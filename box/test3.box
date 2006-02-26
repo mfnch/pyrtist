@@ -1,0 +1,5 @@
+Print["Proprio bene!\n"
+"Ora stampo un reale: ", 9.87654321
+"\nOra stampo un intero: ", 970458
+"\nOra stampo un carattere: '", 'c', "'\n"]
+

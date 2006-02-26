@@ -1,0 +1,13 @@
+Cmp_Operator_Exec: Cerco REAL OP REAL
+Cmp_Operation_Find: Cerco REAL OP REAL
+Cmp_Operator_Exec: Cerco REAL OP REAL
+Cmp_Operation_Find: Cerco REAL OP REAL
+Profondita': 1 -- Tipo: 'VOID'
+Cmp_Operator_Exec: Cerco REAL OP REAL
+Cmp_Operation_Find: Cerco REAL OP REAL
+Profondita': 1 -- Tipo: 'VOID'
+Profondita': 2 -- Tipo: 'VOID'
+Profondita': 3 -- Tipo: 'VOID'
+Cmp_Operator_Exec: Cerco REAL OP REAL
+Cmp_Operation_Find: Cerco REAL OP REAL
+answer=4.56,1.23

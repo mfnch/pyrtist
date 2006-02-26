@@ -1,0 +1,79 @@
+
+l'istruzione e' composta da un header
+e da una lista di descrittori di registri
+
+L'header identifica sia l'istruzione,
+sia il tipo dei registri, il quale puo' essere:
+TIPO DI REGISTRO:
+-----------------------------
+0 -- Int
+1 -- Real
+2 -- Point
+3 -- Puntatore
+Un descrittore di registro invece e' composto
+dal descritore di allocazione e da un numero.
+Il descrittore di allocazione specifica dove
+e' memorizzato il registro:
+DESCRITTORE DI ALLOCAZIONE:
+-----------------------------
+0 -- Registro locale
+1 -- Variabile locale
+2 -- Variabile globale
+3 -- Locazione di memoria
+Il numero specifica a seconda dei casi:
+(casi 0, 1, 2) il numero di registro/variabile
+(caso 3) la posizione in memoria del registro
+
+CONVENZIONI:
+Indico un registro con una serie di lettere appiccicate ad un numero!
+La prima lettera e' opzionale e puo' essere una 'r', una 'v', oppure una 'g'
+e distingue tra registri ( = 'r'), variabili ( = 'v'), variabili globali
+( = 'g' ) e locazioni di memoria (assente).
+La seconda lettera e' obbligatoria e indica il tipo di registro
+('i' per int, 'r' per real, 'p' per point, 'o' per pointer)
+Segue infine un numero indicante il numero di registro/variabile,
+oppure un numero fra parentesi quadre per indicare la locazione di memoria.
+
+ |i|1
+r|r|2
+v|p|3
+g|o|...
+
+oppure:
+
+ |(...)
+i|(-2)
+r|(-1)
+p|(0)
+o|(1)
+ |(2)
+ |(...)
+
+I registri e variabili locali vengono allocati con istruzioni come
+'regi 2, 3' che crea 2 variabili (vi1 e vi2) e 3 registri interi
+(ri1, ri2, ri3, mentre ri0 e' sempre presente, perche' assolve
+a funzioni speciali come passaggio di parametri...).
+Dopo tale istruzione i registri e variabili locali punteranno
+su di una zona diversa della memoria, quella appena allocata da regi.
+Altre istruzioni simili esistono per gli altri tipi (regr, regp, rego).
+Quando una di queste istruzioni viene usata, si perde la zona di memoria
+precedentemente allocata per i registri.
+Per ovviare a questo esistono altre 2 istruzioni: push e pop
+
+push 12345
+regi 2, 3
+regr 2, 2
+regp 0, 1
+rego 1, 0
+...
+pop 12345
+
+L'argomento di push e pop, non ha un significato particolarmente importante.
+Serve solo per poter accoppiare le istruzioni, cioe' per sicurezza.
+In questo modo e' possibile capire quale stato vuole ripristinare
+l'istruzione pop ('push 1 ... pop 2' provochera' un errore!)
+L'istruzione call esegue implicitamente una istruzione push
+e l'istruzione ret di ritorno esegue la corrispondente pop.
+Da notare che le istruzioni reg... non hanno alcun effetto sulle variabili
+globali!
+   

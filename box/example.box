@@ -1,0 +1,6 @@
+Print[
+  a = 2, "I define a\n"
+  "This is a: ", a, '\n'
+  "And this is the square root of a: ", Sqrt[a], '\n'
+]
+

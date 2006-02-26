@@ -1,0 +1,88 @@
+
+
+x.p3 = x.p1 + x.p2
+
+p = (0, 0)
+
+\ line[
+  \ circle[
+    \ line[
+      \ circle[
+        .r
+        a@circle = 1
+      ]
+    ]
+  ]
+]
+
+
+
+
+-------------------------------------------------------------------------------
+line[ color[1, 1, 1], point[0, 0], point[5, 2] ]
+---
+bianco = color[1, 1, 1]
+p1 = point[0, 0]
+p2 = point[5, 2]
+line[ bianco, p1, p2 ]
+-------------------------------------------------------------------------------
+[
+
+  \ obj1 \ obj2
+]
+
+
+-------------------------------------------------------------------------------
+point -> {x = y = int}
+point@print -> { print{"(", @@.x, ", ", @@.y, ")"} }
+
+point + point -> {@1 + @2}
+
+-------------------------------------------------------------------------------
+
+
+_________________
+
+-------------------------------[OGGETTI e TIPI]--------------------------------
+Il tipo definisce astrattamente come e' fatto l'oggetto.
+L'oggetto e' una particolare istanza di un tipo.
+
+  ESEMPIO: matteo = persona
+           matteo --> oggetto, persona --> tipo
+
+---
+Una scatola e' un raggruppamento di espressioni: box[expr1, expr2, expr3, ...]
+Posso creare una scatola a partire sia da un tipo, sia da un oggetto.
+
+  ESEMPIO:
+    matteo = persona[ .capelli = "castani", .occhi = "marroni", .altezza = 1.80 ]
+    federico = matteo[ .altezza = 1.75 ]
+---
+Ogni espressione all'interno della scatola provoca l'esecuzione di una procedura,
+tranne casi particolari (il caso di espressione senza tipo e espressione inattiva)
+
+  ESEMPIO:
+    print[ a = 12, a, 2*a ] <---[equivalente]---> print[12, 24]
+                            <---[equivalente]---> print[ (a = 12), 2*a ]
+
+    per ogni intero all'interno della scatola,
+    vengono eseguite le procedure int@print
+
+L'operatore di assegnazione genera un'espressione inattiva:
+  a = int --> espressione inattiva di tipo int, priva di valore
+  a = 12  --> espressione inattiva di tipo int, con valore 12
+
+\ expr  --> ignora l'espressione
+---
+
+
+a: = 1
+
+
+ADDRESS         -->     :[NAME]
+ADDRESS ADDRESS -->     ADDRESS
+
+NAME ADDRESS    -->     EXPRESSION
+
+
+

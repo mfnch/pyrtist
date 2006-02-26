@@ -1,0 +1,40 @@
+ 
+ Alcune precisazioni sullo stile utilizzato nei sorgenti del programma:
+ 
+ Per "indentare" uso il TAB con lunghezza impostata su 4.
+
+ Convenzioni:
+  nomi di variabili: tutto minuscolo, eventualmente separato da _
+  tipi di dati: tutto attaccato, con prime lettere maiuscole
+  procedure: prefisso del file di appartenenza + nome staccato con _ 
+   e iniziali maiuscole
+  macro: tutto maiuscolo
+
+  Comunicazione di errori e successo/insuccesso delle funzioni:
+  Spesso le funzioni eseguono un compito che puo' aver esito positivo o negativo.
+   le funzioni restituiscono spesso un intero.
+  In questi sorgenti, per comunicare l'esito, tali funzioni restituiscono
+  un tipo enumerato, di nome Task, cosi' definito:
+ 
+    typedef enum {Failed, Success} Task;
+  
+  E per testare il successo/insucccesso vengono usate le 2 macro IS_SUCCESSFUL() e
+  IS_FAILED() ad esempio:
+  
+    /* Funzione che esegue il compito */
+    Task Do_Do_Do(...)
+    {
+        ...
+        if (...) return Failed;   /* Esco in caso d'errore! */
+        ...
+        return Success;           /* Operazione completata con successo! */
+    }
+  
+    /* Funzione principale */
+    int main(void)
+    {
+        if IS_FAILED(Do_Do_Do(...))
+            fprintf(stderr, "Si e' verificato un errore!\n");  
+    }
+
+ 

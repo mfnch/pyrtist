@@ -1,0 +1,120 @@
+*******************************************************************************
+*       A SHORT GUIDE TO THE INSTRUCTIONS OF THE VIRTUAL MACHINE OF BOX       *
+*******************************************************************************
+
+NOTES:
+  * I use lowercase letters for the names of the instructions.
+  * I use:
+    'C' as a shorthand for 'character', 'I' as a shorthand for 'integer',
+    'R' as a shorthand for 'real', 'P' as a shorthand for 'point',
+    'O' as a shorthand for 'object'.
+  * When I want to say "something which can be a character or an integer"
+    I will use 'CI' and similar expressions in similar cases!
+  * If an instructions get more than one integer, for example, I use
+    the numbers 1 or 2 to distinguish one from the other: 'I1' and 'I2'.
+  * Arguments are always of the same type.
+
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+INSTRUCTION:  line I
+DESCRIPTION:  To communicate to the VM that I is the line of the source
+  program which is going to be executed.
+
+-------------------------------------------------------------------------------
+INSTRUCTION:  call I
+DESCRIPTION:  to call the module number I installed on the virtual machine.
+
+-------------------------------------------------------------------------------
+INSTRUCTION:  ret
+DESCRIPTION:  to terminate the execution of the current module and return
+  to the caller-module (or to end the program if the current module was
+  the first launched module).
+
+-------------------------------------------------------------------------------
+INSTRUCTIONS: newc I1, I2
+              newi I1, I2
+              newr I1, I2
+              newp I1, I2
+              newo I1, I2
+DESCRIPTION:  to allocate new registers and variables of various types
+  (for the current module).
+
+-------------------------------------------------------------------------------
+INSTRUCTION:  mov CIRPO1, CIRPO2
+DESCRIPTION:  to move values from (registers/variables/memory)
+  to (registers/variables/memory).
+
+-------------------------------------------------------------------------------
+INSTRUCTIONS: bnot I
+              band I1, I2
+              bxor I1, I2
+              bor I1, I2
+DESCRIPTION: to perform bitwise logical operations.
+
+-------------------------------------------------------------------------------
+INSTRUCTIONS: lnot I
+              land I1, I2
+              lor I1, I2
+DESCRIPTION: to perform logical operations.
+
+-------------------------------------------------------------------------------
+INSTRUCTIONS: shl I1, I2
+              shr I1, I2
+DESCRIPTION: To (sh)ift (l)eft/(r)ight the bits of an integer.
+
+-------------------------------------------------------------------------------
+INSTRUCTIONS: inc IR
+              dec IR
+DESCRIPTION: To increment or decrement scalars (i.e. integers or reals).
+
+-------------------------------------------------------------------------------
+INSTRUCTIONS: add IRP1, IRP2
+              sub IRP1, IRP2
+              mul IR1, IR2
+              div IR1, IR2
+              rem I1, I2
+              neg IRP
+              pmulr P
+              pdivr P
+DESCRIPTION: Arithmetical operations.
+
+-------------------------------------------------------------------------------
+INSTRUCTIONS: eq IRP1, IRP2
+              ne IRP1, IRP2
+              lt IR1, IR2
+              le IR1, IR2
+              gt IR1, IR2
+              ge IR1, IR2
+DESCRIPTION: Operation to compare two values.
+
+-------------------------------------------------------------------------------
+INSTRUCTIONS: real I
+              intg R
+              point IR1, IR2
+              projx P
+              projy P
+DESCRIPTION: Operations for conversion from one type to another.
+
+-------------------------------------------------------------------------------
+
+INSTRUCTIONS: pptrx P
+              pptry P
+DESCRIPTION: Operations to get the pointer to members of an object of
+ the intrinsic type 'point'.
+
+------------------------------------------------------------------------------
+INSTRUCTIONS: malloc I
+              mfree O
+              mcopy O1, O2
+DESCRIPTION: To allocate, free and copy portions of memory.
+
+-------------------------------------------------------------------------------
+INSTRUCTIONS: lea C
+              lea I
+              lea R
+              lea P
+              lea O1, O2
+DESCRIPTION: To (l)oad the (e)ffective (a)ddress of the (register/variable/
+  location of memory).
+
+
