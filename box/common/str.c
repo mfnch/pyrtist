@@ -433,3 +433,18 @@ strange_cases: {
     }
   }
 }
+
+#ifdef NEED_STRNDUP
+char *strndup(const char *s, int n) {
+  int i, l;
+  char *ret, *r;
+
+  l = strlen(s);
+  if ( l < n ) n = l;
+  ret = r = (char *) malloc(n + 1);
+  if ( r == NULL ) return NULL;
+  for(i = 0; i < l; i++) *(r++) = *(s++);
+  *r = '\0';
+  return ret;
+}
+#endif
