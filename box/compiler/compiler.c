@@ -21,6 +21,8 @@
  * Questo file contiene l'implementazione del compilatore.
  */
 
+#define USE_PRIVILEGED
+
 /*#define DEBUG*/
 /*#define DEBUG_SPECIES_EXPANSION*/
 /*#define DEBUG_STRUCT_EXPANSION*/
@@ -85,7 +87,10 @@ Operation *Cmp_Operation_Add(
   int is_privileged;
 
   MSG_LOCATION("Cmp_Operation_Add");
-
+#if 0
+  printf("Adding operation (%s, %s) to operator '%s'\n",
+   Tym_Type_Names(type1), Tym_Type_Names(type2), opr->name);
+#endif
   opn = (Operation *) malloc( sizeof(Operation) );
   if ( opn == NULL ) {
     MSG_ERROR("Memoria esaurita!");
@@ -114,6 +119,7 @@ Operation *Cmp_Operation_Add(
     break;
   }
 
+#ifdef USE_PRIVILEGED
   /* Aggiungo l'operazione all'operatore: un'operazione privilegiata
    * viene inserita non solo nella catena delle operazioni, ma pure
    * in un'array che ne permette il ritrovamento in maniera immediata.
@@ -124,6 +130,7 @@ Operation *Cmp_Operation_Add(
      */
     opr->opn[aa][t] = opn;
   }
+#endif
 
   /* Creo un collegamento di tipo "a catena"
    */
@@ -159,8 +166,10 @@ Operation *Cmp_Operation_Find(Operator *opr,
 
   MSG_LOCATION("Cmp_Operation_Find");
 
+#if 0
   printf("Cmp_Operation_Find: Cerco %s OP %s\n",
    Tym_Type_Names(type1), Tym_Type_Names(type2));
+#endif
 
   /* Is it a privileged operation or not? */
   if ( typer != TYPE_NONE ) {
@@ -193,6 +202,7 @@ Operation *Cmp_Operation_Find(Operator *opr,
       break;
     }
 
+#ifdef USE_PRIVILEGED
     if ( is_privileged ) {
       opn = opr->opn[aa][type];
       if ( opn != NULL ) {
@@ -203,6 +213,7 @@ Operation *Cmp_Operation_Find(Operator *opr,
         return opn;
       }
     }
+#endif
   }
 
   for (opn = opr->opn_chain; opn != NULL; opn = opn->next ) {
@@ -505,8 +516,10 @@ Expression *Cmp_Operator_Exec(Operator *opr, Expression *e1, Expression *e2) {
 
   MSG_LOCATION("Cmp_Operator_Exec");
 
+#if 0
   printf("Cmp_Operator_Exec: Cerco %s OP %s\n",
    Tym_Type_Names(e1->type), Tym_Type_Names(e2->type));
+#endif
 
   if ( e1 == NULL ) {e1type = TYPE_NONE; num_arg = 1;}
     else {e1type = e1->resolved; e1valued = e1->is.value;}
@@ -1423,7 +1436,7 @@ AsmOut *Cmp_Curr_Output;
  *     (quelle fra i tipi intrinseci).
  *  2) Setta l'output di compilazione.
  */
-Task Cmp_Init()
+Task Cmp_Define_Builtins()
 {
   Operation *opn;
   int status;
@@ -1438,7 +1451,7 @@ Task Cmp_Init()
     {4, "VOID"}
   };
 
-  MSG_LOCATION("Cmp_Init");
+  MSG_LOCATION("Cmp_Define_Builtins");
 
   /* Inizializzo le liste di occupazione di registri e variabili */
   TASK( Reg_Init(typl_nreg) );
@@ -1519,27 +1532,14 @@ Task Cmp_Init()
 
   status = 0; /* Se qualcosa va male trovero' status = 1, alla fine! */
   /* § OPERATORE DI ASSEGNAZIONE */
-#if 0
-  /* §§ ASSEGNAZIONE DI CARATTERI */
-  ADD_OPERATION(assign, TYPE_CHAR, TYPE_CHAR,  TYPE_CHAR,  ASM_MOV_CC, 0, 1, 1);
-  /* §§ ASSEGNAZIONE DI INTERI */
-  ADD_OPERATION(assign, TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_MOV_II, 0, 1, 1);
-  /* §§ ASSEGNAZIONE DI REALI */
-  ADD_OPERATION(assign, TYPE_REAL, TYPE_REAL,  TYPE_REAL,  ASM_MOV_RR, 0, 1, 1);
   /* §§ ASSEGNAZIONE DI PUNTI */
-  ADD_OPERATION(assign,TYPE_POINT,TYPE_POINT, TYPE_POINT,  ASM_MOV_PP, 0, 1, 1);
-#endif
-
-#if 1
-  /* §§ ASSEGNAZIONE DI PUNTI */
-  ADD_OPERATION(assign,TYPE_POINT,TYPE_POINT, TYPE_POINT,  ASM_MOV_PP, 0, 1, 1);
+  ADD_OPERATION(assign,TYPE_POINT, type_Point, TYPE_POINT, ASM_MOV_PP, 0, 1, 1);
   /* §§ ASSEGNAZIONE DI REALI */
-  ADD_OPERATION(assign, TYPE_REAL, TYPE_REAL,type_RealNum, ASM_MOV_RR, 0, 1, 1);
+  ADD_OPERATION(assign, TYPE_REAL,type_RealNum,TYPE_REAL, ASM_MOV_RR, 0, 1, 1);
   /* §§ ASSEGNAZIONE DI INTERI */
-  ADD_OPERATION(assign, TYPE_INTG, TYPE_INTG,type_IntgNum, ASM_MOV_II, 0, 1, 1);
+  ADD_OPERATION(assign, TYPE_INTG,type_IntgNum,TYPE_INTG, ASM_MOV_II, 0, 1, 1);
   /* §§ ASSEGNAZIONE DI CARATTERI */
-  ADD_OPERATION(assign, TYPE_CHAR, TYPE_CHAR,  TYPE_CHAR,  ASM_MOV_CC, 0, 1, 1);
-#endif
+  ADD_OPERATION(assign, TYPE_CHAR, TYPE_CHAR,  TYPE_CHAR, ASM_MOV_CC, 0, 1, 1);
 
   /* § OPPOSTO BIT-PER-BIT DI UN INTERO */
   ADD_OPERATION(bnot, TYPE_INTG, TYPE_NONE,  TYPE_INTG, ASM_BNOT_I, 0, 1, 0);

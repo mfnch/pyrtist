@@ -12,10 +12,9 @@
 #include "registers.h"
 #include "compiler.h"
 
+/* Important builtin types */
+Intg type_Point, type_RealNum, type_IntgNum, type_CharNum;
 Intg type_String;
-Intg type_Pnt;
-/* Le specie per la gestione automatica delle conversioni fra numeri */
-Intg type_RealNum, type_IntgNum;
 
 static Task Tmp(void);
 static Task Lib_Define_Basics(void);
@@ -103,9 +102,9 @@ static Task Lib_Define_Basics(void) {
   type_2RealNum = TYPE_NONE;
   TASK( Tym_Build_Structure(& type_2RealNum, type_RealNum) );
   TASK( Tym_Build_Structure(& type_2RealNum, type_RealNum) );
-  type_Pnt = TYPE_NONE;
-  TASK( Tym_Build_Specie(& type_Pnt, TYPE_POINT) );
-  TASK( Tym_Build_Specie(& type_Pnt, type_2RealNum) );
+  type_Point = TYPE_NONE;
+  TASK( Tym_Build_Specie(& type_Point, TYPE_POINT) );
+  TASK( Tym_Build_Specie(& type_Point, type_2RealNum) );
 
   /* Ora faccio l'overloading dell'operatore di conversione
    * e definisco le conversioni automatiche che il compilatore
@@ -174,7 +173,7 @@ static Task Lib_Define_Print(void) {
   TASK( Cmp_Def_C_Procedure(TYPE_CHAR,   type_Print, Print_Char  ) );
   TASK( Cmp_Def_C_Procedure(TYPE_INTG,   type_Print, Print_Int   ) );
   TASK( Cmp_Def_C_Procedure(TYPE_REAL,   type_Print, Print_Real  ) );
-  TASK( Cmp_Def_C_Procedure(type_Pnt,    type_Print, Print_Pnt ) );
+  TASK( Cmp_Def_C_Procedure(type_Point,  type_Print, Print_Pnt ) );
   TASK( Cmp_Def_C_Procedure(type_String, type_Print, Print_String) );
   TASK( Cmp_Def_C_Procedure(PROC_PAUSE,  type_Print, Print_NewLine) );
   /*Tym_Print_Procedure(stdout, type_new);*/

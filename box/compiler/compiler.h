@@ -233,8 +233,8 @@ extern int tym_must_expand;
 extern Intg tym_recent_type;
 extern TypeDesc *tym_recent_typedesc;
 
-/* Tipi non intrinseci usati dalla libreria di Box */
-extern Intg type_RealNum, type_IntgNum;
+/* Important builtin types */
+extern Intg type_Point, type_RealNum, type_IntgNum, type_CharNum;
 
 Intg Tym_Type_Next(void);
 TypeDesc *Tym_Type_New(Name *nm);
@@ -315,7 +315,7 @@ Expression *Cmp_Expr_Reg0_To_LReg(Intg t);
 Task Cmp_Expr_O_To_OReg(Expression *e);
 Task Cmp_Complete_Ptr_1(Expression *e);
 Task Cmp_Complete_Ptr_2(Expression *e1, Expression *e2);
-Task Cmp_Init();
+Task Cmp_Define_Builtins();
 void Cmp_Expr_New_Imm_Char(Expression *e, Char c);
 void Cmp_Expr_New_Imm_Intg(Expression *e, Intg i);
 void Cmp_Expr_New_Imm_Real(Expression *e, Real r);
