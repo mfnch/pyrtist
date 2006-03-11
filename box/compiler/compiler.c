@@ -160,7 +160,7 @@ Operation *Cmp_Operation_Find(Operator *opr,
  Intg type1, Intg type2, Intg typer, OpnInfo *oi) {
 
   Intg type;
-  int check_rs;
+  int no_check_arg1, no_check_arg2, check_rs;
   int ne1, ne2;
   Operation *opn;
 
@@ -171,17 +171,16 @@ Operation *Cmp_Operation_Find(Operator *opr,
    Tym_Type_Names(type1), Tym_Type_Names(type2));
 #endif
 
-  /* Is it a privileged operation or not? */
-  if ( typer != TYPE_NONE ) {
-    check_rs = 1;
+  no_check_arg1 = (type1 == TYPE_NONE);
+  no_check_arg2 = (type2 == TYPE_NONE);
+  check_rs      = (typer != TYPE_NONE);
 
-  } else {
+  /* Is it a privileged operation or not? */
+  if ( ! check_rs ) {
     Intg aa;
     int is_privileged;
 
-    check_rs = 0;
-
-    aa = (type1 == TYPE_NONE) + ((type2 == TYPE_NONE) << 1);
+    aa = no_check_arg1 | (no_check_arg2 << 1);
     switch (aa) {
     case 0:
       type = type1 = Tym_Type_Resolve_All(type1);
@@ -222,8 +221,8 @@ Operation *Cmp_Operation_Find(Operator *opr,
 
     ok_1 = (t1 == type1);
     ok_2 = (t2 == type2);
-    if ( ! ok_1 ) ok_1 = Tym_Compare_Types(t1, type1, & ne1);
-    if ( ! ok_2 ) ok_2 = Tym_Compare_Types(t2, type2, & ne2);
+    if ( ! (ok_1 || no_check_arg1) ) ok_1 = Tym_Compare_Types(t1, type1, & ne1);
+    if ( ! (ok_2 || no_check_arg2) ) ok_2 = Tym_Compare_Types(t2, type2, & ne2);
 
     if ( check_rs ) {
       ok_rs = Tym_Compare_Types(typer, opn->type_rs, NULL);
@@ -1579,7 +1578,7 @@ Task Cmp_Define_Builtins()
   ADD_OPERATION(plus, type_RealNum, type_RealNum, type_RealNum, ASM_ADD_RR, 1, 1, 0);
   ADD_OPERATION(plus, type_IntgNum, type_IntgNum, type_IntgNum, ASM_ADD_II, 1, 1, 0);
   /* §§ SOMMA FRA PUNTI */
-  ADD_OPERATION(plus,  TYPE_POINT,TYPE_POINT, TYPE_POINT,  ASM_ADD_PP, 1, 1, 0);
+  ADD_OPERATION(plus,  type_Point,type_Point, TYPE_POINT,  ASM_ADD_PP, 1, 1, 0);
 
   /* § OPERATORE DI DIFFERENZA */
   /* §§ OPPOSTO DI UN INTERO */
@@ -1587,27 +1586,27 @@ Task Cmp_Define_Builtins()
   /* §§ OPPOSTO DI UN REALE */
   ADD_OPERATION(minus,  TYPE_REAL, TYPE_NONE,  TYPE_REAL,   ASM_NEG_R, 0, 1, 0);
   /* §§ OPPOSTO DI UN PUNTO */
-  ADD_OPERATION(minus, TYPE_POINT, TYPE_NONE, TYPE_POINT,   ASM_NEG_P, 0, 1, 0);
+  ADD_OPERATION(minus, type_Point, TYPE_NONE, TYPE_POINT,   ASM_NEG_P, 0, 1, 0);
 
   /* §§ DIFFERENZA FRA REALI E INTERI */
   ADD_OPERATION(minus, type_RealNum, type_RealNum, type_RealNum, ASM_SUB_RR, 0, 1, 0);
   ADD_OPERATION(minus, type_IntgNum, type_IntgNum, type_IntgNum, ASM_SUB_II, 0, 1, 0);
   /* §§ DIFFERENZA FRA PUNTI */
-  ADD_OPERATION(minus, TYPE_POINT,TYPE_POINT, TYPE_POINT,  ASM_SUB_PP, 0, 1, 0);
+  ADD_OPERATION(minus, type_Point,type_Point, TYPE_POINT,  ASM_SUB_PP, 0, 1, 0);
 
   /* § OPERATORE DI PRODOTTO */
   /* §§ PRODOTTO FRA REALI E INTERI */
   ADD_OPERATION(times, type_RealNum, type_RealNum, type_RealNum, ASM_MUL_RR, 1, 1, 0);
   ADD_OPERATION(times, type_IntgNum, type_IntgNum, type_IntgNum, ASM_MUL_II, 1, 1, 0);
   /* §§ PRODOTTO REALE * PUNTO O VICEVERSA */
-  ADD_OPERATION(times, TYPE_POINT, type_RealNum, TYPE_POINT, ASM_PMULR_P, 1, 1, 0);
+  ADD_OPERATION(times, type_Point, type_RealNum, TYPE_POINT, ASM_PMULR_P, 1, 1, 0);
 
   /* § OPERATORE DI DIVISIONE */
   /* §§ DIVISIONE FRA REALI E INTERI */
   ADD_OPERATION(div, type_RealNum, type_RealNum, type_RealNum, ASM_DIV_RR, 0, 1, 0);
   ADD_OPERATION(div, type_IntgNum, type_IntgNum, type_IntgNum, ASM_DIV_II, 0, 1, 0);
   /* §§ DIVISIONE PUNTO / REALE */
-  ADD_OPERATION(div, TYPE_POINT, type_RealNum, TYPE_POINT, ASM_PDIVR_P, 0, 1, 0);
+  ADD_OPERATION(div, type_Point, type_RealNum, TYPE_POINT, ASM_PDIVR_P, 0, 1, 0);
 
   /* § RESTO DELLA DIVISIONE FRA INTERI */
   ADD_OPERATION(rem,  TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_REM_II,  0, 1, 0);
@@ -1618,14 +1617,14 @@ Task Cmp_Define_Builtins()
   /* §§ UGUAGLIANZA FRA REALI */
   ADD_OPERATION(eq,   TYPE_REAL, TYPE_REAL, TYPE_INTG, ASM_EQ_RR,   1, 1, 0);
   /* §§ UGUAGLIANZA FRA PUNTI */
-  ADD_OPERATION(eq,  TYPE_POINT,TYPE_POINT, TYPE_INTG, ASM_EQ_PP,   1, 1, 0);
+  ADD_OPERATION(eq,  type_Point,type_Point, TYPE_INTG, ASM_EQ_PP,   1, 1, 0);
   /* § OPERATORE DI DISUGUAGLIANZA */
   /* §§ DISUGUAGLIANZA FRA INTERI */
   ADD_OPERATION(ne,   TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_NE_II,   1, 1, 0);
   /* §§ DISUGUAGLIANZA FRA REALI */
   ADD_OPERATION(ne,   TYPE_REAL, TYPE_REAL, TYPE_INTG, ASM_NE_RR,   1, 1, 0);
   /* §§ DISUGUAGLIANZA FRA PUNTI */
-  ADD_OPERATION(ne,  TYPE_POINT,TYPE_POINT, TYPE_INTG, ASM_NE_PP,   1, 1, 0);
+  ADD_OPERATION(ne,  type_Point,type_Point, TYPE_INTG, ASM_NE_PP,   1, 1, 0);
   /* § OPERATORE DI MINORE */
   /* §§ MINORE FRA INTERI */
   ADD_OPERATION(lt,   TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_LT_II,   0, 1, 0);
@@ -1670,14 +1669,14 @@ Task Cmp_Define_Builtins()
   /* §§ += FRA REALI */
   ADD_OPERATION(aplus,  TYPE_REAL, TYPE_REAL,  TYPE_REAL,  ASM_ADD_RR, 0, 1, 1);
   /* §§ += FRA PUNTI */
-  ADD_OPERATION(aplus, TYPE_POINT,TYPE_POINT, TYPE_POINT,  ASM_ADD_PP, 0, 1, 1);
+  ADD_OPERATION(aplus, TYPE_POINT,type_Point, TYPE_POINT,  ASM_ADD_PP, 0, 1, 1);
   /* § OPERATORE -= */
   /* §§ -= FRA INTERI */
   ADD_OPERATION(aminus, TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_SUB_II, 0, 1, 1);
   /* §§ -= FRA REALI */
   ADD_OPERATION(aminus, TYPE_REAL, TYPE_REAL,  TYPE_REAL,  ASM_SUB_RR, 0, 1, 1);
   /* §§ -= FRA PUNTI */
-  ADD_OPERATION(aminus,TYPE_POINT,TYPE_POINT, TYPE_POINT,  ASM_SUB_PP, 0, 1, 1);
+  ADD_OPERATION(aminus,TYPE_POINT,type_Point, TYPE_POINT,  ASM_SUB_PP, 0, 1, 1);
   /* § OPERATORE *= */
   /* §§ *= FRA INTERI */
   ADD_OPERATION(atimes, TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_MUL_II, 0, 1, 1);

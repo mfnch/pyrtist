@@ -28,6 +28,11 @@ void yyerror(char* s);
 /* Numero della linea che e' in fase di lettura dal tokenizer */
 extern UInt tok_linenum;
 
+#define OPERATORA_EXEC(opr, rs, a, b) \
+  if IS_FAILED( Prs_Operator(opr, & (rs), a, b) ) \
+    {(rs).is.ignore = 1; parser_attr.no_syntax_err = 1; YYERROR;} \
+  (rs).is.ignore = 1;
+
 #define OPERATOR2_EXEC(opr, rs, a, b) \
   if IS_FAILED( Prs_Operator(opr, & (rs), a, b) ) \
     {parser_attr.no_syntax_err = 1; YYERROR;}
@@ -275,16 +280,16 @@ expr:
 
  | expr '=' expr        { if (Prs_Rule_Valued_Eq_Valued(& $$, & $1, & $3) ) MY_ERR}
 
- | expr TOK_APLUS expr  { OPERATOR2_EXEC(cmp_opr.aplus, $$, & $1, & $3); }
- | expr TOK_AMINUS expr { OPERATOR2_EXEC(cmp_opr.aminus,$$, & $1, & $3); }
- | expr TOK_ATIMES expr { OPERATOR2_EXEC(cmp_opr.atimes,$$, & $1, & $3); }
- | expr TOK_ADIV expr   { OPERATOR2_EXEC(cmp_opr.adiv,  $$, & $1, & $3); }
- | expr TOK_AREM expr   { OPERATOR2_EXEC(cmp_opr.arem,  $$, & $1, & $3); }
- | expr TOK_ABAND expr  { OPERATOR2_EXEC(cmp_opr.aband, $$, & $1, & $3); }
- | expr TOK_ABXOR expr  { OPERATOR2_EXEC(cmp_opr.abxor, $$, & $1, & $3); }
- | expr TOK_ABOR expr   { OPERATOR2_EXEC(cmp_opr.abor,  $$, & $1, & $3); }
- | expr TOK_ASHL expr   { OPERATOR2_EXEC(cmp_opr.ashl,  $$, & $1, & $3); }
- | expr TOK_ASHR expr   { OPERATOR2_EXEC(cmp_opr.ashr,  $$, & $1, & $3); }
+ | expr TOK_APLUS expr  { OPERATORA_EXEC(cmp_opr.aplus, $$, & $1, & $3); }
+ | expr TOK_AMINUS expr { OPERATORA_EXEC(cmp_opr.aminus,$$, & $1, & $3); }
+ | expr TOK_ATIMES expr { OPERATORA_EXEC(cmp_opr.atimes,$$, & $1, & $3); }
+ | expr TOK_ADIV expr   { OPERATORA_EXEC(cmp_opr.adiv,  $$, & $1, & $3); }
+ | expr TOK_AREM expr   { OPERATORA_EXEC(cmp_opr.arem,  $$, & $1, & $3); }
+ | expr TOK_ABAND expr  { OPERATORA_EXEC(cmp_opr.aband, $$, & $1, & $3); }
+ | expr TOK_ABXOR expr  { OPERATORA_EXEC(cmp_opr.abxor, $$, & $1, & $3); }
+ | expr TOK_ABOR expr   { OPERATORA_EXEC(cmp_opr.abor,  $$, & $1, & $3); }
+ | expr TOK_ASHL expr   { OPERATORA_EXEC(cmp_opr.ashl,  $$, & $1, & $3); }
+ | expr TOK_ASHR expr   { OPERATORA_EXEC(cmp_opr.ashr,  $$, & $1, & $3); }
 
  | expr TOK_LOR expr    { OPERATOR2_EXEC(cmp_opr.lor,  $$, & $1, & $3); }
  | expr TOK_LAND expr   { OPERATOR2_EXEC(cmp_opr.land, $$, & $1, & $3); }
