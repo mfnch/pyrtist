@@ -1,40 +1,46 @@
- 
- Alcune precisazioni sullo stile utilizzato nei sorgenti del programma:
- 
- Per "indentare" uso il TAB con lunghezza impostata su 4.
+STYLE OF THE CODE (10/03/2006):
+  Unfortunatly the style is not omogeneousn throughout the program!!!
+  This problems is connected with the long life of this code and with my mind
+  which changes with experience.
+  Better to write down here some conventions:
 
- Convenzioni:
-  nomi di variabili: tutto minuscolo, eventualmente separato da _
-  tipi di dati: tutto attaccato, con prime lettere maiuscole
-  procedure: prefisso del file di appartenenza + nome staccato con _ 
-   e iniziali maiuscole
-  macro: tutto maiuscolo
+  InThisWay   --> types
+  in_this_way --> instances
+  IN_THIS_WAY --> macros
+  a, b, c, .. --> local instances (counters, and other instances)
+  In_This_Way --> functions
 
-  Comunicazione di errori e successo/insuccesso delle funzioni:
-  Spesso le funzioni eseguono un compito che puo' aver esito positivo o negativo.
-   le funzioni restituiscono spesso un intero.
-  In questi sorgenti, per comunicare l'esito, tali funzioni restituiscono
-  un tipo enumerato, di nome Task, cosi' definito:
- 
+  Tab length = 2, example:
+
+  while( 1 ) {
+    printf("Nothing to print!\n");
+    printf("Really nothing!\n");
+  }
+
+FUNCTIONS: HOW WE DEAL WITH ERRORS....
+  This typedef is defined inside 'types.h' which is included in almost every
+  source file of the program:
+
     typedef enum {Failed, Success} Task;
-  
-  E per testare il successo/insucccesso vengono usate le 2 macro IS_SUCCESSFUL() e
-  IS_FAILED() ad esempio:
-  
-    /* Funzione che esegue il compito */
+
+  This is how we define many functions:
+
+    /* This functions deals with a particular task and can exit with
+     * or without errors
+     */
     Task Do_Do_Do(...)
     {
         ...
-        if (...) return Failed;   /* Esco in caso d'errore! */
+        if (...) return Failed;   /* Exits in case of errors! */
         ...
-        return Success;           /* Operazione completata con successo! */
+        return Success;           /* Operation succesfully completed! */
     }
-  
-    /* Funzione principale */
+
+  Now we call this function, testing for errors:
+
+    /* Main function */
     int main(void)
     {
         if IS_FAILED(Do_Do_Do(...))
-            fprintf(stderr, "Si e' verificato un errore!\n");  
+            fprintf(stderr, "Error!\n");
     }
-
- 
