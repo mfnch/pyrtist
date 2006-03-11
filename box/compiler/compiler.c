@@ -867,6 +867,26 @@ Expression *Cmp_Operation_Exec(
  * convertirli, etc.                                                          *
  ******************************************************************************/
 
+/* Prints the details about the specified expression *e.
+ */
+void Expr_Print(FILE *out, Expression *e) {
+  fprintf(out,
+          "Expression(type=\"%s\", resolved=\"%s\", "
+          "imm=%c, value=%c, typed=%c, ignore=%c, target=%c,"
+          "gaddr=%c, allocd=%c, release=%c)\n",
+          Tym_Type_Names(e->type),
+          Tym_Type_Names(e->resolved),
+          e->is.imm ? '1' : '0',
+          e->is.value ? '1' : '0',
+          e->is.typed ? '1' : '0',
+          e->is.ignore ? '1' : '0',
+          e->is.target ? '1' : '0',
+          e->is.gaddr ? '1' : '0',
+          e->is.allocd ? '1' : '0',
+          e->is.release ? '1' : '0'
+         );
+}
+
 /* DESCRIZIONE: Inizializzo la struttura expr in modo che contenga un
  *  registro locale libero. Se zero == 0, tale registro viene occupato,
  *  fino a quando non sara' "liberato" con Cmp_LReg_Free.
@@ -1259,7 +1279,7 @@ Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src) {
          c, e_dest->value.i, CAT_IMM, e_src->value.p);
         break;
        default:
-        MSG_ERROR("Errore interno in Cmp_Expr_Move");
+        MSG_ERROR("Internal error in Cmp_Expr_Move");
         return Failed;
       }
       return Cmp_Expr_Destroy(e_src);
@@ -1273,7 +1293,9 @@ Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src) {
 
   } else {
     /* Sposto un oggetto user-defined */
-    MSG_ERROR("Errore interno in Cmp_Expr_Move: non ancora implementato!");
+    MSG_ERROR("Internal error in Cmp_Expr_Move: still not implemented!");
+    fprintf(stderr, "e_src = ");  Expr_Print(stderr, e_src);
+    fprintf(stderr, "e_dest = "); Expr_Print(stderr, e_dest);
     return Failed;
   }
 }

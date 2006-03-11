@@ -428,7 +428,8 @@ Task Parser_Finish(void)
 }
 
 /* DESCRIPTION: This function assigns the expression *e, to the untyped
- *  expression *new_e.
+ *  expression *new_e: if *e is a target, *new_e will be a copy of *e,
+ *  otherwise *e will be simply copied into *new_e.
  */
 Task Prs_Def_Operator(Operator *opr,
                       Expression *rs, Expression *new_e, Expression *e) {
@@ -453,7 +454,10 @@ Task Prs_Def_Operator(Operator *opr,
     if ( result == NULL ) return Failed;
     *rs = *result;
     return Success;
-//  }
+
+//  } else {
+
+//   }
   TASK( Cmp_Expr_Move(rs, e) );
   return Success;
 }

@@ -70,6 +70,9 @@ typedef enum {
  */
 typedef enum {CAT_NONE = -1, CAT_GREG = 0, CAT_LREG, CAT_PTR, CAT_IMM} AsmArg;
 
+/* Names of categories (see AsmArg) */
+extern const char *asm_arg_str[4];
+
 /* Enumerazione dei tipi di moduli */
 typedef enum {
   MODULE_IS_VM_CODE,
