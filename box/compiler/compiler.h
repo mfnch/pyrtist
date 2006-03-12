@@ -7,7 +7,7 @@ typedef struct {
   struct {
     unsigned int imm     : 1; /* l'espressione e' immediata? */
     unsigned int value   : 1; /* Possiede un valore determinato? */
-    unsigned int typed   : 1; /* Posside tipo? */
+    unsigned int typed   : 1; /* Possiede tipo? */
     unsigned int ignore  : 1; /* Va ignorata o passata alla box? */
     unsigned int target  : 1; /* si puo' assegnare un valore all'espressione?*/
     unsigned int gaddr   : 1; /* addr e' un registro globale (o locale)? */
@@ -224,6 +224,49 @@ typedef struct {
   Intg exp_type2;
 } OpnInfo;
 
+/* This type is used to specify a container (see the macros CONTAINER_...) */
+typedef struct {
+  int type_of_container;
+  int which_one;
+} Container;
+
+/* These macros are used in functions such as Cmp_Expr_Container_New
+ * or Cmp_Expr_Container_Change to specify the container for an expression.
+ */
+
+/* The container is immediate (contains directly the value
+ * of the integer, real, etc.)
+ */
+#define CONTAINER_IMM (& (Container) {0, 0})
+
+/* In the function Cmp_Expr_Container_Change this will behaves similar
+ * to CONTAINER_LREG_AUTO, but with one difference. If the expression
+ * is already contained in a local register:
+ *  - macro CONTAINER_LREG_AUTO: will keep the expression
+ *    in its current container;
+ *  - macro CONTAINER_LREG_FORCE: will choose another local register
+ *    and use this as the new container.
+ */
+#define CONTAINER_LREG_FORCE (& (Container) {1, -2})
+
+/* A local register automatically chosen (and reserved) */
+#define CONTAINER_LREG_AUTO (& (Container) {1, -1})
+
+/* A well defined local register */
+#define CONTAINER_LREG(num) (& (Container) {1, num > 0 ? num : 0})
+
+/* A well defined local variable */
+#define CONTAINER_LVAR(num) (& (Container) {2, num > 0 ? num : 0})
+
+/* A local variable automatically chosen (and reserved) */
+#define CONTAINER_LVAR_AUTO (& (Container) {2, -1})
+
+/* A well defined global register */
+#define CONTAINER_GREG(num) (& (Container) {3, num > 0 ? num : 0})
+
+/* A well defined global variable */
+#define CONTAINER_GVAR(num) (& (Container) {4, num > 0 ? num : 0})
+
 extern struct cmp_opr_struct cmp_opr;
 extern AsmOut *Cmp_Curr_Output;
 extern Intg cmp_box_level;
@@ -299,7 +342,8 @@ Expression *Cmp_Member_Intrinsic(Expression *e, Name *m);
 Expression *Cmp_Member_Get(Expression *e, Name *m);
 Expression *Cmp_Operator_Exec(Operator *opr, Expression *e1, Expression *e2);
 Expression *Cmp_Operation_Exec(Operation *opn, Expression *e1, Expression *e2);
-void Expr_Print(FILE *out, Expression *e);
+void Cmp_Expr_Print(FILE *out, Expression *e);
+Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c);
 Task Cmp_Expr_LReg(Expression *e, Intg t, int zero);
 Task Cmp_LReg_Free(Expression *expr);
 Task Cmp_Free(Expression *expr);

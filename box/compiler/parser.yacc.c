@@ -448,18 +448,21 @@ Task Prs_Def_Operator(Operator *opr,
   if (s == NULL) return Failed;
 
   target = & (s->value);
-//  if ( e->is.target ) {
+  if ( e->is.target ) {
     TASK( Cmp_Expr_Create(target, e->type, /* temporary = */ 0) );
     result = Cmp_Operator_Exec(opr, target, e);
     if ( result == NULL ) return Failed;
     *rs = *result;
     return Success;
 
-//  } else {
+  } else {
 
-//   }
-  TASK( Cmp_Expr_Move(rs, e) );
-  return Success;
+    TASK( Cmp_Expr_Container_New(target, e->type, CONTAINER_LVAR_AUTO) );
+    TASK( Cmp_Expr_To_X(e, target->categ, target->value.i, 0) );
+    target->is.allocd = 0;
+    *rs = *target;
+    return Success;
+  }
 }
 
 /* DESCRIPTION: This function compiles the binary operation opr.

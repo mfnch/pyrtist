@@ -869,22 +869,99 @@ Expression *Cmp_Operation_Exec(
 
 /* Prints the details about the specified expression *e.
  */
-void Expr_Print(FILE *out, Expression *e) {
+void Cmp_Expr_Print(FILE *out, Expression *e) {
   fprintf(out,
-          "Expression(type=\"%s\", resolved=\"%s\", "
-          "imm=%c, value=%c, typed=%c, ignore=%c, target=%c,"
-          "gaddr=%c, allocd=%c, release=%c)\n",
-          Tym_Type_Names(e->type),
-          Tym_Type_Names(e->resolved),
-          e->is.imm ? '1' : '0',
-          e->is.value ? '1' : '0',
-          e->is.typed ? '1' : '0',
-          e->is.ignore ? '1' : '0',
-          e->is.target ? '1' : '0',
-          e->is.gaddr ? '1' : '0',
-          e->is.allocd ? '1' : '0',
-          e->is.release ? '1' : '0'
-         );
+    "Expression(type="SIntg"=\"%s\", resolved="SIntg"=\"%s\", "
+    "categ=%d=\"%s\", imm=%c, value=%c, typed=%c, ignore=%c, target=%c,"
+    "gaddr=%c, allocd=%c, release=%c)\n",
+    e->type, Tym_Type_Names(e->type),
+    e->resolved, Tym_Type_Names(e->resolved),
+    e->categ,
+    (e->categ >= 0) && (e->categ < 4) ? asm_arg_str[e->categ] : "ERROR!",
+    e->is.imm ? '1' : '0',
+    e->is.value ? '1' : '0',
+    e->is.typed ? '1' : '0',
+    e->is.ignore ? '1' : '0',
+    e->is.target ? '1' : '0',
+    e->is.gaddr ? '1' : '0',
+    e->is.allocd ? '1' : '0',
+    e->is.release ? '1' : '0'
+  );
+}
+
+/* Create a new empty container.
+ * NOTE: At the end this should substitute Cmp_Expr_LReg and Cmp_Expr_Create.
+ */
+Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c) {
+  int intrinsic;
+  Intg type_of_register, resolved;
+
+  e->is.typed = 1;
+  e->is.value = 1;
+  e->is.ignore = 0;
+  e->is.allocd = 0;
+  e->type = type;
+  e->resolved = resolved = Tym_Type_Resolve_All(type);
+  intrinsic = (resolved < NUM_INTRINSICS);
+  type_of_register = (intrinsic) ? resolved : TYPE_OBJ;
+
+  e->is.imm = 0;
+  e->is.target = 0;
+  e->is.release = 0;
+
+  switch( c->type_of_container ) {
+  case 0:
+    e->is.imm = 1;
+    e->categ = CAT_IMM;
+    return Success;
+    break;
+
+  case 1:
+    e->categ = CAT_LREG;
+    if ( c->which_one < 0 ) {
+      /* Automatically choses the local register */
+      if ( (e->value.i = Reg_Occupy(type_of_register)) < 1 ) return Failed;
+      e->is.release = 1;
+      return Success;
+
+    } else {
+      /* The user wants a particolar register to be chosen */
+      e->value.i = c->which_one;
+      return Success;
+    }
+    break;
+
+  case 2:
+    e->categ = CAT_LREG;
+    e->is.target = 1;
+    if ( c->which_one < 0 ) {
+      /* Automatically choses the local variables */
+      if ( (e->value.i = -Var_Occupy(type_of_register, cmp_box_level)) >= 0 ) return Failed;
+      return Success;
+
+    } else {
+      /* The user wants a particolar variable to be chosen */
+      e->value.i = c->which_one;
+      return Success;
+    }
+    break;
+
+  case 3:
+    e->categ = CAT_GREG;
+    e->value.i = c->which_one;
+    return Success;
+    break;
+
+  case 4:
+    e->categ = CAT_GREG;
+    e->value.i = -(c->which_one);
+    return Success;
+    break;
+
+  default:
+    MSG_ERROR("Internal error: wrong type of container!");
+  }
+  return Failed;
 }
 
 /* DESCRIZIONE: Inizializzo la struttura expr in modo che contenga un
@@ -1015,7 +1092,7 @@ Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free) {
         VM_Assemble(ASM_MOV_Pimm, categ, reg, CAT_IMM, expr->value.p); break;
        default:
         MSG_ERROR( "Errore interno: non sono ammessi valori immediati"
-        " per il tipo '%s'.", Tym_Type_Name(expr->type) );
+         " per il tipo '%s'.", Tym_Type_Name(expr->type) );
         return Failed;
       }
       EXIT_FUNCTION;
@@ -1086,8 +1163,8 @@ Expression *Cmp__Expr_To_LReg(Expression *expr, int force) {
   return expr;
 }
 
-/* DESCRIPTION: This function generates the assembly code which
- *  puts the address of the expression expr into a precise register.
+/* This function generates the assembly code which
+ * puts the address of the expression expr into a precise register.
  * NOTE: categ can be CAT_LREG or CAT_GREG.
  */
 Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
@@ -1242,12 +1319,13 @@ Task Cmp_Expr_Destroy(Expression *e) {
 /* DESCRIPTION:
  */
 Task Cmp_Expr_Copy(Expression *e_dest, Expression *e_src) {
-  MSG_WARNING("Cmp_Expr_Destroy non ancora implementata!");
+  MSG_WARNING("Cmp_Expr_Copy non ancora implementata!");
   return Cmp_Expr_Move(e_dest, e_src);
 }
 
-/* DESCRIPTION: This function can move intrinsic and non-intrinsic objects.
- * NOTE: This function does not free the source expression *e_src.
+/* This function can moves intrinsic and non-intrinsic objects.
+ * What is moved is the data contained inside the object.
+ * Memory is not allocated nor freed!
  */
 Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src) {
   register Intg t, c;
@@ -1294,8 +1372,8 @@ Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src) {
   } else {
     /* Sposto un oggetto user-defined */
     MSG_ERROR("Internal error in Cmp_Expr_Move: still not implemented!");
-    fprintf(stderr, "e_src = ");  Expr_Print(stderr, e_src);
-    fprintf(stderr, "e_dest = "); Expr_Print(stderr, e_dest);
+    fprintf(stderr, "e_src = ");  Cmp_Expr_Print(stderr, e_src);
+    fprintf(stderr, "e_dest = "); Cmp_Expr_Print(stderr, e_dest);
     return Failed;
   }
 }
@@ -1336,7 +1414,7 @@ Expression *Cmp_Expr_Reg0_To_LReg(Intg t) {
  *  sia di categoria "registro locale" (CAT_LREG) o "registro globale"
  *  (CAT_GREG). In caso contrario (cioe' per categoria "puntatore a "
  *  (CAT_PTR) ) provvede a mettere l'espressione in un registro locale.
- * NOTA: Tutte queste operazioni sono eseguite sul *e.
+ * NOTA: Tutte queste operazioni sono eseguite su *e.
  */
 Task Cmp_Expr_O_To_OReg(Expression *e) {
   assert ( e->type >= NUM_INTRINSICS );
