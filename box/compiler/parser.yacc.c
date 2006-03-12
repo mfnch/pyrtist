@@ -221,7 +221,6 @@ simple.expr:
   TOK_LNAME suffix.opt    { Prs_Name_To_Expr( & $1, & $$, $2); }
 | TOK_EXPR                { $$ = $1; }
 | string                  { if IS_FAILED( Cmp_String_New_And_Free(& $$, & $1) ) MY_ERR }
-| '$'                     { Point p = {0.0, 0.0}; Cmp_Expr_New_Imm_Point(& $$, & p); }
  ;
 
 array.expr:
