@@ -18,6 +18,8 @@
 #define END_OF_CHAIN -1
 #define OCCUPIED 0
 
+#define DEBUG
+
 /******************************************************************************
  * Le procedure che seguono servono a gestire le liste di occupazione dei     *
  * registri. Tali liste servono per compilare le espressioni matematiche e    *
@@ -124,7 +126,8 @@ Task Reg_Release(Intg t, UInt regnum) {
   }
 
   if (Arr_Item(rb, Intg, regnum) != OCCUPIED) {
-    MSG_ERROR("Reg_Release: Registro non occupato(2)");
+    MSG_ERROR("Reg_Release: Already released register (2):"
+     " type = %d, num = %d", t, regnum);
     return Failed;
   }
 

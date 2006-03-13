@@ -1013,20 +1013,6 @@ Task Cmp_Expr_LReg(Expression *e, Intg type, int zero) {
   }
 }
 
-/* DESCRIZIONE: Libera un espressione di categoria "registro locale"
- *  (precedentemente occupata con Cmp_LReg_Occupy). In questo modo la struttura
- *  *expr potra' essere tranquillamente cancellata (deallocata).
- */
-Task Cmp_LReg_Free(Expression *e) {
-  MSG_LOCATION("Cmp_LReg_Free");
-
-  TASK( Reg_Release(e->type, e->value.reg) );
-  /*e->type = ...;
-  e->categ = ...;*/
-
-  return Success;
-}
-
 /* DESCRIZIONE: Da chiamare prima di cancellare, sovrascrivere o deallocare
  *  la struttura di tipo Expression che contiene un'espressione.
  */
@@ -1047,7 +1033,7 @@ Task Cmp_Free(Expression *expr) {
 
      case CAT_LREG:
       if (expr->value.reg <= 0) return Success;
-      return Cmp_LReg_Free(expr);
+      return Reg_Release(expr->type, expr->value.reg);
       break;
 
      default: break;

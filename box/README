@@ -1,4 +1,7 @@
 Known problems:
+  a = +1 gives strange errors!
+
+
   QUESTION: Are the parenthesis really necessaries in type definitions?
    If not, remove the corresponding rule! In fact this conflicts with
    the rule for structure definition: a = (Int) shouldn't be a structure

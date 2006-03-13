@@ -200,7 +200,11 @@ static Box *cmp_current_box;
 
 Intg cmp_box_level;
 
-/* DESCRIPTION: This function opens a new box for the expression *e.
+/* This function opens a new box for the expression *e.
+ * If e == NULL the box is considered to be a simple untyped box.
+ * If *e is an typed, but un-valued expression the creation of a new box
+ * of type *e is started.
+ * If *e has value, a modification-box for that expression is started.
  */
 Task Cmp_Box_Instance_Begin(Expression *e) {
   Box box;
@@ -223,12 +227,9 @@ Task Cmp_Box_Instance_Begin(Expression *e) {
     box.value.resolved = TYPE_VOID;
     box.value.is.typed = 1;
     box.value.is.value = 0;
-    box.ID = cmp_box_level;	    /* Livello della sessione */
+    box.ID = cmp_box_level;     /* Livello della sessione */
 
   } else {
-    TypeDesc *td;
-    Intg t;
-
     if ( ! e->is.typed ) {
       MSG_ERROR( "Impossibile aprire una box per il simbolo senza tipo '%s'!",
        Name_To_Str(& e->value.nm) );
@@ -236,19 +237,13 @@ Task Cmp_Box_Instance_Begin(Expression *e) {
       return Failed;
     }
 
-    t = Tym_Type_Resolve_Alias(e->type);
-    td = Tym_Type_Get(t);
-    if ( td == NULL ) return Failed;
-    box.type = e->type;
-    e->type = t;
-    if ( td->size > 0 ) {
-      /* Se *e e' un tipo senza valore, gli do' valore! */
-      TASK( Cmp_Expr_LReg(e, e->type, 0) );
-    } else {
-      e->is.value = (td->size > 0) ? 1 : 0;
+    if ( ! e->is.value ) {
+      TASK( Cmp_Expr_Create(e, e->type, /* temporary = */ 1 ) );
+      e->is.release = 0;
     }
 
     /* Compilo il descrittore del nuovo esempio di sessione aperto */
+    box.type = e->type;
     box.child = NULL;        /* Catena dei simboli figli */
     box.value = *e;          /* Valore della sessione */
     box.ID = cmp_box_level;  /* Livello della sessione */

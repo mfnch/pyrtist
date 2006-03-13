@@ -345,7 +345,6 @@ Expression *Cmp_Operation_Exec(Operation *opn, Expression *e1, Expression *e2);
 void Cmp_Expr_Print(FILE *out, Expression *e);
 Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c);
 Task Cmp_Expr_LReg(Expression *e, Intg t, int zero);
-Task Cmp_LReg_Free(Expression *expr);
 Task Cmp_Free(Expression *expr);
 Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free);
 Expression *Cmp__Expr_To_LReg(Expression *expr, int force);
