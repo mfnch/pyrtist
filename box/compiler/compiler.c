@@ -327,8 +327,7 @@ Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn) {
 
     } else {
       /* Metto l'espressione nel registro 0 */
-      e = Cmp_Expr_To_LReg(e);
-      if ( e == NULL ) return Failed;
+      TASK( Cmp_Expr_To_LReg(e) );
       TASK( Cmp_Complete_Ptr_1(e) );
       VM_Assemble( c_opn->asm_code, e->categ, e->value.i );
       TASK( Cmp_Expr_Destroy(e) );
@@ -367,13 +366,12 @@ Expression *Cmp_Member_Intrinsic(Expression *e, Name *m) {
 
       switch( tolower(*(m->text)) ) {
        case 'x':
-        e = Cmp_Expr_To_LReg(e);
-        if ( e == NULL ) return NULL;
+        if IS_FAILED( Cmp_Expr_To_LReg(e) ) return NULL;
         if IS_FAILED( Cmp_Complete_Ptr_1(e) ) return NULL;
         VM_Assemble(ASM_PPTRX_P, e->categ, e->value.i);
         break;
        case 'y':
-        e = Cmp_Expr_To_LReg(e);
+        if IS_FAILED( Cmp_Expr_To_LReg(e) ) return NULL;
         if ( e == NULL ) return NULL;
         if IS_FAILED( Cmp_Complete_Ptr_1(e) ) return NULL;
         VM_Assemble(ASM_PPTRY_P, e->categ, e->value.i);
@@ -637,8 +635,7 @@ static Expression *Opn_Exec_Intrinsic(
       if ( opn_is.right ) {
         Expression old_e2 = *e2;
         /*e2value = e2->value.i, e2categ = e2->categ;*/
-        e2 = Cmp_Expr_Force_To_LReg(e2);
-        if ( e2 == NULL ) return NULL;
+        if IS_FAILED( Cmp_Expr_Force_To_LReg(e2) ) return NULL;
         if IS_FAILED( Cmp_Complete_Ptr_1(& old_e2) ) return NULL;
         VM_Assemble(opn->asm_code, old_e2.categ, old_e2.value.i);
         return e2;
@@ -649,8 +646,7 @@ static Expression *Opn_Exec_Intrinsic(
       }
     } else {
       /* Se necessario, converto e2 in registro locale. */
-      e2 = Cmp_Expr_To_LReg(e2);
-      if ( e2 == NULL ) return NULL;
+      if IS_FAILED( Cmp_Expr_To_LReg(e2) ) return NULL;
 
       /* Ora compilo l'operazione */
       if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
@@ -696,9 +692,8 @@ static Expression *Opn_Exec_Intrinsic(
           /* caso 1: argomenti dello stesso tipo, ma risultato
           *  di tipo diverso (caso di <, <=, >, >=, ==, !=, ...)
           */
-          e1 = Cmp_Expr_To_LReg(e1);
-          e2 = Cmp_Expr_To_LReg(e2);
-          if ( (e1 == NULL) || ( e2 == NULL) ) return NULL;
+          if ( (Cmp_Expr_To_LReg(e1) == Failed)
+            || (Cmp_Expr_To_LReg(e2) == Failed) ) return NULL;
           if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
           VM_Assemble(opn->asm_code,
           e1->categ, e1->value.i, e2->categ, e2->value.i);
@@ -715,7 +710,7 @@ static Expression *Opn_Exec_Intrinsic(
           if ( eq.er_e1 ) { /* caso 2: un argomento e' dello stesso tipo
                                 del risultato */
 er_equal_e1:
-            if ( (e1 = Cmp_Expr_Force_To_LReg(e1)) == NULL ) return NULL;
+            if IS_FAILED( Cmp_Expr_Force_To_LReg(e1) ) return NULL;
             if IS_FAILED( Cmp_Expr_To_X(e2, CAT_LREG, 0, 1) ) return NULL;
             if IS_FAILED( Cmp_Complete_Ptr_1(e1) ) return NULL;
             VM_Assemble(opn->asm_code, e1->categ, e1->value.i);
@@ -732,8 +727,7 @@ er_equal_e1:
     } else { /*************************************************NOT STRANGE*/
       if ( opn_is.unary ) {
         if ( opn_is.right ) e1 = e2;
-        e1 = Cmp_Expr_Force_To_LReg(e1);
-        if ( e1 == NULL ) return NULL;
+        if IS_FAILED( Cmp_Expr_Force_To_LReg(e1) ) return NULL;
         if IS_FAILED( Cmp_Complete_Ptr_1(e1) ) return NULL;
         VM_Assemble(opn->asm_code, e1->categ, e1->value.i);
         return e1;
@@ -756,13 +750,11 @@ er_equal_e1:
         * convertire e1 in un registro locale (che puo' contenerlo!)
         */
         if ( ! result_in.e1 ) {
-          e1 = Cmp_Expr_Force_To_LReg(e1);
-          if ( e1 == NULL ) return NULL;
+          if IS_FAILED( Cmp_Expr_Force_To_LReg(e1) ) return NULL;
         }
 
         /* Se necessario, converto e2 in registro locale. */
-        e2 = Cmp_Expr_To_LReg(e2);
-        if ( e2 == NULL ) return NULL;
+        if IS_FAILED( Cmp_Expr_To_LReg(e2) ) return NULL;
 
         /* Ora compilo l'operazione */
         if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
@@ -838,13 +830,11 @@ Expression *Cmp_Operation_Exec(
                  * e1 in un registro locale (che puo' contenerlo!)
                  */
                 if ( ! result_in_e1 ) {
-                        e1 = Cmp_Expr_Force_To_LReg(e1);
-                        if ( e1 == NULL ) return NULL;
+                  if IS_FAILED( Cmp_Expr_Force_To_LReg(e1) ) return NULL;
                 }
 
                 /* Se necessario, converto e2 in registro locale. */
-                e2 = Cmp_Expr_To_LReg(e2);
-                if ( e2 == NULL ) return NULL;
+                if IS_FAILED( Cmp_Expr_To_LReg(e2) ) return NULL;
 
                 /* Ora compilo l'operazione */
                 if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
@@ -970,6 +960,8 @@ Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c) {
  *  Se zero == 1, viene utilizzato il registro numero zero (ad esempio:
  *  ri0, rr0, ...), il quale viene utilizzato dal compilatore
  *  (per convenzione) per il transito temporaneo dei dati.
+
+ -----------------------> OBSLOLETE <------------------------
  */
 Task Cmp_Expr_LReg(Expression *e, Intg type, int zero) {
   MSG_LOCATION("Cmp_Expr_LReg");
@@ -979,7 +971,7 @@ Task Cmp_Expr_LReg(Expression *e, Intg type, int zero) {
   e->is.ignore = 0;
   e->is.target = 0;
   e->is.typed = 1;
-  e->is.release = 0;
+  e->is.release = 1;
   e->is.allocd = 0;
 
   e->categ = CAT_LREG;
@@ -989,7 +981,6 @@ Task Cmp_Expr_LReg(Expression *e, Intg type, int zero) {
   if (type < CMP_PRIVILEGED) {
     if ( zero ) { e->value.i = 0; return Success; }
     if ( (e->value.i = Reg_Occupy(type)) < 1 ) return Failed;
-    e->is.release = 1;
     return Success;
 
   } else {
@@ -1015,9 +1006,13 @@ Task Cmp_Expr_LReg(Expression *e, Intg type, int zero) {
 
 /* DESCRIZIONE: Da chiamare prima di cancellare, sovrascrivere o deallocare
  *  la struttura di tipo Expression che contiene un'espressione.
+
+ --------------------> OBSOLETE <-----------------------
  */
 Task Cmp_Free(Expression *expr) {
   MSG_LOCATION("Cmp_Free");
+
+  return Cmp_Expr_Destroy(expr);
 
   if ( expr->is.typed ) {
     /* L'espressione va "liberata" solo se e' un registro locale
@@ -1128,25 +1123,25 @@ Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free) {
  *  in tutti i casi, se invece force = 0, l'operazione viene eseguita
  *  solo per espressioni immediate di tipo TYPE_REAL e TYPE_POINT.
  */
-Expression *Cmp__Expr_To_LReg(Expression *expr, int force) {
+Task Cmp__Expr_To_LReg(Expression *expr, int force) {
   Expression lreg;
   MSG_LOCATION("Cmp__Expr_To_LReg");
 
   /* Se l'espressione e' gia' un registro locale, allora esco! */
   if ( expr->categ == CAT_LREG )
-    if ( expr->value.reg > 0 ) return expr;
+    if ( expr->value.reg > 0 ) return Success;
 
   if ( ! force ) {
     register int is_integer =
      (expr->resolved == TYPE_CHAR) || (expr->resolved == TYPE_INTG);
-    if ( is_integer || (expr->categ != CAT_IMM) ) return expr;
+    if ( is_integer || (expr->categ != CAT_IMM) ) return Success;
   }
 
-  if IS_FAILED( Cmp_Expr_LReg(& lreg, expr->resolved, 0) ) return NULL;
+  if IS_FAILED( Cmp_Expr_LReg(& lreg, expr->resolved, 0) ) return Failed;
   if IS_FAILED( Cmp_Expr_To_X(expr, lreg.categ, lreg.value.reg, 1) )
-    return NULL;
+    return Failed;
   *expr = lreg;
-  return expr;
+  return Success;
 }
 
 /* This function generates the assembly code which
@@ -1475,8 +1470,7 @@ Task Cmp_Complete_Ptr_2(Expression *e1, Expression *e2) {
     VM_Assemble(ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e2->addr);
     return Success;
    case 3:
-    e2 = Cmp_Expr_Force_To_LReg(e2);
-    if ( e2 == NULL ) return Failed;
+    if IS_FAILED( Cmp_Expr_Force_To_LReg(e2) ) return Failed;
     addr_categ = ( e1->is.gaddr ) ? CAT_GREG : CAT_LREG;
     VM_Assemble(ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e1->addr);
     return Success;

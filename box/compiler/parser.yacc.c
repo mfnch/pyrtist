@@ -51,16 +51,16 @@ extern UInt tok_linenum;
   if IS_FAILED( Cmp_Box_Instance_Begin( expr ) ) \
     {parser_attr.no_syntax_err = 1; parser_attr.old_box = 0; YYERROR;}
 
-#define BOX_CLOSE() \
-  if IS_FAILED( Cmp_Box_Instance_End() ) \
+#define BOX_CLOSE(expr) \
+  if IS_FAILED( Cmp_Box_Instance_End( expr ) ) \
     {parser_attr.no_syntax_err = 1; YYERROR;}
 
 #define BOX_REOPEN(expr) \
   if IS_FAILED( Cmp_Box_Instance_Begin( expr ) ) \
     {parser_attr.no_syntax_err = 1; parser_attr.old_box = 1; YYERROR;}
 
-#define BOX_RECLOSE() \
-  if IS_FAILED( Cmp_Box_Instance_End() ) \
+#define BOX_RECLOSE(expr) \
+  if IS_FAILED( Cmp_Box_Instance_End( expr ) ) \
     {parser_attr.no_syntax_err = 1; YYERROR;}
 
 #define MY_ERR {parser_attr.no_syntax_err = 1; YYERROR;}
@@ -238,12 +238,12 @@ prim.expr:
  | array.expr
    '['                 { BOX_REOPEN( & $1 ); }
    statement.list
-   ']'                 { BOX_RECLOSE();      }
+   ']'                 { BOX_RECLOSE( & $1 );      }
 
  | type
    '['                 { BOX_OPEN( & $1 ); }
    statement.list
-   ']'                 { BOX_CLOSE();      }
+   ']'                 { BOX_CLOSE( & $1 );      }
  ;
 
 /* Espressioni secondarie */
@@ -375,7 +375,7 @@ statement.list:
 compound.statement:
  '['               {BOX_OPEN( NULL );}
  statement.list
- ']'               {BOX_CLOSE();}
+ ']'               {BOX_CLOSE( NULL );}
  ;
 
 program:

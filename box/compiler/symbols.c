@@ -258,11 +258,16 @@ Task Cmp_Box_Instance_Begin(Expression *e) {
 }
 
 /* DESCRIZIONE: Conclude l'ultimo esempio di sessione aperto, la lista
- *  delle variabili esplicite viene analizzata, per ogniuna di queste
+ *  delle variabili esplicite viene analizzata, per ognuna di queste
  *  viene eseguita l'azione final_action, dopodiche' viene eliminata.
  */
-Task Cmp_Box_Instance_End(void) {
+Task Cmp_Box_Instance_End(Expression *e) {
   MSG_LOCATION("Cmp_Box_Instance_End");
+
+  /* Il registro occupato per la sessione ora diventa un registro normale
+   * e puo' essere liberato!
+   */
+  if ( e != NULL ) e->is.release = 1;
 
   /* Eseguo dei controlli di sicurezza */
   if ( cmp_box_list == NULL ) {

@@ -18,8 +18,6 @@
 #define END_OF_CHAIN -1
 #define OCCUPIED 0
 
-#define DEBUG
-
 /******************************************************************************
  * Le procedure che seguono servono a gestire le liste di occupazione dei     *
  * registri. Tali liste servono per compilare le espressioni matematiche e    *
