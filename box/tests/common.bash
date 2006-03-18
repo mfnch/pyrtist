@@ -25,7 +25,11 @@ function test_next {
 }
 
 function check_successful {
-  echo "  > Test successful!"
+  if [ "$1" == "" ]; then
+    echo "  > Test successful!"
+  else
+    echo "  > Test successful: $1"
+  fi
 }
 
 function check_failed {
@@ -36,7 +40,7 @@ function check_noerr {
   local ne=$(grep Err $BOXOUT | wc -l)
   NUM_ERRORS=$[ $NUM_ERRORS + $ne ]
   if [ $ne -lt 1 ]; then
-    check_successful
+    check_successful "No errors."
   else
     err_report
     check_failed
@@ -46,7 +50,7 @@ function check_noerr {
 function check_answer {
   local ANSWER=$(grep "answer=" $BOXOUT | cut -d = -f 2)
   if [ "$ANSWER" == "$1" ]; then
-    check_successful
+    check_successful "Right result."
   else
     err_report
     check_failed
