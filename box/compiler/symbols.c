@@ -233,7 +233,7 @@ Task Cmp_Box_Instance_Begin(Expression *e) {
     if ( ! e->is.typed ) {
       MSG_ERROR( "Impossibile aprire una box per il simbolo senza tipo '%s'!",
        Name_To_Str(& e->value.nm) );
-      Cmp_Free( e );
+      Cmp_Expr_Destroy( e );
       return Failed;
     }
 

@@ -141,3 +141,4 @@ Task VM_Asm_Out_Set(AsmOut *out);
 Task VM_Asm_Prepare(Intg *num_var, Intg *num_reg);
 Task VM_Asm_Install(Intg module, AsmOut *program);
 void VM_Assemble(AsmCode instr, ...);
+int VM_Save(FILE *out, Intg module_num);

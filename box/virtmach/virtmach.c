@@ -1420,6 +1420,10 @@ void VM_Assemble(AsmCode instr, ...)
                           /* i_len = */ idim, atype);
     }
   }
+}
 
-  return;
+/* This function saves 'module_num' to disk
+ */
+int VM_Save(FILE *out, Intg module_num) {
+  return 0;
 }

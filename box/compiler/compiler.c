@@ -379,7 +379,7 @@ Task Cmp_Member_Intrinsic(Expression *e, Name *m) {
         goto cmp_memb_intr_err;
         break;
       }
-      TASK( Cmp_Free(e) );
+      TASK( Cmp_Expr_Destroy(e) );
 
       /* ATTENZIONE: devo mettere ro0 in un registro locale temporaneo */
 
@@ -655,7 +655,7 @@ static Expression *Opn_Exec_Intrinsic(
        e1->categ, e1->value.i, e2->categ, e2->value.i);
 
       /* Ora libero il registro che non contiene il risultato! */
-      Cmp_Free(e2);
+      Cmp_Expr_Destroy(e2);
       return e1;
     }
 
@@ -698,8 +698,8 @@ static Expression *Opn_Exec_Intrinsic(
           if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
           VM_Assemble(opn->asm_code,
            e1->categ, e1->value.i, e2->categ, e2->value.i);
-          Cmp_Free(e1);
-          Cmp_Free(e2);
+          Cmp_Expr_Destroy(e1);
+          Cmp_Expr_Destroy(e2);
           return Cmp_Expr_Reg0_To_LReg(opn->type_rs);
 
         } else {
@@ -763,7 +763,7 @@ er_equal_e1:
          e1->categ, e1->value.i, e2->categ, e2->value.i);
 
         /* Ora libero il registro che non contiene il risultato! */
-        Cmp_Free(e2);
+        Cmp_Expr_Destroy(e2);
         return e1;
       }
     }
@@ -843,7 +843,7 @@ Expression *Cmp_Operation_Exec(
                  e1->categ, e1->value.i, e2->categ, e2->value.i);
 
                 /* Ora libero il registro che non contiene il risultato! */
-                Cmp_Free(e2);
+                Cmp_Expr_Destroy(e2);
                 return e1;
 
         } else {
@@ -1027,43 +1027,6 @@ Task Cmp_Expr_LReg(Expression *e, Intg type, int zero) {
   }
 }
 
-/* DESCRIZIONE: Da chiamare prima di cancellare, sovrascrivere o deallocare
- *  la struttura di tipo Expression che contiene un'espressione.
-
- --------------------> OBSOLETE <-----------------------
- */
-Task Cmp_Free(Expression *expr) {
-  MSG_LOCATION("Cmp_Free");
-
-  return Cmp_Expr_Destroy(expr);
-
-  if ( expr->is.typed ) {
-    /* L'espressione va "liberata" solo se e' un registro locale
-      * o un puntatore!
-      */
-    switch ( expr->categ ) {
-     case CAT_PTR:
-      /* L'address e' un registro o variabile? */
-      if ( expr->addr > 0 )
-          /* E' un registro. Dunque ora va liberato! */
-          return Reg_Release(TYPE_OBJ, expr->addr);
-      break;
-
-     case CAT_LREG:
-      if (expr->value.reg <= 0) return Success;
-      return Reg_Release(expr->type, expr->value.reg);
-      break;
-
-     default: break;
-    }
-    return Success;
-
-  } else {
-    Name_Free(& expr->value.nm);
-    return Success;
-  }
-}
-
 static Intg asm_lea[NUM_INTRINSICS] = {
   ASM_LEA_C, ASM_LEA_I, ASM_LEA_R, ASM_LEA_P
 };
@@ -1206,7 +1169,7 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
       VM_Assemble(asm_lea[t], expr->categ, expr->value.i);
       VM_Assemble(ASM_MOV_OO, categ, reg, CAT_LREG, (Intg) 0);
       if ( !and_free ) return Success;
-      return Cmp_Free(expr);
+      return Cmp_Expr_Destroy(expr);
 
     } else {
       if ( expr->categ == CAT_PTR ) {
@@ -1214,7 +1177,7 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
         VM_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, expr->addr );
         VM_Assemble( ASM_LEA_OO, categ, reg, CAT_PTR, expr->value.i );
         if ( !and_free ) return Success;
-        return Cmp_Free(expr);
+        return Cmp_Expr_Destroy(expr);
 
       } else { /* expr->categ == CAT_LREG, CAT_GREG */
         VM_Assemble(ASM_MOV_OO, categ, reg, expr->categ, expr->value.i);
@@ -1223,7 +1186,7 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
   }
 
   if ( !and_free ) return Success;
-  return Cmp_Free(expr);
+  return Cmp_Expr_Destroy(expr);
 }
 
 /* DESCRIPTION: This function creates (in *e) a new expression of type 'type'.

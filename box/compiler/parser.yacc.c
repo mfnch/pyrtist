@@ -443,7 +443,7 @@ Task Prs_Def_Operator(Operator *opr,
   assert( (!new_e->is.typed) && (opr->can_define) && (e->is.value) );
 
   s = Sym_New_Explicit(& new_e->value.nm, new_e->addr);
-  Cmp_Free(new_e);
+  Cmp_Expr_Destroy(new_e);
   if (s == NULL) return Failed;
 
   target = & (s->value);
