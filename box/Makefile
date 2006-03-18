@@ -173,3 +173,8 @@ clean:
 
 package: clean
 	D=$$(date +"%d%b%Y") && cd .. && tar cjvf box_$$D.tar.bz2 box/*
+
+test:
+	INITIAL_DIR=$(pwd)
+	cd tests && bash scope.bash && bash structure.bash
+	cd $(INITIAL_DIR)

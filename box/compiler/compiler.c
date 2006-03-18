@@ -24,6 +24,7 @@
 #define USE_PRIVILEGED
 
 /*#define DEBUG*/
+#define DEBUG_CONTAINER_HANDLING
 /*#define DEBUG_SPECIES_EXPANSION*/
 /*#define DEBUG_STRUCT_EXPANSION*/
 
@@ -865,7 +866,7 @@ void Cmp_Expr_Print(FILE *out, Expression *e) {
   if ( e->categ == CAT_IMM ) {
     switch(e->resolved) {
     case TYPE_CHAR:
-      sprintf(buffer, "INT("SChar")", e->value.i);
+      sprintf(buffer, "INT("SChar")", (Char) e->value.i);
       break;
     case TYPE_INTG:
       sprintf(buffer, "INT("SIntg")", e->value.i);
@@ -1123,9 +1124,8 @@ Task Cmp__Expr_To_LReg(Expression *expr, int force) {
     if ( is_integer || (expr->categ != CAT_IMM) ) return Success;
   }
 
-  if IS_FAILED( Cmp_Expr_LReg(& lreg, expr->resolved, 0) ) return Failed;
-  if IS_FAILED( Cmp_Expr_To_X(expr, lreg.categ, lreg.value.reg, 1) )
-    return Failed;
+  TASK( Cmp_Expr_Create(& lreg, expr->type, 1 /* temporary */) );
+  TASK( Cmp_Expr_To_X(expr, lreg.categ, lreg.value.reg, 1) );
   *expr = lreg;
   return Success;
 }
@@ -1202,6 +1202,12 @@ Task Cmp_Expr_Create(Expression *e, Intg type, int temporary) {
 
   assert( type >= 0 );
 
+#ifdef DEBUG_CONTAINER_HANDLING
+  printf( "Creating a new %s of type %s\n",
+   (temporary ? "temporary expression" : "variable"),
+   Tym_Type_Name(type) );
+#endif
+
   e->is.typed = 1;
   e->is.value = 0;
   e->is.imm = 0;
@@ -1244,6 +1250,11 @@ Task Cmp_Expr_Create(Expression *e, Intg type, int temporary) {
  */
 Task Cmp_Expr_Destroy(Expression *e) {
   MSG_LOCATION("Cmp_Expr_Destroy");
+
+#ifdef DEBUG_CONTAINER_HANDLING
+  printf( "Cmp_Expr_Destroy: destroying " );
+  Cmp_Expr_Print(stdout, e);
+#endif
 
   if ( ! e->is.typed ) {
     Name_Free(& e->value.nm);
@@ -1355,7 +1366,8 @@ Expression *Cmp_Expr_Reg0_To_LReg(Intg t) {
   static Expression lreg;
 
   /* Metto in lreg un nuovo registro locale */
-  if IS_FAILED( Cmp_Expr_LReg(& lreg, t, 0) ) return NULL;
+  if IS_FAILED( Cmp_Expr_Container_New(& lreg, t, CONTAINER_LREG_AUTO) )
+    return NULL;
 
   switch ( t ) {
    case TYPE_NONE:
@@ -1842,17 +1854,7 @@ void Cmp_Expr_New_Imm_Intg(Expression *e, Intg i) {
 void Cmp_Expr_New_Imm_Real(Expression *e, Real r) {
   MSG_LOCATION("Cmp_Expr_New_Imm_Real");
 
-  e->is.imm = 1;
-  e->is.value = 1;
-  e->is.ignore = 0;
-  e->is.target = 0;
-  e->is.typed = 1;
-  e->is.allocd = 0;
-  e->is.release = 1;
-
-  e->resolved = e->type = TYPE_REAL;
-  e->categ = CAT_IMM;
-
+  Cmp_Expr_Container_New(e, TYPE_REAL, CONTAINER_IMM);
   e->value.r = r;
 }
 
