@@ -24,7 +24,7 @@
 #define USE_PRIVILEGED
 
 /*#define DEBUG*/
-#define DEBUG_CONTAINER_HANDLING
+/* #define DEBUG_CONTAINER_HANDLING */
 /*#define DEBUG_SPECIES_EXPANSION*/
 /*#define DEBUG_STRUCT_EXPANSION*/
 
@@ -863,6 +863,12 @@ Expression *Cmp_Operation_Exec(
  */
 void Cmp_Expr_Print(FILE *out, Expression *e) {
   char buffer[128], *value = buffer;
+
+  if ( ! e->is.typed ) {
+    fprintf(out, "Name(name=\"%s\")\n", e->value.nm.text);
+    return;
+  }
+
   if ( e->categ == CAT_IMM ) {
     switch(e->resolved) {
     case TYPE_CHAR:
@@ -1815,18 +1821,7 @@ void Cmp_Finish() {
  */
 void Cmp_Expr_New_Imm_Char(Expression *e, Char c) {
   MSG_LOCATION("Cmp_Expr_New_Imm_Char");
-
-  e->is.imm = 1;
-  e->is.value = 1;
-  e->is.ignore = 0;
-  e->is.target = 0;
-  e->is.typed = 1;
-  e->is.allocd = 0;
-  e->is.release = 1;
-
-  e->resolved = e->type = TYPE_CHAR;
-  e->categ = CAT_IMM;
-
+  Cmp_Expr_Container_New(e, TYPE_CHAR, CONTAINER_IMM);
   e->value.i = (Intg) c;
 }
 
@@ -1834,18 +1829,7 @@ void Cmp_Expr_New_Imm_Char(Expression *e, Char c) {
  */
 void Cmp_Expr_New_Imm_Intg(Expression *e, Intg i) {
   MSG_LOCATION("Cmp_Expr_New_Imm_Intg");
-
-  e->is.imm = 1;
-  e->is.value = 1;
-  e->is.ignore = 0;
-  e->is.target = 0;
-  e->is.typed = 1;
-  e->is.allocd = 0;
-  e->is.release = 1;
-
-  e->resolved = e->type = TYPE_INTG;
-  e->categ = CAT_IMM;
-
+  Cmp_Expr_Container_New(e, TYPE_INTG, CONTAINER_IMM);
   e->value.i = i;
 }
 
@@ -1853,7 +1837,6 @@ void Cmp_Expr_New_Imm_Intg(Expression *e, Intg i) {
  */
 void Cmp_Expr_New_Imm_Real(Expression *e, Real r) {
   MSG_LOCATION("Cmp_Expr_New_Imm_Real");
-
   Cmp_Expr_Container_New(e, TYPE_REAL, CONTAINER_IMM);
   e->value.r = r;
 }
@@ -1862,18 +1845,7 @@ void Cmp_Expr_New_Imm_Real(Expression *e, Real r) {
  */
 void Cmp_Expr_New_Imm_Point(Expression *e, Point *p) {
   MSG_LOCATION("Cmp_Expr_New_Imm_Point");
-
-  e->is.imm = 1;
-  e->is.value = 1;
-  e->is.ignore = 0;
-  e->is.target = 0;
-  e->is.typed = 1;
-  e->is.allocd = 0;
-  e->is.release = 1;
-
-  e->resolved = e->type = TYPE_POINT;
-  e->categ = CAT_IMM;
-
+  Cmp_Expr_Container_New(e, TYPE_POINT, CONTAINER_IMM);
   e->value.p = *p;
 }
 
