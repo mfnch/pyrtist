@@ -358,7 +358,7 @@ Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn) {
 
 /******************************************************************************/
 
-Expression *Cmp_Member_Intrinsic(Expression *e, Name *m) {
+Task Cmp_Member_Intrinsic(Expression *e, Name *m) {
   switch( e->type ) {
    case TYPE_POINT:
     if ( m->length == 1 ) {
@@ -366,25 +366,24 @@ Expression *Cmp_Member_Intrinsic(Expression *e, Name *m) {
 
       switch( tolower(*(m->text)) ) {
        case 'x':
-        if IS_FAILED( Cmp_Expr_To_LReg(e) ) return NULL;
-        if IS_FAILED( Cmp_Complete_Ptr_1(e) ) return NULL;
+        TASK( Cmp_Expr_To_LReg(e) );
+        TASK( Cmp_Complete_Ptr_1(e) );
         VM_Assemble(ASM_PPTRX_P, e->categ, e->value.i);
         break;
        case 'y':
-        if IS_FAILED( Cmp_Expr_To_LReg(e) ) return NULL;
-        if ( e == NULL ) return NULL;
-        if IS_FAILED( Cmp_Complete_Ptr_1(e) ) return NULL;
+        TASK( Cmp_Expr_To_LReg(e) );
+        TASK( Cmp_Complete_Ptr_1(e) );
         VM_Assemble(ASM_PPTRY_P, e->categ, e->value.i);
         break;
        default:
         goto cmp_memb_intr_err;
         break;
       }
-      if IS_FAILED( Cmp_Free(e) ) return NULL;
+      TASK( Cmp_Free(e) );
 
       /* ATTENZIONE: devo mettere ro0 in un registro locale temporaneo */
 
-      if ( (addr = Reg_Occupy(TYPE_OBJ)) < 1 ) return NULL;
+      if ( (addr = Reg_Occupy(TYPE_OBJ)) < 1 ) return Failed;
       VM_Assemble(ASM_MOV_OO, CAT_LREG, addr, CAT_LREG, 0);
 
       e->resolved = e->type = TYPE_REAL;
@@ -396,7 +395,7 @@ Expression *Cmp_Member_Intrinsic(Expression *e, Name *m) {
       e->is.value = e->is.target = 1;
       e->is.allocd = 0;
       e->is.release = 1;
-      return e;
+      return Success;
     }
     goto cmp_memb_intr_err;
     break;
@@ -405,12 +404,12 @@ Expression *Cmp_Member_Intrinsic(Expression *e, Name *m) {
     goto cmp_memb_intr_err;
     break;
   }
-  return NULL;
+  return Failed;
 
 cmp_memb_intr_err:
   MSG_ERROR( "'%s' non e' un membro del tipo intrinseco '%s'!",
    Name_To_Str(m), Tym_Type_Name(e->type) );
-  return NULL;
+  return Failed;
 }
 
 static Expression *Cmp__Member_Of_Ptr(Expression *e, Name *nm) {
@@ -482,8 +481,10 @@ Expression *Cmp_Member_Get(Expression *e, Name *nm) {
   }
 
   /* Determino se si tratta di un oggetto intrinseco */
-  if ( t < NUM_INTRINSICS )
-    return Cmp_Member_Intrinsic(e, nm);
+  if ( t < NUM_INTRINSICS ) {
+    if IS_FAILED( Cmp_Member_Intrinsic(e, nm) ) return NULL;
+    return e;
+  }
 
   td = Tym_Type_Get(t);
   if ( td == NULL ) return NULL;
@@ -696,7 +697,7 @@ static Expression *Opn_Exec_Intrinsic(
             || (Cmp_Expr_To_LReg(e2) == Failed) ) return NULL;
           if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
           VM_Assemble(opn->asm_code,
-          e1->categ, e1->value.i, e2->categ, e2->value.i);
+           e1->categ, e1->value.i, e2->categ, e2->value.i);
           Cmp_Free(e1);
           Cmp_Free(e2);
           return Cmp_Expr_Reg0_To_LReg(opn->type_rs);
@@ -860,14 +861,36 @@ Expression *Cmp_Operation_Exec(
 /* Prints the details about the specified expression *e.
  */
 void Cmp_Expr_Print(FILE *out, Expression *e) {
+  char buffer[128], *value = buffer;
+  if ( e->categ == CAT_IMM ) {
+    switch(e->resolved) {
+    case TYPE_CHAR:
+      sprintf(buffer, "INT("SChar")", e->value.i);
+      break;
+    case TYPE_INTG:
+      sprintf(buffer, "INT("SIntg")", e->value.i);
+      break;
+    case TYPE_REAL:
+      sprintf(buffer, "REAL("SReal")", e->value.r);
+      break;
+    default:
+      value = "UNKNOWN";
+      break;
+    }
+
+  } else {
+    sprintf(buffer, "INT("SIntg")", e->value.i);
+  }
+
   fprintf(out,
     "Expression(type="SIntg"=\"%s\", resolved="SIntg"=\"%s\", "
-    "categ=%d=\"%s\", imm=%c, value=%c, typed=%c, ignore=%c, target=%c,"
+    "categ=%d=\"%s\", %s, imm=%c, value=%c, typed=%c, ignore=%c, target=%c,"
     "gaddr=%c, allocd=%c, release=%c)\n",
     e->type, Tym_Type_Names(e->type),
     e->resolved, Tym_Type_Names(e->resolved),
     e->categ,
     (e->categ >= 0) && (e->categ < 4) ? asm_arg_str[e->categ] : "ERROR!",
+    value,
     e->is.imm ? '1' : '0',
     e->is.value ? '1' : '0',
     e->is.typed ? '1' : '0',
@@ -1212,42 +1235,45 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
 Task Cmp_Expr_Create(Expression *e, Intg type, int temporary) {
   register int intrinsic;
   Intg type_of_register, resolved;
+  TypeDesc *td;
+
   assert( type >= 0 );
 
   e->is.typed = 1;
-  e->is.value = 1;
-  e->is.ignore = 0;
-  e->type = type;
+  e->is.value = 0;
   e->is.imm = 0;
+  e->is.ignore = 0;
+  e->is.target = 0;
+  e->is.release = 0;
+  e->is.allocd = 0;
   e->categ = CAT_LREG;
+  e->type = type;
   e->resolved = resolved = Tym_Type_Resolve_All(type);
   intrinsic = (resolved < NUM_INTRINSICS);
   type_of_register = (intrinsic) ? resolved : TYPE_OBJ;
 
+  td = Tym_Type_Get(type);
+  if ( td == NULL ) return Failed;
+  if ( td->size == 0 ) return Success;
+
+  e->is.value = 1;
   if ( temporary ) {
-    e->is.target = 0;
     e->is.release = 1;
     if ( (e->value.i = Reg_Occupy(type_of_register)) < 1 ) return Failed;
 
   } else {
     e->is.target = 1;
-    e->is.release = 0;
     if ( (e->value.i = -Var_Occupy(type_of_register, cmp_box_level))
          >= 0 ) return Failed;
   }
 
   /* If the object is of an intrinsic type, we can return now! */
-  e->is.allocd = 0;
   if ( intrinsic ) return Success;
-  e->is.allocd = 1;
 
   /* If the object is of a user defined type, we must allocate it! */
-  {
-    TypeDesc *td = Tym_Type_Get(type);
-    if ( td == NULL ) return Failed;
-    VM_Assemble(ASM_MALLOC_I, CAT_IMM, td->size);
-    VM_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
-  }
+  VM_Assemble(ASM_MALLOC_I, CAT_IMM, td->size);
+  VM_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
+  e->is.allocd = 1;
   return Success;
 }
 

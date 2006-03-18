@@ -60,55 +60,55 @@ typedef struct Operator Operator;
 
 /* "Collezione" di tutti gli operatori */
 struct cmp_opr_struct {
-	/* Operatore usato per la conversione fra tipi diversi */
-	Operator *converter;
+  /* Operatore usato per la conversione fra tipi diversi */
+  Operator *converter;
 
-	/* Operatori di assegnazione */
-	Operator *assign;
-	Operator *aplus;
-	Operator *aminus;
-	Operator *atimes;
-	Operator *adiv;
-	Operator *arem;
-	Operator *aband;
-	Operator *abxor;
-	Operator *abor;
-	Operator *ashl;
-	Operator *ashr;
+  /* Operatori di assegnazione */
+  Operator *assign;
+  Operator *aplus;
+  Operator *aminus;
+  Operator *atimes;
+  Operator *adiv;
+  Operator *arem;
+  Operator *aband;
+  Operator *abxor;
+  Operator *abor;
+  Operator *ashl;
+  Operator *ashr;
 
-	/* Operatori di incremento/decremento */
-	Operator *inc;
-	Operator *dec;
+  /* Operatori di incremento/decremento */
+  Operator *inc;
+  Operator *dec;
 
-	/* Operatori aritmetici convenzionali */
-	Operator *plus;
-	Operator *minus;
-	Operator *times;
-	Operator *div;
-	Operator *rem;
+  /* Operatori aritmetici convenzionali */
+  Operator *plus;
+  Operator *minus;
+  Operator *times;
+  Operator *div;
+  Operator *rem;
 
-	/* Operatori bit-bit */
-	Operator *bor;
-	Operator *bxor;
-	Operator *band;
-	Operator *bnot;
+  /* Operatori bit-bit */
+  Operator *bor;
+  Operator *bxor;
+  Operator *band;
+  Operator *bnot;
 
-	/* Operatori di shift */
-	Operator *shl;
-	Operator *shr;
+  /* Operatori di shift */
+  Operator *shl;
+  Operator *shr;
 
-	/* Operatori di confronto */
-	Operator *eq;
-	Operator *ne;
-	Operator *gt;
-	Operator *ge;
-	Operator *lt;
-	Operator *le;
+  /* Operatori di confronto */
+  Operator *eq;
+  Operator *ne;
+  Operator *gt;
+  Operator *ge;
+  Operator *lt;
+  Operator *le;
 
-	/* Operatori logici */
-	Operator *lor;
-	Operator *land;
-	Operator *lnot;
+  /* Operatori logici */
+  Operator *lor;
+  Operator *land;
+  Operator *lnot;
 };
 
 /* Tipi possibili per un simbolo */
@@ -120,26 +120,26 @@ typedef enum { CONSTANT, VARIABLE, FUNCTION, BOX } SymbolType;
  *  i simboli.
  */
 struct symbol {
-	/* Quantita' di competenza delle funzioni del tipo Sym_Symbol_... */
-	char			*name;		/* Nome del simbolo */
-	UInt			leng;		/* Lunghezza del nome */
-	struct symbol	*next;		/* Simbolo seguente nella hash-table */
-	struct symbol	*previous;	/* Simbolo precedente nella hash-table */
+  /* Quantita' di competenza delle funzioni del tipo Sym_Symbol_... */
+  char *name;              /* Nome del simbolo */
+  UInt leng;               /* Lunghezza del nome */
+  struct symbol	*next;     /* Simbolo seguente nella hash-table */
+  struct symbol	*previous; /* Simbolo precedente nella hash-table */
 
-	/* Quantita' che descrivono il simbolo e lo relazionano agli altri */
-	struct {
-	  unsigned int is_explicit : 1;
-	} symattr;					/* Attributi del simbolo */
-	SymbolType		symtype;	/* Tipo di simbolo */
-	Expression		value;		/* Valore dell'simbolo */
-	struct symbol	*child; 	/* Catena dei simboli figli */
-	struct symbol	*brother;	/* Prossimo simbolo nella catena (vedi sopra) */
+  /* Quantita' che descrivono il simbolo e lo relazionano agli altri */
+  struct {
+    unsigned int is_explicit : 1;
+  } symattr;              /* Attributi del simbolo */
+  SymbolType symtype;     /* Tipo di simbolo */
+  Expression value;       /* Valore dell'simbolo */
+  struct symbol *child;   /* Catena dei simboli figli */
+  struct symbol *brother; /* Prossimo simbolo nella catena (vedi sopra) */
 
-	/* Questa union distingue i dati di simboli espliciti dagli impliciti */
-	union {
-		UInt	exp;	/* Caso esplicito: il genitore e' un esempio di box */
-		Intg	imp;	/* Caso implicito: il genitore e' un tipo di box */
-	} parent;
+  /* Questa union distingue i dati di simboli espliciti dagli impliciti */
+  union {
+    UInt exp;             /* Caso esplicito: il genitore e' un esempio di box */
+    Intg imp;             /* Caso implicito: il genitore e' un tipo di box */
+  } parent;
 };
 
 typedef struct symbol Symbol;
@@ -338,7 +338,7 @@ Operation *Cmp_Operation_Find(Operator *opr,
  Intg type1, Intg type2, Intg typer, OpnInfo *oi);
 Task Cmp_Conversion(Intg type1, Intg type2, Expression *e);
 Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn);
-Expression *Cmp_Member_Intrinsic(Expression *e, Name *m);
+Task Cmp_Member_Intrinsic(Expression *e, Name *m);
 Expression *Cmp_Member_Get(Expression *e, Name *m);
 Expression *Cmp_Operator_Exec(Operator *opr, Expression *e1, Expression *e2);
 Expression *Cmp_Operation_Exec(Operation *opn, Expression *e1, Expression *e2);

@@ -459,6 +459,7 @@ Task Prs_Def_Operator(Operator *opr,
     TASK( Cmp_Expr_Container_New(target, e->type, CONTAINER_LVAR_AUTO) );
     TASK( Cmp_Expr_To_X(e, target->categ, target->value.i, 0) );
     target->is.allocd = 0;
+    TASK( Cmp_Expr_Destroy(target) );
     *rs = *target;
     return Success;
   }
