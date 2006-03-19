@@ -1903,11 +1903,12 @@ Task Cmp_Expr_Target_Delete(Expression *e) {
 
   if ( !e->is.target || !e->is.value || e->is.imm ) return Success;
 
-  if ( e->type < CMP_PRIVILEGED ) {
-    if IS_SUCCESSFUL( Var_Release(e->type, -e->value.i) ) return Success;
+  if ( e->resolved < CMP_PRIVILEGED ) {
+    if IS_SUCCESSFUL( Var_Release(e->resolved, -e->value.i) ) return Success;
     return Failed;
 
   } else {
+    printf("Qui faccio la cazzata!\n");
     VM_Assemble(ASM_MFREE_O, e->categ, e->value.i);
     if IS_SUCCESSFUL( Var_Release(TYPE_OBJ, -e->value.i) ) return Success;
     return Failed;
