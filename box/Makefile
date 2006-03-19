@@ -176,5 +176,5 @@ package: clean
 
 test:
 	INITIAL_DIR=$(pwd)
-	cd tests && bash scope.bash && bash structure.bash
+	cd tests && bash scope.bash && bash structure.bash && bash bugs.bash
 	cd $(INITIAL_DIR)
