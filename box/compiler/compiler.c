@@ -1501,6 +1501,7 @@ Task Cmp_Complete_Ptr_1(Expression *e) {
  * Le procedure che seguono servono a inizializzare/resettare il compilatore. *
  ******************************************************************************/
 
+#if 0
 /* Destinazione attuale del codice compilato dal compilatore */
 AsmOut *Cmp_Curr_Output;
 
@@ -1801,6 +1802,7 @@ Task Cmp_Define_Builtins()
 
   return Success;
 }
+#endif
 
 #if 0
 void Cmp_Finish() {

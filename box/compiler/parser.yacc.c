@@ -408,7 +408,7 @@ Task Parser_Init(UInt maxinc, char *f)
   TASK( Tok_Init( maxinc, f ) );
 
   /* Inizializzo le routine che servono per la compilazione */
-  TASK( Cmp_Define_Builtins() );
+  TASK( Builtins_Define() );
 
   parser_attr.no_syntax_err = 0;
 
