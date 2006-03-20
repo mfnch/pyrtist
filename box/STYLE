@@ -1,5 +1,5 @@
-STYLE OF THE CODE (10/03/2006):
-  Unfortunatly the style is not omogeneousn throughout the program!!!
+STYLE OF THE CODE (20/03/2006):
+  Unfortunatly the style is not omogeneous throughout the program!!!
   This problems is connected with the long life of this code and with my mind
   which changes with experience.
   Better to write down here some conventions:
@@ -9,6 +9,15 @@ STYLE OF THE CODE (10/03/2006):
   IN_THIS_WAY --> macros
   a, b, c, .. --> local instances (counters, and other instances)
   In_This_Way --> functions
+
+  Name for functions usually starts with a prefix, such that it is simple
+  to recognize where they are defined. For example: 'Cmp_Operator_New' comes
+  from the file 'compiler.c'. Usually names for important functions defined
+  in the same file begin with the same prefix, but it can happen that a longer
+  prefix is used. Consider the file 'builtins.c' for example. Functions
+  defined here starts with the prefix 'Blt'. An exception is 'Builtins_Define'.
+  The reason for this choice is clear: avoid redundant letters (avoid things
+  such as 'Blt_Builtins_Define': longer name, but no added information!).
 
   Tab length = 2, example:
 
