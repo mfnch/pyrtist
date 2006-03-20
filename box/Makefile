@@ -27,9 +27,8 @@ GRAP_DIRS = graphic/
 # Files oggetto
 OBJECTS = messages.o array.o str.o \
  symbols.o main.o registers.o typeman.o compiler.o parser.o \
- virtmach.o library.o
+ virtmach.o builtins.o
 
-# library.o \
 # opcodes.o \
 # fig.o bm1bit.o bm4bit.o ps.o bmcommon.o graphic.o rasterizer.o grpline.o \
 # settings.o simplefn.o units.o window.o lists.o plist.o flist.o print.o line.o \
@@ -90,7 +89,7 @@ registers.o: registers.c types.h defaults.h messages.h array.h
 symbols.o: symbols.c types.h messages.h str.h array.h defaults.h
 	gcc $(OPTIONS) -c $(INCL_DIRS) $< -o $@
 
-library.o: library.c types.h defaults.h array.h virtmach.h registers.h compiler.h
+builtins.o: builtins.c types.h defaults.h messages.h array.h str.h virtmach.h registers.h compiler.h
 	gcc $(OPTIONS) -c $(INCL_DIRS) $< -o $@
 
 # Compilo i sorgenti della macchina virtuale

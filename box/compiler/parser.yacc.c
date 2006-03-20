@@ -14,6 +14,7 @@
 #include "compiler.h"
 #include "tokenizer.h"
 #include "parser.h"
+#include "builtins.h"
 
 #define YYDEBUG 0
 

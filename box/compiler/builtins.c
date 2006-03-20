@@ -90,12 +90,12 @@ Task Builtins_Define()
   static UInt typl_nreg[NUM_TYPES] = REG_OCC_TYP_SIZE;
   static UInt typl_nvar[NUM_TYPES] = VAR_OCC_TYP_SIZE;
   Name intrinsic_type[6] = {
-    {4, "CHAR"},
-    {3, "INT"},
-    {4, "REAL"},
-    {5, "POINT"},
-    {6, "OBJECT"},
-    {4, "VOID"}
+    {4, "Char"},
+    {3, "Int"},
+    {4, "Real"},
+    {5, "Point"},
+    {6, "Object"},
+    {4, "Void"}
   };
 
   MSG_LOCATION("Cmp_Define_Builtins");
@@ -174,7 +174,6 @@ Task Builtins_Define()
   /* Esco con errore se qualcuna delle precedenti creazioni e' fallita! */
   if ( status == 1 ) return Failed;
 
-  /* T E M P O R A N E O ! ! ! */
   TASK( Blt_Define_All() );
 
   status = 0; /* Se qualcosa va male trovero' status = 1, alla fine! */

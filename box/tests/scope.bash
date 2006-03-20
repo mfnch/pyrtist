@@ -12,8 +12,8 @@ rm -f $ERRORS
 test_next
 echo "testing untyped boxes, explicit variables without value"
 $BOX << EOF  >$BOXOUT 2>&1
-  [a = CHAR]
-  a = INT
+  [a = Char]
+  a = Int
 EOF
 check_noerr
 
@@ -38,7 +38,7 @@ test_next
 echo "testing untyped boxes, explicit variables with value"
 $BOX << EOF  >$BOXOUT 2>&1
   [a = 1.234]
-  a = CHAR
+  a = Char
 EOF
 check_noerr
 
@@ -47,7 +47,7 @@ test_next
 echo "testing typed boxes, explicit variables"
 $BOX << EOF  >$BOXOUT 2>&1
   Print[a = 1.234]
-  a = CHAR
+  a = Char
 EOF
 check_noerr
 
