@@ -1,0 +1,65 @@
+Many languages such as BASIC or FORTRAN give to the user ad-hoc instructions, one for each particular operation the user may wish to perform. A completely different approach is adopted by many other languages, such as C/C++, Java and many others. These languages provide a uniform environment which implement a few powerful constructs which allow the user to add new functionality in a coherent way. Let's consider C++: to print a string, a number or whatever else, you use a standard library, ending to write something similar to 'cout << "Hello world!" << endl;'. With BASIC you use instead an ad-hoc instruction, the 'print' instruction: 'print "Hello world!"'.
+Box tries to follow the philosophy of C-derived languages, which usually results to be more powerful and elegant.
+
+In C you can group statements with the compound statement:
+
+  {statement1; statement2; ...; statementN;}
+
+In Box such groups of statements are called "boxes".
+In Box we can use boxes to build an object. Indeed we can have untyped boxes, such as:
+
+  [statement1, statement2, ..., statementN]
+
+but also, typed boxes:
+
+  a = Int[statement1, statement2, ..., statementN]
+
+Note that we use [] instead of {}, and we use , instead of ; (this choices is connected with the fact that the italian keyboard has not the symbols { and }).
+Another important difference with C is that statements with type and value can be captured by the parent box.
+
+  a = 1.2
+  b = Int[ a ]
+  Print[ a, " converted to integer, gives ", b; ]
+
+These three lines shows the basic idea of Box: replace C-function with an enhanced version of the C-compound statement. This gives an important advantage: order of arguments is not important. We give an example: suppose you want to write a function to draw a circle. What should be the interface for such a function? In C one programmer could write:
+
+typedef double Number;
+typedef struct {Number x, y;} Point;
+void circle(Point *center, Number radius);
+
+But another programmer, could also write:
+
+void circle(Number radius, Point *center);
+
+Here it is evident that the order of the arguments is important for the machine, but NOT FOR THE USER! In even more complicated functions the user could be more and more disoriented and confused by the necessity of taking care of the order of the arguments, even if that order is not really needed to perform that task! Box approach to results in creating a box with type Circle:
+
+Circle[(1, 2), 5]
+// But the order of the two arguments is not important!
+Circle[5, (1, 2)]
+
+With C++ you can obtain a similar behaviour overloading the << operator.
+
+circle << Point(1, 2) << 5;
+
+But C++ is not certainly developed around such an idea and the syntax of operators is limited and quite difficult to handle.
+
+Now suppose you want to write a function to draw a line. You want to be able to specify the width of the line. In C you would do something like:
+
+start_line(point1);
+continue_line(point2, width12);
+continue_line(point3, width23);
+end_line(point4, width34);
+
+or
+
+typedef struct{Point p; Number w;} LineElement;
+LineElement my_line[4] = {{point1, 0.0}, {point2, width12}, ...};
+draw_line(my_line);
+
+Which are both horrible approaches to the problem.
+The idea of boxes let us write more readable code:
+
+Line[point1, width12, point2, width23, point3, width34, point4 ]
+
+
+
