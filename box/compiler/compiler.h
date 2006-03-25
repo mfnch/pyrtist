@@ -81,6 +81,7 @@ struct cmp_opr_struct {
   Operator *dec;
 
   /* Operatori aritmetici convenzionali */
+  Operator *pow;
   Operator *plus;
   Operator *minus;
   Operator *times;

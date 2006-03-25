@@ -147,6 +147,7 @@ Task Builtins_Define()
   NEW_OPERATOR(inc, "++");
   NEW_OPERATOR(dec, "--");
   /* Operatori aritmetici convenzionali */
+  NEW_OPERATOR(pow, "**");
   NEW_OPERATOR(plus, "+");
   NEW_OPERATOR(minus,"-");
   NEW_OPERATOR(times,"*");
@@ -218,6 +219,13 @@ Task Builtins_Define()
   ADD_OPERATION(dec, TYPE_REAL, TYPE_NONE,  TYPE_REAL,  ASM_DEC_R, 0, 1, 1);
   /* §§ DECREMENTO(DESTRO) DI UN REALE */
   ADD_OPERATION(dec, TYPE_NONE, TYPE_REAL,  TYPE_REAL,  ASM_DEC_R, 0, 1, 1);
+
+  /* § OPERATORE DI POTENZA */
+  /* §§ POTENZA DI UN REALE */
+  ADD_OPERATION(pow, type_RealNum, type_RealNum, type_RealNum, ASM_POW_RR, 0, 1, 0);
+  /* §§ POTENZA DI UN INTERO */
+  ADD_OPERATION(pow, TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_POW_II, 0, 1, 0);
+
   /* § OPERATORE DI SOMMA */
   /* §§ SOMMA FRA INTERI */
   //ADD_OPERATION(plus,   TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_ADD_II, 1, 1, 0);

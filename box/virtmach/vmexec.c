@@ -4,6 +4,7 @@
  * virtuale (spesso denotata con VM).
  * Questo file e' incluso direttamente dal file "virtmach.c"
  */
+#include <math.h>
 
 static void VM__Exec_Ret(void)
 {
@@ -75,199 +76,179 @@ static void VM__Exec_Inc_R(void) { ++ *((Real *) vmcur->arg1); }
 static void VM__Exec_Dec_I(void) { -- *((Intg *) vmcur->arg1); }
 static void VM__Exec_Dec_R(void) { -- *((Real *) vmcur->arg1); }
 
+static void VM__Exec_Pow_II(void) { /* bad implementation!!! */
+  Intg i, r = 1, b = *((Intg *) vmcur->arg1), p = *((Intg *) vmcur->arg2);
+  for (i = 0; i < p; i++) r *= b;
+  *((Intg *) vmcur->arg1) = r;
+}
+static void VM__Exec_Pow_RR(void) {
+  *((Real *) vmcur->arg1) =
+   pow(*((Real *) vmcur->arg1), *((Real *) vmcur->arg2));
+}
+
 static void VM__Exec_Add_II(void)
-	{*((Intg *) vmcur->arg1) += *((Intg *) vmcur->arg2); return;}
+  {*((Intg *) vmcur->arg1) += *((Intg *) vmcur->arg2); return;}
 static void VM__Exec_Add_RR(void)
-	{*((Real *) vmcur->arg1) += *((Real *) vmcur->arg2); return;}
+  {*((Real *) vmcur->arg1) += *((Real *) vmcur->arg2); return;}
 static void VM__Exec_Add_PP(void) {
-	((Point *) vmcur->arg1)->x += ((Point *) vmcur->arg2)->x;
-	((Point *) vmcur->arg1)->y += ((Point *) vmcur->arg2)->y;
-	return;
+  ((Point *) vmcur->arg1)->x += ((Point *) vmcur->arg2)->x;
+  ((Point *) vmcur->arg1)->y += ((Point *) vmcur->arg2)->y;
 }
 
 static void VM__Exec_Sub_II(void)
-	{*((Intg *) vmcur->arg1) -= *((Intg *) vmcur->arg2); return;}
+  {*((Intg *) vmcur->arg1) -= *((Intg *) vmcur->arg2); return;}
 static void VM__Exec_Sub_RR(void)
-	{*((Real *) vmcur->arg1) -= *((Real *) vmcur->arg2); return;}
+  {*((Real *) vmcur->arg1) -= *((Real *) vmcur->arg2); return;}
 static void VM__Exec_Sub_PP(void) {
-	((Point *) vmcur->arg1)->x -= ((Point *) vmcur->arg2)->x;
-	((Point *) vmcur->arg1)->y -= ((Point *) vmcur->arg2)->y;
-	return;
+  ((Point *) vmcur->arg1)->x -= ((Point *) vmcur->arg2)->x;
+  ((Point *) vmcur->arg1)->y -= ((Point *) vmcur->arg2)->y;
 }
 
 static void VM__Exec_Mul_II(void)
-	{*((Intg *) vmcur->arg1) *= *((Intg *) vmcur->arg2);}
+  {*((Intg *) vmcur->arg1) *= *((Intg *) vmcur->arg2);}
 static void VM__Exec_Mul_RR(void)
-	{*((Real *) vmcur->arg1) *= *((Real *) vmcur->arg2);}
+  {*((Real *) vmcur->arg1) *= *((Real *) vmcur->arg2);}
 
 static void VM__Exec_Div_II(void)
-	{*((Intg *) vmcur->arg1) /= *((Intg *) vmcur->arg2);}
+  {*((Intg *) vmcur->arg1) /= *((Intg *) vmcur->arg2);}
 static void VM__Exec_Div_RR(void)
-	{*((Real *) vmcur->arg1) /= *((Real *) vmcur->arg2);}
+  {*((Real *) vmcur->arg1) /= *((Real *) vmcur->arg2);}
 static void VM__Exec_Rem_II(void)
-	{*((Intg *) vmcur->arg1) %= *((Intg *) vmcur->arg2);}
+  {*((Intg *) vmcur->arg1) %= *((Intg *) vmcur->arg2);}
 
 static void VM__Exec_Neg_I(void)
-	{*((Intg *) vmcur->arg1) = -*((Intg *) vmcur->arg1); return;}
+  {*((Intg *) vmcur->arg1) = -*((Intg *) vmcur->arg1); return;}
 static void VM__Exec_Neg_R(void)
-	{*((Real *) vmcur->arg1) = -*((Real *) vmcur->arg1); return;}
+  {*((Real *) vmcur->arg1) = -*((Real *) vmcur->arg1); return;}
 static void VM__Exec_Neg_P(void) {
-	((Point *) vmcur->arg1)->x = -((Point *) vmcur->arg1)->x;
-	((Point *) vmcur->arg1)->y = -((Point *) vmcur->arg1)->y;
-	return;
+  ((Point *) vmcur->arg1)->x = -((Point *) vmcur->arg1)->x;
+  ((Point *) vmcur->arg1)->y = -((Point *) vmcur->arg1)->y;
 }
 
 static void VM__Exec_PMulR_PR(void) {
-	Real r = *((Real *) vmcur->local[TYPE_REAL]);
-	((Point *) vmcur->arg1)->x *= r;
-	((Point *) vmcur->arg1)->y *= r;
-	return;
+  Real r = *((Real *) vmcur->local[TYPE_REAL]);
+  ((Point *) vmcur->arg1)->x *= r;
+  ((Point *) vmcur->arg1)->y *= r;
 }
 static void VM__Exec_PDivR_PR(void) {
-	Real r = *((Real *) vmcur->local[TYPE_REAL]);
-	((Point *) vmcur->arg1)->x /= r;
-	((Point *) vmcur->arg1)->y /= r;
-	return;
+  Real r = *((Real *) vmcur->local[TYPE_REAL]);
+  ((Point *) vmcur->arg1)->x /= r;
+  ((Point *) vmcur->arg1)->y /= r;
 }
 
 static void VM__Exec_Real_C(void) {
-	*((Real *) vmcur->local[TYPE_REAL]) = (Real) *((Char *) vmcur->arg1);
+  *((Real *) vmcur->local[TYPE_REAL]) = (Real) *((Char *) vmcur->arg1);
 }
 static void VM__Exec_Real_I(void) {
-	*((Real *) vmcur->local[TYPE_REAL]) = (Real) *((Intg *) vmcur->arg1);
+  *((Real *) vmcur->local[TYPE_REAL]) = (Real) *((Intg *) vmcur->arg1);
 }
 static void VM__Exec_Intg_R(void) {
-	*((Intg *) vmcur->local[TYPE_INTG]) = (Intg) *((Real *) vmcur->arg1);
-	return;
+  *((Intg *) vmcur->local[TYPE_INTG]) = (Intg) *((Real *) vmcur->arg1);
 }
 static void VM__Exec_Point_II(void) {
-	((Point *) vmcur->local[TYPE_POINT])->x = (Real) *((Intg *) vmcur->arg1);
-	((Point *) vmcur->local[TYPE_POINT])->y = (Real) *((Intg *) vmcur->arg2);
-	return;
+  ((Point *) vmcur->local[TYPE_POINT])->x = (Real) *((Intg *) vmcur->arg1);
+  ((Point *) vmcur->local[TYPE_POINT])->y = (Real) *((Intg *) vmcur->arg2);
 }
 static void VM__Exec_Point_RR(void) {
-	((Point *) vmcur->local[TYPE_POINT])->x = *((Real *) vmcur->arg1);
-	((Point *) vmcur->local[TYPE_POINT])->y = *((Real *) vmcur->arg2);
-	return;
+  ((Point *) vmcur->local[TYPE_POINT])->x = *((Real *) vmcur->arg1);
+  ((Point *) vmcur->local[TYPE_POINT])->y = *((Real *) vmcur->arg2);
 }
 static void VM__Exec_ProjX_P(void) {
-	*((Real *) vmcur->local[TYPE_REAL]) = ((Point *) vmcur->arg1)->x;
-	return;
+  *((Real *) vmcur->local[TYPE_REAL]) = ((Point *) vmcur->arg1)->x;
 }
 static void VM__Exec_ProjY_P(void) {
-	*((Real *) vmcur->local[TYPE_REAL]) = ((Point *) vmcur->arg1)->y;
-	return;
+  *((Real *) vmcur->local[TYPE_REAL]) = ((Point *) vmcur->arg1)->y;
 }
 static void VM__Exec_PPtrX_P(void) {
-	*((Obj *) vmcur->local[TYPE_OBJ]) = & (((Point *) vmcur->arg1)->x);
-	return;
+  *((Obj *) vmcur->local[TYPE_OBJ]) = & (((Point *) vmcur->arg1)->x);
 }
 static void VM__Exec_PPtrY_P(void) {
-	*((Obj *) vmcur->local[TYPE_OBJ]) = & (((Point *) vmcur->arg1)->y);
-	return;
+  *((Obj *) vmcur->local[TYPE_OBJ]) = & (((Point *) vmcur->arg1)->y);
 }
 
 static void VM__Exec_Eq_II(void) {
-	*((Intg *) vmcur->arg1) =
-	 *((Intg *) vmcur->arg1) == *((Intg *) vmcur->arg2);
-	return;
+  *((Intg *) vmcur->arg1) =
+   *((Intg *) vmcur->arg1) == *((Intg *) vmcur->arg2);
 }
 static void VM__Exec_Eq_RR(void) {
-	*((Intg *) vmcur->local[TYPE_INTG]) =
-	 *((Real *) vmcur->arg1) == *((Real *) vmcur->arg2);
-	return;
+  *((Intg *) vmcur->local[TYPE_INTG]) =
+   *((Real *) vmcur->arg1) == *((Real *) vmcur->arg2);
 }
 static void VM__Exec_Eq_PP(void) {
-	*((Intg *) vmcur->local[TYPE_INTG]) =
-	    ( ((Point *) vmcur->arg1)->x == ((Point *) vmcur->arg2)->x )
-	 && ( ((Point *) vmcur->arg1)->y == ((Point *) vmcur->arg2)->y );
-	return;
+  *((Intg *) vmcur->local[TYPE_INTG]) =
+     ( ((Point *) vmcur->arg1)->x == ((Point *) vmcur->arg2)->x )
+  && ( ((Point *) vmcur->arg1)->y == ((Point *) vmcur->arg2)->y );
 }
 static void VM__Exec_Ne_II(void) {
-	*((Intg *) vmcur->arg1) =
-	 *((Intg *) vmcur->arg1) != *((Intg *) vmcur->arg2);
-	return;
+  *((Intg *) vmcur->arg1) =
+   *((Intg *) vmcur->arg1) != *((Intg *) vmcur->arg2);
 }
 static void VM__Exec_Ne_RR(void) {
-	*((Intg *) vmcur->local[TYPE_INTG]) =
-	 *((Real *) vmcur->arg1) != *((Real *) vmcur->arg2);
-	return;
+  *((Intg *) vmcur->local[TYPE_INTG]) =
+   *((Real *) vmcur->arg1) != *((Real *) vmcur->arg2);
 }
 static void VM__Exec_Ne_PP(void) {
-	*((Intg *) vmcur->local[TYPE_INTG]) =
-	    ( ((Point *) vmcur->arg1)->x != ((Point *) vmcur->arg2)->x )
-	 || ( ((Point *) vmcur->arg1)->y != ((Point *) vmcur->arg2)->y );
-	return;
+  *((Intg *) vmcur->local[TYPE_INTG]) =
+     ( ((Point *) vmcur->arg1)->x != ((Point *) vmcur->arg2)->x )
+  || ( ((Point *) vmcur->arg1)->y != ((Point *) vmcur->arg2)->y );
 }
 
 static void VM__Exec_Lt_II(void) {
-	*((Intg *) vmcur->arg1) =
-	 *((Intg *) vmcur->arg1) < *((Intg *) vmcur->arg2);
-	return;
+  *((Intg *) vmcur->arg1) =
+   *((Intg *) vmcur->arg1) < *((Intg *) vmcur->arg2);
 }
 static void VM__Exec_Lt_RR(void) {
-	*((Intg *) vmcur->local[TYPE_INTG]) =
-	 *((Real *) vmcur->arg1) < *((Real *) vmcur->arg2);
-	return;
+  *((Intg *) vmcur->local[TYPE_INTG]) =
+   *((Real *) vmcur->arg1) < *((Real *) vmcur->arg2);
 }
 static void VM__Exec_Le_II(void) {
-	*((Intg *) vmcur->arg1) =
-	 *((Intg *) vmcur->arg1) <= *((Intg *) vmcur->arg2);
-	return;
+  *((Intg *) vmcur->arg1) =
+   *((Intg *) vmcur->arg1) <= *((Intg *) vmcur->arg2);
 }
 static void VM__Exec_Le_RR(void) {
-	*((Intg *) vmcur->local[TYPE_INTG]) =
-	 *((Real *) vmcur->arg1) <= *((Real *) vmcur->arg2);
-	return;
+  *((Intg *) vmcur->local[TYPE_INTG]) =
+   *((Real *) vmcur->arg1) <= *((Real *) vmcur->arg2);
 }
 static void VM__Exec_Gt_II(void) {
-	*((Intg *) vmcur->arg1) =
-	 *((Intg *) vmcur->arg1) > *((Intg *) vmcur->arg2);
-	return;
+  *((Intg *) vmcur->arg1) =
+   *((Intg *) vmcur->arg1) > *((Intg *) vmcur->arg2);
 }
 static void VM__Exec_Gt_RR(void) {
-	*((Intg *) vmcur->local[TYPE_INTG]) =
-	 *((Real *) vmcur->arg1) > *((Real *) vmcur->arg2);
-	return;
+  *((Intg *) vmcur->local[TYPE_INTG]) =
+   *((Real *) vmcur->arg1) > *((Real *) vmcur->arg2);
 }
 static void VM__Exec_Ge_II(void) {
-	*((Intg *) vmcur->arg1) =
-	 *((Intg *) vmcur->arg1) >= *((Intg *) vmcur->arg2);
-	return;
+  *((Intg *) vmcur->arg1) =
+   *((Intg *) vmcur->arg1) >= *((Intg *) vmcur->arg2);
 }
 static void VM__Exec_Ge_RR(void) {
-	*((Intg *) vmcur->local[TYPE_INTG]) =
-	 *((Real *) vmcur->arg1) >= *((Real *) vmcur->arg2);
-	return;
+  *((Intg *) vmcur->local[TYPE_INTG]) =
+   *((Real *) vmcur->arg1) >= *((Real *) vmcur->arg2);
 }
 
 static void VM__Exec_LNot_I(void) {
-	*((Intg *) vmcur->arg1) = ! *((Intg *) vmcur->arg1);
-	return;
+  *((Intg *) vmcur->arg1) = ! *((Intg *) vmcur->arg1);
 }
 static void VM__Exec_LAnd_II(void) {
-	*((Intg *) vmcur->arg1) =
-	 *((Intg *) vmcur->arg1) && *((Intg *) vmcur->arg2);
-	return;
+  *((Intg *) vmcur->arg1) =
+   *((Intg *) vmcur->arg1) && *((Intg *) vmcur->arg2);
 }
 static void VM__Exec_LOr_II(void) {
-	*((Intg *) vmcur->arg1) =
-	 *((Intg *) vmcur->arg1) || *((Intg *) vmcur->arg2);
-	return;
+  *((Intg *) vmcur->arg1) =
+   *((Intg *) vmcur->arg1) || *((Intg *) vmcur->arg2);
 }
 
 static void VM__Exec_Malloc_I(void) {
-	*((Obj *) vmcur->local[TYPE_OBJ]) = (Obj) malloc( *((Intg *) vmcur->arg1) );
-	/* MANCA LA VERIFICA DI MEMORIA ESAURITA */
-	return;
+  *((Obj *) vmcur->local[TYPE_OBJ]) = (Obj) malloc( *((Intg *) vmcur->arg1) );
+  /* MANCA LA VERIFICA DI MEMORIA ESAURITA */
 }
 static void VM__Exec_MFree_O(void) { free(*((Obj *) vmcur->arg1)); }
 static void VM__Exec_MCopy_OO(void) {
-	(void) memcpy(
-		*((Obj *) vmcur->arg1),             /* destination */
-		*((Obj *) vmcur->arg2),             /* source */
-		*((Intg *) vmcur->local[TYPE_INTG]) /* size */
-	);
+  (void) memcpy(
+   *((Obj *) vmcur->arg1),             /* destination */
+   *((Obj *) vmcur->arg2),             /* source */
+   *((Intg *) vmcur->local[TYPE_INTG]) /* size */
+  );
 }
 
 static void VM__Exec_Lea(void) {

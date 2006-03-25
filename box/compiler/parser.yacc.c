@@ -125,7 +125,9 @@ extern UInt tok_linenum;
 %left TOK_SHL TOK_SHR
 %left '+' '-'
 %left '*' '/' '%'
-%left '!' '~' TOK_INC TOK_DEC TOK_NEG
+%left TOK_NEG
+%right TOK_POW
+%left '!' '~' TOK_INC TOK_DEC
 %left TOK_LMEMBER TOK_UMEMBER
 
 /* Regola di partenza
@@ -270,12 +272,18 @@ expr:
     $$ = *result;
   }
 
+ | TOK_UMEMBER {
+  }
+
  | expr TOK_LMEMBER {
     Expression *result = Cmp_Member_Get(& $1, & $2);
     if ( result == NULL ) {
       parser_attr.no_syntax_err = 1;
       YYERROR;
     } else $$ = *result;
+  }
+
+ | expr TOK_UMEMBER {
   }
 
  | expr '=' expr        { if (Prs_Rule_Valued_Eq_Valued(& $$, & $1, & $3) ) MY_ERR}
@@ -313,6 +321,7 @@ expr:
  | expr '*' expr        { OPERATOR2_EXEC(cmp_opr.times,$$, & $1, & $3); }
  | expr '/' expr        { OPERATOR2_EXEC( cmp_opr.div, $$, & $1, & $3); }
  | expr '%' expr        { OPERATOR2_EXEC( cmp_opr.rem, $$, & $1, & $3); }
+ | expr TOK_POW expr    { OPERATOR2_EXEC( cmp_opr.pow, $$, & $1, & $3); }
  | '-' expr %prec TOK_NEG { OPERATOR1L_EXEC( cmp_opr.minus, $$, & $2 ); }
  | '+' expr %prec TOK_NEG { OPERATOR1L_EXEC(  cmp_opr.plus, $$, & $2 ); }
 

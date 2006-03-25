@@ -600,6 +600,8 @@ InstrDesc vm_instr_desc_table[] = {
   { "inc",  1, TYPE_REAL, VM__GLPI,     VM__Exec_Inc_R,  VM__D_GLPI_GLPI }, /* inc reg_r          */
   { "dec",  1, TYPE_INTG, VM__GLPI,     VM__Exec_Dec_I,  VM__D_GLPI_GLPI }, /* dec reg_i          */
   { "dec",  1, TYPE_REAL, VM__GLPI,     VM__Exec_Dec_R,  VM__D_GLPI_GLPI }, /* dec reg_r          */
+  { "pow",  2, TYPE_INTG, VM__GLP_GLPI, VM__Exec_Pow_II, VM__D_GLPI_GLPI }, /* pow reg_i, reg_i   */
+  { "pow",  2, TYPE_REAL, VM__GLP_GLPI, VM__Exec_Pow_RR, VM__D_GLPI_GLPI }, /* pow reg_r, reg_r   */
   { "add",  2, TYPE_INTG, VM__GLP_GLPI, VM__Exec_Add_II, VM__D_GLPI_GLPI }, /* add reg_i, reg_i   */
   { "add",  2, TYPE_REAL, VM__GLP_GLPI, VM__Exec_Add_RR, VM__D_GLPI_GLPI }, /* add reg_r, reg_r   */
   { "add",  2, TYPE_POINT,VM__GLP_GLPI, VM__Exec_Add_PP, VM__D_GLPI_GLPI }, /* add reg_p, reg_p   */
