@@ -114,6 +114,19 @@ OGGETTI E CONTENITORI: intendiamo per contenitore il registro o la locazione
  In questo compilatore di box e' la struttura 'Expression' che specifica
  il contenitore di un dato oggetto.
  Qui di seguito descrivo nel dettaglio come questo accada.
+*******************************************************************************
+
+# roN is the object to be 'opened'
+mov ri0, [parent]
+box roN
+
+# This returns in roN the box whose number is riM (if riM = -1, returns
+# the last opened box), put in ri0 its parent, and in roN the actual box.
+mov ri0, riM
+parent roN
+
+# 'close' the object
+xob
 
 *******************************************************************************
 

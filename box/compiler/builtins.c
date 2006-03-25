@@ -34,6 +34,7 @@ static Task Print_String(void);
 static Task Print_NewLine(void);
 /* Functions for conversions */
 static Task Conv_2RealNum_to_Point(void);
+static Task Int_RealNum(void);
 /* Mathematical functions */
 static Task Sin_RealNum(void);
 static Task Cos_RealNum(void);
@@ -356,6 +357,14 @@ Task Builtins_Define()
   opn->is.link = 0;
   opn->asm_code = ASM_REAL_C;
 
+  opn = Cmp_Operation_Add(cmp_opr.converter, TYPE_REAL, TYPE_NONE, TYPE_INTG);
+  status |= ( opn == NULL );
+  opn->is.commutative = 0;
+  opn->is.intrinsic = 1;
+  opn->is.assignment = 0;
+  opn->is.link = 0;
+  opn->asm_code = ASM_INTG_R;
+
   /* Se il caricamento degli operatori non e' perfettamente riuscito esco! */
   if ( status == 1 ) return Failed;
 
@@ -436,6 +445,9 @@ static Task Blt_Define_Basics(void) {
     opn->module = m;
   }
 
+  /* Define the conversion Real@Int, such as: a = Int[ 1.2 ]*/
+  TASK( Cmp_Def_C_Procedure(type_RealNum, TYPE_INTG, Int_RealNum)   );
+
   return Success;
 }
 
@@ -507,6 +519,11 @@ static Task Print_NewLine(void) {printf("\n"); return Success;}
  *****************************************************************************/
 static Task Conv_2RealNum_to_Point(void) {
   BOX_VM_CURRENT(Point) = *(BOX_VM_ARGPTR1(Point));
+  return Success;
+}
+
+static Task Int_RealNum(void) {
+  BOX_VM_CURRENT(Intg) = (Intg) BOX_VM_ARG1(Real);
   return Success;
 }
 
