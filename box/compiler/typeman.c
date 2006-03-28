@@ -93,7 +93,6 @@ TypeDesc *Tym_Type_Get(Intg t) {
   MSG_LOCATION("Tym_Type_Get");
 
   if ( (t < 0) || (t >= Arr_NumItem(tym_type_list)) ) {
-    printf("Si tratta di: %d\n", t);
     MSG_ERROR("Tipo sconosciuto!");
     return NULL;
   }
