@@ -162,7 +162,7 @@ Operation *Cmp_Operation_Find(Operator *opr,
  Intg type1, Intg type2, Intg typer, OpnInfo *oi) {
 
   Intg type;
-  int no_check_arg1, no_check_arg2, check_rs;
+  int no_check_arg1, no_check_arg2, check_rs, unary;
   int ne1, ne2;
   Operation *opn;
 
@@ -176,6 +176,7 @@ Operation *Cmp_Operation_Find(Operator *opr,
   no_check_arg1 = (type1 == TYPE_NONE);
   no_check_arg2 = (type2 == TYPE_NONE);
   check_rs      = (typer != TYPE_NONE);
+  unary = no_check_arg1 || no_check_arg2;
 
   /* Is it a privileged operation or not? */
   if ( ! check_rs ) {
@@ -241,7 +242,7 @@ Operation *Cmp_Operation_Find(Operator *opr,
         return opn;
       }
 
-      if ( opn->is.commutative ) {
+      if ( !unary && opn->is.commutative ) {
         ok_1 = (t1 == type2);
         ok_2 = (t2 == type1);
         if ( ! ok_1 ) ok_1 = Tym_Compare_Types(t1, type2, & ne2);

@@ -128,6 +128,50 @@ parent roN
 # 'close' the object
 xob
 
+// ESEMPIO DI COMPILAZIONE
+
+p12 = Put[ resistor, .Near[1, p1], .Near[2, p2] ]
+
+malloc 40
+mov ro1, ro0
+box ro1
+active 0
+
+mov gro1, ro1
+call [<]@Put
+
+mov gro1, ro1
+mov gro2, vo1 (vo1 = resistor)
+call Window@Put
+
+
+call [<]@Put.Near
+
+mov ri0, 1
+lea ri0
+mov gro2, ro0
+call Int@Near@Put
+
+lea vp1 (vp1 = p1)
+mov gro2, ro0
+call Point@Near@Put
+
+call [>]@Put.Near
+
+mov ri0, 2
+lea ri0
+mov gro2, ro0
+call Int@Near@Put
+
+lea vp2 (vp2 = p2)
+mov gro2, ro0
+call Point@Near@Put
+
+call [>]@Put.Near
+
+call [>]@Put
+xob
+
 *******************************************************************************
 
 @Window[

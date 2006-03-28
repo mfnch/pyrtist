@@ -93,6 +93,7 @@ TypeDesc *Tym_Type_Get(Intg t) {
   MSG_LOCATION("Tym_Type_Get");
 
   if ( (t < 0) || (t >= Arr_NumItem(tym_type_list)) ) {
+    printf("Si tratta di: %d\n", t);
     MSG_ERROR("Tipo sconosciuto!");
     return NULL;
   }
@@ -332,8 +333,8 @@ Task Tym_Box_Abstract_Member_New(Intg parent, Name *nm, Intg type) {
   TypeDesc *td, *ptd;
 
   /* I create a new implicit symbol with name nm and I get the type and symbol
-    * descriptors for the new symbol and its parent.
-    */
+   * descriptors for the new symbol and its parent.
+   */
   s = Sym_Implicit_New(parent, nm);
   td = Tym_Type_Get(type);
   ptd = Tym_Type_Get(parent);
