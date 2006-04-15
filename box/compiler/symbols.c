@@ -356,7 +356,7 @@ static UInt Imp_Check_Name_Conflicts(Symbol *s) {
   MSG_LOCATION("Imp_Check_Name_Conflicts");
 
   if ( ! s->symattr.is_explicit ) {
-    /* Il simbolo e' esplicito */
+    /* Il simbolo e' implicito */
     if ( s->parent.imp == sym_cur_parent ) return 1;
   }
 
@@ -371,8 +371,8 @@ Symbol *Sym_Implicit_Find(Intg parent, Name *nm) {
   return Sym_Symbol_Find(nm, Imp_Check_Name_Conflicts);
 }
 
-/* DESCRIZIONE: Definisce una variabile implicita associata a parent
- *  (un membro di parent).
+/* DESCRIZIONE: Definisce una variabile implicita associata
+ *  al tipo parent (un membro di parent).
  */
 Symbol *Sym_Implicit_New(Intg parent, Name *nm) {
   Symbol *s, *ps;
@@ -512,41 +512,38 @@ Symbol *Sym_New_Explicit(Name *nm, Intg depth) {
  *  principali (cioe' box che non sono sotto-box).
  */
 /* Questa e' usata nella prossima funzione, che e' quella da usare! */
-static UInt Sym__Find_Simple_Name(Symbol *s)
-{
-	MSG_LOCATION("Sym__Find_Simple_Name");
+static UInt Sym__Find_Simple_Name(Symbol *s) {
+  MSG_LOCATION("Sym__Find_Simple_Name");
 
-	if ( s->symattr.is_explicit )
-		return 1; /* Simbolo trovato! */
-	else {
-		/* Tra i simboli impliciti, accetto solo quelli principali */
-		if ( s->parent.imp < 0 ) return 1;
-	}
-	return 0;
+  if ( s->symattr.is_explicit )
+    return 1; /* Simbolo trovato! */
+  else {
+    /* Tra i simboli impliciti, accetto solo quelli principali */
+    if ( s->parent.imp < 0 ) return 1;
+  }
+  return 0;
 }
 
-Symbol *Sym_Find_Simple_Name(Name *nm)
-{
-	MSG_LOCATION("Sym_Find_Simple_Name");
-	return Sym_Symbol_Find(nm, Sym__Find_Simple_Name);
+Symbol *Sym_Find_Simple_Name(Name *nm) {
+  MSG_LOCATION("Sym_Find_Simple_Name");
+  return Sym_Symbol_Find(nm, Sym__Find_Simple_Name);
 }
 
 /* DESCRIZIONE: Funzione del tipo SymbolAction, usata con Sym_Symbol_Find,
  *  all'interno di Sym_Explicit_New, per controllare che non esistano
  *  conflitti fra i nomi.
  */
-static UInt Exp_Check_Name_Conflicts(Symbol *s)
-{
-	MSG_LOCATION("Exp_Check_Name_Conflicts");
+static UInt Exp_Check_Name_Conflicts(Symbol *s) {
+  MSG_LOCATION("Exp_Check_Name_Conflicts");
 
-	if ( s->symattr.is_explicit ) {
-		/* Il simbolo e' esplicito */
-		if ( s->parent.exp == cmp_current_box->ID )
-			/* Ne esiste un altro all'interno della stessa sessione: errore! */
-			return 1;	/* Termino la ricerca */
-	}
+  if ( s->symattr.is_explicit ) {
+    /* Il simbolo e' esplicito */
+    if ( s->parent.exp == cmp_current_box->ID )
+      /* Ne esiste un altro all'interno della stessa sessione: errore! */
+      return 1; /* Termino la ricerca */
+  }
 
-	return 0;	/* Faccio continuare la ricerca */
+  return 0;     /* Faccio continuare la ricerca */
 }
 
 /* DESCRIZIONE: Definisce una variabile esplicita per la sessione corrente.

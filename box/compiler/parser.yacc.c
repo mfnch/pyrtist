@@ -1,5 +1,5 @@
 %{
-/* parser.c- Autore: Franchin Matteo - settembre 2002
+/* parser.c- Autore: Matteo Franchin - settembre 2002
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -97,7 +97,7 @@ extern UInt tok_linenum;
 
 /* Lista delle espressioni aventi valore semantico
  */
-%type <Ex> simple.type
+%type <Ex> name.type
 %type <Ex> prim.type
 %type <Ex> type
 %type <Ex> asgn.type
@@ -166,12 +166,13 @@ suffix.opt:
 /*****************************************************************************
  *                                  Types                                    *
  *****************************************************************************/
-simple.type:
+name.type:
   TOK_UNAME suffix.opt      { if ( Prs_Name_To_Expr(& $1, & $$, $2) ) MY_ERR }
+| TOK_UMEMBER suffix.opt    { if ( Prs_Name_To_Expr(& $1, & $$, $2) ) MY_ERR }
  ;
 
 prim.type:
-  simple.type               { $$ = $1; }
+  name.type                 { $$ = $1; }
 | '(' type ')'              { $$ = $2; }
 | '(' type.list ')'         { $$ = $2; }
 | '(' type.species ')'      { $$ = $2; }
@@ -185,7 +186,7 @@ type:
 
 asgn.type:
   type                      { $$ = $1; }
-| simple.type '=' asgn.type { if ( Prs_Rule_Typed_Eq_Typed(& $$, & $1, & $3) ) MY_ERR }
+| name.type '=' asgn.type   { if ( Prs_Rule_Typed_Eq_Typed(& $$, & $1, & $3) ) MY_ERR }
 | expr '=' asgn.type        { if (Prs_Rule_Valued_Eq_Typed(& $$, & $1, & $3) ) MY_ERR }
  ;
 
@@ -238,12 +239,12 @@ prim.expr:
 
  | '(' expr.list ')'   { if ( Cmp_Structure_End(& $$) ) MY_ERR }
 
- | array.expr
+ | prim.expr
    '['                 { BOX_REOPEN( & $1 ); }
    statement.list
    ']'                 { BOX_RECLOSE( & $1 );      }
 
- | type
+ | prim.type
    '['                 { BOX_OPEN( & $1 ); }
    statement.list
    ']'                 { BOX_CLOSE( & $1 );      }
@@ -252,6 +253,8 @@ prim.expr:
 /* Espressioni secondarie */
 expr:
    prim.expr           { $$ = $1; }
+
+/* | prim.expr TOK_UMEMBER    {} */
 
  | TOK_LMEMBER {
     Expression e_box, *result;
@@ -272,18 +275,12 @@ expr:
     $$ = *result;
   }
 
- | TOK_UMEMBER {
-  }
-
  | expr TOK_LMEMBER {
     Expression *result = Cmp_Member_Get(& $1, & $2);
     if ( result == NULL ) {
       parser_attr.no_syntax_err = 1;
       YYERROR;
     } else $$ = *result;
-  }
-
- | expr TOK_UMEMBER {
   }
 
  | expr '=' expr        { if (Prs_Rule_Valued_Eq_Valued(& $$, & $1, & $3) ) MY_ERR}
@@ -623,7 +620,7 @@ Task Prs_Array_Of_X(Expression *array, Expression *num, Expression *x) {
 
   array->is.typed = 1;
   array->is.value = 0;
-  array->type = t = Tym_Build_Array_Of(n, x->type);
+  array->type = t = Tym_Def_Array_Of(n, x->type);
   if ( t != TYPE_NONE ) return Success;
   return Failed;
 }
@@ -649,7 +646,7 @@ Task Prs_Alias_Of_X(Expression *alias, Expression *x) {
   target = & (s->value);
   target->is.typed = 1;
   target->is.value = 0;
-  target->type = t = Tym_Build_Alias_Of(& alias->value.nm, x->type);
+  target->type = t = Tym_Def_Alias_Of(& alias->value.nm, x->type);
   TASK( Cmp_Expr_Destroy(alias) );
   *alias = *target;
   if ( t != TYPE_NONE ) return Success;

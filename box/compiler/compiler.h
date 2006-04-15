@@ -292,9 +292,9 @@ Symbol *Tym_Symbol_Of_Type(Intg type);
 Task Tym_Box_Abstract_Member_New(Intg parent, Name *nm, Intg type);
 Task Tym_Box_Abstract_Delete(Intg type);
 void Tym_Box_Abstract_Print(FILE *stream, Intg type);
-Intg Tym_Build_Array_Of(Intg num, Intg type);
-Intg Tym_Build_Pointer_To(Intg type);
-Intg Tym_Build_Alias_Of(Name *nm, Intg type);
+Intg Tym_Def_Array_Of(Intg num, Intg type);
+Intg Tym_Def_Pointer_To(Intg type);
+Intg Tym_Def_Alias_Of(Name *nm, Intg type);
 int Tym_Compare_Types(Intg type1, Intg type2, int *need_expansion);
 Intg Tym_Type_Resolve(Intg type, int not_alias, int not_species);
 #define Tym_Type_Resolve_Alias(type) Tym_Type_Resolve(type, 0, 1)

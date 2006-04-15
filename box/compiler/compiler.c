@@ -1795,7 +1795,7 @@ Task Cmp_String_New(Expression *e, Name *str, int free_str) {
   MSG_LOCATION("Cmp_String_New");
 
   /* Creo il tipo di dato corrispondente alla stringa */
-  ts = Tym_Build_Array_Of(length, TYPE_CHAR);
+  ts = Tym_Def_Array_Of(length, TYPE_CHAR);
   if ( ts < 0 ) return Failed;
 
   /* Copio la stringa nell'area dati */

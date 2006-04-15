@@ -413,7 +413,7 @@ static Task Blt_Define_Basics(void) {
   Intg type_2RealNum;
 
   /* Ora definisco il tipo stringa */
-  type_String = Tym_Build_Array_Of(-1, TYPE_CHAR);
+  type_String = Tym_Def_Array_Of(-1, TYPE_CHAR);
   if ( type_String == TYPE_NONE ) return Failed;
 
   /* Definisco type_IntgNum --> (Int < Char) */

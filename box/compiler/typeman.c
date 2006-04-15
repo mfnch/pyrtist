@@ -291,7 +291,7 @@ Intg Tym__Box_Abstract_New(Name *nm, Intg size, Intg aliased_type) {
 
   /* Now I create a new type for the box */
   if ( size < 0 ) {
-    type = Tym_Build_Alias_Of(nm, aliased_type);
+    type = Tym_Def_Alias_Of(nm, aliased_type);
     if ( type == TYPE_NONE ) return TYPE_NONE;
     if ( (td = Tym_Type_Get(type)) == NULL ) return TYPE_NONE;
 
@@ -377,30 +377,30 @@ Task Tym_Box_Abstract_Delete(Intg type) {
  *  of the abstract box 'type'.
  */
 void Tym_Box_Abstract_Print(FILE *stream, Intg type) {
-        Symbol *s, *ps;
-        TypeDesc *td, *ptd;
+  Symbol *s, *ps;
+  TypeDesc *td, *ptd;
 
-        ptd = Tym_Type_Get(type);
-        if (ptd == NULL) return;
-        ps = ptd->sym;
-        if ( ps == NULL ) return;
+  ptd = Tym_Type_Get(type);
+  if (ptd == NULL) return;
+  ps = ptd->sym;
+  if ( ps == NULL ) return;
 
-        fprintf(stream, "Printing the structure of the box '%s':\n", ptd->name);
+  fprintf(stream, "Printing the structure of the box '%s':\n", ptd->name);
 
-        /* Loop over the symbols of the box */
-        for ( s = ps->child; s != NULL; s = s->brother ) {
-                char *name;
-                td = Tym_Type_Get(s->value.type);
-                name = Str_Dup(s->name, s->leng);
-                if ( (name != NULL) && (td != NULL) ) {
-                        fprintf(stream, "Address "SIntg
-                         ":\titem with name '%s' of type '%s' and dimension "SIntg"\n",
-                         s->value.addr, name, Tym_Type_Name(s->value.type), td->size);
-                        free(name);
-                } else {
-                        fprintf(stream, "Problem in Tym_Box_Abstract_Print!\n");
-                }
-        }
+  /* Loop over the symbols of the box */
+  for ( s = ps->child; s != NULL; s = s->brother ) {
+    char *name;
+    td = Tym_Type_Get(s->value.type);
+    name = Str_Dup(s->name, s->leng);
+    if ( (name != NULL) && (td != NULL) ) {
+      fprintf(stream, "Address "SIntg
+       ":\titem with name '%s' of type '%s' and dimension "SIntg"\n",
+       s->value.addr, name, Tym_Type_Name(s->value.type), td->size);
+      free(name);
+    } else {
+      fprintf(stream, "Problem in Tym_Box_Abstract_Print!\n");
+    }
+  }
 }
 
 /* DESCRIZIONE: Crea una nuova specie di tipi. Una specie di tipi e'
@@ -524,10 +524,10 @@ again:
  * NOTE: The new type will be returned or TYPE_NONE in case of errors.
  * NOTE 2: It updates tym_recent_type and tym_recent_typedesc.
  */
-Intg Tym_Build_Array_Of(Intg num, Intg type) {
+Intg Tym_Def_Array_Of(Intg num, Intg type) {
   Intg size;
   TypeDesc *td;
-  MSG_LOCATION("Tym_Build_Array_Of");
+  MSG_LOCATION("Tym_Def_Array_Of");
 
   if ( (td = Tym_Type_Get(type)) == NULL ) return TYPE_NONE;
   /* Faccio i controlli sul tipo type */
@@ -558,9 +558,9 @@ Intg Tym_Build_Array_Of(Intg num, Intg type) {
  * NOTE: The new type will be returned or TYPE_NONE in case of errors.
  * NOTE 2: It updates tym_recent_type and tym_recent_typedesc.
  */
-Intg Tym_Build_Pointer_To(Intg type) {
+Intg Tym_Def_Pointer_To(Intg type) {
   TypeDesc *td;
-  MSG_LOCATION("Tym_Build_Pointer_To");
+  MSG_LOCATION("Tym_Def_Pointer_To");
 
   if ( (td = Tym_Type_Get(type)) == NULL ) return TYPE_NONE;
   /* Faccio i controlli sul tipo type */
@@ -590,10 +590,10 @@ Intg Tym_Build_Pointer_To(Intg type) {
  * NOTE: The new type will be returned or TYPE_NONE in case of errors.
  * NOTE 2: It updates tym_recent_type and tym_recent_typedesc.
  */
-Intg Tym_Build_Alias_Of(Name *nm, Intg type) {
+Intg Tym_Def_Alias_Of(Name *nm, Intg type) {
   TypeDesc *td;
   Intg size;
-  MSG_LOCATION("Tym_Build_Alias_Of");
+  MSG_LOCATION("Tym_Def_Alias_Of");
 
   if ( nm == NULL ) nm = Name_Empty();
 
@@ -935,7 +935,7 @@ Task Tym_Build_Specie(Intg *specie, Intg type) {
     Intg great_type, great_size, specie_type;
 
     /* Creo un alias di type */
-    great_type = Tym_Build_Alias_Of(Name_Empty(), type);
+    great_type = Tym_Def_Alias_Of(Name_Empty(), type);
     if ( great_type == TYPE_NONE ) return Failed;
     td = tym_recent_typedesc;
     specie_type = Tym_Type_Next();
@@ -968,7 +968,7 @@ Task Tym_Build_Specie(Intg *specie, Intg type) {
     td->target = Tym_Type_Next();
 
     /* Creo il prossimo elemento della specie */
-    lower_type = Tym_Build_Alias_Of(Name_Empty(), type);
+    lower_type = Tym_Def_Alias_Of(Name_Empty(), type);
     if ( lower_type == TYPE_NONE ) return Failed;
     td = tym_recent_typedesc;
     td->parent = *specie;
@@ -987,7 +987,7 @@ Task Tym_Build_Structure(Intg *strc, Intg type) {
     Intg first_type, strc_size, strc_type;
 
     /* Creo un alias di type */
-    first_type = Tym_Build_Alias_Of(Name_Empty(), type);
+    first_type = Tym_Def_Alias_Of(Name_Empty(), type);
     if ( first_type == TYPE_NONE ) return Failed;
     td = tym_recent_typedesc;
     strc_type = Tym_Type_Next();
@@ -1017,7 +1017,7 @@ Task Tym_Build_Structure(Intg *strc, Intg type) {
     assert( strc_td->tot == TOT_STRUCTURE );
 
     /* Creo il prossimo elemento della struttura */
-    new = Tym_Build_Alias_Of(Name_Empty(), type);
+    new = Tym_Def_Alias_Of(Name_Empty(), type);
     if ( new == TYPE_NONE ) return Failed;
     new_td = tym_recent_typedesc;
     new_td->parent = *strc;
