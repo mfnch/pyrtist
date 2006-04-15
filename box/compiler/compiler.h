@@ -289,7 +289,7 @@ const char *Tym_Type_Name(Intg t);
 char *Tym_Type_Names(Intg t);
 Intg Tym__Box_Abstract_New(Name *nm, Intg size, Intg aliased_type);
 Symbol *Tym_Symbol_Of_Type(Intg type);
-Task Tym_Box_Abstract_Member_New(Intg parent, Name *nm, Intg type);
+Task Tym_Def_Member(Intg parent, Name *nm, Intg type);
 Task Tym_Box_Abstract_Delete(Intg type);
 void Tym_Box_Abstract_Print(FILE *stream, Intg type);
 Intg Tym_Def_Array_Of(Intg num, Intg type);
@@ -301,11 +301,11 @@ Intg Tym_Type_Resolve(Intg type, int not_alias, int not_species);
 #define Tym_Type_Resolve_Species(type) Tym_Type_Resolve(type, 1, 0)
 #define Tym_Type_Resolve_All(type) Tym_Type_Resolve(type, 0, 0)
 Task Tym_Delete_Type(Intg type);
-Intg Tym_Build_Procedure(Intg proc, Intg of_type, Intg asm_module);
+Intg Tym_Def_Procedure(Intg proc, Intg of_type, Intg asm_module);
 Intg Tym_Search_Procedure(Intg proc, Intg of_type, Intg *containing_species);
 void Tym_Print_Procedure(FILE *stream, Intg of_type);
-Task Tym_Build_Specie(Intg *specie, Intg type);
-Task Tym_Build_Structure(Intg *strc, Intg type);
+Task Tym_Def_Specie(Intg *specie, Intg type);
+Task Tym_Def_Structure(Intg *strc, Intg type);
 Task Tym_Structure_Get(Intg *type);
 
 #define Tym_Box_Abstract_New(nm) Tym__Box_Abstract_New(nm, (Intg) 0, TYPE_NONE)

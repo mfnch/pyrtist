@@ -327,7 +327,7 @@ Symbol *Tym_Symbol_Of_Type(Intg type) {
 /* DESCRIPTION: This function creates a new member for the abstract box
  *  associated with the type parent.
  */
-Task Tym_Box_Abstract_Member_New(Intg parent, Name *nm, Intg type) {
+Task Tym_Def_Member(Intg parent, Name *nm, Intg type) {
   Symbol *s, *ps;
   TypeDesc *td, *ptd;
 
@@ -774,10 +774,10 @@ Task Tym_Delete_Type(Intg type) {
 /* DESCRIPTION: This function define the procedure proc@of_type and associates
  *  the module asm_module to the procedure.
  */
-Intg Tym_Build_Procedure(Intg proc, Intg of_type, Intg asm_module) {
+Intg Tym_Def_Procedure(Intg proc, Intg of_type, Intg asm_module) {
   TypeDesc *td, *p;
   Intg new_procedure;
-  MSG_LOCATION("Tym_Build_Procedure");
+  MSG_LOCATION("Tym_Def_Procedure");
 
   if ( (p = Tym_Type_Get(of_type)) == NULL ) return TYPE_NONE;
   switch (p->tot) {
@@ -910,9 +910,9 @@ void Tym_Print_Procedure(FILE *stream, Intg of_type) {
  *  You can define a new specie as in the following example:
  *   EXAMPLE: (Real < Intg < Char)
  *            new_specie = TYPE_NONE;
- *            Tym_Build_Specie(*new_specie, TYPE_REAL);
- *            Tym_Build_Specie(*new_specie, TYPE_INTG);
- *            Tym_Build_Specie(*new_specie, TYPE_CHAR);
+ *            Tym_Def_Specie(*new_specie, TYPE_REAL);
+ *            Tym_Def_Specie(*new_specie, TYPE_INTG);
+ *            Tym_Def_Specie(*new_specie, TYPE_CHAR);
  * NOTE: Species are used to do automatic conversions. For instance:
  *  consider the function cosine: Cos[x]. This is a real valued function
  *  of the real variable x. What happens if you write Cos[1]?
@@ -929,7 +929,7 @@ void Tym_Print_Procedure(FILE *stream, Intg of_type) {
  *  to a Scalar a Real value, an Intg value or a Char value. The compiler
  *  will chose the right conversion for you!
  */
-Task Tym_Build_Specie(Intg *specie, Intg type) {
+Task Tym_Def_Specie(Intg *specie, Intg type) {
   if ( *specie == TYPE_NONE ) {
     register TypeDesc *td;
     Intg great_type, great_size, specie_type;
@@ -981,7 +981,7 @@ Task Tym_Build_Specie(Intg *specie, Intg type) {
  *  You can define a new structure in a way very similar to the
  *  one used to define species.
  */
-Task Tym_Build_Structure(Intg *strc, Intg type) {
+Task Tym_Def_Structure(Intg *strc, Intg type) {
   if ( *strc == TYPE_NONE ) {
     register TypeDesc *td;
     Intg first_type, strc_size, strc_type;

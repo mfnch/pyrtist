@@ -386,22 +386,22 @@ static Task Tmp(void) {
   if (type_New < 0) return Failed;
 
   if IS_FAILED(
-    Tym_Box_Abstract_Member_New(type_New, & ((Name) {6, "comp_x"}), TYPE_REAL)
+    Tym_Def_Member(type_New, & ((Name) {6, "comp_x"}), TYPE_REAL)
   ) return Failed;
 
   if IS_FAILED(
-    Tym_Box_Abstract_Member_New(type_New, & ((Name) {6, "comp_y"}), TYPE_REAL)
+    Tym_Def_Member(type_New, & ((Name) {6, "comp_y"}), TYPE_REAL)
   ) return Failed;
 
   type_New2 = Tym_Box_Abstract_New(& ((Name) {7, "Punto3d"}));
   if (type_New2 < 0) return Failed;
 
   if IS_FAILED(
-    Tym_Box_Abstract_Member_New(type_New2, & ((Name) {2, "xy"}), type_New)
+    Tym_Def_Member(type_New2, & ((Name) {2, "xy"}), type_New)
   ) return Failed;
 
   if IS_FAILED(
-    Tym_Box_Abstract_Member_New(type_New2, & ((Name) {1, "z"}), TYPE_REAL)
+    Tym_Def_Member(type_New2, & ((Name) {1, "z"}), TYPE_REAL)
   ) return Failed;
 
   /*Tym_Box_Abstract_Print(stdout, type_new);
@@ -418,20 +418,20 @@ static Task Blt_Define_Basics(void) {
 
   /* Definisco type_IntgNum --> (Int < Char) */
   type_IntgNum = TYPE_NONE;
-  TASK( Tym_Build_Specie(& type_IntgNum, TYPE_INTG) );
-  TASK( Tym_Build_Specie(& type_IntgNum, TYPE_CHAR) );
+  TASK( Tym_Def_Specie(& type_IntgNum, TYPE_INTG) );
+  TASK( Tym_Def_Specie(& type_IntgNum, TYPE_CHAR) );
   /* Definisco type_RealNum --> (Real < Int < Char) */
   type_RealNum = TYPE_NONE;
-  TASK( Tym_Build_Specie(& type_RealNum, TYPE_REAL) );
-  TASK( Tym_Build_Specie(& type_RealNum, TYPE_INTG) );
-  TASK( Tym_Build_Specie(& type_RealNum, TYPE_CHAR) );
+  TASK( Tym_Def_Specie(& type_RealNum, TYPE_REAL) );
+  TASK( Tym_Def_Specie(& type_RealNum, TYPE_INTG) );
+  TASK( Tym_Def_Specie(& type_RealNum, TYPE_CHAR) );
 
   type_2RealNum = TYPE_NONE;
-  TASK( Tym_Build_Structure(& type_2RealNum, type_RealNum) );
-  TASK( Tym_Build_Structure(& type_2RealNum, type_RealNum) );
+  TASK( Tym_Def_Structure(& type_2RealNum, type_RealNum) );
+  TASK( Tym_Def_Structure(& type_2RealNum, type_RealNum) );
   type_Point = TYPE_NONE;
-  TASK( Tym_Build_Specie(& type_Point, TYPE_POINT) );
-  TASK( Tym_Build_Specie(& type_Point, type_2RealNum) );
+  TASK( Tym_Def_Specie(& type_Point, TYPE_POINT) );
+  TASK( Tym_Def_Specie(& type_Point, type_2RealNum) );
 
   /* Ora faccio l'overloading dell'operatore di conversione
    * e definisco le conversioni automatiche che il compilatore

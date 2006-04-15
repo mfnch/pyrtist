@@ -1863,7 +1863,7 @@ Task Cmp_Procedure_Search
   if ( p == TYPE_NONE ) {
     *prototype = TYPE_NONE;
     *asm_module = VM_Module_Next();
-    p = Tym_Build_Procedure(procedure, b->type, *asm_module);
+    p = Tym_Def_Procedure(procedure, b->type, *asm_module);
     if ( p == TYPE_NONE ) return Failed;
     assert( *asm_module == VM_Module_Undefined(Tym_Type_Name(p)) );
     return Success;
@@ -1932,7 +1932,7 @@ Task Cmp_Def_C_Procedure(Intg procedure, Intg of_type, Task (*C_func)(void)) {
   Intg asm_module, proc;
 
   asm_module = VM_Module_Next();
-  proc = Tym_Build_Procedure(procedure, of_type, asm_module);
+  proc = Tym_Def_Procedure(procedure, of_type, asm_module);
   if ( proc == TYPE_NONE ) return Failed;
 
   if ( asm_module != VM_Module_Undefined(Tym_Type_Name(proc)) )

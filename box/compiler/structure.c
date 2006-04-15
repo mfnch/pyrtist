@@ -57,7 +57,7 @@ Task Cmp_Structure_Add(Expression *e) {
 
   /* Creo un tipo opportuno associato alla struttura */
   e->type = t = Tym_Type_Resolve_All(e->type);
-  TASK( Tym_Build_Structure(& cmp_structure_type, t) );
+  TASK( Tym_Def_Structure(& cmp_structure_type, t) );
 
   /* Memorizzo l'espressione *e per poterla trattare
    * in seguito in Cmp_Structure_End

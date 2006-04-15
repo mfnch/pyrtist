@@ -670,8 +670,8 @@ Task Prs_Species_New(
   CHECK_TYPE(first); CHECK_TYPE(second);
 
   new_species = TYPE_NONE;
-  TASK( Tym_Build_Specie( & new_species,  first->type) );
-  TASK( Tym_Build_Specie( & new_species, second->type) );
+  TASK( Tym_Def_Specie( & new_species,  first->type) );
+  TASK( Tym_Def_Specie( & new_species, second->type) );
 
   species->is.typed = 1;
   species->is.value = 0;
@@ -688,7 +688,7 @@ Task Prs_Species_Add(Expression *species, Expression *old, Expression *type) {
 
   old_species = old->type;
   assert( old_species != TYPE_NONE );
-  TASK( Tym_Build_Specie( & old_species, type->type) );
+  TASK( Tym_Def_Specie( & old_species, type->type) );
   *species = *old;
   return Success;
 }
@@ -703,8 +703,8 @@ Task Prs_Struct_New(
   CHECK_TYPE(first); CHECK_TYPE(second);
 
   new_strc = TYPE_NONE;
-  TASK( Tym_Build_Structure( & new_strc,  first->type) );
-  TASK( Tym_Build_Structure( & new_strc, second->type) );
+  TASK( Tym_Def_Structure( & new_strc,  first->type) );
+  TASK( Tym_Def_Structure( & new_strc, second->type) );
 
   strc->is.typed = 1;
   strc->is.value = 0;
@@ -721,7 +721,7 @@ Task Prs_Struct_Add(Expression *strc, Expression *old, Expression *type) {
 
   old_strc = old->type;
   assert( old_strc != TYPE_NONE );
-  TASK( Tym_Build_Structure( & old_strc, type->type) );
+  TASK( Tym_Def_Structure( & old_strc, type->type) );
   *strc = *old;
   return Success;
 }
