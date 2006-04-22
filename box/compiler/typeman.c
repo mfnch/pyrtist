@@ -274,31 +274,47 @@ Intg Cmp_Align(Intg addr) {
   return addr;
 }
 
-/* DESCRIPTION: This function defines a new abstract box with name nm.
- *  It creates a new type associated to the new box and returns it.
+/* This function defines a new type and a corresponding new symbol.
+ * It behaves in two distinct ways: if 'parent != TYPE_NONE', it defines
+ * a type 'new_type' which will be member of 'parent',
+ * if 'parent == TYPE_NONE', the new type will be an independent
+ * (explicit) type. There is another important thing to say:
+ * if 'size < 0' the new type will be simply an alias of the type given
+ * inside 'aliased_type'
+
+ The new type is returned inside *new_type.
+
+ * It creates a new type associated to the new box and returns it.
  * NOTE: In case of error returns TYPE_NONE.
  *  If size < 0 an alias of aliased_type will be created.
+ * Tym_Def_Type_With_Name
  */
-Intg Tym__Box_Abstract_New(Name *nm, Intg size, Intg aliased_type) {
+Task Tym_Def_Type(Intg *new_type,
+ Intg parent, Name *nm, Intg size, Intg aliased_type) {
   Symbol *s;
   TypeDesc *td;
   Intg type;
-  MSG_LOCATION("Tym__Box_Abstract_New");
+  MSG_LOCATION("Tym_Def_Type");
 
- /* First of all I create a new explicit symbol with name *nm */
-  s = Sym_New_Explicit(nm, 0);
-  if ( s == NULL ) return TYPE_NONE;
+  /* First of all I create the symbol with name *nm */
+  if ( parent == TYPE_NONE ) {
+    s = Sym_New_Explicit(nm, 0);
+    if ( s == NULL ) return Failed;
+
+  } else {
+    TASK( Sym_Implicit_New(& s, parent, nm) );
+  }
 
   /* Now I create a new type for the box */
   if ( size < 0 ) {
     type = Tym_Def_Alias_Of(nm, aliased_type);
-    if ( type == TYPE_NONE ) return TYPE_NONE;
-    if ( (td = Tym_Type_Get(type)) == NULL ) return TYPE_NONE;
+    if ( type == TYPE_NONE ) return Failed;
+    if ( (td = Tym_Type_Get(type)) == NULL ) return Failed;
 
   } else {
     td = Tym_Type_New(nm);
     type = Tym_Type_Newer();
-    if ( (td == NULL) || (type < 0) ) return TYPE_NONE;
+    if ( (td == NULL) || (type < 0) ) return Failed;
     td->tot = TOT_INSTANCE;
     td->size = size;
     td->target = TYPE_NONE;
@@ -312,7 +328,8 @@ Intg Tym__Box_Abstract_New(Name *nm, Intg size, Intg aliased_type) {
   s->symtype = VARIABLE;
   s->value.is.value = 0;
   s->value.is.typed = 1;
-  return type;
+  *new_type = type;
+  return Success;
 }
 
 /* DESCRIPTION: Returns the symbol associated with the type 'type';
@@ -334,7 +351,7 @@ Task Tym_Def_Member(Intg parent, Name *nm, Intg type) {
   /* I create a new implicit symbol with name nm and I get the type and symbol
    * descriptors for the new symbol and its parent.
    */
-  s = Sym_Implicit_New(parent, nm);
+  TASK( Sym_Implicit_New(& s, parent, nm) );
   td = Tym_Type_Get(type);
   ptd = Tym_Type_Get(parent);
   if ( (s == NULL) || (td == NULL) || (ptd == NULL) ) return Failed;

@@ -371,28 +371,27 @@ Symbol *Sym_Implicit_Find(Intg parent, Name *nm) {
   return Sym_Symbol_Find(nm, Imp_Check_Name_Conflicts);
 }
 
-/* DESCRIZIONE: Definisce una variabile implicita associata
- *  al tipo parent (un membro di parent).
+/* Defines a new implicit symbol, mwmber of the type 'parent'.
  */
-Symbol *Sym_Implicit_New(Intg parent, Name *nm) {
+Task Sym_Implicit_New(Symbol **new_sym, Intg parent, Name *nm) {
   Symbol *s, *ps;
 
   MSG_LOCATION("Sym_Implicit_New");
 
   ps = Tym_Symbol_Of_Type(parent);
-  if ( ps == NULL ) return NULL;
+  if ( ps == NULL ) return Failed;
 
   /* Controllo che non esista un simbolo omonimo gia' definito */
   sym_cur_parent = parent;
   s = Sym_Symbol_Find(nm, Imp_Check_Name_Conflicts);
   if ( s != NULL ) {
     MSG_ERROR("Un simbolo con lo stesso nome esiste gia'");
-    return NULL;
+    return Failed;
   }
 
   /* Introduco il nuovo simbolo nella lista dei simboli correnti */
   s = Sym_Symbol_New(nm);
-  if ( s == NULL ) return NULL;
+  if ( s == NULL ) return Failed;
 
   /* Collego il nuovo simbolo alla lista delle variabili implicite
     * del genitore parent (in modo da poterle eliminare quando
@@ -405,7 +404,9 @@ Symbol *Sym_Implicit_New(Intg parent, Name *nm) {
   s->symattr.is_explicit = 0;
   s->parent.imp = parent;
   s->symtype = VARIABLE;
-  return s;
+  assert(new_sym != NULL);
+  *new_sym = s;
+  return Success;
 }
 
 /******************************************************************************

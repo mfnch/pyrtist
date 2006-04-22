@@ -124,8 +124,8 @@ struct symbol {
   /* Quantita' di competenza delle funzioni del tipo Sym_Symbol_... */
   char *name;              /* Nome del simbolo */
   UInt leng;               /* Lunghezza del nome */
-  struct symbol	*next;     /* Simbolo seguente nella hash-table */
-  struct symbol	*previous; /* Simbolo precedente nella hash-table */
+  struct symbol *next;     /* Simbolo seguente nella hash-table */
+  struct symbol *previous; /* Simbolo precedente nella hash-table */
 
   /* Quantita' che descrivono il simbolo e lo relazionano agli altri */
   struct {
@@ -287,7 +287,8 @@ TypeDesc *Tym_Type_Get(Intg t);
 Intg Tym_Type_Size(Intg t);
 const char *Tym_Type_Name(Intg t);
 char *Tym_Type_Names(Intg t);
-Intg Tym__Box_Abstract_New(Name *nm, Intg size, Intg aliased_type);
+Task Tym_Def_Type(Intg *new_type,
+ Intg parent, Name *nm, Intg size, Intg aliased_type);
 Symbol *Tym_Symbol_Of_Type(Intg type);
 Task Tym_Def_Member(Intg parent, Name *nm, Intg type);
 Task Tym_Box_Abstract_Delete(Intg type);
@@ -308,10 +309,12 @@ Task Tym_Def_Specie(Intg *specie, Intg type);
 Task Tym_Def_Structure(Intg *strc, Intg type);
 Task Tym_Structure_Get(Intg *type);
 
-#define Tym_Box_Abstract_New(nm) Tym__Box_Abstract_New(nm, (Intg) 0, TYPE_NONE)
-#define Tym_Box_Abstract_New_Alias(nm, type) \
- Tym__Box_Abstract_New(nm, (Intg) -1, type)
-#define Tym_Intrinsic_New(nm, size) Tym__Box_Abstract_New(nm, size, TYPE_NONE)
+#define Tym_Def_Explicit(new_type, nm) \
+  Tym_Def_Type(new_type, TYPE_NONE, nm, (Intg) 0, TYPE_NONE)
+#define Tym_Def_Explicit_Alias(new_type, nm, type) \
+  Tym_Def_Type(new_type, TYPE_NONE, nm, (Intg) -1, type)
+#define Tym_Def_Intrinsic(new_type, nm, size) \
+  Tym_Def_Type(new_type, TYPE_NONE, nm, size, TYPE_NONE)
 
 /* Procedure definite in 'symbol.c'*/
 UInt Sym__Hash(char *name, UInt leng);
@@ -326,7 +329,7 @@ Task Cmp_Box_Instance_End(Expression *e);
 Intg Box_Search_Opened(Intg type, Intg depth);
 Box *Box_Get(Intg depth);
 Symbol *Sym_Implicit_Find(Intg parent, Name *nm);
-Symbol *Sym_Implicit_New(Intg parent, Name *nm);
+Task Sym_Implicit_New(Symbol **new_sym, Intg parent, Name *nm);
 #define EXACT_DEPTH 0
 #define NO_EXACT_DEPTH 1
 Symbol *Sym_Find_Explicit(Name *nm, Intg depth, int mode);

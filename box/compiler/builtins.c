@@ -111,14 +111,21 @@ Task Builtins_Define()
   TASK( Cmp_Box_Instance_Begin( NULL ) );
 
   /* Definisco i tipi intrinseci */
-  if (
-     ( Tym_Intrinsic_New( intrinsic_type+0, sizeof(Char)  ) != TYPE_CHAR  )
-  || ( Tym_Intrinsic_New( intrinsic_type+1, sizeof(Intg)  ) != TYPE_INTG  )
-  || ( Tym_Intrinsic_New( intrinsic_type+2, sizeof(Real)  ) != TYPE_REAL  )
-  || ( Tym_Intrinsic_New( intrinsic_type+3, sizeof(Point) ) != TYPE_POINT )
-  || ( Tym_Intrinsic_New( intrinsic_type+4, 0 ) != TYPE_OBJ )
-  || ( Tym_Intrinsic_New( intrinsic_type+5, 0 ) != TYPE_VOID )
-  ) return Failed;
+  {
+    Intg t;
+    TASK( Tym_Def_Intrinsic(& t, intrinsic_type+0, sizeof(Char)) );
+    assert(t == TYPE_CHAR);
+    TASK( Tym_Def_Intrinsic(& t, intrinsic_type+1, sizeof(Intg)  ) );
+    assert(t == TYPE_INTG);
+    TASK( Tym_Def_Intrinsic(& t, intrinsic_type+2, sizeof(Real)  ) );
+    assert(t == TYPE_REAL);
+    TASK( Tym_Def_Intrinsic(& t, intrinsic_type+3, sizeof(Point) ) );
+    assert(t == TYPE_POINT);
+    TASK( Tym_Def_Intrinsic(& t, intrinsic_type+4, 0 ) );
+    assert(t == TYPE_OBJ);
+    TASK( Tym_Def_Intrinsic(& t, intrinsic_type+5, 0 ) );
+    assert(t == TYPE_VOID);
+  }
 
   /* Inizializzo il segmento-dati */
   TASK( Cmp_Data_Init() );
@@ -382,8 +389,7 @@ Task Builtins_Define()
 static Task Tmp(void) {
   Intg type_New, type_New2;
 
-  type_New = Tym_Box_Abstract_New(& ((Name) {7, "Punto2d"}));
-  if (type_New < 0) return Failed;
+  TASK( Tym_Def_Explicit(& type_New, & ((Name) {7, "Punto2d"})) );
 
   if IS_FAILED(
     Tym_Def_Member(type_New, & ((Name) {6, "comp_x"}), TYPE_REAL)
@@ -393,8 +399,7 @@ static Task Tmp(void) {
     Tym_Def_Member(type_New, & ((Name) {6, "comp_y"}), TYPE_REAL)
   ) return Failed;
 
-  type_New2 = Tym_Box_Abstract_New(& ((Name) {7, "Punto3d"}));
-  if (type_New2 < 0) return Failed;
+  TASK( Tym_Def_Explicit(& type_New2, & ((Name) {7, "Punto3d"})) );
 
   if IS_FAILED(
     Tym_Def_Member(type_New2, & ((Name) {2, "xy"}), type_New)
@@ -459,27 +464,25 @@ static Task Blt_Define_Basics(void) {
   return Success;
 }
 
-#define DEFINE_TYPE(name, length, type)     \
-  type_##name = Tym_Box_Abstract_New_Alias( \
-   & ((Name) {length, #name}), type);       \
-  if ( type_##name < 0 ) return Failed;
+#define DEFINE_TYPE(name, length, type) \
+  Tym_Def_Explicit_Alias(& type_##name, & ((Name) {length, #name}), type)
 
 static Task Blt_Define_Math(void) {
   Intg type_Sin, type_Cos, type_Tan, type_Asin, type_Acos, type_Atan,
    type_Exp, type_Log, type_Log10, type_Sqrt, type_Ceil, type_Floor;
 
-  DEFINE_TYPE(Sin,   3, TYPE_REAL)
-  DEFINE_TYPE(Cos,   3, TYPE_REAL)
-  DEFINE_TYPE(Tan,   3, TYPE_REAL)
-  DEFINE_TYPE(Asin,  4, TYPE_REAL)
-  DEFINE_TYPE(Acos,  4, TYPE_REAL)
-  DEFINE_TYPE(Atan,  4, TYPE_REAL)
-  DEFINE_TYPE(Exp,   3, TYPE_REAL)
-  DEFINE_TYPE(Log,   3, TYPE_REAL)
-  DEFINE_TYPE(Log10, 5, TYPE_REAL)
-  DEFINE_TYPE(Sqrt,  4, TYPE_REAL)
-  DEFINE_TYPE(Ceil,  4, TYPE_INTG)
-  DEFINE_TYPE(Floor, 5, TYPE_INTG)
+  TASK( DEFINE_TYPE(Sin,   3, TYPE_REAL) );
+  TASK( DEFINE_TYPE(Cos,   3, TYPE_REAL) );
+  TASK( DEFINE_TYPE(Tan,   3, TYPE_REAL) );
+  TASK( DEFINE_TYPE(Asin,  4, TYPE_REAL) );
+  TASK( DEFINE_TYPE(Acos,  4, TYPE_REAL) );
+  TASK( DEFINE_TYPE(Atan,  4, TYPE_REAL) );
+  TASK( DEFINE_TYPE(Exp,   3, TYPE_REAL) );
+  TASK( DEFINE_TYPE(Log,   3, TYPE_REAL) );
+  TASK( DEFINE_TYPE(Log10, 5, TYPE_REAL) );
+  TASK( DEFINE_TYPE(Sqrt,  4, TYPE_REAL) );
+  TASK( DEFINE_TYPE(Ceil,  4, TYPE_INTG) );
+  TASK( DEFINE_TYPE(Floor, 5, TYPE_INTG) );
 
   TASK( Cmp_Def_C_Procedure(type_RealNum, type_Cos,   Cos_RealNum)   );
   TASK( Cmp_Def_C_Procedure(type_RealNum, type_Sin,   Sin_RealNum)   );
@@ -498,8 +501,7 @@ static Task Blt_Define_Math(void) {
 
 static Task Blt_Define_Print(void) {
   Intg type_Print;
-  type_Print = Tym_Box_Abstract_New_Alias(& ((Name) {5, "Print"}), TYPE_VOID);
-  if (type_Print < 0) return Failed;
+  TASK( Tym_Def_Explicit_Alias(& type_Print, & ((Name) {5, "Print"}), TYPE_VOID) );
   TASK( Cmp_Def_C_Procedure(TYPE_CHAR,   type_Print, Print_Char  ) );
   TASK( Cmp_Def_C_Procedure(TYPE_INTG,   type_Print, Print_Int   ) );
   TASK( Cmp_Def_C_Procedure(TYPE_REAL,   type_Print, Print_Real  ) );
