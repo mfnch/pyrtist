@@ -9,7 +9,7 @@
     </list>
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
-        <RegExpr attribute="Data Type" context="#stay" String="[A-Z][A-Za-z0-9]*"/>
+        <RegExpr attribute="Data Type" context="#stay" String="\b[A-Z][A-Za-z0-9]*"/>
         <RegExpr attribute="Member Type" context="#stay" String="[.][A-Z][A-Za-z0-9]*"/>
         <RegExpr attribute="Member" context="#stay" String="[.][a-z][A-Za-z0-9]*"/>
 
@@ -65,8 +65,8 @@
     <itemDatas>
       <itemData name="Normal Text"  defStyleNum="dsNormal"/>
       <itemData name="Keyword"      defStyleNum="dsNormal" bold="1"/>
-      <itemData name="Data Type"    defStyleNum="dsDataType" bold="0"/>
-      <itemData name="Member Type"  defStyleNum="dsDataType" bold="0"/>
+      <itemData name="Data Type"    defStyleNum="dsDataType" bold="1"/>
+      <itemData name="Member Type"  defStyleNum="dsDataType" bold="1"/>
       <itemData name="Member"       defStyleNum="dsNormal"/>
       <itemData name="Attribute"    defStyleNum="dsAttribute"/>
       <itemData name="Decimal"      defStyleNum="dsDecVal"/>
