@@ -170,15 +170,9 @@ typedef enum {
 
 /* Enumeration of special procedures */
 enum {
-  PROC_OPEN    = -1,
-  PROC_CLOSE   = -2,
-  PROC_PAUSE   = -3,
-  PROC_REOPEN  = -4,
-  PROC_RECLOSE = -5,
-  PROC_REPAUSE = -6,
-  PROC_COPY    = -7,
-  PROC_DESTROY = -8,
-  PROC_SPECIAL_NUM = 9
+  PROC_COPY    = -1,
+  PROC_DESTROY = -2,
+  PROC_SPECIAL_NUM = 3
 };
 
 extern char *tym_special_name[PROC_SPECIAL_NUM];
@@ -367,7 +361,6 @@ Task Cmp_Define_Builtins();
 void Cmp_Expr_New_Imm_Char(Expression *e, Char c);
 void Cmp_Expr_New_Imm_Intg(Expression *e, Intg i);
 void Cmp_Expr_New_Imm_Real(Expression *e, Real r);
-Task Cmp_Expr_Target_New(Expression *e, Intg type);
 Task Cmp_Expr_Target_Delete(Expression *e);
 void Cmp_Expr_New_Imm_Point(Expression *e, Point *p);
 Task Cmp_Data_Init(void);

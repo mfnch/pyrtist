@@ -753,11 +753,11 @@ Task Prs_Struct_Add(Expression *strc, Expression *old, Expression *type) {
  */
 Task Prs_Pause(int re) {
   Box *b;
-  Intg procedure = PROC_PAUSE, asm_module;
+  Intg asm_module; /*procedure = TYPE_PAUSE, ;
 
-  if ( re ) procedure = PROC_REPAUSE;
+   if ( re ) procedure = PROC_REPAUSE; */
 
-  TASK( Cmp_Procedure_Search(procedure, 0, & b, NULL, & asm_module) );
+  TASK( Cmp_Procedure_Search(TYPE_PAUSE, 0, & b, NULL, & asm_module) );
 
   if ( b->value.is.value ) {
     TASK( Cmp_Expr_To_Ptr(& b->value, CAT_GREG, (Intg) 1, 0) );

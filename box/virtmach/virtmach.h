@@ -14,7 +14,10 @@ typedef enum {
   TYPE_REAL  =  2,
   TYPE_POINT =  3,
   TYPE_OBJ   =  4,
-  TYPE_VOID  =  5
+  TYPE_VOID  =  5,
+  TYPE_OPEN  =  6,
+  TYPE_CLOSE =  7,
+  TYPE_PAUSE =  8
 } TypeID;
 
 /* Associo un numero a ciascun tipo, per poterlo identificare */

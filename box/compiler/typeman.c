@@ -30,8 +30,6 @@ TypeDesc *tym_recent_typedesc;
 Intg tym_recent_type;
 char *tym_special_name[PROC_SPECIAL_NUM] = {
   "",
-  "{open}", "{close}", "{pause}",
-  "{reopen}", "{reclose}", "{repause}",
   "{copy}", "{destroy}"
 };
 

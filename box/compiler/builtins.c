@@ -34,6 +34,7 @@ static Task Print_Pnt(void);
 static Task Print_String(void);
 static Task Print_NewLine(void);
 static Task Exit_Int(void);
+static Task Exit_Success(void);
 /* Functions for conversions */
 static Task Conv_2RealNum_to_Point(void);
 static Task Char_Char(void);
@@ -120,10 +121,16 @@ Task Builtins_Define() {
     assert(t == TYPE_REAL);
     TASK( Tym_Def_Intrinsic(& t, & NAME("Point"), sizeof(Point) ) );
     assert(t == TYPE_POINT);
-    TASK( Tym_Def_Intrinsic(& t, & NAME("Object"), 0 ) );
+    TASK( Tym_Def_Intrinsic(& t, & NAME("(Object)"), 0 ) ); /* NOTE: ??? */
     assert(t == TYPE_OBJ);
     TASK( Tym_Def_Intrinsic(& t, & NAME("Void"), 0 ) );
     assert(t == TYPE_VOID);
+    TASK( Tym_Def_Intrinsic(& t, & NAME("(<)"), 0 ) );
+    assert(t == TYPE_OPEN);
+    TASK( Tym_Def_Intrinsic(& t, & NAME("(>)"), 0 ) );
+    assert(t == TYPE_CLOSE);
+    TASK( Tym_Def_Intrinsic(& t, & NAME("(;)"), 0 ) );
+    assert(t == TYPE_PAUSE);
   }
 
   /* Inizializzo il segmento-dati */
@@ -498,7 +505,7 @@ static Task Blt_Define_Print(void) {
   TASK( Cmp_Def_C_Procedure(TYPE_REAL,   type_Print, Print_Real  ) );
   TASK( Cmp_Def_C_Procedure(type_Point,  type_Print, Print_Pnt ) );
   TASK( Cmp_Def_C_Procedure(type_String, type_Print, Print_String) );
-  TASK( Cmp_Def_C_Procedure(PROC_PAUSE,  type_Print, Print_NewLine) );
+  TASK( Cmp_Def_C_Procedure(TYPE_PAUSE,  type_Print, Print_NewLine) );
   /*Tym_Print_Procedure(stdout, type_new);*/
   return Success;
 }
@@ -510,6 +517,7 @@ static Task Blt_Define_Sys(void) {
 
   TASK( Tym_Def_Type(& type_Exit_Success,
    type_Exit, & NAME("Success"), (Intg) -1, TYPE_VOID) );
+  TASK( Cmp_Def_C_Procedure(TYPE_OPEN, type_Exit_Success, Exit_Success) );
 
   return Success;
 }
@@ -528,6 +536,7 @@ static Task Print_NewLine(void) {printf("\n"); return Success;}
 
 /* This function is not politically correct!!! */
 static Task Exit_Int(void)  {exit(BOX_VM_ARG1(Intg));}
+static Task Exit_Success(void) {exit(EXIT_SUCCESS);}
 
 /*****************************************************************************
  *                       FUNCTIONS FOR CONVERSION                            *

@@ -1545,55 +1545,6 @@ void Cmp_Expr_New_Imm_Point(Expression *e, Point *p) {
   e->value.p = *p;
 }
 
-/* DESCRIZIONE: Crea una espressione di tipo "target" locale, cioe' che puo'
- *  essere il target di un'operazione di assegnazione. Quindi a tale espressione
- *  corrisponde una variabile locale di tipo type.
- */
-Task Cmp_Expr_Target_New(Expression *e, Intg type) {
-  MSG_LOCATION("Cmp_Expr_New_Target");
-  assert( (type >= 0) || (type < NUM_TYPES) );
-
-  if (type < CMP_PRIVILEGED) {
-    e->is.imm = 0;
-    e->is.value = 1;
-    e->is.ignore = 0;
-    e->is.target = 1;
-    e->is.typed = 1;
-    e->is.allocd = 0;
-    e->is.release = 0;
-
-    e->resolved = e->type = type;
-    e->categ = CAT_LREG;
-
-    if ( (e->value.i = -Var_Occupy(type, cmp_box_level)) < 0 )
-      return Success;
-    return Failed;
-
-  } else {
-    TypeDesc *td;
-
-    e->is.imm = 0;
-    e->is.value = 1;
-    e->is.ignore = 0;
-    e->is.target = 1;
-    e->is.typed = 1;
-    e->is.allocd = 1;
-    e->is.release = 0;
-
-    e->resolved = e->type = type;
-    e->categ = CAT_LREG;
-    if ( (e->value.i = -Var_Occupy(TYPE_OBJ, cmp_box_level)) >= 0 )
-      return Failed;
-
-    td = Tym_Type_Get(type);
-    if ( td == NULL ) return Failed;
-
-    VM_Assemble(ASM_MALLOC_I, CAT_IMM, td->size);
-    VM_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
-    return Success;
-  }
-}
-
 Task Cmp_Expr_Target_Delete(Expression *e) {
   MSG_LOCATION("Cmp_Expr_Target_Delete");
 
