@@ -7,6 +7,20 @@ NUM_TEST=0
 NUM_ERRORS=0
 ERR_REPORTED=0
 
+# Setup colors
+case $TERM in
+  xterm*|rxvt*)
+    RED=$(echo -e '\033[01;31m')
+    GREEN=$(echo -e '\033[01;32m')
+    NO_COLOUR=$(echo -e '\033[0m')
+    ;;
+  *)
+    GREEN=""
+    RED=""
+    NO_COLOUR=""
+    ;;
+esac
+
 function err_report {
   if [ $ERR_REPORTED -eq 0 ]; then
     echo "*** Beginning of test $NUM_TEST (ERRORS DETECTED!) ***" >> $ERRORS
@@ -26,14 +40,14 @@ function test_next {
 
 function check_successful {
   if [ "$1" == "" ]; then
-    echo "  > Test successful!"
+    echo "  > $GREEN""Test successful!"$NO_COLOUR
   else
-    echo "  > Test successful: $1"
+    echo "  > $GREEN""Test successful"$NO_COLOUR": $1"
   fi
 }
 
 function check_failed {
-  echo "  > --> TEST FAILED! <--"
+  echo "  > "$RED"--> TEST FAILED! <--"$NO_COLOUR
 }
 
 function check_noerr {
