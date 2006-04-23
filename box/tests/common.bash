@@ -66,6 +66,7 @@ function check_answer {
   if [ "$ANSWER" == "$1" ]; then
     check_successful "Result OK."
   else
+    NUM_ERRORS=$[ $NUM_ERRORS + 1 ]
     err_report
     check_failed
   fi
