@@ -10,8 +10,8 @@ ERR_REPORTED=0
 # Setup colors
 case $TERM in
   xterm*|rxvt*)
-    RED=$(echo -e '\033[01;31m')
-    GREEN=$(echo -e '\033[01;32m')
+    RED=$(echo -e '\033[00;31m')
+    GREEN=$(echo -e '\033[00;32m')
     NO_COLOUR=$(echo -e '\033[0m')
     ;;
   *)
