@@ -361,7 +361,6 @@ Task Cmp_Define_Builtins();
 void Cmp_Expr_New_Imm_Char(Expression *e, Char c);
 void Cmp_Expr_New_Imm_Intg(Expression *e, Intg i);
 void Cmp_Expr_New_Imm_Real(Expression *e, Real r);
-Task Cmp_Expr_Target_Delete(Expression *e);
 void Cmp_Expr_New_Imm_Point(Expression *e, Point *p);
 Task Cmp_Data_Init(void);
 Intg Cmp_Data_Add(Intg type, void *data, Intg size);

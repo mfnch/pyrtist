@@ -1545,23 +1545,6 @@ void Cmp_Expr_New_Imm_Point(Expression *e, Point *p) {
   e->value.p = *p;
 }
 
-Task Cmp_Expr_Target_Delete(Expression *e) {
-  MSG_LOCATION("Cmp_Expr_Target_Delete");
-
-  if ( !e->is.target || !e->is.value || e->is.imm ) return Success;
-
-  if ( e->resolved < CMP_PRIVILEGED ) {
-    if IS_SUCCESSFUL( Var_Release(e->resolved, -e->value.i) ) return Success;
-    return Failed;
-
-  } else {
-    printf("Qui faccio la cazzata!\n");
-    VM_Assemble(ASM_MFREE_O, e->categ, e->value.i);
-    if IS_SUCCESSFUL( Var_Release(TYPE_OBJ, -e->value.i) ) return Success;
-    return Failed;
-  }
-}
-
 /*****************************************************************************
  * The following functions are needed to handle the data segment and the     *
  * segment of immediate values. The first is necessary to store strings and  *

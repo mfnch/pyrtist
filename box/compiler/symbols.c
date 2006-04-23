@@ -286,7 +286,7 @@ Task Cmp_Box_Instance_End(Expression *e) {
     Symbol *s;
 
     for ( s = box->child; s != (Symbol *) NULL; s = s->brother ) {
-      TASK( Cmp_Expr_Target_Delete( & (s->value) ) );
+      TASK( Cmp_Expr_Destroy( & (s->value) ) );
       Sym_Symbol_Delete( s );
     }
   }
