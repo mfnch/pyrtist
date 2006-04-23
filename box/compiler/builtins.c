@@ -36,7 +36,12 @@ static Task Print_NewLine(void);
 static Task Exit_Int(void);
 /* Functions for conversions */
 static Task Conv_2RealNum_to_Point(void);
+static Task Char_Char(void);
+static Task Char_Int(void);
+static Task Char_Real(void);
+static Task Int_IntNum(void);
 static Task Int_RealNum(void);
+static Task Real_RealNum(void);
 /* Mathematical functions */
 static Task Sin_RealNum(void);
 static Task Cos_RealNum(void);
@@ -439,8 +444,13 @@ static Task Blt_Define_Basics(void) {
     opn->module = m;
   }
 
-  /* Define the conversion Real@Int, such as: a = Int[ 1.2 ]*/
-  TASK( Cmp_Def_C_Procedure(type_RealNum, TYPE_INTG, Int_RealNum)   );
+  /* Define the conversions (example: Real@Int such as: a = Int[ 1.2 ]) */
+  TASK( Cmp_Def_C_Procedure(TYPE_CHAR, TYPE_CHAR, Char_Char) );
+  TASK( Cmp_Def_C_Procedure(TYPE_INTG, TYPE_CHAR, Char_Int ) );
+  TASK( Cmp_Def_C_Procedure(TYPE_REAL, TYPE_CHAR, Char_Real) );
+  TASK( Cmp_Def_C_Procedure(type_IntgNum,  TYPE_INTG, Int_IntNum ) );
+  TASK( Cmp_Def_C_Procedure(type_RealNum, TYPE_INTG, Int_RealNum) );
+  TASK( Cmp_Def_C_Procedure(type_RealNum, TYPE_REAL, Real_RealNum) );
 
   return Success;
 }
@@ -523,10 +533,18 @@ static Task Conv_2RealNum_to_Point(void) {
   return Success;
 }
 
-static Task Int_RealNum(void) {
-  BOX_VM_CURRENT(Intg) = (Intg) BOX_VM_ARG1(Real);
-  return Success;
-}
+static Task Char_Char(void)
+  {BOX_VM_CURRENT(Char) = BOX_VM_ARG1(Char); return Success;}
+static Task Char_Int(void)
+  {BOX_VM_CURRENT(Char) = (Char) BOX_VM_ARG1(Intg); return Success;}
+static Task Char_Real(void)
+  {BOX_VM_CURRENT(Char) = (Char) BOX_VM_ARG1(Real); return Success;}
+static Task Int_IntNum(void)
+  {BOX_VM_CURRENT(Intg) = BOX_VM_ARG1(Intg); return Success;}
+static Task Int_RealNum(void)
+  {BOX_VM_CURRENT(Intg) = (Intg) BOX_VM_ARG1(Real); return Success;}
+static Task Real_RealNum(void)
+  {BOX_VM_CURRENT(Real) = BOX_VM_ARG1(Real); return Success;}
 
 /*****************************************************************************
  *                        MATHEMATICAL FUNCTIONS                             *

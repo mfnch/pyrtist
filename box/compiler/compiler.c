@@ -1846,8 +1846,7 @@ Task Cmp_Procedure_Search
   /* Now we use prefix to identify the box, which is the parent
    * of the procedure
    */
-  b = Box_Get( (prefix < 0) ? 0 : prefix );
-  if ( b == NULL ) return Failed;
+  TASK( Box_Get(& b, (prefix < 0) ? 0 : prefix) );
   if ( b->type == TYPE_VOID ) {
     MSG_WARNING("La box di tipo [...] non ammette procedure!");
     return Failed;

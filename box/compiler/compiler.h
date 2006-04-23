@@ -327,7 +327,7 @@ void Sym_Symbol_Delete(Symbol *s);
 Task Cmp_Box_Instance_Begin(Expression *e);
 Task Cmp_Box_Instance_End(Expression *e);
 Intg Box_Search_Opened(Intg type, Intg depth);
-Box *Box_Get(Intg depth);
+Task Box_Get(Box **box, Intg depth);
 Symbol *Sym_Implicit_Find(Intg parent, Name *nm);
 Task Sym_Implicit_New(Symbol **new_sym, Intg parent, Name *nm);
 #define EXACT_DEPTH 0

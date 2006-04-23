@@ -330,7 +330,7 @@ Intg Box_Search_Opened(Intg type, Intg depth) {
 /* DESCRIPTION: This function returns the pointer to the structure Box
  *  corresponding to the box with depth 'depth'.
  */
-Box *Box_Get(Intg depth) {
+Task Box_Get(Box **box, Intg depth) {
   Intg max_depth;
   assert(cmp_box_list != NULL);
   max_depth = Arr_NumItem(cmp_box_list);
@@ -338,11 +338,12 @@ Box *Box_Get(Intg depth) {
     if (depth < 0) {
       MSG_ERROR("Profondita' di box negativa.");
     } else {
-      MSG_ERROR("Profondita' di box troppo profondo.");
+      MSG_ERROR("Profondita' di box troppo profonda.");
     }
-    return NULL;
+    return Failed;
   }
-  return Arr_LastItemPtr(cmp_box_list, Box) - depth;
+  *box = Arr_LastItemPtr(cmp_box_list, Box) - depth;
+  return Success;
 }
 
 /* Tipo che funge da genitore per i tipi impliciti */

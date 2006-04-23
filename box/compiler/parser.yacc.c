@@ -259,8 +259,7 @@ expr:
  | TOK_LMEMBER {
     Expression e_box, *result;
     Box *b;
-    b = Box_Get(0);
-    if ( b == NULL ) {YYERROR;}
+    if IS_FAILED( Box_Get(& b, 0) ) {YYERROR;}
     if ( b->value.resolved == TYPE_VOID ) {
       MSG_WARNING("La box di tipo [...] non puo' possedere alcun membro!");
       YYERROR;
@@ -492,9 +491,9 @@ Task Prs_Operator(Operator *opr, Expression *rs, Expression *a, Expression *b) {
   }
 }
 
-/* DESCRIPTION: If name:suffix is the name of an already defined symbol
- *  this function puts the corresponding expression into *e, otherwise
- *  it transforms the name *nm into an untyped expression *e.
+/* If name:suffix is the name of an already defined symbol
+ * this function puts the corresponding expression into *e, otherwise
+ * it transforms the name *nm into an untyped expression *e.
  */
 Task Prs_Name_To_Expr(Name *nm, Expression *e, Intg suffix) {
   Symbol *s;
@@ -532,8 +531,34 @@ Task Prs_Name_To_Expr(Name *nm, Expression *e, Intg suffix) {
  * it transforms the name *nm into an untyped expression *e.
  */
 Task Prs_Member_To_Expr(Name *nm, Expression *e, Intg suffix) {
+  Symbol *s;
 
+  if ( suffix < 0 ) {
+    /* Non e' stata specificata la profondita' di scatola! */
+    s = Sym_Explicit_Find(nm, 0, NO_EXACT_DEPTH);
+    suffix = 0;
+  } else {
+    /* E' stata specificata la profondita' di scatola! */
+    s = Sym_Explicit_Find(nm, suffix, EXACT_DEPTH);
+  }
 
+  if ( s == NULL ) {
+   /* Il nome non corrisponde ad un simbolo gia' definito:
+    * restituisco una espressione (untyped) corrispondente.
+    */
+    e->is.typed = 0;
+    e->addr = suffix;
+    e->value.nm = *Name_Dup(nm);
+    if ( e->value.nm.text == NULL ) return Failed;
+    return Success;
+
+  } else {
+   /* Il nome corrisponde ad un simbolo gia' definito:
+    * restituisco l'espressione (typed) corrispondente!
+    */
+    *e = s->value;
+    return Success;
+  }
 }
 
 /* DESCRIPTION: Every explicit symbol can be followed by a suffix,
