@@ -504,9 +504,13 @@ static Task Blt_Define_Print(void) {
 }
 
 static Task Blt_Define_Sys(void) {
-  Intg type_Exit;
+  Intg type_Exit, type_Exit_Success;
   TASK( Tym_Def_Explicit_Alias(& type_Exit, & NAME("Exit"), TYPE_VOID) );
   TASK( Cmp_Def_C_Procedure(TYPE_INTG, type_Exit, Exit_Int) );
+
+  TASK( Tym_Def_Type(& type_Exit_Success,
+   type_Exit, & NAME("Success"), (Intg) -1, TYPE_VOID) );
+
   return Success;
 }
 

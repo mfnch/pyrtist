@@ -298,11 +298,12 @@ Task Tym_Def_Type(Intg *new_type,
 
   /* First of all I create the symbol with name *nm */
   if ( parent == TYPE_NONE ) {
-    s = Sym_Explicit_New(nm, 0);
-    if ( s == NULL ) return Failed;
+    TASK( Sym_Explicit_New(& s, nm, 0) );
+    s->symattr.is_explicit = 1;
 
   } else {
     TASK( Sym_Implicit_New(& s, parent, nm) );
+    s->symattr.is_explicit = 0;
   }
 
   /* Now I create a new type for the box */
@@ -324,7 +325,6 @@ Task Tym_Def_Type(Intg *new_type,
   /* I set all the remaining values of the structure s */
   s->value.type = type;
   s->value.resolved = Tym_Type_Resolve_All(type);
-  s->symattr.is_explicit = 1;
   s->symtype = VARIABLE;
   s->value.is.value = 0;
   s->value.is.typed = 1;

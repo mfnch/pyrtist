@@ -448,9 +448,11 @@ Task Prs_Def_Operator(Operator *opr,
 
   assert( (!new_e->is.typed) && (opr->can_define) && (e->is.value) );
 
-  s = Sym_Explicit_New(& new_e->value.nm, new_e->addr);
-  Cmp_Expr_Destroy(new_e);
-  if (s == NULL) return Failed;
+  {
+    Task t = Sym_Explicit_New(& s, & new_e->value.nm, new_e->addr);
+    Cmp_Expr_Destroy(new_e);
+    TASK( t );
+  }
 
   target = & (s->value);
   if ( e->is.target ) {
@@ -532,33 +534,21 @@ Task Prs_Name_To_Expr(Name *nm, Expression *e, Intg suffix) {
  */
 Task Prs_Member_To_Expr(Name *nm, Expression *e, Intg suffix) {
   Symbol *s;
+  Box *b;
 
-  if ( suffix < 0 ) {
-    /* Non e' stata specificata la profondita' di scatola! */
-    s = Sym_Explicit_Find(nm, 0, NO_EXACT_DEPTH);
-    suffix = 0;
-  } else {
-    /* E' stata specificata la profondita' di scatola! */
-    s = Sym_Explicit_Find(nm, suffix, EXACT_DEPTH);
+  TASK( Box_Get(& b, (suffix < 0) ? 0 : suffix) );
+
+  if IS_FAILED( Sym_Implicit_Find(& s, b->type, nm) ) {
+    MSG_ERROR("'%s' non e' membro di '%s'.",
+     Name_To_Str(nm), Tym_Type_Name(b->type));
+    return Failed;
   }
 
-  if ( s == NULL ) {
-   /* Il nome non corrisponde ad un simbolo gia' definito:
-    * restituisco una espressione (untyped) corrispondente.
-    */
-    e->is.typed = 0;
-    e->addr = suffix;
-    e->value.nm = *Name_Dup(nm);
-    if ( e->value.nm.text == NULL ) return Failed;
-    return Success;
-
-  } else {
-   /* Il nome corrisponde ad un simbolo gia' definito:
-    * restituisco l'espressione (typed) corrispondente!
-    */
-    *e = s->value;
-    return Success;
-  }
+  /* Il nome corrisponde ad un simbolo gia' definito:
+  * restituisco l'espressione (typed) corrispondente!
+  */
+  *e = s->value;
+  return Success;
 }
 
 /* DESCRIPTION: Every explicit symbol can be followed by a suffix,
@@ -674,8 +664,7 @@ Task Prs_Alias_Of_X(Expression *alias, Expression *x) {
     return Failed;
   }
 
-  s = Sym_Explicit_New(& alias->value.nm, alias->addr);
-  if (s == NULL) return Failed;
+  TASK( Sym_Explicit_New(& s, & alias->value.nm, alias->addr) );
 
   target = & (s->value);
   target->is.typed = 1;
@@ -830,9 +819,11 @@ Task Prs_Rule_Valued_Eq_Typed(Expression *rs,
     Symbol *s;
     Expression *target;
 
-    s = Sym_Explicit_New(& valued->value.nm, valued->addr);
-    TASK( Cmp_Expr_Destroy(valued) );
-    if (s == NULL) return Failed;
+    {
+      Task t = Sym_Explicit_New(& s, & valued->value.nm, valued->addr);
+      TASK( Cmp_Expr_Destroy(valued) );
+      TASK( t );
+    }
 
     target = & (s->value);
     TASK( Cmp_Expr_Create(target, typed->type, /* temporary = */ 0 ) );

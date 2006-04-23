@@ -432,8 +432,7 @@ static Expression *Cmp__Member_Of_Instance(Expression *e, Name *nm) {
   if ( sym_struct == NULL ) return Failed;*/
 
   /* Cerco *nm fra i membri del tipo t */
-  s = Sym_Implicit_Find(t, nm);
-  if ( s == NULL ) {
+  if IS_FAILED( Sym_Implicit_Find(& s, t, nm) ) {
     MSG_ERROR( "'%s' non e' un membro del tipo '%s'!",
      Name_To_Str(nm), Tym_Type_Name(t) );
     return NULL;
@@ -1830,23 +1829,23 @@ Task Cmp_String_New(Expression *e, Name *str, int free_str) {
 /* DESCRIPTION: This function is an interface for the function
  *  Tym_Search_Procedure. In fact the purpose of the first is very similar
  *  to the purpose of the second: the function searches the procedure
- *  of type 'procedure' which belong to the opened box, whose prefix
- *  descriptor is 'prefix'. If a suitable procedure is found, its actual
+ *  of type 'procedure' which belong to the opened box, whose suffix
+ *  descriptor is 'suffix'. If a suitable procedure is found, its actual
  *  type is assigned to *prototype and its module number is put into
  *  *asm_module. After the call *box will contain the pointer to the
- *  box whose prefix is 'prefix'.
+ *  box whose suffix is 'suffix'.
  */
 Task Cmp_Procedure_Search
- (Intg procedure, Intg prefix, Box **box, Intg *prototype, Intg *asm_module) {
+ (Intg procedure, Intg suffix, Box **box, Intg *prototype, Intg *asm_module) {
   Box *b;
   Intg p, dummy;
 
   if ( prototype == NULL ) prototype = & dummy;
 
-  /* Now we use prefix to identify the box, which is the parent
+  /* Now we use suffix to identify the box, which is the parent
    * of the procedure
    */
-  TASK( Box_Get(& b, (prefix < 0) ? 0 : prefix) );
+  TASK( Box_Get(& b, (suffix < 0) ? 0 : suffix) );
   if ( b->type == TYPE_VOID ) {
     MSG_WARNING("La box di tipo [...] non ammette procedure!");
     return Failed;
@@ -1879,9 +1878,9 @@ Task Cmp_Procedure_Search
 }
 
 /* DESCRIPTION: This function handles the procedures of the box corresponding
- *  to prefix. It generates the assembly code that calls the procedure.
+ *  to suffix. It generates the assembly code that calls the procedure.
  */
-Task Cmp_Procedure(Expression *e, Intg prefix) {
+Task Cmp_Procedure(Expression *e, Intg suffix) {
   Box *b;
   Intg asm_module, t;
   Intg prototype;
@@ -1897,7 +1896,7 @@ Task Cmp_Procedure(Expression *e, Intg prefix) {
   if ( t == TYPE_VOID ) goto exit_success;
 
   if IS_FAILED( Cmp_Procedure_Search
-   (e->type, prefix, & b, & prototype, & asm_module) ) goto exit_failed;
+   (e->type, suffix, & b, & prototype, & asm_module) ) goto exit_failed;
 
   /* Now we compile the procedure */
   /* We pass the box which is the parent of the procedure */

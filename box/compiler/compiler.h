@@ -328,12 +328,12 @@ Task Cmp_Box_Instance_Begin(Expression *e);
 Task Cmp_Box_Instance_End(Expression *e);
 Intg Box_Search_Opened(Intg type, Intg depth);
 Task Box_Get(Box **box, Intg depth);
-Symbol *Sym_Implicit_Find(Intg parent, Name *nm);
+Task Sym_Implicit_Find(Symbol **s, Intg parent, Name *nm);
 Task Sym_Implicit_New(Symbol **new_sym, Intg parent, Name *nm);
 #define EXACT_DEPTH 0
 #define NO_EXACT_DEPTH 1
 Symbol *Sym_Explicit_Find(Name *nm, Intg depth, int mode);
-Symbol *Sym_Explicit_New(Name *nm, Intg depth);
+Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth);
 
 /* Procedure definite in 'compiler.c'*/
 Operator *Cmp_Operator_New(char *token);
@@ -381,8 +381,8 @@ void Cmp_Imm_Destroy(void);
 Task Cmp_String_New(Expression *e, Name *str, int free_str);
 #define Cmp_String_New_And_Free(e, str) Cmp_String_New(e, str, 1)
 Task Cmp_Procedure_Search
- (Intg procedure, Intg prefix, Box **box, Intg *prototype, Intg *asm_module);
-Task Cmp_Procedure(Expression *e, Intg prefix);
+ (Intg procedure, Intg suffix, Box **box, Intg *prototype, Intg *asm_module);
+Task Cmp_Procedure(Expression *e, Intg suffix);
 Task Cmp_Structure_Begin(void);
 Task Cmp_Structure_Add(Expression *e);
 Task Cmp_Structure_End(Expression *new_struct);

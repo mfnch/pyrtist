@@ -338,7 +338,7 @@ Task Box_Get(Box **box, Intg depth) {
     if (depth < 0) {
       MSG_ERROR("Profondita' di box negativa.");
     } else {
-      MSG_ERROR("Profondita' di box troppo profonda.");
+      MSG_ERROR("Profondita' di box fuori limite.");
     }
     return Failed;
   }
@@ -367,9 +367,10 @@ static UInt Imp_Check_Name_Conflicts(Symbol *s) {
 /* DESCRIPTION: This function search a member of parent with name nm.
  * NOTE: Returns NULL if it doesn't find any member with name nm.
  */
-Symbol *Sym_Implicit_Find(Intg parent, Name *nm) {
+Task Sym_Implicit_Find(Symbol **s, Intg parent, Name *nm) {
   sym_cur_parent = parent;
-  return Sym_Symbol_Find(nm, Imp_Check_Name_Conflicts);
+  *s = Sym_Symbol_Find(nm, Imp_Check_Name_Conflicts);
+  return (*s == NULL) ? Failed : Success;
 }
 
 /* Defines a new implicit symbol, mwmber of the type 'parent'.
@@ -472,7 +473,7 @@ Symbol *Sym_Explicit_Find(Name *nm, Intg depth, int mode) {
 /* DESCRIZIONE: Questa funzione definisce un nuovo simbolo di nome *nm,
  *  attribuendolo alla box di profondita' depth.
  */
-Symbol *Sym_Explicit_New(Name *nm, Intg depth) {
+Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth) {
   Intg box_lev;
   Symbol *s;
   Box *b;
@@ -484,12 +485,12 @@ Symbol *Sym_Explicit_New(Name *nm, Intg depth) {
   s = Sym_Explicit_Find(nm, depth, EXACT_DEPTH);
   if ( s != NULL ) {
     MSG_ERROR("Un simbolo con lo stesso nome esiste gia'");
-    return NULL;
+    return Failed;
   }
 
   /* Introduco il nuovo simbolo nella lista dei simboli correnti */
   s = Sym_Symbol_New(nm);
-  if ( s == NULL ) return NULL;
+  if ( s == NULL ) return Failed;
 
   /* Collego il nuovo simbolo alla lista delle variabili esplicite della
    * box corrente (in modo da eliminarle alla chiusura della box).
@@ -504,5 +505,6 @@ Symbol *Sym_Explicit_New(Name *nm, Intg depth) {
   s->child = NULL;
   s->parent.exp = box_lev;
   s->symtype = VARIABLE;
-  return s;
+  *sym = s;
+  return Success;
 }

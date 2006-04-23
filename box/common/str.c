@@ -370,16 +370,22 @@ Name *Name_Empty(void) {
   static Name nm = {(UInt) 0, (char *) NULL}; return & nm;
 }
 
-/* DESCRIZIONE: Converte la stringa descritta dalla struttura Name *n in una
- *  stringa null-terminated.
+/* This function converts the string corresponding to the structure of type
+ * Name into a normal C-string (NUL-terminated).
+ * The string is allocated by this function, but should not be freed directly
+ * by the user. For this purpose call: (void) Name_To_Str((Name) {0, NULL}).
+ * After the user calls 'Name_To_Str' he must use the string, before the next
+ * call to this same function is made. For this reason the statement:
+ *   printf("Two Name-s: '%s' and '%s'\n", Name_To_Str(nm1), Name_To_Str(nm2));
+ * I S   W R O N G!!!
  */
-char *Name_To_Str(Name *n)
-{
-	static char *asciiz = NULL;
-	free(asciiz);
-	asciiz = (char *) malloc( n->length + 1 );
-	asciiz[n->length] = '\0';
-	return strncpy(asciiz, n->text, n->length);
+const char *Name_To_Str(Name *n) {
+  static char *asciiz = NULL;
+  free(asciiz);
+  if (n->length == 0) return "";
+  asciiz = (char *) malloc( n->length + 1 );
+  asciiz[n->length] = '\0';
+  return strncpy(asciiz, n->text, n->length);
 }
 
 /* DESCRIZIONE: Rimuove la stringa associata a *n (pone n --> "")
