@@ -141,7 +141,7 @@ extern UInt tok_linenum;
  *****************************************************************************/
 sep:
    ','                 { }
- | ';'                 { if IS_FAILED( Prs_Pause(parser_attr.old_box) ) MY_ERR}
+ | ';'                 { if IS_FAILED( Prs_Procedure_Special(TYPE_PAUSE, 0, 0) ) MY_ERR}
  | TOK_NEWLINE         { VM_Assemble(ASM_LINE_Iimm, CAT_IMM, ++tok_linenum); }
  ;
 
@@ -343,7 +343,7 @@ type.statement:
  *               DEFINIZIONE DELL'ESPRESSIONE COME ISTRUZIONE                 *
  ******************************************************************************/
 expr.statement:
-   expr { if IS_FAILED( Cmp_Procedure( & $1, -1) ) MY_ERR }
+   expr { if IS_FAILED( Cmp_Procedure( & $1, -1, 0) ) MY_ERR }
 ;
 
 /******************************************************************************/
@@ -749,22 +749,14 @@ Task Prs_Struct_Add(Expression *strc, Expression *old, Expression *type) {
   return Success;
 }
 
-/* DESCRIPTION:
+/*
  */
-Task Prs_Pause(int re) {
-  Box *b;
-  Intg asm_module; /*procedure = TYPE_PAUSE, ;
-
-   if ( re ) procedure = PROC_REPAUSE; */
-
-  TASK( Cmp_Procedure_Search(TYPE_PAUSE, 0, & b, NULL, & asm_module) );
-
-  if ( b->value.is.value ) {
-    TASK( Cmp_Expr_To_Ptr(& b->value, CAT_GREG, (Intg) 1, 0) );
-  }
-
-  VM_Assemble(ASM_CALL_I, CAT_IMM, asm_module);
-  return Success;
+Task Prs_Procedure_Special(int type, int fresh_object, int ignore_not_found) {
+  Expression e;
+  Task t;
+  TASK( Cmp_Expr_Unvalued(& e, TYPE_PAUSE) );
+  t = Cmp_Procedure(& e, 0, fresh_object);
+  return ignore_not_found ? Success : t;
 }
 
 /* DESCRIPTION: This function handles the rule: Type = Type

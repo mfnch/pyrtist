@@ -985,6 +985,17 @@ Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c) {
   return Failed;
 }
 
+/* This fuction creates an expression with type, but without value.
+ */
+Task Cmp_Expr_Unvalued(Expression *e, Intg type) {
+  e->type = type;
+  e->resolved = Tym_Type_Resolve_All(type);
+  e->is.value = 0;
+  e->is.typed = 1;
+  e->is.ignore = 0;
+  return Success;
+}
+
 /* DESCRIZIONE: Inizializzo la struttura expr in modo che contenga un
  *  registro locale libero. Se zero == 0, tale registro viene occupato,
  *  fino a quando non sara' "liberato" con Cmp_LReg_Free.
@@ -1769,8 +1780,8 @@ Task Cmp_String_New(Expression *e, Name *str, int free_str) {
  *  *asm_module. After the call *box will contain the pointer to the
  *  box whose suffix is 'suffix'.
  */
-Task Cmp_Procedure_Search
- (Intg procedure, Intg suffix, Box **box, Intg *prototype, Intg *asm_module) {
+Task Cmp_Procedure_Search(Intg procedure, Intg suffix,
+ Box **box, Intg *prototype, Intg *asm_module) {
   Box *b;
   Intg p, dummy;
 
@@ -1811,10 +1822,15 @@ Task Cmp_Procedure_Search
   }
 }
 
-/* DESCRIPTION: This function handles the procedures of the box corresponding
- *  to suffix. It generates the assembly code that calls the procedure.
+/* This function handles the procedures of the box corresponding to suffix.
+ * It generates the assembly code that calls the procedure.
+ * '*e' is the object passed to the box whose suffix is 'suffix'.
+ * 'fresh_object' is 1, if the box has just been created, otherwise it is 0:
+ * Example:
+ *  b = Box[ ... ] <-- just created, fresh_object = 1
+ *  a = b[ ... ]   <-- old box, fresh_object = 0
  */
-Task Cmp_Procedure(Expression *e, Intg suffix) {
+Task Cmp_Procedure(Expression *e, Intg suffix, int fresh_object) {
   Box *b;
   Intg asm_module, t;
   Intg prototype;
@@ -1839,23 +1855,25 @@ Task Cmp_Procedure(Expression *e, Intg suffix) {
       goto exit_failed;
   }
 
-  /* We pass the argument of the procedure */
-  if ( prototype != TYPE_NONE ) {
-    /* The argument must be converted first! */
-    TASK( Cmp_Expr_Expand(prototype, e) );
+  /* We pass the argument of the procedure if its size is > 0 */
+  if (Tym_Type_Size(t) > 0) {
+    if ( prototype != TYPE_NONE ) {
+      /* The argument must be converted first! */
+      TASK( Cmp_Expr_Expand(prototype, e) );
+    }
+
+    if IS_FAILED( Cmp_Expr_To_Ptr(e, CAT_GREG, (Intg) 2, 0) ) goto exit_failed;
   }
 
-  if IS_FAILED( Cmp_Expr_To_Ptr(e, CAT_GREG, (Intg) 2, 0) ) goto exit_failed;
   VM_Assemble(ASM_CALL_I, CAT_IMM, asm_module);
-  goto exit_success;
-
-exit_failed:
-  (void) Cmp_Expr_Destroy(e);
-  return Failed;
 
 exit_success:
   (void) Cmp_Expr_Destroy(e);
   return Success;
+
+exit_failed:
+  (void) Cmp_Expr_Destroy(e);
+  return Failed;
 }
 
 /*****************************************************************************/

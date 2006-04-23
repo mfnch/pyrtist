@@ -321,13 +321,9 @@ Task Tym_Def_Type(Intg *new_type,
   td->sym = s;
 
   /* I set all the remaining values of the structure s */
-  s->value.type = type;
-  s->value.resolved = Tym_Type_Resolve_All(type);
   s->symtype = VARIABLE;
-  s->value.is.value = 0;
-  s->value.is.typed = 1;
   *new_type = type;
-  return Success;
+  return Cmp_Expr_Unvalued(& s->value, type);
 }
 
 /* DESCRIPTION: Returns the symbol associated with the type 'type';

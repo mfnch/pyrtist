@@ -342,6 +342,7 @@ Expression *Cmp_Operator_Exec(Operator *opr, Expression *e1, Expression *e2);
 Expression *Cmp_Operation_Exec(Operation *opn, Expression *e1, Expression *e2);
 void Cmp_Expr_Print(FILE *out, Expression *e);
 Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c);
+Task Cmp_Expr_Unvalued(Expression *e, Intg type);
 Task Cmp_Expr_LReg(Expression *e, Intg t, int zero);
 Task Cmp_Free(Expression *expr);
 Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free);
@@ -374,7 +375,7 @@ Task Cmp_String_New(Expression *e, Name *str, int free_str);
 #define Cmp_String_New_And_Free(e, str) Cmp_String_New(e, str, 1)
 Task Cmp_Procedure_Search
  (Intg procedure, Intg suffix, Box **box, Intg *prototype, Intg *asm_module);
-Task Cmp_Procedure(Expression *e, Intg suffix);
+Task Cmp_Procedure(Expression *e, Intg suffix, int fresh_object);
 Task Cmp_Structure_Begin(void);
 Task Cmp_Structure_Add(Expression *e);
 Task Cmp_Structure_End(Expression *new_struct);
