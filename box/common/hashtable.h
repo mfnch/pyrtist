@@ -18,6 +18,7 @@
  */
 
 struct {
+  UInt key_size;
   void *key, *object;
   struct HashItem *next;
 } HashItem;

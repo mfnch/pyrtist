@@ -24,6 +24,7 @@ static Task Tmp(void);
 static Task Blt_Define_Basics(void);
 static Task Blt_Define_Math(void);
 static Task Blt_Define_Print(void);
+static Task Blt_Define_Sys(void);
 
 /* box-procedures */
 static Task Print_Char(void);
@@ -32,6 +33,7 @@ static Task Print_Real(void);
 static Task Print_Pnt(void);
 static Task Print_String(void);
 static Task Print_NewLine(void);
+static Task Exit_Int(void);
 /* Functions for conversions */
 static Task Conv_2RealNum_to_Point(void);
 static Task Int_RealNum(void);
@@ -76,6 +78,7 @@ Task Blt_Define_All(void) {
   TASK( Blt_Define_Basics() );
   TASK( Blt_Define_Math() );
   TASK( Blt_Define_Print() );
+  TASK( Blt_Define_Sys() );
   return Success;
 }
 
@@ -84,20 +87,11 @@ Task Blt_Define_All(void) {
  *     (those between intrinsic types)
  *  2) Sets the output for compiled code.
  */
-Task Builtins_Define()
-{
+Task Builtins_Define() {
   Operation *opn;
   int status;
   static UInt typl_nreg[NUM_TYPES] = REG_OCC_TYP_SIZE;
   static UInt typl_nvar[NUM_TYPES] = VAR_OCC_TYP_SIZE;
-  Name intrinsic_type[6] = {
-    {4, "Char"},
-    {3, "Int"},
-    {4, "Real"},
-    {5, "Point"},
-    {6, "Object"},
-    {4, "Void"}
-  };
 
   MSG_LOCATION("Cmp_Define_Builtins");
 
@@ -113,17 +107,17 @@ Task Builtins_Define()
   /* Definisco i tipi intrinseci */
   {
     Intg t;
-    TASK( Tym_Def_Intrinsic(& t, intrinsic_type+0, sizeof(Char)) );
+    TASK( Tym_Def_Intrinsic(& t, & NAME("Char"), sizeof(Char)) );
     assert(t == TYPE_CHAR);
-    TASK( Tym_Def_Intrinsic(& t, intrinsic_type+1, sizeof(Intg)  ) );
+    TASK( Tym_Def_Intrinsic(& t, & NAME("Int"), sizeof(Intg)  ) );
     assert(t == TYPE_INTG);
-    TASK( Tym_Def_Intrinsic(& t, intrinsic_type+2, sizeof(Real)  ) );
+    TASK( Tym_Def_Intrinsic(& t, & NAME("Real"), sizeof(Real)  ) );
     assert(t == TYPE_REAL);
-    TASK( Tym_Def_Intrinsic(& t, intrinsic_type+3, sizeof(Point) ) );
+    TASK( Tym_Def_Intrinsic(& t, & NAME("Point"), sizeof(Point) ) );
     assert(t == TYPE_POINT);
-    TASK( Tym_Def_Intrinsic(& t, intrinsic_type+4, 0 ) );
+    TASK( Tym_Def_Intrinsic(& t, & NAME("Object"), 0 ) );
     assert(t == TYPE_OBJ);
-    TASK( Tym_Def_Intrinsic(& t, intrinsic_type+5, 0 ) );
+    TASK( Tym_Def_Intrinsic(& t, & NAME("Void"), 0 ) );
     assert(t == TYPE_VOID);
   }
 
@@ -389,28 +383,15 @@ Task Builtins_Define()
 static Task Tmp(void) {
   Intg type_New, type_New2;
 
-  TASK( Tym_Def_Explicit(& type_New, & ((Name) {7, "Punto2d"})) );
+  TASK( Tym_Def_Explicit(& type_New, & NAME("Punto2d")) );
+  TASK( Tym_Def_Member(type_New, & NAME("comp_x"), TYPE_REAL) );
+  TASK( Tym_Def_Member(type_New, & NAME("comp_y"), TYPE_REAL) );
+  TASK( Tym_Def_Explicit(& type_New2, & NAME("Punto3d")) );
+  TASK( Tym_Def_Member(type_New2, & NAME("xy"), type_New) );
+  TASK( Tym_Def_Member(type_New2, & NAME("z"), TYPE_REAL) );
 
-  if IS_FAILED(
-    Tym_Def_Member(type_New, & ((Name) {6, "comp_x"}), TYPE_REAL)
-  ) return Failed;
-
-  if IS_FAILED(
-    Tym_Def_Member(type_New, & ((Name) {6, "comp_y"}), TYPE_REAL)
-  ) return Failed;
-
-  TASK( Tym_Def_Explicit(& type_New2, & ((Name) {7, "Punto3d"})) );
-
-  if IS_FAILED(
-    Tym_Def_Member(type_New2, & ((Name) {2, "xy"}), type_New)
-  ) return Failed;
-
-  if IS_FAILED(
-    Tym_Def_Member(type_New2, & ((Name) {1, "z"}), TYPE_REAL)
-  ) return Failed;
-
-  /*Tym_Box_Abstract_Print(stdout, type_new);
-  Tym_Box_Abstract_Print(stdout, type_new2);*/
+  /*Tym_Print_Structure(stdout, type_new);
+  Tym_Print_Structure(stdout, type_new2);*/
   return Success;
 }
 
@@ -464,25 +445,25 @@ static Task Blt_Define_Basics(void) {
   return Success;
 }
 
-#define DEFINE_TYPE(name, length, type) \
-  Tym_Def_Explicit_Alias(& type_##name, & ((Name) {length, #name}), type)
+#define DEFINE_TYPE(name, type) \
+  Tym_Def_Explicit_Alias(& type_##name, & NAME(#name), type)
 
 static Task Blt_Define_Math(void) {
   Intg type_Sin, type_Cos, type_Tan, type_Asin, type_Acos, type_Atan,
    type_Exp, type_Log, type_Log10, type_Sqrt, type_Ceil, type_Floor;
 
-  TASK( DEFINE_TYPE(Sin,   3, TYPE_REAL) );
-  TASK( DEFINE_TYPE(Cos,   3, TYPE_REAL) );
-  TASK( DEFINE_TYPE(Tan,   3, TYPE_REAL) );
-  TASK( DEFINE_TYPE(Asin,  4, TYPE_REAL) );
-  TASK( DEFINE_TYPE(Acos,  4, TYPE_REAL) );
-  TASK( DEFINE_TYPE(Atan,  4, TYPE_REAL) );
-  TASK( DEFINE_TYPE(Exp,   3, TYPE_REAL) );
-  TASK( DEFINE_TYPE(Log,   3, TYPE_REAL) );
-  TASK( DEFINE_TYPE(Log10, 5, TYPE_REAL) );
-  TASK( DEFINE_TYPE(Sqrt,  4, TYPE_REAL) );
-  TASK( DEFINE_TYPE(Ceil,  4, TYPE_INTG) );
-  TASK( DEFINE_TYPE(Floor, 5, TYPE_INTG) );
+  TASK( DEFINE_TYPE(Sin,   TYPE_REAL) );
+  TASK( DEFINE_TYPE(Cos,   TYPE_REAL) );
+  TASK( DEFINE_TYPE(Tan,   TYPE_REAL) );
+  TASK( DEFINE_TYPE(Asin,  TYPE_REAL) );
+  TASK( DEFINE_TYPE(Acos,  TYPE_REAL) );
+  TASK( DEFINE_TYPE(Atan,  TYPE_REAL) );
+  TASK( DEFINE_TYPE(Exp,   TYPE_REAL) );
+  TASK( DEFINE_TYPE(Log,   TYPE_REAL) );
+  TASK( DEFINE_TYPE(Log10, TYPE_REAL) );
+  TASK( DEFINE_TYPE(Sqrt,  TYPE_REAL) );
+  TASK( DEFINE_TYPE(Ceil,  TYPE_INTG) );
+  TASK( DEFINE_TYPE(Floor, TYPE_INTG) );
 
   TASK( Cmp_Def_C_Procedure(type_RealNum, type_Cos,   Cos_RealNum)   );
   TASK( Cmp_Def_C_Procedure(type_RealNum, type_Sin,   Sin_RealNum)   );
@@ -501,7 +482,7 @@ static Task Blt_Define_Math(void) {
 
 static Task Blt_Define_Print(void) {
   Intg type_Print;
-  TASK( Tym_Def_Explicit_Alias(& type_Print, & ((Name) {5, "Print"}), TYPE_VOID) );
+  TASK( Tym_Def_Explicit_Alias(& type_Print, & NAME("Print"), TYPE_VOID) );
   TASK( Cmp_Def_C_Procedure(TYPE_CHAR,   type_Print, Print_Char  ) );
   TASK( Cmp_Def_C_Procedure(TYPE_INTG,   type_Print, Print_Int   ) );
   TASK( Cmp_Def_C_Procedure(TYPE_REAL,   type_Print, Print_Real  ) );
@@ -509,6 +490,13 @@ static Task Blt_Define_Print(void) {
   TASK( Cmp_Def_C_Procedure(type_String, type_Print, Print_String) );
   TASK( Cmp_Def_C_Procedure(PROC_PAUSE,  type_Print, Print_NewLine) );
   /*Tym_Print_Procedure(stdout, type_new);*/
+  return Success;
+}
+
+static Task Blt_Define_Sys(void) {
+  Intg type_Exit;
+  TASK( Tym_Def_Explicit_Alias(& type_Exit, & NAME("Exit"), TYPE_VOID) );
+  TASK( Cmp_Def_C_Procedure(TYPE_INTG, type_Exit, Exit_Int) );
   return Success;
 }
 
@@ -523,6 +511,9 @@ static Task Print_Pnt(void) {
 }
 static Task Print_String(void) {printf("%s", BOX_VM_ARGPTR1(char)); return Success;}
 static Task Print_NewLine(void) {printf("\n"); return Success;}
+
+/* This function is not politically correct!!! */
+static Task Exit_Int(void)  {exit(BOX_VM_ARG1(Intg));}
 
 /*****************************************************************************
  *                       FUNCTIONS FOR CONVERSION                            *

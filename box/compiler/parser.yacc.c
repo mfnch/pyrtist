@@ -168,7 +168,7 @@ suffix.opt:
  *****************************************************************************/
 name.type:
   TOK_UNAME suffix.opt      { if ( Prs_Name_To_Expr(& $1, & $$, $2) ) MY_ERR }
-| TOK_UMEMBER suffix.opt    { if ( Prs_Name_To_Expr(& $1, & $$, $2) ) MY_ERR }
+| TOK_UMEMBER suffix.opt    { if ( Prs_Member_To_Expr(& $1, & $$, $2) ) MY_ERR }
  ;
 
 prim.type:
@@ -449,7 +449,7 @@ Task Prs_Def_Operator(Operator *opr,
 
   assert( (!new_e->is.typed) && (opr->can_define) && (e->is.value) );
 
-  s = Sym_New_Explicit(& new_e->value.nm, new_e->addr);
+  s = Sym_Explicit_New(& new_e->value.nm, new_e->addr);
   Cmp_Expr_Destroy(new_e);
   if (s == NULL) return Failed;
 
@@ -501,11 +501,11 @@ Task Prs_Name_To_Expr(Name *nm, Expression *e, Intg suffix) {
 
   if ( suffix < 0 ) {
     /* Non e' stata specificata la profondita' di scatola! */
-    s = Sym_Find_Explicit(nm, 0, NO_EXACT_DEPTH);
+    s = Sym_Explicit_Find(nm, 0, NO_EXACT_DEPTH);
     suffix = 0;
   } else {
     /* E' stata specificata la profondita' di scatola! */
-    s = Sym_Find_Explicit(nm, suffix, EXACT_DEPTH);
+    s = Sym_Explicit_Find(nm, suffix, EXACT_DEPTH);
   }
 
   if ( s == NULL ) {
@@ -527,6 +527,15 @@ Task Prs_Name_To_Expr(Name *nm, Expression *e, Intg suffix) {
   }
 }
 
+/* If name:suffix is the name of an already defined symbol
+ * this function puts the corresponding expression into *e, otherwise
+ * it transforms the name *nm into an untyped expression *e.
+ */
+Task Prs_Member_To_Expr(Name *nm, Expression *e, Intg suffix) {
+
+
+}
+
 /* DESCRIPTION: Every explicit symbol can be followed by a suffix,
  *  which specifies which opened box contains the symbol.
  *  For example: variable::box1:box2
@@ -540,7 +549,7 @@ Task Prs_Suffix(Intg *rs, Intg suffix, Name *nm) {
     Symbol *s;
 
     /* Cerco il simbolo a profondita' suffix o superiori */
-    s = Sym_Find_Explicit(nm, suffix, NO_EXACT_DEPTH);
+    s = Sym_Explicit_Find(nm, suffix, NO_EXACT_DEPTH);
     if ( s == NULL ) {
       MSG_ERROR( "'%s' <-- tipo astratto inesistente!",
        Name_To_Str(nm) );
@@ -640,7 +649,7 @@ Task Prs_Alias_Of_X(Expression *alias, Expression *x) {
     return Failed;
   }
 
-  s = Sym_New_Explicit(& alias->value.nm, alias->addr);
+  s = Sym_Explicit_New(& alias->value.nm, alias->addr);
   if (s == NULL) return Failed;
 
   target = & (s->value);
@@ -796,7 +805,7 @@ Task Prs_Rule_Valued_Eq_Typed(Expression *rs,
     Symbol *s;
     Expression *target;
 
-    s = Sym_New_Explicit(& valued->value.nm, valued->addr);
+    s = Sym_Explicit_New(& valued->value.nm, valued->addr);
     TASK( Cmp_Expr_Destroy(valued) );
     if (s == NULL) return Failed;
 

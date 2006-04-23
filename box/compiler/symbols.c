@@ -394,9 +394,9 @@ Task Sym_Implicit_New(Symbol **new_sym, Intg parent, Name *nm) {
   if ( s == NULL ) return Failed;
 
   /* Collego il nuovo simbolo alla lista delle variabili implicite
-    * del genitore parent (in modo da poterle eliminare quando
-    * si vuole eliminare parent).
-    */
+   * del genitore parent (in modo da poterle eliminare quando
+   * si vuole eliminare parent).
+   */
   s->brother = ps->child;
   ps->child = s;
 
@@ -422,22 +422,22 @@ static Symbol *sym_found;
 
 /**********************************[RICERCA]**********************************/
 
-/* FUNZIONE INTERNA USATA DA Sym_Find_Explicit */
-static UInt Sym__Find_Explicit(Symbol *s) {
-  MSG_LOCATION("Sym__Find_Explicit");
+/* FUNZIONE INTERNA USATA DA Sym_Explicit_Find */
+static UInt Sym__Explicit_Find(Symbol *s) {
+  MSG_LOCATION("Sym__Explicit_Find");
   return (s->symattr.is_explicit) && (s->parent.exp == sym_find_box);
 }
 
-/* FUNZIONE INTERNA USATA DA Sym_Find_Explicit */
-static UInt Sym__Find_Explicit_All(Symbol *s) {
-  MSG_LOCATION("Sym__Find_Explicit");
+/* FUNZIONE INTERNA USATA DA Sym_Explicit_Find */
+static UInt Sym__Explicit_Find_All(Symbol *s) {
+  MSG_LOCATION("Sym__Explicit_Find");
   if ( s->symattr.is_explicit ) {
     if ( sym_found == NULL ) {
       if ( s->parent.exp <= sym_find_box) sym_found = s;
       return 0;
     } else {
       if ( (s->parent.exp <= sym_find_box)
-        && (sym_found->parent.exp < s->parent.exp) )
+       && (sym_found->parent.exp < s->parent.exp) )
         sym_found = s;
       return 0;
     }
@@ -451,17 +451,17 @@ static UInt Sym__Find_Explicit_All(Symbol *s) {
  *  se box = NO_EXACT_DEPTH cerca a partire dalla scatola di profondita'
  *  depth e via via nelle scatole di profondita' superiore.
  */
-Symbol *Sym_Find_Explicit(Name *nm, Intg depth, int mode) {
-  MSG_LOCATION("Sym_Find_Explicit");
+Symbol *Sym_Explicit_Find(Name *nm, Intg depth, int mode) {
+  MSG_LOCATION("Sym_Explicit_Find");
   if ( mode == EXACT_DEPTH ) {
     sym_find_box = cmp_box_level - depth;
     assert( (sym_find_box >= 0) && (depth >= 0) );
-    return Sym_Symbol_Find(nm, Sym__Find_Explicit);
+    return Sym_Symbol_Find(nm, Sym__Explicit_Find);
 
   } else {
     sym_found = NULL;
     sym_find_box = cmp_box_level - depth;
-    (void) Sym_Symbol_Find(nm, Sym__Find_Explicit_All);
+    (void) Sym_Symbol_Find(nm, Sym__Explicit_Find_All);
     return sym_found;
   }
 }
@@ -471,16 +471,16 @@ Symbol *Sym_Find_Explicit(Name *nm, Intg depth, int mode) {
 /* DESCRIZIONE: Questa funzione definisce un nuovo simbolo di nome *nm,
  *  attribuendolo alla box di profondita' depth.
  */
-Symbol *Sym_New_Explicit(Name *nm, Intg depth) {
+Symbol *Sym_Explicit_New(Name *nm, Intg depth) {
   Intg box_lev;
   Symbol *s;
   Box *b;
 
-  MSG_LOCATION("Sym_New_Explicit");
+  MSG_LOCATION("Sym_Explicit_New");
 
   /* Controllo che non esista un simbolo omonimo gia' definito */
   assert( (depth >= 0) && (depth <= cmp_box_level) );
-  s = Sym_Find_Explicit(nm, depth, EXACT_DEPTH);
+  s = Sym_Explicit_Find(nm, depth, EXACT_DEPTH);
   if ( s != NULL ) {
     MSG_ERROR("Un simbolo con lo stesso nome esiste gia'");
     return NULL;
@@ -505,81 +505,3 @@ Symbol *Sym_New_Explicit(Name *nm, Intg depth) {
   s->symtype = VARIABLE;
   return s;
 }
-
-#if 0
-/* DESCRIZIONE: Chiamata direttamente dal parser, per cercare i simboli
- *  di "nome semplice" (quelli costituiti da sole lettere, senza prefissi
- *  come :). Simboli di questo nome sono o variabili esplicite oppure box
- *  principali (cioe' box che non sono sotto-box).
- */
-/* Questa e' usata nella prossima funzione, che e' quella da usare! */
-static UInt Sym__Find_Simple_Name(Symbol *s) {
-  MSG_LOCATION("Sym__Find_Simple_Name");
-
-  if ( s->symattr.is_explicit )
-    return 1; /* Simbolo trovato! */
-  else {
-    /* Tra i simboli impliciti, accetto solo quelli principali */
-    if ( s->parent.imp < 0 ) return 1;
-  }
-  return 0;
-}
-
-Symbol *Sym_Find_Simple_Name(Name *nm) {
-  MSG_LOCATION("Sym_Find_Simple_Name");
-  return Sym_Symbol_Find(nm, Sym__Find_Simple_Name);
-}
-
-/* DESCRIZIONE: Funzione del tipo SymbolAction, usata con Sym_Symbol_Find,
- *  all'interno di Sym_Explicit_New, per controllare che non esistano
- *  conflitti fra i nomi.
- */
-static UInt Exp_Check_Name_Conflicts(Symbol *s) {
-  MSG_LOCATION("Exp_Check_Name_Conflicts");
-
-  if ( s->symattr.is_explicit ) {
-    /* Il simbolo e' esplicito */
-    if ( s->parent.exp == cmp_current_box->ID )
-      /* Ne esiste un altro all'interno della stessa sessione: errore! */
-      return 1; /* Termino la ricerca */
-  }
-
-  return 0;     /* Faccio continuare la ricerca */
-}
-
-/* DESCRIZIONE: Definisce una variabile esplicita per la sessione corrente.
- */
-Symbol *Sym_Explicit_New(Name *nm, SymbolAction init_action)
-{
-	Symbol *s;
-
-	MSG_LOCATION("Sym_Explicit_New");
-
-	/* Controllo che non esista un simbolo omonimo gia' definito */
-	s = Sym_Symbol_Find(nm, Exp_Check_Name_Conflicts);
-	if ( s != NULL ) {
-		MSG_ERROR("Un simbolo con lo stesso nome esiste gia'");
-		return NULL;
-	}
-
-	/* Introduco il nuovo simbolo nella lista dei simboli correnti */
-	s = Sym_Symbol_New(nm);
-	if ( s == NULL ) return NULL;
-
-	/* Collego il nuovo simbolo alla lista delle variabili esplicite della
-	 * sessione corrente (in modo da eliminarle alla chiusura della sessione).
-	 */
-	s->brother = cmp_current_box->child;
-	cmp_current_box->child = s;
-
-	/* Inizializzo il simbolo */
-	s->symattr.is_explicit = 1;
-	s->child = NULL;
-	s->parent.exp = cmp_current_box->ID;
-	s->symtype = VARIABLE;
-	if ( init_action != NULL )
-		if ( init_action(s) == 2 ) return NULL;
-
-	return s;
-}
-#endif

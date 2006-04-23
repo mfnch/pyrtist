@@ -298,7 +298,7 @@ Task Tym_Def_Type(Intg *new_type,
 
   /* First of all I create the symbol with name *nm */
   if ( parent == TYPE_NONE ) {
-    s = Sym_New_Explicit(nm, 0);
+    s = Sym_Explicit_New(nm, 0);
     if ( s == NULL ) return Failed;
 
   } else {
@@ -370,7 +370,7 @@ Task Tym_Def_Member(Intg parent, Name *nm, Intg type) {
 
 /* DESCRIPTION: Deletes the type 'type' and all its corresponding box.
  */
-Task Tym_Box_Abstract_Delete(Intg type) {
+Task Tym_Undef_Type(Intg type) {
   Symbol *s, *ps;
   TypeDesc *td, *ptd;
 
@@ -393,7 +393,7 @@ Task Tym_Box_Abstract_Delete(Intg type) {
 /* DESCRIPTION: This function is written for debugging: it prints the structure
  *  of the abstract box 'type'.
  */
-void Tym_Box_Abstract_Print(FILE *stream, Intg type) {
+void Tym_Print_Structure(FILE *stream, Intg type) {
   Symbol *s, *ps;
   TypeDesc *td, *ptd;
 
@@ -415,7 +415,7 @@ void Tym_Box_Abstract_Print(FILE *stream, Intg type) {
        s->value.addr, name, Tym_Type_Name(s->value.type), td->size);
       free(name);
     } else {
-      fprintf(stream, "Problem in Tym_Box_Abstract_Print!\n");
+      fprintf(stream, "Problem in Tym_Print_Structure!\n");
     }
   }
 }

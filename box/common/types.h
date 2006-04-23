@@ -23,6 +23,7 @@ typedef struct {
   Real x, y;
 } Point;
 
+#define NAME(str) ((Name) {sizeof(str)-1, str})
 typedef struct {
   UInt length;
   char *text;

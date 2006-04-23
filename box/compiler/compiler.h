@@ -291,8 +291,8 @@ Task Tym_Def_Type(Intg *new_type,
  Intg parent, Name *nm, Intg size, Intg aliased_type);
 Symbol *Tym_Symbol_Of_Type(Intg type);
 Task Tym_Def_Member(Intg parent, Name *nm, Intg type);
-Task Tym_Box_Abstract_Delete(Intg type);
-void Tym_Box_Abstract_Print(FILE *stream, Intg type);
+Task Tym_Undef_Type(Intg type);
+void Tym_Print_Structure(FILE *stream, Intg type);
 Intg Tym_Def_Array_Of(Intg num, Intg type);
 Intg Tym_Def_Pointer_To(Intg type);
 Intg Tym_Def_Alias_Of(Name *nm, Intg type);
@@ -332,8 +332,8 @@ Symbol *Sym_Implicit_Find(Intg parent, Name *nm);
 Task Sym_Implicit_New(Symbol **new_sym, Intg parent, Name *nm);
 #define EXACT_DEPTH 0
 #define NO_EXACT_DEPTH 1
-Symbol *Sym_Find_Explicit(Name *nm, Intg depth, int mode);
-Symbol *Sym_New_Explicit(Name *nm, Intg depth);
+Symbol *Sym_Explicit_Find(Name *nm, Intg depth, int mode);
+Symbol *Sym_Explicit_New(Name *nm, Intg depth);
 
 /* Procedure definite in 'compiler.c'*/
 Operator *Cmp_Operator_New(char *token);
