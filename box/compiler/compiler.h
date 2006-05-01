@@ -37,7 +37,7 @@ struct Operation {
     unsigned int assignment  : 1; /* E' una operazione di assegnazione? */
     unsigned int link        : 1; /* E' una operazione di tipo "link"? */
   } is;
-  Intg type1, type2, type_rs;	/* Tipi dei due argomenti */
+  Intg type1, type2, type_rs;   /* Tipi dei due argomenti */
   union {
     UInt asm_code;  /* Codice assembly dell'istruzione associata */
     Intg module;    /* Modulo caricato nella VM per eseguire l'operazione */
@@ -180,9 +180,11 @@ extern char *tym_special_name[PROC_SPECIAL_NUM];
 /* Struttura usata per descrivere i tipi di dati */
 typedef struct {
   TypeOfType tot;
+  Intg size;       /* Spazio occupato in memoria dal tipo */
+  char *name;      /* Nome del tipo */
+
   Intg parent;     /* Specie a cui appartiene il tipo */
   Intg greater;    /* Tipo in cui puo' essere convertito */
-  Intg size;       /* Spazio occupato in memoria dal tipo */
   Intg target;     /* Per costruire puntatori a target, array di target, etc */
   Intg procedure;  /* Prima procedura corrispondente al tipo */
   union{
@@ -192,7 +194,6 @@ typedef struct {
     Intg sp_size;  /* Numero di elementi della specie */
     Symbol *sym;   /* Simbolo associato al tipo (NULL = non ce n'e'!)*/
   };
-  char *name;      /* Nome del tipo */
 } TypeDesc;
 
 /* Definisco il tipo SymbolAction. Se dichiaro:
@@ -373,9 +374,10 @@ Intg Cmp_Imm_Add(Intg type, void *data, Intg size);
 void Cmp_Imm_Destroy(void);
 Task Cmp_String_New(Expression *e, Name *str, int free_str);
 #define Cmp_String_New_And_Free(e, str) Cmp_String_New(e, str, 1)
-Task Cmp_Procedure_Search
- (Intg procedure, Intg suffix, Box **box, Intg *prototype, Intg *asm_module);
-Task Cmp_Procedure(Expression *e, Intg suffix, int fresh_object);
+Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
+ Box **box, Intg *prototype, Intg *asm_module, int auto_define);
+Task Cmp_Procedure(int *found, Expression *e, Intg suffix,
+ int fresh_object, int auto_define);
 Task Cmp_Structure_Begin(void);
 Task Cmp_Structure_Add(Expression *e);
 Task Cmp_Structure_End(Expression *new_struct);

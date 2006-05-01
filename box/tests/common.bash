@@ -53,7 +53,12 @@ function check_failed {
 function check_noerr {
   local ne=$(grep Err $BOXOUT | wc -l)
   NUM_ERRORS=$[ $NUM_ERRORS + $ne ]
-  if [ $ne -lt 1 ]; then
+  if [ "$1" == "" ]; then
+    EXIT_STATUS=0
+  else
+    EXIT_STATUS=$1
+  fi
+  if [ $ne -lt 1 -a $EXIT_STATUS == 0 ]; then
     check_successful "Compilation OK."
   else
     err_report

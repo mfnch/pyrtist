@@ -51,6 +51,7 @@ extern UInt tok_linenum;
 #define BOX_OPEN(expr) \
   if IS_FAILED( Cmp_Box_Instance_Begin( expr ) ) \
     {parser_attr.no_syntax_err = 1; parser_attr.old_box = 0; YYERROR;}
+  //if IS_FAILED( Prs_Procedure_Special(NULL, TYPE_OPEN, 0, 0) ) MY_ERR
 
 #define BOX_CLOSE(expr) \
   if IS_FAILED( Cmp_Box_Instance_End( expr ) ) \
@@ -141,7 +142,7 @@ extern UInt tok_linenum;
  *****************************************************************************/
 sep:
    ','                 { }
- | ';'                 { if IS_FAILED( Prs_Procedure_Special(TYPE_PAUSE, 0, 0) ) MY_ERR}
+ | ';'                 { if IS_FAILED( Prs_Procedure_Special(NULL, TYPE_PAUSE, 0, 1) ) MY_ERR }
  | TOK_NEWLINE         { VM_Assemble(ASM_LINE_Iimm, CAT_IMM, ++tok_linenum); }
  ;
 
@@ -267,8 +268,8 @@ expr:
     e_box = b->value;
     result = Cmp_Member_Get(& e_box, & $1);
     if ( result == NULL ) {
-        parser_attr.no_syntax_err = 1;
-        YYERROR;
+      parser_attr.no_syntax_err = 1;
+      YYERROR;
     }
     result->is.release = 0;
     $$ = *result;
@@ -343,7 +344,7 @@ type.statement:
  *               DEFINIZIONE DELL'ESPRESSIONE COME ISTRUZIONE                 *
  ******************************************************************************/
 expr.statement:
-   expr { if IS_FAILED( Cmp_Procedure( & $1, -1, 0) ) MY_ERR }
+   expr { if IS_FAILED( Cmp_Procedure( NULL, & $1, -1, 0, /* auto_define */ 1) ) MY_ERR }
 ;
 
 /******************************************************************************/
@@ -684,7 +685,7 @@ Task Prs_Alias_Of_X(Expression *alias, Expression *x) {
   }                                          \
   assert(! t->is.value)
 
-/* DESCRIPTION: This function creates the new specie of types (first < second).
+/* This function creates the new specie of types (first < second).
  */
 Task Prs_Species_New(
  Expression *species, Expression *first, Expression *second) {
@@ -702,7 +703,7 @@ Task Prs_Species_New(
   return Success;
 }
 
-/* DESCRIPTION: This function adds a new type to an already existing species.
+/* This function adds a new type to an already existing species.
  */
 Task Prs_Species_Add(Expression *species, Expression *old, Expression *type) {
   Intg old_species;
@@ -716,8 +717,7 @@ Task Prs_Species_Add(Expression *species, Expression *old, Expression *type) {
   return Success;
 }
 
-/* DESCRIPTION: This function creates the new structure
- *  of types (first, second).
+/* This function creates the new structure of types (first, second).
  */
 Task Prs_Struct_New(
  Expression *strc, Expression *first, Expression *second) {
@@ -735,7 +735,7 @@ Task Prs_Struct_New(
   return Success;
 }
 
-/* DESCRIPTION: This function adds a new type to an already existing structure.
+/* This function adds a new type to an already existing structure.
  */
 Task Prs_Struct_Add(Expression *strc, Expression *old, Expression *type) {
   Intg old_strc;
@@ -749,17 +749,18 @@ Task Prs_Struct_Add(Expression *strc, Expression *old, Expression *type) {
   return Success;
 }
 
-/*
+/* This function calls a procedure without value like (;), (<) or (>).
  */
-Task Prs_Procedure_Special(int type, int fresh_object, int ignore_not_found) {
+Task Prs_Procedure_Special(int *found, int type,
+ int fresh_object, int auto_define) {
   Expression e;
-  Task t;
-  TASK( Cmp_Expr_Unvalued(& e, TYPE_PAUSE) );
-  t = Cmp_Procedure(& e, 0, fresh_object);
-  return ignore_not_found ? Success : t;
+  int dummy = 0;
+  if ( found == NULL ) found = & dummy;
+  TASK( Cmp_Expr_Unvalued(& e, type) );
+  return Cmp_Procedure(found, & e, 0, fresh_object, auto_define);
 }
 
-/* DESCRIPTION: This function handles the rule: Type = Type
+/* This function handles the rule: Type = Type
  */
 Task Prs_Rule_Typed_Eq_Typed(Expression *rs,
  Expression *typed1, Expression *typed2) {

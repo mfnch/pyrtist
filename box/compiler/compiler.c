@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2005 Matteo Franchin
+ * Copyright (C) 2006 Matteo Franchin
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1771,21 +1771,30 @@ Task Cmp_String_New(Expression *e, Name *str, int free_str) {
  * The following functions are needed to compile procedures.                 *
  *****************************************************************************/
 
-/* DESCRIPTION: This function is an interface for the function
- *  Tym_Search_Procedure. In fact the purpose of the first is very similar
- *  to the purpose of the second: the function searches the procedure
- *  of type 'procedure' which belong to the opened box, whose suffix
- *  descriptor is 'suffix'. If a suitable procedure is found, its actual
- *  type is assigned to *prototype and its module number is put into
- *  *asm_module. After the call *box will contain the pointer to the
- *  box whose suffix is 'suffix'.
+/* This function is an interface for the function Tym_Search_Procedure.
+ * In fact the purpose of the first is very similar to the purpose
+ * of the second: the function searches the procedure of type 'procedure'
+ * which belongs to the opened box, whose suffix descriptor is 'suffix'.
+ * If a suitable procedure is found, its actual type is assigned
+ * to *prototype and its module number is put into *asm_module.
+ * If the searched procedure is not found, the behaviour will depend
+ * on the argument 'auto_define': if it is = 1, then the procedure will
+ * be added, marked as undefined and returned. If it is = 0, then
+ * the function will exit...
+ * NOTE: After the call *box will contain the pointer to the box
+ * whose suffix is 'suffix'.
+ * NOTE 2: This function returns Success, when no fatal errors occurred,
+ *  and can return Success even if the procedure was not found.
+ *  To understand if a procedure was actually found look at the value
+ *  of *found.
  */
-Task Cmp_Procedure_Search(Intg procedure, Intg suffix,
- Box **box, Intg *prototype, Intg *asm_module) {
+Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
+ Box **box, Intg *prototype, Intg *asm_module, int auto_define) {
   Box *b;
   Intg p, dummy;
 
-  if ( prototype == NULL ) prototype = & dummy;
+  *found = 0;
+  if ( prototype == NULL ) prototype = & dummy; /* See later! */
 
   /* Now we use suffix to identify the box, which is the parent
    * of the procedure
@@ -1804,11 +1813,14 @@ Task Cmp_Procedure_Search(Intg procedure, Intg suffix,
    * and we mark it as "undefined"
    */
   if ( p == TYPE_NONE ) {
+    if (! auto_define) return Success;
+
     *prototype = TYPE_NONE;
     *asm_module = VM_Module_Next();
     p = Tym_Def_Procedure(procedure, b->type, *asm_module);
     if ( p == TYPE_NONE ) return Failed;
     assert( *asm_module == VM_Module_Undefined(Tym_Type_Name(p)) );
+    *found = 1;
     return Success;
 
   } else {
@@ -1818,6 +1830,7 @@ Task Cmp_Procedure_Search(Intg procedure, Intg suffix,
     if ( td == NULL ) return Failed;
     assert(td->tot == TOT_PROCEDURE);
     *asm_module = td->asm_mod;
+    *found = 1;
     return Success;
   }
 }
@@ -1829,12 +1842,21 @@ Task Cmp_Procedure_Search(Intg procedure, Intg suffix,
  * Example:
  *  b = Box[ ... ] <-- just created, fresh_object = 1
  *  a = b[ ... ]   <-- old box, fresh_object = 0
+ * 'auto_define' allows the automatic definition of non found procedures
+ * (the definition should then be provided by the user later in the code).
+ * The function returns Success, even if the procedure is not found:
+ * check the content of *found for this purpose.
  */
-Task Cmp_Procedure(Expression *e, Intg suffix, int fresh_object) {
+Task Cmp_Procedure(int *found, Expression *e, Intg suffix,
+ int fresh_object, int auto_define) {
   Box *b;
   Intg asm_module, t;
   Intg prototype;
+  int dummy = 0;
+
   MSG_LOCATION("Cmp_Procedure");
+
+  if ( found == NULL ) found = & dummy;
 
   /* First of all we check the attributes of the expression *e */
   if ( e->is.ignore ) goto exit_success;
@@ -1845,8 +1867,13 @@ Task Cmp_Procedure(Expression *e, Intg suffix, int fresh_object) {
   t = Tym_Type_Resolve_Alias(e->type);
   if ( t == TYPE_VOID ) goto exit_success;
 
-  if IS_FAILED( Cmp_Procedure_Search
-   (e->type, suffix, & b, & prototype, & asm_module) ) goto exit_failed;
+  if IS_FAILED(
+      Cmp_Procedure_Search(
+        found, e->type, suffix, & b, & prototype, & asm_module, auto_define
+      )
+    ) goto exit_failed;
+
+  if ( ! found ) goto exit_success;
 
   /* Now we compile the procedure */
   /* We pass the box which is the parent of the procedure */
@@ -1859,7 +1886,7 @@ Task Cmp_Procedure(Expression *e, Intg suffix, int fresh_object) {
   if (Tym_Type_Size(t) > 0) {
     if ( prototype != TYPE_NONE ) {
       /* The argument must be converted first! */
-      TASK( Cmp_Expr_Expand(prototype, e) );
+      if IS_FAILED( Cmp_Expr_Expand(prototype, e) ) goto exit_failed;
     }
 
     if IS_FAILED( Cmp_Expr_To_Ptr(e, CAT_GREG, (Intg) 2, 0) ) goto exit_failed;

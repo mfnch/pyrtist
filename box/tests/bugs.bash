@@ -16,5 +16,13 @@ Print[ pi = Atan[1]*4, pi; ]
 EOF
 check_noerr
 
+#------------------------------------------------------------------------------
+test_next
+echo "Bug 2: The program \"Print[;]\\n\" gives a segmentation fault with option -o"
+$BOX -o x << EOF  >$BOXOUT 2>&1
+Print[ ; ]
+EOF
+check_noerr $?
+
 echo ">>"
 check_final

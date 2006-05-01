@@ -13,7 +13,8 @@ Task Prs_Species_New(Expression *species, Expression *first, Expression *second)
 Task Prs_Species_Add(Expression *species, Expression *old, Expression *type);
 Task Prs_Struct_New(Expression *strc, Expression *first, Expression *second);
 Task Prs_Struct_Add(Expression *strc, Expression *old, Expression *type);
-Task Prs_Procedure_Special(int type, int fresh_object, int ignore_not_found);
+Task Prs_Procedure_Special(int *found, int type,
+ int fresh_object, int auto_define);
 Task Prs_Rule_Typed_Eq_Typed(Expression *rs, Expression *typed1, Expression *typed2);
 Task Prs_Rule_Valued_Eq_Typed(Expression *rs,
  Expression *valued, Expression *typed);
