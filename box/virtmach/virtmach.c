@@ -458,6 +458,7 @@ static void VM__D_CALL(char **iarg) {
 
   assert(na <= 2);
 
+  *iarg = iarg_str[0];
   if ( (na == 1) && ((vmcur->arg_type & 3) == CAT_IMM) ) {
     UInt iat = vmcur->idesc->t_id;
     Intg m_num;
@@ -484,10 +485,10 @@ static void VM__D_CALL(char **iarg) {
         m_name = Str_Cut(m->name, 40, 85);
         sprintf(iarg_str[0], SIntg"('%.40s')", m_num, m_name);
         free(m_name);
+        return;
       }
 
     }
-    return;
 
   } else {
     VM__D_GLPI_GLPI(iarg);
