@@ -17,32 +17,61 @@
  * MA 02110-1301, USA.
  */
 
-struct {
-  UInt key_size;
+typedef unsigned int (*HashFunction)(void *key, unsigned int key_size,
+ unsigned int ht_size);
+typedef int (*HashComparison)(void *key1, void *key2,
+ unsigned int size1, unsigned int size2);
+
+typedef struct ht {
+  struct ht *next;
   void *key, *object;
-  struct HashItem *next;
+  unsigned int key_size, object_size;
 } HashItem;
 
-typedef struct HashItem HashItem;
-
-/* An hash-table is simply a collection of n lists. Let's call them "branches".
- * n is setted up with the function 'Hash_New', which creates the hash-table.
- * The user can then decide to add a new element to a particular branch,
- * using the function 'Hash_Insert'. The user can then search elements inside
- * a given branch, with the function 'Hash_Find'. This function implements
- * the usual stupid algorithm to find the element: it will run through all
- * the elements of the branch, until the right one is reached.
- * This formalism give a way to store elements and search them in a fast way.
- * The only thing to do is to define a function which returns a branch,
- * for every element given. For this purpose, a generic function is given
- * (Hash_Key), but the user can use his own better function.
- */
 typedef struct {
-  Array *data;
-} HashTable;
+  int num_entries;
+  /* function to get the hash from the key */
+  HashFunction hash;
+  /* function to compare two keys */
+  HashComparison cmp;
+  HashItem **item;
+} Hashtable;
 
-typedef struct {
-  int size;
-  void *data;
-  int (*compare)(HashKey *o1, HashKey *o2);
-} HashKey;
+unsigned int default_hash(void *key, unsigned int key_size,
+ unsigned int ht_size);
+int default_cmp(void *key1, void *key2, unsigned int size1, unsigned int size2);
+int default_action(HashItem *hi);
+Hashtable *hashtable_new(unsigned int num_entries, HashFunction hash,
+ HashComparison cmp);
+int hashtable_add(Hashtable *ht, unsigned int branch, void *key,
+ unsigned int key_size, void *object, unsigned int object_size);
+int hashtable_iter(Hashtable *ht, int branch, void *key, unsigned int key_size,
+ HashItem **result, int (*action)(HashItem *));
+int hashtable_iter2(Hashtable *ht, int branch, int (*action)(HashItem *));
+void hashtable_destroy(Hashtable *ht);
+void hashtable_statistics(Hashtable *ht, FILE *out);
+
+#define hashtable(num_entries) \
+  hashtable_new(num_entries, (HashFunction) NULL, (HashComparison) NULL)
+
+#define hashtable_insert(ht, key, key_size) \
+ hashtable_add( \
+    ht, \
+    ht->hash(key, key_size, ht->num_entries), \
+    key, key_size, \
+    (void *) NULL, 0)
+
+#define hashtable_insert_obj(ht, key, key_size, object, object_size) \
+ hashtable_add( \
+    ht, \
+    ht->hash(key, key_size, ht->num_entries), \
+    key, key_size, \
+    object, object_size)
+
+#define hashtable_find(ht, key, key_size, item) \
+  hashtable_iter( \
+    ht, \
+    ht->hash(key, key_size, ht->num_entries), \
+    key, key_size, \
+    item, \
+    default_action)

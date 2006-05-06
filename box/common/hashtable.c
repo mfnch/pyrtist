@@ -17,214 +17,226 @@
  * MA 02110-1301, USA.
  */
 
-/*
- * This file contains all the functions required to handle hash-tables
- */
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 
 /* #define DEBUG */
 
-/*#include <string.h>*/
+#include "hashtable.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <assert.h>
-
-#include "types.h"
-#include "messages.h"
-#include "defaults.h"
-#include "str.h"
-#include "array.h"
-#include "virtmach.h"
-#include "compiler.h"
-
-
-/* Variabili interne */
-static Symbol *hashtable[SYM_HASHSIZE];
-
-/* Funzioni statiche definite in questo file: */
-static UInt Imp_Check_Name_Conflicts(Symbol *s);
-
-/******************************************************************************
- *   FUNZIONI ELEMENTARI DI GESTIONE DEI SIMBOLI (CREAZIONE ED ELEMINAZIONE)  *
- ******************************************************************************
- * These functions perform the basic operations with the hash-table:
- * create, destroy and find its items.
- */
-
-/* DESCRIZIONE: Funzione che associa ad ogni nome un intero in modo
- *  "abbastanza casuale". Serve per trovare velocemente le variabili
- *  accedendo alla tavola hashtable, invece di scorrere tutta la lista
- *  delle variabili definite.
- */
-UInt Sym__Hash(char *name, UInt leng)
-{
-  register UInt i, hashval;
-
-  MSG_LOCATION("Sym__Hash");
-
-  hashval = 0;
-  for(i = 0; i<leng; i++)
-    hashval = *(name++) + SYM_PARAMETER*hashval;
-
-  return (hashval % SYM_HASHSIZE);
-}
-
-
-int main(void) {
-  HashTable *ht;
-  TASK( Hash_New(ht, 100) );
-  TASK( Hash_Insert(ht, Hash_Key("matteo", 6), NULL) );
-  Hash_Key
-  return 0;
-}
-
-
-
-UInt Hash_Key(void *key_data, UInt key_size, UInt table_size) {
-
-}
-
-/* This function creates a new hash-table.
- */
-HashTable *Hash_New(unsigned int table_size) {
-
-}
-
-Task Hash_Destroy(HashTable *ht) {
-}
-
-/*
- */
-Task Hash_Insert(HashTable *ht, int branch, HashKey *hk, void *object) {
-
-}
-
-Task Hash_Remove(HashTable *ht) {
-
-}
-
-Task Hash_Run_Through(HashTable *ht) {
-}
-
-Task Hash_Diagnostics(HashTable *ht) {
-}
-
-/* Search inside the hash-table ht, the object corresponding to the key '*k'.
- * If the object is found, its pointer is stored inside '**object' and 'Success'
- * is returned. If the object is not found the function returns 'Failed'.
- */
-Task Hash_Find(HashTable *ht, void **object, Key *k) {
-  Symbol *s;
-
-  MSG_LOCATION("Hash_Find");
-
-  for ( s = hashtable[Sym__Hash(nm->text, nm->length)];
-    s != (Symbol *) NULL; s = s->next ) {
-
-    if IS_SUCCESSFUL( Str_Eq2(nm->text, nm->length, s->name, s->leng) ) {
-      switch ( action(s) ) {
-      case 0:
-        break;
-      case 1:
-        return s; break;
-      default:
-        return (Symbol *) NULL;
-      }
-    }
+static void *xmalloc(size_t size) {
+  void *p = malloc(size);
+  if ( p == NULL ) {
+    fprintf(stderr, "Fatal error: malloc failed!\n");
+    exit(EXIT_FAILURE);
   }
-  return (Symbol *) NULL;
+  return p;
 }
 
-/* DESCRIZIONE: Stampa su stream i livelli di occupazione della hash-table.
- * NOTA: Serve per il debug.
+/* Generic hash-function (invented by me: could be bad!) */
+unsigned int default_hash(void *key, unsigned int key_size,
+ unsigned int ht_size) {
+  unsigned long h = 0;
+  unsigned char *c = (unsigned char *) key;
+  int i;
+
+  for(i = 0; i < key_size; i++)
+    h = ( h << 3 ) + *c++;
+
+  return h % ht_size;
+}
+
+/* Generic comparison function */
+int default_cmp(void *key1, void *key2, unsigned int size1, unsigned int size2)
+{
+  if (size1 != size2)
+    return 0;
+  else {
+    char *k1 = (char *) key1, *k2 = (char *) key2; /* NOTE: Non optimal!!! */
+    int i;
+    for(i = 0; i < size1; i++)
+      if ( *k1++ != *k2++ ) return 0;
+    return 1;
+  }
+}
+
+int default_action(HashItem *hi) {return 1;}
+
+/* Create a new hashtable
  */
+Hashtable *hashtable_new(
+ unsigned int num_entries,
+ HashFunction hash,
+ HashComparison cmp)
+{
+  Hashtable *ht;
+  HashItem **hi;
+  int i;
+
+  assert(num_entries > 0);
+  ht = (Hashtable *) xmalloc(sizeof(Hashtable));
+  hi = (HashItem **) xmalloc(sizeof(HashItem)*num_entries);
+
+  for(i = 0; i < num_entries; i++) hi[i] = (HashItem *) NULL;
+  ht->num_entries = num_entries;
+  ht->item = hi;
+
+  if ( hash == (HashFunction) NULL )
+    ht->hash = default_hash;
+  else
+    ht->hash = hash;
+
+  if ( cmp == (HashComparison) NULL )
+    ht->cmp = default_cmp;
+  else
+    ht->cmp = cmp;
+
+  return ht;
+}
+
+void hashtable_destroy(Hashtable *ht) {
+  int i, branch;
+  HashItem *hi, *next;
+
+  /* First we deallocate all the HashItem-s */
+  for(branch = 0; i < ht->num_entries; i++)
+    for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = next) {
+      next = hi->next;
+      free(hi);
+    }
+
+  /* Now we deallocate the table of branches */
+  free(ht->item);
+  /* And at the end we free the main Hashtable structure */
+  free(ht);
+}
+
+/* Add a new element to the branch number 'branch' of the hashtable 'ht'.
+ * This new element will have the attributes: 'key' and 'object'.
+ * These object will only be referenced by the hashtable (not copied),
+ * so you should allocate/free by yourself if you need to do so.
+ */
+int hashtable_add(
+ Hashtable *ht,
+ unsigned int branch,
+ void *key,
+ unsigned int key_size,
+ void *object,
+ unsigned int object_size)
+{
+  HashItem *hi;
+  assert(branch < ht->num_entries);
+  hi = (HashItem *) xmalloc(sizeof(HashItem));
+  hi->key = key;
+  hi->object = object;
+  hi->key_size = key_size;
+  hi->object_size = object_size;
+
+  /* Add the new item to the list */
+  hi->next = ht->item[branch];
+  ht->item[branch] = hi;
 #ifdef DEBUG
-void Sym_Symbol_Diagnostic(FILE *stream)
-{
-  UInt i;
-  Symbol *s;
-
-  fprintf(stream, "Stato di riempimento della hash-table:\n");
-  for(i=0; i<SYM_HASHSIZE; i++) {
-    UInt j = 0;
-
-    for ( s = hashtable[i]; s != (Symbol *) NULL; s = s->next )
-      ++j;
-
-    if ( (j % 5) == 4 )
-      fprintf(stream, SUInt ":" SUInt "\t", i, j);
-    else
-      fprintf(stream, SUInt ":" SUInt "\n", i, j);
-  }
-}
+  fprintf(stderr, "Adding item to branch %d\n", branch);
 #endif
-
-/* DESCRIZIONE: Inserisce un nuovo simbolo nella tavola dei simboli correnti,
- *  senza preoccuparsi della presenza di simboli dello stesso tipo.
- *  Restituisce il puntatore al descrittore del simbolo o NULL in caso di errore.
- */
-Symbol *Sym_Symbol_New(Name *nm)
-{
-  register Symbol *s, *t;
-  UInt hashval;
-
-  MSG_LOCATION("Sym_Symbol_New");
-
-  s = (Symbol *) malloc(sizeof(Symbol));
-  if ( s == NULL ) {
-    MSG_ERROR("Memoria esaurita");
-    return (Symbol *) NULL;
-  }
-
-  s->name = Str_Dup(nm->text, nm->length);
-  if ( s->name == NULL ) {
-      MSG_ERROR("Memoria esaurita");
-      free(s); return (Symbol *) NULL;
-  }
-
-  hashval = Sym__Hash(s->name, s->leng = nm->length);
-
-  t = hashtable[hashval];
-  s->previous = NULL;
-  s->next = t;
-  if (t != NULL) t->previous = s;
-  hashtable[hashval] = s;
-
-/*#ifdef DEBUG
-  Sym_Symbol_Diagnostic(stderr);
-  #endif*/
-
-  return s;
+  return 1;
 }
 
-/* DESCRIZIONE: Elimina il simbolo s dalla lista dei simboli correnti.
- * NOTA: Se s = NULL, esce senza far niente.
+/* Iterate over one or all the branches of an hashtable 'ht':
+ * if 'branch < 0' returns 0, otherwise iterate over
+ * the branch number 'branch'. For every iteration the function cmp
+ * will be used to determine if the current element is equal to 'item'.
+ * For every element which matches, the function 'action' will be called.
+ * If this function returns 0 the iteration will continue, if it returns 0,
+ * then the iteration will end and the function will return the current
+ * element inside *result.
+ * RETURN VALUE: this function returns 1 if the item has been succesfully found
+ *  ('action' returned with 1), 0 otherwise.
  */
-void Sym_Symbol_Delete(Symbol *s)
+int hashtable_iter(
+ Hashtable *ht,
+ int branch,
+ void *key,
+ unsigned int key_size,
+ HashItem **result,
+ int (*action)(HashItem *))
 {
-  MSG_LOCATION("Sym_Symbol_Delete");
-
-  if ( s == NULL ) return;
-
-  if ( s->previous == NULL ) {
-    if ( s->next == NULL ) {
-      hashtable[Sym__Hash(s->name, s->leng)] = NULL;
-      free(s->name); free(s); return;
-    } else {
-      hashtable[Sym__Hash(s->name, s->leng)] = s->next;
-      (s->next)->previous = NULL;
-      free(s->name); free(s); return;
-    }
+  if ( branch < 0 ) {
+    return 0;
 
   } else {
-    if ( s->next == NULL ) {
-      (s->previous)->next = NULL;
-      free(s->name); free(s); return;
-    } else {
-      (s->previous)->next = s->next;
-      (s->next)->previous = s->previous;
-      free(s->name); free(s); return;
-    }
+    HashItem *hi;
+    for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = hi->next)
+      if ( ht->cmp(hi->key, key, hi->key_size, key_size) ) {
+        if ( action(hi) ) {
+          *result = hi;
+          return 1;
+        }
+      }
+    return 0;
   }
 }
+
+/* Iterate over one or all the branches of an hashtable 'ht':
+ * if 'branch < 0' iterate over all the branches, otherwise iterate over
+ * the branch number 'branch'.
+ * For every element encountered, the function 'action' will be called.
+ * If this function returns 0 the iteration will continue, if it returns 0,
+ * then the iteration will end.
+ * RETURN VALUE: this function returns 1 if the item has been succesfully found
+ *  ('action' returned with 1), 0 otherwise.
+ */
+int hashtable_iter2(Hashtable *ht, int branch, int (*action)(HashItem *)) {
+  if ( branch < 0 ) {
+    int i;
+    for(i = 0; i < ht->num_entries; i++)
+      if ( hashtable_iter2(ht, i, action) ) return 1;
+    return 0;
+
+  } else {
+    HashItem *hi;
+    for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = hi->next)
+      if ( action(hi) ) return 1;
+    return 0;
+  }
+}
+
+static int branch_size;
+
+int count_action(HashItem *hi) {++branch_size; return 0;}
+
+void hashtable_statistics(Hashtable *ht, FILE *out) {
+  int i;
+  HashItem *hi;
+  fprintf(out, "--------------------\n");
+  fprintf(out, "HASHTABLE STATISTICS:\n");
+  fprintf(out, "number of branches %d\n", ht->num_entries);
+  fprintf(out, "occupation status\n");
+  for(i = 0; i < ht->num_entries; i++) {
+    branch_size = 0;
+    (void) hashtable_iter2(ht, i, count_action);
+    fprintf(out, "branch %d: %d\n", i, branch_size);
+  }
+  fprintf(out, "--------------------\n");
+}
+
+/******************************************************************************/
+
+#if 0
+/* Test */
+int main(void) {
+  Hashtable *ht;
+  HashItem *hi;
+
+  ht = hashtable_new(1000, (HashFunction) NULL, (HashComparison) NULL);
+  (void) hashtable_insert(ht, "Ciao", NULL);
+  (void) hashtable_insert(ht, "Matteo", NULL);
+  (void) hashtable_insert(ht, "Franchin", NULL);
+  if ( hashtable_find(ht, "Matteo", & hi) ) {
+    printf("Item found\n");
+  } else {
+    printf("Item not found\n");
+  }
+  exit(EXIT_SUCCESS);
+}
+#endif
