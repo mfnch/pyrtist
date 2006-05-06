@@ -173,5 +173,5 @@ clean:
 package: clean
 	D=$$(date +"%d%b%Y") && cd .. && tar cjvf box_$$D.tar.bz2 box/*
 
-test:
+test: box
 	cd tests && bash scope.bash && bash structure.bash && bash bugs.bash

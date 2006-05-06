@@ -49,6 +49,39 @@
 /* "Collezione" di tutti gli operatori */
 struct cmp_opr_struct cmp_opr;
 
+/* Destinazione attuale del codice compilato dal compilatore */
+AsmOut *cmp_curr_output;
+
+/******************************************************************************/
+
+/* Gets ready to start the compilation */
+Task Cmp_Init(void) {
+  static UInt typl_nreg[NUM_TYPES] = REG_OCC_TYP_SIZE;
+  static UInt typl_nvar[NUM_TYPES] = VAR_OCC_TYP_SIZE;
+
+  /* Initialization of the code which writes the bytecode program for the VM */
+
+  /* Initialization of the lists which hold the occupation status
+   * for registers and variables.
+   */
+  TASK( Reg_Init(typl_nreg) );
+  TASK( Var_Init(typl_nvar) );
+
+  /* Sets the output for the compiled code */
+  cmp_curr_output = VM_Asm_Out_New(-1);
+  TASK( VM_Asm_Out_Set(cmp_curr_output) );
+  TASK( Cmp_Box_Instance_Begin( NULL ) );
+
+  /* Inizializzo le routine che servono per la compilazione */
+  TASK( Builtins_Define() );
+  return Success;
+}
+
+Task Cmp_Finish(void) {
+  TASK( Cmp_Box_Instance_End( NULL ) );
+  return Success;
+}
+
 /******************************************************************************/
 
 /* DESCRIZIONE: Crea un nuovo operatore.
@@ -333,7 +366,7 @@ Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn) {
       TASK( Cmp_Expr_To_LReg(e) );
       TASK( Cmp_Complete_Ptr_1(e) );
       VM_Assemble( c_opn->asm_code, e->categ, e->value.i );
-      TASK( Cmp_Expr_Destroy(e) );
+      TASK( Cmp_Expr_Destroy_Tmp(e) );
       TASK( Cmp_Expr_Reg0(e, type_dest) );
     }
 
@@ -353,7 +386,7 @@ Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn) {
     TASK( Cmp_Expr_To_Ptr(& new_e, CAT_GREG, (Intg) 1, 0) );
   /* call conv_func */
     VM_Assemble(ASM_CALL_I, CAT_IMM, c_opn->module);
-    TASK( Cmp_Expr_Destroy(e) );
+    TASK( Cmp_Expr_Destroy_Tmp(e) );
     *e = new_e;
     return Success;
   }
@@ -382,7 +415,7 @@ Task Cmp_Member_Intrinsic(Expression *e, Name *m) {
         goto cmp_memb_intr_err;
         break;
       }
-      TASK( Cmp_Expr_Destroy(e) );
+      TASK( Cmp_Expr_Destroy_Tmp(e) );
 
       /* ATTENZIONE: devo mettere ro0 in un registro locale temporaneo */
 
@@ -657,7 +690,7 @@ static Expression *Opn_Exec_Intrinsic(
        e1->categ, e1->value.i, e2->categ, e2->value.i);
 
       /* Ora libero il registro che non contiene il risultato! */
-      Cmp_Expr_Destroy(e2);
+      Cmp_Expr_Destroy_Tmp(e2);
       return e1;
     }
 
@@ -700,8 +733,8 @@ static Expression *Opn_Exec_Intrinsic(
           if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
           VM_Assemble(opn->asm_code,
            e1->categ, e1->value.i, e2->categ, e2->value.i);
-          Cmp_Expr_Destroy(e1);
-          Cmp_Expr_Destroy(e2);
+          Cmp_Expr_Destroy_Tmp(e1);
+          Cmp_Expr_Destroy_Tmp(e2);
           return Cmp_Expr_Reg0_To_LReg(opn->type_rs);
 
         } else {
@@ -765,7 +798,7 @@ er_equal_e1:
          e1->categ, e1->value.i, e2->categ, e2->value.i);
 
         /* Ora libero il registro che non contiene il risultato! */
-        Cmp_Expr_Destroy(e2);
+        Cmp_Expr_Destroy_Tmp(e2);
         return e1;
       }
     }
@@ -845,7 +878,7 @@ Expression *Cmp_Operation_Exec(
                  e1->categ, e1->value.i, e2->categ, e2->value.i);
 
                 /* Ora libero il registro che non contiene il risultato! */
-                Cmp_Expr_Destroy(e2);
+                Cmp_Expr_Destroy_Tmp(e2);
                 return e1;
 
         } else {
@@ -993,6 +1026,8 @@ Task Cmp_Expr_Unvalued(Expression *e, Intg type) {
   e->is.value = 0;
   e->is.typed = 1;
   e->is.ignore = 0;
+  e->is.imm = 0;
+  e->is.target = 0;
   return Success;
 }
 
@@ -1059,7 +1094,7 @@ static Intg asm_mov[NUM_INTRINSICS] = {
  * NOTE: categ can be CAT_LREG or CAT_GREG.
  */
 Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free) {
-#define EXIT_FUNCTION if ( !and_free ) return Success; return Cmp_Expr_Destroy(expr)
+#define EXIT_FUNCTION if ( !and_free ) return Success; return Cmp_Expr_Destroy_Tmp(expr)
   int is_integer;
   MSG_LOCATION("Cmp_Expr_To_X");
 
@@ -1187,7 +1222,7 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
       VM_Assemble(asm_lea[t], expr->categ, expr->value.i);
       VM_Assemble(ASM_MOV_OO, categ, reg, CAT_LREG, (Intg) 0);
       if ( !and_free ) return Success;
-      return Cmp_Expr_Destroy(expr);
+      return Cmp_Expr_Destroy_Tmp(expr);
 
     } else {
       if ( expr->categ == CAT_PTR ) {
@@ -1195,7 +1230,7 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
         VM_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, expr->addr );
         VM_Assemble( ASM_LEA_OO, categ, reg, CAT_PTR, expr->value.i );
         if ( !and_free ) return Success;
-        return Cmp_Expr_Destroy(expr);
+        return Cmp_Expr_Destroy_Tmp(expr);
 
       } else { /* expr->categ == CAT_LREG, CAT_GREG */
         VM_Assemble(ASM_MOV_OO, categ, reg, expr->categ, expr->value.i);
@@ -1204,7 +1239,7 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
   }
 
   if ( !and_free ) return Success;
-  return Cmp_Expr_Destroy(expr);
+  return Cmp_Expr_Destroy_Tmp(expr);
 }
 
 /* DESCRIPTION: This function creates (in *e) a new expression of type 'type'.
@@ -1266,7 +1301,7 @@ Task Cmp_Expr_Create(Expression *e, Intg type, int temporary) {
 
 /* DESCRIPTION:
  */
-Task Cmp_Expr_Destroy(Expression *e) {
+Task Cmp_Expr_Destroy(Expression *e, int destroy_target) {
   MSG_LOCATION("Cmp_Expr_Destroy");
 
 #ifdef DEBUG_CONTAINER_HANDLING
@@ -1307,7 +1342,7 @@ Task Cmp_Expr_Destroy(Expression *e) {
      default: break;
     }
 
-    if ( (! intrinsic) && (e->is.allocd) && (! e->is.target) ) {
+    if (!intrinsic && e->is.allocd && (!e->is.target || destroy_target)) {
       // ??? dovrei usare Cmp_Complete_Ptr_1?
       VM_Assemble(ASM_MFREE_O, e->categ, e->value.i);
     }
@@ -1359,13 +1394,13 @@ Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src) {
         MSG_ERROR("Internal error in Cmp_Expr_Move");
         return Failed;
       }
-      return Cmp_Expr_Destroy(e_src);
+      return Cmp_Expr_Destroy_Tmp(e_src);
 
     } else {
       TASK( Cmp_Complete_Ptr_2(e_dest, e_src) );
       VM_Assemble( asm_mov[t],
        e_dest->categ, e_dest->value.i, e_src->categ, e_src->value.i );
-      return Cmp_Expr_Destroy(e_src);
+      return Cmp_Expr_Destroy_Tmp(e_src);
     }
 
   } else {
@@ -1508,21 +1543,6 @@ Task Cmp_Complete_Ptr_1(Expression *e) {
   }
   return Success;
 }
-
-#if 0
-void Cmp_Finish() {
-  Task status;
-  Intg main;
-  Intg num_var[NUM_TYPES], num_reg[NUM_TYPES];
-
-  RegVar_Get_Nums(num_var, num_reg);
-  if IS_FAILED( VM_Asm_Prepare(num_var, num_reg) ) return Failed;
-  main = VM_Module_Undefined("main");
-  if ( main < 1 ) return Failed;
-  if IS_FAILED( VM_Asm_Install(main, Cmp_Curr_Output) ) return Failed;
-  status = VM_Module_Execute(main);
-}
-#endif
 
 /* DESCRIZIONE: Mette in *e un espressione immediata di tipo intero.
  */
@@ -1873,7 +1893,7 @@ Task Cmp_Procedure(int *found, Expression *e, Intg suffix,
       )
     ) goto exit_failed;
 
-  if ( ! found ) goto exit_success;
+  if ( ! *found ) goto exit_success;
 
   /* Now we compile the procedure */
   /* We pass the box which is the parent of the procedure */
@@ -1895,11 +1915,11 @@ Task Cmp_Procedure(int *found, Expression *e, Intg suffix,
   VM_Assemble(ASM_CALL_I, CAT_IMM, asm_module);
 
 exit_success:
-  (void) Cmp_Expr_Destroy(e);
+  (void) Cmp_Expr_Destroy_Tmp(e);
   return Success;
 
 exit_failed:
-  (void) Cmp_Expr_Destroy(e);
+  (void) Cmp_Expr_Destroy_Tmp(e);
   return Failed;
 }
 

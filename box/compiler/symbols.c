@@ -221,7 +221,7 @@ Task Cmp_Box_Instance_Begin(Expression *e) {
   ++cmp_box_level; /* Aumento il livello di box */
   if ( e == NULL ) {
     /* Si tratta di una box void */
-    box.child = NULL;	        /* Catena dei simboli figli */
+    box.child = NULL;         /* Catena dei simboli figli */
     box.type = TYPE_VOID;
     box.value.type = TYPE_VOID;
     box.value.resolved = TYPE_VOID;
@@ -233,7 +233,7 @@ Task Cmp_Box_Instance_Begin(Expression *e) {
     if ( ! e->is.typed ) {
       MSG_ERROR( "Impossibile aprire una box per il simbolo senza tipo '%s'!",
        Name_To_Str(& e->value.nm) );
-      Cmp_Expr_Destroy( e );
+      Cmp_Expr_Destroy_Tmp( e );
       return Failed;
     }
 
@@ -286,7 +286,7 @@ Task Cmp_Box_Instance_End(Expression *e) {
     Symbol *s;
 
     for ( s = box->child; s != (Symbol *) NULL; s = s->brother ) {
-      TASK( Cmp_Expr_Destroy( & (s->value) ) );
+      TASK( Cmp_Expr_Destroy(& (s->value), 1) );
       Sym_Symbol_Delete( s );
     }
   }

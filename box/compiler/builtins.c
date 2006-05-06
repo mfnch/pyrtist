@@ -61,9 +61,6 @@ static Task Floor_RealNum(void);
  * Le procedure che seguono servono a inizializzare/resettare il compilatore. *
  ******************************************************************************/
 
-/* Destinazione attuale del codice compilato dal compilatore */
-AsmOut *Cmp_Curr_Output;
-
 /* Con queste macro abbrevio la definizione delle operazioni */
 #define NEW_OPERATOR(o, str) \
   status |= ( (cmp_opr.o = Cmp_Operator_New(str)) == NULL );
@@ -96,19 +93,8 @@ Task Blt_Define_All(void) {
 Task Builtins_Define() {
   Operation *opn;
   int status;
-  static UInt typl_nreg[NUM_TYPES] = REG_OCC_TYP_SIZE;
-  static UInt typl_nvar[NUM_TYPES] = VAR_OCC_TYP_SIZE;
 
   MSG_LOCATION("Cmp_Define_Builtins");
-
-  /* Inizializzo le liste di occupazione di registri e variabili */
-  TASK( Reg_Init(typl_nreg) );
-  TASK( Var_Init(typl_nvar) );
-
-  /* Setto l'output della compilazione */
-  Cmp_Curr_Output = VM_Asm_Out_New(-1);
-  TASK( VM_Asm_Out_Set(Cmp_Curr_Output) );
-  TASK( Cmp_Box_Instance_Begin( NULL ) );
 
   /* Definisco i tipi intrinseci */
   {
@@ -536,7 +522,7 @@ static Task Print_NewLine(void) {printf("\n"); return Success;}
 
 /* This function is not politically correct!!! */
 static Task Exit_Int(void)  {exit(BOX_VM_ARG1(Intg));}
-static Task Exit_Success(void) {exit(EXIT_SUCCESS);}
+static Task Exit_Success(void) {printf("Exit_Success\n"); exit(EXIT_SUCCESS);}
 
 /*****************************************************************************
  *                       FUNCTIONS FOR CONVERSION                            *

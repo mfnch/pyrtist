@@ -50,10 +50,13 @@ extern UInt tok_linenum;
 
 #define BOX_OPEN(expr) \
   if IS_FAILED( Cmp_Box_Instance_Begin( expr ) ) \
-    {parser_attr.no_syntax_err = 1; parser_attr.old_box = 0; YYERROR;}
-  //if IS_FAILED( Prs_Procedure_Special(NULL, TYPE_OPEN, 0, 0) ) MY_ERR
+    {parser_attr.no_syntax_err = 1; parser_attr.old_box = 0; YYERROR;} \
+  if (expr != NULL) \
+    if IS_FAILED( Prs_Procedure_Special(NULL, TYPE_OPEN, 0, 0) ) MY_ERR
 
 #define BOX_CLOSE(expr) \
+  if (expr != NULL) \
+    if IS_FAILED( Prs_Procedure_Special(NULL, TYPE_CLOSE, 0, 0) ) MY_ERR; \
   if IS_FAILED( Cmp_Box_Instance_End( expr ) ) \
     {parser_attr.no_syntax_err = 1; YYERROR;}
 
@@ -406,16 +409,13 @@ void yyerror(char* s)
  *  maxinc indica il numero massimo di file di include che possono essere
  *  aperti contemporaneamente.
  */
-Task Parser_Init(UInt maxinc, char *f)
-{
+Task Parser_Init(UInt maxinc, char *f) {
+
   /* Leggo comunque dallo stdin (che puo' essere stato rediretto)! */
   yyrestart( stdin );
 
   /* Inizializzo il tokenizer */
   TASK( Tok_Init( maxinc, f ) );
-
-  /* Inizializzo le routine che servono per la compilazione */
-  TASK( Builtins_Define() );
 
   parser_attr.no_syntax_err = 0;
 
@@ -428,8 +428,7 @@ Task Parser_Init(UInt maxinc, char *f)
 
 /* DESCRIZIONE: Completa il parsing del file di input.
  */
-Task Parser_Finish(void)
-{
+Task Parser_Finish(void) {
   return Success;
 }
 
@@ -451,7 +450,7 @@ Task Prs_Def_Operator(Operator *opr,
 
   {
     Task t = Sym_Explicit_New(& s, & new_e->value.nm, new_e->addr);
-    Cmp_Expr_Destroy(new_e);
+    Cmp_Expr_Destroy_Tmp(new_e);
     TASK( t );
   }
 
@@ -467,8 +466,9 @@ Task Prs_Def_Operator(Operator *opr,
 
     TASK( Cmp_Expr_Container_New(target, e->type, CONTAINER_LVAR_AUTO) );
     TASK( Cmp_Expr_To_X(e, target->categ, target->value.i, 0) );
+    target->is.allocd = e->is.allocd;
     e->is.allocd = 0;
-    TASK( Cmp_Expr_Destroy(e) );
+    TASK( Cmp_Expr_Destroy_Tmp(e) );
     *rs = *target;
     return Success;
   }
@@ -671,7 +671,7 @@ Task Prs_Alias_Of_X(Expression *alias, Expression *x) {
   target->is.typed = 1;
   target->is.value = 0;
   target->type = t = Tym_Def_Alias_Of(& alias->value.nm, x->type);
-  TASK( Cmp_Expr_Destroy(alias) );
+  TASK( Cmp_Expr_Destroy_Tmp(alias) );
   *alias = *target;
   if ( t != TYPE_NONE ) return Success;
   return Failed;
@@ -794,14 +794,14 @@ Task Prs_Rule_Valued_Eq_Typed(Expression *rs,
   rs->is.ignore = 1;
   if ( ! typed->is.typed ) {
     MSG_ERROR("Il tipo alla destra di '=' non e' ancora stato definito!");
-    (void) Cmp_Expr_Destroy(valued);
+    (void) Cmp_Expr_Destroy_Tmp(valued);
     return Failed;
   }
 
   if ( valued->is.typed ) {
     /* Assertion: the type of 'valued' should be 'typed'. */
     Intg t = valued->type;
-    TASK( Cmp_Expr_Destroy(valued) );
+    TASK( Cmp_Expr_Destroy_Tmp(valued) );
 
     if ( Tym_Compare_Types(t, typed->type, NULL) == 1 ) return Success;
     MSG_ERROR("Incongruenza fra i tipi!");
@@ -814,7 +814,7 @@ Task Prs_Rule_Valued_Eq_Typed(Expression *rs,
 
     {
       Task t = Sym_Explicit_New(& s, & valued->value.nm, valued->addr);
-      TASK( Cmp_Expr_Destroy(valued) );
+      TASK( Cmp_Expr_Destroy_Tmp(valued) );
       TASK( t );
     }
 
@@ -839,7 +839,7 @@ Task Prs_Rule_Valued_Eq_Valued(Expression *rs,
   rs->is.ignore = 1;
   if ( ! valued2->is.typed ) {
     MSG_ERROR("L'oggetto alla destra di '=' non ha tipo definito!");
-    (void) Cmp_Expr_Destroy(valued1);
+    (void) Cmp_Expr_Destroy_Tmp(valued1);
     return Failed;
   }
 

@@ -20,7 +20,4 @@
 /* Important builtin types */
 extern Intg type_Point, type_RealNum, type_IntgNum, type_CharNum, type_String;
 
-/* Destination of the code compiled by the compiler */
-extern AsmOut *Cmp_Curr_Output;
-
 Task Builtins_Define(void);

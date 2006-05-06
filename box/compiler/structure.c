@@ -239,7 +239,7 @@ static Task Cmp__Structure_Foregnd(
       e_dest.value.i = arg_size_old;
       TASK( Cmp_Expr_Move(& e_dest, e_src) );
     } else {
-      TASK( Cmp_Expr_Destroy(e_src) );
+      TASK( Cmp_Expr_Destroy_Tmp(e_src) );
     }
 
     arg_size_old = si->size;
@@ -255,7 +255,7 @@ static Task Cmp__Structure_Foregnd(
 static Task Cmp__Structure_Free(StructItem *first, Intg num) {
   register Intg i;
   for(i = 0; i < num; i++) {
-    TASK( Cmp_Expr_Destroy(& first->expr) );
+    TASK( Cmp_Expr_Destroy_Tmp(& first->expr) );
     ++first;
   }
   return Success;
@@ -395,7 +395,7 @@ Task Cmp_Expr_Expand(Intg species, Expression *e) {
           TASK( Cmp_Structure_Get(& member2, & n2) );
         };
 
-        TASK( Cmp_Expr_Destroy(e) );
+        TASK( Cmp_Expr_Destroy_Tmp(e) );
         *e = new_struc;
       }
       return Success;

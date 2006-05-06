@@ -264,7 +264,7 @@ typedef struct {
 #define CONTAINER_GVAR(num) (& (Container) {4, num > 0 ? num : 0})
 
 extern struct cmp_opr_struct cmp_opr;
-extern AsmOut *Cmp_Curr_Output;
+extern AsmOut *cmp_curr_output;
 extern Intg cmp_box_level;
 
 /* Variabili definite in 'typeman.c'*/
@@ -331,6 +331,8 @@ Symbol *Sym_Explicit_Find(Name *nm, Intg depth, int mode);
 Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth);
 
 /* Procedure definite in 'compiler.c'*/
+Task Cmp_Init(void);
+Task Cmp_Finish(void);
 Operator *Cmp_Operator_New(char *token);
 Operation *Cmp_Operation_Add(Operator *opr, Intg type1, Intg type2, Intg typer);
 Operation *Cmp_Operation_Find(Operator *opr,
@@ -350,7 +352,7 @@ Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free);
 Task Cmp__Expr_To_LReg(Expression *expr, int force);
 Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free);
 Task Cmp_Expr_Create(Expression *e, Intg type, int temporary);
-Task Cmp_Expr_Destroy(Expression *e);
+Task Cmp_Expr_Destroy(Expression *e, int destroy_target);
 Task Cmp_Expr_Copy(Expression *e_dest, Expression *e_src);
 Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src);
 Task Cmp_Def_C_Procedure(Intg procedure, Intg of_type, Task (*C_func)(void));
@@ -385,6 +387,7 @@ Task Cmp_Structure_Get(Expression *member, int *n);
 Task Cmp_Expr_Expand(Intg species, Expression *e);
 Task Cmp_Convert(Intg type, Expression *e);
 
+#define Cmp_Expr_Destroy_Tmp(e) Cmp_Expr_Destroy(e, 0)
 #define Cmp_Expr_To_LReg(expr) Cmp__Expr_To_LReg(expr, 0)
 #define Cmp_Expr_Force_To_LReg(expr) Cmp__Expr_To_LReg(expr, 1)
 #define Cmp_Expr_To_Reg0(expr) Cmp__Expr_To_LReg(expr, 0, 1)
