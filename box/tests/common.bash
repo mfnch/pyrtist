@@ -1,5 +1,5 @@
 #!/bin/bash
-BOX="../box"
+BOX="../src/box"
 BOXOPT="-st"
 BOXOUT="output.log"
 ERRORS="errors.log"
