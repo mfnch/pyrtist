@@ -178,6 +178,10 @@ enum {
 extern char *tym_special_name[PROC_SPECIAL_NUM];
 
 /* Struttura usata per descrivere i tipi di dati */
+/* This structure has changed too many times. Now it is very ugly and dirty,
+ * it should be completely rewritten, but this needs some work, since many
+ * functions make assumptions about it.
+ */
 typedef struct {
   TypeOfType tot;
   Intg size;       /* Spazio occupato in memoria dal tipo */

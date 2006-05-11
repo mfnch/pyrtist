@@ -749,7 +749,7 @@ Task Prs_Struct_Add(Expression *strc, Expression *old, Expression *type) {
   return Success;
 }
 
-/* This function calls a procedure without value like (;), (<) or (>).
+/* This function calls a procedure without value, as (;), (<) or (>).
  */
 Task Prs_Procedure_Special(int *found, int type,
  int fresh_object, int auto_define) {
