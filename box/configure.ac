@@ -1,8 +1,10 @@
-AC_INIT(box, 0.1, [fnch@libero.it])
+AC_INIT(box, 0.1, fnch@libero.it)
 
-AC_PREREQ(2.59)
-AC_CONFIG_SRCDIR([y.tab.c])
+AC_PREREQ(2.52)
+AC_CONFIG_SRCDIR([src/compiler.c])
 AC_CONFIG_HEADER([config.h])
+
+AM_INIT_AUTOMAKE
 
 # Checks for programs.
 AC_PROG_CC
@@ -24,5 +26,5 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([floor memmove memset pow rint sqrt strdup strncasecmp strndup])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT
