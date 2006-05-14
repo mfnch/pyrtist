@@ -1,6 +1,24 @@
-/* vmexec.c - Autore: Franchin Matteo - giugno 2004
- *
- * Questo file contiene la funzioni che eseguono le istruzioni della macchina
+/***************************************************************************
+ *   Copyright (C) 2006 by Matteo Franchin                                 *
+ *   fnch@libero.it                                                        *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+
+/* Questo file contiene la funzioni che eseguono le istruzioni della macchina
  * virtuale (spesso denotata con VM).
  * Questo file e' incluso direttamente dal file "virtmach.c"
  */
@@ -11,17 +29,22 @@
 #include "messages.h"
 #include "virtmach.h"
 
-static void VM__Exec_Ret(void) {vmcur->flags.exit = 1;}
+static void VM__Exec_Ret(VMProgram *vmp) {vmp->vmcur->flags.exit = 1;}
 
-static void VM__Exec_Call_I(void) {
-  if IS_SUCCESSFUL( VM_Module_Execute(*((Intg *) vmcur->arg1)) ) return;
-  vmcur->flags.error = vmcur->flags.exit = 1;
+static void VM__Exec_Call_I(VMProgram *vmp) {
+  VMStatus *vm = vmp->vmcur;
+  if IS_SUCCESSFUL( VM_Module_Execute(*((Intg *) vm->arg1)) ) return;
+  vm->flags.error = vm->flags.exit = 1;
 }
 
-static void VM__Exec_Line_I(void) {vmcur->line = *((Intg *) vmcur->arg1);}
+static void VM__Exec_Line_I(VMProgram *vmp) {
+  VMStatus *vm = vmp->vmcur;
+  vm->line = *((Intg *) vm->arg1);
+}
 
 #define VM__NEW(name, TYPE_ID, Type)                                   \
-static void VM__Exec_ ## name ## _II(void) {                           \
+static void VM__Exec_ ## name ## _II(VMProgram *vmp) {                 \
+  VMStatus *vmcur = vmp->vmcur;                                        \
   register Type *ptr;                                                  \
   register Intg numvar = *((Intg *) vmcur->arg1),                      \
     numreg = *((Intg *) vmcur->arg2), numtot = numvar + numreg + 1;    \
@@ -34,7 +57,7 @@ static void VM__Exec_ ## name ## _II(void) {                           \
   MSG_FATAL(#name ": Impossibile allocare lo spazio per i registri."); \
   vmcur->flags.error = vmcur->flags.exit = 1; return;                  \
 err:  MSG_FATAL(#name ": Registri gia' allocati!");                    \
-  vmcur->flags.error = vmcur->flags.exit = 1; return;                  \
+  vmcur->flags.error = vmcur->flags.exit = 1;                          \
 }
 
 VM__NEW(NewC, TYPE_CHAR,  Char)

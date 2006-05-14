@@ -23,6 +23,19 @@
  * instructions.
  */
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdarg.h>
+#include <assert.h>
+
+#include "types.h"
+#include "defaults.h"
+#include "messages.h"
+#include "array.h"
+#include "virtmach_ng.h"
+#include "str.h"
+
 /* Read the first 4 bytes (VMByteX4), extract the format bit and put the "rest"
  * in the i_eye (which should be defined as 'register VMByteX4 i_eye;')
  * is_long tells if the instruction is encoded with the packed format (4 bytes)
@@ -114,7 +127,7 @@ static const UInt size_of_type[NUM_TYPES] = {
 };
 
 /* Restituisce il puntatore al registro globale n-esimo. */
-static void *VM__Get_G(VMStatus *vcur, Intg n) {
+static void *VM__Get_G(VMStatus *vmcur, Intg n) {
   register TypeID t = vmcur->idesc->t_id;
 
   assert( (t >= 0) && (t < NUM_TYPES) );
@@ -132,7 +145,7 @@ static void *VM__Get_G(VMStatus *vcur, Intg n) {
 }
 
 /* Restituisce il puntatore al registro locale n-esimo. */
-static void *VM__Get_L(VMStatus *vcur, Intg n) {
+static void *VM__Get_L(VMStatus *vmcur, Intg n) {
   register TypeID t = vmcur->idesc->t_id;
 
   assert( (t >= 0) && (t < NUM_TYPES) );
@@ -150,12 +163,12 @@ static void *VM__Get_L(VMStatus *vcur, Intg n) {
 }
 
 /* Restituisce il puntatore alla locazione di memoria (ro0 + n). */
-static void *VM__Get_P(VMStatus *vcur, Intg n) {
+static void *VM__Get_P(VMStatus *vmcur, Intg n) {
   return *((void **) vmcur->local[TYPE_OBJ]) + n;
 }
 
 /* Restituisce il puntatore ad un intero/reale di valore n. */
-static void *VM__Get_I(VMStatus *vcur, Intg n) {
+static void *VM__Get_I(VMStatus *vmcur, Intg n) {
   register TypeID t = vmcur->idesc->t_id;
   static Intg i = 0;
   static union { Char c; Intg i; Real r; } v[2], *value;
@@ -191,7 +204,7 @@ static void *(*vm_gets[4])(VMStatus *, Intg) = {
  *  'P'untatore, mentre il secondo puo' essere dei tipi appena enumerati oppure
  *  puo' essere un 'I'mmediato intero.
  */
-static void VM__GLP_GLPI(VMStatus *vcur) {
+static void VM__GLP_GLPI(VMStatus *vmcur) {
   signed long narg1, narg2;
   register UInt atype = vmcur->arg_type;
 
@@ -201,8 +214,8 @@ static void VM__GLP_GLPI(VMStatus *vcur) {
     ASM_SHORT_GET_2ARGS( vmcur->i_pos, vmcur->i_eye, narg1, narg2);
   }
 
-  vmcur->arg1 = vm_gets[atype & 0x3](narg1);
-  vmcur->arg2 = vm_gets[(atype >> 2) & 0x3](narg2);
+  vmcur->arg1 = vm_gets[atype & 0x3](vmcur, narg1);
+  vmcur->arg2 = vm_gets[(atype >> 2) & 0x3](vmcur, narg2);
 #ifdef DEBUG_EXEC
   printf("Cathegories: arg1 = %lu - arg2 = %lu\n",
          atype & 0x3, (atype >> 2) & 0x3);
@@ -212,7 +225,7 @@ static void VM__GLP_GLPI(VMStatus *vcur) {
 /* Questa funzione e' analoga alla precedente, ma gestisce
  *  istruzioni come: "mov ri1, 123456", "mov rf2, 3.14", "mov rp5, (1, 2)", etc.
  */
-static void VM__GLP_Imm(VMStatus *vcur) {
+static void VM__GLP_Imm(VMStatus *vmcur) {
   signed long narg1;
   register UInt atype = vmcur->arg_type;
 
@@ -222,7 +235,7 @@ static void VM__GLP_Imm(VMStatus *vcur) {
     ASM_SHORT_GET_1ARG( vmcur->i_pos, vmcur->i_eye, narg1 );
   }
 
-  vmcur->arg1 = vm_gets[atype & 0x3](narg1);
+  vmcur->arg1 = vm_gets[atype & 0x3](vmcur, narg1);
   vmcur->arg2 = vmcur->i_pos;
 }
 
@@ -230,7 +243,7 @@ static void VM__GLP_Imm(VMStatus *vcur) {
  *  istruzioni con un solo argomento di tipo GLPI (Globale oppure Locale
  *  o Puntatore o Immediato intero).
  */
-static void VM__GLPI(VMStatus *vcur) {
+static void VM__GLPI(VMStatus *vmcur) {
   signed long narg1;
   register UInt atype = vmcur->arg_type;
 
@@ -240,14 +253,14 @@ static void VM__GLPI(VMStatus *vcur) {
     ASM_SHORT_GET_1ARG( vmcur->i_pos, vmcur->i_eye, narg1 );
   }
 
-  vmcur->arg1 = vm_gets[atype & 0x3](narg1);
+  vmcur->arg1 = vm_gets[atype & 0x3](vmcur, narg1);
 }
 
 /* Questa funzione e' analoga alle precedenti, ma gestisce
  *  istruzioni con un solo argomento di tipo immediato (memorizzato subito
  *  di seguito all'istruzione).
  */
-static void VM__Imm(VMStatus *vcur) {
+static void VM__Imm(VMStatus *vmcur) {
   vmcur->arg1 = (void *) vmcur->i_pos;
 }
 
@@ -332,6 +345,7 @@ static void VM__D_GLPI_GLPI(VMProgram *vmp, char **iarg) {
 
 /* Analoga alla precedente, ma per istruzioni CALL. */
 static void VM__D_CALL(VMProgram *vmp, char **iarg) {
+  VMStatus *vmcur = vmp->vmcur;
   register UInt na = vmcur->idesc->numargs;
 
   assert(na <= 2);
@@ -353,13 +367,13 @@ static void VM__D_CALL(VMProgram *vmp, char **iarg) {
     if ( iat == TYPE_CHAR ) m_num = (Intg) ((Char) m_num);
     {
 
-      if ( (m_num < 1) || (m_num > Arr_NumItem(vm_modules_list)) ) {
+      if ( (m_num < 1) || (m_num > Arr_NumItem(vmp->vm_modules_list)) ) {
         sprintf(vmp->iarg_str[0], SIntg, m_num);
         return;
 
       } else {
         char *m_name;
-        VMModule *m = Arr_ItemPtr(vm_modules_list, VMModule, m_num);
+        VMModule *m = Arr_ItemPtr(vmp->vm_modules_list, VMModule, m_num);
         m_name = Str_Cut(m->name, 40, 85);
         sprintf(vmp->iarg_str[0], SIntg"('%.40s')", m_num, m_name);
         free(m_name);
@@ -369,12 +383,13 @@ static void VM__D_CALL(VMProgram *vmp, char **iarg) {
     }
 
   } else {
-    VM__D_GLPI_GLPI(iarg);
+    VM__D_GLPI_GLPI(vmp, iarg);
   }
 }
 
 /* Analoga alla precedente, ma per istruzioni del tipo GLPI-Imm. */
 static void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
+  VMStatus *vmcur = vmp->vmcur;
   UInt iaf = vmcur->arg_type & 3, iat = vmcur->idesc->t_id;
   Intg iai;
   VMByteX4 *arg2;
@@ -444,7 +459,7 @@ static void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
 /*******************************************************************************
  * Functions for (de)inizialization                                            *
  *******************************************************************************/
-Task VMProg_Init(VMProgram *new_vmp) {
+Task VM_Init(VMProgram *new_vmp) {
   new_vmp = (VMProgram *) malloc(sizeof(VMProgram));
   if (new_vmp == NULL) return Failed;
   new_vmp->vm_modules_list = (Array *) NULL;
@@ -456,17 +471,16 @@ Task VMProg_Init(VMProgram *new_vmp) {
   return Success;
 }
 
-void VMProg_Destroy(VMProgram *vmp) {
+void VM_Destroy(VMProgram *vmp) {
   if (vmp == (VMProgram *) NULL) return;
   if (vmp->vm_globals != 0) {
     int i;
-    for(i = 0; i < NUM_TYPES; i++) free( vm_global[i] );
+    for(i = 0; i < NUM_TYPES; i++) free( vmp->vm_global[i] );
   }
   free(vmp->vm_cur_output);
   free(vmp->tmp_code);
   Arr_Destroy(vmp->vm_modules_list);
   free(vmp);
-  return Success;
 }
 
 /*******************************************************************************
@@ -492,7 +506,7 @@ Task VMProg_Install_Sheet(VMProgram *vmp, UInt sheet, UInt *assigned_module) {
  * e' andato storto. Tale numero, se usato da un istruzione call, provoca
  * l'esecuzione del modulo come procedura.
  */
-Task VM_Module_Install(VMProgram *vmp, Intg *new_module
+Task VM_Module_Install(VMProgram *vmp, Intg *new_module,
  VMModuleType t, const char *name, VMModulePtr p) {
   /* Creo la lista dei moduli se non esiste */
   if ( vmp->vm_modules_list == NULL ) {
@@ -508,7 +522,7 @@ Task VM_Module_Install(VMProgram *vmp, Intg *new_module
     TASK( Arr_Push( vmp->vm_modules_list, & new ) );
   }
 
-  *new_module = Arr_NumItem(vm_modules_list);
+  *new_module = Arr_NumItem(vmp->vm_modules_list);
   return Success;
 }
 
@@ -629,7 +643,7 @@ Task VM_Module_Global_Set(VMProgram *vmp, Intg type, Intg reg, void *value) {
     return Failed;
   }
 
-  if ( (vmp->reg < vmp->vm_gmin[type]) || (reg > vmp->vm_gmax[type]) ) {
+  if ( (reg < vmp->vm_gmin[type]) || (reg > vmp->vm_gmax[type]) ) {
     MSG_ERROR("VM_Module_Global_Set: Riferimento a registro non allocato!");
     return Failed;
   }
@@ -684,7 +698,7 @@ Task VM_Module_Execute(VMProgram *vmp, Intg mnum) {
       vm.lmin[i] = 0; vm.lmax[i] = 0; vm.local[i] = & reg0[i];
       if ( vmp->vm_global[i] != NULL ) {
         vm.gmin[i] = vmp->vm_gmin[i]; vm.gmax[i] = vmp->vm_gmax[i];
-        vm.global[i] = vmp->vm_global[i] + size_of_type[i]*(-vm_gmin[i]);
+        vm.global[i] = vmp->vm_global[i] + size_of_type[i]*(-vmp->vm_gmin[i]);
       } else {
         vm.gmin[i] = 1; vm.gmax[i] = -1; vm.global[i] = NULL;
       }
@@ -778,7 +792,7 @@ Task VM_Module_Disassemble(VMProgram *vmp, Intg module_num, FILE *stream) {
     MSG_ERROR("Nessun modulo installato!");
     return Failed;
   }
-  if ( (module_num < 1) || (module_num > vmp->Arr_NumItem(vm_modules_list)) ) {
+  if (module_num < 1 || module_num > Arr_NumItem(vmp->vm_modules_list)) {
     MSG_ERROR("Il modulo da disassemblare non esiste!");
     return Failed;
   }
@@ -825,7 +839,7 @@ Task VM_Module_Disassemble_All(VMProgram *vmp, FILE *stream) {
  */
 Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
   register VMByteX4 *i_pos = (VMByteX4 *) prog;
-  VMStatus vm, *vmold = vmcur;
+  VMStatus vm;
   UInt pos, nargs;
   const char *iname;
   char *iarg[VM_MAX_NUMARGS];
@@ -993,7 +1007,7 @@ Task VM_Asm_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
 
   VM_Assemble(vmp, ASM_RET);
 
-  vmp->vm_cur_output = tmp_code;
+  vmp->vm_cur_output = vmp->tmp_code;
   {
     register Intg i;
     Intg instruction[NUM_TYPES] = {
@@ -1027,7 +1041,7 @@ err:
  * NOTE: program will be destroyed.
  */
 Task VM_Asm_Install(VMProgram *vmp, Intg module, AsmOut *program) {
-  Array *p = program->progra;
+  Array *p = program->program;
   VMModulePtr ptr;
   ptr.vm.dim = Arr_NumItem(p);
   ptr.vm.code = Arr_Data_Only(p);

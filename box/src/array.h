@@ -1,8 +1,27 @@
-/* array.h - Autore: Franchin Matteo - 3 maggio 2004
- *
- * Questo file contiene le definizioni necessarie per poter
- * gestire le chiamate ad array.c
- */
+/***************************************************************************
+ *   Copyright (C) 2006 by Matteo Franchin                                 *
+ *   fnch@libero.it                                                        *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+
+/* array.h - 3 maggio 2004 */
+
+#ifndef _ARRAY_H
+#define _ARRAY_H
 
 /* Struttura di controllo dell'array */
 typedef struct {
@@ -46,3 +65,4 @@ void *Arr_Data_Only(Array *a);
 #define Arr_Inc(a) Arr_BigEnough((a), ++(a)->numel)
 #define Arr_MDec(a, n) Arr_SmallEnough((a), (a)->numel -= n)
 #define Arr_MInc(a, n) Arr_BigEnough((a), (a)->numel += n)
+#endif

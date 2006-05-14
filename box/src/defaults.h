@@ -1,12 +1,31 @@
-/* defaults.h - Autore: Franchin Matteo - maggio 2004
- *
- * Questo file contiene la definizione di alcune costanti che regolano
+/***************************************************************************
+ *   Copyright (C) 2006 by Matteo Franchin                                 *
+ *   fnch@libero.it                                                        *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+
+/* Questo file contiene la definizione di alcune costanti che regolano
  * il funzionamento del programma.
  */
-
-/******************************************************************************/
-/*                                COSTANTI COMUNI                             */
-/******************************************************************************/
+#ifndef _DEFAULT_H
+#define _DEFAULT_H
+/*****************************************************************************
+ *                                COSTANTI COMUNI                            *
+ *****************************************************************************/
 
 /* NUM_TYPES: Numero totale dei tipi di registri disponibili.
  * NUM_INTRINSICS e' il numero di tipi intrinseci (il tipo TYPE_OBJ non
@@ -16,9 +35,9 @@
 #define NUM_TYPES 5
 #define NUM_INTRINSICS 4
 
-/******************************************************************************/
-/*                     COSTANTI UTILIZZATE NEL FILE main.c                    */
-/******************************************************************************/
+/*****************************************************************************
+ *                     COSTANTI UTILIZZATE NEL FILE main.c                   *
+ *****************************************************************************/
 
 /* PROGRAM_NAME e' il nome del programma.
  * VERSION_STR e VERSION_NUM sono la stringa e l'intero che identificano
@@ -36,9 +55,9 @@
 
 #define OPTION_CHAR '-'
 
-/******************************************************************************/
-/*                   COSTANTI UTILIZZATE NEL FILE messages.c                  */
-/******************************************************************************/
+/*****************************************************************************
+ *                  COSTANTI UTILIZZATE NEL FILE messages.c                  *
+ *****************************************************************************/
 
 /* MSG_NUM_ARGS_MAX e' il numero massimo di argomenti (caratteri %)
  * che possono essere contenuti in un messaggio (cioe' nell'argomento fmt
@@ -51,9 +70,9 @@
 #define MSG_CUT_POSITION 25
 #define MSG_BUFFER_SIZE 1024
 
-/******************************************************************************/
-/*                COSTANTI UTILIZZATE NEL FILE tokenizer.lex.c                */
-/******************************************************************************/
+/*****************************************************************************
+ *               COSTANTI UTILIZZATE NEL FILE tokenizer.lex.c                *
+ *****************************************************************************/
 
 /* TOK_MAX_INCLUDE e' il numero massimo di file di include che il tokenizer
  * accettera' di aprire (annidare) l'uno dentro l'altro. Serve soltanto
@@ -65,9 +84,9 @@
 #define TOK_MAX_INCLUDE 10
 #define TOK_TYPICAL_MAX_INCLUDE 4
 
-/******************************************************************************/
-/*                   COSTANTI UTILIZZATE NEL FILE symbols.c                   */
-/******************************************************************************/
+/*****************************************************************************
+ *                  COSTANTI UTILIZZATE NEL FILE symbols.c                   *
+ *****************************************************************************/
 
 /* SYM_HASHSIZE e' la dimensione della tavola di hash, SYM_PARAMETER
  * e' un parametro utilizzato dalla funzione di hash.
@@ -75,9 +94,9 @@
 #define SYM_HASHSIZE 101
 #define SYM_PARAMETER 31
 
-/******************************************************************************/
-/*                  COSTANTI UTILIZZATE NEL FILE virtmach.c                   */
-/******************************************************************************/
+/*****************************************************************************
+ *                 COSTANTI UTILIZZATE NEL FILE virtmach.c                   *
+ *****************************************************************************/
 
 /* VM_TYPICAL_NUM_MODULES e' il numero tipico di moduli installati nella VM,
  * VM_TYPICAL_MOD_DIM e' la dimensione tipica di un modulo di programma
@@ -93,9 +112,9 @@
 /* Commentare la riga seguente per rendere la VM piu' veloce, ma meno sicura! */
 #define VM_SAFE_EXEC1
 
-/******************************************************************************/
-/*                  COSTANTI UTILIZZATE NEL FILE compiler.c                   */
-/******************************************************************************/
+/*****************************************************************************
+ *                 COSTANTI UTILIZZATE NEL FILE compiler.c                   *
+ *****************************************************************************/
 
 /* CMP_TYPICAL_NUM_TYPES e' il numero tipico di tipi (intrinseci+user defined)
  * di cui fara' uso il programma.
@@ -123,3 +142,4 @@
 #define SYM_BOX_LIST_DIM 5
 #define CMP_TYPICAL_STRUC_DIM  32
 #define CMP_TYPICAL_STRUC_SIZE 1024
+#endif

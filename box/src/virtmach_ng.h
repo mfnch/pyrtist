@@ -19,6 +19,8 @@
  ***************************************************************************/
 
 #ifndef _VIRTMACH_H
+#define _VIRTMACH_H
+
 /* Associo un numero a ciascun tipo, per poterlo identificare */
 typedef enum {
   TYPE_NONE  = -1,
@@ -35,6 +37,42 @@ typedef enum {
   TYPE_DESTROY= 9
 } TypeID;
 
+/* Enumero gli header di istruzione della macchina virtuale.
+ * ATTENZIONE: L'ordine nella seguente enumerazione deve rispettare l'ordine
+ *  nella tabella dei descrittori di istruzione ( vm_instr_desc_table[] )
+ * NUMERO ISTRUZIONI: 77
+ */
+typedef enum {
+  ASM_LINE_Iimm=1, ASM_CALL_I, ASM_CALL_Iimm,
+  ASM_NEWC_II, ASM_NEWI_II, ASM_NEWR_II, ASM_NEWP_II, ASM_NEWO_II,
+  ASM_MOV_Cimm, ASM_MOV_Iimm, ASM_MOV_Rimm, ASM_MOV_Pimm,
+  ASM_MOV_CC, ASM_MOV_II, ASM_MOV_RR, ASM_MOV_PP, ASM_MOV_OO,
+  ASM_BNOT_I, ASM_BAND_II, ASM_BXOR_II, ASM_BOR_II,
+  ASM_SHL_II, ASM_SHR_II,
+  ASM_INC_I, ASM_INC_R, ASM_DEC_I, ASM_DEC_R,
+  ASM_POW_II, ASM_POW_RR,
+  ASM_ADD_II, ASM_ADD_RR, ASM_ADD_PP, ASM_SUB_II, ASM_SUB_RR, ASM_SUB_PP,
+  ASM_MUL_II, ASM_MUL_RR, ASM_DIV_II, ASM_DIV_RR, ASM_REM_II,
+  ASM_NEG_I, ASM_NEG_R, ASM_NEG_P, ASM_PMULR_P, ASM_PDIVR_P,
+  ASM_EQ_II, ASM_EQ_RR, ASM_EQ_PP, ASM_NE_II, ASM_NE_RR, ASM_NE_PP,
+  ASM_LT_II, ASM_LT_RR, ASM_LE_II, ASM_LE_RR,
+  ASM_GT_II, ASM_GT_RR, ASM_GE_II, ASM_GE_RR,
+  ASM_LNOT_I, ASM_LAND_II, ASM_LOR_II,
+  ASM_REAL_C, ASM_REAL_I, ASM_INTG_R, ASM_POINT_II, ASM_POINT_RR,
+  ASM_PROJX_P, ASM_PROJY_P, ASM_PPTRX_P, ASM_PPTRY_P,
+  ASM_RET,
+  ASM_MALLOC_I, ASM_MFREE_O, ASM_MCOPY_OO,
+  ASM_LEA_C, ASM_LEA_I, ASM_LEA_R, ASM_LEA_P, ASM_LEA_OO,
+  ASM_ILLEGAL
+} AsmCode;
+
+/* Enumerazione delle categorie di argomento, utilizzata da Asm_Assemble
+ * per assemblare le istruzioni.
+ * NOTA: Questa enumerazione deve essere coerente con l'ordine dell'array
+ *  vm_gets[].
+ */
+typedef enum {CAT_NONE = -1, CAT_GREG = 0, CAT_LREG, CAT_PTR, CAT_IMM} AsmArg;
+
 /* Data type used to write/read binary codes for the instructions */
 typedef unsigned char VMByte;
 typedef unsigned long VMByteX4;
@@ -43,10 +81,29 @@ typedef signed char VMSByte;
 /* Definisco il tipo Obj, che e' semplicemente il tipo puntatore */
 typedef void *Obj;
 
+/* This is an union of all possible types */
+typedef union {
+  Char c;
+  Intg i;
+  Real r;
+  Point p;
+  Obj o;
+} Generic;
+
+/* Associo un numero a ciascun tipo, per poterlo identificare */
+typedef enum {
+  SIZEOF_CHAR  = sizeof(Char),
+  SIZEOF_INTG  = sizeof(Intg),
+  SIZEOF_REAL  = sizeof(Real),
+  SIZEOF_POINT = sizeof(Point),
+  SIZEOF_OBJ   = sizeof(Obj), SIZEOF_PTR = SIZEOF_OBJ
+} SizeOfType;
+
 /* Numero massimo degli argomenti di un'istruzione */
 #define VM_MAX_NUMARGS 2
 
-struct __vmprogram {};
+struct __vmprogram;
+struct __vmstatus;
 
 /* Enumerazione dei tipi di moduli */
 typedef enum {
@@ -81,15 +138,16 @@ typedef struct {
   UInt numargs;                 /* Numero di argomenti dell'istruzione */
   TypeID t_id;                  /* Numero che identifica il tipo
                                    degli argomenti (interi, reali, ...) */
-  void (*get_args)(VMStatus *); /* Per trattare gli argomenti */
-  void (*execute)(VMProgram *); /* Per eseguire l'istruzione */
-  void (*disasm)(VMProgram *, char **);  /* Per disassemblare gli argomenti */
+  void (*get_args)(struct __vmstatus *); /* Per trattare gli argomenti */
+  void (*execute)(struct __vmprogram *); /* Per eseguire l'istruzione */
+  /* Per disassemblare gli argomenti */
+  void (*disasm)(struct __vmprogram *, char **);
 } VMInstrDesc;
 
 /* This structure contains all the data which define the status for the VM.
  * Status is allocated by 'VM_Module_Execute' inside its stack.
  */
-typedef struct {
+struct __vmstatus {
   /* Flags della VM */
   struct {
     unsigned int error    : 1; /* L'istruzione ha provocato un errore! */
@@ -117,13 +175,24 @@ typedef struct {
   Intg lmin[NUM_TYPES], lmax[NUM_TYPES];
   /* Stato di allocazione dei registri per il modulo in esecuzione */
   Intg alc[NUM_TYPES];
-} VMStatus;
+};
+
+typedef struct __vmstatus VMStatus;
+
+/* Tipo che serve a gestire la scrittura di codice per la VM */
+typedef struct {
+  struct {
+    unsigned int error : 1;
+    unsigned int inhibit : 1;
+  } status;
+  Array *program;
+} AsmOut;
 
 /* This structure define all what is needed for the functions defined inside
  * the file 'virtmach.c'
  */
 struct __vmprogram {
-  Array *vm_modules_list = NULL; /* List of installed modules */
+  Array *vm_modules_list; /* List of installed modules */
   int vm_globals;
   void *vm_global[NUM_TYPES];
   Intg vm_gmin[NUM_TYPES], vm_gmax[NUM_TYPES];
@@ -135,14 +204,16 @@ struct __vmprogram {
   AsmOut *vm_cur_output;
   AsmOut *tmp_code;
   VMStatus *vmcur;
-} VMProgram;
+};
 
 typedef struct __vmprogram VMProgram;
 
-Task VMProg_Init(VMProgram *new_vmp);
-void VMProg_Destroy(VMProgram *vmp);
+extern VMInstrDesc vm_instr_desc_table[];
 
-Task VM_Module_Install(VMProgram *vmp, Intg *new_module
+Task VM_Init(VMProgram *new_vmp);
+void VM_Destroy(VMProgram *vmp);
+
+Task VM_Module_Install(VMProgram *vmp, Intg *new_module,
  VMModuleType t, const char *name, VMModulePtr p);
 Task VM_Module_Define(VMProgram *vmp, Intg module_num,
  VMModuleType t, VMModulePtr p);
@@ -166,11 +237,11 @@ Task VM_Asm_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg);
 Task VM_Asm_Install(VMProgram *vmp, Intg module, AsmOut *program);
 void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 
-/* Numero minimo di ByteX4 che riesce a contenere tutti i tipi possibili
+/* Numero minimo di VMByteX4 che riesce a contenere tutti i tipi possibili
  * di argomenti (Intg, Real, Point, Obj)
  */
 #define MAX_SIZE_IN_IWORDS \
- ((sizeof(Point) + sizeof(ByteX4) - 1) / sizeof(ByteX4))
+ ((sizeof(Point) + sizeof(VMByteX4) - 1) / sizeof(VMByteX4))
 
 #define BOX_VM_CURRENT(vmp, Type) *((Type *) *(vmp)->box_vm_current)
 #define BOX_VM_ARG1(vmp, Type) *((Type *) *(vmp)->box_vm_arg1)
