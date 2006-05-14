@@ -102,20 +102,10 @@
  *  eseguire materialmente l'operazione.                                       *
  *******************************************************************************/
 
-/* We need to pass the current VM to all the functions. This requires to define
- * every function in the following way:
- *   RetType function(VMProgram *vmp, ...);
- * This is what we do for most of the functions defined here.
- * However for some internal functions we use a different strategy: we pass
- * the current VM status using the static pointer defined in the following
- * statement.
- */
-static VMStatus *vmcur;
-
 /* This array lets us to obtain the size of a type by type index.
  * (Useful in what follows)
  */
-UInt size_of_type[NUM_TYPES] = {
+static const UInt size_of_type[NUM_TYPES] = {
   sizeof(Char),
   sizeof(Intg),
   sizeof(Real),
@@ -124,7 +114,7 @@ UInt size_of_type[NUM_TYPES] = {
 };
 
 /* Restituisce il puntatore al registro globale n-esimo. */
-static void *VM__Get_G(Intg n) {
+static void *VM__Get_G(VMStatus *vcur, Intg n) {
   register TypeID t = vmcur->idesc->t_id;
 
   assert( (t >= 0) && (t < NUM_TYPES) );
@@ -142,7 +132,7 @@ static void *VM__Get_G(Intg n) {
 }
 
 /* Restituisce il puntatore al registro locale n-esimo. */
-static void *VM__Get_L(Intg n) {
+static void *VM__Get_L(VMStatus *vcur, Intg n) {
   register TypeID t = vmcur->idesc->t_id;
 
   assert( (t >= 0) && (t < NUM_TYPES) );
@@ -160,12 +150,12 @@ static void *VM__Get_L(Intg n) {
 }
 
 /* Restituisce il puntatore alla locazione di memoria (ro0 + n). */
-static void *VM__Get_P(Intg n) {
+static void *VM__Get_P(VMStatus *vcur, Intg n) {
   return *((void **) vmcur->local[TYPE_OBJ]) + n;
 }
 
 /* Restituisce il puntatore ad un intero/reale di valore n. */
-static void *VM__Get_I(Intg n) {
+static void *VM__Get_I(VMStatus *vcur, Intg n) {
   register TypeID t = vmcur->idesc->t_id;
   static Intg i = 0;
   static union { Char c; Intg i; Real r; } v[2], *value;
@@ -186,7 +176,9 @@ static void *VM__Get_I(Intg n) {
 }
 
 /* Array di puntatori alle 4 funzioni sopra: */
-static void *(*vm_gets[4])() = { VM__Get_G, VM__Get_L, VM__Get_P, VM__Get_I };
+static void *(*vm_gets[4])(VMStatus *, Intg) = {
+  VM__Get_G, VM__Get_L, VM__Get_P, VM__Get_I
+};
 
 /*******************************************************************************
  * Functions used to execute the instructions                                  *
@@ -199,7 +191,7 @@ static void *(*vm_gets[4])() = { VM__Get_G, VM__Get_L, VM__Get_P, VM__Get_I };
  *  'P'untatore, mentre il secondo puo' essere dei tipi appena enumerati oppure
  *  puo' essere un 'I'mmediato intero.
  */
-static void VM__GLP_GLPI(void) {
+static void VM__GLP_GLPI(VMStatus *vcur) {
   signed long narg1, narg2;
   register UInt atype = vmcur->arg_type;
 
@@ -220,7 +212,7 @@ static void VM__GLP_GLPI(void) {
 /* Questa funzione e' analoga alla precedente, ma gestisce
  *  istruzioni come: "mov ri1, 123456", "mov rf2, 3.14", "mov rp5, (1, 2)", etc.
  */
-static void VM__GLP_Imm(void) {
+static void VM__GLP_Imm(VMStatus *vcur) {
   signed long narg1;
   register UInt atype = vmcur->arg_type;
 
@@ -238,7 +230,7 @@ static void VM__GLP_Imm(void) {
  *  istruzioni con un solo argomento di tipo GLPI (Globale oppure Locale
  *  o Puntatore o Immediato intero).
  */
-static void VM__GLPI(void) {
+static void VM__GLPI(VMStatus *vcur) {
   signed long narg1;
   register UInt atype = vmcur->arg_type;
 
@@ -255,7 +247,7 @@ static void VM__GLPI(void) {
  *  istruzioni con un solo argomento di tipo immediato (memorizzato subito
  *  di seguito all'istruzione).
  */
-static void VM__Imm(void) {
+static void VM__Imm(VMStatus *vcur) {
   vmcur->arg1 = (void *) vmcur->i_pos;
 }
 
@@ -270,7 +262,8 @@ static char iarg_str[VM_MAX_NUMARGS][64];
  *  iarg e' una tabella di puntatori alle stringhe che corrisponderanno
  *  agli argomenti disassemblati.
  */
-static void VM__D_GLPI_GLPI(char **iarg) {
+static void VM__D_GLPI_GLPI(VMProgram *vmp, char **iarg) {
+  VMStatus *vmcur = vmp->vmcur;
   UInt n, na = vmcur->idesc->numargs;
   UInt iaform[2] = {vmcur->arg_type & 3, (vmcur->arg_type >> 2) & 3};
   Intg iaint[2];
@@ -340,7 +333,7 @@ static void VM__D_GLPI_GLPI(char **iarg) {
 }
 
 /* Analoga alla precedente, ma per istruzioni CALL. */
-static void VM__D_CALL(char **iarg) {
+static void VM__D_CALL(VMProgram *vmp, char **iarg) {
   register UInt na = vmcur->idesc->numargs;
 
   assert(na <= 2);
@@ -383,7 +376,7 @@ static void VM__D_CALL(char **iarg) {
 }
 
 /* Analoga alla precedente, ma per istruzioni del tipo GLPI-Imm. */
-static void VM__D_GLPI_Imm(char **iarg) {
+static void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
   UInt iaf = vmcur->arg_type & 3, iat = vmcur->idesc->t_id;
   Intg iai;
   VMByteX4 *arg2;
@@ -459,6 +452,7 @@ Task VMProg_Init(VMProgram *new_vmp) {
   if (new_vmp == NULL) return Failed;
   new_vmp->vm_modules_list = (Array *) NULL;
   new_vmp->vm_globals = 0;
+  new_vmp->vm_dflags.hexcode = 0;
   return Success;
 }
 
@@ -650,11 +644,15 @@ Task VM_Module_Global_Set(VMProgram *vmp, Intg type, Intg reg, void *value) {
 /*******************************************************************************
  * Functions to execute code                                                   *
  *******************************************************************************/
-/* Execute the module number m. */
+
+/* Execute the module number m of program vmp.
+ * If initial != NULL, *initial is the initial status of the virtual machine.
+ */
 Task VM_Module_Execute(VMProgram *vmp, Intg mnum) {
   VMModule *m;
   register VMByteX4 *i_pos;
-  VMStatus vm, *vmold = vmcur;
+  VMStatus vm;
+  static Generic reg0[NUM_TYPES]; /* Registri locali numero zero */
 #ifdef DEBUG_EXEC
   Intg i = 0;
 #endif
@@ -662,36 +660,33 @@ Task VM_Module_Execute(VMProgram *vmp, Intg mnum) {
   MSG_LOCATION("VM_Module_Execute");
 
   /* Controlliamo che il modulo sia installato! */
-  if ( (mnum < 1) || (mnum > Arr_NumItem(vm_modules_list)) ) {
+  if ( (mnum < 1) || (mnum > Arr_NumItem(vmp->vm_modules_list)) ) {
     MSG_ERROR("Modulo non installato!");
     return Failed;
   }
 
-  m = Arr_ItemPtr( vm_modules_list, VMModule, mnum );
+  m = Arr_ItemPtr( vmp->vm_modules_list, VMModule, mnum );
   switch (m->type) {
-    case MODULE_IS_C_FUNC: return m->ptr.c_func();
+    case MODULE_IS_C_FUNC: return m->ptr.c_func(vmp);
     case MODULE_IS_VM_CODE: break;
     default:
       MSG_ERROR("Tentativo di esecuzione di modulo non definito o difettoso.");
       return Failed;
   }
 
-  if ( vmcur == NULL ) {
-    register Intg i;
+  vmp->vmcur = & vm;
+
+  {
+    int i;
     for(i = 0; i < NUM_TYPES; i++) {
       vm.lmin[i] = 0; vm.lmax[i] = 0; vm.local[i] = & reg0[i];
-      if ( vm_global[i] != NULL ) {
-        vm.gmin[i] = vm_gmin[i]; vm.gmax[i] = vm_gmax[i];
-        vm.global[i] = vm_global[i] + size_of_type[i]*(-vm_gmin[i]);
+      if ( vmp->vm_global[i] != NULL ) {
+        vm.gmin[i] = vmp->vm_gmin[i]; vm.gmax[i] = vmp->vm_gmax[i];
+        vm.global[i] = vmp->vm_global[i] + size_of_type[i]*(-vm_gmin[i]);
       } else {
         vm.gmin[i] = 1; vm.gmax[i] = -1; vm.global[i] = NULL;
       }
     }
-    vmcur = & vm;
-  } else {
-    /* Imposto lo stato della VM su una copia dello stato corrente */
-    vm = *vmcur;
-    vmcur = & vm;
   }
 
   vm.m = m;
@@ -724,16 +719,16 @@ Task VM_Module_Execute(VMProgram *vmp, Intg mnum) {
 
     if ( vm.i_type >= ASM_ILLEGAL ) {
       MSG_ERROR("Istruzione non riconosciuta!");
-      vmcur = vmold; return Failed;
+      return Failed;
     }
 
     /* Trovo il descrittore di istruzione */
     vm.idesc = & vm_instr_desc_table[vm.i_type];
 
     /* Localizza in memoria gli argomenti */
-    if ( vm.idesc->numargs > 0 ) vm.idesc->get_args();
+    if ( vm.idesc->numargs > 0 ) vm.idesc->get_args(& vm);
     /* Esegue l'istruzione */
-    if ( ! vm.flags.error ) vm.idesc->execute();
+    if ( ! vm.flags.error ) vm.idesc->execute(vmp);
 
     /* Passo alla prossima istruzione */
     vm.i_pos = (i_pos += vm.i_len);
@@ -743,7 +738,7 @@ Task VM_Module_Execute(VMProgram *vmp, Intg mnum) {
 
   } while ( ! vm.flags.exit );
 
-  /* Delete the registers allocated with the new* instructions */
+  /* Delete the registers allocated with the 'new*' instructions */
   {
     register int i;
     for(i = 0; i < NUM_TYPES; i++)
@@ -751,7 +746,179 @@ Task VM_Module_Execute(VMProgram *vmp, Intg mnum) {
         free(vm.local[i] + vm.lmin[i]*size_of_type[i]);
   }
 
-  if ( ! vm.flags.error ) return Success;
+  return vm.flags.error ? Failed : Success;
+}
+
+/*******************************************************************************
+ * Functions to disassemble code                                                  *
+ *******************************************************************************/
+
+/* Imposta le opzioni per il disassemblaggio:
+ * L'opzione puo' essere settata con un valore > 0, resettata con 0
+ * e lasciata inalterata con un valore < 0.
+ * 1) hexcode: scrive nel listato anche i codici esadecimali delle
+ *  istruzioni.
+ */
+void VM_DSettings(VMProgram *vmp, int hexcode) {
+  /* Per settare le opzioni di assemblaggio, disassemblaggio, etc. */
+  vmp->vm_dflags.hexcode = hexcode;
+}
+
+/* This function prints the assembly source code of the module
+ * whose number is module_num.
+ */
+Task VM_Module_Disassemble(VMProgram *vmp, Intg module_num, FILE *stream) {
+  VMModule *m;
+  char *mod_type;
+  int print_code;
+
+  if ( vmp->vm_modules_list == NULL ) {
+    MSG_ERROR("Nessun modulo installato!");
+    return Failed;
+  }
+  if ( (module_num < 1) || (module_num > vmp->Arr_NumItem(vm_modules_list)) ) {
+    MSG_ERROR("Il modulo da disassemblare non esiste!");
+    return Failed;
+  }
+
+  m = ((VMModule *) vmp->vm_modules_list->ptr) + (module_num - 1);
+  fprintf(stream, "\n----------------------------------------\n");
+  fprintf(stream, "Module number: "SIntg"\n", module_num);
+  if ( m->name != NULL )
+    fprintf(stream, "Module name:   '%s'\n", m->name);
+  else
+    fprintf(stream, "Module name:   (undefined)\n");
+
+  print_code = 0;
+  switch(m->type) {
+    case MODULE_IS_VM_CODE: mod_type = "BOX-VM code"; print_code = 0; break;
+    case MODULE_IS_C_FUNC:  mod_type = "external C-function"; break;
+    case MODULE_UNDEFINED:  mod_type = "undefined"; break;
+    default:  mod_type = "this should never appear!"; break;
+  }
+  fprintf(stream, "Module type:   %s\n", mod_type);
+
+  /*if ( print_code )
+  return VM_Disassemble(stream, m->ptr.vm.code, m->ptr.vm.dim);*/
+  return Success;
+}
+
+/* This function prints the assembly source code of all the installed modules.
+ */
+Task VM_Module_Disassemble_All(VMProgram *vmp, FILE *stream) {
+  Intg n, module_num;
+
+  if ( vmp->vm_modules_list == NULL ) return Success;
+
+  module_num = Arr_NumItem(vmp->vm_modules_list);
+  for(n = 1; n <= module_num; n++) {
+    TASK( VM_Module_Disassemble(vmp, n, stream) );
+  }
+  return Success;
+}
+
+/* Traduce il codice binario della VM, in formato testo.
+ * prog e' il puntatore all'inizio del codice, dim e' la dimensione del codice
+ * da tradurre (espresso in "numero di VMByteX4").
+ */
+Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
+  register VMByteX4 *i_pos = (VMByteX4 *) prog;
+  VMStatus vm, *vmold = vmcur;
+  UInt pos, nargs;
+  const char *iname;
+  char *iarg[VM_MAX_NUMARGS];
+
+  MSG_LOCATION("VM_Disassemble");
+
+  vmcur = & vm;
+  vm.flags.exit = vm.flags.error = 0;
+  for ( pos = 0; pos < dim; ) {
+    register VMByteX4 i_eye;
+    register int is_long;
+
+    vm.i_pos = i_pos;
+
+    /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
+    ASM_GET_FORMAT(vm.i_pos, i_eye, is_long);
+    vm.flags.is_long = is_long;
+    if ( is_long ) {
+      ASM_LONG_GET_HEADER(vm.i_pos, i_eye, vm.i_type, vm.i_len, vm.arg_type);
+      vm.i_eye = i_eye;
+      vm.flags.is_long = 1;
+
+    } else {
+      ASM_SHORT_GET_HEADER(vm.i_pos, i_eye, vm.i_type, vm.i_len, vm.arg_type);
+      vm.i_eye = i_eye;
+      vm.flags.is_long = 0;
+    }
+#ifdef DEBUG_VM_D_EVERY_ONE
+    printf("Instruction at position "SUInt": "
+     "{is_long = %d, length = "SUInt", type = "SUInt
+     ", arg_type = "SUInt")\n",
+     pos, vm.flags.is_long, vm.i_len, vm.i_type, vm.arg_type);
+#endif
+
+    if ( (vm.i_type < 1) || (vm.i_type >= ASM_ILLEGAL) ) {
+  iname = "???";
+  vm.i_len = 1;
+  nargs = 0;
+
+    } else {
+      /* Trovo il descrittore di istruzione */
+      vm.idesc = & vm_instr_desc_table[vm.i_type];
+      iname = vm.idesc->name;
+
+      /* Localizza in memoria gli argomenti */
+      nargs = vm.idesc->numargs;
+
+      vm.idesc->disasm(iarg);
+      if ( vm.flags.exit ) goto vm_disassemble_err;
+    }
+
+    if ( vm.flags.error ) {
+      fprintf(output, SUInt "\t%8.8lx\tError!",
+              (UInt) (pos * sizeof(VMByteX4)), *i_pos);
+
+    } else {
+      int i;
+      VMByteX4 *i_pos2 = i_pos;
+
+      /* Stampo l'istruzione e i suoi argomenti */
+      fprintf( output, SUInt "\t", (UInt) (pos * sizeof(VMByteX4)) );
+      if ( vm_dflags.hexcode )
+        fprintf(output, "%8.8lx\t", *(i_pos2++));
+      fprintf(output, "%s", iname);
+
+      if ( nargs > 0 ) {
+        UInt n;
+
+        assert(nargs <= VM_MAX_NUMARGS);
+
+        fprintf(output, " %s", iarg[0]);
+        for ( n = 1; n < nargs; n++ )
+          fprintf(output, ", %s", iarg[n]);
+      }
+      fprintf(output, "\n");
+
+      /* Stampo i restanti codici dell'istruzione in esadecimale */
+      if ( vm_dflags.hexcode ) {
+        for( i = 1; i < vm.i_len; i++ )
+          fprintf(output, "\t%8.8lx\n", *(i_pos2++));
+      }
+    }
+
+    /* Passo alla prossima istruzione */
+    if ( vm.i_len < 1 ) goto vm_disassemble_err;
+
+    vm.i_pos = (i_pos += vm.i_len);
+    pos += vm.i_len;
+  }
+
+  vmcur = vmold;
+  return Success;
+
+vm_disassemble_err:
+    vmcur = vmold;
   return Failed;
 }
 
@@ -759,25 +926,309 @@ Task VM_Module_Execute(VMProgram *vmp, Intg mnum) {
  * Functions to assemble code                                                  *
  *******************************************************************************/
 
-Task VMProg_Execute_Module(VMProgram *vmp, UInt module, int *status);
-Task VMProg_Assemble(VMProgram *vmp, AsmCode instr, ...);
-Task VMProg_Dasm(VMProgram *vmp, UInt module, FILE *out);
-Task VMProg_Dasm_Data(VMProgram *vmp, FILE *out);
-Task VMProg_Dasm_All(VMProgram *vmp, FILE *out);
-Task VMProg_Dasm_Opts(VMProgram *vmp, ???);
-Task VMProg_Save(VMProgram *vmp, FILE *out);
-Task VMProg_Load(VMProgram *vmp, FILE *in);
+static AsmOut *vm_cur_output = NULL;
+static AsmOut *tmp_code = NULL;
 
-Task VM_Module_Globals(Intg *num_var, Intg *num_reg);
-Task VM_Module_Global_Set(Intg type, Intg reg, void *value);
-  Task VM_Module_Execute(Intg mnum);
-  void VM_DSettings(int hexcode);
-  Task VM_Module_Disassemble(FILE *stream, Intg module_num);
-  Task VM_Module_Disassemble_All(FILE *stream);
-  Task VM_Disassemble(FILE *output, void *prog, UInt dim);
-AsmOut *VM_Asm_Out_New(Intg dim);
-Task VM_Asm_Out_Set(AsmOut *out);
-Task VM_Asm_Prepare(Intg *num_var, Intg *num_reg);
-Task VM_Asm_Install(Intg module, AsmOut *program);
-  void VM_Assemble(AsmCode instr, ...);
-int VM_Save(FILE *out, Intg module_num);
+
+/* DESCRIZIONE: Imposta le opzioni per l'assemblaggio:
+ *  L'opzione puo' essere settata con un valore > 0, resettata con 0
+ *  e lasciata inalterata con un valore < 0.
+ *  1) forcelong: forza la scrittura di tutte le istruzioni in formato lungo.
+ *  2) error: indica se, nel corso della scrittura del programma,
+ *   si e' verificato un errore;
+ *  3) inhibit: inibisce la scrittura del programma (per errori ad esempio).
+ * NOTA: Le opzioni da error in poi "appartengono" al programma attualmente
+ *  in scrittura.
+ */
+void VM_ASettings(int forcelong, int error, int inhibit) {
+  /* VM_SET e' definita nell'header virtmach.h */
+  VM_SET(vm_aflags, forcelong);
+
+  VM_SET(vm_cur_output->status, error);
+  VM_SET(vm_cur_output->status, inhibit);
+
+  return;
+}
+
+/* Crea un nuovo "foglio bianco" dove poter scrivere le istruzioni
+ * assemblate da VM_Assemble. Ad esempio, dopo l'esecuzione delle istruzioni:
+ *   out = VM_Asm_Out_New(-1);
+ *   VM_Asm_Out_Set(out);
+ * L'output della funzione VM_Assemble finira' in out.
+ */
+AsmOut *VM_Asm_Out_New(Intg dim) {
+  AsmOut *out;
+  Array *prog;
+
+  if ( dim < 1 ) dim = VM_TYPICAL_MOD_DIM;
+  prog = Array_New( sizeof(VMByteX4), dim );
+  if ( prog == NULL ) return NULL;
+
+  out = (AsmOut *) malloc( sizeof(AsmOut) );
+  if ( out == NULL ) {
+    MSG_ERROR("Memoria esaurita!");
+    return NULL;
+  }
+
+  out->status.error = 0;
+  out->status.inhibit = 0;
+  out->program = prog;
+  return out;
+}
+
+/* Seleziona l'output della funzione VM_Assemble().
+ * NOTA: Se out = NULL, restituisce Failed.
+ */
+Task VM_Asm_Out_Set(AsmOut *out) {
+  if ( out == NULL ) return Failed;
+  vm_cur_output = out;
+  return Success;
+}
+
+/* DESCRIPTION: This function execute the final steps to prepare the program
+ *  to be installed as a module and to be executed.
+ *  num_reg and num_var are the pointers to arrays of NUM_TYPES elements
+ *  containing the numbers of register and variables used by the program
+ *  for every type.
+ *  module is the module-number of an undefined module which will be used
+ *  to install the program.
+ */
+Task VM_Asm_Prepare(Intg *num_var, Intg *num_reg) {
+  AsmOut *save_cur = vm_cur_output;
+  Array *prog, *prog_beginning;
+
+  /* Clean or set-up the array for the temporary code */
+  if ( tmp_code == NULL ) {
+    tmp_code = VM_Asm_Out_New( VM_TYPICAL_TMP_SIZE );
+    if ( tmp_code == NULL ) return Failed;
+  } else {
+    if IS_FAILED( Arr_Clear(tmp_code->program) ) return Failed;
+  }
+
+  VM_Assemble(ASM_RET);
+
+  vm_cur_output = tmp_code;
+  {
+    register Intg i;
+    Intg instruction[NUM_TYPES] = {
+      ASM_NEWC_II, ASM_NEWI_II, ASM_NEWR_II, ASM_NEWP_II, ASM_NEWO_II};
+
+      for(i = 0; i < NUM_TYPES; i++) {
+        register Intg nv = num_var[i], nr = num_reg[i];
+        if ( (nv < 0) || (nr < 0) ) {
+          MSG_ERROR("Errore nella chiamata di VM_Asm_Prepare."); goto err;
+        }
+        if ( (nv > 0) || (nr > 0) )
+          VM_Assemble(instruction[i], CAT_IMM, nv, CAT_IMM, nr);
+      }
+  }
+  vm_cur_output = save_cur;
+  prog_beginning = tmp_code->program;
+  prog = vm_cur_output->program;
+
+  if IS_FAILED(
+               Arr_Insert(prog, 1, Arr_NumItem(prog_beginning), Arr_Ptr(prog_beginning))
+              ) return Failed;
+  return Success;
+
+err:
+    vm_cur_output = save_cur;
+  return Failed;
+}
+
+/* DESCRIPTION: This function install a program (written using
+ *  the object AsmOut) into the module with number module.
+ * NOTE: program will be destroyed.
+ */
+Task VM_Asm_Install(Intg module, AsmOut *program) {
+  Array *p;
+  VMModulePtr ptr;
+  p = program->program;
+  ptr.vm.dim = Arr_NumItem(p);
+  ptr.vm.code = Arr_Data_Only(p);
+  free(program);
+  if IS_FAILED( VM_Module_Define(module, MODULE_IS_VM_CODE, ptr) )
+    return Failed;
+  return Success;
+}
+
+/* DESCRIZIONE: Assembla l'istruzione specificata da instr, scrivendo il codice
+ *  binario ad essa corrispondente nella destinazione specificata dalla funzione
+ *  VM_Asm_Out_Set().
+ */
+void VM_Assemble(AsmCode instr, ...) {
+  va_list ap;
+  int i, t;
+  VMInstrDesc *idesc;
+  int is_short;
+  struct {
+    TypeID t;  /* Tipi degli argomenti */
+    AsmArg c;  /* Categorie degli argomenti */
+    void *ptr; /* Puntatori ai valori degli argomenti */
+    Intg  vi;   /* Destinazione dei valori...   */
+    Real  vr;   /* ...immediati degli argomenti */
+    Point vp;
+  } arg[VM_MAX_NUMARGS];
+
+  MSG_LOCATION("VM_Assemble");
+
+  /* Esco subito se e' settato il flag di inibizione! */
+  if ( vm_cur_output->status.inhibit ) return;
+
+  if ( (instr < 1) || (instr >= ASM_ILLEGAL) ) {
+    MSG_ERROR("Istruzione non riconosciuta!");
+    return;
+  }
+
+  idesc = & vm_instr_desc_table[instr];
+
+  assert( idesc->numargs <= VM_MAX_NUMARGS );
+
+  va_start(ap, instr);
+
+  /* Prendo argomento per argomento */
+  t = 0; /* Indice di argomento */
+  is_short = 1;
+  for ( i = 0; i < idesc->numargs; i++ ) {
+    Intg vi;
+
+    /* Prendo dalla lista degli argomenti della funzione la categoria
+    * dell'argomento dell'istruzione.
+    */
+    switch ( arg[t].c = va_arg(ap, AsmArg) ) {
+      case CAT_LREG:
+      case CAT_GREG:
+      case CAT_PTR:
+        arg[t].t = TYPE_INTG;
+        arg[t].vi = vi = va_arg(ap, Intg);
+        arg[t].ptr = (void *) (& arg[t].vi);
+        break;
+
+      case CAT_IMM:
+        switch (idesc->t_id) {
+          case TYPE_CHAR:
+            arg[t].t = TYPE_CHAR;
+            arg[t].vi = va_arg(ap, Intg); vi = 0;
+            arg[t].ptr = (void *) (& arg[t].vi);
+            break;
+          case TYPE_INTG:
+            arg[t].t = TYPE_INTG;
+            arg[t].vi = vi = va_arg(ap, Intg);
+            arg[t].ptr = (void *) (& arg[t].vi);
+            break;
+          case TYPE_REAL:
+            is_short = 0;
+            arg[t].t = TYPE_REAL;
+            arg[t].vr = va_arg(ap, Real);
+            arg[t].ptr = (void *) (& arg[t].vr);
+            break;
+          case TYPE_POINT:
+            is_short = 0;
+            arg[t].t = TYPE_POINT;
+            arg[t].vp.x = va_arg(ap, Real);
+            arg[t].vp.y = va_arg(ap, Real);
+            arg[t].ptr = (void *) (& arg[t].vp);
+            break;
+          default:
+            is_short = 0;
+            break;
+        }
+        break;
+
+      default:
+        MSG_ERROR("Categoria di argomenti sconosciuta!");
+        vm_cur_output->status.error = 1;
+        vm_cur_output->status.inhibit = 1;
+        break;
+    }
+
+    if (is_short) {
+      /* Controllo che l'argomento possa essere "contenuto"
+      * nel formato corto.
+      */
+      vi &= ~0x7fL;
+      if ( (vi != 0) && (vi != ~0x7fL) )
+        is_short = 0;
+    }
+
+    ++t;
+  }
+
+  va_end(ap);
+
+  assert(t == idesc->numargs);
+
+  /* Cerco di capire se e' possibile scrivere l'istruzione in formato corto */
+  if ( vm_aflags.forcelong ) is_short = 0;
+  if ( (is_short == 1) && (t <= 2) ) {
+    /* L'istruzione va scritta in formato corto! */
+    VMByteX4 buffer[1], *i_pos = buffer;
+    register VMByteX4 i_eye;
+    UInt atype;
+    Array *prog = vm_cur_output->program;
+
+    for ( ; t < 2; t++ ) {
+      arg[t].c = 0;
+      arg[t].vi = 0;
+    }
+
+    atype = (arg[1].c << 2) | arg[0].c;
+    ASM_SHORT_PUT_HEADER(i_pos, i_eye, instr, /* is_long = */ 0,
+                         /* i_len = */ 1, atype);
+    ASM_SHORT_PUT_2ARGS(i_pos, i_eye, arg[0].vi, arg[1].vi);
+
+    if IS_FAILED( Arr_Push(prog, buffer) ) {
+      vm_cur_output->status.error = 1;
+      vm_cur_output->status.inhibit = 1;
+      return;
+    }
+    return;
+
+  } else {
+    /* L'istruzione va scritta in formato lungo! */
+    UInt idim, iheadpos;
+    VMByteX4 iw[MAX_SIZE_IN_IWORDS];
+    Array *prog = vm_cur_output->program;
+
+    /* Lascio il posto per la "testa" dell'istruzione (non conoscendo ancora
+    * la dimensione dell'istruzione, non posso scrivere adesso la testa.
+    * Potro' farlo solo alla fine, dopo aver scritto tutti gli argomenti!)
+    */
+    iheadpos = Arr_NumItem(prog) + 1;
+    Arr_MInc(prog, idim = 2);
+
+    for ( i = 0; i < t; i++ ) {
+      UInt adim, aiwdim;
+
+      adim = size_of_type[arg[i].t];
+      aiwdim = (adim + sizeof(VMByteX4) - 1) / sizeof(VMByteX4);
+      iw[aiwdim - 1] = 0;
+      (void) memcpy( iw, arg[i].ptr, adim );
+
+      if IS_FAILED( Arr_MPush(prog, iw, aiwdim) ) {
+        vm_cur_output->status.error = 1;
+        vm_cur_output->status.inhibit = 1;
+        return;
+      }
+
+      idim += aiwdim;
+    }
+
+    {
+      VMByteX4 *i_pos;
+      register VMByteX4 i_eye;
+      UInt atype;
+
+      /* Trovo il puntatore alla testa dell'istruzione */
+      i_pos = Arr_ItemPtr(prog, VMByteX4, iheadpos);
+
+      for ( ; t < 2; t++ )
+        arg[t].c = 0;
+
+      /* Scrivo la "testa" dell'istruzione */
+      atype = (arg[1].c << 2) | arg[0].c;
+      ASM_LONG_PUT_HEADER(i_pos, i_eye, instr, /* is_long = */ 1,
+                          /* i_len = */ idim, atype);
+    }
+  }
+}
