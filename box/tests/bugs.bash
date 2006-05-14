@@ -24,5 +24,13 @@ Print[ ; ]
 EOF
 check_noerr $?
 
+#------------------------------------------------------------------------------
+test_next
+echo "Bug 3: The program with the new version of the VM sometimes gives a segfault"
+$BOX -o x << EOF  >$BOXOUT 2>&1
+a = 1.234
+EOF
+check_noerr $?
+
 echo ">>"
 check_final

@@ -61,6 +61,9 @@ function check_noerr {
   if [ $ne -lt 1 -a $EXIT_STATUS == 0 ]; then
     check_successful "Compilation OK."
   else
+    if [ $EXIT_STATUS != 0 ]; then
+      NUM_ERRORS=$[ $NUM_ERRORS + 1 ]
+    fi
     err_report
     check_failed
   fi
