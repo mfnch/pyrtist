@@ -129,6 +129,11 @@ struct __vmprogram {
   Intg vm_gmin[NUM_TYPES], vm_gmax[NUM_TYPES];
   Obj *box_vm_current, *box_vm_arg1, *box_vm_arg2;
   struct {unsigned int hexcode : 1;} vm_dflags;
+  /* Array in cui verranno disassemblati gli argomenti (scritti con sprintf) */
+  char iarg_str[VM_MAX_NUMARGS][64];
+  struct {unsigned int forcelong : 1;} vm_aflags;
+  AsmOut *vm_cur_output;
+  AsmOut *tmp_code;
   VMStatus *vmcur;
 } VMProgram;
 
@@ -148,5 +153,29 @@ Task VM_Module_Globals(VMProgram *vmp, Intg num_var[], Intg num_reg[]);
 Task VM_Module_Global_Set(VMProgram *vmp, Intg type, Intg reg, void *value);
 
 Task VM_Module_Execute(VMProgram *vmp, Intg mnum);
+
+void VM_DSettings(VMProgram *vmp, int hexcode);
+Task VM_Module_Disassemble(VMProgram *vmp, Intg module_num, FILE *stream);
+Task VM_Module_Disassemble_All(VMProgram *vmp, FILE *stream);
+Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim);
+
+void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit);
+AsmOut *VM_Asm_Out_New(Intg dim);
+void VM_Asm_Out_Set(VMProgram *vmp, AsmOut *out);
+Task VM_Asm_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg);
+Task VM_Asm_Install(VMProgram *vmp, Intg module, AsmOut *program);
+void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
+
+/* Numero minimo di ByteX4 che riesce a contenere tutti i tipi possibili
+ * di argomenti (Intg, Real, Point, Obj)
+ */
+#define MAX_SIZE_IN_IWORDS \
+ ((sizeof(Point) + sizeof(ByteX4) - 1) / sizeof(ByteX4))
+
+#define BOX_VM_CURRENT(vmp, Type) *((Type *) *(vmp)->box_vm_current)
+#define BOX_VM_ARG1(vmp, Type) *((Type *) *(vmp)->box_vm_arg1)
+#define BOX_VM_ARG2(vmp, Type) *((Type *) *(vmp)->box_vm_arg2)
+#define BOX_VM_ARGPTR1(vmp, Type) ((Type *) *(vmp)->box_vm_arg1)
+#define BOX_VM_ARGPTR2(vmp, Type) ((Type *) *(vmp)->box_vm_arg2)
 
 #endif
