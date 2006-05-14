@@ -112,10 +112,10 @@ Task Cmp_Structure_End(Expression *new_struct) {
       struct_addr = Cmp_Data_Add(type,
        Arr_FirstItemPtr(cmp_structure_data, void), size);
       if ( struct_addr < 0 ) return Failed;
-      VM_Assemble(ASM_MOV_OO, CAT_LREG, 0, CAT_GREG, 0);
-      VM_Assemble(ASM_LEA_OO, CAT_LREG, 0, CAT_PTR, struct_addr);
-      VM_Assemble(ASM_MOV_II, CAT_LREG, 0, CAT_IMM, size);
-      VM_Assemble(ASM_MCOPY_OO, new_struct->categ, new_struct->value.i,
+      Cmp_Assemble(ASM_MOV_OO, CAT_LREG, 0, CAT_GREG, 0);
+      Cmp_Assemble(ASM_LEA_OO, CAT_LREG, 0, CAT_PTR, struct_addr);
+      Cmp_Assemble(ASM_MOV_II, CAT_LREG, 0, CAT_IMM, size);
+      Cmp_Assemble(ASM_MCOPY_OO, new_struct->categ, new_struct->value.i,
        CAT_LREG, 0);
     }
 

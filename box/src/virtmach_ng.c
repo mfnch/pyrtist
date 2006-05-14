@@ -457,15 +457,17 @@ void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
 /*******************************************************************************
  * Functions for (de)inizialization                                            *
  *******************************************************************************/
-Task VM_Init(VMProgram *new_vmp) {
-  new_vmp = (VMProgram *) malloc(sizeof(VMProgram));
-  if (new_vmp == NULL) return Failed;
-  new_vmp->vm_modules_list = (Array *) NULL;
-  new_vmp->vm_globals = 0;
-  new_vmp->vm_dflags.hexcode = 0;
-  new_vmp->vm_aflags.forcelong = 0;
-  new_vmp->vm_cur_output = NULL;
-  new_vmp->tmp_code = NULL;
+Task VM_Init(VMProgram **new_vmp) {
+  VMProgram *nv;
+  nv = (VMProgram *) malloc(sizeof(VMProgram));
+  if (nv == NULL) return Failed;
+  nv->vm_modules_list = (Array *) NULL;
+  nv->vm_globals = 0;
+  nv->vm_dflags.hexcode = 0;
+  nv->vm_aflags.forcelong = 0;
+  nv->vm_cur_output = NULL;
+  nv->tmp_code = NULL;
+  *new_vmp = nv;
   return Success;
 }
 

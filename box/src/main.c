@@ -68,6 +68,9 @@ struct opt {
   { NULL }
 }, opt_default =  { "input", PAR_STRING, 0, FLAG_INPUT, 0, 1, & flags, & file_input };
 
+
+static VMProgram *program = NULL;
+
 /* Funzioni definite inquesto file */
 int main(int argc, char** argv);
 void Main_Error_Exit(char *msg);
@@ -203,7 +206,8 @@ int main(int argc, char** argv) {
   if IS_FAILED( Parser_Init(TOK_MAX_INCLUDE, file_setup) )
     Main_Error_Exit( NULL );
 
-  if IS_FAILED( Cmp_Init() ) Main_Error_Exit( NULL );
+  if IS_FAILED( VM_Init(& program) ) Main_Error_Exit( NULL );
+  if IS_FAILED( Cmp_Init(program) ) Main_Error_Exit( NULL );
 
   Msg_Num_Reset_All();
 
@@ -220,7 +224,7 @@ int main(int argc, char** argv) {
   /* Esco dal contesto "Fase di compilazione" */
   Msg_Context_Exit(0);
 
-    if IS_FAILED( Main_Prepare() ) Main_Error_Exit( NULL );
+  if IS_FAILED( Main_Prepare() ) Main_Error_Exit( NULL );
 
   /* Controllo se e' possibile procedere all'esecuzione del file compilato! */
   if ( (flags & FLAG_EXECUTE) && (Msg_Num(MSG_NUM_WARNERRFAT) > 0) ) {
@@ -249,10 +253,10 @@ int main(int argc, char** argv) {
 
     (void) Cmp_Data_Display(stdout);
     fprintf(stdout, "\n");
-    VM_DSettings(1);
+    VM_DSettings(program, 1);
 /*    if IS_FAILED( VM_Module_Disassemble_All(stdout) )
       Main_Error_Exit( NULL );*/
-    if IS_FAILED(  VM_Disassemble(stdout,
+    if IS_FAILED(  VM_Disassemble(program, stdout,
      (cmp_curr_output->program)->ptr, (cmp_curr_output->program)->numel )
                 ) Main_Error_Exit( NULL );
   }
@@ -292,6 +296,7 @@ int main(int argc, char** argv) {
     err_prnclr( stderr );
   }
 */
+  VM_Destroy(program); /* This function accepts program = NULL */
   exit( EXIT_SUCCESS );
 }
 
@@ -300,10 +305,10 @@ Task Main_Prepare(void) {
   int i;
   Intg num_var[NUM_TYPES], num_reg[NUM_TYPES];
   RegVar_Get_Nums(num_var, num_reg);
-  TASK( VM_Asm_Prepare(num_var, num_reg) );
+  TASK( VM_Asm_Prepare(program, num_var, num_reg) );
   /* Preparo i registri globali */
   for(i = 0; i < NUM_TYPES; i++) {num_var[i] = 0; num_reg[i] = 3;}
-  TASK( VM_Module_Globals(num_var, num_reg) );
+  TASK( VM_Module_Globals(program, num_var, num_reg) );
  /* The following function sets gro0 to point to the data segment */
   TASK( Cmp_Data_Prepare() );
   return Success;
@@ -317,7 +322,7 @@ Task Main_Execute(void) {
 
   Msg_Num_Reset_All();
   Msg_Context_Enter("Controllo lo stato di definizione dei moduli.\n");
-  status = VM_Module_Check(1);
+  status = VM_Module_Check(program, 1);
   Msg_Context_Exit(0);
   if ( status == Failed ) {
     MSG_ADVICE( "Trovati " SUInt " errori: l'esecuzione non verra' avviata!",
@@ -327,10 +332,9 @@ Task Main_Execute(void) {
 
   Msg_Num_Reset_All();
   Msg_Context_Enter("Fase di esecuzione:\n");
-  main_module = VM_Module_Undefined("main");
-  if ( main_module < 1 ) return Failed;
-  if IS_FAILED( VM_Asm_Install(main_module, cmp_curr_output) ) return Failed;
-  exit_code = VM_Module_Execute(main_module);
+  TASK( VM_Module_Undefined(program, & main_module, "main") );
+  TASK( VM_Asm_Install(program, main_module, cmp_curr_output) );
+  exit_code = VM_Module_Execute(program, main_module);
 
   Msg_Context_Exit(0);
   MSG_ADVICE( "Esecuzione completata. Trovati " SUInt " errori e "
@@ -345,18 +349,17 @@ Task Main_Execute(void) {
  *  Se msg contiene "%s", questi verranno sostituiti con la stringa usata
  *  per avviare il programma.
  */
-void Main_Error_Exit(char *msg)
-{
+void Main_Error_Exit(char *msg) {
   if ( (msg != NULL) && ((flags & FLAG_SILENT) == 0) ) {
     fprintf(stderr, msg, prog_name);
     fprintf(stderr, "\n");
   }
 
+  VM_Destroy(program); /* This function accepts program = NULL */
   exit( EXIT_FAILURE );
 }
 
-void Main_Cmnd_Line_Help(void)
-{
+void Main_Cmnd_Line_Help(void) {
   fprintf( stderr,
   "\n" PROGRAM_NAME " " VERSION_STR " - Linguaggio per la descrizione di figure grafiche"
   "\n Ideato e programmato da Franchin Matteo - "
@@ -383,46 +386,38 @@ void Main_Cmnd_Line_Help(void)
   exit( EXIT_SUCCESS );
 }
 
-AsmOut *VM_Asm_Out_New(Intg dim);
-Task VM_Asm_Out_Set(AsmOut *out);
-void VM_Assemble(AsmCode instr, ...);
-
-void Temporaneo(void)
-{
+void Temporaneo(void) {
   AsmOut *o;
 
   return;
 
   o = VM_Asm_Out_New(-1);
-  if IS_FAILED( VM_Asm_Out_Set(o) ) {
-    printf("Impossibile creare la destinazione del compilatore!");
-    return;
-  }
+  VM_Asm_Out_Set(program, o);
 
   printf("Writing program...\n");
-  VM_Assemble(ASM_PROJX_P, CAT_GREG, 15);
-  VM_Assemble(ASM_PROJY_P, CAT_LREG, 7);
-  VM_Assemble(ASM_INTG_R, CAT_LREG, 1);
-  VM_Assemble(ASM_REAL_I, CAT_LREG, 2);
-  VM_Assemble(ASM_REAL_I, CAT_IMM, 27);
-  VM_Assemble(ASM_POINT_II, CAT_LREG, 3, CAT_GREG, 4);
-  VM_Assemble(ASM_POINT_RR, CAT_LREG, 5, CAT_LREG, 6);
-  VM_Assemble(ASM_MOV_Iimm, CAT_LREG, 3, CAT_IMM, 1003);
-  VM_Assemble(ASM_MOV_Iimm, CAT_LREG, 3, CAT_IMM, 127);
-  VM_Assemble(ASM_MOV_Iimm, CAT_LREG, 3, CAT_IMM, 128);
-  VM_Assemble(ASM_MOV_Pimm, CAT_LREG, 2, CAT_IMM, 3.1415, -2.7);
-  VM_Assemble(ASM_MOV_Rimm, CAT_LREG, 23, CAT_IMM, 1.234567);
-  VM_Assemble(ASM_MOV_II, CAT_LREG, 3, CAT_IMM, -128);
-  VM_Assemble(ASM_MOV_Iimm, CAT_LREG, 3, CAT_IMM, -129);
-  VM_Assemble(ASM_CALL_Iimm, CAT_LREG, 13);
-  VM_Assemble(ASM_MOV_II, CAT_GREG, 1, CAT_LREG, 3);
-  VM_Assemble(ASM_MOV_II, CAT_LREG, 2, CAT_PTR, -2000);
-  VM_Assemble(ASM_ADD_II, CAT_GREG, 1, CAT_IMM, 37);
-  VM_Assemble(ASM_RET);
+  Cmp_Assemble(ASM_PROJX_P, CAT_GREG, 15);
+  Cmp_Assemble(ASM_PROJY_P, CAT_LREG, 7);
+  Cmp_Assemble(ASM_INTG_R, CAT_LREG, 1);
+  Cmp_Assemble(ASM_REAL_I, CAT_LREG, 2);
+  Cmp_Assemble(ASM_REAL_I, CAT_IMM, 27);
+  Cmp_Assemble(ASM_POINT_II, CAT_LREG, 3, CAT_GREG, 4);
+  Cmp_Assemble(ASM_POINT_RR, CAT_LREG, 5, CAT_LREG, 6);
+  Cmp_Assemble(ASM_MOV_Iimm, CAT_LREG, 3, CAT_IMM, 1003);
+  Cmp_Assemble(ASM_MOV_Iimm, CAT_LREG, 3, CAT_IMM, 127);
+  Cmp_Assemble(ASM_MOV_Iimm, CAT_LREG, 3, CAT_IMM, 128);
+  Cmp_Assemble(ASM_MOV_Pimm, CAT_LREG, 2, CAT_IMM, 3.1415, -2.7);
+  Cmp_Assemble(ASM_MOV_Rimm, CAT_LREG, 23, CAT_IMM, 1.234567);
+  Cmp_Assemble(ASM_MOV_II, CAT_LREG, 3, CAT_IMM, -128);
+  Cmp_Assemble(ASM_MOV_Iimm, CAT_LREG, 3, CAT_IMM, -129);
+  Cmp_Assemble(ASM_CALL_Iimm, CAT_LREG, 13);
+  Cmp_Assemble(ASM_MOV_II, CAT_GREG, 1, CAT_LREG, 3);
+  Cmp_Assemble(ASM_MOV_II, CAT_LREG, 2, CAT_PTR, -2000);
+  Cmp_Assemble(ASM_ADD_II, CAT_GREG, 1, CAT_IMM, 37);
+  Cmp_Assemble(ASM_RET);
   printf("Completed!\nDisassembling...\n");
-  VM_DSettings(1);
+  VM_DSettings(program, 1);
   if IS_FAILED(
-   VM_Disassemble(stdout, (o->program)->ptr, (o->program)->numel) ) {
+   VM_Disassemble(program, stdout, (o->program)->ptr, (o->program)->numel) ) {
     printf("Ho qualche problema nella scrittura del programma!\n");
     return;
   }

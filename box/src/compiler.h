@@ -1,7 +1,38 @@
-/* compiler.h - Autore: Franchin Matteo - dicembre 2004
+/***************************************************************************
+ *   Copyright (C) 2006 by Matteo Franchin                                 *
+ *   fnch@libero.it                                                        *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+
+/* compiler.h - dicembre 2004
  *
  * Questo file contiene le dichiarazioni per typeman.c, symbol.c, compiler.c
  */
+
+#ifndef _COMPILER_H
+#define _COMPILER_H
+
+#include "virtmach.h"
+
+/* The target of the compilation */
+extern VMProgram *cmp_vm;
+
+/* We make our life simpler, since we write code always in cmp_vm */
+#define Cmp_Assemble(...) VM_Assemble(cmp_vm, __VA_ARGS__)
 
 typedef struct {
   struct {
@@ -340,7 +371,7 @@ Symbol *Sym_Explicit_Find(Name *nm, Intg depth, int mode);
 Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth);
 
 /* Procedure definite in 'compiler.c'*/
-Task Cmp_Init(void);
+Task Cmp_Init(VMProgram *program);
 Task Cmp_Finish(void);
 Operator *Cmp_Operator_New(char *token);
 Operation *Cmp_Operation_Add(Operator *opr, Intg type1, Intg type2, Intg typer);
@@ -406,4 +437,5 @@ Task Cmp_Convert(Intg type, Expression *e);
 #define BOX_MODIFICATION 2
 
 Task Cmp_Def_C_Procedure(Intg procedure, int when_should_call, Intg of_type,
-                         Task (*C_func)(void));
+ Task (*C_func)(VMProgram *));
+#endif

@@ -1,21 +1,22 @@
-/*
- * Copyright (C) 2006 Matteo Franchin
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301, USA.
- */
+/***************************************************************************
+ *   Copyright (C) 2006 by Matteo Franchin                                 *
+ *   fnch@libero.it                                                        *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
 
 /*
  * Questo file contiene l'implementazione del compilatore.
@@ -46,6 +47,9 @@
 
 /******************************************************************************/
 
+/* The target of the compilation */
+VMProgram *cmp_vm;
+
 /* "Collezione" di tutti gli operatori */
 struct cmp_opr_struct cmp_opr;
 
@@ -55,7 +59,7 @@ AsmOut *cmp_curr_output;
 /******************************************************************************/
 
 /* Gets ready to start the compilation */
-Task Cmp_Init(void) {
+Task Cmp_Init(VMProgram *program) {
   static UInt typl_nreg[NUM_TYPES] = REG_OCC_TYP_SIZE;
   static UInt typl_nvar[NUM_TYPES] = VAR_OCC_TYP_SIZE;
 
@@ -67,9 +71,11 @@ Task Cmp_Init(void) {
   TASK( Reg_Init(typl_nreg) );
   TASK( Var_Init(typl_nvar) );
 
+  cmp_vm = program;
+
   /* Sets the output for the compiled code */
   cmp_curr_output = VM_Asm_Out_New(-1);
-  TASK( VM_Asm_Out_Set(cmp_curr_output) );
+  VM_Asm_Out_Set(cmp_vm, cmp_curr_output);
   TASK( Cmp_Box_Instance_Begin( NULL ) );
 
   /* Inizializzo le routine che servono per la compilazione */
@@ -357,7 +363,7 @@ Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn) {
   if ( c_opn->is.intrinsic ) {
     if ( (e->categ == CAT_LREG) && (e->value.i == 0) ) {
       /* Si tratta del registro r0 (ri0, rr0, ...) */
-      VM_Assemble( c_opn->asm_code, CAT_LREG, (Intg) 0 );
+      Cmp_Assemble( c_opn->asm_code, CAT_LREG, (Intg) 0 );
       e->type = type_dest;
       e->resolved = Tym_Type_Resolve_All(type_dest);
 
@@ -365,7 +371,7 @@ Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn) {
       /* Metto l'espressione nel registro 0 */
       TASK( Cmp_Expr_To_LReg(e) );
       TASK( Cmp_Complete_Ptr_1(e) );
-      VM_Assemble( c_opn->asm_code, e->categ, e->value.i );
+      Cmp_Assemble( c_opn->asm_code, e->categ, e->value.i );
       TASK( Cmp_Expr_Destroy_Tmp(e) );
       TASK( Cmp_Expr_Reg0(e, type_dest) );
     }
@@ -385,7 +391,7 @@ Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn) {
     TASK( Cmp_Expr_Create(& new_e, type_dest, /* temporary = */ 1) );
     TASK( Cmp_Expr_To_Ptr(& new_e, CAT_GREG, (Intg) 1, 0) );
   /* call conv_func */
-    VM_Assemble(ASM_CALL_I, CAT_IMM, c_opn->module);
+    Cmp_Assemble(ASM_CALL_I, CAT_IMM, c_opn->module);
     TASK( Cmp_Expr_Destroy_Tmp(e) );
     *e = new_e;
     return Success;
@@ -404,12 +410,12 @@ Task Cmp_Member_Intrinsic(Expression *e, Name *m) {
        case 'x':
         TASK( Cmp_Expr_To_LReg(e) );
         TASK( Cmp_Complete_Ptr_1(e) );
-        VM_Assemble(ASM_PPTRX_P, e->categ, e->value.i);
+        Cmp_Assemble(ASM_PPTRX_P, e->categ, e->value.i);
         break;
        case 'y':
         TASK( Cmp_Expr_To_LReg(e) );
         TASK( Cmp_Complete_Ptr_1(e) );
-        VM_Assemble(ASM_PPTRY_P, e->categ, e->value.i);
+        Cmp_Assemble(ASM_PPTRY_P, e->categ, e->value.i);
         break;
        default:
         goto cmp_memb_intr_err;
@@ -420,7 +426,7 @@ Task Cmp_Member_Intrinsic(Expression *e, Name *m) {
       /* ATTENZIONE: devo mettere ro0 in un registro locale temporaneo */
 
       if ( (addr = Reg_Occupy(TYPE_OBJ)) < 1 ) return Failed;
-      VM_Assemble(ASM_MOV_OO, CAT_LREG, addr, CAT_LREG, 0);
+      Cmp_Assemble(ASM_MOV_OO, CAT_LREG, addr, CAT_LREG, 0);
 
       e->resolved = e->type = TYPE_REAL;
       e->categ = CAT_PTR;
@@ -673,11 +679,11 @@ static Expression *Opn_Exec_Intrinsic(
         /*e2value = e2->value.i, e2categ = e2->categ;*/
         if IS_FAILED( Cmp_Expr_Force_To_LReg(e2) ) return NULL;
         if IS_FAILED( Cmp_Complete_Ptr_1(& old_e2) ) return NULL;
-        VM_Assemble(opn->asm_code, old_e2.categ, old_e2.value.i);
+        Cmp_Assemble(opn->asm_code, old_e2.categ, old_e2.value.i);
         return e2;
       } else {
         if IS_FAILED( Cmp_Complete_Ptr_1(e1) ) return NULL;
-        VM_Assemble(opn->asm_code, e1->categ, e1->value.i);
+        Cmp_Assemble(opn->asm_code, e1->categ, e1->value.i);
         return e1;
       }
     } else {
@@ -686,7 +692,7 @@ static Expression *Opn_Exec_Intrinsic(
 
       /* Ora compilo l'operazione */
       if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
-      VM_Assemble(opn->asm_code,
+      Cmp_Assemble(opn->asm_code,
        e1->categ, e1->value.i, e2->categ, e2->value.i);
 
       /* Ora libero il registro che non contiene il risultato! */
@@ -731,7 +737,7 @@ static Expression *Opn_Exec_Intrinsic(
           if ( (Cmp_Expr_To_LReg(e1) == Failed)
             || (Cmp_Expr_To_LReg(e2) == Failed) ) return NULL;
           if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
-          VM_Assemble(opn->asm_code,
+          Cmp_Assemble(opn->asm_code,
            e1->categ, e1->value.i, e2->categ, e2->value.i);
           Cmp_Expr_Destroy_Tmp(e1);
           Cmp_Expr_Destroy_Tmp(e2);
@@ -749,7 +755,7 @@ er_equal_e1:
             if IS_FAILED( Cmp_Expr_Force_To_LReg(e1) ) return NULL;
             if IS_FAILED( Cmp_Expr_To_X(e2, CAT_LREG, 0, 1) ) return NULL;
             if IS_FAILED( Cmp_Complete_Ptr_1(e1) ) return NULL;
-            VM_Assemble(opn->asm_code, e1->categ, e1->value.i);
+            Cmp_Assemble(opn->asm_code, e1->categ, e1->value.i);
             return e1;
 
           } else { /* caso 3: tipi tutti diversi */
@@ -765,7 +771,7 @@ er_equal_e1:
         if ( opn_is.right ) e1 = e2;
         if IS_FAILED( Cmp_Expr_Force_To_LReg(e1) ) return NULL;
         if IS_FAILED( Cmp_Complete_Ptr_1(e1) ) return NULL;
-        VM_Assemble(opn->asm_code, e1->categ, e1->value.i);
+        Cmp_Assemble(opn->asm_code, e1->categ, e1->value.i);
         return e1;
 
       } else {
@@ -794,7 +800,7 @@ er_equal_e1:
 
         /* Ora compilo l'operazione */
         if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
-        VM_Assemble(opn->asm_code,
+        Cmp_Assemble(opn->asm_code,
          e1->categ, e1->value.i, e2->categ, e2->value.i);
 
         /* Ora libero il registro che non contiene il risultato! */
@@ -874,7 +880,7 @@ Expression *Cmp_Operation_Exec(
 
                 /* Ora compilo l'operazione */
                 if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
-                VM_Assemble(opn->asm_code,
+                Cmp_Assemble(opn->asm_code,
                  e1->categ, e1->value.i, e2->categ, e2->value.i);
 
                 /* Ora libero il registro che non contiene il risultato! */
@@ -897,6 +903,12 @@ Expression *Cmp_Operation_Exec(
  */
 void Cmp_Expr_Print(FILE *out, Expression *e) {
   char buffer[128], *value = buffer;
+  static const char *asm_arg_str[4] = {
+    "global register",
+    "local register",
+    "pointer to location",
+    "immediate value"
+  };
 
   if ( ! e->is.typed ) {
     fprintf(out, "Name(name=\"%s\")\n", e->value.nm.text);
@@ -1073,8 +1085,8 @@ Task Cmp_Expr_LReg(Expression *e, Intg type, int zero) {
         if ( zero ) { e->value.i = 0; }
          else { if ( (e->value.i = Reg_Occupy(TYPE_OBJ)) < 1 ) return Failed; }
 
-        VM_Assemble(ASM_MALLOC_I, CAT_IMM, s);
-        VM_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
+        Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, s);
+        Cmp_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
       }
     }
     return Success;
@@ -1108,9 +1120,9 @@ Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free) {
     if ( (expr->categ == CAT_IMM) && (! is_integer) ) {
       switch ( expr->resolved ) {
        case TYPE_REAL:
-        VM_Assemble(ASM_MOV_Rimm, categ, reg, CAT_IMM, expr->value.r); break;
+        Cmp_Assemble(ASM_MOV_Rimm, categ, reg, CAT_IMM, expr->value.r); break;
        case TYPE_POINT:
-        VM_Assemble(ASM_MOV_Pimm, categ, reg, CAT_IMM, expr->value.p); break;
+        Cmp_Assemble(ASM_MOV_Pimm, categ, reg, CAT_IMM, expr->value.p); break;
        default:
         MSG_ERROR( "Errore interno: non sono ammessi valori immediati"
          " per il tipo '%s'.", Tym_Type_Name(expr->type) );
@@ -1127,7 +1139,7 @@ Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free) {
         *   mov rr1, real[ro0+8] <-- prelevo il valore
         */
         Intg addr_categ = ( expr->is.gaddr ) ? CAT_GREG : CAT_LREG;
-        VM_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0,
+        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0,
          addr_categ, expr->addr );
       }
 
@@ -1136,7 +1148,7 @@ Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free) {
         return Failed;
       }
 
-      VM_Assemble(asm_mov[t], categ, reg, expr->categ, expr->value.i);
+      Cmp_Assemble(asm_mov[t], categ, reg, expr->categ, expr->value.i);
       EXIT_FUNCTION;
     }
 
@@ -1145,12 +1157,12 @@ Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free) {
 
     if ( expr->categ == CAT_PTR ) {
       register Intg addr_categ = ( expr->is.gaddr ) ? CAT_GREG : CAT_LREG;
-      VM_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, expr->addr );
-      VM_Assemble( ASM_LEA_OO, categ, reg, CAT_PTR, expr->value.i );
+      Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, expr->addr );
+      Cmp_Assemble( ASM_LEA_OO, categ, reg, CAT_PTR, expr->value.i );
       EXIT_FUNCTION;
 
     } else { /* expr->categ == CAT_LREG, CAT_GREG */
-      VM_Assemble(ASM_MOV_OO, categ, reg, expr->categ, expr->value.i);
+      Cmp_Assemble(ASM_MOV_OO, categ, reg, expr->categ, expr->value.i);
       EXIT_FUNCTION;
     }
   }
@@ -1199,8 +1211,8 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
 
     TASK( Cmp_Expr_To_X(expr, CAT_LREG, (Intg) 0, and_free) );
     assert( (t >= 0) && (t < NUM_INTRINSICS) );
-    VM_Assemble(asm_lea[t], CAT_LREG, (Intg) 0);
-    VM_Assemble(ASM_MOV_OO, categ, reg, CAT_LREG, (Intg) 0);
+    Cmp_Assemble(asm_lea[t], CAT_LREG, (Intg) 0);
+    Cmp_Assemble(ASM_MOV_OO, categ, reg, CAT_LREG, (Intg) 0);
     return Success;
 
   } else {
@@ -1216,24 +1228,24 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
         *   mov ..., ro0 <-- metto l'indirizzo dove richiesto
         */
         register Intg addr_categ = ( expr->is.gaddr ) ? CAT_GREG : CAT_LREG;
-        VM_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, expr->addr );
+        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, expr->addr );
       }
 
-      VM_Assemble(asm_lea[t], expr->categ, expr->value.i);
-      VM_Assemble(ASM_MOV_OO, categ, reg, CAT_LREG, (Intg) 0);
+      Cmp_Assemble(asm_lea[t], expr->categ, expr->value.i);
+      Cmp_Assemble(ASM_MOV_OO, categ, reg, CAT_LREG, (Intg) 0);
       if ( !and_free ) return Success;
       return Cmp_Expr_Destroy_Tmp(expr);
 
     } else {
       if ( expr->categ == CAT_PTR ) {
         register Intg addr_categ = ( expr->is.gaddr ) ? CAT_GREG : CAT_LREG;
-        VM_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, expr->addr );
-        VM_Assemble( ASM_LEA_OO, categ, reg, CAT_PTR, expr->value.i );
+        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, expr->addr );
+        Cmp_Assemble( ASM_LEA_OO, categ, reg, CAT_PTR, expr->value.i );
         if ( !and_free ) return Success;
         return Cmp_Expr_Destroy_Tmp(expr);
 
       } else { /* expr->categ == CAT_LREG, CAT_GREG */
-        VM_Assemble(ASM_MOV_OO, categ, reg, expr->categ, expr->value.i);
+        Cmp_Assemble(ASM_MOV_OO, categ, reg, expr->categ, expr->value.i);
       }
     }
   }
@@ -1293,8 +1305,8 @@ Task Cmp_Expr_Create(Expression *e, Intg type, int temporary) {
   if ( intrinsic ) return Success;
 
   /* If the object is of a user defined type, we must allocate it! */
-  VM_Assemble(ASM_MALLOC_I, CAT_IMM, td->size);
-  VM_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
+  Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, td->size);
+  Cmp_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
   e->is.allocd = 1;
   return Success;
 }
@@ -1344,7 +1356,7 @@ Task Cmp_Expr_Destroy(Expression *e, int destroy_target) {
 
     if (!intrinsic && e->is.allocd && (!e->is.target || destroy_target)) {
       // ??? dovrei usare Cmp_Complete_Ptr_1?
-      VM_Assemble(ASM_MFREE_O, e->categ, e->value.i);
+      Cmp_Assemble(ASM_MFREE_O, e->categ, e->value.i);
     }
     return Success;
   }
@@ -1383,11 +1395,11 @@ Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src) {
       TASK( Cmp_Complete_Ptr_1(e_dest) );
       switch ( t ) {
        case TYPE_REAL:
-        VM_Assemble(ASM_MOV_Rimm,
+        Cmp_Assemble(ASM_MOV_Rimm,
          c, e_dest->value.i, CAT_IMM, e_src->value.r);
         break;
        case TYPE_POINT:
-        VM_Assemble(ASM_MOV_Pimm,
+        Cmp_Assemble(ASM_MOV_Pimm,
          c, e_dest->value.i, CAT_IMM, e_src->value.p);
         break;
        default:
@@ -1398,7 +1410,7 @@ Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src) {
 
     } else {
       TASK( Cmp_Complete_Ptr_2(e_dest, e_src) );
-      VM_Assemble( asm_mov[t],
+      Cmp_Assemble( asm_mov[t],
        e_dest->categ, e_dest->value.i, e_src->categ, e_src->value.i );
       return Cmp_Expr_Destroy_Tmp(e_src);
     }
@@ -1427,19 +1439,19 @@ Expression *Cmp_Expr_Reg0_To_LReg(Intg t) {
     MSG_ERROR("Errore interno in Cmp_Expr_Reg0_To_LReg");
     return NULL; break;
    case TYPE_CHAR:
-    VM_Assemble(ASM_MOV_CC, lreg.categ, lreg.value.i, CAT_LREG, 0);
+    Cmp_Assemble(ASM_MOV_CC, lreg.categ, lreg.value.i, CAT_LREG, 0);
     return &lreg; break;
    case TYPE_INTG:
-    VM_Assemble(ASM_MOV_II, lreg.categ, lreg.value.i, CAT_LREG, 0);
+    Cmp_Assemble(ASM_MOV_II, lreg.categ, lreg.value.i, CAT_LREG, 0);
     return &lreg; break;
    case TYPE_REAL:
-    VM_Assemble(ASM_MOV_RR, lreg.categ, lreg.value.i, CAT_LREG, 0);
+    Cmp_Assemble(ASM_MOV_RR, lreg.categ, lreg.value.i, CAT_LREG, 0);
     return &lreg; break;
    case TYPE_POINT:
-    VM_Assemble(ASM_MOV_PP, lreg.categ, lreg.value.i, CAT_LREG, 0);
+    Cmp_Assemble(ASM_MOV_PP, lreg.categ, lreg.value.i, CAT_LREG, 0);
     return &lreg; break;
    default:
-    VM_Assemble(ASM_MOV_OO, lreg.categ, lreg.value.i, CAT_LREG, 0);
+    Cmp_Assemble(ASM_MOV_OO, lreg.categ, lreg.value.i, CAT_LREG, 0);
     return &lreg; break;
   }
   return NULL;
@@ -1468,8 +1480,8 @@ Task Cmp_Expr_O_To_OReg(Expression *e) {
           *  mov ro0, ro4
           *  mov ro4, Obj[ro0+64]
           */
-        VM_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, ro_categ, ro_num );
-        VM_Assemble( ASM_MOV_OO, ro_categ, ro_num, CAT_PTR, e->value.i );
+        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, ro_categ, ro_num );
+        Cmp_Assemble( ASM_MOV_OO, ro_categ, ro_num, CAT_PTR, e->value.i );
         e->resolved = e->type = TYPE_OBJ;
         e->categ = ro_categ;
         e->value.i = ro_num;
@@ -1485,10 +1497,10 @@ Task Cmp_Expr_O_To_OReg(Expression *e) {
           */
         Intg new_reg;
 
-        VM_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, ro_categ, ro_num );
+        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, ro_categ, ro_num );
         new_reg = Reg_Occupy(TYPE_OBJ);
         if ( new_reg < 1 ) return Failed;
-        VM_Assemble( ASM_MOV_OO, CAT_LREG, new_reg, CAT_PTR, e->value.i );
+        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, new_reg, CAT_PTR, e->value.i );
         e->type = TYPE_OBJ;
         e->categ = CAT_LREG;
         e->value.i = new_reg;
@@ -1517,16 +1529,16 @@ Task Cmp_Complete_Ptr_2(Expression *e1, Expression *e2) {
   switch ( (e1->categ == CAT_PTR) | (e2->categ == CAT_PTR) << 1) {
    case 1:
     addr_categ = ( e1->is.gaddr ) ? CAT_GREG : CAT_LREG;
-    VM_Assemble(ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e1->addr);
+    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e1->addr);
     return Success;
    case 2:
     addr_categ = ( e2->is.gaddr ) ? CAT_GREG : CAT_LREG;
-    VM_Assemble(ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e2->addr);
+    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e2->addr);
     return Success;
    case 3:
     if IS_FAILED( Cmp_Expr_Force_To_LReg(e2) ) return Failed;
     addr_categ = ( e1->is.gaddr ) ? CAT_GREG : CAT_LREG;
-    VM_Assemble(ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e1->addr);
+    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e1->addr);
     return Success;
    default:
     return Success;
@@ -1539,7 +1551,7 @@ Task Cmp_Complete_Ptr_2(Expression *e1, Expression *e2) {
 Task Cmp_Complete_Ptr_1(Expression *e) {
   if ( e->categ == CAT_PTR ) {
     register Intg addr_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
-    VM_Assemble(ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e->addr);
+    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e->addr);
   }
   return Success;
 }
@@ -1648,7 +1660,7 @@ Task Cmp_Data_Prepare(void) {
   MSG_LOCATION("Cmp_Data_Prepare");
 
   data_ptr = (void *) Arr_FirstItemPtr(cmp_data_segment, char);
-  TASK( VM_Module_Global_Set(TYPE_OBJ, (Intg) 0, & data_ptr) );
+  TASK( VM_Module_Global_Set(cmp_vm, TYPE_OBJ, (Intg) 0, & data_ptr) );
   return Success;
 }
 
@@ -1836,10 +1848,14 @@ Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
     if (! auto_define) return Success;
 
     *prototype = TYPE_NONE;
-    *asm_module = VM_Module_Next();
+    *asm_module = VM_Module_Next(cmp_vm);
     p = Tym_Def_Procedure(procedure, b->attr.second, b->type, *asm_module);
     if ( p == TYPE_NONE ) return Failed;
-    assert( *asm_module == VM_Module_Undefined(Tym_Type_Name(p)) );
+    {
+      Intg nm;
+      TASK(VM_Module_Undefined(cmp_vm, & nm, Tym_Type_Name(p)));
+      assert(nm == *asm_module);
+    }
     *found = 1;
     return Success;
 
@@ -1911,7 +1927,7 @@ Task Cmp_Procedure(int *found, Expression *e, Intg suffix, int auto_define) {
     if IS_FAILED( Cmp_Expr_To_Ptr(e, CAT_GREG, (Intg) 2, 0) ) goto exit_failed;
   }
 
-  VM_Assemble(ASM_CALL_I, CAT_IMM, asm_module);
+  Cmp_Assemble(ASM_CALL_I, CAT_IMM, asm_module);
 
 exit_success:
   (void) Cmp_Expr_Destroy_Tmp(e);
@@ -1924,11 +1940,11 @@ exit_failed:
 
 /*****************************************************************************/
 Task Cmp_Def_C_Procedure(Intg procedure, int when_should_call, Intg of_type,
-                         Task (*C_func)(void)) {
-  ModulePtr p;
-  Intg asm_module, proc;
+ Task (*C_func)(VMProgram *)) {
+  VMModulePtr p;
+  Intg asm_module, nm, proc;
 
-  asm_module = VM_Module_Next();
+  asm_module = VM_Module_Next(cmp_vm);
   if ( when_should_call & BOX_CREATION ) {
     proc = Tym_Def_Procedure(procedure, 0, of_type, asm_module);
     if ( proc == TYPE_NONE ) return Failed;
@@ -1938,11 +1954,11 @@ Task Cmp_Def_C_Procedure(Intg procedure, int when_should_call, Intg of_type,
     if ( proc == TYPE_NONE ) return Failed;
   }
 
-  if ( asm_module != VM_Module_Undefined(Tym_Type_Name(proc)) )
-    return Failed;
+  TASK(VM_Module_Undefined(cmp_vm, & nm, Tym_Type_Name(proc)));
+  if ( asm_module != nm ) return Failed;
 
   p.c_func = C_func;
-  TASK( VM_Module_Define(asm_module, MODULE_IS_C_FUNC, p) );
+  TASK( VM_Module_Define(cmp_vm, asm_module, MODULE_IS_C_FUNC, p) );
   return Success;
 }
 

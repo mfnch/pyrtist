@@ -1,6 +1,27 @@
 %{
-/* parser.c- Autore: Matteo Franchin - settembre 2002
+/***************************************************************************
+ *   Copyright (C) 2006 by Matteo Franchin                                 *
+ *   fnch@libero.it                                                        *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+
+/* parser.c - settembre 2002
  */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -143,7 +164,7 @@ extern UInt tok_linenum;
 sep:
    ','                 { }
  | ';'                 { if IS_FAILED( Prs_Procedure_Special(NULL, TYPE_PAUSE, 1) ) MY_ERR }
- | TOK_NEWLINE         { VM_Assemble(ASM_LINE_Iimm, CAT_IMM, ++tok_linenum); }
+ | TOK_NEWLINE         { Cmp_Assemble(ASM_LINE_Iimm, CAT_IMM, ++tok_linenum); }
  ;
 
 /*****************************************************************************
@@ -351,7 +372,7 @@ expr.statement:
 /*               DEFINIZIONE DELLA SINTASSI DELL'ISTRUZIONE END               */
 /******************************************************************************/
 end.statement:
-  TOK_END { VM_Assemble(ASM_RET); }
+  TOK_END { Cmp_Assemble(ASM_RET); }
 ;
 
 /*************DEFINIZIONE DELLA STRUTTURA GENERICA DEI PROGRAMMI**************/

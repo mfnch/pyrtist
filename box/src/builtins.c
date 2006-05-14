@@ -27,35 +27,35 @@ static Task Blt_Define_Print(void);
 static Task Blt_Define_Sys(void);
 
 /* box-procedures */
-static Task Print_Char(void);
-static Task Print_Int(void);
-static Task Print_Real(void);
-static Task Print_Pnt(void);
-static Task Print_String(void);
-static Task Print_NewLine(void);
-static Task Exit_Int(void);
-static Task Exit_Success(void);
+static Task Print_Char(VMProgram *vmp);
+static Task Print_Int(VMProgram *vmp);
+static Task Print_Real(VMProgram *vmp);
+static Task Print_Pnt(VMProgram *vmp);
+static Task Print_String(VMProgram *vmp);
+static Task Print_NewLine(VMProgram *vmp);
+static Task Exit_Int(VMProgram *vmp);
+static Task Exit_Success(VMProgram *vmp);
 /* Functions for conversions */
-static Task Conv_2RealNum_to_Point(void);
-static Task Char_Char(void);
-static Task Char_Int(void);
-static Task Char_Real(void);
-static Task Int_IntNum(void);
-static Task Int_RealNum(void);
-static Task Real_RealNum(void);
+static Task Conv_2RealNum_to_Point(VMProgram *vmp);
+static Task Char_Char(VMProgram *vmp);
+static Task Char_Int(VMProgram *vmp);
+static Task Char_Real(VMProgram *vmp);
+static Task Int_IntNum(VMProgram *vmp);
+static Task Int_RealNum(VMProgram *vmp);
+static Task Real_RealNum(VMProgram *vmp);
 /* Mathematical functions */
-static Task Sin_RealNum(void);
-static Task Cos_RealNum(void);
-static Task Tan_RealNum(void);
-static Task Asin_RealNum(void);
-static Task Acos_RealNum(void);
-static Task Atan_RealNum(void);
-static Task Exp_RealNum(void);
-static Task Log_RealNum(void);
-static Task Log10_RealNum(void);
-static Task Sqrt_RealNum(void);
-static Task Ceil_RealNum(void);
-static Task Floor_RealNum(void);
+static Task Sin_RealNum(VMProgram *vmp);
+static Task Cos_RealNum(VMProgram *vmp);
+static Task Tan_RealNum(VMProgram *vmp);
+static Task Asin_RealNum(VMProgram *vmp);
+static Task Acos_RealNum(VMProgram *vmp);
+static Task Atan_RealNum(VMProgram *vmp);
+static Task Exp_RealNum(VMProgram *vmp);
+static Task Log_RealNum(VMProgram *vmp);
+static Task Log10_RealNum(VMProgram *vmp);
+static Task Sqrt_RealNum(VMProgram *vmp);
+static Task Ceil_RealNum(VMProgram *vmp);
+static Task Floor_RealNum(VMProgram *vmp);
 
 /******************************************************************************
  * Le procedure che seguono servono a inizializzare/resettare il compilatore. *
@@ -425,11 +425,11 @@ static Task Blt_Define_Basics(void) {
    */
   {
     Intg m;
-    ModulePtr p;
+    VMModulePtr p;
     Operation *opn;
 
     p.c_func = Conv_2RealNum_to_Point;
-    m = VM_Module_Install(MODULE_IS_C_FUNC, "conv_2Real_to_Point", p);
+    TASK(VM_Module_Install(cmp_vm, & m, MODULE_IS_C_FUNC, "conv_2Real_to_Point", p));
     if ( m < 1 ) return Failed;
     opn = Cmp_Operation_Add(cmp_opr.converter, type_2RealNum, TYPE_NONE, TYPE_POINT);
     if ( opn == NULL ) return Failed;
@@ -512,90 +512,109 @@ static Task Blt_Define_Sys(void) {
 }
 
 /*******************************BOX-PROCEDURES********************************/
-static Task Print_Char(void) {printf(SChar, BOX_VM_ARG1(Char)); return Success;}
-static Task Print_Int(void)  {printf(SIntg, BOX_VM_ARG1(Intg)); return Success;}
-static Task Print_Real(void) {printf(SReal, BOX_VM_ARG1(Real)); return Success;}
-static Task Print_Pnt(void) {
-  Point *p = BOX_VM_ARGPTR1(Point);
+static Task Print_Char(VMProgram *vmp) {
+  printf(SChar, BOX_VM_ARG1(vmp, Char));
+  return Success;
+}
+static Task Print_Int(VMProgram *vmp) {
+  printf(SIntg, BOX_VM_ARG1(vmp, Intg));
+  return Success;
+}
+static Task Print_Real(VMProgram *vmp) {
+  printf(SReal, BOX_VM_ARG1(vmp, Real));
+  return Success;
+}
+static Task Print_Pnt(VMProgram *vmp) {
+  Point *p = BOX_VM_ARGPTR1(vmp, Point);
   printf(SPoint, p->x, p->y);
   return Success;
 }
-static Task Print_String(void) {printf("%s", BOX_VM_ARGPTR1(char)); return Success;}
-static Task Print_NewLine(void) {printf("\n"); return Success;}
+static Task Print_String(VMProgram *vmp) {
+  printf("%s", BOX_VM_ARGPTR1(vmp, char));
+  return Success;
+}
+static Task Print_NewLine(VMProgram *vmp) {
+  printf("\n"); return Success;
+}
 
 /* This function is not politically correct!!! */
-static Task Exit_Int(void)  {exit(BOX_VM_ARG1(Intg));}
-static Task Exit_Success(void) {printf("Exit_Success\n"); exit(EXIT_SUCCESS);}
+static Task Exit_Int(VMProgram *vmp) {
+  exit(BOX_VM_ARG1(vmp, Intg));
+}
+static Task Exit_Success(VMProgram *vmp) {
+  printf("Exit_Success\n");
+  exit(EXIT_SUCCESS);
+}
 
 /*****************************************************************************
  *                       FUNCTIONS FOR CONVERSION                            *
  *****************************************************************************/
-static Task Conv_2RealNum_to_Point(void) {
-  BOX_VM_CURRENT(Point) = *(BOX_VM_ARGPTR1(Point));
+static Task Conv_2RealNum_to_Point(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Point) = *(BOX_VM_ARGPTR1(vmp, Point));
   return Success;
 }
 
-static Task Char_Char(void)
-  {BOX_VM_CURRENT(Char) = BOX_VM_ARG1(Char); return Success;}
-static Task Char_Int(void)
-  {BOX_VM_CURRENT(Char) = (Char) BOX_VM_ARG1(Intg); return Success;}
-static Task Char_Real(void)
-  {BOX_VM_CURRENT(Char) = (Char) BOX_VM_ARG1(Real); return Success;}
-static Task Int_IntNum(void)
-  {BOX_VM_CURRENT(Intg) = BOX_VM_ARG1(Intg); return Success;}
-static Task Int_RealNum(void)
-  {BOX_VM_CURRENT(Intg) = (Intg) BOX_VM_ARG1(Real); return Success;}
-static Task Real_RealNum(void)
-  {BOX_VM_CURRENT(Real) = BOX_VM_ARG1(Real); return Success;}
+static Task Char_Char(VMProgram *vmp)
+  {BOX_VM_CURRENT(vmp, Char) = BOX_VM_ARG1(vmp, Char); return Success;}
+static Task Char_Int(VMProgram *vmp)
+  {BOX_VM_CURRENT(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Intg); return Success;}
+static Task Char_Real(VMProgram *vmp)
+  {BOX_VM_CURRENT(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Real); return Success;}
+static Task Int_IntNum(VMProgram *vmp)
+  {BOX_VM_CURRENT(vmp, Intg) = BOX_VM_ARG1(vmp, Intg); return Success;}
+static Task Int_RealNum(VMProgram *vmp)
+  {BOX_VM_CURRENT(vmp, Intg) = (Intg) BOX_VM_ARG1(vmp, Real); return Success;}
+static Task Real_RealNum(VMProgram *vmp)
+  {BOX_VM_CURRENT(vmp, Real) = BOX_VM_ARG1(vmp, Real); return Success;}
 
 /*****************************************************************************
  *                        MATHEMATICAL FUNCTIONS                             *
  *****************************************************************************/
-static Task Sin_RealNum(void) {
-  BOX_VM_CURRENT(Real) = sin(BOX_VM_ARG1(Real));
+static Task Sin_RealNum(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = sin(BOX_VM_ARG1(vmp, Real));
   return Success;
 }
-static Task Cos_RealNum(void) {
-  BOX_VM_CURRENT(Real) = cos(BOX_VM_ARG1(Real));
+static Task Cos_RealNum(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = cos(BOX_VM_ARG1(vmp, Real));
   return Success;
 }
-static Task Tan_RealNum(void) {
-  BOX_VM_CURRENT(Real) = tan(BOX_VM_ARG1(Real));
+static Task Tan_RealNum(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = tan(BOX_VM_ARG1(vmp, Real));
   return Success;
 }
-static Task Asin_RealNum(void) {
-  BOX_VM_CURRENT(Real) = asin(BOX_VM_ARG1(Real));
+static Task Asin_RealNum(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = asin(BOX_VM_ARG1(vmp, Real));
   return Success;
 }
-static Task Acos_RealNum(void) {
-  BOX_VM_CURRENT(Real) = acos(BOX_VM_ARG1(Real));
+static Task Acos_RealNum(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = acos(BOX_VM_ARG1(vmp, Real));
   return Success;
 }
-static Task Atan_RealNum(void) {
-  BOX_VM_CURRENT(Real) = atan(BOX_VM_ARG1(Real));
+static Task Atan_RealNum(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = atan(BOX_VM_ARG1(vmp, Real));
   return Success;
 }
-static Task Exp_RealNum(void) {
-  BOX_VM_CURRENT(Real) = exp(BOX_VM_ARG1(Real));
+static Task Exp_RealNum(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = exp(BOX_VM_ARG1(vmp, Real));
   return Success;
 }
-static Task Log_RealNum(void) {
-  BOX_VM_CURRENT(Real) = log(BOX_VM_ARG1(Real));
+static Task Log_RealNum(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = log(BOX_VM_ARG1(vmp, Real));
   return Success;
 }
-static Task Log10_RealNum(void) {
-  BOX_VM_CURRENT(Real) = log10(BOX_VM_ARG1(Real));
+static Task Log10_RealNum(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = log10(BOX_VM_ARG1(vmp, Real));
   return Success;
 }
-static Task Sqrt_RealNum(void) {
-  BOX_VM_CURRENT(Real) = sqrt(BOX_VM_ARG1(Real));
+static Task Sqrt_RealNum(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = sqrt(BOX_VM_ARG1(vmp, Real));
   return Success;
 }
-static Task Ceil_RealNum(void) {
-  BOX_VM_CURRENT(Intg) = ceil(BOX_VM_ARG1(Real));
+static Task Ceil_RealNum(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Intg) = ceil(BOX_VM_ARG1(vmp, Real));
   return Success;
 }
-static Task Floor_RealNum(void) {
-  BOX_VM_CURRENT(Intg) = floor(BOX_VM_ARG1(Real));
+static Task Floor_RealNum(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Intg) = floor(BOX_VM_ARG1(vmp, Real));
   return Success;
 }

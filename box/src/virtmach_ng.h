@@ -225,7 +225,7 @@ void VM__D_CALL(VMProgram *vmp, char **iarg);
 void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg);
 
 /* These are the functions to use to control the VM */
-Task VM_Init(VMProgram *new_vmp);
+Task VM_Init(VMProgram **new_vmp);
 void VM_Destroy(VMProgram *vmp);
 
 Task VM_Module_Install(VMProgram *vmp, Intg *new_module,
