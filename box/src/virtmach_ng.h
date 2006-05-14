@@ -21,6 +21,11 @@
 #ifndef _VIRTMACH_H
 #define _VIRTMACH_H
 
+#include <stdio.h>
+#include "types.h"
+#include "defaults.h"
+#include "array.h"
+
 /* Associo un numero a ciascun tipo, per poterlo identificare */
 typedef enum {
   TYPE_NONE  = -1,
@@ -210,6 +215,16 @@ typedef struct __vmprogram VMProgram;
 
 extern VMInstrDesc vm_instr_desc_table[];
 
+/* These functions are intended to be used only inside 'vmexec.h' */
+void VM__GLP_GLPI(VMStatus *vmcur);
+void VM__GLP_Imm(VMStatus *vmcur);
+void VM__GLPI(VMStatus *vmcur);
+void VM__Imm(VMStatus *vmcur);
+void VM__D_GLPI_GLPI(VMProgram *vmp, char **iarg);
+void VM__D_CALL(VMProgram *vmp, char **iarg);
+void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg);
+
+/* These are the functions to use to control the VM */
 Task VM_Init(VMProgram *new_vmp);
 void VM_Destroy(VMProgram *vmp);
 

@@ -204,7 +204,7 @@ static void *(*vm_gets[4])(VMStatus *, Intg) = {
  *  'P'untatore, mentre il secondo puo' essere dei tipi appena enumerati oppure
  *  puo' essere un 'I'mmediato intero.
  */
-static void VM__GLP_GLPI(VMStatus *vmcur) {
+void VM__GLP_GLPI(VMStatus *vmcur) {
   signed long narg1, narg2;
   register UInt atype = vmcur->arg_type;
 
@@ -225,7 +225,7 @@ static void VM__GLP_GLPI(VMStatus *vmcur) {
 /* Questa funzione e' analoga alla precedente, ma gestisce
  *  istruzioni come: "mov ri1, 123456", "mov rf2, 3.14", "mov rp5, (1, 2)", etc.
  */
-static void VM__GLP_Imm(VMStatus *vmcur) {
+void VM__GLP_Imm(VMStatus *vmcur) {
   signed long narg1;
   register UInt atype = vmcur->arg_type;
 
@@ -243,7 +243,7 @@ static void VM__GLP_Imm(VMStatus *vmcur) {
  *  istruzioni con un solo argomento di tipo GLPI (Globale oppure Locale
  *  o Puntatore o Immediato intero).
  */
-static void VM__GLPI(VMStatus *vmcur) {
+void VM__GLPI(VMStatus *vmcur) {
   signed long narg1;
   register UInt atype = vmcur->arg_type;
 
@@ -260,9 +260,7 @@ static void VM__GLPI(VMStatus *vmcur) {
  *  istruzioni con un solo argomento di tipo immediato (memorizzato subito
  *  di seguito all'istruzione).
  */
-static void VM__Imm(VMStatus *vmcur) {
-  vmcur->arg1 = (void *) vmcur->i_pos;
-}
+void VM__Imm(VMStatus *vmcur) {vmcur->arg1 = (void *) vmcur->i_pos;}
 
 /*******************************************************************************
  * Functions used to disassemble the instructions (see VM_Disassemble)         *
@@ -273,7 +271,7 @@ static void VM__Imm(VMStatus *vmcur) {
  *  iarg e' una tabella di puntatori alle stringhe che corrisponderanno
  *  agli argomenti disassemblati.
  */
-static void VM__D_GLPI_GLPI(VMProgram *vmp, char **iarg) {
+void VM__D_GLPI_GLPI(VMProgram *vmp, char **iarg) {
   VMStatus *vmcur = vmp->vmcur;
   UInt n, na = vmcur->idesc->numargs;
   UInt iaform[2] = {vmcur->arg_type & 3, (vmcur->arg_type >> 2) & 3};
@@ -344,7 +342,7 @@ static void VM__D_GLPI_GLPI(VMProgram *vmp, char **iarg) {
 }
 
 /* Analoga alla precedente, ma per istruzioni CALL. */
-static void VM__D_CALL(VMProgram *vmp, char **iarg) {
+void VM__D_CALL(VMProgram *vmp, char **iarg) {
   VMStatus *vmcur = vmp->vmcur;
   register UInt na = vmcur->idesc->numargs;
 
@@ -388,7 +386,7 @@ static void VM__D_CALL(VMProgram *vmp, char **iarg) {
 }
 
 /* Analoga alla precedente, ma per istruzioni del tipo GLPI-Imm. */
-static void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
+void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
   VMStatus *vmcur = vmp->vmcur;
   UInt iaf = vmcur->arg_type & 3, iat = vmcur->idesc->t_id;
   Intg iai;
