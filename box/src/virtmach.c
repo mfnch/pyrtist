@@ -33,7 +33,7 @@
 #include "defaults.h"
 #include "messages.h"
 #include "array.h"
-#include "virtmach_ng.h"
+#include "virtmach.h"
 #include "str.h"
 
 /* Read the first 4 bytes (VMByteX4), extract the format bit and put the "rest"
