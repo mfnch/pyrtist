@@ -445,7 +445,6 @@ char *strndup(const char *s, int n) {
   int i, l;
   char *ret, *r;
 
-  printf("strndup: mia versione!\n");
   l = strlen(s);
   if ( l < n ) n = l;
   ret = r = (char *) malloc(n + 1);

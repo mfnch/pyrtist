@@ -22,6 +22,8 @@
  * virtuale (spesso denotata con VM).
  * Questo file e' incluso direttamente dal file "virtmach.c"
  */
+#include <stdlib.h>
+#include <string.h>
 #include <math.h>
 
 #include "virtmach.h"
