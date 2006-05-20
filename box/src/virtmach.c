@@ -465,8 +465,9 @@ Task VM_Init(VMProgram **new_vmp) {
   nv->vm_globals = 0;
   nv->vm_dflags.hexcode = 0;
   nv->vm_aflags.forcelong = 0;
-  nv->vm_cur_output = NULL;
-  nv->tmp_code = NULL;
+  nv->vm_cur_output = (AsmOut *) NULL;
+  nv->tmp_code = (AsmOut *) NULL;
+  nv->stack = (Array *) NULL;
   *new_vmp = nv;
   return Success;
 }
@@ -477,9 +478,15 @@ void VM_Destroy(VMProgram *vmp) {
     int i;
     for(i = 0; i < NUM_TYPES; i++) free( vmp->vm_global[i] );
   }
-  free(vmp->vm_cur_output);
-  free(vmp->tmp_code);
+//   VM_Asm_Out_Destroy(vmp->vm_cur_output);
+  VM_Asm_Out_Destroy(vmp->tmp_code);
+  vmp->tmp_code = NULL;
   Arr_Destroy(vmp->vm_modules_list);
+  if ( vmp->stack != NULL )
+    if ( Arr_NumItem(vmp->stack) != 0 ) {
+      MSG_WARNING("Run finished with non empty stack.");
+    }
+  Arr_Destroy(vmp->stack);
   free(vmp);
 }
 
@@ -978,6 +985,14 @@ AsmOut *VM_Asm_Out_New(Intg dim) {
   return out;
 }
 
+/* Destructor for objects of type 'AsmOut'
+ */
+void VM_Asm_Out_Destroy(AsmOut *ao) {
+  if (ao == (AsmOut *) NULL) return;
+  Arr_Destroy(ao->program);
+  free(ao);
+}
+
 /* Seleziona l'output della funzione VM_Assemble().
  * NOTA: Se out = NULL, restituisce Failed.
  */
@@ -1032,20 +1047,23 @@ Task VM_Asm_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
   return Success;
 
 err:
-    vmp->vm_cur_output = save_cur;
+  vmp->vm_cur_output = save_cur;
   return Failed;
 }
 
 /* This function install a program (written using
  * the object AsmOut) into the module with number module.
- * NOTE: program will be destroyed.
+ * NOTE: program will be destroyed and *program will be set to NULL
+ *  (just to keep track of this).
  */
-Task VM_Asm_Install(VMProgram *vmp, Intg module, AsmOut *program) {
-  Array *p = program->program;
+Task VM_Asm_Install(VMProgram *vmp, Intg module, AsmOut **program) {
+  AsmOut *ao = *program;
+  Array *p = ao->program;
   VMModulePtr ptr;
   ptr.vm.dim = Arr_NumItem(p);
   ptr.vm.code = Arr_Data_Only(p);
-  free(program);
+  free(ao);
+  *program = NULL;
   return VM_Module_Define(vmp, module, MODULE_IS_VM_CODE, ptr);
 }
 

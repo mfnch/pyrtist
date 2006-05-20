@@ -333,7 +333,7 @@ Task Main_Execute(void) {
   Msg_Num_Reset_All();
   Msg_Context_Enter("Fase di esecuzione:\n");
   TASK( VM_Module_Undefined(program, & main_module, "main") );
-  TASK( VM_Asm_Install(program, main_module, cmp_curr_output) );
+  TASK( VM_Asm_Install(program, main_module, & cmp_curr_output) );
   exit_code = VM_Module_Execute(program, main_module);
 
   Msg_Context_Exit(0);

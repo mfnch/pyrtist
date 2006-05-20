@@ -18,7 +18,9 @@
 #include "builtins.h"
 
 /* Important builtin types */
-Intg type_Point, type_RealNum, type_IntgNum, type_CharNum, type_String;
+Intg
+  type_Point, type_RealNum, type_IntgNum, type_CharNum, type_String,
+  type_File;
 
 static Task Tmp(void);
 static Task Blt_Define_Basics(void);
@@ -35,6 +37,10 @@ static Task Print_String(VMProgram *vmp);
 static Task Print_NewLine(VMProgram *vmp);
 static Task Exit_Int(VMProgram *vmp);
 static Task Exit_Success(VMProgram *vmp);
+static Task C_File_Open(VMProgram *vmp);
+static Task C_File_String(VMProgram *vmp);
+static Task C_File_Close(VMProgram *vmp);
+static Task M_File_String(VMProgram *vmp);
 /* Functions for conversions */
 static Task Conv_2RealNum_to_Point(VMProgram *vmp);
 static Task Char_Char(VMProgram *vmp);
@@ -498,6 +504,12 @@ static Task Blt_Define_Print(void) {
   return Success;
 }
 
+typedef struct {
+  unsigned int opened : 1;
+  char *name;
+  FILE *file;
+} File;
+
 static Task Blt_Define_Sys(void) {
   Intg type_Exit, type_Exit_Success;
   TASK( Tym_Def_Explicit_Alias(& type_Exit, & NAME("Exit"), TYPE_VOID) );
@@ -505,9 +517,14 @@ static Task Blt_Define_Sys(void) {
 
   TASK( Tym_Def_Type(& type_Exit_Success,
    type_Exit, & NAME("Success"), (Intg) -1, TYPE_VOID) );
-  TASK( Cmp_Def_C_Procedure(TYPE_OPEN, BOX_CREATION, type_Exit_Success,
-   Exit_Success) );
+  TASK(Cmp_Def_C_Procedure(TYPE_OPEN, BOX_CREATION, type_Exit_Success, Exit_Success));
 
+  TASK( Tym_Def_Intrinsic(& type_File, & NAME("File"), sizeof(File)) );
+
+  TASK(Cmp_Def_C_Procedure(TYPE_OPEN,  BOX_CREATION, type_File, C_File_Open));
+  TASK(Cmp_Def_C_Procedure(type_String,BOX_CREATION, type_File, C_File_String));
+  TASK(Cmp_Def_C_Procedure(TYPE_CLOSE, BOX_CREATION, type_File, C_File_Close));
+  TASK(Cmp_Def_C_Procedure(type_String,BOX_MODIFICATION,type_File,M_File_String));
   return Success;
 }
 
@@ -537,6 +554,10 @@ static Task Print_NewLine(VMProgram *vmp) {
   printf("\n"); return Success;
 }
 
+/*****************************************************************************
+ *                           SYSTEM PROCEDURES                               *
+ *****************************************************************************/
+
 /* This function is not politically correct!!! */
 static Task Exit_Int(VMProgram *vmp) {
   exit(BOX_VM_ARG1(vmp, Intg));
@@ -544,6 +565,37 @@ static Task Exit_Int(VMProgram *vmp) {
 static Task Exit_Success(VMProgram *vmp) {
   printf("Exit_Success\n");
   exit(EXIT_SUCCESS);
+}
+
+static Task C_File_Open(VMProgram *vmp) {
+  File *f = BOX_VM_CURRENTPTR(vmp, File);
+  f->opened = 0;
+  f->name = "";
+  return Success;
+}
+static Task C_File_String(VMProgram *vmp) {
+  File *f = BOX_VM_CURRENTPTR(vmp, File);
+  f->name = BOX_VM_ARGPTR1(vmp, char);
+  return Success;
+}
+static Task C_File_Close(VMProgram *vmp) {
+  File *f = BOX_VM_CURRENTPTR(vmp, File);
+  f->file = fopen(f->name, "w");
+  if ( f->file == NULL ) {
+    fprintf(stderr, "Error opening the file. Exiting!\n");
+    return Failed;
+  }
+  f->opened = 1;
+  return Success;
+}
+static Task M_File_String(VMProgram *vmp) {
+  File *f = BOX_VM_CURRENTPTR(vmp, File);
+  if ( ! f->opened ) {
+    fprintf(stderr, "Error: writing to a not opened file. Exiting!\n");
+    return Failed;
+  }
+  fprintf(f->file, "%s", BOX_VM_ARGPTR1(vmp, char));
+  return Success;
 }
 
 /*****************************************************************************

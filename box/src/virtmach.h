@@ -208,6 +208,7 @@ struct __vmprogram {
   struct {unsigned int forcelong : 1;} vm_aflags;
   AsmOut *vm_cur_output;
   AsmOut *tmp_code;
+  Array *stack;
   VMStatus *vmcur;
 };
 
@@ -249,9 +250,10 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim);
 
 void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit);
 AsmOut *VM_Asm_Out_New(Intg dim);
+void VM_Asm_Out_Destroy(AsmOut *ao);
 void VM_Asm_Out_Set(VMProgram *vmp, AsmOut *out);
 Task VM_Asm_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg);
-Task VM_Asm_Install(VMProgram *vmp, Intg module, AsmOut *program);
+Task VM_Asm_Install(VMProgram *vmp, Intg module, AsmOut **program);
 void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 
 /* Numero minimo di VMByteX4 che riesce a contenere tutti i tipi possibili
@@ -263,6 +265,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 #define BOX_VM_CURRENT(vmp, Type) *((Type *) *(vmp)->box_vm_current)
 #define BOX_VM_ARG1(vmp, Type) *((Type *) *(vmp)->box_vm_arg1)
 #define BOX_VM_ARG2(vmp, Type) *((Type *) *(vmp)->box_vm_arg2)
+#define BOX_VM_CURRENTPTR(vmp, Type) ((Type *) *(vmp)->box_vm_current)
 #define BOX_VM_ARGPTR1(vmp, Type) ((Type *) *(vmp)->box_vm_arg1)
 #define BOX_VM_ARGPTR2(vmp, Type) ((Type *) *(vmp)->box_vm_arg2)
 

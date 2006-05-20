@@ -1864,7 +1864,7 @@ Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
 
     td = Tym_Type_Get(p);
     if ( td == NULL ) return Failed;
-    assert(td->tot == TOT_PROCEDURE);
+    assert(td->tot == TOT_PROCEDURE || td->tot == TOT_PROCEDURE2);
     *asm_module = td->asm_mod;
     *found = 1;
     return Success;
