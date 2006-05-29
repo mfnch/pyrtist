@@ -32,5 +32,16 @@ a = 1.234
 EOF
 check_noerr $?
 
+#------------------------------------------------------------------------------
+test_next
+echo "Bug 4: Internal error in Cmp_Structure_Get"
+$BOX -o x << EOF  >$BOXOUT 2>&1
+p = Point
+p = (1, 2)
+p = (1, 2)
+p = (1, 2)
+EOF
+check_noerr $?
+
 echo ">>"
 check_final

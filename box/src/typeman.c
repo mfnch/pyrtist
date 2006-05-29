@@ -1054,17 +1054,17 @@ Task Tym_Def_Structure(Intg *strc, Intg type) {
     register TypeDesc *strc_td, *new_td, *last_td;
     register Intg new;
 
-    /* Trovo il descrittore della struttura */
-    strc_td = Tym_Type_Get(*strc);
-    if ( strc_td == NULL ) return Failed;
-    assert( strc_td->tot == TOT_STRUCTURE );
-
     /* Creo il prossimo elemento della struttura */
     new = Tym_Def_Alias_Of(Name_Empty(), type);
     if ( new == TYPE_NONE ) return Failed;
     new_td = tym_recent_typedesc;
     new_td->parent = *strc;
     new_td->greater = TYPE_NONE;
+
+    /* Trovo il descrittore della struttura */
+    strc_td = Tym_Type_Get(*strc);
+    if ( strc_td == NULL ) return Failed;
+    assert( strc_td->tot == TOT_STRUCTURE );
 
     /* Concateno questo nuovo elemento agli altri */
     last_td = Tym_Type_Get(strc_td->greater);

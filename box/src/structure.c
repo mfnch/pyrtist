@@ -414,7 +414,7 @@ Task Cmp_Expr_Expand(Intg species, Expression *e) {
   return Failed;
 }
 
-/* DESCRIPTION: An example of use (see also Tym_Structure_Get):
+/*  An example of use (see also Tym_Structure_Get):
  *  Suppose that the Expression structure is a structure,
  *     Expression member = structure; int n;
  *     do {TASK( Cmp_Structure_Get(& member, & n) );} while (n > 0);
@@ -459,11 +459,12 @@ Task Cmp_Structure_Get(Expression *member, int *n) {
     return Success;
 
   } else {
-    assert( n > 0 );
+    assert( *n > 0 );
     --(*n);
     /* (n == 0) if and only if (member_type == TYPE_NONE) */
     if ( (*n == 0) != (member_type == TYPE_NONE) ) {
-      MSG_ERROR("Cmp_Structure_Get: errore interno!");
+      MSG_ERROR("Cmp_Structure_Get: errore interno: *n = %d, member_type = %d",
+        *n, member_type);
       return Failed;
     }
     if ( n == 0 ) return Success;
