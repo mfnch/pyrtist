@@ -265,6 +265,13 @@ typedef struct {
   int which_one;
 } Container;
 
+enum {
+  CONTAINER_TYPE_IMM = 0,
+  CONTAINER_TYPE_LREG, CONTAINER_TYPE_LVAR,
+  CONTAINER_TYPE_GREG, CONTAINER_TYPE_GVAR,
+  CONTAINER_TYPE_ARG, CONTAINER_TYPE_STACK
+};
+
 /* These macros are used in functions such as Cmp_Expr_Container_New
  * or Cmp_Expr_Container_Change to specify the container for an expression.
  */
@@ -272,7 +279,7 @@ typedef struct {
 /* The container is immediate (contains directly the value
  * of the integer, real, etc.)
  */
-#define CONTAINER_IMM (& (Container) {0, 0})
+#define CONTAINER_IMM (& (Container) {CONTAINER_TYPE_IMM, 0})
 
 /* In the function Cmp_Expr_Container_Change this will behaves similar
  * to CONTAINER_LREG_AUTO, but with one difference. If the expression
@@ -282,25 +289,37 @@ typedef struct {
  *  - macro CONTAINER_LREG_FORCE: will choose another local register
  *    and use this as the new container.
  */
-#define CONTAINER_LREG_FORCE (& (Container) {1, -2})
+#define CONTAINER_LREG_FORCE (& (Container) {CONTAINER_TYPE_LREG, -2})
 
 /* A local register automatically chosen (and reserved) */
-#define CONTAINER_LREG_AUTO (& (Container) {1, -1})
+#define CONTAINER_LREG_AUTO (& (Container) {CONTAINER_TYPE_LREG, -1})
 
 /* A well defined local register */
-#define CONTAINER_LREG(num) (& (Container) {1, num > 0 ? num : 0})
+#define CONTAINER_LREG(num) \
+  (& (Container) {CONTAINER_TYPE_LREG, num > 0 ? num : 0})
 
 /* A well defined local variable */
-#define CONTAINER_LVAR(num) (& (Container) {2, num > 0 ? num : 0})
+#define CONTAINER_LVAR(num) \
+  (& (Container) {CONTAINER_TYPE_LVAR, num > 0 ? num : 0})
 
 /* A local variable automatically chosen (and reserved) */
-#define CONTAINER_LVAR_AUTO (& (Container) {2, -1})
+#define CONTAINER_LVAR_AUTO \
+  (& (Container) {CONTAINER_TYPE_LVAR, -1})
 
 /* A well defined global register */
-#define CONTAINER_GREG(num) (& (Container) {3, num > 0 ? num : 0})
+#define CONTAINER_GREG(num) \
+  (& (Container) {CONTAINER_TYPE_GREG, num > 0 ? num : 0})
 
 /* A well defined global variable */
-#define CONTAINER_GVAR(num) (& (Container) {4, num > 0 ? num : 0})
+#define CONTAINER_GVAR(num) \
+  (& (Container) {CONTAINER_TYPE_GVAR, num > 0 ? num : 0})
+
+/* A well defined global variable */
+#define CONTAINER_ARG(num) \
+  (& (Container) {CONTAINER_TYPE_ARG, num})
+
+/* Use this macro if you want to specify to use the stack as a container */
+#define CONTAINER_STACK (& (Container) {CONTAINER_TYPE_STACK, 0})
 
 extern struct cmp_opr_struct cmp_opr;
 extern AsmOut *cmp_curr_output;

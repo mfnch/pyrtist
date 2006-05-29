@@ -976,13 +976,13 @@ Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c) {
   e->is.release = 0;
 
   switch( c->type_of_container ) {
-  case 0:
+  case CONTAINER_TYPE_IMM:
     e->is.imm = 1;
     e->categ = CAT_IMM;
     return Success;
     break;
 
-  case 1:
+  case CONTAINER_TYPE_LREG:
     e->categ = CAT_LREG;
     if ( c->which_one < 0 ) {
       /* Automatically choses the local register */
@@ -997,7 +997,7 @@ Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c) {
     }
     break;
 
-  case 2:
+  case CONTAINER_TYPE_LVAR:
     e->categ = CAT_LREG;
     e->is.target = 1;
     if ( c->which_one < 0 ) {
@@ -1012,20 +1012,20 @@ Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c) {
     }
     break;
 
-  case 3:
+  case CONTAINER_TYPE_GREG:
     e->categ = CAT_GREG;
     e->value.i = c->which_one;
     return Success;
     break;
 
-  case 4:
+  case CONTAINER_TYPE_GVAR:
     e->categ = CAT_GREG;
     e->value.i = -(c->which_one);
     return Success;
     break;
 
   default:
-    MSG_ERROR("Internal error: wrong type of container!");
+    MSG_ERROR("Cmp_Expr_Container_New: wrong type of container!");
   }
   return Failed;
 }
@@ -1101,8 +1101,8 @@ static Intg asm_mov[NUM_INTRINSICS] = {
   ASM_MOV_CC, ASM_MOV_II, ASM_MOV_RR, ASM_MOV_PP
 };
 
-/* DESCRIPTION: This function generates the assembly code which
- *  puts the expression expr into a precise register.
+/* This function generates the assembly code which
+ * puts the expression expr into a precise register.
  * NOTE: categ can be CAT_LREG or CAT_GREG.
  */
 Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free) {
@@ -1197,7 +1197,17 @@ Task Cmp__Expr_To_LReg(Expression *expr, int force) {
 
 /* This function generates the assembly code which
  * puts the address of the expression expr into a precise register.
- * NOTE: categ can be CAT_LREG or CAT_GREG.
+ * NOTE:
+ * - categ can be CAT_LREG or CAT_GREG.
+ * - can't be used to pass more than one argument per time:
+ *   For example: suppose you use it with two immediate values:
+ *     mov ri0, 1 <-- first value
+ *     lea ri0
+ *     mov ro1, ro0
+ *     mov ri0, 2 <-- second value
+ *     lea ri0
+ *     mov ro2, ro0
+ *   ro1 and ro2 will be pointers to the same value (2 which overwrited 1).
  */
 Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
   MSG_LOCATION("Cmp_Expr_To_Ptr");
@@ -1246,12 +1256,104 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
 
       } else { /* expr->categ == CAT_LREG, CAT_GREG */
         Cmp_Assemble(ASM_MOV_OO, categ, reg, expr->categ, expr->value.i);
+        if ( !and_free ) return Success;
+        return Cmp_Expr_Destroy_Tmp(expr);
       }
     }
   }
+}
 
-  if ( !and_free ) return Success;
-  return Cmp_Expr_Destroy_Tmp(expr);
+/* This function generates the assembly code which
+ * puts the address of the expression expr into a precise register.
+ * NOTE:
+ * - categ can be CAT_LREG or CAT_GREG.
+ * - can't be used to pass more than one argument per time:
+ *   For example: suppose you use it with two immediate values:
+ *     mov ri0, 1 <-- first value
+ *     lea ri0
+ *     mov ro1, ro0
+ *     mov ri0, 2 <-- second value
+ *     lea ri0
+ *     mov ro2, ro0
+ *   ro1 and ro2 will be pointers to the same value (2 which overwrited 1).
+ */
+Task Cmp_Expr_Container_Change(Expression *e, Container *c) {
+  int toc;
+  assert(e != NULL && c != NULL);
+  assert(e->is.typed && e->is.value);
+
+  switch( c->type_of_container ) {
+  case CONTAINER_TYPE_ARG: case CONTAINER_TYPE_STACK: {
+    int is_arg = (c->type_of_container == CONTAINER_TYPE_ARG);
+
+    if ( e->categ == CAT_IMM ) {
+      Intg t = e->resolved;
+      assert(t >= 0 && t < NUM_INTRINSICS);
+      TASK( Cmp_Expr_To_X(e, CAT_LREG, (Intg) 0, 0) );
+      Cmp_Assemble(asm_lea[t], CAT_LREG, (Intg) 0);
+      if ( is_arg ) { /* c->type_of_container == CONTAINER_TYPE_ARG */
+        Cmp_Assemble(ASM_MOV_OO, CAT_GREG, c->which_one, CAT_LREG, (Intg) 0);
+        return Success;
+      } else { /* c->type_of_container == CONTAINER_TYPE_STACK */
+        Cmp_Assemble(ASM_PUSH_O, CAT_LREG, (Intg) 0);
+        return Success;
+      }
+    } else {
+      register Intg t = e->resolved;
+      assert(t >= 0);
+
+      if ( t < NUM_INTRINSICS ) {
+        if ( e->categ == CAT_PTR ) {
+          /* L'espressione e' un puntatore, allora devo settare il puntatore
+          * di riferimento, in modo da realizzare una cosa simile a:
+          *   mov ro0, ro1 <-- setto il puntatore di riferimento (ro0)
+          *   lea p[ro0+8] <-- prelevo il valore
+          *   mov ..., ro0 <-- metto l'indirizzo dove richiesto
+          */
+          register Intg addr_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
+          Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e->addr );
+        }
+
+        Cmp_Assemble(asm_lea[t], e->categ, e->value.i);
+        if ( is_arg ) { /* c->type_of_container == CONTAINER_TYPE_ARG */
+          Cmp_Assemble(ASM_MOV_OO, CAT_GREG, c->which_one, CAT_LREG, (Intg) 0);
+          return Success;
+        } else { /* c->type_of_container == CONTAINER_TYPE_STACK */
+          Cmp_Assemble(ASM_PUSH_O, CAT_LREG, (Intg) 0);
+          return Success;
+        }
+
+      } else {
+        if ( e->categ == CAT_PTR ) {
+          if ( is_arg ) {
+            register Intg addr_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
+            Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e->addr );
+            Cmp_Assemble( ASM_LEA_OO, CAT_GREG, c->which_one,
+              CAT_PTR, e->value.i );
+            return Success;
+          } else {
+            register Intg addr_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
+            Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e->addr );
+            Cmp_Assemble( ASM_LEA_OO, CAT_LREG, 0, CAT_PTR, e->value.i );
+            Cmp_Assemble( ASM_PUSH_O, CAT_LREG, 0);
+          }
+        } else { /* e->categ == CAT_LREG, CAT_GREG */
+          if ( is_arg ) {
+            Cmp_Assemble(ASM_MOV_OO, CAT_GREG, c->which_one,
+             e->categ, e->value.i);
+            return Success;
+          } else {
+            Cmp_Assemble(ASM_PUSH_O, e->categ, e->value.i);
+            return Success;
+          }
+        }
+      }
+    }
+  }
+  default:
+    MSG_ERROR("Cmp_Expr_Container_Change: wrong type of container!");
+  }
+  return Failed;
 }
 
 /* DESCRIPTION: This function creates (in *e) a new expression of type 'type'.
@@ -1457,6 +1559,9 @@ Expression *Cmp_Expr_Reg0_To_LReg(Intg t) {
   return NULL;
 }
 
+#if 0
+/* Not used */
+
 /* DESCRIZIONE: Questa funzione controlla che una espressione di tipo oggetto
  *  sia di categoria "registro locale" (CAT_LREG) o "registro globale"
  *  (CAT_GREG). In caso contrario (cioe' per categoria "puntatore a "
@@ -1515,6 +1620,7 @@ Task Cmp_Expr_O_To_OReg(Expression *e) {
   }
   return Failed;
 }
+#endif
 
 /* DESCRIZIONE: Quando faccio riferimento ad un membro di una struttura
  *  il compilatore genera del codice tipo:
@@ -1559,7 +1665,6 @@ Task Cmp_Complete_Ptr_1(Expression *e) {
 /* DESCRIZIONE: Mette in *e un espressione immediata di tipo intero.
  */
 void Cmp_Expr_New_Imm_Char(Expression *e, Char c) {
-  MSG_LOCATION("Cmp_Expr_New_Imm_Char");
   Cmp_Expr_Container_New(e, TYPE_CHAR, CONTAINER_IMM);
   e->value.i = (Intg) c;
 }
@@ -1567,7 +1672,6 @@ void Cmp_Expr_New_Imm_Char(Expression *e, Char c) {
 /* DESCRIZIONE: Mette in *e un espressione immediata di tipo intero.
  */
 void Cmp_Expr_New_Imm_Intg(Expression *e, Intg i) {
-  MSG_LOCATION("Cmp_Expr_New_Imm_Intg");
   Cmp_Expr_Container_New(e, TYPE_INTG, CONTAINER_IMM);
   e->value.i = i;
 }
@@ -1575,7 +1679,6 @@ void Cmp_Expr_New_Imm_Intg(Expression *e, Intg i) {
 /* DESCRIZIONE: Mette in *e un espressione immediata di tipo reale.
  */
 void Cmp_Expr_New_Imm_Real(Expression *e, Real r) {
-  MSG_LOCATION("Cmp_Expr_New_Imm_Real");
   Cmp_Expr_Container_New(e, TYPE_REAL, CONTAINER_IMM);
   e->value.r = r;
 }
@@ -1583,7 +1686,6 @@ void Cmp_Expr_New_Imm_Real(Expression *e, Real r) {
 /* DESCRIZIONE: Mette in *e un espressione immediata di tipo reale.
  */
 void Cmp_Expr_New_Imm_Point(Expression *e, Point *p) {
-  MSG_LOCATION("Cmp_Expr_New_Imm_Point");
   Cmp_Expr_Container_New(e, TYPE_POINT, CONTAINER_IMM);
   e->value.p = *p;
 }

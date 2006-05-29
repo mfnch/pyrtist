@@ -362,7 +362,7 @@ static void VM__Exec_Lea_OO(VMProgram *vmp) {
   *((Obj *) vmcur->arg1) = (Obj) vmcur->arg2;
 }
 
-static void VM__Exec_Push(VMProgram *vmp) {
+static void VM__Exec_Push_O(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   if ( vmp->stack == (Array *) NULL ) {
     vmp->stack = Array_New(sizeof(Obj), 10);
@@ -370,7 +370,7 @@ static void VM__Exec_Push(VMProgram *vmp) {
   (void) Arr_Push(vmp->stack, vmcur->arg1);
 }
 
-static void VM__Exec_Pop(VMProgram *vmp) {
+static void VM__Exec_Pop_O(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Obj *) vmcur->arg1) = Arr_LastItem(vmp->stack, Obj);
   Arr_Dec(vmp->stack);
@@ -463,6 +463,6 @@ VMInstrDesc vm_instr_desc_table[] = {
   {  "lea", 1,TYPE_REAL, VM__GLP_GLPI,  VM__Exec_Lea,    VM__D_GLPI_GLPI }, /* lea r[ro0+...]     */
   {  "lea", 1,TYPE_POINT,VM__GLP_GLPI,  VM__Exec_Lea,    VM__D_GLPI_GLPI }, /* lea p[ro0+...]     */
   {  "lea", 2, TYPE_OBJ, VM__GLP_GLPI,  VM__Exec_Lea_OO, VM__D_GLPI_GLPI }, /* lea reg_o, o[ro0+...] */
-  { "push", 1, TYPE_OBJ, VM__GLP_GLPI,  VM__Exec_Push,   VM__D_GLPI_GLPI }, /* push reg_o         */
-  {  "pop", 1, TYPE_OBJ, VM__GLP_GLPI,  VM__Exec_Pop,    VM__D_GLPI_GLPI }  /* pop reg_o          */
+  { "push", 1, TYPE_OBJ, VM__GLP_GLPI,  VM__Exec_Push_O, VM__D_GLPI_GLPI }, /* push reg_o         */
+  {  "pop", 1, TYPE_OBJ, VM__GLP_GLPI,  VM__Exec_Pop_O,  VM__D_GLPI_GLPI }  /* pop reg_o          */
 };
