@@ -410,6 +410,7 @@ Task Cmp_Free(Expression *expr);
 Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free);
 Task Cmp__Expr_To_LReg(Expression *expr, int force);
 Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free);
+Task Cmp_Expr_Container_Change(Expression *e, Container *c);
 Task Cmp_Expr_Create(Expression *e, Intg type, int temporary);
 Task Cmp_Expr_Destroy(Expression *e, int destroy_target);
 Task Cmp_Expr_Copy(Expression *e_dest, Expression *e_src);

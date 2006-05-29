@@ -90,7 +90,7 @@ Task Cmp_Finish(void) {
 
 /******************************************************************************/
 
-/* DESCRIZIONE: Crea un nuovo operatore.
+/* Crea un nuovo operatore.
  */
 Operator *Cmp_Operator_New(char *name) {
   Operator *opr;
@@ -117,9 +117,9 @@ Operator *Cmp_Operator_New(char *name) {
   return opr;
 }
 
-/* DESCRIZIONE: Aggiunge una nuova operazione di tipo type1 opr type2
- *  all'operatore *opr. Se type1 o type2 sono uguali a TYPE_NONE si tratta di
- *  un'operazione unaria (sinistra o destra rispettivamente).
+/* Aggiunge una nuova operazione di tipo type1 opr type2
+ * all'operatore *opr. Se type1 o type2 sono uguali a TYPE_NONE si tratta
+ * di un'operazione unaria (sinistra o destra rispettivamente).
  */
 Operation *Cmp_Operation_Add(
  Operator *opr, Intg type1, Intg type2, Intg typer) {
@@ -2015,7 +2015,7 @@ Task Cmp_Procedure(int *found, Expression *e, Intg suffix, int auto_define) {
   /* Now we compile the procedure */
   /* We pass the box which is the parent of the procedure */
   if ( b->value.is.value ) {
-    if IS_FAILED( Cmp_Expr_To_Ptr(& b->value, CAT_GREG, (Intg) 1, 0) )
+    if IS_FAILED( Cmp_Expr_Container_Change(& b->value, CONTAINER_ARG(1)) )
       goto exit_failed;
   }
 
