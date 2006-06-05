@@ -26,7 +26,7 @@
 typedef Array Chest;
 
 Task Chest_New(Chest **new_chest, UInt element_size, UInt min_dim);
-Task Chest_Occupy(Chest *c, void *item);
+Task Chest_Occupy(Chest *c, void *item, int *assigned_index);
 Task Chest_Release(Chest *c, UInt item_index);
 
 #define Chest_MaxIndex(c) (c->max_idx)

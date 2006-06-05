@@ -33,6 +33,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "types.h"
 #include "defaults.h"
@@ -51,7 +52,7 @@
  */
 Task Chest_New(Chest **new_chest, UInt element_size, UInt min_dim) {
   Array *a;
-  element_size += sizeof(Intg);
+  element_size += sizeof(int);
   TASK( Arr_New(& a, element_size, min_dim) );
   a->chain = CHEST_END_OF_CHAIN;
   a->max_idx = 0;
@@ -68,14 +69,20 @@ Task Chest_New(Chest **new_chest, UInt element_size, UInt min_dim) {
  * NOTA: Il numero di registro restituito e' sempre maggiore di 1,
  *  viene restituito 0 solo in caso di errori.
  */
-Task Chest_Occupy(Chest *c, void *item) {
+Task Chest_Occupy(Chest *c, void *item, int *assigned_index) {
   Array *a = (Array *) c;
+  int dummy_int, item_size;
+  void *item_dst;
+  assigned_index = assigned_index == NULL ? & dummy_int : assigned_index;
+  item_size = a->elsize - sizeof(int);
+  assert(item_size >= 0);
   if ( Arr_Chain(a) == CHEST_END_OF_CHAIN ) {
     /* Se la catena dei registri disponibili e' vuota non resta che creare
      * un nuovo registro, contrassegnarlo come occupato e restituirlo.
      */
     Arr_Inc(a);
-    Arr_LastItem(a, Intg) = CHEST_ITEM_OCCUPIED;
+    item_dst = Arr_LastItemPtr(a, void);
+    *((int *) item_dst) = CHEST_ITEM_OCCUPIED;
 
     {
       Intg ni = Arr_NumItem(a);
@@ -83,17 +90,26 @@ Task Chest_Occupy(Chest *c, void *item) {
 #ifdef DEBUG
       printf("Chest_Occupy: occupo (num="SIntg")\n", ni);
 #endif
-      return ni;
+      *assigned_index = ni;
     }
+    if (item == NULL || item_size == 0) return Success;
+    item_dst += sizeof(int);
+    (void) memcpy(item_dst, item, item_size);
+    return Success;
 
   } else {
     long free_item = a->chain;
-    a->chain = Arr_Item(a, Intg, free_item);
-    Arr_Item(a, Intg, free_item) = CHEST_ITEM_OCCUPIED;
+    item_dst = Arr_ItemPtr(a, void, free_item);
+    a->chain = *((int *) item_dst);
+    *((int *) item_dst) = CHEST_ITEM_OCCUPIED;
 #ifdef DEBUG
     printf("Chest_Occupy: occupo (num="SIntg")\n", free_item);
 #endif
-    return free_item;
+    *assigned_index = free_item;
+    if (item == NULL || item_size == 0) return Success;
+    item_dst += sizeof(int);
+    (void) memcpy(item_dst, item, item_size);
+    return Success;
   }
 }
 
