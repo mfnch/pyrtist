@@ -98,6 +98,13 @@ Array *Array_New(UInt elsize, UInt mindim) {
   return a;
 }
 
+/* Alternative interface for the function Array_New
+ */
+Task Arr_New(Array **new_array, UInt elsize, UInt mindim) {
+  return (*new_array = Array_New(elsize, mindim)) == (Array *) NULL ?
+      Failed : Success;
+}
+
 /* DESCRIZIONE: Converte l'array specificata, in una nuova array
  *  con elementi di dimensione diversa (elsize).
  *  mindim = dimensione minima dell'array (in elementi)
@@ -167,34 +174,32 @@ Task Arr_Push(Array *a, void *elem)
  *  preoccupandosi di reallocare la memoria se necessario.
  *  Restituisce 1 solo in caso di successo.
  */
-Task Arr_MPush(Array *a, void *elem, UInt numel)
-{
-	MSG_LOCATION("Arr_MPush");
+Task Arr_MPush(Array *a, void *elem, UInt numel) {
+  MSG_LOCATION("Arr_MPush");
+  if (numel < 1) {
+    MSG_ERROR("Parametri errati");
+    return Failed;
+  }
 
-	if (numel < 1) {
-		MSG_ERROR("Parametri errati");
-		return Failed;
-	}
+  if (a->ID == ARR_ID) {
+    void *tptr;
+    UInt tpos = a->numel * a->elsize;
 
-	if (a->ID == ARR_ID) {
-		void *tptr;
-		UInt tpos = a->numel * a->elsize;
+    a->numel += numel;
 
-		a->numel += numel;
+    /* Controlla che l'array non debba essere allargata */
+    ARRAY_EXPAND(a, a->numel);
 
-		/* Controlla che l'array non debba essere allargata */
-		ARRAY_EXPAND(a, a->numel);
+    tptr = a->ptr + tpos;
+    memcpy(tptr, elem, numel * a->elsize);
+    return Success;
 
-		tptr = a->ptr + tpos;
-		memcpy(tptr, elem, numel * a->elsize);
-		return Success;
+  } else {
+    MSG_ERROR("Array non inizializzata");
+    return Failed;
+  }
 
-	} else {
-		MSG_ERROR("Array non inizializzata");
-		return Failed;
-	}
-
-	return Failed;
+  return Failed;
 }
 
 /* DESCRIZIONE: Se necessario allarga l'array in modo che contenga

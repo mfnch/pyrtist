@@ -25,18 +25,20 @@
 
 /* Struttura di controllo dell'array */
 typedef struct {
-  long ID;	/* Costante identificativa di struttura inizializzata */
-  void *ptr;	/* Puntatore alla zona di memoria che contiene i dati */
-  long dim;	/* Numero massimo di elementi contenibili */
-  long size;	/* Dimensione in bytes della zona di memoria allocata */
-  long mindim;	/* Valore minimo di dim */
-  short elsize;	/* Dimensione in bytes di ogni elemento */
-  long numel;		/* Numero di elementi attualmente inseriti */
-  long chain;		/* Quantita' inutilizzata (utile per eventuali catene di elementi) */
+  long ID;      /* Costante identificativa di struttura inizializzata */
+  void *ptr;    /* Puntatore alla zona di memoria che contiene i dati */
+  long dim;     /* Numero massimo di elementi contenibili */
+  long size;    /* Dimensione in bytes della zona di memoria allocata */
+  long mindim;  /* Valore minimo di dim */
+  short elsize; /* Dimensione in bytes di ogni elemento */
+  long numel;   /* Numero di elementi attualmente inseriti */
+  long chain;   /* Quantita riservata all'estensione Chest */
+  long max_idx; /* Quantita riservata all'estensione Chest */
 } Array;
 
 /* Procedure definite in array.c */
 Array *Array_New(UInt elsize, UInt mindim);
+Task Arr_New(Array **new_array, UInt elsize, UInt mindim);
 Array *Arr_Recycle(Array *a, UInt elsize, UInt mindim);
 Task Arr_Push(Array *a, void *elem);
 Task Arr_MPush(Array *a, void *elem, UInt numel);

@@ -943,6 +943,15 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
  * Functions to assemble code                                                  *
  *******************************************************************************/
 
+Task VM_Sheet_New(int *sheet_id) {
+}
+
+Task VM_Sheet_Select(int sheet_id) {
+}
+
+Task VM_Sheet_Install(int sheet_id) {
+}
+
 /* Imposta le opzioni per l'assemblaggio:
  * L'opzione puo' essere settata con un valore > 0, resettata con 0
  * e lasciata inalterata con un valore < 0.
