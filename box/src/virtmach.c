@@ -495,17 +495,6 @@ void VM_Destroy(VMProgram *vmp) {
   free(vmp);
 }
 
-/*******************************************************************************
- * Functions to handle sheets: a sheet is a place where you can put temporary  *
- * code, which can then be istalled as a new module or handled in other ways.  *
- *******************************************************************************/
-Task VMProg_New_Sheet(VMProgram *vmp, UInt *new_sheet) {
-}
-
-Task VMProg_Install_Sheet(VMProgram *vmp, UInt sheet, UInt *assigned_module) {
-
-}
-
 /* Installa un nuovo modulo di programma con nome name.
  * Un modulo e' semplicemente un pezzo di codice che puo' essere eseguito.
  * E' possibile installare 2 tipi di moduli:
@@ -945,17 +934,60 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
 }
 
 /*******************************************************************************
- * Functions to assemble code                                                  *
+ * Functions to handle sheets: a sheet is a place where you can put temporary  *
+ * code, which can then be istalled as a new module or handled in other ways.  *
  *******************************************************************************/
 
-Task VM_Sheet_New(int *sheet_id) {
+static Task VM__Sheet_Destroy(void *s) {
+  if ( s == NULL ) return;
+  Arr_Destroy( ((VMSheet *) s)->program );
+  return Success;
 }
 
-Task VM_Sheet_Select(int sheet_id) {
+Task VM_Sheet_New(VMProgram *vmp, int *sheet_id) {
+  VMSheet sheet;
+  Array *program;
+
+  if ( vmp->sheets == (Collection *) NULL ) {
+     TASK( Clc_New(& vmp->sheets, sizeof(VMSheet), VM_TYPICAL_NUM_SHEETS) );
+     Clc_Destructor(vmp->sheets, VM__Sheet_Destroy);
+  }
+
+  TASK( Arr_New(& program, sizeof(VMByteX4), VM_TYPICAL_MOD_DIM) );
+
+  sheet.program = program;
+  sheet.status.error = 0;
+  sheet.status.inhibit = 0;
+  return Clc_Occupy(vmp->sheets, & sheet, sheet_id);
 }
 
-Task VM_Sheet_Install(int sheet_id) {
+Task VM_Sheet_Destroy(VMProgram *vmp, int sheet_id) {
+  return Clc_Release(vmp->sheets, sheet_id);
 }
+
+Task VM_Sheet_Select(VMProgram *vmp, int sheet_id) {
+  assert( vmp->sheets != (Collection *) NULL);
+  return Success;
+}
+
+Task VM_Sheet_Install(VMProgram *vmp, int sheet_id) {
+  assert( vmp->sheets != (Collection *) NULL);
+  return Success;
+
+  /*AsmOut *ao = *program;
+  Array *p = ao->program;
+  VMModulePtr ptr;
+  ptr.vm.dim = Arr_NumItem(p);
+  ptr.vm.code = Arr_Data_Only(p);
+  free(ao);
+  *program = NULL;
+  return VM_Module_Define(vmp, module, MODULE_IS_VM_CODE, ptr);
+*/
+}
+
+/*******************************************************************************
+ * Functions to assemble code                                                  *
+ *******************************************************************************/
 
 /* Imposta le opzioni per l'assemblaggio:
  * L'opzione puo' essere settata con un valore > 0, resettata con 0

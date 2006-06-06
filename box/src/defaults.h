@@ -107,6 +107,7 @@
  * VM_TYPICAL_TMP_SIZE: dimensione tipica del codice temporaneo prodotto.
  */
 #define VM_TYPICAL_NUM_MODULES 10
+#define VM_TYPICAL_NUM_SHEETS 10
 #define VM_TYPICAL_MOD_DIM 1024
 #define VM_TYPICAL_TMP_SIZE 1024
 /* Commentare la riga seguente per rendere la VM piu' veloce, ma meno sicura! */

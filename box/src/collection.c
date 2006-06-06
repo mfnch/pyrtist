@@ -56,8 +56,14 @@ Task Clc_New(Collection **new_clc, UInt element_size, UInt min_dim) {
   TASK( Arr_New(& a, element_size, min_dim) );
   a->chain = CLC_END_OF_CHAIN;
   a->max_idx = 0;
+  a->destroy = (Task (*)(void *)) NULL;
   *new_clc = (Collection *) a;
   return Success;
+}
+
+/* Gives a function used to destroy objects when 'Clc_Release' is called */
+void Clc_Destructor(Collection *c, Task (*destroy)(void *)) {
+  c->destroy = destroy;
 }
 
 /* Restituisce un numero di registro libero e lo occupa,
@@ -117,22 +123,46 @@ Task Clc_Occupy(Collection *c, void *item, int *assigned_index) {
  */
 Task Clc_Release(Collection *c, UInt item_index) {
   Array *a = (Array *) c;
+  void *item_ptr;
 #ifdef DEBUG
   printf("Clc_Release: rilascio (num="SIntg")\n", item_index);
 #endif
 
   if (item_index > Arr_NumItem(a)) {
-    MSG_ERROR("Clc_Release: Relesing a non occupied register(1)");
+    MSG_ERROR("Clc_Release: Releasing a non occupied item(1)");
     return Failed;
   }
 
-  if (Arr_Item(a, Intg, item_index) != CLC_ITEM_OCCUPIED) {
-    MSG_ERROR("Clc_Release: Already released register(2): num = %d",
+  item_ptr = Arr_ItemPtr(a, void, item_index);
+  if (*((int *) item_ptr) != CLC_ITEM_OCCUPIED) {
+    MSG_ERROR("Clc_Release: Already released item(2): num = %d",
       item_index);
     return Failed;
   }
 
-  Arr_Item(a, Intg, item_index) = a->chain;
+  *((int *) item_ptr) = a->chain;
   a->chain = item_index;
+
+  if ( c->destroy == (Task (*)(void *)) NULL ) return Success;
+  c->destroy(item_ptr + sizeof(int));
+  return Success;
+}
+
+Task Clc_Object_Ptr(Collection *c, void **item_ptr, UInt item_index) {
+  Array *a = (Array *) c;
+  void *ip;
+
+  if (item_index > Arr_NumItem(a)) {
+    MSG_ERROR("Clc_Object_Ptr: Index out of bounds.");
+    return Failed;
+  }
+
+  ip = Arr_ItemPtr(a, void, item_index);
+  if (*((int *) ip) != CLC_ITEM_OCCUPIED) {
+    MSG_ERROR("Clc_Object_Ptr: Index refers to bad item.");
+    return Failed;
+  }
+
+  *item_ptr = ip + sizeof(int);
   return Success;
 }

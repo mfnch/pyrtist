@@ -32,6 +32,7 @@ typedef struct {
   long mindim;  /* Valore minimo di dim */
   short elsize; /* Dimensione in bytes di ogni elemento */
   long numel;   /* Numero di elementi attualmente inseriti */
+  Task (*destroy)(void *); /* Quantita riservata all'estensione Chest */
   long chain;   /* Quantita riservata all'estensione Chest */
   long max_idx; /* Quantita riservata all'estensione Chest */
 } Array;
