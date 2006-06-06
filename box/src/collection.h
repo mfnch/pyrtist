@@ -18,16 +18,17 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* chest.h,  June 2006 */
+/* collection.h,  June 2006 */
 
-#ifndef _CHEST_H
-#define _CHEST_H
+#ifndef _COLLECTION_H
+#define _COLLECTION_H
 
-typedef Array Chest;
+typedef Array Collection;
 
-Task Chest_New(Chest **new_chest, UInt element_size, UInt min_dim);
-Task Chest_Occupy(Chest *c, void *item, int *assigned_index);
-Task Chest_Release(Chest *c, UInt item_index);
+Task Clc_New(Collection **new_clc, UInt element_size, UInt min_dim);
+Task Clc_Occupy(Collection *c, void *item, int *assigned_index);
+Task Clc_Release(Collection *c, UInt item_index);
 
-#define Chest_MaxIndex(c) (c->max_idx)
+#define Clc_MaxIndex(c) (c->max_idx)
+#define Clc_Destroy(c) Arr_Destroy((Array *) (c))
 #endif

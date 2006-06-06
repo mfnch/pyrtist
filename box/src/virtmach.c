@@ -33,6 +33,7 @@
 #include "defaults.h"
 #include "messages.h"
 #include "array.h"
+#include "collection.h"
 #include "virtmach.h"
 #include "str.h"
 
@@ -462,6 +463,8 @@ Task VM_Init(VMProgram **new_vmp) {
   nv = (VMProgram *) malloc(sizeof(VMProgram));
   if (nv == NULL) return Failed;
   nv->vm_modules_list = (Array *) NULL;
+  nv->sheets = (Collection *) NULL;
+  nv->installed_sheets = (Collection *) NULL;
   nv->vm_globals = 0;
   nv->vm_dflags.hexcode = 0;
   nv->vm_aflags.forcelong = 0;
@@ -486,6 +489,8 @@ void VM_Destroy(VMProgram *vmp) {
     if ( Arr_NumItem(vmp->stack) != 0 ) {
       MSG_WARNING("Run finished with non empty stack.");
     }
+  Clc_Destroy(vmp->sheets);
+  Clc_Destroy(vmp->installed_sheets);
   Arr_Destroy(vmp->stack);
   free(vmp);
 }

@@ -25,6 +25,7 @@
 #include "types.h"
 #include "defaults.h"
 #include "array.h"
+#include "collection.h"
 
 /* Associo un numero a ciascun tipo, per poterlo identificare */
 typedef enum {
@@ -194,11 +195,20 @@ typedef struct {
   Array *program;
 } AsmOut;
 
+typedef struct {
+  struct {
+    unsigned int error : 1;
+    unsigned int inhibit : 1;
+  } status;
+  Array *program;
+} VMSheet;
+
 /* This structure define all what is needed for the functions defined inside
  * the file 'virtmach.c'
  */
 struct __vmprogram {
   Array *vm_modules_list; /* List of installed modules */
+  Collection *sheets, *installed_sheets;
   int vm_globals;
   void *vm_global[NUM_TYPES];
   Intg vm_gmin[NUM_TYPES], vm_gmax[NUM_TYPES];

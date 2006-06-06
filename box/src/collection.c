@@ -18,10 +18,10 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* chest.c,  June 2006
+/* collection.c,  June 2006
  *
- * This file defines the object Chest which is an extension of the object
- * array. This files adds to the Array object the possibility of releasing
+ * This file defines the object Collection which is an extension of the obj
+ * Array. This file adds to the Array object the possibility of releasing
  * an element. For example:
  *
  *  you can insert three elements: 1, 2 and 3, then you can release
@@ -39,10 +39,10 @@
 #include "defaults.h"
 #include "messages.h"
 #include "array.h"
-#include "chest.h"
+#include "collection.h"
 
-#define CHEST_END_OF_CHAIN -1
-#define CHEST_ITEM_OCCUPIED 0
+#define CLC_END_OF_CHAIN -1
+#define CLC_ITEM_OCCUPIED 0
 
 /* Inizializza gli array che tengono nota dei registri occupati
  * e setta la loro "dimensione a riposo". Questa quantita'(per ciascun
@@ -50,13 +50,13 @@
  * ci si aspetta saranno occupati contemporanemente, in questo modo saranno
  * eseguite poche realloc.
  */
-Task Chest_New(Chest **new_chest, UInt element_size, UInt min_dim) {
+Task Clc_New(Collection **new_clc, UInt element_size, UInt min_dim) {
   Array *a;
   element_size += sizeof(int);
   TASK( Arr_New(& a, element_size, min_dim) );
-  a->chain = CHEST_END_OF_CHAIN;
+  a->chain = CLC_END_OF_CHAIN;
   a->max_idx = 0;
-  *new_chest = (Chest *) a;
+  *new_clc = (Collection *) a;
   return Success;
 }
 
@@ -69,26 +69,26 @@ Task Chest_New(Chest **new_chest, UInt element_size, UInt min_dim) {
  * NOTA: Il numero di registro restituito e' sempre maggiore di 1,
  *  viene restituito 0 solo in caso di errori.
  */
-Task Chest_Occupy(Chest *c, void *item, int *assigned_index) {
+Task Clc_Occupy(Collection *c, void *item, int *assigned_index) {
   Array *a = (Array *) c;
   int dummy_int, item_size;
   void *item_dst;
   assigned_index = assigned_index == NULL ? & dummy_int : assigned_index;
   item_size = a->elsize - sizeof(int);
   assert(item_size >= 0);
-  if ( Arr_Chain(a) == CHEST_END_OF_CHAIN ) {
+  if ( Arr_Chain(a) == CLC_END_OF_CHAIN ) {
     /* Se la catena dei registri disponibili e' vuota non resta che creare
      * un nuovo registro, contrassegnarlo come occupato e restituirlo.
      */
     Arr_Inc(a);
     item_dst = Arr_LastItemPtr(a, void);
-    *((int *) item_dst) = CHEST_ITEM_OCCUPIED;
+    *((int *) item_dst) = CLC_ITEM_OCCUPIED;
 
     {
       Intg ni = Arr_NumItem(a);
       if (ni > a->max_idx) a->max_idx = ni;
 #ifdef DEBUG
-      printf("Chest_Occupy: occupo (num="SIntg")\n", ni);
+      printf("Clc_Occupy: occupo (num="SIntg")\n", ni);
 #endif
       *assigned_index = ni;
     }
@@ -101,9 +101,9 @@ Task Chest_Occupy(Chest *c, void *item, int *assigned_index) {
     long free_item = a->chain;
     item_dst = Arr_ItemPtr(a, void, free_item);
     a->chain = *((int *) item_dst);
-    *((int *) item_dst) = CHEST_ITEM_OCCUPIED;
+    *((int *) item_dst) = CLC_ITEM_OCCUPIED;
 #ifdef DEBUG
-    printf("Chest_Occupy: occupo (num="SIntg")\n", free_item);
+    printf("Clc_Occupy: occupo (num="SIntg")\n", free_item);
 #endif
     *assigned_index = free_item;
     if (item == NULL || item_size == 0) return Success;
@@ -113,21 +113,21 @@ Task Chest_Occupy(Chest *c, void *item, int *assigned_index) {
   }
 }
 
-/* Vedi Chest_Occupy.
+/* Vedi Clc_Occupy.
  */
-Task Chest_Release(Chest *c, UInt item_index) {
+Task Clc_Release(Collection *c, UInt item_index) {
   Array *a = (Array *) c;
 #ifdef DEBUG
-  printf("Chest_Release: rilascio (num="SIntg")\n", item_index);
+  printf("Clc_Release: rilascio (num="SIntg")\n", item_index);
 #endif
 
   if (item_index > Arr_NumItem(a)) {
-    MSG_ERROR("Chest_Release: Relesing a non occupied register(1)");
+    MSG_ERROR("Clc_Release: Relesing a non occupied register(1)");
     return Failed;
   }
 
-  if (Arr_Item(a, Intg, item_index) != CHEST_ITEM_OCCUPIED) {
-    MSG_ERROR("Chest_Release: Already released register(2): num = %d",
+  if (Arr_Item(a, Intg, item_index) != CLC_ITEM_OCCUPIED) {
+    MSG_ERROR("Clc_Release: Already released register(2): num = %d",
       item_index);
     return Failed;
   }
