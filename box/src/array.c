@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 /* De-commentare per includere i messaggi di debug */
 /*#define DEBUG*/
@@ -148,8 +149,7 @@ Array *Arr_Recycle(Array *a, UInt elsize, UInt mindim) {
  *  preoccupandosi di reallocare la memoria se necessario.
  *  Restituisce 1 solo in caso di successo.
  */
-Task Arr_Push(Array *a, void *elem)
-{
+Task Arr_Push(Array *a, void *elem) {
   MSG_LOCATION("Arr_Push");
   if (a->ID == ARR_ID) {
     void *tptr;
@@ -351,4 +351,24 @@ void *Arr_Data_Only(Array *a) {
     }
   }
   return NULL;
+}
+
+/* Apply a function to all the elements of an array
+ */
+Task Arr_Iter(Array *a, Task (*action)(void *)) {
+  assert(a != NULL && action != NULL);
+  if (a->ID != ARR_ID) {
+    int i;
+    void *item_ptr = a->ptr;
+    for(i = 0; i < a->numel; i++) {
+      printf("Arr_Iter\n");
+      if IS_FAILED( action(item_ptr) ) return Failed;
+      item_ptr += a->elsize;
+    }
+    return Success;
+
+  } else {
+    MSG_ERROR("Array non inizializzata");
+    return Failed;
+  }
 }

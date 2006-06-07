@@ -66,6 +66,12 @@ void Clc_Destructor(Collection *c, Task (*destroy)(void *)) {
   c->destroy = destroy;
 }
 
+void Clc_Destroy(Collection *c) {
+  if ( c == (Collection *) NULL ) return;
+  if ( c->destroy != NULL ) (void) Arr_Iter((Array *) c, c->destroy);
+  Arr_Destroy((Array *) c);
+}
+
 /* Restituisce un numero di registro libero e lo occupa,
  * in modo tale che questo numero di registro non venga piu' restituito
  * nelle prossime chiamate a Reg_Occupy, a meno che il registro

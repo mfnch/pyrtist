@@ -27,12 +27,12 @@ typedef Array Collection;
 
 Task Clc_New(Collection **new_clc, UInt element_size, UInt min_dim);
 void Clc_Destructor(Collection *c, Task (*destroy)(void *));
+void Clc_Destroy(Collection *c);
 Task Clc_Occupy(Collection *c, void *item, int *assigned_index);
 Task Clc_Release(Collection *c, UInt item_index);
 Task Clc_Object_Ptr(Collection *c, void **item_ptr, UInt item_index);
 
 #define Clc_MaxIndex(c) (c->max_idx)
-#define Clc_Destroy(c) Arr_Destroy((Array *) (c))
 
 #define Clc_ItemPtr(c, type, n) \
   ((type *) ((c)->ptr + ((n)-1)*((UInt) (c)->elsize) + sizeof(int)))
