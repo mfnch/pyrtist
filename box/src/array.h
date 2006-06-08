@@ -49,7 +49,7 @@ Task Arr_BigEnough(Array *a, UInt numel);
 Task Arr_SmallEnough(Array *a, UInt numel);
 Task Arr_Clear(Array *a);
 void Arr_Destroy(Array *a);
-void *Arr_Data_Only(Array *a);
+Task Arr_Data_Only(Array *a, void **data_ptr);
 Task Arr_Iter(Array *a, Task (*action)(void *));
 
 /* Valore che contrassegna le array correttamente inizializzate */

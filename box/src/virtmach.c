@@ -970,19 +970,14 @@ Task VM_Sheet_Select(VMProgram *vmp, int sheet_id) {
   return Success;
 }
 
-Task VM_Sheet_Install(VMProgram *vmp, int sheet_id) {
+Task VM_Sheet_Install(VMProgram *vmp, Intg module, int sheet_id) {
+  VMSheet *sheet;
+  VMModulePtr module_ptr;
   assert( vmp->sheets != (Collection *) NULL);
-  return Success;
-
-  /*AsmOut *ao = *program;
-  Array *p = ao->program;
-  VMModulePtr ptr;
-  ptr.vm.dim = Arr_NumItem(p);
-  ptr.vm.code = Arr_Data_Only(p);
-  free(ao);
-  *program = NULL;
-  return VM_Module_Define(vmp, module, MODULE_IS_VM_CODE, ptr);
-*/
+  TASK( Clc_Object_Ptr(vmp->sheets, (void **) & sheet, sheet_id) );
+  module_ptr.vm.dim = Arr_NumItem(sheet->program);
+  TASK( Arr_Data_Only(sheet->program, & module_ptr.vm.code) );
+  return VM_Module_Define(vmp, module, MODULE_IS_VM_CODE, module_ptr);
 }
 
 /*******************************************************************************
@@ -1107,7 +1102,8 @@ Task VM_Asm_Install(VMProgram *vmp, Intg module, AsmOut **program) {
   Array *p = ao->program;
   VMModulePtr ptr;
   ptr.vm.dim = Arr_NumItem(p);
-  ptr.vm.code = Arr_Data_Only(p);
+  TASK( Arr_Data_Only(p, & ptr.vm.code) );
+  Arr_Destroy(p);
   free(ao);
   *program = NULL;
   return VM_Module_Define(vmp, module, MODULE_IS_VM_CODE, ptr);

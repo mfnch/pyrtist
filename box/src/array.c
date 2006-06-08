@@ -1,4 +1,24 @@
-/* array.c - Autore: Franchin Matteo - 3 maggio 2004
+/***************************************************************************
+ *   Copyright (C) 2006 by Matteo Franchin                                 *
+ *   fnch@libero.it                                                        *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+
+/* array.c, 3 maggio 2004
  *
  * Questo file contiene il codice necessario per gestire un array.
  * Si possono inserire e togliere elementi senza preoccuparsi
@@ -335,22 +355,21 @@ void Arr_Destroy(Array *a) {
   return;
 }
 
-/* DESCRIZIONE: Distrugge l'array, mantenendo pero' l'area di memoria
- *  ad essa associata. Restituisce proprio il puntatore a tale area.
- * NOTA: il puntatore a sara' inutilizzabile dopo l'esecuzione di questa
- *  funzione.
+/* Extract the data from an 'Array' object.
+ * After the call to this function, the 'Array' will be empty.
  */
-void *Arr_Data_Only(Array *a) {
-  void *data_ptr;
-
+Task Arr_Data_Only(Array *a, void **data_ptr) {
   if ( a != NULL) {
     if (a->ID == ARR_ID) {
-      data_ptr = a->ptr;
-      free(a);
-      return data_ptr;
+      *data_ptr = a->ptr;
+      a->dim = 0;
+      a->size = 0;
+      a->numel = 0;
+      a->ptr = NULL;
+      return Success;
     }
   }
-  return NULL;
+  return Failed;
 }
 
 /* Apply a function to all the elements of an array
