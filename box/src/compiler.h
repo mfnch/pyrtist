@@ -322,7 +322,6 @@ enum {
 #define CONTAINER_STACK (& (Container) {CONTAINER_TYPE_STACK, 0})
 
 extern struct cmp_opr_struct cmp_opr;
-extern AsmOut *cmp_curr_output;
 extern Intg cmp_box_level;
 
 /* Variabili definite in 'typeman.c'*/

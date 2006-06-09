@@ -66,9 +66,22 @@ void Clc_Destructor(Collection *c, Task (*destroy)(void *)) {
   c->destroy = destroy;
 }
 
+static Task (*item_destructor)(void *);
+
+static Task item_container_destructor(void *item_container) {
+  if ( *((int *) item_container) == CLC_ITEM_OCCUPIED ) {
+    void *item = item_container + sizeof(int);
+    return item_destructor(item);
+  }
+  return Success;
+}
+
 void Clc_Destroy(Collection *c) {
   if ( c == (Collection *) NULL ) return;
-  if ( c->destroy != NULL ) (void) Arr_Iter((Array *) c, c->destroy);
+  if ( c->destroy != NULL ) {
+    item_destructor = c->destroy;
+    (void) Arr_Iter((Array *) c, item_container_destructor);
+  }
   Arr_Destroy((Array *) c);
 }
 
@@ -149,8 +162,14 @@ Task Clc_Release(Collection *c, UInt item_index) {
   *((int *) item_ptr) = a->chain;
   a->chain = item_index;
 
+#ifdef DEBUG
+  fprintf(stderr, "Calling destructor..."); fflush(stderr);
+#endif
   if ( c->destroy == (Task (*)(void *)) NULL ) return Success;
   c->destroy(item_ptr + sizeof(int));
+#ifdef DEBUG
+  fprintf(stderr, "done!"); fflush(stderr);
+#endif
   return Success;
 }
 

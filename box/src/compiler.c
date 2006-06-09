@@ -53,9 +53,6 @@ VMProgram *cmp_vm;
 /* "Collezione" di tutti gli operatori */
 struct cmp_opr_struct cmp_opr;
 
-/* Destinazione attuale del codice compilato dal compilatore */
-AsmOut *cmp_curr_output;
-
 /******************************************************************************/
 
 /* Gets ready to start the compilation */
@@ -74,8 +71,12 @@ Task Cmp_Init(VMProgram *program) {
   cmp_vm = program;
 
   /* Sets the output for the compiled code */
-  cmp_curr_output = VM_Asm_Out_New(-1);
-  VM_Asm_Out_Set(cmp_vm, cmp_curr_output);
+  {
+    int main_sheet;
+    TASK( VM_Sheet_New(cmp_vm, & main_sheet) );
+    TASK( VM_Sheet_Set_Current(cmp_vm, main_sheet) );
+  }
+
   TASK( Cmp_Box_Instance_Begin( NULL ) );
 
   /* Inizializzo le routine che servono per la compilazione */

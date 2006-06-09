@@ -193,14 +193,6 @@ typedef struct {
     unsigned int inhibit : 1;
   } status;
   Array *program;
-} AsmOut;
-
-typedef struct {
-  struct {
-    unsigned int error : 1;
-    unsigned int inhibit : 1;
-  } status;
-  Array *program;
 } VMSheet;
 
 /* This structure define all what is needed for the functions defined inside
@@ -208,7 +200,6 @@ typedef struct {
  */
 struct __vmprogram {
   Array *vm_modules_list; /* List of installed modules */
-  Collection *sheets, *installed_sheets;
   int vm_globals;
   void *vm_global[NUM_TYPES];
   Intg vm_gmin[NUM_TYPES], vm_gmax[NUM_TYPES];
@@ -217,8 +208,11 @@ struct __vmprogram {
   /* Array in cui verranno disassemblati gli argomenti (scritti con sprintf) */
   char iarg_str[VM_MAX_NUMARGS][64];
   struct {unsigned int forcelong : 1;} vm_aflags;
-  AsmOut *vm_cur_output;
-  AsmOut *tmp_code;
+
+  Collection *sheets;
+  VMSheet *current_sheet;
+  int current_sheet_id;
+
   Array *stack;
   VMStatus *vmcur;
 };
@@ -260,11 +254,22 @@ Task VM_Module_Disassemble_All(VMProgram *vmp, FILE *stream);
 Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim);
 
 void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit);
+
+#if 0
 AsmOut *VM_Asm_Out_New(Intg dim);
 void VM_Asm_Out_Destroy(AsmOut *ao);
 void VM_Asm_Out_Set(VMProgram *vmp, AsmOut *out);
 Task VM_Asm_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg);
 Task VM_Asm_Install(VMProgram *vmp, Intg module, AsmOut **program);
+#endif
+
+Task VM_Sheet_New(VMProgram *vmp, int *sheet_id);
+Task VM_Sheet_Destroy(VMProgram *vmp, int sheet_id);
+int VM_Sheet_Get_Current(VMProgram *vmp);
+Task VM_Sheet_Set_Current(VMProgram *vmp, int sheet_id);
+Task VM_Sheet_Install(VMProgram *vmp, Intg module, int sheet_id);
+Task VM_Sheet_Disassemble(VMProgram *vmp, int sheet_id, FILE *out);
+
 void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 
 /* Numero minimo di VMByteX4 che riesce a contenere tutti i tipi possibili

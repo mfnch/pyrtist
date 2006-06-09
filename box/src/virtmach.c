@@ -464,12 +464,11 @@ Task VM_Init(VMProgram **new_vmp) {
   if (nv == NULL) return Failed;
   nv->vm_modules_list = (Array *) NULL;
   nv->sheets = (Collection *) NULL;
-  nv->installed_sheets = (Collection *) NULL;
   nv->vm_globals = 0;
   nv->vm_dflags.hexcode = 0;
   nv->vm_aflags.forcelong = 0;
-  nv->vm_cur_output = (AsmOut *) NULL;
-  nv->tmp_code = (AsmOut *) NULL;
+  nv->current_sheet_id = -1;
+  nv->current_sheet = (VMSheet *) NULL;
   nv->stack = (Array *) NULL;
   *new_vmp = nv;
   return Success;
@@ -481,16 +480,12 @@ void VM_Destroy(VMProgram *vmp) {
     int i;
     for(i = 0; i < NUM_TYPES; i++) free( vmp->vm_global[i] );
   }
-//   VM_Asm_Out_Destroy(vmp->vm_cur_output);
-  VM_Asm_Out_Destroy(vmp->tmp_code);
-  vmp->tmp_code = NULL;
   Arr_Destroy(vmp->vm_modules_list);
   if ( vmp->stack != NULL )
     if ( Arr_NumItem(vmp->stack) != 0 ) {
       MSG_WARNING("Run finished with non empty stack.");
     }
   Clc_Destroy(vmp->sheets);
-  Clc_Destroy(vmp->installed_sheets);
   Arr_Destroy(vmp->stack);
   free(vmp);
 }
@@ -939,8 +934,8 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
  *******************************************************************************/
 
 static Task VM__Sheet_Destroy(void *s) {
-  if ( s == NULL ) return;
-  Arr_Destroy( ((VMSheet *) s)->program );
+  Array *program = ((VMSheet *) s)->program;
+  if ( program != (Array *) NULL ) Arr_Destroy( program );
   return Success;
 }
 
@@ -965,8 +960,16 @@ Task VM_Sheet_Destroy(VMProgram *vmp, int sheet_id) {
   return Clc_Release(vmp->sheets, sheet_id);
 }
 
-Task VM_Sheet_Select(VMProgram *vmp, int sheet_id) {
+int VM_Sheet_Get_Current(VMProgram *vmp) {
+  return vmp->current_sheet_id;
+}
+
+Task VM_Sheet_Set_Current(VMProgram *vmp, int sheet_id) {
+  VMSheet *sheet;
   assert( vmp->sheets != (Collection *) NULL);
+  TASK( Clc_Object_Ptr(vmp->sheets, (void **) & sheet, sheet_id) );
+  vmp->current_sheet_id = sheet_id;
+  vmp->current_sheet = sheet;
   return Success;
 }
 
@@ -978,6 +981,18 @@ Task VM_Sheet_Install(VMProgram *vmp, Intg module, int sheet_id) {
   module_ptr.vm.dim = Arr_NumItem(sheet->program);
   TASK( Arr_Data_Only(sheet->program, & module_ptr.vm.code) );
   return VM_Module_Define(vmp, module, MODULE_IS_VM_CODE, module_ptr);
+}
+
+Task VM_Sheet_Disassemble(VMProgram *vmp, int sheet_id, FILE *out) {
+  VMSheet *sheet;
+  assert( vmp->sheets != (Collection *) NULL);
+  TASK( Clc_Object_Ptr(vmp->sheets, (void **) & sheet, sheet_id) );
+  {
+    Array *prg = sheet->program;
+    int prg_len = Arr_NumItem(prg);
+    void *prg_ptr = Arr_Ptr(prg);
+    return VM_Disassemble(vmp, out, prg_ptr, prg_len);
+  }
 }
 
 /*******************************************************************************
@@ -996,10 +1011,11 @@ Task VM_Sheet_Install(VMProgram *vmp, Intg module, int sheet_id) {
  */
 void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit) {
   vmp->vm_aflags.forcelong = forcelong;
-  vmp->vm_cur_output->status.error = error;
-  vmp->vm_cur_output->status.inhibit = inhibit;
+  vmp->current_sheet->status.error = error;
+  vmp->current_sheet->status.inhibit = inhibit;
 }
 
+#if 0
 /* Crea un nuovo "foglio bianco" dove poter scrivere le istruzioni
  * assemblate da VM_Assemble. Ad esempio, dopo l'esecuzione delle istruzioni:
  *   out = VM_Asm_Out_New(-1);
@@ -1040,8 +1056,9 @@ void VM_Asm_Out_Destroy(AsmOut *ao) {
 void VM_Asm_Out_Set(VMProgram *vmp, AsmOut *out) {
   if ( out != NULL ) vmp->vm_cur_output = out;
 }
+#endif
 
-/* This function execute the final steps to prepare the program
+/* This function executes the final steps to prepare the program
  * to be installed as a module and to be executed.
  * num_reg and num_var are the pointers to arrays of NUM_TYPES elements
  * containing the numbers of register and variables used by the program
@@ -1049,49 +1066,58 @@ void VM_Asm_Out_Set(VMProgram *vmp, AsmOut *out) {
  * module is the module-number of an undefined module which will be used
  * to install the program.
  */
-Task VM_Asm_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
-  AsmOut *save_cur = vmp->vm_cur_output;
-  Array *prog, *prog_beginning;
-
-  /* Clean or set-up the array for the temporary code */
-  if ( vmp->tmp_code == NULL ) {
-    vmp->tmp_code = VM_Asm_Out_New( VM_TYPICAL_TMP_SIZE );
-    if ( vmp->tmp_code == NULL ) return Failed;
-  } else {
-    TASK( Arr_Clear(vmp->tmp_code->program) );
-  }
+Task VM_Sheet_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
+  int previous_sheet;
+  int tmp_sheet_id = -1;
+  Array *main = vmp->current_sheet->program;
+  Task exit_status = Failed;
 
   VM_Assemble(vmp, ASM_RET);
 
-  vmp->vm_cur_output = vmp->tmp_code;
+  previous_sheet = VM_Sheet_Get_Current(vmp);
+  TASK( VM_Sheet_New(vmp, & tmp_sheet_id) );
+  if IS_FAILED( VM_Sheet_Set_Current(vmp, tmp_sheet_id) ) goto exit;
+
   {
     register Intg i;
     Intg instruction[NUM_TYPES] = {
-      ASM_NEWC_II, ASM_NEWI_II, ASM_NEWR_II, ASM_NEWP_II, ASM_NEWO_II};
+      ASM_NEWC_II, ASM_NEWI_II, ASM_NEWR_II, ASM_NEWP_II, ASM_NEWO_II
+    };
 
-      for(i = 0; i < NUM_TYPES; i++) {
-        register Intg nv = num_var[i], nr = num_reg[i];
-        if ( (nv < 0) || (nr < 0) ) {
-          MSG_ERROR("Errore nella chiamata di VM_Asm_Prepare."); goto err;
-        }
-        if ( (nv > 0) || (nr > 0) )
-          VM_Assemble(vmp, instruction[i], CAT_IMM, nv, CAT_IMM, nr);
+    for(i = 0; i < NUM_TYPES; i++) {
+      register Intg nv = num_var[i], nr = num_reg[i];
+      if ( nv < 0 || nr < 0 ) {
+        MSG_ERROR("Errore nella chiamata di VM_Sheet_Prepare.");
+        goto exit;
       }
+      if ( nv > 0 || nr > 0 )
+        VM_Assemble(vmp, instruction[i], CAT_IMM, nv, CAT_IMM, nr);
+    }
   }
-  vmp->vm_cur_output = save_cur;
-  prog_beginning = vmp->tmp_code->program;
-  prog = vmp->vm_cur_output->program;
 
-  if IS_FAILED(
-     Arr_Insert(prog, 1, Arr_NumItem(prog_beginning), Arr_Ptr(prog_beginning))
-   ) return Failed;
-  return Success;
+  /* Insert the program just written inside tmp_code at the beginning
+   * of the main program 'main' (which is the one selected before entering
+   * this function).
+   */
+  {
+    Array *code_to_insert = vmp->current_sheet->program;
+    int code_to_insert_len = Arr_NumItem(code_to_insert);
+    void *code_to_insert_ptr = Arr_Ptr(code_to_insert);
 
-err:
-  vmp->vm_cur_output = save_cur;
-  return Failed;
+    if IS_FAILED(Arr_Insert(main, 1, code_to_insert_len, code_to_insert_ptr) )
+      goto exit;
+  }
+
+  exit_status = Success;
+
+exit:
+  (void) VM_Sheet_Set_Current(vmp, previous_sheet);
+  if ( tmp_sheet_id >= 0 )
+    (void) VM_Sheet_Destroy(vmp, tmp_sheet_id);
+  return exit_status;
 }
 
+#if 0
 /* This function install a program (written using
  * the object AsmOut) into the module with number module.
  * NOTE: program will be destroyed and *program will be set to NULL
@@ -1108,6 +1134,7 @@ Task VM_Asm_Install(VMProgram *vmp, Intg module, AsmOut **program) {
   *program = NULL;
   return VM_Module_Define(vmp, module, MODULE_IS_VM_CODE, ptr);
 }
+#endif
 
 /* Assembla l'istruzione specificata da instr, scrivendo il codice
  * binario ad essa corrispondente nella destinazione specificata
@@ -1130,7 +1157,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
   MSG_LOCATION("VM_Assemble");
 
   /* Esco subito se e' settato il flag di inibizione! */
-  if ( vmp->vm_cur_output->status.inhibit ) return;
+  if ( vmp->current_sheet->status.inhibit ) return;
 
   if ( (instr < 1) || (instr >= ASM_ILLEGAL) ) {
     MSG_ERROR("Istruzione non riconosciuta!");
@@ -1194,8 +1221,8 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
 
       default:
         MSG_ERROR("Categoria di argomenti sconosciuta!");
-        vmp->vm_cur_output->status.error = 1;
-        vmp->vm_cur_output->status.inhibit = 1;
+        vmp->current_sheet->status.error = 1;
+        vmp->current_sheet->status.inhibit = 1;
         break;
     }
 
@@ -1222,7 +1249,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
     VMByteX4 buffer[1], *i_pos = buffer;
     register VMByteX4 i_eye;
     UInt atype;
-    Array *prog = vmp->vm_cur_output->program;
+    Array *prog = vmp->current_sheet->program;
 
     for ( ; t < 2; t++ ) {
       arg[t].c = 0;
@@ -1235,8 +1262,8 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
     ASM_SHORT_PUT_2ARGS(i_pos, i_eye, arg[0].vi, arg[1].vi);
 
     if IS_FAILED( Arr_Push(prog, buffer) ) {
-      vmp->vm_cur_output->status.error = 1;
-      vmp->vm_cur_output->status.inhibit = 1;
+      vmp->current_sheet->status.error = 1;
+      vmp->current_sheet->status.inhibit = 1;
       return;
     }
     return;
@@ -1245,7 +1272,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
     /* L'istruzione va scritta in formato lungo! */
     UInt idim, iheadpos;
     VMByteX4 iw[MAX_SIZE_IN_IWORDS];
-    Array *prog = vmp->vm_cur_output->program;
+    Array *prog = vmp->current_sheet->program;
 
     /* Lascio il posto per la "testa" dell'istruzione (non conoscendo ancora
     * la dimensione dell'istruzione, non posso scrivere adesso la testa.
@@ -1263,8 +1290,8 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
       (void) memcpy( iw, arg[i].ptr, adim );
 
       if IS_FAILED( Arr_MPush(prog, iw, aiwdim) ) {
-        vmp->vm_cur_output->status.error = 1;
-        vmp->vm_cur_output->status.inhibit = 1;
+        vmp->current_sheet->status.error = 1;
+        vmp->current_sheet->status.inhibit = 1;
         return;
       }
 

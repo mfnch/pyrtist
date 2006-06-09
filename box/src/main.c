@@ -267,6 +267,7 @@ int main(int argc, char** argv) {
 
   /* Fase di output */
   if (flags & FLAG_OUTPUT) {
+    int current_sheet = VM_Sheet_Get_Current(program);
     MSG_ADVICE(
      "Scrivo il listato 'assembly' prodotto dalla compilazione in \"%s\"!",
      file_output );
@@ -276,9 +277,8 @@ int main(int argc, char** argv) {
     VM_DSettings(program, 1);
 /*    if IS_FAILED( VM_Module_Disassemble_All(stdout) )
       Main_Error_Exit( NULL );*/
-    if IS_FAILED(  VM_Disassemble(program, stdout,
-     (cmp_curr_output->program)->ptr, (cmp_curr_output->program)->numel )
-                ) Main_Error_Exit( NULL );
+    if IS_FAILED( VM_Sheet_Disassemble(program, current_sheet, stdout) )
+      Main_Error_Exit( NULL );
   }
 
   /* Fase di esecuzione */
@@ -325,7 +325,7 @@ Task Main_Prepare(void) {
   int i;
   Intg num_var[NUM_TYPES], num_reg[NUM_TYPES];
   RegVar_Get_Nums(num_var, num_reg);
-  TASK( VM_Asm_Prepare(program, num_var, num_reg) );
+  TASK( VM_Sheet_Prepare(program, num_var, num_reg) );
   /* Preparo i registri globali */
   for(i = 0; i < NUM_TYPES; i++) {num_var[i] = 0; num_reg[i] = 3;}
   TASK( VM_Module_Globals(program, num_var, num_reg) );
@@ -353,7 +353,7 @@ Task Main_Execute(void) {
   Msg_Num_Reset_All();
   Msg_Context_Enter("Fase di esecuzione:\n");
   TASK( VM_Module_Undefined(program, & main_module, "main") );
-  TASK( VM_Asm_Install(program, main_module, & cmp_curr_output) );
+  TASK( VM_Sheet_Install(program, main_module, VM_Sheet_Get_Current(program)));
   exit_code = VM_Module_Execute(program, main_module);
 
   Msg_Context_Exit(0);
@@ -407,11 +407,10 @@ void Main_Cmnd_Line_Help(void) {
 }
 
 void Temporaneo(void) {
-  AsmOut *o;
 
   return;
 
-  o = VM_Asm_Out_New(-1);
+/*   o = VM_Asm_Out_New(-1);
   VM_Asm_Out_Set(program, o);
 
   printf("Writing program...\n");
@@ -442,6 +441,6 @@ void Temporaneo(void) {
     return;
   }
   printf("Completed!\n");
-
+*/
   return;
 }

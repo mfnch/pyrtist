@@ -376,11 +376,10 @@ Task Arr_Data_Only(Array *a, void **data_ptr) {
  */
 Task Arr_Iter(Array *a, Task (*action)(void *)) {
   assert(a != NULL && action != NULL);
-  if (a->ID != ARR_ID) {
+  if (a->ID == ARR_ID) {
     int i;
     void *item_ptr = a->ptr;
     for(i = 0; i < a->numel; i++) {
-      printf("Arr_Iter\n");
       if IS_FAILED( action(item_ptr) ) return Failed;
       item_ptr += a->elsize;
     }
