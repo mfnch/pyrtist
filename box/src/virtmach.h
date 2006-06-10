@@ -255,14 +255,6 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim);
 
 void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit);
 
-#if 0
-AsmOut *VM_Asm_Out_New(Intg dim);
-void VM_Asm_Out_Destroy(AsmOut *ao);
-void VM_Asm_Out_Set(VMProgram *vmp, AsmOut *out);
-Task VM_Asm_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg);
-Task VM_Asm_Install(VMProgram *vmp, Intg module, AsmOut **program);
-#endif
-
 Task VM_Sheet_New(VMProgram *vmp, int *sheet_id);
 Task VM_Sheet_Destroy(VMProgram *vmp, int sheet_id);
 int VM_Sheet_Get_Current(VMProgram *vmp);

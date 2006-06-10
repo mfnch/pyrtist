@@ -1015,49 +1015,6 @@ void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit) {
   vmp->current_sheet->status.inhibit = inhibit;
 }
 
-#if 0
-/* Crea un nuovo "foglio bianco" dove poter scrivere le istruzioni
- * assemblate da VM_Assemble. Ad esempio, dopo l'esecuzione delle istruzioni:
- *   out = VM_Asm_Out_New(-1);
- *   VM_Asm_Out_Set(out);
- * L'output della funzione VM_Assemble finira' in out.
- */
-AsmOut *VM_Asm_Out_New(Intg dim) {
-  AsmOut *out;
-  Array *prog;
-
-  if ( dim < 1 ) dim = VM_TYPICAL_MOD_DIM;
-  prog = Array_New( sizeof(VMByteX4), dim );
-  if ( prog == NULL ) return NULL;
-
-  out = (AsmOut *) malloc( sizeof(AsmOut) );
-  if ( out == NULL ) {
-    MSG_ERROR("Memoria esaurita!");
-    return NULL;
-  }
-
-  out->status.error = 0;
-  out->status.inhibit = 0;
-  out->program = prog;
-  return out;
-}
-
-/* Destructor for objects of type 'AsmOut'
- */
-void VM_Asm_Out_Destroy(AsmOut *ao) {
-  if (ao == (AsmOut *) NULL) return;
-  Arr_Destroy(ao->program);
-  free(ao);
-}
-
-/* Seleziona l'output della funzione VM_Assemble().
- * NOTA: Se out = NULL, restituisce Failed.
- */
-void VM_Asm_Out_Set(VMProgram *vmp, AsmOut *out) {
-  if ( out != NULL ) vmp->vm_cur_output = out;
-}
-#endif
-
 /* This function executes the final steps to prepare the program
  * to be installed as a module and to be executed.
  * num_reg and num_var are the pointers to arrays of NUM_TYPES elements
@@ -1116,25 +1073,6 @@ exit:
     (void) VM_Sheet_Destroy(vmp, tmp_sheet_id);
   return exit_status;
 }
-
-#if 0
-/* This function install a program (written using
- * the object AsmOut) into the module with number module.
- * NOTE: program will be destroyed and *program will be set to NULL
- *  (just to keep track of this).
- */
-Task VM_Asm_Install(VMProgram *vmp, Intg module, AsmOut **program) {
-  AsmOut *ao = *program;
-  Array *p = ao->program;
-  VMModulePtr ptr;
-  ptr.vm.dim = Arr_NumItem(p);
-  TASK( Arr_Data_Only(p, & ptr.vm.code) );
-  Arr_Destroy(p);
-  free(ao);
-  *program = NULL;
-  return VM_Module_Define(vmp, module, MODULE_IS_VM_CODE, ptr);
-}
-#endif
 
 /* Assembla l'istruzione specificata da instr, scrivendo il codice
  * binario ad essa corrispondente nella destinazione specificata
