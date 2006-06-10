@@ -415,21 +415,21 @@ void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
     if (uiai < 0) {uiai = -uiai; rc = 'v';} else rc = 'r';
     switch(iaf) {
       case CAT_GREG:
-        sprintf(vmp->iarg_str[1], "g%c%c" SIntg, rc, tc, uiai);
+        sprintf(vmp->iarg_str[0], "g%c%c" SIntg, rc, tc, uiai);
         break;
       case CAT_LREG:
-        sprintf(vmp->iarg_str[1], "%c%c" SIntg, rc, tc, uiai);
+        sprintf(vmp->iarg_str[0], "%c%c" SIntg, rc, tc, uiai);
         break;
       case CAT_PTR:
         if ( iai < 0 )
-          sprintf(vmp->iarg_str[1], "%c[ro0 - " SIntg "]", tc, uiai);
+          sprintf(vmp->iarg_str[0], "%c[ro0 - " SIntg "]", tc, uiai);
         else if ( iai == 0 )
-          sprintf(vmp->iarg_str[1], "%c[ro0]", tc);
+          sprintf(vmp->iarg_str[0], "%c[ro0]", tc);
         else
-          sprintf(vmp->iarg_str[1], "%c[ro0 + " SIntg "]", tc, uiai);
+          sprintf(vmp->iarg_str[0], "%c[ro0 + " SIntg "]", tc, uiai);
         break;
       case CAT_IMM:
-        sprintf(vmp->iarg_str[1], SIntg, iai);
+        sprintf(vmp->iarg_str[0], SIntg, iai);
         break;
     }
   }
@@ -437,22 +437,22 @@ void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
   /* Secondo argomento */
   switch (iat) {
     case TYPE_CHAR:
-      sprintf( vmp->iarg_str[2], SChar, *((Char *) arg2) );
+      sprintf( vmp->iarg_str[1], SChar, *((Char *) arg2) );
       break;
     case TYPE_INTG:
-      sprintf( vmp->iarg_str[2], SIntg, *((Intg *) arg2) );
+      sprintf( vmp->iarg_str[1], SIntg, *((Intg *) arg2) );
       break;
     case TYPE_REAL:
-      sprintf( vmp->iarg_str[2], SReal, *((Real *) arg2) );
+      sprintf( vmp->iarg_str[1], SReal, *((Real *) arg2) );
       break;
     case TYPE_POINT:
-      sprintf( vmp->iarg_str[2], SPoint,
+      sprintf( vmp->iarg_str[1], SPoint,
                ((Point *) arg2)->x, ((Point *) arg2)->y );
       break;
   }
 
-  *(iarg++) = vmp->iarg_str[1];
-  *iarg = vmp->iarg_str[2];
+  *(iarg++) = vmp->iarg_str[0];
+  *iarg = vmp->iarg_str[1];
 }
 
 /*******************************************************************************

@@ -1,6 +1,24 @@
-/* Autore: Franchin Matteo - 8 maggio 2004
- *
- *  Funzioni per effettuare semplici operazioni sulle stringhe.
+/***************************************************************************
+ *   Copyright (C) 2006 by Matteo Franchin                                 *
+ *   fnch@libero.it                                                        *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+
+/* 8 maggio 2004 - Funzioni per effettuare semplici operazioni sulle stringhe.
  */
 
 #include <stdlib.h>
@@ -324,12 +342,11 @@ Task Str_ToIntg(char *s, UInt l, Intg *i)
   return Failed;
 }
 
-/* DESCRIZIONE: Converte il numero da formato stringa a formato numerico.
+/* Converte il numero da formato stringa a formato numerico.
  *  s e' il puntatore alla stringa, l la lunghezza. Il numero convertito verra'
  *  memorizzato in *r.
  */
-Task Str_ToReal(char *s, UInt l, Real *r)
-{
+Task Str_ToReal(char *s, UInt l, Real *r) {
   if ( l < 64 ) {
     char sc[64], *endptr;
 
@@ -338,7 +355,7 @@ Task Str_ToReal(char *s, UInt l, Real *r)
     sc[l] = '\0';
 
     errno = 0;
-    *r = strtoreal(sc, & endptr);
+    *r = strtoreal(sc, NULL);
     if ( errno == 0 ) return Success;
 
   } else {
@@ -356,6 +373,7 @@ Task Str_ToReal(char *s, UInt l, Real *r)
 
     errno = 0;
     *r = strtoreal(sc, & endptr);
+    free(sc);
     if ( errno == 0 ) return Success;
   }
 
@@ -398,8 +416,9 @@ Name *Name_Dup(Name *n) {
   static Name rs;
 
   if ( n > 0 ) {
-    if ( (rs.text = strndup(n->text, rs.length = n->length))
-         == NULL ) {MSG_FATAL("Memoria esaurita!");}
+    rs.length = n->length;
+    rs.text = strndup(n->text, n->length);
+    if ( rs.text == NULL ) {MSG_FATAL("Memoria esaurita!");}
     return & rs;
   }
   rs.text = NULL;

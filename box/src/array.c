@@ -348,6 +348,7 @@ Task Arr_Clear(Array *a) {
 void Arr_Destroy(Array *a) {
   if ( a != NULL) {
     if (a->ID == ARR_ID) {
+      a->ID = 0; /* Can be useful to detect reference to free-d Array */
       free(a->ptr);
       free(a);
     }

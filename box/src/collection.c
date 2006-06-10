@@ -177,6 +177,9 @@ Task Clc_Object_Ptr(Collection *c, void **item_ptr, UInt item_index) {
   Array *a = (Array *) c;
   void *ip;
 
+  assert(c != (Collection *) NULL);
+  assert(a->ID == ARR_ID);
+
   if (item_index > Arr_NumItem(a)) {
     MSG_ERROR("Clc_Object_Ptr: Index out of bounds.");
     return Failed;
