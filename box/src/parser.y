@@ -377,7 +377,12 @@ end.statement:
 ;
 
 again.statement:
-  TMP_TOK_AGAIN { VM_Label_Jump(cmp_vm, 1, 0); }
+
+  TMP_TOK_AGAIN {
+    Box *b;
+    if IS_FAILED( Box_Get(& b, 0) ) {YYERROR;}
+    VM_Label_Jump(cmp_vm, b->label_begin, 0);
+  }
 ;
 
 /*************DEFINIZIONE DELLA STRUTTURA GENERICA DEI PROGRAMMI**************/

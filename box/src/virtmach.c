@@ -347,10 +347,10 @@ void VM__D_CALL(VMProgram *vmp, char **iarg) {
   VMStatus *vmcur = vmp->vmcur;
   register UInt na = vmcur->idesc->numargs;
 
-  assert(na <= 2);
+  assert(na == 1);
 
   *iarg = vmp->iarg_str[0];
-  if ( (na == 1) && ((vmcur->arg_type & 3) == CAT_IMM) ) {
+  if ( (vmcur->arg_type & 3) == CAT_IMM ) {
     UInt iat = vmcur->idesc->t_id;
     Intg m_num;
     void *arg2;
@@ -380,6 +380,39 @@ void VM__D_CALL(VMProgram *vmp, char **iarg) {
       }
 
     }
+
+  } else {
+    VM__D_GLPI_GLPI(vmp, iarg);
+  }
+}
+
+/* Analoga alla precedente, ma per istruzioni di salto (jmp, jc). */
+void VM__D_JMP(VMProgram *vmp, char **iarg) {
+  VMStatus *vmcur = vmp->vmcur;
+  register UInt na = vmcur->idesc->numargs;
+
+  assert(na == 1);
+
+  *iarg = vmp->iarg_str[0];
+  if ( (vmcur->arg_type & 3) == CAT_IMM ) {
+    UInt iat = vmcur->idesc->t_id;
+    Intg m_num;
+    Intg position;
+    void *arg2;
+
+    if ( vmcur->flags.is_long ) {
+      ASM_LONG_GET_1ARG( vmcur->i_pos, vmcur->i_eye, m_num);
+      arg2 = vmcur->i_pos;
+    } else {
+      ASM_SHORT_GET_1ARG( vmcur->i_pos, vmcur->i_eye, m_num);
+      arg2 = vmcur->i_pos;
+    }
+
+    if ( iat == TYPE_CHAR ) m_num = (Intg) ((Char) m_num);
+
+    position = (vmcur->dasm_pos + m_num)*sizeof(VMByteX4);
+    sprintf(vmp->iarg_str[0], SIntg, position);
+    return;
 
   } else {
     VM__D_GLPI_GLPI(vmp, iarg);
@@ -857,6 +890,7 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
     register int is_long;
 
     vm.i_pos = i_pos;
+    vm.dasm_pos = pos;
 
     /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
     ASM_GET_FORMAT(vm.i_pos, i_eye, is_long);

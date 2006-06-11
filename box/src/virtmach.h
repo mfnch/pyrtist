@@ -167,6 +167,7 @@ struct __vmstatus {
   VMModule *m;        /* Modulo correntemente in esecuzione */
 
   /* Variabili che riguardano l'istruzione in esecuzione: */
+  UInt dasm_pos;      /* Position in num. of read bytes for the disassembler */
   VMByteX4 *i_pos;    /* Puntatore all'istruzione */
   VMByteX4 i_eye;     /* Occhio di lettura (gli ultimi 4 byte letti) */
   UInt i_type, i_len; /* Tipo e dimensione dell'istruzione */
@@ -246,6 +247,7 @@ void VM__GLPI(VMStatus *vmcur);
 void VM__Imm(VMStatus *vmcur);
 void VM__D_GLPI_GLPI(VMProgram *vmp, char **iarg);
 void VM__D_CALL(VMProgram *vmp, char **iarg);
+void VM__D_JMP(VMProgram *vmp, char **iarg);
 void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg);
 
 /* These are the functions to use to control the VM */
