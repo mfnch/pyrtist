@@ -464,6 +464,8 @@ Task VM_Init(VMProgram **new_vmp) {
   if (nv == NULL) return Failed;
   nv->vm_modules_list = (Array *) NULL;
   nv->sheets = (Collection *) NULL;
+  nv->labels = (Collection *) NULL;
+  nv->references = (Collection *) NULL;
   nv->vm_globals = 0;
   nv->vm_dflags.hexcode = 0;
   nv->vm_aflags.forcelong = 0;
@@ -485,6 +487,8 @@ void VM_Destroy(VMProgram *vmp) {
     if ( Arr_NumItem(vmp->stack) != 0 ) {
       MSG_WARNING("Run finished with non empty stack.");
     }
+  Clc_Destroy(vmp->references);
+  Clc_Destroy(vmp->labels);
   Clc_Destroy(vmp->sheets);
   Arr_Destroy(vmp->stack);
   free(vmp);
@@ -939,6 +943,11 @@ static Task VM__Sheet_Destroy(void *s) {
   return Success;
 }
 
+/* This function creates a new sheet. A sheet is a place where to put
+ * the assembly code (bytecode) produced by VM_Assemble and is identified
+ * by an integer assigned by this function. This integer is passed back
+ * through *sheet_id.
+ */
 Task VM_Sheet_New(VMProgram *vmp, int *sheet_id) {
   VMSheet sheet;
   Array *program;
@@ -956,14 +965,20 @@ Task VM_Sheet_New(VMProgram *vmp, int *sheet_id) {
   return Clc_Occupy(vmp->sheets, & sheet, sheet_id);
 }
 
+/* Destroys the sheet 'sheet_id' created with 'VM_Sheet_New'.
+ */
 Task VM_Sheet_Destroy(VMProgram *vmp, int sheet_id) {
   return Clc_Release(vmp->sheets, sheet_id);
 }
 
+/* Get the ID of the active sheet (the current target of VM_Assemble).
+ */
 int VM_Sheet_Get_Current(VMProgram *vmp) {
   return vmp->current_sheet_id;
 }
 
+/* Set ''sheet_id to be the active sheet.
+ */
 Task VM_Sheet_Set_Current(VMProgram *vmp, int sheet_id) {
   VMSheet *sheet;
   assert( vmp->sheets != (Collection *) NULL);
@@ -973,6 +988,10 @@ Task VM_Sheet_Set_Current(VMProgram *vmp, int sheet_id) {
   return Success;
 }
 
+/* Install the sheet 'sheet_id' and assign to it the module number 'module'.
+ * After this function has been executed, the VM will recognize the instruction
+ * 'call module' as a call to the code containing in the sheet 'sheet_id'.
+ */
 Task VM_Sheet_Install(VMProgram *vmp, Intg module, int sheet_id) {
   VMSheet *sheet;
   VMModulePtr module_ptr;
@@ -983,6 +1002,9 @@ Task VM_Sheet_Install(VMProgram *vmp, Intg module, int sheet_id) {
   return VM_Module_Define(vmp, module, MODULE_IS_VM_CODE, module_ptr);
 }
 
+/* Print as plain text the code contained inside the sheet 'sheet_id'
+ * inside out.
+ */
 Task VM_Sheet_Disassemble(VMProgram *vmp, int sheet_id, FILE *out) {
   VMSheet *sheet;
   assert( vmp->sheets != (Collection *) NULL);
@@ -993,6 +1015,49 @@ Task VM_Sheet_Disassemble(VMProgram *vmp, int sheet_id, FILE *out) {
     void *prg_ptr = Arr_Ptr(prg);
     return VM_Disassemble(vmp, out, prg_ptr, prg_len);
   }
+}
+
+/* This function creates a new label. A label is a number which refers to a
+ * position in the assembled code. It can be a defined label (meaning that
+ * the sheet and the position of the label in the sheet is known)
+ * or can be an undefined label (meaning that we don't know where the label
+ * will be pointing, but we want to jump there in some way).
+ * This last behaviour is obtained passing sheet_id = -1 and position = -1.
+ * In this case the functon will create a list containing the unresolved
+ * references to the label. Later, when the position of the label is known
+ * and is specified with VM_Label_Define, all the unresolved references
+ * will be resolved.
+ */
+Task VM_Label_New(VMProgram *vmp, int *label, int sheet_id, int position) {
+}
+
+/* Same as VM_Label_New, but sheet_id is the current active sheet and
+ * position is the current position in that sheet.
+ */
+Task VM_Label_New_Here(VMProgram *vmp, int *label) {
+}
+
+/* Specify the position of a undefined label.
+ */
+Task VM_Label_Define(VMProgram *vmp, int label, int sheet_id, int position) {
+}
+
+/* Same as VM_Label_Define, but sheet_id is the current active sheet and
+ * position is the current position in that sheet.
+ */
+Task VM_Label_Define_Here(VMProgram *vmp, int label) {
+}
+
+/* Remove a label from the list of labels. The label should not have
+ * unresolved references.
+ */
+Task VM_Label_Destroy(VMProgram *vmp, int label) {
+}
+
+Task VM_Label_Reference(VMProgram *vmp, int label,
+ int sheet_id, int position, int kind)
+{
+
 }
 
 /*******************************************************************************

@@ -195,11 +195,29 @@ typedef struct {
   Array *program;
 } VMSheet;
 
+/* Used by the functions VM_Sheet_* */
+typedef struct {
+  int sheet_id, position;
+  int chain_unresolved;
+} VMLabel;
+
+/* A reference to a label */
+typedef struct {
+  int kind, position, next;
+} VMReference;
+
 /* This structure define all what is needed for the functions defined inside
  * the file 'virtmach.c'
  */
 struct __vmprogram {
-  Array *vm_modules_list; /* List of installed modules */
+  Collection *sheets;     /* Collection of uninstalled sheets */
+  VMSheet *current_sheet; /* Pointer and ID of the current actived sheet */
+  int current_sheet_id;
+  Array *vm_modules_list; /* Array of installed modules */
+
+  Collection *labels;     /* Collection of the labels */
+  Collection *references; /* References to these labels */
+
   int vm_globals;
   void *vm_global[NUM_TYPES];
   Intg vm_gmin[NUM_TYPES], vm_gmax[NUM_TYPES];
@@ -208,10 +226,6 @@ struct __vmprogram {
   /* Array in cui verranno disassemblati gli argomenti (scritti con sprintf) */
   char iarg_str[VM_MAX_NUMARGS][64];
   struct {unsigned int forcelong : 1;} vm_aflags;
-
-  Collection *sheets;
-  VMSheet *current_sheet;
-  int current_sheet_id;
 
   Array *stack;
   VMStatus *vmcur;
