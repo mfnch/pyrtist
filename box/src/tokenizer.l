@@ -120,6 +120,7 @@ include BEGIN(include);
 {SPACES}    {}
 
 "end"       {return TOK_END;}
+"again"     {return TMP_TOK_AGAIN;}
 
  /* Operatori di assegnazione */
 "+="  { return TOK_APLUS; }

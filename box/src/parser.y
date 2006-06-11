@@ -116,6 +116,7 @@ extern UInt tok_linenum;
 %token <Nm> TOK_LMEMBER
 %token <Nm> TOK_UMEMBER
 %token <Nm> TOK_STRING
+%token <Nm> TMP_TOK_AGAIN
 
 /* Lista delle espressioni aventi valore semantico
  */
@@ -375,6 +376,10 @@ end.statement:
   TOK_END { Cmp_Assemble(ASM_RET); }
 ;
 
+again.statement:
+  TMP_TOK_AGAIN { VM_Label_Jump(cmp_vm, 1, 0); }
+;
+
 /*************DEFINIZIONE DELLA STRUTTURA GENERICA DEI PROGRAMMI**************/
 /* Cio' che resta descrive la sintassi delle righe e del corpo del programma
  */
@@ -382,6 +387,7 @@ statement:
  | type.statement
  | expr.statement
  | end.statement
+ | again.statement
  | compound.statement
  | error sep {
   if (! parser_attr.no_syntax_err ) {

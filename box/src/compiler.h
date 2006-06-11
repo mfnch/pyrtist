@@ -185,6 +185,8 @@ typedef struct {
   Intg        type;     /* Type of the box */
   Expression  value;    /* Expression associated with the box */
   Symbol      *child;   /* Child symbols which belongs to this box */
+  int         label_begin, /* Labels located at the beginning */
+              label_end;   /* and at the end of the box */
 } Box;
 
 /* Enumero i tipi di tipo */

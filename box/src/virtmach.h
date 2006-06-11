@@ -284,6 +284,7 @@ Task VM_Label_New_Here(VMProgram *vmp, int *label);
 static Task Resolve_Reference(VMProgram *vmp, VMReference *r, VMLabel *l);
 Task VM_Label_Define(VMProgram *vmp, int label, int sheet_id, int position);
 Task VM_Label_Define_Here(VMProgram *vmp, int label);
+Task VM_Label_Destroy(VMProgram *vmp, int label);
 Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional);
 
 void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);

@@ -1060,7 +1060,8 @@ Task VM_Label_New(VMProgram *vmp, int *label, int sheet_id, int position) {
   l.sheet_id = sheet_id;
   l.position = position;
   l.chain_unresolved = -1; /* No unresolved references */
-  return Clc_Occupy(vmp->labels, label, (void *) & l);
+  TASK( Clc_Occupy(vmp->labels, (void *) & l, label) );
+  return Success;
 }
 
 /* Same as VM_Label_New, but sheet_id is the current active sheet and
@@ -1130,7 +1131,6 @@ Task VM_Label_Define_Here(VMProgram *vmp, int label) {
  */
 Task VM_Label_Destroy(VMProgram *vmp, int label) {
   VMLabel *l;
-  int is_defined;
   TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
   assert( (l->position == -1) == (l->sheet_id == -1) );
   if ( l->chain_unresolved != -1 ) {
@@ -1143,21 +1143,21 @@ Task VM_Label_Destroy(VMProgram *vmp, int label) {
 
 Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
   VMLabel *l;
-  int is_defined;
+  int not_defined;
   AsmCode asm_of_jmp = is_conditional ? ASM_JC_I : ASM_JMP_I;
   int current_sheet_id = vmp->current_sheet_id;
   int current_position = Arr_NumItem(vmp->current_sheet->program);
 
   TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
-  is_defined = (l->sheet_id == -1);
-  assert( (l->position == -1) == is_defined );
+  not_defined = (l->sheet_id == -1);
+  assert( (l->position == -1) == not_defined );
 
   if ( l->sheet_id != current_sheet_id ) {
     MSG_ERROR("This label refers to code outside the current sheet.");
     return Failed;
   }
 
-  if ( is_defined ) {
+  if ( ! not_defined ) {
     if ( l->position < 0 ) {
       MSG_ERROR("Found label referring to invalid position.");
       return Failed;
