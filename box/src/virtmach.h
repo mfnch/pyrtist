@@ -204,7 +204,8 @@ typedef struct {
 
 /* A reference to a label */
 typedef struct {
-  int kind, position, next;
+  int position, next;
+  AsmCode kind;
 } VMReference;
 
 /* This structure define all what is needed for the functions defined inside

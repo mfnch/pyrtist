@@ -378,12 +378,12 @@ static void VM__Exec_Pop_O(VMProgram *vmp) {
 
 static void VM__Exec_Jmp_I(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  vmcur->i_len += *((Intg *) vmcur->arg1);
+  vmcur->i_len = *((Intg *) vmcur->arg1);
 }
 
 static void VM__Exec_Jc_I(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  vmcur->i_len +=
+  vmcur->i_len =
     *((Intg *) vmcur->local[TYPE_INTG]) ? *((Intg *) vmcur->arg1) : 0;
 }
 

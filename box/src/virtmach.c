@@ -1052,17 +1052,35 @@ Task VM_Label_New_Here(VMProgram *vmp, int *label) {
    vmp->current_sheet_id, Arr_NumItem(vmp->current_sheet->program) );
 }
 
+/* This function assemble the jump instruction corresponding to the
+ * reference 'r' to the label 'l'. It is called by 'VM_Label_Define'.
+ */
+static Task Resolve_Reference(VMProgram *vmp, VMReference *r, VMLabel *l) {
+  return Success;
+  VM_Assemble(vmp, r->kind, CAT_IMM, l->position - r->position);
+}
+
 /* Specify the position of a undefined label.
  */
 Task VM_Label_Define(VMProgram *vmp, int label, int sheet_id, int position) {
   VMLabel *l;
   TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
-  assert(l->sheet_id == -1 && l->position == -1);
-  l->sheet_id = -1;
-  l->position = -1;
-  if (l->chain_unresolved == -1) return Success;
+  assert(l->sheet_id == -1 && l->position == -1); /* Should be undefined! */
+  l->sheet_id = sheet_id;
+  l->position = position;
 
-  /* If we are here we need to resolve past references to this label */
+  /* Now we need to resolve past references to this label */
+  while (l->chain_unresolved != -1) {
+    VMReference *r;
+    int cur_ref;
+    cur_ref = l->chain_unresolved;
+    TASK( Clc_Object_Ptr(vmp->references, (void **) & r, cur_ref) );
+
+    TASK( Resolve_Reference(vmp, r, l) );
+
+    l->chain_unresolved = r->next;
+    TASK( Clc_Release(vmp->references, cur_ref) );
+  };
   return Success;
 }
 
@@ -1078,17 +1096,65 @@ Task VM_Label_Define_Here(VMProgram *vmp, int label) {
  * unresolved references.
  */
 Task VM_Label_Destroy(VMProgram *vmp, int label) {
-  return Failed;
+  VMLabel *l;
+  int is_defined;
+  TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
+  assert( (l->position == -1) == (l->sheet_id == -1) );
+  if ( l->chain_unresolved != -1 ) {
+    MSG_ERROR("Trying to destroy a label with unresolved references.");
+    return Failed;
+  }
+  TASK( Clc_Release(vmp->labels, label) );
+  return Success;
 }
 
-Task VM_Label_Reference(VMProgram *vmp, int label,
- int sheet_id, int position, int kind)
-{
-  VMReference r;
-  if ( vmp->references == (Collection *) NULL ) {
-    TASK(Clc_New(& vmp->references,sizeof(VMReference),VM_TYPICAL_NUM_LABELS));
+Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
+  VMLabel *l;
+  int is_defined;
+  AsmCode asm_of_jmp = is_conditional ? ASM_JC_I : ASM_JMP_I;
+  int current_sheet_id = vmp->current_sheet_id;
+  int current_position = Arr_NumItem(vmp->current_sheet->program);
+
+  TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
+  is_defined = (l->sheet_id == -1);
+  assert( (l->position == -1) == is_defined );
+
+  if ( l->sheet_id != current_sheet_id ) {
+    MSG_ERROR("This label refers to code outside the current sheet.");
+    return Failed;
   }
-  return Failed;
+
+  if ( is_defined ) {
+    if ( l->position < 0 ) {
+      MSG_ERROR("Found label referring to invalid position.");
+      return Failed;
+    }
+    VM_Assemble(vmp, asm_of_jmp, CAT_IMM, l->position - current_position);
+    return Success;
+
+  } else {
+    /* We cannot assemble the instruction now, since we don't know where
+     * the label is. So we store this reference in the list of references.
+     */
+    VMReference r;
+    int ref_index;
+
+    if ( vmp->references == (Collection *) NULL ) {
+      TASK( Clc_New(& vmp->references, sizeof(VMReference),
+       VM_TYPICAL_NUM_LABELS) );
+    }
+
+    r.kind = asm_of_jmp;
+    r.position = current_position;
+    r.next = l->chain_unresolved;
+    TASK( Clc_Occupy(vmp->references, & ref_index, (void *) & r) );
+
+    l->chain_unresolved = ref_index;
+
+    /* For now we assemble a dummy instance of the jump instruction */
+    VM_Assemble(vmp, asm_of_jmp, CAT_IMM, (Intg) 0);
+    return Success;
+  }
 }
 
 /*******************************************************************************
