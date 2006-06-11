@@ -715,7 +715,7 @@ Task VM_Module_Execute(VMProgram *vmp, Intg mnum) {
     register VMByteX4 i_eye;
 
 #ifdef DEBUG_EXEC
-    printf("module = "SIntg", pos = "SIntg" - reading instruction.\n",
+    fprintf(stderr, "module = "SIntg", pos = "SIntg" - reading instruction.\n",
            mnum, i*sizeof(VMByteX4));
 #endif
 
@@ -746,7 +746,10 @@ Task VM_Module_Execute(VMProgram *vmp, Intg mnum) {
     /* Esegue l'istruzione */
     if ( ! vm.flags.error ) vm.idesc->execute(vmp);
 
-    /* Passo alla prossima istruzione */
+    /* Passo alla prossima istruzione.
+     * vm.i_len can be modified by 'vm.idesc->execute(vmp)' when executing
+     * instructions such as 'jmp' or 'jc'
+     */
     vm.i_pos = (i_pos += vm.i_len);
 #ifdef DEBUG_EXEC
     i += vm.i_len;
@@ -1029,35 +1032,63 @@ Task VM_Sheet_Disassemble(VMProgram *vmp, int sheet_id, FILE *out) {
  * will be resolved.
  */
 Task VM_Label_New(VMProgram *vmp, int *label, int sheet_id, int position) {
+  VMLabel l;
+  assert( (sheet_id == -1) == (position == -1) );
+  if ( vmp->labels == (Collection *) NULL ) {
+    TASK( Clc_New(& vmp->labels, sizeof(VMLabel), VM_TYPICAL_NUM_LABELS) );
+  }
+
+  l.sheet_id = sheet_id;
+  l.position = position;
+  l.chain_unresolved = -1; /* No unresolved references */
+  return Clc_Occupy(vmp->labels, label, (void *) & l);
 }
 
 /* Same as VM_Label_New, but sheet_id is the current active sheet and
  * position is the current position in that sheet.
  */
 Task VM_Label_New_Here(VMProgram *vmp, int *label) {
+  return VM_Label_New( vmp, label,
+   vmp->current_sheet_id, Arr_NumItem(vmp->current_sheet->program) );
 }
 
 /* Specify the position of a undefined label.
  */
 Task VM_Label_Define(VMProgram *vmp, int label, int sheet_id, int position) {
+  VMLabel *l;
+  TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
+  assert(l->sheet_id == -1 && l->position == -1);
+  l->sheet_id = -1;
+  l->position = -1;
+  if (l->chain_unresolved == -1) return Success;
+
+  /* If we are here we need to resolve past references to this label */
+  return Success;
 }
 
 /* Same as VM_Label_Define, but sheet_id is the current active sheet and
  * position is the current position in that sheet.
  */
 Task VM_Label_Define_Here(VMProgram *vmp, int label) {
+  return VM_Label_Define( vmp, label,
+   vmp->current_sheet_id, Arr_NumItem(vmp->current_sheet->program) );
 }
 
 /* Remove a label from the list of labels. The label should not have
  * unresolved references.
  */
 Task VM_Label_Destroy(VMProgram *vmp, int label) {
+  return Failed;
 }
 
 Task VM_Label_Reference(VMProgram *vmp, int label,
  int sheet_id, int position, int kind)
 {
-
+  VMReference r;
+  if ( vmp->references == (Collection *) NULL ) {
+    TASK(Clc_New(& vmp->references,sizeof(VMReference),VM_TYPICAL_NUM_LABELS));
+  }
+  return Failed;
 }
 
 /*******************************************************************************

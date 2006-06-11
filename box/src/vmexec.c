@@ -376,6 +376,17 @@ static void VM__Exec_Pop_O(VMProgram *vmp) {
   Arr_Dec(vmp->stack);
 }
 
+static void VM__Exec_Jmp_I(VMProgram *vmp) {
+  VMStatus *vmcur = vmp->vmcur;
+  vmcur->i_len += *((Intg *) vmcur->arg1);
+}
+
+static void VM__Exec_Jc_I(VMProgram *vmp) {
+  VMStatus *vmcur = vmp->vmcur;
+  vmcur->i_len +=
+    *((Intg *) vmcur->local[TYPE_INTG]) ? *((Intg *) vmcur->arg1) : 0;
+}
+
 /******************************************************************************
  * La seguente tabella descrive le istruzioni e specifica quali funzioni      *
  * debbano essere chiamate per localizzare la posizione in memoria degli      *
@@ -454,15 +465,17 @@ VMInstrDesc vm_instr_desc_table[] = {
   { "projy",1, TYPE_POINT,VM__GLPI,    VM__Exec_ProjY_P, VM__D_GLPI_GLPI }, /* projy reg_p        */
   { "pptrx",1, TYPE_POINT,VM__GLPI,    VM__Exec_PPtrX_P, VM__D_GLPI_GLPI }, /* pptrx reg_p        */
   { "pptry",1, TYPE_POINT,VM__GLPI,    VM__Exec_PPtrY_P, VM__D_GLPI_GLPI }, /* pptry reg_p        */
-  { "ret",  0, TYPE_NONE, NULL,         VM__Exec_Ret,    VM__D_GLPI_GLPI }, /* ret                */
+  { "ret",  0, TYPE_NONE, NULL,            VM__Exec_Ret, VM__D_GLPI_GLPI }, /* ret                */
   {"malloc",1, TYPE_INTG, VM__GLPI,   VM__Exec_Malloc_I, VM__D_GLPI_GLPI }, /* malloc reg_i       */
-  { "mfree",1, TYPE_OBJ, VM__GLPI,    VM__Exec_MFree_O,  VM__D_GLPI_GLPI }, /* mfree reg_o        */
-  { "mcopy",2, TYPE_OBJ, VM__GLP_GLPI,VM__Exec_MCopy_OO, VM__D_GLPI_GLPI }, /* mcopy reg_o, reg_o */
-  {  "lea", 1,TYPE_CHAR, VM__GLP_GLPI,  VM__Exec_Lea,    VM__D_GLPI_GLPI }, /* lea c[ro0+...]     */
-  {  "lea", 1,TYPE_INTG, VM__GLP_GLPI,  VM__Exec_Lea,    VM__D_GLPI_GLPI }, /* lea i[ro0+...]     */
-  {  "lea", 1,TYPE_REAL, VM__GLP_GLPI,  VM__Exec_Lea,    VM__D_GLPI_GLPI }, /* lea r[ro0+...]     */
-  {  "lea", 1,TYPE_POINT,VM__GLP_GLPI,  VM__Exec_Lea,    VM__D_GLPI_GLPI }, /* lea p[ro0+...]     */
-  {  "lea", 2, TYPE_OBJ, VM__GLP_GLPI,  VM__Exec_Lea_OO, VM__D_GLPI_GLPI }, /* lea reg_o, o[ro0+...] */
-  { "push", 1, TYPE_OBJ, VM__GLP_GLPI,  VM__Exec_Push_O, VM__D_GLPI_GLPI }, /* push reg_o         */
-  {  "pop", 1, TYPE_OBJ, VM__GLP_GLPI,  VM__Exec_Pop_O,  VM__D_GLPI_GLPI }  /* pop reg_o          */
+  { "mfree",1, TYPE_OBJ,  VM__GLPI,    VM__Exec_MFree_O, VM__D_GLPI_GLPI }, /* mfree reg_o        */
+  { "mcopy",2, TYPE_OBJ,  VM__GLP_GLPI,VM__Exec_MCopy_OO,VM__D_GLPI_GLPI }, /* mcopy reg_o, reg_o */
+  {  "lea", 1, TYPE_CHAR, VM__GLP_GLPI,    VM__Exec_Lea, VM__D_GLPI_GLPI }, /* lea c[ro0+...]     */
+  {  "lea", 1, TYPE_INTG, VM__GLP_GLPI,    VM__Exec_Lea, VM__D_GLPI_GLPI }, /* lea i[ro0+...]     */
+  {  "lea", 1, TYPE_REAL, VM__GLP_GLPI,    VM__Exec_Lea, VM__D_GLPI_GLPI }, /* lea r[ro0+...]     */
+  {  "lea", 1, TYPE_POINT,VM__GLP_GLPI,    VM__Exec_Lea, VM__D_GLPI_GLPI }, /* lea p[ro0+...]     */
+  {  "lea", 2, TYPE_OBJ,  VM__GLP_GLPI, VM__Exec_Lea_OO, VM__D_GLPI_GLPI }, /* lea reg_o, o[ro0+...] */
+  { "push", 1, TYPE_OBJ,  VM__GLP_GLPI, VM__Exec_Push_O, VM__D_GLPI_GLPI }, /* push reg_o         */
+  {  "pop", 1, TYPE_OBJ,  VM__GLP_GLPI,  VM__Exec_Pop_O, VM__D_GLPI_GLPI }, /* pop reg_o          */
+  {  "jmp", 1, TYPE_INTG, VM__GLP_GLPI,  VM__Exec_Jmp_I, VM__D_GLPI_GLPI }, /* jmp reg_i          */
+  {   "jc", 1, TYPE_INTG, VM__GLP_GLPI,   VM__Exec_Jc_I, VM__D_GLPI_GLPI }  /* jc  reg_i          */
 };
