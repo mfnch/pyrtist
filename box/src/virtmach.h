@@ -214,7 +214,7 @@ typedef struct {
 struct __vmprogram {
   Collection *sheets;     /* Collection of uninstalled sheets */
   VMSheet *current_sheet; /* Pointer and ID of the current actived sheet */
-  int current_sheet_id;
+  int current_sheet_id, jmp_sheet_id;
   Array *vm_modules_list; /* Array of installed modules */
 
   Collection *labels;     /* Collection of the labels */
@@ -273,10 +273,18 @@ void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit);
 
 Task VM_Sheet_New(VMProgram *vmp, int *sheet_id);
 Task VM_Sheet_Destroy(VMProgram *vmp, int sheet_id);
+Task VM_Sheet(VMProgram *vmp, VMSheet **s, int sheet_id);
 int VM_Sheet_Get_Current(VMProgram *vmp);
 Task VM_Sheet_Set_Current(VMProgram *vmp, int sheet_id);
+Task VM_Sheet_Clear(VMProgram *vmp, int sheet_id);
 Task VM_Sheet_Install(VMProgram *vmp, Intg module, int sheet_id);
 Task VM_Sheet_Disassemble(VMProgram *vmp, int sheet_id, FILE *out);
+Task VM_Label_New(VMProgram *vmp, int *label, int sheet_id, int position);
+Task VM_Label_New_Here(VMProgram *vmp, int *label);
+static Task Resolve_Reference(VMProgram *vmp, VMReference *r, VMLabel *l);
+Task VM_Label_Define(VMProgram *vmp, int label, int sheet_id, int position);
+Task VM_Label_Define_Here(VMProgram *vmp, int label);
+Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional);
 
 void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 

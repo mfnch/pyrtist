@@ -311,8 +311,8 @@ Task Arr_Insert(Array *a, Intg where, Intg how_many, void *items) {
   }
 }
 
-/* DESCRIPTION: This function appends to the queque of the array a,
- *  how_many empty elements (initialized with 0).
+/* This function appends to the queque of the array a,
+ * 'how_many' empty elements (initialized with 0).
  */
 Task Arr_Empty(Array *a, Intg how_many) {
   MSG_LOCATION("Arr_Empty");
@@ -331,9 +331,8 @@ Task Arr_Empty(Array *a, Intg how_many) {
   }
 }
 
-/* DESCRIZIONE: Svuota l'array, riallocandola se la sua dimensione
- *  supera la dimensione "di riposo".
- *  Restituisce 1 in caso di successo.
+/* Clear the array and realloc it if its dimension is greater than
+ * "the starting dimension".
  */
 Task Arr_Clear(Array *a) {
   if IS_SUCCESSFUL(Arr_SmallEnough(a, 0)) {
@@ -343,7 +342,7 @@ Task Arr_Clear(Array *a) {
   return Failed;
 }
 
-/* DESCRIZIONE: Distrugge l'array.
+/* Distrugge l'array.
  */
 void Arr_Destroy(Array *a) {
   if ( a != NULL) {
@@ -390,4 +389,28 @@ Task Arr_Iter(Array *a, Task (*action)(void *)) {
     MSG_ERROR("Array non inizializzata");
     return Failed;
   }
+}
+
+/* This function takes 'n' item stored in 'src' ('src' is the pointer to the
+ * first item) and copy them inside the array 'a', overwriting its elements.
+ * The first overwritten element will be 'dest'.
+ */
+Task Arr_Overwrite(Array *a, Intg dest, void *src, UInt n) {
+  assert(a != NULL);
+  if (a->ID == ARR_ID) {
+    void *dest_ptr;
+    int required_dim;
+    if (n < 1) return Success;
+    required_dim = dest + n - 1;
+    if ( required_dim > a->numel ) a->numel = required_dim;
+    ARRAY_EXPAND(a, a->numel); /* We expand the array, if necessary */
+    dest_ptr = Arr_ItemPtr(a, void, dest);
+    (void) memcpy(dest_ptr, src, a->elsize*n);
+    return Success;
+
+  } else {
+    MSG_ERROR("Array non inizializzata");
+    return Failed;
+  }
+  return Failed;
 }

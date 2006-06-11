@@ -462,15 +462,16 @@ Task VM_Init(VMProgram **new_vmp) {
   VMProgram *nv;
   nv = (VMProgram *) malloc(sizeof(VMProgram));
   if (nv == NULL) return Failed;
+  TASK( VM_Sheet_New(nv, & nv->jmp_sheet_id) );
   nv->vm_modules_list = (Array *) NULL;
   nv->sheets = (Collection *) NULL;
+  nv->current_sheet_id = -1;
+  nv->current_sheet = (VMSheet *) NULL;
   nv->labels = (Collection *) NULL;
   nv->references = (Collection *) NULL;
   nv->vm_globals = 0;
   nv->vm_dflags.hexcode = 0;
   nv->vm_aflags.forcelong = 0;
-  nv->current_sheet_id = -1;
-  nv->current_sheet = (VMSheet *) NULL;
   nv->stack = (Array *) NULL;
   *new_vmp = nv;
   return Success;
@@ -974,6 +975,13 @@ Task VM_Sheet_Destroy(VMProgram *vmp, int sheet_id) {
   return Clc_Release(vmp->sheets, sheet_id);
 }
 
+/* Get the VMSheet structure which describes sheet number 'sheet_id'.
+ */
+Task VM_Sheet(VMProgram *vmp, VMSheet **s, int sheet_id) {
+  assert( vmp->sheets != (Collection *) NULL);
+  return Clc_Object_Ptr(vmp->sheets, (void **) s, sheet_id);
+}
+
 /* Get the ID of the active sheet (the current target of VM_Assemble).
  */
 int VM_Sheet_Get_Current(VMProgram *vmp) {
@@ -988,6 +996,17 @@ Task VM_Sheet_Set_Current(VMProgram *vmp, int sheet_id) {
   TASK( Clc_Object_Ptr(vmp->sheets, (void **) & sheet, sheet_id) );
   vmp->current_sheet_id = sheet_id;
   vmp->current_sheet = sheet;
+  return Success;
+}
+
+/* Remove all the code assembled inside the sheet 'sheet_id'.
+ * WARNING: Labels and their references are not removed!
+ */
+Task VM_Sheet_Clear(VMProgram *vmp, int sheet_id) {
+  VMSheet *sheet;
+  assert( vmp->sheets != (Collection *) NULL);
+  TASK( Clc_Object_Ptr(vmp->sheets, (void **) & sheet, sheet_id) );
+  TASK( Arr_Clear(sheet->program) );
   return Success;
 }
 
@@ -1056,8 +1075,22 @@ Task VM_Label_New_Here(VMProgram *vmp, int *label) {
  * reference 'r' to the label 'l'. It is called by 'VM_Label_Define'.
  */
 static Task Resolve_Reference(VMProgram *vmp, VMReference *r, VMLabel *l) {
-  return Success;
+  int saved_sheet_id = VM_Sheet_Get_Current(vmp);
+  VMSheet *jmp_sheet;
+  TASK( VM_Sheet_Clear(vmp, vmp->jmp_sheet_id) );
+  TASK( VM_Sheet_Set_Current(vmp, vmp->jmp_sheet_id) );
   VM_Assemble(vmp, r->kind, CAT_IMM, l->position - r->position);
+  TASK( VM_Sheet_Set_Current(vmp, saved_sheet_id) );
+
+  TASK(VM_Sheet(vmp, & jmp_sheet, vmp->jmp_sheet_id));
+  {
+    void *src = Arr_FirstItemPtr(jmp_sheet->program, void);
+    int src_size = Arr_NumItem(jmp_sheet->program);
+    Array *dest =  vmp->current_sheet->program; /* Destination sheet */
+    int dest_pos = r->position;
+    TASK(Arr_Overwrite(dest, dest_pos, src, src_size) );
+  }
+  return Success;
 }
 
 /* Specify the position of a undefined label.
