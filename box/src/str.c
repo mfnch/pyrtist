@@ -18,8 +18,9 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* 8 maggio 2004 - Funzioni per effettuare semplici operazioni sulle stringhe.
- */
+/* $Id$ */
+
+/* 8 maggio 2004 - Semplici operazioni su stringhe. */
 
 #include <stdlib.h>
 #include <ctype.h>

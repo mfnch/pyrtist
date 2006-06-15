@@ -18,6 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+/* $Id$ */
+
 /* array.c, 3 maggio 2004
  *
  * Questo file contiene il codice necessario per gestire un array.
@@ -126,11 +128,11 @@ Task Arr_New(Array **new_array, UInt elsize, UInt mindim) {
       Failed : Success;
 }
 
-/* DESCRIZIONE: Converte l'array specificata, in una nuova array
- *  con elementi di dimensione diversa (elsize).
- *  mindim = dimensione minima dell'array (in elementi)
- *  Restituisce il puntatore alla nuova array se tutto va bene,
- *  NULL in caso di errore.
+/* Converte l'array specificata, in una nuova array
+ * con elementi di dimensione diversa (elsize).
+ * mindim = dimensione minima dell'array (in elementi)
+ * Restituisce il puntatore alla nuova array se tutto va bene,
+ * NULL in caso di errore.
  * NOTA: L'array creata sara' vuota.
  */
 Array *Arr_Recycle(Array *a, UInt elsize, UInt mindim) {
@@ -165,9 +167,9 @@ Array *Arr_Recycle(Array *a, UInt elsize, UInt mindim) {
   return a;
 }
 
-/* DESCRIZIONE: Inserisce un elemento in coda nel array,
- *  preoccupandosi di reallocare la memoria se necessario.
- *  Restituisce 1 solo in caso di successo.
+/* Inserisce un elemento in coda nel array,
+ * preoccupandosi di reallocare la memoria se necessario.
+ * Restituisce 1 solo in caso di successo.
  */
 Task Arr_Push(Array *a, void *elem) {
   MSG_LOCATION("Arr_Push");
@@ -186,13 +188,11 @@ Task Arr_Push(Array *a, void *elem) {
     MSG_ERROR("Array non inizializzata");
     return Failed;
   }
-
-  return Failed;
 }
 
-/* DESCRIZIONE: Inserisce piu' elementi in coda nell'array,
- *  preoccupandosi di reallocare la memoria se necessario.
- *  Restituisce 1 solo in caso di successo.
+/* Inserisce piu' elementi in coda nell'array,
+ * preoccupandosi di reallocare la memoria se necessario.
+ * Restituisce 1 solo in caso di successo.
  */
 Task Arr_MPush(Array *a, void *elem, UInt numel) {
   MSG_LOCATION("Arr_MPush");
@@ -218,12 +218,10 @@ Task Arr_MPush(Array *a, void *elem, UInt numel) {
     MSG_ERROR("Array non inizializzata");
     return Failed;
   }
-
-  return Failed;
 }
 
-/* DESCRIZIONE: Se necessario allarga l'array in modo che contenga
- *  numel elementi. Restituisce 1 in caso di successo.
+/* Se necessario allarga l'array in modo che contenga
+ * numel elementi. Restituisce 1 in caso di successo.
  */
 Task Arr_BigEnough(Array *a, UInt numel) {
   MSG_LOCATION("Arr_BigEnough");
@@ -242,8 +240,6 @@ Task Arr_BigEnough(Array *a, UInt numel) {
     MSG_ERROR("Array non inizializzata");
     return Failed;
   }
-
-  return Failed;
 }
 
 /* DESCRIZIONE: Se necessario riduce l'array in modo che non sia
@@ -266,8 +262,6 @@ Task Arr_SmallEnough(Array *a, UInt numel) {
     MSG_ERROR("Array non inizializzata");
     return Failed;
   }
-
-  return Failed;
 }
 
 /* DESCRIPTION: This function inserts how_many items (items is the pointer
@@ -352,7 +346,6 @@ void Arr_Destroy(Array *a) {
       free(a);
     }
   }
-  return;
 }
 
 /* Extract the data from an 'Array' object.
@@ -412,5 +405,4 @@ Task Arr_Overwrite(Array *a, Intg dest, void *src, UInt n) {
     MSG_ERROR("Array non inizializzata");
     return Failed;
   }
-  return Failed;
 }

@@ -18,6 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+/* $Id$ */
+
 /* main.c, maggio 2004
  *
  * Questo file legge le opzioni ed esegue le azioni associate.

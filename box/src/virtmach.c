@@ -18,6 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+/* $Id$ */
+
 /* This files implements the functionality of the Virtual Machine (VM)
  * of Box: defines functions to assemble, disassemble, execute basic
  * instructions.

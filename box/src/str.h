@@ -18,6 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+/* $Id$ */
+
 Task Str_Eq(char *a, char *b);
 Task Str_Eq2(char *s1, UInt l1, char *s2, UInt l2);
 Task Str_CaseEq2(char *s1, UInt l1, char *s2, UInt l2);

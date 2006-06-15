@@ -18,6 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+/* $Id$ */
+
 /* collection.c,  June 2006
  *
  * This file defines the object Collection which is an extension of the obj

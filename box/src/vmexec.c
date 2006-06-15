@@ -18,6 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+/* $Id$ */
+
 /* Questo file contiene la funzioni che eseguono le istruzioni della macchina
  * virtuale (spesso denotata con VM).
  * Questo file e' incluso direttamente dal file "virtmach.c"
