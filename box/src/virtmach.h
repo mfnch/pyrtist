@@ -306,4 +306,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 #define BOX_VM_ARGPTR1(vmp, Type) ((Type *) *(vmp)->box_vm_arg1)
 #define BOX_VM_ARGPTR2(vmp, Type) ((Type *) *(vmp)->box_vm_arg2)
 
+#define VM_Label_New_Undef(vmp, label) \
+  VM_Label_New(vmp, label, vmp->current_sheet_id, -1)
+
 #endif

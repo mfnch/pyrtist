@@ -276,6 +276,7 @@ Task Cmp_Box_Instance_Begin(Expression *e) {
 
   /* Creo le labels che puntano all'inizio ed alla fine della box */
   TASK( VM_Label_New_Here(cmp_vm, & box.label_begin) );
+  TASK( VM_Label_New_Undef(cmp_vm, & box.label_end) );
 
   /* Inserisce la nuova sessione */
   TASK(Arr_Push(cmp_box_list, & box));
@@ -316,6 +317,8 @@ Task Cmp_Box_Instance_End(Expression *e) {
 
     /* Cancello le labels che puntano all'inizio ed alla fine della box */
     TASK( VM_Label_Destroy(cmp_vm, box->label_begin) );
+    TASK( VM_Label_Define_Here(cmp_vm, box->label_end) );
+    TASK( VM_Label_Destroy(cmp_vm, box->label_end) );
 
     for ( s = box->child; s != (Symbol *) NULL; s = s->brother ) {
       TASK( Cmp_Expr_Destroy(& (s->value), 1) );

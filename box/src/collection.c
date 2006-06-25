@@ -79,6 +79,9 @@ static Task item_container_destructor(void *item_container) {
 }
 
 void Clc_Destroy(Collection *c) {
+#ifdef DEBUG
+  fprintf(stderr, "Clc_Destroy: %p: destructor invoked\n", c);
+#endif
   if ( c == (Collection *) NULL ) return;
   if ( c->destroy != NULL ) {
     item_destructor = c->destroy;
@@ -115,7 +118,7 @@ Task Clc_Occupy(Collection *c, void *item, int *assigned_index) {
       Intg ni = Arr_NumItem(a);
       if (ni > a->max_idx) a->max_idx = ni;
 #ifdef DEBUG
-      printf("Clc_Occupy: occupo (num="SIntg")\n", ni);
+      printf("Clc_Occupy(1): %p: occupo (num="SIntg")\n", c, ni);
 #endif
       *assigned_index = ni;
     }
@@ -130,7 +133,7 @@ Task Clc_Occupy(Collection *c, void *item, int *assigned_index) {
     a->chain = *((int *) item_dst);
     *((int *) item_dst) = CLC_ITEM_OCCUPIED;
 #ifdef DEBUG
-    printf("Clc_Occupy: occupo (num="SIntg")\n", free_item);
+    printf("Clc_Occupy(2): %p: occupo (num="SIntg")\n", c, free_item);
 #endif
     *assigned_index = free_item;
     if (item == NULL || item_size == 0) return Success;
@@ -146,7 +149,7 @@ Task Clc_Release(Collection *c, UInt item_index) {
   Array *a = (Array *) c;
   void *item_ptr;
 #ifdef DEBUG
-  printf("Clc_Release: rilascio (num="SIntg")\n", item_index);
+  printf("Clc_Release: %p: rilascio (num="SIntg")\n", c, item_index);
 #endif
 
   if (item_index > Arr_NumItem(a)) {
@@ -165,12 +168,12 @@ Task Clc_Release(Collection *c, UInt item_index) {
   a->chain = item_index;
 
 #ifdef DEBUG
-  fprintf(stderr, "Calling destructor..."); fflush(stderr);
+  fprintf(stderr, "Calling destructor...\n"); fflush(stderr);
 #endif
   if ( c->destroy == (Task (*)(void *)) NULL ) return Success;
   c->destroy(item_ptr + sizeof(int));
 #ifdef DEBUG
-  fprintf(stderr, "done!"); fflush(stderr);
+  fprintf(stderr, "done!\n"); fflush(stderr);
 #endif
   return Success;
 }

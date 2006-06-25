@@ -490,14 +490,13 @@ void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
   *iarg = vmp->iarg_str[1];
 }
 
-/*******************************************************************************
- * Functions for (de)inizialization                                            *
- *******************************************************************************/
+/*****************************************************************************
+ * Functions for (de)inizialization                                          *
+ *****************************************************************************/
 Task VM_Init(VMProgram **new_vmp) {
   VMProgram *nv;
   nv = (VMProgram *) malloc(sizeof(VMProgram));
   if (nv == NULL) return Failed;
-  TASK( VM_Sheet_New(nv, & nv->jmp_sheet_id) );
   nv->vm_modules_list = (Array *) NULL;
   nv->sheets = (Collection *) NULL;
   nv->current_sheet_id = -1;
@@ -508,6 +507,7 @@ Task VM_Init(VMProgram **new_vmp) {
   nv->vm_dflags.hexcode = 0;
   nv->vm_aflags.forcelong = 0;
   nv->stack = (Array *) NULL;
+  TASK( VM_Sheet_New(nv, & nv->jmp_sheet_id) );
   *new_vmp = nv;
   return Success;
 }
@@ -693,9 +693,9 @@ Task VM_Module_Global_Set(VMProgram *vmp, Intg type, Intg reg, void *value) {
   return Success;
 }
 
-/*******************************************************************************
- * Functions to execute code                                                   *
- *******************************************************************************/
+/*****************************************************************************
+ * Functions to execute code                                                 *
+ *****************************************************************************/
 
 /* Execute the module number m of program vmp.
  * If initial != NULL, *initial is the initial status of the virtual machine.
@@ -1080,15 +1080,15 @@ Task VM_Sheet_Disassemble(VMProgram *vmp, int sheet_id, FILE *out) {
  * the sheet and the position of the label in the sheet is known)
  * or can be an undefined label (meaning that we don't know where the label
  * will be pointing, but we want to jump there in some way).
- * This last behaviour is obtained passing sheet_id = -1 and position = -1.
+ * This last behaviour is obtained passing position = -1.
  * In this case the functon will create a list containing the unresolved
  * references to the label. Later, when the position of the label is known
  * and is specified with VM_Label_Define, all the unresolved references
  * will be resolved.
+ * NOTE: valid positions start from 0, not 1!
  */
 Task VM_Label_New(VMProgram *vmp, int *label, int sheet_id, int position) {
   VMLabel l;
-  assert( (sheet_id == -1) == (position == -1) );
   if ( vmp->labels == (Collection *) NULL ) {
     TASK( Clc_New(& vmp->labels, sizeof(VMLabel), VM_TYPICAL_NUM_LABELS) );
   }
@@ -1124,8 +1124,8 @@ static Task Resolve_Reference(VMProgram *vmp, VMReference *r, VMLabel *l) {
     void *src = Arr_FirstItemPtr(jmp_sheet->program, void);
     int src_size = Arr_NumItem(jmp_sheet->program);
     Array *dest =  vmp->current_sheet->program; /* Destination sheet */
-    int dest_pos = r->position;
-    TASK(Arr_Overwrite(dest, dest_pos, src, src_size) );
+    int dest_pos = r->position + 1; /* NEED TO ADD 1 */
+    TASK(Arr_Overwrite(dest, dest_pos, src, src_size));
   }
   return Success;
 }
@@ -1135,8 +1135,8 @@ static Task Resolve_Reference(VMProgram *vmp, VMReference *r, VMLabel *l) {
 Task VM_Label_Define(VMProgram *vmp, int label, int sheet_id, int position) {
   VMLabel *l;
   TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
-  assert(l->sheet_id == -1 && l->position == -1); /* Should be undefined! */
-  l->sheet_id = sheet_id;
+  assert(l->position == -1); /* Should be undefined! */
+  assert(l->sheet_id == sheet_id);
   l->position = position;
 
   /* Now we need to resolve past references to this label */
@@ -1168,7 +1168,6 @@ Task VM_Label_Define_Here(VMProgram *vmp, int label) {
 Task VM_Label_Destroy(VMProgram *vmp, int label) {
   VMLabel *l;
   TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
-  assert( (l->position == -1) == (l->sheet_id == -1) );
   if ( l->chain_unresolved != -1 ) {
     MSG_ERROR("Trying to destroy a label with unresolved references.");
     return Failed;
@@ -1185,8 +1184,7 @@ Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
   int current_position = Arr_NumItem(vmp->current_sheet->program);
 
   TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
-  not_defined = (l->sheet_id == -1);
-  assert( (l->position == -1) == not_defined );
+  not_defined = (l->position == -1);
 
   if ( l->sheet_id != current_sheet_id ) {
     MSG_ERROR("This label refers to code outside the current sheet.");
@@ -1216,7 +1214,7 @@ Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
     r.kind = asm_of_jmp;
     r.position = current_position;
     r.next = l->chain_unresolved;
-    TASK( Clc_Occupy(vmp->references, & ref_index, (void *) & r) );
+    TASK( Clc_Occupy(vmp->references,  (void *) & r, & ref_index) );
 
     l->chain_unresolved = ref_index;
 
@@ -1226,9 +1224,9 @@ Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
   }
 }
 
-/*******************************************************************************
- * Functions to assemble code                                                  *
- *******************************************************************************/
+/*****************************************************************************
+ * Functions to assemble code                                                *
+ *****************************************************************************/
 
 /* Imposta le opzioni per l'assemblaggio:
  * L'opzione puo' essere settata con un valore > 0, resettata con 0

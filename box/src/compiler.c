@@ -55,7 +55,7 @@ VMProgram *cmp_vm;
 /* "Collezione" di tutti gli operatori */
 struct cmp_opr_struct cmp_opr;
 
-/******************************************************************************/
+/*****************************************************************************/
 
 /* Gets ready to start the compilation */
 Task Cmp_Init(VMProgram *program) {

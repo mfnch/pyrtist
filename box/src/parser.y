@@ -110,6 +110,9 @@ extern UInt tok_linenum;
 %token TOK_NEWLINE
 %token TOK_ERRSEP
 
+%token TMP_TOK_AGAIN
+%token TMP_TOK_EXIT
+
 /* Lista dei token aventi valore semantico
  */
 %token <Ex> TOK_EXPR
@@ -118,7 +121,6 @@ extern UInt tok_linenum;
 %token <Nm> TOK_LMEMBER
 %token <Nm> TOK_UMEMBER
 %token <Nm> TOK_STRING
-%token <Nm> TMP_TOK_AGAIN
 
 /* Lista delle espressioni aventi valore semantico
  */
@@ -379,11 +381,18 @@ end.statement:
 ;
 
 again.statement:
-
   TMP_TOK_AGAIN {
     Box *b;
     if IS_FAILED( Box_Get(& b, 0) ) {YYERROR;}
     VM_Label_Jump(cmp_vm, b->label_begin, 0);
+  }
+;
+
+exit.statement:
+  TMP_TOK_EXIT {
+    Box *b;
+    if IS_FAILED( Box_Get(& b, 0) ) {YYERROR;}
+    VM_Label_Jump(cmp_vm, b->label_end, 0);
   }
 ;
 
@@ -395,6 +404,7 @@ statement:
  | expr.statement
  | end.statement
  | again.statement
+ | exit.statement
  | compound.statement
  | error sep {
   if (! parser_attr.no_syntax_err ) {
@@ -432,11 +442,11 @@ void yyerror(char* s)
   return;
 }
 
-/* DESCRIZIONE: Inizializza il parser. Se f != NULL il compilatore partira'
- *  come se la prima istruzione del programma fosse una "include nomefile"
- *  dove nomefile e' la stringa a cui punta f.
- *  maxinc indica il numero massimo di file di include che possono essere
- *  aperti contemporaneamente.
+/* Inizializza il parser. Se f != NULL il compilatore partira'
+ * come se la prima istruzione del programma fosse una "include nomefile"
+ * dove nomefile e' la stringa a cui punta f.
+ * maxinc indica il numero massimo di file di include che possono essere
+ * aperti contemporaneamente.
  */
 Task Parser_Init(UInt maxinc, char *f) {
 
@@ -455,15 +465,15 @@ Task Parser_Init(UInt maxinc, char *f) {
   return Success;
 }
 
-/* DESCRIZIONE: Completa il parsing del file di input.
+/* Completa il parsing del file di input.
  */
 Task Parser_Finish(void) {
   return Success;
 }
 
-/* DESCRIPTION: This function assigns the expression *e, to the untyped
- *  expression *new_e: if *e is a target, *new_e will be a copy of *e,
- *  otherwise *e will be simply copied into *new_e.
+/* This function assigns the expression *e, to the untyped
+ * expression *new_e: if *e is a target, *new_e will be a copy of *e,
+ * otherwise *e will be simply copied into *new_e.
  */
 Task Prs_Def_Operator(Operator *opr,
                       Expression *rs, Expression *new_e, Expression *e) {
@@ -813,7 +823,7 @@ Task Prs_Rule_Typed_Eq_Typed(Expression *rs,
   }
 }
 
-/* DESCRIPTION: This function handles the rule: value = Type
+/* This function handles the rule: value = Type
  */
 Task Prs_Rule_Valued_Eq_Typed(Expression *rs,
  Expression *valued, Expression *typed) {
@@ -852,13 +862,13 @@ Task Prs_Rule_Valued_Eq_Typed(Expression *rs,
   }
 }
 
-/* DESCRIPTION: This function handles the rule: Type = value
+/* This function handles the rule: Type = value
  */
 Task prs_rule_typed_eq_valued(Expression *typed, Expression *valued) {
   return Success;
 }
 
-/* DESCRIPTION: This function handles the rule: value = value
+/* This function handles the rule: value = value
  */
 Task Prs_Rule_Valued_Eq_Valued(Expression *rs,
  Expression *valued1, Expression *valued2) {
