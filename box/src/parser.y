@@ -550,10 +550,11 @@ Task Prs_Name_To_Expr(Name *nm, Expression *e, Intg suffix) {
   }
 
   if ( s == NULL ) {
-   /* Il nome non corrisponde ad un simbolo gia' definito:
-    * restituisco una espressione (untyped) corrispondente.
-    */
+    /* Il nome non corrisponde ad un simbolo gia' definito:
+     * restituisco una espressione (untyped) corrispondente.
+     */
     e->is.typed = 0;
+    e->is.ignore = 0;
     e->addr = suffix;
     e->value.nm = *Name_Dup(nm);
     if ( e->value.nm.text == NULL ) return Failed;

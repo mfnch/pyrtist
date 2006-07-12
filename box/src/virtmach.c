@@ -105,18 +105,18 @@
 #define ASM_LONG_GET_2ARGS(i_pos, i_eye, arg1, arg2) \
 { arg1 = *(i_pos++); arg2 = i_eye = *(i_pos++); }
 
-/*******************************************************************************
- *  Le seguenti funzioni servono a ricavare gli indirizzi in memoria dei       *
- *  registri globali (indicati con 'G'), dei registri locali ('L'),            *
- *  dei puntatori ('P') o degli immediati interi ('I') che compaiono come      *
- *  argomenti delle istruzioni. Ad esempio: l'istruzione "mov ri2, i[ro0+4]"   *
- *  dice alla macchina virtuale di mettere nel registro intero locale numero 2 *
- *  (ri2) il valore intero presente alla locazione (ro0 + 4). A tale scopo     *
- *  la VM calcola gli indirizzi in memoria dei 2 argomenti (usando VM__Get_L   *
- *  per il primo argomento, ri2, e usando VM_Get_P per il secondo, i[ro0+4]).  *
- *  Una volta calcolati gli indirizzi la VM chiamera' VM__Exec_Mov_II per      *
- *  eseguire materialmente l'operazione.                                       *
- *******************************************************************************/
+/*****************************************************************************
+ *  Le seguenti funzioni servono a ricavare gli indirizzi in memoria dei     *
+ *  registri globali (indicati con 'G'), dei registri locali ('L'),          *
+ *  dei puntatori ('P') o degli immediati interi ('I') che compaiono come    *
+ *  argomenti delle istruzioni. Ad esempio: l'istruzione "mov ri2, i[ro0+4]" *
+ *  dice alla macchina virtuale di mettere nel registro intero locale num. 2 *
+ *  (ri2) il valore intero presente alla locazione (ro0 + 4). A tale scopo   *
+ *  la VM calcola gli indirizzi in memoria dei 2 argomenti (usando VM__Get_L *
+ *  per il primo argomento, ri2, e usando VM_Get_P per il secondo, i[ro0+4]).*
+ *  Una volta calcolati gli indirizzi la VM chiamera' VM__Exec_Mov_II per    *
+ *  eseguire materialmente l'operazione.                                     *
+ *****************************************************************************/
 
 /* This array lets us to obtain the size of a type by type index.
  * (Useful in what follows)
@@ -265,9 +265,9 @@ void VM__GLPI(VMStatus *vmcur) {
  */
 void VM__Imm(VMStatus *vmcur) {vmcur->arg1 = (void *) vmcur->i_pos;}
 
-/*******************************************************************************
- * Functions used to disassemble the instructions (see VM_Disassemble)         *
- *******************************************************************************/
+/*****************************************************************************
+ * Functions used to disassemble the instructions (see VM_Disassemble)       *
+ *****************************************************************************/
 
 /* Questa funzione serve a disassemblare gli argomenti di
  *  un'istruzione di tipo GLPI-GLPI.
@@ -804,9 +804,9 @@ Task VM_Module_Execute(VMProgram *vmp, Intg mnum) {
   return vm.flags.error ? Failed : Success;
 }
 
-/*******************************************************************************
- * Functions to disassemble code                                                  *
- *******************************************************************************/
+/*****************************************************************************
+ * Functions to disassemble code                                             *
+ *****************************************************************************/
 
 /* Imposta le opzioni per il disassemblaggio:
  * L'opzione puo' essere settata con un valore > 0, resettata con 0
@@ -972,10 +972,10 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
   return Success;
 }
 
-/*******************************************************************************
- * Functions to handle sheets: a sheet is a place where you can put temporary  *
- * code, which can then be istalled as a new module or handled in other ways.  *
- *******************************************************************************/
+/******************************************************************************
+ * Functions to handle sheets: a sheet is a place where you can put temporary *
+ * code, which can then be istalled as a new module or handled in other ways. *
+ ******************************************************************************/
 
 static Task VM__Sheet_Destroy(void *s) {
   Array *program = ((VMSheet *) s)->program;

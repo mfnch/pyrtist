@@ -1,6 +1,26 @@
-Known problems:
-  a = +1 gives strange errors!
+*** Box ***
+This is the first implementation of the byte compiler for Box, a language initially written with a special care for graphics. The language is indeed an evolution of a previous language whose purpose was making figures. Then it changed into a - much more powerful - general purpose language. Actually we could say it is still evolving, since it has not reached its final form.
+-----------
 
+arrow = Window[][.Line[(-1, 0), (1, 0), (0, 2);], \.Hot[(0, 0)], \.Hot[(0, 1)]]
+
+page = Window[]
+\ page[ Line[(0, 10), (5, 5), (10, 10), arrow] ]
+page.Save["file.bmp"]
+
+If[a > 0].Then[].Else[]
+
+Open["file.txt"][
+  l = .Line
+  Print[l.Up]
+]:Again[!.Eof]
+
+
+f = Real -> Real -> Real
+
+----------
+
+Known problems:
 
   QUESTION: Are the parenthesis really necessaries in type definitions?
    If not, remove the corresponding rule! In fact this conflicts with
