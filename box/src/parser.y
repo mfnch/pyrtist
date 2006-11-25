@@ -396,9 +396,23 @@ exit.statement:
   }
 ;
 
-/*************DEFINIZIONE DELLA STRUTTURA GENERICA DEI PROGRAMMI**************/
-/* Cio' che resta descrive la sintassi delle righe e del corpo del programma
- */
+parent:
+   type
+ | type '@' parent
+;
+
+parent.opt:
+ | parent
+;
+
+procedure.statement:
+   '@' parent '[' statement.list ']'
+ | type '@' parent.opt '[' statement.list ']'
+ | type '@' parent.opt '?' TOK_LNAME
+;
+
+ /*************DEFINIZIONE DELLA STRUTTURA GENERICA DEI PROGRAMMI**************/
+ /* Cio' che resta descrive la sintassi delle righe e del corpo del programma */
 statement:
  | type.statement
  | expr.statement
@@ -406,6 +420,7 @@ statement:
  | again.statement
  | exit.statement
  | compound.statement
+ | procedure.statement
  | error sep {
   if (! parser_attr.no_syntax_err ) {
     MSG_ERROR("Errore di sintassi!");

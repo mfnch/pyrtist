@@ -505,7 +505,7 @@ Task VM_Init(VMProgram **new_vmp) {
   nv->references = (Collection *) NULL;
   nv->vm_globals = 0;
   nv->vm_dflags.hexcode = 0;
-  nv->vm_aflags.forcelong = 0;
+  nv->vm_aflags.forcelong = 1;
   nv->stack = (Array *) NULL;
   TASK( VM_Sheet_New(nv, & nv->jmp_sheet_id) );
   *new_vmp = nv;
@@ -1081,8 +1081,8 @@ Task VM_Sheet_Disassemble(VMProgram *vmp, int sheet_id, FILE *out) {
  * or can be an undefined label (meaning that we don't know where the label
  * will be pointing, but we want to jump there in some way).
  * This last behaviour is obtained passing position = -1.
- * In this case the functon will create a list containing the unresolved
- * references to the label. Later, when the position of the label is known
+ * In this case the function will create a list containing the unresolved
+ * references to the label. Later, when the position of the label will be known
  * and is specified with VM_Label_Define, all the unresolved references
  * will be resolved.
  * NOTE: valid positions start from 0, not 1!
@@ -1247,7 +1247,7 @@ void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit) {
 /* This function executes the final steps to prepare the program
  * to be installed as a module and to be executed.
  * num_reg and num_var are the pointers to arrays of NUM_TYPES elements
- * containing the numbers of register and variables used by the program
+ * containing the numbers of registers and variables used by the program
  * for every type.
  * module is the module-number of an undefined module which will be used
  * to install the program.
