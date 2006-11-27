@@ -23,7 +23,9 @@
 /* array.h - 3 maggio 2004 */
 
 #ifndef _ARRAY_H
-#define _ARRAY_H
+#  define _ARRAY_H
+
+#  include "types.h"
 
 /* Struttura di controllo dell'array */
 typedef struct {

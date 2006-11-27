@@ -505,7 +505,7 @@ Task VM_Init(VMProgram **new_vmp) {
   nv->references = (Collection *) NULL;
   nv->vm_globals = 0;
   nv->vm_dflags.hexcode = 0;
-  nv->vm_aflags.forcelong = 1;
+  nv->vm_aflags.forcelong = 0;
   nv->stack = (Array *) NULL;
   TASK( VM_Sheet_New(nv, & nv->jmp_sheet_id) );
   *new_vmp = nv;

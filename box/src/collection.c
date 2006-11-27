@@ -20,17 +20,6 @@
 
 /* $Id$ */
 
-/* collection.c,  June 2006
- *
- * This file defines the object Collection which is an extension of the obj
- * Array. This file adds to the Array object the possibility of releasing
- * an element. For example:
- *
- *  you can insert three elements: 1, 2 and 3, then you can release
- *  the element number 2. Now when you insert another element, this will
- *  be put at the position occupied by 2: the most recently released item.
- */
-
 /*#define DEBUG*/
 
 #include <stdlib.h>
@@ -46,12 +35,6 @@
 #define CLC_END_OF_CHAIN -1
 #define CLC_ITEM_OCCUPIED 0
 
-/* Inizializza gli array che tengono nota dei registri occupati
- * e setta la loro "dimensione a riposo". Questa quantita'(per ciascun
- * tipo di registro) deve essere piu' grande del numero di registri che
- * ci si aspetta saranno occupati contemporanemente, in questo modo saranno
- * eseguite poche realloc.
- */
 Task Clc_New(Collection **new_clc, UInt element_size, UInt min_dim) {
   Array *a;
   element_size += sizeof(int);

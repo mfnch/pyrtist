@@ -27,6 +27,7 @@
 /* #define DEBUG */
 
 #include "hashtable.h"
+#include "hashfunc.h"
 
 static void *xmalloc(size_t size) {
   void *p = malloc(size);
@@ -38,16 +39,8 @@ static void *xmalloc(size_t size) {
 }
 
 /* Generic hash-function (invented by me: could be bad!) */
-unsigned int default_hash(void *key, unsigned int key_size,
- unsigned int ht_size) {
-  unsigned long h = 0;
-  unsigned char *c = (unsigned char *) key;
-  int i;
-
-  for(i = 0; i < key_size; i++)
-    h = ( h << 3 ) + *c++;
-
-  return h % ht_size;
+unsigned int default_hash(void *key, unsigned int key_size) {
+  return hashlittle(key, key_size, 1);
 }
 
 /* Generic comparison function */
@@ -75,14 +68,25 @@ Hashtable *hashtable_new(
 {
   Hashtable *ht;
   HashItem **hi;
-  int i;
+  int i, mask;
 
   assert(num_entries > 0);
+  i = 1;
+  mask = 0;
+  do {
+    i <<= 1;
+    mask = mask << 1 | 1;
+  } while ((num_entries >>= 1) != 0);
+  num_entries = i;
+
   ht = (Hashtable *) xmalloc(sizeof(Hashtable));
   hi = (HashItem **) xmalloc(sizeof(HashItem)*num_entries);
 
+  printf("Created hashtable of size %d, mask = %8x\n", num_entries, mask);
+
   for(i = 0; i < num_entries; i++) hi[i] = (HashItem *) NULL;
   ht->num_entries = num_entries;
+  ht->mask = mask;
   ht->item = hi;
 
   if ( hash == (HashFunction) NULL )
@@ -225,17 +229,25 @@ void hashtable_statistics(Hashtable *ht, FILE *out) {
 
 /******************************************************************************/
 
-#if 0
+#if HASHTABLE_TEST
 /* Test */
 int main(void) {
   Hashtable *ht;
   HashItem *hi;
 
-  ht = hashtable_new(1000, (HashFunction) NULL, (HashComparison) NULL);
-  (void) hashtable_insert(ht, "Ciao", NULL);
-  (void) hashtable_insert(ht, "Matteo", NULL);
-  (void) hashtable_insert(ht, "Franchin", NULL);
-  if ( hashtable_find(ht, "Matteo", & hi) ) {
+  ht = hashtable_new(5, (HashFunction) NULL, (HashComparison) NULL);
+  (void) hashtable_insert(ht, "Ciao", 4);
+  (void) hashtable_insert(ht, "Matteo", 6);
+  (void) hashtable_insert(ht, "Franchin", 8);
+  (void) hashtable_insert(ht, "questo", 6);
+  (void) hashtable_insert(ht, "e'", 2);
+  (void) hashtable_insert(ht, "il", 2);
+  (void) hashtable_insert(ht, "mio", 3);
+  (void) hashtable_insert(ht, "nome", 4);
+  (void) hashtable_insert(ht, "e questa e' una piccola frase.", 30);
+  (void) hashtable_insert(ht, "due parole", 10);
+  hashtable_statistics(ht, stdout);
+  if ( hashtable_find(ht, "Matteo", 6, & hi) ) {
     printf("Item found\n");
   } else {
     printf("Item not found\n");

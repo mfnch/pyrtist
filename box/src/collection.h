@@ -20,6 +20,19 @@
 
 /* $Id$ */
 
+/**
+ * @file collection.h
+ * @brief A collection is an array whose elements can be occupied or freed.
+ *
+ * This file defines the object Collection which is an extension
+ * of the object Array.
+ * This file adds to the Array object the possibility of releasing
+ * an element. For example:
+ *  you can insert three elements: 1, 2 and 3, then you can release
+ *  the element number 2. Now when you insert another element, this will
+ *  be put at the position occupied by 2: the most recently released item.
+ */
+
 /* collection.h,  June 2006 */
 
 #ifndef _COLLECTION_H
@@ -27,7 +40,15 @@
 
 typedef Array Collection;
 
+/** Creates a new Collection object.
+ * @param new_clc the address of the new created object is returned here.
+ * @param element_size size of the elements contained in the collection.
+ *  All elements have the same size.
+ * @param min_dim this is the default size of the collection:
+ *  the dimension when it is empty, which will be increased when needed.
+ */
 Task Clc_New(Collection **new_clc, UInt element_size, UInt min_dim);
+
 void Clc_Destructor(Collection *c, Task (*destroy)(void *));
 void Clc_Destroy(Collection *c);
 Task Clc_Occupy(Collection *c, void *item, int *assigned_index);

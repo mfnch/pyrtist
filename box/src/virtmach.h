@@ -20,6 +20,11 @@
 
 /* $Id$ */
 
+/**
+ * @file virtmach.h
+ * @brief The virtual machine of Box.
+ */
+
 #ifndef _VIRTMACH_H
 #define _VIRTMACH_H
 
@@ -28,6 +33,10 @@
 #include "defaults.h"
 #include "array.h"
 #include "collection.h"
+
+#define _INSIDE_VIRTMACH_H
+#include "vmsym.h"
+#undef _INSIDE_VIRTMACH_H
 
 /* Associo un numero a ciascun tipo, per poterlo identificare */
 typedef enum {
@@ -154,7 +163,7 @@ typedef struct {
   void (*disasm)(struct __vmprogram *, char **);
 } VMInstrDesc;
 
-/* This structure contains all the data which define the status for the VM.
+/** This structure contains all the data which define the status for the VM.
  * Status is allocated by 'VM_Module_Execute' inside its stack.
  */
 struct __vmstatus {
@@ -211,26 +220,31 @@ typedef struct {
   AsmCode kind;
 } VMReference;
 
-/* This structure define all what is needed for the functions defined inside
- * the file 'virtmach.c'
+/** @brief The full status of the virtual machine of Box.
  */
 struct __vmprogram {
-  Collection *sheets;     /* Collection of uninstalled sheets */
-  VMSheet *current_sheet; /* Pointer and ID of the current actived sheet */
-  int current_sheet_id, jmp_sheet_id;
-  Array *vm_modules_list; /* Array of installed modules */
+  VMSymTable sym_table; /**< Table of referenced and defined symbols */
 
-  Collection *labels;     /* Collection of the labels */
-  Collection *references; /* References to these labels */
+  Collection *sheets;     /**< Collection of uninstalled sheets */
+  VMSheet *current_sheet; /**< Pointer and ID of the current actived sheet */
+  int current_sheet_id, jmp_sheet_id;
+  Array *vm_modules_list; /**< Array of installed modules */
+
+  Collection *labels;     /**< Collection of the labels */
+  Collection *references; /**< References to these labels */
 
   int vm_globals;
   void *vm_global[NUM_TYPES];
   Intg vm_gmin[NUM_TYPES], vm_gmax[NUM_TYPES];
   Obj *box_vm_current, *box_vm_arg1, *box_vm_arg2;
   struct {unsigned int hexcode : 1;} vm_dflags;
-  /* Array in cui verranno disassemblati gli argomenti (scritti con sprintf) */
+  /** Array used with sprintf, when arguments are disassembled. */
   char iarg_str[VM_MAX_NUMARGS][64];
-  struct {unsigned int forcelong : 1;} vm_aflags;
+  /** Flags which control the behaviour of the VM. */
+  struct {
+    /** Force the instructions to be assembled in the long form. */
+    unsigned int forcelong : 1;
+  } vm_aflags;
 
   Array *stack;
   VMStatus *vmcur;

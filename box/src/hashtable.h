@@ -20,8 +20,7 @@
 
 /* $Id$ */
 
-typedef unsigned int (*HashFunction)(void *key, unsigned int key_size,
- unsigned int ht_size);
+typedef unsigned int (*HashFunction)(void *key, unsigned int key_size);
 typedef int (*HashComparison)(void *key1, void *key2,
  unsigned int size1, unsigned int size2);
 
@@ -33,6 +32,7 @@ typedef struct ht {
 
 typedef struct {
   int num_entries;
+  int mask;
   /* function to get the hash from the key */
   HashFunction hash;
   /* function to compare two keys */
@@ -40,8 +40,7 @@ typedef struct {
   HashItem **item;
 } Hashtable;
 
-unsigned int default_hash(void *key, unsigned int key_size,
- unsigned int ht_size);
+unsigned int default_hash(void *key, unsigned int key_size);
 int default_cmp(void *key1, void *key2, unsigned int size1, unsigned int size2);
 int default_action(HashItem *hi);
 Hashtable *hashtable_new(unsigned int num_entries, HashFunction hash,
@@ -60,21 +59,21 @@ void hashtable_statistics(Hashtable *ht, FILE *out);
 #define hashtable_insert(ht, key, key_size) \
  hashtable_add( \
     ht, \
-    ht->hash(key, key_size, ht->num_entries), \
+    ht->mask & ht->hash(key, key_size), \
     key, key_size, \
     (void *) NULL, 0)
 
 #define hashtable_insert_obj(ht, key, key_size, object, object_size) \
  hashtable_add( \
     ht, \
-    ht->hash(key, key_size, ht->num_entries), \
+    ht->mask & ht->hash(key, key_size), \
     key, key_size, \
     object, object_size)
 
 #define hashtable_find(ht, key, key_size, item) \
   hashtable_iter( \
     ht, \
-    ht->hash(key, key_size, ht->num_entries), \
+    ht->mask & ht->hash(key, key_size), \
     key, key_size, \
     item, \
     default_action)
