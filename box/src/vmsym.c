@@ -22,17 +22,50 @@
 
 #include <assert.h>
 
+#include "defaults.h"
 #include "virtmach.h"
 #include "vmsym.h"
 
-Task VM_Sym_Begin(VMProgram *vmp) {
+Task VM_Sym_Init(VMProgram *vmp) {
   assert(vmp != (VMProgram *) NULL);
   VMSymTable *st = & vmp->sym_table;
-  return Failed;
+
+  HT(& st->syms, VMSYM_SYM_HT_SIZE);
+  Arr_New(& st->defs, sizeof(VMSym), VMSYM_DEF_ARR_SIZE);
+  Arr_New(& st->refs, sizeof(VMSym), VMSYM_REF_ARR_SIZE);
+
+  return Success;
+#if 0
+  Hashtable *ht;
+  HashItem *hi;
+
+  (void) HT_New(& ht, 5, (HashFunction) NULL, (HashComparison) NULL);
+  (void) HT_Insert(ht, "Ciao", 4);
+  (void) HT_Insert(ht, "Matteo", 6);
+  (void) HT_Insert(ht, "Franchin", 8);
+  (void) HT_Insert(ht, "questo", 6);
+  (void) HT_Insert(ht, "e'", 2);
+  (void) HT_Insert(ht, "il", 2);
+  (void) HT_Insert(ht, "mio", 3);
+  (void) HT_Insert(ht, "nome", 4);
+  (void) HT_Insert(ht, "e questa e' una piccola frase.", 30);
+  (void) HT_Insert(ht, "due parole", 10);
+  HT_Statistics(ht, stdout);
+  if ( HT_Find(ht, "Matteo", 6, & hi) ) {
+    printf("Item found\n");
+  } else {
+    printf("Item not found\n");
+  }
+  exit(EXIT_SUCCESS);
+#endif
 }
 
-Task VM_Sym_End(VMProgram *vmp) {
+void VM_Sym_Destroy(VMProgram *vmp) {
   assert(vmp != (VMProgram *) NULL);
+  VMSymTable *st = & vmp->sym_table;
+  HT_Destroy(st->syms);
+  Arr_Destroy(st->defs);
+  Arr_Destroy(st->refs);
 }
 
 void VM_Sym_Procedure(VMSym *s, char *name, int sheet) {

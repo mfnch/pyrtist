@@ -29,6 +29,7 @@
 
 #  include "types.h"
 #  include "array.h"
+#  include "hashtable.h"
 
 /** @file vmsym.h
  * @brief The implementation of the reference/definition list for the box VM.
@@ -45,6 +46,7 @@
  * This structure is embedded in the main VM structure VMProgram.
  */
 typedef struct {
+  Hashtable *syms;
   Array *defs;
   Array *refs;
 } VMSymTable;
@@ -76,12 +78,12 @@ typedef struct {
 /** Initialize the symbol table of the program.
  * @param vmp is the VM-program.
  */
-Task VM_Sym_Begin(VMProgram *vmp);
+Task VM_Sym_Init(VMProgram *vmp);
 
 /** Destroy the symbol table of the program.
  * @param vmp is the VM-program.
  */
-Task VM_Sym_End(VMProgram *vmp);
+void VM_Sym_Destroy(VMProgram *vmp);
 
 /** Create a symbol for a new reference or for the definition of a procedure.
  * @param s the VMSym structure which will be filled to represent

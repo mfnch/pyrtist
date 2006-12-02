@@ -508,6 +508,7 @@ Task VM_Init(VMProgram **new_vmp) {
   nv->vm_aflags.forcelong = 0;
   nv->stack = (Array *) NULL;
   TASK( VM_Sheet_New(nv, & nv->jmp_sheet_id) );
+  TASK( VM_Sym_Init(nv) );
   *new_vmp = nv;
   return Success;
 }
@@ -527,6 +528,7 @@ void VM_Destroy(VMProgram *vmp) {
   Clc_Destroy(vmp->labels);
   Clc_Destroy(vmp->sheets);
   Arr_Destroy(vmp->stack);
+  VM_Sym_Destroy(vmp);
   free(vmp);
 }
 

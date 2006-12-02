@@ -20,6 +20,13 @@
 
 /* $Id$ */
 
+/**
+ * @file hashtable.h
+ * @brief The definition of the hash table object.
+ *
+ * The hash table implementation used by the Box compiler, VM, etc.
+ */
+
 typedef unsigned int (*HashFunction)(void *key, unsigned int key_size);
 typedef int (*HashComparison)(void *key1, void *key2,
  unsigned int size1, unsigned int size2);
@@ -40,40 +47,95 @@ typedef struct {
   HashItem **item;
 } Hashtable;
 
-unsigned int default_hash(void *key, unsigned int key_size);
-int default_cmp(void *key1, void *key2, unsigned int size1, unsigned int size2);
-int default_action(HashItem *hi);
-Hashtable *hashtable_new(unsigned int num_entries, HashFunction hash,
- HashComparison cmp);
-int hashtable_add(Hashtable *ht, unsigned int branch, void *key,
+unsigned int HT_Default_Hash(void *key, unsigned int key_size);
+int HT_Default_Cmp(void *key1, void *key2, unsigned int size1, unsigned int size2);
+int HT_Default_Action(HashItem *hi);
+
+/** Create a new hashtable.
+ * @param ht where to put the pointer to the created hash table.
+ * @param num_entries number of entries of the hash table
+ *  (which should be approximatively equal to the number of expected
+ *  elements to be inserted in the hashtable).
+ * @param hash hash function to be used.
+ * @param cmp comparison function to be used.
+ */
+void HT_New(Hashtable **ht, unsigned int num_entries,
+ HashFunction hash, HashComparison cmp);
+
+/** Destroy the hash table given as argument.
+ */
+void HT_Destroy(Hashtable *ht);
+
+/** Most general function to add a new element to the hashtable.
+ * The object referenced by the key will only be referenced
+ * by the hashtable (not copied), so you should allocate/free it
+ * by yourself, if you needed.
+ * @param ht the hash table.
+ * @param branch number of the branch in the hash table (should be computed
+ *  using the hash function). This is done by the macro HT_Insert.
+ * @param key pointer to the key.
+ * @param key_size size of the key.
+ * @param object object corresponding to the key.
+ * @param object_size size of the object.
+ * @see HT_Insert, HT_Insert_Obj
+ */
+int HT_Add(Hashtable *ht, unsigned int branch, void *key,
  unsigned int key_size, void *object, unsigned int object_size);
-int hashtable_iter(Hashtable *ht, int branch, void *key, unsigned int key_size,
+
+/** Iterate over one or all the branches of an hashtable 'ht'.
+ *
+ * If 'branch < 0' returns 0, otherwise iterate over
+ * the branch number 'branch'. For every iteration the function cmp
+ * will be used to determine if the current element is equal to 'item'.
+ * For every element which matches, the function 'action' will be called.
+ * If this function returns 0 the iteration will continue, if it returns 0,
+ * then the iteration will end and the function will return the current
+ * element inside *result.
+ * RETURN VALUE: this function returns 1 if the item has been succesfully found
+ *  ('action' returned with 1), 0 otherwise.
+ */
+int HT_Iter(Hashtable *ht, int branch, void *key, unsigned int key_size,
  HashItem **result, int (*action)(HashItem *));
-int hashtable_iter2(Hashtable *ht, int branch, int (*action)(HashItem *));
-void hashtable_destroy(Hashtable *ht);
-void hashtable_statistics(Hashtable *ht, FILE *out);
+int HT_Iter2(Hashtable *ht, int branch, int (*action)(HashItem *));
+void HT_Statistics(Hashtable *ht, FILE *out);
 
-#define hashtable(num_entries) \
-  hashtable_new(num_entries, (HashFunction) NULL, (HashComparison) NULL)
+/** Create an hash table using the default hashing function
+ * and the default comparison function
+ * @see HT_New
+ */
+#define HT(ht, num_entries) \
+ HT_New(ht, num_entries, (HashFunction) NULL, (HashComparison) NULL)
 
-#define hashtable_insert(ht, key, key_size) \
- hashtable_add( \
+/** Insert with HT_Add an element in the hash table,
+ * using the default hashing function and with no referenced object.
+ * @see HT_Insert_Obj, HT_Add
+ */
+#define HT_Insert(ht, key, key_size) \
+ HT_Add( \
     ht, \
     ht->mask & ht->hash(key, key_size), \
     key, key_size, \
     (void *) NULL, 0)
 
-#define hashtable_insert_obj(ht, key, key_size, object, object_size) \
- hashtable_add( \
+/** Insert with HT_Add an element in the hash table,
+ * using the default hashing function.
+ * @see HT_Insert, HT_Add
+ */
+#define HT_Insert_Obj(ht, key, key_size, object, object_size) \
+ HT_Add( \
     ht, \
     ht->mask & ht->hash(key, key_size), \
     key, key_size, \
     object, object_size)
 
-#define hashtable_find(ht, key, key_size, item) \
-  hashtable_iter( \
+/** Uses HT_Iter to find the given key in the hash table.
+ * item will be set with the pointer to found the HashItem.
+ * @see HT_Iter
+ */
+#define HT_Find(ht, key, key_size, item) \
+  HT_Iter( \
     ht, \
     ht->mask & ht->hash(key, key_size), \
     key, key_size, \
     item, \
-    default_action)
+    HT_Default_Action)

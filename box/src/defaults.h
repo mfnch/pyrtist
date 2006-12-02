@@ -20,6 +20,15 @@
 
 /* $Id$ */
 
+/**
+ * @file defaults.h
+ * @brief The defaults settings for the Box compiler stuff.
+ *
+ * This file contains the definitions of the constants which tune
+ * the performance of the Box compiler, VM, etc.
+ * These include the default size of hashtables, arrays, etc.
+ */
+
 /* Questo file contiene la definizione di alcune costanti che regolano
  * il funzionamento del programma.
  */
@@ -115,6 +124,13 @@
 #define VM_TYPICAL_TMP_SIZE 1024
 /* Commentare la riga seguente per rendere la VM piu' veloce, ma meno sicura! */
 #define VM_SAFE_EXEC1
+
+/** Initial size of the hashtable containing the symbols for the VM */
+#define VMSYM_SYM_HT_SIZE 4096
+/** Initial size of the array containing the definitions of the VM symbols */
+#define VMSYM_DEF_ARR_SIZE 1024
+/** Initial size of the array containing the references to the VM symbols */
+#define VMSYM_REF_ARR_SIZE 2048
 
 /*****************************************************************************
  *                 COSTANTI UTILIZZATE NEL FILE compiler.c                   *

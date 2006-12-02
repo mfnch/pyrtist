@@ -38,13 +38,13 @@ static void *xmalloc(size_t size) {
   return p;
 }
 
-/* Generic hash-function (invented by me: could be bad!) */
-unsigned int default_hash(void *key, unsigned int key_size) {
+/* Default hash-function */
+unsigned int HT_Default_Hash(void *key, unsigned int key_size) {
   return hashlittle(key, key_size, 1);
 }
 
-/* Generic comparison function */
-int default_cmp(void *key1, void *key2, unsigned int size1, unsigned int size2)
+/* Default comparison function */
+int HT_Default_Cmp(void *key1, void *key2, unsigned int size1, unsigned int size2)
 {
   if (size1 != size2)
     return 0;
@@ -57,14 +57,12 @@ int default_cmp(void *key1, void *key2, unsigned int size1, unsigned int size2)
   }
 }
 
-int default_action(HashItem *hi) {return 1;}
+int HT_Default_Action(HashItem *hi) {return 1;}
 
 /* Create a new hashtable
  */
-Hashtable *hashtable_new(
- unsigned int num_entries,
- HashFunction hash,
- HashComparison cmp)
+void HT_New(Hashtable **new_ht, unsigned int num_entries,
+ HashFunction hash, HashComparison cmp)
 {
   Hashtable *ht;
   HashItem **hi;
@@ -81,8 +79,11 @@ Hashtable *hashtable_new(
 
   ht = (Hashtable *) xmalloc(sizeof(Hashtable));
   hi = (HashItem **) xmalloc(sizeof(HashItem)*num_entries);
+  *new_ht = ht;
 
+#if DEBUG
   printf("Created hashtable of size %d, mask = %8x\n", num_entries, mask);
+#endif
 
   for(i = 0; i < num_entries; i++) hi[i] = (HashItem *) NULL;
   ht->num_entries = num_entries;
@@ -90,24 +91,22 @@ Hashtable *hashtable_new(
   ht->item = hi;
 
   if ( hash == (HashFunction) NULL )
-    ht->hash = default_hash;
+    ht->hash = HT_Default_Hash;
   else
     ht->hash = hash;
 
   if ( cmp == (HashComparison) NULL )
-    ht->cmp = default_cmp;
+    ht->cmp = HT_Default_Cmp;
   else
     ht->cmp = cmp;
-
-  return ht;
 }
 
-void hashtable_destroy(Hashtable *ht) {
-  int i, branch;
+void HT_Destroy(Hashtable *ht) {
+  int branch;
   HashItem *hi, *next;
 
   /* First we deallocate all the HashItem-s */
-  for(branch = 0; i < ht->num_entries; i++)
+  for(branch = 0; branch < ht->num_entries; branch++)
     for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = next) {
       next = hi->next;
       free(hi);
@@ -124,7 +123,7 @@ void hashtable_destroy(Hashtable *ht) {
  * These object will only be referenced by the hashtable (not copied),
  * so you should allocate/free by yourself if you need to do so.
  */
-int hashtable_add(
+int HT_Add(
  Hashtable *ht,
  unsigned int branch,
  void *key,
@@ -160,13 +159,9 @@ int hashtable_add(
  * RETURN VALUE: this function returns 1 if the item has been succesfully found
  *  ('action' returned with 1), 0 otherwise.
  */
-int hashtable_iter(
- Hashtable *ht,
- int branch,
- void *key,
- unsigned int key_size,
- HashItem **result,
- int (*action)(HashItem *))
+int HT_Iter(Hashtable *ht, int branch,
+ void *key, unsigned int key_size,
+ HashItem **result, int (*action)(HashItem *))
 {
   if ( branch < 0 ) {
     return 0;
@@ -193,11 +188,11 @@ int hashtable_iter(
  * RETURN VALUE: this function returns 1 if the item has been succesfully found
  *  ('action' returned with 1), 0 otherwise.
  */
-int hashtable_iter2(Hashtable *ht, int branch, int (*action)(HashItem *)) {
+int HT_Iter2(Hashtable *ht, int branch, int (*action)(HashItem *)) {
   if ( branch < 0 ) {
     int i;
     for(i = 0; i < ht->num_entries; i++)
-      if ( hashtable_iter2(ht, i, action) ) return 1;
+      if ( HT_Iter2(ht, i, action) ) return 1;
     return 0;
 
   } else {
@@ -209,10 +204,9 @@ int hashtable_iter2(Hashtable *ht, int branch, int (*action)(HashItem *)) {
 }
 
 static int branch_size;
+static int count_action(HashItem *hi) {++branch_size; return 0;}
 
-int count_action(HashItem *hi) {++branch_size; return 0;}
-
-void hashtable_statistics(Hashtable *ht, FILE *out) {
+void HT_Statistics(Hashtable *ht, FILE *out) {
   int i;
   HashItem *hi;
   fprintf(out, "--------------------\n");
@@ -221,7 +215,7 @@ void hashtable_statistics(Hashtable *ht, FILE *out) {
   fprintf(out, "occupation status\n");
   for(i = 0; i < ht->num_entries; i++) {
     branch_size = 0;
-    (void) hashtable_iter2(ht, i, count_action);
+    (void) HT_Iter2(ht, i, count_action);
     fprintf(out, "branch %d: %d\n", i, branch_size);
   }
   fprintf(out, "--------------------\n");
@@ -235,19 +229,19 @@ int main(void) {
   Hashtable *ht;
   HashItem *hi;
 
-  ht = hashtable_new(5, (HashFunction) NULL, (HashComparison) NULL);
-  (void) hashtable_insert(ht, "Ciao", 4);
-  (void) hashtable_insert(ht, "Matteo", 6);
-  (void) hashtable_insert(ht, "Franchin", 8);
-  (void) hashtable_insert(ht, "questo", 6);
-  (void) hashtable_insert(ht, "e'", 2);
-  (void) hashtable_insert(ht, "il", 2);
-  (void) hashtable_insert(ht, "mio", 3);
-  (void) hashtable_insert(ht, "nome", 4);
-  (void) hashtable_insert(ht, "e questa e' una piccola frase.", 30);
-  (void) hashtable_insert(ht, "due parole", 10);
-  hashtable_statistics(ht, stdout);
-  if ( hashtable_find(ht, "Matteo", 6, & hi) ) {
+  (void) HT_New(& ht, 5, (HashFunction) NULL, (HashComparison) NULL);
+  (void) HT_Insert(ht, "Ciao", 4);
+  (void) HT_Insert(ht, "Matteo", 6);
+  (void) HT_Insert(ht, "Franchin", 8);
+  (void) HT_Insert(ht, "questo", 6);
+  (void) HT_Insert(ht, "e'", 2);
+  (void) HT_Insert(ht, "il", 2);
+  (void) HT_Insert(ht, "mio", 3);
+  (void) HT_Insert(ht, "nome", 4);
+  (void) HT_Insert(ht, "e questa e' una piccola frase.", 30);
+  (void) HT_Insert(ht, "due parole", 10);
+  HT_Statistics(ht, stdout);
+  if ( HT_Find(ht, "Matteo", 6, & hi) ) {
     printf("Item found\n");
   } else {
     printf("Item not found\n");
