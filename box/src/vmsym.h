@@ -49,6 +49,7 @@ typedef struct {
   Hashtable *syms;
   Array *defs;
   Array *refs;
+  Array *names;
 } VMSymTable;
 
 /** @brief Reference or definition of a symbol for the virtual machine of box.
@@ -58,7 +59,7 @@ typedef struct {
  */
 typedef struct {
   int is_definition; /**< 1 for a definition, 0 for a reference */
-  char *name; /**< name of the reference or definition */
+  Name name; /**< name of the reference or definition */
   enum {VMSYM_NONE, VMSYM_PROCEDURE} type; /**< Type of reference/definition */
   union {
     struct {
@@ -93,7 +94,7 @@ void VM_Sym_Destroy(VMProgram *vmp);
  *  and is greater than zero for its definition. In this latter case
  *  it is the number of the sheet which contains the code of the procedure.
  */
-void VM_Sym_Procedure(VMSym *s, char *name, int sheet);
+void VM_Sym_Procedure(VMSym *s, Name *name, int sheet);
 
 /** Specify the code which makes the reference.
  * @param s the referenced symbol;

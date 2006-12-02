@@ -126,11 +126,13 @@
 #define VM_SAFE_EXEC1
 
 /** Initial size of the hashtable containing the symbols for the VM */
-#define VMSYM_SYM_HT_SIZE 4096
+#define VMSYM_SYM_HT_SIZE 1024
 /** Initial size of the array containing the definitions of the VM symbols */
 #define VMSYM_DEF_ARR_SIZE 1024
 /** Initial size of the array containing the references to the VM symbols */
 #define VMSYM_REF_ARR_SIZE 2048
+/** Initial size of the array containing the names of the VM symbols */
+#define VMSYS_NAME_ARR_SIZE 8192
 
 /*****************************************************************************
  *                 COSTANTI UTILIZZATE NEL FILE compiler.c                   *

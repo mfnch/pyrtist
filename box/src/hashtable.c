@@ -28,6 +28,7 @@
 
 #include "hashtable.h"
 #include "hashfunc.h"
+#include "str.h"
 
 static void *xmalloc(size_t size) {
   void *p = malloc(size);
@@ -88,6 +89,8 @@ void HT_New(Hashtable **new_ht, unsigned int num_entries,
   for(i = 0; i < num_entries; i++) hi[i] = (HashItem *) NULL;
   ht->num_entries = num_entries;
   ht->mask = mask;
+  ht->settings.copy_keys = 1;
+  ht->settings.copy_objs = 1;
   ht->item = hi;
 
   if ( hash == (HashFunction) NULL )
@@ -109,6 +112,8 @@ void HT_Destroy(Hashtable *ht) {
   for(branch = 0; branch < ht->num_entries; branch++)
     for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = next) {
       next = hi->next;
+      if ( hi->allocated.key ) free(hi->key);
+      if ( hi->allocated.obj ) free(hi->object);
       free(hi);
     }
 
@@ -120,7 +125,7 @@ void HT_Destroy(Hashtable *ht) {
 
 /* Add a new element to the branch number 'branch' of the hashtable 'ht'.
  * This new element will have the attributes: 'key' and 'object'.
- * These object will only be referenced by the hashtable (not copied),
+ * key and object will only be referenced by the hashtable (not copied),
  * so you should allocate/free by yourself if you need to do so.
  */
 int HT_Add(
@@ -134,10 +139,24 @@ int HT_Add(
   HashItem *hi;
   assert(branch < ht->num_entries);
   hi = (HashItem *) xmalloc(sizeof(HashItem));
-  hi->key = key;
-  hi->object = object;
+
   hi->key_size = key_size;
+  if (ht->settings.copy_keys) {
+    hi->key = Mem_Dup(key, key_size);
+    hi->allocated.key = 1;
+  } else {
+    hi->key = key;
+    hi->allocated.key = 0;
+  }
+
   hi->object_size = object_size;
+  if (ht->settings.copy_objs) {
+    hi->object = Mem_Dup(object, object_size);
+    hi->allocated.obj = 1;
+  } else {
+    hi->object = object;
+    hi->allocated.obj = 0;
+  }
 
   /* Add the new item to the list */
   hi->next = ht->item[branch];
@@ -146,6 +165,14 @@ int HT_Add(
   fprintf(stderr, "Adding item to branch %d\n", branch);
 #endif
   return 1;
+}
+
+void HT_Copy_Key(Hashtable *ht, int bool) {
+  ht->settings.copy_keys = bool;
+}
+
+void HT_Copy_Obj(Hashtable *ht, int bool) {
+  ht->settings.copy_objs = bool;
 }
 
 /* Iterate over one or all the branches of an hashtable 'ht':

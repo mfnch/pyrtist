@@ -23,6 +23,8 @@
 #include <assert.h>
 
 #include "defaults.h"
+#include "types.h"
+#include "messages.h"
 #include "virtmach.h"
 #include "vmsym.h"
 
@@ -31,10 +33,12 @@ Task VM_Sym_Init(VMProgram *vmp) {
   VMSymTable *st = & vmp->sym_table;
 
   HT(& st->syms, VMSYM_SYM_HT_SIZE);
-  Arr_New(& st->defs, sizeof(VMSym), VMSYM_DEF_ARR_SIZE);
-  Arr_New(& st->refs, sizeof(VMSym), VMSYM_REF_ARR_SIZE);
-
+  TASK( Arr_New(& st->defs, sizeof(VMSym), VMSYM_DEF_ARR_SIZE) );
+  TASK( Arr_New(& st->refs, sizeof(VMSym), VMSYM_REF_ARR_SIZE) );
+  TASK( Arr_New(& st->names, sizeof(char), VMSYS_NAME_ARR_SIZE) );
   return Success;
+}
+
 #if 0
   Hashtable *ht;
   HashItem *hi;
@@ -58,7 +62,6 @@ Task VM_Sym_Init(VMProgram *vmp) {
   }
   exit(EXIT_SUCCESS);
 #endif
-}
 
 void VM_Sym_Destroy(VMProgram *vmp) {
   assert(vmp != (VMProgram *) NULL);
@@ -66,13 +69,14 @@ void VM_Sym_Destroy(VMProgram *vmp) {
   HT_Destroy(st->syms);
   Arr_Destroy(st->defs);
   Arr_Destroy(st->refs);
+  Arr_Destroy(st->names);
 }
 
-void VM_Sym_Procedure(VMSym *s, char *name, int sheet) {
+void VM_Sym_Procedure(VMSym *s, Name *name, int sheet) {
   assert(s != (VMSym *) NULL);
   assert(sheet >= 0);
   s->is_definition = (sheet > 0);
-  s->name = name;
+  s->name = *name;
   s->type = VMSYM_PROCEDURE;
   s->value.def_procedure = sheet;
 }
@@ -87,6 +91,22 @@ void VM_Sym_Reference(VMSym *s, int sheet, int position, int length) {
 
 Task VM_Sym_Add(VMProgram *vmp, VMSym *s) {
   assert(vmp != (VMProgram *) NULL);
+  VMSymTable *st = & vmp->sym_table;
+
+  if ( s->is_definition ) {
+    HashItem *hi;
+    if ( HT_Find(st->syms, s->name.text, s->name.length, & hi) ) {
+      VMSym *s_def = (VMSym *) hi->object;
+      MSG_ERROR("Double definition of the symbol '%s'", Name_To_Str(s->name));
+    }
+
+  } else {
+    HashItem *hi;
+    if ( ! HT_Find(st->syms, s->name.text, s->name.length, & hi) ) {
+      MSG_ERROR("Double definition of the symbol '%s'", Name_To_Str(s->name));
+    }
+
+  }
 }
 
 Task VM_Sym_Link(VMProgram *vmp) {

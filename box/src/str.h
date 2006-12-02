@@ -20,6 +20,11 @@
 
 /* $Id$ */
 
+#ifndef _STR_H
+#  define _STR_H
+
+#  include "types.h"
+
 Task Str_Eq(char *a, char *b);
 Task Str_Eq2(char *s1, UInt l1, char *s2, UInt l2);
 Task Str_CaseEq2(char *s1, UInt l1, char *s2, UInt l2);
@@ -38,8 +43,11 @@ const char *Name_To_Str(Name *n);
 void Name_Free(Name *n);
 Name *Name_Dup(Name *n);
 Task Name_Cat(Name *nm, Name *nm1, Name *nm2, int free_args);
+void *Mem_Dup(const void *src, unsigned int length);
 #define Name_Cat_And_Free(nm, nm1, nm2) Name_Cat(nm, nm1, nm2, 1)
 
-#ifndef HAVE_STRNDUP
+#  ifndef HAVE_STRNDUP
 char *strndup(const char *s, int n);
+#  endif
+
 #endif

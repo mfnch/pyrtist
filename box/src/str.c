@@ -24,7 +24,8 @@
 
 #include <stdlib.h>
 #include <ctype.h>
-#define _GNU_SOURCE /* Just to use strndup! */
+/* Just to use strndup! */
+#define _GNU_SOURCE
 #include <string.h>
 #include <errno.h>
 
@@ -458,6 +459,12 @@ strange_cases: {
       return Failed;
     }
   }
+}
+
+void *Mem_Dup(const void *src, unsigned int length) {
+  void *copy = (void *) malloc(length);
+  memcpy(copy, src, length);
+  return copy;
 }
 
 #ifndef HAVE_STRNDUP
