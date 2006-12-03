@@ -63,6 +63,7 @@ Task Arr_Overwrite(Array *a, Intg dest, void *src, UInt n);
 /* Macro utili */
 #define Arr_Chain(a)	((a)->chain)
 #define Arr_NumItem(a)	((a)->numel)
+#define Arr_NumItems(a)	((a)->numel)
 #define Arr_Ptr(a)		((a)->ptr)
 #define Arr_Item(a, type, n)	*((type *) ((a)->ptr + ((n)-1)*((UInt) (a)->elsize)))
 #define Arr_FirstItem(a, type)	*((type *) ((a)->ptr))

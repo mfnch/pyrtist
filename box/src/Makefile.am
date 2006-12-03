@@ -27,6 +27,8 @@ BUILT_SOURCES = parser.h
 
 AM_YFLAGS = -d
 
+AM_CFLAGS = -Wall
+
 bin_PROGRAMS = box
 
 noinst_HEADERS = defaults.h types.h str.h messages.h debug.h \

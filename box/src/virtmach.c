@@ -33,11 +33,12 @@
 
 #include "types.h"
 #include "defaults.h"
+#include "str.h"
 #include "messages.h"
 #include "array.h"
 #include "collection.h"
 #include "virtmach.h"
-#include "str.h"
+#include "vmsym.h"
 
 /* Read the first 4 bytes (VMByteX4), extract the format bit and put the "rest"
  * in the i_eye (which should be defined as 'register VMByteX4 i_eye;')
@@ -546,6 +547,7 @@ void VM_Destroy(VMProgram *vmp) {
  */
 Task VM_Module_Install(VMProgram *vmp, Intg *new_module,
  VMModuleType t, const char *name, VMModulePtr p) {
+
   /* Creo la lista dei moduli se non esiste */
   if ( vmp->vm_modules_list == NULL ) {
     vmp->vm_modules_list = Array_New(sizeof(VMModule), VM_TYPICAL_NUM_MODULES);
@@ -561,6 +563,12 @@ Task VM_Module_Install(VMProgram *vmp, Intg *new_module,
   }
 
   *new_module = Arr_NumItem(vmp->vm_modules_list);
+  {
+    VMSym s;
+    Name n = {strlen(name), name};
+    VM_Sym_Procedure(& s, & n, *new_module);
+    TASK( VM_Sym_Add(vmp, & s) );
+  }
   return Success;
 }
 
@@ -1343,7 +1351,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
   t = 0; /* Indice di argomento */
   is_short = 1;
   for ( i = 0; i < idesc->numargs; i++ ) {
-    Intg vi;
+    Intg vi = 0;
 
     /* Prendo dalla lista degli argomenti della funzione la categoria
     * dell'argomento dell'istruzione.

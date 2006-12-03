@@ -235,7 +235,6 @@ static int count_action(HashItem *hi) {++branch_size; return 0;}
 
 void HT_Statistics(Hashtable *ht, FILE *out) {
   int i;
-  HashItem *hi;
   fprintf(out, "--------------------\n");
   fprintf(out, "HASHTABLE STATISTICS:\n");
   fprintf(out, "number of branches %d\n", ht->num_entries);

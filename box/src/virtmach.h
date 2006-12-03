@@ -299,7 +299,6 @@ Task VM_Sheet_Install(VMProgram *vmp, Intg module, int sheet_id);
 Task VM_Sheet_Disassemble(VMProgram *vmp, int sheet_id, FILE *out);
 Task VM_Label_New(VMProgram *vmp, int *label, int sheet_id, int position);
 Task VM_Label_New_Here(VMProgram *vmp, int *label);
-static Task Resolve_Reference(VMProgram *vmp, VMReference *r, VMLabel *l);
 Task VM_Label_Define(VMProgram *vmp, int label, int sheet_id, int position);
 Task VM_Label_Define_Here(VMProgram *vmp, int label);
 Task VM_Label_Destroy(VMProgram *vmp, int label);

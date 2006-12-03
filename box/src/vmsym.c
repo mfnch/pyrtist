@@ -24,6 +24,7 @@
 
 #include "defaults.h"
 #include "types.h"
+#include "str.h"
 #include "messages.h"
 #include "virtmach.h"
 #include "vmsym.h"
@@ -38,30 +39,6 @@ Task VM_Sym_Init(VMProgram *vmp) {
   TASK( Arr_New(& st->names, sizeof(char), VMSYS_NAME_ARR_SIZE) );
   return Success;
 }
-
-#if 0
-  Hashtable *ht;
-  HashItem *hi;
-
-  (void) HT_New(& ht, 5, (HashFunction) NULL, (HashComparison) NULL);
-  (void) HT_Insert(ht, "Ciao", 4);
-  (void) HT_Insert(ht, "Matteo", 6);
-  (void) HT_Insert(ht, "Franchin", 8);
-  (void) HT_Insert(ht, "questo", 6);
-  (void) HT_Insert(ht, "e'", 2);
-  (void) HT_Insert(ht, "il", 2);
-  (void) HT_Insert(ht, "mio", 3);
-  (void) HT_Insert(ht, "nome", 4);
-  (void) HT_Insert(ht, "e questa e' una piccola frase.", 30);
-  (void) HT_Insert(ht, "due parole", 10);
-  HT_Statistics(ht, stdout);
-  if ( HT_Find(ht, "Matteo", 6, & hi) ) {
-    printf("Item found\n");
-  } else {
-    printf("Item not found\n");
-  }
-  exit(EXIT_SUCCESS);
-#endif
 
 void VM_Sym_Destroy(VMProgram *vmp) {
   assert(vmp != (VMProgram *) NULL);
@@ -92,25 +69,55 @@ void VM_Sym_Reference(VMSym *s, int sheet, int position, int length) {
 Task VM_Sym_Add(VMProgram *vmp, VMSym *s) {
   assert(vmp != (VMProgram *) NULL);
   VMSymTable *st = & vmp->sym_table;
+  HashItem *hi;
+
+  /* If the name of the symbol is not present in the hash table,
+   * we insert it: this has to be done anyway!
+   */
+  if ( ! HT_Find(st->syms, s->name.text, s->name.length, & hi) ) {
+    VMSymStuff s_stuff;
+#ifdef DEBUG
+    printf("VM_Sym_Add: Inserting new symbol '%s'\n", Name_To_Str(& s->name));
+#endif
+    s_stuff.def = -1;
+    s_stuff.ref = -1;
+    (void) HT_Insert_Obj(st->syms, s->name.text, s->name.length,
+      (void *) & s_stuff, sizeof(s_stuff));
+    if ( ! HT_Find(st->syms, s->name.text, s->name.length, & hi) ) {
+      MSG_ERROR("Hashtable seems not to work (from VM_Sym_Add)");
+      return Failed;
+    }
+  }
 
   if ( s->is_definition ) {
-    HashItem *hi;
-    if ( HT_Find(st->syms, s->name.text, s->name.length, & hi) ) {
-      VMSym *s_def = (VMSym *) hi->object;
-      MSG_ERROR("Double definition of the symbol '%s'", Name_To_Str(s->name));
+    VMSymStuff *s_stuff = (VMSymStuff *) hi->object;
+    VMSym *s_in;
+    if (s_stuff->def < 1) {
+      MSG_ERROR("Double definition of the symbol '%s'",
+       Name_To_Str(& s->name));
+      return Failed;
     }
+    TASK( Arr_Push(st->defs, s) );
+    s_in = Arr_LastItemPtr(st->defs, VMSym);
+    s_in->name.length = 0;
+    s_stuff->def = Arr_NumItems(st->defs);
+    return Success;
 
   } else {
-    HashItem *hi;
-    if ( ! HT_Find(st->syms, s->name.text, s->name.length, & hi) ) {
-      MSG_ERROR("Double definition of the symbol '%s'", Name_To_Str(s->name));
-    }
-
+    VMSymStuff *s_stuff = (VMSymStuff *) hi->object;
+    VMSym *s_in;
+    TASK( Arr_Push(st->refs, s) );
+    s_in = Arr_LastItemPtr(st->refs, VMSym);
+    s_in->next = s_stuff->ref;
+    s_stuff->ref = Arr_NumItems(st->refs);
+    s_in->name.length = 0;
+    return Success;
   }
 }
 
 Task VM_Sym_Link(VMProgram *vmp) {
   assert(vmp != (VMProgram *) NULL);
+  return Failed;
 }
 
 #if 0

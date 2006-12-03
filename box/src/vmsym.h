@@ -20,6 +20,16 @@
 
 /* $Id$ */
 
+/** @file vmsym.h
+ * @brief The implementation of the reference/definition list for the box VM.
+ *
+ * This file implements the mechanism to define and reference procedures,
+ * labels and other symbols needed by a Box bytecode compiled program.
+ * This mechanism is similar to the linking of the object files produced
+ * by the compilation of several C-source files. In this sense whe could
+ * say that this file implements the Box linker.
+ */
+
 #ifndef _VIRTMACH_H
 #  include "virtmach.h"
 #endif
@@ -31,15 +41,6 @@
 #  include "array.h"
 #  include "hashtable.h"
 
-/** @file vmsym.h
- * @brief The implementation of the reference/definition list for the box VM.
- *
- * This file implements the mechanism to define and reference procedures,
- * labels and other symbols needed by a Box bytecode compiled program.
- * This mechanism is similar to the linking of the object files produced
- * by the compilation of several C-source files. In this sense whe could
- * say that this file implements the Box linker.
- */
 
 /** @brief The table of reference and definition for the Box VM.
  *
@@ -61,6 +62,7 @@ typedef struct {
   int is_definition; /**< 1 for a definition, 0 for a reference */
   Name name; /**< name of the reference or definition */
   enum {VMSYM_NONE, VMSYM_PROCEDURE} type; /**< Type of reference/definition */
+  int next; /** Used internally to make the chain of references */
   union {
     struct {
       int sheet; /**< sheet where the reference is */
@@ -70,6 +72,11 @@ typedef struct {
     int def_procedure; /**< The sheet containing the defined procedure */
   } value; /** What is needed to specify a reference/definition */
 } VMSym;
+
+typedef struct {
+  unsigned int def, ref;
+} VMSymStuff;
+
 #endif
 
 #ifndef _VMSYM_H

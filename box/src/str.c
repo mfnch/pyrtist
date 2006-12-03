@@ -462,7 +462,9 @@ strange_cases: {
 }
 
 void *Mem_Dup(const void *src, unsigned int length) {
-  void *copy = (void *) malloc(length);
+  void *copy;
+  if (length < 1) return NULL;
+  copy = (void *) malloc(length);
   memcpy(copy, src, length);
   return copy;
 }
