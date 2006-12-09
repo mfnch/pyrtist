@@ -39,6 +39,7 @@
 #include "collection.h"
 #include "virtmach.h"
 #include "vmsym.h"
+#include "vmproc.h"
 
 /* Read the first 4 bytes (VMByteX4), extract the format bit and put the "rest"
  * in the i_eye (which should be defined as 'register VMByteX4 i_eye;')
@@ -355,30 +356,31 @@ void VM__D_CALL(VMProgram *vmp, char **iarg) {
   *iarg = vmp->iarg_str[0];
   if ( (vmcur->arg_type & 3) == CAT_IMM ) {
     UInt iat = vmcur->idesc->t_id;
-    Intg m_num;
+    Intg call_num;
     void *arg2;
 
     if ( vmcur->flags.is_long ) {
-      ASM_LONG_GET_1ARG( vmcur->i_pos, vmcur->i_eye, m_num);
+      ASM_LONG_GET_1ARG( vmcur->i_pos, vmcur->i_eye, call_num);
       arg2 = vmcur->i_pos;
     } else {
-      ASM_SHORT_GET_1ARG( vmcur->i_pos, vmcur->i_eye, m_num);
+      ASM_SHORT_GET_1ARG( vmcur->i_pos, vmcur->i_eye, call_num);
       arg2 = vmcur->i_pos;
     }
 
-    if ( iat == TYPE_CHAR ) m_num = (Intg) ((Char) m_num);
+    if ( iat == TYPE_CHAR ) call_num = (Intg) ((Char) call_num);
     {
-
-      if ( (m_num < 1) || (m_num > Arr_NumItem(vmp->vm_modules_list)) ) {
-        sprintf(vmp->iarg_str[0], SIntg, m_num);
+      VMProcTable *pt = & vmp->proc_table;
+      if ( (call_num < 1) || (call_num > Arr_NumItem(pt->installed)) ) {
+        sprintf(vmp->iarg_str[0], SIntg, call_num);
         return;
 
       } else {
-        char *m_name;
-        VMModule *m = Arr_ItemPtr(vmp->vm_modules_list, VMModule, m_num);
-        m_name = Str_Cut(m->name, 40, 85);
-        sprintf(vmp->iarg_str[0], SIntg"('%.40s')", m_num, m_name);
-        free(m_name);
+        char *call_name;
+        VMProcInstalled *p;
+        p = Arr_ItemPtr(pt->installed, VMProcInstalled, call_num);
+        call_name = Str_Cut(p->name, 40, 85);
+        sprintf(vmp->iarg_str[0], SIntg"('%.40s')", call_num, call_name);
+        free(call_name);
         return;
       }
 
@@ -498,17 +500,19 @@ Task VM_Init(VMProgram **new_vmp) {
   VMProgram *nv;
   nv = (VMProgram *) malloc(sizeof(VMProgram));
   if (nv == NULL) return Failed;
+#if 0
   nv->vm_modules_list = (Array *) NULL;
   nv->sheets = (Collection *) NULL;
   nv->current_sheet_id = -1;
   nv->current_sheet = (VMSheet *) NULL;
+#endif
   nv->labels = (Collection *) NULL;
   nv->references = (Collection *) NULL;
   nv->vm_globals = 0;
   nv->vm_dflags.hexcode = 0;
   nv->vm_aflags.forcelong = 0;
   nv->stack = (Array *) NULL;
-  TASK( VM_Sheet_New(nv, & nv->jmp_sheet_id) );
+
   TASK( VM_Proc_Init(nv) );
   TASK( VM_Sym_Init(nv) );
   *new_vmp = nv;
@@ -521,20 +525,19 @@ void VM_Destroy(VMProgram *vmp) {
     int i;
     for(i = 0; i < NUM_TYPES; i++) free( vmp->vm_global[i] );
   }
-  Arr_Destroy(vmp->vm_modules_list);
   if ( vmp->stack != NULL )
     if ( Arr_NumItem(vmp->stack) != 0 ) {
       MSG_WARNING("Run finished with non empty stack.");
     }
   Clc_Destroy(vmp->references);
   Clc_Destroy(vmp->labels);
-  Clc_Destroy(vmp->sheets);
   Arr_Destroy(vmp->stack);
   VM_Sym_Destroy(vmp);
   VM_Proc_Destroy(vmp);
   free(vmp);
 }
 
+#if 0
 /* Installa un nuovo modulo di programma con nome name.
  * Un modulo e' semplicemente un pezzo di codice che puo' essere eseguito.
  * E' possibile installare 2 tipi di moduli:
@@ -634,6 +637,7 @@ Task VM_Module_Check(VMProgram *vmp, int report_errs) {
   }
   return status;
 }
+#endif
 
 /* Sets the number of global registers and variables for each type. */
 Task VM_Module_Globals(VMProgram *vmp, Intg num_var[], Intg num_reg[]) {
@@ -712,8 +716,9 @@ Task VM_Module_Global_Set(VMProgram *vmp, Intg type, Intg reg, void *value) {
 /* Execute the module number m of program vmp.
  * If initial != NULL, *initial is the initial status of the virtual machine.
  */
-Task VM_Module_Execute(VMProgram *vmp, Intg mnum) {
-  VMModule *m;
+Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
+  VMProcTable *pt = & vmp->proc_table;
+  VMProcInstalled *p;
   register VMByteX4 *i_pos;
   VMStatus vm;
   static Generic reg0[NUM_TYPES]; /* Registri locali numero zero */
@@ -721,20 +726,18 @@ Task VM_Module_Execute(VMProgram *vmp, Intg mnum) {
   Intg i = 0;
 #endif
 
-  MSG_LOCATION("VM_Module_Execute");
-
   /* Controlliamo che il modulo sia installato! */
-  if ( (mnum < 1) || (mnum > Arr_NumItem(vmp->vm_modules_list)) ) {
-    MSG_ERROR("Modulo non installato!");
+  if ( (call_num < 1) || (call_num > Arr_NumItem(pt->installed)) ) {
+    MSG_ERROR("Call to the undefined procedure %d.", call_num);
     return Failed;
   }
 
-  m = Arr_ItemPtr( vmp->vm_modules_list, VMModule, mnum );
-  switch (m->type) {
-    case MODULE_IS_C_FUNC: return m->ptr.c_func(vmp);
-    case MODULE_IS_VM_CODE: break;
+  p = Arr_ItemPtr( pt->installed, VMProcInstalled, call_num );
+  switch (p->type) {
+    case VMPROC_IS_C_CODE: return p->code.c(vmp);
+    case VMPROC_IS_VM_CODE: break;
     default:
-      MSG_ERROR("Tentativo di esecuzione di modulo non definito o difettoso.");
+      MSG_ERROR("Call into the broken procedure %d.", call_num);
       return Failed;
   }
 
@@ -753,8 +756,8 @@ Task VM_Module_Execute(VMProgram *vmp, Intg mnum) {
     }
   }
 
-  vm.m = m;
-  vm.i_pos = i_pos = (VMByteX4 *) m->ptr.vm.code;
+  vm.p = p;
+  vm.i_pos = i_pos = (VMByteX4 *) p->code.vm.ptr;
   vm.flags.exit = vm.flags.error = 0;
   {register int i; for(i = 0; i < NUM_TYPES; i++) vm.alc[i] = 0;}
 
@@ -829,59 +832,6 @@ Task VM_Module_Execute(VMProgram *vmp, Intg mnum) {
 void VM_DSettings(VMProgram *vmp, int hexcode) {
   /* Per settare le opzioni di assemblaggio, disassemblaggio, etc. */
   vmp->vm_dflags.hexcode = hexcode;
-}
-
-/* This function prints the assembly source code of the module
- * whose number is module_num.
- */
-Task VM_Module_Disassemble(VMProgram *vmp, Intg module_num, FILE *stream) {
-  VMModule *m;
-  char *mod_type;
-  int print_code;
-
-  if ( vmp->vm_modules_list == NULL ) {
-    MSG_ERROR("Nessun modulo installato!");
-    return Failed;
-  }
-  if (module_num < 1 || module_num > Arr_NumItem(vmp->vm_modules_list)) {
-    MSG_ERROR("Il modulo da disassemblare non esiste!");
-    return Failed;
-  }
-
-  m = ((VMModule *) vmp->vm_modules_list->ptr) + (module_num - 1);
-  fprintf(stream, "\n----------------------------------------\n");
-  fprintf(stream, "Module number: "SIntg"\n", module_num);
-  if ( m->name != NULL )
-    fprintf(stream, "Module name:   '%s'\n", m->name);
-  else
-    fprintf(stream, "Module name:   (undefined)\n");
-
-  print_code = 0;
-  switch(m->type) {
-    case MODULE_IS_VM_CODE: mod_type = "BOX-VM code"; print_code = 0; break;
-    case MODULE_IS_C_FUNC:  mod_type = "external C-function"; break;
-    case MODULE_UNDEFINED:  mod_type = "undefined"; break;
-    default:  mod_type = "this should never appear!"; break;
-  }
-  fprintf(stream, "Module type:   %s\n", mod_type);
-
-  /*if ( print_code )
-  return VM_Disassemble(stream, m->ptr.vm.code, m->ptr.vm.dim);*/
-  return Success;
-}
-
-/* This function prints the assembly source code of all the installed modules.
- */
-Task VM_Module_Disassemble_All(VMProgram *vmp, FILE *stream) {
-  Intg n, module_num;
-
-  if ( vmp->vm_modules_list == NULL ) return Success;
-
-  module_num = Arr_NumItem(vmp->vm_modules_list);
-  for(n = 1; n <= module_num; n++) {
-    TASK( VM_Module_Disassemble(vmp, n, stream) );
-  }
-  return Success;
 }
 
 /* Traduce il codice binario della VM, in formato testo.
@@ -984,6 +934,7 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
   return Success;
 }
 
+#if 0
 /******************************************************************************
  * Functions to handle sheets: a sheet is a place where you can put temporary *
  * code, which can then be istalled as a new module or handled in other ways. *
@@ -1086,6 +1037,7 @@ Task VM_Sheet_Disassemble(VMProgram *vmp, int sheet_id, FILE *out) {
     return VM_Disassemble(vmp, out, prg_ptr, prg_len);
   }
 }
+#endif
 
 /* This function creates a new label. A label is a number which refers to a
  * position in the assembled code. It can be a defined label (meaning that
@@ -1116,26 +1068,28 @@ Task VM_Label_New(VMProgram *vmp, int *label, int sheet_id, int position) {
  * position is the current position in that sheet.
  */
 Task VM_Label_New_Here(VMProgram *vmp, int *label) {
-  return VM_Label_New( vmp, label,
-   vmp->current_sheet_id, Arr_NumItem(vmp->current_sheet->program) );
+  return VM_Label_New( vmp, label, vmp->proc_table.target_proc_num,
+   Arr_NumItem(vmp->proc_table.target_proc->code) );
 }
 
 /* This function assemble the jump instruction corresponding to the
  * reference 'r' to the label 'l'. It is called by 'VM_Label_Define'.
  */
 static Task Resolve_Reference(VMProgram *vmp, VMReference *r, VMLabel *l) {
-  int saved_sheet_id = VM_Sheet_Get_Current(vmp);
-  VMSheet *jmp_sheet;
-  TASK( VM_Sheet_Clear(vmp, vmp->jmp_sheet_id) );
-  TASK( VM_Sheet_Set_Current(vmp, vmp->jmp_sheet_id) );
-  VM_Assemble(vmp, r->kind, CAT_IMM, l->position - r->position);
-  TASK( VM_Sheet_Set_Current(vmp, saved_sheet_id) );
+  VMProcTable *pt = & vmp->proc_table;
+  unsigned int saved_proc_num = VM_Proc_Target_Get(vmp);
+  VMProc *tmp_proc;
 
-  TASK(VM_Sheet(vmp, & jmp_sheet, vmp->jmp_sheet_id));
+  TASK( VM_Proc_Empty(vmp, pt->tmp_proc) );
+  TASK( VM_Proc_Target_Set(vmp, pt->tmp_proc) );
+  tmp_proc = pt->target_proc;
+  VM_Assemble(vmp, r->kind, CAT_IMM, l->position - r->position);
+  TASK( VM_Proc_Target_Set(vmp, saved_proc_num) );
+
   {
-    void *src = Arr_FirstItemPtr(jmp_sheet->program, void);
-    int src_size = Arr_NumItem(jmp_sheet->program);
-    Array *dest =  vmp->current_sheet->program; /* Destination sheet */
+    void *src = Arr_FirstItemPtr(tmp_proc->code, void);
+    int src_size = Arr_NumItem(tmp_proc->code);
+    Array *dest =  pt->target_proc->code; /* Destination sheet */
     int dest_pos = r->position + 1; /* NEED TO ADD 1 */
     TASK(Arr_Overwrite(dest, dest_pos, src, src_size));
   }
@@ -1170,8 +1124,8 @@ Task VM_Label_Define(VMProgram *vmp, int label, int sheet_id, int position) {
  * position is the current position in that sheet.
  */
 Task VM_Label_Define_Here(VMProgram *vmp, int label) {
-  return VM_Label_Define( vmp, label,
-   vmp->current_sheet_id, Arr_NumItem(vmp->current_sheet->program) );
+  return VM_Label_Define( vmp, label, vmp->proc_table.target_proc_num,
+   Arr_NumItem(vmp->proc_table.target_proc->code) );
 }
 
 /* Remove a label from the list of labels. The label should not have
@@ -1189,16 +1143,17 @@ Task VM_Label_Destroy(VMProgram *vmp, int label) {
 }
 
 Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
+  VMProcTable *pt = & vmp->proc_table;
   VMLabel *l;
   int not_defined;
   AsmCode asm_of_jmp = is_conditional ? ASM_JC_I : ASM_JMP_I;
-  int current_sheet_id = vmp->current_sheet_id;
-  int current_position = Arr_NumItem(vmp->current_sheet->program);
+  int target_proc_num = pt->target_proc_num;
+  int current_position = Arr_NumItem(pt->target_proc->code);
 
   TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
   not_defined = (l->position == -1);
 
-  if ( l->sheet_id != current_sheet_id ) {
+  if ( l->sheet_id != target_proc_num ) {
     MSG_ERROR("This label refers to code outside the current sheet.");
     return Failed;
   }
@@ -1251,9 +1206,10 @@ Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
  *  in scrittura.
  */
 void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit) {
+  VMProcTable *pt = & vmp->proc_table;
   vmp->vm_aflags.forcelong = forcelong;
-  vmp->current_sheet->status.error = error;
-  vmp->current_sheet->status.inhibit = inhibit;
+  pt->target_proc->status.error = error;
+  pt->target_proc->status.inhibit = inhibit;
 }
 
 /* This function executes the final steps to prepare the program
@@ -1264,17 +1220,18 @@ void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit) {
  * module is the module-number of an undefined module which will be used
  * to install the program.
  */
-Task VM_Sheet_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
+Task VM_Code_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
+  VMProcTable *pt = & vmp->proc_table;
   int previous_sheet;
   int tmp_sheet_id = -1;
-  Array *entry = vmp->current_sheet->program;
+  Array *entry = pt->target_proc->code;
   Task exit_status = Failed;
 
   VM_Assemble(vmp, ASM_RET);
 
-  previous_sheet = VM_Sheet_Get_Current(vmp);
-  TASK( VM_Sheet_New(vmp, & tmp_sheet_id) );
-  if IS_FAILED( VM_Sheet_Set_Current(vmp, tmp_sheet_id) ) goto exit;
+  previous_sheet = VM_Proc_Target_Get(vmp);
+  TASK( VM_Proc_Code_New(vmp, & tmp_sheet_id) );
+  if IS_FAILED( VM_Proc_Target_Set(vmp, tmp_sheet_id) ) goto exit;
 
   {
     register Intg i;
@@ -1285,7 +1242,7 @@ Task VM_Sheet_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
     for(i = 0; i < NUM_TYPES; i++) {
       register Intg nv = num_var[i], nr = num_reg[i];
       if ( nv < 0 || nr < 0 ) {
-        MSG_ERROR("Errore nella chiamata di VM_Sheet_Prepare.");
+        MSG_ERROR("Errore nella chiamata di VM_Code_Prepare.");
         goto exit;
       }
       if ( nv > 0 || nr > 0 )
@@ -1298,7 +1255,7 @@ Task VM_Sheet_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
    * this function).
    */
   {
-    Array *code_to_insert = vmp->current_sheet->program;
+    Array *code_to_insert = pt->target_proc->code;
     int code_to_insert_len = Arr_NumItem(code_to_insert);
     void *code_to_insert_ptr = Arr_Ptr(code_to_insert);
 
@@ -1309,9 +1266,9 @@ Task VM_Sheet_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
   exit_status = Success;
 
 exit:
-  (void) VM_Sheet_Set_Current(vmp, previous_sheet);
+  (void) VM_Proc_Target_Set(vmp, previous_sheet);
   if ( tmp_sheet_id >= 0 )
-    (void) VM_Sheet_Destroy(vmp, tmp_sheet_id);
+    (void) VM_Proc_Code_Destroy(vmp, tmp_sheet_id);
   return exit_status;
 }
 
@@ -1321,6 +1278,7 @@ exit:
  */
 void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
   va_list ap;
+  VMProcTable *pt = & vmp->proc_table;
   int i, t;
   VMInstrDesc *idesc;
   int is_short;
@@ -1336,7 +1294,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
   MSG_LOCATION("VM_Assemble");
 
   /* Esco subito se e' settato il flag di inibizione! */
-  if ( vmp->current_sheet->status.inhibit ) return;
+  if ( pt->target_proc->status.inhibit ) return;
 
   if ( (instr < 1) || (instr >= ASM_ILLEGAL) ) {
     MSG_ERROR("Istruzione non riconosciuta!");
@@ -1400,8 +1358,8 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
 
       default:
         MSG_ERROR("Categoria di argomenti sconosciuta!");
-        vmp->current_sheet->status.error = 1;
-        vmp->current_sheet->status.inhibit = 1;
+        pt->target_proc->status.error = 1;
+        pt->target_proc->status.inhibit = 1;
         break;
     }
 
@@ -1428,7 +1386,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
     VMByteX4 buffer[1], *i_pos = buffer;
     register VMByteX4 i_eye;
     UInt atype;
-    Array *prog = vmp->current_sheet->program;
+    Array *prog = pt->target_proc->code;
 
     for ( ; t < 2; t++ ) {
       arg[t].c = 0;
@@ -1441,8 +1399,8 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
     ASM_SHORT_PUT_2ARGS(i_pos, i_eye, arg[0].vi, arg[1].vi);
 
     if IS_FAILED( Arr_Push(prog, buffer) ) {
-      vmp->current_sheet->status.error = 1;
-      vmp->current_sheet->status.inhibit = 1;
+      pt->target_proc->status.error = 1;
+      pt->target_proc->status.inhibit = 1;
       return;
     }
     return;
@@ -1451,7 +1409,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
     /* L'istruzione va scritta in formato lungo! */
     UInt idim, iheadpos;
     VMByteX4 iw[MAX_SIZE_IN_IWORDS];
-    Array *prog = vmp->current_sheet->program;
+    Array *prog = pt->target_proc->code;
 
     /* Lascio il posto per la "testa" dell'istruzione (non conoscendo ancora
     * la dimensione dell'istruzione, non posso scrivere adesso la testa.
@@ -1469,8 +1427,8 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
       (void) memcpy( iw, arg[i].ptr, adim );
 
       if IS_FAILED( Arr_MPush(prog, iw, aiwdim) ) {
-        vmp->current_sheet->status.error = 1;
-        vmp->current_sheet->status.inhibit = 1;
+        pt->target_proc->status.error = 1;
+        pt->target_proc->status.inhibit = 1;
         return;
       }
 

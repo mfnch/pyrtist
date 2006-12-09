@@ -13,6 +13,7 @@
 #include "array.h"
 #include "str.h"
 #include "virtmach.h"
+#include "vmproc.h"
 #include "registers.h"
 #include "compiler.h"
 #include "builtins.h"
@@ -430,13 +431,11 @@ static Task Blt_Define_Basics(void) {
    * dovra' fare.
    */
   {
-    Intg m;
-    VMModulePtr p;
+    unsigned int m;
     Operation *opn;
 
-    p.c_func = Conv_2RealNum_to_Point;
-    TASK(VM_Module_Install(cmp_vm, & m, MODULE_IS_C_FUNC, "conv_2Real_to_Point", p));
-    if ( m < 1 ) return Failed;
+    TASK( VM_Proc_Install_CCode(cmp_vm, & m, Conv_2RealNum_to_Point,
+     "conv_2Real_to_Point", "Description...") );
     opn = Cmp_Operation_Add(cmp_opr.converter, type_2RealNum, TYPE_NONE, TYPE_POINT);
     if ( opn == NULL ) return Failed;
     opn->is.commutative = 0;

@@ -34,6 +34,7 @@
 #include "messages.h"
 #include "array.h"
 #include "virtmach.h"
+#include "vmproc.h"
 #include "registers.h"
 #include "compiler.h"
 #include "parserh.h"
@@ -269,7 +270,7 @@ int main(int argc, char** argv) {
 
   /* Fase di output */
   if (flags & FLAG_OUTPUT) {
-    int current_sheet = VM_Sheet_Get_Current(program);
+    int target_proc_num = VM_Proc_Target_Get(program);
     MSG_ADVICE(
      "Scrivo il listato 'assembly' prodotto dalla compilazione in \"%s\"!",
      file_output );
@@ -279,7 +280,7 @@ int main(int argc, char** argv) {
     VM_DSettings(program, 1);
 /*    if IS_FAILED( VM_Module_Disassemble_All(stdout) )
       Main_Error_Exit( NULL );*/
-    if IS_FAILED( VM_Sheet_Disassemble(program, current_sheet, stdout) )
+    if IS_FAILED( VM_Proc_Disassemble_One(program, target_proc_num, stdout) )
       Main_Error_Exit( NULL );
   }
 
@@ -327,7 +328,7 @@ Task Main_Prepare(void) {
   int i;
   Intg num_var[NUM_TYPES], num_reg[NUM_TYPES];
   RegVar_Get_Nums(num_var, num_reg);
-  TASK( VM_Sheet_Prepare(program, num_var, num_reg) );
+  TASK( VM_Code_Prepare(program, num_var, num_reg) );
   /* Preparo i registri globali */
   for(i = 0; i < NUM_TYPES; i++) {num_var[i] = 0; num_reg[i] = 3;}
   TASK( VM_Module_Globals(program, num_var, num_reg) );
@@ -338,11 +339,11 @@ Task Main_Prepare(void) {
 
 /* FASE DI ESECUZIONE */
 Task Main_Execute(void) {
-  int status;
   Task exit_code;
-  Intg main_module;
+  unsigned int main_module;
 
-  Msg_Num_Reset_All();
+  /*Msg_Num_Reset_All();
+
   Msg_Context_Enter("Controllo lo stato di definizione dei moduli.\n");
   status = VM_Module_Check(program, 1);
   Msg_Context_Exit(0);
@@ -351,11 +352,12 @@ Task Main_Execute(void) {
      Msg_Num(MSG_NUM_ERRFAT) );
     return Failed;
   }
+  */
 
   Msg_Num_Reset_All();
   Msg_Context_Enter("Fase di esecuzione:\n");
-  TASK( VM_Module_Undefined(program, & main_module, "main") );
-  TASK( VM_Sheet_Install(program, main_module, VM_Sheet_Get_Current(program)));
+  TASK( VM_Proc_Install_Code(program, & main_module,
+   VM_Proc_Target_Get(program), "main", "Description...") );
   exit_code = VM_Module_Execute(program, main_module);
 
   Msg_Context_Exit(0);

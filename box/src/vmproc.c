@@ -23,6 +23,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "types.h"
+#include "messages.h"
 #include "virtmach.h"
 #include "vmproc.h"
 
@@ -47,6 +49,9 @@ Task VM_Proc_Init(VMProgram *vmp) {
   TASK( Arr_New(& pt->installed, sizeof(VMProcInstalled),
                 VMPROC_INST_ARR_SIZE) );
   Arr_Destructor(pt->installed, Installed_Procedure_Destroy);
+  pt->target_proc_num = 0;
+  pt->target_proc = (VMProc *) NULL;
+  TASK( VM_Proc_Code_New(vmp, & pt->tmp_proc) );
   return Success;
 }
 
@@ -105,7 +110,7 @@ Task VM_Proc_Install_Code(VMProgram *vmp, unsigned int *call_num,
   TASK( Arr_Data_Only(((VMProc *) procedure)->code, & code_ptr) );
   procedure_inst.code.vm.ptr = code_ptr;
 
-  *call_num = Arr_NumItem(pt->installed);
+  *call_num = Arr_NumItem(pt->installed) + 1;
   TASK( Arr_Push(pt->installed, & procedure_inst) );
   return Success;
 }
@@ -121,9 +126,13 @@ Task VM_Proc_Install_CCode(VMProgram *vmp, unsigned int *call_num,
   procedure_inst.desc = strdup(desc);
   procedure_inst.code.c = (Task (*)(void *)) c_proc;
 
-  *call_num = Arr_NumItem(pt->installed);
+  *call_num = Arr_NumItem(pt->installed) + 1;
   TASK( Arr_Push(pt->installed, & procedure_inst) );
   return Success;
+}
+
+unsigned int VM_Proc_Install_Number(VMProgram *vmp) {
+  return Arr_NumItem(vmp->proc_table.installed) + 1;
 }
 
 Task VM_Proc_Ptr_And_Length(VMProgram *vmp, VMByteX4 **ptr,
@@ -143,6 +152,55 @@ Task VM_Proc_Disassemble(VMProgram *vmp, FILE *out, unsigned int proc_num) {
   unsigned int length;
   TASK( VM_Proc_Ptr_And_Length(vmp, & ptr, & length, proc_num) );
   return VM_Disassemble(vmp, out, ptr, length);
+}
+
+Task VM_Proc_Disassemble_One(VMProgram *vmp, unsigned int call_num, FILE *out)
+{
+  VMProcTable *pt = & vmp->proc_table;
+  VMProcInstalled *p;
+  char *mod_type;
+  int print_code;
+
+  if (call_num < 1 || call_num > Arr_NumItem(pt->installed)) {
+    MSG_ERROR("The procedure %d is not installed!", call_num);
+    return Failed;
+  }
+
+  p = Arr_ItemPtr( pt->installed, VMProcInstalled, call_num );
+  fprintf(out, "\n----------------------------------------\n");
+  fprintf(out, "Procedure number: "SUInt"\n", (UInt) call_num);
+  if ( p->name != NULL )
+    fprintf(out, "Name: '%s'\n", p->name);
+  else
+    fprintf(out, "Name: (undefined)\n");
+
+  if ( p->desc != NULL )
+    fprintf(out, "Description: '%s'\n", p->desc);
+  else
+    fprintf(out, "Description: (undefined)\n");
+
+  print_code = 0;
+  switch(p->type) {
+    case VMPROC_IS_VM_CODE: mod_type = "BOX-VM code"; print_code = 0; break;
+    case VMPROC_IS_C_CODE:  mod_type = "external C-function"; break;
+    default:  mod_type = "Broken procedure, Aarrggg..."; break;
+  }
+  fprintf(out, "Type: %s\n", mod_type);
+
+//   if ( print_code )
+    return VM_Proc_Disassemble(vmp, out, call_num);
+  return Success;
+}
+
+Task VM_Proc_Disassemble_All(VMProgram *vmp, FILE *out) {
+  VMProcTable *pt = & vmp->proc_table;
+  unsigned int n, proc_num;
+
+  proc_num = Arr_NumItem(pt->installed);
+  for(n = 1; n <= proc_num; n++) {
+    TASK( VM_Proc_Disassemble_One(vmp, n, out) );
+  }
+  return Success;
 }
 
 #if 0

@@ -43,6 +43,8 @@
 #include "array.h"
 #include "str.h"
 #include "virtmach.h"
+#include "vmproc.h"
+#include "vmsym.h"
 #include "registers.h"
 #include "compiler.h"
 #include "builtins.h"
@@ -74,9 +76,9 @@ Task Cmp_Init(VMProgram *program) {
 
   /* Sets the output for the compiled code */
   {
-    int main_sheet;
-    TASK( VM_Sheet_New(cmp_vm, & main_sheet) );
-    TASK( VM_Sheet_Set_Current(cmp_vm, main_sheet) );
+    unsigned int main_sheet;
+    TASK( VM_Proc_Code_New(cmp_vm, & main_sheet) );
+    TASK( VM_Proc_Target_Set(cmp_vm, main_sheet) );
   }
 
   TASK( Cmp_Box_Instance_Begin( NULL ) );
@@ -1951,6 +1953,9 @@ Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
   if ( p == TYPE_NONE ) {
     if (! auto_define) return Success;
 
+    MSG_ERROR("compiler.c (1954): Still not implemented!!!");
+    return Failed;
+#if 0
     *prototype = TYPE_NONE;
     *asm_module = VM_Module_Next(cmp_vm);
     p = Tym_Def_Procedure(procedure, b->attr.second, b->type, *asm_module);
@@ -1962,6 +1967,7 @@ Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
     }
     *found = 1;
     return Success;
+#endif
 
   } else {
     TypeDesc *td;
@@ -2047,13 +2053,14 @@ Task Cmp_Builtin_Proc_Def(Intg procedure, int when_should_call, Intg of_type,
  Task (*C_func)(VMProgram *)) {
   static int builtin_id = 0;
   char builtin_name[16];
-  Intg proc = -1;
-  UInt id;
+  /*Intg proc = -1;
+  UInt id;*/
 
 
   /* First we define the name */
   sprintf(builtin_name, "b%09u", builtin_id);
   return Success;
+#if 0
   TASK( VM_Sym_ID_of_Name(cmp_vm, & id, (Name) {10, builtin_name}) );
 
   if ( when_should_call & BOX_CREATION ) {
@@ -2068,16 +2075,17 @@ Task Cmp_Builtin_Proc_Def(Intg procedure, int when_should_call, Intg of_type,
 
   builtin_id++;
   return Success;
+#endif
 }
 
 Task Cmp_Def_C_Procedure(Intg procedure, int when_should_call, Intg of_type,
  Task (*C_func)(VMProgram *)) {
-  VMModulePtr p;
-  Intg asm_module, nm, proc = -1;
+  unsigned int asm_module, proc = -1;
 
   (void) Cmp_Builtin_Proc_Def(procedure, when_should_call, of_type, C_func);
 
-  asm_module = VM_Module_Next(cmp_vm);
+  asm_module = VM_Proc_Install_Number(cmp_vm);
+
   if ( when_should_call & BOX_CREATION ) {
     proc = Tym_Def_Procedure(procedure, 0, of_type, asm_module);
     if ( proc == TYPE_NONE ) return Failed;
@@ -2093,11 +2101,8 @@ Task Cmp_Def_C_Procedure(Intg procedure, int when_should_call, Intg of_type,
     return Failed;
   }
 
-  TASK(VM_Module_Undefined(cmp_vm, & nm, Tym_Type_Name(proc)));
-  if ( asm_module != nm ) return Failed;
-
-  p.c_func = C_func;
-  TASK( VM_Module_Define(cmp_vm, asm_module, MODULE_IS_C_FUNC, p) );
+  TASK( VM_Proc_Install_CCode(cmp_vm, & asm_module, C_func,
+   Tym_Type_Name(proc), "Description...") );
   return Success;
 }
 

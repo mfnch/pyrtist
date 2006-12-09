@@ -73,6 +73,7 @@ typedef struct {
  */
 typedef struct {
   unsigned int target_proc_num; /**< Number of the target procedure */
+  unsigned int tmp_proc; /**< Procedure used as temporary buffer */
   VMProc *target_proc;  /**< The target procedure */
   Array *installed; /**< Array of the installed procedures */
   Collection *uninstalled; /**< Collection of the uninstalled procedures */
@@ -92,7 +93,7 @@ Task VM_Proc_Init(VMProgram *vmp);
 /** Destroy the table of installed and uninstalled procedures.
  * @param vmp is the VM-program.
  */
-void VM_Sym_Destroy(VMProgram *vmp);
+void VM_Proc_Destroy(VMProgram *vmp);
 
 /** Creates a new procedure. A procedure is a place where to put
  * the assembly code (bytecode) produced by VM_Assemble and is identified
@@ -118,6 +119,11 @@ unsigned int VM_Proc_Target_Get(VMProgram *vmp);
  */
 Task VM_Proc_Empty(VMProgram *vmp, unsigned int proc_num);
 
+
+/** Returns the call-number which will be assigned to the next installed
+ * procedure.
+ */
+unsigned int VM_Proc_Install_Number(VMProgram *vmp);
 
 /** Install the procedure 'proc_num' and assign to it the number 'call_num'.
  * After this function has been executed, the VM will recognize the instruction
@@ -155,6 +161,18 @@ Task VM_Proc_Ptr_And_Length(VMProgram *vmp, VMByteX4 **ptr,
  * The stream out is the destination for the produced output.
  */
 Task VM_Proc_Disassemble(VMProgram *vmp, FILE *out, unsigned int proc_num);
+
+/** This function prints information and assembly source code
+ * of the procedure, whose number is 'call_num'.
+ * It is similar to VM_Proc_Disassemble, but gives some more details.
+ * @see VM_Proc_Disassemble
+ */
+Task VM_Proc_Disassemble_One(VMProgram *vmp, unsigned int call_num, FILE *out);
+
+/** This function prints the assembly source code
+ * of all the installed modules.
+ */
+Task VM_Proc_Disassemble_All(VMProgram *vmp, FILE *out);
 
 #  endif
 #endif

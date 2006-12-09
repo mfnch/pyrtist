@@ -175,8 +175,8 @@ struct __vmstatus {
     unsigned int is_long  : 1; /* L'istruzione e' in formato lungo? */
   } flags;
 
-  Intg line;          /* Numero di linea (fissato dall'istruzione line) */
-  VMModule *m;        /* Modulo correntemente in esecuzione */
+  Intg line;          /**< Number of line, as set by the 'line' instruction */
+  VMProcInstalled *p; /**< Procedure which is currently been executed */
 
   /* Variabili che riguardano l'istruzione in esecuzione: */
   UInt dasm_pos;      /* Position in num. of read bytes for the disassembler */
@@ -227,10 +227,12 @@ struct __vmprogram {
   VMSymTable sym_table; /**< Table of referenced and defined symbols */
   VMProcTable proc_table; /**< Table of installed and uninstalled procedures*/
 
+#if 0
   Collection *sheets;     /**< Collection of uninstalled sheets */
   VMSheet *current_sheet; /**< Pointer and ID of the current actived sheet */
   int current_sheet_id, jmp_sheet_id;
   Array *vm_modules_list; /**< Array of installed modules */
+#endif
 
   Collection *labels;     /**< Collection of the labels */
   Collection *references; /**< References to these labels */
@@ -272,21 +274,13 @@ void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg);
 Task VM_Init(VMProgram **new_vmp);
 void VM_Destroy(VMProgram *vmp);
 
-Task VM_Module_Install(VMProgram *vmp, Intg *new_module,
- VMModuleType t, const char *name, VMModulePtr p);
-Task VM_Module_Define(VMProgram *vmp, Intg module_num,
- VMModuleType t, VMModulePtr p);
-Task VM_Module_Undefined(VMProgram *vmp, Intg *new_module, const char *name);
-Intg VM_Module_Next(VMProgram *vmp);
-Task VM_Module_Check(VMProgram *vmp, int report_errs);
 Task VM_Module_Globals(VMProgram *vmp, Intg num_var[], Intg num_reg[]);
 Task VM_Module_Global_Set(VMProgram *vmp, Intg type, Intg reg, void *value);
 
-Task VM_Module_Execute(VMProgram *vmp, Intg mnum);
+Task VM_Code_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg);
+Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num);
 
 void VM_DSettings(VMProgram *vmp, int hexcode);
-Task VM_Module_Disassemble(VMProgram *vmp, Intg module_num, FILE *stream);
-Task VM_Module_Disassemble_All(VMProgram *vmp, FILE *stream);
 Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim);
 
 void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit);
@@ -322,6 +316,6 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 #define BOX_VM_ARGPTR2(vmp, Type) ((Type *) *(vmp)->box_vm_arg2)
 
 #define VM_Label_New_Undef(vmp, label) \
-  VM_Label_New(vmp, label, vmp->current_sheet_id, -1)
+  VM_Label_New(vmp, label, vmp->proc_table.target_proc_num, -1)
 
 #endif
