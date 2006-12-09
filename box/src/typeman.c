@@ -146,12 +146,12 @@ Task Tym__Type_Name(Intg t, Array *name) {
       return Arr_MPush(name, nm, strlen(nm));
     }
 
-    MSG_ERROR("Tipo sconosciuto!");
+    MSG_ERROR("Unknown type!");
     return Arr_MPush(name, "Unknown", 7);
   }
 
   if (t >= Arr_NumItem(tym_type_list)) {
-    MSG_ERROR("Tipo sconosciuto!");
+    MSG_ERROR("Unknown type!");
     return Arr_MPush(name, "Unknown", 7);
   }
 
@@ -162,29 +162,29 @@ Task Tym__Type_Name(Intg t, Array *name) {
     return Arr_MPush(name, td->name, strlen(td->name));
 
    case TOT_PTR_TO:
-    if IS_FAILED( Arr_MPush(name, "puntatore a ", 12) ) return Failed;
+    if IS_FAILED( Arr_MPush(name, "pointer to ", 11) ) return Failed;
     return Tym__Type_Name(td->target, name);
 
    case TOT_ARRAY_OF: {
       char str[128];
       register Intg s = td->arr_size;
-      if ( s > 0 ) sprintf(str, "array("SIntg") di ", s);
-              else sprintf(str, "array() di ");
+      if ( s > 0 ) sprintf(str, "array("SIntg") of ", s);
+              else sprintf(str, "array() of ");
       if IS_FAILED( Arr_MPush(name, str, strlen(str)) ) return Failed;
     }
     return Tym__Type_Name(td->target, name);
 
    case TOT_PROCEDURE:
-    TASK( Arr_MPush(name, "procedura ", 10) );
+    TASK( Arr_MPush(name, "procedure ", 10) );
     TASK( Tym__Type_Name(td->target, name)  );
-    TASK( Arr_MPush(name, " di ", 4)        );
+    TASK( Arr_MPush(name, " of ", 4)        );
     TASK( Tym__Type_Name(td->parent, name)  );
     return Success;
 
    case TOT_PROCEDURE2:
-    TASK( Arr_MPush(name, "procedura ", 10) );
+    TASK( Arr_MPush(name, "procedure ", 10) );
     TASK( Tym__Type_Name(td->target, name)  );
-    TASK( Arr_MPush(name, " di ", 4)        );
+    TASK( Arr_MPush(name, " of ", 4)        );
     TASK( Tym__Type_Name(td->parent, name)  );
     TASK( Arr_MPush(name, "[]", 2)        );
     return Success;
@@ -192,7 +192,7 @@ Task Tym__Type_Name(Intg t, Array *name) {
    case TOT_SPECIE: {
       register Intg t = td->target;
       register int not_first = 0;
-      TASK( Arr_MPush(name, "specie(", 7) );
+      TASK( Arr_MPush(name, "species(", 8) );
       do {
         td = Tym_Type_Get(t);
         if ( td == NULL ) {
@@ -221,7 +221,7 @@ Task Tym__Type_Name(Intg t, Array *name) {
    case TOT_STRUCTURE: {
       register Intg t = td->target;
       register int not_first = 0;
-      TASK( Arr_MPush(name, "struttura(", 10) );
+      TASK( Arr_MPush(name, "structure(", 10) );
       do {
         td = Tym_Type_Get(t);
         if ( td == NULL ) {
@@ -398,7 +398,7 @@ Task Tym_Undef_Type(Intg type) {
   Symbol *s, *ps;
   TypeDesc *td, *ptd;
 
-  MSG_ERROR("Non ancora implementato!");
+  MSG_ERROR("Not implemented!");
   return Failed;
 
   ptd = Tym_Type_Get(type);
@@ -581,7 +581,7 @@ Intg Tym_Def_Array_Of(Intg num, Intg type) {
   }
   size = td->size;
   if ( size < 1 ) {
-    MSG_ERROR("Impossibile creare una array di dimensione indefinita.");
+    MSG_ERROR("Cannot create a undefined size array.");
     return TYPE_NONE;
   }
 
@@ -613,7 +613,7 @@ Intg Tym_Def_Pointer_To(Intg type) {
     return TYPE_NONE;
   }
   if ( td->size < 1 ) {
-    MSG_ERROR("Tentativo di creare un puntatore ad un tipo di size 0 ('%s').",
+    MSG_ERROR("Cannot create a pointer to a zero-size object ('%s').",
      Tym_Type_Name(type));
     return TYPE_NONE;
   }
@@ -646,7 +646,7 @@ Intg Tym_Def_Alias_Of(Name *nm, Intg type) {
    case TOT_SPECIE: case TOT_ALIAS_OF: case TOT_STRUCTURE:
      break;
    default:
-    MSG_ERROR("Impossibile creare uno pseudonimo di '%s'.",
+    MSG_ERROR("Cannot create an alias of '%s'.",
      Tym_Type_Name(type));
     return TYPE_NONE;
   }
@@ -768,7 +768,7 @@ int Tym_Compare_Types(Intg type1, Intg type2, int *need_expansion) {
       }
 
      default:
-      MSG_ERROR("Tym_Compare_Types non implementata fino in fondo!");
+      MSG_ERROR("Tym_Compare_Types still not fully implemented!");
       return 0;
     }
 
@@ -814,11 +814,11 @@ Intg Tym_Type_Resolve(Intg type, int not_alias, int not_species) {
  */
 Task Tym_Delete_Type(Intg type) {
   MSG_LOCATION("Tym_Delete_Type");
-  MSG_ERROR("'Tym_Delete_Type' <-- non ancora implementato!");
+  MSG_ERROR("'Tym_Delete_Type' <-- not implemented!");
   return Failed;
 }
 
-/* This function define the procedure proc@of_type and associates to it
+/* This function defines the procedure proc@of_type and associates to it
  * the module 'asm_module'. If second == 0, then the procedure is a first one
  * (those called when an object is beeing created: Object[ procedure ]),
  * if second == 1, then the procedure is a second procedure (those called

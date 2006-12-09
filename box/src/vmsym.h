@@ -30,10 +30,6 @@
  * say that this file implements the Box linker.
  */
 
-#ifndef _VIRTMACH_H
-#  include "virtmach.h"
-#endif
-
 #ifndef _VMSYM_H_TYPES
 #  define _VMSYM_H_TYPES
 
@@ -60,6 +56,7 @@ typedef struct {
  */
 typedef struct {
   int is_definition; /**< 1 for a definition, 0 for a reference */
+  int id; /**< number which identify the referenced/defined symbol */
   Name name; /**< name of the reference or definition */
   enum {VMSYM_NONE, VMSYM_PROCEDURE} type; /**< Type of reference/definition */
   int next; /** Used internally to make the chain of references */
@@ -74,7 +71,8 @@ typedef struct {
 } VMSym;
 
 typedef struct {
-  unsigned int def, ref;
+  unsigned int def; /**< index of the definition in the array of defs. */
+  unsigned int ref; /**< index of the first reference of the chain */
 } VMSymStuff;
 
 #endif

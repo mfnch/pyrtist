@@ -1281,7 +1281,6 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
  *   ro1 and ro2 will be pointers to the same value (2 which overwrited 1).
  */
 Task Cmp_Expr_Container_Change(Expression *e, Container *c) {
-  int toc;
   assert(e != NULL && c != NULL);
   assert(e->is.typed && e->is.value);
 
@@ -2044,19 +2043,54 @@ exit_failed:
 }
 
 /*****************************************************************************/
+Task Cmp_Builtin_Proc_Def(Intg procedure, int when_should_call, Intg of_type,
+ Task (*C_func)(VMProgram *)) {
+  static int builtin_id = 0;
+  char builtin_name[16];
+  Intg proc = -1;
+  UInt id;
+
+
+  /* First we define the name */
+  sprintf(builtin_name, "b%09u", builtin_id);
+  return Success;
+  TASK( VM_Sym_ID_of_Name(cmp_vm, & id, (Name) {10, builtin_name}) );
+
+  if ( when_should_call & BOX_CREATION ) {
+    proc = Tym_Def_Procedure(procedure, 0, of_type, id);
+    if ( proc == TYPE_NONE ) return Failed;
+  }
+
+  if ( when_should_call & BOX_MODIFICATION ) {
+    proc = Tym_Def_Procedure(procedure, 1, of_type, id);
+    if ( proc == TYPE_NONE ) return Failed;
+  }
+
+  builtin_id++;
+  return Success;
+}
+
 Task Cmp_Def_C_Procedure(Intg procedure, int when_should_call, Intg of_type,
  Task (*C_func)(VMProgram *)) {
   VMModulePtr p;
-  Intg asm_module, nm, proc;
+  Intg asm_module, nm, proc = -1;
+
+  (void) Cmp_Builtin_Proc_Def(procedure, when_should_call, of_type, C_func);
 
   asm_module = VM_Module_Next(cmp_vm);
   if ( when_should_call & BOX_CREATION ) {
     proc = Tym_Def_Procedure(procedure, 0, of_type, asm_module);
     if ( proc == TYPE_NONE ) return Failed;
   }
+
   if ( when_should_call & BOX_MODIFICATION ) {
     proc = Tym_Def_Procedure(procedure, 1, of_type, asm_module);
     if ( proc == TYPE_NONE ) return Failed;
+  }
+
+  if (proc == -1) {
+    MSG_FATAL("Cmp_Def_C_Procedure: Should not happen!");
+    return Failed;
   }
 
   TASK(VM_Module_Undefined(cmp_vm, & nm, Tym_Type_Name(proc)));

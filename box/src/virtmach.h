@@ -35,6 +35,7 @@
 #include "collection.h"
 
 #define _INSIDE_VIRTMACH_H
+#include "vmproc.h"
 #include "vmsym.h"
 #undef _INSIDE_VIRTMACH_H
 
@@ -224,6 +225,7 @@ typedef struct {
  */
 struct __vmprogram {
   VMSymTable sym_table; /**< Table of referenced and defined symbols */
+  VMProcTable proc_table; /**< Table of installed and uninstalled procedures*/
 
   Collection *sheets;     /**< Collection of uninstalled sheets */
   VMSheet *current_sheet; /**< Pointer and ID of the current actived sheet */

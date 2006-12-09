@@ -96,7 +96,7 @@ void HT_Destroy(Hashtable *ht);
 int HT_Add(Hashtable *ht, unsigned int branch, void *key,
  unsigned int key_size, void *object, unsigned int object_size);
 
-/** Iterate over one or all the branches of an hashtable 'ht'.
+/** Iterate over one branch of an hashtable 'ht'.
  *
  * If 'branch < 0' returns 0, otherwise iterate over
  * the branch number 'branch'. For every iteration the function cmp
@@ -110,7 +110,20 @@ int HT_Add(Hashtable *ht, unsigned int branch, void *key,
  */
 int HT_Iter(Hashtable *ht, int branch, void *key, unsigned int key_size,
  HashItem **result, int (*action)(HashItem *));
+
+/** Iterate over one or all the branches of an hashtable 'ht':
+ * if 'branch < 0' iterate over all the branches, otherwise iterate over
+ * the branch number 'branch'.
+ * For every element encountered, the function 'action' will be called.
+ * If this function returns 0 the iteration will continue, if it returns 0,
+ * then the iteration will end.
+ * RETURN VALUE: this function returns 1 if the item has been succesfully found
+ *  ('action' returned with 1), 0 otherwise.
+ */
 int HT_Iter2(Hashtable *ht, int branch, int (*action)(HashItem *));
+
+/** Prints some statistics about the usage of an hash table.
+ */
 void HT_Statistics(Hashtable *ht, FILE *out);
 
 /** When an object is added the key is copied by default (using malloc).

@@ -49,6 +49,64 @@ void VM_Sym_Destroy(VMProgram *vmp) {
   Arr_Destroy(st->names);
 }
 
+Name VM_Sym_Name_Of_ID(VMProgram *vmp, UInt id) {
+  return (Name) {0, (char *) NULL};
+}
+
+Task VM_Sym_ID_Of_Name(VMProgram *vmp, UInt *id, Name *n) {
+  assert(vmp != (VMProgram *) NULL);
+  VMSymTable *st = & vmp->sym_table;
+  HashItem *hi;
+
+  if ( HT_Find(st->syms, n->text, n->length, & hi) ) {
+    *id = ((VMSymStuff *) hi->object)->def;
+    return Success;
+
+  } else {
+    VMSymStuff s_stuff;
+#ifdef DEBUG
+    printf("VM_Sym_ID_Of_Name: new name '%s'\n", Name_To_Str(& s->name));
+#endif
+    s_stuff.def = *id = Arr_NumItems(st->defs)+1;
+    s_stuff.ref = -1;
+    (void) HT_Insert_Obj(st->syms, n->text, n->length,
+      (void *) & s_stuff, sizeof(s_stuff));
+    if ( ! HT_Find(st->syms, n->text, n->length, & hi) ) {
+      MSG_ERROR("Hashtable seems not to work (from VM_Sym_Add)");
+      return Failed;
+
+    } else {
+      VMSym s;
+      s.is_definition = 1;
+      s.id = s_stuff.def;
+      TASK( Arr_Push(st->defs, & s) );
+      return Success;
+    }
+  }
+}
+
+#if 0
+  if ( s->is_definition ) {
+    VMSymStuff *s_stuff = (VMSymStuff *) hi->object;
+    VMSym *s_in;
+    if (s_stuff->def < 1) {
+      MSG_ERROR("Double definition of the symbol '%s'",
+       Name_To_Str(& s->name));
+      return Failed;
+    }
+    TASK( Arr_Push(st->defs, s) );
+    s_in = Arr_LastItemPtr(st->defs, VMSym);
+    s_in->name.length = 0;
+    s_stuff->def = Arr_NumItems(st->defs);
+    return Success;
+#endif
+
+
+
+
+
+
+
 void VM_Sym_Procedure(VMSym *s, Name *name, int sheet) {
   assert(s != (VMSym *) NULL);
   assert(sheet >= 0);

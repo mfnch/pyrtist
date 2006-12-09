@@ -509,6 +509,7 @@ Task VM_Init(VMProgram **new_vmp) {
   nv->vm_aflags.forcelong = 0;
   nv->stack = (Array *) NULL;
   TASK( VM_Sheet_New(nv, & nv->jmp_sheet_id) );
+  TASK( VM_Proc_Init(nv) );
   TASK( VM_Sym_Init(nv) );
   *new_vmp = nv;
   return Success;
@@ -530,6 +531,7 @@ void VM_Destroy(VMProgram *vmp) {
   Clc_Destroy(vmp->sheets);
   Arr_Destroy(vmp->stack);
   VM_Sym_Destroy(vmp);
+  VM_Proc_Destroy(vmp);
   free(vmp);
 }
 
@@ -1265,7 +1267,7 @@ void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit) {
 Task VM_Sheet_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
   int previous_sheet;
   int tmp_sheet_id = -1;
-  Array *main = vmp->current_sheet->program;
+  Array *entry = vmp->current_sheet->program;
   Task exit_status = Failed;
 
   VM_Assemble(vmp, ASM_RET);
@@ -1292,7 +1294,7 @@ Task VM_Sheet_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
   }
 
   /* Insert the program just written inside tmp_code at the beginning
-   * of the main program 'main' (which is the one selected before entering
+   * of the main program 'entry' (which is the one selected before entering
    * this function).
    */
   {
@@ -1300,7 +1302,7 @@ Task VM_Sheet_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
     int code_to_insert_len = Arr_NumItem(code_to_insert);
     void *code_to_insert_ptr = Arr_Ptr(code_to_insert);
 
-    if IS_FAILED(Arr_Insert(main, 1, code_to_insert_len, code_to_insert_ptr) )
+    if IS_FAILED(Arr_Insert(entry, 1, code_to_insert_len, code_to_insert_ptr) )
       goto exit;
   }
 

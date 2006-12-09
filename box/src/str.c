@@ -22,10 +22,11 @@
 
 /* 8 maggio 2004 - Semplici operazioni su stringhe. */
 
-#include <stdlib.h>
-#include <ctype.h>
 /* Just to use strndup! */
 #define _GNU_SOURCE
+
+#include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 #include <errno.h>
 
@@ -350,7 +351,7 @@ Task Str_ToIntg(char *s, UInt l, Intg *i)
  */
 Task Str_ToReal(char *s, UInt l, Real *r) {
   if ( l < 64 ) {
-    char sc[64], *endptr;
+    char sc[64];
 
     /* Copio la stringa in modo da poterla terminare con '\0' */
     strncpy(sc, s, l);

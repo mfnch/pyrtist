@@ -133,6 +133,8 @@
 #define VMSYM_REF_ARR_SIZE 2048
 /** Initial size of the array containing the names of the VM symbols */
 #define VMSYS_NAME_ARR_SIZE 8192
+/** Initial size of the collection containing the uninstalled procedures */
+#define VMPROC_INST_CLC_SIZE 16
 
 /*****************************************************************************
  *                 COSTANTI UTILIZZATE NEL FILE compiler.c                   *
