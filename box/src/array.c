@@ -117,7 +117,7 @@ Array *Array_New(UInt elsize, UInt mindim) {
   a->numel = 0;
   a->mindim = mindim;
   a->elsize = elsize;
-
+  a->destroy = NULL;
   return a;
 }
 
@@ -126,6 +126,10 @@ Array *Array_New(UInt elsize, UInt mindim) {
 Task Arr_New(Array **new_array, UInt elsize, UInt mindim) {
   return (*new_array = Array_New(elsize, mindim)) == (Array *) NULL ?
       Failed : Success;
+}
+
+void Arr_Destructor(Array *a, Task (*destroy)(void *)) {
+  a->destroy = destroy;
 }
 
 /* Converte l'array specificata, in una nuova array
@@ -306,10 +310,10 @@ Task Arr_Insert(Array *a, Intg where, Intg how_many, void *items) {
 }
 
 /* This function appends to the queque of the array a,
- * 'how_many' empty elements (initialized with 0).
+ * 'how_many' blank elements (initialized with 0).
  */
-Task Arr_Empty(Array *a, Intg how_many) {
-  MSG_LOCATION("Arr_Empty");
+Task Arr_Append_Blank(Array *a, Intg how_many) {
+  MSG_LOCATION("Arr_Append_Blank");
     /* Very similar to Arr_Push */
   if (a->ID == ARR_ID) {
     UInt tpos;
@@ -340,11 +344,14 @@ Task Arr_Clear(Array *a) {
  */
 void Arr_Destroy(Array *a) {
   if ( a != NULL) {
-    if (a->ID == ARR_ID) {
-      a->ID = 0; /* Can be useful to detect reference to free-d Array */
-      free(a->ptr);
-      free(a);
-    }
+    assert(a->ID == ARR_ID);
+    /* If a destructor is given, uses it to iterate over all the elements
+     * for the last time.
+     */
+    if ( a->destroy != NULL ) (void) Arr_Iter((Array *) a, a->destroy);
+    a->ID = 0; /* Can be useful to detect reference to free-d Array */
+    free(a->ptr);
+    free(a);
   }
 }
 

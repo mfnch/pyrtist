@@ -49,7 +49,7 @@ Task Clc_New(Collection **new_clc, UInt element_size, UInt min_dim) {
 
 /* Gives a function used to destroy objects when 'Clc_Release' is called */
 void Clc_Destructor(Collection *c, Task (*destroy)(void *)) {
-  c->destroy = destroy;
+  Arr_Destructor(c, destroy);
 }
 
 static Task (*item_destructor)(void *);
@@ -70,6 +70,7 @@ void Clc_Destroy(Collection *c) {
   if ( c->destroy != NULL ) {
     item_destructor = c->destroy;
     (void) Arr_Iter((Array *) c, item_container_destructor);
+    c->destroy = NULL;
   }
   Arr_Destroy((Array *) c);
 }

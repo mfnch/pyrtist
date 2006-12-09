@@ -198,7 +198,7 @@ static Task Cmp__Structure_Backgnd(StructItem *first, Intg num, Intg size,
 
     } else {
       *only_backgnd = 0;
-      TASK( Arr_Empty(cmp_structure_data, si->size) );
+      TASK( Arr_Append_Blank(cmp_structure_data, si->size) );
     }
 
     ++si;

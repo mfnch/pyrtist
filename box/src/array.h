@@ -44,11 +44,15 @@ typedef struct {
 /* Procedure definite in array.c */
 Array *Array_New(UInt elsize, UInt mindim);
 Task Arr_New(Array **new_array, UInt elsize, UInt mindim);
+
+/** Gives a function used to destroy objects when 'Arr_Destroy' is called */
+void Arr_Destructor(Array *a, Task (*destroy)(void *));
+
 Array *Arr_Recycle(Array *a, UInt elsize, UInt mindim);
 Task Arr_Push(Array *a, void *elem);
 Task Arr_MPush(Array *a, void *elem, UInt numel);
 Task Arr_Insert(Array *a, Intg where, Intg how_many, void *items);
-Task Arr_Empty(Array *a, Intg how_many);
+Task Arr_Append_Blank(Array *a, Intg how_many);
 Task Arr_BigEnough(Array *a, UInt numel);
 Task Arr_SmallEnough(Array *a, UInt numel);
 Task Arr_Clear(Array *a);
@@ -60,7 +64,8 @@ Task Arr_Overwrite(Array *a, Intg dest, void *src, UInt n);
 /* Valore che contrassegna le array correttamente inizializzate */
 #define ARR_ID 0x66626468
 
-/* Macro utili */
+/* Useful macros */
+#define Arr_Empty Arr_Clear
 #define Arr_Chain(a)	((a)->chain)
 #define Arr_NumItem(a)	((a)->numel)
 #define Arr_NumItems(a)	((a)->numel)
