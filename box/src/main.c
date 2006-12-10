@@ -280,7 +280,7 @@ int main(int argc, char** argv) {
     VM_DSettings(program, 1);
 /*    if IS_FAILED( VM_Module_Disassemble_All(stdout) )
       Main_Error_Exit( NULL );*/
-    if IS_FAILED( VM_Proc_Disassemble_One(program, target_proc_num, stdout) )
+    if IS_FAILED( VM_Proc_Disassemble(program, stdout, target_proc_num) )
       Main_Error_Exit( NULL );
   }
 

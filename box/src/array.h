@@ -41,13 +41,10 @@ typedef struct {
   long max_idx; /* Quantita riservata all'estensione Chest */
 } Array;
 
-/* Procedure definite in array.c */
-Array *Array_New(UInt elsize, UInt mindim);
-Task Arr_New(Array **new_array, UInt elsize, UInt mindim);
-
 /** Gives a function used to destroy objects when 'Arr_Destroy' is called */
 void Arr_Destructor(Array *a, Task (*destroy)(void *));
 
+/* Procedure definite in array.c */
 Array *Arr_Recycle(Array *a, UInt elsize, UInt mindim);
 Task Arr_Push(Array *a, void *elem);
 Task Arr_MPush(Array *a, void *elem, UInt numel);
@@ -56,7 +53,6 @@ Task Arr_Append_Blank(Array *a, Intg how_many);
 Task Arr_BigEnough(Array *a, UInt numel);
 Task Arr_SmallEnough(Array *a, UInt numel);
 Task Arr_Clear(Array *a);
-void Arr_Destroy(Array *a);
 Task Arr_Data_Only(Array *a, void **data_ptr);
 Task Arr_Iter(Array *a, Task (*action)(void *));
 Task Arr_Overwrite(Array *a, Intg dest, void *src, UInt n);
@@ -80,4 +76,23 @@ Task Arr_Overwrite(Array *a, Intg dest, void *src, UInt n);
 #define Arr_Inc(a) Arr_BigEnough((a), ++(a)->numel)
 #define Arr_MDec(a, n) Arr_SmallEnough((a), (a)->numel -= n)
 #define Arr_MInc(a, n) Arr_BigEnough((a), (a)->numel += n)
+#endif
+
+#ifdef DEBUG_ARRAY
+Array *Array_New_Debug(UInt elsize, UInt mindim, const char *file, int line);
+Task Arr_New_Debug(Array **new_array, UInt elsize, UInt mindim,
+ const char *file, int line);
+void Arr_Destroy_Debug(Array *a, const char *file, int line);
+
+#  define Arr_New(new_array, elsize, mindim) \
+     Arr_New_Debug(new_array, elsize, mindim, __FILE__, __LINE__)
+#  define Array_New(elsize, mindim) \
+     Array_New_Debug(elsize, mindim, __FILE__, __LINE__)
+#  define Arr_Destroy(a) \
+     Arr_Destroy_Debug(a, __FILE__, __LINE__)
+
+#else
+Array *Array_New(UInt elsize, UInt mindim);
+Task Arr_New(Array **new_array, UInt elsize, UInt mindim);
+void Arr_Destroy(Array *a);
 #endif

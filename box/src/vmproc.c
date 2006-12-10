@@ -154,7 +154,7 @@ Task VM_Proc_Disassemble(VMProgram *vmp, FILE *out, unsigned int proc_num) {
   return VM_Disassemble(vmp, out, ptr, length);
 }
 
-Task VM_Proc_Disassemble_One(VMProgram *vmp, unsigned int call_num, FILE *out)
+Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, unsigned int call_num)
 {
   VMProcTable *pt = & vmp->proc_table;
   VMProcInstalled *p;
@@ -187,8 +187,10 @@ Task VM_Proc_Disassemble_One(VMProgram *vmp, unsigned int call_num, FILE *out)
   }
   fprintf(out, "Type: %s\n", mod_type);
 
-//   if ( print_code )
-    return VM_Proc_Disassemble(vmp, out, call_num);
+  if (p->type == VMPROC_IS_VM_CODE) {
+/*   if ( print_code ) */
+    return VM_Disassemble(vmp, out, p->code.vm.ptr, p->code.vm.size);
+  }
   return Success;
 }
 
@@ -198,7 +200,7 @@ Task VM_Proc_Disassemble_All(VMProgram *vmp, FILE *out) {
 
   proc_num = Arr_NumItem(pt->installed);
   for(n = 1; n <= proc_num; n++) {
-    TASK( VM_Proc_Disassemble_One(vmp, n, out) );
+    TASK( VM_Proc_Disassemble_One(vmp, out, n) );
   }
   return Success;
 }

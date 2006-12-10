@@ -167,7 +167,7 @@ Task VM_Proc_Disassemble(VMProgram *vmp, FILE *out, unsigned int proc_num);
  * It is similar to VM_Proc_Disassemble, but gives some more details.
  * @see VM_Proc_Disassemble
  */
-Task VM_Proc_Disassemble_One(VMProgram *vmp, unsigned int call_num, FILE *out);
+Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, unsigned int call_num);
 
 /** This function prints the assembly source code
  * of all the installed modules.

@@ -94,10 +94,13 @@
  *  Restituisce il puntatore all'array (tipo Array *) se tutto va bene,
  *  NULL in caso di errore.
  */
-Array *Array_New(UInt elsize, UInt mindim) {
+#ifdef DEBUG_ARRAY
+Array *Array_New_Debug(UInt elsize, UInt mindim, const char *src, int line)
+#else
+Array *Array_New(UInt elsize, UInt mindim)
+#endif
+{
   Array *a;
-
-  MSG_LOCATION("Array_New");
 
   if ( elsize < 1 ) {
     MSG_ERROR("Parametri errati");
@@ -109,6 +112,11 @@ Array *Array_New(UInt elsize, UInt mindim) {
     MSG_ERROR("Memoria esaurita");
     return NULL;
   }
+
+#ifdef DEBUG_ARRAY
+  fprintf(stderr, "Array_New, called in '%s' (%d): allocating array at %p\n",
+   src, line, a);
+#endif
 
   a->ID = ARR_ID;
   a->ptr = NULL;
@@ -123,10 +131,19 @@ Array *Array_New(UInt elsize, UInt mindim) {
 
 /* Alternative interface for the function Array_New
  */
+#ifdef DEBUG_ARRAY
+Task Arr_New_Debug(Array **new_array, UInt elsize, UInt mindim,
+ const char *src, int line) {
+  return
+   (*new_array = Array_New_Debug(elsize, mindim, src, line)) == NULL ?
+   Failed : Success;
+}
+#else
 Task Arr_New(Array **new_array, UInt elsize, UInt mindim) {
   return (*new_array = Array_New(elsize, mindim)) == (Array *) NULL ?
       Failed : Success;
 }
+#endif
 
 void Arr_Destructor(Array *a, Task (*destroy)(void *)) {
   a->destroy = destroy;
@@ -342,7 +359,12 @@ Task Arr_Clear(Array *a) {
 
 /* Distrugge l'array.
  */
-void Arr_Destroy(Array *a) {
+#ifdef DEBUG_ARRAY
+void Arr_Destroy_Debug(Array *a, const char *src, int line)
+#else
+void Arr_Destroy(Array *a)
+#endif
+{
   if ( a != NULL) {
     assert(a->ID == ARR_ID);
     /* If a destructor is given, uses it to iterate over all the elements
@@ -352,6 +374,10 @@ void Arr_Destroy(Array *a) {
     a->ID = 0; /* Can be useful to detect reference to free-d Array */
     free(a->ptr);
     free(a);
+#ifdef DEBUG_ARRAY
+    fprintf(stderr, "Arr_Destroy, called in '%s' (%d): destroying "
+     "array at %p\n", src, line, a);
+#endif
   }
 }
 
