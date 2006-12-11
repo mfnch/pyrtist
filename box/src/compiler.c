@@ -76,7 +76,7 @@ Task Cmp_Init(VMProgram *program) {
 
   /* Sets the output for the compiled code */
   {
-    unsigned int main_sheet;
+    UInt main_sheet;
     TASK( VM_Proc_Code_New(cmp_vm, & main_sheet) );
     TASK( VM_Proc_Target_Set(cmp_vm, main_sheet) );
   }
@@ -2080,7 +2080,7 @@ Task Cmp_Builtin_Proc_Def(Intg procedure, int when_should_call, Intg of_type,
 
 Task Cmp_Def_C_Procedure(Intg procedure, int when_should_call, Intg of_type,
  Task (*C_func)(VMProgram *)) {
-  unsigned int asm_module, proc = -1;
+  UInt asm_module, proc = 0;
 
   (void) Cmp_Builtin_Proc_Def(procedure, when_should_call, of_type, C_func);
 
@@ -2096,7 +2096,7 @@ Task Cmp_Def_C_Procedure(Intg procedure, int when_should_call, Intg of_type,
     if ( proc == TYPE_NONE ) return Failed;
   }
 
-  if (proc == -1) {
+  if (!proc) {
     MSG_FATAL("Cmp_Def_C_Procedure: Should not happen!");
     return Failed;
   }

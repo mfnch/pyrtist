@@ -22,14 +22,22 @@
 #ifndef _TYPES_H
 #  define _TYPES_H
 
-/* Numeri interi senza segno */
+/** The integer type of Box numbers and the integer type we will try
+ * to use whenever possible: 64 bit on 64 bit architectures,
+ * 32 bit elsewhere.
+ */
+typedef long Int;
+typedef long Intg; /**< Alias for Int, which should disappear, one day... */
+
+/** The unsigned integer type that we will try to use whenever possible.
+ * Same size of Int.
+ */
 typedef unsigned long UInt;
 
 /* Qui definisco la "precisione" dei numeri interi e reali.
  * Dopo tali definizioni, definisco pure quelle macro che devono essere
  * cambiate, qualora si cambino le definizioni di Intg e Real.
  */
-typedef long Intg;	/* Numeri interi */
 typedef double Real; /* Numeri in virgola mobile */
 #define strtointg strtol /* Conversione stringa->Intg */
 #define strtoreal strtod /* Conversione stringa->Real */
@@ -52,6 +60,7 @@ typedef struct {
 #define SUInt "%lu"
 #define SChar "%c"
 #define SIntg "%ld"
+#define SInt "%ld"
 #define SReal "%g"
 #define SPoint "(%g, %g)"
 

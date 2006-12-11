@@ -44,9 +44,9 @@
  */
 typedef struct {
   Hashtable *syms;
+  Array *data;
   Array *defs;
   Array *refs;
-  Array *names;
 } VMSymTable;
 
 /** @brief Reference or definition of a symbol for the virtual machine of box.
@@ -71,8 +71,8 @@ typedef struct {
 } VMSym;
 
 typedef struct {
-  unsigned int def; /**< index of the definition in the array of defs. */
-  unsigned int ref; /**< index of the first reference of the chain */
+  UInt def; /**< index of the definition in the array of defs. */
+  UInt ref; /**< index of the first reference of the chain */
 } VMSymStuff;
 
 #endif
@@ -91,6 +91,42 @@ Task VM_Sym_Init(VMProgram *vmp);
  */
 void VM_Sym_Destroy(VMProgram *vmp);
 
+/** This is the prototype for a function which generates a piece of code
+ * which makes a reference to a symbol.
+ * Functions of this type are called when a reference is made to a symbol
+ * ('resolving=0') or when the reference is being resolved ('resolving=1').
+ * If the symbol has already been defined, then 'defined=1', otherwise
+ * 'defined=0'. 'def' and 'def_size'are respectively the pointer
+ * and the size of the definition data (which are allocated when the symbol
+ * is created with VM_sym_New).
+ */
+typedef Task (*VMSymResolver)(UInt sym_num, UInt sym_type, int defined,
+ int resolving, void *def, UInt def_size, void *ref, UInt ref_size);
+
+/** Create a new symbol with name 'n' and type 'sym_type'.
+ * '*sym_num' is set with the allocated symbol number.
+ */
+Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, Name *n,
+ UInt sym_type, UInt def_size);
+
+/** Define a symbol which was previously created with VM_sym_New */
+Task VM_Sym_Def(VMProgram *vmp, UInt sym_num, void *def, UInt def_size);
+
+/** Add a reference to the symbol 'sym_num' */
+Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, void *ref, UInt ref_size);
+
+/** Set the symbol resolver */
+Task VM_Sym_Resolver_Set(VMProgram *vmp, VMSymResolver resolver);
+
+/** Resolve the symbol 'sym_num' */
+Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num);
+
+Task VM_Sym_Name_Get(VMProgram *vmp, UInt sym_num);
+
+/** Check that the type of the symbol 'sym_num' is 'sym_type'. */
+Task VM_Sym_Check_Type(VMProgram *vmp, UInt sym_num, UInt sym_type);
+
+#    if 0
 /** Create a symbol for a new reference or for the definition of a procedure.
  * @param s the VMSym structure which will be filled to represent
  *  the reference or the definition of the procedure;
@@ -120,5 +156,6 @@ Task VM_Sym_Add(VMProgram *vmp, VMSym *s);
  * @param vmp is the VM-program.
  */
 Task VM_Sym_Link(VMProgram *vmp);
+#    endif
 #  endif
 #endif

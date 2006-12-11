@@ -129,6 +129,10 @@
 #define VMSYM_SYM_HT_SIZE 1024
 /** Initial size of the array containing the definitions of the VM symbols */
 #define VMSYM_DEF_ARR_SIZE 1024
+/** Initial size of the array containing the data of the definition
+ * and reference structures
+ */
+#define VMSYM_DATA_ARR_SIZE 1024
 /** Initial size of the array containing the references to the VM symbols */
 #define VMSYM_REF_ARR_SIZE 2048
 /** Initial size of the array containing the names of the VM symbols */

@@ -26,6 +26,7 @@
 
 /* #define DEBUG */
 
+#include "types.h"
 #include "hashtable.h"
 #include "hashfunc.h"
 #include "str.h"
@@ -91,6 +92,7 @@ void HT_New(Hashtable **new_ht, unsigned int num_entries,
   ht->mask = mask;
   ht->settings.copy_keys = 1;
   ht->settings.copy_objs = 1;
+  ht->destroy = NULL;
   ht->item = hi;
 
   if ( hash == (HashFunction) NULL )
@@ -108,6 +110,8 @@ void HT_Destroy(Hashtable *ht) {
   int branch;
   HashItem *hi, *next;
 
+  if (ht->destroy) (void) HT_Iter2(ht, -1, ht->destroy);
+
   /* First we deallocate all the HashItem-s */
   for(branch = 0; branch < ht->num_entries; branch++)
     for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = next) {
@@ -121,6 +125,10 @@ void HT_Destroy(Hashtable *ht) {
   free(ht->item);
   /* And at the end we free the main Hashtable structure */
   free(ht);
+}
+
+void HT_Destructor(Hashtable *ht, Task (*destroy)(HashItem *)) {
+  ht->destroy = destroy;
 }
 
 /* Add a new element to the branch number 'branch' of the hashtable 'ht'.
@@ -210,28 +218,30 @@ int HT_Iter(Hashtable *ht, int branch,
  * if 'branch < 0' iterate over all the branches, otherwise iterate over
  * the branch number 'branch'.
  * For every element encountered, the function 'action' will be called.
- * If this function returns 0 the iteration will continue, if it returns 0,
- * then the iteration will end.
+ * If this function returns 'Success' the iteration will continue,
+ * if it returns 'Failed', then the iteration will end.
  * RETURN VALUE: this function returns 1 if the item has been succesfully found
  *  ('action' returned with 1), 0 otherwise.
  */
-int HT_Iter2(Hashtable *ht, int branch, int (*action)(HashItem *)) {
+Task HT_Iter2(Hashtable *ht, int branch, Task (*action)(HashItem *)) {
   if ( branch < 0 ) {
     int i;
-    for(i = 0; i < ht->num_entries; i++)
-      if ( HT_Iter2(ht, i, action) ) return 1;
-    return 0;
+    for(i = 0; i < ht->num_entries; i++) {
+      TASK( HT_Iter2(ht, i, action) );
+    }
+    return Success;
 
   } else {
     HashItem *hi;
-    for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = hi->next)
-      if ( action(hi) ) return 1;
-    return 0;
+    for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = hi->next) {
+      TASK( action(hi) );
+    }
+    return Success;
   }
 }
 
 static int branch_size;
-static int count_action(HashItem *hi) {++branch_size; return 0;}
+static Task count_action(HashItem *hi) {++branch_size; return Success;}
 
 void HT_Statistics(Hashtable *ht, FILE *out) {
   int i;

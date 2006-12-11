@@ -145,6 +145,30 @@ Task Arr_New(Array **new_array, UInt elsize, UInt mindim) {
 }
 #endif
 
+/* Distrugge l'array.
+ */
+#ifdef DEBUG_ARRAY
+void Arr_Destroy_Debug(Array *a, const char *src, int line)
+#else
+void Arr_Destroy(Array *a)
+#endif
+{
+  if ( a != NULL) {
+    assert(a->ID == ARR_ID);
+    /* If a destructor is given, uses it to iterate over all the elements
+     * for the last time.
+     */
+    if ( a->destroy != NULL ) (void) Arr_Iter((Array *) a, a->destroy);
+    a->ID = 0; /* Can be useful to detect reference to free-d Array */
+    free(a->ptr);
+    free(a);
+#ifdef DEBUG_ARRAY
+    fprintf(stderr, "Arr_Destroy, called in '%s' (%d): destroying "
+     "array at %p\n", src, line, a);
+#endif
+  }
+}
+
 void Arr_Destructor(Array *a, Task (*destroy)(void *)) {
   a->destroy = destroy;
 }
@@ -355,30 +379,6 @@ Task Arr_Clear(Array *a) {
     return Success;
   }
   return Failed;
-}
-
-/* Distrugge l'array.
- */
-#ifdef DEBUG_ARRAY
-void Arr_Destroy_Debug(Array *a, const char *src, int line)
-#else
-void Arr_Destroy(Array *a)
-#endif
-{
-  if ( a != NULL) {
-    assert(a->ID == ARR_ID);
-    /* If a destructor is given, uses it to iterate over all the elements
-     * for the last time.
-     */
-    if ( a->destroy != NULL ) (void) Arr_Iter((Array *) a, a->destroy);
-    a->ID = 0; /* Can be useful to detect reference to free-d Array */
-    free(a->ptr);
-    free(a);
-#ifdef DEBUG_ARRAY
-    fprintf(stderr, "Arr_Destroy, called in '%s' (%d): destroying "
-     "array at %p\n", src, line, a);
-#endif
-  }
 }
 
 /* Extract the data from an 'Array' object.

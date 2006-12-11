@@ -75,7 +75,7 @@ struct opt {
   UInt     repeat; /* Numero di volte che l'opzione puo' essere invocata */
   UInt     *flags; /* Puntatore all'insieme dei flags */
   void     *arg;   /* Puntatore al parametro da settare */
-} opt_tab[]   =  {
+} opt_tab[] = {
   { "help", PAR_NONE, 0, FLAG_HELP, 0, -1, & flags, NULL },
   { "?",  PAR_NONE, 0, FLAG_HELP, 0, -1, & flags, NULL },
   { "test", PAR_NONE, 0, 0, FLAG_EXECUTE, -1, & flags, NULL },
@@ -340,7 +340,7 @@ Task Main_Prepare(void) {
 /* FASE DI ESECUZIONE */
 Task Main_Execute(void) {
   Task exit_code;
-  unsigned int main_module;
+  UInt main_module;
 
   /*Msg_Num_Reset_All();
 

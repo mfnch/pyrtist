@@ -431,7 +431,7 @@ static Task Blt_Define_Basics(void) {
    * dovra' fare.
    */
   {
-    unsigned int m;
+    UInt m;
     Operation *opn;
 
     TASK( VM_Proc_Install_CCode(cmp_vm, & m, Conv_2RealNum_to_Point,

@@ -61,7 +61,7 @@ typedef struct {
      * which implements the procedure.
      */
     struct {
-      unsigned int size; /**< Number of VMByteX4 in the code */
+      UInt size; /**< Number of VMByteX4 in the code */
       void *ptr; /**< Pointer to the code */
     } vm;
   } code;
@@ -72,8 +72,8 @@ typedef struct {
  * This structure is embedded in the main VM structure VMProgram.
  */
 typedef struct {
-  unsigned int target_proc_num; /**< Number of the target procedure */
-  unsigned int tmp_proc; /**< Procedure used as temporary buffer */
+  UInt target_proc_num; /**< Number of the target procedure */
+  UInt tmp_proc; /**< Procedure used as temporary buffer */
   VMProc *target_proc;  /**< The target procedure */
   Array *installed; /**< Array of the installed procedures */
   Collection *uninstalled; /**< Collection of the uninstalled procedures */
@@ -100,39 +100,39 @@ void VM_Proc_Destroy(VMProgram *vmp);
  * by an integer assigned by this function. This integer is passed back
  * through *proc_num.
  */
-Task VM_Proc_Code_New(VMProgram *vmp, unsigned int *proc_num);
+Task VM_Proc_Code_New(VMProgram *vmp, UInt *proc_num);
 
 /** Destroys the procedure whose number is 'proc_num'.
  */
-Task VM_Proc_Code_Destroy(VMProgram *vmp, unsigned int proc_num);
+Task VM_Proc_Code_Destroy(VMProgram *vmp, UInt proc_num);
 
 /** Set 'proc_num' to be the target procedure: the place where
  * VM_Assemble put the assembled code
  */
-Task VM_Proc_Target_Set(VMProgram *vmp, unsigned int sheet_id);
+Task VM_Proc_Target_Set(VMProgram *vmp, UInt proc_num);
 
 /** Get the ID of the target procedure */
-unsigned int VM_Proc_Target_Get(VMProgram *vmp);
+UInt VM_Proc_Target_Get(VMProgram *vmp);
 
 /** Remove all the code assembled inside the procedure 'proc_num'.
  * WARNING: Labels and their references are not removed!
  */
-Task VM_Proc_Empty(VMProgram *vmp, unsigned int proc_num);
+Task VM_Proc_Empty(VMProgram *vmp, UInt proc_num);
 
 
 /** Returns the call-number which will be assigned to the next installed
  * procedure.
  */
-unsigned int VM_Proc_Install_Number(VMProgram *vmp);
+UInt VM_Proc_Install_Number(VMProgram *vmp);
 
 /** Install the procedure 'proc_num' and assign to it the number 'call_num'.
  * After this function has been executed, the VM will recognize the instruction
- * 'call call_num' as a call to the code contained inside the sheet 'proc_num'.
+ * 'call call_num' as a call to the code contained inside 'proc_num'.
  * The procedure 'proc_num' will be empty, but not destroyed (it will still be
- * inside the collection of uninstalled sheets).
+ * inside the collection of uninstalled procedures).
  */
-Task VM_Proc_Install_Code(VMProgram *vmp, unsigned int *call_num,
-                          unsigned int proc_num, const char *name,
+Task VM_Proc_Install_Code(VMProgram *vmp, UInt *call_num,
+                          UInt proc_num, const char *name,
                           const char *desc);
 
 /** The prototype of a C-function to be used as a procedure.
@@ -144,7 +144,7 @@ typedef Task (*VMCCode)(VMProgram *);
  * 'c_proc' as a new procedure. The call-number is returned in '*call_num'.
  * @see VM_Proc_Install_Code
  */
-Task VM_Proc_Install_CCode(VMProgram *vmp, unsigned int *call_num,
+Task VM_Proc_Install_CCode(VMProgram *vmp, UInt *call_num,
                            VMCCode c_proc, const char *name,
                            const char *desc);
 
@@ -155,19 +155,19 @@ Task VM_Proc_Install_CCode(VMProgram *vmp, unsigned int *call_num,
  * is not written.
  */
 Task VM_Proc_Ptr_And_Length(VMProgram *vmp, VMByteX4 **ptr,
-                            unsigned int *length, int proc_num);
+                            UInt *length, int proc_num);
 
 /** Print as plain text the code contained inside the procedure 'proc_num'.
  * The stream out is the destination for the produced output.
  */
-Task VM_Proc_Disassemble(VMProgram *vmp, FILE *out, unsigned int proc_num);
+Task VM_Proc_Disassemble(VMProgram *vmp, FILE *out, UInt proc_num);
 
 /** This function prints information and assembly source code
  * of the procedure, whose number is 'call_num'.
  * It is similar to VM_Proc_Disassemble, but gives some more details.
  * @see VM_Proc_Disassemble
  */
-Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, unsigned int call_num);
+Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, UInt call_num);
 
 /** This function prints the assembly source code
  * of all the installed modules.

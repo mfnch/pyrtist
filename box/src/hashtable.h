@@ -27,6 +27,11 @@
  * The hash table implementation used by the Box compiler, VM, etc.
  */
 
+#ifndef _HASHTABLE_H
+#  define _HASHTABLE_H
+
+#  include "types.h"
+
 typedef unsigned int (*HashFunction)(void *key, unsigned int key_size);
 typedef int (*HashComparison)(void *key1, void *key2,
  unsigned int size1, unsigned int size2);
@@ -54,6 +59,8 @@ typedef struct {
     /** Should we copy the key (using malloc)? */
     unsigned int copy_objs: 1;
   } settings;
+  /** Used to finalize elements before destruction */
+  Task (*destroy)(HashItem *);
   /** function to get the hash from the key */
   HashFunction hash;
   /** function to compare two keys */
@@ -80,6 +87,9 @@ void HT_New(Hashtable **ht, unsigned int num_entries,
 /** Destroy the hash table given as argument.
  */
 void HT_Destroy(Hashtable *ht);
+
+/** Gives a function used to destroy objects when 'HT_Destroy' is called */
+void HT_Destructor(Hashtable *ht, Task (*destroy)(HashItem *));
 
 /** Most general function to add a new element to the hashtable.
  * key and object will be duplicated or not, depending on the settings
@@ -120,7 +130,7 @@ int HT_Iter(Hashtable *ht, int branch, void *key, unsigned int key_size,
  * RETURN VALUE: this function returns 1 if the item has been succesfully found
  *  ('action' returned with 1), 0 otherwise.
  */
-int HT_Iter2(Hashtable *ht, int branch, int (*action)(HashItem *));
+Task HT_Iter2(Hashtable *ht, int branch, Task (*action)(HashItem *));
 
 /** Prints some statistics about the usage of an hash table.
  */
@@ -176,3 +186,5 @@ void HT_Copy_Obj(Hashtable *ht, int bool);
     key, key_size, \
     item, \
     HT_Default_Action)
+
+#endif

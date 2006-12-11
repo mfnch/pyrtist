@@ -61,21 +61,38 @@ void VM_Proc_Destroy(VMProgram *vmp) {
   Arr_Destroy(pt->installed);
 }
 
-Task VM_Proc_Code_New(VMProgram *vmp, unsigned int *proc_num) {
+/* This function whenever the Collection pt->uninstalled is touched:
+ * a new uninstalled procedure is inserted or removed.
+ * These operations could change the address of the target procedure
+ * (whose number is pt->target_proc_num), therefore we must re-calculate
+ * this address and update pt->target_proc.
+ * Yes, I know. This is a great source of nasty bugs...
+ */
+static void target_proc_refresh(VMProgram *vmp) {
+  VMProcTable *pt = & vmp->proc_table;
+  if (pt->target_proc_num)
+    (void) VM_Proc_Target_Set(vmp, pt->target_proc_num);
+}
+
+Task VM_Proc_Code_New(VMProgram *vmp, UInt *proc_num) {
   VMProcTable *pt = & vmp->proc_table;
   VMProc procedure;
   procedure.status.error = 0;
   procedure.status.inhibit = 0;
   TASK( Arr_New(& procedure.code, sizeof(VMByteX4), VM_PROC_CODE_SIZE) );
-  return Clc_Occupy(pt->uninstalled, & procedure, proc_num);
+  TASK( Clc_Occupy(pt->uninstalled, & procedure, proc_num) );
+  target_proc_refresh(vmp);
+  return Success;
 }
 
-Task VM_Proc_Code_Destroy(VMProgram *vmp, unsigned int proc_num) {
+Task VM_Proc_Code_Destroy(VMProgram *vmp, UInt proc_num) {
   VMProcTable *pt = & vmp->proc_table;
-  return Clc_Release(pt->uninstalled, proc_num);
+  TASK( Clc_Release(pt->uninstalled, proc_num) );
+  target_proc_refresh(vmp);
+  return Success;
 }
 
-Task VM_Proc_Target_Set(VMProgram *vmp, unsigned int proc_num) {
+Task VM_Proc_Target_Set(VMProgram *vmp, UInt proc_num) {
   VMProcTable *pt = & vmp->proc_table;
   void *procedure;
   TASK( Clc_Object_Ptr(pt->uninstalled, & procedure, proc_num) );
@@ -84,19 +101,19 @@ Task VM_Proc_Target_Set(VMProgram *vmp, unsigned int proc_num) {
   return Success;
 }
 
-unsigned int VM_Proc_Target_Get(VMProgram *vmp) {
+UInt VM_Proc_Target_Get(VMProgram *vmp) {
   return vmp->proc_table.target_proc_num;
 }
 
-Task VM_Proc_Empty(VMProgram *vmp, unsigned int proc_num) {
+Task VM_Proc_Empty(VMProgram *vmp, UInt proc_num) {
   VMProcTable *pt = & vmp->proc_table;
   void *procedure;
   TASK( Clc_Object_Ptr(pt->uninstalled, & procedure, proc_num) );
   return Arr_Empty(((VMProc *) procedure)->code);
 }
 
-Task VM_Proc_Install_Code(VMProgram *vmp, unsigned int *call_num,
-                          unsigned int proc_num, const char *name,
+Task VM_Proc_Install_Code(VMProgram *vmp, UInt *call_num,
+                          UInt proc_num, const char *name,
                           const char *desc) {
   VMProcTable *pt = & vmp->proc_table;
   void *procedure, *code_ptr;
@@ -115,7 +132,7 @@ Task VM_Proc_Install_Code(VMProgram *vmp, unsigned int *call_num,
   return Success;
 }
 
-Task VM_Proc_Install_CCode(VMProgram *vmp, unsigned int *call_num,
+Task VM_Proc_Install_CCode(VMProgram *vmp, UInt *call_num,
                            VMCCode c_proc, const char *name,
                            const char *desc) {
   VMProcTable *pt = & vmp->proc_table;
@@ -131,12 +148,12 @@ Task VM_Proc_Install_CCode(VMProgram *vmp, unsigned int *call_num,
   return Success;
 }
 
-unsigned int VM_Proc_Install_Number(VMProgram *vmp) {
+UInt VM_Proc_Install_Number(VMProgram *vmp) {
   return Arr_NumItem(vmp->proc_table.installed) + 1;
 }
 
 Task VM_Proc_Ptr_And_Length(VMProgram *vmp, VMByteX4 **ptr,
-                            unsigned int *length, int proc_num) {
+                            UInt *length, int proc_num) {
   VMProcTable *pt = & vmp->proc_table;
   void *procedure;
   Array *code;
@@ -147,14 +164,14 @@ Task VM_Proc_Ptr_And_Length(VMProgram *vmp, VMByteX4 **ptr,
   return Success;
 }
 
-Task VM_Proc_Disassemble(VMProgram *vmp, FILE *out, unsigned int proc_num) {
+Task VM_Proc_Disassemble(VMProgram *vmp, FILE *out, UInt proc_num) {
   VMByteX4 *ptr;
-  unsigned int length;
+  UInt length;
   TASK( VM_Proc_Ptr_And_Length(vmp, & ptr, & length, proc_num) );
   return VM_Disassemble(vmp, out, ptr, length);
 }
 
-Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, unsigned int call_num)
+Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, UInt call_num)
 {
   VMProcTable *pt = & vmp->proc_table;
   VMProcInstalled *p;
@@ -196,7 +213,7 @@ Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, unsigned int call_num)
 
 Task VM_Proc_Disassemble_All(VMProgram *vmp, FILE *out) {
   VMProcTable *pt = & vmp->proc_table;
-  unsigned int n, proc_num;
+  UInt n, proc_num;
 
   proc_num = Arr_NumItem(pt->installed);
   for(n = 1; n <= proc_num; n++) {

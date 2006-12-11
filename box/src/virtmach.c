@@ -1099,18 +1099,18 @@ static Task Resolve_Reference(VMProgram *vmp, VMReference *r, VMLabel *l) {
 /* Specify the position of a undefined label.
  */
 Task VM_Label_Define(VMProgram *vmp, int label, int sheet_id, int position) {
-  VMLabel *l;
-  TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
+  VMLabel *l = NULL;
+  TASK( Clc_Object_Ptr(vmp->labels,  & *(void **) l, label) );
   assert(l->position == -1); /* Should be undefined! */
   assert(l->sheet_id == sheet_id);
   l->position = position;
 
   /* Now we need to resolve past references to this label */
   while (l->chain_unresolved != -1) {
-    VMReference *r;
+    VMReference *r = NULL;
     int cur_ref;
     cur_ref = l->chain_unresolved;
-    TASK( Clc_Object_Ptr(vmp->references, (void **) & r, cur_ref) );
+    TASK( Clc_Object_Ptr(vmp->references, & *(void **) r, cur_ref) );
 
     TASK( Resolve_Reference(vmp, r, l) );
 
@@ -1132,8 +1132,8 @@ Task VM_Label_Define_Here(VMProgram *vmp, int label) {
  * unresolved references.
  */
 Task VM_Label_Destroy(VMProgram *vmp, int label) {
-  VMLabel *l;
-  TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
+  VMLabel *l = NULL;
+  TASK( Clc_Object_Ptr(vmp->labels, & *(void **) l, label) );
   if ( l->chain_unresolved != -1 ) {
     MSG_ERROR("Trying to destroy a label with unresolved references.");
     return Failed;
@@ -1144,13 +1144,13 @@ Task VM_Label_Destroy(VMProgram *vmp, int label) {
 
 Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
   VMProcTable *pt = & vmp->proc_table;
-  VMLabel *l;
+  VMLabel *l = NULL;
   int not_defined;
   AsmCode asm_of_jmp = is_conditional ? ASM_JC_I : ASM_JMP_I;
   int target_proc_num = pt->target_proc_num;
   int current_position = Arr_NumItem(pt->target_proc->code);
 
-  TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
+  TASK( Clc_Object_Ptr(vmp->labels, & *(void **) l, label) );
   not_defined = (l->position == -1);
 
   if ( l->sheet_id != target_proc_num ) {
@@ -1223,7 +1223,7 @@ void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit) {
 Task VM_Code_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
   VMProcTable *pt = & vmp->proc_table;
   int previous_sheet;
-  int tmp_sheet_id = -1;
+  UInt tmp_sheet_id = 0;
   Array *entry = pt->target_proc->code;
   Task exit_status = Failed;
 
@@ -1267,7 +1267,7 @@ Task VM_Code_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
 
 exit:
   (void) VM_Proc_Target_Set(vmp, previous_sheet);
-  if ( tmp_sheet_id >= 0 )
+  if ( tmp_sheet_id > 0 )
     (void) VM_Proc_Code_Destroy(vmp, tmp_sheet_id);
   return exit_status;
 }

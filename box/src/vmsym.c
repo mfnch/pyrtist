@@ -34,9 +34,9 @@ Task VM_Sym_Init(VMProgram *vmp) {
   VMSymTable *st = & vmp->sym_table;
 
   HT(& st->syms, VMSYM_SYM_HT_SIZE);
+  TASK( Arr_New(& st->data, sizeof(Char), VMSYM_DATA_ARR_SIZE) );
   TASK( Arr_New(& st->defs, sizeof(VMSym), VMSYM_DEF_ARR_SIZE) );
   TASK( Arr_New(& st->refs, sizeof(VMSym), VMSYM_REF_ARR_SIZE) );
-  TASK( Arr_New(& st->names, sizeof(char), VMSYS_NAME_ARR_SIZE) );
   return Success;
 }
 
@@ -44,10 +44,102 @@ void VM_Sym_Destroy(VMProgram *vmp) {
   assert(vmp != (VMProgram *) NULL);
   VMSymTable *st = & vmp->sym_table;
   HT_Destroy(st->syms);
+  Arr_Destroy(st->data);
   Arr_Destroy(st->defs);
   Arr_Destroy(st->refs);
-  Arr_Destroy(st->names);
 }
+
+Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, Name *n,
+ UInt sym_type, UInt def_size) {
+  VMSymTable *st = & vmp->sym_table;
+  HashItem *hi;
+
+  if ( HT_Find(st->syms, n->text, n->length, & hi) ) {
+    MSG_ERROR("The symbol '%s' has already been defined!", Name_To_Str(n));
+    return Success;
+
+  } else {
+    VMSymStuff s_stuff;
+#ifdef DEBUG
+    printf("VM_Sym_New: new symbol '%s'\n", Name_To_Str(n));
+#endif
+#if 0
+    s_stuff.def = *id = Arr_NumItems(st->defs)+1;
+    s_stuff.ref = -1;
+    (void) HT_Insert_Obj(st->syms, n->text, n->length,
+      (void *) & s_stuff, sizeof(s_stuff));
+    if ( ! HT_Find(st->syms, n->text, n->length, & hi) ) {
+      MSG_ERROR("Hashtable seems not to work (from VM_Sym_Add)");
+      return Failed;
+
+    } else {
+      VMSym s;
+      s.is_definition = 1;
+      s.id = s_stuff.def;
+      TASK( Arr_Push(st->defs, & s) );
+      return Success;
+    }
+#endif
+  }
+  MSG_ERROR("%s (%d): still not implemented!", __FILE__, __LINE__); return Failed;
+}
+
+Task VM_Sym_Def(VMProgram *vmp, UInt sym_num, void *def, UInt def_size) {
+  MSG_ERROR("%s (%d): still not implemented!", __FILE__, __LINE__); return Failed;
+}
+
+Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, void *ref, UInt ref_size) {
+  MSG_ERROR("%s (%d): still not implemented!", __FILE__, __LINE__); return Failed;
+}
+
+Task VM_Sym_Resolver_Set(VMProgram *vmp, VMSymResolver resolver) {
+  MSG_ERROR("%s (%d): still not implemented!", __FILE__, __LINE__); return Failed;
+}
+
+Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
+  MSG_ERROR("%s (%d): still not implemented!", __FILE__, __LINE__); return Failed;
+}
+
+Task VM_Sym_Name_Get(VMProgram *vmp, UInt sym_num) {
+  MSG_ERROR("%s (%d): still not implemented!", __FILE__, __LINE__); return Failed;
+}
+
+Task VM_Sym_Check_Type(VMProgram *vmp, UInt sym_num, UInt sym_type) {
+  VMSymTable *st = & vmp->sym_table;
+  MSG_ERROR("%s (%d): still not implemented!", __FILE__, __LINE__); return Failed;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 Name VM_Sym_Name_Of_ID(VMProgram *vmp, UInt id) {
   return (Name) {0, (char *) NULL};
@@ -187,4 +279,12 @@ VM_Sym_Reference(& s, 1, 10, 2);
 /* Procedure definition */
 VMSym s;
 VM_Sym_Procedure(& s, "my_procedure", 1);
+
+
+
+
+
+
 #endif
+
+
