@@ -1100,7 +1100,7 @@ static Task Resolve_Reference(VMProgram *vmp, VMReference *r, VMLabel *l) {
  */
 Task VM_Label_Define(VMProgram *vmp, int label, int sheet_id, int position) {
   VMLabel *l = NULL;
-  TASK( Clc_Object_Ptr(vmp->labels,  & *(void **) l, label) );
+  TASK( Clc_Object_Ptr(vmp->labels,  (void **) & l, label) );
   assert(l->position == -1); /* Should be undefined! */
   assert(l->sheet_id == sheet_id);
   l->position = position;
@@ -1110,7 +1110,7 @@ Task VM_Label_Define(VMProgram *vmp, int label, int sheet_id, int position) {
     VMReference *r = NULL;
     int cur_ref;
     cur_ref = l->chain_unresolved;
-    TASK( Clc_Object_Ptr(vmp->references, & *(void **) r, cur_ref) );
+    TASK( Clc_Object_Ptr(vmp->references, (void **) & r, cur_ref) );
 
     TASK( Resolve_Reference(vmp, r, l) );
 
@@ -1133,7 +1133,7 @@ Task VM_Label_Define_Here(VMProgram *vmp, int label) {
  */
 Task VM_Label_Destroy(VMProgram *vmp, int label) {
   VMLabel *l = NULL;
-  TASK( Clc_Object_Ptr(vmp->labels, & *(void **) l, label) );
+  TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
   if ( l->chain_unresolved != -1 ) {
     MSG_ERROR("Trying to destroy a label with unresolved references.");
     return Failed;
@@ -1150,7 +1150,7 @@ Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
   int target_proc_num = pt->target_proc_num;
   int current_position = Arr_NumItem(pt->target_proc->code);
 
-  TASK( Clc_Object_Ptr(vmp->labels, & *(void **) l, label) );
+  TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
   not_defined = (l->position == -1);
 
   if ( l->sheet_id != target_proc_num ) {
