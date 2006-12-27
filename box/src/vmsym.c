@@ -21,6 +21,7 @@
 /* $Id$ */
 
 #include <assert.h>
+#include <string.h>
 
 #include "defaults.h"
 #include "types.h"
@@ -36,7 +37,7 @@ Task VM_Sym_Init(VMProgram *vmp) {
   HT(& st->syms, VMSYM_SYM_HT_SIZE);
   TASK( Arr_New(& st->data, sizeof(Char), VMSYM_DATA_ARR_SIZE) );
   TASK( Arr_New(& st->defs, sizeof(VMSym), VMSYM_DEF_ARR_SIZE) );
-  TASK( Arr_New(& st->refs, sizeof(VMSym), VMSYM_REF_ARR_SIZE) );
+  TASK( Arr_New(& st->refs, sizeof(VMSymRef), VMSYM_REF_ARR_SIZE) );
   return Success;
 }
 
@@ -55,41 +56,74 @@ Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, Name *n,
   HashItem *hi;
 
   if ( HT_Find(st->syms, n->text, n->length, & hi) ) {
-    MSG_ERROR("The symbol '%s' has already been defined!", Name_To_Str(n));
+    MSG_ERROR("The symbol '%s' has already been created!", Name_To_Str(n));
     return Success;
 
   } else {
-    VMSymStuff s_stuff;
+    VMSym ss;
 #ifdef DEBUG
     printf("VM_Sym_New: new symbol '%s'\n", Name_To_Str(n));
 #endif
-#if 0
-    s_stuff.def = *id = Arr_NumItems(st->defs)+1;
-    s_stuff.ref = -1;
-    (void) HT_Insert_Obj(st->syms, n->text, n->length,
-      (void *) & s_stuff, sizeof(s_stuff));
+    ss.name = "";
+    ss.sym_type = sym_type;
+    ss.defined = 0;
+    ss.def_size = def_size;
+    ss.def_addr = Arr_NumItem(st->data);
+    ss.first_ref = 0;
+    TASK( Arr_Push(st->defs, & ss) );
+    *sym_num = Arr_NumItem(st->defs);
+
+    (void) HT_Insert_Obj(st->syms, n->text, n->length, sym_num, sizeof(UInt));
     if ( ! HT_Find(st->syms, n->text, n->length, & hi) ) {
       MSG_ERROR("Hashtable seems not to work (from VM_Sym_Add)");
       return Failed;
 
     } else {
-      VMSym s;
-      s.is_definition = 1;
-      s.id = s_stuff.def;
-      TASK( Arr_Push(st->defs, & s) );
+      TASK( Arr_Append_Blank(st->data, def_size) );
       return Success;
     }
-#endif
   }
-  MSG_ERROR("%s (%d): still not implemented!", __FILE__, __LINE__); return Failed;
 }
 
-Task VM_Sym_Def(VMProgram *vmp, UInt sym_num, void *def, UInt def_size) {
-  MSG_ERROR("%s (%d): still not implemented!", __FILE__, __LINE__); return Failed;
+Task VM_Sym_Def(VMProgram *vmp, UInt sym_num, void *def) {
+  VMSymTable *st = & vmp->sym_table;
+  VMSym *s;
+  s = Arr_ItemPtr(st->defs, VMSym, sym_num);
+  if (s->defined) {
+    const char *sym_name = VM_Sym_Name_Get(vmp, sym_num);
+    MSG_ERROR("Double definition of the symbol '%s'.", sym_name);
+    return Failed;
+  }
+  if (def != NULL) {
+    void *def_data_ptr;
+    def_data_ptr = (void *) Arr_ItemPtr(st->data, Char, s->def_addr);
+    (void) memcpy(def_data_ptr, def, s->def_size);
+  }
+  s->defined = 1;
+  return Success;
 }
 
 Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, void *ref, UInt ref_size) {
-  MSG_ERROR("%s (%d): still not implemented!", __FILE__, __LINE__); return Failed;
+  VMSymTable *st = & vmp->sym_table;
+  VMSym *s;
+  VMSymRef sr;
+  void *ref_data_ptr;
+
+  assert(ref != NULL);
+  s = Arr_ItemPtr(st->defs, VMSym, sym_num);
+  sr.sym_num = sym_num;
+  sr.next = s->first_ref;
+  sr.ref_size = ref_size;
+  sr.ref_addr = Arr_NumItem(st->data);
+  /* Copy the data for the reference */
+  TASK( Arr_Append_Blank(st->data, ref_size) );
+  ref_data_ptr = (void *) Arr_ItemPtr(st->data, Char, sr.ref_addr);
+  (void) memcpy(ref_data_ptr, ref, ref_size);
+  /* Add the reference */
+  TASK( Arr_Push(st->refs, & sr) );
+  /* Link the reference to the list of references for the symbol */
+  s->first_ref = Arr_NumItem(st->refs);
+  return Success;
 }
 
 Task VM_Sym_Resolver_Set(VMProgram *vmp, VMSymResolver resolver) {
@@ -97,194 +131,61 @@ Task VM_Sym_Resolver_Set(VMProgram *vmp, VMSymResolver resolver) {
 }
 
 Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
-  MSG_ERROR("%s (%d): still not implemented!", __FILE__, __LINE__); return Failed;
+  VMSymTable *st = & vmp->sym_table;
+  VMSym *s;
+  UInt next;
+  UInt sym_type, def_size, ref_size;
+  int defined;
+  void *def, *ref;
+  VMSymResolver r;
+
+  if (sym_num < 1) {
+    UInt i, num_defs = Arr_NumItem(st->defs);
+    for(i=0; i>num_defs; i++) {
+      TASK( VM_Sym_Resolve(vmp, i) );
+    }
+    return Success;
+  }
+
+  s = Arr_ItemPtr(st->defs, VMSym, sym_num);
+  next = s->first_ref;
+  defined = s->defined;
+  def = (void *) Arr_ItemPtr(st->data, Char, s->def_addr);
+  def_size = s->def_addr;
+  sym_type = s->sym_type;
+  r = s->resolver;
+  if (r == NULL) {
+    MSG_ERROR("VM_Sym_Resolve: cannot resolve the symbol: "
+     "the resolver is not present!");
+    return Failed;
+  }
+  while(next > 0) {
+    VMSymRef *sr = Arr_ItemPtr(st->refs, VMSymRef, next);
+    if (sr->sym_num != sym_num) {
+      MSG_FATAL("VM_Sym_Resolve: bad reference in the chain!");
+      return Failed;
+    }
+
+    ref = (void *) Arr_ItemPtr(st->data, Char, sr->ref_addr);
+    ref_size = sr->ref_addr;
+    TASK( r(sym_num, sym_type, defined, 1, def, def_size, ref, ref_size) );
+
+    next = sr->next;
+  }
+  return Success;
 }
 
-Task VM_Sym_Name_Get(VMProgram *vmp, UInt sym_num) {
-  MSG_ERROR("%s (%d): still not implemented!", __FILE__, __LINE__); return Failed;
+const char *VM_Sym_Name_Get(VMProgram *vmp, UInt sym_num) {
+  VMSymTable *st = & vmp->sym_table;
+  VMSym *s;
+  s = Arr_ItemPtr(st->defs, VMSym, sym_num);
+  return s->name;
 }
 
 Task VM_Sym_Check_Type(VMProgram *vmp, UInt sym_num, UInt sym_type) {
   VMSymTable *st = & vmp->sym_table;
-  MSG_ERROR("%s (%d): still not implemented!", __FILE__, __LINE__); return Failed;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Name VM_Sym_Name_Of_ID(VMProgram *vmp, UInt id) {
-  return (Name) {0, (char *) NULL};
-}
-
-Task VM_Sym_ID_Of_Name(VMProgram *vmp, UInt *id, Name *n) {
-  assert(vmp != (VMProgram *) NULL);
-  VMSymTable *st = & vmp->sym_table;
-  HashItem *hi;
-
-  if ( HT_Find(st->syms, n->text, n->length, & hi) ) {
-    *id = ((VMSymStuff *) hi->object)->def;
-    return Success;
-
-  } else {
-    VMSymStuff s_stuff;
-#ifdef DEBUG
-    printf("VM_Sym_ID_Of_Name: new name '%s'\n", Name_To_Str(& s->name));
-#endif
-    s_stuff.def = *id = Arr_NumItems(st->defs)+1;
-    s_stuff.ref = -1;
-    (void) HT_Insert_Obj(st->syms, n->text, n->length,
-      (void *) & s_stuff, sizeof(s_stuff));
-    if ( ! HT_Find(st->syms, n->text, n->length, & hi) ) {
-      MSG_ERROR("Hashtable seems not to work (from VM_Sym_Add)");
-      return Failed;
-
-    } else {
-      VMSym s;
-      s.is_definition = 1;
-      s.id = s_stuff.def;
-      TASK( Arr_Push(st->defs, & s) );
-      return Success;
-    }
-  }
-}
-
-#if 0
-  if ( s->is_definition ) {
-    VMSymStuff *s_stuff = (VMSymStuff *) hi->object;
-    VMSym *s_in;
-    if (s_stuff->def < 1) {
-      MSG_ERROR("Double definition of the symbol '%s'",
-       Name_To_Str(& s->name));
-      return Failed;
-    }
-    TASK( Arr_Push(st->defs, s) );
-    s_in = Arr_LastItemPtr(st->defs, VMSym);
-    s_in->name.length = 0;
-    s_stuff->def = Arr_NumItems(st->defs);
-    return Success;
-#endif
-
-
-
-
-
-
-
-void VM_Sym_Procedure(VMSym *s, Name *name, int sheet) {
-  assert(s != (VMSym *) NULL);
-  assert(sheet >= 0);
-  s->is_definition = (sheet > 0);
-  s->name = *name;
-  s->type = VMSYM_PROCEDURE;
-  s->value.def_procedure = sheet;
-}
-
-void VM_Sym_Reference(VMSym *s, int sheet, int position, int length) {
-  assert(s != (VMSym *) NULL);
-  assert(!s->is_definition);
-  s->value.ref.sheet = sheet;
-  s->value.ref.position = position;
-  s->value.ref.length = length;
-}
-
-Task VM_Sym_Add(VMProgram *vmp, VMSym *s) {
-  assert(vmp != (VMProgram *) NULL);
-  VMSymTable *st = & vmp->sym_table;
-  HashItem *hi;
-
-  /* If the name of the symbol is not present in the hash table,
-   * we insert it: this has to be done anyway!
-   */
-  if ( ! HT_Find(st->syms, s->name.text, s->name.length, & hi) ) {
-    VMSymStuff s_stuff;
-#ifdef DEBUG
-    printf("VM_Sym_Add: Inserting new symbol '%s'\n", Name_To_Str(& s->name));
-#endif
-    s_stuff.def = -1;
-    s_stuff.ref = -1;
-    (void) HT_Insert_Obj(st->syms, s->name.text, s->name.length,
-      (void *) & s_stuff, sizeof(s_stuff));
-    if ( ! HT_Find(st->syms, s->name.text, s->name.length, & hi) ) {
-      MSG_ERROR("Hashtable seems not to work (from VM_Sym_Add)");
-      return Failed;
-    }
-  }
-
-  if ( s->is_definition ) {
-    VMSymStuff *s_stuff = (VMSymStuff *) hi->object;
-    VMSym *s_in;
-    if (s_stuff->def < 1) {
-      MSG_ERROR("Double definition of the symbol '%s'",
-       Name_To_Str(& s->name));
-      return Failed;
-    }
-    TASK( Arr_Push(st->defs, s) );
-    s_in = Arr_LastItemPtr(st->defs, VMSym);
-    s_in->name.length = 0;
-    s_stuff->def = Arr_NumItems(st->defs);
-    return Success;
-
-  } else {
-    VMSymStuff *s_stuff = (VMSymStuff *) hi->object;
-    VMSym *s_in;
-    TASK( Arr_Push(st->refs, s) );
-    s_in = Arr_LastItemPtr(st->refs, VMSym);
-    s_in->next = s_stuff->ref;
-    s_stuff->ref = Arr_NumItems(st->refs);
-    s_in->name.length = 0;
-    return Success;
-  }
-}
-
-Task VM_Sym_Link(VMProgram *vmp) {
-  assert(vmp != (VMProgram *) NULL);
+  VMSym *s;
+  s = Arr_ItemPtr(st->defs, VMSym, sym_num);
+  if ( s->sym_type == sym_type ) return Success;
   return Failed;
 }
-
-#if 0
-/* Reference definition */
-VMSym s;
-VM_Sym_Procedure(& s, "my_procedure", 0);
-VM_Sym_Reference(& s, 1, 10, 2);
-
-/* Procedure definition */
-VMSym s;
-VM_Sym_Procedure(& s, "my_procedure", 1);
-
-
-
-
-
-
-#endif
-
-

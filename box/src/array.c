@@ -235,28 +235,24 @@ Task Arr_Push(Array *a, void *elem) {
   }
 }
 
-/* Inserisce piu' elementi in coda nell'array,
- * preoccupandosi di reallocare la memoria se necessario.
- * Restituisce 1 solo in caso di successo.
- */
 Task Arr_MPush(Array *a, void *elem, UInt numel) {
   MSG_LOCATION("Arr_MPush");
-  if (numel < 1) {
-    MSG_ERROR("Parametri errati");
-    return Failed;
-  }
-
   if (a->ID == ARR_ID) {
     void *tptr;
-    UInt tpos = a->numel * a->elsize;
+    UInt tpos;
 
+    if (numel < 1) return Success;
+    tpos = a->numel * a->elsize;
     a->numel += numel;
 
     /* Controlla che l'array non debba essere allargata */
     ARRAY_EXPAND(a, a->numel);
 
     tptr = a->ptr + tpos;
-    memcpy(tptr, elem, numel * a->elsize);
+    if (elem != NULL)
+      memcpy(tptr, elem, numel * a->elsize);
+    else
+      (void) memset(tptr, 0, numel * a->elsize);
     return Success;
 
   } else {
