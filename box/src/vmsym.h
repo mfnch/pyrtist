@@ -36,7 +36,7 @@
 #  include "types.h"
 #  include "array.h"
 #  include "hashtable.h"
-
+#  include "vmcommon.h"
 
 /** @brief The table of reference and definition for the Box VM.
  *
@@ -58,8 +58,8 @@ typedef struct {
  * and the size of the definition data (which are allocated when the symbol
  * is created with VM_sym_New).
  */
-typedef Task (*VMSymResolver)(UInt sym_num, UInt sym_type, int defined,
- int resolving, void *def, UInt def_size, void *ref, UInt ref_size);
+typedef Task (*VMSymResolver)(VMProgram *vmp, UInt sym_num, UInt sym_type,
+ int defined, void *def, UInt def_size, void *ref, UInt ref_size);
 
 /** @brief The details about a symbol.
  */
@@ -80,18 +80,19 @@ typedef struct {
   UInt next; /**< ID-number of the next reference to the same symbol */
   UInt ref_size; /**< Size of the data containing the symbol reference */
   UInt ref_addr;  /**< Address of the data in the array 'data' */
+  int resolved; /**< Has the reference been resolved? */
 } VMSymRef;
 
-/** @brief The details about a symbol.
- */
+/* Data types used by the VM_Sym_Code_* functions */
+typedef Task (*VMSymCodeGen)(VMProgram *vmp, UInt sym_num, UInt sym_type,
+ int defined, void *def, UInt def_size, void *ref, UInt ref_size);
+
 typedef struct {
-  char *name; /**< The string containing the name of the symbol */
-  int defined; /**< Has a definition been given for the symbol? */
-  UInt def_size; /**< Size of the data containing the symbol definition */
-  UInt def_addr; /**< Address of the data in the array 'data' */
-  UInt sym_type; /**< Type of the symbol */
-  UInt sym_num; /**< ID-number assigned to the symbol */
-} VMSymStuff;
+  UInt proc_num;
+  UInt pos;
+  UInt size;
+  VMSymCodeGen code_gen;
+} VMSymCodeRef;
 
 #endif
 
@@ -122,7 +123,7 @@ Task VM_Sym_Def(VMProgram *vmp, UInt sym_num, void *def);
 Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, void *ref, UInt ref_size);
 
 /** Set the symbol resolver */
-Task VM_Sym_Resolver_Set(VMProgram *vmp, VMSymResolver resolver);
+Task VM_Sym_Resolver_Set(VMProgram *vmp, UInt sym_num, VMSymResolver r);
 
 /** Resolve the symbol 'sym_num'.
  * If sym_num=0, then try to resolve all the symbols.
@@ -134,36 +135,13 @@ const char *VM_Sym_Name_Get(VMProgram *vmp, UInt sym_num);
 /** Check that the type of the symbol 'sym_num' is 'sym_type'. */
 Task VM_Sym_Check_Type(VMProgram *vmp, UInt sym_num, UInt sym_type);
 
-#    if 0
-/** Create a symbol for a new reference or for the definition of a procedure.
- * @param s the VMSym structure which will be filled to represent
- *  the reference or the definition of the procedure;
- * @param name the name of the procedure;
- * @param sheet this parameter is zero for a reference to the procedure
- *  and is greater than zero for its definition. In this latter case
- *  it is the number of the sheet which contains the code of the procedure.
+/** Creates a new symbol whose references imply code generation.
  */
-void VM_Sym_Procedure(VMSym *s, Name *name, int sheet);
+Task VM_Sym_Code_New(VMProgram *vmp, UInt *sym_num, Name *n,
+ UInt sym_type, UInt def_size);
 
-/** Specify the code which makes the reference.
- * @param s the referenced symbol;
- * @param sheet sheet which contains the code which makes the reference.
- * @param position position of the code which makes the reference.
- * @param length size of the code which makes the reference.
- */
-void VM_Sym_Reference(VMSym *s, int sheet, int position, int length);
+Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen);
 
-/** Add a new reference/definition to the VM-program reference list.
- *  @param vmp is the VM-program.
- *  @param s is the reference or definition.
- *  @see VM_Reference_Def()
- */
-Task VM_Sym_Add(VMProgram *vmp, VMSym *s);
-
-/** Resolve all the references in the bytecode compiled program.
- * @param vmp is the VM-program.
- */
-Task VM_Sym_Link(VMProgram *vmp);
-#    endif
+Task VM_Sym_Code_Def(VMProgram *vmp, UInt sym_num, void *def);
 #  endif
 #endif

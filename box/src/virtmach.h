@@ -34,6 +34,8 @@
 #include "array.h"
 #include "collection.h"
 
+#include "vmcommon.h"
+
 #define _INSIDE_VIRTMACH_H
 #include "vmproc.h"
 #include "vmsym.h"
@@ -122,9 +124,6 @@ typedef enum {
 /* Numero massimo degli argomenti di un'istruzione */
 #define VM_MAX_NUMARGS 2
 
-struct __vmprogram;
-struct __vmstatus;
-
 /* Enumerazione dei tipi di moduli */
 typedef enum {
   MODULE_IS_VM_CODE,
@@ -140,7 +139,7 @@ typedef union {
     Intg dim;
     void *code;
   } vm;
-  Task (*c_func)(struct __vmprogram *);
+  Task (*c_func)(VMProgram *);
 } VMModulePtr;
 
 typedef struct {
@@ -158,10 +157,10 @@ typedef struct {
   UInt numargs;                 /* Numero di argomenti dell'istruzione */
   TypeID t_id;                  /* Numero che identifica il tipo
                                    degli argomenti (interi, reali, ...) */
-  void (*get_args)(struct __vmstatus *); /* Per trattare gli argomenti */
-  void (*execute)(struct __vmprogram *); /* Per eseguire l'istruzione */
+  void (*get_args)(VMStatus *); /* Per trattare gli argomenti */
+  void (*execute)(VMProgram *); /* Per eseguire l'istruzione */
   /* Per disassemblare gli argomenti */
-  void (*disasm)(struct __vmprogram *, char **);
+  void (*disasm)(VMProgram *, char **);
 } VMInstrDesc;
 
 /** This structure contains all the data which define the status for the VM.
@@ -198,6 +197,7 @@ struct __vmstatus {
   Intg alc[NUM_TYPES];
 };
 
+#undef VMStatus
 typedef struct __vmstatus VMStatus;
 
 /* Tipo che serve a gestire la scrittura di codice per la VM */
@@ -254,6 +254,11 @@ struct __vmprogram {
   VMStatus *vmcur;
 };
 
+/* VMProgram was set by 'vmcommon.h' as a macro which expanded to
+ * "struct __vmprogram". Here we undefine this macro and we define
+ * a corresponding typedef
+ */
+#undef VMProgram
 typedef struct __vmprogram VMProgram;
 
 extern VMInstrDesc vm_instr_desc_table[];

@@ -29,6 +29,7 @@
 #include "messages.h"
 #include "virtmach.h"
 #include "vmsym.h"
+#include "vmproc.h"
 
 Task VM_Sym_Init(VMProgram *vmp) {
   assert(vmp != (VMProgram *) NULL);
@@ -70,6 +71,7 @@ Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, Name *n,
     ss.def_size = def_size;
     ss.def_addr = Arr_NumItem(st->data);
     ss.first_ref = 0;
+    ss.resolver = (VMSymResolver) NULL;
     TASK( Arr_Push(st->defs, & ss) );
     *sym_num = Arr_NumItem(st->defs);
 
@@ -115,6 +117,7 @@ Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, void *ref, UInt ref_size) {
   sr.next = s->first_ref;
   sr.ref_size = ref_size;
   sr.ref_addr = Arr_NumItem(st->data);
+  sr.resolved = 0;
   /* Copy the data for the reference */
   TASK( Arr_Append_Blank(st->data, ref_size) );
   ref_data_ptr = (void *) Arr_ItemPtr(st->data, Char, sr.ref_addr);
@@ -126,8 +129,13 @@ Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, void *ref, UInt ref_size) {
   return Success;
 }
 
-Task VM_Sym_Resolver_Set(VMProgram *vmp, VMSymResolver resolver) {
-  MSG_ERROR("%s (%d): still not implemented!", __FILE__, __LINE__); return Failed;
+Task VM_Sym_Resolver_Set(VMProgram *vmp, UInt sym_num, VMSymResolver r) {
+  VMSymTable *st = & vmp->sym_table;
+  VMSym *s;
+
+  s = Arr_ItemPtr(st->defs, VMSym, sym_num);
+  s->resolver = r;
+  return Success;
 }
 
 Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
@@ -168,7 +176,10 @@ Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
 
     ref = (void *) Arr_ItemPtr(st->data, Char, sr->ref_addr);
     ref_size = sr->ref_addr;
-    TASK( r(sym_num, sym_type, defined, 1, def, def_size, ref, ref_size) );
+    if (!sr->resolved) {
+      TASK( r(vmp, sym_num, sym_type, defined, def, def_size, ref, ref_size) );
+      sr->resolved = 1;
+    }
 
     next = sr->next;
   }
@@ -189,3 +200,65 @@ Task VM_Sym_Check_Type(VMProgram *vmp, UInt sym_num, UInt sym_type) {
   if ( s->sym_type == sym_type ) return Success;
   return Failed;
 }
+
+/****************************************************************************/
+
+#if 1
+Task VM_Sym_Code_New(VMProgram *vmp, UInt *sym_num, Name *n,
+ UInt sym_type, UInt def_size) {
+  TASK( VM_Sym_New(vmp, sym_num, n, sym_type, def_size) );
+  return Failed;
+}
+
+
+static Task code_generator(VMProgram *vmp, UInt sym_num, UInt sym_type,
+ int defined, int resolving, void *def, UInt def_size,
+ void *ref, UInt ref_size) {
+  VMSymTable *st = & vmp->sym_table;
+  VMSymCodeRef *ref_head = (VMSymCodeRef *) ref;
+  void *ref_tail = ref + sizeof(VMSymCodeRef);
+  UInt ref_tail_size = ref_size - sizeof(VMSymCodeRef);
+  VMProcTable *pt = & vmp->proc_table;
+  VMProc *tmp_proc;
+  UInt saved_proc_num;
+
+  saved_proc_num = VM_Proc_Target_Get(vmp);
+  TASK( VM_Proc_Empty(vmp, pt->tmp_proc) );
+  TASK( VM_Proc_Target_Set(vmp, pt->tmp_proc) );
+  tmp_proc = pt->target_proc;
+  /* Call the procedure here! */
+  TASK( ref_head->code_gen(vmp, sym_num, sym_type, defined,
+    def, def_size, ref_tail, ref_tail_size) );
+  TASK( VM_Proc_Target_Set(vmp, ref_head->proc_num) );
+  /* Replace the referencing code with the generated code */
+  {
+    void *src = Arr_FirstItemPtr(tmp_proc->code, void);
+    int src_size = Arr_NumItem(tmp_proc->code);
+    Array *dest =  pt->target_proc->code; /* Destination sheet */
+    int dest_pos = ref_head->pos + 1; /* NEED TO ADD 1 */
+    if (src_size != ref_head->size) {
+      MSG_ERROR("vmsym.c, code_generator: The code for the resolved "
+        "reference does not match the space which was reserved for it!");
+      return Failed;
+    }
+    TASK(Arr_Overwrite(dest, dest_pos, src, src_size));
+  }
+  TASK( VM_Proc_Target_Set(vmp, saved_proc_num) );
+  return Success;
+}
+
+
+
+
+
+
+Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen) {
+
+}
+
+Task VM_Sym_Code_Def(VMProgram *vmp, UInt sym_num, void *def) {
+
+}
+
+#endif
+

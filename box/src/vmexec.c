@@ -28,8 +28,8 @@
 #include <string.h>
 #include <math.h>
 
-#include "virtmach.h"
 #include "messages.h"
+#include "virtmach.h"
 
 static void VM__Exec_Ret(VMProgram *vmp) {vmp->vmcur->flags.exit = 1;}
 
