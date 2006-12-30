@@ -116,6 +116,14 @@ void VM_Sym_Destroy(VMProgram *vmp);
 Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, Name *n,
  UInt sym_type, UInt def_size);
 
+/** Rename a symbol, given its old name.
+ */
+Task VM_Sym_Rename_From_Old(VMProgram *vmp, Name *old_name, Name *new_name);
+
+/** Rename a symbol, given its ID number.
+ */
+Task VM_Sym_Rename(VMProgram *vmp, UInt sym_num, Name *new_name);
+
 /** Define a symbol which was previously created with VM_sym_New */
 Task VM_Sym_Def(VMProgram *vmp, UInt sym_num, void *def);
 
@@ -135,13 +143,16 @@ const char *VM_Sym_Name_Get(VMProgram *vmp, UInt sym_num);
 /** Check that the type of the symbol 'sym_num' is 'sym_type'. */
 Task VM_Sym_Check_Type(VMProgram *vmp, UInt sym_num, UInt sym_type);
 
-/** Creates a new symbol whose references imply code generation.
+/** This function calls the function given as argument 'VM_Sym_Code_Ref'
+ * to assemble a piece of VM-code which makes reference to the symbol
+ * 'sym_num'. The reference will be resolved calling again 'code_gen'
+ * once the symbol has been defined.
+ * The function 'code_gen' assembles parametrically a piece of VM byte-code.
  */
-Task VM_Sym_Code_New(VMProgram *vmp, UInt *sym_num, Name *n,
- UInt sym_type, UInt def_size);
-
 Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen);
 
-Task VM_Sym_Code_Def(VMProgram *vmp, UInt sym_num, void *def);
+#  define VM_Sym_Code_New VM_Sym_New
+#  define VM_Sym_Code_Def VM_Sym_Def
+
 #  endif
 #endif

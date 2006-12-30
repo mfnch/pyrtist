@@ -175,6 +175,42 @@ int HT_Add(
   return 1;
 }
 
+Task HT_Remove(Hashtable *ht, void *key, unsigned int key_size) {
+  HashItem **hi_ptr, *hi;
+  unsigned int branch = ht->mask & ht->hash(key, key_size);
+  hi_ptr = & ht->item[branch];
+  while( (hi = *hi_ptr) != (HashItem *) NULL ) {
+    if ( ht->cmp(hi->key, key, hi->key_size, key_size) ) {
+      *hi_ptr = hi->next;
+      if ( hi->allocated.key ) free(hi->key);
+      if ( hi->allocated.obj ) free(hi->object);
+      free(hi);
+      return Success;
+    }
+    hi_ptr = & hi->next;
+  }
+  return Failed;
+}
+
+Task HT_Rename(Hashtable *ht, void *key, unsigned int key_size,
+ void *new_key, unsigned int new_key_size) {
+  HashItem *item;
+  void *object;
+  unsigned int object_size, allocated_obj;
+  TASK( HT_Find(ht, key, key_size, & item) );
+  object = item->object;
+  object_size = item->object_size;
+  allocated_obj = item->allocated.obj;
+  item->allocated.obj = 0;
+  TASK( HT_Remove(ht, key, key_size) );
+  TASK( HT_Insert(ht, new_key, new_key_size) );
+  TASK( HT_Find(ht, new_key, new_key_size, & item) );
+  item->object = object;
+  item->object_size = object_size;
+  item->allocated.obj = allocated_obj;
+  return Success;
+}
+
 void HT_Copy_Key(Hashtable *ht, int bool) {
   ht->settings.copy_keys = bool;
 }

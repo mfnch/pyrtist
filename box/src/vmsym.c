@@ -87,6 +87,18 @@ Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, Name *n,
   }
 }
 
+Task VM_Sym_Rename_From_Old(VMProgram *vmp, Name *old_name, Name *new_name) {
+  VMSymTable *st = & vmp->sym_table;
+  return HT_Rename(st->syms, old_name->text, old_name->length,
+   new_name->text, new_name->length);
+}
+
+Task VM_Sym_Rename(VMProgram *vmp, UInt sym_num, Name *new_name) {
+  char *name_text = (char *) VM_Sym_Name_Get(vmp, sym_num);
+  Name old_name = {strlen(name_text), name_text};
+  return VM_Sym_Rename_From_Old(vmp, & old_name, new_name);
+}
+
 Task VM_Sym_Def(VMProgram *vmp, UInt sym_num, void *def) {
   VMSymTable *st = & vmp->sym_table;
   VMSym *s;
@@ -203,18 +215,8 @@ Task VM_Sym_Check_Type(VMProgram *vmp, UInt sym_num, UInt sym_type) {
 
 /****************************************************************************/
 
-#if 1
-Task VM_Sym_Code_New(VMProgram *vmp, UInt *sym_num, Name *n,
- UInt sym_type, UInt def_size) {
-  TASK( VM_Sym_New(vmp, sym_num, n, sym_type, def_size) );
-  return Failed;
-}
-
-
 static Task code_generator(VMProgram *vmp, UInt sym_num, UInt sym_type,
- int defined, int resolving, void *def, UInt def_size,
- void *ref, UInt ref_size) {
-  VMSymTable *st = & vmp->sym_table;
+ int defined, void *def, UInt def_size, void *ref, UInt ref_size) {
   VMSymCodeRef *ref_head = (VMSymCodeRef *) ref;
   void *ref_tail = ref + sizeof(VMSymCodeRef);
   UInt ref_tail_size = ref_size - sizeof(VMSymCodeRef);
@@ -247,18 +249,31 @@ static Task code_generator(VMProgram *vmp, UInt sym_num, UInt sym_type,
   return Success;
 }
 
-
-
-
-
-
 Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen) {
+  VMSymTable *st = & vmp->sym_table;
+  VMSym *s;
+  void *def;
+  VMProcTable *pt = & vmp->proc_table;
+  VMSymCodeRef ref_data;
 
+  s = Arr_ItemPtr(st->defs, VMSym, sym_num);
+  def = (void *) Arr_ItemPtr(st->data, Char, s->def_addr);
+  ref_data.code_gen = code_gen;
+  ref_data.proc_num = pt->target_proc_num;
+  ref_data.pos = Arr_NumItem(pt->target_proc->code);
+  TASK( code_gen(vmp, sym_num, s->sym_type, s->defined, def, s->def_size, NULL, 0) );
+  if (pt->target_proc_num != ref_data.proc_num) {
+    MSG_ERROR("VM_Sym_Code_Ref: the function 'code_gen' must not change "
+     "the current target for compilation!");
+  }
+  ref_data.size = Arr_NumItem(pt->target_proc->code) - ref_data.pos;
+  TASK( VM_Sym_Ref(vmp, sym_num, & ref_data, sizeof(VMSymCodeRef)) );
+  TASK( VM_Sym_Resolver_Set(vmp, sym_num, code_generator) );
+  return Success;
 }
 
-Task VM_Sym_Code_Def(VMProgram *vmp, UInt sym_num, void *def) {
+#if 0
+/* Usage for the VM_Sym_Code_Ref function */
 
-}
 
 #endif
-

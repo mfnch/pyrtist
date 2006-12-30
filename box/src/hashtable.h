@@ -46,7 +46,7 @@ typedef struct ht {
   unsigned int key_size, object_size;
 } HashItem;
 
-/** Hast table object */
+/** Hash table object */
 typedef struct {
   /** Size of the hash table, should be a power of 2 */
   int num_entries;
@@ -105,6 +105,19 @@ void HT_Destructor(Hashtable *ht, Task (*destroy)(HashItem *));
  */
 int HT_Add(Hashtable *ht, unsigned int branch, void *key,
  unsigned int key_size, void *object, unsigned int object_size);
+
+/** Remove the element matching the given key from the hash-table.
+ */
+Task HT_Remove(Hashtable *ht, void *key, unsigned int key_size);
+
+/** Rename the key keeping the old associated object:
+ * The couple (old_key, old_object) is deleted and the new couple
+ * (new_key, old_object) is inserted.
+ * This function may be used to avoid deleting the data contained
+ * in old_object.
+ */
+Task HT_Rename(Hashtable *ht, void *key, unsigned int key_size,
+ void *new_key, unsigned int new_key_size);
 
 /** Iterate over one branch of an hashtable 'ht'.
  *
