@@ -227,13 +227,6 @@ struct __vmprogram {
   VMSymTable sym_table; /**< Table of referenced and defined symbols */
   VMProcTable proc_table; /**< Table of installed and uninstalled procedures*/
 
-#if 0
-  Collection *sheets;     /**< Collection of uninstalled sheets */
-  VMSheet *current_sheet; /**< Pointer and ID of the current actived sheet */
-  int current_sheet_id, jmp_sheet_id;
-  Array *vm_modules_list; /**< Array of installed modules */
-#endif
-
   Collection *labels;     /**< Collection of the labels */
   Collection *references; /**< References to these labels */
 

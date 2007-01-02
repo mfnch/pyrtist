@@ -153,6 +153,6 @@ Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen);
 
 #  define VM_Sym_Code_New VM_Sym_New
 #  define VM_Sym_Code_Def VM_Sym_Def
-
+#  define VM_Sym_Resolve_All(vmp) VM_Sym_Resolve(vmp, 0)
 #  endif
 #endif

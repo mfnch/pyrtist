@@ -60,10 +60,13 @@ typedef struct {
     /** Structure containing the details about the VM code,
      * which implements the procedure.
      */
+    UInt proc_num; /**> Number of the procedure which contains the code */
+#if 0
     struct {
       UInt size; /**< Number of VMByteX4 in the code */
       void *ptr; /**< Pointer to the code */
     } vm;
+#endif
   } code;
 } VMProcInstalled;
 

@@ -38,7 +38,6 @@ static Task Installed_Procedure_Destroy(void *s) {
   VMProcInstalled *p = (VMProcInstalled *) s;
   free(p->name);
   free(p->desc);
-  if (p->type == VMPROC_IS_VM_CODE) free( p->code.vm.ptr );
   return Success;
 }
 
@@ -116,16 +115,18 @@ Task VM_Proc_Install_Code(VMProgram *vmp, UInt *call_num,
                           UInt proc_num, const char *name,
                           const char *desc) {
   VMProcTable *pt = & vmp->proc_table;
-  void *procedure, *code_ptr;
   VMProcInstalled procedure_inst;
 
   procedure_inst.type = VMPROC_IS_VM_CODE;
   procedure_inst.name = strdup(name);
   procedure_inst.desc = strdup(desc);
+  procedure_inst.code.proc_num = proc_num;
+#if 0
   TASK( Clc_Object_Ptr(pt->uninstalled, & procedure, proc_num) );
   procedure_inst.code.vm.size = Arr_NumItem(((VMProc *) procedure)->code);;
   TASK( Arr_Data_Only(((VMProc *) procedure)->code, & code_ptr) );
   procedure_inst.code.vm.ptr = code_ptr;
+#endif
 
   *call_num = Arr_NumItem(pt->installed) + 1;
   TASK( Arr_Push(pt->installed, & procedure_inst) );
@@ -206,7 +207,7 @@ Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, UInt call_num)
 
   if (p->type == VMPROC_IS_VM_CODE) {
 /*   if ( print_code ) */
-    return VM_Disassemble(vmp, out, p->code.vm.ptr, p->code.vm.size);
+    return VM_Proc_Disassemble(vmp, out, p->code.proc_num);
   }
   return Success;
 }

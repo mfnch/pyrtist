@@ -756,8 +756,11 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
     }
   }
 
+
   vm.p = p;
-  vm.i_pos = i_pos = (VMByteX4 *) p->code.vm.ptr;
+  TASK( VM_Proc_Ptr_And_Length(vmp, & vm.i_pos,
+   (UInt *) NULL, p->code.proc_num) );
+  i_pos = vm.i_pos;
   vm.flags.exit = vm.flags.error = 0;
   {register int i; for(i = 0; i < NUM_TYPES; i++) vm.alc[i] = 0;}
 

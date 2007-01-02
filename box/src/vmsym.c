@@ -273,7 +273,48 @@ Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen) {
 }
 
 #if 0
-/* Usage for the VM_Sym_Code_Ref function */
+/* Usage for the function 'VM_Sym_Code_Ref' */
 
+#  define CALL_TYPE 1
 
+/* This is the function which assembles the code for the function call */
+Task Assemble_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
+ int defined, void *def, UInt def_size, void *ref, UInt ref_size) {
+  UInt call_num = 0;
+  assert(sym_type == CALL_TYPE);
+  if (defined && def != NULL) {
+    assert(def_size=sizeof(UInt));
+    call_num = *((UInt *) def);
+  }
+  VM_Assemble(vmp, ASM_CALL_I, CAT_IMM, call_num);
+}
+
+int main(void) {
+  UInt sym_num;
+  VMProgram *vmp;
+  /* Initialization of the VM goes here
+   ...
+   ...
+   */
+
+  /* Here we define that a symbol with name "my_proc" and type call_type=1 */
+  (void) VM_Sym_New(vmp, & sym_num, NAME("my_proc"), CALL_TYPE, sizeof(UInt));
+  /* Here we make a reference to it: at this point the assembled code for
+   * "call 0" will be added to the current target procedure.
+   * 0 is wrong, but we don't know what is the right number, because
+   * the symbol is still not defined.
+   */
+  (void) VM_Sym_Code_Ref(vmp, sym_num, Assemble_Call);
+  /* Here we define the symbol "my_proc" to be (UInt) 123.
+   * Now we know that all the "call" instruction referencing
+   * the symbol "my_proc" should be assembled with "call 123"
+   */
+  (void) VM_Sym_Def(vmp, & ((UInt) 123), sizeof(UInt));
+  /* We can now resolve all the past references which were made when
+   * we were not aware of the real value of "my_proc".
+   * The code "call 0" will be replaced with "call 123"
+   */
+  (void) VM_Sym_Resolve_All(vmp);
+  return 0;
+}
 #endif
