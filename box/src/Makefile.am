@@ -34,11 +34,12 @@ bin_PROGRAMS = box
 noinst_HEADERS = defaults.h types.h str.h messages.h debug.h \
   array.h collection.h registers.h virtmach.h \
   tokenizer.h parserh.h compiler.h builtins.h \
-  hashfunc.h hashtable.h vmproc.h vmsym.h vmcommon.h
+  hashfunc.h hashtable.h vmproc.h vmsym.h vmcommon.h \
+  vmsymstuff.h
 
 box_SOURCES = str.c messages.c array.c collection.c \
   virtmach.c vmexec.c vmproc.c vmsym.c \
   symbols.c tokenizer.l parser.y registers.c typeman.c compiler.c \
-  builtins.c main.c hashfunc.c hashtable.c
+  builtins.c main.c hashfunc.c hashtable.c vmsymstuff.c
 
 EXTRA_DIST = structure.c

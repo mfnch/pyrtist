@@ -131,8 +131,9 @@ UInt VM_Proc_Install_Number(VMProgram *vmp);
 /** Install the procedure 'proc_num' and assign to it the number 'call_num'.
  * After this function has been executed, the VM will recognize the instruction
  * 'call call_num' as a call to the code contained inside 'proc_num'.
- * The procedure 'proc_num' will be empty, but not destroyed (it will still be
- * inside the collection of uninstalled procedures).
+ * The procedure 'proc_num' is untouched it still exists and can be modified
+ * (this is necessary for symbol resolution: a procedure can be installed
+ * even if it references are still undefined).
  */
 Task VM_Proc_Install_Code(VMProgram *vmp, UInt *call_num,
                           UInt proc_num, const char *name,

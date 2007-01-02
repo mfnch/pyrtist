@@ -287,6 +287,7 @@ Task Assemble_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
     call_num = *((UInt *) def);
   }
   VM_Assemble(vmp, ASM_CALL_I, CAT_IMM, call_num);
+  return Success;
 }
 
 int main(void) {
@@ -309,7 +310,7 @@ int main(void) {
    * Now we know that all the "call" instruction referencing
    * the symbol "my_proc" should be assembled with "call 123"
    */
-  (void) VM_Sym_Def(vmp, & ((UInt) 123), sizeof(UInt));
+  (void) VM_Sym_Def(vmp, sym_num, & ((UInt) 123));
   /* We can now resolve all the past references which were made when
    * we were not aware of the real value of "my_proc".
    * The code "call 0" will be replaced with "call 123"
