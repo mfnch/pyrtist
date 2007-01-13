@@ -17,7 +17,7 @@ Task Str_ToIntg(char *s, UInt l, Intg *i);
 Task Str_ToReal(char *s, UInt l, Real *r);
 char *Str_ToString(char *s, Intg l, Intg *new_length);
 Name *Name_Empty(void);
-const char *Name_To_Str(Name *n);
+const char *Name_Str(Name *n);
 void Name_Free(Name *n);
 Name *Name_Dup(Name *n);
 Task Name_Cat(Name *nm, Name *nm1, Name *nm2, int free_args);

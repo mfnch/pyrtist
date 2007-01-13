@@ -541,7 +541,7 @@ Task Prs_Member_To_Expr(Name *nm, Expression *e, Intg suffix) {
 
   if IS_FAILED( Sym_Implicit_Find(& s, b->type, nm) ) {
     MSG_ERROR("'%s' non e' membro di '%s'.",
-     Name_To_Str(nm), Tym_Type_Name(b->type));
+     Name_Str(nm), Tym_Type_Name(b->type));
     return Failed;
   }
 
@@ -568,7 +568,7 @@ Task Prs_Suffix(Intg *rs, Intg suffix, Name *nm) {
     s = Sym_Explicit_Find(nm, suffix, NO_EXACT_DEPTH);
     if ( s == NULL ) {
       MSG_ERROR( "'%s' <-- tipo astratto inesistente!",
-       Name_To_Str(nm) );
+       Name_Str(nm) );
       return Failed;
     }
 
@@ -576,7 +576,7 @@ Task Prs_Suffix(Intg *rs, Intg suffix, Name *nm) {
     assert( s->value.is.typed );
     if ( s->value.is.value ) {
       MSG_ERROR( "'%s' deve essere un tipo astratto!",
-       Name_To_Str(nm) );
+       Name_Str(nm) );
       return Failed;
     }
 
@@ -585,7 +585,7 @@ Task Prs_Suffix(Intg *rs, Intg suffix, Name *nm) {
       return Success;
 
     MSG_ERROR( "'%s' <-- nessuna box aperta e' di questo tipo!",
-      Name_To_Str(nm) );
+      Name_Str(nm) );
     return Failed;
 
   } else {
@@ -680,7 +680,7 @@ Task Prs_Alias_Of_X(Expression *alias, Expression *x) {
 #define CHECK_TYPE(t)                        \
   if ( ! t->is.typed ) {                     \
      MSG_ERROR("'%s' <-- Tipo non definito", \
-      Name_To_Str(& t->value.nm));           \
+      Name_Str(& t->value.nm));           \
      return Failed;                          \
   }                                          \
   assert(! t->is.value)

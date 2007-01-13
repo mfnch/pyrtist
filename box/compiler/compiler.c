@@ -444,7 +444,7 @@ Task Cmp_Member_Intrinsic(Expression *e, Name *m) {
 
 cmp_memb_intr_err:
   MSG_ERROR( "'%s' non e' un membro del tipo intrinseco '%s'!",
-   Name_To_Str(m), Tym_Type_Name(e->type) );
+   Name_Str(m), Tym_Type_Name(e->type) );
   return Failed;
 }
 
@@ -467,7 +467,7 @@ static Expression *Cmp__Member_Of_Instance(Expression *e, Name *nm) {
   /* Cerco *nm fra i membri del tipo t */
   if IS_FAILED( Sym_Implicit_Find(& s, t, nm) ) {
     MSG_ERROR( "'%s' non e' un membro del tipo '%s'!",
-     Name_To_Str(nm), Tym_Type_Name(t) );
+     Name_Str(nm), Tym_Type_Name(t) );
     return NULL;
   }
 
@@ -511,7 +511,7 @@ Expression *Cmp_Member_Get(Expression *e, Name *nm) {
 
   if ( ! e->is.value ) {
     MSG_ERROR("Richiesta del membro '%s' di un'espressione senza valore!",
-     Name_To_Str(nm));
+     Name_Str(nm));
     return NULL;
   }
 
