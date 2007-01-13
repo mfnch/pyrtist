@@ -41,8 +41,8 @@ static Task Assemble_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
   return Success;
 }
 
-Task VM_Sym_New_Call(VMProgram *vmp, UInt *sym_num, Name *sym_name) {
-  return VM_Sym_New(vmp, sym_num, sym_name, VM_SYM_CALL, sizeof(UInt));
+Task VM_Sym_New_Call(VMProgram *vmp, UInt *sym_num) {
+  return VM_Sym_New(vmp, sym_num, VM_SYM_CALL, sizeof(UInt));
 }
 
 Task VM_Sym_Def_Call(VMProgram *vmp, UInt sym_num, UInt proc_num) {

@@ -51,52 +51,60 @@ void VM_Sym_Destroy(VMProgram *vmp) {
   Arr_Destroy(st->refs);
 }
 
-Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, Name *n,
- UInt sym_type, UInt def_size) {
+Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, UInt sym_type, UInt def_size) {
   VMSymTable *st = & vmp->sym_table;
   HashItem *hi;
+  VMSym ss;
+
+#ifdef DEBUG
+  printf("VM_Sym_New: new symbol '%s'\n", Name_To_Str(n));
+#endif
+  ss.name.length = 0;
+  ss.name.text = (char *) NULL;
+  ss.sym_type = sym_type;
+  ss.defined = 0;
+  ss.def_size = def_size;
+  ss.def_addr = Arr_NumItem(st->data);
+  ss.first_ref = 0;
+  ss.resolver = (VMSymResolver) NULL;
+  TASK( Arr_Push(st->defs, & ss) );
+  *sym_num = Arr_NumItem(st->defs);
+  TASK( Arr_Append_Blank(st->data, def_size) );
+  return Success;
+}
+
+Task VM_Sym_Name_Set(VMProgram *vmp, UInt sym_num, Name *n) {
+  VMSymTable *st = & vmp->sym_table;
+  HashItem *hi;
+  VMSym *s;
+
+  s = Arr_ItemPtr(st->defs, VMSym, sym_num);
+  if (s->name.length != 0) {
+    MSG_ERROR("This symbol has already been given a name!");
+    return Failed;
+  }
 
   if ( HT_Find(st->syms, n->text, n->length, & hi) ) {
-    MSG_ERROR("The symbol '%s' has already been created!", Name_To_Str(n));
-    return Success;
-
-  } else {
-    VMSym ss;
-#ifdef DEBUG
-    printf("VM_Sym_New: new symbol '%s'\n", Name_To_Str(n));
-#endif
-    ss.name = "";
-    ss.sym_type = sym_type;
-    ss.defined = 0;
-    ss.def_size = def_size;
-    ss.def_addr = Arr_NumItem(st->data);
-    ss.first_ref = 0;
-    ss.resolver = (VMSymResolver) NULL;
-    TASK( Arr_Push(st->defs, & ss) );
-    *sym_num = Arr_NumItem(st->defs);
-
-    (void) HT_Insert_Obj(st->syms, n->text, n->length, sym_num, sizeof(UInt));
-    if ( ! HT_Find(st->syms, n->text, n->length, & hi) ) {
-      MSG_ERROR("Hashtable seems not to work (from VM_Sym_Add)");
-      return Failed;
-
-    } else {
-      TASK( Arr_Append_Blank(st->data, def_size) );
-      return Success;
-    }
+    MSG_ERROR("Another symbol exists having the name '%s'!", Name_To_Str(n));
+    return Failed;
   }
+
+  (void) HT_Insert_Obj(st->syms, n->text, n->length, sym_num, sizeof(UInt));
+  if ( ! HT_Find(st->syms, n->text, n->length, & hi) ) {
+    MSG_ERROR("Hashtable seems not to work (from VM_Sym_Add)");
+    return Failed;
+  }
+
+  s->name.text = hi->key;
+  s->name.length = hi->key_size;
+  return Success;
 }
 
-Task VM_Sym_Rename_From_Old(VMProgram *vmp, Name *old_name, Name *new_name) {
+const char *VM_Sym_Name_Get(VMProgram *vmp, UInt sym_num) {
   VMSymTable *st = & vmp->sym_table;
-  return HT_Rename(st->syms, old_name->text, old_name->length,
-   new_name->text, new_name->length);
-}
-
-Task VM_Sym_Rename(VMProgram *vmp, UInt sym_num, Name *new_name) {
-  char *name_text = (char *) VM_Sym_Name_Get(vmp, sym_num);
-  Name old_name = {strlen(name_text), name_text};
-  return VM_Sym_Rename_From_Old(vmp, & old_name, new_name);
+  VMSym *s;
+  s = Arr_ItemPtr(st->defs, VMSym, sym_num);
+  return s->name;
 }
 
 Task VM_Sym_Def(VMProgram *vmp, UInt sym_num, void *def) {
@@ -161,7 +169,7 @@ Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
 
   if (sym_num < 1) {
     UInt i, num_defs = Arr_NumItem(st->defs);
-    for(i=0; i>num_defs; i++) {
+    for(i=1; i<=num_defs; i++) {
       TASK( VM_Sym_Resolve(vmp, i) );
     }
     return Success;
@@ -187,7 +195,7 @@ Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
     }
 
     ref = (void *) Arr_ItemPtr(st->data, Char, sr->ref_addr);
-    ref_size = sr->ref_addr;
+    ref_size = sr->ref_size;
     if (!sr->resolved) {
       TASK( r(vmp, sym_num, sym_type, defined, def, def_size, ref, ref_size) );
       sr->resolved = 1;
@@ -198,11 +206,46 @@ Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
   return Success;
 }
 
-const char *VM_Sym_Name_Get(VMProgram *vmp, UInt sym_num) {
+void VM_Sym_Table_Print(VMProgram *vmp, FILE *out, UInt sym_num) {
   VMSymTable *st = & vmp->sym_table;
   VMSym *s;
+  UInt next, ref_num;
+
+  if (sym_num < 1) {
+    UInt i, num_defs = Arr_NumItem(st->defs);
+    fprintf(out, "The table contains "SUInt" symbols\n", num_defs);
+    for(i=1; i<=num_defs; i++) {
+      VM_Sym_Table_Print(vmp, out, i);
+    }
+    return;
+  }
+
   s = Arr_ItemPtr(st->defs, VMSym, sym_num);
-  return s->name;
+  next = s->first_ref;
+  ref_num = 1;
+
+  fprintf(out,
+   "Symbol ID = "SUInt"; name = '%s'; type = "SUInt"; resolver = %p; "
+   "defined = %d, def_addr = "SUInt", def_size = "SUInt"\n",
+   sym_num, VM_Sym_Name_Get(vmp, sym_num), s->sym_type, s->resolver,
+   s->defined, s->def_addr, s->def_size);
+
+  while(next > 0) {
+    VMSymRef *sr = Arr_ItemPtr(st->refs, VMSymRef, next);
+    if (sr->sym_num != sym_num) {
+      fprintf(out, "Bad reference in the chain!");
+      return;
+    }
+
+    fprintf(out,
+     "  Reference number = "SUInt"; ref_addr = "SUInt"; "
+     "ref_size = "SUInt"; resolved = %d\n",
+     ref_num, sr->ref_addr,
+     sr->ref_size, sr->resolved);
+
+    next = sr->next;
+    ++ref_num;
+  }
 }
 
 Task VM_Sym_Check_Type(VMProgram *vmp, UInt sym_num, UInt sym_type) {

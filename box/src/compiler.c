@@ -26,6 +26,8 @@
 
 #define USE_PRIVILEGED
 
+#define NEW_CALL_SYS
+
 /*#define DEBUG*/
 /* #define DEBUG_CONTAINER_HANDLING */
 /*#define DEBUG_SPECIES_EXPANSION*/
@@ -45,6 +47,7 @@
 #include "virtmach.h"
 #include "vmproc.h"
 #include "vmsym.h"
+#include "vmsymstuff.h"
 #include "registers.h"
 #include "compiler.h"
 #include "builtins.h"
@@ -396,7 +399,11 @@ Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn) {
     TASK( Cmp_Expr_Create(& new_e, type_dest, /* temporary = */ 1) );
     TASK( Cmp_Expr_To_Ptr(& new_e, CAT_GREG, (Intg) 1, 0) );
   /* call conv_func */
+#ifdef NEW_CALL_SYS
+    TASK( VM_Sym_Call(cmp_vm, c_opn->module) );
+#else
     Cmp_Assemble(ASM_CALL_I, CAT_IMM, c_opn->module);
+#endif
     TASK( Cmp_Expr_Destroy_Tmp(e) );
     *e = new_e;
     return Success;
@@ -2037,7 +2044,11 @@ Task Cmp_Procedure(int *found, Expression *e, Intg suffix, int auto_define) {
     if IS_FAILED( Cmp_Expr_To_Ptr(e, CAT_GREG, (Intg) 2, 0) ) goto exit_failed;
   }
 
+#ifdef NEW_CALL_SYS
+  TASK( VM_Sym_Call(cmp_vm, asm_module) );
+#else
   Cmp_Assemble(ASM_CALL_I, CAT_IMM, asm_module);
+#endif
 
 exit_success:
   (void) Cmp_Expr_Destroy_Tmp(e);
@@ -2051,38 +2062,44 @@ exit_failed:
 /*****************************************************************************/
 Task Cmp_Builtin_Proc_Def(Intg procedure, int when_should_call, Intg of_type,
  Task (*C_func)(VMProgram *)) {
+  UInt proc = 0, sym_num, call_num;
   static int builtin_id = 0;
-  char builtin_name[16];
-  /*Intg proc = -1;
-  UInt id;*/
 
+  /* We then create the symbol associated with this name */
+  TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
 
-  /* First we define the name */
-  sprintf(builtin_name, "b%09u", builtin_id);
-  return Success;
-#if 0
-  TASK( VM_Sym_ID_of_Name(cmp_vm, & id, (Name) {10, builtin_name}) );
-
+  /* We tell to the compiler that some procedures are associated with it */
   if ( when_should_call & BOX_CREATION ) {
-    proc = Tym_Def_Procedure(procedure, 0, of_type, id);
+    proc = Tym_Def_Procedure(procedure, 0, of_type, sym_num);
     if ( proc == TYPE_NONE ) return Failed;
   }
 
   if ( when_should_call & BOX_MODIFICATION ) {
-    proc = Tym_Def_Procedure(procedure, 1, of_type, id);
+    proc = Tym_Def_Procedure(procedure, 1, of_type, sym_num);
     if ( proc == TYPE_NONE ) return Failed;
   }
 
+  if (!proc) {
+    MSG_FATAL("Cmp_Def_C_Procedure: Should not happen!");
+    return Failed;
+  }
+
+  /* We finally install the code (a C function) for the procedure */
+  TASK( VM_Proc_Install_CCode(cmp_vm, & call_num, C_func,
+   "(noname)", Tym_Type_Name(proc)) );
+  /* And define the symbol */
+  TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
   builtin_id++;
   return Success;
-#endif
 }
 
 Task Cmp_Def_C_Procedure(Intg procedure, int when_should_call, Intg of_type,
  Task (*C_func)(VMProgram *)) {
   UInt asm_module, proc = 0;
 
-  (void) Cmp_Builtin_Proc_Def(procedure, when_should_call, of_type, C_func);
+#ifdef NEW_CALL_SYS
+  return Cmp_Builtin_Proc_Def(procedure, when_should_call, of_type, C_func);
+#endif
 
   asm_module = VM_Proc_Install_Number(cmp_vm);
 

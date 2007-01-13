@@ -35,6 +35,7 @@
 #include "array.h"
 #include "virtmach.h"
 #include "vmproc.h"
+#include "vmsym.h"
 #include "registers.h"
 #include "compiler.h"
 #include "parserh.h"
@@ -285,7 +286,10 @@ int main(int argc, char** argv) {
   }
 
   /* Fase di esecuzione */
-  if (flags & FLAG_EXECUTE) (void) Main_Execute();
+  if (flags & FLAG_EXECUTE) {
+    VM_Sym_Table_Print(program, stderr, 0);
+    (void) Main_Execute();
+  }
 
 /*
   if ( flag.output ) {

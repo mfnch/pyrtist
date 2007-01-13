@@ -64,7 +64,7 @@ typedef Task (*VMSymResolver)(VMProgram *vmp, UInt sym_num, UInt sym_type,
 /** @brief The details about a symbol.
  */
 typedef struct {
-  char *name; /**< The string containing the name of the symbol */
+  Name name; /**< The name of the symbol */
   int defined; /**< Has a definition been given for the symbol? */
   UInt def_size; /**< Size of the data containing the symbol definition */
   UInt def_addr; /**< Address of the data in the array 'data' */
@@ -113,8 +113,11 @@ void VM_Sym_Destroy(VMProgram *vmp);
 /** Create a new symbol with name 'n' and type 'sym_type'.
  * '*sym_num' is set with the allocated symbol number.
  */
-Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, Name *n,
- UInt sym_type, UInt def_size);
+Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, UInt sym_type, UInt def_size);
+
+/** Associate a name to the symbol sym_num.
+ */
+Task VM_Sym_Name_Set(VMProgram *vmp, UInt sym_num, Name *n);
 
 /** Rename a symbol, given its old name.
  */
@@ -137,6 +140,12 @@ Task VM_Sym_Resolver_Set(VMProgram *vmp, UInt sym_num, VMSymResolver r);
  * If sym_num=0, then try to resolve all the symbols.
  */
 Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num);
+
+/** Print the symbol table for the given symbol. The symbol table is a list
+ * of all the references made to the symbol. If sym_num is zero the references
+ * to all the symbols will be printed. out is the destination.
+ */
+void VM_Sym_Table_Print(VMProgram *vmp, FILE *out, UInt sym_num);
 
 const char *VM_Sym_Name_Get(VMProgram *vmp, UInt sym_num);
 

@@ -32,7 +32,7 @@
 #  define VM_SYM_CALL 1
 #  define VM_SYM_LABEL 2
 
-Task VM_Sym_New_Call(VMProgram *vmp, UInt *sym_num, Name *sym_name);
+Task VM_Sym_New_Call(VMProgram *vmp, UInt *sym_num);
 
 Task VM_Sym_Def_Call(VMProgram *vmp, UInt sym_num, UInt proc_num);
 

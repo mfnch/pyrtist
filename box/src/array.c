@@ -116,6 +116,7 @@ Array *Array_New(UInt elsize, UInt mindim)
 #ifdef DEBUG_ARRAY
   fprintf(stderr, "Array_New, called in '%s' (%d): allocating array at %p\n",
    src, line, a);
+  fflush(stderr);
 #endif
 
   a->ID = ARR_ID;
@@ -154,18 +155,20 @@ void Arr_Destroy(Array *a)
 #endif
 {
   if ( a != NULL) {
+#ifdef DEBUG_ARRAY
+    fprintf(stderr, "Arr_Destroy, called in '%s' (%d): destroying "
+     "array at %p\n", src, line, a);
+    fflush(stderr);
+#endif
     assert(a->ID == ARR_ID);
     /* If a destructor is given, uses it to iterate over all the elements
      * for the last time.
      */
     if ( a->destroy != NULL ) (void) Arr_Iter((Array *) a, a->destroy);
     a->ID = 0; /* Can be useful to detect reference to free-d Array */
+    fprintf(stderr, "a->ptr = %p\n", a->ptr);
     free(a->ptr);
     free(a);
-#ifdef DEBUG_ARRAY
-    fprintf(stderr, "Arr_Destroy, called in '%s' (%d): destroying "
-     "array at %p\n", src, line, a);
-#endif
   }
 }
 
