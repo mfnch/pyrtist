@@ -22,6 +22,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "defaults.h"
 #include "types.h"
@@ -53,11 +54,10 @@ void VM_Sym_Destroy(VMProgram *vmp) {
 
 Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, UInt sym_type, UInt def_size) {
   VMSymTable *st = & vmp->sym_table;
-  HashItem *hi;
   VMSym ss;
 
 #ifdef DEBUG
-  printf("VM_Sym_New: new symbol '%s'\n", Name_To_Str(n));
+  printf("VM_Sym_New: new symbol '%s'\n", Name_Str(n));
 #endif
   ss.name.length = 0;
   ss.name.text = (char *) NULL;
@@ -77,6 +77,7 @@ Task VM_Sym_Name_Set(VMProgram *vmp, UInt sym_num, Name *n) {
   VMSymTable *st = & vmp->sym_table;
   HashItem *hi;
   VMSym *s;
+  char *n_str;
 
   s = Arr_ItemPtr(st->defs, VMSym, sym_num);
   if (s->name.length != 0) {
@@ -85,17 +86,19 @@ Task VM_Sym_Name_Set(VMProgram *vmp, UInt sym_num, Name *n) {
   }
 
   if ( HT_Find(st->syms, n->text, n->length, & hi) ) {
-    MSG_ERROR("Another symbol exists having the name '%s'!", Name_To_Str(n));
+    MSG_ERROR("Another symbol exists having the name '%s'!", Name_Str(n));
     return Failed;
   }
 
-  (void) HT_Insert_Obj(st->syms, n->text, n->length, sym_num, sizeof(UInt));
+  n_str = Name_To_Str(n);
+  (void) HT_Insert_Obj(st->syms, n_str, n->length, & sym_num, sizeof(UInt));
+  free(n_str);
   if ( ! HT_Find(st->syms, n->text, n->length, & hi) ) {
     MSG_ERROR("Hashtable seems not to work (from VM_Sym_Add)");
     return Failed;
   }
 
-  s->name.text = hi->key;
+  s->name.text = (char *) hi->key;
   s->name.length = hi->key_size;
   return Success;
 }
@@ -104,7 +107,7 @@ const char *VM_Sym_Name_Get(VMProgram *vmp, UInt sym_num) {
   VMSymTable *st = & vmp->sym_table;
   VMSym *s;
   s = Arr_ItemPtr(st->defs, VMSym, sym_num);
-  return s->name;
+  return s->name.text;
 }
 
 Task VM_Sym_Def(VMProgram *vmp, UInt sym_num, void *def) {
@@ -210,6 +213,7 @@ void VM_Sym_Table_Print(VMProgram *vmp, FILE *out, UInt sym_num) {
   VMSymTable *st = & vmp->sym_table;
   VMSym *s;
   UInt next, ref_num;
+  char *sym_name;
 
   if (sym_num < 1) {
     UInt i, num_defs = Arr_NumItem(st->defs);
@@ -222,12 +226,13 @@ void VM_Sym_Table_Print(VMProgram *vmp, FILE *out, UInt sym_num) {
 
   s = Arr_ItemPtr(st->defs, VMSym, sym_num);
   next = s->first_ref;
+  sym_name = (s->name.length > 0) ? s->name.text : "";
   ref_num = 1;
 
   fprintf(out,
    "Symbol ID = "SUInt"; name = '%s'; type = "SUInt"; resolver = %p; "
    "defined = %d, def_addr = "SUInt", def_size = "SUInt"\n",
-   sym_num, VM_Sym_Name_Get(vmp, sym_num), s->sym_type, s->resolver,
+   sym_num, sym_name, s->sym_type, s->resolver,
    s->defined, s->def_addr, s->def_size);
 
   while(next > 0) {

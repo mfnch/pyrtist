@@ -256,7 +256,7 @@ static Task Str__ToChar(char *s, Intg l, Intg *f, char *c) {
        case '\'': *c = '\''; return Success;
        case '\"': *c = '\"'; return Success;
        default:
-         MSG_ERROR("'%s' <- Sequenza di escape errata.", Name_To_Str(& nm));
+         MSG_ERROR("'%s' <- Sequenza di escape errata.", Name_Str(& nm));
          return Failed;
       }
     }
@@ -266,19 +266,19 @@ err_empty:
   MSG_ERROR("'' <- Manca il carattere.");
   return Failed;
 err_miss:
-  MSG_ERROR("'%s' <- Sequenza di escape incompleta.", Name_To_Str(& nm));
+  MSG_ERROR("'%s' <- Sequenza di escape incompleta.", Name_Str(& nm));
   return Failed;
 err_hex_digit:
   nm.length = 3;
-  MSG_ERROR("'%s' <- Cifra esadecimale errata.", Name_To_Str(& nm));
+  MSG_ERROR("'%s' <- Cifra esadecimale errata.", Name_Str(& nm));
   return Failed;
 err_oct_digit:
   nm.length = 2;
-  MSG_ERROR("'%s' <- Cifra ottale errata.", Name_To_Str(& nm));
+  MSG_ERROR("'%s' <- Cifra ottale errata.", Name_Str(& nm));
   return Failed;
 err_overflow:
   nm.length = 4;
-  MSG_ERROR("'%s' <- Numero ottale superiore a 255.", Name_To_Str(& nm));
+  MSG_ERROR("'%s' <- Numero ottale superiore a 255.", Name_Str(& nm));
   return Failed;
 }
 
@@ -293,7 +293,7 @@ Task Str_ToChar(char *s, Intg l, char *c) {
     return Success;
   else {
     Name nm = {l, s};
-    MSG_ERROR("'%s' <- Troppi caratteri.", Name_To_Str(& nm));
+    MSG_ERROR("'%s' <- Troppi caratteri.", Name_Str(& nm));
     return Failed;
   }
 }
@@ -394,17 +394,28 @@ Name *Name_Empty(void) {
 /* This function converts the string corresponding to the structure of type
  * Name into a normal C-string (NUL-terminated).
  * The string is allocated by this function, but should not be freed directly
- * by the user. For this purpose call: (void) Name_To_Str((Name) {0, NULL}).
- * After the user calls 'Name_To_Str' he must use the string, before the next
+ * by the user. For this purpose call: (void) Name_Str((Name) {0, NULL}).
+ * After the user calls 'Name_Str' he must use the string, before the next
  * call to this same function is made. For this reason the statement:
- *   printf("Two Name-s: '%s' and '%s'\n", Name_To_Str(nm1), Name_To_Str(nm2));
+ *   printf("Two Name-s: '%s' and '%s'\n", Name_Str(nm1), Name_Str(nm2));
  * I S   W R O N G!!!
  */
-const char *Name_To_Str(Name *n) {
+const char *Name_Str(Name *n) {
   static char *asciiz = NULL;
   free(asciiz);
   if (n->length == 0) return "";
   asciiz = (char *) malloc( n->length + 1 );
+  asciiz[n->length] = '\0';
+  return strncpy(asciiz, n->text, n->length);
+}
+
+/* This function converts the string corresponding to the structure of type
+ * Name into a normal C-string (NUL-terminated).
+ */
+char *Name_To_Str(Name *n) {
+  char *asciiz = NULL;
+  if (n->length == 0) return strdup("");
+  asciiz = (char *) malloc(n->length + 1);
   asciiz[n->length] = '\0';
   return strncpy(asciiz, n->text, n->length);
 }
