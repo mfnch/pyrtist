@@ -34,6 +34,8 @@
 #include "array.h"
 #include "str.h"
 #include "virtmach.h"
+#include "vmsym.h"
+#include "vmsymstuff.h"
 #include "compiler.h"
 #include "tokenizer.h"
 #include "parserh.h"
@@ -46,8 +48,13 @@ ParserAttr parser_attr;
 /* Funzioni definite in questo file */
 void yyerror(char* s);
 
+static Task Declare_Proc(Expr *child_type, Expr *parent_type, Name *name);
+
 /* Numero della linea che e' in fase di lettura dal tokenizer */
 extern UInt tok_linenum;
+
+#define DO(action) \
+  if IS_FAILED( action ) {parser_attr.no_syntax_err = 1; YYERROR;}
 
 #define OPERATORA_EXEC(opr, rs, a, b) \
   if IS_FAILED( Prs_Operator(opr, & (rs), a, b) ) \
@@ -134,6 +141,8 @@ extern UInt tok_linenum;
 %type <Ex> array.expr
 %type <Ex> expr
 %type <Ex> prim.expr
+%type <Ex> parent
+%type <Ex> parent.opt
 %type <Nm> prim.suffix
 %type <Sf> suffix
 %type <Sf> suffix.opt
@@ -397,18 +406,18 @@ exit.statement:
 ;
 
 parent:
-   type
- | type '@' parent
+   type {$$ = $1;}
+ | type '@' parent {$$ = $1;}
 ;
 
 parent.opt:
- | parent
+ | parent {$$ = $1;}
 ;
 
 procedure.statement:
    '@' parent '[' statement.list ']'
  | type '@' parent.opt '[' statement.list ']'
- | type '@' parent.opt '?' TOK_LNAME
+ | type '@' parent.opt '?' TOK_LNAME {DO(Declare_Proc(& $1, & $3, & $5))}
 ;
 
  /*************DEFINIZIONE DELLA STRUTTURA GENERICA DEI PROGRAMMI**************/
@@ -485,6 +494,28 @@ Task Parser_Init(UInt maxinc, char *f) {
 Task Parser_Finish(void) {
   return Success;
 }
+
+
+static Task Declare_Proc(Expr *child_type, Expr *parent_type, Name *name) {
+  UInt sym_num;
+  TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
+  TASK( VM_Sym_Name_Set(cmp_vm, sym_num, name) );
+  TASK( Tym_Def_Procedure(child_type->type, 0, parent_type->type, sym_num) );
+  return Success;
+}
+
+#if 0
+enum {EXPR_TYPE, EXPR_VALUE};
+
+Task Prs_Want(Expression *e, UInt want) {
+  switch(want) {
+  case EXPR_TYPE:
+    break;
+  case EXPR_VALUE:
+    break;
+  }
+}
+#endif
 
 /* This function assigns the expression *e, to the untyped
  * expression *new_e: if *e is a target, *new_e will be a copy of *e,

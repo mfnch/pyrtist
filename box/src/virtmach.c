@@ -378,7 +378,7 @@ void VM__D_CALL(VMProgram *vmp, char **iarg) {
         char *call_name;
         VMProcInstalled *p;
         p = Arr_ItemPtr(pt->installed, VMProcInstalled, call_num);
-        call_name = Str_Cut(p->name, 40, 85);
+        call_name = Str_Cut(p->desc, 40, 85);
         sprintf(vmp->iarg_str[0], SIntg"('%.40s')", call_num, call_name);
         free(call_name);
         return;

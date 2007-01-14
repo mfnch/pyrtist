@@ -2063,7 +2063,6 @@ exit_failed:
 Task Cmp_Builtin_Proc_Def(Intg procedure, int when_should_call, Intg of_type,
  Task (*C_func)(VMProgram *)) {
   UInt proc = 0, sym_num, call_num;
-  static int builtin_id = 0;
 
   /* We then create the symbol associated with this name */
   TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
@@ -2089,7 +2088,6 @@ Task Cmp_Builtin_Proc_Def(Intg procedure, int when_should_call, Intg of_type,
    "(noname)", Tym_Type_Name(proc)) );
   /* And define the symbol */
   TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
-  builtin_id++;
   return Success;
 }
 

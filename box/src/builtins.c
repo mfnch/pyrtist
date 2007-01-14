@@ -14,6 +14,8 @@
 #include "str.h"
 #include "virtmach.h"
 #include "vmproc.h"
+#include "vmsym.h"
+#include "vmsymstuff.h"
 #include "registers.h"
 #include "compiler.h"
 #include "builtins.h"
@@ -431,17 +433,20 @@ static Task Blt_Define_Basics(void) {
    * dovra' fare.
    */
   {
-    UInt m;
+    UInt sym_num, call_num;
     Operation *opn;
 
-    TASK( VM_Proc_Install_CCode(cmp_vm, & m, Conv_2RealNum_to_Point,
-     "conv_2Real_to_Point", "Description...") );
+    TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
+    TASK( VM_Proc_Install_CCode(cmp_vm, & call_num, Conv_2RealNum_to_Point,
+     "(noname)", "conv_2Real_to_Point") );
+    TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
+
     opn = Cmp_Operation_Add(cmp_opr.converter, type_2RealNum, TYPE_NONE, TYPE_POINT);
     if ( opn == NULL ) return Failed;
     opn->is.commutative = 0;
     opn->is.intrinsic = 0;
     opn->is.assignment = 0;
-    opn->module = m;
+    opn->module = call_num;
   }
 
   /* Define the conversions (example: Real@Int such as: a = Int[ 1.2 ]) */

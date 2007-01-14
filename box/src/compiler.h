@@ -62,6 +62,8 @@ typedef struct {
 
 } Expression;
 
+#define Expr Expression
+
 struct Operation {
   struct {
     unsigned int intrinsic   : 1; /* E' una operazione intrinseca? */

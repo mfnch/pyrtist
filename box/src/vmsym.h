@@ -119,13 +119,8 @@ Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, UInt sym_type, UInt def_size);
  */
 Task VM_Sym_Name_Set(VMProgram *vmp, UInt sym_num, Name *n);
 
-/** Rename a symbol, given its old name.
- */
-Task VM_Sym_Rename_From_Old(VMProgram *vmp, Name *old_name, Name *new_name);
-
-/** Rename a symbol, given its ID number.
- */
-Task VM_Sym_Rename(VMProgram *vmp, UInt sym_num, Name *new_name);
+/** Get the name of the given symbol sym_num */
+const char *VM_Sym_Name_Get(VMProgram *vmp, UInt sym_num);
 
 /** Define a symbol which was previously created with VM_sym_New */
 Task VM_Sym_Def(VMProgram *vmp, UInt sym_num, void *def);
@@ -146,8 +141,6 @@ Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num);
  * to all the symbols will be printed. out is the destination.
  */
 void VM_Sym_Table_Print(VMProgram *vmp, FILE *out, UInt sym_num);
-
-const char *VM_Sym_Name_Get(VMProgram *vmp, UInt sym_num);
 
 /** Check that the type of the symbol 'sym_num' is 'sym_type'. */
 Task VM_Sym_Check_Type(VMProgram *vmp, UInt sym_num, UInt sym_type);

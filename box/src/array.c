@@ -166,7 +166,6 @@ void Arr_Destroy(Array *a)
      */
     if ( a->destroy != NULL ) (void) Arr_Iter((Array *) a, a->destroy);
     a->ID = 0; /* Can be useful to detect reference to free-d Array */
-    fprintf(stderr, "a->ptr = %p\n", a->ptr);
     free(a->ptr);
     free(a);
   }
@@ -175,6 +174,19 @@ void Arr_Destroy(Array *a)
 void Arr_Destructor(Array *a, Task (*destroy)(void *)) {
   a->destroy = destroy;
 }
+
+#ifdef DEBUG_ARRAY
+void *Arr_ItemPtr_Debug(Array *a, int n, const char *src, int line) {
+  if (n < 1 || n > a->numel) {
+    fprintf(stderr, "Arr_ItemPtr, called in '%s' (%d): "
+     "index (=%d) out of bounds (=1..%d)\n",
+     src, line, n, a->numel);
+    fflush(stderr);
+    exit(EXIT_FAILURE);
+  }
+  return a->ptr + (n-1)*((UInt) a->elsize);
+}
+#endif
 
 /* Converte l'array specificata, in una nuova array
  * con elementi di dimensione diversa (elsize).
@@ -204,7 +216,7 @@ Array *Arr_Recycle(Array *a, UInt elsize, UInt mindim) {
     /* Non c'e' memoria sufficiente:
       * distruggo la vecchia array e ne creo una nuova!
       */
-    free( a->ptr );
+    free(a->ptr);
     a->ID = 0;
     return Array_New(elsize, mindim);
   }

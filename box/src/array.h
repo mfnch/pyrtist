@@ -66,10 +66,8 @@ Task Arr_Overwrite(Array *a, Intg dest, void *src, UInt n);
 #define Arr_NumItem(a)	((a)->numel)
 #define Arr_NumItems(a)	((a)->numel)
 #define Arr_Ptr(a)		((a)->ptr)
-#define Arr_Item(a, type, n)	*((type *) ((a)->ptr + ((n)-1)*((UInt) (a)->elsize)))
 #define Arr_FirstItem(a, type)	*((type *) ((a)->ptr))
 #define Arr_LastItem(a, type)	*((type *) ((a)->ptr + ((a)->numel-1)*((UInt) (a)->elsize)))
-#define Arr_ItemPtr(a, type, n) ((type *) ((a)->ptr + ((n)-1)*((UInt) (a)->elsize)))
 #define Arr_FirstItemPtr(a, type)	((type *) ((a)->ptr))
 #define Arr_LastItemPtr(a, type)	((type *) ((a)->ptr + ((a)->numel-1)*((UInt) (a)->elsize)))
 #define Arr_Dec(a) Arr_SmallEnough((a), --(a)->numel)
@@ -83,6 +81,7 @@ Array *Array_New_Debug(UInt elsize, UInt mindim, const char *file, int line);
 Task Arr_New_Debug(Array **new_array, UInt elsize, UInt mindim,
  const char *file, int line);
 void Arr_Destroy_Debug(Array *a, const char *file, int line);
+void *Arr_ItemPtr_Debug(Array *a, int n, const char *src, int line);
 
 #  define Arr_New(new_array, elsize, mindim) \
      Arr_New_Debug(new_array, elsize, mindim, __FILE__, __LINE__)
@@ -90,9 +89,16 @@ void Arr_Destroy_Debug(Array *a, const char *file, int line);
      Array_New_Debug(elsize, mindim, __FILE__, __LINE__)
 #  define Arr_Destroy(a) \
      Arr_Destroy_Debug(a, __FILE__, __LINE__)
+#  define Arr_ItemPtr(a, type, n) \
+     ((type *) Arr_ItemPtr_Debug(a, n, __FILE__, __LINE__))
+#  define Arr_Item(a, type, n) \
+     *((type *) Arr_ItemPtr_Debug(a, n, __FILE__, __LINE__))
 
 #else
 Array *Array_New(UInt elsize, UInt mindim);
 Task Arr_New(Array **new_array, UInt elsize, UInt mindim);
 void Arr_Destroy(Array *a);
+
+#  define Arr_ItemPtr(a, type, n) ((type *) ((a)->ptr + ((n)-1)*((UInt) (a)->elsize)))
+#  define Arr_Item(a, type, n)    *((type *) ((a)->ptr + ((n)-1)*((UInt) (a)->elsize)))
 #endif

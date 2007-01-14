@@ -64,7 +64,7 @@ Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, UInt sym_type, UInt def_size) {
   ss.sym_type = sym_type;
   ss.defined = 0;
   ss.def_size = def_size;
-  ss.def_addr = Arr_NumItem(st->data);
+  ss.def_addr = 1+Arr_NumItem(st->data);
   ss.first_ref = 0;
   ss.resolver = (VMSymResolver) NULL;
   TASK( Arr_Push(st->defs, & ss) );
@@ -139,8 +139,8 @@ Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, void *ref, UInt ref_size) {
   sr.sym_num = sym_num;
   sr.next = s->first_ref;
   sr.ref_size = ref_size;
-  sr.ref_addr = Arr_NumItem(st->data);
-  sr.resolved = 0;
+  sr.ref_addr = 1+Arr_NumItem(st->data);
+  sr.resolved = s->defined;
   /* Copy the data for the reference */
   TASK( Arr_Append_Blank(st->data, ref_size) );
   ref_data_ptr = (void *) Arr_ItemPtr(st->data, Char, sr.ref_addr);
@@ -185,7 +185,7 @@ Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
   def_size = s->def_addr;
   sym_type = s->sym_type;
   r = s->resolver;
-  if (r == NULL) {
+  if (r == NULL && next > 0) {
     MSG_ERROR("VM_Sym_Resolve: cannot resolve the symbol: "
      "the resolver is not present!");
     return Failed;
@@ -272,6 +272,7 @@ static Task code_generator(VMProgram *vmp, UInt sym_num, UInt sym_type,
   VMProc *tmp_proc;
   UInt saved_proc_num;
 
+  printf("CALLED!\n");
   saved_proc_num = VM_Proc_Target_Get(vmp);
   TASK( VM_Proc_Empty(vmp, pt->tmp_proc) );
   TASK( VM_Proc_Target_Set(vmp, pt->tmp_proc) );
@@ -346,8 +347,8 @@ int main(void) {
    ...
    */
 
-  /* Here we define that a symbol with name "my_proc" and type call_type=1 */
-  (void) VM_Sym_New(vmp, & sym_num, NAME("my_proc"), CALL_TYPE, sizeof(UInt));
+  /* Here we define that a new symbol with type CALL_TYPE=1 */
+  (void) VM_Sym_New(vmp, & sym_num, CALL_TYPE, sizeof(UInt));
   /* Here we make a reference to it: at this point the assembled code for
    * "call 0" will be added to the current target procedure.
    * 0 is wrong, but we don't know what is the right number, because

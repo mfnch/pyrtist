@@ -287,7 +287,10 @@ int main(int argc, char** argv) {
 
   /* Fase di esecuzione */
   if (flags & FLAG_EXECUTE) {
-    VM_Sym_Table_Print(program, stderr, 0);
+    if IS_FAILED( VM_Sym_Resolve_All(program) ) {
+      exit(EXIT_FAILURE);
+    }
+    /*VM_Sym_Table_Print(program, stderr, 0);*/
     (void) Main_Execute();
   }
 
