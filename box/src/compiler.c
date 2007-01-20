@@ -26,8 +26,6 @@
 
 #define USE_PRIVILEGED
 
-#define NEW_CALL_SYS
-
 /*#define DEBUG*/
 /* #define DEBUG_CONTAINER_HANDLING */
 /*#define DEBUG_SPECIES_EXPANSION*/
@@ -399,11 +397,7 @@ Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn) {
     TASK( Cmp_Expr_Create(& new_e, type_dest, /* temporary = */ 1) );
     TASK( Cmp_Expr_To_Ptr(& new_e, CAT_GREG, (Intg) 1, 0) );
   /* call conv_func */
-#ifdef NEW_CALL_SYS
     TASK( VM_Sym_Call(cmp_vm, c_opn->module) );
-#else
-    Cmp_Assemble(ASM_CALL_I, CAT_IMM, c_opn->module);
-#endif
     TASK( Cmp_Expr_Destroy_Tmp(e) );
     *e = new_e;
     return Success;
@@ -2044,11 +2038,7 @@ Task Cmp_Procedure(int *found, Expression *e, Intg suffix, int auto_define) {
     if IS_FAILED( Cmp_Expr_To_Ptr(e, CAT_GREG, (Intg) 2, 0) ) goto exit_failed;
   }
 
-#ifdef NEW_CALL_SYS
   TASK( VM_Sym_Call(cmp_vm, asm_module) );
-#else
-  Cmp_Assemble(ASM_CALL_I, CAT_IMM, asm_module);
-#endif
 
 exit_success:
   (void) Cmp_Expr_Destroy_Tmp(e);
@@ -2095,30 +2085,7 @@ Task Cmp_Def_C_Procedure(Intg procedure, int when_should_call, Intg of_type,
  Task (*C_func)(VMProgram *)) {
   UInt asm_module, proc = 0;
 
-#ifdef NEW_CALL_SYS
   return Cmp_Builtin_Proc_Def(procedure, when_should_call, of_type, C_func);
-#endif
-
-  asm_module = VM_Proc_Install_Number(cmp_vm);
-
-  if ( when_should_call & BOX_CREATION ) {
-    proc = Tym_Def_Procedure(procedure, 0, of_type, asm_module);
-    if ( proc == TYPE_NONE ) return Failed;
-  }
-
-  if ( when_should_call & BOX_MODIFICATION ) {
-    proc = Tym_Def_Procedure(procedure, 1, of_type, asm_module);
-    if ( proc == TYPE_NONE ) return Failed;
-  }
-
-  if (!proc) {
-    MSG_FATAL("Cmp_Def_C_Procedure: Should not happen!");
-    return Failed;
-  }
-
-  TASK( VM_Proc_Install_CCode(cmp_vm, & asm_module, C_func,
-   Tym_Type_Name(proc), "Description...") );
-  return Success;
 }
 
 #include "structure.c"

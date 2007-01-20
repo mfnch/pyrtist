@@ -20,7 +20,9 @@
 
 /* $Id$ */
 
-/* messages.c - maggio 2004
+/* WAS I SO STUPID 3 YEARS AGO? THIS SOURCE IS JUST CRAP! SHOULD REWRITE IT!
+ *
+ * messages.c - maggio 2004
  *
  * Questo file gestisce i messaggi (di errore, avvertimento, etc) che
  * il programma deve segnalare.

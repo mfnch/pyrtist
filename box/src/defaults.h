@@ -76,6 +76,8 @@
  * Str_Cut(s, MSG_MAX_LENGHT, MSG_CUT_POSITION), tutti gli altri verranno
  * passati a sprintf o fprintf cosi' come sono.
  */
+#define MSG_TYPICAL_NUM_MSGS 16
+
 #define MSG_NUM_ARGS_MAX 8
 #define MSG_MAX_LENGHT 40
 #define MSG_CUT_POSITION 25

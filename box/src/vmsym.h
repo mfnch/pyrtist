@@ -133,6 +133,7 @@ Task VM_Sym_Resolver_Set(VMProgram *vmp, UInt sym_num, VMSymResolver r);
 
 /** Resolve the symbol 'sym_num'.
  * If sym_num=0, then try to resolve all the symbols.
+ * If the symbol is not defined, it silently ignore it!
  */
 Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num);
 

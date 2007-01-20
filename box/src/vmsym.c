@@ -179,8 +179,8 @@ Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
   }
 
   s = Arr_ItemPtr(st->defs, VMSym, sym_num);
+  if (! s->defined) return Success;
   next = s->first_ref;
-  defined = s->defined;
   def = (void *) Arr_ItemPtr(st->data, Char, s->def_addr);
   def_size = s->def_addr;
   sym_type = s->sym_type;
@@ -200,7 +200,7 @@ Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
     ref = (void *) Arr_ItemPtr(st->data, Char, sr->ref_addr);
     ref_size = sr->ref_size;
     if (!sr->resolved) {
-      TASK( r(vmp, sym_num, sym_type, defined, def, def_size, ref, ref_size) );
+      TASK( r(vmp, sym_num, sym_type, 1, def, def_size, ref, ref_size) );
       sr->resolved = 1;
     }
 
