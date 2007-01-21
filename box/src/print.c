@@ -47,13 +47,13 @@ const char *print(const char *fmt, ...) {
   static int buf_size = 0;
   int do_write = 1, do_read = 1, do_continue = 1, do_dealloc = 1;
   char *str_dealloc = (char *) NULL;
-  char cw, cr;
+  char cw = '?', cr = '?';
   const char *i;
   char *o;
   enum {STATE_NORMAL, STATE_CMND, STATE_SUBSTRING, STATE_END} state;
   UInt size;
   int substring_size;
-  char aux_buf[128], *substring;
+  char aux_buf[128], *substring = "?";
   va_list ap;
 
   if ( msg == (char *) NULL ) {
@@ -150,6 +150,9 @@ const char *print(const char *fmt, ...) {
           state = STATE_SUBSTRING;
           break;
         }
+      default:
+        state = STATE_NORMAL;
+        break;
       }
       break;
 

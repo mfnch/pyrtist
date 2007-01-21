@@ -41,7 +41,7 @@
  *   the memory or to worry about buffer overflow when using the %s
  *   specifier to write substrings. Usage is as follows:
  *       const char *msg = print("string = '%s', number = '%d'\n", "Hi!", 12);
- *       (* No need to call the free(...) function. The user mustn't do it! *)
+ *       (No need to call the free(...) function. The user mustn't do it!)
  * - has %N to handle the Name data type.
  *   ES:
  *       Name my_name = {15, "Matteo Franchin"};
