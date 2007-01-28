@@ -35,20 +35,6 @@
 #include "array.h"
 #include "msgbase.h"
 
-/* Inizializza il sistema di gestione dei messaggi.
- * ignore_level(0-17) specifica il livello di gravita' minimo richiesto
- * affinche' un messaggio sia considerato (in tutti gli altri casi verra'
- * ignorato, cioe' non verra' mostrato, anche se incrementera'
- * il corrispondente contatore dei messaggi, a cui si accede con Msg_Num()).
- * act_level(0-17) specifica il livello di gravita' minimo affinche' venga chiamata
- * la funzione di gestione degli errori (che viene impostata proprio
- * con Msg_Init, vedi fn, piu' avanti).
- * ctxt_always indica se il contesto deve essere mostrato sempre, anche se non
- * ci sono messaggi da visualizzare (ctxt_always = 1 --> visualizza sempre)
- * fn e' la funzione che viene chiamata se il livello di gravita' del messaggio
- * supera act_level.
- */
-
 /** Initialization of the message module */
 Task Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level) {
   MsgStack *ms;
@@ -125,6 +111,20 @@ void Msg_Counter_Clear_All(MsgStack *ms) {
   for(i=0; i<ms->num_levels; i++) ms->level[i] = 0;
 }
 
+static void Msg_Clean(MsgStack *ms) {
+  UInt i, num_msgs;
+  EXIT_IF_NOT_INIT(ms);
+  num_msgs = Arr_NumItem(ms->msgs);
+  for(i=num_msgs; i>0; i--) {
+    Msg *m = Arr_ItemPtr(ms->msgs, Msg, i);
+    if (m->level == 0 || m->msg != (char *) NULL) {
+      if (i < num_msgs) break;
+      return;
+    }
+  }
+  (void) Arr_MDec(ms->msgs, num_msgs-i);
+}
+
 /** Show the messages which have still not been shown */
 void Msg_Show(MsgStack *ms) {
   UInt i, num_msgs;
@@ -138,7 +138,8 @@ void Msg_Show(MsgStack *ms) {
     free(m->msg);
     m->msg = (char *) NULL;
   }
-  ms->last_shown = num_msgs;
+  Msg_Clean(ms);
+  ms->last_shown = Arr_NumItem(ms->msgs);
 }
 
 void Msg_Context_Begin(MsgStack *ms, const char *msg, MsgFilter mf) {

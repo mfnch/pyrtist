@@ -211,7 +211,7 @@ int main(int argc, char** argv) {
         Main_Error_Exit( NULL );
       }
     } else {
-      MSG_ADVICE("Reading the source file from standard input");
+      MSG_ADVICE("Reading the source program from standard input");
     }
   }
 

@@ -171,6 +171,7 @@ void Arr_Destroy(Array *a)
   }
 }
 
+
 void Arr_Destructor(Array *a, Task (*destroy)(void *)) {
   a->destroy = destroy;
 }
@@ -232,7 +233,6 @@ Array *Arr_Recycle(Array *a, UInt elsize, UInt mindim) {
  * Restituisce 1 solo in caso di successo.
  */
 Task Arr_Push(Array *a, void *elem) {
-  MSG_LOCATION("Arr_Push");
   if (a->ID == ARR_ID) {
     void *tptr;
     UInt tpos = a->numel++ * a->elsize;
@@ -251,7 +251,6 @@ Task Arr_Push(Array *a, void *elem) {
 }
 
 Task Arr_MPush(Array *a, void *elem, UInt numel) {
-  MSG_LOCATION("Arr_MPush");
   if (a->ID == ARR_ID) {
     void *tptr;
     UInt tpos;
@@ -280,14 +279,7 @@ Task Arr_MPush(Array *a, void *elem, UInt numel) {
  * numel elementi. Restituisce 1 in caso di successo.
  */
 Task Arr_BigEnough(Array *a, UInt numel) {
-  MSG_LOCATION("Arr_BigEnough");
-
   if (a->ID == ARR_ID) {
-    if (numel < 0) {
-      MSG_ERROR("Parametri errati");
-      return Failed;
-    }
-
     /* Controlla che l'array non debba essere allargata  */
     ARRAY_EXPAND(a, numel);
     return Success;
@@ -302,14 +294,7 @@ Task Arr_BigEnough(Array *a, UInt numel) {
  *  troppo vuota. Restituisce 1 in caso di successo.
  */
 Task Arr_SmallEnough(Array *a, UInt numel) {
-  MSG_LOCATION("Arr_SmallEnough");
-
   if (a->ID == ARR_ID) {
-    if (numel < 0) {
-      MSG_ERROR("Parametri errati");
-      return Failed;
-    }
-
     /* Controlla che l'array non debba essere allargato */
     ARRAY_SHRINK(a, numel);
     return Success;
@@ -324,8 +309,6 @@ Task Arr_SmallEnough(Array *a, UInt numel) {
  *  to these items) into the array a at position where.
  */
 Task Arr_Insert(Array *a, Intg where, Intg how_many, void *items) {
-  MSG_LOCATION("Arr_Insert");
-
   if ( how_many < 1 ) return Success;
   if ( a->ID == ARR_ID ) {
     register Intg numel = a->numel, new_dim, elsize = a->elsize, to_move;
