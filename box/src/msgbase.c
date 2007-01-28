@@ -33,7 +33,7 @@
 #include "types.h"
 #include "defaults.h"
 #include "array.h"
-#include "messages_ng.h"
+#include "msgbase.h"
 
 /* Inizializza il sistema di gestione dei messaggi.
  * ignore_level(0-17) specifica il livello di gravita' minimo richiesto
@@ -50,7 +50,7 @@
  */
 
 /** Initialization of the message module */
-Task _Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level) {
+Task Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level) {
   MsgStack *ms;
   UInt i;
   *ms_ptr = ms = (MsgStack *) malloc(sizeof(MsgStack));
@@ -83,11 +83,28 @@ void Msg_Destroy(MsgStack *ms) {
   free(ms);
 }
 
+void Msg_Show_Level_Set(MsgStack *ms, UInt show_level) {
+  EXIT_IF_NOT_INIT(ms);
+  ms->show_level = show_level;
+}
+
 /** Get the value of the specified message counter */
 UInt Msg_Counter_Get(MsgStack *ms, UInt level) {
   if (ms == (MsgStack *) NULL) return 0;
   if (level >= 1 && level <= ms->num_levels) return ms->level[level-1];
   return 0;
+}
+
+/** Get the number of messages whose level is greater or equal than
+ * the spefified one.
+ */
+UInt Msg_Counter_Sum_Get(MsgStack *ms, UInt level) {
+  UInt i, sum=0;
+  if (ms == (MsgStack *) NULL) return 0;
+  if (level > ms->num_levels) return 0;
+  for(i = level < 1 ? 0 : level-1; i<ms->num_levels; i++)
+    sum += ms->level[i];
+  return sum;
 }
 
 /** Clear one message counter */
@@ -163,7 +180,7 @@ void Msg_Add(MsgStack *ms, UInt level, const char *msg) {
 }
 
 
-#if 1
+#if 0
 #include "print.h"
 
 char *my_filter(UInt level, char *original_msg) {

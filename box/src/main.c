@@ -41,7 +41,7 @@
 #include "parserh.h"
 
 /* Visualizzo questo messaggio quando ho errori nella riga di comando: */
-#define CMD_LINE_HELP "Digitare %s -h per avere un aiuto!"
+#define CMD_LINE_HELP "Try '%s -h' to get some help!"
 
 /* Definisco i tipi possibili per i parametri degli argomenti
  * della riga di comando
@@ -112,13 +112,10 @@ int main(int argc, char** argv) {
   int i;
   UInt j;
 
-  /* Stabilisco cosa fare in caso di errore critico */
-  Msg_Exit_Now = Main_Error_Exit;
-
   /* Inizializzo la gestione dei messaggi */
-  Msg_Init( 0, 17, 0, NULL );
+  Msg_Main_Init(MSG_LEVEL_WARNING);
 
-  Msg_Context_Enter("Lettura delle opzioni nella riga di comando...\n");
+  MSG_CONTEXT_BEGIN("Reading the command line options");
 
   /* Impostazioni iniziali dei flag */
   flags = FLAG_EXECUTE;
@@ -139,12 +136,12 @@ int main(int argc, char** argv) {
         }
 
       if ( opnum == -1 ) {
-        MSG_ERROR( "-%s <-- Opzione non riconosciuta!", option );
+        MSG_ERROR( "-%s <-- Illegal option!", option );
         Main_Error_Exit( CMD_LINE_HELP );
       }
 
       if ( opnum == -2 ) {
-        MSG_ERROR( "-%s <-- Opzione ambigua!", option );
+        MSG_ERROR( "-%s <-- Ambiguous option!", option );
         Main_Error_Exit( CMD_LINE_HELP );
       }
 
@@ -161,7 +158,7 @@ int main(int argc, char** argv) {
     if ( opt_desc->repeat > 0 )
       --opt_desc->repeat;
     else if ( opt_desc->repeat == 0 ) {
-      MSG_ERROR("-%s <-- L'opzione non puo' essere ripetuta!", option );
+      MSG_ERROR("-%s <-- This option should be used only once!", option );
       Main_Error_Exit( CMD_LINE_HELP );
     }
 
@@ -171,7 +168,7 @@ int main(int argc, char** argv) {
 
     if ( opt_desc->part != PAR_NONE ) {
       if ( ++i >= argc ) {
-        MSG_ERROR("-%s <-- Manca l'argomento dell'opzione!", option );
+        MSG_ERROR("-%s <-- This option requires an argument!", option );
         Main_Error_Exit( CMD_LINE_HELP );
       }
 
@@ -179,43 +176,43 @@ int main(int argc, char** argv) {
        case PAR_STRING:
         *((char **) opt_desc->arg) = argv[i]; break;
        default:
-        MSG_ERROR("Errore interno nel parsing delle opzioni.");
+         MSG_ERROR("Internal error in the option parsing :-(");
         Main_Error_Exit( NULL );
       }
     }
   } /* Fine del ciclo for */
 
-  /* Esco dal contesto "lettura delle opzioni" */
-  Msg_Context_Exit(0);
+  MSG_CONTEXT_END();
+  MSG_CONTEXT_BEGIN("Interpreting the command line options");
 
   /* Controllo se e' stata specificata l'opzione di help */
   if ( flags & FLAG_HELP ) Main_Cmnd_Line_Help();
 
   /* Re-inizializzo la gestione dei messaggi! */
   if ( flags & FLAG_VERBOSE )
-    Msg_Init( 0, 17, 1, NULL ); /* Mostro tutti i messaggi! */
+    Msg_Main_Show_Level_Set(MSG_LEVEL_ADVICE); /* Mostro tutti i messaggi! */
   else if ( flags & FLAG_ERRORS )
-    Msg_Init( 8, 17, 0, NULL ); /* Mostro solo i messaggi d'errore/gravi! */
+    Msg_Main_Show_Level_Set(MSG_LEVEL_ERROR); /* Mostro solo i messaggi d'errore/gravi! */
   else if ( flags & FLAG_SILENT )
-    Msg_Init( 17, 17, 0, NULL ); /* Non mostro alcun messaggio! */
+    Msg_Main_Show_Level_Set(MSG_LEVEL_MAX+1); /* Non mostro alcun messaggio! */
   else
-    Msg_Init( 4, 17, 0, NULL ); /* Mostro solo i messaggi importanti! */
+    Msg_Main_Show_Level_Set(MSG_LEVEL_ERROR); /* Mostro solo i messaggi importanti! */
 
   Temporaneo();
 
   /* Controllo che tutto sia apposto */
   if ( (flags & FLAG_INPUT) == 0 ) {
-    MSG_ERROR("File di input non specificato!");
+    MSG_ERROR("You should specify an input file!");
     Main_Error_Exit( CMD_LINE_HELP );
 
   } else {
     if ( (flags & FLAG_STDIN) == 0 ) {
       if ( freopen(file_input, "rt", stdin) == NULL ) {
-        MSG_ERROR("%s <-- Impossibile aprire il file!", file_input);
+        MSG_ERROR("%s <-- Cannot open the file!", file_input);
         Main_Error_Exit( NULL );
       }
     } else {
-      MSG_ADVICE("Leggo il file da compilare dallo standard input.");
+      MSG_ADVICE("Reading the source file from standard input");
     }
   }
 
@@ -225,7 +222,8 @@ int main(int argc, char** argv) {
   } else
     file_setup = (char *) NULL;
 
-  Msg_Context_Enter("Fase di compilazione:\n");
+  MSG_CONTEXT_END();
+  MSG_CONTEXT_BEGIN("Compilation stage");
 
   if IS_FAILED( Parser_Init(TOK_MAX_INCLUDE, file_setup) )
     Main_Error_Exit( NULL );
@@ -233,48 +231,43 @@ int main(int argc, char** argv) {
   if IS_FAILED( VM_Init(& program) ) Main_Error_Exit( NULL );
   if IS_FAILED( Cmp_Init(program) ) Main_Error_Exit( NULL );
 
-  Msg_Num_Reset_All();
+  Msg_Main_Counter_Clear_All();
 
   /* Avvio il parsing! */
   (void) yyparse();
 
-  MSG_ADVICE( "Compilazione completata. Trovati " SUInt
-   " errori e " SUInt " warnings.",
-   Msg_Num(MSG_NUM_ERRFAT), Msg_Num(MSG_NUM_WARNINGS) );
+  MSG_ADVICE( "Compilaton has finished. "
+   SUInt " errors and " SUInt " warnings were found.",
+   MSG_GT_ERRORS, MSG_NUM_WARNINGS );
 
   if IS_FAILED( Parser_Finish() ) Main_Error_Exit( NULL );
   if IS_FAILED( Cmp_Finish() ) Main_Error_Exit( NULL );
 
-  /* Esco dal contesto "Fase di compilazione" */
-  Msg_Context_Exit(0);
-
   if IS_FAILED( Main_Prepare() ) Main_Error_Exit( NULL );
 
   /* Controllo se e' possibile procedere all'esecuzione del file compilato! */
-  if ( (flags & FLAG_EXECUTE) && (Msg_Num(MSG_NUM_WARNERRFAT) > 0) ) {
+  if ( (flags & FLAG_EXECUTE) && (MSG_GT_WARNINGS > 0) ) {
     if (flags & FLAG_FORCE_EXEC) {
-      if ( Msg_Num(MSG_NUM_ERRFAT) > 0 ) {
+      if ( MSG_GT_ERRORS > 0 ) {
         flags &= ~FLAG_EXECUTE;
         MSG_ADVICE(
-         "Trovati errori: l'esecuzione non verra' avviata!" );
+         "Errors found: Execution will not be started!" );
       } else {
         MSG_ADVICE(
-         "Trovati warnings: l'esecuzione verra' comunque avviata!" );
+         "Warings found: Execution will be started anyway!" );
       }
 
     } else {
       flags &= ~FLAG_EXECUTE;
-      MSG_ADVICE(
-       "Trovati warnings e/o errori: l'esecuzione non verra' avviata!" );
+      MSG_ADVICE("Warnings/errors found: Execution will not be started!" );
     }
   }
 
   /* Fase di output */
   if (flags & FLAG_OUTPUT) {
     int target_proc_num = VM_Proc_Target_Get(program);
-    MSG_ADVICE(
-     "Scrivo il listato 'assembly' prodotto dalla compilazione in \"%s\"!",
-     file_output );
+    MSG_ADVICE("Writing the assembly code for the compiled program"
+     "into \"%s\"!", file_output );
 
     (void) Cmp_Data_Display(stdout);
     fprintf(stdout, "\n");
@@ -349,6 +342,9 @@ Task Main_Execute(void) {
   Task exit_code;
   UInt main_module;
 
+  Msg_Main_Counter_Clear_All();
+  MSG_CONTEXT_BEGIN("Execution stage");
+
   /*Msg_Num_Reset_All();
 
   Msg_Context_Enter("Controllo lo stato di definizione dei moduli.\n");
@@ -361,16 +357,15 @@ Task Main_Execute(void) {
   }
   */
 
-  Msg_Num_Reset_All();
-  Msg_Context_Enter("Fase di esecuzione:\n");
+
   TASK( VM_Proc_Install_Code(program, & main_module,
    VM_Proc_Target_Get(program), "main", "Description...") );
   exit_code = VM_Module_Execute(program, main_module);
 
-  Msg_Context_Exit(0);
-  MSG_ADVICE( "Esecuzione completata. Trovati " SUInt " errori e "
-    SUInt " warnings.",
-    Msg_Num(MSG_NUM_ERRFAT), Msg_Num(MSG_NUM_WARNINGS) );
+  MSG_ADVICE( "Execution finished. "
+   SUInt " errors and " SUInt " warnings were found.",
+   MSG_GT_ERRORS, MSG_NUM_WARNINGS );
+  MSG_CONTEXT_END();
   return Success;
 }
 
@@ -392,7 +387,7 @@ void Main_Error_Exit(char *msg) {
 
 void Main_Cmnd_Line_Help(void) {
   fprintf( stderr,
-  "\n" PROGRAM_NAME " " VERSION_STR " - Linguaggio per la descrizione di figure grafiche"
+  PROGRAM_NAME " " VERSION_STR " - Linguaggio per la descrizione di figure grafiche"
   "\n Ideato e programmato da Matteo Franchin - "
    VERSION_DATE ", " VERSION_TIME "\n\n"
   "UTILIZZO: " PROGRAM_NAME " opzioni fileinput\n\n"

@@ -307,9 +307,9 @@ Task Tok_Include_Begin(char *f)
   }
 
   cur.linenum = tok_linenum;
-  cur.msgcontext = Msg_Context_Num();
-  cur.num_errs = Msg_Num( MSG_NUM_ERRFAT );
-  cur.num_warns = Msg_Num( MSG_NUM_WARNINGS );
+  cur.msgcontext = 0; /*Msg_Context_Num(); TODO ??? */
+  cur.num_errs = MSG_GT_ERRORS;
+  cur.num_warns = MSG_NUM_WARNINGS;
   cur.buffer = YY_CURRENT_BUFFER;
   if IS_FAILED( Arr_Push(tok_include_list, & cur) ) return Failed;
 
@@ -319,8 +319,7 @@ Task Tok_Include_Begin(char *f)
   yy_switch_to_buffer(
    yy_create_buffer((yyin = incfile), YY_BUF_SIZE) );
 
-  Msg_Context_Enter("File incluso \"%s\":\n", f);
-
+  MSG_CONTEXT_BEGIN("Entering the included file \"%s\":\n", f);
   return Success;
 }
 
@@ -344,13 +343,12 @@ UInt Tok_Include_End(void)
     (void) Arr_Dec( tok_include_list );
     --tok_cur_include_level;
     /* Calcolo il numero di errori nel file incluso (+tutti i sotto-inclusi!) */
-    num_errs = Msg_Num(MSG_NUM_ERRFAT) - cur.num_errs;
-    num_warns = Msg_Num(MSG_NUM_WARNINGS) - cur.num_warns;
-    MSG_ADVICE( "Esco dal file incluso. Trovati " SUInt " errori e "
-     SUInt " warnings.",
+    num_errs = MSG_GT_ERRORS - cur.num_errs;
+    num_warns = MSG_NUM_WARNINGS - cur.num_warns;
+    MSG_ADVICE( "Exiting from the included file. "
+     SUInt " errors and " SUInt " warnings were found.",
      num_errs, num_warns );
-    Msg_Context_Return( cur.msgcontext );
-
+    MSG_CONTEXT_END();
     return 0;
 
   } else

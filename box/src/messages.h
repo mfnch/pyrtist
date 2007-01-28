@@ -20,49 +20,137 @@
 
 /* $Id$ */
 
-/* messages.h - maggio 2004
+/** @file messages.h
+ * @brief The message handler for the box copiler (wraps up msgbase)
+ *
+ * This file uses the msgbase module to provide a message handler
+ * with all the features required for the Box compiler.
+ * This module actually wraps up the msgbase one.
  */
 
 #ifndef _MESSAGES_H
-#define _MESSAGES_H
+#  define _MESSAGES_H
 
-#include "types.h"
+#  include "types.h"
+#  include "print.h"
+#  include "msgbase.h"
 
-typedef void (*MsgAction)(UInt *errlev);
+extern MsgStack *msg_main_stack;
 
-void Msg_PrintF(UInt level, const char *fmt, ...);
-void Msg_Init(UInt ignore_level, UInt act_level, UInt ctxt_always, MsgAction fn);
-UInt Msg_Context_Num(void);
-void Msg_Context_Exit(Intg n);
-void Msg_Context_Return(UInt n);
-UInt Msg_Num(Intg t);
-void Msg_Num_Reset_All(void);
-extern void (*Msg_Exit_Now)(char *msg);
+/** Initialize the main message handler */
+Task Msg_Main_Init(UInt show_level);
 
-#ifdef DEBUG
-#define MSG_LOCATION(fname) fprintf(stderr, fname " function entered!\n");
-#else
-#define MSG_LOCATION(fname)
-#endif
+#  define MSG_LEVEL_ADVICE 1
+#  define MSG_LEVEL_WARNING 2
+#  define MSG_LEVEL_ERROR 3
+#  define MSG_LEVEL_FATAL 4
+#  define MSG_LEVEL_MAX 4
 
-/* Le seguenti macro servono a segnalare errori o messaggi,
- * sono "variadic macros" cioe' possono avere un numero imprecisato di argomenti
- * (questa caratteristica e' supportata purtroppo solo dal C99)
+/** INTERNAL (used throughout macros): Begin a context installing
+ * an appropriate filter.
  */
-/* Macro per segnalare un errore */
-#define MSG_ADVICE(...) Msg_PrintF(1, __VA_ARGS__)
-#define MSG_WARNING(...) Msg_PrintF(4, __VA_ARGS__)
-#define MSG_ERROR(...) Msg_PrintF(8, __VA_ARGS__)
-#define MSG_FATAL(...) Msg_PrintF(12, __VA_ARGS__)
+void Msg_Main_Context_Begin(const char *msg);
 
-/* Macro per entrare in un nuovo contesto */
-#define Msg_Context_Enter(...) Msg_PrintF(0, __VA_ARGS__)
+/** Finalize the main message handler */
+#  define Msg_Main_Destroy() Msg_Destroy(msg_main_stack)
 
-#define MSG_NUM_ADVICES 0
-#define MSG_NUM_WARNINGS 1
-#define MSG_NUM_ERRORS 2
-#define MSG_NUM_FATALS 3
-#define MSG_NUM_ALL -1
-#define MSG_NUM_WARNERRFAT -2
-#define MSG_NUM_ERRFAT -3
+/** Decide what is the minimum level a message should have to be processed
+ * by the message handler
+ */
+#  define Msg_Main_Show_Level_Set(show_level) \
+     Msg_Show_Level_Set(msg_main_stack, show_level)
+
+/** Reset all the counters containing the number of received messages.
+ */
+#  define Msg_Main_Counter_Clear_All() \
+     Msg_Counter_Clear_All(msg_main_stack)
+
+/** Get the number of received messages for the specified level */
+#  define Msg_Main_Counter_Get(level) \
+     Msg_Main_Counter_Get(msg_main_stack, level)
+
+/** Get the number of messages whose level is greater than the specified one
+ */
+#  define Msg_Main_Counter_Get_Sum(level) \
+     Msg_Main_Counter_Get_Sum(msg_main_stack, level)
+
+/****************************************************************************
+ * MACROS TO OBTAIN THE NUMBER OF RECEIVED MESSAGES
+ */
+
+/** This macro returns the number of messages of kind 'advice' */
+#  define MSG_NUM_ADVICES (Msg_Counter_Get(msg_main_stack, MSG_LEVEL_ADVICE))
+
+/** This macro returns the number of messages of kind 'warning' */
+#  define MSG_NUM_WARNINGS (Msg_Counter_Get(msg_main_stack,MSG_LEVEL_WARNING))
+
+/** This macro returns the number of messages of kind 'error' */
+#  define MSG_NUM_ERRORS (Msg_Counter_Get(msg_main_stack, MSG_LEVEL_ERROR))
+
+/** This macro returns the number of messages of kind 'fatal' */
+#  define MSG_NUM_FATALS (Msg_Counter_Get(msg_main_stack, MSG_LEVEL_FATAL))
+
+/****************************************************************************
+ * MACROS TO OBTAIN THE NUMBER OF RECEIVED MESSAGES WITH LEVEL GREATER
+ * THAN THE ONE SPECIFIED
+ */
+
+/** This macro returns the number of messages whose level is
+ * equal or greater than 'advice': all the messages!
+ */
+#  define MSG_GT_ADVICES \
+     (Msg_Counter_Sum_Get(msg_main_stack, MSG_LEVEL_ADVICE))
+
+/** This macro returns the number of messages whose level is
+ * equal or greater than 'warning'.
+ */
+#  define MSG_GT_WARNINGS \
+     (Msg_Counter_Sum_Get(msg_main_stack, MSG_LEVEL_WARNING))
+
+/** This macro returns the number of messages whose level is
+ * equal or greater than 'error'.
+ */
+#  define MSG_GT_ERRORS \
+     (Msg_Counter_Sum_Get(msg_main_stack, MSG_LEVEL_ERROR))
+
+/** This macro returns the number of messages whose level is
+ * equal or greater than 'fatal'.
+ */
+#  define MSG_GT_FATALS \
+     (Msg_Counter_Sum_Get(msg_main_stack, MSG_LEVEL_FATAL))
+
+/****************************************************************************
+ * MACROS USED TO BEGIN AND END CONTEXTS
+ */
+#  define MSG_CONTEXT_BEGIN(...) Msg_Main_Context_Begin(print(__VA_ARGS__))
+
+#  define MSG_CONTEXT_END() Msg_Context_End(msg_main_stack, 1)
+
+/****************************************************************************
+ * MACROS USED TO SIGNAL MESSAGES
+ */
+
+/** Macro to signal an information */
+#  define MSG_ADVICE(...) \
+     Msg_Add(msg_main_stack, MSG_LEVEL_ADVICE, print(__VA_ARGS__))
+
+/** Macro used to signal a warning message */
+#  define MSG_WARNING(...) \
+     Msg_Add(msg_main_stack, MSG_LEVEL_WARNING, print(__VA_ARGS__))
+
+/** Macro used to signal an error message */
+#  define MSG_ERROR(...) \
+     Msg_Add(msg_main_stack, MSG_LEVEL_ERROR, print(__VA_ARGS__))
+
+/** Macro used to signal a fatal error message */
+#  define MSG_FATAL(...) \
+     Msg_Add(msg_main_stack, MSG_LEVEL_FATAL, print(__VA_ARGS__))
+
+/* Obsolete */
+#  ifdef DEBUG
+#    define MSG_LOCATION(fname) fprintf(stderr, fname " function entered!\n");
+#  else
+#    define MSG_LOCATION(fname)
+#  endif
+
 #endif

@@ -46,6 +46,7 @@ typedef enum {
   TYPE_NONE  = -1,
   TYPE_CHAR  =  0,
   TYPE_INTG  =  1,
+  TYPE_INT   =  1,
   TYPE_REAL  =  2,
   TYPE_POINT =  3,
   TYPE_OBJ   =  4,

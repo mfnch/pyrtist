@@ -40,12 +40,13 @@
  * But this behaviour can be tuned.
  */
 
-#ifndef _MESSAGES_H
-#  define _MESSAGES_H
+#ifndef _MSGBASE_H
+#  define _MSGBASE_H
 
 #include <stdio.h>
 
 #include "types.h"
+#include "array.h"
 
 /** Receives a string together with its deallocation responsibility,
  * returns a string together with its deallocation responsibility.
@@ -81,13 +82,21 @@ typedef struct {
 } MsgStack;
 
 /** Initialization of the message module */
-Task _Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level);
+Task Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level);
 
 /** Finalization of the message module */
 void Msg_Destroy(MsgStack *ms);
 
+/** Set the minimum level a message should have to be considered */
+void Msg_Show_Level_Set(MsgStack *ms, UInt show_level);
+
 /** Get the value of the specified message counter */
 UInt Msg_Counter_Get(MsgStack *ms, UInt level);
+
+/** Get the number of messages whose level is greater or equal than
+ * the spefified one.
+ */
+UInt Msg_Counter_Sum_Get(MsgStack *ms, UInt level);
 
 /** Clear one message counter */
 void Msg_Counter_Clear(MsgStack *ms, UInt level);
