@@ -183,7 +183,6 @@ int main(int argc, char** argv) {
   } /* Fine del ciclo for */
 
   MSG_CONTEXT_END();
-  MSG_CONTEXT_BEGIN("Interpreting the command line options");
 
   /* Controllo se e' stata specificata l'opzione di help */
   if ( flags & FLAG_HELP ) Main_Cmnd_Line_Help();
@@ -222,8 +221,8 @@ int main(int argc, char** argv) {
   } else
     file_setup = (char *) NULL;
 
-  MSG_CONTEXT_END();
-  MSG_CONTEXT_BEGIN("Compilation stage");
+  Msg_Main_Counter_Clear_All();
+  MSG_CONTEXT_BEGIN("Compilation");
 
   if IS_FAILED( Parser_Init(TOK_MAX_INCLUDE, file_setup) )
     Main_Error_Exit( NULL );
@@ -231,14 +230,13 @@ int main(int argc, char** argv) {
   if IS_FAILED( VM_Init(& program) ) Main_Error_Exit( NULL );
   if IS_FAILED( Cmp_Init(program) ) Main_Error_Exit( NULL );
 
-  Msg_Main_Counter_Clear_All();
-
   /* Avvio il parsing! */
   (void) yyparse();
 
-  MSG_ADVICE( "Compilaton has finished. "
-   SUInt " errors and " SUInt " warnings were found.",
+  MSG_ADVICE( "Compilaton finished. "
+   "%U errors and %U warnings were found.",
    MSG_GT_ERRORS, MSG_NUM_WARNINGS );
+  MSG_CONTEXT_END();
 
   if IS_FAILED( Parser_Finish() ) Main_Error_Exit( NULL );
   if IS_FAILED( Cmp_Finish() ) Main_Error_Exit( NULL );
@@ -284,7 +282,14 @@ int main(int argc, char** argv) {
       exit(EXIT_FAILURE);
     }
     /*VM_Sym_Table_Print(program, stderr, 0);*/
+
+    Msg_Main_Counter_Clear_All();
+    MSG_CONTEXT_BEGIN("Execution");
     (void) Main_Execute();
+    MSG_ADVICE( "Execution finished. "
+     "%U errors and %U warnings were found.",
+     MSG_GT_ERRORS, MSG_NUM_WARNINGS );
+    MSG_CONTEXT_END();
   }
 
 /*
@@ -342,9 +347,6 @@ Task Main_Execute(void) {
   Task exit_code;
   UInt main_module;
 
-  Msg_Main_Counter_Clear_All();
-  MSG_CONTEXT_BEGIN("Execution stage");
-
   /*Msg_Num_Reset_All();
 
   Msg_Context_Enter("Controllo lo stato di definizione dei moduli.\n");
@@ -361,11 +363,6 @@ Task Main_Execute(void) {
   TASK( VM_Proc_Install_Code(program, & main_module,
    VM_Proc_Target_Get(program), "main", "Description...") );
   exit_code = VM_Module_Execute(program, main_module);
-
-  MSG_ADVICE( "Execution finished. "
-   SUInt " errors and " SUInt " warnings were found.",
-   MSG_GT_ERRORS, MSG_NUM_WARNINGS );
-  MSG_CONTEXT_END();
   return Success;
 }
 

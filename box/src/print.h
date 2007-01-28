@@ -46,6 +46,9 @@
  *   ES:
  *       Name my_name = {15, "Matteo Franchin"};
  *       msg = print("My name is %N, nice to meet you!", & my_name);
+ * - supports all the data types defined inside the header "types.h"
+ *   the spefifiers are: %U for UInt, %I for Int, %R for Real,
+ *   %P for (pointer to) Point
  * - has %~s to print a string and deallocate it with free(...).
  *   ES:
  *       msg = print("%~s", strdup("allocated string"));

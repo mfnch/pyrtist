@@ -136,6 +136,33 @@ const char *print(const char *fmt, ...) {
         substring = aux_buf;
         state = STATE_SUBSTRING;
         break;
+      case 'I':
+        do_read = 0;
+        sprintf(aux_buf, SInt, va_arg(ap, Int));
+        substring = aux_buf;
+        state = STATE_SUBSTRING;
+        break;
+      case 'U':
+        do_read = 0;
+        sprintf(aux_buf, SUInt, va_arg(ap, UInt));
+        substring = aux_buf;
+        state = STATE_SUBSTRING;
+        break;
+      case 'R':
+        do_read = 0;
+        sprintf(aux_buf, SReal, va_arg(ap, Real));
+        substring = aux_buf;
+        state = STATE_SUBSTRING;
+        break;
+      case 'P':
+        {
+          Point *p = va_arg(ap, Point *);
+          do_read = 0;
+          sprintf(aux_buf, "(" SReal ", " SReal ")", p->x, p->y);
+          substring = aux_buf;
+          state = STATE_SUBSTRING;
+          break;
+        }
       case 'N':
         {
           Name *nm = va_arg(ap, Name *);

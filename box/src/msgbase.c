@@ -83,6 +83,11 @@ void Msg_Destroy(MsgStack *ms) {
   free(ms);
 }
 
+void Msg_Default_Filter_Set(MsgStack *ms, MsgFilter mf) {
+  EXIT_IF_NOT_INIT(ms);
+  ms->filter = ms->default_filter = mf;
+}
+
 void Msg_Show_Level_Set(MsgStack *ms, UInt show_level) {
   EXIT_IF_NOT_INIT(ms);
   ms->show_level = show_level;

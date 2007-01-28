@@ -54,7 +54,9 @@ static char *show_type_and_msg(UInt level, char *original_msg) {
 }
 
 Task Msg_Main_Init(UInt show_level) {
-  return Msg_Init(& msg_main_stack, 4, show_level);
+  Task t = Msg_Init(& msg_main_stack, 4, show_level);
+  Msg_Default_Filter_Set(msg_main_stack, show_type_and_msg);
+  return t;
 }
 
 void Msg_Main_Context_Begin(const char *msg) {

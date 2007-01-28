@@ -87,6 +87,9 @@ Task Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level);
 /** Finalization of the message module */
 void Msg_Destroy(MsgStack *ms);
 
+/** Set the default filter to use */
+void Msg_Default_Filter_Set(MsgStack *ms, MsgFilter mf);
+
 /** Set the minimum level a message should have to be considered */
 void Msg_Show_Level_Set(MsgStack *ms, UInt show_level);
 
