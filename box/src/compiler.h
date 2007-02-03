@@ -180,19 +180,6 @@ struct symbol {
 
 typedef struct symbol Symbol;
 
-/* Questa struttura descrive un esempio di box */
-typedef struct {
-  Intg        ID;       /* Box level: this number identifies the box */
-  struct {
-    unsigned int second : 1; /* This is 1 only if it is a non-creation box */
-  } attr;
-  Intg        type;     /* Type of the box */
-  Expression  value;    /* Expression associated with the box */
-  Symbol      *child;   /* Child symbols which belongs to this box */
-  int         label_begin, /* Labels located at the beginning */
-              label_end;   /* and at the end of the box */
-} Box;
-
 /* Enumero i tipi di tipo */
 typedef enum {
   TOT_INSTANCE,
@@ -338,6 +325,8 @@ extern TypeDesc *tym_recent_typedesc;
 /* Important builtin types */
 extern Intg type_Point, type_RealNum, type_IntgNum, type_CharNum;
 
+#include "box.h"
+
 Intg Tym_Type_Next(void);
 TypeDesc *Tym_Type_New(Name *nm);
 Intg Tym_Type_Newer(void);
@@ -383,16 +372,11 @@ void Sym_Symbol_Diagnostic(FILE *stream);
 #endif
 Symbol *Sym_Symbol_New(Name *nm);
 void Sym_Symbol_Delete(Symbol *s);
-Task Cmp_Box_Instance_Begin(Expression *e);
-Task Cmp_Box_Instance_End(Expression *e);
-Intg Box_Search_Opened(Intg type, Intg depth);
-Task Box_Get(Box **box, Intg depth);
 Task Sym_Implicit_Find(Symbol **s, Intg parent, Name *nm);
 Task Sym_Implicit_New(Symbol **new_sym, Intg parent, Name *nm);
 #define EXACT_DEPTH 0
 #define NO_EXACT_DEPTH 1
 Symbol *Sym_Explicit_Find(Name *nm, Intg depth, int mode);
-Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth);
 
 /* Procedure definite in 'compiler.c'*/
 Task Cmp_Init(VMProgram *program);

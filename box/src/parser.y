@@ -37,6 +37,7 @@
 #include "vmsym.h"
 #include "vmsymstuff.h"
 #include "compiler.h"
+#include "box.h"
 #include "tokenizer.h"
 #include "parserh.h"
 #include "builtins.h"

@@ -42,6 +42,7 @@
 #include "virtmach.h"
 #include "registers.h"
 #include "compiler.h"
+#include "box.h"
 
 /* #define DEBUG_COMPARE_TYPES */
 

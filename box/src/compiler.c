@@ -48,6 +48,7 @@
 #include "vmsymstuff.h"
 #include "registers.h"
 #include "compiler.h"
+#include "box.h"
 #include "builtins.h"
 
 /******************************************************************************/
