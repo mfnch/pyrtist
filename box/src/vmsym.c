@@ -347,7 +347,7 @@ int main(void) {
    ...
    */
 
-  /* Here we define that a new symbol with type CALL_TYPE=1 */
+  /* Here we define that a new symbol with type CALL_TYPE=1 exists */
   (void) VM_Sym_New(vmp, & sym_num, CALL_TYPE, sizeof(UInt));
   /* Here we make a reference to it: at this point the assembled code for
    * "call 0" will be added to the current target procedure.
@@ -356,7 +356,7 @@ int main(void) {
    */
   (void) VM_Sym_Code_Ref(vmp, sym_num, Assemble_Call);
   /* Here we define the symbol "my_proc" to be (UInt) 123.
-   * Now we know that all the "call" instruction referencing
+   * Now we know that all the "call" instructions referencing
    * the symbol "my_proc" should be assembled with "call 123"
    */
   (void) VM_Sym_Def(vmp, sym_num, & ((UInt) 123));
