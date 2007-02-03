@@ -36,6 +36,7 @@
 // #include "vmsym.h"
 // #include "vmsymstuff.h"
 // #include "registers.h"
+#include "expr.h"
 #include "compiler.h"
 
 /******************************************************************************
@@ -55,40 +56,6 @@ Task Box_Definition_Begin(BoxStack *bs) {
 }
 #endif
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* NOTA: Osserviamo che bisogna distinguere fra:
- *  1) il tipo di simbolo;
- *  2) l'esempio di simbolo.
- * Questo vale per ogni tipo di linguaggio, come il C ad esempio.
- * int, long oppure double sono "tipi di simboli", mentre se definisco
- * int a, b; long c; double d; chiamero' a, b, c, d "esempi di simboli".
- * Quindi avro' procedure per definire un "tipo di sessione" e procedure
- * per definire "un esempio di sessione", ma questo vale non solo per
- * le sessioni, ma anche per le variabili, le funzioni, etc.
- * Distinguo le procedure  per definire gli esempi con la parola Instance
- * (come Sym_Session_New, che definisce un tipo di sessione, e
- * Sym_Session_Instance_Begin, che inizia un esempio di sessione,
- * di tipo gia' definito).
- */
-
-static Array *cmp_box_list;
-static Box *cmp_current_box;
-
-Intg cmp_box_level;
-
-/****************************************************************************/
 static BoxStack box_stack, *bs = & box_stack;
 
 Task Box_Init(void) {
@@ -100,17 +67,20 @@ void Box_Destroy(void) {
   Arr_Destroy(bs->box);
 }
 
-#if 0
-/** This function opens a new box for the expression *e.
+UInt Box_Depth(void) {
+  return (Arr_NumItem(bs->box) - 1);
+}
+
+/* This function opens a new box for the expression *e.
  * If e == NULL the box is considered to be a simple untyped box.
  * If *e is a typed, but un-valued expression, then the creation of a new box
  * of type *e is started.
  * If *e has value, a modification-box for that expression is started.
  */
-Task Box_Instance_Begin(BoxStack *bs, Expr *e) {
+Task Box_Instance_Begin(Expr *e) {
   Box b;
 
-  if (e == (Expr *) NULL) {
+  if ( e == NULL ) {
     /* Si tratta di una box void */
     b.attr.second = 0;
     b.child = NULL;         /* Catena dei simboli figli */
@@ -126,7 +96,7 @@ Task Box_Instance_Begin(BoxStack *bs, Expr *e) {
 
     b.attr.second = 1;
     if ( ! e->is.value ) {
-      TASK( Cmp_Expr_Create(e, e->type, /* temporary = */ 1) );
+      TASK( Cmp_Expr_Create(e, e->type, /* temporary = */ 1 ) );
       e->is.release = 0;
       b.attr.second = 0;
     }
@@ -142,91 +112,7 @@ Task Box_Instance_Begin(BoxStack *bs, Expr *e) {
   TASK( VM_Label_New_Undef(cmp_vm, & b.label_end) );
 
   /* Inserisce la nuova sessione */
-  TASK(Arr_Push(cmp_box_list, & b));
-
-  return Success;
-}
-#endif
-
-/* This function opens a new box for the expression *e.
- * If e == NULL the box is considered to be a simple untyped box.
- * If *e is a typed, but un-valued expression, then the creation of a new box
- * of type *e is started.
- * If *e has value, a modification-box for that expression is started.
- */
-Task Box_Instance_Begin(Expr *e) {
-  Box box;
-#if 0
-  if (e == (Expr *) NULL) {
-    /* Si tratta di una box void */
-    b.attr.second = 0;
-    b.child = NULL;         /* Catena dei simboli figli */
-    b.type = TYPE_VOID;
-    Expr_New_Void(& b.value);
-
-  } else {
-
-
-  }
-
-  /* Creo le labels che puntano all'inizio ed alla fine della box */
-  TASK( VM_Label_New_Here(cmp_vm, & b.label_begin) );
-  TASK( VM_Label_New_Undef(cmp_vm, & b.label_end) );
-
-  /* Inserisce la nuova sessione */
-  TASK(Arr_Push(cmp_box_list, & b));
-
-  return Success;
-#endif
-  /* Se non esiste la lista delle box aperte la creo ora! */
-  if ( cmp_box_list == NULL ) {
-    cmp_box_list = Array_New(sizeof(Box), SYM_BOX_LIST_DIM);
-    if ( cmp_box_list == NULL ) return Failed;
-    cmp_box_level = -1; /* 0 e' la sessione principale */
-  }
-
-  ++cmp_box_level; /* Aumento il livello di box */
-  if ( e == NULL ) {
-    /* Si tratta di una box void */
-    box.ID = cmp_box_level;     /* Livello della sessione */
-    box.attr.second = 0;
-    box.child = NULL;         /* Catena dei simboli figli */
-    box.type = TYPE_VOID;
-    box.value.type = TYPE_VOID;
-    box.value.resolved = TYPE_VOID;
-    box.value.is.typed = 1;
-    box.value.is.value = 0;
-
-  } else {
-    if ( ! e->is.typed ) {
-      MSG_ERROR("Cannot open the box: '%N' has no type!", & e->value.nm);
-      Cmp_Expr_Destroy_Tmp(e);
-      return Failed;
-    }
-
-    box.attr.second = 1;
-    if ( ! e->is.value ) {
-      TASK( Cmp_Expr_Create(e, e->type, /* temporary = */ 1 ) );
-      e->is.release = 0;
-      box.attr.second = 0;
-    }
-
-    /* Compilo il descrittore del nuovo esempio di sessione aperto */
-    box.ID = cmp_box_level;  /* Livello della sessione */
-    box.type = e->type;
-    box.child = NULL;        /* Catena dei simboli figli */
-    box.value = *e;          /* Valore della sessione */
-  }
-
-  /* Creo le labels che puntano all'inizio ed alla fine della box */
-  TASK( VM_Label_New_Here(cmp_vm, & box.label_begin) );
-  TASK( VM_Label_New_Undef(cmp_vm, & box.label_end) );
-
-  /* Inserisce la nuova sessione */
-  TASK(Arr_Push(cmp_box_list, & box));
-
-  /* Imposto il puntatore all'esempio di sessione attualmente aperto */
-  cmp_current_box = Arr_LastItemPtr(cmp_box_list, Box);
+  TASK(Arr_Push(bs->box, & b));
 
   return Success;
 }
@@ -242,19 +128,19 @@ Task Box_Instance_End(Expr *e) {
   if ( e != NULL ) e->is.release = 1;
 
   /* Eseguo dei controlli di sicurezza */
-  if ( cmp_box_list == NULL ) {
+  if ( bs->box == NULL ) {
     MSG_ERROR("Nessuna box da terminare");
     return Failed;
   }
 
-  if ( Arr_NumItem(cmp_box_list) < 1 ) {
+  if ( Arr_NumItem(bs->box) < 1 ) {
     MSG_ERROR("Nessuna box da terminare");
     return Failed;
   }
 
   /* Cancello le variabili esplicite della sessione */
   {
-    Box *box = Arr_LastItemPtr(cmp_box_list, Box);
+    Box *box = Arr_LastItemPtr(bs->box, Box);
     Symbol *s;
 
     /* Cancello le labels che puntano all'inizio ed alla fine della box */
@@ -268,9 +154,7 @@ Task Box_Instance_End(Expr *e) {
     }
   }
 
-  TASK(Arr_Dec(cmp_box_list));
-  --cmp_box_level;
-  cmp_current_box = Arr_LastItemPtr(cmp_box_list, Box);
+  TASK(Arr_Dec(bs->box));
   return Success;
 }
 
@@ -284,15 +168,15 @@ Intg Box_Search_Opened(Intg type, Intg depth) {
   Intg max_depth, d;
   Box *box;
 
-  assert( (cmp_box_list != NULL) && (depth >= 0) );
+  assert( (bs->box != NULL) && (depth >= 0) );
 
-  max_depth = Arr_NumItem(cmp_box_list);
+  max_depth = Arr_NumItem(bs->box);
   if ( depth >= max_depth ) {
     MSG_ERROR("Indirizzo di box troppo profondo.");
     return -1;
   }
 
-  box = Arr_LastItemPtr(cmp_box_list, Box) - depth;
+  box = Arr_LastItemPtr(bs->box, Box) - depth;
   for (d = depth; d < max_depth; d++) {
 #if 1
     printf("Profondita': "SIntg" -- Tipo: '%s'\n",
@@ -309,8 +193,8 @@ Intg Box_Search_Opened(Intg type, Intg depth) {
  */
 Task Box_Get(Box **box, Intg depth) {
   Intg max_depth;
-  assert(cmp_box_list != NULL);
-  max_depth = Arr_NumItem(cmp_box_list);
+  assert(bs->box != NULL);
+  max_depth = Arr_NumItem(bs->box);
   if ( (depth >= max_depth) || (depth < 0) ) {
     if (depth < 0) {
       MSG_ERROR("Profondita' di box negativa.");
@@ -319,7 +203,7 @@ Task Box_Get(Box **box, Intg depth) {
     }
     return Failed;
   }
-  *box = Arr_LastItemPtr(cmp_box_list, Box) - depth;
+  *box = Arr_LastItemPtr(bs->box, Box) - depth;
   return Success;
 }
 
@@ -336,7 +220,7 @@ Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth) {
   MSG_LOCATION("Sym_Explicit_New");
 
   /* Controllo che non esista un simbolo omonimo gia' definito */
-  assert( (depth >= 0) && (depth <= cmp_box_level) );
+  assert( (depth >= 0) && (depth <= Box_Depth()) );
   s = Sym_Explicit_Find(nm, depth, EXACT_DEPTH);
   if ( s != NULL ) {
     MSG_ERROR("Un simbolo con lo stesso nome esiste gia'");
@@ -350,8 +234,8 @@ Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth) {
   /* Collego il nuovo simbolo alla lista delle variabili esplicite della
    * box corrente (in modo da eliminarle alla chiusura della box).
    */
-  box_lev = cmp_box_level - depth;
-  b = Arr_ItemPtr(cmp_box_list, Box, box_lev + 1);
+  box_lev = Box_Depth() - depth;
+  b = Arr_ItemPtr(bs->box, Box, box_lev + 1);
   s->brother = b->child;
   b->child = s;
 
@@ -389,14 +273,14 @@ Task Box_Instance_End() {
    */
   if ( e != NULL ) e->is.release = 1;
 
-  if ( Arr_NumItem(cmp_box_list) < 1 ) {
+  if ( Arr_NumItem(bs->box) < 1 ) {
     MSG_ERROR("Nessuna box da terminare");
     return Failed;
   }
 
   /* Cancello le variabili esplicite della sessione */
   {
-    Box *box = Arr_LastItemPtr(cmp_box_list, Box);
+    Box *box = Arr_LastItemPtr(bs->box, Box);
     Symbol *s;
 
     /* Cancello le labels che puntano all'inizio ed alla fine della box */
@@ -410,7 +294,7 @@ Task Box_Instance_End() {
     }
   }
 
-  TASK(Arr_Dec(cmp_box_list));
+  TASK(Arr_Dec(bs->box));
   return Success;
 }
 
@@ -434,15 +318,15 @@ Intg Box_Search_Opened(Intg type, Intg depth) {
   Intg max_depth, d;
   Box *box;
 
-  assert( (cmp_box_list != NULL) && (depth >= 0) );
+  assert( (bs->box != NULL) && (depth >= 0) );
 
-  max_depth = Arr_NumItem(cmp_box_list);
+  max_depth = Arr_NumItem(bs->box);
   if ( depth >= max_depth ) {
     MSG_ERROR("Indirizzo di box troppo profondo.");
     return -1;
   }
 
-  box = Arr_LastItemPtr(cmp_box_list, Box) - depth;
+  box = Arr_LastItemPtr(bs->box, Box) - depth;
   for (d = depth; d < max_depth; d++) {
 #if 1
     printf("Profondita': "SIntg" -- Tipo: '%s'\n",
@@ -459,8 +343,8 @@ Intg Box_Search_Opened(Intg type, Intg depth) {
  */
 Task Box_Get(Box **box, Intg depth) {
   Intg max_depth;
-  assert(cmp_box_list != NULL);
-  max_depth = Arr_NumItem(cmp_box_list);
+  assert(bs->box != NULL);
+  max_depth = Arr_NumItem(bs->box);
   if ( (depth >= max_depth) || (depth < 0) ) {
     if (depth < 0) {
       MSG_ERROR("Profondita' di box negativa.");
@@ -469,7 +353,7 @@ Task Box_Get(Box **box, Intg depth) {
     }
     return Failed;
   }
-  *box = Arr_LastItemPtr(cmp_box_list, Box) - depth;
+  *box = Arr_LastItemPtr(bs->box, Box) - depth;
   return Success;
 }
 #endif

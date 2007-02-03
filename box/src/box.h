@@ -40,33 +40,19 @@ typedef struct {
 
 /* Questa struttura descrive un esempio di box */
 typedef struct {
-  Intg        ID;       /* Box level: this number identifies the box */
   struct {
     unsigned int second : 1; /* This is 1 only if it is a non-creation box */
   } attr;
   Intg        type;     /* Type of the box */
-  Expression  value;    /* Expression associated with the box */
+  Expr        value;    /* Expression associated with the box */
   Symbol      *child;   /* Child symbols which belongs to this box */
   int         label_begin, /* Labels located at the beginning */
               label_end;   /* and at the end of the box */
 } Box;
-
-#    if 0
-/* Questa struttura descrive un esempio di box */
-typedef struct {
-  struct {
-    unsigned int second : 1; /* This is 1 only if it is a non-creation box */
-  } attr;
-  Int         type;     /* Type of the box */
-  Expression  value;    /* Expression associated with the box */
-  Symbol      *child;   /* Child symbols which belongs to this box */
-  int         label_begin, /* Labels located at the beginning */
-              label_end;   /* and at the end of the box */
-} Box;
-#    endif
 
 Task Box_Init(void);
 void Box_Destroy(void);
+UInt Box_Depth(void);
 Task Box_Instance_Begin(Expr *e);
 Task Box_Instance_End(Expr *e);
 Intg Box_Search_Opened(Intg type, Intg depth);

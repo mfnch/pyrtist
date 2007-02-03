@@ -1008,7 +1008,8 @@ Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c) {
     e->is.target = 1;
     if ( c->which_one < 0 ) {
       /* Automatically choses the local variables */
-      if ( (e->value.i = -Var_Occupy(type_of_register, cmp_box_level)) >= 0 ) return Failed;
+      if ( (e->value.i = -Var_Occupy(type_of_register, Box_Depth())) >= 0 )
+        return Failed;
       return Success;
 
     } else {
@@ -1404,7 +1405,7 @@ Task Cmp_Expr_Create(Expression *e, Intg type, int temporary) {
 
   } else {
     e->is.target = 1;
-    if ( (e->value.i = -Var_Occupy(type_of_register, cmp_box_level))
+    if ( (e->value.i = -Var_Occupy(type_of_register, Box_Depth()))
          >= 0 ) return Failed;
   }
 

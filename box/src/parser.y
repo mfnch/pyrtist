@@ -680,7 +680,7 @@ Task Prs_Suffix(Intg *rs, Intg suffix, Name *nm) {
       *rs = 0;
       return Success;
     } else {
-      if ( (*rs = suffix + 1) <= cmp_box_level ) {
+      if ( (*rs = suffix + 1) <= Box_Depth() ) {
         return Success;
       } else {
         MSG_ERROR("Massima profondita' di box superata.");
