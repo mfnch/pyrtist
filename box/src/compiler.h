@@ -29,40 +29,13 @@
 #define _COMPILER_H
 
 #include "virtmach.h"
+#include "expr.h"
 
 /* The target of the compilation */
 extern VMProgram *cmp_vm;
 
 /* We make our life simpler, since we write code always in cmp_vm */
 #define Cmp_Assemble(...) VM_Assemble(cmp_vm, __VA_ARGS__)
-
-typedef struct {
-  struct {
-    unsigned int imm     : 1; /* l'espressione e' immediata? */
-    unsigned int value   : 1; /* Possiede un valore determinato? */
-    unsigned int typed   : 1; /* Possiede tipo? */
-    unsigned int ignore  : 1; /* Va ignorata o passata alla box? */
-    unsigned int target  : 1; /* si puo' assegnare un valore all'espressione?*/
-    unsigned int gaddr   : 1; /* addr e' un registro globale (o locale)? */
-    unsigned int allocd  : 1; /* l'oggetto e' stato allocato? (va liberato?) */
-    unsigned int release : 1; /* il registro va rilasciato automaticamente? */
-  } is;
-
-  Intg    addr;
-  Intg    type;     /* The type of the expression */
-  Intg    resolved; /* = Tym_Type_Resolve_All(type) */
-  AsmArg  categ;
-  union {
-    Intg  i;
-    Real  r;
-    Point p;
-    Intg  reg;
-    Name  nm;
-  } value;
-
-} Expression;
-
-#define Expr Expression
 
 struct Operation {
   struct {
@@ -380,7 +353,7 @@ Symbol *Sym_Explicit_Find(Name *nm, Intg depth, int mode);
 
 /* Procedure definite in 'compiler.c'*/
 Task Cmp_Init(VMProgram *program);
-Task Cmp_Finish(void);
+void Cmp_Finish(void);
 Operator *Cmp_Operator_New(char *token);
 Operation *Cmp_Operation_Add(Operator *opr, Intg type1, Intg type2, Intg typer);
 Operation *Cmp_Operation_Find(Operator *opr,

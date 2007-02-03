@@ -20,57 +20,45 @@
 
 /* $Id$ */
 
-/** @file box.h
+/** @file expr.h
  * @brief The functions to handle declarations and instantiations of boxes.
  *
  * Some words.
  */
 
-#ifndef _COMPILER_H
-/* This file must be included only by "compiler.h" */
-#  include "compiler.h"
+#ifndef _EXPR_H
+#  define _EXPR_H
 
-#else
-#  ifndef _BOX_H
-#    define _BOX_H
+#  include "virtmach.h"
 
-typedef struct {
-  Array *box;
-} BoxStack;
-
-/* Questa struttura descrive un esempio di box */
-typedef struct {
-  Intg        ID;       /* Box level: this number identifies the box */
-  struct {
-    unsigned int second : 1; /* This is 1 only if it is a non-creation box */
-  } attr;
-  Intg        type;     /* Type of the box */
-  Expression  value;    /* Expression associated with the box */
-  Symbol      *child;   /* Child symbols which belongs to this box */
-  int         label_begin, /* Labels located at the beginning */
-              label_end;   /* and at the end of the box */
-} Box;
-
-#    if 0
-/* Questa struttura descrive un esempio di box */
 typedef struct {
   struct {
-    unsigned int second : 1; /* This is 1 only if it is a non-creation box */
-  } attr;
-  Int         type;     /* Type of the box */
-  Expression  value;    /* Expression associated with the box */
-  Symbol      *child;   /* Child symbols which belongs to this box */
-  int         label_begin, /* Labels located at the beginning */
-              label_end;   /* and at the end of the box */
-} Box;
-#    endif
+    unsigned int imm     : 1; /* l'espressione e' immediata? */
+    unsigned int value   : 1; /* Possiede un valore determinato? */
+    unsigned int typed   : 1; /* Possiede tipo? */
+    unsigned int ignore  : 1; /* Va ignorata o passata alla box? */
+    unsigned int target  : 1; /* si puo' assegnare un valore all'espressione?*/
+    unsigned int gaddr   : 1; /* addr e' un registro globale (o locale)? */
+    unsigned int allocd  : 1; /* l'oggetto e' stato allocato? (va liberato?) */
+    unsigned int release : 1; /* il registro va rilasciato automaticamente? */
+  } is;
 
-Task Box_Init(void);
-void Box_Destroy(void);
-Task Box_Instance_Begin(Expr *e);
-Task Box_Instance_End(Expr *e);
-Intg Box_Search_Opened(Intg type, Intg depth);
-Task Box_Get(Box **box, Intg depth);
-Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth);
-#  endif
+  Intg    addr;
+  Intg    type;     /* The type of the expression */
+  Intg    resolved; /* = Tym_Type_Resolve_All(type) */
+  AsmArg  categ;
+  union {
+    Intg  i;
+    Real  r;
+    Point p;
+    Intg  reg;
+    Name  nm;
+  } value;
+
+} Expr;
+
+/** For backward compatibility */
+#define Expression Expr
+
+void Expr_New_Void(Expr *e);
 #endif

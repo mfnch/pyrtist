@@ -238,8 +238,8 @@ int main(int argc, char** argv) {
    MSG_GT_ERRORS, MSG_NUM_WARNINGS );
   MSG_CONTEXT_END();
 
-  if IS_FAILED( Parser_Finish() ) Main_Error_Exit( NULL );
-  if IS_FAILED( Cmp_Finish() ) Main_Error_Exit( NULL );
+  Parser_Finish();
+  Cmp_Finish();
 
   if IS_FAILED( Main_Prepare() ) Main_Error_Exit( NULL );
 

@@ -43,14 +43,6 @@
  ******************************************************************************/
 
 #if 0
-Task Box_Init(BoxStack *bs) {
-  TASK( Arr_New(& bs->box, sizeof(Box), BOX_ARR_SIZE) );
-  return Success;
-}
-
-void Box_Destroy(BoxStack *bs) {
-  Arr_destroy(bs->box);
-}
 
 Task Box_Open_Main(BoxStack *bs) {
 }
@@ -62,8 +54,6 @@ Task Box_Definition_Begin(BoxStack *bs) {
 
 }
 #endif
-
-
 
 
 
@@ -97,6 +87,18 @@ static Array *cmp_box_list;
 static Box *cmp_current_box;
 
 Intg cmp_box_level;
+
+/****************************************************************************/
+static BoxStack box_stack, *bs = & box_stack;
+
+Task Box_Init(void) {
+  TASK( Arr_New(& bs->box, sizeof(Box), BOX_ARR_SIZE) );
+  return Success;
+}
+
+void Box_Destroy(void) {
+  Arr_Destroy(bs->box);
+}
 
 #if 0
 /** This function opens a new box for the expression *e.

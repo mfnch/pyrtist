@@ -176,4 +176,10 @@
 #define SYM_BOX_LIST_DIM 5
 #define CMP_TYPICAL_STRUC_DIM  32
 #define CMP_TYPICAL_STRUC_SIZE 1024
+
+/*****************************************************************************
+ *                 COSTANTI UTILIZZATE NEL FILE compiler.c                   *
+ *****************************************************************************/
+#define BOX_ARR_SIZE 16
+
 #endif

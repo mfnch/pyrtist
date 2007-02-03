@@ -83,6 +83,7 @@ Task Cmp_Init(VMProgram *program) {
     TASK( VM_Proc_Target_Set(cmp_vm, main_sheet) );
   }
 
+  TASK( Box_Init() );
   TASK( Box_Instance_Begin( NULL ) );
 
   /* Inizializzo le routine che servono per la compilazione */
@@ -90,9 +91,9 @@ Task Cmp_Init(VMProgram *program) {
   return Success;
 }
 
-Task Cmp_Finish(void) {
-  TASK( Box_Instance_End( NULL ) );
-  return Success;
+void Cmp_Finish(void) {
+  (void) Box_Instance_End( NULL );
+  Box_Destroy();
 }
 
 /******************************************************************************/
