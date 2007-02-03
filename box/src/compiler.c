@@ -83,7 +83,7 @@ Task Cmp_Init(VMProgram *program) {
     TASK( VM_Proc_Target_Set(cmp_vm, main_sheet) );
   }
 
-  TASK( Cmp_Box_Instance_Begin( NULL ) );
+  TASK( Box_Instance_Begin( NULL ) );
 
   /* Inizializzo le routine che servono per la compilazione */
   TASK( Builtins_Define() );
@@ -91,7 +91,7 @@ Task Cmp_Init(VMProgram *program) {
 }
 
 Task Cmp_Finish(void) {
-  TASK( Cmp_Box_Instance_End( NULL ) );
+  TASK( Box_Instance_End( NULL ) );
   return Success;
 }
 
@@ -107,7 +107,7 @@ Operator *Cmp_Operator_New(char *name) {
 
   opr = (Operator *) malloc( sizeof(Operator) );
   if ( opr == NULL ) {
-    MSG_ERROR("Memoria esaurita!");
+    MSG_FATAL("Memory request failed.");
     return NULL;
   }
 
@@ -141,7 +141,7 @@ Operation *Cmp_Operation_Add(
 #endif
   opn = (Operation *) malloc( sizeof(Operation) );
   if ( opn == NULL ) {
-    MSG_ERROR("Memoria esaurita!");
+    MSG_ERROR("Memory request failed.");
     return NULL;
   }
 
@@ -342,7 +342,7 @@ Task Cmp_Conversion(Intg type1, Intg type2, Expression *e) {
 
   if ( opn == NULL ) {
     if ( ! do_it ) return Failed;
-    MSG_ERROR("Non so come convertire '%s' in '%s'!",
+    MSG_ERROR("Conversion from '%s' to '%s' is undefined!",
      Tym_Type_Names(type1), Tym_Type_Names(type2));
     return Failed;
   }
@@ -456,13 +456,13 @@ Task Cmp_Member_Intrinsic(Expression *e, Name *m) {
   return Failed;
 
 cmp_memb_intr_err:
-  MSG_ERROR( "'%s' non e' un membro del tipo intrinseco '%s'!",
-   Name_Str(m), Tym_Type_Name(e->type) );
+  MSG_ERROR( "'%N' is not an intrinsic member of '%s'!",
+   m, Tym_Type_Name(e->type) );
   return Failed;
 }
 
 static Expression *Cmp__Member_Of_Ptr(Expression *e, Name *nm) {
-  MSG_ERROR("Non ancora implementato (Cmp__Member_Of_Ptr)!");
+  MSG_ERROR("Cmp__Member_Of_Ptr: Still not implemented!");
   return NULL;
 }
 
@@ -479,8 +479,7 @@ static Expression *Cmp__Member_Of_Instance(Expression *e, Name *nm) {
 
   /* Cerco *nm fra i membri del tipo t */
   if IS_FAILED( Sym_Implicit_Find(& s, t, nm) ) {
-    MSG_ERROR( "'%s' non e' un membro del tipo '%s'!",
-     Name_Str(nm), Tym_Type_Name(t) );
+    MSG_ERROR( "'%N' is not a member of type '%s'!", nm, Tym_Type_Name(t) );
     return NULL;
   }
 
@@ -508,7 +507,7 @@ static Expression *Cmp__Member_Of_Instance(Expression *e, Name *nm) {
     return e;
 
    default:
-    MSG_ERROR("Errore interno in Cmp__Member_Of_Instance!");
+    MSG_ERROR("Cmp__Member_Of_Instance: internal error!");
   }
 
   return NULL;
@@ -523,8 +522,7 @@ Expression *Cmp_Member_Get(Expression *e, Name *nm) {
   TypeDesc *td;
 
   if ( ! e->is.value ) {
-    MSG_ERROR("Richiesta del membro '%s' di un'espressione senza valore!",
-     Name_Str(nm));
+    MSG_ERROR("Requested member '%N' of a non-valued expression!", nm);
     return NULL;
   }
 
@@ -542,7 +540,7 @@ Expression *Cmp_Member_Get(Expression *e, Name *nm) {
    case TOT_PTR_TO:   /* in C questo e' il caso: espressione->membro */
     return Cmp__Member_Of_Ptr(e, nm);
    default:
-    MSG_ERROR("Il tipo '%s' non ha membri!", Tym_Type_Name(t));
+    MSG_ERROR("The type '%s' has no members!", Tym_Type_Name(t));
   }
   return NULL;
 }
@@ -605,16 +603,16 @@ Expression *Cmp_Operator_Exec(Operator *opr, Expression *e1, Expression *e2) {
 Exec_Opn_Error:
   if ( num_arg == 1 ) {
     if ( e1type != TYPE_NONE ) {
-        MSG_ERROR("%s %s <-- Operazione non definita!",
+        MSG_ERROR("%s %s <-- Operation has not been defined!",
          opr->name, Tym_Type_Name(e1->type) );
     } else {
-        MSG_ERROR("%s %s <-- Operazione non definita!",
+        MSG_ERROR("%s %s <-- Operation has not been defined!",
          Tym_Type_Name(e2->type), opr->name );
     }
     return NULL;
 
   } else {
-    MSG_ERROR("%s %s %s <-- Operazione non definita!",
+    MSG_ERROR("%s %s %s <-- Operation has not been defined!",
      Tym_Type_Names(e1->type), opr->name, Tym_Type_Names(e2->type) );
     return NULL;
   }
@@ -661,7 +659,7 @@ static Expression *Opn_Exec_Intrinsic(
     e2 = e1;
     break;
    default:
-    MSG_ERROR("Errore interno: operazione priva di argomenti!");
+    MSG_ERROR("Internal error: operation has no arguments!");
     return NULL;
   }
 
@@ -675,7 +673,7 @@ static Expression *Opn_Exec_Intrinsic(
       * dell'assegazione!
       */
     if ( ! e1->is.target ) {
-      MSG_ERROR("Impossibile modificare il valore dell'espressione!");
+      MSG_ERROR("This expression cannot be modified!");
       return NULL;
     }
 
@@ -725,7 +723,7 @@ static Expression *Opn_Exec_Intrinsic(
       * un reale, etc.
       */
       if ( opn_is.unary ) {
-        MSG_ERROR("Non ancora implementato!");
+        MSG_ERROR("Still not implemented!");
         return NULL;
 
       } else {
@@ -766,7 +764,7 @@ er_equal_e1:
             return e1;
 
           } else { /* caso 3: tipi tutti diversi */
-            MSG_ERROR("Non ancora implementato!");
+            MSG_ERROR("Still not implemented!");
             return NULL;
           }
         }
@@ -832,7 +830,7 @@ Expression *Cmp_Operation_Exec(
   if ( opn->is.intrinsic )
     return Opn_Exec_Intrinsic(opn, e1, e2);
   else {
-    MSG_ERROR("L'overloading degli operatori e' per ora impossibile!");
+    MSG_ERROR("Operator overloading is still not implemented!");
     return NULL;
   }
 
@@ -1544,7 +1542,7 @@ Expression *Cmp_Expr_Reg0_To_LReg(Intg t) {
 
   switch ( t ) {
    case TYPE_NONE:
-    MSG_ERROR("Errore interno in Cmp_Expr_Reg0_To_LReg");
+    MSG_ERROR("Internal error in Cmp_Expr_Reg0_To_LReg");
     return NULL; break;
    case TYPE_CHAR:
     Cmp_Assemble(ASM_MOV_CC, lreg.categ, lreg.value.i, CAT_LREG, 0);
@@ -2008,7 +2006,7 @@ Task Cmp_Procedure(int *found, Expression *e, Intg suffix, int auto_define) {
   /* First of all we check the attributes of the expression *e */
   if ( e->is.ignore ) goto exit_success;
   if ( !e->is.typed ) {
-    MSG_ERROR("L'espressione deve avere tipo!");
+    MSG_ERROR("This expression has no type!");
     goto exit_failed;
   }
   t = Tym_Type_Resolve_Alias(e->type);

@@ -256,29 +256,29 @@ static Task Str__ToChar(char *s, Intg l, Intg *f, char *c) {
        case '\'': *c = '\''; return Success;
        case '\"': *c = '\"'; return Success;
        default:
-         MSG_ERROR("'%s' <- Sequenza di escape errata.", Name_Str(& nm));
+         MSG_ERROR("'%N' <- Wrong escape sequence.", & nm);
          return Failed;
       }
     }
   }
 
 err_empty:
-  MSG_ERROR("'' <- Manca il carattere.");
+  MSG_ERROR("'' <- Missing character.");
   return Failed;
 err_miss:
-  MSG_ERROR("'%s' <- Sequenza di escape incompleta.", Name_Str(& nm));
+  MSG_ERROR("'%N' <- Unexpected end for the escape sequence.", & nm);
   return Failed;
 err_hex_digit:
   nm.length = 3;
-  MSG_ERROR("'%s' <- Cifra esadecimale errata.", Name_Str(& nm));
+  MSG_ERROR("'%N' <- Wrong hexadecimal digit.", & nm);
   return Failed;
 err_oct_digit:
   nm.length = 2;
-  MSG_ERROR("'%s' <- Cifra ottale errata.", Name_Str(& nm));
+  MSG_ERROR("'%N' <- Wrong ocatal digit", & nm);
   return Failed;
 err_overflow:
   nm.length = 4;
-  MSG_ERROR("'%s' <- Numero ottale superiore a 255.", Name_Str(& nm));
+  MSG_ERROR("'%N' <- This octal number is greater than 255.", & nm);
   return Failed;
 }
 
@@ -293,7 +293,7 @@ Task Str_ToChar(char *s, Intg l, char *c) {
     return Success;
   else {
     Name nm = {l, s};
-    MSG_ERROR("'%s' <- Troppi caratteri.", Name_Str(& nm));
+    MSG_ERROR("'%N' <- Too many characters.", & nm);
     return Failed;
   }
 }

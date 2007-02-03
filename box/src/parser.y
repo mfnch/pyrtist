@@ -77,7 +77,7 @@ extern UInt tok_linenum;
    else rs = *result;
 
 #define BOX_OPEN(expr) \
-  if IS_FAILED( Cmp_Box_Instance_Begin( expr ) ) \
+  if IS_FAILED( Box_Instance_Begin( expr ) ) \
     {parser_attr.no_syntax_err = 1; parser_attr.old_box = 0; YYERROR;} \
   if (expr != NULL) \
     if IS_FAILED( Prs_Procedure_Special(NULL, TYPE_OPEN, 0) ) MY_ERR
@@ -85,15 +85,15 @@ extern UInt tok_linenum;
 #define BOX_CLOSE(expr) \
   if (expr != NULL) \
     if IS_FAILED( Prs_Procedure_Special(NULL, TYPE_CLOSE, 0) ) MY_ERR; \
-  if IS_FAILED( Cmp_Box_Instance_End( expr ) ) \
+  if IS_FAILED( Box_Instance_End( expr ) ) \
     {parser_attr.no_syntax_err = 1; YYERROR;}
 
 #define BOX_REOPEN(expr) \
-  if IS_FAILED( Cmp_Box_Instance_Begin( expr ) ) \
+  if IS_FAILED( Box_Instance_Begin( expr ) ) \
     {parser_attr.no_syntax_err = 1; parser_attr.old_box = 1; YYERROR;}
 
 #define BOX_RECLOSE(expr) \
-  if IS_FAILED( Cmp_Box_Instance_End( expr ) ) \
+  if IS_FAILED( Box_Instance_End( expr ) ) \
     {parser_attr.no_syntax_err = 1; YYERROR;}
 
 #define MY_ERR {parser_attr.no_syntax_err = 1; YYERROR;}
@@ -433,7 +433,7 @@ statement:
  | procedure.statement
  | error sep {
   if (! parser_attr.no_syntax_err ) {
-    MSG_ERROR("Errore di sintassi!");
+    MSG_ERROR("Syntax error.");
   }
   parser_attr.no_syntax_err = 0;
     Tok_Unput(',');

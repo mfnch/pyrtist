@@ -86,7 +86,7 @@ Task VM_Sym_Name_Set(VMProgram *vmp, UInt sym_num, Name *n) {
   }
 
   if ( HT_Find(st->syms, n->text, n->length, & hi) ) {
-    MSG_ERROR("Another symbol exists having the name '%s'!", Name_Str(n));
+    MSG_ERROR("Another symbol exists having the name '%N'!", n);
     return Failed;
   }
 

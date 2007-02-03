@@ -65,8 +65,8 @@ typedef struct {
 } Box;
 #    endif
 
-Task Cmp_Box_Instance_Begin(Expression *e);
-Task Cmp_Box_Instance_End(Expression *e);
+Task Box_Instance_Begin(Expr *e);
+Task Box_Instance_End(Expr *e);
 Intg Box_Search_Opened(Intg type, Intg depth);
 Task Box_Get(Box **box, Intg depth);
 Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth);
