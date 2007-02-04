@@ -321,7 +321,7 @@ Intg Tym_Type_Resolve(Intg type, int not_alias, int not_species);
 #define Tym_Type_Resolve_Species(type) Tym_Type_Resolve(type, 1, 0)
 #define Tym_Type_Resolve_All(type) Tym_Type_Resolve(type, 0, 0)
 Task Tym_Delete_Type(Intg type);
-Intg Tym_Def_Procedure(Intg proc, int second, Intg of_type, Intg asm_module);
+Intg Tym_Def_Procedure(Intg proc, int second, Intg of_type, Intg sym_num);
 Intg Tym_Search_Procedure(Intg proc, int second, Intg of_type,
                           Intg *containing_species);
 void Tym_Print_Procedure(FILE *stream, Intg of_type);
@@ -396,7 +396,7 @@ void Cmp_Imm_Destroy(void);
 Task Cmp_String_New(Expression *e, Name *str, int free_str);
 #define Cmp_String_New_And_Free(e, str) Cmp_String_New(e, str, 1)
 Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
- Box **box, Intg *prototype, Intg *asm_module, int auto_define);
+ Box **box, Intg *prototype, Intg *sym_num, int auto_define);
 Task Cmp_Procedure(int *found, Expression *e, Intg suffix, int auto_define);
 Task Cmp_Structure_Begin(void);
 Task Cmp_Structure_Add(Expression *e);
@@ -404,6 +404,9 @@ Task Cmp_Structure_End(Expression *new_struct);
 Task Cmp_Structure_Get(Expression *member, int *n);
 Task Cmp_Expr_Expand(Intg species, Expression *e);
 Task Cmp_Convert(Intg type, Expression *e);
+
+Task Cmp_Builtin_Proc_Def(Intg procedure, int when_should_call, Intg of_type,
+ Task (*C_func)(VMProgram *));
 
 #define Cmp_Expr_Destroy_Tmp(e) Cmp_Expr_Destroy(e, 0)
 #define Cmp_Expr_To_LReg(expr) Cmp__Expr_To_LReg(expr, 0)
@@ -416,6 +419,4 @@ Task Cmp_Convert(Intg type, Expression *e);
 #define BOX_CREATION 1
 #define BOX_MODIFICATION 2
 
-Task Cmp_Def_C_Procedure(Intg procedure, int when_should_call, Intg of_type,
- Task (*C_func)(VMProgram *));
 #endif

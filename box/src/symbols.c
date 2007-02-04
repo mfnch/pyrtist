@@ -227,7 +227,7 @@ Task Sym_Implicit_Find(Symbol **s, Intg parent, Name *nm) {
   return (*s == NULL) ? Failed : Success;
 }
 
-/* Defines a new implicit symbol, mwmber of the type 'parent'.
+/* Defines a new implicit symbol, member of the type 'parent'.
  */
 Task Sym_Implicit_New(Symbol **new_sym, Intg parent, Name *nm) {
   Symbol *s, *ps;

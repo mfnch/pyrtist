@@ -35,26 +35,31 @@
 #    define _BOX_H
 
 typedef struct {
+  UInt cur_proc_num;
   Array *box;
 } BoxStack;
 
 /* Questa struttura descrive un esempio di box */
 typedef struct {
   struct {
+    unsigned int definition : 1; /* instance or definition of procedure? */
     unsigned int second : 1; /* This is 1 only if it is a non-creation box */
-  } attr;
-  Intg        type;     /* Type of the box */
-  Expr        value;    /* Expression associated with the box */
-  Symbol      *child;   /* Child symbols which belongs to this box */
-  int         label_begin, /* Labels located at the beginning */
-              label_end;   /* and at the end of the box */
+  } is;
+  UInt   proc_num; /* Number of the procedure where the box is */
+  Int    type;     /* Type of the box */
+  Expr   value;    /* Expression associated with the box */
+  Symbol *child;   /* Child symbols which belongs to this box */
+  int    label_begin, /* Labels located at the beginning */
+         label_end;   /* and at the end of the box */
 } Box;
 
 Task Box_Init(void);
 void Box_Destroy(void);
-UInt Box_Depth(void);
+Int Box_Depth(void);
 Task Box_Def_Begin(Int proc_type);
 Task Box_Def_End(void);
+Task Box_Main_Begin(void);
+void Box_Main_End(void);
 Task Box_Instance_Begin(Expr *e);
 Task Box_Instance_End(Expr *e);
 Intg Box_Search_Opened(Intg type, Intg depth);

@@ -450,12 +450,12 @@ static Task Blt_Define_Basics(void) {
   }
 
   /* Define the conversions (example: Real@Int such as: a = Int[ 1.2 ]) */
-  TASK(Cmp_Def_C_Procedure(TYPE_CHAR, BOX_CREATION, TYPE_CHAR, Char_Char));
-  TASK(Cmp_Def_C_Procedure(TYPE_INTG, BOX_CREATION, TYPE_CHAR, Char_Int ));
-  TASK(Cmp_Def_C_Procedure(TYPE_REAL, BOX_CREATION, TYPE_CHAR, Char_Real));
-  TASK(Cmp_Def_C_Procedure(type_IntgNum, BOX_CREATION, TYPE_INTG, Int_IntNum ));
-  TASK(Cmp_Def_C_Procedure(type_RealNum, BOX_CREATION, TYPE_INTG, Int_RealNum));
-  TASK(Cmp_Def_C_Procedure(type_RealNum, BOX_CREATION, TYPE_REAL, Real_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_CHAR, BOX_CREATION, TYPE_CHAR, Char_Char));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_INTG, BOX_CREATION, TYPE_CHAR, Char_Int ));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_REAL, BOX_CREATION, TYPE_CHAR, Char_Real));
+  TASK(Cmp_Builtin_Proc_Def(type_IntgNum, BOX_CREATION, TYPE_INTG, Int_IntNum ));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum, BOX_CREATION, TYPE_INTG, Int_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum, BOX_CREATION, TYPE_REAL, Real_RealNum));
 
   return Success;
 }
@@ -480,30 +480,30 @@ static Task Blt_Define_Math(void) {
   TASK( DEFINE_TYPE(Ceil,  TYPE_INTG) );
   TASK( DEFINE_TYPE(Floor, TYPE_INTG) );
 
-  TASK(Cmp_Def_C_Procedure(type_RealNum,BOX_CREATION,type_Cos,   Cos_RealNum));
-  TASK(Cmp_Def_C_Procedure(type_RealNum,BOX_CREATION,type_Sin,   Sin_RealNum));
-  TASK(Cmp_Def_C_Procedure(type_RealNum,BOX_CREATION,type_Tan,   Tan_RealNum));
-  TASK(Cmp_Def_C_Procedure(type_RealNum,BOX_CREATION,type_Asin,  Asin_RealNum));
-  TASK(Cmp_Def_C_Procedure(type_RealNum,BOX_CREATION,type_Acos,  Acos_RealNum));
-  TASK(Cmp_Def_C_Procedure(type_RealNum,BOX_CREATION,type_Atan,  Atan_RealNum));
-  TASK(Cmp_Def_C_Procedure(type_RealNum,BOX_CREATION,type_Exp,   Exp_RealNum));
-  TASK(Cmp_Def_C_Procedure(type_RealNum,BOX_CREATION,type_Log,   Log_RealNum));
-  TASK(Cmp_Def_C_Procedure(type_RealNum,BOX_CREATION,type_Log10,Log10_RealNum));
-  TASK(Cmp_Def_C_Procedure(type_RealNum,BOX_CREATION,type_Sqrt, Sqrt_RealNum));
-  TASK(Cmp_Def_C_Procedure(type_RealNum,BOX_CREATION,type_Ceil, Ceil_RealNum));
-  TASK(Cmp_Def_C_Procedure(type_RealNum,BOX_CREATION,type_Floor,Floor_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Cos,   Cos_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Sin,   Sin_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Tan,   Tan_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Asin,  Asin_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Acos,  Acos_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Atan,  Atan_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Exp,   Exp_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Log,   Log_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Log10,Log10_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Sqrt, Sqrt_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Ceil, Ceil_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Floor,Floor_RealNum));
   return Success;
 }
 
 static Task Blt_Define_Print(void) {
   Intg type_Print;
   TASK(Tym_Def_Explicit_Alias(& type_Print, & NAME("Print"), TYPE_VOID));
-  TASK(Cmp_Def_C_Procedure(TYPE_CHAR,  BOX_CREATION,type_Print, Print_Char));
-  TASK(Cmp_Def_C_Procedure(TYPE_INTG,  BOX_CREATION,type_Print, Print_Int));
-  TASK(Cmp_Def_C_Procedure(TYPE_REAL,  BOX_CREATION,type_Print, Print_Real));
-  TASK(Cmp_Def_C_Procedure(type_Point, BOX_CREATION,type_Print, Print_Pnt));
-  TASK(Cmp_Def_C_Procedure(type_String,BOX_CREATION,type_Print, Print_String));
-  TASK(Cmp_Def_C_Procedure(TYPE_PAUSE, BOX_CREATION,type_Print,Print_NewLine));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_CHAR,  BOX_CREATION,type_Print, Print_Char));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_INTG,  BOX_CREATION,type_Print, Print_Int));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_REAL,  BOX_CREATION,type_Print, Print_Real));
+  TASK(Cmp_Builtin_Proc_Def(type_Point, BOX_CREATION,type_Print, Print_Pnt));
+  TASK(Cmp_Builtin_Proc_Def(type_String,BOX_CREATION,type_Print, Print_String));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_PAUSE, BOX_CREATION,type_Print,Print_NewLine));
   /*Tym_Print_Procedure(stdout, type_new);*/
   return Success;
 }
@@ -517,18 +517,18 @@ typedef struct {
 static Task Blt_Define_Sys(void) {
   Intg type_Exit, type_Exit_Success;
   TASK( Tym_Def_Explicit_Alias(& type_Exit, & NAME("Exit"), TYPE_VOID) );
-  TASK( Cmp_Def_C_Procedure(TYPE_INTG, BOX_CREATION, type_Exit, Exit_Int) );
+  TASK( Cmp_Builtin_Proc_Def(TYPE_INTG, BOX_CREATION, type_Exit, Exit_Int) );
 
   TASK( Tym_Def_Type(& type_Exit_Success,
    type_Exit, & NAME("Success"), (Intg) -1, TYPE_VOID) );
-  TASK(Cmp_Def_C_Procedure(TYPE_OPEN, BOX_CREATION, type_Exit_Success, Exit_Success));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_OPEN, BOX_CREATION, type_Exit_Success, Exit_Success));
 
   TASK( Tym_Def_Intrinsic(& type_File, & NAME("File"), sizeof(File)) );
 
-  TASK(Cmp_Def_C_Procedure(TYPE_OPEN,  BOX_CREATION, type_File, C_File_Open));
-  TASK(Cmp_Def_C_Procedure(type_String,BOX_CREATION, type_File, C_File_String));
-  TASK(Cmp_Def_C_Procedure(TYPE_CLOSE, BOX_CREATION, type_File, C_File_Close));
-  TASK(Cmp_Def_C_Procedure(type_String,BOX_MODIFICATION,type_File,M_File_String));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_OPEN,  BOX_CREATION, type_File, C_File_Open));
+  TASK(Cmp_Builtin_Proc_Def(type_String,BOX_CREATION, type_File, C_File_String));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_CLOSE, BOX_CREATION, type_File, C_File_Close));
+  TASK(Cmp_Builtin_Proc_Def(type_String,BOX_MODIFICATION,type_File,M_File_String));
   return Success;
 }
 

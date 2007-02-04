@@ -31,8 +31,8 @@
 #include "messages.h"
 #include "array.h"
 // #include "str.h"
-// #include "virtmach.h"
-// #include "vmproc.h"
+#include "virtmach.h"
+#include "vmproc.h"
 // #include "vmsym.h"
 // #include "vmsymstuff.h"
 // #include "registers.h"
@@ -54,23 +54,50 @@ void Box_Destroy(void) {
   Arr_Destroy(bs->box);
 }
 
-UInt Box_Depth(void) {
+Int Box_Depth(void) {
   return (Arr_NumItem(bs->box) - 1);
 }
 
-Task Box_Open_Main(void) {
-  return Failed;
+Task Box_Main_Begin(void) {
+  /* Sets the output for the compiled code */
+  UInt main_sheet;
+  TASK( VM_Proc_Code_New(cmp_vm, & main_sheet) );
+  TASK( VM_Proc_Target_Set(cmp_vm, main_sheet) );
+  bs->cur_proc_num = main_sheet;
+  return Box_Instance_Begin((Expr *) NULL);
 }
 
-Task Box_Close_Main(void) {
-  return Failed;
+void Box_Main_End(void) {
+  (void) Box_Instance_End((Expr *) NULL);
 }
 
 Task Box_Def_Begin(Int proc_type) {
+  UInt new_sheet;
+  Box b;
+
+  TASK( VM_Proc_Code_New(cmp_vm, & new_sheet) );
+
+  b.is.second = 0;
+  b.child = NULL;
+  b.type = TYPE_VOID;
+  Expr_New_Void(& b.value);
+  b.is.definition = 1;
+  b.proc_num = new_sheet;
+  TASK(Arr_Push(bs->box, & b));
+
+  TASK( VM_Proc_Target_Set(cmp_vm, new_sheet) );
+  bs->cur_proc_num = new_sheet;
   return Success;
 }
 
 Task Box_Def_End(void) {
+  Box *b;
+  TASK(Arr_Dec(bs->box));
+  if (Arr_NumItem(bs->box) > 0) {
+    b = Arr_LastItemPtr(bs->box, Box);
+    TASK( VM_Proc_Target_Set(cmp_vm, b->proc_num) );
+    bs->cur_proc_num = b->proc_num;
+  }
   return Success;
 }
 
@@ -85,7 +112,7 @@ Task Box_Instance_Begin(Expr *e) {
 
   if ( e == NULL ) {
     /* Si tratta di una box void */
-    b.attr.second = 0;
+    b.is.second = 0;
     b.child = NULL;         /* Catena dei simboli figli */
     b.type = TYPE_VOID;
     Expr_New_Void(& b.value);
@@ -97,11 +124,11 @@ Task Box_Instance_Begin(Expr *e) {
       return Failed;
     }
 
-    b.attr.second = 1;
+    b.is.second = 1;
     if ( ! e->is.value ) {
       TASK( Cmp_Expr_Create(e, e->type, /* temporary = */ 1 ) );
       e->is.release = 0;
-      b.attr.second = 0;
+      b.is.second = 0;
     }
 
     /* Compilo il descrittore del nuovo esempio di sessione aperto */
@@ -115,6 +142,8 @@ Task Box_Instance_Begin(Expr *e) {
   TASK( VM_Label_New_Undef(cmp_vm, & b.label_end) );
 
   /* Inserisce la nuova sessione */
+  b.is.definition = 0; /* This is just an instance, not a definition */
+  b.proc_num = bs->cur_proc_num; /* The procedure number where we are now */
   TASK(Arr_Push(bs->box, & b));
 
   return Success;

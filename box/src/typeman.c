@@ -821,12 +821,12 @@ Task Tym_Delete_Type(Intg type) {
 }
 
 /* This function defines the procedure proc@of_type and associates to it
- * the module 'asm_module'. If second == 0, then the procedure is a first one
+ * the symbol 'sym_num'. If second == 0, then the procedure is a first one
  * (those called when an object is beeing created: Object[ procedure ]),
  * if second == 1, then the procedure is a second procedure (those called
  * when an object is beeing used: Object[][ procedure ]).
  */
-Intg Tym_Def_Procedure(Intg proc, int second, Intg of_type, Intg asm_module) {
+Intg Tym_Def_Procedure(Intg proc, int second, Intg of_type, Intg sym_num) {
   TypeDesc *td, *p;
   Intg new_procedure;
   MSG_LOCATION("Tym_Def_Procedure");
@@ -847,7 +847,7 @@ Intg Tym_Def_Procedure(Intg proc, int second, Intg of_type, Intg asm_module) {
   td->size = 0;
   td->parent = of_type;
   td->target = proc;
-  td->asm_mod = asm_module;
+  td->asm_mod = sym_num;
   td->procedure = p->procedure;
   new_procedure = tym_recent_type;
   /* The previous call to Tym_Type_New may had required to realloc

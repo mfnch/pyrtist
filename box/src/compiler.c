@@ -67,6 +67,7 @@ Task Cmp_Init(VMProgram *program) {
   static UInt typl_nvar[NUM_TYPES] = VAR_OCC_TYP_SIZE;
 
   /* Initialization of the code which writes the bytecode program for the VM */
+  cmp_vm = program;
 
   /* Initialization of the lists which hold the occupation status
    * for registers and variables.
@@ -74,17 +75,8 @@ Task Cmp_Init(VMProgram *program) {
   TASK( Reg_Init(typl_nreg) );
   TASK( Var_Init(typl_nvar) );
 
-  cmp_vm = program;
-
-  /* Sets the output for the compiled code */
-  {
-    UInt main_sheet;
-    TASK( VM_Proc_Code_New(cmp_vm, & main_sheet) );
-    TASK( VM_Proc_Target_Set(cmp_vm, main_sheet) );
-  }
-
   TASK( Box_Init() );
-  TASK( Box_Instance_Begin( NULL ) );
+  TASK( Box_Main_Begin() );
 
   /* Inizializzo le routine che servono per la compilazione */
   TASK( Builtins_Define() );
@@ -92,7 +84,7 @@ Task Cmp_Init(VMProgram *program) {
 }
 
 void Cmp_Finish(void) {
-  (void) Box_Instance_End( NULL );
+  Box_Main_End();
   Box_Destroy();
 }
 
@@ -1847,7 +1839,7 @@ Task Cmp_String_New(Expression *e, Name *str, int free_str) {
  * of the second: the function searches the procedure of type 'procedure'
  * which belongs to the opened box, whose suffix descriptor is 'suffix'.
  * If a suitable procedure is found, its actual type is assigned
- * to *prototype and its module number is put into *asm_module.
+ * to *prototype and its symbol number is put into *sym_num.
  * If the searched procedure is not found, the behaviour will depend
  * on the argument 'auto_define': if it is = 1, then the procedure will
  * be added, marked as undefined and returned. If it is = 0, then
@@ -1860,7 +1852,7 @@ Task Cmp_String_New(Expression *e, Name *str, int free_str) {
  *  of *found.
  */
 Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
- Box **box, Intg *prototype, Intg *asm_module, int auto_define) {
+ Box **box, Intg *prototype, Intg *sym_num, int auto_define) {
   Box *b;
   Intg p, dummy;
 
@@ -1878,7 +1870,7 @@ Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
   *box = b;
 
   /* Now we search for the procedure associated with *e */
-  p = Tym_Search_Procedure(procedure, b->attr.second, b->type, prototype);
+  p = Tym_Search_Procedure(procedure, b->is.second, b->type, prototype);
 
   /* If a suitable procedure does not exist, we create it now,
    * and we mark it as "undefined"
@@ -1908,7 +1900,7 @@ Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
     td = Tym_Type_Get(p);
     if ( td == NULL ) return Failed;
     assert(td->tot == TOT_PROCEDURE || td->tot == TOT_PROCEDURE2);
-    *asm_module = td->asm_mod;
+    *sym_num = td->asm_mod;
     *found = 1;
     return Success;
   }
@@ -1928,7 +1920,7 @@ Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
  */
 Task Cmp_Procedure(int *found, Expression *e, Intg suffix, int auto_define) {
   Box *b;
-  Intg asm_module, t;
+  Intg sym_num, t;
   Intg prototype;
   int dummy = 0;
 
@@ -1947,7 +1939,7 @@ Task Cmp_Procedure(int *found, Expression *e, Intg suffix, int auto_define) {
 
   if IS_FAILED(
       Cmp_Procedure_Search(
-        found, e->type, suffix, & b, & prototype, & asm_module, auto_define
+        found, e->type, suffix, & b, & prototype, & sym_num, auto_define
       )
     ) goto exit_failed;
 
@@ -1970,7 +1962,7 @@ Task Cmp_Procedure(int *found, Expression *e, Intg suffix, int auto_define) {
     if IS_FAILED( Cmp_Expr_To_Ptr(e, CAT_GREG, (Intg) 2, 0) ) goto exit_failed;
   }
 
-  TASK( VM_Sym_Call(cmp_vm, asm_module) );
+  TASK( VM_Sym_Call(cmp_vm, sym_num) );
 
 exit_success:
   (void) Cmp_Expr_Destroy_Tmp(e);
@@ -2011,13 +2003,6 @@ Task Cmp_Builtin_Proc_Def(Intg procedure, int when_should_call, Intg of_type,
   /* And define the symbol */
   TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
   return Success;
-}
-
-Task Cmp_Def_C_Procedure(Intg procedure, int when_should_call, Intg of_type,
- Task (*C_func)(VMProgram *)) {
-  UInt asm_module, proc = 0;
-
-  return Cmp_Builtin_Proc_Def(procedure, when_should_call, of_type, C_func);
 }
 
 #include "structure.c"
