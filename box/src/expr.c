@@ -21,6 +21,25 @@
 /* $Id$ */
 
 #include "expr.h"
+#include "compiler.h"
+
+/* This fuction creates an expression with type, but without value.
+ */
+void Expr_New_Type(Expr *e, Int type) {
+  e->type = type;
+  e->resolved = Tym_Type_Resolve_All(type);
+  e->value.i = 0;
+  e->addr = 0;
+  e->categ = 0;
+  e->is.typed = 1;
+  e->is.value = 0;
+  e->is.ignore = 0;
+  e->is.imm = 0;
+  e->is.target = 0;
+  e->is.gaddr = 0;
+  e->is.allocd = 0;
+  e->is.release = 0;
+}
 
 /** Put inside *e a the Void value. */
 void Expr_New_Void(Expr *e) {
@@ -28,6 +47,65 @@ void Expr_New_Void(Expr *e) {
   e->resolved = TYPE_VOID;
   e->is.typed = 1;
   e->is.value = 0;
+  e->is.ignore = 0;
+  e->is.imm = 0;
+  e->is.target = 0;
+}
+
+/* Prints the details about the specified expression *e.
+ */
+void Expr_Print(Expr *e, FILE *out) {
+  char buffer[128], *value = buffer;
+  static const char *asm_arg_str[4] = {
+    "global register",
+    "local register",
+    "pointer to location",
+    "immediate value"
+  };
+
+  if ( ! e->is.typed ) {
+    fprintf(out, "Name(name=\"%s\")\n", e->value.nm.text);
+    return;
+  }
+
+  if ( e->categ == CAT_IMM ) {
+    switch(e->resolved) {
+    case TYPE_CHAR:
+      sprintf(buffer, "INT("SChar")", (Char) e->value.i);
+      break;
+    case TYPE_INTG:
+      sprintf(buffer, "INT("SIntg")", e->value.i);
+      break;
+    case TYPE_REAL:
+      sprintf(buffer, "REAL("SReal")", e->value.r);
+      break;
+    default:
+      value = "UNKNOWN";
+      break;
+    }
+
+  } else {
+    sprintf(buffer, "INT("SIntg")", e->value.i);
+  }
+
+  fprintf(out,
+    "Expression(type="SIntg"=\"%s\", resolved="SIntg"=\"%s\", "
+    "categ=%d=\"%s\", %s, imm=%c, value=%c, typed=%c, ignore=%c, target=%c, "
+    "gaddr=%c, allocd=%c, release=%c)\n",
+    e->type, Tym_Type_Names(e->type),
+    e->resolved, Tym_Type_Names(e->resolved),
+    e->categ,
+    (e->categ >= 0) && (e->categ < 4) ? asm_arg_str[e->categ] : "ERROR!",
+    value,
+    e->is.imm ? '1' : '0',
+    e->is.value ? '1' : '0',
+    e->is.typed ? '1' : '0',
+    e->is.ignore ? '1' : '0',
+    e->is.target ? '1' : '0',
+    e->is.gaddr ? '1' : '0',
+    e->is.allocd ? '1' : '0',
+    e->is.release ? '1' : '0'
+  );
 }
 
 #if 0

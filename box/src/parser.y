@@ -49,6 +49,8 @@ ParserAttr parser_attr;
 /* Funzioni definite in questo file */
 void yyerror(char* s);
 
+static Task Proc_Def_Open(Expr *child_type, Expr *parent_type);
+static Task Proc_Def_Close(void);
 static Task Declare_Proc(Expr *child_type, Expr *parent_type, Name *name);
 
 /* Numero della linea che e' in fase di lettura dal tokenizer */
@@ -407,18 +409,28 @@ exit.statement:
 ;
 
 parent:
-   type {$$ = $1;}
- | type '@' parent {$$ = $1;}
+   type                 {$$ = $1;}
+ | type '@' parent      {$$ = $1;}
 ;
 
 parent.opt:
- | parent {$$ = $1;}
+                        {}
+ | parent               {$$ = $1;}
 ;
 
-procedure.statement:
-   '@' parent '[' statement.list ']'
- | type '@' parent.opt '[' statement.list ']'
- | type '@' parent.opt '?' TOK_LNAME {DO(Declare_Proc(& $1, & $3, & $5))}
+proc.def:
+   '@' parent
+   '['
+   statement.list
+   ']'
+
+ | type '@' parent.opt
+   '['                  {DO(Proc_Def_Open(& $1, & $3))}
+   statement.list
+   ']'                  {DO(Proc_Def_Close())}
+
+ | type '@' parent.opt
+   '?' TOK_LNAME        {DO(Declare_Proc(& $1, & $3, & $5))}
 ;
 
  /*************DEFINIZIONE DELLA STRUTTURA GENERICA DEI PROGRAMMI**************/
@@ -430,7 +442,7 @@ statement:
  | again.statement
  | exit.statement
  | compound.statement
- | procedure.statement
+ | proc.def
  | error sep {
   if (! parser_attr.no_syntax_err ) {
     MSG_ERROR("Syntax error.");
@@ -496,13 +508,26 @@ Task Parser_Finish(void) {
   return Success;
 }
 
-
 static Task Declare_Proc(Expr *child_type, Expr *parent_type, Name *name) {
   UInt sym_num;
+  Int proc;
   TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
   TASK( VM_Sym_Name_Set(cmp_vm, sym_num, name) );
-  TASK( Tym_Def_Procedure(child_type->type, 0, parent_type->type, sym_num) );
-  return Success;
+  proc = Tym_Def_Procedure(child_type->type, 0, parent_type->type, sym_num);
+  return (proc == TYPE_NONE) ? Failed : Success;
+}
+
+static Task Proc_Def_Open(Expr *child_type, Expr *parent_type) {
+  UInt sym_num;
+  Int proc_type;
+  TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
+  proc_type = Tym_Def_Procedure(child_type->type,0,parent_type->type,sym_num);
+  if (proc_type == TYPE_NONE) return Failed;
+  return Box_Def_Begin(proc_type);
+}
+
+static Task Proc_Def_Close(void) {
+  return Box_Def_End();
 }
 
 #if 0
@@ -549,7 +574,6 @@ Task Prs_Def_Operator(Operator *opr,
     return Success;
 
   } else {
-
     TASK( Cmp_Expr_Container_New(target, e->type, CONTAINER_LVAR_AUTO) );
     TASK( Cmp_Expr_To_X(e, target->categ, target->value.i, 0) );
     target->is.allocd = e->is.allocd;
@@ -584,7 +608,7 @@ Task Prs_Operator(Operator *opr, Expression *rs, Expression *a, Expression *b) {
  * this function puts the corresponding expression into *e, otherwise
  * it transforms the name *nm into an untyped expression *e.
  */
-Task Prs_Name_To_Expr(Name *nm, Expression *e, Intg suffix) {
+Task Prs_Name_To_Expr(Name *nm, Expr *e, Intg suffix) {
   Symbol *s;
 
   if ( suffix < 0 ) {
@@ -842,7 +866,7 @@ Task Prs_Procedure_Special(int *found, int type, int auto_define) {
   Expression e;
   int dummy = 0;
   if ( found == NULL ) found = & dummy;
-  TASK( Cmp_Expr_Unvalued(& e, type) );
+  Expr_New_Type(& e, type);
   return Cmp_Procedure(found, & e, 0, auto_define);
 }
 

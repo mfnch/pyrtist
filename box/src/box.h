@@ -53,6 +53,8 @@ typedef struct {
 Task Box_Init(void);
 void Box_Destroy(void);
 UInt Box_Depth(void);
+Task Box_Def_Begin(Int proc_type);
+Task Box_Def_End(void);
 Task Box_Instance_Begin(Expr *e);
 Task Box_Instance_End(Expr *e);
 Intg Box_Search_Opened(Intg type, Intg depth);

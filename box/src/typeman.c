@@ -354,7 +354,8 @@ Task Tym_Def_Type(Intg *new_type,
   /* I set all the remaining values of the structure s */
   s->symtype = VARIABLE;
   *new_type = type;
-  return Cmp_Expr_Unvalued(& s->value, type);
+  Expr_New_Type(& s->value, type);
+  return Success;
 }
 
 /* DESCRIPTION: Returns the symbol associated with the type 'type';

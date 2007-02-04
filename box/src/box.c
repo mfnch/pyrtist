@@ -43,19 +43,6 @@
  *            FUNZIONI DI GESTIONE DELLE BOX (APERTURA E CHIUSURA)            *
  ******************************************************************************/
 
-#if 0
-
-Task Box_Open_Main(BoxStack *bs) {
-}
-
-Task Box_Close_Main(BoxStack *bs) {
-}
-
-Task Box_Definition_Begin(BoxStack *bs) {
-
-}
-#endif
-
 static BoxStack box_stack, *bs = & box_stack;
 
 Task Box_Init(void) {
@@ -69,6 +56,22 @@ void Box_Destroy(void) {
 
 UInt Box_Depth(void) {
   return (Arr_NumItem(bs->box) - 1);
+}
+
+Task Box_Open_Main(void) {
+  return Failed;
+}
+
+Task Box_Close_Main(void) {
+  return Failed;
+}
+
+Task Box_Def_Begin(Int proc_type) {
+  return Success;
+}
+
+Task Box_Def_End(void) {
+  return Success;
 }
 
 /* This function opens a new box for the expression *e.
@@ -117,9 +120,9 @@ Task Box_Instance_Begin(Expr *e) {
   return Success;
 }
 
-/* DESCRIZIONE: Conclude l'ultimo esempio di sessione aperto, la lista
- *  delle variabili esplicite viene analizzata, per ognuna di queste
- *  viene eseguita l'azione final_action, dopodiche' viene eliminata.
+/** Conclude l'ultimo esempio di sessione aperto, la lista
+ * delle variabili esplicite viene analizzata, per ognuna di queste
+ * viene eseguita l'azione final_action, dopodiche' viene eliminata.
  */
 Task Box_Instance_End(Expr *e) {
   /* Il registro occupato per la sessione ora diventa un registro normale
@@ -247,113 +250,3 @@ Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth) {
   *sym = s;
   return Success;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if 0
-
-/** Conclude l'ultimo esempio di sessione aperto, la lista
- * delle variabili esplicite viene analizzata, per ognuna di queste
- * viene eseguita l'azione final_action, dopodiche' viene eliminata.
- */
-Task Box_Instance_End() {
-  /* Il registro occupato per la sessione ora diventa un registro normale
-   * e puo' essere liberato!
-   */
-  if ( e != NULL ) e->is.release = 1;
-
-  if ( Arr_NumItem(bs->box) < 1 ) {
-    MSG_ERROR("Nessuna box da terminare");
-    return Failed;
-  }
-
-  /* Cancello le variabili esplicite della sessione */
-  {
-    Box *box = Arr_LastItemPtr(bs->box, Box);
-    Symbol *s;
-
-    /* Cancello le labels che puntano all'inizio ed alla fine della box */
-    TASK( VM_Label_Destroy(cmp_vm, box->label_begin) );
-    TASK( VM_Label_Define_Here(cmp_vm, box->label_end) );
-    TASK( VM_Label_Destroy(cmp_vm, box->label_end) );
-
-    for ( s = box->child; s != (Symbol *) NULL; s = s->brother ) {
-      TASK( Cmp_Expr_Destroy(& (s->value), 1) );
-      Sym_Symbol_Delete( s );
-    }
-  }
-
-  TASK(Arr_Dec(bs->box));
-  return Success;
-}
-
-
-
-
-
-
-
-
-
-
-
-/* DESCRIZIONE: Cerca fra le scatole aperte di profondita' > depth,
- *  la prima di tipo type. Se depth = 0 parte dall'ultima scatola aperta,
- *  se depth = 1, dalla penultima, etc.
- *  Restituisce la profondita' della scatola cercata o -1 in caso
- *  di ricerca fallita.
- */
-Intg Box_Search_Opened(Intg type, Intg depth) {
-  Intg max_depth, d;
-  Box *box;
-
-  assert( (bs->box != NULL) && (depth >= 0) );
-
-  max_depth = Arr_NumItem(bs->box);
-  if ( depth >= max_depth ) {
-    MSG_ERROR("Indirizzo di box troppo profondo.");
-    return -1;
-  }
-
-  box = Arr_LastItemPtr(bs->box, Box) - depth;
-  for (d = depth; d < max_depth; d++) {
-#if 1
-    printf("Profondita': "SIntg" -- Tipo: '%s'\n",
-     d, Tym_Type_Name(box->value.type));
-#endif
-    if ( box->type == type ) return d;
-    --box;
-  }
-  return -1;
-}
-
-/* DESCRIPTION: This function returns the pointer to the structure Box
- *  corresponding to the box with depth 'depth'.
- */
-Task Box_Get(Box **box, Intg depth) {
-  Intg max_depth;
-  assert(bs->box != NULL);
-  max_depth = Arr_NumItem(bs->box);
-  if ( (depth >= max_depth) || (depth < 0) ) {
-    if (depth < 0) {
-      MSG_ERROR("Profondita' di box negativa.");
-    } else {
-      MSG_ERROR("Profondita' di box fuori limite.");
-    }
-    return Failed;
-  }
-  *box = Arr_LastItemPtr(bs->box, Box) - depth;
-  return Success;
-}
-#endif

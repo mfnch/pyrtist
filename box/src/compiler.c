@@ -905,62 +905,6 @@ Expression *Cmp_Operation_Exec(
  * convertirli, etc.                                                          *
  ******************************************************************************/
 
-/* Prints the details about the specified expression *e.
- */
-void Cmp_Expr_Print(FILE *out, Expression *e) {
-  char buffer[128], *value = buffer;
-  static const char *asm_arg_str[4] = {
-    "global register",
-    "local register",
-    "pointer to location",
-    "immediate value"
-  };
-
-  if ( ! e->is.typed ) {
-    fprintf(out, "Name(name=\"%s\")\n", e->value.nm.text);
-    return;
-  }
-
-  if ( e->categ == CAT_IMM ) {
-    switch(e->resolved) {
-    case TYPE_CHAR:
-      sprintf(buffer, "INT("SChar")", (Char) e->value.i);
-      break;
-    case TYPE_INTG:
-      sprintf(buffer, "INT("SIntg")", e->value.i);
-      break;
-    case TYPE_REAL:
-      sprintf(buffer, "REAL("SReal")", e->value.r);
-      break;
-    default:
-      value = "UNKNOWN";
-      break;
-    }
-
-  } else {
-    sprintf(buffer, "INT("SIntg")", e->value.i);
-  }
-
-  fprintf(out,
-    "Expression(type="SIntg"=\"%s\", resolved="SIntg"=\"%s\", "
-    "categ=%d=\"%s\", %s, imm=%c, value=%c, typed=%c, ignore=%c, target=%c,"
-    "gaddr=%c, allocd=%c, release=%c)\n",
-    e->type, Tym_Type_Names(e->type),
-    e->resolved, Tym_Type_Names(e->resolved),
-    e->categ,
-    (e->categ >= 0) && (e->categ < 4) ? asm_arg_str[e->categ] : "ERROR!",
-    value,
-    e->is.imm ? '1' : '0',
-    e->is.value ? '1' : '0',
-    e->is.typed ? '1' : '0',
-    e->is.ignore ? '1' : '0',
-    e->is.target ? '1' : '0',
-    e->is.gaddr ? '1' : '0',
-    e->is.allocd ? '1' : '0',
-    e->is.release ? '1' : '0'
-  );
-}
-
 /* Create a new empty container.
  * NOTE: At the end this should substitute Cmp_Expr_LReg and Cmp_Expr_Create.
  */
@@ -1035,19 +979,6 @@ Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c) {
     MSG_ERROR("Cmp_Expr_Container_New: wrong type of container!");
   }
   return Failed;
-}
-
-/* This fuction creates an expression with type, but without value.
- */
-Task Cmp_Expr_Unvalued(Expression *e, Intg type) {
-  e->type = type;
-  e->resolved = Tym_Type_Resolve_All(type);
-  e->is.value = 0;
-  e->is.typed = 1;
-  e->is.ignore = 0;
-  e->is.imm = 0;
-  e->is.target = 0;
-  return Success;
 }
 
 /* DESCRIZIONE: Inizializzo la struttura expr in modo che contenga un
@@ -1426,7 +1357,7 @@ Task Cmp_Expr_Destroy(Expression *e, int destroy_target) {
 
 #ifdef DEBUG_CONTAINER_HANDLING
   printf( "Cmp_Expr_Destroy: destroying " );
-  Cmp_Expr_Print(stdout, e);
+  Expr_Print(e, stdout);
 #endif
 
   if ( ! e->is.typed ) {
@@ -1526,8 +1457,8 @@ Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src) {
   } else {
     /* Sposto un oggetto user-defined */
     MSG_ERROR("Internal error in Cmp_Expr_Move: still not implemented!");
-    fprintf(stderr, "e_src = ");  Cmp_Expr_Print(stderr, e_src);
-    fprintf(stderr, "e_dest = "); Cmp_Expr_Print(stderr, e_dest);
+    fprintf(stderr, "e_src = ");  Expr_Print(e_src, stderr);
+    fprintf(stderr, "e_dest = "); Expr_Print(e_dest, stderr);
     return Failed;
   }
 }

@@ -110,7 +110,7 @@ Task Builtins_Define() {
     Intg t;
     TASK( Tym_Def_Intrinsic(& t, & NAME("Char"), sizeof(Char)) );
     assert(t == TYPE_CHAR);
-    TASK( Tym_Def_Intrinsic(& t, & NAME("Int"), sizeof(Intg)  ) );
+    TASK( Tym_Def_Intrinsic(& t, & NAME("Int"), sizeof(Int)  ) );
     assert(t == TYPE_INTG);
     TASK( Tym_Def_Intrinsic(& t, & NAME("Real"), sizeof(Real)  ) );
     assert(t == TYPE_REAL);

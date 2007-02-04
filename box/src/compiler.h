@@ -363,7 +363,6 @@ Task Cmp_Member_Intrinsic(Expression *e, Name *m);
 Expression *Cmp_Member_Get(Expression *e, Name *m);
 Expression *Cmp_Operator_Exec(Operator *opr, Expression *e1, Expression *e2);
 Expression *Cmp_Operation_Exec(Operation *opn, Expression *e1, Expression *e2);
-void Cmp_Expr_Print(FILE *out, Expression *e);
 Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c);
 Task Cmp_Expr_Unvalued(Expression *e, Intg type);
 Task Cmp_Expr_LReg(Expression *e, Intg t, int zero);

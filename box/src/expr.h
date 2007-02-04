@@ -60,5 +60,13 @@ typedef struct {
 /** For backward compatibility */
 #define Expression Expr
 
+/** Create a new type-expression */
+void Expr_New_Type(Expr *e, Int type);
+
+/** Create a new Void expression */
 void Expr_New_Void(Expr *e);
+
+/** Print the content of the given expression */
+void Expr_Print(Expr *e, FILE *out);
+
 #endif
