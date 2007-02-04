@@ -770,7 +770,7 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
 
 #ifdef DEBUG_EXEC
     fprintf(stderr, "module = "SIntg", pos = "SIntg" - reading instruction.\n",
-           mnum, i*sizeof(VMByteX4));
+           call_num, i*sizeof(VMByteX4));
 #endif
 
     /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */

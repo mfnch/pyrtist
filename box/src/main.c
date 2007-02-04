@@ -100,7 +100,8 @@ int main(int argc, char** argv);
 void Main_Error_Exit(char *msg);
 void Main_Cmnd_Line_Help(void);
 Task Main_Prepare(void);
-Task Main_Execute(void);
+Task Main_Install(UInt *main_module);
+Task Main_Execute(UInt main_module);
 void Temporaneo(void);
 
 /******************************************************************************/
@@ -110,7 +111,7 @@ void Temporaneo(void);
  */
 int main(int argc, char** argv) {
   int i;
-  UInt j;
+  UInt j, main_module;
 
   /* Inizializzo la gestione dei messaggi */
   Msg_Main_Init(MSG_LEVEL_WARNING);
@@ -242,6 +243,8 @@ int main(int argc, char** argv) {
   Cmp_Finish();
 
   if IS_FAILED( Main_Prepare() ) Main_Error_Exit( NULL );
+  if IS_FAILED( Main_Install(& main_module) ) Main_Error_Exit( NULL );
+
 
   /* Controllo se e' possibile procedere all'esecuzione del file compilato! */
   if ( (flags & FLAG_EXECUTE) && (MSG_GT_WARNINGS > 0) ) {
@@ -270,10 +273,10 @@ int main(int argc, char** argv) {
     (void) Cmp_Data_Display(stdout);
     fprintf(stdout, "\n");
     VM_DSettings(program, 1);
-/*    if IS_FAILED( VM_Module_Disassemble_All(stdout) )
-      Main_Error_Exit( NULL );*/
-    if IS_FAILED( VM_Proc_Disassemble(program, stdout, target_proc_num) )
+    if IS_FAILED( VM_Proc_Disassemble_All(program, stdout) )
       Main_Error_Exit( NULL );
+/*    if IS_FAILED( VM_Proc_Disassemble(program, stdout, target_proc_num) )
+      Main_Error_Exit( NULL );*/
   }
 
   /* Fase di esecuzione */
@@ -285,7 +288,7 @@ int main(int argc, char** argv) {
 
     Msg_Main_Counter_Clear_All();
     MSG_CONTEXT_BEGIN("Execution");
-    (void) Main_Execute();
+    (void) Main_Execute(main_module);
     MSG_ADVICE( "Execution finished. "
      "%U errors and %U warnings were found.",
      MSG_GT_ERRORS, MSG_NUM_WARNINGS );
@@ -343,10 +346,12 @@ Task Main_Prepare(void) {
 }
 
 /* FASE DI ESECUZIONE */
-Task Main_Execute(void) {
-  Task exit_code;
-  UInt main_module;
+Task Main_Install(UInt *main_module) {
+  return VM_Proc_Install_Code(program, main_module,
+   VM_Proc_Target_Get(program), "main", "Description...");
+}
 
+Task Main_Execute(UInt main_module) {
   /*Msg_Num_Reset_All();
 
   Msg_Context_Enter("Controllo lo stato di definizione dei moduli.\n");
@@ -359,11 +364,7 @@ Task Main_Execute(void) {
   }
   */
 
-
-  TASK( VM_Proc_Install_Code(program, & main_module,
-   VM_Proc_Target_Get(program), "main", "Description...") );
-  exit_code = VM_Module_Execute(program, main_module);
-  return Success;
+  return VM_Module_Execute(program, main_module);
 }
 
 /* DESCRIZIONE: Questa funzione viene chiamata, nel caso si sia verificato

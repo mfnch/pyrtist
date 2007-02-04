@@ -847,7 +847,7 @@ Intg Tym_Def_Procedure(Intg proc, int second, Intg of_type, Intg sym_num) {
   td->size = 0;
   td->parent = of_type;
   td->target = proc;
-  td->asm_mod = sym_num;
+  td->sym_num = sym_num;
   td->procedure = p->procedure;
   new_procedure = tym_recent_type;
   /* The previous call to Tym_Type_New may had required to realloc
@@ -856,6 +856,27 @@ Intg Tym_Def_Procedure(Intg proc, int second, Intg of_type, Intg sym_num) {
   if ( (p = Tym_Type_Get(of_type)) == NULL ) return TYPE_NONE;
   p->procedure = new_procedure;
   return new_procedure;
+}
+
+Task Tym_Procedure_Info(Int proc_type, Int *child, Int *parent,
+ int *second, UInt *sym_num) {
+  TypeDesc *td;
+  int t;
+
+  td = Tym_Type_Get(Tym_Type_Resolve_Alias(proc_type));
+  if (td == (TypeDesc *) NULL) return Failed;
+  t = (td->tot == TOT_PROCEDURE) | (td->tot == TOT_PROCEDURE2) << 1;
+  if (t != 0) {
+    if (child != (Int *) NULL) *child = td->target;
+    if (parent != (Int *) NULL) *parent = td->parent;
+    if (sym_num != (UInt *) NULL) *sym_num = td->sym_num;
+    if (second != (int *) NULL) *second = (t == 2);
+    return Success;
+
+  } else {
+    MSG_ERROR("Tym_Procedure_Info: the type you gave is not a procedure!");
+    return Failed;
+  }
 }
 
 /* This function searches for the existence of the procedure proc@of_type.
@@ -1114,7 +1135,7 @@ Task Tym_Def_Structure(Intg *strc, Intg type) {
  *  In this case, after this call: *t = TYPE_REAL. When there are no more
  *  members,the function will put: *t = TYPE_NONE.
  * NOTE: you shouldn't change *type between one call and another.
- *  This code - for example - IS TO BE AVOIDED:
+ *  This code - for example - MUST BE AVOIDED:
  *   Intg s_copy = s, *t = & s_copy;
  *   TASK( Tym_Structure_Get(t));
  *   *t = Tym_Type_Resolve_All(*t);  <-- E R R O R !

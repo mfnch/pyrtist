@@ -193,7 +193,7 @@ typedef struct {
   Intg target;     /* Per costruire puntatori a target, array di target, etc */
   Intg procedure;  /* Prima procedura corrispondente al tipo */
   union{
-    Intg asm_mod;  /* Numero di modulo associato alla procedura */
+    Intg sym_num;  /* Symbol ID for the procedure */
     Intg arr_size; /* Numero di elementi dell'array */
     Intg st_size;  /* Numero di elementi della struttura */
     Intg sp_size;  /* Numero di elementi della specie */
@@ -322,6 +322,8 @@ Intg Tym_Type_Resolve(Intg type, int not_alias, int not_species);
 #define Tym_Type_Resolve_All(type) Tym_Type_Resolve(type, 0, 0)
 Task Tym_Delete_Type(Intg type);
 Intg Tym_Def_Procedure(Intg proc, int second, Intg of_type, Intg sym_num);
+Task Tym_Procedure_Info(Int proc_type, Int *child, Int *parent,
+                        int *second, UInt *sym_num);
 Intg Tym_Search_Procedure(Intg proc, int second, Intg of_type,
                           Intg *containing_species);
 void Tym_Print_Procedure(FILE *stream, Intg of_type);

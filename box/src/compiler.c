@@ -1900,7 +1900,7 @@ Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
     td = Tym_Type_Get(p);
     if ( td == NULL ) return Failed;
     assert(td->tot == TOT_PROCEDURE || td->tot == TOT_PROCEDURE2);
-    *sym_num = td->asm_mod;
+    *sym_num = td->sym_num;
     *found = 1;
     return Success;
   }

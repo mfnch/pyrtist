@@ -33,9 +33,9 @@
 // #include "str.h"
 #include "virtmach.h"
 #include "vmproc.h"
-// #include "vmsym.h"
-// #include "vmsymstuff.h"
-// #include "registers.h"
+#include "vmsym.h"
+#include "vmsymstuff.h"
+#include "registers.h"
 #include "expr.h"
 #include "compiler.h"
 
@@ -79,7 +79,7 @@ Task Box_Def_Begin(Int proc_type) {
 
   b.is.second = 0;
   b.child = NULL;
-  b.type = TYPE_VOID;
+  b.type = proc_type;
   Expr_New_Void(& b.value);
   b.is.definition = 1;
   b.proc_num = new_sheet;
@@ -90,8 +90,31 @@ Task Box_Def_Begin(Int proc_type) {
   return Success;
 }
 
+static Task Box_Def_Prepare(void) {
+  Int num_var[NUM_TYPES], num_reg[NUM_TYPES];
+  RegVar_Get_Nums(num_var, num_reg);
+  TASK( VM_Code_Prepare(cmp_vm, num_var, num_reg) );
+  return Success;
+}
+
 Task Box_Def_End(void) {
   Box *b;
+  Int proc_type;
+  UInt sym_num, call_num, proc_num;
+
+  TASK(Box_Def_Prepare());
+  b = Arr_LastItemPtr(bs->box, Box);
+  assert(b->is.definition);
+  proc_type = b->type;
+  proc_num = b->proc_num;
+  TASK(Tym_Procedure_Info(proc_type, (Int *) NULL, (Int *) NULL,
+   (int *) NULL, & sym_num));
+  /* We finally install the code for the procedure */
+  TASK( VM_Proc_Install_Code(cmp_vm, & call_num, proc_num,
+   "(noname)", Tym_Type_Name(proc_type)) );
+  /* And define the symbol */
+  TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
+
   TASK(Arr_Dec(bs->box));
   if (Arr_NumItem(bs->box) > 0) {
     b = Arr_LastItemPtr(bs->box, Box);
