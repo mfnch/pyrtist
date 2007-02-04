@@ -720,8 +720,8 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
   VMProcTable *pt = & vmp->proc_table;
   VMProcInstalled *p;
   register VMByteX4 *i_pos;
-  VMStatus vm;
-  static Generic reg0[NUM_TYPES]; /* Registri locali numero zero */
+  VMStatus vm, *vm_save;
+  Generic reg0[NUM_TYPES]; /* Registri locali numero zero */
 #ifdef DEBUG_EXEC
   Intg i = 0;
 #endif
@@ -741,6 +741,7 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
       return Failed;
   }
 
+  vm_save = vmp->vmcur;
   vmp->vmcur = & vm;
 
   {
@@ -789,6 +790,7 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
 
     if ( vm.i_type >= ASM_ILLEGAL ) {
       MSG_ERROR("Istruzione non riconosciuta!");
+      vmp->vmcur = vm_save;
       return Failed;
     }
 
@@ -819,6 +821,7 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
         free(vm.local[i] + vm.lmin[i]*size_of_type[i]);
   }
 
+  vmp->vmcur = vm_save;
   return vm.flags.error ? Failed : Success;
 }
 
