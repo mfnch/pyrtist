@@ -209,7 +209,8 @@ int main(int argc, char** argv) {
   } else {
     if ( (flags & FLAG_STDIN) == 0 ) {
       if ( freopen(file_input, "rt", stdin) == NULL ) {
-        MSG_ERROR("%s <-- Cannot open the file!", file_input);
+        MSG_ERROR("%s <-- Cannot open the file for reading: %s",
+         file_input, strerror(errno));
         Main_Error_Exit( NULL );
       }
     } else {
