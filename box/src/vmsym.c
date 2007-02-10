@@ -160,6 +160,7 @@ static Task Check_Ref(void *item, void *all_resolved) {
 
 Task VM_Sym_Ref_Check(VMProgram *vmp, int *all_resolved) {
   VMSymTable *st = & vmp->sym_table;
+  *all_resolved = 1;
   return Arr_Iter(st->refs, Check_Ref, all_resolved);
 }
 
