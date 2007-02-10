@@ -28,7 +28,7 @@
 #ifndef _LIST_H
 #  define _LIST_H
 
-typedef Task (*ListIterator)(void *item);
+typedef Task (*ListIterator)(void *item, void *pass_data);
 typedef void (*ListDestructor)(void *item);
 
 typedef struct __ListItemHead {
@@ -49,7 +49,7 @@ UInt List_Length(List *l);
 void List_Remove(List *l, void *item);
 void List_Insert_With_Size(List *l, void *item_where,
  void *item_what, UInt size);
-Task List_Iter(List *l, ListIterator i);
+Task List_Iter(List *l, ListIterator i, void *pass_data);
 Task List_Item_Get(List *l, void **item, UInt index);
 
 #  define List_Insert(list, item_where, item_what) \

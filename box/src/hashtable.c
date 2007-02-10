@@ -59,7 +59,7 @@ int HT_Default_Cmp(void *key1, void *key2, unsigned int size1, unsigned int size
   }
 }
 
-int HT_Default_Action(HashItem *hi) {return 1;}
+int HT_Default_Action(HashItem *it, void *pass_data) {return 1;}
 
 /* Create a new hashtable
  */
@@ -106,11 +106,15 @@ void HT_New(Hashtable **new_ht, unsigned int num_entries,
     ht->cmp = cmp;
 }
 
+Task Destroy_Item(HashItem *item, void *destructor) {
+  return ((Task (*)(HashItem *)) destructor)(item);
+}
+
 void HT_Destroy(Hashtable *ht) {
   int branch;
   HashItem *hi, *next;
 
-  if (ht->destroy) (void) HT_Iter2(ht, -1, ht->destroy);
+  if (ht->destroy) (void) HT_Iter2(ht, -1, Destroy_Item, ht->destroy);
 
   /* First we deallocate all the HashItem-s */
   for(branch = 0; branch < ht->num_entries; branch++)
@@ -223,7 +227,7 @@ void HT_Copy_Obj(Hashtable *ht, int bool) {
  * if 'branch < 0' returns 0, otherwise iterate over
  * the branch number 'branch'. For every iteration the function cmp
  * will be used to determine if the current element is equal to 'item'.
- * For every element which matches, the function 'action' will be called.
+ * For every element which matches, the function 'it' will be called.
  * If this function returns 0 the iteration will continue, if it returns 0,
  * then the iteration will end and the function will return the current
  * element inside *result.
@@ -232,7 +236,7 @@ void HT_Copy_Obj(Hashtable *ht, int bool) {
  */
 int HT_Iter(Hashtable *ht, int branch,
  void *key, unsigned int key_size,
- HashItem **result, int (*action)(HashItem *))
+ HashItem **result, HTIterator it, void *pass_data)
 {
   if ( branch < 0 ) {
     return 0;
@@ -241,7 +245,7 @@ int HT_Iter(Hashtable *ht, int branch,
     HashItem *hi;
     for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = hi->next)
       if ( ht->cmp(hi->key, key, hi->key_size, key_size) ) {
-        if ( action(hi) ) {
+        if ( it(hi, pass_data) ) {
           *result = hi;
           return 1;
         }
@@ -259,35 +263,38 @@ int HT_Iter(Hashtable *ht, int branch,
  * RETURN VALUE: this function returns 1 if the item has been succesfully found
  *  ('action' returned with 1), 0 otherwise.
  */
-Task HT_Iter2(Hashtable *ht, int branch, Task (*action)(HashItem *)) {
+Task HT_Iter2(Hashtable *ht, int branch, HTIterator2 it2, void *pass_data) {
   if ( branch < 0 ) {
     int i;
     for(i = 0; i < ht->num_entries; i++) {
-      TASK( HT_Iter2(ht, i, action) );
+      TASK( HT_Iter2(ht, i, it2, pass_data) );
     }
     return Success;
 
   } else {
     HashItem *hi;
     for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = hi->next) {
-      TASK( action(hi) );
+      TASK( it2(hi, pass_data) );
     }
     return Success;
   }
 }
 
-static int branch_size;
-static Task count_action(HashItem *hi) {++branch_size; return Success;}
+static Task count_action(HashItem *hi, void *branch_size) {
+  ++*((int *) branch_size);
+  return Success;
+}
 
 void HT_Statistics(Hashtable *ht, FILE *out) {
   int i;
+  int branch_size;
   fprintf(out, "--------------------\n");
   fprintf(out, "HASHTABLE STATISTICS:\n");
   fprintf(out, "number of branches %d\n", ht->num_entries);
   fprintf(out, "occupation status\n");
   for(i = 0; i < ht->num_entries; i++) {
     branch_size = 0;
-    (void) HT_Iter2(ht, i, count_action);
+    (void) HT_Iter2(ht, i, count_action, & branch_size);
     fprintf(out, "branch %d: %d\n", i, branch_size);
   }
   fprintf(out, "--------------------\n");

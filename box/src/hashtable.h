@@ -69,9 +69,12 @@ typedef struct {
   HashItem **item;
 } Hashtable;
 
+typedef int (*HTIterator)(HashItem *item, void *pass_data);
+typedef Task (*HTIterator2)(HashItem *item, void *pass_data);
+
 unsigned int HT_Default_Hash(void *key, unsigned int key_size);
 int HT_Default_Cmp(void *key1, void *key2, unsigned int size1, unsigned int size2);
-int HT_Default_Action(HashItem *hi);
+int HT_Default_Action(HashItem *hi, void *pass_data);
 
 /** Create a new hashtable.
  * @param ht where to put the pointer to the created hash table.
@@ -132,7 +135,7 @@ Task HT_Rename(Hashtable *ht, void *key, unsigned int key_size,
  *  ('action' returned with 1), 0 otherwise.
  */
 int HT_Iter(Hashtable *ht, int branch, void *key, unsigned int key_size,
- HashItem **result, int (*action)(HashItem *));
+ HashItem **result, HTIterator it, void *pass_data);
 
 /** Iterate over one or all the branches of an hashtable 'ht':
  * if 'branch < 0' iterate over all the branches, otherwise iterate over
@@ -143,7 +146,7 @@ int HT_Iter(Hashtable *ht, int branch, void *key, unsigned int key_size,
  * RETURN VALUE: this function returns 1 if the item has been succesfully found
  *  ('action' returned with 1), 0 otherwise.
  */
-Task HT_Iter2(Hashtable *ht, int branch, Task (*action)(HashItem *));
+Task HT_Iter2(Hashtable *ht, int branch, HTIterator2 it2, void *pass_data);
 
 /** Prints some statistics about the usage of an hash table.
  */
@@ -198,6 +201,6 @@ void HT_Copy_Obj(Hashtable *ht, int bool);
     ht->mask & ht->hash(key, key_size), \
     key, key_size, \
     item, \
-    HT_Default_Action)
+    HT_Default_Action, NULL)
 
 #endif

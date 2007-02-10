@@ -98,11 +98,11 @@ void List_Insert_With_Size(List *l, void *item_where,
   ++l->length;
 }
 
-Task List_Iter(List *l, ListIterator i) {
+Task List_Iter(List *l, ListIterator i, void *pass_data) {
   ListItemHead *lih;
   for(lih=l->head_tail.next; lih != (ListItemHead *) NULL; lih=lih->next) {
     void *item = (void *) lih + sizeof(ListItemHead);
-    if IS_FAILED( i(item) ) return Failed;
+    if IS_FAILED( i(item, pass_data) ) return Failed;
   }
   return Success;
 }
@@ -127,7 +127,7 @@ Task List_Item_Get(List *l, void **item, UInt index) {
 
 #if 0
 
-Task Print_List_Items(void *item) {
+Task Print_List_Items(void *item, void *) {
   printf("Item: '%s'\n", (char *) item);
   return Success;
 }
@@ -142,7 +142,7 @@ int main(void) {
   List_Append(l, "judo");
   List_Append(l, "karo");
   List_Append(l, "razo");
-  (void) List_Iter(l, Print_List_Items);
+  (void) List_Iter(l, Print_List_Items, NULL);
   printf("Removing elements!\n");
   for(i=0; i<20; i++) {
     int index = 3;
@@ -151,7 +151,7 @@ int main(void) {
     printf("Removing item '%s' at position %d\n", (char *) item, index);
     List_Remove(l, item);
     printf("The followings items are still in the list:\n");
-    (void) List_Iter(l, Print_List_Items);
+    (void) List_Iter(l, Print_List_Items, NULL);
   }
 
   List_Destroy(l);

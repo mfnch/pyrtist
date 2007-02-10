@@ -52,12 +52,10 @@ void Clc_Destructor(Collection *c, Task (*destroy)(void *)) {
   Arr_Destructor(c, destroy);
 }
 
-static Task (*item_destructor)(void *);
-
-static Task item_container_destructor(void *item_container) {
+static Task item_container_destructor(void *item_container, void *destructor) {
   if ( *((int *) item_container) == CLC_ITEM_OCCUPIED ) {
     void *item = item_container + sizeof(int);
-    return item_destructor(item);
+    return ((Task (*)(void  *)) destructor)(item);
   }
   return Success;
 }
@@ -68,8 +66,7 @@ void Clc_Destroy(Collection *c) {
 #endif
   if ( c == (Collection *) NULL ) return;
   if ( c->destroy != NULL ) {
-    item_destructor = c->destroy;
-    (void) Arr_Iter((Array *) c, item_container_destructor);
+    (void) Arr_Iter((Array *) c, item_container_destructor, c->destroy);
     c->destroy = NULL;
   }
   Arr_Destroy((Array *) c);

@@ -146,6 +146,11 @@ Task Arr_New(Array **new_array, UInt elsize, UInt mindim) {
 }
 #endif
 
+static Task Destroy_Item(void *item, void *destructor) {
+  return ((Task (*)(void *)) destructor)(item);
+}
+
+
 /* Distrugge l'array.
  */
 #ifdef DEBUG_ARRAY
@@ -164,7 +169,8 @@ void Arr_Destroy(Array *a)
     /* If a destructor is given, uses it to iterate over all the elements
      * for the last time.
      */
-    if ( a->destroy != NULL ) (void) Arr_Iter((Array *) a, a->destroy);
+    if ( a->destroy != NULL )
+      (void) Arr_Iter((Array *) a, Destroy_Item, a->destroy);
     a->ID = 0; /* Can be useful to detect reference to free-d Array */
     free(a->ptr);
     free(a);
@@ -394,13 +400,13 @@ Task Arr_Data_Only(Array *a, void **data_ptr) {
 
 /* Apply a function to all the elements of an array
  */
-Task Arr_Iter(Array *a, Task (*action)(void *)) {
+Task Arr_Iter(Array *a, Task (*action)(void *, void *), void *pass_data) {
   assert(a != NULL && action != NULL);
   if (a->ID == ARR_ID) {
     int i;
     void *item_ptr = a->ptr;
     for(i = 0; i < a->numel; i++) {
-      if IS_FAILED( action(item_ptr) ) return Failed;
+      if IS_FAILED( action(item_ptr, pass_data) ) return Failed;
       item_ptr += a->elsize;
     }
     return Success;

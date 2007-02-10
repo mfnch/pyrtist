@@ -272,7 +272,6 @@ static Task code_generator(VMProgram *vmp, UInt sym_num, UInt sym_type,
   VMProc *tmp_proc;
   UInt saved_proc_num;
 
-  printf("CALLED!\n");
   saved_proc_num = VM_Proc_Target_Get(vmp);
   TASK( VM_Proc_Empty(vmp, pt->tmp_proc) );
   TASK( VM_Proc_Target_Set(vmp, pt->tmp_proc) );
