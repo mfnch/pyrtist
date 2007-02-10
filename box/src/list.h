@@ -1,0 +1,62 @@
+/***************************************************************************
+ *   Copyright (C) 2007 by Matteo Franchin                                 *
+ *   fnch@libero.it                                                        *
+ *                                                                         *
+ *   This program is free software; you can redistribute it and/or modify  *
+ *   it under the terms of the GNU General Public License as published by  *
+ *   the Free Software Foundation; either version 2 of the License, or     *
+ *   (at your option) any later version.                                   *
+ *                                                                         *
+ *   This program is distributed in the hope that it will be useful,       *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of        *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the         *
+ *   GNU General Public License for more details.                          *
+ *                                                                         *
+ *   You should have received a copy of the GNU General Public License     *
+ *   along with this program; if not, write to the                         *
+ *   Free Software Foundation, Inc.,                                       *
+ *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
+ ***************************************************************************/
+
+/* $Id$ */
+
+/** @file list.h
+ * @brief Implementation of the list type.
+ */
+
+
+#ifndef _LIST_H
+#  define _LIST_H
+
+typedef Task (*ListIterator)(void *item);
+typedef void (*ListDestructor)(void *item);
+
+typedef struct __ListItemHead {
+  struct __ListItemHead *previous;
+  struct __ListItemHead *next;
+} ListItemHead;
+
+typedef struct {
+  UInt item_size;
+  UInt length;
+  ListDestructor destructor;
+  ListItemHead head_tail;
+} List;
+
+void List_New(List **l, UInt item_size);
+void List_Destroy(List *l);
+UInt List_Length(List *l);
+void List_Remove(List *l, void *item);
+void List_Insert_With_Size(List *l, void *item_where,
+ void *item_what, UInt size);
+Task List_Iter(List *l, ListIterator i);
+Task List_Item_Get(List *l, void **item, UInt index);
+
+#  define List_Insert(list, item_where, item_what) \
+     List_Insert_With_Size((list), item_where, item_what, (list)->item_size)
+#  define List_Append_With_Size(list, item, size) \
+     List_Insert_With_Size((list), NULL, (item), size)
+#  define List_Append(list, item) \
+     List_Insert_With_Size((list), NULL, (item), (list)->item_size)
+
+#endif

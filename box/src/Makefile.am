@@ -32,14 +32,15 @@ AM_CFLAGS = -Wall
 
 bin_PROGRAMS = box
 
-noinst_HEADERS = defaults.h types.h str.h print.h \
+noinst_HEADERS = defaults.h types.h mem.h str.h print.h \
   msgbase.h messages.h debug.h \
-  array.h collection.h registers.h virtmach.h \
+  list.h array.h collection.h registers.h virtmach.h \
   tokenizer.h parserh.h expr.h compiler.h box.h builtins.h \
   hashfunc.h hashtable.h vmproc.h vmsym.h vmcommon.h \
   vmsymstuff.h
 
-box_SOURCES = str.c print.c msgbase.c messages.c array.c collection.c \
+box_SOURCES = mem.c str.c print.c msgbase.c messages.c \
+  list.c array.c collection.c \
   virtmach.c vmexec.c vmproc.c vmsym.c \
   symbols.c tokenizer.l parser.y registers.c expr.c typeman.c \
   compiler.c box.c \
