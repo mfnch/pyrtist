@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include "types.h"
 #include "defaults.h"
@@ -106,8 +107,8 @@ void Temporaneo(void);
 
 /******************************************************************************/
 
-/* DESCRIZIONE: main function del programma. Analizza la riga di comando
- *  ed esegue le azioni specificate.
+/* main function of the program. Gets the command line arguments and set up
+ * the program accrodingly.
  */
 int main(int argc, char** argv) {
   int i;
@@ -266,17 +267,29 @@ int main(int argc, char** argv) {
 
   /* Fase di output */
   if (flags & FLAG_OUTPUT) {
-    int target_proc_num = VM_Proc_Target_Get(program);
-    MSG_ADVICE("Writing the assembly code for the compiled program"
-     "into \"%s\"!", file_output );
+    FILE *out = stdout;
+    int close_file = 0;
+    if (strcmp(file_output, "-") == 0) {
+      MSG_ADVICE("Writing the assembly code for the compiled program"
+       "on the standart output.");
+    } else {
+      MSG_ADVICE("Writing the assembly code for the compiled program"
+       "into \"%s\"!", file_output );
+      out = fopen(file_output, "w");
+      if (out == (FILE *) NULL) {
+        MSG_ERROR("Cannot open '%s' for writing: %s",
+         file_output, strerror(errno));
+        Main_Error_Exit(NULL);
+      }
+      close_file = 1;
+    }
 
-    (void) Cmp_Data_Display(stdout);
-    fprintf(stdout, "\n");
+    (void) Cmp_Data_Display(out);
+    fprintf(out, "\n");
     VM_DSettings(program, 1);
-    if IS_FAILED( VM_Proc_Disassemble_All(program, stdout) )
+    if IS_FAILED( VM_Proc_Disassemble_All(program, out) )
       Main_Error_Exit( NULL );
-/*    if IS_FAILED( VM_Proc_Disassemble(program, stdout, target_proc_num) )
-      Main_Error_Exit( NULL );*/
+    if (close_file) (void) fclose(out);
   }
 
   /* Fase di esecuzione */
@@ -295,38 +308,6 @@ int main(int argc, char** argv) {
     MSG_CONTEXT_END();
   }
 
-/*
-  if ( flag.output ) {
-    FILE *compiled = fopen(file_output, "wt");
-
-    if ( compiled == NULL )
-      Option_Error( file_output, "Impossibile creare il file" );
-
-    vrmc_print(compiled, program.ptr);
-
-    if ( fclose(compiled) != 0 )
-      Option_Error( file_output, "Impossibile chiudere il file" );
-  }
-
-  if ( flag.execute ) {
-    if ( ! vrmc_init(
-     reg_num(TVAL_INTG), var_num(TVAL_INTG),
-     reg_num(TVAL_FLT), var_num(TVAL_FLT),
-     reg_num(TVAL_PNT), var_num(TVAL_PNT),
-     reg_num(TVAL_OBJ), var_num(TVAL_OBJ),
-     0, 0) ) {
-      fprintf( stderr, "Errore nella preparazione dell'esecuzione!\n" );
-    }
-
-    fprintf( stderr, "\nEsecuzione in corso...\n" );
-    if ( vrmc_execute(program.ptr) )
-      fprintf( stderr, "Esecuzione terminata con successo!\n" );
-    else
-      fprintf( stderr, "Esecuzione terminata con errori!\n" );
-
-    err_prnclr( stderr );
-  }
-*/
   VM_Destroy(program); /* This function accepts program = NULL */
   exit( EXIT_SUCCESS );
 }
@@ -385,26 +366,26 @@ void Main_Error_Exit(char *msg) {
 
 void Main_Cmnd_Line_Help(void) {
   fprintf( stderr,
-  PROGRAM_NAME " " VERSION_STR " - Linguaggio per la descrizione di figure grafiche"
-  "\n Ideato e programmato da Matteo Franchin - "
+  PROGRAM_NAME " " VERSION_STR " - Language to describe graphic figures."
+  "\n Created and implemented by Matteo Franchin - "
    VERSION_DATE ", " VERSION_TIME "\n\n"
-  "UTILIZZO: " PROGRAM_NAME " opzioni fileinput\n\n"
-  "opzioni: sono le seguenti:\n"
-  " -h(elp)               visualizza questa schermata di aiuto\n"
-  " -st(din)              legge il file di input direttamente dallo standard input\n"
-  " -i(nput) nomefile     specifica il file di input\n"
-  " -o(utput) nomefile    compila in nomefile (senza sovrascriverlo se gia' esiste)\n"
-  " -w(rite) nomefile     come sopra, ma sovrascrive se il file esiste\n"
-  " -se(tup) nomefile     specifica il file da includere automaticamente all'avvio\n"
-  " -t(est)               compila senza eseguire\n"
-  " -v(erbose)            mostra tutti i messaggi, anche quelli poco importanti\n"
-  " -e(rrors)             scrive solo i messaggi d'errore\n"
-  " -si(lent)             evita la scrittura di qualsiasi messaggio\n"
-  " -f(orce)              forza l'esecuzione, anche in presenza di warnings\n"
-  "\n fileinput: contiene il nome del file di input\n\n"
-  "NOTA: alcune opzioni possono essere usate piu' di una volta.\n"
-  " Certe si cancellano a coppie. Ad esempio: specificare due volte l'opzione -t\n"
-  " equivale a non specificarla affatto.\n\n"
+  "USAGE: " PROGRAM_NAME " options inputfile\n\n"
+  "options: are the following:\n"
+  " -h(elp)               show this help screen\n"
+  " -st(din)              read the input file from stadard input\n"
+  " -i(nput) filename     specify the input file\n"
+  " -o(utput) filename    compile to filename (refuse to overwrite it)\n"
+  " -w(rite) filename     compile to filename (overwrite if it exists)\n"
+  " -se(tup) filename     this file will be included automatically at the beginning\n"
+  " -t(est)               just a test: compilation with no execution\n"
+  " -v(erbose)            show all the messages, also warning messages\n"
+  " -e(rrors)             show only error messages\n"
+  " -si(lent)             do not show any message\n"
+  " -f(orce)              force execution, even if warning messages have been shown\n"
+  "\n inputfile: the name of the input file\n\n"
+  "NOTE: some options can be used more than once.\n"
+  " Some of them cancel out two by two. Example: using two times the option -t\n"
+  " has the same effect of not using it at all.\n"
   );
 
   exit( EXIT_SUCCESS );
