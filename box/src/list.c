@@ -104,6 +104,7 @@ Task List_Iter(List *l, ListIterator i) {
     void *item = (void *) lih + sizeof(ListItemHead);
     if IS_FAILED( i(item) ) return Failed;
   }
+  return Success;
 }
 
 Task List_Item_Get(List *l, void **item, UInt index) {
