@@ -105,6 +105,20 @@ Task Main_Install(UInt *main_module);
 Task Main_Execute(UInt main_module);
 void Temporaneo(void);
 
+
+/* Enter symbol resolution stage */
+static Task Stage_Symbol_Resolution(void) {
+  int all_resolved;
+  MSG_CONTEXT_BEGIN("Symbol resolution");
+  TASK( VM_Sym_Ref_Check(program, & all_resolved) );
+  if (! all_resolved) {
+    VM_Sym_Ref_Report(program);
+    MSG_ERROR("Unresolved references: exiting.");
+    Main_Error_Exit(NULL);
+  }
+  MSG_CONTEXT_END();
+}
+
 /******************************************************************************/
 
 /* main function of the program. Gets the command line arguments and set up
@@ -246,6 +260,8 @@ int main(int argc, char** argv) {
 
   if IS_FAILED( Main_Prepare() ) Main_Error_Exit( NULL );
   if IS_FAILED( Main_Install(& main_module) ) Main_Error_Exit( NULL );
+
+  Stage_Symbol_Resolution();
 
 
   /* Controllo se e' possibile procedere all'esecuzione del file compilato! */

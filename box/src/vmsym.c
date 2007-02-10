@@ -152,6 +152,32 @@ Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, void *ref, UInt ref_size) {
   return Success;
 }
 
+static Task Check_Ref(void *item, void *all_resolved) {
+  VMSymRef *sr = (VMSymRef *) item;
+  *((int *) all_resolved) &= sr->resolved;
+  return Success;
+}
+
+Task VM_Sym_Ref_Check(VMProgram *vmp, int *all_resolved) {
+  VMSymTable *st = & vmp->sym_table;
+  return Arr_Iter(st->refs, Check_Ref, all_resolved);
+}
+
+static Task Report_Ref(void *item, void *pass_data) {
+  VMProgram *vmp = (VMProgram *) pass_data;
+  VMSymRef *sr = (VMSymRef *) item;
+  if (! sr->resolved) {
+    MSG_ERROR("Unresolved reference to the symbol (ID=%d, name='%s')",
+     sr->sym_num, VM_Sym_Name_Get(vmp, sr->sym_num));
+  }
+  return Success;
+}
+
+Task VM_Sym_Ref_Report(VMProgram *vmp) {
+  VMSymTable *st = & vmp->sym_table;
+  return Arr_Iter(st->refs, Report_Ref, vmp);
+}
+
 Task VM_Sym_Resolver_Set(VMProgram *vmp, UInt sym_num, VMSymResolver r) {
   VMSymTable *st = & vmp->sym_table;
   VMSym *s;
@@ -166,7 +192,6 @@ Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
   VMSym *s;
   UInt next;
   UInt sym_type, def_size, ref_size;
-  int defined;
   void *def, *ref;
   VMSymResolver r;
 

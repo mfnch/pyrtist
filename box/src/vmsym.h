@@ -131,6 +131,12 @@ Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, void *ref, UInt ref_size);
 /** Set the symbol resolver */
 Task VM_Sym_Resolver_Set(VMProgram *vmp, UInt sym_num, VMSymResolver r);
 
+/** Set *all_resolved = 1 only if there are no unresolved references */
+Task VM_Sym_Ref_Check(VMProgram *vmp, int *all_resolved);
+
+/** Print an error message for every unresolved reference */
+Task VM_Sym_Ref_Report(VMProgram *vmp);
+
 /** Resolve the symbol 'sym_num'.
  * If sym_num=0, then try to resolve all the symbols.
  * If the symbol is not defined, it silently ignore it!
