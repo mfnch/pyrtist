@@ -67,8 +67,10 @@ static char *file_input;
 static char *file_output;
 static char *file_setup;
 
+static VMProgram *program = NULL;
+
 /* Tabella contenente i nomi delle opzioni e i dati relativi */
-struct opt {
+static struct opt {
   char     *name;  /* Nome dell'opzione */
   ParType  part;   /* Tipo dell'eventuale parametro associato all'opzione */
   UInt     cflag;  /* Se part = PAR_NONE, esegue *((UInt *) arg) &= ~cflag */
@@ -93,9 +95,6 @@ struct opt {
   { NULL }
 }, opt_default =  { "input", PAR_STRING, 0, FLAG_INPUT, 0, 1, & flags, & file_input };
 
-
-static VMProgram *program = NULL;
-
 /* Funzioni definite inquesto file */
 int main(int argc, char** argv);
 void Main_Error_Exit(char *msg);
@@ -103,30 +102,10 @@ void Main_Cmnd_Line_Help(void);
 Task Main_Prepare(void);
 Task Main_Install(UInt *main_module);
 Task Main_Execute(UInt main_module);
-void Temporaneo(void);
 
-
-/* Enter symbol resolution stage */
-static Task Stage_Symbol_Resolution(void) {
-  int all_resolved;
-  MSG_CONTEXT_BEGIN("Symbol resolution");
-  TASK( VM_Sym_Ref_Check(program, & all_resolved) );
-  if (! all_resolved) {
-    VM_Sym_Ref_Report(program);
-    MSG_ERROR("Unresolved references: exiting.");
-    Main_Error_Exit(NULL);
-  }
-  MSG_CONTEXT_END();
-}
-
-/******************************************************************************/
-
-/* main function of the program. Gets the command line arguments and set up
- * the program accrodingly.
- */
-int main(int argc, char** argv) {
+static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
   int i;
-  UInt j, main_module;
+  UInt j;
 
   /* Inizializzo la gestione dei messaggi */
   Msg_Main_Init(MSG_LEVEL_WARNING);
@@ -134,7 +113,7 @@ int main(int argc, char** argv) {
   MSG_CONTEXT_BEGIN("Reading the command line options");
 
   /* Impostazioni iniziali dei flag */
-  flags = FLAG_EXECUTE;
+  *flags = FLAG_EXECUTE;
 
   prog_name = argv[0];
 
@@ -193,12 +172,17 @@ int main(int argc, char** argv) {
         *((char **) opt_desc->arg) = argv[i]; break;
        default:
          MSG_ERROR("Internal error in the option parsing :-(");
-        Main_Error_Exit( NULL );
+         Main_Error_Exit( NULL );
       }
     }
   } /* Fine del ciclo for */
 
   MSG_CONTEXT_END();
+  return Success;
+}
+
+static Task Stage_Interpret_Command_Line(UInt *f) {
+  UInt flags = *f;
 
   /* Controllo se e' stata specificata l'opzione di help */
   if ( flags & FLAG_HELP ) Main_Cmnd_Line_Help();
@@ -212,8 +196,6 @@ int main(int argc, char** argv) {
     Msg_Main_Show_Level_Set(MSG_LEVEL_MAX+1); /* Non mostro alcun messaggio! */
   else
     Msg_Main_Show_Level_Set(MSG_LEVEL_ERROR); /* Mostro solo i messaggi importanti! */
-
-  Temporaneo();
 
   /* Controllo che tutto sia apposto */
   if ( (flags & FLAG_INPUT) == 0 ) {
@@ -238,50 +220,75 @@ int main(int argc, char** argv) {
   } else
     file_setup = (char *) NULL;
 
+  return Success;
+}
+
+static Task Stage_Compilation(char *file, UInt *main_module) {
   Msg_Main_Counter_Clear_All();
   MSG_CONTEXT_BEGIN("Compilation");
 
-  if IS_FAILED( Parser_Init(TOK_MAX_INCLUDE, file_setup) )
-    Main_Error_Exit( NULL );
-
-  if IS_FAILED( VM_Init(& program) ) Main_Error_Exit( NULL );
-  if IS_FAILED( Cmp_Init(program) ) Main_Error_Exit( NULL );
-
-  /* Avvio il parsing! */
+  TASK( Parser_Init(TOK_MAX_INCLUDE, file) );
+  TASK( VM_Init(& program) );
+  TASK( Cmp_Init(program) );
   (void) yyparse();
+  Parser_Finish();
+  Cmp_Finish();
+
+  TASK( Main_Install(main_module) );
 
   MSG_ADVICE( "Compilaton finished. "
    "%U errors and %U warnings were found.",
    MSG_GT_ERRORS, MSG_NUM_WARNINGS );
   MSG_CONTEXT_END();
+  return Success;
+}
 
-  Parser_Finish();
-  Cmp_Finish();
-
-  if IS_FAILED( Main_Prepare() ) Main_Error_Exit( NULL );
-  if IS_FAILED( Main_Install(& main_module) ) Main_Error_Exit( NULL );
-
-  Stage_Symbol_Resolution();
-
-
-  /* Controllo se e' possibile procedere all'esecuzione del file compilato! */
-  if ( (flags & FLAG_EXECUTE) && (MSG_GT_WARNINGS > 0) ) {
-    if (flags & FLAG_FORCE_EXEC) {
-      if ( MSG_GT_ERRORS > 0 ) {
-        flags &= ~FLAG_EXECUTE;
-        MSG_ADVICE(
-         "Errors found: Execution will not be started!" );
-      } else {
-        MSG_ADVICE(
-         "Warings found: Execution will be started anyway!" );
-      }
-
-    } else {
-      flags &= ~FLAG_EXECUTE;
-      MSG_ADVICE("Warnings/errors found: Execution will not be started!" );
-    }
+/* Enter symbol resolution stage */
+static Task Stage_Symbol_Resolution(UInt *flags) {
+  int all_resolved;
+  MSG_CONTEXT_BEGIN("Symbol resolution");
+  TASK( VM_Sym_Resolve_All(program) );
+  TASK( VM_Sym_Ref_Check(program, & all_resolved) );
+  if (! all_resolved) {
+    VM_Sym_Ref_Report(program);
+    MSG_ERROR("Unresolved references: program cannot be executed.");
+    *flags &= ~FLAG_EXECUTE;
   }
+  MSG_CONTEXT_END();
+}
 
+static Task Stage_Execution(UInt *flags, UInt main_module) {
+  /* Controllo se e' possibile procedere all'esecuzione del file compilato! */
+  if (*flags & FLAG_EXECUTE) {
+    if (MSG_GT_WARNINGS > 0) {
+      if (*flags & FLAG_FORCE_EXEC) {
+        if ( MSG_GT_ERRORS > 0 ) {
+          *flags &= ~FLAG_EXECUTE;
+          MSG_ADVICE("Errors found: Execution will not be started!");
+          return Success;
+        } else {
+          MSG_ADVICE("Warnings found: Execution will be started anyway!");
+        }
+
+      } else {
+        *flags &= ~FLAG_EXECUTE;
+        MSG_ADVICE("Warnings/errors found: Execution will not be started!" );
+        return Success;
+      }
+    }
+
+    MSG_CONTEXT_BEGIN("Execution");
+    Msg_Main_Counter_Clear_All();
+    (void) Main_Execute(main_module);
+    MSG_ADVICE( "Execution finished. "
+     "%U errors and %U warnings were found.",
+     MSG_GT_ERRORS, MSG_NUM_WARNINGS );
+    MSG_CONTEXT_END();
+  }
+  return Success;
+}
+
+static Task Stage_Write_Asm(UInt flags) {
   /* Fase di output */
   if (flags & FLAG_OUTPUT) {
     FILE *out = stdout;
@@ -296,7 +303,7 @@ int main(int argc, char** argv) {
       if (out == (FILE *) NULL) {
         MSG_ERROR("Cannot open '%s' for writing: %s",
          file_output, strerror(errno));
-        Main_Error_Exit(NULL);
+        return Failed;
       }
       close_file = 1;
     }
@@ -304,29 +311,10 @@ int main(int argc, char** argv) {
     (void) Cmp_Data_Display(out);
     fprintf(out, "\n");
     VM_DSettings(program, 1);
-    if IS_FAILED( VM_Proc_Disassemble_All(program, out) )
-      Main_Error_Exit( NULL );
+    TASK( VM_Proc_Disassemble_All(program, out) );
     if (close_file) (void) fclose(out);
   }
-
-  /* Fase di esecuzione */
-  if (flags & FLAG_EXECUTE) {
-    if IS_FAILED( VM_Sym_Resolve_All(program) ) {
-      exit(EXIT_FAILURE);
-    }
-    /*VM_Sym_Table_Print(program, stderr, 0);*/
-
-    Msg_Main_Counter_Clear_All();
-    MSG_CONTEXT_BEGIN("Execution");
-    (void) Main_Execute(main_module);
-    MSG_ADVICE( "Execution finished. "
-     "%U errors and %U warnings were found.",
-     MSG_GT_ERRORS, MSG_NUM_WARNINGS );
-    MSG_CONTEXT_END();
-  }
-
-  VM_Destroy(program); /* This function accepts program = NULL */
-  exit( EXIT_SUCCESS );
+  return Success;
 }
 
 /* FASE DI POST-COMPILAZIONE */
@@ -345,6 +333,7 @@ Task Main_Prepare(void) {
 
 /* FASE DI ESECUZIONE */
 Task Main_Install(UInt *main_module) {
+  TASK( Main_Prepare() );
   return VM_Proc_Install_Code(program, main_module,
    VM_Proc_Target_Get(program), "main", "Description...");
 }
@@ -404,45 +393,28 @@ void Main_Cmnd_Line_Help(void) {
   " Some of them cancel out two by two. Example: using two times the option -t\n"
   " has the same effect of not using it at all.\n"
   );
+  exit( EXIT_SUCCESS );
+}
+
+/******************************************************************************/
+/* main function of the program. */
+int main(int argc, char** argv) {
+  UInt main_module;
+
+  (void) Stage_Parse_Command_Line(& flags, argc, argv);
+
+  (void) Stage_Interpret_Command_Line(& flags);
+
+  (void) Stage_Compilation(file_setup, & main_module);
+
+  (void) Stage_Symbol_Resolution(& flags);
+
+  (void) Stage_Write_Asm(flags);
+
+  (void) Stage_Execution(& flags, main_module);
+
+  VM_Destroy(program); /* This function accepts program = NULL */
 
   exit( EXIT_SUCCESS );
 }
 
-void Temporaneo(void) {
-
-  return;
-
-/*   o = VM_Asm_Out_New(-1);
-  VM_Asm_Out_Set(program, o);
-
-  printf("Writing program...\n");
-  Cmp_Assemble(ASM_PROJX_P, CAT_GREG, 15);
-  Cmp_Assemble(ASM_PROJY_P, CAT_LREG, 7);
-  Cmp_Assemble(ASM_INTG_R, CAT_LREG, 1);
-  Cmp_Assemble(ASM_REAL_I, CAT_LREG, 2);
-  Cmp_Assemble(ASM_REAL_I, CAT_IMM, 27);
-  Cmp_Assemble(ASM_POINT_II, CAT_LREG, 3, CAT_GREG, 4);
-  Cmp_Assemble(ASM_POINT_RR, CAT_LREG, 5, CAT_LREG, 6);
-  Cmp_Assemble(ASM_MOV_Iimm, CAT_LREG, 3, CAT_IMM, 1003);
-  Cmp_Assemble(ASM_MOV_Iimm, CAT_LREG, 3, CAT_IMM, 127);
-  Cmp_Assemble(ASM_MOV_Iimm, CAT_LREG, 3, CAT_IMM, 128);
-  Cmp_Assemble(ASM_MOV_Pimm, CAT_LREG, 2, CAT_IMM, 3.1415, -2.7);
-  Cmp_Assemble(ASM_MOV_Rimm, CAT_LREG, 23, CAT_IMM, 1.234567);
-  Cmp_Assemble(ASM_MOV_II, CAT_LREG, 3, CAT_IMM, -128);
-  Cmp_Assemble(ASM_MOV_Iimm, CAT_LREG, 3, CAT_IMM, -129);
-  Cmp_Assemble(ASM_CALL_Iimm, CAT_LREG, 13);
-  Cmp_Assemble(ASM_MOV_II, CAT_GREG, 1, CAT_LREG, 3);
-  Cmp_Assemble(ASM_MOV_II, CAT_LREG, 2, CAT_PTR, -2000);
-  Cmp_Assemble(ASM_ADD_II, CAT_GREG, 1, CAT_IMM, 37);
-  Cmp_Assemble(ASM_RET);
-  printf("Completed!\nDisassembling...\n");
-  VM_DSettings(program, 1);
-  if IS_FAILED(
-   VM_Disassemble(program, stdout, (o->program)->ptr, (o->program)->numel) ) {
-    printf("Ho qualche problema nella scrittura del programma!\n");
-    return;
-  }
-  printf("Completed!\n");
-*/
-  return;
-}
