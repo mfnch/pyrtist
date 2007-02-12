@@ -30,6 +30,8 @@
 #include <string.h>
 #include <errno.h>
 
+#include "config.h"
+
 #include "types.h"
 #include "defaults.h"
 #include "messages.h"
@@ -127,12 +129,52 @@ static Task Stage_Init(void) {
   return Success;
 }
 
+Task Removeme(void *string, void *pass_data) {
+  printf("Added: %s\n", (char *) string);
+  return Success;
+}
+
 static void Stage_Finalize(void) {
   VM_Destroy(program); /* This function accepts program = NULL */
+
+  List_Iter(lib_dirs, Removeme, NULL);
 
   List_Destroy(libraries);
   List_Destroy(lib_dirs);
   List_Destroy(inc_dirs);
+}
+
+static Task Add_Strings_To_List(const char *env_var, List *list) {
+#ifdef HAVE_GETENV
+  char *strings = getenv(env_var);
+  if (strings != (char *) NULL) {
+    char *s = strings, *string = s;
+    UInt length = 0;
+    while(1) {
+      switch(*s) {
+      case '\0':
+        if (length > 0) List_Append_With_Size(list, string, length);
+        return Success;
+      case PATH_SEPARATOR:
+        if (length > 0) List_Append_With_Size(list, string, length);
+        string = ++s;
+        length = 0;
+        break;
+      default:
+        ++s;
+        ++length;
+      }
+    }
+  }
+#endif
+  return Success;
+}
+
+static Task Stage_Add_Default_Paths(void) {
+  TASK( Add_Strings_To_List(BOX_LIBRARY_PATH, lib_dirs) );
+  TASK( Add_Strings_To_List(BOX_INCLUDE_PATH, inc_dirs) );
+  TASK( Add_Strings_To_List(BOX_DEFAULT_LIBS, libraries) );
+  return Success;
 }
 
 static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
@@ -417,11 +459,14 @@ void Main_Cmnd_Line_Help(void) {
   " -o(utput) filename    compile to filename (refuse to overwrite it)\n"
   " -w(rite) filename     compile to filename (overwrite if it exists)\n"
   " -se(tup) filename     this file will be included automatically at the beginning\n"
+  " -l(ibrary) lib        add a new C library to be used when linking\n"
+  " -L(ib-path) dir       add dir to the list of directories to be searched for -l\n"
+  " -I(nclude-path) dir   add a new directory to be searched when including files\n"
   " -t(est)               just a test: compilation with no execution\n"
+  " -f(orce)              force execution, even if warning messages have been shown\n"
   " -v(erbose)            show all the messages, also warning messages\n"
   " -e(rrors)             show only error messages\n"
   " -si(lent)             do not show any message\n"
-  " -f(orce)              force execution, even if warning messages have been shown\n"
   "\n inputfile: the name of the input file\n\n"
   "NOTE: some options can be used more than once.\n"
   " Some of them cancel out two by two. Example: using two times the option -t\n"
@@ -441,6 +486,8 @@ int main(int argc, char** argv) {
   (void) Stage_Parse_Command_Line(& flags, argc, argv);
 
   (void) Stage_Interpret_Command_Line(& flags);
+
+  (void) Stage_Add_Default_Paths();
 
   (void) Stage_Compilation(file_setup, & main_module);
 

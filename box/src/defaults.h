@@ -38,6 +38,26 @@
  *                                COSTANTI COMUNI                            *
  *****************************************************************************/
 
+/** Separator used to separate directory paths in the environmental variables
+ * BOX_LIBRARY_PATH, etc.
+ */
+#define PATH_SEPARATOR ':'
+
+/** The name of the environmental variable which contains the user
+ * specified list of paths where to search for Box libraries.
+ */
+#define BOX_LIBRARY_PATH "BOX_LIBRARY_PATH"
+
+/** The name of the environmental variable which contains the user
+ * specified list of libraries to load by default.
+ */
+#define BOX_DEFAULT_LIBS "BOX_DEFAULT_LIBS"
+
+/** The name of the environmental variable which contains the user
+ * specified list of paths where to search for Box include files.
+ */
+#define BOX_INCLUDE_PATH "BOX_INCLUDE_PATH"
+
 /* NUM_TYPES: Numero totale dei tipi di registri disponibili.
  * NUM_INTRINSICS e' il numero di tipi intrinseci (il tipo TYPE_OBJ non
  *  e' considerato un tipo intrinseco, in quanto serve per gestire i tipi
