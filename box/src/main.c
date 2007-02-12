@@ -33,6 +33,7 @@
 #include "types.h"
 #include "defaults.h"
 #include "messages.h"
+#include "list.h"
 #include "array.h"
 #include "virtmach.h"
 #include "vmproc.h"
@@ -43,14 +44,6 @@
 
 /* Visualizzo questo messaggio quando ho errori nella riga di comando: */
 #define CMD_LINE_HELP "Try '%s -h' to get some help!"
-
-/* Definisco i tipi possibili per i parametri degli argomenti
- * della riga di comando
- */
-typedef enum {
-  PAR_NONE, PAR_INTG, PAR_UINT,
-  PAR_REAL, PAR_POINT, PAR_STRING
-} ParType;
 
 /* Elenco dei flags che regolano il funzionamento del programma: */
 enum {
@@ -67,33 +60,55 @@ static char *file_input;
 static char *file_output;
 static char *file_setup;
 
+static List *libraries;
+static List *lib_dirs;
+static List *inc_dirs;
+
 static VMProgram *program = NULL;
+
+/* Functions called when the argument of an option is found */
+static void set_file_input(char *arg) {file_input = arg;}
+static void set_file_output(char *arg) {file_output = arg;}
+static void set_file_setup(char *arg) {file_setup = arg;}
+static void add_library(char *arg) {
+  List_Append_With_Size(libraries, arg, strlen(arg));
+}
+static void add_lib_dir(char *arg) {
+  List_Append_With_Size(lib_dirs, arg, strlen(arg));
+}
+static void add_inc_dir(char *arg) {
+  List_Append_With_Size(inc_dirs, arg, strlen(arg));
+}
+
+#define NO_ARG ((void (*)(char *)) NULL)
 
 /* Tabella contenente i nomi delle opzioni e i dati relativi */
 static struct opt {
   char     *name;  /* Nome dell'opzione */
-  ParType  part;   /* Tipo dell'eventuale parametro associato all'opzione */
   UInt     cflag;  /* Se part = PAR_NONE, esegue *((UInt *) arg) &= ~cflag */
   UInt     sflag;  /* Se part = PAR_NONE, esegue *((UInt *) arg) |= sflag */
   UInt     xflag;  /* Se part = PAR_NONE, esegue *((UInt *) arg) ^= xflag */
   UInt     repeat; /* Numero di volte che l'opzione puo' essere invocata */
   UInt     *flags; /* Puntatore all'insieme dei flags */
-  void     *arg;   /* Puntatore al parametro da settare */
+  void     (*use_argument)(char *arg);
 } opt_tab[] = {
-  { "help", PAR_NONE, 0, FLAG_HELP, 0, -1, & flags, NULL },
-  { "?",  PAR_NONE, 0, FLAG_HELP, 0, -1, & flags, NULL },
-  { "test", PAR_NONE, 0, 0, FLAG_EXECUTE, -1, & flags, NULL },
-  { "verbose",  PAR_NONE, FLAG_ERRORS + FLAG_SILENT, 0, FLAG_VERBOSE, -1, & flags, NULL },
-  { "errors", PAR_NONE, FLAG_VERBOSE + FLAG_SILENT, 0, FLAG_ERRORS, -1, & flags, NULL },
-  { "silent", PAR_NONE, FLAG_VERBOSE + FLAG_ERRORS, 0, FLAG_SILENT, -1, & flags, NULL },
-  { "force",  PAR_NONE, 0, 0, FLAG_FORCE_EXEC, -1, & flags, NULL },
-  { "stdin",  PAR_NONE, 0, FLAG_INPUT+FLAG_STDIN, 0, 1, & flags, NULL },
-  { "input",  PAR_STRING, FLAG_STDIN, FLAG_INPUT, 0, 1, & flags, & file_input },
-  { "output", PAR_STRING, FLAG_OVERWRITE, FLAG_OUTPUT, 0, 1, & flags, & file_output },
-  { "write",  PAR_STRING, 0, FLAG_OVERWRITE + FLAG_OUTPUT, 0, 1, & flags, & file_output },
-  { "setup",  PAR_STRING, 0, FLAG_SETUP, 0, 1, & flags, & file_setup },
-  { NULL }
-}, opt_default =  { "input", PAR_STRING, 0, FLAG_INPUT, 0, 1, & flags, & file_input };
+  {"help",    0, FLAG_HELP, 0, -1, & flags, NO_ARG},
+  {"?",       0, FLAG_HELP, 0, -1, & flags, NO_ARG},
+  {"test",    0, 0, FLAG_EXECUTE, -1, & flags, NO_ARG},
+  {"verbose", FLAG_ERRORS + FLAG_SILENT, 0, FLAG_VERBOSE, -1, & flags, NO_ARG},
+  {"errors",  FLAG_VERBOSE + FLAG_SILENT, 0, FLAG_ERRORS, -1, & flags, NO_ARG},
+  {"silent",  FLAG_VERBOSE + FLAG_ERRORS, 0, FLAG_SILENT, -1, & flags, NO_ARG},
+  {"force",   0, 0, FLAG_FORCE_EXEC, -1, & flags, NO_ARG},
+  {"stdin",   0, FLAG_INPUT+FLAG_STDIN, 0, 1, & flags, NO_ARG},
+  {"input",   FLAG_STDIN, FLAG_INPUT, 0, 1, & flags, set_file_input},
+  {"output",  FLAG_OVERWRITE, FLAG_OUTPUT, 0, 1, & flags, set_file_output},
+  {"write",   0, FLAG_OVERWRITE + FLAG_OUTPUT, 0, 1, & flags, set_file_output},
+  {"setup",   0, FLAG_SETUP, 0, 1, & flags, set_file_setup},
+  {"library", 0, 0, 0, -1, & flags, add_library},
+  {"Include-path", 0, 0, 0, -1, & flags, add_inc_dir},
+  {"Lib-path", 0, 0, 0, -1, & flags, add_lib_dir},
+  {NULL }
+}, opt_default =  {"input", 0, FLAG_INPUT, 0, 1, & flags, set_file_input};
 
 /* Funzioni definite inquesto file */
 int main(int argc, char** argv);
@@ -102,6 +117,23 @@ void Main_Cmnd_Line_Help(void);
 Task Main_Prepare(void);
 Task Main_Install(UInt *main_module);
 Task Main_Execute(UInt main_module);
+
+/******************************************************************************/
+
+static Task Stage_Init(void) {
+  List_New(& libraries, 0);
+  List_New(& lib_dirs, 0);
+  List_New(& inc_dirs, 0);
+  return Success;
+}
+
+static void Stage_Finalize(void) {
+  VM_Destroy(program); /* This function accepts program = NULL */
+
+  List_Destroy(libraries);
+  List_Destroy(lib_dirs);
+  List_Destroy(inc_dirs);
+}
 
 static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
   int i;
@@ -120,23 +152,31 @@ static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
   /* Ciclo su tutti gli argomenti passati */
   for ( i = 1; i < argc; i++ ) {
     char *option = argv[i];
+    char *opt_prefix = "";
     struct opt *opt_desc;
 
-    if ( *option == OPTION_CHAR ) {
+    if (*option == OPTION_CHAR) {
+      static char single_opt_char[2] = {OPTION_CHAR, '\0'};
+      static char double_opt_char[3] = {OPTION_CHAR, OPTION_CHAR, '\0'};
       UInt oplen = strlen(++option), opnum = -1;
 
-      for ( j = 0; opt_tab[j].name != NULL; j++ )
-        if ( strncasecmp(option, opt_tab[j].name, oplen) == 0 ) {
-          if ( opnum == -1 ) opnum = j; else opnum = -2;
+      opt_prefix = single_opt_char;
+      if (oplen > 0)
+        if (*option == OPTION_CHAR) {
+          opt_prefix = double_opt_char;
+          ++option;
+          --oplen;
         }
 
-      if ( opnum == -1 ) {
-        MSG_ERROR( "-%s <-- Illegal option!", option );
-        Main_Error_Exit( CMD_LINE_HELP );
-      }
+      for ( j = 0; opt_tab[j].name != NULL; j++ )
+        if ( strncmp(option, opt_tab[j].name, oplen) == 0 )
+          opnum = (opnum == -1) ? j : -2;
 
-      if ( opnum == -2 ) {
-        MSG_ERROR( "-%s <-- Ambiguous option!", option );
+      if ( opnum == -1 ) {
+        MSG_ERROR("%s%s <-- Illegal option!", opt_prefix, option);
+        Main_Error_Exit( CMD_LINE_HELP );
+      } else if ( opnum == -2 ) {
+        MSG_ERROR("%s%s <-- Ambiguous option!", opt_prefix, option);
         Main_Error_Exit( CMD_LINE_HELP );
       }
 
@@ -153,7 +193,7 @@ static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
     if ( opt_desc->repeat > 0 )
       --opt_desc->repeat;
     else if ( opt_desc->repeat == 0 ) {
-      MSG_ERROR("-%s <-- This option should be used only once!", option );
+      MSG_ERROR("%s%s <-- Should be used only once!", opt_prefix, option);
       Main_Error_Exit( CMD_LINE_HELP );
     }
 
@@ -161,19 +201,13 @@ static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
     *opt_desc->flags |= opt_desc->sflag;
     *opt_desc->flags ^= opt_desc->xflag;
 
-    if ( opt_desc->part != PAR_NONE ) {
+    if ( opt_desc->use_argument != NO_ARG ) {
       if ( ++i >= argc ) {
-        MSG_ERROR("-%s <-- This option requires an argument!", option );
+        MSG_ERROR("%s%s <-- Option requires an argument!", opt_prefix, option);
         Main_Error_Exit( CMD_LINE_HELP );
       }
 
-      switch ( opt_desc->part ) {
-       case PAR_STRING:
-        *((char **) opt_desc->arg) = argv[i]; break;
-       default:
-         MSG_ERROR("Internal error in the option parsing :-(");
-         Main_Error_Exit( NULL );
-      }
+      opt_desc->use_argument(argv[i]);
     }
   } /* Fine del ciclo for */
 
@@ -397,9 +431,12 @@ void Main_Cmnd_Line_Help(void) {
 }
 
 /******************************************************************************/
+
 /* main function of the program. */
 int main(int argc, char** argv) {
   UInt main_module;
+
+  if IS_FAILED( Stage_Init() ) Main_Error_Exit("Initialization failed!");
 
   (void) Stage_Parse_Command_Line(& flags, argc, argv);
 
@@ -413,7 +450,7 @@ int main(int argc, char** argv) {
 
   (void) Stage_Execution(& flags, main_module);
 
-  VM_Destroy(program); /* This function accepts program = NULL */
+  Stage_Finalize();
 
   exit( EXIT_SUCCESS );
 }
