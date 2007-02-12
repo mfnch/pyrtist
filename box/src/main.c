@@ -147,25 +147,8 @@ static void Stage_Finalize(void) {
 static Task Add_Strings_To_List(const char *env_var, List *list) {
 #ifdef HAVE_GETENV
   char *strings = getenv(env_var);
-  if (strings != (char *) NULL) {
-    char *s = strings, *string = s;
-    UInt length = 0;
-    while(1) {
-      switch(*s) {
-      case '\0':
-        if (length > 0) List_Append_With_Size(list, string, length);
-        return Success;
-      case PATH_SEPARATOR:
-        if (length > 0) List_Append_With_Size(list, string, length);
-        string = ++s;
-        length = 0;
-        break;
-      default:
-        ++s;
-        ++length;
-      }
-    }
-  }
+  if (strings != (char *) NULL)
+    List_Append_Strings(list, strings, PATH_SEPARATOR);
 #endif
   return Success;
 }

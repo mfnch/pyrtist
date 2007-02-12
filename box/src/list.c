@@ -70,7 +70,7 @@ void List_Remove(List *l, void *item) {
 }
 
 void List_Insert_With_Size(List *l, void *item_where,
- void *item_what, UInt size) {
+ const void *item_what, UInt size) {
   ListItemHead **prev_lih, **next_lih;
 
   void *new_item = Mem_Alloc(sizeof(ListItemHead) + size);
@@ -122,6 +122,25 @@ Task List_Item_Get(List *l, void **item, UInt index) {
     MSG_ERROR("Trying to get item with index %U of a list with %U elements",
      index, l->length);
     return Failed;
+  }
+}
+
+void List_Append_Strings(List *l, const char *strings, char separator) {
+  const char *s = strings, *string = s;
+  UInt length = 0;
+  while(1) {
+    register char c = *s;
+    if (c == '\0') {
+      if (length > 0) List_Append_With_Size(l, string, length);
+      return;
+    } else if (c == separator) {
+      if (length > 0) List_Append_With_Size(l, string, length);
+      string = ++s;
+      length = 0;
+    } else {
+      ++s;
+      ++length;
+    }
   }
 }
 

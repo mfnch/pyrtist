@@ -48,9 +48,10 @@ void List_Destroy(List *l);
 UInt List_Length(List *l);
 void List_Remove(List *l, void *item);
 void List_Insert_With_Size(List *l, void *item_where,
- void *item_what, UInt size);
+ const void *item_what, UInt size);
 Task List_Iter(List *l, ListIterator i, void *pass_data);
 Task List_Item_Get(List *l, void **item, UInt index);
+void List_Append_Strings(List *l, const char *strings, char separator);
 
 #  define List_Insert(list, item_where, item_what) \
      List_Insert_With_Size((list), item_where, item_what, (list)->item_size)
