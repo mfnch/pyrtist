@@ -40,7 +40,7 @@
 static Task Close_DyLib(void *item) {
   void *dylib = *((void **) item);
   if (dlclose(dylib)) {
-    MSG_WARNING("dlclose failure");
+    MSG_WARNING("VM_Sym_Destroy: Close_DyLib: dlclose failure");
   }
   return Success;
 }
