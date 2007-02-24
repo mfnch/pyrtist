@@ -33,6 +33,7 @@
 #include "messages.h"
 #include "virtmach.h"
 #include "vmsym.h"
+#include "vmsymstuff.h"
 #include "vmproc.h"
 #include "list.h"
 

@@ -85,9 +85,7 @@ include BEGIN(include);
 
   BEGIN(INITIAL);
 
-  printf(">>> File: \"%s\"\n", f);
-
-  if ( ! Tok_Include_Begin( f ) ) {
+  if IS_FAILED( Tok_Include_Begin( f ) ) {
     free(f); return TOK_ERR;
   } else
     free(f);
@@ -295,8 +293,6 @@ Task Tok_Include_Begin(char *f)
   FILE *incfile;
   TokIncludeData cur;
 
-  MSG_LOCATION("Tok_Include_Begin");
-
   if ( tok_cur_include_level >= tok_max_include_level ) {
     MSG_ERROR("Impossibile includere \"%s\": troppi file inclusi!", f);
     return Failed;
@@ -322,7 +318,7 @@ Task Tok_Include_Begin(char *f)
   yy_switch_to_buffer(
    yy_create_buffer((yyin = incfile), YY_BUF_SIZE) );
 
-  MSG_CONTEXT_BEGIN("Entering the included file \"%s\":\n", f);
+  MSG_CONTEXT_BEGIN("Entering the included file \"%s\"", f);
   return Success;
 }
 
@@ -349,7 +345,7 @@ UInt Tok_Include_End(void)
     num_errs = MSG_GT_ERRORS - cur.num_errs;
     num_warns = MSG_NUM_WARNINGS - cur.num_warns;
     MSG_ADVICE( "Exiting from the included file. "
-     SUInt " errors and " SUInt " warnings were found.",
+     "%U errors and %U warnings were found.",
      num_errs, num_warns );
     MSG_CONTEXT_END();
     return 0;

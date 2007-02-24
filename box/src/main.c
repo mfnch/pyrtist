@@ -299,8 +299,8 @@ static Task Stage_Compilation(char *file, UInt *main_module) {
 static Task Stage_Symbol_Resolution(UInt *flags) {
   int all_resolved;
   MSG_CONTEXT_BEGIN("Symbol resolution");
-  TASK( VM_Sym_Resolve_All(program) );
   TASK( VM_Sym_Resolve_CLibs(program, lib_dirs, libraries) );
+  TASK( VM_Sym_Resolve_All(program) );
   TASK( VM_Sym_Ref_Check(program, & all_resolved) );
   if (! all_resolved) {
     VM_Sym_Ref_Report(program);
