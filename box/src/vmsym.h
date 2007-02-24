@@ -37,6 +37,7 @@
 #  include "array.h"
 #  include "hashtable.h"
 #  include "vmcommon.h"
+#  include "list.h"
 
 /** @brief The table of reference and definition for the Box VM.
  *
@@ -151,6 +152,14 @@ void VM_Sym_Table_Print(VMProgram *vmp, FILE *out, UInt sym_num);
 
 /** Check that the type of the symbol 'sym_num' is 'sym_type'. */
 Task VM_Sym_Check_Type(VMProgram *vmp, UInt sym_num, UInt sym_type);
+
+/** Open the given dynamic library to resolve symbols. */
+Task VM_Sym_Resolve_CLib(VMProgram *vmp, char *lib_file);
+
+/** Resolution of functions defined in external dynamically loaded
+ * C libraries.
+ */
+Task VM_Sym_Resolve_CLibs(VMProgram *vmp, List *lib_paths, List *libs);
 
 /** This function calls the function given as argument 'VM_Sym_Code_Ref'
  * to assemble a piece of VM-code which makes reference to the symbol

@@ -129,15 +129,8 @@ static Task Stage_Init(void) {
   return Success;
 }
 
-Task Removeme(void *string, void *pass_data) {
-  printf("Added: %s\n", (char *) string);
-  return Success;
-}
-
 static void Stage_Finalize(void) {
   VM_Destroy(program); /* This function accepts program = NULL */
-
-  List_Iter(lib_dirs, Removeme, NULL);
 
   List_Destroy(libraries);
   List_Destroy(lib_dirs);
@@ -307,6 +300,7 @@ static Task Stage_Symbol_Resolution(UInt *flags) {
   int all_resolved;
   MSG_CONTEXT_BEGIN("Symbol resolution");
   TASK( VM_Sym_Resolve_All(program) );
+  TASK( VM_Sym_Resolve_CLibs(program, lib_dirs, libraries) );
   TASK( VM_Sym_Ref_Check(program, & all_resolved) );
   if (! all_resolved) {
     VM_Sym_Ref_Report(program);

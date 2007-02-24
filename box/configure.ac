@@ -33,12 +33,13 @@ AC_PROG_CC
 AC_PROG_LEX
 AC_PROG_YACC
 
-# Checks for libraries.
-AC_CHECK_LIB([m], [floor])
-
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
+AC_CHECK_HEADERS([stdlib.h string.h unistd.h dlfcn.h])
+
+# Checks for libraries.
+AC_CHECK_LIB([m], [floor])
+AC_CHECK_LIB([dl], [dlopen])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

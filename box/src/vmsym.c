@@ -23,6 +23,9 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <dlfcn.h>
+
+#include "config.h"
 
 #include "defaults.h"
 #include "types.h"
@@ -31,6 +34,7 @@
 #include "virtmach.h"
 #include "vmsym.h"
 #include "vmproc.h"
+#include "list.h"
 
 Task VM_Sym_Init(VMProgram *vmp) {
   assert(vmp != (VMProgram *) NULL);
@@ -285,6 +289,95 @@ Task VM_Sym_Check_Type(VMProgram *vmp, UInt sym_num, UInt sym_type) {
   s = Arr_ItemPtr(st->defs, VMSym, sym_num);
   if ( s->sym_type == sym_type ) return Success;
   return Failed;
+}
+
+struct clib_ref_data {
+  VMProgram *vmp;
+  void *dylib;
+  char *lib_file;
+};
+
+static Task Resolve_Ref_With_CLib(void *item, void *pass_data) {
+  VMSymRef *sr = (VMSymRef *) item;
+  if (! sr->resolved) {
+    struct clib_ref_data *clrd = (struct clib_ref_data *) pass_data;
+    VMProgram *vmp = clrd->vmp;
+    const char *sym_name = VM_Sym_Name_Get(vmp, sr->sym_num);
+    if (sym_name != (char *) NULL) {
+      char *err_msg;
+      void *sym;
+      UInt call_num;
+
+      err_msg = dlerror();
+      sym = dlsym(clrd->dylib, sym_name);
+      err_msg = dlerror();
+      if (err_msg != (char *) NULL) return Success;
+      if (sym == (char *) NULL) {
+        MSG_ERROR("Symbol '%s' from library '%s' is NULL",
+         sym_name, clrd->lib_file);
+        return Success;
+      }
+      TASK( VM_Proc_Install_CCode(vmp, & call_num,
+       (Task (*)(VMProgram *)) sym, sym_name, sym_name) );
+      TASK( VM_Sym_Def_Call(vmp, sr->sym_num, call_num) );
+    }
+  }
+  return Success;
+}
+
+Task VM_Sym_Resolve_CLib(VMProgram *vmp, char *lib_file) {
+  VMSymTable *st = & vmp->sym_table;
+#ifdef HAVE_LIBDL
+  struct clib_ref_data clrd;
+  clrd.vmp = vmp;
+  clrd.dylib = dlopen(lib_file, RTLD_NOW);
+  clrd.lib_file = lib_file;
+  if (clrd.dylib == NULL) return Failed;
+  return Arr_Iter(st->refs, Resolve_Ref_With_CLib, & clrd);
+#else
+  MSG_WARNING("Cannot load '%s': the virtual machine was compiled "
+   "without support for dynamic loading of libraries.", lib_file);
+  return Failed;
+#endif
+}
+
+struct clibs_data {
+  VMProgram *vmp;
+  List *lib_paths;
+  char *path;
+  char *lib;
+};
+
+Task Iter_Over_Paths(void *string, void *pass_data) {
+  struct clibs_data *cld = (struct clibs_data *) pass_data;
+  char *lib_file;
+  Task status;
+  cld->path = (char *) string;
+  lib_file = strdup(print("%s/lib%s.so", cld->path, cld->lib));
+  status = VM_Sym_Resolve_CLib(cld->vmp, lib_file);
+  free(lib_file);
+  if (status == Success) return Failed; /* Stop here, if we have found it! */
+  return Success;
+}
+
+Task Iter_Over_Libs(void *string, void *pass_data) {
+  struct clibs_data *cld = (struct clibs_data *) pass_data;
+  cld->lib = (char *) string;
+  /* IS_SUCCESS is misleading: here we use Success, just to continue
+   * the iteration. Therefore if we get Success, it means that the library
+   * has not been found
+   */
+  if (List_Iter(cld->lib_paths, Iter_Over_Paths, cld) == Success) {
+    MSG_WARNING("'%s' <-- library has not been found!", cld->lib);
+  }
+  return Success;
+}
+
+Task VM_Sym_Resolve_CLibs(VMProgram *vmp, List *lib_paths, List *libs) {
+  struct clibs_data cld;
+  cld.vmp = vmp;
+  cld.lib_paths = lib_paths;
+  return List_Iter(libs, Iter_Over_Libs, & cld);
 }
 
 /****************************************************************************/
