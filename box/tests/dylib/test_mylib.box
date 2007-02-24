@@ -1,0 +1,4 @@
+// Example of usage of an external Box C-library
+include "mylib.box"
+
+MyLib["Hello world\n"]
