@@ -37,6 +37,14 @@
 #include "vmproc.h"
 #include "list.h"
 
+static Task Close_DyLib(void *item) {
+  void *dylib = *((void **) item);
+  if (dlclose(dylib)) {
+    MSG_WARNING("dlclose failure");
+  }
+  return Success;
+}
+
 Task VM_Sym_Init(VMProgram *vmp) {
   assert(vmp != (VMProgram *) NULL);
   VMSymTable *st = & vmp->sym_table;
@@ -45,6 +53,8 @@ Task VM_Sym_Init(VMProgram *vmp) {
   TASK( Arr_New(& st->data, sizeof(Char), VMSYM_DATA_ARR_SIZE) );
   TASK( Arr_New(& st->defs, sizeof(VMSym), VMSYM_DEF_ARR_SIZE) );
   TASK( Arr_New(& st->refs, sizeof(VMSymRef), VMSYM_REF_ARR_SIZE) );
+  TASK( Arr_New(& st->dylibs, sizeof(void *), VMSYM_DYLIB_ARR_SIZE) );
+  Arr_Destructor(st->dylibs, Close_DyLib);
   return Success;
 }
 
@@ -55,6 +65,7 @@ void VM_Sym_Destroy(VMProgram *vmp) {
   Arr_Destroy(st->data);
   Arr_Destroy(st->defs);
   Arr_Destroy(st->refs);
+  Arr_Destroy(st->dylibs);
 }
 
 Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, UInt sym_type, UInt def_size) {
@@ -331,9 +342,10 @@ Task VM_Sym_Resolve_CLib(VMProgram *vmp, char *lib_file) {
 #ifdef HAVE_LIBDL
   struct clib_ref_data clrd;
   clrd.vmp = vmp;
-  clrd.dylib = dlopen(lib_file, RTLD_NOW);
   clrd.lib_file = lib_file;
+  clrd.dylib = dlopen(lib_file, RTLD_NOW);
   if (clrd.dylib == NULL) return Failed;
+  TASK( Arr_Push(st->dylibs, & clrd.dylib) );
   return Arr_Iter(st->refs, Resolve_Ref_With_CLib, & clrd);
 #else
   MSG_WARNING("Cannot load '%s': the virtual machine was compiled "

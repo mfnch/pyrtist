@@ -48,6 +48,7 @@ typedef struct {
   Array *data;
   Array *defs;
   Array *refs;
+  Array *dylibs;
 } VMSymTable;
 
 /** This is the prototype for a function which generates a piece of code

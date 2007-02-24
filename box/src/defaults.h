@@ -157,6 +157,8 @@
 #define VMSYM_DATA_ARR_SIZE 1024
 /** Initial size of the array containing the references to the VM symbols */
 #define VMSYM_REF_ARR_SIZE 2048
+/** Initial size of the array containing the opened C-libraries */
+#define VMSYM_DYLIB_ARR_SIZE 16
 /** Initial size of the array containing the names of the VM symbols */
 #define VMSYS_NAME_ARR_SIZE 8192
 /** Initial size of the array containing the installed procedures */

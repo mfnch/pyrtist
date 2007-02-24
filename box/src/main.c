@@ -347,10 +347,10 @@ static Task Stage_Write_Asm(UInt flags) {
     FILE *out = stdout;
     int close_file = 0;
     if (strcmp(file_output, "-") == 0) {
-      MSG_ADVICE("Writing the assembly code for the compiled program"
+      MSG_ADVICE("Writing the assembly code for the compiled program "
        "on the standart output.");
     } else {
-      MSG_ADVICE("Writing the assembly code for the compiled program"
+      MSG_ADVICE("Writing the assembly code for the compiled program "
        "into \"%s\"!", file_output );
       out = fopen(file_output, "w");
       if (out == (FILE *) NULL) {
