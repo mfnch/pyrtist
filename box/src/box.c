@@ -58,17 +58,32 @@ Int Box_Depth(void) {
   return (Arr_NumItem(bs->box) - 1);
 }
 
+static Task Box_Def_Prepare(UInt head_sym_num) {
+  Int num_var[NUM_TYPES], num_reg[NUM_TYPES];
+  RegVar_Get_Nums(num_var, num_reg);
+  TASK( VM_Sym_Def_Proc_Head(cmp_vm, head_sym_num, num_var, num_reg) );
+  return Success;
+}
+
 Task Box_Main_Begin(void) {
+  Box *b;
   /* Sets the output for the compiled code */
   UInt main_sheet;
   TASK( VM_Proc_Code_New(cmp_vm, & main_sheet) );
   TASK( VM_Proc_Target_Set(cmp_vm, main_sheet) );
   bs->cur_proc_num = main_sheet;
-  return Box_Instance_Begin((Expr *) NULL);
+  TASK( Box_Instance_Begin((Expr *) NULL) );
+  b = Arr_LastItemPtr(bs->box, Box);
+  TASK( VM_Sym_Proc_Head(cmp_vm, & b->head_sym_num) );
+  return Success;
 }
 
 void Box_Main_End(void) {
+  Box *b = Arr_LastItemPtr(bs->box, Box);
+  UInt head_sym_num = b->head_sym_num;
   (void) Box_Instance_End((Expr *) NULL);
+  VM_Assemble(cmp_vm, ASM_RET);
+  (void) Box_Def_Prepare(head_sym_num);
 }
 
 Task Box_Def_Begin(Int proc_type) {
@@ -83,17 +98,11 @@ Task Box_Def_Begin(Int proc_type) {
   Expr_New_Void(& b.value);
   b.is.definition = 1;
   b.proc_num = new_sheet;
-  TASK(Arr_Push(bs->box, & b));
 
   TASK( VM_Proc_Target_Set(cmp_vm, new_sheet) );
   bs->cur_proc_num = new_sheet;
-  return Success;
-}
-
-static Task Box_Def_Prepare(void) {
-  Int num_var[NUM_TYPES], num_reg[NUM_TYPES];
-  RegVar_Get_Nums(num_var, num_reg);
-  TASK( VM_Code_Prepare(cmp_vm, num_var, num_reg) );
+  TASK( VM_Sym_Proc_Head(cmp_vm, & b.head_sym_num) );
+  TASK(Arr_Push(bs->box, & b));
   return Success;
 }
 
@@ -102,9 +111,10 @@ Task Box_Def_End(void) {
   Int proc_type;
   UInt sym_num, call_num, proc_num;
 
-  TASK(Box_Def_Prepare());
   b = Arr_LastItemPtr(bs->box, Box);
   assert(b->is.definition);
+  VM_Assemble(cmp_vm, ASM_RET);
+  TASK(Box_Def_Prepare(b->head_sym_num));
   proc_type = b->type;
   proc_num = b->proc_num;
   TASK(Tym_Procedure_Info(proc_type, (Int *) NULL, (Int *) NULL,

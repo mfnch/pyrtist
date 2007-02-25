@@ -45,12 +45,13 @@ typedef struct {
     unsigned int definition : 1; /* instance or definition of procedure? */
     unsigned int second : 1; /* This is 1 only if it is a non-creation box */
   } is;
-  UInt   proc_num; /* Number of the procedure where the box is */
-  Int    type;     /* Type of the box */
-  Expr   value;    /* Expression associated with the box */
-  Symbol *child;   /* Child symbols which belongs to this box */
-  int    label_begin, /* Labels located at the beginning */
-         label_end;   /* and at the end of the box */
+  UInt   proc_num;     /* Number of the procedure where the box is */
+  UInt   head_sym_num; /* Symbol ID associated with the header of the proc. */
+  Int    type;         /* Type of the box */
+  Expr   value;        /* Expression associated with the box */
+  Symbol *child;       /* Child symbols which belongs to this box */
+  int    label_begin,  /* Labels located at the beginning */
+         label_end;    /* and at the end of the box */
 } Box;
 
 Task Box_Init(void);

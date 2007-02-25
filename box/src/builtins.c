@@ -446,7 +446,7 @@ static Task Blt_Define_Basics(void) {
     opn->is.commutative = 0;
     opn->is.intrinsic = 0;
     opn->is.assignment = 0;
-    opn->module = call_num;
+    opn->module = sym_num;
   }
 
   /* Define the conversions (example: Real@Int such as: a = Int[ 1.2 ]) */

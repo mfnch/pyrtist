@@ -30,11 +30,18 @@
 #  define _VMSYMSTUFF_H
 
 #  define VM_SYM_CALL 1
-#  define VM_SYM_LABEL 2
+#  define VM_SYM_PROC_HEAD 123
+#  define VM_SYM_LABEL 3
 
 Task VM_Sym_New_Call(VMProgram *vmp, UInt *sym_num);
 
 Task VM_Sym_Def_Call(VMProgram *vmp, UInt sym_num, UInt proc_num);
 
 Task VM_Sym_Call(VMProgram *vmp, UInt sym_num);
+
+Task VM_Sym_Proc_Head(VMProgram *vmp, UInt *sym_num);
+
+Task VM_Sym_Def_Proc_Head(VMProgram *vmp, UInt sym_num,
+ Int *num_var, Int *num_reg);
+
 #endif

@@ -237,7 +237,7 @@ Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
   if (! s->defined) return Success;
   next = s->first_ref;
   def = (void *) Arr_ItemPtr(st->data, Char, s->def_addr);
-  def_size = s->def_addr;
+  def_size = s->def_size;
   sym_type = s->sym_type;
   r = s->resolver;
   if (r == NULL && next > 0) {
@@ -329,7 +329,7 @@ static Task Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
     struct clib_ref_data *clrd = (struct clib_ref_data *) pass_data;
     VMProgram *vmp = clrd->vmp;
     const char *sym_name = s->name.text;
-    if (sym_name != (char *) NULL) {
+    if (sym_name != (char *) NULL && s->sym_type == VM_SYM_CALL) {
       char *err_msg;
       void *sym;
       UInt call_num;
@@ -356,12 +356,10 @@ Task VM_Sym_Resolve_CLib(VMProgram *vmp, char *lib_file) {
 #ifdef DYLIB
   VMSymTable *st = & vmp->sym_table;
   struct clib_ref_data clrd;
-  printf("trying '%s'\n", lib_file);
   clrd.vmp = vmp;
   clrd.lib_file = lib_file;
   clrd.dylib = dlopen(lib_file, RTLD_NOW);
   if (clrd.dylib == NULL) return Failed;
-  printf("library '%s' successfully opened\n", lib_file);
   TASK( Arr_Push(st->dylibs, & clrd.dylib) );
   return Arr_Iter(st->defs, Resolve_Ref_With_CLib, & clrd);
 #else

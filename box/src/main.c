@@ -376,7 +376,7 @@ Task Main_Prepare(void) {
   int i;
   Intg num_var[NUM_TYPES], num_reg[NUM_TYPES];
   RegVar_Get_Nums(num_var, num_reg);
-  TASK( VM_Code_Prepare(program, num_var, num_reg) );
+//   TASK( VM_Code_Prepare(program, num_var, num_reg) );
   /* Preparo i registri globali */
   for(i = 0; i < NUM_TYPES; i++) {num_var[i] = 0; num_reg[i] = 3;}
   TASK( VM_Module_Globals(program, num_var, num_reg) );
