@@ -146,7 +146,7 @@ Task Arr_New(Array **new_array, UInt elsize, UInt mindim) {
 }
 #endif
 
-static Task Destroy_Item(void *item, void *destructor) {
+static Task Destroy_Item(UInt item_num, void *item, void *destructor) {
   return ((Task (*)(void *)) destructor)(item);
 }
 
@@ -400,13 +400,14 @@ Task Arr_Data_Only(Array *a, void **data_ptr) {
 
 /* Apply a function to all the elements of an array
  */
-Task Arr_Iter(Array *a, Task (*action)(void *, void *), void *pass_data) {
+Task Arr_Iter(Array *a, Task (*action)(UInt, void *, void *), void *pass_data)
+{
   assert(a != NULL && action != NULL);
   if (a->ID == ARR_ID) {
     int i;
     void *item_ptr = a->ptr;
-    for(i = 0; i < a->numel; i++) {
-      if IS_FAILED( action(item_ptr, pass_data) ) return Failed;
+    for(i = 1; i <= a->numel; i++) {
+      if IS_FAILED( action(i, item_ptr, pass_data) ) return Failed;
       item_ptr += a->elsize;
     }
     return Success;

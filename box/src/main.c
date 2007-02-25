@@ -73,13 +73,14 @@ static void set_file_input(char *arg) {file_input = arg;}
 static void set_file_output(char *arg) {file_output = arg;}
 static void set_file_setup(char *arg) {file_setup = arg;}
 static void add_library(char *arg) {
-  List_Append_With_Size(libraries, arg, strlen(arg));
+  /* strlen(...)+1 --> include also '\0' */
+  List_Append_With_Size(libraries, arg, strlen(arg)+1);
 }
 static void add_lib_dir(char *arg) {
-  List_Append_With_Size(lib_dirs, arg, strlen(arg));
+  List_Append_With_Size(lib_dirs, arg, strlen(arg)+1);
 }
 static void add_inc_dir(char *arg) {
-  List_Append_With_Size(inc_dirs, arg, strlen(arg));
+  List_Append_With_Size(inc_dirs, arg, strlen(arg)+1);
 }
 
 #define NO_ARG ((void (*)(char *)) NULL)

@@ -66,6 +66,7 @@ typedef Task (*VMSymResolver)(VMProgram *vmp, UInt sym_num, UInt sym_type,
 /** @brief The details about a symbol.
  */
 typedef struct {
+  UInt sym_num; /**< The symbol ID number */
   Name name; /**< The name of the symbol */
   int defined; /**< Has a definition been given for the symbol? */
   UInt def_size; /**< Size of the data containing the symbol definition */

@@ -26,6 +26,9 @@
 #include <dlfcn.h>
 
 #include "config.h"
+#ifdef HAVE_LIBDL
+#  define DYLIB
+#endif
 
 #include "defaults.h"
 #include "types.h"
@@ -37,6 +40,7 @@
 #include "vmproc.h"
 #include "list.h"
 
+#ifdef DYLIB
 static Task Close_DyLib(void *item) {
   void *dylib = *((void **) item);
   if (dlclose(dylib)) {
@@ -44,6 +48,7 @@ static Task Close_DyLib(void *item) {
   }
   return Success;
 }
+#endif
 
 Task VM_Sym_Init(VMProgram *vmp) {
   assert(vmp != (VMProgram *) NULL);
@@ -53,8 +58,10 @@ Task VM_Sym_Init(VMProgram *vmp) {
   TASK( Arr_New(& st->data, sizeof(Char), VMSYM_DATA_ARR_SIZE) );
   TASK( Arr_New(& st->defs, sizeof(VMSym), VMSYM_DEF_ARR_SIZE) );
   TASK( Arr_New(& st->refs, sizeof(VMSymRef), VMSYM_REF_ARR_SIZE) );
+#ifdef DYLIB
   TASK( Arr_New(& st->dylibs, sizeof(void *), VMSYM_DYLIB_ARR_SIZE) );
   Arr_Destructor(st->dylibs, Close_DyLib);
+#endif
   return Success;
 }
 
@@ -65,7 +72,9 @@ void VM_Sym_Destroy(VMProgram *vmp) {
   Arr_Destroy(st->data);
   Arr_Destroy(st->defs);
   Arr_Destroy(st->refs);
+#ifdef DYLIB
   Arr_Destroy(st->dylibs);
+#endif
 }
 
 Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, UInt sym_type, UInt def_size) {
@@ -94,6 +103,7 @@ Task VM_Sym_Name_Set(VMProgram *vmp, UInt sym_num, Name *n) {
   HashItem *hi;
   VMSym *s;
   char *n_str;
+  UInt n_len;
 
   s = Arr_ItemPtr(st->defs, VMSym, sym_num);
   if (s->name.length != 0) {
@@ -101,21 +111,24 @@ Task VM_Sym_Name_Set(VMProgram *vmp, UInt sym_num, Name *n) {
     return Failed;
   }
 
-  if ( HT_Find(st->syms, n->text, n->length, & hi) ) {
+  n_str = Name_To_Str(n);
+  n_len = n->length + 1; /* include also the terminating '\0' character */
+  if ( HT_Find(st->syms, n_str, n_len, & hi) ) {
+    free(n_str);
     MSG_ERROR("Another symbol exists having the name '%N'!", n);
     return Failed;
   }
 
-  n_str = Name_To_Str(n);
-  (void) HT_Insert_Obj(st->syms, n_str, n->length, & sym_num, sizeof(UInt));
-  free(n_str);
-  if ( ! HT_Find(st->syms, n->text, n->length, & hi) ) {
+  (void) HT_Insert_Obj(st->syms, n_str, n_len, & sym_num, sizeof(UInt));
+  if ( ! HT_Find(st->syms, n_str, n_len, & hi) ) {
+    free(n_str);
     MSG_ERROR("Hashtable seems not to work (from VM_Sym_Add)");
     return Failed;
   }
+  free(n_str);
 
   s->name.text = (char *) hi->key;
-  s->name.length = hi->key_size;
+  s->name.length = hi->key_size - 1; /* Without the final '\0' */
   return Success;
 }
 
@@ -168,7 +181,7 @@ Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, void *ref, UInt ref_size) {
   return Success;
 }
 
-static Task Check_Ref(void *item, void *all_resolved) {
+static Task Check_Ref(UInt item_num, void *item, void *all_resolved) {
   VMSymRef *sr = (VMSymRef *) item;
   *((int *) all_resolved) &= sr->resolved;
   return Success;
@@ -180,7 +193,7 @@ Task VM_Sym_Ref_Check(VMProgram *vmp, int *all_resolved) {
   return Arr_Iter(st->refs, Check_Ref, all_resolved);
 }
 
-static Task Report_Ref(void *item, void *pass_data) {
+static Task Report_Ref(UInt item_num, void *item, void *pass_data) {
   VMProgram *vmp = (VMProgram *) pass_data;
   VMSymRef *sr = (VMSymRef *) item;
   if (! sr->resolved) {
@@ -309,12 +322,13 @@ struct clib_ref_data {
   char *lib_file;
 };
 
-static Task Resolve_Ref_With_CLib(void *item, void *pass_data) {
-  VMSymRef *sr = (VMSymRef *) item;
-  if (! sr->resolved) {
+#ifdef DYLIB
+static Task Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
+  VMSym *s = (VMSym *) item;
+  if (! s->defined) {
     struct clib_ref_data *clrd = (struct clib_ref_data *) pass_data;
     VMProgram *vmp = clrd->vmp;
-    const char *sym_name = VM_Sym_Name_Get(vmp, sr->sym_num);
+    const char *sym_name = s->name.text;
     if (sym_name != (char *) NULL) {
       char *err_msg;
       void *sym;
@@ -331,22 +345,25 @@ static Task Resolve_Ref_With_CLib(void *item, void *pass_data) {
       }
       TASK( VM_Proc_Install_CCode(vmp, & call_num,
        (Task (*)(VMProgram *)) sym, sym_name, sym_name) );
-      TASK( VM_Sym_Def_Call(vmp, sr->sym_num, call_num) );
+      TASK( VM_Sym_Def_Call(vmp, sym_num, call_num) );
     }
   }
   return Success;
 }
+#endif
 
 Task VM_Sym_Resolve_CLib(VMProgram *vmp, char *lib_file) {
+#ifdef DYLIB
   VMSymTable *st = & vmp->sym_table;
-#ifdef HAVE_LIBDL
   struct clib_ref_data clrd;
+  printf("trying '%s'\n", lib_file);
   clrd.vmp = vmp;
   clrd.lib_file = lib_file;
   clrd.dylib = dlopen(lib_file, RTLD_NOW);
   if (clrd.dylib == NULL) return Failed;
+  printf("library '%s' successfully opened\n", lib_file);
   TASK( Arr_Push(st->dylibs, & clrd.dylib) );
-  return Arr_Iter(st->refs, Resolve_Ref_With_CLib, & clrd);
+  return Arr_Iter(st->defs, Resolve_Ref_With_CLib, & clrd);
 #else
   MSG_WARNING("Cannot load '%s': the virtual machine was compiled "
    "without support for dynamic loading of libraries.", lib_file);

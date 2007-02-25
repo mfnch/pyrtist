@@ -1,11 +1,17 @@
-all: run
+all: run_mylib
 
 libmylib.so: mylib.c
 	gcc -I../../src -fPIC -shared -o libmylib.so mylib.c
 
-run: libmylib.so
+run_mylib: libmylib.so
 	../../src/box -v -L ./ -l mylib -o test_mylib.bvm test_mylib.box
 
-check: run
+libline.so: line.c
+	gcc -I../../src -fPIC -shared -o $@ $<
 
-.PHONY: all run check
+run_line: libline.so
+	../../src/box -v -L ./ -l line -o test_line.bvm test_line.box
+
+check: run_mylib
+
+.PHONY: all run_mylib run_line check

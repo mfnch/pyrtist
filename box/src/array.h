@@ -54,7 +54,7 @@ Task Arr_BigEnough(Array *a, UInt numel);
 Task Arr_SmallEnough(Array *a, UInt numel);
 Task Arr_Clear(Array *a);
 Task Arr_Data_Only(Array *a, void **data_ptr);
-Task Arr_Iter(Array *a, Task (*action)(void *, void *), void *pass_data);
+Task Arr_Iter(Array *a, Task (*action)(UInt, void *, void *), void *pass_data);
 Task Arr_Overwrite(Array *a, Intg dest, void *src, UInt n);
 
 /* Valore che contrassegna le array correttamente inizializzate */
