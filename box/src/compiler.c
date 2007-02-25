@@ -1946,12 +1946,6 @@ Task Cmp_Procedure(int *found, Expression *e, Intg suffix, int auto_define) {
   if ( ! *found ) goto exit_success;
 
   /* Now we compile the procedure */
-  /* We pass the box which is the parent of the procedure */
-  if ( b->value.is.value ) {
-    if IS_FAILED( Cmp_Expr_Container_Change(& b->value, CONTAINER_ARG(1)) )
-      goto exit_failed;
-  }
-
   /* We pass the argument of the procedure if its size is > 0 */
   if (Tym_Type_Size(t) > 0) {
     if ( prototype != TYPE_NONE ) {
@@ -1960,6 +1954,12 @@ Task Cmp_Procedure(int *found, Expression *e, Intg suffix, int auto_define) {
     }
 
     if IS_FAILED( Cmp_Expr_To_Ptr(e, CAT_GREG, (Intg) 2, 0) ) goto exit_failed;
+  }
+
+  /* We pass the box which is the parent of the procedure */
+  if ( b->value.is.value ) {
+    if IS_FAILED( Cmp_Expr_Container_Change(& b->value, CONTAINER_ARG(1)) )
+      goto exit_failed;
   }
 
   TASK( VM_Sym_Call(cmp_vm, sym_num) );
