@@ -20,43 +20,58 @@
 
 /* $Id$ */
 
-Task TS_Init(TS **ts) {
+#include "types.h"
+#include "typesys.h"
+#include "messages.h"
 
+Task TS_Init(TS **ts) {
+  MSG_ERROR("Stil not implemented!"); return Failed;
 }
 
 void TS_Destroy(TS *ts) {
+  MSG_ERROR("Stil not implemented!");
 }
 
 Task TS_Intrinsic_New(TS *ts, Type *i) {
+  MSG_ERROR("Stil not implemented!"); return Failed;
 }
 
 Task TS_Alias_New(TS *ts, Type *a, Type t) {
+  MSG_ERROR("Stil not implemented!"); return Failed;
 }
 
 Task TS_Link_New(TS *ts, Type *l, Type t) {
+  MSG_ERROR("Stil not implemented!"); return Failed;
 }
 
 Task TS_Structure_Begin(TS *ts, Type *s) {
+  MSG_ERROR("Stil not implemented!"); return Failed;
 }
 
 Task TS_Structure_Add(TS *ts, Type s, Type m, char *m_name) {
+  MSG_ERROR("Stil not implemented!"); return Failed;
 }
 
 Task TS_Array_New(TS *ts, Type *a, Type t) {
+  MSG_ERROR("Stil not implemented!"); return Failed;
 }
 
 Task TS_Species_Begin(TS *ts, Type *s) {
+  MSG_ERROR("Stil not implemented!"); return Failed;
 }
 
 Task TS_Species_Add(TS *ts, Type s, Type m) {
+  MSG_ERROR("Stil not implemented!"); return Failed;
 }
 
 Task TS_Enum_Begin(TS *ts, Type *e) {
+  MSG_ERROR("Stil not implemented!"); return Failed;
 }
 
 Task TS_Enum_Add(TS *ts, Type e, Type t) {
+  MSG_ERROR("Stil not implemented!"); return Failed;
 }
 
 Task TS_Default_Value(TS *ts, Type *dv_t, Type t, Data *dv) {
+  MSG_ERROR("Stil not implemented!"); return Failed;
 }
-

@@ -56,6 +56,8 @@ typedef struct {
   char *text;
 } Name;
 
+typedef Name Data;
+
 /* Stringhe da usare nelle printf per stampare i vari tipi */
 #define SUInt "%lu"
 #define SChar "%c"

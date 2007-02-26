@@ -29,6 +29,10 @@
 #ifndef _TYPESYS_H
 #  define _TYPESYS_H
 
+#  include "types.h"
+#  include "array.h"
+#  include "hashtable.h"
+
 typedef Int Type;
 
 typedef enum {

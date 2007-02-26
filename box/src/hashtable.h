@@ -30,6 +30,8 @@
 #ifndef _HASHTABLE_H
 #  define _HASHTABLE_H
 
+#  include <stdio.h>
+
 #  include "types.h"
 
 typedef unsigned int (*HashFunction)(void *key, unsigned int key_size);
