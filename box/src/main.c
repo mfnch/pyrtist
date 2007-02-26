@@ -248,7 +248,7 @@ static Task Stage_Interpret_Command_Line(UInt *f) {
   else if ( flags & FLAG_SILENT )
     Msg_Main_Show_Level_Set(MSG_LEVEL_MAX+1); /* Non mostro alcun messaggio! */
   else
-    Msg_Main_Show_Level_Set(MSG_LEVEL_ERROR); /* Mostro solo i messaggi importanti! */
+    Msg_Main_Show_Level_Set(MSG_LEVEL_WARNING);
 
   /* Controllo che tutto sia apposto */
   if ( (flags & FLAG_INPUT) == 0 ) {
@@ -309,6 +309,7 @@ static Task Stage_Symbol_Resolution(UInt *flags) {
     *flags &= ~FLAG_EXECUTE;
   }
   MSG_CONTEXT_END();
+  return Success;
 }
 
 static Task Stage_Execution(UInt *flags, UInt main_module) {
