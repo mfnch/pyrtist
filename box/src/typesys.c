@@ -20,41 +20,43 @@
 
 /* $Id$ */
 
-/** @file print.h
- * @brief A simplified version of sprintf with automatic memory management.
- *
- * This file provides the function print, which is a simplified version
- * of the function sprintf, but offers a number of advantages over it.
- * Memory is managed automatically, the Name data type is supported
- * with the specified %N, string deallocation is allowed with %~s.
- */
+Task TS_Init(TS **ts) {
 
-#ifndef _PRINT_H
-#  define _PRINT_H
+}
 
-#  include <stdarg.h>
+void TS_Destroy(TS *ts) {
+}
 
-#  define PRINT_BUF_SIZE 512
+Task TS_Intrinsic_New(TS *ts, Type *i) {
+}
 
-/** A simplified version of sprintf, with a number of desirable features:
- * - handles memory in a nice way: the user does not need to allocate/free
- *   the memory or to worry about buffer overflow when using the %s
- *   specifier to write substrings. Usage is as follows:
- *       const char *msg = print("string = '%s', number = '%d'\n", "Hi!", 12);
- *       (No need to call the free(...) function. The user mustn't do it!)
- * - has %N to handle the Name data type.
- *   ES:
- *       Name my_name = {15, "Matteo Franchin"};
- *       msg = print("My name is %N, nice to meet you!", & my_name);
- * - supports all the data types defined inside the header "types.h"
- *   the spefifiers are: %U for UInt, %I for Int, %R for Real,
- *   %P for (pointer to) Point
- * - has %~s to print a string and deallocate it with free(...).
- *   ES:
- *       msg = print("%~s", strdup("allocated string"));
- */
-const char *print(const char *fmt, ...);
+Task TS_Alias_New(TS *ts, Type *a, Type t) {
+}
 
-#  define printdup(...) strdup(print(__VA_ARGS__))
+Task TS_Link_New(TS *ts, Type *l, Type t) {
+}
 
-#endif
+Task TS_Structure_Begin(TS *ts, Type *s) {
+}
+
+Task TS_Structure_Add(TS *ts, Type s, Type m, char *m_name) {
+}
+
+Task TS_Array_New(TS *ts, Type *a, Type t) {
+}
+
+Task TS_Species_Begin(TS *ts, Type *s) {
+}
+
+Task TS_Species_Add(TS *ts, Type s, Type m) {
+}
+
+Task TS_Enum_Begin(TS *ts, Type *e) {
+}
+
+Task TS_Enum_Add(TS *ts, Type e, Type t) {
+}
+
+Task TS_Default_Value(TS *ts, Type *dv_t, Type t, Data *dv) {
+}
+

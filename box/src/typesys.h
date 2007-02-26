@@ -20,41 +20,61 @@
 
 /* $Id$ */
 
-/** @file print.h
- * @brief A simplified version of sprintf with automatic memory management.
+/** @file typesys.h
+ * @brief The type system for the Box compiler.
  *
- * This file provides the function print, which is a simplified version
- * of the function sprintf, but offers a number of advantages over it.
- * Memory is managed automatically, the Name data type is supported
- * with the specified %N, string deallocation is allowed with %~s.
+ * Some words.
  */
 
-#ifndef _PRINT_H
-#  define _PRINT_H
+#ifndef _TYPESYS_H
+#  define _TYPESYS_H
 
-#  include <stdarg.h>
+typedef Int Type;
 
-#  define PRINT_BUF_SIZE 512
+typedef enum {
+  TS_KIND_INTRINSIC=1,
+  TS_KIND_LINK,
+  TS_KIND_ALIAS,
+  TS_KIND_SPECIES,
+  TS_KIND_STRUCTURE,
+  TS_KIND_ENUM,
+  TS_KIND_ARRAY,
+  TS_KIND_POINTER
+} TSKind;
 
-/** A simplified version of sprintf, with a number of desirable features:
- * - handles memory in a nice way: the user does not need to allocate/free
- *   the memory or to worry about buffer overflow when using the %s
- *   specifier to write substrings. Usage is as follows:
- *       const char *msg = print("string = '%s', number = '%d'\n", "Hi!", 12);
- *       (No need to call the free(...) function. The user mustn't do it!)
- * - has %N to handle the Name data type.
- *   ES:
- *       Name my_name = {15, "Matteo Franchin"};
- *       msg = print("My name is %N, nice to meet you!", & my_name);
- * - supports all the data types defined inside the header "types.h"
- *   the spefifiers are: %U for UInt, %I for Int, %R for Real,
- *   %P for (pointer to) Point
- * - has %~s to print a string and deallocate it with free(...).
- *   ES:
- *       msg = print("%~s", strdup("allocated string"));
- */
-const char *print(const char *fmt, ...);
+typedef struct {
+  TSKind kind;
+  Int size;
+  void *val;
+} TSDesc;
 
-#  define printdup(...) strdup(print(__VA_ARGS__))
+typedef struct {
+  Array *type_descs;
+  Hashtable *members;
+} TS;
+
+Task TS_Init(TS **ts);
+
+void TS_Destroy(TS *ts);
+
+Task TS_Alias_New(TS *ts, Type *a, Type t);
+
+Task TS_Link_New(TS *ts, Type *l, Type t);
+
+Task TS_Structure_Begin(TS *ts, Type *s);
+
+Task TS_Structure_Add(TS *ts, Type s, Type m, char *m_name);
+
+Task TS_Array_New(TS *ts, Type *a, Type t);
+
+Task TS_Species_Begin(TS *ts, Type *s);
+
+Task TS_Species_Add(TS *ts, Type s, Type m);
+
+Task TS_Enum_Begin(TS *ts, Type *e);
+
+Task TS_Enum_Add(TS *ts, Type e, Type t);
+
+Task TS_Default_Value(TS *ts, Type *dv_t, Type t, Data *dv);
 
 #endif
