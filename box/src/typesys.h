@@ -46,10 +46,16 @@ typedef enum {
   TS_KIND_POINTER
 } TSKind;
 
+enum {
+  TS_TYPE_NONE = -1
+};
+
 typedef struct {
   TSKind kind;
   Int size;
+  char *name;
   void *val;
+  Type target;
 } TSDesc;
 
 typedef struct {
@@ -57,9 +63,13 @@ typedef struct {
   Hashtable *members;
 } TS;
 
-Task TS_Init(TS **ts);
+Task TS_Init(TS *ts);
 
 void TS_Destroy(TS *ts);
+
+Task TS_Intrinsic_New(TS *ts, Type *i, Int size);
+
+Task TS_Name_Set(TS *ts, Type t, const char *name);
 
 Task TS_Alias_New(TS *ts, Type *a, Type t);
 
@@ -69,7 +79,7 @@ Task TS_Structure_Begin(TS *ts, Type *s);
 
 Task TS_Structure_Add(TS *ts, Type s, Type m, char *m_name);
 
-Task TS_Array_New(TS *ts, Type *a, Type t);
+Task TS_Array_New(TS *ts, Type *a, Type t, Int size);
 
 Task TS_Species_Begin(TS *ts, Type *s);
 

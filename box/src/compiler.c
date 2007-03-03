@@ -40,6 +40,7 @@
 #include "types.h"
 #include "defaults.h"
 #include "messages.h"
+#include "mem.h"
 #include "array.h"
 #include "str.h"
 #include "virtmach.h"
@@ -50,11 +51,12 @@
 #include "compiler.h"
 #include "box.h"
 #include "builtins.h"
+#include "parserh.h"
 
 /******************************************************************************/
 
-/* The target of the compilation */
-VMProgram *cmp_vm;
+/* The main compiler data structure */
+Compiler *cmp;
 
 /* "Collezione" di tutti gli operatori */
 struct cmp_opr_struct cmp_opr;
@@ -67,25 +69,32 @@ Task Cmp_Init(VMProgram *program) {
   static UInt typl_nvar[NUM_TYPES] = VAR_OCC_TYP_SIZE;
 
   /* Initialization of the code which writes the bytecode program for the VM */
-  cmp_vm = program;
+  cmp = Mem_Alloc(sizeof(Compiler));
+  cmp->vm = program;
 
   /* Initialization of the lists which hold the occupation status
    * for registers and variables.
    */
   TASK( Reg_Init(typl_nreg) );
   TASK( Var_Init(typl_nvar) );
-
-  TASK( Box_Init() );
-  TASK( Box_Main_Begin() );
-
-  /* Inizializzo le routine che servono per la compilazione */
-  TASK( Builtins_Define() );
   return Success;
 }
 
-void Cmp_Finish(void) {
-  Box_Main_End();
-  Box_Destroy();
+
+Task Cmp_Parse(const char *file) {
+  TASK( Box_Init() ); /* Init the box stack */
+  TASK( Box_Main_Begin() ); /* Create the main box */
+  TASK( Builtins_Define() ); /* Add builtin stuff */
+  TASK( Parser_Init(file) ); /* Prepare the parser */
+  (void) yyparse(); /* Parse the file */
+  Parser_Finish(); /* Finalize parsing */
+  Box_Main_End(); /* Close the main box */
+  Box_Destroy(); /* Destroy the stack of boxes */
+  return Success;
+}
+
+void Cmp_Destroy(void) {
+  Mem_Free(cmp);
 }
 
 /******************************************************************************/

@@ -32,7 +32,7 @@ typedef struct {
 
 extern ParserAttr parser_attr;
 
-Task Parser_Init(UInt maxinc, char *f);
+Task Parser_Init(const char *f);
 Task Parser_Finish(void);
 Task Prs_Operator(Operator *opr, Expression *rs, Expression *a, Expression *b);
 Task Prs_Name_To_Expr(Name *nm, Expression *e, Intg suffix);

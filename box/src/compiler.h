@@ -26,16 +26,11 @@
  */
 
 #ifndef _COMPILER_H
-#define _COMPILER_H
+#  define _COMPILER_H
 
-#include "virtmach.h"
-#include "expr.h"
-
-/* The target of the compilation */
-extern VMProgram *cmp_vm;
-
-/* We make our life simpler, since we write code always in cmp_vm */
-#define Cmp_Assemble(...) VM_Assemble(cmp_vm, __VA_ARGS__)
+#  include "virtmach.h"
+#  include "expr.h"
+#  include "typesys.h"
 
 struct Operation {
   struct {
@@ -238,6 +233,19 @@ enum {
   CONTAINER_TYPE_ARG, CONTAINER_TYPE_STACK
 };
 
+typedef struct {
+  VMProgram *vm;
+  TS ts;
+} Compiler;
+
+/* The main compiler data structure */
+extern Compiler *cmp;
+
+#  define cmp_vm (cmp->vm)
+
+/* We make our life simpler, since we write code always in cmp_vm */
+#  define Cmp_Assemble(...) VM_Assemble(cmp->vm, __VA_ARGS__)
+
 /* These macros are used in functions such as Cmp_Expr_Container_New
  * or Cmp_Expr_Container_Change to specify the container for an expression.
  */
@@ -354,7 +362,8 @@ Symbol *Sym_Explicit_Find(Name *nm, Intg depth, int mode);
 
 /* Procedure definite in 'compiler.c'*/
 Task Cmp_Init(VMProgram *program);
-void Cmp_Finish(void);
+void Cmp_Destroy(void);
+Task Cmp_Parse(const char *file);
 Operator *Cmp_Operator_New(char *token);
 Operation *Cmp_Operation_Add(Operator *opr, Intg type1, Intg type2, Intg typer);
 Operation *Cmp_Operation_Find(Operator *opr,

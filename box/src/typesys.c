@@ -20,28 +20,82 @@
 
 /* $Id$ */
 
+#include <assert.h>
+#include <string.h>
+
+#include "defaults.h"
 #include "types.h"
 #include "typesys.h"
 #include "messages.h"
+#include "array.h"
+#include "hashtable.h"
 
-Task TS_Init(TS **ts) {
-  MSG_ERROR("Stil not implemented!"); return Failed;
+Task TS_Init(TS *ts) {
+  /* Replace Array with Collection <-----------------------------------------------*/
+  TASK( Arr_New(& ts->type_descs, sizeof(TSDesc), TS_TSDESC_ARR_SIZE) );
+  HT(& ts->members, TS_MEMB_HT_SIZE);
+  return Success;
 }
 
 void TS_Destroy(TS *ts) {
-  MSG_ERROR("Stil not implemented!");
+  Arr_Destroy(ts->type_descs);
+  HT_Destroy(ts->members);
 }
 
-Task TS_Intrinsic_New(TS *ts, Type *i) {
-  MSG_ERROR("Stil not implemented!"); return Failed;
+#if 0
+void TS_Def(TS *ts, Type *new, TSDesc *td) {}
+
+void TS_Undef(TS *ts, Type *t) {}
+#endif
+
+Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
+  TSDesc td;
+  assert(size >= 0);
+  td.kind = TS_KIND_INTRINSIC;
+  td.size = size;
+  td.target = TS_TYPE_NONE;
+  td.name = (char *) NULL;
+  td.val = NULL;
+  TASK( Arr_Push(ts->type_descs, & td) );
+  *i = Arr_NumItems(ts->type_descs);
+  return Success;
+}
+
+Task TS_Name_Set(TS *ts, Type t, const char *name) {
+  TSDesc *td = Arr_ItemPtr(ts->type_descs, TSDesc, t);
+  if (td->name != (char *) NULL) {
+    MSG_ERROR("TS_Name_Set: trying to set the name '%s' for type %d: "
+     "this type has been already given the name '%s'!", name, t, td->name);
+    return Failed;
+  }
+  td->name = strdup(name);
+  return Success;
 }
 
 Task TS_Alias_New(TS *ts, Type *a, Type t) {
-  MSG_ERROR("Stil not implemented!"); return Failed;
+  TSDesc td;
+  TSDesc *target_td = Arr_ItemPtr(ts->type_descs, TSDesc, t);
+  td.kind = TS_KIND_ALIAS;
+  td.target = t;
+  td.size = target_td->size;
+  td.name = (char *) NULL;
+  td.val = NULL;
+  TASK( Arr_Push(ts->type_descs, & td) );
+  *a = Arr_NumItems(ts->type_descs);
+  return Success;
 }
 
 Task TS_Link_New(TS *ts, Type *l, Type t) {
-  MSG_ERROR("Stil not implemented!"); return Failed;
+  TSDesc td;
+  TSDesc *target_td = Arr_ItemPtr(ts->type_descs, TSDesc, t);
+  td.kind = TS_KIND_LINK;
+  td.target = t;
+  td.size = target_td->size;
+  td.name = (char *) NULL;
+  td.val = NULL;
+  TASK( Arr_Push(ts->type_descs, & td) );
+  *l = Arr_NumItems(ts->type_descs);
+  return Success;
 }
 
 Task TS_Structure_Begin(TS *ts, Type *s) {
@@ -52,8 +106,17 @@ Task TS_Structure_Add(TS *ts, Type s, Type m, char *m_name) {
   MSG_ERROR("Stil not implemented!"); return Failed;
 }
 
-Task TS_Array_New(TS *ts, Type *a, Type t) {
-  MSG_ERROR("Stil not implemented!"); return Failed;
+Task TS_Array_New(TS *ts, Type *a, Type t, Int size) {
+  TSDesc td;
+  TSDesc *target_td = Arr_ItemPtr(ts->type_descs, TSDesc, t);
+  td.kind = TS_KIND_ARRAY;
+  td.target = t;
+  td.size = size < 0 ? -1 : size*target_td->size;
+  td.name = (char *) NULL;
+  td.val = NULL;
+  TASK( Arr_Push(ts->type_descs, & td) );
+  *a = Arr_NumItems(ts->type_descs);
+  return Success;
 }
 
 Task TS_Species_Begin(TS *ts, Type *s) {

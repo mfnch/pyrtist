@@ -485,13 +485,13 @@ void yyerror(char* s)
  * maxinc indica il numero massimo di file di include che possono essere
  * aperti contemporaneamente.
  */
-Task Parser_Init(UInt maxinc, char *f) {
+Task Parser_Init(const char *f) {
 
   /* Leggo comunque dallo stdin (che puo' essere stato rediretto)! */
   yyrestart( stdin );
 
   /* Inizializzo il tokenizer */
-  TASK( Tok_Init( maxinc, f ) );
+  TASK( Tok_Init(TOK_MAX_INCLUDE, f) );
 
   parser_attr.no_syntax_err = 0;
 

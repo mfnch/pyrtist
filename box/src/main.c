@@ -42,7 +42,6 @@
 #include "vmsym.h"
 #include "registers.h"
 #include "compiler.h"
-#include "parserh.h"
 
 /* Visualizzo questo messaggio quando ho errori nella riga di comando: */
 #define CMD_LINE_HELP "Try '%s -h' to get some help!"
@@ -133,6 +132,7 @@ static Task Stage_Init(void) {
 static void Stage_Finalize(void) {
   VM_Destroy(program); /* This function accepts program = NULL */
 
+  Cmp_Destroy();
   List_Destroy(libraries);
   List_Destroy(lib_dirs);
   List_Destroy(inc_dirs);
@@ -280,12 +280,9 @@ static Task Stage_Compilation(char *file, UInt *main_module) {
   Msg_Main_Counter_Clear_All();
   MSG_CONTEXT_BEGIN("Compilation");
 
-  TASK( Parser_Init(TOK_MAX_INCLUDE, file) );
   TASK( VM_Init(& program) );
   TASK( Cmp_Init(program) );
-  (void) yyparse();
-  Parser_Finish();
-  Cmp_Finish();
+  TASK( Cmp_Parse(file) );
 
   TASK( Main_Install(main_module) );
 

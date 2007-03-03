@@ -199,6 +199,15 @@
 #define CMP_TYPICAL_STRUC_SIZE 1024
 
 /*****************************************************************************
+ *                 COSTANTI UTILIZZATE NEL FILE typesys.c                    *
+ *****************************************************************************/
+
+/** Typical size of the array of types */
+#define TS_TSDESC_ARR_SIZE 1024
+/** Size of the hashtables for member of structures, etc. */
+#define TS_MEMB_HT_SIZE 32768
+
+/*****************************************************************************
  *                 COSTANTI UTILIZZATE NEL FILE compiler.c                   *
  *****************************************************************************/
 #define BOX_ARR_SIZE 16

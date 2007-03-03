@@ -250,7 +250,7 @@ int yywrap(void) {
  *  maxinc indica il numero massimo di file di include che possono essere
  *  aperti contemporaneamente.
  */
-Task Tok_Init(UInt maxinc, char *f)
+Task Tok_Init(UInt maxinc, const char *f)
 {
   tok_max_include_level = maxinc;
 
@@ -288,7 +288,7 @@ Task Tok_Finish(void)
  *  su di esso. Bastera' poi eseguire tok_include_end() per ritornare al punto
  *  in cui la direttiva include aveva interrotto la lettura.
  */
-Task Tok_Include_Begin(char *f)
+Task Tok_Include_Begin(const char *f)
 {
   FILE *incfile;
   TokIncludeData cur;

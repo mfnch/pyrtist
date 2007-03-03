@@ -75,10 +75,10 @@ void Clc_Destroy(Collection *c) {
 
 /* Restituisce un numero di registro libero e lo occupa,
  * in modo tale che questo numero di registro non venga piu' restituito
- * nelle prossime chiamate a Reg_Occupy, a meno che il registro
- * non venga liberato con Reg_Release.
+ * nelle prossime chiamate a Clc_Occupy, a meno che il registro
+ * non venga liberato con Clc_Release.
  * t e' il tipo di registro, per ciascuno dei tipi di registro
- * Reg_Occupy funziona in maniera indipendente.
+ * Clc_Occupy funziona in maniera indipendente.
  * NOTA: Il numero di registro restituito e' sempre maggiore di 1,
  *  viene restituito 0 solo in caso di errori.
  */
