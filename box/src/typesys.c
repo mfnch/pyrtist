@@ -28,24 +28,34 @@
 #include "typesys.h"
 #include "messages.h"
 #include "array.h"
+#include "collection.h"
 #include "hashtable.h"
 
+static void try_it(TS *ts) {
+  Type t, t1;
+  (void) TS_Intrinsic_New(ts, & t, sizeof(Int));
+  (void) TS_Name_Set(ts, t, "Int");
+  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t));
+  (void) TS_Array_New(ts, & t1, t, 10);
+  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t1));
+}
+
 Task TS_Init(TS *ts) {
-  /* Replace Array with Collection <-----------------------------------------------*/
-  TASK( Arr_New(& ts->type_descs, sizeof(TSDesc), TS_TSDESC_ARR_SIZE) );
+  TASK( Clc_New(& ts->type_descs, sizeof(TSDesc), TS_TSDESC_CLC_SIZE) );
   HT(& ts->members, TS_MEMB_HT_SIZE);
+  try_it(ts);
   return Success;
 }
 
 void TS_Destroy(TS *ts) {
-  Arr_Destroy(ts->type_descs);
+  Clc_Destroy(ts->type_descs);
   HT_Destroy(ts->members);
 }
 
 #if 0
-void TS_Def(TS *ts, Type *new, TSDesc *td) {}
+void TS_Ref(TS *ts, Type *new, TSDesc *td) {}
 
-void TS_Undef(TS *ts, Type *t) {}
+void TS_Unref(TS *ts, Type *t) {}
 #endif
 
 Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
@@ -56,13 +66,12 @@ Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
   td.target = TS_TYPE_NONE;
   td.name = (char *) NULL;
   td.val = NULL;
-  TASK( Arr_Push(ts->type_descs, & td) );
-  *i = Arr_NumItems(ts->type_descs);
+  TASK( Clc_Occupy(ts->type_descs, & td, i) );
   return Success;
 }
 
 Task TS_Name_Set(TS *ts, Type t, const char *name) {
-  TSDesc *td = Arr_ItemPtr(ts->type_descs, TSDesc, t);
+  TSDesc *td = Clc_ItemPtr(ts->type_descs, TSDesc, t);
   if (td->name != (char *) NULL) {
     MSG_ERROR("TS_Name_Set: trying to set the name '%s' for type %d: "
      "this type has been already given the name '%s'!", name, t, td->name);
@@ -72,29 +81,49 @@ Task TS_Name_Set(TS *ts, Type t, const char *name) {
   return Success;
 }
 
+const char *TS_Name_Get_Orig(TS *ts, Type t) {
+  TSDesc *td = Clc_ItemPtr(ts->type_descs, TSDesc, t);
+  if (td->name != (char *) NULL) return td->name;
+
+  switch(td->kind) {
+  case TS_KIND_INTRINSIC:
+    return print("<size=%I>", td->size);
+  case TS_KIND_ARRAY:
+    if (td->size > 0) {
+      Int array_size = td->data.array_size;
+      return print("(%d)%s", array_size, TS_Name_Get_Orig(ts, td->target));
+    } else
+      return print("()%s", TS_Name_Get_Orig(ts, td->target));
+  default:
+    return "<unknown type>";
+  }
+}
+
+char *TS_Name_Get(TS *ts, Type t) {
+  return strdup(TS_Name_Get_Orig(ts, t));
+}
+
 Task TS_Alias_New(TS *ts, Type *a, Type t) {
   TSDesc td;
-  TSDesc *target_td = Arr_ItemPtr(ts->type_descs, TSDesc, t);
+  TSDesc *target_td = Clc_ItemPtr(ts->type_descs, TSDesc, t);
   td.kind = TS_KIND_ALIAS;
   td.target = t;
   td.size = target_td->size;
   td.name = (char *) NULL;
   td.val = NULL;
-  TASK( Arr_Push(ts->type_descs, & td) );
-  *a = Arr_NumItems(ts->type_descs);
+  TASK( Clc_Occupy(ts->type_descs, & td, a) );
   return Success;
 }
 
 Task TS_Link_New(TS *ts, Type *l, Type t) {
   TSDesc td;
-  TSDesc *target_td = Arr_ItemPtr(ts->type_descs, TSDesc, t);
+  TSDesc *target_td = Clc_ItemPtr(ts->type_descs, TSDesc, t);
   td.kind = TS_KIND_LINK;
   td.target = t;
   td.size = target_td->size;
   td.name = (char *) NULL;
   td.val = NULL;
-  TASK( Arr_Push(ts->type_descs, & td) );
-  *l = Arr_NumItems(ts->type_descs);
+  TASK( Clc_Occupy(ts->type_descs, & td, l) );
   return Success;
 }
 
@@ -108,14 +137,14 @@ Task TS_Structure_Add(TS *ts, Type s, Type m, char *m_name) {
 
 Task TS_Array_New(TS *ts, Type *a, Type t, Int size) {
   TSDesc td;
-  TSDesc *target_td = Arr_ItemPtr(ts->type_descs, TSDesc, t);
+  TSDesc *target_td = Clc_ItemPtr(ts->type_descs, TSDesc, t);
   td.kind = TS_KIND_ARRAY;
   td.target = t;
   td.size = size < 0 ? -1 : size*target_td->size;
   td.name = (char *) NULL;
   td.val = NULL;
-  TASK( Arr_Push(ts->type_descs, & td) );
-  *a = Arr_NumItems(ts->type_descs);
+  td.data.array_size = size;
+  TASK( Clc_Occupy(ts->type_descs, & td, a) );
   return Success;
 }
 

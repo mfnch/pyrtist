@@ -235,7 +235,7 @@ enum {
 
 typedef struct {
   VMProgram *vm;
-  TS ts;
+  TS ts_obj, *ts;
 } Compiler;
 
 /* The main compiler data structure */

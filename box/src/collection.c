@@ -38,7 +38,7 @@
 
 Task Clc_New(Collection **new_clc, UInt element_size, UInt min_dim) {
   Array *a;
-  element_size += sizeof(int);
+  element_size += sizeof(UInt);
   TASK( Arr_New(& a, element_size, min_dim) );
   a->chain = CLC_END_OF_CHAIN;
   a->max_idx = 0;
@@ -55,7 +55,7 @@ void Clc_Destructor(Collection *c, Task (*destroy)(void *)) {
 static Task item_container_destructor(UInt item_num,
  void *item_container, void *destructor) {
   if ( *((int *) item_container) == CLC_ITEM_OCCUPIED ) {
-    void *item = item_container + sizeof(int);
+    void *item = item_container + sizeof(UInt);
     return ((Task (*)(void  *)) destructor)(item);
   }
   return Success;
@@ -82,12 +82,12 @@ void Clc_Destroy(Collection *c) {
  * NOTA: Il numero di registro restituito e' sempre maggiore di 1,
  *  viene restituito 0 solo in caso di errori.
  */
-Task Clc_Occupy(Collection *c, void *item, int *assigned_index) {
+Task Clc_Occupy(Collection *c, void *item, UInt *assigned_index) {
   Array *a = (Array *) c;
-  int dummy_int, item_size;
+  UInt dummy_int, item_size;
   void *item_dst;
   assigned_index = assigned_index == NULL ? & dummy_int : assigned_index;
-  item_size = a->elsize - sizeof(int);
+  item_size = a->elsize - sizeof(UInt);
   assert(item_size >= 0);
   if ( Arr_Chain(a) == CLC_END_OF_CHAIN ) {
     /* Se la catena dei registri disponibili e' vuota non resta che creare
@@ -106,7 +106,7 @@ Task Clc_Occupy(Collection *c, void *item, int *assigned_index) {
       *assigned_index = ni;
     }
     if (item == NULL || item_size == 0) return Success;
-    item_dst += sizeof(int);
+    item_dst += sizeof(UInt);
     (void) memcpy(item_dst, item, item_size);
     return Success;
 
@@ -120,7 +120,7 @@ Task Clc_Occupy(Collection *c, void *item, int *assigned_index) {
 #endif
     *assigned_index = free_item;
     if (item == NULL || item_size == 0) return Success;
-    item_dst += sizeof(int);
+    item_dst += sizeof(UInt);
     (void) memcpy(item_dst, item, item_size);
     return Success;
   }
@@ -154,7 +154,7 @@ Task Clc_Release(Collection *c, UInt item_index) {
   fprintf(stderr, "Calling destructor...\n"); fflush(stderr);
 #endif
   if ( c->destroy == (Task (*)(void *)) NULL ) return Success;
-  c->destroy(item_ptr + sizeof(int));
+  c->destroy(item_ptr + sizeof(UInt));
 #ifdef DEBUG
   fprintf(stderr, "done!\n"); fflush(stderr);
 #endif
@@ -179,6 +179,6 @@ Task Clc_Object_Ptr(Collection *c, void **item_ptr, UInt item_index) {
     return Failed;
   }
 
-  *item_ptr = ip + sizeof(int);
+  *item_ptr = ip + sizeof(UInt);
   return Success;
 }

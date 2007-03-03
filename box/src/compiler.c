@@ -52,6 +52,7 @@
 #include "box.h"
 #include "builtins.h"
 #include "parserh.h"
+#include "typesys.h"
 
 /******************************************************************************/
 
@@ -71,6 +72,8 @@ Task Cmp_Init(VMProgram *program) {
   /* Initialization of the code which writes the bytecode program for the VM */
   cmp = Mem_Alloc(sizeof(Compiler));
   cmp->vm = program;
+  cmp->ts = & cmp->ts_obj;
+  TASK( TS_Init(cmp->ts) );
 
   /* Initialization of the lists which hold the occupation status
    * for registers and variables.
@@ -94,6 +97,7 @@ Task Cmp_Parse(const char *file) {
 }
 
 void Cmp_Destroy(void) {
+  TS_Destroy(cmp->ts);
   Mem_Free(cmp);
 }
 

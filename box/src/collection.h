@@ -36,7 +36,10 @@
 /* collection.h,  June 2006 */
 
 #ifndef _COLLECTION_H
-#define _COLLECTION_H
+#  define _COLLECTION_H
+
+#  include "types.h"
+#  include "array.h"
 
 typedef Array Collection;
 
@@ -51,16 +54,16 @@ Task Clc_New(Collection **new_clc, UInt element_size, UInt min_dim);
 
 void Clc_Destructor(Collection *c, Task (*destroy)(void *));
 void Clc_Destroy(Collection *c);
-Task Clc_Occupy(Collection *c, void *item, int *assigned_index);
+Task Clc_Occupy(Collection *c, void *item, UInt *assigned_index);
 Task Clc_Release(Collection *c, UInt item_index);
 Task Clc_Object_Ptr(Collection *c, void **item_ptr, UInt item_index);
 
 #define Clc_MaxIndex(c) (c->max_idx)
 
 #define Clc_ItemPtr(c, type, n) \
-  ((type *) ((c)->ptr + ((n)-1)*((UInt) (c)->elsize) + sizeof(int)))
+  ((type *) ((c)->ptr + ((n)-1)*((UInt) (c)->elsize) + sizeof(UInt)))
 #define Clc_FirstItemPtr(c, type) \
-  ((type *) ((c)->ptr + sizeof(int)))
+  ((type *) ((c)->ptr + sizeof(UInt)))
 #define Clc_LastItemPtr(c, type) \
-  ((type *) ((c)->ptr + ((c)->numel-1)*((UInt) (c)->elsize) + sizeof(int)))
+  ((type *) ((c)->ptr + ((c)->numel-1)*((UInt) (c)->elsize) + sizeof(UInt)))
 #endif

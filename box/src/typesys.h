@@ -30,7 +30,7 @@
 #  define _TYPESYS_H
 
 #  include "types.h"
-#  include "array.h"
+#  include "collection.h"
 #  include "hashtable.h"
 
 typedef Int Type;
@@ -56,10 +56,13 @@ typedef struct {
   char *name;
   void *val;
   Type target;
+  union {
+    Int array_size;
+  } data;
 } TSDesc;
 
 typedef struct {
-  Array *type_descs;
+  Collection *type_descs;
   Hashtable *members;
 } TS;
 
@@ -70,6 +73,10 @@ void TS_Destroy(TS *ts);
 Task TS_Intrinsic_New(TS *ts, Type *i, Int size);
 
 Task TS_Name_Set(TS *ts, Type t, const char *name);
+
+const char *TS_Name_Get_Orig(TS *ts, Type t);
+
+char *TS_Name_Get(TS *ts, Type t);
 
 Task TS_Alias_New(TS *ts, Type *a, Type t);
 
