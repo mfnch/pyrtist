@@ -41,13 +41,15 @@ typedef enum {
   TS_KIND_ALIAS,
   TS_KIND_SPECIES,
   TS_KIND_STRUCTURE,
+  TS_KIND_MEMBER,
   TS_KIND_ENUM,
   TS_KIND_ARRAY,
   TS_KIND_POINTER
 } TSKind;
 
 enum {
-  TS_TYPE_NONE = -1
+  TS_TYPE_NONE = -1,
+  TS_SIZE_UNKNOWN = -1
 };
 
 typedef struct {
@@ -58,6 +60,8 @@ typedef struct {
   Type target;
   union {
     Int array_size;
+    Type structure_last;
+    Type member_next;
   } data;
 } TSDesc;
 
@@ -70,11 +74,13 @@ Task TS_Init(TS *ts);
 
 void TS_Destroy(TS *ts);
 
+Int TS_Size(TS *ts, Type t);
+
+Int TS_Align(TS *ts, Int address);
+
 Task TS_Intrinsic_New(TS *ts, Type *i, Int size);
 
 Task TS_Name_Set(TS *ts, Type t, const char *name);
-
-const char *TS_Name_Get_Orig(TS *ts, Type t);
 
 char *TS_Name_Get(TS *ts, Type t);
 
@@ -84,7 +90,7 @@ Task TS_Link_New(TS *ts, Type *l, Type t);
 
 Task TS_Structure_Begin(TS *ts, Type *s);
 
-Task TS_Structure_Add(TS *ts, Type s, Type m, char *m_name);
+Task TS_Structure_Add(TS *ts, Type s, Type m, const char *m_name);
 
 Task TS_Array_New(TS *ts, Type *a, Type t, Int size);
 
