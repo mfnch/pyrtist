@@ -61,6 +61,7 @@ typedef struct {
   union {
     Int array_size;
     Type structure_last;
+    Type species_last;
     Type member_next;
   } data;
 } TSDesc;

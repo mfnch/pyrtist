@@ -33,7 +33,7 @@
 #include "hashtable.h"
 
 static void try_it(TS *ts) {
-  Type ti, tr, tp, t1, t2;
+  Type ti, tr, tp, t1, t2, t3;
   (void) TS_Intrinsic_New(ts, & ti, sizeof(Int));
   (void) TS_Name_Set(ts, ti, "Int");
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, ti));
@@ -53,6 +53,14 @@ static void try_it(TS *ts) {
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t2));
   (void) TS_Structure_Add(ts, t2, tp, NULL);
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t2));
+  (void) TS_Species_Begin(ts, & t3);
+  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t3));
+  (void) TS_Species_Add(ts, t3, tr);
+  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t3));
+  (void) TS_Species_Add(ts, t3, ti);
+  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t3));
+  (void) TS_Species_Add(ts, t3, tp);
+  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t3));
 }
 
 Task TS_Init(TS *ts) {
@@ -112,6 +120,28 @@ char *TS_Name_Get(TS *ts, Type t) {
   switch(td->kind) {
   case TS_KIND_INTRINSIC:
     return printdup("<size=%I>", td->size);
+  case TS_KIND_SPECIES:
+    if (td->size > 0) {
+      char *name = (char *) NULL;
+      Type m = td->target;
+      while (1) {
+        TSDesc *m_td = Clc_ItemPtr(ts->type_descs, TSDesc, m);
+        char *m_name = TS_Name_Get(ts, m_td->target);
+        m = m_td->data.member_next;
+        if (m == t) {
+          if (name == (char *) NULL)
+            return printdup("(%~s <)", m_name);
+          else
+            return printdup("(%~s < %~s)", name, m_name);
+        } else {
+          if (name == (char *) NULL)
+            name = m_name; /* no need to free! */
+          else
+            name = printdup("%~s < %~s", name, m_name);
+        }
+      }
+    }
+    return Mem_Strdup("(<)");
   case TS_KIND_STRUCTURE:
     if (td->size > 0) {
       char *name = (char *) NULL;
@@ -199,11 +229,15 @@ Task TS_Structure_Add(TS *ts, Type s, Type m, const char *m_name) {
   TASK( Clc_Occupy(ts->type_descs, & td, & new_m) );
 
   s_td = Clc_ItemPtr(ts->type_descs, TSDesc, s);
-  m_td = Clc_ItemPtr(ts->type_descs, TSDesc, s_td->data.structure_last);
+  assert(s_td->kind == TS_KIND_STRUCTURE);
+  if (s_td->data.structure_last != TS_TYPE_NONE) {
+    m_td = Clc_ItemPtr(ts->type_descs, TSDesc, s_td->data.structure_last);
+    assert(m_td->kind == TS_KIND_MEMBER);
+    m_td->data.member_next = new_m;
+  }
   s_td->data.structure_last = new_m;
   if (s_td->target == TS_TYPE_NONE) s_td->target = new_m;
   s_td->size += m_size;
-  m_td->data.member_next = new_m;
   return Success;
 }
 
@@ -221,11 +255,41 @@ Task TS_Array_New(TS *ts, Type *a, Type t, Int size) {
 }
 
 Task TS_Species_Begin(TS *ts, Type *s) {
-  MSG_ERROR("Stil not implemented!"); return Failed;
+  TSDesc td;
+  td.kind = TS_KIND_SPECIES;
+  td.target = TS_TYPE_NONE;
+  td.data.species_last = TS_TYPE_NONE;
+  td.size = 0;
+  td.name = (char *) NULL;
+  td.val = NULL;
+  TASK( Clc_Occupy(ts->type_descs, & td, s) );
+  return Success;
 }
 
 Task TS_Species_Add(TS *ts, Type s, Type m) {
-  MSG_ERROR("Stil not implemented!"); return Failed;
+  TSDesc td, *m_td, *s_td;
+  Type new_m;
+  Int m_size;
+  m_td = Clc_ItemPtr(ts->type_descs, TSDesc, m);
+  m_size = m_td->size;
+  td.kind = TS_KIND_MEMBER;
+  td.target = m;
+  td.size = m_size;
+  td.data.member_next = s;
+  td.val = NULL;
+  TASK( Clc_Occupy(ts->type_descs, & td, & new_m) );
+
+  s_td = Clc_ItemPtr(ts->type_descs, TSDesc, s);
+  assert(s_td->kind == TS_KIND_SPECIES);
+  if (s_td->data.structure_last != TS_TYPE_NONE) {
+    m_td = Clc_ItemPtr(ts->type_descs, TSDesc, s_td->data.structure_last);
+    assert(m_td->kind == TS_KIND_MEMBER);
+    m_td->data.member_next = new_m;
+  }
+  s_td->data.structure_last = new_m;
+  if (s_td->target == TS_TYPE_NONE) s_td->target = new_m;
+  if (m_size > s_td->size) s_td->size = m_size;
+  return Success;
 }
 
 Task TS_Enum_Begin(TS *ts, Type *e) {
