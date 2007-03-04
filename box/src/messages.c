@@ -35,7 +35,7 @@ MsgStack *msg_main_stack = (MsgStack *) NULL;
 static char *show_type_and_msg(UInt level, char *original_msg) {
   if (level == 0) {
     char *final_msg;
-    final_msg = strdup(print("STAGE: %s:\n", original_msg));
+    final_msg = printdup("STAGE: %s:\n", original_msg);
     free(original_msg);
     return final_msg;
 
@@ -47,7 +47,7 @@ static char *show_type_and_msg(UInt level, char *original_msg) {
     case MSG_LEVEL_ERROR: prefix = "Error"; break;
     case MSG_LEVEL_FATAL: prefix = "Fatal error"; break;
     }
-    final_msg = strdup(print("%s: %s\n", prefix, original_msg));
+    final_msg = printdup("%s: %s\n", prefix, original_msg);
     free(original_msg);
     return final_msg;
   }

@@ -40,7 +40,7 @@
  *       msg = print("My name is %N, nice to meet you!", & my_name);
  * - has %~s, %~N to print a string and deallocate it with free(...).
  *   ES:
- *       msg = print("%S", strdup("allocated string"));
+ *       msg = print("%S", Mem_Strdup("allocated string"));
  */
 const char *print(const char *fmt, ...) {
   static char *msg = NULL;

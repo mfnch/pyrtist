@@ -34,6 +34,7 @@
 #include "types.h"
 #include "str.h"
 #include "messages.h"
+#include "mem.h"
 #include "virtmach.h"
 #include "vmsym.h"
 #include "vmsymstuff.h"
@@ -381,7 +382,7 @@ Task Iter_Over_Paths(void *string, void *pass_data) {
   char *lib_file;
   Task status;
   cld->path = (char *) string;
-  lib_file = strdup(print("%s/lib%s.so", cld->path, cld->lib));
+  lib_file = Mem_Strdup(print("%s/lib%s.so", cld->path, cld->lib));
   status = VM_Sym_Resolve_CLib(cld->vmp, lib_file);
   free(lib_file);
   if (status == Success) return Failed; /* Stop here, if we have found it! */

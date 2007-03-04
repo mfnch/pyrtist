@@ -33,4 +33,8 @@ void *Mem_Alloc(UInt size);
 
 void Mem_Free(void *ptr);
 
+char *Mem_Strdup(const char *s);
+
+void Mem_Exit(const char *msg);
+
 #endif

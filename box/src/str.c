@@ -33,6 +33,7 @@
 #include "config.h"
 #include "types.h"
 #include "messages.h"
+#include "mem.h"
 #include "str.h"
 
 /* DESCRIZIONE: Questa funzione confronta due stringhe senza distinguere
@@ -132,7 +133,7 @@ char *Str_Cut(const char *s, UInt maxleng, Intg start) {
  */
 char *Str__Cut(const char *s, UInt leng, UInt maxleng, Intg start) {
   if ( leng <= maxleng )
-    return strdup(s);
+    return Mem_Strdup(s);
 
   else {
     char *rets, *c;
@@ -414,7 +415,7 @@ const char *Name_Str(Name *n) {
  */
 char *Name_To_Str(Name *n) {
   char *asciiz = NULL;
-  if (n->length == 0) return strdup("");
+  if (n->length == 0) return Mem_Strdup("");
   asciiz = (char *) malloc(n->length + 1);
   asciiz[n->length] = '\0';
   return strncpy(asciiz, n->text, n->length);

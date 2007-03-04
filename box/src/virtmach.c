@@ -562,7 +562,7 @@ Task VM_Module_Install(VMProgram *vmp, Intg *new_module,
   {
     VMModule new;
     new.type = t;
-    new.name = strdup(name);
+    new.name = Mem_Strdup(name);
     new.ptr = p;
     TASK( Arr_Push( vmp->vm_modules_list, & new ) );
   }

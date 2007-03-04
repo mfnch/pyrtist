@@ -21,16 +21,29 @@
 /* $Id$ */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "types.h"
+#include "messages.h"
 #include "mem.h"
 
 void *Mem_Alloc(UInt size) {
   void *ptr = malloc(size);
-  if (ptr == NULL) exit(EXIT_FAILURE);
+  if (ptr == NULL) Mem_Exit("malloc failed!");
   return ptr;
 }
 
 void Mem_Free(void *ptr) {
   free(ptr);
+}
+
+char *Mem_Strdup(const char *s) {
+  char *sd = strdup(s);
+  if (sd == NULL) Mem_Exit("strdup failed!");
+  return sd;
+}
+
+void Mem_Exit(const char *msg) {
+  MSG_FATAL("Mem_Exit: %s", msg);
+  exit(EXIT_FAILURE);
 }

@@ -34,6 +34,8 @@
 
 #  include <stdarg.h>
 
+#  include "mem.h"
+
 #  define PRINT_BUF_SIZE 512
 
 /** A simplified version of sprintf, with a number of desirable features:
@@ -51,10 +53,10 @@
  *   %P for (pointer to) Point
  * - has %~s to print a string and deallocate it with free(...).
  *   ES:
- *       msg = print("%~s", strdup("allocated string"));
+ *       msg = print("%~s", Mem_Strdup("allocated string"));
  */
 const char *print(const char *fmt, ...);
 
-#  define printdup(...) strdup(print(__VA_ARGS__))
+#  define printdup(...) Mem_Strdup(print(__VA_ARGS__))
 
 #endif

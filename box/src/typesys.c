@@ -27,6 +27,7 @@
 #include "types.h"
 #include "typesys.h"
 #include "messages.h"
+#include "mem.h"
 #include "array.h"
 #include "collection.h"
 #include "hashtable.h"
@@ -100,13 +101,13 @@ Task TS_Name_Set(TS *ts, Type t, const char *name) {
      "this type has been already given the name '%s'!", name, t, td->name);
     return Failed;
   }
-  td->name = strdup(name);
+  td->name = Mem_Strdup(name);
   return Success;
 }
 
 char *TS_Name_Get(TS *ts, Type t) {
   TSDesc *td = Clc_ItemPtr(ts->type_descs, TSDesc, t);
-  if (td->name != (char *) NULL) return strdup(td->name);
+  if (td->name != (char *) NULL) return Mem_Strdup(td->name);
 
   switch(td->kind) {
   case TS_KIND_INTRINSIC:
@@ -134,7 +135,7 @@ char *TS_Name_Get(TS *ts, Type t) {
         }
       }
     }
-    return strdup("(,)");
+    return Mem_Strdup("(,)");
   case TS_KIND_ARRAY:
     if (td->size > 0) {
       Int as = td->data.array_size;
@@ -142,7 +143,7 @@ char *TS_Name_Get(TS *ts, Type t) {
     } else
       return printdup("()%~s", TS_Name_Get(ts, td->target));
   default:
-    return strdup("<unknown type>");
+    return Mem_Strdup("<unknown type>");
   }
 }
 
@@ -192,7 +193,7 @@ Task TS_Structure_Add(TS *ts, Type s, Type m, const char *m_name) {
   td.target = m;
   td.size = TS_Align(ts, TS_Size(ts, s));
   td.name = (char *) NULL;
-  if (m_name != (char *) NULL) td.name = strdup(m_name);
+  if (m_name != (char *) NULL) td.name = Mem_Strdup(m_name);
   td.data.member_next = s;
   td.val = NULL;
   TASK( Clc_Occupy(ts->type_descs, & td, & new_m) );

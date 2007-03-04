@@ -25,6 +25,7 @@
 
 #include "types.h"
 #include "messages.h"
+#include "mem.h"
 #include "virtmach.h"
 #include "vmproc.h"
 
@@ -118,8 +119,8 @@ Task VM_Proc_Install_Code(VMProgram *vmp, UInt *call_num,
   VMProcInstalled procedure_inst;
 
   procedure_inst.type = VMPROC_IS_VM_CODE;
-  procedure_inst.name = strdup(name);
-  procedure_inst.desc = strdup(desc);
+  procedure_inst.name = Mem_Strdup(name);
+  procedure_inst.desc = Mem_Strdup(desc);
   procedure_inst.code.proc_num = proc_num;
 #if 0
   TASK( Clc_Object_Ptr(pt->uninstalled, & procedure, proc_num) );
@@ -140,8 +141,8 @@ Task VM_Proc_Install_CCode(VMProgram *vmp, UInt *call_num,
   VMProcInstalled procedure_inst;
 
   procedure_inst.type = VMPROC_IS_C_CODE;
-  procedure_inst.name = strdup(name);
-  procedure_inst.desc = strdup(desc);
+  procedure_inst.name = Mem_Strdup(name);
+  procedure_inst.desc = Mem_Strdup(desc);
   procedure_inst.code.c = (Task (*)(void *)) c_proc;
 
   *call_num = Arr_NumItem(pt->installed) + 1;
