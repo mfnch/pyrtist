@@ -29,16 +29,8 @@
 #include "types.h"
 #include "hashtable.h"
 #include "hashfunc.h"
+#include "mem.h"
 #include "str.h"
-
-static void *xmalloc(size_t size) {
-  void *p = malloc(size);
-  if ( p == NULL ) {
-    fprintf(stderr, "Fatal error: malloc failed!\n");
-    exit(EXIT_FAILURE);
-  }
-  return p;
-}
 
 /* Default hash-function */
 unsigned int HT_Default_Hash(void *key, unsigned int key_size) {
@@ -79,8 +71,8 @@ void HT_New(Hashtable **new_ht, unsigned int num_entries,
   } while ((num_entries >>= 1) != 0);
   num_entries = i;
 
-  ht = (Hashtable *) xmalloc(sizeof(Hashtable));
-  hi = (HashItem **) xmalloc(sizeof(HashItem)*num_entries);
+  ht = (Hashtable *) Mem_Alloc(sizeof(Hashtable));
+  hi = (HashItem **) Mem_Alloc(sizeof(HashItem)*num_entries);
   *new_ht = ht;
 
 #if DEBUG
@@ -120,15 +112,15 @@ void HT_Destroy(Hashtable *ht) {
   for(branch = 0; branch < ht->num_entries; branch++)
     for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = next) {
       next = hi->next;
-      if ( hi->allocated.key ) free(hi->key);
-      if ( hi->allocated.obj ) free(hi->object);
-      free(hi);
+      if ( hi->allocated.key ) Mem_Free(hi->key);
+      if ( hi->allocated.obj ) Mem_Free(hi->object);
+      Mem_Free(hi);
     }
 
   /* Now we deallocate the table of branches */
-  free(ht->item);
+  Mem_Free(ht->item);
   /* And at the end we free the main Hashtable structure */
-  free(ht);
+  Mem_Free(ht);
 }
 
 void HT_Destructor(Hashtable *ht, Task (*destroy)(HashItem *)) {
@@ -150,7 +142,7 @@ int HT_Add(
 {
   HashItem *hi;
   assert(branch < ht->num_entries);
-  hi = (HashItem *) xmalloc(sizeof(HashItem));
+  hi = (HashItem *) Mem_Alloc(sizeof(HashItem));
 
   hi->key_size = key_size;
   if (ht->settings.copy_keys) {
@@ -186,9 +178,9 @@ Task HT_Remove(Hashtable *ht, void *key, unsigned int key_size) {
   while( (hi = *hi_ptr) != (HashItem *) NULL ) {
     if ( ht->cmp(hi->key, key, hi->key_size, key_size) ) {
       *hi_ptr = hi->next;
-      if ( hi->allocated.key ) free(hi->key);
-      if ( hi->allocated.obj ) free(hi->object);
-      free(hi);
+      if ( hi->allocated.key ) Mem_Free(hi->key);
+      if ( hi->allocated.obj ) Mem_Free(hi->object);
+      Mem_Free(hi);
       return Success;
     }
     hi_ptr = & hi->next;
