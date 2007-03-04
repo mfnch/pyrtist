@@ -85,13 +85,8 @@ Task Str_Eq2(char *s1, UInt l1, char *s2, UInt l2) {
 char *Str_DupLow(char *s, UInt leng)
 {
   char *ns, *nc;
-
-  ns = (char *) malloc(leng);
-  if ( ns == NULL ) return NULL;
-
-  for (nc = ns; leng > 0; leng--)
-    *(nc++) = tolower(*(s++));
-
+  ns = (char *) Mem_Alloc(leng);
+  for (nc = ns; leng > 0; leng--) *(nc++) = tolower(*(s++));
   return ns;
 }
 
@@ -103,13 +98,9 @@ char *Str_DupLow(char *s, UInt leng)
 char *Str_Dup(char *s, UInt leng) {
   char *ns, *nc;
 
-  if ( (s == NULL) || (leng < 1) ) return NULL;
-  ns = (char *) malloc( leng + 1 );
-  if ( ns == NULL ) return NULL;
-
-  for (nc = ns; leng > 0; leng--)
-    *(nc++) = *(s++);
-
+  if (s == NULL || leng < 1) return "";
+  ns = (char *) Mem_Alloc(leng + 1);
+  for (nc = ns; leng > 0; leng--) *(nc++) = *(s++);
   *nc = '\0';
   return ns;
 }
@@ -137,9 +128,7 @@ char *Str__Cut(const char *s, UInt leng, UInt maxleng, Intg start) {
 
   else {
     char *rets, *c;
-
-    rets = (char *) malloc(maxleng + 1);
-    if ( rets == NULL ) return NULL;
+    rets = (char *) Mem_Alloc(maxleng + 1);
 
     if ( start < 0 ) start = 0;
       else if ( start > 100 ) start = 100;
@@ -307,8 +296,7 @@ char *Str_ToString(char *s, Intg l, Intg *new_length) {
   Intg f, nl = 1; /* <-- incluso il '\0' di terminazione stringa */
   char *c, *out;
 
-  c = out = (char *) malloc(l+1);
-  if ( out == NULL ) return NULL;
+  c = out = (char *) Mem_Alloc(l+1);
   while (l > 0) {
     if IS_FAILED( Str__ToChar(s, l, & f, c) ) return NULL;
     ++c;
@@ -364,12 +352,7 @@ Task Str_ToReal(char *s, UInt l, Real *r) {
 
   } else {
     char *sc, *endptr;
-
-    sc = (char *) malloc(sizeof(char)*(l+1));
-    if ( sc == NULL ) {
-      MSG_FATAL("Memoria esaurita!");
-      return Failed;
-    }
+    sc = (char *) Mem_Alloc(sizeof(char)*(l+1));
 
     /* Copio la stringa in modo da poterla terminare con '\0' */
     strncpy(sc, s, l);
@@ -377,7 +360,7 @@ Task Str_ToReal(char *s, UInt l, Real *r) {
 
     errno = 0;
     *r = strtoreal(sc, & endptr);
-    free(sc);
+    Mem_Free(sc);
     if ( errno == 0 ) return Success;
   }
 
@@ -403,9 +386,9 @@ Name *Name_Empty(void) {
  */
 const char *Name_Str(Name *n) {
   static char *asciiz = NULL;
-  free(asciiz);
+  Mem_Free(asciiz);
   if (n->length == 0) return "";
-  asciiz = (char *) malloc( n->length + 1 );
+  asciiz = (char *) Mem_Alloc(n->length + 1);
   asciiz[n->length] = '\0';
   return strncpy(asciiz, n->text, n->length);
 }
@@ -416,14 +399,14 @@ const char *Name_Str(Name *n) {
 char *Name_To_Str(Name *n) {
   char *asciiz = NULL;
   if (n->length == 0) return Mem_Strdup("");
-  asciiz = (char *) malloc(n->length + 1);
+  asciiz = (char *) Mem_Alloc(n->length + 1);
   asciiz[n->length] = '\0';
   return strncpy(asciiz, n->text, n->length);
 }
 
 /* DESCRIZIONE: Rimuove la stringa associata a *n (pone n --> "")
  */
-void Name_Free(Name *n) {free(n->text); n->text = NULL; n->length = 0;}
+void Name_Free(Name *n) {Mem_Free(n->text); n->text = NULL; n->length = 0;}
 
 /* DESCRIZIONE: Duplica la stringa *n.
  */
@@ -450,8 +433,7 @@ Task Name_Cat(Name *nm, Name *nm1, Name *nm2, int free_args) {
   if ( nm2->text[l2-1] == '\0' ) --l2;
   l = l1 + l2;
 
-  nm->text = dest = (char *) malloc( nm->length = l + 1 );
-  if ( dest == NULL ) return Failed;
+  nm->text = dest = (char *) Mem_Alloc( nm->length = l + 1 );
   if ( l1 > 0 ) strncpy(dest, nm1->text, l1);
   if ( l2 > 0 ) strncpy(dest + l1, nm2->text, l2);
   *(dest + l) = '\0';
@@ -477,7 +459,7 @@ strange_cases: {
 void *Mem_Dup(const void *src, unsigned int length) {
   void *copy;
   if (length < 1) return NULL;
-  copy = (void *) malloc(length);
+  copy = (void *) Mem_Alloc(length);
   memcpy(copy, src, length);
   return copy;
 }
