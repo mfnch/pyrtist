@@ -37,11 +37,15 @@
  * To solve this problem we use this strategy:
  *  - the common code is written inside this file;
  *  - the function is defined inside 'typesys.c' using the following syntax:
+ *  @code
  *    #define NAME_OF_FUNCTION
  *    #  include "tsdef.c"
  *    #undef NAME_OF_FUNCTION
+ *  @endcode
  * when this file is included it will define the required function:
  * all is done throughout preprocessor directives.
+ * This also helps to make it clear what the differences between
+ * different kind of types are!
  * Yes, I know! This preprocessor stuff is too tricky, but to me it seems
  * the better way of doing things!
  */
@@ -80,6 +84,28 @@ Task TS_Structure_Add(TS *ts, Type s, Type m, const char *m_name)
 #elif defined(TS_SPECIES_ADD)
 #  define TS_X_ADD TS_KIND_SPECIES
 Task TS_Species_Add(TS *ts, Type s, Type m)
+
+#elif defined(TS_ENUM_ADD)
+#  define TS_X_ADD TS_KIND_ENUM
+Task TS_Enum_Add(TS *ts, Type s, Type m)
+
+#elif defined(TS_NAME_GET_CASE_STRUCTURE)
+#  define TS_NAME_GET_CASE_X TS_KIND_STRUCTURE
+#  define GROUP_EMPTY "(,)"
+#  define GROUP_ONE "(%~s,)"
+#  define GROUP_TWO "%~s, %~s"
+
+#elif defined(TS_NAME_GET_CASE_SPECIES)
+#  define TS_NAME_GET_CASE_X TS_KIND_SPECIES
+#  define GROUP_EMPTY "(<)"
+#  define GROUP_ONE "(%~s<)"
+#  define GROUP_TWO "%~s<%~s"
+
+#elif defined(TS_NAME_GET_CASE_ENUM)
+#  define TS_NAME_GET_CASE_X TS_KIND_ENUM
+#  define GROUP_EMPTY "(|)"
+#  define GROUP_ONE "(%~s|)"
+#  define GROUP_TWO "%~s|%~s"
 #endif
 
 /* here we really define the body of the function */
@@ -148,11 +174,43 @@ Task TS_Species_Add(TS *ts, Type s, Type m)
   if (s_td->target == TS_TYPE_NONE) s_td->target = new_m;
 #  ifdef TS_STRUCTURE_ADD
   s_td->size += m_size;
+#  elif defined(TS_ENUM_ADD)
+  m_size += TS_Align(ts, sizeof(Int));
+  if (m_size > s_td->size) s_td->size = m_size;
 #  else
   if (m_size > s_td->size) s_td->size = m_size;
 #  endif
   return Success;
 }
+
+#elif defined(TS_NAME_GET_CASE_X)
+  /* A case in the main switch statement of the TS_Name_Get function */
+    if (td->size > 0) {
+      char *name = (char *) NULL;
+      Type m = td->target;
+      while (1) {
+        TSDesc *m_td = Clc_ItemPtr(ts->type_descs, TSDesc, m);
+        char *m_name = TS_Name_Get(ts, m_td->target);
+#ifdef TS_NAME_GET_CASE_STRUCTURE
+        if (m_td->name != (char *) NULL)
+          m_name = printdup("%s=%~s", m_td->name, m_name);
+#endif
+        m = m_td->data.member_next;
+        if (m == t) {
+          if (name == (char *) NULL)
+            return printdup(GROUP_ONE, m_name);
+          else
+            return printdup("("GROUP_TWO")", name, m_name);
+        } else {
+          if (name == (char *) NULL)
+            name = m_name; /* no need to free! */
+          else
+            name = printdup(GROUP_TWO, name, m_name);
+        }
+      }
+    }
+    return Mem_Strdup(GROUP_EMPTY);
+
 #endif
 
 #ifdef TS_X_NEW
@@ -165,4 +223,11 @@ Task TS_Species_Add(TS *ts, Type s, Type m)
 
 #ifdef TS_X_ADD
 #  undef TS_X_ADD
+#endif
+
+#ifdef TS_NAME_GET_CASE_X
+#  undef TS_NAME_GET_CASE_X
+#  undef GROUP_EMPTY
+#  undef GROUP_ONE
+#  undef GROUP_TWO
 #endif

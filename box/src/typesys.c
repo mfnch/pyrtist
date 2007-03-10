@@ -33,7 +33,7 @@
 #include "hashtable.h"
 
 static void try_it(TS *ts) {
-  Type ti, tr, tp, t1, t2, t3, t4;
+  Type ti, tr, tp, t1, t2, t3, t4, t5;
   (void) TS_Intrinsic_New(ts, & ti, sizeof(Int));
   (void) TS_Name_Set(ts, ti, "Int");
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, ti));
@@ -67,6 +67,15 @@ static void try_it(TS *ts) {
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t4));
   (void) TS_Species_Add(ts, t4, tp);
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t4));
+
+  (void) TS_Enum_Begin(ts, & t5);
+  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t5));
+  (void) TS_Enum_Add(ts, t5, tr);
+  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t5));
+  (void) TS_Enum_Add(ts, t5, ti);
+  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t5));
+  (void) TS_Enum_Add(ts, t5, tp);
+  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t5));
 }
 
 Task TS_Init(TS *ts) {
@@ -114,58 +123,29 @@ char *TS_Name_Get(TS *ts, Type t) {
   switch(td->kind) {
   case TS_KIND_INTRINSIC:
     return printdup("<size=%I>", td->size);
-  case TS_KIND_SPECIES:
-    if (td->size > 0) {
-      char *name = (char *) NULL;
-      Type m = td->target;
-      while (1) {
-        TSDesc *m_td = Clc_ItemPtr(ts->type_descs, TSDesc, m);
-        char *m_name = TS_Name_Get(ts, m_td->target);
-        m = m_td->data.member_next;
-        if (m == t) {
-          if (name == (char *) NULL)
-            return printdup("(%~s <)", m_name);
-          else
-            return printdup("(%~s < %~s)", name, m_name);
-        } else {
-          if (name == (char *) NULL)
-            name = m_name; /* no need to free! */
-          else
-            name = printdup("%~s < %~s", name, m_name);
-        }
-      }
-    }
-    return Mem_Strdup("(<)");
-  case TS_KIND_STRUCTURE:
-    if (td->size > 0) {
-      char *name = (char *) NULL;
-      Type m = td->target;
-      while (1) {
-        TSDesc *m_td = Clc_ItemPtr(ts->type_descs, TSDesc, m);
-        char *m_name = TS_Name_Get(ts, m_td->target);
-        if (m_td->name != (char *) NULL)
-          m_name = printdup("%s=%~s", m_td->name, m_name);
-        m = m_td->data.member_next;
-        if (m == t) {
-          if (name == (char *) NULL)
-            return printdup("(%~s,)", m_name);
-          else
-            return printdup("(%~s, %~s)", name, m_name);
-        } else {
-          if (name == (char *) NULL)
-            name = m_name; /* no need to free! */
-          else
-            name = printdup("%~s, %~s", name, m_name);
-        }
-      }
-    }
-    return Mem_Strdup("(,)");
+
   case TS_KIND_ARRAY:
     if (td->size > 0) {
       Int as = td->data.array_size;
       return printdup("(%I)%~s", as, TS_Name_Get(ts, td->target));
     } else
       return printdup("()%~s", TS_Name_Get(ts, td->target));
+
+  case TS_KIND_STRUCTURE:
+#define TS_NAME_GET_CASE_STRUCTURE
+#include "tsdef.c"
+#undef TS_NAME_GET_CASE_STRUCTURE
+
+  case TS_KIND_SPECIES:
+#define TS_NAME_GET_CASE_SPECIES
+#include "tsdef.c"
+#undef TS_NAME_GET_CASE_SPECIES
+
+  case TS_KIND_ENUM:
+#define TS_NAME_GET_CASE_ENUM
+#include "tsdef.c"
+#undef TS_NAME_GET_CASE_ENUM
+
   default:
     return Mem_Strdup("<unknown type>");
   }
@@ -184,6 +164,10 @@ Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
   return Success;
 }
 
+/* Here we define functions which have almost common bodies.
+ * This is done in a tricky way (look at the documentation inside
+ * the included file!)
+ */
 #define TS_ALIAS_NEW
 #include "tsdef.c"
 #undef TS_ALIAS_NEW
