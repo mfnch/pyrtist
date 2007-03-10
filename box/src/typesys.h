@@ -62,6 +62,7 @@ typedef struct {
     Int array_size;
     Type structure_last;
     Type species_last;
+    Type last;
     Type member_next;
   } data;
 } TSDesc;

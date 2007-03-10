@@ -35,7 +35,8 @@ bin_PROGRAMS = box
 noinst_HEADERS = defaults.h types.h mem.h str.h print.h \
   msgbase.h messages.h debug.h \
   list.h array.h collection.h registers.h virtmach.h \
-  tokenizer.h parserh.h typesys.h expr.h compiler.h box.h builtins.h \
+  tokenizer.h parserh.h typesys.h tsdef.c \
+  expr.h compiler.h box.h builtins.h \
   hashfunc.h hashtable.h vmproc.h vmsym.h vmcommon.h \
   vmsymstuff.h
 

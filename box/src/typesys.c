@@ -33,7 +33,7 @@
 #include "hashtable.h"
 
 static void try_it(TS *ts) {
-  Type ti, tr, tp, t1, t2, t3;
+  Type ti, tr, tp, t1, t2, t3, t4;
   (void) TS_Intrinsic_New(ts, & ti, sizeof(Int));
   (void) TS_Name_Set(ts, ti, "Int");
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, ti));
@@ -53,14 +53,20 @@ static void try_it(TS *ts) {
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t2));
   (void) TS_Structure_Add(ts, t2, tp, NULL);
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t2));
-  (void) TS_Species_Begin(ts, & t3);
+  (void) TS_Structure_Begin(ts, & t3);
+  (void) TS_Structure_Add(ts, t3, t2, "my_structure");
+  (void) TS_Structure_Add(ts, t3, t1, "my_array");
+  (void) TS_Structure_Add(ts, t3, ti, "my_int");
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t3));
-  (void) TS_Species_Add(ts, t3, tr);
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t3));
-  (void) TS_Species_Add(ts, t3, ti);
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t3));
-  (void) TS_Species_Add(ts, t3, tp);
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t3));
+
+  (void) TS_Species_Begin(ts, & t4);
+  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t4));
+  (void) TS_Species_Add(ts, t4, tr);
+  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t4));
+  (void) TS_Species_Add(ts, t4, ti);
+  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t4));
+  (void) TS_Species_Add(ts, t4, tp);
+  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t4));
 }
 
 Task TS_Init(TS *ts) {
@@ -88,18 +94,6 @@ Int TS_Size(TS *ts, Type t) {
 
 Int TS_Align(TS *ts, Int address) {
   return address;
-}
-
-Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
-  TSDesc td;
-  assert(size >= 0);
-  td.kind = TS_KIND_INTRINSIC;
-  td.size = size;
-  td.target = TS_TYPE_NONE;
-  td.name = (char *) NULL;
-  td.val = NULL;
-  TASK( Clc_Occupy(ts->type_descs, & td, i) );
-  return Success;
 }
 
 Task TS_Name_Set(TS *ts, Type t, const char *name) {
@@ -177,128 +171,56 @@ char *TS_Name_Get(TS *ts, Type t) {
   }
 }
 
-Task TS_Alias_New(TS *ts, Type *a, Type t) {
+/****************************************************************************/
+Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
   TSDesc td;
-  TSDesc *target_td = Clc_ItemPtr(ts->type_descs, TSDesc, t);
-  td.kind = TS_KIND_ALIAS;
-  td.target = t;
-  td.size = target_td->size;
-  td.name = (char *) NULL;
-  td.val = NULL;
-  TASK( Clc_Occupy(ts->type_descs, & td, a) );
-  return Success;
-}
-
-Task TS_Link_New(TS *ts, Type *l, Type t) {
-  TSDesc td;
-  TSDesc *target_td = Clc_ItemPtr(ts->type_descs, TSDesc, t);
-  td.kind = TS_KIND_LINK;
-  td.target = t;
-  td.size = target_td->size;
-  td.name = (char *) NULL;
-  td.val = NULL;
-  TASK( Clc_Occupy(ts->type_descs, & td, l) );
-  return Success;
-}
-
-Task TS_Structure_Begin(TS *ts, Type *s) {
-  TSDesc td;
-  td.kind = TS_KIND_STRUCTURE;
+  assert(size >= 0);
+  td.kind = TS_KIND_INTRINSIC;
+  td.size = size;
   td.target = TS_TYPE_NONE;
-  td.data.structure_last = TS_TYPE_NONE;
-  td.size = 0;
   td.name = (char *) NULL;
   td.val = NULL;
-  TASK( Clc_Occupy(ts->type_descs, & td, s) );
+  TASK( Clc_Occupy(ts->type_descs, & td, i) );
   return Success;
 }
 
-Task TS_Structure_Add(TS *ts, Type s, Type m, const char *m_name) {
-  TSDesc td, *m_td, *s_td;
-  Type new_m;
-  Int m_size;
-  m_td = Clc_ItemPtr(ts->type_descs, TSDesc, m);
-  m_size = m_td->size;
-  td.kind = TS_KIND_MEMBER;
-  td.target = m;
-  td.size = TS_Align(ts, TS_Size(ts, s));
-  td.name = (char *) NULL;
-  if (m_name != (char *) NULL) td.name = Mem_Strdup(m_name);
-  td.data.member_next = s;
-  td.val = NULL;
-  TASK( Clc_Occupy(ts->type_descs, & td, & new_m) );
+#define TS_ALIAS_NEW
+#include "tsdef.c"
+#undef TS_ALIAS_NEW
 
-  s_td = Clc_ItemPtr(ts->type_descs, TSDesc, s);
-  assert(s_td->kind == TS_KIND_STRUCTURE);
-  if (s_td->data.structure_last != TS_TYPE_NONE) {
-    m_td = Clc_ItemPtr(ts->type_descs, TSDesc, s_td->data.structure_last);
-    assert(m_td->kind == TS_KIND_MEMBER);
-    m_td->data.member_next = new_m;
-  }
-  s_td->data.structure_last = new_m;
-  if (s_td->target == TS_TYPE_NONE) s_td->target = new_m;
-  s_td->size += m_size;
-  return Success;
-}
+#define TS_LINK_NEW
+#include "tsdef.c"
+#undef TS_LINK_NEW
 
-Task TS_Array_New(TS *ts, Type *a, Type t, Int size) {
-  TSDesc td;
-  TSDesc *target_td = Clc_ItemPtr(ts->type_descs, TSDesc, t);
-  td.kind = TS_KIND_ARRAY;
-  td.target = t;
-  td.size = size < 0 ? TS_SIZE_UNKNOWN : size*target_td->size;
-  td.name = (char *) NULL;
-  td.val = NULL;
-  td.data.array_size = size;
-  TASK( Clc_Occupy(ts->type_descs, & td, a) );
-  return Success;
-}
+#define TS_ARRAY_NEW
+#include "tsdef.c"
+#undef TS_ARRAY_NEW
 
-Task TS_Species_Begin(TS *ts, Type *s) {
-  TSDesc td;
-  td.kind = TS_KIND_SPECIES;
-  td.target = TS_TYPE_NONE;
-  td.data.species_last = TS_TYPE_NONE;
-  td.size = 0;
-  td.name = (char *) NULL;
-  td.val = NULL;
-  TASK( Clc_Occupy(ts->type_descs, & td, s) );
-  return Success;
-}
+/****************************************************************************/
+#define TS_STRUCTURE_BEGIN
+#include "tsdef.c"
+#undef TS_STRUCTURE_BEGIN
 
-Task TS_Species_Add(TS *ts, Type s, Type m) {
-  TSDesc td, *m_td, *s_td;
-  Type new_m;
-  Int m_size;
-  m_td = Clc_ItemPtr(ts->type_descs, TSDesc, m);
-  m_size = m_td->size;
-  td.kind = TS_KIND_MEMBER;
-  td.target = m;
-  td.size = m_size;
-  td.data.member_next = s;
-  td.val = NULL;
-  TASK( Clc_Occupy(ts->type_descs, & td, & new_m) );
+#define TS_SPECIES_BEGIN
+#include "tsdef.c"
+#undef TS_SPECIES_BEGIN
 
-  s_td = Clc_ItemPtr(ts->type_descs, TSDesc, s);
-  assert(s_td->kind == TS_KIND_SPECIES);
-  if (s_td->data.structure_last != TS_TYPE_NONE) {
-    m_td = Clc_ItemPtr(ts->type_descs, TSDesc, s_td->data.structure_last);
-    assert(m_td->kind == TS_KIND_MEMBER);
-    m_td->data.member_next = new_m;
-  }
-  s_td->data.structure_last = new_m;
-  if (s_td->target == TS_TYPE_NONE) s_td->target = new_m;
-  if (m_size > s_td->size) s_td->size = m_size;
-  return Success;
-}
+#define TS_ENUM_BEGIN
+#include "tsdef.c"
+#undef TS_ENUM_BEGIN
 
-Task TS_Enum_Begin(TS *ts, Type *e) {
-  MSG_ERROR("Stil not implemented!"); return Failed;
-}
+/****************************************************************************/
+#define TS_STRUCTURE_ADD
+#include "tsdef.c"
+#undef TS_STRUCTURE_ADD
 
-Task TS_Enum_Add(TS *ts, Type e, Type t) {
-  MSG_ERROR("Stil not implemented!"); return Failed;
-}
+#define TS_SPECIES_ADD
+#include "tsdef.c"
+#undef TS_SPECIES_ADD
+
+#define TS_ENUM_ADD
+#include "tsdef.c"
+#undef TS_ENUM_ADD
 
 Task TS_Default_Value(TS *ts, Type *dv_t, Type t, Data *dv) {
   MSG_ERROR("Stil not implemented!"); return Failed;
