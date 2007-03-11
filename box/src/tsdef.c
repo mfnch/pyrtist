@@ -97,9 +97,9 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
 
 #elif defined(TS_NAME_GET_CASE_SPECIES)
 #  define TS_NAME_GET_CASE_X TS_KIND_SPECIES
-#  define GROUP_EMPTY "(<)"
-#  define GROUP_ONE "(%~s<)"
-#  define GROUP_TWO "%~s<%~s"
+#  define GROUP_EMPTY "(->)"
+#  define GROUP_ONE "(%~s->)"
+#  define GROUP_TWO "%~s->%~s"
 
 #elif defined(TS_NAME_GET_CASE_ENUM)
 #  define TS_NAME_GET_CASE_X TS_KIND_ENUM

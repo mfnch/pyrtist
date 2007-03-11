@@ -41,9 +41,11 @@ typedef enum {
   TS_KIND_ALIAS,
   TS_KIND_SPECIES,
   TS_KIND_STRUCTURE,
-  TS_KIND_MEMBER,
   TS_KIND_ENUM,
+  TS_KIND_MEMBER,
   TS_KIND_ARRAY,
+  TS_KIND_PROC1,
+  TS_KIND_PROC2,
   TS_KIND_POINTER
 } TSKind;
 
@@ -60,9 +62,8 @@ typedef struct {
   Type target;
   union {
     Int array_size;
-    Type structure_last;
-    Type species_last;
     Type last;
+    Type parent;
     Type member_next;
   } data;
 } TSDesc;
@@ -73,6 +74,13 @@ typedef struct {
   Array *name_buffer;
 } TS;
 
+typedef enum {
+  TS_TYPES_EQUAL=7,
+  TS_TYPES_MATCH=3,
+  TS_TYPES_EXPAND=1,
+  TS_TYPES_UNMATCH=0
+} TSCmp;
+
 Task TS_Init(TS *ts);
 
 void TS_Destroy(TS *ts);
@@ -82,6 +90,11 @@ Int TS_Size(TS *ts, Type t);
 Int TS_Align(TS *ts, Int address);
 
 Task TS_Intrinsic_New(TS *ts, Type *i, Int size);
+
+/** Create a new procedure type in p. init tells if the procedure
+ * is an initialisation procedure or not.
+ */
+Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int init);
 
 Task TS_Name_Set(TS *ts, Type t, const char *name);
 
@@ -117,5 +130,21 @@ void TS_Member_Find(TS *ts, Type *m, Type s, const char *m_name);
  * with TS_Member_Find)
  */
 void TS_Member_Get(TS *ts, Type *t, Int *address, Type m);
+
+/** If m is a structure/species/enum returns its first member.
+ * If m is a member, return the next member.
+ * It m is the last member, return the parent structure.
+ */
+Type TS_Member_Next(TS *ts, Type m);
+
+/** This function tells if a type t2 is contained into a type t1.
+ * The return value is the following:
+ * - TS_TYPES_EQUAL: the two types are equal;
+ * - TS_TYPES_MATCH: the two types are equal;
+ * - TS_TYPES_EXPAND: the two types are compatible, but type t2 should
+ *    be expanded to type t1;
+ * - TS_TYPES_UNMATCH: the two types are not compatible;
+ */
+TSCmp TS_Compare(TS *ts, Type t1, Type t2);
 
 #endif

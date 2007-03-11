@@ -33,7 +33,7 @@
 #include "hashtable.h"
 
 static void try_it(TS *ts) {
-  Type ti, tr, tp, t1, t2, t3, t4, t5, t6;
+  Type ti, tr, tp, t1, t2, t3, t4, t5, t6, t7;
   (void) TS_Intrinsic_New(ts, & ti, sizeof(Int));
   (void) TS_Name_Set(ts, ti, "Int");
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, ti));
@@ -57,9 +57,9 @@ static void try_it(TS *ts) {
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t3));
 
   (void) TS_Species_Begin(ts, & t4);
-  (void) TS_Species_Add(ts, t4, tr);
-  (void) TS_Species_Add(ts, t4, ti);
   (void) TS_Species_Add(ts, t4, tp);
+  (void) TS_Species_Add(ts, t4, ti);
+  (void) TS_Species_Add(ts, t4, tr);
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t4));
 
   (void) TS_Enum_Begin(ts, & t5);
@@ -85,6 +85,15 @@ static void try_it(TS *ts) {
   TS_Member_Find(ts, & t6, t2, "xxx");
   MSG_ADVICE("Searching member 'xxx' of structure %~s: %s!",
    TS_Name_Get(ts, t2), t6 == TS_TYPE_NONE ? "not found" : "found");
+
+  (void) TS_Structure_Begin(ts, & t7);
+  (void) TS_Structure_Add(ts, t7, tr, NULL);
+  (void) TS_Structure_Add(ts, t7, ti, NULL);
+  (void) TS_Structure_Add(ts, t7, tp, NULL);
+  MSG_ADVICE("%~s ? %~s = %d\n", TS_Name_Get(ts, t4), TS_Name_Get(ts, ti),
+   TS_Compare(ts, t4, ti));
+  MSG_ADVICE("%~s ? %~s = %d\n", TS_Name_Get(ts, t2), TS_Name_Get(ts, t7),
+   TS_Compare(ts, t2, t7));
 }
 
 Task TS_Init(TS *ts) {
@@ -99,6 +108,37 @@ void TS_Destroy(TS *ts) {
   Clc_Destroy(ts->type_descs);
   HT_Destroy(ts->members);
   Arr_Destroy(ts->name_buffer);
+}
+
+static TSDesc *Resolve(TS *ts, Type *rt, Type t) {
+  while(1) {
+    TSDesc *td = Clc_ItemPtr(ts->type_descs, TSDesc, t);
+    switch(td->kind) {
+    case TS_KIND_LINK:
+    case TS_KIND_ALIAS:
+    case TS_KIND_MEMBER:
+      t = td->target; break;
+    default:
+      if (rt != (Type *) NULL) *rt = t;
+      return td;
+    }
+  }
+}
+
+static TSDesc *Fully_Resolve(TS *ts, Type *rt, Type t) {
+  while(1) {
+    TSDesc *td = Clc_ItemPtr(ts->type_descs, TSDesc, t);
+    switch(td->kind) {
+    case TS_KIND_LINK:
+    case TS_KIND_ALIAS:
+    case TS_KIND_MEMBER:
+    case TS_KIND_SPECIES:
+      t = td->target; break;
+    default:
+      if (rt != (Type *) NULL) *rt = t;
+      return td;
+    }
+  }
 }
 
 #if 0
@@ -129,6 +169,7 @@ Task TS_Name_Set(TS *ts, Type t, const char *name) {
 
 char *TS_Name_Get(TS *ts, Type t) {
   TSDesc *td = Clc_ItemPtr(ts->type_descs, TSDesc, t);
+  td = Resolve(ts, & t, t);
   if (td->name != (char *) NULL) return Mem_Strdup(td->name);
 
   switch(td->kind) {
@@ -188,6 +229,11 @@ void TS_Member_Get(TS *ts, Type *t, Int *address, Type m) {
   if (address != (Int *) NULL) *address = m_td->size;
 }
 
+Type TS_Member_Next(TS *ts, Type m) {
+  TSDesc *td = Clc_ItemPtr(ts->type_descs, TSDesc, m);
+  return td->kind == TS_KIND_MEMBER ? td->data.member_next : td->target;
+}
+
 /****************************************************************************
  * Here we define functions which have almost common bodies.                *
  * This is done in a tricky way (look at the documentation inside           *
@@ -204,6 +250,18 @@ Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
   td.name = (char *) NULL;
   td.val = NULL;
   TASK( Clc_Occupy(ts->type_descs, & td, i) );
+  return Success;
+}
+
+Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int init) {
+  TSDesc td;
+  td.kind = init ? TS_KIND_PROC1 : TS_KIND_PROC2;
+  td.size = TS_SIZE_UNKNOWN;
+  td.target = child;
+  td.data.parent = parent;
+  td.name = (char *) NULL;
+  td.val = NULL;
+  TASK( Clc_Occupy(ts->type_descs, & td, p) );
   return Success;
 }
 
@@ -249,4 +307,78 @@ Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
 
 Task TS_Default_Value(TS *ts, Type *dv_t, Type t, Data *dv) {
   MSG_ERROR("Still not implemented!"); return Failed;
+}
+
+TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
+  TSDesc *td1, *td2;
+  TSCmp cmp = TS_TYPES_EQUAL;
+  if (t1 == t2) return TS_TYPES_EQUAL;
+  while(1) {
+    td1 = Resolve(ts, & t1, t1);
+    td2 = Fully_Resolve(ts, & t2, t2);
+    if (t1 == t2) return cmp;
+
+    switch(td1->kind) {
+    case TS_KIND_INTRINSIC:
+      return TS_TYPES_UNMATCH;
+
+    case TS_KIND_SPECIES:
+      {
+        Type m=t1;
+        while (1) {
+          m = TS_Member_Next(ts, m);
+          if (m == t1) return TS_TYPES_UNMATCH;
+          MSG_ADVICE("left: %~s , right: %~s",
+           TS_Name_Get(ts, m), TS_Name_Get(ts, t2));
+          printf("cmp = %d\n", cmp);
+          if (TS_Compare(ts, m, t2) != TS_TYPES_UNMATCH) {
+            if (TS_Member_Next(ts, m) == t1) return cmp;
+            return cmp & TS_TYPES_EXPAND;
+          }
+        }
+      }
+
+    case TS_KIND_STRUCTURE:
+    case TS_KIND_ENUM:
+      /* Should we match member names?
+       * For now we tolerate: (x=Real, y=Int) == (z=Real, hgj=Int)
+       */
+      if (td2->kind != td1->kind)
+        return TS_TYPES_UNMATCH;
+      else {
+        Type m1=t1, m2=t2;
+        while (1) {
+          m1 = TS_Member_Next(ts, m1);
+          m2 = TS_Member_Next(ts, m2);
+          if (m1 == t1 || m2 == t2) break;
+          cmp &= TS_Compare(ts, m1, m2);
+          if (cmp == TS_TYPES_UNMATCH) return TS_TYPES_UNMATCH;
+        }
+        if (m1 != t1 || m2 != t2) return TS_TYPES_UNMATCH;
+        return cmp;
+      }
+
+    case TS_KIND_ARRAY:
+      if (td2->kind != TS_KIND_ARRAY) return TS_TYPES_UNMATCH;
+      if (td1->data.array_size == td2->data.array_size) break;
+      if (td1->data.array_size != TS_SIZE_UNKNOWN) return TS_TYPES_UNMATCH;
+      cmp &= TS_TYPES_MATCH;
+      break;
+
+    case TS_KIND_PROC1:
+    case TS_KIND_PROC2:
+      if (td2->kind != td1->kind) return TS_TYPES_UNMATCH;
+      if (TS_Compare(ts, td1->data.parent, td2->data.parent) != TS_TYPES_EQUAL)
+        return TS_TYPES_UNMATCH;
+      return TS_Compare(ts, td1->target, td2->target);
+
+    case TS_KIND_POINTER:
+    default:
+      MSG_ERROR("TS_Compare: not fully implemented!");
+      return TS_TYPES_UNMATCH;
+    }
+
+    t1 = td1->target;
+    t2 = td2->target;
+  }
 }
