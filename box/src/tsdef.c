@@ -174,6 +174,13 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
   if (s_td->target == TS_TYPE_NONE) s_td->target = new_m;
 #  ifdef TS_STRUCTURE_ADD
   s_td->size += m_size;
+  /* We also add the member to the hashtable for fast search */
+  if (m_name != (char *) NULL) {
+    Name n;
+    TASK( Member_Full_Name(ts, & n, s, m_name) );
+    HT_Insert_Obj(ts->members, n.text, n.length, & new_m, sizeof(Type));
+  }
+
 #  elif defined(TS_ENUM_ADD)
   m_size += TS_Align(ts, sizeof(Int));
   if (m_size > s_td->size) s_td->size = m_size;

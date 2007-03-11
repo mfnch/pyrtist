@@ -46,8 +46,8 @@ void Arr_Destructor(Array *a, Task (*destroy)(void *));
 
 /* Procedure definite in array.c */
 Array *Arr_Recycle(Array *a, UInt elsize, UInt mindim);
-Task Arr_Push(Array *a, void *elem);
-Task Arr_MPush(Array *a, void *elem, UInt numel);
+Task Arr_Push(Array *a, const void *elem);
+Task Arr_MPush(Array *a, const void *elem, UInt numel);
 Task Arr_Insert(Array *a, Intg where, Intg how_many, void *items);
 Task Arr_Append_Blank(Array *a, Intg how_many);
 Task Arr_BigEnough(Array *a, UInt numel);

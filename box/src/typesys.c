@@ -33,7 +33,7 @@
 #include "hashtable.h"
 
 static void try_it(TS *ts) {
-  Type ti, tr, tp, t1, t2, t3, t4, t5;
+  Type ti, tr, tp, t1, t2, t3, t4, t5, t6;
   (void) TS_Intrinsic_New(ts, & ti, sizeof(Int));
   (void) TS_Name_Set(ts, ti, "Int");
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, ti));
@@ -46,41 +46,51 @@ static void try_it(TS *ts) {
   (void) TS_Array_New(ts, & t1, ti, 10);
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t1));
   (void) TS_Structure_Begin(ts, & t2);
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t2));
   (void) TS_Structure_Add(ts, t2, tr, "x");
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t2));
   (void) TS_Structure_Add(ts, t2, ti, "stuff");
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t2));
   (void) TS_Structure_Add(ts, t2, tp, NULL);
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t2));
   (void) TS_Structure_Begin(ts, & t3);
-  (void) TS_Structure_Add(ts, t3, t2, "my_structure");
   (void) TS_Structure_Add(ts, t3, t1, "my_array");
+  (void) TS_Structure_Add(ts, t3, t2, "my_structure");
   (void) TS_Structure_Add(ts, t3, ti, "my_int");
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t3));
 
   (void) TS_Species_Begin(ts, & t4);
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t4));
   (void) TS_Species_Add(ts, t4, tr);
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t4));
   (void) TS_Species_Add(ts, t4, ti);
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t4));
   (void) TS_Species_Add(ts, t4, tp);
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t4));
 
   (void) TS_Enum_Begin(ts, & t5);
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t5));
   (void) TS_Enum_Add(ts, t5, tr);
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t5));
   (void) TS_Enum_Add(ts, t5, ti);
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t5));
   (void) TS_Enum_Add(ts, t5, tp);
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t5));
+
+  TS_Member_Find(ts, & t6, t2, "x");
+  MSG_ADVICE("Searching member 'x' of structure %~s: %s!",
+   TS_Name_Get(ts, t2), t6 == TS_TYPE_NONE ? "not found" : "found");
+  TS_Member_Find(ts, & t6, t3, "my_structure");
+  MSG_ADVICE("Searching member 'my_structure' of structure %~s: %s!",
+   TS_Name_Get(ts, t3), t6 == TS_TYPE_NONE ? "not found" : "found");
+  if (t6 != TS_TYPE_NONE) {
+    Type mt;
+    Int addr;
+    TS_Member_Get(ts, & mt, & addr, t6);
+    MSG_ADVICE("Member has type %~s and position: %I",
+     TS_Name_Get(ts, mt), addr);
+  }
+
+  TS_Member_Find(ts, & t6, t2, "xxx");
+  MSG_ADVICE("Searching member 'xxx' of structure %~s: %s!",
+   TS_Name_Get(ts, t2), t6 == TS_TYPE_NONE ? "not found" : "found");
 }
 
 Task TS_Init(TS *ts) {
   TASK( Clc_New(& ts->type_descs, sizeof(TSDesc), TS_TSDESC_CLC_SIZE) );
   HT(& ts->members, TS_MEMB_HT_SIZE);
+  TASK( Arr_New(& ts->name_buffer, sizeof(char), TS_NAME_BUFFER_SIZE) );
   try_it(ts);
   return Success;
 }
@@ -88,6 +98,7 @@ Task TS_Init(TS *ts) {
 void TS_Destroy(TS *ts) {
   Clc_Destroy(ts->type_descs);
   HT_Destroy(ts->members);
+  Arr_Destroy(ts->name_buffer);
 }
 
 #if 0
@@ -151,7 +162,39 @@ char *TS_Name_Get(TS *ts, Type t) {
   }
 }
 
-/****************************************************************************/
+/* The full name to use in the hashtable of members */
+static Task Member_Full_Name(TS *ts, Name *n, Type s, const char *m_name) {
+  TASK( Arr_Clear(ts->name_buffer) );
+  TASK( Arr_MPush(ts->name_buffer, & s, sizeof(Type)) );
+  TASK( Arr_MPush(ts->name_buffer, m_name, strlen(m_name)) );
+  n->text = Arr_FirstItemPtr(ts->name_buffer, char);
+  n->length = Arr_NumItem(ts->name_buffer);
+  return Success;
+}
+
+void TS_Member_Find(TS *ts, Type *m, Type s, const char *m_name) {
+  Name n;
+  HashItem *hi;
+  *m = TS_TYPE_NONE;;
+  if IS_FAILED(Member_Full_Name(ts, & n, s, m_name)) return;
+  if (HT_Find(ts->members, n.text, n.length, & hi))
+    *m = *((Type *) hi->object);
+}
+
+void TS_Member_Get(TS *ts, Type *t, Int *address, Type m) {
+  TSDesc *m_td = Clc_ItemPtr(ts->type_descs, TSDesc, m);
+  assert(m_td->kind == TS_KIND_MEMBER);
+  if (t != (Type *) NULL) *t = m_td->target;
+  if (address != (Int *) NULL) *address = m_td->size;
+}
+
+/****************************************************************************
+ * Here we define functions which have almost common bodies.                *
+ * This is done in a tricky way (look at the documentation inside           *
+ * the included file!)                                                      *
+ ****************************************************************************/
+
+/*FUNCTIONS: TS_X_New *******************************************************/
 Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
   TSDesc td;
   assert(size >= 0);
@@ -164,10 +207,6 @@ Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
   return Success;
 }
 
-/* Here we define functions which have almost common bodies.
- * This is done in a tricky way (look at the documentation inside
- * the included file!)
- */
 #define TS_ALIAS_NEW
 #include "tsdef.c"
 #undef TS_ALIAS_NEW
@@ -180,7 +219,7 @@ Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
 #include "tsdef.c"
 #undef TS_ARRAY_NEW
 
-/****************************************************************************/
+/*FUNCTIONS: TS_X_Begin *****************************************************/
 #define TS_STRUCTURE_BEGIN
 #include "tsdef.c"
 #undef TS_STRUCTURE_BEGIN
@@ -193,7 +232,7 @@ Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
 #include "tsdef.c"
 #undef TS_ENUM_BEGIN
 
-/****************************************************************************/
+/*FUNCTIONS: TS_X_Add *******************************************************/
 #define TS_STRUCTURE_ADD
 #include "tsdef.c"
 #undef TS_STRUCTURE_ADD
@@ -206,6 +245,8 @@ Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
 #include "tsdef.c"
 #undef TS_ENUM_ADD
 
+/****************************************************************************/
+
 Task TS_Default_Value(TS *ts, Type *dv_t, Type t, Data *dv) {
-  MSG_ERROR("Stil not implemented!"); return Failed;
+  MSG_ERROR("Still not implemented!"); return Failed;
 }

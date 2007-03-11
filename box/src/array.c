@@ -238,7 +238,7 @@ Array *Arr_Recycle(Array *a, UInt elsize, UInt mindim) {
  * preoccupandosi di reallocare la memoria se necessario.
  * Restituisce 1 solo in caso di successo.
  */
-Task Arr_Push(Array *a, void *elem) {
+Task Arr_Push(Array *a, const void *elem) {
   if (a->ID == ARR_ID) {
     void *tptr;
     UInt tpos = a->numel++ * a->elsize;
@@ -256,7 +256,7 @@ Task Arr_Push(Array *a, void *elem) {
   }
 }
 
-Task Arr_MPush(Array *a, void *elem, UInt numel) {
+Task Arr_MPush(Array *a, const void *elem, UInt numel) {
   if (a->ID == ARR_ID) {
     void *tptr;
     UInt tpos;

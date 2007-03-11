@@ -27,6 +27,11 @@
  * This file contains the definitions of the constants which tune
  * the performance of the Box compiler, VM, etc.
  * These include the default size of hashtables, arrays, etc.
+ * We could think a future when these constant come from experience:
+ * when exiting the box compiler saves statistics about array usage,
+ * hashtable usage, etc. Then when box is started this information
+ * is used to guess appropriate values for array sizes, etc.
+ * It shouldn't be particularly hard to implement!
  */
 
 /* Questo file contiene la definizione di alcune costanti che regolano
@@ -203,9 +208,11 @@
  *****************************************************************************/
 
 /** Typical size of the array of types */
-#define TS_TSDESC_CLC_SIZE 1024
+#define TS_TSDESC_CLC_SIZE 8192
 /** Size of the hashtables for member of structures, etc. */
-#define TS_MEMB_HT_SIZE 32768
+#define TS_MEMB_HT_SIZE 8192
+/** Typical size of an identifier name */
+#define TS_NAME_BUFFER_SIZE 64
 
 /*****************************************************************************
  *                 COSTANTI UTILIZZATE NEL FILE compiler.c                   *

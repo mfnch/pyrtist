@@ -32,6 +32,8 @@
 #include "mem.h"
 #include "str.h"
 
+#include <ctype.h>
+
 /* Default hash-function */
 unsigned int HT_Default_Hash(void *key, unsigned int key_size) {
   return hashlittle(key, key_size, 1);

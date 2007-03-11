@@ -70,6 +70,7 @@ typedef struct {
 typedef struct {
   Collection *type_descs;
   Hashtable *members;
+  Array *name_buffer;
 } TS;
 
 Task TS_Init(TS *ts);
@@ -105,5 +106,16 @@ Task TS_Enum_Begin(TS *ts, Type *e);
 Task TS_Enum_Add(TS *ts, Type e, Type t);
 
 Task TS_Default_Value(TS *ts, Type *dv_t, Type t, Data *dv);
+
+/** Search the member 'm_name' from the members of the structure s.
+ * If the member is found then *m will be set with its type number,
+ * otherwise *m will be TS_TYPE_NONE
+ */
+void TS_Member_Find(TS *ts, Type *m, Type s, const char *m_name);
+
+/** Obtain details about a member of a structure (to be used in conjunction
+ * with TS_Member_Find)
+ */
+void TS_Member_Get(TS *ts, Type *t, Int *address, Type m);
 
 #endif
