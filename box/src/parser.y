@@ -279,14 +279,14 @@ prim.expr:
  | '(' expr.list ')'   { if ( Cmp_Structure_End(& $$) ) MY_ERR }
 
  | prim.expr
-   '['                 { BOX_REOPEN( & $1 ); }
+   '['                 { BOX_REOPEN( & $1 );  }
    statement.list
-   ']'                 { BOX_RECLOSE( & $1 );      }
+   ']'                 { BOX_RECLOSE( & $1 ); }
 
  | prim.type
-   '['                 { BOX_OPEN( & $1 ); }
+   '['                 { BOX_OPEN( & $1 );  }
    statement.list
-   ']'                 { BOX_CLOSE( & $1 );      }
+   ']'                 { BOX_CLOSE( & $1 ); }
  ;
 
 /* Espressioni secondarie */

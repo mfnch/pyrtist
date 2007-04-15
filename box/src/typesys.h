@@ -44,8 +44,7 @@ typedef enum {
   TS_KIND_ENUM,
   TS_KIND_MEMBER,
   TS_KIND_ARRAY,
-  TS_KIND_PROC1,
-  TS_KIND_PROC2,
+  TS_KIND_PROC,
   TS_KIND_POINTER
 } TSKind;
 
@@ -60,13 +59,23 @@ typedef struct {
   char *name;
   void *val;
   Type target;
+  Type first_proc;
   union {
     Int array_size;
     Type last;
-    Type parent;
     Type member_next;
+    struct {
+      int kind;
+      Type parent;
+    } proc;
   } data;
 } TSDesc;
+
+/* Used to initialise the structure TSDesc */
+#define TS_TSDESC_INIT(tsdesc) \
+  (tsdesc)->val = (char *) NULL; \
+  (tsdesc)->name = (char *) NULL; \
+  (tsdesc)->first_proc = TS_TYPE_NONE
 
 typedef struct {
   Collection *type_descs;
@@ -94,7 +103,21 @@ Task TS_Intrinsic_New(TS *ts, Type *i, Int size);
 /** Create a new procedure type in p. init tells if the procedure
  * is an initialisation procedure or not.
  */
-Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int init);
+Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind);
+
+/** Register the procedure p. After this function has been called
+ * the procedure p will belong to the list of procedures of its parent.
+ */
+Task TS_Procedure_Register(TS *ts, Type p);
+
+/** Search the given procedure in the list of registered procedures.
+ * Return the procedure in *proc, or TS_TYPE_NONE if the procedure
+ * has not been found. If the argument of the procedure needs to be expanded
+ * *expansion_type is the target type for that expansion. If expansion
+ * is not needed then *expansion_type = TS_TYPE_NONE.
+ */
+Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
+ Type parent, Type child, int kind);
 
 Task TS_Name_Set(TS *ts, Type t, const char *name);
 

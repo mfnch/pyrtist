@@ -114,6 +114,7 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
 {
   TSDesc td;
   TSDesc *src_td = Clc_ItemPtr(ts->type_descs, TSDesc, src);
+  TS_TSDESC_INIT(& td);
   td.kind = TS_X_NEW;
   td.target = src;
 #  ifdef TS_ARRAY_NEW
@@ -122,8 +123,6 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
 #  else
   td.size = src_td->size;
 #  endif
-  td.name = (char *) NULL;
-  td.val = NULL;
   TASK( Clc_Occupy(ts->type_descs, & td, dst) );
   return Success;
 }
@@ -132,12 +131,11 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
 /* Code for TS_Structure_Begin, TS_Species_Begin, etc. */
 {
   TSDesc td;
+  TS_TSDESC_INIT(& td);
   td.kind = TS_X_BEGIN;
   td.target = TS_TYPE_NONE;
   td.data.last = TS_TYPE_NONE;
   td.size = 0;
-  td.name = (char *) NULL;
-  td.val = NULL;
   TASK( Clc_Occupy(ts->type_descs, & td, s) );
   return Success;
 }
@@ -150,9 +148,9 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
   Int m_size;
   m_td = Clc_ItemPtr(ts->type_descs, TSDesc, m);
   m_size = m_td->size;
+  TS_TSDESC_INIT(& td);
   td.kind = TS_KIND_MEMBER;
   td.target = m;
-  td.name = (char *) NULL;
 #  ifdef TS_STRUCTURE_ADD
   if (m_name != (char *) NULL) td.name = Mem_Strdup(m_name);
   td.size = TS_Align(ts, TS_Size(ts, s));
@@ -160,7 +158,6 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
   td.size = m_size;
 #  endif
   td.data.member_next = s;
-  td.val = NULL;
   TASK( Clc_Occupy(ts->type_descs, & td, & new_m) );
 
   s_td = Clc_ItemPtr(ts->type_descs, TSDesc, s);

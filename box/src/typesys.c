@@ -33,7 +33,7 @@
 #include "hashtable.h"
 
 static void try_it(TS *ts) {
-  Type ti, tr, tp, t1, t2, t3, t4, t5, t6, t7;
+  Type ti, tr, tp, t1, t2, t3, t4, t5, t6, t7, t8;
   (void) TS_Intrinsic_New(ts, & ti, sizeof(Int));
   (void) TS_Name_Set(ts, ti, "Int");
   MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, ti));
@@ -90,10 +90,30 @@ static void try_it(TS *ts) {
   (void) TS_Structure_Add(ts, t7, tr, NULL);
   (void) TS_Structure_Add(ts, t7, ti, NULL);
   (void) TS_Structure_Add(ts, t7, tp, NULL);
-  MSG_ADVICE("%~s ? %~s = %d\n", TS_Name_Get(ts, t4), TS_Name_Get(ts, ti),
+  MSG_ADVICE("%~s ? %~s = %d", TS_Name_Get(ts, t4), TS_Name_Get(ts, ti),
    TS_Compare(ts, t4, ti));
-  MSG_ADVICE("%~s ? %~s = %d\n", TS_Name_Get(ts, t2), TS_Name_Get(ts, t7),
+  MSG_ADVICE("%~s ? %~s = %d", TS_Name_Get(ts, t2), TS_Name_Get(ts, t7),
    TS_Compare(ts, t2, t7));
+
+  {
+    Type tproc, texp;
+    (void) TS_Procedure_New(ts, & t8, ti, tp, 1);
+    (void) TS_Procedure_Register(ts, t8);
+    MSG_ADVICE("Registered procedure type %~s", TS_Name_Get(ts, t8));
+    (void) TS_Procedure_New(ts, & t8, ti, tr, 1);
+    (void) TS_Procedure_Register(ts, t8);
+    MSG_ADVICE("Registered procedure type %~s", TS_Name_Get(ts, t8));
+    (void) TS_Procedure_New(ts, & t8, ti, t4, 1);
+    (void) TS_Procedure_Register(ts, t8);
+    MSG_ADVICE("Registered procedure type %~s", TS_Name_Get(ts, t8));
+
+    MSG_ADVICE("Searching procedure %~s$%~s",
+     TS_Name_Get(ts, ti), TS_Name_Get(ts, tr));
+    (void) TS_Procedure_Search(ts, & tproc, & texp, ti, ti, 1);
+    MSG_ADVICE("search result=%s, expansion=%~s",
+     tproc != TS_TYPE_NONE ? "found" : "not found",
+     texp != TS_TYPE_NONE ? TS_Name_Get(ts, texp) : strdup("not needed"));
+  }
 }
 
 Task TS_Init(TS *ts) {
@@ -198,6 +218,14 @@ char *TS_Name_Get(TS *ts, Type t) {
 #include "tsdef.c"
 #undef TS_NAME_GET_CASE_ENUM
 
+  case TS_KIND_PROC:
+    {
+      char *proc_kind_strs[4] = {"$", "$", "$$", "$&"};
+      char *proc_kind_str = proc_kind_strs[td->data.proc.kind & 3];
+      return printdup("%~s%s%~s", TS_Name_Get(ts, td->data.proc.parent),
+       proc_kind_str, TS_Name_Get(ts, td->target));
+    }
+
   default:
     return Mem_Strdup("<unknown type>");
   }
@@ -244,23 +272,22 @@ Type TS_Member_Next(TS *ts, Type m) {
 Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
   TSDesc td;
   assert(size >= 0);
+  TS_TSDESC_INIT(& td);
   td.kind = TS_KIND_INTRINSIC;
   td.size = size;
   td.target = TS_TYPE_NONE;
-  td.name = (char *) NULL;
-  td.val = NULL;
   TASK( Clc_Occupy(ts->type_descs, & td, i) );
   return Success;
 }
 
-Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int init) {
+Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind) {
   TSDesc td;
-  td.kind = init ? TS_KIND_PROC1 : TS_KIND_PROC2;
+  TS_TSDESC_INIT(& td);
+  td.kind = TS_KIND_PROC;
   td.size = TS_SIZE_UNKNOWN;
   td.target = child;
-  td.data.parent = parent;
-  td.name = (char *) NULL;
-  td.val = NULL;
+  td.data.proc.parent = parent;
+  td.data.proc.kind = kind & 3;
   TASK( Clc_Occupy(ts->type_descs, & td, p) );
   return Success;
 }
@@ -304,6 +331,50 @@ Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int init) {
 #undef TS_ENUM_ADD
 
 /****************************************************************************/
+/* Procedure registration an search */
+
+/* Register the procedure.
+ * The way we handle registration and search is very inefficient.
+ * this could and should be improved, but we stick to the simple solution
+ * for now!
+ */
+Task TS_Procedure_Register(TS *ts, Type p) {
+  TSDesc *proc_td, *parent_td;
+  Type parent;
+  proc_td = Clc_ItemPtr(ts->type_descs, TSDesc, p);
+  assert(proc_td->kind == TS_KIND_PROC);
+  parent = proc_td->data.proc.parent;
+  parent_td = Clc_ItemPtr(ts->type_descs, TSDesc, parent);
+  assert(proc_td->first_proc == TS_TYPE_NONE); /* Must not be registered! */
+  proc_td->first_proc = parent_td->first_proc;
+  parent_td->first_proc = p;
+  return Success;
+}
+
+Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
+ Type parent, Type child, int kind) {
+  TSDesc *p_td, *parent_td;
+  Type p, dummy;
+  if (proc == (Type *) NULL) proc = & dummy;
+  if (expansion_type == (Type *) NULL) expansion_type = & dummy;
+  *proc = TS_TYPE_NONE;
+  *expansion_type = TS_TYPE_NONE;
+  parent_td = Clc_ItemPtr(ts->type_descs, TSDesc, parent);
+  for(p = parent_td->first_proc; p != TS_TYPE_NONE; p = p_td->first_proc) {
+    TSCmp comparison;
+    p_td = Clc_ItemPtr(ts->type_descs, TSDesc, p);
+    comparison = TS_Compare(ts, p_td->target, child);
+    MSG_ADVICE("TS_Procedure_Search: considering %~s", TS_Name_Get(ts, p));
+    if (comparison != TS_TYPES_UNMATCH) {
+      if (comparison == TS_TYPES_EXPAND) *expansion_type = p_td->target;
+      *proc = p;
+      return Success;
+    }
+  }
+  return Success;
+}
+
+/****************************************************************************/
 
 Task TS_Default_Value(TS *ts, Type *dv_t, Type t, Data *dv) {
   MSG_ERROR("Still not implemented!"); return Failed;
@@ -324,13 +395,10 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
 
     case TS_KIND_SPECIES:
       {
-        Type m=t1;
+        Type m = t1;
         while (1) {
           m = TS_Member_Next(ts, m);
           if (m == t1) return TS_TYPES_UNMATCH;
-          MSG_ADVICE("left: %~s , right: %~s",
-           TS_Name_Get(ts, m), TS_Name_Get(ts, t2));
-          printf("cmp = %d\n", cmp);
           if (TS_Compare(ts, m, t2) != TS_TYPES_UNMATCH) {
             if (TS_Member_Next(ts, m) == t1) return cmp;
             return cmp & TS_TYPES_EXPAND;
@@ -365,10 +433,13 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
       cmp &= TS_TYPES_MATCH;
       break;
 
-    case TS_KIND_PROC1:
-    case TS_KIND_PROC2:
-      if (td2->kind != td1->kind) return TS_TYPES_UNMATCH;
-      if (TS_Compare(ts, td1->data.parent, td2->data.parent) != TS_TYPES_EQUAL)
+    case TS_KIND_PROC:
+      {
+        int k1 = td1->data.proc.kind, k2 = td2->data.proc.kind;
+        if ((k1 & k2) == 0) return TS_TYPES_UNMATCH;
+      }
+      if (TS_Compare(ts, td1->data.proc.parent, td2->data.proc.parent)
+          != TS_TYPES_EQUAL)
         return TS_TYPES_UNMATCH;
       return TS_Compare(ts, td1->target, td2->target);
 
