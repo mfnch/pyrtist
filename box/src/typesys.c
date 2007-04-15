@@ -98,13 +98,13 @@ static void try_it(TS *ts) {
   {
     Type tproc, texp;
     (void) TS_Procedure_New(ts, & t8, ti, tp, 1);
-    (void) TS_Procedure_Register(ts, t8);
+    (void) TS_Procedure_Register(ts, t8, 123);
     MSG_ADVICE("Registered procedure type %~s", TS_Name_Get(ts, t8));
     (void) TS_Procedure_New(ts, & t8, ti, tr, 1);
-    (void) TS_Procedure_Register(ts, t8);
+    (void) TS_Procedure_Register(ts, t8, 124);
     MSG_ADVICE("Registered procedure type %~s", TS_Name_Get(ts, t8));
     (void) TS_Procedure_New(ts, & t8, ti, t4, 1);
-    (void) TS_Procedure_Register(ts, t8);
+    (void) TS_Procedure_Register(ts, t8, 125);
     MSG_ADVICE("Registered procedure type %~s", TS_Name_Get(ts, t8));
 
     MSG_ADVICE("Searching procedure %~s$%~s",
@@ -288,6 +288,7 @@ Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind) {
   td.target = child;
   td.data.proc.parent = parent;
   td.data.proc.kind = kind & 3;
+  td.data.proc.sym_num = 0;
   TASK( Clc_Occupy(ts->type_descs, & td, p) );
   return Success;
 }
@@ -338,7 +339,7 @@ Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind) {
  * this could and should be improved, but we stick to the simple solution
  * for now!
  */
-Task TS_Procedure_Register(TS *ts, Type p) {
+Task TS_Procedure_Register(TS *ts, Type p, UInt sym_num) {
   TSDesc *proc_td, *parent_td;
   Type parent;
   proc_td = Clc_ItemPtr(ts->type_descs, TSDesc, p);
@@ -348,7 +349,16 @@ Task TS_Procedure_Register(TS *ts, Type p) {
   assert(proc_td->first_proc == TS_TYPE_NONE); /* Must not be registered! */
   proc_td->first_proc = parent_td->first_proc;
   parent_td->first_proc = p;
+  proc_td->data.proc.sym_num = sym_num;
   return Success;
+}
+
+void TS_Procedure_Sym_Num(TS *ts, UInt *sym_num, Type p) {
+  TSDesc *proc_td;
+  proc_td = Clc_ItemPtr(ts->type_descs, TSDesc, p);
+  assert(proc_td->kind == TS_KIND_PROC);
+  assert(proc_td->first_proc != TS_TYPE_NONE); /* Must be registered */
+  *sym_num = proc_td->data.proc.sym_num;
 }
 
 Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
@@ -364,7 +374,7 @@ Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
     TSCmp comparison;
     p_td = Clc_ItemPtr(ts->type_descs, TSDesc, p);
     comparison = TS_Compare(ts, p_td->target, child);
-    MSG_ADVICE("TS_Procedure_Search: considering %~s", TS_Name_Get(ts, p));
+    /*MSG_ADVICE("TS_Procedure_Search: considering %~s", TS_Name_Get(ts, p));*/
     if (comparison != TS_TYPES_UNMATCH) {
       if (comparison == TS_TYPES_EXPAND) *expansion_type = p_td->target;
       *proc = p;

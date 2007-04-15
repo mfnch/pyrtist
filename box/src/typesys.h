@@ -67,6 +67,7 @@ typedef struct {
     struct {
       int kind;
       Type parent;
+      UInt sym_num;
     } proc;
   } data;
 } TSDesc;
@@ -107,8 +108,13 @@ Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind);
 
 /** Register the procedure p. After this function has been called
  * the procedure p will belong to the list of procedures of its parent.
+ * sym_num is the symbol associated with the procedure.
  */
-Task TS_Procedure_Register(TS *ts, Type p);
+Task TS_Procedure_Register(TS *ts, Type p, UInt sym_num);
+
+/** Obtain the symbol identification number of a registered procedure.
+ */
+void TS_Procedure_Sym_Num(TS *ts, UInt *sym_num, Type p);
 
 /** Search the given procedure in the list of registered procedures.
  * Return the procedure in *proc, or TS_TYPE_NONE if the procedure
