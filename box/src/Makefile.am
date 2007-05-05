@@ -43,7 +43,7 @@ noinst_HEADERS = defaults.h types.h mem.h str.h print.h \
 box_SOURCES = mem.c str.c print.c msgbase.c messages.c \
   list.c array.c collection.c \
   virtmach.c vmexec.c vmproc.c vmsym.c \
-  symbols.c tokenizer.l parser.y registers.c expr.c typeman.c \
+  symbols.c tokenizer.l parser.y registers.c expr.c \
   typesys.c compiler.c box.c \
   builtins.c main.c hashfunc.c hashtable.c vmsymstuff.c
 

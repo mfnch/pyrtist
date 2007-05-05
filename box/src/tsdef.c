@@ -113,7 +113,7 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
 /* Code for TS_Alias_New, TS_Link_New, etc. */
 {
   TSDesc td;
-  TSDesc *src_td = Clc_ItemPtr(ts->type_descs, TSDesc, src);
+  TSDesc *src_td = Type_Ptr(ts, src);
   TS_TSDESC_INIT(& td);
   td.kind = TS_X_NEW;
   td.target = src;
@@ -123,7 +123,7 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
 #  else
   td.size = src_td->size;
 #  endif
-  TASK( Clc_Occupy(ts->type_descs, & td, dst) );
+  TASK( Type_New(ts, dst, & td) );
   return Success;
 }
 
@@ -136,7 +136,7 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
   td.target = TS_TYPE_NONE;
   td.data.last = TS_TYPE_NONE;
   td.size = 0;
-  TASK( Clc_Occupy(ts->type_descs, & td, s) );
+  TASK( Type_New(ts, s, & td) );
   return Success;
 }
 
@@ -146,7 +146,7 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
   TSDesc td, *m_td, *s_td;
   Type new_m;
   Int m_size;
-  m_td = Clc_ItemPtr(ts->type_descs, TSDesc, m);
+  m_td = Type_Ptr(ts, m);
   m_size = m_td->size;
   TS_TSDESC_INIT(& td);
   td.kind = TS_KIND_MEMBER;
@@ -158,12 +158,12 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
   td.size = m_size;
 #  endif
   td.data.member_next = s;
-  TASK( Clc_Occupy(ts->type_descs, & td, & new_m) );
+  TASK( Type_New(ts, & new_m, & td) );
 
-  s_td = Clc_ItemPtr(ts->type_descs, TSDesc, s);
+  s_td = Type_Ptr(ts, s);
   assert(s_td->kind == TS_X_ADD);
   if (s_td->data.last != TS_TYPE_NONE) {
-    m_td = Clc_ItemPtr(ts->type_descs, TSDesc, s_td->data.last);
+    m_td = Type_Ptr(ts, s_td->data.last);
     assert(m_td->kind == TS_KIND_MEMBER);
     m_td->data.member_next = new_m;
   }
@@ -193,7 +193,7 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
       char *name = (char *) NULL;
       Type m = td->target;
       while (1) {
-        TSDesc *m_td = Clc_ItemPtr(ts->type_descs, TSDesc, m);
+        TSDesc *m_td = Type_Ptr(ts, m);
         char *m_name = TS_Name_Get(ts, m_td->target);
 #ifdef TS_NAME_GET_CASE_STRUCTURE
         if (m_td->name != (char *) NULL)

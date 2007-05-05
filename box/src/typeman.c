@@ -28,6 +28,7 @@
 
 /*#define DEBUG*/
 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -44,6 +45,7 @@
 #include "compiler.h"
 #include "box.h"
 
+#ifndef EMULATE_TYPEMAN
 /* #define DEBUG_COMPARE_TYPES */
 
 /******************************************************************************
@@ -1173,4 +1175,4 @@ Task Tym_Structure_Get(Intg *type) {
   }
 }
 
-
+#endif

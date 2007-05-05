@@ -177,6 +177,7 @@ typedef UInt SymbolAction(Symbol *s);
 
 
 /***********************/
+#ifndef EMULATE_TYPEMAN
 /* Enumero i tipi di tipo */
 typedef enum {
   TOT_INSTANCE,
@@ -224,6 +225,7 @@ typedef struct {
 /*    Symbol *sym;    Simbolo associato al tipo (NULL = non ce n'e'!)*/
   };
 } TypeDesc;
+#endif
 /***********************/
 
 
@@ -325,13 +327,15 @@ extern struct cmp_opr_struct cmp_opr;
 
 /* Variabili definite in 'typeman.c'*/
 extern int tym_must_expand;
+
+#include "box.h"
+
+#ifndef EMULATE_TYPEMAN
 extern Intg tym_recent_type;
 extern TypeDesc *tym_recent_typedesc;
 
 /* Important builtin types */
 extern Intg type_Point, type_RealNum, type_IntgNum, type_CharNum;
-
-#include "box.h"
 
 TypeDesc *Tym_Type_Get(Intg t);
 Intg Tym_Type_Size(Intg t);
@@ -368,6 +372,7 @@ Task Tym_Structure_Get(Intg *type);
   Tym_Def_Type(new_type, TYPE_NONE, nm, (Intg) -1, type)
 #define Tym_Def_Intrinsic(new_type, nm, size) \
   Tym_Def_Type(new_type, TYPE_NONE, nm, size, TYPE_NONE)
+#endif
 
 /* Procedure definite in 'symbol.c'*/
 UInt Sym__Hash(char *name, UInt leng);

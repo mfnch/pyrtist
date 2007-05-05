@@ -1908,12 +1908,7 @@ Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
 #endif
 
   } else {
-    TypeDesc *td;
-
-    td = Tym_Type_Get(p);
-    if ( td == NULL ) return Failed;
-    assert(td->tot == TOT_PROCEDURE || td->tot == TOT_PROCEDURE2);
-    *sym_num = td->sym_num;
+    *sym_num = Tym_Proc_Get_Sym_Num(p);
     *found = 1;
     return Success;
   }

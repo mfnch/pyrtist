@@ -34,6 +34,9 @@
  * It shouldn't be particularly hard to implement!
  */
 
+/* Transition code from typeman.c to typesys.c */
+#  define EMULATE_TYPEMAN
+
 /* Questo file contiene la definizione di alcune costanti che regolano
  * il funzionamento del programma.
  */

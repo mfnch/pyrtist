@@ -277,8 +277,6 @@ e ha tipo (Int , Real)
  */
 
 Task Cmp_Expr_Expand(Intg species, Expression *e) {
-  int first;
-  TypeDesc *td1, *td2;
   register Intg type1, type2;
 
   assert( e->is.typed && e->is.value );
@@ -286,129 +284,132 @@ Task Cmp_Expr_Expand(Intg species, Expression *e) {
   type1 = species;
   type2 = e->type;
 
-  first = 1;
-
 #ifdef DEBUG_SPECIES_EXPANSION
   printf("Espando: '%s' --> '%s'\n",
    Tym_Type_Names(e->type), Tym_Type_Names(species));
 #endif
 
-  for(;;) {
-    if ( type1 == type2 ) return Success;
-    type1 = Tym_Type_Resolve_Alias(type1);
-    type2 = Tym_Type_Resolve_All(type2);
-    if ( type1 == type2 ) return Success;
+  if ( type1 == type2 ) return Success;
+  type1 = Tym_Type_Resolve_Alias(type1);
+  type2 = Tym_Type_Resolve_All(type2);
+  if ( type1 == type2 ) return Success;
 
-    td1 = Tym_Type_Get(type1);
-    td2 = Tym_Type_Get(type2);
-    if ( (td1 == NULL) || (td2 == NULL) ) {
-      MSG_ERROR("Tipi errati in Cmp_Expr_Expand!");
-      return Failed;
-    }
+  switch(Tym_Type_TOT(type1)) {
+    case TOT_INSTANCE: /* type1 != type2 !!! */
+    MSG_ERROR("Tipo non ammesso per la conversione della specie.");
+    return Failed;
 
-    switch( td1->tot ) {
-     case TOT_INSTANCE: /* type1 != type2 !!! */
-      MSG_ERROR("Tipo non ammesso per la conversione della specie.");
-      return Failed;
+    case TOT_PTR_TO:
+    MSG_ERROR("Non ancora implementato!"); return Failed;
+    /*if (td2->tot == TOT_PTR_TO) break;
+    return 0;*/
 
-     case TOT_PTR_TO:
-      MSG_ERROR("Non ancora implementato!"); return Failed;
-      /*if (td2->tot == TOT_PTR_TO) break;
-      return 0;*/
-
-     case TOT_ARRAY_OF:
-      MSG_ERROR("Non ancora implementato!"); return Failed;
-      /*if (td2->tot != TOT_ARRAY_OF) return 0;
-      {
-        register Intg td1s = td1->arr_size, td2s = td2->arr_size;
-        if (td1s == td2s) break;
-        if ((td1s < 1) && first) break;
-        return 0;
-      }*/
-
-     case TOT_SPECIE: {
-        register Intg t = td1->target, great_type = td1->greater;
-        do {
-          td1 = Tym_Type_Get(t);
-          if ( td1 == NULL ) {
-            MSG_ERROR("Array dei tipi danneggiata!");
-            return Failed;
-          }
-          if ( Tym_Compare_Types(t, type2, NULL) ) {
-            TASK( Cmp_Expr_Expand(t, e) );
-            return Cmp_Conversion(e->type, great_type, e);
-          }
-          t = td1->greater;
-        } while( td1->greater != TYPE_NONE );
-      }
-      MSG_ERROR("Impossibile espandere la specie!");
-      return Failed;
-
-     case TOT_PROCEDURE:
-      MSG_ERROR("Non ancora implementato!"); return Failed;
-      /*if (td2->tot != TOT_PROCEDURE) return 0;
-      return (
-           Tym_Compare_Types(td1->parent, td2->parent)
-        && Tym_Compare_Types(td1->target, td2->target) );*/
-
-     case TOT_STRUCTURE: {
-       int need_expansion = 0;
-
-      /* Prima di eseguire la conversione verifico che si possa
-       * effettivamente fare!
-       */
-      if ( ! Tym_Compare_Types(type1, type2, & need_expansion) ) {
-        MSG_ERROR("Cmp_Expr_Expand: "
-         "Espansione fra tipi non compatibili!");
-        return Failed;
-      }
-
-      /* Ora dobbiamo espandere la struttura, ma solo se necessario! */
-      if ( ! need_expansion ) return Success;
-
-      /* E' necessario: bisogna creare una nuova struttura per contenere
-       * il risultato dell'espansione
-       */
-      {
-        int n1, n2;
-        Expression new_struc, member1, member2, member2_copy;
-        TASK( Cmp_Expr_Create(& new_struc, type1, 1) );
-        member1 = new_struc;
-        member2 = *e;
-
-        TASK(Cmp_Structure_Get(& member1, & n1));
-        TASK(Cmp_Structure_Get(& member2, & n2));
-        while (n1 > 0) {
-          member2_copy = member2;
-#ifdef DEBUG_STRUCT_EXPANSION
-          printf("Espando il membro: '%s' --> '%s'\n",
-           Tym_Type_Names(member2.type), Tym_Type_Names(member1.type));
-#endif
-          TASK( Cmp_Expr_Expand(member1.type, & member2_copy) );
-#ifdef DEBUG_STRUCT_EXPANSION
-          printf("Dopo l'espansione: type='%s', resolved='%s'\n",
-           Tym_Type_Names(member2_copy.type), Tym_Type_Names(member2_copy.resolved));
-#endif
-          TASK( Cmp_Expr_Move(& member1, & member2_copy) );
-
-          TASK( Cmp_Structure_Get(& member1, & n1) );
-          TASK( Cmp_Structure_Get(& member2, & n2) );
-        };
-
-        TASK( Cmp_Expr_Destroy_Tmp(e) );
-        *e = new_struc;
-      }
-      return Success;
-      }
-
-     default:
-      MSG_ERROR("Cmp_Expr_Expand non implementata fino in fondo!");
+    case TOT_ARRAY_OF:
+    MSG_ERROR("Non ancora implementato!"); return Failed;
+    /*if (td2->tot != TOT_ARRAY_OF) return 0;
+    {
+      register Intg td1s = td1->arr_size, td2s = td2->arr_size;
+      if (td1s == td2s) break;
+      if ((td1s < 1) && first) break;
       return 0;
+    }*/
+
+    case TOT_SPECIE: {
+      Int member_type = type1;
+      Int target_type = Tym_Struct_Get_Target(type1);
+      TASK(Tym_Specie_Get(& member_type));
+      while (member_type != TYPE_NONE) {
+        if ( Tym_Compare_Types(member_type, type2, NULL) ) {
+          TASK( Cmp_Expr_Expand(member_type, e) );
+          return Cmp_Conversion(e->type, target_type, e);
+        }
+        TASK( Tym_Specie_Get(& member_type) );
+      };
+      MSG_ERROR("Cannot expand the species!");
+      return Failed;
     }
 
-    first = 0;
-    type1 = td1->target;
-    type2 = td2->target;
+
+#if 0
+    {
+      register Intg t = td1->target, great_type = td1->greater;
+      do {
+        td1 = Tym_Type_Get(t);
+        if ( td1 == NULL ) {
+          MSG_ERROR("Array dei tipi danneggiata!");
+          return Failed;
+        }
+        if ( Tym_Compare_Types(t, type2, NULL) ) {
+          TASK( Cmp_Expr_Expand(t, e) );
+          return Cmp_Conversion(e->type, great_type, e);
+        }
+        t = td1->greater;
+      } while( td1->greater != TYPE_NONE );
+    }
+    MSG_ERROR("Impossibile espandere la specie!");
+    return Failed;
+#endif
+
+    case TOT_PROCEDURE:
+    MSG_ERROR("Non ancora implementato!"); return Failed;
+    /*if (td2->tot != TOT_PROCEDURE) return 0;
+    return (
+          Tym_Compare_Types(td1->parent, td2->parent)
+      && Tym_Compare_Types(td1->target, td2->target) );*/
+
+    case TOT_STRUCTURE: {
+      int need_expansion = 0;
+
+    /* Prima di eseguire la conversione verifico che si possa
+      * effettivamente fare!
+      */
+    if ( ! Tym_Compare_Types(type1, type2, & need_expansion) ) {
+      MSG_ERROR("Cmp_Expr_Expand: "
+        "Espansione fra tipi non compatibili!");
+      return Failed;
+    }
+
+    /* Ora dobbiamo espandere la struttura, ma solo se necessario! */
+    if ( ! need_expansion ) return Success;
+
+    /* E' necessario: bisogna creare una nuova struttura per contenere
+      * il risultato dell'espansione
+      */
+    {
+      int n1, n2;
+      Expression new_struc, member1, member2, member2_copy;
+      TASK( Cmp_Expr_Create(& new_struc, type1, 1) );
+      member1 = new_struc;
+      member2 = *e;
+
+      TASK(Cmp_Structure_Get(& member1, & n1));
+      TASK(Cmp_Structure_Get(& member2, & n2));
+      while (n1 > 0) {
+        member2_copy = member2;
+#ifdef DEBUG_STRUCT_EXPANSION
+        printf("Espando il membro: '%s' --> '%s'\n",
+         Tym_Type_Names(member2.type), Tym_Type_Names(member1.type));
+#endif
+        TASK( Cmp_Expr_Expand(member1.type, & member2_copy) );
+#ifdef DEBUG_STRUCT_EXPANSION
+        printf("Dopo l'espansione: type='%s', resolved='%s'\n",
+         Tym_Type_Names(member2_copy.type), Tym_Type_Names(member2_copy.resolved));
+#endif
+        TASK( Cmp_Expr_Move(& member1, & member2_copy) );
+
+        TASK( Cmp_Structure_Get(& member1, & n1) );
+        TASK( Cmp_Structure_Get(& member2, & n2) );
+      };
+
+      TASK( Cmp_Expr_Destroy_Tmp(e) );
+      *e = new_struc;
+    }
+    return Success;
+    }
+
+    default:
+    MSG_ERROR("Cmp_Expr_Expand non implementata fino in fondo!");
+    return 0;
   }
 
   return Failed;
@@ -434,15 +435,14 @@ Task Cmp_Expr_Expand(Intg species, Expression *e) {
 Task Cmp_Structure_Get(Expression *member, int *n) {
   Intg member_type = member->type;
   TASK( Tym_Structure_Get(& member_type) );
-  /* Now tym_recent_typedesc is the descriptor of member->resolved */
 
-  if ( tym_recent_typedesc->tot == TOT_STRUCTURE ) {
+  if ( Tym_Type_TOT(member->type) == TOT_STRUCTURE ) {
     Expression first;
 
     /* (sotto) Manca parte dell'implementazione! */
     assert( (member->categ == CAT_LREG) || (member->categ == CAT_GREG) );
 
-    if ( (*n = tym_recent_typedesc->st_size) == 0 ) return Success;
+    if ( (*n = Tym_Struct_Get_Num_Items(member->type)) == 0 ) return Success;
     assert( *n > 0 );
 
     first.categ = CAT_PTR;
@@ -468,8 +468,8 @@ Task Cmp_Structure_Get(Expression *member, int *n) {
       return Failed;
     }
     if ( n == 0 ) return Success;
+    member->value.i += Tym_Type_Size(member->type);
     member->type = member_type;
-    member->value.i += tym_recent_typedesc->size;
     member->resolved = Tym_Type_Resolve_All(member_type);
   }
   return Success;
