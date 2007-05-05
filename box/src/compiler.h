@@ -163,82 +163,6 @@ typedef struct symbol Symbol;
  */
 typedef UInt SymbolAction(Symbol *s);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-/***********************/
-#ifndef EMULATE_TYPEMAN
-/* Enumero i tipi di tipo */
-typedef enum {
-  TOT_INSTANCE,
-  TOT_PTR_TO,
-  TOT_ARRAY_OF,
-  TOT_SPECIE,
-  TOT_PROCEDURE,
-  TOT_PROCEDURE2,
-  TOT_ALIAS_OF,
-  TOT_STRUCTURE
-} TypeOfType;
-
-/* Stringhe corrispondenti ai tipi di tipi */
-#define TOT_DESCRIPTIONS { \
- "instance of ", "pointer to", "array of ", "set of types", "procedure " }
-
-/* Enumeration of special procedures */
-enum {
-  PROC_COPY    = -1,
-  PROC_DESTROY = -2,
-  PROC_SPECIAL_NUM = 3
-};
-
-extern char *tym_special_name[PROC_SPECIAL_NUM];
-
-/* Struttura usata per descrivere i tipi di dati */
-/* This structure has changed too many times. Now it is very ugly and dirty,
- * it should be completely rewritten, but this needs some work, since many
- * functions make assumptions about it.
- */
-typedef struct {
-  TypeOfType tot;
-  Intg size;       /* Spazio occupato in memoria dal tipo */
-  char *name;      /* Nome del tipo */
-
-  Intg parent;     /* Specie a cui appartiene il tipo */
-  Intg greater;    /* Tipo in cui puo' essere convertito */
-  Intg target;     /* Per costruire puntatori a target, array di target, etc */
-  Intg procedure;  /* Prima procedura corrispondente al tipo */
-  union{
-    Intg sym_num;  /* Symbol ID for the procedure */
-    Intg arr_size; /* Numero di elementi dell'array */
-    Intg st_size;  /* Numero di elementi della struttura */
-    Intg sp_size;  /* Numero di elementi della specie */
-/*    Symbol *sym;    Simbolo associato al tipo (NULL = non ce n'e'!)*/
-  };
-} TypeDesc;
-#endif
-/***********************/
-
-
-
-
-
-
-
-
-
-
-
-
 /* Tipo legato all'uso di Cmp_Operation_Find */
 typedef struct {
   unsigned int commute :1;
@@ -329,50 +253,6 @@ extern struct cmp_opr_struct cmp_opr;
 extern int tym_must_expand;
 
 #include "box.h"
-
-#ifndef EMULATE_TYPEMAN
-extern Intg tym_recent_type;
-extern TypeDesc *tym_recent_typedesc;
-
-/* Important builtin types */
-extern Intg type_Point, type_RealNum, type_IntgNum, type_CharNum;
-
-TypeDesc *Tym_Type_Get(Intg t);
-Intg Tym_Type_Size(Intg t);
-const char *Tym_Type_Name(Intg t);
-char *Tym_Type_Names(Intg t);
-Task Tym_Def_Type(Intg *new_type,
- Intg parent, Name *nm, Intg size, Intg aliased_type);
-Symbol *Tym_Symbol_Of_Type(Intg type);
-/*Task Tym_Def_Member(Intg parent, Name *nm, Intg type);*/
-Task Tym_Undef_Type(Intg type);
-void Tym_Print_Structure(FILE *stream, Intg type);
-Intg Tym_Def_Array_Of(Intg num, Intg type);
-Intg Tym_Def_Pointer_To(Intg type);
-Intg Tym_Def_Alias_Of(Name *nm, Intg type);
-int Tym_Compare_Types(Intg type1, Intg type2, int *need_expansion);
-Intg Tym_Type_Resolve(Intg type, int not_alias, int not_species);
-#define Tym_Type_Resolve_Alias(type) Tym_Type_Resolve(type, 0, 1)
-#define Tym_Type_Resolve_Species(type) Tym_Type_Resolve(type, 1, 0)
-#define Tym_Type_Resolve_All(type) Tym_Type_Resolve(type, 0, 0)
-Task Tym_Delete_Type(Intg type);
-Intg Tym_Def_Procedure(Intg proc, int second, Intg of_type, Intg sym_num);
-Task Tym_Procedure_Info(Int proc_type, Int *child, Int *parent,
-                        int *second, UInt *sym_num);
-Intg Tym_Search_Procedure(Intg proc, int second, Intg of_type,
-                          Intg *containing_species);
-void Tym_Print_Procedure(FILE *stream, Intg of_type);
-Task Tym_Def_Specie(Intg *specie, Intg type);
-Task Tym_Def_Structure(Intg *strc, Intg type);
-Task Tym_Structure_Get(Intg *type);
-
-/*#define Tym_Def_Explicit(new_type, nm) \
-  Tym_Def_Type(new_type, TYPE_NONE, nm, (Intg) 0, TYPE_NONE)*/
-#define Tym_Def_Explicit_Alias(new_type, nm, type) \
-  Tym_Def_Type(new_type, TYPE_NONE, nm, (Intg) -1, type)
-#define Tym_Def_Intrinsic(new_type, nm, size) \
-  Tym_Def_Type(new_type, TYPE_NONE, nm, size, TYPE_NONE)
-#endif
 
 /* Procedure definite in 'symbol.c'*/
 UInt Sym__Hash(char *name, UInt leng);

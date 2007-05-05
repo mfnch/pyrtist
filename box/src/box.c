@@ -117,8 +117,7 @@ Task Box_Def_End(void) {
   TASK(Box_Def_Prepare(b->head_sym_num));
   proc_type = b->type;
   proc_num = b->proc_num;
-  TASK(Tym_Procedure_Info(proc_type, (Int *) NULL, (Int *) NULL,
-   (int *) NULL, & sym_num));
+  Tym_Procedure_Sym_Num(& sym_num, proc_type);
   /* We finally install the code for the procedure */
   TASK( VM_Proc_Install_Code(cmp_vm, & call_num, proc_num,
    "(noname)", Tym_Type_Name(proc_type)) );

@@ -96,9 +96,9 @@ Task TS_Init(TS *ts);
 void TS_Destroy(TS *ts);
 
 Int TS_Size(TS *ts, Type t);
+#define TS_Size_Get TS_Size
 
 TSKind TS_What_Is(TS *ts, Type t);
-
 #define TS_Is_Member(ts, t) (TS_What_Is((ts), (t)) == TS_KIND_MEMBER)
 
 Int TS_Align(TS *ts, Int address);
@@ -170,6 +170,9 @@ void TS_Member_Get(TS *ts, Type *t, Int *address, Type m);
  */
 Type TS_Member_Next(TS *ts, Type m);
 
+/** Counts the member of a structure/species/enum (using TS_Member_Next) */
+Int TS_Member_Count(TS *ts, Type s);
+
 /** This function tells if a type t2 is contained into a type t1.
  * The return value is the following:
  * - TS_TYPES_EQUAL: the two types are equal;
@@ -180,7 +183,7 @@ Type TS_Member_Next(TS *ts, Type m);
  */
 TSCmp TS_Compare(TS *ts, Type t1, Type t2);
 
-#  ifdef EMULATE_TYPEMAN
+#  if 1
 /* Enumero i tipi di tipo */
 typedef enum {
   TOT_INSTANCE,
@@ -256,7 +259,7 @@ Task Tym_Def_Specie(Intg *specie, Intg type);
 Task Tym_Def_Structure(Intg *strc, Intg type);
 Task Tym_Structure_Get(Intg *type);
 Task Tym_Specie_Get(Intg *type);
-Int Tym_Struct_Get_Target(Int type);
+Int Tym_Specie_Get_Target(Int type);
 
 /*#define Tym_Def_Explicit(new_type, nm) \
   Tym_Def_Type(new_type, TYPE_NONE, nm, (Intg) 0, TYPE_NONE)*/

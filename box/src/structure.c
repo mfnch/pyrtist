@@ -316,7 +316,7 @@ Task Cmp_Expr_Expand(Intg species, Expression *e) {
 
     case TOT_SPECIE: {
       Int member_type = type1;
-      Int target_type = Tym_Struct_Get_Target(type1);
+      Int target_type = Tym_Specie_Get_Target(type1);
       TASK(Tym_Specie_Get(& member_type));
       while (member_type != TYPE_NONE) {
         if ( Tym_Compare_Types(member_type, type2, NULL) ) {

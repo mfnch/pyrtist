@@ -32,6 +32,8 @@
 #include "collection.h"
 #include "hashtable.h"
 
+static TS *last_ts; /* Just for transition: will be removed! */
+
 static void try_it(TS *ts) {
   Type ti, tr, tp, t1, t2, t3, t4, t5, t6, t7, t8;
   (void) TS_Intrinsic_New(ts, & ti, sizeof(Int));
@@ -121,7 +123,8 @@ Task TS_Init(TS *ts) {
   TASK( Clc_New(& ts->type_descs, sizeof(TSDesc), TS_TSDESC_CLC_SIZE) );
   HT(& ts->members, TS_MEMB_HT_SIZE);
   TASK( Arr_New(& ts->name_buffer, sizeof(char), TS_NAME_BUFFER_SIZE) );
-  try_it(ts);
+  last_ts = ts; /* Just for transition: will be removed! */
+  /*try_it(ts);*/
   return Success;
 }
 
@@ -277,6 +280,25 @@ void TS_Member_Get(TS *ts, Type *t, Int *address, Type m) {
 Type TS_Member_Next(TS *ts, Type m) {
   TSDesc *td = Type_Ptr(ts, m);
   return td->kind == TS_KIND_MEMBER ? td->data.member_next : td->target;
+}
+
+Int TS_Member_Count(TS *ts, Type s) {
+  Int count = 0;
+  TSDesc *td = Type_Ptr(ts, s);
+  switch(td->kind) {
+  case TS_KIND_SPECIES:
+  case TS_KIND_STRUCTURE:
+  case TS_KIND_ENUM:
+    while(1) {
+      Int next = TS_Member_Next(ts, s);
+      if (! TS_Is_Member(ts, next)) break;
+      ++count;
+    };
+  default:
+    MSG_FATAL("Trying to count members of a the non-membered type %~s",
+     TS_Name_Get(ts, s));
+  }
+  return count;
 }
 
 /****************************************************************************
@@ -502,7 +524,180 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
  * This code reimplement typeman.c as a wrapper around typesys.c
  */
 
+void Tym_Procedure_Sym_Num(UInt *sym_num, Type p) {
+  TS_Procedure_Sym_Num(last_ts, sym_num, p);
+}
+
 #ifdef EMULATE_TYPEMAN
+
+#include <stdlib.h>
+
+#include "compiler.h"
+
+Int Tym_Type_Size(Int t) {return (Int) TS_Size(last_ts, (Type) t);}
+
+TypeOfType Tym_Type_TOT(Int t) {
+  switch(TS_What_Is(last_ts, (Type) t)) {
+  case TS_KIND_INTRINSIC: return TOT_INSTANCE;
+  case TS_KIND_LINK: return TOT_ALIAS_OF;
+  case TS_KIND_ALIAS: return TOT_ALIAS_OF;
+  case TS_KIND_SPECIES: return TOT_SPECIE;
+  case TS_KIND_STRUCTURE: return TOT_STRUCTURE;
+  case TS_KIND_MEMBER: return TOT_ALIAS_OF;
+  case TS_KIND_ARRAY: return TOT_ARRAY_OF;
+  case TS_KIND_PROC:
+    return TOT_PROCEDURE;
+    return TOT_PROCEDURE2;
+  case TS_KIND_POINTER: return TOT_PTR_TO;
+  case TS_KIND_ENUM:
+    assert(0);
+    return 0;
+  }
+}
+
+const char *Tym_Type_Name(Int t) {
+  static char *last_name = (char *) NULL;
+  if (last_name != (char *) NULL) {
+    free(last_name);
+    last_name = (char *) NULL;
+  }
+  last_name = TS_Name_Get(last_ts, (Type) t);
+  return last_name;
+}
+
+char *Tym_Type_Names(Int t) {
+  static int tym_num_name = -1;
+  static char *tym_name[TYM_NUM_TYPE_NAMES];
+
+  register char *str;
+  if ( tym_num_name < 0 ) {
+    int i;
+    for(i = 0; i < TYM_NUM_TYPE_NAMES; i++) tym_name[i] = (char *) NULL;
+    tym_num_name = 0;
+  }
+  free(tym_name[tym_num_name]);
+  str = strdup(Tym_Type_Name(t));
+  tym_name[tym_num_name] = str;
+  tym_num_name = (tym_num_name + 1) % TYM_NUM_TYPE_NAMES;
+  return str;
+}
+
+Task Tym_Def_Type(Int *new_type,
+ Int parent, Name *nm, Int size, Int aliased_type) {
+  Symbol *s;
+  Type type;
+
+  /* First of all I create the symbol with name *nm */
+  assert(parent == TYPE_NONE);
+  TASK( Sym_Explicit_New(& s, nm, 0) );
+  s->symattr.is_explicit = 1;
+
+  /* Now I create a new type for the box */
+  if ( size < 0 ) {
+    TASK( TS_Alias_New(last_ts, & type, aliased_type) );
+
+  } else {
+    TASK(TS_Intrinsic_New(last_ts, & type, size));
+  }
+
+  /* I set all the remaining values of the structure s */
+  s->symtype = VARIABLE;
+  *new_type = type;
+  Expr_New_Type(& s->value, type);
+  return Success;
+}
+
+Int Tym_Def_Array_Of(Int num, Int type) {
+  Type array;
+  assert(TS_Array_New(last_ts, & array, type, num) == Success);
+  return array;
+}
+
+Int Tym_Def_Alias_Of(Name *nm, Int type) {
+  Type alias;
+  assert(TS_Alias_New(last_ts, & alias, type) == Success);
+  return alias;
+}
+
+int Tym_Compare_Types(Intg type1, Intg type2, int *need_expansion) {
+  switch(TS_Compare(last_ts, type1, type2)) {
+  case TS_TYPES_MATCH:
+  case TS_TYPES_EXPAND:
+    *need_expansion = 1;
+    return 1;
+  case TS_TYPES_EQUAL:
+    *need_expansion = 0;
+    return 1;
+  default:
+  case TS_TYPES_UNMATCH:
+    *need_expansion = 0;
+    return 0;
+  }
+}
+
+Int Tym_Type_Resolve(Int type, int not_alias, int not_species) {
+  MSG_WARNING("Tym_Type_Resolve: not implemented!");
+  return type;
+}
+
+Int Tym_Def_Procedure(Int proc, int second, Int of_type, Int sym_num) {
+  Type procedure;
+  int kind = second ? 2 : 1;
+  assert(TS_Procedure_New(last_ts, & procedure, of_type, proc, kind)==Success);
+  assert(TS_Procedure_Register(last_ts, procedure, sym_num)==Success);
+  return procedure;
+}
+
+Int Tym_Search_Procedure(Int proc, int second, Int of_type,
+                         Int *exp) {
+
+  Type found;
+  int kind = second ? 2 : 1;
+  assert(TS_Procedure_Search(last_ts, & found, exp, of_type, proc, kind)
+         ==Success);
+  return found;
+}
+
+Task Tym_Def_Specie(Int *specie, Int type) {
+  if (*specie == TYPE_NONE) {
+    TASK( TS_Species_Begin(last_ts, specie) );
+  }
+  return TS_Species_Add(last_ts, *specie, type);
+}
+
+Task Tym_Def_Structure(Int *strc, Intg type) {
+  if (*strc == TYPE_NONE) {
+    TASK( TS_Structure_Begin(last_ts, strc) );
+  }
+  return TS_Structure_Add(last_ts, *strc, type, NULL);
+}
+
+Task Tym_Specie_Get(Int *type) {
+  *type = TS_Member_Next(last_ts, *type);
+  return Success;
+}
+
+Task Tym_Structure_Get(Int *type) {
+  *type = TS_Member_Next(last_ts, *type);
+  return Success;
+}
+
+Int Tym_Specie_Get_Target(Int type) {
+  TSDesc *s_td = Type_Ptr(last_ts, type);
+  return s_td->data.last;
+}
+
+UInt Tym_Proc_Get_Sym_Num(Int t) {
+  UInt sym_num;
+  TS_Procedure_Sym_Num(last_ts, & sym_num, t);
+  return sym_num;
+}
+
+Int Tym_Struct_Get_Num_Items(Int t) {
+  return TS_Member_Count(last_ts, t);
+}
+
+#else
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -873,6 +1068,7 @@ Intg Tym_Def_Array_Of(Intg num, Intg type) {
   return tym_recent_type;
 }
 
+#if 0
 /* DESCRIPTION: This function creates a new type of data using the type "type".
  *  The new data type is "pointer to object of kind type".
  * NOTE: The new type will be returned or TYPE_NONE in case of errors.
@@ -904,6 +1100,7 @@ Intg Tym_Def_Pointer_To(Intg type) {
   td->target = type;
   return tym_recent_type;
 }
+#endif
 
 /* DESCRIPTION: This function creates a new type of data using the type "type".
  *  The new data type is "alias of type".
@@ -1427,7 +1624,7 @@ Task Tym_Specie_Get(Intg *type) {
 }
 
 /* Similar to Tym_Structure_Get, but for species. */
-Int Tym_Struct_Get_Target(Int type) {
+Int Tym_Specie_Get_Target(Int type) {
   TypeDesc *td;
   assert(type != TYPE_NONE);
   td = Tym_Type_Get(type);
