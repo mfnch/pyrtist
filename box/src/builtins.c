@@ -25,7 +25,6 @@ Intg
   type_Point, type_RealNum, type_IntgNum, type_CharNum, type_String,
   type_File;
 
-static Task Tmp(void);
 static Task Blt_Define_Basics(void);
 static Task Blt_Define_Math(void);
 static Task Blt_Define_Print(void);
@@ -39,7 +38,6 @@ static Task Print_Pnt(VMProgram *vmp);
 static Task Print_String(VMProgram *vmp);
 static Task Print_NewLine(VMProgram *vmp);
 static Task Exit_Int(VMProgram *vmp);
-static Task Exit_Success(VMProgram *vmp);
 static Task C_File_Open(VMProgram *vmp);
 static Task C_File_String(VMProgram *vmp);
 static Task C_File_Close(VMProgram *vmp);
@@ -86,7 +84,6 @@ static Task Floor_RealNum(VMProgram *vmp);
 /* Defines some types and some basic boxes.
  */
 Task Blt_Define_All(void) {
-  TASK( Tmp() );
   TASK( Blt_Define_Basics() );
   TASK( Blt_Define_Math() );
   TASK( Blt_Define_Print() );
@@ -389,21 +386,6 @@ Task Builtins_Define() {
   return Success;
 }
 
-static Task Tmp(void) {
-  Intg type_New, type_New2;
-
-  TASK( Tym_Def_Explicit(& type_New, & NAME("Punto2d")) );
-  TASK( Tym_Def_Member(type_New, & NAME("comp_x"), TYPE_REAL) );
-  TASK( Tym_Def_Member(type_New, & NAME("comp_y"), TYPE_REAL) );
-  TASK( Tym_Def_Explicit(& type_New2, & NAME("Punto3d")) );
-  TASK( Tym_Def_Member(type_New2, & NAME("xy"), type_New) );
-  TASK( Tym_Def_Member(type_New2, & NAME("z"), TYPE_REAL) );
-
-  /*Tym_Print_Structure(stdout, type_new);
-  Tym_Print_Structure(stdout, type_new2);*/
-  return Success;
-}
-
 static Task Blt_Define_Basics(void) {
   Intg type_2RealNum;
 
@@ -515,13 +497,9 @@ typedef struct {
 } File;
 
 static Task Blt_Define_Sys(void) {
-  Intg type_Exit, type_Exit_Success;
+  Intg type_Exit;
   TASK( Tym_Def_Explicit_Alias(& type_Exit, & NAME("Exit"), TYPE_VOID) );
   TASK( Cmp_Builtin_Proc_Def(TYPE_INTG, BOX_CREATION, type_Exit, Exit_Int) );
-
-  TASK( Tym_Def_Type(& type_Exit_Success,
-   type_Exit, & NAME("Success"), (Intg) -1, TYPE_VOID) );
-  TASK(Cmp_Builtin_Proc_Def(TYPE_OPEN, BOX_CREATION, type_Exit_Success, Exit_Success));
 
   TASK( Tym_Def_Intrinsic(& type_File, & NAME("File"), sizeof(File)) );
 
@@ -565,10 +543,6 @@ static Task Print_NewLine(VMProgram *vmp) {
 /* This function is not politically correct!!! */
 static Task Exit_Int(VMProgram *vmp) {
   exit(BOX_VM_ARG1(vmp, Intg));
-}
-static Task Exit_Success(VMProgram *vmp) {
-  printf("Exit_Success\n");
-  exit(EXIT_SUCCESS);
 }
 
 static Task C_File_Open(VMProgram *vmp) {

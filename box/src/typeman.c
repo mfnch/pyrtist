@@ -326,14 +326,9 @@ Task Tym_Def_Type(Intg *new_type,
   MSG_LOCATION("Tym_Def_Type");
 
   /* First of all I create the symbol with name *nm */
-  if ( parent == TYPE_NONE ) {
-    TASK( Sym_Explicit_New(& s, nm, 0) );
-    s->symattr.is_explicit = 1;
-
-  } else {
-    TASK( Sym_Implicit_New(& s, parent, nm) );
-    s->symattr.is_explicit = 0;
-  }
+  assert( parent == TYPE_NONE );
+  TASK( Sym_Explicit_New(& s, nm, 0) );
+  s->symattr.is_explicit = 1;
 
   /* Now I create a new type for the box */
   if ( size < 0 ) {
@@ -367,6 +362,7 @@ Symbol *Tym_Symbol_Of_Type(Intg type) {
   return td->sym;
 }
 
+#if 0
 /* DESCRIPTION: This function creates a new member for the abstract box
  *  associated with the type parent.
  */
@@ -393,6 +389,7 @@ Task Tym_Def_Member(Intg parent, Name *nm, Intg type) {
   ptd->size = Cmp_Align(ptd->size + td->size);
   return Success;
 }
+#endif
 
 /* DESCRIPTION: Deletes the type 'type' and all its corresponding box.
  */

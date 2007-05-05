@@ -484,10 +484,13 @@ static Expression *Cmp__Member_Of_Instance(Expression *e, Name *nm) {
   if ( sym_struct == NULL ) return Failed;*/
 
   /* Cerco *nm fra i membri del tipo t */
-  if IS_FAILED( Sym_Implicit_Find(& s, t, nm) ) {
+  MSG_ERROR("Major change is happening: feature has been disabled!");
+  return Failed;
+
+  /*if IS_FAILED( Sym_Implicit_Find(& s, t, nm) ) {
     MSG_ERROR( "'%N' is not a member of type '%s'!", nm, Tym_Type_Name(t) );
     return NULL;
-  }
+  }*/
 
   switch ( e->categ ) {
    case CAT_GREG:

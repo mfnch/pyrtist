@@ -221,14 +221,17 @@ static UInt Imp_Check_Name_Conflicts(Symbol *s) {
 /* DESCRIPTION: This function search a member of parent with name nm.
  * NOTE: Returns NULL if it doesn't find any member with name nm.
  */
-Task Sym_Implicit_Find(Symbol **s, Intg parent, Name *nm) {
+/*Task Sym_Implicit_Find(Symbol **s, Intg parent, Name *nm) {
+  MSG_ERROR("Major change is happening: feature has been disabled!");
+  return Failed;
   sym_cur_parent = parent;
   *s = Sym_Symbol_Find(nm, Imp_Check_Name_Conflicts);
   return (*s == NULL) ? Failed : Success;
-}
+}*/
 
 /* Defines a new implicit symbol, member of the type 'parent'.
  */
+ #if 0
 Task Sym_Implicit_New(Symbol **new_sym, Intg parent, Name *nm) {
   Symbol *s, *ps;
 
@@ -264,6 +267,7 @@ Task Sym_Implicit_New(Symbol **new_sym, Intg parent, Name *nm) {
   *new_sym = s;
   return Success;
 }
+#endif
 
 /******************************************************************************
  *           FUNZIONI DI GESTIONE SIMBOLI (IMPLICITI ED ESPLICITI)            *

@@ -645,6 +645,9 @@ Task Prs_Name_To_Expr(Name *nm, Expr *e, Intg suffix) {
  * it transforms the name *nm into an untyped expression *e.
  */
 Task Prs_Member_To_Expr(Name *nm, Expression *e, Intg suffix) {
+  MSG_ERROR("Major change is happening: feature has been disabled!");
+  return Failed;
+/*
   Symbol *s;
   Box *b;
 
@@ -656,11 +659,11 @@ Task Prs_Member_To_Expr(Name *nm, Expression *e, Intg suffix) {
     return Failed;
   }
 
-  /* Il nome corrisponde ad un simbolo gia' definito:
+  * Il nome corrisponde ad un simbolo gia' definito:
   * restituisco l'espressione (typed) corrispondente!
-  */
+  *
   *e = s->value;
-  return Success;
+  return Success;*/
 }
 
 /* DESCRIPTION: Every explicit symbol can be followed by a suffix,

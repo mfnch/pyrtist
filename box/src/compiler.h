@@ -317,7 +317,7 @@ char *Tym_Type_Names(Intg t);
 Task Tym_Def_Type(Intg *new_type,
  Intg parent, Name *nm, Intg size, Intg aliased_type);
 Symbol *Tym_Symbol_Of_Type(Intg type);
-Task Tym_Def_Member(Intg parent, Name *nm, Intg type);
+/*Task Tym_Def_Member(Intg parent, Name *nm, Intg type);*/
 Task Tym_Undef_Type(Intg type);
 void Tym_Print_Structure(FILE *stream, Intg type);
 Intg Tym_Def_Array_Of(Intg num, Intg type);
