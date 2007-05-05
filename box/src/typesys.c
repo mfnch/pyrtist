@@ -412,7 +412,6 @@ void TS_Procedure_Sym_Num(TS *ts, UInt *sym_num, Type p) {
   TSDesc *proc_td;
   proc_td = Type_Ptr(ts, p);
   assert(proc_td->kind == TS_KIND_PROC);
-  assert(proc_td->first_proc != TS_TYPE_NONE); /* Must be registered */
   *sym_num = proc_td->data.proc.sym_num;
 }
 
@@ -549,6 +548,7 @@ void Tym_Procedure_Sym_Num(UInt *sym_num, Type p) {
 #include <stdlib.h>
 
 #include "compiler.h"
+#include "str.h"
 
 Int Tym_Type_Size(Int t) {return (Int) TS_Size(last_ts, (Type) t);}
 
@@ -602,6 +602,7 @@ Task Tym_Def_Type(Int *new_type,
  Int parent, Name *nm, Int size, Int aliased_type) {
   Symbol *s;
   Type type;
+  char *name;
 
   /* First of all I create the symbol with name *nm */
   assert(parent == TYPE_NONE);
@@ -615,6 +616,9 @@ Task Tym_Def_Type(Int *new_type,
   } else {
     TASK(TS_Intrinsic_New(last_ts, & type, size));
   }
+  name = Name_To_Str(nm);
+  (void) TS_Name_Set(last_ts, type, name);
+  free(name);
 
   /* I set all the remaining values of the structure s */
   s->symtype = VARIABLE;
