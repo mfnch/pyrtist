@@ -98,6 +98,9 @@ void TS_Destroy(TS *ts);
 Int TS_Size(TS *ts, Type t);
 #define TS_Size_Get TS_Size
 
+/** Resolve types (useful for comparisons) */
+Type TS_Resolve(TS *ts, Type t, int resolve_alias, int resolve_species);
+
 TSKind TS_What_Is(TS *ts, Type t);
 #define TS_Is_Member(ts, t) (TS_What_Is((ts), (t)) == TS_KIND_MEMBER)
 

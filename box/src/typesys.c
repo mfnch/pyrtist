@@ -176,6 +176,22 @@ static TSDesc *Fully_Resolve(TS *ts, Type *rt, Type t) {
   }
 }
 
+Type TS_Resolve(TS *ts, Type t, int resolve_alias, int resolve_species) {
+  int resolve;
+  while(1) {
+    TSDesc *td = Type_Ptr(ts, t);
+    switch(td->kind) {
+    case TS_KIND_LINK: resolve = 1; break;
+    case TS_KIND_MEMBER: resolve = 1; break;
+    case TS_KIND_ALIAS: resolve = resolve_alias; break;
+    case TS_KIND_SPECIES: resolve = resolve_species; break;
+    default: resolve = 0; break;
+    }
+    if (!resolve) return t;
+    t = td->target;
+  }
+}
+
 #if 0
 void TS_Ref(TS *ts, Type *new, TSDesc *td) {}
 
@@ -636,8 +652,7 @@ int Tym_Compare_Types(Intg type1, Intg type2, int *need_expansion) {
 }
 
 Int Tym_Type_Resolve(Int type, int not_alias, int not_species) {
-  MSG_WARNING("Tym_Type_Resolve: not implemented!");
-  return type;
+  return TS_Resolve(last_ts, type, ! not_alias, ! not_species);
 }
 
 Int Tym_Def_Procedure(Int proc, int second, Int of_type, Int sym_num) {
