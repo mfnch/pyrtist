@@ -463,3 +463,27 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
     t2 = td2->target;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/****************************************************************************/
+/* Code for transition from typeman.c to typesys.c
+ * This code reimplement typeman.c as a wrapper around typesys.c
+ */
+
+#ifdef EMULATE_TYPEMAN
+#endif

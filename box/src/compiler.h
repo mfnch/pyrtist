@@ -148,6 +148,35 @@ struct symbol {
 
 typedef struct symbol Symbol;
 
+/* Definisco il tipo SymbolAction. Se dichiaro:
+ *  SymbolAction action;
+ * action sara' una funzione in grado di operare o analizzare su un simbolo
+ * (tipo Symbol). Funzioni di questo tipo vengono chiamate da quelle funzioni
+ * (come ad esempio Sym_Symbol_Find) che scorrono la lista dei simboli,
+ * in modo da poter eseguire un'operazione o controllo sul simbolo trovato.
+ * Il valore restituito e' un UInt che informa la funzione chiamante dell'esito
+ * dell'operazione/controllo. I valori sono:
+ *   0 tutto Ok, e' possibile passare al prossimo simbolo;
+ *   1 tutto Ok, ma non occorre continuare e passare al prossimo simbolo;
+ *   2 qualcosa non e' andato correttamente, meglio che la funzione chiamante
+ *     esca immediatamente.
+ */
+typedef UInt SymbolAction(Symbol *s);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/***********************/
 /* Enumero i tipi di tipo */
 typedef enum {
   TOT_INSTANCE,
@@ -192,24 +221,21 @@ typedef struct {
     Intg arr_size; /* Numero di elementi dell'array */
     Intg st_size;  /* Numero di elementi della struttura */
     Intg sp_size;  /* Numero di elementi della specie */
-    Symbol *sym;   /* Simbolo associato al tipo (NULL = non ce n'e'!)*/
+/*    Symbol *sym;    Simbolo associato al tipo (NULL = non ce n'e'!)*/
   };
 } TypeDesc;
+/***********************/
 
-/* Definisco il tipo SymbolAction. Se dichiaro:
- *  SymbolAction action;
- * action sara' una funzione in grado di operare o analizzare su un simbolo
- * (tipo Symbol). Funzioni di questo tipo vengono chiamate da quelle funzioni
- * (come ad esempio Sym_Symbol_Find) che scorrono la lista dei simboli,
- * in modo da poter eseguire un'operazione o controllo sul simbolo trovato.
- * Il valore restituito e' un UInt che informa la funzione chiamante dell'esito
- * dell'operazione/controllo. I valori sono:
- *   0 tutto Ok, e' possibile passare al prossimo simbolo;
- *   1 tutto Ok, ma non occorre continuare e passare al prossimo simbolo;
- *   2 qualcosa non e' andato correttamente, meglio che la funzione chiamante
- *     esca immediatamente.
- */
-typedef UInt SymbolAction(Symbol *s);
+
+
+
+
+
+
+
+
+
+
 
 /* Tipo legato all'uso di Cmp_Operation_Find */
 typedef struct {
@@ -307,9 +333,6 @@ extern Intg type_Point, type_RealNum, type_IntgNum, type_CharNum;
 
 #include "box.h"
 
-Intg Tym_Type_Next(void);
-TypeDesc *Tym_Type_New(Name *nm);
-Intg Tym_Type_Newer(void);
 TypeDesc *Tym_Type_Get(Intg t);
 Intg Tym_Type_Size(Intg t);
 const char *Tym_Type_Name(Intg t);
@@ -339,8 +362,8 @@ Task Tym_Def_Specie(Intg *specie, Intg type);
 Task Tym_Def_Structure(Intg *strc, Intg type);
 Task Tym_Structure_Get(Intg *type);
 
-#define Tym_Def_Explicit(new_type, nm) \
-  Tym_Def_Type(new_type, TYPE_NONE, nm, (Intg) 0, TYPE_NONE)
+/*#define Tym_Def_Explicit(new_type, nm) \
+  Tym_Def_Type(new_type, TYPE_NONE, nm, (Intg) 0, TYPE_NONE)*/
 #define Tym_Def_Explicit_Alias(new_type, nm, type) \
   Tym_Def_Type(new_type, TYPE_NONE, nm, (Intg) -1, type)
 #define Tym_Def_Intrinsic(new_type, nm, size) \

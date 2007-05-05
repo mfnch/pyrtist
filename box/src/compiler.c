@@ -467,11 +467,14 @@ cmp_memb_intr_err:
   return Failed;
 }
 
+#if 0
 static Expression *Cmp__Member_Of_Ptr(Expression *e, Name *nm) {
   MSG_ERROR("Cmp__Member_Of_Ptr: Still not implemented!");
   return NULL;
 }
+#endif
 
+#if 0
 /* DESCRIPTION: This is a particular case of the following function
  *  (Cmp_Member_Get). It deals with members of instance of an object.
  */
@@ -521,6 +524,7 @@ static Expression *Cmp__Member_Of_Instance(Expression *e, Name *nm) {
 
   return NULL;
 }
+#endif
 
 /* DESCRIZIONE: Restituisce l'espressione corrispondente al membro di *e,
  *  il cui nome e' specificato in *m (NULL in caso d'errore, tipo:
@@ -528,7 +532,6 @@ static Expression *Cmp__Member_Of_Instance(Expression *e, Name *nm) {
  */
 Expression *Cmp_Member_Get(Expression *e, Name *nm) {
   Intg t = e->resolved;
-  TypeDesc *td;
 
   if ( ! e->is.value ) {
     MSG_ERROR("Requested member '%N' of a non-valued expression!", nm);
@@ -541,6 +544,10 @@ Expression *Cmp_Member_Get(Expression *e, Name *nm) {
     return e;
   }
 
+  MSG_ERROR("Major change is happening: feature has been disabled!");
+  assert(0);
+
+#if 0
   td = Tym_Type_Get(t);
   if ( td == NULL ) return NULL;
   switch ( td->tot ) {
@@ -552,6 +559,7 @@ Expression *Cmp_Member_Get(Expression *e, Name *nm) {
     MSG_ERROR("The type '%s' has no members!", Tym_Type_Name(t));
   }
   return NULL;
+#endif
 }
 
 /******************************************************************************/
@@ -1019,21 +1027,14 @@ Task Cmp_Expr_LReg(Expression *e, Intg type, int zero) {
     return Success;
 
   } else {
-    TypeDesc *td;
+    Int s = Tym_Type_Size(type);
+    if ( s > 0 ) {
+      e->is.allocd = 1;
+      if ( zero ) { e->value.i = 0; }
+        else { if ( (e->value.i = Reg_Occupy(TYPE_OBJ)) < 1 ) return Failed; }
 
-    td = Tym_Type_Get(type);
-    if ( td == NULL ) return Failed;
-
-    {
-      register Intg s = td->size;
-      if ( s > 0 ) {
-        e->is.allocd = 1;
-        if ( zero ) { e->value.i = 0; }
-         else { if ( (e->value.i = Reg_Occupy(TYPE_OBJ)) < 1 ) return Failed; }
-
-        Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, s);
-        Cmp_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
-      }
+      Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, s);
+      Cmp_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
     }
     return Success;
   }
@@ -1309,8 +1310,8 @@ Task Cmp_Expr_Container_Change(Expression *e, Container *c) {
  */
 Task Cmp_Expr_Create(Expression *e, Intg type, int temporary) {
   register int intrinsic;
-  Intg type_of_register, resolved;
-  TypeDesc *td;
+  Int type_of_register, resolved;
+  Int ts = Tym_Type_Size(type);
 
   assert( type >= 0 );
 
@@ -1333,10 +1334,6 @@ Task Cmp_Expr_Create(Expression *e, Intg type, int temporary) {
   intrinsic = (resolved < NUM_INTRINSICS);
   type_of_register = (intrinsic) ? resolved : TYPE_OBJ;
 
-  td = Tym_Type_Get(type);
-  if ( td == NULL ) return Failed;
-  if ( td->size == 0 ) return Success;
-
   e->is.value = 1;
   if ( temporary ) {
     e->is.release = 1;
@@ -1352,7 +1349,7 @@ Task Cmp_Expr_Create(Expression *e, Intg type, int temporary) {
   if ( intrinsic ) return Success;
 
   /* If the object is of a user defined type, we must allocate it! */
-  Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, td->size);
+  Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, ts);
   Cmp_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
   e->is.allocd = 1;
   return Success;

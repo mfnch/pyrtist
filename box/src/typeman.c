@@ -64,7 +64,7 @@ static char *tym_name[TYM_NUM_TYPE_NAMES];
  *  be associated to the new type, that will be created by the next call
  *  to the function Tym_Type_New.
  */
-Intg Tym_Type_Next(void) {
+static Intg Tym_Type_Next(void) {
   if ( tym_type_list == NULL ) return 0;
   return Arr_NumItem(tym_type_list);
 }
@@ -74,7 +74,7 @@ Intg Tym_Type_Next(void) {
  *  in caso di errore).
  * NOTE: It updates tym_recent_type and tym_recent_typedesc.
  */
-TypeDesc *Tym_Type_New(Name *nm) {
+static TypeDesc *Tym_Type_New(Name *nm) {
   TypeDesc td;
 
   /* Se l'array dei tipi non e' stato inizializzato, lo faccio ora */
@@ -87,7 +87,6 @@ TypeDesc *Tym_Type_New(Name *nm) {
   td.parent = TYPE_NONE;
   td.greater = TYPE_NONE;
   td.procedure = TYPE_NONE;
-  td.sym = NULL;
 
   /* Inserisce il nuovo tipo nella lista */
   if IS_FAILED(Arr_Push(tym_type_list, & td)) return NULL;
@@ -99,7 +98,7 @@ TypeDesc *Tym_Type_New(Name *nm) {
 /* DESCRIPTION: Returns the last type created by the function Cmp_Type_New
  *  (or -1 if none was created!).
  */
-Intg Tym_Type_Newer(void) {
+static Intg Tym_Type_Newer(void) {
   MSG_LOCATION("Tym_Type_Newer");
 
   if ( tym_type_list != NULL ) return (Arr_NumItem(tym_type_list) - 1);
@@ -344,7 +343,6 @@ Task Tym_Def_Type(Intg *new_type,
     td->size = size;
     td->target = TYPE_NONE;
   }
-  td->sym = s;
 
   /* I set all the remaining values of the structure s */
   s->symtype = VARIABLE;
@@ -353,6 +351,7 @@ Task Tym_Def_Type(Intg *new_type,
   return Success;
 }
 
+#if 0
 /* DESCRIPTION: Returns the symbol associated with the type 'type';
  */
 Symbol *Tym_Symbol_Of_Type(Intg type) {
@@ -361,6 +360,7 @@ Symbol *Tym_Symbol_Of_Type(Intg type) {
   if ( td == NULL ) return NULL;
   return td->sym;
 }
+#endif
 
 #if 0
 /* DESCRIPTION: This function creates a new member for the abstract box
@@ -391,6 +391,7 @@ Task Tym_Def_Member(Intg parent, Name *nm, Intg type) {
 }
 #endif
 
+#if 0
 /* DESCRIPTION: Deletes the type 'type' and all its corresponding box.
  */
 Task Tym_Undef_Type(Intg type) {
@@ -412,7 +413,9 @@ Task Tym_Undef_Type(Intg type) {
   }
   return Success;
 }
+#endif
 
+#if 0
 /* DESCRIPTION: This function is written for debugging: it prints the structure
  *  of the abstract box 'type'.
  */
@@ -442,6 +445,7 @@ void Tym_Print_Structure(FILE *stream, Intg type) {
     }
   }
 }
+#endif
 
 /* DESCRIZIONE: Crea una nuova specie di tipi. Una specie di tipi e'
  *  un raggruppamento di tipi di dato (che a loro volta possono essere
@@ -808,6 +812,7 @@ Intg Tym_Type_Resolve(Intg type, int not_alias, int not_species) {
   return type;
 }
 
+#if 0
 /* DESCRIPTION: This function deletes the type type (and its chain
  *  of type-descriptors).
  */
@@ -816,6 +821,7 @@ Task Tym_Delete_Type(Intg type) {
   MSG_ERROR("'Tym_Delete_Type' <-- not implemented!");
   return Failed;
 }
+#endif
 
 /* This function defines the procedure proc@of_type and associates to it
  * the symbol 'sym_num'. If second == 0, then the procedure is a first one
@@ -960,6 +966,7 @@ Intg Tym_Search_Procedure(Intg proc, int second, Intg of_type,
   return TYPE_NONE;
 }
 
+#if 0
 /* This function prints all the procedures belonging to the type of_type.
  */
 void Tym_Print_Procedure(FILE *stream, Intg of_type) {
@@ -990,6 +997,7 @@ void Tym_Print_Procedure(FILE *stream, Intg of_type) {
     }
   }
 }
+#endif
 
 /* DESCRIPTION: This function defines a new specie of types.
  *  You can define a new specie as in the following example:

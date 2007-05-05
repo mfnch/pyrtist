@@ -29,6 +29,9 @@
 #ifndef _TYPESYS_H
 #  define _TYPESYS_H
 
+/* Transition code from typeman.c to typesys.c */
+#  define EMULATE_TYPEMAN
+
 #  include "types.h"
 #  include "collection.h"
 #  include "hashtable.h"
@@ -175,5 +178,9 @@ Type TS_Member_Next(TS *ts, Type m);
  * - TS_TYPES_UNMATCH: the two types are not compatible;
  */
 TSCmp TS_Compare(TS *ts, Type t1, Type t2);
+
+#  ifdef EMULATE_TYPEMAN
+
+#  endif
 
 #endif
