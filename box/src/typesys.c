@@ -167,8 +167,9 @@ static TSDesc *Fully_Resolve(TS *ts, Type *rt, Type t) {
     case TS_KIND_LINK:
     case TS_KIND_ALIAS:
     case TS_KIND_MEMBER:
-    case TS_KIND_SPECIES:
       t = td->target; break;
+    case TS_KIND_SPECIES:
+      t = td->data.last; break;
     default:
       if (rt != (Type *) NULL) *rt = t;
       return td;
@@ -180,15 +181,20 @@ Type TS_Resolve(TS *ts, Type t, int resolve_alias, int resolve_species) {
   int resolve;
   while(1) {
     TSDesc *td = Type_Ptr(ts, t);
+    Type rt = td->target;
     switch(td->kind) {
-    case TS_KIND_LINK: resolve = 1; break;
-    case TS_KIND_MEMBER: resolve = 1; break;
-    case TS_KIND_ALIAS: resolve = resolve_alias; break;
-    case TS_KIND_SPECIES: resolve = resolve_species; break;
-    default: resolve = 0; break;
+    case TS_KIND_LINK:
+    case TS_KIND_MEMBER:
+      resolve = 1; break;
+    case TS_KIND_ALIAS:
+      resolve = resolve_alias; break;
+    case TS_KIND_SPECIES:
+      rt = td->data.last; resolve = resolve_species; break;
+    default:
+      resolve = 0;
     }
     if (!resolve) return t;
-    t = td->target;
+    t = rt;
   }
 }
 
@@ -299,17 +305,14 @@ Type TS_Member_Next(TS *ts, Type m) {
 }
 
 Int TS_Member_Count(TS *ts, Type s) {
-  Int count = 0, previous=s;
+  Int count=0, next=s;
   TSDesc *td = Type_Ptr(ts, s);
   switch(td->kind) {
   case TS_KIND_SPECIES:
   case TS_KIND_STRUCTURE:
   case TS_KIND_ENUM:
     while(1) {
-      Int next = TS_Member_Next(ts, s);
-      assert(next != previous);
-      previous = next;
-      printf("Here: count = %d, next = %d\n", count, next);
+      next = TS_Member_Next(ts, next);
       if (! TS_Is_Member(ts, next)) break;
       ++count;
     };
@@ -699,11 +702,13 @@ Task Tym_Def_Structure(Int *strc, Intg type) {
 
 Task Tym_Specie_Get(Int *type) {
   *type = TS_Member_Next(last_ts, *type);
+  if (! TS_Is_Member(last_ts, *type)) *type = TYPE_NONE;
   return Success;
 }
 
 Task Tym_Structure_Get(Int *type) {
   *type = TS_Member_Next(last_ts, *type);
+  if (! TS_Is_Member(last_ts, *type)) *type = TYPE_NONE;
   return Success;
 }
 

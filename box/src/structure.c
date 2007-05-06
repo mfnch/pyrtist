@@ -320,6 +320,11 @@ Task Cmp_Expr_Expand(Intg species, Expression *e) {
       TASK(Tym_Specie_Get(& member_type));
       while (member_type != TYPE_NONE) {
         if ( Tym_Compare_Types(member_type, type2, NULL) ) {
+          MSG_ADVICE("The species %s contains %s",
+                     Tym_Type_Names(type1), Tym_Type_Names(type2));
+          MSG_ADVICE("Expanding %s into %s",
+                     Tym_Type_Names(e->type),
+                     Tym_Type_Names(member_type));
           TASK( Cmp_Expr_Expand(member_type, e) );
           return Cmp_Conversion(e->type, target_type, e);
         }
@@ -373,8 +378,8 @@ Task Cmp_Expr_Expand(Intg species, Expression *e) {
     if ( ! need_expansion ) return Success;
 
     /* E' necessario: bisogna creare una nuova struttura per contenere
-      * il risultato dell'espansione
-      */
+     * il risultato dell'espansione
+     */
     {
       int n1, n2;
       Expression new_struc, member1, member2, member2_copy;
@@ -386,6 +391,7 @@ Task Cmp_Expr_Expand(Intg species, Expression *e) {
       TASK(Cmp_Structure_Get(& member2, & n2));
       while (n1 > 0) {
         member2_copy = member2;
+#define DEBUG_STRUCT_EXPANSION
 #ifdef DEBUG_STRUCT_EXPANSION
         printf("Espando il membro: '%s' --> '%s'\n",
          Tym_Type_Names(member2.type), Tym_Type_Names(member1.type));
@@ -440,7 +446,7 @@ Task Cmp_Structure_Get(Expression *member, int *n) {
     Expression first;
 
     /* (sotto) Manca parte dell'implementazione! */
-    assert( (member->categ == CAT_LREG) || (member->categ == CAT_GREG) );
+    assert(member->categ == CAT_LREG || member->categ == CAT_GREG);
 
     if ( (*n = Tym_Struct_Get_Num_Items(member->type)) == 0 ) return Success;
     assert( *n > 0 );
@@ -463,12 +469,12 @@ Task Cmp_Structure_Get(Expression *member, int *n) {
     --(*n);
     /* (n == 0) if and only if (member_type == TYPE_NONE) */
     if ( (*n == 0) != (member_type == TYPE_NONE) ) {
-      MSG_ERROR("Cmp_Structure_Get: errore interno: *n = %d, member_type = %d",
+      MSG_FATAL("Cmp_Structure_Get: errore interno: *n = %d, member_type = %d",
         *n, member_type);
       return Failed;
     }
     if ( n == 0 ) return Success;
-    member->value.i += Tym_Type_Size(member->type);
+    member->value.i += Tym_Type_Size(member->resolved);
     member->type = member_type;
     member->resolved = Tym_Type_Resolve_All(member_type);
   }

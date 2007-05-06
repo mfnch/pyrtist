@@ -1421,16 +1421,18 @@ Task Cmp_Expr_Copy(Expression *e_dest, Expression *e_src) {
 Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src) {
   register Intg t, c;
 
-  assert( (e_dest != NULL) && (e_src != NULL) );
-  assert( e_dest->resolved == e_src->resolved );
+  printf("resolved types: e_dest = %d, e_src = %d\n",
+         e_dest->resolved, e_src->resolved);
+  assert(e_dest != NULL && e_src != NULL);
+  assert(e_dest->resolved == e_src->resolved);
   t = e_dest->resolved;
   c = e_dest->categ;
-  assert( t >= 0 );
+  assert(t >= 0);
   assert((e_src->is.typed) && (e_src->is.value) && (c != CAT_IMM));
 
   /* Qui devo controllare se il tipo ammette un mover user-defined! */
 
-  if ( t < NUM_INTRINSICS ) {
+  if (t < NUM_INTRINSICS) {
     /* Sposto una quantita' intrinseca */
     register int is_integer;
 
