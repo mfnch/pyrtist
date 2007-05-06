@@ -25,10 +25,31 @@
  * che servono per inizializzare ed avviare il compilatore.
  */
 
+#ifndef _PARSERH_H
+#  define _PARSERH_H
+
+#  include "typesys.h"
+
 typedef struct {
   unsigned int old_box : 1;
   unsigned int no_syntax_err : 1;
-} ParserAttr ;
+} ParserAttr;
+
+
+/*****************************************************************************
+ * Data types used during parsing of structures                              *
+ *****************************************************************************/
+typedef struct {
+  char *name;
+  Type type;
+} StrucMember;
+
+typedef struct {
+  Type type;
+  Type previous;
+} Struc;
+
+/*****************************************************************************/
 
 extern ParserAttr parser_attr;
 
@@ -53,3 +74,5 @@ Task Prs_Rule_Typed_Eq_Valued(Expression *typed, Expression *valued);
 Task Prs_Rule_Valued_Eq_Valued(Expression *rs,
  Expression *valued1, Expression *valued2);
 int yyparse(void);
+
+#endif

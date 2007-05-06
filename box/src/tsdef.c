@@ -197,7 +197,7 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
         char *m_name = TS_Name_Get(ts, m_td->target);
 #ifdef TS_NAME_GET_CASE_STRUCTURE
         if (m_td->name != (char *) NULL)
-          m_name = printdup("%s=%~s", m_td->name, m_name);
+          m_name = printdup("%~s %s", m_name, m_td->name);
 #endif
         m = m_td->data.member_next;
         if (m == t) {

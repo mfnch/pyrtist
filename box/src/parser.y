@@ -56,6 +56,68 @@ static Task Declare_Proc(Expr *child_type, Expr *parent_type, Name *name);
 /* Numero della linea che e' in fase di lettura dal tokenizer */
 extern UInt tok_linenum;
 
+
+
+/****************************************************************************
+ * Here we define static function which implements the actions of some      *
+ * rules. Actions are included directly into the grammar when possible,     *
+ * but sometimes - to keep acceptable readability we confine the code       *
+ * in these static functions that are collected here.                       *
+ ****************************************************************************/
+
+/* Construct the core of a structure type: takes two members and construct
+ * a two membered structure Sm1, Sm2 --> (Sm1, Sm2).
+ * The type of the new structure of types is stored inside *st.
+ */
+static Task Type_Struc_All_1(Struc *s, StrucMember *sm1, StrucMember *sm2) {
+  Type st;
+  TASK( TS_Structure_Begin(cmp->ts, & st) );
+  assert(sm1->type != TYPE_NONE);
+  TASK( TS_Structure_Add(cmp->ts, st, sm1->type, sm1->name) );
+  free(sm1->name);
+  sm1->name = (char *) NULL;
+  if (sm2->type == TYPE_NONE) sm2->type = sm1->type;
+  TASK( TS_Structure_Add(cmp->ts, st, sm2->type, sm2->name) );
+  free(sm2->name);
+  sm2->name = (char *) NULL;
+  s->type = st;
+  s->previous = sm2->type;
+  return Success;
+}
+
+/* Add a new member to an existing structure type.
+ * After the structure type se1 has been changed, it is copied into *se.
+ */
+static Task Type_Struc_All_2(Struc *s, Struc *s1, StrucMember *sm2) {
+  if (sm2->type == TYPE_NONE) sm2->type = s1->previous;
+  TASK( TS_Structure_Add(cmp->ts, s1->type, sm2->type, sm2->name) );
+  free(sm2->name);
+  sm2->name = (char *) NULL;
+  s->type = s1->type;
+  s->previous = sm2->type;
+  return Success;
+}
+
+/* Construct a single-member structure type.
+ */
+static Task Type_Struc_1(Expr *se, StrucMember *sm) {
+  Type st;
+  TASK( TS_Structure_Begin(cmp->ts, & st) );
+  TASK( TS_Structure_Add(cmp->ts, st, sm->type, sm->name) );
+  free(sm->name);
+  sm->name = (char *) NULL;
+  Expr_New_Type(se, st);
+  return Success;
+}
+
+/* Just convert the final structure type into an Expression */
+static Task Type_Struc_2(Expr *se, Struc *s) {
+  Expr_New_Type(se, s->type);
+  return Success;
+}
+
+/*****************************************************************************/
+
 #define DO(action) \
   if IS_FAILED( action ) {parser_attr.no_syntax_err = 1; YYERROR;}
 
@@ -101,14 +163,17 @@ extern UInt tok_linenum;
 #define MY_ERR {parser_attr.no_syntax_err = 1; YYERROR;}
 %}
 
+
 /* Union che contiene tutti i tipi di valore semantico
  * che possono avere i token
  */
 %union {
-  Expression  Ex; /* Espressione generica */
-  Name        Nm; /* Nome */
-  Intg        Sf; /* Suffisso che specifica lo scoping per le variabili */
-  Intg        Ty; /* Tipo */
+  Expr          Ex; /* Espressione generica */
+  Name          Nm; /* Nome */
+  Int           Sf; /* Suffisso che specifica lo scoping per le variabili */
+  Type          Ty; /* Tipo */
+  Struc         Sc; /* Incomplete structure type */
+  StrucMember   SM; /* Member of structure type */
 }
 
 /* Lista dei token senza valore semantico
@@ -140,7 +205,6 @@ extern UInt tok_linenum;
 %type <Ex> prim.type
 %type <Ex> type
 %type <Ex> asgn.type
-%type <Ex> type.list
 %type <Ex> type.species
 %type <Ex> simple.expr
 %type <Ex> array.expr
@@ -152,6 +216,12 @@ extern UInt tok_linenum;
 %type <Sf> suffix
 %type <Sf> suffix.opt
 %type <Nm> string
+
+%type <SM> type.struc.first
+%type <SM> type.struc.second
+%type <Sc> type.struc.all
+%type <Ex> type.struc
+
 
 /* Lista dei token affetti da regole di precedenza
  */
@@ -215,7 +285,7 @@ name.type:
 prim.type:
   name.type                 { $$ = $1; }
 | '(' type ')'              { $$ = $2; }
-| '(' type.list ')'         { $$ = $2; }
+| type.struc                { $$ = $1; }
 | '(' type.species ')'      { $$ = $2; }
  ;
 
@@ -231,15 +301,54 @@ asgn.type:
 | expr '=' asgn.type        { if (Prs_Rule_Valued_Eq_Typed(& $$, & $1, & $3) ) MY_ERR }
  ;
 
-type.list:
-  type ',' type             { if ( Prs_Struct_New(& $$, & $1, & $3) ) MY_ERR }
-| type.list ',' type        { if ( Prs_Struct_Add(& $$, & $1, & $3) ) MY_ERR }
- ;
-
 type.species:
   type TOK_TO type          { if ( Prs_Species_New(& $$, & $1, & $3) ) MY_ERR }
 | type.species TOK_TO type  { if ( Prs_Species_Add(& $$, & $1, & $3) ) MY_ERR }
  ;
+
+
+
+
+/* Used to match the final optional comma as in (Real, Real,) */
+comma.opt:
+| ','
+;
+
+/* Matches the first element of a structure type */
+type.struc.first:
+  type                     {$$.type = $1.type; $$.name = NULL;}
+| type TOK_LNAME           {$$.type = $1.type; $$.name = Name_To_Str(& $2);}
+;
+
+/* Matches the second, third, ... element of a structure type */
+type.struc.second:
+  type.struc.first         {$$ = $1;}
+| TOK_LNAME                {$$.type = TYPE_NONE; $$.name = Name_To_Str(& $1);}
+;
+
+/* Matches a structure type with at least two elements */
+type.struc.all:
+  type.struc.first ',' type.struc.second {DO(Type_Struc_All_1(& $$, & $1, & $3));}
+| type.struc.all ',' type.struc.second   {DO(Type_Struc_All_2(& $$, & $1, & $3));}
+;
+
+/* Matches all sorts of structure types */
+type.struc:
+  '(' type.struc.first ',' ')'           {DO(Type_Struc_1(& $$, & $2));}
+| '(' type.struc.all comma.opt ')'       {DO(Type_Struc_2(& $$, & $2));}
+;
+
+/*
+type.list:
+  type ',' type             { if ( Prs_Struct_New(& $$, & $1, & $3) ) MY_ERR }
+| type.list ',' type        { if ( Prs_Struct_Add(& $$, & $1, & $3) ) MY_ERR }
+ ;
+*/
+
+
+
+
+
 
 /*****************************************************************************
  *                                 Strings                                   *
