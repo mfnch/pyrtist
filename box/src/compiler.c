@@ -1349,6 +1349,7 @@ Task Cmp_Expr_Create(Expression *e, Intg type, int temporary) {
   if ( intrinsic ) return Success;
 
   /* If the object is of a user defined type, we must allocate it! */
+  if (ts < 1) return Success;
   Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, ts);
   Cmp_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
   e->is.allocd = 1;

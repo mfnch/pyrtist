@@ -395,20 +395,36 @@ static Task Blt_Define_Basics(void) {
 
   /* Definisco type_IntgNum --> (Int < Char) */
   type_IntgNum = TYPE_NONE;
+#ifdef EMULATE_TYPEMAN
+  TASK( Tym_Def_Specie(& type_IntgNum, TYPE_CHAR) );
+  TASK( Tym_Def_Specie(& type_IntgNum, TYPE_INTG) );
+#else
   TASK( Tym_Def_Specie(& type_IntgNum, TYPE_INTG) );
   TASK( Tym_Def_Specie(& type_IntgNum, TYPE_CHAR) );
+#endif
   /* Definisco type_RealNum --> (Real < Int < Char) */
   type_RealNum = TYPE_NONE;
+#ifdef EMULATE_TYPEMAN
+  TASK( Tym_Def_Specie(& type_RealNum, TYPE_CHAR) );
+  TASK( Tym_Def_Specie(& type_RealNum, TYPE_INTG) );
+  TASK( Tym_Def_Specie(& type_RealNum, TYPE_REAL) );
+#else
   TASK( Tym_Def_Specie(& type_RealNum, TYPE_REAL) );
   TASK( Tym_Def_Specie(& type_RealNum, TYPE_INTG) );
   TASK( Tym_Def_Specie(& type_RealNum, TYPE_CHAR) );
+#endif
 
   type_2RealNum = TYPE_NONE;
   TASK( Tym_Def_Structure(& type_2RealNum, type_RealNum) );
   TASK( Tym_Def_Structure(& type_2RealNum, type_RealNum) );
   type_Point = TYPE_NONE;
+#ifdef EMULATE_TYPEMAN
+  TASK( Tym_Def_Specie(& type_Point, type_2RealNum) );
+  TASK( Tym_Def_Specie(& type_Point, TYPE_POINT) );
+#else
   TASK( Tym_Def_Specie(& type_Point, TYPE_POINT) );
   TASK( Tym_Def_Specie(& type_Point, type_2RealNum) );
+#endif
 
   /* Ora faccio l'overloading dell'operatore di conversione
    * e definisco le conversioni automatiche che il compilatore

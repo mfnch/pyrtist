@@ -299,7 +299,7 @@ Type TS_Member_Next(TS *ts, Type m) {
 }
 
 Int TS_Member_Count(TS *ts, Type s) {
-  Int count = 0;
+  Int count = 0, previous=s;
   TSDesc *td = Type_Ptr(ts, s);
   switch(td->kind) {
   case TS_KIND_SPECIES:
@@ -307,9 +307,13 @@ Int TS_Member_Count(TS *ts, Type s) {
   case TS_KIND_ENUM:
     while(1) {
       Int next = TS_Member_Next(ts, s);
+      assert(next != previous);
+      previous = next;
+      printf("Here: count = %d, next = %d\n", count, next);
       if (! TS_Is_Member(ts, next)) break;
       ++count;
     };
+    break;
   default:
     MSG_FATAL("Trying to count members of a the non-membered type %~s",
      TS_Name_Get(ts, s));
@@ -640,6 +644,8 @@ Int Tym_Def_Alias_Of(Name *nm, Int type) {
 }
 
 int Tym_Compare_Types(Intg type1, Intg type2, int *need_expansion) {
+  int dummy;
+  if (need_expansion == (int *) NULL) need_expansion = & dummy;
   switch(TS_Compare(last_ts, type1, type2)) {
   case TS_TYPES_MATCH:
   case TS_TYPES_EXPAND:
