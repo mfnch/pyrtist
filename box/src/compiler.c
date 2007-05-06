@@ -1421,8 +1421,6 @@ Task Cmp_Expr_Copy(Expression *e_dest, Expression *e_src) {
 Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src) {
   register Intg t, c;
 
-  printf("resolved types: e_dest = %d, e_src = %d\n",
-         e_dest->resolved, e_src->resolved);
   assert(e_dest != NULL && e_src != NULL);
   assert(e_dest->resolved == e_src->resolved);
   t = e_dest->resolved;

@@ -120,6 +120,8 @@ extern UInt tok_linenum;
 %token TOK_NEWLINE
 %token TOK_ERRSEP
 
+%token TOK_TO
+
 %token TMP_TOK_AGAIN
 %token TMP_TOK_EXIT
 
@@ -235,8 +237,8 @@ type.list:
  ;
 
 type.species:
-  type '<' type             { if ( Prs_Species_New(& $$, & $1, & $3) ) MY_ERR }
-| type.species '<' type     { if ( Prs_Species_Add(& $$, & $1, & $3) ) MY_ERR }
+  type TOK_TO type          { if ( Prs_Species_New(& $$, & $1, & $3) ) MY_ERR }
+| type.species TOK_TO type  { if ( Prs_Species_Add(& $$, & $1, & $3) ) MY_ERR }
  ;
 
 /*****************************************************************************

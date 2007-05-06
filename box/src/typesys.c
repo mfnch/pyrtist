@@ -34,97 +34,11 @@
 
 static TS *last_ts; /* Just for transition: will be removed! */
 
-static void try_it(TS *ts) {
-  Type ti, tr, tp, t1, t2, t3, t4, t5, t6, t7, t8;
-  (void) TS_Intrinsic_New(ts, & ti, sizeof(Int));
-  (void) TS_Name_Set(ts, ti, "Int");
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, ti));
-  MSG_ADVICE("Il corrispondente numero e' %d", (int) ti);
-  (void) TS_Intrinsic_New(ts, & tr, sizeof(Real));
-  (void) TS_Name_Set(ts, tr, "Real");
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, tr));
-  (void) TS_Intrinsic_New(ts, & tp, sizeof(Point));
-  (void) TS_Name_Set(ts, tp, "Point");
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, tp));
-  (void) TS_Array_New(ts, & t1, ti, 10);
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t1));
-  (void) TS_Structure_Begin(ts, & t2);
-  (void) TS_Structure_Add(ts, t2, tr, "x");
-  (void) TS_Structure_Add(ts, t2, ti, "stuff");
-  (void) TS_Structure_Add(ts, t2, tp, NULL);
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t2));
-  (void) TS_Structure_Begin(ts, & t3);
-  (void) TS_Structure_Add(ts, t3, t1, "my_array");
-  (void) TS_Structure_Add(ts, t3, t2, "my_structure");
-  (void) TS_Structure_Add(ts, t3, ti, "my_int");
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t3));
-
-  (void) TS_Species_Begin(ts, & t4);
-  (void) TS_Species_Add(ts, t4, tp);
-  (void) TS_Species_Add(ts, t4, ti);
-  (void) TS_Species_Add(ts, t4, tr);
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t4));
-
-  (void) TS_Enum_Begin(ts, & t5);
-  (void) TS_Enum_Add(ts, t5, tr);
-  (void) TS_Enum_Add(ts, t5, ti);
-  (void) TS_Enum_Add(ts, t5, tp);
-  MSG_ADVICE("Definito il tipo '%~s'", TS_Name_Get(ts, t5));
-
-  TS_Member_Find(ts, & t6, t2, "x");
-  MSG_ADVICE("Searching member 'x' of structure %~s: %s!",
-   TS_Name_Get(ts, t2), t6 == TS_TYPE_NONE ? "not found" : "found");
-  TS_Member_Find(ts, & t6, t3, "my_structure");
-  MSG_ADVICE("Searching member 'my_structure' of structure %~s: %s!",
-   TS_Name_Get(ts, t3), t6 == TS_TYPE_NONE ? "not found" : "found");
-  if (t6 != TS_TYPE_NONE) {
-    Type mt;
-    Int addr;
-    TS_Member_Get(ts, & mt, & addr, t6);
-    MSG_ADVICE("Member has type %~s and position: %I",
-     TS_Name_Get(ts, mt), addr);
-  }
-
-  TS_Member_Find(ts, & t6, t2, "xxx");
-  MSG_ADVICE("Searching member 'xxx' of structure %~s: %s!",
-   TS_Name_Get(ts, t2), t6 == TS_TYPE_NONE ? "not found" : "found");
-
-  (void) TS_Structure_Begin(ts, & t7);
-  (void) TS_Structure_Add(ts, t7, tr, NULL);
-  (void) TS_Structure_Add(ts, t7, ti, NULL);
-  (void) TS_Structure_Add(ts, t7, tp, NULL);
-  MSG_ADVICE("%~s ? %~s = %d", TS_Name_Get(ts, t4), TS_Name_Get(ts, ti),
-   TS_Compare(ts, t4, ti));
-  MSG_ADVICE("%~s ? %~s = %d", TS_Name_Get(ts, t2), TS_Name_Get(ts, t7),
-   TS_Compare(ts, t2, t7));
-
-  {
-    Type tproc, texp;
-    (void) TS_Procedure_New(ts, & t8, ti, tp, 1);
-    (void) TS_Procedure_Register(ts, t8, 123);
-    MSG_ADVICE("Registered procedure type %~s", TS_Name_Get(ts, t8));
-    (void) TS_Procedure_New(ts, & t8, ti, tr, 1);
-    (void) TS_Procedure_Register(ts, t8, 124);
-    MSG_ADVICE("Registered procedure type %~s", TS_Name_Get(ts, t8));
-    (void) TS_Procedure_New(ts, & t8, ti, t4, 1);
-    (void) TS_Procedure_Register(ts, t8, 125);
-    MSG_ADVICE("Registered procedure type %~s", TS_Name_Get(ts, t8));
-
-    MSG_ADVICE("Searching procedure %~s$%~s",
-     TS_Name_Get(ts, ti), TS_Name_Get(ts, tr));
-    (void) TS_Procedure_Search(ts, & tproc, & texp, ti, ti, 1);
-    MSG_ADVICE("search result=%s, expansion=%~s",
-     tproc != TS_TYPE_NONE ? "found" : "not found",
-     texp != TS_TYPE_NONE ? TS_Name_Get(ts, texp) : strdup("not needed"));
-  }
-}
-
 Task TS_Init(TS *ts) {
   TASK( Clc_New(& ts->type_descs, sizeof(TSDesc), TS_TSDESC_CLC_SIZE) );
   HT(& ts->members, TS_MEMB_HT_SIZE);
   TASK( Arr_New(& ts->name_buffer, sizeof(char), TS_NAME_BUFFER_SIZE) );
   last_ts = ts; /* Just for transition: will be removed! */
-  /*try_it(ts);*/
   return Success;
 }
 
@@ -525,25 +439,9 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /****************************************************************************/
 /* Code for transition from typeman.c to typesys.c
- * This code reimplement typeman.c as a wrapper around typesys.c
+ * This code re-implements typeman.c as a wrapper around typesys.c
  */
 
 void Tym_Procedure_Sym_Num(UInt *sym_num, Type p) {
@@ -1097,40 +995,6 @@ Intg Tym_Def_Array_Of(Intg num, Intg type) {
   td->target = type;
   return tym_recent_type;
 }
-
-#if 0
-/* DESCRIPTION: This function creates a new type of data using the type "type".
- *  The new data type is "pointer to object of kind type".
- * NOTE: The new type will be returned or TYPE_NONE in case of errors.
- * NOTE 2: It updates tym_recent_type and tym_recent_typedesc.
- */
-Intg Tym_Def_Pointer_To(Intg type) {
-  TypeDesc *td;
-  MSG_LOCATION("Tym_Def_Pointer_To");
-
-  if ( (td = Tym_Type_Get(type)) == NULL ) return TYPE_NONE;
-  /* Faccio i controlli sul tipo type */
-  switch (td->tot) {
-   case TOT_INSTANCE: case TOT_PTR_TO: case TOT_ARRAY_OF: break;
-   default:
-    MSG_ERROR("Impossibile creare un puntatore a '%s'.",
-     Tym_Type_Name(type));
-    return TYPE_NONE;
-  }
-  if ( td->size < 1 ) {
-    MSG_ERROR("Cannot create a pointer to a zero-size object ('%s').",
-     Tym_Type_Name(type));
-    return TYPE_NONE;
-  }
-
-  /* Creo il nuovo tipo */
-  if ( (td = Tym_Type_New( Name_Empty() )) == NULL ) return TYPE_NONE;
-  td->size = SIZEOF_PTR;
-  td->tot = TOT_PTR_TO;
-  td->target = type;
-  return tym_recent_type;
-}
-#endif
 
 /* DESCRIPTION: This function creates a new type of data using the type "type".
  *  The new data type is "alias of type".

@@ -320,11 +320,6 @@ Task Cmp_Expr_Expand(Intg species, Expression *e) {
       TASK(Tym_Specie_Get(& member_type));
       while (member_type != TYPE_NONE) {
         if ( Tym_Compare_Types(member_type, type2, NULL) ) {
-          MSG_ADVICE("The species %s contains %s",
-                     Tym_Type_Names(type1), Tym_Type_Names(type2));
-          MSG_ADVICE("Expanding %s into %s",
-                     Tym_Type_Names(e->type),
-                     Tym_Type_Names(member_type));
           TASK( Cmp_Expr_Expand(member_type, e) );
           return Cmp_Conversion(e->type, target_type, e);
         }
@@ -391,7 +386,6 @@ Task Cmp_Expr_Expand(Intg species, Expression *e) {
       TASK(Cmp_Structure_Get(& member2, & n2));
       while (n1 > 0) {
         member2_copy = member2;
-#define DEBUG_STRUCT_EXPANSION
 #ifdef DEBUG_STRUCT_EXPANSION
         printf("Espando il membro: '%s' --> '%s'\n",
          Tym_Type_Names(member2.type), Tym_Type_Names(member1.type));
