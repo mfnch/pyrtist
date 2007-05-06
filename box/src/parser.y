@@ -942,38 +942,6 @@ Task Prs_Species_Add(Expression *species, Expression *old, Expression *type) {
   return Success;
 }
 
-/* This function creates the new structure of types (first, second).
- */
-Task Prs_Struct_New(
- Expression *strc, Expression *first, Expression *second) {
-  Intg new_strc;
-
-  CHECK_TYPE(first); CHECK_TYPE(second);
-
-  new_strc = TYPE_NONE;
-  TASK( Tym_Def_Structure( & new_strc,  first->type) );
-  TASK( Tym_Def_Structure( & new_strc, second->type) );
-
-  strc->is.typed = 1;
-  strc->is.value = 0;
-  strc->type = new_strc;
-  return Success;
-}
-
-/* This function adds a new type to an already existing structure.
- */
-Task Prs_Struct_Add(Expression *strc, Expression *old, Expression *type) {
-  Intg old_strc;
-
-  CHECK_TYPE(old); CHECK_TYPE(type);
-
-  old_strc = old->type;
-  assert( old_strc != TYPE_NONE );
-  TASK( Tym_Def_Structure( & old_strc, type->type) );
-  *strc = *old;
-  return Success;
-}
-
 /* This function calls a procedure without value, as (;), (<) or (>).
  */
 Task Prs_Procedure_Special(int *found, int type, int auto_define) {

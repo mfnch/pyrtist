@@ -249,9 +249,6 @@ extern Compiler *cmp;
 
 extern struct cmp_opr_struct cmp_opr;
 
-/* Variabili definite in 'typeman.c'*/
-extern int tym_must_expand;
-
 #include "box.h"
 
 /* Procedure definite in 'symbol.c'*/
