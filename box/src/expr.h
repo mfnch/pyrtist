@@ -29,7 +29,9 @@
 #ifndef _EXPR_H
 #  define _EXPR_H
 
+#  include "typesys.h"
 #  include "virtmach.h"
+
 
 typedef struct {
   struct {
@@ -68,5 +70,18 @@ void Expr_New_Void(Expr *e);
 
 /** Print the content of the given expression */
 void Expr_Print(Expr *e, FILE *out);
+
+/** Convert an object register/variable into a pointer.
+ * example: this correspond to the transition from ro3 --> o[ro3]
+ */
+void Expr_To_Ptr(Expr *e);
+
+/** Given an expression *s, construct in *m the expression
+ * corresponding to its member with name m_name.
+ * Obviously *s has to be a structure and m_name must be
+ * the name of a member of this structure.
+ * Once the member has been obtained *s is release.
+ */
+Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name);
 
 #endif

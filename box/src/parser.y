@@ -306,8 +306,9 @@ type.species:
 | type.species TOK_TO type  { if ( Prs_Species_Add(& $$, & $1, & $3) ) MY_ERR }
  ;
 
-
-
+/*****************************************************************************
+ *                            Structure types                                *
+ *****************************************************************************/
 
 /* Used to match the final optional comma as in (Real, Real,) */
 comma.opt:
@@ -337,18 +338,6 @@ type.struc:
   '(' type.struc.first ',' ')'           {DO(Type_Struc_1(& $$, & $2));}
 | '(' type.struc.all comma.opt ')'       {DO(Type_Struc_2(& $$, & $2));}
 ;
-
-/*
-type.list:
-  type ',' type             { if ( Prs_Struct_New(& $$, & $1, & $3) ) MY_ERR }
-| type.list ',' type        { if ( Prs_Struct_Add(& $$, & $1, & $3) ) MY_ERR }
- ;
-*/
-
-
-
-
-
 
 /*****************************************************************************
  *                                 Strings                                   *
@@ -407,7 +396,7 @@ expr:
 /* | prim.expr TOK_UMEMBER    {} */
 
  | TOK_LMEMBER {
-    Expression e_box, *result;
+    Expression e_box;
     Box *b;
     if IS_FAILED( Box_Get(& b, 0) ) {YYERROR;}
     if ( b->value.resolved == TYPE_VOID ) {
@@ -415,22 +404,11 @@ expr:
       YYERROR;
     }
     e_box = b->value;
-    result = Cmp_Member_Get(& e_box, & $1);
-    if ( result == NULL ) {
-      parser_attr.no_syntax_err = 1;
-      YYERROR;
-    }
-    result->is.release = 0;
-    $$ = *result;
+    DO(Expr_Struc_Member(& $$, & e_box, & $1));
+    $$.is.release = 0;
   }
 
- | expr TOK_LMEMBER {
-    Expression *result = Cmp_Member_Get(& $1, & $2);
-    if ( result == NULL ) {
-      parser_attr.no_syntax_err = 1;
-      YYERROR;
-    } else $$ = *result;
-  }
+ | expr TOK_LMEMBER {DO(Expr_Struc_Member(& $$, & $1, & $2));}
 
  | expr '=' expr        { if (Prs_Rule_Valued_Eq_Valued(& $$, & $1, & $3) ) MY_ERR}
 

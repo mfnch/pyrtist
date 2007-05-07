@@ -20,8 +20,17 @@
 
 /* $Id$ */
 
-#include "expr.h"
+#include <assert.h>
+#include <ctype.h>
+
+#include "types.h"
+#include "messages.h"
+#include "typesys.h"
 #include "compiler.h"
+#include "registers.h"
+#include "expr.h"
+#include "str.h"
+#include "mem.h"
 
 /* This fuction creates an expression with type, but without value.
  */
@@ -107,6 +116,176 @@ void Expr_Print(Expr *e, FILE *out) {
     e->is.release ? '1' : '0'
   );
 }
+
+/* Converts an expression into a pointer */
+void Expr_To_Ptr(Expr *e) {
+  assert(e->categ != CAT_IMM);
+  switch(e->categ) {
+  case CAT_GREG:
+  case CAT_LREG:
+    /* *e is a register o a local/global variable:
+     * we have to pass from the object being referenced by roN
+     * (roN is the N-th object register) to o[roN]
+     */
+    e->is.gaddr = (e->categ == CAT_GREG ? 1 : 0);
+    e->categ = CAT_PTR;
+    e->addr = e->value.i;
+    e->value.i = 0;
+    e->is.imm = e->is.ignore = 0;
+    e->is.value = e->is.target = 1;
+    e->is.allocd = 0; e->is.release = 1;
+    return;
+
+  case CAT_PTR:
+    /* *e is already a pointer (i.e. something like o[roN+M]
+     * There is nothing to do then!
+     */
+    return;
+  default:
+    assert(0);
+  }
+}
+
+/* Given a Point expression and the name of its possible member
+ * ("x" or "y"), constructs an expression for the corresponding
+ * member in *m. *s is then released.
+ */
+static Task Expr_Point_Member(Expr *m, Expr *s, Name *m_name) {
+  assert(s->resolved < NUM_INTRINSICS);
+  if (s->resolved != TYPE_POINT) goto member_not_found;
+
+  if (m_name->length == 1) {
+    Int addr;
+    switch(tolower(*(m_name->text))) {
+    case 'x':
+      TASK( Cmp_Expr_To_LReg(s) );
+      TASK( Cmp_Complete_Ptr_1(s) );
+      Cmp_Assemble(ASM_PPTRX_P, s->categ, s->value.i);
+      break;
+    case 'y':
+      TASK( Cmp_Expr_To_LReg(s) );
+      TASK( Cmp_Complete_Ptr_1(s) );
+      Cmp_Assemble(ASM_PPTRY_P, s->categ, s->value.i);
+      break;
+    default:
+      goto member_not_found;
+    }
+    TASK( Cmp_Expr_Destroy_Tmp(s) );
+
+    /* ATTENZIONE: devo mettere ro0 in un registro locale temporaneo */
+    if ( (addr = Reg_Occupy(TYPE_OBJ)) < 1 ) return Failed;
+    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, addr, CAT_LREG, 0);
+
+    m->resolved = m->type = TYPE_REAL;
+    m->categ = CAT_PTR;
+    m->is.gaddr = 0;
+    m->addr = addr;
+    m->value.i = 0;
+    m->is.imm = m->is.ignore = 0;
+    m->is.value = m->is.target = 1;
+    m->is.allocd = 0;
+    m->is.release = 1;
+    return Success;
+  }
+
+member_not_found:
+  MSG_ERROR( "'%N' is not an intrinsic member of '%s'!",
+   m, Tym_Type_Name(s->type) );
+  return Failed;
+}
+
+
+/* Given a structure expression and the name of its member,
+ * constructs an expression for the corresponding member in *m.
+ * *s is then released.
+ */
+Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name) {
+  Type t = s->resolved, m_type, tm;
+  Int m_addr;
+  char *str_m_name;
+
+  if (! s->is.value) {
+    MSG_ERROR("Requested member '%N' of a non-valued expression!", m_name);
+    return Failed;
+  }
+
+  /* Determino se si tratta di un oggetto intrinseco */
+  if (t < NUM_INTRINSICS)
+    return Expr_Point_Member(m, s, m_name);
+
+  str_m_name = Name_To_Str(m_name);
+  TS_Member_Find(cmp->ts, & tm, s->type, str_m_name);
+  Mem_Free(str_m_name);
+  if (tm == TYPE_NONE) {
+    MSG_ERROR("'%s' has no member with name '%N'",
+     Tym_Type_Name(s->type), m_name);
+    return Failed;
+  }
+
+  TS_Member_Get(cmp->ts, & m_type, & m_addr, tm);
+
+  *m = *s;
+  Expr_To_Ptr(m);
+  m->type = m_type;
+  m->resolved = Tym_Type_Resolve_All(m_type);
+  m->value.i += m_addr;
+  return Success;
+}
+
+#if 0
+/* DESCRIPTION: This is a particular case of the following function
+ *  (Cmp_Member_Get). It deals with members of instance of an object.
+ */
+static Expression *Cmp__Member_Of_Instance(Expression *e, Name *nm) {
+  Symbol *s;
+  Intg t = e->resolved;
+
+  /* Determino il simbolo associato all'espressione *e */
+  /*sym_struct = Cmp_Type_Symbol(e->type);
+  if ( sym_struct == NULL ) return Failed;*/
+
+  /* Cerco *nm fra i membri del tipo t */
+  MSG_ERROR("Major change is happening: feature has been disabled!");
+  return Failed;
+
+  /*if IS_FAILED( Sym_Implicit_Find(& s, t, nm) ) {
+    MSG_ERROR( "'%N' is not a member of type '%s'!", nm, Tym_Type_Name(t) );
+    return NULL;
+  }*/
+
+  switch ( e->categ ) {
+   case CAT_GREG:
+   case CAT_LREG:
+    /* *e e' un registro (oppure una variabile) locale o globale! */
+    e->is.gaddr = ( e->categ == CAT_GREG ) ? 1 : 0;
+    e->addr = e->value.i;
+    e->categ = CAT_PTR;
+    e->value.i = s->value.addr;
+    e->type = s->value.type;
+    e->resolved = s->value.resolved;
+    e->is.imm = e->is.ignore = 0;
+    e->is.value = e->is.target = 1;
+    e->is.allocd = 0; e->is.release = 1;
+    return e;
+
+   case CAT_PTR:
+    e->value.i += s->value.addr;
+    e->type = s->value.type;
+    e->resolved = s->value.resolved;
+    e->is.imm = e->is.ignore = 0;
+    e->is.value = e->is.target = 1;
+    return e;
+
+   default:
+    MSG_ERROR("Cmp__Member_Of_Instance: internal error!");
+  }
+
+  return NULL;
+}
+#endif
+
+/******************************************************************************/
+
 
 #if 0
 /** Put inside *e a the given immediate Char value. */

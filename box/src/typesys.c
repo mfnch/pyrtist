@@ -200,7 +200,8 @@ static Task Member_Full_Name(TS *ts, Name *n, Type s, const char *m_name) {
 void TS_Member_Find(TS *ts, Type *m, Type s, const char *m_name) {
   Name n;
   HashItem *hi;
-  *m = TS_TYPE_NONE;;
+  *m = TS_TYPE_NONE;
+  s = TS_Resolve(ts, s, 1, 1);
   if IS_FAILED(Member_Full_Name(ts, & n, s, m_name)) return;
   if (HT_Find(ts->members, n.text, n.length, & hi))
     *m = *((Type *) hi->object);
@@ -469,6 +470,7 @@ TypeOfType Tym_Type_TOT(Int t) {
     return TOT_PROCEDURE2;
   case TS_KIND_POINTER: return TOT_PTR_TO;
   case TS_KIND_ENUM:
+  default:
     assert(0);
     return 0;
   }

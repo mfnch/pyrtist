@@ -275,8 +275,6 @@ Operation *Cmp_Operation_Find(Operator *opr,
  Intg type1, Intg type2, Intg typer, OpnInfo *oi);
 Task Cmp_Conversion(Intg type1, Intg type2, Expression *e);
 Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn);
-Task Cmp_Member_Intrinsic(Expression *e, Name *m);
-Expression *Cmp_Member_Get(Expression *e, Name *m);
 Expression *Cmp_Operator_Exec(Operator *opr, Expression *e1, Expression *e2);
 Expression *Cmp_Operation_Exec(Operation *opn, Expression *e1, Expression *e2);
 Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c);
