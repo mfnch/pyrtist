@@ -108,7 +108,8 @@ Changes:
              (to handle species).
     [TO DO 4] Arrays, pointers (string as pointer to Char)
     [TO DO 5] Scope: implicit objects and implicit types.
-    [TO DO 6] Structures: one should be able to define structures with named members.
+    [TO DO 6][DONE, 7 May 2007] Structures: one should be able to define structures
+                                with named members.
   *** ADVANCED FEATURES ***
     [TO DO 7] Add code attributes (to define constants, global objects, etc.)
     [TO DO 8] Immediate execution of operations between immediate operands.
