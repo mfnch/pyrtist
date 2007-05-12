@@ -156,6 +156,12 @@ Task TS_Enum_Add(TS *ts, Type e, Type t);
 
 Task TS_Default_Value(TS *ts, Type *dv_t, Type t, Data *dv);
 
+/** Given an array type (N)X returns X in *memb and the size N
+ * of the array in *array_size.
+ * An error is generated if array is not an array type.
+ */
+Task TS_Array_Member(TS *ts, Type *memb, Type array, Int *array_size);
+
 /** Search the member 'm_name' from the members of the structure s.
  * If the member is found then *m will be set with its type number,
  * otherwise *m will be TS_TYPE_NONE

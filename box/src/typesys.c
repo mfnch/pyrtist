@@ -136,7 +136,7 @@ Task TS_Name_Set(TS *ts, Type t, const char *name) {
   TSDesc *td = Type_Ptr(ts, t);
   if (td->name != (char *) NULL) {
     MSG_ERROR("TS_Name_Set: trying to set the name '%s' for type %I: "
-     "this type has been already given the name '%s'!", name, t, td->name);
+     "this type has already been given the name '%s'!", name, t, td->name);
     return Failed;
   }
   td->name = Mem_Strdup(name);
@@ -185,6 +185,19 @@ char *TS_Name_Get(TS *ts, Type t) {
   default:
     return Mem_Strdup("<unknown type>");
   }
+}
+
+Task TS_Array_Member(TS *ts, Type *memb, Type array, Int *array_size) {
+  Type a = TS_Resolve(ts, array, 1, 1);
+  TSDesc *a_td = Type_Ptr(ts, a);
+  if (a_td->kind != TS_KIND_ARRAY) {
+    MSG_ERROR("Cannot extract element of the non-array type '%~s'",
+     TS_Name_Get(ts, array));
+    return Failed;
+  }
+  *memb = a_td->target;
+  if (array_size != (Int *) NULL) *array_size = a_td->data.array_size;
+  return Success;
 }
 
 /* The full name to use in the hashtable of members */
@@ -541,6 +554,7 @@ Int Tym_Def_Array_Of(Int num, Int type) {
 Int Tym_Def_Alias_Of(Name *nm, Int type) {
   Type alias;
   assert(TS_Alias_New(last_ts, & alias, type) == Success);
+  TS_Name_Set(last_ts, alias, Name_To_Str(nm));
   return alias;
 }
 

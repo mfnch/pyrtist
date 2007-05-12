@@ -25,8 +25,18 @@
  * Questo file contiene le dichiarazioni delle procedure definite in register.c
  */
 
-#define REG_OCC_TYP_SIZE {10, 10, 10, 10, 10}
-#define VAR_OCC_TYP_SIZE {10, 10, 10, 10, 10}
+#ifndef _REGISTERS_H
+#  define _REGISTERS_H
+
+typedef struct {
+  Array *reg_occ[NUM_TYPES];
+  Int reg_max[NUM_TYPES];
+  Array *var_occ[NUM_TYPES];
+  Int var_max[NUM_TYPES];
+} RegAlloc;
+
+#  define REG_OCC_TYP_SIZE {10, 10, 10, 10, 10}
+#  define VAR_OCC_TYP_SIZE {10, 10, 10, 10, 10}
 
 Task Reg_Init(UInt typical_num_reg[NUM_TYPES]);
 Intg Reg_Occupy(Intg t);
@@ -37,3 +47,4 @@ Intg Var_Occupy(Intg type, Intg level);
 Task Var_Release(Intg type, UInt varnum);
 Intg Var_Num(Intg type);
 void RegVar_Get_Nums(Intg *num_var, Intg *num_reg);
+#endif

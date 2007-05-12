@@ -117,6 +117,23 @@ void Expr_Print(Expr *e, FILE *out) {
   );
 }
 
+/* Checks that the given expression has type */
+Task Expr_Must_Have_Type(Expr *e) {
+  if (! e->is.typed) {
+    MSG_ERROR("Expression has no type.");
+    return Failed;
+  }
+  return Success;
+}
+
+Task Expr_Must_Have_Value(Expr *e) {
+  if (! (e->is.typed && e->is.value)) {
+    MSG_ERROR("Expression has no value.");
+    return Failed;
+  }
+  return Success;
+}
+
 /* Converts an expression into a pointer */
 void Expr_To_Ptr(Expr *e) {
   assert(e->categ != CAT_IMM);
@@ -232,57 +249,29 @@ Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name) {
   return Success;
 }
 
-#if 0
-/* DESCRIPTION: This is a particular case of the following function
- *  (Cmp_Member_Get). It deals with members of instance of an object.
- */
-static Expression *Cmp__Member_Of_Instance(Expression *e, Name *nm) {
-  Symbol *s;
-  Intg t = e->resolved;
-
-  /* Determino il simbolo associato all'espressione *e */
-  /*sym_struct = Cmp_Type_Symbol(e->type);
-  if ( sym_struct == NULL ) return Failed;*/
-
-  /* Cerco *nm fra i membri del tipo t */
-  MSG_ERROR("Major change is happening: feature has been disabled!");
-  return Failed;
-
-  /*if IS_FAILED( Sym_Implicit_Find(& s, t, nm) ) {
-    MSG_ERROR( "'%N' is not a member of type '%s'!", nm, Tym_Type_Name(t) );
-    return NULL;
-  }*/
-
-  switch ( e->categ ) {
-   case CAT_GREG:
-   case CAT_LREG:
-    /* *e e' un registro (oppure una variabile) locale o globale! */
-    e->is.gaddr = ( e->categ == CAT_GREG ) ? 1 : 0;
-    e->addr = e->value.i;
-    e->categ = CAT_PTR;
-    e->value.i = s->value.addr;
-    e->type = s->value.type;
-    e->resolved = s->value.resolved;
-    e->is.imm = e->is.ignore = 0;
-    e->is.value = e->is.target = 1;
-    e->is.allocd = 0; e->is.release = 1;
-    return e;
-
-   case CAT_PTR:
-    e->value.i += s->value.addr;
-    e->type = s->value.type;
-    e->resolved = s->value.resolved;
-    e->is.imm = e->is.ignore = 0;
-    e->is.value = e->is.target = 1;
-    return e;
-
-   default:
-    MSG_ERROR("Cmp__Member_Of_Instance: internal error!");
+Task Expr_Array_Member(Expr *member, Expr *array, Expr *index) {
+  Type m_type;
+  Int m_size;
+  TASK( Expr_Must_Have_Type(array) );
+  TASK( Expr_Must_Have_Value(index) );
+  TASK( TS_Array_Member(cmp->ts, & m_type, array->type, (Int *) NULL) );
+  if (index->resolved != TYPE_INT) {
+    MSG_ERROR("Indices of arrays must be integers.");
+    return Failed;
   }
-
-  return NULL;
+  *member = *array;
+  Expr_To_Ptr(member);
+  member->type = m_type;
+  member->resolved = Tym_Type_Resolve_All(m_type);
+  m_size = TS_Size(cmp->ts, m_type);
+  if (index->categ == CAT_IMM) {
+    member->value.i += m_size*index->value.i;
+  } else {
+    MSG_ERROR("Index of array is non-constant: not implemented yet!");
+    member->value.i = 0;
+  }
+  return Success;
 }
-#endif
 
 /******************************************************************************/
 

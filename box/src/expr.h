@@ -71,6 +71,12 @@ void Expr_New_Void(Expr *e);
 /** Print the content of the given expression */
 void Expr_Print(Expr *e, FILE *out);
 
+/** Checks that the given expression has type */
+Task Expr_Must_Have_Type(Expr *e);
+
+/** Checks that the given expression has value */
+Task Expr_Must_Have_Value(Expr *e);
+
 /** Convert an object register/variable into a pointer.
  * example: this correspond to the transition from ro3 --> o[ro3]
  */
@@ -83,5 +89,11 @@ void Expr_To_Ptr(Expr *e);
  * Once the member has been obtained *s is release.
  */
 Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name);
+
+/** Given an array expression and an index expression,
+ * build up an expression containing the corresponding member
+ * of the array.
+ */
+Task Expr_Array_Member(Expr *memb, Expr *array, Expr *index);
 
 #endif

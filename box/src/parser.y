@@ -368,8 +368,8 @@ simple.expr:
 
 array.expr:
   simple.expr             { $$ = $1; }
-| array.expr '(' expr ')' { }
- ;
+| array.expr '(' expr ')' { DO(Expr_Array_Member(& $$, & $1, & $3)); }
+;
 
 prim.expr:
    array.expr          { $$ = $1; }
@@ -939,12 +939,13 @@ Task Prs_Rule_Typed_Eq_Typed(Expression *rs,
     /* Assertion: 'typed2' must be equal to 'typed1'. */
     *rs = *typed2;
     if ( ! typed2->is.typed ) {
-      MSG_ERROR("Il tipo alla destra di '=' non e' ancora stato definito!");
+      MSG_ERROR("The type on the right hand side of '=' "
+       "has not been defined yet!");
       return Failed;
     }
     if ( Tym_Compare_Types(typed1->type, typed2->type, NULL) == 1 )
       return Success;
-    MSG_ERROR("Incongruenza fra i tipi!");
+    MSG_ERROR("Type mismatch!");
     return Failed;
 
   } else {

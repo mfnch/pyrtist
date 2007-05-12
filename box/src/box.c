@@ -79,8 +79,13 @@ Task Box_Main_Begin(void) {
 }
 
 void Box_Main_End(void) {
-  Box *b = Arr_LastItemPtr(bs->box, Box);
+  UInt box_level = Box_Depth();
+  Box *b = Arr_FirstItemPtr(bs->box, Box);
   UInt head_sym_num = b->head_sym_num;
+  if (box_level > 0) {
+    MSG_ERROR("Missing %I closing %s!", box_level,
+     box_level > 1 ? "braces" : "brace");
+  }
   (void) Box_Instance_End((Expr *) NULL);
   VM_Assemble(cmp_vm, ASM_RET);
   (void) Box_Def_Prepare(head_sym_num);
@@ -117,7 +122,7 @@ Task Box_Def_End(void) {
   TASK(Box_Def_Prepare(b->head_sym_num));
   proc_type = b->type;
   proc_num = b->proc_num;
-  Tym_Procedure_Sym_Num(& sym_num, proc_type);
+  TS_Procedure_Sym_Num(cmp->ts, & sym_num, proc_type);
   /* We finally install the code for the procedure */
   TASK( VM_Proc_Install_Code(cmp_vm, & call_num, proc_num,
    "(noname)", Tym_Type_Name(proc_type)) );
@@ -259,11 +264,11 @@ Task Box_Get(Box **box, Intg depth) {
   Intg max_depth;
   assert(bs->box != NULL);
   max_depth = Arr_NumItem(bs->box);
-  if ( (depth >= max_depth) || (depth < 0) ) {
+  if (depth >= max_depth || depth < 0) {
     if (depth < 0) {
-      MSG_ERROR("Profondita' di box negativa.");
+      MSG_ERROR("Negative box depth.");
     } else {
-      MSG_ERROR("Profondita' di box fuori limite.");
+      MSG_ERROR("Invalid box depth.");
     }
     return Failed;
   }
@@ -281,13 +286,11 @@ Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth) {
   Symbol *s;
   Box *b;
 
-  MSG_LOCATION("Sym_Explicit_New");
-
   /* Controllo che non esista un simbolo omonimo gia' definito */
   assert( (depth >= 0) && (depth <= Box_Depth()) );
   s = Sym_Explicit_Find(nm, depth, EXACT_DEPTH);
   if ( s != NULL ) {
-    MSG_ERROR("Un simbolo con lo stesso nome esiste gia'");
+    MSG_ERROR("A symbol with name '%N' has already been defined", nm);
     return Failed;
   }
 
