@@ -542,6 +542,14 @@ statement:
     /*YYBACKUP(',', yylval);*/
   yyerrok;
   }
+ | error ']' {
+  if (! parser_attr.no_syntax_err ) {
+    MSG_ERROR("Syntax error.");
+  }
+  parser_attr.no_syntax_err = 0;
+  Tok_Unput(']');
+  yyerrok;
+  }
 ;
 
 statement.list:
