@@ -50,6 +50,9 @@ typedef struct {
 
 Task Reg_Init(void);
 void Reg_Destroy(void);
+void Reg_Frame_Push(void);
+Task Reg_Frame_Pop(void);
+Int Reg_Frame_Get(void);
 Int Reg_Occupy(Int t);
 Task Reg_Release(Int t, UInt regnum);
 Int Reg_Num(Int t);

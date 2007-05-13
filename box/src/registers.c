@@ -62,20 +62,6 @@ static Task Frame_Destructor(void *reg_frame_ptr) {
   return Success;
 }
 
-void Reg_Frame_Push(void) {
-  int i;
-  RegFrame new_frame;
-  for(i=0; i<NUM_TYPES; i++) {
-    new_frame.reg_occ[i] = (Collection *) NULL;
-    new_frame.var_occ[i] = (Array *) NULL;
-  }
-  (void) Arr_Push(ra->reg_frame, & new_frame);
-}
-
-Task Reg_Frame_Pop(void) {
-  return Arr_Pop(ra->reg_frame);
-}
-
 /*  Inizializza gli array che tengono nota dei registri occupati
  *  e setta la loro "dimensione a riposo". Questa quantita'(per ciascun
  *  tipo di registro) deve essere piu' grande del numero di registri che
@@ -92,6 +78,22 @@ Task Reg_Init(void) {
 void Reg_Destroy(void) {
   Arr_Destroy(ra->reg_frame);
 }
+
+void Reg_Frame_Push(void) {
+  int i;
+  RegFrame new_frame;
+  for(i=0; i<NUM_TYPES; i++) {
+    new_frame.reg_occ[i] = (Collection *) NULL;
+    new_frame.var_occ[i] = (Array *) NULL;
+  }
+  (void) Arr_Push(ra->reg_frame, & new_frame);
+}
+
+Task Reg_Frame_Pop(void) {
+  return Arr_Pop(ra->reg_frame);
+}
+
+Int Reg_Frame_Get(void) {return Arr_NumItem(ra->reg_frame);}
 
 /*  Restituisce un numero di registro libero e lo occupa,
  *  in modo tale che questo numero di registro non venga piu' restituito
