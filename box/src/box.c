@@ -181,6 +181,7 @@ Task Box_Def_End(void) {
 Task Box_Instance_Begin(Expr *e) {
   Box b;
 
+  Expr_New_Void(& b.child);
   if ( e == NULL ) {
     /* Si tratta di una box void */
     b.is.second = 0;

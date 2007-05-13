@@ -366,8 +366,8 @@ simple.expr:
   TOK_LNAME suffix.opt    { Prs_Name_To_Expr( & $1, & $$, $2); }
 | TOK_EXPR                { $$ = $1; }
 | string                  { if IS_FAILED( Cmp_String_New_And_Free(& $$, & $1) ) MY_ERR }
-| '$'                     { DO( Box_Child_Get(& $$, 0) ); }
-| TOK_PARENT              { DO( Box_Parent_Get(& $$, 0) ); }
+| '$' suffix.opt          { DO( Box_Child_Get(& $$, $2) ); }
+| TOK_PARENT suffix.opt   { DO( Box_Parent_Get(& $$, $2) ); }
  ;
 
 array.expr:

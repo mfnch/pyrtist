@@ -1203,9 +1203,7 @@ Task Cmp_Expr_Create(Expression *e, Int type, int temporary) {
 
 /* DESCRIPTION:
  */
-Task Cmp_Expr_Destroy(Expression *e, int destroy_target) {
-  MSG_LOCATION("Cmp_Expr_Destroy");
-
+Task Cmp_Expr_Destroy(Expr *e, int destroy_target) {
 #ifdef DEBUG_CONTAINER_HANDLING
   printf( "Cmp_Expr_Destroy: destroying " );
   Expr_Print(e, stdout);

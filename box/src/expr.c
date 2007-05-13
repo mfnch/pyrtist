@@ -67,7 +67,7 @@ void Expr_New_Void(Expr *e) {
 void Expr_New_Value(Expr *e, Type t) {
   e->is.typed = 1;
   e->type = t;
-  e->resolved = TS_Resolve(cmp->ts, t, 1, 0);
+  e->resolved = TS_Resolve(cmp->ts, t, 1, 1);
   e->is.value = (TS_Size(cmp->ts, t) > 0) ? 1 : 0;
   e->categ = CAT_LREG;
   e->value.i = 0;
@@ -304,6 +304,7 @@ void Expr_Parent_And_Child(Expr *e_parent, Expr *e_child, Type t_proc) {
     /* Here we occupy a TYPE_OBJ even if the type is TYPE_INT, etc.
      * This is because we have to get the object from the register go1
      */
+    e_parent->is.target = 1;
     e_parent->categ = CAT_PTR;
     e_parent->is.gaddr = 0;
     e_parent->addr = Reg_Occupy(TYPE_OBJ);
@@ -314,6 +315,7 @@ void Expr_Parent_And_Child(Expr *e_parent, Expr *e_child, Type t_proc) {
   Expr_New_Value(e_child, t_child);
   if (e_child->is.value) {
     /* See previous comment! */
+    e_child->is.target = 1;
     e_child->categ = CAT_PTR;
     e_child->is.gaddr = 0;
     e_child->addr = Reg_Occupy(TYPE_OBJ);
