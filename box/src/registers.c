@@ -37,6 +37,7 @@
 #include "messages.h"
 #include "array.h"
 #include "registers.h"
+#include "virtmach.h"
 
 #define END_OF_CHAIN -1
 #define OCCUPIED 0
@@ -109,7 +110,8 @@ Int Reg_Occupy(Int t) {
   RegFrame *rf = Arr_LastItemPtr(ra->reg_frame, RegFrame);
   Task task;
 
-  assert(t >= 0 && t < NUM_TYPES);
+  assert(t >= 0);
+  if (t >= NUM_TYPES) t = TYPE_OBJ;
   if (rf->reg_occ[t] == (Collection *) NULL) {
     task = Clc_New(& rf->reg_occ[t], 0, REG_OCC_TYP_SIZE);
     assert(task == Success);
@@ -125,7 +127,8 @@ Int Reg_Occupy(Int t) {
 Task Reg_Release(Int t, UInt reg_num) {
   RegFrame *rf = Arr_LastItemPtr(ra->reg_frame, RegFrame);
 
-  assert(t >= 0 && t < NUM_TYPES);
+  assert(t >= 0);
+  if (t >= NUM_TYPES) t = TYPE_OBJ;
   if (rf->reg_occ[t] == (Collection *) NULL) {
     MSG_ERROR("Reg_Release: trying to release a non-occupied register!");
     return Failed;
@@ -139,7 +142,8 @@ Task Reg_Release(Int t, UInt reg_num) {
 Int Reg_Num(Int t) {
   RegFrame *rf = Arr_LastItemPtr(ra->reg_frame, RegFrame);
 
-  assert(t >= 0 && t < NUM_TYPES);
+  assert(t >= 0);
+  if (t >= NUM_TYPES) t = TYPE_OBJ;
   if (rf->reg_occ[t] == (Collection *) NULL) return 0;
   return Clc_MaxIndex(rf->reg_occ[t]);
 }
@@ -179,7 +183,8 @@ Int Var_Occupy(Int type, Int level) {
   Int ni;
   long occ;
 
-  assert(type >= 0 && type < NUM_TYPES);
+  assert(type >= 0);
+  if (type >= NUM_TYPES) type = TYPE_OBJ;
 
   if (rf->var_occ[type] == (Array *) NULL) {
     /* Preparo le array */
@@ -234,7 +239,8 @@ Task Var_Release(Int type, UInt varnum) {
   Array *rb;
   VarItem *vi;
 
-  assert(type >= 0 && type < NUM_TYPES);
+  assert(type >= 0);
+  if (type >= NUM_TYPES) type = TYPE_OBJ;
 
   if (rf->var_occ[type] == (Array *) NULL) {
     MSG_ERROR("Var_Release: trying to release a non-occupied variable!");
@@ -262,7 +268,8 @@ Task Var_Release(Int type, UInt varnum) {
  */
 Int Var_Num(Int type) {
   RegFrame *rf = Arr_LastItemPtr(ra->reg_frame, RegFrame);
-  assert(type >= 0 && type < NUM_TYPES);
+  assert(type >= 0);
+  if (type >= NUM_TYPES) type = TYPE_OBJ;
   if (rf->var_occ[type] == (Array *) NULL) return 0;
   return rf->var_max[type];
 }

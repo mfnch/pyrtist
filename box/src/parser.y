@@ -190,6 +190,8 @@ static Task Type_Struc_2(Expr *se, Struc *s) {
 %token TMP_TOK_AGAIN
 %token TMP_TOK_EXIT
 
+%token TOK_PARENT
+
 /* Lista dei token aventi valore semantico
  */
 %token <Ex> TOK_EXPR
@@ -364,6 +366,8 @@ simple.expr:
   TOK_LNAME suffix.opt    { Prs_Name_To_Expr( & $1, & $$, $2); }
 | TOK_EXPR                { $$ = $1; }
 | string                  { if IS_FAILED( Cmp_String_New_And_Free(& $$, & $1) ) MY_ERR }
+| '$'                     { DO( Box_Child_Get(& $$, 0) ); }
+| TOK_PARENT              { DO( Box_Parent_Get(& $$, 0) ); }
  ;
 
 array.expr:
@@ -396,15 +400,9 @@ expr:
 /* | prim.expr TOK_UMEMBER    {} */
 
  | TOK_LMEMBER {
-    Expression e_box;
-    Box *b;
-    if IS_FAILED( Box_Get(& b, 0) ) {YYERROR;}
-    if ( b->value.resolved == TYPE_VOID ) {
-      MSG_WARNING("La box di tipo [...] non puo' possedere alcun membro!");
-      YYERROR;
-    }
-    e_box = b->value;
-    DO(Expr_Struc_Member(& $$, & e_box, & $1));
+    Expression e_parent;
+    TASK( Box_Parent_Get(& e_parent, 0) );
+    DO(Expr_Struc_Member(& $$, & e_parent, & $1));
     $$.is.release = 0;
   }
 
@@ -763,31 +761,29 @@ Task Prs_Member_To_Expr(Name *nm, Expression *e, Intg suffix) {
   return Success;*/
 }
 
-/* DESCRIPTION: Every explicit symbol can be followed by a suffix,
- *  which specifies which opened box contains the symbol.
- *  For example: variable::box1:box2
- *  The compiler interprets the string '::box1:box2' as the specification
- *  of the box which contains the variable 'v'.
- *  The association string --> box-level is obtained by the following
- *  function.
+/* Every explicit symbol can be followed by a suffix,
+ * which specifies which opened box contains the symbol.
+ * For example: variable::box1:box2
+ * The compiler interprets the string '::box1:box2' as the specification
+ * of the box which contains the variable 'v'.
+ * The association string --> box-level is obtained by the following
+ * function.
  */
-Task Prs_Suffix(Intg *rs, Intg suffix, Name *nm) {
+Task Prs_Suffix(Int *rs, Int suffix, Name *nm) {
   if ( nm->length > 0 ) {
     Symbol *s;
 
     /* Cerco il simbolo a profondita' suffix o superiori */
     s = Sym_Explicit_Find(nm, suffix, NO_EXACT_DEPTH);
     if ( s == NULL ) {
-      MSG_ERROR( "'%s' <-- tipo astratto inesistente!",
-       Name_To_Str(nm) );
+      MSG_ERROR( "'%N' <-- type not found!", nm );
       return Failed;
     }
 
     /* Controllo che sia un tipo, ossia un simbolo con tipo e senza valore. */
     assert( s->value.is.typed );
     if ( s->value.is.value ) {
-      MSG_ERROR( "'%s' deve essere un tipo astratto!",
-       Name_To_Str(nm) );
+      MSG_ERROR( "'%N' has to be a type!", nm );
       return Failed;
     }
 
@@ -795,8 +791,7 @@ Task Prs_Suffix(Intg *rs, Intg suffix, Name *nm) {
     if ( (*rs = Box_Search_Opened(s->value.type, suffix + 1)) >= 0 )
       return Success;
 
-    MSG_ERROR( "'%s' <-- nessuna box aperta e' di questo tipo!",
-      Name_To_Str(nm) );
+    MSG_ERROR( "'%N' <-- none of the opened box have this type!", nm );
     return Failed;
 
   } else {
@@ -807,7 +802,7 @@ Task Prs_Suffix(Intg *rs, Intg suffix, Name *nm) {
       if ( (*rs = suffix + 1) <= Box_Depth() ) {
         return Success;
       } else {
-        MSG_ERROR("Massima profondita' di box superata.");
+        MSG_ERROR("Maximum box depth exceeded.");
         return Failed;
       }
     }

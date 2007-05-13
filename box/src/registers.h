@@ -23,7 +23,20 @@
 /** @file registers.h
  * @brief The register allocation system.
  *
- * Some words.
+ * This file provides the functions needed to associate registers
+ * to expressions, guaranting that occupied registers will never be used
+ * for other new expressions, unless they have been first released
+ * with the appropriate function.
+ * The system keeps track of registers indipendently for different
+ * pieces of code. For this purpose the concept of frame is used.
+ * Registers in different frames are completely independent. This means
+ * that there is a different occupation list for each different frame.
+ * Frames can be created with the function Reg_Frame_Push and destroyed
+ * with Reg_Frame_Pop. Registers with different types are also independent.
+ * This means that there is a different occupation list for each different
+ * type of register. There are NUM_TYPES kinds of registers.
+ * NOTE: In all the functions defined here, when the given type exceed
+ * the maximum value, the default type TYPE_OBJ is considered.
  */
 
 #ifndef _REGISTERS_H
@@ -33,19 +46,19 @@
 #  include "array.h"
 #  include "collection.h"
 
-/** This structure describe the state of allocation of the register
- * in a single function.
+/** @brief The state of allocation of the registers in a single function.
  */
 typedef struct {
-  Collection *reg_occ[NUM_TYPES];
-  Int var_max[NUM_TYPES];
-  Array *var_occ[NUM_TYPES];
+  Collection *reg_occ[NUM_TYPES]; /**< Registers occupation */
+  Int var_max[NUM_TYPES]; /**< Variables occcupations */
+  Array *var_occ[NUM_TYPES]; /**< Total number of registers
+                                  to allocate for variables */
 } RegFrame;
 
-/** This structure keeps the full state of the register allocator.
+/** @brief This structure keeps the full state of the register allocator.
  */
 typedef struct {
-  Array *reg_frame;
+  Array *reg_frame; /**< Array of register frames */
 } RegAlloc;
 
 Task Reg_Init(void);

@@ -48,7 +48,7 @@ typedef struct ht {
   unsigned int key_size, object_size;
 } HashItem;
 
-/** Hash table object */
+/** @brief Hash table object */
 typedef struct {
   /** Size of the hash table, should be a power of 2 */
   int num_entries;

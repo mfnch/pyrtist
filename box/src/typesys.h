@@ -113,6 +113,18 @@ Task TS_Intrinsic_New(TS *ts, Type *i, Int size);
  */
 Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind);
 
+/** Get information about the procedure p. This information is store
+ * in the destination specified by the given pointers, but this happens
+ * only if the pointer is != NULL.
+ * @param ts the type-system data structure
+ * @param parent the parent of the procedure
+ * @param child the children of the procedure
+ * @param kind the kind of the procedure
+ * @param sym_num the symbol identification (for registered procedures)
+ */
+void TS_Procedure_Info(TS *ts, Type *parent, Type *child,
+                       int *kind, UInt *sym_num, Type p);
+
 /** Register the procedure p. After this function has been called
  * the procedure p will belong to the list of procedures of its parent.
  * sym_num is the symbol associated with the procedure.
@@ -259,8 +271,6 @@ Intg Tym_Type_Resolve(Intg type, int not_alias, int not_species);
 #define Tym_Type_Resolve_Species(type) Tym_Type_Resolve(type, 1, 0)
 #define Tym_Type_Resolve_All(type) Tym_Type_Resolve(type, 0, 0)
 Intg Tym_Def_Procedure(Intg proc, int second, Intg of_type, Intg sym_num);
-Task Tym_Procedure_Info(Int proc_type, Int *child, Int *parent,
-                        int *second, UInt *sym_num);
 Intg Tym_Search_Procedure(Intg proc, int second, Intg of_type,
                           Intg *containing_species);
 void Tym_Print_Procedure(FILE *stream, Intg of_type);

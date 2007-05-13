@@ -39,19 +39,21 @@ typedef struct {
   Array *box;
 } BoxStack;
 
-/* Questa struttura descrive un esempio di box */
+/** @brief This structure describes an opened box
+ */
 typedef struct {
   struct {
-    unsigned int definition : 1; /* instance or definition of procedure? */
-    unsigned int second : 1; /* This is 1 only if it is a non-creation box */
+    unsigned int definition : 1; /**< instance or definition of procedure? */
+    unsigned int second : 1; /**< This is 1 only if it is a non-creation box */
   } is;
-  UInt   proc_num;     /* Number of the procedure where the box is */
-  UInt   head_sym_num; /* Symbol ID associated with the header of the proc. */
-  Int    type;         /* Type of the box */
-  Expr   value;        /* Expression associated with the box */
-  Symbol *child;       /* Child symbols which belongs to this box */
-  int    label_begin,  /* Labels located at the beginning */
-         label_end;    /* and at the end of the box */
+  UInt   proc_num;     /**< Number of the procedure where the box is */
+  UInt   head_sym_num; /**< Symbol ID associated with the header of the proc. */
+  Int    type;         /**< Type of the box */
+  Expr   parent;       /**< Expression associated with the box */
+  Expr   child;        /**< Expression associated with the child of a procedure */
+  Symbol *syms;        /**< Child symbols which belong to this box */
+  int    label_begin,  /**< Labels located at the beginning */
+         label_end;    /**< and at the end of the box */
 } Box;
 
 Task Box_Init(void);
@@ -64,7 +66,28 @@ void Box_Main_End(void);
 Task Box_Instance_Begin(Expr *e);
 Task Box_Instance_End(Expr *e);
 Intg Box_Search_Opened(Intg type, Intg depth);
+
+/** This function returns the pointer to the structure Box
+ * corresponding to the box with depth 'depth'.
+ * NOTE: Specifying a negative value for 'depth' is equivalent to specify
+ *  the value 0.
+ */
 Task Box_Get(Box **box, Intg depth);
+
+/** Create in '*e_parent' the expression corresponding to the parent
+ * of the box whose depth level is 'depth'
+ * NOTE: Specifying a negative value for 'depth' is equivalent to specify
+ *  the value 0.
+ */
+Task Box_Parent_Get(Expr *e_parent, Int depth);
+
+/** Create in '*e_child' the expression corresponding to the child
+ * of the box whose depth level is 'depth'
+ * NOTE: Specifying a negative value for 'depth' is equivalent to specify
+ *  the value 0.
+ */
+Task Box_Child_Get(Expr *e_child, Int depth);
+
 Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth);
 #  endif
 #endif

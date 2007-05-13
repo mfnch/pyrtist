@@ -95,19 +95,44 @@ Task Box_Def_Begin(Int proc_type) {
   UInt new_sheet;
   Box b;
 
+  /* Create a new procedure where to write the code
+   * and set it as the target of code generation.
+   */
   TASK( VM_Proc_Code_New(cmp_vm, & new_sheet) );
+  TASK( VM_Proc_Target_Set(cmp_vm, new_sheet) );
 
+  /* Create a new register frame for the new piece of code:
+   * allocation of registers should start from scratch!
+   */
+  Reg_Frame_Push();
+
+  /* Create the header of the procedure: the piece of code
+   * where instructions such as "regi 1, 2" appears.
+   * These instructions say to the virtual machine how many registers
+   * will be used in the procedure. Currently these numbers are not known
+   * therfore we use the vmsym module to register a new symbol, which
+   * will used later to correct the header, once this information will
+   * be known.
+   */
+  TASK( VM_Sym_Proc_Head(cmp_vm, & b.head_sym_num) );
+
+  /* Now we get the parent and the child of the procedure.
+   * We create two expression which will be used to refer
+   * to these objects.
+   */
+  Expr_Parent_And_Child(& b.parent, & b.child, proc_type);
+
+  /* We finally collect all the other data about the box and we push
+   * it in the array of opened boxes.
+   */
   b.is.second = 0;
-  b.child = NULL;
+  b.syms = NULL;
   b.type = proc_type;
-  Expr_New_Void(& b.value);
   b.is.definition = 1;
   b.proc_num = new_sheet;
-
-  TASK( VM_Proc_Target_Set(cmp_vm, new_sheet) );
-  bs->cur_proc_num = new_sheet;
-  TASK( VM_Sym_Proc_Head(cmp_vm, & b.head_sym_num) );
+  /*Expr_New_Void(& b.parent);*/
   TASK(Arr_Push(bs->box, & b));
+  bs->cur_proc_num = new_sheet;
   return Success;
 }
 
@@ -128,6 +153,15 @@ Task Box_Def_End(void) {
    "(noname)", Tym_Type_Name(proc_type)) );
   /* And define the symbol */
   TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
+
+  {
+    Symbol *s;
+    for ( s = b->syms; s != (Symbol *) NULL; s = s->brother ) {
+      TASK( Cmp_Expr_Destroy(& (s->value), 1) );
+      Sym_Symbol_Delete( s );
+    }
+  }
+  TASK( Reg_Frame_Pop() );
 
   TASK(Arr_Dec(bs->box));
   if (Arr_NumItem(bs->box) > 0) {
@@ -150,9 +184,9 @@ Task Box_Instance_Begin(Expr *e) {
   if ( e == NULL ) {
     /* Si tratta di una box void */
     b.is.second = 0;
-    b.child = NULL;         /* Catena dei simboli figli */
+    b.syms = NULL;         /* Catena dei simboli figli */
     b.type = TYPE_VOID;
-    Expr_New_Void(& b.value);
+    Expr_New_Void(& b.parent);
 
   } else {
     if ( ! e->is.typed ) {
@@ -170,8 +204,8 @@ Task Box_Instance_Begin(Expr *e) {
 
     /* Compilo il descrittore del nuovo esempio di sessione aperto */
     b.type = e->type;
-    b.child = NULL;        /* Catena dei simboli figli */
-    b.value = *e;          /* Valore della sessione */
+    b.syms = NULL;        /* Catena dei simboli figli */
+    b.parent = *e;         /* Valore della sessione */
   }
 
   /* Creo le labels che puntano all'inizio ed alla fine della box */
@@ -216,7 +250,7 @@ Task Box_Instance_End(Expr *e) {
     TASK( VM_Label_Define_Here(cmp_vm, box->label_end) );
     TASK( VM_Label_Destroy(cmp_vm, box->label_end) );
 
-    for ( s = box->child; s != (Symbol *) NULL; s = s->brother ) {
+    for ( s = box->syms; s != (Symbol *) NULL; s = s->brother ) {
       TASK( Cmp_Expr_Destroy(& (s->value), 1) );
       Sym_Symbol_Delete( s );
     }
@@ -232,8 +266,8 @@ Task Box_Instance_End(Expr *e) {
  *  Restituisce la profondita' della scatola cercata o -1 in caso
  *  di ricerca fallita.
  */
-Intg Box_Search_Opened(Intg type, Intg depth) {
-  Intg max_depth, d;
+Int Box_Search_Opened(Int type, Int depth) {
+  Int max_depth, d;
   Box *box;
 
   assert( (bs->box != NULL) && (depth >= 0) );
@@ -246,9 +280,9 @@ Intg Box_Search_Opened(Intg type, Intg depth) {
 
   box = Arr_LastItemPtr(bs->box, Box) - depth;
   for (d = depth; d < max_depth; d++) {
-#if 1
-    printf("Profondita': "SIntg" -- Tipo: '%s'\n",
-     d, Tym_Type_Name(box->value.type));
+#if 0
+    printf("Profondita': "SInt" -- Tipo: '%s'\n",
+     d, Tym_Type_Name(box->parent.type));
 #endif
     if ( box->type == type ) return d;
     --box;
@@ -259,19 +293,30 @@ Intg Box_Search_Opened(Intg type, Intg depth) {
 /* This function returns the pointer to the structure Box
  * corresponding to the box with depth 'depth'.
  */
-Task Box_Get(Box **box, Intg depth) {
-  Intg max_depth;
+Task Box_Get(Box **box, Int depth) {
+  Int max_depth;
   assert(bs->box != NULL);
+  if (depth < 0) depth = 0;
   max_depth = Arr_NumItem(bs->box);
-  if (depth >= max_depth || depth < 0) {
-    if (depth < 0) {
-      MSG_ERROR("Negative box depth.");
-    } else {
-      MSG_ERROR("Invalid box depth.");
-    }
+  if (depth >= max_depth) {
+    MSG_ERROR("Invalid box depth.");
     return Failed;
   }
   *box = Arr_LastItemPtr(bs->box, Box) - depth;
+  return Success;
+}
+
+Task Box_Parent_Get(Expr *e_parent, Int depth) {
+  Box *b;
+  TASK( Box_Get(& b, depth) );
+  *e_parent = b->parent;
+  return Success;
+}
+
+Task Box_Child_Get(Expr *e_child, Int depth) {
+  Box *b;
+  TASK( Box_Get(& b, depth) );
+  *e_child = b->child;
   return Success;
 }
 
@@ -280,8 +325,8 @@ Task Box_Get(Box **box, Intg depth) {
 /*  Questa funzione definisce un nuovo simbolo di nome *nm,
  *  attribuendolo alla box di profondita' depth.
  */
-Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth) {
-  Intg box_lev;
+Task Sym_Explicit_New(Symbol **sym, Name *nm, Int depth) {
+  Int box_lev;
   Symbol *s;
   Box *b;
 
@@ -302,8 +347,8 @@ Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth) {
    */
   box_lev = Box_Depth() - depth;
   b = Arr_ItemPtr(bs->box, Box, box_lev + 1);
-  s->brother = b->child;
-  b->child = s;
+  s->brother = b->syms;
+  b->syms = s;
 
   /* Inizializzo il simbolo */
   s->symattr.is_explicit = 1;

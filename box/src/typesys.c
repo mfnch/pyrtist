@@ -352,6 +352,21 @@ void TS_Procedure_Sym_Num(TS *ts, UInt *sym_num, Type p) {
   *sym_num = proc_td->data.proc.sym_num;
 }
 
+void TS_Procedure_Info(TS *ts, Type *parent, Type *child,
+                       int *kind, UInt *sym_num, Type p) {
+  TSDesc *proc_td;
+  proc_td = Type_Ptr(ts, p);
+  assert(proc_td->kind == TS_KIND_PROC);
+  if (parent != (Type *) NULL)
+    *parent = proc_td->data.proc.parent;
+  if (child != (Type *) NULL)
+    *child = proc_td->target;
+  if (kind != (int *) NULL)
+    *kind = proc_td->data.proc.kind;
+  if (sym_num != (UInt *) NULL)
+    *sym_num = proc_td->data.proc.sym_num;
+}
+
 Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
  Type parent, Type child, int kind) {
   TSDesc *p_td, *parent_td;

@@ -27,18 +27,18 @@
 
 #  include "types.h"
 
-/* Struttura di controllo dell'array */
+/** @brief Array object */
 typedef struct {
-  long ID;      /* Costante identificativa di struttura inizializzata */
-  void *ptr;    /* Puntatore alla zona di memoria che contiene i dati */
-  long dim;     /* Numero massimo di elementi contenibili */
-  long size;    /* Dimensione in bytes della zona di memoria allocata */
-  long mindim;  /* Valore minimo di dim */
-  short elsize; /* Dimensione in bytes di ogni elemento */
-  long numel;   /* Numero di elementi attualmente inseriti */
+  long ID;      /**< Costante identificativa di struttura inizializzata */
+  void *ptr;    /**< Puntatore alla zona di memoria che contiene i dati */
+  long dim;     /**< Numero massimo di elementi contenibili */
+  long size;    /**< Dimensione in bytes della zona di memoria allocata */
+  long mindim;  /**< Valore minimo di dim */
+  short elsize; /**< Dimensione in bytes di ogni elemento */
+  long numel;   /**< Numero di elementi attualmente inseriti */
   Task (*destroy)(void *); /**< Used to finalize elements before destruction*/
-  long chain;   /* Quantita riservata all'estensione Collection */
-  long max_idx; /* Quantita riservata all'estensione Collection */
+  long chain;   /**< Quantita riservata all'estensione Collection */
+  long max_idx; /**< Quantita riservata all'estensione Collection */
 } Array;
 
 /** Gives a function used to destroy objects when 'Arr_Destroy' is called */

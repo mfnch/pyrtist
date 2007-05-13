@@ -61,6 +61,22 @@ void Expr_New_Void(Expr *e) {
   e->is.target = 0;
 }
 
+/** Create an expression with value, corresponding to a local register 0
+ * having a suitable type.
+ */
+void Expr_New_Value(Expr *e, Type t) {
+  e->is.typed = 1;
+  e->type = t;
+  e->resolved = TS_Resolve(cmp->ts, t, 1, 0);
+  e->is.value = (TS_Size(cmp->ts, t) > 0) ? 1 : 0;
+  e->categ = CAT_LREG;
+  e->value.i = 0;
+  e->is.imm = e->is.ignore = 0;
+  e->is.target = e->is.gaddr = 0;
+  e->is.allocd = e->is.release = 0;
+  e->addr = 0;
+}
+
 /* Prints the details about the specified expression *e.
  */
 void Expr_Print(Expr *e, FILE *out) {
@@ -272,6 +288,40 @@ Task Expr_Array_Member(Expr *member, Expr *array, Expr *index) {
   }
   return Success;
 }
+
+/** This function gets the parent and the child of the given procedure
+ * out of the global registers used for passing the respective pointers.
+ * This function should be used at the beginning of a function
+ * to construct the expressions for the child and parent.
+ */
+void Expr_Parent_And_Child(Expr *e_parent, Expr *e_child, Type t_proc) {
+  Type t_parent, t_child;
+  TS_Procedure_Info(cmp->ts, & t_parent, & t_child, (int *) NULL,
+   (UInt *) NULL, t_proc);
+
+  Expr_New_Value(e_parent, t_parent);
+  if (e_parent->is.value) {
+    /* Here we occupy a TYPE_OBJ even if the type is TYPE_INT, etc.
+     * This is because we have to get the object from the register go1
+     */
+    e_parent->categ = CAT_PTR;
+    e_parent->is.gaddr = 0;
+    e_parent->addr = Reg_Occupy(TYPE_OBJ);
+    e_parent->value.i = 0;
+    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, e_parent->addr, CAT_GREG, 1);
+  }
+
+  Expr_New_Value(e_child, t_child);
+  if (e_child->is.value) {
+    /* See previous comment! */
+    e_child->categ = CAT_PTR;
+    e_child->is.gaddr = 0;
+    e_child->addr = Reg_Occupy(TYPE_OBJ);
+    e_child->value.i = 0;
+    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, e_child->addr, CAT_GREG, 2);
+  }
+}
+
 
 /******************************************************************************/
 

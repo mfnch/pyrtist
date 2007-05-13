@@ -68,6 +68,11 @@ void Expr_New_Type(Expr *e, Int type);
 /** Create a new Void expression */
 void Expr_New_Void(Expr *e);
 
+/** Create an expression with value, corresponding to a local register 0
+ * having a suitable type.
+ */
+void Expr_New_Value(Expr *e, Type t);
+
 /** Print the content of the given expression */
 void Expr_Print(Expr *e, FILE *out);
 
@@ -86,7 +91,7 @@ void Expr_To_Ptr(Expr *e);
  * corresponding to its member with name m_name.
  * Obviously *s has to be a structure and m_name must be
  * the name of a member of this structure.
- * Once the member has been obtained *s is release.
+ * Once the member has been obtained *s is released.
  */
 Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name);
 
@@ -95,5 +100,13 @@ Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name);
  * of the array.
  */
 Task Expr_Array_Member(Expr *memb, Expr *array, Expr *index);
+
+
+/** This function gets the parent and the child of the given procedure
+ * out of the global registers used for passing the respective pointers.
+ * This function should be used at the beginning of a function
+ * to construct the expressions for the child and parent.
+ */
+void Expr_Parent_And_Child(Expr *e_parent, Expr *e_child, Type t_proc);
 
 #endif

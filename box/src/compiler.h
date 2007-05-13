@@ -40,10 +40,10 @@ struct Operation {
     unsigned int assignment  : 1; /* E' una operazione di assegnazione? */
     unsigned int link        : 1; /* E' una operazione di tipo "link"? */
   } is;
-  Intg type1, type2, type_rs;   /* Tipi dei due argomenti */
+  Int type1, type2, type_rs;   /* Tipi dei due argomenti */
   union {
     UInt asm_code;  /* Codice assembly dell'istruzione associata */
-    Intg module;    /* Modulo caricato nella VM per eseguire l'operazione */
+    Int module;    /* Modulo caricato nella VM per eseguire l'operazione */
   }; /* <-- questa e' una union senza nome! Non e' ISO C purtroppo! */
   struct Operation *next;     /* Prossima operazione dello stesso operatore */
 };
@@ -142,7 +142,7 @@ struct symbol {
   /* Questa union distingue i dati di simboli espliciti dagli impliciti */
   union {
     UInt exp;             /* Caso esplicito: il genitore e' un esempio di box */
-    Intg imp;             /* Caso implicito: il genitore e' un tipo di box */
+    Int imp;             /* Caso implicito: il genitore e' un tipo di box */
   } parent;
 };
 
@@ -168,8 +168,8 @@ typedef struct {
   unsigned int commute :1;
   unsigned int expand1 :1;
   unsigned int expand2 :1;
-  Intg exp_type1;
-  Intg exp_type2;
+  Int exp_type1;
+  Int exp_type2;
 } OpnInfo;
 
 /* This type is used to specify a container (see the macros CONTAINER_...) */
@@ -259,67 +259,67 @@ void Sym_Symbol_Diagnostic(FILE *stream);
 #endif
 Symbol *Sym_Symbol_New(Name *nm);
 void Sym_Symbol_Delete(Symbol *s);
-Task Sym_Implicit_Find(Symbol **s, Intg parent, Name *nm);
-Task Sym_Implicit_New(Symbol **new_sym, Intg parent, Name *nm);
+Task Sym_Implicit_Find(Symbol **s, Int parent, Name *nm);
+Task Sym_Implicit_New(Symbol **new_sym, Int parent, Name *nm);
 #define EXACT_DEPTH 0
 #define NO_EXACT_DEPTH 1
-Symbol *Sym_Explicit_Find(Name *nm, Intg depth, int mode);
+Symbol *Sym_Explicit_Find(Name *nm, Int depth, int mode);
 
 /* Procedure definite in 'compiler.c'*/
 Task Cmp_Init(VMProgram *program);
 void Cmp_Destroy(void);
 Task Cmp_Parse(const char *file);
 Operator *Cmp_Operator_New(char *token);
-Operation *Cmp_Operation_Add(Operator *opr, Intg type1, Intg type2, Intg typer);
+Operation *Cmp_Operation_Add(Operator *opr, Int type1, Int type2, Int typer);
 Operation *Cmp_Operation_Find(Operator *opr,
- Intg type1, Intg type2, Intg typer, OpnInfo *oi);
-Task Cmp_Conversion(Intg type1, Intg type2, Expression *e);
-Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn);
+ Int type1, Int type2, Int typer, OpnInfo *oi);
+Task Cmp_Conversion(Int type1, Int type2, Expression *e);
+Task Cmp_Conversion_Exec(Expression *e, Int type_dest, Operation *c_opn);
 Expression *Cmp_Operator_Exec(Operator *opr, Expression *e1, Expression *e2);
 Expression *Cmp_Operation_Exec(Operation *opn, Expression *e1, Expression *e2);
-Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c);
-Task Cmp_Expr_Unvalued(Expression *e, Intg type);
-Task Cmp_Expr_LReg(Expression *e, Intg t, int zero);
+Task Cmp_Expr_Container_New(Expression *e, Int type, Container *c);
+Task Cmp_Expr_Unvalued(Expression *e, Int type);
+Task Cmp_Expr_LReg(Expression *e, Int t, int zero);
 Task Cmp_Free(Expression *expr);
-Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free);
+Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Int reg, int and_free);
 Task Cmp__Expr_To_LReg(Expression *expr, int force);
-Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free);
+Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Int reg, int and_free);
 Task Cmp_Expr_Container_Change(Expression *e, Container *c);
-Task Cmp_Expr_Create(Expression *e, Intg type, int temporary);
+Task Cmp_Expr_Create(Expression *e, Int type, int temporary);
 Task Cmp_Expr_Destroy(Expression *e, int destroy_target);
 Task Cmp_Expr_Copy(Expression *e_dest, Expression *e_src);
 Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src);
 
-Expression *Cmp_Expr_Reg0_To_LReg(Intg t);
+Expression *Cmp_Expr_Reg0_To_LReg(Int t);
 Task Cmp_Expr_O_To_OReg(Expression *e);
 Task Cmp_Complete_Ptr_1(Expression *e);
 Task Cmp_Complete_Ptr_2(Expression *e1, Expression *e2);
 Task Cmp_Define_Builtins();
 void Cmp_Expr_New_Imm_Char(Expression *e, Char c);
-void Cmp_Expr_New_Imm_Intg(Expression *e, Intg i);
+void Cmp_Expr_New_Imm_Intg(Expression *e, Int i);
 void Cmp_Expr_New_Imm_Real(Expression *e, Real r);
 void Cmp_Expr_New_Imm_Point(Expression *e, Point *p);
 Task Cmp_Data_Init(void);
-Intg Cmp_Data_Add(Intg type, void *data, Intg size);
+Int Cmp_Data_Add(Int type, void *data, Int size);
 void Cmp_Data_Destroy(void);
 Task Cmp_Data_Prepare(void);
 Task Cmp_Data_Display(FILE *stream);
 Task Cmp_Imm_Init(void);
-Intg Cmp_Imm_Add(Intg type, void *data, Intg size);
+Int Cmp_Imm_Add(Int type, void *data, Int size);
 void Cmp_Imm_Destroy(void);
 Task Cmp_String_New(Expression *e, Name *str, int free_str);
 #define Cmp_String_New_And_Free(e, str) Cmp_String_New(e, str, 1)
-Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
- Box **box, Intg *prototype, Intg *sym_num, int auto_define);
-Task Cmp_Procedure(int *found, Expression *e, Intg suffix, int auto_define);
+Task Cmp_Procedure_Search(int *found, Int procedure, Int suffix,
+ Box **box, Int *prototype, Int *sym_num, int auto_define);
+Task Cmp_Procedure(int *found, Expression *e, Int suffix, int auto_define);
 Task Cmp_Structure_Begin(void);
 Task Cmp_Structure_Add(Expression *e);
 Task Cmp_Structure_End(Expression *new_struct);
 Task Cmp_Structure_Get(Expression *member, int *n);
-Task Cmp_Expr_Expand(Intg species, Expression *e);
-Task Cmp_Convert(Intg type, Expression *e);
+Task Cmp_Expr_Expand(Int species, Expression *e);
+Task Cmp_Convert(Int type, Expression *e);
 
-Task Cmp_Builtin_Proc_Def(Intg procedure, int when_should_call, Intg of_type,
+Task Cmp_Builtin_Proc_Def(Int procedure, int when_should_call, Int of_type,
  Task (*C_func)(VMProgram *));
 
 #define Cmp_Expr_Destroy_Tmp(e) Cmp_Expr_Destroy(e, 0)

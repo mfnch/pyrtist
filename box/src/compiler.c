@@ -132,9 +132,9 @@ Operator *Cmp_Operator_New(char *name) {
  * di un'operazione unaria (sinistra o destra rispettivamente).
  */
 Operation *Cmp_Operation_Add(
- Operator *opr, Intg type1, Intg type2, Intg typer) {
+ Operator *opr, Int type1, Int type2, Int typer) {
   Operation *opn;
-  Intg aa, t, t1, t2;
+  Int aa, t, t1, t2;
   int is_privileged;
 
   MSG_LOCATION("Cmp_Operation_Add");
@@ -208,9 +208,9 @@ Operation *Cmp_Operation_Add(
  * NOTE: it should not happen that type1 = type2 = TYPE_NONE.
  */
 Operation *Cmp_Operation_Find(Operator *opr,
- Intg type1, Intg type2, Intg typer, OpnInfo *oi) {
+ Int type1, Int type2, Int typer, OpnInfo *oi) {
 
-  Intg type;
+  Int type;
   int no_check_arg1, no_check_arg2, check_rs, unary;
   int ne1, ne2;
   Operation *opn;
@@ -229,7 +229,7 @@ Operation *Cmp_Operation_Find(Operator *opr,
 
   /* Is it a privileged operation or not? */
   if ( ! check_rs ) {
-    Intg aa;
+    Int aa;
     int is_privileged;
 
     aa = no_check_arg1 | (no_check_arg2 << 1);
@@ -268,7 +268,7 @@ Operation *Cmp_Operation_Find(Operator *opr,
   }
 
   for (opn = opr->opn_chain; opn != NULL; opn = opn->next ) {
-    register Intg t1 = opn->type1, t2 = opn->type2;
+    register Int t1 = opn->type1, t2 = opn->type2;
     int ok_1, ok_2, ok_rs = 1;
 
     ok_1 = (t1 == type1);
@@ -316,9 +316,9 @@ Operation *Cmp_Operation_Find(Operator *opr,
  *  the function will try to convert the expression e into a new expression
  *  of type type2: the appropriate assembly code will be generated.
  */
-Task Cmp_Conversion(Intg type1, Intg type2, Expression *e) {
+Task Cmp_Conversion(Int type1, Int type2, Expression *e) {
   int do_it = 0;
-  Intg t1, t2;
+  Int t1, t2;
   Operation *opn;
 
 #ifdef DEBUG_SPECIES_EXPANSION
@@ -369,11 +369,11 @@ Task Cmp_Conversion(Intg type1, Intg type2, Expression *e) {
  *  remember that the register number 0 is often used for special purposes
  *  and shouldn't be left occupied for long periods).
  */
-Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn) {
+Task Cmp_Conversion_Exec(Expression *e, Int type_dest, Operation *c_opn) {
   if ( c_opn->is.intrinsic ) {
     if ( (e->categ == CAT_LREG) && (e->value.i == 0) ) {
       /* Si tratta del registro r0 (ri0, rr0, ...) */
-      Cmp_Assemble( c_opn->asm_code, CAT_LREG, (Intg) 0 );
+      Cmp_Assemble( c_opn->asm_code, CAT_LREG, (Int) 0 );
       e->type = type_dest;
       e->resolved = Tym_Type_Resolve_All(type_dest);
 
@@ -396,10 +396,10 @@ Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn) {
     Expression new_e;
 
   /* mov gro2, expr_src */
-    TASK( Cmp_Expr_To_Ptr(e, CAT_GREG, (Intg) 2, 0) );
+    TASK( Cmp_Expr_To_Ptr(e, CAT_GREG, (Int) 2, 0) );
   /* mov gro1, expr_dest */
     TASK( Cmp_Expr_Create(& new_e, type_dest, /* temporary = */ 1) );
-    TASK( Cmp_Expr_To_Ptr(& new_e, CAT_GREG, (Intg) 1, 0) );
+    TASK( Cmp_Expr_To_Ptr(& new_e, CAT_GREG, (Int) 1, 0) );
   /* call conv_func */
     TASK( VM_Sym_Call(cmp_vm, c_opn->module) );
     TASK( Cmp_Expr_Destroy_Tmp(e) );
@@ -417,7 +417,7 @@ Task Cmp_Conversion_Exec(Expression *e, Intg type_dest, Operation *c_opn) {
  */
 Expression *Cmp_Operator_Exec(Operator *opr, Expression *e1, Expression *e2) {
   int e1valued = 1, e2valued = 1;
-  Intg e1type, e2type, num_arg = 2;
+  Int e1type, e2type, num_arg = 2;
   Operation *opn;
   OpnInfo oi;
 
@@ -493,7 +493,7 @@ static Expression *Opn_Exec_Intrinsic(
  Operation *opn, Expression *e1, Expression *e2) {
 
   struct {unsigned int unary :1, right : 1, strange :1, immediate :1;} opn_is;
-  Intg rs_resolved = Tym_Type_Resolve_All(opn->type_rs);
+  Int rs_resolved = Tym_Type_Resolve_All(opn->type_rs);
 
   MSG_LOCATION("Opn_Exec_Intrinsic");
 
@@ -770,9 +770,9 @@ Expression *Cmp_Operation_Exec(
 /* Create a new empty container.
  * NOTE: At the end this should substitute Cmp_Expr_LReg and Cmp_Expr_Create.
  */
-Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c) {
+Task Cmp_Expr_Container_New(Expression *e, Int type, Container *c) {
   int intrinsic;
-  Intg type_of_register, resolved;
+  Int type_of_register, resolved;
 
   e->is.typed = 1;
   e->is.value = 1;
@@ -852,7 +852,7 @@ Task Cmp_Expr_Container_New(Expression *e, Intg type, Container *c) {
 
  -----------------------> OBSLOLETE <------------------------
  */
-Task Cmp_Expr_LReg(Expression *e, Intg type, int zero) {
+Task Cmp_Expr_LReg(Expression *e, Int type, int zero) {
   MSG_LOCATION("Cmp_Expr_LReg");
 
   e->is.imm = 0;
@@ -886,11 +886,11 @@ Task Cmp_Expr_LReg(Expression *e, Intg type, int zero) {
   }
 }
 
-static Intg asm_lea[NUM_INTRINSICS] = {
+static Int asm_lea[NUM_INTRINSICS] = {
   ASM_LEA_C, ASM_LEA_I, ASM_LEA_R, ASM_LEA_P
 };
 
-static Intg asm_mov[NUM_INTRINSICS] = {
+static Int asm_mov[NUM_INTRINSICS] = {
   ASM_MOV_CC, ASM_MOV_II, ASM_MOV_RR, ASM_MOV_PP
 };
 
@@ -898,7 +898,7 @@ static Intg asm_mov[NUM_INTRINSICS] = {
  * puts the expression expr into a precise register.
  * NOTE: categ can be CAT_LREG or CAT_GREG.
  */
-Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free) {
+Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Int reg, int and_free) {
 #define EXIT_FUNCTION if ( !and_free ) return Success; return Cmp_Expr_Destroy_Tmp(expr)
   int is_integer;
   MSG_LOCATION("Cmp_Expr_To_X");
@@ -924,15 +924,15 @@ Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free) {
       EXIT_FUNCTION;
 
     } else {
-      register Intg t = expr->resolved;
+      register Int t = expr->resolved;
       if ( expr->categ == CAT_PTR ) {
         /* L'espressione e' un puntatore, allora devo settare il puntatore
         * di riferimento, in modo da realizzare una cosa simile a:
         *   mov ro0, ro1         <-- setto il puntatore di riferimento (ro0)
         *   mov rr1, real[ro0+8] <-- prelevo il valore
         */
-        Intg addr_categ = ( expr->is.gaddr ) ? CAT_GREG : CAT_LREG;
-        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0,
+        Int addr_categ = ( expr->is.gaddr ) ? CAT_GREG : CAT_LREG;
+        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Int) 0,
          addr_categ, expr->addr );
       }
 
@@ -949,8 +949,8 @@ Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Intg reg, int and_free) {
     assert( expr->categ != CAT_IMM );
 
     if ( expr->categ == CAT_PTR ) {
-      register Intg addr_categ = ( expr->is.gaddr ) ? CAT_GREG : CAT_LREG;
-      Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, expr->addr );
+      register Int addr_categ = ( expr->is.gaddr ) ? CAT_GREG : CAT_LREG;
+      Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Int) 0, addr_categ, expr->addr );
       Cmp_Assemble( ASM_LEA_OO, categ, reg, CAT_PTR, expr->value.i );
       EXIT_FUNCTION;
 
@@ -1002,7 +1002,7 @@ Task Cmp__Expr_To_LReg(Expression *expr, int force) {
  *     mov ro2, ro0
  *   ro1 and ro2 will be pointers to the same value (2 which overwrited 1).
  */
-Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
+Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Int reg, int and_free) {
   MSG_LOCATION("Cmp_Expr_To_Ptr");
 
   assert(expr != NULL);
@@ -1010,16 +1010,16 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
   assert( (categ == CAT_LREG) || (categ == CAT_GREG) );
 
   if ( expr->categ == CAT_IMM ) {
-    register Intg t = expr->resolved;
+    register Int t = expr->resolved;
 
-    TASK( Cmp_Expr_To_X(expr, CAT_LREG, (Intg) 0, and_free) );
+    TASK( Cmp_Expr_To_X(expr, CAT_LREG, (Int) 0, and_free) );
     assert( (t >= 0) && (t < NUM_INTRINSICS) );
-    Cmp_Assemble(asm_lea[t], CAT_LREG, (Intg) 0);
-    Cmp_Assemble(ASM_MOV_OO, categ, reg, CAT_LREG, (Intg) 0);
+    Cmp_Assemble(asm_lea[t], CAT_LREG, (Int) 0);
+    Cmp_Assemble(ASM_MOV_OO, categ, reg, CAT_LREG, (Int) 0);
     return Success;
 
   } else {
-    register Intg t = expr->resolved;
+    register Int t = expr->resolved;
 
     assert(t >= 0);
     if ( t < NUM_INTRINSICS ) {
@@ -1030,19 +1030,19 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
         *   lea p[ro0+8] <-- prelevo il valore
         *   mov ..., ro0 <-- metto l'indirizzo dove richiesto
         */
-        register Intg addr_categ = ( expr->is.gaddr ) ? CAT_GREG : CAT_LREG;
-        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, expr->addr );
+        register Int addr_categ = ( expr->is.gaddr ) ? CAT_GREG : CAT_LREG;
+        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Int) 0, addr_categ, expr->addr );
       }
 
       Cmp_Assemble(asm_lea[t], expr->categ, expr->value.i);
-      Cmp_Assemble(ASM_MOV_OO, categ, reg, CAT_LREG, (Intg) 0);
+      Cmp_Assemble(ASM_MOV_OO, categ, reg, CAT_LREG, (Int) 0);
       if ( !and_free ) return Success;
       return Cmp_Expr_Destroy_Tmp(expr);
 
     } else {
       if ( expr->categ == CAT_PTR ) {
-        register Intg addr_categ = ( expr->is.gaddr ) ? CAT_GREG : CAT_LREG;
-        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, expr->addr );
+        register Int addr_categ = ( expr->is.gaddr ) ? CAT_GREG : CAT_LREG;
+        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Int) 0, addr_categ, expr->addr );
         Cmp_Assemble( ASM_LEA_OO, categ, reg, CAT_PTR, expr->value.i );
         if ( !and_free ) return Success;
         return Cmp_Expr_Destroy_Tmp(expr);
@@ -1068,7 +1068,7 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Intg reg, int and_free) {
  *     mov ri0, 2 <-- second value
  *     lea ri0
  *     mov ro2, ro0
- *   ro1 and ro2 will be pointers to the same value (2 which overwrited 1).
+ *   ro1 and ro2 will be pointers to the same value (2 which overwrote 1).
  */
 Task Cmp_Expr_Container_Change(Expression *e, Container *c) {
   assert(e != NULL && c != NULL);
@@ -1079,19 +1079,19 @@ Task Cmp_Expr_Container_Change(Expression *e, Container *c) {
     int is_arg = (c->type_of_container == CONTAINER_TYPE_ARG);
 
     if ( e->categ == CAT_IMM ) {
-      Intg t = e->resolved;
+      Int t = e->resolved;
       assert(t >= 0 && t < NUM_INTRINSICS);
-      TASK( Cmp_Expr_To_X(e, CAT_LREG, (Intg) 0, 0) );
-      Cmp_Assemble(asm_lea[t], CAT_LREG, (Intg) 0);
+      TASK( Cmp_Expr_To_X(e, CAT_LREG, (Int) 0, 0) );
+      Cmp_Assemble(asm_lea[t], CAT_LREG, (Int) 0);
       if ( is_arg ) { /* c->type_of_container == CONTAINER_TYPE_ARG */
-        Cmp_Assemble(ASM_MOV_OO, CAT_GREG, c->which_one, CAT_LREG, (Intg) 0);
+        Cmp_Assemble(ASM_MOV_OO, CAT_GREG, c->which_one, CAT_LREG, (Int) 0);
         return Success;
       } else { /* c->type_of_container == CONTAINER_TYPE_STACK */
-        Cmp_Assemble(ASM_PUSH_O, CAT_LREG, (Intg) 0);
+        Cmp_Assemble(ASM_PUSH_O, CAT_LREG, (Int) 0);
         return Success;
       }
     } else {
-      register Intg t = e->resolved;
+      register Int t = e->resolved;
       assert(t >= 0);
 
       if ( t < NUM_INTRINSICS ) {
@@ -1102,30 +1102,30 @@ Task Cmp_Expr_Container_Change(Expression *e, Container *c) {
           *   lea p[ro0+8] <-- prelevo il valore
           *   mov ..., ro0 <-- metto l'indirizzo dove richiesto
           */
-          register Intg addr_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
-          Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e->addr );
+          register Int addr_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
+          Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Int) 0, addr_categ, e->addr );
         }
 
         Cmp_Assemble(asm_lea[t], e->categ, e->value.i);
         if ( is_arg ) { /* c->type_of_container == CONTAINER_TYPE_ARG */
-          Cmp_Assemble(ASM_MOV_OO, CAT_GREG, c->which_one, CAT_LREG, (Intg) 0);
+          Cmp_Assemble(ASM_MOV_OO, CAT_GREG, c->which_one, CAT_LREG, (Int) 0);
           return Success;
         } else { /* c->type_of_container == CONTAINER_TYPE_STACK */
-          Cmp_Assemble(ASM_PUSH_O, CAT_LREG, (Intg) 0);
+          Cmp_Assemble(ASM_PUSH_O, CAT_LREG, (Int) 0);
           return Success;
         }
 
       } else {
         if ( e->categ == CAT_PTR ) {
           if ( is_arg ) {
-            register Intg addr_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
-            Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e->addr );
+            register Int addr_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
+            Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Int) 0, addr_categ, e->addr );
             Cmp_Assemble( ASM_LEA_OO, CAT_GREG, c->which_one,
               CAT_PTR, e->value.i );
             return Success;
           } else {
-            register Intg addr_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
-            Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e->addr );
+            register Int addr_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
+            Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Int) 0, addr_categ, e->addr );
             Cmp_Assemble( ASM_LEA_OO, CAT_LREG, 0, CAT_PTR, e->value.i );
             Cmp_Assemble( ASM_PUSH_O, CAT_LREG, 0);
           }
@@ -1154,7 +1154,7 @@ Task Cmp_Expr_Container_Change(Expression *e, Container *c) {
  *  store any definitive value), if temporary == 0 the expression corresponds
  *  to a particular variable.
  */
-Task Cmp_Expr_Create(Expression *e, Intg type, int temporary) {
+Task Cmp_Expr_Create(Expression *e, Int type, int temporary) {
   register int intrinsic;
   Int type_of_register, resolved;
   Int ts = Tym_Type_Size(type);
@@ -1217,7 +1217,7 @@ Task Cmp_Expr_Destroy(Expression *e, int destroy_target) {
 
   } else {
     register int intrinsic;
-    Intg type_of_register, resolved;;
+    Int type_of_register, resolved;;
 
     assert( ! (e->is.target && e->is.imm) );
     if ( !e->is.value ) return Success;
@@ -1264,7 +1264,7 @@ Task Cmp_Expr_Copy(Expression *e_dest, Expression *e_src) {
  * Memory is not allocated nor freed!
  */
 Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src) {
-  register Intg t, c;
+  register Int t, c;
 
   assert(e_dest != NULL && e_src != NULL);
   assert(e_dest->resolved == e_src->resolved);
@@ -1317,7 +1317,7 @@ Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src) {
 /* DESCRIZIONE: Prende il valore dal registro zero per metterlo in un registro
  *  locale temporaneo (che viene occupato).
  */
-Expression *Cmp_Expr_Reg0_To_LReg(Intg t) {
+Expression *Cmp_Expr_Reg0_To_LReg(Int t) {
   static Expression lreg;
 
   /* Metto in lreg un nuovo registro locale */
@@ -1363,8 +1363,8 @@ Task Cmp_Expr_O_To_OReg(Expression *e) {
    case CAT_GREG: case CAT_LREG:
     return Success;
    case CAT_PTR: {
-      Intg ro_num = e->addr;
-      Intg ro_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
+      Int ro_num = e->addr;
+      Int ro_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
 
       if ( ro_num > 0 ) {
         /* Il puntatore di riferimento e' contenuto in un registro:
@@ -1373,7 +1373,7 @@ Task Cmp_Expr_O_To_OReg(Expression *e) {
           *  mov ro0, ro4
           *  mov ro4, Obj[ro0+64]
           */
-        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, ro_categ, ro_num );
+        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Int) 0, ro_categ, ro_num );
         Cmp_Assemble( ASM_MOV_OO, ro_categ, ro_num, CAT_PTR, e->value.i );
         e->resolved = e->type = TYPE_OBJ;
         e->categ = ro_categ;
@@ -1388,9 +1388,9 @@ Task Cmp_Expr_O_To_OReg(Expression *e) {
           *  mov ro0, vo1
           *  mov ro1, Obj[ro0+8]
           */
-        Intg new_reg;
+        Int new_reg;
 
-        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Intg) 0, ro_categ, ro_num );
+        Cmp_Assemble( ASM_MOV_OO, CAT_LREG, (Int) 0, ro_categ, ro_num );
         new_reg = Reg_Occupy(TYPE_OBJ);
         if ( new_reg < 1 ) return Failed;
         Cmp_Assemble( ASM_MOV_OO, CAT_LREG, new_reg, CAT_PTR, e->value.i );
@@ -1418,21 +1418,21 @@ Task Cmp_Expr_O_To_OReg(Expression *e) {
  *  Questa funzione fa proprio questo.
  */
 Task Cmp_Complete_Ptr_2(Expression *e1, Expression *e2) {
-  Intg addr_categ;
+  Int addr_categ;
 
   switch ( (e1->categ == CAT_PTR) | (e2->categ == CAT_PTR) << 1) {
    case 1:
     addr_categ = ( e1->is.gaddr ) ? CAT_GREG : CAT_LREG;
-    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e1->addr);
+    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Int) 0, addr_categ, e1->addr);
     return Success;
    case 2:
     addr_categ = ( e2->is.gaddr ) ? CAT_GREG : CAT_LREG;
-    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e2->addr);
+    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Int) 0, addr_categ, e2->addr);
     return Success;
    case 3:
     if IS_FAILED( Cmp_Expr_Force_To_LReg(e2) ) return Failed;
     addr_categ = ( e1->is.gaddr ) ? CAT_GREG : CAT_LREG;
-    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e1->addr);
+    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Int) 0, addr_categ, e1->addr);
     return Success;
    default:
     return Success;
@@ -1444,8 +1444,8 @@ Task Cmp_Complete_Ptr_2(Expression *e1, Expression *e2) {
  */
 Task Cmp_Complete_Ptr_1(Expression *e) {
   if ( e->categ == CAT_PTR ) {
-    register Intg addr_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
-    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Intg) 0, addr_categ, e->addr);
+    register Int addr_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
+    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Int) 0, addr_categ, e->addr);
   }
   return Success;
 }
@@ -1454,12 +1454,12 @@ Task Cmp_Complete_Ptr_1(Expression *e) {
  */
 void Cmp_Expr_New_Imm_Char(Expression *e, Char c) {
   Cmp_Expr_Container_New(e, TYPE_CHAR, CONTAINER_IMM);
-  e->value.i = (Intg) c;
+  e->value.i = (Int) c;
 }
 
 /* DESCRIZIONE: Mette in *e un espressione immediata di tipo intero.
  */
-void Cmp_Expr_New_Imm_Intg(Expression *e, Intg i) {
+void Cmp_Expr_New_Imm_Intg(Expression *e, Int i) {
   Cmp_Expr_Container_New(e, TYPE_INTG, CONTAINER_IMM);
   e->value.i = i;
 }
@@ -1491,18 +1491,18 @@ void Cmp_Expr_New_Imm_Point(Expression *e, Point *p) {
  *****************************************************************************/
 
 typedef struct {
-  Intg signature;
+  Int signature;
 /*  struct {
     unsigned int used : 1;
   } status;*/
-  Intg type;
-  Intg size;
+  Int type;
+  Int size;
 } DataItem;
 
 static Array *cmp_data_segment = NULL;
 static Array *cmp_imm_segment  = NULL;
 static char signature_str[4] = "data";
-static Intg signature;
+static Int signature;
 
 /* DESCRIPTION: This function initializes the data segment, the area used
  *  to store strings and the values of other objects.
@@ -1516,7 +1516,7 @@ Task Cmp_Data_Init(void) {
     cmp_data_segment = Array_New(sizeof(char), CMP_TYPICAL_DATA_SIZE);
     if ( cmp_data_segment == NULL ) return Failed;
   }
-  signature = *((Intg *) signature_str);
+  signature = *((Int *) signature_str);
   return Success;
 }
 
@@ -1524,8 +1524,8 @@ Task Cmp_Data_Init(void) {
  * NOTE: It returns the address of the data item with respect to the beginning
  *  of the data segment.
  */
-Intg Cmp_Data_Add(Intg type, void *data, Intg size) {
-  Intg addr;
+Int Cmp_Data_Add(Int type, void *data, Int size) {
+  Int addr;
   DataItem di;
   MSG_LOCATION("Cmp_Data_Add");
 
@@ -1550,7 +1550,7 @@ Task Cmp_Data_Prepare(void) {
   MSG_LOCATION("Cmp_Data_Prepare");
 
   data_ptr = (void *) Arr_FirstItemPtr(cmp_data_segment, char);
-  TASK( VM_Module_Global_Set(cmp_vm, TYPE_OBJ, (Intg) 0, & data_ptr) );
+  TASK( VM_Module_Global_Set(cmp_vm, TYPE_OBJ, (Int) 0, & data_ptr) );
   return Success;
 }
 
@@ -1571,7 +1571,7 @@ Task Cmp_Imm_Init(void) {
     cmp_imm_segment = Array_New(sizeof(char), CMP_TYPICAL_IMM_SIZE);
     if ( cmp_imm_segment == NULL ) return Failed;
   }
-  signature = *((Intg *) signature_str);
+  signature = *((Int *) signature_str);
   return Success;
 }
 
@@ -1580,8 +1580,8 @@ Task Cmp_Imm_Init(void) {
  * NOTE: It returns the address of the data item with respect to the beginning
  *  of the segment.
  */
-Intg Cmp_Imm_Add(Intg type, void *data, Intg size) {
-  Intg addr;
+Int Cmp_Imm_Add(Int type, void *data, Int size) {
+  Int addr;
   DataItem di;
   MSG_LOCATION("Cmp_Imm_Add");
 
@@ -1608,7 +1608,7 @@ void Cmp_Imm_Destroy(void) {
  */
 Task Cmp_Data_Display(FILE *stream) {
   char *data;
-  Intg size, pos, ds;
+  Int size, pos, ds;
   DataItem *di;
   MSG_LOCATION("Cmp_Data_Display");
 
@@ -1656,8 +1656,8 @@ Task Cmp_Data_Display(FILE *stream) {
  *****************************************************************************/
 
 Task Cmp_String_New(Expression *e, Name *str, int free_str) {
-  Intg ts, addr;
-  Intg length = str->length;
+  Int ts, addr;
+  Int length = str->length;
   MSG_LOCATION("Cmp_String_New");
 
   /* Creo il tipo di dato corrispondente alla stringa */
@@ -1710,10 +1710,10 @@ Task Cmp_String_New(Expression *e, Name *str, int free_str) {
  *  To understand if a procedure was actually found look at the value
  *  of *found.
  */
-Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
- Box **box, Intg *prototype, Intg *sym_num, int auto_define) {
+Task Cmp_Procedure_Search(int *found, Int procedure, Int suffix,
+ Box **box, Int *prototype, Int *sym_num, int auto_define) {
   Box *b;
-  Intg p, dummy;
+  Int p, dummy;
 
   *found = 0;
   if ( prototype == NULL ) prototype = & dummy; /* See later! */
@@ -1721,7 +1721,7 @@ Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
   /* Now we use suffix to identify the box, which is the parent
    * of the procedure
    */
-  TASK( Box_Get(& b, (suffix < 0) ? 0 : suffix) );
+  TASK( Box_Get(& b, suffix) );
   if ( b->type == TYPE_VOID ) {
     MSG_WARNING("La box di tipo [...] non ammette procedure!");
     return Failed;
@@ -1745,7 +1745,7 @@ Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
     p = Tym_Def_Procedure(procedure, b->attr.second, b->type, *asm_module);
     if ( p == TYPE_NONE ) return Failed;
     {
-      Intg nm;
+      Int nm;
       TASK(VM_Module_Undefined(cmp_vm, & nm, Tym_Type_Name(p)));
       assert(nm == *asm_module);
     }
@@ -1772,13 +1772,12 @@ Task Cmp_Procedure_Search(int *found, Intg procedure, Intg suffix,
  * The function returns Success, even if the procedure is not found:
  * check the content of *found for this purpose.
  */
-Task Cmp_Procedure(int *found, Expression *e, Intg suffix, int auto_define) {
+Task Cmp_Procedure(int *found, Expr *e, Int suffix, int auto_define) {
   Box *b;
-  Intg sym_num, t;
-  Intg prototype;
+  Int sym_num, t;
+  Int prototype;
   int dummy = 0;
-
-  MSG_LOCATION("Cmp_Procedure");
+  Expr e_parent;
 
   if ( found == NULL ) found = & dummy;
 
@@ -1807,12 +1806,13 @@ Task Cmp_Procedure(int *found, Expression *e, Intg suffix, int auto_define) {
       if IS_FAILED( Cmp_Expr_Expand(prototype, e) ) goto exit_failed;
     }
 
-    if IS_FAILED( Cmp_Expr_To_Ptr(e, CAT_GREG, (Intg) 2, 0) ) goto exit_failed;
+    if IS_FAILED( Cmp_Expr_To_Ptr(e, CAT_GREG, (Int) 2, 0) ) goto exit_failed;
   }
 
   /* We pass the box which is the parent of the procedure */
-  if ( b->value.is.value ) {
-    if IS_FAILED( Cmp_Expr_Container_Change(& b->value, CONTAINER_ARG(1)) )
+  TASK( Box_Parent_Get(& e_parent, suffix) );
+  if ( e_parent.is.value ) {
+    if IS_FAILED( Cmp_Expr_Container_Change(& e_parent, CONTAINER_ARG(1)) )
       goto exit_failed;
   }
 
@@ -1828,7 +1828,7 @@ exit_failed:
 }
 
 /*****************************************************************************/
-Task Cmp_Builtin_Proc_Def(Intg procedure, int when_should_call, Intg of_type,
+Task Cmp_Builtin_Proc_Def(Int procedure, int when_should_call, Int of_type,
  Task (*C_func)(VMProgram *)) {
   UInt proc = 0, sym_num, call_num;
 

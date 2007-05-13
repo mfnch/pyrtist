@@ -161,6 +161,8 @@ include BEGIN(include);
  /* Altri operatori */
 "**"  { return TOK_POW; }
 
+"$$"  { return TOK_PARENT; }
+
  /* Numero intero di tipo carattere */
 [']([^'\n]|\\')*['] {
   Char c;
