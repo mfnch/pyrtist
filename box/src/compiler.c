@@ -1168,7 +1168,7 @@ Task Cmp_Expr_Create(Expression *e, Intg type, int temporary) {
 #endif
 
   e->is.typed = 1;
-  e->is.value = 0;
+  e->is.value = ts > 0 ? 1 : 0;
   e->is.imm = 0;
   e->is.ignore = 0;
   e->is.target = 0;
@@ -1180,7 +1180,6 @@ Task Cmp_Expr_Create(Expression *e, Intg type, int temporary) {
   intrinsic = (resolved < NUM_INTRINSICS);
   type_of_register = (intrinsic) ? resolved : TYPE_OBJ;
 
-  e->is.value = 1;
   if ( temporary ) {
     e->is.release = 1;
     if ( (e->value.i = Reg_Occupy(type_of_register)) < 1 ) return Failed;

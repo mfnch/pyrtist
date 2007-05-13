@@ -538,7 +538,7 @@ Task Tym_Def_Type(Int *new_type,
   }
   name = Name_To_Str(nm);
   (void) TS_Name_Set(last_ts, type, name);
-  free(name);
+  Mem_Free(name);
 
   /* I set all the remaining values of the structure s */
   s->symtype = VARIABLE;

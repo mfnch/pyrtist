@@ -182,7 +182,6 @@ Task Box_Instance_Begin(Expr *e) {
   b.is.definition = 0; /* This is just an instance, not a definition */
   b.proc_num = bs->cur_proc_num; /* The procedure number where we are now */
   TASK(Arr_Push(bs->box, & b));
-
   return Success;
 }
 
