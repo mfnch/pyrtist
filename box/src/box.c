@@ -227,7 +227,7 @@ Task Box_Instance_End(Expr *e) {
   return Success;
 }
 
-/* DESCRIZIONE: Cerca fra le scatole aperte di profondita' > depth,
+/*  Cerca fra le scatole aperte di profondita' > depth,
  *  la prima di tipo type. Se depth = 0 parte dall'ultima scatola aperta,
  *  se depth = 1, dalla penultima, etc.
  *  Restituisce la profondita' della scatola cercata o -1 in caso
@@ -257,8 +257,8 @@ Intg Box_Search_Opened(Intg type, Intg depth) {
   return -1;
 }
 
-/* DESCRIPTION: This function returns the pointer to the structure Box
- *  corresponding to the box with depth 'depth'.
+/* This function returns the pointer to the structure Box
+ * corresponding to the box with depth 'depth'.
  */
 Task Box_Get(Box **box, Intg depth) {
   Intg max_depth;
@@ -278,7 +278,7 @@ Task Box_Get(Box **box, Intg depth) {
 
 /********************************[DEFINIZIONE]********************************/
 
-/* DESCRIZIONE: Questa funzione definisce un nuovo simbolo di nome *nm,
+/*  Questa funzione definisce un nuovo simbolo di nome *nm,
  *  attribuendolo alla box di profondita' depth.
  */
 Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth) {

@@ -20,31 +20,42 @@
 
 /* $Id$ */
 
-/* registers.h - agosto 2004
+/** @file registers.h
+ * @brief The register allocation system.
  *
- * Questo file contiene le dichiarazioni delle procedure definite in register.c
+ * Some words.
  */
 
 #ifndef _REGISTERS_H
 #  define _REGISTERS_H
 
+#  include "types.h"
+#  include "array.h"
+#  include "collection.h"
+
+/** This structure describe the state of allocation of the register
+ * in a single function.
+ */
 typedef struct {
-  Array *reg_occ[NUM_TYPES];
-  Int reg_max[NUM_TYPES];
-  Array *var_occ[NUM_TYPES];
+  Collection *reg_occ[NUM_TYPES];
   Int var_max[NUM_TYPES];
+  Array *var_occ[NUM_TYPES];
+} RegFrame;
+
+/** This structure keeps the full state of the register allocator.
+ */
+typedef struct {
+  Array *reg_frame;
 } RegAlloc;
 
-#  define REG_OCC_TYP_SIZE {10, 10, 10, 10, 10}
-#  define VAR_OCC_TYP_SIZE {10, 10, 10, 10, 10}
-
-Task Reg_Init(UInt typical_num_reg[NUM_TYPES]);
-Intg Reg_Occupy(Intg t);
-Task Reg_Release(Intg t, UInt regnum);
-Intg Reg_Num(Intg t);
-Task Var_Init(UInt typical_num_var[NUM_TYPES]);
-Intg Var_Occupy(Intg type, Intg level);
-Task Var_Release(Intg type, UInt varnum);
-Intg Var_Num(Intg type);
-void RegVar_Get_Nums(Intg *num_var, Intg *num_reg);
+Task Reg_Init(void);
+void Reg_Destroy(void);
+Int Reg_Occupy(Int t);
+Task Reg_Release(Int t, UInt regnum);
+Int Reg_Num(Int t);
+Task Var_Init(void);
+Int Var_Occupy(Int type, Int level);
+Task Var_Release(Int type, UInt varnum);
+Int Var_Num(Int type);
+void RegVar_Get_Nums(Int *num_var, Int *num_reg);
 #endif

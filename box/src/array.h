@@ -37,8 +37,8 @@ typedef struct {
   short elsize; /* Dimensione in bytes di ogni elemento */
   long numel;   /* Numero di elementi attualmente inseriti */
   Task (*destroy)(void *); /**< Used to finalize elements before destruction*/
-  long chain;   /* Quantita riservata all'estensione Chest */
-  long max_idx; /* Quantita riservata all'estensione Chest */
+  long chain;   /* Quantita riservata all'estensione Collection */
+  long max_idx; /* Quantita riservata all'estensione Collection */
 } Array;
 
 /** Gives a function used to destroy objects when 'Arr_Destroy' is called */
@@ -48,6 +48,8 @@ void Arr_Destructor(Array *a, Task (*destroy)(void *));
 Array *Arr_Recycle(Array *a, UInt elsize, UInt mindim);
 Task Arr_Push(Array *a, const void *elem);
 Task Arr_MPush(Array *a, const void *elem, UInt numel);
+Task Arr_MPop(Array *a, UInt numel);
+#define Arr_Pop(a) Arr_MPop((a), 1)
 Task Arr_Insert(Array *a, Intg where, Intg how_many, void *items);
 Task Arr_Append_Blank(Array *a, Intg how_many);
 Task Arr_BigEnough(Array *a, UInt numel);

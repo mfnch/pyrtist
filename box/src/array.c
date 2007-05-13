@@ -281,6 +281,23 @@ Task Arr_MPush(Array *a, const void *elem, UInt numel) {
   }
 }
 
+Task Arr_MPop(Array *a, UInt numel) {
+  Task t = Success;
+  UInt item_index, i;
+  item_index = a->numel;
+  if (numel > item_index) {
+    MSG_ERROR("Arr_MPop: Trying to remove more elements than present");
+    return Failed;
+  }
+  i = numel;
+  for(; i > 0; i--) {
+    void *item_ptr = Arr_ItemPtr(a,  void *, item_index--);
+    if IS_FAILED(a->destroy(item_ptr)) t = Failed;
+  }
+  if IS_FAILED(Arr_SmallEnough(a, a->numel -= numel)) t = Failed;
+  return t;
+}
+
 /* Se necessario allarga l'array in modo che contenga
  * numel elementi. Restituisce 1 in caso di successo.
  */

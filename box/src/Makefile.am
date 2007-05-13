@@ -28,6 +28,7 @@ BUILT_SOURCES = parser.h
 AM_YFLAGS = -d
 
 AM_CFLAGS = -Wall
+# -DDEBUG_ARRAY
 # -DDEBUG_EXEC
 
 bin_PROGRAMS = box

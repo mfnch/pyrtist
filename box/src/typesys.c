@@ -547,13 +547,15 @@ Task Tym_Def_Type(Int *new_type,
 
 Int Tym_Def_Array_Of(Int num, Int type) {
   Type array;
-  assert(TS_Array_New(last_ts, & array, type, num) == Success);
+  Task t = TS_Array_New(last_ts, & array, type, num);
+  assert(t == Success);
   return array;
 }
 
 Int Tym_Def_Alias_Of(Name *nm, Int type) {
   Type alias;
-  assert(TS_Alias_New(last_ts, & alias, type) == Success);
+  Task t = TS_Alias_New(last_ts, & alias, type);
+  assert(t == Success);
   TS_Name_Set(last_ts, alias, Name_To_Str(nm));
   return alias;
 }
@@ -583,8 +585,10 @@ Int Tym_Type_Resolve(Int type, int not_alias, int not_species) {
 Int Tym_Def_Procedure(Int proc, int second, Int of_type, Int sym_num) {
   Type procedure;
   int kind = second ? 2 : 1;
-  assert(TS_Procedure_New(last_ts, & procedure, of_type, proc, kind)==Success);
-  assert(TS_Procedure_Register(last_ts, procedure, sym_num)==Success);
+  Task t = TS_Procedure_New(last_ts, & procedure, of_type, proc, kind);
+  assert(t == Success);
+  t = TS_Procedure_Register(last_ts, procedure, sym_num);
+  assert(t == Success);
   return procedure;
 }
 
@@ -593,8 +597,8 @@ Int Tym_Search_Procedure(Int proc, int second, Int of_type,
 
   Type found;
   int kind = second ? 2 : 1;
-  assert(TS_Procedure_Search(last_ts, & found, exp, of_type, proc, kind)
-         ==Success);
+  Task t = TS_Procedure_Search(last_ts, & found, exp, of_type, proc, kind);
+  assert(t == Success);
   return found;
 }
 

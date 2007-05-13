@@ -66,9 +66,6 @@ struct cmp_opr_struct cmp_opr;
 
 /* Gets ready to start the compilation */
 Task Cmp_Init(VMProgram *program) {
-  static UInt typl_nreg[NUM_TYPES] = REG_OCC_TYP_SIZE;
-  static UInt typl_nvar[NUM_TYPES] = VAR_OCC_TYP_SIZE;
-
   /* Initialization of the code which writes the bytecode program for the VM */
   cmp = Mem_Alloc(sizeof(Compiler));
   cmp->vm = program;
@@ -78,8 +75,7 @@ Task Cmp_Init(VMProgram *program) {
   /* Initialization of the lists which hold the occupation status
    * for registers and variables.
    */
-  TASK( Reg_Init(typl_nreg) );
-  TASK( Var_Init(typl_nvar) );
+  TASK( Reg_Init() );
   return Success;
 }
 
@@ -98,6 +94,7 @@ Task Cmp_Parse(const char *file) {
 
 void Cmp_Destroy(void) {
   TS_Destroy(cmp->ts);
+  Reg_Destroy();
   Mem_Free(cmp);
 }
 
