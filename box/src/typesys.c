@@ -59,14 +59,16 @@ static TSDesc *Type_Ptr(TS *ts, Type t) {
   return Clc_ItemPtr(ts->type_descs, TSDesc, t+1);
 }
 
-static TSDesc *Resolve(TS *ts, Type *rt, Type t) {
+static TSDesc *Resolve(TS *ts, Type *rt, Type t, int ignore_names) {
   while(1) {
     TSDesc *td = Type_Ptr(ts, t);
     switch(td->kind) {
     case TS_KIND_LINK:
     case TS_KIND_ALIAS:
     case TS_KIND_MEMBER:
-      t = td->target; break;
+      t = td->target;
+      if (ignore_names) break;
+      if (td->name == (char *) NULL) break;
     default:
       if (rt != (Type *) NULL) *rt = t;
       return td;
@@ -145,7 +147,7 @@ Task TS_Name_Set(TS *ts, Type t, const char *name) {
 
 char *TS_Name_Get(TS *ts, Type t) {
   TSDesc *td = Type_Ptr(ts, t);
-  td = Resolve(ts, & t, t);
+  td = Resolve(ts, & t, t, 0);
   if (td->name != (char *) NULL) return Mem_Strdup(td->name);
 
   switch(td->kind) {
@@ -384,7 +386,7 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
   TSCmp cmp = TS_TYPES_EQUAL;
   if (t1 == t2) return TS_TYPES_EQUAL;
   while(1) {
-    td1 = Resolve(ts, & t1, t1);
+    td1 = Resolve(ts, & t1, t1, 1);
     td2 = Fully_Resolve(ts, & t2, t2);
     if (t1 == t2) return cmp;
 
