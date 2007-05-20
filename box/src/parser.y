@@ -545,7 +545,6 @@ statement:
     MSG_ERROR("Syntax error.");
   }
   parser_attr.no_syntax_err = 0;
-  Tok_Unput(']');
   yyerrok;
   }
 ;

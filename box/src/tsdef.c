@@ -192,12 +192,22 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
     if (td->size > 0) {
       char *name = (char *) NULL;
       Type m = td->target;
+#ifdef TS_NAME_GET_CASE_STRUCTURE
+      Type previous_type = TS_TYPE_NONE;
+#endif
       while (1) {
         TSDesc *m_td = Type_Ptr(ts, m);
         char *m_name = TS_Name_Get(ts, m_td->target);
 #ifdef TS_NAME_GET_CASE_STRUCTURE
-        if (m_td->name != (char *) NULL)
-          m_name = printdup("%~s %s", m_name, m_td->name);
+        if (m_td->name != (char *) NULL) {
+          if (m_td->target != previous_type)
+            m_name = printdup("%~s %s", m_name, m_td->name);
+          else {
+            Mem_Free(m_name);
+            m_name = Mem_Strdup(m_td->name);
+          }
+        }
+        previous_type = m_td->target;
 #endif
         m = m_td->data.member_next;
         if (m == t) {

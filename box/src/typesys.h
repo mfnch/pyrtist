@@ -45,6 +45,7 @@ typedef enum {
   TS_KIND_MEMBER,
   TS_KIND_ARRAY,
   TS_KIND_PROC,
+  TS_KIND_METHOD,
   TS_KIND_POINTER
 } TSKind;
 

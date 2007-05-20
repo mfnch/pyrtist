@@ -115,18 +115,18 @@ Task VM_Sym_Name_Set(VMProgram *vmp, UInt sym_num, Name *n) {
   n_str = Name_To_Str(n);
   n_len = n->length + 1; /* include also the terminating '\0' character */
   if ( HT_Find(st->syms, n_str, n_len, & hi) ) {
-    free(n_str);
+    Mem_Free(n_str);
     MSG_ERROR("Another symbol exists having the name '%N'!", n);
     return Failed;
   }
 
   (void) HT_Insert_Obj(st->syms, n_str, n_len, & sym_num, sizeof(UInt));
   if ( ! HT_Find(st->syms, n_str, n_len, & hi) ) {
-    free(n_str);
+    Mem_Free(n_str);
     MSG_ERROR("Hashtable seems not to work (from VM_Sym_Add)");
     return Failed;
   }
-  free(n_str);
+  Mem_Free(n_str);
 
   s->name.text = (char *) hi->key;
   s->name.length = hi->key_size - 1; /* Without the final '\0' */
@@ -384,7 +384,7 @@ Task Iter_Over_Paths(void *string, void *pass_data) {
   cld->path = (char *) string;
   lib_file = Mem_Strdup(print("%s/lib%s.so", cld->path, cld->lib));
   status = VM_Sym_Resolve_CLib(cld->vmp, lib_file);
-  free(lib_file);
+  Mem_Free(lib_file);
   if (status == Success) return Failed; /* Stop here, if we have found it! */
   return Success;
 }

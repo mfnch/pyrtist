@@ -37,8 +37,8 @@ static Task Procedure_Destroy(void *s) {
 
 static Task Installed_Procedure_Destroy(void *s) {
   VMProcInstalled *p = (VMProcInstalled *) s;
-  free(p->name);
-  free(p->desc);
+  Mem_Free(p->name);
+  Mem_Free(p->desc);
   return Success;
 }
 
