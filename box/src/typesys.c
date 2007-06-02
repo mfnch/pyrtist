@@ -248,7 +248,7 @@ Int TS_Member_Count(TS *ts, Type s) {
     };
     break;
   default:
-    MSG_FATAL("Trying to count members of a the non-membered type %~s",
+    MSG_FATAL("Trying to count members of the non-membered type %~s",
      TS_Name_Get(ts, s));
   }
   return count;
