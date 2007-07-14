@@ -1,0 +1,8 @@
+// Header file for the g library
+
+Line = (Int, Point)
+
+R = (Char -> Int -> Real)
+P = ((R, R) -> Point)
+
+P@Line ? line_point

@@ -18,5 +18,15 @@
 #    59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             #
 ############################################################################
 
-EXTRA_DIST = README STYLE PROBLEMS
-SUBDIRS = src libs tests
+# $Id$
+
+boxlibdir=@boxlibdir@
+boxincdir=@boxincdir@
+
+boxlib_LTLIBRARIES = libg.la
+
+dist_boxinc_DATA = g.bxh
+
+AM_CPPFLAGS = -I../../src
+libg_la_SOURCES = g.c
+libg_la_LDFLAGS = -module

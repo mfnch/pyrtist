@@ -28,6 +28,14 @@ AC_CONFIG_HEADER([config.h])
 
 AM_INIT_AUTOMAKE
 
+# Directories where to store specific box library files
+boxdir="$libdir/box"
+boxlibdir="$boxdir/lib"
+boxincdir="$boxdir/include"
+
+# Libtool support
+AC_PROG_LIBTOOL
+
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_LEX
@@ -50,5 +58,7 @@ AC_FUNC_REALLOC
 AC_CHECK_FUNCS([floor memmove memset pow rint sqrt strdup strncasecmp strndup])
 AC_CHECK_FUNCS([getenv])
 
-AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile])
+AC_SUBST([boxlibdir])
+AC_SUBST([boxincdir])
+AC_CONFIG_FILES([Makefile src/Makefile libs/Makefile libs/g/Makefile tests/Makefile])
 AC_OUTPUT

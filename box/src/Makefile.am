@@ -20,14 +20,18 @@
 
 # $Id$
 
-# set the include path found by configure
-INCLUDES = $(all_includes)
+boxlibdir=@boxlibdir@
+boxincdir=@boxincdir@
 
 BUILT_SOURCES = parser.h
 
 AM_YFLAGS = -d
 
 AM_CFLAGS = -Wall
+
+AM_CPPFLAGS = '-DBUILTIN_LIBRARY_PATH="$(boxlibdir)"' \
+              '-DBUILTIN_INCLUDE_PATH="$(boxincdir)"'
+
 # -DDEBUG_ARRAY
 # -DDEBUG_EXEC
 

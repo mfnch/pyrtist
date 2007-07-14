@@ -28,6 +28,9 @@
 #ifndef _LIST_H
 #  define _LIST_H
 
+/* Used in List_Append_String */
+#  include <string.h>
+
 typedef Task (*ListIterator)(void *item, void *pass_data);
 typedef void (*ListDestructor)(void *item);
 
@@ -59,5 +62,7 @@ void List_Append_Strings(List *l, const char *strings, char separator);
      List_Insert_With_Size((list), NULL, (item), size)
 #  define List_Append(list, item) \
      List_Insert_With_Size((list), NULL, (item), (list)->item_size)
+#  define  List_Append_String(list, s) \
+     List_Append_With_Size((list), (s), strlen(s)+1)
 
 #endif

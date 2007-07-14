@@ -30,7 +30,15 @@
 #include <string.h>
 #include <errno.h>
 
-#include "config.h"
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
+#ifdef PACKAGE_STRING
+#  define BOX_VERSTR PACKAGE_STRING
+#else
+#  define BOX_VERSTR "box"
+#endif
 
 #include "types.h"
 #include "defaults.h"
@@ -151,7 +159,15 @@ static Task Stage_Add_Default_Paths(void) {
   TASK( Add_Strings_To_List(BOX_LIBRARY_PATH, lib_dirs) );
   TASK( Add_Strings_To_List(BOX_INCLUDE_PATH, inc_dirs) );
   TASK( Add_Strings_To_List(BOX_DEFAULT_LIBS, libraries) );
-  return Success;
+
+#ifdef BUILTIN_LIBRARY_PATH
+  List_Append_String(lib_dirs, BUILTIN_LIBRARY_PATH);
+#endif
+
+#ifdef BUILTIN_INCLUDE_PATH
+  List_Append_String(inc_dirs, BUILTIN_INCLUDE_PATH);
+#endif
+return Success;
 }
 
 static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
@@ -424,7 +440,7 @@ void Main_Error_Exit(char *msg) {
 
 void Main_Cmnd_Line_Help(void) {
   fprintf( stderr,
-  PROGRAM_NAME " " VERSION_STR " - Language to describe graphic figures."
+  BOX_VERSTR " - Language to describe graphic figures."
   "\n Created and implemented by Matteo Franchin - "
    VERSION_DATE ", " VERSION_TIME "\n\n"
   "USAGE: " PROGRAM_NAME " options inputfile\n\n"
