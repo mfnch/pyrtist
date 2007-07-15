@@ -56,7 +56,7 @@ AC_C_CONST
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([floor memmove memset pow rint sqrt strdup strncasecmp strndup])
-AC_CHECK_FUNCS([getenv])
+AC_CHECK_FUNCS([getenv stat])
 
 AC_SUBST([boxlibdir])
 AC_SUBST([boxincdir])
