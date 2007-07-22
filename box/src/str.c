@@ -95,10 +95,11 @@ char *Str_DupLow(char *s, UInt leng)
  * NOTA: Restituisce NULL se non c'e' abbastanza memoria per creare
  *  la nuova stringa.
  */
-char *Str_Dup(char *s, UInt leng) {
+char *Str_Dup(const char *s, UInt leng) {
   char *ns, *nc;
 
-  if (s == NULL || leng < 1) return "";
+  if (s == NULL || leng < 1)
+    return (char *) Mem_Strdup("");
   ns = (char *) Mem_Alloc(leng + 1);
   for (nc = ns; leng > 0; leng--) *(nc++) = *(s++);
   *nc = '\0';

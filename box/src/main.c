@@ -43,13 +43,13 @@
 #include "types.h"
 #include "defaults.h"
 #include "messages.h"
-#include "list.h"
 #include "array.h"
 #include "virtmach.h"
 #include "vmproc.h"
 #include "vmsym.h"
 #include "registers.h"
 #include "compiler.h"
+#include "paths.h"
 
 /* Visualizzo questo messaggio quando ho errori nella riga di comando: */
 #define CMD_LINE_HELP "Try '%s -h' to get some help!"
@@ -69,26 +69,12 @@ static char *file_input;
 static char *file_output;
 static char *file_setup;
 
-static List *libraries;
-static List *lib_dirs;
-static List *inc_dirs;
-
 static VMProgram *program = NULL;
 
 /* Functions called when the argument of an option is found */
 static void set_file_input(char *arg) {file_input = arg;}
 static void set_file_output(char *arg) {file_output = arg;}
 static void set_file_setup(char *arg) {file_setup = arg;}
-static void add_library(char *arg) {
-  /* strlen(...)+1 --> include also '\0' */
-  List_Append_With_Size(libraries, arg, strlen(arg)+1);
-}
-static void add_lib_dir(char *arg) {
-  List_Append_With_Size(lib_dirs, arg, strlen(arg)+1);
-}
-static void add_inc_dir(char *arg) {
-  List_Append_With_Size(inc_dirs, arg, strlen(arg)+1);
-}
 
 #define NO_ARG ((void (*)(char *)) NULL)
 
@@ -114,9 +100,9 @@ static struct opt {
   {"output",  FLAG_OVERWRITE, FLAG_OUTPUT, 0, 1, & flags, set_file_output},
   {"write",   0, FLAG_OVERWRITE + FLAG_OUTPUT, 0, 1, & flags, set_file_output},
   {"setup",   0, FLAG_SETUP, 0, 1, & flags, set_file_setup},
-  {"library", 0, 0, 0, -1, & flags, add_library},
-  {"Include-path", 0, 0, 0, -1, & flags, add_inc_dir},
-  {"Lib-path", 0, 0, 0, -1, & flags, add_lib_dir},
+  {"library", 0, 0, 0, -1, & flags, Path_Add_Lib},
+  {"Include-path", 0, 0, 0, -1, & flags, Path_Add_Inc_Dir},
+  {"Lib-path", 0, 0, 0, -1, & flags, Path_Add_Lib_Dir},
   {NULL }
 }, opt_default =  {"input", 0, FLAG_INPUT, 0, 1, & flags, set_file_input};
 
@@ -131,43 +117,14 @@ Task Main_Execute(UInt main_module);
 /******************************************************************************/
 
 static Task Stage_Init(void) {
-  List_New(& libraries, 0);
-  List_New(& lib_dirs, 0);
-  List_New(& inc_dirs, 0);
+  Path_Init();
   return Success;
 }
 
 static void Stage_Finalize(void) {
   VM_Destroy(program); /* This function accepts program = NULL */
-
+  Path_Destroy();
   Cmp_Destroy();
-  List_Destroy(libraries);
-  List_Destroy(lib_dirs);
-  List_Destroy(inc_dirs);
-}
-
-static Task Add_Strings_To_List(const char *env_var, List *list) {
-#ifdef HAVE_GETENV
-  char *strings = getenv(env_var);
-  if (strings != (char *) NULL)
-    List_Append_Strings(list, strings, PATH_SEPARATOR);
-#endif
-  return Success;
-}
-
-static Task Stage_Add_Default_Paths(void) {
-  TASK( Add_Strings_To_List(BOX_LIBRARY_PATH, lib_dirs) );
-  TASK( Add_Strings_To_List(BOX_INCLUDE_PATH, inc_dirs) );
-  TASK( Add_Strings_To_List(BOX_DEFAULT_LIBS, libraries) );
-
-#ifdef BUILTIN_LIBRARY_PATH
-  List_Append_String(lib_dirs, BUILTIN_LIBRARY_PATH);
-#endif
-
-#ifdef BUILTIN_INCLUDE_PATH
-  List_Append_String(inc_dirs, BUILTIN_INCLUDE_PATH);
-#endif
-return Success;
 }
 
 static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
@@ -289,6 +246,11 @@ static Task Stage_Interpret_Command_Line(UInt *f) {
   } else
     file_setup = (char *) NULL;
 
+  return Success;
+}
+
+static Task Stage_Add_Default_Paths(void) {
+  Path_Set_All_From_Env();
   return Success;
 }
 

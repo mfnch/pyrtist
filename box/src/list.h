@@ -31,6 +31,8 @@
 /* Used in List_Append_String */
 #  include <string.h>
 
+#  include "types.h"
+
 typedef Task (*ListIterator)(void *item, void *pass_data);
 typedef void (*ListDestructor)(void *item);
 
@@ -46,6 +48,9 @@ typedef struct {
   ListItemHead head_tail;
 } List;
 
+/* Used with the function List_Product_Iter */
+typedef Task (*ListProduct)(void **tuple, void *pass);
+
 void List_New(List **l, UInt item_size);
 void List_Destroy(List *l);
 UInt List_Length(List *l);
@@ -55,6 +60,7 @@ void List_Insert_With_Size(List *l, void *item_where,
 Task List_Iter(List *l, ListIterator i, void *pass_data);
 Task List_Item_Get(List *l, void **item, UInt index);
 void List_Append_Strings(List *l, const char *strings, char separator);
+Task List_Product_Iter(List *l, ListProduct product, void *pass);
 
 #  define List_Insert(list, item_where, item_what) \
      List_Insert_With_Size((list), item_where, item_what, (list)->item_size)
@@ -63,6 +69,6 @@ void List_Append_Strings(List *l, const char *strings, char separator);
 #  define List_Append(list, item) \
      List_Insert_With_Size((list), NULL, (item), (list)->item_size)
 #  define  List_Append_String(list, s) \
-     List_Append_With_Size((list), (s), strlen(s)+1)
+     List_Insert_With_Size((list), NULL, (s), strlen(s)+1)
 
 #endif

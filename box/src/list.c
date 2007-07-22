@@ -25,6 +25,7 @@
 #include "types.h"
 #include "messages.h"
 #include "mem.h"
+#include "str.h"
 #include "list.h"
 
 void List_New(List **l, UInt item_size) {
@@ -131,10 +132,14 @@ void List_Append_Strings(List *l, const char *strings, char separator) {
   while(1) {
     register char c = *s;
     if (c == '\0') {
-      if (length > 0) List_Append_With_Size(l, string, length);
+      if (length > 0) List_Append_With_Size(l, string, length+1);
       return;
     } else if (c == separator) {
-      if (length > 0) List_Append_With_Size(l, string, length);
+      if (length > 0) {
+        char *s_copy = Str_Dup(string, length);
+        List_Append_With_Size(l, s_copy, length+1);
+        Mem_Free(s_copy);
+      }
       string = ++s;
       length = 0;
     } else {
@@ -144,10 +149,89 @@ void List_Append_Strings(List *l, const char *strings, char separator) {
   }
 }
 
+typedef struct {
+  ListProduct product;
+  void *pass;
+  List *sublist;
+  Int num_sublists;
+  ListItemHead *item;
+  Int sublist_idx;
+  void **tuple;
+} ListProductData;
+
+static Task Product_Iter(ListProductData *state);
+static Task Product_Iter(ListProductData *state);
+
+/* Used internally (by Product_Iter) */
+static Task Product_Sublist_Iter(void *item, void *pass) {
+  ListProductData *my_state = (ListProductData *) pass;
+  my_state->tuple[my_state->sublist_idx-1] = item;
+  return Product_Iter(my_state);
+}
+
+/* Used internally (by List_Product_Iter) */
+static Task Product_Iter(ListProductData *state) {
+  if (state->sublist_idx >= state->num_sublists)
+    /* The tuple has been fully filled: we can proceed
+     * and invoke the function 'product'
+     */
+    return state->product(state->tuple, state->pass);
+  else {
+    ListProductData my_state = *state;
+    List *this_sublist =
+            *((List **) ((void *) state->item + sizeof(ListItemHead)));
+    my_state.item = my_state.item->next;
+    ++my_state.sublist_idx;
+    return List_Iter(this_sublist, Product_Sublist_Iter, & my_state);
+  }
+}
+
+/* We explain this function with an example: assume you have two lists:
+ *   list1 = [1, 2, 3], list2 = [a, b, c]
+ * You want to iterate over all the couples made by one element of list1
+ * and one of list2:
+ *   list1 x list2 = [(1, a), (1, b), (1, c), (2, a), (2, b), ...]
+ * Then you use List_Product_Iter, where 'l' is a list containing
+ * the two lists 'list1' and 'list2'. 'product' is a function which
+ * receives an array of pointers to the items of the tuple, as first
+ * argument, and a pointer provided by the user, as second argument.
+ * This function will be invoked for each tuple of the product list.
+ * pass is a pointer used just to pass to the 'product' function
+ * extra data. pass is passed unchanged to the 'product' function.
+ */
+Task List_Product_Iter(List *l, ListProduct product, void *pass) {
+  UInt n = List_Length(l);
+  if (n > 0) {
+    Task status;
+    ListProductData state;
+    state.product = product;
+    state.pass = pass;
+    state.sublist = l;
+    state.num_sublists = List_Length(l);
+    state.item = l->head_tail.next;
+    state.sublist_idx = 0;
+    state.tuple = (void **) Mem_Alloc(n*sizeof(void *));
+    status = Product_Iter(& state);
+    Mem_Free(state.tuple);
+    return status;
+
+  } else
+    return Success;
+}
+
 #if 0
 
-Task Print_List_Items(void *item, void *) {
+Task Print_List_Items(void *item, void *pass) {
   printf("Item: '%s'\n", (char *) item);
+  return Success;
+}
+
+Task Test_Product_Iter(void **tuple, void *pass) {
+  char *format_string = (char *) pass;
+  char *string1 = (char *) tuple[0],
+       *string2 = (char *) tuple[1],
+       *string3 = (char *) tuple[2];
+  printf(format_string, string1, string2, string3);
   return Success;
 }
 
@@ -172,8 +256,38 @@ int main(void) {
     printf("The followings items are still in the list:\n");
     (void) List_Iter(l, Print_List_Items, NULL);
   }
-
   List_Destroy(l);
+
+  if (1) {
+    List *l, *greetings, *people, *terminators;
+    printf("*** Testing List_Product_Iter ***\n");
+    List_New(& l, sizeof(List *));
+    List_New(& greetings, 0);
+    List_New(& people, 0);
+    List_New(& terminators, 0);
+
+    List_Append_String(greetings, "Hello");
+    List_Append_String(greetings, "Bye");
+    List_Append_String(greetings, "See you");
+
+    List_Append_String(people, "Matteo");
+    List_Append_String(people, "Terry");
+
+    List_Append_String(terminators, ":-)");
+    List_Append_String(terminators, ":-(");
+    List_Append_String(terminators, "!");
+
+    List_Append(l, & greetings);
+    List_Append(l, & people);
+    List_Append(l, & terminators);
+    List_Product_Iter(l, Test_Product_Iter, "%s %s%s\n");
+
+    List_Destroy(l);
+    List_Destroy(greetings);
+    List_Destroy(people);
+    List_Destroy(terminators);
+  }
+
   return 0;
 }
 

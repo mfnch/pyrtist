@@ -20,9 +20,15 @@
 
 /* $Id$ */
 
-#ifndef FILEUTILS_H
-#  define FILEUTILS_H
+#ifndef _FILEUTILS_H
+#  define _FILEUTILS_H
 
 int File_Exist(const char *file_name);
+
+void File_Find(List **found_files, const char *file_name,
+               List *prefixes, List *suffixes);
+
+void File_Find_First(char **found_file, const char *file_name,
+               List *prefixes, List *suffixes);
 
 #endif
