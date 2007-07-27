@@ -968,9 +968,8 @@ Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Int reg, int and_free) {
  *  in tutti i casi, se invece force = 0, l'operazione viene eseguita
  *  solo per espressioni immediate di tipo TYPE_REAL e TYPE_POINT.
  */
-Task Cmp__Expr_To_LReg(Expression *expr, int force) {
+Task Cmp__Expr_To_LReg(Expr *expr, int force) {
   Expression lreg;
-  MSG_LOCATION("Cmp__Expr_To_LReg");
 
   /* Se l'espressione e' gia' un registro locale, allora esco! */
   if ( expr->categ == CAT_LREG )
@@ -1154,10 +1153,10 @@ Task Cmp_Expr_Container_Change(Expression *e, Container *c) {
  *  store any definitive value), if temporary == 0 the expression corresponds
  *  to a particular variable.
  */
-Task Cmp_Expr_Create(Expression *e, Int type, int temporary) {
+Task Cmp_Expr_Create(Expr *e, Int type, int temporary) {
   register int intrinsic;
   Int type_of_register, resolved;
-  Int ts = Tym_Type_Size(type);
+  Int ts;
 
   assert( type >= 0 );
 
@@ -1168,7 +1167,6 @@ Task Cmp_Expr_Create(Expression *e, Int type, int temporary) {
 #endif
 
   e->is.typed = 1;
-  e->is.value = ts > 0 ? 1 : 0;
   e->is.imm = 0;
   e->is.ignore = 0;
   e->is.target = 0;
@@ -1177,6 +1175,8 @@ Task Cmp_Expr_Create(Expression *e, Int type, int temporary) {
   e->categ = CAT_LREG;
   e->type = type;
   e->resolved = resolved = Tym_Type_Resolve_All(type);
+  ts = Tym_Type_Size(resolved);
+  e->is.value = ts > 0 ? 1 : 0;
   if (ts < 1) return Success;
 
   intrinsic = (resolved < NUM_INTRINSICS);

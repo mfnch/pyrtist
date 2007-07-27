@@ -101,5 +101,5 @@ FILE *Path_Open_Inc_File(const char *file, const char *mode) {
     return fd;
 
   } else
-    return (char *) NULL;
+    return (FILE *) NULL;
 }

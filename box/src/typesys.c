@@ -94,23 +94,27 @@ static TSDesc *Fully_Resolve(TS *ts, Type *rt, Type t) {
 }
 
 Type TS_Resolve(TS *ts, Type t, int resolve_alias, int resolve_species) {
-  int resolve;
-  while(1) {
-    TSDesc *td = Type_Ptr(ts, t);
-    Type rt = td->target;
-    switch(td->kind) {
-    case TS_KIND_LINK:
-    case TS_KIND_MEMBER:
-      resolve = 1; break;
-    case TS_KIND_ALIAS:
-      resolve = resolve_alias; break;
-    case TS_KIND_SPECIES:
-      rt = td->data.last; resolve = resolve_species; break;
-    default:
-      resolve = 0;
+  if (t == TS_TYPE_NONE)
+    return TS_TYPE_NONE;
+  else {
+    int resolve;
+    while(1) {
+      TSDesc *td = Type_Ptr(ts, t);
+      Type rt = td->target;
+      switch(td->kind) {
+      case TS_KIND_LINK:
+      case TS_KIND_MEMBER:
+        resolve = 1; break;
+      case TS_KIND_ALIAS:
+        resolve = resolve_alias; break;
+      case TS_KIND_SPECIES:
+        rt = td->data.last; resolve = resolve_species; break;
+      default:
+        resolve = 0;
+      }
+      if (!resolve) return t;
+      t = rt;
     }
-    if (!resolve) return t;
-    t = rt;
   }
 }
 

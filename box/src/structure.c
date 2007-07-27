@@ -7,9 +7,9 @@ static Array *cmp_structure_exprs;
 static Array *cmp_structure_data;
 
 typedef struct {
-  Intg       num;  /* Numero dell'elemento */
-  Intg       size; /* Posizione dell'elemento nella struttura */
-  Expression expr; /* Espressione contenente il valore dell'elemento */
+  Int  num;  /* Numero dell'elemento */
+  Int  size; /* Posizione dell'elemento nella struttura */
+  Expr expr; /* Espressione contenente il valore dell'elemento */
 } StructItem;
 
 static Task Cmp__Structure_Free(StructItem *first, Intg num);
@@ -276,8 +276,8 @@ e ha tipo (Int , Real)
 
  */
 
-Task Cmp_Expr_Expand(Intg species, Expression *e) {
-  register Intg type1, type2;
+Task Cmp_Expr_Expand(Int species, Expression *e) {
+  register Int type1, type2;
 
   assert( e->is.typed && e->is.value );
 

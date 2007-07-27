@@ -31,9 +31,7 @@ AM_CFLAGS = -Wall
 
 AM_CPPFLAGS = '-DBUILTIN_LIBRARY_PATH="$(boxlibdir)"' \
               '-DBUILTIN_INCLUDE_PATH="$(boxincdir)"'
-
-# -DDEBUG_ARRAY
-# -DDEBUG_EXEC
+# -DDEBUG_ARRAY -DDEBUG_EXEC
 
 bin_PROGRAMS = box
 
