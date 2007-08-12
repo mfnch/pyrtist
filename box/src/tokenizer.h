@@ -25,7 +25,6 @@
  * File header per usare le funzioni definite in 'tokenizer.lex.c'
  */
 
-int yywrap(void);
 int yylex(void);
 Task Tok_Init(UInt maxinc, const char *f);
 Task Tok_Finish(void);

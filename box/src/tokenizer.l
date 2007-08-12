@@ -72,6 +72,8 @@ NAME    [A-Za-z][A-Za-z0-9_]*
 LNAME   [a-z][A-Za-z0-9_]*
 UNAME   [A-Z][A-Za-z0-9_]*
 
+%option noyywrap
+
 %%
 
 include BEGIN(include);
@@ -240,11 +242,6 @@ include BEGIN(include);
 . {return yytext[0];}
 
 %%
-
-/* wrap function */
-int yywrap(void) {
-  return 1;
-}
 
 /* DESCRIZIONE: Prepara le funzioni di analisi lessicale del compilatore.
  *  Se f != NULL il compilatore partira' come se la prima istruzione
