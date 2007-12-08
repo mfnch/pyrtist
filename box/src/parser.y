@@ -49,9 +49,10 @@ ParserAttr parser_attr;
 /* Funzioni definite in questo file */
 void yyerror(char* s);
 
-static Task Proc_Def_Open(Expr *child_type, Expr *parent_type);
+static Task Proc_Def_Open(Expr *child_type, Int kind, Expr *parent_type);
 static Task Proc_Def_Close(void);
-static Task Declare_Proc(Expr *child_type, Expr *parent_type, Name *name);
+static Task Declare_Proc(Expr *child_type, Int kind, Expr *parent_type,
+                         Name *name);
 
 /* Numero della linea che e' in fase di lettura dal tokenizer */
 extern UInt tok_linenum;
@@ -168,12 +169,13 @@ static Task Type_Struc_2(Expr *se, Struc *s) {
  * che possono avere i token
  */
 %union {
-  Expr          Ex; /* Espressione generica */
-  Name          Nm; /* Nome */
-  Int           Sf; /* Suffisso che specifica lo scoping per le variabili */
-  Type          Ty; /* Tipo */
-  Struc         Sc; /* Incomplete structure type */
-  StrucMember   SM; /* Member of structure type */
+  Expr          Ex;   /* Espressione generica */
+  Name          Nm;   /* Nome */
+  Int           Sf;   /* Suffisso che specifica lo scoping per le variabili */
+  Type          Ty;   /* Tipo */
+  Struc         Sc;   /* Incomplete structure type */
+  StrucMember   SM;   /* Member of structure type */
+  Int           kind; /* Per TOK_AT */
 }
 
 /* Lista dei token senza valore semantico
@@ -200,6 +202,7 @@ static Task Type_Struc_2(Expr *se, Struc *s) {
 %token <Nm> TOK_LMEMBER
 %token <Nm> TOK_UMEMBER
 %token <Nm> TOK_STRING
+%token <kind> TOK_AT
 
 /* Lista delle espressioni aventi valore semantico
  */
@@ -218,6 +221,10 @@ static Task Type_Struc_2(Expr *se, Struc *s) {
 %type <Sf> suffix
 %type <Sf> suffix.opt
 %type <Nm> string
+
+
+%type <Ex> expr.struc
+%type <Ex> expr.struc.all
 
 %type <SM> type.struc.first
 %type <SM> type.struc.second
@@ -342,21 +349,28 @@ type.struc:
 ;
 
 /*****************************************************************************
+ *                           Structure expression                            *
+ *****************************************************************************/
+expr.struc.all:
+  expr ',' expr            { if ( Cmp_Structure_Begin()   ) MY_ERR
+                             if ( Cmp_Structure_Add(& $1) ) MY_ERR
+                             if ( Cmp_Structure_Add(& $3) ) MY_ERR }
+| expr.struc.all ',' expr  { if ( Cmp_Structure_Add(& $3) ) MY_ERR }
+ ;
+
+expr.struc:
+  '(' expr ',' ')'                   { if ( Cmp_Structure_Begin()   ) MY_ERR
+                                       if ( Cmp_Structure_Add(& $2) ) MY_ERR
+                                       if ( Cmp_Structure_End(& $$) ) MY_ERR }
+| '(' expr.struc.all comma.opt ')'   { if ( Cmp_Structure_End(& $$) ) MY_ERR }
+;
+
+/*****************************************************************************
  *                                 Strings                                   *
  *****************************************************************************/
 string:
   TOK_STRING           { $$ = $1; }
 | string TOK_STRING    { if IS_FAILED( Name_Cat_And_Free(& $$, & $1, & $2) ) MY_ERR }
- ;
-
-/*****************************************************************************
- *                                  Lists                                    *
- *****************************************************************************/
-expr.list:
-  expr ',' expr       { if ( Cmp_Structure_Begin()   ) MY_ERR
-                        if ( Cmp_Structure_Add(& $1) ) MY_ERR
-                        if ( Cmp_Structure_Add(& $3) ) MY_ERR }
-| expr.list ',' expr  { if ( Cmp_Structure_Add(& $3) ) MY_ERR }
  ;
 
 /*****************************************************************************
@@ -380,7 +394,7 @@ prim.expr:
 
  | '(' expr ')'        { $$ = $2; $$.is.ignore = 0; }
 
- | '(' expr.list ')'   { if ( Cmp_Structure_End(& $$) ) MY_ERR }
+ | expr.struc          { $$ = $1; }
 
  | prim.expr
    '['                 { BOX_REOPEN( & $1 );  }
@@ -506,18 +520,18 @@ parent.opt:
 ;
 
 proc.def:
-   '@' parent
+   TOK_AT parent
    '['
    statement.list
    ']'
 
- | type '@' parent.opt
-   '['                  {DO(Proc_Def_Open(& $1, & $3))}
+ | type TOK_AT parent.opt
+   '['                  {DO(Proc_Def_Open(& $1, $2, & $3))}
    statement.list
    ']'                  {DO(Proc_Def_Close())}
 
- | type '@' parent.opt
-   '?' TOK_LNAME        {DO(Declare_Proc(& $1, & $3, & $5))}
+ | type TOK_AT parent.opt
+   '?' TOK_LNAME        {DO(Declare_Proc(& $1, $2, & $3, & $5))}
 ;
 
  /*************DEFINIZIONE DELLA STRUTTURA GENERICA DEI PROGRAMMI**************/
@@ -602,20 +616,22 @@ Task Parser_Finish(void) {
   return Success;
 }
 
-static Task Declare_Proc(Expr *child_type, Expr *parent_type, Name *name) {
+static Task Declare_Proc(Expr *child_type, Int kind, Expr *parent_type,
+                         Name *name) {
   UInt sym_num;
   Int proc;
   TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
   TASK( VM_Sym_Name_Set(cmp_vm, sym_num, name) );
-  proc = Tym_Def_Procedure(child_type->type, 0, parent_type->type, sym_num);
+  proc = TS_Procedure_Def(child_type->type, kind, parent_type->type, sym_num);
   return (proc == TYPE_NONE) ? Failed : Success;
 }
 
-static Task Proc_Def_Open(Expr *child_type, Expr *parent_type) {
+static Task Proc_Def_Open(Expr *child_type, Int kind, Expr *parent_type) {
   UInt sym_num;
   Int proc_type;
   TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
-  proc_type = Tym_Def_Procedure(child_type->type,0,parent_type->type,sym_num);
+  proc_type =
+    TS_Procedure_Def(child_type->type, kind, parent_type->type, sym_num);
   if (proc_type == TYPE_NONE) return Failed;
   return Box_Def_Begin(proc_type);
 }

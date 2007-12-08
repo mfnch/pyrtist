@@ -165,6 +165,12 @@ include BEGIN(include);
 
 "$$"  { return TOK_PARENT; }
 
+"@"   { yylval.kind = 1; return TOK_AT; }
+
+"@@"  { yylval.kind = 2; return TOK_AT; }
+
+"@&"  { yylval.kind = 3; return TOK_AT; }
+
  /* Numero intero di tipo carattere */
 [']([^'\n]|\\')*['] {
   Char c;

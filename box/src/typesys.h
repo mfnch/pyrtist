@@ -114,7 +114,7 @@ Task TS_Intrinsic_New(TS *ts, Type *i, Int size);
  */
 Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind);
 
-/** Get information about the procedure p. This information is store
+/** Get information about the procedure p. This information is stored
  * in the destination specified by the given pointers, but this happens
  * only if the pointer is != NULL.
  * @param ts the type-system data structure
@@ -145,6 +145,12 @@ void TS_Procedure_Sym_Num(TS *ts, UInt *sym_num, Type p);
 Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
  Type parent, Type child, int kind);
 
+/** Create and register a procedure by calling firt TS_Procedure_New
+ * and then TS_Procedure_Register. sym_num is the associated symbol
+ * identifier.
+ */
+Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num);
+
 Task TS_Name_Set(TS *ts, Type t, const char *name);
 
 char *TS_Name_Get(TS *ts, Type t);
@@ -152,6 +158,10 @@ char *TS_Name_Get(TS *ts, Type t);
 Task TS_Alias_New(TS *ts, Type *a, Type t);
 
 Task TS_Link_New(TS *ts, Type *l, Type t);
+
+#if 0
+Task TS_SubType_New(TS *ts, Type *s,)
+#endif
 
 Task TS_Structure_Begin(TS *ts, Type *s);
 
@@ -229,6 +239,7 @@ enum {
   PROC_SPECIAL_NUM = 3
 };
 
+#if 0
 /* Struttura usata per descrivere i tipi di dati */
 /* This structure has changed too many times. Now it is very ugly and dirty,
  * it should be completely rewritten, but this needs some work, since many
@@ -251,6 +262,7 @@ typedef struct {
 /*    Symbol *sym;    Simbolo associato al tipo (NULL = non ce n'e'!)*/
   };
 } TypeDesc;
+#endif
 
 /* Important builtin types */
 extern Intg type_Point, type_RealNum, type_IntgNum, type_CharNum;

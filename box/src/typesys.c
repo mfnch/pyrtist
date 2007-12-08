@@ -375,6 +375,7 @@ Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
  Type parent, Type child, int kind) {
   TSDesc *p_td, *parent_td;
   Type p, dummy;
+  assert(kind == 1 || kind == 2);
   if (proc == (Type *) NULL) proc = & dummy;
   if (expansion_type == (Type *) NULL) expansion_type = & dummy;
   *proc = TS_TYPE_NONE;
@@ -382,16 +383,31 @@ Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
   parent_td = Type_Ptr(ts, parent);
   for(p = parent_td->first_proc; p != TS_TYPE_NONE; p = p_td->first_proc) {
     TSCmp comparison;
+    int p_kind;
     p_td = Type_Ptr(ts, p);
-    comparison = TS_Compare(ts, p_td->target, child);
     /*MSG_ADVICE("TS_Procedure_Search: considering %~s", TS_Name_Get(ts, p));*/
-    if (comparison != TS_TYPES_UNMATCH) {
-      if (comparison == TS_TYPES_EXPAND) *expansion_type = p_td->target;
-      *proc = p;
-      return Success;
+    p_kind = p_td->data.proc.kind;
+    assert(p_kind != 0 && (p_kind | 3) == 3);
+    if ((p_kind & kind) != 0) {
+      comparison = TS_Compare(ts, p_td->target, child);
+      if (comparison != TS_TYPES_UNMATCH) {
+        if (comparison == TS_TYPES_EXPAND) *expansion_type = p_td->target;
+        *proc = p;
+        return Success;
+      }
     }
   }
   return Success;
+}
+
+Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num) {
+  Type procedure;
+  assert(kind != 0 && (kind | 3) == 3); /* kind can be 1, 2 or 3 */
+  Task t = TS_Procedure_New(last_ts, & procedure, of_type, proc, kind);
+  assert(t == Success);
+  t = TS_Procedure_Register(last_ts, procedure, sym_num);
+  assert(t == Success);
+  return procedure;
 }
 
 /****************************************************************************/
