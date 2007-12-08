@@ -11,6 +11,12 @@ typedef struct {
   Point prev;
 } Line;
 
+Task line_begin(VMProgram *vmp) {
+  Line *l = BOX_VM_CURRENTPTR(vmp, Line);
+  l->num_points = 0;
+  return Success;
+}
+
 Task line_point(VMProgram *vmp) {
   Line *l = BOX_VM_CURRENTPTR(vmp, Line);
   Point *p = BOX_VM_ARGPTR1(vmp, Point);
@@ -22,3 +28,4 @@ Task line_point(VMProgram *vmp) {
   ++(l->num_points);
   return Success;
 }
+
