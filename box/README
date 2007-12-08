@@ -113,7 +113,7 @@ Changes:
   *** ADVANCED FEATURES ***
     [TO DO 7] Add code attributes (to define constants, global objects, etc.)
     [TO DO 8] Immediate execution of operations between immediate operands.
-    [TO DO 9] Add user-defined procedures.
+    [TO DO 9][DONE] Add user-defined procedures.
    [TO DO 10] Operator overloading.
 
   11 september 2005: How one should implement the call to user defined modules
