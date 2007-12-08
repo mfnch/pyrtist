@@ -36,6 +36,7 @@
 #include "virtmach.h"
 #include "vmsym.h"
 #include "vmsymstuff.h"
+#include "expr.h"
 #include "compiler.h"
 #include "box.h"
 #include "tokenizer.h"
@@ -176,6 +177,7 @@ static Task Type_Struc_2(Expr *se, Struc *s) {
   Struc         Sc;   /* Incomplete structure type */
   StrucMember   SM;   /* Member of structure type */
   Int           kind; /* Per TOK_AT */
+  Type          proc; /* Per TOK_PROC */
 }
 
 /* Lista dei token senza valore semantico
@@ -203,6 +205,7 @@ static Task Type_Struc_2(Expr *se, Struc *s) {
 %token <Nm> TOK_UMEMBER
 %token <Nm> TOK_STRING
 %token <kind> TOK_AT
+%token <proc> TOK_PROC
 
 /* Lista delle espressioni aventi valore semantico
  */
@@ -215,6 +218,7 @@ static Task Type_Struc_2(Expr *se, Struc *s) {
 %type <Ex> array.expr
 %type <Ex> expr
 %type <Ex> prim.expr
+%type <Ex> child
 %type <Ex> parent
 %type <Ex> parent.opt
 %type <Nm> prim.suffix
@@ -509,9 +513,14 @@ exit.statement:
   }
 ;
 
+child:
+   type                 {$$ = $1;}
+|  TOK_PROC             {Expr_New_Type(& $$, $1);}
+;
+
 parent:
    type                 {$$ = $1;}
- | type '@' parent      {$$ = $1;}
+ | type TOK_AT parent   {$$ = $1;}
 ;
 
 parent.opt:
@@ -525,12 +534,12 @@ proc.def:
    statement.list
    ']'
 
- | type TOK_AT parent.opt
+ | child TOK_AT parent.opt
    '['                  {DO(Proc_Def_Open(& $1, $2, & $3))}
    statement.list
    ']'                  {DO(Proc_Def_Close())}
 
- | type TOK_AT parent.opt
+ | child TOK_AT parent.opt
    '?' TOK_LNAME        {DO(Declare_Proc(& $1, $2, & $3, & $5))}
 ;
 

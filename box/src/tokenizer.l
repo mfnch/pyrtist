@@ -171,6 +171,12 @@ include BEGIN(include);
 
 "@&"  { yylval.kind = 3; return TOK_AT; }
 
+"([)" { yylval.proc = TYPE_OPEN; return TOK_PROC; }
+
+"(])" { yylval.proc = TYPE_CLOSE; return TOK_PROC; }
+
+"(;)" { yylval.proc = TYPE_PAUSE; return TOK_PROC; }
+
  /* Numero intero di tipo carattere */
 [']([^'\n]|\\')*['] {
   Char c;
