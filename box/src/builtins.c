@@ -117,9 +117,9 @@ Task Builtins_Define() {
     assert(t == TYPE_OBJ);
     TASK( Tym_Def_Intrinsic(& t, & NAME("Void"), 0 ) );
     assert(t == TYPE_VOID);
-    TASK( Tym_Def_Intrinsic(& t, & NAME("(<)"), 0 ) );
+    TASK( Tym_Def_Intrinsic(& t, & NAME("([)"), 0 ) );
     assert(t == TYPE_OPEN);
-    TASK( Tym_Def_Intrinsic(& t, & NAME("(>)"), 0 ) );
+    TASK( Tym_Def_Intrinsic(& t, & NAME("(])"), 0 ) );
     assert(t == TYPE_CLOSE);
     TASK( Tym_Def_Intrinsic(& t, & NAME("(;)"), 0 ) );
     assert(t == TYPE_PAUSE);

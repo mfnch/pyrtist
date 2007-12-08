@@ -182,10 +182,10 @@ char *TS_Name_Get(TS *ts, Type t) {
 
   case TS_KIND_PROC:
     {
-      char *proc_kind_strs[4] = {"$", "$", "$$", "$&"};
+      char *proc_kind_strs[4] = {"err", "@", "@@", "@&"};
       char *proc_kind_str = proc_kind_strs[td->data.proc.kind & 3];
-      return printdup("%~s%s%~s", TS_Name_Get(ts, td->data.proc.parent),
-       proc_kind_str, TS_Name_Get(ts, td->target));
+      return printdup("%~s%s%~s", TS_Name_Get(ts, td->target),
+                      proc_kind_str, TS_Name_Get(ts, td->data.proc.parent));
     }
 
   default:
