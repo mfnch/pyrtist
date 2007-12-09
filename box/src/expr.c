@@ -324,6 +324,10 @@ void Expr_Parent_And_Child(Expr *e_parent, Expr *e_child, Type t_proc) {
   }
 }
 
+/* Called when the / stands as a prefix for an expression. */
+Task Expr_Ignore(Expr *e) {
+  return Cmp_Expr_Destroy_Tmp(e);
+}
 
 /******************************************************************************/
 

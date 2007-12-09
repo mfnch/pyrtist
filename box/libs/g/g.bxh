@@ -5,6 +5,6 @@ Line = (Int, Point)
 R = (Char -> Int -> Real)
 P = ((R, R) -> Point)
 
-([)@Line ? line_begin
-P@Line ? line_point
+([)@Line ? "line_begin"
+P@Line ? "line_point"
 

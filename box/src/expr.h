@@ -109,4 +109,7 @@ Task Expr_Array_Member(Expr *memb, Expr *array, Expr *index);
  */
 void Expr_Parent_And_Child(Expr *e_parent, Expr *e_child, Type t_proc);
 
+/** Called when the / stands as a prefix for the expression *e. */
+Task Expr_Ignore(Expr *e);
+
 #endif

@@ -487,7 +487,8 @@ type.statement:
  *               DEFINIZIONE DELL'ESPRESSIONE COME ISTRUZIONE                 *
  ******************************************************************************/
 expr.statement:
-   expr { if IS_FAILED( Cmp_Procedure( NULL, & $1, -1, /* auto_define */ 1) ) MY_ERR }
+   expr      { if IS_FAILED( Cmp_Procedure( NULL, & $1, -1, /* auto_define */ 1) ) MY_ERR }
+|  '\\' expr { DO(Expr_Ignore(& $2)) }
 ;
 
 /******************************************************************************/
@@ -540,7 +541,7 @@ proc.def:
    ']'                  {DO(Proc_Def_Close())}
 
  | child TOK_AT parent.opt
-   '?' TOK_LNAME        {DO(Declare_Proc(& $1, $2, & $3, & $5))}
+   '?' TOK_STRING       {DO(Declare_Proc(& $1, $2, & $3, & $5))}
 ;
 
  /*************DEFINIZIONE DELLA STRUTTURA GENERICA DEI PROGRAMMI**************/
