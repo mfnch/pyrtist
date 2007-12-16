@@ -120,18 +120,21 @@ static Task Type_Struc_2(Expr *se, Struc *s) {
 
 static Task Reg_Subtype(Expr *result, Name *parent, Name *child) {
   Expr parent_expr;
-  Type subtype_type;
+  Type subtype;
   TASK( Prs_Name_To_Expr(parent, & parent_expr, 0) );
   if (!parent_expr.is.typed) {
     MSG_ERROR("Cannot refer to the subtype '%N' of the undefined type '%N'",
               child, parent);
     return Failed;
   }
-  MSG_WARNING("Reg_Subtype: Not implemented yet!");
-  return Success;
 
-  TASK( TS_Subtype_New(cmp->ts, & subtype_type, parent_expr.type, child) );
-  Expr_New_Type(result, subtype_type);
+  TS_Subtype_Find(cmp->ts, & subtype, parent_expr.type, child);
+  if (subtype == TS_TYPE_NONE) {
+    MSG_ERROR("The type '%N' has not a subtype with name '%N'", parent, child);
+    return Failed;
+  }
+
+  Expr_New_Type(result, subtype);
   return Success;
 }
 
@@ -593,7 +596,7 @@ child:
 
 parent:
    type                 {$$ = $1;}
- | type TOK_AT parent   {$$ = $1;}
+ | registered.subtype   {$$ = $1;}
 ;
 
 parent.opt:

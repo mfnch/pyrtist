@@ -405,6 +405,11 @@ char *Name_To_Str(Name *n) {
   return strncpy(asciiz, n->text, n->length);
 }
 
+void Name_From_Str(Name *dest, char *src) {
+  dest->text = src;
+  dest->length = strlen(src);
+}
+
 /* DESCRIZIONE: Rimuove la stringa associata a *n (pone n --> "")
  */
 void Name_Free(Name *n) {Mem_Free(n->text); n->text = NULL; n->length = 0;}

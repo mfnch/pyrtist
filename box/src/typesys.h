@@ -87,6 +87,7 @@ typedef struct {
 typedef struct {
   Collection *type_descs;
   Hashtable *members;
+  Hashtable *subtypes;
   Array *name_buffer;
 } TS;
 
@@ -168,6 +169,12 @@ Task TS_Subtype_New(TS *ts, Type *new_subtype,
 /** Register a previously created (and still unregistered) subtype.
  */
 Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type);
+
+/** Find the registered subtype with name child among the subtypes of type
+ * parent. The found subtype is put inside *subtype. If no subtype is found
+ * then TS_TYPE_NONE is returned inside *subtype.
+ */
+void TS_Subtype_Find(TS *ts, Type *subtype, Type parent, Name *child);
 
 Task TS_Name_Set(TS *ts, Type t, const char *name);
 

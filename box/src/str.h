@@ -41,6 +41,7 @@ char *Str_ToString(char *s, Intg l, Intg *new_length);
 Name *Name_Empty(void);
 const char *Name_Str(Name *n);
 char *Name_To_Str(Name *n);
+void Name_From_Str(Name *dest, char *src);
 void Name_Free(Name *n);
 Name *Name_Dup(Name *n);
 Task Name_Cat(Name *nm, Name *nm1, Name *nm2, int free_args);

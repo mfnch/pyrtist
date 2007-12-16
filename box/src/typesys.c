@@ -37,7 +37,8 @@ static TS *last_ts; /* Just for transition: will be removed! */
 
 Task TS_Init(TS *ts) {
   TASK( Clc_New(& ts->type_descs, sizeof(TSDesc), TS_TSDESC_CLC_SIZE) );
-  HT(& ts->members, TS_MEMB_HT_SIZE);
+  HT(& ts->members,  TS_MEMB_HT_SIZE);
+  HT(& ts->subtypes, TS_SUBT_HT_SIZE);
   TASK( Arr_New(& ts->name_buffer, sizeof(char), TS_NAME_BUFFER_SIZE) );
   last_ts = ts; /* Just for transition: will be removed! */
   return Success;
@@ -46,6 +47,7 @@ Task TS_Init(TS *ts) {
 void TS_Destroy(TS *ts) {
   Clc_Destroy(ts->type_descs);
   HT_Destroy(ts->members);
+  HT_Destroy(ts->subtypes);
   Arr_Destroy(ts->name_buffer);
 }
 
@@ -433,20 +435,57 @@ Task TS_Subtype_New(TS *ts, Type *new_subtype,
   td.target = TS_TYPE_NONE;
   td.data.subtype.parent = parent_type;
   td.data.subtype.child_name = Name_To_Str(child_name);
-  TASK( Type_New(ts, new_subtype, & td) );
-  return Success;
+  return Type_New(ts, new_subtype, & td);
 }
 
 /* Register a previously created (and still unregistered) subtype.
  */
 Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type) {
   TSDesc *s_td = Type_Ptr(ts, subtype);
+  Type parent, found_subtype;
+  Name child_name, full_name;
+  char *child_str;
+
   if (s_td->target != TS_TYPE_NONE) {
     MSG_ERROR("Cannot redefine subtype '%~s'", TS_Name_Get(ts, subtype));
     return Failed;
   }
+
+  child_str = s_td->data.subtype.child_name;
+  Name_From_Str(& child_name, child_str);
+  parent = s_td->data.subtype.parent;
+  TS_Subtype_Find(ts, & found_subtype, parent, & child_name);
+  if (found_subtype != TS_TYPE_NONE) {
+    TSDesc *found_subtype_td = Type_Ptr(ts, found_subtype);
+    Type found_subtype_type = found_subtype_td->target;
+    TSCmp comparison = TS_Compare(ts, found_subtype_type, subtype_type);
+    if ((comparison & TS_TYPES_MATCH) == 0) {
+      MSG_ERROR("Cannot redefine subtype '%~s'", TS_Name_Get(ts, subtype));
+      return Failed;
+    }
+    return Success;
+  }
+
+  /* CHECK: MAYBE WE SHOULD RESOVE THE TYPE HERE */
   s_td->target = subtype_type;
+  TASK( Member_Full_Name(ts, & full_name, parent, child_str) );
+  HT_Insert_Obj(ts->subtypes,
+                full_name.text, full_name.length,
+                & subtype, sizeof(Type));
   return Success;
+}
+
+void TS_Subtype_Find(TS *ts, Type *subtype, Type parent, Name *child) {
+  Name full_name;
+  HashItem *hi;
+  char *child_str = Name_To_Str(child);
+  /*s = TS_Resolve(ts, s, 1, 1);*/
+  Task t = Member_Full_Name(ts, & full_name, parent, child_str);
+  Mem_Free(child_str);
+  *subtype = TS_TYPE_NONE;
+  if IS_FAILED(t) return;
+  if (HT_Find(ts->subtypes, full_name.text, full_name.length, & hi))
+    *subtype = *((Type *) hi->object);
 }
 
 #if 0

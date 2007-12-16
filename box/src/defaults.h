@@ -222,6 +222,8 @@
 #define TS_TSDESC_CLC_SIZE 8192
 /** Size of the hashtables for member of structures, etc. */
 #define TS_MEMB_HT_SIZE 8192
+/** Size of the hashtables for subtypes */
+#define TS_SUBT_HT_SIZE 8192
 /** Typical size of an identifier name */
 #define TS_NAME_BUFFER_SIZE 64
 
