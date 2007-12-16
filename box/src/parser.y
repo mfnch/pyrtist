@@ -118,6 +118,63 @@ static Task Type_Struc_2(Expr *se, Struc *s) {
   return Success;
 }
 
+static Task Reg_Subtype(Expr *result, Name *parent, Name *child) {
+  Expr parent_expr;
+  Type subtype_type;
+  TASK( Prs_Name_To_Expr(parent, & parent_expr, 0) );
+  if (!parent_expr.is.typed) {
+    MSG_ERROR("Cannot refer to the subtype '%N' of the undefined type '%N'",
+              child, parent);
+    return Failed;
+  }
+  MSG_WARNING("Reg_Subtype: Not implemented yet!");
+  return Success;
+
+  TASK( TS_Subtype_New(cmp->ts, & subtype_type, parent_expr.type, child) );
+  Expr_New_Type(result, subtype_type);
+  return Success;
+}
+
+static Task Reg_SubSubtype(Expr *result, Expr *reg_parent, Name *child) {
+  MSG_WARNING("Not implemented yet!");
+  return Success;
+}
+
+static Task Unreg_Subtype(Expr *result, Name *parent, Name *child) {
+  Expr parent_expr;
+  Type subtype_type;
+  TASK( Prs_Name_To_Expr(parent, & parent_expr, 0) );
+  if (!parent_expr.is.typed) {
+    MSG_ERROR("Cannot refer to the subtype '%N' of the undefined type '%N'",
+              child, parent);
+    return Failed;
+  }
+  TASK( TS_Subtype_New(cmp->ts, & subtype_type, parent_expr.type, child) );
+  Expr_New_Type(result, subtype_type);
+  return Success;
+}
+
+static Task Unreg_SubSubtype(Expr *result, Expr *reg_parent, Name *child) {
+  MSG_WARNING("Not implemented yet!");
+  return Success;
+}
+
+static Task Register_Subtype(Expr *result, Expr *unreg_subtype, Expr *type) {
+  *result = *type;
+  if (!unreg_subtype->is.typed) {
+    MSG_ERROR("Register_Subtype: '%N' is not a subtype!",
+              unreg_subtype->value.nm);
+    return Failed;
+  }
+  if (!type->is.typed) {
+    MSG_ERROR("Cannot define the subtype '%s': '%N' is untyped!",
+              Tym_Type_Name(unreg_subtype->type), & type->value.nm);
+    return Failed;
+  }
+  TASK( TS_Subtype_Register(cmp->ts, unreg_subtype->type, type->type) );
+  return Success;
+}
+
 /*****************************************************************************/
 
 #define DO(action) \
@@ -235,6 +292,9 @@ static Task Type_Struc_2(Expr *se, Struc *s) {
 %type <Sc> type.struc.all
 %type <Ex> type.struc
 
+%type <Ex> registered.subtype
+%type <Ex> unregistered.subtype
+
 
 /* Lista dei token affetti da regole di precedenza
  */
@@ -312,6 +372,7 @@ asgn.type:
   type                      { $$ = $1; }
 | name.type '=' asgn.type   { if ( Prs_Rule_Typed_Eq_Typed(& $$, & $1, & $3) ) MY_ERR }
 | expr '=' asgn.type        { if (Prs_Rule_Valued_Eq_Typed(& $$, & $1, & $3) ) MY_ERR }
+| unregistered.subtype '=' asgn.type          {DO(Register_Subtype(& $$, & $1, & $3));}
  ;
 
 type.species:
@@ -350,6 +411,17 @@ type.struc.all:
 type.struc:
   '(' type.struc.first ',' ')'           {DO(Type_Struc_1(& $$, & $2));}
 | '(' type.struc.all comma.opt ')'       {DO(Type_Struc_2(& $$, & $2));}
+;
+
+
+registered.subtype:
+  TOK_UNAME TOK_UMEMBER                  {DO(Reg_Subtype(& $$, & $1, & $2));}
+| registered.subtype TOK_UMEMBER         {DO(Reg_SubSubtype(& $$, & $1, & $2));}
+;
+
+unregistered.subtype:
+  TOK_UNAME TOK_UMEMBER                  {DO(Unreg_Subtype(& $$, & $1, & $2));}
+| registered.subtype TOK_UMEMBER         {DO(Unreg_SubSubtype(& $$, & $1, & $2));}
 ;
 
 /*****************************************************************************
@@ -718,7 +790,7 @@ Task Prs_Operator(Operator *opr, Expression *rs, Expression *a, Expression *b) {
     if ( opr->can_define ) {
       return Prs_Def_Operator(opr, rs, a, b);
     } else {
-      MSG_ERROR("L'espressione deve avere tipo!");
+      MSG_ERROR("The expression should have type!");
       return Failed;
     }
   }

@@ -28,6 +28,7 @@
 #include "typesys.h"
 #include "messages.h"
 #include "mem.h"
+#include "str.h"
 #include "array.h"
 #include "collection.h"
 #include "hashtable.h"
@@ -188,6 +189,10 @@ char *TS_Name_Get(TS *ts, Type t) {
                       proc_kind_str, TS_Name_Get(ts, td->data.proc.parent));
     }
 
+  case TS_KIND_SUBTYPE:
+    return printdup("%~s.%s",
+                    TS_Name_Get(ts, td->data.subtype.parent),
+                    td->data.subtype.child_name);
   default:
     return Mem_Strdup("<unknown type>");
   }
@@ -328,7 +333,7 @@ Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind) {
 #undef TS_ENUM_ADD
 
 /****************************************************************************/
-/* Procedure registration an search */
+/* Procedure registration and search */
 
 /* Register the procedure.
  * The way we handle registration and search is very inefficient.
@@ -409,6 +414,50 @@ Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num) {
   assert(t == Success);
   return procedure;
 }
+
+/****************************************************************************/
+
+
+/* Create a new unregistered subtype: a subtype is unregistered when
+ * the parent is not aware of its existance. An unregistered type is defined
+ * only giving its name and its parent type. When the subtype is registered
+ * the parent type becomes aware of it. In order for the registration to be
+ * completed the full type of the subtype must be specified.
+ */
+Task TS_Subtype_New(TS *ts, Type *new_subtype,
+                    Type parent_type, Name *child_name) {
+  TSDesc td;
+  TS_TSDESC_INIT(& td);
+  td.kind = TS_KIND_SUBTYPE;
+  td.size = TS_SIZE_UNKNOWN;
+  td.target = TS_TYPE_NONE;
+  td.data.subtype.parent = parent_type;
+  td.data.subtype.child_name = Name_To_Str(child_name);
+  TASK( Type_New(ts, new_subtype, & td) );
+  return Success;
+}
+
+/* Register a previously created (and still unregistered) subtype.
+ */
+Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type) {
+  TSDesc *s_td = Type_Ptr(ts, subtype);
+  if (s_td->target != TS_TYPE_NONE) {
+    MSG_ERROR("Cannot redefine subtype '%~s'", TS_Name_Get(ts, subtype));
+    return Failed;
+  }
+  s_td->target = subtype_type;
+  return Success;
+}
+
+#if 0
+ParentType.ChildName = ChildType;
+
+Window.Save = Void
+()Char@Window.Save[Print["Saving window into ", $$::;]]
+
+#endif
+
+
 
 /****************************************************************************/
 
@@ -520,6 +569,7 @@ TypeOfType Tym_Type_TOT(Int t) {
     return TOT_PROCEDURE2;
   case TS_KIND_POINTER: return TOT_PTR_TO;
   case TS_KIND_ENUM:
+  case TS_KIND_SUBTYPE:
   default:
     assert(0);
     return 0;

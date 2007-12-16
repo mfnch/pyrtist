@@ -46,7 +46,8 @@ typedef enum {
   TS_KIND_ARRAY,
   TS_KIND_PROC,
   TS_KIND_METHOD,
-  TS_KIND_POINTER
+  TS_KIND_POINTER,
+  TS_KIND_SUBTYPE
 } TSKind;
 
 enum {
@@ -70,6 +71,10 @@ typedef struct {
       Type parent;
       UInt sym_num;
     } proc;
+    struct {
+      Type parent;
+      char *child_name;
+    } subtype;
   } data;
 } TSDesc;
 
@@ -150,6 +155,19 @@ Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
  * identifier.
  */
 Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num);
+
+/** Create a new unregistered subtype: a subtype is unregistered when
+ * the parent is not aware of its existance. An unregistered type is defined
+ * only giving its name and its parent type. When the subtype is registered
+ * the parent type becomes aware of it. In order for the registration to be
+ * completed the full type of the subtype must be specified.
+ */
+Task TS_Subtype_New(TS *ts, Type *new_subtype,
+                    Type parent_type, Name *child_name);
+
+/** Register a previously created (and still unregistered) subtype.
+ */
+Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type);
 
 Task TS_Name_Set(TS *ts, Type t, const char *name);
 
