@@ -353,10 +353,12 @@ suffix.opt:
 /*****************************************************************************
  *                                  Types                                    *
  *****************************************************************************/
+
 name.type:
   TOK_UNAME suffix.opt      { if ( Prs_Name_To_Expr(& $1, & $$, $2) ) MY_ERR }
-| TOK_UMEMBER suffix.opt    { if ( Prs_Member_To_Expr(& $1, & $$, $2) ) MY_ERR }
  ;
+
+/*| TOK_UMEMBER suffix.opt    { if ( Prs_Member_To_Expr(& $1, & $$, $2) ) MY_ERR } */
 
 prim.type:
   name.type                 { $$ = $1; }
@@ -480,17 +482,27 @@ prim.expr:
    statement.list
    ']'                 { BOX_RECLOSE( & $1 ); }
 
- | prim.type
+ | name.type
    '['                 { BOX_OPEN( & $1 );  }
    statement.list
    ']'                 { BOX_CLOSE( & $1 ); }
+
+| prim.expr TOK_UMEMBER
+   '['                 {}
+   statement.list      {}
+   ']'                 {}
  ;
+
+/*
+| prim.expr TOK_UMEMBER
+   '['                 {}
+   statement.list      {}
+   ']'                 {}
+*/
 
 /* Espressioni secondarie */
 expr:
    prim.expr           { $$ = $1; }
-
-/* | prim.expr TOK_UMEMBER    {} */
 
  | TOK_LMEMBER {
     Expression e_parent;
