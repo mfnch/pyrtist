@@ -63,7 +63,7 @@ Task Box_Def_Begin(Int proc_type);
 Task Box_Def_End(void);
 Task Box_Main_Begin(void);
 void Box_Main_End(void);
-Task Box_Instance_Begin(Expr *e);
+Task Box_Instance_Begin(Expr *e, int kind);
 Task Box_Instance_End(Expr *e);
 Intg Box_Search_Opened(Intg type, Intg depth);
 

@@ -34,6 +34,11 @@ typedef long Intg; /**< Alias for Int, which should disappear, one day... */
  */
 typedef unsigned long UInt;
 
+/** A subtype is simply a structure containing two pointer: one points
+ * to the parent, one to the child.
+ */
+typedef void *Subtype[2];
+
 /* Qui definisco la "precisione" dei numeri interi e reali.
  * Dopo tali definizioni, definisco pure quelle macro che devono essere
  * cambiate, qualora si cambino le definizioni di Intg e Real.

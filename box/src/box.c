@@ -72,7 +72,7 @@ Task Box_Main_Begin(void) {
   TASK( VM_Proc_Code_New(cmp_vm, & main_sheet) );
   TASK( VM_Proc_Target_Set(cmp_vm, main_sheet) );
   bs->cur_proc_num = main_sheet;
-  TASK( Box_Instance_Begin((Expr *) NULL) );
+  TASK( Box_Instance_Begin((Expr *) NULL, 1) );
   b = Arr_LastItemPtr(bs->box, Box);
   TASK( VM_Sym_Proc_Head(cmp_vm, & b->head_sym_num) );
   return Success;
@@ -178,7 +178,7 @@ Task Box_Def_End(void) {
  * of type *e is started.
  * If *e has value, a modification-box for that expression is started.
  */
-Task Box_Instance_Begin(Expr *e) {
+Task Box_Instance_Begin(Expr *e, int kind) {
   Box b;
 
   Expr_New_Void(& b.child);
@@ -196,7 +196,7 @@ Task Box_Instance_Begin(Expr *e) {
       return Failed;
     }
 
-    b.is.second = 1;
+    b.is.second = (kind == 2);
     if ( ! e->is.value ) {
       TASK( Cmp_Expr_Create(e, e->type, /* temporary = */ 1 ) );
       e->is.release = 0;

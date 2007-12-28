@@ -178,6 +178,39 @@ static Task Register_Subtype(Expr *result, Expr *unreg_subtype, Expr *type) {
   return Success;
 }
 
+Task Subtype_Create(Expr *result, Expr *parent, Name *child) {
+  TASK( Expr_Subtype_Create(result, parent, child) );
+  TASK( Cmp_Expr_Destroy_Tmp(parent) );
+  return Success;
+}
+
+Task Box_Open(Expr *proc, int kind) {
+  TASK( Box_Instance_Begin(proc, kind) );
+  if (proc != NULL)
+    return Prs_Procedure_Special(NULL, TYPE_OPEN, 0);
+  return Success;
+}
+
+Task Box_Close(Expr *proc) {
+  if (proc != NULL) {
+    TASK( Prs_Procedure_Special(NULL, TYPE_CLOSE, 0) );
+  }
+  return Box_Instance_End(proc);
+}
+
+Task Subtype_Box_Open(Expr *subtype, int kind) {
+  MSG_ADVICE("Subtype_Box_Open: parent is '%s'", Tym_Type_Name(subtype->type));
+  TASK( Box_Instance_Begin(subtype, kind) );
+  TASK( Prs_Procedure_Special(NULL, TYPE_OPEN, 0) );
+  return Success;
+}
+
+Task Subtype_Box_Close(Expr *subtype) {
+  TASK( Prs_Procedure_Special(NULL, TYPE_CLOSE, 0) );
+  TASK( Box_Instance_End(subtype) );
+  return Success;
+}
+
 /*****************************************************************************/
 
 #define DO(action) \
@@ -201,26 +234,6 @@ static Task Register_Subtype(Expr *result, Expr *unreg_subtype, Expr *type) {
   Expression *result = Cmp_Operator_Exec(opr, NULL, a); \
   if ( result == NULL ) {parser_attr.no_syntax_err = 1; YYERROR;} \
    else rs = *result;
-
-#define BOX_OPEN(expr) \
-  if IS_FAILED( Box_Instance_Begin( expr ) ) \
-    {parser_attr.no_syntax_err = 1; parser_attr.old_box = 0; YYERROR;} \
-  if (expr != NULL) \
-    if IS_FAILED( Prs_Procedure_Special(NULL, TYPE_OPEN, 0) ) MY_ERR
-
-#define BOX_CLOSE(expr) \
-  if (expr != NULL) \
-    if IS_FAILED( Prs_Procedure_Special(NULL, TYPE_CLOSE, 0) ) MY_ERR; \
-  if IS_FAILED( Box_Instance_End( expr ) ) \
-    {parser_attr.no_syntax_err = 1; YYERROR;}
-
-#define BOX_REOPEN(expr) \
-  if IS_FAILED( Box_Instance_Begin( expr ) ) \
-    {parser_attr.no_syntax_err = 1; parser_attr.old_box = 1; YYERROR;}
-
-#define BOX_RECLOSE(expr) \
-  if IS_FAILED( Box_Instance_End( expr ) ) \
-    {parser_attr.no_syntax_err = 1; YYERROR;}
 
 #define MY_ERR {parser_attr.no_syntax_err = 1; YYERROR;}
 %}
@@ -297,7 +310,7 @@ static Task Register_Subtype(Expr *result, Expr *unreg_subtype, Expr *type) {
 
 %type <Ex> registered.subtype
 %type <Ex> unregistered.subtype
-
+%type <Ex> subtype.expr
 
 /* Lista dei token affetti da regole di precedenza
  */
@@ -470,35 +483,32 @@ array.expr:
 | array.expr '(' expr ')' { DO(Expr_Array_Member(& $$, & $1, & $3)); }
 ;
 
+subtype.expr:
+  prim.expr TOK_UMEMBER {DO(Subtype_Create(& $$, & $1, & $2));}
+;
+
 prim.expr:
-   array.expr          { $$ = $1; }
+   array.expr           { $$ = $1; }
 
- | '(' expr ')'        { $$ = $2; $$.is.ignore = 0; }
+ | '(' expr ')'         { $$ = $2; $$.is.ignore = 0; }
 
- | expr.struc          { $$ = $1; }
+ | expr.struc           { $$ = $1; }
 
  | prim.expr
-   '['                 { BOX_REOPEN( & $1 );  }
+   '['                  { Box_Open(& $1, 2); }
    statement.list
-   ']'                 { BOX_RECLOSE( & $1 ); }
+   ']'                  { Box_Close(& $1); }
 
  | name.type
-   '['                 { BOX_OPEN( & $1 );  }
+   '['                  { Box_Open(& $1, 1); }
    statement.list
-   ']'                 { BOX_CLOSE( & $1 ); }
+   ']'                  { Box_Close(& $1); }
 
-| prim.expr TOK_UMEMBER
-   '['                 {}
-   statement.list      {}
-   ']'                 {}
+| subtype.expr
+   '['                  { DO(Subtype_Box_Open(& $1, 1)); }
+   statement.list
+   ']'                  { DO(Subtype_Box_Close(& $1)); }
  ;
-
-/*
-| prim.expr TOK_UMEMBER
-   '['                 {}
-   statement.list      {}
-   ']'                 {}
-*/
 
 /* Espressioni secondarie */
 expr:
@@ -666,9 +676,9 @@ statement.list:
  ;
 
 compound.statement:
- '['               {BOX_OPEN( NULL );}
+ '['               {Box_Open(NULL, 1);}
  statement.list
- ']'               {BOX_CLOSE( NULL );}
+ ']'               {Box_Close(NULL);}
  ;
 
 program:
@@ -1035,7 +1045,7 @@ Task Prs_Species_Add(Expression *species, Expression *old, Expression *type) {
   return Success;
 }
 
-/* This function calls a procedure without value, as (;), (<) or (>).
+/* This function calls a procedure without value, as (;), ([) or (]).
  */
 Task Prs_Procedure_Special(int *found, int type, int auto_define) {
   Expression e;

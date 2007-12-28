@@ -1722,7 +1722,7 @@ Task Cmp_Procedure_Search(int *found, Int procedure, Int suffix,
    */
   TASK( Box_Get(& b, suffix) );
   if ( b->type == TYPE_VOID ) {
-    MSG_WARNING("La box di tipo [...] non ammette procedure!");
+    MSG_WARNING("[...] does not admit any procedures.");
     return Failed;
   }
   *box = b;
@@ -1736,7 +1736,7 @@ Task Cmp_Procedure_Search(int *found, Int procedure, Int suffix,
   if ( p == TYPE_NONE ) {
     if (! auto_define) return Success;
 
-    MSG_ERROR("compiler.c (1954): Still not implemented!!!");
+    MSG_ERROR("compiler.c, Cmp_Procedure_Search: Still not implemented!!!");
     return Failed;
 #if 0
     *prototype = TYPE_NONE;
@@ -1786,14 +1786,13 @@ Task Cmp_Procedure(int *found, Expr *e, Int suffix, int auto_define) {
     MSG_ERROR("This expression has no type!");
     goto exit_failed;
   }
+
   t = Tym_Type_Resolve_Alias(e->type);
   if ( t == TYPE_VOID ) goto exit_success;
 
-  if IS_FAILED(
-      Cmp_Procedure_Search(
-        found, e->type, suffix, & b, & prototype, & sym_num, auto_define
-      )
-    ) goto exit_failed;
+  if IS_FAILED(Cmp_Procedure_Search(found, e->type, suffix, & b, & prototype,
+                                    & sym_num, auto_define) )
+    goto exit_failed;
 
   if ( ! *found ) goto exit_success;
 

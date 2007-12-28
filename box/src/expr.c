@@ -329,6 +329,27 @@ Task Expr_Ignore(Expr *e) {
   return Cmp_Expr_Destroy_Tmp(e);
 }
 
+/* This function creates in 'subtype' a the subtype of kind 'child'
+ * of 'parent'.
+ */
+Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child) {
+  Type found_subtype;
+  if (!parent->is.typed) {
+    MSG_ERROR("The symbol '%N' has no type and cannot have a subtype '%N'",
+              & parent->value.nm, child);
+    return Failed;
+  }
+  TS_Subtype_Find(cmp->ts, & found_subtype, parent->type, child);
+  if (found_subtype == TS_TYPE_NONE) {
+    MSG_ERROR("Type '%~s' has not a subtype of name '%N'",
+              TS_Name_Get(cmp->ts, parent->type), child);
+    return Failed;
+  }
+
+  TASK( Cmp_Expr_Create(subtype, found_subtype, /* temporary */ 1) );
+  return Success;
+}
+
 /******************************************************************************/
 
 
