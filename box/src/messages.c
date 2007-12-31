@@ -62,3 +62,22 @@ Task Msg_Main_Init(UInt show_level) {
 void Msg_Main_Context_Begin(const char *msg) {
   Msg_Context_Begin(msg_main_stack, msg, show_type_and_msg);
 }
+
+static void default_fatal_handler(void) {
+  exit(EXIT_FAILURE);
+}
+
+static FatalHandler fatal_handler = default_fatal_handler;
+
+/** Function used to set the fatal error message handler */
+void Msg_Set_Fatal_Handler(FatalHandler fh) {
+  if (fh == (FatalHandler) NULL)
+    fatal_handler = default_fatal_handler;
+  else
+    fatal_handler = fh;
+}
+
+/** Used by MSG_FATAL to terminate the program */
+void Msg_Call_Fatal_Handler(void) {
+  fatal_handler();
+}

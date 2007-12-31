@@ -51,6 +51,15 @@ Task Msg_Main_Init(UInt show_level);
  */
 void Msg_Main_Context_Begin(const char *msg);
 
+/** Type of the function called when a fatal error message is reported */
+typedef void (*FatalHandler)(void);
+
+/** Function used to set the fatal error message handler */
+void Msg_Set_Fatal_Handler(FatalHandler fh);
+
+/** Used by MSG_FATAL to terminate the program */
+void Msg_Call_Fatal_Handler(void);
+
 /** Finalize the main message handler */
 #  define Msg_Main_Destroy() Msg_Destroy(msg_main_stack)
 
@@ -144,7 +153,10 @@ void Msg_Main_Context_Begin(const char *msg);
 
 /** Macro used to signal a fatal error message */
 #  define MSG_FATAL(...) \
-     Msg_Add(msg_main_stack, MSG_LEVEL_FATAL, print(__VA_ARGS__))
+     if (1) { \
+       Msg_Add(msg_main_stack, MSG_LEVEL_FATAL, print(__VA_ARGS__)); \
+       Msg_Call_Fatal_Handler(); \
+     }
 
 /* Obsolete */
 #  ifdef DEBUG

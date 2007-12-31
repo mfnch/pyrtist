@@ -125,6 +125,7 @@ Task Builtins_Define() {
     assert(t == TYPE_PAUSE);
     TASK( Tym_Def_Intrinsic(& t, & NAME("(\\)"), 0 ) );
     assert(t == TYPE_DESTROY);
+    TASK( Tym_Def_Intrinsic(& t, & NAME("Ptr"), sizeof(Ptr) ) );
   }
 
   /* Inizializzo il segmento-dati */

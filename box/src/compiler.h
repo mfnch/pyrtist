@@ -172,19 +172,6 @@ typedef struct {
   Int exp_type2;
 } OpnInfo;
 
-/* This type is used to specify a container (see the macros CONTAINER_...) */
-typedef struct {
-  int type_of_container;
-  int which_one;
-} Container;
-
-enum {
-  CONTAINER_TYPE_IMM = 0,
-  CONTAINER_TYPE_LREG, CONTAINER_TYPE_LVAR,
-  CONTAINER_TYPE_GREG, CONTAINER_TYPE_GVAR,
-  CONTAINER_TYPE_ARG, CONTAINER_TYPE_STACK
-};
-
 typedef struct {
   VMProgram *vm;
   TS ts_obj, *ts;
@@ -197,55 +184,6 @@ extern Compiler *cmp;
 
 /* We make our life simpler, since we write code always in cmp_vm */
 #  define Cmp_Assemble(...) VM_Assemble(cmp->vm, __VA_ARGS__)
-
-/* These macros are used in functions such as Cmp_Expr_Container_New
- * or Cmp_Expr_Container_Change to specify the container for an expression.
- */
-
-/* The container is immediate (contains directly the value
- * of the integer, real, etc.)
- */
-#define CONTAINER_IMM (& (Container) {CONTAINER_TYPE_IMM, 0})
-
-/* In the function Cmp_Expr_Container_Change this will behaves similar
- * to CONTAINER_LREG_AUTO, but with one difference. If the expression
- * is already contained in a local register:
- *  - macro CONTAINER_LREG_AUTO: will keep the expression
- *    in its current container;
- *  - macro CONTAINER_LREG_FORCE: will choose another local register
- *    and use this as the new container.
- */
-#define CONTAINER_LREG_FORCE (& (Container) {CONTAINER_TYPE_LREG, -2})
-
-/* A local register automatically chosen (and reserved) */
-#define CONTAINER_LREG_AUTO (& (Container) {CONTAINER_TYPE_LREG, -1})
-
-/* A well defined local register */
-#define CONTAINER_LREG(num) \
-  (& (Container) {CONTAINER_TYPE_LREG, num > 0 ? num : 0})
-
-/* A well defined local variable */
-#define CONTAINER_LVAR(num) \
-  (& (Container) {CONTAINER_TYPE_LVAR, num > 0 ? num : 0})
-
-/* A local variable automatically chosen (and reserved) */
-#define CONTAINER_LVAR_AUTO \
-  (& (Container) {CONTAINER_TYPE_LVAR, -1})
-
-/* A well defined global register */
-#define CONTAINER_GREG(num) \
-  (& (Container) {CONTAINER_TYPE_GREG, num > 0 ? num : 0})
-
-/* A well defined global variable */
-#define CONTAINER_GVAR(num) \
-  (& (Container) {CONTAINER_TYPE_GVAR, num > 0 ? num : 0})
-
-/* A well defined global variable */
-#define CONTAINER_ARG(num) \
-  (& (Container) {CONTAINER_TYPE_ARG, num})
-
-/* Use this macro if you want to specify to use the stack as a container */
-#define CONTAINER_STACK (& (Container) {CONTAINER_TYPE_STACK, 0})
 
 extern struct cmp_opr_struct cmp_opr;
 
@@ -277,7 +215,6 @@ Task Cmp_Conversion(Int type1, Int type2, Expression *e);
 Task Cmp_Conversion_Exec(Expression *e, Int type_dest, Operation *c_opn);
 Expression *Cmp_Operator_Exec(Operator *opr, Expression *e1, Expression *e2);
 Expression *Cmp_Operation_Exec(Operation *opn, Expression *e1, Expression *e2);
-Task Cmp_Expr_Container_New(Expression *e, Int type, Container *c);
 Task Cmp_Expr_Unvalued(Expression *e, Int type);
 Task Cmp_Expr_LReg(Expression *e, Int t, int zero);
 Task Cmp_Free(Expression *expr);
@@ -285,7 +222,6 @@ Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Int reg, int and_free);
 Task Cmp__Expr_To_LReg(Expression *expr, int force);
 Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Int reg, int and_free);
 Task Cmp_Expr_Container_Change(Expression *e, Container *c);
-Task Cmp_Expr_Create(Expression *e, Int type, int temporary);
 Task Cmp_Expr_Destroy(Expression *e, int destroy_target);
 Task Cmp_Expr_Copy(Expression *e_dest, Expression *e_src);
 Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src);

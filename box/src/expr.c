@@ -346,8 +346,110 @@ Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child) {
     return Failed;
   }
 
-  TASK( Cmp_Expr_Create(subtype, found_subtype, /* temporary */ 1) );
+  Expr_Container_New(subtype, found_subtype, CONTAINER_LREG_AUTO);
+  Expr_Alloc(subtype);
   return Success;
+}
+
+/* Create a new empty container.
+ * NOTE: At the end this should substitute Cmp_Expr_LReg.
+ */
+void Expr_Container_New(Expr *e, Type type, Container *c) {
+  int intrinsic;
+  Int type_of_register, resolved;
+
+  e->is.typed = 1;
+  e->is.value = 1;
+  e->is.ignore = 0;
+  e->is.allocd = 0;
+  e->type = type;
+  e->resolved = resolved = Tym_Type_Resolve_All(type);
+  intrinsic = (resolved < NUM_INTRINSICS);
+  type_of_register = (intrinsic) ? resolved : TYPE_OBJ;
+
+  e->is.imm = 0;
+  e->is.target = 0;
+  e->is.release = 0;
+
+  switch( c->type_of_container ) {
+  case CONTAINER_TYPE_IMM:
+    e->is.imm = 1;
+    e->categ = CAT_IMM;
+    return; break;
+
+  case CONTAINER_TYPE_LREG:
+    e->categ = CAT_LREG;
+    if ( c->which_one < 0 ) {
+      /* Automatically choses the local register */
+      if ( (e->value.i = Reg_Occupy(type_of_register)) < 1 ) {
+        MSG_FATAL("Expr_Container_New: Reg_Occupy failed!");
+      }
+      e->is.release = 1;
+      return;
+
+    } else {
+      /* The user wants a particolar register to be chosen */
+      e->value.i = c->which_one;
+      return;
+    }
+    break;
+
+  case CONTAINER_TYPE_LVAR:
+    e->categ = CAT_LREG;
+    e->is.target = 1;
+    if ( c->which_one < 0 ) {
+      /* Automatically choses the local variables */
+      if ( (e->value.i = -Var_Occupy(type_of_register, Box_Depth())) >= 0 ) {
+        MSG_FATAL("Expr_Container_New: Var_Occupy failed!");
+      }
+      return;
+
+    } else {
+      /* The user wants a particolar variable to be chosen */
+      e->value.i = c->which_one;
+      return;
+    }
+    break;
+
+  case CONTAINER_TYPE_GREG:
+    e->categ = CAT_GREG;
+    e->value.i = c->which_one;
+    return;
+    break;
+
+  case CONTAINER_TYPE_GVAR:
+    e->categ = CAT_GREG;
+    e->value.i = -(c->which_one);
+    return;
+    break;
+
+  default:
+    MSG_FATAL("Expr_Container_New: wrong type of container!");
+  }
+}
+
+void Expr_Alloc(Expr *e) {
+  int is_intrinsic;
+  Type t;
+  Int size;
+
+  assert(e->is.typed);
+  assert(!e->is.allocd);
+
+  t = e->type;
+  size = TS_Size(cmp->ts, t);
+  is_intrinsic = (e->resolved < NUM_INTRINSICS);
+
+  /* Intrinsic types are contained inside the appropriate registers
+   * and the corresponding objects do not need to be allocated.
+   * We obviously do not allocate space for types with size == 0.
+   */
+  if (is_intrinsic || size < 1) return;
+
+  /* If the object is of a user defined type, we must allocate it! */
+  Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, size);
+  Cmp_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
+  e->is.allocd = 1;
 }
 
 /******************************************************************************/
@@ -376,80 +478,5 @@ void Expr_New_Imm_Real(Expression *e, Real r) {
 void Expr_New_Imm_Point(Expression *e, Point *p) {
   Expr_New_Container(e, TYPE_POINT, CONTAINER_IMM);
   e->value.p = *p;
-}
-
-/** Create a new empty container.
- * NOTE: At the end this should substitute Cmp_Expr_LReg and Cmp_Expr_Create.
- */
-Task Expr_New_Container(Expression *e, Intg type, Container *c) {
-  int intrinsic;
-  Intg type_of_register, resolved;
-
-  e->is.typed = 1;
-  e->is.value = 1;
-  e->is.ignore = 0;
-  e->is.allocd = 0;
-  e->type = type;
-  e->resolved = resolved = Tym_Type_Resolve_All(type);
-  intrinsic = (resolved < NUM_INTRINSICS);
-  type_of_register = (intrinsic) ? resolved : TYPE_OBJ;
-
-  e->is.imm = 0;
-  e->is.target = 0;
-  e->is.release = 0;
-
-  switch( c->type_of_container ) {
-  case CONTAINER_TYPE_IMM:
-    e->is.imm = 1;
-    e->categ = CAT_IMM;
-    return Success;
-    break;
-
-  case CONTAINER_TYPE_LREG:
-    e->categ = CAT_LREG;
-    if ( c->which_one < 0 ) {
-      /* Automatically choses the local register */
-      if ( (e->value.i = Reg_Occupy(type_of_register)) < 1 ) return Failed;
-      e->is.release = 1;
-      return Success;
-
-    } else {
-      /* The user wants a particolar register to be chosen */
-      e->value.i = c->which_one;
-      return Success;
-    }
-    break;
-
-  case CONTAINER_TYPE_LVAR:
-    e->categ = CAT_LREG;
-    e->is.target = 1;
-    if ( c->which_one < 0 ) {
-      /* Automatically choses the local variables */
-      if ( (e->value.i = -Var_Occupy(type_of_register, cmp_box_level)) >= 0 ) return Failed;
-      return Success;
-
-    } else {
-      /* The user wants a particolar variable to be chosen */
-      e->value.i = c->which_one;
-      return Success;
-    }
-    break;
-
-  case CONTAINER_TYPE_GREG:
-    e->categ = CAT_GREG;
-    e->value.i = c->which_one;
-    return Success;
-    break;
-
-  case CONTAINER_TYPE_GVAR:
-    e->categ = CAT_GREG;
-    e->value.i = -(c->which_one);
-    return Success;
-    break;
-
-  default:
-    MSG_ERROR("Cmp_Expr_Container_New: wrong type of container!");
-  }
-  return Failed;
 }
 #endif

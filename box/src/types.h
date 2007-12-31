@@ -55,6 +55,8 @@ typedef struct {
   Real x, y;
 } Point;
 
+typedef void *Ptr;
+
 #define NAME(str) ((Name) {sizeof(str)-1, str})
 typedef struct {
   UInt length;

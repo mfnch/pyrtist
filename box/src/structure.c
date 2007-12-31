@@ -103,7 +103,8 @@ Task Cmp_Structure_End(Expression *new_struct) {
 
   } else {
     /* Alloco lo spazio dove mettero' la struttura */
-    TASK( Cmp_Expr_Create(new_struct, type, 1) );
+    Expr_Container_New(new_struct, type, CONTAINER_LREG_AUTO);
+    Expr_Alloc(new_struct);
 
     /* Copio il background della struttura, se presente */
     if ( ! only_foregnd ) {
@@ -378,7 +379,8 @@ Task Cmp_Expr_Expand(Int species, Expression *e) {
     {
       int n1, n2;
       Expression new_struc, member1, member2, member2_copy;
-      TASK( Cmp_Expr_Create(& new_struc, type1, 1) );
+      Expr_Container_New(& new_struc, type1, CONTAINER_LREG_AUTO);
+      Expr_Alloc(& new_struc);
       member1 = new_struc;
       member2 = *e;
 

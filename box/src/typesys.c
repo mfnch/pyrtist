@@ -388,18 +388,18 @@ Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
   *proc = TS_TYPE_NONE;
   *expansion_type = TS_TYPE_NONE;
   parent_td = Type_Ptr(ts, parent);
-  MSG_ADVICE("TS_Procedure_Search: searching procedure");
+  /*MSG_ADVICE("TS_Procedure_Search: searching procedure");*/
   for(p = parent_td->first_proc; p != TS_TYPE_NONE; p = p_td->first_proc) {
     TSCmp comparison;
     int p_kind;
     p_td = Type_Ptr(ts, p);
-    MSG_ADVICE("TS_Procedure_Search: considering %~s", TS_Name_Get(ts, p));
+    /*MSG_ADVICE("TS_Procedure_Search: considering %~s", TS_Name_Get(ts, p));*/
     p_kind = p_td->data.proc.kind;
     assert(p_kind != 0 && (p_kind | 3) == 3);
     if ((p_kind & kind) != 0) {
-      MSG_ADVICE("TS_Procedure_Search: '%s', comparing '%s' == '%s'",
+      /*MSG_ADVICE("TS_Procedure_Search: '%s', comparing '%s' == '%s'",
                  Tym_Type_Names(parent),
-                 Tym_Type_Names(p_td->target), Tym_Type_Names(child));
+                 Tym_Type_Names(p_td->target), Tym_Type_Names(child));*/
       comparison = TS_Compare(ts, p_td->target, child);
       if (comparison != TS_TYPES_UNMATCH) {
         if (comparison == TS_TYPES_EXPAND) *expansion_type = p_td->target;
@@ -413,8 +413,8 @@ Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
 
 Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num) {
   Type procedure;
-  MSG_ADVICE("TS_Procedure_Def: new procedure '%s' of '%s'",
-             Tym_Type_Names(proc), Tym_Type_Names(of_type));
+  /*MSG_ADVICE("TS_Procedure_Def: new procedure '%s' of '%s'",
+             Tym_Type_Names(proc), Tym_Type_Names(of_type));*/
   assert(kind != 0 && (kind | 3) == 3); /* kind can be 1, 2 or 3 */
   Task t = TS_Procedure_New(last_ts, & procedure, of_type, proc, kind);
   assert(t == Success);

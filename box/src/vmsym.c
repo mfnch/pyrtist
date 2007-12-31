@@ -397,7 +397,8 @@ Task Iter_Over_Libs(void *string, void *pass_data) {
    * has not been found
    */
   if (List_Iter(cld->lib_paths, Iter_Over_Paths, cld) == Success) {
-    MSG_WARNING("'%s' <-- library has not been found!", cld->lib);
+    MSG_WARNING("'%s' <-- library has not been found or cannot be loaded!",
+                cld->lib);
   }
   return Success;
 }

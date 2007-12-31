@@ -199,7 +199,7 @@ Task Box_Close(Expr *proc) {
 }
 
 Task Subtype_Box_Open(Expr *subtype, int kind) {
-  MSG_ADVICE("Subtype_Box_Open: parent is '%s'", Tym_Type_Name(subtype->type));
+  /*MSG_ADVICE("Subtype_Box_Open: parent is '%s'", Tym_Type_Name(subtype->type));*/
   TASK( Box_Instance_Begin(subtype, kind) );
   TASK( Prs_Procedure_Special(NULL, TYPE_OPEN, 0) );
   return Success;
@@ -784,14 +784,15 @@ Task Prs_Def_Operator(Operator *opr,
 
   target = & (s->value);
   if ( e->is.target ) {
-    TASK( Cmp_Expr_Create(target, e->type, /* temporary = */ 0) );
+    Expr_Container_New(target, e->type, CONTAINER_LVAR_AUTO);
+    Expr_Alloc(target);
     result = Cmp_Operator_Exec(opr, target, e);
     if ( result == NULL ) return Failed;
     *rs = *result;
     return Success;
 
   } else {
-    TASK( Cmp_Expr_Container_New(target, e->type, CONTAINER_LVAR_AUTO) );
+    Expr_Container_New(target, e->type, CONTAINER_LVAR_AUTO);
     TASK( Cmp_Expr_To_X(e, target->categ, target->value.i, 0) );
     target->is.allocd = e->is.allocd;
     e->is.allocd = 0;
@@ -1083,13 +1084,12 @@ Task Prs_Rule_Typed_Eq_Typed(Expression *rs,
 
 /* This function handles the rule: value = Type
  */
-Task Prs_Rule_Valued_Eq_Typed(Expression *rs,
- Expression *valued, Expression *typed) {
+Task Prs_Rule_Valued_Eq_Typed(Expr *rs, Expr *valued, Expr *typed) {
 
   *rs = *typed;
   rs->is.ignore = 1;
   if ( ! typed->is.typed ) {
-    MSG_ERROR("Il tipo alla destra di '=' non e' ancora stato definito!");
+    MSG_ERROR("Undefined type on the right of '='.");
     (void) Cmp_Expr_Destroy_Tmp(valued);
     return Failed;
   }
@@ -1100,7 +1100,7 @@ Task Prs_Rule_Valued_Eq_Typed(Expression *rs,
     TASK( Cmp_Expr_Destroy_Tmp(valued) );
 
     if ( Tym_Compare_Types(t, typed->type, NULL) == 1 ) return Success;
-    MSG_ERROR("Incongruenza fra i tipi!");
+    MSG_ERROR("Type mismatch!");
     return Failed;
 
   } else {
@@ -1115,7 +1115,8 @@ Task Prs_Rule_Valued_Eq_Typed(Expression *rs,
     }
 
     target = & (s->value);
-    TASK( Cmp_Expr_Create(target, typed->type, /* temporary = */ 0 ) );
+    Expr_Container_New(target, typed->type, CONTAINER_LVAR_AUTO);
+    Expr_Alloc(target);
     return Success;
   }
 }

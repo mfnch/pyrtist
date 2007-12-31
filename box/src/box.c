@@ -198,7 +198,8 @@ Task Box_Instance_Begin(Expr *e, int kind) {
 
     b.is.second = (kind == 2);
     if ( ! e->is.value ) {
-      TASK( Cmp_Expr_Create(e, e->type, /* temporary = */ 1 ) );
+      Expr_Container_New(e, e->type, CONTAINER_LREG_AUTO);
+      Expr_Alloc(e);
       e->is.release = 0;
       b.is.second = 0;
     }
