@@ -1,5 +1,11 @@
 // Header file for the g library
 
+Window = Ptr
+([)@Window ? "window_begin"
+
+Window.Save = Void
+(])@Window.Save ? "window_save_end"
+
 Line = (Int, Point)
 
 R = (Char -> Int -> Real)
