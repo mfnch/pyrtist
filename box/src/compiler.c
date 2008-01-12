@@ -491,8 +491,7 @@ Exec_Opn_Error:
  *  corrispondente ad un gran numero di operazioni intrinseche.
  * NOTA: Viene chiamata da Cmp_Operation_Exec.
  */
-static Expression *Opn_Exec_Intrinsic(
- Operation *opn, Expression *e1, Expression *e2) {
+static Expression *Opn_Exec_Intrinsic(Operation *opn, Expr *e1, Expr *e2) {
 
   struct {unsigned int unary :1, right : 1, strange :1, immediate :1;} opn_is;
   Int rs_resolved = Tym_Type_Resolve_All(opn->type_rs);
@@ -685,8 +684,7 @@ er_equal_e1:
  *  NULL, e --> operazione unaria destra come e++
  *  e, NULL --> operazione unaria sinistra come ++e
  */
-Expression *Cmp_Operation_Exec(
- Operation *opn, Expression *e1, Expression *e2) {
+Expression *Cmp_Operation_Exec(Operation *opn, Expr *e1, Expr *e2) {
 
   int strange_case, result_in_e1;
 
@@ -846,7 +844,7 @@ Task Cmp_Expr_Create(Expr *e, Int type, int temporary) {
 
  -----------------------> OBSLOLETE <------------------------
  */
-Task Cmp_Expr_LReg(Expression *e, Int type, int zero) {
+Task Cmp_Expr_LReg(Expr *e, Int type, int zero) {
   MSG_LOCATION("Cmp_Expr_LReg");
 
   e->is.imm = 0;
@@ -892,10 +890,9 @@ static Int asm_mov[NUM_INTRINSICS] = {
  * puts the expression expr into a precise register.
  * NOTE: categ can be CAT_LREG or CAT_GREG.
  */
-Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Int reg, int and_free) {
+Task Cmp_Expr_To_X(Expr *expr, AsmArg categ, Int reg, int and_free) {
 #define EXIT_FUNCTION if ( !and_free ) return Success; return Cmp_Expr_Destroy_Tmp(expr)
   int is_integer;
-  MSG_LOCATION("Cmp_Expr_To_X");
 
   assert(expr != NULL);
   assert( (expr->is.typed) && (expr->is.value) );
@@ -996,9 +993,7 @@ Task Cmp__Expr_To_LReg(Expr *expr, int force) {
  *     mov ro2, ro0
  *   ro1 and ro2 will be pointers to the same value (2 which overwrited 1).
  */
-Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Int reg, int and_free) {
-  MSG_LOCATION("Cmp_Expr_To_Ptr");
-
+Task Cmp_Expr_To_Ptr(Expr *expr, AsmArg categ, Int reg, int and_free) {
   assert(expr != NULL);
   assert( (expr->is.typed) && (expr->is.value) );
   assert( (categ == CAT_LREG) || (categ == CAT_GREG) );
@@ -1064,7 +1059,7 @@ Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Int reg, int and_free) {
  *     mov ro2, ro0
  *   ro1 and ro2 will be pointers to the same value (2 which overwrote 1).
  */
-Task Cmp_Expr_Container_Change(Expression *e, Container *c) {
+Task Cmp_Expr_Container_Change(Expr *e, Container *c) {
   assert(e != NULL && c != NULL);
   assert(e->is.typed && e->is.value);
 

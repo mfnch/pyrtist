@@ -41,7 +41,7 @@ noinst_HEADERS = defaults.h types.h mem.h str.h print.h \
   tokenizer.h parserh.h typesys.h tsdef.c \
   expr.h compiler.h box.h builtins.h \
   hashfunc.h hashtable.h vmproc.h vmsym.h vmcommon.h \
-  vmsymstuff.h paths.h
+  vmsymstuff.h paths.h container.h
 
 box_SOURCES = mem.c str.c print.c msgbase.c messages.c \
   list.c array.c collection.c fileutils.c \
@@ -49,6 +49,6 @@ box_SOURCES = mem.c str.c print.c msgbase.c messages.c \
   symbols.c tokenizer.l parser.y registers.c expr.c \
   typesys.c compiler.c box.c \
   builtins.c hashfunc.c hashtable.c vmsymstuff.c \
-  paths.c main.c
+  paths.c main.c container.c
 
 EXTRA_DIST = structure.c

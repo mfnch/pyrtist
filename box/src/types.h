@@ -34,11 +34,6 @@ typedef long Intg; /**< Alias for Int, which should disappear, one day... */
  */
 typedef unsigned long UInt;
 
-/** A subtype is simply a structure containing two pointer: one points
- * to the parent, one to the child.
- */
-typedef void *Subtype[2];
-
 /* Qui definisco la "precisione" dei numeri interi e reali.
  * Dopo tali definizioni, definisco pure quelle macro che devono essere
  * cambiate, qualora si cambino le definizioni di Intg e Real.
@@ -56,6 +51,17 @@ typedef struct {
 } Point;
 
 typedef void *Ptr;
+
+/** A subtype is simply a structure containing two pointer: one points
+ * to the parent, one to the child.
+ */
+typedef Ptr Subtype[2];
+
+#define SUBTYPE_PARENT_PTR(subtype, parent_type) \
+  (*((parent_type **) ((subtype)[0])))
+
+#define SUBTYPE_CHILD_PTR(subtype, child_type) \
+  (*((child_type **) (((subtype)[1]))))
 
 #define NAME(str) ((Name) {sizeof(str)-1, str})
 typedef struct {

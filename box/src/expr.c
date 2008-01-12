@@ -333,7 +333,8 @@ Task Expr_Ignore(Expr *e) {
  * of 'parent'.
  */
 Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child) {
-  Type found_subtype;
+  Type found_subtype, child_type;
+  Expr child_expr, child_ptr, parent_ptr;
   if (!parent->is.typed) {
     MSG_ERROR("The symbol '%N' has no type and cannot have a subtype '%N'",
               & parent->value.nm, child);
@@ -346,8 +347,45 @@ Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child) {
     return Failed;
   }
 
+  TS_Subtype_Child_Get(cmp->ts, & child_type, found_subtype);
+
+  /* Create the child object */
+  Expr_Container_New(& child_expr, child_type, CONTAINER_LRPTR_AUTO);
+  Expr_Alloc(& child_expr);
+
+  /* Create the subtype object */
   Expr_Container_New(subtype, found_subtype, CONTAINER_LREG_AUTO);
   Expr_Alloc(subtype);
+
+  Cmp_Assemble(ASM_MOV_OO, CAT_PTR, 0, parent->categ, parent->value.i);
+  Cmp_Assemble(ASM_MOV_OO, CAT_PTR, sizeof(Ptr), CAT_LREG, child_expr.addr);
+
+#if 0
+  /* Create the member of the subtype object which contains the parent */
+  Expr_Container_New(& parent_ptr, parent->type,
+                     CONTAINER_LRPTR(subtype->addr, 0));
+
+  /* Create the member of the subtype object which contains the child */
+  Expr_Container_New(& child_ptr, child_type,
+                     CONTAINER_LRPTR(subtype->addr, sizeof(void *)));
+  /* Move the pointer to */
+  Expr_Container_Copy(child_expr,
+                      CONTAINER_LRPTR(subtype->addr, sizeof(void *)));
+#endif
+
+
+#if 0
+
+
+  malloc SB
+  mov roB, ro0
+
+  malloc 8
+  mov roS, ro0
+  mov o[ro0], roA (roA is the parent)
+  mov o[ro0+4], roB
+#endif
+
   return Success;
 }
 
@@ -417,16 +455,115 @@ void Expr_Container_New(Expr *e, Type type, Container *c) {
     return;
     break;
 
-  case CONTAINER_TYPE_GVAR:
-    e->categ = CAT_GREG;
-    e->value.i = -(c->which_one);
+  case CONTAINER_TYPE_GPTR:
+  case CONTAINER_TYPE_LRPTR:
+  case CONTAINER_TYPE_LVPTR:
+  {
+    int is_gaddr = (c->type_of_container == CONTAINER_TYPE_GPTR);
+
+    e->is.gaddr = is_gaddr;
+    e->is.target = 1;
+    e->categ = CAT_PTR;
+    e->addr = c->addr;         /* X in o[roX + N]*/
+    e->value.i = c->which_one; /* X in o[roN + X] */
+
+    if (is_gaddr || c->addr >= 0) return;
+
+    if (c->type_of_container == CONTAINER_TYPE_LRPTR) {
+      if ( (e->addr = Reg_Occupy(TYPE_OBJ)) < 1 ) {
+        MSG_FATAL("Expr_Container_New: Reg_Occupy failed!");
+      }
+      e->is.release = 1;
+      return;
+
+    } else {
+      if ( (e->addr = -Var_Occupy(TYPE_OBJ, Box_Depth())) >= 0 ) {
+        MSG_FATAL("Expr_Container_New: Var_Occupy failed!");
+      }
+    }
     return;
     break;
+  }
 
   default:
     MSG_FATAL("Expr_Container_New: wrong type of container!");
   }
 }
+
+static AsmCode asm_mov[] = {
+  ASM_MOV_CC,
+  ASM_MOV_II,
+  ASM_MOV_RR,
+  ASM_MOV_PP,
+  ASM_MOV_OO
+};
+
+#if 0
+
+Task Expr_Container_Copy(Expr *dest, Expr *src) {
+  int is_intrinsic = (resolved < NUM_INTRINSICS);
+  Type t = src->resolved;
+  assert(dest->resolved == src->resolved);
+
+
+  /* cases which give rise to:
+   *  (mov ro0, ...)
+   *  mov A, B
+   */
+}
+
+Task Expr_Container_Copy(Expr *dest, Expr *src) {
+  register Int t, c;
+
+  assert(dest != NULL && src != NULL);
+  assert(e_dest->resolved == e_src->resolved);
+  t = e_dest->resolved;
+  c = e_dest->categ;
+  assert(t >= 0);
+  assert((e_src->is.typed) && (e_src->is.value) && (c != CAT_IMM));
+
+  /* Qui devo controllare se il tipo ammette un mover user-defined! */
+
+  if (t < NUM_INTRINSICS) {
+    /* Sposto una quantita' intrinseca */
+    register int is_integer;
+
+    is_integer = (e_src->resolved == TYPE_CHAR)
+              || (e_src->resolved == TYPE_INTG);
+    if ( (e_src->categ == CAT_IMM) && (! is_integer) ) {
+      TASK( Cmp_Complete_Ptr_1(e_dest) );
+      switch ( t ) {
+       case TYPE_REAL:
+        Cmp_Assemble(ASM_MOV_Rimm,
+         c, e_dest->value.i, CAT_IMM, e_src->value.r);
+        break;
+       case TYPE_POINT:
+        Cmp_Assemble(ASM_MOV_Pimm,
+         c, e_dest->value.i, CAT_IMM, e_src->value.p);
+        break;
+       default:
+        MSG_ERROR("Internal error in Cmp_Expr_Move");
+        return Failed;
+      }
+      return Cmp_Expr_Destroy_Tmp(e_src);
+
+    } else {
+      TASK( Cmp_Complete_Ptr_2(e_dest, e_src) );
+      Cmp_Assemble( asm_mov[t],
+       e_dest->categ, e_dest->value.i, e_src->categ, e_src->value.i );
+      return Cmp_Expr_Destroy_Tmp(e_src);
+    }
+
+  } else {
+    /* Sposto un oggetto user-defined */
+    MSG_ERROR("Internal error in Cmp_Expr_Move: still not implemented!");
+    fprintf(stderr, "e_src = ");  Expr_Print(e_src, stderr);
+    fprintf(stderr, "e_dest = "); Expr_Print(e_dest, stderr);
+    return Failed;
+  }
+}
+}
+#endif
 
 void Expr_Alloc(Expr *e) {
   int is_intrinsic;
@@ -440,17 +577,29 @@ void Expr_Alloc(Expr *e) {
   size = TS_Size(cmp->ts, t);
   is_intrinsic = (e->resolved < NUM_INTRINSICS);
 
-  /* Intrinsic types are contained inside the appropriate registers
-   * and the corresponding objects do not need to be allocated.
-   * We obviously do not allocate space for types with size == 0.
-   */
-  if (is_intrinsic || size < 1) return;
+  if (size < 1) return;
 
-  /* If the object is of a user defined type, we must allocate it! */
-  Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, size);
-  Cmp_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
-  e->is.allocd = 1;
+  if (e->categ == CAT_PTR) {
+    Int ptr_reg = e->addr;
+    Int ptr_categ = (e->is.gaddr ? CAT_GREG : CAT_LREG);
+    Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, size);
+    Cmp_Assemble(ASM_MOV_OO, ptr_categ, ptr_reg, CAT_LREG, 0);
+    e->is.allocd = 1;
+
+  } else {
+    /* Intrinsic types are contained inside the appropriate registers
+    * and the corresponding objects do not need to be allocated.
+    * We obviously do not allocate space for types with size == 0.
+    */
+    if (is_intrinsic) return;
+
+    /* If the object is of a user defined type, we must allocate it! */
+    Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, size);
+    Cmp_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
+    e->is.allocd = 1;
+  }
 }
+
 
 /******************************************************************************/
 

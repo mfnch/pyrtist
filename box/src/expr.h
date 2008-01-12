@@ -45,12 +45,12 @@ typedef struct {
     unsigned int release : 1; /* il registro va rilasciato automaticamente? */
   } is;
 
-  Intg    addr;
-  Intg    type;     /* The type of the expression */
-  Intg    resolved; /* = Tym_Type_Resolve_All(type) */
+  Int    addr;
+  Int    type;     /* The type of the expression */
+  Int    resolved; /* = Tym_Type_Resolve_All(type) */
   AsmArg  categ;
   union {
-    Intg  i;
+    Int  i;
     Real  r;
     Point p;
     Intg  reg;
@@ -122,12 +122,15 @@ Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child);
 typedef struct {
   int type_of_container;
   int which_one;
+  int addr;
 } Container;
 
 enum {
   CONTAINER_TYPE_IMM = 0,
   CONTAINER_TYPE_LREG, CONTAINER_TYPE_LVAR,
-  CONTAINER_TYPE_GREG, CONTAINER_TYPE_GVAR,
+  CONTAINER_TYPE_GREG,
+  CONTAINER_TYPE_GPTR,
+  CONTAINER_TYPE_LRPTR, CONTAINER_TYPE_LVPTR,
   CONTAINER_TYPE_ARG, CONTAINER_TYPE_STACK
 };
 
@@ -185,7 +188,19 @@ void Expr_Alloc(Expr *e);
 
 /* A well defined global variable */
 #define CONTAINER_GVAR(num) \
-  (& (Container) {CONTAINER_TYPE_GVAR, num > 0 ? num : 0})
+  (& (Container) {CONTAINER_TYPE_GREG, num > 0 ? -num : 0})
+
+/* Global pointer to object */
+#define CONTAINER_GPTR(gr, offset) \
+  (& (Container) {CONTAINER_TYPE_GPTR, offset, gr})
+
+/* Local pointer to object */
+#define CONTAINER_LRPTR(lr, offset) \
+  (& (Container) {CONTAINER_TYPE_LRPTR, lr, offset})
+
+/* Local pointer to object */
+#define CONTAINER_LRPTR_AUTO \
+  (& (Container) {CONTAINER_TYPE_LRPTR, 0, -1})
 
 /* A well defined global variable */
 #define CONTAINER_ARG(num) \

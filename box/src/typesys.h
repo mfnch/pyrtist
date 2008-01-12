@@ -202,6 +202,9 @@ Task TS_Enum_Begin(TS *ts, Type *e);
 
 Task TS_Enum_Add(TS *ts, Type e, Type t);
 
+/** Get the child type of a subtype. */
+void TS_Subtype_Child_Get(TS *ts, Type *child, Type subtype);
+
 Task TS_Default_Value(TS *ts, Type *dv_t, Type t, Data *dv);
 
 /** Given an array type (N)X returns X in *memb and the size N

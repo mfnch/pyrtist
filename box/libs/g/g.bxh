@@ -5,6 +5,7 @@ Window = Ptr
 
 Window.Save = Void
 (])@Window.Save ? "window_save_end"
+()Char@Window.Save ? "window_save_str"
 
 Line = (Int, Point)
 

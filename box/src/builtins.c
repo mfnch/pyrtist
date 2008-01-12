@@ -100,8 +100,6 @@ Task Builtins_Define() {
   Operation *opn;
   int status;
 
-  MSG_LOCATION("Cmp_Define_Builtins");
-
   /* Definisco i tipi intrinseci */
   {
     Intg t;

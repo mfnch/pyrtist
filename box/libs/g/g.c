@@ -23,7 +23,8 @@ Task window_begin(VMProgram *vmp) {
   Window *w;
   w = *wp = (WindowPtr) malloc(sizeof(Window)); /* Should use Mem_Alloc, but this requires to link against the internal box library (which still does not exist) */
   if (w == (WindowPtr) NULL) return Failed;
-  printf("Window object allocated\n");
+  printf("Window object allocated (%p)\n", w);
+  printf("WindowPtr object: %p\n", wp);
   w->width = 0;
   w->height = 0;
   w->save_file_name = (char *) NULL;
@@ -37,9 +38,32 @@ Task window_destroy(VMProgram *vmp) {
   return Success;
 }
 
+Task window_save_str(VMProgram *vmp) {
+  Subtype *s = BOX_VM_CURRENTPTR(vmp, Subtype);
+  WindowPtr *wp = SUBTYPE_PARENT_PTR(s, WindowPtr);
+  Window *w = *wp;
+  char *file_name = BOX_VM_ARGPTR1(vmp, char);
+
+  if (w->save_file_name != (char *) NULL) {
+    printf("Window.Save: changing save target to '%s'\n", file_name);
+  }
+
+  w->save_file_name = file_name;
+  return Success;
+}
+
 Task window_save_end(VMProgram *vmp) {
-  Window *w = BOX_VM_CURRENT(vmp, WindowPtr);
-  if (1 || w->save_file_name == (char *) NULL) {
+  Subtype *s = BOX_VM_CURRENTPTR(vmp, Subtype);
+  WindowPtr *wp = SUBTYPE_PARENT_PTR(s, WindowPtr);
+  Window *w = *wp;
+
+  printf("Subtype: %p\n", s);
+  printf("Parent pointer: %p\n", wp);
+  printf("Window pointer: %p\n", w);
+  printf("Size: %d x %d\n", w->width, w->height);
+  printf("String pointer: %p\n", w->save_file_name);
+
+  if (w->save_file_name == (char *) NULL) {
     printf("window not saved: need a file name!\n");
     return Failed;
   }

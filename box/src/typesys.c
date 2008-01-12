@@ -495,6 +495,15 @@ void TS_Subtype_Find(TS *ts, Type *subtype, Type parent, Name *child) {
     *subtype = *((Type *) hi->object);
 }
 
+void TS_Subtype_Child_Get(TS *ts, Type *child, Type subtype) {
+  TSDesc *s_td = Type_Ptr(ts, subtype);
+
+  assert(s_td->kind == TS_KIND_SUBTYPE);
+  assert(s_td->target != TS_TYPE_NONE);
+  assert(s_td->size != TS_SIZE_UNKNOWN);
+  *child = s_td->target;
+}
+
 #if 0
 ParentType.ChildName = ChildType;
 
