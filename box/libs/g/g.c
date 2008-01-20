@@ -45,7 +45,8 @@ Task window_save_str(VMProgram *vmp) {
   char *file_name = BOX_VM_ARGPTR1(vmp, char);
 
   if (w->save_file_name != (char *) NULL) {
-    printf("Window.Save: changing save target to '%s'\n", file_name);
+    printf("Window.Save: changing save target from '%s' to '%s'\n",
+           w->save_file_name, file_name);
   }
 
   w->save_file_name = file_name;
@@ -56,12 +57,6 @@ Task window_save_end(VMProgram *vmp) {
   Subtype *s = BOX_VM_CURRENTPTR(vmp, Subtype);
   WindowPtr *wp = SUBTYPE_PARENT_PTR(s, WindowPtr);
   Window *w = *wp;
-
-  printf("Subtype: %p\n", s);
-  printf("Parent pointer: %p\n", wp);
-  printf("Window pointer: %p\n", w);
-  printf("Size: %d x %d\n", w->width, w->height);
-  printf("String pointer: %p\n", w->save_file_name);
 
   if (w->save_file_name == (char *) NULL) {
     printf("window not saved: need a file name!\n");

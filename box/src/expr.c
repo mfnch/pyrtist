@@ -334,7 +334,9 @@ Task Expr_Ignore(Expr *e) {
  */
 Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child) {
   Type found_subtype, child_type;
-  Expr child_expr, child_ptr, parent_ptr;
+  Expr child_expr; /* child_ptr, parent_ptr */
+  int not_void_parent, not_void_child;
+
   if (!parent->is.typed) {
     MSG_ERROR("The symbol '%N' has no type and cannot have a subtype '%N'",
               & parent->value.nm, child);
@@ -349,16 +351,36 @@ Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child) {
 
   TS_Subtype_Child_Get(cmp->ts, & child_type, found_subtype);
 
+  /* This is what we do in the following:
+      malloc SB  (Allocate the child)
+      mov roB, ro0
+
+      malloc 8
+      mov roS, ro0
+      mov o[ro0], roA (roA is the parent)
+      mov o[ro0+4], roB
+  */
+
+  not_void_parent = (TS_Size(cmp->ts, parent->type) > 0);
+  not_void_child = (TS_Size(cmp->ts, child_type) > 0);
+
   /* Create the child object */
-  Expr_Container_New(& child_expr, child_type, CONTAINER_LRPTR_AUTO);
-  Expr_Alloc(& child_expr);
+  if (not_void_child) {
+    Expr_Container_New(& child_expr, child_type, CONTAINER_LRPTR_AUTO);
+    Expr_Alloc(& child_expr);
+  }
 
   /* Create the subtype object */
   Expr_Container_New(subtype, found_subtype, CONTAINER_LREG_AUTO);
   Expr_Alloc(subtype);
 
-  Cmp_Assemble(ASM_MOV_OO, CAT_PTR, 0, parent->categ, parent->value.i);
-  Cmp_Assemble(ASM_MOV_OO, CAT_PTR, sizeof(Ptr), CAT_LREG, child_expr.addr);
+  if (not_void_parent)
+    Cmp_Assemble(ASM_MOV_OO, CAT_PTR, 0, parent->categ, parent->value.i);
+
+  if (not_void_child) {
+    Cmp_Assemble(ASM_MOV_OO, CAT_PTR, sizeof(Ptr), CAT_LREG, child_expr.addr);
+    Cmp_Expr_Destroy_Tmp(& child_expr);
+  }
 
 #if 0
   /* Create the member of the subtype object which contains the parent */
@@ -373,18 +395,6 @@ Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child) {
                       CONTAINER_LRPTR(subtype->addr, sizeof(void *)));
 #endif
 
-
-#if 0
-
-
-  malloc SB
-  mov roB, ro0
-
-  malloc 8
-  mov roS, ro0
-  mov o[ro0], roA (roA is the parent)
-  mov o[ro0+4], roB
-#endif
 
   return Success;
 }
@@ -490,6 +500,9 @@ void Expr_Container_New(Expr *e, Type type, Container *c) {
   }
 }
 
+
+#if 0
+
 static AsmCode asm_mov[] = {
   ASM_MOV_CC,
   ASM_MOV_II,
@@ -497,8 +510,6 @@ static AsmCode asm_mov[] = {
   ASM_MOV_PP,
   ASM_MOV_OO
 };
-
-#if 0
 
 Task Expr_Container_Copy(Expr *dest, Expr *src) {
   int is_intrinsic = (resolved < NUM_INTRINSICS);
@@ -599,7 +610,6 @@ void Expr_Alloc(Expr *e) {
     e->is.allocd = 1;
   }
 }
-
 
 /******************************************************************************/
 

@@ -30,37 +30,42 @@
 #  define _CONTAINER_H
 
 #  include "types.h"
+#  include "virtmach.h"
 
+/* These types for now are just duplicates of the types defined in virtmach.h
+ * This has to be seen as a first attempt of create an interface for code
+ * generation which is unbound to the target machine, even if for now we
+ * support as a target only the box vm.
+ */
 typedef enum {
-  CONT_IMM=0,
-  CONT_LOC,
-  CONT_GLOB,
-  CONT_PTR
+  CONT_GREG = CAT_GREG,
+  CONT_LREG = CAT_LREG,
+  CONT_PTR = CAT_PTR,
+  CONT_IMM = CAT_IMM
 } ContCateg;
 
 typedef enum {
-  CONT_INT=1,
-  CONT_REAL,
-  CONT_POINT,
-  CONT_OBJ
+  CONT_CHAR  = TYPE_CHAR,
+  CONT_INT   = TYPE_INT,
+  CONT_REAL  = TYPE_REAL,
+  CONT_POINT = TYPE_POINT,
+  CONT_OBJ   = TYPE_OBJ
 } ContType;
 
 typedef struct {
-  ContCateg categ;
-  ContType type;
-  union {
-    Int i;
-    Real r;
-    Point p;
-  } data;
+  ContCateg  categ;
+  ContType   type;
+  Int        reg;
+  Int        ptr_reg;
+  void       *extra;
+  struct {
+    int ptr_is_greg : 1;
+  }          flags;
 } Cont;
 
-
 /*
-type, categ, data
-
-type = (INT, REAL, POINT, OBJ)
-categ = (CAT_IMM, CAT_LREG, CAT_GREG, CAT_PTR)
-data = union(INT, REAL, POINT, (INT, INT))
+#define CONT_NEW_LREG(type, num) (& ((Cont) {CONT_LREG, (type), & (Int) (num)}))
+#define CONT_LREG(type, num) (& ((Cont) {CONT_LREG, (type), & (Int) (num)}))
 */
+
 #endif

@@ -106,11 +106,11 @@ typedef void *Obj;
 
 /* This is an union of all possible types */
 typedef union {
-  Char c;
-  Intg i;
-  Real r;
+  Char  c;
+  Int   i;
+  Real  r;
   Point p;
-  Obj o;
+  Obj   o;
 } Generic;
 
 /* Associo un numero a ciascun tipo, per poterlo identificare */
@@ -144,10 +144,10 @@ typedef union {
 } VMModulePtr;
 
 typedef struct {
-  VMModuleType type;  /* Tipo di modulo */
-  const char *name; /* Nome del modulo */
-  VMModulePtr ptr;    /* Puntatore al modulo */
-  Intg length;      /* Dimensione del modulo (in numero di VMByteX4) */
+  VMModuleType type;   /* Tipo di modulo */
+  const char   *name;  /* Nome del modulo */
+  VMModulePtr  ptr;    /* Puntatore al modulo */
+  Int          length; /* Dimensione del modulo (in numero di VMByteX4) */
 } VMModule;
 
 /* This type is used in the table 'vm_instr_desc_table', which collects
