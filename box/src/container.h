@@ -36,6 +36,13 @@
  * This has to be seen as a first attempt of create an interface for code
  * generation which is unbound to the target machine, even if for now we
  * support as a target only the box vm.
+ *
+ * IMPORTANT: the user who calls the ``Cont_*'' routines is expected to use
+ *   the following enumerated constants (CONT_*), EVEN IF the file
+ *   'container.c' uses the VM native names (CAT_GREG, CAT_LREG, etc.).
+ *   Indeed the following declarations must be seen as a generic interface
+ *   specification, while the implementation in 'container.c' refers
+ *   specifically to the box virtual machine and its instruction set.
  */
 typedef enum {
   CONT_GREG = CAT_GREG,
@@ -63,9 +70,19 @@ typedef struct {
   }          flags;
 } Cont;
 
-/*
-#define CONT_NEW_LREG(type, num) (& ((Cont) {CONT_LREG, (type), & (Int) (num)}))
-#define CONT_LREG(type, num) (& ((Cont) {CONT_LREG, (type), & (Int) (num)}))
-*/
+#define CONT_NEW_LREG(type, num) \
+  ((Cont) {CONT_LREG, (type), (num)})
+
+#define CONT_NEW_LPTR(type, ptr_reg, offset) \
+  ((Cont) {CONT_PTR, (type), (offset), (ptr_reg), (void *) 0, {0}})
+
+/** Move the content of container 'src' to the container 'dest'.
+ */
+void Cont_Move(Cont *dest, Cont *src);
+
+/** Create in 'dest' a pointer to the content of the container 'src'.
+ * Consequently 'dest' has to have type==CONT_OBJ.
+ */
+void Cont_Ptr_Create(Cont *dest, Cont *src);
 
 #endif

@@ -31,6 +31,7 @@
 
 #  include "typesys.h"
 #  include "virtmach.h"
+#  include "container.h"
 
 
 typedef struct {
@@ -81,6 +82,9 @@ Task Expr_Must_Have_Type(Expr *e);
 
 /** Checks that the given expression has value */
 Task Expr_Must_Have_Value(Expr *e);
+
+/** Put in *c the container of the expression *e */
+void Expr_Cont_Get(Cont *c, Expr *e);
 
 /** Convert an object register/variable into a pointer.
  * example: this correspond to the transition from ro3 --> o[ro3]

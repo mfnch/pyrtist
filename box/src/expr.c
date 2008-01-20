@@ -31,6 +31,7 @@
 #include "expr.h"
 #include "str.h"
 #include "mem.h"
+#include "container.h"
 
 /* This fuction creates an expression with type, but without value.
  */
@@ -148,6 +149,16 @@ Task Expr_Must_Have_Value(Expr *e) {
     return Failed;
   }
   return Success;
+}
+
+void Expr_Cont_Get(Cont *c, Expr *e) {
+  assert(e->resolved >= 0);
+  c->categ = e->categ;
+  c->type = e->resolved < TYPE_OBJ ? e->resolved : TYPE_OBJ;
+  c->reg = e->value.i;
+  c->ptr_reg = e->addr;
+  c->extra = & e->value.i;
+  c->flags.ptr_is_greg = e->is.gaddr;
 }
 
 /* Converts an expression into a pointer */
@@ -374,8 +385,12 @@ Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child) {
   Expr_Container_New(subtype, found_subtype, CONTAINER_LREG_AUTO);
   Expr_Alloc(subtype);
 
-  if (not_void_parent)
-    Cmp_Assemble(ASM_MOV_OO, CAT_PTR, 0, parent->categ, parent->value.i);
+  if (not_void_parent) {
+    Cont c_src, c_dest = CONT_NEW_LPTR(CONT_OBJ, subtype->value.i, 0);
+    Expr_Cont_Get(& c_src, parent);
+    Cont_Ptr_Create(& c_dest, & c_src);
+//     Cmp_Assemble(ASM_MOV_OO, CAT_PTR, 0, parent->categ, parent->value.i);
+  }
 
   if (not_void_child) {
     Cmp_Assemble(ASM_MOV_OO, CAT_PTR, sizeof(Ptr), CAT_LREG, child_expr.addr);
