@@ -1744,8 +1744,10 @@ Task Cmp_Procedure(int *found, Expr *e, Int suffix, int auto_define) {
   /* We pass the box which is the parent of the procedure */
   TASK( Box_Parent_Get(& e_parent, suffix) );
   if ( e_parent.is.value ) {
-    if IS_FAILED( Cmp_Expr_Container_Change(& e_parent, CONTAINER_ARG(1)) )
-      goto exit_failed;
+    if (Tym_Type_Size(e_parent.resolved) > 0) {
+      if IS_FAILED( Cmp_Expr_Container_Change(& e_parent, CONTAINER_ARG(1)) )
+        goto exit_failed;
+    }
   }
 
   TASK( VM_Sym_Call(cmp_vm, sym_num) );
