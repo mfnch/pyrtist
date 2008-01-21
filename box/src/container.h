@@ -76,6 +76,9 @@ typedef struct {
 #define CONT_NEW_LPTR(type, ptr_reg, offset) \
   ((Cont) {CONT_PTR, (type), (offset), (ptr_reg), (void *) 0, {0}})
 
+#define CONT_NEW_INT(value) ((Cont) {CONT_IMM, CONT_INT, (value)})
+
+
 /** Move the content of container 'src' to the container 'dest'.
  */
 void Cont_Move(Cont *dest, Cont *src);
@@ -84,5 +87,16 @@ void Cont_Move(Cont *dest, Cont *src);
  * Consequently 'dest' has to have type==CONT_OBJ.
  */
 void Cont_Ptr_Create(Cont *dest, Cont *src);
+
+/** Increase the pointer container *ptr by the integer value stored
+ * inside the container *offset. This can be both an immediate integer
+ * or a integer register.
+ */
+void Cont_Ptr_Inc(Cont *ptr, Cont *offset);
+
+/** Change the type of a container when possible (this operation does
+ * not produce any output code).
+ */
+void Cont_Ptr_Cast(Cont *ptr, ContType type);
 
 #endif

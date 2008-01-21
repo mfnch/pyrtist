@@ -161,6 +161,27 @@ void Expr_Cont_Get(Cont *c, Expr *e) {
   c->flags.ptr_is_greg = e->is.gaddr;
 }
 
+void Expr_Cont_Set(Expr *e, Cont *c) {
+  assert(e->resolved >= 0);
+  assert((e->resolved >= TYPE_OBJ) == (c->type == TYPE_OBJ));
+  e->categ = c->categ;
+  e->value.i = c->reg;
+  e->addr = c->ptr_reg;
+  e->is.gaddr = c->flags.ptr_is_greg;
+  /* c->extra ??? */
+}
+
+void Expr_Cast(Expr *e, Type t) {
+  Cont c;
+  Type r = TS_Resolve(cmp->ts, t, 1, 1);
+  ContType ct = (r > TYPE_OBJ) ? TYPE_OBJ : r;
+  Expr_Cont_Get(& c, e);
+  Cont_Ptr_Cast(& c, ct);
+  e->type = t;
+  e->resolved = r;
+  Expr_Cont_Set(e, & c);
+}
+
 /* Converts an expression into a pointer */
 void Expr_To_Ptr(Expr *e) {
   assert(e->categ != CAT_IMM);
@@ -360,7 +381,7 @@ Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child) {
     return Failed;
   }
 
-  TS_Subtype_Child_Get(cmp->ts, & child_type, found_subtype);
+  TS_Subtype_Get_Child(cmp->ts, & child_type, found_subtype);
 
   /* This is what we do in the following:
       malloc SB  (Allocate the child)
@@ -389,7 +410,6 @@ Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child) {
     Cont c_src, c_dest = CONT_NEW_LPTR(CONT_OBJ, subtype->value.i, 0);
     Expr_Cont_Get(& c_src, parent);
     Cont_Ptr_Create(& c_dest, & c_src);
-//     Cmp_Assemble(ASM_MOV_OO, CAT_PTR, 0, parent->categ, parent->value.i);
   }
 
   if (not_void_child) {
@@ -397,20 +417,82 @@ Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child) {
     Cmp_Expr_Destroy_Tmp(& child_expr);
   }
 
-#if 0
-  /* Create the member of the subtype object which contains the parent */
-  Expr_Container_New(& parent_ptr, parent->type,
-                     CONTAINER_LRPTR(subtype->addr, 0));
+  return Success;
+}
 
-  /* Create the member of the subtype object which contains the child */
-  Expr_Container_New(& child_ptr, child_type,
-                     CONTAINER_LRPTR(subtype->addr, sizeof(void *)));
-  /* Move the pointer to */
-  Expr_Container_Copy(child_expr,
-                      CONTAINER_LRPTR(subtype->addr, sizeof(void *)));
-#endif
+Task Expr_Subtype_Get_Parent(Expr *parent, Expr *subtype) {
+  Type parent_type;
+  Cont parent_cont, subtype_cont;
+  int not_void_parent;
 
+  if (!subtype->is.typed) {
+    MSG_ERROR("The symbol '%N' has no type!", & subtype->value.nm);
+    return Failed;
+  }
 
+  if (!TS_Is_Subtype(cmp->ts, subtype->resolved)) {
+    MSG_ERROR("Cannot get the parent of '%~s': this is not a subtype!",
+              TS_Name_Get(cmp->ts, subtype->type));
+    return Failed;
+  }
+
+  TS_Subtype_Get_Parent(cmp->ts, & parent_type, subtype->resolved);
+
+  not_void_parent = (TS_Size(cmp->ts, parent_type) > 0);
+  if (not_void_parent) {
+    Expr_Container_New(parent, parent_type, CONTAINER_LREG_AUTO);
+    Expr_Cont_Get(& parent_cont, parent);
+    Expr_Cont_Get(& subtype_cont, subtype);
+    Cont_Move(& parent_cont, & subtype_cont);
+    return Success;
+
+  } else {
+    Expr_New_Value(parent, parent_type);
+    return Success;
+  }
+}
+
+Task Expr_Subtype_Get_Child(Expr *child, Expr *subtype) {
+  Type child_type;
+  Cont child_cont, subtype_cont;
+  int not_void_child;
+
+  if (!subtype->is.typed) {
+    MSG_ERROR("The symbol '%N' has no type!", & subtype->value.nm);
+    return Failed;
+  }
+
+  if (!TS_Is_Subtype(cmp->ts, subtype->resolved)) {
+    MSG_ERROR("Cannot get the child of '%~s': this is not a subtype!",
+              TS_Name_Get(cmp->ts, subtype->type));
+    return Failed;
+  }
+
+  TS_Subtype_Get_Child(cmp->ts, & child_type, subtype->resolved);
+
+  not_void_child = (TS_Size(cmp->ts, child_type) > 0);
+  if (not_void_child) {
+    Expr_Container_New(child, CONT_OBJ, CONTAINER_LREG_AUTO);
+    Expr_Cont_Get(& child_cont, child);
+    Expr_Cont_Get(& subtype_cont, subtype);
+    Cont_Ptr_Inc(& subtype_cont, & CONT_NEW_INT(sizeof(Ptr)));
+    Cont_Move(& child_cont, & subtype_cont);
+    Expr_Cast(child, child_type);
+    return Success;
+
+  } else {
+    Expr_New_Value(child, child_type);
+    return Success;
+  }
+}
+
+Task Expr_Resolve_Subtype(Expr *e) {
+  Expr child;
+  if (!e->is.typed) return Success;
+  if (!TS_Is_Subtype(cmp->ts, e->resolved)) return Success;
+  TASK( Expr_Subtype_Get_Child(& child, e) );
+  Cmp_Expr_Destroy_Tmp(e);
+  *e = child;
   return Success;
 }
 

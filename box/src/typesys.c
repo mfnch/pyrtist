@@ -132,7 +132,7 @@ Int TS_Size(TS *ts, Type t) {
   return td->size;
 }
 
-TSKind TS_What_Is(TS *ts, Type t) {
+TSKind TS_Kind(TS *ts, Type t) {
   TSDesc *td = Type_Ptr(ts, t);
   return td->kind;
 }
@@ -495,13 +495,22 @@ void TS_Subtype_Find(TS *ts, Type *subtype, Type parent, Name *child) {
     *subtype = *((Type *) hi->object);
 }
 
-void TS_Subtype_Child_Get(TS *ts, Type *child, Type subtype) {
+void TS_Subtype_Get_Child(TS *ts, Type *child, Type subtype) {
   TSDesc *s_td = Type_Ptr(ts, subtype);
 
   assert(s_td->kind == TS_KIND_SUBTYPE);
   assert(s_td->target != TS_TYPE_NONE);
   assert(s_td->size != TS_SIZE_UNKNOWN);
   *child = s_td->target;
+}
+
+void TS_Subtype_Get_Parent(TS *ts, Type *parent, Type subtype) {
+  TSDesc *s_td = Type_Ptr(ts, subtype);
+
+  assert(s_td->kind == TS_KIND_SUBTYPE);
+  assert(s_td->target != TS_TYPE_NONE);
+  assert(s_td->size != TS_SIZE_UNKNOWN);
+  *parent = s_td->data.subtype.parent;
 }
 
 #if 0
@@ -611,7 +620,7 @@ void Tym_Procedure_Sym_Num(UInt *sym_num, Type p) {
 Int Tym_Type_Size(Int t) {return (Int) TS_Size(last_ts, (Type) t);}
 
 TypeOfType Tym_Type_TOT(Int t) {
-  switch(TS_What_Is(last_ts, (Type) t)) {
+  switch(TS_Kind(last_ts, (Type) t)) {
   case TS_KIND_INTRINSIC: return TOT_INSTANCE;
   case TS_KIND_LINK: return TOT_ALIAS_OF;
   case TS_KIND_ALIAS: return TOT_ALIAS_OF;

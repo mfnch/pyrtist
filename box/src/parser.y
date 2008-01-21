@@ -211,6 +211,11 @@ Task Subtype_Box_Close(Expr *subtype) {
   return Success;
 }
 
+Task Expr_Statement(Expr *e) {
+  TASK( Expr_Resolve_Subtype(e) );
+  return Cmp_Procedure(NULL, e, -1, /* auto_define */ 1);
+}
+
 /*****************************************************************************/
 
 #define DO(action) \
@@ -341,7 +346,7 @@ Task Subtype_Box_Close(Expr *subtype) {
  *****************************************************************************/
 sep:
    ','                 { }
- | ';'                 { if IS_FAILED( Prs_Procedure_Special(NULL, TYPE_PAUSE, 1) ) MY_ERR }
+ | ';'                 { DO( Prs_Procedure_Special(NULL, TYPE_PAUSE, 1) ) }
  | TOK_NEWLINE         { Cmp_Assemble(ASM_LINE_Iimm, CAT_IMM, ++tok_linenum); }
  ;
 
@@ -354,8 +359,8 @@ prim.suffix:
  ;
 
 suffix:
-   prim.suffix         { if IS_FAILED( Prs_Suffix(& $$, -1, & $1) ) MY_ERR }
- | suffix prim.suffix  { if IS_FAILED( Prs_Suffix(& $$, $1, & $2) ) MY_ERR }
+   prim.suffix         { DO( Prs_Suffix(& $$, -1, & $1) ) }
+ | suffix prim.suffix  { DO( Prs_Suffix(& $$, $1, & $2) ) }
  ;
 
 suffix.opt:
@@ -368,7 +373,7 @@ suffix.opt:
  *****************************************************************************/
 
 name.type:
-  TOK_UNAME suffix.opt      { if ( Prs_Name_To_Expr(& $1, & $$, $2) ) MY_ERR }
+  TOK_UNAME suffix.opt      { DO( Prs_Name_To_Expr(& $1, & $$, $2) ) }
  ;
 
 /*| TOK_UMEMBER suffix.opt    { if ( Prs_Member_To_Expr(& $1, & $$, $2) ) MY_ERR } */
@@ -584,7 +589,7 @@ type.statement:
  *               DEFINIZIONE DELL'ESPRESSIONE COME ISTRUZIONE                 *
  ******************************************************************************/
 expr.statement:
-   expr      { if IS_FAILED( Cmp_Procedure( NULL, & $1, -1, /* auto_define */ 1) ) MY_ERR }
+   expr      { DO(Expr_Statement(& $1)) }
 |  '\\' expr { DO(Expr_Ignore(& $2)) }
 ;
 

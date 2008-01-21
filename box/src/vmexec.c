@@ -389,6 +389,11 @@ static void VM__Exec_Jc_I(VMProgram *vmp) {
     *((Int *) vmcur->local[TYPE_INT]) ? *((Int *) vmcur->arg1) : 0;
 }
 
+static void VM__Exec_Add_O(VMProgram *vmp) {
+  VMStatus *vmcur = vmp->vmcur;
+  *((Obj *) vmcur->arg1) += *((Int *) vmcur->local[TYPE_INT]);
+}
+
 /******************************************************************************
  * La seguente tabella descrive le istruzioni e specifica quali funzioni      *
  * debbano essere chiamate per localizzare la posizione in memoria degli      *
@@ -460,7 +465,7 @@ VMInstrDesc vm_instr_desc_table[] = {
   { "lor",  2, TYPE_INT, VM__GLP_GLPI, VM__Exec_LOr_II, VM__D_GLPI_GLPI },  /* lor  reg_i, reg_i  */
   { "real", 1, TYPE_CHAR, VM__GLPI,     VM__Exec_Real_C, VM__D_GLPI_GLPI }, /* real reg_c         */
   { "real", 1, TYPE_INT, VM__GLPI,     VM__Exec_Real_I, VM__D_GLPI_GLPI },  /* real reg_i         */
-  { "intg", 1, TYPE_REAL, VM__GLPI,     VM__Exec_Int_R, VM__D_GLPI_GLPI }, /* intg reg_r         */
+  { "intg", 1, TYPE_REAL, VM__GLPI,     VM__Exec_Int_R, VM__D_GLPI_GLPI },  /* intg reg_r         */
   { "point",2, TYPE_INT, VM__GLP_GLPI,VM__Exec_Point_II,VM__D_GLPI_GLPI },  /* point reg_i, reg_i */
   { "point",2, TYPE_REAL, VM__GLP_GLPI,VM__Exec_Point_RR,VM__D_GLPI_GLPI }, /* point reg_r, reg_r */
   { "projx",1, TYPE_POINT,VM__GLPI,    VM__Exec_ProjX_P, VM__D_GLPI_GLPI }, /* projx reg_p        */
@@ -478,6 +483,7 @@ VMInstrDesc vm_instr_desc_table[] = {
   {  "lea", 2, TYPE_OBJ,  VM__GLP_GLPI, VM__Exec_Lea_OO, VM__D_GLPI_GLPI }, /* lea reg_o, o[ro0+...] */
   { "push", 1, TYPE_OBJ,  VM__GLPI,     VM__Exec_Push_O, VM__D_GLPI_GLPI }, /* push reg_o         */
   {  "pop", 1, TYPE_OBJ,  VM__GLPI,      VM__Exec_Pop_O, VM__D_GLPI_GLPI }, /* pop reg_o          */
-  {  "jmp", 1, TYPE_INT, VM__GLPI,      VM__Exec_Jmp_I,       VM__D_JMP },  /* jmp reg_i          */
-  {   "jc", 1, TYPE_INT, VM__GLPI,       VM__Exec_Jc_I,       VM__D_JMP }   /* jc  reg_i          */
+  {  "jmp", 1, TYPE_INT, VM__GLPI,      VM__Exec_Jmp_I,       VM__D_JMP  }, /* jmp reg_i          */
+  {   "jc", 1, TYPE_INT, VM__GLPI,       VM__Exec_Jc_I,       VM__D_JMP  }, /* jc  reg_i          */
+  {  "add", 1, TYPE_OBJ, VM__GLPI,      VM__Exec_Add_O,  VM__D_GLPI_GLPI }  /* add reg_o          */
 };

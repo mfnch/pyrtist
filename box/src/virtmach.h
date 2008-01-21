@@ -61,7 +61,7 @@ typedef enum {
 /* Enumero gli header di istruzione della macchina virtuale.
  * ATTENZIONE: L'ordine nella seguente enumerazione deve rispettare l'ordine
  *  nella tabella dei descrittori di istruzione ( vm_instr_desc_table[] )
- * NUMERO ISTRUZIONI: 77
+ * NUMERO ISTRUZIONI: 78
  */
 typedef enum {
   ASM_LINE_Iimm=1, ASM_CALL_I, ASM_CALL_Iimm,
@@ -86,6 +86,7 @@ typedef enum {
   ASM_LEA_C, ASM_LEA_I, ASM_LEA_R, ASM_LEA_P, ASM_LEA_OO,
   ASM_PUSH_O, ASM_POP_O,
   ASM_JMP_I, ASM_JC_I,
+  ASM_ADD_O,
   ASM_ILLEGAL
 } AsmCode;
 

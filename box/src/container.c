@@ -133,17 +133,6 @@ void Cont_Move(Cont *dest, Cont *src) {
     assert(src->categ != CAT_IMM);
     Cmp_Assemble(ASM_MOV_OO, dest->categ, dest->reg, src->categ, src->reg);
     return;
-
-#if 0
-    if (dest->categ == CAT_PTR) {
-      Cmp_Assemble( ASM_LEA_OO, categ, reg, CAT_PTR, expr->value.i );
-      return;
-
-    } else { /* expr->categ == CAT_LREG, CAT_GREG */
-      Cmp_Assemble(ASM_MOV_OO, categ, reg, expr->categ, expr->value.i);
-      return;
-    }
-#endif
   }
 }
 
@@ -194,6 +183,62 @@ void Cont_Ptr_Create(Cont *dest, Cont *src) {
     } else {
       prepare_ptr_access(dest);
       Cmp_Assemble(ASM_MOV_OO, dest->categ, dest->reg, src->categ, src->reg);
+      return;
+    }
+  }
+}
+
+void Cont_Ptr_Inc(Cont *ptr, Cont *offset) {
+  assert(ptr->categ != CAT_IMM);
+  assert(offset->type == TYPE_INT);
+
+  if (offset->categ == CAT_IMM) {
+    Int int_offset = offset->reg;
+    switch(ptr->categ) {
+    case CAT_PTR:
+      ptr->reg += int_offset;
+      return;
+
+    default:
+      assert(ptr->type == TYPE_OBJ);
+      ptr->ptr_reg = ptr->reg;
+      ptr->reg = int_offset;
+      ptr->flags.ptr_is_greg = (ptr->categ == CAT_GREG);
+      ptr->categ = CAT_PTR;
+      return;
+    }
+
+  } else {
+    MSG_FATAL("Cont_Ptr_Inc: not implemented yet!");
+  }
+}
+
+void Cont_Ptr_Cast(Cont *ptr, ContType type) {
+  assert(ptr->categ != CAT_IMM);
+  if (type == TYPE_OBJ) {
+    switch(ptr->categ) {
+    case CAT_PTR:
+      ptr->type = type;
+      return;
+    default:
+      MSG_FATAL("Cont_Ptr_Cast: cannot cast type=%d to %d if the container ",
+                "is not a pointer.", ptr->type, type);
+      return;
+    }
+
+  } else {
+    switch(ptr->categ) {
+    case CAT_PTR:
+      ptr->type = type;
+      return;
+
+    default:
+      assert(ptr->type == TYPE_OBJ);
+      ptr->ptr_reg = ptr->reg;
+      ptr->reg = 0;
+      ptr->flags.ptr_is_greg = (ptr->categ == CAT_GREG);
+      ptr->categ = CAT_PTR;
+      ptr->type = type;
       return;
     }
   }

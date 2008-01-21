@@ -108,8 +108,10 @@ Int TS_Size(TS *ts, Type t);
 /** Resolve types (useful for comparisons) */
 Type TS_Resolve(TS *ts, Type t, int resolve_alias, int resolve_species);
 
-TSKind TS_What_Is(TS *ts, Type t);
-#define TS_Is_Member(ts, t) (TS_What_Is((ts), (t)) == TS_KIND_MEMBER)
+TSKind TS_Kind(TS *ts, Type t);
+
+#define TS_Is_Member(ts, t) (TS_Kind((ts), (t)) == TS_KIND_MEMBER)
+#define TS_Is_Subtype(ts, t) (TS_Kind((ts), (t)) == TS_KIND_SUBTYPE)
 
 Int TS_Align(TS *ts, Int address);
 
@@ -203,7 +205,10 @@ Task TS_Enum_Begin(TS *ts, Type *e);
 Task TS_Enum_Add(TS *ts, Type e, Type t);
 
 /** Get the child type of a subtype. */
-void TS_Subtype_Child_Get(TS *ts, Type *child, Type subtype);
+void TS_Subtype_Get_Child(TS *ts, Type *child, Type subtype);
+
+/** Get the parent type of a subtype. */
+void TS_Subtype_Get_Parent(TS *ts, Type *parent, Type subtype);
 
 Task TS_Default_Value(TS *ts, Type *dv_t, Type t, Data *dv);
 

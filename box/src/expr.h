@@ -83,8 +83,17 @@ Task Expr_Must_Have_Type(Expr *e);
 /** Checks that the given expression has value */
 Task Expr_Must_Have_Value(Expr *e);
 
-/** Put in *c the container of the expression *e */
+/** Get/Set the container of the expression *e. These function will disappear
+ * as soon as Expr will be asjusted to contain a Cont object.
+ */
 void Expr_Cont_Get(Cont *c, Expr *e);
+void Expr_Cont_Set(Expr *e, Cont *c);
+
+/** Change the type of an expression if asmissible (using Cont_Cast).
+ * This is often used to transform a generic pointer into a pointer
+ * to a specific type.
+ */
+void Expr_Cast(Expr *e, Type t);
 
 /** Convert an object register/variable into a pointer.
  * example: this correspond to the transition from ro3 --> o[ro3]
@@ -121,6 +130,18 @@ Task Expr_Ignore(Expr *e);
  */
 Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child);
 
+/** Creates an expression containing the parent of 'subtype'.
+ */
+Task Expr_Subtype_Get_Parent(Expr *parent, Expr *subtype);
+
+/** Creates an expression containing the child of 'subtype'.
+ */
+Task Expr_Subtype_Get_Child(Expr *child, Expr *subtype);
+
+/** If *e is a subtype, then it is converted to its own child;
+ * otherwise nothing is done.
+ */
+Task Expr_Resolve_Subtype(Expr *e);
 
 /** This type is used to specify a container (see the macros CONTAINER_...) */
 typedef struct {
