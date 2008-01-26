@@ -25,7 +25,7 @@ boxincdir=@boxincdir@
 
 boxlib_LTLIBRARIES = libg.la
 
-dist_boxinc_DATA = g.bxh color.bxh window.bxh
+dist_boxinc_DATA = g.bxh color.bxh window.bxh line.bxh
 
 AM_CPPFLAGS = -I../../src
 libg_la_SOURCES = g.c bm1bit.c bm4bit.c bm8bit.c bmcommon.c fig.c graphic.c \

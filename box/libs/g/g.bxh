@@ -1,12 +1,6 @@
 // Header file for the g library
 
-Line = (Int, Point)
-
-R = (Char -> Int -> Real)
-P = ((R, R) -> Point)
-
-([)@Line ? "line_begin"
-P@Line ? "line_point"
-
 include "color.bxh"
 include "window.bxh"
+include "line.bxh"
+
