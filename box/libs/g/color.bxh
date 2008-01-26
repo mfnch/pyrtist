@@ -1,0 +1,22 @@
+// Definition of the type Color and some example of Color-s
+Color = (Real r, g, b)
+
+Color@Print["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, "]"]
+
+color = (Color black, red, green, yellow, blue, magenta, cyan, white, _
+               dred, dgreen, dyellow, dblue, dmagenta, dcyan, grey)
+
+[
+  on  = 1.0 // Maximum intensity
+  mid = 0.5 // Medium intensity
+  off = 0.0 // Minimum intensity
+
+  color.black.r    = off, color.black.g    = off, color.black.b    = off
+  color.red.r      =  on, color.red.g      = off, color.red.b      = off
+  color.green.r    = off, color.green.g    =  on, color.green.b    = off
+  color.yellow.r   =  on, color.yellow.g   =  on, color.yellow.b   = off
+  color.blue.r     = off, color.blue.g     = off, color.blue.b     =  on
+  color.magenta.r  =  on, color.magenta.g  = off, color.magenta.b  =  on
+  color.cyan.r     = off, color.cyan.g     =  on, color.cyan.b     =  on
+  color.white.r    =  on, color.white.g    =  on, color.white.b    =  on
+]

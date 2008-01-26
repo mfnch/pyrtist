@@ -1,0 +1,11 @@
+// The Window object
+
+Window = Ptr
+([)@Window ? "window_begin"
+()Char@Window ? "window_str"
+(])@Window ? "window_end"
+P@Window ? "window_size"
+
+Window.Save = Void
+(])@Window.Save ? "window_save_end"
+()Char@Window.Save ? "window_save_str"
