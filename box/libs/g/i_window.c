@@ -6,33 +6,16 @@
 #include "types.h"
 #include "virtmach.h"
 #include "graphic.h"
+#include "g.h"
+#include "i_window.h"
+#include "i_line.h"
 
 #define DEBUG
-
-typedef struct {
-  struct {
-    int type : 1;
-    int size : 1;
-  } have;
-
-  enum {BM1, BM4, BM8, FIG, PS} type;
-  Point size, origin, res;
-
-  grp_window *window;
-
-  char *save_file_name;
-} Window;
 
 /*enum {FLAG_TYPE=0x1, FLAG_SIZE=0x2, FLAG_ORIGIN=0x4,
  FLAG_RESX=0x8, FLAG_RESY=0x10, FLAG_NUMLAYERS=0x20,
  FLAG_FILENAME=0X40};
 */
-
-void g_error(const char *msg) {
-  printf("Error: %s\n", msg);
-}
-
-typedef void *WindowPtr;
 
 Task window_begin(VMProgram *vmp) {
   WindowPtr *wp = BOX_VM_CURRENTPTR(vmp, WindowPtr);
@@ -53,15 +36,20 @@ Task window_begin(VMProgram *vmp) {
   w->res.y = 2.0;
   w->have.size = 0;
   w->save_file_name = (char *) NULL;
+  w->fg_color.r = 0.0; w->fg_color.g = 0.0; w->fg_color.b = 0.0;
+
+  TASK( line_window_init(w) );
   return Success;
 }
 
 Task window_destroy(VMProgram *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
+  Window *w = (Window *) wp;
   (void) free(wp);
 #ifdef DEBUG
   printf("Window object deallocated\n");
 #endif
+  line_window_destroy(w);
   return Success;
 }
 
@@ -153,9 +141,7 @@ Task window_end(VMProgram *vmp) {
 }
 
 Task window_save_str(VMProgram *vmp) {
-  Subtype *s = BOX_VM_CURRENTPTR(vmp, Subtype);
-  WindowPtr *wp = SUBTYPE_PARENT_PTR(s, WindowPtr);
-  Window *w = *wp;
+  SUBTYPE_OF_WINDOW(vmp, w);
   char *file_name = BOX_VM_ARGPTR1(vmp, char);
 
   if (w->save_file_name != (char *) NULL) {
@@ -168,9 +154,7 @@ Task window_save_str(VMProgram *vmp) {
 }
 
 Task window_save_end(VMProgram *vmp) {
-  Subtype *s = BOX_VM_CURRENTPTR(vmp, Subtype);
-  WindowPtr *wp = SUBTYPE_PARENT_PTR(s, WindowPtr);
-  Window *w = *wp;
+  SUBTYPE_OF_WINDOW(vmp, w);
 
   if (w->save_file_name == (char *) NULL) {
     g_error("window not saved: need a file name!\n");

@@ -4,6 +4,10 @@
  * gestire le chiamate a buffer.c
  */
 
+#ifndef _BUFFER_H
+
+#  define _BUFFER_H
+
 /* Struttura di controllo del buffer */
 typedef struct {
 	long id;	/* Costante identificativa di struttura inizializzata */
@@ -40,3 +44,5 @@ void buff_free(buff *buffer);
 #define buff_firstitemptr(buffer, type)	((type *) ((buffer)->ptr))
 #define buff_lastitemptr(buffer, type)	((type *) ((buffer)->ptr + ((buffer)->numel-1)*((long) (buffer)->elsize)))
 #define buff_dec(buffer)	buff_smallenough((buffer), --(buffer)->numel)
+
+#endif

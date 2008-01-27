@@ -20,21 +20,21 @@
  * in modo che riesca a contenere n elementi
  */
 #define BUFF_EXPAND(buffer, n) \
-	if ( n > buffer->dim ) { \
-		if ( buffer->dim == 0 ) { \
-			for( buffer->dim = buffer->mindim; \
-			 buffer->dim < n; buffer->dim *= 2); \
-			buffer->size = (buffer->dim) * buffer->elsize; \
-			buffer->ptr = malloc( buffer->size ); \
-		} else { \
-			for(; buffer->dim < n; buffer->dim *= 2); \
-			buffer->size = (buffer->dim)*buffer->elsize; \
-			buffer->ptr = realloc( buffer->ptr, buffer->size ); \
-		} \
-		if ( buffer->ptr == NULL ) { \
-			FATALMSG("buffer.c", "Memoria esaurita"); \
-			return 0; \
-		}\
+  if ( n > buffer->dim ) { \
+    if ( buffer->dim == 0 ) { \
+      for( buffer->dim = buffer->mindim; \
+       buffer->dim < n; buffer->dim *= 2); \
+      buffer->size = (buffer->dim) * buffer->elsize; \
+      buffer->ptr = malloc( buffer->size ); \
+    } else { \
+      for(; buffer->dim < n; buffer->dim *= 2); \
+      buffer->size = (buffer->dim)*buffer->elsize; \
+      buffer->ptr = realloc( buffer->ptr, buffer->size ); \
+    } \
+    if ( buffer->ptr == NULL ) { \
+      FATALMSG("buffer.c", "Memoria esaurita"); \
+      return 0; \
+    }\
     }
 
 /* Questa macro provvede a contrarre il buffer
@@ -43,16 +43,16 @@
  * n e' il numero di elementi del buffer.
  */
 #define BUFF_SHRINK(buffer, n) \
-	if (buffer->dim > buffer->mindim) { \
-		for(; 4*n < buffer->dim; buffer->dim /= 2); \
-		if (buffer->dim < buffer->mindim) \
-			buffer->dim = buffer->mindim; \
-		buffer->size = (buffer->dim)*buffer->elsize; \
-		buffer->ptr = realloc( buffer->ptr, buffer->size ); \
-		if ( buffer->ptr == NULL ) { \
-			ERRORMSG("buffer.c", "Problemi con realloc"); \
-			return 0; \
-		} \
+  if (buffer->dim > buffer->mindim) { \
+    for(; 4*n < buffer->dim; buffer->dim /= 2); \
+    if (buffer->dim < buffer->mindim) \
+      buffer->dim = buffer->mindim; \
+    buffer->size = (buffer->dim)*buffer->elsize; \
+    buffer->ptr = realloc( buffer->ptr, buffer->size ); \
+    if ( buffer->ptr == NULL ) { \
+      ERRORMSG("buffer.c", "Problemi con realloc"); \
+      return 0; \
+    } \
     }
 
 /* NOME: buff_create
@@ -65,21 +65,21 @@
  */
 int buff_create(buff *buffer, short elsize, long mindim)
 {
-	if ( (elsize<1) || (mindim<1) ) {
-		ERRORMSG("buff_create", "Parametri errati");
-		buffer->id = 0;
-		return 0;
-	}
+  if (elsize<1 || mindim<1) {
+    ERRORMSG("buff_create", "Parametri errati");
+    buffer->id = 0;
+    return 0;
+  }
 
-	buffer->id = buffID;
-	buffer->ptr = NULL;
-	buffer->dim = 0;
-	buffer->size = 0;
-	buffer->numel = 0;
-	buffer->mindim = mindim;
-	buffer->elsize = elsize;
+  buffer->id = buffID;
+  buffer->ptr = NULL;
+  buffer->dim = 0;
+  buffer->size = 0;
+  buffer->numel = 0;
+  buffer->mindim = mindim;
+  buffer->elsize = elsize;
 
-	return 1;
+  return 1;
 }
 
 /* NOME: buff_create
@@ -91,34 +91,34 @@ int buff_create(buff *buffer, short elsize, long mindim)
  */
 int buff_recycle(buff *buffer, short elsize, long mindim)
 {
-	if ( (elsize<1) || (mindim<1) ) {
-		ERRORMSG("buff_recycle", "Parametri errati");
-		return 0;
-	}
+  if ( (elsize<1) || (mindim<1) ) {
+    ERRORMSG("buff_recycle", "Parametri errati");
+    return 0;
+  }
 
-	if ( buffer->id != buffID ) {
-		ERRORMSG("buff_recycle", "Buffer danneggiato");
-		return 0;
-	}
-	
-	/* Calcolo quanti elementi di dimensione elsize ci stanno nella zona
-	 * allocata per il vecchio buffer
-	 */
-	buffer->dim = buffer->size / elsize;
-	if ( buffer->dim < 1 ) {
-		/* Non c'e' memoria sufficiente:
-		 * distruggo il vecchio buffer e ne creo uno nuovo!
-		 */
-		free( buffer->ptr );
-		buffer->id = 0;
+  if ( buffer->id != buffID ) {
+    ERRORMSG("buff_recycle", "Buffer danneggiato");
+    return 0;
+  }
 
-		return buff_create(buffer, elsize, mindim);
-	}
+  /* Calcolo quanti elementi di dimensione elsize ci stanno nella zona
+   * allocata per il vecchio buffer
+   */
+  buffer->dim = buffer->size / elsize;
+  if ( buffer->dim < 1 ) {
+    /* Non c'e' memoria sufficiente:
+     * distruggo il vecchio buffer e ne creo uno nuovo!
+     */
+    free( buffer->ptr );
+    buffer->id = 0;
 
-	buffer->numel = 0;
-	buffer->mindim = mindim;
-	buffer->elsize = elsize;
-	return 1;
+    return buff_create(buffer, elsize, mindim);
+  }
+
+  buffer->numel = 0;
+  buffer->mindim = mindim;
+  buffer->elsize = elsize;
+  return 1;
 }
 
 /* NOME: buff_push
@@ -128,24 +128,25 @@ int buff_recycle(buff *buffer, short elsize, long mindim)
  */
 int buff_push(buff *buffer, void *elem)
 {
-	void *tptr;
-	long tpos;
+  void *tptr;
+  long tpos;
 
-	if (buffer->id == buffID) {
-		tpos = buffer->numel++ * buffer->elsize;
+  if (buffer->id == buffID) {
+    tpos = buffer->numel++ * buffer->elsize;
 
-		/* Controlla che il buffer non debba essere allargato */
-		BUFF_EXPAND(buffer, buffer->numel);
+    /* Controlla che il buffer non debba essere allargato */
+    BUFF_EXPAND(buffer, buffer->numel);
 
-		tptr = buffer->ptr + tpos;
-		memcpy(tptr, elem, buffer->elsize);
+    tptr = buffer->ptr + tpos;
+    memcpy(tptr, elem, buffer->elsize);
 
-	} else {
-		ERRORMSG("buff_push", "Buffer non inizializzato");
-		return 0;
-	}
+  } else {
+    printf("buffer->id='%x'\n", buffer->id);
+    ERRORMSG("buff_push", "Buffer non inizializzato");
+    return 0;
+  }
 
-	return 1;
+  return 1;
 }
 
 /* NOME: buff_mpush
@@ -155,30 +156,30 @@ int buff_push(buff *buffer, void *elem)
  */
 int buff_mpush(buff *buffer, void *elem, long numel)
 {
-	void *tptr;
-	long tpos;
+  void *tptr;
+  long tpos;
 
-	if (buffer->id == buffID) {
-		if (numel < 1) {
-			ERRORMSG("buff_mpush", "Parametri errati");
-			return 0;
-		}
+  if (buffer->id == buffID) {
+    if (numel < 1) {
+      ERRORMSG("buff_mpush", "Parametri errati");
+      return 0;
+    }
 
-		tpos = buffer->numel * buffer->elsize;
-		buffer->numel += numel;
+    tpos = buffer->numel * buffer->elsize;
+    buffer->numel += numel;
 
-		/* Controlla che il buffer non debba essere allargato */
-		BUFF_EXPAND(buffer, buffer->numel);
+    /* Controlla che il buffer non debba essere allargato */
+    BUFF_EXPAND(buffer, buffer->numel);
 
-		tptr = buffer->ptr + tpos;
-		memcpy(tptr, elem, numel*buffer->elsize);
-		
-	} else {
-		ERRORMSG("buff_mpush", "Buffer non inizializzato");
-		return 0;
-	}
+    tptr = buffer->ptr + tpos;
+    memcpy(tptr, elem, numel*buffer->elsize);
 
-	return 1;
+  } else {
+    ERRORMSG("buff_mpush", "Buffer non inizializzato");
+    return 0;
+  }
+
+  return 1;
 }
 
 /* NOME: buff_bigenough
@@ -187,24 +188,24 @@ int buff_mpush(buff *buffer, void *elem, long numel)
  */
 int buff_bigenough(buff *buffer, long numel)
 {
-	PRNMSG("buff_bigenough: Controllo se e' necessario allargare il buffer\n...");
-	if (buffer->id == buffID) {
-		if (numel < 0) {
-			ERRORMSG("buff_bigenough", "Parametri errati");
-			EXIT_ERR("numel < 0!\n");
-		}
+  PRNMSG("buff_bigenough: Controllo se e' necessario allargare il buffer\n...");
+  if (buffer->id == buffID) {
+    if (numel < 0) {
+      ERRORMSG("buff_bigenough", "Parametri errati");
+      EXIT_ERR("numel < 0!\n");
+    }
 
-		PRNMSG("Provo...\n");
-		/* Controlla che il buffer non debba essere allargato */
-		BUFF_EXPAND(buffer, numel);
-		PRNMSG("Fatto!\n");
+    PRNMSG("Provo...\n");
+    /* Controlla che il buffer non debba essere allargato */
+    BUFF_EXPAND(buffer, numel);
+    PRNMSG("Fatto!\n");
 
-	} else {
-		ERRORMSG("buff_bigenough", "Buffer non inizializzato");
-		EXIT_ERR("buffer distrutto o non inizializzato!\n");
-	}
+  } else {
+    ERRORMSG("buff_bigenough", "Buffer non inizializzato");
+    EXIT_ERR("buffer distrutto o non inizializzato!\n");
+  }
 
-	EXIT_OK("Ok!\n");
+  EXIT_OK("Ok!\n");
 }
 
 /* NOME: buff_smallenough
@@ -213,21 +214,21 @@ int buff_bigenough(buff *buffer, long numel)
  */
 int buff_smallenough(buff *buffer, long numel)
 {
-	if (buffer->id == buffID) {
-		if (numel < 0) {
-			ERRORMSG("buff_smallenough", "Parametri errati");
-			return 0;
-		}
+  if (buffer->id == buffID) {
+    if (numel < 0) {
+      ERRORMSG("buff_smallenough", "Parametri errati");
+      return 0;
+    }
 
-		/* Controlla che il buffer non debba essere allargato */
-		BUFF_SHRINK(buffer, numel);
+    /* Controlla che il buffer non debba essere allargato */
+    BUFF_SHRINK(buffer, numel);
 
-	} else {
-		ERRORMSG("buff_smallenough", "Buffer non inizializzato");
-		return 0;
-	}
+  } else {
+    ERRORMSG("buff_smallenough", "Buffer non inizializzato");
+    return 0;
+  }
 
-	return 1;
+  return 1;
 }
 
 /* NOME: buff_clear
@@ -237,12 +238,12 @@ int buff_smallenough(buff *buffer, long numel)
  */
 int buff_clear(buff *buffer)
 {
-	if (buff_smallenough(buffer, 0))
-		buffer->numel = 0;
-	else
-		return 0;
-	
-	return 1;
+  if (buff_smallenough(buffer, 0))
+    buffer->numel = 0;
+  else
+    return 0;
+
+  return 1;
 }
 
 /* NOME: buff_free
@@ -251,13 +252,13 @@ int buff_clear(buff *buffer)
  */
 void buff_free(buff *buffer)
 {
-	if (buffer->id == buffID) {
-		free(buffer->ptr);
-		buffer->ptr = NULL;
-		buffer->dim = 0;
-		buffer->size = 0;
-		buffer->numel = 0;
-  	}
+  if (buffer->id == buffID) {
+    free(buffer->ptr);
+    buffer->ptr = NULL;
+    buffer->dim = 0;
+    buffer->size = 0;
+    buffer->numel = 0;
+  }
 
-	return;
+  return;
 }

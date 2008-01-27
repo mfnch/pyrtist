@@ -18,8 +18,8 @@
 #include "autoput.h"
 
 /* Quantita' che definiscono la trasformazione */
-static real Qx, Qy, Tx, Ty;
-static real theta, cos_theta, sin_theta, s, cos_tau, sin_tau/*,tau*/;
+static Real Qx, Qy, Tx, Ty;
+static Real theta, cos_theta, sin_theta, s, cos_tau, sin_tau/*,tau*/;
 
 #define AUTO_TRANSLATION(n) ( ((n) & 0x3) != 0 )
 #define AUTO_TRANSLATION_X(n) ( ((n) & 0x1) != 0 )
@@ -66,12 +66,12 @@ static real theta, cos_theta, sin_theta, s, cos_tau, sin_tau/*,tau*/;
  *   BIT 4 di needed  -->  L'oggetto sara' "sproporzionato" (automaticamente)
  *   BIT 5 di needed  -->  L'oggetto sara' riflesso (automaticamente)
  */
-int aput_autoput(point *F, point *R, real *weight, int n, int needed)
+int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed)
 {
 	register int i;
-	register real wsum, *wptr;
-	register real ix, iy, jx, jy, g2x, g2y, sg2x, sg2y;
-	point *Fptr, *Rptr;
+	register Real wsum, *wptr;
+	register Real ix, iy, jx, jy, g2x, g2y, sg2x, sg2y;
+	Point *Fptr, *Rptr;
 
 	PRNMSG("aput_autoput: Calcolo la trasformazione dai vincoli...\n");
 	PRNMSG("...needed = "); PRNINTG(needed); PRNMSG("\n...");
@@ -96,7 +96,7 @@ int aput_autoput(point *F, point *R, real *weight, int n, int needed)
 		 */
 		if ( ! AUTO_TRANSLATION_X(needed) ) {
 			/* x manuale, y automatico */
-			register real MFx, MFy, MRy, w;
+			register Real MFx, MFy, MRy, w;
 
 			PRNMSG("auto-traslazione lungo y\n...");
 
@@ -104,9 +104,9 @@ int aput_autoput(point *F, point *R, real *weight, int n, int needed)
 			wsum = *(wptr = weight);
 			MFx = (Fptr = F)->x * wsum;
 			MFy = Fptr->y * wsum;
-			MRy = (Rptr = R)->y * wsum; 
+			MRy = (Rptr = R)->y * wsum;
 			for (i=1; i<n; i++) {
-				wsum += (w = *(++wptr)); 
+				wsum += (w = *(++wptr));
 				MFx += (++Fptr)->x * w;
 				MFy += Fptr->y * w;
 				MRy += (++Rptr)->y * w;
@@ -130,7 +130,7 @@ int aput_autoput(point *F, point *R, real *weight, int n, int needed)
 
 		} else {
 			/* x e y entrambi automatici */
-			register real MFx, MFy, MRx, MRy, w;
+			register Real MFx, MFy, MRx, MRy, w;
 
 			PRNMSG("auto-traslazione(lungo x-y)\n...");
 
@@ -138,10 +138,10 @@ int aput_autoput(point *F, point *R, real *weight, int n, int needed)
 			wsum = *(wptr = weight);
 			MFx = (Fptr = F)->x * wsum;
 			MFy = Fptr->y * wsum;
-			MRx = (Rptr = R)->x * wsum; 
-			MRy = Rptr->y * wsum; 
+			MRx = (Rptr = R)->x * wsum;
+			MRy = Rptr->y * wsum;
 			for (i=1; i<n; i++) {
-				wsum += (w = *(++wptr)); 
+				wsum += (w = *(++wptr));
 				MFx += (++Fptr)->x * w;
 				MFy += Fptr->y * w;
 				MRx += (++Rptr)->x * w;
@@ -164,7 +164,7 @@ int aput_autoput(point *F, point *R, real *weight, int n, int needed)
 		/* Calcoliamo wsum */
 		wsum = *(wptr = weight);
 		for (i=1; i<n; i++)
-			wsum += *(++wptr); 
+			wsum += *(++wptr);
 	}
 
 	/* Se non c'e' altro da fare ESCO! */
@@ -174,9 +174,9 @@ int aput_autoput(point *F, point *R, real *weight, int n, int needed)
 	 * per eseguire la minimizzazione
 	 */
 	{
-		register real
+		register Real
 		 w, gx, gy, wgx, wgy, sx, sy, Ux, Uy;
-		
+
 		Ux = Tx + Qx;
 		Uy = Ty + Qy;
 
@@ -225,19 +225,19 @@ int aput_autoput(point *F, point *R, real *weight, int n, int needed)
 	if ( FIXED_PROPORTION(needed) ) {
 		/* CASO 1: Proporzioni fissate manualmente */
 		PRNMSG("proporzioni fisse\n...");
-		
-		real A = ix * cos_tau + iy * sin_tau;
-		real B = jx * cos_tau + jy * sin_tau;
+
+		Real A = ix * cos_tau + iy * sin_tau;
+		Real B = jx * cos_tau + jy * sin_tau;
 
 		if ( AUTO_ROTATION(needed) ) {
 			/* Determino l'angolo di rotazione, se e' selezionata
 			 * la rotazione automatica!
 			 */
-			real modAB = sqrt(A*A + B*B);
+			Real modAB = sqrt(A*A + B*B);
 			cos_theta = A/modAB;
 			sin_theta = B/modAB;
 			theta = atan2(sin_theta, cos_theta);
-		
+
 		} else {
 			/* Se la rotazione e' manuale, conosco theta, ma non sin e cos! */
 			cos_theta = cos(theta);
@@ -246,7 +246,7 @@ int aput_autoput(point *F, point *R, real *weight, int n, int needed)
 
 		/* Ora non resta che calcolare il fattore di ingrandimento! */
 		if ( AUTO_SCALE(needed) ) {
-			real C = cos_tau * cos_tau * g2x + sin_tau * sin_tau * g2y;
+			Real C = cos_tau * cos_tau * g2x + sin_tau * sin_tau * g2y;
 			s = ( A * cos_theta + B * sin_theta ) / C;
 		}
 
@@ -266,10 +266,10 @@ int aput_autoput(point *F, point *R, real *weight, int n, int needed)
 /* DESCRIZIONE: Setta i parametri della trasformazione prima di avviare
  *  il calcolo automatico con aput_autoput.
  */
-void aput_set( point *rot_center, point *trsl_vect,
- real *rot_angle, real *scale_x, real *scale_y )
+void aput_set( Point *rot_center, Point *trsl_vect,
+ Real *rot_angle, Real *scale_x, Real *scale_y )
 {
-	register real sx, sy;
+	register Real sx, sy;
 
 	Qx = rot_center->x;
 	Qy = rot_center->y;
@@ -287,8 +287,8 @@ void aput_set( point *rot_center, point *trsl_vect,
 
 /* DESCRIZIONE: Preleva i parametri calcolati in modo automatico da aput_autoput
  */
-void aput_get( point *rot_center, point *trsl_vect,
- real *rot_angle, real *scale_x, real *scale_y )
+void aput_get( Point *rot_center, Point *trsl_vect,
+ Real *rot_angle, Real *scale_x, Real *scale_y )
 {
 	rot_center->x = Qx;
 	rot_center->y = Qy;
@@ -305,10 +305,10 @@ void aput_get( point *rot_center, point *trsl_vect,
 /* DESCRIZIONE: Calcola la matrice corrispondente ai parametri di trasformazione
  *  specificati.
  */
-void aput_matrix( point *t, point *rcntr, real rang, real sx, real sy,
- real *matrix )
+void aput_matrix( Point *t, Point *rcntr, Real rang, Real sx, Real sy,
+ Real *matrix )
 {
-	real c, s, m11, m12, m21, m22;
+	Real c, s, m11, m12, m21, m22;
 
 	c = cos(rang); s = sin(rang);
 	m11 = sx * c; m12 = - (sy * s);
@@ -354,7 +354,7 @@ int aput_allow(char *permissions, int *needed)
 	if ( p == ' ' ) { allow = *needed; }
 
 	for (;; p = tolower(*permissions) ) {
-		
+
 		switch (status) {
 		 case NORMAL:
 			switch (p) {

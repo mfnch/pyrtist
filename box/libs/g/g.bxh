@@ -1,5 +1,8 @@
 // Header file for the g library
 
+R = (Char -> Int -> Real)
+P = ((R, R) -> Point)
+
 include "color.bxh"
 include "window.bxh"
 include "line.bxh"

@@ -1,9 +1,9 @@
 // Interface to Window.Line
 
-Line = (Int, Point)
-
-R = (Char -> Int -> Real)
-P = ((R, R) -> Point)
-
-([)@Line ? "line_begin"
-P@Line ? "line_point"
+Window.Line = Void
+([)@Window.Line ? "line_begin"
+(])@Window.Line ? "line_end"
+R@Window.Line ? "line_real"
+P@Window.Line ? "line_point"
+(;)@Window.Line ? "line_pause"
+Color@Window.Line ? "line_color"
