@@ -139,7 +139,21 @@ static Task Reg_Subtype(Expr *result, Name *parent, Name *child) {
 }
 
 static Task Reg_SubSubtype(Expr *result, Expr *reg_parent, Name *child) {
-  MSG_WARNING("Not implemented yet!");
+  Type subtype_type;
+  if (!reg_parent->is.typed) {
+    MSG_ERROR("Cannot refer to the subtype '%N' of the undefined type '%N'",
+              child, reg_parent->value.nm);
+    return Failed;
+  }
+
+  TS_Subtype_Find(cmp->ts, & subtype_type, reg_parent->type, child);
+  if (subtype_type == TS_TYPE_NONE) {
+    MSG_ERROR("The type '%~s' has not a subtype with name '%N'",
+              TS_Name_Get(cmp->ts, reg_parent->type), child);
+    return Failed;
+  }
+
+  Expr_New_Type(result, subtype_type);
   return Success;
 }
 
@@ -158,7 +172,15 @@ static Task Unreg_Subtype(Expr *result, Name *parent, Name *child) {
 }
 
 static Task Unreg_SubSubtype(Expr *result, Expr *reg_parent, Name *child) {
-  MSG_WARNING("Not implemented yet!");
+  Type subtype_type;
+  if (!reg_parent->is.typed) {
+    MSG_ERROR("Cannot refer to the subtype '%N' of the undefined type '%N'",
+              child, reg_parent->value.nm);
+    return Failed;
+  }
+  assert(TS_Is_Subtype(cmp->ts, reg_parent->type));
+  TASK( TS_Subtype_New(cmp->ts, & subtype_type, reg_parent->type, child) );
+  Expr_New_Type(result, subtype_type);
   return Success;
 }
 
