@@ -33,6 +33,6 @@ libg_la_SOURCES = g.c g.h bm1bit.c bm4bit.c bm8bit.c bitmap.h \
                   fig.c fig.h graphic.c graphic.h grpline.c ps.c \
                   rasterizer.c buffer.c buffer.h error.c error.h \
                   autoput.c autoput.h \
-                  i_window.c i_window.h i_line.c i_line_h
+                  i_window.c i_window.h i_line.c i_line.h
 
 libg_la_LDFLAGS = -module
