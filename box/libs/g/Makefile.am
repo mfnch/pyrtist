@@ -28,10 +28,11 @@ boxlib_LTLIBRARIES = libg.la
 dist_boxinc_DATA = g.bxh color.bxh window.bxh line.bxh
 
 AM_CPPFLAGS = -I../../src
-libg_la_SOURCES = g.c g.h bm1bit.c bm4bit.c bm8bit.c bmcommon.c bmcommon.h \
+libg_la_SOURCES = g.c g.h bm1bit.c bm4bit.c bm8bit.c bitmap.h \
+                  bmcommon.c bmcommon.h \
                   fig.c fig.h graphic.c graphic.h grpline.c ps.c \
                   rasterizer.c buffer.c buffer.h error.c error.h \
                   autoput.c autoput.h \
-                  i_window.c i_window.h i_line.c
+                  i_window.c i_window.h i_line.c i_line_h
 
 libg_la_LDFLAGS = -module

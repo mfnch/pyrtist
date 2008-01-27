@@ -150,7 +150,7 @@ Task line_pause(VMProgram *vmp) {
   w->line.close = 0;
 
   if ( ! buff_clear(& w->line.pieces) )
-    g_error("buff_clear failed!\n");
+    g_error("buff_clear failed!");
 
   return Success;
 }
@@ -164,6 +164,10 @@ Task line_color(VMProgram *vmp) {
   return Success;
 }
 
+Task line_window(VMProgram *vmp) {
+  g_error("not implemented yet!");
+  return Failed;
+}
 
 
 #if 0
