@@ -10,26 +10,36 @@
  *  dal compilatore mentre cerca di ottimizzare il codice.
  */
 
+/* Little endian representation for a two bytes integer */
+typedef struct {
+  unsigned char byte[2];
+} LEUInt16;
+
+/* Little endian representation for a four bytes integer */
+typedef struct {
+  unsigned char byte[4];
+} LEUInt32;
+
 struct bmp_file_header {
-  unsigned short id;
-  unsigned long size;
-  short reserved1;
-  short reserved2;
-  unsigned long imgoffs;
+  LEUInt16 id;
+  LEUInt32 size;
+  LEUInt16 reserved1;
+  LEUInt16 reserved2;
+  LEUInt32 imgoffs;
 } __attribute__ ((packed));
 
 struct bmp_image_header {
-  unsigned long headsize;
-  unsigned long width;
-  unsigned long height;
-  unsigned short numplanes;
-  unsigned short bitperpixel;
-  unsigned long compression;
-  unsigned long compsize;
-  unsigned long horres;
-  unsigned long vertres;
-  unsigned long numcolors;
-  unsigned long impcolors;
+  LEUInt32 headsize;
+  LEUInt32 width;
+  LEUInt32 height;
+  LEUInt16 numplanes;
+  LEUInt16 bitperpixel;
+  LEUInt32 compression;
+  LEUInt32 compsize;
+  LEUInt32 horres;
+  LEUInt32 vertres;
+  LEUInt32 numcolors;
+  LEUInt32 impcolors;
 } __attribute__ ((packed));
 
 /* Struttura degli elementi della color map (palette) */
