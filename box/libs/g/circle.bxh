@@ -1,0 +1,8 @@
+// Interface to Window.Circle
+
+Window.Circle = Void
+([)@Window.Circle ? "circle_begin"
+(])@Window.Circle ? "circle_end"
+P@Window.Circle ? "circle_point"
+R@Window.Circle ? "circle_real"
+(;)@Window.Circle ? "circle_pause"

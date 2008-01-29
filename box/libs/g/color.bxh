@@ -4,7 +4,8 @@ Color = (Real r, g, b)
 Color@Print["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, "]"]
 
 color = (Color black, red, green, yellow, blue, magenta, cyan, white, _
-               dred, dgreen, dyellow, dblue, dmagenta, dcyan, grey)
+               dark_red, dark_green, dark_yellow, dark_blue, dark_magenta, _
+               dark_cyan, grey)
 
 [
   on  = 1.0 // Maximum intensity
@@ -19,4 +20,12 @@ color = (Color black, red, green, yellow, blue, magenta, cyan, white, _
   color.magenta.r  =  on, color.magenta.g  = off, color.magenta.b  =  on
   color.cyan.r     = off, color.cyan.g     =  on, color.cyan.b     =  on
   color.white.r    =  on, color.white.g    =  on, color.white.b    =  on
+
+  color.dark_red.r    = mid, color.dark_red.g    = off, color.dark_red.b    = off
+  color.dark_green.r  = off, color.dark_green.g  = mid, color.dark_green.b  = off
+  color.dark_yellow.r = mid, color.dark_yellow.g = mid, color.dark_yellow.b = off
+  color.dark_blue.r   = off, color.dark_blue.g   = off, color.dark_blue.b   = mid
+  color.dark_magenta.r= mid, color.dark_magenta.g= off, color.dark_magenta.b= mid
+  color.dark_cyan.r   = off, color.dark_cyan.g   = mid, color.dark_cyan.b   = mid
+  color.grey.r        = mid, color.grey.g        = mid, color.grey.b        = mid
 ]

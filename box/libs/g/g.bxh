@@ -6,4 +6,5 @@ P = ((R, R) -> Point)
 include "color.bxh"
 include "window.bxh"
 include "line.bxh"
-
+include "circle.bxh"
+include "poly.bxh"
