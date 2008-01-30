@@ -47,7 +47,8 @@ Task line_window_init(Window *w) {
   (*ls)[0] = 0.0; (*ls)[1] = 0.0; (*ls)[2] = 0.0; (*ls)[3] = 0.0;
   w->line.this_piece.width1 = w->line.this_piece.width2 = 1.0;
   w->line.this_piece.fig = (void *) NULL;
-  w->line.default_color = (Color *) NULL;
+  g_optcolor_alternative_set(& w->line.color, & w->fg_color);
+  g_optcolor_unset(& w->line.color);
   return Success;
 }
 
@@ -64,11 +65,6 @@ Task line_begin(VMProgram *vmp) {
   w->line.num_points = 0;
   w->line.close = 0;
 
-  if (w->line.default_color != (Color *) NULL)
-    w->line.color = *w->line.default_color;
-  else
-    w->line.color = w->fg_color;
-
   {
     grp_window *cur_win = grp_win;
     grp_win = w->window;
@@ -83,8 +79,9 @@ Task line_begin(VMProgram *vmp) {
 Task line_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   grp_window *cur_win = grp_win;
+  Color *c = g_optcolor_get(& w->line.color);
   grp_win = w->window;
-  grp_rfgcolor(w->line.color.r, w->line.color.g, w->line.color.b);
+  grp_rfgcolor(c->r, c->g, c->b);
   (void) line_draw(w->line.close, & w->line.pieces);
   grp_win = cur_win;
   return Success;
@@ -124,7 +121,6 @@ Task line_real(VMProgram *vmp) {
 Task line_point(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *p = BOX_VM_ARGPTR1(vmp, Point);
-  WindowLinePiece piece;
 
   w->line.state = GOT_POINT;
   w->line.this_piece.point = *p;
@@ -139,9 +135,10 @@ Task line_point(VMProgram *vmp) {
 
 Task line_pause(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
+  Color *c = g_optcolor_get(& w->line.color);
   grp_window *cur_win = grp_win;
   grp_win = w->window;
-  grp_rfgcolor(w->line.color.r, w->line.color.g, w->line.color.b);
+  grp_rfgcolor(c->r, c->g, c->b);
   (void) line_draw(w->line.close, & w->line.pieces);
   grp_win = cur_win;
 
@@ -158,10 +155,7 @@ Task line_pause(VMProgram *vmp) {
 Task line_color(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Color *c = BOX_VM_ARGPTR1(vmp, Color);
-  w->line.color = *c;
-  w->line.default_color = & w->line.color;
-  grp_window *cur_win = grp_win;
-  return Success;
+  return g_optcolor_set(& w->line.color, c);
 }
 
 Task line_window(VMProgram *vmp) {

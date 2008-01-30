@@ -9,6 +9,7 @@
 #include "g.h"
 #include "i_window.h"
 #include "i_line.h"
+#include "i_circle.h"
 
 #define DEBUG
 
@@ -36,9 +37,13 @@ Task window_begin(VMProgram *vmp) {
   w->res.y = 2.0;
   w->have.size = 0;
   w->save_file_name = (char *) NULL;
-  w->fg_color.r = 0.0; w->fg_color.g = 0.0; w->fg_color.b = 0.0;
+
+  /* This is the parent colors: no alternatives! */
+  g_optcolor_alternative_set(& w->fg_color, (OptColor *) NULL);
+  (void) g_optcolor_set_rgb(& w->fg_color, 0.0, 0.0, 0.0);
 
   TASK( line_window_init(w) );
+  TASK( circle_window_init(w) );
   return Success;
 }
 
@@ -189,4 +194,12 @@ Task window_save_end(VMProgram *vmp) {
   printf("Saved window to '%s'\n", w->save_file_name);
 #endif
   return Success;
+}
+
+
+Task window_color(VMProgram *vmp) {
+  WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
+  Window *w = (Window *) wp;
+  Color *c = BOX_VM_ARGPTR1(vmp, Color);
+  return g_optcolor_set(& w->fg_color, c);
 }

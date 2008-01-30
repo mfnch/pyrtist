@@ -6,3 +6,4 @@ Window.Circle = Void
 P@Window.Circle ? "circle_point"
 R@Window.Circle ? "circle_real"
 (;)@Window.Circle ? "circle_pause"
+Color@Window.Circle ? "circle_color"

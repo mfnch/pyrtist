@@ -5,7 +5,7 @@ Color@Print["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, "]"]
 
 color = (Color black, red, green, yellow, blue, magenta, cyan, white, _
                dark_red, dark_green, dark_yellow, dark_blue, dark_magenta, _
-               dark_cyan, grey)
+               dark_cyan, grey, none)
 
 [
   on  = 1.0 // Maximum intensity
@@ -28,4 +28,7 @@ color = (Color black, red, green, yellow, blue, magenta, cyan, white, _
   color.dark_magenta.r= mid, color.dark_magenta.g= off, color.dark_magenta.b= mid
   color.dark_cyan.r   = off, color.dark_cyan.g   = mid, color.dark_cyan.b   = mid
   color.grey.r        = mid, color.grey.g        = mid, color.grey.b        = mid
+
+  // Just to unset the local default color for the subobjects of Window
+  color.none.r = -1.0, color.none.b = color.none.g = 0.0
 ]

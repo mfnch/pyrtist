@@ -20,6 +20,8 @@
 
 # $Id$
 
+AM_CFLAGS = -Wall
+
 boxlibdir=@boxlibdir@
 boxincdir=@boxincdir@
 
