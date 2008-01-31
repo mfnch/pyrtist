@@ -13,6 +13,12 @@ Task circle_window_init(Window *w) {
   return Success;
 }
 
+Task circle_color(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  Color *c = BOX_VM_ARGPTR1(vmp, Color);
+  return g_optcolor_set(& w->circle.color, c);
+}
+
 Task circle_begin(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->circle.got.radius_a = GOT_NOT;
@@ -89,10 +95,4 @@ Task circle_pause(VMProgram *vmp) {
 
 Task circle_end(VMProgram *vmp) {
   return circle_pause(vmp);
-}
-
-Task circle_color(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
-  Color *c = BOX_VM_ARGPTR1(vmp, Color);
-  return g_optcolor_set(& w->circle.color, c);
 }

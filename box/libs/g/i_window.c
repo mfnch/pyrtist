@@ -44,7 +44,15 @@ Task window_begin(VMProgram *vmp) {
 
   TASK( line_window_init(w) );
   TASK( circle_window_init(w) );
+  TASK( poly_window_init(w) );
   return Success;
+}
+
+Task window_color(VMProgram *vmp) {
+  WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
+  Window *w = (Window *) wp;
+  Color *c = BOX_VM_ARGPTR1(vmp, Color);
+  return g_optcolor_set(& w->fg_color, c);
 }
 
 Task window_destroy(VMProgram *vmp) {
@@ -196,10 +204,20 @@ Task window_save_end(VMProgram *vmp) {
   return Success;
 }
 
+Task window_hot_point(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
 
-Task window_color(VMProgram *vmp) {
-  WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
-  Window *w = (Window *) wp;
-  Color *c = BOX_VM_ARGPTR1(vmp, Color);
-  return g_optcolor_set(& w->fg_color, c);
+  return Success;
+}
+
+Task window_hot_string(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+
+  return Success;
+}
+
+Task window_hot_end(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+
+  return Success;
 }

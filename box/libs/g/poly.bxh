@@ -1,1 +1,4 @@
 // Interface to Window.Poly
+
+Window.Poly = Void
+Color@Window.Poly ? "poly_color"

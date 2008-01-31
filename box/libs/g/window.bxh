@@ -10,3 +10,8 @@ Color@&Window ? "window_color"
 Window.Save = Void
 (])@Window.Save ? "window_save_end"
 ()Char@Window.Save ? "window_save_str"
+
+Window.Hot = Point
+P@Window.Hot ? "window_hot_point"
+()Char@Window.Hot ? "window_hot_string"
+(])@Window.Hot ? "window_hot_end"

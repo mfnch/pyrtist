@@ -45,11 +45,25 @@ Task line_window_init(Window *w) {
    */
   LineStyle *ls = & w->line.this_piece.style;
   (*ls)[0] = 0.0; (*ls)[1] = 0.0; (*ls)[2] = 0.0; (*ls)[3] = 0.0;
+  {
+    grp_window *cur_win = grp_win;
+    grp_win = w->window;
+    /* Mando le impostazioni alla libreria grafica */
+    grp_join_style(& w->line.this_piece.style[0]);
+    grp_win = cur_win;
+  }
+
   w->line.this_piece.width1 = w->line.this_piece.width2 = 1.0;
   w->line.this_piece.fig = (void *) NULL;
   g_optcolor_alternative_set(& w->line.color, & w->fg_color);
   g_optcolor_unset(& w->line.color);
   return Success;
+}
+
+Task line_color(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  Color *c = BOX_VM_ARGPTR1(vmp, Color);
+  return g_optcolor_set(& w->line.color, c);
 }
 
 void line_window_destroy(Window *w) {
@@ -64,14 +78,6 @@ Task line_begin(VMProgram *vmp) {
     g_error("buff_clear failed!\n");
   w->line.num_points = 0;
   w->line.close = 0;
-
-  {
-    grp_window *cur_win = grp_win;
-    grp_win = w->window;
-    /* Mando le impostazioni alla libreria grafica */
-    grp_join_style(& w->line.this_piece.style[0]);
-    grp_win = cur_win;
-  }
 
   return Success;
 }
@@ -152,15 +158,26 @@ Task line_pause(VMProgram *vmp) {
   return Success;
 }
 
-Task line_color(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
-  Color *c = BOX_VM_ARGPTR1(vmp, Color);
-  return g_optcolor_set(& w->line.color, c);
-}
-
 Task line_window(VMProgram *vmp) {
   g_error("not implemented yet!");
   return Failed;
+}
+
+/* For now the same style is applied to the whole line.
+ * I think we can mix styles for the same line. FIXME
+ */
+Task line_style(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  LineStyle *ls = BOX_VM_ARGPTR1(vmp, LineStyle);
+  grp_window *cur_win = grp_win;
+  w->line.this_piece.style[0] = (*ls)[0];
+  w->line.this_piece.style[1] = (*ls)[1];
+  w->line.this_piece.style[2] = (*ls)[2];
+  w->line.this_piece.style[3] = (*ls)[3];
+  grp_win = w->window;
+  grp_join_style(& w->line.this_piece.style[0]);
+  grp_win = cur_win;
+  return Success;
 }
 
 

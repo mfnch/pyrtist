@@ -3,7 +3,7 @@
 
 /* This is part of the Window object */
 typedef struct {
-  int foo;
+  OptColor color;
 } WindowPoly;
 
 #else

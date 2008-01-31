@@ -1,5 +1,12 @@
 // Interface to Window.Line
 
+// Style for joining lines
+LineStyle = (Real a, b, c, d)
+line = (LineStyle sharp, medium, smooth)
+line.sharp.a  = 0.0, line.sharp.b  =-1.0, line.sharp.c  = 0.0, line.sharp.d  =-1.0
+line.medium.a = 0.0, line.medium.b = 0.0, line.medium.c = 0.0, line.medium.d = 0.0
+line.smooth.a = 2.0, line.smooth.b = 2.0, line.smooth.c = 2.0, line.smooth.d = 2.0
+
 Window.Line = Void
 ([)@Window.Line ? "line_begin"
 (])@Window.Line ? "line_end"
@@ -8,3 +15,4 @@ P@Window.Line ? "line_point"
 (;)@Window.Line ? "line_pause"
 Color@Window.Line ? "line_color"
 Window@Window.Line ? "line_window"
+LineStyle@Window.Line ? "line_style"
