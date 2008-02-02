@@ -467,8 +467,6 @@ void rst_cong(Point a, Point b, Point c)
 	c.y = CV_YF_A(c.y);
 
 	rst__cong( & a, & b, & c );
-
-	return;
 }
 
 /* NOME: rst__cong

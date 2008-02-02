@@ -2,3 +2,7 @@
 
 Window.Poly = Void
 Color@Window.Poly ? "poly_color"
+([)@Window.Poly ? "poly_begin"
+P@Window.Poly ? "poly_point"
+R@Window.Poly ? "poly_real"
+(])@Window.Poly ? "poly_end"

@@ -11,6 +11,10 @@ void g_error(const char *msg) {
   printf("Error: %s\n", msg);
 }
 
+void g_warning(const char *msg) {
+  printf("Warning: %s\n", msg);
+}
+
 Task g_optcolor_set(OptColor *oc, Color *c) {
   if (c->r < -0.5) {
     if (oc->alternative == (OptColor *) NULL) {

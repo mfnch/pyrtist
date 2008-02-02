@@ -7,9 +7,11 @@
 #include "virtmach.h"
 #include "graphic.h"
 #include "g.h"
+#include "pointlist.h"
 #include "i_window.h"
 #include "i_line.h"
 #include "i_circle.h"
+#include "i_poly.h"
 
 #define DEBUG
 
@@ -38,6 +40,8 @@ Task window_begin(VMProgram *vmp) {
   w->have.size = 0;
   w->save_file_name = (char *) NULL;
 
+  TASK( pointlist_init(& w->pointlist) );
+
   /* This is the parent colors: no alternatives! */
   g_optcolor_alternative_set(& w->fg_color, (OptColor *) NULL);
   (void) g_optcolor_set_rgb(& w->fg_color, 0.0, 0.0, 0.0);
@@ -58,11 +62,12 @@ Task window_color(VMProgram *vmp) {
 Task window_destroy(VMProgram *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
   Window *w = (Window *) wp;
-  (void) free(wp);
 #ifdef DEBUG
   printf("Window object deallocated\n");
 #endif
+  pointlist_destroy(& w->pointlist);
   line_window_destroy(w);
+  (void) free(wp);
   return Success;
 }
 
@@ -204,20 +209,44 @@ Task window_save_end(VMProgram *vmp) {
   return Success;
 }
 
+Task window_hot_begin(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  w->hot.got.name = 0;
+  w->hot.got.point = 0;
+  w->hot.name = (char *) NULL;
+  return Success;
+}
+
 Task window_hot_point(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-
-  return Success;
+  Point *point = BOX_VM_ARGPTR1(vmp, Point);
+  char *name = (w->hot.got.name) ? w->hot.name : (char *) NULL;
+  Task t = pointlist_add(& w->pointlist, point, name);
+  if (w->hot.got.name) {
+    w->hot.got.name = 0;
+    free(w->hot.name);
+    w->hot.name = (char *) NULL; /* To avoid double free() */
+  }
+  w->hot.got.point = 1;
+  return t;
 }
 
 Task window_hot_string(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-
+  char *name = strdup(BOX_VM_ARGPTR1(vmp, char));
+  w->hot.name = name;
+  w->hot.got.name = 1;
   return Success;
 }
 
 Task window_hot_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
+  if (! w->hot.got.point)
+    g_warning("Hot[] did not get a point!");
+  if (w->hot.got.name)
+    g_warning("Hot[] got a name, but not the corresponding point!");
 
+  pointlist_fprint(& w->pointlist, stdout);
   return Success;
 }
+

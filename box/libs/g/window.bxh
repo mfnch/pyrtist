@@ -12,6 +12,7 @@ Window.Save = Void
 ()Char@Window.Save ? "window_save_str"
 
 Window.Hot = Point
+([)@Window.Hot ? "window_hot_begin"
 P@Window.Hot ? "window_hot_point"
 ()Char@Window.Hot ? "window_hot_string"
 (])@Window.Hot ? "window_hot_end"

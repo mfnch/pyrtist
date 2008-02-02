@@ -499,7 +499,7 @@ typedef struct {
 static Task Blt_Define_Sys(void) {
   Intg type_Exit;
   TASK( Tym_Def_Explicit_Alias(& type_Exit, & NAME("Exit"), TYPE_VOID) );
-  TASK( Cmp_Builtin_Proc_Def(TYPE_INTG, BOX_CREATION, type_Exit, Exit_Int) );
+  TASK( Cmp_Builtin_Proc_Def(TYPE_INT, BOX_CREATION, type_Exit, Exit_Int) );
 
   TASK( Tym_Def_Intrinsic(& type_File, & NAME("File"), sizeof(File)) );
 

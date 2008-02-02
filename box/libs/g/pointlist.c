@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "types.h"
@@ -6,45 +7,49 @@
 #include "buffer.h"
 #include "pointlist.h"
 
-Task point_list_init(PointList *pl) {
-  if (buff_create(& pl->pl, sizeof(PointList), 8))
+Task pointlist_init(PointList *pl) {
+  if (buff_create(& pl->pl, sizeof(PointListItem), 8))
     return Success;
   return Failed;
 }
 
-void point_list_destroy(PointList *pl) {
+void pointlist_destroy(PointList *pl) {
   PointListItem *pli = buff_firstitemptr(& pl->pl, PointListItem);
   int i, n = buff_numitem(& pl->pl);
   for(i=0; i < n; i++) free((pli++)->name);
   buff_free(& pl->pl);
 }
 
-Point *point_list_find(PointList *pl, char *name) {
+Point *pointlist_find(PointList *pl, char *name) {
   PointListItem *pli = buff_firstitemptr(& pl->pl, PointListItem);
   int i, n = buff_numitem(& pl->pl);
+  if (name == (char *) NULL) return (char *) NULL;
   for(i=0; i < n; i++) {
-    if (strcmp(pli->name, name) == 0)
-       return & pli->point;
+    if (pli->name != (char *) NULL) {
+      if (strcmp(pli->name, name) == 0)
+         return & pli->point;
+    }
     ++pli;
   }
   return (Point *) NULL;
 }
 
-Task point_list_add(PointList *pl, Point *p, char *name) {
+Task pointlist_add(PointList *pl, Point *p, char *name) {
   PointListItem pli;
-  if (point_list_find(pl, name) != (Point *) NULL) {
-    g_error("Another point with the same name exists!");
-    return Failed;
-  }
 
   pli.point = *p;
   if (name == (char *) NULL) {
     pli.name = (char *) NULL;
 
   } else {
+    if (pointlist_find(pl, name) != (Point *) NULL) {
+      g_error("Another point with the same name exists!");
+      return Failed;
+    }
+
     pli.name = strdup(name);
     if (pli.name == (char *) NULL) {
-      g_error("point_list_add: strcpy failed!");
+      g_error("pointlist_add: strcpy failed!");
       return Failed;
     }
   }
@@ -53,7 +58,23 @@ Task point_list_add(PointList *pl, Point *p, char *name) {
   return Failed;
 }
 
-Task point_list_clear(PointList *pl) {
+Task pointlist_clear(PointList *pl) {
   if (buff_clear(& pl->pl)) return Success;
   return Failed;
 }
+
+void pointlist_fprint(PointList *pl, FILE *out) {
+  PointListItem *pli = buff_firstitemptr(& pl->pl, PointListItem);
+  int i, n = buff_numitem(& pl->pl);
+  for(i=0; i < n; i++) {
+    if (pli->name == (char *) NULL) {
+      fprintf(out, "%d: (%g, %g)\n",
+             i, pli->point.x, pli->point.y);
+    } else {
+      fprintf(out, "%d: (%g, %g) <-- '%s'\n",
+              i, pli->point.x, pli->point.y, pli->name);
+    }
+    ++pli;
+  }
+}
+
