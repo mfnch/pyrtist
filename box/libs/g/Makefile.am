@@ -27,7 +27,8 @@ boxincdir=@boxincdir@
 
 boxlib_LTLIBRARIES = libg.la
 
-dist_boxinc_DATA = g.bxh color.bxh window.bxh line.bxh circle.bxh poly.bxh
+dist_boxinc_DATA = g.bxh color.bxh window.bxh line.bxh circle.bxh poly.bxh \
+                   put.bxh
 
 AM_CPPFLAGS = -I../../src
 libg_la_SOURCES = g.c g.h pointlist.c pointlist.h \
@@ -37,6 +38,7 @@ libg_la_SOURCES = g.c g.h pointlist.c pointlist.h \
                   rasterizer.c buffer.c buffer.h error.c error.h \
                   autoput.c autoput.h \
                   i_window.c i_window.h i_line.c i_line.h \
-                  i_circle.c i_circle.h i_poly.c i_poly.h
+                  i_circle.c i_circle.h i_poly.c i_poly.h \
+                  i_put.c i_put.h
 
 libg_la_LDFLAGS = -module

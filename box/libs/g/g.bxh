@@ -3,8 +3,9 @@
 R = (Char -> Int -> Real)
 P = ((R, R) -> Point)
 
-include "color.bxh"
-include "window.bxh"
-include "line.bxh"
-include "circle.bxh"
-include "poly.bxh"
+include "color"
+include "window"
+include "line"
+include "circle"
+include "poly"
+include "put"
