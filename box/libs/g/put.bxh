@@ -1,3 +1,19 @@
 // Interface to Window.Put
 
 Window.Put = Void
+Window.Put.Scale = Void
+Window.Put.Near = Void
+
+([)@Window.Put ? "window_put_begin"
+(])@Window.Put ? "window_put_end"
+Window@Window.Put ? "window_put_window"
+P@Window.Put ? "window_put_point"
+R@Window.Put ? "window_put_real"
+()Char@Window.Put ? "window_put_string"
+
+R@Window.Put.Scale ? "window_put_scale_real"
+
+([)@Window.Put.Near ? "window_put_near_begin"
+(])@Window.Put.Near ? "window_put_near_end"
+()Char@Window.Put.Near ? "window_put_near_real"
+R@Window.Put.Near ? "window_put_near_string"

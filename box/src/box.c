@@ -312,6 +312,7 @@ Task Box_Parent_Get(Expr *e_parent, Int depth) {
   Box *b;
   TASK( Box_Get(& b, depth) );
   *e_parent = b->parent;
+  e_parent->is.allocd = e_parent->is.release = 0;
   return Success;
 }
 

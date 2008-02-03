@@ -76,8 +76,10 @@ Task line_begin(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->line.state = GOT_NOTHING;
 
-  if ( ! buff_clear(& w->line.pieces) )
+  if ( ! buff_clear(& w->line.pieces) ) {
     g_error("buff_clear failed!\n");
+    return Failed;
+  }
   w->line.num_points = 0;
   w->line.close = 0;
 

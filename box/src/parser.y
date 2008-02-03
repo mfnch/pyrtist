@@ -398,8 +398,6 @@ name.type:
   TOK_UNAME suffix.opt      { DO( Prs_Name_To_Expr(& $1, & $$, $2) ) }
  ;
 
-/*| TOK_UMEMBER suffix.opt    { if ( Prs_Member_To_Expr(& $1, & $$, $2) ) MY_ERR } */
-
 prim.type:
   name.type                 { $$ = $1; }
 | '(' type ')'              { $$ = $2; }
@@ -512,6 +510,7 @@ array.expr:
 
 subtype.expr:
   prim.expr TOK_UMEMBER {DO(Subtype_Create(& $$, & $1, & $2));}
+| TOK_UMEMBER           { }
 ;
 
 prim.expr:

@@ -12,6 +12,7 @@
 #include "i_line.h"
 #include "i_circle.h"
 #include "i_poly.h"
+#include "i_put.h"
 
 #define DEBUG
 
@@ -49,6 +50,7 @@ Task window_begin(VMProgram *vmp) {
   TASK( line_window_init(w) );
   TASK( circle_window_init(w) );
   TASK( poly_window_init(w) );
+  TASK( put_window_init(w) );
   return Success;
 }
 
@@ -66,6 +68,7 @@ Task window_destroy(VMProgram *vmp) {
   printf("Window object deallocated\n");
 #endif
   pointlist_destroy(& w->pointlist);
+  put_window_destroy(w);
   line_window_destroy(w);
   (void) free(wp);
   return Success;
