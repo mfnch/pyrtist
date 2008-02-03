@@ -142,7 +142,7 @@ Task window_end(VMProgram *vmp) {
     break;
 
   case FIG:
-    w->window = fig_open_win(10);
+    w->window = fig_open_win(1);
     break;
 
   default:

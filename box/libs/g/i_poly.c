@@ -7,7 +7,7 @@
 #include "g.h"
 #include "i_window.h"
 
-#define DEBUG
+/*#define DEBUG*/
 
 Task poly_window_init(Window *w) {
   g_optcolor_alternative_set(& w->poly.color, & w->fg_color);
@@ -46,12 +46,28 @@ static Task _poly_point(Window *w, Point *p, int omit_line) {
 
   if (wp->num_points > 0) {
     Point *last = & wp->last_point, lastb, pb;
-    Real m1 = wp->margin[0], m2 = wp->margin[1];
+    Real dx = p->x - last->x, dy = p->y - last->y, d = sqrt(dx*dx + dy*dy),
+         m1 = wp->margin[0], m2 = wp->margin[1], m;
 
-    lastb.x = (p->x - last->x) * m1 + last->x;
-    lastb.y = (p->y - last->y) * m1 + last->y;
-    pb.x = -(p->x - last->x) * m2 + p->x;
-    pb.y = -(p->y - last->y) * m2 + p->y;
+    if (d > 0.0) {
+      if (m1 < 0.0) m1 = -m1/d;
+      if (m2 < 0.0) m2 = -m2/d;
+    } else {
+      if (m1 < 0.0) m1 = 0.0;
+      if (m2 < 0.0) m2 = 0.0;
+    }
+    m = m1 + m2;
+    if (m > 1.0) {
+      g_warning("Margins for Poly segment exceed the length "
+                "of the whole segment");
+      m1 /= m;
+      m2 /= m;
+    }
+
+    lastb.x = dx * m1 + last->x;
+    lastb.y = dy * m1 + last->y;
+    pb.x = -dx * m2 + p->x;
+    pb.y = -dy * m2 + p->y;
 
     grp_win = w->window;
     if (wp->num_points > 1) {
@@ -88,12 +104,14 @@ Task poly_point(VMProgram *vmp) {
 
 Task poly_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
+  Color *c = g_optcolor_get(& w->poly.color);
   grp_window *cur_win = grp_win;
 
   TASK( _poly_point(w, & w->poly.first_points[0], 0) );
   TASK( _poly_point(w, & w->poly.first_points[1], 1) );
 
   grp_win = w->window;
+  grp_rfgcolor(c->r, c->g, c->b);
   grp_rdraw();
   grp_rreset();
   grp_win = cur_win;

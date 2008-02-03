@@ -19,12 +19,14 @@
 #include "fig.h"
 #include "autoput.h"
 
+#define DEBUG
+
 /* Procedure contenente gli algoritmi usati per tracciare le linee */
 static int line_draw(int closed, buff *line_desc);
 static int line_draw_opened(buff *line_desc);
 static int line_draw_closed(buff *line_desc);
-static int line_put_to_begin_or_end(
- Point *p1, Point *p2, Real w, void *f, int final );
+static int line_put_to_begin_or_end(Point *p1, Point *p2, Real w,
+                                    void *f, int final);
 static int line_put_to_join( Point *p1, Point *p2, Point *p3,
  Real w1, Real w2, void *f, int first );
 static void line_first_point(Point *p, Real s);
@@ -159,8 +161,13 @@ Task line_pause(VMProgram *vmp) {
 }
 
 Task line_window(VMProgram *vmp) {
-  g_error("not implemented yet!");
-  return Failed;
+  SUBTYPE_OF_WINDOW(vmp, w);
+  WindowPtr *wp = BOX_VM_ARGPTR1(vmp, WindowPtr);
+
+  w->line.this_piece.fig = (void *) *wp;
+  printf("Passing window pointer %p\n", wp);
+  printf("Passing window pointer %p\n", *wp);
+  return Success;
 }
 
 /* For now the same style is applied to the whole line.
@@ -451,13 +458,9 @@ static int line_draw_opened(buff *line_desc) {
 
   } else {
     /* Attenzione: in->width1 e' lo spessore uscente di i->pnt! */
-#if 1
-    assert(0);
-#else
-    if ( ! line_put_to_begin_or_end(
-     & (i->pnt), & (in->pnt), in->width1, i->fig, 0 ) )
+    if ( ! line_put_to_begin_or_end(& (i->point), & (in->point),
+                                    in->width1, i->fig, 0 ) )
       return 0;
-#endif
   }
 
   /* Ripeto per (numpnt - 2) volte */
@@ -473,13 +476,9 @@ static int line_draw_opened(buff *line_desc) {
     line_final_point( & (in->point), in->width2 );
 
   } else {
-#if 1
-    assert(0);
-#else
-    if ( ! line_put_to_begin_or_end(
-     & (in->pnt), & (i->point), in->width1, in->fig, 1 ) )
+    if ( ! line_put_to_begin_or_end(& (in->point), & (i->point),
+                                    in->width1, in->fig, 1) )
       return 0;
-#endif
   }
 
   return 1;
@@ -538,12 +537,11 @@ static int line_draw_closed(buff *line_desc) {
   return 1;
 }
 
-#if 0
 /* DESCRIZIONE: Questa funzione serve ad usare una figura come elemento
  *  di (inizio/termine)-linea. La figura verra' disposta sull'estremo p1
  *  della linea p1-p2 (serve a realizzare linee che terminano con una freccia,
  *  ad esempio).
- *  Sulla figura individuiamo 3 punti: f1, f2, f3.
+ *  Sulla figura individuiamo 3 punti: f1 (head), f2 (center), f3.
  *  L'algoritmo traslera' f1 su p1, ruotera' la figura usando il vincolo
  *  !near[f2, p2], scalera' la figura (senza deformarla) con s = d(f1, f2)/w
  *  (con w spessore della linea)
@@ -556,47 +554,55 @@ static int line_draw_closed(buff *line_desc) {
  *  Se i punti non sono 3, ma solo 1 (f1), allora verra' assunto f2=f3=(0, 0).
  *  Se i punti sono solo 2, verra' assunto f3=(0, 0).
  */
-static int line_put_to_begin_or_end(
- Point *p1, Point *p2, Real w, void *f, int final )
-{
-  void *f_hots;
-  long numhp;
+static int line_put_to_begin_or_end(Point *p1, Point *p2, Real w,
+                                    void *f, int final) {
+  long num_hp;
   Real rot_angle = 0.0, scale_x = 1.0, scale_y = 1.0;
-  Point rot_center, trsl_vect, *pnt;
+  Point rot_center, trsl_vect;
   /* Punto finale e iniziale a cui vanno congiunti i segmenti della spezzata */
-  Point pfi;
+  Point pfi, pnt[3];
+  Window *fw = (Window *) f;
 
-  if ( ((obj_header *) f)->child == NULL ) {
-    /* La figura da disporre non possiede hot-points: errore! */
-    vrmc_liberr("La figura non possiede una lista di hot-points!");
-    EXIT_ERR("...->child == NULL!\n");
+  if (fw == (Window *) NULL)
+    return 1;
+
+  else {
+    Point *p;
+    printf("Got Window pointer %p\n", fw);
+    p = pointlist_find(& fw->pointlist, "head");
+    if (p == (Point *) NULL) {
+      g_error("The figure needs to have at least one hot point with name "
+              "\"head\" to be used as an arrow!");
+      return 0;
+    }
+    pnt[0] = *p;
+    num_hp = 1;
+
+    p = pointlist_find(& fw->pointlist, "tail");
+    if (p != (Point *) NULL) pnt[num_hp++] = *p;
+
+    p = pointlist_find(& fw->pointlist, "join");
+    if (p != (Point *) NULL) pnt[num_hp++] = *p;
   }
 
-  /* Prelevo la PList che contiene gli hot-points */
-  f_hots = LIST_GET_FROM_STATUS( ((obj_header *) f)->child );
-
-  /* Accedo alla PList */
-  pnt = list_access( OBJID_PLIST, f_hots, & numhp );
-  if ( pnt == NULL ) { EXIT_ERR("list_access fallita!\n"); }
-
-  if ( numhp < 1 ) {
-    vrmc_liberr("figura priva di hot-points");
-    EXIT_ERR("numhp = 0!\n");
+  if (num_hp < 1) {
+    g_error("The figure has not any hot points.");
+    return 1;
   }
 
   /* Traslo in modo che pnt[1] vada a finire in p2 */
-  rot_center.x = pnt->x; rot_center.y = pnt->y;
+  rot_center.x = pnt[0].x; rot_center.y = pnt[0].y;
   trsl_vect.x = p1->x - rot_center.x; trsl_vect.y = p1->y - rot_center.y;
 
   /* Se ho solo un hot-point la trasformazione l'ho gia' individuata!
    * Se ne ho piu' di 1, devo calcolare rotazione e scala!
    */
-  if ( numhp > 1 ) {
+  if ( num_hp > 1 ) {
     register Real d, dx, dy;
 
     /* Calcolo la distanza di riferimento per eseguire la scala */
-    dx = pnt[1].x - pnt->x;
-    dy = pnt[1].y - pnt->y;
+    dx = pnt[1].x - pnt[0].x;
+    dy = pnt[1].y - pnt[0].y;
     d = sqrt( dx*dx + dy*dy );
 
     /* Calcolo il fattore di scala */
@@ -609,9 +615,7 @@ static int line_put_to_begin_or_end(
       Real weight = 1.0;
       Point near_fig, near_back;
 
-      if ( ! aput_allow("r", & needed ) ) {
-        EXIT_ERR("aput_allow fallita!\n");
-      }
+      if ( ! aput_allow("r", & needed ) ) return 0;
 
       near_back.x = p2->x; near_back.y = p2->y;
       near_fig.x = pnt[1].x; near_fig.y = pnt[1].y;
@@ -621,9 +625,8 @@ static int line_put_to_begin_or_end(
        & rot_angle, & scale_x, & scale_y );
 
       /* Calcolo i parametri della trasformazione in base ai vincoli */
-      if ( ! aput_autoput( & near_fig, & near_back, & weight, 1, needed ) ) {
-        EXIT_ERR("aput_autoput fallita!\n");
-      }
+      if ( ! aput_autoput( & near_fig, & near_back, & weight, 1, needed ) )
+        return 0;
 
       /* Preleva i risultati dei calcoli */
       aput_get( & rot_center, & trsl_vect,
@@ -650,7 +653,7 @@ static int line_put_to_begin_or_end(
   /* Calcolo dove vanno a finire pfi[0] = f3 e pfi[1] = f5,
    * quando trasformo la figura
    */
-  if ( numhp < 3 )
+  if ( num_hp < 3 )
     pfi = (Point) {0.0, 0.0};
   else
     pfi = pnt[2];
@@ -658,7 +661,7 @@ static int line_put_to_begin_or_end(
   fig_ltransform( & pfi, 1 );
 
   /* Disegno l'oggetto */
-  fig_draw_fig( ((obj_header *) f)->info );
+  fig_draw_fig(fw->window);
 
   /* Continuo a disegnare le linee */
   if ( final )
@@ -666,9 +669,10 @@ static int line_put_to_begin_or_end(
   else
     line_first_point( & pfi, w );
 
-  EXIT_OK("figura disegnata!\n");
+  return 1;
 }
 
+#if 0
 /* DESCRIZIONE: Simile alla precedente, ma usa una figura come elemento
  *  di congiunzione fra due linee di una spezzata.
  * NOTA: first specifica se il punto p2 e' il primo, cioe' quello da cui
@@ -678,11 +682,9 @@ static int line_put_to_begin_or_end(
  *  della figura (f3) viene salvato in *p1 (per uso futuro).
  */
 static int line_put_to_join( Point *p1, Point *p2, Point *p3,
- Real w1, Real w2, void *f, int first )
-{
-  void *f_hots;
-  long numhp;
-  Real w = ( w1 + w2 ) / 2.0;
+ Real w1, Real w2, void *f, int first ) {
+  int num_hp;
+  Real w = 0.5*(w1 + w2);
   Real rot_angle = 0.0, scale_x = 1.0, scale_y = 1.0;
   Point rot_center, trsl_vect, *pnt;
   /* Punto finale e iniziale a cui vanno congiunti i segmenti della spezzata */
@@ -698,12 +700,12 @@ static int line_put_to_join( Point *p1, Point *p2, Point *p3,
   f_hots = LIST_GET_FROM_STATUS( ((obj_header *) f)->child );
 
   /* Accedo alla PList */
-  pnt = list_access( OBJID_PLIST, f_hots, & numhp );
+  pnt = list_access( OBJID_PLIST, f_hots, & num_hp );
   if ( pnt == NULL ) { EXIT_ERR("list_access fallita!\n"); }
 
-  if ( numhp < 1 ) {
+  if ( num_hp < 1 ) {
     vrmc_liberr("figura priva di hot-points");
-    EXIT_ERR("numhp = 0!\n");
+    EXIT_ERR("num_hp = 0!\n");
   }
 
   /* Traslo in modo che pnt[1] vada a finire in p2 */
@@ -713,18 +715,18 @@ static int line_put_to_join( Point *p1, Point *p2, Point *p3,
   /* Se ho solo un hot-point la trasformazione l'ho gia' individuata!
    * Se ne ho piu' di 1, devo calcolare rotazione e scala!
    */
-  if ( numhp > 1 ) {
+  if ( num_hp > 1 ) {
     register Real d;
 
-    if ( numhp >= 3 ) {
+    if ( num_hp >= 3 ) {
       pfi[0] = pnt[2];
-      if ( numhp >= 5 ) {
+      if ( num_hp >= 5 ) {
         pfi[1] = pnt[4];
       }
     }
 
     /* Calcolo la distanza di riferimento per eseguire la scala */
-    if ( numhp < 4 ) {
+    if ( num_hp < 4 ) {
       register Real dx, dy;
 
       dx = pnt[1].x - pnt->x;
@@ -752,13 +754,14 @@ static int line_put_to_join( Point *p1, Point *p2, Point *p3,
       Point near_fig[2], near_back[2];
 
       if ( ! aput_allow("r", & needed ) ) {
-        EXIT_ERR("aput_allow fallita!\n");
+        g_error("aput_allow fallita!");
+        return 1;
       }
 
       near_back[0].x = p1->x; near_back[0].y = p1->y;
       near_back[1].x = p3->x; near_back[1].y = p3->y;
 
-      if ( numhp < 4 ) {
+      if ( num_hp < 4 ) {
         near_fig[1].x = near_fig[0].x = pnt[1].x;
         near_fig[1].y = near_fig[0].y = pnt[1].y;
       } else {
@@ -772,7 +775,8 @@ static int line_put_to_join( Point *p1, Point *p2, Point *p3,
 
       /* Calcolo i parametri della trasformazione in base ai vincoli */
       if ( ! aput_autoput( near_fig, near_back, weight, 2, needed ) ) {
-        EXIT_ERR("aput_autoput fallita!\n");
+        g_error("aput_autoput fallita!");
+        return 1;
       }
 
       /* Preleva i risultati dei calcoli */
