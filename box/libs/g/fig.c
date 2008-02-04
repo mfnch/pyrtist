@@ -175,7 +175,6 @@ grp_window *fig_open_win(int numlayers)
     layh->numcmnd = 0;
     layh->previous = i++;
     layh->next = (i + 1) % numlayers;
-    printf("Initialized layer n. %d\n", i);
 
     ++layh;    /* Passo al prossimo layer */
   }
@@ -333,7 +332,7 @@ int fig_new_layer(void)
 
   /* Compilo l'header del layer */
   layh->ID = 0x7279616c;  /* 0x7279616c = "layr" */
-;
+
   //layh->color = ???;
   llayh->numcmnd = 0;
   llayh->previous = figh->bottom;
@@ -606,7 +605,6 @@ void fig_draw_layer(grp_window *source, int l)
   figh = (struct fig_header *) source->wrdep;
 
   l = CIRCULAR_INDEX(figh->numlayers, l);
-  printf("Drawing layer %d\n", l);
 
   /* Trovo l'header del layer l */
   laylist = & figh->layerlist;

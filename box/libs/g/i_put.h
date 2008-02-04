@@ -12,6 +12,9 @@ typedef struct {
     int constraints : 1;
     int figure : 1;
     int compute : 1;
+    int translation : 1;
+    int rot_angle : 1;
+    int scale : 1;
   } got;
 } WindowPut;
 

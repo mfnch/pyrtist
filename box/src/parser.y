@@ -201,6 +201,11 @@ static Task Register_Subtype(Expr *result, Expr *unreg_subtype, Expr *type) {
 }
 
 Task Subtype_Create(Expr *result, Expr *parent, Name *child) {
+  Expr this_parent;
+  if (parent == (Expr *) NULL) {
+    parent = & this_parent;
+    TASK( Box_Parent_Get(parent, 0) );
+  }
   TASK( Expr_Subtype_Create(result, parent, child) );
   TASK( Cmp_Expr_Destroy_Tmp(parent) );
   return Success;
@@ -510,7 +515,7 @@ array.expr:
 
 subtype.expr:
   prim.expr TOK_UMEMBER {DO(Subtype_Create(& $$, & $1, & $2));}
-| TOK_UMEMBER           { }
+| TOK_UMEMBER           {DO(Subtype_Create(& $$, (Expr *) NULL, & $1));}
 ;
 
 prim.expr:

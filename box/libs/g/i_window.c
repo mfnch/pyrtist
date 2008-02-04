@@ -14,7 +14,7 @@
 #include "i_poly.h"
 #include "i_put.h"
 
-#define DEBUG
+/*#define DEBUG*/
 
 /*enum {FLAG_TYPE=0x1, FLAG_SIZE=0x2, FLAG_ORIGIN=0x4,
  FLAG_RESX=0x8, FLAG_RESY=0x10, FLAG_NUMLAYERS=0x20,
@@ -249,7 +249,6 @@ Task window_hot_end(VMProgram *vmp) {
   if (w->hot.got.name)
     g_warning("Hot[] got a name, but not the corresponding point!");
 
-  pointlist_fprint(& w->pointlist, stdout);
   return Success;
 }
 

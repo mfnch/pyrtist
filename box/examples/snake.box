@@ -1,0 +1,28 @@
+include "g"
+eye = Window["fig"]
+\ eye.Circle[color.yellow, (0, 0), 1, 0.5; color.dark_green, 0.1, 0.5]
+
+tongue = Window["fig"]
+\ tongue.Poly[color.dark_red, (0.5, 0), (0.5, 4), 0, 1, (0.5, 5), 1, 0, (1, 5)
+              0, 1, (0, 5), 1, 0, (0, 4.5), 0, 1, (0, 5), 1, 0, (-1, 5),
+              0, 1, (-0.5, 5), 1, 0, (-0.5, 4), (-0.5, 0)]
+
+face = Window["fig"][
+  a = b = c = d = Point
+  a = (5, -5), b = (7, 0), c = (4, 8), d = (0, 9)
+  \ .Poly[color.dark_green, a, 0.5, 0.5, b, c, d,
+          (-c.x, c.y), (-b.x, b.y), (-a.x, a.y)]
+  \ .Put[tongue, (0, 6)]
+  \ .Put[eye, (2.6, 0), -70, .Scale[1.5]]
+  \ .Put[eye, (-2.6, 0), 70, .Scale[1.5]]
+  \ .Hot["head", (0, 9), "tail", (0, 5), "join", (0, -4)]
+]
+
+snake = Window["fig"]
+snake.Line[color.dark_green, line.smooth, (10, 10), 1, 4, (40, 100), 4, 5
+           (80, 10), (120, 90), (150, 25), (170, 55), face, (195, 70)]
+
+output = Window["bm8", (210, 110)]
+output.Put[snake, (0, 0), .Scale[1]]
+output.Save["snake.bmp"]
+

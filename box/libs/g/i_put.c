@@ -37,11 +37,14 @@ Task window_put_begin(VMProgram *vmp) {
   w->put.rot_angle = 0.0;
   w->put.rot_center.x = w->put.rot_center.y = 0.0;
   w->put.translation.x = w->put.translation.y = 0.0;
-  w->put.scale.x = w->put.scale.y = 0.0;
+  w->put.scale.x = w->put.scale.y = 1.0;
   w->put.auto_transforms = 0;
   w->put.got.constraints = 0;
   w->put.got.compute = 0;
   w->put.got.figure = 0;
+  w->put.got.translation = 0;
+  w->put.got.rot_angle = 0;
+  w->put.got.scale = 0;
 
   if ( ! (   buff_clear(& w->put.fig_points)
           && buff_clear(& w->put.back_points)
@@ -92,50 +95,6 @@ static Task put_calculate(Window *w) {
   return Success;
 }
 
-#if 0
-static int put_begin(void)
-{
-  list *cur_list;
-
-  PRNMSG("put_begin: Inizio istruzione...");
-
-  put_status = CONSTRAINTS_USED;
-  put_figtype = NO_FIG_SPECIFIED;
-
-  /* Stato predefinito: tutto manuale! */
-  put_needed = 0;
-
-  /* Setto i parametri di default per la trasformazione */
-  put_rot_angle = 0.0;
-  put_scale_y = put_scale_x = 1.0;
-  put_rot_center = put_trsl_vect = (Point) {0.0, 0.0};
-
-  /* Inizializzo le due liste di punti (plist) che conterranno i vincoli */
-  cur_list = list_status;
-  list_status = B_list;
-  if ( ! list_begin(OBJID_PLIST, sizeof(Point)) ) {
-    EXIT_ERR("Impossibile creare la plist!\n");
-  }
-  B_list = list_status;
-
-  list_status = F_list;
-  if ( ! list_begin(OBJID_PLIST, sizeof(Point)) ) {
-    EXIT_ERR("Impossibile creare la plist!\n");
-  }
-  F_list = list_status;
-
-  /* Creo la lista che conterra' i pesi relativi a ciascun vincolo */
-  list_status = weight_list;
-  if ( ! list_begin(OBJID_FLIST, sizeof(Real)) ) {
-    EXIT_ERR("Impossibile creare la flist!\n");
-  }
-  weight_list = list_status;
-  list_status = cur_list;
-
-  EXIT_OK("Ok!\n");
-}
-#endif
-
 
 Task window_put_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
@@ -146,7 +105,7 @@ Task window_put_end(VMProgram *vmp) {
    * sono ancora stati utilizzati (cioe' .Compute non e' stata invocata), allora
    * li uso adesso e mi calcolo la trasformazione che meglio li soddisfa!
    */
-  if ( !(w->put.got.compute) ) { TASK( put_calculate(w) ); }
+  if ( w->put.got.constraints ) { TASK( put_calculate(w) ); }
 
   if ( !w->put.got.figure ) {
     g_warning("You did not provide any figure to Put[].");
@@ -167,13 +126,48 @@ Task window_put_end(VMProgram *vmp) {
   return Success;
 }
 
+Task window_put_window(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  WindowPtr *wp = BOX_VM_ARGPTR1(vmp, WindowPtr);
+  w->put.figure = (void *) *wp;
+  w->put.got.figure = 1;
+  return Success;
+}
 
-Task window_put_window(VMProgram *vmp) {return Success;}
-Task window_put_point(VMProgram *vmp) {return Success;}
-Task window_put_real(VMProgram *vmp) {return Success;}
+Task window_put_point(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  Point *translation = BOX_VM_ARGPTR1(vmp, Point);
+  w->put.translation = *translation;
+  if (w->put.got.translation)
+    g_warning("ignoring previously specified translation vector!");
+  w->put.got.translation = 1;
+  return Success;
+}
+
+Task window_put_real(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  Real *rot_angle = BOX_VM_ARGPTR1(vmp, Real);
+  w->put.rot_angle = *rot_angle;
+  if (w->put.got.rot_angle)
+    g_warning("ignoring previously specified rotation angle!");
+  w->put.got.rot_angle = 1;
+  return Success;
+}
+
 Task window_put_string(VMProgram *vmp) {return Success;}
 
-Task window_put_scale_real(VMProgram *vmp) {return Success;}
+Task window_put_scale_real(VMProgram *vmp) {
+  Subtype *scale_of_window_put = BOX_VM_CURRENTPTR(vmp, Subtype);
+  Subtype *put_of_window = SUBTYPE_PARENT_PTR(scale_of_window_put, Subtype);
+  Window *w = *((Window **) SUBTYPE_PARENT_PTR(put_of_window, WindowPtr));
+  Real *scale = BOX_VM_ARGPTR1(vmp, Real);
+  w->put.scale.y = w->put.scale.x = *scale;
+  if (w->put.got.scale)
+    g_warning("ignoring previously specified scale factors!");
+  w->put.got.scale = 1;
+  return Success;
+}
+
 Task window_put_near_begin(VMProgram *vmp) {return Success;}
 Task window_put_near_end(VMProgram *vmp) {return Success;}
 Task window_put_near_real(VMProgram *vmp) {return Success;}

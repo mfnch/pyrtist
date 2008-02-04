@@ -167,8 +167,6 @@ Task line_window(VMProgram *vmp) {
   WindowPtr *wp = BOX_VM_ARGPTR1(vmp, WindowPtr);
 
   w->line.this_piece.fig = (void *) *wp;
-  printf("Passing window pointer %p\n", wp);
-  printf("Passing window pointer %p\n", *wp);
   return Success;
 }
 
@@ -350,7 +348,6 @@ static int line_put_to_begin_or_end(Point *p1, Point *p2, Real w,
 
   else {
     Point *p;
-    printf("Got Window pointer %p\n", fw);
     p = pointlist_find(& fw->pointlist, "head");
     if (p == (Point *) NULL) {
       g_error("The figure needs to have at least one hot point with name "
