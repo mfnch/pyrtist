@@ -606,7 +606,7 @@ static Task Int_RealNum(VMProgram *vmp)
 static Task Real_RealNum(VMProgram *vmp)
   {BOX_VM_CURRENT(vmp, Real) = BOX_VM_ARG1(vmp, Real); return Success;}
 static Task If_IntNum(VMProgram *vmp)
-  {BOX_VM_CURRENT(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;}
+  {BOX_VM_CURRENT(vmp, Int) = !BOX_VM_ARG1(vmp, Int); return Success;}
 static Task For_IntNum(VMProgram *vmp)
   {BOX_VM_CURRENT(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;}
 
