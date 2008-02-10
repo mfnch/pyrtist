@@ -240,7 +240,9 @@ Task Subtype_Box_Close(Expr *subtype) {
 
 Task Expr_Statement(Expr *e) {
   TASK( Expr_Resolve_Subtype(e) );
-  return Cmp_Procedure(NULL, e, -1, /* auto_define */ 1);
+  TASK( Cmp_Procedure(NULL, e, -1, /* auto_define */ 1) );
+  (void) Cmp_Expr_Destroy_Tmp(e);
+  return Success;
 }
 
 /*****************************************************************************/
@@ -1084,7 +1086,9 @@ Task Prs_Procedure_Special(int *found, int type, int auto_define) {
   int dummy = 0;
   if ( found == NULL ) found = & dummy;
   Expr_New_Type(& e, type);
-  return Cmp_Procedure(found, & e, 0, auto_define);
+  TASK( Cmp_Procedure(found, & e, 0, auto_define) );
+  (void) Cmp_Expr_Destroy_Tmp(& e);
+  return Success;
 }
 
 /* This function handles the rule: Type = Type

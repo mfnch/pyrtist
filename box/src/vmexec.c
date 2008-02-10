@@ -385,8 +385,8 @@ static void VM__Exec_Jmp_I(VMProgram *vmp) {
 
 static void VM__Exec_Jc_I(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  vmcur->i_len =
-    *((Int *) vmcur->local[TYPE_INT]) ? *((Int *) vmcur->arg1) : 0;
+  if (*((Int *) vmcur->local[TYPE_INT]))
+    vmcur->i_len = *((Int *) vmcur->arg1);
 }
 
 static void VM__Exec_Add_O(VMProgram *vmp) {

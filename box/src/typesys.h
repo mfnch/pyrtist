@@ -105,6 +105,18 @@ void TS_Destroy(TS *ts);
 Int TS_Size(TS *ts, Type t);
 #define TS_Size_Get TS_Size
 
+/** A type can be defined as an extension of other types.
+ * This is what "MyType = Int" is supposed to do.
+ * This function returns the extended type, given the extension type.
+ * The function goes up only by one level. If "MyType2" extends "MyType1"
+ * which in turn extends "Int", then:
+ *
+ *   TS_Resolve_Named_Type(MyType2) --> MyType1
+ *   TS_Resolve_Named_Type(MyType1) --> Int
+ *   TS_Resolve_Named_Type(Int) --> Int
+ */
+Type TS_Resolve_Named_Type(TS *ts, Type t);
+
 /** Resolve types (useful for comparisons) */
 Type TS_Resolve(TS *ts, Type t, int resolve_alias, int resolve_species);
 

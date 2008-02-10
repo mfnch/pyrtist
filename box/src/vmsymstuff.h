@@ -30,14 +30,26 @@
 #  define _VMSYMSTUFF_H
 
 #  define VM_SYM_CALL 1
+#  define VM_SYM_COND_JMP 2
 #  define VM_SYM_PROC_HEAD 123
 #  define VM_SYM_LABEL 3
+
+typedef struct {
+  Int sheet_id, position;
+} VMSymLabel;
 
 Task VM_Sym_New_Call(VMProgram *vmp, UInt *sym_num);
 
 Task VM_Sym_Def_Call(VMProgram *vmp, UInt sym_num, UInt proc_num);
 
 Task VM_Sym_Call(VMProgram *vmp, UInt sym_num);
+
+Task VM_Sym_New_Cond_Jmp(VMProgram *vmp, UInt *sym_num);
+
+Task VM_Sym_Def_Cond_Jmp(VMProgram *vmp, UInt sym_num,
+                         Int sheet_id, Int position);
+
+Task VM_Sym_Cond_Jmp(VMProgram *vmp, UInt sym_num);
 
 Task VM_Sym_Proc_Head(VMProgram *vmp, UInt *sym_num);
 

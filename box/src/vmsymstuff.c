@@ -30,7 +30,9 @@
 /*** call references ********************************************************/
 /* This is the function which assembles the code for the function call */
 static Task Assemble_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
- int defined, void *def, UInt def_size, void *ref, UInt ref_size) {
+                          int defined, void *def, UInt def_size,
+                          void *ref, UInt ref_size)
+{
   UInt call_num = 0;
   assert(sym_type == VM_SYM_CALL);
   if (defined && def != NULL) {
@@ -51,6 +53,38 @@ Task VM_Sym_Def_Call(VMProgram *vmp, UInt sym_num, UInt proc_num) {
 
 Task VM_Sym_Call(VMProgram *vmp, UInt sym_num) {
   return VM_Sym_Code_Ref(vmp, sym_num, Assemble_Call);
+}
+
+/*** jumps ******************************************************************/
+static Task Assemble_Cond_Jmp(VMProgram *vmp, UInt sym_num, UInt sym_type,
+                              int defined, void *def, UInt def_size,
+                              void *ref, UInt ref_size)
+{
+  Int sheet_id, position=0;
+  assert(sym_type == VM_SYM_COND_JMP);
+  if (defined && def != NULL) {
+    assert(def_size == sizeof(VMSymLabel));
+    sheet_id = ((VMSymLabel *) def)->sheet_id;
+    position = ((VMSymLabel *) def)->position;
+  }
+  VM_Assemble(vmp, ASM_JC_I, CAT_IMM, position);
+  return Success;
+}
+
+Task VM_Sym_New_Cond_Jmp(VMProgram *vmp, UInt *sym_num) {
+  return VM_Sym_New(vmp, sym_num, VM_SYM_COND_JMP, sizeof(VMSymLabel));
+}
+
+Task VM_Sym_Def_Cond_Jmp(VMProgram *vmp, UInt sym_num,
+                         Int sheet_id, Int position) {
+  VMSymLabel label;
+  label.sheet_id = sheet_id;
+  label.position = position;
+  return VM_Sym_Def(vmp, sym_num, & label);
+}
+
+Task VM_Sym_Cond_Jmp(VMProgram *vmp, UInt sym_num) {
+  return VM_Sym_Code_Ref(vmp, sym_num, Assemble_Cond_Jmp);
 }
 
 /*** procedure headers ******************************************************/

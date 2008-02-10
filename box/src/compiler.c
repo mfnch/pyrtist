@@ -1644,7 +1644,9 @@ Task Cmp_String_New(Expression *e, Name *str, int free_str) {
  *  of *found.
  */
 Task Cmp_Procedure_Search(int *found, Int procedure, Int suffix,
- Box **box, Int *prototype, Int *sym_num, int auto_define) {
+                          Box **box, Int *prototype, Int *sym_num,
+                          int auto_define)
+{
   Box *b;
   Int p, dummy;
 
@@ -1670,7 +1672,8 @@ Task Cmp_Procedure_Search(int *found, Int procedure, Int suffix,
   if ( p == TYPE_NONE ) {
     if (! auto_define) return Success;
 
-    MSG_ERROR("compiler.c, Cmp_Procedure_Search: Still not implemented!!!");
+    MSG_ERROR("Don't know how to use '%~s' expressions inside a '%~s' box.",
+              TS_Name_Get(cmp->ts, procedure), TS_Name_Get(cmp->ts, b->type));
     return Failed;
 #if 0
     *prototype = TYPE_NONE;
@@ -1715,50 +1718,52 @@ Task Cmp_Procedure(int *found, Expr *e, Int suffix, int auto_define) {
   if ( found == NULL ) found = & dummy;
 
   /* First of all we check the attributes of the expression *e */
-  if ( e->is.ignore ) goto exit_success;
+  if ( e->is.ignore ) return Success;
   if ( !e->is.typed ) {
     MSG_ERROR("This expression has no type!");
-    goto exit_failed;
+    return Failed;
   }
 
   t = Tym_Type_Resolve_Alias(e->type);
-  if ( t == TYPE_VOID ) goto exit_success;
+  if (t == TYPE_VOID) return Success;
 
-  if IS_FAILED(Cmp_Procedure_Search(found, e->type, suffix, & b, & prototype,
-                                    & sym_num, auto_define) )
-    goto exit_failed;
+  if (e->type == TYPE_IF || e->type == TYPE_FOR) {
+    Cont src;
+    Box *b;
+    TASK( Box_Get(& b, suffix) );
+    Expr_Cont_Get(& src, e);
+    Cont_Move(& CONT_NEW_LREG(TYPE_INT, 0), & src);
+    VM_Label_Jump(cmp->vm,
+                  e->type == TYPE_FOR ? b->label_begin : b->label_end,
+                  1);
+    return Success;
+  }
 
-  if ( ! *found ) goto exit_success;
+  TASK( Cmp_Procedure_Search(found, e->type, suffix, & b, & prototype,
+                             & sym_num, auto_define) );
+
+  if ( ! *found ) return Success;
 
   /* Now we compile the procedure */
   /* We pass the argument of the procedure if its size is > 0 */
   if (Tym_Type_Size(t) > 0) {
     if ( prototype != TYPE_NONE ) {
       /* The argument must be converted first! */
-      if IS_FAILED( Cmp_Expr_Expand(prototype, e) ) goto exit_failed;
+      TASK( Cmp_Expr_Expand(prototype, e) );
     }
 
-    if IS_FAILED( Cmp_Expr_To_Ptr(e, CAT_GREG, (Int) 2, 0) ) goto exit_failed;
+    TASK( Cmp_Expr_To_Ptr(e, CAT_GREG, (Int) 2, 0) );
   }
 
   /* We pass the box which is the parent of the procedure */
   TASK( Box_Parent_Get(& e_parent, suffix) );
   if ( e_parent.is.value ) {
     if (Tym_Type_Size(e_parent.resolved) > 0) {
-      if IS_FAILED( Cmp_Expr_Container_Change(& e_parent, CONTAINER_ARG(1)) )
-        goto exit_failed;
+      TASK( Cmp_Expr_Container_Change(& e_parent, CONTAINER_ARG(1)) );
     }
   }
 
-  TASK( VM_Sym_Call(cmp_vm, sym_num) );
-
-exit_success:
-  (void) Cmp_Expr_Destroy_Tmp(e);
-  return Success;
-
-exit_failed:
-  (void) Cmp_Expr_Destroy_Tmp(e);
-  return Failed;
+  return VM_Sym_Call(cmp_vm, sym_num);
 }
 
 /*****************************************************************************/

@@ -55,7 +55,10 @@ typedef enum {
   TYPE_OPEN  =  6,
   TYPE_CLOSE =  7,
   TYPE_PAUSE =  8,
-  TYPE_DESTROY= 9
+  TYPE_DESTROY= 9,
+  TYPE_PTR   = 10,
+  TYPE_IF    = 11,
+  TYPE_FOR   = 12
 } TypeID;
 
 /* Enumero gli header di istruzione della macchina virtuale.

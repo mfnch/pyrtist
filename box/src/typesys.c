@@ -96,6 +96,10 @@ static TSDesc *Fully_Resolve(TS *ts, Type *rt, Type t) {
   }
 }
 
+Type TS_Resolve_Named_Type(TS *ts, Type t) {
+  return t;
+}
+
 Type TS_Resolve(TS *ts, Type t, int resolve_alias, int resolve_species) {
   if (t == TS_TYPE_NONE)
     return TS_TYPE_NONE;

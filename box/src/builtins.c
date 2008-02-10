@@ -50,6 +50,8 @@ static Task Char_Real(VMProgram *vmp);
 static Task Int_IntNum(VMProgram *vmp);
 static Task Int_RealNum(VMProgram *vmp);
 static Task Real_RealNum(VMProgram *vmp);
+static Task If_IntNum(VMProgram *vmp);
+static Task For_IntNum(VMProgram *vmp);
 /* Mathematical functions */
 static Task Sin_RealNum(VMProgram *vmp);
 static Task Cos_RealNum(VMProgram *vmp);
@@ -124,6 +126,12 @@ Task Builtins_Define() {
     TASK( Tym_Def_Intrinsic(& t, & NAME("(\\)"), 0 ) );
     assert(t == TYPE_DESTROY);
     TASK( Tym_Def_Intrinsic(& t, & NAME("Ptr"), sizeof(Ptr) ) );
+
+    /* Define conditional types */
+    TASK( Tym_Def_Explicit_Alias(& t, & NAME("If"), TYPE_INT) );
+    assert(t == TYPE_IF);
+    TASK( Tym_Def_Explicit_Alias(& t, & NAME("For"), TYPE_INT) );
+    assert(t == TYPE_FOR);
   }
 
   /* Inizializzo il segmento-dati */
@@ -438,7 +446,8 @@ static Task Blt_Define_Basics(void) {
   TASK(Cmp_Builtin_Proc_Def(type_IntgNum, BOX_CREATION, TYPE_INTG, Int_IntNum ));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum, BOX_CREATION, TYPE_INTG, Int_RealNum));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum, BOX_CREATION, TYPE_REAL, Real_RealNum));
-
+  TASK(Cmp_Builtin_Proc_Def(type_IntgNum, BOX_CREATION, TYPE_IF, If_IntNum ));
+  TASK(Cmp_Builtin_Proc_Def(type_IntgNum, BOX_CREATION, TYPE_FOR, For_IntNum ));
   return Success;
 }
 
@@ -587,15 +596,19 @@ static Task Conv_2RealNum_to_Point(VMProgram *vmp) {
 static Task Char_Char(VMProgram *vmp)
   {BOX_VM_CURRENT(vmp, Char) = BOX_VM_ARG1(vmp, Char); return Success;}
 static Task Char_Int(VMProgram *vmp)
-  {BOX_VM_CURRENT(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Intg); return Success;}
+  {BOX_VM_CURRENT(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Int); return Success;}
 static Task Char_Real(VMProgram *vmp)
   {BOX_VM_CURRENT(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Real); return Success;}
 static Task Int_IntNum(VMProgram *vmp)
-  {BOX_VM_CURRENT(vmp, Intg) = BOX_VM_ARG1(vmp, Intg); return Success;}
+  {BOX_VM_CURRENT(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;}
 static Task Int_RealNum(VMProgram *vmp)
-  {BOX_VM_CURRENT(vmp, Intg) = (Intg) BOX_VM_ARG1(vmp, Real); return Success;}
+  {BOX_VM_CURRENT(vmp, Int) = (Int) BOX_VM_ARG1(vmp, Real); return Success;}
 static Task Real_RealNum(VMProgram *vmp)
   {BOX_VM_CURRENT(vmp, Real) = BOX_VM_ARG1(vmp, Real); return Success;}
+static Task If_IntNum(VMProgram *vmp)
+  {BOX_VM_CURRENT(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;}
+static Task For_IntNum(VMProgram *vmp)
+  {BOX_VM_CURRENT(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;}
 
 /*****************************************************************************
  *                        MATHEMATICAL FUNCTIONS                             *
