@@ -168,7 +168,10 @@ Task window_put_scale_real(VMProgram *vmp) {
   return Success;
 }
 
-Task window_put_near_begin(VMProgram *vmp) {return Success;}
+Task window_put_near_begin(VMProgram *vmp) {
+  return Success;
+}
+
 Task window_put_near_end(VMProgram *vmp) {return Success;}
 Task window_put_near_real(VMProgram *vmp) {return Success;}
 Task window_put_near_string(VMProgram *vmp) {return Success;}

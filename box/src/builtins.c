@@ -21,9 +21,8 @@
 #include "builtins.h"
 
 /* Important builtin types */
-Intg
-  type_Point, type_RealNum, type_IntgNum, type_CharNum, type_String,
-  type_File;
+Type type_Point, type_RealNum, type_IntgNum, type_CharNum, type_String,
+     type_File;
 
 static Task Blt_Define_Basics(void);
 static Task Blt_Define_Math(void);
@@ -50,6 +49,7 @@ static Task Char_Real(VMProgram *vmp);
 static Task Int_IntNum(VMProgram *vmp);
 static Task Int_RealNum(VMProgram *vmp);
 static Task Real_RealNum(VMProgram *vmp);
+static Task Point_RealNumCouple(VMProgram *vmp);
 static Task If_IntNum(VMProgram *vmp);
 static Task For_IntNum(VMProgram *vmp);
 /* Mathematical functions */
@@ -446,6 +446,7 @@ static Task Blt_Define_Basics(void) {
   TASK(Cmp_Builtin_Proc_Def(type_IntgNum, BOX_CREATION, TYPE_INTG, Int_IntNum ));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum, BOX_CREATION, TYPE_INTG, Int_RealNum));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum, BOX_CREATION, TYPE_REAL, Real_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_Point, BOX_CREATION, TYPE_POINT, Point_RealNumCouple ));
   TASK(Cmp_Builtin_Proc_Def(type_IntgNum, BOX_CREATION, TYPE_IF, If_IntNum ));
   TASK(Cmp_Builtin_Proc_Def(type_IntgNum, BOX_CREATION, TYPE_FOR, For_IntNum ));
   return Success;
@@ -605,6 +606,8 @@ static Task Int_RealNum(VMProgram *vmp)
   {BOX_VM_CURRENT(vmp, Int) = (Int) BOX_VM_ARG1(vmp, Real); return Success;}
 static Task Real_RealNum(VMProgram *vmp)
   {BOX_VM_CURRENT(vmp, Real) = BOX_VM_ARG1(vmp, Real); return Success;}
+static Task Point_RealNumCouple(VMProgram *vmp)
+  {BOX_VM_CURRENT(vmp, Point) = BOX_VM_ARG1(vmp, Point); return Success;}
 static Task If_IntNum(VMProgram *vmp)
   {BOX_VM_CURRENT(vmp, Int) = !BOX_VM_ARG1(vmp, Int); return Success;}
 static Task For_IntNum(VMProgram *vmp)

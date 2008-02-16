@@ -2,6 +2,7 @@
 Color = (Real r, g, b)
 
 Color@Print["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, "]"]
+Color@Color[$$.r = $.r, $$.g = $.g, $$.b = $.b]
 
 color = (Color black, red, green, yellow, blue, magenta, cyan, white, _
                dark_red, dark_green, dark_yellow, dark_blue, dark_magenta, _
