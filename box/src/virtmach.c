@@ -157,7 +157,7 @@ static void *VM__Get_L(VMStatus *vmcur, Intg n) {
 
 #ifdef VM_SAFE_EXEC1
   if ( (n < vmcur->lmin[t]) || (n > vmcur->lmax[t]) ) {
-  MSG_ERROR("Riferimento a registro locale non allocato!");
+  MSG_ERROR("Trying to access unallocated local register(t:%I,n:%I)!", t,  n);
   vmcur->flags.error = vmcur->flags.exit = 1;
   return NULL;
   }

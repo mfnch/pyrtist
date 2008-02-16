@@ -42,6 +42,7 @@ static void VM__Exec_Call_I(VMProgram *vmp) {
 static void VM__Exec_Line_I(VMProgram *vmp) {
   VMStatus *vm = vmp->vmcur;
   vm->line = *((Int *) vm->arg1);
+  Msg_Line_Set(vm->line);
 }
 
 #define VM__NEW(name, TYPE_ID, Type)                                   \
@@ -401,7 +402,7 @@ static void VM__Exec_Add_O(VMProgram *vmp) {
  ******************************************************************************/
 VMInstrDesc vm_instr_desc_table[] = {
   { },
-  { "line", 1, TYPE_INT, VM__Imm,      VM__Exec_Line_I, VM__D_GLPI_GLPI },  /* line imm_i         */
+  { "line", 1, TYPE_INT, VM__GLPI,     VM__Exec_Line_I, VM__D_GLPI_GLPI },  /* line imm_i         */
   { "call", 1, TYPE_INT, VM__GLPI,     VM__Exec_Call_I, VM__D_CALL      },  /* call reg_i         */
   { "call", 1, TYPE_INT, VM__Imm,      VM__Exec_Call_I, VM__D_CALL      },  /* call imm_i         */
   { "newc", 2, TYPE_INT, VM__GLP_GLPI, VM__Exec_NewC_II,VM__D_GLPI_GLPI },  /* newc imm_i, imm_i  */

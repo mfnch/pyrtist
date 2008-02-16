@@ -77,6 +77,7 @@ Task Cmp_Init(VMProgram *program) {
    * for registers and variables.
    */
   TASK( Reg_Init() );
+  Msg_Line_Set((Int) 1);
   return Success;
 }
 
@@ -90,6 +91,7 @@ Task Cmp_Parse(const char *file) {
   Parser_Finish(); /* Finalize parsing */
   Box_Main_End(); /* Close the main box */
   Box_Destroy(); /* Destroy the stack of boxes */
+  Msg_Line_Set(MSG_UNDEF_LINE); /* Remove line numbers from error messages */
   return Success;
 }
 

@@ -380,8 +380,11 @@ Task Main_Execute(UInt main_module) {
     return Failed;
   }
   */
-
-  return VM_Module_Execute(program, main_module);
+  Task t;
+  Msg_Line_Set((Int) 1);
+  t = VM_Module_Execute(program, main_module);
+  Msg_Line_Set(MSG_UNDEF_LINE);
+  return t;
 }
 
 /* DESCRIZIONE: Questa funzione viene chiamata, nel caso si sia verificato

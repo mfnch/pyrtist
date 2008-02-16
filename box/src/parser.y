@@ -376,7 +376,8 @@ Task Expr_Statement(Expr *e) {
 sep:
    ','                 { }
  | ';'                 { DO( Prs_Procedure_Special(NULL, TYPE_PAUSE, 1) ) }
- | TOK_NEWLINE         { Cmp_Assemble(ASM_LINE_Iimm, CAT_IMM, ++tok_linenum); }
+ | TOK_NEWLINE         { Cmp_Assemble(ASM_LINE_Iimm, CAT_IMM, ++tok_linenum);
+                         Msg_Line_Set(tok_linenum); }
  ;
 
 /*****************************************************************************

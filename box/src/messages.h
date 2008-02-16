@@ -51,6 +51,15 @@ Task Msg_Main_Init(UInt show_level);
  */
 void Msg_Main_Context_Begin(const char *msg);
 
+/** Set the current line number in the source file.
+ * The argument should be an Int number > 0.
+ * Alternatively the user can pass MSG_UNDEF_LINE, to avoid the line number
+ * to be present in error messages.
+ */
+void Msg_Line_Set(Int line_number);
+
+#define MSG_UNDEF_LINE -1
+
 /** Type of the function called when a fatal error message is reported */
 typedef void (*FatalHandler)(void);
 
