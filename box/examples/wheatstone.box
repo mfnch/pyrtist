@@ -1,0 +1,33 @@
+include "g"
+include "electric"
+
+wheatstone = Window["fig"][
+  d1 = 20.0 // d1 = half diagonal
+  p1 = (0, -d1)
+  p2 = (d1, 0)
+  p3 = (0, d1)
+  p4 = (-d1, 0)
+  \ .Hot[p1, p2, p3, p4]
+
+  // Places the four resistors
+  r12 = .Put[resistor, "rt", .Near[1, p1], .Near[2, p2]]
+  r23 = .Put[diode, "rt", .Near[1, p2], .Near[2, p3]]
+  r34 = .Put[inductance, "rt", .Near[1, p3], .Near[2, p4]]
+  r41 = .Put[resistor, "rt", .Near[1, p4], .Near[2, p1]]
+
+  // Connecting the four resistors
+//   \ .Line[p1, r12->1; r12->2, p2; r12->2, p2; p2, r23->1;
+//           r23->2, p3; p3, r34->1; r34->2, p4; p4, r41->1; r41->2, p1]
+
+  // Drawing small circles on the nodes
+  \ .Circle[0.8, p1; p2; p3; p4]
+]
+
+//-------------------------------------------------------------------------------
+Print["Opening a new 'bm4' windows to save the figure."]
+main = Window["bm4", (50, 50)]
+\ main.Put[wheatstone, (25, 25)]
+main.Save["wheatstone.bmp"]
+
+// page <- Window !type "ps", !file "wheatstone.ps"
+// >< Put Ponte_Di_Wheatstone, (100, 100), !scale 3
