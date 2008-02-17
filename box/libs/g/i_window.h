@@ -50,4 +50,10 @@ typedef void *WindowPtr;
     Window *w = *( (Window **) \
       SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), WindowPtr) );
 
+  #define SUBTYPE2_OF_WINDOW(vmp, w) \
+    Window *w = *( (Window **) \
+      SUBTYPE_PARENT_PTR( \
+        SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), Subtype), \
+        WindowPtr) );
+
 #endif

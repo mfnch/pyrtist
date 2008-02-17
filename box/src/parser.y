@@ -804,7 +804,8 @@ Task Prs_Def_Operator(Operator *opr,
   Expression *result, *target;
 
   if ( ! e->is.typed ) {
-    MSG_ERROR("L'espressione alla destra di '%s' deve avere tipo!", opr->name);
+    MSG_ERROR("The expression on the right of '%s' must have a type!",
+              opr->name);
     return Failed;
   }
 

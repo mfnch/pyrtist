@@ -43,5 +43,13 @@ p = (1, 2)
 EOF
 check_noerr $?
 
+#------------------------------------------------------------------------------
+test_next
+echo "Bug 5: a = Point[.x=1, .y=-4]"
+$BOX -o x << EOF  >$BOXOUT 2>&1
+a = Point[.x=1, .y=-4]
+EOF
+check_noerr $?
+
 echo ">>"
 check_final

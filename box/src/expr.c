@@ -217,6 +217,7 @@ void Expr_To_Ptr(Expr *e) {
  */
 static Task Expr_Point_Member(Expr *m, Expr *s, Name *m_name) {
   assert(s->resolved < NUM_INTRINSICS);
+
   if (s->resolved != TYPE_POINT) goto member_not_found;
 
   if (m_name->length == 1) {
@@ -241,6 +242,7 @@ static Task Expr_Point_Member(Expr *m, Expr *s, Name *m_name) {
     if ( (addr = Reg_Occupy(TYPE_OBJ)) < 1 ) return Failed;
     Cmp_Assemble(ASM_MOV_OO, CAT_LREG, addr, CAT_LREG, 0);
 
+    m->is.typed = 1;
     m->resolved = m->type = TYPE_REAL;
     m->categ = CAT_PTR;
     m->is.gaddr = 0;

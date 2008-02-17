@@ -18,6 +18,7 @@ typedef struct {
 
 Task pointlist_init(PointList *pl);
 void pointlist_destroy(PointList *pl);
+Point *pointlist_get(PointList *pl, Int index);
 Point *pointlist_find(PointList *pl, char *name);
 Task pointlist_add(PointList *pl, Point *p, char *name);
 Task pointlist_clear(PointList *pl);

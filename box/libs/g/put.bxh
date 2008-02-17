@@ -15,5 +15,6 @@ R@Window.Put.Scale ? "window_put_scale_real"
 
 ([)@Window.Put.Near ? "window_put_near_begin"
 (])@Window.Put.Near ? "window_put_near_end"
-()Char@Window.Put.Near ? "window_put_near_real"
-R@Window.Put.Near ? "window_put_near_string"
+()Char@Window.Put.Near ? "window_put_near_string"
+Int@Window.Put.Near ? "window_put_near_int"
+Real@Window.Put.Near ? "window_put_near_real"

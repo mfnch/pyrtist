@@ -23,7 +23,7 @@ void pointlist_destroy(PointList *pl) {
 Point *pointlist_find(PointList *pl, char *name) {
   PointListItem *pli = buff_firstitemptr(& pl->pl, PointListItem);
   int i, n = buff_numitem(& pl->pl);
-  if (name == (char *) NULL) return (char *) NULL;
+  if (name == (char *) NULL) return (Point *) NULL;
   for(i=0; i < n; i++) {
     if (pli->name != (char *) NULL) {
       if (strcmp(pli->name, name) == 0)
@@ -32,6 +32,14 @@ Point *pointlist_find(PointList *pl, char *name) {
     ++pli;
   }
   return (Point *) NULL;
+}
+
+Point *pointlist_get(PointList *pl, Int index) {
+  Int n = buff_numitem(& pl->pl);
+  PointListItem *pli;
+  if (index < 1 || index > n) return (Point *) NULL;
+  pli = buff_itemptr(& pl->pl, PointListItem, index);
+  return & pli->point;
 }
 
 Task pointlist_add(PointList *pl, Point *p, char *name) {
