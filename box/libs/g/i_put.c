@@ -154,7 +154,17 @@ Task window_put_real(VMProgram *vmp) {
   return Success;
 }
 
-Task window_put_string(VMProgram *vmp) {return Success;}
+Task window_put_string(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  char *auto_transformations_str = BOX_VM_ARGPTR1(vmp, char);
+
+  if (!aput_allow(auto_transformations_str, & w->put.auto_transforms)) {
+    g_warning("aput_allow failed!");
+    return Success;
+  }
+
+  return Success;
+}
 
 Task window_put_scale_real(VMProgram *vmp) {
   Subtype *scale_of_window_put = BOX_VM_CURRENTPTR(vmp, Subtype);
@@ -191,6 +201,8 @@ Task window_put_near_end(VMProgram *vmp) {
     g_error("window_put_near_end: buff_push() failed!");
     return Failed;
   }
+
+  w->put.got.constraints = 1;
   return Success;
 }
 

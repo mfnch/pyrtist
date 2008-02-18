@@ -8,14 +8,14 @@ diode = Window["fig"][
   \ .Hot[p1, p2]
   \ .Poly[(0, -a), (0, a), (b, 0)]
   \ .Poly[(p=(b-s/2, -a)), (p+=(s, 0)), (p+=(0, 2*a)), (p-=(s, 0))]
-  \ .Line[p1, 0.2, p2]
+  \ .Line[0.2, p1, 0.2, p2]
 ]
 
 //-------------------------------------------------------------------------------
 resistor = Window["fig"][
   d1 = 1.0, v1 = Point[.x=1, .y=4], v2 = Point[.x=1, .y=-4]
   p0 = p = Point[.x=.y=0.0]
-  \ .Line[line.sharp, p, 0.2, (d1, 0), (p+=v1/2)
+  \ .Line[line.sharp, 0.2, p, 0.2, (p+=(d1, 0)), (p+=v1/2)
     (p+=v2), (p+=v1), (p+=v2), (p+=v1), (p+=v2), (p+=v1)
     (p+=v2), (p+=v1), (p+=v2), (p+=v1), (p+=v2), (p+=v1/2), (p+=(d1, 0))
   ]
@@ -31,7 +31,7 @@ inductance = Window["fig"][
   v4 = (-a, b) + (v, 0)
   p0 = p = Point[.x=.y=0.0]
   \ .Line[
-    line.smooth, p, 0.2, (p+=(d1, 0))
+    line.smooth, 0.2, p, 0.2, (p+=(d1, 0))
     (p+=v1), (p+=v2), (p+=v3), (p+=v4), (p+=v1), (p+=v2), (p+=v3), (p+=v4)
     (p+=v1), (p+=v2), (p+=v3), (p+=v4), (p+=v1), (p+=v2), (p+=v3), (p+=v4)
     (p+=v1), (p+=v2), (p+=v3), (p+=v4), (p+=v1), (p+=v2), (p+=v3), (p+=v4)

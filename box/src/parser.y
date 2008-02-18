@@ -664,7 +664,7 @@ proc.def:
    TOK_AT parent
    '['
    statement.list
-   ']'
+   ']'                  {}
 
  | child TOK_AT parent.opt
    '['                  {DO(Proc_Def_Open(& $1, $2, & $3))}

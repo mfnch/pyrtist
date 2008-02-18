@@ -24,9 +24,9 @@ wheatstone = Window["fig"][
 ]
 
 //-------------------------------------------------------------------------------
-Print["Opening a new 'bm4' windows to save the figure."]
-main = Window["bm4", (50, 50)]
-\ main.Put[wheatstone, (25, 25)]
+Print["Opening a new 'bm4' windows to save the figure.";]
+main = Window["bm4", (200, 200)]
+\ main.Put[wheatstone, (100, 100), .Scale[4]]
 main.Save["wheatstone.bmp"]
 
 // page <- Window !type "ps", !file "wheatstone.ps"
