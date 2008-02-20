@@ -1,6 +1,10 @@
 // Kind of arrows
-arrow_triangle = Window["fig"][
+arrow = Window["fig"][
   \ .Poly[(0, -1), (0.5, 0), (0, 1), (2, 0)]
   \ .Hot["head", (2, 0), "tail", (1.8, 0), "join", (0.5, 0)]
 ]
 
+arrow_triangle = Window["fig"][
+  \ .Poly[(0, -1), (0, 1), (2, 0)]
+  \ .Hot["head", (2, 0), "tail", (1.8, 0), "join", (0, 0)]
+]

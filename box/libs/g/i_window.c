@@ -123,8 +123,13 @@ Task window_end(VMProgram *vmp) {
 
   switch(w->type) {
   case PS:
-    g_error("not implemented yet!");
-    return Failed;
+    if (w->save_file_name == (char *) NULL) {
+      g_error("Window: window type 'ps' requires a file name. "
+              "Please provide one.");
+      return Failed;
+    }
+    w->window = ps_open_win(w->save_file_name);
+    break;
 
   case BM1:
     w->window = gr1b_open_win(w->origin.x, w->origin.y,
