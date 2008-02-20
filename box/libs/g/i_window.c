@@ -257,6 +257,10 @@ Task window_hot_end(VMProgram *vmp) {
   return Success;
 }
 
+/* FIXME: w->save_file_name needs to have a copy of the string. Box does
+ *  not give the guarantee that the string will not be deallocated after
+ *  this function has returned.
+ */
 Task window_file_string(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->save_file_name = BOX_VM_ARGPTR1(vmp, char);
