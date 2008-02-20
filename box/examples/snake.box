@@ -26,5 +26,5 @@ output = Window["bm8", (210, 110)]
 output.Put[snake, (0, 0), .Scale[1]]
 output.Save["snake.bmp"]
 
-\ Window["ps"][.Put[snake, (0, 0), .Scale[1]]]
+\ Window["ps", .File["snake.ps"]][.Put[snake, (0, 0), .Scale[1]]]
 

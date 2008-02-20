@@ -257,3 +257,16 @@ Task window_hot_end(VMProgram *vmp) {
   return Success;
 }
 
+Task window_file_string(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  w->save_file_name = BOX_VM_ARGPTR1(vmp, char);
+  return Success;
+}
+
+Task window_res_point(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  Point *res = BOX_VM_ARGPTR1(vmp, Point);
+  w->res.x = res->x;
+  w->res.y = res->y;
+  return Success;
+}
