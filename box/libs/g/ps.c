@@ -231,16 +231,16 @@ grp_window *ps_open_win(char *file)
 	 "    /xu xb xc sub def /yu yb yc sub def\n"
 	 "    /xv xb xa sub def /yv yb ya sub def\n"
 	 "    /xo xa xu sub def /yo ya yu sub def\n\n"
-	 "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] setmatrix\n"
+	 "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
 	 "    0 0 1 0 90 arc\n    savematrix setmatrix\n\n  end\n} def\n\n"
 	 "/circledict 8 dict def\n\ncircledict /mtrx matrix put\n"
 	 "/circle {\ncircledict begin\n  /yb exch def /xb exch def\n"
 	 "  /ya exch def /xa exch def\n  /yo exch def /xo exch def\n\n"
 	 "    /xu xa xo sub def /yu ya yo sub def\n"
 	 "    /xv xb xo sub def /yv yb yo sub def\n\n"
-	 "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] setmatrix\n"
+	 "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
 	 "    0 0 1 0 360 arc\n    savematrix setmatrix\n\n  end\n} def\n\n"
-	 "[1 0 0 1 0 0] setmatrix\n\n"
+	 "90 rotate\n1 -1 scale\n"
 	 , file
 	);
 
