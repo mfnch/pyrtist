@@ -53,8 +53,8 @@ static long previous_px, previous_py;
  *  1 unita' = 1/72 inch = 0.35277777... millimetri
  */
 #define PS_POINT(p, px, py) \
-	long px = (p.x * 2.8346457), \
-	      py = (p.y * 2.8346457);
+	long px = (p.x * 283.46457), \
+	      py = (p.y * 283.46457);
 
 static void ps_close_win(void)
 {
@@ -221,7 +221,7 @@ grp_window *ps_open_win(char *file)
 
 	/* Scrivo l'intestazione del file */
 	fprintf(winstream,
-	 "%%!PS-Adobe-2.0\n%%%%Title: %s\n%%%%Creator: gdl Version ???\n"
+	 "%%!PS-Adobe-2.0\n%%%%Title: %s\n%%%%Creator: Box g library\n"
 	 "%%%%Orientation: Landscape\n%%%%Pages: 1\n%%%%BoundingBox: 0 0 612 792\n"
 	 "%%%%BeginSetup\n%%%%IncludeFeature: *PageSize Letter\n%%%%EndSetup\n"
 	 "%%%%Magnification: 1.0000\n%%%%EndComments\n\n"
@@ -240,7 +240,7 @@ grp_window *ps_open_win(char *file)
 	 "    /xv xb xo sub def /yv yb yo sub def\n\n"
 	 "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
 	 "    0 0 1 0 360 arc\n    savematrix setmatrix\n\n  end\n} def\n\n"
-	 "90 rotate\n1 -1 scale\n"
+	 "0.01 0.01 scale\n90 rotate\n1 -1 scale\n"
 	 , file
 	);
 

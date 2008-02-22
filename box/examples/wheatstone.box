@@ -1,3 +1,4 @@
+// Run with "box wheatstone.box -l g"
 include "g"
 include "electric"
 
@@ -29,5 +30,8 @@ main = Window["bm4", (200, 200)]
 \ main.Put[wheatstone, (100, 100), .Scale[4]]
 main.Save["wheatstone.bmp"]
 
-// page <- Window !type "ps", !file "wheatstone.ps"
-// >< Put Ponte_Di_Wheatstone, (100, 100), !scale 3
+Print["Opening a new 'ps' windows to save the figure.";]
+\ Window["ps", .File["wheatstone.ps"]][
+  \ .Put[wheatstone, (100, 100), .Scale[3]]
+]
+
