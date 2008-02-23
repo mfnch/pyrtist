@@ -57,11 +57,13 @@ typedef void *Ptr;
  */
 typedef Ptr Subtype[2];
 
-#define SUBTYPE_PARENT_PTR(subtype, parent_type) \
-  (*((parent_type **) ((subtype)[0])))
+/* in this macro 'subtype_ptr' should have type 'Subtype *' */
+#define SUBTYPE_PARENT_PTR(subtype_ptr, parent_type) \
+  ((parent_type *) ((*(subtype_ptr))[0]))
 
-#define SUBTYPE_CHILD_PTR(subtype, child_type) \
-  (*((child_type **) (((subtype)[1]))))
+/* in this macro 'subtype_ptr' should have type 'Subtype *' */
+#define SUBTYPE_CHILD_PTR(subtype_ptr, child_type) \
+  (( child_type *) ((*(subtype_ptr))[1]))
 
 #define NAME(str) ((Name) {sizeof(str)-1, str})
 typedef struct {

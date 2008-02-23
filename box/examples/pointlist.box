@@ -1,0 +1,5 @@
+include "g"
+pl = PointList[(0, 1), "second", (2, 3), "third", (4, 5), (6, 7), (8, 9)]
+Print[pl.Get[1], pl.Get["second"], pl.Get[2], pl.Get[2.1],
+      pl.Get[2.5], pl.Get[2.9], pl.Get[3];]
+

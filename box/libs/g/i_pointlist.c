@@ -74,8 +74,7 @@ Task pointlist_get_str(VMProgram *vmp) {
     g_error("The name you gave is not a name of a point in the PointList.");
     return Failed;
   }
-  printf("PointList.Get: get (%f, %f)\n", p->x, p->y);
-//   *out_p = *p;
+  *out_p = *p;
   return Success;
 }
 
@@ -86,7 +85,7 @@ Task pointlist_get_int(VMProgram *vmp) {
     g_error("Wrong index in PointList.Get");
     return Failed;
   }
-  printf("PointList.Get: get (%f, %f)\n", p->x, p->y);
+  *out_p = *p;
   return Success;
 }
 
@@ -106,6 +105,6 @@ Task pointlist_get_real(VMProgram *vmp) {
   }
   p.x = p_a->x * d_b + p_b->x * d_a;
   p.y = p_a->y * d_b + p_b->y * d_a;
-  printf("PointList.Get: get (%f, %f)\n", p.x, p.y);
+  *out_p = p;
   return Success;
 }
