@@ -490,11 +490,13 @@ Task Expr_Subtype_Get_Child(Expr *child, Expr *subtype) {
 
 Task Expr_Resolve_Subtype(Expr *e) {
   Expr child;
+  int ignore = e->is.ignore;
   if (!e->is.typed) return Success;
   if (!TS_Is_Subtype(cmp->ts, e->resolved)) return Success;
   TASK( Expr_Subtype_Get_Child(& child, e) );
   Cmp_Expr_Destroy_Tmp(e);
   *e = child;
+  e->is.ignore = ignore;
   return Success;
 }
 

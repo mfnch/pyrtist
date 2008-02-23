@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "types.h"
 #include "virtmach.h"
@@ -66,24 +67,45 @@ Task pointlist_point(VMProgram *vmp) {
   return t;
 }
 
-Task pointlist_get_begin(VMProgram *vmp) {
-  PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, get);
-
-  return Success;
-}
-
-Task pointlist_get_end(VMProgram *vmp) {
-  return Success;
-}
-
 Task pointlist_get_str(VMProgram *vmp) {
+  PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, out_p, Point);
+  Point *p = pointlist_find(& ipl->pl, BOX_VM_ARGPTR1(vmp, char));
+  if (p == (Point *) NULL) {
+    g_error("The name you gave is not a name of a point in the PointList.");
+    return Failed;
+  }
+  printf("PointList.Get: get (%f, %f)\n", p->x, p->y);
+//   *out_p = *p;
   return Success;
 }
 
 Task pointlist_get_int(VMProgram *vmp) {
+  PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, out_p, Point);
+  Point *p = pointlist_get(& ipl->pl, BOX_VM_ARG1(vmp, Int));
+  if (p == (Point *) NULL) {
+    g_error("Wrong index in PointList.Get");
+    return Failed;
+  }
+  printf("PointList.Get: get (%f, %f)\n", p->x, p->y);
   return Success;
 }
 
 Task pointlist_get_real(VMProgram *vmp) {
+  PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, out_p, Point);
+  Real real_index = BOX_VM_ARG1(vmp, Real);
+  Int index_a = (Int) real_index,
+      index_b = index_a + (index_a < 0 ? -1 : 1);
+  Real d_a = fabs(real_index - index_a),
+       d_b = fabs(real_index - index_b);
+  Point *p_a, *p_b, p;
+  p_a = pointlist_get(& ipl->pl, index_a);
+  p_b = pointlist_get(& ipl->pl, index_b);
+  if (p_a == (Point *) NULL || p_b == (Point *) NULL) {
+    g_error("Wrong index in PointList.Get, shouldn't happen!");
+    return Failed;
+  }
+  p.x = p_a->x * d_b + p_b->x * d_a;
+  p.y = p_a->y * d_b + p_b->y * d_a;
+  printf("PointList.Get: get (%f, %f)\n", p.x, p.y);
   return Success;
 }
