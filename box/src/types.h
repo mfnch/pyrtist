@@ -52,7 +52,7 @@ typedef struct {
 
 typedef void *Ptr;
 
-/** A subtype is simply a structure containing two pointer: one points
+/** A subtype is simply a structure containing two pointers: one points
  * to the parent, one to the child.
  */
 typedef Ptr Subtype[2];

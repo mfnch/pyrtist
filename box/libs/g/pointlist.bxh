@@ -2,9 +2,12 @@
 
 PointList = Ptr
 ([)@PointList ? "pointlist_begin"
-()Char@Window ? "pointlist_str"
-P@Window ? "pointlist_point"
+()Char@&PointList ? "pointlist_str"
+P@&PointList ? "pointlist_point"
 
 PointList.Get = Point
-
-PointList.Add = Void
+([)@PointList.Get ? "pointlist_get_begin"
+(])@PointList.Get ? "pointlist_get_end"
+()Char@PointList.Get ? "pointlist_get_str"
+Int@PointList.Get ? "pointlist_get_int"
+Real@PointList.Get ? "pointlist_get_real"

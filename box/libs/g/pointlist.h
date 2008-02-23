@@ -2,27 +2,15 @@
 #ifndef _POINTLIST_H
 #  define _POINTLIST_H
 
-#  include <stdio.h>
+#  include "objlist.h"
 
-#  include "types.h"
-#  include "buffer.h"
+#  define PointList ObjList
 
-typedef struct {
-  Point point;
-  char *name;
-} PointListItem;
-
-typedef struct {
-  buff pl;
-} PointList;
-
-Task pointlist_init(PointList *pl);
-void pointlist_destroy(PointList *pl);
-Point *pointlist_get(PointList *pl, Int index);
-Point *pointlist_find(PointList *pl, char *name);
-Task pointlist_add(PointList *pl, Point *p, char *name);
-Task pointlist_clear(PointList *pl);
-void pointlist_fprint(PointList *pl, FILE *out);
+#  define pointlist_init(pl) (objlist_init((pl), sizeof(Point)))
+#  define pointlist_destroy(pl) (objlist_destroy((pl)))
+#  define pointlist_find(pl, name) ((Point *) objlist_find((pl), (name)))
+#  define pointlist_get(pl, index) ((Point *) objlist_get((pl), (index)))
+#  define pointlist_add(pl, p, name) (objlist_add((pl), (p), name))
 
 #endif
 

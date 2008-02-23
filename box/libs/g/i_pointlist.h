@@ -15,15 +15,29 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* autoput.h
- *
- * Dichiarazione delle funzioni definite in autoput.c
- */
+#ifndef _I_POINTLIST_H
+#  define _I_POINTLIST_H
 
-void aput_matrix(Point *t, Point *rcntr, Real rang, Real sx, Real sy, Real *matrix);
-void aput_get(Point *rot_center, Point *trsl_vect,
-              Real *rot_angle, Real *scale_x, Real *scale_y );
-void aput_set(Point *rot_center, Point *trsl_vect,
-              Real *rot_angle, Real *scale_x, Real *scale_y );
-int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed);
-int aput_allow(char *permissions, int *needed);
+#  include "types.h"
+#  include "buffer.h"
+#  include "pointlist.h"
+
+typedef struct {
+  PointList pl;
+  char *name;
+} IPointList;
+
+#  define PROC_OF_POINTLIST(vmp, ipl) \
+    IPointList **ipl##_ptr = BOX_VM_CURRENTPTR(vmp, IPointList *), \
+              *ipl = *ipl##_ptr
+
+#  define PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, subtype) \
+    IPointList *ipl = *( (IPointList **) \
+      SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), IPointList *) )
+
+/*
+    IPointList *ipl = *( (IPointList **) \
+      SUBTYPE_CHILD_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), IPointList *) );
+*/
+
+#endif
