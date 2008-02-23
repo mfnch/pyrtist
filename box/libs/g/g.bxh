@@ -6,6 +6,7 @@ P = ((R, R) -> Point)
 const = (Real pi,)
 const.pi = 3.14159265358979323844
 
+include "pointlist"
 include "color"
 include "window"
 include "line"

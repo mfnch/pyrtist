@@ -1,0 +1,10 @@
+// The PointList object
+
+PointList = Ptr
+([)@PointList ? "pointlist_begin"
+()Char@Window ? "pointlist_str"
+P@Window ? "pointlist_point"
+
+PointList.Get = Point
+
+PointList.Add = Void
