@@ -8,6 +8,8 @@
 #include "i_window.h"
 #include "autoput.h"
 #include "fig.h"
+#include "pointlist.h"
+#include "i_pointlist.h"
 
 Task put_window_init(Window *w) {
   if ( ! buff_create(& w->put.fig_points, sizeof(Point), 8) ) {
@@ -95,11 +97,17 @@ static Task put_calculate(Window *w) {
   return Success;
 }
 
+static Task _transform_pl(Int index, char *name, void *object, void *data) {
+  fig_ltransform((Point *) object, 1);
+  return Success;
+}
 
 Task window_put_end(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
+  PROC_OF_WINDOW_SUBTYPE(vmp, w, out_pl, IPointList *);
+//   SUBTYPE_OF_WINDOW(vmp, w);
   grp_window *cur_win = grp_win;
   Window *figure;
+  IPointList *returned_pl;
 
   /* Se sono gia' stati inseriti dei vincoli (con !near[...]), ma essi non
    * sono ancora stati utilizzati (cioe' .Compute non e' stata invocata), allora
@@ -123,6 +131,15 @@ Task window_put_end(VMProgram *vmp) {
   grp_win = w->window;
   fig_draw_fig(figure->window);
   grp_win = cur_win;
+  returned_pl = (IPointList *) malloc(sizeof(IPointList));
+  if (returned_pl == (IPointList *) NULL) {
+    g_error("window_put_end: malloc failed!");
+    return Failed;
+  }
+  returned_pl->name = (char *) NULL;
+  pointlist_dup(& returned_pl->pl, & figure->pointlist);
+  (void) pointlist_iter(& returned_pl->pl, _transform_pl, NULL);
+  *out_pl = returned_pl;
   return Success;
 }
 

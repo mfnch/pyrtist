@@ -221,7 +221,8 @@ void Cont_Ptr_Cast(Cont *ptr, ContType type) {
       ptr->type = type;
       return;
     default:
-      MSG_FATAL("Cont_Ptr_Cast: cannot cast type=%d to %d if the container ",
+      if (ptr->type == type) return;
+      MSG_FATAL("Cont_Ptr_Cast: cannot cast type=%I to %I if the container "
                 "is not a pointer.", ptr->type, type);
       return;
     }

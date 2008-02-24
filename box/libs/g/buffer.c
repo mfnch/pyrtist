@@ -99,6 +99,20 @@ int buff_create(buff *buffer, short elsize, long mindim)
   return 1;
 }
 
+int buff_dup(buff *dest, buff *src) {
+  if (src->id != buffID) {
+    ERRORMSG("buff_recycle", "Buffer danneggiato");
+    return 0;
+  }
+
+  *dest = *src;
+  if (dest->size > 0 && dest->ptr != (void *) NULL) {
+    dest->ptr = (void *) malloc(dest->size);
+    (void) memcpy(dest->ptr, src->ptr, dest->size);
+  }
+  return 1;
+}
+
 /* NOME: buff_create
  * DESCRIZIONE: Converte il buffer specificato, in un nuovo buffer
  *  con elementi di dimensione diversa (elsize).

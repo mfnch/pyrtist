@@ -1,6 +1,6 @@
 // Interface to Window.Put
 
-Window.Put = Void
+Window.Put = PointList
 Window.Put.Scale = Void
 Window.Put.Near = Void
 

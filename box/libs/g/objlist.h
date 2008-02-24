@@ -22,10 +22,12 @@ typedef Task (*ObjListIterator)(Int obj_idx, char *name,
 Task objlist_init(ObjList *ol, Int obj_size);
 void objlist_destroy(ObjList *pl);
 Task objlist_clear(ObjList *ol);
+Task objlist_dup(ObjList *dest, ObjList *src);
 void *objlist_find(ObjList *ol, char *name);
 void *objlist_get(ObjList *ol, Int index);
 Task objlist_add(ObjList *ol, void *obj, char *name);
 Task objlist_iter(ObjList *ol, ObjListIterator it, void *data);
+Int objlist_num(ObjList *ol);
 
 #endif
 

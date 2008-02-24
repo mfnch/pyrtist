@@ -43,6 +43,20 @@ Task objlist_clear(ObjList *ol) {
   return Failed;
 }
 
+Task objlist_dup(ObjList *dest, ObjList *src) {
+  int i, n;
+  if (!buff_dup(& dest->ol, & src->ol)) return Success;
+  /* We need to copy all the string names: they cannot be shared! */
+  n = buff_numitem(& dest->ol);
+  for(i=1; i <= n; i++) {
+    ObjListItem *dest_oli = buff_itemptr(& dest->ol, ObjListItem, i);
+    /* Ignoring the out of memory errors should be fine anyway! */
+    if (dest_oli->name != (char *) NULL)
+      dest_oli->name = strdup(dest_oli->name);
+  }
+  return Success;
+}
+
 void *objlist_find(ObjList *ol, char *name) {
   int i, n = buff_numitem(& ol->ol);
   if (name == (char *) NULL) return (void *) NULL;
@@ -104,4 +118,8 @@ Task objlist_iter(ObjList *ol, ObjListIterator it, void *data) {
       return Failed;
   }
   return Success;
+}
+
+Int objlist_num(ObjList *ol) {
+  return buff_numitem(& ol->ol);
 }

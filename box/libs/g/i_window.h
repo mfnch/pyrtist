@@ -46,14 +46,20 @@ typedef struct {
 typedef void *WindowPtr;
 
 
-  #define SUBTYPE_OF_WINDOW(vmp, w) \
+#  define SUBTYPE_OF_WINDOW(vmp, w) \
     Window *w = *( (Window **) \
       SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), WindowPtr) );
 
-  #define SUBTYPE2_OF_WINDOW(vmp, w) \
+#  define SUBTYPE2_OF_WINDOW(vmp, w) \
     Window *w = *( (Window **) \
       SUBTYPE_PARENT_PTR( \
         SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), Subtype), \
         WindowPtr) );
+
+#  define PROC_OF_WINDOW_SUBTYPE(vmp, w, child, child_type) \
+    Window *w = *( (Window **) \
+      SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), Window *) ); \
+    child_type *child = ( (child_type *) \
+      SUBTYPE_CHILD_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), child_type) )
 
 #endif

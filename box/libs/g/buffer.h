@@ -22,6 +22,7 @@ typedef struct {
 
 /* Procedure definite in buffer.c */
 int buff_create(buff *buffer, short elsize, long mindim);
+int buff_dup(buff *dest, buff *src);
 int buff_recycle(buff *buffer, short elsize, long mindim);
 int buff_push(buff *buffer, void *elem);
 int buff_mpush(buff *buffer, void *elem, long numel);

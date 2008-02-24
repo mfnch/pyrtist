@@ -67,6 +67,20 @@ Task pointlist_point(VMProgram *vmp) {
   return t;
 }
 
+static Task _add_from_pointlist(Int index, char *name,
+                                void *object, void *data)
+{
+  PointList *dest_pl = (PointList *) data;
+  Point *p = (Point *) object;
+  return pointlist_add(dest_pl, p, name);
+}
+
+Task pointlist_pointlist(VMProgram *vmp) {
+  PROC_OF_POINTLIST(vmp, ipl);
+  IPointList *ipl_to_add = BOX_VM_ARG1(vmp, IPointList *);
+  return pointlist_iter(& ipl_to_add->pl, _add_from_pointlist, & ipl->pl);
+}
+
 Task pointlist_get_str(VMProgram *vmp) {
   PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, out_p, Point);
   Point *p = pointlist_find(& ipl->pl, BOX_VM_ARGPTR1(vmp, char));
@@ -106,5 +120,11 @@ Task pointlist_get_real(VMProgram *vmp) {
   p.x = p_a->x * d_b + p_b->x * d_a;
   p.y = p_a->y * d_b + p_b->y * d_a;
   *out_p = p;
+  return Success;
+}
+
+Task pointlist_num_begin(VMProgram *vmp) {
+  PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, out_num, Int);
+  *out_num = pointlist_num(& ipl->pl);
   return Success;
 }
