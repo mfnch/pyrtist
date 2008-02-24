@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE language SYSTEM "language.dtd">
-<language name="Box" version="0.1" kateversion="2.1" section="Sources" extensions="*.box" mimetype="text/x-csrc;text/x-c++src;text/x-chdr" priority="1">
+<language name="Box" version="0.1" kateversion="2.1" section="Sources" extensions="*.box;*.bxh" mimetype="text/x-box" author="Matteo Franchin (fnch@libero.it)" license="LGPL">
   <highlighting>
     <list name="attention">
       <item> FIXME </item>
       <item> TODO </item>
       <item> ### </item>
     </list>
+    <list name="keywords">
+      <item> include </item>
+    </list>
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
         <RegExpr attribute="Data Type" context="#stay" String="\b[A-Z][A-Za-z0-9]*"/>
         <RegExpr attribute="Member Type" context="#stay" String="[.][A-Z][A-Za-z0-9]*"/>
         <RegExpr attribute="Member" context="#stay" String="[.][a-z][A-Za-z0-9]*"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
 
         <DetectChar attribute="Symbol" context="#stay" char="@"/>
         <Detect2Chars attribute="Symbol" context="#stay" char="@" char1="@"/>

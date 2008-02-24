@@ -16,3 +16,7 @@ P@Window.Line ? "line_point"
 Color@Window.Line ? "line_color"
 Window@Window.Line ? "line_window"
 LineStyle@Window.Line ? "line_style"
+
+Window.Line.Close = Void
+([)@Window.Line.Close ? "window_line_close_begin"
+Int@Window.Line.Close ? "window_line_close_int"

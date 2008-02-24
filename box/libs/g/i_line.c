@@ -88,13 +88,18 @@ Task line_begin(VMProgram *vmp) {
 
 Task line_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  grp_window *cur_win = grp_win;
-  Color *c = g_optcolor_get(& w->line.color);
-  grp_win = w->window;
-  grp_rfgcolor(c->r, c->g, c->b);
-  (void) line_draw(w->line.close, & w->line.pieces);
-  grp_win = cur_win;
-  return Success;
+  if (buff_numitem(& w->line.pieces) < 1)
+    return Success;
+
+  else {
+    grp_window *cur_win = grp_win;
+    Color *c = g_optcolor_get(& w->line.color);
+    grp_win = w->window;
+    grp_rfgcolor(c->r, c->g, c->b);
+    (void) line_draw(w->line.close, & w->line.pieces);
+    grp_win = cur_win;
+    return Success;
+  }
 }
 
 Task line_real(VMProgram *vmp) {
@@ -187,6 +192,17 @@ Task line_style(VMProgram *vmp) {
   return Success;
 }
 
+Task window_line_close_begin(VMProgram *vmp) {
+  SUBTYPE2_OF_WINDOW(vmp, w);
+  w->line.close = 1;
+  return Success;
+}
+
+Task window_line_close_int(VMProgram *vmp) {
+  SUBTYPE2_OF_WINDOW(vmp, w);
+  w->line.close = BOX_VM_ARG1(vmp, Int);
+  return Success;
+}
 
 /******************************************************************************
  * F U N Z I O N I    D I   D I S E G N O    P E R    L I N E E   S P E S S E *
@@ -224,7 +240,7 @@ static int line_draw_opened(buff *line_desc) {
   /* Una linea e' descritta da almeno 2 punti */
   numpnt = buff_numitem(line_desc);
   if ( numpnt < 2 ) {
-    g_warning("Linea con meno di 2 punti");
+    g_warning("Line with less than two points");
     return 1;
   }
 
