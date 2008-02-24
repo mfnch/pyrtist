@@ -1,4 +1,5 @@
 // Some symbols used in electronics
+include "arrows"
 
 //-------------------------------------------------------------------------------
 diode = Window["fig"][
@@ -40,3 +41,37 @@ inductance = Window["fig"][
   \ .Hot[p0, p]
 ]
 
+//-------------------------------------------------------------------------------
+capacitor = Window["fig"][
+  h = 4.0, d = 1.0
+  \ .Line[line.sharp, 0.6, (-h, -d), (h, -d); (-h, d), (h, d)]
+  \ .Hot[(0.0, -d), (0.0, d)]
+]
+
+//-------------------------------------------------------------------------------
+transistor_NPN = Window[]
+transistor_PNP = Window[]
+
+[
+  r = 5.0
+  d = 0.4, hd = 0.5*d
+  ld = r*0.4, ll = r*0.5, lp = r*0.2
+  a = -0.65*const.pi
+  base = (r-hd, 0)
+  collector = (r-hd)*(Cos[a], Sin[a])
+  emitter = (r-hd)*(Cos[-a], Sin[-a])
+  \ transistor_NPN[
+    \ .Circle[(0, 0), r; color.white, r-d]
+    \ .Line[d, (ld, -ll), (ld, ll); hd, base, (ld, 0)]
+    \ .Hot["C", collector, "E", emitter, "B", base]
+  ]
+  \ transistor_PNP[
+    \ .Put[transistor_NPN]
+    \ .Line[hd, collector, arrow_triangle, (ld-d, -lp);
+            (ld, lp), emitter]
+    \ .Hot["C", collector, "E", emitter, "B", base]
+  ]
+  \ transistor_NPN[
+    \ .Line[(ld, -lp), collector; (ld, lp), arrow_triangle, emitter]
+  ]
+]

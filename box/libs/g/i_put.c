@@ -195,6 +195,19 @@ Task window_put_scale_real(VMProgram *vmp) {
   return Success;
 }
 
+Task window_put_scale_point(VMProgram *vmp) {
+  Subtype *scale_of_window_put = BOX_VM_CURRENTPTR(vmp, Subtype);
+  Subtype *put_of_window = SUBTYPE_PARENT_PTR(scale_of_window_put, Subtype);
+  Window *w = *((Window **) SUBTYPE_PARENT_PTR(put_of_window, WindowPtr));
+  Point *p = BOX_VM_ARGPTR1(vmp, Point);
+  w->put.scale.y = p->x;
+  w->put.scale.x = p->y;
+  if (w->put.got.scale)
+    g_warning("ignoring previously specified scale factors!");
+  w->put.got.scale = 1;
+  return Success;
+}
+
 Task window_put_near_begin(VMProgram *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
   w->put.near.have.on_src = 0;
