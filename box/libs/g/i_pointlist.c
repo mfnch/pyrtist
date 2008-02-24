@@ -15,7 +15,7 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
+/* $Id:$ */
 
 #include <stdlib.h>
 #include <stdio.h>
