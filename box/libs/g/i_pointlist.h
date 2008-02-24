@@ -15,6 +15,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+/* $Id$ */
+
 #ifndef _I_POINTLIST_H
 #  define _I_POINTLIST_H
 
