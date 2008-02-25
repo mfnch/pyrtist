@@ -191,23 +191,13 @@ Task window_save_end(VMProgram *vmp) {
     return Failed;
 
   } else {
-    FILE *file;
     grp_window *cur_win;
     int all_ok;
 
-    file = fopen(w->save_file_name, "wb");
-    if (file == (FILE *) NULL) {
-      g_error("cannot open file for writing!");
-      return Failed;
-    }
-
     cur_win = grp_win;
     grp_win = w->window;
-    all_ok = grp_save(file);
+    all_ok = grp_save(w->save_file_name);
     grp_win = cur_win;
-
-    fclose(file);
-
     return (all_ok) ? Success : Failed;
   }
 

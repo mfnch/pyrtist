@@ -63,12 +63,7 @@ void grbm_draw_point(FCOOR x, FCOOR y)
 /***************************************************************************************/
 /* PROCEDURE DI SALVATAGGIO SU DISCO DELLA FINESTRA GRAFICA */
 
-/* FUNZIONE: grbm_save_to_bmp
- * Salva la finestra in un file in formato BMP, scrivendolo su stream.
- * Restituisce 1 in caso di successo, 0 altrimenti.
- */
-int grbm_save_to_bmp(FILE *stream)
-{
+static int _grbm_save_to_bmp(FILE *stream) {
   int i;
   long bytesperline, imgsize, imgoffs;
   void *lineptr;
@@ -157,4 +152,15 @@ int grbm_save_to_bmp(FILE *stream)
   }
 
   return 1;
+}
+
+/* FUNZIONE: grbm_save_to_bmp
+ * Salva la finestra in un file in formato BMP, scrivendolo su stream.
+ * Restituisce 1 in caso di successo, 0 altrimenti.
+ */
+int grbm_save_to_bmp(const char *file_name) {
+  FILE *file = fopen(file_name, "w");
+  int status = _grbm_save_to_bmp(file);
+  fclose(file);
+  return status;
 }

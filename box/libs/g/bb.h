@@ -17,15 +17,9 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* autoput.h
- *
- * Dichiarazione delle funzioni definite in autoput.c
- */
+#ifndef _BB_H
+#  define _BB_H
 
-void aput_matrix(Point *t, Point *rcntr, Real rang, Real sx, Real sy, Real *matrix);
-void aput_get(Point *rot_center, Point *trsl_vect,
-              Real *rot_angle, Real *scale_x, Real *scale_y );
-void aput_set(Point *rot_center, Point *trsl_vect,
-              Real *rot_angle, Real *scale_x, Real *scale_y );
-int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed);
-int aput_allow(char *permissions, int *needed);
+void bb_bounding_box(grp_window *figure, Point *bb_min, Point *bb_max);
+
+#endif

@@ -50,6 +50,7 @@ void fig_rcurve(Point a, Point b, Point c, Real cut);
 void fig_rcircle(Point ctr, Point a, Point b);
 void fig_rfgcolor(Real r, Real g, Real b);
 void fig_rbgcolor(Real r, Real g, Real b);
+static int fig_save(const char *file_name);
 
 /* Lista delle funzioni di basso livello (non disponibili) */
 static void (*fig_lowfn[])() = {
@@ -205,7 +206,7 @@ grp_window *fig_open_win(int numlayers)
   wd->ptr = buff_ptr(laylist);
 
   wd->wrdep = (void *) figh;
-  wd->save = not_available;
+  wd->save = fig_save;
   wd->lowfn = fig_lowfn;
   wd->midfn = fig_midfn;
 
@@ -768,4 +769,8 @@ void fig_draw_fig(grp_window *source)
 
   PRNMSG("Ok!\n");
   return;
+}
+
+static int fig_save(const char *file_name) {
+  return ps_save_fig(file_name, grp_win);
 }
