@@ -119,8 +119,10 @@ void bb_bounding_box(grp_window *figure, Point *bb_min, Point *bb_max) {
   bb.midfn = bb_midfn;
   bb_num_points = 0;
   grp_win = & bb;
+  aput_identity_matrix(fig_matrix);
   fig_draw_fig(figure);
   grp_win = cur_win;
   if (bb_min != (Point *) NULL) {bb_min->x = bb_min_x; bb_min->y = bb_min_y;}
   if (bb_max != (Point *) NULL) {bb_max->x = bb_max_x; bb_max->y = bb_max_y;}
 }
+

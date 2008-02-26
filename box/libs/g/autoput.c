@@ -337,7 +337,12 @@ void aput_matrix( Point *t, Point *rcntr, Real rang, Real sx, Real sy,
 	matrix[2] = m21; matrix[3] = m22;
 	matrix[4] = (1.0 - m11) * rcntr->x - m12 * rcntr->y + t->x;
 	matrix[5] = (1.0 - m22) * rcntr->y - m21 * rcntr->x + t->y;
-	return;
+}
+
+void aput_identity_matrix(Real *matrix) {
+  Point t = {0.0, 0.0}, rcntr = {0.0, 0.0};
+  Real rang = 0.0, sx = 1.0, sy = 1.0;
+  aput_matrix(& t, & rcntr, rang, sx, sy, matrix);
 }
 
 /* DESCRIZIONE: Converte una stringa in un valore di "needed" da usare nella

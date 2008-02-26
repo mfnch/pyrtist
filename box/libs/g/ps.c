@@ -127,6 +127,11 @@ static void ps_rline(Point a, Point b)
 
 static void ps_rcong(Point a, Point b, Point c) {
   PS_POINT(a, ax, ay); PS_POINT(b, bx, by); PS_POINT(c, cx, cy);
+  int a_eq_b = ax == bx && ay == by,
+      a_eq_c = ax == cx && ay == cy,
+      b_eq_c = bx == cx && by == cy,
+      n_eq = a_eq_b + a_eq_c + b_eq_c;
+  if (n_eq == 3) return;
 
   if ( beginning_of_path )
     fprintf( (FILE *) grp_win->ptr, " newpath" );
@@ -260,8 +265,8 @@ int ps_save_fig(const char *file_name, grp_window *figure) {
          bb_min.x, bb_min.y, bb_max.x, bb_max.y);
 
   grp_win = ps_open_win(file_name);
-  translation.x = bb_min.x;
-  translation.y = bb_min.y;
+  translation.x = -bb_min.x;
+  translation.y = -bb_min.y;
   center.y = center.x = 0.0;
   sy = sx = 1.0;
   rot_angle = 0.0;
