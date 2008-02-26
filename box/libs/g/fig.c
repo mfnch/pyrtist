@@ -772,5 +772,5 @@ void fig_draw_fig(grp_window *source)
 }
 
 static int fig_save(const char *file_name) {
-  return ps_save_fig(file_name, grp_win);
+  return eps_save_fig(file_name, grp_win);
 }

@@ -95,6 +95,7 @@ grp_window *gr8b_open_win(FCOOR ltx, FCOOR lty, FCOOR rdx, FCOOR rdy,
 grp_window *fig_open_win(int numlayers);
 grp_window *ps_open_win(char *file);
 int ps_save_fig(const char *file_name, grp_window *figure);
+int eps_save_fig(const char *file_name, grp_window *figure);
 
 /* Procedure per la gestione di una palette */
 void grp_color_build(Real r, Real g, Real b, color *c);

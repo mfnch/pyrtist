@@ -34,8 +34,8 @@ AM_CPPFLAGS = -I../../src
 libg_la_SOURCES = g.c g.h objlist.c objlist.h pointlist.h \
                   bm1bit.c bm4bit.c bm8bit.c bitmap.h \
                   bmcommon.c bmcommon.h \
-                  fig.c fig.h graphic.c graphic.h grpline.c ps.c \
-                  bb.c bb.h \
+                  fig.c fig.h graphic.c graphic.h grpline.c \
+                  ps.c eps.c bb.c bb.h \
                   rasterizer.c buffer.c buffer.h error.c error.h \
                   autoput.c autoput.h \
                   i_pointlist.c i_pointlist.h \
