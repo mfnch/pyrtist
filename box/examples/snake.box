@@ -22,9 +22,11 @@ snake = Window["fig"]
 snake.Line[color.dark_green, line.smooth, (10, 10), 1, 4, (40, 100), 4, 5
            (80, 10), (120, 90), (150, 25), (170, 55), face, (195, 70)]
 
+snake.Save["snake.eps"]
+
 output = Window["bm8", (210, 110)]
-output.Put[snake, (0, 0), .Scale[1]]
+\ output.Put[snake, (0, 0), .Scale[1]]
 output.Save["snake.bmp"]
 
-\ Window["ps", .File["snake.ps"]][.Put[snake, (0, 0), .Scale[1]]]
+\ Window["ps", .File["snake.ps"]][\ .Put[snake, (0, 0), .Scale[1]]]
 

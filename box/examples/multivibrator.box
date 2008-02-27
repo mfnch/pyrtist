@@ -42,4 +42,6 @@ w = Window[][
 ]
 
 // Save the figure into a postscript file
+w.Save["multivibrator.eps"]
 \ Window["ps", .File["multivibrator.ps"]][\ .Put[w, (10, 10), .Scale[3]]]
+

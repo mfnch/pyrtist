@@ -27,6 +27,8 @@ wheatstone = Window["fig"][
   // Drawing small circles on the nodes
   \ .Circle[0.8, p1; p2; p3; p4]
 ]
+wheatstone.Save["w.ps"]
+
 
 //-------------------------------------------------------------------------------
 Print["Opening a new 'bm4' windows to save the figure.";]
@@ -37,6 +39,3 @@ Print["Opening a new 'ps' windows to save the figure.";]
 \ Window["ps", .File["wheatstone.ps"]][
   \ .Put[wheatstone, (100, 100), .Scale[3]]
 ]
-
-wheatstone.Save["w.ps"]
-
