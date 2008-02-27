@@ -94,6 +94,7 @@ grp_window *gr8b_open_win(FCOOR ltx, FCOOR lty, FCOOR rdx, FCOOR rdy,
  FCOOR resx, FCOOR resy);
 grp_window *fig_open_win(int numlayers);
 grp_window *ps_open_win(char *file);
+grp_window *eps_open_win(char *file, Real x, Real y);
 int ps_save_fig(const char *file_name, grp_window *figure);
 int eps_save_fig(const char *file_name, grp_window *figure);
 
@@ -156,7 +157,8 @@ Point *grp_ref(Point *o, Point *v, Point *p);
 #define grp_radperdeg  0.01745329252
 #define grp_radpergrad  0.01570796327
 #define grp_ppmmperdpi  0.03937007874
-
+#define grp_mm_per_inch 25.4
+#define grp_inch_per_psunit (1.0/72.0)
 
 /* Conversione da coordinate relative a coordinate assolute (floating) */
 #define CV_XF_A(x)  (((FCOOR) x - grp_win->ltx)/grp_win->stepx)

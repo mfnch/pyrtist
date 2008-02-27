@@ -15,6 +15,7 @@ Window.Hot = Point
 ([)@Window.Hot ? "window_hot_begin"
 P@Window.Hot ? "window_hot_point"
 ()Char@Window.Hot ? "window_hot_string"
+PointList@Window.Hot ? "window_hot_pointlist"
 (])@Window.Hot ? "window_hot_end"
 
 Window.Res = Void

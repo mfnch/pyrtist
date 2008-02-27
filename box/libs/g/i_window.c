@@ -8,6 +8,7 @@
 #include "graphic.h"
 #include "g.h"
 #include "pointlist.h"
+#include "i_pointlist.h"
 #include "i_window.h"
 #include "i_line.h"
 #include "i_circle.h"
@@ -235,6 +236,20 @@ Task window_hot_string(VMProgram *vmp) {
   w->hot.name = name;
   w->hot.got.name = 1;
   return Success;
+}
+
+static Task _add_from_pointlist(Int index, char *name,
+                                void *object, void *data)
+{
+  PointList *dest_pl = (PointList *) data;
+  Point *p = (Point *) object;
+  return pointlist_add(dest_pl, p, name);
+}
+
+Task window_hot_pointlist(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  IPointList *ipl_to_add = BOX_VM_ARG1(vmp, IPointList *);
+  return pointlist_iter(& ipl_to_add->pl, _add_from_pointlist, & w->pointlist);
 }
 
 Task window_hot_end(VMProgram *vmp) {

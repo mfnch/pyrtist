@@ -17,23 +17,22 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* eps.c - 15 aprile 2004
- *
- * Questo file contiene le funzioni che implementano una finestra di tipo
- * postscript (ps). In questa finestra i comandi grafici vengono immediatamente
- * diretti sul file postscript di output.
- */
-
 #include <stdlib.h>
 #include <stdio.h>
-/*#include <math.h>*/
+#include <math.h>
 
-#include "error.h"    /* Serve per la segnalazione degli errori */
+#include "error.h"
 #include "types.h"
-#include "graphic.h"  /* Dichiaro alcune strutture grafiche generali */
+#include "graphic.h"
 #include "fig.h"
 #include "autoput.h"
 #include "bb.h"
+
+/* This terminal discretizes the points into a grid where the number of
+ * points per inch in the x and y directions are discretization_x and
+ * discretization_y
+ */
+static int discretization_x = 1000, discretization_y = 1000;
 
 static void not_available(void);
 static void eps_close_win(void);
@@ -70,13 +69,14 @@ static void (*eps_midfn[])() = {
 static int beginning_of_line = 1, beginning_of_path = 1;
 static long previous_px, previous_py;
 
+static Point eps_point_scale = {283.46457, 283.46457};
 /* Le coordinate dei punti passati alle funzioni grafiche in questo file,
  * sono espresse in millimetri: le converto nelle unita' postscript:
  *  1 unita' = 1/72 inch = 0.35277777... millimetri
  */
 #define EPS_POINT(p, px, py) \
-  long px = (p.x * 283.46457), \
-       py = (p.y * 283.46457);
+  long px = (p.x * eps_point_scale.x), \
+       py = (p.y * eps_point_scale.y);
 
 static void eps_close_win(void) {
   FILE *f = (FILE *) grp_win->ptr;
@@ -173,15 +173,23 @@ static void eps_rbgcolor(Real r, Real g, Real b) {return;}
 /***************************************************************************************/
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
 
-/* NOME: eps_open_win
- * DESCRIZIONE: Apre una finestra grafica di tipo postscript.
- *  Tale finestra tradurra' i comandi grafici ricevuti in istruzioni postscript,
- *  che saranno scritte immediatamente su file.
+/* Open a graphic window with type "eps" (encapsulated postscript).
+ * The windows opens a file and send all the commands it receives directly
+ * to it. The window will have size size_x and size_y (in mm) and will
+ * show coordinates from (0, 0) to (size_x, size_y). 
  */
-grp_window *eps_open_win(char *file) {
+grp_window *eps_open_win(char *file, Real size_x, Real size_y) {
   grp_window *wd;
   FILE *winstream;
-  int x_max = 294, y_max = 214;
+  Real size_x_psunit, size_y_psunit;
+  int x_max, y_max;
+
+  /* Should express the size of the window in postscript units 1/72 of inch */
+  /* 1 inch = 25.4 mm */
+  size_x_psunit = (size_x / grp_mm_per_inch)/grp_inch_per_psunit;
+  size_y_psunit = (size_y / grp_mm_per_inch)/grp_inch_per_psunit;
+  x_max = (int) size_x_psunit+1;
+  y_max = (int) size_y_psunit+1;
 
   /* Creo la finestra */
   wd = (grp_window *) malloc( sizeof(grp_window) );
@@ -252,7 +260,7 @@ grp_window *eps_open_win(char *file) {
 
   fprintf(winstream, "newpath 0 %d moveto 0 0 lineto %d 0 "
           "lineto %d %d lineto closepath clip newpath\n"
-          "0.0 0.0 translate\n1 -1 scale\n0.01 0.01 scale\n",
+          "0.01 0.01 scale\n",
           y_max, x_max, x_max, y_max);
 
   return wd;
@@ -264,7 +272,7 @@ static int eps_save(void) {
 }
 
 int eps_save_fig(const char *file_name, grp_window *figure) {
-  Point bb_min, bb_max, translation, center;
+  Point bb_min, bb_max, translation, center, size;
   Real sx, sy, rot_angle;
   grp_window *cur_win = grp_win;
 
@@ -272,7 +280,9 @@ int eps_save_fig(const char *file_name, grp_window *figure) {
   printf("Bounding box (%f, %f) - (%f, %f)\n",
          bb_min.x, bb_min.y, bb_max.x, bb_max.y);
 
-  grp_win = eps_open_win(file_name);
+  size.x = fabs(bb_max.x - bb_min.x);
+  size.y = fabs(bb_max.y - bb_min.y);
+  grp_win = eps_open_win(file_name, size.x, size.y);
   translation.x = -bb_min.x;
   translation.y = -bb_min.y;
   center.y = center.x = 0.0;
