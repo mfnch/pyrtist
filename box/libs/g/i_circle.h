@@ -6,8 +6,9 @@
 typedef struct {
   struct {
     enum {GOT_NOT, GOT_NOW, GOT_BEFORE} center, radius_a, radius_b;
+    int color : 1;
   } got;
-  OptColor color;
+  Color color;
   Point center;
   Real radius_a, radius_b;
 } WindowCircle;
@@ -16,8 +17,6 @@ typedef struct {
 
 #  ifndef _I_CIRCLE_H
 #    define _I_CIRCLE_H
-
-Task circle_window_init(Window *w);
 
 #  endif
 

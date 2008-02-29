@@ -7,16 +7,11 @@
 #include "g.h"
 #include "i_window.h"
 
-Task circle_window_init(Window *w) {
-  g_optcolor_alternative_set(& w->circle.color, & w->fg_color);
-  g_optcolor_unset(& w->circle.color);
-  return Success;
-}
-
 Task circle_color(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Color *c = BOX_VM_ARGPTR1(vmp, Color);
-  return g_optcolor_set(& w->circle.color, c);
+  w->circle.color = BOX_VM_ARG1(vmp, Color);
+  w->circle.got.color = 1;
+  return Success;
 }
 
 Task circle_begin(VMProgram *vmp) {
@@ -24,6 +19,7 @@ Task circle_begin(VMProgram *vmp) {
   w->circle.got.radius_a = GOT_NOT;
   w->circle.got.radius_b = GOT_NOT;
   w->circle.got.center = GOT_NOT;
+  w->circle.got.color = 0;
   return Success;
 }
 
@@ -66,7 +62,6 @@ Task circle_pause(VMProgram *vmp) {
     return Failed;
 
   } else {
-    Color *color = g_optcolor_get(& w->circle.color);
     Point c, a, b;
     c = w->circle.center;
     a.x = c.x + w->circle.radius_a;
@@ -78,7 +73,11 @@ Task circle_pause(VMProgram *vmp) {
     grp_win = w->window;
     grp_rreset();
     grp_rcircle(c, a, b);
-    grp_rfgcolor(color->r, color->g, color->b);
+    if (w->circle.got.color) {
+      Color *color = & w->circle.color;
+      grp_rfgcolor(color->r, color->g, color->b);
+      w->circle.got.color = 0;
+    }
     grp_rdraw();
     grp_rreset();
     grp_win = cur_win;

@@ -11,8 +11,6 @@
 #include "i_pointlist.h"
 #include "i_window.h"
 #include "i_line.h"
-#include "i_circle.h"
-#include "i_poly.h"
 #include "i_put.h"
 
 /*#define DEBUG*/
@@ -49,8 +47,6 @@ Task window_begin(VMProgram *vmp) {
   (void) g_optcolor_set_rgb(& w->fg_color, 0.0, 0.0, 0.0);
 
   TASK( line_window_init(w) );
-  TASK( circle_window_init(w) );
-  TASK( poly_window_init(w) );
   TASK( put_window_init(w) );
   return Success;
 }

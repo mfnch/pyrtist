@@ -9,16 +9,11 @@
 
 /*#define DEBUG*/
 
-Task poly_window_init(Window *w) {
-  g_optcolor_alternative_set(& w->poly.color, & w->fg_color);
-  g_optcolor_unset(& w->poly.color);
-  return Success;
-}
-
 Task poly_color(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Color *c = BOX_VM_ARGPTR1(vmp, Color);
-  return g_optcolor_set(& w->poly.color, c);
+  w->poly.color = BOX_VM_ARG1(vmp, Color);
+  w->poly.got.color = 1;
+  return Success;
 }
 
 Task poly_begin(VMProgram *vmp) {
@@ -34,6 +29,7 @@ Task poly_begin(VMProgram *vmp) {
   w->poly.margin[1] = 0.0;
   w->poly.num_points = 0;
   w->poly.num_margins = 0;
+  w->poly.got.color = 0;
   return Success;
 }
 
@@ -104,14 +100,17 @@ Task poly_point(VMProgram *vmp) {
 
 Task poly_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Color *c = g_optcolor_get(& w->poly.color);
   grp_window *cur_win = grp_win;
 
   TASK( _poly_point(w, & w->poly.first_points[0], 0) );
   TASK( _poly_point(w, & w->poly.first_points[1], 1) );
 
   grp_win = w->window;
-  grp_rfgcolor(c->r, c->g, c->b);
+  if (w->poly.got.color) {
+    Color *c = & w->poly.color;
+    grp_rfgcolor(c->r, c->g, c->b);
+    w->poly.got.color = 0;
+  }
   grp_rdraw();
   grp_rreset();
   grp_win = cur_win;

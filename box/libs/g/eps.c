@@ -176,7 +176,7 @@ static void eps_rbgcolor(Real r, Real g, Real b) {return;}
 /* Open a graphic window with type "eps" (encapsulated postscript).
  * The windows opens a file and send all the commands it receives directly
  * to it. The window will have size size_x and size_y (in mm) and will
- * show coordinates from (0, 0) to (size_x, size_y). 
+ * show coordinates from (0, 0) to (size_x, size_y).
  */
 grp_window *eps_open_win(char *file, Real size_x, Real size_y) {
   grp_window *wd;
@@ -260,7 +260,7 @@ grp_window *eps_open_win(char *file, Real size_x, Real size_y) {
 
   fprintf(winstream, "newpath 0 %d moveto 0 0 lineto %d 0 "
           "lineto %d %d lineto closepath clip newpath\n"
-          "0.01 0.01 scale\n",
+          "0.01 0.01 scale\n0 0 0 setrgbcolor\n",
           y_max, x_max, x_max, y_max);
 
   return wd;

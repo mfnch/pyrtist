@@ -243,7 +243,7 @@ grp_window *ps_open_win(char *file) {
    "    /xv xb xo sub def /yv yb yo sub def\n\n"
    "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
    "    0 0 1 0 360 arc\n    savematrix setmatrix\n\n  end\n} def\n\n"
-   "0.01 0.01 scale\n90 rotate\n1 -1 scale\n"
+   "0.01 0.01 scale\n90 rotate\n1 -1 scale\n0 0 0 setrgbcolor\n"
    , file
   );
 

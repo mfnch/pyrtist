@@ -41,6 +41,6 @@ libg_la_SOURCES = g.c g.h objlist.c objlist.h pointlist.h \
                   i_pointlist.c i_pointlist.h \
                   i_window.c i_window.h i_line.c i_line.h \
                   i_circle.c i_circle.h i_poly.c i_poly.h \
-                  i_put.c i_put.h
+                  i_put.c i_put.h i_text.c i_text.h
 
 libg_la_LDFLAGS = -module

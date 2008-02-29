@@ -57,15 +57,14 @@ Task line_window_init(Window *w) {
 
   w->line.this_piece.width1 = w->line.this_piece.width2 = 1.0;
   w->line.this_piece.fig = (void *) NULL;
-  g_optcolor_alternative_set(& w->line.color, & w->fg_color);
-  g_optcolor_unset(& w->line.color);
   return Success;
 }
 
 Task line_color(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Color *c = BOX_VM_ARGPTR1(vmp, Color);
-  return g_optcolor_set(& w->line.color, c);
+  w->line.color = BOX_VM_ARG1(vmp, Color);
+  w->line.got.color = 1;
+  return Success;
 }
 
 void line_window_destroy(Window *w) {
@@ -82,7 +81,7 @@ Task line_begin(VMProgram *vmp) {
   }
   w->line.num_points = 0;
   w->line.close = 0;
-
+  w->line.got.color = 0;
   return Success;
 }
 
@@ -93,9 +92,11 @@ Task line_end(VMProgram *vmp) {
 
   else {
     grp_window *cur_win = grp_win;
-    Color *c = g_optcolor_get(& w->line.color);
     grp_win = w->window;
-    grp_rfgcolor(c->r, c->g, c->b);
+    if (w->line.got.color) {
+      Color *c = & w->line.color;
+      grp_rfgcolor(c->r, c->g, c->b);
+    }
     (void) line_draw(w->line.close, & w->line.pieces);
     grp_win = cur_win;
     return Success;
@@ -150,10 +151,13 @@ Task line_point(VMProgram *vmp) {
 
 Task line_pause(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Color *c = g_optcolor_get(& w->line.color);
   grp_window *cur_win = grp_win;
   grp_win = w->window;
-  grp_rfgcolor(c->r, c->g, c->b);
+  if (w->line.got.color) {
+    Color *c = & w->line.color;
+    grp_rfgcolor(c->r, c->g, c->b);
+    w->line.got.color = 0;
+  }
   (void) line_draw(w->line.close, & w->line.pieces);
   grp_win = cur_win;
 

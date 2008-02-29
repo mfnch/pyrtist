@@ -1,65 +1,2099 @@
-Many languages such as BASIC or FORTRAN give to the user ad-hoc instructions, one for each particular operation the user may wish to perform. A completely different approach is adopted by many other languages, such as C/C++, Java and many others. These languages provide a uniform environment which implement a few powerful constructs which allow the user to add new functionality in a coherent way. Let's consider C++: to print a string, a number or whatever else, you use a standard library, ending to write something similar to 'cout << "Hello world!" << endl;'. With BASIC you use instead an ad-hoc instruction, the 'print' instruction: 'print "Hello world!"'.
-Box tries to follow the philosophy of C-derived languages, which usually results to be more powerful and elegant.
+.. comment:
+  . -*- mode: rst -*-
 
-In C you can group statements with the compound statement:
+.. sectnum::
 
-  {statement1; statement2; ...; statementN;}
-
-In Box such groups of statements are called "boxes".
-In Box we can use boxes to build an object. Indeed we can have untyped boxes, such as:
-
-  [statement1, statement2, ..., statementN]
-
-but also, typed boxes:
-
-  a = Int[statement1, statement2, ..., statementN]
-
-Note that we use [] instead of {}, and we use , instead of ; (this choices is connected with the fact that the italian keyboard has not the symbols { and }).
-Another important difference with C is that statements with type and value can be captured by the parent box.
-
-  a = 1.2
-  b = Int[ a ]
-  Print[ a, " converted to integer, gives ", b; ]
-
-These three lines shows the basic idea of Box: replace C-function with an enhanced version of the C-compound statement. This gives an important advantage: order of arguments is not important. We give an example: suppose you want to write a function to draw a circle. What should be the interface for such a function? In C one programmer could write:
-
-typedef double Number;
-typedef struct {Number x, y;} Point;
-void circle(Point *center, Number radius);
-
-But another programmer, could also write:
-
-void circle(Number radius, Point *center);
-
-Here it is evident that the order of the arguments is important for the machine, but NOT FOR THE USER! In even more complicated functions the user could be more and more disoriented and confused by the necessity of taking care of the order of the arguments, even if that order is not really needed to perform that task! Box approach to results in creating a box with type Circle:
-
-Circle[(1, 2), 5]
-// But the order of the two arguments is not important!
-Circle[5, (1, 2)]
-
-With C++ you can obtain a similar behaviour overloading the << operator.
-
-circle << Point(1, 2) << 5;
-
-But C++ is not certainly developed around such an idea and the syntax of operators is limited and quite difficult to handle.
-
-Now suppose you want to write a function to draw a line. You want to be able to specify the width of the line. In C you would do something like:
-
-start_line(point1);
-continue_line(point2, width12);
-continue_line(point3, width23);
-end_line(point4, width34);
-
-or
-
-typedef struct{Point p; Number w;} LineElement;
-LineElement my_line[4] = {{point1, 0.0}, {point2, width12}, ...};
-draw_line(my_line);
-
-Which are both horrible approaches to the problem.
-The idea of boxes let us write more readable code:
-
-Line[point1, width12, point2, width23, point3, width34, point4 ]
+===================================
+Box User Manual (0.1 Alpha version)
+===================================
 
 
+:Authors: Matteo Franchin
 
+:Licence: `GNU Lesser General Public License (LGPL) version 3 <http://www.gnu.org/licenses/lgpl.html>`__
+
+:SVN-Version: |svnversion| compiled |date| at |time|.
+
+:Home page: http://boxc.sourceforge.net
+
+
+.. image:: ../images/boxlogo.png
+   :align: center
+
+
+.. contents:: Outline of document
+   :depth: 3
+
+Introduction
+============
+
+|Nmag| is a flexible finite element micromagnetic simulation
+package with an user interface based on the 
+`Python <http://www.python.org/>`__ programming language.
+
+
+|Nmag| Philosophy
+-----------------
+
+The majority of specialized simulation codes used in research today
+consists of a highly specialized core application which initially was
+written to simulate the behaviour of some very specific
+system. Usually, the core application then evolved into a more broadly
+applicable tool through the introduction of additional
+parameters. Some simulation codes reach a point where it becomes
+evident that they need an amount of flexibility that can only be
+provided by including some script programming capabilities.
+
+The approach underlying |Nmag| turns this very common pattern of
+software evolution (which we also have seen in web browsers, CAD
+software, word processors, etc) on its head: rather than gradually
+providing more and more flexibility in an ad-hoc manner through adding
+configuration parameters, slowly evolving into an extensive
+specialized programming language, |Nmag| starts out as an extension to
+a widely used programming language (Python_) from which it gains all its
+flexibility and evolves towards more specialized notions to
+conveniently define and study the properties of very specific physical
+systems.
+
+The main advantage of this approach is two-fold: first, we do not
+gradually evolve another ad-hoc (and potentially badly implemented)
+special purpose programming language. Second, by drawing upon the
+capabilities of a well supported existing framework for flexibility,
+we get a lot of additional power for free: the user can employ readily
+available and well supported Python libraries for tasks such as data
+post-processing and analysis, e.g. generating images for web pages
+etc. In addition to this, some users may benefit from the capability
+to use |Nmag| interactively from a command prompt, which can be very
+helpful during the development phase of an involved simulation script.
+
+The disadvantage is of course that a novice user may be confronted
+with much more freedom than he can handle. We try to cope with this
+issue by providing a collection of example scripts (in the `Guided
+tour`_) for the most common applications that only need very slight
+modification for basic use (e.g. changing of the mesh filename or
+material parameters).
+
+At present, |Nmag| is based on the Python programming language. This
+seems to be a somewhat reasonable choice at present, as Python is
+especially friendly towards casual users who do not want to be forced
+to first become expert programmers before they can produce any useful
+results. Furthermore, Python is quite widespread and widely supported
+these days. 
+
+.. comment:
+
+  As most of the underlying field theoretical foundations
+  used by |Nmag| are derived from the low level |Nsim| multiphysics
+  simulator which is not closely tied to Python, it would be possible to
+  provide support for other scripting languages in the future should the
+  need arise (e.g. in case Python should become unpopular over the
+  years).
+  
+
+How to read this document
+-------------------------
+
+We suggest you follow the `Guided Tour`_ through a number of examples
+to get a quick overview of what |nmag| looks like in real use, and to
+see examples that can be used to carry out typical simulations. We
+provide a number of skeletons that are easily adapted to specific
+systems which show how to compute hysteresis loops, do energy
+minimisation, or compute time evolution.
+
+The `Command Reference`_ section explains the relevant commands
+provided by |Nmag| in full detail. This should be especially useful to
+advanced users who want to design sophisticated simulation scripts in
+Python.
+
+If you are new to micromagnetic modelling, you may want to start with
+the `mini tutorial micromagnetic modelling`_.
+
+Development status
+------------------
+
+|Nmag| is a relatively young piece of software. It almost certainly
+contains many bugs and we encourage users to report these to the
+`nmag team`_, so they can be document and fixed.
+
+It is also very likely that parts of the user interface will change
+over time.  We will try to make changes backward compatible where this
+is feasible and acceptable.
+
+Some features do exist that have not been documented in the manual
+yet. This may be (i) because the nmag team has not found the time yet
+to create the documentation. However, it is also possible that (ii) we
+are still testing how a feature and its interface *feels* when being
+used, and we hesitate to document an interface if we consider it
+likely that it might be changed in the near future. Finally, (iii) we
+will not rush to publish any new functionality if we are not aware of
+any users who would be interested in this feature. For this reason, we
+do encourage users to contact the `nmag team`_ to suggest features
+that would be relevant to them. We are also interested in generic
+feedback (good and bad; ideally constructive).
+
+While we have only limited resources for the development and
+maintenance of the code and will therefore not be able to react
+immediately (or at all) to requests and suggestions, it is important
+that we maintain an up-to-date understanding of the requirements of
+the community.
+
+Mailing list
+------------
+
+If you are using |nmag|, we recommend that you subscribe to at least
+one of these following two lists to be aware of any major bugs or
+improvements. If you have a question about how to use the software, we
+suggest you subscribe to nmag-users_, and post it there. (If you
+prefer to contact only the devolpers, see `nmag team`_.)
+
+nmag-announce
+~~~~~~~~~~~~~
+
+**nmag-announce@lists.soton.ac.uk** is a low traffic read-only mailing
+list which will broadcast updates of nmag and any other relevant news.
+
+To subscribe to this list, send an email to
+`nmag-announce-request@lists.soton.ac.uk
+<mailto:nmag-announce-request@lists.soton.ac.uk>`__ with an empty
+subject and the word ``subscribe`` in the body of the email.
+
+The **archives** can be found and searched at
+http://groups.google.com/group/nmag-announce.
+
+nmag-users
+~~~~~~~~~~
+
+**nmag-users@lists.soton.ac.uk** is a mailing list to discuss the use of
+nmag. Any announcements to ``nmag-announce`` will also be sent to this
+mailing list.
+
+To subscribe to this list, send an email to
+`nmag-users-request@lists.soton.ac.uk
+<mailto:nmag-users-request@lists.soton.ac.uk>`__ with an empty subject
+and the word ``subscribe`` in the body of the email.
+
+Information about how to unsubscribe are provided with the welcome
+message once you have subscribed.
+
+The **archives** can be found and searched at
+http://groups.google.com/group/nmag-users.
+
+
+
+Support
+-------
+
+Support will be provided within our limited resources. After
+consulting the manual, please feel free to use the `mailing list`_
+``nmag-users@lists.soton.ac.uk`` to seek advice, or contact the `nmag
+team`_ directly.
+
+
+License and Disclaimer
+----------------------
+
+This software was developed at the University of Southampton, United
+Kingdom. It is released under the GNU General Public License (GPL_) as
+published by the Free Software Foundation; either version 2, or (at
+your option) any later version.
+
+
+|Nmag| is an experimental system. Neither the University of
+Southampton nor the authors assume any responsibility whatsoever for
+its use by other parties, and makes no guarantees, expressed or
+implied, about its quality, reliability, or any other characteristic.
+
+
+
+
+Guided Tour
+===========
+
+We present a number of worked out examples that are explained in
+detail and should cover most of the usual applications.
+
+.. include:: example1/doc.txt
+
+.. include:: example2/doc.txt
+
+.. include:: example_stoner_wohlfarth/doc.txt
+
+.. include:: example_hysteresis/doc.txt
+
+.. include:: example_vortex/doc.txt
+
+.. include:: example_manipulate/doc.txt
+
+.. include:: example_ipython/doc.txt
+
+.. include:: example_pinning/doc.txt
+
+.. include:: example_uniaxial_anis/doc.txt
+
+.. include:: example_cubic_anis/doc.txt
+
+.. include:: example_user_anis/doc.txt
+
+.. include:: example_restart/doc.txt
+
+.. include:: example_two_materials/doc.txt
+
+.. include:: example_larmor/doc.txt
+
+.. include:: example_1Dperiodicity/doc.txt
+
+.. include:: example_2Dperiodicity/doc.txt
+
+.. include:: example_periodic_spinwaves/doc.txt
+
+.. comment
+  .. include:: example_thermal/doc.txt
+
+.. include:: example_thermal_cube/doc.txt
+
+.. include:: example2/doc2.txt
+
+.. include:: example_tolerances/doc.txt
+
+.. comment
+  .. include:: example_timestepper_params/doc.txt
+
+
+Parallel execution
+------------------
+
+To be written.
+
+More than one magnetic material, exchange coupled
+-------------------------------------------------
+
+To be written.
+
+
+Background
+==========
+
+In this section, we list some background information on the simulation
+package, some explanation of the philosophy behind it (which may
+explain some of the user interface choices that have been made) and
+explanation of some terms that are relevant.
+
+
+.. _`nsim library`:
+
+The |Nsim| library
+------------------
+
+|Nmag| is the high-level user interface that provides micromagnetic
+capabilities to a general purpose finite element multi-physics field
+theory library called |Nsim|. Therefore, many of the concepts used by
+|Nmag| are inherited from |Nsim|.
+
+Fields and subfields
+--------------------
+
+.. _fields:
+
+Field
+~~~~~
+
+The Field_ is the central entity within the `nsim library`_. It represents physical
+fields such as:
+
+- magnetisation (usually a 3d vector field), 
+- the magnetic exchange field (usually a 3d vector field), or
+- magnetic exchange energy (a scalar field).
+
+A field may contain degrees of freedom of different type, which belong
+to different parts of a simulated object. For example, the
+magnetisation field may contain the effective magnetisation (density)
+for more than one type of magnetic atoms, which may make up different
+parts of the object studied. In order to deal with this, we introduce
+the concept of subfield_\ s: A |Nmag|/|Nsim| field can be regarded as a
+collection of subfields. Most often, there only is one subfield in a
+field, but when it makes sense to group together multiple conceptually
+independent fields (such as the effective magnetisation of the iron
+atoms in a multilayer structure and that of some other magnetic metal
+also present in the structure), a field may contain more than one
+subfield: In particular, the magnetisation field ``M`` may contain
+subfields ``M_Fe`` and ``M_Co``.
+
+The question what subfields to group together is partly a question of
+design. For |Nmag|, the relevant choices have been made by the |Nmag|
+developers, so the user should not have to worry about this.
+
+
+Subfield
+~~~~~~~~
+
+Each field contains one or more subfield_\ s. For example, a
+simulation with two different types of magnetic material (for example
+Fe and Dy), has a field ``m`` for the normalised magnetisation and
+this would contain two subfields ``m_Fe`` and ``m_Dy``.
+
+(It is partly a question of philosophy whether different material
+magnetisations are treated as subfields in one field, or whether they
+are treated as two fields. For now, we have chosen to collect all the
+material magnetisations as different subfields in one field.)
+
+Often, a field contains only one subfield and this may carry the same
+name as the field.
+
+Fields and Subfields in Nmag
+----------------------------
+
+Example: one magnetic material
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Assuming we have a simulation of one material with name PermAlloy (Py), 
+we would have the following field_\ s and subfield_\ s:
+
+========== ============== ==============================================
+Field      Subfield 	  Comment		                         
+========== ============== ==============================================
+m	   m_Py	       	  normalised magnetisation                      
+---------- -------------- ----------------------------------------------
+M	   M_Py	       	  magnetisation	                         
+---------- -------------- ----------------------------------------------
+H_total    H_total_Py     total effective field
+---------- -------------- ----------------------------------------------
+H_ext      H_ext          external (applied) field (only one)
+---------- -------------- ----------------------------------------------
+E_ext	   E_ext_Py	  energy density of Py due to external field
+---------- -------------- ----------------------------------------------
+H_anis     H_anis_Py  	  crystal anisotropy field
+---------- -------------- ----------------------------------------------
+E_anis     E_anis_Py  	  crystal anisotropy energy density
+---------- -------------- ----------------------------------------------
+H_exch 	   H_exch_Py  	  exchange field 
+---------- -------------- ----------------------------------------------
+E_exch 	   E_exch_Py  	  exchange energy
+---------- -------------- ----------------------------------------------
+H_demag    H_demag     	  demagnetisation field (only one)
+---------- -------------- ----------------------------------------------
+E_demag    E_demag_Py  	  demagnetisation field energy density for Py
+---------- -------------- ----------------------------------------------
+phi	   phi		  scalar potential for H_demag
+---------- -------------- ----------------------------------------------
+rho	   rho		  magnetic charge density (div M)
+---------- -------------- ----------------------------------------------
+H_total    H_total_Py     total effective field
+========== ============== ==============================================
+
+
+It is worth noting that the names of the fields are fixed whereas the
+subfield names are (often) material dependent and given by
+
+- the name of the field and the material name (joined through '``_``') 
+  if there is one (material-specific) subfield for every magnetisation or
+
+- the name of the field if there is only one subfield (such as the 
+  demagnetisation field or the applied external field)
+
+
+This may seem a little bit confusing at first, but is easy to
+understand once one accepts the general rule that the
+material-dependent quantities - and only those - contain a
+material-related suffix. All atomic species experience the
+demagnetisation field in the same way, so this has to be ``H_demag``
+(i.e. non-material-specific). On the other hand, anisotropy depends on
+the atomic species, so this is ``H_anis_Py``, and therefore, the total
+effective field also has to be material-specific: ``H_total_Py``. (All
+this becomes particularly relevant in systems where two types of
+magnetic atoms are embedded in the same crystal lattice.)
+
+
+Example: two magnetic material
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This table from the `Example: two different magnetic materials`_ shows
+the fields and subfields when more than one material is involved:
+
+.. include:: example_two_materials/table.txt
+
+
+Obtaining and setting subfield data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Data contained in subfields can be written to files (using
+save_data_), can be probed at particular points in space
+(probe_subfield_, probe_subfield_siv_), or can be obtained from all
+sites simultaneously (get_subfield_). Some data can also be set (in
+particular the applied field ``H_ext`` using set_H_ext_ and all the
+subfields belonging to the field ``m`` using set_m_).
+
+
+Primary and secondary fields
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are two different types of fields in |nmag|: *primary* and
+*secondary* fields. 
+
+*Primary fields* are those that the user can set
+arbitrarily. Currently, these are the (normalised) magnetisation ``m``
+and the external field ``H_ext`` (which can be modified with set_m_
+and set_H_ext_).
+
+*Secondary* fields (which could also be called *dependent fields*) can
+not be set directly from the user but are computed from the primary
+fields.
+
+
+
+Mesh
+----
+
+In finite element calculations, we need a mesh to define the geometry
+of the system. For development and debugging purposes, |Nsim| includes
+some (at present undocumented) capabilities to generate toy meshes
+directly from geometry specifications, but for virtually all |Nsim|
+applications, the user will have to use an external tool to generate a
+(tetrahedral) mesh file describing the geometry.
+
+Node
+~~~~
+
+Roughly speaking, a mesh is a tessellation of space where the support
+points are called *mesh nodes*. |nmag| uses an unstructured mesh
+(i.e. the cells filling up three-dimensional space are tetrahedra).
+
+node id
+~~~~~~~
+
+Each node in the finite element mesh has an associated node id. This
+is an integer (starting from 0 for the first node).
+
+This information is used when defining which node is connected to
+which (see `Finite element mesh generation`_ for more details), and
+when defining the sites_ at which the field degrees of freedom are
+calculated.
+
+node position
+~~~~~~~~~~~~~
+
+The position (as a 3d vector) in space of a node.
+
+.. _sites:
+
+Site
+----
+
+A mesh_ has nodes, and each node is identified by its `node id`_.
+
+If we use *first order basis functions* in the finite element
+calculation, then a *site* is exactly the same as a *node*. In
+micromagnetism, we almost always use first order basis functions
+(because the requirement to resolve the exchange length forces us to
+have a very fine mesh, and usually the motivation of using higher
+order basis functions is to make the mesh coarser).
+
+If we were to use *second* or *higher order base functions*, then we
+have more sites than nodes. In a second order basis function
+calculation, we identify sites by a tuple of `node id`_. 
+
+
+SI object
+---------
+
+We are using a special ``SI`` object to express physical entities (see
+also SI_). Let us first clarify some terminology:
+
+.. _si-value:
+
+physical entity 
+  A pair (a,b) where a is a number (for example 10) and b is a product
+  of powers of dimensions (for example m^1s^-1) which we need to
+  express a physical quantity (in this example 10 m/s).
+
+dimension 
+  SI dimensions: meters (m), seconds (s), Ampere (A), kilogram (kg), Kelvin
+  (K), Mol (mol), candela (cd). These can be obtained using the units_ attribute of the SI_ object.
+
+SI-value 
+  for a given physical entity (a,b) where a is the numerical value and
+  b are the SI dimensions, this is just the numerical value a (and can be
+  obtained with the value_ attribute of the SI_ object).
+
+Simulation Units
+  The dimensionless number that expressed an entity within the
+  simulation core. This is irrelevant to the user, except in highly
+  exotic situations.
+
+
+There are several reasons for using SI objects:
+
+*  In the context of the micromagnetic simulations, the use of SI
+   objects avoids ambiguity as the user has to specify the right
+   dimensions and - where possible - the code will complain if these
+   are unexpected units (such as in the definition of material
+   parameters).
+
+*  The specification of units is more important when the
+   micromagnetism is extended with other physical phenomena (moving
+   towards multi-physics calculations) for which, in principle, the 
+   software cannot predict what units these will have. 
+
+*  Some convenience in having a choice of how to specify, for example,
+   magnetic fields (i.e. ``A/m``, ``T/mu0``, ``Oe``). See also comments
+   in set_H_ext_.
+
+
+Library of useful si constants
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``si`` name space in |nmag| provides the following constants:
+
+.. include:: dyn/si.py
+   :literal:
+
+
+To express the magnetisation in A/m equivalent to the polaration of 1
+Tesla, we could thus use::
+
+   from nmag import si
+   
+   myM = 1.5*si.Tesla/si.mu0
+
+
+The command reference for SI_ provides some more details on the behaviour of SI objects.
+
+
+Terms
+-----
+
+Stage, Step, iteration, time, etc.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We use the same terminology for hysteresis loops as OOMMF_ (stage, step, iteration, time) and extend this slightly:
+
+:step: A step is the smallest possible change of the fields. This
+  corresponds (usually) to carrying out a time integration of the
+  system over a small amount of time `dt`. Step is an integer starting 
+  from 0.
+
+  If we minimise energy (rather than computing the time development
+  exactly), then a step may not necessarily refer to progressing the
+  simulation through real time.
+
+:iteration: Another term for Step (deprecated)
+
+:stage: An integer to identify all the calculations carried out at one
+  (constant) applied magnetic field (as in OOMMF_).
+
+:time: The time that has been simulated (typically of the order of
+  pico- or nanoseconds).
+
+
+:id: This is an integer (starting from 0) that uniquely identifies 
+  saved data. *I. e.* whenever data is saved, this number will increase by 
+  1. It is available in the `h5 data file`_ and the ndt_ data files, 
+  and thus allows
+  to match data in the ndt files with the corresponding (spatially resolved)
+  field data in the h5 file.
+
+:stage_step:
+  The number of steps since we have started the current stage.
+
+:stage_time: 
+  The amount of time that has been simulated since we started this stage.
+
+:real_time: The amount of real time the simulation has been running
+  (this is the [wall] execution time) and therefore typically of the
+  order of minutes to days.
+
+:local_time: A string (human readable) with the local time. Useful in
+  data files to see when an entry was saved.
+
+:unix_time: The number of (non-leap) seconds since 1.1.1970 - this is
+  the same information as local_time but represented in a more computer
+  friendly way for computing differences.
+
+
+
+Some geek-talk deciphered
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+|nmag| uses some object orientation in the high-level user interface
+ presented here. There are a few special terms used in object
+ orientation that may not be familiar and of which we attempt to give
+ a very brief description:
+
+:method: A method is just a function that is associated to an object. 
+
+Solvers and tolerance settings
+------------------------------
+
+There are a number of linear algebra solvers and one solver for
+ordinary differential equations (ODEs) in |nmag|:
+
+1. two solvers for the calculation of the demagnetisation
+   field. Default values can be modified when creating the Simulation_
+   object (this user interface is not final -- if you really feel you
+   would like to change the defaults, please contact the `nmag team`_ so
+   we can take your requirements into account in the next release).
+
+2. one solver for the system of algebraic equations that results from
+   the time integrator's implicit integration scheme.
+
+   (We need to document the default settings and how to modify this.)
+
+3. the ODE integrator.
+
+   Setting of the tolerances for the ODE integrator can be done with
+   set_params_. An example of this is shown in section `example
+   tolerances`_.
+
+We expect that for most users, the tolerances of the ODE integrator
+are most important (see `example tolerances`_) as this greatly affects
+the performance of the simulation.
+   
+
+Command reference
+=================
+
+.. include:: dyn/nmag.txt
+
+Command line options
+--------------------
+
+|Nmag| supports a number of command line options to configure its behaviour. 
+
+Suppose the simulation script is called ``X.py``, then these OPTIONS can be specified like this::
+
+  nsim X.py OPTIONS
+
+The available options are:
+
+:--clean: 
+
+  to override any existing ``_dat.h5`` and ``_dat.ndt`` files. If this
+  option is not provided and the data files exist already, then |nmag|
+  will interrupt the execution without having modified the data files
+  on the disk.
+
+  Example::
+    
+    nsim X.py --clean
+
+:--loglevel:
+  
+  this switch determines the amount of information that is being send
+  to stdout (usually the screen) and also to the file ``X_log.log``.
+
+  The available levels are in increasing order of detail:
+
+  :error:
+
+    print no messages apart from errors
+
+  :warning:
+ 
+    print warnings
+
+  :info:
+
+    print a moderate amount of information (default)
+
+  :info2:
+
+    print slightly more information 
+
+  :debug:
+
+    print a lot of information (typically for developer and debugging use)
+
+  Example::
+
+    nsim X.py --loglevel info2
+
+  or::
+
+    nsim X.py --loglevel debug 
+
+
+:--restart:
+
+  If a calculation of a hysteresis loop is interrupted (power cut,
+  computer crash, exceeding allocated run time on cluster, etc), then
+  the calculation can be carried out starting from the moment when the
+  last restart file was saved (see `Restart example`_).
+
+  This continuation is activated with the ``--restart`` switch.
+
+  Example::
+
+    nsim X.py --restart
+
+  Note that this functionality is only available for the hysteresis loop.
+
+
+The command line options can be combined, for example::
+
+  nsim X.py --clean --loglevel debug
+
+
+
+
+
+
+Finite element mesh generation
+==============================
+
+Finite element mesh generation is a difficult business, and one needs
+to get used to using at least one mesh generating software package to
+be able to create meshes for the geometries one wants to simulate.
+
+A list of available free and commercial mesh generators is available at: 
+http://www.andrew.cmu.edu/user/sowen/softsurv.html
+
+For |nmag| one needs to create 'unstructured' meshes which means for
+three dimensional simulations that the mesh simplices are tetrahedra,
+and the surface elements are triangles.
+
+We are not recommending any mesh generating software. We have used
+Netgen_ to generate most of the meshes for this manual. The
+Vienna/Sheffield group (Fidler and Schrefl) use the commercial mesh
+generator *GID* (http://gid.cimne.upc.es/).
+
+The mesh format used by |nmag| is called  |nmesh|  and described in
+`Nmesh file format`_.
+
+The nmeshimport_ tool provides conversion from the following mesh
+formats into nmesh files:
+
+* Netgen (neutral). Create mesh in Netgen, then go to ``File->Export
+  Filetype`` and ensure that ``Neutral Format`` is selected. Then
+  export the mesh with ``File->Export Mesh``. (See also `Mesh
+  generation`_ which is part of the `Guided Tour`_.)
+
+* There is a contributed import module for Gambit_. Use at your own risk.
+
+
+Nmesh file format
+-----------------
+
+There are two nmesh file formats: `ascii nmesh`_ and `hdf5 nmesh`_.
+
+Ascii nmesh
+~~~~~~~~~~~
+
+This section describes the syntax of the nmesh ascii files. You only
+need to read this if you would like to know what the nmesh ascii
+format looks like. This is only necessary if you (i) need to convert
+nmesh ascii files into other mesh formats, or (ii) if you have
+generated a mesh in a format that is not supported by nmeshimport_.
+
+(You could in principle convert any data into the `nmesh hdf5` format
+but it is expected that it is easier to convert the mesh into a `nmesh
+ascii` file, and then use nmeshpp_ with option ``--convert`` to
+convert the mesh frnm nmesh ascii to nmesh hdf5.)
+
+
+We describe the structure of the ascii nmesh file format using the
+following example: A `mesh file <../files/smallsphere.nmesh>`__ for 
+a sphere with radius 1 (with Netgen_ and this geometry file 
+`sphere.geo <../files/sphere.geo>`__):
+
+.. image:: ../images/smallsphere.png
+   :align: center
+
+The mesh file looks as follows::
+
+  # PYFEM mesh file version 1.0
+  # dim = 3 	 nodes = 79 	 simplices = 174 	 surfaces = 148 	 periodic = 0
+  79
+           0.000000000000            0.000000000000            0.000000000000 
+           1.000000000000            0.000000000000            0.000000000000 
+           0.911922000000            0.410365000000            0.000000000000 
+           0.941662000000            0.159249000000            0.296499000000 
+  <snip>
+           0.038305000000           -0.552912000000           -0.107777000000 
+          -0.533150000000            0.052091000000           -0.084880000000 
+  174
+       1         58          0         62         78 
+       1         33         78         36         50 
+       1         19         77          0         17 
+       1         67         75         78         72 
+  <snip>
+       1         58          0         53         62 
+       1         77         51         32         39 
+       1         78         67         63         72 
+       1         78         49         63         50 
+  148
+       -1 1	45 51 59 
+       1 -1	5 12 13 
+       1 -1	25 37 39 
+  <snip>
+       1 -1	19 30 34 
+       1 -1	42 44 54 
+       1 -1	32 45 51 
+
+
+We have removed a significant number of lines for the purpose of
+abbreviation in the places marked with ``<snip>``. We discuss the
+different parts of this file in more detail:
+
+* The file starts with two lines starting with ``#``. 
+
+  * The first line contains a file format version string which needs to have
+    exactly this form.
+
+  * The second line contains a summary of the data, i.e.:
+
+    dim
+      the dimensionality of the space in which the mesh is defined (usually 3, 
+      as we work with meshes in 3d space).
+
+    nodes
+      the number of nodes (also called vertices), here ``79``
+
+    simplices
+      the number of simplices (also called volume elements), here ``174``. 
+      In 3d, a simplex is a tetrahedron.
+
+    surfaces
+      the number of surface elements, here ``148``. In 3d, the surface 
+      elements are triangles.
+
+    periodic
+      the number of periodic identifications of points.
+
+* The next section contains the data for all the nodes. The first line
+  of this section contains (again) the total number of nodes
+  (``79``). All subsequent 79 lines in this section contain each the
+  position of one node. Because the dimensionality of space in this
+  example is 3, there are 3 floating point numbers per node (i.e. the
+  x, y and z-component).
+
+* The next section contains the data for the simplices. The first line
+  of this section contains (again) the total number of simplices (here
+  ``174``). The next 174 lines contain the following information each:
+
+  The first integer is a *region identifier*. In this example, we have
+  only one region (the sphere). This is useful, if different magnetic
+  materials are simulated at the same time. When the mesh is loaded
+  into |nmag|, one assigns material properties to these regions.
+
+  The next 4 integers (in 3 dimensions) are node identifiers. The 4 nodes 
+  listed here, form a simplex. Note that the very first node has index 0.
+
+* The next section contains the data for the surface elements. The
+  first line contains the number of surface elements (``148``). The
+  next 148 lines contain each the following information:
+
+  - The first two integers are the region identifiers between which the
+    surface is sandwiched. If there is no simplex on one side of the surface,
+    then the "outside" region identifier of ``-1`` will be used. (It is possible
+    to use other negative numbers to discern between different parts of the outer 
+    boundary. This is occasionally important in |nsim| to specify Dirichlet and 
+    von Neumann boundary conditions along different parts of a boundary.)
+
+  - The following integers are the node ids of the nodes that define
+    the surface. (In this example, we have three nodes as the surface
+    elements are triangles.)
+
+  Note that this last section is only contained in the file to make the 
+  users' life easier (for, say, plotting of the mesh). This section on 
+  surface elements can be omitted and nmesh will read and process the mesh
+  even if the surface elements are not specified (they can be computed from 
+  the node and simplex data provided in the other sections).
+
+
+* The next section contains data about periodic points. The first line
+  again is the number of data lines to follow. Each data line gives the 
+  node indices belonging to one set of points that are treated as
+  copies of the same point. (I.e. |Nmag| will know that field degrees of 
+  freedom associated to points from such a set will have "mirage" copies and 
+  use this information internally e.g. in the time integrator and when building
+  finite element matrix operators.)
+
+Hdf5 nmesh
+~~~~~~~~~~
+
+In addition to the `Ascii nmesh`_ format, there is another (binary and
+compressed) way of storing nmesh meshes. This is based on the hdf5_
+library which often is abbreviated as ``h5``.
+
+We recommend that this file-format to store meshes as it is a
+compressed binary file format, and thus much more space efficient. The
+nmeshpp_ tool can convert (using ``--convert``) ascii nmesh files into
+hdf5 files. Likewise, using the nmeshimport_ tool with a target file
+name that ends in ``.h5`` will also choose this file format. We
+strongly recommend to use the extension ``.nmesh.h5`` (but ``.h5`` is
+sufficient to trigger saving meshes in hdf5 format).
+
+For conversion of other mesh formats to a format readable by |nmesh|,
+we suggest to bring data into `ascii nmesh`_ format, and then convert
+this ascii nmesh file to a .h5 file.
+
+For completeness, we outline the ``nmesh.h5`` file format
+here. Knowledge of hdf5_ or pytables_ may be useful to understand the
+underlying concepts.
+
+The nmesh.h5 file contains the following nodes (this is output from
+pytables_'s ``ptdump`` program)::
+
+  / (RootGroup) ''
+  /etc (Group) 'Configuration and version data'
+  /etc/filetype (Array(1L,)) 'data file type'
+  /etc/fileversion (Array(1L,)) 'data file type version'
+  /mesh (Group) 'Mesh data'
+  /mesh/points (CArray(1154L, 3L), shuffle, 
+                zlib(5)) 'Positions of mesh nodes (=points)'
+  /mesh/simplices (CArray(4953L, 4L), shuffle, zlib(5)) 
+               'Indices of nodes (starting from zero). 
+                Each row is one simplex.'
+  /mesh/simplicesregions (CArray(4953L,), shuffle, zlib(5)) 
+               'Region ids (one for each simplex).'
+
+
+In short, the position of the mesh nodes are stored in
+``/mesh/points`` as 8byte-floats. The simplices (i.e. tetrahedra in
+3d) are stored in ``/mesh/simplices`` as a set of integers (4 in 3d)
+per simplex which are the indices of the mesh nodes that form the
+simplex. We also need to store to what physical region each simplex
+belongs. Regions are coded by integer values (with 0 being vacuum, and
+-1 the area outside the mesh) and stored in ``/mesh/simplicesregions``.
+
+
+mesh file size
+--------------
+
+The following table shows the size of the mesh file used in `Example 2`_ stored in various formats.
+
+  ======================== ========= =============
+  Filename                 size (kB)   type  
+  ======================== ========= =============
+  bar30_30_100.neutral     1036      ascii	 	 
+  bar30_30_100.neutral.gz  246	     gzipped ascii 
+  bar30_30_100.nmesh	   794	     ascii 	 
+  bar30_30_100.nmesh.h5    203	     hdf5 
+  ======================== ========= =============
+
+The ``.neutral`` file is the mesh as written by Netgen_ in this
+particular format. The second line shows the file size of the same
+file after compressing with ``gzip``. The third line shows the size of
+the mesh stored as an `Ascii nmesh`_ file while the last line gives
+the size of the corresponding `Hdf5 nmesh`_ file.
+
+
+Executables
+===========
+
+ncol
+----
+
+``ncol`` is a utility to conveniently analyse ndt_ files.
+
+Suppose we have data file with name X_dat.ndt. We can then use::
+
+  ncol X_dat.ndt
+
+or simply::
+
+  ncol X
+
+to display the content of the file. This is useful to quickly gain an
+overview of the data in the file.  For the `Example 2: Computing the
+time development of a system`_, the command is::
+
+  ncol bar
+
+which produces this output::
+
+  0 :         #time           #<s>              0 
+  1 :            id             <>              0 
+  2 :          step             <>              0 
+  3 :  last_step_dt            <s>              0 
+  4 :    stage_time            <s>              0 
+  5 :    stage_step             <>              0 
+  6 :         stage             <>              0 
+  7 :    E_total_Py      <kg/ms^2>  -260346.5776034 
+  8 :           phi            <A>  2.50626665111e-07 
+  9 :      E_ext_Py      <kg/ms^2>              0 
+  10:     H_demag_0          <A/m>  -263661.6673782 
+  11:     H_demag_1          <A/m>  -8.212128727093 
+  12:     H_demag_2          <A/m>  -77027.64089399 
+  13:     dmdt_Py_0         <A/ms>  -8.250903922407e+15 
+  14:     dmdt_Py_1         <A/ms>  2.333345040949e+16 
+  15:     dmdt_Py_2         <A/ms>  8.250903922407e+15 
+  16:           pin             <>              1 
+  17:   H_anis_Py_0          <A/m>              0 
+  18:   H_anis_Py_1          <A/m>              0 
+  19:   H_anis_Py_2          <A/m>              0 
+  20:        m_Py_0             <>  0.7071067811865 
+  21:        m_Py_1             <>              0 
+  22:        m_Py_2             <>  0.7071067811865 
+  23:        M_Py_0          <A/m>  608111.8318204 
+  24:        M_Py_1          <A/m>              0 
+  25:        M_Py_2          <A/m>  608111.8318204 
+  26:     E_anis_Py      <kg/ms^2>              0 
+  27:     E_exch_Py      <kg/ms^2>  3.114630036477e-11 
+  28:           rho        <A/m^2>  3.469702141876e+13 
+  29:       H_ext_0          <A/m>              0 
+  30:       H_ext_1          <A/m>              0 
+  31:       H_ext_2          <A/m>              0 
+  32:  H_total_Py_0          <A/m>  -263661.6673782 
+  33:  H_total_Py_1          <A/m>  -8.212128727085 
+  34:  H_total_Py_2          <A/m>  -77027.64089399 
+  35:    E_demag_Py      <kg/ms^2>  -260346.5776034 
+  36:   H_exch_Py_0          <A/m>  2.037901097873e-11 
+  37:   H_exch_Py_1          <A/m>              0 
+  38:   H_exch_Py_2          <A/m>  2.037901097873e-11 
+  39: maxangle_m_Py          <deg>              0 
+  40:     localtime             <>  2007/10/04-20:46:28 
+  41:      unixtime            <s>  1191527188.269 
+  
+
+The four columns above show the following data: the first is just a
+line number count. The second is the *name* of the data. The third
+provides the *units* of this data type. The fourth displays the first
+data value in the file (typically corresponding to the configuration
+of the simulation when save_data_ was called the first time).
+
+The meaning of the keywords ``time``, ``id``, ``step``, ``stage_time``,
+``stage_step``, ``stage``, ``localtime`` and ``unixtime`` is explained
+in section `Stage, Step, iteration, time, etc.`_.
+
+The role of the ``id`` counter is to provide a reference to the
+configuration that was saved. The same ``id`` is saved in the
+``bar_dat.h5`` files that stores spatially resolved files. This allows
+to identify the snapshot of a spatially resolved field with the
+correct data in the ``ndt`` file.
+
+
+``last_step_dt`` is the length of the last time step carried out by
+the timestepper. This is a useful indicator to learn about the
+stiffness of the system: the time step is adjusted automatically to
+achieve a certain accuracy, and thus the size of the time step
+reflects how hard it is to integrate the equations of motion.
+
+The fields starting with ``E_total_Py`` down to ``H_exch_Py_2`` are
+all nsim subfields (see fields_), and the data stored for these are
+spatially averaged numbers. For example, the subfield ``M_Py_0`` is
+the x-component of the Magnetisation of the material ``Py`` averaged
+over all the space where this material is defined.
+
+The ``maxangle_m_Py`` is the maximum angle (in degree) of the change
+of the magnetisation from one node in the mesh to the next. It is
+important that this number is small: the equations on which the
+micromagnetic theory is based assume that the magnetisation changes
+slowly as a function of space. In the discretised solvers (this
+applies to |nmag| as it applies to OOMMF, Magpar and other codes),
+this means that the maximum angle between neighbouring sites should be
+kept small. How small is good enough? This is hard to say in
+general. We provide some (subjective) guidance: Values of 180 degrees
+(or -180 degrees) quite clearly indicate that the results of the
+calculations must not be trusted (i.e. they are wrong). Values around
+90 degrees make the results highly questionable. Values of below 30
+degrees indicate that the results are probably reliable. The smaller
+the value, the more accurate the results will be.
+
+
+The general syntax for calling ``ncol`` is::
+
+  ncol [OPTIONS] datafile [COLS]
+
+A list of options can be obtained with::
+
+  ncol --help
+
+
+.. comment:
+  [Note for developers] In principle we could have used the 
+  iteration counter of the
+  time integration as this unique identifier. However, because the
+  user can interactively modify `primary fields`_, and the secondary
+  fields are updated without calling the time integration, the
+  timestepper's iteration counter would not provide a unique
+  reference. Similarly, |nmag| could be extended to include more
+  sophisticated energy minimisation routines.
+
+
+nmagpp
+------
+
+The stage``nmagpp`` program is the NMAG data PostProcessor. It can be used to 
+
+- convert data stored in ``RUNID_dat.h5`` files into vtk files
+
+- dump the data to the screen.
+
+The documentation is available with the ``--help`` switch::
+
+  nmagpp --help
+
+Inspecting the content
+~~~~~~~~~~~~~~~~~~~~~~
+
+We describe some typical scenarios, using the data file ``bar_dat.h5``
+that is generated in `Example 2: Computing the time development of a
+system`_.
+
+The ``bar_dat.h5`` file contains spatially resolved data for all
+fields in the simulation (because we have used the
+``save_data(fields='all')`` command). Some of the functions of
+``nmagpp`` apply to one field only (such as ``--dump`` or
+``--timesteplist``). This field defaults to ``m`` (the normalised
+magnetisation field) and can be specified through a ``--field``
+command line parameter. (See also
+[Footnote_different_fields_in_different_timesteps]_ .)
+
+* Checking what at what timesteps (configurations) data has been saved::
+  
+    nmagpp --timesteplist bar
+
+  produces::
+  
+    Available time steps for field 'm' are
+           row         id   time <s>       step      stage
+             0          0          0          0          0
+             1         10      5e-11        327          0
+             2         20      1e-10        536          0
+             3         30    1.5e-10        670          0
+             4         40      2e-10        807          0
+             5         50    2.5e-10        954          0
+             6         60      3e-10       1079          0
+
+
+The first column with heading ``row`` is just a numeric identifier of
+the data sets in the ``h5`` file. This is used for the ``--range``
+option to specify which time step(s) should be processed.
+
+The ``id`` is the same ``id`` as used in the ndt_ files that can be
+read with the ncol_ command. In particular, its purpose is to identify
+time steps saved in the ndt file with the corresponding data saved in
+the h5 data file.
+
+Columns ``time`` (measured in seconds), ``step`` and ``stage`` are just
+providing some further information (see `Stage, Step, iteration, time,
+etc.`_)
+
+Dumping data
+~~~~~~~~~~~~
+
+Suppose we are interested in the magnetisation data stored at time 0
+seconds (i.e. the initial configuration). This command 
+can be displayed to the
+standard output like this::
+
+  nmagpp --range 0 --dump bar
+
+produces output that starts like this::
+
+  field    : m
+  subfield : m_Py
+  time     : 0 * <SI: 1  s >
+  id       : 0
+  step     : 0
+  stage    : 0
+  field unit: <SI: 1  >
+  position unit: <SI: 1e-09  m >
+  row: 0
+  #Start (index in h5 table, dofsite, pos, data)
+     0:   0 : (  0,  0,  0) : (    0.707107,            0,     0.707107)
+     1:   1 : (  3,  0,  0) : (    0.707107,            0,     0.707107)
+     2:   2 : (  6,  0,  0) : (    0.707107,            0,     0.707107)
+     3:   3 : (  9,  0,  0) : (    0.707107,            0,     0.707107)
+  
+The first few rows provide some metadata such as which field and
+subfield the data is about, at what simulation time it was saved (here
+0 seconds), what the id, step and stage is. It further shows the
+``field unit`` and the ``position unit``. These give the physical
+dimensions with which the numerical quantities from the table have to
+be multiplied to get dimensionful physical quantities. For example,
+the positions in the table are provided as ``(0,0,0)``, ``(3,0,0)``,
+``(6,0,0)`` etc. These numbers have to be multiplied by 
+`` <SI: 1e-09 m > `` = 1e-9 meters to obtain the actual positions 
+in SI units. In other words, the position coordinate data is expressed in 
+nanometers. In this particular example, the field data -- the normalised
+magnetisation -- is dimensionless.
+
+Followed by the keyword ``#Start`` the actual data starts (in the next
+line).  The format of the subsequent data lines is as follows:
+
+* Column 1: index of the site in the h5 file. This mostly relevant for
+  developers.
+
+* Column 2: the index of the site. As long as we are dealing with
+  first order basis functions (as is nearly always the case in
+  micromagnetics), this is equivalent to the node id in the mesh.
+
+* Columns 3, 4, 5: enclosed in parentheses, the position of the site
+  is expressed in units of the ``position unit``.
+
+* Columns 6, 7, 8: enclosed in parentheses, the actual field data
+  expressed in units of the ``field unit``.
+
+In short, the first line of the actual data::
+
+     0:   0 : (  0,  0,  0) : (    0.707107,            0,     0.707107)
+
+tells us that the normalised magnetisation at node id ``0``, and
+position ``(0,0,0) nm`` is pointing in the direction 
+``(0.707107,0,0.707107)``.
+
+
+Another example: Suppose we are interested in the magnetisation field
+``M`` (this is the non-normalised magnetisation measured in Ampere per
+meter) at time 1e-10 seconds (i.e. 0.1 nanoseconds). We use this
+command::
+
+
+ nmagpp --field M --dump --range 2 bar
+
+to obtain output beginning like this::
+
+  
+  field    : M
+  subfield : M_Py
+  time     : 1e-10 * <SI: 1  s >
+  id       : 20
+  step     : 547
+  stage    : 0
+  field unit: <SI: 1  A / m >
+  position unit: <SI: 1e-09  m >
+  row: 2
+  #Start (index in h5 table, dofsite, pos, data)
+     0    0  (       0    0    0 )  (  156990   452328   714391 )
+     1    1  (       3    0    0 )  (  141900   459702   712839 )
+     2    2  (       6    0    0 )  ( 90155.7   468574   715480 )
+
+In principle, this output data can be parsed by other tools to extract
+the positions and the data. However, it is hoped that other options of
+the nmagpp tool (such as the ``--vtk`` switch ) already cover most of
+the situations where the need to convert data may arise. (If you would
+like to export the raw data into another file format or application,
+please contact the `nmag team`_ to request this feature, as it may be
+of interest to other people as well.)
+
+It is further possible to access the data in the ``_dat.h5`` files
+directly from tailor written post-processing scripts. See `example:
+post processing of saved field data`_.
+
+
+Range of data to be processed
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The ``--range`` switch allows a variety of ways to express which of
+the ``rows`` in the data file should be selected (for dumping to the
+screen, or conversion to a vtk file). Here are some examples::
+
+  --range 17                        #will select 17
+  --range "range(5,10)"             #will select [5,6,7,8,9]
+  --range "[2,5,10,42]"             #will select [2,5,10,42]
+  --range "range(10)+[20,25,31,42]" #will select [0,1,2,3,...,9,10,20,25,31,42]
+  --range -1                        #will select the last row
+
+
+Conversion to vtk file
+~~~~~~~~~~~~~~~~~~~~~~
+
+The command 
+
+  nmagpp --range 0 --vtk test.vtk bar
+
+will take the first dataset in the ``bar_dat.h5`` file and convert it
+to a (binary) vtk file with name ``test.vtk``. For vtk files, the
+default is to convert all fields. However, if a field is specified
+using the ``--field`` option, then only this field is converted. This
+may be useful if disk space or conversion time is an issue.
+
+We can convert multiple time steps into a set of vtk files with one
+command. For example, to convert all save time steps into vtk files,
+use::
+
+  nmagpp --vtk alltest.vtk bar
+
+This will create files ``alltest-0000.vtk``, ``alltest-0001.vtk``,
+``alltest-0002.vtk``, ``alltest-0003.vtk``, ``alltest-0004.vtk``,
+``alltest-0005.vtk``, and ``alltest-0006.vtk``.
+
+The conversion to vtk can be combined with the ``--range`` command.
+(See  `Range of data to be processed`_). For example, to convert every
+third time step saved into vtk files ``x-0000.vtk``, ``x-0003.vtk``,
+``x-0006.vtk``, we could use::
+
+  nmagpp --range "range(0,7,3)" --vtk x.vtk bar
+
+The string "range(0,7,3)" is a Python expression and will evaluate to
+[0,3,6] (because it is the list of integers starting from 0, going up
+to [but not including] 7, in steps of 3).
+
+
+Other features
+~~~~~~~~~~~~~~
+
+Use:
+
+  nmagpp --help
+
+to get an overview of other features of nmag.
+
+
+
+
+nmeshpp
+-------
+
+The ``nmeshpp`` program is the NMESHPreProcesser and NMESHPostProcessor. 
+It provides quick access to some statistical information
+about nmesh meshes. The basic usage is
+
+  ``nmeshpp [OPTIONS] INPUTFILE [OUTPUTFILE]``
+
+where ``INPUT`` is the name of a nmesh file (either in ascii or hdf5
+format), ``OUTPUTFILE`` is the name of the file to be written to (if
+required; this depends on the ``OPTIONS``) and OPTIONS can be one or
+several of the options listed in the following subsections. We use the
+mesh file `bar30_30_100.nmesh.h5 <../example2/bar30_30_100.nmesh.h5>`__ from `Example 2`_ to
+illustrate the usage of nmeshpp_.
+
+General information (``--info``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The command::
+
+  nmeshpp --info bar30_30_100.nmesh.h5
+
+produces the following output::
+
+  ====== Info output: ========================================================
+  3-dimensional mesh
+  18671 volume elements (3d)
+   3438 surface elements (2d)
+   4086 points
+      1 simplex regions ([1])
+      2 point regions ([-1, 1])
+      2 region volumes ([0.0, 89999.999999999782])
+   1721 boundary points (-> BEM size<=  22MB)
+      0 periodic points (mirage=0, total=0)
+  a0: average=3.543451, std=0.581220, min=1.953689, max=5.708395
+
+Starting from the top of the output, we are given the information that
+this is a three-dimensional mesh, with its number of *volume elements*
+(i.e. tetrahedra in 3d), *surface elements* (i.e. surface triangles) and
+*points*.  
+
+We are also given a list of *simplex regions* (which is just [1]
+here). If we had more than one region defined (say two disconnected
+spheres that are to be associated with different material), then we
+would have two entries here. The numbers given in this list are the
+identifiers of the regions: in this example there is only one region
+and it has the identifier 1.
+
+The *point regions* is a list of all regions in which points are
+located. This includes of course region 1. Region -1 represents the
+vacuum around the meshed region. The points that are located on the
+surface of the bar are located both in the bar (region 1) and in the
+vacuum (region -1). Other negative region numbers (-2, -3) can be used
+to discern different pieces of a boundary. (While this feature is at
+present not used by |Nmag|, the underlying |nsim| framework provides
+capabilities to e.g. associate Dirichlet boundary conditions to a
+1/-1 boundary and von Neumann boundary conditions to a 1/-2 boundary.)
+
+The *region volumes* provide the geometrical volume of the regions. By
+convention, the vacuum has volume 0. In this example, the bar volume
+is meant to be 30x30x100=90000. The deviation from this due to limited
+numerical precision (and of the order of 1e-10).
+
+The *boundary points* are the number of nodes located at the surface
+of the bar. This number is important if using the hybrid finite
+element/boundary element method to compute the demagnetisation field,
+as the boundary element matrix size will be proportional to the square
+of the number of boundary points. The size of the boundary element
+matrix is given as well (see `memory requirements of boundary element matrix`_).
+
+The *periodic points* are the number of points that have *mirage
+images* in the mesh. There will always be zero periodic points (and
+thus zero mirage images) unless we are dealing with a periodic mesh 
+(see nmeshmirror_ and `Example: Spin-waves in periodic system`_).
+
+Finally, we are given some information about the statistics of the
+edge lengths *a0* in the mesh: the average value, the standard
+deviation, the maximum and minimum value. This is important as in
+micromagnetics the angle of the magnetisation must not vary strongly
+from one node to the next. In practice, the edge length a0 should
+therefore be (significantly) smaller than the exchange length (see
+`What size of the cells (FD) and tetrahedra (FE) should I choose?`_)
+
+Memory requirements of boundary element matrix
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The boundary element matrix is densely populated matrix with s rows
+and s columns, where s is the number of surface nodes in the
+mesh. (Strictly, it is only the number of surface nodes that enclose a
+ferromagnetic material.) Assuming we use 8 bytes to store one floating
+point number, we can thus estimate the memory required to store this
+matrix. In the example above, we have 1721 boundary points, and thus
+1721*1721=2961841 matrix entries. Each entry requires 8 byte, so the
+total memory requirement is 23694728 bytes, or approximately 23139
+kilobytes or 23 megabytes.
+
+The nmeshpp -i command can be used to quickly check how big the BEM
+matrix is. A computation is only feasible if the RAM of the computer
+can hold the boundary element matrix. (When carrying out a distributed
+calculation, it is sufficient if the total RAM of all machines can
+hold the matrix.)
+
+Inspecting the quality of a mesh
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The quality of a mesh can be defined in various ways. In
+micromagnetics, we usually want tetrahedra that have edges of nearly
+identical length (i.e. we do not want the tetrahedra to be flat).
+
+``nmeshpp`` uses the ratio of the radius of the in-sphere (the sphere
+that can just fit into a tetrahedron so that it touches the sides) to
+radius of the circumsphere (the sphere passing through the four corners),
+multiplied by the number of dimensions. This number is 1.0 for a
+perfect tetrahedron with identical edge lengths, and 0 for a
+completely flat (effectively 2-dimensional) tetrahedron.
+
+The command::
+
+ nmeshpp -q bar30_30_100.nmesh.h5 
+
+computes a histogram of the distribution of this quality parameter for
+the bar mesh, and produces this output::
+
+  ====== Quality output: ======================================================
+  [qual interval] counts = probability
+  [ 0.000- 0.100]      0 = 0.00% 
+  [ 0.100- 0.200]      0 = 0.00% 
+  [ 0.200- 0.300]      0 = 0.00% 
+  [ 0.300- 0.400]      0 = 0.00% 
+  [ 0.400- 0.500]      1 = 0.01% *
+  [ 0.500- 0.600]     42 = 0.22% *
+  [ 0.600- 0.700]    364 = 1.95% **
+  [ 0.700- 0.800]   2420 =12.96% ************
+  [ 0.800- 0.900]   8252 =44.20% ****************************************
+  [ 0.900- 1.000]   7592 =40.66% *************************************
+  
+
+
+Histogram of edge lengths
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The command::
+
+  nmeshpp -a bar30_30_100.nmesh.h5 
+
+computes a histogram of the edge length distribution of the mesh::
+
+  ====== a0 output: ===========================================================
+  [a0   interval] counts = probability
+  [ 1.954- 2.329]    234 = 0.63% **
+  [ 2.329- 2.705]   1424 = 3.81% *******
+  [ 2.705- 3.080]   7921 =21.17% *************************************
+  [ 3.080- 3.456]   8790 =23.50% ****************************************
+  [ 3.456- 3.831]   7573 =20.24% ***********************************
+  [ 3.831- 4.207]   5884 =15.73% ***************************
+  [ 4.207- 4.582]   3769 =10.08% ******************
+  [ 4.582- 4.957]   1385 = 3.70% *******
+  [ 4.957- 5.333]    365 = 0.98% **
+  [ 5.333- 5.708]     63 = 0.17% *
+  
+  average   a0: <a0>   = 3.543451
+  stand dev a0: <a0^2> = 0.581220^2
+  min and max :        =(1.953689,5.708395)
+
+
+nmeshmirror
+~~~~~~~~~~~
+
+The ``nmeshmirror`` tool can create periodic meshes out of a non-periodic mesh. The geometry described by the non-periodic mesh has to
+be a cuboid. This can be mirrored along one (or more) of the planes
+defined by the sides of the cuboid.
+
+The general usage is ::
+
+   nmeshmirror meshfile error1 error2 directions newfile remove
+   
+where:
+
+- ``meshfile`` is the original (non-periodic) ASCII nmesh file
+
+- ``error1`` is the maximum distance between two points in
+  order to consider them coincident (case of points on mirroring planes)
+  
+- ``error2`` is the maximum distance between a point and the surface
+  opposite to the one used as mirroring plane in order to consider the
+  point periodic 
+
+- ``directions`` is a list of values 0,1 or -1, corresponding to the
+  direction(s) over which the mesh is mirrored: 1 corresponds to
+  mirroring along the positive given axis, -1 along the negative given
+  axis and 0 corresponds to no mirroring along the given axis.
+
+  For a three dimensional mesh, there are three options to mirror the
+  mesh (along the x, y and z direction). In that case, the
+  ``directions`` would be a list of three integers, for example
+  ``0,1,0`` to mirror the input mesh on the xz plane that limits the
+  mesh in the y direction.
+
+
+
+- ``newfile`` is the name of the ASCII file with the new periodic mesh
+
+- ``remove`` is an optional argument which takes the values 0 and 1
+  and removes the periodic points from the final mesh when is set to 1.
+  The default value is 0.
+
+Calling ``orig.nmesh`` the ASCII file of a 3D non-periodic mesh, an example
+of the use of nmeshmirror is the following, where the mesh is mirrored
+along the positive x-axis and the negative z-axis:: 
+
+  nmeshmirror orig.nmesh 1e-6 1e-6 1,0,-1 periodic.nmesh
+
+resulting in a periodic mesh along the same axes.
+
+nmeshsort
+~~~~~~~~~
+
+The ``nmeshsort`` script sorts the nodes of a mesh along a given axis
+(not recommended when using parmetis with multiple-object meshes). We
+expect this to be most relevant to developers.
+
+The general usage is ::
+
+   nmeshsort meshfile axis newfile
+   
+where:
+
+- ``meshfile`` is the original ASCII nmesh file
+
+- ``axis`` is the axis over which the sorting takes place
+
+- ``newfile`` is the name of the ASCII file with the new periodic mesh
+
+Calling ``orig.nmesh`` the ASCII file of a 3D mesh, an example
+of the use of nmeshsort is the following, where the mesh is sorted
+along the z-axis:: 
+
+  nmeshsort orig.nmesh 2 sorted.nmesh
+
+nmeshimport
+-----------
+
+The ``nmeshimport`` tool can convert Netgen_ and Gambit neutral files
+into nmesh files. 
+
+The nmeshimport_ command can be used to import other mesh formats into
+nmesh.
+
+The general usage is::
+
+  nmeshimport OPTIONS INPUTFILE NMESHFILE
+
+The OPTION to import from netgen_ is ``--netgen``. The (contributed)
+code for importing from a Gambit mesh file is ``--gambit``.
+
+Usage example: assuming we have a file ``mymesh.neutral`` created with
+Netgen_ and would like to convert it to ``mymesh.nmesh.h5``, we could
+use this command::
+
+  nmeshimport --netgen mymesh.neutral mymesh.nmesh.h5
+
+Use::
+
+  nmeshimport --help 
+
+to see all available features.
+
+nsim
+----
+
+This is the main executable. It superficially appears to be a Python
+interpreter, but has extended functionality. In particular, it has
+support for parallel execution (using MPI), and contains extensions
+accessible in the additional built-in ``ocaml`` module which provides
+the additional functionality of the |nsim| multiphysics
+system. (|Nmag| is a Python library on top of |nsim|, which itself is
+implemented in Objective Caml.)
+
+
+nsimversion
+-----------
+
+A script that provides some information about the version of the
+software. If you need to report a bug/problem, please include the
+output of this program.
+
+
+Files and file names
+====================
+
+mesh files (``.nmesh``, ``.nmesh.h5``)
+---------------------------------------
+
+Files that contain a finite element mesh. See `Nmesh file format`_.
+
+Simulation scripts (``.py``)
+----------------------------
+
+Files that contain simulation program code. The ending is (by
+convention) ``.py`` which reflects that the programming language used
+is Python.
+
+All the example codes provided in the `Guided tour`_ are such simulation scripts.
+
+
+.. _ndt:
+
+Data files (``.ndt``)
+---------------------
+
+``ndt`` stands for |Nmag| Data Table, analog to ``odt`` files (OOMMF_
+Data Table) for the OOMMF project. In fact, ``ndt`` and ``odt`` files
+are very similar.
+
+``ndt`` files are ascii files where each row corresponds to one time
+step (or, more generally, configuration of the system). The columns
+contain:
+
+- metadata such as
+
+  - a unique identifier for every row
+
+  - the time at which the row was written
+
+- (spatially) averaged field_ data
+
+
+The first two lines contain information about what data is stored in the various columns:
+
+ 1. The first line provides a header
+
+ 2. The second line provides the SI units 
+
+All other lines contain the actual data.
+
+
+
+The file can be loaded into any data processing software (such as MS
+Excel, Origin, Matlab, Gnuplot, ...). However, often it is more
+convenient to use the ncol_ tool to select the relevant columns, and
+only to pass the filtered data to a post-processing (e.g. plotting)
+program.
+
+
+Data is written into the ``ndt`` file whenever the save_data_ method
+of the simulation object is called.   
+
+
+.. _`h5 data files`:
+.. _`h5 data file`:
+
+Data files (``.h5``)
+---------------------
+
+The ``h5`` data files store spatially resolved fields_. The format is
+a binary and compressed hdf5_ format to which we have convenient
+access via the pytables_ package for Python. The user should not have
+to worry about reading this file directly, but use the nmagpp_ tool to
+access the data.
+
+
+
+
+File names for data files
+-------------------------
+
+The filenames for the ndt_ and `h5 data files`_ are given by
+concatenation of the *simulation name*, the extension ``_dat.`` and
+the extension (``.h5`` or ``.ndt``).
+
+When a simulation object is created, for example in a file called
+``mybar.py`` starting like this::
+
+  import nmag
+  sim = nmag.Simulation(name="bar")
+
+then the simulation name is ``bar``.
+
+If no name is provided, i.e. the file ``mybar.py`` starts like this::
+
+  import nmag
+  sim = nmag.Simulation()
+
+then the simulation name will be the *run id*. The *run id* is the
+filename of the simulation script (without the ``.py`` extension),
+i.e. the simulation name then will be ``mybar``.
+
+
+Let us assume for the rest of this section that the simulation name
+is ``bar``.  Once we use the save_data_ command, for example like this::
+
+  sim.save_data()
+
+an ``ndt`` file will be created, with name ``bar_dat.ndt`` (= ``bar``
++ ``_dat.`` + ``ndt``).
+
+Similarly, if we write the fields spatially resolved::
+
+  sim.save_data(fields='all')
+
+a `h5 data file`_ with name ``bar_dat.h5`` (= ``bar`` + ``_dat.`` + ``h5``)
+will be created.
+
+
+
+File names for log files
+------------------------
+
+A log file is created that stores (most of) the messages displayed to
+stdout (i.e. the screen). The name of the log file starts with the
+name of the simulation script (without the ``.py`` extension), and ends with ``_log.log``.
+
+For example, a simulation script with name ``mybar.py`` will have an
+associated log file with name ``mybar_log.log``.
+
+Another three files will be created automatically which are primarily
+of use to the developers and can usually be ignored:
+
+- ``mybar_log.conf``:
+  This can be used to configure what data is logged.
+
+- ``mybar_ocaml.conf``:   
+  Configuration of some variables used in the ocaml code
+
+- ``mybar_nmag.conf``:
+  Some variables used in the nmag code
+
+
+.. comment :.. _FAQ:
+
+Frequently Asked Questions
+==========================
+
+.. contents::
+  :local:
+
+What is the difference between the OOMMF and |nmag| approach?
+-------------------------------------------------------------
+
+There are several aspects. One important point is the calculation of
+the demagnetisation field as this is a computationally very expensive step.
+
+OOMMF_ is based on discretising space into small cuboids (often called
+'finite differences'). One advantage of this method is that the demag
+field can be computed very efficiently (via fast Fourier
+transformation techniques). One disadvantage is that this methods
+works less well (i.e. less accurately) if the geometry shape does not
+align with a cartesian grid as the boundary then is represented as a
+staircase pattern.
+
+|nmag|'s finite elements discretise space into many small
+tetrahedra. The corresponding approach towards the computation of the
+demagnetisation field (which is the same as Magpar_'s method) is based
+on the Fredkin and Koehler Hybrid Finite Element/Boundary Element
+method. The advantage of this method (over OOMMF's approach) is that
+curved and spherical geometries can be spatially resolved much more
+accurately. However, this method of calculating the demagnetisation
+field is less efficient than OOMMF's approach for thin films. (In
+particular: memory requirements for the boundary element method grow
+as the square of the number of surface points.) Note that for
+simulation of thin films, the hybrid Finite Element/Boundary Element
+(as used by |nmag| and Magpar_) is likely to require a lot of memory
+(see `memory requirements of boundary element matrix`_).
+
+
+There are other points that are related to the fundamentally different
+discretisation approach used to turn a field theory problem (with a
+conceptually infinite number of degrees of freedom) into a finite
+problem: OOMMF assumes the magnetisation in every cell to be constant
+(with jumps at boundaries), while |Nmag| assumes magnetisation to be
+continuous and vary linearly within cells (thus slightly violating the
+constraint of constant magnitude within a cell of non-constant
+magnetisation).
+
+
+Why do you have your own Python interpreter (=``nsim``)?
+--------------------------------------------------------
+
+In order to provide the ability to run code in a distributed
+environment (using MPI), we cannot use the standard Python
+executable. (Technically speaking, a program started under MPI control
+will receive extra MPI-related command line arguments which upset the
+standard Python interpreter.) It so happens that -- by providing our
+own Python executable which is called ``nsim`` -- we have easier
+access to the low-level library of |nsim| which is written in
+Objective Caml.
+
+What is nsim - I thought the package is called |nmag|?
+------------------------------------------------------
+
+The `nsim library`_ is our general purpose multi-physics simulation
+environment. The corresponding executable is started through the nsim_
+command. |Nmag| is a collection of scripts that provide micromagnetic
+functionality on top of nsim. For this reason, nsim is being mentioned
+a lot in the manual.
+
+
+How fast is nmag in comparison to magpar?
+-----------------------------------------
+
+
+Internally, some of the magpar and nmag core components are
+structurally very similar. In particular, the time integration routine
+is almost identical up to some philosophical issues such as how to
+keep the length of the magnetisation vector constant, and whether or
+not to use a symmetrical exchange matrix and a post-processing step
+rather than combining these into an asymmetrical matrix, etc. The
+actual wall clock time used will depend to a large degree on the
+requested accuracy of the calculations (see `example timestepper tolerances`_). 
+
+Given equivalent tolerance parameters, we have found (the
+single-process version of) nmag to be about as fast as magpar. The
+computation of an individual velocity dM/dt is very similar in nmag
+and magpar, and about equally efficient. However, we observe that,
+depending on the particular problem, subtle differences in the
+philosophies underlying time integration can lead to noticeable
+differences in the number of individual steps required to do some
+particular simulation, which can be up to about 25% of simulation time
+in either direction.
+
+Setup time is a different issue: nmag derives its flexibility from
+abstract approaches where magpar uses hard-coded compiled
+functions. Where magpar uses a hand-coded Jacobian, nmag employs the
+nsim core to symbolically compute the derivative of the equations of
+motion. There is a trade-off: the flexibility of being able to
+introduce another term into the equations of motion without having to
+manually adjust the code for the Jacobian comes at a price in
+execution time. Therefore, nmag's setup time at present is far larger
+than magpar's. This can be alleviated to a considerable degree by
+providing hard-coded "bypass routines" which can be used as
+alternatives to the symbolically founded methods for special
+situations that are frequently encountered (such as setting up a
+Laplace operator matrix). Conceptually, it is easy to add support for
+this but due to limited manpower, it has not happened yet.
+
+
+In short: once the setup stage is over, nmag is about as fast as
+magpar. Magpar's setup time, however, is much smaller.
+
+
+How do I start a time-consuming nmag run in the background?
+-----------------------------------------------------------
+
+While this is a Unix rather than a nmag issue, it comes up
+sufficiently often to address it here.
+
+Well-known techniques to run programs in the background are:
+
+  - Using the "nohup" (no-hangup) command, as in::
+
+      nohup nsim sphere1.py &
+
+  - Using the at-daemon for scheduling of command execution at
+    given times::
+
+         at now
+         warning: commands will be executed using /bin/sh
+         at> nsim example1.py
+         at> <EOT>
+         job 2 at Fri Dec 14 12:08:00 2007
+
+  - Manual daemonization by using a parent process which forks & exits,
+    as in::
+
+      perl -e 'exit(0) if fork(); exec "nsim sphere1.py"'
+
+    (But if you know Unix to that degree, you presumably would
+    not have asked in the first place.)
+
+
+  - One of the most elegant ways to start a process in the background
+    is by using the "screen" utility, which is installed on a number of
+    Unix systems. With "screen", it becomes possible to start a text
+    terminal session in such a way that one can "detach" from it while
+    keeping the session alive, and even log out and log in again much
+    later and from a different machine, re-attaching the terminal
+    session and continuing work from the point where it was left.
+
+    While it is a good idea to read the documentation, most basic usage of
+    "screen" requires the knowledge of three commands only:
+    
+      - With "screen -R", one can re-attach to a running session,
+        automatically creating a new one if none was created before.
+    
+      - Within a "screen" session, Control+a is a prefix keyboard command
+        for controlling "screen": Pressing Control-a and then Control-d
+        will detach the session.
+    
+      - Control-a ? will being up a help screen showing all "screen"
+        keyboard commands.
+    
+
+.. comment:
+       Furthermore, once one exits a shell which was started under "screen"
+       control, this will kill the "screen" session as well.
+     
+
+nmag claims to support MPI. So, can I run simulation jobs on multiple processors?
+---------------------------------------------------------------------------------
+
+In principle, yes. But this at present is an undocumented feature we
+have not publicly released yet: tuning the simulation loop has higher
+priority on our agenda. Also, while the main simulation loop is
+parallelized, matrix setup so far is not.
+
+
+
+
+
+Useful tools
+============
+
+vtk
+---
+
+The homepage of the Visualisation ToolKit (vtk) is
+http://www.vtk.org. VTK provides is is an open source, freely
+available software system for 3D computer graphics, image processing,
+and visualization. It also provides a file-format which is called
+'vtk'. A number of high-level user interfaces exist to visualise data
+provided in such vtk files. These include:
+
+- MayaVi_ (http://mayavi.sourceforge.net/)
+- VisIt (http://www.llnl.gov/visit/)
+- ParaView (http://www.paraview.org/)
+
+
+MayaVi
+------
+
+"MayaVi is a free, easy to use scientific data visualizer. It is
+written in Python and uses the Visualization Toolkit (VTK) for
+graphical rendering. MayaVi is free and distributed under the
+conditions of the BSD license. It is also cross platform and should
+run on any platform where both Python and VTK are available (which is
+almost any Unix, Mac OSX or Windows)." The MayaVi web page is
+http://mayavi.sourceforge.net/.
+
+MayaVi has been used to generate many of the plots in this manual.
+Other tools are available for visualisation of vtk files (see vtk_).
+
+NumPy
+-----
+
+Numerical Python (short *numpy*) is an extension library to Python
+that provides fast array operations and is designed for numerical
+work. This Python extension and documentation can be found at
+http://numpy.scipy.org/
+
+Contact
+=======
+
+.. _`nmag team`:
+
+The nmag developer team can be contacted at
+``nmag@soton.ac.uk``.
+
+Questions about the usage of nmag can also be send to the `nmag-users`_ mailing list.
+
+
+.. include:: tutorial/doc.txt
+
+
+Acknowledgements
+================
+
+This work has been financially supported by the `Engineering and
+Physical Science Research Council (EPSRC) <http://www.epsrc.ac.uk>`__ (GR/T09156/01) in the United Kingdom and
+by the `University of Southampton`_.
+
+We thank Thomas Schrefl, Wyn Williams, Michael Donahue, Richard
+Boardman and Jurgen Zimmermann for useful discussion that have
+supported the development of this tool.
+
+Further acknowledgements go to the Magpar_ software and its main
+author Werner Scholz. Magpar has provided a finite element
+implementation of micromagnetics that has proved very useful in the
+development of nmag. Special thanks to Werner Scholz who has discussed
+various numerical problems with the nmag team in great depth.
+
+We further thank the beta users for their helpful feedback, in
+particular Michael Martens, David Vokoun, Niels Wiese, Gabriel David
+Chaves O'Flynn and David Gonzales at the very early stages of the
+project.
+
+
+Footnotes
+=========
+
+.. [different fields in_saved_data] x
+
+
+.. [Footnote_different_fields_in_different_timesteps]
+
+  Save_data_ and nmagpp_ allow to save *all fields* at one time step
+  to the `h5 data file`_ (with ``save_data(fields='all')``, or to
+  save only a subset of all fields into the file (for example only the
+  magnetisation with ``save_data(fields=['m'])``). The motivation
+  behind this is that if the simulation is very big, or many time
+  steps have to be saved, then disk space may become an issue.
+
+  The current functionality of save_data_ and nmagpp_ allow only to
+  save the same set of fields in one data file. For example, we can
+  save all the fields every 10 picoseconds. Or we can save only the
+  magnetisation every 10 picoseconds. We cannot save first the
+  magnetisation only, and at a later stage all the fields.
+
+  This functionality may (!) be provided later - user feedback and
+  suggestions for useful features is welcome. For this reason, there
+  is a ``--field`` option in nmagpp_ that appears to be unnecessary
+  considering current functionality (for example for ``--timesteplist``).
+
+
+.. |nmag_url| replace:: `nmag <http://nmag.soton.ac.uk>`__
+.. |Nmag_url| replace:: `nmag <http://nmag.soton.ac.uk>`__
+
+.. |nmag| replace:: nmag
+.. |nsim| replace:: nsim
+.. |Nmag| replace:: Nmag
+.. |nmesh| replace:: nmesh
+
+
+.. |figwidth1| replace:: 15cm
+
+.. |date| date::
+.. |time| date:: %H:%M
+
+
+
+.. _netgen: http://www.hpfem.jku.at/netgen/
+.. _gambit: http://www.fluent.com/software/gambit/index.htm
+.. _pytables: http://www.pytables.org/
+.. _hdf5: http://www.hdfgroup.org/
+.. _magpar: http://magnet.atp.tuwien.ac.at/scholz/magpar/
+.. _oommf: http://math.nist.gov/oommf/
+.. _xmgrace: http://plasma-gate.weizmann.ac.il/Grace/
+.. _sundials: http://www.llnl.gov/CASC/sundials/
+.. _gnuplot: http://www.gnuplot.info/
+.. _python: http://www.python.org
+
+
+
+
+
+.. _`University of Southampton`: http://www.soton.ac.uk
+
+.. include:: dyn/svnversion.txt
+
+.. _GPL: http://www.gnu.org/licenses/gpl2.txt
+
+.. comment:
+  .. _gyromagnetic: http://hussle.harvard.edu/~gabrielse/gabrielse/papers/2006/NewElectronMagneticMoment.pdf
+
+
+
+.. comment:
+
+  A summary of the conventions we try to use in this document:
+
+  unix prompt: $ (suggested by Thomas)
+
+.. comment: unused references
+  .. _EPSRC: http://www.epsrc.ac.uk

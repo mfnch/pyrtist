@@ -14,9 +14,12 @@ typedef struct {
         GOT_POINT,
         GOT_1ST_FLOAT,
         GOT_2ND_FLOAT} state;
+  struct {
+    int color : 1;
+  } got;
   Int num_points;
 
-  OptColor color;
+  Color color;
   int close;
   WindowLinePiece this_piece;
   buff pieces;
