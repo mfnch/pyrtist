@@ -43,6 +43,8 @@ static void eps_rline(Point a, Point b);
 static void eps_rcong(Point a, Point b, Point c);
 static void eps_rcircle(Point ctr, Point a, Point b);
 static void eps_rfgcolor(Real r, Real g, Real b);
+static void eps_text(Point *p, const char *text);
+
 #if 0
 static void eps_rbgcolor(Real r, Real g, Real b);
 #endif
@@ -62,7 +64,8 @@ static void (*eps_lowfn[])() = {
 static void (*eps_midfn[])() = {
   eps_rreset, eps_rinit, eps_rdraw,
   eps_rline, eps_rcong, not_available,
-  eps_rcircle, eps_rfgcolor, not_available
+  eps_rcircle, eps_rfgcolor, not_available,
+  not_available, eps_text
 };
 
 /* Variabili usate dalle procedure per scrivere il file postscript */
@@ -96,9 +99,10 @@ static void eps_rdraw(void) {
     fprintf( (FILE *) grp_win->ptr, " eofill\n");
 }
 
-static void eps_rline(Point a, Point b)
-{
+static void eps_rline(Point a, Point b) {
   EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by);
+
+  if (ax == bx && ay == by) return;
 
   if ( beginning_of_line ) {
     beginning_of_line = 0;
@@ -131,11 +135,14 @@ static void eps_rline(Point a, Point b)
 
 static void eps_rcong(Point a, Point b, Point c) {
   EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by); EPS_POINT(c, cx, cy);
+#if 0
   int a_eq_b = ax == bx && ay == by,
       a_eq_c = ax == cx && ay == cy,
       b_eq_c = bx == cx && by == cy,
       n_eq = a_eq_b + a_eq_c + b_eq_c;
   if (n_eq == 3) return;
+#endif
+  if (ax == cx && ay == cy) return;
 
   if ( beginning_of_path )
     fprintf( (FILE *) grp_win->ptr, " newpath" );
@@ -144,7 +151,6 @@ static void eps_rcong(Point a, Point b, Point c) {
    " %ld %ld %ld %ld %ld %ld cong", ax, ay, bx, by, cx, cy );
   previous_px = cx; previous_py = cy;
   beginning_of_line = 0;
-  return;
 }
 
 static void eps_rcircle(Point ctr, Point a, Point b) {
@@ -157,13 +163,19 @@ static void eps_rcircle(Point ctr, Point a, Point b) {
    " %ld %ld %ld %ld %ld %ld circle", cx, cy, ax, ay, bx, by );
   beginning_of_line = 1;
   beginning_of_path = 0;
-  return;
 }
 
 static void eps_rfgcolor(Real r, Real g, Real b) {
   fprintf( (FILE *) grp_win->ptr,
    "  %g %g %g setrgbcolor\n", r, g, b );
-  return;
+}
+
+static void eps_text(Point *p, const char *text) {
+  EPS_POINT((*p), px, py);
+
+  fprintf((FILE *) grp_win->ptr,
+          "  %ld %ld moveto (%s) show\n",
+          px, py, text);
 }
 
 #if 0

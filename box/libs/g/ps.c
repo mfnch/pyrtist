@@ -63,7 +63,8 @@ static void (*ps_lowfn[])() = {
 static void (*ps_midfn[])() = {
   ps_rreset, ps_rinit, ps_rdraw,
   ps_rline, ps_rcong, not_available,
-  ps_rcircle, ps_rfgcolor, not_available
+  ps_rcircle, ps_rfgcolor, not_available,
+  not_available, not_available
 };
 
 /* Variabili usate dalle procedure per scrivere il file postscript */

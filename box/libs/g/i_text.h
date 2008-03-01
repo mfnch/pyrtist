@@ -17,13 +17,19 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#ifdef _DEF_TEXT_SUBOBJECTS
+#ifdef _DEF_WINDOW_SUBOBJECTS
 
 /* This is part of the Window object */
 typedef struct {
+  char *text;
+  Point position;
+  Color color;
 
   struct {
-    int constraints : 1;
+    int text : 1;
+    int position : 1;
+    int font : 1;
+    int color : 1;
   } got;
 } WindowText;
 

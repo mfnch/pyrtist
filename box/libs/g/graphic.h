@@ -136,6 +136,7 @@ Point *grp_ref(Point *o, Point *v, Point *p);
 #define grp_rcircle      (grp_win->midfn[6])
 #define grp_rfgcolor    (grp_win->midfn[7])
 #define grp_rbgcolor    (grp_win->midfn[8])
+#define grp_text        (grp_win->midfn[10])
 
 /* Macro per la conversione fra diverse unità di misura */
 /* Lunghezze */

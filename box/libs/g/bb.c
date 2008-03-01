@@ -28,6 +28,7 @@
 #include "types.h"
 #include "graphic.h"
 #include "fig.h"
+#include "autoput.h"
 #include "bb.h"
 
 static Int bb_num_points;
@@ -97,6 +98,10 @@ static void bb_rfgcolor(Real r, Real g, Real b) {return;}
 
 static void bb_rbgcolor(Real r, Real g, Real b) {return;}
 
+static void bb_text(Point *p, const char *text) {
+  return;
+}
+
 static int bb_save(void) {return 1;}
 
 /* Queste funzioni non sono disponibili per finestre postscript
@@ -109,7 +114,8 @@ static void (*bb_lowfn[])() = {
 static void (*bb_midfn[])() = {
   bb_rreset, bb_rinit, bb_rdraw,
   bb_rline, bb_rcong, not_available,
-  bb_rcircle, bb_rfgcolor, bb_rbgcolor
+  bb_rcircle, bb_rfgcolor, bb_rbgcolor,
+  not_available, bb_text
 };
 
 void bb_bounding_box(grp_window *figure, Point *bb_min, Point *bb_max) {

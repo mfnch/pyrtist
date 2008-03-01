@@ -10,8 +10,8 @@
 #include <string.h>
 #include <math.h>
 
-#include "error.h"			/* Serve per la segnalazione degli errori */
-#include "graphic.h"		/* Dichiaro alcune strutture grafiche generali */
+#include "error.h"      /* Serve per la segnalazione degli errori */
+#include "graphic.h"    /* Dichiaro alcune strutture grafiche generali */
 
 /* Descrittore della finestra attualmente in uso: lo faccio puntare
  * ad una finestra che da solo errori (vedi piu' avanti).
@@ -20,7 +20,7 @@ grp_window *grp_win = & grp_empty_win;
 
 /* Costanti moltiplicative usate per convertire: */
 /*  - lunghezze in millimetri: */
-FCOOR grp_tomm	= 1.0;
+FCOOR grp_tomm  = 1.0;
 /* - angoli in radianti: */
 FCOOR grp_torad = grp_radperdeg;
 /* - risoluzioni in punti per millimetro: */
@@ -39,31 +39,32 @@ FCOOR grp_toppmm = grp_ppmmperdpi;
 
 static void win_not_opened(void)
 {
-	ERRORMSG("win_not_opened", "Nessuna finestra aperta");
-	return;
+  ERRORMSG("win_not_opened", "Nessuna finestra aperta");
+  return;
 }
 
 /* Lista delle funzioni di basso livello (non disponibili) */
 static void (*wno_lowfn[])() = {
-	win_not_opened, win_not_opened, win_not_opened, win_not_opened
+  win_not_opened, win_not_opened, win_not_opened, win_not_opened
 };
 
 /* Lista delle funzioni di rasterizzazione */
 static void (*wno_midfn[])() = {
-	win_not_opened, win_not_opened, win_not_opened,
-	win_not_opened, win_not_opened, win_not_opened,
-	win_not_opened, win_not_opened, win_not_opened
+  win_not_opened, win_not_opened, win_not_opened,
+  win_not_opened, win_not_opened, win_not_opened,
+  win_not_opened, win_not_opened, win_not_opened,
+  win_not_opened, win_not_opened
 };
 
 grp_window grp_empty_win = {
-	NULL, 0.0, 0.0, 0.0, 0.0,		/* ptr, ltx, lty, rdx, rdy */
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,	/* minx, miny, maxx, maxy, lx, ly */
-	0.0, 0.0, 0.0, 0.0, 0.0, 0.0,	/* versox, versoy, stepx, stepy, resx, resy */
-	0, 0, NULL, NULL, NULL,			/* numptx, numpty, bgcol, fgcol, pal */
-	0, 0, 0, NULL, 					/* bitperpixel, bytesperline, dim, wrdep */
-	win_not_opened,	/* save */
-	wno_lowfn,		/* lowfn */
-	wno_midfn		/* midfn */
+  NULL, 0.0, 0.0, 0.0, 0.0,    /* ptr, ltx, lty, rdx, rdy */
+  0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  /* minx, miny, maxx, maxy, lx, ly */
+  0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  /* versox, versoy, stepx, stepy, resx, resy */
+  0, 0, NULL, NULL, NULL,      /* numptx, numpty, bgcol, fgcol, pal */
+  0, 0, 0, NULL,           /* bitperpixel, bytesperline, dim, wrdep */
+  win_not_opened,  /* save */
+  wno_lowfn,    /* lowfn */
+  wno_midfn    /* midfn */
 };
 
 /********************************************************************/
@@ -87,24 +88,24 @@ grp_window grp_empty_win = {
  */
 Point *grp_ref(Point *o, Point *v, Point *p)
 {
-	register FCOOR c, cx, cy;
-	static Point result;
+  register FCOOR c, cx, cy;
+  static Point result;
 
-	/* Normalizzo v e trovo pertanto vx */
-	cx = v->x; cy = v->y;
-	c = sqrt(cx*cx + cy*cy);
-	if (c == 0.0) {
-		ERRORMSG("grp_ref",
-		"Punti coincidenti: impossibile costruire il riferimento cartesiano!");
-		return NULL;
-	}
+  /* Normalizzo v e trovo pertanto vx */
+  cx = v->x; cy = v->y;
+  c = sqrt(cx*cx + cy*cy);
+  if (c == 0.0) {
+    ERRORMSG("grp_ref",
+    "Punti coincidenti: impossibile costruire il riferimento cartesiano!");
+    return NULL;
+  }
 
-	cx /= c; cy /= c;
+  cx /= c; cy /= c;
 
-	result.x = o->x + p->x * cx - p->y * cy;
-	result.y = o->y + p->x * cy + p->y * cx;
+  result.x = o->x + p->x * cx - p->y * cy;
+  result.y = o->y + p->x * cy + p->y * cx;
 
-	return & result;
+  return & result;
 }
 
 /********************************************************************/
@@ -127,10 +128,10 @@ static unsigned long color_hash(palette *p, color *c);
  */
 void grp_color_build(Real r, Real g, Real b, color *c)
 {
-	if ( r < 0.0 ) c->r = 0; else if ( r > 1.0 ) c->r = 255; else c->r = 255*r;
-	if ( g < 0.0 ) c->g = 0; else if ( g > 1.0 ) c->g = 255; else c->g = 255*g;
-	if ( b < 0.0 ) c->b = 0; else if ( b > 1.0 ) c->b = 255; else c->b = 255*b;
-	return;
+  if ( r < 0.0 ) c->r = 0; else if ( r > 1.0 ) c->r = 255; else c->r = 255*r;
+  if ( g < 0.0 ) c->g = 0; else if ( g > 1.0 ) c->g = 255; else c->g = 255*g;
+  if ( b < 0.0 ) c->b = 0; else if ( b > 1.0 ) c->b = 255; else c->b = 255*b;
+  return;
 }
 
 /* DESCRIZIONE: Arrotonda un colore. Il risultato e' simile all'arrotondamento
@@ -139,21 +140,21 @@ void grp_color_build(Real r, Real g, Real b, color *c)
  */
 void grp_color_reduce(palette *p, color *c)
 {
-	register unsigned int mask, add, col;
-	unsigned int mtable[8] =
-	 {0777, 0776, 0774, 0770, 0760, 0740, 0700, 0600};
-	unsigned int atable[8] =
-	 {0x0, 0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40};
+  register unsigned int mask, add, col;
+  unsigned int mtable[8] =
+   {0777, 0776, 0774, 0770, 0760, 0740, 0700, 0600};
+  unsigned int atable[8] =
+   {0x0, 0x1, 0x2, 0x4, 0x8, 0x10, 0x20, 0x40};
 
-	mask = mtable[p->reduce];
-	add = atable[p->reduce];
-	col = ( ((unsigned int) c->r) + add ) & mask;
-	c->r = (col >= 255) ? 255 : col;
-	col = ( ((unsigned int) c->g) + add ) & mask;
-	c->g = (col >= 255) ? 255 : col;
-	col = ( ((unsigned int) c->b) + add ) & mask;
-	c->b = (col >= 255) ? 255 : col;
-	return;
+  mask = mtable[p->reduce];
+  add = atable[p->reduce];
+  col = ( ((unsigned int) c->r) + add ) & mask;
+  c->r = (col >= 255) ? 255 : col;
+  col = ( ((unsigned int) c->g) + add ) & mask;
+  c->g = (col >= 255) ? 255 : col;
+  col = ( ((unsigned int) c->b) + add ) & mask;
+  c->b = (col >= 255) ? 255 : col;
+  return;
 }
 
 /* DESCRIZIONE: Costruisce una tavolazza di colori.
@@ -163,48 +164,48 @@ void grp_color_reduce(palette *p, color *c)
  */
 palette *grp_palette_build(long numcol, long hashdim, long hashmul, int reduce)
 {
-	palette *p;
+  palette *p;
 
-	if ( (numcol < 1) || (hashmul < 2) ) {
-		ERRORMSG("grp_build_palette", "Errore nei parametri");
-		return NULL;
-	}
+  if ( (numcol < 1) || (hashmul < 2) ) {
+    ERRORMSG("grp_build_palette", "Errore nei parametri");
+    return NULL;
+  }
 
-	p = (palette *) malloc( sizeof(palette) );
-	if ( p == NULL ) {
-		ERRORMSG("grp_build_palette", "Memoria esaurita");
-		return NULL;
-	}
+  p = (palette *) malloc( sizeof(palette) );
+  if ( p == NULL ) {
+    ERRORMSG("grp_build_palette", "Memoria esaurita");
+    return NULL;
+  }
 
-	p->hashdim = hashdim;
-	p->hashmul = hashmul;
-	p->hashtable = (palitem **) calloc( p->hashdim, sizeof(palitem *) );
-	if ( p->hashtable == NULL ) {
-		ERRORMSG("grp_build_palette", "Memoria esaurita");
-		return NULL;
-	}
+  p->hashdim = hashdim;
+  p->hashmul = hashmul;
+  p->hashtable = (palitem **) calloc( p->hashdim, sizeof(palitem *) );
+  if ( p->hashtable == NULL ) {
+    ERRORMSG("grp_build_palette", "Memoria esaurita");
+    return NULL;
+  }
 
-	p->dim = numcol;
-	p->num = 0;
+  p->dim = numcol;
+  p->num = 0;
 
-	p->reduce = ( (reduce > 0) && (reduce < 8) ) ?
-	 reduce : 0;
+  p->reduce = ( (reduce > 0) && (reduce < 8) ) ?
+   reduce : 0;
 
-	return p;
+  return p;
 }
 
 /* DESCRIZIONE: Cerca il colore c fra i colori della tavolazza
  */
 palitem *grp_color_find(palette *p, color *c)
 {
-	palitem *pi;
+  palitem *pi;
 
-	for ( pi = p->hashtable[color_hash(p, c)];
-	 pi != (palitem *) NULL; pi = pi->next )
-		if ( COLOR_EQUAL( & pi->c, c ) )
-			return pi;
+  for ( pi = p->hashtable[color_hash(p, c)];
+   pi != (palitem *) NULL; pi = pi->next )
+    if ( COLOR_EQUAL( & pi->c, c ) )
+      return pi;
 
-	return (palitem *) NULL;
+  return (palitem *) NULL;
 }
 
 /* DESCRIZIONE: Inserisce un nuovo colore, fra quelli gia' presenti nella
@@ -217,42 +218,42 @@ palitem *grp_color_find(palette *p, color *c)
  */
 palitem *grp_color_request(palette *p, color *c)
 {
-	color c2;
-	palitem *new;
+  color c2;
+  palitem *new;
 
-	c2 = *c;
-	grp_color_reduce(p, & c2);
+  c2 = *c;
+  grp_color_reduce(p, & c2);
 
-	new = grp_color_find(p, & c2);
+  new = grp_color_find(p, & c2);
 
-	if (  new == NULL ) {
-		/* Colore non ancora introdotto */
-		palitem *pi;
-		unsigned long hashval;
+  if (  new == NULL ) {
+    /* Colore non ancora introdotto */
+    palitem *pi;
+    unsigned long hashval;
 
-		if ( p->num >= p->dim) {
-			ERRORMSG("grp_color_request", "Tavolazza piena");
-			return NULL;
-		}
+    if ( p->num >= p->dim) {
+      ERRORMSG("grp_color_request", "Tavolazza piena");
+      return NULL;
+    }
 
-		pi = (palitem *) malloc( sizeof(palitem) );
+    pi = (palitem *) malloc( sizeof(palitem) );
 
-		if ( pi == NULL ) {
-			ERRORMSG("grp_color_request", "Memoria esaurita");
-			return NULL;
-		}
+    if ( pi == NULL ) {
+      ERRORMSG("grp_color_request", "Memoria esaurita");
+      return NULL;
+    }
 
-		pi->index = p->num++;
-		pi->c = c2;
+    pi->index = p->num++;
+    pi->c = c2;
 
-		hashval = color_hash(p, & c2);
-		pi->next = p->hashtable[hashval];
-		p->hashtable[hashval] = pi;
+    hashval = color_hash(p, & c2);
+    pi->next = p->hashtable[hashval];
+    p->hashtable[hashval] = pi;
 
-		return pi;
-	}
+    return pi;
+  }
 
-	return new;
+  return new;
 }
 
 /* DESCRIZIONE: Scorre tutta la tavolazza dei colori eseguendo l'operazione
@@ -265,49 +266,49 @@ palitem *grp_color_request(palette *p, color *c)
  */
 int grp_palette_transform( palette *p, int (*operation)(palitem *pi) )
 {
-	int i;
-	palitem *pi;
+  int i;
+  palitem *pi;
 
-	/* Scorriamo tutta la hash-table in cerca di tutti gli elementi */
-	for ( i = 0; i < p->hashdim; i++ ) {
+  /* Scorriamo tutta la hash-table in cerca di tutti gli elementi */
+  for ( i = 0; i < p->hashdim; i++ ) {
 
-		for ( pi = p->hashtable[i];
-		 pi != (palitem *) NULL; pi = pi->next ) {
+    for ( pi = p->hashtable[i];
+     pi != (palitem *) NULL; pi = pi->next ) {
 
-			/* Eseguo l'operazione su ciascun elemento */
-			if ( ! operation(pi) ) return 0;
-		}
+      /* Eseguo l'operazione su ciascun elemento */
+      if ( ! operation(pi) ) return 0;
+    }
 
-	}
+  }
 
-	return 1;
+  return 1;
 }
 
 /* DESCRIZIONE: Distrugge la palette p, liberando la memoria da essa occupata.
  */
 void grp_palette_destroy(palette *p)
 {
-	int i;
-	palitem *pi, *nextpi;
+  int i;
+  palitem *pi, *nextpi;
 
-	/* Scorriamo tutta la hash-table in cerca di elementi da cancellare */
-	for ( i = 0; i < p->hashdim; i++ ) {
+  /* Scorriamo tutta la hash-table in cerca di elementi da cancellare */
+  for ( i = 0; i < p->hashdim; i++ ) {
 
-		for ( pi = p->hashtable[i];
-		 pi != (palitem *) NULL; pi = nextpi ) {
+    for ( pi = p->hashtable[i];
+     pi != (palitem *) NULL; pi = nextpi ) {
 
-			nextpi = pi->next;
-			free( pi );
-		}
+      nextpi = pi->next;
+      free( pi );
+    }
 
-	}
+  }
 
-	/* Elimino la hash-table */
-	free(p->hashtable);
-	/* Elimino la struttura "palette" */
-	free(p);
+  /* Elimino la hash-table */
+  free(p->hashtable);
+  /* Elimino la struttura "palette" */
+  free(p);
 
-	return;
+  return;
 }
 
 /* DESCRIZIONE: Funzione che associa ad ogni colore, un indice (della tavola
@@ -316,5 +317,5 @@ void grp_palette_destroy(palette *p)
  */
 static unsigned long color_hash(palette *p, color *c)
 {
-	return ( ( (unsigned long ) c->b ) + (c->g + c->r * p->hashmul) * p->hashmul ) % p->hashdim;
+  return ( ( (unsigned long ) c->b ) + (c->g + c->r * p->hashmul) * p->hashmul ) % p->hashdim;
 }

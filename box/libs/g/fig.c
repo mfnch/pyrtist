@@ -64,7 +64,8 @@ static void (*fig_lowfn[])() = {
 void (*fig_midfn[])() = {
   fig_rreset, fig_rinit, fig_rdraw,
   fig_rline, fig_rcong, fig_rcurve,
-  fig_rcircle, fig_rfgcolor, fig_rbgcolor
+  fig_rcircle, fig_rfgcolor, fig_rbgcolor,
+  not_available, not_available
 };
 
 /*#define grp_activelayer (((struct fig_header *) grp_win->wrdep)->current)*/

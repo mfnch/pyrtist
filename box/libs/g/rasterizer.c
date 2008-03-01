@@ -31,21 +31,21 @@
 #include "error.h"
 #include "graphic.h"
 
-#define RSTBLOCKDIM		16384
-#define MAXROWPERBLOCK	8192
+#define RSTBLOCKDIM    16384
+#define MAXROWPERBLOCK  8192
 
-#define WORD			unsigned short
-#define SWORD			short
+#define WORD      unsigned short
+#define SWORD      short
 
 struct block_desc {
-	SWORD	ymin;		/* Coordinata y corrispondente alla prima riga descritta */
-	SWORD	ymax;		/* Coordinata y corrispondente all'ultima riga descritta */
-	WORD	dim;		/* Dimensioni totali del buffer in WORD */
-	WORD	*buffer;	/* Puntatore al buffer */
-	WORD	numfree;	/* Numero di "posti" (cioe' WORD) ancora liberi */
-	WORD	winext;		/* Posizione in WORD del prossimo posto libero */
-	WORD	*inext;		/* Puntatore al prossimo posto libero */
-	struct block_desc *next;	/* Puntatore al prossimo blocco */
+  SWORD  ymin;    /* Coordinata y corrispondente alla prima riga descritta */
+  SWORD  ymax;    /* Coordinata y corrispondente all'ultima riga descritta */
+  WORD  dim;    /* Dimensioni totali del buffer in WORD */
+  WORD  *buffer;  /* Puntatore al buffer */
+  WORD  numfree;  /* Numero di "posti" (cioe' WORD) ancora liberi */
+  WORD  winext;    /* Posizione in WORD del prossimo posto libero */
+  WORD  *inext;    /* Puntatore al prossimo posto libero */
+  struct block_desc *next;  /* Puntatore al prossimo blocco */
 };
 
 typedef struct block_desc block_desc;
@@ -62,13 +62,13 @@ extern void err_print(FILE *stream);
  * (nelle procedure rst__line e rst__cong) e serve a tenere conto
  * degli eventuali "sconfinamenti" del bordo rispetto allo schermo.
  */
-#define MARK(y, x)						\
-	if (x < GRP_AXMIN)					\
-		rst__mark(y, GRP_MLOUT);		\
-	else if (x > GRP_AXMAX)				\
-		rst__mark(y, GRP_MROUT);		\
-	else								\
-		rst__mark(y, CV_A_MED(x))
+#define MARK(y, x)            \
+  if (x < GRP_AXMIN)          \
+    rst__mark(y, GRP_MLOUT);    \
+  else if (x > GRP_AXMAX)        \
+    rst__mark(y, GRP_MROUT);    \
+  else                \
+    rst__mark(y, CV_A_MED(x))
 
 /***************************************************************************************/
 /* DICHIARAZIONE DELLE PROCEDURE DEFINITE IN QUESTO FILE */
@@ -98,12 +98,16 @@ void rst_poly(Point *p, int n);
 void rst_fgcolor(Real r, Real g, Real b);
 void rst_bgcolor(Real r, Real g, Real b);
 
+static void not_available(void) {
+  ERRORMSG("not_available", "Not available for postscript windows.");
+}
+
 /* Lista delle funzioni di rasterizzazione */
 void (*rst_midfn[])() = {
-	rst_reset, rst_init, rst_draw,
-	rst_line, rst_cong, rst_curve,
-	rst_circle, rst_fgcolor, rst_bgcolor,
-	rst_poly
+  rst_reset, rst_init, rst_draw,
+  rst_line, rst_cong, rst_curve,
+  rst_circle, rst_fgcolor, rst_bgcolor,
+  rst_poly, not_available
 };
 
 /***************************************************************************************/
@@ -139,7 +143,7 @@ void rst_reset(void)
 
   /* Facciamo un loop su tutti i blocchi */
   for(rstblock = first; rstblock != (block_desc *) 0; rstblock = rstblock->next)
-    rst__block_reset(rstblock);	/* Puliamo ciascun blocco */
+    rst__block_reset(rstblock);  /* Puliamo ciascun blocco */
 
   return;
 }
@@ -392,14 +396,14 @@ void rst_draw(void)
  */
 void rst_line(Point a, Point b)
 {
-	a.x = CV_XF_A(a.x);
-	a.y = CV_YF_A(a.y);
-	b.x = CV_XF_A(b.x);
-	b.y = CV_YF_A(b.y);
+  a.x = CV_XF_A(a.x);
+  a.y = CV_YF_A(a.y);
+  b.x = CV_XF_A(b.x);
+  b.y = CV_YF_A(b.y);
 
-	rst__line( & a, & b );
+  rst__line( & a, & b );
 
-	return;
+  return;
 }
 
 /* NOME: rst__line
@@ -408,61 +412,61 @@ void rst_line(Point a, Point b)
  */
 void rst__line(Point *pa, Point *pb)
 {
-	FCOOR ly;
+  FCOOR ly;
 
-	if (pa->y > pb->y) { register Point *tmp; tmp = pa; pa = pb; pb = tmp; }
+  if (pa->y > pb->y) { register Point *tmp; tmp = pa; pa = pb; pb = tmp; }
 
-	ly = pb->y - pa->y;
-	if (ly < 0.95) {
-		/* In tal caso ho solo un valore di y, oppure nessuno */
-		ICOOR y1, y2;
+  ly = pb->y - pa->y;
+  if (ly < 0.95) {
+    /* In tal caso ho solo un valore di y, oppure nessuno */
+    ICOOR y1, y2;
 
-		if ( (pb->y < GRP_AYMIN) || (pa->y > GRP_AYMAX) ) return;
+    if ( (pb->y < GRP_AYMIN) || (pa->y > GRP_AYMAX) ) return;
 
-		y1 = CV_MED_GT( CV_A_MED( pa->y ) );
-		y2 = CV_MED_LW( CV_A_MED( pb->y ) );
+    y1 = CV_MED_GT( CV_A_MED( pa->y ) );
+    y2 = CV_MED_LW( CV_A_MED( pb->y ) );
 
-		if (y1 == y2) {
-			/* Solo in questo caso la retta "si vede" */
-			FCOOR x;
+    if (y1 == y2) {
+      /* Solo in questo caso la retta "si vede" */
+      FCOOR x;
 
-			x = pa->x + ((((FCOOR) y1) - pa->y)/ly)*(pb->x - pa->x);
+      x = pa->x + ((((FCOOR) y1) - pa->y)/ly)*(pb->x - pa->x);
 
-			MARK(y1, x);
-		}
+      MARK(y1, x);
+    }
 
-	} else {
-		/* In tal caso la retta ha una inclinazione rilevante */
-		ICOOR y1, y2, y;
-		FCOOR a, b, x;
+  } else {
+    /* In tal caso la retta ha una inclinazione rilevante */
+    ICOOR y1, y2, y;
+    FCOOR a, b, x;
 
-		/* Esco in caso di linea non visibile (sopra o sotto) */
-		if ( (pb->y < GRP_AYMIN) || (pa->y > GRP_AYMAX) ) return;
+    /* Esco in caso di linea non visibile (sopra o sotto) */
+    if ( (pb->y < GRP_AYMIN) || (pa->y > GRP_AYMAX) ) return;
 
-		a = (pb->x - pa->x)/ly;
-		b = pa->x - pa->y * a;
+    a = (pb->x - pa->x)/ly;
+    b = pa->x - pa->y * a;
 
-		if (pa->y < GRP_AYMIN)
-        	y1 = GRP_IYMIN;
+    if (pa->y < GRP_AYMIN)
+          y1 = GRP_IYMIN;
         else
-			y1 = CV_MED_GT( CV_A_MED( pa->y ) );
+      y1 = CV_MED_GT( CV_A_MED( pa->y ) );
 
-		if (pb->y > GRP_AYMAX)
-			y2 = GRP_IYMAX;
-		else
-			y2 = CV_MED_LW( CV_A_MED( pb->y ) );
+    if (pb->y > GRP_AYMAX)
+      y2 = GRP_IYMAX;
+    else
+      y2 = CV_MED_LW( CV_A_MED( pb->y ) );
 
-		x = b + a*((FCOOR) y1);
-		PRNMSG("Linea parte da: "); PRNINTG(y1); PRNMSG("\n");
-		for(y = y1; y <= y2; y++) {
+    x = b + a*((FCOOR) y1);
+    PRNMSG("Linea parte da: "); PRNINTG(y1); PRNMSG("\n");
+    for(y = y1; y <= y2; y++) {
 
-			MARK(y, x);
+      MARK(y, x);
 
-			x += a;
-		}
-	}
+      x += a;
+    }
+  }
 
-	return;
+  return;
 }
 
 /* NOME: rst_cong
@@ -476,14 +480,14 @@ void rst__line(Point *pa, Point *pb)
  */
 void rst_cong(Point a, Point b, Point c)
 {
-	a.x = CV_XF_A(a.x);
-	a.y = CV_YF_A(a.y);
-	b.x = CV_XF_A(b.x);
-	b.y = CV_YF_A(b.y);
-	c.x = CV_XF_A(c.x);
-	c.y = CV_YF_A(c.y);
+  a.x = CV_XF_A(a.x);
+  a.y = CV_YF_A(a.y);
+  b.x = CV_XF_A(b.x);
+  b.y = CV_YF_A(b.y);
+  c.x = CV_XF_A(c.x);
+  c.y = CV_YF_A(c.y);
 
-	rst__cong( & a, & b, & c );
+  rst__cong( & a, & b, & c );
 }
 
 /* NOME: rst__cong
@@ -491,138 +495,138 @@ void rst_cong(Point a, Point b, Point c)
  */
 void rst__cong(Point *pa, Point *pb, Point *pc)
 {
-	ICOOR iymin, iymax, iy;
-	FCOOR ymin, ymax;
-	FCOOR v01x, v01y, v21x, v21y, v02x, v02y, h;
+  ICOOR iymin, iymax, iy;
+  FCOOR ymin, ymax;
+  FCOOR v01x, v01y, v21x, v21y, v02x, v02y, h;
 
-	/* Comincio col trovare la massima proiezione della curva
-	 * sull'asse y, cioe' l'intervallo di ordinate in cui stanno sicuramente
-	 * tutti i punti della curva: basta a tal proposito che l'intervallo
-	 * contenga le ordinate dei tre punti p[0], p[1], p[2]
-	 */
-	if (pa->y < pb->y) {
-		ymin = pa->y;
-		ymax = pb->y;
-	} else {
-		ymin = pb->y;
-		ymax = pa->y;
-	}
+  /* Comincio col trovare la massima proiezione della curva
+   * sull'asse y, cioe' l'intervallo di ordinate in cui stanno sicuramente
+   * tutti i punti della curva: basta a tal proposito che l'intervallo
+   * contenga le ordinate dei tre punti p[0], p[1], p[2]
+   */
+  if (pa->y < pb->y) {
+    ymin = pa->y;
+    ymax = pb->y;
+  } else {
+    ymin = pb->y;
+    ymax = pa->y;
+  }
 
-	if (pc->y > ymax)
-		ymax = pc->y;
-	else if (pc->y < ymin)
-		ymin = pc->y;
+  if (pc->y > ymax)
+    ymax = pc->y;
+  else if (pc->y < ymin)
+    ymin = pc->y;
 
-	/* Se l'intervallo sta sopra o sotto lo "schermo" e' come se non ci fosse */
-	if ( (ymax < GRP_AYMIN) || (ymin > GRP_AYMAX) ) return;
+  /* Se l'intervallo sta sopra o sotto lo "schermo" e' come se non ci fosse */
+  if ( (ymax < GRP_AYMIN) || (ymin > GRP_AYMAX) ) return;
 
-	/* Devo per tagliare l'eventuale parte "invisibile" dell'intervallo */
-	if (ymin < GRP_AYMIN) ymin = GRP_AYMIN;
-	if (ymax > GRP_AYMAX) ymax = GRP_AYMAX;
+  /* Devo per tagliare l'eventuale parte "invisibile" dell'intervallo */
+  if (ymin < GRP_AYMIN) ymin = GRP_AYMIN;
+  if (ymax > GRP_AYMAX) ymax = GRP_AYMAX;
 
-	/* Ora converto le coordinate in coordinate intere */
-	iymin = CV_MED_GT( CV_A_MED( ymin ) );
-	iymax = CV_MED_LW( CV_A_MED( ymax ) );
+  /* Ora converto le coordinate in coordinate intere */
+  iymin = CV_MED_GT( CV_A_MED( ymin ) );
+  iymax = CV_MED_LW( CV_A_MED( ymax ) );
 
-	/* Calcolo i due vettori che descrivono il parallelogramma
-	 * in cui e' inserita la curva, diretti "fuori dall'origine".
-	 */
-	v21x = pb->x - pc->x;
-	v21y = pb->y - pc->y;
+  /* Calcolo i due vettori che descrivono il parallelogramma
+   * in cui e' inserita la curva, diretti "fuori dall'origine".
+   */
+  v21x = pb->x - pc->x;
+  v21y = pb->y - pc->y;
 
-	v01x = pb->x - pa->x;
-	v01y = pb->y - pa->y;
+  v01x = pb->x - pa->x;
+  v01y = pb->y - pa->y;
 
-	/* Calcolo il vettore 02 */
-	v02x = pc->x - pa->x;
-	v02y = pc->y - pa->y;
+  /* Calcolo il vettore 02 */
+  v02x = pc->x - pa->x;
+  v02y = pc->y - pa->y;
 
-	/* Controllo che il parallelogramma non sia troppo stretto:
-	 * in tal caso lo posso sostituire con una retta.
-	 * Devo calcolare l'altezza del triangolo 012 di base 02
-	 * e questa altezza deve essere molto minore di 1
-	 * (noi consideriamo << 0.05).
-	 * NOTA: h e' questa altezza al quadrato per 4.
-	 * NOTA: i casi degeneri(punti allineati) rientrano
-	 *  nella categoria dell' "h stretto"
-	 */
-	h = pow(v21x * v01y - v21y * v01x, 2.0)/(v02x*v02x + v02y*v02y);
-	if (h < 0.01) {
-		rst__line( pa, pc );
-		return;
-	}
+  /* Controllo che il parallelogramma non sia troppo stretto:
+   * in tal caso lo posso sostituire con una retta.
+   * Devo calcolare l'altezza del triangolo 012 di base 02
+   * e questa altezza deve essere molto minore di 1
+   * (noi consideriamo << 0.05).
+   * NOTA: h e' questa altezza al quadrato per 4.
+   * NOTA: i casi degeneri(punti allineati) rientrano
+   *  nella categoria dell' "h stretto"
+   */
+  h = pow(v21x * v01y - v21y * v01x, 2.0)/(v02x*v02x + v02y*v02y);
+  if (h < 0.01) {
+    rst__line( pa, pc );
+    return;
+  }
 
-	{
-	/* Ora mi calcolo i parametri a, b, c della generica retta orizzontale
-	 * che ha equazione ax + by + c = 0 scritta nelle coordinate
-	 * normalizzate (x, y). Questo fascio di rette si ottiene al variare del
-	 * solo parametro c, mentre a e b rimangono inalterati.
-	 * Detto 3 il verice del parallelogramma 0123, (x, y) sono le coordinate
-	 * del sistema di riferimento (non ortonormale!!!) con origine in 3
-	 * e versori v01 e v21
-	 */
-	FCOOR a, b, c, c2, cstep, s1mc2;
-	FCOOR i1x, i1y, i2x, i2y, rx, ry, x1, x2;
+  {
+  /* Ora mi calcolo i parametri a, b, c della generica retta orizzontale
+   * che ha equazione ax + by + c = 0 scritta nelle coordinate
+   * normalizzate (x, y). Questo fascio di rette si ottiene al variare del
+   * solo parametro c, mentre a e b rimangono inalterati.
+   * Detto 3 il verice del parallelogramma 0123, (x, y) sono le coordinate
+   * del sistema di riferimento (non ortonormale!!!) con origine in 3
+   * e versori v01 e v21
+   */
+  FCOOR a, b, c, c2, cstep, s1mc2;
+  FCOOR i1x, i1y, i2x, i2y, rx, ry, x1, x2;
 
-	/* cstep e' il valore da sommare a c per passare alla retta orizzontale
-	 * tipo Y = k alla retta orizzontale Y = k+1
-	 * (X, Y) sono le usuali coordinate di schermo (mentre (x, y) ...)
-	 */
-	cstep = 1.0/sqrt(v01y*v01y + v21y*v21y);
-	a = -v01y * cstep;
-	b = -v21y * cstep;
+  /* cstep e' il valore da sommare a c per passare alla retta orizzontale
+   * tipo Y = k alla retta orizzontale Y = k+1
+   * (X, Y) sono le usuali coordinate di schermo (mentre (x, y) ...)
+   */
+  cstep = 1.0/sqrt(v01y*v01y + v21y*v21y);
+  a = -v01y * cstep;
+  b = -v21y * cstep;
 
-	/* Parto dalla retta orizzontale Y = iymin */
-	c = (v21y - pa->y + ((FCOOR) iymin))*cstep;
+  /* Parto dalla retta orizzontale Y = iymin */
+  c = (v21y - pa->y + ((FCOOR) iymin))*cstep;
 
-	for (iy = iymin; iy <= iymax; iy++) {
-		c2 = c*c;
+  for (iy = iymin; iy <= iymax; iy++) {
+    c2 = c*c;
 
-		PRNMSG("Cong: riga "); PRNINTG(iy);
-		if (c2 <= 1.0) {
-			PRNMSG(":c2<=1.0");
-			s1mc2 = sqrt(1.0 - c2);
-			i1x = i2x = -a*c;
-			i1y = i2y = -b*c;
-			rx = -b * s1mc2;
-			ry = a * s1mc2;
+    PRNMSG("Cong: riga "); PRNINTG(iy);
+    if (c2 <= 1.0) {
+      PRNMSG(":c2<=1.0");
+      s1mc2 = sqrt(1.0 - c2);
+      i1x = i2x = -a*c;
+      i1y = i2y = -b*c;
+      rx = -b * s1mc2;
+      ry = a * s1mc2;
 
-			/* Ecco i 2 punti di intersezione */
-			if ( ((i1x += rx) < 0.0) || ((i1y += ry) < 0.0) ) {
-				PRNMSG(":ramo1");
-				i2x -= rx; i2y -= ry;
-				if ( (i2x >= 0.0) && (i2y >= 0.0) ) {
-					PRNMSG(":i2x="); PRNFLT(i2x);
-					PRNMSG(" :i2y="); PRNFLT(i2y); PRNMSG(":ok");
-					x1 = pa->x + v01x*i2x + v21x*(i2y - 1.0);
-					MARK(iy, x1);
-				} else {
-					PRNMSG(":i2x="); PRNFLT(i2x);
-					PRNMSG(" :i2y="); PRNFLT(i2y); PRNMSG(":no");
-				}
-			} else {
-				PRNMSG(":ramo2");
-				if ( ((i2x -= rx) < 0.0) || ((i2y -= ry) < 0.0) ) {
-					PRNMSG(":ok1");
-					x1 = pa->x + v01x*i1x + v21x*(i1y - 1.0);
-					MARK(iy, x1);
-				} else {
-					PRNMSG(":ok2");
-					x1 = pa->x + v01x*i1x + v21x*(i1y - 1.0);
-					x2 = pa->x + v01x*i2x + v21x*(i2y - 1.0);
-					MARK(iy, x1);
-					MARK(iy, x2);
-				}
-			}
-		}
-		PRNMSG("\n");
+      /* Ecco i 2 punti di intersezione */
+      if ( ((i1x += rx) < 0.0) || ((i1y += ry) < 0.0) ) {
+        PRNMSG(":ramo1");
+        i2x -= rx; i2y -= ry;
+        if ( (i2x >= 0.0) && (i2y >= 0.0) ) {
+          PRNMSG(":i2x="); PRNFLT(i2x);
+          PRNMSG(" :i2y="); PRNFLT(i2y); PRNMSG(":ok");
+          x1 = pa->x + v01x*i2x + v21x*(i2y - 1.0);
+          MARK(iy, x1);
+        } else {
+          PRNMSG(":i2x="); PRNFLT(i2x);
+          PRNMSG(" :i2y="); PRNFLT(i2y); PRNMSG(":no");
+        }
+      } else {
+        PRNMSG(":ramo2");
+        if ( ((i2x -= rx) < 0.0) || ((i2y -= ry) < 0.0) ) {
+          PRNMSG(":ok1");
+          x1 = pa->x + v01x*i1x + v21x*(i1y - 1.0);
+          MARK(iy, x1);
+        } else {
+          PRNMSG(":ok2");
+          x1 = pa->x + v01x*i1x + v21x*(i1y - 1.0);
+          x2 = pa->x + v01x*i2x + v21x*(i2y - 1.0);
+          MARK(iy, x1);
+          MARK(iy, x2);
+        }
+      }
+    }
+    PRNMSG("\n");
 
-		c += cstep;
-	}
+    c += cstep;
+  }
 
-	}
+  }
 
-	return;
+  return;
 }
 
 /* NOME: rst_curve
@@ -640,16 +644,16 @@ void rst__cong(Point *pa, Point *pb, Point *pc)
  */
 void rst_curve(Point a, Point b, Point c, FCOOR cut)
 {
-	a.x = CV_XF_A(a.x);
-	a.y = CV_YF_A(a.y);
-	b.x = CV_XF_A(b.x);
-	b.y = CV_YF_A(b.y);
-	c.x = CV_XF_A(c.x);
-	c.y = CV_YF_A(c.y);
+  a.x = CV_XF_A(a.x);
+  a.y = CV_YF_A(a.y);
+  b.x = CV_XF_A(b.x);
+  b.y = CV_YF_A(b.y);
+  c.x = CV_XF_A(c.x);
+  c.y = CV_YF_A(c.y);
 
-	rst__curve( & a, & b, & c, cut);
+  rst__curve( & a, & b, & c, cut);
 
-	return;
+  return;
 }
 
 /* NOME: rst__curve
@@ -657,38 +661,38 @@ void rst_curve(Point a, Point b, Point c, FCOOR cut)
  */
 void rst__curve(Point *pa, Point *pb, Point *pc, FCOOR c)
 {
-	FCOOR v10x, v10y, v12x, v12y;
-	Point q[5], *pq;
+  FCOOR v10x, v10y, v12x, v12y;
+  Point q[5], *pq;
 
-	if (c < -1.0) c = -1.0;
-	if (c > 1.0) c = 1.0;
+  if (c < -1.0) c = -1.0;
+  if (c > 1.0) c = 1.0;
 
-	c = ((sqrt(2.0)-1.5)*c*c + c/2 + 2 - sqrt(2));
+  c = ((sqrt(2.0)-1.5)*c*c + c/2 + 2 - sqrt(2));
 
-	v10x = pa->x - pb->x;
-	v10y = pa->y - pb->y;
-	v12x = pc->x - pb->x;
-	v12y = pc->y - pb->y;
+  v10x = pa->x - pb->x;
+  v10y = pa->y - pb->y;
+  v12x = pc->x - pb->x;
+  v12y = pc->y - pb->y;
 
-	q[0].x = pa->x;
-	q[0].y = pa->y;
-	q[4].x = pc->x;
-	q[4].y = pc->y;
+  q[0].x = pa->x;
+  q[0].y = pa->y;
+  q[4].x = pc->x;
+  q[4].y = pc->y;
 
-	q[1].x = pb->x + v10x * c;
-	q[1].y = pb->y + v10y * c;
-	q[3].x = pb->x + v12x * c;
-	q[3].y = pb->y + v12y * c;
+  q[1].x = pb->x + v10x * c;
+  q[1].y = pb->y + v10y * c;
+  q[3].x = pb->x + v12x * c;
+  q[3].y = pb->y + v12y * c;
 
-	/* 2 e' il punto medio tra 1 e 3 */
-	q[2].x = (q[1].x + q[3].x)/2.0;
-	q[2].y = (q[1].y + q[3].y)/2.0;
+  /* 2 e' il punto medio tra 1 e 3 */
+  q[2].x = (q[1].x + q[3].x)/2.0;
+  q[2].y = (q[1].y + q[3].y)/2.0;
 
-	pq = q;
-	rst__cong( pq, pq+1, pq+2 );
-	rst__cong( pq+3, pq+4, pq+5 );
+  pq = q;
+  rst__cong( pq, pq+1, pq+2 );
+  rst__cong( pq+3, pq+4, pq+5 );
 
-	return;
+  return;
 }
 
 /* DESCRIZIONE: Rasterizza una curva tipo "cerchio stirato" (cioe'
@@ -705,77 +709,77 @@ void rst__curve(Point *pa, Point *pb, Point *pc, FCOOR c)
  */
 void rst_circle(Point ctr, Point a, Point b)
 {
-	ICOOR iy, y1, y2;
-	FCOOR xmin, xmax, ymin, ymax;
-	FCOOR C, C2, D, k1, k2, x, dx, y;
+  ICOOR iy, y1, y2;
+  FCOOR xmin, xmax, ymin, ymax;
+  FCOOR C, C2, D, k1, k2, x, dx, y;
 
-	a.x = CV_XF_A(a.x - ctr.x);
-	a.y = CV_YF_A(a.y - ctr.y);
-	b.x = CV_XF_A(b.x - ctr.x);
-	b.y = CV_YF_A(b.y - ctr.y);
-	ctr.x = CV_XF_A(ctr.x);
-	ctr.y = CV_YF_A(ctr.y);
+  a.x = CV_XF_A(a.x - ctr.x);
+  a.y = CV_YF_A(a.y - ctr.y);
+  b.x = CV_XF_A(b.x - ctr.x);
+  b.y = CV_YF_A(b.y - ctr.y);
+  ctr.x = CV_XF_A(ctr.x);
+  ctr.y = CV_YF_A(ctr.y);
 
-	PRNMSG("[rst_circle: a.x = "); PRNFLT(a.x);
-	PRNMSG("; a.y = "); PRNFLT(a.y);
-	PRNMSG("; b.x = "); PRNFLT(b.x);
-	PRNMSG("; b.y = "); PRNFLT(b.y);
+  PRNMSG("[rst_circle: a.x = "); PRNFLT(a.x);
+  PRNMSG("; a.y = "); PRNFLT(a.y);
+  PRNMSG("; b.x = "); PRNFLT(b.x);
+  PRNMSG("; b.y = "); PRNFLT(b.y);
 
-	PRNMSG("esco?");
+  PRNMSG("esco?");
 
-	C2 = a.y * a.y + b.y * b.y;
-	C = sqrt(C2);
+  C2 = a.y * a.y + b.y * b.y;
+  C = sqrt(C2);
 
-	ymin = ctr.y - C;
-	ymax = ctr.y + C;
+  ymin = ctr.y - C;
+  ymax = ctr.y + C;
 
-	/* Esco in caso di cerchio non visibile */
-	if ( (ymax < GRP_AYMIN) || (ymin > GRP_AYMAX) ) return;
+  /* Esco in caso di cerchio non visibile */
+  if ( (ymax < GRP_AYMIN) || (ymin > GRP_AYMAX) ) return;
 
-	PRNMSG(" no! esco?");
+  PRNMSG(" no! esco?");
 
-	D = sqrt( a.x * a.x + b.x * b.x );
-	xmin = ctr.x - D;
-	xmax = ctr.x + D;
-	if ( (xmax < GRP_AXMIN) || (xmin > GRP_AXMAX) ) return;
+  D = sqrt( a.x * a.x + b.x * b.x );
+  xmin = ctr.x - D;
+  xmax = ctr.x + D;
+  if ( (xmax < GRP_AXMIN) || (xmin > GRP_AXMAX) ) return;
 
-	PRNMSG(" no!");
+  PRNMSG(" no!");
 
-	k1 = ( a.x * a.y + b.x * b.y ) / C2;
-	k2 = ( a.x * b.y - a.y * b.x ) / C2;
+  k1 = ( a.x * a.y + b.x * b.y ) / C2;
+  k2 = ( a.x * b.y - a.y * b.x ) / C2;
 
-	/* Taglio le parti che escono sopra o sotto lo "schermo" */
-	if (ymin < GRP_AYMIN)
-		y1 = GRP_IYMIN;
-	else
-		y1 = CV_MED_GT( CV_A_MED(ymin) );
+  /* Taglio le parti che escono sopra o sotto lo "schermo" */
+  if (ymin < GRP_AYMIN)
+    y1 = GRP_IYMIN;
+  else
+    y1 = CV_MED_GT( CV_A_MED(ymin) );
 
-	if (ymax > GRP_AYMAX)
-		y2 = GRP_IYMAX;
-	else
-		y2 = CV_MED_LW( CV_A_MED(ymax) );
+  if (ymax > GRP_AYMAX)
+    y2 = GRP_IYMAX;
+  else
+    y2 = CV_MED_LW( CV_A_MED(ymax) );
 
-	y = ((FCOOR) y1) - ctr.y;
-	x = ctr.x + y*k1;
+  y = ((FCOOR) y1) - ctr.y;
+  x = ctr.x + y*k1;
 
-	PRNMSG("; C2 = "); PRNFLT(C2);
-	PRNMSG(" y1 ="); PRNINTG(y1);
-	PRNMSG("; y2 = "); PRNINTG(y2);
-	PRNMSG("; x = "); PRNFLT(x);
-	PRNMSG("; y = "); PRNFLT(y);
-	PRNMSG("]\n");
+  PRNMSG("; C2 = "); PRNFLT(C2);
+  PRNMSG(" y1 ="); PRNINTG(y1);
+  PRNMSG("; y2 = "); PRNINTG(y2);
+  PRNMSG("; x = "); PRNFLT(x);
+  PRNMSG("; y = "); PRNFLT(y);
+  PRNMSG("]\n");
 
-	for(iy = y1; iy <= y2; iy++) {
+  for(iy = y1; iy <= y2; iy++) {
 
-		dx = k2 * sqrt(C2 - y*y);
-		MARK(iy, x - dx);
-		MARK(iy, x + dx);
+    dx = k2 * sqrt(C2 - y*y);
+    MARK(iy, x - dx);
+    MARK(iy, x + dx);
 
-		x += k1;
-		++y;
-	}
+    x += k1;
+    ++y;
+  }
 
-	return;
+  return;
 }
 
 /* NOME: rst__poly
@@ -784,23 +788,23 @@ void rst_circle(Point ctr, Point a, Point b)
  */
 void rst__poly(Point *p, int n)
 {
-	int i;
-	Point q;
+  int i;
+  Point q;
 
-	if (n<2) {
-		WARNINGMSG("rst__poly", "Poligono con meno di 2 vertici");
-		return;
-	}
+  if (n<2) {
+    WARNINGMSG("rst__poly", "Poligono con meno di 2 vertici");
+    return;
+  }
 
-	q.x = p->x;
-	q.y = p->y;
+  q.x = p->x;
+  q.y = p->y;
 
-	for(i=1; i<n; i++)
-		rst__line( p, ++p );
+  for(i=1; i<n; i++)
+    rst__line( p, ++p );
 
-	rst__line( & q, p );
+  rst__line( & q, p );
 
-	return;
+  return;
 }
 
 /* NOME: rst_poly
@@ -809,54 +813,54 @@ void rst__poly(Point *p, int n)
  */
 void rst_poly(Point *p, int n)
 {
-	int i, j = 1;
-	Point r, q[2];
+  int i, j = 1;
+  Point r, q[2];
 
-	if (n<2) {
-		WARNINGMSG("rst_poly", "Poligono con meno di 2 vertici");
-		return;
-	}
+  if (n<2) {
+    WARNINGMSG("rst_poly", "Poligono con meno di 2 vertici");
+    return;
+  }
 
-	r.x = q[0].x = CV_XF_A(p->x);
-	r.y = q[0].y = CV_YF_A(p->y);
+  r.x = q[0].x = CV_XF_A(p->x);
+  r.y = q[0].y = CV_YF_A(p->y);
 
-	for(i=1; i<n; i++) {
-		++p;
-		q[j].x = CV_XF_A(p->x);
-		q[j].y = CV_YF_A(p->y);
-		rst__line( & q[0], & q[1] );
-		j ^= 1;
-	}
+  for(i=1; i<n; i++) {
+    ++p;
+    q[j].x = CV_XF_A(p->x);
+    q[j].y = CV_YF_A(p->y);
+    rst__line( & q[0], & q[1] );
+    j ^= 1;
+  }
 
-	rst__line( & r, & q[j ^ 1] );
+  rst__line( & r, & q[j ^ 1] );
 
-	return;
+  return;
 }
 
 /* DESCRIZIONE: Setta il colore di primo piano.
  */
 void rst_fgcolor(Real r, Real g, Real b)
 {
-	color c;
-	palitem *newcol;
+  color c;
+  palitem *newcol;
 
-	grp_color_build( r, g, b, & c );
+  grp_color_build( r, g, b, & c );
 
-	newcol = grp_color_request( grp_win->pal, & c );
-	if ( newcol != NULL ) {
-		grp_set_col( newcol->index );
-	}
+  newcol = grp_color_request( grp_win->pal, & c );
+  if ( newcol != NULL ) {
+    grp_set_col( newcol->index );
+  }
 
-	return;
+  return;
 }
 
 /* DESCRIZIONE: Setta il colore di sfondo.
  */
 void rst_bgcolor(Real r, Real g, Real b)
 {
-	color c;
+  color c;
 
-	grp_color_build( r, g, b, & c );
-	(grp_win->bgcol)->c = c;
-	return;
+  grp_color_build( r, g, b, & c );
+  (grp_win->bgcol)->c = c;
+  return;
 }

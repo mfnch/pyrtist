@@ -11,6 +11,7 @@
 #  include "i_circle.h"
 #  include "i_poly.h"
 #  include "i_put.h"
+#  include "i_text.h"
 #  undef _DEF_WINDOW_SUBOBJECTS
 
 typedef struct {
@@ -31,6 +32,7 @@ typedef struct {
   WindowCircle circle;
   WindowPoly poly;
   WindowPut put;
+  WindowText text;
 
   struct {
     struct {
