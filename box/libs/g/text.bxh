@@ -2,4 +2,4 @@
 
 Window.Text = Void
 ([)@Window.Text ? "window_text_begin"
-()Char@Window.Text ? "window_text_begin"
+()Char@Window.Text ? "window_text_str"

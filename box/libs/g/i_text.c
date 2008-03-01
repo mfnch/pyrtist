@@ -29,6 +29,6 @@ Task window_text_begin(VMProgram *vmp) {
   return Success;
 }
 
-Task window_text_begin(VMProgram *vmp) {
+Task window_text_str(VMProgram *vmp) {
   return Success;
 }
