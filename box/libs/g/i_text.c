@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 
 #include "types.h"
 #include "virtmach.h"
@@ -30,38 +31,71 @@
 Task window_text_begin(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->text.text = (char *) NULL;
+  w->text.font = (char *) NULL;
   w->text.position.x = 0.0; w->text.position.y = 0.0;
+  w->text.font_size = 4.2333333333333333;
   w->text.got.text = 0;
-  w->text.got.position = 0;
+  w->text.got.font = 0;
+  w->text.got.font_size = 0;
   return Success;
 }
 
 Task window_text_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  grp_window *cur_win = grp_win;
 
-  grp_win = w->window;
-  if (w->text.got.text) {
+  if (w->text.got.text && w->text.text != (char *) NULL) {
+    grp_window *cur_win = grp_win;
+    grp_win = w->window;
     if (w->text.got.color) {
       Color *c = & w->text.color;
       grp_rfgcolor(c->r, c->g, c->b);
       w->text.got.color = 0;
     }
+
+    if (w->text.got.font && w->text.font != (char *) NULL) {
+      grp_font(w->text.font, w->text.font_size);
+
+    } else {
+      if (w->text.got.font_size && !w->text.got.font_size)
+        g_warning("You gave the size of the font, but not its name!");
+    }
+
     grp_text(& w->text.position, w->text.text);
     grp_rdraw();
     grp_rreset();
-
+    grp_win = cur_win;
   }
-  grp_win = cur_win;
 
   free(w->text.text); w->text.text = (char *) NULL;
+  free(w->text.font); w->text.font = (char *) NULL;
+  return Success;
+}
+
+Task window_text_point(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  w->text.position = BOX_VM_ARG1(vmp, Point);
   return Success;
 }
 
 Task window_text_str(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   free(w->text.text);
-  w->text.text = BOX_VM_ARGPTR1(vmp, char);
+  w->text.text = strdup(BOX_VM_ARGPTR1(vmp, char));
   w->text.got.text = 1;
+  return Success;
+}
+
+Task window_text_font_str(VMProgram *vmp) {
+  SUBTYPE2_OF_WINDOW(vmp, w);
+  free(w->text.font);
+  w->text.font = strdup(BOX_VM_ARGPTR1(vmp, char));
+  w->text.got.font = 1;
+  return Success;
+}
+
+Task window_text_font_real(VMProgram *vmp) {
+  SUBTYPE2_OF_WINDOW(vmp, w);
+  w->text.font_size = BOX_VM_ARG1(vmp, Real);
+  w->text.got.font_size = 1;
   return Success;
 }

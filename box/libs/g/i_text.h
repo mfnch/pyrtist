@@ -21,13 +21,14 @@
 
 /* This is part of the Window object */
 typedef struct {
-  char *text;
+  char *text, *font;
+  Real font_size;
   Point position;
   Color color;
 
   struct {
     int text : 1;
-    int position : 1;
+    int font_size : 1;
     int font : 1;
     int color : 1;
   } got;

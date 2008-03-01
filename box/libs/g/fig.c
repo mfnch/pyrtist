@@ -26,6 +26,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
 /* De-commentare per includere i messaggi di debug */
 /*#define DEBUG*/
@@ -50,6 +52,8 @@ void fig_rcurve(Point a, Point b, Point c, Real cut);
 void fig_rcircle(Point ctr, Point a, Point b);
 void fig_rfgcolor(Real r, Real g, Real b);
 void fig_rbgcolor(Real r, Real g, Real b);
+static void fig_text(Point *p, const char *text);
+static void fig_font(const char *font, Real size);
 static int fig_save(const char *file_name);
 
 /* Lista delle funzioni di basso livello (non disponibili) */
@@ -65,7 +69,7 @@ void (*fig_midfn[])() = {
   fig_rreset, fig_rinit, fig_rdraw,
   fig_rline, fig_rcong, fig_rcurve,
   fig_rcircle, fig_rfgcolor, fig_rbgcolor,
-  not_available, not_available
+  not_available, fig_text, fig_font
 };
 
 /*#define grp_activelayer (((struct fig_header *) grp_win->wrdep)->current)*/
@@ -107,6 +111,8 @@ struct layer_header {
   buff layer;
 };
 
+typedef struct layer_header LayerHeader;
+
 
 /***************************************************************************************/
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
@@ -131,8 +137,7 @@ static void not_available(void)
  *  Ad ogni layer e' associato un numero (da 1 a numlayers) e questo viene
  *  utilizzato per far riferimento ad esso.
  */
-grp_window *fig_open_win(int numlayers)
-{
+grp_window *fig_open_win(int numlayers) {
   grp_window *wd;
   struct fig_header *figh;
   struct layer_header *layh;
@@ -391,8 +396,7 @@ void fig_select_layer(int l)
 
 /* DESCRIZIONE: Pulisce il contenuto del layer l.
  */
-void fig_clear_layer(int l)
-{
+void fig_clear_layer(int l) {
   buff *laylist;
   struct fig_header *figh;
   struct layer_header *layh;
@@ -435,13 +439,22 @@ void fig_clear_layer(int l)
 /* Enumero gli ID di tutti i comandi */
 enum ID_type {
   ID_rreset = 1, ID_rinit, ID_rdraw, ID_rline,
-  ID_rcong, ID_rcurve, ID_rcircle, ID_rfgcolor, ID_rbgcolor
+  ID_rcong, ID_rcurve, ID_rcircle, ID_rfgcolor, ID_rbgcolor,
+  ID_text, ID_font
 };
 
 struct cmnd_header {
   long  ID;
   long  size;
 };
+
+typedef struct cmnd_header CmndHeader;
+
+typedef struct {
+  int arg_data_size;
+  void *arg_data;
+} CmndArg;
+
 
 /* Questa macro contiene gran parte del codice comune a tutte le ... */
 #define BEGIN_CMND(name, argsize) \
@@ -476,32 +489,52 @@ struct cmnd_header {
   /* Incremento il numero di comandi inseriti nel layer */ \
   ++layh->numcmnd
 
-void fig_rreset(void)
-{
+/* This function is used to insert a command in the current layer */
+static void _fig_insert_command(int id, CmndArg *args) {
+  LayerHeader *lh;
+  buff *layer;
+  int total_size, i;
+  CmndHeader ch;
+
+  /* Calculate total size of arguments */
+  total_size = 0;
+  for(i=0; args[i].arg_data_size > 0; i++)
+    total_size += args[i].arg_data_size;
+
+  /* Compile command header */
+  ch.ID = id;
+  ch.size = total_size;
+
+  lh = (LayerHeader *) grp_win->ptr;
+  assert(lh->ID == 0x7279616c);  /* 0x7279616c = "layr" */
+  layer = & lh->layer;
+
+  assert(buff_mpush(layer, & ch, sizeof(CmndHeader)) == 1);
+  for (i=0; args[i].arg_data_size > 0; i++)
+    assert(buff_mpush(layer, args[i].arg_data, args[i].arg_data_size) == 1);
+
+  ++lh->numcmnd; /* Increase counter for number of commands in the layer */
+}
+
+void fig_rreset(void) {
   BEGIN_CMND( "fig_rreset", 0 );
   *cmndh = (struct cmnd_header) {ID_rreset, 0};
   PRNMSG("Ok!\n");
-  return;
 }
 
-void fig_rinit(void)
-{
+void fig_rinit(void) {
   BEGIN_CMND( "fig_rinit", 0 );
   *cmndh = (struct cmnd_header) {ID_rinit, 0};
   PRNMSG("Ok!\n");
-  return;
 }
 
-void fig_rdraw(void)
-{
+void fig_rdraw(void) {
   BEGIN_CMND( "fig_rdraw", 0 );
   *cmndh = (struct cmnd_header) {ID_rdraw, 0};
   PRNMSG("Ok!\n");
-  return;
 }
 
-void fig_rline(Point a, Point b)
-{
+void fig_rline(Point a, Point b) {
   struct cmnd_args {Point a, b;} *cmnda;
   BEGIN_CMND( "fig_rline", sizeof(struct cmnd_args) );
   cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
@@ -509,11 +542,9 @@ void fig_rline(Point a, Point b)
   *cmndh = (struct cmnd_header) {ID_rline, sizeof(struct cmnd_args) };
   *cmnda = (struct cmnd_args) {a, b};
   PRNMSG("Ok!\n");
-  return;
 }
 
-void fig_rcong(Point a, Point b, Point c)
-{
+void fig_rcong(Point a, Point b, Point c) {
   struct cmnd_args {Point a, b, c;} *cmnda;
   BEGIN_CMND( "fig_rcong", sizeof(struct cmnd_args) );
   cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
@@ -521,11 +552,9 @@ void fig_rcong(Point a, Point b, Point c)
   *cmndh = (struct cmnd_header) {ID_rcong, sizeof(struct cmnd_args) };
   *cmnda = (struct cmnd_args) {a, b, c};
   PRNMSG("Ok!\n");
-  return;
 }
 
-void fig_rcurve(Point a, Point b, Point c, Real cut)
-{
+void fig_rcurve(Point a, Point b, Point c, Real cut) {
   struct cmnd_args {Point a, b, c; Real cut;} *cmnda;
   BEGIN_CMND( "fig_rcurve", sizeof(struct cmnd_args) );
   cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
@@ -533,11 +562,9 @@ void fig_rcurve(Point a, Point b, Point c, Real cut)
   *cmndh = (struct cmnd_header) {ID_rcurve, sizeof(struct cmnd_args) };
   *cmnda = (struct cmnd_args) {a, b, c, cut};
   PRNMSG("Ok!\n");
-  return;
 }
 
-void fig_rcircle(Point ctr, Point a, Point b)
-{
+void fig_rcircle(Point ctr, Point a, Point b) {
   struct cmnd_args {Point ctr, a, b;} *cmnda;
   BEGIN_CMND( "fig_rcircle", sizeof(struct cmnd_args) );
   cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
@@ -545,11 +572,9 @@ void fig_rcircle(Point ctr, Point a, Point b)
   *cmndh = (struct cmnd_header) {ID_rcircle, sizeof(struct cmnd_args) };
   *cmnda = (struct cmnd_args) {ctr, a, b};
   PRNMSG("Ok!\n");
-  return;
 }
 
-void fig_rfgcolor(Real r, Real g, Real b)
-{
+void fig_rfgcolor(Real r, Real g, Real b) {
   struct cmnd_args {Real r, g, b;} *cmnda;
   BEGIN_CMND( "fig_rfgcolor", sizeof(struct cmnd_args) );
   cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
@@ -557,11 +582,9 @@ void fig_rfgcolor(Real r, Real g, Real b)
   *cmndh = (struct cmnd_header) {ID_rfgcolor, sizeof(struct cmnd_args) };
   *cmnda = (struct cmnd_args) {r, g, b};
   PRNMSG("Ok!\n");
-  return;
 }
 
-void fig_rbgcolor(Real r, Real g, Real b)
-{
+void fig_rbgcolor(Real r, Real g, Real b) {
   struct cmnd_args {Real r, g, b;} *cmnda;
   BEGIN_CMND( "fig_rbgcolor", sizeof(struct cmnd_args) );
   cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
@@ -569,7 +592,24 @@ void fig_rbgcolor(Real r, Real g, Real b)
   *cmndh = (struct cmnd_header) {ID_rbgcolor, sizeof(struct cmnd_args) };
   *cmnda = (struct cmnd_args) {r, g, b};
   PRNMSG("Ok!\n");
-  return;
+}
+
+static void fig_text(Point *p, const char *text) {
+  Int text_size = strlen(text);
+  CmndArg args[] = {{sizeof(Point), p},
+                    {sizeof(Int), & text_size},
+                    {text_size+1, (void *) text},
+                    {0, (void *) NULL}};
+  _fig_insert_command(ID_text, args);
+}
+
+static void fig_font(const char *font, Real size) {
+  Int font_size = strlen(font);
+  CmndArg args[] = {{sizeof(Real), & size},
+                    {sizeof(Int), & font_size},
+                    {font_size+1, (void *) font},
+                    {0, (void *) NULL}};
+  _fig_insert_command(ID_font, args);
 }
 
 /***************************************************************************************/
@@ -580,8 +620,7 @@ Real fig_matrix[6] = {1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
 
 /* DESCRIZIONE: Applica una trasformazione lineare agli n punti p[].
  */
-void fig_ltransform(Point *p, int n)
-{
+void fig_ltransform(Point *p, int n) {
   register Real m11, m12, m13, m21, m22, m23;
   register Real px;
 
@@ -606,8 +645,7 @@ void fig_ltransform(Point *p, int n)
  *  In tal caso il fig_draw_layer continuera' a leggere sui vecchi indirizzi,
  *  senza controllare questa eventualita'! (problema   R I M O S S O !))
  */
-void fig_draw_layer(grp_window *source, int l)
-{
+void fig_draw_layer(grp_window *source, int l) {
   struct fig_header *figh;
   struct layer_header *layh;
   buff *laylist, *layer;
@@ -642,7 +680,6 @@ void fig_draw_layer(grp_window *source, int l)
 
   /* Continuo fino ad aver eseguito ogni comando */
   while (nc > 0) {
-
     /* Trovo l'indirizzo dell'istruzione corrente.
      * NOTA: devo ricalcolarmelo ogni volta, dato che durante il ciclo while
      *  il buffer potrebbe essere ri-allocato e buff_ptr(layer) potrebbe
@@ -651,72 +688,109 @@ void fig_draw_layer(grp_window *source, int l)
      *  sullo stesso layer, cioe' le dimensioni del layer aumentano
      *  e potrebbe essere necessaria una realloc.
      */
+    int cmnd_header_size;
     cmnd.ptr = (void *) buff_ptr(layer) + (long) ip;
 
+    cmnd_header_size = cmnd.hdr->size;
     ID = cmnd.hdr->ID;
-    ip += sizeof(struct cmnd_header) + cmnd.hdr->size;
-
-    cmnd.ptr += sizeof(struct cmnd_header);
+    ip += sizeof(CmndHeader) + cmnd_header_size;
+    cmnd.ptr += sizeof(CmndHeader);
 
     switch (ID) {
-     case ID_rreset:
+    case ID_rreset:
       grp_rreset();
       break;
 
-     case ID_rinit:
+    case ID_rinit:
       grp_rinit();
       break;
 
-     case ID_rdraw:
+    case ID_rdraw:
       grp_rdraw();
       break;
 
-     case ID_rline: {
+    case ID_rline: {
       struct {Point a, b;} *args = cmnd.ptr;
 
       tp[0] = args->a; tp[1] = args->b;
       fig_ltransform( tp, 2 );
-      grp_rline( tp[0], tp[1] );
+      grp_rline(tp[0], tp[1]);
       } break;
 
-     case ID_rcong: {
+    case ID_rcong: {
       struct {Point a, b, c;} *args = cmnd.ptr;
 
       tp[0] = args->a; tp[1] = args->b; tp[2] = args->c;
       fig_ltransform( tp, 3 );
-      grp_rcong( tp[0], tp[1], tp[2] );
+      grp_rcong(tp[0], tp[1], tp[2]);
       } break;
 
-     case ID_rcurve: {
+    case ID_rcurve: {
       struct {Point a, b, c; Real cut;} *args = cmnd.ptr;
 
       tp[0] = args->a; tp[1] = args->b; tp[2] = args->c;
       fig_ltransform( tp, 3 );
-      grp_rcurve( tp[0], tp[1], tp[2], args->cut );
+      grp_rcurve(tp[0], tp[1], tp[2], args->cut);
       } break;
 
-     case ID_rcircle: {
+    case ID_rcircle: {
       struct {Point ctr, a, b;} *args = cmnd.ptr;
 
       tp[0] = args->ctr; tp[1] = args->a; tp[2] = args->b;
       fig_ltransform( tp, 3 );
-      grp_rcircle( tp[0], tp[1], tp[2] );
+      grp_rcircle(tp[0], tp[1], tp[2]);
       } break;
 
-     case ID_rfgcolor: {
+    case ID_rfgcolor: {
       struct {Real r, g, b;} *args = cmnd.ptr;
 
-      grp_rfgcolor( args->r, args->g, args->b );
+      grp_rfgcolor(args->r, args->g, args->b);
       } break;
 
-     case ID_rbgcolor: {
+    case ID_rbgcolor: {
       struct {Real r, g, b;} *args = cmnd.ptr;
 
-      grp_rbgcolor( args->r, args->g, args->b );
+      grp_rbgcolor(args->r, args->g, args->b);
       } break;
+
+    case ID_text:
+      {
+        void *ptr = cmnd.ptr;
+        Point *p = (Point *) ptr; ptr += sizeof(Point);
+        Int str_size = *((Int *) ptr); ptr += sizeof(Int);
+        char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
+        if (str_size + sizeof(Point) + sizeof(Int) <= cmnd_header_size) {
+          if ( *((char *) ptr) == '\0' ) {
+            grp_text(p, str);
+          } else {
+            WARNINGMSG("fig_draw_layer", "Ignoring text command (bad str)!");
+          }
+        } else {
+          WARNINGMSG("fig_draw_layer", "Ignoring text command (bad size)!");
+        }
+      }
+      break;
+
+    case ID_font:
+      {
+        void *ptr = cmnd.ptr;
+        Real r = *((Real *) ptr); ptr += sizeof(Real);
+        Int str_size = *((Int *) ptr); ptr += sizeof(Int);
+        char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
+        if (str_size + sizeof(Real) + sizeof(Int) <= cmnd_header_size) {
+          if ( *((char *) ptr) == '\0' ) {
+            grp_font(str, r);
+          } else {
+            WARNINGMSG("fig_draw_layer", "Ignoring font command (bad str)!");
+          }
+        } else {
+          WARNINGMSG("fig_draw_layer", "Ignoring font command (bad size)!");
+        }
+      }
+      break;
 
      default:
-      ERRORMSG( "fig_draw_layer", "Comando grafico non riconosciuto" );
+      ERRORMSG("fig_draw_layer", "Comando grafico non riconosciuto");
       return;
       break;
     }
@@ -732,8 +806,7 @@ void fig_draw_layer(grp_window *source, int l)
  *  in uso. I layer vengono disegnati uno dietro l'altro con fig_draw_layer
  *  a partire dal "layer bottom", fino ad arrivare al "layer top".
  */
-void fig_draw_fig(grp_window *source)
-{
+void fig_draw_fig(grp_window *source) {
   struct fig_header *figh;
   struct layer_header *layh;
   buff *laylist;

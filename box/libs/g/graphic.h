@@ -127,16 +127,17 @@ Point *grp_ref(Point *o, Point *v, Point *p);
 #define grp_save(s)          (grp_win->save)(s)
 
 /* Funzioni grafiche di medio livello (di rasterizzazione) */
-#define grp_rreset      (grp_win->midfn[0])
+#define grp_rreset     (grp_win->midfn[0])
 #define grp_rinit      (grp_win->midfn[1])
 #define grp_rdraw      (grp_win->midfn[2])
 #define grp_rline      (grp_win->midfn[3])
 #define grp_rcong      (grp_win->midfn[4])
-#define grp_rcurve      (grp_win->midfn[5])
-#define grp_rcircle      (grp_win->midfn[6])
-#define grp_rfgcolor    (grp_win->midfn[7])
-#define grp_rbgcolor    (grp_win->midfn[8])
-#define grp_text        (grp_win->midfn[10])
+#define grp_rcurve     (grp_win->midfn[5])
+#define grp_rcircle    (grp_win->midfn[6])
+#define grp_rfgcolor   (grp_win->midfn[7])
+#define grp_rbgcolor   (grp_win->midfn[8])
+#define grp_text       (grp_win->midfn[10])
+#define grp_font       (grp_win->midfn[11])
 
 /* Macro per la conversione fra diverse unità di misura */
 /* Lunghezze */

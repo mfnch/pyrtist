@@ -107,7 +107,7 @@ void (*rst_midfn[])() = {
   rst_reset, rst_init, rst_draw,
   rst_line, rst_cong, rst_curve,
   rst_circle, rst_fgcolor, rst_bgcolor,
-  rst_poly, not_available
+  rst_poly, not_available, not_available
 };
 
 /***************************************************************************************/

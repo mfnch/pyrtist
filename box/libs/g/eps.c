@@ -44,6 +44,7 @@ static void eps_rcong(Point a, Point b, Point c);
 static void eps_rcircle(Point ctr, Point a, Point b);
 static void eps_rfgcolor(Real r, Real g, Real b);
 static void eps_text(Point *p, const char *text);
+static void eps_font(const char *font, Real size);
 
 #if 0
 static void eps_rbgcolor(Real r, Real g, Real b);
@@ -65,21 +66,23 @@ static void (*eps_midfn[])() = {
   eps_rreset, eps_rinit, eps_rdraw,
   eps_rline, eps_rcong, not_available,
   eps_rcircle, eps_rfgcolor, not_available,
-  not_available, eps_text
+  not_available, eps_text, eps_font
 };
 
 /* Variabili usate dalle procedure per scrivere il file postscript */
 static int beginning_of_line = 1, beginning_of_path = 1;
 static long previous_px, previous_py;
 
-static Point eps_point_scale = {283.46457, 283.46457};
+static Real eps_point_scale = 283.46457;
 /* Le coordinate dei punti passati alle funzioni grafiche in questo file,
  * sono espresse in millimetri: le converto nelle unita' postscript:
  *  1 unita' = 1/72 inch = 0.35277777... millimetri
  */
 #define EPS_POINT(p, px, py) \
-  long px = (p.x * eps_point_scale.x), \
-       py = (p.y * eps_point_scale.y);
+  long px = (p.x * eps_point_scale), \
+       py = (p.y * eps_point_scale);
+
+#define EPS_REAL(r) ((r)*eps_point_scale)
 
 static void eps_close_win(void) {
   FILE *f = (FILE *) grp_win->ptr;
@@ -176,6 +179,13 @@ static void eps_text(Point *p, const char *text) {
   fprintf((FILE *) grp_win->ptr,
           "  %ld %ld moveto (%s) show\n",
           px, py, text);
+}
+
+static void eps_font(const char *font, Real size) {
+  long s = EPS_REAL(size);
+
+  fprintf((FILE *) grp_win->ptr,
+          "  /%s findfont %ld scalefont setfont\n", font, s);
 }
 
 #if 0
