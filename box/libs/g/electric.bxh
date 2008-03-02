@@ -62,7 +62,7 @@ transistor_PNP = Window[]
   emitter = (r-hd)*(Cos[-a], Sin[-a])
   \ transistor_NPN[
     \ .Circle[(0, 0), r; color.white, r-d]
-    \ .Line[d, (ld, -ll), (ld, ll); hd, base, (ld, 0)]
+    \ .Line[color.black, d, (ld, -ll), (ld, ll); hd, base, (ld, 0)]
     \ .Hot["C", collector, "E", emitter, "B", base]
   ]
   \ transistor_PNP[

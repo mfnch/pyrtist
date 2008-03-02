@@ -98,9 +98,11 @@ static void bb_rfgcolor(Real r, Real g, Real b) {return;}
 
 static void bb_rbgcolor(Real r, Real g, Real b) {return;}
 
-static void bb_text(Point *p, const char *text) {return;}
+static void bb_text(Point *p, const char *text) {got_point(p->x, p->y);}
 
 static void bb_font(Point *p, const char *text) {return;}
+
+static void bb_fake_point(Point *p) {got_point(p->x, p->y);}
 
 static int bb_save(void) {return 1;}
 
@@ -115,7 +117,8 @@ static void (*bb_midfn[])() = {
   bb_rreset, bb_rinit, bb_rdraw,
   bb_rline, bb_rcong, not_available,
   bb_rcircle, bb_rfgcolor, bb_rbgcolor,
-  not_available, bb_text, bb_font
+  not_available, bb_text, bb_font,
+  bb_fake_point
 };
 
 void bb_bounding_box(grp_window *figure, Point *bb_min, Point *bb_max) {

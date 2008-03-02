@@ -44,6 +44,7 @@ static void ps_rline(Point a, Point b);
 static void ps_rcong(Point a, Point b, Point c);
 static void ps_rcircle(Point ctr, Point a, Point b);
 static void ps_rfgcolor(Real r, Real g, Real b);
+static void ps_fake_point(Point *p);
 #if 0
 static void ps_rbgcolor(Real r, Real g, Real b);
 #endif
@@ -64,7 +65,8 @@ static void (*ps_midfn[])() = {
   ps_rreset, ps_rinit, ps_rdraw,
   ps_rline, ps_rcong, not_available,
   ps_rcircle, ps_rfgcolor, not_available,
-  not_available, not_available, not_available
+  not_available, not_available, not_available,
+  ps_fake_point
 };
 
 /* Variabili usate dalle procedure per scrivere il file postscript */
@@ -277,3 +279,5 @@ int ps_save_fig(const char *file_name, grp_window *figure) {
   grp_win = cur_win;
   return 1;
 }
+
+static void ps_fake_point(Point *p) {return;}

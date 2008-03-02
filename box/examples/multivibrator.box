@@ -19,7 +19,7 @@ w = Window[][
   t2_ = .Put[transistor_NPN, "rt", .Scale[(1, -1)],
              .Near["C", (x4, y1)], .Near["E", (x4, y2)]]
 
-  // These lines should disappear in future versions
+  // These lines should disappear in future versions of the Box language
   r1 = PointList[r1_], r2 = PointList[r2_], r3 = PointList[r3_]
   r4 = PointList[r4_], c1 = PointList[c1_], c2 = PointList[c2_]
   t1 = PointList[t1_], t2 = PointList[t2_]
@@ -39,9 +39,22 @@ w = Window[][
   // Insert small circles, where more than 3 lines meet
   \ .Circle[0.6, (x1, y0); (x2, y0); (x3, y0); (x1, y2);
             (x2, y1); (x3, y1); (x1, y1); (x4, y1)]
+
+  // Some labels near the components
+  on_left = Point[(-9.0, 3.0)], on_right = Point[(4.0, 3.0)]
+  on_top = Point[(-3.0, 10.0)]
+  \ .Text[.Font["Arial", 4.0],
+          "R1", Point[r1.Get[1.5]] + on_left;
+          "R2", Point[r2.Get[1.5]] + on_right;
+          "R3", Point[r3.Get[1.5]] + on_left;
+          "R4", Point[r4.Get[1.5]] + on_right;
+          "T1", Point[t1.Get[1.5]] + on_left;
+          "T2", Point[t2.Get[1.5]] + on_right;
+          "C1", Point[c1.Get[1.5]] + on_top;
+          "C2", Point[c2.Get[1.5]] + on_top]
+
+  \ .Show[Point[t2.Get[1.5]] + 3*on_right] // Enlarge bounding box
 ]
 
 // Save the figure into a postscript file
 w.Save["multivibrator.eps"]
-\ Window["ps", .File["multivibrator.ps"]][\ .Put[w, (10, 10), .Scale[3]]]
-

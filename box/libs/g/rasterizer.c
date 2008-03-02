@@ -97,6 +97,7 @@ void rst_circle(Point ctr, Point a, Point b);
 void rst_poly(Point *p, int n);
 void rst_fgcolor(Real r, Real g, Real b);
 void rst_bgcolor(Real r, Real g, Real b);
+static void rst_fake_point(Point *p);
 
 static void not_available(void) {
   ERRORMSG("not_available", "Not available for postscript windows.");
@@ -107,7 +108,8 @@ void (*rst_midfn[])() = {
   rst_reset, rst_init, rst_draw,
   rst_line, rst_cong, rst_curve,
   rst_circle, rst_fgcolor, rst_bgcolor,
-  rst_poly, not_available, not_available
+  rst_poly, not_available, not_available,
+  rst_fake_point
 };
 
 /***************************************************************************************/
@@ -864,3 +866,5 @@ void rst_bgcolor(Real r, Real g, Real b)
   (grp_win->bgcol)->c = c;
   return;
 }
+
+static void rst_fake_point(Point *p) {return;}

@@ -54,6 +54,7 @@ void fig_rfgcolor(Real r, Real g, Real b);
 void fig_rbgcolor(Real r, Real g, Real b);
 static void fig_text(Point *p, const char *text);
 static void fig_font(const char *font, Real size);
+static void fig_fake_point(Point *p);
 static int fig_save(const char *file_name);
 
 /* Lista delle funzioni di basso livello (non disponibili) */
@@ -69,7 +70,8 @@ void (*fig_midfn[])() = {
   fig_rreset, fig_rinit, fig_rdraw,
   fig_rline, fig_rcong, fig_rcurve,
   fig_rcircle, fig_rfgcolor, fig_rbgcolor,
-  not_available, fig_text, fig_font
+  not_available, fig_text, fig_font,
+  fig_fake_point
 };
 
 /*#define grp_activelayer (((struct fig_header *) grp_win->wrdep)->current)*/
@@ -440,7 +442,7 @@ void fig_clear_layer(int l) {
 enum ID_type {
   ID_rreset = 1, ID_rinit, ID_rdraw, ID_rline,
   ID_rcong, ID_rcurve, ID_rcircle, ID_rfgcolor, ID_rbgcolor,
-  ID_text, ID_font
+  ID_text, ID_font, ID_fake_point
 };
 
 struct cmnd_header {
@@ -610,6 +612,11 @@ static void fig_font(const char *font, Real size) {
                     {font_size+1, (void *) font},
                     {0, (void *) NULL}};
   _fig_insert_command(ID_font, args);
+}
+
+static void fig_fake_point(Point *p) {
+  CmndArg args[] = {{sizeof(Point), p}, {0, (void *) NULL}};
+  _fig_insert_command(ID_fake_point, args);
 }
 
 /***************************************************************************************/
@@ -789,7 +796,11 @@ void fig_draw_layer(grp_window *source, int l) {
       }
       break;
 
-     default:
+    case ID_fake_point:
+      grp_fake_point((Point *) cmnd.ptr);
+      break;
+
+    default:
       ERRORMSG("fig_draw_layer", "Comando grafico non riconosciuto");
       return;
       break;

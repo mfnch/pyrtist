@@ -275,3 +275,13 @@ Task window_res_point(VMProgram *vmp) {
   w->res.y = res->y;
   return Success;
 }
+
+Task window_show_point(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  Point *p = BOX_VM_ARGPTR1(vmp, Point);
+  grp_window *cur_win = grp_win;
+  grp_win = w->window;
+  grp_fake_point(p);
+  grp_win = cur_win;
+  return Success;
+}

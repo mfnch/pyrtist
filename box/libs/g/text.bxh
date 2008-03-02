@@ -5,6 +5,7 @@ Window.Text = Void
 (])@Window.Text ? "window_text_end"
 ()Char@Window.Text ? "window_text_str"
 P@Window.Text ? "window_text_point"
+(;)@Window.Text ? "window_text_pause"
 
 Window.Text.Font = Void
 ()Char@Window.Text.Font ? "window_text_font_str"

@@ -45,6 +45,7 @@ static void eps_rcircle(Point ctr, Point a, Point b);
 static void eps_rfgcolor(Real r, Real g, Real b);
 static void eps_text(Point *p, const char *text);
 static void eps_font(const char *font, Real size);
+static void eps_fake_point(Point *p);
 
 #if 0
 static void eps_rbgcolor(Real r, Real g, Real b);
@@ -66,7 +67,8 @@ static void (*eps_midfn[])() = {
   eps_rreset, eps_rinit, eps_rdraw,
   eps_rline, eps_rcong, not_available,
   eps_rcircle, eps_rfgcolor, not_available,
-  not_available, eps_text, eps_font
+  not_available, eps_text, eps_font,
+  eps_fake_point
 };
 
 /* Variabili usate dalle procedure per scrivere il file postscript */
@@ -187,6 +189,8 @@ static void eps_font(const char *font, Real size) {
   fprintf((FILE *) grp_win->ptr,
           "  /%s findfont %ld scalefont setfont\n", font, s);
 }
+
+static void eps_fake_point(Point *p) {return;}
 
 #if 0
 static void eps_rbgcolor(Real r, Real g, Real b) {return;}

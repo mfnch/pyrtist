@@ -22,6 +22,7 @@
         <Detect2Chars attribute="Symbol" context="#stay" char="-" char1=">"/>
         <StringDetect context="#stay" attribute="Symbol" String="(])"/>
         <StringDetect context="#stay" attribute="Symbol" String="([)"/>
+        <StringDetect context="#stay" attribute="Symbol" String="(;)"/>
 
         <DetectChar attribute="Symbol" context="#stay" char="[" beginRegion="Brace1" />
         <DetectChar attribute="Symbol" context="#stay" char="]" endRegion="Brace1" />

@@ -37,12 +37,14 @@ Task window_text_begin(VMProgram *vmp) {
   w->text.got.text = 0;
   w->text.got.font = 0;
   w->text.got.font_size = 0;
+  w->text.got.color = 0;
   return Success;
 }
 
-Task window_text_end(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
-
+static Task _sentence_end(Window *w, int *wrote_text) {
+  int dummy;
+  if (wrote_text == (int *) NULL) wrote_text = & dummy;
+  *wrote_text = 0;
   if (w->text.got.text && w->text.text != (char *) NULL) {
     grp_window *cur_win = grp_win;
     grp_win = w->window;
@@ -57,18 +59,40 @@ Task window_text_end(VMProgram *vmp) {
 
     } else {
       if (w->text.got.font_size && !w->text.got.font_size)
-        g_warning("You gave the size of the font, but not its name!");
+        g_warning("Ignoring font specification: got its size, "
+                  "but not its name!");
     }
 
     grp_text(& w->text.position, w->text.text);
-    grp_rdraw();
-    grp_rreset();
+    *wrote_text = 1;
     grp_win = cur_win;
   }
 
   free(w->text.text); w->text.text = (char *) NULL;
   free(w->text.font); w->text.font = (char *) NULL;
+  w->text.got.font = 0;
+  w->text.got.text = 0;
   return Success;
+}
+
+Task window_text_end(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  int wrote_text;
+
+  TASK( _sentence_end(w, & wrote_text) );
+  if (wrote_text) {
+    grp_window *cur_win = grp_win;
+    grp_win = w->window;
+    grp_rdraw();
+    grp_rreset();
+    grp_win = cur_win;
+  }
+  return Success;
+}
+
+Task window_text_pause(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  return _sentence_end(w, (int *) NULL);
 }
 
 Task window_text_point(VMProgram *vmp) {
