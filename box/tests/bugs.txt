@@ -1,0 +1,35 @@
+---
+mf@fire:~/Documents/CMMP2008_London/pics$ box -st -l g
+include "g"
+arrow_triangle.Save["arrow_triangle.eps"]
+STAGE: Compilation:
+box(19480) malloc: *** error for object 0x305c00: incorrect checksum for freed object - object was probably modified after being freed, break at szone_error to debug
+box(19480) malloc: *** set a breakpoint in szone_error to debug
+Error(line 2): The symbol 'arrow_triangle' has no type and cannot have a subtype 'Save'
+---
+mf@fire:~/src/boxc/trunk/box/tests$ box -st
+a = (1, b)
+structure.c:49: failed assertion `e->is.typed && e->is.value'
+Abort trap
+---
+mf@fire:~/src/boxc/trunk/box/tests$ box -st
+include "g"
+// Kind of arrows
+arrow = Window["fig"][
+  \ .Poly[(0, -1), (0.5, 0), (0, 1), (2, 0)]
+  \ .Hot["head", (2, 0), "tail", (1.8, 0), "join", (0.5, 0)]
+]
+
+arrow_triangle = Window["fig"][
+  \ .Poly[(0, -1), (0, 1), (2, 0)]
+  \ .Hot["head", (2, 0), "tail", (1.8, 0), "join", (0, 0)]
+]
+
+a = Window[]
+\ a.Put[arrow, .Scale[10]]
+a.Save["arrow.eps"]
+
+STAGE: Compilation:
+Error(line 14): This expression has no type!
+---
+
