@@ -20,3 +20,6 @@ LineStyle@Window.Line ? "line_style"
 Window.Line.Close = Void
 ([)@Window.Line.Close ? "window_line_close_begin"
 Int@Window.Line.Close ? "window_line_close_int"
+
+Window.Line.ArrowScale = Void
+R@Window.Line.ArrowScale ? "window_line_arrowscale"

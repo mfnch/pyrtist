@@ -25,10 +25,11 @@
 static int line_draw(int closed, buff *line_desc);
 static int line_draw_opened(buff *line_desc);
 static int line_draw_closed(buff *line_desc);
-static int line_put_to_begin_or_end(Point *p1, Point *p2, Real w,
+static int line_put_to_begin_or_end(Point *p1, Point *p2,
+                                    Real w, Real fw,
                                     void *f, int final);
-static int line_put_to_join( Point *p1, Point *p2, Point *p3,
- Real w1, Real w2, void *f, int first );
+static int line_put_to_join(Point *p1, Point *p2, Point *p3,
+                            Real w1, Real w2, Real fw, void *f, int first);
 static void line_first_point(Point *p, Real s);
 static void line_next_point(Point *p, Real si, Real so);
 static void line_final_point(Point *p, Real s);
@@ -57,6 +58,7 @@ Task line_window_init(Window *w) {
 
   w->line.this_piece.width1 = w->line.this_piece.width2 = 1.0;
   w->line.this_piece.fig = (void *) NULL;
+  w->line.this_piece.arrowscale = 1.0;
   return Success;
 }
 
@@ -82,6 +84,7 @@ Task line_begin(VMProgram *vmp) {
   w->line.num_points = 0;
   w->line.close = 0;
   w->line.got.color = 0;
+  w->line.this_piece.arrowscale = 1.0;
   return Success;
 }
 
@@ -208,6 +211,12 @@ Task window_line_close_int(VMProgram *vmp) {
   return Success;
 }
 
+Task window_line_arrowscale(VMProgram *vmp) {
+  SUBTYPE2_OF_WINDOW(vmp, w);
+  w->line.this_piece.arrowscale = BOX_VM_ARG1(vmp, Real);
+  return Success;
+}
+
 /******************************************************************************
  * F U N Z I O N I    D I   D I S E G N O    P E R    L I N E E   S P E S S E *
  ******************************************************************************/
@@ -228,8 +237,8 @@ static int line_draw(int closed, buff *line_desc) {
   } else { assert(0); }
 
 #if 0
-    if ( ! line_put_to_join(
-     & (ip->pnt), & (i->pnt), & (in->pnt), i->width2, in->width1, i->fig, 0) )
+    if ( ! line_put_to_join(& (ip->pnt), & (i->pnt), & (in->pnt), i->width2, in->width1,
+                            1.0 ???, i->fig, 0) )
       return 0;
   }
 #endif
@@ -259,7 +268,7 @@ static int line_draw_opened(buff *line_desc) {
   } else {
     /* Attenzione: in->width1 e' lo spessore uscente di i->pnt! */
     if ( ! line_put_to_begin_or_end(& (i->point), & (in->point),
-                                    in->width1, i->fig, 0 ) )
+                                    in->width1, in->arrowscale, i->fig, 0 ) )
       return 0;
   }
 
@@ -277,7 +286,7 @@ static int line_draw_opened(buff *line_desc) {
 
   } else {
     if ( ! line_put_to_begin_or_end(& (in->point), & (i->point),
-                                    in->width1, in->fig, 1) )
+                                    in->width1, in->arrowscale, in->fig, 1) )
       return 0;
   }
 
@@ -312,8 +321,8 @@ static int line_draw_closed(buff *line_desc) {
     assert(0);
 #else
     tp = ip->pnt;
-    if ( ! line_put_to_join(
-     & tp, & (i->pnt), & (in->pnt), i->width2, in->width1, i->fig, 1) )
+    if ( ! line_put_to_join(& tp, & (i->pnt), & (in->pnt),
+                            i->width2, in->width1, 1.0 ???, i->fig, 1) )
       return 0;
 #endif
   }
@@ -343,7 +352,7 @@ static int line_draw_closed(buff *line_desc) {
  *  ad esempio).
  *  Sulla figura individuiamo 3 punti: f1 (head), f2 (center), f3.
  *  L'algoritmo traslera' f1 su p1, ruotera' la figura usando il vincolo
- *  !near[f2, p2], scalera' la figura (senza deformarla) con s = d(f1, f2)/w
+ *  !near[f2, p2], scalera' la figura (senza deformarla) con s = w/d(f1, f2)
  *  (con w spessore della linea)
  *  NOTA: d(..., ...) e' la distanza fra 2 punti, quindi l'algoritmo scalera'
  *  la figura in modo tale che la distanza f1-f2 diventi uguale a w.
@@ -354,7 +363,7 @@ static int line_draw_closed(buff *line_desc) {
  *  Se i punti non sono 3, ma solo 1 (f1), allora verra' assunto f2=f3=(0, 0).
  *  Se i punti sono solo 2, verra' assunto f3=(0, 0).
  */
-static int line_put_to_begin_or_end(Point *p1, Point *p2, Real w,
+static int line_put_to_begin_or_end(Point *p1, Point *p2, Real w, Real fig_w,
                                     void *f, int final) {
   long num_hp;
   Real rot_angle = 0.0, scale_x = 1.0, scale_y = 1.0;
@@ -402,11 +411,11 @@ static int line_put_to_begin_or_end(Point *p1, Point *p2, Real w,
     /* Calcolo la distanza di riferimento per eseguire la scala */
     dx = pnt[1].x - pnt[0].x;
     dy = pnt[1].y - pnt[0].y;
-    d = sqrt( dx*dx + dy*dy );
+    d = sqrt(dx*dx + dy*dy);
 
     /* Calcolo il fattore di scala */
     if ( d > 0.0 )
-      scale_x = scale_y = w/d;
+      scale_x = scale_y = fig_w*w/d;
 
     /* Resta soltanto da eseguire la rotazione */
     {
@@ -480,8 +489,8 @@ static int line_put_to_begin_or_end(Point *p1, Point *p2, Real w,
  *  Se first == 1, non viene usata line_final_point e il primo punto
  *  della figura (f3) viene salvato in *p1 (per uso futuro).
  */
-static int line_put_to_join( Point *p1, Point *p2, Point *p3,
- Real w1, Real w2, void *f, int first ) {
+static int line_put_to_join(Point *p1, Point *p2, Point *p3,
+                            Real w1, Real w2, Real fw, void *f, int first) {
   int num_hp;
   Real w = 0.5*(w1 + w2);
   Real rot_angle = 0.0, scale_x = 1.0, scale_y = 1.0;

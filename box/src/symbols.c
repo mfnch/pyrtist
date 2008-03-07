@@ -89,9 +89,12 @@ Symbol *Sym_Symbol_Find(Name *nm, SymbolAction action)
 
   MSG_LOCATION("Sym_Symbol_Find");
 
-  for ( s = hashtable[Sym__Hash(nm->text, nm->length)];
-    s != (Symbol *) NULL; s = s->next ) {
+/*
+  MSG_ADVICE("Searching for '%N'", nm);*/
 
+  for (s = hashtable[Sym__Hash(nm->text, nm->length)];
+       s != (Symbol *) NULL; s = s->next) {
+    /*printf("Comparing with '%s' with '%s'\n", nm->text, s->name);*/
     if IS_SUCCESSFUL( Str_Eq2(nm->text, nm->length, s->name, s->leng) ) {
       switch ( action(s) ) {
       case 0:

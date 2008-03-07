@@ -6,6 +6,7 @@ typedef struct {
   Point point;
   LineStyle style;
   void *fig;
+  Real arrowscale;
 } WindowLinePiece;
 
 /* This is part of the Window object */
@@ -21,6 +22,7 @@ typedef struct {
 
   Color color;
   int close;
+  Real arrowscale;
   WindowLinePiece this_piece;
   buff pieces;
 } WindowLine;

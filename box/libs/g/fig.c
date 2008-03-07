@@ -763,12 +763,13 @@ void fig_draw_layer(grp_window *source, int l) {
     case ID_text:
       {
         void *ptr = cmnd.ptr;
-        Point *p = (Point *) ptr; ptr += sizeof(Point);
+        Point p = *((Point *) ptr); ptr += sizeof(Point);
         Int str_size = *((Int *) ptr); ptr += sizeof(Int);
         char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
         if (str_size + sizeof(Point) + sizeof(Int) <= cmnd_header_size) {
           if ( *((char *) ptr) == '\0' ) {
-            grp_text(p, str);
+            fig_ltransform(& p, 1);
+            grp_text(& p, str);
           } else {
             WARNINGMSG("fig_draw_layer", "Ignoring text command (bad str)!");
           }
@@ -797,7 +798,11 @@ void fig_draw_layer(grp_window *source, int l) {
       break;
 
     case ID_fake_point:
-      grp_fake_point((Point *) cmnd.ptr);
+      {
+        Point p = *((Point *) cmnd.ptr);
+        fig_ltransform(& p, 1);
+        grp_fake_point(& p);
+      }
       break;
 
     default:
