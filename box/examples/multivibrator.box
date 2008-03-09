@@ -1,3 +1,4 @@
+// under a shell type: box -l g multivibrator.box
 include "g"
 include "electric"
 

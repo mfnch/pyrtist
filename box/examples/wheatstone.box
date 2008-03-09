@@ -1,4 +1,4 @@
-// Run with "box wheatstone.box -l g"
+// Under a shell type: box wheatstone.box -l g
 include "g"
 include "electric"
 
@@ -26,16 +26,7 @@ wheatstone = Window["fig"][
 
   // Drawing small circles on the nodes
   \ .Circle[0.8, p1; p2; p3; p4]
+
+  .Save["wheatstone.eps"]  // Saving to eps file
 ]
-wheatstone.Save["w.ps"]
 
-
-//-------------------------------------------------------------------------------
-Print["Opening a new 'bm4' windows to save the figure.";]
-main = Window["bm4", (200, 200)][\ .Put[wheatstone, (100, 100), .Scale[4]]]
-main.Save["wheatstone.bmp"]
-
-Print["Opening a new 'ps' windows to save the figure.";]
-\ Window["ps", .File["wheatstone.ps"]][
-  \ .Put[wheatstone, (100, 100), .Scale[3]]
-]
