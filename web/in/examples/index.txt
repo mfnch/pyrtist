@@ -1,0 +1,11 @@
+restindex
+    crumb: Examples
+    format: rest
+    page-title: Box examples
+    include: Yes
+    page-description:
+       Box examples
+    /description
+/restindex
+
+Here we collect some figures together with their Box source files.

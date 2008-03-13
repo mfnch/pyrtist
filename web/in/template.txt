@@ -1,0 +1,79 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+    <title><% title %></title>
+    <link rel="stylesheet" href="<% path_to_root %>rest2web.css" type="text/css" />
+
+<link rel="stylesheet" href="<% path_to_root %>style.css" type="text/css" />
+
+</head>
+
+<body>
+<div id="wrap">
+<!-- Blue top bar with title -->
+<img src="<% path_to_root %>titlebar.png" alt="Box Compiler" width="800" height="75" hspace="0" vspace="1" valign="top">
+  <!-- after blue logo -->
+
+<div id="wrap">
+<div id="header-section">
+  <div id="header">
+  <ul>
+    <# print_crumbs(breadcrumbs) #>
+  </ul>
+</div>
+</div>
+
+
+<table>
+  <tr>
+    <td valign="top" width="25%" align="left">
+
+    <div id="left-column">
+    <div id="sidie">
+        <a href="http://sourceforge.net">
+          <img src="http://sourceforge.net/sflogo.php?group_id=152653&amp;type=4" width="142" height="42" border="0" alt="SourceForge.net Logo" />
+        </a>
+<ul>
+	<li class="left-navheader-first">
+	<a href="<% indexpage['target'] %>" class="left-navheader"><% include('mynavtitle1.uyu', 'Home') %></a>
+	</li>
+        <# minibar(sections, displayval="crumb", liststart='', listend='',
+                        intro='<li class="left-navheader">'+ include('mynavtitle2.uyu','Pages')+'</li>' ,subsect=False)
+                #>
+
+	</ul>
+      </div>
+      </div>
+
+    </td>
+    <!-- main content cell first, with rowspan=2 -->
+    <td valign="top" rowspan="2">
+    <div id="middle-column">
+      <a name="startcontent" id="startcontent"></a>
+    <div id="gallery">
+      <% body %>
+    </div>
+
+    <div id="end">
+      <p><a href="#startcontent"><small>Return to Top</small></a><br />
+      </p>
+    </div>
+
+    </div></td>
+  </tr>
+  <tr>
+    <td valign="top" align="left" width="25%">
+      </td>
+    </tr>
+  </table>
+
+  <hr />
+<div id="footer">
+                <small>Page last modified <% modtime %>.</small> |
+        Created with <a href="http://sourceforge.net/projects/rest2web">rest2web</a>, and <a href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> docutils.
+</div>
+
+</div>
+</body>
+</html>
+
