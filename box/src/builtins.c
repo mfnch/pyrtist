@@ -84,6 +84,11 @@ static Task Log10_RealNum(VMProgram *vmp);
 static Task Sqrt_RealNum(VMProgram *vmp);
 static Task Ceil_RealNum(VMProgram *vmp);
 static Task Floor_RealNum(VMProgram *vmp);
+static Task Min_Open(VMProgram *vmp);
+static Task Min_RealNum(VMProgram *vmp);
+static Task Max_Open(VMProgram *vmp);
+static Task Max_RealNum(VMProgram *vmp);
+static Task Vec_RealNum(VMProgram *vmp);
 
 /******************************************************************************
  * Le procedure che seguono servono a inizializzare/resettare il compilatore. *
@@ -476,7 +481,8 @@ static Task Blt_Define_Basics(void) {
 
 static Task Blt_Define_Math(void) {
   Intg type_Sin, type_Cos, type_Tan, type_Asin, type_Acos, type_Atan,
-   type_Exp, type_Log, type_Log10, type_Sqrt, type_Ceil, type_Floor;
+   type_Exp, type_Log, type_Log10, type_Sqrt, type_Ceil, type_Floor,
+   type_Min, type_Max, type_Vec;
 
   TASK( DEFINE_TYPE(Sin,   TYPE_REAL) );
   TASK( DEFINE_TYPE(Cos,   TYPE_REAL) );
@@ -488,21 +494,29 @@ static Task Blt_Define_Math(void) {
   TASK( DEFINE_TYPE(Log,   TYPE_REAL) );
   TASK( DEFINE_TYPE(Log10, TYPE_REAL) );
   TASK( DEFINE_TYPE(Sqrt,  TYPE_REAL) );
-  TASK( DEFINE_TYPE(Ceil,  TYPE_INTG) );
-  TASK( DEFINE_TYPE(Floor, TYPE_INTG) );
+  TASK( DEFINE_TYPE(Ceil,  TYPE_INT)  );
+  TASK( DEFINE_TYPE(Floor, TYPE_INT)  );
+  TASK( DEFINE_TYPE(Min,   TYPE_REAL) );
+  TASK( DEFINE_TYPE(Max,   TYPE_REAL) );
+  TASK( DEFINE_TYPE(Vec,   TYPE_POINT) );
 
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Cos,   Cos_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Sin,   Sin_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Tan,   Tan_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Asin,  Asin_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Acos,  Acos_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Atan,  Atan_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Exp,   Exp_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Log,   Log_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Cos,  Cos_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Sin,  Sin_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Tan,  Tan_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Asin, Asin_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Acos, Acos_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Atan, Atan_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Exp,  Exp_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Log,  Log_RealNum));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Log10,Log10_RealNum));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Sqrt, Sqrt_RealNum));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Ceil, Ceil_RealNum));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Floor,Floor_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_OPEN,   BOX_CREATION,type_Min,  Min_Open));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Min,  Min_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_OPEN,   BOX_CREATION,type_Max,  Max_Open));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Max,  Max_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Vec,  Vec_RealNum));
   return Success;
 }
 
@@ -681,5 +695,32 @@ static Task Ceil_RealNum(VMProgram *vmp) {
 }
 static Task Floor_RealNum(VMProgram *vmp) {
   BOX_VM_CURRENT(vmp, Intg) = floor(BOX_VM_ARG1(vmp, Real));
+  return Success;
+}
+static Task Min_Open(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = REAL_MAX;
+  return Success;
+}
+static Task Min_RealNum(VMProgram *vmp) {
+  Real *cp = BOX_VM_CURRENTPTR(vmp, Real), c = *cp,
+       x = BOX_VM_ARG1(vmp, Real);
+  *cp = (x < c) ? x : c;
+  return Success;
+}
+static Task Max_Open(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = REAL_MIN;
+  return Success;
+}
+static Task Max_RealNum(VMProgram *vmp) {
+  Real *cp = BOX_VM_CURRENTPTR(vmp, Real), c = *cp,
+       x = BOX_VM_ARG1(vmp, Real);
+  *cp = (x > c) ? x : c;
+  return Success;
+}
+static Task Vec_RealNum(VMProgram *vmp) {
+  Real angle = BOX_VM_ARG1(vmp, Real);
+  Point *p = BOX_VM_CURRENTPTR(vmp, Point);
+  p->x = cos(angle);
+  p->y = sin(angle);
   return Success;
 }

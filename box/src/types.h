@@ -21,6 +21,8 @@
 #ifndef _TYPES_H
 #  define _TYPES_H
 
+#  include <float.h>
+
 /** The integer type of Box numbers and the integer type we will try
  * to use whenever possible: 64 bit on 64 bit architectures,
  * 32 bit elsewhere.
@@ -40,6 +42,9 @@ typedef unsigned long UInt;
 typedef double Real; /* Numeri in virgola mobile */
 #define strtointg strtol /* Conversione stringa->Intg */
 #define strtoreal strtod /* Conversione stringa->Real */
+
+#define REAL_MAX DBL_MAX
+#define REAL_MIN DBL_MIN
 
 /* Definisco il tipo Char, che e' esattamente un char */
 typedef unsigned char Char;
