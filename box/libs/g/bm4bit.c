@@ -1,6 +1,23 @@
-/* bm4bit.c - Autore: Franchin Matteo - 27 dicembre 2002
- *
- * Questo file contiene quanto basta per poter disegnare con 16 colori.
+/****************************************************************************
+ * Copyright (C) 2008 by Matteo Franchin                                    *
+ *                                                                          *
+ * This file is part of Box.                                                *
+ *                                                                          *
+ *   Box is free software: you can redistribute it and/or modify it         *
+ *   under the terms of the GNU Lesser General Public License as published  *
+ *   by the Free Software Foundation, either version 3 of the License, or   *
+ *   (at your option) any later version.                                    *
+ *                                                                          *
+ *   Box is distributed in the hope that it will be useful,                 *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+ *   GNU Lesser General Public License for more details.                    *
+ *                                                                          *
+ *   You should have received a copy of the GNU Lesser General Public       *
+ *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
+ ****************************************************************************/
+
+/* Questo file contiene quanto basta per poter disegnare con 16 colori.
  * Ho cercato di includervi solo le procedure dipendenti dal tipo di scrittura
  * (4 bit per pixel), mentre procedure piu' generali sono state incluse
  * nel file graphic.c
@@ -85,12 +102,12 @@ grp_window *gr4b_open_win(FCOOR ltx, FCOOR lty, FCOOR rdx, FCOOR rdy,
 		ERRORMSG("gr4b_open_win", "Memoria esaurita");
 		return (grp_window *) 0;
 	}
-	
+
 	if ( (wd->wrdep = (gr4b_wrdep *) malloc(sizeof(gr4b_wrdep))) == NULL ) {
 		ERRORMSG("gr4b_open_win", "Memoria esaurita");
 		return (grp_window *) 0;
 	}
-	
+
 	lx = rdx - ltx;
 	ly = rdy - lty;
 
@@ -315,7 +332,7 @@ void gr4b_hor_line(ICOOR y, ICOOR x1, ICOOR x2)
 		}
 
 	} else {
-		
+
 		*ptr &= WRDP(grp_win)->andmask[1];
 		*ptr |= WRDP(grp_win)->xormask[1];
 	}

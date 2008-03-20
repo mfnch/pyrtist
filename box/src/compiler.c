@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2006 by Matteo Franchin                                 *
+ *   Copyright (C) 2008 by Matteo Franchin                                 *
  *   fnch@libero.it                                                        *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *

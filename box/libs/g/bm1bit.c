@@ -1,6 +1,23 @@
-/* bm1bit.c - Autore: Franchin Matteo - 26, 27 dicembre 2002
- *
- * Questo file contiene quanto basta per poter disegnare in bianco e nero(2 colori).
+/****************************************************************************
+ * Copyright (C) 2008 by Matteo Franchin                                    *
+ *                                                                          *
+ * This file is part of Box.                                                *
+ *                                                                          *
+ *   Box is free software: you can redistribute it and/or modify it         *
+ *   under the terms of the GNU Lesser General Public License as published  *
+ *   by the Free Software Foundation, either version 3 of the License, or   *
+ *   (at your option) any later version.                                    *
+ *                                                                          *
+ *   Box is distributed in the hope that it will be useful,                 *
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of         *
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          *
+ *   GNU Lesser General Public License for more details.                    *
+ *                                                                          *
+ *   You should have received a copy of the GNU Lesser General Public       *
+ *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
+ ****************************************************************************/
+
+/* Questo file contiene quanto basta per poter disegnare in bianco e nero(2 colori).
  * Ho cercato di includervi solo le procedure dipendenti dal tipo di scrittura
  * (1 bit per pixel), mentre procedure pi generali sono state incluse
  * nel file graphic.c
@@ -97,12 +114,12 @@ grp_window *gr1b_open_win(FCOOR ltx, FCOOR lty, FCOOR rdx, FCOOR rdy,
 		ERRORMSG("gr1b_open_win", "Memoria esaurita");
 		return (grp_window *) 0;
 	}
-	
+
 	if ( (wd->wrdep = (gr1b_wrdep *) malloc(sizeof(gr1b_wrdep))) == (void *) 0 ) {
 		ERRORMSG("gr1b_open_win", "Memoria esaurita");
 		return (grp_window *) 0;
 	}
-	
+
 	lx = rdx - ltx;
 	ly = rdy - lty;
 
@@ -168,7 +185,7 @@ grp_window *gr1b_open_win(FCOOR ltx, FCOOR lty, FCOOR rdx, FCOOR rdy,
 	wd->bitperpixel = 1;
 	wd->bytesperline = bytesperline;
 	wd->dim = windim;
-	
+
 	/* Costruisco una tavolazza di colori da associare a questa finestra */
 	wd->pal = grp_palette_build(2, 2, 3, 4);
 	if ( wd->pal == NULL ) return NULL;
@@ -193,7 +210,7 @@ grp_window *gr1b_open_win(FCOOR ltx, FCOOR lty, FCOOR rdx, FCOOR rdy,
 	wd->save = grbm_save_to_bmp;
 	wd->lowfn = gr1b_lowfn;
 	wd->midfn = rst_midfn;
-	
+
 	return wd;
 }
 
