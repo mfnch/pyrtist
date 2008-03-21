@@ -1,0 +1,47 @@
+// A shy smiley
+include "g"
+
+//-------------------------------------------------------------------------------
+// Shy level
+x = 0.60
+
+pdg = 10 * Vec[2*const.pi*x] // Direction of the eyes
+f = 1 - 2*x                  // Happyness level
+i = x                        // Embarassment level
+
+// Parameters for the smiley face
+r = 10       // Face radius
+s = 0.25     // Width of the contour lines
+ro = 2.5     // Eye radius
+rp = 0.4*ro  // Pupil radius
+dp = 0.5*ro  // Distance between the pupil and the eye center
+gr = 1       // Cheek radius
+od = Point[(3.5, -2.0)] // Position of the right eye
+gd = Point[(6, 2.0)]    // Position of the right cheek
+//-------------------------------------------------------------------------------
+
+os = (-od.x, od.y) // Position of the right eye
+gs = (-gd.x, gd.y) // Position of the right cheek
+
+// pd and ps are the positions of the right and left pupil respectively.
+pd = od + (0, x*ro)
+ps = os + (0, x*ro)
+
+cf = Color[.r=1.0, .g=1.0-i,   .b=0] // Face color
+cg = Color[.r=1.0, .g=1.0-2*i, .b=0] // Cheek color
+
+smiley = Window[][
+  // Disegno la faccia
+  \ .Circle[color.black, (0, 0), r+s; cf, r-s]
+
+  b = 4.5
+  \ .Circle[color.white, ro, ro*0.8, os; od]
+
+  \ .Circle[color.black, rp, rp*1.4, pd; ps]
+  \ .Poly[(-5, b-f), 0.2, 0.2, (0, b), (5, b-f), (0, b+f)]
+  \ .Circle[cg, gr, gs; gd]
+]
+
+main = Window["bm4", (22, 22), .Res[(80, 80)]]
+\ main.Put[smiley, (11, 11)]
+main.Save["smiley.bmp"]

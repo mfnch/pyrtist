@@ -84,6 +84,7 @@ static Task Log10_RealNum(VMProgram *vmp);
 static Task Sqrt_RealNum(VMProgram *vmp);
 static Task Ceil_RealNum(VMProgram *vmp);
 static Task Floor_RealNum(VMProgram *vmp);
+static Task Abs_RealNum(VMProgram *vmp);
 static Task Min_Open(VMProgram *vmp);
 static Task Min_RealNum(VMProgram *vmp);
 static Task Max_Open(VMProgram *vmp);
@@ -482,7 +483,7 @@ static Task Blt_Define_Basics(void) {
 static Task Blt_Define_Math(void) {
   Intg type_Sin, type_Cos, type_Tan, type_Asin, type_Acos, type_Atan,
    type_Exp, type_Log, type_Log10, type_Sqrt, type_Ceil, type_Floor,
-   type_Min, type_Max, type_Vec;
+   type_Abs, type_Min, type_Max, type_Vec;
 
   TASK( DEFINE_TYPE(Sin,   TYPE_REAL) );
   TASK( DEFINE_TYPE(Cos,   TYPE_REAL) );
@@ -496,6 +497,7 @@ static Task Blt_Define_Math(void) {
   TASK( DEFINE_TYPE(Sqrt,  TYPE_REAL) );
   TASK( DEFINE_TYPE(Ceil,  TYPE_INT)  );
   TASK( DEFINE_TYPE(Floor, TYPE_INT)  );
+  TASK( DEFINE_TYPE(Abs,   TYPE_REAL) );
   TASK( DEFINE_TYPE(Min,   TYPE_REAL) );
   TASK( DEFINE_TYPE(Max,   TYPE_REAL) );
   TASK( DEFINE_TYPE(Vec,   TYPE_POINT) );
@@ -512,6 +514,7 @@ static Task Blt_Define_Math(void) {
   TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Sqrt, Sqrt_RealNum));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Ceil, Ceil_RealNum));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Floor,Floor_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Abs,  Abs_RealNum));
   TASK(Cmp_Builtin_Proc_Def(TYPE_OPEN,   BOX_CREATION,type_Min,  Min_Open));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Min,  Min_RealNum));
   TASK(Cmp_Builtin_Proc_Def(TYPE_OPEN,   BOX_CREATION,type_Max,  Max_Open));
@@ -695,6 +698,10 @@ static Task Ceil_RealNum(VMProgram *vmp) {
 }
 static Task Floor_RealNum(VMProgram *vmp) {
   BOX_VM_CURRENT(vmp, Intg) = floor(BOX_VM_ARG1(vmp, Real));
+  return Success;
+}
+static Task Abs_RealNum(VMProgram *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = fabs(BOX_VM_ARG1(vmp, Real));
   return Success;
 }
 static Task Min_Open(VMProgram *vmp) {
