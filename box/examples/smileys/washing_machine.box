@@ -1,8 +1,6 @@
 // Box source for a smiley which rotates similarly
 // to a washing machine: t is the time for the animation.
 
-t = 0.0
-
 include "g"
 
 a = 0.8
@@ -16,13 +14,14 @@ speed = 1.0/8.0 // Speed for the rotation
 // Calculate the angle of rotation
 rotation_norm = (1.0 + Atan[(t - 30)*speed]/Atan[30*speed])/2.0
 rotation_norm = Min[rotation_norm, 1.0]
-rotation = 360.0*5.0 * rotation_norm // 5 laps
+laps = 2*const.pi // Angle for a full rotation
+rotation = 5.0*laps * rotation_norm // 5 laps
 
 // This function becomes 1.0 when dizzyness appears (rotation of eyes)
-i_am_sick = (Atan[(t-50)*2]/90.0 + 1.0)/2.0
+i_am_sick = (Atan[(t-50)*2]*2/const.pi + 1.0)/2.0
 
 // Rotation of the eyes
-eye_rotation = 360.0*10.0 * (i_am_sick*t/100.0)
+eye_rotation = 2*const.pi*10.0 * (i_am_sick*t/100.0)
 
 // Deformation of the mouth
 q = Sin[eye_rotation]
@@ -30,14 +29,14 @@ q = Sin[eye_rotation]
 //-------------------------------------------------------------------------------
 // Size parameters for the smiley:
 r = 10.0    // Radius of the face
-s = 0.25	  // Line width
-ro = 2.5	  // Eye radius
+s = 0.25    // Line width
+ro = 2.5    // Eye radius
 rp = 0.4*ro // Pupil radius
 od = Point[(3.5, -2.0)] // Position of the right eye
 gd = Point[(6, 2.0)]    // Position of the right cheek
 
 //-------------------------------------------------------------------------------
-s2 = s + s
+s2 = 2.0*s
 os = (-od.x, od.y) // Position of the left eye
 
 // PD e PS sono le posizioni della pupilla destra e sinistra rispett.
@@ -48,14 +47,15 @@ ps = os + pdos
 
 smiley = Window[][
   // Draw the face
-  \ .Circle[color.yellow, (0, 0), r; color.black, r+s; r-s]
+  \ .Circle[color.black, r+s, (0, 0); color.yellow, r-s]
 
   // Mouth
   b = 4.5 // y position of the mouth
-  .Line[s2, (-5, b), (-3, b+q), (-1, b-q), (1, b+q), (3, b-q), (5, b)]
-  .Circle[color.white, ro, os; od]        // Eyes
-  .Circle[color.black, os, ro+s; ro-s; od, ro+s; ro-s]  // Eye contour
-  .Circle[color.black, rp, pd; ps]                      // Pupils
+  \ .Line[color.black, line.smooth,
+          s2, (-5, b), s2, (-3, b+q), (-1, b-q), (1, b+q), (3, b-q), (5, b)]
+  \ .Circle[color.black, os, ro+s; od, ro+s]  // Eye contour
+  \ .Circle[color.white, ro-s, os; od]        // Eyes
+  \ .Circle[color.black, rp, pd; ps]          // Pupils
 ]
 
 main = Window["bm4", (22, 22), .Res[(80, 80)]][
