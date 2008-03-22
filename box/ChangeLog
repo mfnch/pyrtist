@@ -1,0 +1,10 @@
+Change log (recent come first)
+
+22 March 2008: minor improvements, added examples.
+  * added builtin functions Max, Min, Abs, Vec.
+  * added more examples in the examples directory.
+  * Color@Window sets now the current fg color.
+
+20 March 2008: first release of the tarball. Still very unstable.
+  First tarball is released, just for letting people try the package.
+
