@@ -58,6 +58,7 @@ Task window_begin(VMProgram *vmp) {
   w->res.y = 2.0;
   w->have.size = 0;
   w->save_file_name = (char *) NULL;
+  w->window = (grp_window *) NULL;
 
   TASK( pointlist_init(& w->pointlist) );
 
@@ -74,6 +75,12 @@ Task window_color(VMProgram *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
   Window *w = (Window *) wp;
   Color *c = BOX_VM_ARGPTR1(vmp, Color);
+  if (w->window != (grp_window *) NULL) {
+    grp_window *cur_win = grp_win;
+    grp_win = w->window;
+    grp_rfgcolor(c->r, c->g, c->b);
+    grp_win = cur_win;
+  }
   return g_optcolor_set(& w->fg_color, c);
 }
 
