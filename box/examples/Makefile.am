@@ -1,3 +1,4 @@
 # Add files to the distribution generated with 'make dist'
-EXTRA_DIST = snake.box mysin.box
+EXTRA_DIST = snake.box mysin.box wheatstone.box multivibrator.box
+SUBDIRS = smileys
 

@@ -60,5 +60,7 @@ AC_CHECK_FUNCS([getenv stat])
 
 AC_SUBST([boxlibdir])
 AC_SUBST([boxincdir])
-AC_CONFIG_FILES([Makefile src/Makefile libs/Makefile libs/g/Makefile tests/Makefile examples/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile libs/Makefile libs/g/Makefile
+                 tests/Makefile examples/Makefile examples/smileys/Makefile])
 AC_OUTPUT
+
