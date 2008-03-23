@@ -10,6 +10,8 @@ y0 = 0.0, y1 = sy, y2 = 2.0*sy
 
 w = Window[][
   // Place the four resistors, the two condenser and the two NPN transistors
+  // The string "rt" means: automatically rotate and translate such that
+  // the .Near[] constraints are better satisfied.
   r1_ = .Put[resistor, "rt", .Near[1, (x1, y0)], .Near[2, (x1, y1)]]
   r2_ = .Put[resistor, "rt", .Near[1, (x2, y0)], .Near[2, (x2, y1)]]
   r3_ = .Put[resistor, "rt", .Near[1, (x3, y0)], .Near[2, (x3, y1)]]

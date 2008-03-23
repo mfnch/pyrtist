@@ -289,6 +289,9 @@ Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name) {
     return Failed;
   }
 
+  /* If s is a subtype, convert it automatically to its child. */
+  Expr_Resolve_Subtype(s);
+
   /* Determino se si tratta di un oggetto intrinseco */
   if (t < NUM_INTRINSICS)
     return Expr_Point_Member(m, s, m_name);
