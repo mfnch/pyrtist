@@ -87,5 +87,6 @@ smile = Window["fig"]
 ]
 
 main = Window["bm4", (220, 250)]
-main.Put[smile, (110, 140), .Scale[10]]
+\ main.Put[smile, (110, 140), .Scale[10]]
 main.Save["smiley.bmp"]
+
