@@ -28,7 +28,8 @@ boxincdir=@boxincdir@
 boxlib_LTLIBRARIES = libg.la
 
 dist_boxinc_DATA = g.bxh color.bxh window.bxh line.bxh circle.bxh poly.bxh \
-                   put.bxh arrows.bxh electric.bxh pointlist.bxh text.bxh
+                   put.bxh arrows.bxh electric.bxh pointlist.bxh text.bxh \
+                   bounce.bxh
 
 AM_CPPFLAGS = -I../../src
 libg_la_SOURCES = g.c g.h objlist.c objlist.h pointlist.h \
