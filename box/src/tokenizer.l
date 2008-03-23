@@ -163,7 +163,7 @@ include BEGIN(include);
  /* Altri operatori */
 "**"  { return TOK_POW; }
 
-"$$"  { return TOK_PARENT; }
+[$]+  { yylval.Int = yyleng; return TOK_NPARENT; }
 
 "@"   { yylval.kind = 1; return TOK_AT; }
 

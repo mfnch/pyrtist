@@ -88,6 +88,19 @@ Task Box_Parent_Get(Expr *e_parent, Int depth);
  */
 Task Box_Child_Get(Expr *e_child, Int depth);
 
+/** Create in '*e_parent' the expression corresponding to level-th parent
+ * of the box whose depth level is 'depth'.
+ * NOTE: the first level parent is just the child (which means that
+ *  for level=1, the function is equivalent to Box_Child_Get),
+ *  the second level parent is just the parent (for level=2 this function
+ *  becomes identical to Box_Parent_Get).
+ *  For level=3, the function returns the subtype parent of the expression
+ *  which would be returned for level=2 (and has to be a subtype).
+ *  For level=n+1, the function returns the subtype parent of the expression
+ *  which would be returned for level=n (and has to be a subtype).
+ */
+Task Box_NParent_Get(Expr *e_parent, Int level, Int depth);
+
 Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth);
 #  endif
 #endif

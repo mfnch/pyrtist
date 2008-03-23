@@ -323,6 +323,25 @@ Task Box_Child_Get(Expr *e_child, Int depth) {
   return Success;
 }
 
+Task Box_NParent_Get(Expr *parent, Int level, Int depth) {
+  switch(level) {
+  case 1:
+    return Box_Child_Get(parent, depth);
+  case 2:
+    return Box_Parent_Get(parent, depth);
+  default:
+    if (level > 2) {
+      Expr up_parent;
+      TASK( Box_NParent_Get(& up_parent, level-1, depth) );
+      return Expr_Subtype_Get_Parent(parent, & up_parent);
+
+    } else {
+      MSG_FATAL("Box_NParent_Get: level < 1");
+      return Failed;
+    }
+  }
+}
+
 /********************************[DEFINIZIONE]********************************/
 
 /*  Questa funzione definisce un nuovo simbolo di nome *nm,

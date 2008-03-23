@@ -63,7 +63,7 @@
       DEBUG_MSG("ARRAY_EXPAND: array resized!\n");       \
     }                                                    \
     if ( a->ptr == NULL ) {                              \
-      MSG_FATAL("Memoria esaurita");                     \
+      MSG_FATAL("Out of memory");                        \
       return Failed;                                     \
     }                                                    \
   }
@@ -82,7 +82,7 @@
     a->ptr = realloc( a->ptr, a->size );                 \
     DEBUG_MSG("ARRAY_SHRINK: array resized!\n");         \
     if ( a->ptr == NULL ) {                              \
-      MSG_ERROR("Problemi con realloc");                 \
+      MSG_ERROR("realloc failed!");                      \
       return Failed;                                     \
     }                                                    \
   }
@@ -102,13 +102,13 @@ Array *Array_New(UInt elsize, UInt mindim)
   Array *a;
 
   if ( elsize < 1 ) {
-    MSG_ERROR("Parametri errati");
+    MSG_ERROR("Array_New: elsize is negative!");
     return NULL;
   }
 
   a = (Array *) malloc( sizeof(Array) );
   if ( a == NULL ) {
-    MSG_ERROR("Memoria esaurita");
+    MSG_ERROR("Array_New: out of memory!");
     return NULL;
   }
 
@@ -205,12 +205,12 @@ Array *Arr_Recycle(Array *a, UInt elsize, UInt mindim) {
   MSG_LOCATION("Arr_Recycle");
 
   if ( elsize < 1 ) {
-  MSG_ERROR("Parametri errati");
+  MSG_ERROR("Arr_Recycle: elsize is negative!");
   return NULL;
   }
 
   if ( a->ID != ARR_ID ) {
-    MSG_ERROR("Array danneggiato");
+    MSG_ERROR("Arr_Recycle: array is not initialized (or damaged).");
     return NULL;
   }
 
@@ -250,7 +250,7 @@ Task Arr_Push(Array *a, const void *elem) {
     return Success;
 
   } else {
-    MSG_ERROR("Array non inizializzata");
+    MSG_ERROR("Array is not initialized (or damaged)");
     return Failed;
   }
 }
@@ -275,7 +275,7 @@ Task Arr_MPush(Array *a, const void *elem, UInt numel) {
     return Success;
 
   } else {
-    MSG_ERROR("Array non inizializzata");
+    MSG_ERROR("Array is not initialized (or damaged)");
     return Failed;
   }
 }
@@ -307,7 +307,7 @@ Task Arr_BigEnough(Array *a, UInt numel) {
     return Success;
 
   } else {
-    MSG_ERROR("Array non inizializzata");
+    MSG_ERROR("Array is not initialized (or damaged)");
     return Failed;
   }
 }
@@ -322,7 +322,7 @@ Task Arr_SmallEnough(Array *a, UInt numel) {
     return Success;
 
   } else {
-    MSG_ERROR("Array non inizializzata");
+    MSG_ERROR("Array is not initialized (or damaged)");
     return Failed;
   }
 }
@@ -337,7 +337,7 @@ Task Arr_Insert(Array *a, Intg where, Intg how_many, void *items) {
     register void *src;
 
     if (where < 1) {
-      MSG_ERROR("Punto di inserimento negativo!"); return Failed;
+      MSG_ERROR("Negative insert index!"); return Failed;
 
     } else if (where > numel) {
       new_dim = where + how_many - 1;
@@ -361,7 +361,7 @@ Task Arr_Insert(Array *a, Intg where, Intg how_many, void *items) {
     return Success;
 
   } else {
-      MSG_ERROR("Array non inizializzata");
+      MSG_ERROR("Array is not initialized (or damaged)");
       return Failed;
   }
 }
@@ -370,7 +370,6 @@ Task Arr_Insert(Array *a, Intg where, Intg how_many, void *items) {
  * 'how_many' blank elements (initialized with 0).
  */
 Task Arr_Append_Blank(Array *a, Intg how_many) {
-  MSG_LOCATION("Arr_Append_Blank");
     /* Very similar to Arr_Push */
   if (a->ID == ARR_ID) {
     UInt tpos;
@@ -381,7 +380,7 @@ Task Arr_Append_Blank(Array *a, Intg how_many) {
     return Success;
 
   } else {
-    MSG_ERROR("Array non inizializzata");
+    MSG_ERROR("Array is not initialized (or damaged)");
     return Failed;
   }
 }
@@ -429,7 +428,7 @@ Task Arr_Iter(Array *a, Task (*action)(UInt, void *, void *), void *pass_data)
     return Success;
 
   } else {
-    MSG_ERROR("Array non inizializzata");
+    MSG_ERROR("Array is not initialized (or damaged)");
     return Failed;
   }
 }
@@ -452,7 +451,7 @@ Task Arr_Overwrite(Array *a, Intg dest, void *src, UInt n) {
     return Success;
 
   } else {
-    MSG_ERROR("Array non inizializzata");
+    MSG_ERROR("Array is not initialized (or damaged)");
     return Failed;
   }
 }

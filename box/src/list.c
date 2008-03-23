@@ -70,7 +70,7 @@ void List_Remove(List *l, void *item) {
 }
 
 void List_Insert_With_Size(List *l, void *item_where,
- const void *item_what, UInt size) {
+                           const void *item_what, UInt size) {
   ListItemHead **prev_lih, **next_lih;
 
   void *new_item = Mem_Alloc(sizeof(ListItemHead) + size);
@@ -197,6 +197,8 @@ static Task Product_Iter(ListProductData *state) {
  * This function will be invoked for each tuple of the product list.
  * pass is a pointer used just to pass to the 'product' function
  * extra data. pass is passed unchanged to the 'product' function.
+ * NOTE: the function iterates over the product of an aribtrary
+ *  number of two (despite the examples, where we use only two lists).
  */
 Task List_Product_Iter(List *l, ListProduct product, void *pass) {
   UInt n = List_Length(l);

@@ -107,7 +107,8 @@ static void eps_rdraw(void) {
 static void eps_rline(Point a, Point b) {
   EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by);
 
-  if (ax == bx && ay == by) return;
+
+/*   if (ax == bx && ay == by) return; need to think better about it!!! */
 
   if ( beginning_of_line ) {
     beginning_of_line = 0;

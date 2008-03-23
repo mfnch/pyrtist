@@ -99,7 +99,7 @@ Type TS_Resolve_Named_Type(TS *ts, Type t) {
   return t;
 }
 
-Type TS_Resolve(TS *ts, Type t, int resolve_alias, int resolve_species) {
+Type TS_Resolve(TS *ts, Type t, Int select) {
   if (t == TS_TYPE_NONE)
     return TS_TYPE_NONE;
   else {
@@ -112,9 +112,17 @@ Type TS_Resolve(TS *ts, Type t, int resolve_alias, int resolve_species) {
       case TS_KIND_MEMBER:
         resolve = 1; break;
       case TS_KIND_ALIAS:
-        resolve = resolve_alias; break;
+        resolve = ((select & TS_KS_ALIAS) != 0); break;
       case TS_KIND_SPECIES:
-        rt = td->data.last; resolve = resolve_species; break;
+        rt = td->data.last;
+        resolve = ((select & TS_KS_SPECIES) != 0);
+        break;
+      case TS_KIND_SUBTYPE:
+        resolve = ((select & TS_KS_SUBTYPE) != 0);
+        /* NOTE: the child of a subtype is never a subtype itself!
+         *  Consequently the resolution will take place only once!
+         */
+        break;
       default:
         resolve = 0;
       }
@@ -204,7 +212,7 @@ char *TS_Name_Get(TS *ts, Type t) {
 }
 
 Task TS_Array_Member(TS *ts, Type *memb, Type array, Int *array_size) {
-  Type a = TS_Resolve(ts, array, 1, 1);
+  Type a = TS_Resolve(ts, array, TS_KS_ALIAS | TS_KS_SPECIES);
   TSDesc *a_td = Type_Ptr(ts, a);
   if (a_td->kind != TS_KIND_ARRAY) {
     MSG_ERROR("Cannot extract element of the non-array type '%~s'",
@@ -230,7 +238,7 @@ void TS_Member_Find(TS *ts, Type *m, Type s, const char *m_name) {
   Name n;
   HashItem *hi;
   *m = TS_TYPE_NONE;
-  s = TS_Resolve(ts, s, 1, 1);
+  s = TS_Resolve(ts, s, TS_KS_ALIAS | TS_KS_SPECIES);
   if IS_FAILED(Member_Full_Name(ts, & n, s, m_name)) return;
   if (HT_Find(ts->members, n.text, n.length, & hi))
     *m = *((Type *) hi->object);
@@ -733,7 +741,10 @@ int Tym_Compare_Types(Intg type1, Intg type2, int *need_expansion) {
 }
 
 Int Tym_Type_Resolve(Int type, int not_alias, int not_species) {
-  return TS_Resolve(last_ts, type, ! not_alias, ! not_species);
+  Int select;
+  select  = not_alias ? 0 : TS_KS_ALIAS;
+  select |= not_species ? 0 : TS_KS_SPECIES;
+  return TS_Resolve(last_ts, type, select);
 }
 
 Int Tym_Def_Procedure(Int proc, int second, Int of_type, Int sym_num) {

@@ -23,7 +23,6 @@ static Task Cmp__Structure_Foregnd(Expression *new_struct, StructItem *first,
  */
 Task Cmp_Structure_Begin(void) {
   StructItem header;
-  MSG_LOCATION("Cmp_Structure_Begin");
 
   if ( cmp_structure_exprs == NULL ) {
     cmp_structure_exprs = Array_New(sizeof(StructItem), CMP_TYPICAL_STRUC_DIM);

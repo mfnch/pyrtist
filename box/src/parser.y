@@ -284,6 +284,7 @@ Task Expr_Statement(Expr *e) {
   Struc         Sc;   /* Incomplete structure type */
   StrucMember   SM;   /* Member of structure type */
   Int           kind; /* Per TOK_AT */
+  Int           Int;
   Type          proc; /* Per TOK_PROC */
 }
 
@@ -301,7 +302,7 @@ Task Expr_Statement(Expr *e) {
 %token TMP_TOK_AGAIN
 %token TMP_TOK_EXIT
 
-%token TOK_PARENT
+%token <Int> TOK_NPARENT
 
 /* Lista dei token aventi valore semantico
  */
@@ -507,8 +508,7 @@ simple.expr:
   TOK_LNAME suffix.opt    { Prs_Name_To_Expr( & $1, & $$, $2); }
 | TOK_EXPR                { $$ = $1; }
 | string                  { if IS_FAILED( Cmp_String_New_And_Free(& $$, & $1) ) MY_ERR }
-| '$' suffix.opt          { DO( Box_Child_Get(& $$, $2) ); }
-| TOK_PARENT suffix.opt   { DO( Box_Parent_Get(& $$, $2) ); }
+| TOK_NPARENT suffix.opt  { DO( Box_NParent_Get(& $$, $1, $2) ); }
  ;
 
 array.expr:
@@ -1172,7 +1172,8 @@ Task Prs_Rule_Valued_Eq_Valued(Expression *rs,
   *rs = *valued2;
   rs->is.ignore = 1;
   if ( ! valued2->is.typed ) {
-    MSG_ERROR("L'oggetto alla destra di '=' non ha tipo definito!");
+    MSG_ERROR("The expression on the right of '=' "
+              "has not a well defined type!");
     (void) Cmp_Expr_Destroy_Tmp(valued1);
     return Failed;
   }

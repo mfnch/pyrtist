@@ -74,6 +74,22 @@ void Expr_New_Void(Expr *e);
  */
 void Expr_New_Value(Expr *e, Type t);
 
+/** See the function Expr_Attr_Set */
+typedef enum {
+  EXPR_ATTR_TARGET=1,
+  EXPR_ATTR_IGNORE=2,
+  EXPR_ATTR_RELEASE=4,
+  EXPR_ATTR_ALLOCD=8
+} ExprAttr;
+
+/** Change the attributes of an expression.
+ * mask specifies what attributes have to be changed.
+ * value specifies the values of these attributes.
+ * Both the parameters are supposed to be obtained combining one or more
+ * EXPR_ATTR_* attributes with the bitwise or operator |.
+ */
+void Expr_Attr_Set(Expr *e, Int mask, Int value);
+
 /** Print the content of the given expression */
 void Expr_Print(Expr *e, FILE *out);
 

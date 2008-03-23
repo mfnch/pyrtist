@@ -68,7 +68,7 @@ void Expr_New_Void(Expr *e) {
 void Expr_New_Value(Expr *e, Type t) {
   e->is.typed = 1;
   e->type = t;
-  e->resolved = TS_Resolve(cmp->ts, t, 1, 1);
+  e->resolved = TS_Resolve(cmp->ts, t, TS_KS_ALIAS | TS_KS_SPECIES);
   e->is.value = (TS_Size(cmp->ts, t) > 0) ? 1 : 0;
   e->categ = CAT_LREG;
   e->value.i = 0;
@@ -76,6 +76,19 @@ void Expr_New_Value(Expr *e, Type t) {
   e->is.target = e->is.gaddr = 0;
   e->is.allocd = e->is.release = 0;
   e->addr = 0;
+}
+
+/** Change the attributes of an expression
+ */
+void Expr_Attr_Set(Expr *e, Int mask, Int value) {
+  if ((mask & EXPR_ATTR_TARGET) != 0)
+    e->is.target = ((value & EXPR_ATTR_TARGET) != 0);
+  if ((mask & EXPR_ATTR_IGNORE) != 0)
+    e->is.ignore = ((value & EXPR_ATTR_IGNORE) != 0);
+  if ((mask & EXPR_ATTR_RELEASE) != 0)
+    e->is.release = ((value & EXPR_ATTR_RELEASE) != 0);
+  if ((mask & EXPR_ATTR_ALLOCD) != 0)
+    e->is.allocd = ((value & EXPR_ATTR_ALLOCD) != 0);
 }
 
 /* Prints the details about the specified expression *e.
@@ -173,7 +186,7 @@ void Expr_Cont_Set(Expr *e, Cont *c) {
 
 void Expr_Cast(Expr *e, Type t) {
   Cont c;
-  Type r = TS_Resolve(cmp->ts, t, 1, 1);
+  Type r = TS_Resolve(cmp->ts, t, TS_KS_ALIAS | TS_KS_SPECIES);
   ContType ct = (r > TYPE_OBJ) ? TYPE_OBJ : r;
   Expr_Cont_Get(& c, e);
   Cont_Ptr_Cast(& c, ct);
@@ -480,6 +493,11 @@ Task Expr_Subtype_Get_Child(Expr *child, Expr *subtype) {
     Cont_Ptr_Inc(& subtype_cont, & CONT_NEW_INT(sizeof(Ptr)));
     Cont_Move(& child_cont, & subtype_cont);
     Expr_Cast(child, child_type);
+    /* Need to make this a target, since child was obtained originally
+     * by invoking Expr_Container_New with CONTAINER_LREG_AUTO and hence
+     * is not considered a target, yet.
+     */
+    Expr_Attr_Set(child, EXPR_ATTR_TARGET, EXPR_ATTR_TARGET);
     return Success;
 
   } else {

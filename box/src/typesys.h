@@ -54,6 +54,12 @@ enum {
   TS_SIZE_UNKNOWN = -1
 };
 
+typedef enum {
+  TS_KS_ALIAS=1,
+  TS_KS_SPECIES=2,
+  TS_KS_SUBTYPE=4
+} TSKindSelect;
+
 typedef struct {
   TSKind kind;
   Int size;
@@ -116,8 +122,11 @@ Int TS_Size(TS *ts, Type t);
  */
 Type TS_Resolve_Named_Type(TS *ts, Type t);
 
-/** Resolve types (useful for comparisons) */
-Type TS_Resolve(TS *ts, Type t, int resolve_alias, int resolve_species);
+/** Resolve types (useful for comparisons).
+ * select is a combination (with operator |) of TSKindSelect
+ * values which specify what exactly has to be resolved.
+ */
+Type TS_Resolve(TS *ts, Type t, Int select);
 
 TSKind TS_Kind(TS *ts, Type t);
 
