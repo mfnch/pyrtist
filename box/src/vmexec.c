@@ -481,8 +481,8 @@ VMInstrDesc vm_instr_desc_table[] = {
   {  "lea", 1, TYPE_REAL, VM__GLPI,        VM__Exec_Lea, VM__D_GLPI_GLPI }, /* lea r[ro0+...]     */
   {  "lea", 1, TYPE_POINT,VM__GLPI,        VM__Exec_Lea, VM__D_GLPI_GLPI }, /* lea p[ro0+...]     */
   {  "lea", 2, TYPE_OBJ,  VM__GLP_GLPI, VM__Exec_Lea_OO, VM__D_GLPI_GLPI }, /* lea reg_o, o[ro0+...] */
-  { "push", 1, TYPE_OBJ,  VM__GLPI,     VM__Exec_Push_O, VM__D_GLPI_GLPI }, /* push reg_o         */
-  {  "pop", 1, TYPE_OBJ,  VM__GLPI,      VM__Exec_Pop_O, VM__D_GLPI_GLPI }, /* pop reg_o          */
+  { "push", 1, TYPE_OBJ, VM__GLPI,     VM__Exec_Push_O, VM__D_GLPI_GLPI }, /* push reg_o         */
+  {  "pop", 1, TYPE_OBJ, VM__GLPI,      VM__Exec_Pop_O, VM__D_GLPI_GLPI }, /* pop reg_o          */
   {  "jmp", 1, TYPE_INT, VM__GLPI,      VM__Exec_Jmp_I,       VM__D_JMP  }, /* jmp reg_i          */
   {   "jc", 1, TYPE_INT, VM__GLPI,       VM__Exec_Jc_I,       VM__D_JMP  }, /* jc  reg_i          */
   {  "add", 1, TYPE_OBJ, VM__GLPI,      VM__Exec_Add_O,  VM__D_GLPI_GLPI }  /* add reg_o          */

@@ -215,8 +215,8 @@ typedef struct {
 
 /* Used by the functions VM_Sheet_* */
 typedef struct {
-  int sheet_id, position;
-  int chain_unresolved;
+  Int sheet_id, position;
+  Int chain_unresolved;
 } VMLabel;
 
 /* A reference to a label */

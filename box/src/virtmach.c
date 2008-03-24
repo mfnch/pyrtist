@@ -172,23 +172,23 @@ static void *VM__Get_P(VMStatus *vmcur, Intg n) {
 }
 
 /* Restituisce il puntatore ad un intero/reale di valore n. */
-static void *VM__Get_I(VMStatus *vmcur, Intg n) {
+static void *VM__Get_I(VMStatus *vmcur, Int n) {
   register TypeID t = vmcur->idesc->t_id;
-  static Intg i = 0;
-  static union { Char c; Intg i; Real r; } v[2], *value;
+  static Int i = 0;
+  static union { Char c; Int i; Real r; } v[2], *value;
 
   assert( (t >= TYPE_CHAR) && (t <= TYPE_REAL) );
 
   value = & v[i]; i ^= 1;
   switch (t) {
-    case TYPE_CHAR:
-      value->c = (Char) n; return (void *) (& value->c);
-    case TYPE_INTG:
-      value->i = (Intg) n; return (void *) (& value->i);
-    case TYPE_REAL:
-      value->r = (Real) n; return (void *) (& value->r);
-      default: /* This shouldn't happen! */
-        return (void *) (& value->i); break;
+  case TYPE_CHAR:
+    value->c = (Char) n; return (void *) (& value->c);
+  case TYPE_INT:
+    value->i =  (Int) n; return (void *) (& value->i);
+  case TYPE_REAL:
+    value->r = (Real) n; return (void *) (& value->r);
+  default: /* This shouldn't happen! */
+    return (void *) (& value->i); break;
   }
 }
 
@@ -1047,8 +1047,8 @@ Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
   VMLabel *l = NULL;
   int not_defined;
   AsmCode asm_of_jmp = is_conditional ? ASM_JC_I : ASM_JMP_I;
-  int target_proc_num = pt->target_proc_num;
-  int current_position = Arr_NumItem(pt->target_proc->code);
+  Int target_proc_num = pt->target_proc_num;
+  Int current_position = Arr_NumItem(pt->target_proc->code);
 
   TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
   not_defined = (l->position == -1);
@@ -1063,7 +1063,8 @@ Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
       MSG_ERROR("Found label referring to invalid position.");
       return Failed;
     }
-    VM_Assemble(vmp, asm_of_jmp, CAT_IMM, l->position - current_position);
+    VM_Assemble(vmp, asm_of_jmp,
+                CAT_IMM, (Int) (l->position - current_position));
     return Success;
 
   } else {
@@ -1071,7 +1072,7 @@ Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
      * the label is. So we store this reference in the list of references.
      */
     VMReference r;
-    int ref_index;
+    Int ref_index;
 
     if ( vmp->references == (Collection *) NULL ) {
       TASK( Clc_New(& vmp->references, sizeof(VMReference),
@@ -1186,7 +1187,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
     TypeID t;  /* Tipi degli argomenti */
     AsmArg c;  /* Categorie degli argomenti */
     void *ptr; /* Puntatori ai valori degli argomenti */
-    Intg  vi;   /* Destinazione dei valori...   */
+    Int   vi;   /* Destinazione dei valori...   */
     Real  vr;   /* ...immediati degli argomenti */
     Point vp;
   } arg[VM_MAX_NUMARGS];
@@ -1232,9 +1233,9 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
             arg[t].vi = va_arg(ap, Intg); vi = 0;
             arg[t].ptr = (void *) (& arg[t].vi);
             break;
-          case TYPE_INTG:
-            arg[t].t = TYPE_INTG;
-            arg[t].vi = vi = va_arg(ap, Intg);
+          case TYPE_INT:
+            arg[t].t = TYPE_INT;
+            arg[t].vi = vi = va_arg(ap, Int);
             arg[t].ptr = (void *) (& arg[t].vi);
             break;
           case TYPE_REAL:
