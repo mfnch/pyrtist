@@ -1,0 +1,47 @@
+NOTE
+====
+
+This is not the original work. It was modified by Matteo Franchin,
+to highlight Box sources and make automatic webpages containing correctly
+highlighted Box example programs. See the note at the end for more info
+about the copyright and about the original author.
+
+Syntax-Highlight-Engine-Kate version 0.01
+=========================================
+
+
+INSTALLATION
+
+To install this module type the following:
+
+   perl Makefile.PL
+   make
+   make test
+   make install
+   
+DEMOS
+
+Following demos have been provided. hlhtml.pl and hlansi.pl. After
+the make command you may want to try something like:
+
+   cat bin/hlhtml.pl | perl -Mblib bin/hlansi.pl Perl
+
+or
+
+   cat bin/hlhtml.pl | perl -Mblib bin/hlhtml.pl Perl > tst.html
+   
+just to get an overview of what this module actually does.
+
+COPYRIGHT AND LICENCE
+
+Put the correct copyright and licence information here.
+
+Copyright (C) 2006 by Hans Jeuken
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself, either Perl version 5.8.3 or,
+at your option, any later version of Perl 5 you may have available.
+
+Modified by Matteo Franchin to highlight box sources and create automatically
+the webpage of examples (March 2008)
+

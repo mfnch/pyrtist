@@ -1,0 +1,10 @@
+#!/bin/sh
+if [ $# -ne 3 ]; then
+  echo "Error: you should provide three arguments!"
+  echo "USAGE: highlight language source.ext out.html"
+  exit 1
+fi
+
+d=`dirname $2`; b=`basename $2`; src=`(cd $d && pwd)`/$b
+d=`dirname $3`; b=`basename $3`; dst=`(cd $d && pwd)`/$b
+cd `dirname $0` && perl -Mblib `basename $0`.pl $1 <$src >$dst
