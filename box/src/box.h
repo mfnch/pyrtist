@@ -59,6 +59,16 @@ typedef struct {
 Task Box_Init(void);
 void Box_Destroy(void);
 Int Box_Depth(void);
+
+/** This function calls a procedure without value, such as (;), ([) or (]).
+ * It does not complain if such a procedure is not defined for 'type'.
+ * In such cases the behaviour is the following: if 'auto_define' is 1,
+ * then a procedure is automatically declared (the user then has to define
+ * it later), otherwise the procedure call is ignored.
+ * In any case '*found' is set to 1 if the procedure has been somehow called.
+ */
+Task Box_Call_Void_Proc(int *found, Type type, int auto_define);
+
 Task Box_Def_Begin(Int proc_type);
 Task Box_Def_End(void);
 Task Box_Main_Begin(void);

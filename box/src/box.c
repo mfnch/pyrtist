@@ -91,6 +91,18 @@ void Box_Main_End(void) {
   (void) Box_Def_Prepare(head_sym_num);
 }
 
+/* This function calls a procedure without value, as (;), ([) or (]).
+ */
+Task Box_Call_Void_Proc(int *found, Type type, int auto_define) {
+  Expr e;
+  int dummy = 0;
+  if (found == NULL) found = & dummy;
+  Expr_New_Type(& e, type);
+  TASK( Cmp_Procedure(found, & e, 0, auto_define) );
+  (void) Cmp_Expr_Destroy_Tmp(& e);
+  return Success;
+}
+
 Task Box_Def_Begin(Int proc_type) {
   UInt new_sheet;
   Box b;
@@ -179,7 +191,7 @@ Task Box_Def_End(void) {
  * If *e has value, a modification-box for that expression is started.
  */
 Task Box_Instance_Begin(Expr *e, int kind) {
-  Box b;
+  Box b, *b_ptr;
 
   Expr_New_Void(& b.child);
   if ( e == NULL ) {
@@ -210,14 +222,18 @@ Task Box_Instance_Begin(Expr *e, int kind) {
     b.parent = *e;         /* Valore della sessione */
   }
 
-  /* Creo le labels che puntano all'inizio ed alla fine della box */
-  TASK( VM_Label_New_Here(cmp_vm, & b.label_begin) );
-  TASK( VM_Label_New_Undef(cmp_vm, & b.label_end) );
-
   /* Inserisce la nuova sessione */
   b.is.definition = 0; /* This is just an instance, not a definition */
   b.proc_num = bs->cur_proc_num; /* The procedure number where we are now */
   TASK(Arr_Push(bs->box, & b));
+
+  if (e != (Expr *) NULL)
+    TASK( Box_Call_Void_Proc((int *) NULL, TYPE_OPEN, 0) );
+
+  /* Creo le labels che puntano all'inizio ed alla fine della box */
+  b_ptr = Arr_LastItemPtr(bs->box, Box);
+  TASK( VM_Label_New_Here(cmp_vm, & b_ptr->label_begin) );
+  TASK( VM_Label_New_Undef(cmp_vm, & b_ptr->label_end) );
   return Success;
 }
 
@@ -229,7 +245,10 @@ Task Box_Instance_End(Expr *e) {
   /* Il registro occupato per la sessione ora diventa un registro normale
    * e puo' essere liberato!
    */
-  if ( e != NULL ) e->is.release = 1;
+  if ( e != NULL ) {
+    TASK( Box_Call_Void_Proc((int *) NULL, TYPE_CLOSE, 0) );
+    e->is.release = 1;
+  }
 
   /* Eseguo dei controlli di sicurezza */
   if ( bs->box == NULL ) {

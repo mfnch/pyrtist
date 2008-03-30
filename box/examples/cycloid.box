@@ -1,0 +1,20 @@
+include "g"
+
+Cycloid = Point
+Real@Cycloid[
+  t = $
+  pi = Atan[1]*4
+  center = Point[(0, 0)]
+  big_r = 10.0
+  big_v = 2.0*pi
+  small_r = 4.0
+  small_v = 2.0*pi*5
+  $$ = big_r*Vec[big_v*t] + small_r*Vec[small_v*t]
+]
+
+w = Window[]
+t = 0.0, w.Poly[color.yellow,   Cycloid[t], For[(t += 0.01) <= 1.0]]
+t = 0.0, w.Line[color.red, 0.2, Cycloid[t], For[(t += 0.01) <= 1.01]]
+w.Save["cycloid.eps"]
+
+

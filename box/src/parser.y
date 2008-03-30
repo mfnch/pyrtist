@@ -211,33 +211,6 @@ Task Subtype_Create(Expr *result, Expr *parent, Name *child) {
   return Success;
 }
 
-Task Box_Open(Expr *proc, int kind) {
-  TASK( Box_Instance_Begin(proc, kind) );
-  if (proc != NULL)
-    return Prs_Procedure_Special(NULL, TYPE_OPEN, 0);
-  return Success;
-}
-
-Task Box_Close(Expr *proc) {
-  if (proc != NULL) {
-    TASK( Prs_Procedure_Special(NULL, TYPE_CLOSE, 0) );
-  }
-  return Box_Instance_End(proc);
-}
-
-Task Subtype_Box_Open(Expr *subtype, int kind) {
-  /*MSG_ADVICE("Subtype_Box_Open: parent is '%s'", Tym_Type_Name(subtype->type));*/
-  TASK( Box_Instance_Begin(subtype, kind) );
-  TASK( Prs_Procedure_Special(NULL, TYPE_OPEN, 0) );
-  return Success;
-}
-
-Task Subtype_Box_Close(Expr *subtype) {
-  TASK( Prs_Procedure_Special(NULL, TYPE_CLOSE, 0) );
-  TASK( Box_Instance_End(subtype) );
-  return Success;
-}
-
 Task Expr_Statement(Expr *e) {
   TASK( Expr_Resolve_Subtype(e) );
   TASK( Cmp_Procedure(NULL, e, -1, /* auto_define */ 1) );
@@ -529,19 +502,19 @@ prim.expr:
  | expr.struc           { $$ = $1; }
 
  | prim.expr
-   '['                  { Box_Open(& $1, 2); }
+   '['                  { DO( Box_Instance_Begin(& $1, 2) ); }
    statement.list
-   ']'                  { Box_Close(& $1); }
+   ']'                  { DO( Box_Instance_End(& $1) ); }
 
  | name.type
-   '['                  { Box_Open(& $1, 1); }
+   '['                  { DO( Box_Instance_Begin(& $1, 1) ); }
    statement.list
-   ']'                  { Box_Close(& $1); }
+   ']'                  { DO( Box_Instance_End(& $1) ); }
 
 | subtype.expr
-   '['                  { DO(Subtype_Box_Open(& $1, 1)); }
+   '['                  { DO( Box_Instance_Begin(& $1, 1) ); }
    statement.list
-   ']'                  { DO(Subtype_Box_Close(& $1)); }
+   ']'                  { DO( Box_Instance_End(& $1)); }
  ;
 
 /* Espressioni secondarie */
@@ -710,9 +683,9 @@ statement.list:
  ;
 
 compound.statement:
- '['               {Box_Open(NULL, 1);}
+ '['               { DO( Box_Instance_Begin(NULL, 1) ); }
  statement.list
- ']'               {Box_Close(NULL);}
+ ']'               { DO( Box_Instance_End(NULL) ); }
  ;
 
 program:

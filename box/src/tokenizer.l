@@ -177,19 +177,21 @@ include BEGIN(include);
 
 "(;)" { yylval.proc = TYPE_PAUSE; return TOK_PROC; }
 
+"(\\)" { yylval.proc = TYPE_DESTROY; return TOK_PROC; }
+
  /* Numero intero di tipo carattere */
 [']([^'\n]|\\')*['] {
   Char c;
 
   if IS_FAILED( Str_ToChar(yytext+1, yyleng-2, & c) )
     { parser_attr.no_syntax_err = 1; return TOK_ERR;}
-  Cmp_Expr_New_Imm_Char( & yylval.Ex, (Intg) c );
+  Cmp_Expr_New_Imm_Char( & yylval.Ex, (Int) c );
   return TOK_EXPR;
  }
 
  /* Numero di tipo intero */
 {DIGIT}+ {
-  Intg i;
+  Int i;
 
   if IS_FAILED( Str_ToIntg(yytext, yyleng, & i) )
     { parser_attr.no_syntax_err = 1; return TOK_ERR;}
@@ -198,7 +200,7 @@ include BEGIN(include);
  }
 
  /* Numero di tipo float */
-{DIGIT}+("."{DIGIT}+)?([e][+-]?{DIGIT}+)? {
+{DIGIT}+("."{DIGIT}+)?([eE][+-]?{DIGIT}+)? {
   Real r;
 
   if IS_FAILED( Str_ToReal(yytext, yyleng, & r) )
@@ -212,7 +214,7 @@ include BEGIN(include);
   */
 ["]([^"\n]|\\\")*["] {
   char *s;
-  Intg nl;
+  Int nl;
 
   s = Str_ToString(yytext+1, yyleng-2, & nl);
   if ( s == NULL ) return TOK_ERR;

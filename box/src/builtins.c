@@ -453,7 +453,7 @@ static Task Blt_Define_Basics(void) {
 
     TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
     TASK( VM_Proc_Install_CCode(cmp_vm, & call_num, Conv_2RealNum_to_Point,
-     "(noname)", "conv_2Real_to_Point") );
+                                "(noname)", "conv_2Real_to_Point") );
     TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
 
     opn = Cmp_Operation_Add(cmp_opr.converter, type_2RealNum, TYPE_NONE, TYPE_POINT);

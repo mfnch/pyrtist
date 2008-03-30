@@ -1,5 +1,9 @@
 Change log (recent come first)
 
+30 March 2008: bugfixes and improvements.
+  * fixed the VM bug for jump instruction on 64 bit machines.
+  * improved the handling of open procedures
+
 22 March 2008: minor improvements, added examples.
   * added builtin functions Max, Min, Abs, Vec.
   * added more examples in the examples directory.
