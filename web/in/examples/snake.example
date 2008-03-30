@@ -1,0 +1,8 @@
+rst_out = "snake.txt"
+rst_skeleton = "skeleton"
+crumb = "snake.box"
+description = "An example showing how to use the Line command."
+figure_caption = "the output produced by Box"
+box_source = "../../../box/examples/snake.box"
+out_eps = "snake.eps"
+convert_opts = "-scale 300"

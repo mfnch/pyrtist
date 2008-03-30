@@ -12,6 +12,7 @@ print "Working on '%s'..." % example_file
 in_directory = ".."
 box = "box -l g"
 convert = "convert"
+convert_opts = ""
 highlight = "%s/../katehighlight/bin/highlight" % in_directory
 rst_skeleton = "skeleton"
 rst_out = None
@@ -43,7 +44,8 @@ have_figure = False
 if out_eps and os.access(out_eps, os.R_OK):
   print "Adjusting eps figure..."
   out_png = os.path.splitext(out_eps)[0] + ".png"
-  print commands.getoutput("%s %s %s" % (convert, out_eps, out_png))
+  print commands.getoutput("%s %s %s %s" %
+                           (convert, convert_opts, out_eps, out_png))
   have_figure = os.access(out_png, os.R_OK)
 
 if not have_figure:
