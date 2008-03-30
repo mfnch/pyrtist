@@ -1,0 +1,7 @@
+rst_out = "mv.txt"
+rst_skeleton = "skeleton"
+crumb = "multivibrator.box"
+description = "A simple electric circuit"
+figure_caption = "the output produced by Box"
+box_source = "../../../box/examples/multivibrator.box"
+out_eps = "multivibrator.eps"
