@@ -4,7 +4,7 @@ restindex
     page-title: Box
     include: Yes
     page-description:
-       Box language home page 
+       Box language home page
     /description
 #    section-pages: , aboutme, projects, other, thoughts, links
 #    sectionlist: aboutme, projects, other, links
@@ -14,5 +14,5 @@ restindex
 Box is a language thought to draw graphic figures.
 
 Box is still under intensive developement.
-This website will host some examples and the documentation.
+This website hosts some examples and the documentation.
 

@@ -9,3 +9,6 @@ restindex
 /restindex
 
 Here we collect some figures together with their Box source files.
+
+Take a look at the examples by clicking on the menu on the left
+of the page.
