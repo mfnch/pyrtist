@@ -1,0 +1,49 @@
+include "g"
+
+c1 = Color[.r=.g=.b=0.5]
+c2 = Color[.r=.g=.b=0.7]
+c3 = Color[.r=.g=.b=0.8]
+c4 = Color[.r=.g=0.0, .b=0.8]
+c5 = Color[.r=.g=0.6, .b=1.0]
+
+// Wheel Radius, Angle of rotation, Hinge radius and Position
+wr = 8.0, wa = Real, wh = 6.0, whp = wh*Vec[wa]
+rl = 25.0 // Length of the piston Rod
+// Piston Position, Radius and Width
+pp = whp.x + Sqrt[rl**2 - whp.y**2], pr = 3.0, pw = 5.0
+// Cylinder X position 1 and 2
+cx1 = rl - wh - 1.5*pw, cx2 = rl+wh
+cw = 15.0, ch = 30.0, cw2 = 2.0*cw // conteiner width and height
+cpx = cx1, cpy = pr+0.5, cp = Point[.x=cpx, .y=cpy] // Container position
+cll = 25.0, crl = 10.0 // Container left and right level for the water
+
+vt = ((Acos[Cos[wa]] + wa)/(2*const.pi)) * 4*pr*wh
+cll -= vt/cw
+vt = ((Acos[Cos[wa+const.pi]] + wa)/(2*const.pi)) * 4*pr*wh
+crl += vt/cw
+
+// WindoW
+ww = Window[][
+  php = (pp-0.5*pw, 0)
+  r = wr - wh
+  rs = wr*0.3
+  \ .Circle[(0, 0), wr, c3; rs, c1; rs-0.2, c3]
+  \ .Line[v = rs*Vec[wa], c1, 0.2, -v, 0.2, v; (v = (-v.y, v.x)), -v]
+  \ .Circle[(0, 0), c2, 0.5*r]
+  \ .Poly[c5, (pp, pr), (cx2, pr), (cx2, -pr), (pp, -pr)]
+  \ .Poly[(pp-pw, pr), (pp, pr), (pp, -pr), (pp-pw, -pr), c2]
+  \ .Line[line.sharp, 0.5, (pp-pw, pr), (pp, pr), (pp, -pr), (pp-pw, -pr), c1]
+  \ .Line[whp, php, c1]
+  \ .Circle[whp, 0.8*r, c1; php; c2, 0.3*r; whp]
+  \ .Poly[c5, (cpx, cpy+cll), cp, (cpx+cw, cpy), (cpx+cw, cpy+cll)]
+  \ .Poly[(cpx+cw, cpy+crl), (cpx+cw, cpy), (cpx+cw2, cpy), (cpx+cw2, cpy+crl)]
+  \ .Line[c4, (cx1, pr+0.5), (cx2, pr+0.5), (cx2, -pr-0.5), (cx1, -pr-0.5);
+          (cpx, cpy+ch), cp, (cpx+cw2, cpy), (cpx+cw2, cpy+ch);
+          (cpx+cw, cpy), (cpx+cw, cpy+ch)]
+  .Save["machine.eps"]
+]
+
+\ Window["bm8", (55, 45), .Res[(5, 5)]][
+  \ .Put[ww, (10, 35), .Scale[(-1, 1)]],
+  .Save["machine.bmp"]
+]
