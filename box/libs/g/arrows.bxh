@@ -13,3 +13,10 @@ arrow_line = Window[][
   \ .Line[line.sharp, 0.06, (0, -1), 0.06, (2, 0), (0, 1)]
   \ .Hot["head", (2, 0), "tail", (1.8, 0), "join", (1.8, 0)]
 ]
+
+arrow_ruler = Window[][
+  \ .Poly[(0, -1), (0, 1), (2, 0)]
+  \ .Line[0.1, (2, -1), 0.1, (2, 1)]
+  \ .Hot["head", (2, 0), "tail", (1.8, 0), "join", (0, 0)]
+]
+
