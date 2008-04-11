@@ -67,8 +67,7 @@ static double cutting = 8.0;
  *  di 4 numeri di tipo float, che descrivono il tipo di giunzione da usare
  *  per collegare le linee fra loro.
  */
-void grp_join_style(Real *userjs)
-{
+void grp_join_style(Real *userjs) {
   curjs = (join_style *) userjs;
   return;
 }
@@ -81,12 +80,9 @@ void grp_join_style(Real *userjs)
  *  piu' grande di 1.
  * NOTA: Se non c'e' una sporgenza rilevante il taglio non sara' praticato.
  */
-void grp_cutting(Real c)
-{
+void grp_cutting(Real c) {
   if (c > 0.0)
     cutting = c;
-
-  return;
 }
 
 /* DESCRIZIONE: Specifica gli estremi della prima linea da tracciare.
@@ -99,8 +95,8 @@ void grp_cutting(Real c)
  *  (x1, y1) e (x2, y2).
  */
 void grp_first_line(Real x1, Real y1, Real sp1,
- Real x2, Real y2, Real sp2, Real startlenght, int is_closed)
-{
+                    Real x2, Real y2, Real sp2,
+                    Real startlenght, int is_closed) {
   Real sl;
 
   /* Setto i puntatori alle strutture che contengono i dati sulle linee */
@@ -143,8 +139,6 @@ void grp_first_line(Real x1, Real y1, Real sp1,
   thsl->sp2 = sp2;
   line_is_closed = is_closed;
   line_segment = 0;
-
-  return;
 }
 
 /* DESCRIZIONE: Conclude la tracciatura della spezzata disegnando
@@ -154,8 +148,7 @@ void grp_first_line(Real x1, Real y1, Real sp1,
  *  che si vuole sia "tagliata". Specificando lastlenght = 0
  *  l'ultima linea verra' tracciata nella sua intera lunghezza.
  */
-void grp_last_line(double lastlenght, int is_closed)
-{
+void grp_last_line(double lastlenght, int is_closed) {
   if ( is_closed ) {
     /* La linea e' chiusa */
     thsl->vertex[2] = firstline.vertex[2];
@@ -182,19 +175,15 @@ void grp_last_line(double lastlenght, int is_closed)
     grp_rline( thsl->vertex[2], thsl->vertex[3] );
     grp_rline( thsl->vertex[3], thsl->vertex[0] );
   }
-
-  return;
 }
 
-/*
- * DESCRIZIONE: Continua la tracciatura della spezzata, specificando un altro
+/* DESCRIZIONE: Continua la tracciatura della spezzata, specificando un altro
  *  suo vertice. sp1 e sp2 sono gli spessori della linea in corrispondenza
  *  ai due punti (xl, yl) e (x, y), dove (xl, yl) e' l'ultimo punto immesso.
  *  style specifica il modo in cui le linee della spezzata devono essere
  *  congiunte.............
  */
-void grp_next_line(double x, double y, double sp1, double sp2, int style)
-{
+void grp_next_line(double x, double y, double sp1, double sp2, int style) {
   double thscongpos[2], nxtcongpos[2];
 
   /* Calcolo il vettore relativo alla seconda linea */
@@ -225,20 +214,22 @@ void grp_next_line(double x, double y, double sp1, double sp2, int style)
 
   /* Calcolo i punti di giunzione */
   /* Primo punto di giunzione */
-  if ( ! grp_intersection2(
-   & thsl->p[0], & thsl->vb[0],  /* Prima retta */
-   & nxtl->p[0], & nxtl->vb[0],  /* Seconda retta */
-   & thscongpos[0], & nxtcongpos[0]) ) {printf("1 C'e' qualche problema!!!\n");}
+  if ( ! grp_intersection2(& thsl->p[0], & thsl->vb[0],  /* Prima retta */
+                           & nxtl->p[0], & nxtl->vb[0],  /* Seconda retta */
+                           & thscongpos[0], & nxtcongpos[0]) ) {
+    printf("1 C'e' qualche problema!!!\n");
+  }
 
   /* Secondo punto di giunzione */
-  if ( ! grp_intersection2(
-   & thsl->p[1], & thsl->vb[1],  /* Prima retta */
-   & nxtl->p[1], & nxtl->vb[1],  /* Seconda retta */
-   & thscongpos[1], & nxtcongpos[1]) ) {printf("2 C'e' qualche problema!!!\n");}
+  if ( ! grp_intersection2(& thsl->p[1], & thsl->vb[1],  /* Prima retta */
+                           & nxtl->p[1], & nxtl->vb[1],  /* Seconda retta */
+                           & thscongpos[1], & nxtcongpos[1]) ) {
+    printf("2 C'e' qualche problema!!!\n");
+  }
 
   /* Devo controllare che thscongpos>0 e nxtcongpos<1*/
-  if ((thscongpos[0] <= 0) || (nxtcongpos[0] >= 1)) printf("3 C'e' qualche problema!!!\n");
-  if ((thscongpos[1] <= 0) || (nxtcongpos[1] >= 1)) printf("4 C'e' qualche problema!!!\n");
+  if (thscongpos[0] <= 0 || nxtcongpos[0] >= 1) printf("3 C'e' qualche problema!!!\n");
+  if (thscongpos[1] <= 0 || nxtcongpos[1] >= 1) printf("4 C'e' qualche problema!!!\n");
 
   /* Completo il calcolo dei punti di giunzione */
   nxtl->cong[0].x = nxtl->p[0].x + nxtcongpos[0] * nxtl->vb[0].x;
@@ -255,14 +246,14 @@ void grp_next_line(double x, double y, double sp1, double sp2, int style)
     thsl->vertex[3].y = nxtl->vertex[0].y = nxtl->cong[0].y;
 
     /* Ora non resta che tracciare la linea */
-  if ( (++line_segment != 1) || (! line_is_closed)  ) {
-    grp_rline( thsl->vertex[0], thsl->vertex[1] );
-    grp_rline( thsl->vertex[1], thsl->vertex[2] );
-    grp_rline( thsl->vertex[2], thsl->vertex[3] );
-    grp_rline( thsl->vertex[3], thsl->vertex[0] );
-  } else {
-    firstline = *thsl;
-  }
+    if ( (++line_segment != 1) || (! line_is_closed)  ) {
+      grp_rline( thsl->vertex[0], thsl->vertex[1] );
+      grp_rline( thsl->vertex[1], thsl->vertex[2] );
+      grp_rline( thsl->vertex[2], thsl->vertex[3] );
+      grp_rline( thsl->vertex[3], thsl->vertex[0] );
+    } else {
+      firstline = *thsl;
+    }
 
   } else {
     /* In questo caso le linee vengono collegate smussando gli spigoli */
@@ -572,8 +563,7 @@ int grp_intersection(Point *p1, Point *d1, Point *p2, Point *d2,
  *  intersez = p2 + alpha2 * d2
  */
 int grp_intersection2(Point *p1, Point *d1, Point *p2, Point *d2,
- double *alpha1, double *alpha2)
-{
+                      double *alpha1, double *alpha2) {
   Point p2mp1;
   double d1vectd2;
 
