@@ -61,11 +61,8 @@ static UInt Imp_Check_Name_Conflicts(Symbol *s);
  *  accedendo alla tavola hashtable, invece di scorrere tutta la lista
  *  delle variabili definite.
  */
-UInt Sym__Hash(char *name, UInt leng)
-{
+UInt Sym__Hash(char *name, UInt leng) {
   register UInt i, hashval;
-
-  MSG_LOCATION("Sym__Hash");
 
   hashval = 0;
   for(i = 0; i<leng; i++)
@@ -83,18 +80,11 @@ UInt Sym__Hash(char *name, UInt leng)
  *   2 o altro affinche' la ricerca finisca e Sym_Symbol_Find termini
  *     restituendo NULL (in caso di errore).
  */
-Symbol *Sym_Symbol_Find(Name *nm, SymbolAction action)
-{
+Symbol *Sym_Symbol_Find(Name *nm, SymbolAction action) {
   Symbol *s;
-
-  MSG_LOCATION("Sym_Symbol_Find");
-
-/*
-  MSG_ADVICE("Searching for '%N'", nm);*/
 
   for (s = hashtable[Sym__Hash(nm->text, nm->length)];
        s != (Symbol *) NULL; s = s->next) {
-    /*printf("Comparing with '%s' with '%s'\n", nm->text, s->name);*/
     if IS_SUCCESSFUL( Str_Eq2(nm->text, nm->length, s->name, s->leng) ) {
       switch ( action(s) ) {
       case 0:
@@ -113,8 +103,7 @@ Symbol *Sym_Symbol_Find(Name *nm, SymbolAction action)
  * NOTA: Serve per il debug.
  */
 #ifdef DEBUG
-void Sym_Symbol_Diagnostic(FILE *stream)
-{
+void Sym_Symbol_Diagnostic(FILE *stream) {
   UInt i;
   Symbol *s;
 
@@ -141,8 +130,6 @@ Symbol *Sym_Symbol_New(Name *nm)
 {
   register Symbol *s, *t;
   UInt hashval;
-
-  MSG_LOCATION("Sym_Symbol_New");
 
   s = (Symbol *) malloc(sizeof(Symbol));
   if ( s == NULL ) {
@@ -174,10 +161,7 @@ Symbol *Sym_Symbol_New(Name *nm)
 /* DESCRIZIONE: Elimina il simbolo s dalla lista dei simboli correnti.
  * NOTA: Se s = NULL, esce senza far niente.
  */
-void Sym_Symbol_Delete(Symbol *s)
-{
-  MSG_LOCATION("Sym_Symbol_Delete");
-
+void Sym_Symbol_Delete(Symbol *s) {
   if ( s == NULL ) return;
 
   if ( s->previous == NULL ) {
@@ -211,8 +195,6 @@ static Intg sym_cur_parent = TYPE_NONE;
  *  conflitti fra i nomi.
  */
 static UInt Imp_Check_Name_Conflicts(Symbol *s) {
-  MSG_LOCATION("Imp_Check_Name_Conflicts");
-
   if ( ! s->symattr.is_explicit ) {
     /* Il simbolo e' implicito */
     if ( s->parent.imp == sym_cur_parent ) return 1;
@@ -287,13 +269,11 @@ static Symbol *sym_found;
 
 /* FUNZIONE INTERNA USATA DA Sym_Explicit_Find */
 static UInt Sym__Explicit_Find(Symbol *s) {
-  MSG_LOCATION("Sym__Explicit_Find");
   return (s->symattr.is_explicit) && (s->parent.exp == sym_find_box);
 }
 
 /* FUNZIONE INTERNA USATA DA Sym_Explicit_Find */
 static UInt Sym__Explicit_Find_All(Symbol *s) {
-  MSG_LOCATION("Sym__Explicit_Find");
   if ( s->symattr.is_explicit ) {
     if ( sym_found == NULL ) {
       if ( s->parent.exp <= sym_find_box) sym_found = s;
@@ -315,7 +295,6 @@ static UInt Sym__Explicit_Find_All(Symbol *s) {
  *  depth e via via nelle scatole di profondita' superiore.
  */
 Symbol *Sym_Explicit_Find(Name *nm, Intg depth, int mode) {
-  MSG_LOCATION("Sym_Explicit_Find");
   if ( mode == EXACT_DEPTH ) {
     sym_find_box = Box_Depth() - depth;
     assert( (sym_find_box >= 0) && (depth >= 0) );

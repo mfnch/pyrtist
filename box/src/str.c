@@ -477,8 +477,8 @@ char *strndup(const char *s, int n) {
   l = strlen(s);
   if ( l < n ) n = l;
   ret = r = (char *) malloc(n + 1);
-  if ( r == NULL ) return NULL;
-  for(i = 0; i < l; i++) *(r++) = *(s++);
+  if (r == NULL) return NULL;
+  for(i = 0; i < n; i++) *(r++) = *(s++);
   *r = '\0';
   return ret;
 }
