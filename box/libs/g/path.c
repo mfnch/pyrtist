@@ -17,34 +17,39 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-void path_init(Path **p) {}
+#include "types.h"
+#include "path.h"
 
-void path_appent(Path *p, Point *point, int join) {}
+void gpath_init(GPath **p) {}
 
-void path_move_to(Path *p, Point *point) {}
+void gpath_destroy(GPath *p) {}
 
-void path_line_to(Path *p, Point *point) {}
+void gpath_appent(GPath *p, Point *point, int join) {}
 
-void path_arc_to(Path *p, Point *p1, Point *p2) {}
+void gpath_move_to(GPath *p, Point *point) {}
 
-void path_length(Path *p) {}
+void gpath_line_to(GPath *p, Point *point) {}
 
-void path_num_pieces(Path *p) {}
+void gpath_arc_to(GPath *p, Point *p1, Point *p2) {}
 
-void path_get_first_point_at_length(Path *p, Real length) {}
+void gpath_length(GPath *p) {}
 
-void path_get_last_point_at_length(Path *p, Real length) {}
+void gpath_num_pieces(GPath *p) {}
 
-void path_get_first_point_of_piece(Path *p, Real piece) {}
+void gpath_get_first_point_at_length(GPath *p, Real length) {}
 
-void path_get_last_point_of_piece(Path *p, Real piece) {}
+void gpath_get_last_point_at_length(GPath *p, Real length) {}
 
-void path_get_piece_from_length(Path *p, Real length) {}
+void gpath_get_first_point_of_piece(GPath *p, Real piece) {}
 
-void path_get_length_from_piece(Path *p, Real piece) {}
+void gpath_get_last_point_of_piece(GPath *p, Real piece) {}
 
-void path_subpath(Path *p, Path *subpath, Real first_piece, Real last_piece) {}
+void gpath_get_piece_from_length(GPath *p, Real length) {}
 
-void path_append_reversed(Path *in, Path *out, int join) {}
+void gpath_get_length_from_piece(GPath *p, Real piece) {}
 
-void path_append(Path *in, Path *out, int join) {}
+void gpath_subpath(GPath *p, GPath *subpath, Real first_piece, Real last_piece) {}
+
+void gpath_append_reversed(GPath *in, GPath *out, int join) {}
+
+void gpath_append(GPath *in, GPath *out, int join) {}
