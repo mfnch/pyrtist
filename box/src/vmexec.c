@@ -29,6 +29,7 @@
 
 #include "messages.h"
 #include "virtmach.h"
+#include "vmalloc.h"
 
 static void VM__Exec_Ret(VMProgram *vmp) {vmp->vmcur->flags.exit = 1;}
 
@@ -56,9 +57,9 @@ static void VM__Exec_ ## name ## _II(VMProgram *vmp) {                 \
   ptr = (Type *) calloc(numtot, sizeof(Type));                         \
   vmcur->local[TYPE_ID] = ptr + numvar;                                \
   if ( (ptr != NULL) && (numvar >= 0) && (numtot > numvar) ) return;   \
-  MSG_FATAL(#name ": Impossibile allocare lo spazio per i registri."); \
+  MSG_FATAL(#name ": Cannot allocate the register memory region.");    \
   vmcur->flags.error = vmcur->flags.exit = 1; return;                  \
-err:  MSG_FATAL(#name ": Registri gia' allocati!");                    \
+err:  MSG_FATAL(#name ": Registers have already been allocated!");     \
   vmcur->flags.error = vmcur->flags.exit = 1;                          \
 }
 
@@ -339,12 +340,17 @@ static void VM__Exec_LOr_II(VMProgram *vmp) {
 
 static void VM__Exec_Malloc_I(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  *((Obj *) vmcur->local[TYPE_OBJ]) = (Obj) malloc( *((Int *) vmcur->arg1) );
+  *((Obj *) vmcur->local[TYPE_OBJ])
+    = (Obj) VM_Alloc(*((Int *) vmcur->arg1), -1);
   /* MANCA LA VERIFICA DI MEMORIA ESAURITA */
 }
-static void VM__Exec_MFree_O(VMProgram *vmp) {
+static void VM__Exec_Mln_O(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  free(*((Obj *) vmcur->arg1));
+  VM_Link(*((Obj *) vmcur->arg1));
+}
+static void VM__Exec_MUnln_O(VMProgram *vmp) {
+  VMStatus *vmcur = vmp->vmcur;
+  VM_Unlink(*((Obj *) vmcur->arg1));
 }
 static void VM__Exec_MCopy_OO(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
@@ -473,8 +479,9 @@ VMInstrDesc vm_instr_desc_table[] = {
   { "pptrx",1, TYPE_POINT,VM__GLPI,    VM__Exec_PPtrX_P, VM__D_GLPI_GLPI }, /* pptrx reg_p        */
   { "pptry",1, TYPE_POINT,VM__GLPI,    VM__Exec_PPtrY_P, VM__D_GLPI_GLPI }, /* pptry reg_p        */
   { "ret",  0, TYPE_NONE, NULL,            VM__Exec_Ret, VM__D_GLPI_GLPI }, /* ret                */
-  {"malloc",1, TYPE_INT, VM__GLPI,   VM__Exec_Malloc_I, VM__D_GLPI_GLPI },  /* malloc reg_i       */
-  { "mfree",1, TYPE_OBJ,  VM__GLPI,    VM__Exec_MFree_O, VM__D_GLPI_GLPI }, /* mfree reg_o        */
+  {"malloc",1, TYPE_INT, VM__GLPI,    VM__Exec_Malloc_I, VM__D_GLPI_GLPI }, /* malloc reg_i       */
+  {   "mln",1, TYPE_OBJ,  VM__GLPI,      VM__Exec_Mln_O, VM__D_GLPI_GLPI }, /* mln reg_o        */
+  { "munln",1, TYPE_OBJ,  VM__GLPI,    VM__Exec_MUnln_O, VM__D_GLPI_GLPI }, /* munln reg_o        */
   { "mcopy",2, TYPE_OBJ,  VM__GLP_GLPI,VM__Exec_MCopy_OO,VM__D_GLPI_GLPI }, /* mcopy reg_o, reg_o */
   {  "lea", 1, TYPE_CHAR, VM__GLPI,        VM__Exec_Lea, VM__D_GLPI_GLPI }, /* lea c[ro0+...]     */
   {  "lea", 1, TYPE_INT, VM__GLPI,        VM__Exec_Lea, VM__D_GLPI_GLPI },  /* lea i[ro0+...]     */
