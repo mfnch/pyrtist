@@ -40,15 +40,22 @@ noinst_HEADERS = defaults.h types.h mem.h str.h print.h \
   list.h array.h collection.h fileutils.h registers.h virtmach.h \
   tokenizer.h parserh.h typesys.h tsdef.c \
   expr.h compiler.h box.h builtins.h \
-  hashfunc.h hashtable.h vmproc.h vmsym.h vmcommon.h \
+  hashfunc.h hashtable.h vmalloc.h vmproc.h vmsym.h vmcommon.h \
   vmsymstuff.h paths.h container.h
 
 box_SOURCES = mem.c str.c print.c msgbase.c messages.c \
-  list.c array.c collection.c fileutils.c \
-  virtmach.c vmexec.c vmproc.c vmsym.c \
+  list.c array.c collection.c hashfunc.c hashtable.c fileutils.c \
+  virtmach.c vmalloc.c vmexec.c vmproc.c vmsym.c \
   symbols.c tokenizer.l parser.y registers.c expr.c \
   typesys.c compiler.c box.c \
-  builtins.c hashfunc.c hashtable.c vmsymstuff.c \
+  builtins.c vmsymstuff.c \
   paths.c main.c container.c
 
 EXTRA_DIST = structure.c
+
+# boxlib_LTLIBRARIES = libboxcore.la
+#
+# libboxcore_la_SOURCES = default.h mem.c mem.h str.c str.h \
+#   print.c print.h msgbase.c msgbase.h messages.c messages.h \
+#   list.c list.h array.c array.h collection.c collection.h \
+#   hashfunc.c hashfunc.h hashtable.c hashtable.h

@@ -18,13 +18,19 @@
  ****************************************************************************/
 
 #include "types.h"
+#include "mem.h"
 #include "gpath.h"
 
-void gpath_init(GPath **p) {}
+GPath *gpath_init(void) {
+  GPath *gp = (GPath *) Mem_Alloc(sizeof(GPath));
+  return gp;
+}
 
-void gpath_destroy(GPath *p) {}
+void gpath_destroy(GPath *gp) {
+  Mem_Free(gp);
+}
 
-void gpath_appent(GPath *p, Point *point, int join) {}
+void gpath_append(GPath *p, Point *point, int join) {}
 
 void gpath_move_to(GPath *p, Point *point) {}
 
@@ -48,8 +54,8 @@ void gpath_get_piece_from_length(GPath *p, Real length) {}
 
 void gpath_get_length_from_piece(GPath *p, Real piece) {}
 
-void gpath_subpath(GPath *p, GPath *subpath, Real first_piece, Real last_piece) {}
+void gpath_subgpath(GPath *p, GPath *subpath, Real first_piece, Real last_piece) {}
 
 void gpath_append_reversed(GPath *in, GPath *out, int join) {}
 
-void gpath_append(GPath *in, GPath *out, int join) {}
+void gpath_append_gpath(GPath *in, GPath *out, int join) {}

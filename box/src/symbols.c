@@ -188,7 +188,7 @@ void Sym_Symbol_Delete(Symbol *s) {
 /****************************************************************************/
 
 /* Tipo che funge da genitore per i tipi impliciti */
-static Intg sym_cur_parent = TYPE_NONE;
+static Int sym_cur_parent = TYPE_NONE;
 
 /* DESCRIZIONE: Funzione del tipo SymbolAction, usata con Sym_Symbol_Find,
  *  all'interno di Sym_Implicit_New, per controllare che non esistano
@@ -206,7 +206,7 @@ static UInt Imp_Check_Name_Conflicts(Symbol *s) {
 /* DESCRIPTION: This function search a member of parent with name nm.
  * NOTE: Returns NULL if it doesn't find any member with name nm.
  */
-/*Task Sym_Implicit_Find(Symbol **s, Intg parent, Name *nm) {
+/*Task Sym_Implicit_Find(Symbol **s, Int parent, Name *nm) {
   MSG_ERROR("Major change is happening: feature has been disabled!");
   return Failed;
   sym_cur_parent = parent;
@@ -217,10 +217,8 @@ static UInt Imp_Check_Name_Conflicts(Symbol *s) {
 /* Defines a new implicit symbol, member of the type 'parent'.
  */
  #if 0
-Task Sym_Implicit_New(Symbol **new_sym, Intg parent, Name *nm) {
+Task Sym_Implicit_New(Symbol **new_sym, Int parent, Name *nm) {
   Symbol *s, *ps;
-
-  MSG_LOCATION("Sym_Implicit_New");
 
   ps = Tym_Symbol_Of_Type(parent);
   if ( ps == NULL ) return Failed;
@@ -262,7 +260,7 @@ Task Sym_Implicit_New(Symbol **new_sym, Intg parent, Name *nm) {
  */
 
 /* VARIABILI UTILIZZATE DA Sym_Find_... */
-static Intg sym_find_box;
+static Int sym_find_box;
 static Symbol *sym_found;
 
 /**********************************[RICERCA]**********************************/
@@ -294,7 +292,7 @@ static UInt Sym__Explicit_Find_All(Symbol *s) {
  *  se box = NO_EXACT_DEPTH cerca a partire dalla scatola di profondita'
  *  depth e via via nelle scatole di profondita' superiore.
  */
-Symbol *Sym_Explicit_Find(Name *nm, Intg depth, int mode) {
+Symbol *Sym_Explicit_Find(Name *nm, Int depth, int mode) {
   if ( mode == EXACT_DEPTH ) {
     sym_find_box = Box_Depth() - depth;
     assert( (sym_find_box >= 0) && (depth >= 0) );

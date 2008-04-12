@@ -31,4 +31,7 @@ introduce "The multivibrator example"
 $BOX -l g multivibrator.box
 inspect multivibrator.eps
 
+introduce "The cycloid example"
+$BOX -l g cycloid.box
+inspect cycloid.eps
 

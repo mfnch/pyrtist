@@ -1125,6 +1125,9 @@ Task Cmp_Expr_Destroy(Expr *e, int destroy_target) {
      default: break;
     }
 
+    /* Call the finaliser */
+
+
     if (!intrinsic && e->is.allocd && (!e->is.target || destroy_target)) {
 
       // ??? dovrei usare Cmp_Complete_Ptr_1?
