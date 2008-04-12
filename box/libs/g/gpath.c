@@ -18,7 +18,7 @@
  ****************************************************************************/
 
 #include "types.h"
-#include "path.h"
+#include "gpath.h"
 
 void gpath_init(GPath **p) {}
 
