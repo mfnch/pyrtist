@@ -105,6 +105,13 @@ Task Expr_Must_Have_Value(Expr *e);
 void Expr_Cont_Get(Cont *c, Expr *e);
 void Expr_Cont_Set(Expr *e, Cont *c);
 
+/** Returns the allocation type for the given expression.
+ * The allocation type is an integer associated to the type, which identifies
+ * the allocation/deallocation mechanism: types with the same allocation
+ * type are destroyed by calling the same procedure.
+ */
+Int Expr_Allocation_Type(Expr *e);
+
 /** Change the type of an expression if asmissible (using Cont_Cast).
  * This is often used to transform a generic pointer into a pointer
  * to a specific type.

@@ -814,11 +814,13 @@ Task Cmp_Expr_LReg(Expr *e, Int type, int zero) {
   } else {
     Int s = Tym_Type_Size(type);
     if ( s > 0 ) {
+      Int at;
       e->is.allocd = 1;
       if ( zero ) { e->value.i = 0; }
         else { if ( (e->value.i = Reg_Occupy(TYPE_OBJ)) < 1 ) return Failed; }
 
-      Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, s);
+      at = Expr_Allocation_Type(e);
+      Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, s, CAT_IMM, at);
       Cmp_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
     }
     return Success;

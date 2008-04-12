@@ -25,6 +25,7 @@
 
 #include "error.h"
 #include "graphic.h"
+#include "gpath.h"
 
 /* Di seguito specifichiamo le strutture e le dichiarazioni necessarie
  * per le procedure di tracciatura di linee "spesse"
@@ -185,6 +186,7 @@ void grp_last_line(double lastlenght, int is_closed) {
  */
 void grp_next_line(double x, double y, double sp1, double sp2, int style) {
   double thscongpos[2], nxtcongpos[2];
+  int flag;
 
   /* Calcolo il vettore relativo alla seconda linea */
   nxtl->v.x = (nxtl->pnt2.x = x) - (nxtl->pnt1.x = thsl->pnt2.x);
@@ -214,22 +216,20 @@ void grp_next_line(double x, double y, double sp1, double sp2, int style) {
 
   /* Calcolo i punti di giunzione */
   /* Primo punto di giunzione */
-  if ( ! grp_intersection2(& thsl->p[0], & thsl->vb[0],  /* Prima retta */
+  flag = grp_intersection2(& thsl->p[0], & thsl->vb[0],  /* Prima retta */
                            & nxtl->p[0], & nxtl->vb[0],  /* Seconda retta */
-                           & thscongpos[0], & nxtcongpos[0]) ) {
+                           & thscongpos[0], & nxtcongpos[0]);
+  if (!flag || thscongpos[0] <= 0 || nxtcongpos[0] >= 1) {
     printf("1 C'e' qualche problema!!!\n");
   }
 
   /* Secondo punto di giunzione */
-  if ( ! grp_intersection2(& thsl->p[1], & thsl->vb[1],  /* Prima retta */
+  flag = grp_intersection2(& thsl->p[1], & thsl->vb[1],  /* Prima retta */
                            & nxtl->p[1], & nxtl->vb[1],  /* Seconda retta */
-                           & thscongpos[1], & nxtcongpos[1]) ) {
+                           & thscongpos[1], & nxtcongpos[1]);
+  if (!flag || thscongpos[1] <= 0 || nxtcongpos[1] >= 1) {
     printf("2 C'e' qualche problema!!!\n");
   }
-
-  /* Devo controllare che thscongpos>0 e nxtcongpos<1*/
-  if (thscongpos[0] <= 0 || nxtcongpos[0] >= 1) printf("3 C'e' qualche problema!!!\n");
-  if (thscongpos[1] <= 0 || nxtcongpos[1] >= 1) printf("4 C'e' qualche problema!!!\n");
 
   /* Completo il calcolo dei punti di giunzione */
   nxtl->cong[0].x = nxtl->p[0].x + nxtcongpos[0] * nxtl->vb[0].x;

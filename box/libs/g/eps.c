@@ -304,8 +304,8 @@ int eps_save_fig(const char *file_name, grp_window *figure) {
   grp_window *cur_win = grp_win;
 
   bb_bounding_box(figure, & bb_min, & bb_max);
-  printf("Bounding box (%f, %f) - (%f, %f)\n",
-         bb_min.x, bb_min.y, bb_max.x, bb_max.y);
+  /*printf("Bounding box (%f, %f) - (%f, %f)\n",
+         bb_min.x, bb_min.y, bb_max.x, bb_max.y);*/
 
   size.x = fabs(bb_max.x - bb_min.x);
   size.y = fabs(bb_max.y - bb_min.y);

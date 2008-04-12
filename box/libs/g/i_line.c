@@ -131,12 +131,12 @@ Task line_real(VMProgram *vmp) {
 
   switch(w->line.state) {
   case GOT_NOTHING:
-    w->line.this_piece.width2 = width;
+    w->line.this_piece.width2 = w->line.this_piece.width1 = width;
     w->line.state = GOT_2ND_FLOAT;
     break;
 
   case GOT_POINT:
-    w->line.this_piece.width1 = width;
+    w->line.this_piece.width2 = w->line.this_piece.width1 = width;
     w->line.state = GOT_1ST_FLOAT;
     break;
 

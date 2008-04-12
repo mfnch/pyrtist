@@ -338,11 +338,14 @@ static void VM__Exec_LOr_II(VMProgram *vmp) {
    *((Int *) vmcur->arg1) || *((Int *) vmcur->arg2);
 }
 
-static void VM__Exec_Malloc_I(VMProgram *vmp) {
+static void VM__Exec_Malloc_II(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  *((Obj *) vmcur->local[TYPE_OBJ])
-    = (Obj) VM_Alloc(*((Int *) vmcur->arg1), -1);
-  /* MANCA LA VERIFICA DI MEMORIA ESAURITA */
+  Int size = *((Int *) vmcur->arg1),
+      type = *((Int *) vmcur->arg2);
+  void *uptr = (Obj) VM_Alloc(size, type);
+  *((Obj *) vmcur->local[TYPE_OBJ]) = uptr;
+  if (uptr != (void *) NULL) return;
+  MSG_FATAL("VM_Exec_Malloc_II: memory request failed!");
 }
 static void VM__Exec_Mln_O(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
@@ -479,7 +482,7 @@ VMInstrDesc vm_instr_desc_table[] = {
   { "pptrx",1, TYPE_POINT,VM__GLPI,    VM__Exec_PPtrX_P, VM__D_GLPI_GLPI }, /* pptrx reg_p        */
   { "pptry",1, TYPE_POINT,VM__GLPI,    VM__Exec_PPtrY_P, VM__D_GLPI_GLPI }, /* pptry reg_p        */
   { "ret",  0, TYPE_NONE, NULL,            VM__Exec_Ret, VM__D_GLPI_GLPI }, /* ret                */
-  {"malloc",1, TYPE_INT, VM__GLPI,    VM__Exec_Malloc_I, VM__D_GLPI_GLPI }, /* malloc reg_i       */
+  {"malloc",2, TYPE_INT,VM__GLP_GLPI,VM__Exec_Malloc_II, VM__D_GLPI_GLPI }, /* malloc reg_i       */
   {   "mln",1, TYPE_OBJ,  VM__GLPI,      VM__Exec_Mln_O, VM__D_GLPI_GLPI }, /* mln reg_o        */
   { "munln",1, TYPE_OBJ,  VM__GLPI,    VM__Exec_MUnln_O, VM__D_GLPI_GLPI }, /* munln reg_o        */
   { "mcopy",2, TYPE_OBJ,  VM__GLP_GLPI,VM__Exec_MCopy_OO,VM__D_GLPI_GLPI }, /* mcopy reg_o, reg_o */

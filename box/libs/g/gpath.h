@@ -21,6 +21,7 @@
 #  define _GPATH_H
 
 #  include "types.h"
+#  include "buffer.h"
 
 enum {
   GPATHKIND_LINE,
@@ -33,18 +34,39 @@ typedef struct {
 } GPathPiece;
 
 typedef struct {
+  struct {
+    int position : 1;
+  } have;
   Real tolerance;
-
+  Point position;
+  buff pieces;
 } GPath;
+
+enum {
+  GPATH_JOIN=1,
+  GPATH_INVERT=2,
+  GPATH_CLOSE=4
+};
+
+/** Used in conjunction with gpath_iter() */
+typedef int GPathIterator(Int piece_index, GPathPiece *piece, void *data);
 
 /* For now a GPath is not thought to be modified:
  * we don't provide functions to change the pieces which have already
  * been added to the GPath.
  */
 
+/** Return the pointer to a new allocated empty GPath object. */
 GPath *gpath_init(void);
 
+/** Destroy the given GPath. */
 void gpath_destroy(GPath *p);
+
+/** Break the path = forgets the current position */
+void gpath_break(GPath *p);
+
+/** Return the last point in the piece */
+Point *gpathpiece_last(GPathPiece *piece);
 
 void gpath_append(GPath *p, Point *point, int join);
 
@@ -54,11 +76,21 @@ void gpath_line_to(GPath *p, Point *point);
 
 void gpath_arc_to(GPath *p, Point *p1, Point *p2);
 
+/** Calls the function iter() for each piece of the GPath,
+ * passing the piece index, a pointer to the piece data structure
+ * and the user provided pointer 'data'. The index starts from 1
+ * at the first piece.
+ * The iteration stops if the function iter() returns a value != 0.
+ * If this is the case then this value is returned by 'gpath_iter'.
+ * See the documentation of 'GPathIterator' for more details.
+ */
+int gpath_iter(GPath *gp, GPathIterator iter, void *data);
+
 /** This function returns the length of the path. */
-void gpath_length(GPath *p);
+Real gpath_length(GPath *p);
 
 /** This function returns the number of pieces in the path. */
-void gpath_num_pieces(GPath *p);
+Int gpath_num_pieces(GPath *p);
 
 /** This function returns a point in the path, such that the sub-path
  * which connects it to the starting point has the provided 'length'.
@@ -97,8 +129,6 @@ void gpath_get_length_from_piece(GPath *p, Real piece);
 
 void gpath_subgpath(GPath *p, GPath *subpath, Real first_piece, Real last_piece);
 
-void gpath_append_reversed(GPath *in, GPath *out, int join);
-
-void gpath_append_gpath(GPath *in, GPath *out, int join);
+void gpath_append_gpath(GPath *in, GPath *out, int options);
 
 #endif

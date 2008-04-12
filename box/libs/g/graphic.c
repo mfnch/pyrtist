@@ -29,6 +29,7 @@
 
 #include "error.h"      /* Serve per la segnalazione degli errori */
 #include "graphic.h"    /* Dichiaro alcune strutture grafiche generali */
+#include "gpath.h"
 
 /* Descrittore della finestra attualmente in uso: lo faccio puntare
  * ad una finestra che da solo errori (vedi piu' avanti).
@@ -335,4 +336,26 @@ void grp_palette_destroy(palette *p)
 static unsigned long color_hash(palette *p, color *c)
 {
   return ( ( (unsigned long ) c->b ) + (c->g + c->r * p->hashmul) * p->hashmul ) % p->hashdim;
+}
+
+/* NEW CODE */
+
+static int grp_draw_gpath_iterator(Int index, GPathPiece *piece, void *data) {
+  Point *p = & (piece->p[0]);
+  switch(piece->kind) {
+  case GPATHKIND_LINE:
+    grp_rline(p[0], p[1]);
+    return 0;
+
+  case GPATHKIND_ARC:
+    grp_rcong(p[0], p[1], p[2]);
+    return 0;
+
+  default:
+    return 1;
+  }
+}
+
+void grp_draw_gpath(GPath *gp) {
+  (void) gpath_iter(gp, grp_draw_gpath_iterator, (void *) NULL);
 }

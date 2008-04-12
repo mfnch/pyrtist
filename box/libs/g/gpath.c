@@ -17,30 +17,107 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+#include <stdlib.h>
+
 #include "types.h"
-#include "mem.h"
 #include "gpath.h"
+#include "buffer.h"
+#include "g.h"
 
 GPath *gpath_init(void) {
-  GPath *gp = (GPath *) Mem_Alloc(sizeof(GPath));
+  GPath *gp = (GPath *) malloc(sizeof(GPath));
+  if (gp == (GPath *) NULL) return ((GPath *) NULL);
+  if (!buff_create(& gp->pieces, sizeof(GPathPiece), 10)) {
+    free(gp);
+    return (GPath *) NULL;
+  }
+  gp->have.position = 0;
   return gp;
 }
 
 void gpath_destroy(GPath *gp) {
-  Mem_Free(gp);
+  buff_free(& gp->pieces);
+  free(gp);
 }
 
-void gpath_append(GPath *p, Point *point, int join) {}
+void gpath_break(GPath *gp) {
+  gp->have.position = 0;
+}
 
-void gpath_move_to(GPath *p, Point *point) {}
+Point *gpathpiece_last(GPathPiece *piece) {
+  switch(piece->kind) {
+  case GPATHKIND_LINE: return & (piece->p[1]);
+  case GPATHKIND_ARC: return & (piece->p[2]);
+  default: g_error("gpathpiece_last: shouldn't happen: damaged path?");
+  }
+  return (Point *) NULL;
+}
 
-void gpath_line_to(GPath *p, Point *point) {}
+void gpath_close(GPath *gp) {
+  if (!gp->have.position)
+    return;
 
-void gpath_arc_to(GPath *p, Point *p1, Point *p2) {}
+  else {
+    GPathPiece *piece = buff_firstitemptr(& gp->pieces, GPathPiece);
+    gpath_line_to(gp, & (piece->p[0]));
+  }
+}
 
-void gpath_length(GPath *p) {}
+void gpath_append(GPath *gp, Point *point, int join) {
+  if (join && gp->have.position) {
+    GPathPiece piece;
+    piece.kind = GPATHKIND_LINE;
+    piece.p[0] = gp->position;
+    piece.p[1] = *point;
+    gp->position = *point;
+    (void) buff_push(& gp->pieces, & piece);
 
-void gpath_num_pieces(GPath *p) {}
+  } else {
+    gp->position = *point;
+    gp->have.position = 1;
+  }
+}
+
+void gpath_move_to(GPath *gp, Point *point) {
+  return gpath_append(gp, point, 0);
+}
+
+void gpath_line_to(GPath *gp, Point *point) {
+  return gpath_append(gp, point, 1);
+}
+
+void gpath_arc_to(GPath *gp, Point *p1, Point *p2) {
+  GPathPiece piece;
+  if (!gp->have.position) {
+    gpath_move_to(gp, p1);
+    gpath_line_to(gp, p2);
+    return;
+  }
+
+  piece.kind = GPATHKIND_ARC;
+  piece.p[0] = gp->position;
+  piece.p[1] = *p1;
+  piece.p[2] = *p2;
+  gp->position = *p2;
+  (void) buff_push(& gp->pieces, & piece);
+}
+
+int gpath_iter(GPath *gp, GPathIterator iter, void *data) {
+  Int i, n = buff_numitems(& gp->pieces);
+  GPathPiece *piece = buff_firstitemptr(& gp->pieces, GPathPiece);
+  for(i=1; i<=n; i++) {
+    int retval = iter(i, piece, data);
+    if (retval != 0) return retval;
+  }
+  return 0;
+}
+
+
+Real gpath_length(GPath *gp) {return 0.0;}
+
+Int gpath_num_pieces(GPath *gp) {
+  return buff_numitems(& gp->pieces);
+}
 
 void gpath_get_first_point_at_length(GPath *p, Real length) {}
 
@@ -56,6 +133,24 @@ void gpath_get_length_from_piece(GPath *p, Real piece) {}
 
 void gpath_subgpath(GPath *p, GPath *subpath, Real first_piece, Real last_piece) {}
 
-void gpath_append_reversed(GPath *in, GPath *out, int join) {}
+void gpath_append_gpath(GPath *dest, GPath *src, int options) {
+  Int i, n=buff_numitems(& src->pieces), j = 1, dj = 1;
+  GPathPiece *piece;
+  Point *last;
 
-void gpath_append_gpath(GPath *in, GPath *out, int join) {}
+  if ((options & GPATH_INVERT) != 0) {j = n; dj = -1;}
+
+  piece = buff_itemptr(& src->pieces, GPathPiece, j);
+  if ((options & GPATH_JOIN) != 0 && dest->have.position)
+    gpath_line_to(dest, & (piece->p[0]));
+
+  /* I don't care about performance here! */
+  for(i=0; i<n; i++) {
+    piece = buff_itemptr(& src->pieces, GPathPiece, j);
+    (void) buff_push(& dest->pieces, piece);
+  }
+
+  last = gpathpiece_last(piece);
+  dest->position = *last;
+  if ((options & GPATH_CLOSE) != 0) gpath_close(dest);
+}

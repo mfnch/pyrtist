@@ -54,6 +54,7 @@ void buff_free(buff *buffer);
 #define buff_created(buffer)  ((buffer)->id == buffID ? 1 : 0)
 #define buff_chain(buffer)    ((buffer)->chain)
 #define buff_numitem(buffer)  ((buffer)->numel)
+#define buff_numitems(buffer)  ((buffer)->numel)
 #define buff_ptr(buffer)    ((buffer)->ptr)
 #define buff_item(buffer, type, n)  *((type *) ((buffer)->ptr + ((n)-1)*((long) (buffer)->elsize)))
 #define buff_firstitem(buffer, type)  *((type *) ((buffer)->ptr))

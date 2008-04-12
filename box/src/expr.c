@@ -184,6 +184,15 @@ void Expr_Cont_Set(Expr *e, Cont *c) {
   /* c->extra ??? */
 }
 
+/** Returns the allocation type for the given expression.
+ * The allocation type is an integer associated to the type, which identifies
+ * the allocation/deallocation mechanism: types with the same allocation
+ * type are destroyed by calling the same procedure.
+ */
+Int Expr_Allocation_Type(Expr *e) {
+  return 0; /* This will be done better in the near future */
+}
+
 void Expr_Cast(Expr *e, Type t) {
   Cont c;
   Type r = TS_Resolve(cmp->ts, t, TS_KS_ALIAS | TS_KS_SPECIES);
@@ -715,7 +724,8 @@ void Expr_Alloc(Expr *e) {
   if (e->categ == CAT_PTR) {
     Int ptr_reg = e->addr;
     Int ptr_categ = (e->is.gaddr ? CAT_GREG : CAT_LREG);
-    Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, size);
+    Int at = Expr_Allocation_Type(e);
+    Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, size, CAT_IMM, at);
     Cmp_Assemble(ASM_MOV_OO, ptr_categ, ptr_reg, CAT_LREG, 0);
     e->is.allocd = 1;
 
@@ -724,12 +734,16 @@ void Expr_Alloc(Expr *e) {
     * and the corresponding objects do not need to be allocated.
     * We obviously do not allocate space for types with size == 0.
     */
-    if (is_intrinsic) return;
+    if (is_intrinsic)
+      return;
 
-    /* If the object is of a user defined type, we must allocate it! */
-    Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, size);
-    Cmp_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
-    e->is.allocd = 1;
+    else {
+      Int at = Expr_Allocation_Type(e);
+      /* If the object is of a user defined type, we must allocate it! */
+      Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, size, CAT_IMM, at);
+      Cmp_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
+      e->is.allocd = 1;
+    }
   }
 }
 
