@@ -230,28 +230,27 @@ static int lt_draw_closed(LineTracer *lt) {
 
 /** Traccia la linea e pulisce line_desc (i dati relativi). */
 int lt_draw(LineTracer *lt, int closed) {
+/*    FILE *f;*/
 
   if (closed) {
-    FILE *f;
     if (!lt_draw_closed(lt)) return 0;
     grp_draw_gpath(lt->border[0]);
     grp_draw_gpath(lt->border[1]);
-    f = fopen("part0.dat", "w");
+    /*f = fopen("part0.dat", "w");
     gpath_print_points(lt->border[0], f);
     fclose(f);
     f = fopen("part1.dat", "w");
     gpath_print_points(lt->border[1], f);
     fclose(f);
-    gpath_print_points(lt->border[1], stdout);
+    gpath_print_points(lt->border[1], stdout);*/
 
   } else {
-    FILE *f;
     if (!lt_draw_opened(lt)) return 0;
     gpath_append_gpath(lt->border[0], lt->border[1],
                       GPATH_INVERT | GPATH_JOIN | GPATH_CLOSE);
-    f = fopen("part.dat", "w");
+    /*f = fopen("part.dat", "w");
     gpath_print_points(lt->border[0], f);
-    fclose(f);
+    fclose(f);*/
 
     grp_draw_gpath(lt->border[0]);
     /*gpath_print_points(lt->border[0], stdout);*/
