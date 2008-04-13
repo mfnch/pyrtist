@@ -53,4 +53,6 @@ void lt_clear(LineTracer *lt);
 
 int lt_draw(LineTracer *lt, int closed);
 
+void lt_join_style(Real *userjs);
+
 #endif
