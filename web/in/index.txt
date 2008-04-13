@@ -11,8 +11,21 @@ restindex
 #   section-pages: , publications, contact
 /restindex
 
-Box is a language thought to draw graphic figures.
+Introduction
+------------
 
-Box is still under intensive developement.
-This website hosts some examples and the documentation.
-
+Box is a programming language developed to make graphics easy.
+Everything you draw (lines, circles, text, polygons, etc.)
+is done inside ``Windows``.
+``Windows`` object are the target of graphic commands and
+can then be translated, scaled, rotated and used
+inside other ``Windows``.
+This is actually simpler than what it may seem!
+Indeed, you can define hot points for each ``Window`` you
+create. These hot points can be used to express
+how to rotate, translate and scale your figures,
+removing the necessity of calculating rotation angles,
+scale factors, etc. Everything is calculated automatically
+and when you change your figure the transformations
+are adjusted accordingly, so that everything is placed
+where it should.

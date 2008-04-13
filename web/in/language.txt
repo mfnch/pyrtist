@@ -90,7 +90,7 @@ This line will print twice the string "Hello world!".
 There may be cases when one wants to explicitly ignore a value.
 This is the syntax to use in such cases::
 
-  Print[\ 1, "1 is not printed here!";]
+  Print[\ 1, "nothing appears before the first occurrence 'nothing'";]
 
 The "\" character avoids the valued expression to be passed
 to the underlying box.
@@ -146,3 +146,4 @@ Types and values
 ----------------
 
 more to come soon...
+
