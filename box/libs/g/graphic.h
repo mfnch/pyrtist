@@ -26,6 +26,7 @@
 #  define _GRAPHIC_H
 
 #  include "types.h"
+#  include "gpath.h"
 
 /* Definisco i "tipi" necessari per la grafica */
 #define ICOOR  Int
@@ -123,17 +124,8 @@ palitem *grp_color_find(palette *p, color *c);
 palitem *grp_color_request(palette *p, color *c);
 int grp_palette_transform(palette *p, int (*operation)(palitem *pi));
 void grp_palette_destroy(palette *p);
-/* Procedure per la creazione di linee */
-void grp_join_style(FCOOR *userjs);
-void grp_cutting(FCOOR c);
-void grp_first_line(FCOOR x1, FCOOR y1, FCOOR sp1,
- FCOOR x2, FCOOR y2, FCOOR sp2, FCOOR startlenght, int is_closed);
-void grp_last_line(double lastlenght, int is_closed);
-void grp_next_line(double x, double y, double sp1, double sp2, int style);
-int grp_intersection(Point *p1, Point *d1, Point *p2, Point *d2,
- double *alpha1);
-int grp_intersection2(Point *p1, Point *d1, Point *p2, Point *d2,
- double *alpha1, double *alpha2);
+void grp_draw_gpath(GPath *gp);
+
 Point *grp_ref(Point *o, Point *v, Point *p);
 
 /* Funzioni grafiche di basso livello (legate al tipo di finestra aperta) */

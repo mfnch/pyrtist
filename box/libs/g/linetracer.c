@@ -35,6 +35,31 @@
 #include "fig.h"
 #include "linetracer.h"
 
+static int lt_closed_selected = 0;
+static long lt_entered_numpnts = 0;
+static Point lt_entered_first_pnt;
+static Real lt_entered_s;
+
+/* Procedure contenente gli algoritmi usati per tracciare le linee */
+static int lt_draw_opened(LineTracer *lt);
+static int lt_draw_closed(LineTracer *lt);
+static int lt_put_to_begin_or_end(LineTracer *lt, Point *p1, Point *p2,
+                                  Real w, Real fw, void *f, int final);
+static int lt_put_to_join(LineTracer *lt, Point *p1, Point *p2, Point *p3,
+                          Real w1, Real w2, Real fw, void *f, int first);
+static void lt_first_point(LineTracer *lt, Point *p, Real s);
+static void lt_next_point(LineTracer *lt, Point *p, Real si, Real so);
+static void lt_final_point(LineTracer *lt, Point *p, Real s);
+static void lt_closed_begin(LineTracer *lt, Point *p0, Point *p1,
+                            Real s0o, Real s1i, Real s1o);
+static void lt_closed_finish(LineTracer *lt, Point *p, Real si);
+void lt_next_line(LineTracer *lt, double x, double y,
+                  double sp1, double sp2, int style);
+void lt_first_line(LineTracer *lt, Real x1, Real y1, Real sp1,
+                   Real x2, Real y2, Real sp2, Real startlenght,
+                   int is_closed);
+void lt_last_line(LineTracer *lt, double lastlenght, int is_closed);
+
 LineTracer *lt_new(void) {
   LineTracer *lt = (LineTracer *) malloc(sizeof(LineTracer));
   if (lt == (LineTracer *) NULL) return (LineTracer *) NULL;
@@ -50,6 +75,8 @@ LineTracer *lt_new(void) {
     free(lt);
     return (LineTracer *) NULL;
   }
+
+  lt->cutting = 8.0;
   return lt;
 }
 
@@ -76,25 +103,10 @@ Int lt_num_pieces(LineTracer *lt) {
 
 
 
-/* Procedure contenente gli algoritmi usati per tracciare le linee */
-static int lt_draw_opened(LineTracer *lt);
-static int lt_draw_closed(LineTracer *lt);
-static int lt_put_to_begin_or_end(Point *p1, Point *p2,
-                                    Real w, Real fw,
-                                    void *f, int final);
-static int lt_put_to_join(Point *p1, Point *p2, Point *p3,
-                            Real w1, Real w2, Real fw, void *f, int first);
-static void lt_first_point(Point *p, Real s);
-static void lt_next_point(Point *p, Real si, Real so);
-static void lt_final_point(Point *p, Real s);
-static void lt_closed_begin(Point *p0, Point *p1,
-                              Real s0o, Real s1i, Real s1o);
-static void lt_closed_finish(Point *p, Real si);
-void lt_next_line(double x, double y, double sp1, double sp2, int style);
-void lt_first_line(Real x1, Real y1, Real sp1,
-                   Real x2, Real y2, Real sp2,
-                   Real startlenght, int is_closed);
-void lt_last_line(double lastlenght, int is_closed);
+
+
+
+
 
 /* DESCRIZIONE: Disegna la linea aperta i cui dati sono contenuti in line_desc.
  */
@@ -115,12 +127,12 @@ static int lt_draw_opened(LineTracer *lt) {
   in = buff_itemptr(& lt->pieces, LinePiece, 2);
 
   if ( i->arrow == NULL ) {
-    lt_first_point( & (i->point), in->width1 );
+    lt_first_point(lt, & (i->point), in->width1 );
 
   } else {
     /* Attenzione: in->width1 e' lo spessore uscente di i->pnt! */
-    if ( ! lt_put_to_begin_or_end(& (i->point), & (in->point),
-                                    in->width1, in->arrow_scale, i->arrow, 0 ) )
+    if ( ! lt_put_to_begin_or_end(lt, & (i->point), & (in->point),
+                                  in->width1, in->arrow_scale, i->arrow, 0 ) )
       return 0;
   }
 
@@ -130,11 +142,11 @@ static int lt_draw_opened(LineTracer *lt) {
     ip = i; i = in++;
 
     if ( i->arrow == NULL ) {
-      lt_next_point( & (i->point), i->width2, in->width1 );
+      lt_next_point(lt, & (i->point), i->width2, in->width1 );
 
     } else {
       assert(0);
-      /*if ( ! lt_put_to_join(& (ip->pnt), & (i->pnt), & (in->pnt), i->width2, in->width1,
+      /*if ( ! lt_put_to_join(lt, & (ip->pnt), & (i->pnt), & (in->pnt), i->width2, in->width1,
                               1.0 ???, i->arrow, 0) )
         return 0;*/
     }
@@ -142,11 +154,11 @@ static int lt_draw_opened(LineTracer *lt) {
 
   /* Ora traccio l'ultima linea */
   if ( in->arrow == NULL ) {
-    lt_final_point( & (in->point), in->width2 );
+    lt_final_point(lt, & (in->point), in->width2 );
 
   } else {
-    if ( ! lt_put_to_begin_or_end(& (in->point), & (i->point),
-                                    in->width1, in->arrow_scale, in->arrow, 1) )
+    if ( ! lt_put_to_begin_or_end(lt, & (in->point), & (i->point),
+                                  in->width1, in->arrow_scale, in->arrow, 1) )
       return 0;
   }
 
@@ -173,16 +185,16 @@ static int lt_draw_closed(LineTracer *lt) {
   ip = i-1;
 
   if ( i->arrow == NULL ) {
-    lt_closed_begin(& (ip->point), & (i->point),
-                      i->width1, i->width2, in->width1);
+    lt_closed_begin(lt, & (ip->point), & (i->point),
+                    i->width1, i->width2, in->width1);
 
   } else {
 #if 1
     assert(0);
 #else
     tp = ip->pnt;
-    if ( ! lt_put_to_join(& tp, & (i->pnt), & (in->pnt),
-                            i->width2, in->width1, 1.0 ???, i->arrow, 1) )
+    if ( ! lt_put_to_join(lt, & tp, & (i->pnt), & (in->pnt),
+                          i->width2, in->width1, 1.0 ???, i->arrow, 1) )
       return 0;
 #endif
   }
@@ -193,11 +205,11 @@ static int lt_draw_closed(LineTracer *lt) {
     ip = i; i = in++;
 
     if ( i->arrow == NULL ) {
-      lt_next_point( & (i->point), i->width2, in->width1 );
+      lt_next_point(lt, & (i->point), i->width2, in->width1 );
 
     } else {
       assert(0);
-      /*if ( ! lt_put_to_join(& (ip->pnt), & (i->pnt), & (in->pnt), i->width2, in->width1,
+      /*if ( ! lt_put_to_join(lt, & (ip->pnt), & (i->pnt), & (in->pnt), i->width2, in->width1,
                               1.0 ???, i->arrow, 0) )
         return 0;*/
     }
@@ -205,10 +217,10 @@ static int lt_draw_closed(LineTracer *lt) {
 
   /* in punta all'ultimo "punto" della lista, quello da cui siamo partiti! */
   if ( in->arrow == NULL ) {
-    lt_closed_finish(& (in->point), in->width1);
+    lt_closed_finish(lt, & (in->point), in->width1);
 
   } else {
-    lt_final_point(& tp, in->width1);
+    lt_final_point(lt, & tp, in->width1);
   }
 
   return 1;
@@ -216,7 +228,25 @@ static int lt_draw_closed(LineTracer *lt) {
 
 /** Traccia la linea e pulisce line_desc (i dati relativi). */
 int lt_draw(LineTracer *lt, int closed) {
-  return closed ? lt_draw_closed(lt) : lt_draw_opened(lt);
+
+  if (closed) {
+    if (!lt_draw_closed(lt)) return 0;
+    grp_draw_gpath(lt->border[0]);
+    grp_draw_gpath(lt->border[1]);
+
+  } else {
+    if (!lt_draw_opened(lt)) return 0;
+    gpath_append_gpath(lt->border[0], lt->border[1],
+                      GPATH_INVERT | GPATH_JOIN | GPATH_CLOSE);
+
+    grp_draw_gpath(lt->border[0]);
+/*    printf("---\nBORDER 1+2\n");
+    gpath_print(lt->border[0], stdout);*/
+
+  }
+  gpath_clear(lt->border[1]);
+  gpath_clear(lt->border[0]);
+  return 1;
 }
 
 /* DESCRIZIONE: Questa funzione serve ad usare una figura come elemento
@@ -236,8 +266,8 @@ int lt_draw(LineTracer *lt, int closed) {
  *  Se i punti non sono 3, ma solo 1 (f1), allora verra' assunto f2=f3=(0, 0).
  *  Se i punti sono solo 2, verra' assunto f3=(0, 0).
  */
-static int lt_put_to_begin_or_end(Point *p1, Point *p2, Real w, Real fig_w,
-                                    void *f, int final) {
+static int lt_put_to_begin_or_end(LineTracer *lt, Point *p1, Point *p2,
+                                  Real w, Real fig_w, void *f, int final) {
   long num_hp;
   Real rot_angle = 0.0, scale_x = 1.0, scale_y = 1.0;
   Point rot_center, trsl_vect;
@@ -346,9 +376,9 @@ static int lt_put_to_begin_or_end(Point *p1, Point *p2, Real w, Real fig_w,
 
   /* Continuo a disegnare le linee */
   if ( final )
-    lt_final_point( & pfi, w );
+    lt_final_point(lt, & pfi, w );
   else
-    lt_first_point( & pfi, w );
+    lt_first_point(lt, & pfi, w );
 
   return 1;
 }
@@ -362,8 +392,8 @@ static int lt_put_to_begin_or_end(Point *p1, Point *p2, Real w, Real fig_w,
  *  Se first == 1, non viene usata lt_final_point e il primo punto
  *  della figura (f3) viene salvato in *p1 (per uso futuro).
  */
-static int lt_put_to_join(Point *p1, Point *p2, Point *p3,
-                            Real w1, Real w2, Real fw, void *f, int first) {
+static int lt_put_to_join(LineTracer *lt, Point *p1, Point *p2, Point *p3,
+                          Real w1, Real w2, Real fw, void *f, int first) {
   int num_hp;
   Real w = 0.5*(w1 + w2);
   Real rot_angle = 0.0, scale_x = 1.0, scale_y = 1.0;
@@ -488,23 +518,17 @@ static int lt_put_to_join(Point *p1, Point *p2, Point *p3,
   if ( first ) {
     *p1 = pfi[0];
   } else {
-    lt_final_point( & pfi[0], w1 );
+    lt_final_point(lt, & pfi[0], w1 );
   }
 
   EXIT_OK("figura disegnata!\n");
 }
 #endif
 
-static int lt_closed_selected = 0;
-static long lt_entered_numpnts = 0;
-static Point lt_entered_first_pnt;
-static Real lt_entered_s;
-
 /* DESCRIZIONE: Specifica il primo punto di una spezzata, col relativo
  *  spessore iniziale.
  */
-static void lt_first_point(Point *p, Real s)
-{
+static void lt_first_point(LineTracer *lt, Point *p, Real s) {
   if ( lt_entered_numpnts > 0 ) {
     g_warning("Inizio nuova linea, senza aver terminato la linea precedente");
     return;
@@ -520,17 +544,15 @@ static void lt_first_point(Point *p, Real s)
 /* DESCRIZIONE: Specifica il prossimo punto di una spezzata, col relativo
  *  spessore entrante (si) ed uscente (so).
  */
-static void lt_next_point(Point *p, Real si, Real so)  {
+static void lt_next_point(LineTracer *lt, Point *p, Real si, Real so) {
   if ( lt_entered_numpnts > 1 ) {
-    lt_next_line(p->x, p->y, lt_entered_s, si, 1);
-    grp_rdraw();
-    grp_rreset();
+    lt_next_line(lt, p->x, p->y, lt_entered_s, si, 1);
     lt_entered_s = so;
     ++lt_entered_numpnts;
     return;
 
   } else if ( lt_entered_numpnts == 1 ) {
-    lt_first_line(lt_entered_first_pnt.x, lt_entered_first_pnt.y,
+    lt_first_line(lt, lt_entered_first_pnt.x, lt_entered_first_pnt.y,
                   lt_entered_s, p->x, p->y, si, 0.0, 0 );
     lt_entered_s = so;
     ++lt_entered_numpnts;
@@ -547,23 +569,17 @@ static void lt_next_point(Point *p, Real si, Real so)  {
 /* DESCRIZIONE: Specifica l'ultimo punto di una spezzata, col relativo
  *  spessore finale.
  */
-static void lt_final_point(Point *p, Real s) {
+static void lt_final_point(LineTracer *lt, Point *p, Real s) {
   if ( lt_entered_numpnts > 1 ) {
-    lt_next_line(p->x, p->y, lt_entered_s, s, 1);
-    grp_rdraw();
-    grp_rreset();
-    lt_last_line(0.0, 0);
-    grp_rdraw();
-    grp_rreset();
+    lt_next_line(lt, p->x, p->y, lt_entered_s, s, 1);
+    lt_last_line(lt, 0.0, 0);
     lt_entered_numpnts = 0;
     return;
 
   } else if ( lt_entered_numpnts == 1 ) {
-    lt_first_line(lt_entered_first_pnt.x, lt_entered_first_pnt.y,
+    lt_first_line(lt, lt_entered_first_pnt.x, lt_entered_first_pnt.y,
                   lt_entered_s, p->x, p->y, s, 0.0, 0 );
-    lt_last_line(0.0, 0);
-    grp_rdraw();
-    grp_rreset();
+    lt_last_line(lt, 0.0, 0);
     lt_entered_numpnts = 0;
     return;
 
@@ -579,14 +595,14 @@ static void lt_final_point(Point *p, Real s) {
  *  p0 e' l'ultimo punto (serve per dare la giusta forma alla congiuntura
  *  sull'angolo)
  */
-static void lt_closed_begin(Point *p0, Point *p1,
-                              Real s0o, Real s1i, Real s1o) {
+static void lt_closed_begin(LineTracer *lt, Point *p0, Point *p1,
+                            Real s0o, Real s1i, Real s1o) {
   if (lt_entered_numpnts > 0 || lt_closed_selected) {
     g_warning("Inizio nuova linea, senza aver terminato la linea precedente");
     return;
   }
 
-  lt_first_line(p0->x, p0->y, s0o, p1->x, p1->y, s1i, 0.0, 1);
+  lt_first_line(lt, p0->x, p0->y, s0o, p1->x, p1->y, s1i, 0.0, 1);
 
   lt_entered_s = s1o;
   lt_entered_numpnts = 2;
@@ -596,31 +612,22 @@ static void lt_closed_begin(Point *p0, Point *p1,
 /* DESCRIZIONE: Completa una linea chiusa. p e' il primo punto, cioe' il p1
  *  della funzione lt_closed_begin.
  */
-static void lt_closed_finish(Point *p, Real si)
-{
+static void lt_closed_finish(LineTracer *lt, Point *p, Real si) {
   if ( ! lt_closed_selected ) {
     g_warning("Tentativo di chiudere una linea aperta");
     return;
   }
 
   if ( lt_entered_numpnts > 1 ) {
-    lt_next_line(p->x, p->y, lt_entered_s, si, 1);
-    grp_rdraw();
-    grp_rreset();
-    lt_last_line(0.0, 1);
-    grp_rdraw();
-    grp_rreset();
+    lt_next_line(lt, p->x, p->y, lt_entered_s, si, 1);
+    lt_last_line(lt, 0.0, 1);
     lt_entered_numpnts = 0;
     lt_closed_selected = 0;
     return;
 
   } else if ( lt_entered_numpnts == 1 ) {
-    lt_next_line(p->x, p->y, lt_entered_s, si, 1);
-    grp_rdraw();
-    grp_rreset();
-    lt_last_line(0.0, 1);
-    grp_rdraw();
-    grp_rreset();
+    lt_next_line(lt, p->x, p->y, lt_entered_s, si, 1);
+    lt_last_line(lt, 0.0, 1);
     lt_entered_numpnts = 0;
     lt_closed_selected = 0;
     return;
@@ -644,35 +651,6 @@ static void lt_closed_finish(Point *p, Real si)
 
 
 
-/* Questa struttura tiene conto di cio' che si sta tracciando */
-typedef struct {
-  Point pnt1, pnt2; /* Vertici dell'asse della linea */
-  Real sp1, sp2;    /* Spessori in corrispondenza dei due vertici */
-  Point v;          /* Vettori dell'asse della linea */
-  Point u;          /* Vettore v normalizzato */
-  Point o;          /* Versore ortogonale al vettore dell'asse */
-  Point vb[2];      /* Vettori dei due lati della linea */
-  Point p[2];       /* I due punti laterali della linea */
-  Point cong[2];    /* Punti di congiuntura fra i lati delle linee */
-  Point vci;        /* Vettore di congiuntura interno */
-  Point vertex[4];  /* Vertici della linea precedente */
-  Real mod, mod2;   /* Lunghezza della linea */
-} LineDesc;
-
-typedef struct {
-  /* Lunghezze di giunzione interne ed esterne della linea corrente */
-  double ti, te;
-  /* Lunghezze di giunzione interne ed esterne della prossima linea */
-  double ni, ne;
-} JoinStyle;
-
-static int lt_is_closed;
-static int lt_segment;
-static LineDesc line1, line2, firstline;
-static LineDesc *thsl;
-static LineDesc *nxtl;
-static JoinStyle *curjs;
-static double cutting = 8.0;
 
 
 /* Macro utilizzate in seguito */
@@ -737,8 +715,11 @@ int lt_intersection2(Point *p1, Point *d1, Point *p2, Point *d2,
  *  di 4 numeri di tipo float, che descrivono il tipo di giunzione da usare
  *  per collegare le linee fra loro.
  */
-void lt_join_style(Real *userjs) {
-  curjs = (JoinStyle *) userjs;
+void lt_join_style(LineTracer *lt, Real *userjs) {
+  lt->join_style.ti = userjs[0];
+  lt->join_style.te = userjs[1];
+  lt->join_style.ni = userjs[2];
+  lt->join_style.ne = userjs[3];
 }
 
 /* DESCRIZIONE: Setta il valore di cutting. Quando un angolo della spezzata
@@ -749,8 +730,8 @@ void lt_join_style(Real *userjs) {
  *  piu' grande di 1.
  * NOTA: Se non c'e' una sporgenza rilevante il taglio non sara' praticato.
  */
-void lt_cutting(Real c) {
-  if (c > 0.0) cutting = c;
+void lt_cutting(LineTracer *lt, Real c) {
+  if (c > 0.0) lt->cutting = c;
 }
 
 /* DESCRIZIONE: Specifica gli estremi della prima linea da tracciare.
@@ -762,14 +743,15 @@ void lt_cutting(Real c) {
  *  sp1 e sp2 sono gli spessori della linea in corrispondenza ai due punti
  *  (x1, y1) e (x2, y2).
  */
-void lt_first_line(Real x1, Real y1, Real sp1,
-                   Real x2, Real y2, Real sp2,
-                   Real startlenght, int is_closed) {
+void lt_first_line(LineTracer *lt, Real x1, Real y1, Real sp1,
+                   Real x2, Real y2, Real sp2, Real startlenght,
+                   int is_closed) {
   Real sl;
+  LineDesc *thsl, *nxtl;
 
   /* Setto i puntatori alle strutture che contengono i dati sulle linee */
-  thsl = &line1;
-  nxtl = &line2;
+  thsl = lt->thsl = & lt->line1;
+  nxtl = lt->nxtl = & lt->line2;
 
   /* Calcolo il vettore relativo alla linea */
   thsl->v.x = (thsl->pnt2.x = x2) - (thsl->pnt1.x = x1);
@@ -805,8 +787,8 @@ void lt_first_line(Real x1, Real y1, Real sp1,
 
   thsl->sp1 = sp1;
   thsl->sp2 = sp2;
-  lt_is_closed = is_closed;
-  lt_segment = 0;
+  lt->is_closed = is_closed;
+  lt->segment = 0;
 }
 
 /* DESCRIZIONE: Conclude la tracciatura della spezzata disegnando
@@ -816,17 +798,18 @@ void lt_first_line(Real x1, Real y1, Real sp1,
  *  che si vuole sia "tagliata". Specificando lastlenght = 0
  *  l'ultima linea verra' tracciata nella sua intera lunghezza.
  */
-void lt_last_line(double lastlenght, int is_closed) {
+void lt_last_line(LineTracer *lt, double lastlenght, int is_closed) {
+  LineDesc *thsl = lt->thsl;
   if ( is_closed ) {
     /* La linea e' chiusa */
-    thsl->vertex[2] = firstline.vertex[2];
-    thsl->vertex[3] = firstline.vertex[3];
+    thsl->vertex[2] = lt->firstline.vertex[2];
+    thsl->vertex[3] = lt->firstline.vertex[3];
 
     /* Traccia l'ultima linea della spezzata */
-    grp_rline( thsl->vertex[0], thsl->vertex[1] );
-    grp_rline( thsl->vertex[1], thsl->vertex[2] );
-    grp_rline( thsl->vertex[2], thsl->vertex[3] );
-    grp_rline( thsl->vertex[3], thsl->vertex[0] );
+    gpath_move_to(lt->border[0], & (thsl->vertex[1]));
+    gpath_line_to(lt->border[0], & (thsl->vertex[2]));
+    gpath_move_to(lt->border[1], & (thsl->vertex[0]));
+    gpath_line_to(lt->border[1], & (thsl->vertex[3]));
 
   } else {
     /* La linea e' aperta */
@@ -838,10 +821,10 @@ void lt_last_line(double lastlenght, int is_closed) {
     thsl->vertex[2].y = thsl->p[1].y + ll * thsl->vb[1].y;
 
     /* Traccia l'ultima linea della spezzata */
-    grp_rline( thsl->vertex[0], thsl->vertex[1] );
-    grp_rline( thsl->vertex[1], thsl->vertex[2] );
-    grp_rline( thsl->vertex[2], thsl->vertex[3] );
-    grp_rline( thsl->vertex[3], thsl->vertex[0] );
+    gpath_move_to(lt->border[0], & (thsl->vertex[1]));
+    gpath_line_to(lt->border[0], & (thsl->vertex[2]));
+    gpath_move_to(lt->border[1], & (thsl->vertex[0]));
+    gpath_line_to(lt->border[1], & (thsl->vertex[3]));
   }
 }
 
@@ -851,7 +834,9 @@ void lt_last_line(double lastlenght, int is_closed) {
  *  style specifica il modo in cui le linee della spezzata devono essere
  *  congiunte.............
  */
-void lt_next_line(double x, double y, double sp1, double sp2, int style) {
+void lt_next_line(LineTracer *lt, double x, double y,
+                  double sp1, double sp2, int style) {
+  LineDesc *thsl = lt->thsl, *nxtl = lt->nxtl;
   double thscongpos[2], nxtcongpos[2];
   int flag;
 
@@ -886,17 +871,23 @@ void lt_next_line(double x, double y, double sp1, double sp2, int style) {
   flag = lt_intersection2(& thsl->p[0], & thsl->vb[0],  /* Prima retta */
                           & nxtl->p[0], & nxtl->vb[0],  /* Seconda retta */
                           & thscongpos[0], & nxtcongpos[0]);
-  if (!flag || thscongpos[0] <= 0 || nxtcongpos[0] >= 1) {
+  if (!flag) {
     printf("1 C'e' qualche problema!!!\n");
   }
+
+  if (thscongpos[0] < 0.0) thscongpos[0] = 0.0;
+  if (nxtcongpos[0] > 1.0) nxtcongpos[0] = 1.0;
 
   /* Secondo punto di giunzione */
   flag = lt_intersection2(& thsl->p[1], & thsl->vb[1],  /* Prima retta */
                           & nxtl->p[1], & nxtl->vb[1],  /* Seconda retta */
                           & thscongpos[1], & nxtcongpos[1]);
-  if (!flag || thscongpos[1] <= 0 || nxtcongpos[1] >= 1) {
+  if (!flag) {
     printf("2 C'e' qualche problema!!!\n");
   }
+
+  if (thscongpos[1] < 0.0) thscongpos[1] = 0.0;
+  if (nxtcongpos[1] > 1.0) nxtcongpos[1] = 1.0;
 
   /* Completo il calcolo dei punti di giunzione */
   nxtl->cong[0].x = nxtl->p[0].x + nxtcongpos[0] * nxtl->vb[0].x;
@@ -905,7 +896,7 @@ void lt_next_line(double x, double y, double sp1, double sp2, int style) {
   nxtl->cong[1].x = nxtl->p[1].x + nxtcongpos[1] * nxtl->vb[1].x;
   nxtl->cong[1].y = nxtl->p[1].y + nxtcongpos[1] * nxtl->vb[1].y;
 
-  if ( style == 0 ) {
+  if (style == 0) {
     /* In questo caso le linee si congiungono senza arrotondamenti */
     thsl->vertex[2].x = nxtl->vertex[1].x = nxtl->cong[1].x;
     thsl->vertex[2].y = nxtl->vertex[1].y = nxtl->cong[1].y;
@@ -913,13 +904,13 @@ void lt_next_line(double x, double y, double sp1, double sp2, int style) {
     thsl->vertex[3].y = nxtl->vertex[0].y = nxtl->cong[0].y;
 
     /* Ora non resta che tracciare la linea */
-    if ( (++lt_segment != 1) || (! lt_is_closed)  ) {
-      grp_rline( thsl->vertex[0], thsl->vertex[1] );
-      grp_rline( thsl->vertex[1], thsl->vertex[2] );
-      grp_rline( thsl->vertex[2], thsl->vertex[3] );
-      grp_rline( thsl->vertex[3], thsl->vertex[0] );
+    if (++lt->segment != 1 || !lt->is_closed) {
+      gpath_move_to(lt->border[0], & (thsl->vertex[1]));
+      gpath_line_to(lt->border[0], & (thsl->vertex[2]));
+      gpath_move_to(lt->border[1], & (thsl->vertex[0]));
+      gpath_line_to(lt->border[1], & (thsl->vertex[3]));
     } else {
-      firstline = *thsl;
+      lt->firstline = *thsl;
     }
 
   } else {
@@ -931,16 +922,16 @@ void lt_next_line(double x, double y, double sp1, double sp2, int style) {
 
     /* Determino quale dei due lati della linea e' interno e quale e' esterno */
     thsproj[0] = (nxtl->cong[0].x - thsl->pnt1.x)*thsl->v.x +
-     (nxtl->cong[0].y - thsl->pnt1.y)*thsl->v.y;
+                 (nxtl->cong[0].y - thsl->pnt1.y)*thsl->v.y;
 
     thsproj[1] = (nxtl->cong[1].x - thsl->pnt1.x)*thsl->v.x +
-     (nxtl->cong[1].y - thsl->pnt1.y)*thsl->v.y;
+                 (nxtl->cong[1].y - thsl->pnt1.y)*thsl->v.y;
 
     nxtproj[0] = (nxtl->cong[0].x - nxtl->pnt1.x)*nxtl->v.x +
-     (nxtl->cong[0].y - nxtl->pnt1.y)*nxtl->v.y;
+                 (nxtl->cong[0].y - nxtl->pnt1.y)*nxtl->v.y;
 
     nxtproj[1] = (nxtl->cong[1].x - nxtl->pnt1.x)*nxtl->v.x +
-     (nxtl->cong[1].y - nxtl->pnt1.y)*nxtl->v.y;
+                 (nxtl->cong[1].y - nxtl->pnt1.y)*nxtl->v.y;
 
     if (thsproj[0] < thsproj[1]) {
       inn = 0;
@@ -958,50 +949,50 @@ void lt_next_line(double x, double y, double sp1, double sp2, int style) {
       nxtposzero = nxtproj[1] / nxtl->mod2;
 
     /* Trovo punto di terminazione del bordo interno della prima linea */
-    if (curjs->ti < 0.0) {
-      if (curjs->ti < -1.0)
+    if (lt->join_style.ti < 0.0) {
+      if (lt->join_style.ti < -1.0)
         thsipos = thscongpos[inn];
       else
-        thsipos = thsposzero - curjs->ti * (thscongpos[inn] - thsposzero);
+        thsipos = thsposzero - lt->join_style.ti*(thscongpos[inn]-thsposzero);
 
     } else {
-      thsipos = thsposzero - curjs->ti * thsl->sp2 / thsl->mod;
+      thsipos = thsposzero - lt->join_style.ti * thsl->sp2/thsl->mod;
       if (thsipos < 0.0) thsipos = 0.0;
     }
 
     /* Trovo punto di terminazione del bordo esterno della prima linea */
-    if (curjs->te < 0.0) {
-      if (curjs->te < -1.0)
+    if (lt->join_style.te < 0.0) {
+      if (lt->join_style.te < -1.0)
         thsepos = thscongpos[ext];
       else
-        thsepos = thsposzero - curjs->te * (thscongpos[ext] - thsposzero);
+        thsepos = thsposzero - lt->join_style.te*(thscongpos[ext]-thsposzero);
 
     } else {
-      thsepos = thsposzero - curjs->te * thsl->sp2 / thsl->mod;
+      thsepos = thsposzero - lt->join_style.te * thsl->sp2/thsl->mod;
       if (thsepos < 0.0) thsepos = 0.0;
     }
 
       /* Trovo punto di terminazione del bordo interno della seconda linea */
-    if (curjs->ni < 0.0) {
-      if (curjs->ni < -1.0)
+    if (lt->join_style.ni < 0.0) {
+      if (lt->join_style.ni < -1.0)
         nxtipos = nxtcongpos[inn];
       else
-        nxtipos = nxtposzero - curjs->ni * (nxtcongpos[inn] - nxtposzero);
+        nxtipos = nxtposzero - lt->join_style.ni*(nxtcongpos[inn]-nxtposzero);
 
     } else {
-      nxtipos = nxtposzero + curjs->ni * nxtl->sp1 / nxtl->mod;
+      nxtipos = nxtposzero + lt->join_style.ni * nxtl->sp1/nxtl->mod;
       if (nxtipos > 1.0) nxtipos = 1.0;
     }
 
       /* Trovo punto di terminazione del bordo esterno della seconda linea */
-    if (curjs->ne < 0.0) {
-      if (curjs->ne < -1.0)
+    if (lt->join_style.ne < 0.0) {
+      if (lt->join_style.ne < -1.0)
         nxtepos = nxtcongpos[ext];
       else
-        nxtepos = nxtposzero - curjs->ne * (nxtcongpos[ext] - nxtposzero);
+        nxtepos = nxtposzero - lt->join_style.ne*(nxtcongpos[ext]-nxtposzero);
 
     } else {
-      nxtepos = nxtposzero + curjs->ne * nxtl->sp1 / nxtl->mod;
+      nxtepos = nxtposzero + lt->join_style.ne * nxtl->sp1/nxtl->mod;
       if (nxtepos > 1.0) nxtepos = 1.0;
     }
 
@@ -1009,32 +1000,33 @@ void lt_next_line(double x, double y, double sp1, double sp2, int style) {
     thsl->vertex[3-inn].x = thsl->p[inn].x + thsipos * thsl->vb[inn].x;
     thsl->vertex[3-inn].y = thsl->p[inn].y + thsipos * thsl->vb[inn].y;
 
-    thsl->vertex[2+inn].x = thsl->p[ext].x + thsepos * thsl->vb[ext].x;
-    thsl->vertex[2+inn].y = thsl->p[ext].y + thsepos * thsl->vb[ext].y;
-
     nxtl->vertex[inn].x = nxtl->p[inn].x + nxtipos * nxtl->vb[inn].x;
     nxtl->vertex[inn].y = nxtl->p[inn].y + nxtipos * nxtl->vb[inn].y;
+
+    thsl->vertex[3-ext].x = thsl->p[ext].x + thsepos * thsl->vb[ext].x;
+    thsl->vertex[3-ext].y = thsl->p[ext].y + thsepos * thsl->vb[ext].y;
 
     nxtl->vertex[ext].x = nxtl->p[ext].x + nxtepos * nxtl->vb[ext].x;
     nxtl->vertex[ext].y = nxtl->p[ext].y + nxtepos * nxtl->vb[ext].y;
 
     /* Ora traccio la linea */
-    if ( (++lt_segment != 1) || (! lt_is_closed)  ) {
-      grp_rline( thsl->vertex[0], thsl->vertex[1] );
-      grp_rline( thsl->vertex[1], thsl->vertex[2] );
-      grp_rline( thsl->vertex[2], thsl->vertex[3] );
-      grp_rline( thsl->vertex[3], thsl->vertex[0] );
+    if (++lt->segment != 1 || !lt->is_closed) {
+      gpath_move_to(lt->border[0], & (thsl->vertex[1]));
+      gpath_line_to(lt->border[0], & (thsl->vertex[2]));
+      gpath_move_to(lt->border[1], & (thsl->vertex[0]));
+      gpath_line_to(lt->border[1], & (thsl->vertex[3]));
+
     } else {
-      firstline = *thsl;
+      lt->firstline = *thsl;
     }
 
     /* Ora controllo l'angolo per decidere il tipo di congiuntura
      * da tracciare
      */
-    if ( (cutting > 0.0) &&
-     (thsl->u.x * nxtl->u.x + thsl->u.y * nxtl->u.y < 0.0) ) {
+    if (lt->cutting > 0.0 &&
+        (thsl->u.x * nxtl->u.x + thsl->u.y * nxtl->u.y < 0.0) ) {
+      /* ANGOLO ACUTO: CURVA A GOMITO: USO UNA CONGIUNTURA SMORZATA */
 
-      /* Angolo acuto: curva a gomito: uso una congiuntura smorzata */
       double cgwidth, cgrefwidth, alpha;
       Point cgvertex[5];
 
@@ -1045,39 +1037,39 @@ void lt_next_line(double x, double y, double sp1, double sp2, int style) {
        */
 
       /* Trovo la larghezza di riferimento per la congiuntura */
-       {
-       register double s1, s2, x1, y1, x2, y2, r;
+      {
+        Real s1, s2, x1, y1, x2, y2, r;
 
-       s1 = thsl->sp2;
-       s2 = nxtl->sp1;
-       x1 = thsl->mod;
-       y1 = s1 - thsl->sp1;
-       x2 = s2 - nxtl->sp2;
-       y2 = nxtl->mod;
+        s1 = thsl->sp2;
+        s2 = nxtl->sp1;
+        x1 = thsl->mod;
+        y1 = s1 - thsl->sp1;
+        x2 = s2 - nxtl->sp2;
+        y2 = nxtl->mod;
 
-       r = (x2 * s1  + y2 * s2) * x1;
-       s2 = (x1 * s1  + y1 * s2) * y2;
-       s1 = x1*y2 - x2*y1;
-       cgrefwidth = sqrt(r*r + s2*s2) / s1;
-       }
+        r = (x2 * s1  + y2 * s2) * x1;
+        s2 = (x1 * s1  + y1 * s2) * y2;
+        s1 = x1*y2 - x2*y1;
+        cgrefwidth = sqrt(r*r + s2*s2) / s1;
+      }
 
-       /* Trovo la "larghezza" della congiuntura */
-       {
-       register double r1, r2;
+      /* Trovo la "larghezza" della congiuntura */
+      {
+        Real r1, r2;
 
-       cgvertex[2].x = r1 = nxtl->cong[ext].x;
-       cgvertex[2].y = r2 = nxtl->cong[ext].y;
-       cgvertex[3].x = r1 = nxtl->pnt1.x - r1;
-       cgvertex[3].y = r2 = nxtl->pnt1.y - r2;
-       cgwidth = sqrt(r1*r1 + r2*r2);
-       }
+        cgvertex[2].x = r1 = nxtl->cong[ext].x;
+        cgvertex[2].y = r2 = nxtl->cong[ext].y;
+        cgvertex[3].x = r1 = nxtl->pnt1.x - r1;
+        cgvertex[3].y = r2 = nxtl->pnt1.y - r2;
+        cgwidth = sqrt(r1*r1 + r2*r2);
+      }
 
       /* Trovo il punto centrale della curva ( = lato esterno) */
-      alpha = 1.0 - cutting * 0.707106781 * cgrefwidth / cgwidth;
+      alpha = 1.0 - lt->cutting * 0.707106781 * cgrefwidth / cgwidth;
 
-      if ( (alpha > 0) && (alpha < 1) ) {
+      if (alpha > 0 && alpha < 1) {
         /* In questo caso ho cutting! */
-        double beta1, beta2;
+        Real beta1, beta2;
         Point cutdir;
 
         /* Continuo il calcolo che stavo facendo. */
@@ -1119,8 +1111,9 @@ void lt_next_line(double x, double y, double sp1, double sp2, int style) {
         cgvertex[3].y = cgvertex[4].y + beta2 * nxtl->vb[ext].y;
 
         /* Finalmente posso tracciare il lato esterno */
-        grp_rcong( cgvertex[0], cgvertex[1], cgvertex[2] );
-        grp_rcong( cgvertex[2], cgvertex[3], cgvertex[4] );
+        gpath_move_to(lt->border[ext], & (cgvertex[0]));
+        gpath_arc_to(lt->border[ext], & (cgvertex[1]), & (cgvertex[2]));
+        gpath_arc_to(lt->border[ext], & (cgvertex[3]), & (cgvertex[4]));
 
         /* Ora traccio il lato interno */
         cgvertex[0].x = thsl->vertex[2+ext].x;
@@ -1129,60 +1122,46 @@ void lt_next_line(double x, double y, double sp1, double sp2, int style) {
         cgvertex[1].y = nxtl->cong[inn].y;
         cgvertex[2].x = nxtl->vertex[inn].x;
         cgvertex[2].y = nxtl->vertex[inn].y;
-        grp_rcong( cgvertex[0], cgvertex[1], cgvertex[2] );
-
-        /* E infine traccio i lati di tipo linea */
-        grp_rline( thsl->vertex[2], thsl->vertex[3] );
-        grp_rline( nxtl->vertex[0], nxtl->vertex[1] );
-
+        gpath_move_to(lt->border[inn], & (cgvertex[0]));
+        gpath_arc_to(lt->border[inn], & (cgvertex[1]), & (cgvertex[2]));
         goto nxln_exit;
       }
     }
 
      /* Angolo ottuso: curva dolce: uso una congiuntura semplice! */
-     {
+    {
      Point cgvertex[3];
 
-     /* La congiuntura ha 4 lati, 2 sono linee, 2 sono curve.
-      * Ora traccio i lati uno in seguito all'altro:
-      * curva, linea, curva, linea!
-      */
+      /* La congiuntura ha 4 lati, 2 sono linee, 2 sono curve.
+       * Traccio solo le curve, una in seguito all'altra.
+       */
 
-     /* Linea */
-     grp_rline( thsl->vertex[2], thsl->vertex[3] );
+      /* Curva */
+      cgvertex[0].x = thsl->vertex[3].x;
+      cgvertex[0].y = thsl->vertex[3].y;
+      cgvertex[1].x = nxtl->cong[0].x;
+      cgvertex[1].y = nxtl->cong[0].y;
+      cgvertex[2].x = nxtl->vertex[0].x;
+      cgvertex[2].y = nxtl->vertex[0].y;
+      gpath_move_to(lt->border[1], & (cgvertex[0]));
+      gpath_arc_to(lt->border[1], & (cgvertex[1]), & (cgvertex[2]));
 
-     /* Curva */
-     cgvertex[0].x = thsl->vertex[3].x;
-     cgvertex[0].y = thsl->vertex[3].y;
-     cgvertex[1].x = nxtl->cong[0].x;
-     cgvertex[1].y = nxtl->cong[0].y;
-     cgvertex[2].x = nxtl->vertex[0].x;
-     cgvertex[2].y = nxtl->vertex[0].y;
-     grp_rcong( cgvertex[0], cgvertex[1], cgvertex[2] );
-
-     /* Linea */
-     grp_rline( nxtl->vertex[0], nxtl->vertex[1] );
-
-     /* Curva */
-     cgvertex[0].x = nxtl->vertex[1].x;
-     cgvertex[0].y = nxtl->vertex[1].y;
-     cgvertex[1].x = nxtl->cong[1].x;
-     cgvertex[1].y = nxtl->cong[1].y;
-     cgvertex[2].x = thsl->vertex[2].x;
-     cgvertex[2].y = thsl->vertex[2].y;
-     grp_rcong( cgvertex[0], cgvertex[1], cgvertex[2] );
-
-     }
+      /* Curva */
+      cgvertex[0].x = nxtl->vertex[1].x;
+      cgvertex[0].y = nxtl->vertex[1].y;
+      cgvertex[1].x = nxtl->cong[1].x;
+      cgvertex[1].y = nxtl->cong[1].y;
+      cgvertex[2].x = thsl->vertex[2].x;
+      cgvertex[2].y = thsl->vertex[2].y;
+      gpath_move_to(lt->border[0], & (cgvertex[2]));
+      gpath_arc_to(lt->border[0], & (cgvertex[1]), & (cgvertex[0]));
+    }
   }
 
 nxln_exit:
   /* Preparo l'elaborazione della prossima linea */
-  {
-    LineDesc *tmpl = thsl;
-    thsl = nxtl;
-    nxtl = tmpl;
-  }
-
+  lt->thsl = nxtl;
+  lt->nxtl = thsl;
   return;
 
 nxln_err1:

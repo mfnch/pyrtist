@@ -58,7 +58,7 @@ Task line_window_init(Window *w) {
     grp_window *cur_win = grp_win;
     grp_win = w->window;
     /* Mando le impostazioni alla libreria grafica */
-    lt_join_style(& w->line.this_piece.style[0]);
+    lt_join_style(w->line.lt, & w->line.this_piece.style[0]);
     grp_win = cur_win;
   }
 
@@ -104,6 +104,8 @@ Task line_end(VMProgram *vmp) {
       grp_rfgcolor(c->r, c->g, c->b);
     }
     lt_draw(w->line.lt, w->line.close);
+    grp_rdraw();
+    grp_rreset();
     grp_win = cur_win;
     return Success;
   }
@@ -164,6 +166,8 @@ Task line_pause(VMProgram *vmp) {
     w->line.got.color = 0;
   }
   (void) lt_draw(w->line.lt, w->line.close);
+  grp_rdraw();
+  grp_rreset();
   grp_win = cur_win;
 
   w->line.state = GOT_NOTHING;
@@ -193,7 +197,7 @@ Task line_style(VMProgram *vmp) {
   w->line.this_piece.style[2] = (*ls)[2];
   w->line.this_piece.style[3] = (*ls)[3];
   grp_win = w->window;
-  lt_join_style(& w->line.this_piece.style[0]);
+  lt_join_style(w->line.lt, & w->line.this_piece.style[0]);
   grp_win = cur_win;
   return Success;
 }

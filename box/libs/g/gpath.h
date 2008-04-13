@@ -60,21 +60,24 @@ typedef int GPathIterator(Int piece_index, GPathPiece *piece, void *data);
 GPath *gpath_init(void);
 
 /** Destroy the given GPath. */
-void gpath_destroy(GPath *p);
+void gpath_destroy(GPath *gp);
+
+/** Clear the given GPath. */
+void gpath_clear(GPath *gp);
 
 /** Break the path = forgets the current position */
-void gpath_break(GPath *p);
+void gpath_break(GPath *gp);
 
 /** Return the last point in the piece */
 Point *gpathpiece_last(GPathPiece *piece);
 
-void gpath_append(GPath *p, Point *point, int join);
+void gpath_append(GPath *gp, Point *point, int join);
 
-void gpath_move_to(GPath *p, Point *point);
+void gpath_move_to(GPath *gp, Point *point);
 
-void gpath_line_to(GPath *p, Point *point);
+void gpath_line_to(GPath *gp, Point *point);
 
-void gpath_arc_to(GPath *p, Point *p1, Point *p2);
+void gpath_arc_to(GPath *gp, Point *p1, Point *p2);
 
 /** Calls the function iter() for each piece of the GPath,
  * passing the piece index, a pointer to the piece data structure
@@ -86,11 +89,14 @@ void gpath_arc_to(GPath *p, Point *p1, Point *p2);
  */
 int gpath_iter(GPath *gp, GPathIterator iter, void *data);
 
+/** Prints the content of the provided GPath to the 'out' stream. */
+void gpath_print(GPath *gp, FILE *out);
+
 /** This function returns the length of the path. */
-Real gpath_length(GPath *p);
+Real gpath_length(GPath *gp);
 
 /** This function returns the number of pieces in the path. */
-Int gpath_num_pieces(GPath *p);
+Int gpath_num_pieces(GPath *gp);
 
 /** This function returns a point in the path, such that the sub-path
  * which connects it to the starting point has the provided 'length'.
@@ -129,6 +135,6 @@ void gpath_get_length_from_piece(GPath *p, Real piece);
 
 void gpath_subgpath(GPath *p, GPath *subpath, Real first_piece, Real last_piece);
 
-void gpath_append_gpath(GPath *in, GPath *out, int options);
+void gpath_append_gpath(GPath *dest, GPath *src, int options);
 
 #endif

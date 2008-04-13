@@ -88,7 +88,7 @@ static Real eps_point_scale = 283.46457;
 
 static void eps_close_win(void) {
   FILE *f = (FILE *) grp_win->ptr;
-  fprintf(f, "restore\nshowpage\n%%%%Trailer\n%%EOF\n");
+  fprintf(f, "\nrestore\nshowpage\n%%%%Trailer\n%%EOF\n");
   fclose(f);
 }
 
@@ -106,7 +106,6 @@ static void eps_rdraw(void) {
 
 static void eps_rline(Point a, Point b) {
   EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by);
-
 
 /*   if (ax == bx && ay == by) return; need to think better about it!!! */
 
@@ -157,6 +156,7 @@ static void eps_rcong(Point a, Point b, Point c) {
    " %ld %ld %ld %ld %ld %ld cong", ax, ay, bx, by, cx, cy );
   previous_px = cx; previous_py = cy;
   beginning_of_line = 0;
+  beginning_of_path = 0;
 }
 
 static void eps_rcircle(Point ctr, Point a, Point b) {
