@@ -23,6 +23,7 @@
 #  include "g.h"
 #  include "buffer.h"
 #  include "pointlist.h"
+#  include "linetracer.h"
 
 #  define _DEF_WINDOW_SUBOBJECTS
 #  include "i_line.h"

@@ -20,6 +20,8 @@
 #ifndef _G_H
 #  define _G_H
 
+#  include "types.h"
+
 typedef struct {
   Real r, g, b;
 } Color;

@@ -17,19 +17,646 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* PROCEDURE DI TRACCIATURA DI LINEE SPESSE
- */
+/* PROCEDURE DI TRACCIATURA DI LINEE SPESSE */
 
 #include <math.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
 
+#include "types.h"
 #include "error.h"
+#include "g.h"
 #include "graphic.h"
 #include "gpath.h"
+#include "buffer.h"
+#include "i_window.h"
+#include "autoput.h"
+#include "fig.h"
+#include "linetracer.h"
 
-/* Di seguito specifichiamo le strutture e le dichiarazioni necessarie
- * per le procedure di tracciatura di linee "spesse"
+LineTracer *lt_new(void) {
+  LineTracer *lt = (LineTracer *) malloc(sizeof(LineTracer));
+  if (lt == (LineTracer *) NULL) return (LineTracer *) NULL;
+  lt->border[0] = gpath_init();
+  lt->border[1] = gpath_init();
+
+  if (   lt->border[0] == (GPath *) NULL
+      || lt->border[1] == (GPath *) NULL
+      || !buff_create(& lt->pieces, sizeof(LinePiece), 10)) {
+    gpath_destroy(lt->border[0]);
+    gpath_destroy(lt->border[1]);
+    buff_free(& lt->pieces);
+    free(lt);
+    return (LineTracer *) NULL;
+  }
+  return lt;
+}
+
+void lt_destroy(LineTracer *lt) {
+  gpath_destroy(lt->border[0]);
+  gpath_destroy(lt->border[1]);
+  buff_free(& lt->pieces);
+  free(lt);
+}
+
+void lt_add_piece(LineTracer *lt, LinePiece *lp) {
+  (void) buff_push(& lt->pieces, lp);
+}
+
+void lt_clear(LineTracer *lt) {
+  buff_clear(& lt->pieces);
+}
+
+Int lt_num_pieces(LineTracer *lt) {
+  return buff_numitems(& lt->pieces);
+}
+
+
+
+
+
+/* Procedure contenente gli algoritmi usati per tracciare le linee */
+static int lt_draw_opened(LineTracer *lt);
+static int lt_draw_closed(LineTracer *lt);
+static int line_put_to_begin_or_end(Point *p1, Point *p2,
+                                    Real w, Real fw,
+                                    void *f, int final);
+static int line_put_to_join(Point *p1, Point *p2, Point *p3,
+                            Real w1, Real w2, Real fw, void *f, int first);
+static void line_first_point(Point *p, Real s);
+static void line_next_point(Point *p, Real si, Real so);
+static void line_final_point(Point *p, Real s);
+static void line_closed_begin(Point *p0, Point *p1,
+                              Real s0o, Real s1i, Real s1o);
+static void line_closed_finish(Point *p, Real si);
+
+/* DESCRIZIONE: Disegna la linea aperta i cui dati sono contenuti in line_desc.
  */
+static int lt_draw_opened(LineTracer *lt) {
+  long numpnt, m;
+  LinePiece *ip, *i, *in; /* p --> previous, n --> next */
+
+  /* Una linea e' descritta da almeno 2 punti */
+  numpnt = buff_numitem(& lt->pieces);
+  if ( numpnt < 2 ) {
+    g_warning("Line with less than two points");
+    return 1;
+  }
+
+  /* i1 punta all'ultimo punto, i2 e 13 al primo e secondo rispettivamente */
+  ip = buff_lastitemptr(& lt->pieces, LinePiece);
+  i = buff_firstitemptr(& lt->pieces, LinePiece);
+  in = buff_itemptr(& lt->pieces, LinePiece, 2);
+
+  if ( i->arrow == NULL ) {
+    line_first_point( & (i->point), in->width1 );
+
+  } else {
+    /* Attenzione: in->width1 e' lo spessore uscente di i->pnt! */
+    if ( ! line_put_to_begin_or_end(& (i->point), & (in->point),
+                                    in->width1, in->arrow_scale, i->arrow, 0 ) )
+      return 0;
+  }
+
+  /* Ripeto per (numpnt - 2) volte */
+  for ( m = 2; m < numpnt; m++ ) {
+    /* Faccio uno shift dei puntatori, per passare al prossimo punto */
+    ip = i; i = in++;
+
+    if ( i->arrow == NULL ) {
+      line_next_point( & (i->point), i->width2, in->width1 );
+
+    } else {
+      assert(0);
+      /*if ( ! line_put_to_join(& (ip->pnt), & (i->pnt), & (in->pnt), i->width2, in->width1,
+                              1.0 ???, i->arrow, 0) )
+        return 0;*/
+    }
+  }
+
+  /* Ora traccio l'ultima linea */
+  if ( in->arrow == NULL ) {
+    line_final_point( & (in->point), in->width2 );
+
+  } else {
+    if ( ! line_put_to_begin_or_end(& (in->point), & (i->point),
+                                    in->width1, in->arrow_scale, in->arrow, 1) )
+      return 0;
+  }
+
+  return 1;
+}
+
+/* DESCRIZIONE: Disegna la linea aperta i cui dati sono contenuti in line_desc.
+ */
+static int lt_draw_closed(LineTracer *lt) {
+  long numpnt, m;
+  LinePiece *ip, *i, *in; /* p --> previous, n --> next */
+  Point tp;
+
+  /* Una linea e' descritta da almeno 2 punti */
+  numpnt = buff_numitem(& lt->pieces);
+  if ( numpnt < 2 ) {
+    g_warning("Linea con meno di 2 punti");
+    return 1;
+  }
+
+  /* i punta all'ultimo punto, ip e in al pen-ultimo e al primo rispett. */
+  in = buff_firstitemptr(& lt->pieces, LinePiece);
+  i = buff_lastitemptr(& lt->pieces, LinePiece);
+  ip = i-1;
+
+  if ( i->arrow == NULL ) {
+    line_closed_begin(& (ip->point), & (i->point),
+                      i->width1, i->width2, in->width1);
+
+  } else {
+#if 1
+    assert(0);
+#else
+    tp = ip->pnt;
+    if ( ! line_put_to_join(& tp, & (i->pnt), & (in->pnt),
+                            i->width2, in->width1, 1.0 ???, i->arrow, 1) )
+      return 0;
+#endif
+  }
+
+  /* Ripeto per (numpnt - 1) volte */
+  for ( m = 1; m < numpnt; m++ ) {
+    /* Faccio uno shift dei puntatori, per passare al prossimo punto */
+    ip = i; i = in++;
+
+    if ( i->arrow == NULL ) {
+      line_next_point( & (i->point), i->width2, in->width1 );
+
+    } else {
+      assert(0);
+      /*if ( ! line_put_to_join(& (ip->pnt), & (i->pnt), & (in->pnt), i->width2, in->width1,
+                              1.0 ???, i->arrow, 0) )
+        return 0;*/
+    }
+  }
+
+  /* in punta all'ultimo "punto" della lista, quello da cui siamo partiti! */
+  if ( in->arrow == NULL ) {
+    line_closed_finish(& (in->point), in->width1);
+
+  } else {
+    line_final_point(& tp, in->width1);
+  }
+
+  return 1;
+}
+
+/** Traccia la linea e pulisce line_desc (i dati relativi). */
+int lt_draw(LineTracer *lt, int closed) {
+  return closed ? lt_draw_closed(lt) : lt_draw_opened(lt);
+}
+
+/* DESCRIZIONE: Questa funzione serve ad usare una figura come elemento
+ *  di (inizio/termine)-linea. La figura verra' disposta sull'estremo p1
+ *  della linea p1-p2 (serve a realizzare linee che terminano con una freccia,
+ *  ad esempio).
+ *  Sulla figura individuiamo 3 punti: f1 (head), f2 (center), f3.
+ *  L'algoritmo traslera' f1 su p1, ruotera' la figura usando il vincolo
+ *  !near[f2, p2], scalera' la figura (senza deformarla) con s = w/d(f1, f2)
+ *  (con w spessore della linea)
+ *  NOTA: d(..., ...) e' la distanza fra 2 punti, quindi l'algoritmo scalera'
+ *  la figura in modo tale che la distanza f1-f2 diventi uguale a w.
+ *  Questa trasformazione rende le dimensioni dell'oggetto poporzionate
+ *  allo spessore della linea!).
+ *  Infine, una volta che l'oggetto e' stato disposto, viene disegnato
+ *  il segmento f3-p2.
+ *  Se i punti non sono 3, ma solo 1 (f1), allora verra' assunto f2=f3=(0, 0).
+ *  Se i punti sono solo 2, verra' assunto f3=(0, 0).
+ */
+static int line_put_to_begin_or_end(Point *p1, Point *p2, Real w, Real fig_w,
+                                    void *f, int final) {
+  long num_hp;
+  Real rot_angle = 0.0, scale_x = 1.0, scale_y = 1.0;
+  Point rot_center, trsl_vect;
+  /* Punto finale e iniziale a cui vanno congiunti i segmenti della spezzata */
+  Point pfi, pnt[3];
+  Window *fw = (Window *) f;
+
+  if (fw == (Window *) NULL)
+    return 1;
+
+  else {
+    Point *p;
+    p = pointlist_find(& fw->pointlist, "head");
+    if (p == (Point *) NULL) {
+      g_error("The figure needs to have at least one hot point with name "
+              "\"head\" to be used as an arrow!");
+      return 0;
+    }
+    pnt[0] = *p;
+    num_hp = 1;
+
+    p = pointlist_find(& fw->pointlist, "tail");
+    if (p != (Point *) NULL) pnt[num_hp++] = *p;
+
+    p = pointlist_find(& fw->pointlist, "join");
+    if (p != (Point *) NULL) pnt[num_hp++] = *p;
+  }
+
+  if (num_hp < 1) {
+    g_error("The figure has not any hot points.");
+    return 1;
+  }
+
+  /* Traslo in modo che pnt[1] vada a finire in p2 */
+  rot_center.x = pnt[0].x; rot_center.y = pnt[0].y;
+  trsl_vect.x = p1->x - rot_center.x; trsl_vect.y = p1->y - rot_center.y;
+
+  /* Se ho solo un hot-point la trasformazione l'ho gia' individuata!
+   * Se ne ho piu' di 1, devo calcolare rotazione e scala!
+   */
+  if ( num_hp > 1 ) {
+    register Real d, dx, dy;
+
+    /* Calcolo la distanza di riferimento per eseguire la scala */
+    dx = pnt[1].x - pnt[0].x;
+    dy = pnt[1].y - pnt[0].y;
+    d = sqrt(dx*dx + dy*dy);
+
+    /* Calcolo il fattore di scala */
+    if ( d > 0.0 )
+      scale_x = scale_y = fig_w*w/d;
+
+    /* Resta soltanto da eseguire la rotazione */
+    {
+      int needed = 0;
+      Real weight = 1.0;
+      Point near_fig, near_back;
+
+      if ( ! aput_allow("r", & needed ) ) return 0;
+
+      near_back.x = p2->x; near_back.y = p2->y;
+      near_fig.x = pnt[1].x; near_fig.y = pnt[1].y;
+
+      /* Setto i parametri prima dei calcoli */
+      aput_set( & rot_center, & trsl_vect,
+       & rot_angle, & scale_x, & scale_y );
+
+      /* Calcolo i parametri della trasformazione in base ai vincoli */
+      if ( ! aput_autoput( & near_fig, & near_back, & weight, 1, needed ) )
+        return 0;
+
+      /* Preleva i risultati dei calcoli */
+      aput_get( & rot_center, & trsl_vect,
+       & rot_angle, & scale_x, & scale_y );
+    }
+  }
+
+  #ifdef DEBUG
+  printf("Vettore di traslazione: T = (%g, %g)\n", trsl_vect.x, trsl_vect.y);
+  printf("Centro di rotazione: Q = (%g, %g)\n", rot_center.x, rot_center.y);
+  printf("Angolo di rotazione: theta = %g\n", rot_angle);
+  printf("Scala x: %g\n", scale_x);
+  printf("Scala y: %g\n", scale_y);
+  #endif
+
+  /* Calcolo la matrice di trasformazione */
+  aput_matrix(
+   & trsl_vect,
+   & rot_center, rot_angle,
+   scale_x, scale_y,
+   fig_matrix
+  );
+
+  /* Calcolo dove vanno a finire pfi[0] = f3 e pfi[1] = f5,
+   * quando trasformo la figura
+   */
+  if ( num_hp < 3 )
+    pfi = (Point) {0.0, 0.0};
+  else
+    pfi = pnt[2];
+
+  fig_ltransform( & pfi, 1 );
+
+  /* Disegno l'oggetto */
+  fig_draw_fig(fw->window);
+
+  /* Continuo a disegnare le linee */
+  if ( final )
+    line_final_point( & pfi, w );
+  else
+    line_first_point( & pfi, w );
+
+  return 1;
+}
+
+#if 0
+/* DESCRIZIONE: Simile alla precedente, ma usa una figura come elemento
+ *  di congiunzione fra due linee di una spezzata.
+ * NOTA: first specifica se il punto p2 e' il primo, cioe' quello da cui
+ *  si inizia a tracciare la linea (che quindi sara' chiusa, altrimenti
+ *  sarebbe stata usata la line_put_to_begin_or_end).
+ *  Se first == 1, non viene usata line_final_point e il primo punto
+ *  della figura (f3) viene salvato in *p1 (per uso futuro).
+ */
+static int line_put_to_join(Point *p1, Point *p2, Point *p3,
+                            Real w1, Real w2, Real fw, void *f, int first) {
+  int num_hp;
+  Real w = 0.5*(w1 + w2);
+  Real rot_angle = 0.0, scale_x = 1.0, scale_y = 1.0;
+  Point rot_center, trsl_vect, *pnt;
+  /* Punto finale e iniziale a cui vanno congiunti i segmenti della spezzata */
+  Point pfi[2] = {{0.0, 0.0}, {0.0, 0.0}};
+
+  if ( ((obj_header *) f)->child == NULL ) {
+    /* La figura da disporre non possiede hot-points: errore! */
+    vrmc_liberr("La figura non possiede una lista di hot-points!");
+    EXIT_ERR("...->child == NULL!\n");
+  }
+
+  /* Prelevo la PList che contiene gli hot-points */
+  f_hots = LIST_GET_FROM_STATUS( ((obj_header *) f)->child );
+
+  /* Accedo alla PList */
+  pnt = list_access( OBJID_PLIST, f_hots, & num_hp );
+  if ( pnt == NULL ) { EXIT_ERR("list_access fallita!\n"); }
+
+  if ( num_hp < 1 ) {
+    vrmc_liberr("figura priva di hot-points");
+    EXIT_ERR("num_hp = 0!\n");
+  }
+
+  /* Traslo in modo che pnt[1] vada a finire in p2 */
+  rot_center.x = pnt->x; rot_center.y = pnt->y;
+  trsl_vect.x = p2->x - rot_center.x; trsl_vect.y = p2->y - rot_center.y;
+
+  /* Se ho solo un hot-point la trasformazione l'ho gia' individuata!
+   * Se ne ho piu' di 1, devo calcolare rotazione e scala!
+   */
+  if ( num_hp > 1 ) {
+    register Real d;
+
+    if ( num_hp >= 3 ) {
+      pfi[0] = pnt[2];
+      if ( num_hp >= 5 ) {
+        pfi[1] = pnt[4];
+      }
+    }
+
+    /* Calcolo la distanza di riferimento per eseguire la scala */
+    if ( num_hp < 4 ) {
+      register Real dx, dy;
+
+      dx = pnt[1].x - pnt->x;
+      dy = pnt[1].y - pnt->y;
+      d = sqrt( dx*dx + dy*dy );
+
+    } else {
+      register Real dx, dy;
+
+      dx = pnt[1].x - pnt->x;
+      dy = pnt[1].y - pnt->y;
+      d = sqrt( dx*dx + dy*dy );
+      dx = pnt[3].x - pnt->x;
+      dy = pnt[3].y - pnt->y;
+      d = ( d + sqrt(dx*dx + dy*dy) ) / 2.0;
+    }
+
+    if ( d > 0.0 )
+      scale_x = scale_y = w/d;
+
+    /* Resta soltanto da eseguire la rotazione */
+    {
+      int needed = 0;
+      Real weight[2] = {1.0, 1.0};
+      Point near_fig[2], near_back[2];
+
+      if ( ! aput_allow("r", & needed ) ) {
+        g_error("aput_allow fallita!");
+        return 1;
+      }
+
+      near_back[0].x = p1->x; near_back[0].y = p1->y;
+      near_back[1].x = p3->x; near_back[1].y = p3->y;
+
+      if ( num_hp < 4 ) {
+        near_fig[1].x = near_fig[0].x = pnt[1].x;
+        near_fig[1].y = near_fig[0].y = pnt[1].y;
+      } else {
+        near_fig[0].x = pnt[1].x; near_fig[0].y = pnt[1].y;
+        near_fig[1].x = pnt[3].x; near_fig[1].y = pnt[3].y;
+      }
+
+      /* Setto i parametri prima dei calcoli */
+      aput_set( & rot_center, & trsl_vect,
+       & rot_angle, & scale_x, & scale_y );
+
+      /* Calcolo i parametri della trasformazione in base ai vincoli */
+      if ( ! aput_autoput( near_fig, near_back, weight, 2, needed ) ) {
+        g_error("aput_autoput fallita!");
+        return 1;
+      }
+
+      /* Preleva i risultati dei calcoli */
+      aput_get( & rot_center, & trsl_vect,
+       & rot_angle, & scale_x, & scale_y );
+    }
+  }
+
+  /* Calcolo la matrice di trasformazione */
+  aput_matrix(
+   & trsl_vect,
+   & rot_center, rot_angle,
+   scale_x, scale_y,
+   fig_matrix
+  );
+
+  /* Calcolo dove vanno a finire pfi[0] = f3 e pfi[1] = f5,
+   * quando trasformo la figura
+   */
+  fig_ltransform( pfi, 2 );
+
+  /* Disegno l'oggetto */
+  fig_draw_fig( ((obj_header *) f)->info );
+
+  /* Continuo a disegnare le linee */
+  line_first_point( & pfi[1], w2 );
+
+  if ( first ) {
+    *p1 = pfi[0];
+  } else {
+    line_final_point( & pfi[0], w1 );
+  }
+
+  EXIT_OK("figura disegnata!\n");
+}
+#endif
+
+static int line_closed_selected = 0;
+static long line_entered_numpnts = 0;
+static Point line_entered_first_pnt;
+static Real line_entered_s;
+
+/* DESCRIZIONE: Specifica il primo punto di una spezzata, col relativo
+ *  spessore iniziale.
+ */
+static void line_first_point(Point *p, Real s)
+{
+  if ( line_entered_numpnts > 0 ) {
+    g_warning("Inizio nuova linea, senza aver terminato la linea precedente");
+    return;
+  }
+
+  line_entered_first_pnt = *p;
+  line_entered_s = s;
+
+  line_entered_numpnts = 1;
+  return;
+}
+
+/* DESCRIZIONE: Specifica il prossimo punto di una spezzata, col relativo
+ *  spessore entrante (si) ed uscente (so).
+ */
+static void line_next_point(Point *p, Real si, Real so)
+{
+  if ( line_entered_numpnts > 1 ) {
+    grp_next_line(p->x, p->y, line_entered_s, si, 1);
+    grp_rdraw();
+    grp_rreset();
+    line_entered_s = so;
+    ++line_entered_numpnts;
+    return;
+
+  } else if ( line_entered_numpnts == 1 ) {
+    grp_first_line(
+     line_entered_first_pnt.x, line_entered_first_pnt.y, line_entered_s,
+     p->x, p->y, si, 0.0, 0 );
+    line_entered_s = so;
+    ++line_entered_numpnts;
+    return;
+
+  } else {
+    g_warning("Secondo punto senza il primo");
+    return;
+  }
+
+  return;
+}
+
+/* DESCRIZIONE: Specifica l'ultimo punto di una spezzata, col relativo
+ *  spessore finale.
+ */
+static void line_final_point(Point *p, Real s)
+{
+  if ( line_entered_numpnts > 1 ) {
+    grp_next_line(p->x, p->y, line_entered_s, s, 1);
+    grp_rdraw();
+    grp_rreset();
+    grp_last_line(0.0, 0);
+    grp_rdraw();
+    grp_rreset();
+    line_entered_numpnts = 0;
+    return;
+
+  } else if ( line_entered_numpnts == 1 ) {
+    grp_first_line(
+     line_entered_first_pnt.x, line_entered_first_pnt.y, line_entered_s,
+     p->x, p->y, s, 0.0, 0 );
+    grp_last_line(0.0, 0);
+    grp_rdraw();
+    grp_rreset();
+    line_entered_numpnts = 0;
+    return;
+
+  } else {
+    g_warning("Ultimo punto senza il primo");
+    return;
+  }
+
+  return;
+}
+
+/* DESCRIZIONE: Per tracciare una linea che si richiude su se' stessa, bisogna
+ *  usare questa funzione in luogo della line_first_point e line_close_finish
+ *  alla fine per completarla.
+ *  p0 e' l'ultimo punto (serve per dare la giusta forma alla congiuntura
+ *  sull'angolo)
+ */
+static void line_closed_begin(
+ Point *p0, Point *p1, Real s0o, Real s1i, Real s1o )
+{
+  if ( (line_entered_numpnts > 0) || (line_closed_selected) ) {
+    g_warning(
+     "Inizio nuova linea, senza aver terminato la linea precedente");
+    return;
+  }
+
+  grp_first_line( p0->x, p0->y, s0o, p1->x, p1->y, s1i, 0.0, 1 );
+
+  line_entered_s = s1o;
+  line_entered_numpnts = 2;
+  line_closed_selected = 1;
+  return;
+}
+
+/* DESCRIZIONE: Completa una linea chiusa. p e' il primo punto, cioe' il p1
+ *  della funzione line_closed_begin.
+ */
+static void line_closed_finish(Point *p, Real si)
+{
+  if ( ! line_closed_selected ) {
+    g_warning("Tentativo di chiudere una linea aperta");
+    return;
+  }
+
+  if ( line_entered_numpnts > 1 ) {
+    grp_next_line(p->x, p->y, line_entered_s, si, 1);
+    grp_rdraw();
+    grp_rreset();
+    grp_last_line(0.0, 1);
+    grp_rdraw();
+    grp_rreset();
+    line_entered_numpnts = 0;
+    line_closed_selected = 0;
+    return;
+
+  } else if ( line_entered_numpnts == 1 ) {
+    grp_next_line(p->x, p->y, line_entered_s, si, 1);
+    grp_rdraw();
+    grp_rreset();
+    grp_last_line(0.0, 1);
+    grp_rdraw();
+    grp_rreset();
+    line_entered_numpnts = 0;
+    line_closed_selected = 0;
+    return;
+
+  } else {
+    g_warning("Meno di 3 punti nella linea chiusa");
+    return;
+  }
+
+  return;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* Questa struttura tiene conto di cio' che si sta tracciando */
 typedef struct {
@@ -44,32 +671,87 @@ typedef struct {
   Point vci;        /* Vettore di congiuntura interno */
   Point vertex[4];  /* Vertici della linea precedente */
   Real mod, mod2;   /* Lunghezza della linea */
-} line_desc;
+} LineDesc;
 
 typedef struct {
   /* Lunghezze di giunzione interne ed esterne della linea corrente */
   double ti, te;
   /* Lunghezze di giunzione interne ed esterne della prossima linea */
   double ni, ne;
-} join_style;
+} JoinStyle;
 
 static int line_is_closed;
 static int line_segment;
-static line_desc line1, line2, firstline;
-static line_desc *thsl;
-static line_desc *nxtl;
-static join_style *curjs;
+static LineDesc line1, line2, firstline;
+static LineDesc *thsl;
+static LineDesc *nxtl;
+static JoinStyle *curjs;
 static double cutting = 8.0;
 
 /* Macro utilizzate in seguito */
 #define MOD2(x, y)  (x*x + y*y)
 
+/* DESCRIZIONE: Questa funzione calcola l'intersezione fra le seguenti linee:
+ *  1) la linea passante per il punto p1 e diretta lungo il vettore d1;
+ *  2) la linea passante per p2 e diretta lungo d2.
+ *  Se il calcolo riesce restituisce 1, 0 altrimenti (se le linee sono
+ *  parallele oppure coincidenti).
+ *  La procedura restituisce alpha1, che mi permette di ottenere il punto
+ *  d'intersezione nel modo seguente: intersez = p1 + alpha1 * d1
+ */
+int lt_intersection(Point *p1, Point *d1, Point *p2, Point *d2,
+                    double *alpha1) {
+  Point p2mp1;
+  double d1vectd2;
+
+  p2mp1.x = p2->x - p1->x;
+  p2mp1.y = p2->y - p1->y;
+
+  /* Primo punto di giunzione */
+  d1vectd2 = d1->x * d2->y - d1->y * d2->x;
+
+  if (d1vectd2 == 0.0) return 0;
+
+  *alpha1 = (p2mp1.x * d2->y - p2mp1.y * d2->x) / d1vectd2;
+
+  return 1;
+}
+
+/* DESCRIZIONE: Questa funzione calcola l'intersezione fra le seguenti linee:
+ *  1) la linea passante per il punto p1 e diretta lungo il vettore d1;
+ *  2) la linea passante per p2 e diretta lungo d2.
+ *  Se il calcolo riesce restituisce 1, 0 altrimenti (se le linee sono
+ *  parallele oppure coincidenti).
+ *  La procedura restituisce alpha1, che mi permette di ottenere il punto
+ *  d'intersezione nel modo seguente: intersez = p1 + alpha1 * d1
+ *  e alpha2 che permette di ottenere lo stesso punto come:
+ *  intersez = p2 + alpha2 * d2
+ */
+int lt_intersection2(Point *p1, Point *d1, Point *p2, Point *d2,
+                     double *alpha1, double *alpha2) {
+  Point p2mp1;
+  double d1vectd2;
+
+  p2mp1.x = p2->x - p1->x;
+  p2mp1.y = p2->y - p1->y;
+
+  /* Primo punto di giunzione */
+  d1vectd2 = d1->x * d2->y - d1->y * d2->x;
+
+  if (d1vectd2 == 0.0) return 0;
+
+  *alpha1 = (p2mp1.x * d2->y - p2mp1.y * d2->x) / d1vectd2;
+  *alpha2 = (p2mp1.x * d1->y - p2mp1.y * d1->x) / d1vectd2;
+
+  return 1;
+}
+
 /* DESCRIZIONE: Setta lo stile di giunzione. userjs e' un puntatore ad un array
  *  di 4 numeri di tipo float, che descrivono il tipo di giunzione da usare
  *  per collegare le linee fra loro.
  */
-void grp_join_style(Real *userjs) {
-  curjs = (join_style *) userjs;
+void lt_join_style(Real *userjs) {
+  curjs = (JoinStyle *) userjs;
   return;
 }
 
@@ -81,21 +763,21 @@ void grp_join_style(Real *userjs) {
  *  piu' grande di 1.
  * NOTA: Se non c'e' una sporgenza rilevante il taglio non sara' praticato.
  */
-void grp_cutting(Real c) {
+void lt_cutting(Real c) {
   if (c > 0.0)
     cutting = c;
 }
 
 /* DESCRIZIONE: Specifica gli estremi della prima linea da tracciare.
  *  Le altre linee che continuano la spezzata devono essere specificate
- *  con grp_next_line
+ *  con lt_next_line
  *  La prima parte della linea pu essere "tagliata".
  *  A tal proposito startlenght specifica la lunghezza della prima parte
  *  della linea che si vuole "omettere".
  *  sp1 e sp2 sono gli spessori della linea in corrispondenza ai due punti
  *  (x1, y1) e (x2, y2).
  */
-void grp_first_line(Real x1, Real y1, Real sp1,
+void lt_first_line(Real x1, Real y1, Real sp1,
                     Real x2, Real y2, Real sp2,
                     Real startlenght, int is_closed) {
   Real sl;
@@ -149,7 +831,7 @@ void grp_first_line(Real x1, Real y1, Real sp1,
  *  che si vuole sia "tagliata". Specificando lastlenght = 0
  *  l'ultima linea verra' tracciata nella sua intera lunghezza.
  */
-void grp_last_line(double lastlenght, int is_closed) {
+void lt_last_line(double lastlenght, int is_closed) {
   if ( is_closed ) {
     /* La linea e' chiusa */
     thsl->vertex[2] = firstline.vertex[2];
@@ -184,7 +866,7 @@ void grp_last_line(double lastlenght, int is_closed) {
  *  style specifica il modo in cui le linee della spezzata devono essere
  *  congiunte.............
  */
-void grp_next_line(double x, double y, double sp1, double sp2, int style) {
+void lt_next_line(double x, double y, double sp1, double sp2, int style) {
   double thscongpos[2], nxtcongpos[2];
   int flag;
 
@@ -216,17 +898,17 @@ void grp_next_line(double x, double y, double sp1, double sp2, int style) {
 
   /* Calcolo i punti di giunzione */
   /* Primo punto di giunzione */
-  flag = grp_intersection2(& thsl->p[0], & thsl->vb[0],  /* Prima retta */
-                           & nxtl->p[0], & nxtl->vb[0],  /* Seconda retta */
-                           & thscongpos[0], & nxtcongpos[0]);
+  flag = lt_intersection2(& thsl->p[0], & thsl->vb[0],  /* Prima retta */
+                          & nxtl->p[0], & nxtl->vb[0],  /* Seconda retta */
+                          & thscongpos[0], & nxtcongpos[0]);
   if (!flag || thscongpos[0] <= 0 || nxtcongpos[0] >= 1) {
     printf("1 C'e' qualche problema!!!\n");
   }
 
   /* Secondo punto di giunzione */
-  flag = grp_intersection2(& thsl->p[1], & thsl->vb[1],  /* Prima retta */
-                           & nxtl->p[1], & nxtl->vb[1],  /* Seconda retta */
-                           & thscongpos[1], & nxtcongpos[1]);
+  flag = lt_intersection2(& thsl->p[1], & thsl->vb[1],  /* Prima retta */
+                          & nxtl->p[1], & nxtl->vb[1],  /* Seconda retta */
+                          & thscongpos[1], & nxtcongpos[1]);
   if (!flag || thscongpos[1] <= 0 || nxtcongpos[1] >= 1) {
     printf("2 C'e' qualche problema!!!\n");
   }
@@ -394,7 +1076,7 @@ void grp_next_line(double x, double y, double sp1, double sp2, int style) {
        cgrefwidth = sqrt(r*r + s2*s2) / s1;
        }
 
-      /* Trovo la "larghezza" della congiuntura */
+       /* Trovo la "larghezza" della congiuntura */
        {
        register double r1, r2;
 
@@ -431,14 +1113,14 @@ void grp_next_line(double x, double y, double sp1, double sp2, int style) {
         cutdir.y = cgvertex[0].y - cgvertex[4].y;
 
         /* Trovo il punto 1: �intersezione di 2 rette! */
-        if ( ! grp_intersection(
+        if ( ! lt_intersection(
          /* Prima retta: bordo esterno della linea 1 */
          & cgvertex[0], & thsl->vb[ext],
          /* Seconda retta: passante per 2 con direzione cutdir */
          & cgvertex[2], & cutdir, & beta1) ) {goto nxln_err1;}
 
         /* Trovo il punto 2: �intersezione di 2 rette! */
-        if ( ! grp_intersection(
+        if ( ! lt_intersection(
          /* Prima retta: bordo esterno della linea 2 */
          & cgvertex[4], & nxtl->vb[ext],
          /* Seconda retta: passante per 2 con direzione cutdir */
@@ -511,7 +1193,7 @@ void grp_next_line(double x, double y, double sp1, double sp2, int style) {
 nxln_exit:
   /* Preparo l'elaborazione della prossima linea */
    {
-   register line_desc *tmpl;
+   register LineDesc *tmpl;
 
    tmpl = thsl;
    thsl = nxtl;
@@ -523,60 +1205,4 @@ nxln_exit:
 nxln_err1:
   printf("Impossibile tracciare lo spigolo! Disattivare cutting!\n");
   goto nxln_exit;
-}
-
-/* DESCRIZIONE: Questa funzione calcola l'intersezione fra le seguenti linee:
- *  1) la linea passante per il punto p1 e diretta lungo il vettore d1;
- *  2) la linea passante per p2 e diretta lungo d2.
- *  Se il calcolo riesce restituisce 1, 0 altrimenti (se le linee sono
- *  parallele oppure coincidenti).
- *  La procedura restituisce alpha1, che mi permette di ottenere il punto
- *  d'intersezione nel modo seguente: intersez = p1 + alpha1 * d1
- */
-int grp_intersection(Point *p1, Point *d1, Point *p2, Point *d2,
- double *alpha1)
-{
-  Point p2mp1;
-  double d1vectd2;
-
-  p2mp1.x = p2->x - p1->x;
-  p2mp1.y = p2->y - p1->y;
-
-  /* Primo punto di giunzione */
-  d1vectd2 = d1->x * d2->y - d1->y * d2->x;
-
-  if (d1vectd2 == 0.0) return 0;
-
-  *alpha1 = (p2mp1.x * d2->y - p2mp1.y * d2->x) / d1vectd2;
-
-  return 1;
-}
-
-/* DESCRIZIONE: Questa funzione calcola l'intersezione fra le seguenti linee:
- *  1) la linea passante per il punto p1 e diretta lungo il vettore d1;
- *  2) la linea passante per p2 e diretta lungo d2.
- *  Se il calcolo riesce restituisce 1, 0 altrimenti (se le linee sono
- *  parallele oppure coincidenti).
- *  La procedura restituisce alpha1, che mi permette di ottenere il punto
- *  d'intersezione nel modo seguente: intersez = p1 + alpha1 * d1
- *  e alpha2 che permette di ottenere lo stesso punto come:
- *  intersez = p2 + alpha2 * d2
- */
-int grp_intersection2(Point *p1, Point *d1, Point *p2, Point *d2,
-                      double *alpha1, double *alpha2) {
-  Point p2mp1;
-  double d1vectd2;
-
-  p2mp1.x = p2->x - p1->x;
-  p2mp1.y = p2->y - p1->y;
-
-  /* Primo punto di giunzione */
-  d1vectd2 = d1->x * d2->y - d1->y * d2->x;
-
-  if (d1vectd2 == 0.0) return 0;
-
-  *alpha1 = (p2mp1.x * d2->y - p2mp1.y * d2->x) / d1vectd2;
-  *alpha2 = (p2mp1.x * d1->y - p2mp1.y * d1->x) / d1vectd2;
-
-  return 1;
 }

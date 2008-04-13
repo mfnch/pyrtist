@@ -19,14 +19,6 @@
 
 #ifdef _DEF_WINDOW_SUBOBJECTS
 
-typedef struct {
-  Real width1, width2;
-  Point point;
-  LineStyle style;
-  void *fig;
-  Real arrowscale;
-} WindowLinePiece;
-
 /* This is part of the Window object */
 typedef struct {
   enum {GOT_NOTHING,
@@ -41,8 +33,8 @@ typedef struct {
   Color color;
   int close;
   Real arrowscale;
-  WindowLinePiece this_piece;
-  buff pieces;
+  LineTracer *lt;
+  LinePiece this_piece;
 } WindowLine;
 
 #else

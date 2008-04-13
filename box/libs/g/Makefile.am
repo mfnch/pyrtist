@@ -39,7 +39,7 @@ libg_la_SOURCES = g.c g.h objlist.c objlist.h pointlist.h \
                   ps.c eps.c bb.c bb.h \
                   rasterizer.c buffer.c buffer.h error.c error.h \
                   autoput.c autoput.h \
-                  gpath.c gpath.h \
+                  gpath.c gpath.h linetracer.c linetracer.h \
                   i_pointlist.c i_pointlist.h \
                   i_window.c i_window.h i_line.c i_line.h \
                   i_circle.c i_circle.h i_poly.c i_poly.h \
