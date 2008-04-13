@@ -114,6 +114,7 @@ static void eps_rline(Point a, Point b) {
   if (beginning_of_path) {
     fprintf((FILE *) grp_win->ptr, " newpath");
     beginning_of_path = 0;
+    continuing = 0;
   }
 
   if (!continuing)
