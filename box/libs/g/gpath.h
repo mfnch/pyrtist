@@ -92,6 +92,9 @@ int gpath_iter(GPath *gp, GPathIterator iter, void *data);
 /** Prints the content of the provided GPath to the 'out' stream. */
 void gpath_print(GPath *gp, FILE *out);
 
+/** Prints the points of the provided GPath to the 'out' stream. */
+void gpath_print_points(GPath *gp, FILE *out);
+
 /** This function returns the length of the path. */
 Real gpath_length(GPath *gp);
 

@@ -35,6 +35,8 @@
 #include "fig.h"
 #include "linetracer.h"
 
+/*#define DEBUG_PROBLEM*/
+
 static int lt_closed_selected = 0;
 static long lt_entered_numpnts = 0;
 static Point lt_entered_first_pnt;
@@ -230,16 +232,29 @@ static int lt_draw_closed(LineTracer *lt) {
 int lt_draw(LineTracer *lt, int closed) {
 
   if (closed) {
+    FILE *f;
     if (!lt_draw_closed(lt)) return 0;
     grp_draw_gpath(lt->border[0]);
     grp_draw_gpath(lt->border[1]);
+    f = fopen("part0.dat", "w");
+    gpath_print_points(lt->border[0], f);
+    fclose(f);
+    f = fopen("part1.dat", "w");
+    gpath_print_points(lt->border[1], f);
+    fclose(f);
+    gpath_print_points(lt->border[1], stdout);
 
   } else {
+    FILE *f;
     if (!lt_draw_opened(lt)) return 0;
     gpath_append_gpath(lt->border[0], lt->border[1],
                       GPATH_INVERT | GPATH_JOIN | GPATH_CLOSE);
+    f = fopen("part.dat", "w");
+    gpath_print_points(lt->border[0], f);
+    fclose(f);
 
     grp_draw_gpath(lt->border[0]);
+    /*gpath_print_points(lt->border[0], stdout);*/
 /*    printf("---\nBORDER 1+2\n");
     gpath_print(lt->border[0], stdout);*/
 
@@ -838,7 +853,7 @@ void lt_next_line(LineTracer *lt, double x, double y,
                   double sp1, double sp2, int style) {
   LineDesc *thsl = lt->thsl, *nxtl = lt->nxtl;
   double thscongpos[2], nxtcongpos[2];
-  int flag;
+  int flag, problem[2];
 
   /* Calcolo il vettore relativo alla seconda linea */
   nxtl->v.x = (nxtl->pnt2.x = x) - (nxtl->pnt1.x = thsl->pnt2.x);
@@ -871,9 +886,13 @@ void lt_next_line(LineTracer *lt, double x, double y,
   flag = lt_intersection2(& thsl->p[0], & thsl->vb[0],  /* Prima retta */
                           & nxtl->p[0], & nxtl->vb[0],  /* Seconda retta */
                           & thscongpos[0], & nxtcongpos[0]);
-  if (!flag) {
-    printf("1 C'e' qualche problema!!!\n");
-  }
+  problem[0] =   (flag == 0)*0x4
+               | (thscongpos[0] < 0.0)*0x2
+               | (nxtcongpos[0] > 1.0)*0x1;
+#ifdef DEBUG_PROBLEM
+  if (problem[0] != 0)
+    printf("problem[0] = %d\n", problem[0]);
+#endif
 
   if (thscongpos[0] < 0.0) thscongpos[0] = 0.0;
   if (nxtcongpos[0] > 1.0) nxtcongpos[0] = 1.0;
@@ -882,9 +901,14 @@ void lt_next_line(LineTracer *lt, double x, double y,
   flag = lt_intersection2(& thsl->p[1], & thsl->vb[1],  /* Prima retta */
                           & nxtl->p[1], & nxtl->vb[1],  /* Seconda retta */
                           & thscongpos[1], & nxtcongpos[1]);
-  if (!flag) {
-    printf("2 C'e' qualche problema!!!\n");
-  }
+
+  problem[1] =   (flag == 0)*0x4
+               | (thscongpos[1] < 0.0)*0x2
+               | (nxtcongpos[1] > 1.0)*0x1;
+#ifdef DEBUG_PROBLEM
+  if (problem[1] != 0)
+    printf("problem[1] = %d\n", problem[1]);
+#endif
 
   if (thscongpos[1] < 0.0) thscongpos[1] = 0.0;
   if (nxtcongpos[1] > 1.0) nxtcongpos[1] = 1.0;
@@ -948,66 +972,92 @@ void lt_next_line(LineTracer *lt, double x, double y,
     else
       nxtposzero = nxtproj[1] / nxtl->mod2;
 
-    /* Trovo punto di terminazione del bordo interno della prima linea */
-    if (lt->join_style.ti < 0.0) {
-      if (lt->join_style.ti < -1.0)
-        thsipos = thscongpos[inn];
-      else
-        thsipos = thsposzero - lt->join_style.ti*(thscongpos[inn]-thsposzero);
+    /* We deal with the internal part of the line now */
+    if (problem[inn] == 0) {
+      /* Trovo punto di terminazione del bordo interno della prima linea */
+      if (lt->join_style.ti < 0.0) {
+        if (lt->join_style.ti < -1.0)
+          thsipos = thscongpos[inn];
+        else
+          thsipos = thsposzero
+                    - lt->join_style.ti*(thscongpos[inn] - thsposzero);
+
+      } else {
+        thsipos = thsposzero - lt->join_style.ti * thsl->sp2/thsl->mod;
+        if (thsipos < 0.0) thsipos = 0.0;
+      }
+
+        /* Trovo punto di terminazione del bordo interno della seconda linea */
+      if (lt->join_style.ni < 0.0) {
+        if (lt->join_style.ni < -1.0)
+          nxtipos = nxtcongpos[inn];
+        else
+          nxtipos = nxtposzero
+                    - lt->join_style.ni*(nxtcongpos[inn] - nxtposzero);
+
+      } else {
+        nxtipos = nxtposzero + lt->join_style.ni * nxtl->sp1/nxtl->mod;
+        if (nxtipos > 1.0) nxtipos = 1.0;
+      }
+
+      /* Completo il calcolo dei punti */
+      thsl->vertex[3-inn].x = thsl->p[inn].x + thsipos * thsl->vb[inn].x;
+      thsl->vertex[3-inn].y = thsl->p[inn].y + thsipos * thsl->vb[inn].y;
+
+      nxtl->vertex[inn].x = nxtl->p[inn].x + nxtipos * nxtl->vb[inn].x;
+      nxtl->vertex[inn].y = nxtl->p[inn].y + nxtipos * nxtl->vb[inn].y;
 
     } else {
-      thsipos = thsposzero - lt->join_style.ti * thsl->sp2/thsl->mod;
-      if (thsipos < 0.0) thsipos = 0.0;
+      /* Completo il calcolo dei punti */
+      thsl->vertex[3-inn].x = thsl->p[inn].x;
+      thsl->vertex[3-inn].y = thsl->p[inn].y;
+
+      nxtl->vertex[inn].x = nxtl->p[inn].x;
+      nxtl->vertex[inn].y = nxtl->p[inn].y;
     }
 
-    /* Trovo punto di terminazione del bordo esterno della prima linea */
-    if (lt->join_style.te < 0.0) {
-      if (lt->join_style.te < -1.0)
-        thsepos = thscongpos[ext];
-      else
-        thsepos = thsposzero - lt->join_style.te*(thscongpos[ext]-thsposzero);
+    /* We deal with the internal part of the line now */
+    if (problem[ext] == 0) {
+      /* Trovo punto di terminazione del bordo esterno della prima linea */
+      if (lt->join_style.te < 0.0) {
+        if (lt->join_style.te < -1.0)
+          thsepos = thscongpos[ext];
+        else
+          thsepos = thsposzero - lt->join_style.te*(thscongpos[ext] - thsposzero);
+
+      } else {
+        thsepos = thsposzero - lt->join_style.te * thsl->sp2/thsl->mod;
+        if (thsepos < 0.0) thsepos = 0.0;
+      }
+
+        /* Trovo punto di terminazione del bordo esterno della seconda linea */
+      if (lt->join_style.ne < 0.0) {
+        if (lt->join_style.ne < -1.0)
+          nxtepos = nxtcongpos[ext];
+        else
+          nxtepos = nxtposzero - lt->join_style.ne*(nxtcongpos[ext]-nxtposzero);
+
+      } else {
+        nxtepos = nxtposzero + lt->join_style.ne * nxtl->sp1/nxtl->mod;
+        if (nxtepos > 1.0) nxtepos = 1.0;
+      }
+
+      /*printf("thsipos=%g, nxtipos=%g\n", thsipos, nxtipos);*/
+
+      /* Completo il calcolo dei punti */
+      thsl->vertex[3-ext].x = thsl->p[ext].x + thsepos * thsl->vb[ext].x;
+      thsl->vertex[3-ext].y = thsl->p[ext].y + thsepos * thsl->vb[ext].y;
+
+      nxtl->vertex[ext].x = nxtl->p[ext].x + nxtepos * nxtl->vb[ext].x;
+      nxtl->vertex[ext].y = nxtl->p[ext].y + nxtepos * nxtl->vb[ext].y;
 
     } else {
-      thsepos = thsposzero - lt->join_style.te * thsl->sp2/thsl->mod;
-      if (thsepos < 0.0) thsepos = 0.0;
+      thsl->vertex[3-ext].x = thsl->p[ext].x;
+      thsl->vertex[3-ext].y = thsl->p[ext].y;
+
+      nxtl->vertex[ext].x = nxtl->p[ext].x;
+      nxtl->vertex[ext].y = nxtl->p[ext].y;
     }
-
-      /* Trovo punto di terminazione del bordo interno della seconda linea */
-    if (lt->join_style.ni < 0.0) {
-      if (lt->join_style.ni < -1.0)
-        nxtipos = nxtcongpos[inn];
-      else
-        nxtipos = nxtposzero - lt->join_style.ni*(nxtcongpos[inn]-nxtposzero);
-
-    } else {
-      nxtipos = nxtposzero + lt->join_style.ni * nxtl->sp1/nxtl->mod;
-      if (nxtipos > 1.0) nxtipos = 1.0;
-    }
-
-      /* Trovo punto di terminazione del bordo esterno della seconda linea */
-    if (lt->join_style.ne < 0.0) {
-      if (lt->join_style.ne < -1.0)
-        nxtepos = nxtcongpos[ext];
-      else
-        nxtepos = nxtposzero - lt->join_style.ne*(nxtcongpos[ext]-nxtposzero);
-
-    } else {
-      nxtepos = nxtposzero + lt->join_style.ne * nxtl->sp1/nxtl->mod;
-      if (nxtepos > 1.0) nxtepos = 1.0;
-    }
-
-    /* Completo il calcolo dei punti */
-    thsl->vertex[3-inn].x = thsl->p[inn].x + thsipos * thsl->vb[inn].x;
-    thsl->vertex[3-inn].y = thsl->p[inn].y + thsipos * thsl->vb[inn].y;
-
-    nxtl->vertex[inn].x = nxtl->p[inn].x + nxtipos * nxtl->vb[inn].x;
-    nxtl->vertex[inn].y = nxtl->p[inn].y + nxtipos * nxtl->vb[inn].y;
-
-    thsl->vertex[3-ext].x = thsl->p[ext].x + thsepos * thsl->vb[ext].x;
-    thsl->vertex[3-ext].y = thsl->p[ext].y + thsepos * thsl->vb[ext].y;
-
-    nxtl->vertex[ext].x = nxtl->p[ext].x + nxtepos * nxtl->vb[ext].x;
-    nxtl->vertex[ext].y = nxtl->p[ext].y + nxtepos * nxtl->vb[ext].y;
 
     /* Ora traccio la linea */
     if (++lt->segment != 1 || !lt->is_closed) {
@@ -1023,7 +1073,7 @@ void lt_next_line(LineTracer *lt, double x, double y,
     /* Ora controllo l'angolo per decidere il tipo di congiuntura
      * da tracciare
      */
-    if (lt->cutting > 0.0 &&
+    if (lt->cutting > 0.0 && problem[ext] == 0 &&
         (thsl->u.x * nxtl->u.x + thsl->u.y * nxtl->u.y < 0.0) ) {
       /* ANGOLO ACUTO: CURVA A GOMITO: USO UNA CONGIUNTURA SMORZATA */
 
@@ -1109,11 +1159,13 @@ void lt_next_line(LineTracer *lt, double x, double y,
         cgvertex[1].y = cgvertex[0].y + beta1 * thsl->vb[ext].y;
         cgvertex[3].x = cgvertex[4].x + beta2 * nxtl->vb[ext].x;
         cgvertex[3].y = cgvertex[4].y + beta2 * nxtl->vb[ext].y;
+        cgvertex[2].x = 0.5*(cgvertex[1].x + cgvertex[3].x);
+        cgvertex[2].y = 0.5*(cgvertex[1].y + cgvertex[3].y);
 
         /* Finalmente posso tracciare il lato esterno */
-        gpath_move_to(lt->border[ext], & (cgvertex[0]));
-        gpath_arc_to(lt->border[ext], & (cgvertex[1]), & (cgvertex[2]));
-        gpath_arc_to(lt->border[ext], & (cgvertex[3]), & (cgvertex[4]));
+        gpath_move_to(lt->border[inn], & (cgvertex[0]));
+        gpath_arc_to(lt->border[inn], & (cgvertex[1]), & (cgvertex[2]));
+        gpath_arc_to(lt->border[inn], & (cgvertex[3]), & (cgvertex[4]));
 
         /* Ora traccio il lato interno */
         cgvertex[0].x = thsl->vertex[2+ext].x;
@@ -1122,37 +1174,58 @@ void lt_next_line(LineTracer *lt, double x, double y,
         cgvertex[1].y = nxtl->cong[inn].y;
         cgvertex[2].x = nxtl->vertex[inn].x;
         cgvertex[2].y = nxtl->vertex[inn].y;
-        gpath_move_to(lt->border[inn], & (cgvertex[0]));
-        gpath_arc_to(lt->border[inn], & (cgvertex[1]), & (cgvertex[2]));
+        gpath_move_to(lt->border[ext], & (cgvertex[0]));
+        gpath_arc_to(lt->border[ext], & (cgvertex[1]), & (cgvertex[2]));
         goto nxln_exit;
       }
+
     }
 
-     /* Angolo ottuso: curva dolce: uso una congiuntura semplice! */
     {
-     Point cgvertex[3];
+      /* ANGOLO OTTUSO: CURVA DOLCE: USO UNA CONGIUNTURA SEMPLICE! */
+      Point cgvertex[3];
 
       /* La congiuntura ha 4 lati, 2 sono linee, 2 sono curve.
        * Traccio solo le curve, una in seguito all'altra.
        */
 
-      /* Curva */
-      cgvertex[0].x = thsl->vertex[3].x;
-      cgvertex[0].y = thsl->vertex[3].y;
-      cgvertex[1].x = nxtl->cong[0].x;
-      cgvertex[1].y = nxtl->cong[0].y;
-      cgvertex[2].x = nxtl->vertex[0].x;
-      cgvertex[2].y = nxtl->vertex[0].y;
+      /* Prima curva */
+      if (problem[1] == 0) {
+        cgvertex[0].x = thsl->vertex[3].x;
+        cgvertex[0].y = thsl->vertex[3].y;
+        cgvertex[1].x = nxtl->cong[0].x;
+        cgvertex[1].y = nxtl->cong[0].y;
+        cgvertex[2].x = nxtl->vertex[0].x;
+        cgvertex[2].y = nxtl->vertex[0].y;
+
+      } else {
+        cgvertex[0].x = thsl->vertex[3].x;
+        cgvertex[0].y = thsl->vertex[3].y;
+        cgvertex[1].x = cgvertex[0].x;
+        cgvertex[1].y = cgvertex[0].y;
+        cgvertex[2].x = nxtl->vertex[0].x;
+        cgvertex[2].y = nxtl->vertex[0].y;
+      }
       gpath_move_to(lt->border[1], & (cgvertex[0]));
       gpath_arc_to(lt->border[1], & (cgvertex[1]), & (cgvertex[2]));
 
-      /* Curva */
-      cgvertex[0].x = nxtl->vertex[1].x;
-      cgvertex[0].y = nxtl->vertex[1].y;
-      cgvertex[1].x = nxtl->cong[1].x;
-      cgvertex[1].y = nxtl->cong[1].y;
-      cgvertex[2].x = thsl->vertex[2].x;
-      cgvertex[2].y = thsl->vertex[2].y;
+      /* Seconda curva */
+      if (problem[0] == 0) {
+        cgvertex[0].x = nxtl->vertex[1].x;
+        cgvertex[0].y = nxtl->vertex[1].y;
+        cgvertex[1].x = nxtl->cong[1].x;
+        cgvertex[1].y = nxtl->cong[1].y;
+        cgvertex[2].x = thsl->vertex[2].x;
+        cgvertex[2].y = thsl->vertex[2].y;
+
+      } else {
+        cgvertex[0].x = nxtl->vertex[1].x;
+        cgvertex[0].y = nxtl->vertex[1].y;
+        cgvertex[1].x = cgvertex[0].x;
+        cgvertex[1].y = cgvertex[0].y;
+        cgvertex[2].x = thsl->vertex[2].x;
+        cgvertex[2].y = thsl->vertex[2].y;
+      }
       gpath_move_to(lt->border[0], & (cgvertex[2]));
       gpath_arc_to(lt->border[0], & (cgvertex[1]), & (cgvertex[0]));
     }

@@ -106,36 +106,21 @@ static void eps_rdraw(void) {
 
 static void eps_rline(Point a, Point b) {
   EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by);
+  int continuing = (ax == previous_px) && (ay == previous_py),
+      length_zero = (ax == bx && ay == by);
 
-/*   if (ax == bx && ay == by) return; need to think better about it!!! */
+  if (continuing && length_zero) return;
 
-  if ( beginning_of_line ) {
-    beginning_of_line = 0;
-    if ( beginning_of_path ) {
-      fprintf( (FILE *) grp_win->ptr,
-       " newpath %ld %ld moveto %ld %ld lineto", ax, ay, bx, by );
-      previous_px = bx; previous_py = by;
-      beginning_of_path = 0;
-
-    } else {
-      fprintf( (FILE *) grp_win->ptr,
-       " %ld %ld moveto %ld %ld lineto", ax, ay, bx, by );
-      previous_px = bx; previous_py = by;
-      beginning_of_path = 0;
-    }
-
-  } else {
-    if ( (ax == previous_px) && (ay == previous_py) ) {
-      fprintf( (FILE *) grp_win->ptr,
-       " %ld %ld lineto", bx, by );
-      previous_px = bx; previous_py = by;
-
-    } else {
-      fprintf( (FILE *) grp_win->ptr,
-       " %ld %ld moveto %ld %ld lineto", ax, ay, bx, by );
-      previous_px = bx; previous_py = by;
-    }
+  if (beginning_of_path) {
+    fprintf((FILE *) grp_win->ptr, " newpath");
+    beginning_of_path = 0;
   }
+
+  if (!continuing)
+    fprintf((FILE *) grp_win->ptr, " %ld %ld moveto", ax, ay);
+
+  fprintf((FILE *) grp_win->ptr, " %ld %ld lineto", bx, by);
+  previous_px = bx; previous_py = by;
 }
 
 static void eps_rcong(Point a, Point b, Point c) {
@@ -149,14 +134,15 @@ static void eps_rcong(Point a, Point b, Point c) {
 #endif
   if (ax == cx && ay == cy) return;
 
-  if ( beginning_of_path )
+  if (beginning_of_path) {
     fprintf( (FILE *) grp_win->ptr, " newpath" );
+    beginning_of_path = 0;
+  }
 
   fprintf( (FILE *) grp_win->ptr,
    " %ld %ld %ld %ld %ld %ld cong", ax, ay, bx, by, cx, cy );
   previous_px = cx; previous_py = cy;
   beginning_of_line = 0;
-  beginning_of_path = 0;
 }
 
 static void eps_rcircle(Point ctr, Point a, Point b) {

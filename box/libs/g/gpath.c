@@ -155,6 +155,26 @@ void gpath_print(GPath *gp, FILE *out) {
   (void) gpath_iter(gp, gpath_print_iterator, out);
 }
 
+static int gpath_print_points_iterator(Int i, GPathPiece *p, void *data) {
+  FILE *out = (FILE *) data;
+  Int j, n = 0;
+  switch(p->kind) {
+  case GPATHKIND_LINE: n = 2; break;
+  case GPATHKIND_ARC: n = 3; break;
+  default:
+    fprintf(out, "piece n. "SInt", kind=unknown: damaged?\n", i);
+    break;
+  }
+  for(j=0; j<n; j++)
+    fprintf(out, SReal" "SReal"\n", p->p[j].x, p->p[j].y);
+    fprintf(out, "\n");
+  return 0;
+}
+
+void gpath_print_points(GPath *gp, FILE *out) {
+  (void) gpath_iter(gp, gpath_print_points_iterator, out);
+}
+
 Real gpath_length(GPath *gp) {return 0.0;}
 
 Int gpath_num_pieces(GPath *gp) {

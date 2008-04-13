@@ -13,7 +13,7 @@ w.Line[(x=4-4*a), Curve[(100.0, a)], x
 
 a = 0.0, af = 0.64
 w.Line[line.sharp,
-       (x=3-Sin[50.0*a]), Curve[(50.0, a)], x
+       x=3-Sin[50.0*a], x, Curve[(50.0, a)], x
        For[(a += 0.005) < af]
        color.red]
 
