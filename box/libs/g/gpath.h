@@ -23,7 +23,7 @@
 #  include "types.h"
 #  include "buffer.h"
 
-enum {
+typedef enum {
   GPATHKIND_LINE,
   GPATHKIND_ARC
 } GPathKind;
