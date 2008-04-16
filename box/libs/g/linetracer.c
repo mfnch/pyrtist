@@ -143,6 +143,8 @@ static int lt_draw_opened(LineTracer *lt) {
     /* Faccio uno shift dei puntatori, per passare al prossimo punto */
     ip = i; i = in++;
 
+    lt_join_style_set(lt, & i->style);
+
     if ( i->arrow == NULL ) {
       lt_next_point(lt, & (i->point), i->width2, in->width1 );
 
@@ -729,11 +731,16 @@ int lt_intersection2(Point *p1, Point *d1, Point *p2, Point *d2,
  *  di 4 numeri di tipo float, che descrivono il tipo di giunzione da usare
  *  per collegare le linee fra loro.
  */
-void lt_join_style(LineTracer *lt, Real *userjs) {
-  lt->join_style.ti = userjs[0];
-  lt->join_style.te = userjs[1];
-  lt->join_style.ni = userjs[2];
-  lt->join_style.ne = userjs[3];
+void lt_join_style_from_array(LineJoinStyle *ljs,
+                              Real ti, Real te, Real ni, Real ne) {
+  ljs->ti = ti;
+  ljs->te = te;
+  ljs->ni = ni;
+  ljs->ne = ne;
+}
+
+void lt_join_style_set(LineTracer *lt, LineJoinStyle *ljs) {
+  lt->join_style = *ljs;
 }
 
 /* DESCRIZIONE: Setta il valore di cutting. Quando un angolo della spezzata

@@ -52,13 +52,13 @@ Task line_window_init(Window *w) {
   /* We want these settings to be global:
    * for all lines of this window
    */
-  LineStyle *ls = & w->line.this_piece.style;
-  (*ls)[0] = 0.0; (*ls)[1] = 0.0; (*ls)[2] = 0.0; (*ls)[3] = 0.0;
+  LineJoinStyle *ls = & w->line.this_piece.style;
+  ls->ti = ls->te = ls->ni = ls->ne = 0.0;
   {
     grp_window *cur_win = grp_win;
     grp_win = w->window;
     /* Mando le impostazioni alla libreria grafica */
-    lt_join_style(w->line.lt, & w->line.this_piece.style[0]);
+    lt_join_style_set(w->line.lt, ls);
     grp_win = cur_win;
   }
 
@@ -185,20 +185,11 @@ Task line_window(VMProgram *vmp) {
   return Success;
 }
 
-/* For now the same style is applied to the whole line.
- * I think we can mix styles for the same line. FIXME
- */
 Task line_style(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  LineStyle *ls = BOX_VM_ARGPTR1(vmp, LineStyle);
-  grp_window *cur_win = grp_win;
-  w->line.this_piece.style[0] = (*ls)[0];
-  w->line.this_piece.style[1] = (*ls)[1];
-  w->line.this_piece.style[2] = (*ls)[2];
-  w->line.this_piece.style[3] = (*ls)[3];
-  grp_win = w->window;
-  lt_join_style(w->line.lt, & w->line.this_piece.style[0]);
-  grp_win = cur_win;
+  Real *ls = BOX_VM_ARGPTR1(vmp, Real);
+  lt_join_style_from_array(& w->line.this_piece.style,
+                           ls[0], ls[1], ls[2], ls[3]);
   return Success;
 }
 

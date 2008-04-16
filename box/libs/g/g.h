@@ -31,8 +31,6 @@ typedef struct __OptColor {
   struct __OptColor *alternative, *selected;
 } OptColor;
 
-typedef Real LineStyle[4];
-
 void g_error(const char *msg);
 void g_warning(const char *msg);
 Task g_optcolor_set(OptColor *oc, Color *c);

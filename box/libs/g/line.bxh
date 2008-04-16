@@ -2,6 +2,8 @@
 
 // Style for joining lines
 LineStyle = (Real a, b, c, d)
+R@LineStyle[.a = .b = .c = .d = $]
+
 line = (LineStyle sharp, medium, smooth)
 line.sharp.a  = 0.0, line.sharp.b  =-1.0, line.sharp.c  = 0.0, line.sharp.d  =-1.0
 line.medium.a = 0.0, line.medium.b = 0.0, line.medium.c = 0.0, line.medium.d = 0.0

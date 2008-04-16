@@ -17,4 +17,7 @@ Change log (recent come first)
     number of architectures.
   * Introducing reference counting for objects allocated by the VM:
     still not used to the full extent.
+  * Several improvements to Window.Line: it should now be more robust,
+    and supports lines having multiple join styles.
+  * Poly accepts now (;)
 

@@ -25,19 +25,19 @@
 #  include "gpath.h"
 
 typedef struct {
-  Real width1, width2;
-  Point point;
-  LineStyle style;
-  void *arrow;
-  Real arrow_scale;
-} LinePiece;
-
-typedef struct {
   /* Lunghezze di giunzione interne ed esterne della linea corrente */
   double ti, te;
   /* Lunghezze di giunzione interne ed esterne della prossima linea */
   double ni, ne;
 } LineJoinStyle;
+
+typedef struct {
+  Real width1, width2;
+  Point point;
+  LineJoinStyle style;
+  void *arrow;
+  Real arrow_scale;
+} LinePiece;
 
 /* Questa struttura tiene conto di cio' che si sta tracciando */
 typedef struct {
@@ -79,6 +79,9 @@ void lt_clear(LineTracer *lt);
 
 int lt_draw(LineTracer *lt, int closed);
 
-void lt_join_style(LineTracer *lt, Real *userjs);
+void lt_join_style_from_array(LineJoinStyle *ljs,
+                              Real ti, Real te, Real ni, Real ne);
+
+void lt_join_style_set(LineTracer *lt, LineJoinStyle *ljs);
 
 #endif

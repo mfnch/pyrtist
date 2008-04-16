@@ -136,6 +136,31 @@ Task poly_end(VMProgram *vmp) {
   return Success;
 }
 
+Task poly_pause(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  grp_window *cur_win = grp_win;
+
+  TASK( _poly_point(w, & w->poly.first_points[0], 0) );
+  TASK( _poly_point(w, & w->poly.first_points[1], 1) );
+
+  grp_win = w->window;
+  if (w->poly.got.color) {
+    Color *c = & w->poly.color;
+    grp_rfgcolor(c->r, c->g, c->b);
+    w->poly.got.color = 0;
+  }
+  grp_rdraw();
+  grp_rreset();
+  grp_win = cur_win;
+
+  /* Stato dell'istruzione = iniziale */
+  w->poly.state = POLY_GOT_NOTHING;
+  w->poly.num_points = 0;
+  w->poly.num_margins = 0;
+  w->poly.got.color = 0;
+  return Success;
+}
+
 Task poly_real(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Real margin = BOX_VM_ARG1(vmp, Real);
