@@ -1007,6 +1007,7 @@ Task Prs_Alias_Of_X(Expression *alias, Expression *x) {
   target = & (s->value);
   target->is.typed = 1;
   target->is.value = 0;
+  target->is.imm = target->is.target = 0;
   target->type = t = Tym_Def_Alias_Of(& alias->value.nm, x->type);
   TASK( Cmp_Expr_Destroy_Tmp(alias) );
   *alias = *target;
