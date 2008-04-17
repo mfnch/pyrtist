@@ -1,323 +1,45 @@
-*** Box ***
-This is the first implementation of the byte compiler for Box, a language initially written with a special care for graphics. The language is indeed an evolution of a previous language whose purpose was making figures. Then it changed into a - much more powerful - general purpose language. Actually we could say it is still evolving, since it has not reached its final form.
------------
+Installation
+------------
+To compile the sources and install on your machine you may proceed
+with the quite usual sequence:
 
-arrow = Window[][.Line[(-1, 0), (1, 0), (0, 2);], \.Hot[(0, 0)], \.Hot[(0, 1)]]
+  ./configure
+  make
+  make install
 
-page = Window[]
-\ page[ Line[(0, 10), (5, 5), (10, 10), arrow] ]
-page.Save["file.bmp"]
+Detailed instructions are available inside the file INSTALL in this same
+directory. If you want a local installation, you may proceed as follows:
 
-If[a > 0].Then[].Else[]
+  ./configure --prefix=/home/yourusername/local
+  make
+  make install
 
-Open["file.txt"][
-  l = .Line
-  Print[l.Up]
-]:Again[!.Eof]
+Your system won't know where to find the Box executable.
+Therefore you may put a line such as
 
+  export PATH=$PATH:~/local/bin
 
-f = Real -> Real -> Real
+at the end of your bashrc file (which is a hidden file in your home
+directory: ~/.bashrc). This last modification is not needed. It just
+makes life easier.
 
-----------
+Test
+----
+After installation, you may run some tests to see if the compilation
+suceeded. Just type:
 
-Known problems:
+  make check
 
-  QUESTION: Are the parenthesis really necessaries in type definitions?
-   If not, remove the corresponding rule! In fact this conflicts with
-   the rule for structure definition: a = (Int) shouldn't be a structure
-   with only one item?
+You should get a final message such as:
 
-  PREFIXES: Now the derived types (array of, etc) are still not
-    handled perfectly (the user cannot define an array of X).
-    But in the next future arrays, etc will be implemented.
-    So what prefix shall I use if I open an array of X, for example:
-    z = [10]int{
-      a = 123
-      {
-        a: = 456
-        print{ a, a:[10]int }
-      }
-    }
-    The prefix :int[10] is not compatible with the current grammar!!!
-    (however there is a way to skip the problem: use a:: instead
-    of a:[10]int).
+  0 errors found.
+  All tests performed led to success.
+  ...
 
-  SYNTAX: Int[10][10] <-- should work!
+Documentation
+-------------
+You may find the documentation on the website http://boxc.sourceforge.net/
+The documentation is still incomplete. You may start to learn by looking
+at the examples on the examples directory.
+If you need help or found some bugs, just use the Sourceforge support request.
 
-Changes:
-  [TO DO] 15 june 2005: add the new type "Char" to the VM. This is needed
-    to introduce the concept of string in box language (as in C,
-    a string will be simply an array of Char)
-  [DONE] 15 june 2005: The VM and the compiler now can handle
-    the new type 'Char'.
-
-  [TO DO] 16 june 2005: Add the data segment, to store strings
-    and other values.
-  [DONE] 17 june 2005
-
-  [TO DO] 16 june 2005: The program must be able to print the compound types
-    (arrays of x, pointers to x, etc) in error messages.
-  [DONE] 17 june 2005: Now the compiler can print compound data types.
-    For example: "array[4] di char"
-
-  [TO DO] 16 june 2005: Add the string data type as an array of Char.
-  [DOING] 17 june 2005: Now the tokenizer supports C-style strings
-    (with escaped characters) and C-style characters.
-    strings can be concatenated like in the following example:
-      "this is "   "a string"   is equal to "this is a string"
-
-  [TO DO] 19 june 2005: Add the concept of "procedure type of type".
-    We must add the function to add procedures and the function to search
-    procedures.
-  [DONE] 23 june 2005: The functions were added.
-
-  [TO DO] 20 june 2005: Improve the organization of procedures and improve
-    the performances of the search algorithm for procedures (now it does
-    simply a loop over all the procedures child@parent of the type 'parent').
-
-  27 june 2005: First execution of a simple box-program!!!
-
-  [TO DO] 6 july 2005: Implement the concept of species of types.
-    I should be able to define scalar = (> real, int, char >)
-    and then define a procedure scalar@sin.
-    Thus when the compiler finds sin['a'], it behaves as it had encountered
-    the expression sin[real['a']]: it translates 'a' into a real expression
-    and then executes sin[...].
-  [DONE] 11 july 2005: The compiler now can handle species.
-
-  [TO DO] 9 july 2005: It seems to be necessary to change the grammar
-    of the language: in particular we should distinguish types from variables.
-    One possible idea is the following:
-    * types are words composed by both uppercase and lowercase characters,
-      without '_'
-    * all the remaining words are considered to be variables.
-  [DONE] 15 july 2005: Now BOX is case-sensitive. Names of types must
-    be written with the first letter uppercase (Int, Real, MyType, etc).
-    The names which start with a lowercase letter are considered
-    to be variables (for example: var or vaRiaBLE).
-    Type constructor operators have been introduced (array constructor,
-    species constructor, alias constructor, structure constructor).
-    Now you can define an alias of an array of 10 integers as:
-      NewType = (10)Int
-
-  25 july 2005: What we should do in the next future:
-  *** BASIC FEATURES ***
-    [TO DO 1] Add special procedures (to create, destroy, copy objects, etc.)
-    [TO DO 2][DONE, 21 sept 2005] Write the function for conversion of species.
-    [TO DO 3][DONE, 21 sept 2005] Correct the functions which handle operators
-             (to handle species).
-    [TO DO 4] Arrays, pointers (string as pointer to Char)
-    [TO DO 5] Scope: implicit objects and implicit types.
-    [TO DO 6][DONE, 7 May 2007] Structures: one should be able to define structures
-                                with named members.
-  *** ADVANCED FEATURES ***
-    [TO DO 7] Add code attributes (to define constants, global objects, etc.)
-    [TO DO 8] Immediate execution of operations between immediate operands.
-    [TO DO 9][DONE] Add user-defined procedures.
-   [TO DO 10] Operator overloading.
-
-  11 september 2005: How one should implement the call to user defined modules
-   in case of operator overloading?
-    EXAMPLE: conversion from a structure(Real, Real) to a Point
-      ARGS: vo1 <-- the pointer to the structure
-            vp1 <-- the variable which will contain the converted point
-      CODE:
-            mov gro2, vo1
-            lea vp1
-            mov gro1, ro0
-            call [module number]
-
-*******************************************************************************
-OGGETTI E CONTENITORI: intendiamo per contenitore il registro o la locazione
- di memoria che contiene i dati che costituiscono l'oggetto.
- Per oggetto intendiamo una struttura dati contenuta in un contenitore
- e opportunamente inizializzata.
- In questo compilatore di box e' la struttura 'Expression' che specifica
- il contenitore di un dato oggetto.
- Qui di seguito descrivo nel dettaglio come questo accada.
-*******************************************************************************
-
-# roN is the object to be 'opened'
-mov ri0, [parent]
-box roN
-
-# This returns in roN the box whose number is riM (if riM = -1, returns
-# the last opened box), put in ri0 its parent, and in roN the actual box.
-mov ri0, riM
-parent roN
-
-# 'close' the object
-xob
-
-// ESEMPIO DI COMPILAZIONE
-
-p12 = Put[ resistor, .Near[1, p1], .Near[2, p2] ]
-
-malloc 40
-mov ro1, ro0
-box ro1
-active 0
-
-mov gro1, ro1
-call [<]@Put
-
-mov gro1, ro1
-mov gro2, vo1 (vo1 = resistor)
-call Window@Put
-
-
-call [<]@Put.Near
-
-mov ri0, 1
-lea ri0
-mov gro2, ro0
-call Int@Near@Put
-
-lea vp1 (vp1 = p1)
-mov gro2, ro0
-call Point@Near@Put
-
-call [>]@Put.Near
-
-mov ri0, 2
-lea ri0
-mov gro2, ro0
-call Int@Near@Put
-
-lea vp2 (vp2 = p2)
-mov gro2, ro0
-call Point@Near@Put
-
-call [>]@Put.Near
-
-call [>]@Put
-xob
-
-*******************************************************************************
-
-@Window[
-  Box = Void
-  (p1:Point, p3:Point)@Box = [
-    p2 = (p1.x, p3.y), p4 = (p3.x, p1.y)
-    ClosedLine[p1, p2, p3, p4]
-  ]
-]
-
-@Box@Window[
-
-]
-
-
-(Box = Void)@Window = [ Line@[]
-
-]
-
-Object[       ] [         ]
-      OPEN    ^ REOPEN    ^
-              CLOSE       RECLOSE
-
-procedure speciali:
-
-OPEN     Inizio della creazione dell'oggetto Obj*[]
-PAUSE    Pausa nella creazione dell'oggetto Obj[;*]
-CLOSE    Fine della creazione dell'oggetto Obj[]*
-REOPEN   Inizio dell'utilizzo dell'oggetto obj*[]
-REPAUSE  Pausa nell'utilizzo dell'oggetto obj[;*]
-RECLOSE  Fine dell'utilizzo dell'oggetto obj[]*
-COPY     Funzione di copia dell'oggetto
-DESTROY  Funzione di distruzione dell'oggetto
-
-{open}@Print = [ Print["Inizio a stampare"] ]
-{;}@Print = [ Print['\n'] ]
-
-{const} a = 1
-
--------------------------------------------------------------------------------
-OVERLOADING OF OPERATORS
-  complex -> (i = r = real)
-  couple -> (right = left = complex)
-
-  couple@complex{+} -> [@@ = (@.left.r + @.right.r, @.left.i + @.right.i)]
-  couple@complex{-} -> [@@ = (@.left.r - @.right.r, @.left.i - @.right.i)]
-  couple@complex{*} -> [
-    @@ = (@.left.r * @.right.r - @.left.i + @.right.i, _
-          @.left.r * @.right.i + @.left.i + @.right.r)
-  ]
-
-  NOW, IF: a = complex[1, 2], b = complex[4, 5]
-  c = a + b IS EQUIVALENT TO c = complex{+}[(a, b)]
-
-(left = Real, right = Real)@Real{+} = [ @# = #@ ]
-
-type{op} where op = +, -, *, /, ++, --, ...
-{*[} or {*[]}
-{]*} or {[]*}
-{**[} or {**[]}
-{]**} or {[]**}
-
--------------------------------------------------------------------------------
-The operator -> 'ALIAS OF'
-
-p3 -> (real, real, real)
-
-p3 -> (x->real, y->real, z->real)
-
-p3 = (x = y = z = scalar)
-p3 = (1.0, 2.0, 3.0)
-
-p3 = (real, real, real)
-
-a = (10)real
-
-s = (10)char
-
-print -> void
-
--------------------------------------------------------------------------------
-LISTE:
-
-(expr)
-  restituisce expr, ne' piu' ne' meno!
-
-(expr1, expr2, ...)
-  se expr1, expr2, ... sono tutti senza valore definisce
-  un nuovo tipo di dato: una struttura
-
-  se expr1, expr2, ... hanno tutti valore, restituisce
-  un oggetto inizializzato, che viene memorizzato
-  nel segmento dati
-
-  se solo qualcuno fra expr1, expr2, ... ha valore
-  restituisce un errore!
-
-ESEMPI:
-  (1, Point[], Real[], 0.0) e' una struttura di tipo (Int, Point, Real, Real)
-  equivalente a (1, (0.0, 0.0), 0.0, 0.0)
-
-scalar = (real > int > char)
-
--------------------------------------------------------------------------------
-
-TIPI DI ASSEGNAZIONE:
-
-SINTASSI      SITUAZIONE        TIPO          RESTITUISCE
-x = Int       x non definito    definizione   Int
-x = Int       x definito        assertion     Int
-x = 1         x non definito    def & asgn    1
-x = 1         x definito        assegnazione  1
-
-T1 = T2       T1 non definito   definizione   T2
-T1 = T2       T1 definito       assertion     T2
-
-T1 = x        T1 definito       conversione   x convertito (se ce n'e' bisogno)
-T1 = x        T1 non definito   definizione   x (T1 e' definito come il tipo di x)
-
-ESEMPI:
-
-
-Tipo = a = b = Int
-Tipo = a = 1 = Int
-
-typed_eq_valued(Expression *typed, Expression *valued) {
-
-}

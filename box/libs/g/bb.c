@@ -88,10 +88,12 @@ static void bb_rcircle(Point ctr, Point a, Point b) {
 #endif
   va.x = a.x - ctr.x; va.y = a.y - ctr.y;
   vb.x = b.x - ctr.x; vb.y = b.y - ctr.y;
+
   got_point(a.x + vb.x, a.y + vb.y);
   got_point(a.x - vb.x, a.y - vb.y);
-  got_point(ctr.x - vb.x + va.x, ctr.y - a.y + vb.y);
-  got_point(ctr.x - vb.x - va.x, ctr.y - a.y - vb.y);
+  got_point(ctr.x - vb.x + va.x, ctr.y - va.y + vb.y);
+  got_point(ctr.x - vb.x - va.x, ctr.y - va.y - vb.y);
+
 }
 
 static void bb_rfgcolor(Real r, Real g, Real b) {return;}

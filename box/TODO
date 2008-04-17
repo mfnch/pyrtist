@@ -1,0 +1,57 @@
+There are a number of things which needs to be done as soon as possible:
+The user may expect great improvements in future versions of the language.
+
+MODIFICATIONS TO THE BOX COMPILER (in order of importance):
+1 global variables: quantities defined in the upper scope unit should
+  be automatically allocated as global (global register should be used
+  instead of local ones);
+2 precedence rules for name reolution should be introduced. The first
+  refers to subtypes. When object.Subtype is found, Box searches now for
+  subtypes of the type of object. If no such a subtype is found, an error
+  is reported. We should extend this behaviour: if the subtype is not found
+  and object is a subtype itself, Box should try to convert it into its child
+  and search among its subtypes. Example:
+    w = Window[][
+      pl = .Put[...]
+      ...
+      ... pl.Get[1] ...
+    ]
+  Now pl has type Window.Put. This subtype has child of type PointList.
+  Since no subtype Window.Put.Get exists, Box should convert pl to its child
+  (an object of type PointList) and try to find a subtype .Get
+  The problem should be faced in a more general way, allowing automatic
+  conversion of types at (]), see X 
+3 The second precedence rule is the following:
+  If a procedure for a given type is not found, that type should be once
+  resolved and then the procedure should be searched again.
+  This will allow to create real inherited types. Example:
+    MyInt = Int
+    x = MyInt[1]
+  Does not work now, because Int@MyInt does not exist. One expects that this
+  should work, since Int@Int exists and MyInt = Int.
+4 If $, $$, $$$, ... are used without scope level specification, they should
+  refer to the procedure which is being defined, rather than to the current
+  opened box. This is what one wants to do in 99% of the cases.
+  One should specify the level to refear to the current opened box, such as
+  in $:
+5 The VM should be instructed about how to create or destroy types.
+  This process has already been started, but needs to be completed.
+  In the end Box should be able to create hidden procedures for destroying
+  those data types that need a special treatment (structures in particular).
+  The compiler then should communicate to the VM what procedure to call
+  for destroying what type. The destruction will then be operated
+  automatically by the VM when the reference count reaches 0.
+  Types associated with the destroyed type will be destroyed as well
+  in a recursive fashion.
+6 Copying types of all kinds should be possible, with eventual invocation
+  of user defined procedures. It's not clear if we should allow the VM
+  to automatically copying objects, by introducing an ad-hoc instruction.
+7 Pointers needs to be introduced, so that objects can be referred by other
+  objects.
+8 We should allow automatic conversion of types, once they have been created.
+  This will allow to use a Type as a container for local variables, which
+  are needed only for the creation or managing of the object.
+  Once the type has been used and the final parenthesis (]) is found,
+  the object should be converted to a final object, which does not contain
+  the local variables. This will be very useful.
+
