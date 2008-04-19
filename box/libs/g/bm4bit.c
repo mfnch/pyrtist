@@ -47,12 +47,12 @@ typedef struct {
 extern void (*rst_midfn[])();
 
 /* Procedure definite in questo file */
-grp_window *gr4b_open_win(FCOOR ltx, FCOOR lty, FCOOR rdx, FCOOR rdy,
- FCOOR resx, FCOOR resy);
+grp_window *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
+                          Real resx, Real resy);
 void gr4b_close_win(void);
 void gr4b_set_col(int col);
-void gr4b_draw_point(ICOOR ptx, ICOOR pty);
-void gr4b_hor_line(ICOOR y, ICOOR x1, ICOOR x2);
+void gr4b_draw_point(Int ptx, Int pty);
+void gr4b_hor_line(Int y, Int x1, Int x2);
 
 /* Array di puntatori a queste procedure */
 static void (*gr4b_lowfn[])() = {
@@ -89,13 +89,12 @@ static void (*gr4b_lowfn[])() = {
  *  per la gestione della finestra stessa.
  *  In caso di errore invece restituisce 0.
  */
-grp_window *gr4b_open_win(FCOOR ltx, FCOOR lty, FCOOR rdx, FCOOR rdy,
- FCOOR resx, FCOOR resy)
-{
+grp_window *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
+                          Real resx, Real resy) {
  	void *winptr;
  	grp_window *wd;
 	long numptx, numpty, bytesperline, windim;
-	FCOOR lx, ly, versox, versoy;
+	Real lx, ly, versox, versoy;
 
 	if (
 	 (wd = (grp_window *) malloc(sizeof(grp_window))) == NULL ) {
@@ -224,7 +223,7 @@ void gr4b_close_win(void)
  * Disegna un punto in posizione (ptx, pty)
  * (espressa in coordinate fisiche, cioe' numero riga, numero colonna)
  */
-void gr4b_draw_point(ICOOR ptx, ICOOR pty)
+void gr4b_draw_point(Int ptx, Int pty)
 {
 	long q, r;
 	char *ptr;
@@ -289,7 +288,7 @@ void gr4b_set_col(int col)
  * Scrive una linea sulla riga y, da colonna x1 a x2
  * (queste sono tutte coordinate intere).
  */
-void gr4b_hor_line(ICOOR y, ICOOR x1, ICOOR x2)
+void gr4b_hor_line(Int y, Int x1, Int x2)
 {
 	long lenght, nbyte, xbyte, xpix, i;
 	char *ptr;

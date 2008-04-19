@@ -28,6 +28,9 @@ Task Cmp_Structure_Begin(void) {
     cmp_structure_exprs = Array_New(sizeof(StructItem), CMP_TYPICAL_STRUC_DIM);
     if ( cmp_structure_exprs == NULL ) return Failed;
     cmp_structure_type = TYPE_NONE;
+
+  } else {
+    TASK( Arr_Clear(cmp_structure_exprs) );
   }
 
   header.expr.type = cmp_structure_type;
@@ -38,12 +41,14 @@ Task Cmp_Structure_Begin(void) {
   return Success;
 }
 
-/* DESCRIPTION: This function adds a new elements to the structure
+/* DESCRIPTION: This function adds a new element to the structure
  *  which is currently being constructed.
  */
-Task Cmp_Structure_Add(Expression *e) {
+Task Cmp_Structure_Add(Expr *e) {
   StructItem si;
-  register Intg t, item_size;
+  register Int t, item_size;
+
+  TASK( Expr_Must_Have_Value(e) );
 
   assert(e->is.typed && e->is.value);
   item_size = Tym_Type_Size(e->type);
@@ -69,11 +74,11 @@ Task Cmp_Structure_Add(Expression *e) {
 
 /* DESCRIPTION: This function ends the creation of the current structure.
  */
-Task Cmp_Structure_End(Expression *new_struct) {
+Task Cmp_Structure_End(Expr *new_struct) {
   StructItem *si, *first;
   int only_backgnd, only_foregnd;
-  Intg num = cmp_structure_num, size = cmp_structure_size,
-   type = cmp_structure_type;
+  Int num = cmp_structure_num, size = cmp_structure_size,
+      type = cmp_structure_type;
 
   assert(cmp_structure_exprs != NULL);
 
@@ -150,7 +155,7 @@ Task Cmp_Structure_End(Expression *new_struct) {
  *  *only_backgnd = 1 (in other cases only_backgnd = 0).
  */
 static Task Cmp__Structure_Backgnd(StructItem *first, Intg num, Intg size,
- int *only_backgnd, int *only_foregnd) {
+                                   int *only_backgnd, int *only_foregnd) {
   register Intg i, arg_size, arg_size_old;
   register StructItem *si;
 
@@ -211,8 +216,8 @@ static Task Cmp__Structure_Backgnd(StructItem *first, Intg num, Intg size,
  *  It fills all the members of the structure which have not a definite value
  *  at compile-time.
  */
-static Task Cmp__Structure_Foregnd(
- Expression *new_struct, StructItem *first, Intg num, int only_foregnd) {
+static Task Cmp__Structure_Foregnd(Expr *new_struct, StructItem *first,
+                                   Int num, int only_foregnd) {
 
   register Intg i, arg_size, arg_size_old;
   register StructItem *si;
@@ -252,7 +257,7 @@ static Task Cmp__Structure_Foregnd(
 /* DESCRIPTION: This function frees the expression that were collected
  *  to build the structure.
  */
-static Task Cmp__Structure_Free(StructItem *first, Intg num) {
+static Task Cmp__Structure_Free(StructItem *first, Int num) {
   register Intg i;
   for(i = 0; i < num; i++) {
     TASK( Cmp_Expr_Destroy_Tmp(& first->expr) );

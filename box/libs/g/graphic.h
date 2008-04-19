@@ -28,10 +28,6 @@
 #  include "types.h"
 #  include "gpath.h"
 
-/* Definisco i "tipi" necessari per la grafica */
-#define ICOOR  Int
-#define FCOOR  Real
-
 /****** DEFINIZIONE DELLE STRUTTURE NECESSARIE PER LA GRAFICA ******/
 
 /* Definisce la struttura adatta a contenere il colore di un punto */
@@ -62,23 +58,23 @@ typedef struct {
 
 /* Descrittore di una finestra grafica */
 typedef struct {
-  void *ptr;        /* Puntatore alla zona di memoria della finestra */
-  FCOOR ltx, lty;      /* Coordinate dell'angolo in alto a sinistra (in mm)*/
-  FCOOR rdx, rdy;      /* Coordinate dell'angolo in basso a destra (in mm) */
-  FCOOR minx, miny;    /* Coordinate minime visualizzabili (in mm) */
-  FCOOR maxx, maxy;    /* Coordinate massime visualizzabili (in mm) */
-  FCOOR lx, ly;      /* Larghezza e altezza (in mm, sono positive)*/
-  FCOOR versox, versoy;  /* Versori x e y (numeri uguali a +1 o -1) */
-  FCOOR stepx, stepy;    /* Salto fra un punto e quello alla sua sinistra e in basso */
-  FCOOR resx, resy;    /* Risoluzione x e y (in punti per mm) */
-  ICOOR numptx, numpty;  /* Numero di punti nelle due direzioni */
+  void *ptr;           /* Puntatore alla zona di memoria della finestra */
+  Real ltx, lty;       /* Coordinate dell'angolo in alto a sinistra (in mm)*/
+  Real rdx, rdy;       /* Coordinate dell'angolo in basso a destra (in mm) */
+  Real minx, miny;     /* Coordinate minime visualizzabili (in mm) */
+  Real maxx, maxy;     /* Coordinate massime visualizzabili (in mm) */
+  Real lx, ly;         /* Larghezza e altezza (in mm, sono positive)*/
+  Real versox, versoy; /* Versori x e y (numeri uguali a +1 o -1) */
+  Real stepx, stepy;   /* Salto fra un punto e quello alla sua sinistra e in basso */
+  Real resx, resy;     /* Risoluzione x e y (in punti per mm) */
+  Int numptx, numpty;  /* Numero di punti nelle due direzioni */
   palitem *bgcol;      /* Colore dello sfondo */
   palitem *fgcol;      /* Colore attualmente in uso */
-  palette *pal;      /* Tavolazza dei colori relativi alla finestra */
+  palette *pal;        /* Tavolazza dei colori relativi alla finestra */
   long bitperpixel;    /* Numero di bit necessari a memorizzaze 1 pixel */
-  long bytesperline;    /* Byte occupati da una linea */
-  long dim;        /* Dimensione totale in byte della finestra */
-  void *wrdep;      /* Puntatore alla struttura dei dati dipendenti dalla scrittura */
+  long bytesperline;   /* Byte occupati da una linea */
+  long dim;            /* Dimensione totale in byte della finestra */
+  void *wrdep;         /* Puntatore alla struttura dei dati dipendenti dalla scrittura */
 
   /* Puntatore alle procedura per salvare la finestra su disco */
   int (*save)();
@@ -98,18 +94,18 @@ extern grp_window *grp_win;
 extern grp_window grp_empty_win;
 
 /* Per convertire in millimetri, radianti, punti per millimetro */
-extern FCOOR grp_tomm;
-extern FCOOR grp_torad;
-extern FCOOR grp_toppmm;
+extern Real grp_tomm;
+extern Real grp_torad;
+extern Real grp_toppmm;
 
 /* Dichiarazioni delle procedure della libreria */
 /* Funzioni grafiche di alto livello */
-grp_window *gr1b_open_win(FCOOR ltx, FCOOR lty, FCOOR rdx, FCOOR rdy,
- FCOOR resx, FCOOR resy);
-grp_window *gr4b_open_win(FCOOR ltx, FCOOR lty, FCOOR rdx, FCOOR rdy,
- FCOOR resx, FCOOR resy);
-grp_window *gr8b_open_win(FCOOR ltx, FCOOR lty, FCOOR rdx, FCOOR rdy,
- FCOOR resx, FCOOR resy);
+grp_window *gr1b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
+                          Real resx, Real resy);
+grp_window *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
+                          Real resx, Real resy);
+grp_window *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
+                          Real resx, Real resy);
 grp_window *fig_open_win(int numlayers);
 grp_window *ps_open_win(char *file);
 grp_window *eps_open_win(char *file, Real x, Real y);
@@ -173,19 +169,19 @@ Point *grp_ref(Point *o, Point *v, Point *p);
 #define grp_inch_per_psunit (1.0/72.0)
 
 /* Conversione da coordinate relative a coordinate assolute (floating) */
-#define CV_XF_A(x)  (((FCOOR) x - grp_win->ltx)/grp_win->stepx)
-#define CV_YF_A(y)  (((FCOOR) y - grp_win->lty)/grp_win->stepy)
+#define CV_XF_A(x)  (((Real) x - grp_win->ltx)/grp_win->stepx)
+#define CV_YF_A(y)  (((Real) y - grp_win->lty)/grp_win->stepy)
 /* Conversione di lunghezze relative in lunghezze assolute */
-#define CV_LXF_A(x)  (((FCOOR) x)/grp_win->stepx)
-#define CV_LYF_A(y)  (((FCOOR) y)/grp_win->stepy)
+#define CV_LXF_A(x)  (((Real) x)/grp_win->stepx)
+#define CV_LYF_A(y)  (((Real) y)/grp_win->stepy)
 /* Conversione da coordinate assolute a coordinate intermedie */
 #define CV_A_MED(x)  ((int) floor(x) + (int) ceil(x))
 /* Conversione da coordinate intermedie a coordinate intere */
-#define CV_MED_GT(x)  (((ICOOR) x + 1) >> 1)
-#define CV_MED_LW(x)  (((ICOOR) x - 1) >> 1)
+#define CV_MED_GT(x)  (((Int) x + 1) >> 1)
+#define CV_MED_LW(x)  (((Int) x - 1) >> 1)
 
 /* Restituisce 1 se la coordinata intermedia è un intero esatto, 0 altrimenti */
-#define IS_EXACT_INT(x)  ((ICOOR) x & 1)
+#define IS_EXACT_INT(x)  ((Int) x & 1)
 
 #define WINNUMROW    grp_win->numpty
 

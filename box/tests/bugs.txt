@@ -1,5 +1,0 @@
-mf@fire:~/src/boxc/trunk/box/tests$ box -st
-a = (1, b)
-structure.c:49: failed assertion `e->is.typed && e->is.value'
-Abort trap
-

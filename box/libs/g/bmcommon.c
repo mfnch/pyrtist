@@ -66,8 +66,7 @@ void write_leuint32(LEUInt32 *dest, unsigned long src) {
 /* SUBROUTINE: grbm_draw_point
  * Disegna un punto in posizione (x, y) (espressa in millimetri)
  */
-void grbm_draw_point(FCOOR x, FCOOR y)
-{
+void grbm_draw_point(Real x, Real y) {
   long ptx, pty;
 
   ptx = rint((x - grp_win->ltx)/grp_win->stepx);

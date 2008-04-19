@@ -150,18 +150,23 @@ void Expr_Print(Expr *e, FILE *out) {
 /* Checks that the given expression has type */
 Task Expr_Must_Have_Type(Expr *e) {
   if (! e->is.typed) {
-    MSG_ERROR("Expression has no type.");
+    MSG_ERROR("Expression '%N' has no type.", & e->value.nm);
     return Failed;
   }
   return Success;
 }
 
 Task Expr_Must_Have_Value(Expr *e) {
-  if (! (e->is.typed && e->is.value)) {
-    MSG_ERROR("Expression has no value.");
+  if (e->is.typed && e->is.value) return Success;
+  if (! e->is.typed) {
+    MSG_ERROR("Expression '%N' has no type.", & e->value.nm);
+    return Failed;
+
+  } else {
+    MSG_ERROR("Expression of type '%~s' has no value.",
+              TS_Name_Get(cmp->ts, e->type));
     return Failed;
   }
-  return Success;
 }
 
 void Expr_Cont_Get(Cont *c, Expr *e) {
@@ -278,8 +283,8 @@ static Task Expr_Point_Member(Expr *m, Expr *s, Name *m_name) {
   }
 
 member_not_found:
-  MSG_ERROR( "'%N' is not an intrinsic member of '%s'!",
-   m, Tym_Type_Name(s->type) );
+  MSG_ERROR("'%N' is not an intrinsic member of '%s'!",
+            m_name, Tym_Type_Name(s->type));
   return Failed;
 }
 

@@ -67,6 +67,13 @@ extern UInt tok_linenum;
  * in these static functions that are collected here.                       *
  ****************************************************************************/
 
+static Task Type_Struc_Begin(StrucMember *sm, Expr *type, char *m) {
+  TASK( Expr_Must_Have_Type(type) );
+  sm->type = type->type;
+  sm->name = m;
+  return Success;
+}
+
 /* Construct the core of a structure type: takes two members and construct
  * a two membered structure Sm1, Sm2 --> (Sm1, Sm2).
  * The type of the new structure of types is stored inside *st.
@@ -416,8 +423,8 @@ comma.opt:
 
 /* Matches the first element of a structure type */
 type.struc.first:
-  type                     {$$.type = $1.type; $$.name = NULL;}
-| type TOK_LNAME           {$$.type = $1.type; $$.name = Name_To_Str(& $2);}
+  type                     {DO(Type_Struc_Begin(& $$, & $1, (char *) NULL));}
+| type TOK_LNAME           {DO(Type_Struc_Begin(& $$, & $1, Name_To_Str(& $2)));}
 ;
 
 /* Matches the second, third, ... element of a structure type */

@@ -37,7 +37,7 @@
 #define MAXROWPERBLOCK  8192
 
 #define WORD      unsigned short
-#define SWORD      short
+#define SWORD     short
 
 struct block_desc {
   SWORD  ymin;    /* Coordinata y corrispondente alla prima riga descritta */
@@ -83,7 +83,7 @@ block_desc *rst__trytomark(SWORD y, SWORD x);
 void rst__mark(SWORD y, SWORD x);
 void rst__line(Point *pa, Point *pb);
 void rst__cong(Point *pa, Point *pb, Point *pc);
-void rst__curve(Point *pa, Point *pb, Point *pc, FCOOR c);
+void rst__curve(Point *pa, Point *pb, Point *pc, Real c);
 void rst__poly(Point *p, int n);
 
 /* Le procedure "di libreria" definite per essere chiamate dall'esterno
@@ -94,7 +94,7 @@ void rst_init(void);
 void rst_draw(void);
 void rst_line(Point a, Point b);
 void rst_cong(Point a, Point b, Point c);
-void rst_curve(Point a, Point b, Point c, FCOOR cut);
+void rst_curve(Point a, Point b, Point c, Real cut);
 void rst_circle(Point ctr, Point a, Point b);
 void rst_poly(Point *p, int n);
 void rst_fgcolor(Real r, Real g, Real b);
@@ -121,8 +121,7 @@ void (*rst_midfn[])() = {
  * DESCRIZIONE: Resetta il blocco di rasterizzazione specificato.
  *  Dunque il blocco viene svuotato e il suo contenuto va perso.
  */
-void rst__block_reset(block_desc *rstblock)
-{
+void rst__block_reset(block_desc *rstblock) {
   WORD y;
   WORD *ptr;
 
@@ -133,31 +132,25 @@ void rst__block_reset(block_desc *rstblock)
 
   for(ptr = rstblock->buffer; y-- > 0; ptr++)
     *ptr = (WORD) 0;
-
-  return;
 }
 
 /* NOME: rst_reset
  * DESCRIZIONE: Pulisce il buffer di rasterizzazione,
  *  senza deallocare memoria.
  */
-void rst_reset(void)
-{
+void rst_reset(void) {
   block_desc *rstblock;
 
   /* Facciamo un loop su tutti i blocchi */
   for(rstblock = first; rstblock != (block_desc *) 0; rstblock = rstblock->next)
     rst__block_reset(rstblock);  /* Puliamo ciascun blocco */
-
-  return;
 }
 
 /* NOME: rst_init
  * DESCRIZIONE: Prepara il sistema nel suo stato iniziale,
  *  pronto per rasterizzare.
  */
-void rst_init(void)
-{
+void rst_init(void) {
   int i, numblockmin, numblockalc = 0;
   WORD ymin, ymax;
   WORD *bufptr;
@@ -219,12 +212,8 @@ void rst_init(void)
       rstblock->ymin = ymin;
       rstblock->ymax = WINNUMROW - 1;
       rst__block_reset(rstblock);
-
-      return;
     }
   }
-
-  return;
 }
 
 /* NOME: rst__trytomark
@@ -235,8 +224,7 @@ void rst_init(void)
  *  In tal caso, a meno che non si sia verificato un errore,
  *  l'operazione e' stata completata con successo.
  */
-block_desc *rst__trytomark(SWORD y, SWORD x)
-{
+block_desc *rst__trytomark(SWORD y, SWORD x) {
   WORD *ptr, *newptr;
   block_desc *rstblock;
 
@@ -288,8 +276,7 @@ block_desc *rst__trytomark(SWORD y, SWORD x)
  *  Se non c'e' abbastanza memoria nella riga, alloca nuova memoria
  * in modo da poter concludere l'operazione.
  */
-void rst__mark(SWORD y, SWORD x)
-{
+void rst__mark(SWORD y, SWORD x) {
   block_desc *rstblock;
 
   /* Se la libreria di rasterizzazione non e' stata ancora inizializzata
@@ -341,16 +328,13 @@ void rst__mark(SWORD y, SWORD x)
 
     ERRORMSG("rst_mark", "Feature in fase di implementazione");
   }
-
-  return;
 }
 
 /* NOME: rst_draw
  * DESCRIZIONE: Legge il contenuto del buffer di rasterizzazione
  *  e traccia il disegno corrispondente sulla finestra grafica.
  */
-void rst_draw(void)
-{
+void rst_draw(void) {
   int border;
   SWORD y, x1, x2, xmin;
   WORD *row, *col;
@@ -390,40 +374,34 @@ void rst_draw(void)
       }
     }
   }
-
-  return;
 }
 
 /* NOME: rst_line
  * DESCRIZIONE: Rasterizza la linea congiungente i due punti a e b.
  * NOTA: Le coordinate dei punti sono coordinate relative.
  */
-void rst_line(Point a, Point b)
-{
+void rst_line(Point a, Point b) {
   a.x = CV_XF_A(a.x);
   a.y = CV_YF_A(a.y);
   b.x = CV_XF_A(b.x);
   b.y = CV_YF_A(b.y);
 
   rst__line( & a, & b );
-
-  return;
 }
 
 /* NOME: rst__line
  * DESCRIZIONE: Rasterizza la linea congiungente i due punti *pa e *pb.
  * NOTA: Le coordinate dei punti sono coordinate assolute.
  */
-void rst__line(Point *pa, Point *pb)
-{
-  FCOOR ly;
+void rst__line(Point *pa, Point *pb) {
+  Real ly;
 
   if (pa->y > pb->y) { register Point *tmp; tmp = pa; pa = pb; pb = tmp; }
 
   ly = pb->y - pa->y;
   if (ly < 0.95) {
     /* In tal caso ho solo un valore di y, oppure nessuno */
-    ICOOR y1, y2;
+    Int y1, y2;
 
     if ( (pb->y < GRP_AYMIN) || (pa->y > GRP_AYMAX) ) return;
 
@@ -432,17 +410,17 @@ void rst__line(Point *pa, Point *pb)
 
     if (y1 == y2) {
       /* Solo in questo caso la retta "si vede" */
-      FCOOR x;
+      Real x;
 
-      x = pa->x + ((((FCOOR) y1) - pa->y)/ly)*(pb->x - pa->x);
+      x = pa->x + ((((Real) y1) - pa->y)/ly)*(pb->x - pa->x);
 
       MARK(y1, x);
     }
 
   } else {
     /* In tal caso la retta ha una inclinazione rilevante */
-    ICOOR y1, y2, y;
-    FCOOR a, b, x;
+    Int y1, y2, y;
+    Real a, b, x;
 
     /* Esco in caso di linea non visibile (sopra o sotto) */
     if ( (pb->y < GRP_AYMIN) || (pa->y > GRP_AYMAX) ) return;
@@ -460,7 +438,7 @@ void rst__line(Point *pa, Point *pb)
     else
       y2 = CV_MED_LW( CV_A_MED( pb->y ) );
 
-    x = b + a*((FCOOR) y1);
+    x = b + a*((Real) y1);
     PRNMSG("Linea parte da: "); PRNINTG(y1); PRNMSG("\n");
     for(y = y1; y <= y2; y++) {
 
@@ -469,8 +447,6 @@ void rst__line(Point *pa, Point *pb)
       x += a;
     }
   }
-
-  return;
 }
 
 /* NOME: rst_cong
@@ -482,8 +458,7 @@ void rst__line(Point *pa, Point *pb)
  *  e curva finendo in c.
  * NOTA: Le coordinate dei punti sono coordinate relative.
  */
-void rst_cong(Point a, Point b, Point c)
-{
+void rst_cong(Point a, Point b, Point c) {
   a.x = CV_XF_A(a.x);
   a.y = CV_YF_A(a.y);
   b.x = CV_XF_A(b.x);
@@ -497,11 +472,10 @@ void rst_cong(Point a, Point b, Point c)
 /* NOME: rst__cong
  * DESCRIZIONE: Come rst_cong, ma utilizza coordinate assolute.
  */
-void rst__cong(Point *pa, Point *pb, Point *pc)
-{
-  ICOOR iymin, iymax, iy;
-  FCOOR ymin, ymax;
-  FCOOR v01x, v01y, v21x, v21y, v02x, v02y, h;
+void rst__cong(Point *pa, Point *pb, Point *pc) {
+  Int iymin, iymax, iy;
+  Real ymin, ymax;
+  Real v01x, v01y, v21x, v21y, v02x, v02y, h;
 
   /* Comincio col trovare la massima proiezione della curva
    * sull'asse y, cioe' l'intervallo di ordinate in cui stanno sicuramente
@@ -569,8 +543,8 @@ void rst__cong(Point *pa, Point *pb, Point *pc)
    * del sistema di riferimento (non ortonormale!!!) con origine in 3
    * e versori v01 e v21
    */
-  FCOOR a, b, c, c2, cstep, s1mc2;
-  FCOOR i1x, i1y, i2x, i2y, rx, ry, x1, x2;
+  Real a, b, c, c2, cstep, s1mc2;
+  Real i1x, i1y, i2x, i2y, rx, ry, x1, x2;
 
   /* cstep e' il valore da sommare a c per passare alla retta orizzontale
    * tipo Y = k alla retta orizzontale Y = k+1
@@ -581,7 +555,7 @@ void rst__cong(Point *pa, Point *pb, Point *pc)
   b = -v21y * cstep;
 
   /* Parto dalla retta orizzontale Y = iymin */
-  c = (v21y - pa->y + ((FCOOR) iymin))*cstep;
+  c = (v21y - pa->y + ((Real) iymin))*cstep;
 
   for (iy = iymin; iy <= iymax; iy++) {
     c2 = c*c;
@@ -629,8 +603,6 @@ void rst__cong(Point *pa, Point *pb, Point *pc)
   }
 
   }
-
-  return;
 }
 
 /* NOME: rst_curve
@@ -646,8 +618,7 @@ void rst__cong(Point *pa, Point *pb, Point *pc)
  *  i punti a, b e c.
  * NOTA: Le coordinate dei punti sono coordinate relative.
  */
-void rst_curve(Point a, Point b, Point c, FCOOR cut)
-{
+void rst_curve(Point a, Point b, Point c, Real cut) {
   a.x = CV_XF_A(a.x);
   a.y = CV_YF_A(a.y);
   b.x = CV_XF_A(b.x);
@@ -656,16 +627,13 @@ void rst_curve(Point a, Point b, Point c, FCOOR cut)
   c.y = CV_YF_A(c.y);
 
   rst__curve( & a, & b, & c, cut);
-
-  return;
 }
 
 /* NOME: rst__curve
  * DESCRIZIONE: Come rst_curve ma utilizza coordinate assolute.
  */
-void rst__curve(Point *pa, Point *pb, Point *pc, FCOOR c)
-{
-  FCOOR v10x, v10y, v12x, v12y;
+void rst__curve(Point *pa, Point *pb, Point *pc, Real c) {
+  Real v10x, v10y, v12x, v12y;
   Point q[5], *pq;
 
   if (c < -1.0) c = -1.0;
@@ -695,8 +663,6 @@ void rst__curve(Point *pa, Point *pb, Point *pc, FCOOR c)
   pq = q;
   rst__cong( pq, pq+1, pq+2 );
   rst__cong( pq+3, pq+4, pq+5 );
-
-  return;
 }
 
 /* DESCRIZIONE: Rasterizza una curva tipo "cerchio stirato" (cioe'
@@ -711,11 +677,10 @@ void rst__curve(Point *pa, Point *pb, Point *pc, FCOOR c)
  *   va = a - ctr  e  vb = b - ctr, dove a e b sono passati come argomenti
  *  a rst_circle.
  */
-void rst_circle(Point ctr, Point a, Point b)
-{
-  ICOOR iy, y1, y2;
-  FCOOR xmin, xmax, ymin, ymax;
-  FCOOR C, C2, D, k1, k2, x, dx, y;
+void rst_circle(Point ctr, Point a, Point b) {
+  Int iy, y1, y2;
+  Real xmin, xmax, ymin, ymax;
+  Real C, C2, D, k1, k2, x, dx, y;
 
   a.x = CV_XF_A(a.x - ctr.x);
   a.y = CV_YF_A(a.y - ctr.y);
@@ -763,7 +728,7 @@ void rst_circle(Point ctr, Point a, Point b)
   else
     y2 = CV_MED_LW( CV_A_MED(ymax) );
 
-  y = ((FCOOR) y1) - ctr.y;
+  y = ((Real) y1) - ctr.y;
   x = ctr.x + y*k1;
 
   PRNMSG("; C2 = "); PRNFLT(C2);
@@ -782,16 +747,13 @@ void rst_circle(Point ctr, Point a, Point b)
     x += k1;
     ++y;
   }
-
-  return;
 }
 
 /* NOME: rst__poly
  * DESCRIZIONE: Rasterizza un poligono chiuso di n vertici:
  * p[0], p[1], ..., p[n-1] (punti espressi in coordinate assolute).
  */
-void rst__poly(Point *p, int n)
-{
+void rst__poly(Point *p, int n) {
   int i;
   Point q;
 
@@ -807,16 +769,13 @@ void rst__poly(Point *p, int n)
     rst__line( p, ++p );
 
   rst__line( & q, p );
-
-  return;
 }
 
 /* NOME: rst_poly
  * DESCRIZIONE: Rasterizza un poligono chiuso di n vertici:
  * p[0], p[1], ..., p[n-1]
  */
-void rst_poly(Point *p, int n)
-{
+void rst_poly(Point *p, int n) {
   int i, j = 1;
   Point r, q[2];
 
@@ -837,14 +796,11 @@ void rst_poly(Point *p, int n)
   }
 
   rst__line( & r, & q[j ^ 1] );
-
-  return;
 }
 
 /* DESCRIZIONE: Setta il colore di primo piano.
  */
-void rst_fgcolor(Real r, Real g, Real b)
-{
+void rst_fgcolor(Real r, Real g, Real b) {
   color c;
   palitem *newcol;
 
@@ -854,19 +810,15 @@ void rst_fgcolor(Real r, Real g, Real b)
   if ( newcol != NULL ) {
     grp_set_col( newcol->index );
   }
-
-  return;
 }
 
 /* DESCRIZIONE: Setta il colore di sfondo.
  */
-void rst_bgcolor(Real r, Real g, Real b)
-{
+void rst_bgcolor(Real r, Real g, Real b) {
   color c;
 
   grp_color_build( r, g, b, & c );
   (grp_win->bgcol)->c = c;
-  return;
 }
 
-static void rst_fake_point(Point *p) {return;}
+static void rst_fake_point(Point *p) {}

@@ -38,11 +38,11 @@ grp_window *grp_win = & grp_empty_win;
 
 /* Costanti moltiplicative usate per convertire: */
 /*  - lunghezze in millimetri: */
-FCOOR grp_tomm  = 1.0;
+Real grp_tomm  = 1.0;
 /* - angoli in radianti: */
-FCOOR grp_torad = grp_radperdeg;
+Real grp_torad = grp_radperdeg;
 /* - risoluzioni in punti per millimetro: */
-FCOOR grp_toppmm = grp_ppmmperdpi;
+Real grp_toppmm = grp_ppmmperdpi;
 
 /********************************************************************/
 /*           FUNZIONI DI INIZIALIZZAZIONE DELLA LIBRERIA            */
@@ -104,9 +104,8 @@ grp_window grp_empty_win = {
  *  Bisogna quindi salvare o comunque utilizzare il risultato prima
  *  di ri-chiamare grp_ref!
  */
-Point *grp_ref(Point *o, Point *v, Point *p)
-{
-  register FCOOR c, cx, cy;
+Point *grp_ref(Point *o, Point *v, Point *p) {
+  Real c, cx, cy;
   static Point result;
 
   /* Normalizzo v e trovo pertanto vx */
