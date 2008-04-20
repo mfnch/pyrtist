@@ -44,6 +44,6 @@ ww = Window[][
 ]
 
 \ Window["bm8", (55, 45), .Res[(5, 5)]][
-  \ .Put[ww, (10, 35), .Scale[(-1, 1)]],
+  \ .Put[ww, (10, 35), .Scale[(1, -1)]],
   .Save["machine.bmp"]
 ]

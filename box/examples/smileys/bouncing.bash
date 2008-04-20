@@ -26,5 +26,6 @@ EOF
 done
 
 cmnd gifsicle -l0 -d1 $FILE_LIST --output=../bouncing.gif
+cp bouncing_0.gif ../
 cd ..
 

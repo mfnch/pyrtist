@@ -25,6 +25,7 @@ EOF
   FILE_LIST="$FILE_LIST $NEW_FILE"
 done
 
-cmnd gifsicle -l0 --delay 1 $FILE_LIST --output=../washing.gif
+cmnd gifsicle -l0 --delay 1 $FILE_LIST --output=../washing_machine.gif
+cp smiley_0.gif ../washing_machine_0.gif
 cd ..
 

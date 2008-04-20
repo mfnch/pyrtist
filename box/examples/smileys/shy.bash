@@ -26,5 +26,6 @@ EOF
 done
 
 cmnd gifsicle -l0 --delay 1 $FILE_LIST --output=../shy.gif
+cp smiley_0.gif ../shy_0.gif
 cd ..
 

@@ -1,6 +1,6 @@
 restindex
     crumb: Home
-    format: rest
+    format: html
     page-title: Box
     include: Yes
     page-description:
@@ -10,18 +10,59 @@ restindex
 #    sectionlist: aboutme, projects, other, links
 #   section-pages: , publications, contact
 /restindex
+<script LANGUAGE ="JavaScript">
+  <!--
+    window.onerror=null;
+    browserName = navigator.appName;
+    browserVer = parseInt(navigator.appVersion);
 
-Introduction
-------------
+    num_images = 5;
+    cur_image = 0;
+    on_image = new Array();
+    off_image = new Array();
 
-Box is a programming language developed to make graphics easy.
+    if (browserName=="Netscape" && browserVer >= 3)
+      ver = "yes";
+    else
+      ver = "yes";
+
+    if(ver == "yes") {
+      on_image[0]  = new Image(); on_image[0].src  = "bouncing.gif";
+      off_image[0] = new Image(); off_image[0].src = "bouncing_0.gif";
+      on_image[1]  = new Image(); on_image[1].src  = "shy.gif";
+      off_image[1] = new Image(); off_image[1].src = "shy_0.gif";
+      on_image[2]  = new Image(); on_image[2].src  = "washing_machine.gif";
+      off_image[2] = new Image(); off_image[2].src = "washing_machine_0.gif";
+      on_image[3]  = new Image(); on_image[3].src  = "losing_eyes.gif";
+      off_image[3] = new Image(); off_image[3].src = "losing_eyes_0.gif";
+      on_image[4]  = new Image(); on_image[4].src  = "machine.gif";
+      off_image[4] = new Image(); off_image[4].src = "machine_0.gif";
+    }
+
+    function change() {
+      if (ver == "yes")  {
+        if (cur_image >= 0)
+          document["anim" + cur_image].src = off_image[cur_image].src;
+        cur_image += 1;
+        if (cur_image < num_images)
+          document["anim" + cur_image].src = on_image[cur_image].src;
+        else
+          cur_image = -1;
+      }
+    }
+
+  // -->
+</script>
+
+<h1 class="title">Introduction</h1>
+<p>Box is a programming language developed to make graphics easy.
 Everything you draw (lines, circles, text, polygons, etc.)
-is done inside ``Windows``.
-``Windows`` object are the target of graphic commands and
+is done inside "Window"s.
+Windows object are the target of graphic commands and
 can be translated, scaled, rotated and used
-inside other ``Windows``.
+inside other Windows.
 This is actually simpler than what it may seem!
-Indeed, you can define hot points for each ``Window`` you
+Indeed, you can define hot points for each Window you
 create. These hot points can be used to express
 how to rotate, translate and scale your figures,
 removing the necessity of calculating rotation angles,
@@ -29,3 +70,25 @@ scale factors, etc. Everything is calculated automatically
 and when you change your figure the transformations
 are adjusted accordingly, so that everything is placed
 where it should.
+</p>
+
+<h1 class="title">Examples</h1>
+<p>The documentation of Box is still under construction.
+However you may find some examples inside the tarball (examples directory).
+Some of them can be browsed <a href="examples/index.html">here</a>.
+Box can be used also to create simple animations,
+here are some examples:</p>
+
+<center>
+<table> <tbody>
+<tr>
+<td><form><input type="button" value="NEXT" onclick="change()"></form></td>
+<td><img name="anim0" src="bouncing.gif" border="0" hspace=10></td>
+<td><img name="anim1" src="shy_0.gif" border="0" hspace=10></td>
+<td><img name="anim2" src="washing_machine_0.gif" border="0" hspace=10></td>
+<td><img name="anim3" src="losing_eyes_0.gif" border="0" hspace=10></td>
+<td><img name="anim4" src="machine_0.gif" border="0" hspace=10></td>
+</tr>
+</center>
+
+</tbody> </table>
