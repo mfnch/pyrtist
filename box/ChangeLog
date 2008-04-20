@@ -12,7 +12,7 @@ Change log (recent come first)
 20 March 2008: first release of the tarball. Still very unstable.
   First tarball is released, just for letting people try the package.
 
-----:
+20 April 2008: Adjustments and bugfixes.
   * Bugfix on the strnlen implementation. Should affect only a limited
     number of architectures.
   * Introducing reference counting for objects allocated by the VM:
@@ -20,4 +20,6 @@ Change log (recent come first)
   * Several improvements to Window.Line: it should now be more robust,
     and supports lines having multiple join styles.
   * Poly accepts now (;)
+  * Error messages are now displayed when undefined items appear
+    inside structures.
 
