@@ -1,0 +1,9 @@
+rst_out = "curved_arrow.txt"
+rst_skeleton = "skeleton"
+crumb = "curved_arrow.box"
+description = "Two curved variable-width lines"
+figure_caption = "the output produced by Box"
+box_source = "../../../box/examples/curved_arrow.box"
+out_eps = "curved_arrow.eps"
+convert_opts = "-density 25 -antialias -size 50"
+

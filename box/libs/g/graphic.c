@@ -55,8 +55,7 @@ Real grp_toppmm = grp_ppmmperdpi;
  * accidentali "segmentation fault").
  */
 
-static void win_not_opened(void)
-{
+static void win_not_opened(void) {
   ERRORMSG("win_not_opened", "Nessuna finestra aperta");
   return;
 }

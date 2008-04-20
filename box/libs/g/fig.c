@@ -38,6 +38,7 @@
 #include "error.h"
 #include "buffer.h"
 #include "graphic.h"  /* Dichiaro alcune strutture grafiche generali */
+#include "g.h"
 #include "fig.h"
 
 /* Queste funzioni sono definite nella seconda parte di questo file
@@ -47,7 +48,7 @@
 static void not_available(void);
 void fig_rreset(void);
 void fig_rinit(void);
-void fig_rdraw(void);
+void fig_rdraw(DrawStyle style);
 void fig_rline(Point a, Point b);
 void fig_rcong(Point a, Point b, Point c);
 void fig_rcurve(Point a, Point b, Point c, Real cut);
@@ -69,7 +70,7 @@ static void (*fig_lowfn[])() = {
 
 /* Lista delle funzioni di rasterizzazione */
 void (*fig_midfn[])() = {
-  fig_rreset, fig_rinit, fig_rdraw,
+  fig_rreset, fig_rinit,
   fig_rline, fig_rcong, fig_rcurve,
   fig_rcircle, fig_rfgcolor, fig_rbgcolor,
   not_available, fig_text, fig_font,
@@ -219,6 +220,8 @@ grp_window *fig_open_win(int numlayers) {
   wd->save = fig_save;
   wd->lowfn = fig_lowfn;
   wd->midfn = fig_midfn;
+
+  wd->rdraw = fig_rdraw;
 
   PRNMSG("Ok!\n");
   return wd;
@@ -532,10 +535,10 @@ void fig_rinit(void) {
   PRNMSG("Ok!\n");
 }
 
-void fig_rdraw(void) {
-  BEGIN_CMND( "fig_rdraw", 0 );
-  *cmndh = (struct cmnd_header) {ID_rdraw, 0};
-  PRNMSG("Ok!\n");
+void fig_rdraw(DrawStyle style) {
+  CmndArg args[] = {{sizeof(DrawStyle), & style},
+                    {0, (void *) NULL}};
+  _fig_insert_command(ID_rdraw, args);
 }
 
 void fig_rline(Point a, Point b) {
@@ -715,7 +718,10 @@ void fig_draw_layer(grp_window *source, int l) {
       break;
 
     case ID_rdraw:
-      grp_rdraw();
+      {
+        DrawStyle style = *((DrawStyle *) cmnd.ptr);
+        grp_rdraw(style);
+      }
       break;
 
     case ID_rline: {
@@ -860,9 +866,22 @@ void fig_draw_fig(grp_window *source) {
   }
 
   PRNMSG("Ok!\n");
-  return;
 }
 
 static int fig_save(const char *file_name) {
-  return eps_save_fig(file_name, grp_win);
+  enum {EXT_EPS=0, EXT_BMP, EXT_END, EXT_NUM};
+  char *ext[EXT_NUM];
+  ext[EXT_EPS] = "eps";
+  ext[EXT_BMP] = "bmp";
+  ext[EXT_END] = (char *) NULL;
+  switch(file_extension(ext, file_name)) {
+  case EXT_EPS:
+    return eps_save_fig(file_name, grp_win);
+  case EXT_BMP:
+    g_warning("Not implemented yet!");
+    return 0;
+  default:
+    g_warning("Unrecognized extension in file name: using eps file format!");
+    return eps_save_fig(file_name, grp_win);
+  }
 }

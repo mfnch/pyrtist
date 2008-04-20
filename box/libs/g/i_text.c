@@ -83,7 +83,7 @@ Task window_text_end(VMProgram *vmp) {
   if (wrote_text) {
     grp_window *cur_win = grp_win;
     grp_win = w->window;
-    grp_rdraw();
+    grp_rdraw(DRAW_EOFILL);
     grp_rreset();
     grp_win = cur_win;
   }

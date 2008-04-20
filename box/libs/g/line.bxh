@@ -9,11 +9,6 @@ line.sharp.a  = 0.0, line.sharp.b  =-1.0, line.sharp.c  = 0.0, line.sharp.d  =-1
 line.medium.a = 0.0, line.medium.b = 0.0, line.medium.c = 0.0, line.medium.d = 0.0
 line.smooth.a = 2.0, line.smooth.b = 2.0, line.smooth.c = 2.0, line.smooth.d = 2.0
 
-BorderStyle = (Int join, Real width, Color color)
-FillStyle = (Int style, Color color, BorderStyle border)
-
-
-
 Window.Line = Void
 ([)@Window.Line ? "line_begin"
 (])@Window.Line ? "line_end"

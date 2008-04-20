@@ -97,7 +97,7 @@ Task circle_pause(VMProgram *vmp) {
       grp_rfgcolor(color->r, color->g, color->b);
       w->circle.got.color = 0;
     }
-    grp_rdraw();
+    grp_rdraw(DRAW_EOFILL);
     grp_rreset();
     grp_win = cur_win;
 

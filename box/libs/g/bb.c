@@ -64,7 +64,7 @@ static void bb_rreset(void) {return;}
 
 static void bb_rinit(void) {return;}
 
-static void bb_rdraw(void) {return;}
+static void bb_rdraw(DrawStyle style) {return;}
 
 static void bb_rline(Point a, Point b) {
 #ifdef DEBUG
@@ -116,7 +116,7 @@ static void (*bb_lowfn[])() = {
 
 /* Lista delle funzioni di rasterizzazione */
 static void (*bb_midfn[])() = {
-  bb_rreset, bb_rinit, bb_rdraw,
+  bb_rreset, bb_rinit,
   bb_rline, bb_rcong, not_available,
   bb_rcircle, bb_rfgcolor, bb_rbgcolor,
   not_available, bb_text, bb_font,
@@ -128,6 +128,7 @@ void bb_bounding_box(grp_window *figure, Point *bb_min, Point *bb_max) {
   bb.save = bb_save;
   bb.lowfn = bb_lowfn;
   bb.midfn = bb_midfn;
+  bb.rdraw = bb_rdraw;
   bb_num_points = 0;
   grp_win = & bb;
   aput_identity_matrix(fig_matrix);

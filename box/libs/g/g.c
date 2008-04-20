@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <strings.h>
 
 #include "types.h"
 #include "virtmach.h"
@@ -63,4 +64,31 @@ Color *g_optcolor_get(OptColor *oc) {
 
 void g_optcolor_alternative_set(OptColor *oc, OptColor *alternative) {
   oc->alternative = alternative;
+}
+
+/** Given an array of possible extensions (which is just an array
+ * made up by the pointers to the corresponding string, terminated
+ * by a NULL pointer), returns the index of the extension of 'file_name'.
+ * If the extension of 'file_name' is not found among the provided array,
+ * the function returns -1.
+ */
+int file_extension(char **extensions, const char *file_name) {
+  const char *c = file_name, *ext = (char *) NULL;
+  /* First we determine the extension in the file_name */
+  for(; *c != '\0'; c++)
+    if (*c == '.') ext = c;
+
+  if (ext == (char *) NULL)
+    return -1;
+
+  else {
+    int i = 0;
+    char **e;
+    ++ext; /* This points to '.', so we can safely increment it! */
+    for(e = extensions; *e != (char *) NULL; e++) {
+      if (strcasecmp(ext, *e) == 0) return i;
+      ++i;
+    }
+    return -1;
+  }
 }

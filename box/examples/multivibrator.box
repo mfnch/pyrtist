@@ -1,4 +1,7 @@
-// under a shell type: box -l g multivibrator.box
+// Under a shell type: box -l g multivibrator.box
+// ---
+// Here we show how to draw a small electric circuit.
+
 include "g"
 include "electric"
 
@@ -35,8 +38,8 @@ w = Window[][
           t1.Get["E"], (x1, y2); t2.Get["E"], (x4, y2), (x0, y2);
           r2.Get[2], (x2, y1), c1.Get[2]; c1.Get[1], (x1, y1);
           r3.Get[2], (x3, y1), c2.Get[2]; c2.Get[1], (x4, y1);
-          (x2, y1), Point[t2.Get["B"]] - (sx*0.2, 0), t2.Get["B"];
-          (x3, y1), Point[t1.Get["B"]] + (sx*0.2, 0), t1.Get["B"]
+          (x2, y1), t2.Get["B"] - (sx*0.2, 0), t2.Get["B"];
+          (x3, y1), t1.Get["B"] + (sx*0.2, 0), t1.Get["B"]
   ]
 
   // Insert small circles, where more than 3 lines meet
@@ -47,18 +50,19 @@ w = Window[][
   on_left = Point[(-8.5, -1.5)], on_right = Point[(4.0, -1.5)]
   on_top = Point[(-3.0, 5.0)]
   \ .Text[.Font["Arial", 4.0],
-          "R1", Point[r1.Get[1.5]] + on_left;
-          "R2", Point[r2.Get[1.5]] + on_right;
-          "R3", Point[r3.Get[1.5]] + on_left;
-          "R4", Point[r4.Get[1.5]] + on_right;
-          "T1", Point[t1.Get[1.5]] + on_left;
-          "T2", Point[t2.Get[1.5]] + on_right;
-          "C1", Point[c1.Get[1.5]] + on_top;
-          "C2", Point[c2.Get[1.5]] + on_top]
+          "R1", r1.Get[1.5] + on_left;
+          "R2", r2.Get[1.5] + on_right;
+          "R3", r3.Get[1.5] + on_left;
+          "R4", r4.Get[1.5] + on_right;
+          "T1", t1.Get[1.5] + on_left;
+          "T2", t2.Get[1.5] + on_right;
+          "C1", c1.Get[1.5] + on_top;
+          "C2", c2.Get[1.5] + on_top]
 
-  \ .Show[Point[t2.Get[1.5]] + 3*on_right] // Enlarge bounding box
+  // Enlarge bounding box: the Show[] instruction specify some points that
+  // should be visible anyway (the bounding box is enlarged accordingly)
+  \ .Show[t2.Get[1.5] + 3*on_right]
 ]
 
 // Save the figure into a postscript file
 w.Save["multivibrator.eps"]
-

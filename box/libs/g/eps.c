@@ -38,7 +38,7 @@ static void not_available(void);
 static void eps_close_win(void);
 static void eps_rreset(void);
 static void eps_rinit(void);
-static void eps_rdraw(void);
+static void eps_rdraw(DrawStyle style);
 static void eps_rline(Point a, Point b);
 static void eps_rcong(Point a, Point b, Point c);
 static void eps_rcircle(Point ctr, Point a, Point b);
@@ -64,7 +64,7 @@ static void (*eps_lowfn[])() = {
 
 /* Lista delle funzioni di rasterizzazione */
 static void (*eps_midfn[])() = {
-  eps_rreset, eps_rinit, eps_rdraw,
+  eps_rreset, eps_rinit,
   eps_rline, eps_rcong, not_available,
   eps_rcircle, eps_rfgcolor, not_available,
   not_available, eps_text, eps_font,
@@ -99,9 +99,22 @@ static void eps_rreset(void) {
 
 static void eps_rinit(void) {return;}
 
-static void eps_rdraw(void) {
-  if ( ! beginning_of_path )
-    fprintf( (FILE *) grp_win->ptr, " eofill\n");
+static void eps_rdraw(DrawStyle style) {
+  if ( ! beginning_of_path ) {
+    switch(style) {
+    case DRAW_FILL:
+      fprintf( (FILE *) grp_win->ptr, " fill\n"); break;
+    case DRAW_EOFILL:
+      fprintf( (FILE *) grp_win->ptr, " eofill\n"); break;
+    case DRAW_CLIP:
+      fprintf( (FILE *) grp_win->ptr, " clip\n"); break;
+    case DRAW_EOCLIP:
+      fprintf( (FILE *) grp_win->ptr, " eoclip\n"); break;
+    default:
+      g_warning("Unsupported drawing style: using even-odd fill algorithm!");
+      fprintf( (FILE *) grp_win->ptr, " eofill\n"); break;
+    }
+  }
 }
 
 static void eps_rline(Point a, Point b) {
@@ -248,6 +261,8 @@ grp_window *eps_open_win(char *file, Real size_x, Real size_y) {
   wd->save = eps_save;
   wd->lowfn = eps_lowfn;
   wd->midfn = eps_midfn;
+
+  wd->rdraw = eps_rdraw;
 
   /* Scrivo l'intestazione del file */
   fprintf(winstream, "%%!PS-Adobe-2.0 EPSF-2.0\n"

@@ -130,7 +130,7 @@ Task poly_end(VMProgram *vmp) {
     grp_rfgcolor(c->r, c->g, c->b);
     w->poly.got.color = 0;
   }
-  grp_rdraw();
+  grp_rdraw(DRAW_EOFILL);
   grp_rreset();
   grp_win = cur_win;
   return Success;
@@ -149,7 +149,7 @@ Task poly_pause(VMProgram *vmp) {
     grp_rfgcolor(c->r, c->g, c->b);
     w->poly.got.color = 0;
   }
-  grp_rdraw();
+  grp_rdraw(DRAW_EOFILL);
   grp_rreset();
   grp_win = cur_win;
 

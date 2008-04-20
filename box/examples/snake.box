@@ -1,4 +1,16 @@
+// Under a shell type: box -l g snake.box
+// ---
+// This example shows the flexibility of the Window.Line instruction, which
+// lets you draw lines with variable width: for each point of the line you
+// can specify the enter-width and the exit-width. You can also use different
+// join styles in the same line. This example shows in particular how to
+// define a customized line terminator: predefined line terminators exist
+// to draw arrows, but you can also use your own line terminator and draw
+// a snake!
 include "g"
+
+// Here we draw our line-terminator: this is just a common Window object
+// where some hot points have been defined.
 eye = Window["fig"]
 \ eye.Circle[color.yellow, (0, 0), 1, 0.5; color.dark_green, 0.1, 0.5]
 
@@ -7,6 +19,7 @@ tongue = Window["fig"]
               0, 1, (0, 5), 1, 0, (0, 4.5), 0, 1, (0, 5), 1, 0, (-1, 5),
               0, 1, (-0.5, 5), 1, 0, (-0.5, 4), (-0.5, 0)]
 
+// Now we can use the tongue and the eye figures to draw the face of a snake
 face = Window["fig"][
   a = b = c = d = Point
   a = (5, -5), b = (7, 0), c = (4, 8), d = (0, 9)
@@ -15,9 +28,22 @@ face = Window["fig"][
   \ .Put[tongue, (0, 6)]
   \ .Put[eye, (2.6, 0), -70, .Scale[1.5]]
   \ .Put[eye, (-2.6, 0), 70, .Scale[1.5]]
+
+  // These hot points are used by the Window.Line instruction to place
+  // the figure at the end of the line.
+  // Window.Line behaves as follows:
+  //  - it moves the figure such that "head" goes to the final point
+  //    of the line;
+  //  - it rotates the figure such that the point "tail" is as near
+  //    as possible to the second last point of the line;
+  //  - it scales the figure such that the distance "tail"-"head" is equal
+  //    to the width of the line.
+  //  - after the figure has been placed, the line is drawed by connecting
+  //    the second last point to the "join" point.
   \ .Hot["head", (0, 9), "tail", (0, 5), "join", (0, -4)]
 ]
 
+// Now we can draw as many snakes as we want with just one Line instruction!
 snake = Window["fig"]
 snake.Line[color.dark_green, line.smooth, (10, 10), 1, 4, (40, 100), 4, 5
            (80, 10), (120, 90), (150, 25), (170, 55), face, (195, 70)]

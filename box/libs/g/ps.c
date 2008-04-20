@@ -34,12 +34,13 @@
 #include "fig.h"
 #include "autoput.h"
 #include "bb.h"
+#include "g.h"
 
 static void not_available(void);
 static void ps_close_win(void);
 static void ps_rreset(void);
 static void ps_rinit(void);
-static void ps_rdraw(void);
+static void ps_rdraw(DrawStyle style);
 static void ps_rline(Point a, Point b);
 static void ps_rcong(Point a, Point b, Point c);
 static void ps_rcircle(Point ctr, Point a, Point b);
@@ -62,7 +63,7 @@ static void (*ps_lowfn[])() = {
 
 /* Lista delle funzioni di rasterizzazione */
 static void (*ps_midfn[])() = {
-  ps_rreset, ps_rinit, ps_rdraw,
+  ps_rreset, ps_rinit,
   ps_rline, ps_rcong, not_available,
   ps_rcircle, ps_rfgcolor, not_available,
   not_available, not_available, not_available,
@@ -90,9 +91,22 @@ static void ps_rreset(void) {
 
 static void ps_rinit(void) {return;}
 
-static void ps_rdraw(void) {
-  if ( ! beginning_of_path )
-    fprintf( (FILE *) grp_win->ptr, " eofill\n");
+static void ps_rdraw(DrawStyle style) {
+  if ( ! beginning_of_path ) {
+    switch(style) {
+    case DRAW_FILL:
+      fprintf( (FILE *) grp_win->ptr, " fill\n"); break;
+    case DRAW_EOFILL:
+      fprintf( (FILE *) grp_win->ptr, " eofill\n"); break;
+    case DRAW_CLIP:
+      fprintf( (FILE *) grp_win->ptr, " clip\n"); break;
+    case DRAW_EOCLIP:
+      fprintf( (FILE *) grp_win->ptr, " eoclip\n"); break;
+    default:
+      g_warning("Unsupported drawing style: using even-odd fill algorithm!");
+      fprintf( (FILE *) grp_win->ptr, " eofill\n"); break;
+    }
+  }
 }
 
 static void ps_rline(Point a, Point b)
@@ -224,6 +238,8 @@ grp_window *ps_open_win(char *file) {
   wd->save = ps_save;
   wd->lowfn = ps_lowfn;
   wd->midfn = ps_midfn;
+
+  wd->rdraw = ps_rdraw;
 
   /* Scrivo l'intestazione del file */
   fprintf(winstream,

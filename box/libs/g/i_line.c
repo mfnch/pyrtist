@@ -104,7 +104,7 @@ Task line_end(VMProgram *vmp) {
       grp_rfgcolor(c->r, c->g, c->b);
     }
     lt_draw(w->line.lt, w->line.close);
-    grp_rdraw();
+    grp_rdraw(DRAW_FILL);
     grp_rreset();
     grp_win = cur_win;
     return Success;
@@ -166,7 +166,7 @@ Task line_pause(VMProgram *vmp) {
     w->line.got.color = 0;
   }
   (void) lt_draw(w->line.lt, w->line.close);
-  grp_rdraw();
+  grp_rdraw(DRAW_FILL);
   grp_rreset();
   grp_win = cur_win;
 

@@ -38,5 +38,13 @@ Task g_optcolor_set_rgb(OptColor *oc, Real r, Real g, Real b);
 Color *g_optcolor_get(OptColor *oc);
 void g_optcolor_alternative_set(OptColor *oc, OptColor *alternative);
 
+/** Given an array of possible extensions (which is just an array
+ * made up by the pointers to the corresponding string, terminated
+ * by a NULL pointer), returns the index of the extension of 'file_name'.
+ * If the extension of 'file_name' is not found among the provided array,
+ * the function returns -1.
+ */
+int file_extension(char **extensions, const char *file_name);
+
 #  define g_optcolor_unset(oc) g_optcolor_set_rgb((oc), -1.0, 0.0, 0.0);
 #endif

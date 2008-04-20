@@ -32,6 +32,7 @@
 #include "debug.h"
 #include "error.h"
 #include "graphic.h"
+#include "g.h"
 
 #define RSTBLOCKDIM    16384
 #define MAXROWPERBLOCK  8192
@@ -91,7 +92,7 @@ void rst__poly(Point *p, int n);
  */
 void rst_reset(void);
 void rst_init(void);
-void rst_draw(void);
+static void rst_draw(DrawStyle style);
 void rst_line(Point a, Point b);
 void rst_cong(Point a, Point b, Point c);
 void rst_curve(Point a, Point b, Point c, Real cut);
@@ -102,17 +103,21 @@ void rst_bgcolor(Real r, Real g, Real b);
 static void rst_fake_point(Point *p);
 
 static void not_available(void) {
-  ERRORMSG("not_available", "Not available for postscript windows.");
+  ERRORMSG("not_available", "Not available for bitmapped windows.");
 }
 
 /* Lista delle funzioni di rasterizzazione */
 void (*rst_midfn[])() = {
-  rst_reset, rst_init, rst_draw,
+  rst_reset, rst_init,
   rst_line, rst_cong, rst_curve,
   rst_circle, rst_fgcolor, rst_bgcolor,
   rst_poly, not_available, not_available,
   rst_fake_point
 };
+
+void rst_set_methods(grp_window *gw) {
+  gw->rdraw = rst_draw;
+}
 
 /***************************************************************************************/
 /* PROCEDURE PER LA RASTERIZZAZIONE DI POLIGONI ED ALTRE FIGURE */
@@ -334,43 +339,61 @@ void rst__mark(SWORD y, SWORD x) {
  * DESCRIZIONE: Legge il contenuto del buffer di rasterizzazione
  *  e traccia il disegno corrispondente sulla finestra grafica.
  */
-void rst_draw(void) {
+static void rst_draw(DrawStyle style) {
   int border;
-  SWORD y, x1, x2, xmin;
+  SWORD y, x1=0, x2, xmin;
   WORD *row, *col;
   block_desc *rstblock;
+  if (style != DRAW_EOFILL) {
+    static int msg_already_displayed = 0;
+    if (! msg_already_displayed) {
+      g_warning("Unsupported drawing style: using even-odd fill algorithm!");
+      msg_already_displayed = 1;
+    }
+    style = DRAW_EOFILL;
+  }
 
   /* Facciamo un loop in modo da considerare tutti i blocchi */
-  for(rstblock = first; rstblock != (block_desc *) 0; rstblock = rstblock->next)
-  {
+  for(rstblock = first; rstblock != (block_desc *) 0;
+      rstblock = rstblock->next) {
     /* Facciamo un loop su tutte le righe contenute nel blocco */
     row = rstblock->buffer;
-    for(y = rstblock->ymin;
-     y <= rstblock->ymax; y++)
-    {
+    for(y = rstblock->ymin; y <= rstblock->ymax; y++) {
       /* Ora disegnamo ognuna delle righe */
       xmin = 0;
-      border = 0;
-      for (col = row++; *col != (WORD) 0; )
-      {
-        col = (WORD *) rstblock->buffer + (WORD) *col;
+      if (style == DRAW_EOFILL) {
+        border = 0;
+        for (col = row++; *col != (WORD) 0;) {
+          col = (WORD *) rstblock->buffer + (WORD) *col;
 
-        if (border == 1) {
-          /* Bordo destro: traccio la linea */
-          x2 = CV_MED_LW(*(col+1));
-//          printf("  --  Secondo: %d\n", x2);
+          if (border == 1) {
+            /* Bordo destro: traccio la linea */
+            x2 = CV_MED_LW(*(col+1));
 
-          if (x2 >= xmin) {
-            grp_hor_line(y, x1, x2);
-            xmin = x2 + 1;
+            if (x2 >= xmin) {
+              grp_hor_line(y, x1, x2);
+              xmin = x2 + 1;
+            }
+          } else {
+            /* Bordo sinistro */
+            x1 = CV_MED_GT(*(col+1));
+            if (x1 > xmin) xmin = x1;
           }
-        } else {
-          /* Bordo sinistro */
-          x1 = CV_MED_GT(*(col+1));
-//          printf("Riga %d, primo: %d",y, x1);
-          if (x1 > xmin) xmin = x1;
+          border ^= 1;
         }
-        border ^= 1;
+
+      } else {
+        int num = 0;
+        /* Plain fill */
+        for (col = row++; *col != (WORD) 0;) {
+          col = (WORD *) rstblock->buffer + (WORD) *col;
+          if (num == 0)
+            x1 = CV_MED_GT(*(col+1));
+          else
+            x2 = CV_MED_GT(*(col+1));
+          ++num;
+        }
+        if (num > 1) grp_hor_line(y, x1, x2);
       }
     }
   }
@@ -765,8 +788,10 @@ void rst__poly(Point *p, int n) {
   q.x = p->x;
   q.y = p->y;
 
-  for(i=1; i<n; i++)
-    rst__line( p, ++p );
+  for(i=1; i<n; i++) {
+    Point *previous_p = p++;
+    rst__line(previous_p, p);
+  }
 
   rst__line( & q, p );
 }

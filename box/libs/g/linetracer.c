@@ -236,8 +236,13 @@ int lt_draw(LineTracer *lt, int closed) {
 
   if (closed) {
     if (!lt_draw_closed(lt)) return 0;
+    /*grp_draw_gpath(lt->border[0]); doesn't work in FILL mode!!!
+    grp_draw_gpath(lt->border[1]);*/
+
+    gpath_append_gpath(lt->border[0], lt->border[1],
+                      GPATH_INVERT | GPATH_JOIN | GPATH_CLOSE);
     grp_draw_gpath(lt->border[0]);
-    grp_draw_gpath(lt->border[1]);
+
     /*f = fopen("part0.dat", "w");
     gpath_print_points(lt->border[0], f);
     fclose(f);

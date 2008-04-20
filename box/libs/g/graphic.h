@@ -30,6 +30,8 @@
 
 /****** DEFINIZIONE DELLE STRUTTURE NECESSARIE PER LA GRAFICA ******/
 
+typedef enum {DRAW_FILL=0, DRAW_EOFILL, DRAW_CLIP, DRAW_EOCLIP} DrawStyle;
+
 /* Definisce la struttura adatta a contenere il colore di un punto */
 typedef struct {
   unsigned char r;  /* Componente rossa */
@@ -85,6 +87,8 @@ typedef struct {
   /* Puntatore alle procedure di medio livello per gestire la finestra */
   void (**midfn)();
 
+  void (*rdraw)(DrawStyle style);
+
 } grp_window;
 
 /* Dati importanti per la libreria */
@@ -122,6 +126,8 @@ int grp_palette_transform(palette *p, int (*operation)(palitem *pi));
 void grp_palette_destroy(palette *p);
 void grp_draw_gpath(GPath *gp);
 
+void rst_set_methods(grp_window *gw);
+
 Point *grp_ref(Point *o, Point *v, Point *p);
 
 /* Funzioni grafiche di basso livello (legate al tipo di finestra aperta) */
@@ -134,16 +140,16 @@ Point *grp_ref(Point *o, Point *v, Point *p);
 /* Funzioni grafiche di medio livello (di rasterizzazione) */
 #define grp_rreset     (grp_win->midfn[0])
 #define grp_rinit      (grp_win->midfn[1])
-#define grp_rdraw      (grp_win->midfn[2])
-#define grp_rline      (grp_win->midfn[3])
-#define grp_rcong      (grp_win->midfn[4])
-#define grp_rcurve     (grp_win->midfn[5])
-#define grp_rcircle    (grp_win->midfn[6])
-#define grp_rfgcolor   (grp_win->midfn[7])
-#define grp_rbgcolor   (grp_win->midfn[8])
-#define grp_text       (grp_win->midfn[10])
-#define grp_font       (grp_win->midfn[11])
-#define grp_fake_point (grp_win->midfn[12])
+#define grp_rdraw      (grp_win->rdraw)
+#define grp_rline      (grp_win->midfn[2])
+#define grp_rcong      (grp_win->midfn[3])
+#define grp_rcurve     (grp_win->midfn[4])
+#define grp_rcircle    (grp_win->midfn[5])
+#define grp_rfgcolor   (grp_win->midfn[6])
+#define grp_rbgcolor   (grp_win->midfn[7])
+#define grp_text       (grp_win->midfn[9])
+#define grp_font       (grp_win->midfn[10])
+#define grp_fake_point (grp_win->midfn[11])
 
 /* Macro per la conversione fra diverse unità di misura */
 /* Lunghezze */

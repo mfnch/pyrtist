@@ -1,3 +1,7 @@
+// Under a shell type: box -l g curved_arrow.box
+// ---
+// One arrow and one closed line.
+
 include "g"
 include "arrows"
 
@@ -11,11 +15,11 @@ w.Line[(x=4-4*a), Curve[(100.0, a)], x
        For[(a += 0.005) < af]
        arrow_triangle, Curve[(100.0, af+0.02)], line.sharp]
 
-a = 0.0, af = 0.64
+a = 0.0, af = 1.0
 w.Line[line.smooth,
        x=3-Sin[50.0*a], x, Curve[(50.0, a)], x
-       For[(a += 0.005) < af]
-       color.red]
+       For[(a += 0.02) < af]
+       .Close[], color.red]
 
 w.Save["curved_arrow.eps"]
 
