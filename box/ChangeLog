@@ -1,5 +1,16 @@
 Change log (recent come first)
 
+20 April 2008: Adjustments and bugfixes.
+  * Bugfix on the strnlen implementation. Should affect only a limited
+    number of architectures.
+  * Introducing reference counting for objects allocated by the VM:
+    still not used to the full extent.
+  * Several improvements to Window.Line: it should now be more robust,
+    and supports lines having multiple join styles.
+  * Poly accepts now (;)
+  * Error messages are now displayed when undefined items appear
+    inside structures.
+
 30 March 2008: bugfixes and improvements.
   * fixed the VM bug for jump instruction on 64 bit machines.
   * improved the handling of open procedures
@@ -11,15 +22,4 @@ Change log (recent come first)
 
 20 March 2008: first release of the tarball. Still very unstable.
   First tarball is released, just for letting people try the package.
-
-20 April 2008: Adjustments and bugfixes.
-  * Bugfix on the strnlen implementation. Should affect only a limited
-    number of architectures.
-  * Introducing reference counting for objects allocated by the VM:
-    still not used to the full extent.
-  * Several improvements to Window.Line: it should now be more robust,
-    and supports lines having multiple join styles.
-  * Poly accepts now (;)
-  * Error messages are now displayed when undefined items appear
-    inside structures.
 
