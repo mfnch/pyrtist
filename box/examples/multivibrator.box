@@ -15,20 +15,15 @@ w = Window[][
   // Place the four resistors, the two condenser and the two NPN transistors
   // The string "rt" means: automatically rotate and translate such that
   // the .Near[] constraints are better satisfied.
-  r1_ = .Put[resistor, "rt", .Near[1, (x1, y0)], .Near[2, (x1, y1)]]
-  r2_ = .Put[resistor, "rt", .Near[1, (x2, y0)], .Near[2, (x2, y1)]]
-  r3_ = .Put[resistor, "rt", .Near[1, (x3, y0)], .Near[2, (x3, y1)]]
-  r4_ = .Put[resistor, "rt", .Near[1, (x4, y0)], .Near[2, (x4, y1)]]
-  c1_ = .Put[capacitor, "rt", .Near[1, (x1, y1)], .Near[2, (x2, y1)]]
-  c2_ = .Put[capacitor, "rt", .Near[1, (x4, y1)], .Near[2, (x3, y1)]]
-  t1_ = .Put[transistor_NPN, "rt", .Near["C", (x1, y1)], .Near["E", (x1, y2)]]
-  t2_ = .Put[transistor_NPN, "rt", .Scale[(1, -1)],
+  r1 = .Put[resistor, "rt", .Near[1, (x1, y0)], .Near[2, (x1, y1)]]
+  r2 = .Put[resistor, "rt", .Near[1, (x2, y0)], .Near[2, (x2, y1)]]
+  r3 = .Put[resistor, "rt", .Near[1, (x3, y0)], .Near[2, (x3, y1)]]
+  r4 = .Put[resistor, "rt", .Near[1, (x4, y0)], .Near[2, (x4, y1)]]
+  c1 = .Put[capacitor, "rt", .Near[1, (x1, y1)], .Near[2, (x2, y1)]]
+  c2 = .Put[capacitor, "rt", .Near[1, (x4, y1)], .Near[2, (x3, y1)]]
+  t1 = .Put[transistor_NPN, "rt", .Near["C", (x1, y1)], .Near["E", (x1, y2)]]
+  t2 = .Put[transistor_NPN, "rt", .Scale[(1, -1)],
              .Near["C", (x4, y1)], .Near["E", (x4, y2)]]
-
-  // These lines should disappear in future versions of the Box language
-  r1 = PointList[r1_], r2 = PointList[r2_], r3 = PointList[r3_]
-  r4 = PointList[r4_], c1 = PointList[c1_], c2 = PointList[c2_]
-  t1 = PointList[t1_], t2 = PointList[t2_]
 
   // Trace all the connections between the components
   \ .Line[0.2, (x0, y0), (x4, y0), r4.Get[1];

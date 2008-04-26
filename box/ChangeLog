@@ -1,5 +1,9 @@
 Change log (recent come first)
 
+  * Subtypes are resolved into their children if the method in Subtype.Method
+    is not found.
+  * Bugfix in the resolution of subtype-->parent.
+
 20 April 2008: Adjustments and bugfixes.
   * Bugfix on the strnlen implementation. Should affect only a limited
     number of architectures.

@@ -347,8 +347,17 @@ Task Expr_Array_Member(Expr *member, Expr *array, Expr *index) {
   if (index->categ == CAT_IMM) {
     member->value.i += m_size*index->value.i;
   } else {
+    Cont cont_index;
+    Int member_categ, member_reg;
+
+    member_categ = (member->is.gaddr ? CAT_GREG : CAT_LREG);
+    member_reg = member->addr;
+    Expr_Cont_Get(& cont_index, index);
+    Cont_Move(& CONT_NEW_LREG(TYPE_INT, 0), & cont_index);
+    Cmp_Assemble(ASM_MUL_II, CAT_LREG, (Int) 0, CAT_IMM, (Int) m_size);
+    Cmp_Assemble(ASM_ADD_O, member_categ, member_reg);
+
     MSG_ERROR("Index of array is non-constant: not implemented yet!");
-    member->value.i = 0;
   }
   return Success;
 }
@@ -406,11 +415,21 @@ Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child) {
               & parent->value.nm, child);
     return Failed;
   }
-  TS_Subtype_Find(cmp->ts, & found_subtype, parent->type, child);
-  if (found_subtype == TS_TYPE_NONE) {
-    MSG_ERROR("Type '%~s' has not a subtype of name '%N'",
-              TS_Name_Get(cmp->ts, parent->type), child);
-    return Failed;
+
+  /* If the method has not been found, it could be a method of the child
+   * of the type. We then resolve the type to its child and try again.
+   */
+  for(;;) {
+    TS_Subtype_Find(cmp->ts, & found_subtype, parent->type, child);
+    if (found_subtype != TS_TYPE_NONE) break;
+    if (TS_Is_Subtype(cmp->ts, parent->type)) {
+      TASK( Expr_Resolve_Subtype(parent) );
+
+    } else {
+      MSG_ERROR("Type '%~s' has not a subtype of name '%N'",
+                TS_Name_Get(cmp->ts, parent->type), child);
+      return Failed;
+    }
   }
 
   TS_Subtype_Get_Child(cmp->ts, & child_type, found_subtype);
@@ -472,10 +491,16 @@ Task Expr_Subtype_Get_Parent(Expr *parent, Expr *subtype) {
 
   not_void_parent = (TS_Size(cmp->ts, parent_type) > 0);
   if (not_void_parent) {
-    Expr_Container_New(parent, parent_type, CONTAINER_LREG_AUTO);
+    Expr_Container_New(parent, CONT_OBJ, CONTAINER_LREG_AUTO);
     Expr_Cont_Get(& parent_cont, parent);
     Expr_Cont_Get(& subtype_cont, subtype);
     Cont_Move(& parent_cont, & subtype_cont);
+    Expr_Cast(parent, parent_type);
+    /* Need to make this a target, since child was obtained originally
+     * by invoking Expr_Container_New with CONTAINER_LREG_AUTO and hence
+     * is not considered a target, yet.
+     */
+    Expr_Attr_Set(parent, EXPR_ATTR_TARGET, EXPR_ATTR_TARGET);
     return Success;
 
   } else {

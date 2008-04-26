@@ -16,15 +16,11 @@ wheatstone = Window["fig"][
   // Each component has two connections. Here we want to rotate and translate
   // ("rt") a resistor such that the first of its terminals in near to
   // the point p1 and the second one is near to p2.
-  st_r12 = .Put[resistor, "rt", .Near[1, p1], .Near[2, p2]]
+  r12 = .Put[resistor, "rt", .Near[1, p1], .Near[2, p2]]
   // We proceed in a similar way for the other components:
-  st_r23 = .Put[diode, "rt", .Near[1, p2], .Near[2, p3]]
-  st_r34 = .Put[inductance, "rt", .Near[1, p3], .Near[2, p4]]
-  st_r41 = .Put[resistor, "rt", .Near[1, p4], .Near[2, p1]]
-
-  // This is still necessary until I decide how to deal with subtypes.
-  r12 = PointList[st_r12], r23 = PointList[st_r23]
-  r34 = PointList[st_r34], r41 = PointList[st_r41]
+  r23 = .Put[diode, "rt", .Near[1, p2], .Near[2, p3]]
+  r34 = .Put[inductance, "rt", .Near[1, p3], .Near[2, p4]]
+  r41 = .Put[resistor, "rt", .Near[1, p4], .Near[2, p1]]
 
   // Connecting the four resistors
   \ .Line[0.2, p1, r12.Get[1]; r12.Get[2], p2; r12.Get[2], p2; p2, r23.Get[1];

@@ -5,22 +5,6 @@ MODIFICATIONS TO THE BOX COMPILER (in order of importance):
 1 global variables: quantities defined in the upper scope unit should
   be automatically allocated as global (global register should be used
   instead of local ones);
-2 precedence rules for name reolution should be introduced. The first
-  refers to subtypes. When object.Subtype is found, Box searches now for
-  subtypes of the type of object. If no such a subtype is found, an error
-  is reported. We should extend this behaviour: if the subtype is not found
-  and object is a subtype itself, Box should try to convert it into its child
-  and search among its subtypes. Example:
-    w = Window[][
-      pl = .Put[...]
-      ...
-      ... pl.Get[1] ...
-    ]
-  Now pl has type Window.Put. This subtype has child of type PointList.
-  Since no subtype Window.Put.Get exists, Box should convert pl to its child
-  (an object of type PointList) and try to find a subtype .Get
-  The problem should be faced in a more general way, allowing automatic
-  conversion of types at (]), see X 
 3 The second precedence rule is the following:
   If a procedure for a given type is not found, that type should be once
   resolved and then the procedure should be searched again.
@@ -55,3 +39,20 @@ MODIFICATIONS TO THE BOX COMPILER (in order of importance):
   the object should be converted to a final object, which does not contain
   the local variables. This will be very useful.
 
+DONE:
+2 precedence rules for name resolution should be introduced. The first
+  refers to subtypes. When object.Subtype is found, Box searches now for
+  subtypes of the type of object. If no such a subtype is found, an error
+  is reported. We should extend this behaviour: if the subtype is not found
+  and object is a subtype itself, Box should try to convert it into its child
+  and search among its subtypes. Example:
+    w = Window[][
+      pl = .Put[...]
+      ...
+      ... pl.Get[1] ...
+    ]
+  Now pl has type Window.Put. This subtype has child of type PointList.
+  Since no subtype Window.Put.Get exists, Box should convert pl to its child
+  (an object of type PointList) and try to find a subtype .Get
+  The problem should be faced in a more general way, allowing automatic
+  conversion of types at (]), see X

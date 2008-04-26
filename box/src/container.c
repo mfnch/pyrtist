@@ -45,7 +45,7 @@ void Cont_Move(Cont *dest, Cont *src) {
 
   if (dest->type != src->type) {
     if (dest->type != TYPE_OBJ) {
-      MSG_FATAL("Cont_Mov: can't move container type=%d to %d!",
+      MSG_FATAL("Cont_Move: can't move container type=%d to %d!",
                 src->type, dest->type);
       return;
     }
@@ -53,7 +53,7 @@ void Cont_Move(Cont *dest, Cont *src) {
     /* Here we must convert a non OBJ container into an OBJ container.
      * This is what could be done in this way:
      */
-    MSG_FATAL("Cont_Mov: not implemented yet!");
+    MSG_FATAL("Cont_Move: not implemented yet!");
     return;
   }
 

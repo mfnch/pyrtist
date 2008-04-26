@@ -40,8 +40,10 @@
 #include "builtins.h"
 
 /* Important builtin types */
-Type type_Point, type_RealNum, type_IntgNum, type_CharNum, type_String,
+Type type_Point, type_RealNum, type_IntNum, type_String,
      type_File;
+
+Int type_IntSpecies, type_RealSpecies, type_PointSpecies, type_RealCouple;
 
 static Task Blt_Define_Basics(void);
 static Task Blt_Define_Math(void);
@@ -118,15 +120,114 @@ Task Blt_Define_All(void) {
   return Success;
 }
 
+static Task Blt_Define_Types(void) {
+  int i;
+
+  struct {
+    Name name;
+    Int size;
+    Type type;
+
+  } intrinsic[] = {
+    {NAME("Char"),     sizeof(Char),  TYPE_CHAR},
+    {NAME("INT"),      sizeof(Int),   TYPE_INT},
+    {NAME("REAL"),     sizeof(Real),  TYPE_REAL},
+    {NAME("POINT"),    sizeof(Point), TYPE_POINT},
+    {NAME("(Object)"), 0,             TYPE_OBJ },
+    {NAME("Void"),     0,             TYPE_VOID},
+    {NAME("([)"),      0,             TYPE_OPEN},
+    {NAME("(])"),      0,             TYPE_CLOSE},
+    {NAME("(;)"),      0,             TYPE_PAUSE},
+    {NAME("(\\)"),     0,             TYPE_DESTROY},
+    {NAME("Ptr"),      sizeof(Ptr),   TYPE_PTR},
+    {NAME(""),        -1,             TYPE_NONE}
+  };
+
+  struct {
+    Name name;
+    Type target;
+    Type type;
+
+  } alias[] = {
+    {NAME("If"),   TYPE_INT,  TYPE_IF},
+    {NAME("For"),  TYPE_INT,  TYPE_FOR},
+    {NAME("CHAR"), TYPE_CHAR, TYPE_NONE},
+    {NAME(""),     TYPE_NONE, TYPE_NONE}
+  };
+
+  struct {
+    Name name;
+    Type *target;
+
+  } alias2[] = {
+    {NAME("Int"),   & type_IntSpecies},
+    {NAME("Real"),  & type_RealSpecies},
+    {NAME("Point"), & type_PointSpecies},
+    {NAME(""),     (Type *) NULL}
+  };
+
+  /* Define the intrinsic types */
+  for(i = 0; intrinsic[i].size >= 0; i++) {
+    Type t;
+    TASK( Tym_Def_Intrinsic(& t, & intrinsic[i].name, intrinsic[i].size) );
+    assert(t == intrinsic[i].type || intrinsic[i].type == TYPE_NONE);
+  }
+
+  /* Define the alias types */
+  for(i = 0; alias[i].target != TYPE_NONE; i++) {
+    Type t;
+    TASK( Tym_Def_Explicit_Alias(& t, & alias[i].name, alias[i].target) );
+    assert(t == alias[i].type || alias[i].type == TYPE_NONE);
+  }
+
+  /* Define Int = (CHAR -> INT) */
+  type_IntSpecies = TYPE_NONE;
+  TASK( Tym_Def_Specie(& type_IntSpecies, TYPE_CHAR) );
+  TASK( Tym_Def_Specie(& type_IntSpecies, TYPE_INT) );
+
+  /* Define Real = (CHAR -> INT -> REAL) */
+  type_RealSpecies = TYPE_NONE;
+  TASK( Tym_Def_Specie(& type_RealSpecies, TYPE_CHAR) );
+  TASK( Tym_Def_Specie(& type_RealSpecies, TYPE_INT) );
+  TASK( Tym_Def_Specie(& type_RealSpecies, TYPE_REAL) );
+
+  /* Define Point = ((Real, Real) -> POINT)*/
+  type_RealCouple = TYPE_NONE;
+  TASK( Tym_Def_Structure(& type_RealCouple, type_RealSpecies) );
+  TASK( Tym_Def_Structure(& type_RealCouple, type_RealSpecies) );
+  type_PointSpecies = TYPE_NONE;
+  TASK( Tym_Def_Specie(& type_PointSpecies, type_RealCouple) );
+  TASK( Tym_Def_Specie(& type_PointSpecies, TYPE_POINT) );
+
+  /* Ora definisco il tipo stringa */
+  type_String = Tym_Def_Array_Of(-1, TYPE_CHAR);
+  if ( type_String == TYPE_NONE ) return Failed;
+
+  /* Define the alias types */
+  for(i = 0; alias2[i].target != (Type *) NULL; i++) {
+    Type t;
+    TASK( Tym_Def_Explicit_Alias(& t, & alias2[i].name, *alias2[i].target) );
+  }
+
+  return Success;
+}
+
 /* Initialize the compiler:
  *  1) Creates the fundamental operators and associated operations
  *     (those between intrinsic types)
  *  2) Sets the output for compiled code.
  */
-Task Builtins_Define() {
+Task Builtins_Define(void) {
   Operation *opn;
   int status;
 
+#if 0
+  TASK( Blt_Define_Types() );
+  type_Point = type_PointSpecies;
+  type_RealNum = type_RealSpecies;
+  type_IntNum = type_IntSpecies;
+
+#else
   /* Definisco i tipi intrinseci */
   {
     Intg t;
@@ -158,6 +259,7 @@ Task Builtins_Define() {
     TASK( Tym_Def_Explicit_Alias(& t, & NAME("For"), TYPE_INT) );
     assert(t == TYPE_FOR);
   }
+#endif
 
   /* Inizializzo il segmento-dati */
   TASK( Cmp_Data_Init() );
@@ -224,7 +326,7 @@ Task Builtins_Define() {
   /* §§ ASSEGNAZIONE DI REALI */
   ADD_OPERATION(assign, TYPE_REAL,type_RealNum,TYPE_REAL, ASM_MOV_RR, 0, 1, 1);
   /* §§ ASSEGNAZIONE DI INTERI */
-  ADD_OPERATION(assign, TYPE_INTG,type_IntgNum,TYPE_INTG, ASM_MOV_II, 0, 1, 1);
+  ADD_OPERATION(assign, TYPE_INTG,type_IntNum,TYPE_INTG, ASM_MOV_II, 0, 1, 1);
   /* §§ ASSEGNAZIONE DI CARATTERI */
   ADD_OPERATION(assign, TYPE_CHAR, TYPE_CHAR,  TYPE_CHAR, ASM_MOV_CC, 0, 1, 1);
 
@@ -271,7 +373,7 @@ Task Builtins_Define() {
 
   /* §§ SOMMA FRA REALI E INTERI */
   ADD_OPERATION(plus, type_RealNum, type_RealNum, type_RealNum, ASM_ADD_RR, 1, 1, 0);
-  ADD_OPERATION(plus, type_IntgNum, type_IntgNum, type_IntgNum, ASM_ADD_II, 1, 1, 0);
+  ADD_OPERATION(plus, type_IntNum, type_IntNum, type_IntNum, ASM_ADD_II, 1, 1, 0);
   /* §§ SOMMA FRA PUNTI */
   ADD_OPERATION(plus,  type_Point,type_Point, TYPE_POINT,  ASM_ADD_PP, 1, 1, 0);
 
@@ -285,21 +387,21 @@ Task Builtins_Define() {
 
   /* §§ DIFFERENZA FRA REALI E INTERI */
   ADD_OPERATION(minus, type_RealNum, type_RealNum, type_RealNum, ASM_SUB_RR, 0, 1, 0);
-  ADD_OPERATION(minus, type_IntgNum, type_IntgNum, type_IntgNum, ASM_SUB_II, 0, 1, 0);
+  ADD_OPERATION(minus, type_IntNum, type_IntNum, type_IntNum, ASM_SUB_II, 0, 1, 0);
   /* §§ DIFFERENZA FRA PUNTI */
   ADD_OPERATION(minus, type_Point,type_Point, TYPE_POINT,  ASM_SUB_PP, 0, 1, 0);
 
   /* § OPERATORE DI PRODOTTO */
   /* §§ PRODOTTO FRA REALI E INTERI */
   ADD_OPERATION(times, type_RealNum, type_RealNum, type_RealNum, ASM_MUL_RR, 1, 1, 0);
-  ADD_OPERATION(times, type_IntgNum, type_IntgNum, type_IntgNum, ASM_MUL_II, 1, 1, 0);
+  ADD_OPERATION(times, type_IntNum, type_IntNum, type_IntNum, ASM_MUL_II, 1, 1, 0);
   /* §§ PRODOTTO REALE * PUNTO O VICEVERSA */
   ADD_OPERATION(times, type_Point, type_RealNum, TYPE_POINT, ASM_PMULR_P, 1, 1, 0);
 
   /* § OPERATORE DI DIVISIONE */
   /* §§ DIVISIONE FRA REALI E INTERI */
   ADD_OPERATION(div, type_RealNum, type_RealNum, type_RealNum, ASM_DIV_RR, 0, 1, 0);
-  ADD_OPERATION(div, type_IntgNum, type_IntgNum, type_IntgNum, ASM_DIV_II, 0, 1, 0);
+  ADD_OPERATION(div, type_IntNum, type_IntNum, type_IntNum, ASM_DIV_II, 0, 1, 0);
   /* §§ DIVISIONE PUNTO / REALE */
   ADD_OPERATION(div, type_Point, type_RealNum, TYPE_POINT, ASM_PDIVR_P, 0, 1, 0);
 
@@ -419,16 +521,16 @@ Task Builtins_Define() {
 }
 
 static Task Blt_Define_Basics(void) {
-  Intg type_2RealNum;
+#if 1
 
   /* Ora definisco il tipo stringa */
   type_String = Tym_Def_Array_Of(-1, TYPE_CHAR);
   if ( type_String == TYPE_NONE ) return Failed;
 
-  /* Definisco type_IntgNum --> (Int < Char) */
-  type_IntgNum = TYPE_NONE;
-  TASK( Tym_Def_Specie(& type_IntgNum, TYPE_CHAR) );
-  TASK( Tym_Def_Specie(& type_IntgNum, TYPE_INTG) );
+  /* Definisco type_IntNum --> (Int < Char) */
+  type_IntNum = TYPE_NONE;
+  TASK( Tym_Def_Specie(& type_IntNum, TYPE_CHAR) );
+  TASK( Tym_Def_Specie(& type_IntNum, TYPE_INTG) );
 
   /* Definisco type_RealNum --> (Real < Int < Char) */
   type_RealNum = TYPE_NONE;
@@ -436,12 +538,13 @@ static Task Blt_Define_Basics(void) {
   TASK( Tym_Def_Specie(& type_RealNum, TYPE_INTG) );
   TASK( Tym_Def_Specie(& type_RealNum, TYPE_REAL) );
 
-  type_2RealNum = TYPE_NONE;
-  TASK( Tym_Def_Structure(& type_2RealNum, type_RealNum) );
-  TASK( Tym_Def_Structure(& type_2RealNum, type_RealNum) );
+  type_RealCouple = TYPE_NONE;
+  TASK( Tym_Def_Structure(& type_RealCouple, type_RealNum) );
+  TASK( Tym_Def_Structure(& type_RealCouple, type_RealNum) );
   type_Point = TYPE_NONE;
-  TASK( Tym_Def_Specie(& type_Point, type_2RealNum) );
+  TASK( Tym_Def_Specie(& type_Point, type_RealCouple) );
   TASK( Tym_Def_Specie(& type_Point, TYPE_POINT) );
+#endif
 
   /* Ora faccio l'overloading dell'operatore di conversione
    * e definisco le conversioni automatiche che il compilatore
@@ -456,7 +559,7 @@ static Task Blt_Define_Basics(void) {
                                 "(noname)", "conv_2Real_to_Point") );
     TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
 
-    opn = Cmp_Operation_Add(cmp_opr.converter, type_2RealNum, TYPE_NONE, TYPE_POINT);
+    opn = Cmp_Operation_Add(cmp_opr.converter, type_RealCouple, TYPE_NONE, TYPE_POINT);
     if ( opn == NULL ) return Failed;
     opn->is.commutative = 0;
     opn->is.intrinsic = 0;
@@ -466,14 +569,14 @@ static Task Blt_Define_Basics(void) {
 
   /* Define the conversions (example: Real@Int such as: a = Int[ 1.2 ]) */
   TASK(Cmp_Builtin_Proc_Def(TYPE_CHAR, BOX_CREATION, TYPE_CHAR, Char_Char));
-  TASK(Cmp_Builtin_Proc_Def(TYPE_INTG, BOX_CREATION, TYPE_CHAR, Char_Int ));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_INT,  BOX_CREATION, TYPE_CHAR, Char_Int ));
   TASK(Cmp_Builtin_Proc_Def(TYPE_REAL, BOX_CREATION, TYPE_CHAR, Char_Real));
-  TASK(Cmp_Builtin_Proc_Def(type_IntgNum, BOX_CREATION, TYPE_INTG, Int_IntNum ));
+  TASK(Cmp_Builtin_Proc_Def(type_IntNum, BOX_CREATION, TYPE_INTG, Int_IntNum ));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum, BOX_CREATION, TYPE_INTG, Int_RealNum));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum, BOX_CREATION, TYPE_REAL, Real_RealNum));
   TASK(Cmp_Builtin_Proc_Def(type_Point, BOX_CREATION, TYPE_POINT, Point_RealNumCouple ));
-  TASK(Cmp_Builtin_Proc_Def(type_IntgNum, BOX_CREATION, TYPE_IF, If_IntNum ));
-  TASK(Cmp_Builtin_Proc_Def(type_IntgNum, BOX_CREATION, TYPE_FOR, For_IntNum ));
+  TASK(Cmp_Builtin_Proc_Def(type_IntNum, BOX_CREATION, TYPE_IF, If_IntNum ));
+  TASK(Cmp_Builtin_Proc_Def(type_IntNum, BOX_CREATION, TYPE_FOR, For_IntNum ));
   return Success;
 }
 
