@@ -1,5 +1,6 @@
 Change log (recent come first)
 
+26 April 2008: Improvements and bugfixes.
   * Subtypes are resolved into their children if the method in Subtype.Method
     is not found.
   * Bugfix in the resolution of subtype-->parent.
