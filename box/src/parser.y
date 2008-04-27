@@ -21,8 +21,7 @@
 
 /* $Id$ */
 
-/* parser.c - settembre 2002
- */
+/* parser.c - settembre 2002 */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -119,7 +118,7 @@ static Task Type_Struc_1(Expr *se, StrucMember *sm) {
   return Success;
 }
 
-/* Just convert the final structure type into an Expression */
+/* Just convert the final structure type into an Expr */
 static Task Type_Struc_2(Expr *se, Struc *s) {
   Expr_New_Type(se, s->type);
   return Success;
@@ -240,12 +239,12 @@ Task Expr_Statement(Expr *e) {
     {parser_attr.no_syntax_err = 1; YYERROR;}
 
 #define OPERATOR1L_EXEC(opr, rs, a) \
-  Expression *result = Cmp_Operator_Exec(opr, a, NULL); \
+  Expr *result = Cmp_Operator_Exec(opr, a, NULL); \
   if ( result == NULL ) {parser_attr.no_syntax_err = 1; YYERROR;} \
    else rs = *result;
 
 #define OPERATOR1R_EXEC(opr, rs, a) \
-  Expression *result = Cmp_Operator_Exec(opr, NULL, a); \
+  Expr *result = Cmp_Operator_Exec(opr, NULL, a); \
   if ( result == NULL ) {parser_attr.no_syntax_err = 1; YYERROR;} \
    else rs = *result;
 
@@ -529,7 +528,7 @@ expr:
    prim.expr           { $$ = $1; }
 
  | TOK_LMEMBER {
-    Expression e_parent;
+    Expr e_parent;
     TASK( Box_Parent_Get(& e_parent, 0) );
     DO(Expr_Struc_Member(& $$, & e_parent, & $1));
     $$.is.release = 0;
@@ -764,7 +763,7 @@ static Task Proc_Def_Close(void) {
 #if 0
 enum {EXPR_TYPE, EXPR_VALUE};
 
-Task Prs_Want(Expression *e, UInt want) {
+Task Prs_Want(Expr *e, UInt want) {
   switch(want) {
   case EXPR_TYPE:
     break;
@@ -779,9 +778,9 @@ Task Prs_Want(Expression *e, UInt want) {
  * otherwise *e will be simply copied into *new_e.
  */
 Task Prs_Def_Operator(Operator *opr,
-                      Expression *rs, Expression *new_e, Expression *e) {
+                      Expr *rs, Expr *new_e, Expr *e) {
   Symbol *s;
-  Expression *result, *target;
+  Expr *result, *target;
 
   if ( ! e->is.typed ) {
     MSG_ERROR("The expression on the right of '%s' must have a type!",
@@ -820,9 +819,9 @@ Task Prs_Def_Operator(Operator *opr,
 /* DESCRIPTION: This function compiles the binary operation opr.
  *  a and b are the two arguments, rs is the result.
  */
-Task Prs_Operator(Operator *opr, Expression *rs, Expression *a, Expression *b) {
+Task Prs_Operator(Operator *opr, Expr *rs, Expr *a, Expr *b) {
   if ( a->is.typed && b->is.typed ) {
-    Expression *result = Cmp_Operator_Exec(opr, a, b);
+    Expr *result = Cmp_Operator_Exec(opr, a, b);
     if ( result == NULL ) return Failed;
     *rs = *result;
     return Success;
@@ -871,32 +870,6 @@ Task Prs_Name_To_Expr(Name *nm, Expr *e, Intg suffix) {
     *e = s->value;
     return Success;
   }
-}
-
-/* If name:suffix is the name of an already defined symbol
- * this function puts the corresponding expression into *e, otherwise
- * it transforms the name *nm into an untyped expression *e.
- */
-Task Prs_Member_To_Expr(Name *nm, Expression *e, Intg suffix) {
-  MSG_ERROR("Major change is happening: feature has been disabled!");
-  return Failed;
-/*
-  Symbol *s;
-  Box *b;
-
-  TASK( Box_Get(& b, (suffix < 0) ? 0 : suffix) );
-
-  if IS_FAILED( Sym_Implicit_Find(& s, b->type, nm) ) {
-    MSG_ERROR("'%s' non e' membro di '%s'.",
-     Name_To_Str(nm), Tym_Type_Name(b->type));
-    return Failed;
-  }
-
-  * Il nome corrisponde ad un simbolo gia' definito:
-  * restituisco l'espressione (typed) corrispondente!
-  *
-  *e = s->value;
-  return Success;*/
 }
 
 /* Every explicit symbol can be followed by a suffix,
@@ -950,7 +923,7 @@ Task Prs_Suffix(Int *rs, Int suffix, Name *nm) {
 /* DESCRIPTION: This function build an array of *num objects of type *x.
  * NOTE: *num is an integer expression. The new type will be put into *array.
  */
-Task Prs_Array_Of_X(Expression *array, Expression *num, Expression *x) {
+Task Prs_Array_Of_X(Expr *array, Expr *num, Expr *x) {
   register Intg t, n;
 
   /* Checks on *num */
@@ -997,9 +970,9 @@ Task Prs_Array_Of_X(Expression *array, Expression *num, Expression *x) {
 /* DESCRIPTION: This function build an alias of the type *x.
  * NOTE: The new type will be put into *alias.
  */
-Task Prs_Alias_Of_X(Expression *alias, Expression *x) {
+Task Prs_Alias_Of_X(Expr *alias, Expr *x) {
   Symbol *s;
-  Expression *target;
+  Expr *target;
   register Intg t;
 
   assert( !alias->is.typed );
@@ -1022,18 +995,17 @@ Task Prs_Alias_Of_X(Expression *alias, Expression *x) {
   return Failed;
 }
 
-#define CHECK_TYPE(t)                        \
-  if ( ! t->is.typed ) {                     \
-     MSG_ERROR("'%s' <-- Tipo non definito", \
-      Name_To_Str(& t->value.nm));           \
-     return Failed;                          \
-  }                                          \
+#define CHECK_TYPE(t)                   \
+  if ( ! t->is.typed ) {                \
+     MSG_ERROR("'%s' <-- Unknown type", \
+      Name_To_Str(& t->value.nm));      \
+     return Failed;                     \
+  }                                     \
   assert(! t->is.value)
 
 /* This function creates the new specie of types (first < second).
  */
-Task Prs_Species_New(
- Expression *species, Expression *first, Expression *second) {
+Task Prs_Species_New(Expr *species, Expr *first, Expr *second) {
   Intg new_species;
 
   CHECK_TYPE(first); CHECK_TYPE(second);
@@ -1050,7 +1022,7 @@ Task Prs_Species_New(
 
 /* This function adds a new type to an already existing species.
  */
-Task Prs_Species_Add(Expression *species, Expression *old, Expression *type) {
+Task Prs_Species_Add(Expr *species, Expr *old, Expr *type) {
   Intg old_species;
 
   CHECK_TYPE(old); CHECK_TYPE(type);
@@ -1065,7 +1037,7 @@ Task Prs_Species_Add(Expression *species, Expression *old, Expression *type) {
 /* This function calls a procedure without value, as (;), ([) or (]).
  */
 Task Prs_Procedure_Special(int *found, int type, int auto_define) {
-  Expression e;
+  Expr e;
   int dummy = 0;
   if ( found == NULL ) found = & dummy;
   Expr_New_Type(& e, type);
@@ -1076,8 +1048,7 @@ Task Prs_Procedure_Special(int *found, int type, int auto_define) {
 
 /* This function handles the rule: Type = Type
  */
-Task Prs_Rule_Typed_Eq_Typed(Expression *rs,
- Expression *typed1, Expression *typed2) {
+Task Prs_Rule_Typed_Eq_Typed(Expr *rs, Expr *typed1, Expr *typed2) {
 
   if ( typed1->is.typed ) {
     /* Assertion: 'typed2' must be equal to 'typed1'. */
@@ -1124,7 +1095,7 @@ Task Prs_Rule_Valued_Eq_Typed(Expr *rs, Expr *valued, Expr *typed) {
   } else {
     /* Definition: creating (into 'valued') a new object of type 'typed'. */
     Symbol *s;
-    Expression *target;
+    Expr *target;
 
     {
       Task t = Sym_Explicit_New(& s, & valued->value.nm, valued->addr);
@@ -1141,14 +1112,14 @@ Task Prs_Rule_Valued_Eq_Typed(Expr *rs, Expr *valued, Expr *typed) {
 
 /* This function handles the rule: Type = value
  */
-Task prs_rule_typed_eq_valued(Expression *typed, Expression *valued) {
+Task prs_rule_typed_eq_valued(Expr *typed, Expr *valued) {
   return Success;
 }
 
 /* This function handles the rule: value = value
  */
-Task Prs_Rule_Valued_Eq_Valued(Expression *rs,
- Expression *valued1, Expression *valued2) {
+Task Prs_Rule_Valued_Eq_Valued(Expr *rs,
+                               Expr *valued1, Expr *valued2) {
 
   *rs = *valued2;
   rs->is.ignore = 1;
@@ -1161,7 +1132,7 @@ Task Prs_Rule_Valued_Eq_Valued(Expression *rs,
 
   if ( valued1->is.typed ) {
     /* Assignment: assigns 'valued2' to 'valued1'. */
-    Expression *result = Cmp_Operator_Exec(cmp_opr.assign, valued1, valued2);
+    Expr *result = Cmp_Operator_Exec(cmp_opr.assign, valued1, valued2);
     if ( result == NULL ) return Failed;
     *rs = *result;
     rs->is.ignore = 1;
