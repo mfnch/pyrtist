@@ -69,7 +69,7 @@ if test "$ac_cv_with_cairo" = yes; then
                     [cairo >= 0.9.0],
                     [HAVE_CAIRO=1],
                     [if test $pkg_failed = yes; then
-    AC_MSG_WARN([Package requirements (cairo >= 0.9.0) were not met])
+    AC_MSG_WARN([Package requirement (cairo >= 0.9.0) was not met])
                      elif test $pkg_failed = untried; then
     AC_MSG_WARN([The pkg-config script could not be found or is too old.])
                      fi])
