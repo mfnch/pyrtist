@@ -38,6 +38,12 @@ MODIFICATIONS TO THE BOX COMPILER (in order of importance):
   Once the type has been used and the final parenthesis (]) is found,
   the object should be converted to a final object, which does not contain
   the local variables. This will be very useful.
+9 Operator overloading: this needs adjustments to the basic operation handling
+  routines as well as the Box language. The first is important, because
+  it would already allow the addition of a builtin String object, which
+  allows to easily concatenate, compare strings.
+10 Point 9 would allow the definition of builtin functions to get input
+  from files and from stdin.
 
 DONE:
 2 precedence rules for name resolution should be introduced. The first
@@ -55,4 +61,5 @@ DONE:
   Since no subtype Window.Put.Get exists, Box should convert pl to its child
   (an object of type PointList) and try to find a subtype .Get
   The problem should be faced in a more general way, allowing automatic
-  conversion of types at (]), see X
+  conversion of types at (]), see 8
+

@@ -20,7 +20,8 @@
 
 # $Id$
 
-AM_CFLAGS = -Wall
+AM_CFLAGS=-Wall @CAIRO_CFLAGS@
+AM_CPPFLAGS = -I../../src
 
 boxlibdir=@boxlibdir@
 boxincdir=@boxincdir@
@@ -31,7 +32,6 @@ dist_boxinc_DATA = g.bxh color.bxh window.bxh line.bxh circle.bxh poly.bxh \
                    put.bxh arrows.bxh electric.bxh pointlist.bxh text.bxh \
                    bounce.bxh
 
-AM_CPPFLAGS = -I../../src
 libg_la_SOURCES = g.c g.h objlist.c objlist.h pointlist.h \
                   bm1bit.c bm4bit.c bm8bit.c bitmap.h \
                   bmcommon.c bmcommon.h \
@@ -45,4 +45,5 @@ libg_la_SOURCES = g.c g.h objlist.c objlist.h pointlist.h \
                   i_circle.c i_circle.h i_poly.c i_poly.h \
                   i_put.c i_put.h i_text.c i_text.h
 
-libg_la_LDFLAGS = -module
+libg_la_LDFLAGS=-module @CAIRO_LIBS@
+

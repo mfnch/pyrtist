@@ -44,7 +44,7 @@ AC_PROG_YACC
 # Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h dlfcn.h])
-AC_CHECK_HEADERS([cairo.h])
+#AC_CHECK_HEADERS([cairo.h])
 
 # Checks for libraries.
 AC_CHECK_LIB([m], [floor])
@@ -67,7 +67,7 @@ AC_ARG_WITH([cairo],
 if test "$ac_cv_with_cairo" = yes; then
   PKG_CHECK_MODULES(CAIRO,
                     [cairo >= 0.9.0],
-                    [HAVE_CAIRO=1],
+                    [HAVE_CAIRO=1],# Not used, sometimes useful to pkg-config
                     [if test $pkg_failed = yes; then
     AC_MSG_WARN([Package requirement (cairo >= 0.9.0) was not met])
                      elif test $pkg_failed = untried; then
@@ -75,6 +75,9 @@ if test "$ac_cv_with_cairo" = yes; then
                      fi])
 
 fi
+
+AC_SUBST(CAIRO_LIBS)
+AC_SUBST(CAIRO_CFLAGS)
 
 AC_SUBST([boxlibdir])
 AC_SUBST([boxincdir])
@@ -90,10 +93,10 @@ AC_OUTPUT
 AC_MSG_RESULT([])
 AC_MSG_RESULT([Configuration summary:])
 AC_MSG_RESULT([----------------------])
-AC_MSG_RESULT([])
 
 if test "$ac_cv_with_cairo" = yes; then
   AC_MSG_RESULT([Support for the Cairo 2D graphic library: yes])
 else
   AC_MSG_RESULT([Support for the Cairo 2D graphic library: no])
 fi
+
