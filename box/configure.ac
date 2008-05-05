@@ -65,7 +65,7 @@ AC_ARG_WITH([cairo],
             [ac_cv_with_cairo=$withval], [ac_cv_with_cairo=no])
 
 if test "$ac_cv_with_cairo" = yes; then
-  PKG_CHECK_MODULES(CAIRO,
+  PKG_CHECK_MODULES([CAIRO],
                     [cairo >= 0.9.0],
                     [HAVE_CAIRO=1],# Not used, sometimes useful to pkg-config
                     [if test $pkg_failed = yes; then
