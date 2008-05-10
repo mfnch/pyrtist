@@ -48,6 +48,22 @@ Task window_begin(VMProgram *vmp) {
   printf("Window object allocated (%p)\n", w);
   printf("WindowPtr object: %p\n", wp);
 #endif
+
+#if 0
+  w->plan.type = grp_window_type_from_string("fig");
+  w->plan.have.type = 0;
+  
+  w->plan.have.corner1 = 0;
+  w->origin.x = 0.0;
+  w->origin.y = 0.0;
+  w->size.x = 100.0;
+  w->size.y = 100.0;
+  w->res.x = 2.0;
+  w->res.y = 2.0;
+  w->have.size = 0;
+  w->save_file_name = (char *) NULL;
+#endif
+
   w->type = FIG;
   w->have.type = 0;
   w->origin.x = 0.0;
@@ -58,6 +74,7 @@ Task window_begin(VMProgram *vmp) {
   w->res.y = 2.0;
   w->have.size = 0;
   w->save_file_name = (char *) NULL;
+
   w->window = (grp_window *) NULL;
 
   TASK( pointlist_init(& w->pointlist) );

@@ -132,11 +132,14 @@ typedef struct {
     int type : 1, corner1 : 1, corner2 : 1, size : 1,
         resolution : 1, file_name : 1, num_layers: 1;
   } have;
-  char *type;
+  int type;
   Point corner1, corner2, size, resolution;
   char *file_name;
   int num_layers;
 } GrpWindowPlan;
+
+/** Get the window ID (an integer number) from the window type (a string) */
+int grp_window_type_from_string(const char *type_str);
 
 /** Unified function to open any kind of window */
 GrpWindow *grp_window_open(GrpWindowPlan *plan);

@@ -24,6 +24,7 @@
 #  include "buffer.h"
 #  include "pointlist.h"
 #  include "linetracer.h"
+#  include "graphic.h"
 
 #  define _DEF_WINDOW_SUBOBJECTS
 #  include "i_line.h"
@@ -41,6 +42,8 @@ typedef struct {
 
   enum {BM1, BM4, BM8, FIG, PS} type;
   Point size, origin, res;
+
+  GrpWindowPlan plan;
 
   grp_window *window;
 

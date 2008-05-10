@@ -26,6 +26,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 
 #include "config.h"
 #include "error.h"      /* Serve per la segnalazione degli errori */
@@ -419,45 +420,59 @@ grp_window *grp_win = & grp_dummy_win;
 
 /****************************************************************************/
 
+enum {HAVE_TYPE=1, HAVE_CORNER1=2, HAVE_CORNER2=4, HAVE_CORNERS=6,
+      HAVE_SIZE=8, HAVE_RESOLUTION=0x10, HAVE_FILE_NAME=0x20,
+      HAVE_NUM_LAYERS=0x40};
+
+typedef enum {WT_NONE=-1, WT_BM1=0, WT_BM4, WT_BM8, WT_FIG,
+              WT_PS, WT_EPS, WT_CAIRO, WT_MAX} WT;
+
+struct win_types {
+  char *type_str;
+  WT type_num;
+  int must_have;
+
+} win_types[] = {
+  /* Order here is important: win_types[WT_x] should correspond to WT_x */
+  {"bm1", WT_BM1, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+  {"bm4", WT_BM4, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+  {"bm8", WT_BM8, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+  {"fig", WT_FIG, HAVE_TYPE},
+  {"ps",  WT_PS, HAVE_TYPE + HAVE_FILE_NAME},
+  {"eps", WT_EPS, HAVE_TYPE + HAVE_FILE_NAME + HAVE_SIZE},
+  {"cairo", WT_CAIRO, HAVE_TYPE},
+  {(char *) NULL, WT_NONE}
+};
+
+int grp_window_type_from_string(const char *type_str) {
+  struct win_types *this_type;
+  for(this_type = win_types;
+      this_type->type_str != (char *) NULL;
+      this_type++) {
+    if (strcasecmp(this_type->type_str, type_str))
+      return this_type->type_num;
+  }
+  return WT_NONE;
+}
+
 /** Define a function which can create new windows of all
  * the different types.
  */
 GrpWindow *grp_window_open(GrpWindowPlan *plan) {
-  typedef enum {WT_NONE, WT_BM1, WT_BM4, WT_BM8, WT_FIG,
-                WT_PS, WT_EPS, WT_CAIRO} WT;
-  enum {HAVE_TYPE=1, HAVE_CORNER1=2, HAVE_CORNER2=4, HAVE_CORNERS=6,
-        HAVE_SIZE=8, HAVE_RESOLUTION=0x10, HAVE_FILE_NAME=0x20,
-        HAVE_NUM_LAYERS=0x40};
-  struct {
-    char *type_str;
-    WT type_num;
-    int must_have;
-
-  } types[] = {
-    {"bm1", WT_BM1, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
-    {"bm4", WT_BM4, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
-    {"bm8", WT_BM8, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
-    {"fig", WT_FIG, HAVE_TYPE},
-    {"ps",  WT_PS, HAVE_TYPE + HAVE_FILE_NAME},
-    {"eps", WT_EPS, HAVE_TYPE + HAVE_FILE_NAME + HAVE_SIZE},
-    {"cairo", WT_CAIRO, HAVE_TYPE},
-    {(char *) NULL, WT_NONE}
-  }, *this_type;
-  WT type_num = WT_NONE;
   int must_have = 0;
-
-  for(this_type = types; this_type->type_str != (char *) NULL; this_type++) {
-    if (strcasecmp(this_type->type_str, plan->type)) {
-      type_num = this_type->type_num;
-      must_have = this_type->must_have;
-      break;
-    }
-  }
 
   if ((must_have & HAVE_TYPE) != 0 && !plan->have.type) {
     g_error("Cannot open the window: window type is missing!");
     return (GrpWindow *) NULL;
   }
+
+  if (plan->type < 0 || plan->type >= WT_MAX) {
+    g_error("Cannot open the window: unknown window type!");
+    return (GrpWindow *) NULL;
+  }
+
+  assert(plan->type == win_types[plan->type].type_num);
+  must_have = win_types[plan->type].must_have;
 
   if ((must_have & HAVE_CORNER1) != 0 && !plan->have.corner1) {
     g_error("Cannot open the window: first corner is missing!");
@@ -489,7 +504,7 @@ GrpWindow *grp_window_open(GrpWindowPlan *plan) {
     return (GrpWindow *) NULL;
   }
 
-  switch(type_num) {
+  switch(plan->type) {
   case WT_BM1:
     return gr1b_open_win(plan->corner1.x, plan->corner1.y,
                          plan->corner2.x, plan->corner2.y,
