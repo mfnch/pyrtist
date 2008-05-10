@@ -41,9 +41,6 @@ typedef struct {
   unsigned char fxormask;    /* Maschera xor per disegnare 8 punti alla volta */
 } gr1b_wrdep;
 
-/* Funzioni esterne di rasterizzazione (definite in rasterizer.c) */
-extern void (*rst_midfn[])();
-
 /* Procedure definite in questo file */
 grp_window *gr1b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
  Real resx, Real resy);
@@ -51,14 +48,6 @@ void gr1b_set_col(int col);
 void gr1b_draw_point(Int ptx, Int pty);
 void gr1b_hor_line(Int y, Int x1, Int x2);
 void gr1b_close_win(void);
-
-/* Array di puntatori a queste procedure */
-static void (*gr1b_lowfn[])() = {
-  gr1b_close_win,
-  gr1b_set_col,
-  gr1b_draw_point,
-  gr1b_hor_line
-};
 
 /* Variabili locali */
 static unsigned char xormask[2][8] = {
@@ -92,7 +81,11 @@ static void gr1b_repair(GrpWindow *wd) {
   grp_window_block(wd);
   rst_repair(wd);
   wd->save = grbm_save_to_bmp;
-  wd->lowfn = gr1b_lowfn;
+
+  wd->close_win = gr1b_close_win;
+  wd->set_col = gr1b_set_col;
+  wd->draw_point = gr1b_draw_point;
+  wd->hor_line = gr1b_hor_line;
 }
 
 /* NOME: gr1b_open_win

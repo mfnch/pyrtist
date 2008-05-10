@@ -43,9 +43,6 @@ typedef struct {
   unsigned char fxormask;    /* Maschera xor per disegnare 2 punti alla volta */
 } gr4b_wrdep;
 
-/* Funzioni esterne di rasterizzazione (definite in rasterizer.c) */
-extern void (*rst_midfn[])();
-
 /* Procedure definite in questo file */
 grp_window *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
                           Real resx, Real resy);
@@ -53,14 +50,6 @@ void gr4b_close_win(void);
 void gr4b_set_col(int col);
 void gr4b_draw_point(Int ptx, Int pty);
 void gr4b_hor_line(Int y, Int x1, Int x2);
-
-/* Array di puntatori a queste procedure */
-static void (*gr4b_lowfn[])() = {
-  gr4b_close_win,
-  gr4b_set_col,
-  gr4b_draw_point,
-  gr4b_hor_line
-};
 
 /* Questa macro restituisce il segno di un double
  * (1 se il numero e' positivo, -1 se e' negativo)
@@ -80,7 +69,11 @@ static void gr4b_repair(GrpWindow *wd) {
   grp_window_block(wd);
   rst_repair(wd);
   wd->save = grbm_save_to_bmp;
-  wd->lowfn = gr4b_lowfn;
+
+  wd->close_win = gr4b_close_win;
+  wd->set_col = gr4b_set_col;
+  wd->draw_point = gr4b_draw_point;
+  wd->hor_line = gr4b_hor_line;
 }
 
 /* NOME: gr4b_open_win
@@ -219,8 +212,6 @@ void gr4b_close_win(void) {
   free( grp_win->wrdep );
   free( grp_win );
   grp_palette_destroy( grp_win->pal );
-
-  return;
 }
 
 /***************************************************************************************/

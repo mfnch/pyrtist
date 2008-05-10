@@ -324,17 +324,6 @@ void grp_draw_gpath(GPath *gp) {
  * accidentali "segmentation fault").
  */
 
-static void win_not_opened(void) {
-  ERRORMSG("win_not_opened", "Nessuna finestra aperta");
-  return;
-}
-
-/* Lista delle funzioni di basso livello (non disponibili) */
-static void (*wno_lowfn[])() = {
-  win_not_opened, win_not_opened, win_not_opened, win_not_opened
-};
-
-
 static void dummy_err(GrpWindow *w, const char *method) {
   if (! w->quiet) {
     fprintf(stderr, "%s.%s: method is not implemented.\n",
@@ -370,6 +359,11 @@ static int dummy_save(const char *file_name) {
   return 1;
 }
 
+void dummy_close_win(void) {dummy_err(grp_win, "close_win");}
+void dummy_set_col(int col) {dummy_err(grp_win, "set_col");}
+void dummy_draw_point(Int ptx, Int pty) {dummy_err(grp_win, "draw_point");}
+void dummy_hor_line(Int y, Int x1, Int x2) {dummy_err(grp_win, "hor_line");}
+
 void grp_window_block(GrpWindow *w) {
   w->rreset = dummy_rreset;
   w->rinit = dummy_rinit;
@@ -383,7 +377,11 @@ void grp_window_block(GrpWindow *w) {
   w->font = dummy_font;
   w->fake_point = dummy_fake_point;
   w->save = dummy_save;
-  w->lowfn = wno_lowfn;
+
+  w->close_win = dummy_close_win;
+  w->set_col = dummy_set_col;
+  w->draw_point = dummy_draw_point;
+  w->hor_line = dummy_hor_line;
 }
 
 GrpWindow grp_dummy_win = {
@@ -401,6 +399,10 @@ GrpWindow grp_dummy_win = {
   dummy_fake_point,
   dummy_save,
   0, /* quiet */
+  dummy_close_win,
+  dummy_set_col,
+  dummy_draw_point,
+  dummy_hor_line,
   grp_window_block /* repair */
 };
 

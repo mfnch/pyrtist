@@ -36,7 +36,6 @@
 #include "bb.h"
 #include "g.h"
 
-static void not_available(void);
 static void ps_close_win(void);
 static void ps_rreset(void);
 static void ps_rinit(void);
@@ -50,16 +49,6 @@ static void ps_fake_point(Point *p);
 static void ps_rbgcolor(Real r, Real g, Real b);
 #endif
 static int ps_save(const char *unused);
-
-static void not_available(void) {
-  ERRORMSG("not_available", "Not available for postscript windows.");
-}
-
-/* Queste funzioni non sono disponibili per finestre postscript
- */
-static void (*ps_lowfn[])() = {
-  ps_close_win, not_available, not_available, not_available
-};
 
 /* Variabili usate dalle procedure per scrivere il file postscript */
 static int beginning_of_line = 1, beginning_of_path = 1;
@@ -179,7 +168,6 @@ static void ps_rbgcolor(Real r, Real g, Real b) {return;}
 /** Set the default methods to the ps window */
 static void ps_repair(GrpWindow *w) {
   grp_window_block(w);
-  w->lowfn = ps_lowfn;
   w->rreset = ps_rreset;
   w->rinit = ps_rinit;
   w->rdraw = ps_rdraw;
@@ -189,6 +177,8 @@ static void ps_repair(GrpWindow *w) {
   w->rfgcolor = ps_rfgcolor;
   w->fake_point = ps_fake_point;
   w->save = ps_save;
+
+  w->close_win = ps_close_win;
 }
 
 /* NOME: ps_open_win

@@ -45,7 +45,6 @@
  * e invece di eseguire effettivamente i comandi, provvedono soltanto
  * a memorizzarli nel layer attualmente attivo.
  */
-static void not_available(void);
 void fig_rreset(void);
 void fig_rinit(void);
 void fig_rdraw(DrawStyle style);
@@ -58,14 +57,6 @@ static void fig_text(Point *p, const char *text);
 static void fig_font(const char *font, Real size);
 static void fig_fake_point(Point *p);
 static int fig_save(const char *file_name);
-
-/* Lista delle funzioni di basso livello (non disponibili) */
-static void (*fig_lowfn[])() = {
-  not_available,
-  not_available,
-  not_available,
-  not_available
-};
 
 /*#define grp_activelayer (((struct fig_header *) grp_win->wrdep)->current)*/
 
@@ -127,16 +118,6 @@ static void fig_repair(GrpWindow *w) {
   w->font = fig_font;
   w->fake_point = fig_fake_point;
   w->save = fig_save;
-  w->lowfn = fig_lowfn;
-}
-
-/* I puntatori alle funzioni non disponibili con finestre di tipo "fig"
- * vengono fatti puntare a questa funzione
- */
-static void not_available(void)
-{
-  WARNINGMSG("fig low function", "Caratteristica non disponibile");
-  return;
 }
 
 /* DESCRIZIONE: Apre una finestra di tipo "fig", che consiste essenzialmente

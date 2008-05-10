@@ -63,6 +63,7 @@ typedef struct _grp_window {
   /** String which identifies the type of the window */
   char *win_type_str;
 
+  /* High level functions */
   void (*rreset)(void);
   void (*rinit)(void);
   void (*rdraw)(DrawStyle style);
@@ -79,6 +80,12 @@ typedef struct _grp_window {
 
   /** If set to 1, inhibits error messages */
   int quiet;
+
+  /* Low level functions */
+  void (*close_win)(void);
+  void (*set_col)(int col);
+  void (*draw_point)(Int ptx, Int pty);
+  void (*hor_line)(Int y, Int x1, Int x2);
 
   /** Restore the window methods, which may have been changed after an error
    * has occurred.
@@ -102,15 +109,6 @@ typedef struct _grp_window {
   long bytesperline;   /* Byte occupati da una linea */
   long dim;            /* Dimensione totale in byte della finestra */
   void *wrdep;         /* Puntatore alla struttura dei dati dipendenti dalla scrittura */
-
-  /* Puntatore alle procedure di basso livello per gestire la finestra */
-  void (**lowfn)();
-
-#if 0
-  /* Puntatore alle procedure di medio livello per gestire la finestra */
-  void (**midfn)();
-#endif
-
 } grp_window;
 
 #define GrpWindow grp_window
@@ -157,11 +155,10 @@ void rst_repair(grp_window *gw);
 Point *grp_ref(Point *o, Point *v, Point *p);
 
 /* Funzioni grafiche di basso livello (legate al tipo di finestra aperta) */
-#define grp_close_win(p1)      (grp_win->lowfn[0])(p1)
-#define grp_set_col(p1)        (grp_win->lowfn[1])(p1)
-#define grp_draw_point(p1, p2)    (grp_win->lowfn[2])(p1, p2)
-#define grp_hor_line(p1, p2, p3)  (grp_win->lowfn[3])(p1, p2, p3)
-#define grp_save(s)          (grp_win->save)(s)
+#define grp_close_win  (grp_win->close_win)
+#define grp_set_col    (grp_win->set_col)
+#define grp_draw_point (grp_win->draw_point)
+#define grp_hor_line   (grp_win->hor_line)
 
 /* Funzioni grafiche di medio livello (di rasterizzazione) */
 #define grp_rreset     (grp_win->rreset)
@@ -175,6 +172,7 @@ Point *grp_ref(Point *o, Point *v, Point *p);
 #define grp_text       (grp_win->text)
 #define grp_font       (grp_win->font)
 #define grp_fake_point (grp_win->fake_point)
+#define grp_save       (grp_win->save)
 
 /* Macro per la conversione fra diverse unità di misura */
 /* Lunghezze */

@@ -54,10 +54,6 @@ static void got_point(Real x, Real y) {
   ++bb_num_points;
 }
 
-static void not_available(void) {
-  ERRORMSG("not_available", "Not available for bb windows.");
-}
-
 static void bb_close_win(void) {return;}
 
 static void bb_rline(Point *a, Point *b) {
@@ -94,21 +90,16 @@ static void bb_text(Point *p, const char *text) {got_point(p->x, p->y);}
 
 static void bb_fake_point(Point *p) {got_point(p->x, p->y);}
 
-/* Queste funzioni non sono disponibili per finestre postscript
- */
-static void (*bb_lowfn[])() = {
-  bb_close_win, not_available, not_available, not_available
-};
-
 /** Set the default methods to the bb window */
 static void bb_repair(GrpWindow *w) {
   grp_window_block(w);
-  w->lowfn = bb_lowfn;
   w->rline = bb_rline;
   w->rcong = bb_rcong;
   w->rcircle = bb_rcircle;
   w->text = bb_text;
   w->fake_point = bb_fake_point;
+
+  w->close_win = bb_close_win;
 }
 
 void bb_bounding_box(grp_window *figure, Point *bb_min, Point *bb_max) {

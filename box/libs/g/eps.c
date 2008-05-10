@@ -35,7 +35,6 @@
  */
 static int discretization_x = 1000, discretization_y = 1000;
 
-static void not_available(void);
 static void eps_close_win(void);
 static void eps_rreset(void);
 static void eps_rinit(void);
@@ -52,25 +51,6 @@ static void eps_fake_point(Point *p);
 static void eps_rbgcolor(Real r, Real g, Real b);
 #endif
 static int eps_save(const char *unused);
-
-static void not_available(void) {
-  ERRORMSG("not_available", "Not available for postscript windows.");
-}
-
-/* Queste funzioni non sono disponibili per finestre postscript
- */
-static void (*eps_lowfn[])() = {
-  eps_close_win, not_available, not_available, not_available
-};
-
-/* Lista delle funzioni di rasterizzazione */
-static void (*eps_midfn[])() = {
-  eps_rreset, eps_rinit,
-  eps_rcong, not_available,
-  eps_rcircle, eps_rfgcolor, not_available,
-  not_available, eps_text, eps_font,
-  eps_fake_point
-};
 
 /* Variabili usate dalle procedure per scrivere il file postscript */
 static int beginning_of_line = 1, beginning_of_path = 1;
@@ -204,7 +184,6 @@ static void eps_rbgcolor(Real r, Real g, Real b) {return;}
 /** Set the default methods to the eps window */
 static void eps_repair(GrpWindow *w) {
   grp_window_block(w);
-  w->lowfn = eps_lowfn;
 
   w->rreset = eps_rreset;
   w->rinit = eps_rinit;
@@ -217,6 +196,8 @@ static void eps_repair(GrpWindow *w) {
   w->font = eps_font;
   w->fake_point = eps_fake_point;
   w->save = eps_save;
+
+  w->close_win = eps_close_win;
 }
 
 /* Open a graphic window with type "eps" (encapsulated postscript).

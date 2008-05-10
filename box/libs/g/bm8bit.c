@@ -41,9 +41,6 @@ typedef struct {
   unsigned char xormask;  /* Puntatore alla maschera xor per il disegno di punti */
 } gr8b_wrdep;
 
-/* Funzioni esterne di rasterizzazione (definite in rasterizer.c) */
-extern void (*rst_midfn[])();
-
 /* Procedure definite in questo file */
 grp_window *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
                           Real resx, Real resy);
@@ -51,14 +48,6 @@ void gr8b_close_win(void);
 void gr8b_set_col(int col);
 void gr8b_draw_point(Int ptx, Int pty);
 void gr8b_hor_line(Int y, Int x1, Int x2);
-
-/* Array di puntatori a queste procedure */
-static void (*gr8b_lowfn[])() = {
-  gr8b_close_win,
-  gr8b_set_col,
-  gr8b_draw_point,
-  gr8b_hor_line
-};
 
 /* Questa macro restituisce il segno di un double
  * (1 se il numero e' positivo, -1 se e' negativo)
@@ -78,7 +67,11 @@ static void gr8b_repair(GrpWindow *wd) {
   grp_window_block(wd);
   rst_repair(wd);
   wd->save = grbm_save_to_bmp;
-  wd->lowfn = gr8b_lowfn;
+
+  wd->close_win = gr8b_close_win;
+  wd->set_col = gr8b_set_col;
+  wd->draw_point = gr8b_draw_point;
+  wd->hor_line = gr8b_hor_line;
 }
 
 /* DESCRIZIONE: Apre una finestra grafica di forma rettangolare
