@@ -17,14 +17,18 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+#include <stdlib.h>
+
 #include <cairo.h>
 
 #include "error.h"
 #include "types.h"
 #include "graphic.h"
 #include "g.h"
+#include "wincairo.h"
+
 #if 0
-#include <cairo.h>
+
 
 int main (int argc, char *argv[]) {
   cairo_surface_t *surface;
@@ -46,7 +50,8 @@ int main (int argc, char *argv[]) {
 }
 #endif
 
-GrpWindow *cairo_open_win(const char *file, Real size_x, Real size_y) {
+GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
+#if 0
   grp_window *wd;
   FILE *winstream;
   Real size_x_psunit, size_y_psunit;
@@ -89,9 +94,10 @@ GrpWindow *cairo_open_win(const char *file, Real size_x, Real size_y) {
   wd->repair = eps_repair;
   wd->repair(wd);
   wd->win_type_str = "cairo";
-
-
   return wd;
+#else
+  return (GrpWindow *) NULL;
+#endif
 }
 
 

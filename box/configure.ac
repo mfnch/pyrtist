@@ -65,16 +65,24 @@ AC_ARG_WITH([cairo],
             [ac_cv_with_cairo=$withval], [ac_cv_with_cairo=no])
 
 if test "$ac_cv_with_cairo" = yes; then
+  use_libcairo=yes
   PKG_CHECK_MODULES([CAIRO],
                     [cairo >= 0.9.0],
-                    [HAVE_CAIRO=1],# Not used, sometimes useful to pkg-config
+                    [HAVE_CAIRO=1],
                     [if test $pkg_failed = yes; then
     AC_MSG_WARN([Package requirement (cairo >= 0.9.0) was not met])
                      elif test $pkg_failed = untried; then
     AC_MSG_WARN([The pkg-config script could not be found or is too old.])
-                     fi])
+                     fi
+                     use_libcairo=no])
 
 fi
+
+if test "${use_libcairo}" = yes ; then
+  AC_DEFINE(HAVE_LIBCAIRO, 1, [ Define to 1 if you have the `cairo' library. ])
+fi
+
+AM_CONDITIONAL(BUILD_WINCAIRO, test "${use_libcairo}" = yes)
 
 AC_SUBST(CAIRO_LIBS)
 AC_SUBST(CAIRO_CFLAGS)

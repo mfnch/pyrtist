@@ -124,6 +124,23 @@ extern Real grp_tomm;
 extern Real grp_torad;
 extern Real grp_toppmm;
 
+/** This structure is used to make uniform the functions for opening
+ * graphic windows of different types.
+ */
+typedef struct {
+  struct {
+    int type : 1, corner1 : 1, corner2 : 1, size : 1,
+        resolution : 1, file_name : 1, num_layers: 1;
+  } have;
+  char *type;
+  Point corner1, corner2, size, resolution;
+  char *file_name;
+  int num_layers;
+} GrpWindowPlan;
+
+/** Unified function to open any kind of window */
+GrpWindow *grp_window_open(GrpWindowPlan *plan);
+
 /* Dichiarazioni delle procedure della libreria */
 /* Funzioni grafiche di alto livello */
 grp_window *gr1b_open_win(Real ltx, Real lty, Real rdx, Real rdy,

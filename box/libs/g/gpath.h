@@ -20,6 +20,8 @@
 #ifndef _GPATH_H
 #  define _GPATH_H
 
+#  include <stdio.h>
+
 #  include "types.h"
 #  include "buffer.h"
 

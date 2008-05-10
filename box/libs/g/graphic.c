@@ -27,9 +27,15 @@
 #include <string.h>
 #include <math.h>
 
+#include "config.h"
 #include "error.h"      /* Serve per la segnalazione degli errori */
 #include "graphic.h"    /* Dichiaro alcune strutture grafiche generali */
 #include "gpath.h"
+#include "g.h"
+
+#if HAVE_LIBCAIRO
+#  include "wincairo.h"
+#endif
 
 /* Costanti moltiplicative usate per convertire: */
 /*  - lunghezze in millimetri: */
@@ -410,3 +416,107 @@ GrpWindow grp_dummy_win = {
  * ad una finestra che da solo errori (vedi piu' avanti).
  */
 grp_window *grp_win = & grp_dummy_win;
+
+/****************************************************************************/
+
+/** Define a function which can create new windows of all
+ * the different types.
+ */
+GrpWindow *grp_window_open(GrpWindowPlan *plan) {
+  typedef enum {WT_NONE, WT_BM1, WT_BM4, WT_BM8, WT_FIG,
+                WT_PS, WT_EPS, WT_CAIRO} WT;
+  enum {HAVE_TYPE=1, HAVE_CORNER1=2, HAVE_CORNER2=4, HAVE_CORNERS=6,
+        HAVE_SIZE=8, HAVE_RESOLUTION=0x10, HAVE_FILE_NAME=0x20,
+        HAVE_NUM_LAYERS=0x40};
+  struct {
+    char *type_str;
+    WT type_num;
+    int must_have;
+
+  } types[] = {
+    {"bm1", WT_BM1, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+    {"bm4", WT_BM4, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+    {"bm8", WT_BM8, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+    {"fig", WT_FIG, HAVE_TYPE},
+    {"ps",  WT_PS, HAVE_TYPE + HAVE_FILE_NAME},
+    {"eps", WT_EPS, HAVE_TYPE + HAVE_FILE_NAME + HAVE_SIZE},
+    {"cairo", WT_CAIRO, HAVE_TYPE},
+    {(char *) NULL, WT_NONE}
+  }, *this_type;
+  WT type_num = WT_NONE;
+  int must_have = 0;
+
+  for(this_type = types; this_type->type_str != (char *) NULL; this_type++) {
+    if (strcasecmp(this_type->type_str, plan->type)) {
+      type_num = this_type->type_num;
+      must_have = this_type->must_have;
+      break;
+    }
+  }
+
+  if ((must_have & HAVE_TYPE) != 0 && !plan->have.type) {
+    g_error("Cannot open the window: window type is missing!");
+    return (GrpWindow *) NULL;
+  }
+
+  if ((must_have & HAVE_CORNER1) != 0 && !plan->have.corner1) {
+    g_error("Cannot open the window: first corner is missing!");
+    return (GrpWindow *) NULL;
+  }
+
+  if ((must_have & HAVE_CORNER2) != 0 && !plan->have.corner2) {
+    g_error("Cannot open the window: second corner is missing!");
+    return (GrpWindow *) NULL;
+  }
+
+  if ((must_have & HAVE_SIZE) != 0 && !plan->have.size) {
+    g_error("Cannot open the window: size is missing!");
+    return (GrpWindow *) NULL;
+  }
+
+  if ((must_have & HAVE_RESOLUTION) != 0 && !plan->have.resolution) {
+    g_error("Cannot open the window: window resolution is missing!");
+    return (GrpWindow *) NULL;
+  }
+
+  if ((must_have & HAVE_FILE_NAME) != 0 && !plan->have.file_name) {
+    g_error("Cannot open the window: file name is missing!");
+    return (GrpWindow *) NULL;
+  }
+
+  if ((must_have & HAVE_NUM_LAYERS) != 0 && !plan->have.num_layers) {
+    g_error("Cannot open the window: number of layers is missing!");
+    return (GrpWindow *) NULL;
+  }
+
+  switch(type_num) {
+  case WT_BM1:
+    return gr1b_open_win(plan->corner1.x, plan->corner1.y,
+                         plan->corner2.x, plan->corner2.y,
+                         plan->resolution.x, plan->resolution.y);
+  case WT_BM4:
+    return gr4b_open_win(plan->corner1.x, plan->corner1.y,
+                         plan->corner2.x, plan->corner2.y,
+                         plan->resolution.x, plan->resolution.y);
+  case WT_BM8:
+    return gr8b_open_win(plan->corner1.x, plan->corner1.y,
+                         plan->corner2.x, plan->corner2.y,
+                         plan->resolution.x, plan->resolution.y);
+  case WT_FIG:
+    return fig_open_win(1);
+  case WT_PS:
+    return ps_open_win(plan->file_name);
+  case WT_EPS:
+    return eps_open_win(plan->file_name, plan->size.x, plan->size.y);
+  case WT_CAIRO:
+#if HAVE_LIBCAIRO
+    return cairo_open_win(plan);
+#else
+    g_error("The graphic library has been compiled without Cairo support.");
+    return (GrpWindow *) NULL;
+#endif
+  default:
+    g_error("Unknown window type!");
+    return (GrpWindow *) NULL;
+  }
+}
