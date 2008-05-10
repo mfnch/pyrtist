@@ -73,6 +73,14 @@ static void (*gr8b_lowfn[])() = {
 /***************************************************************************************/
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
 
+/** Set the default methods to the gr1b window */
+static void gr8b_repair(GrpWindow *wd) {
+  grp_window_block(wd);
+  rst_repair(wd);
+  wd->save = grbm_save_to_bmp;
+  wd->lowfn = gr8b_lowfn;
+}
+
 /* DESCRIZIONE: Apre una finestra grafica di forma rettangolare
  *  associando all'angolo in alto a sinistra le coordinate (ltx, lty)
  *  e all'angolo in basso a destra le coordinate (rdx, rdy).
@@ -190,10 +198,10 @@ grp_window *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
   WRDP(wd)->xormask = 0x01;
 
   /* Ora do' le procedure per gestire la finestra */
-  wd->save = grbm_save_to_bmp;
-  wd->lowfn = gr8b_lowfn;
-  wd->midfn = rst_midfn;
-  rst_set_methods(wd);
+  wd->quiet = 0;
+  wd->repair = gr8b_repair;
+  wd->repair(wd);
+  wd->win_type_str = "bm8";
   return wd;
 }
 

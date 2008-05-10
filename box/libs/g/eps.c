@@ -27,6 +27,7 @@
 #include "fig.h"
 #include "autoput.h"
 #include "bb.h"
+#include "g.h"
 
 /* This terminal discretizes the points into a grid where the number of
  * points per inch in the x and y directions are discretization_x and
@@ -39,9 +40,9 @@ static void eps_close_win(void);
 static void eps_rreset(void);
 static void eps_rinit(void);
 static void eps_rdraw(DrawStyle style);
-static void eps_rline(Point a, Point b);
-static void eps_rcong(Point a, Point b, Point c);
-static void eps_rcircle(Point ctr, Point a, Point b);
+static void eps_rline(Point *a, Point *b);
+static void eps_rcong(Point *a, Point *b, Point *c);
+static void eps_rcircle(Point *ctr, Point *a, Point *b);
 static void eps_rfgcolor(Real r, Real g, Real b);
 static void eps_text(Point *p, const char *text);
 static void eps_font(const char *font, Real size);
@@ -50,7 +51,7 @@ static void eps_fake_point(Point *p);
 #if 0
 static void eps_rbgcolor(Real r, Real g, Real b);
 #endif
-static int eps_save(void);
+static int eps_save(const char *unused);
 
 static void not_available(void) {
   ERRORMSG("not_available", "Not available for postscript windows.");
@@ -65,7 +66,7 @@ static void (*eps_lowfn[])() = {
 /* Lista delle funzioni di rasterizzazione */
 static void (*eps_midfn[])() = {
   eps_rreset, eps_rinit,
-  eps_rline, eps_rcong, not_available,
+  eps_rcong, not_available,
   eps_rcircle, eps_rfgcolor, not_available,
   not_available, eps_text, eps_font,
   eps_fake_point
@@ -81,8 +82,8 @@ static Real eps_point_scale = 283.46457;
  *  1 unita' = 1/72 inch = 0.35277777... millimetri
  */
 #define EPS_POINT(p, px, py) \
-  long px = (p.x * eps_point_scale), \
-       py = (p.y * eps_point_scale);
+  long px = (p->x * eps_point_scale), \
+       py = (p->y * eps_point_scale);
 
 #define EPS_REAL(r) ((r)*eps_point_scale)
 
@@ -117,7 +118,7 @@ static void eps_rdraw(DrawStyle style) {
   }
 }
 
-static void eps_rline(Point a, Point b) {
+static void eps_rline(Point *a, Point *b) {
   EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by);
   int continuing = (ax == previous_px) && (ay == previous_py),
       length_zero = (ax == bx && ay == by);
@@ -137,7 +138,7 @@ static void eps_rline(Point a, Point b) {
   previous_px = bx; previous_py = by;
 }
 
-static void eps_rcong(Point a, Point b, Point c) {
+static void eps_rcong(Point *a, Point *b, Point *c) {
   EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by); EPS_POINT(c, cx, cy);
 #if 0
   int a_eq_b = ax == bx && ay == by,
@@ -159,7 +160,7 @@ static void eps_rcong(Point a, Point b, Point c) {
   beginning_of_line = 0;
 }
 
-static void eps_rcircle(Point ctr, Point a, Point b) {
+static void eps_rcircle(Point *ctr, Point *a, Point *b) {
   EPS_POINT(ctr, cx, cy); EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by);
 
   if ( beginning_of_path )
@@ -177,7 +178,7 @@ static void eps_rfgcolor(Real r, Real g, Real b) {
 }
 
 static void eps_text(Point *p, const char *text) {
-  EPS_POINT((*p), px, py);
+  EPS_POINT(p, px, py);
 
   fprintf((FILE *) grp_win->ptr,
           "  %ld %ld moveto (%s) show\n",
@@ -200,12 +201,30 @@ static void eps_rbgcolor(Real r, Real g, Real b) {return;}
 /***************************************************************************************/
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
 
+/** Set the default methods to the eps window */
+static void eps_repair(GrpWindow *w) {
+  grp_window_block(w);
+  w->lowfn = eps_lowfn;
+
+  w->rreset = eps_rreset;
+  w->rinit = eps_rinit;
+  w->rdraw = eps_rdraw;
+  w->rline = eps_rline;
+  w->rcong = eps_rcong;
+  w->rcircle = eps_rcircle;
+  w->rfgcolor = eps_rfgcolor;
+  w->text = eps_text;
+  w->font = eps_font;
+  w->fake_point = eps_fake_point;
+  w->save = eps_save;
+}
+
 /* Open a graphic window with type "eps" (encapsulated postscript).
  * The windows opens a file and send all the commands it receives directly
  * to it. The window will have size size_x and size_y (in mm) and will
  * show coordinates from (0, 0) to (size_x, size_y).
  */
-grp_window *eps_open_win(char *file, Real size_x, Real size_y) {
+grp_window *eps_open_win(const char *file, Real size_x, Real size_y) {
   grp_window *wd;
   FILE *winstream;
   Real size_x_psunit, size_y_psunit;
@@ -258,11 +277,11 @@ grp_window *eps_open_win(char *file, Real size_x, Real size_y) {
   if ( wd->fgcol == NULL ) return NULL;*/
 
   /* Ora do' le procedure per gestire la finestra */
-  wd->save = eps_save;
-  wd->lowfn = eps_lowfn;
-  wd->midfn = eps_midfn;
+  wd->quiet = 0;
+  wd->repair = eps_repair;
+  wd->repair(wd);
+  wd->win_type_str = "eps";
 
-  wd->rdraw = eps_rdraw;
 
   /* Scrivo l'intestazione del file */
   fprintf(winstream, "%%!PS-Adobe-2.0 EPSF-2.0\n"
@@ -295,7 +314,7 @@ grp_window *eps_open_win(char *file, Real size_x, Real size_y) {
   return wd;
 }
 
-static int eps_save(void) {
+static int eps_save(const char *unused) {
   fclose((FILE *) grp_win->ptr);
   return 1;
 }

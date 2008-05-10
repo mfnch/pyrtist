@@ -60,53 +60,39 @@ static void not_available(void) {
 
 static void bb_close_win(void) {return;}
 
-static void bb_rreset(void) {return;}
-
-static void bb_rinit(void) {return;}
-
-static void bb_rdraw(DrawStyle style) {return;}
-
-static void bb_rline(Point a, Point b) {
+static void bb_rline(Point *a, Point *b) {
 #ifdef DEBUG
   printf("line\n");
 #endif
-  got_point(a.x, a.y); got_point(b.x, b.y);
+  got_point(a->x, a->y); got_point(b->x, b->y);
 }
 
-static void bb_rcong(Point a, Point b, Point c) {
+static void bb_rcong(Point *a, Point *b, Point *c) {
 #ifdef DEBUG
   printf("cong\n");
 #endif
-  got_point(a.x, a.y); got_point(b.x, b.y);
-  got_point(c.x, c.y); got_point(a.x + c.x - b.x, a.y + c.y - b.y);
+  got_point(a->x, a->y); got_point(b->x, b->y);
+  got_point(c->x, c->y); got_point(a->x + c->x - b->x, a->y + c->y - b->y);
 }
 
-static void bb_rcircle(Point ctr, Point a, Point b) {
+static void bb_rcircle(Point *ctr, Point *a, Point *b) {
   Point va, vb;
 #ifdef DEBUG
   printf("circle\n");
 #endif
-  va.x = a.x - ctr.x; va.y = a.y - ctr.y;
-  vb.x = b.x - ctr.x; vb.y = b.y - ctr.y;
+  va.x = a->x - ctr->x; va.y = a->y - ctr->y;
+  vb.x = b->x - ctr->x; vb.y = b->y - ctr->y;
 
-  got_point(a.x + vb.x, a.y + vb.y);
-  got_point(a.x - vb.x, a.y - vb.y);
-  got_point(ctr.x - vb.x + va.x, ctr.y - va.y + vb.y);
-  got_point(ctr.x - vb.x - va.x, ctr.y - va.y - vb.y);
+  got_point(a->x + vb.x, a->y + vb.y);
+  got_point(a->x - vb.x, a->y - vb.y);
+  got_point(ctr->x - vb.x + va.x, ctr->y - va.y + vb.y);
+  got_point(ctr->x - vb.x - va.x, ctr->y - va.y - vb.y);
 
 }
 
-static void bb_rfgcolor(Real r, Real g, Real b) {return;}
-
-static void bb_rbgcolor(Real r, Real g, Real b) {return;}
-
 static void bb_text(Point *p, const char *text) {got_point(p->x, p->y);}
 
-static void bb_font(Point *p, const char *text) {return;}
-
 static void bb_fake_point(Point *p) {got_point(p->x, p->y);}
-
-static int bb_save(void) {return 1;}
 
 /* Queste funzioni non sono disponibili per finestre postscript
  */
@@ -114,21 +100,24 @@ static void (*bb_lowfn[])() = {
   bb_close_win, not_available, not_available, not_available
 };
 
-/* Lista delle funzioni di rasterizzazione */
-static void (*bb_midfn[])() = {
-  bb_rreset, bb_rinit,
-  bb_rline, bb_rcong, not_available,
-  bb_rcircle, bb_rfgcolor, bb_rbgcolor,
-  not_available, bb_text, bb_font,
-  bb_fake_point
-};
+/** Set the default methods to the bb window */
+static void bb_repair(GrpWindow *w) {
+  grp_window_block(w);
+  w->lowfn = bb_lowfn;
+  w->rline = bb_rline;
+  w->rcong = bb_rcong;
+  w->rcircle = bb_rcircle;
+  w->text = bb_text;
+  w->fake_point = bb_fake_point;
+}
 
 void bb_bounding_box(grp_window *figure, Point *bb_min, Point *bb_max) {
   grp_window *cur_win = grp_win, bb;
-  bb.save = bb_save;
-  bb.lowfn = bb_lowfn;
-  bb.midfn = bb_midfn;
-  bb.rdraw = bb_rdraw;
+  /* Ora do' le procedure per gestire la finestra */
+  bb.quiet = 1;
+  bb.repair = bb_repair;
+  bb.repair(& bb);
+  bb.win_type_str = "bb";
   bb_num_points = 0;
   grp_win = & bb;
   aput_identity_matrix(fig_matrix);

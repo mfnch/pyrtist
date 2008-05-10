@@ -93,30 +93,25 @@ void rst__poly(Point *p, int n);
 void rst_reset(void);
 void rst_init(void);
 static void rst_draw(DrawStyle style);
-void rst_line(Point a, Point b);
-void rst_cong(Point a, Point b, Point c);
-void rst_curve(Point a, Point b, Point c, Real cut);
-void rst_circle(Point ctr, Point a, Point b);
+void rst_line(Point *a, Point *b);
+void rst_cong(Point *a, Point *b, Point *c);
+void rst_curve(Point *a, Point *b, Point *c, Real cut);
+void rst_circle(Point *ctr, Point *a, Point *b);
 void rst_poly(Point *p, int n);
 void rst_fgcolor(Real r, Real g, Real b);
 void rst_bgcolor(Real r, Real g, Real b);
 static void rst_fake_point(Point *p);
 
-static void not_available(void) {
-  ERRORMSG("not_available", "Not available for bitmapped windows.");
-}
-
-/* Lista delle funzioni di rasterizzazione */
-void (*rst_midfn[])() = {
-  rst_reset, rst_init,
-  rst_line, rst_cong, rst_curve,
-  rst_circle, rst_fgcolor, rst_bgcolor,
-  rst_poly, not_available, not_available,
-  rst_fake_point
-};
-
-void rst_set_methods(grp_window *gw) {
-  gw->rdraw = rst_draw;
+void rst_repair(grp_window *w) {
+  w->rreset = rst_reset;
+  w->rinit = rst_init;
+  w->rdraw = rst_draw;
+  w->rline = rst_line;
+  w->rcong = rst_cong;
+  w->rcircle = rst_circle;
+  w->rfgcolor = rst_fgcolor;
+  w->rbgcolor = rst_bgcolor;
+  w->fake_point = rst_fake_point;
 }
 
 /***************************************************************************************/
@@ -403,13 +398,12 @@ static void rst_draw(DrawStyle style) {
  * DESCRIZIONE: Rasterizza la linea congiungente i due punti a e b.
  * NOTA: Le coordinate dei punti sono coordinate relative.
  */
-void rst_line(Point a, Point b) {
-  a.x = CV_XF_A(a.x);
-  a.y = CV_YF_A(a.y);
-  b.x = CV_XF_A(b.x);
-  b.y = CV_YF_A(b.y);
+void rst_line(Point *a, Point *b) {
+  Point ia, ib;
+  ia.x = CV_XF_A(a->x); ia.y = CV_YF_A(a->y);
+  ib.x = CV_XF_A(b->x); ib.y = CV_YF_A(b->y);
 
-  rst__line( & a, & b );
+  rst__line(& ia, & ib);
 }
 
 /* NOME: rst__line
@@ -481,15 +475,16 @@ void rst__line(Point *pa, Point *pb) {
  *  e curva finendo in c.
  * NOTA: Le coordinate dei punti sono coordinate relative.
  */
-void rst_cong(Point a, Point b, Point c) {
-  a.x = CV_XF_A(a.x);
-  a.y = CV_YF_A(a.y);
-  b.x = CV_XF_A(b.x);
-  b.y = CV_YF_A(b.y);
-  c.x = CV_XF_A(c.x);
-  c.y = CV_YF_A(c.y);
+void rst_cong(Point *a, Point *b, Point *c) {
+  Point ia, ib, ic;
+  ia.x = CV_XF_A(a->x);
+  ia.y = CV_YF_A(a->y);
+  ib.x = CV_XF_A(b->x);
+  ib.y = CV_YF_A(b->y);
+  ic.x = CV_XF_A(c->x);
+  ic.y = CV_YF_A(c->y);
 
-  rst__cong( & a, & b, & c );
+  rst__cong(& ia, & ib, & ic);
 }
 
 /* NOME: rst__cong
@@ -641,15 +636,16 @@ void rst__cong(Point *pa, Point *pb, Point *pc) {
  *  i punti a, b e c.
  * NOTA: Le coordinate dei punti sono coordinate relative.
  */
-void rst_curve(Point a, Point b, Point c, Real cut) {
-  a.x = CV_XF_A(a.x);
-  a.y = CV_YF_A(a.y);
-  b.x = CV_XF_A(b.x);
-  b.y = CV_YF_A(b.y);
-  c.x = CV_XF_A(c.x);
-  c.y = CV_YF_A(c.y);
+void rst_curve(Point *a, Point *b, Point *c, Real cut) {
+  Point ia, ib, ic;
+  ia.x = CV_XF_A(a->x);
+  ia.y = CV_YF_A(a->y);
+  ib.x = CV_XF_A(b->x);
+  ib.y = CV_YF_A(b->y);
+  ic.x = CV_XF_A(c->x);
+  ic.y = CV_YF_A(c->y);
 
-  rst__curve( & a, & b, & c, cut);
+  rst__curve(& ia, & ib, & ic, cut);
 }
 
 /* NOME: rst__curve
@@ -700,24 +696,18 @@ void rst__curve(Point *pa, Point *pb, Point *pc, Real c) {
  *   va = a - ctr  e  vb = b - ctr, dove a e b sono passati come argomenti
  *  a rst_circle.
  */
-void rst_circle(Point ctr, Point a, Point b) {
+void rst_circle(Point *pctr, Point *pa, Point *pb) {
+  Point ctr, a, b;
   Int iy, y1, y2;
   Real xmin, xmax, ymin, ymax;
   Real C, C2, D, k1, k2, x, dx, y;
 
-  a.x = CV_XF_A(a.x - ctr.x);
-  a.y = CV_YF_A(a.y - ctr.y);
-  b.x = CV_XF_A(b.x - ctr.x);
-  b.y = CV_YF_A(b.y - ctr.y);
-  ctr.x = CV_XF_A(ctr.x);
-  ctr.y = CV_YF_A(ctr.y);
-
-  PRNMSG("[rst_circle: a.x = "); PRNFLT(a.x);
-  PRNMSG("; a.y = "); PRNFLT(a.y);
-  PRNMSG("; b.x = "); PRNFLT(b.x);
-  PRNMSG("; b.y = "); PRNFLT(b.y);
-
-  PRNMSG("esco?");
+  a.x = CV_XF_A(pa->x - pctr->x);
+  a.y = CV_YF_A(pa->y - pctr->y);
+  b.x = CV_XF_A(pb->x - pctr->x);
+  b.y = CV_YF_A(pb->y - pctr->y);
+  ctr.x = CV_XF_A(pctr->x);
+  ctr.y = CV_YF_A(pctr->y);
 
   C2 = a.y * a.y + b.y * b.y;
   C = sqrt(C2);

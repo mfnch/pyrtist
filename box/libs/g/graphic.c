@@ -31,11 +31,6 @@
 #include "graphic.h"    /* Dichiaro alcune strutture grafiche generali */
 #include "gpath.h"
 
-/* Descrittore della finestra attualmente in uso: lo faccio puntare
- * ad una finestra che da solo errori (vedi piu' avanti).
- */
-grp_window *grp_win = & grp_empty_win;
-
 /* Costanti moltiplicative usate per convertire: */
 /*  - lunghezze in millimetri: */
 Real grp_tomm  = 1.0;
@@ -43,46 +38,6 @@ Real grp_tomm  = 1.0;
 Real grp_torad = grp_radperdeg;
 /* - risoluzioni in punti per millimetro: */
 Real grp_toppmm = grp_ppmmperdpi;
-
-/********************************************************************/
-/*           FUNZIONI DI INIZIALIZZAZIONE DELLA LIBRERIA            */
-/********************************************************************/
-
-/* Creo una finestra priva di qualsiasi funzione: essa dara' un errore
- * per qualsiasi operazione s tenti di eseguire.
- * La finestra cosi' creata sara' la finestra iniziale, che corrisponde
- * allo stato "nessuna finestra ancora aperta" (in modo da evitare
- * accidentali "segmentation fault").
- */
-
-static void win_not_opened(void) {
-  ERRORMSG("win_not_opened", "Nessuna finestra aperta");
-  return;
-}
-
-/* Lista delle funzioni di basso livello (non disponibili) */
-static void (*wno_lowfn[])() = {
-  win_not_opened, win_not_opened, win_not_opened, win_not_opened
-};
-
-/* Lista delle funzioni di rasterizzazione */
-static void (*wno_midfn[])() = {
-  win_not_opened, win_not_opened, win_not_opened,
-  win_not_opened, win_not_opened, win_not_opened,
-  win_not_opened, win_not_opened, win_not_opened,
-  win_not_opened, win_not_opened
-};
-
-grp_window grp_empty_win = {
-  NULL, 0.0, 0.0, 0.0, 0.0,    /* ptr, ltx, lty, rdx, rdy */
-  0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  /* minx, miny, maxx, maxy, lx, ly */
-  0.0, 0.0, 0.0, 0.0, 0.0, 0.0,  /* versox, versoy, stepx, stepy, resx, resy */
-  0, 0, NULL, NULL, NULL,      /* numptx, numpty, bgcol, fgcol, pal */
-  0, 0, 0, NULL,           /* bitperpixel, bytesperline, dim, wrdep */
-  win_not_opened,  /* save */
-  wno_lowfn,    /* lowfn */
-  wno_midfn    /* midfn */
-};
 
 /********************************************************************/
 /*             FUNZIONI GENERALI DI CALCOLO GEOMETRICO              */
@@ -342,11 +297,11 @@ static int grp_draw_gpath_iterator(Int index, GPathPiece *piece, void *data) {
   Point *p = & (piece->p[0]);
   switch(piece->kind) {
   case GPATHKIND_LINE:
-    grp_rline(p[0], p[1]);
+    grp_rline(& p[0], & p[1]);
     return 0;
 
   case GPATHKIND_ARC:
-    grp_rcong(p[0], p[1], p[2]);
+    grp_rcong(& p[0], & p[1], & p[2]);
     return 0;
 
   default:
@@ -357,3 +312,99 @@ static int grp_draw_gpath_iterator(Int index, GPathPiece *piece, void *data) {
 void grp_draw_gpath(GPath *gp) {
   (void) gpath_iter(gp, grp_draw_gpath_iterator, (void *) NULL);
 }
+
+/****************************************************************************/
+/*  DEFINITION OF A DUMMY WINDOW WHICH DOES NOTHING OR JUST REPORTS ERRORS  */
+/****************************************************************************/
+
+/* Creo una finestra priva di qualsiasi funzione: essa dara' un errore
+ * per qualsiasi operazione s tenti di eseguire.
+ * La finestra cosi' creata sara' la finestra iniziale, che corrisponde
+ * allo stato "nessuna finestra ancora aperta" (in modo da evitare
+ * accidentali "segmentation fault").
+ */
+
+static void win_not_opened(void) {
+  ERRORMSG("win_not_opened", "Nessuna finestra aperta");
+  return;
+}
+
+/* Lista delle funzioni di basso livello (non disponibili) */
+static void (*wno_lowfn[])() = {
+  win_not_opened, win_not_opened, win_not_opened, win_not_opened
+};
+
+
+static void dummy_err(GrpWindow *w, const char *method) {
+  if (! w->quiet) {
+    fprintf(stderr, "%s.%s: method is not implemented.\n",
+            w->win_type_str, method);
+  }
+}
+
+static void dummy_rreset(void) {dummy_err(grp_win, "rreset");}
+static void dummy_rinit(void) {dummy_err(grp_win, "rinit");}
+static void dummy_rdraw(DrawStyle style) {dummy_err(grp_win, "rdraw");}
+static void dummy_rline(Point *a, Point *b) {dummy_err(grp_win, "rline");}
+static void dummy_rcong(Point *a, Point *b, Point *c) {
+  dummy_err(grp_win, "rcong");
+}
+static void dummy_rcircle(Point *ctr, Point *a, Point *b) {
+  dummy_err(grp_win, "rcircle");
+}
+static void dummy_rfgcolor(Real r, Real g, Real b) {
+  dummy_err(grp_win, "rfgcolor");
+}
+static void dummy_rbgcolor(Real r, Real g, Real b) {
+  dummy_err(grp_win, "rbgcolor");
+}
+static void dummy_text(Point *p, const char *text) {
+  dummy_err(grp_win, "text");
+}
+static void dummy_font(const char *font, Real size) {
+  dummy_err(grp_win, "font");
+}
+static void dummy_fake_point(Point *p) {dummy_err(grp_win, "fake_point");}
+static int dummy_save(const char *file_name) {
+  dummy_err(grp_win, "save");
+  return 1;
+}
+
+void grp_window_block(GrpWindow *w) {
+  w->rreset = dummy_rreset;
+  w->rinit = dummy_rinit;
+  w->rdraw = dummy_rdraw;
+  w->rline = dummy_rline;
+  w->rcong = dummy_rcong;
+  w->rcircle = dummy_rcircle;
+  w->rfgcolor = dummy_rfgcolor;
+  w->rbgcolor = dummy_rbgcolor;
+  w->text = dummy_text;
+  w->font = dummy_font;
+  w->fake_point = dummy_fake_point;
+  w->save = dummy_save;
+  w->lowfn = wno_lowfn;
+}
+
+GrpWindow grp_dummy_win = {
+  "blocked",
+  dummy_rreset,
+  dummy_rinit,
+  dummy_rdraw,
+  dummy_rline,
+  dummy_rcong,
+  dummy_rcircle,
+  dummy_rfgcolor,
+  dummy_rbgcolor,
+  dummy_text,
+  dummy_font,
+  dummy_fake_point,
+  dummy_save,
+  0, /* quiet */
+  grp_window_block /* repair */
+};
+
+/* Descrittore della finestra attualmente in uso: lo faccio puntare
+ * ad una finestra che da solo errori (vedi piu' avanti).
+ */
+grp_window *grp_win = & grp_dummy_win;

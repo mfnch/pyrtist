@@ -75,6 +75,14 @@ static void (*gr4b_lowfn[])() = {
 /***************************************************************************************/
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
 
+/** Set the default methods to the gr4b window */
+static void gr4b_repair(GrpWindow *wd) {
+  grp_window_block(wd);
+  rst_repair(wd);
+  wd->save = grbm_save_to_bmp;
+  wd->lowfn = gr4b_lowfn;
+}
+
 /* NOME: gr4b_open_win
  * DESCRIZIONE: Apre una finestra grafica di forma rettangolare
  *  associando all'angolo in alto a sinistra le coordinate (ltx, lty)
@@ -195,11 +203,10 @@ grp_window *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
   WRDP(wd)->fxormask = 0x11 * 15;
 
   /* Ora do' le procedure per gestire la finestra */
-  wd->save = grbm_save_to_bmp;
-  wd->lowfn = gr4b_lowfn;
-  wd->midfn = rst_midfn;
-  rst_set_methods(wd);
-
+  wd->quiet = 0;
+  wd->repair = gr4b_repair;
+  wd->repair(wd);
+  wd->win_type_str = "bm4";
   return wd;
 }
 

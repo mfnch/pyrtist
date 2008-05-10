@@ -49,10 +49,9 @@ static void not_available(void);
 void fig_rreset(void);
 void fig_rinit(void);
 void fig_rdraw(DrawStyle style);
-void fig_rline(Point a, Point b);
-void fig_rcong(Point a, Point b, Point c);
-void fig_rcurve(Point a, Point b, Point c, Real cut);
-void fig_rcircle(Point ctr, Point a, Point b);
+void fig_rline(Point *a, Point *b);
+void fig_rcong(Point *a, Point *b, Point *c);
+void fig_rcircle(Point *ctr, Point *a, Point *b);
 void fig_rfgcolor(Real r, Real g, Real b);
 void fig_rbgcolor(Real r, Real g, Real b);
 static void fig_text(Point *p, const char *text);
@@ -66,15 +65,6 @@ static void (*fig_lowfn[])() = {
   not_available,
   not_available,
   not_available
-};
-
-/* Lista delle funzioni di rasterizzazione */
-void (*fig_midfn[])() = {
-  fig_rreset, fig_rinit,
-  fig_rline, fig_rcong, fig_rcurve,
-  fig_rcircle, fig_rfgcolor, fig_rbgcolor,
-  not_available, fig_text, fig_font,
-  fig_fake_point
 };
 
 /*#define grp_activelayer (((struct fig_header *) grp_win->wrdep)->current)*/
@@ -121,6 +111,24 @@ typedef struct layer_header LayerHeader;
 
 /***************************************************************************************/
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
+
+/** Set the default methods to the gr1b window */
+static void fig_repair(GrpWindow *w) {
+  grp_window_block(w);
+  w->rreset = fig_rreset;
+  w->rinit = fig_rinit;
+  w->rdraw = fig_rdraw;
+  w->rline = fig_rline;
+  w->rcong = fig_rcong;
+  w->rcircle = fig_rcircle;
+  w->rfgcolor = fig_rfgcolor;
+  w->rbgcolor = fig_rbgcolor;
+  w->text = fig_text;
+  w->font = fig_font;
+  w->fake_point = fig_fake_point;
+  w->save = fig_save;
+  w->lowfn = fig_lowfn;
+}
 
 /* I puntatori alle funzioni non disponibili con finestre di tipo "fig"
  * vengono fatti puntare a questa funzione
@@ -217,11 +225,11 @@ grp_window *fig_open_win(int numlayers) {
   wd->ptr = buff_ptr(laylist);
 
   wd->wrdep = (void *) figh;
-  wd->save = fig_save;
-  wd->lowfn = fig_lowfn;
-  wd->midfn = fig_midfn;
 
-  wd->rdraw = fig_rdraw;
+  wd->quiet = 0;
+  wd->repair = fig_repair;
+  wd->repair(wd);
+  wd->win_type_str = "fig";
 
   PRNMSG("Ok!\n");
   return wd;
@@ -446,7 +454,7 @@ void fig_clear_layer(int l) {
 /* Enumero gli ID di tutti i comandi */
 enum ID_type {
   ID_rreset = 1, ID_rinit, ID_rdraw, ID_rline,
-  ID_rcong, ID_rcurve, ID_rcircle, ID_rfgcolor, ID_rbgcolor,
+  ID_rcong, ID_rcircle, ID_rfgcolor, ID_rbgcolor,
   ID_text, ID_font, ID_fake_point
 };
 
@@ -541,43 +549,33 @@ void fig_rdraw(DrawStyle style) {
   _fig_insert_command(ID_rdraw, args);
 }
 
-void fig_rline(Point a, Point b) {
+void fig_rline(Point *a, Point *b) {
   struct cmnd_args {Point a, b;} *cmnda;
   BEGIN_CMND( "fig_rline", sizeof(struct cmnd_args) );
   cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
 
   *cmndh = (struct cmnd_header) {ID_rline, sizeof(struct cmnd_args) };
-  *cmnda = (struct cmnd_args) {a, b};
+  *cmnda = (struct cmnd_args) {*a, *b};
   PRNMSG("Ok!\n");
 }
 
-void fig_rcong(Point a, Point b, Point c) {
+void fig_rcong(Point *a, Point *b, Point *c) {
   struct cmnd_args {Point a, b, c;} *cmnda;
   BEGIN_CMND( "fig_rcong", sizeof(struct cmnd_args) );
   cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
 
   *cmndh = (struct cmnd_header) {ID_rcong, sizeof(struct cmnd_args) };
-  *cmnda = (struct cmnd_args) {a, b, c};
+  *cmnda = (struct cmnd_args) {*a, *b, *c};
   PRNMSG("Ok!\n");
 }
 
-void fig_rcurve(Point a, Point b, Point c, Real cut) {
-  struct cmnd_args {Point a, b, c; Real cut;} *cmnda;
-  BEGIN_CMND( "fig_rcurve", sizeof(struct cmnd_args) );
-  cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
-
-  *cmndh = (struct cmnd_header) {ID_rcurve, sizeof(struct cmnd_args) };
-  *cmnda = (struct cmnd_args) {a, b, c, cut};
-  PRNMSG("Ok!\n");
-}
-
-void fig_rcircle(Point ctr, Point a, Point b) {
+void fig_rcircle(Point *ctr, Point *a, Point *b) {
   struct cmnd_args {Point ctr, a, b;} *cmnda;
   BEGIN_CMND( "fig_rcircle", sizeof(struct cmnd_args) );
   cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
 
   *cmndh = (struct cmnd_header) {ID_rcircle, sizeof(struct cmnd_args) };
-  *cmnda = (struct cmnd_args) {ctr, a, b};
+  *cmnda = (struct cmnd_args) {*ctr, *a, *b};
   PRNMSG("Ok!\n");
 }
 
@@ -729,7 +727,7 @@ void fig_draw_layer(grp_window *source, int l) {
 
       tp[0] = args->a; tp[1] = args->b;
       fig_ltransform( tp, 2 );
-      grp_rline(tp[0], tp[1]);
+      grp_rline(& tp[0], & tp[1]);
       } break;
 
     case ID_rcong: {
@@ -737,15 +735,7 @@ void fig_draw_layer(grp_window *source, int l) {
 
       tp[0] = args->a; tp[1] = args->b; tp[2] = args->c;
       fig_ltransform( tp, 3 );
-      grp_rcong(tp[0], tp[1], tp[2]);
-      } break;
-
-    case ID_rcurve: {
-      struct {Point a, b, c; Real cut;} *args = cmnd.ptr;
-
-      tp[0] = args->a; tp[1] = args->b; tp[2] = args->c;
-      fig_ltransform( tp, 3 );
-      grp_rcurve(tp[0], tp[1], tp[2], args->cut);
+      grp_rcong(& tp[0], & tp[1], & tp[2]);
       } break;
 
     case ID_rcircle: {
@@ -753,7 +743,7 @@ void fig_draw_layer(grp_window *source, int l) {
 
       tp[0] = args->ctr; tp[1] = args->a; tp[2] = args->b;
       fig_ltransform( tp, 3 );
-      grp_rcircle(tp[0], tp[1], tp[2]);
+      grp_rcircle(& tp[0], & tp[1], & tp[2]);
       } break;
 
     case ID_rfgcolor: {

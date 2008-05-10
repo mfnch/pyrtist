@@ -90,7 +90,7 @@ static Task _poly_point(Window *w, Point *p, int omit_line) {
       printf("Corner (%g, %g) (%g, %g) (%g, %g)\n",
              wp->lastb.x, wp->lastb.y, last->x, last->y, lastb.x, lastb.y);
 #endif
-      grp_rcong(wp->lastb, *last, lastb);
+      grp_rcong(& wp->lastb, last, & lastb);
     }
 
     if (!omit_line) {
@@ -98,7 +98,7 @@ static Task _poly_point(Window *w, Point *p, int omit_line) {
       printf("Line (%g, %g) (%g, %g)\n",
              lastb.x, lastb.y, pb.x, pb.y);
 #endif
-      grp_rline(lastb, pb);
+      grp_rline(& lastb, & pb);
     }
     grp_win = cur_win;
 

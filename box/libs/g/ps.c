@@ -41,15 +41,15 @@ static void ps_close_win(void);
 static void ps_rreset(void);
 static void ps_rinit(void);
 static void ps_rdraw(DrawStyle style);
-static void ps_rline(Point a, Point b);
-static void ps_rcong(Point a, Point b, Point c);
-static void ps_rcircle(Point ctr, Point a, Point b);
+static void ps_rline(Point *a, Point *b);
+static void ps_rcong(Point *a, Point *b, Point *c);
+static void ps_rcircle(Point *ctr, Point *a, Point *b);
 static void ps_rfgcolor(Real r, Real g, Real b);
 static void ps_fake_point(Point *p);
 #if 0
 static void ps_rbgcolor(Real r, Real g, Real b);
 #endif
-static int ps_save(void);
+static int ps_save(const char *unused);
 
 static void not_available(void) {
   ERRORMSG("not_available", "Not available for postscript windows.");
@@ -61,15 +61,6 @@ static void (*ps_lowfn[])() = {
   ps_close_win, not_available, not_available, not_available
 };
 
-/* Lista delle funzioni di rasterizzazione */
-static void (*ps_midfn[])() = {
-  ps_rreset, ps_rinit,
-  ps_rline, ps_rcong, not_available,
-  ps_rcircle, ps_rfgcolor, not_available,
-  not_available, not_available, not_available,
-  ps_fake_point
-};
-
 /* Variabili usate dalle procedure per scrivere il file postscript */
 static int beginning_of_line = 1, beginning_of_path = 1;
 static long previous_px, previous_py;
@@ -79,8 +70,8 @@ static long previous_px, previous_py;
  *  1 unita' = 1/72 inch = 0.35277777... millimetri
  */
 #define PS_POINT(p, px, py) \
-  long px = (p.x * 283.46457), \
-       py = (p.y * 283.46457);
+  long px = (p->x * 283.46457), \
+       py = (p->y * 283.46457);
 
 static void ps_close_win(void) {fclose((FILE *) grp_win->ptr);}
 
@@ -109,8 +100,7 @@ static void ps_rdraw(DrawStyle style) {
   }
 }
 
-static void ps_rline(Point a, Point b)
-{
+static void ps_rline(Point *a, Point *b) {
   PS_POINT(a, ax, ay); PS_POINT(b, bx, by);
 
   if ( beginning_of_line ) {
@@ -142,7 +132,7 @@ static void ps_rline(Point a, Point b)
   }
 }
 
-static void ps_rcong(Point a, Point b, Point c) {
+static void ps_rcong(Point *a, Point *b, Point *c) {
   PS_POINT(a, ax, ay); PS_POINT(b, bx, by); PS_POINT(c, cx, cy);
   int a_eq_b = ax == bx && ay == by,
       a_eq_c = ax == cx && ay == cy,
@@ -160,7 +150,7 @@ static void ps_rcong(Point a, Point b, Point c) {
   return;
 }
 
-static void ps_rcircle(Point ctr, Point a, Point b) {
+static void ps_rcircle(Point *ctr, Point *a, Point *b) {
   PS_POINT(ctr, cx, cy); PS_POINT(a, ax, ay); PS_POINT(b, bx, by);
 
   if ( beginning_of_path )
@@ -186,12 +176,27 @@ static void ps_rbgcolor(Real r, Real g, Real b) {return;}
 /***************************************************************************************/
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
 
+/** Set the default methods to the ps window */
+static void ps_repair(GrpWindow *w) {
+  grp_window_block(w);
+  w->lowfn = ps_lowfn;
+  w->rreset = ps_rreset;
+  w->rinit = ps_rinit;
+  w->rdraw = ps_rdraw;
+  w->rline = ps_rline;
+  w->rcong = ps_rcong;
+  w->rcircle = ps_rcircle;
+  w->rfgcolor = ps_rfgcolor;
+  w->fake_point = ps_fake_point;
+  w->save = ps_save;
+}
+
 /* NOME: ps_open_win
  * DESCRIZIONE: Apre una finestra grafica di tipo postscript.
  *  Tale finestra tradurra' i comandi grafici ricevuti in istruzioni postscript,
  *  che saranno scritte immediatamente su file.
  */
-grp_window *ps_open_win(char *file) {
+grp_window *ps_open_win(const char *file) {
   grp_window *wd;
   FILE *winstream;
 
@@ -235,11 +240,10 @@ grp_window *ps_open_win(char *file) {
   if ( wd->fgcol == NULL ) return NULL;*/
 
   /* Ora do' le procedure per gestire la finestra */
-  wd->save = ps_save;
-  wd->lowfn = ps_lowfn;
-  wd->midfn = ps_midfn;
-
-  wd->rdraw = ps_rdraw;
+  wd->quiet = 0;
+  wd->repair = ps_repair;
+  wd->repair(wd);
+  wd->win_type_str = "ps";
 
   /* Scrivo l'intestazione del file */
   fprintf(winstream,
@@ -269,7 +273,7 @@ grp_window *ps_open_win(char *file) {
   return wd;
 }
 
-static int ps_save(void) {
+static int ps_save(const char *unused) {
   fclose((FILE *) grp_win->ptr);
   return 1;
 }

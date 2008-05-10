@@ -87,6 +87,14 @@ static unsigned char fandmask[2] = {0x00, 0xff};
 /***************************************************************************************/
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
 
+/** Set the default methods to the gr1b window */
+static void gr1b_repair(GrpWindow *wd) {
+  grp_window_block(wd);
+  rst_repair(wd);
+  wd->save = grbm_save_to_bmp;
+  wd->lowfn = gr1b_lowfn;
+}
+
 /* NOME: gr1b_open_win
  * DESCRIZIONE: Apre una finestra grafica di forma rettangolare
  *  associando all'angolo in alto a sinistra le coordinate (ltx, lty)
@@ -206,11 +214,10 @@ grp_window *gr1b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
   WRDP(wd)->fxormask = fxormask[1];
 
   /* Ora do' le procedure per gestire la finestra */
-  wd->save = grbm_save_to_bmp;
-  wd->lowfn = gr1b_lowfn;
-  wd->midfn = rst_midfn;
-  rst_set_methods(wd);
-
+  wd->quiet = 0;
+  wd->repair = gr1b_repair;
+  wd->repair(wd);
+  wd->win_type_str = "bm1";
   return wd;
 }
 

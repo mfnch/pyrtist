@@ -59,7 +59,32 @@ typedef struct {
 } palette;
 
 /* Descrittore di una finestra grafica */
-typedef struct {
+typedef struct _grp_window {
+  /** String which identifies the type of the window */
+  char *win_type_str;
+
+  void (*rreset)(void);
+  void (*rinit)(void);
+  void (*rdraw)(DrawStyle style);
+  void (*rline)(Point *a, Point *b);
+  void (*rcong)(Point *a, Point *b, Point *c);
+  void (*rcircle)(Point *ctr, Point *a, Point *b);
+  void (*rfgcolor)(Real r, Real g, Real b);
+  void (*rbgcolor)(Real r, Real g, Real b);
+  void (*text)(Point *p, const char *text);
+  void (*font)(const char *font, Real size);
+  void (*fake_point)(Point *p);
+  /** Used to save the window to a file */
+  int (*save)(const char *file_name);
+
+  /** If set to 1, inhibits error messages */
+  int quiet;
+
+  /** Restore the window methods, which may have been changed after an error
+   * has occurred.
+   */
+  void (*repair)(struct _grp_window *w);
+
   void *ptr;           /* Puntatore alla zona di memoria della finestra */
   Real ltx, lty;       /* Coordinate dell'angolo in alto a sinistra (in mm)*/
   Real rdx, rdy;       /* Coordinate dell'angolo in basso a destra (in mm) */
@@ -78,18 +103,17 @@ typedef struct {
   long dim;            /* Dimensione totale in byte della finestra */
   void *wrdep;         /* Puntatore alla struttura dei dati dipendenti dalla scrittura */
 
-  /* Puntatore alle procedura per salvare la finestra su disco */
-  int (*save)();
-
   /* Puntatore alle procedure di basso livello per gestire la finestra */
   void (**lowfn)();
 
+#if 0
   /* Puntatore alle procedure di medio livello per gestire la finestra */
   void (**midfn)();
-
-  void (*rdraw)(DrawStyle style);
+#endif
 
 } grp_window;
+
+#define GrpWindow grp_window
 
 /* Dati importanti per la libreria */
 /* Finestra attualmente in uso */
@@ -111,10 +135,12 @@ grp_window *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
 grp_window *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
                           Real resx, Real resy);
 grp_window *fig_open_win(int numlayers);
-grp_window *ps_open_win(char *file);
-grp_window *eps_open_win(char *file, Real x, Real y);
+grp_window *ps_open_win(const char *file);
+grp_window *eps_open_win(const char *file, Real x, Real y);
 int ps_save_fig(const char *file_name, grp_window *figure);
 int eps_save_fig(const char *file_name, grp_window *figure);
+
+void grp_window_block(GrpWindow *w);
 
 /* Procedure per la gestione di una palette */
 void grp_color_build(Real r, Real g, Real b, color *c);
@@ -126,7 +152,7 @@ int grp_palette_transform(palette *p, int (*operation)(palitem *pi));
 void grp_palette_destroy(palette *p);
 void grp_draw_gpath(GPath *gp);
 
-void rst_set_methods(grp_window *gw);
+void rst_repair(grp_window *gw);
 
 Point *grp_ref(Point *o, Point *v, Point *p);
 
@@ -138,18 +164,17 @@ Point *grp_ref(Point *o, Point *v, Point *p);
 #define grp_save(s)          (grp_win->save)(s)
 
 /* Funzioni grafiche di medio livello (di rasterizzazione) */
-#define grp_rreset     (grp_win->midfn[0])
-#define grp_rinit      (grp_win->midfn[1])
+#define grp_rreset     (grp_win->rreset)
+#define grp_rinit      (grp_win->rinit)
 #define grp_rdraw      (grp_win->rdraw)
-#define grp_rline      (grp_win->midfn[2])
-#define grp_rcong      (grp_win->midfn[3])
-#define grp_rcurve     (grp_win->midfn[4])
-#define grp_rcircle    (grp_win->midfn[5])
-#define grp_rfgcolor   (grp_win->midfn[6])
-#define grp_rbgcolor   (grp_win->midfn[7])
-#define grp_text       (grp_win->midfn[9])
-#define grp_font       (grp_win->midfn[10])
-#define grp_fake_point (grp_win->midfn[11])
+#define grp_rline      (grp_win->rline)
+#define grp_rcong      (grp_win->rcong)
+#define grp_rcircle    (grp_win->rcircle)
+#define grp_rfgcolor   (grp_win->rfgcolor)
+#define grp_rbgcolor   (grp_win->rbgcolor)
+#define grp_text       (grp_win->text)
+#define grp_font       (grp_win->font)
+#define grp_fake_point (grp_win->fake_point)
 
 /* Macro per la conversione fra diverse unità di misura */
 /* Lunghezze */
