@@ -35,14 +35,6 @@
 #  undef _DEF_WINDOW_SUBOBJECTS
 
 typedef struct {
-  struct {
-    int type : 1;
-    int size : 1;
-  } have;
-
-  enum {BM1, BM4, BM8, FIG, PS} type;
-  Point size, origin, res;
-
   GrpWindowPlan plan;
 
   grp_window *window;

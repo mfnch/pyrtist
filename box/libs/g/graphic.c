@@ -420,9 +420,8 @@ grp_window *grp_win = & grp_dummy_win;
 
 /****************************************************************************/
 
-enum {HAVE_TYPE=1, HAVE_CORNER1=2, HAVE_CORNER2=4, HAVE_CORNERS=6,
-      HAVE_SIZE=8, HAVE_RESOLUTION=0x10, HAVE_FILE_NAME=0x20,
-      HAVE_NUM_LAYERS=0x40};
+enum {HAVE_TYPE=1, HAVE_ORIGIN=2, HAVE_SIZE=4, HAVE_CORNERS=6,
+      HAVE_RESOLUTION=8, HAVE_FILE_NAME=0x10, HAVE_NUM_LAYERS=0x20};
 
 typedef enum {WT_NONE=-1, WT_BM1=0, WT_BM4, WT_BM8, WT_FIG,
               WT_PS, WT_EPS, WT_CAIRO, WT_MAX} WT;
@@ -449,7 +448,7 @@ int grp_window_type_from_string(const char *type_str) {
   for(this_type = win_types;
       this_type->type_str != (char *) NULL;
       this_type++) {
-    if (strcasecmp(this_type->type_str, type_str))
+    if (strcasecmp(this_type->type_str, type_str) == 0)
       return this_type->type_num;
   }
   return WT_NONE;
@@ -474,13 +473,8 @@ GrpWindow *grp_window_open(GrpWindowPlan *plan) {
   assert(plan->type == win_types[plan->type].type_num);
   must_have = win_types[plan->type].must_have;
 
-  if ((must_have & HAVE_CORNER1) != 0 && !plan->have.corner1) {
-    g_error("Cannot open the window: first corner is missing!");
-    return (GrpWindow *) NULL;
-  }
-
-  if ((must_have & HAVE_CORNER2) != 0 && !plan->have.corner2) {
-    g_error("Cannot open the window: second corner is missing!");
+  if ((must_have & HAVE_ORIGIN) != 0 && !plan->have.origin) {
+    g_error("Cannot open the window: origin is missing!");
     return (GrpWindow *) NULL;
   }
 
@@ -506,16 +500,19 @@ GrpWindow *grp_window_open(GrpWindowPlan *plan) {
 
   switch(plan->type) {
   case WT_BM1:
-    return gr1b_open_win(plan->corner1.x, plan->corner1.y,
-                         plan->corner2.x, plan->corner2.y,
+    return gr1b_open_win(plan->origin.x, plan->origin.y,
+                         plan->origin.x + plan->size.x,
+                         plan->origin.y + plan->size.y,
                          plan->resolution.x, plan->resolution.y);
   case WT_BM4:
-    return gr4b_open_win(plan->corner1.x, plan->corner1.y,
-                         plan->corner2.x, plan->corner2.y,
+    return gr4b_open_win(plan->origin.x, plan->origin.y,
+                         plan->origin.x + plan->size.x,
+                         plan->origin.y + plan->size.y,
                          plan->resolution.x, plan->resolution.y);
   case WT_BM8:
-    return gr8b_open_win(plan->corner1.x, plan->corner1.y,
-                         plan->corner2.x, plan->corner2.y,
+    return gr8b_open_win(plan->origin.x, plan->origin.y,
+                         plan->origin.x + plan->size.x,
+                         plan->origin.y + plan->size.y,
                          plan->resolution.x, plan->resolution.y);
   case WT_FIG:
     return fig_open_win(1);

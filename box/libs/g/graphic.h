@@ -129,11 +129,12 @@ extern Real grp_toppmm;
  */
 typedef struct {
   struct {
-    int type : 1, corner1 : 1, corner2 : 1, size : 1,
+    int type : 1, origin : 1, size : 1,
         resolution : 1, file_name : 1, num_layers: 1;
   } have;
   int type;
-  Point corner1, corner2, size, resolution;
+  Point origin, size,
+        resolution; /** Resolution in points per mm */
   char *file_name;
   int num_layers;
 } GrpWindowPlan;

@@ -34,11 +34,6 @@
 
 /*#define DEBUG*/
 
-/*enum {FLAG_TYPE=0x1, FLAG_SIZE=0x2, FLAG_ORIGIN=0x4,
- FLAG_RESX=0x8, FLAG_RESY=0x10, FLAG_NUMLAYERS=0x20,
- FLAG_FILENAME=0X40};
-*/
-
 Task window_begin(VMProgram *vmp) {
   WindowPtr *wp = BOX_VM_CURRENTPTR(vmp, WindowPtr);
   Window *w;
@@ -49,30 +44,24 @@ Task window_begin(VMProgram *vmp) {
   printf("WindowPtr object: %p\n", wp);
 #endif
 
-#if 0
-  w->plan.type = grp_window_type_from_string("fig");
   w->plan.have.type = 0;
-  
-  w->plan.have.corner1 = 0;
-  w->origin.x = 0.0;
-  w->origin.y = 0.0;
-  w->size.x = 100.0;
-  w->size.y = 100.0;
-  w->res.x = 2.0;
-  w->res.y = 2.0;
-  w->have.size = 0;
-  w->save_file_name = (char *) NULL;
-#endif
+  w->plan.type = grp_window_type_from_string("fig");
 
-  w->type = FIG;
-  w->have.type = 0;
-  w->origin.x = 0.0;
-  w->origin.y = 0.0;
-  w->size.x = 100.0;
-  w->size.y = 100.0;
-  w->res.x = 2.0;
-  w->res.y = 2.0;
-  w->have.size = 0;
+  w->plan.have.origin = 1;
+  w->plan.origin.x = 0.0;
+  w->plan.origin.y = 0.0;
+
+  w->plan.have.size = 0;
+  w->plan.size.x = 100.0;
+  w->plan.size.y = 100.0;
+
+  w->plan.have.resolution = 0;
+  w->plan.resolution.x = 2.0;
+  w->plan.resolution.y = 2.0;
+
+  w->plan.have.file_name = 0;
+  w->plan.file_name = (char *) NULL;
+
   w->save_file_name = (char *) NULL;
 
   w->window = (grp_window *) NULL;
@@ -119,27 +108,18 @@ Task window_str(VMProgram *vmp) {
   Window *w = (Window *) wp;
   char *type_str = BOX_VM_ARGPTR1(vmp, char);
 
-  int i;
-# define NUM_WIN_TYPES 5
-  struct {char *type_str; int type_id;} win_type[NUM_WIN_TYPES] = {
-    {"bm1", BM1}, {"bm4", BM4}, {"bm8", BM8}, {"fig", FIG}, {"ps", PS}
-  };
+  if (w->plan.have.type) {
+    g_warning("You have already specified the window type!");
+  }
 
-  if (w->have.type) {
-    g_error("You have already specified the window type!");
+
+  w->plan.type = grp_window_type_from_string(type_str);
+  if (w->plan.type < 0) {
+    g_error("Unrecognized window type!");
     return Failed;
   }
-
-  for(i=0; i<NUM_WIN_TYPES; i++) {
-    if (strcasecmp(win_type[i].type_str, type_str) == 0) {
-      w->type = win_type[i].type_id;
-      w->have.type = 1;
-      return Success;
-    }
-  }
-
-  g_error("Unrecognized window type!");
-  return Failed;
+  w->plan.have.type = 1;
+  return Success;
 }
 
 Task window_size(VMProgram *vmp) {
@@ -147,13 +127,13 @@ Task window_size(VMProgram *vmp) {
   Window *w = (Window *) wp;
   Point *win_size = BOX_VM_ARGPTR1(vmp, Point);
 
-  if (w->have.size) {
+  if (w->plan.have.size) {
     g_error("You have already specified the window size!");
     return Failed;
   }
 
-  w->have.size = 1;
-  w->size = *win_size;
+  w->plan.have.size = 1;
+  w->plan.size = *win_size;
   return Success;
 }
 
@@ -161,6 +141,7 @@ Task window_end(VMProgram *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
   Window *w = (Window *) wp;
 
+#if 0
   switch(w->type) {
   case PS:
     if (w->save_file_name == (char *) NULL) {
@@ -197,7 +178,9 @@ Task window_end(VMProgram *vmp) {
     g_error("window_end: shouldn't happen!");
     return Failed;
   }
+#endif
 
+  w->window = grp_window_open(& w->plan);
   if (w->window == (grp_window *) NULL) {
     g_error("cannot create the window!");
     return Failed;
@@ -307,15 +290,23 @@ Task window_hot_end(VMProgram *vmp) {
  */
 Task window_file_string(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  w->save_file_name = BOX_VM_ARGPTR1(vmp, char);
+  if (w->plan.have.file_name) {
+    g_warning("You have already provided a file name for the window.");
+  }
+  w->plan.have.file_name = 1;
+  w->plan.file_name = BOX_VM_ARGPTR1(vmp, char);
   return Success;
 }
 
 Task window_res_point(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *res = BOX_VM_ARGPTR1(vmp, Point);
-  w->res.x = res->x;
-  w->res.y = res->y;
+  if (w->plan.have.resolution) {
+    g_warning("You have already provided the window resolution.");
+  }
+  w->plan.resolution.x = res->x;
+  w->plan.resolution.y = res->y;
+  w->plan.have.resolution = 1;
   return Success;
 }
 

@@ -15,6 +15,8 @@ function inspect {
   $GV $1
 }
 
+rm -f *.eps
+
 introduce "The wheatstone example"
 $BOX -l g wheatstone.box
 inspect wheatstone.eps
