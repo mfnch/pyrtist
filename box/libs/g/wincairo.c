@@ -18,6 +18,7 @@
  ****************************************************************************/
 
 #include <stdlib.h>
+#include <math.h>
 
 #include <cairo.h>
 
@@ -27,178 +28,88 @@
 #include "g.h"
 #include "wincairo.h"
 
-#if 0
-
-
-int main (int argc, char *argv[]) {
-  cairo_surface_t *surface;
-  cairo_t *cr;
-
-  surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, 240, 80);
-  cr = cairo_create (surface);
-
-  cairo_select_font_face (cr, "serif", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_BOLD);
-  cairo_set_font_size (cr, 32.0);
-  cairo_set_source_rgb (cr, 0.0, 0.0, 1.0);
-  cairo_move_to (cr, 10.0, 50.0);
-  cairo_show_text (cr, "Hello, world");
-  cairo_destroy (cr);
-  cairo_surface_write_to_png (surface, "hello.png");
-  cairo_surface_destroy (surface);
-
-  return 0;
+static void wincairo_close_win(void) {
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
+  cairo_surface_t *surface = cairo_get_target(cr);
+  cairo_destroy(cr);
+  cairo_surface_destroy(surface);
 }
-#endif
-
-GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
-#if 0
-  grp_window *wd;
-  FILE *winstream;
-  Real size_x_psunit, size_y_psunit;
-  int x_max, y_max;
-
-  /* Should express the size of the window in postscript units 1/72 of inch */
-  /* 1 inch = 25.4 mm */
-  size_x_psunit = (size_x / grp_mm_per_inch)/grp_inch_per_psunit;
-  size_y_psunit = (size_y / grp_mm_per_inch)/grp_inch_per_psunit;
-  x_max = (int) size_x_psunit+1;
-  y_max = (int) size_y_psunit+1;
-
-  /* Creo la finestra */
-  wd = (grp_window *) malloc( sizeof(grp_window) );
-  if ( wd == NULL ) {
-    ERRORMSG("eps_open_win", "Memoria esaurita");
-    return NULL;
-  }
-
-  winstream = (FILE *) malloc( sizeof(FILE) );
-  if ( winstream == NULL) {
-    ERRORMSG("eps_open_win", "Memoria esaurita");
-    free(wd);
-    return NULL;
-  }
-
-  /* Apro il file su cui verranno scritte le istruzioni postscript */
-  winstream = fopen(file, "w");
-  if ( winstream == NULL ) {
-    ERRORMSG("eps_open_win", "Impossibile aprire il file");
-    free(wd); free(winstream);
-    return NULL;
-  }
-
-  wd->ptr = (void *) winstream;
-
-
-  /* Ora do' le procedure per gestire la finestra */
-  wd->quiet = 0;
-  wd->repair = eps_repair;
-  wd->repair(wd);
-  wd->win_type_str = "cairo";
-  return wd;
-#else
-  return (GrpWindow *) NULL;
-#endif
-}
-
-
-#if 0
-#include <stdlib.h>
-#include <stdio.h>
-#include <math.h>
-
-
-
-/* This terminal discretizes the points into a grid where the number of
- * points per inch in the x and y directions are discretization_x and
- * discretization_y
- */
-static int discretization_x = 1000, discretization_y = 1000;
-
-static void eps_close_win(void);
-static void eps_rreset(void);
-static void eps_rinit(void);
-static void eps_rdraw(DrawStyle style);
-static void eps_rline(Point *a, Point *b);
-static void eps_rcong(Point *a, Point *b, Point *c);
-static void eps_rcircle(Point *ctr, Point *a, Point *b);
-static void eps_rfgcolor(Real r, Real g, Real b);
-static void eps_text(Point *p, const char *text);
-static void eps_font(const char *font, Real size);
-static void eps_fake_point(Point *p);
-
-#if 0
-static void eps_rbgcolor(Real r, Real g, Real b);
-#endif
-static int eps_save(const char *unused);
 
 /* Variabili usate dalle procedure per scrivere il file postscript */
 static int beginning_of_line = 1, beginning_of_path = 1;
-static long previous_px, previous_py;
+static Point previous;
 
-static Real eps_point_scale = 283.46457;
-/* Le coordinate dei punti passati alle funzioni grafiche in questo file,
- * sono espresse in millimetri: le converto nelle unita' postscript:
- *  1 unita' = 1/72 inch = 0.35277777... millimetri
- */
-#define EPS_POINT(p, px, py) \
-  long px = (p->x * eps_point_scale), \
-       py = (p->y * eps_point_scale);
-
-#define EPS_REAL(r) ((r)*eps_point_scale)
-
-static void eps_close_win(void) {
-  FILE *f = (FILE *) grp_win->ptr;
-  fprintf(f, "\nrestore\nshowpage\n%%%%Trailer\n%%EOF\n");
-  fclose(f);
+static int same_points(Point *a, Point *b) {
+  return (fabs(a->x - b->x) < 1e-10 && fabs(a->y - b->y) < 1e-10);
 }
 
-static void eps_rreset(void) {
+static void wincairo_rreset(void) {
   beginning_of_line = 1;
   beginning_of_path = 1;
 }
 
-static void eps_rinit(void) {return;}
+static void wincairo_rinit(void) {}
 
-static void eps_rdraw(DrawStyle style) {
+static void wincairo_rdraw(DrawStyle style) {
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
+
   if ( ! beginning_of_path ) {
     switch(style) {
     case DRAW_FILL:
-      fprintf( (FILE *) grp_win->ptr, " fill\n"); break;
+      cairo_set_fill_rule(cr, CAIRO_FILL_RULE_WINDING);
+      cairo_fill(cr);
+      break;
+
     case DRAW_EOFILL:
-      fprintf( (FILE *) grp_win->ptr, " eofill\n"); break;
+      cairo_set_fill_rule(cr, CAIRO_FILL_RULE_EVEN_ODD);
+      cairo_fill(cr);
+      break;
+
     case DRAW_CLIP:
-      fprintf( (FILE *) grp_win->ptr, " clip\n"); break;
+      cairo_set_fill_rule(cr, CAIRO_FILL_RULE_WINDING);
+      cairo_clip(cr);
+      break;
+
     case DRAW_EOCLIP:
-      fprintf( (FILE *) grp_win->ptr, " eoclip\n"); break;
+      cairo_set_fill_rule(cr, CAIRO_FILL_RULE_EVEN_ODD);
+      cairo_clip(cr);
+      break;
+
     default:
       g_warning("Unsupported drawing style: using even-odd fill algorithm!");
-      fprintf( (FILE *) grp_win->ptr, " eofill\n"); break;
+      cairo_set_fill_rule(cr, CAIRO_FILL_RULE_EVEN_ODD);
+      cairo_fill(cr);
+      break;
     }
   }
 }
 
-static void eps_rline(Point *a, Point *b) {
-  EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by);
-  int continuing = (ax == previous_px) && (ay == previous_py),
-      length_zero = (ax == bx && ay == by);
+static void wincairo_rfgcolor(Real r, Real g, Real b) {
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
+  cairo_set_source_rgb(cr, r, g, b);
+}
+
+static void wincairo_rline(Point *a, Point *b) {
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
+  int continuing = same_points(a, & previous),
+      length_zero = same_points(a, b);
 
   if (continuing && length_zero) return;
 
   if (beginning_of_path) {
-    fprintf((FILE *) grp_win->ptr, " newpath");
+    cairo_new_path(cr);
     beginning_of_path = 0;
     continuing = 0;
   }
 
-  if (!continuing)
-    fprintf((FILE *) grp_win->ptr, " %ld %ld moveto", ax, ay);
+  if (!continuing) cairo_move_to(cr, a->x, a->y);
 
-  fprintf((FILE *) grp_win->ptr, " %ld %ld lineto", bx, by);
-  previous_px = bx; previous_py = by;
+  cairo_line_to(cr, b->x, b->y);
+  previous = *b;
 }
 
-static void eps_rcong(Point *a, Point *b, Point *c) {
-  EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by); EPS_POINT(c, cx, cy);
+static void wincairo_rcong(Point *a, Point *b, Point *c) {
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
 #if 0
   int a_eq_b = ax == bx && ay == by,
       a_eq_c = ax == cx && ay == cy,
@@ -206,85 +117,126 @@ static void eps_rcong(Point *a, Point *b, Point *c) {
       n_eq = a_eq_b + a_eq_c + b_eq_c;
   if (n_eq == 3) return;
 #endif
-  if (ax == cx && ay == cy) return;
+  if (same_points(a, c)) return;
 
+#if 0
   if (beginning_of_path) {
-    fprintf( (FILE *) grp_win->ptr, " newpath" );
+    cairo_new_path(cr);
     beginning_of_path = 0;
   }
 
   fprintf( (FILE *) grp_win->ptr,
    " %ld %ld %ld %ld %ld %ld cong", ax, ay, bx, by, cx, cy );
-  previous_px = cx; previous_py = cy;
+
+  previous = *c;
   beginning_of_line = 0;
+#else
+  wincairo_rline(a, b);
+  wincairo_rline(b, c);
+#endif
 }
 
-static void eps_rcircle(Point *ctr, Point *a, Point *b) {
-  EPS_POINT(ctr, cx, cy); EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by);
+static void wincairo_rcircle(Point *ctr, Point *a, Point *b) {
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
 
-  if ( beginning_of_path )
-    fprintf( (FILE *) grp_win->ptr, " newpath" );
+  if (beginning_of_path)
+    cairo_new_path(cr);
 
-  fprintf( (FILE *) grp_win->ptr,
-   " %ld %ld %ld %ld %ld %ld circle", cx, cy, ax, ay, bx, by );
+  /*fprintf( (FILE *) grp_win->ptr,
+   " %ld %ld %ld %ld %ld %ld circle", cx, cy, ax, ay, bx, by );*/
+
   beginning_of_line = 1;
   beginning_of_path = 0;
 }
 
-static void eps_rfgcolor(Real r, Real g, Real b) {
-  fprintf( (FILE *) grp_win->ptr,
-   "  %g %g %g setrgbcolor\n", r, g, b );
+static int wincairo_save(const char *file_name) {
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
+  cairo_surface_t *surface = cairo_get_target(cr);
+  char *exts[] = {"png", "pdf", (char *) NULL};
+  enum {EXT_PNG=0};
+  cairo_status_t status;
+
+  switch(file_extension(exts, file_name)) {
+  default:
+    g_warning("Unrecognized extension: using PNG!");
+  case EXT_PNG:
+#ifdef CAIRO_HAS_PNG_FUNCTIONS
+    status = cairo_surface_write_to_png(surface, file_name);
+#else
+    g_error("Cairo has been compiled without PNG support!");
+    return 0;
+#endif
+  }
+
+  switch(status) {
+  case CAIRO_STATUS_SUCCESS:
+    return 1;
+
+  default:
+    g_error("Cannot save the window!");
+    return 0;
+  }
 }
 
-static void eps_text(Point *p, const char *text) {
-  EPS_POINT(p, px, py);
-
-  fprintf((FILE *) grp_win->ptr,
-          "  %ld %ld moveto (%s) show\n",
-          px, py, text);
+/** Set the default methods to the cairo windows */
+static void wincairo_repair(GrpWindow *w) {
+  grp_window_block(w);
+  w->save = wincairo_save;
+  w->close_win = wincairo_close_win;
+  w->rreset = wincairo_rreset;
+  w->rinit = wincairo_rinit;
+  w->rdraw = wincairo_rdraw;
+  w->rfgcolor = wincairo_rfgcolor;
+  w->rline = wincairo_rline;
+  w->rcong = wincairo_rcong;
+  w->rcircle = wincairo_rcircle;
 }
 
-static void eps_font(const char *font, Real size) {
-  long s = EPS_REAL(size);
+GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
+  GrpWindow *w;
+  cairo_surface_t *surface;
+  cairo_t *cr;
+  cairo_status_t status;
+  int numptx, numpty;
 
-  fprintf((FILE *) grp_win->ptr,
-          "  /%s findfont %ld scalefont setfont\n", font, s);
-}
+  if ((w = (GrpWindow *) malloc(sizeof(GrpWindow))) == (GrpWindow *) NULL) {
+    g_error("cairo_open_win: malloc failed!");
+    return (GrpWindow *) NULL;
+  }
 
-static void eps_fake_point(Point *p) {return;}
+  if (! (plan->have.size && plan->have.resolution) ) {
+    g_error("Cannot create Cairo image surface: size or resolution missing!");
+    return (GrpWindow *) NULL;
+  }
+
+  numptx = plan->size.x * plan->resolution.x;
+  numpty = plan->size.y * plan->resolution.y;
+
+  surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, numptx, numpty);
+  status = cairo_surface_status(surface);
+  if (status != CAIRO_STATUS_SUCCESS) {
+    g_error("Cannot create Cairo image surface:");
+    g_error(cairo_status_to_string(status));
+    return (GrpWindow *) NULL;
+  }
+  cr = cairo_create(surface);
+  status = cairo_status(cr);
+  if (status != CAIRO_STATUS_SUCCESS) {
+    g_error("Cannot create Cairo context:");
+    g_error(cairo_status_to_string(status));
+    return (GrpWindow *) NULL;
+  }
+
+  w->ptr = (void *) cr;
+
+  /* Ora do' le procedure per gestire la finestra */
+  w->quiet = 0;
+  w->repair = wincairo_repair;
+  w->repair(w);
+  w->win_type_str = "cairo";
+  return w;
 
 #if 0
-static void eps_rbgcolor(Real r, Real g, Real b) {return;}
-#endif
-
-/***************************************************************************************/
-/* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
-
-/** Set the default methods to the eps window */
-static void eps_repair(GrpWindow *w) {
-  grp_window_block(w);
-
-  w->rreset = eps_rreset;
-  w->rinit = eps_rinit;
-  w->rdraw = eps_rdraw;
-  w->rline = eps_rline;
-  w->rcong = eps_rcong;
-  w->rcircle = eps_rcircle;
-  w->rfgcolor = eps_rfgcolor;
-  w->text = eps_text;
-  w->font = eps_font;
-  w->fake_point = eps_fake_point;
-  w->save = eps_save;
-
-  w->close_win = eps_close_win;
-}
-
-/* Open a graphic window with type "eps" (encapsulated postscript).
- * The windows opens a file and send all the commands it receives directly
- * to it. The window will have size size_x and size_y (in mm) and will
- * show coordinates from (0, 0) to (size_x, size_y).
- */
-grp_window *eps_open_win(const char *file, Real size_x, Real size_y) {
   grp_window *wd;
   FILE *winstream;
   Real size_x_psunit, size_y_psunit;
@@ -296,110 +248,6 @@ grp_window *eps_open_win(const char *file, Real size_x, Real size_y) {
   size_y_psunit = (size_y / grp_mm_per_inch)/grp_inch_per_psunit;
   x_max = (int) size_x_psunit+1;
   y_max = (int) size_y_psunit+1;
-
-  /* Creo la finestra */
-  wd = (grp_window *) malloc( sizeof(grp_window) );
-  if ( wd == NULL ) {
-    ERRORMSG("eps_open_win", "Memoria esaurita");
-    return NULL;
-  }
-
-  winstream = (FILE *) malloc( sizeof(FILE) );
-  if ( winstream == NULL) {
-    ERRORMSG("eps_open_win", "Memoria esaurita");
-    free(wd);
-    return NULL;
-  }
-
-  /* Apro il file su cui verranno scritte le istruzioni postscript */
-  winstream = fopen(file, "w");
-  if ( winstream == NULL ) {
-    ERRORMSG("eps_open_win", "Impossibile aprire il file");
-    free(wd); free(winstream);
-    return NULL;
-  }
-
-  wd->ptr = (void *) winstream;
-
-  /* Costruisco una tavolazza di colori da associare a questa finestra *
-  wd->pal = grp_palette_build(2, 2, 3, 4);
-  if ( wd->pal == NULL ) return NULL;
-
-  * La prima richiesta di colore corrisponde all'indice di colore 0,
-   * cioe' all'indice dello sfondo della figura.
-   * Quindi setto il colore dello sfondo a RGB = {255, 255, 255} = bianco
-   *
-  wd->bgcol = grp_color_request( wd->pal, & ((color) {255, 255, 255}) );
-  if ( wd->bgcol == NULL ) return NULL;
-
-  * Setto il colore di primo piano a RGB = {0, 0, 0} = nero *
-  wd->fgcol = grp_color_request( wd->pal, & ((color) {0, 0, 0}) );
-  if ( wd->fgcol == NULL ) return NULL;*/
-
-  /* Ora do' le procedure per gestire la finestra */
-  wd->quiet = 0;
-  wd->repair = eps_repair;
-  wd->repair(wd);
-  wd->win_type_str = "eps";
-
-
-  /* Scrivo l'intestazione del file */
-  fprintf(winstream, "%%!PS-Adobe-2.0 EPSF-2.0\n"
-          "%%%%Title: %s\n%%%%Creator: Box g library\n", file);
-  fprintf(winstream, "%%%%BoundingBox: 0 0 %d %d\n", x_max, y_max);
-  fprintf(winstream,
-   "%%%%Magnification: 1.0000\n%%%%EndComments\n\n"
-   "/congdict 8 dict def\n\ncongdict /mtrx matrix put\n"
-   "/cong {\ncongdict begin\n  /yc exch def /xc exch def\n"
-   "  /yb exch def /xb exch def\n  /ya exch def /xa exch def\n\n"
-   "    /xu xb xc sub def /yu yb yc sub def\n"
-   "    /xv xb xa sub def /yv yb ya sub def\n"
-   "    /xo xa xu sub def /yo ya yu sub def\n\n"
-   "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
-   "    0 0 1 0 90 arc\n    savematrix setmatrix\n\n  end\n} def\n\n"
-   "/circledict 8 dict def\n\ncircledict /mtrx matrix put\n"
-   "/circle {\ncircledict begin\n  /yb exch def /xb exch def\n"
-   "  /ya exch def /xa exch def\n  /yo exch def /xo exch def\n\n"
-   "    /xu xa xo sub def /yu ya yo sub def\n"
-   "    /xv xb xo sub def /yv yb yo sub def\n\n"
-   "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
-   "    0 0 1 0 360 arc\n    savematrix setmatrix\n\n  end\n} def\n\n"
-   "save\n");
-
-  fprintf(winstream, "newpath 0 %d moveto 0 0 lineto %d 0 "
-          "lineto %d %d lineto closepath clip newpath\n"
-          "0.01 0.01 scale\n0 0 0 setrgbcolor\n",
-          y_max, x_max, x_max, y_max);
-
-  return wd;
-}
-
-static int eps_save(const char *unused) {
-  fclose((FILE *) grp_win->ptr);
-  return 1;
-}
-
-int eps_save_fig(const char *file_name, grp_window *figure) {
-  Point bb_min, bb_max, translation, center, size;
-  Real sx, sy, rot_angle;
-  grp_window *cur_win = grp_win;
-
-  bb_bounding_box(figure, & bb_min, & bb_max);
-  /*printf("Bounding box (%f, %f) - (%f, %f)\n",
-         bb_min.x, bb_min.y, bb_max.x, bb_max.y);*/
-
-  size.x = fabs(bb_max.x - bb_min.x);
-  size.y = fabs(bb_max.y - bb_min.y);
-  grp_win = eps_open_win(file_name, size.x, size.y);
-  translation.x = -bb_min.x;
-  translation.y = -bb_min.y;
-  center.y = center.x = 0.0;
-  sy = sx = 1.0;
-  rot_angle = 0.0;
-  aput_matrix(& translation, & center, rot_angle, sx, sy, fig_matrix);
-  fig_draw_fig(figure);
-  grp_close_win();
-  grp_win = cur_win;
-  return 1;
-}
 #endif
+  return (GrpWindow *) NULL;
+}

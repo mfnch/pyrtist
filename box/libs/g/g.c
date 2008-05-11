@@ -67,7 +67,7 @@ void g_optcolor_alternative_set(OptColor *oc, OptColor *alternative) {
 }
 
 /** Given an array of possible extensions (which is just an array
- * made up by the pointers to the corresponding string, terminated
+ * made up by the pointers to the corresponding strings, terminated
  * by a NULL pointer), returns the index of the extension of 'file_name'.
  * If the extension of 'file_name' is not found among the provided array,
  * the function returns -1.

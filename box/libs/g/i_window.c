@@ -141,51 +141,29 @@ Task window_end(VMProgram *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
   Window *w = (Window *) wp;
 
-#if 0
-  switch(w->type) {
-  case PS:
-    if (w->save_file_name == (char *) NULL) {
-      g_error("Window: window type 'ps' requires a file name. "
-              "Please provide one.");
-      return Failed;
-    }
-    w->window = ps_open_win(w->save_file_name);
-    break;
-
-  case BM1:
-    w->window = gr1b_open_win(w->origin.x, w->origin.y,
-                              w->origin.x+w->size.x, w->origin.y+w->size.y,
-                              w->res.x, w->res.y);
-    break;
-
-  case BM4:
-    w->window = gr4b_open_win(w->origin.x, w->origin.y,
-                              w->origin.x+w->size.x, w->origin.y+w->size.y,
-                              w->res.x, w->res.y);
-    break;
-
-  case BM8:
-    w->window = gr8b_open_win(w->origin.x, w->origin.y,
-                              w->origin.x+w->size.x, w->origin.y+w->size.y,
-                              w->res.x, w->res.y);
-    break;
-
-  case FIG:
-    w->window = fig_open_win(1);
-    break;
-
-  default:
-    g_error("window_end: shouldn't happen!");
-    return Failed;
-  }
-#endif
-
+  w->plan.have.resolution = 1;
+  w->plan.have.size = 1;
   w->window = grp_window_open(& w->plan);
   if (w->window == (grp_window *) NULL) {
     g_error("cannot create the window!");
     return Failed;
   }
 
+  return Success;
+}
+
+Task window_origin_point(VMProgram *vmp) {
+  WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
+  Window *w = (Window *) wp;
+  Point *origin = BOX_VM_ARGPTR1(vmp, Point);
+
+  if (w->plan.have.origin) {
+    g_error("You have already specified the origin of the window!");
+    return Failed;
+  }
+
+  w->plan.have.origin = 1;
+  w->plan.origin = *origin;
   return Success;
 }
 
@@ -221,6 +199,7 @@ Task window_save_end(VMProgram *vmp) {
     grp_win = w->window;
     all_ok = grp_save(w->save_file_name);
     grp_win = cur_win;
+    w->save_file_name = (char *) NULL;
     return (all_ok) ? Success : Failed;
   }
 
