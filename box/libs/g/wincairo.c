@@ -109,7 +109,6 @@ static void wincairo_rline(Point *a, Point *b) {
 }
 
 static void wincairo_rcong(Point *a, Point *b, Point *c) {
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
 #if 0
   int a_eq_b = ax == bx && ay == by,
       a_eq_c = ax == cx && ay == cy,
@@ -117,33 +116,56 @@ static void wincairo_rcong(Point *a, Point *b, Point *c) {
       n_eq = a_eq_b + a_eq_c + b_eq_c;
   if (n_eq == 3) return;
 #endif
-  if (same_points(a, c)) return;
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
 
-#if 0
-  if (beginning_of_path) {
-    cairo_new_path(cr);
-    beginning_of_path = 0;
+  if (same_points(a, c))
+    return;
+
+  else {
+    cairo_matrix_t previous_m, m;
+
+    if (beginning_of_path) {
+      cairo_new_path(cr);
+      beginning_of_path = 0;
+    }
+
+    cairo_get_matrix(cr, & previous_m);
+    m.xx = b->x - c->x;  m.yx = b->y - c->y;
+    m.xy = b->x - a->x;  m.yy = b->y - a->y;
+    m.x0 = a->x - m.xx; m.y0 = a->y - m.yx;
+    cairo_transform(cr, & m);
+
+    cairo_arc(cr,
+              (double) 0, (double) 0, /* center */
+              (double) 1, /* radius */
+              (double) 0, (double) M_PI/2.0 /* angle begin and end */);
+
+    cairo_set_matrix(cr, & previous_m);
+
+    previous = *c;
+    beginning_of_line = 0;
   }
-
-  fprintf( (FILE *) grp_win->ptr,
-   " %ld %ld %ld %ld %ld %ld cong", ax, ay, bx, by, cx, cy );
-
-  previous = *c;
-  beginning_of_line = 0;
-#else
-  wincairo_rline(a, b);
-  wincairo_rline(b, c);
-#endif
 }
 
 static void wincairo_rcircle(Point *ctr, Point *a, Point *b) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
+  cairo_matrix_t previous_m, m;
 
   if (beginning_of_path)
     cairo_new_path(cr);
 
-  /*fprintf( (FILE *) grp_win->ptr,
-   " %ld %ld %ld %ld %ld %ld circle", cx, cy, ax, ay, bx, by );*/
+  cairo_get_matrix(cr, & previous_m);
+  m.xx = a->x - ctr->x;  m.yx = a->y - ctr->y;
+  m.xy = b->x - ctr->x;  m.yy = b->y - ctr->y;
+  m.x0 = ctr->x; m.y0 = ctr->y;
+  cairo_transform(cr, & m);
+
+  cairo_arc(cr,
+            (double) 0, (double) 0, /* center */
+            (double) 1, /* radius */
+            (double) 0, (double) 2.0*M_PI /* angle begin and end */);
+
+  cairo_set_matrix(cr, & previous_m);
 
   beginning_of_line = 1;
   beginning_of_path = 0;
@@ -219,6 +241,7 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
     g_error(cairo_status_to_string(status));
     return (GrpWindow *) NULL;
   }
+
   cr = cairo_create(surface);
   status = cairo_status(cr);
   if (status != CAIRO_STATUS_SUCCESS) {

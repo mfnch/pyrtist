@@ -7,3 +7,15 @@ Print["The PointList object has now ", pl.Num[], " points.";]
 Print[pl.Get[1], pl.Get["second"], pl.Get[2], pl.Get[2.1],
       pl.Get[2.5], pl.Get[2.9], pl.Get[3];]
 
+PointList@Print[
+  n = $.Num[]
+  i = 0
+  "PointList["
+  [If[++i <= n]
+     p = $::.Get[i], Print[p, If[i < n], ", "]
+   For[1]]
+  "]"
+]
+
+Print[pl;]
+
