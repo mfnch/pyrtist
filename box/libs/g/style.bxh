@@ -1,0 +1,4 @@
+// Interface for the Style object
+
+Style = Ptr
+
