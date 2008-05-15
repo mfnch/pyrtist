@@ -35,5 +35,6 @@ void fig_clear_layer(int l);
 void fig_ltransform(Point *p, int n);
 void fig_draw_layer(grp_window *source, int l);
 void fig_draw_fig(grp_window *source);
+int fig_save_fig(GrpWindow *figure, GrpWindowPlan *plan);
 
 #endif

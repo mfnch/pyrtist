@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <assert.h>
 
 #include "error.h"
 #include "types.h"
@@ -69,6 +70,7 @@ static Real eps_point_scale = 283.46457;
 
 static void eps_close_win(void) {
   FILE *f = (FILE *) grp_win->ptr;
+  assert(f != (FILE *) NULL);
   fprintf(f, "\nrestore\nshowpage\n%%%%Trailer\n%%EOF\n");
   fclose(f);
 }
@@ -219,24 +221,17 @@ grp_window *eps_open_win(const char *file, Real size_x, Real size_y) {
   y_max = (int) size_y_psunit+1;
 
   /* Creo la finestra */
-  wd = (grp_window *) malloc( sizeof(grp_window) );
-  if ( wd == NULL ) {
+  wd = (GrpWindow *) malloc( sizeof(grp_window) );
+  if (wd == NULL) {
     ERRORMSG("eps_open_win", "Memoria esaurita");
-    return NULL;
-  }
-
-  winstream = (FILE *) malloc( sizeof(FILE) );
-  if ( winstream == NULL) {
-    ERRORMSG("eps_open_win", "Memoria esaurita");
-    free(wd);
     return NULL;
   }
 
   /* Apro il file su cui verranno scritte le istruzioni postscript */
   winstream = fopen(file, "w");
-  if ( winstream == NULL ) {
-    ERRORMSG("eps_open_win", "Impossibile aprire il file");
-    free(wd); free(winstream);
+  if (winstream == NULL) {
+    ERRORMSG("eps_open_win", "Cannot open the file for writing!");
+    free(wd);
     return NULL;
   }
 
@@ -296,7 +291,6 @@ grp_window *eps_open_win(const char *file, Real size_x, Real size_y) {
 }
 
 static int eps_save(const char *unused) {
-  fclose((FILE *) grp_win->ptr);
   return 1;
 }
 

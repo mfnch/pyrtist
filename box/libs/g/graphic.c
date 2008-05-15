@@ -362,7 +362,10 @@ static void dummy_font(const char *font, Real size) {
 }
 static void dummy_fake_point(Point *p) {dummy_err(grp_win, "fake_point");}
 static int dummy_save(const char *file_name) {
-  dummy_err(grp_win, "save");
+  /* If this function is not provided by the specific terminal, then
+   * the window is probably a stream window. The best thing to do is then
+   * to silently ignore the command.
+   */
   return 1;
 }
 
@@ -423,35 +426,75 @@ grp_window *grp_win = & grp_dummy_win;
 enum {HAVE_TYPE=1, HAVE_ORIGIN=2, HAVE_SIZE=4, HAVE_CORNERS=6,
       HAVE_RESOLUTION=8, HAVE_FILE_NAME=0x10, HAVE_NUM_LAYERS=0x20};
 
-typedef enum {WT_NONE=-1, WT_BM1=0, WT_BM4, WT_BM8, WT_FIG,
-              WT_PS, WT_EPS, WT_CAIRO, WT_MAX} WT;
+typedef enum {WL_NONE=-1, WL_G=0, WL_CAIRO} WL;
 
-struct win_types {
+struct win_lib {
+  char *name;
+  WL win_lib;
+
+} win_libs[] = {
+  {          "g", WL_G},
+  {      "cairo", WL_CAIRO},
+  {(char *) NULL, WL_NONE}
+};
+
+struct win_type {
   char *type_str;
   WT type_num;
+  WL win_lib;
   int must_have;
 
 } win_types[] = {
-  /* Order here is important: win_types[WT_x] should correspond to WT_x */
-  {"bm1", WT_BM1, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
-  {"bm4", WT_BM4, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
-  {"bm8", WT_BM8, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
-  {"fig", WT_FIG, HAVE_TYPE},
-  {"ps",  WT_PS, HAVE_TYPE + HAVE_FILE_NAME},
-  {"eps", WT_EPS, HAVE_TYPE + HAVE_FILE_NAME + HAVE_SIZE},
-  {"cairo", WT_CAIRO, HAVE_TYPE},
+  {"bm1", WT_BM1, WL_G, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+  {"bm4", WT_BM4, WL_G, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+  {"bm8", WT_BM8, WL_G, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+  {"fig", WT_FIG, WL_G, HAVE_TYPE},
+  {"ps",   WT_PS, WL_G, HAVE_TYPE + HAVE_FILE_NAME},
+  {"eps", WT_EPS, WL_G, HAVE_TYPE + HAVE_FILE_NAME + HAVE_SIZE},
+  {"a1",   WT_A1, WL_CAIRO, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+  {"a8",   WT_A8, WL_CAIRO, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+  {"rgb24",   WT_RGB24, WL_CAIRO, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+  {"argb32", WT_ARGB32, WL_CAIRO, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
   {(char *) NULL, WT_NONE}
 };
 
 int grp_window_type_from_string(const char *type_str) {
-  struct win_types *this_type;
+  char *colon = (char *) NULL;
+  struct win_type *this_type;
+  WL preferred_lib = WL_NONE;
+  int type = -1, i;
+
+  colon = index(type_str, ':');
+  if (colon != (char *) NULL) {
+    char *lib = strdup(type_str);
+    assert(type_str != (char *) NULL);
+    lib[colon - type_str] = '\0';
+    struct win_lib *this_lib;
+    for(this_lib = win_libs; this_lib->name != (char *) NULL; this_lib++) {
+      if (strcasecmp(this_lib->name, lib) == 0) {
+        preferred_lib = this_lib->win_lib;
+        break;
+      }
+    }
+
+    type_str = colon + 1;
+    free(lib);
+
+    if (preferred_lib == WL_NONE)
+      g_warning("Preferred window library not found!");
+  }
+
+  i = 0;
   for(this_type = win_types;
       this_type->type_str != (char *) NULL;
-      this_type++) {
-    if (strcasecmp(this_type->type_str, type_str) == 0)
-      return this_type->type_num;
+      this_type++, i++) {
+    if (strcasecmp(this_type->type_str, type_str) == 0) {
+      if (preferred_lib == this_type->win_lib)
+        return i;
+      type = i;
+    }
   }
-  return WT_NONE;
+  return type;
 }
 
 /** Define a function which can create new windows of all
@@ -459,6 +502,8 @@ int grp_window_type_from_string(const char *type_str) {
  */
 GrpWindow *grp_window_open(GrpWindowPlan *plan) {
   int must_have = 0;
+  WL win_lib;
+  WT win_type;
 
   if ((must_have & HAVE_TYPE) != 0 && !plan->have.type) {
     g_error("Cannot open the window: window type is missing!");
@@ -470,8 +515,9 @@ GrpWindow *grp_window_open(GrpWindowPlan *plan) {
     return (GrpWindow *) NULL;
   }
 
-  assert(plan->type == win_types[plan->type].type_num);
+  win_type = win_types[plan->type].type_num;
   must_have = win_types[plan->type].must_have;
+  win_lib = win_types[plan->type].win_lib;
 
   if ((must_have & HAVE_ORIGIN) != 0 && !plan->have.origin) {
     g_error("Cannot open the window: origin is missing!");
@@ -498,6 +544,17 @@ GrpWindow *grp_window_open(GrpWindowPlan *plan) {
     return (GrpWindow *) NULL;
   }
 
+  if (win_lib != WL_G) {
+    assert(win_lib == WL_CAIRO);
+#if HAVE_LIBCAIRO
+    plan->type = win_type;
+    return cairo_open_win(plan);
+#else
+    g_error("The graphic library has been compiled without Cairo support.");
+    return (GrpWindow *) NULL;
+#endif
+  }
+
   switch(plan->type) {
   case WT_BM1:
     return gr1b_open_win(plan->origin.x, plan->origin.y,
@@ -520,13 +577,6 @@ GrpWindow *grp_window_open(GrpWindowPlan *plan) {
     return ps_open_win(plan->file_name);
   case WT_EPS:
     return eps_open_win(plan->file_name, plan->size.x, plan->size.y);
-  case WT_CAIRO:
-#if HAVE_LIBCAIRO
-    return cairo_open_win(plan);
-#else
-    g_error("The graphic library has been compiled without Cairo support.");
-    return (GrpWindow *) NULL;
-#endif
   default:
     g_error("Unknown window type!");
     return (GrpWindow *) NULL;

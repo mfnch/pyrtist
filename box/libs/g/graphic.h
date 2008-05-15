@@ -124,6 +124,11 @@ extern Real grp_tomm;
 extern Real grp_torad;
 extern Real grp_toppmm;
 
+/* Window type (in GrpWindowPlan) */
+typedef enum {WT_NONE=-1, WT_BM1=0, WT_BM4, WT_BM8, WT_FIG,
+              WT_PS, WT_EPS, WT_A1, WT_A8, WT_RGB24, WT_ARGB32,
+              WT_MAX} WT;
+
 /** This structure is used to make uniform the functions for opening
  * graphic windows of different types.
  */

@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <assert.h>
 
 /* De-commentare per includere i messaggi di debug */
@@ -40,6 +41,8 @@
 #include "graphic.h"  /* Dichiaro alcune strutture grafiche generali */
 #include "g.h"
 #include "fig.h"
+#include "bb.h"
+#include "autoput.h"
 
 /* Queste funzioni sono definite nella seconda parte di questo file
  * e invece di eseguire effettivamente i comandi, provvedono soltanto
@@ -102,6 +105,8 @@ typedef struct layer_header LayerHeader;
 
 /***************************************************************************************/
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
+
+static char *fig_id_string = "fig";
 
 /** Set the default methods to the gr1b window */
 static void fig_repair(GrpWindow *w) {
@@ -210,7 +215,7 @@ grp_window *fig_open_win(int numlayers) {
   wd->quiet = 0;
   wd->repair = fig_repair;
   wd->repair(wd);
-  wd->win_type_str = "fig";
+  wd->win_type_str = fig_id_string;
 
   PRNMSG("Ok!\n");
   return wd;
@@ -808,6 +813,7 @@ void fig_draw_fig(grp_window *source) {
   long nl, cl;
 
   PRNMSG("fig_draw_fig:\n  ");
+  assert(source->win_type_str == fig_id_string);
 
   /* Trovo l'header della figura "source" */
   figh = (struct fig_header *) source->wrdep;
@@ -840,19 +846,76 @@ void fig_draw_fig(grp_window *source) {
 }
 
 static int fig_save(const char *file_name) {
-  enum {EXT_EPS=0, EXT_BMP, EXT_END, EXT_NUM};
-  char *ext[EXT_NUM];
-  ext[EXT_EPS] = "eps";
-  ext[EXT_BMP] = "bmp";
-  ext[EXT_END] = (char *) NULL;
+  char *out_type = "eps";
+  GrpWindowPlan plan;
+
+  enum {EXT_EPS=0, EXT_PNG, EXT_BMP, EXT_NUM};
+  char *ext[] = {"eps", "png", "bmp", (char *) NULL};
   switch(file_extension(ext, file_name)) {
-  case EXT_EPS:
-    return eps_save_fig(file_name, grp_win);
-  case EXT_BMP:
-    g_warning("Not implemented yet!");
-    return 0;
+  case EXT_EPS: out_type = "eps"; break;
+  case EXT_PNG: out_type = "argb32"; break;
+  case EXT_BMP: out_type = "bm8"; break;
   default:
     g_warning("Unrecognized extension in file name: using eps file format!");
-    return eps_save_fig(file_name, grp_win);
+    out_type = "eps"; break;
   }
+
+  plan.file_name = (char *) file_name;
+  plan.have.file_name = 1;
+  plan.type = grp_window_type_from_string(out_type);
+  plan.have.type = 1;
+  assert(plan.type >= 0);
+  plan.have.size = 0;
+  plan.have.origin = 0;
+  plan.resolution.x = plan.resolution.y = 2;
+  plan.have.resolution = 1;
+  plan.have.num_layers = 0;
+  return fig_save_fig(grp_win, & plan);
+}
+
+int fig_save_fig(GrpWindow *figure, GrpWindowPlan *plan) {
+  Point translation, center;
+  Real sx, sy, rot_angle;
+  GrpWindow *cur_win = grp_win;
+
+  if (!plan->have.file_name || plan->file_name == (char *) NULL) {
+    g_error("To save the \"fig\" Window you need to provide a filename!");
+    return 0;
+  }
+
+  if (!(plan->have.size && plan->have.origin)) {
+    Point bb_min, bb_max;
+    bb_bounding_box(figure, & bb_min, & bb_max);
+    /*printf("Bounding box (%f, %f) - (%f, %f)\n",
+           bb_min.x, bb_min.y, bb_max.x, bb_max.y);*/
+
+    plan->size.x = fabs(bb_max.x - bb_min.x);
+    plan->size.y = fabs(bb_max.y - bb_min.y);
+    plan->have.size = 1;
+
+    plan->origin.x = bb_min.x;
+    plan->origin.y = bb_min.y;
+  }
+
+  translation.x = -plan->origin.x;
+  translation.y = -plan->origin.y;
+  center.y = center.x = 0.0;
+  sy = sx = 1.0;
+  rot_angle = 0.0;
+
+  plan->origin.x = 0.0;
+  plan->origin.y = 0.0;
+  plan->have.origin = 1;
+  grp_win = grp_window_open(plan);
+  if (grp_win != (GrpWindow *) NULL) {
+    aput_matrix(& translation, & center, rot_angle, sx, sy, fig_matrix);
+    fig_draw_fig(figure);
+    grp_save(plan->file_name); /* Some terminals require an explicit save! */
+    grp_close_win();
+    grp_win = cur_win;
+    return 1;
+  }
+
+  grp_win = cur_win;
+  return 0;
 }

@@ -220,6 +220,8 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
   cairo_t *cr;
   cairo_status_t status;
   int numptx, numpty;
+  enum {WC_NONE=-1, WC_IMAGE=1} win_class;
+  cairo_format_t format;
 
   if ((w = (GrpWindow *) malloc(sizeof(GrpWindow))) == (GrpWindow *) NULL) {
     g_error("cairo_open_win: malloc failed!");
@@ -234,7 +236,33 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
   numptx = plan->size.x * plan->resolution.x;
   numpty = plan->size.y * plan->resolution.y;
 
-  surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, numptx, numpty);
+  switch((WT) plan->type) {
+  case WT_A1:
+    win_class = WC_IMAGE;
+    format = CAIRO_FORMAT_A1;
+    break;
+
+  case WT_A8:
+    win_class = WC_IMAGE;
+    format = CAIRO_FORMAT_A8;
+    break;
+
+  case WT_RGB24:
+    win_class = WC_IMAGE;
+    format = CAIRO_FORMAT_RGB24;
+    break;
+
+  case WT_ARGB32:
+    win_class = WC_IMAGE;
+    format = CAIRO_FORMAT_ARGB32;
+    break;
+
+  default:
+    g_error("cairo_open_win: unknown window type!");
+    return (GrpWindow *) NULL;
+  }
+
+  surface = cairo_image_surface_create(format, numptx, numpty);
   status = cairo_surface_status(surface);
   if (status != CAIRO_STATUS_SUCCESS) {
     g_error("Cannot create Cairo image surface:");

@@ -197,18 +197,11 @@ grp_window *ps_open_win(const char *file) {
     return NULL;
   }
 
-  winstream = (FILE *) malloc( sizeof(FILE) );
-  if ( winstream == NULL) {
-    ERRORMSG("ps_open_win", "Memoria esaurita");
-    free(wd);
-    return NULL;
-  }
-
   /* Apro il file su cui verranno scritte le istruzioni postscript */
   winstream = fopen(file, "w");
   if ( winstream == NULL ) {
     ERRORMSG("ps_open_win", "Impossibile aprire il file");
-    free(wd); free(winstream);
+    free(wd);
     return NULL;
   }
 
@@ -264,7 +257,6 @@ grp_window *ps_open_win(const char *file) {
 }
 
 static int ps_save(const char *unused) {
-  fclose((FILE *) grp_win->ptr);
   return 1;
 }
 
