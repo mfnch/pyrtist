@@ -849,13 +849,14 @@ static int fig_save(const char *file_name) {
   char *out_type = "eps";
   GrpWindowPlan plan;
 
-  enum {EXT_EPS=0, EXT_BMP, EXT_PNG, EXT_PDF, EXT_SVG, EXT_NUM};
-  char *ext[] = {"eps", "bmp", "png", "pdf", "svg", (char *) NULL};
+  enum {EXT_EPS=0, EXT_BMP, EXT_PNG, EXT_PDF, EXT_PS, EXT_SVG, EXT_NUM};
+  char *ext[] = {"eps", "bmp", "png", "pdf", "ps", "svg", (char *) NULL};
   switch(file_extension(ext, file_name)) {
   case EXT_EPS: out_type = "eps"; break;
   case EXT_BMP: out_type = "bm8"; break;
   case EXT_PNG: out_type = "argb32"; break;
   case EXT_PDF: out_type = "pdf"; break;
+  case  EXT_PS: out_type = "cairo:ps"; break;
   case EXT_SVG: out_type = "svg"; break;
   default:
     g_warning("Unrecognized extension in file name: using eps file format!");
@@ -869,7 +870,7 @@ static int fig_save(const char *file_name) {
   assert(plan.type >= 0);
   plan.have.size = 0;
   plan.have.origin = 0;
-  plan.resolution.x = plan.resolution.y = 2;
+  plan.resolution.x = plan.resolution.y = 100.0/grp_mmperinch; /* ~ 100 dpi */
   plan.have.resolution = 1;
   plan.have.num_layers = 0;
   return fig_save_fig(grp_win, & plan);

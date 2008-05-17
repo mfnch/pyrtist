@@ -438,6 +438,8 @@ struct win_lib {
   {(char *) NULL, WL_NONE}
 };
 
+static int num_win_terminals = -1;
+
 struct win_type {
   char *type_str;
   WT type_num;
@@ -445,18 +447,25 @@ struct win_type {
   int must_have;
 
 } win_types[] = {
-  {"bm1", WT_BM1, WL_G, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
-  {"bm4", WT_BM4, WL_G, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
-  {"bm8", WT_BM8, WL_G, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
-  {"fig", WT_FIG, WL_G, HAVE_TYPE},
-  {"ps",   WT_PS, WL_G, HAVE_TYPE + HAVE_FILE_NAME},
-  {"eps", WT_EPS, WL_G, HAVE_TYPE + HAVE_FILE_NAME + HAVE_SIZE},
+  /* NOTE: preferred terminals must come later. Example: if we have two
+   * EPS terminals (WL_G and WL_CAIRO), the one which appears latter in
+   * the list is the one which is chosen by default, i.e. when the prefix
+   * "cairo:" (or "g:") is missing.
+   */
+  {"eps", WT_EPS, WL_CAIRO, HAVE_TYPE + HAVE_FILE_NAME + HAVE_SIZE},
+  {"ps",   WT_PS, WL_CAIRO, HAVE_TYPE + HAVE_FILE_NAME + HAVE_SIZE},
   {"a1",   WT_A1, WL_CAIRO, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
   {"a8",   WT_A8, WL_CAIRO, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
   {"rgb24",   WT_RGB24, WL_CAIRO, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
   {"argb32", WT_ARGB32, WL_CAIRO, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
   {"pdf", WT_PDF, WL_CAIRO, HAVE_TYPE + HAVE_FILE_NAME + HAVE_SIZE},
   {"svg", WT_SVG, WL_CAIRO, HAVE_TYPE + HAVE_FILE_NAME + HAVE_SIZE},
+  {"bm1", WT_BM1, WL_G, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+  {"bm4", WT_BM4, WL_G, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+  {"bm8", WT_BM8, WL_G, HAVE_TYPE + HAVE_CORNERS + HAVE_RESOLUTION},
+  {"fig", WT_FIG, WL_G, HAVE_TYPE},
+  {"ps",   WT_PS, WL_G, HAVE_TYPE + HAVE_FILE_NAME},
+  {"eps", WT_EPS, WL_G, HAVE_TYPE + HAVE_FILE_NAME + HAVE_SIZE},
   {(char *) NULL, WT_NONE}
 };
 
@@ -512,7 +521,17 @@ GrpWindow *grp_window_open(GrpWindowPlan *plan) {
     return (GrpWindow *) NULL;
   }
 
-  if (plan->type < 0 || plan->type >= WT_MAX) {
+  if (num_win_terminals < 1) {
+    /* Count the number of terminals if it hasn't been done before:
+     * This could be stored with a macro, but it require extra sync.
+     */
+    struct win_type *tt;
+    num_win_terminals = 0;
+    for(tt = win_types; tt->type_str != (char *) NULL; tt++)
+      ++num_win_terminals;
+  }
+
+  if (plan->type < 0 || plan->type >= num_win_terminals) {
     g_error("Cannot open the window: unknown window type!");
     return (GrpWindow *) NULL;
   }
@@ -557,7 +576,7 @@ GrpWindow *grp_window_open(GrpWindowPlan *plan) {
 #endif
   }
 
-  switch(plan->type) {
+  switch(win_type) {
   case WT_BM1:
     return gr1b_open_win(plan->origin.x, plan->origin.y,
                          plan->origin.x + plan->size.x,

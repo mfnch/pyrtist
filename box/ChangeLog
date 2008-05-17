@@ -1,5 +1,17 @@
 Change log (recent come first)
 
+17 May 2008: Integration of Cairo in the graphic library.
+  * The graphic terminal has been adjusted, removing the lowfn midfn
+    function list, which are now replaced by full declared methods.
+  * A new function to open any type of windows has been introduced.
+    This function takes a GrpWindowPlan which can contain the window
+    size, file_name, resolution, etc.
+  * Cairo is now detected in configuration scripts and new terminals
+    are avaiblable when Box is compiled with support for it.
+    We now can use Cairo image, PDF, SVG, PS terminals.
+  * Extended the method Window.Save, which now looks at the extension
+    and can accordingly save EPS, PNG, PDF, SVG, BMP files.
+
 26 April 2008: Improvements and bugfixes.
   * Subtypes are resolved into their children if the method in Subtype.Method
     is not found.

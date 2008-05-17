@@ -3,14 +3,18 @@ Installation
 To compile the sources and install on your machine you may proceed
 with the quite usual sequence:
 
-  ./configure
+  ./configure --with-cairo
   make
   make install
 
-Detailed instructions are available inside the file INSTALL in this same
-directory. If you want a local installation, you may proceed as follows:
+Detailed installation instructions are available inside the file INSTALL
+in this same directory. The '--with-cairo' flag enables detection and
+usage of the Cairo 2D graphic library. Be sure to have this library
+installed on your system: this is not mandatory, but will give you some
+more features (see later section).
+If you want a local installation, you may proceed as follows:
 
-  ./configure --prefix=/home/yourusername/local
+  ./configure --prefix=/home/yourusername/local --with-cairo
   make
   make install
 
@@ -35,6 +39,13 @@ You should get a final message such as:
   0 errors found.
   All tests performed led to success.
   ...
+
+Cairo library
+-------------
+You can now compile Box with support for the Cairo 2D graphic library.
+Cairo gives support for some more output terminals (PDF, SVG, PNG, PS)
+and is going to be well exploited in the next Box releases, giving it
+many cool features. Be sure to compile Box with the '--with-cairo' flag ;-)
 
 Documentation
 -------------

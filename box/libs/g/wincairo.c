@@ -38,6 +38,9 @@
 #include "g.h"
 #include "wincairo.h"
 
+static char *wincairo_image_id_string   = "cairo:image";
+static char *wincairo_stream_id_string  = "cairo:stream";
+
 static void wincairo_close_win(void) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   cairo_surface_t *surface = cairo_get_target(cr);
@@ -209,6 +212,9 @@ static int wincairo_save(const char *file_name) {
   enum {EXT_PNG=0};
   cairo_status_t status;
 
+  if (grp_win->win_type_str != wincairo_image_id_string)
+    return 1;
+
   switch(file_extension(exts, file_name)) {
   default:
     g_warning("Unrecognized extension: using PNG!");
@@ -368,8 +374,9 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
     numptx = fabs(plan->size.x * plan->resolution.x);
     numpty = fabs(plan->size.y * plan->resolution.y);
     surface = cairo_image_surface_create(format, numptx, numpty);
+    w->win_type_str = wincairo_image_id_string;
 
-  } else if (win_class == WC_STREAM) {
+ } else if (win_class == WC_STREAM) {
     double width, height;
 
     if (! (plan->have.file_name && plan->have.size) ) {
@@ -405,6 +412,7 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
       return (GrpWindow *) NULL;
 
     surface = stream_surface_create(plan->file_name, width, height);
+    w->win_type_str = wincairo_stream_id_string;
 
     if (wt == WT_EPS) {
 #ifdef HAVE_CAIRO_EPS
@@ -441,6 +449,5 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
   w->quiet = 0;
   w->repair = wincairo_repair;
   w->repair(w);
-  w->win_type_str = "cairo";
   return w;
 }

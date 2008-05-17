@@ -40,6 +40,7 @@ wheatstone = Window[][
   .Save["cairo.png"]
   .Save["cairo.pdf"]
   .Save["cairo.svg"]
+  .Save["cairo.ps"]
 ]
 
 //w = Window["a8", (200, 200)][
