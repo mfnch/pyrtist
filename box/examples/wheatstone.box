@@ -23,9 +23,8 @@ wheatstone = Window["fig"][
   r41 = .Put[resistor, "rt", .Near[1, p4], .Near[2, p1]]
 
   // Connecting the four resistors
-  \ .Line[0.2, p1, r12.Get[1]; r12.Get[2], p2; r12.Get[2], p2; p2, r23.Get[1];
-          r23.Get[2], p3; p3, r34.Get[1]; r34.Get[2], p4; p4, r41.Get[1];
-          r41.Get[2], p1]
+  \ .Line[0.2, p1, r12.Get[1]; r12.Get[2], p2; p2, r23.Get[1]; r23.Get[2], p3;
+          p3, r34.Get[1]; r34.Get[2], p4; p4, r41.Get[1]; r41.Get[2], p1]
 
   // Drawing small circles on the nodes
   // Here you see how a single Circle instruction can be used to draw many
@@ -37,3 +36,4 @@ wheatstone = Window["fig"][
 
   .Save["wheatstone.eps"]  // Saving to eps file
 ]
+

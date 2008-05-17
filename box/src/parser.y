@@ -278,9 +278,6 @@ Task Expr_Statement(Expr *e) {
 
 %token TOK_TO
 
-%token TMP_TOK_AGAIN
-%token TMP_TOK_EXIT
-
 %token <Int> TOK_NPARENT
 
 /* Lista dei token aventi valore semantico
@@ -608,22 +605,6 @@ end.statement:
   TOK_END { Cmp_Assemble(ASM_RET); }
 ;
 
-again.statement:
-  TMP_TOK_AGAIN {
-    Box *b;
-    if IS_FAILED( Box_Get(& b, 0) ) {YYERROR;}
-    VM_Label_Jump(cmp_vm, b->label_begin, 0);
-  }
-;
-
-exit.statement:
-  TMP_TOK_EXIT {
-    Box *b;
-    if IS_FAILED( Box_Get(& b, 0) ) {YYERROR;}
-    VM_Label_Jump(cmp_vm, b->label_end, 0);
-  }
-;
-
 child:
    type                 {$$ = $1;}
 |  TOK_PROC             {Expr_New_Type(& $$, $1);}
@@ -660,8 +641,6 @@ statement:
  | type.statement
  | expr.statement
  | end.statement
- | again.statement
- | exit.statement
  | compound.statement
  | proc.def
  | error sep {

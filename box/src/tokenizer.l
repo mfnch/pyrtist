@@ -128,8 +128,6 @@ include BEGIN(include);
 
 "->"        {return TOK_TO;}
 "end"       {return TOK_END;}
-"again"     {return TMP_TOK_AGAIN;}
-"exit"      {return TMP_TOK_EXIT;}
 
  /* Operatori di assegnazione */
 "+="  { return TOK_APLUS; }

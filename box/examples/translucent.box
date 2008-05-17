@@ -1,0 +1,18 @@
+// Under a shell type: box -l g translucent.box
+// ---
+// Here we show translucent effects on Cairo Windows.
+
+include "g"
+
+w = Window[][
+  c1 = Color[color.red, .a=0.5]
+  c2 = Color[color.yellow, .a=0.5]
+  c3 = Color[color.blue, .a=0.5]
+  radius = 20.0
+
+  \ .Circle[(-5, 2), 4, c2]                         // One circle (behind)
+  i = 0, delta = 4*const.pi/5, angle0 = -const.pi/2 // The star
+  \ .Line[radius*Vec[i*delta + angle0], For[++i < 5], .Close[], c1]
+  \ .Circle[(2, 5), 8, c2; (-1, -1), 6, c3]         // Other two circles
+  .Save["translucent.pdf"]                          // Save to PDF
+]
