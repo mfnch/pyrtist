@@ -19,8 +19,18 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <assert.h>
 
 #include <cairo.h>
+#ifdef CAIRO_HAS_PS_SURFACE
+#  include <cairo-ps.h>
+#endif
+#ifdef CAIRO_HAS_PDF_SURFACE
+#  include <cairo-pdf.h>
+#endif
+#ifdef CAIRO_HAS_SVG_SURFACE
+#  include <cairo-svg.h>
+#endif
 
 #include "error.h"
 #include "types.h"
@@ -42,6 +52,23 @@ static Point previous;
 static int same_points(Point *a, Point *b) {
   return (fabs(a->x - b->x) < 1e-10 && fabs(a->y - b->y) < 1e-10);
 }
+
+static void my_point(Point *in, Point *out) {
+  GrpWindow *w = grp_win;
+  out->x = (in->x - w->ltx)*w->resx;
+  out->y = (in->y - w->lty)*w->resy;
+}
+
+/* Macros used to scale the point coordinates */
+#define MY_2POINTS(a, b) \
+  Point my_a, my_b; \
+  my_point((a), & my_a); my_point((b), & my_b); \
+  (a) = & my_a; (b) = & my_b
+
+#define MY_3POINTS(a, b, c) \
+  Point my_a, my_b, my_c; \
+  my_point((a), & my_a); my_point((b), & my_b);  my_point((c), & my_c); \
+  (a) = & my_a; (b) = & my_b; (c) = & my_c
 
 static void wincairo_rreset(void) {
   beginning_of_line = 1;
@@ -91,6 +118,8 @@ static void wincairo_rfgcolor(Real r, Real g, Real b) {
 
 static void wincairo_rline(Point *a, Point *b) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
+  MY_2POINTS(a, b);
+
   int continuing = same_points(a, & previous),
       length_zero = same_points(a, b);
 
@@ -117,6 +146,7 @@ static void wincairo_rcong(Point *a, Point *b, Point *c) {
   if (n_eq == 3) return;
 #endif
   cairo_t *cr = (cairo_t *) grp_win->ptr;
+  MY_3POINTS(a, b, c);
 
   if (same_points(a, c))
     return;
@@ -150,6 +180,7 @@ static void wincairo_rcong(Point *a, Point *b, Point *c) {
 static void wincairo_rcircle(Point *ctr, Point *a, Point *b) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   cairo_matrix_t previous_m, m;
+  MY_3POINTS(ctr, a, b);
 
   if (beginning_of_path)
     cairo_new_path(cr);
@@ -185,7 +216,7 @@ static int wincairo_save(const char *file_name) {
 #ifdef CAIRO_HAS_PNG_FUNCTIONS
     status = cairo_surface_write_to_png(surface, file_name);
 #else
-    g_error("Cairo has been compiled without PNG support!");
+    g_error("Cairo was not compiled with PNG support!");
     return 0;
 #endif
   }
@@ -219,24 +250,28 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
   cairo_surface_t *surface;
   cairo_t *cr;
   cairo_status_t status;
+  WT wt;
   int numptx, numpty;
-  enum {WC_NONE=-1, WC_IMAGE=1} win_class;
+  enum {WC_NONE=-1, WC_IMAGE=1, WC_STREAM} win_class;
   cairo_format_t format;
+  typedef cairo_surface_t *(*StreamSurfaceCreate)(const char *filename,
+                                                  double width_in_points,
+                                                  double height_in_points);
+  StreamSurfaceCreate stream_surface_create = (StreamSurfaceCreate) NULL;
+
+  if (!plan->have.type) {
+    g_error("cairo_open_win: missing window type!");
+    return (GrpWindow *) NULL;
+  }
+
+  wt = (WT) plan->type;
 
   if ((w = (GrpWindow *) malloc(sizeof(GrpWindow))) == (GrpWindow *) NULL) {
     g_error("cairo_open_win: malloc failed!");
     return (GrpWindow *) NULL;
   }
 
-  if (! (plan->have.size && plan->have.resolution) ) {
-    g_error("Cannot create Cairo image surface: size or resolution missing!");
-    return (GrpWindow *) NULL;
-  }
-
-  numptx = plan->size.x * plan->resolution.x;
-  numpty = plan->size.y * plan->resolution.y;
-
-  switch((WT) plan->type) {
+  switch(wt) {
   case WT_A1:
     win_class = WC_IMAGE;
     format = CAIRO_FORMAT_A1;
@@ -257,15 +292,137 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
     format = CAIRO_FORMAT_ARGB32;
     break;
 
+  case WT_PS:
+#ifdef CAIRO_HAS_PS_SURFACE
+    stream_surface_create = cairo_ps_surface_create;
+    win_class = WC_STREAM;
+    break;
+#else
+    g_error("cairo_open_win: Cairo was not compiled "
+            "with support for the PostScript backend!");
+    return (GrpWindow *) NULL;
+#endif
+
+  case WT_EPS:
+#ifdef CAIRO_HAS_PS_SURFACE
+    stream_surface_create = cairo_ps_surface_create;
+    win_class = WC_STREAM;
+    break;
+#else
+    g_error("cairo_open_win: Cairo was not compiled "
+            "with support for the PostScript backend!");
+    return (GrpWindow *) NULL;
+#endif
+
+  case WT_PDF:
+#ifdef CAIRO_HAS_PDF_SURFACE
+    stream_surface_create = cairo_pdf_surface_create;
+    win_class = WC_STREAM;
+    break;
+#else
+    g_error("cairo_open_win: Cairo was not compiled "
+            "with support for the PDF backend!");
+    return (GrpWindow *) NULL;
+#endif
+
+  case WT_SVG:
+#ifdef CAIRO_HAS_SVG_SURFACE
+    stream_surface_create = cairo_svg_surface_create;
+    win_class = WC_STREAM;
+    break;
+#else
+    g_error("cairo_open_win: Cairo was not compiled "
+            "with support for the SVG backend!");
+    return (GrpWindow *) NULL;
+#endif
+
   default:
     g_error("cairo_open_win: unknown window type!");
     return (GrpWindow *) NULL;
   }
 
-  surface = cairo_image_surface_create(format, numptx, numpty);
+  if (win_class == WC_IMAGE) {
+    if (! (plan->have.size && plan->have.resolution) ) {
+      g_error("Cannot create Cairo image surface: "
+              "size or resolution missing!");
+      return (GrpWindow *) NULL;
+    }
+
+    if (plan->have.origin) {
+      w->ltx = plan->origin.x;
+      w->lty = plan->origin.y;
+
+    } else {
+      w->ltx = 0.0;
+      w->lty = 0.0;
+    }
+
+    w->lx = plan->size.x;
+    w->ly = plan->size.y;
+    w->resx = plan->resolution.x * (plan->size.x < 0.0 ? -1.0 : 1.0);
+    w->resy = plan->resolution.y * (plan->size.y < 0.0 ? -1.0 : 1.0);
+
+    w->rdx = w->ltx + plan->size.x;
+    w->rdy = w->lty + plan->size.y;
+
+    numptx = fabs(plan->size.x * plan->resolution.x);
+    numpty = fabs(plan->size.y * plan->resolution.y);
+    surface = cairo_image_surface_create(format, numptx, numpty);
+
+  } else if (win_class == WC_STREAM) {
+    double width, height;
+
+    if (! (plan->have.file_name && plan->have.size) ) {
+      g_error("Cannot create Cairo image surface: "
+              "file name or size missing!");
+      return (GrpWindow *) NULL;
+    }
+
+    /* All sizes and coordinates are expressed in mm, we must
+     * therefore convert the size of the window in postscript units:
+     * 1 postscript unit (also called point) = 1/72 inch
+     * 1 inch = 25.4 mm
+     */
+    width  = (plan->size.x / grp_mm_per_inch) / grp_inch_per_psunit;
+    height = (plan->size.y / grp_mm_per_inch) / grp_inch_per_psunit;
+
+    /* These quantities are used in the function my_point (macros MY_2POINTS
+     * and MY_3POINTS) to scale the coordinates of every point.
+     */
+    w->resy = w->resx =
+      (1.0 / grp_mm_per_inch) / grp_inch_per_psunit; /* mm --> psunits */
+
+    if (plan->have.origin) {
+      w->ltx = plan->origin.x;
+      w->lty = plan->origin.y;
+
+    } else {
+      w->ltx = 0.0;
+      w->lty = 0.0;
+    }
+
+    if (stream_surface_create == (StreamSurfaceCreate) NULL)
+      return (GrpWindow *) NULL;
+
+    surface = stream_surface_create(plan->file_name, width, height);
+
+    if (wt == WT_EPS) {
+#ifdef HAVE_CAIRO_EPS
+      cairo_ps_surface_set_eps(surface, (cairo_bool_t) 1);
+#else
+      g_warning("This version of Cairo does not support EPS format: "
+                "using PS.");
+#endif
+    }
+
+  } else {
+    g_error("cairo_open_win: shouldn't happen!");
+    return (GrpWindow *) NULL;
+  }
+
   status = cairo_surface_status(surface);
   if (status != CAIRO_STATUS_SUCCESS) {
-    g_error("Cannot create Cairo image surface:");
+    g_error("Cannot create Cairo surface:");
     g_error(cairo_status_to_string(status));
     return (GrpWindow *) NULL;
   }
@@ -286,19 +443,4 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
   w->repair(w);
   w->win_type_str = "cairo";
   return w;
-
-#if 0
-  grp_window *wd;
-  FILE *winstream;
-  Real size_x_psunit, size_y_psunit;
-  int x_max, y_max;
-
-  /* Should express the size of the window in postscript units 1/72 of inch */
-  /* 1 inch = 25.4 mm */
-  size_x_psunit = (size_x / grp_mm_per_inch)/grp_inch_per_psunit;
-  size_y_psunit = (size_y / grp_mm_per_inch)/grp_inch_per_psunit;
-  x_max = (int) size_x_psunit+1;
-  y_max = (int) size_y_psunit+1;
-#endif
-  return (GrpWindow *) NULL;
 }

@@ -58,6 +58,21 @@ typedef struct {
   palitem **hashtable;  /* Puntatore alla hash-table */
 } palette;
 
+/** This structure is used to make uniform the functions for opening
+ * graphic windows of different types.
+ */
+typedef struct {
+  struct {
+    int type : 1, origin : 1, size : 1,
+        resolution : 1, file_name : 1, num_layers: 1;
+  } have;
+  int type;
+  Point origin, size,
+        resolution; /** Resolution in points per mm */
+  char *file_name;
+  int num_layers;
+} GrpWindowPlan;
+
 /* Descrittore di una finestra grafica */
 typedef struct _grp_window {
   /** String which identifies the type of the window */
@@ -109,15 +124,14 @@ typedef struct _grp_window {
   long bytesperline;   /* Byte occupati da una linea */
   long dim;            /* Dimensione totale in byte della finestra */
   void *wrdep;         /* Puntatore alla struttura dei dati dipendenti dalla scrittura */
-} grp_window;
+} GrpWindow;
 
-#define GrpWindow grp_window
+/* Just for compatibility with past conventions */
+#define grp_window GrpWindow
 
 /* Dati importanti per la libreria */
 /* Finestra attualmente in uso */
-extern grp_window *grp_win;
-/* Una finestra che da solo errori (definita in graphic.c): */
-extern grp_window grp_empty_win;
+extern GrpWindow *grp_win;
 
 /* Per convertire in millimetri, radianti, punti per millimetro */
 extern Real grp_tomm;
@@ -127,22 +141,7 @@ extern Real grp_toppmm;
 /* Window type (in GrpWindowPlan) */
 typedef enum {WT_NONE=-1, WT_BM1=0, WT_BM4, WT_BM8, WT_FIG,
               WT_PS, WT_EPS, WT_A1, WT_A8, WT_RGB24, WT_ARGB32,
-              WT_MAX} WT;
-
-/** This structure is used to make uniform the functions for opening
- * graphic windows of different types.
- */
-typedef struct {
-  struct {
-    int type : 1, origin : 1, size : 1,
-        resolution : 1, file_name : 1, num_layers: 1;
-  } have;
-  int type;
-  Point origin, size,
-        resolution; /** Resolution in points per mm */
-  char *file_name;
-  int num_layers;
-} GrpWindowPlan;
+              WT_PDF, WT_SVG, WT_MAX} WT;
 
 /** Get the window ID (an integer number) from the window type (a string) */
 int grp_window_type_from_string(const char *type_str);
@@ -152,17 +151,17 @@ GrpWindow *grp_window_open(GrpWindowPlan *plan);
 
 /* Dichiarazioni delle procedure della libreria */
 /* Funzioni grafiche di alto livello */
-grp_window *gr1b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
-                          Real resx, Real resy);
-grp_window *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
-                          Real resx, Real resy);
-grp_window *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
-                          Real resx, Real resy);
-grp_window *fig_open_win(int numlayers);
-grp_window *ps_open_win(const char *file);
-grp_window *eps_open_win(const char *file, Real x, Real y);
-int ps_save_fig(const char *file_name, grp_window *figure);
-int eps_save_fig(const char *file_name, grp_window *figure);
+GrpWindow *gr1b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
+                         Real resx, Real resy);
+GrpWindow *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
+                         Real resx, Real resy);
+GrpWindow *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
+                         Real resx, Real resy);
+GrpWindow *fig_open_win(int numlayers);
+GrpWindow *ps_open_win(const char *file);
+GrpWindow *eps_open_win(const char *file, Real x, Real y);
+int ps_save_fig(const char *file_name, GrpWindow *figure);
+int eps_save_fig(const char *file_name, GrpWindow *figure);
 
 void grp_window_block(GrpWindow *w);
 
@@ -176,7 +175,7 @@ int grp_palette_transform(palette *p, int (*operation)(palitem *pi));
 void grp_palette_destroy(palette *p);
 void grp_draw_gpath(GPath *gp);
 
-void rst_repair(grp_window *gw);
+void rst_repair(GrpWindow *gw);
 
 Point *grp_ref(Point *o, Point *v, Point *p);
 

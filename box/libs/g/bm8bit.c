@@ -146,7 +146,7 @@ grp_window *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
     wd->maxx = wd->rdx;
   } else {
     wd->minx = wd->rdx;
-     wd->maxx = wd->ltx;
+    wd->maxx = wd->ltx;
   }
 
   if (ly > 0.0) {

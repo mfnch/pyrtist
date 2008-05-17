@@ -849,12 +849,14 @@ static int fig_save(const char *file_name) {
   char *out_type = "eps";
   GrpWindowPlan plan;
 
-  enum {EXT_EPS=0, EXT_PNG, EXT_BMP, EXT_NUM};
-  char *ext[] = {"eps", "png", "bmp", (char *) NULL};
+  enum {EXT_EPS=0, EXT_BMP, EXT_PNG, EXT_PDF, EXT_SVG, EXT_NUM};
+  char *ext[] = {"eps", "bmp", "png", "pdf", "svg", (char *) NULL};
   switch(file_extension(ext, file_name)) {
   case EXT_EPS: out_type = "eps"; break;
-  case EXT_PNG: out_type = "argb32"; break;
   case EXT_BMP: out_type = "bm8"; break;
+  case EXT_PNG: out_type = "argb32"; break;
+  case EXT_PDF: out_type = "pdf"; break;
+  case EXT_SVG: out_type = "svg"; break;
   default:
     g_warning("Unrecognized extension in file name: using eps file format!");
     out_type = "eps"; break;
