@@ -80,6 +80,14 @@ typedef struct {
   int num_layers;
 } GrpWindowPlan;
 
+/** Font feature: slant */
+typedef enum {
+  FONT_SLANT_NORMAL, FONT_SLANT_ITALIC, FONT_SLANT_OBLIQUE
+} FontSlant;
+
+typedef enum {
+  FONT_WEIGHT_NORMAL, FONT_WEIGHT_BOLD
+} FontWeight;
 
 /* Descrittore di una finestra grafica */
 typedef struct _grp_window {
@@ -96,7 +104,7 @@ typedef struct _grp_window {
   void (*rfgcolor)(Color *c);
   void (*rbgcolor)(Color *c);
   void (*text)(Point *p, const char *text);
-  void (*font)(const char *font, Real size);
+  void (*font)(const char *font_name, Real size);
   void (*fake_point)(Point *p);
   /** Used to save the window to a file */
   int (*save)(const char *file_name);

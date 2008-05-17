@@ -29,24 +29,13 @@
 #include "autoput.h"
 #include "bb.h"
 #include "g.h"
+#include "psfonts.h"
 
 /* This terminal discretizes the points into a grid where the number of
  * points per inch in the x and y directions are discretization_x and
  * discretization_y
  */
 static int discretization_x = 1000, discretization_y = 1000;
-
-static void eps_close_win(void);
-static void eps_rreset(void);
-static void eps_rinit(void);
-static void eps_rdraw(DrawStyle style);
-static void eps_rline(Point *a, Point *b);
-static void eps_rcong(Point *a, Point *b, Point *c);
-static void eps_rcircle(Point *ctr, Point *a, Point *b);
-static void eps_rfgcolor(Color *c);
-static void eps_text(Point *p, const char *text);
-static void eps_font(const char *font, Real size);
-static void eps_fake_point(Point *p);
 
 #if 0
 static void eps_rbgcolor(Color *c);
@@ -169,9 +158,21 @@ static void eps_text(Point *p, const char *text) {
 
 static void eps_font(const char *font, Real size) {
   long s = EPS_REAL(size);
+  const char *full_name;
+
+  full_name = ps_font_get_full_name(font,
+                                    FONT_SLANT_NORMAL,
+                                    FONT_WEIGHT_NORMAL);
+
+  if (full_name == (const char *) NULL) {
+    fprintf(stderr, "Font not found. Available fonts are:\n");
+    ps_print_available_fonts(stderr);
+    full_name = ps_default_font_full_name();
+    fprintf(stderr, "Using default font '%s'\n", full_name);
+  }
 
   fprintf((FILE *) grp_win->ptr,
-          "  /%s findfont %ld scalefont setfont\n", font, s);
+          "  /%s findfont %ld scalefont setfont\n", full_name, s);
 }
 
 static void eps_fake_point(Point *p) {return;}

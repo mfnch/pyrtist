@@ -360,7 +360,7 @@ static void dummy_text(Point *p, const char *text) {
 static void dummy_font(const char *font, Real size) {
   dummy_err(grp_win, "font");
 }
-static void dummy_fake_point(Point *p) {dummy_err(grp_win, "fake_point");}
+static void dummy_fake_point(Point *p) {return;}
 static int dummy_save(const char *file_name) {
   /* If this function is not provided by the specific terminal, then
    * the window is probably a stream window. The best thing to do is then

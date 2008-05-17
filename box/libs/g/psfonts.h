@@ -20,6 +20,37 @@
 #ifndef _PSFONTS_H
 #  define _PSFONTS_H
 
-const char *findfont(const char *font_name);
+#  include "graphic.h"
+
+/** Returns the full name of the postscript font whose name is 'font_name',
+ * and whose style is described by 's' and 'w'.
+ * The function returns NULL if there is no default postscript font
+ * corresponding to the given description.
+ */
+const char *ps_font_get_full_name(const char *font_name,
+                                  FontSlant s, FontWeight w);
+
+/** Returns details about the postscript font whose full name is 'full_name'.
+ * The details are returned in '*name' (the main name of the font),
+ * '*s' (the slant attribute of the font) and in '*w' (the weight attribute).
+ * If one or more of these pointers are set to NULL, the corresponding
+ * attribute is not returned.
+ * The function returns 0 if the font has not been found (1 otherwise).
+ */
+int ps_font_get_info(const char *full_name,
+                     const char **name, FontSlant *s, FontWeight *w);
+
+/** Print a list of the available postscript fonts to the stream 'out'.
+ * The list is formatted as follows:
+ *   Font1 (Normal, Bold, Italic, Bold+Italic)
+ *   Font2 (Normal, Italic)
+ *   ...
+ */
+void ps_print_available_fonts(FILE *out);
+
+/** Returns the full name of one available font, to be used
+ * as the default font.
+ */
+const char *ps_default_font_full_name(void);
 
 #endif

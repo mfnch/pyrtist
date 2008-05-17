@@ -37,6 +37,7 @@
 #include "graphic.h"
 #include "g.h"
 #include "wincairo.h"
+#include "psfonts.h"
 
 static char *wincairo_image_id_string   = "cairo:image";
 static char *wincairo_stream_id_string  = "cairo:stream";
@@ -63,6 +64,9 @@ static void my_point(Point *in, Point *out) {
 }
 
 /* Macros used to scale the point coordinates */
+#define MY_POINT(a) \
+  Point my_a; my_point((a), & my_a); (a) = & my_a
+
 #define MY_2POINTS(a, b) \
   Point my_a, my_b; \
   my_point((a), & my_a); my_point((b), & my_b); \
@@ -72,6 +76,12 @@ static void my_point(Point *in, Point *out) {
   Point my_a, my_b, my_c; \
   my_point((a), & my_a); my_point((b), & my_b);  my_point((c), & my_c); \
   (a) = & my_a; (b) = & my_b; (c) = & my_c
+
+/* This is broken, but is required for fonts (fonts support is broken as well
+ * and needs to be better done: font drawing should depend on Points, not on
+ * a given Real size!)
+ */
+#define MY_REAL(r) ((r)*grp_win->resx) \
 
 static void wincairo_rreset(void) {
   beginning_of_line = 1;
@@ -205,6 +215,46 @@ static void wincairo_rcircle(Point *ctr, Point *a, Point *b) {
   beginning_of_path = 0;
 }
 
+static void wincairo_font(const char *font_name, Real size) {
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
+  const char *name;
+  FontSlant s;
+  FontWeight w;
+  cairo_font_slant_t cs;
+  cairo_font_weight_t cw;
+
+  if (ps_font_get_info(font_name, & name, & s, & w)) {
+    switch(s) {
+    case FONT_SLANT_NORMAL: cs = CAIRO_FONT_SLANT_NORMAL; break;
+    case FONT_SLANT_ITALIC: cs = CAIRO_FONT_SLANT_ITALIC; break;
+    case FONT_SLANT_OBLIQUE: cs = CAIRO_FONT_SLANT_OBLIQUE; break;
+    default: cs = CAIRO_FONT_SLANT_NORMAL; break;
+    }
+
+    switch(w) {
+    case FONT_WEIGHT_NORMAL: cw = CAIRO_FONT_WEIGHT_NORMAL; break;
+    case FONT_WEIGHT_BOLD: cw = CAIRO_FONT_WEIGHT_BOLD; break;
+    default: cw = CAIRO_FONT_WEIGHT_NORMAL; break;
+    }
+
+  } else {
+    name = font_name;
+    cs = CAIRO_FONT_SLANT_NORMAL;
+    cw = CAIRO_FONT_WEIGHT_NORMAL;
+  }
+
+  cairo_select_font_face(cr, name, cs, cw);
+  cairo_set_font_size(cr, MY_REAL(size));
+}
+
+static void wincairo_text(Point *p, const char *text) {
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
+  MY_POINT(p);
+
+  cairo_move_to(cr, p->x, p->y);
+  cairo_show_text(cr, text);
+}
+
 static int wincairo_save(const char *file_name) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   cairo_surface_t *surface = cairo_get_target(cr);
@@ -249,6 +299,8 @@ static void wincairo_repair(GrpWindow *w) {
   w->rline = wincairo_rline;
   w->rcong = wincairo_rcong;
   w->rcircle = wincairo_rcircle;
+  w->font = wincairo_font;
+  w->text = wincairo_text;
 }
 
 GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
