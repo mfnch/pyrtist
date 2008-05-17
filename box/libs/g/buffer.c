@@ -159,8 +159,7 @@ int buff_recycle(buff *buffer, short elsize, long mindim)
  *  preoccupandosi di reallocare la memoria se necessario.
  *  Restituisce 1 solo in caso di successo.
  */
-int buff_push(buff *buffer, void *elem)
-{
+int buff_push(buff *buffer, void *elem) {
   void *tptr;
   long tpos;
 

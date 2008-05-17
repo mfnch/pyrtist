@@ -104,12 +104,12 @@ static unsigned long color_hash(palette *p, color *c);
  *  compresi tra 0.0 e 1.0, in una struttura di tipo color.
  *  r, g, b sono le componenti iniziali, *c conterra' la struttura finale.
  */
-void grp_color_build(Real r, Real g, Real b, color *c)
-{
-  if ( r < 0.0 ) c->r = 0; else if ( r > 1.0 ) c->r = 255; else c->r = 255*r;
-  if ( g < 0.0 ) c->g = 0; else if ( g > 1.0 ) c->g = 255; else c->g = 255*g;
-  if ( b < 0.0 ) c->b = 0; else if ( b > 1.0 ) c->b = 255; else c->b = 255*b;
-  return;
+void grp_color_build(Color *c, ColorBytes *cb) {
+#define BYTE_COLOR(x) ((int) 255.0*((x) > 1.0 ? 1.0 : ((x) < 0.0 ? 0.0 : (x))))
+  cb->r = BYTE_COLOR(c->r);
+  cb->g = BYTE_COLOR(c->g);
+  cb->b = BYTE_COLOR(c->b);
+#undef BYTE_COLOR
 }
 
 /* DESCRIZIONE: Arrotonda un colore. Il risultato e' simile all'arrotondamento
@@ -348,10 +348,10 @@ static void dummy_rcong(Point *a, Point *b, Point *c) {
 static void dummy_rcircle(Point *ctr, Point *a, Point *b) {
   dummy_err(grp_win, "rcircle");
 }
-static void dummy_rfgcolor(Real r, Real g, Real b) {
+static void dummy_rfgcolor(Color *c) {
   dummy_err(grp_win, "rfgcolor");
 }
-static void dummy_rbgcolor(Real r, Real g, Real b) {
+static void dummy_rbgcolor(Color *c) {
   dummy_err(grp_win, "rbgcolor");
 }
 static void dummy_text(Point *p, const char *text) {

@@ -44,7 +44,7 @@ w = Window[][
   // Some labels near the components
   on_left = Point[(-8.5, -1.5)], on_right = Point[(4.0, -1.5)]
   on_top = Point[(-3.0, 5.0)]
-  \ .Text[.Font["Arial", 4.0],
+  \ .Text[.Font["Times-Roman", 4.0],
           "R1", r1.Get[1.5] + on_left;
           "R2", r2.Get[1.5] + on_right;
           "R3", r3.Get[1.5] + on_left;

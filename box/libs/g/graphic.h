@@ -32,17 +32,24 @@
 
 typedef enum {DRAW_FILL=0, DRAW_EOFILL, DRAW_CLIP, DRAW_EOCLIP} DrawStyle;
 
+/* The color type */
+typedef struct {
+  Real r, g, b, a;
+} Color;
+
 /* Definisce la struttura adatta a contenere il colore di un punto */
 typedef struct {
   unsigned char r;  /* Componente rossa */
   unsigned char g;  /* Componente verde */
   unsigned char b;  /* Componente blu */
-} color;
+} ColorBytes;
+
+#define color ColorBytes
 
 /* Questa e' la struttura di un elemento della palette */
 struct palitem {
   long index;    /* Numero del colore nella tavolazza */
-  color c;    /* Colore */
+  ColorBytes c;    /* Colore */
   struct palitem *next;  /* Puntatore al prossimo elemento */
 };
 
@@ -73,6 +80,7 @@ typedef struct {
   int num_layers;
 } GrpWindowPlan;
 
+
 /* Descrittore di una finestra grafica */
 typedef struct _grp_window {
   /** String which identifies the type of the window */
@@ -85,8 +93,8 @@ typedef struct _grp_window {
   void (*rline)(Point *a, Point *b);
   void (*rcong)(Point *a, Point *b, Point *c);
   void (*rcircle)(Point *ctr, Point *a, Point *b);
-  void (*rfgcolor)(Real r, Real g, Real b);
-  void (*rbgcolor)(Real r, Real g, Real b);
+  void (*rfgcolor)(Color *c);
+  void (*rbgcolor)(Color *c);
   void (*text)(Point *p, const char *text);
   void (*font)(const char *font, Real size);
   void (*fake_point)(Point *p);
@@ -166,11 +174,11 @@ int eps_save_fig(const char *file_name, GrpWindow *figure);
 void grp_window_block(GrpWindow *w);
 
 /* Procedure per la gestione di una palette */
-void grp_color_build(Real r, Real g, Real b, color *c);
-void grp_color_reduce(palette *p, color *c);
+void grp_color_build(Color *cb, ColorBytes *c);
+void grp_color_reduce(palette *p, ColorBytes *c);
 palette *grp_palette_build(long numcol, long hashdim, long hashmul, int reduce);
-palitem *grp_color_find(palette *p, color *c);
-palitem *grp_color_request(palette *p, color *c);
+palitem *grp_color_find(palette *p, ColorBytes *c);
+palitem *grp_color_request(palette *p, ColorBytes *c);
 int grp_palette_transform(palette *p, int (*operation)(palitem *pi));
 void grp_palette_destroy(palette *p);
 void grp_draw_gpath(GPath *gp);

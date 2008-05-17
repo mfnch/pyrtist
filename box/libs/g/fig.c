@@ -54,8 +54,8 @@ void fig_rdraw(DrawStyle style);
 void fig_rline(Point *a, Point *b);
 void fig_rcong(Point *a, Point *b, Point *c);
 void fig_rcircle(Point *ctr, Point *a, Point *b);
-void fig_rfgcolor(Real r, Real g, Real b);
-void fig_rbgcolor(Real r, Real g, Real b);
+void fig_rfgcolor(Color *c);
+void fig_rbgcolor(Color *c);
 static void fig_text(Point *p, const char *text);
 static void fig_font(const char *font, Real size);
 static void fig_fake_point(Point *p);
@@ -565,24 +565,14 @@ void fig_rcircle(Point *ctr, Point *a, Point *b) {
   PRNMSG("Ok!\n");
 }
 
-void fig_rfgcolor(Real r, Real g, Real b) {
-  struct cmnd_args {Real r, g, b;} *cmnda;
-  BEGIN_CMND( "fig_rfgcolor", sizeof(struct cmnd_args) );
-  cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
-
-  *cmndh = (struct cmnd_header) {ID_rfgcolor, sizeof(struct cmnd_args) };
-  *cmnda = (struct cmnd_args) {r, g, b};
-  PRNMSG("Ok!\n");
+void fig_rfgcolor(Color *c) {
+  CmndArg args[] = {{sizeof(Color), c}, {0, (void *) NULL}};
+  _fig_insert_command(ID_rfgcolor, args);
 }
 
-void fig_rbgcolor(Real r, Real g, Real b) {
-  struct cmnd_args {Real r, g, b;} *cmnda;
-  BEGIN_CMND( "fig_rbgcolor", sizeof(struct cmnd_args) );
-  cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
-
-  *cmndh = (struct cmnd_header) {ID_rbgcolor, sizeof(struct cmnd_args) };
-  *cmnda = (struct cmnd_args) {r, g, b};
-  PRNMSG("Ok!\n");
+void fig_rbgcolor(Color *c) {
+  CmndArg args[] = {{sizeof(Color), c}, {0, (void *) NULL}};
+  _fig_insert_command(ID_rbgcolor, args);
 }
 
 static void fig_text(Point *p, const char *text) {
@@ -732,17 +722,11 @@ void fig_draw_layer(grp_window *source, int l) {
       grp_rcircle(& tp[0], & tp[1], & tp[2]);
       } break;
 
-    case ID_rfgcolor: {
-      struct {Real r, g, b;} *args = cmnd.ptr;
+    case ID_rfgcolor:
+      grp_rfgcolor((Color *) cmnd.ptr); break;
 
-      grp_rfgcolor(args->r, args->g, args->b);
-      } break;
-
-    case ID_rbgcolor: {
-      struct {Real r, g, b;} *args = cmnd.ptr;
-
-      grp_rbgcolor(args->r, args->g, args->b);
-      } break;
+    case ID_rbgcolor:
+      grp_rbgcolor((Color *) cmnd.ptr); break;
 
     case ID_text:
       {

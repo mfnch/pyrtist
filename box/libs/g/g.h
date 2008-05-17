@@ -22,21 +22,21 @@
 
 #  include "types.h"
 
-typedef struct {
-  Real r, g, b;
-} Color;
+void g_error(const char *msg);
+void g_warning(const char *msg);
 
+#if 0
+/* Obsolete? */
 typedef struct __OptColor {
   Color local;
   struct __OptColor *alternative, *selected;
 } OptColor;
 
-void g_error(const char *msg);
-void g_warning(const char *msg);
 Task g_optcolor_set(OptColor *oc, Color *c);
 Task g_optcolor_set_rgb(OptColor *oc, Real r, Real g, Real b);
 Color *g_optcolor_get(OptColor *oc);
 void g_optcolor_alternative_set(OptColor *oc, OptColor *alternative);
+#endif
 
 /** Given an array of possible extensions (which is just an array
  * made up by the pointers to the corresponding string, terminated

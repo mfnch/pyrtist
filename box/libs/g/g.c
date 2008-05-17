@@ -33,6 +33,7 @@ void g_warning(const char *msg) {
   printf("Warning: %s\n", msg);
 }
 
+#if 0
 Task g_optcolor_set(OptColor *oc, Color *c) {
   if (c->r < -0.5) {
     if (oc->alternative == (OptColor *) NULL) {
@@ -65,6 +66,7 @@ Color *g_optcolor_get(OptColor *oc) {
 void g_optcolor_alternative_set(OptColor *oc, OptColor *alternative) {
   oc->alternative = alternative;
 }
+#endif
 
 /** Given an array of possible extensions (which is just an array
  * made up by the pointers to the corresponding strings, terminated

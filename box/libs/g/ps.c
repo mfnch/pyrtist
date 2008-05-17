@@ -43,10 +43,10 @@ static void ps_rdraw(DrawStyle style);
 static void ps_rline(Point *a, Point *b);
 static void ps_rcong(Point *a, Point *b, Point *c);
 static void ps_rcircle(Point *ctr, Point *a, Point *b);
-static void ps_rfgcolor(Real r, Real g, Real b);
+static void ps_rfgcolor(Color *c);
 static void ps_fake_point(Point *p);
 #if 0
-static void ps_rbgcolor(Real r, Real g, Real b);
+static void ps_rbgcolor(Color *c);
 #endif
 static int ps_save(const char *unused);
 
@@ -136,7 +136,6 @@ static void ps_rcong(Point *a, Point *b, Point *c) {
    " %ld %ld %ld %ld %ld %ld cong", ax, ay, bx, by, cx, cy );
   previous_px = cx; previous_py = cy;
   beginning_of_line = 0;
-  return;
 }
 
 static void ps_rcircle(Point *ctr, Point *a, Point *b) {
@@ -149,17 +148,15 @@ static void ps_rcircle(Point *ctr, Point *a, Point *b) {
    " %ld %ld %ld %ld %ld %ld circle", cx, cy, ax, ay, bx, by );
   beginning_of_line = 1;
   beginning_of_path = 0;
-  return;
 }
 
-static void ps_rfgcolor(Real r, Real g, Real b) {
-  fprintf( (FILE *) grp_win->ptr,
-   "  %g %g %g setrgbcolor\n", r, g, b );
-  return;
+static void ps_rfgcolor(Color *c) {
+  fprintf((FILE *) grp_win->ptr,
+          "  %g %g %g setrgbcolor\n", c->r, c->g, c->b);
 }
 
 #if 0
-static void ps_rbgcolor(Real r, Real g, Real b) {return;}
+static void ps_rbgcolor(Color *c) {return;}
 #endif
 
 /***************************************************************************************/

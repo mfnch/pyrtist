@@ -17,64 +17,50 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#ifndef _I_WINDOW_H
-#  define _I_WINDOW_H
-#  include "types.h"
-#  include "g.h"
-#  include "buffer.h"
-#  include "pointlist.h"
-#  include "linetracer.h"
-#  include "graphic.h"
+#include <stdlib.h>
 
-#  define _DEF_WINDOW_SUBOBJECTS
-#  include "i_line.h"
-#  include "i_circle.h"
-#  include "i_poly.h"
-#  include "i_put.h"
-#  include "i_text.h"
-#  undef _DEF_WINDOW_SUBOBJECTS
+/* It seems there are 35 fonts that are guaranteed to be available.
+ * Others may be available, but maybe not. Therefore we stick only to these.
+ */
+static const char *guaranteed_ps_fonts[] = {
+  "AvantGarde-Book",
+  "AvantGarde-BookOblique",
+  "AvantGarde-Demi",
+  "AvantGarde-DemiOblique",
+  "Bookman-Demi",
+  "Bookman-DemiItalic",
+  "Bookman-Light",
+  "Bookman-LightItalic",
+  "Courier",
+  "Courier-Bold",
+  "Courier-BoldOblique",
+  "Courier-Oblique",
+  "Helvetica",
+  "Helvetica-Bold",
+  "Helvetica-BoldOblique",
+  "Helvetica-Narrow",
+  "Helvetica-Narrow-Bold",
+  "Helvetica-Narrow-BoldOblique",
+  "Helvetica-Narrow-Oblique",
+  "Helvetica-Oblique",
+  "NewCenturySchlbk-Bold",
+  "NewCenturySchlbk-BoldItalic",
+  "NewCenturySchlbk-Italic",
+  "NewCenturySchlbk-Roman",
+  "Palatino-Bold",
+  "Palatino-BoldItalic",
+  "Palatino-Italic",
+  "Palatino-Roman",
+  "Symbol",
+  "Times-Bold",
+  "Times-BoldItalic",
+  "Times-Italic",
+  "Times-Roman",
+  "ZapfChancery-MediumItalic",
+  "ZapfDingbats",
+  (char *) NULL
+};
 
-typedef struct {
-  GrpWindowPlan plan;
-
-  grp_window *window;
-
-  PointList pointlist;
-
-  WindowLine line;
-  WindowCircle circle;
-  WindowPoly poly;
-  WindowPut put;
-  WindowText text;
-
-  struct {
-    struct {
-      int point : 1;
-      int name : 1;
-    } got;
-    char *name;
-  } hot;
-
-  char *save_file_name;
-} Window;
-
-typedef void *WindowPtr;
-
-
-#  define SUBTYPE_OF_WINDOW(vmp, w) \
-    Window *w = *( (Window **) \
-      SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), WindowPtr) );
-
-#  define SUBTYPE2_OF_WINDOW(vmp, w) \
-    Window *w = *( (Window **) \
-      SUBTYPE_PARENT_PTR( \
-        SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), Subtype), \
-        WindowPtr) );
-
-#  define PROC_OF_WINDOW_SUBTYPE(vmp, w, child, child_type) \
-    Window *w = *( (Window **) \
-      SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), Window *) ); \
-    child_type *child = ( (child_type *) \
-      SUBTYPE_CHILD_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), child_type) )
-
-#endif
+const char *findfont(const char *font_name) {
+  return font_name;
+}

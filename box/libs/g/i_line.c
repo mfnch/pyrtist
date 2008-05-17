@@ -101,7 +101,7 @@ Task line_end(VMProgram *vmp) {
     grp_win = w->window;
     if (w->line.got.color) {
       Color *c = & w->line.color;
-      grp_rfgcolor(c->r, c->g, c->b);
+      grp_rfgcolor(c);
     }
     lt_draw(w->line.lt, w->line.close);
     grp_rdraw(DRAW_FILL);
@@ -162,7 +162,7 @@ Task line_pause(VMProgram *vmp) {
   grp_win = w->window;
   if (w->line.got.color) {
     Color *c = & w->line.color;
-    grp_rfgcolor(c->r, c->g, c->b);
+    grp_rfgcolor(c);
     w->line.got.color = 0;
   }
   (void) lt_draw(w->line.lt, w->line.close);

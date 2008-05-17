@@ -114,9 +114,9 @@ static void wincairo_rdraw(DrawStyle style) {
   }
 }
 
-static void wincairo_rfgcolor(Real r, Real g, Real b) {
+static void wincairo_rfgcolor(Color *c) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
-  cairo_set_source_rgb(cr, r, g, b);
+  cairo_set_source_rgb(cr, c->r, c->g, c->b);
 }
 
 static void wincairo_rline(Point *a, Point *b) {

@@ -102,7 +102,7 @@ AC_MSG_RESULT([])
 AC_MSG_RESULT([Configuration summary:])
 AC_MSG_RESULT([----------------------])
 
-if test "$ac_cv_with_cairo" = yes; then
+if test "${use_libcairo}" = yes; then
   AC_MSG_RESULT([Support for the Cairo 2D graphic library: yes])
 else
   AC_MSG_RESULT([Support for the Cairo 2D graphic library: no])

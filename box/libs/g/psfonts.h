@@ -17,64 +17,9 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#ifndef _I_WINDOW_H
-#  define _I_WINDOW_H
-#  include "types.h"
-#  include "g.h"
-#  include "buffer.h"
-#  include "pointlist.h"
-#  include "linetracer.h"
-#  include "graphic.h"
+#ifndef _PSFONTS_H
+#  define _PSFONTS_H
 
-#  define _DEF_WINDOW_SUBOBJECTS
-#  include "i_line.h"
-#  include "i_circle.h"
-#  include "i_poly.h"
-#  include "i_put.h"
-#  include "i_text.h"
-#  undef _DEF_WINDOW_SUBOBJECTS
-
-typedef struct {
-  GrpWindowPlan plan;
-
-  grp_window *window;
-
-  PointList pointlist;
-
-  WindowLine line;
-  WindowCircle circle;
-  WindowPoly poly;
-  WindowPut put;
-  WindowText text;
-
-  struct {
-    struct {
-      int point : 1;
-      int name : 1;
-    } got;
-    char *name;
-  } hot;
-
-  char *save_file_name;
-} Window;
-
-typedef void *WindowPtr;
-
-
-#  define SUBTYPE_OF_WINDOW(vmp, w) \
-    Window *w = *( (Window **) \
-      SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), WindowPtr) );
-
-#  define SUBTYPE2_OF_WINDOW(vmp, w) \
-    Window *w = *( (Window **) \
-      SUBTYPE_PARENT_PTR( \
-        SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), Subtype), \
-        WindowPtr) );
-
-#  define PROC_OF_WINDOW_SUBTYPE(vmp, w, child, child_type) \
-    Window *w = *( (Window **) \
-      SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), Window *) ); \
-    child_type *child = ( (child_type *) \
-      SUBTYPE_CHILD_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), child_type) )
+const char *findfont(const char *font_name);
 
 #endif

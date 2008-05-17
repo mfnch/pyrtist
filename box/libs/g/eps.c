@@ -43,13 +43,13 @@ static void eps_rdraw(DrawStyle style);
 static void eps_rline(Point *a, Point *b);
 static void eps_rcong(Point *a, Point *b, Point *c);
 static void eps_rcircle(Point *ctr, Point *a, Point *b);
-static void eps_rfgcolor(Real r, Real g, Real b);
+static void eps_rfgcolor(Color *c);
 static void eps_text(Point *p, const char *text);
 static void eps_font(const char *font, Real size);
 static void eps_fake_point(Point *p);
 
 #if 0
-static void eps_rbgcolor(Real r, Real g, Real b);
+static void eps_rbgcolor(Color *c);
 #endif
 static int eps_save(const char *unused);
 
@@ -154,9 +154,9 @@ static void eps_rcircle(Point *ctr, Point *a, Point *b) {
   beginning_of_path = 0;
 }
 
-static void eps_rfgcolor(Real r, Real g, Real b) {
+static void eps_rfgcolor(Color *c) {
   fprintf( (FILE *) grp_win->ptr,
-   "  %g %g %g setrgbcolor\n", r, g, b );
+   "  %g %g %g setrgbcolor\n", c->r, c->g, c->b );
 }
 
 static void eps_text(Point *p, const char *text) {
@@ -177,7 +177,7 @@ static void eps_font(const char *font, Real size) {
 static void eps_fake_point(Point *p) {return;}
 
 #if 0
-static void eps_rbgcolor(Real r, Real g, Real b) {return;}
+static void eps_rbgcolor(Color *c) {return;}
 #endif
 
 /***************************************************************************************/

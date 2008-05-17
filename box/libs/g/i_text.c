@@ -50,7 +50,7 @@ static Task _sentence_end(Window *w, int *wrote_text) {
     grp_win = w->window;
     if (w->text.got.color) {
       Color *c = & w->text.color;
-      grp_rfgcolor(c->r, c->g, c->b);
+      grp_rfgcolor(c);
       w->text.got.color = 0;
     }
 

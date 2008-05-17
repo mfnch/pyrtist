@@ -69,10 +69,6 @@ Task window_begin(VMProgram *vmp) {
 
   TASK( pointlist_init(& w->pointlist) );
 
-  /* This is the parent colors: no alternatives! */
-  g_optcolor_alternative_set(& w->fg_color, (OptColor *) NULL);
-  (void) g_optcolor_set_rgb(& w->fg_color, 0.0, 0.0, 0.0);
-
   TASK( line_window_init(w) );
   TASK( put_window_init(w) );
   return Success;
@@ -85,10 +81,10 @@ Task window_color(VMProgram *vmp) {
   if (w->window != (grp_window *) NULL) {
     grp_window *cur_win = grp_win;
     grp_win = w->window;
-    grp_rfgcolor(c->r, c->g, c->b);
+    grp_rfgcolor(c);
     grp_win = cur_win;
   }
-  return g_optcolor_set(& w->fg_color, c);
+  return Success;
 }
 
 Task window_destroy(VMProgram *vmp) {
