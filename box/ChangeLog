@@ -11,6 +11,8 @@ Change log (recent come first)
     We now can use Cairo image, PDF, SVG, PS terminals.
   * Extended the method Window.Save, which now looks at the extension
     and can accordingly save EPS, PNG, PDF, SVG, BMP files.
+  * Colors have now an alpha channel: translucency is possible with
+    Cairo windows!
 
 26 April 2008: Improvements and bugfixes.
   * Subtypes are resolved into their children if the method in Subtype.Method
