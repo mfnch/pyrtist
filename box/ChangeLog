@@ -13,6 +13,9 @@ Change log (recent come first)
     and can accordingly save EPS, PNG, PDF, SVG, BMP files.
   * Colors have now an alpha channel: translucency is possible with
     Cairo windows!
+  * We can now set the drawing Style: we can decide what rule to use
+    for filling and we now can also clip along the path generated
+    by all the graphic commands (Line, Circle, Poly and Text).
 
 26 April 2008: Improvements and bugfixes.
   * Subtypes are resolved into their children if the method in Subtype.Method
