@@ -49,6 +49,8 @@ Task poly_begin(VMProgram *vmp) {
   w->poly.num_points = 0;
   w->poly.num_margins = 0;
   w->poly.got.color = 0;
+
+  g_style_new(& w->poly.style, & w->style);
   return Success;
 }
 
@@ -130,8 +132,8 @@ Task poly_end(VMProgram *vmp) {
     grp_rfgcolor(c);
     w->poly.got.color = 0;
   }
-  grp_rdraw(DRAW_EOFILL);
-  grp_rreset();
+
+  (void) g_rdraw(& w->poly.style, & w->poly.default_style, DRAW_WHEN_END);
   grp_win = cur_win;
   return Success;
 }
@@ -149,8 +151,7 @@ Task poly_pause(VMProgram *vmp) {
     grp_rfgcolor(c);
     w->poly.got.color = 0;
   }
-  grp_rdraw(DRAW_EOFILL);
-  grp_rreset();
+  (void) g_rdraw(& w->poly.style, & w->poly.default_style, DRAW_WHEN_PAUSE);
   grp_win = cur_win;
 
   /* Stato dell'istruzione = iniziale */

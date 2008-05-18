@@ -88,6 +88,8 @@ Task line_begin(VMProgram *vmp) {
   w->line.close = 0;
   w->line.got.color = 0;
   w->line.this_piece.arrow_scale = 1.0;
+
+  g_style_new(& w->line.style, & w->style);
   return Success;
 }
 
@@ -104,8 +106,7 @@ Task line_end(VMProgram *vmp) {
       grp_rfgcolor(c);
     }
     lt_draw(w->line.lt, w->line.close);
-    grp_rdraw(DRAW_FILL);
-    grp_rreset();
+    (void) g_rdraw(& w->line.style, & w->line.default_style, DRAW_WHEN_END);
     grp_win = cur_win;
     return Success;
   }
@@ -166,8 +167,7 @@ Task line_pause(VMProgram *vmp) {
     w->line.got.color = 0;
   }
   (void) lt_draw(w->line.lt, w->line.close);
-  grp_rdraw(DRAW_FILL);
-  grp_rreset();
+  (void) g_rdraw(& w->line.style, & w->line.default_style, DRAW_WHEN_PAUSE);
   grp_win = cur_win;
 
   w->line.state = GOT_NOTHING;

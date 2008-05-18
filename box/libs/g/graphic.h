@@ -85,11 +85,12 @@ typedef enum {
   FONT_SLANT_NORMAL, FONT_SLANT_ITALIC, FONT_SLANT_OBLIQUE
 } FontSlant;
 
+/** Font feature: weight */
 typedef enum {
   FONT_WEIGHT_NORMAL, FONT_WEIGHT_BOLD
 } FontWeight;
 
-/* Descrittore di una finestra grafica */
+/** Descriptor of a graphic Window */
 typedef struct _grp_window {
   /** String which identifies the type of the window */
   char *win_type_str;

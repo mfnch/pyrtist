@@ -102,7 +102,7 @@ static void bb_repair(GrpWindow *w) {
   w->close_win = bb_close_win;
 }
 
-void bb_bounding_box(grp_window *figure, Point *bb_min, Point *bb_max) {
+int bb_bounding_box(grp_window *figure, Point *bb_min, Point *bb_max) {
   grp_window *cur_win = grp_win, bb;
   /* Ora do' le procedure per gestire la finestra */
   bb.quiet = 1;
@@ -116,5 +116,8 @@ void bb_bounding_box(grp_window *figure, Point *bb_min, Point *bb_max) {
   grp_win = cur_win;
   if (bb_min != (Point *) NULL) {bb_min->x = bb_min_x; bb_min->y = bb_min_y;}
   if (bb_max != (Point *) NULL) {bb_max->x = bb_max_x; bb_max->y = bb_max_y;}
+  return (   bb_num_points > 2
+          && bb_max_x - bb_min_x > 0.0
+          && bb_max_y - bb_min_y > 0.0) ? 1 : 0;
 }
 

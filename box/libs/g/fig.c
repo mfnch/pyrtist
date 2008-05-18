@@ -872,7 +872,11 @@ int fig_save_fig(GrpWindow *figure, GrpWindowPlan *plan) {
 
   if (!(plan->have.size && plan->have.origin)) {
     Point bb_min, bb_max;
-    bb_bounding_box(figure, & bb_min, & bb_max);
+    if (!bb_bounding_box(figure, & bb_min, & bb_max)) {
+      g_warning("Computed bounding box is degenerate: "
+                "cannot save the figure!");
+      return 0;
+    }
     /*printf("Bounding box (%f, %f) - (%f, %f)\n",
            bb_min.x, bb_min.y, bb_max.x, bb_max.y);*/
 

@@ -35,6 +35,8 @@ typedef struct {
   Real arrowscale;
   LineTracer *lt;
   LinePiece this_piece;
+
+  GStyle default_style, style;
 } WindowLine;
 
 #else

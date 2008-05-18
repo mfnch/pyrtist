@@ -26,8 +26,10 @@ face = Window["fig"][
   \ .Poly[color.dark_green, a, 0.5, 0.5, b, c, d,
           (-c.x, c.y), (-b.x, b.y), (-a.x, a.y)]
   \ .Put[tongue, (0, 6)]
+  color.yellow
   \ .Put[eye, (2.6, 0), -70, .Scale[1.5]]
   \ .Put[eye, (-2.6, 0), 70, .Scale[1.5]]
+  color.dark_green
 
   // These hot points are used by the Window.Line instruction to place
   // the figure at the end of the line.

@@ -35,6 +35,27 @@
 
 /*#define DEBUG*/
 
+static void set_default_style(GStyle *gs, DrawStyle ds, DrawWhen dw) {
+  g_style_new(gs, G_STYLE_NONE);
+  g_style_set_draw_style(gs, ds);
+  g_style_set_draw_when(gs, dw);
+}
+
+static void init_default_styles(Window *w) {
+  /* For Circle, we set a style which allows easily to draw dognuts */
+  set_default_style(& w->circle.default_style, DRAW_EOFILL, DRAW_WHEN_END);
+  /* For Poly, we use the same style as Circle to easily allow holes */
+  set_default_style(& w->poly.default_style, DRAW_EOFILL, DRAW_WHEN_END);
+  /* For Text and Line, we usually don't want holes to appear! */
+  set_default_style(& w->text.default_style, DRAW_FILL, DRAW_WHEN_PAUSE);
+  set_default_style(& w->line.default_style, DRAW_FILL, DRAW_WHEN_PAUSE);
+
+  /* The main Window style is left completely unset (i.e. transparent
+   * to the default styles.
+   */
+  g_style_new(& w->style, (GStyle *) NULL);
+}
+
 Task window_begin(VMProgram *vmp) {
   WindowPtr *wp = BOX_VM_CURRENTPTR(vmp, WindowPtr);
   Window *w;
@@ -47,25 +68,23 @@ Task window_begin(VMProgram *vmp) {
 
   w->plan.have.type = 0;
   w->plan.type = grp_window_type_from_string("fig");
-
   w->plan.have.origin = 1;
   w->plan.origin.x = 0.0;
   w->plan.origin.y = 0.0;
-
   w->plan.have.size = 0;
   w->plan.size.x = 100.0;
   w->plan.size.y = 100.0;
-
   w->plan.have.resolution = 0;
   w->plan.resolution.x = 2.0;
   w->plan.resolution.y = 2.0;
-
   w->plan.have.file_name = 0;
   w->plan.file_name = (char *) NULL;
 
   w->save_file_name = (char *) NULL;
 
   w->window = (grp_window *) NULL;
+
+  init_default_styles(w);
 
   TASK( pointlist_init(& w->pointlist) );
 

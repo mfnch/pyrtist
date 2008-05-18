@@ -421,7 +421,9 @@ GrpWindow grp_dummy_win = {
  */
 grp_window *grp_win = & grp_dummy_win;
 
-/****************************************************************************/
+/****************************************************************************
+ * Generic functions to open a Window using a GrpWindowPlan.                *
+ ****************************************************************************/
 
 enum {HAVE_TYPE=1, HAVE_ORIGIN=2, HAVE_SIZE=4, HAVE_CORNERS=6,
       HAVE_RESOLUTION=8, HAVE_FILE_NAME=0x10, HAVE_NUM_LAYERS=0x20};

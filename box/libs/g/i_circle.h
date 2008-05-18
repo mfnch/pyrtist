@@ -28,6 +28,8 @@ typedef struct {
   Color color;
   Point center;
   Real radius_a, radius_b;
+
+  GStyle default_style, style;
 } WindowCircle;
 
 #else

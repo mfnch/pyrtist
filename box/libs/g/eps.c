@@ -280,7 +280,8 @@ grp_window *eps_open_win(const char *file, Real size_x, Real size_y) {
    "    /xu xa xo sub def /yu ya yo sub def\n"
    "    /xv xb xo sub def /yv yb yo sub def\n\n"
    "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
-   "    0 0 1 0 360 arc\n    savematrix setmatrix\n\n  end\n} def\n\n"
+   "    1 0 moveto 0 0 1 0 360 arc\n"
+   "    savematrix setmatrix\n\n  end\n} def\n\n"
    "save\n");
 
   fprintf(winstream, "newpath 0 %d moveto 0 0 lineto %d 0 "

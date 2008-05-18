@@ -32,6 +32,8 @@ typedef struct {
     int font : 1;
     int color : 1;
   } got;
+
+  GStyle default_style, style;
 } WindowText;
 
 #else

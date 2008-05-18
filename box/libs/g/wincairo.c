@@ -39,12 +39,22 @@
 #include "wincairo.h"
 #include "psfonts.h"
 
+/*#define DEBUG*/
+
+#ifdef DEBUG
+#  define WHEREAMI \
+   fprintf(stderr, "Inside '%s'\n", __func__), fflush(stderr)
+#else
+#  define WHEREAMI (void) 0
+#endif
+
 static char *wincairo_image_id_string   = "cairo:image";
 static char *wincairo_stream_id_string  = "cairo:stream";
 
 static void wincairo_close_win(void) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   cairo_surface_t *surface = cairo_get_target(cr);
+  WHEREAMI;
   cairo_destroy(cr);
   cairo_surface_destroy(surface);
 }
@@ -59,6 +69,7 @@ static int same_points(Point *a, Point *b) {
 
 static void my_point(Point *in, Point *out) {
   GrpWindow *w = grp_win;
+  WHEREAMI;
   out->x = (in->x - w->ltx)*w->resx;
   out->y = (in->y - w->lty)*w->resy;
 }
@@ -84,14 +95,16 @@ static void my_point(Point *in, Point *out) {
 #define MY_REAL(r) ((r)*grp_win->resx) \
 
 static void wincairo_rreset(void) {
+  WHEREAMI;
   beginning_of_line = 1;
   beginning_of_path = 1;
 }
 
-static void wincairo_rinit(void) {}
+static void wincairo_rinit(void) {WHEREAMI;}
 
 static void wincairo_rdraw(DrawStyle style) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
+  WHEREAMI;
 
   if ( ! beginning_of_path ) {
     switch(style) {
@@ -126,12 +139,14 @@ static void wincairo_rdraw(DrawStyle style) {
 
 static void wincairo_rfgcolor(Color *c) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
+  WHEREAMI;
   cairo_set_source_rgba(cr, c->r, c->g, c->b, c->a);
 }
 
 static void wincairo_rline(Point *a, Point *b) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   MY_2POINTS(a, b);
+  WHEREAMI;
 
   int continuing = same_points(a, & previous),
       length_zero = same_points(a, b);
@@ -151,6 +166,7 @@ static void wincairo_rline(Point *a, Point *b) {
 }
 
 static void wincairo_rcong(Point *a, Point *b, Point *c) {
+  WHEREAMI;
 #if 0
   int a_eq_b = ax == bx && ay == by,
       a_eq_c = ax == cx && ay == cy,
@@ -194,6 +210,7 @@ static void wincairo_rcircle(Point *ctr, Point *a, Point *b) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   cairo_matrix_t previous_m, m;
   MY_3POINTS(ctr, a, b);
+  WHEREAMI;
 
   if (beginning_of_path)
     cairo_new_path(cr);
@@ -204,6 +221,7 @@ static void wincairo_rcircle(Point *ctr, Point *a, Point *b) {
   m.x0 = ctr->x; m.y0 = ctr->y;
   cairo_transform(cr, & m);
 
+  cairo_move_to(cr, (double) 1, (double) 0);
   cairo_arc(cr,
             (double) 0, (double) 0, /* center */
             (double) 1, /* radius */
@@ -222,6 +240,7 @@ static void wincairo_font(const char *font_name, Real size) {
   FontWeight w;
   cairo_font_slant_t cs;
   cairo_font_weight_t cw;
+  WHEREAMI;
 
   if (ps_font_get_info(font_name, & name, & s, & w)) {
     switch(s) {
@@ -250,6 +269,7 @@ static void wincairo_font(const char *font_name, Real size) {
 static void wincairo_text(Point *p, const char *text) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   MY_POINT(p);
+  WHEREAMI;
 
   cairo_move_to(cr, p->x, p->y);
   cairo_show_text(cr, text);
@@ -261,6 +281,7 @@ static int wincairo_save(const char *file_name) {
   char *exts[] = {"png", "pdf", (char *) NULL};
   enum {EXT_PNG=0};
   cairo_status_t status;
+  WHEREAMI;
 
   if (grp_win->win_type_str != wincairo_image_id_string)
     return 1;
@@ -289,6 +310,7 @@ static int wincairo_save(const char *file_name) {
 
 /** Set the default methods to the cairo windows */
 static void wincairo_repair(GrpWindow *w) {
+  WHEREAMI;
   grp_window_block(w);
   w->save = wincairo_save;
   w->close_win = wincairo_close_win;
@@ -316,6 +338,7 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
                                                   double width_in_points,
                                                   double height_in_points);
   StreamSurfaceCreate stream_surface_create = (StreamSurfaceCreate) NULL;
+  WHEREAMI;
 
   if (!plan->have.type) {
     g_error("cairo_open_win: missing window type!");

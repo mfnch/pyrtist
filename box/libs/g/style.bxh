@@ -1,4 +1,7 @@
 // Interface for the Style object
 
 Style = Ptr
+([)@Style ? "style_begin"
 
+Style.Fill = Void
+()Char@Style.Fill ? "style_fill_string"

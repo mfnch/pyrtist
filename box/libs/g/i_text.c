@@ -38,6 +38,8 @@ Task window_text_begin(VMProgram *vmp) {
   w->text.got.font = 0;
   w->text.got.font_size = 0;
   w->text.got.color = 0;
+
+  g_style_new(& w->text.style, & w->style);
   return Success;
 }
 
@@ -83,8 +85,7 @@ Task window_text_end(VMProgram *vmp) {
   if (wrote_text) {
     grp_window *cur_win = grp_win;
     grp_win = w->window;
-    grp_rdraw(DRAW_EOFILL);
-    grp_rreset();
+    (void) g_rdraw(& w->text.style, & w->text.default_style, DRAW_WHEN_END);
     grp_win = cur_win;
   }
   return Success;
@@ -92,7 +93,16 @@ Task window_text_end(VMProgram *vmp) {
 
 Task window_text_pause(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  return _sentence_end(w, (int *) NULL);
+  int wrote_text;
+
+  TASK( _sentence_end(w, & wrote_text) );
+  if (wrote_text) {
+    grp_window *cur_win = grp_win;
+    grp_win = w->window;
+    (void) g_rdraw(& w->text.style, & w->text.default_style, DRAW_WHEN_PAUSE);
+    grp_win = cur_win;
+  }
+  return Success;
 }
 
 Task window_text_point(VMProgram *vmp) {

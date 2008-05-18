@@ -20,6 +20,9 @@
 #ifndef _BB_H
 #  define _BB_H
 
-void bb_bounding_box(grp_window *figure, Point *bb_min, Point *bb_max);
+/** Compute the bounding box of the given figure. If the bounding box
+ * is degenerate returns 0. Returns 1 otherwise.
+ */
+int bb_bounding_box(grp_window *figure, Point *bb_min, Point *bb_max);
 
 #endif

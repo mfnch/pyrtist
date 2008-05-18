@@ -39,6 +39,8 @@ Task circle_begin(VMProgram *vmp) {
   w->circle.got.radius_b = GOT_NOT;
   w->circle.got.center = GOT_NOT;
   w->circle.got.color = 0;
+
+  g_style_new(& w->circle.style, & w->style);
   return Success;
 }
 
@@ -72,7 +74,7 @@ Task circle_real(VMProgram *vmp) {
   return Success;
 }
 
-Task circle_pause(VMProgram *vmp) {
+static Task _circle_draw(VMProgram *vmp, DrawWhen when) {
   SUBTYPE_OF_WINDOW(vmp, w);
 
   if (w->circle.got.center == GOT_NOT || w->circle.got.radius_a == GOT_NOT) {
@@ -90,15 +92,13 @@ Task circle_pause(VMProgram *vmp) {
 
     grp_window *cur_win = grp_win;
     grp_win = w->window;
-    grp_rreset();
     grp_rcircle(& c, & a, & b);
     if (w->circle.got.color) {
       Color *color = & w->circle.color;
       grp_rfgcolor(color);
       w->circle.got.color = 0;
     }
-    grp_rdraw(DRAW_EOFILL);
-    grp_rreset();
+    (void) g_rdraw(& w->circle.style, & w->circle.default_style, when);
     grp_win = cur_win;
 
     w->circle.got.center = (w->circle.got.center == GOT_NOT)
@@ -111,6 +111,10 @@ Task circle_pause(VMProgram *vmp) {
   }
 }
 
+Task circle_pause(VMProgram *vmp) {
+  return _circle_draw(vmp, DRAW_WHEN_PAUSE);
+}
+
 Task circle_end(VMProgram *vmp) {
-  return circle_pause(vmp);
+  return _circle_draw(vmp, DRAW_WHEN_END);
 }

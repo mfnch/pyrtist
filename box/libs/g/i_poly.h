@@ -35,6 +35,8 @@ typedef struct {
   Real margin[2];
 
   Color color;
+
+  GStyle default_style, style;
 } WindowPoly;
 
 #else

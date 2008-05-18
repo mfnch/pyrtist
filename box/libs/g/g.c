@@ -94,3 +94,53 @@ int file_extension(char **extensions, const char *file_name) {
     return -1;
   }
 }
+
+/****************************************************************************
+ * Function to manipulate graphic styles (GStyle).                          *
+ ****************************************************************************/
+
+void g_style_new(GStyle *gs, GStyle *covered_style) {
+  int i;
+  for(i = 0; i < G_STYLE_ATTR_NUM; i++)
+    gs->attr[i] = (void *) NULL;
+  gs->covered_style = covered_style;
+}
+
+static int check_attr(GStyleAttr a) {
+  if (a >= 0 && a < G_STYLE_ATTR_NUM) return 1;
+  g_error("check_attr: unknown GStyleAttr argument.");
+  return 0;
+}
+
+void *g_style_attr_get(GStyle *gs, GStyle *default_style,
+                         GStyleAttr a) {
+  if (!check_attr(a)) return (void *) NULL;
+  if (gs == (GStyle *) NULL) return (void *) NULL;
+
+  if (gs->attr[a] != (void *) NULL)
+    return gs->attr[a];
+
+  else if (gs->covered_style != (GStyle *) NULL)
+    return g_style_attr_get(gs->covered_style, default_style, a);
+
+  else
+    return g_style_attr_get(default_style, (GStyle *) NULL, a);
+}
+
+void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data) {
+  if (!check_attr(a)) return;
+  gs->attr[a] = attr_data;
+}
+
+int g_rdraw(GStyle *gs, GStyle *default_style, DrawWhen now) {
+  DrawWhen *when = g_style_get_draw_when(gs, default_style),
+           predef_when = DRAW_WHEN_PAUSE;
+  DrawStyle *style = g_style_get_draw_style(gs, default_style),
+            predef_style = DRAW_EOFILL;
+  if (when == (DrawWhen *) NULL) when = & predef_when;
+  if (style == (DrawStyle *) NULL) style = & predef_style;
+  if (now < *when) return 0;
+  grp_rdraw(*style);
+  grp_rreset();
+  return 1;
+}

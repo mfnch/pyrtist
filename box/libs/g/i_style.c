@@ -17,4 +17,15 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+#include "types.h"
+#include "virtmach.h"
+
 #include "i_style.h"
+
+Task style_begin(VMProgram *vmp) {
+  return Success;
+}
+
+Task style_fill_string(VMProgram *vmp) {
+  return Success;
+}
