@@ -11,8 +11,10 @@ include "g"
 
 // Here we draw our line-terminator: this is just a common Window object
 // where some hot points have been defined.
-eye = Window["fig"]
-\ eye.Circle[color.yellow, (0, 0), 1, 0.5; color.dark_green, 0.1, 0.5]
+eye = Window["fig"][
+  Style[.Fill[";"]]
+  \ .Circle[color.yellow, (0, 0), 1, 0.5; color.dark_green, 0.1, 0.5]
+]
 
 tongue = Window["fig"]
 \ tongue.Poly[color.dark_red, (0.5, 0), (0.5, 4), 0, 1, (0.5, 5), 1, 0, (1, 5)

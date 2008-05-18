@@ -6,6 +6,7 @@ Window = Ptr
 (])@Window ? "window_end"
 P@Window ? "window_size"
 Color@&Window ? "window_color"
+Style@&Window ? "window_style"
 
 Window.Save = Void
 (])@Window.Save ? "window_save_end"

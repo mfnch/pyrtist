@@ -32,6 +32,7 @@
 #include "i_window.h"
 #include "i_line.h"
 #include "i_put.h"
+#include "i_style.h"
 
 /*#define DEBUG*/
 
@@ -115,7 +116,7 @@ Task window_destroy(VMProgram *vmp) {
   pointlist_destroy(& w->pointlist);
   put_window_destroy(w);
   line_window_destroy(w);
-  (void) free(wp);
+  free(wp);
   return Success;
 }
 
@@ -150,6 +151,13 @@ Task window_size(VMProgram *vmp) {
 
   w->plan.have.size = 1;
   w->plan.size = *win_size;
+  return Success;
+}
+
+Task window_style(VMProgram *vmp) {
+  Window *w = BOX_VM_THIS(vmp, WindowPtr);
+  IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
+  g_style_copy_selected(& w->style, & s->style, s->have);
   return Success;
 }
 

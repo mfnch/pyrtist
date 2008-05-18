@@ -25,20 +25,20 @@
  */
 
 #ifndef _VIRTMACH_H
-#define _VIRTMACH_H
+#  define _VIRTMACH_H
 
-#include <stdio.h>
-#include "types.h"
-#include "defaults.h"
-#include "array.h"
-#include "collection.h"
+#  include <stdio.h>
+#  include "types.h"
+#  include "defaults.h"
+#  include "array.h"
+#  include "collection.h"
 
-#include "vmcommon.h"
+#  include "vmcommon.h"
 
-#define _INSIDE_VIRTMACH_H
-#include "vmproc.h"
-#include "vmsym.h"
-#undef _INSIDE_VIRTMACH_H
+#  define _INSIDE_VIRTMACH_H
+#  include "vmproc.h"
+#  include "vmsym.h"
+#  undef _INSIDE_VIRTMACH_H
 
 /* Associo un numero a ciascun tipo, per poterlo identificare */
 typedef enum {
@@ -126,7 +126,7 @@ typedef enum {
 } SizeOfType;
 
 /* Numero massimo degli argomenti di un'istruzione */
-#define VM_MAX_NUMARGS 2
+#  define VM_MAX_NUMARGS 2
 
 /* Enumerazione dei tipi di moduli */
 typedef enum {
@@ -255,7 +255,7 @@ struct __vmprogram {
  * "struct __vmprogram". Here we undefine this macro and we define
  * a corresponding typedef
  */
-#undef VMProgram
+#  undef VMProgram
 typedef struct __vmprogram VMProgram;
 
 extern VMInstrDesc vm_instr_desc_table[];
@@ -307,17 +307,35 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 /* Numero minimo di VMByteX4 che riesce a contenere tutti i tipi possibili
  * di argomenti (Intg, Real, Point, Obj)
  */
-#define MAX_SIZE_IN_IWORDS \
- ((sizeof(Point) + sizeof(VMByteX4) - 1) / sizeof(VMByteX4))
+#  define MAX_SIZE_IN_IWORDS \
+   ((sizeof(Point) + sizeof(VMByteX4) - 1) / sizeof(VMByteX4))
 
-#define BOX_VM_CURRENT(vmp, Type) *((Type *) *(vmp)->box_vm_current)
-#define BOX_VM_ARG1(vmp, Type) *((Type *) *(vmp)->box_vm_arg1)
-#define BOX_VM_ARG2(vmp, Type) *((Type *) *(vmp)->box_vm_arg2)
-#define BOX_VM_CURRENTPTR(vmp, Type) ((Type *) *(vmp)->box_vm_current)
-#define BOX_VM_ARGPTR1(vmp, Type) ((Type *) *(vmp)->box_vm_arg1)
-#define BOX_VM_ARGPTR2(vmp, Type) ((Type *) *(vmp)->box_vm_arg2)
+#  define BOX_VM_THIS_PTR(vmp, Type) ((Type *) *(vmp)->box_vm_current)
+#  define BOX_VM_THIS(vmp, Type) (*BOX_VM_THIS_PTR(vmp, Type))
+#  define BOX_VM_ARG1_PTR(vmp, Type) ((Type *) *(vmp)->box_vm_arg1)
+#  define BOX_VM_ARG1(vmp, Type) (*BOX_VM_ARG1_PTR(vmp, Type))
+#  define BOX_VM_ARG_PTR BOX_VM_ARG1_PTR
+#  define BOX_VM_ARG BOX_VM_ARG1
+#  define BOX_VM_ARG2_PTR(vmp, Type) ((Type *) *(vmp)->box_vm_arg2)
+#  define BOX_VM_ARG2(vmp, Type) (*BOX_VM_ARG2_PTR(vmp, Type))
 
-#define VM_Label_New_Undef(vmp, label) \
-  VM_Label_New(vmp, label, vmp->proc_table.target_proc_num, -1)
+/* Subtype-related macros */
+#  define BOX_VM_SUB_PARENT_PTR(vmp, parent_t) \
+   SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), parent_t)
+#  define BOX_VM_SUB_PARENT(vmp, parent_t) \
+   (*BOX_VM_SUB_PARENT_PTR(vmp, parent_t))
+#  define BOX_VM_SUB_CHILD_PTR(vmp, child_t) \
+   SUBTYPE_CHILD_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), child_t)
+#  define BOX_VM_SUB_CHILD(vmp, child_t) \
+   (*BOX_VM_SUB_CHILD_PTR(vmp, child_t))
+
+/* These are obsolete macros */
+#  define BOX_VM_CURRENT BOX_VM_THIS
+#  define BOX_VM_CURRENTPTR BOX_VM_THIS_PTR
+#  define BOX_VM_ARGPTR1 BOX_VM_ARG1_PTR
+#  define BOX_VM_ARGPTR2 BOX_VM_ARG2_PTR
+
+#  define VM_Label_New_Undef(vmp, label) \
+   VM_Label_New(vmp, label, vmp->proc_table.target_proc_num, -1)
 
 #endif

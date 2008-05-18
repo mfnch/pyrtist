@@ -68,6 +68,21 @@ void g_optcolor_alternative_set(OptColor *oc, OptColor *alternative) {
 }
 #endif
 
+/** Given an array of possible strings (an array of string pointers,
+ * terminated by a (char *) NULL pointer), returns the index of the one
+ * which matches (via strcasecmp) with the provided one 'string'.
+ * In case of no matches the function returns -1.
+ */
+int g_string_find_in_list(char **list, const char *string) {
+  int i = 0;
+  const char **s;
+  for(s = list; *s != (char *) NULL; s++) {
+    if (strcasecmp(*s, string) == 0) return i;
+    ++i;
+  }
+  return -1;
+}
+
 /** Given an array of possible extensions (which is just an array
  * made up by the pointers to the corresponding strings, terminated
  * by a NULL pointer), returns the index of the extension of 'file_name'.
@@ -81,18 +96,10 @@ int file_extension(char **extensions, const char *file_name) {
     if (*c == '.') ext = c;
 
   if (ext == (char *) NULL)
-    return -1;
+    return -1; /* Noe extension */
 
-  else {
-    int i = 0;
-    char **e;
-    ++ext; /* This points to '.', so we can safely increment it! */
-    for(e = extensions; *e != (char *) NULL; e++) {
-      if (strcasecmp(ext, *e) == 0) return i;
-      ++i;
-    }
-    return -1;
-  }
+  ++ext; /* This points to '.', so we can safely increment it! */
+  return g_string_find_in_list(extensions, ext);
 }
 
 /****************************************************************************
@@ -130,6 +137,21 @@ void *g_style_attr_get(GStyle *gs, GStyle *default_style,
 void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data) {
   if (!check_attr(a)) return;
   gs->attr[a] = attr_data;
+}
+
+void g_style_copy_selected(GStyle *dest, GStyle *src,
+                           int sel[G_STYLE_ATTR_NUM]) {
+  if (sel[G_STYLE_ATTR_DRAW]) {
+    dest->draw = src->draw;
+    dest->attr[G_STYLE_ATTR_DRAW] =
+      (src->attr[G_STYLE_ATTR_DRAW] == NULL) ? NULL : & dest->draw;
+  }
+
+  if (sel[G_STYLE_ATTR_DRAW_WHEN]) {
+    dest->draw_when = src->draw_when;
+    dest->attr[G_STYLE_ATTR_DRAW_WHEN] =
+      (src->attr[G_STYLE_ATTR_DRAW_WHEN] == NULL) ? NULL : & dest->draw_when;
+  }
 }
 
 int g_rdraw(GStyle *gs, GStyle *default_style, DrawWhen now) {

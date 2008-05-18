@@ -20,17 +20,13 @@
 #ifndef _I_STYLE_H
 #  define _I_STYLE_H
 
-typedef struct {
-  struct {
-    unsigned int fill : 1;
-  } have;
+#  include "g.h"
 
-  struct {
-    unsigned int on_pause : 1;
-    unsigned int on_end : 1;
-    enum {FILL_STYLE_PLAIN=1, FILL_STYLE_EOFILL,
-          FILL_STYLE_CLIP, FILL_STYLE_EOCLIP} fill;
-  } fill;
-} Style;
+typedef struct {
+  GStyle style;
+  int have[G_STYLE_ATTR_NUM];
+} IStyle;
+
+typedef IStyle *IStylePtr;
 
 #endif

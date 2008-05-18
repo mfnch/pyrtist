@@ -28,6 +28,13 @@
 void g_error(const char *msg);
 void g_warning(const char *msg);
 
+/** Given an array of possible strings (an array of string pointers,
+ * terminated by a (char *) NULL pointer), returns the index of the one
+ * which matches (via strcasecmp) with the provided one 'string'.
+ * In case of no matches the function returns -1.
+ */
+int g_string_find_in_list(char **list, const char *string);
+
 /** Given an array of possible extensions (which is just an array
  * made up by the pointers to the corresponding string, terminated
  * by a NULL pointer), returns the index of the extension of 'file_name'.
@@ -110,5 +117,9 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
  * by the DrawWhen value set in 'gs'.
  */
 int g_rdraw(GStyle *gs, GStyle *deafult_style, DrawWhen now);
+
+/** Copy the attributes specified in the array sel from 'src' to 'dest'. */
+void g_style_copy_selected(GStyle *dest, GStyle *src,
+                           int sel[G_STYLE_ATTR_NUM]);
 
 #endif
