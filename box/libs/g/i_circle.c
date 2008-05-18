@@ -25,6 +25,7 @@
 #include "graphic.h"
 #include "g.h"
 #include "i_window.h"
+#include "i_style.h"
 
 Task circle_color(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
@@ -71,6 +72,13 @@ Task circle_real(VMProgram *vmp) {
     w->circle.radius_b = w->circle.radius_a = radius;
     w->circle.got.radius_a = GOT_NOW;
   }
+  return Success;
+}
+
+Task circle_style(VMProgram *vmp) {
+  IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
+  SUBTYPE_OF_WINDOW(vmp, w);
+  g_style_copy_selected(& w->circle.style, & s->style, s->have);
   return Success;
 }
 

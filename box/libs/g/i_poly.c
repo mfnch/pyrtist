@@ -25,6 +25,7 @@
 #include "graphic.h"
 #include "g.h"
 #include "i_window.h"
+#include "i_style.h"
 
 /*#define DEBUG*/
 
@@ -117,6 +118,13 @@ Task poly_point(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *p = BOX_VM_ARGPTR1(vmp, Point);
   return _poly_point(w, p, 0);
+}
+
+Task poly_style(VMProgram *vmp) {
+  IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
+  SUBTYPE_OF_WINDOW(vmp, w);
+  g_style_copy_selected(& w->poly.style, & s->style, s->have);
+  return Success;
 }
 
 Task poly_end(VMProgram *vmp) {

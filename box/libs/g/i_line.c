@@ -31,6 +31,7 @@
 #include "g.h"
 #include "i_window.h"
 #include "i_line.h"
+#include "i_style.h"
 
 #include "debug.h"
 #include "error.h"
@@ -185,11 +186,19 @@ Task line_window(VMProgram *vmp) {
   return Success;
 }
 
-Task line_style(VMProgram *vmp) {
+Task line_linestyle(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Real *ls = BOX_VM_ARGPTR1(vmp, Real);
   lt_join_style_from_array(& w->line.this_piece.style,
                            ls[0], ls[1], ls[2], ls[3]);
+  return Success;
+}
+
+
+Task line_style(VMProgram *vmp) {
+  IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
+  SUBTYPE_OF_WINDOW(vmp, w);
+  g_style_copy_selected(& w->line.style, & s->style, s->have);
   return Success;
 }
 

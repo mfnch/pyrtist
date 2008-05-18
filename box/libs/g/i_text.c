@@ -26,6 +26,7 @@
 #include "graphic.h"
 #include "g.h"
 #include "i_window.h"
+#include "i_style.h"
 #include "i_text.h"
 
 Task window_text_begin(VMProgram *vmp) {
@@ -116,6 +117,13 @@ Task window_text_str(VMProgram *vmp) {
   free(w->text.text);
   w->text.text = strdup(BOX_VM_ARGPTR1(vmp, char));
   w->text.got.text = 1;
+  return Success;
+}
+
+Task window_text_style(VMProgram *vmp) {
+  IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
+  SUBTYPE_OF_WINDOW(vmp, w);
+  g_style_copy_selected(& w->text.style, & s->style, s->have);
   return Success;
 }
 
