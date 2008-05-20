@@ -1,9 +1,6 @@
 // Interface for the Style object
 
-// We declare Style as (Ptr, Ptr) and not simply Ptr to avoid compatibility
-// with Window (which is defined as Ptr as well). We have to fix
-// these problems as soon as possible!
-Style = (Ptr, Ptr)
+Style = ++Ptr
 ([)@Style ? "style_begin"
 
 Style.Fill = Void

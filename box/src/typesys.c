@@ -65,7 +65,6 @@ static TSDesc *Resolve(TS *ts, Type *rt, Type t, int ignore_names) {
   while(1) {
     TSDesc *td = Type_Ptr(ts, t);
     switch(td->kind) {
-    case TS_KIND_LINK:
     case TS_KIND_ALIAS:
     case TS_KIND_MEMBER:
       t = td->target;
@@ -82,7 +81,6 @@ static TSDesc *Fully_Resolve(TS *ts, Type *rt, Type t) {
   while(1) {
     TSDesc *td = Type_Ptr(ts, t);
     switch(td->kind) {
-    case TS_KIND_LINK:
     case TS_KIND_ALIAS:
     case TS_KIND_MEMBER:
       t = td->target; break;
@@ -108,11 +106,12 @@ Type TS_Resolve(TS *ts, Type t, Int select) {
       TSDesc *td = Type_Ptr(ts, t);
       Type rt = td->target;
       switch(td->kind) {
-      case TS_KIND_LINK:
       case TS_KIND_MEMBER:
         resolve = 1; break;
       case TS_KIND_ALIAS:
         resolve = ((select & TS_KS_ALIAS) != 0); break;
+      case TS_KIND_DETACHED:
+        resolve = ((select & TS_KS_DETACHED) != 0); break;
       case TS_KIND_SPECIES:
         rt = td->data.last;
         resolve = ((select & TS_KS_SPECIES) != 0);
@@ -172,6 +171,9 @@ char *TS_Name_Get(TS *ts, Type t) {
   case TS_KIND_INTRINSIC:
     return printdup("<size=%I>", td->size);
 
+  case TS_KIND_DETACHED:
+    return printdup("++%~s", TS_Name_Get(ts, td->target));
+
   case TS_KIND_ARRAY:
     if (td->size > 0) {
       Int as = td->data.array_size;
@@ -212,7 +214,8 @@ char *TS_Name_Get(TS *ts, Type t) {
 }
 
 Task TS_Array_Member(TS *ts, Type *memb, Type array, Int *array_size) {
-  Type a = TS_Resolve(ts, array, TS_KS_ALIAS | TS_KS_SPECIES);
+  Type a = TS_Resolve(ts, array,   TS_KS_ALIAS | TS_KS_SPECIES
+                                 | TS_KS_DETACHED);
   TSDesc *a_td = Type_Ptr(ts, a);
   if (a_td->kind != TS_KIND_ARRAY) {
     MSG_ERROR("Cannot extract element of the non-array type '%~s'",
@@ -238,7 +241,7 @@ void TS_Member_Find(TS *ts, Type *m, Type s, const char *m_name) {
   Name n;
   HashItem *hi;
   *m = TS_TYPE_NONE;
-  s = TS_Resolve(ts, s, TS_KS_ALIAS | TS_KS_SPECIES);
+  s = TS_Resolve(ts, s, TS_KS_ALIAS | TS_KS_SPECIES | TS_KS_DETACHED);
   if IS_FAILED(Member_Full_Name(ts, & n, s, m_name)) return;
   if (HT_Find(ts->members, n.text, n.length, & hi))
     *m = *((Type *) hi->object);
@@ -314,6 +317,10 @@ Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind) {
 #define TS_LINK_NEW
 #include "tsdef.c"
 #undef TS_LINK_NEW
+
+#define TS_DETACHED_NEW
+#include "tsdef.c"
+#undef TS_DETACHED_NEW
 
 #define TS_ARRAY_NEW
 #include "tsdef.c"
@@ -553,6 +560,9 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
     case TS_KIND_INTRINSIC:
       return TS_TYPES_UNMATCH;
 
+    case TS_KIND_DETACHED:
+      return TS_TYPES_UNMATCH;
+
     case TS_KIND_SPECIES:
       {
         Type m = t1;
@@ -568,8 +578,12 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
 
     case TS_KIND_STRUCTURE:
     case TS_KIND_ENUM:
-      /* Should we match member names?
-       * For now we tolerate: (x=Real, y=Int) == (z=Real, hgj=Int)
+      /* Member names are not matched, i.e. we tolerate:
+       *   (Real x, y) == (Real z, hgj)
+       * If one wants incompatible types, he should use type detachment
+       * and define: Point = ++(Real x, y)
+       * This way Point will be different to all the other types, including
+       * (Real a, b) and (Real, Real).
        */
       if (td2->kind != td1->kind)
         return TS_TYPES_UNMATCH;
@@ -633,7 +647,6 @@ Int Tym_Type_Size(Int t) {return (Int) TS_Size(last_ts, (Type) t);}
 TypeOfType Tym_Type_TOT(Int t) {
   switch(TS_Kind(last_ts, (Type) t)) {
   case TS_KIND_INTRINSIC: return TOT_INSTANCE;
-  case TS_KIND_LINK: return TOT_ALIAS_OF;
   case TS_KIND_ALIAS: return TOT_ALIAS_OF;
   case TS_KIND_SPECIES: return TOT_SPECIE;
   case TS_KIND_STRUCTURE: return TOT_STRUCTURE;

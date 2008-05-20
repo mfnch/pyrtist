@@ -1,6 +1,6 @@
 // The Window object
 
-Window = Ptr
+Window = ++Ptr
 ([)@Window ? "window_begin"
 ()Char@Window ? "window_str"
 (])@Window ? "window_end"

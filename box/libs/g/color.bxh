@@ -1,5 +1,5 @@
 // Definition of the type Color and some example of Color-s
-Color = (R r, g, b, a)
+Color = ++(R r, g, b, a)
 
 Color@Print["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, ", .a=", $.a, "]"]
 Color@Color[$$.r = $.r, $$.g = $.g, $$.b = $.b, $$.a = $.a]

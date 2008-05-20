@@ -54,8 +54,8 @@ Task Cmp_Structure_Add(Expr *e) {
   item_size = Tym_Type_Size(e->type);
   if ( item_size < 1 ) {
     assert(item_size == 0);
-    MSG_ERROR("Impossibile aggiungere alla struttura"
-     "un oggetto di dimensione 0 (tipo '%s')", Tym_Type_Name(e->type));
+    MSG_ERROR("Cannot add to the structure a zero-sized object "
+              " (with type '%s')", Tym_Type_Name(e->type));
     return Failed;
   }
 
@@ -83,7 +83,7 @@ Task Cmp_Structure_End(Expr *new_struct) {
   assert(cmp_structure_exprs != NULL);
 
   if ( num < 1 ) {
-    MSG_ERROR("Tentativo di creare una struttura vuota.");
+    MSG_ERROR("Trying to create an empty structure.");
     return Failed;
   }
 
@@ -301,16 +301,16 @@ Task Cmp_Expr_Expand(Int species, Expression *e) {
 
   switch(Tym_Type_TOT(type1)) {
     case TOT_INSTANCE: /* type1 != type2 !!! */
-    MSG_ERROR("Tipo non ammesso per la conversione della specie.");
+    MSG_ERROR("Type forbidden in species conversions.");
     return Failed;
 
     case TOT_PTR_TO:
-    MSG_ERROR("Non ancora implementato!"); return Failed;
+    MSG_ERROR("Not implemented yet!"); return Failed;
     /*if (td2->tot == TOT_PTR_TO) break;
     return 0;*/
 
     case TOT_ARRAY_OF:
-    MSG_ERROR("Non ancora implementato!"); return Failed;
+    MSG_ERROR("Not implemented yet!"); return Failed;
     /*if (td2->tot != TOT_ARRAY_OF) return 0;
     {
       register Intg td1s = td1->arr_size, td2s = td2->arr_size;
@@ -351,12 +351,12 @@ Task Cmp_Expr_Expand(Int species, Expression *e) {
         t = td1->greater;
       } while( td1->greater != TYPE_NONE );
     }
-    MSG_ERROR("Impossibile espandere la specie!");
+    MSG_ERROR("Cannot expand the species!");
     return Failed;
 #endif
 
     case TOT_PROCEDURE:
-    MSG_ERROR("Non ancora implementato!"); return Failed;
+    MSG_ERROR("Not implemented yet!"); return Failed;
     /*if (td2->tot != TOT_PROCEDURE) return 0;
     return (
           Tym_Compare_Types(td1->parent, td2->parent)
@@ -370,7 +370,7 @@ Task Cmp_Expr_Expand(Int species, Expression *e) {
       */
     if ( ! Tym_Compare_Types(type1, type2, & need_expansion) ) {
       MSG_ERROR("Cmp_Expr_Expand: "
-        "Espansione fra tipi non compatibili!");
+                "Expansion involves incompatible types!");
       return Failed;
     }
 
@@ -414,7 +414,7 @@ Task Cmp_Expr_Expand(Int species, Expression *e) {
     }
 
     default:
-    MSG_ERROR("Cmp_Expr_Expand non implementata fino in fondo!");
+    MSG_ERROR("Cmp_Expr_Expand not fully implemented!");
     return 0;
   }
 

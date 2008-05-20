@@ -66,6 +66,15 @@ extern UInt tok_linenum;
  * in these static functions that are collected here.                       *
  ****************************************************************************/
 
+static void Sep_Newline(void) {
+  Cmp_Assemble(ASM_LINE_Iimm, CAT_IMM, ++tok_linenum);
+  Msg_Line_Set(tok_linenum);
+}
+
+static void Sep_Pause(void) {
+  (void) Prs_Procedure_Special(NULL, TYPE_PAUSE, 1);
+}
+
 static Task Type_Struc_Begin(StrucMember *sm, Expr *type, char *m) {
   TASK( Expr_Must_Have_Type(type) );
   sm->type = type->type;
@@ -206,7 +215,7 @@ static Task Register_Subtype(Expr *result, Expr *unreg_subtype, Expr *type) {
   return Success;
 }
 
-Task Subtype_Create(Expr *result, Expr *parent, Name *child) {
+static Task Subtype_Create(Expr *result, Expr *parent, Name *child) {
   Expr this_parent;
   if (parent == (Expr *) NULL) {
     parent = & this_parent;
@@ -217,11 +226,21 @@ Task Subtype_Create(Expr *result, Expr *parent, Name *child) {
   return Success;
 }
 
-Task Expr_Statement(Expr *e) {
+static Task Expr_Statement(Expr *e) {
   TASK( Expr_Resolve_Subtype(e) );
   TASK( Cmp_Procedure(NULL, e, -1, /* auto_define */ 1) );
   (void) Cmp_Expr_Destroy_Tmp(e);
   return Success;
+}
+
+static void Type_Detached(Expr *dst, Expr *src) {
+  Type dt;
+  if (Expr_Is_Error(src)) {*dst = *src; return;}
+  if (TS_Detached_New(cmp->ts, & dt, src->type) == Success) {
+    Expr_New_Type(dst, dt);
+    return;
+  }
+  Expr_New_Error(dst);
 }
 
 /*****************************************************************************/
@@ -314,10 +333,13 @@ Task Expr_Statement(Expr *e) {
 %type <Ex> expr.struc
 %type <Ex> expr.struc.all
 
-%type <SM> type.struc.first
-%type <SM> type.struc.second
-%type <Sc> type.struc.all
+%type <SM> type.struc1
+%type <SM> type.struc234
+%type <Sc> type.struc1234
 %type <Ex> type.struc
+
+%type <Ex> array.type
+%type <Ex> detached.type
 
 %type <Ex> registered.subtype
 %type <Ex> unregistered.subtype
@@ -350,12 +372,25 @@ Task Expr_Statement(Expr *e) {
 /*****************************************************************************
  *                                 Separators                                *
  *****************************************************************************/
+
+void.sep:
+  ','                 { }
+| TOK_NEWLINE         { Sep_Newline(); }
+;
+
+void.seps:
+  void.sep            { }
+| void.seps void.sep  { }
+;
+
 sep:
-   ','                 { }
- | ';'                 { DO( Prs_Procedure_Special(NULL, TYPE_PAUSE, 1) ) }
- | TOK_NEWLINE         { Cmp_Assemble(ASM_LINE_Iimm, CAT_IMM, ++tok_linenum);
-                         Msg_Line_Set(tok_linenum); }
- ;
+  void.sep            { }
+| ';'                 { Sep_Pause(); }
+;
+
+void.seps.opt:
+| void.seps           { }
+;
 
 /*****************************************************************************
  *       Grammatica relativa ai suffissi del tipo ::: o :tipo1:::tipo2::     *
@@ -372,7 +407,7 @@ suffix:
 
 suffix.opt:
                        { $$ = -1; }
-| suffix               { $$ = $1; }
+ | suffix              { $$ = $1; }
  ;
 
 /*****************************************************************************
@@ -380,7 +415,7 @@ suffix.opt:
  *****************************************************************************/
 
 name.type:
-  TOK_UNAME suffix.opt      { DO( Prs_Name_To_Expr(& $1, & $$, $2) ) }
+  TOK_UNAME suffix.opt     { DO( Prs_Name_To_Expr(& $1, & $$, $2) ) }
  ;
 
 prim.type:
@@ -390,14 +425,23 @@ prim.type:
 | '(' type.species ')'      { $$ = $2; }
  ;
 
-type:
+array.type:
   prim.type                 { $$ = $1; }
 | '(' expr ')' type         { if ( Prs_Array_Of_X(& $$, & $2, & $4) ) MY_ERR }
 | '(' ')' type              { if ( Prs_Array_Of_X(& $$, NULL, & $3) ) MY_ERR }
  ;
 
+detached.type:
+  array.type                { $$ = $1; }
+| TOK_INC array.type        { Type_Detached(& $$, & $2); }
+;
+
+type:
+  array.type                { $$ = $1; }
+;
+
 asgn.type:
-  type                      { $$ = $1; }
+  detached.type             { $$ = $1; }
 | name.type '=' asgn.type   { if ( Prs_Rule_Typed_Eq_Typed(& $$, & $1, & $3) ) MY_ERR }
 | expr '=' asgn.type        { if (Prs_Rule_Valued_Eq_Typed(& $$, & $1, & $3) ) MY_ERR }
 | unregistered.subtype '=' asgn.type          {DO(Register_Subtype(& $$, & $1, & $3));}
@@ -412,33 +456,28 @@ type.species:
  *                            Structure types                                *
  *****************************************************************************/
 
-/* Used to match the final optional comma as in (Real, Real,) */
-comma.opt:
-| ','
-;
-
 /* Matches the first element of a structure type */
-type.struc.first:
+type.struc1:
   type                     {DO(Type_Struc_Begin(& $$, & $1, (char *) NULL));}
 | type TOK_LNAME           {DO(Type_Struc_Begin(& $$, & $1, Name_To_Str(& $2)));}
 ;
 
 /* Matches the second, third, ... element of a structure type */
-type.struc.second:
-  type.struc.first         {$$ = $1;}
+type.struc234:
+  type.struc1              {$$ = $1;}
 | TOK_LNAME                {$$.type = TYPE_NONE; $$.name = Name_To_Str(& $1);}
 ;
 
 /* Matches a structure type with at least two elements */
-type.struc.all:
-  type.struc.first ',' type.struc.second {DO(Type_Struc_All_1(& $$, & $1, & $3));}
-| type.struc.all ',' type.struc.second   {DO(Type_Struc_All_2(& $$, & $1, & $3));}
+type.struc1234:
+  type.struc1 void.seps type.struc234    {DO(Type_Struc_All_1(& $$, & $1, & $3));}
+| type.struc1234 void.seps type.struc234 {DO(Type_Struc_All_2(& $$, & $1, & $3));}
 ;
 
 /* Matches all sorts of structure types */
 type.struc:
-  '(' type.struc.first ',' ')'           {DO(Type_Struc_1(& $$, & $2));}
-| '(' type.struc.all comma.opt ')'       {DO(Type_Struc_2(& $$, & $2));}
+  '(' type.struc1 void.seps ')'          {DO(Type_Struc_1(& $$, & $2));}
+| '(' type.struc1234 void.seps.opt ')'   {DO(Type_Struc_2(& $$, & $2));}
 ;
 
 
@@ -456,17 +495,17 @@ unregistered.subtype:
  *                           Structure expression                            *
  *****************************************************************************/
 expr.struc.all:
-  expr ',' expr            { if ( Cmp_Structure_Begin()   ) MY_ERR
-                             if ( Cmp_Structure_Add(& $1) ) MY_ERR
-                             if ( Cmp_Structure_Add(& $3) ) MY_ERR }
-| expr.struc.all ',' expr  { if ( Cmp_Structure_Add(& $3) ) MY_ERR }
+  expr void.seps expr           { if ( Cmp_Structure_Begin()   ) MY_ERR
+                                  if ( Cmp_Structure_Add(& $1) ) MY_ERR
+                                  if ( Cmp_Structure_Add(& $3) ) MY_ERR }
+| expr.struc.all void.seps expr { if ( Cmp_Structure_Add(& $3) ) MY_ERR }
  ;
 
 expr.struc:
-  '(' expr ',' ')'                   { if ( Cmp_Structure_Begin()   ) MY_ERR
-                                       if ( Cmp_Structure_Add(& $2) ) MY_ERR
-                                       if ( Cmp_Structure_End(& $$) ) MY_ERR }
-| '(' expr.struc.all comma.opt ')'   { if ( Cmp_Structure_End(& $$) ) MY_ERR }
+  '(' expr void.seps ')'               { if ( Cmp_Structure_Begin()   ) MY_ERR
+                                         if ( Cmp_Structure_Add(& $2) ) MY_ERR
+                                         if ( Cmp_Structure_End(& $$) ) MY_ERR }
+| '(' expr.struc.all void.seps.opt ')' { if ( Cmp_Structure_End(& $$) ) MY_ERR }
 ;
 
 /*****************************************************************************
@@ -935,7 +974,7 @@ Task Prs_Array_Of_X(Expr *array, Expr *num, Expr *x) {
 
   /* Checks on *x */
   if ( ! x->is.typed ) {
-    MSG_ERROR("Impossibile creare un'array di oggetti di tipo non definito!");
+    MSG_ERROR("Cannot create an array of objects with undefined type!");
     return Failed;
   }
 

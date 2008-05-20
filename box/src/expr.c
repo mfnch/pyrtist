@@ -35,13 +35,13 @@
 
 /* This fuction creates an expression with type, but without value.
  */
-void Expr_New_Type(Expr *e, Int type) {
-  e->type = type;
-  e->resolved = Tym_Type_Resolve_All(type);
+void Expr_Background(Expr *e) {
+  e->type = TS_TYPE_NONE;
+  e->resolved = TS_TYPE_NONE;
   e->value.i = 0;
   e->addr = 0;
   e->categ = 0;
-  e->is.typed = 1;
+  e->is.typed = 0;
   e->is.value = 0;
   e->is.ignore = 0;
   e->is.imm = 0;
@@ -49,23 +49,29 @@ void Expr_New_Type(Expr *e, Int type) {
   e->is.gaddr = 0;
   e->is.allocd = 0;
   e->is.release = 0;
+  e->is.error = 0;
+}
+
+void Expr_New_Type(Expr *e, Int type) {
+  Expr_Background(e);
+  e->type = type;
+  e->resolved = Tym_Type_Resolve_All(type);
+  e->is.typed = 1;
 }
 
 /** Put inside *e a the Void value. */
 void Expr_New_Void(Expr *e) {
+  Expr_Background(e);
   e->type = TYPE_VOID;
   e->resolved = TYPE_VOID;
   e->is.typed = 1;
-  e->is.value = 0;
-  e->is.ignore = 0;
-  e->is.imm = 0;
-  e->is.target = 0;
 }
 
 /** Create an expression with value, corresponding to a local register 0
  * having a suitable type.
  */
 void Expr_New_Value(Expr *e, Type t) {
+  Expr_Background(e);
   e->is.typed = 1;
   e->type = t;
   e->resolved = TS_Resolve(cmp->ts, t, TS_KS_ALIAS | TS_KS_SPECIES);
@@ -76,6 +82,11 @@ void Expr_New_Value(Expr *e, Type t) {
   e->is.target = e->is.gaddr = 0;
   e->is.allocd = e->is.release = 0;
   e->addr = 0;
+}
+
+void Expr_New_Error(Expr *e) {
+  Expr_Background(e);
+  Expr_Attr_Set(e, EXPR_ATTR_ERROR, EXPR_ATTR_ERROR);
 }
 
 /** Change the attributes of an expression
@@ -89,6 +100,8 @@ void Expr_Attr_Set(Expr *e, Int mask, Int value) {
     e->is.release = ((value & EXPR_ATTR_RELEASE) != 0);
   if ((mask & EXPR_ATTR_ALLOCD) != 0)
     e->is.allocd = ((value & EXPR_ATTR_ALLOCD) != 0);
+  if ((mask & EXPR_ATTR_ERROR) != 0)
+    e->is.allocd = ((value & EXPR_ATTR_ERROR) != 0);
 }
 
 /* Prints the details about the specified expression *e.
@@ -101,6 +114,11 @@ void Expr_Print(Expr *e, FILE *out) {
     "pointer to location",
     "immediate value"
   };
+
+  if ( e->is.error ) {
+    fprintf(out, "ERROR_Expr\n", e->value.nm.text);
+    return;
+  }
 
   if ( ! e->is.typed ) {
     fprintf(out, "Name(name=\"%s\")\n", e->value.nm.text);

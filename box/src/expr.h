@@ -44,6 +44,9 @@ typedef struct {
     unsigned int gaddr   : 1; /* addr e' un registro globale (o locale)? */
     unsigned int allocd  : 1; /* l'oggetto e' stato allocato? (va liberato?) */
     unsigned int release : 1; /* il registro va rilasciato automaticamente? */
+    unsigned int error   : 1; /* An invalid expression coming from an error
+                                 which has already been communicated to
+                                 the user: we should propagate it silently! */
   } is;
 
   Int    addr;
@@ -63,6 +66,21 @@ typedef struct {
 /** For backward compatibility */
 #define Expression Expr
 
+/** Return the error state of the Expr referenced by the pointer 'e' */
+#define Expr_Is_Error(e) ((e)->is.error)
+
+/** Set *e to be the result of an error, which has already beed signaled
+ * to the user and thus need to be propagated silently.
+ */
+void Expr_New_Error(Expr *e);
+
+/** Clear the content of the expression '*e'. This function must be called
+ * by every function which creates an Expr type. Rationale: if we add new
+ * entries to Expr we can just edit this function to be sure that every
+ * Expr instance is initialised correctly.
+ */
+void Expr_Background(Expr *e);
+
 /** Create a new type-expression */
 void Expr_New_Type(Expr *e, Int type);
 
@@ -79,7 +97,8 @@ typedef enum {
   EXPR_ATTR_TARGET=1,
   EXPR_ATTR_IGNORE=2,
   EXPR_ATTR_RELEASE=4,
-  EXPR_ATTR_ALLOCD=8
+  EXPR_ATTR_ALLOCD=8,
+  EXPR_ATTR_ERROR=16
 } ExprAttr;
 
 /** Change the attributes of an expression.

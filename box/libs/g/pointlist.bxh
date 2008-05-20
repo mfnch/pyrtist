@@ -1,6 +1,6 @@
 // The PointList object
 
-PointList = Ptr
+PointList = ++Ptr
 ([)@PointList ? "pointlist_begin"
 ()Char@&PointList ? "pointlist_str"
 P@&PointList ? "pointlist_point"

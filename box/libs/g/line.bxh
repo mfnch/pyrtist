@@ -1,10 +1,7 @@
 // Interface to Window.Line
 
 // Style for joining lines
-LineStyle = (Real a, b, c, d, unused)
-// The last member is just to make the LineStyle type
-// incompatible with the Color type. This is a temporary
-// remedy to a deficiency of the way Box handles procedures.
+LineStyle = ++(Real a, b, c, d)
 
 R@LineStyle[.a = .b = .c = .d = $]
 

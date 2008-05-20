@@ -56,9 +56,9 @@
 #  define TS_X_NEW TS_KIND_ALIAS
 Task TS_Alias_New(TS *ts, Type *dst, Type src)
 
-#elif defined(TS_LINK_NEW)
-#  define TS_X_NEW TS_KIND_LINK
-Task TS_Link_New(TS *ts, Type *dst, Type src)
+#elif defined(TS_DETACHED_NEW)
+#  define TS_X_NEW TS_KIND_DETACHED
+Task TS_Detached_New(TS *ts, Type *dst, Type src)
 
 #elif defined(TS_ARRAY_NEW)
 #  define TS_X_NEW TS_KIND_ARRAY
@@ -109,7 +109,7 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
 
 /* here we really define the body of the function */
 #if defined(TS_X_NEW)
-/* Code for TS_Alias_New, TS_Link_New, etc. */
+/* Code for TS_Alias_New, TS_Detached_New, etc. */
 {
   TSDesc td;
   TSDesc *src_td = Type_Ptr(ts, src);

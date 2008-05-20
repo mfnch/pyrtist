@@ -36,8 +36,8 @@ typedef Int Type;
 
 typedef enum {
   TS_KIND_INTRINSIC=1,
-  TS_KIND_LINK,
   TS_KIND_ALIAS,
+  TS_KIND_DETACHED,
   TS_KIND_SPECIES,
   TS_KIND_STRUCTURE,
   TS_KIND_ENUM,
@@ -57,7 +57,8 @@ enum {
 typedef enum {
   TS_KS_ALIAS=1,
   TS_KS_SPECIES=2,
-  TS_KS_SUBTYPE=4
+  TS_KS_SUBTYPE=4,
+  TS_KS_DETACHED=8
 } TSKindSelect;
 
 typedef struct {
@@ -204,7 +205,10 @@ char *TS_Name_Get(TS *ts, Type t);
 
 Task TS_Alias_New(TS *ts, Type *a, Type t);
 
-Task TS_Link_New(TS *ts, Type *l, Type t);
+/** Create a new detached type from the type t. The new type (in *d) will be
+ * identical to t, but incompatible: TS_Compare will not match the two types.
+ */
+Task TS_Detached_New(TS *ts, Type *a, Type t);
 
 #if 0
 Task TS_SubType_New(TS *ts, Type *s,)
