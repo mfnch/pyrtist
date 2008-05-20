@@ -116,7 +116,7 @@ void Expr_Print(Expr *e, FILE *out) {
   };
 
   if ( e->is.error ) {
-    fprintf(out, "ERROR_Expr\n", e->value.nm.text);
+    fprintf(out, "ERROR_Expr\n");
     return;
   }
 
@@ -312,7 +312,7 @@ member_not_found:
  * *s is then released.
  */
 Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name) {
-  Type t = s->resolved, m_type, tm;
+  Type m_type, tm;
   Int m_addr;
   char *str_m_name;
 
@@ -325,7 +325,12 @@ Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name) {
   Expr_Resolve_Subtype(s);
 
   /* Determino se si tratta di un oggetto intrinseco */
-  if (t < NUM_INTRINSICS)
+#if 0
+  t = TS_Resolve(cmp->ts, s->type,  TS_KS_ALIAS | TS_KS_SPECIES
+                                  | TS_KS_DETACHED);
+#endif
+
+  if (s->resolved < NUM_INTRINSICS)
     return Expr_Point_Member(m, s, m_name);
 
   str_m_name = Name_To_Str(m_name);
