@@ -86,7 +86,7 @@ int HT_Default_Action(HashItem *hi, void *pass_data);
  * @param cmp comparison function to be used.
  */
 void HT_New(Hashtable **ht, unsigned int num_entries,
- HashFunction hash, HashComparison cmp);
+            HashFunction hash, HashComparison cmp);
 
 /** Destroy the hash table given as argument.
  */
@@ -108,7 +108,7 @@ void HT_Destructor(Hashtable *ht, Task (*destroy)(HashItem *));
  * @see HT_Insert, HT_Insert_Obj, HT_Copy_Key, HT_Copy_Obj
  */
 int HT_Add(Hashtable *ht, unsigned int branch, void *key,
- unsigned int key_size, void *object, unsigned int object_size);
+           unsigned int key_size, void *object, unsigned int object_size);
 
 /** Remove the element matching the given key from the hash-table.
  */
@@ -121,7 +121,7 @@ Task HT_Remove(Hashtable *ht, void *key, unsigned int key_size);
  * in old_object.
  */
 Task HT_Rename(Hashtable *ht, void *key, unsigned int key_size,
- void *new_key, unsigned int new_key_size);
+               void *new_key, unsigned int new_key_size);
 
 /** Iterate over one branch of an hashtable 'ht'.
  *
@@ -129,14 +129,14 @@ Task HT_Rename(Hashtable *ht, void *key, unsigned int key_size,
  * the branch number 'branch'. For every iteration the function cmp
  * will be used to determine if the current element is equal to 'item'.
  * For every element which matches, the function 'action' will be called.
- * If this function returns 0 the iteration will continue, if it returns 0,
+ * If this function returns 0 the iteration will continue, if it returns 1,
  * then the iteration will end and the function will return the current
  * element inside *result.
  * RETURN VALUE: this function returns 1 if the item has been succesfully found
  *  ('action' returned with 1), 0 otherwise.
  */
 int HT_Iter(Hashtable *ht, int branch, void *key, unsigned int key_size,
- HashItem **result, HTIterator it, void *pass_data);
+            HashItem **result, HTIterator it, void *pass_data);
 
 /** Iterate over one or all the branches of an hashtable 'ht':
  * if 'branch < 0' iterate over all the branches, otherwise iterate over

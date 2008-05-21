@@ -353,7 +353,7 @@ static void VM__Exec_Mln_O(VMProgram *vmp) {
 }
 static void VM__Exec_MUnln_O(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  VM_Unlink(*((Obj *) vmcur->arg1));
+  VM_Unlink(vmp, *((Obj *) vmcur->arg1));
 }
 static void VM__Exec_MCopy_OO(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;

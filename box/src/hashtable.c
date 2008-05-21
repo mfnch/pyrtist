@@ -57,8 +57,7 @@ int HT_Default_Action(HashItem *it, void *pass_data) {return 1;}
 /* Create a new hashtable
  */
 void HT_New(Hashtable **new_ht, unsigned int num_entries,
- HashFunction hash, HashComparison cmp)
-{
+            HashFunction hash, HashComparison cmp) {
   Hashtable *ht;
   HashItem **hi;
   int i, mask;
@@ -133,14 +132,9 @@ void HT_Destructor(Hashtable *ht, Task (*destroy)(HashItem *)) {
  * key and object will only be referenced by the hashtable (not copied),
  * so you should allocate/free by yourself if you need to do so.
  */
-int HT_Add(
- Hashtable *ht,
- unsigned int branch,
- void *key,
- unsigned int key_size,
- void *object,
- unsigned int object_size)
-{
+int HT_Add(Hashtable *ht, unsigned int branch,
+           void *key, unsigned int key_size,
+           void *object, unsigned int object_size) {
   HashItem *hi;
   assert(branch < ht->num_entries);
   hi = (HashItem *) Mem_Alloc(sizeof(HashItem));
@@ -190,7 +184,7 @@ Task HT_Remove(Hashtable *ht, void *key, unsigned int key_size) {
 }
 
 Task HT_Rename(Hashtable *ht, void *key, unsigned int key_size,
- void *new_key, unsigned int new_key_size) {
+               void *new_key, unsigned int new_key_size) {
   HashItem *item;
   void *object;
   unsigned int object_size, allocated_obj;
@@ -228,7 +222,7 @@ void HT_Copy_Obj(Hashtable *ht, int bool) {
  *  ('action' returned with 1), 0 otherwise.
  */
 int HT_Iter(Hashtable *ht, int branch,
- void *key, unsigned int key_size,
+            void *key, unsigned int key_size,
  HashItem **result, HTIterator it, void *pass_data)
 {
   if ( branch < 0 ) {
@@ -239,7 +233,7 @@ int HT_Iter(Hashtable *ht, int branch,
     for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = hi->next)
       if ( ht->cmp(hi->key, key, hi->key_size, key_size) ) {
         if ( it(hi, pass_data) ) {
-          *result = hi;
+          if (result != (HashItem **) NULL) *result = hi;
           return 1;
         }
       }

@@ -184,6 +184,12 @@
 /** Initial size of the code of a procedure */
 #define VM_PROC_CODE_SIZE 1024
 
+/** Initial size of the hash table containing the destructors and other
+ * type-related methods needed by the memory handling system of the virtual
+ * machine.
+ */
+#define VM_METHOD_HT_SIZE 1024
+
 /*****************************************************************************
  *                 COSTANTI UTILIZZATE NEL FILE compiler.c                   *
  *****************************************************************************/

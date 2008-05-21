@@ -32,6 +32,7 @@
 #  include "defaults.h"
 #  include "array.h"
 #  include "collection.h"
+#  include "hashtable.h"
 
 #  include "vmcommon.h"
 
@@ -178,7 +179,7 @@ struct __vmstatus {
     unsigned int is_long  : 1; /* L'istruzione e' in formato lungo? */
   } flags;
 
-  Intg line;          /**< Number of line, as set by the 'line' instruction */
+  Int line;           /**< Number of line, as set by the 'line' instruction */
   VMProcInstalled *p; /**< Procedure which is currently been executed */
 
   /* Variabili che riguardano l'istruzione in esecuzione: */
@@ -194,11 +195,11 @@ struct __vmstatus {
   void *global[NUM_TYPES];
   void *local[NUM_TYPES];
   /* Numero di registro globale minimo e massimo */
-  Intg gmin[NUM_TYPES], gmax[NUM_TYPES];
+  Int gmin[NUM_TYPES], gmax[NUM_TYPES];
   /* Numero di registro locale minimo e massimo */
-  Intg lmin[NUM_TYPES], lmax[NUM_TYPES];
+  Int lmin[NUM_TYPES], lmax[NUM_TYPES];
   /* Stato di allocazione dei registri per il modulo in esecuzione */
-  Intg alc[NUM_TYPES];
+  Int alc[NUM_TYPES];
 };
 
 #undef VMStatus
@@ -228,15 +229,16 @@ typedef struct {
 /** @brief The full status of the virtual machine of Box.
  */
 struct __vmprogram {
-  VMSymTable sym_table; /**< Table of referenced and defined symbols */
-  VMProcTable proc_table; /**< Table of installed and uninstalled procedures*/
+  VMSymTable sym_table;    /**< Table of referenced and defined symbols */
+  VMProcTable proc_table;  /**< Table of installed and uninstalled procedures*/
+  Hashtable *method_table; /**< Hashtable containing destructors, etc. */
 
   Collection *labels;     /**< Collection of the labels */
   Collection *references; /**< References to these labels */
 
   int vm_globals;
   void *vm_global[NUM_TYPES];
-  Intg vm_gmin[NUM_TYPES], vm_gmax[NUM_TYPES];
+  Int vm_gmin[NUM_TYPES], vm_gmax[NUM_TYPES];
   Obj *box_vm_current, *box_vm_arg1, *box_vm_arg2;
   struct {unsigned int hexcode : 1;} vm_dflags;
   /** Array used with sprintf, when arguments are disassembled. */

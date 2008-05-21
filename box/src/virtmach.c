@@ -39,6 +39,7 @@
 #include "virtmach.h"
 #include "vmsym.h"
 #include "vmproc.h"
+#include "vmalloc.h"
 
 /* Read the first 4 bytes (VMByteX4), extract the format bit and put the "rest"
  * in the i_eye (which should be defined as 'register VMByteX4 i_eye;')
@@ -514,6 +515,7 @@ Task VM_Init(VMProgram **new_vmp) {
 
   TASK( VM_Proc_Init(nv) );
   TASK( VM_Sym_Init(nv) );
+  TASK( VM_Alloc_Init(nv) );
   *new_vmp = nv;
   return Success;
 }
@@ -531,6 +533,7 @@ void VM_Destroy(VMProgram *vmp) {
   Clc_Destroy(vmp->references);
   Clc_Destroy(vmp->labels);
   Arr_Destroy(vmp->stack);
+  VM_Alloc_Destroy(vmp);
   VM_Sym_Destroy(vmp);
   VM_Proc_Destroy(vmp);
   free(vmp);

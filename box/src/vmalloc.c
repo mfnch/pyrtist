@@ -21,6 +21,7 @@
 
 #include "types.h"
 #include "defaults.h"
+#include "virtmach.h"
 #include "vmalloc.h"
 
 /* #define DEBUG_VMALLOC */
@@ -90,7 +91,7 @@ void VM_Link(void *uptr) {
 /** Decrease the reference counter for the given object and proceed
  * with destroying it, if it has reached zero.
  */
-void VM_Unlink(void *uptr) {
+void VM_Unlink(VMProgram *vmp, void *uptr) {
   VMAllocHead *head = GET_HEAD_FROM_UPTR(uptr);
   Int references = --head->references;
   if (references > 0)
@@ -98,8 +99,22 @@ void VM_Unlink(void *uptr) {
 
   else if (references == 0) {
     void *bptr = GET_BPTR_FROM_UPTR(uptr);
+    Int method_num = VM_Alloc_Method_Get(vmp, head->type, VM_ALC_DESTRUCTOR);
+    if (method_num >= 0) {
+      VMStatus *vmcur;
+      void *save_arg1;
 #ifdef DEBUG_VMALLOC
-    printf("VM_Unlink: Deallocating object of type "SInt" at %p\n",
+      printf("VM_Unlink: calling destructor (call %d) for type "
+             SInt" at %p.\n", method_num, head->type, bptr);
+#endif
+      vmcur = vmp->vmcur;
+      save_arg1 = vmcur->arg1;
+      vmcur->arg1 = uptr;
+      (void) VM_Module_Execute(vmp, method_num);
+      vmcur->arg1 = save_arg1;
+    }
+#ifdef DEBUG_VMALLOC
+    printf("VM_Unlink: Deallocating object of type "SInt" at %p.\n",
            head->type, bptr);
 #endif
     free(bptr);
@@ -111,4 +126,40 @@ void VM_Unlink(void *uptr) {
 #endif
     return;
   }
+}
+
+Task VM_Alloc_Init(VMProgram *vmp) {
+  HT(& vmp->method_table, VM_METHOD_HT_SIZE);
+  return Success;
+}
+
+void VM_Alloc_Destroy(VMProgram *vmp) {
+  HT_Destroy(vmp->method_table);
+}
+
+typedef struct {
+  Int type;
+  VMAlcMethod method;
+} Key;
+
+Task VM_Alloc_Method_Set(VMProgram *vmp, Int type, VMAlcMethod m, Int m_num) {
+  Key k;
+  k.type = type;
+  k.method = m;
+  /* Should I check for re-definition and how should I deal with that? */
+  if (!HT_Insert_Obj(vmp->method_table,
+                     & k, sizeof(Key),
+                     & m_num, sizeof(Int)))
+    return Failed;
+  return Success;
+}
+
+Int VM_Alloc_Method_Get(VMProgram *vmp, Int type, VMAlcMethod m) {
+  HashItem *found;
+  Key k;
+  k.type = type;
+  k.method = m;
+  if (HT_Find(vmp->method_table, & k, sizeof(Key), & found))
+    return *((Int *) found->object);
+  return -1;
 }
