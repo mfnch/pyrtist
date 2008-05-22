@@ -10,6 +10,8 @@ PointList.Get = Point
 ()Char@PointList.Get ? "pointlist_get_str"
 Int@PointList.Get ? "pointlist_get_int"
 Real@PointList.Get ? "pointlist_get_real"
+P@PointList.Get ? "pointlist_get_point"
 
 PointList.Num = Int
 ([)@PointList.Num ? "pointlist_num_begin"
+

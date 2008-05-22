@@ -105,24 +105,36 @@ Task pointlist_get_int(VMProgram *vmp) {
   return Success;
 }
 
-Task pointlist_get_real(VMProgram *vmp) {
-  PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, out_p, Point);
-  Real real_index = BOX_VM_ARG1(vmp, Real);
-  Int index_a = (Int) real_index,
+static Task _get_from_point(Point *out_p, PointList *pl,
+                            Real index_x, Real index_y) {
+  Int index_a = (Int) index_x,
       index_b = index_a + (index_a < 0 ? -1 : 1);
-  Real d_a = fabs(real_index - index_a),
-       d_b = fabs(real_index - index_b);
-  Point *p_a, *p_b, p;
-  p_a = pointlist_get(& ipl->pl, index_a);
-  p_b = pointlist_get(& ipl->pl, index_b);
+  Real d_a = fabs(index_x - index_a);
+  Point *p_a, *p_b, d_p;
+  p_a = pointlist_get(pl, index_a);
+  p_b = pointlist_get(pl, index_b);
   if (p_a == (Point *) NULL || p_b == (Point *) NULL) {
     g_error("Wrong index in PointList.Get, shouldn't happen!");
     return Failed;
   }
-  p.x = p_a->x * d_b + p_b->x * d_a;
-  p.y = p_a->y * d_b + p_b->y * d_a;
-  *out_p = p;
+  d_p.x = p_b->x - p_a->x;
+  d_p.y = p_b->y - p_a->y;
+  out_p->x = p_a->x + d_p.x*d_a - d_p.y*index_y;
+  out_p->y = p_a->y + d_p.y*d_a + d_p.x*index_y;
   return Success;
+
+}
+
+Task pointlist_get_real(VMProgram *vmp) {
+  PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, out_p, Point);
+  Real real_index = BOX_VM_ARG1(vmp, Real);
+  return _get_from_point(out_p, & ipl->pl, real_index, 0.0);
+}
+
+Task pointlist_get_point(VMProgram *vmp) {
+  PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, out_p, Point);
+  Point *point_index = BOX_VM_ARG1_PTR(vmp, Point);
+  return _get_from_point(out_p, & ipl->pl, point_index->x, point_index->y);
 }
 
 Task pointlist_num_begin(VMProgram *vmp) {

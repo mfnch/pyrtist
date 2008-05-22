@@ -1,0 +1,14 @@
+include "g"
+
+w = Window[][
+  a = (10, 40), b = (100, 20),  c = (110, 120),  d = (30, 100)
+
+  Style[.Fill[";"]]
+  .Poly[Color[color.blue, .a=0.5], a, b, c, d;
+        Color[color.yellow, .a=0.5],  a, 0.2, 0.2, b, c, d]
+
+  .Circle[Color[color.red, .a=0.5], 2, a; b; c; d]
+
+  .Save["poly.png"]
+]
+
