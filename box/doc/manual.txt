@@ -28,3 +28,13 @@ package with an user interface based on the
 
 .. include:: poly.txt
 
+
+.. |box_website| replace:: `Box <http://boxc.sourceforge.net>`__
+.. |box_projsite| replace:: `Box <http://sourceforge.net/projects/boxc>`__
+.. |Box| replace:: Box
+
+.. |date| date::
+.. |time| date:: %H:%M
+
+.. include:: svn_version.txt
+
