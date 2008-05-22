@@ -23,10 +23,11 @@ w = Window[][
           0.35, (23, 30), 0.3, 0.2, (19, 35)]
 
   // The o is a ring
-  \ .Circle[(c=(28.8, 30.8)), 2.3; c+(0.1, 0.1), color.white, 1.5]
+  \ .Circle[(c=(28.8, 30.8)), 2.3; c+(0.1, 0.1), 1.5]
 ]
 
 \ Window[][
-  \ .Put[w, .Scale[(5, -5)]]
-  .Save["box-logo.eps"]
+  \ .Put[w, .Scale[(2, 2)]]
+  .Save["box-logo.png"]
 ]
+

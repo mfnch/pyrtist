@@ -1,14 +1,25 @@
 include "g"
+include "arrows"
 
 w = Window[][
   a = (10, 40), b = (100, 20),  c = (110, 120),  d = (30, 100)
+  pl = PointList[a, b, c, d]
 
   Style[.Fill[";"]]
-  .Poly[Color[color.blue, .a=0.5], a, b, c, d;
-        Color[color.yellow, .a=0.5],  a, 0.2, 0.2, b, c, d]
+  .Poly[Color[color.blue, .a=0.8], a, b, c, d;
+        Color[color.yellow, .a=0.7], a, 0.2, 0.2, b, c, d]
 
+  // Circles
   .Circle[Color[color.red, .a=0.5], 2, a; b; c; d]
 
+  // Rulers
+  .Line[Color[color.black, .a=0.5], 0.5, h=0.03
+        arrow_ruler, pl.Get[(1, -h)], arrow_ruler, pl.Get[(1.999, -h)];
+        arrow_ruler, pl.Get[(1, h)], arrow_ruler, pl.Get[(1.2, h)];
+        arrow_ruler, pl.Get[(1.8, h)], arrow_ruler, pl.Get[(1.999, h)]]
+
+  // Labels
+  .Text[.Font["Sans", 10], pl.Get[(1.5, 0.06)], "L"]
   .Save["poly.png"]
 ]
 
