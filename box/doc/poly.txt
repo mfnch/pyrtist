@@ -4,3 +4,8 @@ Poly instruction
 
 A nice explanation.
 
+.. image:: ../poly.png
+   :align: center
+
+as you see from figure.
+

@@ -4,7 +4,7 @@ Box User Manual (0.1)
 
 :Authors: Matteo Franchin
 
-:Licence: `GNU Lesser General Public License (LGPL) version 3 <http://www.gnu.org/licenses/gpl2.txt>`__
+:Licence: `GNU Lesser General Public License (LGPL) version 3 <http://www.gnu.org/licenses/lgpl-3.0.html>`__
 
 :SVN-Version: |svnversion| compiled |date| at |time|.
 
@@ -25,6 +25,9 @@ Introduction
 flexible finite element micromagnetic simulation
 package with an user interface based on the
 `Python <http://www.python.org/>`__ programming language.
+
+Command reference
+=================
 
 .. include:: poly.txt
 
