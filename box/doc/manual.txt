@@ -29,7 +29,19 @@ package with an user interface based on the
 Command reference
 =================
 
+.. include:: color.txt
+
+.. include:: pointlist.txt
+
 .. include:: poly.txt
+
+.. include:: circle.txt
+
+.. include:: text.txt
+
+.. include:: line.txt
+
+.. include:: put.txt
 
 
 .. |box_website| replace:: `Box <http://boxc.sourceforge.net>`__

@@ -1,0 +1,6 @@
+
+Circle instruction
+------------------
+
+The ``Circle`` instruction can be used to create circles and ellipses.
+

@@ -7,15 +7,24 @@ It takes a list of points with optional left and right margins:
 
 .. code-block:: Box
 
-  // IN: point1, point2, ... = Point
-  // IN(OPTIONAL): left_margin0, right_margin0, ... = Real
-  // RETURNS: point_list = PointList
   point_list = Poly[left_margin0, right_margin0, point1,
                     left_margin1, right_margin1, point2,
                     left_margin1, right_margin1, point3, ...]
 
-Left and right margins are just real numbers and are used
-for rounding the corners.
+Left and right margins are real numbers and are used
+for rounding the corners. They can be omitted to draw a polygon
+with sharp corners. For example:
+
+.. code-block:: Box
+
+  blue = Color[color.blue, .a=0.7]
+  pl = Poly[color, a, b, c, d]
+
+draws a polygon with four sides with vertices ``a``, ``b``, ``c`` and ``d``.
+``color`` is a ``Color`` object derived from the standard ``color.blue``
+color, with modified alpha channel (``.a=0.7``, it is a transparent color!).
+The ``Poly`` instruction returns a ``PointList`` object containing
+the vertices of the polygon. This pointlist can be used in many ways.
 
 
 .. image:: ../poly.png

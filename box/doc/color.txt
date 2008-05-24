@@ -1,0 +1,6 @@
+
+Color instruction
+-----------------
+
+The ``Color`` instruction can be used to create colors.
+

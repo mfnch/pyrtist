@@ -1,0 +1,6 @@
+
+Line instruction
+----------------
+
+The ``Line`` instruction can be used to lines.
+

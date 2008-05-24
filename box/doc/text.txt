@@ -1,0 +1,6 @@
+
+Text instruction
+----------------
+
+The ``Text`` instruction can be used to write text.
+
