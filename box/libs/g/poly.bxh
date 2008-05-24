@@ -1,6 +1,6 @@
 // Interface to Window.Poly
 
-Window.Poly = Void
+Window.Poly = PointList
 Color@Window.Poly ? "poly_color"
 ([)@Window.Poly ? "poly_begin"
 P@Window.Poly ? "poly_point"
@@ -8,3 +8,4 @@ R@Window.Poly ? "poly_real"
 (])@Window.Poly ? "poly_end"
 (;)@Window.Poly ? "poly_pause"
 Style@Window.Poly ? "poly_style"
+PointList@Window.Poly ? "poly_pointlist"

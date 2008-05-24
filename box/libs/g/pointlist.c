@@ -23,4 +23,30 @@
 
 #include "pointlist.h"
 
+struct params_for_pointlist_print {
+  Int num_points;
+  FILE *out;
+};
 
+static Task _pointlist_print(Int index, char *name,
+                             void *object, void *data)
+{
+  struct params_for_pointlist_print *params =
+   (struct params_for_pointlist_print *) data;
+  Point *p = (Point *) object;
+  if (name != (char *) NULL)
+    fprintf(params->out, "\"%s\", ("SReal", "SReal")", name, p->x, p->y);
+  else
+    fprintf(params->out, "("SReal", "SReal")", p->x, p->y);
+  if (index < params->num_points) fprintf(params->out, ", ");
+  return Success;
+}
+
+void pointlist_print(PointList *pl, FILE *out) {
+  struct params_for_pointlist_print params;
+  params.out = out;
+  params.num_points = pointlist_num(pl);
+  fprintf(out, "PointList[");
+  (void) pointlist_iter(pl, _pointlist_print, & params);
+  fprintf(out, "]");
+}

@@ -729,7 +729,7 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
 #endif
 
   /* Controlliamo che il modulo sia installato! */
-  if ( (call_num < 1) || (call_num > Arr_NumItem(pt->installed)) ) {
+  if (call_num < 1 || call_num > Arr_NumItem(pt->installed)) {
     MSG_ERROR("Call to the undefined procedure %d.", call_num);
     return Failed;
   }

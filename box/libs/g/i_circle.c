@@ -26,6 +26,8 @@
 #include "g.h"
 #include "i_window.h"
 #include "i_style.h"
+#include "pointlist.h"
+#include "i_pointlist.h"
 
 Task circle_color(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
@@ -45,9 +47,7 @@ Task circle_begin(VMProgram *vmp) {
   return Success;
 }
 
-Task circle_point(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
-  Point *center = BOX_VM_ARGPTR1(vmp, Point);
+static Task _circle_point(Window *w, Point *center) {
   if (w->circle.got.center == GOT_NOW) {
     g_error("You already specified a center for the circle.");
     return Failed;
@@ -55,6 +55,12 @@ Task circle_point(VMProgram *vmp) {
   w->circle.center = *center;
   w->circle.got.center = GOT_NOW;
   return Success;
+}
+
+Task circle_point(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  Point *center = BOX_VM_ARGPTR1(vmp, Point);
+  return _circle_point(w, center);
 }
 
 Task circle_real(VMProgram *vmp) {
@@ -82,9 +88,7 @@ Task circle_style(VMProgram *vmp) {
   return Success;
 }
 
-static Task _circle_draw(VMProgram *vmp, DrawWhen when) {
-  SUBTYPE_OF_WINDOW(vmp, w);
-
+static Task _circle_draw(Window *w, DrawWhen when) {
   if (w->circle.got.center == GOT_NOT || w->circle.got.radius_a == GOT_NOT) {
     g_error("To draw a circle you have to specify at least "
             "the center (a point) the radius (a real)");
@@ -120,9 +124,34 @@ static Task _circle_draw(VMProgram *vmp, DrawWhen when) {
 }
 
 Task circle_pause(VMProgram *vmp) {
-  return _circle_draw(vmp, DRAW_WHEN_PAUSE);
+  SUBTYPE_OF_WINDOW(vmp, w);
+  return _circle_draw(w, DRAW_WHEN_PAUSE);
 }
 
 Task circle_end(VMProgram *vmp) {
-  return _circle_draw(vmp, DRAW_WHEN_END);
+  SUBTYPE_OF_WINDOW(vmp, w);
+  return _circle_draw(w, DRAW_WHEN_END);
+}
+
+struct params_for_add_from_pl {
+  Int num_points;
+  Window *w;
+};
+
+static Task _add_from_pl(Int index, char *name, void *object, void *data) {
+  struct params_for_add_from_pl *params = (struct params_for_add_from_pl *) data;
+  Point *center = (Point *) object;
+  TASK( _circle_point(params->w, center) );
+  if (index == params->num_points) return Success;
+  return _circle_draw(params->w, DRAW_WHEN_PAUSE);
+}
+
+Task circle_pointlist(VMProgram *vmp) {
+  Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
+  IPointList *arg_ipl = BOX_VM_ARG1(vmp, IPointListPtr);
+  struct params_for_add_from_pl params;
+  PointList *arg_pl = IPL_POINTLIST(arg_ipl);
+  params.w = w;
+  params.num_points = pointlist_num(arg_pl);
+  return pointlist_iter(arg_pl, _add_from_pl, & params);
 }

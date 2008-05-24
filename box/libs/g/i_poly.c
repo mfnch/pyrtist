@@ -26,8 +26,30 @@
 #include "g.h"
 #include "i_window.h"
 #include "i_style.h"
+#include "i_pointlist.h"
 
 /*#define DEBUG*/
+
+#if 0
+/** See VMCall */
+typedef Task (*VMCallable)(VMProgram *vmp);
+
+/** This should become part of the VM library. For now we put it there. */
+Task VM_Call_C(VMProgram *vmp, VMCallable f, void *obj, void *arg);
+
+Task VM_Call_C(VMProgram *vmp, VMCallable f, void *obj, void *arg) {
+  void *save_obj, *save_arg;
+  Task t;
+  save_obj = *vmp->box_vm_current;
+  save_arg = *vmp->box_vm_arg1;
+  *vmp->box_vm_current = obj;
+  *vmp->box_vm_arg1 = arg;
+  t = f(vmp);
+  *vmp->box_vm_current = save_obj;
+  *vmp->box_vm_arg1 = save_arg;
+  return t;
+}
+#endif
 
 Task poly_color(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
@@ -37,7 +59,11 @@ Task poly_color(VMProgram *vmp) {
 }
 
 Task poly_begin(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
+  Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
+  IPointListPtr *ipl_ptr = BOX_VM_SUB_CHILD_PTR(vmp, IPointListPtr);
+
+  TASK( ipl_create(ipl_ptr) );
+
   grp_window *cur_win = grp_win;
   grp_win = w->window;
   grp_rreset();
@@ -55,17 +81,17 @@ Task poly_begin(VMProgram *vmp) {
   return Success;
 }
 
-static Task _poly_point(Window *w, Point *p, int omit_line) {
+static Task _poly_point_draw_only(Window *w, Point *p, int omit_line) {
   WindowPoly *wp = & w->poly;
   grp_window *cur_win = grp_win;
+  Real m1 = wp->margin[0], m2 = wp->margin[1];
 
   if (wp->num_points < 2)
     wp->first_points[wp->num_points] = *p;
 
   if (wp->num_points > 0) {
     Point *last = & wp->last_point, lastb, pb;
-    Real dx = p->x - last->x, dy = p->y - last->y, d = sqrt(dx*dx + dy*dy),
-         m1 = wp->margin[0], m2 = wp->margin[1], m;
+    Real dx = p->x - last->x, dy = p->y - last->y, d = sqrt(dx*dx + dy*dy), m;
 
     if (d > 0.0) {
       if (m1 < 0.0) m1 = -m1/d;
@@ -111,13 +137,22 @@ static Task _poly_point(Window *w, Point *p, int omit_line) {
   wp->last_point = *p;
   ++wp->num_points;
   w->poly.num_margins = 0;
+  wp->margin[0] = m2;
+  wp->margin[1] = m1;
   return Success;
 }
 
+static Task _poly_point(Window *w, IPointList *ipl, Point *p) {
+  PointList *pl = IPL_POINTLIST(ipl);
+  TASK( pointlist_add(pl, p, (char *) NULL) );
+  return _poly_point_draw_only(w, p, 0);
+}
+
 Task poly_point(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
+  Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
+  IPointList *ipl = BOX_VM_SUB_CHILD(vmp, IPointListPtr);
   Point *p = BOX_VM_ARGPTR1(vmp, Point);
-  return _poly_point(w, p, 0);
+  return _poly_point(w, ipl, p);
 }
 
 Task poly_style(VMProgram *vmp) {
@@ -131,8 +166,8 @@ Task poly_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   grp_window *cur_win = grp_win;
 
-  TASK( _poly_point(w, & w->poly.first_points[0], 0) );
-  TASK( _poly_point(w, & w->poly.first_points[1], 1) );
+  TASK( _poly_point_draw_only(w, & w->poly.first_points[0], 0) );
+  TASK( _poly_point_draw_only(w, & w->poly.first_points[1], 1) );
 
   grp_win = w->window;
   if (w->poly.got.color) {
@@ -150,8 +185,8 @@ Task poly_pause(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   grp_window *cur_win = grp_win;
 
-  TASK( _poly_point(w, & w->poly.first_points[0], 0) );
-  TASK( _poly_point(w, & w->poly.first_points[1], 1) );
+  TASK( _poly_point_draw_only(w, & w->poly.first_points[0], 0) );
+  TASK( _poly_point_draw_only(w, & w->poly.first_points[1], 1) );
 
   grp_win = w->window;
   if (w->poly.got.color) {
@@ -172,13 +207,51 @@ Task poly_pause(VMProgram *vmp) {
 
 Task poly_real(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Real margin = BOX_VM_ARG1(vmp, Real);
+  Real margin = BOX_VM_ARG1(vmp, Real), max_margin;
 
-  if (w->poly.num_margins > 1) {
+  switch(w->poly.num_margins++) {
+  case 0:
+    if (margin < 0.0) margin = 0.0;
+    if (margin > 1.0) margin = 1.0;
+    w->poly.margin[0] = margin;
+    w->poly.margin[1] = (margin < 0.5) ? margin : (1.0 - margin);
+    break;
+
+  case 1:
+    max_margin = 1.0 - w->poly.margin[0];
+    if (margin > max_margin) margin = max_margin;
+    w->poly.margin[1] = margin;
+    break;
+
+  default:
     g_warning("Enough margins: ignoring Real value.");
     return Success;
   }
-
-  w->poly.margin[w->poly.num_margins++] = margin;
   return Success;
+}
+
+struct add_from_pl_params {
+  Window *w;
+  IPointList *dest_ipl;
+};
+
+static Task _add_from_pl(Int index, char *name, void *object, void *data) {
+  struct add_from_pl_params *params = (struct add_from_pl_params *) data;
+  Point *p = (Point *) object;
+  return _poly_point(params->w, params->dest_ipl, p);
+}
+
+Task poly_pointlist(VMProgram *vmp) {
+  Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
+  IPointList *my_ipl = BOX_VM_SUB_CHILD(vmp, IPointListPtr);
+  IPointList *arg_ipl = BOX_VM_ARG1(vmp, IPointListPtr);
+  PointList *arg_pl = IPL_POINTLIST(arg_ipl);
+  struct add_from_pl_params params;
+  if (my_ipl == arg_ipl) {
+    g_error("can't add a PointList object to itself.");
+    return Failed;
+  }
+  params.w = w;
+  params.dest_ipl = my_ipl;
+  return pointlist_iter(arg_pl, _add_from_pl, & params);
 }

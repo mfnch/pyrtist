@@ -29,11 +29,16 @@
 #include "pointlist.h"
 #include "i_pointlist.h"
 
-Task pointlist_begin(VMProgram *vmp) {
-  PROC_OF_POINTLIST(vmp, ipl);
+Task ipl_create(IPointListPtr *ipl_ptr) {
+  IPointList *ipl;
   ipl = *ipl_ptr = (IPointList *) malloc(sizeof(IPointList));
   ipl->name = (char *) NULL;
   return pointlist_init(& ipl->pl);
+}
+
+Task pointlist_begin(VMProgram *vmp) {
+  PROC_OF_POINTLIST(vmp, ipl);
+  return ipl_create(ipl_ptr);
 }
 
 Task pointlist_end(VMProgram *vmp) {
@@ -140,5 +145,11 @@ Task pointlist_get_point(VMProgram *vmp) {
 Task pointlist_num_begin(VMProgram *vmp) {
   PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, out_num, Int);
   *out_num = pointlist_num(& ipl->pl);
+  return Success;
+}
+
+Task print_pointlist(VMProgram *vmp) {
+  IPointList *ipl_to_print = BOX_VM_ARG1(vmp, IPointListPtr);
+  pointlist_print(IPL_POINTLIST(ipl_to_print), stdout);
   return Success;
 }

@@ -15,3 +15,4 @@ P@PointList.Get ? "pointlist_get_point"
 PointList.Num = Int
 ([)@PointList.Num ? "pointlist_num_begin"
 
+PointList@Print ? "print_pointlist"
