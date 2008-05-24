@@ -1,0 +1,103 @@
+p, td, th, li {
+  font-family: Gill, Verdana, Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  line-height: 14pt;
+  color: #000033;
+}
+
+
+body {
+  background-color: #FFFFFF;
+  background-image: url('images/backg.gif');
+  background-repeat: repeat-x
+}
+
+.maincontent {
+  vertical-align: top;
+  margin-right: 10px;   /* what does this do?*/
+  margin-top: 0px;
+  a.link{ color:#0000FF;}
+}
+
+
+.secondnav {
+  border: 1px solid #000066;
+  padding: 5px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: bolder;
+  color: #000066;
+  background-color: #EDEAFB;
+  vertical-align: top;
+
+}
+
+
+h1 {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-color: #000066;
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 22pt;
+}
+
+h2 {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  font-weight: bold;
+  color #000066;
+}
+
+h3 {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+/*  color: #666699;*/
+        color  #000066;
+}
+
+h4 {
+  font-family: Verdana, Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+    /*
+  color: #666699;
+       */
+          color  #000066;
+}
+
+
+.navtitle {
+  font-family: Verdana,Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  color: #FFFFFF;
+  background-color: #7777AA;
+  text-align: center;
+}
+
+a.nav:link { color:#FFFFFF;}
+a.nav:visited { color:#FFFFFF; }
+a.nav:hover { color:#FFFFFF; }
+
+a.std:link { color:#000066;}
+a.std:visited { color:#000066; }
+a.std:hover { color:#FF0000; }
+
+.footer {
+  font-family: Verdana,Arial, Helvetica, sans-serif;
+  font-size: 9px;
+  font-weight: bolder;
+  color: #FFFFFF;
+  color: #444444;
+  # background-color: #000058;
+}
+
+.codeblock pre {
+  overflow: auto;
+}
+
+pre.Box, .Box pre {
+  background-color: #e0ffe0;
+  border: 1px solid #c0e0c0;
+}

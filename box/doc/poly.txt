@@ -2,7 +2,21 @@
 Poly instruction
 ----------------
 
-A nice explanation.
+The ``Poly`` instruction can be used to draw polygons.
+It takes a list of points with optional left and right margins:
+
+.. code-block:: Box
+
+  // IN: point1, point2, ... = Point
+  // IN(OPTIONAL): left_margin0, right_margin0, ... = Real
+  // RETURNS: point_list = PointList
+  point_list = Poly[left_margin0, right_margin0, point1,
+                    left_margin1, right_margin1, point2,
+                    left_margin1, right_margin1, point3, ...]
+
+Left and right margins are just real numbers and are used
+for rounding the corners.
+
 
 .. image:: ../poly.png
    :align: center

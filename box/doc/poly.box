@@ -3,12 +3,11 @@ include "arrows"
 
 w = Window[][
   a = (10, 40), b = (100, 20),  c = (110, 120),  d = (30, 100)
+  blue = Color[color.blue, .a=0.7], yellow = Color[color.yellow, .a=0.7]
   pl = PointList[a, b, c, d]
 
   Style[.Fill[";"]]
-  .Poly[Color[color.yellow, .a=0.8], a, b, c, d;
-        Color[color.blue, .a=0.7], a, 0.2, 0.2, b, c, d;
-        Color[color.green, .a=0.5], 0.5, 0.5, a, b, c, d]
+  .Poly[blue, a, b, c, d; yellow, 0.2, 0.2, a, b, c, d; 0.5, 0.5, a, b, c, d]
 
   // Circles
   .Circle[Color[color.red, .a=0.5], 2, a; b; c; d]

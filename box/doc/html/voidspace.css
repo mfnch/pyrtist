@@ -1,7 +1,7 @@
 /*
 :Authors: Ian Bicking, Michael Foord
 :Contact: fuzzyman@voidspace.org.uk
-:Date: 2005/08/26 
+:Date: 2005/08/26
 :Version: 0.1.0
 :Copyright: This stylesheet has been placed in the public domain.
 
@@ -83,7 +83,7 @@ h1 {
   border: medium solid black;
 }
 
-h1 a.toc-backref, h2 a.toc-backref { 
+h1 a.toc-backref, h2 a.toc-backref {
   color: #ffffff;
 }
 
@@ -98,8 +98,8 @@ h3, h4, h5, h6 {
   color: #000000;
 }
 
-h3 a.toc-backref, h4 a.toc-backref, h5 a.toc-backref, 
-h6 a.toc-backref { 
+h3 a.toc-backref, h4 a.toc-backref, h5 a.toc-backref,
+h6 a.toc-backref {
   color: #000000;
 }
 
@@ -134,4 +134,14 @@ h1 tt, h2 tt, h3 tt, h4 tt, h5 tt, h6 tt {
 
 code, tt {
   color: #000066;
+}
+
+.codeblock pre
+{
+  overflow: auto;
+}
+
+pre.Box, .Box pre {
+  background-color: #e0ffe0;
+  border: 1px solid #c0e0c0;
 }
