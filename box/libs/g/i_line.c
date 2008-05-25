@@ -30,8 +30,10 @@
 #include "graphic.h"
 #include "g.h"
 #include "i_window.h"
-#include "i_line.h"
 #include "i_style.h"
+#include "pointlist.h"
+#include "i_pointlist.h"
+#include "i_line.h"
 
 #include "debug.h"
 #include "error.h"
@@ -81,7 +83,11 @@ void line_window_destroy(Window *w) {
 }
 
 Task line_begin(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
+  Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
+  IPointListPtr *ipl_ptr = BOX_VM_SUB_CHILD_PTR(vmp, IPointListPtr);
+
+  TASK( ipl_create(ipl_ptr) );
+
   w->line.state = GOT_NOTHING;
 
   lt_clear(w->line.lt);
@@ -145,8 +151,10 @@ Task line_real(VMProgram *vmp) {
 }
 
 Task line_point(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
+  Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
+  IPointList *ipl = BOX_VM_SUB_CHILD(vmp, IPointListPtr);
   Point *p = BOX_VM_ARGPTR1(vmp, Point);
+  PointList *pl = IPL_POINTLIST(ipl);
 
   w->line.state = GOT_POINT;
   w->line.this_piece.point = *p;
@@ -155,7 +163,7 @@ Task line_point(VMProgram *vmp) {
   ++w->line.num_points;
   w->line.this_piece.width1 = w->line.this_piece.width2;
   w->line.this_piece.arrow = (void *) NULL;
-  return Success;
+  return pointlist_add(pl, p, (char *) NULL);
 }
 
 Task line_pause(VMProgram *vmp) {

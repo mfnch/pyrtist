@@ -14,10 +14,11 @@ i = 1, \ w.Poly[color.yellow, pl.Get[i+0.5], For[++i < 5]]
 w.Save["html/poly2.png"]
 
 
-yellow = Color[color.yellow, .a=0.7]
+yellow = Color[color.red, .a=0.7]
 
 \ w[Style[.Fill[";"]]]
-\ w.Poly[yellow, 0.2, pl; 0.5, pl]
+\ w.Poly[yellow, 0, 1.0, pl; 0.5, pl]
+w.Save["html/poly3.png"]
 
 // Rulers
 w.Line[Color[color.black, .a=0.5], 0.5, h=0.03

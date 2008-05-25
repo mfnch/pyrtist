@@ -49,8 +49,8 @@ face = Window["fig"][
 
 // Now we can draw as many snakes as we want with just one Line instruction!
 snake = Window["fig"]
-snake.Line[color.dark_green, line.smooth, (10, 10), 1, 4, (40, 100), 4, 5
-           (80, 10), (120, 90), (150, 25), (170, 55), face, (195, 70)]
+\ snake.Line[color.dark_green, line.smooth, (10, 10), 1, 4, (40, 100), 4, 5
+             (80, 10), (120, 90), (150, 25), (170, 55), face, (195, 70)]
 
 snake.Save["snake.eps"]
 

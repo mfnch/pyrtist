@@ -213,6 +213,7 @@ void Expr_Cont_Set(Expr *e, Cont *c) {
  * type are destroyed by calling the same procedure.
  */
 Int Expr_Allocation_Type(Expr *e) {
+  return e->type;
   return 0; /* This will be done better in the near future */
 }
 

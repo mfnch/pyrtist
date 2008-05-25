@@ -46,9 +46,9 @@ This is the result:
 
 Now we focus on margins and how the polygon corners can be rounded.
 
-
-.. image:: ../poly.png
+.. image:: poly3.png
    :align: center
+
 
 Here is the Box code used to generate all the pictures in this subsection:
 
