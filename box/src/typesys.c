@@ -397,7 +397,7 @@ void TS_Procedure_Info(TS *ts, Type *parent, Type *child,
 }
 
 Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
- Type parent, Type child, int kind) {
+                         Type parent, Type child, int kind) {
   TSDesc *p_td, *parent_td;
   Type p, dummy;
   assert(kind == 1 || kind == 2);

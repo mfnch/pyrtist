@@ -24,7 +24,7 @@
 #include "virtmach.h"
 #include "vmalloc.h"
 
-/* #define DEBUG_VMALLOC */
+/*#define DEBUG_VMALLOC*/
 
 typedef struct {
   Int type;
@@ -101,17 +101,16 @@ void VM_Unlink(VMProgram *vmp, void *uptr) {
     void *bptr = GET_BPTR_FROM_UPTR(uptr);
     Int method_num = VM_Alloc_Method_Get(vmp, head->type, VM_ALC_DESTRUCTOR);
     if (method_num >= 0) {
-      VMStatus *vmcur;
-      void *save_arg1;
+      void *save_this;
 #ifdef DEBUG_VMALLOC
       printf("VM_Unlink: calling destructor (call %d) for type "
              SInt" at %p.\n", method_num, head->type, bptr);
 #endif
-      vmcur = vmp->vmcur;
-      save_arg1 = vmcur->arg1;
-      vmcur->arg1 = uptr;
+
+      save_this = *vmp->box_vm_current;
+      *vmp->box_vm_current = uptr;
       (void) VM_Module_Execute(vmp, method_num);
-      vmcur->arg1 = save_arg1;
+      *vmp->box_vm_current = save_this;
     }
 #ifdef DEBUG_VMALLOC
     printf("VM_Unlink: Deallocating object of type "SInt" at %p.\n",

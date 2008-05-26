@@ -53,6 +53,7 @@
 #include "builtins.h"
 #include "parserh.h"
 #include "typesys.h"
+#include "autogen.h"
 #include "expr.h"
 
 /******************************************************************************/
@@ -1131,8 +1132,12 @@ Task Cmp_Expr_Destroy(Expr *e, int destroy_target) {
 
 
     if (!intrinsic && e->is.allocd && (!e->is.target || destroy_target)) {
+      TASK( Auto_Destructor_Create(e->type) );
 
-      // ??? dovrei usare Cmp_Complete_Ptr_1?
+      /* NOTE: Should I use  Cmp_Complete_Ptr_1?
+       * I think I shouldn't, since it makes no sense to call munln
+       * on the members of a structure or array!
+       */
       Cmp_Assemble(ASM_MUNLN_O, e->categ, e->value.i);
     }
     return Success;

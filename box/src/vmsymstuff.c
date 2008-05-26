@@ -23,6 +23,7 @@
 
 #include "types.h"
 #include "virtmach.h"
+#include "vmalloc.h"
 #include "vmsym.h"
 #include "vmsymstuff.h"
 
@@ -52,6 +53,36 @@ Task VM_Sym_Def_Call(VMProgram *vmp, UInt sym_num, UInt proc_num) {
 
 Task VM_Sym_Call(VMProgram *vmp, UInt sym_num) {
   return VM_Sym_Code_Ref(vmp, sym_num, Assemble_Call);
+}
+
+/*** basic method registration **********************************************/
+/* Some methods are special and need to be registered separately using
+ * the vm allocator. These methods (constructors, destructors, ... of types)
+ * are called automatically by the allocator during construction/destruction
+ * of objects, rather than being called with an "ASM_CALL_I" instruction.
+ * Here we are not generating VM code, we are just calling
+ * VM_Alloc_Method_Set.
+ */
+
+/* This is the function registers the method, if it is known. */
+static Task Register_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
+                          int defined, void *def, UInt def_size,
+                          void *ref, UInt ref_size) {
+  assert(sym_type == VM_SYM_CALL);
+  if (defined && def != NULL) {
+    UInt call_num;
+    Int type;
+    assert(def_size == sizeof(UInt) && ref_size == sizeof(Int));
+    call_num = *((UInt *) def);
+    type = *((Int *) ref);
+    return VM_Alloc_Method_Set(vmp, type, VM_ALC_DESTRUCTOR, call_num);
+  }
+  return Success;
+}
+
+Task VM_Sym_Alloc_Method_Register(VMProgram *vmp, UInt sym_num, Int type) {
+  return VM_Sym_Ref(vmp, sym_num, Register_Call,
+                    & type, sizeof(Int), VM_SYM_UNRESOLVED);
 }
 
 /*** jumps ******************************************************************/

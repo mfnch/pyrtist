@@ -60,7 +60,8 @@ typedef struct {
  * is created with VM_sym_New).
  */
 typedef Task (*VMSymResolver)(VMProgram *vmp, UInt sym_num, UInt sym_type,
- int defined, void *def, UInt def_size, void *ref, UInt ref_size);
+                              int defined, void *def, UInt def_size,
+                              void *ref, UInt ref_size);
 
 /** @brief The details about a symbol.
  */
@@ -72,7 +73,6 @@ typedef struct {
   UInt def_addr; /**< Address of the data in the array 'data' */
   UInt sym_type; /**< Type of the symbol */
   UInt first_ref; /**< Number of the first reference to the symbol */
-  VMSymResolver resolver; /**< Procedure to invoke for resolution */
 } VMSym;
 
 /** @brief A reference...
@@ -83,11 +83,13 @@ typedef struct {
   UInt ref_size; /**< Size of the data containing the symbol reference */
   UInt ref_addr;  /**< Address of the data in the array 'data' */
   int resolved; /**< Has the reference been resolved? */
+  VMSymResolver resolver; /**< Function to be called for resolution */
 } VMSymRef;
 
 /* Data types used by the VM_Sym_Code_* functions */
 typedef Task (*VMSymCodeGen)(VMProgram *vmp, UInt sym_num, UInt sym_type,
- int defined, void *def, UInt def_size, void *ref, UInt ref_size);
+                             int defined, void *def, UInt def_size,
+                             void *ref, UInt ref_size);
 
 typedef struct {
   UInt proc_num;
@@ -124,14 +126,29 @@ Task VM_Sym_Name_Set(VMProgram *vmp, UInt sym_num, Name *n);
 /** Get the name of the given symbol sym_num */
 const char *VM_Sym_Name_Get(VMProgram *vmp, UInt sym_num);
 
-/** Define a symbol which was previously created with VM_sym_New */
+/** Define a symbol which was previously created with VM_Sym_New */
 Task VM_Sym_Def(VMProgram *vmp, UInt sym_num, void *def);
 
-/** Add a reference to the symbol 'sym_num' */
-Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, void *ref, UInt ref_size);
+typedef enum {
+  VM_SYM_AUTO,
+  VM_SYM_RESOLVED,
+  VM_SYM_UNRESOLVED,
+} VMSymStatus;
 
+/** Add a reference to the symbol 'sym_num'. The reference data is pointed
+ * by 'ref' and has size 'ref_size'. 'r' is the function to be called for
+ * resolving the symbol. If 'resolved' == VM_SYM_RESOLVED, the reference
+ * is marked as resolved, if 'resolved' == VM_SYM_UNRESOLVED, it is marked
+ * as unresolved. If 'resolved' == VM_SYM_AUTO, then it is marked as resolved
+ * only if the symbol is defined.
+ */
+Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, VMSymResolver r,
+                void *ref, UInt ref_size, VMSymStatus resolved);
+
+#if 0
 /** Set the symbol resolver */
 Task VM_Sym_Resolver_Set(VMProgram *vmp, UInt sym_num, VMSymResolver r);
+#endif
 
 /** Set *all_resolved = 1 only if there are no unresolved references */
 Task VM_Sym_Ref_Check(VMProgram *vmp, int *all_resolved);

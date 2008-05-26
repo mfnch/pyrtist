@@ -91,7 +91,6 @@ Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, UInt sym_type, UInt def_size) {
   ss.def_size = def_size;
   ss.def_addr = 1+Arr_NumItem(st->data);
   ss.first_ref = 0;
-  ss.resolver = (VMSymResolver) NULL;
   TASK( Arr_Push(st->defs, & ss) );
   *sym_num = Arr_NumItem(st->defs);
   TASK( Arr_Append_Blank(st->data, def_size) );
@@ -157,7 +156,8 @@ Task VM_Sym_Def(VMProgram *vmp, UInt sym_num, void *def) {
   return Success;
 }
 
-Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, void *ref, UInt ref_size) {
+Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, VMSymResolver r,
+                void *ref, UInt ref_size, VMSymStatus resolved) {
   VMSymTable *st = & vmp->sym_table;
   VMSym *s;
   VMSymRef sr;
@@ -169,7 +169,12 @@ Task VM_Sym_Ref(VMProgram *vmp, UInt sym_num, void *ref, UInt ref_size) {
   sr.next = s->first_ref;
   sr.ref_size = ref_size;
   sr.ref_addr = 1+Arr_NumItem(st->data);
-  sr.resolved = s->defined;
+  switch(resolved) {
+  case VM_SYM_RESOLVED: sr.resolved = 1; break;
+  case VM_SYM_UNRESOLVED: sr.resolved = 0; break;
+  default: sr.resolved = s->defined; break;
+  }
+  sr.resolver = r;
   /* Copy the data for the reference */
   TASK( Arr_Append_Blank(st->data, ref_size) );
   ref_data_ptr = (void *) Arr_ItemPtr(st->data, Char, sr.ref_addr);
@@ -208,6 +213,7 @@ Task VM_Sym_Ref_Report(VMProgram *vmp) {
   return Arr_Iter(st->refs, Report_Ref, vmp);
 }
 
+#if 0
 Task VM_Sym_Resolver_Set(VMProgram *vmp, UInt sym_num, VMSymResolver r) {
   VMSymTable *st = & vmp->sym_table;
   VMSym *s;
@@ -216,6 +222,7 @@ Task VM_Sym_Resolver_Set(VMProgram *vmp, UInt sym_num, VMSymResolver r) {
   s->resolver = r;
   return Success;
 }
+#endif
 
 Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
   VMSymTable *st = & vmp->sym_table;
@@ -223,7 +230,6 @@ Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
   UInt next;
   UInt sym_type, def_size, ref_size;
   void *def, *ref;
-  VMSymResolver r;
 
   if (sym_num < 1) {
     UInt i, num_defs = Arr_NumItem(st->defs);
@@ -239,12 +245,6 @@ Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
   def = (void *) Arr_ItemPtr(st->data, Char, s->def_addr);
   def_size = s->def_size;
   sym_type = s->sym_type;
-  r = s->resolver;
-  if (r == NULL && next > 0) {
-    MSG_ERROR("VM_Sym_Resolve: cannot resolve the symbol: "
-     "the resolver is not present!");
-    return Failed;
-  }
   while(next > 0) {
     VMSymRef *sr = Arr_ItemPtr(st->refs, VMSymRef, next);
     if (sr->sym_num != sym_num) {
@@ -255,7 +255,14 @@ Task VM_Sym_Resolve(VMProgram *vmp, UInt sym_num) {
     ref = (void *) Arr_ItemPtr(st->data, Char, sr->ref_addr);
     ref_size = sr->ref_size;
     if (!sr->resolved) {
-      TASK( r(vmp, sym_num, sym_type, 1, def, def_size, ref, ref_size) );
+      if (sr->resolver == NULL) {
+        MSG_ERROR("VM_Sym_Resolve: cannot resolve the symbol: "
+                  "the resolver is not present!");
+        return Failed;
+      }
+
+      TASK( sr->resolver(vmp, sym_num, sym_type, 1, def, def_size,
+                         ref, ref_size) );
       sr->resolved = 1;
     }
 
@@ -285,9 +292,9 @@ void VM_Sym_Table_Print(VMProgram *vmp, FILE *out, UInt sym_num) {
   ref_num = 1;
 
   fprintf(out,
-   "Symbol ID = "SUInt"; name = '%s'; type = "SUInt"; resolver = %p; "
+   "Symbol ID = "SUInt"; name = '%s'; type = "SUInt"; "
    "defined = %d, def_addr = "SUInt", def_size = "SUInt"\n",
-   sym_num, sym_name, s->sym_type, s->resolver,
+   sym_num, sym_name, s->sym_type,
    s->defined, s->def_addr, s->def_size);
 
   while(next > 0) {
@@ -299,9 +306,9 @@ void VM_Sym_Table_Print(VMProgram *vmp, FILE *out, UInt sym_num) {
 
     fprintf(out,
      "  Reference number = "SUInt"; ref_addr = "SUInt"; "
-     "ref_size = "SUInt"; resolved = %d\n",
+     "ref_size = "SUInt"; resolved = %d, resolver = %p\n",
      ref_num, sr->ref_addr,
-     sr->ref_size, sr->resolved);
+     sr->ref_size, sr->resolved, sr->resolver);
 
     next = sr->next;
     ++ref_num;
@@ -364,7 +371,7 @@ Task VM_Sym_Resolve_CLib(VMProgram *vmp, char *lib_file) {
   return Arr_Iter(st->defs, Resolve_Ref_With_CLib, & clrd);
 #else
   MSG_WARNING("Cannot load '%s': the virtual machine was compiled "
-   "without support for dynamic loading of libraries.", lib_file);
+              "without support for dynamic loading of libraries.", lib_file);
   return Failed;
 #endif
 }
@@ -412,7 +419,8 @@ Task VM_Sym_Resolve_CLibs(VMProgram *vmp, List *lib_paths, List *libs) {
 /****************************************************************************/
 
 static Task code_generator(VMProgram *vmp, UInt sym_num, UInt sym_type,
- int defined, void *def, UInt def_size, void *ref, UInt ref_size) {
+                           int defined, void *def, UInt def_size,
+                           void *ref, UInt ref_size) {
   VMSymCodeRef *ref_head = (VMSymCodeRef *) ref;
   void *ref_tail = ref + sizeof(VMSymCodeRef);
   UInt ref_tail_size = ref_size - sizeof(VMSymCodeRef);
@@ -436,7 +444,8 @@ static Task code_generator(VMProgram *vmp, UInt sym_num, UInt sym_type,
     int dest_pos = ref_head->pos + 1; /* NEED TO ADD 1 */
     if (src_size != ref_head->size) {
       MSG_ERROR("vmsym.c, code_generator: The code for the resolved "
-        "reference does not match the space which was reserved for it!");
+                "reference does not match the space which was reserved "
+                "for it!");
       return Failed;
     }
     TASK(Arr_Overwrite(dest, dest_pos, src, src_size));
@@ -460,11 +469,11 @@ Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen) {
   TASK( code_gen(vmp, sym_num, s->sym_type, s->defined, def, s->def_size, NULL, 0) );
   if (pt->target_proc_num != ref_data.proc_num) {
     MSG_ERROR("VM_Sym_Code_Ref: the function 'code_gen' must not change "
-     "the current target for compilation!");
+              "the current target for compilation!");
   }
   ref_data.size = Arr_NumItem(pt->target_proc->code) - ref_data.pos;
-  TASK( VM_Sym_Ref(vmp, sym_num, & ref_data, sizeof(VMSymCodeRef)) );
-  TASK( VM_Sym_Resolver_Set(vmp, sym_num, code_generator) );
+  TASK( VM_Sym_Ref(vmp, sym_num, code_generator,
+                   & ref_data, sizeof(VMSymCodeRef), -1) );
   return Success;
 }
 
@@ -475,7 +484,8 @@ Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen) {
 
 /* This is the function which assembles the code for the function call */
 Task Assemble_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
- int defined, void *def, UInt def_size, void *ref, UInt ref_size) {
+                   int defined, void *def, UInt def_size,
+                   void *ref, UInt ref_size) {
   UInt call_num = 0;
   assert(sym_type == CALL_TYPE);
   if (defined && def != NULL) {
