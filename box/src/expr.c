@@ -84,6 +84,26 @@ void Expr_New_Value(Expr *e, Type t) {
   e->addr = 0;
 }
 
+void Expr_New_Imm_Char(Expr *e, Char c) {
+  Expr_Container_New(e, TYPE_CHAR, CONTAINER_IMM);
+  e->value.i = (Int) c;
+}
+
+void Expr_New_Imm_Int(Expr *e, Int i) {
+  Expr_Container_New(e, TYPE_INTG, CONTAINER_IMM);
+  e->value.i = i;
+}
+
+void Expr_New_Imm_Real(Expr *e, Real r) {
+  Expr_Container_New(e, TYPE_REAL, CONTAINER_IMM);
+  e->value.r = r;
+}
+
+void Expr_New_Imm_Point(Expr *e, Point *p) {
+  Expr_Container_New(e, TYPE_POINT, CONTAINER_IMM);
+  e->value.p = *p;
+}
+
 void Expr_New_Error(Expr *e) {
   Expr_Background(e);
   Expr_Attr_Set(e, EXPR_ATTR_ERROR, EXPR_ATTR_ERROR);
@@ -591,6 +611,7 @@ void Expr_Container_New(Expr *e, Type type, Container *c) {
   int intrinsic;
   Int type_of_register, resolved;
 
+  Expr_Background(e);
   e->is.typed = 1;
   e->is.value = 1;
   e->is.ignore = 0;
@@ -684,7 +705,6 @@ void Expr_Container_New(Expr *e, Type type, Container *c) {
     MSG_FATAL("Expr_Container_New: wrong type of container!");
   }
 }
-
 
 #if 0
 
@@ -800,32 +820,3 @@ void Expr_Alloc(Expr *e) {
     }
   }
 }
-
-/******************************************************************************/
-
-
-#if 0
-/** Put inside *e a the given immediate Char value. */
-void Expr_New_Imm_Char(Expression *e, Char c) {
-  Expr_New_Container(e, TYPE_CHAR, CONTAINER_IMM);
-  e->value.i = (Intg) c;
-}
-
-/** Put inside *e a the given immediate Int value. */
-void Cmp_Expr_New_Imm_Intg(Expression *e, Int i) {
-  Expr_New_Container(e, TYPE_INT, CONTAINER_IMM);
-  e->value.i = i;
-}
-
-/** Put inside *e a the given immediate Real value. */
-void Expr_New_Imm_Real(Expression *e, Real r) {
-  Expr_New_Container(e, TYPE_REAL, CONTAINER_IMM);
-  e->value.r = r;
-}
-
-/** Put inside *e a the given immediate Point value. */
-void Expr_New_Imm_Point(Expression *e, Point *p) {
-  Expr_New_Container(e, TYPE_POINT, CONTAINER_IMM);
-  e->value.p = *p;
-}
-#endif

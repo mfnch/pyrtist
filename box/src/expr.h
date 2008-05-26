@@ -92,6 +92,18 @@ void Expr_New_Void(Expr *e);
  */
 void Expr_New_Value(Expr *e, Type t);
 
+/** Create a new immediate character expression. */
+void Expr_New_Imm_Char(Expr *e, Char c);
+
+/** Create a new immediate int expression. */
+void Expr_New_Imm_Int(Expr *e, Int i);
+
+/** Create a new immediate real expression. */
+void Expr_New_Imm_Real(Expr *e, Real r);
+
+/** Create a new immediate point expression. */
+void Expr_New_Imm_Point(Expr *e, Point *p);
+
 /** See the function Expr_Attr_Set */
 typedef enum {
   EXPR_ATTR_TARGET=1,

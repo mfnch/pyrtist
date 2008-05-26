@@ -46,6 +46,7 @@ This is the result:
 
 Now we focus on margins and how the polygon corners can be rounded.
 
+
 .. image:: poly3.png
    :align: center
 

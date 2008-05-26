@@ -1336,34 +1336,6 @@ Task Cmp_Complete_Ptr_1(Expression *e) {
   return Success;
 }
 
-/* DESCRIZIONE: Mette in *e un espressione immediata di tipo intero.
- */
-void Cmp_Expr_New_Imm_Char(Expression *e, Char c) {
-  Expr_Container_New(e, TYPE_CHAR, CONTAINER_IMM);
-  e->value.i = (Int) c;
-}
-
-/* DESCRIZIONE: Mette in *e un espressione immediata di tipo intero.
- */
-void Cmp_Expr_New_Imm_Intg(Expression *e, Int i) {
-  Expr_Container_New(e, TYPE_INTG, CONTAINER_IMM);
-  e->value.i = i;
-}
-
-/* DESCRIZIONE: Mette in *e un espressione immediata di tipo reale.
- */
-void Cmp_Expr_New_Imm_Real(Expression *e, Real r) {
-  Expr_Container_New(e, TYPE_REAL, CONTAINER_IMM);
-  e->value.r = r;
-}
-
-/* DESCRIZIONE: Mette in *e un espressione immediata di tipo reale.
- */
-void Cmp_Expr_New_Imm_Point(Expression *e, Point *p) {
-  Expr_Container_New(e, TYPE_POINT, CONTAINER_IMM);
-  e->value.p = *p;
-}
-
 /*****************************************************************************
  * The following functions are needed to handle the data segment and the     *
  * segment of immediate values. The first is necessary to store strings and  *
