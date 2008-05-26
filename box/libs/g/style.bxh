@@ -2,6 +2,7 @@
 
 Style = ++Ptr
 ([)@Style ? "style_begin"
+(\)@Style ? "style_destroy"
 
 Style.Fill = Void
 ()Char@Style.Fill ? "style_fill_string"
