@@ -1,5 +1,10 @@
 Change log (recent come first)
 
+26 May 2008: Work on the documentation and on the internal allocation system.
+  * Started to write documentation on the graphic capabilities of Box.
+  * Destructors are now called automatically by the VM before deallocation
+    of objects: Window, PointList and Style are now fully deallocated.
+
 17 May 2008: Integration of Cairo in the graphic library.
   * The graphic terminal has been adjusted, removing the lowfn midfn
     function list, which are now replaced by full declared methods.

@@ -175,12 +175,17 @@ static void wincairo_rcong(Point *a, Point *b, Point *c) {
   if (n_eq == 3) return;
 #endif
   cairo_t *cr = (cairo_t *) grp_win->ptr;
+  Point *first = a, *last = c;
   MY_3POINTS(a, b, c);
 
   if (same_points(a, c))
     return;
 
-  else {
+  else if (same_points(a, b) || same_points(b, c)) {
+    wincairo_rline(first, last);
+    return;
+
+  } else {
     cairo_matrix_t previous_m, m;
 
     if (beginning_of_path) {

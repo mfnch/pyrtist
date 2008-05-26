@@ -86,8 +86,13 @@ static Task _poly_point_draw_only(Window *w, Point *p, int omit_line) {
   grp_window *cur_win = grp_win;
   Real m1 = wp->margin[0], m2 = wp->margin[1];
 
-  if (wp->num_points < 2)
+  if (wp->num_points < 2) {
     wp->first_points[wp->num_points] = *p;
+    if (wp->num_points == 1) {
+      wp->first_margins[0] = m1;
+      wp->first_margins[1] = m2;
+    }
+  }
 
   if (wp->num_points > 0) {
     Point *last = & wp->last_point, lastb, pb;
@@ -164,9 +169,12 @@ Task poly_style(VMProgram *vmp) {
 
 Task poly_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
+  WindowPoly *wp = & w->poly;
   grp_window *cur_win = grp_win;
 
   TASK( _poly_point_draw_only(w, & w->poly.first_points[0], 0) );
+  wp->margin[0] = wp->first_margins[0];
+  wp->margin[1] = wp->first_margins[1];
   TASK( _poly_point_draw_only(w, & w->poly.first_points[1], 1) );
 
   grp_win = w->window;
@@ -183,9 +191,12 @@ Task poly_end(VMProgram *vmp) {
 
 Task poly_pause(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
+  WindowPoly *wp = & w->poly;
   grp_window *cur_win = grp_win;
 
   TASK( _poly_point_draw_only(w, & w->poly.first_points[0], 0) );
+  wp->margin[0] = wp->first_margins[0];
+  wp->margin[1] = wp->first_margins[1];
   TASK( _poly_point_draw_only(w, & w->poly.first_points[1], 1) );
 
   grp_win = w->window;
@@ -220,6 +231,7 @@ Task poly_real(VMProgram *vmp) {
   case 1:
     max_margin = 1.0 - w->poly.margin[0];
     if (margin > max_margin) margin = max_margin;
+    if (margin < 0.0) margin = 0.0;
     w->poly.margin[1] = margin;
     break;
 

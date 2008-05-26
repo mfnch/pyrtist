@@ -13,10 +13,11 @@ It takes a list of points with optional left and right margins:
 
 Left and right margins are real numbers and are used
 for rounding the corners. They can be omitted to draw polygons
-with sharp corners. For instance:
+with sharp corners, as we will se later. For instance:
 
 .. code-block:: Box
 
+  a = (5, 20), b = (50, 10),  c = (55, 60),  d = (15, 50)
   pl = w.Poly[color.blue, a, b, c, d]
 
 draws a polygon with vertices ``a``, ``b``, ``c`` and ``d``.
@@ -27,8 +28,8 @@ This is the produced output:
 
 The ``Poly`` instruction returns a ``PointList`` object containing
 the vertices of the polygon. This ``PointList`` can be used in many ways.
-One can, for example, draw the polygon which connects the mid-points
-of the original polygon sides.
+It can be used to draw the polygon which connects the mid-points
+of the original polygon sides:
 
 .. code-block:: Box
 
@@ -44,12 +45,83 @@ This is the result:
 .. image:: poly2.png
    :align: center
 
-Now we focus on margins and how the polygon corners can be rounded.
+Now we focus on how the polygon corners can be rounded.
+Margins are specified using the syntax:
 
+.. code-block:: Box
+
+  \ w.Poly[..., p1, m1, m2, p2, ...]
+
+Between two points ``p1``, ``p2`` you can specify two real numbers
+``r1``, ``r2``. These two optional numbers are used to calculate two points
+``m1``, ``m2`` in the segment ``p1``-``p2``, which we call
+left and right margins.
+``r1`` specifies the distance of ``m1`` from ``p1``,
+while ``r2`` specifies the distance of ``m2`` from ``p2``.
+Both distances are expressed in units of the segment length.
+Consequently ``r1`` and ``r2`` are positive numbers whose
+sum can't be greater than 1.
+If this is not the case, then the value ``new_m1 = Max[0.0, Min[1.0, m1]]``
+is used for the first margin, while for ``m2``,
+``Max[0.0, Min[new_m1, m2]]`` is used.
+
+``m1`` and ``m2`` are connected with a straight segment.
+A similar thing is done for all the sides of the polygons.
+All these segments are then connected using ellipse arcs.
+Here is an example:
+
+.. code-block:: Box
+
+  \ w.Poly[color.yellow
+           a, 0, 0.05, b, 0.1, 0.15, c, 0.2, 0.5, d, 0.2, 0]
+
+which gives:
 
 .. image:: poly3.png
    :align: center
 
+Note the asymmetry of the bottom-left corner, which is the result
+of ``"0.5, d, 0.2"``.
+We notice that the second margin can be omitted.
+In such a situation, the second margin is taken to be equal
+to the first margin.
+However, if the first margin ``m1`` is greater than 0.5,
+the second margin is computed as ``1.0 - m1``,
+to avoid the sum ``m1 + m2`` to be greater than 1.
+
+A single ``Window.Poly`` instruction can be used to draw several
+polygons, using the ``;`` separator. Here is an example:
+
+.. code-block:: Box
+
+  \ w[Style[.Fill[";"]]]
+  \ w.Poly[color.magenta, 0.2, pl;
+           Color[color.red, .a=0.7], 0.5, pl]
+
+Notice that we used the ``PointList`` object, which we obtained previously.
+We also set the drawing style for the window ``w``:
+indeed, the default drawing style for the Window.Poly instruction
+is ``Style[.Fill["eo", "]"]]``, which means that the even-odd rule is used
+for filling, while the filling operation is performed only at the end
+of the instruction. This is useful when ``Window.Poly`` is to be used
+to obtain just a single polygon with holes.
+Here we want to use a single ``Window.Poly`` instruction to draw
+two polygons, we therefore use ``Style[.Fill[";"]]``, which induces
+the filling operation to occour whenever ``;`` is found.
+Here is the result:
+
+.. image:: poly4.png
+   :align: center
+
+Using margin ``1.0, 0``:
+
+.. code-block:: Box
+
+  \ w.Poly[Color[color.green, .a=0.7], 0, 1, pl]
+
+we obtain:
+
+.. image:: poly5.png
+   :align: center
 
 Here is the Box code used to generate all the pictures in this subsection:
-
