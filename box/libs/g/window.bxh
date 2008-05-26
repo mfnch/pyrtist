@@ -2,8 +2,10 @@
 
 Window = ++Ptr
 ([)@Window ? "window_begin"
-()Char@Window ? "window_str"
 (])@Window ? "window_end"
+(\)@Window ? "window_destroy"
+
+()Char@Window ? "window_str"
 P@Window ? "window_size"
 Color@&Window ? "window_color"
 Style@&Window ? "window_style"

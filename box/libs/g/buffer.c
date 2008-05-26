@@ -82,8 +82,7 @@
  * NOTA: buffer e' un puntatore ad una struttura di tipo
  *  buff (gia' precedentemente allocata).
  */
-int buff_create(buff *buffer, short elsize, long mindim)
-{
+int buff_create(buff *buffer, short elsize, long mindim) {
   if (elsize<1 || mindim<1) {
     ERRORMSG("buff_create", "Parametri errati");
     buffer->id = 0;
@@ -122,8 +121,7 @@ int buff_dup(buff *dest, buff *src) {
  *  Restituisce 1 se tutto va bene, 0 in caso di errore.
  * NOTA: Il buffer creato sara' vuoto.
  */
-int buff_recycle(buff *buffer, short elsize, long mindim)
-{
+int buff_recycle(buff *buffer, short elsize, long mindim) {
   if ( (elsize<1) || (mindim<1) ) {
     ERRORMSG("buff_recycle", "Parametri errati");
     return 0;
@@ -186,8 +184,7 @@ int buff_push(buff *buffer, void *elem) {
  *  preoccupandosi di reallocare la memoria se necessario.
  *  Restituisce 1 solo in caso di successo.
  */
-int buff_mpush(buff *buffer, void *elem, long numel)
-{
+int buff_mpush(buff *buffer, void *elem, long numel) {
   void *tptr;
   long tpos;
 
@@ -218,8 +215,7 @@ int buff_mpush(buff *buffer, void *elem, long numel)
  * DESCRIZIONE: Se necessario allarga il buffer in modo che contenga
  *  numel elementi. Restituisce 1 in caso di successo.
  */
-int buff_bigenough(buff *buffer, long numel)
-{
+int buff_bigenough(buff *buffer, long numel) {
   PRNMSG("buff_bigenough: Controllo se e' necessario allargare il buffer\n...");
   if (buffer->id == buffID) {
     if (numel < 0) {
@@ -244,8 +240,7 @@ int buff_bigenough(buff *buffer, long numel)
  * DESCRIZIONE: Se necessario riduce il buffer in modo che non sia
  *  troppo vuoto. Restituisce 1 in caso di successo.
  */
-int buff_smallenough(buff *buffer, long numel)
-{
+int buff_smallenough(buff *buffer, long numel) {
   if (buffer->id == buffID) {
     if (numel < 0) {
       ERRORMSG("buff_smallenough", "Parametri errati");
@@ -268,8 +263,7 @@ int buff_smallenough(buff *buffer, long numel)
  *  supera la dimensione "di riposo".
  *  Restituisce 1 in caso di successo.
  */
-int buff_clear(buff *buffer)
-{
+int buff_clear(buff *buffer) {
   if (buff_smallenough(buffer, 0))
     buffer->numel = 0;
   else
@@ -282,8 +276,7 @@ int buff_clear(buff *buffer)
  * DESCRIZIONE: De-alloca il buffer, riportandolo alla condizione in cui
  *  buff_create lo aveva posto.
  */
-void buff_free(buff *buffer)
-{
+void buff_free(buff *buffer) {
   if (buffer->id == buffID) {
     free(buffer->ptr);
     buffer->ptr = NULL;
@@ -291,6 +284,4 @@ void buff_free(buff *buffer)
     buffer->size = 0;
     buffer->numel = 0;
   }
-
-  return;
 }

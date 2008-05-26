@@ -82,31 +82,38 @@ static int fig_save(const char *file_name);
     ( (index > 0) ? ( (index - 1) % num_items ) + 1 : \
                     num_items - ( (-index) % num_items ) )
 
-struct fig_header {
-  int numlayers;    /* Numero dei layer della figura */
+typedef struct {
+  int numlayers;  /* Numero dei layer della figura */
   int current;    /* Layer attualmente in uso */
-  int top;      /* Primo layer della lista */
-  int bottom;      /* Ultimo layer della lista */
-  int firstfree;    /* Primo posto libero nella lista dei layer (0 = nessuno) */
-  buff layerlist;    /* Buffer che gestisce la lista dei layer */
-};
+  int top;        /* Primo layer della lista */
+  int bottom;     /* Ultimo layer della lista */
+  int firstfree;  /* Primo posto libero nella lista dei layer (0 = nessuno) */
+  buff layerlist; /* Buffer che gestisce la lista dei layer */
+} FigHeader;
 
-struct layer_header {
+typedef struct {
   unsigned long ID;
-//  ... color;
   int numcmnd;
   int previous;
   int next;
   buff layer;
-};
-
-typedef struct layer_header LayerHeader;
-
+} LayerHeader;
 
 /***************************************************************************************/
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
 
 static char *fig_id_string = "fig";
+
+static void fig_close_win(void) {
+  GrpWindow *w = grp_win;
+  FigHeader *fh = (FigHeader *) w->wrdep;
+  LayerHeader *lh = buff_firstitemptr(& fh->layerlist, LayerHeader);
+  Int i, n = buff_numitem(& fh->layerlist);
+  for(i=0; i<n; i++) buff_free(& (lh++)->layer);
+  buff_free(& fh->layerlist);
+  free(fh);
+  free(w);
+}
 
 /** Set the default methods to the gr1b window */
 static void fig_repair(GrpWindow *w) {
@@ -123,6 +130,7 @@ static void fig_repair(GrpWindow *w) {
   w->font = fig_font;
   w->fake_point = fig_fake_point;
   w->save = fig_save;
+  w->close_win = fig_close_win;
 }
 
 /* DESCRIZIONE: Apre una finestra di tipo "fig", che consiste essenzialmente
@@ -138,14 +146,14 @@ static void fig_repair(GrpWindow *w) {
  */
 grp_window *fig_open_win(int numlayers) {
   grp_window *wd;
-  struct fig_header *figh;
-  struct layer_header *layh;
+  FigHeader *figh;
+  LayerHeader *layh;
   buff *laylist;
   int i;
 
   PRNMSG("fig_open_win:\n  ");
 
-  if ( numlayers < 1 ) {
+  if (numlayers < 1) {
     ERRORMSG("fig_open_win", "Figura senza layers");
     return NULL;
   }
@@ -153,16 +161,16 @@ grp_window *fig_open_win(int numlayers) {
   /* Creo gli headers della figura (con tutte le informazioni utili
    * per la gestione dei layers)
    */
-  figh = (struct fig_header *) malloc( sizeof(struct fig_header) );
+  figh = (FigHeader *) malloc( sizeof(FigHeader) );
 
-  if ( (figh == NULL) ) {
+  if (figh == NULL) {
     ERRORMSG("fig_open_win", "Memoria esaurita");
     return NULL;
   }
 
   /* Creo la lista dei layers con numlayers elementi */
   laylist = & figh->layerlist;
-  if ( ! buff_create( laylist, sizeof(struct layer_header), numlayers) ) {
+  if ( ! buff_create(laylist, sizeof(LayerHeader), numlayers) ) {
     ERRORMSG("fig_open_win", "Memoria esaurita");
     return NULL;
   }
@@ -183,7 +191,7 @@ grp_window *fig_open_win(int numlayers) {
   figh->firstfree = 0;  /* Nessun layer libero */
 
   /* Adesso creo la lista dei layer */
-  layh = buff_firstitemptr(laylist, struct layer_header);
+  layh = buff_firstitemptr(laylist, LayerHeader);
   i = 0;
   while (i < numlayers) {
     /* Definisco lo spazio dove verranno memorizzate le istruzioni */
@@ -224,17 +232,16 @@ grp_window *fig_open_win(int numlayers) {
 /* DESCRIZIONE: Elimina un layer con tutto il suo contenuto.
  *  l e' il numero del layer da distruggere.
  */
-int fig_destroy_layer(int l)
-{
-  struct fig_header *figh;
-  struct layer_header *flayh, *llayh, *layh;
+int fig_destroy_layer(int l) {
+  FigHeader *figh;
+  LayerHeader *flayh, *llayh, *layh;
   buff *laylist;
   int p, n;
 
   PRNMSG("fig_destroy_layer:\n  ");
 
   /* Trovo l'header della figura attualmente attiva */
-  figh = (struct fig_header *) grp_win->wrdep;
+  figh = (FigHeader *) grp_win->wrdep;
 
   if (figh->numlayers < 2) {
     ERRORMSG("fig_destroy_layer", "Figura senza layers");
@@ -300,17 +307,16 @@ int fig_destroy_layer(int l)
 /* DESCRIZIONE: Crea un nuovo layer vuoto e ne restituisce il numero
  *  identificativo (> 0) o 0 in caso di errore.
  */
-int fig_new_layer(void)
-{
-  struct fig_header *figh;
-  struct layer_header *flayh, *llayh, *layh;
+int fig_new_layer(void) {
+  FigHeader *figh;
+  LayerHeader *flayh, *llayh, *layh;
   buff *laylist;
   int l;
 
   PRNMSG("fig_new_layer:\n  ");
 
   /* Trovo l'header della figura attualmente attiva */
-  figh = (struct fig_header *) grp_win->wrdep;
+  figh = (FigHeader *) grp_win->wrdep;
 
   laylist = & figh->layerlist;
 
@@ -371,16 +377,15 @@ int fig_new_layer(void)
 /* DESCRIZIONE: Seleziona il layer l: fino alla prossima istruzione
  * fig_select_layer, i comandi grafici saranno inviati a quel layer.
  */
-void fig_select_layer(int l)
-{
+void fig_select_layer(int l) {
   buff *laylist;
-  struct fig_header *figh;
-  struct layer_header *layh;
+  FigHeader *figh;
+  LayerHeader *layh;
 
   PRNMSG("fig_select_layer:\n  ");
 
   /* Trovo l'header della figura attualmente attiva */
-  figh = (struct fig_header *) grp_win->wrdep;
+  figh = (FigHeader *) grp_win->wrdep;
 
   /* Setto il layer attivo a l */
   l = CIRCULAR_INDEX(figh->numlayers, l);
@@ -399,13 +404,13 @@ void fig_select_layer(int l)
  */
 void fig_clear_layer(int l) {
   buff *laylist;
-  struct fig_header *figh;
-  struct layer_header *layh;
+  FigHeader *figh;
+  LayerHeader *layh;
 
   PRNMSG("fig_clear_layer:\n  ");
 
   /* Trovo l'header della figura attualmente attiva */
-  figh = (struct fig_header *) grp_win->wrdep;
+  figh = (FigHeader *) grp_win->wrdep;
 
   /* Trovo l'header del layer l */
   l = CIRCULAR_INDEX(figh->numlayers, l);
@@ -459,14 +464,14 @@ typedef struct {
 
 /* Questa macro contiene gran parte del codice comune a tutte le ... */
 #define BEGIN_CMND(name, argsize) \
-  struct layer_header *layh; \
+  LayerHeader *layh; \
   buff *layer; \
   struct cmnd_header *cmndh; \
   int ni; \
   register void *ip; \
 \
   PRNMSG(name":\n  ");\
-  layh = (struct layer_header *) grp_win->ptr; \
+  layh = (LayerHeader *) grp_win->ptr; \
   if ( layh->ID != 0x7279616c) {  /* 0x7279616c = "layr" */ \
     ERRORMSG(name, "Errore interno (bad layer ID, 2)"); \
     PRNMSG("l'ID del header di layer e' errato\n");\
@@ -632,8 +637,8 @@ void fig_ltransform(Point *p, int n) {
  *  senza controllare questa eventualita'! (problema   R I M O S S O !))
  */
 void fig_draw_layer(grp_window *source, int l) {
-  struct fig_header *figh;
-  struct layer_header *layh;
+  FigHeader *figh;
+  LayerHeader *layh;
   buff *laylist, *layer;
   union {
    struct cmnd_header *hdr;
@@ -645,13 +650,13 @@ void fig_draw_layer(grp_window *source, int l) {
   PRNMSG("fig_draw_layer:\n  ");
 
   /* Trovo l'header della figura "source" */
-  figh = (struct fig_header *) source->wrdep;
+  figh = (FigHeader *) source->wrdep;
 
   l = CIRCULAR_INDEX(figh->numlayers, l);
 
   /* Trovo l'header del layer l */
   laylist = & figh->layerlist;
-  layh = buff_itemptr(laylist, struct layer_header, l);
+  layh = buff_itemptr(laylist, LayerHeader, l);
   if ( layh->ID != 0x7279616c) {  /* 0x7279616c = "layr" */
     ERRORMSG( "fig_draw_layer", "Errore interno (bad layer ID), 3" );
     return;
@@ -791,8 +796,8 @@ void fig_draw_layer(grp_window *source, int l) {
  *  a partire dal "layer bottom", fino ad arrivare al "layer top".
  */
 void fig_draw_fig(grp_window *source) {
-  struct fig_header *figh;
-  struct layer_header *layh;
+  FigHeader *figh;
+  LayerHeader *layh;
   buff *laylist;
   long nl, cl;
 
@@ -800,7 +805,7 @@ void fig_draw_fig(grp_window *source) {
   assert(source->win_type_str == fig_id_string);
 
   /* Trovo l'header della figura "source" */
-  figh = (struct fig_header *) source->wrdep;
+  figh = (FigHeader *) source->wrdep;
 
   laylist = & figh->layerlist;
 

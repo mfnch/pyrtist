@@ -75,7 +75,7 @@ void g_optcolor_alternative_set(OptColor *oc, OptColor *alternative) {
  */
 int g_string_find_in_list(char **list, const char *string) {
   int i = 0;
-  const char **s;
+  char **s;
   for(s = list; *s != (char *) NULL; s++) {
     if (strcasecmp(*s, string) == 0) return i;
     ++i;

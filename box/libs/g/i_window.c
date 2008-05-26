@@ -110,9 +110,15 @@ Task window_color(VMProgram *vmp) {
 Task window_destroy(VMProgram *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
   Window *w = (Window *) wp;
+  grp_window *cur_win = grp_win;
 #ifdef DEBUG
   printf("Window object deallocated\n");
 #endif
+
+  grp_win = w->window;
+  grp_close_win();
+  grp_win = cur_win;
+
   pointlist_destroy(& w->pointlist);
   put_window_destroy(w);
   line_window_destroy(w);
