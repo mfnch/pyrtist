@@ -2,18 +2,6 @@ There are a number of things which needs to be done as soon as possible:
 The user may expect great improvements in future versions of the language.
 
 MODIFICATIONS TO THE BOX COMPILER (in order of importance):
-1 We now have a problem. If we define Window = Ptr and PointList = Ptr
-  then there is no way to distinguish between them. One example is
-  Window@Line: this procedure will be invoked both for Window and for
-  PointList objects. Another example: LineStyle = (Real, Real, Real, Real)
-  is now in conflict with Color = (Real r, g, b, a).
-  It is quite important to solve this issue as soon as possible.
-  The solution is to introduce a new type operator ++
-
-    Type1 = ++Type2
-
-  Will associate to the name Type1 something which is identical
-  to Type2, but is not compatible with it.
 2 global variables: quantities defined in the upper scope unit should
   be automatically allocated as global (global register should be used
   instead of local ones);
@@ -30,15 +18,6 @@ MODIFICATIONS TO THE BOX COMPILER (in order of importance):
   opened box. This is what one wants to do in 99% of the cases.
   One should specify the level to refear to the current opened box, such as
   in $:
-6 The VM should be instructed about how to create or destroy types.
-  This process has already been started, but needs to be completed.
-  In the end Box should be able to create hidden procedures for destroying
-  those data types that need a special treatment (structures in particular).
-  The compiler then should communicate to the VM what procedure to call
-  for destroying what type. The destruction will then be operated
-  automatically by the VM when the reference count reaches 0.
-  Types associated with the destroyed type will be destroyed as well
-  in a recursive fashion.
 7 Copying types of all kinds should be possible, with eventual invocation
   of user defined procedures. It's not clear if we should allow the VM
   to automatically copying objects, by introducing an ad-hoc instruction.
@@ -58,6 +37,18 @@ MODIFICATIONS TO THE BOX COMPILER (in order of importance):
   from files and from stdin.
 
 DONE:
+1 We now have a problem. If we define Window = Ptr and PointList = Ptr
+  then there is no way to distinguish between them. One example is
+  Window@Line: this procedure will be invoked both for Window and for
+  PointList objects. Another example: LineStyle = (Real, Real, Real, Real)
+  is now in conflict with Color = (Real r, g, b, a).
+  It is quite important to solve this issue as soon as possible.
+  The solution is to introduce a new type operator ++
+
+    Type1 = ++Type2
+
+  Will associate to the name Type1 something which is identical
+  to Type2, but is not compatible with it.
 3 precedence rules for name resolution should be introduced. The first
   refers to subtypes. When object.Subtype is found, Box searches now for
   subtypes of the type of object. If no such a subtype is found, an error
@@ -74,4 +65,13 @@ DONE:
   (an object of type PointList) and try to find a subtype .Get
   The problem should be faced in a more general way, allowing automatic
   conversion of types at (]), see 8
+6 The VM should be instructed about how to create or destroy types.
+  This process has already been started, but needs to be completed.
+  In the end Box should be able to create hidden procedures for destroying
+  those data types that need a special treatment (structures in particular).
+  The compiler then should communicate to the VM what procedure to call
+  for destroying what type. The destruction will then be operated
+  automatically by the VM when the reference count reaches 0.
+  Types associated with the destroyed type will be destroyed as well
+  in a recursive fashion.
 
