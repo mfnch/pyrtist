@@ -204,8 +204,8 @@ grp_window *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
 void gr8b_close_win(void) {
   free( grp_win->ptr );
   free( grp_win->wrdep );
-  free( grp_win );
   grp_palette_destroy( grp_win->pal );
+  free( grp_win );
 }
 
 /***************************************************************************************/

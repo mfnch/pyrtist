@@ -123,7 +123,7 @@ Task objlist_add(ObjList *ol, void *obj, char *name) {
   ++ol->ol.numel;
   oli = buff_lastitemptr(& ol->ol, ObjListItem);
   dest_obj = (void *) oli + sizeof(ObjListItem);
-  (void) memcpy(dest_obj, obj, ol->ol.elsize);
+  (void) memcpy(dest_obj, obj, ol->ol.elsize - sizeof(ObjListItem));
   oli->name = name;
   return Success;
 }

@@ -264,16 +264,18 @@ Task Box_Instance_End(Expr *e) {
   /* Cancello le variabili esplicite della sessione */
   {
     Box *box = Arr_LastItemPtr(bs->box, Box);
-    Symbol *s;
+    Symbol *s, *next;
 
     /* Cancello le labels che puntano all'inizio ed alla fine della box */
     TASK( VM_Label_Destroy(cmp_vm, box->label_begin) );
     TASK( VM_Label_Define_Here(cmp_vm, box->label_end) );
     TASK( VM_Label_Destroy(cmp_vm, box->label_end) );
 
-    for ( s = box->syms; s != (Symbol *) NULL; s = s->brother ) {
+    for (s = box->syms; s != (Symbol *) NULL;) {
+      next = s->brother;
       TASK( Cmp_Expr_Destroy(& (s->value), 1) );
-      Sym_Symbol_Delete( s );
+      Sym_Symbol_Delete(s);
+      s = next;
     }
   }
 

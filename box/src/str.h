@@ -45,6 +45,10 @@ void Name_Free(Name *n);
 Name *Name_Dup(Name *n);
 Task Name_Cat(Name *nm, Name *nm1, Name *nm2, int free_args);
 void *Mem_Dup(const void *src, unsigned int length);
+
+/** Similar to Mem_Dup, but allocate extra space in the destination */
+void *Mem_Dup_Larger(const void *src, Int src_size, Int dest_size);
+
 #define Name_Cat_And_Free(nm, nm1, nm2) Name_Cat(nm, nm1, nm2, 1)
 
 #  ifndef HAVE_STRNDUP
@@ -52,3 +56,4 @@ char *strndup(const char *s, int n);
 #  endif
 
 #endif
+

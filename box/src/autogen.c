@@ -38,7 +38,6 @@ Task Auto_Destructor_Create(Type t) {
       UInt sym_num;
       TS_Procedure_Sym_Num(cmp->ts, & sym_num, found);
       return VM_Sym_Alloc_Method_Register(cmp->vm, sym_num, (Int) t);
-
     }
   }
   return Success;

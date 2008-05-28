@@ -188,7 +188,7 @@ Task line_pause(VMProgram *vmp) {
 
 Task line_window(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  WindowPtr *wp = BOX_VM_ARGPTR1(vmp, WindowPtr);
+  WindowPtr *wp = BOX_VM_ARG1_PTR(vmp, WindowPtr);
 
   w->line.this_piece.arrow = (void *) *wp;
   return Success;

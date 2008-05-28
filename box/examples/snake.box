@@ -11,21 +11,21 @@ include "g"
 
 // Here we draw our line-terminator: this is just a common Window object
 // where some hot points have been defined.
-eye = Window["fig"][
+eye = Window[][
   \ .Circle[Style[.Fill[";"]],
             color.yellow, (0, 0), 1, 0.5; color.dark_green, 0.1, 0.5]
 ]
 
-tongue = Window["fig"]
+tongue = Window[]
 \ tongue.Poly[color.dark_red, (0.5, 0), (0.5, 4), 0, 1, (0.5, 5), 1, 0, (1, 5)
               0, 1, (0, 5), 1, 0, (0, 4.5), 0, 1, (0, 5), 1, 0, (-1, 5),
               0, 1, (-0.5, 5), 1, 0, (-0.5, 4), (-0.5, 0)]
 
 // Now we can use the tongue and the eye figures to draw the face of a snake
-face = Window["fig"][
+face = Window[][
   a = b = c = d = Point
   a = (5, -5), b = (7, 0), c = (4, 8), d = (0, 9)
-  \ .Poly[color.dark_green, a, 0.5, 0.5, b, c, d,
+  \ .Poly[color.dark_green, a, 0.5, b, c, d,
           (-c.x, c.y), (-b.x, b.y), (-a.x, a.y)]
   \ .Put[tongue, (0, 6)]
   color.yellow
@@ -48,7 +48,7 @@ face = Window["fig"][
 ]
 
 // Now we can draw as many snakes as we want with just one Line instruction!
-snake = Window["fig"]
+snake = Window[]
 \ snake.Line[color.dark_green, line.smooth, (10, 10), 1, 4, (40, 100), 4, 5
              (80, 10), (120, 90), (150, 25), (170, 55), face, (195, 70)]
 

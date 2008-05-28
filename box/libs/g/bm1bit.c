@@ -221,6 +221,7 @@ grp_window *gr1b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
 void gr1b_close_win(void) {
   free(grp_win->ptr);
   free(grp_win->wrdep);
+  grp_palette_destroy( grp_win->pal );
   free(grp_win);
 }
 

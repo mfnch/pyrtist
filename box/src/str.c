@@ -28,6 +28,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "config.h"
 #include "types.h"
@@ -466,6 +467,17 @@ void *Mem_Dup(const void *src, unsigned int length) {
   if (length < 1) return NULL;
   copy = (void *) Mem_Alloc(length);
   memcpy(copy, src, length);
+  return copy;
+}
+
+/** Similar to Mem_Dup, but allocate extra space */
+void *Mem_Dup_Larger(const void *src, Int src_size, Int dest_size) {
+  void *copy;
+  assert(dest_size >= src_size && src_size >= 0);
+  if (dest_size < 1) return NULL;
+  copy = (void *) Mem_Alloc(dest_size);
+  if (copy == NULL) return NULL;
+  memcpy(copy, src, src_size);
   return copy;
 }
 

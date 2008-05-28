@@ -14,7 +14,7 @@ wheatstone = Window["fig"][
 
   // Places the four components.
   // Each component has two connections. Here we want to rotate and translate
-  // ("rt") a resistor such that the first of its terminals in near to
+  // ("rt") a resistor such that the first of its terminals is near to
   // the point p1 and the second one is near to p2.
   r12 = .Put[resistor, "rt", .Near[1, p1], .Near[2, p2]]
   // We proceed in a similar way for the other components:
