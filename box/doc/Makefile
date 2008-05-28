@@ -8,10 +8,13 @@ all: html
 svn_version:
 	echo ".. |svnversion| replace:: "`svnversion -n .` > svn_version.txt
 
-poly.png: poly.box
+html/box-logo.png: box-logo.box
+	$(BOX) -l g box-logo.box
+
+html/poly1.png: poly.box
 	$(BOX) -l g poly.box
 
-html: svn_version poly.png
+html: svn_version html/box-logo.png html/poly1.png
 	mkdir -p html
 	$(RST2HTML) --strict --stylesheet-path=html/style.css \
 	            --link-stylesheet -v manual.txt html/manual.html \

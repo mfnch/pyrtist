@@ -58,7 +58,7 @@ restindex
 <p>Box is a programming language developed to make graphics easy.
 Everything you draw (lines, circles, text, polygons, etc.)
 is done inside "Window"s.
-Windows object are the target of graphic commands and
+Window objects are the target of graphic commands and
 can be translated, scaled, rotated and used
 inside other Windows.
 This is actually simpler than what it may seem!

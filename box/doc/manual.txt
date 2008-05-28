@@ -10,7 +10,7 @@ Box User Manual (0.1)
 
 :Home page: http://boxc.sourceforge.net
 
-.. image:: ../box-logo.png
+.. image:: box-logo.png
    :align: center
 
 

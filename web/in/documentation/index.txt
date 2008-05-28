@@ -1,0 +1,15 @@
+restindex
+    crumb: Documentation
+    format: rest
+    page-title: Documentation for Box
+    include: Yes
+    page-description:
+       Documentation
+    /description
+/restindex
+
+The documentation of Box is being currently written.
+Here are the available 
+
+* `The still incomplete manual for the Box graphic library <manual.html>`__
+

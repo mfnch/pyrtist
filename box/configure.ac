@@ -43,7 +43,7 @@ AC_PROG_YACC
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdlib.h string.h unistd.h dlfcn.h])
+AC_CHECK_HEADERS([stdlib.h string.h unistd.h dlfcn.h stdint.h])
 #AC_CHECK_HEADERS([cairo.h])
 
 # Checks for libraries.
