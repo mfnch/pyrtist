@@ -4,28 +4,39 @@ include "arrows"
 w = Window[]
 
 // Draw one plain polygon
+//{sharp
 a = (5, 20), b = (50, 10),  c = (55, 60),  d = (15, 50)
 pl = w.Poly[color.blue, a, b, c, d]
+//}
 w.Save["html/poly1.png"]
 
 // Draw another polygon from the mid-points of the edges of the original one
+//{midpoints
 i = 1, \ w.Poly[color.yellow, pl.Get[i+0.5], For[++i < 5]]
 \ w.Circle[Color[color.red, .a=0.5], 1, pl] // Circles on vertices
+//}
 w.Save["html/poly2.png"]
 
+//{margins
 \ w.Poly[color.yellow
          a, 0, 0.05, b, 0.1, 0.15, c, 0.2, 0.5, d, 0.2, 0]
+//}
 w.Save["html/poly3.png"]
 
+//{one_margin
 \ w[Style[.Fill[";"]]]
 \ w.Poly[color.magenta, 0.2, pl;
          Color[color.red, .a=0.7], 0.5, pl]
+//}
 w.Save["html/poly4.png"]
 
+//{big_margin
 \ w.Poly[Color[color.green, .a=0.7], 0, 1, pl]
+//}
 w.Save["html/poly5.png"]
 
 // Rulers
+//{etc
 \ w.Line[Color[color.black, .a=0.5], 0.5, h=0.03
          arrow_ruler, pl.Get[(1, -h)], arrow_ruler, pl.Get[(1.999, -h)];
          arrow_ruler, pl.Get[(1, h)], arrow_ruler, pl.Get[(1.2, h)];
@@ -34,4 +45,6 @@ w.Save["html/poly5.png"]
 // Labels
 w.Text[.Font["Sans", 10], pl.Get[(1.45, 0.06)], "d";
        .Font["Sans", 5],  pl.Get[(1.05, 0.1)], "0.2*d"]
+//}
+
 w.Save["poly.png"]

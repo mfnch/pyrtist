@@ -14,7 +14,10 @@ html/box-logo.png: box-logo.box
 html/poly1.png: poly.box
 	$(BOX) -l g poly.box
 
-html: svn_version html/box-logo.png html/poly1.png
+poly.txt: poly.txt.in
+	python subst.py poly.box poly.txt.in
+
+html: svn_version html/box-logo.png html/poly1.png poly.txt
 	mkdir -p html
 	$(RST2HTML) --strict --stylesheet-path=html/style.css \
 	            --link-stylesheet -v manual.txt html/manual.html \

@@ -13,12 +13,11 @@ It takes a list of points with optional left and right margins:
 
 Left and right margins are real numbers and are used
 for rounding the corners. They can be omitted to draw polygons
-with sharp corners, as we will se later. For instance:
+with sharp corners. For instance:
 
 .. code-block:: Box
 
-  a = (5, 20), b = (50, 10),  c = (55, 60),  d = (15, 50)
-  pl = w.Poly[color.blue, a, b, c, d]
+  //{sharp}
 
 draws a polygon with vertices ``a``, ``b``, ``c`` and ``d``.
 This is the produced output:
@@ -28,13 +27,12 @@ This is the produced output:
 
 The ``Poly`` instruction returns a ``PointList`` object containing
 the vertices of the polygon. This ``PointList`` can be used in many ways.
-It can be used to draw the polygon which connects the mid-points
+It can be used, for example, to draw the polygon which connects the mid-points
 of the original polygon sides:
 
 .. code-block:: Box
 
-  i = 1, \ w.Poly[color.yellow, pl.Get[i+0.5], For[++i < 5]]
-  \ w.Circle[Color[color.red, .a=0.5], 1, pl]
+  //{midpoints}
 
 The second line here draws transparent red circles with radius 1
 and center on the points of the ``PointList`` ``pl``.
@@ -72,8 +70,7 @@ Here is an example:
 
 .. code-block:: Box
 
-  \ w.Poly[color.yellow
-           a, 0, 0.05, b, 0.1, 0.15, c, 0.2, 0.5, d, 0.2, 0]
+  //{margins}
 
 which gives:
 
@@ -94,9 +91,7 @@ polygons, using the ``;`` separator. Here is an example:
 
 .. code-block:: Box
 
-  \ w[Style[.Fill[";"]]]
-  \ w.Poly[color.magenta, 0.2, pl;
-           Color[color.red, .a=0.7], 0.5, pl]
+  //{one_margin}
 
 Notice that we used the ``PointList`` object, which we obtained previously.
 We also set the drawing style for the window ``w``:
@@ -117,7 +112,7 @@ Using margin ``1.0, 0``:
 
 .. code-block:: Box
 
-  \ w.Poly[Color[color.green, .a=0.7], 0, 1, pl]
+  //{big_margin}
 
 we obtain:
 
@@ -125,3 +120,8 @@ we obtain:
    :align: center
 
 Here is the Box code used to generate all the pictures in this subsection:
+
+.. code-block:: Box
+
+  //{all}
+
