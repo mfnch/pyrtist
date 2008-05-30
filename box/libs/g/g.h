@@ -47,6 +47,11 @@ int file_extension(char **extensions, const char *file_name);
 typedef enum {
   G_STYLE_ATTR_DRAW=0,
   G_STYLE_ATTR_DRAW_WHEN,
+  G_STYLE_ATTR_BORD_COLOR,
+  G_STYLE_ATTR_BORD_WIDTH,
+  G_STYLE_ATTR_BORD_JOIN_STYLE,
+  G_STYLE_ATTR_BORD_MITER_LIMIT,
+  G_STYLE_ATTR_BORD_DASHES,
   G_STYLE_ATTR_NUM
 } GStyleAttr;
 
@@ -68,6 +73,8 @@ typedef struct _g_style {
   void *attr[G_STYLE_ATTR_NUM];
   DrawStyle draw;
   DrawWhen draw_when;
+  Color bord_color;
+  Real bord_width, bord_miter_limit;
 } GStyle;
 
 /** Create a new transparent style (transparent means that non of its

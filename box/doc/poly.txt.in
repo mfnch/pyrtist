@@ -3,17 +3,17 @@ Window.Poly instruction
 -----------------------
 
 The ``Poly`` method can be used to draw polygons.
-It takes a list of points with optional left and right margins:
+It takes a list of points with optional margins:
 
 .. code-block:: Box
 
-  point_list = window.Poly[left_margin0, right_margin0, point1,
-                           left_margin1, right_margin1, point2,
-                           left_margin1, right_margin1, point3, ...]
+  point_list = window.Poly[first_margin0, second_margin0, point1,
+                           first_margin1, second_margin1, point2,
+                           first_margin2, second_margin2, point3, ...]
 
-Left and right margins are real numbers and are used
-for rounding the corners. They can be omitted to draw polygons
-with sharp corners. For instance:
+The margins are real numbers and are used for rounding the corners.
+You can omit them, if you want to draw a polygon with sharp corners.
+For instance:
 
 .. code-block:: Box
 
@@ -34,6 +34,10 @@ of the original polygon sides:
 
   //{midpoints}
 
+To understand the first line, you should take a look at the documentation
+for the ``PointList`` object. Here we just remind that ``pl.Get[1.5]`
+is the point between ``pl.Get[1]`` and ``pl.Get[2]``: the point
+at the center of the first side of the polygon.
 The second line here draws transparent red circles with radius 1
 and center on the points of the ``PointList`` ``pl``.
 Note that here we use ``\`` to ignore the ``PointList`` expression
@@ -43,29 +47,37 @@ This is the result:
 .. image:: poly2.png
    :align: center
 
-Now we focus on how the polygon corners can be rounded.
-Margins are specified using the syntax:
+Now we focus on how the polygon corners are rounded.
+The idea is the following: for every edge of the polygon
+we identify a sub-segment, which is just a part of it.
+All the sub-segments are then traced one after the other,
+using ellipse arcs to connect them.
+In practice, between the vertices ``p1`` and ``p2`` of the polygon,
+you can specify two real numbers ``r1`` and ``r2``:
 
 .. code-block:: Box
 
-  \ w.Poly[..., p1, m1, m2, p2, ...]
+  \ w.Poly[..., p1, r1, r2, p2, ...]
 
-Between two points ``p1``, ``p2`` you can specify two real numbers
-``r1``, ``r2``. These two optional numbers are used to calculate two points
-``m1``, ``m2`` in the segment ``p1``-``p2``, which we call
-left and right margins.
-``r1`` specifies the distance of ``m1`` from ``p1``,
-while ``r2`` specifies the distance of ``m2`` from ``p2``.
-Both distances are expressed in units of the segment length.
-Consequently ``r1`` and ``r2`` are positive numbers whose
-sum can't be greater than 1.
-If this is not the case, then the value ``new_m1 = Max[0.0, Min[1.0, m1]]``
-is used for the first margin, while for ``m2``,
-``Max[0.0, Min[new_m1, m2]]`` is used.
-
-``m1`` and ``m2`` are connected with a straight segment.
-A similar thing is done for all the sides of the polygons.
-All these segments are then connected using ellipse arcs.
+The optional numbers ``r1`` and ``r2`` are used to specify which part
+of the edge ``p1``-``p2`` has to be connected with a straight line.
+All the remaining bits are rounded!
+In particular ``r1`` specifies the first margin, i.e.
+the distance between the first point of the edge ``p1``
+and the first point of the sub-segment ``m1``.
+``r2`` specifies the second margin, i.e. the distance between 
+the second point of the sub-segment ``m2`` and the second
+point of the edge ``p2``. They are calculated as
+``m1 = p1 + r1*(p2 - p1)`` and ``m2 = p2 + r2*(p1 - p2)``.
+Consequently when ``r1 = r2 = 0`` for all the edges, the polygon corners
+are not rounded (this is the default behaviour).
+When ``r1 = r2 = 0.5`` the polygon is "fully rounded",
+meaning that it is made just of ellipse arcs.
+It should be clear now that ``r1`` and ``r2`` must be positive numbers
+whose sum can't be greater than 1.
+If this is not the case, then the value ``new_r1 = Max[0.0, Min[1.0, r1]]``
+is used for the first margin, while for the second,
+``Max[0.0, Min[new_r1, r2]]`` is used.
 Here is an example:
 
 .. code-block:: Box
@@ -77,14 +89,27 @@ which gives:
 .. image:: poly3.png
    :align: center
 
-Note the asymmetry of the bottom-left corner, which is the result
-of ``"0.5, d, 0.2"``.
-We notice that the second margin can be omitted.
-In such a situation, the second margin is taken to be equal
-to the first margin.
-However, if the first margin ``m1`` is greater than 0.5,
-the second margin is computed as ``1.0 - m1``,
-to avoid the sum ``m1 + m2`` to be greater than 1.
+Note that it is not necessary to specify both the margins:
+if just the first margin ``r1`` is given, the second is assumed to be
+the same (``r2 = r1``).
+This behaviour makes sense only when ``r1 <= 0.5``
+(remember that ``r1 + r2`` has to be lower than 1.0).
+Therefore, when ``r1 > 0.5``, ``r2`` is calculated as ``1.0 - r1``.
+If both the margins are not given, then the old margins are used.
+In particular:
+
+.. code-block:: Box
+
+  Poly[..., p1, r1, r2, p2, p3, p4, ...]
+
+is equivalent to:
+
+.. code-block:: Box
+
+  Poly[..., p1, r1, r2, p2, r2, r1, p3, r1, r2, p4, ...]
+
+Note that the old margins are used with reversed order!
+This behaviour makes it easy to draw corners with equal margins.
 
 A single ``Window.Poly`` instruction can be used to draw several
 polygons, using the ``;`` separator. Here is an example:
@@ -94,19 +119,22 @@ polygons, using the ``;`` separator. Here is an example:
   //{one_margin}
 
 Notice that we used the ``PointList`` object, which we obtained previously.
-We also set the drawing style for the window ``w``:
-indeed, the default drawing style for the Window.Poly instruction
-is ``Style[.Fill["eo", "]"]]``, which means that the even-odd rule is used
-for filling, while the filling operation is performed only at the end
-of the instruction. This is useful when ``Window.Poly`` is to be used
-to obtain just a single polygon with holes.
-Here we want to use a single ``Window.Poly`` instruction to draw
-two polygons, we therefore use ``Style[.Fill[";"]]``, which induces
-the filling operation to occour whenever ``;`` is found.
+We also set the drawing style for the window ``w``.
+This is necessary because a ``Poly`` instruction can be used also
+to draw polygons with holes. This is actually the default drawing
+style: polygons separated by ``;`` in the same ``Poly`` instruction
+are used to draw just one figure with holes (the inner polygon is the hole).
+We use ``Style[.Fill[";"]]`` to avoid this behaviour and force
+the ``Poly`` instruction to start to draw a different polygon whenever ``;``
+is found (see the documentation of the Style object for more info).
 Here is the result:
 
 .. image:: poly4.png
    :align: center
+
+The rounding procedure works such that, if ``rect`` is a ``PointList``
+containing the vertices of a rectangle, ``.Poly[0.5, rect]`` will draw
+the corresponding ellipse. Here is an example:
 
 Using margin ``1.0, 0``:
 
