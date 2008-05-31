@@ -21,6 +21,7 @@
 #  define _G_H
 
 #  include <stdlib.h>
+#  include <stdio.h>
 
 #  include "types.h"
 #  include "graphic.h"
@@ -34,6 +35,12 @@ void g_warning(const char *msg);
  * In case of no matches the function returns -1.
  */
 int g_string_find_in_list(char **list, const char *string);
+
+
+/** Print a list of strings (as accepted by 'g_string_find_in_list')
+ * to the stream 'out', using 'separator' as a separator.
+ */
+void g_string_list_print(FILE *out, char **list, char *separator);
 
 /** Given an array of possible extensions (which is just an array
  * made up by the pointers to the corresponding string, terminated
@@ -75,6 +82,8 @@ typedef struct _g_style {
   DrawWhen draw_when;
   Color bord_color;
   Real bord_width, bord_miter_limit;
+  JoinStyle bord_join_style;
+  Real *bord_dashes;
 } GStyle;
 
 /** Create a new transparent style (transparent means that non of its
@@ -99,6 +108,7 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
 
 #define G_STYLE_NONE ((GStyle *) NULL)
 
+/* draw_style */
 #define g_style_set_draw_style(gs, ds) \
   do {(gs)->draw = (ds); \
       g_style_attr_set((gs), G_STYLE_ATTR_DRAW, & (gs)->draw);} while (0)
@@ -109,6 +119,7 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
 #define g_style_get_draw_style(gs, default_style) \
   ((DrawStyle *) g_style_attr_get((gs), default_style, G_STYLE_ATTR_DRAW))
 
+/* draw_when */
 #define g_style_set_draw_when(gs, dw) \
   do {(gs)->draw_when = (dw); \
       g_style_attr_set((gs), G_STYLE_ATTR_DRAW_WHEN, \
@@ -119,6 +130,72 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
 
 #define g_style_get_draw_when(gs, default_style) \
   ((DrawWhen *) g_style_attr_get((gs), default_style, G_STYLE_ATTR_DRAW_WHEN))
+
+/* bord_color */
+
+/** void g_style_set_bord_color(GStyle *gs, Color *c) */
+#define g_style_set_bord_color(gs, c) \
+  do {(gs)->bord_color = *(c); \
+      g_style_attr_set((gs), G_STYLE_ATTR_BORD_COLOR, \
+                       & (gs)->bord_color);} while (0)
+
+/** void g_style_unset_bord_color(GStyle *gs) */
+#define g_style_unset_bord_color(gs) \
+  g_style_attr_set((gs), G_STYLE_ATTR_BORD_COLOR, NULL)
+
+/** Color *g_style_get_bord_color(GStyle *gs) */
+#define g_style_get_bord_color(gs, default_style) \
+  ((Color *) g_style_attr_get((gs), default_style, G_STYLE_ATTR_BORD_COLOR))
+
+/* bord_width */
+
+/** void g_style_set_bord_width(GStyle *gs, Real *width) */
+#define g_style_set_bord_width(gs, width) \
+  do {(gs)->bord_width = *(width); \
+      g_style_attr_set((gs), G_STYLE_ATTR_BORD_WIDTH, \
+                       & (gs)->bord_width);} while (0)
+
+/** void g_style_unset_bord_width(GStyle *gs) */
+#define g_style_unset_bord_width(gs) \
+  g_style_attr_set((gs), G_STYLE_ATTR_BORD_WIDTH, NULL)
+
+/** Real *g_style_get_bord_width(GStyle *gs) */
+#define g_style_get_bord_width(gs, default_style) \
+  ((Real *) g_style_attr_get((gs), default_style, G_STYLE_ATTR_BORD_WIDTH))
+
+/* bord_join_style */
+
+/** void g_style_set_bord_join_style(GStyle *gs, JoinStyle *js) */
+#define g_style_set_bord_join_style(gs, js) \
+  do {(gs)->bord_join_style = *(js); \
+      g_style_attr_set((gs), G_STYLE_ATTR_BORD_JOIN_STYLE, \
+                       & (gs)->bord_join_style);} while (0)
+
+/** void g_style_unset_bord_join_style(GStyle *gs) */
+#define g_style_unset_bord_join_style(gs) \
+  g_style_attr_set((gs), G_STYLE_ATTR_BORD_JOIN_STYLE, NULL)
+
+/** JoinStyle *g_style_get_bord_join_style(GStyle *gs) */
+#define g_style_get_bord_join_style(gs, default_style) \
+  ((JoinStyle *) g_style_attr_get((gs), default_style, \
+                                  G_STYLE_ATTR_BORD_JOIN_STYLE))
+
+/* bord_miter_limit */
+
+/** void g_style_set_bord_miter_limit(GStyle *gs, Real *ml) */
+#define g_style_set_bord_miter_limit(gs, ml) \
+  do {(gs)->bord_miter_limit = *(ml); \
+      g_style_attr_set((gs), G_STYLE_ATTR_BORD_MITER_LIMIT, \
+                       & (gs)->bord_miter_limit);} while (0)
+
+/** void g_style_unset_bord_miter_limit(GStyle *gs) */
+#define g_style_unset_bord_miter_limit(gs) \
+  g_style_attr_set((gs), G_STYLE_ATTR_BORD_MITER_LIMIT, NULL)
+
+/** JoinStyle *g_style_get_bord_miter_limit(GStyle *gs) */
+#define g_style_get_bord_miter_limit(gs, default_style) \
+  ((Real *) g_style_attr_get((gs), default_style, \
+                             G_STYLE_ATTR_BORD_MITER_LIMIT))
 
 /** Draw following the style 'gs' and only if 'now' is allowed
  * by the DrawWhen value set in 'gs'.

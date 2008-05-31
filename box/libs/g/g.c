@@ -83,6 +83,15 @@ int g_string_find_in_list(char **list, const char *string) {
   return -1;
 }
 
+void g_string_list_print(FILE *out, char **list, char *separator) {
+  char **s, *sep = "";
+  if (separator == (char *) NULL) separator = ", ";
+  for(s = list; *s != (char *) NULL; s++) {
+    fprintf(out, "%s%s", sep, *s);
+    sep = separator;
+  }
+}
+
 /** Given an array of possible extensions (which is just an array
  * made up by the pointers to the corresponding strings, terminated
  * by a NULL pointer), returns the index of the extension of 'file_name'.
@@ -152,6 +161,34 @@ void g_style_copy_selected(GStyle *dest, GStyle *src,
     dest->attr[G_STYLE_ATTR_DRAW_WHEN] =
       (src->attr[G_STYLE_ATTR_DRAW_WHEN] == NULL) ? NULL : & dest->draw_when;
   }
+
+  if (sel[G_STYLE_ATTR_BORD_COLOR]) {
+    dest->bord_color = src->bord_color;
+    dest->attr[G_STYLE_ATTR_BORD_COLOR] =
+      (src->attr[G_STYLE_ATTR_BORD_COLOR] == NULL) ?
+      NULL : & dest->bord_color;
+  }
+
+  if (sel[G_STYLE_ATTR_BORD_WIDTH]) {
+    dest->bord_width = src->bord_width;
+    dest->attr[G_STYLE_ATTR_BORD_WIDTH] =
+      (src->attr[G_STYLE_ATTR_BORD_WIDTH] == NULL) ?
+      NULL : & dest->bord_width;
+  }
+
+  if (sel[G_STYLE_ATTR_BORD_JOIN_STYLE]) {
+    dest->bord_join_style = src->bord_join_style;
+    dest->attr[G_STYLE_ATTR_BORD_JOIN_STYLE] =
+      (src->attr[G_STYLE_ATTR_BORD_JOIN_STYLE] == NULL) ?
+      NULL : & dest->bord_join_style;
+  }
+
+  if (sel[G_STYLE_ATTR_BORD_MITER_LIMIT]) {
+    dest->bord_miter_limit = src->bord_miter_limit;
+    dest->attr[G_STYLE_ATTR_BORD_MITER_LIMIT] =
+      (src->attr[G_STYLE_ATTR_BORD_MITER_LIMIT] == NULL) ?
+      NULL : & dest->bord_miter_limit;
+  }
 }
 
 int g_rdraw(GStyle *gs, GStyle *default_style, DrawWhen now) {
@@ -159,8 +196,24 @@ int g_rdraw(GStyle *gs, GStyle *default_style, DrawWhen now) {
            predef_when = DRAW_WHEN_PAUSE;
   DrawStyle *style = g_style_get_draw_style(gs, default_style),
             predef_style = DRAW_EOFILL;
+  Color *bord_color = g_style_get_bord_color(gs, default_style),
+        predef_bord_color = (Color) {0.0, 0.0, 0.0};
+  Real *bord_width = g_style_get_bord_width(gs, default_style),
+       predef_bord_width = 0.0;
+  JoinStyle *bord_join_style = g_style_get_bord_join_style(gs, default_style),
+       predef_bord_join_style = JOIN_STYLE_ROUND;
+  Real *bord_miter_limit = g_style_get_bord_miter_limit(gs, default_style),
+       predef_bord_miter_limit = 10.0;
+
   if (when == (DrawWhen *) NULL) when = & predef_when;
   if (style == (DrawStyle *) NULL) style = & predef_style;
+  if (bord_color == (Color *) NULL) bord_color = & predef_bord_color;
+  if (bord_join_style == (JoinStyle *) NULL)
+    bord_join_style = & predef_bord_join_style;
+  if (bord_width == (Real *) NULL) bord_width = & predef_bord_width;
+  if (bord_miter_limit == (Real *) NULL)
+    bord_miter_limit = & predef_bord_miter_limit;
+
   if (now < *when) return 0;
   grp_rdraw(*style);
   grp_rreset();

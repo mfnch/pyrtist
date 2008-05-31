@@ -36,8 +36,7 @@ Task style_begin(VMProgram *vmp) {
   s = *sp = (IStyle *) malloc(sizeof(IStyle));
   if (s == (IStyle *) NULL) return Failed;
   g_style_new(& s->style, G_STYLE_NONE);
-  for(i = 0; i < G_STYLE_ATTR_NUM; i++)
-    s->have[i] = 0;
+  for(i = 0; i < G_STYLE_ATTR_NUM; i++) s->have[i] = 0;
   return Success;
 }
 
@@ -79,5 +78,54 @@ Task style_fill_string(VMProgram *vmp) {
 
   /* Unrecognized string! */
   g_warning("Unknown fill style string in Style.Fill: doing nothing!");
+  return Success;
+}
+
+Task style_border_color(VMProgram *vmp) {
+  IStylePtr s = BOX_VM_SUB_PARENT(vmp, IStylePtr);
+  Color *c = BOX_VM_ARG_PTR(vmp, Color);
+  g_style_set_bord_color(& s->style, c);
+  s->have[G_STYLE_ATTR_BORD_COLOR] = 1;
+  return Success;
+}
+
+Task style_border_real(VMProgram *vmp) {
+  IStylePtr s = BOX_VM_SUB_PARENT(vmp, IStylePtr);
+  Real *r = BOX_VM_ARG_PTR(vmp, Real);
+  g_style_set_bord_width(& s->style, r);
+  s->have[G_STYLE_ATTR_BORD_WIDTH] = 1;
+  return Success;
+}
+
+Task style_border_join(VMProgram *vmp) {
+  IStylePtr s = BOX_VM_SUB_PARENT(vmp, IStylePtr);
+  char *join_style = BOX_VM_ARG_PTR(vmp, char);
+  char *join_styles[] = {"miter", "round", "bevel", (char *) NULL};
+  JoinStyle js[] = {JOIN_STYLE_MITER, JOIN_STYLE_ROUND, JOIN_STYLE_BEVEL};
+  int index = g_string_find_in_list(join_styles, join_style);
+  if (index < 0) {
+    printf("Invalid join style. Available styles are: ");
+    g_string_list_print(stdout, join_styles, ", ");
+    printf(".\n");
+    return Failed;
+  }
+  g_style_set_bord_join_style(& s->style, js + index);
+  s->have[G_STYLE_ATTR_BORD_JOIN_STYLE] = 1;
+  return Success;
+}
+
+Task style_border_dash_begin(VMProgram *vmp) {
+  return Success;
+}
+
+Task style_border_dash_real(VMProgram *vmp) {
+  return Success;
+}
+
+Task style_border_miter_limit(VMProgram *vmp) {
+  /*IStylePtr s = BOX_VM_SUB_PARENT(vmp, IStylePtr);
+  Real *r = BOX_VM_ARG_PTR(vmp, Real);
+  g_style_set_bord_width(& s->style, r);
+  s->have[G_STYLE_ATTR_BORD_WIDTH] = 1;*/
   return Success;
 }

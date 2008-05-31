@@ -6,3 +6,15 @@ Style = ++Ptr
 
 Style.Fill = Void
 ()Char@Style.Fill ? "style_fill_string"
+
+Style.Border = Void
+Color@Style.Border ? "style_border_color"
+R@Style.Border ? "style_border_real"
+()Char@Style.Border ? "style_border_join"
+
+Style.Border.Dash = Void
+([)@Style.Border.Dash ? "style_border_dash_begin"
+R@Style.Border.Dash ? "style_border_dash_real"
+
+Style.Border.MiterLimit = Void
+R@Style.Border.MiterLimit ? "style_border_miter_limit"

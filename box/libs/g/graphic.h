@@ -90,6 +90,11 @@ typedef enum {
   FONT_WEIGHT_NORMAL, FONT_WEIGHT_BOLD
 } FontWeight;
 
+/** Alternatives for joining two segments of a line */
+typedef enum {
+  JOIN_STYLE_MITER=0, JOIN_STYLE_ROUND, JOIN_STYLE_BEVEL
+} JoinStyle;
+
 /** Descriptor of a graphic Window */
 typedef struct _grp_window {
   /** String which identifies the type of the window */

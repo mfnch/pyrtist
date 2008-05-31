@@ -35,7 +35,7 @@ of the original polygon sides:
   //{midpoints}
 
 To understand the first line, you should take a look at the documentation
-for the ``PointList`` object. Here we just remind that ``pl.Get[1.5]`
+for the ``PointList`` object. Here we just remind that ``pl.Get[1.5]``
 is the point between ``pl.Get[1]`` and ``pl.Get[2]``: the point
 at the center of the first side of the polygon.
 The second line here draws transparent red circles with radius 1
@@ -65,7 +65,7 @@ All the remaining bits are rounded!
 In particular ``r1`` specifies the first margin, i.e.
 the distance between the first point of the edge ``p1``
 and the first point of the sub-segment ``m1``.
-``r2`` specifies the second margin, i.e. the distance between 
+``r2`` specifies the second margin, i.e. the distance between
 the second point of the sub-segment ``m2`` and the second
 point of the edge ``p2``. They are calculated as
 ``m1 = p1 + r1*(p2 - p1)`` and ``m2 = p2 + r2*(p1 - p2)``.
@@ -133,10 +133,19 @@ Here is the result:
    :align: center
 
 The rounding procedure works such that, if ``rect`` is a ``PointList``
-containing the vertices of a rectangle, ``.Poly[0.5, rect]`` will draw
+containing the vertices of a rectangle, ``.Poly[0.5, rect]`` draws
 the corresponding ellipse. Here is an example:
 
-Using margin ``1.0, 0``:
+.. code-block:: Box
+
+  //{ellipse}
+
+which gives:
+
+.. image:: ellipse.png
+   :align: center
+
+With margins greater than 0.5:
 
 .. code-block:: Box
 
@@ -145,6 +154,18 @@ Using margin ``1.0, 0``:
 we obtain:
 
 .. image:: poly5.png
+   :align: center
+
+The ``PointList`` returned by the ``Poly`` instruction can be used
+to do other fancy things:
+
+.. code-block:: Box
+
+  //{etc}
+
+and here is the result:
+
+.. image:: poly6.png
    :align: center
 
 Here is the Box code used to generate all the pictures in this subsection:

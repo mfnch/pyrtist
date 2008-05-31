@@ -34,12 +34,17 @@ static Task Assemble_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
                           void *ref, UInt ref_size)
 {
   UInt call_num = 0;
+  int save_force_long;
   assert(sym_type == VM_SYM_CALL);
+
+
   if (defined && def != NULL) {
     assert(def_size == sizeof(UInt));
     call_num = *((UInt *) def);
   }
+  save_force_long = VM_Asm_Fmt_Is_Long(vmp, /* force_long */ 1);
   VM_Assemble(vmp, ASM_CALL_I, CAT_IMM, call_num);
+  (void) VM_Asm_Fmt_Is_Long(vmp, save_force_long);
   return Success;
 }
 

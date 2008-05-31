@@ -539,6 +539,21 @@ void VM_Destroy(VMProgram *vmp) {
   free(vmp);
 }
 
+/** If 'force_long == 1', the VM assembler generator (function VM_Assemble)
+ * is forced to use always the long format for the assembled instructions.
+ * If 'force_long == 0', the VM assebler is instructed to use the short format
+ * when possible. All the other values of 'force_long' do not produce any
+ * changes on how the VM assembler deals with code generation.
+ * The function returns the value of the force_long flag before the function
+ * was called.
+ */
+int VM_Asm_Fmt_Is_Long(VMProgram *vmp, int force_long) {
+  int is_long = vmp->vm_aflags.forcelong;
+  if (force_long | 1 == 1) /* If force_long != 0, 1 the flag is not set */
+    vmp->vm_aflags.forcelong = force_long;
+  return is_long;
+}
+
 #if 0
 /* Installa un nuovo modulo di programma con nome name.
  * Un modulo e' semplicemente un pezzo di codice che puo' essere eseguito.

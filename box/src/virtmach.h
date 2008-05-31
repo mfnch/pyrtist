@@ -287,6 +287,16 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num);
 void VM_DSettings(VMProgram *vmp, int hexcode);
 Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim);
 
+/** If 'force_long == 1', the VM assembler generator (function VM_Assemble)
+ * is forced to use always the long format for the assembled instructions.
+ * If 'force_long == 0', the VM assebler is instructed to use the short format
+ * when possible. All the other values of 'force_long' do not produce any
+ * changes on how the VM assembler deals with code generation.
+ * The function returns the value of the force_long flag before the function
+ * was called.
+ */
+int VM_Asm_Fmt_Is_Long(VMProgram *vmp, int force_long);
+
 void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit);
 
 Task VM_Sheet_New(VMProgram *vmp, int *sheet_id);
