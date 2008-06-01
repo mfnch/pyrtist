@@ -21,7 +21,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>     /* defines uint32_t etc */
 #include <assert.h>
 
 /* #define DEBUG */
@@ -34,8 +33,6 @@
 
 #include <ctype.h>
 
-#define MULTIPLE_OF_SIZEOF_UINT32(i) \
-  ((((i) + sizeof(uint32_t) - 1)/sizeof(uint32_t))*sizeof(uint32_t))
 
 /* Default hash-function */
 unsigned int HT_Default_Hash(void *key, unsigned int key_size) {
@@ -145,9 +142,7 @@ int HT_Add(Hashtable *ht, unsigned int branch,
 
   hi->key_size = key_size;
   if (ht->settings.copy_keys) {
-    /* Use Mem_Dup_Larger to allocate as multiple of sizeof(uint32_t) */
-    Int dest_size = MULTIPLE_OF_SIZEOF_UINT32(key_size);
-    hi->key = Mem_Dup_Larger(key, key_size, dest_size);
+    hi->key = Mem_Dup(key, key_size);
     hi->allocated.key = 1;
   } else {
     hi->key = key;

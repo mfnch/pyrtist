@@ -71,20 +71,29 @@ static void eps_rreset(void) {
 
 static void eps_rinit(void) {return;}
 
-static void eps_rdraw(DrawStyle style) {
+static void eps_rdraw(DrawStyle *style) {
   if ( ! beginning_of_path ) {
-    switch(style) {
-    case DRAW_FILL:
-      fprintf( (FILE *) grp_win->ptr, " fill\n"); break;
-    case DRAW_EOFILL:
-      fprintf( (FILE *) grp_win->ptr, " eofill\n"); break;
-    case DRAW_CLIP:
-      fprintf( (FILE *) grp_win->ptr, " clip\n"); break;
-    case DRAW_EOCLIP:
-      fprintf( (FILE *) grp_win->ptr, " eoclip\n"); break;
+    int do_border = (style->bord_width > 0.0);
+    FILE *out = (FILE *) grp_win->ptr;
+
+    if (do_border) fprintf(out, " gsave");
+    switch(style->fill_style) {
+    case DRAW_FILL:   fprintf(out, " fill"); break;
+    case DRAW_EOFILL: fprintf(out, " eofill"); break;
+    case DRAW_CLIP:   fprintf(out, " clip"); break;
+    case DRAW_EOCLIP: fprintf(out, " eoclip"); break;
     default:
       g_warning("Unsupported drawing style: using even-odd fill algorithm!");
-      fprintf( (FILE *) grp_win->ptr, " eofill\n"); break;
+      fprintf(out, " eofill"); break;
+    }
+    if (do_border) {
+      Color *c = & style->bord_color;
+      Real bw = EPS_REAL(style->bord_width);
+      fprintf(out, " grestore gsave %g %g %g setrgbcolor"
+                   " %g setlinewidth stroke grestore\n",
+                   c->r, c->g, c->b, bw);
+    } else {
+      fprintf(out, "\n");
     }
   }
 }

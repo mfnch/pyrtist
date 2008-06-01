@@ -20,15 +20,32 @@
 
 /* $Id$ */
 
+/* Allocate in blocks of size sizeof(uint32_t), to make Valgrind happy! */
+#define DO_ALIGN_SIZE
+
 #include <stdlib.h>
 #include <string.h>
+
+/* I'm not really sure here if SIZEOF_BLOCK should always be sizeof(uint32_t).
+ * This is why the following code here may seem a little bit non-sense.
+ */
+#ifdef HAVE_STDINT_H
+#  include <stdint.h>
+#  define SIZEOF_BLOCK (sizeof(uint32_t))
+#else
+#  define SIZEOF_BLOCK 4
+#endif
 
 #include "types.h"
 #include "messages.h"
 #include "mem.h"
 
+size_t Mem_Size_Align(size_t n) {
+  return ((n + SIZEOF_BLOCK - 1)/SIZEOF_BLOCK)*SIZEOF_BLOCK;
+}
+
 void *Mem_Alloc(UInt size) {
-  void *ptr = malloc(size);
+  void *ptr = malloc(Mem_Size_Align(size));
   if (ptr == NULL) Mem_Exit("malloc failed!");
   return ptr;
 }
@@ -38,8 +55,10 @@ void Mem_Free(void *ptr) {
 }
 
 char *Mem_Strdup(const char *s) {
-  char *sd = strdup(s);
-  if (sd == NULL) Mem_Exit("strdup failed!");
+  size_t sl = strlen(s) + 1;
+  char *sd = Mem_Alloc(sl);
+  if (sd == (char *) NULL) Mem_Exit("strdup failed!");
+  (void) memcpy(sd, s, sl);
   return sd;
 }
 

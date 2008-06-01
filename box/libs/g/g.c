@@ -150,10 +150,11 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data) {
 
 void g_style_copy_selected(GStyle *dest, GStyle *src,
                            int sel[G_STYLE_ATTR_NUM]) {
-  if (sel[G_STYLE_ATTR_DRAW]) {
-    dest->draw = src->draw;
-    dest->attr[G_STYLE_ATTR_DRAW] =
-      (src->attr[G_STYLE_ATTR_DRAW] == NULL) ? NULL : & dest->draw;
+  if (sel[G_STYLE_ATTR_FILL_STYLE]) {
+    dest->fill_style = src->fill_style;
+    dest->attr[G_STYLE_ATTR_FILL_STYLE] =
+      (src->attr[G_STYLE_ATTR_FILL_STYLE] == NULL) ?
+      NULL : & dest->fill_style;
   }
 
   if (sel[G_STYLE_ATTR_DRAW_WHEN]) {
@@ -194,19 +195,20 @@ void g_style_copy_selected(GStyle *dest, GStyle *src,
 int g_rdraw(GStyle *gs, GStyle *default_style, DrawWhen now) {
   DrawWhen *when = g_style_get_draw_when(gs, default_style),
            predef_when = DRAW_WHEN_PAUSE;
-  DrawStyle *style = g_style_get_draw_style(gs, default_style),
-            predef_style = DRAW_EOFILL;
+  FillStyle *fill_style = g_style_get_fill_style(gs, default_style),
+            predef_fill_style = DRAW_EOFILL;
   Color *bord_color = g_style_get_bord_color(gs, default_style),
-        predef_bord_color = (Color) {0.0, 0.0, 0.0};
+        predef_bord_color = (Color) {0.0, 0.0, 0.0, 1.0};
   Real *bord_width = g_style_get_bord_width(gs, default_style),
        predef_bord_width = 0.0;
   JoinStyle *bord_join_style = g_style_get_bord_join_style(gs, default_style),
        predef_bord_join_style = JOIN_STYLE_ROUND;
   Real *bord_miter_limit = g_style_get_bord_miter_limit(gs, default_style),
        predef_bord_miter_limit = 10.0;
+  DrawStyle style;
 
   if (when == (DrawWhen *) NULL) when = & predef_when;
-  if (style == (DrawStyle *) NULL) style = & predef_style;
+  if (fill_style == (FillStyle *) NULL) fill_style = & predef_fill_style;
   if (bord_color == (Color *) NULL) bord_color = & predef_bord_color;
   if (bord_join_style == (JoinStyle *) NULL)
     bord_join_style = & predef_bord_join_style;
@@ -215,7 +217,12 @@ int g_rdraw(GStyle *gs, GStyle *default_style, DrawWhen now) {
     bord_miter_limit = & predef_bord_miter_limit;
 
   if (now < *when) return 0;
-  grp_rdraw(*style);
+  style.fill_style = *fill_style;
+  style.bord_width = *bord_width;
+  style.bord_join_style = *bord_join_style;
+  style.bord_miter_limit = *bord_miter_limit;
+  style.bord_color = *bord_color;
+  grp_rdraw(& style);
   grp_rreset();
   return 1;
 }

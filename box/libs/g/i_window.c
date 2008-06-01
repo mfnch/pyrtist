@@ -36,9 +36,9 @@
 
 /*#define DEBUG*/
 
-static void set_default_style(GStyle *gs, DrawStyle ds, DrawWhen dw) {
+static void set_default_style(GStyle *gs, FillStyle ds, DrawWhen dw) {
   g_style_new(gs, G_STYLE_NONE);
-  g_style_set_draw_style(gs, ds);
+  g_style_set_fill_style(gs, ds);
   g_style_set_draw_when(gs, dw);
 }
 

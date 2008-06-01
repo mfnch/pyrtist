@@ -30,7 +30,7 @@
 
 /****** DEFINIZIONE DELLE STRUTTURE NECESSARIE PER LA GRAFICA ******/
 
-typedef enum {DRAW_FILL=0, DRAW_EOFILL, DRAW_CLIP, DRAW_EOCLIP} DrawStyle;
+typedef enum {DRAW_FILL=0, DRAW_EOFILL, DRAW_CLIP, DRAW_EOCLIP} FillStyle;
 
 /* The color type */
 typedef struct {
@@ -95,6 +95,14 @@ typedef enum {
   JOIN_STYLE_MITER=0, JOIN_STYLE_ROUND, JOIN_STYLE_BEVEL
 } JoinStyle;
 
+/** All what is needed by the rdraw method */
+typedef struct {
+  FillStyle fill_style;
+  Real bord_width, bord_miter_limit;
+  JoinStyle bord_join_style;
+  Color bord_color;
+} DrawStyle;
+
 /** Descriptor of a graphic Window */
 typedef struct _grp_window {
   /** String which identifies the type of the window */
@@ -103,7 +111,7 @@ typedef struct _grp_window {
   /* High level functions */
   void (*rreset)(void);
   void (*rinit)(void);
-  void (*rdraw)(DrawStyle style);
+  void (*rdraw)(DrawStyle *style);
   void (*rline)(Point *a, Point *b);
   void (*rcong)(Point *a, Point *b, Point *c);
   void (*rcircle)(Point *ctr, Point *a, Point *b);

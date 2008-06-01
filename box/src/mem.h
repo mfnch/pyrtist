@@ -27,7 +27,11 @@
 #ifndef _MEM_H
 #  define _MEM_H
 
+#  include <stdlib.h> /* defines size_t */
 #  include "types.h"
+
+/** Return the lowest multiple of sizeof(uint32_t) which is greater than n */
+size_t Mem_Size_Align(size_t n);
 
 void *Mem_Alloc(UInt size);
 

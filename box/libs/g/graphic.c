@@ -340,7 +340,7 @@ static void dummy_err(GrpWindow *w, const char *method) {
 
 static void dummy_rreset(void) {dummy_err(grp_win, "rreset");}
 static void dummy_rinit(void) {dummy_err(grp_win, "rinit");}
-static void dummy_rdraw(DrawStyle style) {dummy_err(grp_win, "rdraw");}
+static void dummy_rdraw(DrawStyle *style) {dummy_err(grp_win, "rdraw");}
 static void dummy_rline(Point *a, Point *b) {dummy_err(grp_win, "rline");}
 static void dummy_rcong(Point *a, Point *b, Point *c) {
   dummy_err(grp_win, "rcong");

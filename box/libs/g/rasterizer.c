@@ -92,7 +92,7 @@ void rst__poly(Point *p, int n);
  */
 void rst_reset(void);
 void rst_init(void);
-static void rst_draw(DrawStyle style);
+static void rst_draw(DrawStyle *style);
 void rst_line(Point *a, Point *b);
 void rst_cong(Point *a, Point *b, Point *c);
 void rst_curve(Point *a, Point *b, Point *c, Real cut);
@@ -334,18 +334,23 @@ void rst__mark(SWORD y, SWORD x) {
  * DESCRIZIONE: Legge il contenuto del buffer di rasterizzazione
  *  e traccia il disegno corrispondente sulla finestra grafica.
  */
-static void rst_draw(DrawStyle style) {
+static void rst_draw(DrawStyle *style) {
   int border;
+  FillStyle fs = style->fill_style;
   SWORD y, x1=0, x2, xmin;
   WORD *row, *col;
   block_desc *rstblock;
-  if (style != DRAW_EOFILL) {
+  if (fs != DRAW_EOFILL) {
     static int msg_already_displayed = 0;
     if (! msg_already_displayed) {
       g_warning("Unsupported drawing style: using even-odd fill algorithm!");
       msg_already_displayed = 1;
     }
-    style = DRAW_EOFILL;
+    fs = DRAW_EOFILL;
+  }
+
+  if (style->bord_width > 0.0) {
+    g_warning("Unsupported drawing style: border cannot be traced!");
   }
 
   /* Facciamo un loop in modo da considerare tutti i blocchi */
@@ -356,7 +361,7 @@ static void rst_draw(DrawStyle style) {
     for(y = rstblock->ymin; y <= rstblock->ymax; y++) {
       /* Ora disegnamo ognuna delle righe */
       xmin = 0;
-      if (style == DRAW_EOFILL) {
+      if (fs == DRAW_EOFILL) {
         border = 0;
         for (col = row++; *col != (WORD) 0;) {
           col = (WORD *) rstblock->buffer + (WORD) *col;

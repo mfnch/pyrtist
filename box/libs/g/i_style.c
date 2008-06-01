@@ -50,7 +50,7 @@ Task style_fill_string(VMProgram *vmp) {
   IStylePtr s = BOX_VM_SUB_PARENT(vmp, IStylePtr);
   char *string = BOX_VM_ARG_PTR(vmp, char);
   char *style_strs[] = {"plain", "eo", "clip", "eoclip", (char *) NULL};
-  DrawStyle styles[] = {DRAW_FILL, DRAW_EOFILL, DRAW_CLIP, DRAW_EOCLIP};
+  FillStyle styles[] = {DRAW_FILL, DRAW_EOFILL, DRAW_CLIP, DRAW_EOCLIP};
   char *unset_strs[] = {"unset", "-", (char *) NULL};
   char *when_strs[] = {";", "]", (char *) NULL};
   DrawWhen  whens[] = {DRAW_WHEN_PAUSE, DRAW_WHEN_END};
@@ -58,14 +58,14 @@ Task style_fill_string(VMProgram *vmp) {
 
   if (g_string_find_in_list(unset_strs, string) >= 0) {
     g_style_unset_draw_when(& s->style);
-    g_style_unset_draw_style(& s->style);
+    g_style_unset_fill_style(& s->style);
     return Success;
   }
 
   index = g_string_find_in_list(style_strs, string);
   if (index >= 0) {
-    g_style_set_draw_style(& s->style, styles[index]);
-    s->have[G_STYLE_ATTR_DRAW] = 1;
+    g_style_set_fill_style(& s->style, styles[index]);
+    s->have[G_STYLE_ATTR_FILL_STYLE] = 1;
     return Success;
   }
 

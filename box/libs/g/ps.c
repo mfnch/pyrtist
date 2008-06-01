@@ -39,7 +39,7 @@
 static void ps_close_win(void);
 static void ps_rreset(void);
 static void ps_rinit(void);
-static void ps_rdraw(DrawStyle style);
+static void ps_rdraw(DrawStyle *style);
 static void ps_rline(Point *a, Point *b);
 static void ps_rcong(Point *a, Point *b, Point *c);
 static void ps_rcircle(Point *ctr, Point *a, Point *b);
@@ -54,13 +54,17 @@ static int ps_save(const char *unused);
 static int beginning_of_line = 1, beginning_of_path = 1;
 static long previous_px, previous_py;
 
+static Real ps_point_scale = 283.46457;
+
 /* Le coordinate dei punti passati alle funzioni grafiche in questo file,
  * sono espresse in millimetri: le converto nelle unita' postscript:
  *  1 unita' = 1/72 inch = 0.35277777... millimetri
  */
 #define PS_POINT(p, px, py) \
-  long px = (p->x * 283.46457), \
-       py = (p->y * 283.46457);
+  long px = (p->x * ps_point_scale), \
+       py = (p->y * ps_point_scale);
+
+#define PS_REAL(r) ((r)*ps_point_scale)
 
 static void ps_close_win(void) {fclose((FILE *) grp_win->ptr);}
 
@@ -71,20 +75,29 @@ static void ps_rreset(void) {
 
 static void ps_rinit(void) {return;}
 
-static void ps_rdraw(DrawStyle style) {
+static void ps_rdraw(DrawStyle *style) {
   if ( ! beginning_of_path ) {
-    switch(style) {
-    case DRAW_FILL:
-      fprintf( (FILE *) grp_win->ptr, " fill\n"); break;
-    case DRAW_EOFILL:
-      fprintf( (FILE *) grp_win->ptr, " eofill\n"); break;
-    case DRAW_CLIP:
-      fprintf( (FILE *) grp_win->ptr, " clip\n"); break;
-    case DRAW_EOCLIP:
-      fprintf( (FILE *) grp_win->ptr, " eoclip\n"); break;
+    int do_border = (style->bord_width > 0.0);
+    FILE *out = (FILE *) grp_win->ptr;
+
+    if (do_border) fprintf(out, " gsave");
+    switch(style->fill_style) {
+    case DRAW_FILL:   fprintf(out, " fill"); break;
+    case DRAW_EOFILL: fprintf(out, " eofill"); break;
+    case DRAW_CLIP:   fprintf(out, " clip"); break;
+    case DRAW_EOCLIP: fprintf(out, " eoclip"); break;
     default:
       g_warning("Unsupported drawing style: using even-odd fill algorithm!");
-      fprintf( (FILE *) grp_win->ptr, " eofill\n"); break;
+      fprintf(out, " eofill"); break;
+    }
+    if (do_border) {
+      Color *c = & style->bord_color;
+      Real bw = PS_REAL(style->bord_width);
+      fprintf(out, " grestore gsave %g %g %g setrgbcolor"
+                   " %g setlinewidth stroke grestore\n",
+                   c->r, c->g, c->b, bw);
+    } else {
+      fprintf(out, "\n");
     }
   }
 }

@@ -50,7 +50,7 @@
  */
 void fig_rreset(void);
 void fig_rinit(void);
-void fig_rdraw(DrawStyle style);
+void fig_rdraw(DrawStyle *style);
 void fig_rline(Point *a, Point *b);
 void fig_rcong(Point *a, Point *b, Point *c);
 void fig_rcircle(Point *ctr, Point *a, Point *b);
@@ -534,8 +534,8 @@ void fig_rinit(void) {
   PRNMSG("Ok!\n");
 }
 
-void fig_rdraw(DrawStyle style) {
-  CmndArg args[] = {{sizeof(DrawStyle), & style},
+void fig_rdraw(DrawStyle *style) {
+  CmndArg args[] = {{sizeof(DrawStyle), style},
                     {0, (void *) NULL}};
   _fig_insert_command(ID_rdraw, args);
 }
@@ -697,10 +697,7 @@ void fig_draw_layer(grp_window *source, int l) {
       break;
 
     case ID_rdraw:
-      {
-        DrawStyle style = *((DrawStyle *) cmnd.ptr);
-        grp_rdraw(style);
-      }
+      grp_rdraw((DrawStyle *) cmnd.ptr);
       break;
 
     case ID_rline: {

@@ -171,7 +171,6 @@ int buff_push(buff *buffer, void *elem) {
     memcpy(tptr, elem, buffer->elsize);
 
   } else {
-    printf("buffer->id='%x'\n", buffer->id);
     ERRORMSG("buff_push", "Buffer non inizializzato");
     return 0;
   }

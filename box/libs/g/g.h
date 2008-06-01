@@ -52,7 +52,7 @@ int file_extension(char **extensions, const char *file_name);
 
 /** Attributes in GStyle */
 typedef enum {
-  G_STYLE_ATTR_DRAW=0,
+  G_STYLE_ATTR_FILL_STYLE=0,
   G_STYLE_ATTR_DRAW_WHEN,
   G_STYLE_ATTR_BORD_COLOR,
   G_STYLE_ATTR_BORD_WIDTH,
@@ -78,7 +78,7 @@ typedef enum {
 typedef struct _g_style {
   struct _g_style *covered_style;
   void *attr[G_STYLE_ATTR_NUM];
-  DrawStyle draw;
+  FillStyle fill_style;
   DrawWhen draw_when;
   Color bord_color;
   Real bord_width, bord_miter_limit;
@@ -108,16 +108,18 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
 
 #define G_STYLE_NONE ((GStyle *) NULL)
 
-/* draw_style */
-#define g_style_set_draw_style(gs, ds) \
-  do {(gs)->draw = (ds); \
-      g_style_attr_set((gs), G_STYLE_ATTR_DRAW, & (gs)->draw);} while (0)
+/* fill_style */
+#define g_style_set_fill_style(gs, ds) \
+  do {(gs)->fill_style = (ds); \
+      g_style_attr_set((gs), G_STYLE_ATTR_FILL_STYLE, \
+      & (gs)->fill_style);} while (0)
 
-#define g_style_unset_draw_style(gs) \
-  g_style_attr_set((gs), G_STYLE_ATTR_DRAW, NULL)
+#define g_style_unset_fill_style(gs) \
+  g_style_attr_set((gs), G_STYLE_ATTR_FILL_STYLE, NULL)
 
-#define g_style_get_draw_style(gs, default_style) \
-  ((DrawStyle *) g_style_attr_get((gs), default_style, G_STYLE_ATTR_DRAW))
+#define g_style_get_fill_style(gs, default_style) \
+  ((FillStyle *) g_style_attr_get((gs), default_style, \
+                                  G_STYLE_ATTR_FILL_STYLE))
 
 /* draw_when */
 #define g_style_set_draw_when(gs, dw) \
