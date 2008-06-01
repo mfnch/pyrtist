@@ -25,6 +25,7 @@
 typedef struct {
   GStyle style;
   int have[G_STYLE_ATTR_NUM];
+  buff dashes;
 } IStyle;
 
 typedef IStyle *IStylePtr;

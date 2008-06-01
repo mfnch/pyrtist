@@ -37,12 +37,14 @@ Task style_begin(VMProgram *vmp) {
   if (s == (IStyle *) NULL) return Failed;
   g_style_new(& s->style, G_STYLE_NONE);
   for(i = 0; i < G_STYLE_ATTR_NUM; i++) s->have[i] = 0;
+  if (!buff_create(& s->dashes, sizeof(Real), 8)) return Failed;
   return Success;
 }
 
 Task style_destroy(VMProgram *vmp) {
   IStylePtr s = BOX_VM_CURRENT(vmp, IStylePtr);
   g_style_clear(& s->style);
+  buff_free(& s->dashes);
   free(s);
   return Success;
 }
@@ -116,17 +118,20 @@ Task style_border_join(VMProgram *vmp) {
 }
 
 Task style_border_dash_begin(VMProgram *vmp) {
-  return Success;
+  IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
+  return buff_clear(& s->dashes) ? Success : Failed;
 }
 
 Task style_border_dash_real(VMProgram *vmp) {
-  return Success;
+  IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
+  Real *r = BOX_VM_ARG_PTR(vmp, Real);
+  return buff_push(& s->dashes, r) ? Success : Failed;
 }
 
 Task style_border_miter_limit(VMProgram *vmp) {
-  /*IStylePtr s = BOX_VM_SUB_PARENT(vmp, IStylePtr);
+  IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
   Real *r = BOX_VM_ARG_PTR(vmp, Real);
-  g_style_set_bord_width(& s->style, r);
-  s->have[G_STYLE_ATTR_BORD_WIDTH] = 1;*/
+  g_style_set_bord_miter_limit(& s->style, r);
+  s->have[G_STYLE_ATTR_BORD_MITER_LIMIT] = 1;
   return Success;
 }

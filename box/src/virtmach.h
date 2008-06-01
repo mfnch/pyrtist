@@ -333,13 +333,21 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 
 /* Subtype-related macros */
 #  define BOX_VM_SUB_PARENT_PTR(vmp, parent_t) \
-   SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), parent_t)
+   SUBTYPE_PARENT_PTR(BOX_VM_THIS_PTR(vmp, Subtype), parent_t)
 #  define BOX_VM_SUB_PARENT(vmp, parent_t) \
    (*BOX_VM_SUB_PARENT_PTR(vmp, parent_t))
 #  define BOX_VM_SUB_CHILD_PTR(vmp, child_t) \
-   SUBTYPE_CHILD_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), child_t)
+   SUBTYPE_CHILD_PTR(BOX_VM_THIS_PTR(vmp, Subtype), child_t)
 #  define BOX_VM_SUB_CHILD(vmp, child_t) \
    (*BOX_VM_SUB_CHILD_PTR(vmp, child_t))
+#  define BOX_VM_SUB2_PARENT_PTR(vmp, parent_t) \
+   SUBTYPE_PARENT_PTR(BOX_VM_SUB_PARENT_PTR(vmp, Subtype), parent_t)
+#  define BOX_VM_SUB2_PARENT(vmp, parent_t) \
+   (*BOX_VM_SUB2_PARENT_PTR(vmp, parent_t))
+#  define BOX_VM_SUB2_CHILD_PTR(vmp, child_t) \
+   SUBTYPE_CHILD_PTR(BOX_VM_SUB_PARENT_PTR(vmp, Subtype), child_t)
+#  define BOX_VM_SUB2_CHILD(vmp, child_t) \
+   (*BOX_VM_SUB2_CHILD_PTR(vmp, child_t))
 
 /* These are obsolete macros */
 #  define BOX_VM_CURRENT BOX_VM_THIS
