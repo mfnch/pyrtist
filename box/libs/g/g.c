@@ -122,6 +122,12 @@ void g_style_new(GStyle *gs, GStyle *covered_style) {
   gs->covered_style = covered_style;
 }
 
+void g_style_clear(GStyle *gs) {
+  int i;
+  for(i = 0; i < G_STYLE_ATTR_NUM; i++)
+    gs->attr[i] = (void *) NULL;
+}
+
 static int check_attr(GStyleAttr a) {
   if (a >= 0 && a < G_STYLE_ATTR_NUM) return 1;
   g_error("check_attr: unknown GStyleAttr argument.");

@@ -186,6 +186,8 @@ Task poly_end(VMProgram *vmp) {
 
   (void) g_rdraw(& w->poly.style, & w->poly.default_style, DRAW_WHEN_END);
   grp_win = cur_win;
+
+  g_style_clear(& w->poly.style);
   return Success;
 }
 

@@ -102,10 +102,7 @@ Task line_begin(VMProgram *vmp) {
 
 Task line_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  if (lt_num_pieces(w->line.lt) < 1)
-    return Success;
-
-  else {
+  if (lt_num_pieces(w->line.lt) >= 1) {
     grp_window *cur_win = grp_win;
     grp_win = w->window;
     if (w->line.got.color) {
@@ -115,8 +112,10 @@ Task line_end(VMProgram *vmp) {
     lt_draw(w->line.lt, w->line.close);
     (void) g_rdraw(& w->line.style, & w->line.default_style, DRAW_WHEN_END);
     grp_win = cur_win;
-    return Success;
   }
+
+  g_style_clear(& w->line.style);
+  return Success;
 }
 
 Task line_real(VMProgram *vmp) {

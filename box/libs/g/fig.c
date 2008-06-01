@@ -425,8 +425,6 @@ void fig_clear_layer(int l) {
 
   if ( figh->current == l )
     fig_select_layer(l);
-
-  return;
 }
 
 /***************************************************************************************/
@@ -461,40 +459,6 @@ typedef struct {
   void *arg_data;
 } CmndArg;
 
-
-/* Questa macro contiene gran parte del codice comune a tutte le ... */
-#define BEGIN_CMND(name, argsize) \
-  LayerHeader *layh; \
-  buff *layer; \
-  struct cmnd_header *cmndh; \
-  int ni; \
-  register void *ip; \
-\
-  PRNMSG(name":\n  ");\
-  layh = (LayerHeader *) grp_win->ptr; \
-  if ( layh->ID != 0x7279616c) {  /* 0x7279616c = "layr" */ \
-    ERRORMSG(name, "Errore interno (bad layer ID, 2)"); \
-    PRNMSG("l'ID del header di layer e' errato\n");\
-    return; \
-  } \
-\
-  layer = & layh->layer; \
-  ni = buff_numitem(layer); \
-  if ( !buff_bigenough( layer, \
-   buff_numitem(layer) += sizeof(struct cmnd_header) + argsize) \
-  ) { \
-    ERRORMSG(name, "Memoria esaurita"); \
-    return; \
-  } \
-\
-  ip = (void *) buff_ptr(layer) + (int) ni;  /* Instruction-Pointer */ \
-\
-  /* Trovo l'header di istruzione e la lista argomenti */ \
-  cmndh = (struct cmnd_header *) ip; \
-\
-  /* Incremento il numero di comandi inseriti nel layer */ \
-  ++layh->numcmnd
-
 /* This function is used to insert a command in the current layer */
 static void _fig_insert_command(int id, CmndArg *args) {
   LayerHeader *lh;
@@ -523,15 +487,13 @@ static void _fig_insert_command(int id, CmndArg *args) {
 }
 
 void fig_rreset(void) {
-  BEGIN_CMND( "fig_rreset", 0 );
-  *cmndh = (struct cmnd_header) {ID_rreset, 0};
-  PRNMSG("Ok!\n");
+  CmndArg args[] = {{0, (void *) NULL}};
+  _fig_insert_command(ID_rreset, args);
 }
 
 void fig_rinit(void) {
-  BEGIN_CMND( "fig_rinit", 0 );
-  *cmndh = (struct cmnd_header) {ID_rinit, 0};
-  PRNMSG("Ok!\n");
+  CmndArg args[] = {{0, (void *) NULL}};
+  _fig_insert_command(ID_rinit, args);
 }
 
 void fig_rdraw(DrawStyle *style) {
@@ -541,33 +503,26 @@ void fig_rdraw(DrawStyle *style) {
 }
 
 void fig_rline(Point *a, Point *b) {
-  struct cmnd_args {Point a, b;} *cmnda;
-  BEGIN_CMND( "fig_rline", sizeof(struct cmnd_args) );
-  cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
-
-  *cmndh = (struct cmnd_header) {ID_rline, sizeof(struct cmnd_args) };
-  *cmnda = (struct cmnd_args) {*a, *b};
-  PRNMSG("Ok!\n");
+  CmndArg args[] = {{sizeof(Point), a},
+                    {sizeof(Point), b},
+                    {0, (void *) NULL}};
+  _fig_insert_command(ID_rline, args);
 }
 
 void fig_rcong(Point *a, Point *b, Point *c) {
-  struct cmnd_args {Point a, b, c;} *cmnda;
-  BEGIN_CMND( "fig_rcong", sizeof(struct cmnd_args) );
-  cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
-
-  *cmndh = (struct cmnd_header) {ID_rcong, sizeof(struct cmnd_args) };
-  *cmnda = (struct cmnd_args) {*a, *b, *c};
-  PRNMSG("Ok!\n");
+  CmndArg args[] = {{sizeof(Point), a},
+                    {sizeof(Point), b},
+                    {sizeof(Point), c},
+                    {0, (void *) NULL}};
+  _fig_insert_command(ID_rcong, args);
 }
 
 void fig_rcircle(Point *ctr, Point *a, Point *b) {
-  struct cmnd_args {Point ctr, a, b;} *cmnda;
-  BEGIN_CMND( "fig_rcircle", sizeof(struct cmnd_args) );
-  cmnda = (struct cmnd_args *) ( ip + sizeof(struct cmnd_header) );
-
-  *cmndh = (struct cmnd_header) {ID_rcircle, sizeof(struct cmnd_args) };
-  *cmnda = (struct cmnd_args) {*ctr, *a, *b};
-  PRNMSG("Ok!\n");
+  CmndArg args[] = {{sizeof(Point), ctr},
+                    {sizeof(Point), a},
+                    {sizeof(Point), b},
+                    {0, (void *) NULL}};
+  _fig_insert_command(ID_rcircle, args);
 }
 
 void fig_rfgcolor(Color *c) {
@@ -645,7 +600,6 @@ void fig_draw_layer(grp_window *source, int l) {
    void *ptr;
   } cmnd;
   long ID, ip, nc;
-  Point tp[3];
 
   PRNMSG("fig_draw_layer:\n  ");
 
@@ -680,6 +634,8 @@ void fig_draw_layer(grp_window *source, int l) {
      *  e potrebbe essere necessaria una realloc.
      */
     int cmnd_header_size;
+    Point tp[3];
+
     cmnd.ptr = (void *) buff_ptr(layer) + (long) ip;
 
     cmnd_header_size = cmnd.hdr->size;
@@ -700,29 +656,28 @@ void fig_draw_layer(grp_window *source, int l) {
       grp_rdraw((DrawStyle *) cmnd.ptr);
       break;
 
-    case ID_rline: {
-      struct {Point a, b;} *args = cmnd.ptr;
-
-      tp[0] = args->a; tp[1] = args->b;
-      fig_ltransform( tp, 2 );
+    case ID_rline:
+      tp[0] = *((Point *) cmnd.ptr);
+      tp[1] = *((Point *) (cmnd.ptr + sizeof(Point)));
+      fig_ltransform(tp, 2);
       grp_rline(& tp[0], & tp[1]);
-      } break;
+      break;
 
-    case ID_rcong: {
-      struct {Point a, b, c;} *args = cmnd.ptr;
-
-      tp[0] = args->a; tp[1] = args->b; tp[2] = args->c;
-      fig_ltransform( tp, 3 );
+    case ID_rcong:
+      tp[0] = *((Point *) cmnd.ptr);
+      tp[1] = *((Point *) (cmnd.ptr + sizeof(Point)));
+      tp[2] = *((Point *) (cmnd.ptr + 2*sizeof(Point)));
+      fig_ltransform(tp, 3);
       grp_rcong(& tp[0], & tp[1], & tp[2]);
-      } break;
+      break;
 
-    case ID_rcircle: {
-      struct {Point ctr, a, b;} *args = cmnd.ptr;
-
-      tp[0] = args->ctr; tp[1] = args->a; tp[2] = args->b;
-      fig_ltransform( tp, 3 );
+    case ID_rcircle:
+      tp[0] = *((Point *) cmnd.ptr);
+      tp[1] = *((Point *) (cmnd.ptr + sizeof(Point)));
+      tp[2] = *((Point *) (cmnd.ptr + 2*sizeof(Point)));
+      fig_ltransform(tp, 3);
       grp_rcircle(& tp[0], & tp[1], & tp[2]);
-      } break;
+      break;
 
     case ID_rfgcolor:
       grp_rfgcolor((Color *) cmnd.ptr); break;

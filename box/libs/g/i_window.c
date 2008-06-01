@@ -57,6 +57,14 @@ static void init_default_styles(Window *w) {
   g_style_new(& w->style, (GStyle *) NULL);
 }
 
+static void destroy_styles(Window *w) {
+  g_style_clear(& w->circle.default_style);
+  g_style_clear(& w->poly.default_style);
+  g_style_clear(& w->text.default_style);
+  g_style_clear(& w->line.default_style);
+  g_style_clear(& w->style);
+}
+
 Task window_begin(VMProgram *vmp) {
   WindowPtr *wp = BOX_VM_CURRENTPTR(vmp, WindowPtr);
   Window *w;
@@ -119,6 +127,7 @@ Task window_destroy(VMProgram *vmp) {
   grp_close_win();
   grp_win = cur_win;
 
+  destroy_styles(w);
   pointlist_destroy(& w->pointlist);
   put_window_destroy(w);
   line_window_destroy(w);

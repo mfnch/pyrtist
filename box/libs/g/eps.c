@@ -31,11 +31,13 @@
 #include "g.h"
 #include "psfonts.h"
 
+#if 0
 /* This terminal discretizes the points into a grid where the number of
  * points per inch in the x and y directions are discretization_x and
  * discretization_y
  */
 static int discretization_x = 1000, discretization_y = 1000;
+#endif
 
 #if 0
 static void eps_rbgcolor(Color *c);
@@ -89,9 +91,24 @@ static void eps_rdraw(DrawStyle *style) {
     if (do_border) {
       Color *c = & style->bord_color;
       Real bw = EPS_REAL(style->bord_width);
+      int lj;
+
+      switch(style->bord_join_style) {
+      case JOIN_STYLE_MITER: lj = 0; break;
+      case JOIN_STYLE_ROUND: lj = 1; break;
+      case JOIN_STYLE_BEVEL: lj = 2; break;
+      default: lj = 1; break;
+      }
+
       fprintf(out, " grestore gsave %g %g %g setrgbcolor"
-                   " %g setlinewidth stroke grestore\n",
-                   c->r, c->g, c->b, bw);
+                   " %g setlinewidth %d setlinejoin",
+                   c->r, c->g, c->b, bw, lj);
+      if (lj == 0)
+        fprintf(out, " %g setmiterlimit stroke grestore\n",
+                style->bord_miter_limit);
+      else
+        fprintf(out, " stroke grestore\n");
+
     } else {
       fprintf(out, "\n");
     }

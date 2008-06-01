@@ -124,10 +124,24 @@ static void wincairo_rdraw(DrawStyle *style) {
     if (do_border) {
       Color *c = & style->bord_color;
       Real border = MY_REAL(style->bord_width);
+      cairo_line_join_t lj;
+
+      switch(style->bord_join_style) {
+      case JOIN_STYLE_MITER: lj = CAIRO_LINE_JOIN_MITER; break;
+      case JOIN_STYLE_ROUND: lj = CAIRO_LINE_JOIN_ROUND; break;
+      case JOIN_STYLE_BEVEL: lj = CAIRO_LINE_JOIN_BEVEL; break;
+      default: lj = CAIRO_LINE_JOIN_ROUND; break;
+      }
+
       if (do_fill) cairo_fill_preserve(cr); else cairo_clip_preserve(cr);
       cairo_save(cr);
       cairo_set_source_rgba(cr, c->r, c->g, c->b, c->a);
       cairo_set_line_width(cr, border);
+      cairo_set_line_join(cr, lj);
+      if (lj == CAIRO_LINE_JOIN_MITER) {
+        Real miter_limit = MY_REAL(style->bord_miter_limit);
+        cairo_set_miter_limit(cr, miter_limit);
+      }
       cairo_stroke(cr);
       cairo_restore(cr);
 

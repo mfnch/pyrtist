@@ -130,7 +130,9 @@ Task circle_pause(VMProgram *vmp) {
 
 Task circle_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  return _circle_draw(w, DRAW_WHEN_END);
+  Task t = _circle_draw(w, DRAW_WHEN_END);
+  g_style_clear(& w->circle.style);
+  return t;
 }
 
 struct params_for_add_from_pl {

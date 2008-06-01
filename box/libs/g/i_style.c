@@ -42,6 +42,7 @@ Task style_begin(VMProgram *vmp) {
 
 Task style_destroy(VMProgram *vmp) {
   IStylePtr s = BOX_VM_CURRENT(vmp, IStylePtr);
+  g_style_clear(& s->style);
   free(s);
   return Success;
 }

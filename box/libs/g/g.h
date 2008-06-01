@@ -95,6 +95,11 @@ typedef struct _g_style {
  */
 void g_style_new(GStyle *gs, GStyle *covered_style);
 
+/** Unset all the attributes of the style 'gs'.
+ * This can also be considered as a destructor of 'GStyle' objects.
+ */
+void g_style_clear(GStyle *gs);
+
 /** Get an attribute from the style 'gs' (or the styles it covers).
  * If the specified attribute 'a' is not set, then uses 'default_style'.
  * If the attribute 'a' is unset also for 'default_style', then NULL
