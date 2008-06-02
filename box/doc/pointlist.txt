@@ -1,6 +1,0 @@
-
-PointList instruction
----------------------
-
-The ``PointList`` instruction can be used to create an array of named points.
-

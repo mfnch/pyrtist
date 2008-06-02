@@ -1,0 +1,16 @@
+
+PointList instruction
+---------------------
+
+The ``PointList`` instruction can be used to create an array of named points.
+The typical use is:
+
+.. code-block:: Box
+
+  pl = PointList["name1", point1, "name2", point2, ...]
+
+The name comes just before the point it refers to and is optional.
+The points can be retrieved from ``pl`` by using the ``Get`` method.
+``Get`` is a quite flexible method. You can retrieve the point by name,
+if a name has been provided for it:
+
