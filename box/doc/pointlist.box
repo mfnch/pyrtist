@@ -1,0 +1,12 @@
+include "g"
+
+//{init
+pl = PointList["one", (10, 20), "two", (50, 50), (100, 50)]
+Print[pl;]
+//}
+
+//{get_simple
+Print[pl.Get[1], " == ", pl.Get["one"];]
+i = 1, Print[pl.Get[i], For[++i <= pl.Num[]];]
+//}
+

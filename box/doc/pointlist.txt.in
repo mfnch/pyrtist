@@ -9,8 +9,35 @@ The typical use is:
 
   pl = PointList["name1", point1, "name2", point2, ...]
 
-The name comes just before the point it refers to and is optional.
-The points can be retrieved from ``pl`` by using the ``Get`` method.
-``Get`` is a quite flexible method. You can retrieve the point by name,
-if a name has been provided for it:
+The name is optional and, if given, comes just before the point it refers to.
+Here is an example:
+
+.. code-block:: Box
+
+  //{init}
+
+The points can be retrieved using the ``Get`` method.
+You can retrieve the point by name and by index: ``pl.Get["one"]``
+and ``pl.Get[1]`` both return the first point of the list:
+
+.. code-block::
+
+  //{get_simple}
+
+The second line shows how you can iterate over the elements of ``pl``.
+The elements are numbered from ``1`` to ``n``, where ``n`` is the number
+of elements in the list and can be obtained with ``n = pl.Num[]``.
+You can however use indices outside the interval ``1 - n``.
+Indeed, ``pl.Get[0]`` returns the last element of the list
+(the one returned also by ``pl.Get[n]``) and, in general, indices differing
+by a multiple of ``n`` refer to the same element (circular indexing).
+Mathematically this means that ``pl.Get[i] == pl.Get[i + j*n]``,
+for any couple of integers ``i``, ``j``.
+The method ``Get`` can take also a real number as an argument: if
+``pl.Get[1]`` gives the first point of the list and ``pl.Get[2]`` gives
+the second, then ``pl.Get[1.5]`` gives the point in the middle of these.
+Mathematically, if x is a positive number less than unity:
+``pl.Get[i+x] == pl.Get[i] + x*(pl.Get[i+1] - pl.Get[i])``.
+As a further extension, the ``Get`` method can take also a point
+as an argument.
 
