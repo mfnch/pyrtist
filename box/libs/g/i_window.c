@@ -192,8 +192,7 @@ Task window_end(VMProgram *vmp) {
 }
 
 Task window_origin_point(VMProgram *vmp) {
-  WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
-  Window *w = (Window *) wp;
+  SUBTYPE_OF_WINDOW(vmp, w);
   Point *origin = BOX_VM_ARGPTR1(vmp, Point);
 
   if (w->plan.have.origin) {

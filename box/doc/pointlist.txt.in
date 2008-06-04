@@ -20,7 +20,7 @@ The points can be retrieved using the ``Get`` method.
 You can retrieve the point by name and by index: ``pl.Get["one"]``
 and ``pl.Get[1]`` both return the first point of the list:
 
-.. code-block::
+.. code-block:: Box
 
   //{get_simple}
 

@@ -549,7 +549,7 @@ void VM_Destroy(VMProgram *vmp) {
  */
 int VM_Asm_Fmt_Is_Long(VMProgram *vmp, int force_long) {
   int is_long = vmp->vm_aflags.forcelong;
-  if (force_long | 1 == 1) /* If force_long != 0, 1 the flag is not set */
+  if ((force_long | 1) == 1) /* If force_long != 0, 1 the flag is not set */
     vmp->vm_aflags.forcelong = force_long;
   return is_long;
 }

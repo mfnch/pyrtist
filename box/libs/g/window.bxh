@@ -25,7 +25,7 @@ Window.Res = Void
 P@Window.Res ? "window_res_point"
 
 Window.Origin = Void
-P@Window.Res ? "window_origin_point"
+P@Window.Origin ? "window_origin_point"
 
 Window.File = Void
 ()Char@Window.File ? "window_file_string"

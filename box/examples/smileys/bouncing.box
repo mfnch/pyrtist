@@ -2,7 +2,7 @@ include "g"
 include "bounce"
 
 // t has to be set externally
-//t = 0.0
+t = Real
 
 r = 1.5
 r_compressed = 0.8
@@ -17,7 +17,7 @@ ry = r + Min[bp.y + r_compressed - r, 0.0]
 red = 0.5*(r-ry)/(r-r_compressed)
 c = Color[.b=1.0-red, .r=red, .g=0.0]
 w = Window["bm8", (10, 10), .Res[(40, 40)]]
-w.Circle[color.black, p, r+s, ry+s; c, r-s, ry-s]
+\ w.Circle[color.black, p, r+s, ry+s; c, r-s, ry-s]
 y0 = down.y + r_compressed
-w.Poly[color.black, (0.1, y0), (9.9, y0), (9.9, 9.9), (0.1, 9.9)]
+\ w.Poly[color.black, (0.1, y0), (9.9, y0), (9.9, 9.9), (0.1, 9.9)]
 w.Save["bouncing.bmp"]
