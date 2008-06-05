@@ -1,0 +1,47 @@
+Color instruction
+-----------------
+
+The ``Color`` instruction can be used to create colors.
+It is a structure composed by four real numbers
+``(Real r, g, b, a)``.
+The members ``r``, ``g`` and ``b`` correspond respectively
+to the red, green and blue components of the color,
+while the ``a`` member is the alpha channel and can be used
+to define translucent (transparent) colors.
+These real number can be set to values which range from 0.0 to 1.0,
+corresponding respectively to lowest and highest intensity.
+When the alpha channel is set to 0 the color is fully transparent
+when set to 1 the color is fully opaque.
+A new color can be defined using the following syntax:
+
+.. code-block:: Box
+
+  color = Color[.r=0.1, .g=0.2, .b=0.3, .a=0.4]
+
+Colors can be defined starting from existing colors:
+
+.. code-block:: Box
+
+  //{def}
+
+The header file ``"g"`` defines a structure
+which contains some predefined colors:
+
+.. code-block:: Box
+
+  color = (Color black, red, green, yellow, blue, magenta, cyan, white
+           dark_red, dark_green, dark_yellow, dark_blue, dark_magenta
+           dark_cyan, grey, none)
+
+You can set the current color in drawing instructions such as
+``Poly``, ``Circle``, etc.
+
+.. code-block:: Box
+
+  \ w.Poly[..., color, ...]
+
+or directly inside an opened window:
+
+.. code-block:: Box
+
+  w = Window[][ ..., color, ...]
