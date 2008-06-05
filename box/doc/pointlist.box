@@ -32,11 +32,11 @@ near_2 = pl.Get[1.9]     // and this is quite near to pl.Get[2]
 // You can use even a Point index!!!
 x = 1.234
 between_12 = pl.Get[(x, 0)] // This is equivalent to...
-between_12 = pl.Get[x]      // this. For every x!
+between_12 = pl.Get[x]      // ...this. For every x!
 
 p = pl.Get[(1.6, 0.7)]      // The y component moves the point orthogonal
                             // to the current segment.
-// p could be calculated also as
+// p could be calculated also as:
 v = pl.Get[2] - pl.Get[1]      // The vector "containing" 1.6
 o = (-v.y, v.x)                // The orthogonal vector
 p = pl.Get[1] + 0.6*v + 0.7*o  // But this is somewhat more complicated :-)
