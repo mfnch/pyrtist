@@ -1,0 +1,25 @@
+restindex
+    crumb: $crumb$
+    format: html
+    page-title: $title$
+    include: Yes
+    page-description:
+       $title$
+    /description
+/restindex
+
+<h1>$crumb$</h1>
+<h2>$description$</h2>
+<br>
+
+<p style="text-align: center; clear: both;" class="separator">
+<img src="$image$">
+</p>
+
+<p style="text-align: center;">
+<b>Figure:</b> $figure_caption$.
+</p>
+
+<table cellspacing=20><tr><td>
+$htmlized_box_program$
+</td></tr></table>
