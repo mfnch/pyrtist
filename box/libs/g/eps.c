@@ -103,10 +103,22 @@ static void eps_rdraw(DrawStyle *style) {
       fprintf(out, " grestore gsave %g %g %g setrgbcolor"
                    " %g setlinewidth %d setlinejoin",
                    c->r, c->g, c->b, bw, lj);
-      if (lj == 0)
-        fprintf(out, " %g setmiterlimit stroke grestore\n",
-                style->bord_miter_limit);
-      else
+
+      if (style->bord_num_dashes > 0) {
+        Int num_dashes = style->bord_num_dashes, i;
+        Real dash_offset = EPS_REAL(style->bord_dash_offset);
+        char *sep = " [";
+        for(i=0; i<num_dashes; i++) {
+          fprintf(out, "%s"SReal, sep, EPS_REAL(style->bord_dashes[i]));
+          sep = ", ";
+        }
+        fprintf(out, "] "SReal" setdash", dash_offset);
+      }
+
+      if (lj == 0) {
+        Real ml = EPS_REAL(style->bord_miter_limit);
+        fprintf(out, " %g setmiterlimit stroke grestore\n", ml);
+      } else
         fprintf(out, " stroke grestore\n");
 
     } else {

@@ -142,6 +142,19 @@ static void wincairo_rdraw(DrawStyle *style) {
         Real miter_limit = MY_REAL(style->bord_miter_limit);
         cairo_set_miter_limit(cr, miter_limit);
       }
+      if (style->bord_num_dashes > 0) {
+        Int num_dashes = style->bord_num_dashes,
+            size_dashes = num_dashes*sizeof(Real);
+        Real *dashes = (Real *) malloc(size_dashes);
+        if (dashes != (Real *) NULL) {
+          Int i;
+          Real dash_offset = MY_REAL(style->bord_dash_offset);
+          for(i=0; i<num_dashes; i++)
+            dashes[i] = MY_REAL(style->bord_dashes[i]);
+          cairo_set_dash(cr, dashes, num_dashes, dash_offset);
+          free(dashes);
+        }
+      }
       cairo_stroke(cr);
       cairo_restore(cr);
 
@@ -224,6 +237,12 @@ static void wincairo_rcong(Point *a, Point *b, Point *c) {
     previous = *c;
     beginning_of_line = 0;
   }
+}
+
+static void wincairo_rclose(void) {
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
+  WHEREAMI;
+  if (!beginning_of_path) cairo_close_path(cr);
 }
 
 static void wincairo_rcircle(Point *ctr, Point *a, Point *b) {
@@ -340,6 +359,7 @@ static void wincairo_repair(GrpWindow *w) {
   w->rfgcolor = wincairo_rfgcolor;
   w->rline = wincairo_rline;
   w->rcong = wincairo_rcong;
+  w->rclose = wincairo_rclose;
   w->rcircle = wincairo_rcircle;
   w->font = wincairo_font;
   w->text = wincairo_text;

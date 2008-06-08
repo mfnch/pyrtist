@@ -90,16 +90,17 @@ void rst__poly(Point *p, int n);
 /* Le procedure "di libreria" definite per essere chiamate dall'esterno
  * iniziano con rst_
  */
-void rst_reset(void);
-void rst_init(void);
+static void rst_reset(void);
+static void rst_init(void);
 static void rst_draw(DrawStyle *style);
-void rst_line(Point *a, Point *b);
-void rst_cong(Point *a, Point *b, Point *c);
+static void rst_line(Point *a, Point *b);
+static void rst_cong(Point *a, Point *b, Point *c);
+static void rst_close(void);
 void rst_curve(Point *a, Point *b, Point *c, Real cut);
-void rst_circle(Point *ctr, Point *a, Point *b);
+static void rst_circle(Point *ctr, Point *a, Point *b);
 void rst_poly(Point *p, int n);
-void rst_fgcolor(Color *c);
-void rst_bgcolor(Color *c);
+static void rst_fgcolor(Color *c);
+static void rst_bgcolor(Color *c);
 static void rst_fake_point(Point *p);
 
 void rst_repair(grp_window *w) {
@@ -108,6 +109,7 @@ void rst_repair(grp_window *w) {
   w->rdraw = rst_draw;
   w->rline = rst_line;
   w->rcong = rst_cong;
+  w->rclose = rst_close;
   w->rcircle = rst_circle;
   w->rfgcolor = rst_fgcolor;
   w->rbgcolor = rst_bgcolor;
@@ -138,7 +140,7 @@ void rst__block_reset(block_desc *rstblock) {
  * DESCRIZIONE: Pulisce il buffer di rasterizzazione,
  *  senza deallocare memoria.
  */
-void rst_reset(void) {
+static void rst_reset(void) {
   block_desc *rstblock;
 
   /* Facciamo un loop su tutti i blocchi */
@@ -150,7 +152,7 @@ void rst_reset(void) {
  * DESCRIZIONE: Prepara il sistema nel suo stato iniziale,
  *  pronto per rasterizzare.
  */
-void rst_init(void) {
+static void rst_init(void) {
   int i, numblockmin, numblockalc = 0;
   WORD ymin, ymax;
   WORD *bufptr;
@@ -403,7 +405,7 @@ static void rst_draw(DrawStyle *style) {
  * DESCRIZIONE: Rasterizza la linea congiungente i due punti a e b.
  * NOTA: Le coordinate dei punti sono coordinate relative.
  */
-void rst_line(Point *a, Point *b) {
+static void rst_line(Point *a, Point *b) {
   Point ia, ib;
   ia.x = CV_XF_A(a->x); ia.y = CV_YF_A(a->y);
   ib.x = CV_XF_A(b->x); ib.y = CV_YF_A(b->y);
@@ -480,7 +482,7 @@ void rst__line(Point *pa, Point *pb) {
  *  e curva finendo in c.
  * NOTA: Le coordinate dei punti sono coordinate relative.
  */
-void rst_cong(Point *a, Point *b, Point *c) {
+static void rst_cong(Point *a, Point *b, Point *c) {
   Point ia, ib, ic;
   ia.x = CV_XF_A(a->x);
   ia.y = CV_YF_A(a->y);
@@ -491,6 +493,8 @@ void rst_cong(Point *a, Point *b, Point *c) {
 
   rst__cong(& ia, & ib, & ic);
 }
+
+static void rst_close(void) {return;}
 
 /* NOME: rst__cong
  * DESCRIZIONE: Come rst_cong, ma utilizza coordinate assolute.
@@ -701,7 +705,7 @@ void rst__curve(Point *pa, Point *pb, Point *pc, Real c) {
  *   va = a - ctr  e  vb = b - ctr, dove a e b sono passati come argomenti
  *  a rst_circle.
  */
-void rst_circle(Point *pctr, Point *pa, Point *pb) {
+static void rst_circle(Point *pctr, Point *pa, Point *pb) {
   Point ctr, a, b;
   Int iy, y1, y2;
   Real xmin, xmax, ymin, ymax;
@@ -820,7 +824,7 @@ void rst_poly(Point *p, int n) {
 
 /* DESCRIZIONE: Setta il colore di primo piano.
  */
-void rst_fgcolor(Color *c) {
+static void rst_fgcolor(Color *c) {
   color cb;
   palitem *newcol;
 
@@ -832,7 +836,7 @@ void rst_fgcolor(Color *c) {
 
 /* DESCRIZIONE: Setta il colore di sfondo.
  */
-void rst_bgcolor(Color *c) {
+static void rst_bgcolor(Color *c) {
   color cb;
   grp_color_build(c, & cb);
   (grp_win->bgcol)->c = cb;

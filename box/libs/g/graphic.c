@@ -422,7 +422,7 @@ GrpWindow grp_dummy_win = {
 /* Descrittore della finestra attualmente in uso: lo faccio puntare
  * ad una finestra che da solo errori (vedi piu' avanti).
  */
-grp_window *grp_win = & grp_dummy_win;
+GrpWindow *grp_win = & grp_dummy_win;
 
 /****************************************************************************
  * Generic functions to open a Window using a GrpWindowPlan.                *

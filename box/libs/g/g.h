@@ -59,6 +59,7 @@ typedef enum {
   G_STYLE_ATTR_BORD_JOIN_STYLE,
   G_STYLE_ATTR_BORD_MITER_LIMIT,
   G_STYLE_ATTR_BORD_DASHES,
+  G_STYLE_ATTR_BORD_CAP,
   G_STYLE_ATTR_NUM
 } GStyleAttr;
 
@@ -72,6 +73,12 @@ typedef enum {
   DRAW_WHEN_EXPLICIT_DRAW=2 /**< Draw is decided by the user with .Draw[] */
 } DrawWhen;
 
+typedef struct {
+  Int num;
+  Real *dashes;
+  Real offset;
+} GDashes;
+
 /** The graphic style contains information about the fill style,
  * the border color and style, etc.
  */
@@ -83,7 +90,8 @@ typedef struct _g_style {
   Color bord_color;
   Real bord_width, bord_miter_limit;
   JoinStyle bord_join_style;
-  Real *bord_dashes;
+  CapStyle *bord_cap;
+  GDashes bord_dashes;
 } GStyle;
 
 /** Create a new transparent style (transparent means that non of its
@@ -150,7 +158,7 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
 #define g_style_unset_bord_color(gs) \
   g_style_attr_set((gs), G_STYLE_ATTR_BORD_COLOR, NULL)
 
-/** Color *g_style_get_bord_color(GStyle *gs) */
+/** Color *g_style_get_bord_color(GStyle *gs, GStyle *default_style) */
 #define g_style_get_bord_color(gs, default_style) \
   ((Color *) g_style_attr_get((gs), default_style, G_STYLE_ATTR_BORD_COLOR))
 
@@ -166,7 +174,7 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
 #define g_style_unset_bord_width(gs) \
   g_style_attr_set((gs), G_STYLE_ATTR_BORD_WIDTH, NULL)
 
-/** Real *g_style_get_bord_width(GStyle *gs) */
+/** Real *g_style_get_bord_width(GStyle *gs, GStyle *default_style) */
 #define g_style_get_bord_width(gs, default_style) \
   ((Real *) g_style_attr_get((gs), default_style, G_STYLE_ATTR_BORD_WIDTH))
 
@@ -182,7 +190,8 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
 #define g_style_unset_bord_join_style(gs) \
   g_style_attr_set((gs), G_STYLE_ATTR_BORD_JOIN_STYLE, NULL)
 
-/** JoinStyle *g_style_get_bord_join_style(GStyle *gs) */
+/** JoinStyle *g_style_get_bord_join_style(GStyle *gs, GStyle *default_style)
+ */
 #define g_style_get_bord_join_style(gs, default_style) \
   ((JoinStyle *) g_style_attr_get((gs), default_style, \
                                   G_STYLE_ATTR_BORD_JOIN_STYLE))
@@ -199,10 +208,34 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
 #define g_style_unset_bord_miter_limit(gs) \
   g_style_attr_set((gs), G_STYLE_ATTR_BORD_MITER_LIMIT, NULL)
 
-/** JoinStyle *g_style_get_bord_miter_limit(GStyle *gs) */
+/** JoinStyle *g_style_get_bord_miter_limit(GStyle *gs, GStyle *default_style)
+ */
 #define g_style_get_bord_miter_limit(gs, default_style) \
   ((Real *) g_style_attr_get((gs), default_style, \
                              G_STYLE_ATTR_BORD_MITER_LIMIT))
+
+/* bord_cap */
+
+/** void g_style_set_bord_cap(GStyle *gs, CapStyle *cs) */
+#define g_style_set_bord_cap(gs, cs) \
+  do {(gs)->bord_cap = *(cs); \
+      g_style_attr_set((gs), G_STYLE_ATTR_BORD_CAP, \
+                       & (gs)->bord_cap);} while (0)
+
+/** void g_style_unset_bord_cap(GStyle *gs) */
+#define g_style_unset_bord_cap(gs) \
+  g_style_attr_set((gs), G_STYLE_ATTR_BORD_CAP, NULL)
+
+/** CapStyle *g_style_get_bord_cap(GStyle *gs, GStyle *default_style) */
+#define g_style_get_bord_cap(gs, default_style) \
+  ((CapStyle *) g_style_attr_get((gs), default_style, G_STYLE_ATTR_BORD_CAP))
+
+/* bord_dashes */
+
+void g_style_set_bord_dashes(GStyle *gs, Int num_dashes, Real *dashes);
+void g_style_unset_bord_dashes(GStyle *gs);
+Int g_style_get_bord_num_dashes(GStyle *gs, GStyle *default_style);
+Real *g_style_get_bord_dashes(GStyle *gs, GStyle *default_style);
 
 /** Draw following the style 'gs' and only if 'now' is allowed
  * by the DrawWhen value set in 'gs'.

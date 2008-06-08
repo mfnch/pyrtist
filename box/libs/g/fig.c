@@ -398,8 +398,6 @@ void fig_select_layer(int l) {
   layh = buff_ptr(laylist) + l - 1;
   /* Per convenzione grp_win->ptr punta a tale header: lo setto! */
   grp_win->ptr = layh;
-
-  return;
 }
 
 /* DESCRIZIONE: Pulisce il contenuto del layer l.
@@ -500,7 +498,12 @@ void fig_rinit(void) {
 
 void fig_rdraw(DrawStyle *style) {
   CmndArg args[] = {{sizeof(DrawStyle), style},
+                    {0, (void *) NULL},
                     {0, (void *) NULL}};
+  if (style->bord_num_dashes > 0) {
+    args[1].arg_data_size = sizeof(Real)*style->bord_num_dashes;
+    args[1].arg_data = style->bord_dashes;
+  }
   _fig_insert_command(ID_rdraw, args);
 }
 
@@ -660,6 +663,8 @@ void fig_draw_layer(grp_window *source, int l) {
       break;
 
     case ID_rdraw:
+      ((DrawStyle *) cmnd.ptr)->bord_dashes =
+        (Real *) (cmnd.ptr + sizeof(DrawStyle));
       grp_rdraw((DrawStyle *) cmnd.ptr);
       break;
 

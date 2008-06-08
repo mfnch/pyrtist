@@ -128,6 +128,15 @@ Task style_border_dash_real(VMProgram *vmp) {
   return buff_push(& s->dashes, r) ? Success : Failed;
 }
 
+Task style_border_dash_end(VMProgram *vmp) {
+  IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
+  Int n = buff_numitems(& s->dashes);
+  Real *dashes = buff_firstitemptr(& s->dashes, Real);
+  g_style_set_bord_dashes(& s->style, n, dashes);
+  s->have[G_STYLE_ATTR_BORD_DASHES] = 1;
+  return Success;
+}
+
 Task style_border_miter_limit(VMProgram *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
   Real *r = BOX_VM_ARG_PTR(vmp, Real);

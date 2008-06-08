@@ -100,12 +100,18 @@ typedef enum {
   JOIN_STYLE_MITER=0, JOIN_STYLE_ROUND, JOIN_STYLE_BEVEL
 } JoinStyle;
 
+/** Alternatives for line endings. */
+typedef enum {CAP_STYLE_BUTT=0, CAP_STYLE_ROUND, CAP_STYLE_SQUARE} CapStyle;
+
 /** All what is needed by the rdraw method */
 typedef struct {
   FillStyle fill_style;
   Real bord_width, bord_miter_limit;
   JoinStyle bord_join_style;
   Color bord_color;
+  CapStyle bord_cap;
+  Int bord_num_dashes;
+  Real *bord_dashes, bord_dash_offset;
 } DrawStyle;
 
 /** Descriptor of a graphic Window */

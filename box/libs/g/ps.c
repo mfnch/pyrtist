@@ -42,6 +42,7 @@ static void ps_rinit(void);
 static void ps_rdraw(DrawStyle *style);
 static void ps_rline(Point *a, Point *b);
 static void ps_rcong(Point *a, Point *b, Point *c);
+static void ps_rclose(void);
 static void ps_rcircle(Point *ctr, Point *a, Point *b);
 static void ps_rfgcolor(Color *c);
 static void ps_fake_point(Point *p);
@@ -93,9 +94,36 @@ static void ps_rdraw(DrawStyle *style) {
     if (do_border) {
       Color *c = & style->bord_color;
       Real bw = PS_REAL(style->bord_width);
+      int lj;
+
+      switch(style->bord_join_style) {
+      case JOIN_STYLE_MITER: lj = 0; break;
+      case JOIN_STYLE_ROUND: lj = 1; break;
+      case JOIN_STYLE_BEVEL: lj = 2; break;
+      default: lj = 1; break;
+      }
+
       fprintf(out, " grestore gsave %g %g %g setrgbcolor"
-                   " %g setlinewidth stroke grestore\n",
-                   c->r, c->g, c->b, bw);
+                   " %g setlinewidth %d setlinejoin",
+                   c->r, c->g, c->b, bw, lj);
+
+      if (style->bord_num_dashes > 0) {
+        Int num_dashes = style->bord_num_dashes, i;
+        Real dash_offset = PS_REAL(style->bord_dash_offset);
+        char *sep = " [";
+        for(i=0; i<num_dashes; i++) {
+          fprintf(out, "%s"SReal, sep, PS_REAL(style->bord_dashes[i]));
+          sep = ", ";
+        }
+        fprintf(out, "] "SReal" setdash", dash_offset);
+      }
+
+      if (lj == 0) {
+        Real ml = PS_REAL(style->bord_miter_limit);
+        fprintf(out, " %g setmiterlimit stroke grestore\n", ml);
+      } else
+        fprintf(out, " stroke grestore\n");
+
     } else {
       fprintf(out, "\n");
     }
@@ -151,6 +179,12 @@ static void ps_rcong(Point *a, Point *b, Point *c) {
   beginning_of_line = 0;
 }
 
+static void ps_rclose(void) {
+  FILE *out = (FILE *) grp_win->ptr;
+  if (!beginning_of_path)
+    fprintf(out, " closepath");
+}
+
 static void ps_rcircle(Point *ctr, Point *a, Point *b) {
   PS_POINT(ctr, cx, cy); PS_POINT(a, ax, ay); PS_POINT(b, bx, by);
 
@@ -183,6 +217,7 @@ static void ps_repair(GrpWindow *w) {
   w->rdraw = ps_rdraw;
   w->rline = ps_rline;
   w->rcong = ps_rcong;
+  w->rclose = ps_rclose;
   w->rcircle = ps_rcircle;
   w->rfgcolor = ps_rfgcolor;
   w->fake_point = ps_fake_point;
