@@ -157,6 +157,12 @@ static void eps_rcong(Point *a, Point *b, Point *c) {
   beginning_of_line = 0;
 }
 
+static void eps_rclose(void) {
+  FILE *out = (FILE *) grp_win->ptr;
+  if (!beginning_of_path)
+    fprintf(out, " closepath");
+}
+
 static void eps_rcircle(Point *ctr, Point *a, Point *b) {
   EPS_POINT(ctr, cx, cy); EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by);
 
@@ -219,6 +225,7 @@ static void eps_repair(GrpWindow *w) {
   w->rdraw = eps_rdraw;
   w->rline = eps_rline;
   w->rcong = eps_rcong;
+  w->rclose = eps_close;
   w->rcircle = eps_rcircle;
   w->rfgcolor = eps_rfgcolor;
   w->text = eps_text;

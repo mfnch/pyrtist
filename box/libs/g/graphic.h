@@ -119,6 +119,7 @@ typedef struct _grp_window {
   void (*rdraw)(DrawStyle *style);
   void (*rline)(Point *a, Point *b);
   void (*rcong)(Point *a, Point *b, Point *c);
+  void (*rclose)(void);
   void (*rcircle)(Point *ctr, Point *a, Point *b);
   void (*rfgcolor)(Color *c);
   void (*rbgcolor)(Color *c);

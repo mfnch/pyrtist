@@ -345,6 +345,7 @@ static void dummy_rline(Point *a, Point *b) {dummy_err(grp_win, "rline");}
 static void dummy_rcong(Point *a, Point *b, Point *c) {
   dummy_err(grp_win, "rcong");
 }
+static void dummy_rclose(void) {dummy_err(grp_win, "rclose");}
 static void dummy_rcircle(Point *ctr, Point *a, Point *b) {
   dummy_err(grp_win, "rcircle");
 }
@@ -380,6 +381,7 @@ void grp_window_block(GrpWindow *w) {
   w->rdraw = dummy_rdraw;
   w->rline = dummy_rline;
   w->rcong = dummy_rcong;
+  w->rclose = dummy_rclose;
   w->rcircle = dummy_rcircle;
   w->rfgcolor = dummy_rfgcolor;
   w->rbgcolor = dummy_rbgcolor;
@@ -401,6 +403,7 @@ GrpWindow grp_dummy_win = {
   dummy_rdraw,
   dummy_rline,
   dummy_rcong,
+  dummy_rclose,
   dummy_rcircle,
   dummy_rfgcolor,
   dummy_rbgcolor,
