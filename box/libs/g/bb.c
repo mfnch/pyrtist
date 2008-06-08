@@ -31,30 +31,23 @@
 #include "autoput.h"
 #include "bb.h"
 
-static Int bb_num_points;
-static Real bb_min_x, bb_min_y, bb_max_x, bb_max_y;
+static BB bb_global, bb_local;
 
 static void got_point(Real x, Real y) {
-#ifdef DEBUG
-  printf("(%g, %g): from min=(%g, %g), max=(%g, %g); ", x, y, bb_min_x, bb_min_y, bb_max_x, bb_max_y);
-#endif
-  if (bb_num_points < 1) {
-    bb_min_x = bb_max_x = x;
-    bb_min_y = bb_max_y = y;
-
-  } else {
-    if (x < bb_min_x) bb_min_x = x;
-    if (y < bb_min_y) bb_min_y = y;
-    if (x > bb_max_x) bb_max_x = x;
-    if (y > bb_max_y) bb_max_y = y;
-  }
-#ifdef DEBUG
-  printf("to min=(%g, %g), max=(%g, %g)\n", bb_min_x, bb_min_y, bb_max_x, bb_max_y);
-#endif
-  ++bb_num_points;
+  Point p = {x, y};
+  Grp_BB_Must_Contain(& bb_local, & p);
 }
 
 static void bb_close_win(void) {return;}
+
+static void bb_rdraw(DrawStyle *style) {
+  int do_border = (style->bord_width > 0.0);
+  if (do_border)
+    Grp_BB_Margin(& bb_local, style->bord_width);
+
+  Grp_BB_Fuse(& bb_global, & bb_local);
+  Grp_BB_Init(& bb_local);
+}
 
 static void bb_rline(Point *a, Point *b) {
 #ifdef DEBUG
@@ -93,6 +86,7 @@ static void bb_fake_point(Point *p) {got_point(p->x, p->y);}
 /** Set the default methods to the bb window */
 static void bb_repair(GrpWindow *w) {
   grp_window_block(w);
+  w->rdraw = bb_rdraw;
   w->rline = bb_rline;
   w->rcong = bb_rcong;
   w->rcircle = bb_rcircle;
@@ -109,15 +103,14 @@ int bb_bounding_box(grp_window *figure, Point *bb_min, Point *bb_max) {
   bb.repair = bb_repair;
   bb.repair(& bb);
   bb.win_type_str = "bb";
-  bb_num_points = 0;
+  Grp_BB_Init(& bb_global);
+  Grp_BB_Init(& bb_local);
   grp_win = & bb;
   aput_identity_matrix(fig_matrix);
   fig_draw_fig(figure);
   grp_win = cur_win;
-  if (bb_min != (Point *) NULL) {bb_min->x = bb_min_x; bb_min->y = bb_min_y;}
-  if (bb_max != (Point *) NULL) {bb_max->x = bb_max_x; bb_max->y = bb_max_y;}
-  return (   bb_num_points > 2
-          && bb_max_x - bb_min_x > 0.0
-          && bb_max_y - bb_min_y > 0.0) ? 1 : 0;
+  if (bb_min != (Point *) NULL) *bb_min = bb_global.min;
+  if (bb_max != (Point *) NULL) *bb_max = bb_global.max;
+  return (Grp_BB_Volume(& bb_global) > 0.0);
 }
 

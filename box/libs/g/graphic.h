@@ -37,6 +37,11 @@ typedef struct {
   Real r, g, b, a;
 } Color;
 
+typedef struct {
+  Point max, min;
+  Int num;
+} BB;
+
 /* Definisce la struttura adatta a contenere il colore di un punto */
 typedef struct {
   unsigned char r;  /* Componente rossa */
@@ -178,6 +183,24 @@ int grp_window_type_from_string(const char *type_str);
 
 /** Unified function to open any kind of window */
 GrpWindow *grp_window_open(GrpWindowPlan *plan);
+
+/** Initialise bounding box object */
+void Grp_BB_Init(BB *bb);
+
+/** Enlarge bounding box object 'bb', such that it contains the point 'p'. */
+void Grp_BB_Must_Contain(BB *bb, Point *p);
+
+/** Enlarge bounding box object 'dest' to contain the points of 'src'.. */
+void Grp_BB_Fuse(BB *dst, BB *src);
+
+/** Return the volume (area) occupied by the bounding box. */
+Real Grp_BB_Volume(BB *bb);
+
+/** Enlarge the bounding box adding margins. */
+void Grp_BB_Margins(BB *bb, Point *margin_min, Point *margin_max);
+
+/** Enlarge the bounding box adding equal margins. */
+void Grp_BB_Margin(BB *bb, Real margin);
 
 /* Dichiarazioni delle procedure della libreria */
 /* Funzioni grafiche di alto livello */

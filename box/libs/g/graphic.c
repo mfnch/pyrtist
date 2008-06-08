@@ -605,3 +605,54 @@ GrpWindow *grp_window_open(GrpWindowPlan *plan) {
     return (GrpWindow *) NULL;
   }
 }
+
+/****************************************************************************
+ *                        BOUNDING BOX (BB) OBJECT                          *
+ ****************************************************************************/
+
+void Grp_BB_Init(BB *bb) {
+  bb->num = 0;
+  bb->min.x = bb->min.y = bb->max.x = bb->max.y = 0.0;
+}
+
+void Grp_BB_Must_Contain(BB *bb, Point *p) {
+  if (bb->num < 1) {
+    assert(bb->num == 0);
+    bb->min.x = bb->max.x = p->x;
+    bb->min.y = bb->max.y = p->y;
+
+  } else {
+    if (p->x < bb->min.x) bb->min.x = p->x;
+    if (p->y < bb->min.y) bb->min.y = p->y;
+    if (p->x > bb->max.x) bb->max.x = p->x;
+    if (p->y > bb->max.y) bb->max.y = p->y;
+  }
+  ++bb->num;
+}
+
+void Grp_BB_Fuse(BB *dst, BB *src) {
+  if (src->num != 0) {
+    assert(src->num > 0);
+    Grp_BB_Must_Contain(dst, & src->min);
+    Grp_BB_Must_Contain(dst, & src->max);
+    dst->num += src->num - 2;
+  }
+}
+
+Real Grp_BB_Volume(BB *bb) {
+  return (bb->max.x - bb->min.x)*(bb->max.y - bb->min.y);
+}
+
+void Grp_BB_Margins(BB *bb, Point *margin_min, Point *margin_max) {
+  bb->min.x -= margin_min->x;
+  bb->min.y -= margin_min->y;
+  bb->max.x += margin_max->x;
+  bb->max.y += margin_max->y;
+}
+
+void Grp_BB_Margin(BB *bb, Real margin) {
+  bb->min.x -= margin;
+  bb->min.y -= margin;
+  bb->max.x += margin;
+  bb->max.y += margin;
+}
