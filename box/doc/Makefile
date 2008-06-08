@@ -32,7 +32,10 @@ html/poly1.png: poly.box
 poly.txt: poly.txt.in html/poly1.png
 	python subst.py poly.box poly.txt.in
 
-html: svn_version html/box-logo.png color.txt pointlist.txt line.txt poly.txt
+circle.txt: circle.txt.in
+	python subst.py circle.box circle.txt.in
+
+html: svn_version html/box-logo.png color.txt pointlist.txt line.txt poly.txt circle.txt
 	mkdir -p html
 	$(RST2HTML) --strict --stylesheet-path=html/style.css \
 	            --link-stylesheet -v manual.txt html/manual.html \

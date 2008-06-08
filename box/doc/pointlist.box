@@ -9,7 +9,7 @@ pl = PointList["one", (10, 20), "two", (50, 50), (100, 50)]
 // You can refer to points by index and by name!
 p1 = pl.Get[1]     // The points of pl can be retrieved by index...
 p2 = pl.Get["two"] // ...or by name
-p2 = pl.Get[3]     // The third point can only be referred by name, since
+p2 = pl.Get[3]     // The third point can only be referred by index, since
                    // we didn't provide a name!
 
 // You can iterate over the points with:
