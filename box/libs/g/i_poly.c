@@ -167,50 +167,40 @@ Task poly_style(VMProgram *vmp) {
   return Success;
 }
 
-Task poly_end(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
-  WindowPoly *wp = & w->poly;
+static Task _poly_draw(Window *w, DrawWhen dw) {
   GrpWindow *cur_win = grp_win;
+  WindowPoly *wp = & w->poly;
 
+  grp_win = w->window;
   TASK( _poly_point_draw_only(w, & w->poly.first_points[0], 0) );
   wp->margin[0] = wp->first_margins[0];
   wp->margin[1] = wp->first_margins[1];
   TASK( _poly_point_draw_only(w, & w->poly.first_points[1], 1) );
+  grp_rclose();
 
-  grp_win = w->window;
   if (w->poly.got.color) {
     Color *c = & w->poly.color;
     grp_rfgcolor(c);
     w->poly.got.color = 0;
   }
 
-  (void) g_rdraw(& w->poly.style, & w->poly.default_style, DRAW_WHEN_END);
+  (void) g_rdraw(& w->poly.style, & w->poly.default_style, dw);
   grp_win = cur_win;
+  return Success;
+}
 
+Task poly_end(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  TASK(_poly_draw(w, DRAW_WHEN_END));
   g_style_clear(& w->poly.style);
   return Success;
 }
 
 Task poly_pause(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  WindowPoly *wp = & w->poly;
-  GrpWindow *cur_win = grp_win;
+  TASK(_poly_draw(w, DRAW_WHEN_PAUSE));
 
-  TASK( _poly_point_draw_only(w, & w->poly.first_points[0], 0) );
-  wp->margin[0] = wp->first_margins[0];
-  wp->margin[1] = wp->first_margins[1];
-  TASK( _poly_point_draw_only(w, & w->poly.first_points[1], 1) );
-
-  grp_win = w->window;
-  if (w->poly.got.color) {
-    Color *c = & w->poly.color;
-    grp_rfgcolor(c);
-    w->poly.got.color = 0;
-  }
-  (void) g_rdraw(& w->poly.style, & w->poly.default_style, DRAW_WHEN_PAUSE);
-  grp_win = cur_win;
-
-  /* Stato dell'istruzione = iniziale */
+  /* Restore the status to the initial status */
   w->poly.state = POLY_GOT_NOTHING;
   w->poly.num_points = 0;
   w->poly.num_margins = 0;

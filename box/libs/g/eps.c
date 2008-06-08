@@ -225,7 +225,7 @@ static void eps_repair(GrpWindow *w) {
   w->rdraw = eps_rdraw;
   w->rline = eps_rline;
   w->rcong = eps_rcong;
-  w->rclose = eps_close;
+  w->rclose = eps_rclose;
   w->rcircle = eps_rcircle;
   w->rfgcolor = eps_rfgcolor;
   w->text = eps_text;

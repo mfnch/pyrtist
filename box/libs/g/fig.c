@@ -54,6 +54,7 @@ void fig_rdraw(DrawStyle *style);
 void fig_rline(Point *a, Point *b);
 void fig_rcong(Point *a, Point *b, Point *c);
 void fig_rcircle(Point *ctr, Point *a, Point *b);
+void fig_rclose(void);
 void fig_rfgcolor(Color *c);
 void fig_rbgcolor(Color *c);
 static void fig_text(Point *p, const char *text);
@@ -123,6 +124,7 @@ static void fig_repair(GrpWindow *w) {
   w->rdraw = fig_rdraw;
   w->rline = fig_rline;
   w->rcong = fig_rcong;
+  w->rclose = fig_rclose;
   w->rcircle = fig_rcircle;
   w->rfgcolor = fig_rfgcolor;
   w->rbgcolor = fig_rbgcolor;
@@ -443,7 +445,7 @@ void fig_clear_layer(int l) {
 /* Enumero gli ID di tutti i comandi */
 enum ID_type {
   ID_rreset = 1, ID_rinit, ID_rdraw, ID_rline,
-  ID_rcong, ID_rcircle, ID_rfgcolor, ID_rbgcolor,
+  ID_rcong, ID_rclose, ID_rcircle, ID_rfgcolor, ID_rbgcolor,
   ID_text, ID_font, ID_fake_point
 };
 
@@ -515,6 +517,11 @@ void fig_rcong(Point *a, Point *b, Point *c) {
                     {sizeof(Point), c},
                     {0, (void *) NULL}};
   _fig_insert_command(ID_rcong, args);
+}
+
+void fig_rclose(void) {
+  CmndArg args[] = {{0, (void *) NULL}};
+  _fig_insert_command(ID_rclose, args);
 }
 
 void fig_rcircle(Point *ctr, Point *a, Point *b) {
@@ -669,6 +676,10 @@ void fig_draw_layer(grp_window *source, int l) {
       tp[2] = *((Point *) (cmnd.ptr + 2*sizeof(Point)));
       fig_ltransform(tp, 3);
       grp_rcong(& tp[0], & tp[1], & tp[2]);
+      break;
+
+    case ID_rclose:
+      grp_rclose();
       break;
 
     case ID_rcircle:
