@@ -74,8 +74,8 @@ static void bb_rcircle(Point *ctr, Point *a, Point *b) {
 
   got_point(a->x + vb.x, a->y + vb.y);
   got_point(a->x - vb.x, a->y - vb.y);
-  got_point(ctr->x - vb.x + va.x, ctr->y - va.y + vb.y);
-  got_point(ctr->x - vb.x - va.x, ctr->y - va.y - vb.y);
+  got_point(ctr->x - va.x - vb.x, ctr->y - va.y - vb.y);
+  got_point(ctr->x - va.x + vb.x, ctr->y - va.y + vb.y);
 
 }
 
