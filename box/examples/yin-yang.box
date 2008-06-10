@@ -3,12 +3,10 @@ w = Window[][
   b = 0.4  // border
   r = 10.0 // radius
   rr = 2*r, rs = 0.25*r
-  Style[.Border[b]]
-  \ .Circle[color.white, (0, 0), rr]
-  Style[.Border[0], .Fill[";"]]
+  \ .Circle[Style[.Border[b]], color.white, (0, 0), rr]
   \ .Poly[color.black, 1, (0, rr), (r, rr), (r, r), (r, 0), (0, 0), (-r, 0),
           (-r, -r), (-r, -rr), (0, -rr), (rr, -rr), (rr, 0), (rr, rr)]
-  \ .Circle[rs, (0, r); color.white, rs, (0, -r)]
+  \ .Circle[Style[.Fill[";"]], rs, (0, r); color.white, rs, (0, -r)]
   .Save["yin-yang.png"]
 ]
 
