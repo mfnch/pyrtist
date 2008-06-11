@@ -19,11 +19,12 @@ Real@Cycloid[
   $$ = big_r*Vec[big_v*t] + small_r*Vec[small_v*t] // $$ is the Cycloid object
 ]
 
-// Here we use the a For loop to draw a Poly and a Line object.
+// Here we use the a For loop to draw a Poly object.
 // For is a type derived from Int, which has a particular feature:
 // it induces a jump to the begin of the current box, when it is equal to 1.
-w = Window[]
-t = 0.0, \ w.Poly[color.yellow,   Cycloid[t], For[(t += 0.01) <= 1.0]]
-t = 0.0, \ w.Line[color.red, 0.2, Cycloid[t], For[(t += 0.01) <= 1.01]]
-w.Save["cycloid.eps"]
+w = Window[][
+  Style[.Border[0.4, color.red]]
+  t = 0.0, \ .Poly[color.yellow, Cycloid[t], For[(t += 0.01) <= 1.0]]
+  .Save["cycloid.eps"]
+]
 

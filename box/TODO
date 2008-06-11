@@ -75,3 +75,11 @@ DONE:
   Types associated with the destroyed type will be destroyed as well
   in a recursive fashion.
 
+Graphic library
+---------------
+
+* Cap style for border
+* Offset in dash specification
+* Empty filling
+* Poly is not closed for empty filling, unless .Close[] is used
+
