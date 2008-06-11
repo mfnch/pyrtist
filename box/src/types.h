@@ -44,7 +44,7 @@ typedef double Real; /* Numeri in virgola mobile */
 #define strtoreal strtod /* Conversione stringa->Real */
 
 #define REAL_MAX DBL_MAX
-#define REAL_MIN DBL_MIN
+#define REAL_MIN (-DBL_MAX)
 
 /* Definisco il tipo Char, che e' esattamente un char */
 typedef unsigned char Char;
