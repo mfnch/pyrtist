@@ -2,12 +2,13 @@ include "g"
 include "arrows"
 
 t = Real
-t = 0.05
 
 lmc = Color[color.red,    .a=0.5] // local moment color
-sc  = Color[color.blue,   .a=0.9] // system color
+sc  = Color[.r=.g=.b=0.9, .a=1.0] // system color
 cc  = Color[color.yellow, .a=0.8] // conduction electron color
+dwc = Color[color.blue,   .a=0.3] // color of domain wall region
 
+//----------------------------------------------------------------------------
 lmr = 4.0   // local moment radius
 lmal = 10.0 // local moment arrow length
 lmalw = 0.5 // local moment arrow line width
@@ -15,19 +16,37 @@ sw = 100.0  // system half width
 sh = 20.0   // system half height
 dww = 50.0  // domain wall width
 n = 10      // number of localized moments
+da = 0.1    // variation of angle due to stt (in units of pi)
+//----------------------------------------------------------------------------
+
+sw2 = sw + lmal
+
+nt = Real[Int[t]] // number of electrons passed through the sample
+t -= nt           // time
+a0 = da*nt
+
+ac = 1.0 // angle of conduction electron (on the left)
+xc = sw*(2*t - 1)                  // position of conduction electron
+
+dx = dww*2*da
+x0 = dww*(2*a0 + 1) // domain wall borders
+x1 = dww*(2*a0 - 1)
+[If[x0 <= xc], x0 += dx]
+[If[x1 <= xc], x1 += dx]
 
 w = Window[]
-sw2 = sw + lmal
-\ w.Poly[sc, (-sw2, -sh), (sw2, -sh), (sw2, sh), (-sw2, sh)]
+\ w.Poly[sc,  (-sw2, -sh), (sw2, -sh), (sw2, sh), (-sw2, sh)]
+\ w.Poly[dwc, (x0, -sh), (x1, -sh), (x1, sh), (x0, sh)]
 \ w.Line[color.black, 0.5, (-sw2, -sh), (sw2, -sh);
          (-sw2, sh), (sw2, sh)]
-
 i = 0
 [
-  x = (2.0*i/(n - 1) - 1.0)*sw
-  u = 0.5*(1 - Min[1, Max[-1, x/dww]]) // 1...0 for u:-1...1
-  angle = -const.pi*u
-  v = lmal*Vec[angle]
+  x = (2.0*i/(n - 1) - 1.0)*sw     // position of local electron
+  a = a0 + 0.5*(1 - x/dww)         // angle for local electron
+  [If[x <= xc], a += da, ac = a]   // angle variation due to spin-transfer
+  a = -const.pi*Min[1, Max[0, a]]  // expressing angle in radians+truncation
+
+  v = lmal*Vec[a]                  // actual drawing
   p = (x, 0)
   \ w.Circle[p, lmr, lmc]
   \ w.Line[color.black, p-v, lmalw, arrow_triangle, p+v]
@@ -35,14 +54,10 @@ i = 0
   For[++i < n]
 ]
 
-
-tn = Int[t*n]/Real[n]
-x = sw*(2*t - 1)
-angle = -const.pi*(1 - tn)
-v = lmal*Vec[angle]
-cp = (x, sh*0.5)
+ac = -const.pi*Min[1, Max[0, ac]]
+v = lmal*Vec[ac]
+cp = (xc, sh*0.5)
 \ w.Circle[cp, lmr, cc]
 \ w.Line[color.black, cp-v, lmalw, arrow_triangle, cp+v]
 
 w.Save["stt.png"]
-
