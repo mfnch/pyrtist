@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2006, 2008 by Matteo Franchin                              *
+ * Copyright (C) 2008 by Matteo Franchin                                    *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -17,16 +17,13 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#ifndef _BUILTINS_H
-#  define _BUILTINS_H
+#ifndef _BLTINSTR_H
+#  define _BLTINSTR_H
 
 #  include "types.h"
 
-/* Important builtin types */
-extern Type type_Point, type_RealNum, type_IntgNum, type_CharNum, type_String;
+Task Bltin_Str_Init(void);
 
-Task Builtins_Init(void);
-
-Task Builtins_Destroy(void);
+void Bltin_Str_Destroy(void);
 
 #endif

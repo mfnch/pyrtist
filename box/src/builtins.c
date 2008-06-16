@@ -38,6 +38,7 @@
 #include "registers.h"
 #include "compiler.h"
 #include "builtins.h"
+#include "bltinstr.h"
 
 /* Important builtin types */
 Type type_Point, type_RealNum, type_IntNum, type_String,
@@ -217,7 +218,7 @@ static Task Blt_Define_Types(void) {
  *     (those between intrinsic types)
  *  2) Sets the output for compiled code.
  */
-Task Builtins_Define(void) {
+Task Builtins_Init(void) {
   Operation *opn;
   int status;
 
@@ -517,7 +518,12 @@ Task Builtins_Define(void) {
   /* Se il caricamento degli operatori non e' perfettamente riuscito esco! */
   if ( status == 1 ) return Failed;
 
+  TASK( Bltin_Str_Init() );
   return Success;
+}
+
+Task Builtins_Destroy(void) {
+  Bltin_Str_Destroy();
 }
 
 static Task Blt_Define_Basics(void) {

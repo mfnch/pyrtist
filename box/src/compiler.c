@@ -86,12 +86,13 @@ Task Cmp_Init(VMProgram *program) {
 Task Cmp_Parse(const char *file) {
   TASK( Box_Init() ); /* Init the box stack */
   TASK( Box_Main_Begin() ); /* Create the main box */
-  TASK( Builtins_Define() ); /* Add builtin stuff */
+  TASK( Builtins_Init() ); /* Add builtin stuff */
   TASK( Parser_Init(file) ); /* Prepare the parser */
   (void) yyparse(); /* Parse the file */
   Parser_Finish(); /* Finalize parsing */
   Box_Main_End(); /* Close the main box */
   Box_Destroy(); /* Destroy the stack of boxes */
+  Builtins_Destroy(); /* Finalises builtins stuff */
   Msg_Line_Set(MSG_UNDEF_LINE); /* Remove line numbers from error messages */
   return Success;
 }
