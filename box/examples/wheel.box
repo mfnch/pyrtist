@@ -1,0 +1,33 @@
+include "g"
+
+// Define a Wheel object
+Wheel = ++(Real radius, Int slices)
+Wheel.Slices = Void
+
+(Int->Real)@Wheel[$$.radius = $]
+([)@Wheel[$$.radius = 100.0, $$.slices = 10]
+Int@Wheel.Slices[$$$.slices = $]
+
+Wheel@@Window[
+  r = $.radius, n = $.slices
+  Print["Drawing wheel with radius = ", r, " and num. slices = ", n;]
+
+  pi = 4*Atan[1]
+  delta_angle = 2*pi/n
+  di = Int[delta_angle/(pi/90)] + 1
+  dangle = delta_angle/di
+  j = 0
+  [
+    angle = delta_angle*j
+    c = Color[.r=.g=.b=angle/(2*pi), .a=1.0]
+    i = 0
+    \ $$::.Poly[r*Vec[angle], angle += dangle, For[++i <= di], (0, 0), c]
+    For[++j < n]
+  ]
+]
+
+w = Window[][
+  Wheel[50, .Slices[10]]
+  .Save["wheel.png"]
+]
+

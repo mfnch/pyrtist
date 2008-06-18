@@ -254,7 +254,7 @@ int g_rdraw(GStyle *gs, GStyle *default_style, DrawWhen now) {
   DrawWhen *when = g_style_get_draw_when(gs, default_style),
            predef_when = DRAW_WHEN_PAUSE;
   FillStyle *fill_style = g_style_get_fill_style(gs, default_style),
-            predef_fill_style = DRAW_EOFILL;
+            predef_fill_style = FILLSTYLE_EO;
   Color *bord_color = g_style_get_bord_color(gs, default_style),
         predef_bord_color = (Color) {0.0, 0.0, 0.0, 1.0};
   Real *bord_width = g_style_get_bord_width(gs, default_style),

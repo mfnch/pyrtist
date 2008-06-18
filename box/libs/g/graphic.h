@@ -30,7 +30,13 @@
 
 /****** DEFINIZIONE DELLE STRUTTURE NECESSARIE PER LA GRAFICA ******/
 
-typedef enum {DRAW_FILL=0, DRAW_EOFILL, DRAW_CLIP, DRAW_EOCLIP} FillStyle;
+typedef enum {
+  FILLSTYLE_VOID=0,
+  FILLSTYLE_PLAIN,
+  FILLSTYLE_EO,
+  FILLSTYLE_CLIP,
+  FILLSTYLE_EOCLIP
+} FillStyle;
 
 /* The color type */
 typedef struct {

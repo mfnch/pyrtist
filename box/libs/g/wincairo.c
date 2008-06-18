@@ -104,17 +104,18 @@ static void wincairo_rinit(void) {WHEREAMI;}
 
 static void wincairo_rdraw(DrawStyle *style) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
-  int do_fill, do_even_odd, do_border = (style->bord_width > 0.0);
+  int do_fill, do_clip, do_even_odd, do_border = (style->bord_width > 0.0);
   WHEREAMI;
 
   if ( ! beginning_of_path ) {
     switch(style->fill_style) {
-    case DRAW_FILL:   do_fill = 1; do_even_odd = 0; break;
-    case DRAW_EOFILL: do_fill = 1; do_even_odd = 1; break;
-    case DRAW_CLIP:   do_fill = 0; do_even_odd = 0; break;
-    case DRAW_EOCLIP: do_fill = 0; do_even_odd = 1; break;
+    case FILLSTYLE_VOID:   do_fill = do_clip = do_even_odd = 0; break;
+    case FILLSTYLE_PLAIN:  do_fill = 1; do_clip = 0; do_even_odd = 0; break;
+    case FILLSTYLE_EO:     do_fill = 1; do_clip = 0; do_even_odd = 1; break;
+    case FILLSTYLE_CLIP:   do_fill = 0; do_clip = 1; do_even_odd = 0; break;
+    case FILLSTYLE_EOCLIP: do_fill = 0; do_clip = 1; do_even_odd = 1; break;
     default:
-      do_fill = 0; do_even_odd = 1;
+      do_fill = 1; do_clip = 0; do_even_odd = 1;
       g_warning("Unsupported drawing style: using even-odd fill algorithm!");
       break;
     }
@@ -133,7 +134,8 @@ static void wincairo_rdraw(DrawStyle *style) {
       default: lj = CAIRO_LINE_JOIN_ROUND; break;
       }
 
-      if (do_fill) cairo_fill_preserve(cr); else cairo_clip_preserve(cr);
+      if (do_fill) cairo_fill_preserve(cr);
+      if (do_clip) cairo_clip_preserve(cr);
       cairo_save(cr);
       cairo_set_source_rgba(cr, c->r, c->g, c->b, c->a);
       cairo_set_line_width(cr, border);
@@ -159,7 +161,8 @@ static void wincairo_rdraw(DrawStyle *style) {
       cairo_restore(cr);
 
     } else {
-      if (do_fill) cairo_fill(cr); else cairo_clip(cr);
+      if (do_fill) cairo_fill(cr);
+      if (do_clip) cairo_clip(cr);
     }
 
   }

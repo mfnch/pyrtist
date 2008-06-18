@@ -52,8 +52,10 @@ Task style_destroy(VMProgram *vmp) {
 Task style_fill_string(VMProgram *vmp) {
   IStylePtr s = BOX_VM_SUB_PARENT(vmp, IStylePtr);
   char *string = BOX_VM_ARG_PTR(vmp, char);
-  char *style_strs[] = {"plain", "eo", "clip", "eoclip", (char *) NULL};
-  FillStyle styles[] = {DRAW_FILL, DRAW_EOFILL, DRAW_CLIP, DRAW_EOCLIP};
+  char *style_strs[] = {"void", "plain", "eo",
+                        "clip", "eoclip", (char *) NULL};
+  FillStyle styles[] = {FILLSTYLE_VOID, FILLSTYLE_PLAIN, FILLSTYLE_EO,
+                        FILLSTYLE_CLIP, FILLSTYLE_EOCLIP};
   char *unset_strs[] = {"unset", "-", (char *) NULL};
   char *when_strs[] = {";", "]", (char *) NULL};
   DrawWhen  whens[] = {DRAW_WHEN_PAUSE, DRAW_WHEN_END};

@@ -342,13 +342,18 @@ static void rst_draw(DrawStyle *style) {
   SWORD y, x1=0, x2, xmin;
   WORD *row, *col;
   block_desc *rstblock;
-  if (fs != DRAW_EOFILL) {
-    static int msg_already_displayed = 0;
+  static int msg_already_displayed = 0;
+
+  switch(fs) {
+  case FILLSTYLE_VOID: return;
+  case FILLSTYLE_EO: break;
+  default:
     if (! msg_already_displayed) {
       g_warning("Unsupported drawing style: using even-odd fill algorithm!");
       msg_already_displayed = 1;
     }
-    fs = DRAW_EOFILL;
+    fs = FILLSTYLE_EO;
+    break;
   }
 
   if (style->bord_width > 0.0) {
@@ -363,7 +368,7 @@ static void rst_draw(DrawStyle *style) {
     for(y = rstblock->ymin; y <= rstblock->ymax; y++) {
       /* Ora disegnamo ognuna delle righe */
       xmin = 0;
-      if (fs == DRAW_EOFILL) {
+      if (fs == FILLSTYLE_EO) {
         border = 0;
         for (col = row++; *col != (WORD) 0;) {
           col = (WORD *) rstblock->buffer + (WORD) *col;

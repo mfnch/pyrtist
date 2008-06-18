@@ -44,12 +44,12 @@ static void set_default_style(GStyle *gs, FillStyle ds, DrawWhen dw) {
 
 static void init_default_styles(Window *w) {
   /* For Circle, we set a style which allows easily to draw dognuts */
-  set_default_style(& w->circle.default_style, DRAW_EOFILL, DRAW_WHEN_END);
+  set_default_style(& w->circle.default_style, FILLSTYLE_EO, DRAW_WHEN_END);
   /* For Poly, we use the same style as Circle to easily allow holes */
-  set_default_style(& w->poly.default_style, DRAW_EOFILL, DRAW_WHEN_END);
+  set_default_style(& w->poly.default_style, FILLSTYLE_EO, DRAW_WHEN_END);
   /* For Text and Line, we usually don't want holes to appear! */
-  set_default_style(& w->text.default_style, DRAW_FILL, DRAW_WHEN_PAUSE);
-  set_default_style(& w->line.default_style, DRAW_FILL, DRAW_WHEN_PAUSE);
+  set_default_style(& w->text.default_style, FILLSTYLE_PLAIN,DRAW_WHEN_PAUSE);
+  set_default_style(& w->line.default_style, FILLSTYLE_PLAIN,DRAW_WHEN_PAUSE);
 
   /* The main Window style is left completely unset (i.e. transparent
    * to the default styles.
