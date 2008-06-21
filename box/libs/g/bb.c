@@ -109,6 +109,7 @@ int bb_bounding_box(GrpWindow *figure, Point *bb_min, Point *bb_max) {
   aput_identity_matrix(fig_matrix);
   fig_draw_fig(figure);
   grp_win = cur_win;
+  Grp_BB_Fuse(& bb_global, & bb_local);
   if (bb_min != (Point *) NULL) *bb_min = bb_global.min;
   if (bb_max != (Point *) NULL) *bb_max = bb_global.max;
   return (Grp_BB_Volume(& bb_global) > 0.0);
