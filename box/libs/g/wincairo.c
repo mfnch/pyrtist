@@ -126,6 +126,7 @@ static void wincairo_rdraw(DrawStyle *style) {
       Color *c = & style->bord_color;
       Real border = MY_REAL(style->bord_width);
       cairo_line_join_t lj;
+      cairo_line_cap_t lc;
 
       switch(style->bord_join_style) {
       case JOIN_STYLE_MITER: lj = CAIRO_LINE_JOIN_MITER; break;
@@ -134,12 +135,20 @@ static void wincairo_rdraw(DrawStyle *style) {
       default: lj = CAIRO_LINE_JOIN_ROUND; break;
       }
 
+      switch(style->bord_cap) {
+      case CAP_STYLE_BUTT:   lc = CAIRO_LINE_CAP_BUTT; break;
+      case CAP_STYLE_ROUND:  lc = CAIRO_LINE_CAP_ROUND; break;
+      case CAP_STYLE_SQUARE: lc = CAIRO_LINE_CAP_SQUARE; break;
+      default: lc = CAIRO_LINE_CAP_BUTT; break;
+      }
+
       if (do_fill) cairo_fill_preserve(cr);
       if (do_clip) cairo_clip_preserve(cr);
       cairo_save(cr);
       cairo_set_source_rgba(cr, c->r, c->g, c->b, c->a);
       cairo_set_line_width(cr, border);
       cairo_set_line_join(cr, lj);
+      cairo_set_line_cap(cr, lc);
       if (lj == CAIRO_LINE_JOIN_MITER) {
         Real miter_limit = MY_REAL(style->bord_miter_limit);
         cairo_set_miter_limit(cr, miter_limit);

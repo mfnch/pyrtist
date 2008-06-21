@@ -828,6 +828,7 @@ static int fig_save(const char *file_name) {
   plan.have.size = 0;
   plan.have.origin = 0;
   plan.resolution.x = plan.resolution.y = 100.0/grp_mmperinch; /* ~ 100 dpi */
+  plan.resolution.x = plan.resolution.y = 2.7852103697407564*1024/640; /* temporary */
   plan.have.resolution = 1;
   plan.have.num_layers = 0;
   return fig_save_fig(grp_win, & plan);

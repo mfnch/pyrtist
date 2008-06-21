@@ -146,3 +146,22 @@ Task style_border_miter_limit(VMProgram *vmp) {
   s->have[G_STYLE_ATTR_BORD_MITER_LIMIT] = 1;
   return Success;
 }
+
+Task style_border_cap_string(VMProgram *vmp) {
+  IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
+  char *cap_str = BOX_VM_ARG_PTR(vmp, char);
+
+  char *cap_styles[] = {"butt", "round", "square", (char *) NULL};
+  CapStyle cs[] = {CAP_STYLE_BUTT, CAP_STYLE_ROUND, CAP_STYLE_SQUARE};
+
+  int index = g_string_find_in_list(cap_styles, cap_str);
+  if (index < 0) {
+    printf("Invalid cap style. Available styles are: ");
+    g_string_list_print(stdout, cap_styles, ", ");
+    printf(".\n");
+    return Failed;
+  }
+  g_style_set_bord_cap(& s->style, cs + index);
+  s->have[G_STYLE_ATTR_BORD_CAP] = 1;
+  return Success;
+}

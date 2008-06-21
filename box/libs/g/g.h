@@ -90,7 +90,7 @@ typedef struct _g_style {
   Color bord_color;
   Real bord_width, bord_miter_limit;
   JoinStyle bord_join_style;
-  CapStyle *bord_cap;
+  CapStyle bord_cap;
   GDashes bord_dashes;
 } GStyle;
 

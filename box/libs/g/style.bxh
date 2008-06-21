@@ -19,3 +19,6 @@ R@Style.Border.Dash ? "style_border_dash_real"
 
 Style.Border.MiterLimit = Void
 R@Style.Border.MiterLimit ? "style_border_miter_limit"
+
+Style.Border.Cap = Void
+()Char@Style.Border.Cap ? "style_border_cap_string"

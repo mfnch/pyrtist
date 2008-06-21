@@ -100,7 +100,7 @@ static void eps_rdraw(DrawStyle *style) {
     if (do_border) {
       Color *c = & style->bord_color;
       Real bw = EPS_REAL(style->bord_width);
-      int lj;
+      int lj, lc;
 
       switch(style->bord_join_style) {
       case JOIN_STYLE_MITER: lj = 0; break;
@@ -109,9 +109,16 @@ static void eps_rdraw(DrawStyle *style) {
       default: lj = 1; break;
       }
 
-      fprintf(out, " grestore gsave %g %g %g setrgbcolor"
-                   " %g setlinewidth %d setlinejoin",
-                   c->r, c->g, c->b, bw, lj);
+      switch(style->bord_join_style) {
+      case CAP_STYLE_BUTT:   lc = 0; break;
+      case CAP_STYLE_ROUND:  lc = 1; break;
+      case CAP_STYLE_SQUARE: lc = 2; break;
+      default: lc = 0; break;
+      }
+
+      fprintf(out, " gsave %g %g %g setrgbcolor"
+                   " %g setlinewidth %d setlinejoin %d setlinecap",
+                   c->r, c->g, c->b, bw, lj, lc);
 
       if (style->bord_num_dashes > 0) {
         Int num_dashes = style->bord_num_dashes, i;
@@ -386,7 +393,7 @@ static void ps_close_win(void) {
   assert(f != (FILE *) NULL);
   /*fprintf(f, "\nrestore\nshowpage\n%%%%Trailer\n%%EOF\n");*/
   fclose(f);
-}   
+}
 
 /***************************************************************************************/
 /* Here we define another window type: PS (postscript), very similar to EPS. */

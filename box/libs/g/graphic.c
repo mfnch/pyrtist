@@ -73,8 +73,8 @@ Point *grp_ref(Point *o, Point *v, Point *p) {
   cx = v->x; cy = v->y;
   c = sqrt(cx*cx + cy*cy);
   if (c == 0.0) {
-    ERRORMSG("grp_ref",
-    "Punti coincidenti: impossibile costruire il riferimento cartesiano!");
+    ERRORMSG("grp_ref", "Punti coincidenti: impossibile costruire "
+             "il riferimento cartesiano!");
     return NULL;
   }
 
