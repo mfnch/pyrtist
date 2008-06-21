@@ -78,6 +78,7 @@ Task poly_begin(VMProgram *vmp) {
   w->poly.got.color = 0;
 
   g_style_new(& w->poly.style, & w->style);
+  if (!buff_create(& w->poly.pieces, sizeof(PolyPiece), 16)) return Failed;
   return Success;
 }
 
@@ -147,6 +148,104 @@ static Task _poly_point_draw_only(Window *w, Point *p, int omit_line) {
   return Success;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+static Task _poly_piece_add(Window *w, Point *p) {
+  WindowPoly *wp = & w->poly;
+  Real m1 = wp->margin[0], m2 = wp->margin[1];
+  Point *last = & wp->last_point;
+  Real dx = p->x - last->x, dy = p->y - last->y, d = sqrt(dx*dx + dy*dy), m;
+  PolyPiece new_piece;
+
+  if (d > 0.0) {
+    if (m1 < 0.0) m1 = -m1/d;
+    if (m2 < 0.0) m2 = -m2/d;
+  } else {
+    if (m1 < 0.0) m1 = 0.0;
+    if (m2 < 0.0) m2 = 0.0;
+  }
+  m = m1 + m2;
+  if (m > 1.0) {
+    g_warning("Margins for Poly segment exceed the length "
+              "of the whole segment");
+    m1 /= m;
+    m2 /= m;
+  }
+
+  new_piece.p = *last;
+  new_piece.m1 = m1;
+  new_piece.m2 = m2;
+
+  wp->last_point = *p;
+  ++wp->num_points;
+  w->poly.num_margins = 0;
+  wp->margin[0] = m2;
+  wp->margin[1] = m1;
+
+  if (!buff_push(& wp->pieces, & new_piece)) return Failed;
+  return Success;
+}
+
+static void calc_margins(Point *mp1, Point *mp2,
+                         Point *p1, Point *p2, Real m1, Real m2) {
+  Real dx = p2->x - p1->x, dy = p2->y - p1->y;
+  mp1->x = p1->x + m1*dx;
+  mp1->y = p1->y + m1*dy;
+  mp2->x = p2->x - m2*dx;
+  mp2->y = p2->y - m2*dy;
+}
+
+
+Task _poly_draw2(Window *w, int closed) {
+  WindowPoly *wp = & w->poly;
+  Point pc1a, pc1b, pc2a;
+  PolyPiece *pp1, *pp2;
+  Int i, n;
+
+  n = buff_numitems(& wp->pieces);
+  if (closed) {
+    if (n < 3) return Success;
+    pp1 = buff_lastitemptr(& wp->pieces, PolyPiece);
+    pp2 = buff_firstitemptr(& wp->pieces, PolyPiece);
+    calc_margins(& pc1b, & pc2a, & pp1->p, & pp2->p, pp1->m1, pp1->m2);
+
+    for(i = 0; i < n; i++) {
+      pc1a = pc2a;
+      pp1 = pp2++;
+
+      calc_margins(& pc1b, & pc2a, & pp1->p, & pp2->p, pp1->m1, pp1->m2);
+      grp_rcong(& pc1a, & pp1->p, & pc1b);
+      grp_rline(& pc1b, & pp2->p);
+    }
+
+  } else {
+
+  }
+  return Success;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 static Task _poly_point(Window *w, IPointList *ipl, Point *p) {
   PointList *pl = IPL_POINTLIST(ipl);
   TASK( pointlist_add(pl, p, (char *) NULL) );
@@ -193,6 +292,7 @@ Task poly_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   TASK(_poly_draw(w, DRAW_WHEN_END));
   g_style_clear(& w->poly.style);
+  buff_free(& w->poly.pieces);
   return Success;
 }
 
@@ -205,6 +305,7 @@ Task poly_pause(VMProgram *vmp) {
   w->poly.num_points = 0;
   w->poly.num_margins = 0;
   w->poly.got.color = 0;
+  if (!buff_clear(& w->poly.pieces)) return Failed;
   return Success;
 }
 
