@@ -1,5 +1,11 @@
 Change log (recent come first)
 
+21 June 2008: Style object now allow tracing borders
+  * We can now draw polygons with border, controlling the join style
+    (including the miter limit), the cap style, the dashes, the color.
+  * Style can be instructed to draw empty polygons. In that case
+    the border is not closed in Poly, unless Poly.Close[] is used.
+
 29 May 2008: Work on the documentation and on the internal allocation system.
   * Started to write documentation on the graphic capabilities of Box.
   * Destructors are now called automatically by the VM before deallocation
