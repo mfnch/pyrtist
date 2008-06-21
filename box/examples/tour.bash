@@ -1,6 +1,7 @@
 #!/bin/bash
 
 GV=gv
+SHOWPNG=display
 BOX=../src/box
 BOXLIBDIR=../libs/g
 
@@ -13,6 +14,10 @@ function introduce {
 
 function inspect {
   $GV $1
+}
+
+function inspect_png {
+  $SHOWPNG $1
 }
 
 rm -f *.eps
@@ -36,4 +41,8 @@ inspect multivibrator.eps
 introduce "The cycloid example"
 $BOX -l g cycloid.box
 inspect cycloid.eps
+
+introduce "The ying-yang example"
+$BOX -l g yin-yang.box
+inspect_png yin-yang.png
 

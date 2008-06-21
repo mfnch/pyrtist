@@ -80,7 +80,7 @@ static void eps_rdraw(DrawStyle *style) {
     char *fill;
 
     switch(style->fill_style) {
-    case FILLSTYLE_VOID:   fill = (char *) NULL;
+    case FILLSTYLE_VOID:   fill = (char *) NULL; break;
     case FILLSTYLE_PLAIN:  fill = " fill"; break;
     case FILLSTYLE_EO:     fill = " eofill"; break;
     case FILLSTYLE_CLIP:   fill = " clip"; break;
@@ -92,7 +92,7 @@ static void eps_rdraw(DrawStyle *style) {
 
     if (fill != (char *) NULL) {
       if (do_border)
-        fprintf(out, " gsave %s grestore", fill);
+        fprintf(out, " gsave%s grestore", fill);
       else
         fprintf(out, " %s", fill);
     }

@@ -30,7 +30,7 @@ typedef struct {
     int color : 1;
   } got;
 
-  int num_points, num_margins, last_idx;
+  int num_points, num_margins, last_idx, close;
   Point first_points[2], last_point, lastb;
   Real first_margins[2];
   Real margin[2];

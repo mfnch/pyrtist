@@ -9,3 +9,7 @@ R@Window.Poly ? "poly_real"
 (;)@Window.Poly ? "poly_pause"
 Style@Window.Poly ? "poly_style"
 PointList@Window.Poly ? "poly_pointlist"
+
+Window.Poly.Close = Void
+([)@Window.Poly.Close ? "window_poly_close_begin"
+Int@Window.Poly.Close ? "window_poly_close_int"

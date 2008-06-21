@@ -170,13 +170,21 @@ Task poly_style(VMProgram *vmp) {
 static Task _poly_draw(Window *w, DrawWhen dw) {
   GrpWindow *cur_win = grp_win;
   WindowPoly *wp = & w->poly;
+  FillStyle *fs;
+  int close = wp->close;
+
+  fs = g_style_get_fill_style(& w->poly.style, & w->poly.default_style);
+  if (fs != (FillStyle *) NULL)
+    if (*fs != FILLSTYLE_VOID) close = 1;
 
   grp_win = w->window;
-  TASK( _poly_point_draw_only(w, & w->poly.first_points[0], 0) );
-  wp->margin[0] = wp->first_margins[0];
-  wp->margin[1] = wp->first_margins[1];
-  TASK( _poly_point_draw_only(w, & w->poly.first_points[1], 1) );
-  grp_rclose();
+  if (close) {
+    TASK( _poly_point_draw_only(w, & w->poly.first_points[0], 0) );
+    wp->margin[0] = wp->first_margins[0];
+    wp->margin[1] = wp->first_margins[1];
+    TASK( _poly_point_draw_only(w, & w->poly.first_points[1], 1) );
+    grp_rclose();
+  }
 
   if (w->poly.got.color) {
     Color *c = & w->poly.color;
@@ -258,4 +266,16 @@ Task poly_pointlist(VMProgram *vmp) {
   params.w = w;
   params.dest_ipl = my_ipl;
   return pointlist_iter(arg_pl, _add_from_pl, & params);
+}
+
+Task window_poly_close_begin(VMProgram *vmp) {
+  Window *w = BOX_VM_SUB2_PARENT(vmp, WindowPtr);
+  w->poly.close = 1;
+  return Success;
+}
+
+Task window_poly_close_int(VMProgram *vmp) {
+  Window *w = BOX_VM_SUB2_PARENT(vmp, WindowPtr);
+  w->poly.close = BOX_VM_ARG1(vmp, Int);
+  return Success;
 }
