@@ -15,6 +15,7 @@ R@Style.Border ? "style_border_real"
 Style.Border.Dash = Void
 ([)@Style.Border.Dash ? "style_border_dash_begin"
 R@Style.Border.Dash ? "style_border_dash_real"
+(;)@Style.Border.Dash ? "style_border_dash_pause"
 (])@Style.Border.Dash ? "style_border_dash_end"
 
 Style.Border.MiterLimit = Void

@@ -19,12 +19,6 @@
 
 #ifdef _DEF_WINDOW_SUBOBJECTS
 
-typedef struct {
-  Point p;
-  Real m1, m2;
-} PolyPiece;
-
-
 /* This is part of the Window object */
 typedef struct {
   enum {POLY_GOT_NOTHING,
@@ -40,9 +34,6 @@ typedef struct {
   Point first_points[2], last_point, lastb;
   Real first_margins[2];
   Real margin[2];
-
-  PolyPiece this_piece;
-  buff pieces;
 
   Color color;
 

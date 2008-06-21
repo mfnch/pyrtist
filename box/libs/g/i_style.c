@@ -38,6 +38,8 @@ Task style_begin(VMProgram *vmp) {
   g_style_new(& s->style, G_STYLE_NONE);
   for(i = 0; i < G_STYLE_ATTR_NUM; i++) s->have[i] = 0;
   if (!buff_create(& s->dashes, sizeof(Real), 8)) return Failed;
+  s->dash_offset_contest = -1;
+  s->dash_offset = 0.0;
   return Success;
 }
 
@@ -121,20 +123,35 @@ Task style_border_join(VMProgram *vmp) {
 
 Task style_border_dash_begin(VMProgram *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
+  s->dash_offset_contest = -1;
   return buff_clear(& s->dashes) ? Success : Failed;
+}
+
+Task style_border_dash_pause(VMProgram *vmp) {
+  IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
+  s->dash_offset_contest = 0;
+  s->dash_offset = 0.0;
+  return Success;
 }
 
 Task style_border_dash_real(VMProgram *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
   Real *r = BOX_VM_ARG_PTR(vmp, Real);
-  return buff_push(& s->dashes, r) ? Success : Failed;
+  switch(s->dash_offset_contest) {
+  case -1: return buff_push(& s->dashes, r) ? Success : Failed;
+  case  0: s->dash_offset = *r; ++s->dash_offset_contest; break;
+  default:
+    g_warning("Style.Border.Dash: Dash offset already specified: "
+              "ignoring the second value!");
+    return Success;
+  }
 }
 
 Task style_border_dash_end(VMProgram *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
   Int n = buff_numitems(& s->dashes);
   Real *dashes = buff_firstitemptr(& s->dashes, Real);
-  g_style_set_bord_dashes(& s->style, n, dashes);
+  g_style_set_bord_dashes(& s->style, n, dashes, s->dash_offset);
   s->have[G_STYLE_ATTR_BORD_DASHES] = 1;
   return Success;
 }

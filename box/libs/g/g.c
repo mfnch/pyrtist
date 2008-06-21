@@ -168,7 +168,14 @@ Real *g_style_get_bord_dashes(GStyle *gs, GStyle *default_style) {
   return ((GDashes *) d)->dashes;
 }
 
-void g_style_set_bord_dashes(GStyle *gs, Int num_dashes, Real *dashes) {
+Real g_style_get_bord_dash_offset(GStyle *gs, GStyle *default_style) {
+  void *d = g_style_attr_get(gs, default_style, G_STYLE_ATTR_BORD_DASHES);
+  if (d == NULL) return 0.0;
+  return ((GDashes *) d)->offset;
+}
+
+void g_style_set_bord_dashes(GStyle *gs, Int num_dashes, Real *dashes,
+                             Real offset) {
   g_style_unset_bord_dashes(gs);
   if (num_dashes >= 0) {
     Int dashes_size = sizeof(Real)*num_dashes;
@@ -180,6 +187,7 @@ void g_style_set_bord_dashes(GStyle *gs, Int num_dashes, Real *dashes) {
     (void) memcpy(dashes_cpy, dashes, dashes_size);
     gs->bord_dashes.dashes = dashes_cpy;
     gs->bord_dashes.num = num_dashes;
+    gs->bord_dashes.offset = offset;
     gs->attr[G_STYLE_ATTR_BORD_DASHES] = & gs->bord_dashes;
   }
 }
@@ -245,7 +253,8 @@ void g_style_copy_selected(GStyle *dest, GStyle *src,
     if (src->attr[G_STYLE_ATTR_BORD_DASHES] != NULL) {
       Int num_dashes = g_style_get_bord_num_dashes(src, (GStyle *) NULL);
       Real *dashes = g_style_get_bord_dashes(src, (GStyle *) NULL);
-      g_style_set_bord_dashes(dest, num_dashes, dashes);
+      Real dash_offset = g_style_get_bord_dash_offset(src, (GStyle *) NULL);
+      g_style_set_bord_dashes(dest, num_dashes, dashes, dash_offset);
     }
   }
 }
@@ -267,6 +276,7 @@ int g_rdraw(GStyle *gs, GStyle *default_style, DrawWhen now) {
            predef_bord_cap = CAP_STYLE_BUTT;
   Int bord_num_dashes = g_style_get_bord_num_dashes(gs, default_style);
   Real *bord_dashes = g_style_get_bord_dashes(gs, default_style);
+  Real bord_dash_offset = g_style_get_bord_dash_offset(gs, default_style);
   DrawStyle style;
 
   if (when == (DrawWhen *) NULL) when = & predef_when;
@@ -288,7 +298,7 @@ int g_rdraw(GStyle *gs, GStyle *default_style, DrawWhen now) {
   style.bord_cap = *bord_cap;
   style.bord_num_dashes = bord_num_dashes;
   style.bord_dashes = bord_dashes;
-  style.bord_dash_offset = 0.0;
+  style.bord_dash_offset = bord_dash_offset;
   grp_rdraw(& style);
   grp_rreset();
   return 1;

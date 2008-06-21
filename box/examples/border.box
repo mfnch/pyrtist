@@ -1,7 +1,7 @@
 include "g"
 
 w = Window[][
-  Style[.Fill[";"], .Border[2, color.black, .Dash[8], .Cap["round"]]]
+  Style[.Fill[";"], .Border[2, color.black, .Dash[8; 1.0], .Cap["round"]]]
 
   a = (5, 20), b = (50, 10),  c = (55, 60),  d = (15, 50)
   pl = .Poly[color.blue, a, b, c, d]

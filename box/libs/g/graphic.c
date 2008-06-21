@@ -116,8 +116,7 @@ void grp_color_build(Color *c, ColorBytes *cb) {
  *  di un numero reale in un numero intero: usando questa funzione si riduce
  *  il numero complessivo dei colori utilizzati.
  */
-void grp_color_reduce(palette *p, color *c)
-{
+void grp_color_reduce(palette *p, color *c) {
   register unsigned int mask, add, col;
   unsigned int mtable[8] =
    {0777, 0776, 0774, 0770, 0760, 0740, 0700, 0600};
@@ -140,8 +139,8 @@ void grp_color_reduce(palette *p, color *c)
  *  alla nuova struttura di tipo palette, oppure restituisce NULL, in caso di
  *  insuccesso.
  */
-palette *grp_palette_build(long numcol, long hashdim, long hashmul, int reduce)
-{
+palette *grp_palette_build(long numcol, long hashdim,
+                           long hashmul, int reduce) {
   palette *p;
 
   if ( (numcol < 1) || (hashmul < 2) ) {
@@ -174,8 +173,7 @@ palette *grp_palette_build(long numcol, long hashdim, long hashmul, int reduce)
 
 /* DESCRIZIONE: Cerca il colore c fra i colori della tavolazza
  */
-palitem *grp_color_find(palette *p, color *c)
-{
+palitem *grp_color_find(palette *p, color *c) {
   palitem *pi;
 
   for ( pi = p->hashtable[color_hash(p, c)];
@@ -194,8 +192,7 @@ palitem *grp_color_find(palette *p, color *c)
  *  della tavolazza (vedi grp_build_palette per maggiori dettagli).
  *  Se la richiesta di colore non puo' essere soddisfatta restituisce -1.
  */
-palitem *grp_color_request(palette *p, color *c)
-{
+palitem *grp_color_request(palette *p, color *c) {
   color c2;
   palitem *new;
 
@@ -242,8 +239,7 @@ palitem *grp_color_request(palette *p, color *c)
  *  errore (in tal caso la scansione ha immediatamente termine e
  *  grp_palette_transform esce restituendo 0).
  */
-int grp_palette_transform( palette *p, int (*operation)(palitem *pi) )
-{
+int grp_palette_transform(palette *p, int (*operation)(palitem *pi)) {
   int i;
   palitem *pi;
 
@@ -264,8 +260,7 @@ int grp_palette_transform( palette *p, int (*operation)(palitem *pi) )
 
 /* DESCRIZIONE: Distrugge la palette p, liberando la memoria da essa occupata.
  */
-void grp_palette_destroy(palette *p)
-{
+void grp_palette_destroy(palette *p) {
   int i;
   palitem *pi, *nextpi;
 
@@ -285,17 +280,15 @@ void grp_palette_destroy(palette *p)
   free(p->hashtable);
   /* Elimino la struttura "palette" */
   free(p);
-
-  return;
 }
 
 /* DESCRIZIONE: Funzione che associa ad ogni colore, un indice (della tavola
  *  di hash) in modo "abbastanza casuale". Serve per trovare velocemente i colori,
  *  senza scorrere tutta la tavolazza.
  */
-static unsigned long color_hash(palette *p, color *c)
-{
-  return ( ( (unsigned long ) c->b ) + (c->g + c->r * p->hashmul) * p->hashmul ) % p->hashdim;
+static unsigned long color_hash(palette *p, color *c) {
+  return ( ( (unsigned long ) c->b ) +
+           (c->g + c->r * p->hashmul) * p->hashmul ) % p->hashdim;
 }
 
 /* NEW CODE */

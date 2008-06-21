@@ -20,12 +20,17 @@
 #ifndef _I_STYLE_H
 #  define _I_STYLE_H
 
+#  include "types.h"
 #  include "g.h"
 
 typedef struct {
   GStyle style;
   int have[G_STYLE_ATTR_NUM];
   buff dashes;
+  int dash_offset_contest; /**< -1: before ';' (offset not accepted)
+                                 0: just after ';' (waiting for offset)
+                                 1: got offset (offset not accepted) */
+  Real dash_offset;
 } IStyle;
 
 typedef IStyle *IStylePtr;

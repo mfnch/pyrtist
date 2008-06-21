@@ -232,10 +232,24 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
 
 /* bord_dashes */
 
-void g_style_set_bord_dashes(GStyle *gs, Int num_dashes, Real *dashes);
+void g_style_set_bord_dashes(GStyle *gs, Int num_dashes, Real *dashes,
+                             Real offset);
 void g_style_unset_bord_dashes(GStyle *gs);
+
+/** Get the number of real numbers which constitute the dash pattern.
+ * If the dashes pattern is not set returns 0.
+ */
 Int g_style_get_bord_num_dashes(GStyle *gs, GStyle *default_style);
+
+/** Get the dash pattern for the border. If the dashes pattern is not set
+ * returns (Real *) NULL.
+ */
 Real *g_style_get_bord_dashes(GStyle *gs, GStyle *default_style);
+
+/** Get the offset of the dash pattern for the border.
+ * If the dashes pattern is not set return 0.0.
+ */
+Real g_style_get_bord_dash_offset(GStyle *gs, GStyle *default_style);
 
 /** Draw following the style 'gs' and only if 'now' is allowed
  * by the DrawWhen value set in 'gs'.
