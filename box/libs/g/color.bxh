@@ -34,3 +34,4 @@ color = (Color black, red, green, yellow, blue, magenta, cyan, white, _
   color.none.r = -1.0
   color.none.g = color.none.b = color.none.a = 0.0
 ]
+

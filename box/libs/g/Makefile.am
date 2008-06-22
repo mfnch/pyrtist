@@ -35,7 +35,7 @@ dist_boxinc_DATA=g.bxh color.bxh style.bxh window.bxh line.bxh circle.bxh \
 libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
                 bm1bit.c bm4bit.c bm8bit.c bitmap.h \
                 bmcommon.c bmcommon.h \
-                fig.c fig.h graphic.c graphic.h \
+                fig.c fig.h graphic.c graphic.h hsv.c hsv.h \
                 eps.c bb.c bb.h \
                 rasterizer.c buffer.c buffer.h error.c error.h \
                 autoput.c autoput.h \
