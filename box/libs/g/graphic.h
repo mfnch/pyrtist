@@ -215,6 +215,11 @@ void Grp_BB_Margins(BB *bb, Point *margin_min, Point *margin_max);
 /** Enlarge the bounding box adding equal margins. */
 void Grp_BB_Margin(BB *bb, Real margin);
 
+/** Make sure the components of 'c' lie inside [0, 1] and correct them,
+ * if needed.
+ */
+void Color_Trunc(Color *c);
+
 /* Dichiarazioni delle procedure della libreria */
 /* Funzioni grafiche di alto livello */
 GrpWindow *gr1b_open_win(Real ltx, Real lty, Real rdx, Real rdy,

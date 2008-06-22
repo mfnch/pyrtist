@@ -93,12 +93,21 @@ Point *grp_ref(Point *o, Point *v, Point *p) {
 /* Dichiaro la procedura di hash per trovare velocemente i colori */
 static unsigned long color_hash(palette *p, color *c);
 
+void Color_Trunc(Color *c) {
+  if (c->r < 0.0) c->r = 0.0;
+  if (c->r > 1.0) c->r = 1.0;
+  if (c->g < 0.0) c->g = 0.0;
+  if (c->g > 1.0) c->g = 1.0;
+  if (c->b < 0.0) c->b = 0.0;
+  if (c->b > 1.0) c->b = 1.0;
+}
+
+
 /* Questa macro serve a determinare se due colori coincidono o meno
  * (c1 e c2 sono i due puntatori a strutture di tipo color)
  */
 #define COLOR_EQUAL(c1, c2) \
  ( ((c1)->r == (c2->r)) && ((c1)->g == (c2->g)) && ((c1)->b == (c2->b)) )
-
 
 /* DESCRIZIONE: Traduce un colore con componenti RGB date come numeri
  *  compresi tra 0.0 e 1.0, in una struttura di tipo color.

@@ -17,30 +17,25 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#ifndef _HSV_H
-#  define _HSV_H
+#include "types.h"
+#include "virtmach.h"
+#include "graphic.h"
+#include "hsv.h"
 
-#  include "types.h"
+/* Color@HSV */
+Task hsv_color(VMProgram *vmp) {
+  Color c = BOX_VM_ARG1(vmp, Color);
+  HSV *hsv = BOX_VM_THIS_PTR(vmp, HSV);
+  Color_Trunc(& c);
+  HSV_From_Color(hsv, & c);
+  return Success;
+}
 
-typedef struct {
-  Real h, s, v, a;
-} HSV;
-
-/** Make sure the components of 'hsv' lie to the right intervals
- * ('hsv' is corrected, if needed).
- */
-void HSV_Trunc(HSV *hsv);
-
-/** Convert the RGB Color 'c' to an 'HSV' value in 'hsv'.
-  * NOTE: the function assumes that the components of 'c' are included
-  *   in [0, 1]
-  */
-void HSV_From_Color(HSV *hsv, Color *c);
-
-/** Convert the HSV value 'hsv' to a RGB Color in 'c'
-  * NOTE: the function assumes that the components of 'hsv' are included
-  *   in [0, 360[ for 'hsv->h' and in [0, 1] for 'hsv->s' and 'hsv->v'.
-  */
-void HSV_To_Color(Color *c, HSV *hsv);
-
-#endif
+/* HSV@Color */
+Task color_hsv(VMProgram *vmp) {
+  HSV hsv = BOX_VM_ARG1(vmp, HSV);
+  Color *c = BOX_VM_THIS_PTR(vmp, Color);
+  HSV_Trunc(& hsv);
+  HSV_To_Color(c, & hsv);
+  return Success;
+}

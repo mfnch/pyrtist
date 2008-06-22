@@ -35,3 +35,8 @@ color = (Color black, red, green, yellow, blue, magenta, cyan, white, _
   color.none.g = color.none.b = color.none.a = 0.0
 ]
 
+HSV = ++(Real h, s, v, a)
+
+HSV@Print["Color[.h=", $.h, ", .s=", $.s, ", .v=", $.v, ", .a=", $.a, "]"]
+Color@HSV ? "hsv_color"
+HSV@Color ? "color_hsv"

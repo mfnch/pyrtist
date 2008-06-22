@@ -35,7 +35,7 @@
 
 #define TRUNCATE(x) ((x) > 0.0 ? floor(x): -floor(-(x)))
 
-void HSV_trunc(HSV *hsv) {
+void HSV_Trunc(HSV *hsv) {
   hsv->h += 360.0*TRUNCATE(hsv->h/360.0);
   if (hsv->s < 0.0) hsv->s = 0.0;
   if (hsv->s > 1.0) hsv->s = 1.0;
@@ -47,6 +47,7 @@ void HSV_From_Color(HSV *hsv, Color *c) {
   Real r = c->r, g = c->g, b = c->b;
   Real h, var;
 
+  hsv->a = c->a;
   switch((r >= g) | (g >= b) << 1 | (b >= r) << 2) {
   case 0:
     assert(0);
@@ -88,6 +89,7 @@ void HSV_To_Color(Color *c, HSV *hsv) {
   Real h = hsv->h/60.0, s = hsv->s, v = hsv->v;
   Int hi;
 
+  c->a = hsv->a;
   hi = (Int) TRUNCATE(h);
   h -= hi;
 #define CALC_P() (v*(1.0 - s))
