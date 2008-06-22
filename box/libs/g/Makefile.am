@@ -28,9 +28,9 @@ boxincdir=@boxincdir@
 
 boxlib_LTLIBRARIES=libg.la
 
-dist_boxinc_DATA=g.bxh color.bxh style.bxh window.bxh line.bxh circle.bxh \
-                 poly.bxh put.bxh arrows.bxh electric.bxh pointlist.bxh \
-                 text.bxh bounce.bxh
+dist_boxinc_DATA=g.bxh color.bxh style.bxh gradient.bxh window.bxh line.bxh \
+                 circle.bxh poly.bxh put.bxh arrows.bxh electric.bxh \
+                 pointlist.bxh text.bxh bounce.bxh
 
 libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
                 bm1bit.c bm4bit.c bm8bit.c bitmap.h \
@@ -42,6 +42,7 @@ libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
                 gpath.c gpath.h linetracer.c linetracer.h \
                 psfonts.c psfonts.h \ 
                 i_pointlist.c i_pointlist.h i_color.c \
+                i_gradient.c i_gradient.h \
                 i_window.c i_window.h i_line.c i_line.h \
                 i_circle.c i_circle.h i_poly.c i_poly.h \
                 i_put.c i_put.h i_text.c i_text.h \
@@ -53,3 +54,4 @@ endif
 
 libg_la_LDFLAGS=-module
 libg_la_LIBADD=@CAIRO_LIBS@
+

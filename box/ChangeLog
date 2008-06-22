@@ -1,5 +1,8 @@
 Change log (recent come first)
 
+Next:
+  * Can now express color in HSV (besides RGB) and convert RGB<-->HSV;
+
 21 June 2008: Style object now allow tracing borders
   * We can now draw polygons with border, controlling the join style
     (including the miter limit), the cap style, the dashes, the color.

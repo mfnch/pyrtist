@@ -10,6 +10,7 @@ const.degrees = 0.01745329251994329576 // pi/180
 include "pointlist"
 include "color"
 include "style"
+include "gradient"
 include "window"
 include "line"
 include "circle"
