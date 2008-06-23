@@ -1,7 +1,9 @@
 There are a number of things which needs to be done as soon as possible:
 The user may expect great improvements in future versions of the language.
 
-MODIFICATIONS TO THE BOX COMPILER (in order of importance):
+TODO LIST FOR THE BOX COMPILER
+------------------------------
+In order of importance:
 2 global variables: quantities defined in the upper scope unit should
   be automatically allocated as global (global register should be used
   instead of local ones);
@@ -75,11 +77,34 @@ DONE:
   Types associated with the destroyed type will be destroyed as well
   in a recursive fashion.
 
-Graphic library
----------------
+TODO LIST FOR THE GRAPHIC LIBRARY
+---------------------------------
+In order of importance:
+2. Make Window[] to create a WindowPlan without creating the actual Window.
+   This will allow to extend the Window.Save syntax in a sensible way:
 
-* Cap style for border
-* Offset in dash specification
-* Empty filling
-* Poly is not closed for empty filling, unless .Close[] is used
+     w.Save["filename.ext", Window["rgb24", .Res[10]]]
+
+   Be careful! Example:
+
+     w = Window[]
+     w.Line[...]
+
+4. Add functions Deg[] (convert angle from degrees to radians)
+   and Dpi[] (convert resolution from dpi to points per mm.
+6. Add Gradient[] for filling with gradients.
+7. Window should be able to take an already existing image
+   as a background for the new one. We should be able to include
+   existing images.
+8. Use ImageMagick for saving to many formats which are not currently
+   supported.
+9. We need in particular to support gif for animations!
+
+DONE:
+1. Add possibility of setting cap style to Style;
+   add possibility of setting the dash offset to Style.Dash
+3. Polygons should not be closed, when they are not filled.
+   They should be closed only when using Poly.Close[]
+5. Add function HSV[] useful for expressing colors in HSV components.
+   Add HSV@Color and Color@HSV. Add HSV@(Window, Line, Poly, etc.)
 

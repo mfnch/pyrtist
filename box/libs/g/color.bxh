@@ -3,6 +3,8 @@ Color = ++(R r, g, b, a)
 
 Color@Print["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, ", .a=", $.a, "]"]
 Color@Color[$$.r = $.r, $$.g = $.g, $$.b = $.b, $$.a = $.a]
+(R r, g, b)@Color[$$.r = $.r, $$.g = $.g, $$.b = $.b, $$.a = 1.0]
+(R r, g, b, a)@Color[$$.r = $.r, $$.g = $.g, $$.b = $.b, $$.a = $.a]
 
 color = (Color black, red, green, yellow, blue, magenta, cyan, white, _
                dark_red, dark_green, dark_yellow, dark_blue, dark_magenta, _
@@ -37,6 +39,9 @@ color = (Color black, red, green, yellow, blue, magenta, cyan, white, _
 
 HSV = ++(Real h, s, v, a)
 
+(R h, s, v)@HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v, $$.a = 1.0]
+(R h, s, v, a)@HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v, $$.a = $.a]
 HSV@Print["Color[.h=", $.h, ", .s=", $.s, ", .v=", $.v, ", .a=", $.a, "]"]
 Color@HSV ? "hsv_color"
 HSV@Color ? "color_hsv"
+
