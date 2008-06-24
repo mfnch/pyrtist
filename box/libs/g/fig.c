@@ -116,6 +116,10 @@ static void fig_close_win(void) {
   free(w);
 }
 
+static void fig_rgradient(ColorGrad *cg) {
+
+}
+
 /** Set the default methods to the gr1b window */
 static void fig_repair(GrpWindow *w) {
   grp_window_block(w);
@@ -128,6 +132,7 @@ static void fig_repair(GrpWindow *w) {
   w->rcircle = fig_rcircle;
   w->rfgcolor = fig_rfgcolor;
   w->rbgcolor = fig_rbgcolor;
+  w->rgradient = fig_rgradient;
   w->text = fig_text;
   w->font = fig_font;
   w->fake_point = fig_fake_point;
@@ -444,7 +449,7 @@ void fig_clear_layer(int l) {
 enum ID_type {
   ID_rreset = 1, ID_rinit, ID_rdraw, ID_rline,
   ID_rcong, ID_rclose, ID_rcircle, ID_rfgcolor, ID_rbgcolor,
-  ID_text, ID_font, ID_fake_point
+  ID_rgradient, ID_text, ID_font, ID_fake_point
 };
 
 struct cmnd_header {

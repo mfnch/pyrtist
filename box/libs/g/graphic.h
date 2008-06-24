@@ -120,6 +120,43 @@ typedef struct {
   Real *bord_dashes, bord_dash_offset;
 } DrawStyle;
 
+/** Enumeration of possible color gradient types */
+typedef enum {
+  COLOR_GRAD_TYPE_LINEAR=0,
+  COLOR_GRAD_TYPE_RADIAL
+} ColorGradType;
+
+/** Structure used to specify a color in the gradient vector (see ColorGrad)
+ */
+typedef struct {
+  Real position;
+  Color color;
+} ColorGradItem;
+
+/** Decides what should be done outside the gradient area. */
+typedef enum {
+  COLOR_GRAD_EXT_NONE=0,
+  COLOR_GRAD_EXT_REPEAT,
+  COLOR_GRAD_EXT_REFLECT,
+  COLOR_GRAD_EXT_PAD
+} ColorGradExt;
+
+/** Structure containing the specification for linear or circular gradients.
+ * the gradient can be linear or circular. In the case of linear gradients
+ * P(t) is a point in the segment point1-point2 which goes linearly from
+ * point1 to point2, for t going from 0 to 1.
+ * The color is constant in each line passing through P(t) and changes as
+ * a function of t.
+ */
+typedef struct {
+  ColorGradType type;
+  ColorGradExt extend;
+  Point point1, point2;
+  Real radius1, radius2;
+  Int num_items;
+  ColorGradItem *items;
+} ColorGrad;
+
 /** Descriptor of a graphic Window */
 typedef struct _grp_window {
   /** String which identifies the type of the window */
@@ -135,6 +172,7 @@ typedef struct _grp_window {
   void (*rcircle)(Point *ctr, Point *a, Point *b);
   void (*rfgcolor)(Color *c);
   void (*rbgcolor)(Color *c);
+  void (*rgradient)(ColorGrad *cg);
   void (*text)(Point *p, const char *text);
   void (*font)(const char *font_name, Real size);
   void (*fake_point)(Point *p);

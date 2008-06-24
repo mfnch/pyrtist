@@ -139,7 +139,7 @@ Task style_border_dash_real(VMProgram *vmp) {
   Real *r = BOX_VM_ARG_PTR(vmp, Real);
   switch(s->dash_offset_contest) {
   case -1: return buff_push(& s->dashes, r) ? Success : Failed;
-  case  0: s->dash_offset = *r; ++s->dash_offset_contest; break;
+  case  0: s->dash_offset = *r; ++s->dash_offset_contest; return Success;
   default:
     g_warning("Style.Border.Dash: Dash offset already specified: "
               "ignoring the second value!");

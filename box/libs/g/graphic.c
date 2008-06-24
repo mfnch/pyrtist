@@ -357,6 +357,7 @@ static void dummy_rfgcolor(Color *c) {
 static void dummy_rbgcolor(Color *c) {
   dummy_err(grp_win, "rbgcolor");
 }
+static void dummy_rgradient(ColorGrad *cg) {dummy_err(grp_win, "rgradient");}
 static void dummy_text(Point *p, const char *text) {
   dummy_err(grp_win, "text");
 }
@@ -387,6 +388,7 @@ void grp_window_block(GrpWindow *w) {
   w->rcircle = dummy_rcircle;
   w->rfgcolor = dummy_rfgcolor;
   w->rbgcolor = dummy_rbgcolor;
+  w->rgradient = dummy_rgradient;
   w->text = dummy_text;
   w->font = dummy_font;
   w->fake_point = dummy_fake_point;
@@ -409,6 +411,7 @@ GrpWindow grp_dummy_win = {
   dummy_rcircle,
   dummy_rfgcolor,
   dummy_rbgcolor,
+  dummy_rgradient,
   dummy_text,
   dummy_font,
   dummy_fake_point,

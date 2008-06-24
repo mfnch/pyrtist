@@ -183,6 +183,33 @@ static void wincairo_rfgcolor(Color *c) {
   cairo_set_source_rgba(cr, c->r, c->g, c->b, c->a);
 }
 
+static void wincairo_rgradient(ColorGrad *cg) {
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
+  cairo_pattern_t *p;
+  Int i;
+  WHEREAMI;
+  switch(cg->type) {
+  case COLOR_GRAD_TYPE_LINEAR:
+    p = cairo_pattern_create_linear(cg->point1.x, cg->point1.y,
+                                    cg->point2.x, cg->point2.y);
+    break;
+  case COLOR_GRAD_TYPE_RADIAL:
+    p = cairo_pattern_create_radial(cg->point1.x, cg->point1.y, cg->radius1,
+                                    cg->point2.x, cg->point2.y, cg->radius2);
+    break;
+  default:
+    g_warning("Unknown color gradient type. Ignoring gradient setting.");
+    return;
+  }
+
+  for(i=0; i<cg->num_items; i++) {
+    ColorGradItem *cgi = & cg->items[i];
+    Color *c = & cgi->color;
+    cairo_pattern_add_color_stop_rgba(p, cgi->position,
+                                      c->r, c->g, c->b, c->a);
+  }
+}
+
 static void wincairo_rline(Point *a, Point *b) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   MY_2POINTS(a, b);
@@ -369,6 +396,7 @@ static void wincairo_repair(GrpWindow *w) {
   w->rinit = wincairo_rinit;
   w->rdraw = wincairo_rdraw;
   w->rfgcolor = wincairo_rfgcolor;
+  w->rgradient = wincairo_rgradient;
   w->rline = wincairo_rline;
   w->rcong = wincairo_rcong;
   w->rclose = wincairo_rclose;
