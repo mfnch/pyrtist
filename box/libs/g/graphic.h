@@ -304,6 +304,7 @@ Point *grp_ref(Point *o, Point *v, Point *p);
 #define grp_rcircle    (grp_win->rcircle)
 #define grp_rfgcolor   (grp_win->rfgcolor)
 #define grp_rbgcolor   (grp_win->rbgcolor)
+#define grp_rgradient  (grp_win->rgradient)
 #define grp_text       (grp_win->text)
 #define grp_font       (grp_win->font)
 #define grp_fake_point (grp_win->fake_point)

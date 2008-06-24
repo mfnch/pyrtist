@@ -44,24 +44,6 @@
 #include "bb.h"
 #include "autoput.h"
 
-/* Queste funzioni sono definite nella seconda parte di questo file
- * e invece di eseguire effettivamente i comandi, provvedono soltanto
- * a memorizzarli nel layer attualmente attivo.
- */
-void fig_rreset(void);
-void fig_rinit(void);
-void fig_rdraw(DrawStyle *style);
-void fig_rline(Point *a, Point *b);
-void fig_rcong(Point *a, Point *b, Point *c);
-void fig_rcircle(Point *ctr, Point *a, Point *b);
-void fig_rclose(void);
-void fig_rfgcolor(Color *c);
-void fig_rbgcolor(Color *c);
-static void fig_text(Point *p, const char *text);
-static void fig_font(const char *font, Real size);
-static void fig_fake_point(Point *p);
-static int fig_save(const char *file_name);
-
 /*#define grp_activelayer (((struct fig_header *) grp_win->wrdep)->current)*/
 
 /* Dimensione iniziale di un layer in bytes = dimensione iniziale dello spazio
@@ -100,10 +82,148 @@ typedef struct {
   buff layer;
 } LayerHeader;
 
-/***************************************************************************************/
-/* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
-
 static char *fig_id_string = "fig";
+
+/****************************************************************************/
+/* PROCEDURE CORRISPONDENTI AI COMANDI DA "CATTURARE" */
+
+/* Nei layers le istruzioni vengono memorizzate argomento per argomento.
+ * Ogni istruzione e' costituita da un header iniziale, fatto cosi':
+ *  Nome Tipo  Descrizione
+ *------|-----|-------------------------------------
+ *  ID   long  Numero che identifica l'istruzione
+ *  dim  long  Dimesione in byte dell'istruzione (header escluso)
+ * Questo header e' poi seguito da una struttura contenente i valori
+ * degli argomenti del comando specificato.
+ */
+
+/* Enumero gli ID di tutti i comandi */
+enum ID_type {
+  ID_rreset = 1, ID_rinit, ID_rdraw, ID_rline,
+  ID_rcong, ID_rclose, ID_rcircle, ID_rfgcolor, ID_rbgcolor,
+  ID_rgradient, ID_text, ID_font, ID_fake_point
+};
+
+struct cmnd_header {
+  long  ID;
+  long  size;
+};
+
+typedef struct cmnd_header CmndHeader;
+
+typedef struct {
+  int arg_data_size;
+  void *arg_data;
+} CmndArg;
+
+/* This function is used to insert a command in the current layer */
+static void _fig_insert_command(int id, CmndArg *args) {
+  LayerHeader *lh;
+  buff *layer;
+  int total_size, i;
+  CmndHeader ch;
+
+  /* Calculate total size of arguments */
+  total_size = 0;
+  for(i=0; args[i].arg_data_size > 0; i++)
+    total_size += args[i].arg_data_size;
+
+  /* Compile command header */
+  ch.ID = id;
+  ch.size = total_size;
+
+  lh = (LayerHeader *) grp_win->ptr;
+  assert(lh->ID == 0x7279616c);  /* 0x7279616c = "layr" */
+  layer = & lh->layer;
+
+  assert(buff_mpush(layer, & ch, sizeof(CmndHeader)) == 1);
+  for (i=0; args[i].arg_data_size > 0; i++)
+    assert(buff_mpush(layer, args[i].arg_data, args[i].arg_data_size) == 1);
+
+  ++lh->numcmnd; /* Increase counter for number of commands in the layer */
+}
+
+void fig_rreset(void) {
+  CmndArg args[] = {{0, (void *) NULL}};
+  _fig_insert_command(ID_rreset, args);
+}
+
+void fig_rinit(void) {
+  CmndArg args[] = {{0, (void *) NULL}};
+  _fig_insert_command(ID_rinit, args);
+}
+
+void fig_rdraw(DrawStyle *style) {
+  CmndArg args[] = {{sizeof(DrawStyle), style},
+                    {0, (void *) NULL},
+                    {0, (void *) NULL}};
+  if (style->bord_num_dashes > 0) {
+    args[1].arg_data_size = sizeof(Real)*style->bord_num_dashes;
+    args[1].arg_data = style->bord_dashes;
+  }
+  _fig_insert_command(ID_rdraw, args);
+}
+
+void fig_rline(Point *a, Point *b) {
+  CmndArg args[] = {{sizeof(Point), a},
+                    {sizeof(Point), b},
+                    {0, (void *) NULL}};
+  _fig_insert_command(ID_rline, args);
+}
+
+void fig_rcong(Point *a, Point *b, Point *c) {
+  CmndArg args[] = {{sizeof(Point), a},
+                    {sizeof(Point), b},
+                    {sizeof(Point), c},
+                    {0, (void *) NULL}};
+  _fig_insert_command(ID_rcong, args);
+}
+
+void fig_rclose(void) {
+  CmndArg args[] = {{0, (void *) NULL}};
+  _fig_insert_command(ID_rclose, args);
+}
+
+void fig_rcircle(Point *ctr, Point *a, Point *b) {
+  CmndArg args[] = {{sizeof(Point), ctr},
+                    {sizeof(Point), a},
+                    {sizeof(Point), b},
+                    {0, (void *) NULL}};
+  _fig_insert_command(ID_rcircle, args);
+}
+
+void fig_rfgcolor(Color *c) {
+  CmndArg args[] = {{sizeof(Color), c}, {0, (void *) NULL}};
+  _fig_insert_command(ID_rfgcolor, args);
+}
+
+void fig_rbgcolor(Color *c) {
+  CmndArg args[] = {{sizeof(Color), c}, {0, (void *) NULL}};
+  _fig_insert_command(ID_rbgcolor, args);
+}
+
+static void fig_text(Point *p, const char *text) {
+  Int text_size = strlen(text);
+  CmndArg args[] = {{sizeof(Point), p},
+                    {sizeof(Int), & text_size},
+                    {text_size+1, (void *) text},
+                    {0, (void *) NULL}};
+  _fig_insert_command(ID_text, args);
+}
+
+static void fig_font(const char *font, Real size) {
+  Int font_size = strlen(font);
+  CmndArg args[] = {{sizeof(Real), & size},
+                    {sizeof(Int), & font_size},
+                    {font_size+1, (void *) font},
+                    {0, (void *) NULL}};
+  _fig_insert_command(ID_font, args);
+}
+
+static void fig_fake_point(Point *p) {
+  CmndArg args[] = {{sizeof(Point), p}, {0, (void *) NULL}};
+  _fig_insert_command(ID_fake_point, args);
+}
 
 static void fig_close_win(void) {
   GrpWindow *w = grp_win;
@@ -117,7 +237,46 @@ static void fig_close_win(void) {
 }
 
 static void fig_rgradient(ColorGrad *cg) {
+  CmndArg args[] = {{sizeof(ColorGrad), cg},
+                    {0, (void *) NULL},
+                    {0, (void *) NULL}};
+  if (cg->num_items > 0) {
+    args[1].arg_data_size = sizeof(ColorGradItem)*cg->num_items;
+    args[1].arg_data = cg->items;
+  }
+  _fig_insert_command(ID_rgradient, args);
+}
 
+static int fig_save(const char *file_name) {
+  char *out_type = "eps";
+  GrpWindowPlan plan;
+
+  enum {EXT_EPS=0, EXT_BMP, EXT_PNG, EXT_PDF, EXT_PS, EXT_SVG, EXT_NUM};
+  char *ext[] = {"eps", "bmp", "png", "pdf", "ps", "svg", (char *) NULL};
+  switch(file_extension(ext, file_name)) {
+  case EXT_EPS: out_type = "eps"; break;
+  case EXT_BMP: out_type = "bm8"; break;
+  case EXT_PNG: out_type = "argb32"; break;
+  case EXT_PDF: out_type = "pdf"; break;
+  case  EXT_PS: out_type = "cairo:ps"; break;
+  case EXT_SVG: out_type = "svg"; break;
+  default:
+    g_warning("Unrecognized extension in file name: using eps file format!");
+    out_type = "eps"; break;
+  }
+
+  plan.file_name = (char *) file_name;
+  plan.have.file_name = 1;
+  plan.type = grp_window_type_from_string(out_type);
+  plan.have.type = 1;
+  assert(plan.type >= 0);
+  plan.have.size = 0;
+  plan.have.origin = 0;
+  plan.resolution.x = plan.resolution.y = 100.0/grp_mmperinch; /* ~ 100 dpi */
+  plan.resolution.x = plan.resolution.y = 2.7852103697407564*1024/640; /* temporary */
+  plan.have.resolution = 1;
+  plan.have.num_layers = 0;
+  return fig_save_fig(grp_win, & plan);
 }
 
 /** Set the default methods to the gr1b window */
@@ -140,6 +299,7 @@ static void fig_repair(GrpWindow *w) {
   w->close_win = fig_close_win;
 }
 
+/****************************************************************************/
 /* DESCRIZIONE: Apre una finestra di tipo "fig", che consiste essenzialmente
  *  in un "registratore" di comandi grafici. Infatti ogni comando che
  *  la finestra riceve viene memorizzato in diversi "contenitori": i layer.
@@ -433,147 +593,6 @@ void fig_clear_layer(int l) {
 }
 
 /***************************************************************************************/
-/* PROCEDURE CORRISPONDENTI AI COMANDI DA "CATTURARE" */
-
-/* Nei layers le istruzioni vengono memorizzate argomento per argomento.
- * Ogni istruzione e' costituita da un header iniziale, fatto cosi':
- *  Nome Tipo  Descrizione
- *------|-----|-------------------------------------
- *  ID   long  Numero che identifica l'istruzione
- *  dim  long  Dimesione in byte dell'istruzione (header escluso)
- * Questo header e' poi seguito da una struttura contenente i valori
- * degli argomenti del comando specificato.
- */
-
-/* Enumero gli ID di tutti i comandi */
-enum ID_type {
-  ID_rreset = 1, ID_rinit, ID_rdraw, ID_rline,
-  ID_rcong, ID_rclose, ID_rcircle, ID_rfgcolor, ID_rbgcolor,
-  ID_rgradient, ID_text, ID_font, ID_fake_point
-};
-
-struct cmnd_header {
-  long  ID;
-  long  size;
-};
-
-typedef struct cmnd_header CmndHeader;
-
-typedef struct {
-  int arg_data_size;
-  void *arg_data;
-} CmndArg;
-
-/* This function is used to insert a command in the current layer */
-static void _fig_insert_command(int id, CmndArg *args) {
-  LayerHeader *lh;
-  buff *layer;
-  int total_size, i;
-  CmndHeader ch;
-
-  /* Calculate total size of arguments */
-  total_size = 0;
-  for(i=0; args[i].arg_data_size > 0; i++)
-    total_size += args[i].arg_data_size;
-
-  /* Compile command header */
-  ch.ID = id;
-  ch.size = total_size;
-
-  lh = (LayerHeader *) grp_win->ptr;
-  assert(lh->ID == 0x7279616c);  /* 0x7279616c = "layr" */
-  layer = & lh->layer;
-
-  assert(buff_mpush(layer, & ch, sizeof(CmndHeader)) == 1);
-  for (i=0; args[i].arg_data_size > 0; i++)
-    assert(buff_mpush(layer, args[i].arg_data, args[i].arg_data_size) == 1);
-
-  ++lh->numcmnd; /* Increase counter for number of commands in the layer */
-}
-
-void fig_rreset(void) {
-  CmndArg args[] = {{0, (void *) NULL}};
-  _fig_insert_command(ID_rreset, args);
-}
-
-void fig_rinit(void) {
-  CmndArg args[] = {{0, (void *) NULL}};
-  _fig_insert_command(ID_rinit, args);
-}
-
-void fig_rdraw(DrawStyle *style) {
-  CmndArg args[] = {{sizeof(DrawStyle), style},
-                    {0, (void *) NULL},
-                    {0, (void *) NULL}};
-  if (style->bord_num_dashes > 0) {
-    args[1].arg_data_size = sizeof(Real)*style->bord_num_dashes;
-    args[1].arg_data = style->bord_dashes;
-  }
-  _fig_insert_command(ID_rdraw, args);
-}
-
-void fig_rline(Point *a, Point *b) {
-  CmndArg args[] = {{sizeof(Point), a},
-                    {sizeof(Point), b},
-                    {0, (void *) NULL}};
-  _fig_insert_command(ID_rline, args);
-}
-
-void fig_rcong(Point *a, Point *b, Point *c) {
-  CmndArg args[] = {{sizeof(Point), a},
-                    {sizeof(Point), b},
-                    {sizeof(Point), c},
-                    {0, (void *) NULL}};
-  _fig_insert_command(ID_rcong, args);
-}
-
-void fig_rclose(void) {
-  CmndArg args[] = {{0, (void *) NULL}};
-  _fig_insert_command(ID_rclose, args);
-}
-
-void fig_rcircle(Point *ctr, Point *a, Point *b) {
-  CmndArg args[] = {{sizeof(Point), ctr},
-                    {sizeof(Point), a},
-                    {sizeof(Point), b},
-                    {0, (void *) NULL}};
-  _fig_insert_command(ID_rcircle, args);
-}
-
-void fig_rfgcolor(Color *c) {
-  CmndArg args[] = {{sizeof(Color), c}, {0, (void *) NULL}};
-  _fig_insert_command(ID_rfgcolor, args);
-}
-
-void fig_rbgcolor(Color *c) {
-  CmndArg args[] = {{sizeof(Color), c}, {0, (void *) NULL}};
-  _fig_insert_command(ID_rbgcolor, args);
-}
-
-static void fig_text(Point *p, const char *text) {
-  Int text_size = strlen(text);
-  CmndArg args[] = {{sizeof(Point), p},
-                    {sizeof(Int), & text_size},
-                    {text_size+1, (void *) text},
-                    {0, (void *) NULL}};
-  _fig_insert_command(ID_text, args);
-}
-
-static void fig_font(const char *font, Real size) {
-  Int font_size = strlen(font);
-  CmndArg args[] = {{sizeof(Real), & size},
-                    {sizeof(Int), & font_size},
-                    {font_size+1, (void *) font},
-                    {0, (void *) NULL}};
-  _fig_insert_command(ID_font, args);
-}
-
-static void fig_fake_point(Point *p) {
-  CmndArg args[] = {{sizeof(Point), p}, {0, (void *) NULL}};
-  _fig_insert_command(ID_fake_point, args);
-}
-
-/***************************************************************************************/
 /* PROCEDURE PER DISEGNARE I LAYER SULLA FINESTRA ATTIVA */
 
 /* Matrice usata nella trasformazione lineare di fig_ltransform */
@@ -706,6 +725,12 @@ void fig_draw_layer(grp_window *source, int l) {
     case ID_rbgcolor:
       grp_rbgcolor((Color *) cmnd.ptr); break;
 
+    case ID_rgradient:
+      ((ColorGrad *) cmnd.ptr)->items =
+        (ColorGradItem *) (cmnd.ptr + sizeof(ColorGrad));
+      grp_rgradient((ColorGrad *) cmnd.ptr);
+      break;
+
     case ID_text:
       {
         void *ptr = cmnd.ptr;
@@ -805,38 +830,6 @@ void fig_draw_fig(grp_window *source) {
   }
 
   PRNMSG("Ok!\n");
-}
-
-static int fig_save(const char *file_name) {
-  char *out_type = "eps";
-  GrpWindowPlan plan;
-
-  enum {EXT_EPS=0, EXT_BMP, EXT_PNG, EXT_PDF, EXT_PS, EXT_SVG, EXT_NUM};
-  char *ext[] = {"eps", "bmp", "png", "pdf", "ps", "svg", (char *) NULL};
-  switch(file_extension(ext, file_name)) {
-  case EXT_EPS: out_type = "eps"; break;
-  case EXT_BMP: out_type = "bm8"; break;
-  case EXT_PNG: out_type = "argb32"; break;
-  case EXT_PDF: out_type = "pdf"; break;
-  case  EXT_PS: out_type = "cairo:ps"; break;
-  case EXT_SVG: out_type = "svg"; break;
-  default:
-    g_warning("Unrecognized extension in file name: using eps file format!");
-    out_type = "eps"; break;
-  }
-
-  plan.file_name = (char *) file_name;
-  plan.have.file_name = 1;
-  plan.type = grp_window_type_from_string(out_type);
-  plan.have.type = 1;
-  assert(plan.type >= 0);
-  plan.have.size = 0;
-  plan.have.origin = 0;
-  plan.resolution.x = plan.resolution.y = 100.0/grp_mmperinch; /* ~ 100 dpi */
-  plan.resolution.x = plan.resolution.y = 2.7852103697407564*1024/640; /* temporary */
-  plan.have.resolution = 1;
-  plan.have.num_layers = 0;
-  return fig_save_fig(grp_win, & plan);
 }
 
 int fig_save_fig(GrpWindow *figure, GrpWindowPlan *plan) {

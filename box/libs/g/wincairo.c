@@ -184,7 +184,6 @@ static void wincairo_rfgcolor(Color *c) {
 }
 
 static void wincairo_rgradient(ColorGrad *cg) {
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
   cairo_pattern_t *p;
   Int i;
   WHEREAMI;
