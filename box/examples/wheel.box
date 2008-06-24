@@ -20,6 +20,7 @@ Wheel@@Window[
   [
     angle = delta_angle*j
     c = Color[HSV[.h=angle*360.0/(2*pi), .v = .s = 1.0], .a=1.0]
+    \ $$::[Style[.Border[0.2, c]]]
     i = 0
     \ $$::.Poly[r*Vec[angle], angle += dangle, For[++i <= di], (0, 0), c]
     For[++j < n]
@@ -27,7 +28,7 @@ Wheel@@Window[
 ]
 
 w = Window[][
-  Wheel[50, .Slices[40]]
+  Wheel[40, .Slices[500]]
   .Save["wheel.png"]
 ]
 

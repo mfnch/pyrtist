@@ -1,20 +1,17 @@
 include "g"
 
-PythagTree = (Int level
-              Point p1, p2
-              Real xmid, h)
+PythagTree = (Int level, Point p1, p2, Real xmid, h)
 
 PythagTree@@Window[
   xmid = $.xmid, h = $.h, level = $.level, p1 = $.p1, p2 = $.p2
   d = 1e-10
 
-  brown = Color[(0.4, 0.2, 0.0)]
-  green = Color[(0.0, 0.8, 0.0)]
-  Color[brown, If[level < 1], green]
+  g = 1.0/(level+1), b = 1 - g
+  Color[(0.5*b, g, 0)]
 
   side = PointList[p1, p2]
   p = .Poly[side.Get[1], side.Get[2-d], side.Get[(2-d, 1)], side.Get[(1, 1)]]
-  t = .Poly[p.Get[3], p.Get[4], p.Get[(3+xmid, -h)]]
+  t = PointList[p.Get[3], p.Get[4], p.Get[(3+xmid, -h)]]
 
   pt1 = PythagTree[.level = level-1, .xmid = xmid, .h = h
                    .p1 = t.Get[3], .p2 = t.Get[1]]
@@ -25,9 +22,7 @@ PythagTree@@Window[
 ]
 
 w = Window[][
-  PythagTree[.level = 8, .xmid = 0.5, .h = 0.4
-             .p1 = (0, 0), .p2 = (50, 0)]
-
-  .Save["fractree.eps"]
+  PythagTree[.level = 11, .xmid = 0.6, .h = 0.45, .p2 = (0, 0), .p1 = (40, 0)]
+  .Save["fractree.png"]
 ]
 
