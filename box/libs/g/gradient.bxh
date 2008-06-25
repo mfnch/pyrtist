@@ -1,8 +1,16 @@
 // Interface to Gradient
 
 Gradient = ++Ptr
+([)@Gradient ? "gradient_begin"
+(\)@Gradient ? "gradient_destroy"
 
-P@Gradient ? "gradient_point"
+Gradient.Line = Void
+P@Gradient.Line ? "gradient_line_point"
+
+Gradient.Circle = Void
+P@Gradient.Circle ? "gradient_circle_point"
+R@Gradient.Circle ? "gradient_circle_real"
+(;)@Gradient.Circle ? "gradient_circle_pause"
+
 R@Gradient ? "gradient_real"
 Color@Gradient ? "gradient_color"
-()Char@Gradient ? "gradient_string"

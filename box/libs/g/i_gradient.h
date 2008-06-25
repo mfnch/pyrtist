@@ -21,4 +21,22 @@
 
 #  define _I_GRADIENT_H
 
+#  include "types.h"
+#  include "buffer.h"
+#  include "graphic.h"
+
+typedef struct {
+  struct {
+    unsigned int type : 1;
+    unsigned int point1 : 1;
+    unsigned int point2 : 1;
+    unsigned int pause : 1;
+
+  } got;
+  ColorGrad gradient;
+  buff items;
+} Gradient;
+
+typedef Gradient *GradientPtr;
+
 #endif
