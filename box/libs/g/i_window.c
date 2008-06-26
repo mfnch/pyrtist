@@ -33,6 +33,7 @@
 #include "i_line.h"
 #include "i_put.h"
 #include "i_style.h"
+#include "i_gradient.h"
 
 /*#define DEBUG*/
 
@@ -103,13 +104,24 @@ Task window_begin(VMProgram *vmp) {
 }
 
 Task window_color(VMProgram *vmp) {
-  WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
-  Window *w = (Window *) wp;
-  Color *c = BOX_VM_ARGPTR1(vmp, Color);
-  if (w->window != (grp_window *) NULL) {
-    grp_window *cur_win = grp_win;
+  Window *w = BOX_VM_THIS(vmp, WindowPtr);
+  Color *c = BOX_VM_ARG1_PTR(vmp, Color);
+  if (w->window != (GrpWindow *) NULL) {
+    GrpWindow *cur_win = grp_win;
     grp_win = w->window;
     grp_rfgcolor(c);
+    grp_win = cur_win;
+  }
+  return Success;
+}
+
+Task window_gradient(VMProgram *vmp) {
+  Window *w = BOX_VM_THIS(vmp, WindowPtr);
+  Gradient *g = BOX_VM_ARG1_PTR(vmp, Gradient);
+  if (w->window != (GrpWindow *) NULL) {
+    GrpWindow *cur_win = grp_win;
+    grp_win = w->window;
+    grp_rgradient(& g->gradient);
     grp_win = cur_win;
   }
   return Success;

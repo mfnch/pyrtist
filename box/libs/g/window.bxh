@@ -8,6 +8,7 @@ Window = ++Ptr
 ()Char@Window ? "window_str"
 P@Window ? "window_size"
 Color@&Window ? "window_color"
+Gradient@&Window ? "window_gradient"
 Style@&Window ? "window_style"
 
 Window.Save = Void

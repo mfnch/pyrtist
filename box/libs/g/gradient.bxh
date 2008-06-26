@@ -16,3 +16,4 @@ R@Gradient.Circle ? "gradient_circle_real"
 R@Gradient ? "gradient_real"
 Color@Gradient ? "gradient_color"
 
+Gradient@Print ? "print_gradient"

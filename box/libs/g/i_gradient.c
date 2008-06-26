@@ -18,6 +18,7 @@
  ****************************************************************************/
 
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "types.h"
 #include "virtmach.h"
@@ -36,6 +37,8 @@ Task gradient_begin(VMProgram *vmp) {
   g->got.point1 = 0;
   g->got.point2 = 0;
   g->got.pause = 0;
+  g->got.pos = 0;
+  g->this_item.position = -1.0;
   return Success;
 }
 
@@ -71,7 +74,8 @@ Task gradient_line_point(VMProgram *vmp) {
     return Success;
 
   } else {
-    g_warning("Gradient.Line takes just two points!");
+    g_warning("Gradient.Line takes just two points: ignoring other "
+              "given points!");
     return Success;
   }
 }
@@ -168,9 +172,86 @@ Task gradient_real(VMProgram *vmp) {
 
 Task gradient_end(VMProgram *vmp) {
   Gradient *g = BOX_VM_THIS(vmp, GradientPtr);
-  ColorGradItem *cgi = buff_firstitemptr(& g->items, ColorGradItem);
+  ColorGradItem *cgi;
   Int n = buff_numitems(& g->items);
 
+  if (n < 2) {
+    g_error("(])@Gradient: Incomplete gradient specification: "
+            "Gradient should get at least two colors!");
+    return Failed;
+  }
+
+  if (!g->got.type) {
+    g_error("(])@Gradient: Incomplete gradient specification: "
+            "You should use Gradient.Line or Gradient.Circle!");
+    return Failed;
+  }
+
+  if (n == 1) {
+    cgi = buff_firstitemptr(& g->items, ColorGradItem);
+    cgi->position = 0.5;
+
+  } else {
+    Int i;
+    cgi = buff_lastitemptr(& g->items, ColorGradItem);
+    if (cgi->position < 0.0) cgi->position = 1.0;
+    cgi = buff_firstitemptr(& g->items, ColorGradItem);
+    if (cgi->position < 0.0) cgi->position = 0.0;
+    for(i = 1; i < n;) {
+      Int a;
+      Real pos_a, delta_pos;
+      for(; i < n; i++) if (cgi[i].position < 0.0) break;
+      a = i;
+      for(; i < n; i++) if (cgi[i].position >= 0.0) break;
+      pos_a = cgi[a-1].position;
+      delta_pos = (cgi[i].position - pos_a)/(i - a + 1);
+      for(; a < i; a++)
+        cgi[a].position = (pos_a += delta_pos);
+    }
+  }
+  g->gradient.num_items = n;
+  g->gradient.items = buff_firstitemptr(& g->items, ColorGradItem);
+  return Success;
+}
+
+Task print_gradient(VMProgram *vmp) {
+  Gradient *g = BOX_VM_THIS(vmp, GradientPtr);
+  ColorGradItem *cgi = g->gradient.items;
+  Int n = g->gradient.num_items, i;
+  FILE *out = stdout;
+
+  fprintf(out, "Gradient[");
+  if (g->got.type) {
+    if (g->gradient.type == COLOR_GRAD_TYPE_LINEAR) {
+      fprintf(out, ".Line[");
+      if (g->got.point1)
+        fprintf(out, "("SReal", "SReal")",
+                g->gradient.point1.x, g->gradient.point1.y);
+      if (g->got.point2)
+        fprintf(out, ", ("SReal", "SReal")",
+                g->gradient.point2.x, g->gradient.point2.y);
+      fprintf(out, "]");
+
+    } else {
+      fprintf(out, ".Circle[");
+      if (g->got.point1)
+        fprintf(out, "("SReal", "SReal"), "SReal,
+                g->gradient.point1.x, g->gradient.point1.y,
+                g->gradient.radius1);
+      if (g->got.point2)
+        fprintf(out, "; ("SReal", "SReal"), "SReal,
+                g->gradient.point2.x, g->gradient.point2.y,
+                g->gradient.radius2);
+      fprintf(out, "]");
+    }
+  }
+
+  for(i = 0; i < n; i++) {
+    fprintf(out, ", "SReal", Color["SReal", "SReal", "SReal", "SReal"]",
+            cgi[i].position, cgi[i].color.r, cgi[i].color.g,
+            cgi[i].color.b, cgi[i].color.a);
+  }
+  fprintf(out, "]");
   return Success;
 }
 
