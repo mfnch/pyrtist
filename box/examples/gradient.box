@@ -1,0 +1,10 @@
+include "g"
+g = Gradient[.Line[(0, 0), (50, 50)], color.red, color.green, color.blue]
+Print[g;]
+
+w = Window[][
+  g
+  \ .Circle[(50, 50), 50]
+  .Save["gradient.png"]
+]
+
