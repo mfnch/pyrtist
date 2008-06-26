@@ -30,13 +30,18 @@ typedef struct {
     unsigned int type : 1;
     unsigned int point1 : 1;
     unsigned int point2 : 1;
+    unsigned int radius1: 1;
+    unsigned int radius2: 1;
     unsigned int pause : 1;
-
+    unsigned int pos : 1;
   } got;
+
   ColorGrad gradient;
+  ColorGradItem this_item;
   buff items;
 } Gradient;
 
 typedef Gradient *GradientPtr;
 
 #endif
+

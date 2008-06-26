@@ -2,6 +2,7 @@
 
 Gradient = ++Ptr
 ([)@Gradient ? "gradient_begin"
+(])@Gradient ? "gradient_end"
 (\)@Gradient ? "gradient_destroy"
 
 Gradient.Line = Void
@@ -14,3 +15,4 @@ R@Gradient.Circle ? "gradient_circle_real"
 
 R@Gradient ? "gradient_real"
 Color@Gradient ? "gradient_color"
+
