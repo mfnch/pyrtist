@@ -184,6 +184,7 @@ static void wincairo_rfgcolor(Color *c) {
 }
 
 static void wincairo_rgradient(ColorGrad *cg) {
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
   cairo_pattern_t *p;
   Int i;
   WHEREAMI;
@@ -200,13 +201,18 @@ static void wincairo_rgradient(ColorGrad *cg) {
     g_warning("Unknown color gradient type. Ignoring gradient setting.");
     return;
   }
-
+  
   for(i=0; i<cg->num_items; i++) {
     ColorGradItem *cgi = & cg->items[i];
     Color *c = & cgi->color;
     cairo_pattern_add_color_stop_rgba(p, cgi->position,
                                       c->r, c->g, c->b, c->a);
+    printf("cairo_pattern_add_color_stop_rgba: pos="SReal
+           ", color="SReal","SReal","SReal","SReal"\n",
+           cgi->position,c->r, c->g, c->b, c->a);
   }
+  cairo_set_source(cr, p);
+  cairo_pattern_destroy(p);
 }
 
 static void wincairo_rline(Point *a, Point *b) {

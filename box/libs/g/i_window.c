@@ -117,7 +117,7 @@ Task window_color(VMProgram *vmp) {
 
 Task window_gradient(VMProgram *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
-  Gradient *g = BOX_VM_ARG1_PTR(vmp, Gradient);
+  Gradient *g = BOX_VM_ARG1(vmp, GradientPtr);
   if (w->window != (GrpWindow *) NULL) {
     GrpWindow *cur_win = grp_win;
     grp_win = w->window;

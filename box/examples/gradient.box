@@ -1,10 +1,11 @@
 include "g"
-g = Gradient[.Line[(0, 0), (50, 50)], color.red, color.green, color.blue]
+g = Gradient[.Line[(0, 0), (50, 50)], 1, color.red, 0.5, color.green, 0, color.blue]
 Print[g;]
 
 w = Window[][
   g
-  \ .Circle[(50, 50), 50]
+  \ .Circle[(0, 0), 50]
   .Save["gradient.png"]
+  .Save["gradient.eps"]
 ]
 
