@@ -669,6 +669,7 @@ void fig_draw_layer(grp_window *source, int l) {
      */
     int cmnd_header_size;
     Point tp[3];
+    ColorGrad cg;
 
     cmnd.ptr = (void *) buff_ptr(layer) + (long) ip;
 
@@ -726,9 +727,11 @@ void fig_draw_layer(grp_window *source, int l) {
       grp_rbgcolor((Color *) cmnd.ptr); break;
 
     case ID_rgradient:
-      ((ColorGrad *) cmnd.ptr)->items =
-        (ColorGradItem *) (cmnd.ptr + sizeof(ColorGrad));
-      grp_rgradient((ColorGrad *) cmnd.ptr);
+      cg = *((ColorGrad *) cmnd.ptr);
+      cg.items = (ColorGradItem *) (cmnd.ptr + sizeof(ColorGrad));
+      fig_ltransform(& cg.point1, 1);
+      fig_ltransform(& cg.point2, 1);
+      grp_rgradient(& cg);
       break;
 
     case ID_text:

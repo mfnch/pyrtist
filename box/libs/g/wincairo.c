@@ -67,7 +67,7 @@ static int same_points(Point *a, Point *b) {
   return (fabs(a->x - b->x) < 1e-10 && fabs(a->y - b->y) < 1e-10);
 }
 
-static void my_point(Point *in, Point *out) {
+static void my_point(Point *out, Point *in) {
   GrpWindow *w = grp_win;
   WHEREAMI;
   out->x = (in->x - w->ltx)*w->resx;
@@ -76,16 +76,16 @@ static void my_point(Point *in, Point *out) {
 
 /* Macros used to scale the point coordinates */
 #define MY_POINT(a) \
-  Point my_a; my_point((a), & my_a); (a) = & my_a
+  Point my_a; my_point(& my_a, (a)); (a) = & my_a
 
 #define MY_2POINTS(a, b) \
   Point my_a, my_b; \
-  my_point((a), & my_a); my_point((b), & my_b); \
+  my_point(& my_a, (a)); my_point(& my_b, (b)); \
   (a) = & my_a; (b) = & my_b
 
 #define MY_3POINTS(a, b, c) \
   Point my_a, my_b, my_c; \
-  my_point((a), & my_a); my_point((b), & my_b);  my_point((c), & my_c); \
+  my_point(& my_a, (a)); my_point(& my_b, (b));  my_point(& my_c, (c)); \
   (a) = & my_a; (b) = & my_b; (c) = & my_c
 
 /* This is broken, but is required for fonts (fonts support is broken as well
@@ -186,30 +186,31 @@ static void wincairo_rfgcolor(Color *c) {
 static void wincairo_rgradient(ColorGrad *cg) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   cairo_pattern_t *p;
+  Point p1, p2;
   Int i;
   WHEREAMI;
   switch(cg->type) {
   case COLOR_GRAD_TYPE_LINEAR:
-    p = cairo_pattern_create_linear(cg->point1.x, cg->point1.y,
-                                    cg->point2.x, cg->point2.y);
+    my_point(& p1, & cg->point1);
+    my_point(& p2, & cg->point2);
+    p = cairo_pattern_create_linear(p1.x, p1.y, p2.x, p2.y);
     break;
   case COLOR_GRAD_TYPE_RADIAL:
-    p = cairo_pattern_create_radial(cg->point1.x, cg->point1.y, cg->radius1,
-                                    cg->point2.x, cg->point2.y, cg->radius2);
+    my_point(& p1, & cg->point1);
+    my_point(& p2, & cg->point2);
+    p = cairo_pattern_create_radial(p1.x, p1.y, cg->radius1,
+                                    p2.x, p2.y, cg->radius2);
     break;
   default:
     g_warning("Unknown color gradient type. Ignoring gradient setting.");
     return;
   }
-  
+
   for(i=0; i<cg->num_items; i++) {
     ColorGradItem *cgi = & cg->items[i];
     Color *c = & cgi->color;
     cairo_pattern_add_color_stop_rgba(p, cgi->position,
                                       c->r, c->g, c->b, c->a);
-    printf("cairo_pattern_add_color_stop_rgba: pos="SReal
-           ", color="SReal","SReal","SReal","SReal"\n",
-           cgi->position,c->r, c->g, c->b, c->a);
   }
   cairo_set_source(cr, p);
   cairo_pattern_destroy(p);
