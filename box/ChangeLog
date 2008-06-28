@@ -1,7 +1,13 @@
 Change log (recent come first)
 
-Next:
-  * Can now express color in HSV (besides RGB) and convert RGB<-->HSV;
+28 June 2008: Filling with linear/radial color gradients (Gradient[]) 
+  * Can now express color in HSV (besides RGB) and convert RGB<-->HSV.
+  * Can now fill objects using linear or radial color gradients
+    (Gradient[] can be used for the purpose).
+  * Color[] defines .r=.g=.b=0 and .a=1 by default. Opaque red can be
+    defined with Color[.r=1]. Similar behaviour for HSV[].
+    They also both accept a triple (for opaque colors) or quadruple
+    of reals (for translucent colors).
 
 21 June 2008: Style object now allow tracing borders
   * We can now draw polygons with border, controlling the join style
