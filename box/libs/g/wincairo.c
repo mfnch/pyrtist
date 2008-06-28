@@ -206,6 +206,7 @@ static void wincairo_rgradient(ColorGrad *cg) {
     return;
   }
 
+  cairo_pattern_set_extend(p, cg->extend);
   for(i=0; i<cg->num_items; i++) {
     ColorGradItem *cgi = & cg->items[i];
     Color *c = & cgi->color;
@@ -418,6 +419,7 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
   cairo_status_t status;
   WT wt;
   int numptx, numpty;
+  int paint_background = 0;
   enum {WC_NONE=-1, WC_IMAGE=1, WC_STREAM} win_class;
   cairo_format_t format;
   typedef cairo_surface_t *(*StreamSurfaceCreate)(const char *filename,
@@ -452,6 +454,7 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
   case WT_RGB24:
     win_class = WC_IMAGE;
     format = CAIRO_FORMAT_RGB24;
+    paint_background = 1;
     break;
 
   case WT_ARGB32:
@@ -602,6 +605,15 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
     g_error("Cannot create Cairo context:");
     g_error(cairo_status_to_string(status));
     return (GrpWindow *) NULL;
+  }
+
+  /* If we need white background, we paint the window accordingly. */
+  if (paint_background) {
+    cairo_save(cr);
+    cairo_rectangle(cr, 0.0, 0.0, numptx, numpty);
+    cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
+    cairo_fill(cr);
+    cairo_restore(cr);
   }
 
   w->ptr = (void *) cr;

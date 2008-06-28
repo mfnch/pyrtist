@@ -5,6 +5,7 @@ c2 = Color[.r=.g=.b=0.7]
 c3 = Color[.r=.g=.b=0.8]
 c4 = Color[.r=.g=0.0, .b=0.8]
 c5 = Color[.r=.g=0.6, .b=1.0]
+c6 = Color[color.black]
 
 // Wheel Radius, Angle of rotation, Hinge radius and Position
 wr = 8.0, wa = Real, wh = 6.0, whp = wh*Vec[wa]
@@ -24,26 +25,28 @@ crl += vt/cw
 
 // WindoW
 ww = Window[][
+  Style[.Fill[";"]]
   php = (pp-0.5*pw, 0)
   r = wr - wh
   rs = wr*0.3
   \ .Circle[(0, 0), wr, c3; rs, c1; rs-0.2, c3]
   \ .Line[v = rs*Vec[wa], c1, 0.2, -v, 0.2, v; (v = (-v.y, v.x)), -v]
   \ .Circle[(0, 0), c2, 0.5*r]
-  \ .Poly[c5, (pp, pr), (cx2, pr), (cx2, -pr), (pp, -pr)]
   \ .Poly[(pp-pw, pr), (pp, pr), (pp, -pr), (pp-pw, -pr), c2]
   \ .Line[line.sharp, 0.5, (pp-pw, pr), (pp, pr), (pp, -pr), (pp-pw, -pr), c1]
   \ .Line[whp, php, c1]
   \ .Circle[whp, 0.8*r, c1; php; c2, 0.3*r; whp]
-  \ .Poly[c5, (cpx, cpy+cll), cp, (cpx+cw, cpy), (cpx+cw, cpy+cll)]
+  Gradient[.Line[(0, cpy+cll), (0, cpy+cll-ch)], c5, c4]
+  \ .Poly[(cpx, cpy+cll), cp, (cpx+cw, cpy), (cpx+cw, cpy+cll)]
+  Gradient[.Line[(0, cpy+crl), (0, cpy+crl-ch)], c5, c4]
   \ .Poly[(cpx+cw, cpy+crl), (cpx+cw, cpy), (cpx+cw2, cpy), (cpx+cw2, cpy+crl)]
-  \ .Line[c4, (cx1, pr+0.5), (cx2, pr+0.5), (cx2, -pr-0.5), (cx1, -pr-0.5);
+  \ .Line[c6, (cx1, pr+0.5), (cx2, pr+0.5), (cx2, -pr-0.5), (cx1, -pr-0.5);
           (cpx, cpy+ch), cp, (cpx+cw2, cpy), (cpx+cw2, cpy+ch);
           (cpx+cw, cpy), (cpx+cw, cpy+ch)]
-  .Save["machine.eps"]
+//   .Save["machine.png"]
 ]
 
-\ Window["bm8", (55, 45), .Res[(5, 5)]][
-  \ .Put[ww, (10, 35), .Scale[(1, -1)]],
-  .Save["machine.bmp"]
+\ Window["rgb24", (55, 45), .Res[(2, 2)]][
+  \ .Put[ww, (10, 35), .Scale[(1, -1)]]
+  .Save["machine.png"]
 ]

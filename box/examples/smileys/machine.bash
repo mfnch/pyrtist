@@ -21,7 +21,7 @@ EOF
 
   cmnd box -l g $TMP_FILE
   NEW_FILE="pump_$i.gif"
-  cmnd convert machine.bmp -scale 100x100 $NEW_FILE
+  cmnd convert machine.png $NEW_FILE
   FILE_LIST="$FILE_LIST $NEW_FILE"
 done
 

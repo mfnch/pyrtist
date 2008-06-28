@@ -39,6 +39,7 @@ Task gradient_begin(VMProgram *vmp) {
   g->got.pause = 0;
   g->got.pos = 0;
   g->this_item.position = -1.0;
+  g->gradient.extend = COLOR_GRAD_EXT_PAD;
   return Success;
 }
 
@@ -56,6 +57,27 @@ static Task set_gradient_type(Gradient *g, ColorGradType t) {
   }
   g->got.type = 1;
   g->gradient.type = t;
+  return Success;
+}
+
+Task gradient_string(VMProgram *vmp) {
+  Gradient *g = BOX_VM_THIS(vmp, GradientPtr);
+  char *ext_str = BOX_VM_ARG1_PTR(vmp, char);
+  char *ext_styles[] = {"single", "repeated", "repeat",
+                        "reflected", "reflect",
+                        "padded", "pad", (char *) NULL};
+  ColorGradExt es[] = {COLOR_GRAD_EXT_NONE,
+                       COLOR_GRAD_EXT_REPEAT, COLOR_GRAD_EXT_REPEAT,
+                       COLOR_GRAD_EXT_REFLECT, COLOR_GRAD_EXT_REFLECT,
+                       COLOR_GRAD_EXT_PAD, COLOR_GRAD_EXT_PAD};
+  int index = g_string_find_in_list(ext_styles, ext_str);
+  if (index < 0) {
+    printf("Invalid extend style for color gradient. Available styles are: ");
+    g_string_list_print(stdout, ext_styles, ", ");
+    printf(".\n");
+    return Failed;
+  }
+  g->gradient.extend = es[index];
   return Success;
 }
 

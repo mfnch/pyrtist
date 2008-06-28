@@ -1,7 +1,6 @@
 include "g"
 i = 1
-g = Gradient[.Line[(-50, -50), (50, 50)],
-             color.red, color.yellow, color.green, color.cyan, color.blue]
+g = Gradient[.Line[(-50, -50), (0, 0)], color.red, color.yellow]
 Print[g;]
 
 w = Window[][
