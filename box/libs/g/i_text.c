@@ -28,6 +28,7 @@
 #include "i_window.h"
 #include "i_style.h"
 #include "i_text.h"
+#include "i_gradient.h"
 
 Task window_text_begin(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
@@ -42,6 +43,17 @@ Task window_text_begin(VMProgram *vmp) {
 
   g_style_new(& w->text.style, & w->style);
   return Success;
+}
+
+Task window_text_color(VMProgram *vmp) {
+  SUBTYPE_OF_WINDOW(vmp, w);
+  w->text.color = BOX_VM_ARG1(vmp, Color);
+  w->text.got.color = 1;
+  return Success;
+}
+
+Task window_text_gradient(VMProgram *vmp) {
+  return x_gradient(vmp);
 }
 
 static Task _sentence_end(Window *w, int *wrote_text) {

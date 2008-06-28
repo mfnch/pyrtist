@@ -5,9 +5,7 @@ g2 = Gradient[.Circle[(25, 10), 1; 25], color.white, color.black]
 Print[g1;]
 
 w = Window[][
-  g1
-  \ .Poly[(-50, -50), (50, -50), (50, 50), (-50, 50)]
-  g2
-  \ .Circle[(25, 10), 20]
+  \ .Poly[g1, (-50, -50), (50, -50), (50, 50), (-50, 50)]
+  \ .Circle[g2, (25, 10), 20]
   .Save["gradient.png"]
 ]

@@ -24,6 +24,7 @@
 #  include "types.h"
 #  include "buffer.h"
 #  include "graphic.h"
+#  include "virtmach.h"
 
 typedef struct {
   struct {
@@ -43,5 +44,6 @@ typedef struct {
 
 typedef Gradient *GradientPtr;
 
+Task x_gradient(VMProgram *vmp);
 #endif
 

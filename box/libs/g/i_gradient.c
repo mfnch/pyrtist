@@ -24,6 +24,7 @@
 #include "types.h"
 #include "virtmach.h"
 #include "i_gradient.h"
+#include "i_window.h"
 #include "graphic.h"
 #include "g.h"
 
@@ -287,3 +288,12 @@ Task print_gradient(VMProgram *vmp) {
   return Success;
 }
 
+Task x_gradient(VMProgram *vmp) {
+  Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
+  Gradient *g = BOX_VM_ARG1(vmp, GradientPtr);
+  GrpWindow *cur_win = grp_win;
+  grp_win = w->window;
+  grp_rgradient(& g->gradient);
+  grp_win = cur_win;
+  return Success;
+}

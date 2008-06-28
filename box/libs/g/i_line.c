@@ -33,6 +33,7 @@
 #include "i_style.h"
 #include "pointlist.h"
 #include "i_pointlist.h"
+#include "i_gradient.h"
 #include "i_line.h"
 
 #include "debug.h"
@@ -76,6 +77,10 @@ Task line_color(VMProgram *vmp) {
   w->line.color = BOX_VM_ARG1(vmp, Color);
   w->line.got.color = 1;
   return Success;
+}
+
+Task line_gradient(VMProgram *vmp) {
+  return x_gradient(vmp);
 }
 
 void line_window_destroy(Window *w) {

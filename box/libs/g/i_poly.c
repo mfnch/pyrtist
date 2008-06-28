@@ -27,6 +27,7 @@
 #include "i_window.h"
 #include "i_style.h"
 #include "i_pointlist.h"
+#include "i_gradient.h"
 
 /*#define DEBUG*/
 
@@ -56,6 +57,10 @@ Task poly_color(VMProgram *vmp) {
   w->poly.color = BOX_VM_ARG1(vmp, Color);
   w->poly.got.color = 1;
   return Success;
+}
+
+Task poly_gradient(VMProgram *vmp) {
+  return x_gradient(vmp);
 }
 
 Task poly_begin(VMProgram *vmp) {

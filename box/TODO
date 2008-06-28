@@ -92,7 +92,6 @@ In order of importance:
 
 4. Add functions Deg[] (convert angle from degrees to radians)
    and Dpi[] (convert resolution from dpi to points per mm.
-6. Add Gradient[] for filling with gradients.
 7. Window should be able to take an already existing image
    as a background for the new one. We should be able to include
    existing images.
@@ -107,4 +106,5 @@ DONE:
    They should be closed only when using Poly.Close[]
 5. Add function HSV[] useful for expressing colors in HSV components.
    Add HSV@Color and Color@HSV. Add HSV@(Window, Line, Poly, etc.)
+6. Add Gradient[] for filling with gradients.
 
