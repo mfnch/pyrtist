@@ -4,8 +4,11 @@ g1 = Gradient[.Line[(-50, -50), (0, 0)], color.red, color.yellow]
 g2 = Gradient[.Circle[(25, 10), 1; 25], color.white, color.black]
 Print[g1;]
 
+ball = Window[][c = (25, 10), \ .Circle[g2, c, 20], \ .Hot["center", c]]
+
 w = Window[][
   \ .Poly[g1, (-50, -50), (50, -50), (50, 50), (-50, 50)]
   \ .Circle[g2, (25, 10), 20]
+  \ .Put[ball, (-30, -20), .Scale[(0.2, 0.5)], const.pi*0.25]
   .Save["gradient.png"]
 ]

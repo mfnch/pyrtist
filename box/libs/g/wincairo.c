@@ -48,6 +48,21 @@
 #  define WHEREAMI (void) 0
 #endif
 
+/* Invert the cairo matrix 'in' and put the result in 'result'.
+ * The determinant of 'in' is returned and is 0.0, if the matrix
+ * couldn't be inverted.
+ */
+static Real invert_cairo_matrix(cairo_matrix_t *result, cairo_matrix_t *in) {
+  Real det = in->xx*in->yy - in->xy*in->yx, inv_det;
+  if (det == 0.0) return 0.0;
+  inv_det = 1.0/det;
+  result->xx =  inv_det*in->yy; result->xy = -inv_det*in->xy;
+  result->yx = -inv_det*in->yx; result->yy =  inv_det*in->xx;
+  result->x0 = -result->xx * in->x0 - result->xy * in->y0;
+  result->y0 = -result->yx * in->x0 - result->yy * in->y0;
+  return det;
+}
+
 static char *wincairo_image_id_string   = "cairo:image";
 static char *wincairo_stream_id_string  = "cairo:stream";
 
@@ -186,16 +201,18 @@ static void wincairo_rfgcolor(Color *c) {
 static void wincairo_rgradient(ColorGrad *cg) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   cairo_pattern_t *p;
+  cairo_matrix_t m, m_inv;
   Point p1, p2, ref1, ref2;
-  Real r1, r2;
   Int i;
   WHEREAMI;
+
   switch(cg->type) {
   case COLOR_GRAD_TYPE_LINEAR:
     my_point(& p1, & cg->point1);
     my_point(& p2, & cg->point2);
     p = cairo_pattern_create_linear(p1.x, p1.y, p2.x, p2.y);
     break;
+
   case COLOR_GRAD_TYPE_RADIAL:
     my_point(& p1, & cg->point1);
     my_point(& p2, & cg->point2);
@@ -203,11 +220,21 @@ static void wincairo_rgradient(ColorGrad *cg) {
     my_point(& ref2, & cg->ref2);
     ref1.x -= p1.x; ref1.y -= p1.y;
     ref2.x -= p1.x; ref2.y -= p1.y;
-    r2 = r1 = sqrt(ref1.x*ref1.x + ref1.y*ref1.y); /* this is not perfectly correct! */
-    r1 *= cg->radius1;
-    r2 *= cg->radius2;
-    p = cairo_pattern_create_radial(p1.x, p1.y, r1, p2.x, p2.y, r2);
+
+    m.xx = ref1.x; m.yx = ref1.y;
+    m.xy = ref2.x; m.yy = ref2.y;
+    m.x0 = p1.x; m.y0 = p1.y;
+    if (invert_cairo_matrix(& m_inv, & m) == 0.0) {
+      g_warning("wincairo_rgradient: gradient matrix is non invertible. "
+                "Ignoring gradient setting!");
+      return;
+    }
+
+    p = cairo_pattern_create_radial(0.0, 0.0, cg->radius1,
+                                    p2.x - p1.x, p2.y - p1.y, cg->radius2);
+    cairo_pattern_set_matrix(p, & m_inv);
     break;
+
   default:
     g_warning("Unknown color gradient type. Ignoring gradient setting.");
     return;
