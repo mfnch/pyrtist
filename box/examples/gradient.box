@@ -1,11 +1,13 @@
 include "g"
 i = 1
-g = Gradient[.Line[(-50, -50), (0, 0)], color.red, color.yellow]
-Print[g;]
+g1 = Gradient[.Line[(-50, -50), (0, 0)], color.red, color.yellow]
+g2 = Gradient[.Circle[(25, 10), 1; 25], color.white, color.black]
+Print[g1;]
 
 w = Window[][
-  g
+  g1
   \ .Poly[(-50, -50), (50, -50), (50, 50), (-50, 50)]
+  g2
+  \ .Circle[(25, 10), 20]
   .Save["gradient.png"]
 ]
-

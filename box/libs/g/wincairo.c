@@ -186,7 +186,8 @@ static void wincairo_rfgcolor(Color *c) {
 static void wincairo_rgradient(ColorGrad *cg) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   cairo_pattern_t *p;
-  Point p1, p2;
+  Point p1, p2, ref1, ref2;
+  Real r1, r2;
   Int i;
   WHEREAMI;
   switch(cg->type) {
@@ -198,8 +199,14 @@ static void wincairo_rgradient(ColorGrad *cg) {
   case COLOR_GRAD_TYPE_RADIAL:
     my_point(& p1, & cg->point1);
     my_point(& p2, & cg->point2);
-    p = cairo_pattern_create_radial(p1.x, p1.y, cg->radius1,
-                                    p2.x, p2.y, cg->radius2);
+    my_point(& ref1, & cg->ref1);
+    my_point(& ref2, & cg->ref2);
+    ref1.x -= p1.x; ref1.y -= p1.y;
+    ref2.x -= p1.x; ref2.y -= p1.y;
+    r2 = r1 = sqrt(ref1.x*ref1.x + ref1.y*ref1.y); /* this is not perfectly correct! */
+    r1 *= cg->radius1;
+    r2 *= cg->radius2;
+    p = cairo_pattern_create_radial(p1.x, p1.y, r1, p2.x, p2.y, r2);
     break;
   default:
     g_warning("Unknown color gradient type. Ignoring gradient setting.");

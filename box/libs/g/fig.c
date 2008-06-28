@@ -731,6 +731,8 @@ void fig_draw_layer(grp_window *source, int l) {
       cg.items = (ColorGradItem *) (cmnd.ptr + sizeof(ColorGrad));
       fig_ltransform(& cg.point1, 1);
       fig_ltransform(& cg.point2, 1);
+      fig_ltransform(& cg.ref1, 1);
+      fig_ltransform(& cg.ref2, 1);
       grp_rgradient(& cg);
       break;
 

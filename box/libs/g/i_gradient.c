@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 
 #include "types.h"
 #include "virtmach.h"
@@ -36,6 +37,8 @@ Task gradient_begin(VMProgram *vmp) {
   g->got.type = 0;
   g->got.point1 = 0;
   g->got.point2 = 0;
+  g->got.radius1 = 0;
+  g->got.radius2 = 0;
   g->got.pause = 0;
   g->got.pos = 0;
   g->this_item.position = -1.0;
@@ -129,7 +132,7 @@ Task gradient_circle_point(VMProgram *vmp) {
 
 Task gradient_circle_real(VMProgram *vmp) {
   Gradient *g = BOX_VM_SUB_PARENT(vmp, GradientPtr);
-  Real *r = BOX_VM_ARG1_PTR(vmp, Real);
+  Real r = fabs(BOX_VM_ARG1(vmp, Real));
 
   set_gradient_type(g, COLOR_GRAD_TYPE_RADIAL);
   if (!g->got.pause) {
@@ -138,7 +141,7 @@ Task gradient_circle_real(VMProgram *vmp) {
                 "ignoring this other value!");
       return Success;
     }
-    g->gradient.radius2 = g->gradient.radius1 = *r;
+    g->gradient.radius2 = g->gradient.radius1 = r;
     g->got.radius1 = 1;
 
   } else {
@@ -147,7 +150,7 @@ Task gradient_circle_real(VMProgram *vmp) {
                 "ignoring this other value!");
       return Success;
     }
-    g->gradient.radius2 = *r;
+    g->gradient.radius2 = r;
     g->got.radius2 = 1;
   }
   return Success;
@@ -209,6 +212,13 @@ Task gradient_end(VMProgram *vmp) {
     return Failed;
   }
 
+  /* Reference points for the gradient (useful to transform correctly
+   * the gradient when applying transformations of the coordinate system)
+   */
+  g->gradient.ref2 = g->gradient.ref1 = g->gradient.point1;
+  g->gradient.ref1.x += 1.0;
+  g->gradient.ref2.y += 1.0;
+
   if (n == 1) {
     cgi = buff_firstitemptr(& g->items, ColorGradItem);
     cgi->position = 0.5;
@@ -237,7 +247,7 @@ Task gradient_end(VMProgram *vmp) {
 }
 
 Task print_gradient(VMProgram *vmp) {
-  Gradient *g = BOX_VM_THIS(vmp, GradientPtr);
+  Gradient *g = BOX_VM_ARG1(vmp, GradientPtr);
   ColorGradItem *cgi = g->gradient.items;
   Int n = g->gradient.num_items, i;
   FILE *out = stdout;

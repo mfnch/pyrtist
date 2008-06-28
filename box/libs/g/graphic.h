@@ -151,8 +151,8 @@ typedef enum {
 typedef struct {
   ColorGradType type;
   ColorGradExt extend;
-  Point point1, point2, radius1a, radius1b;
-  Real radius1, radius2, radius_ratio;
+  Point point1, point2, ref1, ref2;
+  Real radius1, radius2;
   Int num_items;
   ColorGradItem *items;
 } ColorGrad;
