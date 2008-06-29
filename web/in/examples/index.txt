@@ -1,6 +1,6 @@
 restindex
     crumb: Examples
-    format: rest
+    format: html
     page-title: Box examples
     include: Yes
     page-description:
@@ -9,7 +9,9 @@ restindex
     section-pages: , snake, cycloid, wheatstone, curved_arrow, box-logo, multivibrator
 /restindex
 
-Here we collect some figures together with their Box source files.
+<p>Here we collect some figures together with their Box source files.</p>
 
-Take a look at the examples by clicking on the menu on the left
-of the page.
+<p>Take a look at the examples by clicking on the menu on the left
+of the page.</p>
+
+$thumbnails_table$

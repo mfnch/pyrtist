@@ -46,7 +46,7 @@ if out_eps and os.access(out_eps, os.R_OK):
   out_png = os.path.splitext(out_eps)[0] + ".png"
   print commands.getoutput("%s %s %s %s" %
                            (convert, convert_opts, out_eps, out_png))
-  have_figure = os.access(out_png, os.R_OK)
+have_figure = os.access(out_png, os.R_OK)
 
 if not have_figure:
   raise "The figure '%s' has not been produced: stopping here!" % out_png
@@ -91,3 +91,15 @@ f.write(out)
 f.close()
 
 print "Output produced (%s)" % rst_out
+
+print "Generating thumbnail..."
+html_out = os.path.splitext(out_png)[0] + ".html"
+out_thumb_png = "small_" + out_png
+scale_opts = "-scale 100"
+print commands.getoutput("%s %s %s %s"
+                         % (convert, scale_opts, out_png, out_thumb_png))
+
+f = open("thumbnails.dat", "a")
+f.write("%s, %s\n" % (html_out, out_thumb_png))
+f.close()
+

@@ -1,3 +1,7 @@
+// Under a shell type: box -l g yin-yang.box
+// ---
+// Here we show how Poly can be used to trace curves
+
 include "g"
 w = Window[][
   b = 0.4  // border

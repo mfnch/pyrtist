@@ -1,0 +1,11 @@
+rst_out = "gradient.txt"
+rst_skeleton = "skeleton"
+crumb = "gradient.box"
+description = "Linear and radial color gradients"
+figure_caption = \
+  ("Note that the radial gradient becomes elliptical, when scaled. "
+   "Here we create two color gradients, but more colors can be used. "
+   "For more details, take a look at the documentation")
+box_source = "../../../box/examples/gradient.box"
+out_png = "gradient.png"
+

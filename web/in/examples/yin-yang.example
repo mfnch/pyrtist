@@ -1,0 +1,10 @@
+rst_out = "yin-yang.txt"
+rst_skeleton = "skeleton"
+crumb = "yin-yang.box"
+description = "Yin-yang"
+figure_caption = \
+  ("You can round the borders of a polygons to the point that they become "
+   "arcs of circles or ellipses.")
+box_source = "../../../box/examples/yin-yang.box"
+out_png = "yin-yang.png"
+

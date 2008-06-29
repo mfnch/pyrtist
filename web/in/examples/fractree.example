@@ -1,0 +1,11 @@
+rst_out = "fractree.txt"
+rst_skeleton = "skeleton"
+crumb = "fractree.box"
+description = "Pythagorean tree"
+figure_caption = \
+  ("You can already do some moderately complex programming with Box. "
+   "However the capabilities of the language are going to improve "
+   "substantially in the near future.")
+box_source = "../../../box/examples/fractree.box"
+out_png = "fractree.png"
+
