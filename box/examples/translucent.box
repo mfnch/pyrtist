@@ -14,6 +14,6 @@ w = Window[][
   i = 0, delta = 4*const.pi/5, angle0 = -const.pi/2 // The star
   \ .Line[radius*Vec[i*delta + angle0], For[++i < 5], .Close[], c1]
   \ .Circle[(2, 5), 8, c2; (-1, -1), 6, c3]         // Other two circles
-  .Save["translucent.png"]                          // Save to PNG
+  .Save["translucency.png"]                         // Save to PNG
 ]
 
