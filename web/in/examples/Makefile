@@ -1,9 +1,10 @@
 .PHONY: all
 
 EXAMPLES=*.example
-all: index.html
+all: index.txt
 
-index.html: thumbnails.dat
+index.txt: thumbnails.dat index.txt.in
+	python thumbnails.py
 
 thumbnails.dat: $(EXAMPLES) create_example.py thumbnails.py
 	rm -f thumbnails.dat
@@ -11,5 +12,3 @@ thumbnails.dat: $(EXAMPLES) create_example.py thumbnails.py
 	  python create_example.py $$example; \
 	done
 	cp *.png ../../out/examples/
-	python thumbnails.py
-

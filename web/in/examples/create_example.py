@@ -46,6 +46,8 @@ if out_eps and os.access(out_eps, os.R_OK):
   out_png = os.path.splitext(out_eps)[0] + ".png"
   print commands.getoutput("%s %s %s %s" %
                            (convert, convert_opts, out_eps, out_png))
+
+print out_png
 have_figure = os.access(out_png, os.R_OK)
 
 if not have_figure:
