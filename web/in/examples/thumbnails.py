@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+example_order = ["snake", "cycloid", "wheatstone", "multivibrator",
+                 "yin-yang", "curved_arrow", "box-logo", "translucency",
+                 "gradient", "fractree"]
+
 import sys
 import subst
 
@@ -7,13 +11,20 @@ f = open("thumbnails.dat")
 ls = f.readlines()
 f.close()
 
-num_items = 0
+m = len(example_order)
 items = {}
 for l in ls:
   rs = l.split(",")
   html_file, thumb_file = rs[0:2]
-  items[num_items] = thumb_file.strip(), html_file.strip()
-  num_items += 1
+  n = -1
+  for i in range(len(example_order)):
+    if example_order[i] in html_file:
+      n = i
+      break
+  if n < 0:
+    n = m
+    m += 1
+  items[n] = thumb_file.strip(), html_file.strip()
 
 cols = 5
 
@@ -33,4 +44,6 @@ html += "</table>"
 
 html = '<div align="center">\n%s\n</div>' % html
 
-subst.file_subst({'thumbnails_table':html}, 'index.txt.in', 'index.txt')
+variables = {'thumbnails_table':html,
+             'example_order': ", ".join(example_order)}
+subst.file_subst(variables, 'index.txt.in', 'index.txt')

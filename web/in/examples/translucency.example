@@ -1,11 +1,11 @@
 rst_out = "translucency.txt"
 rst_skeleton = "skeleton"
-crumb = "translucent.box"
+crumb = "translucency.box"
 description = "Translucent colors through Cairo"
 figure_caption = \
   ("It is highly recommended to compile Box with Cairo support. "
    "You'll then be able to use translucent colors, color gradients and "
    "many others useful features.")
-box_source = "../../../box/examples/translucent.box"
-out_png = "translucent.png"
+box_source = "../../../box/examples/translucency.box"
+out_png = "translucency.png"
 

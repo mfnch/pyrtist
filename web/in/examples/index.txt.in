@@ -6,7 +6,7 @@ restindex
     page-description:
        Box examples
     /description
-    section-pages: , snake, cycloid, wheatstone, curved_arrow, box-logo, multivibrator
+    section-pages: , $example_order$
 /restindex
 
 <p>Here we collect some figures together with their Box source files.</p>
