@@ -12,5 +12,6 @@ w = Window[][
           (-r, -r), (-r, -rr), (0, -rr), (rr, -rr), (rr, 0), (rr, rr)]
   \ .Circle[Style[.Fill[";"]], rs, (0, r); color.white, rs, (0, -r)]
   .Save["yin-yang.png"]
+  .Save["yin-yang.eps"]
 ]
 

@@ -27,7 +27,7 @@ PythagTree@@Window[
 
 w = Window[][
   // Now we can draw the tree with the following line
-  PythagTree[.level = 11, .xmid = 0.6, .h = 0.45, .p2 = (0, 0), .p1 = (20, 0)]
+  PythagTree[.level = 11, .xmid = 0.6, .h = 0.45, .p1 = (0, 0), .p2 = (20, 0)]
   .Save["fractree.png"]
 ]
 

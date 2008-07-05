@@ -21,7 +21,7 @@ EOF
 
   cmnd box -l g $TMP_FILE
   NEW_FILE="bouncing_$i.gif"
-  cmnd convert bouncing.bmp -scale 80x80 $NEW_FILE
+  cmnd convert bouncing.png $NEW_FILE
   FILE_LIST="$FILE_LIST $NEW_FILE"
 done
 

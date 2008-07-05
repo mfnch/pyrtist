@@ -546,29 +546,34 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
     return (GrpWindow *) NULL;
   }
 
+  if (! plan->have.size ) {
+    g_error("Cannot create Cairo image surface: size missing!");
+    return (GrpWindow *) NULL;
+  }
+
+  w->lx = plan->size.x;
+  w->ly = plan->size.y;
+
+  if (plan->have.origin) {
+    w->ltx = plan->origin.x;
+    w->lty = plan->origin.y;
+
+  } else {
+    w->ltx = 0.0;
+    w->lty = 0.0;
+  }
+
+  w->rdx = w->ltx + plan->size.x;
+  w->rdy = w->lty + plan->size.y;
+
   if (win_class == WC_IMAGE) {
-    if (! (plan->have.size && plan->have.resolution) ) {
-      g_error("Cannot create Cairo image surface: "
-              "size or resolution missing!");
+    if (! plan->have.resolution) {
+      g_error("Cannot create Cairo image surface: resolution missing!");
       return (GrpWindow *) NULL;
     }
 
-    if (plan->have.origin) {
-      w->ltx = plan->origin.x;
-      w->lty = plan->origin.y;
-
-    } else {
-      w->ltx = 0.0;
-      w->lty = 0.0;
-    }
-
-    w->lx = plan->size.x;
-    w->ly = plan->size.y;
     w->resx = plan->resolution.x * (plan->size.x < 0.0 ? -1.0 : 1.0);
     w->resy = plan->resolution.y * (plan->size.y < 0.0 ? -1.0 : 1.0);
-
-    w->rdx = w->ltx + plan->size.x;
-    w->rdy = w->lty + plan->size.y;
 
     numptx = fabs(plan->size.x * plan->resolution.x);
     numpty = fabs(plan->size.y * plan->resolution.y);
@@ -578,34 +583,24 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
  } else if (win_class == WC_STREAM) {
     double width, height;
 
-    if (! (plan->have.file_name && plan->have.size) ) {
-      g_error("Cannot create Cairo image surface: "
-              "file name or size missing!");
+    if (! plan->have.file_name) {
+      g_error("Cannot create Cairo image surface: file name missing!");
       return (GrpWindow *) NULL;
     }
 
-    /* All sizes and coordinates are expressed in mm, we must
-     * therefore convert the size of the window in postscript units:
-     * 1 postscript unit (also called point) = 1/72 inch
-     * 1 inch = 25.4 mm
-     */
-    width  = (plan->size.x / grp_mm_per_inch) / grp_inch_per_psunit;
-    height = (plan->size.y / grp_mm_per_inch) / grp_inch_per_psunit;
-
     /* These quantities are used in the function my_point (macros MY_2POINTS
      * and MY_3POINTS) to scale the coordinates of every point.
+     * They express the number of postscript units per mm.
      */
-    w->resy = w->resx =
-      (1.0 / grp_mm_per_inch) / grp_inch_per_psunit; /* mm --> psunits */
+    w->resy = w->resx = 1.0 / (grp_mm_per_inch * grp_inch_per_psunit);
 
-    if (plan->have.origin) {
-      w->ltx = plan->origin.x;
-      w->lty = plan->origin.y;
-
-    } else {
-      w->ltx = 0.0;
-      w->lty = 0.0;
-    }
+    /* All sizes and coordinates are expressed in mm, we must
+     * therefore convert the size of the window in postscript units:
+     * 1 postscript unit (also called points) = 1/72 inch
+     * 1 inch = 25.4 mm
+     */
+    width  = plan->size.x * w->resx;
+    height = plan->size.y * w->resy;
 
     if (stream_surface_create == (StreamSurfaceCreate) NULL)
       return (GrpWindow *) NULL;
@@ -625,6 +620,18 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
   } else {
     g_error("cairo_open_win: shouldn't happen!");
     return (GrpWindow *) NULL;
+  }
+
+  if (plan->size.y >= 0.0) {
+    /* In this case, the origin is placed at the bottom of the screen! */
+    w->lty += plan->size.y;
+    w->resy = -w->resy;
+  }
+
+  if (plan->size.x < 0.0) {
+    /* In this case, the origin is placed at the bottom of the screen! */
+    w->ltx += plan->size.x;
+    w->resx = -w->resx;
   }
 
   status = cairo_surface_status(surface);

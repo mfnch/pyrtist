@@ -44,10 +44,9 @@ ww = Window[][
   \ .Line[c6, (cx1, pr+0.5), (cx2, pr+0.5), (cx2, -pr-0.5), (cx1, -pr-0.5);
           (cpx, cpy+ch), cp, (cpx+cw2, cpy), (cpx+cw2, cpy+ch);
           (cpx+cw, cpy), (cpx+cw, cpy+ch)]
-//   .Save["machine.png"]
 ]
 
 \ Window["rgb24", (55, 45), .Res[(2, 2)]][
-  \ .Put[ww, (10, 35), .Scale[(1, -1)]]
+  \ .Put[ww, (10, 10)]
   .Save["machine.png"]
 ]
