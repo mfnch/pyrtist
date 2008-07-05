@@ -1,5 +1,7 @@
 Change log (recent come first)
 
+5 July 2008: Bugfixes in the transformation of draw styles and font
+
 28 June 2008: Filling with linear/radial color gradients (Gradient[]) 
   * Can now express color in HSV (besides RGB) and convert RGB<-->HSV.
   * Can now fill objects using linear or radial color gradients

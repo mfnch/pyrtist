@@ -6,6 +6,8 @@
 
 include "g"
 
+t = Real
+time = t
 rate = 5.0*t // velocita' di cambiamento (bocca e capelli)
 
 a = 0.8
@@ -34,7 +36,7 @@ w = (1.0-Exp[-rate])*0.05
 //-------------------------------------------------------------------------------
 // Descrizione fisica dello smiley:
 r = 10                   // Raggio della faccia
-s = 0.25                 // Spessore delle linee di contorno
+s = 0.2                  // Spessore delle linee di contorno
 ro = 2.5                 // Raggio degli occhi
 rp = 0.4*ro              // Raggio della pupilla
 od = Point[(3.5, -2.0)]  // Posizione dell'occhio destro
@@ -51,42 +53,32 @@ gs = Point[(-gd.x, gd.y)] // Posizione della guancia sinistra
 pd = od + (0, h*ro)
 ps = os + (0, h*ro)
 
-cf = Color[.r=1.0, .g=1.0, .b=0.0] // Colore faccia
+cf_in  = Color[.r = .g = 1.0, .b=Min[0.2*time, 0.8]] // Colore faccia
+cf_out = Color[.r = .g = 0.8, .b = cf_in.b]
 
-smile = Window["fig"]
+smile = Window[]
 
 \ smile[
-  // Disegno la faccia
-  \ .Circle[color.black, (0, 0), r+s; cf, r-s]
-
-  // Bocca
-  b = 4.5 // Posizione in y della bocca
-  \ .Circle[color.black, sx, sy, (0, b);
-            color.red, sx-s2, sy-s2]
-  \ .Circle[color.black, os, ro; od;
-            color.white, os, ro-s2; od]
-  \ .Circle[color.black, rp, rp, pd; ps] // Pupille
+  \ .Circle[Style[.Fill[";"], .Border[color.black, s2]]
+            Gradient[.Circle[(0, 0), 0; r], cf_in, 0.8, cf_in, cf_out]
+            (0, 0), r;                   // face
+            p := (0, 4.5), dp = (0, sy)
+            Gradient[.Line[p-dp, p+4*dp], color.red, color.black]
+            sx, sy, (0, 4.5); // mouth
+            color.white, os, ro; od;     // eyes
+            color.black, rp, rp, pd; ps] // Pupille
 
   // Capelli
-  spacing=10.0 // spaziatura in gradi fra i capelli
-  angle=-90.0
-  a = angle
-  \ .Line[color.black, s, Vers[a]*r, Vers[a]*(r+q)]
-  a = a - spacing
-  \ .Line[color.black, s, Vers[a]*r, Vers[a]*(r+q)]
-  a = a - spacing
-  \ .Line[color.black, s, Vers[a]*r, Vers[a]*(r+q)]
-  a = a - spacing
-  \ .Line[color.black, s, Vers[a]*r, Vers[a]*(r+q)]
-  a = angle + spacing
-  \ .Line[color.black, s, Vers[a]*r, Vers[a]*(r+q)]
-  a = a + spacing
-  \ .Line[color.black, s, Vers[a]*r, Vers[a]*(r+q)]
-  a = a + spacing
-  \ .Line[color.black, s, Vers[a]*r, Vers[a]*(r+q)]
+  n = 3
+  spacing = 30.0 // spaziatura in gradi fra i capelli
+  angle = -90.0 - spacing
+  dangle = spacing/n
+  i = -n
+  color.black
+  \ .Line[s, v: = Vers[angle], v*r, v*(r+q); For[angle += dangle, ++i <= n]]
 ]
 
-main = Window["bm4", (220, 250)]
-\ main.Put[smile, (110, 140), .Scale[10]]
-main.Save["smiley.bmp"]
+main = Window["rgb24", (220, 250), .Res[(0.28, 0.28)]]
+\ main.Put[smile, (110, 110), .Scale[(10, -10)]]
+main.Save["losing_eyes.png"]
 

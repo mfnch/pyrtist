@@ -55,21 +55,37 @@ restindex
 </script>
 
 <h1 class="title">Introduction</h1>
-<p>Box is a programming language developed to make graphics easy.
-Everything you draw (lines, circles, text, polygons, etc.)
-is done inside "Window"s.
-Window objects are the target of graphic commands and
-can be translated, scaled, rotated and used
-inside other Windows.
-This is actually simpler than what it may seem!
-Indeed, you can define hot points for each Window you
-create. These hot points can be used to express
-how to rotate, translate and scale your figures,
-removing the necessity of calculating rotation angles,
-scale factors, etc. Everything is calculated automatically
-and when you change your figure the transformations
-are adjusted accordingly, so that everything is placed
-where it should.
+<p>Box is an object oriented language developed to make graphics
+as easy as possible. Box is in its early stage of development,
+but it already provides most of the features needed
+to create quality pictures and figures.
+Box has many advantages over traditional GUI graphics editors:
+<ul class="simple">
+<li>Reusability: you can draw things inside a Window; you can
+then translate, rotate, scale and put it inside another Window;</li>
+<li>Transformation matrices can be calculated automatically
+from constraints given by the user;</li>
+<li>Flexible syntax: the philosophy is "don't complain if something
+is missing, use default values!".
+You can specify many parameters, but you don't have to!</li>
+<li>Even more flexible syntax: if p is a list of points
+then p.Get[3] gives the third point, p.Get[3.5] gives a point
+between the third and the fourth and p.Get[(3.5, 1)]...
+look at the documentation ;-)
+</li>
+
+<li>You can even draw fractal pictures;</li>
+</ul>
+</p>
+
+<p>Box has also the following features:
+<ul class="simple">
+<li>Translucency: the alpha channel of colors can be set to draw
+partially transparent objects;</li>
+<li>Radial and linear color gradients can be set very easily,
+specifying even more than two colors;</li>
+<li>Supported output formats are Postscript (EPS), PDF, SVG, PNG.</li>
+</ul>
 </p>
 
 <h1 class="title">Examples</h1>

@@ -21,7 +21,7 @@ EOF
 
   cmnd box -l g $TMP_FILE
   NEW_FILE="smiley_$i.gif"
-  cmnd convert smiley.bmp -scale 69x69 $NEW_FILE
+  cmnd convert losing_eyes.png $NEW_FILE
   FILE_LIST="$FILE_LIST $NEW_FILE"
 done
 
