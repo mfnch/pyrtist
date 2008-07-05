@@ -42,8 +42,9 @@ static void bb_close_win(void) {return;}
 
 static void bb_rdraw(DrawStyle *style) {
   int do_border = (style->bord_width > 0.0);
+  Real scale = style->scale;
   if (do_border)
-    Grp_BB_Margin(& bb_local, 0.5*style->bord_width);
+    Grp_BB_Margin(& bb_local, 0.5*scale*style->bord_width);
 
   Grp_BB_Fuse(& bb_global, & bb_local);
   Grp_BB_Init(& bb_local);

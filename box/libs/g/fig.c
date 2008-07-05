@@ -273,7 +273,6 @@ static int fig_save(const char *file_name) {
   plan.have.size = 0;
   plan.have.origin = 0;
   plan.resolution.x = plan.resolution.y = 100.0/grp_mmperinch; /* ~ 100 dpi */
-  plan.resolution.x = plan.resolution.y = 2.7852103697407564*1024/640; /* temporary */
   plan.have.resolution = 1;
   plan.have.num_layers = 0;
   return fig_save_fig(grp_win, & plan);
@@ -595,25 +594,48 @@ void fig_clear_layer(int l) {
 /***************************************************************************************/
 /* PROCEDURE PER DISEGNARE I LAYER SULLA FINESTRA ATTIVA */
 
-/* Matrice usata nella trasformazione lineare di fig_ltransform */
+/* Matrice usata nella trasformazione lineare di fig_transform_point */
 Real fig_matrix[6] = {1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
 
-/* DESCRIZIONE: Applica una trasformazione lineare agli n punti p[].
- */
-void fig_ltransform(Point *p, int n) {
-  register Real m11, m12, m13, m21, m22, m23;
-  register Real px;
-
-  m11 = fig_matrix[0]; m12 = fig_matrix[1];
-  m21 = fig_matrix[2]; m22 = fig_matrix[3];
-  m13 = fig_matrix[4]; m23 = fig_matrix[5];
+/* Apply the transformation in matrix fig_matrix to the n points in p[] */
+void fig_transform_point(Point *p, int n) {
+  Real m11 = fig_matrix[0], m12 = fig_matrix[1],
+       m21 = fig_matrix[2], m22 = fig_matrix[3],
+       m13 = fig_matrix[4], m23 = fig_matrix[5];
+  Real px;
 
   for (; n-- > 0; p++) {
-    p->x = m11 * (px = p->x) + m12 * p->y + m13;
+    px = p->x;
+    p->x = m11 * px + m12 * p->y + m13;
     p->y = m21 * px + m22 * p->y + m23;
   }
+}
 
-  return;
+/* Apply the linear transformation in fig_matrix to the n points in v[] */
+void fig_transform_vector(Point *v, int n) {
+  Real m11 = fig_matrix[0], m12 = fig_matrix[1],
+       m21 = fig_matrix[2], m22 = fig_matrix[3];
+  Real vx;
+
+  for (; n-- > 0; v++) {
+    vx = v->x;
+    v->x = m11 * vx + m12 * v->y;
+    v->y = m21 * vx + m22 * v->y;
+  }
+}
+
+/* Find how the norm of the vector (cos(angle), sin(angle)) changes
+ * with the trasformation in fig_matrix
+ */
+Real fig_transform_factor(Real angle) {
+  Point v = {cos(angle), sin(angle)};
+  fig_transform_vector(& v, 1);
+  return sqrt(v.x*v.x + v.y*v.y);
+}
+
+void fig_transform_scalar(Real *r, int n, Real angle) {
+  Real factor = fig_transform_factor(angle);
+  for (; n-- > 0; r++) *r *= factor;
 }
 
 /* DESCRIZIONE: Disegna il layer l della figura source sulla finestra grafica
@@ -669,6 +691,7 @@ void fig_draw_layer(grp_window *source, int l) {
      */
     int cmnd_header_size;
     Point tp[3];
+    Real tr;
     ColorGrad cg;
 
     cmnd.ptr = (void *) buff_ptr(layer) + (long) ip;
@@ -690,13 +713,16 @@ void fig_draw_layer(grp_window *source, int l) {
     case ID_rdraw:
       ((DrawStyle *) cmnd.ptr)->bord_dashes =
         (Real *) (cmnd.ptr + sizeof(DrawStyle));
+      tr = ((DrawStyle *) cmnd.ptr)->scale;
+      ((DrawStyle *) cmnd.ptr)->scale *= fig_transform_factor(0.0);
       grp_rdraw((DrawStyle *) cmnd.ptr);
+      ((DrawStyle *) cmnd.ptr)->scale = tr;
       break;
 
     case ID_rline:
       tp[0] = *((Point *) cmnd.ptr);
       tp[1] = *((Point *) (cmnd.ptr + sizeof(Point)));
-      fig_ltransform(tp, 2);
+      fig_transform_point(tp, 2);
       grp_rline(& tp[0], & tp[1]);
       break;
 
@@ -704,7 +730,7 @@ void fig_draw_layer(grp_window *source, int l) {
       tp[0] = *((Point *) cmnd.ptr);
       tp[1] = *((Point *) (cmnd.ptr + sizeof(Point)));
       tp[2] = *((Point *) (cmnd.ptr + 2*sizeof(Point)));
-      fig_ltransform(tp, 3);
+      fig_transform_point(tp, 3);
       grp_rcong(& tp[0], & tp[1], & tp[2]);
       break;
 
@@ -716,7 +742,7 @@ void fig_draw_layer(grp_window *source, int l) {
       tp[0] = *((Point *) cmnd.ptr);
       tp[1] = *((Point *) (cmnd.ptr + sizeof(Point)));
       tp[2] = *((Point *) (cmnd.ptr + 2*sizeof(Point)));
-      fig_ltransform(tp, 3);
+      fig_transform_point(tp, 3);
       grp_rcircle(& tp[0], & tp[1], & tp[2]);
       break;
 
@@ -729,10 +755,10 @@ void fig_draw_layer(grp_window *source, int l) {
     case ID_rgradient:
       cg = *((ColorGrad *) cmnd.ptr);
       cg.items = (ColorGradItem *) (cmnd.ptr + sizeof(ColorGrad));
-      fig_ltransform(& cg.point1, 1);
-      fig_ltransform(& cg.point2, 1);
-      fig_ltransform(& cg.ref1, 1);
-      fig_ltransform(& cg.ref2, 1);
+      fig_transform_point(& cg.point1, 1);
+      fig_transform_point(& cg.point2, 1);
+      fig_transform_point(& cg.ref1, 1);
+      fig_transform_point(& cg.ref2, 1);
       grp_rgradient(& cg);
       break;
 
@@ -744,7 +770,7 @@ void fig_draw_layer(grp_window *source, int l) {
         char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
         if (str_size + sizeof(Point) + sizeof(Int) <= cmnd_header_size) {
           if ( *((char *) ptr) == '\0' ) {
-            fig_ltransform(& p, 1);
+            fig_transform_point(& p, 1);
             grp_text(& p, str);
           } else {
             WARNINGMSG("fig_draw_layer", "Ignoring text command (bad str)!");
@@ -761,6 +787,7 @@ void fig_draw_layer(grp_window *source, int l) {
         Real r = *((Real *) ptr); ptr += sizeof(Real);
         Int str_size = *((Int *) ptr); ptr += sizeof(Int);
         char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
+        r *= fig_transform_factor(0.0);
         if (str_size + sizeof(Real) + sizeof(Int) <= cmnd_header_size) {
           if ( *((char *) ptr) == '\0' ) {
             grp_font(str, r);
@@ -776,7 +803,7 @@ void fig_draw_layer(grp_window *source, int l) {
     case ID_fake_point:
       {
         Point p = *((Point *) cmnd.ptr);
-        fig_ltransform(& p, 1);
+        fig_transform_point(& p, 1);
         grp_fake_point(& p);
       }
       break;

@@ -291,6 +291,7 @@ int g_rdraw(GStyle *gs, GStyle *default_style, DrawWhen now) {
 
   if (now < *when) return 0;
   style.fill_style = *fill_style;
+  style.scale = 1.0;
   style.bord_width = *bord_width;
   style.bord_join_style = *bord_join_style;
   style.bord_miter_limit = *bord_miter_limit;

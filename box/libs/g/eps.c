@@ -75,6 +75,7 @@ static void eps_rinit(void) {return;}
 
 static void eps_rdraw(DrawStyle *style) {
   if ( ! beginning_of_path ) {
+    Real scale = style->scale;
     int do_border = (style->bord_width > 0.0);
     FILE *out = (FILE *) grp_win->ptr;
     char *fill;
@@ -99,7 +100,7 @@ static void eps_rdraw(DrawStyle *style) {
 
     if (do_border) {
       Color *c = & style->bord_color;
-      Real bw = EPS_REAL(style->bord_width);
+      Real bw = EPS_REAL(scale*style->bord_width);
       int lj, lc;
 
       switch(style->bord_join_style) {
@@ -122,17 +123,17 @@ static void eps_rdraw(DrawStyle *style) {
 
       if (style->bord_num_dashes > 0) {
         Int num_dashes = style->bord_num_dashes, i;
-        Real dash_offset = EPS_REAL(style->bord_dash_offset);
+        Real dash_offset = EPS_REAL(scale*style->bord_dash_offset);
         char *sep = " [";
         for(i=0; i<num_dashes; i++) {
-          fprintf(out, "%s"SReal, sep, EPS_REAL(style->bord_dashes[i]));
+          fprintf(out, "%s"SReal, sep, EPS_REAL(scale*style->bord_dashes[i]));
           sep = ", ";
         }
         fprintf(out, "] "SReal" setdash", dash_offset);
       }
 
       if (lj == 0) {
-        Real ml = EPS_REAL(style->bord_miter_limit);
+        Real ml = EPS_REAL(scale*style->bord_miter_limit);
         fprintf(out, " %g setmiterlimit stroke grestore\n", ml);
       } else
         fprintf(out, " stroke grestore\n");

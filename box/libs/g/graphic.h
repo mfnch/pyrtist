@@ -112,7 +112,7 @@ typedef enum {CAP_STYLE_BUTT=0, CAP_STYLE_ROUND, CAP_STYLE_SQUARE} CapStyle;
 /** All what is needed by the rdraw method */
 typedef struct {
   FillStyle fill_style;
-  Real bord_width, bord_miter_limit;
+  Real scale, bord_width, bord_miter_limit;
   JoinStyle bord_join_style;
   Color bord_color;
   CapStyle bord_cap;

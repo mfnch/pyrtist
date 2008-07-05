@@ -123,6 +123,8 @@ static void wincairo_rdraw(DrawStyle *style) {
   WHEREAMI;
 
   if ( ! beginning_of_path ) {
+    Real scale = style->scale;
+
     switch(style->fill_style) {
     case FILLSTYLE_VOID:   do_fill = do_clip = do_even_odd = 0; break;
     case FILLSTYLE_PLAIN:  do_fill = 1; do_clip = 0; do_even_odd = 0; break;
@@ -139,7 +141,7 @@ static void wincairo_rdraw(DrawStyle *style) {
                                         : CAIRO_FILL_RULE_WINDING);
     if (do_border) {
       Color *c = & style->bord_color;
-      Real border = MY_REAL(style->bord_width);
+      Real border = MY_REAL(scale*style->bord_width);
       cairo_line_join_t lj;
       cairo_line_cap_t lc;
 
@@ -165,7 +167,7 @@ static void wincairo_rdraw(DrawStyle *style) {
       cairo_set_line_join(cr, lj);
       cairo_set_line_cap(cr, lc);
       if (lj == CAIRO_LINE_JOIN_MITER) {
-        Real miter_limit = MY_REAL(style->bord_miter_limit);
+        Real miter_limit = MY_REAL(scale*style->bord_miter_limit);
         cairo_set_miter_limit(cr, miter_limit);
       }
       if (style->bord_num_dashes > 0) {
@@ -174,9 +176,9 @@ static void wincairo_rdraw(DrawStyle *style) {
         Real *dashes = (Real *) malloc(size_dashes);
         if (dashes != (Real *) NULL) {
           Int i;
-          Real dash_offset = MY_REAL(style->bord_dash_offset);
+          Real dash_offset = MY_REAL(scale*style->bord_dash_offset);
           for(i=0; i<num_dashes; i++)
-            dashes[i] = MY_REAL(style->bord_dashes[i]);
+            dashes[i] = MY_REAL(scale*style->bord_dashes[i]);
           cairo_set_dash(cr, dashes, num_dashes, dash_offset);
           free(dashes);
         }
@@ -188,7 +190,6 @@ static void wincairo_rdraw(DrawStyle *style) {
       if (do_fill) cairo_fill(cr);
       if (do_clip) cairo_clip(cr);
     }
-
   }
 }
 

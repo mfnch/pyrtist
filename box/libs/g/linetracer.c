@@ -390,7 +390,7 @@ static int lt_put_to_begin_or_end(LineTracer *lt, Point *p1, Point *p2,
   else
     pfi = pnt[2];
 
-  fig_ltransform( & pfi, 1 );
+  fig_transform_point( & pfi, 1 );
 
   /* Disegno l'oggetto */
   fig_draw_fig(fw->window);
@@ -528,7 +528,7 @@ static int lt_put_to_join(LineTracer *lt, Point *p1, Point *p2, Point *p3,
   /* Calcolo dove vanno a finire pfi[0] = f3 e pfi[1] = f5,
    * quando trasformo la figura
    */
-  fig_ltransform( pfi, 2 );
+  fig_transform_point( pfi, 2 );
 
   /* Disegno l'oggetto */
   fig_draw_fig( ((obj_header *) f)->info );

@@ -118,7 +118,7 @@ static Task put_calculate(Window *w) {
 }
 
 static Task _transform_pl(Int index, char *name, void *object, void *data) {
-  fig_ltransform((Point *) object, 1);
+  fig_transform_point((Point *) object, 1);
   return Success;
 }
 
