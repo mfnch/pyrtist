@@ -27,7 +27,7 @@ w = Window[][
 ]
 
 \ Window[][
-  \ .Put[w, .Scale[(2, 2)]]
+  \ .Put[w, .Scale[(2, -2)]]
   .Save["html/box-logo.png"]
 ]
 

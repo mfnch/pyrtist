@@ -5,7 +5,7 @@ w = Window[]
 
 // Draw one plain polygon
 //{sharp
-a = (5, 20), b = (50, 10),  c = (55, 60),  d = (15, 50)
+a = (5, 40), b = (50, 50),  c = (55, 0),  d = (15, 10)
 pl = w.Poly[color.blue, a, b, c, d]
 //}
 w.Save["html/poly1.png"]

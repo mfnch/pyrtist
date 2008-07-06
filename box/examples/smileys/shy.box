@@ -5,6 +5,7 @@ include "g"
 // Shyness level
 // x = 0.60
 
+x = Real
 x = Min[Max[x, 0.0], 0.5]
 pdg = 10 * Vec[2*const.pi*x] // Direction of the eyes
 f = 1 - 2*x                  // Happyness level
@@ -28,12 +29,16 @@ gs = (-gd.x, gd.y) // Position of the right cheek
 pd = od + (0, x*ro)
 ps = os + (0, x*ro)
 
-cf = Color[.r=1.0, .g=1.0-i,   .b=0] // Face color
 cg = Color[.r=1.0, .g=1.0-2*i, .b=0] // Cheek color
 
 smiley = Window[][
+  style = Style[.Fill[";"], .Border[color.black, s]]
+  cf1 = Color[.r=1.0, .g=1.0-2*i, .b=0] // Face colors
+  cf2 = Color[.r=1.0, .g=1.0-i, .b=0]
+  cf3 = Color[f: = 0.8, .r = cf2.r*f, .g = cf2.g*f]
+  gradient = Gradient[.Circle[r*(-0.05, -0.05), 0; r], cf1, 0.85, cf2, cf3]
   // Disegno la faccia
-  \ .Circle[color.black, (0, 0), r+s; cf, r-s]
+  \ .Circle[style, gradient, (0, 0), r]
 
   b = 4.5
   \ .Circle[color.black, rp, rp*1.4, pd; ps]
@@ -41,6 +46,6 @@ smiley = Window[][
   \ .Circle[cg, gr, gs; gd]
 ]
 
-main = Window["bm4", (22, 22), .Res[(80, 80)]]
-\ main.Put[smiley, (11, 11)]
-main.Save["smiley.bmp"]
+main = Window["rgb24", (22, 22), .Res[(3, 3)]]
+\ main.Put[smiley, .Scale[(1, -1)], (11, 11)]
+main.Save["shy.png"]

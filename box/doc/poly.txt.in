@@ -1,6 +1,6 @@
 
-Window.Poly instruction
------------------------
+Window.Poly
+-----------
 
 The ``Poly`` method can be used to draw polygons.
 It takes a list of points with optional margins:
