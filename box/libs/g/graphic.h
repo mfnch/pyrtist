@@ -193,6 +193,9 @@ typedef struct _grp_window {
    */
   void (*repair)(struct _grp_window *w);
 
+  /** This function can be internally used to report errors. */
+  void (*_report_error)(const char *msg);
+
   void *ptr;           /* Puntatore alla zona di memoria della finestra */
   Real ltx, lty;       /* Coordinate dell'angolo in alto a sinistra (in mm)*/
   Real rdx, rdy;       /* Coordinate dell'angolo in basso a destra (in mm) */
@@ -272,7 +275,26 @@ GrpWindow *eps_open_win(const char *file, Real x, Real y);
 int ps_save_fig(const char *file_name, GrpWindow *figure);
 int eps_save_fig(const char *file_name, GrpWindow *figure);
 
-void grp_window_block(GrpWindow *w);
+/** Type of function called when Grp_Window_Break has been used. */
+typedef void (*GrpOnError)(const char *where);
+
+/** Block the window 'w', such that it reports errors when used. */
+void Grp_Window_Block(GrpWindow *w);
+
+/** Similar to Grp_Window_Block, but when the window 'w' is used,
+ * the function on_error is called, instead of reporting an error.
+ */
+void Grp_Window_Break(GrpWindow *w, GrpOnError on_error);
+
+/** Restore the window 'w', after it has been broken with Grp_Window_Block
+ * or Grp_Window_Break
+ */
+void Grp_Window_Repair(GrpWindow *w);
+
+/** Make 'w' a dummy window which just reports errors when used. */
+void Grp_Window_Make_Dummy(GrpWindow *w);
+
+#define grp_window_block Grp_Window_Block
 
 /* Procedure per la gestione di una palette */
 void grp_color_build(Color *cb, ColorBytes *c);

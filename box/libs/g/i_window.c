@@ -66,9 +66,14 @@ static void destroy_styles(Window *w) {
   g_style_clear(& w->style);
 }
 
+void err_not_init(const char *location) {
+  g_error("Cannot use the window: it has not been initialized, yet!");
+}
+
 Task window_begin(VMProgram *vmp) {
   WindowPtr *wp = BOX_VM_CURRENTPTR(vmp, WindowPtr);
   Window *w;
+  static GrpWindow my_dummy_window;
   w = *wp = (WindowPtr) malloc(sizeof(Window)); /* Should use Mem_Alloc, but this requires to link against the internal box library (which still does not exist) */
   if (w == (WindowPtr) NULL) return Failed;
 #ifdef DEBUG
@@ -92,7 +97,9 @@ Task window_begin(VMProgram *vmp) {
 
   w->save_file_name = (char *) NULL;
 
-  w->window = (grp_window *) NULL;
+  w->window = & my_dummy_window;
+  Grp_Window_Make_Dummy(w->window);
+  Grp_Window_Break(w->window, err_not_init);
 
   init_default_styles(w);
 

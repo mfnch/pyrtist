@@ -333,36 +333,38 @@ void grp_draw_gpath(GPath *gp) {
  * accidentali "segmentation fault").
  */
 
-static void dummy_err(GrpWindow *w, const char *method) {
-  if (! w->quiet) {
+static void dummy_err(const char *method) {
+  if (! grp_win->quiet) {
     fprintf(stderr, "%s.%s: method is not implemented.\n",
-            w->win_type_str, method);
+            grp_win->win_type_str, method);
   }
 }
 
-static void dummy_rreset(void) {dummy_err(grp_win, "rreset");}
-static void dummy_rinit(void) {dummy_err(grp_win, "rinit");}
-static void dummy_rdraw(DrawStyle *style) {dummy_err(grp_win, "rdraw");}
-static void dummy_rline(Point *a, Point *b) {dummy_err(grp_win, "rline");}
+static void dummy_rreset(void) {grp_win->_report_error("rreset");}
+static void dummy_rinit(void) {grp_win->_report_error("rinit");}
+static void dummy_rdraw(DrawStyle *style) {grp_win->_report_error("rdraw");}
+static void dummy_rline(Point *a, Point *b) {grp_win->_report_error("rline");}
 static void dummy_rcong(Point *a, Point *b, Point *c) {
-  dummy_err(grp_win, "rcong");
+  grp_win->_report_error("rcong");
 }
-static void dummy_rclose(void) {dummy_err(grp_win, "rclose");}
+static void dummy_rclose(void) {grp_win->_report_error("rclose");}
 static void dummy_rcircle(Point *ctr, Point *a, Point *b) {
-  dummy_err(grp_win, "rcircle");
+  grp_win->_report_error("rcircle");
 }
 static void dummy_rfgcolor(Color *c) {
-  dummy_err(grp_win, "rfgcolor");
+  grp_win->_report_error("rfgcolor");
 }
 static void dummy_rbgcolor(Color *c) {
-  dummy_err(grp_win, "rbgcolor");
+  grp_win->_report_error("rbgcolor");
 }
-static void dummy_rgradient(ColorGrad *cg) {dummy_err(grp_win, "rgradient");}
+static void dummy_rgradient(ColorGrad *cg) {
+  grp_win->_report_error("rgradient");
+}
 static void dummy_text(Point *p, const char *text) {
-  dummy_err(grp_win, "text");
+  grp_win->_report_error("text");
 }
 static void dummy_font(const char *font, Real size) {
-  dummy_err(grp_win, "font");
+  grp_win->_report_error("font");
 }
 static void dummy_fake_point(Point *p) {return;}
 static int dummy_save(const char *file_name) {
@@ -373,12 +375,16 @@ static int dummy_save(const char *file_name) {
   return 1;
 }
 
-void dummy_close_win(void) {dummy_err(grp_win, "close_win");}
-void dummy_set_col(int col) {dummy_err(grp_win, "set_col");}
-void dummy_draw_point(Int ptx, Int pty) {dummy_err(grp_win, "draw_point");}
-void dummy_hor_line(Int y, Int x1, Int x2) {dummy_err(grp_win, "hor_line");}
+void dummy_close_win(void) {grp_win->_report_error("close_win");}
+void dummy_set_col(int col) {grp_win->_report_error("set_col");}
+void dummy_draw_point(Int ptx, Int pty) {
+  grp_win->_report_error("draw_point");
+}
+void dummy_hor_line(Int y, Int x1, Int x2) {
+  grp_win->_report_error("hor_line");
+}
 
-void grp_window_block(GrpWindow *w) {
+void Grp_Window_Block(GrpWindow *w) {
   w->rreset = dummy_rreset;
   w->rinit = dummy_rinit;
   w->rdraw = dummy_rdraw;
@@ -398,7 +404,18 @@ void grp_window_block(GrpWindow *w) {
   w->set_col = dummy_set_col;
   w->draw_point = dummy_draw_point;
   w->hor_line = dummy_hor_line;
+
+  w->_report_error = dummy_err;
 }
+
+void Grp_Window_Break(GrpWindow *w, GrpOnError on_error) {
+  Grp_Window_Block(w);
+  w->_report_error = (on_error != (GrpOnError) NULL) ? on_error : dummy_err;
+}
+
+void Grp_Window_Repair(GrpWindow *w) {
+  w->repair(w);
+} 
 
 GrpWindow grp_dummy_win = {
   "blocked",
@@ -421,13 +438,17 @@ GrpWindow grp_dummy_win = {
   dummy_set_col,
   dummy_draw_point,
   dummy_hor_line,
-  grp_window_block /* repair */
+  Grp_Window_Block /* repair */
 };
 
-/* Descrittore della finestra attualmente in uso: lo faccio puntare
- * ad una finestra che da solo errori (vedi piu' avanti).
+/* This is the current window pointer. By default it produces error messages
+ * until it is set properly.
  */
 GrpWindow *grp_win = & grp_dummy_win;
+
+void Grp_Window_Make_Dummy(GrpWindow *w) {
+  *w = grp_dummy_win;
+}
 
 /****************************************************************************
  * Generic functions to open a Window using a GrpWindowPlan.                *

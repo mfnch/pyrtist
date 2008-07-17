@@ -37,7 +37,7 @@ Task ipl_create(IPointListPtr *ipl_ptr) {
 }
 
 Task pointlist_begin(VMProgram *vmp) {
-  PROC_OF_POINTLIST(vmp, ipl);
+  IPointListPtr *ipl_ptr = BOX_VM_THIS_PTR(vmp, IPointListPtr);
   return ipl_create(ipl_ptr);
 }
 

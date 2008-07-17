@@ -27,6 +27,6 @@ extern Type type_Point, type_RealNum, type_IntgNum, type_CharNum, type_String;
 
 Task Builtins_Init(void);
 
-Task Builtins_Destroy(void);
+void Builtins_Destroy(void);
 
 #endif

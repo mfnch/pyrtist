@@ -522,7 +522,7 @@ Task Builtins_Init(void) {
   return Success;
 }
 
-Task Builtins_Destroy(void) {
+void Builtins_Destroy(void) {
   Bltin_Str_Destroy();
 }
 

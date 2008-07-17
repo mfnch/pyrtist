@@ -70,6 +70,7 @@ static void wincairo_close_win(void) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   cairo_surface_t *surface = cairo_get_target(cr);
   WHEREAMI;
+  cairo_show_page(cr);
   cairo_destroy(cr);
   cairo_surface_destroy(surface);
 }

@@ -99,7 +99,8 @@ In order of importance:
    supported.
 9. We need in particular to support gif for animations!
 
-DONE:
+DONE
+----
 1. Add possibility of setting cap style to Style;
    add possibility of setting the dash offset to Style.Dash
 3. Polygons should not be closed, when they are not filled.
@@ -107,4 +108,20 @@ DONE:
 5. Add function HSV[] useful for expressing colors in HSV components.
    Add HSV@Color and Color@HSV. Add HSV@(Window, Line, Poly, etc.)
 6. Add Gradient[] for filling with gradients.
+
+OPEN JOBS
+---------
+- adjust Box grammar and introduce proper compilation through abstract
+  syntax trees. This will allow to add "templates" and make the language
+  much more powerful and robust. Error detection will also benefit
+  from this improvement;
+- develop a bytecode file format for Box, so that already compiled
+  sources can be loaded and linked (similar to pyc files for python);
+- Add support for LaTeX: we should understand what is the right approach
+  (call latex+dvips+imagemagick or can we use directly the dvi file?)
+- Integrate imagemagick into the Box graphic library and make it work
+  together with Cairo: we want to support as many output formats as possible
+  and to be able include pictures (in various file formats) into the working
+  Window. We want also to be able to produce animated gifs and maybe
+  use mencoder for producing movies.
 
