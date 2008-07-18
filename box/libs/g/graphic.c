@@ -57,7 +57,7 @@ Real grp_toppmm = grp_ppmmperdpi;
  *  rispetto a questo nuovo sistema di riferimento.
  *  La funzione restituisce le coordinate di p nel vecchio sistema.
  * NOTA: v viene normalizzato e messo in vx, questo viene ruotato in direzione
- *  oraria (assex -> assey) di 90Â° per ottenere vy e infine viene restituito
+ *  oraria (assex -> assey) di 90° per ottenere vy e infine viene restituito
  *  il valore di (p.x * vx + p.y * vy).
  * ATTENZIONE! Ad ogni chiamata la procedura mette il risultato in una
  *  variabile statica e restituisce sempre il relativo puntatore
@@ -538,6 +538,7 @@ int grp_window_type_from_string(const char *type_str) {
   }
   return type;
 }
+
 
 /** Define a function which can create new windows of all
  * the different types.
