@@ -270,8 +270,8 @@ static void eps_repair(GrpWindow *w) {
  * to it. The window will have size size_x and size_y (in mm) and will
  * show coordinates from (0, 0) to (size_x, size_y).
  */
-grp_window *eps_open_win(const char *file, Real size_x, Real size_y) {
-  grp_window *wd;
+GrpWindow *eps_open_win(const char *file, Real size_x, Real size_y) {
+  GrpWindow *wd;
   FILE *winstream;
   Real size_x_psunit, size_y_psunit;
   int x_max, y_max;
@@ -284,7 +284,7 @@ grp_window *eps_open_win(const char *file, Real size_x, Real size_y) {
   y_max = (int) size_y_psunit+1;
 
   /* Creo la finestra */
-  wd = (GrpWindow *) malloc( sizeof(grp_window) );
+  wd = (GrpWindow *) malloc( sizeof(GrpWindow) );
   if (wd == NULL) {
     ERRORMSG("eps_open_win", "Memoria esaurita");
     return NULL;
@@ -300,27 +300,11 @@ grp_window *eps_open_win(const char *file, Real size_x, Real size_y) {
 
   wd->ptr = (void *) winstream;
 
-  /* Costruisco una tavolazza di colori da associare a questa finestra *
-  wd->pal = grp_palette_build(2, 2, 3, 4);
-  if ( wd->pal == NULL ) return NULL;
-
-  * La prima richiesta di colore corrisponde all'indice di colore 0,
-   * cioe' all'indice dello sfondo della figura.
-   * Quindi setto il colore dello sfondo a RGB = {255, 255, 255} = bianco
-   *
-  wd->bgcol = grp_color_request( wd->pal, & ((color) {255, 255, 255}) );
-  if ( wd->bgcol == NULL ) return NULL;
-
-  * Setto il colore di primo piano a RGB = {0, 0, 0} = nero *
-  wd->fgcol = grp_color_request( wd->pal, & ((color) {0, 0, 0}) );
-  if ( wd->fgcol == NULL ) return NULL;*/
-
   /* Ora do' le procedure per gestire la finestra */
   wd->quiet = 0;
   wd->repair = eps_repair;
   wd->repair(wd);
   wd->win_type_str = "eps";
-
 
   /* Scrivo l'intestazione del file */
   fprintf(winstream, "%%!PS-Adobe-2.0 EPSF-2.0\n"
@@ -358,10 +342,10 @@ static int eps_save(const char *unused) {
   return 1;
 }
 
-int eps_save_fig(const char *file_name, grp_window *figure) {
+int eps_save_fig(const char *file_name, GrpWindow *figure) {
   Point bb_min, bb_max, translation, center, size;
   Real sx, sy, rot_angle;
-  grp_window *cur_win = grp_win;
+  GrpWindow *cur_win = grp_win;
 
   bb_bounding_box(figure, & bb_min, & bb_max);
   /*printf("Bounding box (%f, %f) - (%f, %f)\n",
@@ -421,12 +405,12 @@ static void ps_repair(GrpWindow *w) {
  *  Tale finestra tradurra' i comandi grafici ricevuti in istruzioni postscript,
  *  che saranno scritte immediatamente su file.
  */
-grp_window *ps_open_win(const char *file) {
-  grp_window *wd;
+GrpWindow *ps_open_win(const char *file) {
+  GrpWindow *wd;
   FILE *winstream;
 
   /* Creo la finestra */
-  wd = (grp_window *) malloc( sizeof(grp_window) );
+  wd = (GrpWindow *) malloc( sizeof(GrpWindow) );
   if ( wd == NULL ) {
     ERRORMSG("ps_open_win", "Memoria esaurita");
     return NULL;
@@ -441,21 +425,6 @@ grp_window *ps_open_win(const char *file) {
   }
 
   wd->ptr = (void *) winstream;
-
-  /* Costruisco una tavolazza di colori da associare a questa finestra *
-  wd->pal = grp_palette_build(2, 2, 3, 4);
-  if ( wd->pal == NULL ) return NULL;
-
-  * La prima richiesta di colore corrisponde all'indice di colore 0,
-   * cioe' all'indice dello sfondo della figura.
-   * Quindi setto il colore dello sfondo a RGB = {255, 255, 255} = bianco
-   *
-  wd->bgcol = grp_color_request( wd->pal, & ((color) {255, 255, 255}) );
-  if ( wd->bgcol == NULL ) return NULL;
-
-  * Setto il colore di primo piano a RGB = {0, 0, 0} = nero *
-  wd->fgcol = grp_color_request( wd->pal, & ((color) {0, 0, 0}) );
-  if ( wd->fgcol == NULL ) return NULL;*/
 
   /* Ora do' le procedure per gestire la finestra */
   wd->quiet = 0;
@@ -492,10 +461,10 @@ grp_window *ps_open_win(const char *file) {
   return wd;
 }
 
-int ps_save_fig(const char *file_name, grp_window *figure) {
+int ps_save_fig(const char *file_name, GrpWindow *figure) {
   Point bb_min, bb_max, translation, center;
   Real sx, sy, rot_angle;
-  grp_window *cur_win = grp_win;
+  GrpWindow *cur_win = grp_win;
 
   bb_bounding_box(figure, & bb_min, & bb_max);
   printf("Bounding box (%f, %f) - (%f, %f)\n",
@@ -513,4 +482,3 @@ int ps_save_fig(const char *file_name, grp_window *figure) {
   grp_win = cur_win;
   return 1;
 }
-

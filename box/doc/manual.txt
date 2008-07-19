@@ -26,9 +26,13 @@ which allows you to easily draw figures.
 Command reference
 =================
 
+.. include:: pointlist.txt
+
 .. include:: color.txt
 
-.. include:: pointlist.txt
+.. include:: gradient.txt
+
+.. include:: style.txt
 
 .. include:: poly.txt
 

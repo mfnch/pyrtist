@@ -55,6 +55,7 @@ typedef struct {
     char *name;
   } hot;
 
+  int saved;
   char *save_file_name;
 } Window;
 

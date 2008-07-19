@@ -57,7 +57,7 @@ Real grp_toppmm = grp_ppmmperdpi;
  *  rispetto a questo nuovo sistema di riferimento.
  *  La funzione restituisce le coordinate di p nel vecchio sistema.
  * NOTA: v viene normalizzato e messo in vx, questo viene ruotato in direzione
- *  oraria (assex -> assey) di 90° per ottenere vy e infine viene restituito
+ *  oraria (assex -> assey) di 90ï¿½ per ottenere vy e infine viene restituito
  *  il valore di (p.x * vx + p.y * vy).
  * ATTENZIONE! Ad ogni chiamata la procedura mette il risultato in una
  *  variabile statica e restituisce sempre il relativo puntatore
@@ -415,7 +415,60 @@ void Grp_Window_Break(GrpWindow *w, GrpOnError on_error) {
 
 void Grp_Window_Repair(GrpWindow *w) {
   w->repair(w);
-} 
+}
+
+/*** Error window ***********************************************************/
+static char *err_id_string = "err";
+
+typedef struct {
+  FILE *out;
+  char *msg;
+} GrpWindowErrData;
+
+static void Window_Error_Close(void) {
+  assert(grp_win->win_type_str == err_id_string);
+  free(grp_win->ptr);
+  free(grp_win);
+}
+
+static void Window_Error_Report(const char *location) {
+  assert(grp_win->win_type_str == err_id_string);
+  GrpWindowErrData *d = (GrpWindowErrData *) grp_win->ptr;
+  if (! grp_win->quiet) {
+    fprintf(d->out, "%s\n", d->msg);
+    grp_win->quiet = 1;
+  }
+}
+
+static int Window_Error_Save(const char *file_name) {
+  grp_win->_report_error("save");
+  return 0;
+}
+
+/** Create a Window which displays the given error message, when someone
+ * tries to use it. The error message is fprinted to the give stream.
+ */
+GrpWindow *Grp_Window_Error(FILE *out, const char *msg) {
+  GrpWindow *w = (GrpWindow *) malloc(sizeof(GrpWindow));
+  GrpWindowErrData *d = (GrpWindowErrData *) malloc(sizeof(GrpWindowErrData));
+  Grp_Window_Block(w);
+  w->win_type_str = err_id_string;
+  w->save = Window_Error_Save;
+  w->close_win = Window_Error_Close;
+  w->_report_error = Window_Error_Report;
+  w->quiet = 0;
+
+  d->msg = strdup(msg);
+  d->out = out;
+  w->ptr = d;
+  return w;
+}
+
+int Grp_Window_Is_Error(GrpWindow *w) {
+ return w->win_type_str == err_id_string;
+}
+
+/****************************************************************************/
 
 GrpWindow grp_dummy_win = {
   "blocked",
@@ -500,7 +553,7 @@ struct win_type {
   {(char *) NULL, WT_NONE}
 };
 
-int grp_window_type_from_string(const char *type_str) {
+int Grp_Window_Type_From_String(const char *type_str) {
   char *colon = (char *) NULL;
   struct win_type *this_type;
   WL preferred_lib = WL_NONE;
@@ -540,18 +593,21 @@ int grp_window_type_from_string(const char *type_str) {
 }
 
 
+#define OPEN_FAILED(out, msg) \
+  Grp_Window_Error((out), "Trying to use an uninitialized window. " \
+  "The initialization failed for the following reason: "msg".")
+
+
 /** Define a function which can create new windows of all
  * the different types.
  */
-GrpWindow *grp_window_open(GrpWindowPlan *plan) {
+GrpWindow *Grp_Window_Open(GrpWindowPlan *plan) {
   int must_have = 0;
   WL win_lib;
   WT win_type;
 
-  if ((must_have & HAVE_TYPE) != 0 && !plan->have.type) {
-    g_error("Cannot open the window: window type is missing!");
-    return (GrpWindow *) NULL;
-  }
+  if ((must_have & HAVE_TYPE) != 0 && !plan->have.type)
+    return OPEN_FAILED(stderr, "window type is missing");
 
   if (num_win_terminals < 1) {
     /* Count the number of terminals if it hasn't been done before:
@@ -563,39 +619,27 @@ GrpWindow *grp_window_open(GrpWindowPlan *plan) {
       ++num_win_terminals;
   }
 
-  if (plan->type < 0 || plan->type >= num_win_terminals) {
-    g_error("Cannot open the window: unknown window type!");
-    return (GrpWindow *) NULL;
-  }
+  if (plan->type < 0 || plan->type >= num_win_terminals)
+    return OPEN_FAILED(stderr, "unknown window type");
 
   win_type = win_types[plan->type].type_num;
   must_have = win_types[plan->type].must_have;
   win_lib = win_types[plan->type].win_lib;
 
-  if ((must_have & HAVE_ORIGIN) != 0 && !plan->have.origin) {
-    g_error("Cannot open the window: origin is missing!");
-    return (GrpWindow *) NULL;
-  }
+  if ((must_have & HAVE_ORIGIN) != 0 && !plan->have.origin)
+    return OPEN_FAILED(stderr, "origin is missing");
 
-  if ((must_have & HAVE_SIZE) != 0 && !plan->have.size) {
-    g_error("Cannot open the window: size is missing!");
-    return (GrpWindow *) NULL;
-  }
+  if ((must_have & HAVE_SIZE) != 0 && !plan->have.size)
+    return OPEN_FAILED(stderr, "size is missing");
 
-  if ((must_have & HAVE_RESOLUTION) != 0 && !plan->have.resolution) {
-    g_error("Cannot open the window: window resolution is missing!");
-    return (GrpWindow *) NULL;
-  }
+  if ((must_have & HAVE_RESOLUTION) != 0 && !plan->have.resolution)
+    return OPEN_FAILED(stderr, "window resolution is missing");
 
-  if ((must_have & HAVE_FILE_NAME) != 0 && !plan->have.file_name) {
-    g_error("Cannot open the window: file name is missing!");
-    return (GrpWindow *) NULL;
-  }
+  if ((must_have & HAVE_FILE_NAME) != 0 && !plan->have.file_name)
+    return OPEN_FAILED(stderr, "file name is missing");
 
-  if ((must_have & HAVE_NUM_LAYERS) != 0 && !plan->have.num_layers) {
-    g_error("Cannot open the window: number of layers is missing!");
-    return (GrpWindow *) NULL;
-  }
+  if ((must_have & HAVE_NUM_LAYERS) != 0 && !plan->have.num_layers)
+    return OPEN_FAILED(stderr, "number of layers is missing");
 
   if (win_lib != WL_G) {
     assert(win_lib == WL_CAIRO);
@@ -603,8 +647,9 @@ GrpWindow *grp_window_open(GrpWindowPlan *plan) {
     plan->type = win_type;
     return cairo_open_win(plan);
 #else
-    g_error("The graphic library has been compiled without Cairo support.");
-    return (GrpWindow *) NULL;
+    return OPEN_FAILED(stderr, "window type not available, because "
+                       "the graphic library was compiled without "
+                       "Cairo support");
 #endif
   }
 
@@ -631,8 +676,7 @@ GrpWindow *grp_window_open(GrpWindowPlan *plan) {
   case WT_EPS:
     return eps_open_win(plan->file_name, plan->size.x, plan->size.y);
   default:
-    g_error("Unknown window type!");
-    return (GrpWindow *) NULL;
+    return OPEN_FAILED(stderr, "unknown window type");
   }
 }
 

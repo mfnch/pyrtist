@@ -267,7 +267,7 @@ static int fig_save(const char *file_name) {
 
   plan.file_name = (char *) file_name;
   plan.have.file_name = 1;
-  plan.type = grp_window_type_from_string(out_type);
+  plan.type = Grp_Window_Type_From_String(out_type);
   plan.have.type = 1;
   assert(plan.type >= 0);
   plan.have.size = 0;
@@ -901,7 +901,7 @@ int fig_save_fig(GrpWindow *figure, GrpWindowPlan *plan) {
   plan->origin.x = 0.0;
   plan->origin.y = 0.0;
   plan->have.origin = 1;
-  grp_win = grp_window_open(plan);
+  grp_win = Grp_Window_Open(plan);
   if (grp_win != (GrpWindow *) NULL) {
     aput_matrix(& translation, & center, rot_angle, sx, sy, fig_matrix);
     fig_draw_fig(figure);

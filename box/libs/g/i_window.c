@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #include "types.h"
 #include "virtmach.h"
@@ -34,6 +35,9 @@
 #include "i_put.h"
 #include "i_style.h"
 #include "i_gradient.h"
+#include "bb.h"
+#include "fig.h"
+#include "autoput.h"
 
 /*#define DEBUG*/
 
@@ -73,7 +77,6 @@ void err_not_init(const char *location) {
 Task window_begin(VMProgram *vmp) {
   WindowPtr *wp = BOX_VM_CURRENTPTR(vmp, WindowPtr);
   Window *w;
-  static GrpWindow my_dummy_window;
   w = *wp = (WindowPtr) malloc(sizeof(Window)); /* Should use Mem_Alloc, but this requires to link against the internal box library (which still does not exist) */
   if (w == (WindowPtr) NULL) return Failed;
 #ifdef DEBUG
@@ -82,7 +85,7 @@ Task window_begin(VMProgram *vmp) {
 #endif
 
   w->plan.have.type = 0;
-  w->plan.type = grp_window_type_from_string("fig");
+  w->plan.type = Grp_Window_Type_From_String("fig");
   w->plan.have.origin = 1;
   w->plan.origin.x = 0.0;
   w->plan.origin.y = 0.0;
@@ -97,9 +100,8 @@ Task window_begin(VMProgram *vmp) {
 
   w->save_file_name = (char *) NULL;
 
-  w->window = & my_dummy_window;
-  Grp_Window_Make_Dummy(w->window);
-  Grp_Window_Break(w->window, err_not_init);
+  w->window = Grp_Window_Error(stderr, "Cannot use a window before "
+                               "completing the initialization stage.");
 
   init_default_styles(w);
 
@@ -137,7 +139,7 @@ Task window_gradient(VMProgram *vmp) {
 Task window_destroy(VMProgram *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
   Window *w = (Window *) wp;
-  grp_window *cur_win = grp_win;
+  GrpWindow *cur_win = grp_win;
 #ifdef DEBUG
   printf("Window object deallocated\n");
 #endif
@@ -157,14 +159,14 @@ Task window_destroy(VMProgram *vmp) {
 Task window_str(VMProgram *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
   Window *w = (Window *) wp;
-  char *type_str = BOX_VM_ARGPTR1(vmp, char);
+  char *type_str = BOX_VM_ARG1_PTR(vmp, char);
 
   if (w->plan.have.type) {
     g_warning("You have already specified the window type!");
   }
 
 
-  w->plan.type = grp_window_type_from_string(type_str);
+  w->plan.type = Grp_Window_Type_From_String(type_str);
   if (w->plan.type < 0) {
     g_error("Unrecognized window type!");
     return Failed;
@@ -176,7 +178,7 @@ Task window_str(VMProgram *vmp) {
 Task window_size(VMProgram *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
   Window *w = (Window *) wp;
-  Point *win_size = BOX_VM_ARGPTR1(vmp, Point);
+  Point *win_size = BOX_VM_ARG1_PTR(vmp, Point);
 
   if (w->plan.have.size) {
     g_error("You have already specified the window size!");
@@ -200,9 +202,8 @@ Task window_end(VMProgram *vmp) {
   Window *w = (Window *) wp;
 
   w->plan.have.resolution = 1;
-  w->plan.have.size = 1;
-  w->window = grp_window_open(& w->plan);
-  if (w->window == (grp_window *) NULL) {
+  w->window = Grp_Window_Open(& w->plan);
+  if (w->window == (GrpWindow *) NULL) {
     g_error("cannot create the window!");
     return Failed;
   }
@@ -212,7 +213,7 @@ Task window_end(VMProgram *vmp) {
 
 Task window_origin_point(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Point *origin = BOX_VM_ARGPTR1(vmp, Point);
+  Point *origin = BOX_VM_ARG1_PTR(vmp, Point);
 
   if (w->plan.have.origin) {
     g_error("You have already specified the origin of the window!");
@@ -224,46 +225,162 @@ Task window_origin_point(VMProgram *vmp) {
   return Success;
 }
 
+Task window_save_begin(VMProgram *vmp) {
+  Window *w  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
+  w->save_file_name = (char *) NULL;
+  w->saved = 0;
+  return Success;
+}
+
 Task window_save_str(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
-  char *file_name = BOX_VM_ARGPTR1(vmp, char);
+  Window *w  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
+  char *file_name = BOX_VM_ARG1_PTR(vmp, char);
 
   if (w->save_file_name != (char *) NULL) {
+    free(w->save_file_name);
     printf("Window.Save: changing save target from '%s' to '%s'\n",
            w->save_file_name, file_name);
   }
 
-  w->save_file_name = file_name;
+  w->save_file_name = strdup(file_name);
+  return Success;
+}
+
+Task window_save_window(VMProgram *vmp) {
+  Window *src  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
+  Window *dest = BOX_VM_ARG1(vmp, WindowPtr);
+  Point translation = {0.0, 0.0}, center = {0.0, 0.0};
+  Real sx = 1.0, sy = 1.0, rot_angle = 0.0;
+  GrpWindow *cur_win = grp_win;
+  int type_fig = Grp_Window_Type_From_String("fig");
+  if (src->plan.type != type_fig) {
+    g_error("Window.Save: Saving to arbitrary targets is only available "
+            "for \"fig\" windows. Windows of different type accept only "
+            "the syntax window.Save[\"filename\"]");
+    return Failed;
+  }
+  if (src == dest) {
+    g_error("Window.Save: saving a window into itself is not allowed.");
+    return Failed;
+  }
+
+  /* Here we have two possibilities:
+   * 1. 'dest' is an incomplete window (it can't be used for normal drawing):
+   *    we then want to complete it, using the bounding box of 'src'.
+   *    After this step, the window will become a normal, initialized one,
+   *    which can be used elsewhere in the program.
+   * 2. 'dest' is a normal, correctly initialized  window: we then want
+   *    to scale and translate 'src', such that its bounding box matches
+   *    the bounding box of 'dest'.
+   */
+  if (Grp_Window_Is_Error(dest->window)) {
+    Point bb_min, bb_max;
+    if (!BB_Bounding_Box(src->window, & bb_min, & bb_max)) {
+      g_warning("Computed bounding box is degenerate: "
+                "cannot save the figure!");
+      return Failed;
+    }
+
+    if (src->save_file_name != (char *) NULL) {
+      dest->plan.have.file_name = 1;
+      dest->plan.file_name = src->save_file_name;
+    }
+
+    /*printf("Bounding box (%f, %f) - (%f, %f)\n",
+             bb_min.x, bb_min.y, bb_max.x, bb_max.y);*/
+
+    if (dest->plan.have.origin) {
+      translation.x = -bb_min.x;
+      translation.y = -bb_min.y;
+
+    } else{
+      dest->plan.origin.x = bb_min.x;
+      dest->plan.origin.y = bb_min.y;
+      dest->plan.have.origin = 1;
+    }
+
+    if (dest->plan.have.size) {
+      sx = dest->plan.size.x/(bb_max.x - bb_min.x);
+      sy = dest->plan.size.y/(bb_max.y - bb_min.y);
+
+    } else {
+      dest->plan.size.x = bb_max.x - bb_min.x;
+      dest->plan.size.y = bb_max.y - bb_min.y;
+      dest->plan.have.size = 1;
+    }
+
+    grp_win = dest->window;
+    grp_close_win();
+    grp_win = cur_win;
+    dest->window = Grp_Window_Open(& dest->plan);
+    if (dest->window == (GrpWindow *) NULL) {
+      g_error("Window.Save: cannot create the window!");
+      return Failed;
+    }
+
+    if (Grp_Window_Is_Error(dest->window)) {
+      g_error("Window.Save: cannot complete the given window!");
+      return Failed;
+    }
+
+  } else {
+    Point bb_min, bb_max;
+    if (!BB_Bounding_Box(src->window, & bb_min, & bb_max)) {
+      g_warning("Computed bounding box is degenerate: "
+                "cannot save the figure!");
+      return Failed;
+    }
+    translation.x = -bb_min.x;
+    translation.y = -bb_min.y;
+    sx = dest->plan.size.x/(bb_max.x - bb_min.x);
+    sy = dest->plan.size.y/(bb_max.y - bb_min.y);
+  }
+
+  grp_win = dest->window;
+  aput_matrix(& translation, & center, rot_angle, sx, sy, fig_matrix);
+  fig_draw_fig(src->window);
+  if (dest->plan.have.file_name)
+    grp_save(dest->plan.file_name); /* Some terminals require an explicit save! */
+  grp_win = cur_win;
+
+  if (src->save_file_name != (char *) NULL) {
+    free(src->save_file_name);
+    src->save_file_name = (char *) NULL;
+    dest->plan.file_name = "shouldnthappen.i_window.c";
+  }
+  src->saved = 1;
   return Success;
 }
 
 Task window_save_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
 
-  if (w->save_file_name == (char *) NULL) {
-    g_error("window not saved: need a file name!\n");
-    return Failed;
-
-  } else if (w->window == (grp_window *) NULL) {
-    g_error("cannot save window: it is not initialized!");
-    return Failed;
+  if (w->saved) {
+    if (w->save_file_name != (char *) NULL) {
+      free(w->save_file_name);
+      w->save_file_name = (char *) NULL;
+      g_warning("Window.Save: given file name was not used.\n");
+    }
+    return Success;
 
   } else {
-    grp_window *cur_win;
+    GrpWindow *cur_win;
     int all_ok;
+
+    if (w->save_file_name == (char *) NULL) {
+      g_error("window not saved: need a file name!\n");
+      return Failed;
+    }
 
     cur_win = grp_win;
     grp_win = w->window;
     all_ok = grp_save(w->save_file_name);
     grp_win = cur_win;
+    free(w->save_file_name);
     w->save_file_name = (char *) NULL;
+    w->saved = 1;
     return (all_ok) ? Success : Failed;
   }
-
-#ifdef DEBUG
-  printf("Saved window to '%s'\n", w->save_file_name);
-#endif
-  return Success;
 }
 
 Task window_hot_begin(VMProgram *vmp) {
@@ -276,7 +393,7 @@ Task window_hot_begin(VMProgram *vmp) {
 
 Task window_hot_point(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Point *point = BOX_VM_ARGPTR1(vmp, Point);
+  Point *point = BOX_VM_ARG1_PTR(vmp, Point);
   char *name = (w->hot.got.name) ? w->hot.name : (char *) NULL;
   Task t = pointlist_add(& w->pointlist, point, name);
   if (w->hot.got.name) {
@@ -290,7 +407,7 @@ Task window_hot_point(VMProgram *vmp) {
 
 Task window_hot_string(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  char *name = strdup(BOX_VM_ARGPTR1(vmp, char));
+  char *name = strdup(BOX_VM_ARG1_PTR(vmp, char));
   w->hot.name = name;
   w->hot.got.name = 1;
   return Success;
@@ -330,13 +447,13 @@ Task window_file_string(VMProgram *vmp) {
     g_warning("You have already provided a file name for the window.");
   }
   w->plan.have.file_name = 1;
-  w->plan.file_name = BOX_VM_ARGPTR1(vmp, char);
+  w->plan.file_name = BOX_VM_ARG1_PTR(vmp, char);
   return Success;
 }
 
 Task window_res_point(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Point *res = BOX_VM_ARGPTR1(vmp, Point);
+  Point *res = BOX_VM_ARG1_PTR(vmp, Point);
   if (w->plan.have.resolution) {
     g_warning("You have already provided the window resolution.");
   }
@@ -346,10 +463,21 @@ Task window_res_point(VMProgram *vmp) {
   return Success;
 }
 
+Task window_res_real(VMProgram *vmp) {
+  Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
+  Real *res = BOX_VM_ARG1_PTR(vmp, Real);
+  if (w->plan.have.resolution) {
+    g_warning("You have already provided the window resolution.");
+  }
+  w->plan.resolution.y = w->plan.resolution.x = *res;
+  w->plan.have.resolution = 1;
+  return Success;
+}
+
 Task window_show_point(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Point *p = BOX_VM_ARGPTR1(vmp, Point);
-  grp_window *cur_win = grp_win;
+  Point *p = BOX_VM_ARG1_PTR(vmp, Point);
+  GrpWindow *cur_win = grp_win;
   grp_win = w->window;
   grp_fake_point(p);
   grp_win = cur_win;

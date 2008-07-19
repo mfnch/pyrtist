@@ -25,4 +25,5 @@
  */
 int bb_bounding_box(grp_window *figure, Point *bb_min, Point *bb_max);
 
+#define BB_Bounding_Box bb_bounding_box
 #endif

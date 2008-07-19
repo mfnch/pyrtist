@@ -1,5 +1,14 @@
-Circle
-------
+Window.Circle
+-------------
 
-The ``Circle`` instruction can be used to create circles and ellipses.
+``Circle`` can be used to draw circles, ellipses and rings. Its syntax is:
 
+.. code-block:: Box
+
+  window.Circle[center1, radius1_x, radius1_y;
+                center2, radius2_x, radius2_y; ...]
+
+
+``center1``, ``center2`` the centers (``Point`` objects) of the circles/ellipses,
+``radius1_x``, ``radius2_x``, ``radius1_y``, ``radius2_y`` are the radii
+(``Real`` numbers).

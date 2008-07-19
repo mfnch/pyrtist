@@ -12,8 +12,10 @@ Gradient@&Window ? "window_gradient"
 Style@&Window ? "window_style"
 
 Window.Save = Void
+([)@Window.Save ? "window_save_begin"
 (])@Window.Save ? "window_save_end"
 ()Char@Window.Save ? "window_save_str"
+Window@Window.Save ? "window_save_window"
 
 Window.Hot = Point
 ([)@Window.Hot ? "window_hot_begin"
@@ -23,6 +25,7 @@ PointList@Window.Hot ? "window_hot_pointlist"
 (])@Window.Hot ? "window_hot_end"
 
 Window.Res = Void
+R@Window.Res ? "window_res_real"
 P@Window.Res ? "window_res_point"
 
 Window.Origin = Void

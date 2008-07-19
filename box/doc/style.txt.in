@@ -1,0 +1,6 @@
+Style
+-----
+
+``Style`` can be used to set the filling styles for polygons
+and all the other shapes. It can be used to set the filling
+scheme, the border width, dash pattern, join and cap styles.

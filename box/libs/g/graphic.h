@@ -233,10 +233,10 @@ typedef enum {WT_NONE=-1, WT_BM1=0, WT_BM4, WT_BM8, WT_FIG,
               WT_PDF, WT_SVG, WT_MAX} WT;
 
 /** Get the window ID (an integer number) from the window type (a string) */
-int grp_window_type_from_string(const char *type_str);
+int Grp_Window_Type_From_String(const char *type_str);
 
 /** Unified function to open any kind of window */
-GrpWindow *grp_window_open(GrpWindowPlan *plan);
+GrpWindow *Grp_Window_Open(GrpWindowPlan *plan);
 
 /** Initialise bounding box object */
 void Grp_BB_Init(BB *bb);
@@ -290,6 +290,16 @@ void Grp_Window_Break(GrpWindow *w, GrpOnError on_error);
  * or Grp_Window_Break
  */
 void Grp_Window_Repair(GrpWindow *w);
+
+/** Create a Window which displays the given error message, when someone
+ * tries to use it. The error message is fprinted to the give stream.
+ */
+GrpWindow *Grp_Window_Error(FILE *out, const char *msg);
+
+/** Returns 1 if the window has been created with Grp_Window_Error,
+ * 0 otherwise.
+ */
+int Grp_Window_Is_Error(GrpWindow *w);
 
 /** Make 'w' a dummy window which just reports errors when used. */
 void Grp_Window_Make_Dummy(GrpWindow *w);

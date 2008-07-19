@@ -108,6 +108,12 @@ typedef signed char VMSByte;
 /* Definisco il tipo Obj, che e' semplicemente il tipo puntatore */
 typedef void *Obj;
 
+/** We need more than just a pointer when referring to Box objects */
+typedef struct {
+  void *block; /**< Pointer to the allocated memory block */
+  void *ptr;   /**< Pointer to the data inside this block */
+} ObjPtr;
+
 /* This is an union of all possible types */
 typedef union {
   Char  c;
