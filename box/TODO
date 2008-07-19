@@ -80,18 +80,6 @@ DONE:
 TODO LIST FOR THE GRAPHIC LIBRARY
 ---------------------------------
 In order of importance:
-2. Make Window[] to create a WindowPlan without creating the actual Window.
-   This will allow to extend the Window.Save syntax in a sensible way:
-
-     w.Save["filename.ext", Window["rgb24", .Res[10]]]
-
-   Be careful! Example:
-
-     w = Window[]
-     w.Line[...]
-
-4. Add functions Deg[] (convert angle from degrees to radians)
-   and Dpi[] (convert resolution from dpi to points per mm.
 7. Window should be able to take an already existing image
    as a background for the new one. We should be able to include
    existing images.
@@ -103,8 +91,25 @@ DONE
 ----
 1. Add possibility of setting cap style to Style;
    add possibility of setting the dash offset to Style.Dash
+2. Make Window[] to create a WindowPlan without creating the actual Window.
+   This will allow to extend the Window.Save syntax in a sensible way:
+
+     w.Save["filename.ext", Window["rgb24", .Res[10]]]
+
+   Be careful! Example:
+
+     w = Window["rgb24"]
+     w.Line[...] // Will segfault if w is not initialised
+
+   DONE with the introduction of "incomplete" Windows. Incomplete windows
+   are windows which could not be created, due to some missing params
+   during initialisation. They cause errors only when the user tries to
+   draw something on them. However they can be used as argument for the
+   Window.Save method, which will "complete" the window appropriately.
 3. Polygons should not be closed, when they are not filled.
    They should be closed only when using Poly.Close[]
+4. Add functions Deg[] (convert angle from degrees to radians)
+   and Dpi[] (convert resolution from dpi to points per mm.
 5. Add function HSV[] useful for expressing colors in HSV components.
    Add HSV@Color and Color@HSV. Add HSV@(Window, Line, Poly, etc.)
 6. Add Gradient[] for filling with gradients.
