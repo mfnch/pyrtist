@@ -1,0 +1,8 @@
+include "g"
+
+//{save_rgb24
+// Create a bitmap window and save it.
+w = Window["rgb24", (100, 50)]
+i = 0, \ w.Circle[(50, 50) + 30*Vec[Deg[i]], 5; For[(i+=30) <= 360]]
+w.Save["window1.png"]
+//}

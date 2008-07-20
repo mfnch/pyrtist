@@ -11,6 +11,12 @@ svn_version:
 html/box-logo.png: box-logo.box
 	$(BOX) -l g box-logo.box
 
+html/window1.png:
+	$(BOX) -l g window.box
+
+window.txt: window.txt.in window.box html/window1.png
+	python subst.py window.box window.txt.in
+
 pointlist.out: pointlist.box
 	$(BOX) -l g pointlist.box | tail -n2 > pointlist.out
 
@@ -42,7 +48,7 @@ style.txt:
 	python subst.py style.box style.txt.in
 
 html: svn_version html/box-logo.png color.txt pointlist.txt line.txt poly.txt \
-      circle.txt style.txt gradient.txt
+      circle.txt style.txt gradient.txt window.txt
 	mkdir -p html
 	$(RST2HTML) --strict --stylesheet-path=html/style.css \
 	            --link-stylesheet -v manual.txt html/manual.html \

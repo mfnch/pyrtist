@@ -42,6 +42,7 @@ color = (Color black, red, green, yellow, blue, magenta, cyan, white, _
 HSV = ++(Real h, s, v, a)
 ([)@HSV[.h = 0.0, .s = .v = .a = 1.0]
 HSV@HSV[.h = $.h, .s = $.s, .v = $.v, .a = $.a]
+R@HSV[$$.h = $, $$.s = $$.v = $$.a = 1.0]
 (R h, s, v)@HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v]
 (R h, s, v, a)@HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v, $$.a = $.a]
 

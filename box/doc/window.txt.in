@@ -1,0 +1,125 @@
+
+Window
+------
+
+``Window`` objects play the central role in the graphic library.
+Indeed, every graphic command has a ``Window`` as a target.
+There are many types of windows, all of them however fall in one
+of three cathegories:
+
+1. **bitmap windows**: windows of this type draw into memory.
+   The image surface is reduced to a grid of pixels. The color of each pixel
+   is stored into an allocated region of the memory of your computer.
+   The content of such a window can be saved into a PNG file.
+
+2. **stream (vector) windows**: a window of this type is associated to a file.
+   Any graphic command induces new data to be appended to this file.
+
+3. **recoder windows**: a window which simply records the commands,
+   so that they can be re-used and manipulated in a later stage.
+
+The minimal commands to create a window are:
+
+.. code-block:: Box
+
+  w = Window[]                                    // for a recorder window
+  w = Window["rgb24", (100, 50)]                  // for a bitmap window
+  w = Window["pdf", (100, 50), .File["file.pdf"]] // for a pdf stream window
+
+The window type is identified by a string. If the user does not provide
+a string, then a recorder window will be created by default
+("fig" is the string associated to recorder windows).
+Here is a list of available window types, together with their identificative
+string:
+
++-----------------+----------------+---------------------------------+--------------+
+|**cathegory**    | **id string**  | **window type**                 | **requires** |
++-----------------+----------------+---------------------------------+--------------+
+| bitmap          | "a1"           | alpha channel (1 bit per pixel) | Cairo        |
+|                 +----------------+---------------------------------+              |
+|                 | "a8"           | alpha channel (8 bit per pixel) |              |
+|                 +----------------+---------------------------------+              |
+|                 | "rgb24"        | RGB (24 bit per pixel)          |              |
+|                 +----------------+---------------------------------+              |
+|                 | "argb32"       | RGB + alpha channel             |              |
++-----------------+----------------+---------------------------------+              |
+| stream          | "pdf"          | Output to PDF file              |              |
+|                 +----------------+---------------------------------+              |
+|                 | "svg"          | Output to SVG file              |              |
+|                 +----------------+---------------------------------+              |
+|                 | "cairo:eps"    | Output to EPS file              |              |
+|                 +----------------+---------------------------------+--------------+
+|                 | "eps"          | Output to EPS file              | Native       |
++-----------------+----------------+---------------------------------+              |
+| record          | "fig"          | Commands are recorded           |              |
++-----------------+----------------+---------------------------------+--------------+
+
+Most of these windows are available only when the graphic library is compiled
+with support for the `Cairo 2D graphics library <http://cairographics.org>`__.
+``Window[]`` takes also the following arguments:
+
+- **the size of the window**: *compulsory for bitmap and stream windows*.
+  It is expressed in millimeters, i.e. (100, 50) corresponds to a window
+  with 100 mm width and 50 mm height.
+
+- **the name of the output file**. This is *required only when creating
+  stream windows*. Example: ``w = Window[.File["name.ext"], ...]``.
+
+- **the resolution**. This is *meaningful only for bitmap windows*
+  and specifies the number of pixels per millimeter in both x and y
+  direction.
+  Example: ``w = Window[.Res[Dpi[400]], ...]``. Here the function ``Dpi``
+  converts the resolution from points per inch (dpi) to points per mm.
+
+- **the origin**. Example: If the window is created with
+  ``w = Window[(sx, sy), .Origin[(ox, oy)]]``, then the it will ``show``
+  the points ``(px, py)`` with ``px`` between ``ox`` and ``ox + |sx|``
+  and ``py`` between ``oy`` and ``oy + |sy|``. Here ``|sx|`` and ``|sy|``
+  are the absolute values of ``sx`` and ``sy`` respectively. The sign
+  of ``sx`` and ``sy`` is used to mirror the window along the correspondent
+  direction.
+
+We emphasize that **all the numbers used in graphics commands are expressed
+in millimeters (mm)**. If you prefer to use inches, you should scale your
+figure before saving it.
+
+**Note:** most of the times the user may just want to use a record window
+(``"fig"``) and save its content to file with the `Window.Save`_ method.
+This method takes care of calculating the bounding box of the figure
+you want to save. It allows to save just the portion of your drawing
+which is actually visible and chooses a different target by looking
+at the extension of the provided output file.
+
+Incomplete windows
+------------------
+
+Incomplete windows are created when the user does not provide all
+the parameters which are necessary for the creation of a window.
+For instance:
+
+.. code-block:: Box
+
+  w = Window["rgb24"]
+
+``w`` will be created as an incomplete window, without any complaints.
+An error message will however be displayed as soon as the user tries
+to draw something inside it.
+Incomplete windows can be used together with the method ``Window.Save``,
+which is discussed below.
+
+Window.Save
+-----------
+
+This method is useful only for bitmap windows and for record windows.
+
+- **for bitmap windows** this method offers a way to transfer the image,
+  which is currently stored in the RAM memory of your computer, into a PNG
+  file (no other output image formats are supported at the moment).
+  Here is an example:
+
+  .. code-block:: Box
+
+    //{save_rgb24}
+
+- **for record windows** this method allows to transfer the recorded
+  commands to a new or existing window.
