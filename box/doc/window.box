@@ -2,7 +2,19 @@ include "g"
 
 //{save_rgb24
 // Create a bitmap window and save it.
-w = Window["rgb24", (100, 50)]
-i = 0, \ w.Circle[(50, 50) + 30*Vec[Deg[i]], 5; For[(i+=30) <= 360]]
-w.Save["window1.png"]
+w = Window["rgb24", (50, 50), .Origin[(-25, -25)], .Res[Dpi[100]]]
+s = Style[.Border[1, color.red]] // Just to trace a red border
+i = 0, \ w.Poly[40*Vec[Deg[18+i*144]], For[++i < 5], s] // a star
+w.Save["html/window1.png"]
 //}
+
+//{save_fig
+w2 = Window[] // create a recorder window
+i = 0, \ w2.Poly[40*Vec[Deg[18+i*144]], For[++i < 5], s]
+w2.Save["html/window2.png"]
+//}
+
+//{save_fig2
+w2.Save["html/window3.png", Window["rgb24", .Res[Dpi[50]]]]
+//}
+

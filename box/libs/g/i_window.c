@@ -86,7 +86,7 @@ Task window_begin(VMProgram *vmp) {
 
   w->plan.have.type = 0;
   w->plan.type = Grp_Window_Type_From_String("fig");
-  w->plan.have.origin = 1;
+  w->plan.have.origin = 0;
   w->plan.origin.x = 0.0;
   w->plan.origin.y = 0.0;
   w->plan.have.size = 0;
@@ -202,6 +202,7 @@ Task window_end(VMProgram *vmp) {
   Window *w = (Window *) wp;
 
   w->plan.have.resolution = 1;
+  w->plan.have.origin = 1;
   w->window = Grp_Window_Open(& w->plan);
   if (w->window == (GrpWindow *) NULL) {
     g_error("cannot create the window!");

@@ -101,10 +101,11 @@ For instance:
 
   w = Window["rgb24"]
 
-``w`` will be created as an incomplete window, without any complaints.
+Here the size of the window is not being specified, but there won't
+be complains and ``w`` will be created as an incomplete window.
 An error message will however be displayed as soon as the user tries
 to draw something inside it.
-Incomplete windows can be used together with the method ``Window.Save``,
+Incomplete windows can be used together with the method `Window.Save`_,
 which is discussed below.
 
 Window.Save
@@ -114,12 +115,64 @@ This method is useful only for bitmap windows and for record windows.
 
 - **for bitmap windows** this method offers a way to transfer the image,
   which is currently stored in the RAM memory of your computer, into a PNG
-  file (no other output image formats are supported at the moment).
+  file (currently only PNG is supported as an output image format).
   Here is an example:
 
   .. code-block:: Box
 
     //{save_rgb24}
 
+  The output of this small fragment of code is shown below:
+
+  .. image:: window1.png
+   :align: center
+
+  Notice that a part of the picture lies outside the visible region:
+  the star tips are cut.
+
 - **for record windows** this method allows to transfer the recorded
   commands to a new or existing window.
+  Here is an example:
+
+  .. code-block:: Box
+
+    //{save_fig}
+
+  Just a file name has to be provided to the ``Save`` method: the size
+  is computed automatically and is large enough to contain the picture.
+  The extension of the given file name is used to decided what kind
+  of output format to use. In this case "argb32" is used to create
+  a temporary target window, whose content is then saved to the given
+  file, using PNG as an image format.
+  The output is:
+
+  .. image:: window2.png
+   :align: center
+
+  The picture recorded inside ``w2`` can be directed to EPS and SVG file
+  with:
+
+  .. code-block:: Box
+
+    w2.Save["html/window2.eps"]
+    w2.Save["html/window2.svg"]
+
+  The ``Window.Save`` method however is much more flexible than what
+  you may think at this point.
+  Indeed, the syntax we have seen does not allow to specify
+  the resolution of the image or the format. For example, you may want
+  to use "rgb24", instead of "argb32". This is the situation where
+  `Incomplete windows`_ become handy:
+
+  .. code-block:: Box
+
+    //{save_fig2}
+  
+  This line specify to use a resolution of 50 dpi (points per inch)
+  and to use ``"rgb24"`` as the intermediate bitmap format.
+  This is the image you get:
+
+  .. image:: window3.png
+   :align: center
+
+

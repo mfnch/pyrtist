@@ -11,7 +11,7 @@ svn_version:
 html/box-logo.png: box-logo.box
 	$(BOX) -l g box-logo.box
 
-html/window1.png:
+html/window1.png: window.box
 	$(BOX) -l g window.box
 
 window.txt: window.txt.in window.box html/window1.png
