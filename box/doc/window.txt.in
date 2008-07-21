@@ -138,9 +138,9 @@ This method is useful only for bitmap windows and for record windows.
 
     //{save_fig}
 
-  Just a file name has to be provided to the ``Save`` method: the size
+  Only the file name needs to be provided to the ``Save`` method: the size
   is computed automatically and is large enough to contain the picture.
-  The extension of the given file name is used to decided what kind
+  The extension of the given file name is used to decide what kind
   of output format to use. In this case "argb32" is used to create
   a temporary target window, whose content is then saved to the given
   file, using PNG as an image format.
@@ -149,8 +149,8 @@ This method is useful only for bitmap windows and for record windows.
   .. image:: window2.png
    :align: center
 
-  The picture recorded inside ``w2`` can be directed to EPS and SVG file
-  with:
+  The picture recorded inside ``w2`` can be used again to create, for example,
+  an EPS and a SVG file with:
 
   .. code-block:: Box
 
@@ -159,17 +159,15 @@ This method is useful only for bitmap windows and for record windows.
 
   The ``Window.Save`` method however is much more flexible than what
   you may think at this point.
-  Indeed, the syntax we have seen does not allow to specify
-  the resolution of the image or the format. For example, you may want
-  to use "rgb24", instead of "argb32". This is the situation where
-  `Incomplete windows`_ become handy:
+  For example, you may want to use "rgb24", instead of "argb32".
+  This is the situation where `Incomplete windows`_ become handy:
 
   .. code-block:: Box
 
     //{save_fig2}
   
-  This line specify to use a resolution of 50 dpi (points per inch)
-  and to use ``"rgb24"`` as the intermediate bitmap format.
+  This line specifies to use a resolution of 50 dpi (points per inch)
+  and ``"rgb24"`` as the intermediate bitmap format.
   This is the image you get:
 
   .. image:: window3.png
