@@ -115,7 +115,7 @@ This method is useful only for bitmap windows and for record windows.
 
 - **for bitmap windows** this method offers a way to transfer the image,
   which is currently stored in the RAM memory of your computer, into a PNG
-  file (currently only PNG is supported as an output image format).
+  file (only PNG is supported as an output image format).
   Here is an example:
 
   .. code-block:: Box
@@ -141,9 +141,9 @@ This method is useful only for bitmap windows and for record windows.
   Only the file name needs to be provided to the ``Save`` method: the size
   is computed automatically and is large enough to contain the picture.
   The extension of the given file name is used to decide what kind
-  of output format to use. In this case "argb32" is used to create
-  a temporary target window, whose content is then saved to the given
-  file, using PNG as an image format.
+  of output format to use. In this case "argb32" (the default) is used to
+  create a temporary target window, whose content is then saved
+  to the given file, using PNG as an image format.
   The output is:
 
   .. image:: window2.png
@@ -173,4 +173,26 @@ This method is useful only for bitmap windows and for record windows.
   .. image:: window3.png
    :align: center
 
+  The ``w2.Save`` method uses the provided window as follows:
+
+  + If the provided window is incomplete, then it is completed,
+    computing the bounding box of ``w2`` and using it as a size
+    for the output window. We say that the provided incomplete 
+    window is completed. Indeed, after the method has been called
+    the provided window becomes usable:
+
+    .. code-block:: Box
+
+      w3 = Window["rgb24"]    // w3 is incomplete
+                              // Here w3 cannot be used
+      w2.Save["file.png", w3] // w3 iw completed
+      w3.Circle[(0, 0), 20]   // w3 is now a normal window and can be used! 
+
+    This code will produce also a file ``"file.png"``.
+    You can avoid it, if you just omit that name:
+
+      w2.Save[w3] // w3 iw completed and no file is saved to disk
+
+  + If you provide a normal window (complete window), then ``w2``
+    is scaled to fit in it, before actually being put in it.
 
