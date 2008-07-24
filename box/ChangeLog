@@ -1,5 +1,15 @@
 Change log (recent come first)
 
+dd mm yyyy: 
+  * Can define "incomplete windows": windows which throw an error
+    whenever they are used. Creation of such windows, however,
+    does not produce any errors: this concept is useful for the 
+    new syntax of the Window.Save method;
+  * Extended the syntax of the Window.Save method: it can now take
+    a window and (1) complete it (if it is uncomplete) or (2) put
+    the figure into it (if it is complete). In both cases the figure
+    fits the destination window;
+
 5 July 2008: Bugfixes in the transformation of draw styles and font
 
 28 June 2008: Filling with linear/radial color gradients (Gradient[]) 

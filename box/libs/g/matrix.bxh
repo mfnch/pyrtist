@@ -1,0 +1,53 @@
+R = (Int -> Real)
+P = ((R, R) -> Point)
+
+Matrix = (Real m11, m12, m13, m21, m22, m23)
+
+// If a real is provided inside Matrix[] then we multiply the matrix
+// by the real
+R@&Matrix[
+  $$.m11 *= $, $$.m12 *= $, $$.m21 *= $, $$.m22 *= $, $$.m13 *= $, $$.m23 *= $
+]
+
+// A point just translates the matrix
+P@&Matrix[$$.m13 += $.x, $$.m23 += $.y]
+
+// We initialize with the identity matrix
+([)@Matrix[
+  $$.m12 = $$.m13 = $$.m21 = $$.m23 = 0.0
+  $$.m11 = $$.m22 = 1.0
+]
+
+// If another matrix is provided, we right multiply it.
+Matrix@&Matrix[
+  m11 = $.m11*$$.m11 + $.m12*$$.m21, m12 = $.m11*$$.m12 + $.m12*$$.m22
+  m21 = $.m21*$$.m11 + $.m22*$$.m21, m22 = $.m21*$$.m12 + $.m22*$$.m22
+  $$.m13 = $.m13 + $.m11*$$.m13 + $.m12*$$.m23
+  $$.m23 = $.m23 + $.m21*$$.m13 + $.m22*$$.m23
+  $$.m11 = m11, $$.m12 = m12, $$.m21 = m21, $$.m22 = m22
+]
+
+Matrix.Invert = Void
+([)@&Matrix.Invert[
+  // inversion code
+]
+
+Matrix.Inverse = Matrix
+([)@Matrix.Inverse[
+  $$.m11 = $$$.m11, $$.m12 = $$$.m12, $$.m13 = $$$.m13 // copy from $$$
+  $$.m21 = $$$.m21, $$.m22 = $$$.m22, $$.m23 = $$$.m23
+  .Invert[] // invert
+]
+
+// We add to Print the ability to print a Matrix
+Matrix@Print[
+  v = ", "
+  "((", $.m11, v, $.m12, v, $.m13, ')', v
+  '(', $.m21, v, $.m22, v, $.m23, "))"
+]
+
+// tests
+translate = Matrix[(3, 5)]
+mul2 = Matrix[2]
+m = Matrix[translate, mul2, translate]
+Print[m;]
