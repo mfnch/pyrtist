@@ -30,7 +30,7 @@ boxlib_LTLIBRARIES=libg.la
 
 dist_boxinc_DATA=g.bxh color.bxh style.bxh gradient.bxh window.bxh line.bxh \
                  circle.bxh poly.bxh put.bxh arrows.bxh electric.bxh \
-                 pointlist.bxh text.bxh bounce.bxh
+                 pointlist.bxh text.bxh matrix.bxh bounce.bxh
 
 libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
                 bm1bit.c bm4bit.c bm8bit.c bitmap.h \

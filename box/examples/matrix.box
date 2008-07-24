@@ -1,0 +1,12 @@
+include "matrix"
+
+// tests
+translate = Matrix[(3, 5)]
+mul2 = Matrix[2]
+m = Matrix[translate.Inverse[], mul2, translate]
+m_inv = Matrix[m]
+m_inv.Invert[]
+\ m_inv[m]
+Print[m; m_inv;]
+Print[m.Apply[(3, 5)]; m.Apply[(4, 6)];]
+

@@ -29,7 +29,13 @@ Matrix@&Matrix[
 
 Matrix.Invert = Void
 ([)@&Matrix.Invert[
-  // inversion code
+  m11 = $$$.m11, m12 = $$$.m12
+  m21 = $$$.m21, m22 = $$$.m22
+  det = m11*m22 - m12*m21
+  $$$.m11 =  m22/det, $$$.m12 = -m12/det
+  $$$.m21 = -m21/det, $$$.m22 =  m11/det
+  $$$.m13 = -$$$.m11*$$$.m13 - $$$.m12*$$$.m23
+  $$$.m23 = -$$$.m21*$$$.m13 - $$$.m22*$$$.m23
 ]
 
 Matrix.Inverse = Matrix
@@ -39,6 +45,12 @@ Matrix.Inverse = Matrix
   .Invert[] // invert
 ]
 
+Matrix.Apply = Point
+P@Matrix.Apply[
+  $$.x = $$$.m11 * $.x + $$$.m12 * $.y + $$$.m13
+  $$.y = $$$.m21 * $.x + $$$.m22 * $.y + $$$.m23
+]
+
 // We add to Print the ability to print a Matrix
 Matrix@Print[
   v = ", "
@@ -46,8 +58,3 @@ Matrix@Print[
   '(', $.m21, v, $.m22, v, $.m23, "))"
 ]
 
-// tests
-translate = Matrix[(3, 5)]
-mul2 = Matrix[2]
-m = Matrix[translate, mul2, translate]
-Print[m;]
