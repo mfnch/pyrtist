@@ -26,13 +26,15 @@ which allows you to easily draw figures.
 Command reference
 =================
 
-.. include:: window.txt
-
 .. include:: pointlist.txt
 
 .. include:: color.txt
 
 .. include:: gradient.txt
+
+.. include:: window.txt
+
+.. include:: put.txt
 
 .. include:: style.txt
 
@@ -43,8 +45,6 @@ Command reference
 .. include:: text.txt
 
 .. include:: line.txt
-
-.. include:: put.txt
 
 
 .. |box_website| replace:: `Box <http://boxc.sourceforge.net>`__

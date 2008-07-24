@@ -1,6 +1,6 @@
 
-Put
----
+Window.Put
+----------
 
 The ``Put`` instruction can be used to transform and place figures
 into other figures.

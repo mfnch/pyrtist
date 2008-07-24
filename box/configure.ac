@@ -94,6 +94,7 @@ AC_CONFIG_FILES([Makefile
                  libs/Makefile
                  libs/g/Makefile
                  tests/Makefile
+                 man/Makefile
                  examples/Makefile
                  examples/smileys/Makefile])
 AC_OUTPUT

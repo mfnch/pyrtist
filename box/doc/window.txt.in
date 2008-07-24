@@ -165,7 +165,7 @@ This method is useful only for bitmap windows and for record windows.
   .. code-block:: Box
 
     //{save_fig2}
-  
+
   This line specifies to use a resolution of 50 dpi (points per inch)
   and ``"rgb24"`` as the intermediate bitmap format.
   This is the image you get:
@@ -177,22 +177,32 @@ This method is useful only for bitmap windows and for record windows.
 
   + If the provided window is incomplete, then it is completed,
     computing the bounding box of ``w2`` and using it as a size
-    for the output window. We say that the provided incomplete 
+    for the output window. We say that the provided incomplete
     window is completed. Indeed, after the method has been called
-    the provided window becomes usable:
+    the window becomes usable:
 
     .. code-block:: Box
 
       w3 = Window["rgb24"]    // w3 is incomplete
                               // Here w3 cannot be used
       w2.Save["file.png", w3] // w3 iw completed
-      w3.Circle[(0, 0), 20]   // w3 is now a normal window and can be used! 
+      w3.Circle[(0, 0), 20]   // w3 is now a normal window and can be used!
 
-    This code will produce also a file ``"file.png"``.
-    You can avoid it, if you just omit that name:
+    This does two things: put the content of ``w2'' inside ``w3''
+    and put the same content inside a file ``"file.png"``.
+    You can avoid the latter, if you just omit the file name:
+
+    .. code-block:: Box
 
       w2.Save[w3] // w3 iw completed and no file is saved to disk
 
   + If you provide a normal window (complete window), then ``w2``
     is scaled to fit in it, before actually being put in it.
+
+Window.Hot
+----------
+
+The ``Window.Hot`` method is used to insert a new point into the list
+of hot points of a window. This method is used in conjunction
+with `Window.Put`_.
 

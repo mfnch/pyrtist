@@ -1,0 +1,282 @@
+<!doctype refentry PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+
+<!-- Process this file with docbook-to-man to generate an nroff manual
+     page: `docbook-to-man manpage.sgml > manpage.1'.  You may view
+     the manual page with: `docbook-to-man manpage.sgml | nroff -man |
+     less'.  A typical entry in a Makefile or Makefile.am is:
+
+manpage.1: manpage.sgml
+	docbook-to-man $< > $@
+
+
+	The docbook-to-man binary is found in the docbook-to-man package.
+	Please remember that if you create the nroff version in one of the
+	debian/rules file targets (such as build), you will need to include
+	docbook-to-man in your Build-Depends control field.
+
+  -->
+
+  <!-- Fill in your name for FIRSTNAME and SURNAME. -->
+  <!ENTITY dhfirstname "<firstname>Matteo</firstname>">
+  <!ENTITY dhsurname   "<surname>Franchin</surname>">
+  <!-- Please adjust the date whenever revising the manpage. -->
+  <!ENTITY dhdate      "<date>July 22, 2008</date>">
+  <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
+       allowed: see man(7), man(1). -->
+  <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
+  <!ENTITY dhemail     "<email>fnch@users.sourceforge.net</email>">
+  <!ENTITY dhusername  "Matteo Franchin">
+  <!ENTITY dhucpackage "<refentrytitle>BOX</refentrytitle>">
+  <!ENTITY dhpackage   "box">
+
+  <!ENTITY debian      "<productname>Debian</productname>">
+  <!ENTITY gnu         "<acronym>GNU</acronym>">
+  <!ENTITY gpl         "&gnu; <acronym>GPL</acronym>">
+]>
+
+<refentry>
+  <refentryinfo>
+    <address>
+      &dhemail;
+    </address>
+    <author>
+      &dhfirstname;
+      &dhsurname;
+    </author>
+    <copyright>
+      <year>2003</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    &dhdate;
+  </refentryinfo>
+  <refmeta>
+    &dhucpackage;
+
+    &dhsection;
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+
+    <refpurpose>A language to create figures and graphics.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <group choice="opt">
+        <arg><option>-l</option> <replaceable>library</replaceable></arg>
+      </group>
+      <group choice="req"><arg><option>-st</option></arg>
+                          <arg><replaceable>source.box</replaceable></arg></group>
+    </cmdsynopsis>
+    <para>This is the typical minimal syntax; see below for a list
+          and explanation of the other options.</para>
+  </refsynopsisdiv>
+  <refsect1>
+    <title>DESCRIPTION</title>
+
+    <para><command>&dhpackage;</command> compiles a box source file
+      (to bytecode) and executes it. It can read the source from the standard
+      input (with -st) or from the specified file.</para>
+
+  </refsect1>
+
+  <refsect1>
+    <title>OPTIONS</title>
+
+    <para>A summary of options is included below:</para>
+
+    <variablelist>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-st</option> | <replaceable>source.box</replaceable></term>
+        <listitem>
+          <para>The user MUST provide either a source file or the option
+            <option>-st</option>. In the latter case the source is read
+            from the standard input.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-l</option> <replaceable>library</replaceable></term>
+        <listitem>
+          <para>Link against the provided C library, before trying to execute
+            the compiled code. When specifying ``<option>-l</option> g'',
+            the library ``libg.so'' (or ``libg.dylib'') is searched, instead.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-L</option> <replaceable>path</replaceable></term>
+        <listitem>
+          <para>Add an additional path to be considered when searching for
+            the libraries specified with the <option>-l</option> option.
+            The option can be used more than once to specify more than one
+            path. The last occurrence has the precedence on the formers and
+            has precedence on the paths specified in the environmental
+            variable ``BOX_LIBRARY_PATH''.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-I</option> <replaceable>path</replaceable></term>
+        <listitem>
+          <para>Add an additional path to be considered when searching for
+            the file included with ``include "file"''. This option can be used
+            more than once to specity more than one path. The last occurrence
+            has the precedence on the formers and on the paths specified with
+            the ``BOX_INCLUDE_PATH'' environmental variable.
+            When using ``include "file"'' in your programs, the files
+            ``file.bxh`` and ``file`` are searched (in this precise order).
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-o</option> <replaceable>outfile</replaceable>, <option>-w</option> <replaceable>outfile</replaceable>
+        </term>
+        <listitem>
+          <para>Write to <replaceable>outfile</replaceable> a human readable
+            representation of the bytecode produced from the given box
+            source (useful for debugging). Use <option>-w</option> if you want
+            to overwrite existing files, otherwise use <option>-o</option>.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-se</option> <replaceable>setupfile</replaceable></term>
+        <listitem>
+          <para>Include automatically the file
+            <replaceable>setupfile</replaceable> before processing any
+            other line of source.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-t</option></term>
+        <listitem>
+          <para>Compile only. The compiled code will not be linked
+            and executed.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-f</option></term>
+        <listitem>
+          <para>Force execution, even when warning messages
+            were displayed.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-v</option></term>
+        <listitem>
+          <para>Verbose message reports.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-e</option></term>
+        <listitem>
+          <para>Only error messages are reported (no warnings).</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-si</option></term>
+        <listitem>
+          <para>Make the Box compiler totally silent.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>ENVIRONMENT</title>
+
+    <para>These are the environmental variables used by Box:</para>
+
+    <variablelist>
+      <varlistentry>
+        <term>BOX_LIBRARY_PATH</term>
+        <listitem>
+          <para>Add additional search paths for Box libraries.
+            The format is the same as the shell's $PATH: one or more directory
+            pathnames separated by colons. See option <option>-L</option>.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>BOX_INCLUDE_PATH</term>
+        <listitem>
+          <para>Add additional search paths for Box header files.
+            The format is the same as the shell's $PATH: one or more directory
+            pathnames separated by colons. See option <option>-I</option>.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>BOX_DEFAULT_LIBS</term>
+        <listitem>
+          <para>A list of libraries which should be always used for linking.
+            The format is the same as the shell's $PATH: one or more library
+            names separated by colons.
+          </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1>
+    <title>SEE ALSO</title>
+
+    <para>More documentation, with a description of the Box language
+      and its graphic library, can be found on the web:
+      http://boxc.sourceforge.net
+    </para>
+  </refsect1>
+  <refsect1>
+    <title>AUTHOR</title>
+
+    <para>This manual page was written by &dhusername; &dhemail;.
+      Permission is granted to copy, distribute and/or modify this document
+      under the terms of the &gnu; General Public License, Version 2 any
+	  later version published by the Free Software Foundation.
+    </para>
+	<para>
+	  On Debian systems, the complete text of the GNU General Public
+	  License can be found in /usr/share/common-licenses/GPL.
+	</para>
+
+  </refsect1>
+</refentry>
+
+<!-- Keep this comment at the end of the file
+Local variables:
+mode: sgml
+sgml-omittag:t
+sgml-shorttag:t
+sgml-minimize-attributes:nil
+sgml-always-quote-attributes:t
+sgml-indent-step:2
+sgml-indent-data:t
+sgml-parent-document:nil
+sgml-default-dtd-file:nil
+sgml-exposed-tags:nil
+sgml-local-catalogs:nil
+sgml-local-ecat-files:nil
+End:
+-->
+
+

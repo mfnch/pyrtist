@@ -19,5 +19,5 @@
 ############################################################################
 
 EXTRA_DIST = README STYLE PROBLEMS
-SUBDIRS = src libs tests examples
+SUBDIRS = src libs tests man examples
 
