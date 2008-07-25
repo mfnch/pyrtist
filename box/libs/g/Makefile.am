@@ -20,13 +20,16 @@
 
 # $Id$
 
-AM_CFLAGS=-Wall @CAIRO_CFLAGS@
-AM_CPPFLAGS=-I../../src -I../..
-
 boxlibdir=@boxlibdir@
 boxincdir=@boxincdir@
 
+AM_CFLAGS   = -Wall @CAIRO_CFLAGS@
+AM_CPPFLAGS = -I../../src -I../..
+AM_LDFLAGS  = -no-undefined -module -avoid-version
+
 boxlib_LTLIBRARIES=libg.la
+
+libg_la_LIBADD=@CAIRO_LIBS@
 
 dist_boxinc_DATA=g.bxh color.bxh style.bxh gradient.bxh window.bxh line.bxh \
                  circle.bxh poly.bxh put.bxh arrows.bxh electric.bxh \
@@ -51,6 +54,3 @@ libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
 if BUILD_WINCAIRO
 libg_la_SOURCES+=wincairo.c wincairo.h
 endif
-
-libg_la_LDFLAGS=-module
-libg_la_LIBADD=@CAIRO_LIBS@

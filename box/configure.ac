@@ -20,9 +20,9 @@
 
 # $Id$
 
-AC_INIT(box, 0.1, fnch@libero.it)
+AC_INIT([box],[0.1],[fnch@libero.it])
 
-AC_PREREQ(2.52)
+AC_PREREQ(2.61)
 AC_CONFIG_SRCDIR([src/compiler.c])
 AC_CONFIG_HEADER([config.h])
 
@@ -34,6 +34,7 @@ boxlibdir="$boxdir/lib"
 boxincdir="$boxdir/include"
 
 # Libtool support
+AC_LIBTOOL_WIN32_DLL
 AC_PROG_LIBTOOL
 
 # Checks for programs.
@@ -60,9 +61,8 @@ AC_CHECK_FUNCS([floor memmove memset pow rint sqrt strdup strncasecmp strndup])
 AC_CHECK_FUNCS([getenv stat])
 
 AC_ARG_WITH([cairo],
-            AC_HELP_STRING([--with-cairo],
-                           [use the cairo 2D graphic library [[default=no]]]),
-            [ac_cv_with_cairo=$withval], [ac_cv_with_cairo=no])
+            AS_HELP_STRING([--with-cairo],[use the cairo 2D graphic library [[default=yes]]]),
+            [ac_cv_with_cairo=$withval], [ac_cv_with_cairo=yes])
 
 if test "$ac_cv_with_cairo" = yes; then
   use_libcairo=yes
