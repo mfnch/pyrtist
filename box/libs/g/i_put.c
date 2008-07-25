@@ -67,6 +67,7 @@ Task window_put_begin(VMProgram *vmp) {
   w->put.got.translation = 0;
   w->put.got.rot_angle = 0;
   w->put.got.scale = 0;
+  w->put.got.matrix = 0;
 
   if ( ! (   buff_clear(& w->put.fig_points)
           && buff_clear(& w->put.back_points)
@@ -124,7 +125,6 @@ static Task _transform_pl(Int index, char *name, void *object, void *data) {
 
 Task window_put_end(VMProgram *vmp) {
   PROC_OF_WINDOW_SUBTYPE(vmp, w, out_pl, IPointList *);
-//   SUBTYPE_OF_WINDOW(vmp, w);
   grp_window *cur_win = grp_win;
   Window *figure;
   IPointList *returned_pl;
@@ -140,11 +140,20 @@ Task window_put_end(VMProgram *vmp) {
     return Success;
   }
 
-  /* Calcolo la matrice di trasformazione */
-  aput_matrix(& w->put.translation,
-              & w->put.rot_center, w->put.rot_angle,
-              w->put.scale.x, w->put.scale.y,
-              fig_matrix);
+  if (w->put.got.matrix) {
+    /* the matrix has been given by the user, we just have to use it! */
+    Matrix *m = & w->put.matrix;
+    fig_matrix[0] = m->m11; fig_matrix[1] = m->m12;
+    fig_matrix[2] = m->m21; fig_matrix[3] = m->m22;
+    fig_matrix[4] = m->m13; fig_matrix[5] = m->m23;
+
+  } else {
+    /* Calcolo la matrice di trasformazione */
+    aput_matrix(& w->put.translation,
+                & w->put.rot_center, w->put.rot_angle,
+                w->put.scale.x, w->put.scale.y,
+                fig_matrix);
+  }
 
   /* Disegno l'oggetto */
   figure = (Window *) w->put.figure;
@@ -200,6 +209,14 @@ Task window_put_string(VMProgram *vmp) {
     return Success;
   }
 
+  return Success;
+}
+
+Task window_put_matrix(VMProgram *vmp) {
+  Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
+  Matrix *m = BOX_VM_ARG1_PTR(vmp, Matrix);
+  w->put.matrix = *m;
+  w->put.got.matrix = 1;
   return Success;
 }
 

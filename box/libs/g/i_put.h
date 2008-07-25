@@ -20,6 +20,10 @@
 #ifdef _DEF_WINDOW_SUBOBJECTS
 
 typedef struct {
+  Real m11, m12, m13, m21, m22, m23;
+} Matrix;
+
+typedef struct {
   Point on_src, on_dest;
   Real weight;
   struct {
@@ -37,6 +41,7 @@ typedef struct {
   buff fig_points, back_points, weights;
   Real rot_angle;
   Point rot_center, translation, scale;
+  Matrix matrix;
 
   void *figure;
   struct {
@@ -46,6 +51,7 @@ typedef struct {
     int translation : 1;
     int rot_angle : 1;
     int scale : 1;
+    int matrix : 1;
   } got;
 } WindowPut;
 

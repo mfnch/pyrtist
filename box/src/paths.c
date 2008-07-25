@@ -77,6 +77,34 @@ void Path_Set_All_From_Env(void) {
 #ifdef BUILTIN_INCLUDE_PATH
   Path_Add_Inc_Dir(BUILTIN_INCLUDE_PATH);
 #endif
+
+#ifdef MSWIN
+  if (1) {
+    char *fn = (char *) Mem_Alloc(MAX_PATH);
+    int success = 0;
+    if (fn != (char *) NULL) {
+      char *bn;
+      GetModuleFileName(NULL, fn, MAX_PATH);
+      bn = strrchr(fn, '\\');
+      if (bn != (char *) NULL) {
+        char *new_path;
+        *bn = '\0';
+        new_path = print("%s\\..\\lib\\box\\lib", fn);
+        Path_Add_Lib_Dir(new_path);
+        Mem_Free(new_path);
+        new_path = print("%s\\..\\lib\\box\\include", fn);
+        Path_Add_Inc_Dir(new_path);
+        Mem_Free(new_path);
+        success = 1;
+      }
+      Mem_Free(fn);
+    }
+
+    if (!success) {
+      MSG_WARNING("Cannot add default paths for libraries and headers.");
+    }
+  }
+#endif
 }
 
 void Path_Add_Lib(char *lib) {

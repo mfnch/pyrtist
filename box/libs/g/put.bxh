@@ -10,6 +10,7 @@ Window@Window.Put ? "window_put_window"
 P@Window.Put ? "window_put_point"
 R@Window.Put ? "window_put_real"
 ()Char@Window.Put ? "window_put_string"
+Matrix@Window.Put ? "window_put_matrix"
 
 R@Window.Put.Scale ? "window_put_scale_real"
 P@Window.Put.Scale ? "window_put_scale_point"
