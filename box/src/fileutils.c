@@ -39,6 +39,7 @@
 #include <assert.h>
 
 #include "types.h"
+#include "defaults.h"
 #include "messages.h"
 #include "list.h"
 #include "fileutils.h"
@@ -70,7 +71,8 @@ static Task Find_File_Iterator(void **tuple, void *pass) {
   char *prefix = (char *) tuple[0],
        *suffix = (char *) tuple[1];
   FindFileData *ffd = (FindFileData *) pass;
-  const char *file = print("%s/%s%s", prefix, ffd->file_name, suffix);
+  const char *file = print("%s%c%s%s", prefix, DIR_SEPARATOR,
+                           ffd->file_name, suffix);
   if (File_Exist(file)) {
     if (ffd->only_first) {
       ffd->first_file = Mem_Strdup(file);
@@ -103,7 +105,7 @@ void File_Find(List **found_files, const char *file_name,
  * This is a C-string which needs to be freed by the user.
  */
 void File_Find_First(char **found_file, const char *file_name,
-               List *prefixes, List *suffixes)
+                     List *prefixes, List *suffixes)
 {
   List *l;
   FindFileData ffd;

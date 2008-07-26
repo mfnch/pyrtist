@@ -23,10 +23,6 @@
 #  include "config.h"
 #endif
 
-#if defined WIN32 || defined _WIN32
-#include "windows.h"
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,6 +35,16 @@
 #include "list.h"
 #include "fileutils.h"
 #include "paths.h"
+
+#ifndef __WINDOWS__
+#  if defined WIN32 || defined _WIN32
+#    define __WINDOWS__
+#  endif
+#endif
+
+#ifdef __WINDOWS__
+#  include "windows.h"
+#endif
 
 List *libraries;
 List *lib_dirs;
@@ -82,7 +88,7 @@ void Path_Set_All_From_Env(void) {
   Path_Add_Inc_Dir(BUILTIN_INCLUDE_PATH);
 #endif
 
-#if defined WIN32 || defined _WIN32
+#ifdef __WINDOWS__
   if (1) {
     char *fn = (char *) Mem_Alloc(MAX_PATH);
     int success = 0;
@@ -95,10 +101,8 @@ void Path_Set_All_From_Env(void) {
         *bn = '\0';
         new_path = (char *) print("%s\\..\\lib\\box\\lib", fn);
         Path_Add_Lib_Dir(new_path);
-        Mem_Free(new_path);
         new_path = (char *) print("%s\\..\\lib\\box\\include", fn);
         Path_Add_Inc_Dir(new_path);
-        Mem_Free(new_path);
         success = 1;
       }
       Mem_Free(fn);

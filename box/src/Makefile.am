@@ -29,7 +29,8 @@ AM_YFLAGS = -d
 
 AM_CFLAGS = -Wall
 
-AM_CPPFLAGS = '-DBUILTIN_LIBRARY_PATH="$(boxlibdir)"' \
+AM_CPPFLAGS = $(INCLTDL) \
+              '-DBUILTIN_LIBRARY_PATH="$(boxlibdir)"' \
               '-DBUILTIN_INCLUDE_PATH="$(boxincdir)"'
 # -DDEBUG_ARRAY -DDEBUG_EXEC
 
@@ -50,6 +51,9 @@ box_SOURCES = mem.c str.c print.c msgbase.c messages.c \
   typesys.c compiler.c box.c \
   builtins.c bltinstr.c vmsymstuff.c \
   paths.c main.c container.c autogen.c
+
+box_LDADD = $(LIBLTDL)
+box_DEPENDENCIES = $(LTDLDEPS)
 
 EXTRA_DIST = structure.c
 

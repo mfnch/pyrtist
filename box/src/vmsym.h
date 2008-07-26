@@ -171,7 +171,10 @@ void VM_Sym_Table_Print(VMProgram *vmp, FILE *out, UInt sym_num);
 /** Check that the type of the symbol 'sym_num' is 'sym_type'. */
 Task VM_Sym_Check_Type(VMProgram *vmp, UInt sym_num, UInt sym_type);
 
-/** Open the given dynamic library to resolve symbols. */
+/** Open the given dynamic library to resolve symbols. If the file is not
+ * found then this function appends an appropriate extension (.so for linux,
+ *.dll for windows, etc.) and tries again.
+ */
 Task VM_Sym_Resolve_CLib(VMProgram *vmp, char *lib_file);
 
 /** Resolution of functions defined in external dynamically loaded

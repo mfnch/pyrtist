@@ -1,7 +1,7 @@
 .PHONY: all
 
 all:
-	libtoolize
+	libtoolize --ltdl
 	aclocal
 	autoconf
 	autoheader

@@ -113,6 +113,11 @@ const char *print(const char *fmt, ...) {
       case '~':
         do_dealloc = 1;
         break;
+      case 'c':
+        cw = va_arg(ap, int);
+        do_write = 1;
+        state = STATE_NORMAL;
+        break;
       case 's':
         do_read = 0;
         substring = va_arg(ap, char *);

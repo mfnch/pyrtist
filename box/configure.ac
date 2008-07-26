@@ -1,4 +1,4 @@
-############################################################################
+F############################################################################
 #    Copyright (C) 2006 by Matteo Franchin                                 #
 #    fnch@libero.it                                                        #
 #                                                                          #
@@ -24,18 +24,22 @@ AC_INIT([box],[0.1],[fnch@libero.it])
 
 AC_PREREQ(2.61)
 AC_CONFIG_SRCDIR([src/compiler.c])
-AC_CONFIG_HEADER([config.h])
 
 AM_INIT_AUTOMAKE
+AC_CONFIG_HEADERS([config.h])
+
+# Libtool support
+AC_LIBTOOL_WIN32_DLL
+AC_LIBTOOL_DLOPEN
+LT_CONFIG_LTDL_DIR
+AC_WITH_LTDL
+AC_PROG_LIBTOOL
+LTDL_CONVENIENCE
 
 # Directories where to store specific box library files
 boxdir="$libdir/box"
 boxlibdir="$boxdir/lib"
 boxincdir="$boxdir/include"
-
-# Libtool support
-AC_LIBTOOL_WIN32_DLL
-AC_PROG_LIBTOOL
 
 # Checks for programs.
 AC_PROG_CC
@@ -44,12 +48,11 @@ AC_PROG_YACC
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([stdlib.h string.h unistd.h ltdl.h stdint.h])
+AC_CHECK_HEADERS([stdlib.h string.h unistd.h stdint.h])
 #AC_CHECK_HEADERS([cairo.h])
 
 # Checks for libraries.
 AC_CHECK_LIB([m], [floor])
-AC_CHECK_LIB([ltdl], [lt_dlopen])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

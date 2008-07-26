@@ -24,10 +24,9 @@
 #include <stdlib.h>
 
 #include "config.h"
-#if defined HAVE_LIBLTDL && defined HAVE_LTDL_H
-#  include <ltdl.h>
-#  define DYLIB
-#endif
+
+#include <ltdl.h>
+#define DYLIB
 
 #include "defaults.h"
 #include "types.h"
@@ -372,7 +371,7 @@ Task VM_Sym_Resolve_CLib(VMProgram *vmp, char *lib_file) {
   struct clib_ref_data clrd;
   clrd.vmp = vmp;
   clrd.lib_file = lib_file;
-  clrd.dylib = lt_dlopen(lib_file);
+  clrd.dylib = lt_dlopenext(lib_file);
   if (clrd.dylib == NULL) return Failed;
   TASK( Arr_Push(st->dylibs, & clrd.dylib) );
   return Arr_Iter(st->defs, Resolve_Ref_With_CLib, & clrd);
@@ -395,7 +394,7 @@ Task Iter_Over_Paths(void *string, void *pass_data) {
   char *lib_file;
   Task status;
   cld->path = (char *) string;
-  lib_file = Mem_Strdup(print("%s/lib%s.so", cld->path, cld->lib));
+  lib_file = Mem_Strdup(print("%s/lib%s", cld->path, cld->lib));
   status = VM_Sym_Resolve_CLib(cld->vmp, lib_file);
   Mem_Free(lib_file);
   if (status == Success) return Failed; /* Stop here, if we have found it! */

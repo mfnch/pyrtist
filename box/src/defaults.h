@@ -38,15 +38,35 @@
  * il funzionamento del programma.
  */
 #ifndef _DEFAULT_H
-#define _DEFAULT_H
+#  define _DEFAULT_H
+
 /*****************************************************************************
  *                                COSTANTI COMUNI                            *
  *****************************************************************************/
 
+/* Use ltdl.h just to obtain directory and path separators */
+#ifdef HAVE_LTDL_H
+#  include "ltdl.h"
+#  ifdef LT_PATHSEP_CHAR
+#    undef PATH_SEPARATOR
+#    define PATH_SEPARATOR LT_PATHSEP_CHAR
+#  endif
+#  ifdef LT_DIRSEP_CHAR
+#    undef DIR_SEPARATOR
+#    define DIR_SEPARATOR LT_DIRSEP_CHAR
+#  endif
+#endif
+
 /** Separator used to separate directory paths in the environmental variables
  * BOX_LIBRARY_PATH, etc.
  */
-#define PATH_SEPARATOR ':'
+#ifndef PATH_SEPARATOR
+#  define PATH_SEPARATOR ':'
+#endif
+
+#ifndef DIR_SEPARATOR
+#  define DIR_SEPARATOR '/'
+#endif
 
 /** The name of the environmental variable which contains the user
  * specified list of paths where to search for Box libraries.
