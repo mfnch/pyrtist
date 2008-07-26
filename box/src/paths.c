@@ -23,6 +23,10 @@
 #  include "config.h"
 #endif
 
+#if defined WIN32 || defined _WIN32
+#include "windows.h"
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -89,10 +93,10 @@ void Path_Set_All_From_Env(void) {
       if (bn != (char *) NULL) {
         char *new_path;
         *bn = '\0';
-        new_path = print("%s\\..\\lib\\box\\lib", fn);
+        new_path = (char *) print("%s\\..\\lib\\box\\lib", fn);
         Path_Add_Lib_Dir(new_path);
         Mem_Free(new_path);
-        new_path = print("%s\\..\\lib\\box\\include", fn);
+        new_path = (char *) print("%s\\..\\lib\\box\\include", fn);
         Path_Add_Inc_Dir(new_path);
         Mem_Free(new_path);
         success = 1;
