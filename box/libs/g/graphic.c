@@ -559,7 +559,7 @@ int Grp_Window_Type_From_String(const char *type_str) {
   WL preferred_lib = WL_NONE;
   int type = -1, i;
 
-  colon = index(type_str, ':');
+  colon = strchr(type_str, ':');
   if (colon != (char *) NULL) {
     char *lib = strdup(type_str);
     assert(type_str != (char *) NULL);

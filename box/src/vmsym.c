@@ -22,10 +22,10 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include <dlfcn.h>
 
 #include "config.h"
-#ifdef HAVE_LIBDL
+#if defined HAVE_LIBLTDL && defined HAVE_LTDL_H
+#  include <ltdl.h>
 #  define DYLIB
 #endif
 
@@ -43,8 +43,8 @@
 #ifdef DYLIB
 static Task Close_DyLib(void *item) {
   void *dylib = *((void **) item);
-  if (dlclose(dylib)) {
-    MSG_WARNING("VM_Sym_Destroy: Close_DyLib: dlclose failure");
+  if (lt_dlclose(dylib)) {
+    MSG_WARNING("VM_Sym_Destroy: Close_DyLib: lt_dlclose failure");
   }
   return Success;
 }
@@ -62,6 +62,10 @@ Task VM_Sym_Init(VMProgram *vmp) {
   TASK( Arr_New(& st->dylibs, sizeof(void *), VMSYM_DYLIB_ARR_SIZE) );
   Arr_Destructor(st->dylibs, Close_DyLib);
 #endif
+
+  if (lt_dlinit() != 0) {
+    MSG_WARNING("VM_Sym_Init: lt_dlinit failed!");
+  }
   return Success;
 }
 
@@ -75,6 +79,9 @@ void VM_Sym_Destroy(VMProgram *vmp) {
 #ifdef DYLIB
   Arr_Destroy(st->dylibs);
 #endif
+  if (lt_dlexit() != 0) {
+    MSG_WARNING("VM_Sym_Destroy: lt_dlexit failed!");
+  }
 }
 
 Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, UInt sym_type, UInt def_size) {
@@ -337,13 +344,13 @@ static Task Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
     VMProgram *vmp = clrd->vmp;
     const char *sym_name = s->name.text;
     if (sym_name != (char *) NULL && s->sym_type == VM_SYM_CALL) {
-      char *err_msg;
+      const char *err_msg;
       void *sym;
       UInt call_num;
 
-      err_msg = dlerror();
-      sym = dlsym(clrd->dylib, sym_name);
-      err_msg = dlerror();
+      err_msg = lt_dlerror();
+      sym = lt_dlsym(clrd->dylib, sym_name);
+      err_msg = lt_dlerror();
       if (err_msg != (char *) NULL) return Success;
       if (sym == (char *) NULL) {
         MSG_ERROR("Symbol '%s' from library '%s' is NULL",
@@ -365,7 +372,7 @@ Task VM_Sym_Resolve_CLib(VMProgram *vmp, char *lib_file) {
   struct clib_ref_data clrd;
   clrd.vmp = vmp;
   clrd.lib_file = lib_file;
-  clrd.dylib = dlopen(lib_file, RTLD_NOW);
+  clrd.dylib = lt_dlopen(lib_file);
   if (clrd.dylib == NULL) return Failed;
   TASK( Arr_Push(st->dylibs, & clrd.dylib) );
   return Arr_Iter(st->defs, Resolve_Ref_With_CLib, & clrd);

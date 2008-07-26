@@ -78,7 +78,7 @@ void Path_Set_All_From_Env(void) {
   Path_Add_Inc_Dir(BUILTIN_INCLUDE_PATH);
 #endif
 
-#ifdef MSWIN
+#if defined WIN32 || defined _WIN32
   if (1) {
     char *fn = (char *) Mem_Alloc(MAX_PATH);
     int success = 0;
