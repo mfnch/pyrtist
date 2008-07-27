@@ -9,6 +9,9 @@ dd mm yyyy:
     a window and (1) complete it (if it is uncomplete) or (2) put
     the figure into it (if it is complete). In both cases the figure
     fits the destination window;
+  * Created man page and Ubuntu package;
+  * Ported the source to Windows: we now compile on XP and can
+    distribute the first version of Box for Windows;
 
 5 July 2008: Bugfixes in the transformation of draw styles and font
 

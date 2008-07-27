@@ -1,0 +1,103 @@
+Installation
+============
+
+There are currently three methods for installing Box:
+
+- `Installation from sources`_: can be done easily on Unix platforms
+  (Linux, Mac OS) and somewhat less easily on Microsoft Windows platforms;
+- `Installation on Ubuntu Linux`_: can be done easily downloading the
+  deb package and using ``dpkg -i``;
+- `Installation on Windows`_: just a matter of downloading a zip
+  archive. The executable can be used immediately after unzipping
+  the archive.
+
+Installation from sources
+-------------------------
+Download the tarball from `<http://sourceforge.net/projects/boxc>`__.
+This is usually a file with name such as ``box-0.1.tar.gz``.
+Then untar and configure the package with::
+
+  tar xzvf box-0.1.tar.gz
+  ./configure --prefix=/usr
+
+``configure`` outputs a summary at the end. Be sure it looks like that::
+
+  Configuration summary:
+  ----------------------
+  Support for the Cairo 2D graphic library: yes
+
+If you get a ``"no"`` then check that the Cairo graphics library
+`<http://www.cairographics.org>`__ is installed on your system
+together with the development files.
+On Ubuntu and Debian derivatives, you can install it with::
+
+  sudo aptitude install libcairo libcairo-dev
+
+You should enter the root password when necessary
+for the installation to proceed.
+If you were required to install Cairo, then reconfigure the package
+with ``./configure --prefix=/usr``.
+You can then proceed to the compilation with::
+
+  make
+
+If the compilation is succesful::
+
+  sudo make install
+
+The Box executable, libraries and headers will be installed
+on your system. You can take a look at the man page with::
+
+  man box
+
+Further help and hints with the installation can be found
+on the ``README`` and ``INSTALL`` files inside the package.
+
+The manual is online at `<http://boxc.sourceforge.net>`__.
+If you need further help, take a look at the examples.
+
+Installation on Ubuntu Linux
+----------------------------
+
+Download the Ubuntu package from `<http://sourceforge.net/projects/boxc>`__.
+This is usually a file with name such as ``box_0.1-0ubuntu1_i386.deb``.
+Install it with::
+
+  sudo dpkg -i box_0.1-0ubuntu1_i386.deb
+
+Enter the root password when necessary.
+You may have to install ``libcairo`` with::
+
+  sudo aptitude install libcairo
+
+This is often not necessary, as ``Cairo`` is usually preinstalled
+on an average Ubuntu distribution.
+
+The manual is online at `<http://boxc.sourceforge.net>`__.
+If you need further help, take a look at the examples.
+
+Installation on Windows
+-----------------------
+
+Download the zip file from `<http://sourceforge.net/projects/boxc>`__.
+This is usually a file with name such as ``box20080727.zip``.
+Unzip it inside the directory which is more convenient for your needs.
+You'll find the Box executable in ``box20080727\bin\box.exe`` and some
+examples inside ``box20080727\examples``.
+Make a check as follows: open the MS-DOS prompt and enter
+the examples directory::
+
+  cd box20080727\examples
+  ..\bin\box.exe translucency.box -l g
+
+You can then view the produced output file ``translucency.png``
+with your favourite image viewer.
+You can move the entire directory ``box20080727`` to another location,
+this won't affect the functionality of Box.
+However you have to move the whole directory, preserving
+its structure: the box executable searches for libraries and headers
+in the directory ``DIR\..\lib\box``, where DIR is the directory
+which contains the executable ``box.exe``.
+
+The manual is online at `<http://boxc.sourceforge.net>`__.
+If you need further help, take a look at the provided examples.

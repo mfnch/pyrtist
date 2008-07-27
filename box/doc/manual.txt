@@ -23,6 +23,8 @@ Introduction
 |Box| is an object oriented programming language
 which allows you to easily draw figures.
 
+.. include:: installation.txt
+
 Command reference
 =================
 

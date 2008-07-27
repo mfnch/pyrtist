@@ -48,9 +48,15 @@ style.txt:
 	python subst.py style.box style.txt.in
 
 html: svn_version html/box-logo.png color.txt pointlist.txt line.txt poly.txt \
-      circle.txt style.txt gradient.txt window.txt
+      circle.txt style.txt gradient.txt window.txt installation.txt
 	mkdir -p html
 	$(RST2HTML) --strict --stylesheet-path=html/style.css \
 	            --link-stylesheet -v manual.txt html/manual.html \
+	            -r 1 -g -t -d -s
+
+inst-html: installation.txt
+	mkdir -p inst-html
+	$(RST2HTML) --strict --stylesheet-path=inst-html/style.css \
+	            --link-stylesheet -v installation.txt inst-html/installation.html \
 	            -r 1 -g -t -d -s
 
