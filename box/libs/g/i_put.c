@@ -119,7 +119,8 @@ static Task put_calculate(Window *w) {
 }
 
 static Task _transform_pl(Int index, char *name, void *object, void *data) {
-  fig_transform_point((Point *) object, 1);
+  Matrix *m = (Matrix *) data;
+  Grp_Matrix_Mul_Point(m, (Point *) object, 1);
   return Success;
 }
 
@@ -140,25 +141,17 @@ Task window_put_end(VMProgram *vmp) {
     return Success;
   }
 
-  if (w->put.got.matrix) {
-    /* the matrix has been given by the user, we just have to use it! */
-    Matrix *m = & w->put.matrix;
-    fig_matrix[0] = m->m11; fig_matrix[1] = m->m12;
-    fig_matrix[2] = m->m21; fig_matrix[3] = m->m22;
-    fig_matrix[4] = m->m13; fig_matrix[5] = m->m23;
-
-  } else {
-    /* Calcolo la matrice di trasformazione */
-    aput_matrix(& w->put.translation,
-                & w->put.rot_center, w->put.rot_angle,
-                w->put.scale.x, w->put.scale.y,
-                fig_matrix);
+  if (!w->put.got.matrix) {
+    /* the matrix has not been given by the user, we calculate it! */
+    Grp_Matrix_Set(& w->put.matrix,
+                   & w->put.translation, & w->put.rot_center,
+                   w->put.rot_angle, w->put.scale.x, w->put.scale.y);
   }
 
   /* Disegno l'oggetto */
   figure = (Window *) w->put.figure;
   grp_win = w->window;
-  fig_draw_fig(figure->window);
+  Fig_Draw_Fig_With_Matrix(figure->window, & w->put.matrix);
   grp_win = cur_win;
   returned_pl = (IPointList *) malloc(sizeof(IPointList));
   if (returned_pl == (IPointList *) NULL) {
@@ -167,7 +160,7 @@ Task window_put_end(VMProgram *vmp) {
   }
   returned_pl->name = (char *) NULL;
   pointlist_dup(& returned_pl->pl, & figure->pointlist);
-  (void) pointlist_iter(& returned_pl->pl, _transform_pl, NULL);
+  (void) pointlist_iter(& returned_pl->pl, _transform_pl, & w->put.matrix);
   *out_pl = returned_pl;
   return Success;
 }

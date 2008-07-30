@@ -23,21 +23,19 @@
 #ifndef _FIG_H
 #  define _FIG_H
 
-/* Matrice per la trasformazione lineare di fig_transform_point */
-extern Real fig_matrix[6];
+#  include "graphic.h"
 
 /* Procedure per gestire i layers */
-grp_window *fig_open_win(int numlayers);
+GrpWindow *fig_open_win(int numlayers);
 int fig_destroy_layer(int l);
 int fig_new_layer(void);
 void fig_select_layer(int l);
 void fig_clear_layer(int l);
-void fig_transform_point(Point *p, int n);
-void fig_transform_vector(Point *v, int n);
 Real fig_transform_factor(Real angle);
-void fig_transform_scalar(Real *r, int n, Real angle);
-void fig_draw_layer(grp_window *source, int l);
-void fig_draw_fig(grp_window *source);
+
+void Fig_Draw_Fig(GrpWindow *src);
+void Fig_Draw_Fig_With_Matrix(GrpWindow *src, Matrix *m);
+
 int fig_save_fig(GrpWindow *figure, GrpWindowPlan *plan);
 
 #endif

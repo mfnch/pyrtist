@@ -252,6 +252,7 @@ Task window_save_window(VMProgram *vmp) {
   Window *dest = BOX_VM_ARG1(vmp, WindowPtr);
   Point translation = {0.0, 0.0}, center = {0.0, 0.0};
   Real sx = 1.0, sy = 1.0, rot_angle = 0.0;
+  Matrix m;
   GrpWindow *cur_win = grp_win;
   int type_fig = Grp_Window_Type_From_String("fig");
   if (src->plan.type != type_fig) {
@@ -338,8 +339,8 @@ Task window_save_window(VMProgram *vmp) {
   }
 
   grp_win = dest->window;
-  aput_matrix(& translation, & center, rot_angle, sx, sy, fig_matrix);
-  fig_draw_fig(src->window);
+  Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);
+  Fig_Draw_Fig_With_Matrix(src->window, & m);
   if (dest->plan.have.file_name)
     grp_save(dest->plan.file_name); /* Some terminals require an explicit save! */
   grp_win = cur_win;

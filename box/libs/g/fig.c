@@ -594,49 +594,45 @@ void fig_clear_layer(int l) {
 /***************************************************************************************/
 /* PROCEDURE PER DISEGNARE I LAYER SULLA FINESTRA ATTIVA */
 
-/* Matrice usata nella trasformazione lineare di fig_transform_point */
-Real fig_matrix[6] = {1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
+/* Matrice usata nella trasformazione lineare di Fig_Transform_Point */
+static Matrix fig_matrix = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+
+
+void Fig_Matrix_Apply(Matrix *m) {
+/*  m11 = $.m11*$$.m11 + $.m12*$$.m21, m12 = $.m11*$$.m12 + $.m12*$$.m22
+  m21 = $.m21*$$.m11 + $.m22*$$.m21, m22 = $.m21*$$.m12 + $.m22*$$.m22
+  $$.m13 = $.m13 + $.m11*$$.m13 + $.m12*$$.m23
+  $$.m23 = $.m23 + $.m21*$$.m13 + $.m22*$$.m23
+  $$.m11 = m11, $$.m12 = m12, $$.m21 = m21, $$.m22 = m22*/
+
+}
 
 /* Apply the transformation in matrix fig_matrix to the n points in p[] */
-void fig_transform_point(Point *p, int n) {
-  Real m11 = fig_matrix[0], m12 = fig_matrix[1],
-       m21 = fig_matrix[2], m22 = fig_matrix[3],
-       m13 = fig_matrix[4], m23 = fig_matrix[5];
-  Real px;
-
-  for (; n-- > 0; p++) {
-    px = p->x;
-    p->x = m11 * px + m12 * p->y + m13;
-    p->y = m21 * px + m22 * p->y + m23;
-  }
+static void Fig_Transform_Point(Point *p, int n) {
+  Grp_Matrix_Mul_Point(& fig_matrix, p, n);
 }
 
 /* Apply the linear transformation in fig_matrix to the n points in v[] */
-void fig_transform_vector(Point *v, int n) {
-  Real m11 = fig_matrix[0], m12 = fig_matrix[1],
-       m21 = fig_matrix[2], m22 = fig_matrix[3];
-  Real vx;
-
-  for (; n-- > 0; v++) {
-    vx = v->x;
-    v->x = m11 * vx + m12 * v->y;
-    v->y = m21 * vx + m22 * v->y;
-  }
+static void Fig_Transform_Vector(Point *v, int n) {
+  Grp_Matrix_Mul_Vector(& fig_matrix, v, n);
 }
 
 /* Find how the norm of the vector (cos(angle), sin(angle)) changes
  * with the trasformation in fig_matrix
  */
-Real fig_transform_factor(Real angle) {
+static Real Fig_Transform_Factor(Real angle) {
   Point v = {cos(angle), sin(angle)};
-  fig_transform_vector(& v, 1);
+  Fig_Transform_Vector(& v, 1);
   return sqrt(v.x*v.x + v.y*v.y);
 }
 
-void fig_transform_scalar(Real *r, int n, Real angle) {
-  Real factor = fig_transform_factor(angle);
+#if 0
+/* Commented out: it is not used! */
+static void Fig_Transform_Scalar(Real *r, int n, Real angle) {
+  Real factor = Fig_Transform_Factor(angle);
   for (; n-- > 0; r++) *r *= factor;
 }
+#endif
 
 /* DESCRIZIONE: Disegna il layer l della figura source sulla finestra grafica
  *  attualmente in uso. Questo disegno puo' essere "filtrato" e cioe' puo' essere
@@ -644,10 +640,10 @@ void fig_transform_scalar(Real *r, int n, Real angle) {
  *  A tal scopo occorre impostare la trasformazione con ???????????????????????
  * NOTA: Non e' possibile copiare un layer in se' stesso: infatti l'esecuzione
  *  di comandi sul layer puo' causare un suo ridimensionamento, cioe' una realloc.
- *  In tal caso il fig_draw_layer continuera' a leggere sui vecchi indirizzi,
+ *  In tal caso il Fig_Draw_Layer continuera' a leggere sui vecchi indirizzi,
  *  senza controllare questa eventualita'! (problema   R I M O S S O !))
  */
-void fig_draw_layer(grp_window *source, int l) {
+void Fig_Draw_Layer(grp_window *source, int l) {
   FigHeader *figh;
   LayerHeader *layh;
   buff *laylist, *layer;
@@ -657,7 +653,7 @@ void fig_draw_layer(grp_window *source, int l) {
   } cmnd;
   long ID, ip, nc;
 
-  PRNMSG("fig_draw_layer:\n  ");
+  PRNMSG("Fig_Draw_Layer:\n  ");
 
   /* Trovo l'header della figura "source" */
   figh = (FigHeader *) source->wrdep;
@@ -668,7 +664,7 @@ void fig_draw_layer(grp_window *source, int l) {
   laylist = & figh->layerlist;
   layh = buff_itemptr(laylist, LayerHeader, l);
   if ( layh->ID != 0x7279616c) {  /* 0x7279616c = "layr" */
-    ERRORMSG( "fig_draw_layer", "Errore interno (bad layer ID), 3" );
+    ERRORMSG( "Fig_Draw_Layer", "Errore interno (bad layer ID), 3" );
     return;
   }
 
@@ -714,7 +710,7 @@ void fig_draw_layer(grp_window *source, int l) {
       ((DrawStyle *) cmnd.ptr)->bord_dashes =
         (Real *) (cmnd.ptr + sizeof(DrawStyle));
       tr = ((DrawStyle *) cmnd.ptr)->scale;
-      ((DrawStyle *) cmnd.ptr)->scale *= fig_transform_factor(0.0);
+      ((DrawStyle *) cmnd.ptr)->scale *= Fig_Transform_Factor(0.0);
       grp_rdraw((DrawStyle *) cmnd.ptr);
       ((DrawStyle *) cmnd.ptr)->scale = tr;
       break;
@@ -722,7 +718,7 @@ void fig_draw_layer(grp_window *source, int l) {
     case ID_rline:
       tp[0] = *((Point *) cmnd.ptr);
       tp[1] = *((Point *) (cmnd.ptr + sizeof(Point)));
-      fig_transform_point(tp, 2);
+      Fig_Transform_Point(tp, 2);
       grp_rline(& tp[0], & tp[1]);
       break;
 
@@ -730,7 +726,7 @@ void fig_draw_layer(grp_window *source, int l) {
       tp[0] = *((Point *) cmnd.ptr);
       tp[1] = *((Point *) (cmnd.ptr + sizeof(Point)));
       tp[2] = *((Point *) (cmnd.ptr + 2*sizeof(Point)));
-      fig_transform_point(tp, 3);
+      Fig_Transform_Point(tp, 3);
       grp_rcong(& tp[0], & tp[1], & tp[2]);
       break;
 
@@ -742,7 +738,7 @@ void fig_draw_layer(grp_window *source, int l) {
       tp[0] = *((Point *) cmnd.ptr);
       tp[1] = *((Point *) (cmnd.ptr + sizeof(Point)));
       tp[2] = *((Point *) (cmnd.ptr + 2*sizeof(Point)));
-      fig_transform_point(tp, 3);
+      Fig_Transform_Point(tp, 3);
       grp_rcircle(& tp[0], & tp[1], & tp[2]);
       break;
 
@@ -755,10 +751,10 @@ void fig_draw_layer(grp_window *source, int l) {
     case ID_rgradient:
       cg = *((ColorGrad *) cmnd.ptr);
       cg.items = (ColorGradItem *) (cmnd.ptr + sizeof(ColorGrad));
-      fig_transform_point(& cg.point1, 1);
-      fig_transform_point(& cg.point2, 1);
-      fig_transform_point(& cg.ref1, 1);
-      fig_transform_point(& cg.ref2, 1);
+      Fig_Transform_Point(& cg.point1, 1);
+      Fig_Transform_Point(& cg.point2, 1);
+      Fig_Transform_Point(& cg.ref1, 1);
+      Fig_Transform_Point(& cg.ref2, 1);
       grp_rgradient(& cg);
       break;
 
@@ -770,13 +766,13 @@ void fig_draw_layer(grp_window *source, int l) {
         char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
         if (str_size + sizeof(Point) + sizeof(Int) <= cmnd_header_size) {
           if ( *((char *) ptr) == '\0' ) {
-            fig_transform_point(& p, 1);
+            Fig_Transform_Point(& p, 1);
             grp_text(& p, str);
           } else {
-            WARNINGMSG("fig_draw_layer", "Ignoring text command (bad str)!");
+            WARNINGMSG("Fig_Draw_Layer", "Ignoring text command (bad str)!");
           }
         } else {
-          WARNINGMSG("fig_draw_layer", "Ignoring text command (bad size)!");
+          WARNINGMSG("Fig_Draw_Layer", "Ignoring text command (bad size)!");
         }
       }
       break;
@@ -787,15 +783,15 @@ void fig_draw_layer(grp_window *source, int l) {
         Real r = *((Real *) ptr); ptr += sizeof(Real);
         Int str_size = *((Int *) ptr); ptr += sizeof(Int);
         char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
-        r *= fig_transform_factor(0.0);
+        r *= Fig_Transform_Factor(0.0);
         if (str_size + sizeof(Real) + sizeof(Int) <= cmnd_header_size) {
           if ( *((char *) ptr) == '\0' ) {
             grp_font(str, r);
           } else {
-            WARNINGMSG("fig_draw_layer", "Ignoring font command (bad str)!");
+            WARNINGMSG("Fig_Draw_Layer", "Ignoring font command (bad str)!");
           }
         } else {
-          WARNINGMSG("fig_draw_layer", "Ignoring font command (bad size)!");
+          WARNINGMSG("Fig_Draw_Layer", "Ignoring font command (bad size)!");
         }
       }
       break;
@@ -803,13 +799,13 @@ void fig_draw_layer(grp_window *source, int l) {
     case ID_fake_point:
       {
         Point p = *((Point *) cmnd.ptr);
-        fig_transform_point(& p, 1);
+        Fig_Transform_Point(& p, 1);
         grp_fake_point(& p);
       }
       break;
 
     default:
-      ERRORMSG("fig_draw_layer", "Comando grafico non riconosciuto");
+      ERRORMSG("Fig_Draw_Layer", "Comando grafico non riconosciuto");
       return;
       break;
     }
@@ -822,16 +818,15 @@ void fig_draw_layer(grp_window *source, int l) {
 }
 
 /* DESCRIZIONE: Disegna la figura source sulla finestra grafica attualmente
- *  in uso. I layer vengono disegnati uno dietro l'altro con fig_draw_layer
+ *  in uso. I layer vengono disegnati uno dietro l'altro con Fig_Draw_Layer
  *  a partire dal "layer bottom", fino ad arrivare al "layer top".
  */
-void fig_draw_fig(grp_window *source) {
+static void _Fig_Draw_Fig(GrpWindow *source) {
   FigHeader *figh;
   LayerHeader *layh;
   buff *laylist;
   long nl, cl;
 
-  PRNMSG("fig_draw_fig:\n  ");
   assert(source->win_type_str == fig_id_string);
 
   /* Trovo l'header della figura "source" */
@@ -842,12 +837,9 @@ void fig_draw_fig(grp_window *source) {
   /* Parto dall'header che sta sotto tutti gli altri */
   cl = figh->bottom;
 
-  PRNMSG("Inizio a disegnare i "); PRNINTG(figh->numlayers);
-  PRNMSG(" layer(s)!\n  ");
-
   for ( nl = figh->numlayers; nl > 0; nl-- ) {
     /* Disegno il layer cl */
-    fig_draw_layer(source, cl);
+    Fig_Draw_Layer(source, cl);
 
     /* Ora passo a quello successivo che lo ricopre */
     /* Trovo l'header del layer cl */
@@ -856,12 +848,23 @@ void fig_draw_fig(grp_window *source) {
   }
 
   if (cl != 0) {
-    ERRORMSG( "fig_draw_fig", "Errore interno (layer chain)" );
-    PRNMSG("Catena dei layer danneggiata!\n");
+    ERRORMSG( "Fig_Draw_Fig", "Errore interno (layer chain)" );
     return;
   }
+}
 
-  PRNMSG("Ok!\n");
+void Fig_Draw_Fig_With_Matrix(GrpWindow *src, Matrix *m) {
+  Matrix save_matrix = fig_matrix;
+  fig_matrix = *m;
+  _Fig_Draw_Fig(src);
+  fig_matrix = save_matrix;
+}
+
+void Fig_Draw_Fig(GrpWindow *src) {
+  Matrix save_matrix = fig_matrix;
+  Grp_Matrix_Set_Identity(& fig_matrix);
+  _Fig_Draw_Fig(src);
+  fig_matrix = save_matrix;
 }
 
 int fig_save_fig(GrpWindow *figure, GrpWindowPlan *plan) {
@@ -903,8 +906,9 @@ int fig_save_fig(GrpWindow *figure, GrpWindowPlan *plan) {
   plan->have.origin = 1;
   grp_win = Grp_Window_Open(plan);
   if (grp_win != (GrpWindow *) NULL) {
-    aput_matrix(& translation, & center, rot_angle, sx, sy, fig_matrix);
-    fig_draw_fig(figure);
+    Matrix m;
+    Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);
+    Fig_Draw_Fig_With_Matrix(figure, & m);
     grp_save(plan->file_name); /* Some terminals require an explicit save! */
     grp_close_win();
     grp_win = cur_win;

@@ -44,6 +44,10 @@ typedef struct {
 } Color;
 
 typedef struct {
+  Real m11, m12, m13, m21, m22, m23;
+} Matrix;
+
+typedef struct {
   Point max, min;
   Int num;
 } BB;
@@ -319,6 +323,22 @@ void grp_draw_gpath(GPath *gp);
 void rst_repair(GrpWindow *gw);
 
 Point *grp_ref(Point *o, Point *v, Point *p);
+
+/** Calculate the transformation matrix corresponding to:
+ * translation vector 't', rotation center 'rcntr', rotation angle 'rang',
+ * scale factors 'sx' and 'sy'. The computed matrix is put in 'm'.
+ */
+void Grp_Matrix_Set(Matrix *m,
+                    Point *t, Point *rcntr, Real rang, Real sx, Real sy);
+
+/** Set the matrix 'm' to the identity matrix. */
+void Grp_Matrix_Set_Identity(Matrix *m);
+
+/** Apply the matrix 'm' to the 'num_pts' points in 'pts'. */
+void Grp_Matrix_Mul_Point(Matrix *m, Point *pts, int num_pts);
+
+/** Apply the matrix 'm' to the 'num_vecs' vectors in 'vecs'. */
+void Grp_Matrix_Mul_Vector(Matrix *m, Point *vecs, int num_vecs);
 
 /* Funzioni grafiche di basso livello (legate al tipo di finestra aperta) */
 #define grp_close_win  (grp_win->close_win)

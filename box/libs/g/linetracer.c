@@ -294,6 +294,7 @@ static int lt_put_to_begin_or_end(LineTracer *lt, Point *p1, Point *p2,
   Point rot_center, trsl_vect;
   /* Punto finale e iniziale a cui vanno congiunti i segmenti della spezzata */
   Point pfi, pnt[3];
+  Matrix m;
   Window *fw = (Window *) f;
 
   if (fw == (Window *) NULL)
@@ -375,12 +376,7 @@ static int lt_put_to_begin_or_end(LineTracer *lt, Point *p1, Point *p2,
   #endif
 
   /* Calcolo la matrice di trasformazione */
-  aput_matrix(
-   & trsl_vect,
-   & rot_center, rot_angle,
-   scale_x, scale_y,
-   fig_matrix
-  );
+  Grp_Matrix_Set(& m, & trsl_vect, & rot_center, rot_angle, scale_x, scale_y);
 
   /* Calcolo dove vanno a finire pfi[0] = f3 e pfi[1] = f5,
    * quando trasformo la figura
@@ -390,10 +386,10 @@ static int lt_put_to_begin_or_end(LineTracer *lt, Point *p1, Point *p2,
   else
     pfi = pnt[2];
 
-  fig_transform_point( & pfi, 1 );
+  Grp_Matrix_Mul_Point(& m, & pfi, 1);
 
   /* Disegno l'oggetto */
-  fig_draw_fig(fw->window);
+  Fig_Draw_Fig_With_Matrix(fw->window, & m);
 
   /* Continuo a disegnare le linee */
   if ( final )
@@ -421,6 +417,7 @@ static int lt_put_to_join(LineTracer *lt, Point *p1, Point *p2, Point *p3,
   Point rot_center, trsl_vect, *pnt;
   /* Punto finale e iniziale a cui vanno congiunti i segmenti della spezzata */
   Point pfi[2] = {{0.0, 0.0}, {0.0, 0.0}};
+  Matrix m;
 
   if ( ((obj_header *) f)->child == NULL ) {
     /* La figura da disporre non possiede hot-points: errore! */
@@ -518,12 +515,7 @@ static int lt_put_to_join(LineTracer *lt, Point *p1, Point *p2, Point *p3,
   }
 
   /* Calcolo la matrice di trasformazione */
-  aput_matrix(
-   & trsl_vect,
-   & rot_center, rot_angle,
-   scale_x, scale_y,
-   fig_matrix
-  );
+  Grp_Matrix_Set(& m, & trsl_vect, & rot_center, rot_angle, scale_x, scale_y);
 
   /* Calcolo dove vanno a finire pfi[0] = f3 e pfi[1] = f5,
    * quando trasformo la figura

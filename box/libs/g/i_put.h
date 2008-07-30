@@ -20,10 +20,6 @@
 #ifdef _DEF_WINDOW_SUBOBJECTS
 
 typedef struct {
-  Real m11, m12, m13, m21, m22, m23;
-} Matrix;
-
-typedef struct {
   Point on_src, on_dest;
   Real weight;
   struct {

@@ -107,8 +107,7 @@ int bb_bounding_box(GrpWindow *figure, Point *bb_min, Point *bb_max) {
   Grp_BB_Init(& bb_global);
   Grp_BB_Init(& bb_local);
   grp_win = & bb;
-  aput_identity_matrix(fig_matrix);
-  fig_draw_fig(figure);
+  Fig_Draw_Fig(figure);
   grp_win = cur_win;
   Grp_BB_Fuse(& bb_global, & bb_local);
   if (bb_min != (Point *) NULL) *bb_min = bb_global.min;

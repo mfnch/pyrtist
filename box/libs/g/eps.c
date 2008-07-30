@@ -346,6 +346,7 @@ int eps_save_fig(const char *file_name, GrpWindow *figure) {
   Point bb_min, bb_max, translation, center, size;
   Real sx, sy, rot_angle;
   GrpWindow *cur_win = grp_win;
+  Matrix m;
 
   bb_bounding_box(figure, & bb_min, & bb_max);
   /*printf("Bounding box (%f, %f) - (%f, %f)\n",
@@ -359,8 +360,8 @@ int eps_save_fig(const char *file_name, GrpWindow *figure) {
   center.y = center.x = 0.0;
   sy = sx = 1.0;
   rot_angle = 0.0;
-  aput_matrix(& translation, & center, rot_angle, sx, sy, fig_matrix);
-  fig_draw_fig(figure);
+  Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);
+  Fig_Draw_Fig_With_Matrix(figure, & m);
   grp_close_win();
   grp_win = cur_win;
   return 1;
@@ -465,6 +466,7 @@ int ps_save_fig(const char *file_name, GrpWindow *figure) {
   Point bb_min, bb_max, translation, center;
   Real sx, sy, rot_angle;
   GrpWindow *cur_win = grp_win;
+  Matrix m;
 
   bb_bounding_box(figure, & bb_min, & bb_max);
   printf("Bounding box (%f, %f) - (%f, %f)\n",
@@ -476,8 +478,8 @@ int ps_save_fig(const char *file_name, GrpWindow *figure) {
   center.y = center.x = 0.0;
   sy = sx = 1.0;
   rot_angle = 0.0;
-  aput_matrix(& translation, & center, rot_angle, sx, sy, fig_matrix);
-  fig_draw_fig(figure);
+  Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);
+  Fig_Draw_Fig_With_Matrix(figure, & m);
   grp_close_win();
   grp_win = cur_win;
   return 1;
