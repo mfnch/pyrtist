@@ -360,10 +360,11 @@ static void dummy_rbgcolor(Color *c) {
 static void dummy_rgradient(ColorGrad *cg) {
   grp_win->_report_error("rgradient");
 }
-static void dummy_text(Point *p, const char *text) {
+static void dummy_text(Point *ctr, Point *right, Point *up, Point *from,
+                       const char *text) {
   grp_win->_report_error("text");
 }
-static void dummy_font(const char *font, Real size) {
+static void dummy_font(const char *font) {
   grp_win->_report_error("font");
 }
 static void dummy_fake_point(Point *p) {return;}

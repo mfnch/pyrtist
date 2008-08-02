@@ -80,7 +80,12 @@ static void bb_rcircle(Point *ctr, Point *a, Point *b) {
 
 }
 
-static void bb_text(Point *p, const char *text) {got_point(p->x, p->y);}
+static void bb_text(Point *ctr, Point *left, Point *up, Point *from,
+                    const char *text) {
+  got_point(ctr->x, ctr->y);
+  got_point(left->x, left->y);
+  got_point(up->x, up->y);
+}
 
 static void bb_fake_point(Point *p) {got_point(p->x, p->y);}
 

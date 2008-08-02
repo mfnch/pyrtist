@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <math.h>
 
 #include "types.h"
 #include "virtmach.h"
@@ -35,6 +36,8 @@ Task window_text_begin(VMProgram *vmp) {
   w->text.text = (char *) NULL;
   w->text.font = (char *) NULL;
   w->text.position.x = 0.0; w->text.position.y = 0.0;
+  w->text.direction.x = 1.0; w->text.direction.y = 0.0;
+  w->text.from.x = 0.5; w->text.from.y = 0.5;
   w->text.font_size = 4.2333333333333333;
   w->text.got.text = 0;
   w->text.got.font = 0;
@@ -56,6 +59,24 @@ Task window_text_gradient(VMProgram *vmp) {
   return x_gradient(vmp);
 }
 
+static void _place_text(Window *w) {
+  Point *ctr = & w->text.position, *dx = & w->text.direction,
+        *from = & w->text.from, dy, right, up;
+  Real d, size = w->text.font_size;
+  d = sqrt(dx->x*dx->x + dx->y*dx->y);
+  if (d > 0) {
+    dx->x /= d; dx->y /= d;
+  } else {
+    g_warning("Bad text direction, using (1, 0).");
+    dx->x = 1.0; dx->y = 0.0;
+  }
+  dx->x *= size; dx->y *= size;
+  dy.x = -dx->y; dy.y = dx->x;
+  right.x = ctr->x + dx->x; right.y = ctr->y + dx->y;
+  up.x    = ctr->x + dy.x;  up.y    = ctr->y + dy.y;
+  grp_text(ctr, & right, & up, from, w->text.text);
+}
+
 static Task _sentence_end(Window *w, int *wrote_text) {
   int dummy;
   if (wrote_text == (int *) NULL) wrote_text = & dummy;
@@ -70,7 +91,7 @@ static Task _sentence_end(Window *w, int *wrote_text) {
     }
 
     if (w->text.got.font && w->text.font != (char *) NULL) {
-      grp_font(w->text.font, w->text.font_size);
+      grp_font(w->text.font);
 
     } else {
       if (w->text.got.font_size && !w->text.got.font_size)
@@ -78,7 +99,7 @@ static Task _sentence_end(Window *w, int *wrote_text) {
                   "but not its name!");
     }
 
-    grp_text(& w->text.position, w->text.text);
+    _place_text(w);
     *wrote_text = 1;
     grp_win = cur_win;
   }
@@ -89,6 +110,7 @@ static Task _sentence_end(Window *w, int *wrote_text) {
   w->text.got.text = 0;
   return Success;
 }
+
 
 Task window_text_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
@@ -153,5 +175,11 @@ Task window_text_font_real(VMProgram *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
   w->text.font_size = BOX_VM_ARG1(vmp, Real);
   w->text.got.font_size = 1;
+  return Success;
+}
+
+Task window_text_from_point(VMProgram *vmp) {
+  Window *w = BOX_VM_SUB2_PARENT(vmp, WindowPtr);
+  w->text.from = BOX_VM_ARG1(vmp, Point);
   return Success;
 }

@@ -23,7 +23,7 @@
 typedef struct {
   char *text, *font;
   Real font_size;
-  Point position;
+  Point position, direction, from;
   Color color;
 
   struct {

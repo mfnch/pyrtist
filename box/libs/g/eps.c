@@ -209,16 +209,39 @@ static void eps_rfgcolor(Color *c) {
    "  %g %g %g setrgbcolor\n", c->r, c->g, c->b );
 }
 
-static void eps_text(Point *p, const char *text) {
-  EPS_POINT(p, px, py);
-
-  fprintf((FILE *) grp_win->ptr,
-          "  %ld %ld moveto (%s) show\n",
-          px, py, text);
+static char *escape_text(const char *src) {
+  const char *s;
+  char *d, *dest;
+  int n = 0;
+  /* Count the number of parenthesis */
+  for(s = src; *s != '\0'; s++)
+    n += (*s == '(' || *s == ')') ? 2 : 1;
+  d = dest = (char *) malloc(n + 1);
+  for(s = src; *s != '\0'; s++) {
+    switch(*s) {
+    case '(': case ')': *(d++) = '\\'; *(d++) = *s; break;
+    default: *(d++) = *s; break;
+    }
+  }
+  *d = '\0';
+  /*printf("'%s' --> '%s'\n", src, dest);*/
+  return dest;
 }
 
-static void eps_font(const char *font, Real size) {
-  long s = EPS_REAL(size);
+static void eps_text(Point *ctr, Point *right, Point *up, Point *from,
+                     const char *text) {
+  char *escaped_text = escape_text(text);
+  EPS_POINT(ctr, ctrx, ctry);
+  EPS_POINT(right, rx, ry);
+  EPS_POINT(up, ux, uy);
+
+  fprintf((FILE *) grp_win->ptr,
+          "  %ld %ld %ld %ld %ld %ld %g %g (%s) text\n",
+          ctrx, ctry, rx, ry, ux, uy, from->x, from->y, escaped_text);
+  free(escaped_text);
+}
+
+static void eps_font(const char *font) {
   const char *full_name;
 
   full_name = ps_font_get_full_name(font,
@@ -233,7 +256,7 @@ static void eps_font(const char *font, Real size) {
   }
 
   fprintf((FILE *) grp_win->ptr,
-          "  /%s findfont %ld scalefont setfont\n", full_name, s);
+          "  /%s findfont setfont\n", full_name);
 }
 
 static void eps_fake_point(Point *p) {return;}
@@ -264,6 +287,34 @@ static void eps_repair(GrpWindow *w) {
 
   w->close_win = eps_close_win;
 }
+
+static const char *ps_std_defs =
+  "/congdict 14 dict def\n\ncongdict /mtrx matrix put\n"
+  "/cong {\ncongdict begin\n  /yc exch def /xc exch def\n"
+  "  /yb exch def /xb exch def\n  /ya exch def /xa exch def\n\n"
+  "    /xu xb xc sub def /yu yb yc sub def\n"
+  "    /xv xb xa sub def /yv yb ya sub def\n"
+  "    /xo xa xu sub def /yo ya yu sub def\n\n"
+  "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
+  "    0 0 1 0 90 arc\n    savematrix setmatrix\n\n  end\n} def\n\n"
+  "/circledict 12 dict def\n\ncircledict /mtrx matrix put\n"
+  "/circle {\ncircledict begin\n  /yb exch def /xb exch def\n"
+  "  /ya exch def /xa exch def\n  /yo exch def /xo exch def\n\n"
+  "    /xu xa xo sub def /yu ya yo sub def\n"
+  "    /xv xb xo sub def /yv yb yo sub def\n\n"
+  "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
+  "    1 0 moveto 0 0 1 0 360 arc\n"
+  "    savematrix setmatrix\n\n  end\n} def\n\n"
+  "/textdict 15 dict def\n\ntextdict /mtrx matrix put\n"
+  "/text {\ntextdict begin\n  /str exch def /yf exch def /xf exch def\n"
+  "  /yb exch def /xb exch def\n"
+  "  /ya exch def /xa exch def\n  /yo exch def /xo exch def\n\n"
+  "    /xu xa xo sub def /yu ya yo sub def\n"
+  "    /xv xb xo sub def /yv yb yo sub def\n\n"
+  "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
+  "    newpath 0 0 moveto str true charpath flattenpath pathbbox\n"
+  "    yf mul neg exch xf mul neg exch moveto pop pop str show\n"
+  "    savematrix setmatrix\n\n  end\n} def\n\n";
 
 /* Open a graphic window with type "eps" (encapsulated postscript).
  * The windows opens a file and send all the commands it receives directly
@@ -312,23 +363,8 @@ GrpWindow *eps_open_win(const char *file, Real size_x, Real size_y) {
   fprintf(winstream, "%%%%BoundingBox: 0 0 %d %d\n", x_max, y_max);
   fprintf(winstream,
    "%%%%Magnification: 1.0000\n%%%%EndComments\n\n"
-   "/congdict 8 dict def\n\ncongdict /mtrx matrix put\n"
-   "/cong {\ncongdict begin\n  /yc exch def /xc exch def\n"
-   "  /yb exch def /xb exch def\n  /ya exch def /xa exch def\n\n"
-   "    /xu xb xc sub def /yu yb yc sub def\n"
-   "    /xv xb xa sub def /yv yb ya sub def\n"
-   "    /xo xa xu sub def /yo ya yu sub def\n\n"
-   "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
-   "    0 0 1 0 90 arc\n    savematrix setmatrix\n\n  end\n} def\n\n"
-   "/circledict 8 dict def\n\ncircledict /mtrx matrix put\n"
-   "/circle {\ncircledict begin\n  /yb exch def /xb exch def\n"
-   "  /ya exch def /xa exch def\n  /yo exch def /xo exch def\n\n"
-   "    /xu xa xo sub def /yu ya yo sub def\n"
-   "    /xv xb xo sub def /yv yb yo sub def\n\n"
-   "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
-   "    1 0 moveto 0 0 1 0 360 arc\n"
-   "    savematrix setmatrix\n\n  end\n} def\n\n"
-   "save\n");
+   "%s"
+   "save\n", ps_std_defs);
 
   fprintf(winstream, "newpath 0 %d moveto 0 0 lineto %d 0 "
           "lineto %d %d lineto closepath clip newpath\n"
@@ -435,29 +471,13 @@ GrpWindow *ps_open_win(const char *file) {
 
   /* Scrivo l'intestazione del file */
   fprintf(winstream,
-   "%%!PS-Adobe-2.0\n%%%%Title: %s\n%%%%Creator: Box g library\n"
-   "%%%%Orientation: Landscape\n%%%%Pages: 1\n%%%%BoundingBox: 0 0 612 792\n"
-   "%%%%BeginSetup\n%%%%IncludeFeature: *PageSize Letter\n%%%%EndSetup\n"
-   "%%%%Magnification: 1.0000\n%%%%EndComments\n\n"
-   "/congdict 8 dict def\n\ncongdict /mtrx matrix put\n"
-   "/cong {\ncongdict begin\n  /yc exch def /xc exch def\n"
-   "  /yb exch def /xb exch def\n  /ya exch def /xa exch def\n\n"
-   "    /xu xb xc sub def /yu yb yc sub def\n"
-   "    /xv xb xa sub def /yv yb ya sub def\n"
-   "    /xo xa xu sub def /yo ya yu sub def\n\n"
-   "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
-   "    0 0 1 0 90 arc\n    savematrix setmatrix\n\n  end\n} def\n\n"
-   "/circledict 8 dict def\n\ncircledict /mtrx matrix put\n"
-   "/circle {\ncircledict begin\n  /yb exch def /xb exch def\n"
-   "  /ya exch def /xa exch def\n  /yo exch def /xo exch def\n\n"
-   "    /xu xa xo sub def /yu ya yo sub def\n"
-   "    /xv xb xo sub def /yv yb yo sub def\n\n"
-   "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
-   "    1 0 moveto 0 0 1 0 360 arc\n"
-   "    savematrix setmatrix\n\n  end\n} def\n\n"
-   "0.01 0.01 scale\n90 rotate\n1 -1 scale\n0 0 0 setrgbcolor\n"
-   , file
-  );
+    "%%!PS-Adobe-2.0\n%%%%Title: %s\n%%%%Creator: Box g library\n"
+    "%%%%Orientation: Landscape\n%%%%Pages: 1\n%%%%BoundingBox: 0 0 612 792\n"
+    "%%%%BeginSetup\n%%%%IncludeFeature: *PageSize Letter\n%%%%EndSetup\n"
+    "%%%%Magnification: 1.0000\n%%%%EndComments\n\n"
+    "%s"
+    "0.01 0.01 scale\n90 rotate\n1 -1 scale\n0 0 0 setrgbcolor\n",
+    ps_std_defs, file);
 
   return wd;
 }

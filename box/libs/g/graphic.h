@@ -177,8 +177,9 @@ typedef struct _grp_window {
   void (*rfgcolor)(Color *c);
   void (*rbgcolor)(Color *c);
   void (*rgradient)(ColorGrad *cg);
-  void (*text)(Point *p, const char *text);
-  void (*font)(const char *font_name, Real size);
+  void (*text)(Point *ctr, Point *right, Point *up, Point *from,
+               const char *text);
+  void (*font)(const char *font_name);
   void (*fake_point)(Point *p);
   /** Used to save the window to a file */
   int (*save)(const char *file_name);

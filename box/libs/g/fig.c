@@ -202,19 +202,26 @@ void fig_rbgcolor(Color *c) {
   _fig_insert_command(ID_rbgcolor, args);
 }
 
-static void fig_text(Point *p, const char *text) {
+typedef struct {
+  Point ctr, right, up, from;
+  Int text_size;
+} Arg4Text;
+
+static void fig_text(Point *ctr, Point *right, Point *up, Point *from,
+                      const char *text) {
   Int text_size = strlen(text);
-  CmndArg args[] = {{sizeof(Point), p},
-                    {sizeof(Int), & text_size},
+  Arg4Text arg;
+  CmndArg args[] = {{sizeof(Arg4Text), & arg},
                     {text_size+1, (void *) text},
                     {0, (void *) NULL}};
+  arg.ctr = *ctr; arg.right = *right; arg.up = *up; arg.from = *from;
+  arg.text_size = text_size;
   _fig_insert_command(ID_text, args);
 }
 
-static void fig_font(const char *font, Real size) {
+static void fig_font(const char *font) {
   Int font_size = strlen(font);
-  CmndArg args[] = {{sizeof(Real), & size},
-                    {sizeof(Int), & font_size},
+  CmndArg args[] = {{sizeof(Int), & font_size},
                     {font_size+1, (void *) font},
                     {0, (void *) NULL}};
   _fig_insert_command(ID_font, args);
@@ -760,19 +767,20 @@ void Fig_Draw_Layer(grp_window *source, int l) {
 
     case ID_text:
       {
-        void *ptr = cmnd.ptr;
-        Point p = *((Point *) ptr); ptr += sizeof(Point);
-        Int str_size = *((Int *) ptr); ptr += sizeof(Int);
-        char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
-        if (str_size + sizeof(Point) + sizeof(Int) <= cmnd_header_size) {
-          if ( *((char *) ptr) == '\0' ) {
-            Fig_Transform_Point(& p, 1);
-            grp_text(& p, str);
+        Arg4Text arg = *((Arg4Text *) cmnd.ptr);
+        char *str = (char *) (cmnd.ptr + sizeof(Arg4Text));
+        if (sizeof(Arg4Text) + arg.text_size + 1 <= cmnd_header_size) {
+          char *ptr = (char *) (cmnd.ptr + sizeof(Arg4Text) + arg.text_size);
+          if (*ptr == '\0') {
+            Fig_Transform_Point(& arg.ctr, 1);
+            Fig_Transform_Point(& arg.right, 1);
+            Fig_Transform_Point(& arg.up, 1);
+            grp_text(& arg.ctr, & arg.right, & arg.up, & arg.from, str);
           } else {
-            WARNINGMSG("Fig_Draw_Layer", "Ignoring text command (bad str)!");
+            g_warning("Fig_Draw_Layer: Ignoring text command (bad str)!");
           }
         } else {
-          WARNINGMSG("Fig_Draw_Layer", "Ignoring text command (bad size)!");
+          g_warning("Fig_Draw_Layer: Ignoring text command (bad size)!");
         }
       }
       break;
@@ -780,18 +788,16 @@ void Fig_Draw_Layer(grp_window *source, int l) {
     case ID_font:
       {
         void *ptr = cmnd.ptr;
-        Real r = *((Real *) ptr); ptr += sizeof(Real);
         Int str_size = *((Int *) ptr); ptr += sizeof(Int);
         char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
-        r *= Fig_Transform_Factor(0.0);
-        if (str_size + sizeof(Real) + sizeof(Int) <= cmnd_header_size) {
+        if (str_size + sizeof(Int) <= cmnd_header_size) {
           if ( *((char *) ptr) == '\0' ) {
-            grp_font(str, r);
+            grp_font(str);
           } else {
-            WARNINGMSG("Fig_Draw_Layer", "Ignoring font command (bad str)!");
+            g_warning("Fig_Draw_Layer: Ignoring font command (bad str)!");
           }
         } else {
-          WARNINGMSG("Fig_Draw_Layer", "Ignoring font command (bad size)!");
+          g_warning("Fig_Draw_Layer: Ignoring font command (bad size)!");
         }
       }
       break;
@@ -805,7 +811,7 @@ void Fig_Draw_Layer(grp_window *source, int l) {
       break;
 
     default:
-      ERRORMSG("Fig_Draw_Layer", "Comando grafico non riconosciuto");
+      g_warning("Fig_Draw_Layer: unrecognized command (corrupted figure?)");
       return;
       break;
     }

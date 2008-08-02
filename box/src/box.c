@@ -167,10 +167,12 @@ Task Box_Def_End(void) {
   TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
 
   {
-    Symbol *s;
-    for ( s = b->syms; s != (Symbol *) NULL; s = s->brother ) {
+    Symbol *s, *next;
+    for (next = b->syms; next != (Symbol *) NULL;) {
+      s = next;
+      next = next->brother;
       TASK( Cmp_Expr_Destroy(& (s->value), 1) );
-      Sym_Symbol_Delete( s );
+      Sym_Symbol_Delete(s);
     }
   }
   TASK( Reg_Frame_Pop() );

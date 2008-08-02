@@ -354,13 +354,16 @@ static void wincairo_rcircle(Point *ctr, Point *a, Point *b) {
   beginning_of_path = 0;
 }
 
-static void wincairo_font(const char *font_name, Real size) {
+static void wincairo_font(const char *font_name) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   const char *name;
   FontSlant s;
   FontWeight w;
   cairo_font_slant_t cs;
   cairo_font_weight_t cw;
+  cairo_font_face_t *ff;
+  cairo_status_t status;
+  cairo_matrix_t m;
   WHEREAMI;
 
   if (ps_font_get_info(font_name, & name, & s, & w)) {
@@ -384,16 +387,50 @@ static void wincairo_font(const char *font_name, Real size) {
   }
 
   cairo_select_font_face(cr, name, cs, cw);
-  cairo_set_font_size(cr, MY_REAL(size));
+  ff = cairo_get_font_face(cr);
+  status = cairo_font_face_status(ff);
+  if (status != CAIRO_STATUS_SUCCESS) {
+    fprintf(stderr, "Cannot set font: %s.\n", cairo_status_to_string(status));
+    cairo_select_font_face(cr, "sans", CAIRO_FONT_SLANT_NORMAL,
+                           CAIRO_FONT_WEIGHT_NORMAL);
+  }
+
+  /* Cairo coordinates use the following convention: increasing x goes from
+   * the left to the right side of the screen, while increasing y goes from
+   * the top to the bottom side. Postscript coordinates use the opposite
+   * convention. The Box graphics library also sticks to the Postscript
+   * convention, since this is the usual choice in geometry and mathematics.
+   * Care has to be put in converting from one to the other convention:
+   * we don't want to simply mirror the image: we want to do that only for
+   * graphics, while preserving the direction for fonts: mirroring fonts
+   * is not really what we want! Therefore we DON'T choose the identity
+   * matrix for fonts! We choose diag(1, -1)!
+   */
+  m.xx = 1.0; m.yy = -1.0;
+  m.xy = m.yx = m.x0 = m.y0 = 0.0;
+  cairo_set_font_matrix(cr, & m);
 }
 
-static void wincairo_text(Point *p, const char *text) {
+static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
+                          const char *text) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
-  MY_POINT(p);
+  cairo_matrix_t previous_m, m;
+  cairo_text_extents_t extents;
+  MY_3POINTS(ctr, right, up);
   WHEREAMI;
 
-  cairo_move_to(cr, p->x, p->y);
+  cairo_get_matrix(cr, & previous_m);
+  m.xx = right->x - ctr->x;  m.yx = right->y - ctr->y;
+  m.xy = up->x - ctr->x;  m.yy = up->y - ctr->y;
+  m.x0 = ctr->x; m.y0 = ctr->y;
+  cairo_transform(cr, & m);
+
+  cairo_move_to(cr, (double) 0, (double) 0);
+  cairo_text_extents(cr, text, & extents);
+  cairo_move_to(cr, -extents.x_bearing - extents.width*from->x,
+                -extents.y_bearing - extents.height*from->y);
   cairo_show_text(cr, text);
+  cairo_set_matrix(cr, & previous_m);
 }
 
 static int wincairo_save(const char *file_name) {
@@ -454,10 +491,10 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
   cairo_t *cr;
   cairo_status_t status;
   WT wt;
-  int numptx, numpty;
+  int numptx = 0, numpty = 0;
   int paint_background = 0;
   enum {WC_NONE=-1, WC_IMAGE=1, WC_STREAM} win_class;
-  cairo_format_t format;
+  cairo_format_t format=CAIRO_FORMAT_ARGB32; /* Just to avoid warnings! */
   typedef cairo_surface_t *(*StreamSurfaceCreate)(const char *filename,
                                                   double width_in_points,
                                                   double height_in_points);
