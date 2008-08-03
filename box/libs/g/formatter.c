@@ -33,27 +33,8 @@ typedef enum {
   STATUS_WAIT_BRACKET
 } Status;
 
-struct _stack;
-typedef void (*FormatterAction)(struct _stack *stack);
-
-typedef struct {
-  int buffer_pos, buffer_size;
-  char *buffer;
-
-  FormatterAction flush;
-  FormatterAction draw, subscript, superscript, newline;
-} Formatter;
-
-typedef struct _stack {
-  int level;
-  int eye;
-  const char *text;
-  Point pos;
-  Formatter *fmt;
-} Stack;
-
 static void _Add_Char(Stack *stack, char c) {
-  Formatter *fmt = stack->fmt;
+  Fmt *fmt = stack->fmt;
   int i = fmt->buffer_pos++;
   if (fmt->buffer_pos > fmt->buffer_size) {
     if (fmt->buffer == (char *) NULL) {
@@ -72,17 +53,19 @@ static void _Add_Char(Stack *stack, char c) {
   fmt->buffer[i] = c;
 }
 
+#if 0
 static void _Flush(Stack *stack) {
-  Formatter *fmt = stack->fmt;
+  Fmt *fmt = stack->fmt;
   _Add_Char(stack, '\0');
   printf("FLUSH: '%s'\n", fmt->buffer);
   fmt->buffer_pos = 0;
   stack->text += stack->eye;
   stack->eye = 0;
 }
+#endif
 
 static int _Text_Formatter(Stack *stack) {
-  Formatter *fmt = stack->fmt;
+  Fmt *fmt = stack->fmt;
   Status status;
   Stack new_stack;
 
@@ -98,15 +81,18 @@ static int _Text_Formatter(Stack *stack) {
       switch(c) {
       case '_':
         status = STATUS_WAIT_BRACKET;
-        fmt->draw(stack);
+        if (fmt->draw != (FmtAction) NULL) fmt->draw(stack);
         new_stack = *stack;
-        fmt->subscript(& new_stack);
+        if (fmt->save != (FmtAction) NULL) fmt->save(stack);
+        if (fmt->subscript != (FmtAction) NULL) fmt->subscript(& new_stack);
         break;
       case '^':
         status = STATUS_WAIT_BRACKET;
-        fmt->draw(stack);
+        if (fmt->draw != (FmtAction) NULL) fmt->draw(stack);
         new_stack = *stack;
-        fmt->superscript(& new_stack);
+        if (fmt->save != (FmtAction) NULL) fmt->save(stack);
+        if (fmt->superscript != (FmtAction) NULL)
+          fmt->superscript(& new_stack);
         break;
       case '\\':
         status = STATUS_LITERAL;
@@ -140,6 +126,7 @@ static int _Text_Formatter(Stack *stack) {
         new_stack = *stack;
         ++new_stack.level;
         stack->eye = _Text_Formatter(& new_stack);
+        if (fmt->restore != (FmtAction) NULL) fmt->restore(stack);
         if (stack->eye == -1) return stack->eye;
         break;
       default:
@@ -152,7 +139,9 @@ static int _Text_Formatter(Stack *stack) {
           ++new_stack.level;
           new_stack.text = short_string;
           new_stack.eye = 0;
-          if (_Text_Formatter(& new_stack) == -1) return -1;
+          (void) _Text_Formatter(& new_stack);
+          if (fmt->restore != (FmtAction) NULL) fmt->restore(stack);
+          if (new_stack.eye == -1) return -1;
           status = STATUS_NORMAL;
           break;
         }
@@ -163,50 +152,50 @@ static int _Text_Formatter(Stack *stack) {
 }
 
 void newline(Stack *stack) {
-  Formatter *fmt = stack->fmt;
+  Fmt *fmt = stack->fmt;
   _Add_Char(stack, '\0');
   printf("newline: '%s'\n", fmt->buffer);
   fmt->buffer_pos = 0;
 }
 
 void draw(Stack *stack) {
-  Formatter *fmt = stack->fmt;
+  Fmt *fmt = stack->fmt;
   _Add_Char(stack, '\0');
   printf("draw: '%s'\n", fmt->buffer);
   fmt->buffer_pos = 0;
 }
 
 void superscript(Stack *stack) {
-  Formatter *fmt = stack->fmt;
+  Fmt *fmt = stack->fmt;
   _Add_Char(stack, '\0');
   printf("superscript: '%s'\n", fmt->buffer);
   fmt->buffer_pos = 0;
 }
 
 void subscript(Stack *stack) {
-  Formatter *fmt = stack->fmt;
+  Fmt *fmt = stack->fmt;
   _Add_Char(stack, '\0');
   printf("subscript: '%s'\n", fmt->buffer);
   fmt->buffer_pos = 0;
 }
 
-static void Text_Formatter(const char *text) {
+void Fmt_Text(Fmt *fmt, const char *text) {
   Stack stack;
-  Formatter fmt;
   stack.level = 0;
   stack.eye = 0;
   stack.text = text;
 
-  fmt.buffer_pos = 0;
-  fmt.buffer_size = 0;
-  fmt.buffer = (char *) NULL;
-  fmt.flush = _Flush;
-  fmt.draw = draw;
-  fmt.newline = newline;
-  fmt.subscript = subscript;
-  fmt.superscript = superscript;
-  stack.fmt = & fmt;
+  fmt->buffer_pos = 0;
+  fmt->buffer_size = 0;
+  fmt->buffer = (char *) NULL;
+
+  fmt->restore = fmt->save = (FmtAction) NULL;
+  fmt->draw = draw;
+  fmt->newline = newline;
+  fmt->subscript = subscript;
+  fmt->superscript = superscript;
+  stack.fmt = fmt;
 
   (void) _Text_Formatter(& stack);
-  if (fmt.buffer != (char *) NULL) free(fmt.buffer);
+  if (fmt->buffer != (char *) NULL) free(fmt->buffer);
 }

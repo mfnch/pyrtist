@@ -20,4 +20,26 @@
 #ifndef _FORMATTER_H
 #  define _FORMATTER_H
 
+#  include "types.h"
+
+struct _stack;
+typedef void (*FmtAction)(struct _stack *stack);
+
+typedef struct {
+  int buffer_pos, buffer_size;
+  char *buffer;
+
+  FmtAction save, restore, draw, subscript, superscript, newline;
+} Fmt;
+
+typedef struct _stack {
+  int level;
+  int eye;
+  const char *text;
+  Point pos;
+  Fmt *fmt;
+} Stack;
+
+void Fmt_Text(Fmt *fmt, const char *text);
+
 #endif
