@@ -38,6 +38,7 @@
 #include "g.h"
 #include "wincairo.h"
 #include "psfonts.h"
+#include "formatter.h"
 
 /*#define DEBUG*/
 
@@ -47,6 +48,18 @@
 #else
 #  define WHEREAMI (void) 0
 #endif
+
+static Fmt fmt;
+
+static void Init_Fmt(void) {
+  Fmt_Init(& fmt);
+}
+
+static void Check_Init_Fmt(void) {
+  static int already_init = 0;
+  if (!already_init) Init_Fmt();
+  already_init = 1;
+}
 
 /* Invert the cairo matrix 'in' and put the result in 'result'.
  * The determinant of 'in' is returned and is 0.0, if the matrix
@@ -424,6 +437,9 @@ static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
   m.xy = up->x - ctr->x;  m.yy = up->y - ctr->y;
   m.x0 = ctr->x; m.y0 = ctr->y;
   cairo_transform(cr, & m);
+
+  Check_Init_Fmt();
+  /* Here we should use the formatter module */
 
   cairo_move_to(cr, (double) 0, (double) 0);
   cairo_text_extents(cr, text, & extents);

@@ -40,6 +40,7 @@ typedef struct _stack {
   Fmt *fmt;
 } Stack;
 
+void Fmt_Init(Fmt *fmt);
 void Fmt_Text(Fmt *fmt, const char *text);
 
 #endif

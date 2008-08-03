@@ -179,6 +179,11 @@ void subscript(Stack *stack) {
   fmt->buffer_pos = 0;
 }
 
+void Fmt_Init(Fmt *fmt) {
+  fmt->restore = fmt->save = fmt->draw = fmt->newline =
+    fmt->subscript = fmt->superscript = (FmtAction) NULL;
+}
+
 void Fmt_Text(Fmt *fmt, const char *text) {
   Stack stack;
   stack.level = 0;
@@ -188,12 +193,6 @@ void Fmt_Text(Fmt *fmt, const char *text) {
   fmt->buffer_pos = 0;
   fmt->buffer_size = 0;
   fmt->buffer = (char *) NULL;
-
-  fmt->restore = fmt->save = (FmtAction) NULL;
-  fmt->draw = draw;
-  fmt->newline = newline;
-  fmt->subscript = subscript;
-  fmt->superscript = superscript;
   stack.fmt = fmt;
 
   (void) _Text_Formatter(& stack);
