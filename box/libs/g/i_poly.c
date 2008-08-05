@@ -76,6 +76,7 @@ Task poly_begin(VMProgram *vmp) {
 
   /* Stato dell'istruzione = iniziale */
   w->poly.state = POLY_GOT_NOTHING;
+  w->poly.close = 0;
   w->poly.margin[0] = 0.0;
   w->poly.margin[1] = 0.0;
   w->poly.num_points = 0;
