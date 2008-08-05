@@ -39,6 +39,7 @@
 #include "wincairo.h"
 #include "psfonts.h"
 #include "formatter.h"
+#include "buffer.h"
 
 /*#define DEBUG*/
 
@@ -417,6 +418,7 @@ static void wincairo_font(const char *font_name) {
 
 typedef struct {
   cairo_t *cr;
+  buff matrix;
 } TextPrivate;
 
 static void _Text_Fmt_Draw(FmtStack *stack) {
@@ -424,6 +426,20 @@ static void _Text_Fmt_Draw(FmtStack *stack) {
   char *text = Fmt_Buffer_Get(stack);
   cairo_text_path(private->cr, text);
   Fmt_Buffer_Clear(stack);
+}
+
+static void _Text_Fmt_Save(FmtStack *stack) {
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
+  cairo_matrix_t m;
+  cairo_get_matrix(private->cr, & m);
+  (void) buff_push(& private->matrix, & m);
+}
+
+static void _Text_Fmt_Restore(FmtStack *stack) {
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
+  cairo_matrix_t *m = buff_lastitemptr(& private->matrix, cairo_matrix_t);
+  cairo_set_matrix(private->cr, m);
+  buff_dec(& private->matrix);
 }
 
 static void _Text_Fmt_Subscript(FmtStack *stack) {
@@ -440,6 +456,8 @@ static void Init_Fmt(void) {
   Fmt_Init(& fmt);
   fmt.draw = _Text_Fmt_Draw;
   fmt.subscript = _Text_Fmt_Subscript;
+  fmt.save = _Text_Fmt_Save;
+  fmt.restore = _Text_Fmt_Restore;
 }
 
 static void Check_Init_Fmt(void) {
@@ -466,6 +484,7 @@ static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
   Check_Init_Fmt();
   Fmt_Private_Set(& fmt, & private);
   private.cr = cr;
+  assert(buff_create(& private.matrix, sizeof(cairo_matrix_t), 8));
 
   /* Here we should use the formatter module */
 
@@ -482,6 +501,8 @@ static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
   cairo_fill(cr);
 
   cairo_restore(cr);
+
+  buff_free(& private.matrix);
 }
 
 static int wincairo_save(const char *file_name) {

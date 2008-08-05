@@ -1,0 +1,15 @@
+include "g"
+w2 = Window["eps", .File["text.eps"], (200, 200), .Res[1]]
+w3 = Window["pdf", .File["text.pdf"], (200, 200), .Res[1]]
+
+w = Window[]
+pl = w.Poly[Style[.Border[1]], color.blue
+            (50, 50), (150, 50), (150, 150), (50, 150)]
+\ w.Circle[Color[color.red, .a=0.5], 1, pl]
+\ w.Text[.Font["Times", 10], color.black
+         pl.Get[1], .From[(1, 1)], "H_{app}xxx"; pl.Get[2], .From[(0, 1)], "B";
+         pl.Get[3], .From[(0, 0)], "C"; pl.Get[4], .From[(1, 0)], "D"]
+\ w2.Put[w]
+\ w3.Put[w]
+
+

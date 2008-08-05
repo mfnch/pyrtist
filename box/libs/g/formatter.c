@@ -65,6 +65,12 @@ void Fmt_Buffer_Clear(FmtStack *stack) {
   fmt->buffer_pos = 0;
 }
 
+static int _Draw(FmtStack *stack) {
+  Fmt *fmt = stack->fmt;
+  if (fmt->draw != (FmtAction) NULL) fmt->draw(stack);
+  return stack->eye;
+}
+
 static int _Text_Formatter(FmtStack *stack) {
   Fmt *fmt = stack->fmt;
   Status status;
@@ -74,7 +80,7 @@ static int _Text_Formatter(FmtStack *stack) {
 
   for(;;) {
     char c = stack->text[stack->eye];
-    if (c == '\0') return stack->eye;
+    if (c == '\0') return _Draw(stack);
 
     switch(status) {
     case STATUS_NORMAL:
@@ -82,7 +88,7 @@ static int _Text_Formatter(FmtStack *stack) {
       switch(c) {
       case '_':
         status = STATUS_WAIT_BRACKET;
-        if (fmt->draw != (FmtAction) NULL) fmt->draw(stack);
+        (void) _Draw(stack);
         new_stack = *stack;
         if (fmt->save != (FmtAction) NULL) fmt->save(stack);
         if (fmt->subscript != (FmtAction) NULL) fmt->subscript(& new_stack);
