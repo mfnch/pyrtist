@@ -51,16 +51,6 @@
 
 static Fmt fmt;
 
-static void Init_Fmt(void) {
-  Fmt_Init(& fmt);
-}
-
-static void Check_Init_Fmt(void) {
-  static int already_init = 0;
-  if (!already_init) Init_Fmt();
-  already_init = 1;
-}
-
 /* Invert the cairo matrix 'in' and put the result in 'result'.
  * The determinant of 'in' is returned and is 0.0, if the matrix
  * couldn't be inverted.
@@ -424,29 +414,74 @@ static void wincairo_font(const char *font_name) {
   cairo_set_font_matrix(cr, & m);
 }
 
+
+typedef struct {
+  cairo_t *cr;
+} TextPrivate;
+
+static void _Text_Fmt_Draw(FmtStack *stack) {
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
+  char *text = Fmt_Buffer_Get(stack);
+  cairo_text_path(private->cr, text);
+  Fmt_Buffer_Clear(stack);
+}
+
+static void _Text_Fmt_Subscript(FmtStack *stack) {
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
+  cairo_matrix_t m;
+
+  cairo_get_current_point(private->cr, & m.x0, & m.y0);
+  m.xx = m.yy = 0.5;
+  m.xy = m.yx = 0.0;
+  cairo_transform(private->cr, & m);
+}
+
+static void Init_Fmt(void) {
+  Fmt_Init(& fmt);
+  fmt.draw = _Text_Fmt_Draw;
+  fmt.subscript = _Text_Fmt_Subscript;
+}
+
+static void Check_Init_Fmt(void) {
+  static int already_init = 0;
+  if (!already_init) Init_Fmt();
+  already_init = 1;
+}
+
 static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
                           const char *text) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
-  cairo_matrix_t previous_m, m;
-  cairo_text_extents_t extents;
+  cairo_matrix_t m;
+  double x1, y1, x2, y2;
+  TextPrivate private;
   MY_3POINTS(ctr, right, up);
   WHEREAMI;
 
-  cairo_get_matrix(cr, & previous_m);
   m.xx = right->x - ctr->x;  m.yx = right->y - ctr->y;
   m.xy = up->x - ctr->x;  m.yy = up->y - ctr->y;
   m.x0 = ctr->x; m.y0 = ctr->y;
+  cairo_save(cr);
   cairo_transform(cr, & m);
 
   Check_Init_Fmt();
+  Fmt_Private_Set(& fmt, & private);
+  private.cr = cr;
+
   /* Here we should use the formatter module */
 
+  cairo_save(cr);
+  cairo_new_path(cr);
   cairo_move_to(cr, (double) 0, (double) 0);
-  cairo_text_extents(cr, text, & extents);
-  cairo_move_to(cr, -extents.x_bearing - extents.width*from->x,
-                -extents.y_bearing - extents.height*from->y);
-  cairo_show_text(cr, text);
-  cairo_set_matrix(cr, & previous_m);
+  Fmt_Text(& fmt, text);
+  cairo_restore(cr);
+  cairo_fill_extents(cr, & x1, & y1, & x2, & y2);
+
+  cairo_new_path(cr);
+  cairo_move_to(cr, -x1 - (x2 - x1)*from->x, -y1 - (y2 - y1)*from->y);
+  Fmt_Text(& fmt, text);
+  cairo_fill(cr);
+
+  cairo_restore(cr);
 }
 
 static int wincairo_save(const char *file_name) {

@@ -22,25 +22,33 @@
 
 #  include "types.h"
 
-struct _stack;
-typedef void (*FmtAction)(struct _stack *stack);
+struct _fmt_stack;
+typedef void (*FmtAction)(struct _fmt_stack *stack);
 
 typedef struct {
   int buffer_pos, buffer_size;
   char *buffer;
 
+  void *private_data;
   FmtAction save, restore, draw, subscript, superscript, newline;
 } Fmt;
 
-typedef struct _stack {
+typedef struct _fmt_stack {
   int level;
   int eye;
   const char *text;
   Point pos;
   Fmt *fmt;
-} Stack;
+} FmtStack;
 
 void Fmt_Init(Fmt *fmt);
+char *Fmt_Buffer_Get(FmtStack *stack);
+void Fmt_Buffer_Clear(FmtStack *stack);
 void Fmt_Text(Fmt *fmt, const char *text);
 
+
+void *Fmt_Private_Get(Fmt *fmt);
+void Fmt_Private_Set(Fmt *fmt, void *private_data);
+
 #endif
+

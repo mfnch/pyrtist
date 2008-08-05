@@ -33,7 +33,7 @@ typedef enum {
   STATUS_WAIT_BRACKET
 } Status;
 
-static void _Add_Char(Stack *stack, char c) {
+static void _Add_Char(FmtStack *stack, char c) {
   Fmt *fmt = stack->fmt;
   int i = fmt->buffer_pos++;
   if (fmt->buffer_pos > fmt->buffer_size) {
@@ -53,21 +53,22 @@ static void _Add_Char(Stack *stack, char c) {
   fmt->buffer[i] = c;
 }
 
-#if 0
-static void _Flush(Stack *stack) {
+char *Fmt_Buffer_Get(FmtStack *stack) {
   Fmt *fmt = stack->fmt;
   _Add_Char(stack, '\0');
-  printf("FLUSH: '%s'\n", fmt->buffer);
-  fmt->buffer_pos = 0;
-  stack->text += stack->eye;
-  stack->eye = 0;
+  --fmt->buffer_pos;
+  return fmt->buffer;
 }
-#endif
 
-static int _Text_Formatter(Stack *stack) {
+void Fmt_Buffer_Clear(FmtStack *stack) {
+  Fmt *fmt = stack->fmt;
+  fmt->buffer_pos = 0;
+}
+
+static int _Text_Formatter(FmtStack *stack) {
   Fmt *fmt = stack->fmt;
   Status status;
-  Stack new_stack;
+  FmtStack new_stack;
 
   status = STATUS_NORMAL;
 
@@ -151,28 +152,28 @@ static int _Text_Formatter(Stack *stack) {
   }
 }
 
-void newline(Stack *stack) {
+void newline(FmtStack *stack) {
   Fmt *fmt = stack->fmt;
   _Add_Char(stack, '\0');
   printf("newline: '%s'\n", fmt->buffer);
   fmt->buffer_pos = 0;
 }
 
-void draw(Stack *stack) {
+void draw(FmtStack *stack) {
   Fmt *fmt = stack->fmt;
   _Add_Char(stack, '\0');
   printf("draw: '%s'\n", fmt->buffer);
   fmt->buffer_pos = 0;
 }
 
-void superscript(Stack *stack) {
+void superscript(FmtStack *stack) {
   Fmt *fmt = stack->fmt;
   _Add_Char(stack, '\0');
   printf("superscript: '%s'\n", fmt->buffer);
   fmt->buffer_pos = 0;
 }
 
-void subscript(Stack *stack) {
+void subscript(FmtStack *stack) {
   Fmt *fmt = stack->fmt;
   _Add_Char(stack, '\0');
   printf("subscript: '%s'\n", fmt->buffer);
@@ -182,10 +183,19 @@ void subscript(Stack *stack) {
 void Fmt_Init(Fmt *fmt) {
   fmt->restore = fmt->save = fmt->draw = fmt->newline =
     fmt->subscript = fmt->superscript = (FmtAction) NULL;
+  fmt->private_data = (void *) NULL;
+}
+
+void *Fmt_Private_Get(Fmt *fmt) {
+  return fmt->private_data;
+}
+
+void Fmt_Private_Set(Fmt *fmt, void *private_data) {
+  fmt->private_data = private_data;
 }
 
 void Fmt_Text(Fmt *fmt, const char *text) {
-  Stack stack;
+  FmtStack stack;
   stack.level = 0;
   stack.eye = 0;
   stack.text = text;
