@@ -415,11 +415,23 @@ static void wincairo_font(const char *font_name) {
   cairo_set_font_matrix(cr, & m);
 }
 
+/* BEGIN OF TEXT FORMATTING IMPLEMENTATION **********************************
+ * Here we implement some basic text formatting features, such as           *
+ * subscripts, superscripts and multi-line paragraphs. We exploit           *
+ * the parser provided by the formatter.c module.                           *
+ ****************************************************************************/
 
 typedef struct {
   cairo_t *cr;
-  buff matrix;
+  buff saved_states;
+  Point sub_vec, sup_vec;
+  Real sub_scale, sup_scale;
 } TextPrivate;
+
+typedef struct {
+  Point cur_pos;
+  cairo_matrix_t m;
+} TextState;
 
 static void _Text_Fmt_Draw(FmtStack *stack) {
   TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
@@ -430,32 +442,55 @@ static void _Text_Fmt_Draw(FmtStack *stack) {
 
 static void _Text_Fmt_Save(FmtStack *stack) {
   TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
-  cairo_matrix_t m;
-  cairo_get_matrix(private->cr, & m);
-  (void) buff_push(& private->matrix, & m);
+  TextState ss;
+  cairo_get_matrix(private->cr, & ss.m);
+  cairo_get_current_point(private->cr, & ss.cur_pos.x, & ss.cur_pos.y);
+  (void) buff_push(& private->saved_states, & ss);
 }
 
 static void _Text_Fmt_Restore(FmtStack *stack) {
   TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
-  cairo_matrix_t *m = buff_lastitemptr(& private->matrix, cairo_matrix_t);
-  cairo_set_matrix(private->cr, m);
-  buff_dec(& private->matrix);
+  TextState *ts = buff_lastitemptr(& private->saved_states, TextState);
+  double x, y;
+  cairo_set_matrix(private->cr, & ts->m);
+  cairo_get_current_point(private->cr, & x, & y);
+  cairo_move_to(private->cr, x, ts->cur_pos.y);
+  buff_dec(& private->saved_states);
+}
+
+static void _Text_Fmt_Change(cairo_t *cr, Point *vec, Real scale) {
+  cairo_matrix_t m;
+  cairo_get_current_point(cr, & m.x0, & m.y0);
+  m.x0 += vec->x;
+  m.y0 += vec->y;
+  m.xx = m.yy = scale;
+  m.xy = m.yx = 0.0;
+  cairo_transform(cr, & m);
+  cairo_move_to(cr, (double) 0.0, (double) 0.0);
+}
+
+static void _Text_Fmt_Superscript(FmtStack *stack) {
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
+  _Text_Fmt_Change(private->cr, & private->sup_vec, private->sup_scale);
 }
 
 static void _Text_Fmt_Subscript(FmtStack *stack) {
   TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
-  cairo_matrix_t m;
+  _Text_Fmt_Change(private->cr, & private->sub_vec, private->sub_scale);
+}
 
-  cairo_get_current_point(private->cr, & m.x0, & m.y0);
-  m.xx = m.yy = 0.5;
-  m.xy = m.yx = 0.0;
-  cairo_transform(private->cr, & m);
+static void _Text_Fmt_Newline(FmtStack *stack) {
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
+  cairo_translate(private->cr, 0.0, -1.0);
+  cairo_move_to(private->cr, 0.0, 0.0);
 }
 
 static void Init_Fmt(void) {
   Fmt_Init(& fmt);
   fmt.draw = _Text_Fmt_Draw;
   fmt.subscript = _Text_Fmt_Subscript;
+  fmt.superscript = _Text_Fmt_Superscript;
+  fmt.newline = _Text_Fmt_Newline;
   fmt.save = _Text_Fmt_Save;
   fmt.restore = _Text_Fmt_Restore;
 }
@@ -484,7 +519,16 @@ static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
   Check_Init_Fmt();
   Fmt_Private_Set(& fmt, & private);
   private.cr = cr;
-  assert(buff_create(& private.matrix, sizeof(cairo_matrix_t), 8));
+  private.sup_vec.x = 0.0;
+  private.sup_vec.y = 0.5;
+  private.sup_scale = 0.5;
+  private.sub_vec.x = 0.0;
+  private.sub_vec.y = 0.0;
+  private.sub_scale = 0.5;
+  /*private.nl_vec.x = 0.0;
+  private.nl_vec.y = 1.0;
+  private.nl_scale = 1.0;*/
+  assert(buff_create(& private.saved_states, sizeof(TextState), 8));
 
   /* Here we should use the formatter module */
 
@@ -496,14 +540,16 @@ static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
   cairo_fill_extents(cr, & x1, & y1, & x2, & y2);
 
   cairo_new_path(cr);
-  cairo_move_to(cr, -x1 - (x2 - x1)*from->x, -y1 - (y2 - y1)*from->y);
+  cairo_translate(cr, -x1 - (x2 - x1)*from->x, -y1 - (y2 - y1)*from->y);
   Fmt_Text(& fmt, text);
   cairo_fill(cr);
 
   cairo_restore(cr);
 
-  buff_free(& private.matrix);
+  buff_free(& private.saved_states);
 }
+
+/* END OF TEXT FORMATTING IMPLEMENTATION ************************************/
 
 static int wincairo_save(const char *file_name) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;

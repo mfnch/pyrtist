@@ -95,7 +95,7 @@ static int _Text_Formatter(FmtStack *stack) {
         break;
       case '^':
         status = STATUS_WAIT_BRACKET;
-        if (fmt->draw != (FmtAction) NULL) fmt->draw(stack);
+        (void) _Draw(stack);
         new_stack = *stack;
         if (fmt->save != (FmtAction) NULL) fmt->save(stack);
         if (fmt->superscript != (FmtAction) NULL)
@@ -112,6 +112,7 @@ static int _Text_Formatter(FmtStack *stack) {
         _Add_Char(stack, c);
         break;
       case '\n':
+        (void) _Draw(stack);
         fmt->newline(stack);
         break;
       default:
@@ -156,34 +157,6 @@ static int _Text_Formatter(FmtStack *stack) {
       break;
     }
   }
-}
-
-void newline(FmtStack *stack) {
-  Fmt *fmt = stack->fmt;
-  _Add_Char(stack, '\0');
-  printf("newline: '%s'\n", fmt->buffer);
-  fmt->buffer_pos = 0;
-}
-
-void draw(FmtStack *stack) {
-  Fmt *fmt = stack->fmt;
-  _Add_Char(stack, '\0');
-  printf("draw: '%s'\n", fmt->buffer);
-  fmt->buffer_pos = 0;
-}
-
-void superscript(FmtStack *stack) {
-  Fmt *fmt = stack->fmt;
-  _Add_Char(stack, '\0');
-  printf("superscript: '%s'\n", fmt->buffer);
-  fmt->buffer_pos = 0;
-}
-
-void subscript(FmtStack *stack) {
-  Fmt *fmt = stack->fmt;
-  _Add_Char(stack, '\0');
-  printf("subscript: '%s'\n", fmt->buffer);
-  fmt->buffer_pos = 0;
 }
 
 void Fmt_Init(Fmt *fmt) {
