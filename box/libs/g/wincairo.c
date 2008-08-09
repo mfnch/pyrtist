@@ -78,7 +78,7 @@ static void wincairo_close_win(void) {
 }
 
 /* Variabili usate dalle procedure per scrivere il file postscript */
-static int beginning_of_line = 1, beginning_of_path = 1;
+static int beginning_of_path = 1;
 static Point previous;
 
 static int same_points(Point *a, Point *b) {
@@ -114,7 +114,6 @@ static void my_point(Point *out, Point *in) {
 
 static void wincairo_rreset(void) {
   WHEREAMI;
-  beginning_of_line = 1;
   beginning_of_path = 1;
 }
 
@@ -319,7 +318,6 @@ static void wincairo_rcong(Point *a, Point *b, Point *c) {
     cairo_set_matrix(cr, & previous_m);
 
     previous = *c;
-    beginning_of_line = 0;
   }
 }
 
@@ -352,7 +350,6 @@ static void wincairo_rcircle(Point *ctr, Point *a, Point *b) {
 
   cairo_set_matrix(cr, & previous_m);
 
-  beginning_of_line = 1;
   beginning_of_path = 0;
 }
 
@@ -527,8 +524,6 @@ static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
 
   assert(buff_create(& private.saved_states, sizeof(TextState), 8));
 
-  /* Here we should use the formatter module */
-
   cairo_save(cr);
   cairo_new_path(cr);
   cairo_move_to(cr, (double) 0, (double) 0);
@@ -539,11 +534,10 @@ static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
   cairo_new_path(cr);
   cairo_translate(cr, -x1 - (x2 - x1)*from->x, -y1 - (y2 - y1)*from->y);
   Fmt_Text(& fmt, text);
-  cairo_fill(cr);
-
   cairo_restore(cr);
 
   buff_free(& private.saved_states);
+  beginning_of_path = 0;
 }
 
 /* END OF TEXT FORMATTING IMPLEMENTATION ************************************/

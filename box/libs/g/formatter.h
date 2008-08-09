@@ -37,6 +37,7 @@ typedef struct _fmt_stack {
   int level;
   int eye;
   const char *text;
+  char short_text[3];
   Point pos;
   Fmt *fmt;
 } FmtStack;

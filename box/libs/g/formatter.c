@@ -31,7 +31,8 @@ typedef enum {
   STATUS_NORMAL=0,
   STATUS_STACK_FULL,
   STATUS_LITERAL,
-  STATUS_WAIT_BRACKET
+  STATUS_WAIT_SUB,
+  STATUS_WAIT_SUP
 } Status;
 
 static void _Add_Char(FmtStack *stack, char c) {
@@ -73,6 +74,24 @@ static int _Draw(FmtStack *stack) {
   return stack->eye;
 }
 
+static void _Save(FmtStack *stack) {
+  Fmt *fmt = stack->fmt;
+  if (fmt->save != (FmtAction) NULL) fmt->save(stack);
+}
+
+static void _Restore(FmtStack *stack) {
+  Fmt *fmt = stack->fmt;
+  if (fmt->restore != (FmtAction) NULL) fmt->restore(stack);
+}
+
+static void _Subscript(Fmt *fmt, FmtStack *stack) {
+  if (fmt->subscript != (FmtAction) NULL) fmt->subscript(stack);
+}
+
+static void _Superscript(Fmt *fmt, FmtStack *stack) {
+  if (fmt->superscript != (FmtAction) NULL) fmt->superscript(stack);
+}
+
 static int _Text_Formatter(FmtStack *stack) {
   Fmt *fmt = stack->fmt;
   Status status;
@@ -102,22 +121,10 @@ static int _Text_Formatter(FmtStack *stack) {
       ++stack->eye;
       switch(c) {
       case '_':
-        status = STATUS_WAIT_BRACKET;
-        (void) _Draw(stack);
-        new_stack = *stack;
-        if (fmt->save != (FmtAction) NULL) fmt->save(stack);
-        if (fmt->subscript != (FmtAction) NULL) fmt->subscript(& new_stack);
+        status = STATUS_WAIT_SUB;
         break;
       case '^':
-        status = STATUS_WAIT_BRACKET;
-        (void) _Draw(stack);
-        new_stack = *stack;
-        if (fmt->save != (FmtAction) NULL) fmt->save(stack);
-        if (fmt->superscript != (FmtAction) NULL)
-          fmt->superscript(& new_stack);
-        break;
-      case '\\':
-        status = STATUS_LITERAL;
+        status = STATUS_WAIT_SUP;
         break;
       case '}':
         if (stack->level > 0) {
@@ -138,36 +145,47 @@ static int _Text_Formatter(FmtStack *stack) {
 
     case STATUS_LITERAL:
       status = STATUS_NORMAL;
+      ++stack->eye;
       _Add_Char(stack, c);
       break;
 
-    case STATUS_WAIT_BRACKET:
-      status = STATUS_NORMAL;
+    case STATUS_WAIT_SUB:
+    case STATUS_WAIT_SUP:
       ++stack->eye;
       switch(c) {
-      case '{':
+      case '^':
+      case '_':
+        _Add_Char(stack, c);
+        status = STATUS_NORMAL;
+        break;
+
+      default:
+        (void) _Draw(stack);
+        _Save(stack);
         new_stack = *stack;
         ++new_stack.level;
-        stack->eye = _Text_Formatter(& new_stack);
-        if (fmt->restore != (FmtAction) NULL) fmt->restore(stack);
-        if (stack->eye == -1) return stack->eye;
-        break;
-      default:
-        {
-          char short_string[3];
-          short_string[0] = c;
-          short_string[1] = '}';
-          short_string[2] = '\0';
-          new_stack = *stack;
-          ++new_stack.level;
-          new_stack.text = short_string;
+        if (status == STATUS_WAIT_SUB)
+          _Subscript(fmt, & new_stack);
+        else
+          _Superscript(fmt, & new_stack);
+
+        if (c == '{') {
+          stack->eye = _Text_Formatter(& new_stack);
+
+        } else {
+          /* We emulate the syntax 'char_{s}' for the syntex 'char_s' */
+          new_stack.short_text[0] = c;
+          new_stack.short_text[1] = '}';
+          new_stack.short_text[2] = '\0';
+          new_stack.text = new_stack.short_text;
           new_stack.eye = 0;
           (void) _Text_Formatter(& new_stack);
-          if (fmt->restore != (FmtAction) NULL) fmt->restore(stack);
-          if (new_stack.eye == -1) return -1;
-          status = STATUS_NORMAL;
-          break;
         }
+
+        _Restore(stack);
+        if (stack->eye == -1) return stack->eye;
+        status = STATUS_NORMAL;
+        break;
       }
       break;
     }
