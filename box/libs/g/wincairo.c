@@ -50,8 +50,6 @@
 #  define WHEREAMI (void) 0
 #endif
 
-static Fmt fmt;
-
 /* Invert the cairo matrix 'in' and put the result in 'result'.
  * The determinant of 'in' is returned and is 0.0, if the matrix
  * couldn't be inverted.
@@ -434,14 +432,16 @@ typedef struct {
 } TextState;
 
 static void _Text_Fmt_Draw(FmtStack *stack) {
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
+  Fmt *fmt = Fmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
   char *text = Fmt_Buffer_Get(stack);
   cairo_text_path(private->cr, text);
   Fmt_Buffer_Clear(stack);
 }
 
 static void _Text_Fmt_Save(FmtStack *stack) {
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
+  Fmt *fmt = Fmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
   TextState ss;
   cairo_get_matrix(private->cr, & ss.m);
   cairo_get_current_point(private->cr, & ss.cur_pos.x, & ss.cur_pos.y);
@@ -449,7 +449,8 @@ static void _Text_Fmt_Save(FmtStack *stack) {
 }
 
 static void _Text_Fmt_Restore(FmtStack *stack) {
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
+  Fmt *fmt = Fmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
   TextState *ts = buff_lastitemptr(& private->saved_states, TextState);
   double x, y;
   cairo_set_matrix(private->cr, & ts->m);
@@ -470,35 +471,32 @@ static void _Text_Fmt_Change(cairo_t *cr, Point *vec, Real scale) {
 }
 
 static void _Text_Fmt_Superscript(FmtStack *stack) {
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
+  Fmt *fmt = Fmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
   _Text_Fmt_Change(private->cr, & private->sup_vec, private->sup_scale);
 }
 
 static void _Text_Fmt_Subscript(FmtStack *stack) {
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
+  Fmt *fmt = Fmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
   _Text_Fmt_Change(private->cr, & private->sub_vec, private->sub_scale);
 }
 
 static void _Text_Fmt_Newline(FmtStack *stack) {
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(& fmt);
+  Fmt *fmt = Fmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
   cairo_translate(private->cr, 0.0, -1.0);
   cairo_move_to(private->cr, 0.0, 0.0);
 }
 
-static void Init_Fmt(void) {
-  Fmt_Init(& fmt);
-  fmt.draw = _Text_Fmt_Draw;
-  fmt.subscript = _Text_Fmt_Subscript;
-  fmt.superscript = _Text_Fmt_Superscript;
-  fmt.newline = _Text_Fmt_Newline;
-  fmt.save = _Text_Fmt_Save;
-  fmt.restore = _Text_Fmt_Restore;
-}
-
-static void Check_Init_Fmt(void) {
-  static int already_init = 0;
-  if (!already_init) Init_Fmt();
-  already_init = 1;
+static void _Text_Fmt_Init(Fmt *fmt) {
+  Fmt_Init(fmt);
+  fmt->draw = _Text_Fmt_Draw;
+  fmt->subscript = _Text_Fmt_Subscript;
+  fmt->superscript = _Text_Fmt_Superscript;
+  fmt->newline = _Text_Fmt_Newline;
+  fmt->save = _Text_Fmt_Save;
+  fmt->restore = _Text_Fmt_Restore;
 }
 
 static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
@@ -507,6 +505,7 @@ static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
   cairo_matrix_t m;
   double x1, y1, x2, y2;
   TextPrivate private;
+  Fmt fmt;
   MY_3POINTS(ctr, right, up);
   WHEREAMI;
 
@@ -516,7 +515,7 @@ static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
   cairo_save(cr);
   cairo_transform(cr, & m);
 
-  Check_Init_Fmt();
+  _Text_Fmt_Init(& fmt);
   Fmt_Private_Set(& fmt, & private);
   private.cr = cr;
   private.sup_vec.x = 0.0;
@@ -525,9 +524,7 @@ static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
   private.sub_vec.x = 0.0;
   private.sub_vec.y = 0.0;
   private.sub_scale = 0.5;
-  /*private.nl_vec.x = 0.0;
-  private.nl_vec.y = 1.0;
-  private.nl_scale = 1.0;*/
+
   assert(buff_create(& private.saved_states, sizeof(TextState), 8));
 
   /* Here we should use the formatter module */

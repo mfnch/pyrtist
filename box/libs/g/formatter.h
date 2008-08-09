@@ -47,6 +47,7 @@ void Fmt_Buffer_Clear(FmtStack *stack);
 void Fmt_Text(Fmt *fmt, const char *text);
 
 
+Fmt *Fmt_Get(FmtStack *stack);
 void *Fmt_Private_Get(Fmt *fmt);
 void Fmt_Private_Set(Fmt *fmt, void *private_data);
 

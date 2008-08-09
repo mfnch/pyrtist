@@ -30,6 +30,7 @@
 #include "bb.h"
 #include "g.h"
 #include "psfonts.h"
+#include "formatter.h"
 
 #if 0
 /* This terminal discretizes the points into a grid where the number of
@@ -209,7 +210,7 @@ static void eps_rfgcolor(Color *c) {
    "  %g %g %g setrgbcolor\n", c->r, c->g, c->b );
 }
 
-static char *escape_text(const char *src) {
+static char *Escape_Text(const char *src) {
   const char *s;
   char *d, *dest;
   int n = 0;
@@ -228,17 +229,107 @@ static char *escape_text(const char *src) {
   return dest;
 }
 
+/* BEGIN OF TEXT FORMATTING IMPLEMENTATION **********************************
+ * Here we implement some basic text formatting features, such as           *
+ * subscripts, superscripts and multi-line paragraphs. We exploit           *
+ * the parser provided by the formatter.c module.                           *
+ ****************************************************************************/
+
+typedef struct {
+  FILE *out;
+  Point sub_vec, sup_vec;
+  Real sub_scale, sup_scale;
+} TextPrivate;
+
+static void _Text_Fmt_Draw(FmtStack *stack) {
+  Fmt *fmt = Fmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+  char *escaped_text = Escape_Text(Fmt_Buffer_Get(stack));
+  fprintf(private->out, "  (%s) true charpath\n", escaped_text);
+  free(escaped_text);
+  Fmt_Buffer_Clear(stack);
+}
+
+static void _Text_Fmt_Superscript(FmtStack *stack) {
+  Fmt *fmt = Fmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+  Real scale = private->sup_scale;
+  fprintf(private->out,
+          "  currentpoint translate %g %g translate %g %g scale 0 0 moveto\n",
+          private->sup_vec.x, private->sup_vec.y, scale, scale);
+}
+
+static void _Text_Fmt_Subscript(FmtStack *stack) {
+  Fmt *fmt = Fmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+  Real scale = private->sub_scale;
+  fprintf(private->out,
+          "  currentpoint translate %g %g translate %g %g scale 0 0 moveto\n",
+          private->sub_vec.x, private->sub_vec.y, scale, scale);
+}
+
+static void _Text_Fmt_Save(FmtStack *stack) {
+  Fmt *fmt = Fmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+  fprintf(private->out, " textsave");
+}
+
+static void _Text_Fmt_Restore(FmtStack *stack) {
+  Fmt *fmt = Fmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+  fprintf(private->out, " textrestore");
+}
+
+static void _Text_Fmt_Newline(FmtStack *stack) {
+  Fmt *fmt = Fmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+  fprintf(private->out, " textnewline");
+}
+
+static void _Text_Fmt_Init(Fmt *fmt) {
+  Fmt_Init(fmt);
+  fmt->draw = _Text_Fmt_Draw;
+  fmt->subscript = _Text_Fmt_Subscript;
+  fmt->superscript = _Text_Fmt_Superscript;
+  fmt->save = _Text_Fmt_Save;
+  fmt->restore = _Text_Fmt_Restore;
+  fmt->newline = _Text_Fmt_Newline;
+}
+
 static void eps_text(Point *ctr, Point *right, Point *up, Point *from,
                      const char *text) {
-  char *escaped_text = escape_text(text);
+  TextPrivate private;
+  Fmt fmt;
   EPS_POINT(ctr, ctrx, ctry);
   EPS_POINT(right, rx, ry);
   EPS_POINT(up, ux, uy);
 
+  _Text_Fmt_Init(& fmt);
+  Fmt_Private_Set(& fmt, & private);
+  private.out = (FILE *) grp_win->ptr;
+  private.sup_vec.x = 0.0;
+  private.sup_vec.y = 0.5;
+  private.sup_scale = 0.5;
+  private.sub_vec.x = 0.0;
+  private.sub_vec.y = 0.0;
+  private.sub_scale = 0.5;
+
   fprintf((FILE *) grp_win->ptr,
-          "  %ld %ld %ld %ld %ld %ld %g %g (%s) text\n",
-          ctrx, ctry, rx, ry, ux, uy, from->x, from->y, escaped_text);
-  free(escaped_text);
+          "  gsave %ld %ld %ld %ld %ld %ld newref newpath 0 0 moveto"
+          " matrix currentmatrix\n",
+          ctrx, ctry, rx, ry, ux, uy);
+
+  Fmt_Text(& fmt, text);
+
+  fprintf((FILE *) grp_win->ptr,
+          "  setmatrix pathbbox newpath"
+          " 2 index sub %g mul exch 3 index sub %g mul 4 1 roll add neg"
+          " 3 1 roll add neg exch translate 0 0 moveto\n",
+          from->y, from->x);
+
+  Fmt_Text(& fmt, text);
+
+  fprintf((FILE *) grp_win->ptr, "  fill grestore\n");
 }
 
 static void eps_font(const char *font) {
@@ -305,16 +396,27 @@ static const char *ps_std_defs =
   "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
   "    1 0 moveto 0 0 1 0 360 arc\n"
   "    savematrix setmatrix\n\n  end\n} def\n\n"
-  "/textdict 15 dict def\n\ntextdict /mtrx matrix put\n"
-  "/text {\ntextdict begin\n  /str exch def /yf exch def /xf exch def\n"
+  "/newrefdict 15 dict def\n\nnewrefdict /mtrx matrix put\n"
+  "/newref {\nnewrefdict begin\n"
   "  /yb exch def /xb exch def\n"
-  "  /ya exch def /xa exch def\n  /yo exch def /xo exch def\n\n"
+  "  /ya exch def /xa exch def\n"
+  "  /yo exch def /xo exch def\n\n"
   "    /xu xa xo sub def /yu ya yo sub def\n"
   "    /xv xb xo sub def /yv yb yo sub def\n\n"
-  "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
-  "    newpath 0 0 moveto str true charpath flattenpath pathbbox\n"
-  "    yf mul neg exch xf mul neg exch moveto pop pop str show\n"
-  "    savematrix setmatrix\n\n  end\n} def\n\n";
+  "    [xu yu xv yv xo yo] concat\n"
+  "  end\n} def\n\n"
+  "/textdict 6 dict def\n"
+  "textdict begin\n"
+  "  /supx 0 def /supy 0.5 def /sups 0.5 def\n"
+  "  /subx 0 def /suby 0.0 def /subs 0.5 def\n"
+  "end\n"
+  "/textsave {currentpoint matrix currentmatrix} def\n"
+  "/textrestore {setmatrix exch pop currentpoint pop exch moveto} def\n"
+  "/textsub {currentpoint translate subx suby translate subs dup scale"
+  " 0 0 moveto} def\n"
+  "/textsup {currentpoint translate supx supy translate sups dup scale"
+  " 0 0 moveto} def\n"
+  "/textnewline {0 -1 translate 0 0 moveto} def\n\n";
 
 /* Open a graphic window with type "eps" (encapsulated postscript).
  * The windows opens a file and send all the commands it receives directly

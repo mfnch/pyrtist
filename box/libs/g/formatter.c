@@ -24,11 +24,12 @@
 #include "types.h"
 #include "formatter.h"
 
-#define MAX_RECURSION 64
+#define MAX_STACK_LEVEL 10
 #define BUFFER_SIZE 128
 
 typedef enum {
   STATUS_NORMAL=0,
+  STATUS_STACK_FULL,
   STATUS_LITERAL,
   STATUS_WAIT_BRACKET
 } Status;
@@ -67,6 +68,7 @@ void Fmt_Buffer_Clear(FmtStack *stack) {
 
 static int _Draw(FmtStack *stack) {
   Fmt *fmt = stack->fmt;
+  if (fmt->buffer_pos < 1) return stack->eye;
   if (fmt->draw != (FmtAction) NULL) fmt->draw(stack);
   return stack->eye;
 }
@@ -76,13 +78,26 @@ static int _Text_Formatter(FmtStack *stack) {
   Status status;
   FmtStack new_stack;
 
-  status = STATUS_NORMAL;
+  status = (stack->level >= MAX_STACK_LEVEL) ? STATUS_STACK_FULL : STATUS_NORMAL;
 
   for(;;) {
     char c = stack->text[stack->eye];
     if (c == '\0') return _Draw(stack);
 
     switch(status) {
+    case STATUS_STACK_FULL:
+      ++stack->eye;
+      switch(c) {
+      case '}':
+        if (stack->level == MAX_STACK_LEVEL) return stack->eye;
+        --stack->level;
+        break;
+      case '{':
+        ++stack->level;
+        break;
+      }
+      break;
+
     case STATUS_NORMAL:
       ++stack->eye;
       switch(c) {
@@ -163,6 +178,10 @@ void Fmt_Init(Fmt *fmt) {
   fmt->restore = fmt->save = fmt->draw = fmt->newline =
     fmt->subscript = fmt->superscript = (FmtAction) NULL;
   fmt->private_data = (void *) NULL;
+}
+
+Fmt *Fmt_Get(FmtStack *stack) {
+  return stack->fmt;
 }
 
 void *Fmt_Private_Get(Fmt *fmt) {
