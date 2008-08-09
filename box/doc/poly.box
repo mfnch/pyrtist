@@ -51,8 +51,8 @@ w2.Save["html/ellipse.png"]
          arrow_ruler, pl.Get[(1.8, h)], arrow_ruler, pl.Get[(1.999, h)]]
 
 // Labels
-w.Text[.Font["Sans", 5], pl.Get[(1.45, 0.06)], "d";
-       .Font["Sans", 2],  pl.Get[(1.05, 0.1)], "0.2*d"]
+w.Text[.Font["Sans", 5], pl.Get[1.5], .From[(1, -0.5)], "d";
+       .Font["Sans", 2], pl.Get[1.1], .From[(1, -1.2)], "0.2*d"]
 //}
 
 w.Save["html/poly6.png"]

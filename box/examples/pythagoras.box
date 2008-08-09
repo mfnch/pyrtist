@@ -16,6 +16,5 @@ w = Window[][
         "a^2", t.Get[(1.5, 0.5)];
         "c^2 = a^2 + b^2", t.Get[(2.5, 0.5)];
         "b^2", t.Get[(3.5, 0.5)];]
-  .Save["pythagoras.png", Window["rgb24", .Res[Dpi[100]]]]
-  .Save["pythagoras.eps"]
+  .Save["pythagoras.png", Window["rgb24", .Res[Dpi[80]]]]
 ]

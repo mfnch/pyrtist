@@ -217,7 +217,7 @@ static char *Escape_Text(const char *src) {
   d = dest = (char *) malloc(n + 1);
   for(s = src; *s != '\0'; s++) {
     switch(*s) {
-    case '(': case ')': *(d++) = '\\'; *(d++) = *s; break;
+    case '(': case ')': case '\\': *(d++) = '\\'; *(d++) = *s; break;
     default: *(d++) = *s; break;
     }
   }

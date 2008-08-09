@@ -55,7 +55,7 @@ restindex
 </script>
 
 <h1 class="title">Introduction</h1>
-<p>Box is an object oriented language developed to make graphics
+<p>Box is a vector graphics language developed to make graphics
 as easy as possible. Box is in its early stage of development,
 but it already provides most of the features needed
 to create quality pictures and figures.
@@ -73,8 +73,10 @@ then p.Get[3] gives the third point, p.Get[3.5] gives a point
 between the third and the fourth and p.Get[(3.5, 1)]...
 look at the documentation ;-)
 </li>
-
 <li>You can even draw fractal pictures;</li>
+<li>Box compiles under Linux, Mac and Windows.
+Packages are available for Ubuntu and a zip archive
+(containing the executable) is available for Windows.</li>
 </ul>
 </p>
 

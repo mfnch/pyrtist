@@ -97,7 +97,8 @@ static int _Text_Formatter(FmtStack *stack) {
   Status status;
   FmtStack new_stack;
 
-  status = (stack->level >= MAX_STACK_LEVEL) ? STATUS_STACK_FULL : STATUS_NORMAL;
+  status = (stack->level >= MAX_STACK_LEVEL) ?
+           STATUS_STACK_FULL : STATUS_NORMAL;
 
   for(;;) {
     char c = stack->text[stack->eye];

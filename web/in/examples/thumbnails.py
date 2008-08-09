@@ -2,7 +2,8 @@
 
 example_order = ["snake", "cycloid", "wheatstone", "multivibrator",
                  "yin-yang", "curved_arrow", "box-logo", "translucency",
-                 "gradient", "fractree"]
+                 "gradient", "fractree", "pythagoras", "text",
+                 "cairo_set_line_cap", "cairo_gradient"]
 
 import sys
 import subst
@@ -18,7 +19,8 @@ for l in ls:
   html_file, thumb_file = rs[0:2]
   n = -1
   for i in range(len(example_order)):
-    if example_order[i] in html_file:
+    if example_order[i]+".html" == html_file:
+      print example_order[i], html_file
       n = i
       break
   if n < 0:
