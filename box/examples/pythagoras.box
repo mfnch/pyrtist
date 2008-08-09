@@ -11,6 +11,7 @@ w = Window[][
   sq2 = .Poly[t.Get[2], t.Get[3], t.Get[(3-dx, 1)], t.Get[(2, 1)]]
   sq3 = .Poly[t.Get[3], t.Get[4], t.Get[(4-dx, 1)], t.Get[(3, 1)]]
 
+  Style[.Border[color.red, 0.01]]
   .Text[.Font["Times-Italic", 8], color.black
         "a^2", t.Get[(1.5, 0.5)];
         "c^2 = a^2 + b^2\nuffa\ndouble uffa!", t.Get[(2.5, 0.5)];

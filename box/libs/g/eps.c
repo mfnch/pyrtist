@@ -46,7 +46,7 @@ static void eps_rbgcolor(Color *c);
 static int eps_save(const char *unused);
 
 /* Variabili usate dalle procedure per scrivere il file postscript */
-static int beginning_of_line = 1, beginning_of_path = 1;
+static int beginning_of_path = 1;
 static long previous_px, previous_py;
 
 static Real eps_point_scale = 283.46457;
@@ -68,7 +68,6 @@ static void eps_close_win(void) {
 }
 
 static void eps_rreset(void) {
-  beginning_of_line = 1;
   beginning_of_path = 1;
 }
 
@@ -184,7 +183,6 @@ static void eps_rcong(Point *a, Point *b, Point *c) {
   fprintf( (FILE *) grp_win->ptr,
    " %ld %ld %ld %ld %ld %ld cong", ax, ay, bx, by, cx, cy );
   previous_px = cx; previous_py = cy;
-  beginning_of_line = 0;
 }
 
 static void eps_rclose(void) {
@@ -201,7 +199,6 @@ static void eps_rcircle(Point *ctr, Point *a, Point *b) {
 
   fprintf( (FILE *) grp_win->ptr,
    " %ld %ld %ld %ld %ld %ld circle", cx, cy, ax, ay, bx, by );
-  beginning_of_line = 1;
   beginning_of_path = 0;
 }
 
@@ -245,7 +242,7 @@ static void _Text_Fmt_Draw(FmtStack *stack) {
   Fmt *fmt = Fmt_Get(stack);
   TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
   char *escaped_text = Escape_Text(Fmt_Buffer_Get(stack));
-  fprintf(private->out, "  (%s) true charpath\n", escaped_text);
+  fprintf(private->out, " (%s) textdraw", escaped_text);
   free(escaped_text);
   Fmt_Buffer_Clear(stack);
 }
@@ -253,19 +250,13 @@ static void _Text_Fmt_Draw(FmtStack *stack) {
 static void _Text_Fmt_Superscript(FmtStack *stack) {
   Fmt *fmt = Fmt_Get(stack);
   TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
-  Real scale = private->sup_scale;
-  fprintf(private->out,
-          "  currentpoint translate %g %g translate %g %g scale 0 0 moveto\n",
-          private->sup_vec.x, private->sup_vec.y, scale, scale);
+  fprintf(private->out, " textsup");
 }
 
 static void _Text_Fmt_Subscript(FmtStack *stack) {
   Fmt *fmt = Fmt_Get(stack);
   TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
-  Real scale = private->sub_scale;
-  fprintf(private->out,
-          "  currentpoint translate %g %g translate %g %g scale 0 0 moveto\n",
-          private->sub_vec.x, private->sub_vec.y, scale, scale);
+  fprintf(private->out, " textsub");
 }
 
 static void _Text_Fmt_Save(FmtStack *stack) {
@@ -298,6 +289,7 @@ static void _Text_Fmt_Init(Fmt *fmt) {
 
 static void eps_text(Point *ctr, Point *right, Point *up, Point *from,
                      const char *text) {
+  FILE *out = (FILE *) grp_win->ptr;
   TextPrivate private;
   Fmt fmt;
   EPS_POINT(ctr, ctrx, ctry);
@@ -306,7 +298,7 @@ static void eps_text(Point *ctr, Point *right, Point *up, Point *from,
 
   _Text_Fmt_Init(& fmt);
   Fmt_Private_Set(& fmt, & private);
-  private.out = (FILE *) grp_win->ptr;
+  private.out = out;
   private.sup_vec.x = 0.0;
   private.sup_vec.y = 0.5;
   private.sup_scale = 0.5;
@@ -314,22 +306,22 @@ static void eps_text(Point *ctr, Point *right, Point *up, Point *from,
   private.sub_vec.y = 0.0;
   private.sub_scale = 0.5;
 
-  fprintf((FILE *) grp_win->ptr,
-          "  gsave %ld %ld %ld %ld %ld %ld newref newpath 0 0 moveto"
-          " matrix currentmatrix\n",
+  fprintf(out,
+          "textdict begin\n"
+          "  %g %g %g %g %g %g %g %g textparams\n",
+          from->x, from->y,
+          private.sup_vec.x, private.sup_vec.y, private.sup_scale,
+          private.sub_vec.x, private.sub_vec.y, private.sub_scale);
+
+  fprintf(out,
+          "  %ld %ld %ld %ld %ld %ld textbegin\n",
           ctrx, ctry, rx, ry, ux, uy);
 
   Fmt_Text(& fmt, text);
-
-  fprintf((FILE *) grp_win->ptr,
-          "  setmatrix pathbbox newpath"
-          " 2 index sub %g mul exch 3 index sub %g mul 4 1 roll add neg"
-          " 3 1 roll add neg exch translate 0 0 moveto\n",
-          from->y, from->x);
-
+  fprintf(out, " textcalc\n");
   Fmt_Text(& fmt, text);
-
-  fprintf((FILE *) grp_win->ptr, "  fill grestore\n");
+  fprintf(out, "\n  textend\nend\n");
+  beginning_of_path = 0;
 }
 
 static void eps_font(const char *font) {
@@ -396,20 +388,31 @@ static const char *ps_std_defs =
   "    /savematrix mtrx currentmatrix def\n    [xu yu xv yv xo yo] concat\n"
   "    1 0 moveto 0 0 1 0 360 arc\n"
   "    savematrix setmatrix\n\n  end\n} def\n\n"
-  "/newrefdict 15 dict def\n\nnewrefdict /mtrx matrix put\n"
-  "/newref {\nnewrefdict begin\n"
-  "  /yb exch def /xb exch def\n"
-  "  /ya exch def /xa exch def\n"
-  "  /yo exch def /xo exch def\n\n"
-  "    /xu xa xo sub def /yu ya yo sub def\n"
-  "    /xv xb xo sub def /yv yb yo sub def\n\n"
-  "    [xu yu xv yv xo yo] concat\n"
-  "  end\n} def\n\n"
-  "/textdict 6 dict def\n"
+  "/textdict 18 dict def\n"
   "textdict begin\n"
   "  /supx 0 def /supy 0.5 def /sups 0.5 def\n"
   "  /subx 0 def /suby 0.0 def /subs 0.5 def\n"
   "end\n"
+  "/textparams {\n"
+  "  /subs exch def /suby exch def /subx exch def\n"
+  "  /sups exch def /supy exch def /supx exch def\n"
+  "  /fromy exch def /fromx exch def\n"
+  "} def\n"
+  "/textbegin {\n"
+  "  /yb exch def /xb exch def\n"
+  "  /ya exch def /xa exch def\n"
+  "  /yo exch def /xo exch def\n\n"
+  "    matrix currentmatrix\n"
+  "    /xu xa xo sub def /yu ya yo sub def\n"
+  "    /xv xb xo sub def /yv yb yo sub def\n\n"
+  "    [xu yu xv yv xo yo] concat\n"
+  "    newpath 0 0 moveto matrix currentmatrix\n"
+  "} def\n"
+  "/textend {setmatrix} def\n"
+  "/textdraw {true charpath} def\n"
+  "/textcalc {setmatrix pathbbox newpath 2 index sub fromy mul exch\n"
+  "           3 index sub fromx mul 4 1 roll add neg 3 1 roll add neg exch\n"
+  "           translate 0 0 moveto} def\n"
   "/textsave {currentpoint matrix currentmatrix} def\n"
   "/textrestore {setmatrix exch pop currentpoint pop exch moveto} def\n"
   "/textsub {currentpoint translate subx suby translate subs dup scale"
