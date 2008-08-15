@@ -1,4 +1,14 @@
+REVISION=$Id$
+# Do not change the previous line
+
 Change log (recent come first)
+
+next:
+  * exit status should now be treated more carefully:
+    0, if all OK, 1 otherwise;
+  * variables defined in the upper scope unit are associated to global
+    registers: we can now pass variables to procedures (such as using
+    the color structure inside a procedure);
 
 09 august 2008: Improved text formatting
   * Removed a small horrible bug in the selection of font:

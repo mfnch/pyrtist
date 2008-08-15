@@ -125,35 +125,33 @@
  */
 const UInt size_of_type[NUM_TYPES] = {
   sizeof(Char),
-  sizeof(Intg),
+  sizeof(Int),
   sizeof(Real),
   sizeof(Point),
   sizeof(Obj)
 };
 
 /* Restituisce il puntatore al registro globale n-esimo. */
-static void *VM__Get_G(VMStatus *vmcur, Intg n) {
+static void *VM__Get_G(VMStatus *vmcur, Int n) {
   register TypeID t = vmcur->idesc->t_id;
 
-  assert( (t >= 0) && (t < NUM_TYPES) );
+  assert(t >= 0 && t < NUM_TYPES);
 
 #ifdef VM_SAFE_EXEC1
-  if ( (n < vmcur->gmin[t]) || (n > vmcur->gmax[t]) ) {
-  MSG_ERROR("Riferimento a registro globale non allocato!");
-  vmcur->flags.error = vmcur->flags.exit = 1;
-  return NULL;
+  if (n < vmcur->gmin[t] || n > vmcur->gmax[t]) {
+    MSG_ERROR("Riferimento a registro globale non allocato!");
+    vmcur->flags.error = vmcur->flags.exit = 1;
+    return NULL;
   }
 #endif
-  return (
-   (void *) (vmcur->global[t]) + (Intg) (n * size_of_type[t])
-         );
+  return ((void *) vmcur->global[t] + (Int) (n * size_of_type[t]));
 }
 
 /* Restituisce il puntatore al registro locale n-esimo. */
-static void *VM__Get_L(VMStatus *vmcur, Intg n) {
+static void *VM__Get_L(VMStatus *vmcur, Int n) {
   register TypeID t = vmcur->idesc->t_id;
 
-  assert( (t >= 0) && (t < NUM_TYPES) );
+  assert(t >= 0 && t < NUM_TYPES);
 
 #ifdef VM_SAFE_EXEC1
   if ( (n < vmcur->lmin[t]) || (n > vmcur->lmax[t]) ) {
@@ -162,13 +160,11 @@ static void *VM__Get_L(VMStatus *vmcur, Intg n) {
   return NULL;
   }
 #endif
-  return (
-   (void *) (vmcur->local[t]) + (Intg) (n * size_of_type[t])
-         );
+  return ((void *) vmcur->local[t] + (Int) (n * size_of_type[t]));
 }
 
 /* Restituisce il puntatore alla locazione di memoria (ro0 + n). */
-static void *VM__Get_P(VMStatus *vmcur, Intg n) {
+static void *VM__Get_P(VMStatus *vmcur, Int n) {
   return *((void **) vmcur->local[TYPE_OBJ]) + n;
 }
 
@@ -178,7 +174,7 @@ static void *VM__Get_I(VMStatus *vmcur, Int n) {
   static Int i = 0;
   static union { Char c; Int i; Real r; } v[2], *value;
 
-  assert( (t >= TYPE_CHAR) && (t <= TYPE_REAL) );
+  assert(t >= TYPE_CHAR && t <= TYPE_REAL);
 
   value = & v[i]; i ^= 1;
   switch (t) {
@@ -194,7 +190,7 @@ static void *VM__Get_I(VMStatus *vmcur, Int n) {
 }
 
 /* Array di puntatori alle 4 funzioni sopra: */
-static void *(*vm_gets[4])(VMStatus *, Intg) = {
+static void *(*vm_gets[4])(VMStatus *, Int) = {
   VM__Get_G, VM__Get_L, VM__Get_P, VM__Get_I
 };
 
@@ -280,7 +276,7 @@ void VM__D_GLPI_GLPI(VMProgram *vmp, char **iarg) {
   VMStatus *vmcur = vmp->vmcur;
   UInt n, na = vmcur->idesc->numargs;
   UInt iaform[2] = {vmcur->arg_type & 3, (vmcur->arg_type >> 2) & 3};
-  Intg iaint[2];
+  Int iaint[2];
 
   assert(na <= 2);
 
@@ -313,7 +309,7 @@ void VM__D_GLPI_GLPI(VMProgram *vmp, char **iarg) {
     assert(iaf < 4);
 
     {
-      Intg iai = iaint[n], uiai = iai;
+      Int iai = iaint[n], uiai = iai;
       char rc, tc;
       const char typechars[NUM_TYPES] = "cirpo";
 
@@ -321,22 +317,22 @@ void VM__D_GLPI_GLPI(VMProgram *vmp, char **iarg) {
       if (uiai < 0) {uiai = -uiai; rc = 'v';} else rc = 'r';
       switch(iaf) {
         case CAT_GREG:
-          sprintf(vmp->iarg_str[n], "g%c%c" SIntg, rc, tc, uiai);
+          sprintf(vmp->iarg_str[n], "g%c%c" SInt, rc, tc, uiai);
           break;
         case CAT_LREG:
-          sprintf(vmp->iarg_str[n], "%c%c" SIntg, rc, tc, uiai);
+          sprintf(vmp->iarg_str[n], "%c%c" SInt, rc, tc, uiai);
           break;
         case CAT_PTR:
           if ( iai < 0 )
-            sprintf(vmp->iarg_str[n], "%c[ro0 - " SIntg "]", tc, uiai);
+            sprintf(vmp->iarg_str[n], "%c[ro0 - " SInt "]", tc, uiai);
           else if ( iai == 0 )
             sprintf(vmp->iarg_str[n], "%c[ro0]", tc);
           else
-            sprintf(vmp->iarg_str[n], "%c[ro0 + " SIntg "]", tc, uiai);
+            sprintf(vmp->iarg_str[n], "%c[ro0 + " SInt "]", tc, uiai);
           break;
         case CAT_IMM:
-          if ( iat == TYPE_CHAR ) iai = (Intg) ((Char) iai);
-          sprintf(vmp->iarg_str[n], SIntg, iai);
+          if ( iat == TYPE_CHAR ) iai = (Int) ((Char) iai);
+          sprintf(vmp->iarg_str[n], SInt, iai);
           break;
       }
     }
@@ -356,7 +352,7 @@ void VM__D_CALL(VMProgram *vmp, char **iarg) {
   *iarg = vmp->iarg_str[0];
   if ( (vmcur->arg_type & 3) == CAT_IMM ) {
     UInt iat = vmcur->idesc->t_id;
-    Intg call_num;
+    Int call_num;
     void *arg2;
 
     if ( vmcur->flags.is_long ) {
@@ -367,11 +363,11 @@ void VM__D_CALL(VMProgram *vmp, char **iarg) {
       arg2 = vmcur->i_pos;
     }
 
-    if ( iat == TYPE_CHAR ) call_num = (Intg) ((Char) call_num);
+    if ( iat == TYPE_CHAR ) call_num = (Int) ((Char) call_num);
     {
       VMProcTable *pt = & vmp->proc_table;
       if ( (call_num < 1) || (call_num > Arr_NumItem(pt->installed)) ) {
-        sprintf(vmp->iarg_str[0], SIntg, call_num);
+        sprintf(vmp->iarg_str[0], SInt, call_num);
         return;
 
       } else {
@@ -379,7 +375,7 @@ void VM__D_CALL(VMProgram *vmp, char **iarg) {
         VMProcInstalled *p;
         p = Arr_ItemPtr(pt->installed, VMProcInstalled, call_num);
         call_name = Str_Cut(p->desc, 40, 85);
-        sprintf(vmp->iarg_str[0], SIntg"('%.40s')", call_num, call_name);
+        sprintf(vmp->iarg_str[0], SInt"('%.40s')", call_num, call_name);
         free(call_name);
         return;
       }
@@ -401,8 +397,8 @@ void VM__D_JMP(VMProgram *vmp, char **iarg) {
   *iarg = vmp->iarg_str[0];
   if ( (vmcur->arg_type & 3) == CAT_IMM ) {
     UInt iat = vmcur->idesc->t_id;
-    Intg m_num;
-    Intg position;
+    Int m_num;
+    Int position;
     void *arg2;
 
     if ( vmcur->flags.is_long ) {
@@ -413,10 +409,10 @@ void VM__D_JMP(VMProgram *vmp, char **iarg) {
       arg2 = vmcur->i_pos;
     }
 
-    if ( iat == TYPE_CHAR ) m_num = (Intg) ((Char) m_num);
+    if ( iat == TYPE_CHAR ) m_num = (Int) ((Char) m_num);
 
     position = (vmcur->dasm_pos + m_num)*sizeof(VMByteX4);
-    sprintf(vmp->iarg_str[0], SIntg, position);
+    sprintf(vmp->iarg_str[0], SInt, position);
     return;
 
   } else {
@@ -428,7 +424,7 @@ void VM__D_JMP(VMProgram *vmp, char **iarg) {
 void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
   VMStatus *vmcur = vmp->vmcur;
   UInt iaf = vmcur->arg_type & 3, iat = vmcur->idesc->t_id;
-  Intg iai;
+  Int iai;
   VMByteX4 *arg2;
 
   assert(vmcur->idesc->numargs == 2);
@@ -445,7 +441,7 @@ void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
 
   /* Primo argomento */
   {
-    Intg uiai = iai;
+    Int uiai = iai;
     char rc, tc;
     const char typechars[NUM_TYPES] = "cirpo";
 
@@ -453,21 +449,21 @@ void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
     if (uiai < 0) {uiai = -uiai; rc = 'v';} else rc = 'r';
     switch(iaf) {
       case CAT_GREG:
-        sprintf(vmp->iarg_str[0], "g%c%c" SIntg, rc, tc, uiai);
+        sprintf(vmp->iarg_str[0], "g%c%c" SInt, rc, tc, uiai);
         break;
       case CAT_LREG:
-        sprintf(vmp->iarg_str[0], "%c%c" SIntg, rc, tc, uiai);
+        sprintf(vmp->iarg_str[0], "%c%c" SInt, rc, tc, uiai);
         break;
       case CAT_PTR:
         if ( iai < 0 )
-          sprintf(vmp->iarg_str[0], "%c[ro0 - " SIntg "]", tc, uiai);
+          sprintf(vmp->iarg_str[0], "%c[ro0 - " SInt "]", tc, uiai);
         else if ( iai == 0 )
           sprintf(vmp->iarg_str[0], "%c[ro0]", tc);
         else
-          sprintf(vmp->iarg_str[0], "%c[ro0 + " SIntg "]", tc, uiai);
+          sprintf(vmp->iarg_str[0], "%c[ro0 + " SInt "]", tc, uiai);
         break;
       case CAT_IMM:
-        sprintf(vmp->iarg_str[0], SIntg, iai);
+        sprintf(vmp->iarg_str[0], SInt, iai);
         break;
     }
   }
@@ -477,8 +473,8 @@ void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
     case TYPE_CHAR:
       sprintf( vmp->iarg_str[1], SChar, *((Char *) arg2) );
       break;
-    case TYPE_INTG:
-      sprintf( vmp->iarg_str[1], SIntg, *((Intg *) arg2) );
+    case TYPE_INT:
+      sprintf( vmp->iarg_str[1], SInt, *((Int *) arg2) );
       break;
     case TYPE_REAL:
       sprintf( vmp->iarg_str[1], SReal, *((Real *) arg2) );
@@ -520,16 +516,27 @@ Task VM_Init(VMProgram **new_vmp) {
   return Success;
 }
 
+static void _Free_Globals(VMProgram *vmp) {
+  int i;
+  for(i = 0; i < NUM_TYPES; i++) {
+    void *ptr = vmp->vm_global[i];
+    if (ptr != NULL)
+      free(ptr + vmp->vm_gmin[i]*size_of_type[i]);
+    vmp->vm_global[i] = NULL;
+    vmp->vm_gmin[i] = 1;
+    vmp->vm_gmax[i] = -1;
+  }
+  vmp->vm_globals = 0;
+}
+
 void VM_Destroy(VMProgram *vmp) {
   if (vmp == (VMProgram *) NULL) return;
-  if (vmp->vm_globals != 0) {
-    int i;
-    for(i = 0; i < NUM_TYPES; i++) free( vmp->vm_global[i] );
-  }
-  if ( vmp->stack != NULL )
-    if ( Arr_NumItem(vmp->stack) != 0 ) {
+  if (vmp->vm_globals != 0) _Free_Globals(vmp);
+  if (vmp->stack != NULL) {
+    if (Arr_NumItem(vmp->stack) != 0) {
       MSG_WARNING("Run finished with non empty stack.");
     }
+  }
   Clc_Destroy(vmp->references);
   Clc_Destroy(vmp->labels);
   Arr_Destroy(vmp->stack);
@@ -567,7 +574,7 @@ int VM_Asm_Fmt_Is_Long(VMProgram *vmp, int force_long) {
  * e' andato storto. Tale numero, se usato da un istruzione call, provoca
  * l'esecuzione del modulo come procedura.
  */
-Task VM_Module_Install(VMProgram *vmp, Intg *new_module,
+Task VM_Module_Install(VMProgram *vmp, Int *new_module,
  VMModuleType t, const char *name, VMModulePtr p) {
 
   /* Creo la lista dei moduli se non esiste */
@@ -597,7 +604,7 @@ Task VM_Module_Install(VMProgram *vmp, Intg *new_module,
 /* This function defines an undefined module (previously created
  * with VM_Module_Undefined).
  */
-Task VM_Module_Define(VMProgram *vmp, Intg module_num,
+Task VM_Module_Define(VMProgram *vmp, Int module_num,
  VMModuleType t, VMModulePtr p) {
   VMModule *m;
   if ( vmp->vm_modules_list == NULL ) {
@@ -619,7 +626,7 @@ Task VM_Module_Define(VMProgram *vmp, Intg module_num,
 }
 
 /* This function creates a new undefined module with name name. */
-Task VM_Module_Undefined(VMProgram *vmp, Intg *new_module, const char *name) {
+Task VM_Module_Undefined(VMProgram *vmp, Int *new_module, const char *name) {
   return VM_Module_Install(vmp, new_module,
    MODULE_UNDEFINED, name, (VMModulePtr) {{0, NULL}});
 }
@@ -627,7 +634,7 @@ Task VM_Module_Undefined(VMProgram *vmp, Intg *new_module, const char *name) {
 /* This function returns the module-number which will be
  * associated with the next module that will be installed.
  */
-Intg VM_Module_Next(VMProgram *vmp) {
+Int VM_Module_Next(VMProgram *vmp) {
   if ( vmp->vm_modules_list == NULL ) return 1;
   return Arr_NumItem(vmp->vm_modules_list) + 1;
 }
@@ -638,7 +645,7 @@ Intg VM_Module_Next(VMProgram *vmp) {
  */
 Task VM_Module_Check(VMProgram *vmp, int report_errs) {
   VMModule *m;
-  Intg mn;
+  Int mn;
   int status = Success;
 
   if ( vmp->vm_modules_list == NULL ) return Success;
@@ -657,48 +664,41 @@ Task VM_Module_Check(VMProgram *vmp, int report_errs) {
 #endif
 
 /* Sets the number of global registers and variables for each type. */
-Task VM_Module_Globals(VMProgram *vmp, Intg num_var[], Intg num_reg[]) {
+Task VM_Module_Globals(VMProgram *vmp, Int num_var[], Int num_reg[]) {
   int i;
+  Obj *reg_obj;
 
   assert(vmp != (VMProgram *) NULL);
 
-  if ( vmp->vm_globals != 0 ) {
-    int i;
-    for(i = 0; i < NUM_TYPES; i++) {
-      free( vmp->vm_global[i] );
-      vmp->vm_global[i] = NULL;
-      vmp->vm_gmin[i] = 1;
-      vmp->vm_gmax[i] = -1;
-    }
-  }
+  if (vmp->vm_globals != 0) _Free_Globals(vmp);
 
   for(i = 0; i < NUM_TYPES; i++) {
-    Intg nv = num_var[i], nr = num_reg[i];
+    Int nv = num_var[i], nr = num_reg[i];
+    void *ptr;
+
     if (nv < 0 || nr < 0) {
-      MSG_ERROR("Errore nella definizione dei numeri di registri globali.");
+      MSG_ERROR("Wrong allocation numbers for global registers.");
+      _Free_Globals(vmp);
       return Failed;
     }
-  }
 
-  for(i = 0; i < NUM_TYPES; i++) {
-    Intg nv = num_var[i], nr = num_reg[i];
-    if ( (vmp->vm_global[i] = calloc(nv+nr+1, size_of_type[i])) == NULL ) {
-      MSG_ERROR("Errore nella allocazione dei registri globali.");
-      vmp->vm_globals = -1;
+    ptr = calloc(nv + nr + 1, size_of_type[i]);
+    if (ptr == NULL) {
+      MSG_ERROR("Error in the allocation of the local registers.");
+      _Free_Globals(vmp);
       return Failed;
     }
+
+    vmp->vm_global[i] = ptr + nv*size_of_type[i];
     vmp->vm_gmin[i] = -nv;
     vmp->vm_gmax[i] = nr;
+    vmp->vm_globals = 1; /* Do not move outside the loop! */
   }
 
-  vmp->vm_globals = 1;
-  {
-    register Obj *reg_obj;
-    reg_obj = ((Obj *) vmp->vm_global[TYPE_OBJ]) + vmp->vm_gmin[TYPE_OBJ];
-    vmp->box_vm_current = reg_obj + 1;
-    vmp->box_vm_arg1    = reg_obj + 2;
-    vmp->box_vm_arg2    = reg_obj + 3;
-  }
+  reg_obj = (Obj *) vmp->vm_global[TYPE_OBJ];
+  vmp->box_vm_current = reg_obj + 1;
+  vmp->box_vm_arg1    = reg_obj + 2;
+  vmp->box_vm_arg2    = reg_obj + 3;
   return Success;
 }
 
@@ -706,23 +706,21 @@ Task VM_Module_Globals(VMProgram *vmp, Intg num_var[], Intg num_reg[]) {
  * of type type, whose number is reg. *value is the value assigned
  * to the register (variable).
  */
-Task VM_Module_Global_Set(VMProgram *vmp, Intg type, Intg reg, void *value) {
-  if ( (type < 0) || (type >= NUM_TYPES ) ) {
-    MSG_ERROR("VM_Module_Global_Set: Non esistono registri di questo tipo!");
+Task VM_Module_Global_Set(VMProgram *vmp, Int type, Int reg, void *value) {
+  void *dest;
+
+  if (type < 0 || type >= NUM_TYPES) {
+    MSG_ERROR("VM_Module_Global_Set: Unknown register type!");
     return Failed;
   }
 
-  if ( (reg < vmp->vm_gmin[type]) || (reg > vmp->vm_gmax[type]) ) {
-    MSG_ERROR("VM_Module_Global_Set: Riferimento a registro non allocato!");
+  if (reg < vmp->vm_gmin[type] || reg > vmp->vm_gmax[type]) {
+    MSG_ERROR("VM_Module_Global_Set: Reference to unallocated register!");
     return Failed;
   }
 
-  {
-    int s = size_of_type[type];
-    void *dest;
-    dest = vmp->vm_global[type] + (reg - vmp->vm_gmin[type]) * s;
-    memcpy(dest, value, s);
-  }
+  dest = vmp->vm_global[type] + reg * size_of_type[type];
+  memcpy(dest, value, size_of_type[type]);
   return Success;
 }
 
@@ -740,7 +738,7 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
   VMStatus vm, *vm_save;
   Generic reg0[NUM_TYPES]; /* Registri locali numero zero */
 #ifdef DEBUG_EXEC
-  Intg i = 0;
+  Int i = 0;
 #endif
 
   /* Controlliamo che il modulo sia installato! */
@@ -749,7 +747,7 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
     return Failed;
   }
 
-  p = Arr_ItemPtr( pt->installed, VMProcInstalled, call_num );
+  p = Arr_ItemPtr(pt->installed, VMProcInstalled, call_num);
   switch (p->type) {
     case VMPROC_IS_C_CODE: return p->code.c(vmp);
     case VMPROC_IS_VM_CODE: break;
@@ -765,9 +763,9 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
     int i;
     for(i = 0; i < NUM_TYPES; i++) {
       vm.lmin[i] = 0; vm.lmax[i] = 0; vm.local[i] = & reg0[i];
-      if ( vmp->vm_global[i] != NULL ) {
+      if (vmp->vm_global[i] != NULL) {
         vm.gmin[i] = vmp->vm_gmin[i]; vm.gmax[i] = vmp->vm_gmax[i];
-        vm.global[i] = vmp->vm_global[i] + size_of_type[i]*(-vmp->vm_gmin[i]);
+        vm.global[i] = vmp->vm_global[i];
       } else {
         vm.gmin[i] = 1; vm.gmax[i] = -1; vm.global[i] = NULL;
       }
@@ -777,7 +775,7 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
 
   vm.p = p;
   TASK( VM_Proc_Ptr_And_Length(vmp, & vm.i_pos,
-   (UInt *) NULL, p->code.proc_num) );
+                               (UInt *) NULL, p->code.proc_num) );
   i_pos = vm.i_pos;
   vm.flags.exit = vm.flags.error = 0;
   {register int i; for(i = 0; i < NUM_TYPES; i++) vm.alc[i] = 0;}
@@ -787,8 +785,8 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
     register VMByteX4 i_eye;
 
 #ifdef DEBUG_EXEC
-    fprintf(stderr, "module = "SIntg", pos = "SIntg" - reading instruction.\n",
-           call_num, i*sizeof(VMByteX4));
+    fprintf(stderr, "module = "SInt", pos = "SInt" - reading instruction.\n",
+            call_num, i*sizeof(VMByteX4));
 #endif
 
     /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
@@ -1105,7 +1103,7 @@ Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
     l->chain_unresolved = ref_index;
 
     /* For now we assemble a dummy instance of the jump instruction */
-    VM_Assemble(vmp, asm_of_jmp, CAT_IMM, (Intg) 0);
+    VM_Assemble(vmp, asm_of_jmp, CAT_IMM, (Int) 0);
     return Success;
   }
 }
@@ -1139,7 +1137,7 @@ void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit) {
  * module is the module-number of an undefined module which will be used
  * to install the program.
  */
-Task VM_Code_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
+Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg) {
   VMProcTable *pt = & vmp->proc_table;
   int previous_sheet;
   UInt tmp_sheet_id = 0;
@@ -1153,13 +1151,13 @@ Task VM_Code_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg) {
   if IS_FAILED( VM_Proc_Target_Set(vmp, tmp_sheet_id) ) goto exit;
 
   {
-    register Intg i;
-    Intg instruction[NUM_TYPES] = {
+    register Int i;
+    Int instruction[NUM_TYPES] = {
       ASM_NEWC_II, ASM_NEWI_II, ASM_NEWR_II, ASM_NEWP_II, ASM_NEWO_II
     };
 
     for(i = 0; i < NUM_TYPES; i++) {
-      register Intg nv = num_var[i], nr = num_reg[i];
+      register Int nv = num_var[i], nr = num_reg[i];
       if ( nv < 0 || nr < 0 ) {
         MSG_ERROR("Errore nella chiamata di VM_Code_Prepare.");
         goto exit;
@@ -1230,7 +1228,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
   t = 0; /* Indice di argomento */
   is_short = 1;
   for ( i = 0; i < idesc->numargs; i++ ) {
-    Intg vi = 0;
+    Int vi = 0;
 
     /* Prendo dalla lista degli argomenti della funzione la categoria
     * dell'argomento dell'istruzione.
@@ -1239,8 +1237,8 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
       case CAT_LREG:
       case CAT_GREG:
       case CAT_PTR:
-        arg[t].t = TYPE_INTG;
-        arg[t].vi = vi = va_arg(ap, Intg);
+        arg[t].t = TYPE_INT;
+        arg[t].vi = vi = va_arg(ap, Int);
         arg[t].ptr = (void *) (& arg[t].vi);
         break;
 
@@ -1248,7 +1246,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
         switch (idesc->t_id) {
           case TYPE_CHAR:
             arg[t].t = TYPE_CHAR;
-            arg[t].vi = va_arg(ap, Intg); vi = 0;
+            arg[t].vi = va_arg(ap, Int); vi = 0;
             arg[t].ptr = (void *) (& arg[t].vi);
             break;
           case TYPE_INT:

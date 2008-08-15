@@ -57,8 +57,8 @@ static Task Frame_Destructor(void *reg_frame_ptr) {
   for(i=0; i<NUM_TYPES; i++) {
     if (reg_frame->reg_occ[i] != (Collection *) NULL)
       Clc_Destroy(reg_frame->reg_occ[i]);
-    if (reg_frame->var_occ[i] != (Array *) NULL)
-      Arr_Destroy(reg_frame->var_occ[i]);
+    if (reg_frame->lvar[i].occ != (Array *) NULL)
+      Arr_Destroy(reg_frame->lvar[i].occ);
   }
   return Success;
 }
@@ -70,14 +70,21 @@ static Task Frame_Destructor(void *reg_frame_ptr) {
  *  eseguite poche realloc.
  */
 Task Reg_Init(void) {
+  int i;
   TASK( Arr_New(& ra->reg_frame, sizeof(RegFrame), 2) );
   Arr_Destructor(ra->reg_frame, Frame_Destructor);
   Reg_Frame_Push();
+  for(i=0; i<NUM_TYPES; i++) ra->gvar[i].occ = (Array *) NULL;
   return Success;
 }
 
 void Reg_Destroy(void) {
+  int i;
   Arr_Destroy(ra->reg_frame);
+  for(i=0; i<NUM_TYPES; i++) {
+    if (ra->gvar[i].occ != (Array *) NULL)
+      Arr_Destroy(ra->gvar[i].occ);
+  }
 }
 
 void Reg_Frame_Push(void) {
@@ -85,7 +92,7 @@ void Reg_Frame_Push(void) {
   RegFrame new_frame;
   for(i=0; i<NUM_TYPES; i++) {
     new_frame.reg_occ[i] = (Collection *) NULL;
-    new_frame.var_occ[i] = (Array *) NULL;
+    new_frame.lvar[i].occ = (Array *) NULL;
   }
   (void) Arr_Push(ra->reg_frame, & new_frame);
 }
@@ -165,43 +172,29 @@ typedef struct {
                 costruire una catena di elementi non occupati. */
 } VarItem;
 
-/*  Restituisce un numero di variabile libera e lo occupa.
- *  Questo numero non verra' piu' restituito fino a quando la variabile verra'
- *  liberata con una chiamata a Var_Release.
- *  Se la variabile e' libera Var_Occupy puo' restituirla a patto che
- *  il suo precedente livello (il livello che essa possedeva al momento
- *  dell'ultima liberazione con Var_Release) sia superiore a level.
- *  t e' il tipo di registro, per ciascuno dei tipi di registro
- *  Var_Occupy funziona in maniera indipendente.
- * NOTA: Il numero di registro restituito e' sempre maggiore di 1,
- *  viene restituito 0 solo in caso di errori.
- */
-Int Var_Occupy(Int type, Int level) {
-  RegFrame *rf = Arr_LastItemPtr(ra->reg_frame, RegFrame);
+/* See Var_Occupy */
+static Int _Var_Occupy(VarFrame *var, Int type, Int level) {
   Array *rb;
   VarItem *vi, *last_vi;
   Int ni;
   long occ;
 
-  assert(type >= 0);
-  if (type >= NUM_TYPES) type = TYPE_OBJ;
-
-  if (rf->var_occ[type] == (Array *) NULL) {
+  if (var->occ == (Array *) NULL) {
     /* Preparo le array */
-    Task t = Arr_New(& rf->var_occ[type], sizeof(VarItem), VAR_OCC_TYP_SIZE);
+    Task t = Arr_New(& var->occ, sizeof(VarItem), VAR_OCC_TYP_SIZE);
     assert(t == Success);
     /* Svuota le catene dei registri disponibili */
-    Arr_Chain(rf->var_occ[type]) = END_OF_CHAIN;
-    rf->var_max[type] = 0; /* Resetto i numeri massimi di variabile */
+    Arr_Chain(var->occ) = END_OF_CHAIN;
+    var->max = 0; /* Resetto i numeri massimi di variabile */
   }
 
-  rb = rf->var_occ[type];
+  rb = var->occ;
 
   /* Scorro la catena delle variabili libere finche'
-    * non ne trovo una di livello non inferiore a level
-    */
+   * non ne trovo una di livello non inferiore a level
+   */
   last_vi = NULL;
-  for ( occ = Arr_Chain(rb); occ != END_OF_CHAIN; ) {
+  for (occ = Arr_Chain(rb); occ != END_OF_CHAIN;) {
     vi = Arr_ItemPtr(rb, VarItem, occ);
     if ( vi->level <= level ) {
       /* Ho trovato quel che cercavo! */
@@ -220,34 +213,29 @@ Int Var_Occupy(Int type, Int level) {
   }
 
   /* Se la catena delle variabili libere non si puo' sfruttare non resta che
-    * creare una nuova variabile, contrassegnarla come occupata e restituirla.
-    */
+   * creare una nuova variabile, contrassegnarla come occupata e restituirla.
+   */
   Arr_Inc(rb);
   vi = Arr_LastItemPtr(rb, VarItem);
   vi->chain = OCCUPIED;
   vi->level = level;
 
   ni = Arr_NumItem(rb);
-  if (ni > rf->var_max[type]) rf->var_max[type] = ni;
+  if (ni > var->max) var->max = ni;
   return ni;
 }
 
-/* Vedi Var_Occupy.
- */
-Task Var_Release(Int type, UInt varnum) {
-  RegFrame *rf = Arr_LastItemPtr(ra->reg_frame, RegFrame);
+/* See Var_Release */
+Task _Var_Release(VarFrame *var, Int type, UInt varnum) {
   Array *rb;
   VarItem *vi;
 
-  assert(type >= 0);
-  if (type >= NUM_TYPES) type = TYPE_OBJ;
-
-  if (rf->var_occ[type] == (Array *) NULL) {
+  if (var->occ == (Array *) NULL) {
     MSG_ERROR("Var_Release: trying to release a non-occupied variable!");
     return Failed;
   }
 
-  rb = rf->var_occ[type];
+  rb = var->occ;
   if (varnum > Arr_NumItem(rb)) {
     MSG_ERROR("Variabile non occupata(1)");
     return Failed;
@@ -264,24 +252,66 @@ Task Var_Release(Int type, UInt varnum) {
   return Success;
 }
 
+static RegFrame *Cur_RegFrame(void) {
+  return Arr_LastItemPtr(ra->reg_frame, RegFrame);
+}
+
+static Int RegType(Int type) {
+  assert(type >= 0);
+  return (type >= NUM_TYPES) ? TYPE_OBJ : type;
+}
+
+/*  Restituisce un numero di variabile libera e lo occupa.
+ *  Questo numero non verra' piu' restituito fino a quando la variabile verra'
+ *  liberata con una chiamata a Var_Release.
+ *  Se la variabile e' libera Var_Occupy puo' restituirla a patto che
+ *  il suo precedente livello (il livello che essa possedeva al momento
+ *  dell'ultima liberazione con Var_Release) sia superiore a level.
+ *  t e' il tipo di registro, per ciascuno dei tipi di registro
+ *  Var_Occupy funziona in maniera indipendente.
+ * NOTA: Il numero di registro restituito e' sempre maggiore di 1,
+ *  viene restituito 0 solo in caso di errori.
+ */
+Int Var_Occupy(Int type, Int level) {
+  return _Var_Occupy(& Cur_RegFrame()->lvar[type], RegType(type), level);
+}
+
+/* Vedi Var_Occupy. */
+Task Var_Release(Int type, UInt varnum) {
+  return _Var_Release(& Cur_RegFrame()->lvar[type], RegType(type), varnum);
+}
+
 /* Restituisce il numero di variabile massimo fin'ora utilizzato.
  */
 Int Var_Num(Int type) {
-  RegFrame *rf = Arr_LastItemPtr(ra->reg_frame, RegFrame);
-  assert(type >= 0);
-  if (type >= NUM_TYPES) type = TYPE_OBJ;
-  if (rf->var_occ[type] == (Array *) NULL) return 0;
-  return rf->var_max[type];
+  VarFrame *vf = & Cur_RegFrame()->lvar[RegType(type)];
+  return (vf->occ == (Array *) NULL) ? 0 : vf->max;
+}
+
+Int GVar_Occupy(Int type) {
+  return _Var_Occupy(& ra->gvar[type], RegType(type), 0);
+}
+
+/* Vedi Var_Occupy. */
+Task GVar_Release(Int type, UInt varnum) {
+  return _Var_Release(& ra->gvar[type], RegType(type), varnum);
+}
+
+/* Restituisce il numero di variabile massimo fin'ora utilizzato.
+ */
+Int GVar_Num(Int type) {
+  VarFrame *vf = & ra->gvar[RegType(type)];
+  return (vf->occ == (Array *) NULL) ? 0 : vf->max;
 }
 
 /* This function writes (starting at the address num_var)
  * an array of Int with the number of used variables, and (address num_reg)
  * an array of Int with the number of used registers.
  */
-void RegVar_Get_Nums(Int *num_var, Int *num_reg) {
+void RegLVar_Get_Nums(Int *num_reg, Int *num_lvar) {
   int i;
   for (i = 0; i < NUM_TYPES; i++) {
     *(num_reg++) = Reg_Num(i);
-    *(num_var++) = Var_Num(i);
+    *(num_lvar++) = Var_Num(i);
   }
 }

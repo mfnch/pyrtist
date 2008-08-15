@@ -36,6 +36,7 @@
 
 typedef struct {
   UInt cur_proc_num;
+  Int num_defs; /**< 0 in global context, 1 inside procedure definitions. */
   Array *box;
 } BoxStack;
 
@@ -59,6 +60,7 @@ typedef struct {
 Task Box_Init(void);
 void Box_Destroy(void);
 Int Box_Depth(void);
+Int Box_Def_Num(void);
 
 /** This function calls a procedure without value, such as (;), ([) or (]).
  * It does not complain if such a procedure is not defined for 'type'.

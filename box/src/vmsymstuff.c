@@ -129,7 +129,6 @@ typedef struct {
   Int num_reg[NUM_TYPES];
 } ProcHead;
 
-
 /* This is the function which assembles the first code in procedures
  * (the one which allocates registers and variables).
  * Since at the beginning of a procedure the number of allocated registers
@@ -137,10 +136,11 @@ typedef struct {
  * automatically the header of procedures when the data is known.
  */
 static Task Assemble_Proc_Head(VMProgram *vmp, UInt sym_num, UInt sym_type,
- int defined, void *def, UInt def_size, void *ref, UInt ref_size) {
+                               int defined, void *def, UInt def_size,
+                               void *ref, UInt ref_size) {
   ProcHead *ph = (ProcHead *) def;
   static Int asm_code[NUM_TYPES] = {ASM_NEWC_II, ASM_NEWI_II, ASM_NEWR_II,
-   ASM_NEWP_II, ASM_NEWO_II};
+                                    ASM_NEWP_II, ASM_NEWO_II};
   int i;
 
   assert(sym_type == VM_SYM_PROC_HEAD);
@@ -161,7 +161,7 @@ Task VM_Sym_Proc_Head(VMProgram *vmp, UInt *sym_num) {
 }
 
 Task VM_Sym_Def_Proc_Head(VMProgram *vmp, UInt sym_num,
- Int *num_var, Int *num_reg) {
+                          Int *num_var, Int *num_reg) {
   ProcHead ph;
   int i;
   for(i = 0; i < NUM_TYPES; i++) {

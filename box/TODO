@@ -4,9 +4,6 @@ The user may expect great improvements in future versions of the language.
 TODO LIST FOR THE BOX COMPILER
 ------------------------------
 In order of importance:
-2 global variables: quantities defined in the upper scope unit should
-  be automatically allocated as global (global register should be used
-  instead of local ones);
 4 The second precedence rule is the following:
   If a procedure for a given type is not found, that type should be once
   resolved and then the procedure should be searched again.
@@ -51,6 +48,9 @@ DONE:
 
   Will associate to the name Type1 something which is identical
   to Type2, but is not compatible with it.
+2 global variables: quantities defined in the upper scope unit should
+  be automatically allocated as global (global register should be used
+  instead of local ones);
 3 precedence rules for name resolution should be introduced. The first
   refers to subtypes. When object.Subtype is found, Box searches now for
   subtypes of the type of object. If no such a subtype is found, an error

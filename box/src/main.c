@@ -166,10 +166,10 @@ static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
 
       if ( opnum == -1 ) {
         MSG_ERROR("%s%s <-- Illegal option!", opt_prefix, option);
-        Main_Error_Exit( CMD_LINE_HELP );
+        Main_Error_Exit(CMD_LINE_HELP);
       } else if ( opnum == -2 ) {
         MSG_ERROR("%s%s <-- Ambiguous option!", opt_prefix, option);
-        Main_Error_Exit( CMD_LINE_HELP );
+        Main_Error_Exit(CMD_LINE_HELP);
       }
 
       opt_desc = & opt_tab[opnum];
@@ -186,7 +186,7 @@ static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
       --opt_desc->repeat;
     else if ( opt_desc->repeat == 0 ) {
       MSG_ERROR("%s%s <-- Should be used only once!", opt_prefix, option);
-      Main_Error_Exit( CMD_LINE_HELP );
+      Main_Error_Exit(CMD_LINE_HELP);
     }
 
     *opt_desc->flags &= ~opt_desc->cflag;
@@ -196,7 +196,7 @@ static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
     if ( opt_desc->use_argument != NO_ARG ) {
       if ( ++i >= argc ) {
         MSG_ERROR("%s%s <-- Option requires an argument!", opt_prefix, option);
-        Main_Error_Exit( CMD_LINE_HELP );
+        Main_Error_Exit(CMD_LINE_HELP);
       }
 
       opt_desc->use_argument(argv[i]);
@@ -226,14 +226,14 @@ static Task Stage_Interpret_Command_Line(UInt *f) {
   /* Controllo che tutto sia apposto */
   if ( (flags & FLAG_INPUT) == 0 ) {
     MSG_ERROR("You should specify an input file!");
-    Main_Error_Exit( CMD_LINE_HELP );
+    Main_Error_Exit(CMD_LINE_HELP);
 
   } else {
     if ( (flags & FLAG_STDIN) == 0 ) {
       if ( freopen(file_input, "rt", stdin) == NULL ) {
         MSG_ERROR("%s <-- Cannot open the file for reading: %s",
          file_input, strerror(errno));
-        Main_Error_Exit( NULL );
+        Main_Error_Exit(NULL);
       }
     } else {
       MSG_ADVICE("Reading the source program from standard input");
@@ -264,9 +264,8 @@ static Task Stage_Compilation(char *file, UInt *main_module) {
 
   TASK( Main_Install(main_module) );
 
-  MSG_ADVICE( "Compilaton finished. "
-   "%U errors and %U warnings were found.",
-   MSG_GT_ERRORS, MSG_NUM_WARNINGS );
+  MSG_ADVICE("Compilaton finished. %U errors and %U warnings were found.",
+             MSG_GT_ERRORS, MSG_NUM_WARNINGS );
   MSG_CONTEXT_END();
   return Success;
 }
@@ -274,6 +273,7 @@ static Task Stage_Compilation(char *file, UInt *main_module) {
 /* Enter symbol resolution stage */
 static Task Stage_Symbol_Resolution(UInt *flags) {
   int all_resolved;
+  Task status = Success;
   MSG_CONTEXT_BEGIN("Symbol resolution");
   TASK( VM_Sym_Resolve_CLibs(program, lib_dirs, libraries) );
   TASK( VM_Sym_Resolve_All(program) );
@@ -282,40 +282,41 @@ static Task Stage_Symbol_Resolution(UInt *flags) {
     VM_Sym_Ref_Report(program);
     MSG_ERROR("Unresolved references: program cannot be executed.");
     *flags &= ~FLAG_EXECUTE;
+    status = Failed;
   }
   MSG_CONTEXT_END();
-  return Success;
+  return status;
 }
 
 static Task Stage_Execution(UInt *flags, UInt main_module) {
+  Task status ;
   /* Controllo se e' possibile procedere all'esecuzione del file compilato! */
-  if (*flags & FLAG_EXECUTE) {
-    if (MSG_GT_WARNINGS > 0) {
-      if (*flags & FLAG_FORCE_EXEC) {
-        if ( MSG_GT_ERRORS > 0 ) {
-          *flags &= ~FLAG_EXECUTE;
-          MSG_ADVICE("Errors found: Execution will not be started!");
-          return Success;
-        } else {
-          MSG_ADVICE("Warnings found: Execution will be started anyway!");
-        }
+  if ((*flags & FLAG_EXECUTE) == 0) return Success;
 
-      } else {
+  if (MSG_GT_WARNINGS > 0) {
+    if (*flags & FLAG_FORCE_EXEC) {
+      if ( MSG_GT_ERRORS > 0 ) {
         *flags &= ~FLAG_EXECUTE;
-        MSG_ADVICE("Warnings/errors found: Execution will not be started!" );
-        return Success;
+        MSG_ADVICE("Errors found: Execution will not be started!");
+        return Failed;
+      } else {
+        MSG_ADVICE("Warnings found: Execution will be started anyway!");
       }
-    }
 
-    MSG_CONTEXT_BEGIN("Execution");
-    Msg_Main_Counter_Clear_All();
-    (void) Main_Execute(main_module);
-    MSG_ADVICE( "Execution finished. "
-     "%U errors and %U warnings were found.",
-     MSG_GT_ERRORS, MSG_NUM_WARNINGS );
-    MSG_CONTEXT_END();
+    } else {
+      *flags &= ~FLAG_EXECUTE;
+      MSG_ADVICE("Warnings/errors found: Execution will not be started!" );
+      return Failed;
+    }
   }
-  return Success;
+
+  MSG_CONTEXT_BEGIN("Execution");
+  Msg_Main_Counter_Clear_All();
+  status = Main_Execute(main_module);
+  MSG_ADVICE("Execution finished. %U errors and %U warnings were found.",
+              MSG_GT_ERRORS, MSG_NUM_WARNINGS);
+  MSG_CONTEXT_END();
+  return status;
 }
 
 static Task Stage_Write_Asm(UInt flags) {
@@ -325,10 +326,10 @@ static Task Stage_Write_Asm(UInt flags) {
     int close_file = 0;
     if (strcmp(file_output, "-") == 0) {
       MSG_ADVICE("Writing the assembly code for the compiled program "
-       "on the standart output.");
+                 "on the standart output.");
     } else {
       MSG_ADVICE("Writing the assembly code for the compiled program "
-       "into \"%s\"!", file_output );
+                 "into \"%s\"!", file_output );
       out = fopen(file_output, "w");
       if (out == (FILE *) NULL) {
         MSG_ERROR("Cannot open '%s' for writing: %s",
@@ -350,13 +351,15 @@ static Task Stage_Write_Asm(UInt flags) {
 /* FASE DI POST-COMPILAZIONE */
 Task Main_Prepare(void) {
   int i;
-  Intg num_var[NUM_TYPES], num_reg[NUM_TYPES];
-  RegVar_Get_Nums(num_var, num_reg);
-//   TASK( VM_Code_Prepare(program, num_var, num_reg) );
+  Int num_reg[NUM_TYPES], num_var[NUM_TYPES];
+  RegLVar_Get_Nums(num_reg, num_var);
   /* Preparo i registri globali */
-  for(i = 0; i < NUM_TYPES; i++) {num_var[i] = 0; num_reg[i] = 3;}
+  for(i = 0; i < NUM_TYPES; i++) {
+    num_var[i] = GVar_Num(i);
+    num_reg[i] = 3;
+  }
   TASK( VM_Module_Globals(program, num_var, num_reg) );
- /* The following function sets gro0 to point to the data segment */
+  /* The following function sets gro0 to point to the data segment */
   TASK( Cmp_Data_Prepare() );
   return Success;
 }
@@ -365,7 +368,7 @@ Task Main_Prepare(void) {
 Task Main_Install(UInt *main_module) {
   TASK( Main_Prepare() );
   return VM_Proc_Install_Code(program, main_module,
-   VM_Proc_Target_Get(program), "main", "Description...");
+                              VM_Proc_Target_Get(program), "main", "Entry");
 }
 
 Task Main_Execute(UInt main_module) {
@@ -394,13 +397,13 @@ Task Main_Execute(UInt main_module) {
  *  per avviare il programma.
  */
 void Main_Error_Exit(char *msg) {
-  if ( (msg != NULL) && ((flags & FLAG_SILENT) == 0) ) {
+  if (msg != NULL && (flags & FLAG_SILENT) == 0) {
     fprintf(stderr, msg, prog_name);
     fprintf(stderr, "\n");
   }
 
   VM_Destroy(program); /* This function accepts program = NULL */
-  exit( EXIT_FAILURE );
+  exit(EXIT_FAILURE);
 }
 
 void Main_Cmnd_Line_Help(void) {
@@ -437,25 +440,32 @@ void Main_Cmnd_Line_Help(void) {
 /* main function of the program. */
 int main(int argc, char** argv) {
   UInt main_module;
+  int exit_status = EXIT_SUCCESS;
+  Task status;
 
   if IS_FAILED( Stage_Init() ) Main_Error_Exit("Initialization failed!");
 
-  (void) Stage_Parse_Command_Line(& flags, argc, argv);
+  status = Stage_Parse_Command_Line(& flags, argc, argv);
+  if (status == Failed) exit_status = EXIT_FAILURE;
 
-  (void) Stage_Interpret_Command_Line(& flags);
+  status = Stage_Interpret_Command_Line(& flags);
+  if (status == Failed) exit_status = EXIT_FAILURE;
 
-  (void) Stage_Add_Default_Paths();
+  status = Stage_Add_Default_Paths();
+  if (status == Failed) exit_status = EXIT_FAILURE;
 
-  (void) Stage_Compilation(file_setup, & main_module);
+  status = Stage_Compilation(file_setup, & main_module);
+  if (status == Failed) exit_status = EXIT_FAILURE;
 
-  (void) Stage_Symbol_Resolution(& flags);
+  status = Stage_Symbol_Resolution(& flags);
+  if (status == Failed) exit_status = EXIT_FAILURE;
 
-  (void) Stage_Write_Asm(flags);
+  status = Stage_Write_Asm(flags);
+  if (status == Failed) exit_status = EXIT_FAILURE;
 
-  (void) Stage_Execution(& flags, main_module);
+  status = Stage_Execution(& flags, main_module);
+  if (status == Failed) exit_status = EXIT_FAILURE;
 
   Stage_Finalize();
-
-  exit( EXIT_SUCCESS );
+  exit(exit_status);
 }
-

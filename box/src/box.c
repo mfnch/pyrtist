@@ -47,6 +47,8 @@ static BoxStack box_stack, *bs = & box_stack;
 
 Task Box_Init(void) {
   TASK( Arr_New(& bs->box, sizeof(Box), BOX_ARR_SIZE) );
+  bs->num_defs = 0;
+  bs->cur_proc_num = -1;
   return Success;
 }
 
@@ -58,9 +60,11 @@ Int Box_Depth(void) {
   return (Arr_NumItem(bs->box) - 1);
 }
 
+Int Box_Def_Num(void) {return bs->num_defs;}
+
 static Task Box_Def_Prepare(UInt head_sym_num) {
-  Int num_var[NUM_TYPES], num_reg[NUM_TYPES];
-  RegVar_Get_Nums(num_var, num_reg);
+  Int num_reg[NUM_TYPES], num_var[NUM_TYPES];
+  RegLVar_Get_Nums(num_reg, num_var);
   TASK( VM_Sym_Def_Proc_Head(cmp_vm, head_sym_num, num_var, num_reg) );
   return Success;
 }
@@ -84,7 +88,7 @@ void Box_Main_End(void) {
   UInt head_sym_num = b->head_sym_num;
   if (box_level > 0) {
     MSG_ERROR("Missing %I closing %s!", box_level,
-     box_level > 1 ? "braces" : "brace");
+              box_level > 1 ? "braces" : "brace");
   }
   (void) Box_Instance_End((Expr *) NULL);
   VM_Assemble(cmp_vm, ASM_RET);
@@ -145,6 +149,7 @@ Task Box_Def_Begin(Int proc_type) {
   /*Expr_New_Void(& b.parent);*/
   TASK(Arr_Push(bs->box, & b));
   bs->cur_proc_num = new_sheet;
+  ++bs->num_defs;
   return Success;
 }
 
@@ -183,6 +188,7 @@ Task Box_Def_End(void) {
     TASK( VM_Proc_Target_Set(cmp_vm, b->proc_num) );
     bs->cur_proc_num = b->proc_num;
   }
+  --bs->num_defs;
   return Success;
 }
 
@@ -285,17 +291,17 @@ Task Box_Instance_End(Expr *e) {
   return Success;
 }
 
-/*  Cerca fra le scatole aperte di profondita' > depth,
- *  la prima di tipo type. Se depth = 0 parte dall'ultima scatola aperta,
- *  se depth = 1, dalla penultima, etc.
- *  Restituisce la profondita' della scatola cercata o -1 in caso
- *  di ricerca fallita.
+/* Cerca fra le scatole aperte di profondita' > depth,
+ * la prima di tipo type. Se depth = 0 parte dall'ultima scatola aperta,
+ * se depth = 1, dalla penultima, etc.
+ * Restituisce la profondita' della scatola cercata o -1 in caso
+ * di ricerca fallita.
  */
 Int Box_Search_Opened(Int type, Int depth) {
   Int max_depth, d;
   Box *box;
 
-  assert( (bs->box != NULL) && (depth >= 0) );
+  assert(bs->box != NULL && depth >= 0);
 
   max_depth = Arr_NumItem(bs->box);
   if ( depth >= max_depth ) {

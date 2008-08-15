@@ -207,7 +207,7 @@ typedef struct {
 enum {
   CONTAINER_TYPE_IMM = 0,
   CONTAINER_TYPE_LREG, CONTAINER_TYPE_LVAR,
-  CONTAINER_TYPE_GREG,
+  CONTAINER_TYPE_GREG, CONTAINER_TYPE_GVAR,
   CONTAINER_TYPE_GPTR,
   CONTAINER_TYPE_LRPTR, CONTAINER_TYPE_LVPTR,
   CONTAINER_TYPE_ARG, CONTAINER_TYPE_STACK
@@ -262,12 +262,16 @@ void Expr_Alloc(Expr *e);
   (& (Container) {CONTAINER_TYPE_LVAR, -1})
 
 /* A well defined global register */
-#define CONTAINER_GREG(num) \
-  (& (Container) {CONTAINER_TYPE_GREG, num > 0 ? num : 0})
+#define CONTAINER_GREG(n) \
+  (& (Container) {CONTAINER_TYPE_GREG, (n) > 0 ? (n) : 0})
 
 /* A well defined global variable */
-#define CONTAINER_GVAR(num) \
-  (& (Container) {CONTAINER_TYPE_GREG, num > 0 ? -num : 0})
+#define CONTAINER_GVAR(n) \
+  (& (Container) {CONTAINER_TYPE_GVAR, (n) > 0 ? (n) : 0})
+
+/* A global variable automatically chosen (and reserved) */
+#define CONTAINER_GVAR_AUTO \
+  (& (Container) {CONTAINER_TYPE_GVAR, -1})
 
 /* Global pointer to object */
 #define CONTAINER_GPTR(gr, offset) \

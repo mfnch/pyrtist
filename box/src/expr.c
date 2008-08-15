@@ -648,6 +648,23 @@ void Expr_Container_New(Expr *e, Type type, Container *c) {
     }
     break;
 
+  case CONTAINER_TYPE_GVAR:
+    e->categ = CAT_GREG;
+    e->is.target = 1;
+    if (c->which_one < 0) {
+      /* Automatically choses the local variables */
+      if ( (e->value.i = -GVar_Occupy(type_of_register)) >= 0 ) {
+        MSG_FATAL("Expr_Container_New: GVar_Occupy failed!");
+      }
+      return;
+
+    } else {
+      /* The user wants a particolar variable to be chosen */
+      e->value.i = c->which_one;
+      return;
+    }
+    break;
+
   case CONTAINER_TYPE_LVAR:
     e->categ = CAT_LREG;
     e->is.target = 1;

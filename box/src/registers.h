@@ -46,19 +46,23 @@
 #  include "array.h"
 #  include "collection.h"
 
+typedef struct {
+  Int max; /**< Total number of registers to allocate for variables */
+  Array *occ; /**< Variables occcupations */
+} VarFrame;
+
 /** @brief The state of allocation of the registers in a single function.
  */
 typedef struct {
   Collection *reg_occ[NUM_TYPES]; /**< Registers occupation */
-  Int var_max[NUM_TYPES]; /**< Variables occcupations */
-  Array *var_occ[NUM_TYPES]; /**< Total number of registers
-                                  to allocate for variables */
+  VarFrame lvar[NUM_TYPES]; /**< Local variables */
 } RegFrame;
 
 /** @brief This structure keeps the full state of the register allocator.
  */
 typedef struct {
   Array *reg_frame; /**< Array of register frames */
+  VarFrame gvar[NUM_TYPES]; /**< Global variables */
 } RegAlloc;
 
 Task Reg_Init(void);
@@ -73,5 +77,8 @@ Task Var_Init(void);
 Int Var_Occupy(Int type, Int level);
 Task Var_Release(Int type, UInt varnum);
 Int Var_Num(Int type);
-void RegVar_Get_Nums(Int *num_var, Int *num_reg);
+Int GVar_Occupy(Int type);
+Task GVar_Release(Int type, UInt varnum);
+Int GVar_Num(Int type);
+void RegLVar_Get_Nums(Int *num_reg, Int *num_lvar);
 #endif

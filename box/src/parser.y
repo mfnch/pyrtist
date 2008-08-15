@@ -799,6 +799,7 @@ Task Prs_Def_Operator(Operator *opr,
                       Expr *rs, Expr *new_e, Expr *e) {
   Symbol *s;
   Expr *result, *target;
+  Container *container;
 
   if ( ! e->is.typed ) {
     MSG_ERROR("The expression on the right of '%s' must have a type!",
@@ -814,9 +815,11 @@ Task Prs_Def_Operator(Operator *opr,
     TASK( t );
   }
 
+  container = (Box_Def_Num() == 0) ?
+              CONTAINER_GVAR_AUTO : CONTAINER_LVAR_AUTO;
   target = & (s->value);
   if ( e->is.target ) {
-    Expr_Container_New(target, e->type, CONTAINER_LVAR_AUTO);
+    Expr_Container_New(target, e->type, container);
     Expr_Alloc(target);
     result = Cmp_Operator_Exec(opr, target, e);
     if ( result == NULL ) return Failed;
@@ -824,7 +827,7 @@ Task Prs_Def_Operator(Operator *opr,
     return Success;
 
   } else {
-    Expr_Container_New(target, e->type, CONTAINER_LVAR_AUTO);
+    Expr_Container_New(target, e->type, container);
     TASK( Cmp_Expr_To_X(e, target->categ, target->value.i, 0) );
     target->is.allocd = e->is.allocd;
     e->is.allocd = 0;
@@ -905,14 +908,14 @@ Task Prs_Suffix(Int *rs, Int suffix, Name *nm) {
     /* Cerco il simbolo a profondita' suffix o superiori */
     s = Sym_Explicit_Find(nm, suffix, NO_EXACT_DEPTH);
     if ( s == NULL ) {
-      MSG_ERROR( "'%N' <-- type not found!", nm );
+      MSG_ERROR("'%N' <-- type not found!", nm);
       return Failed;
     }
 
     /* Controllo che sia un tipo, ossia un simbolo con tipo e senza valore. */
     assert( s->value.is.typed );
     if ( s->value.is.value ) {
-      MSG_ERROR( "'%N' has to be a type!", nm );
+      MSG_ERROR("'%N' has to be a type!", nm);
       return Failed;
     }
 
@@ -920,7 +923,7 @@ Task Prs_Suffix(Int *rs, Int suffix, Name *nm) {
     if ( (*rs = Box_Search_Opened(s->value.type, suffix + 1)) >= 0 )
       return Success;
 
-    MSG_ERROR( "'%N' <-- none of the opened box have this type!", nm );
+    MSG_ERROR("'%N' <-- none of the opened box have this type!", nm);
     return Failed;
 
   } else {
@@ -1073,7 +1076,7 @@ Task Prs_Rule_Typed_Eq_Typed(Expr *rs, Expr *typed1, Expr *typed2) {
     *rs = *typed2;
     if ( ! typed2->is.typed ) {
       MSG_ERROR("The type on the right hand side of '=' "
-       "has not been defined yet!");
+                "has not been defined yet!");
       return Failed;
     }
     if ( Tym_Compare_Types(typed1->type, typed2->type, NULL) == 1 )
@@ -1092,7 +1095,7 @@ Task Prs_Rule_Typed_Eq_Typed(Expr *rs, Expr *typed1, Expr *typed2) {
 /* This function handles the rule: value = Type
  */
 Task Prs_Rule_Valued_Eq_Typed(Expr *rs, Expr *valued, Expr *typed) {
-
+  Container *container;
   *rs = *typed;
   rs->is.ignore = 1;
   if ( ! typed->is.typed ) {
@@ -1122,7 +1125,9 @@ Task Prs_Rule_Valued_Eq_Typed(Expr *rs, Expr *valued, Expr *typed) {
     }
 
     target = & (s->value);
-    Expr_Container_New(target, typed->type, CONTAINER_LVAR_AUTO);
+    container = (Box_Def_Num() == 0) ?
+                CONTAINER_GVAR_AUTO : CONTAINER_LVAR_AUTO;
+    Expr_Container_New(target, typed->type, container);
     Expr_Alloc(target);
     return Success;
   }
