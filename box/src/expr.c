@@ -151,7 +151,7 @@ void Expr_Print(Expr *e, FILE *out) {
       sprintf(buffer, "INT("SChar")", (Char) e->value.i);
       break;
     case TYPE_INTG:
-      sprintf(buffer, "INT("SIntg")", e->value.i);
+      sprintf(buffer, "INT("SInt")", e->value.i);
       break;
     case TYPE_REAL:
       sprintf(buffer, "REAL("SReal")", e->value.r);
@@ -162,11 +162,11 @@ void Expr_Print(Expr *e, FILE *out) {
     }
 
   } else {
-    sprintf(buffer, "INT("SIntg")", e->value.i);
+    sprintf(buffer, "INT("SInt")", e->value.i);
   }
 
   fprintf(out,
-    "Expression(type="SIntg"=\"%s\", resolved="SIntg"=\"%s\", "
+    "Expression(type="SInt"=\"%s\", resolved="SInt"=\"%s\", "
     "categ=%d=\"%s\", %s, imm=%c, value=%c, typed=%c, ignore=%c, target=%c, "
     "gaddr=%c, allocd=%c, release=%c)\n",
     e->type, Tym_Type_Names(e->type),

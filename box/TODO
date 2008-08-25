@@ -4,19 +4,6 @@ The user may expect great improvements in future versions of the language.
 TODO LIST FOR THE BOX COMPILER
 ------------------------------
 In order of importance:
-4 The second precedence rule is the following:
-  If a procedure for a given type is not found, that type should be once
-  resolved and then the procedure should be searched again.
-  This will allow to create real inherited types. Example:
-    MyInt = Int
-    x = MyInt[1]
-  Does not work now, because Int@MyInt does not exist. One expects that this
-  should work, since Int@Int exists and MyInt = Int.
-5 If $, $$, $$$, ... are used without scope level specification, they should
-  refer to the procedure which is being defined, rather than to the current
-  opened box. This is what one wants to do in 99% of the cases.
-  One should specify the level to refear to the current opened box, such as
-  in $:
 7 Copying types of all kinds should be possible, with eventual invocation
   of user defined procedures. It's not clear if we should allow the VM
   to automatically copying objects, by introducing an ad-hoc instruction.
@@ -36,6 +23,19 @@ In order of importance:
   from files and from stdin.
 
 DONE:
+4 The second precedence rule is the following:
+  If a procedure for a given type is not found, that type should be once
+  resolved and then the procedure should be searched again.
+  This will allow to create real inherited types. Example:
+    MyInt = Int
+    x = MyInt[1]
+  Does not work now, because Int@MyInt does not exist. One expects that this
+  should work, since Int@Int exists and MyInt = Int.
+5 If $, $$, $$$, ... are used without scope level specification, they should
+  refer to the procedure which is being defined, rather than to the current
+  opened box. This is what one wants to do in 99% of the cases.
+  One should specify the level to refer to the current opened box, such as
+  in $
 1 We now have a problem. If we define Window = Ptr and PointList = Ptr
   then there is no way to distinguish between them. One example is
   Window@Line: this procedure will be invoked both for Window and for

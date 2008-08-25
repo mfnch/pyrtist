@@ -212,6 +212,16 @@ Task window_end(VMProgram *vmp) {
   return Success;
 }
 
+Task window_window(VMProgram *vmp) {
+  Window *w = BOX_VM_THIS(vmp, WindowPtr);
+  Window *src = BOX_VM_ARG1(vmp, WindowPtr);
+  grp_window *cur_win = grp_win;
+  grp_win = w->window;
+  Fig_Draw_Fig(src->window);
+  grp_win = cur_win;
+  return Success;
+}
+
 Task window_origin_point(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *origin = BOX_VM_ARG1_PTR(vmp, Point);
@@ -430,12 +440,15 @@ Task window_hot_pointlist(VMProgram *vmp) {
 }
 
 Task window_hot_end(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
+  Window *w  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
+  Point *p = BOX_VM_SUB_CHILD_PTR(vmp, Point);
+
   if (! w->hot.got.point)
     g_warning("Hot[] did not get a point!");
   if (w->hot.got.name)
     g_warning("Hot[] got a name, but not the corresponding point!");
 
+  *p = *pointlist_get(& w->pointlist, 0); /* return the last point */
   return Success;
 }
 

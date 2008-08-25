@@ -861,7 +861,7 @@ Task Prs_Operator(Operator *opr, Expr *rs, Expr *a, Expr *b) {
  * this function puts the corresponding expression into *e, otherwise
  * it transforms the name *nm into an untyped expression *e.
  */
-Task Prs_Name_To_Expr(Name *nm, Expr *e, Intg suffix) {
+Task Prs_Name_To_Expr(Name *nm, Expr *e, Int suffix) {
   Symbol *s;
 
   if ( suffix < 0 ) {
@@ -945,7 +945,7 @@ Task Prs_Suffix(Int *rs, Int suffix, Name *nm) {
  * NOTE: *num is an integer expression. The new type will be put into *array.
  */
 Task Prs_Array_Of_X(Expr *array, Expr *num, Expr *x) {
-  register Intg t, n;
+  register Int t, n;
 
   /* Checks on *num */
   if ( num != NULL ) {
@@ -994,7 +994,7 @@ Task Prs_Array_Of_X(Expr *array, Expr *num, Expr *x) {
 Task Prs_Alias_Of_X(Expr *alias, Expr *x) {
   Symbol *s;
   Expr *target;
-  register Intg t;
+  register Int t;
 
   assert( !alias->is.typed );
 
@@ -1027,7 +1027,7 @@ Task Prs_Alias_Of_X(Expr *alias, Expr *x) {
 /* This function creates the new specie of types (first < second).
  */
 Task Prs_Species_New(Expr *species, Expr *first, Expr *second) {
-  Intg new_species;
+  Int new_species;
 
   CHECK_TYPE(first); CHECK_TYPE(second);
 
@@ -1044,7 +1044,7 @@ Task Prs_Species_New(Expr *species, Expr *first, Expr *second) {
 /* This function adds a new type to an already existing species.
  */
 Task Prs_Species_Add(Expr *species, Expr *old, Expr *type) {
-  Intg old_species;
+  Int old_species;
 
   CHECK_TYPE(old); CHECK_TYPE(type);
 
@@ -1106,7 +1106,7 @@ Task Prs_Rule_Valued_Eq_Typed(Expr *rs, Expr *valued, Expr *typed) {
 
   if ( valued->is.typed ) {
     /* Assertion: the type of 'valued' should be 'typed'. */
-    Intg t = valued->type;
+    Int t = valued->type;
     TASK( Cmp_Expr_Destroy_Tmp(valued) );
 
     if ( Tym_Compare_Types(t, typed->type, NULL) == 1 ) return Success;

@@ -6,9 +6,16 @@ Change log (recent come first)
 next:
   * exit status should now be treated more carefully:
     0, if all OK, 1 otherwise;
-  * variables defined in the upper scope unit are associated to global
-    registers: we can now pass variables to procedures (such as using
-    the color structure inside a procedure);
+  * variables defined in the upper scope unit are globally defined and are
+    accessible from procedures: for example, using the color structure
+    inside a procedure is now possible;
+  * $, $$, ... without depth specifications refer now to the current
+    definition Box;
+  * if NewType = OldType then NewType inherits the procedures of OldType
+    (but OldType does not inherits the procedures of NewType). NewType
+    inherits also the procedures of OldType which are defined after
+    the occurrence of 'NewType = OldType';
+  * Window.Hot now returns the last point it received as argument.
 
 09 august 2008: Improved text formatting
   * Removed a small horrible bug in the selection of font:

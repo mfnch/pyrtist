@@ -58,7 +58,8 @@ typedef enum {
   TS_KS_ALIAS=1,
   TS_KS_SPECIES=2,
   TS_KS_SUBTYPE=4,
-  TS_KS_DETACHED=8
+  TS_KS_DETACHED=8,
+  TS_KS_ANONIMOUS=16
 } TSKindSelect;
 
 typedef struct {
@@ -111,23 +112,19 @@ void TS_Destroy(TS *ts);
 Int TS_Size(TS *ts, Type t);
 #define TS_Size_Get TS_Size
 
-/** A type can be defined as an extension of other types.
- * This is what "MyType = Int" is supposed to do.
- * This function returns the extended type, given the extension type.
- * The function goes up only by one level. If "MyType2" extends "MyType1"
- * which in turn extends "Int", then:
- *
- *   TS_Resolve_Named_Type(MyType2) --> MyType1
- *   TS_Resolve_Named_Type(MyType1) --> Int
- *   TS_Resolve_Named_Type(Int) --> Int
+/** True if 't' is an anonimous type: anonimous types are types without
+ * a name. A type can be named using 'TS_Name_Set'.
  */
-Type TS_Resolve_Named_Type(TS *ts, Type t);
+int TS_Is_Anonimous(TS *ts, Type t);
 
 /** Resolve types (useful for comparisons).
  * select is a combination (with operator |) of TSKindSelect
  * values which specify what exactly has to be resolved.
  */
-Type TS_Resolve(TS *ts, Type t, Int select);
+Type TS_Resolve_Once(TS *ts, Type t, TSKindSelect select);
+
+/** TS_Resolve_Once is applied until the type is fully resolved. */
+Type TS_Resolve(TS *ts, Type t, TSKindSelect select);
 
 TSKind TS_Kind(TS *ts, Type t);
 
@@ -171,8 +168,14 @@ void TS_Procedure_Sym_Num(TS *ts, UInt *sym_num, Type p);
  * *expansion_type is the target type for that expansion. If expansion
  * is not needed then *expansion_type = TS_TYPE_NONE.
  */
-Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
- Type parent, Type child, int kind);
+void TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
+                         Type parent, Type child, int kind);
+
+/** Similar to TS_Procedure_Search, but search also the procedures inherited
+ * from aliased types.
+ */
+void TS_Procedure_Inherited_Search(TS *ts, Type *proc, Type *expansion_type,
+                                   Type parent, Type child, int kind);
 
 /** Create and register a procedure by calling firt TS_Procedure_New
  * and then TS_Procedure_Register. sym_num is the associated symbol
@@ -304,56 +307,53 @@ enum {
  */
 typedef struct {
   TypeOfType tot;
-  Intg size;       /* Spazio occupato in memoria dal tipo */
+  Int size;       /* Spazio occupato in memoria dal tipo */
   char *name;      /* Nome del tipo */
 
-  Intg parent;     /* Specie a cui appartiene il tipo */
-  Intg greater;    /* Tipo in cui puo' essere convertito */
-  Intg target;     /* Per costruire puntatori a target, array di target, etc */
-  Intg procedure;  /* Prima procedura corrispondente al tipo */
+  Int parent;     /* Specie a cui appartiene il tipo */
+  Int greater;    /* Tipo in cui puo' essere convertito */
+  Int target;     /* Per costruire puntatori a target, array di target, etc */
+  Int procedure;  /* Prima procedura corrispondente al tipo */
   union{
-    Intg sym_num;  /* Symbol ID for the procedure */
-    Intg arr_size; /* Numero di elementi dell'array */
-    Intg st_size;  /* Numero di elementi della struttura */
-    Intg sp_size;  /* Numero di elementi della specie */
+    Int sym_num;  /* Symbol ID for the procedure */
+    Int arr_size; /* Numero di elementi dell'array */
+    Int st_size;  /* Numero di elementi della struttura */
+    Int sp_size;  /* Numero di elementi della specie */
 /*    Symbol *sym;    Simbolo associato al tipo (NULL = non ce n'e'!)*/
   };
 } TypeDesc;
 #endif
 
 /* Important builtin types */
-extern Intg type_Point, type_RealNum, type_IntgNum, type_CharNum;
+extern Int type_Point, type_RealNum, type_IntgNum, type_CharNum;
 
-Intg Tym_Type_Size(Intg t);
+Int Tym_Type_Size(Int t);
 TypeOfType Tym_Type_TOT(Int t);
-UInt Tym_Proc_Get_Sym_Num(Int t);
 Int Tym_Struct_Get_Num_Items(Int t);
-const char *Tym_Type_Name(Intg t);
-char *Tym_Type_Names(Intg t);
-Task Tym_Def_Type(Intg *new_type,
- Intg parent, Name *nm, Intg size, Intg aliased_type);
-Intg Tym_Def_Array_Of(Intg num, Intg type);
-Intg Tym_Def_Pointer_To(Intg type);
-Intg Tym_Def_Alias_Of(Name *nm, Intg type);
-int Tym_Compare_Types(Intg type1, Intg type2, int *need_expansion);
-Intg Tym_Type_Resolve(Intg type, int not_alias, int not_species);
+const char *Tym_Type_Name(Int t);
+char *Tym_Type_Names(Int t);
+Task Tym_Def_Type(Int *new_type,
+ Int parent, Name *nm, Int size, Int aliased_type);
+Int Tym_Def_Array_Of(Int num, Int type);
+Int Tym_Def_Pointer_To(Int type);
+Int Tym_Def_Alias_Of(Name *nm, Int type);
+int Tym_Compare_Types(Int type1, Int type2, int *need_expansion);
+Int Tym_Type_Resolve(Int type, int not_alias, int not_species);
 #define Tym_Type_Resolve_Alias(type) Tym_Type_Resolve(type, 0, 1)
 #define Tym_Type_Resolve_Species(type) Tym_Type_Resolve(type, 1, 0)
 #define Tym_Type_Resolve_All(type) Tym_Type_Resolve(type, 0, 0)
-Intg Tym_Def_Procedure(Intg proc, int second, Intg of_type, Intg sym_num);
-Intg Tym_Search_Procedure(Intg proc, int second, Intg of_type,
-                          Intg *containing_species);
-void Tym_Print_Procedure(FILE *stream, Intg of_type);
-Task Tym_Def_Specie(Intg *specie, Intg type);
-Task Tym_Def_Structure(Intg *strc, Intg type);
-Task Tym_Structure_Get(Intg *type);
-Task Tym_Specie_Get(Intg *type);
+Int Tym_Def_Procedure(Int proc, int second, Int of_type, Int sym_num);
+void Tym_Print_Procedure(FILE *stream, Int of_type);
+Task Tym_Def_Specie(Int *specie, Int type);
+Task Tym_Def_Structure(Int *strc, Int type);
+Task Tym_Structure_Get(Int *type);
+Task Tym_Specie_Get(Int *type);
 Int Tym_Specie_Get_Target(Int type);
 
 /*#define Tym_Def_Explicit(new_type, nm) \
-  Tym_Def_Type(new_type, TYPE_NONE, nm, (Intg) 0, TYPE_NONE)*/
+  Tym_Def_Type(new_type, TYPE_NONE, nm, (Int) 0, TYPE_NONE)*/
 #define Tym_Def_Explicit_Alias(new_type, nm, type) \
-  Tym_Def_Type(new_type, TYPE_NONE, nm, (Intg) -1, type)
+  Tym_Def_Type(new_type, TYPE_NONE, nm, (Int) -1, type)
 #define Tym_Def_Intrinsic(new_type, nm, size) \
   Tym_Def_Type(new_type, TYPE_NONE, nm, size, TYPE_NONE)
 #  endif

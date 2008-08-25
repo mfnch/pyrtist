@@ -315,7 +315,7 @@ Int Box_Search_Opened(Int type, Int depth) {
     printf("Profondita': "SInt" -- Tipo: '%s'\n",
      d, Tym_Type_Name(box->parent.type));
 #endif
-    if ( box->type == type ) return d;
+    if ( box->type == type ) return d; /* BUG: bad type comparison */
     --box;
   }
   return -1;
@@ -352,7 +352,30 @@ Task Box_Child_Get(Expr *e_child, Int depth) {
   return Success;
 }
 
+/** Returns the depth of the n-th to last definition box: Box_Def_Depth(0)
+ * returns the depth of the current (last) definition box (-1 if no definition
+ * box has been opened, yet).
+ */
+Int Box_Def_Depth(int n) {
+  Int depth, max_depth;
+  Box *box;
+
+  assert(bs->box != NULL && n >= 0);
+  max_depth = Arr_NumItems(bs->box);
+  box = Arr_LastItemPtr(bs->box, Box);
+  for(depth = 0; depth < max_depth; depth++) {
+    if (box->is.definition) {
+      if (n == 0) return depth;
+      --n;
+    }
+    --box;
+  }
+
+  return -1;
+}
+
 Task Box_NParent_Get(Expr *parent, Int level, Int depth) {
+  if (depth < 0) depth = Box_Def_Depth(0);
   switch(level) {
   case 1:
     return Box_Child_Get(parent, depth);
@@ -382,16 +405,16 @@ Task Sym_Explicit_New(Symbol **sym, Name *nm, Int depth) {
   Box *b;
 
   /* Controllo che non esista un simbolo omonimo gia' definito */
-  assert( (depth >= 0) && (depth <= Box_Depth()) );
+  assert(depth >= 0 && depth <= Box_Depth());
   s = Sym_Explicit_Find(nm, depth, EXACT_DEPTH);
-  if ( s != NULL ) {
+  if (s != NULL) {
     MSG_ERROR("A symbol with name '%N' has already been defined", nm);
     return Failed;
   }
 
   /* Introduco il nuovo simbolo nella lista dei simboli correnti */
   s = Sym_Symbol_New(nm);
-  if ( s == NULL ) return Failed;
+  if (s == NULL) return Failed;
 
   /* Collego il nuovo simbolo alla lista delle variabili esplicite della
    * box corrente (in modo da eliminarle alla chiusura della box).

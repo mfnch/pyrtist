@@ -126,7 +126,7 @@ typedef union {
 /* Associo un numero a ciascun tipo, per poterlo identificare */
 typedef enum {
   SIZEOF_CHAR  = sizeof(Char),
-  SIZEOF_INTG  = sizeof(Intg),
+  SIZEOF_INTG  = sizeof(Int),
   SIZEOF_REAL  = sizeof(Real),
   SIZEOF_POINT = sizeof(Point),
   SIZEOF_OBJ   = sizeof(Obj), SIZEOF_PTR = SIZEOF_OBJ
@@ -147,7 +147,7 @@ typedef enum {
  */
 typedef union {
   struct {
-    Intg dim;
+    Int dim;
     void *code;
   } vm;
   Task (*c_func)(VMProgram *);
@@ -284,10 +284,10 @@ void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg);
 Task VM_Init(VMProgram **new_vmp);
 void VM_Destroy(VMProgram *vmp);
 
-Task VM_Module_Globals(VMProgram *vmp, Intg num_var[], Intg num_reg[]);
-Task VM_Module_Global_Set(VMProgram *vmp, Intg type, Intg reg, void *value);
+Task VM_Module_Globals(VMProgram *vmp, Int num_var[], Int num_reg[]);
+Task VM_Module_Global_Set(VMProgram *vmp, Int type, Int reg, void *value);
 
-Task VM_Code_Prepare(VMProgram *vmp, Intg *num_var, Intg *num_reg);
+Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg);
 Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num);
 
 void VM_DSettings(VMProgram *vmp, int hexcode);
@@ -311,7 +311,7 @@ Task VM_Sheet(VMProgram *vmp, VMSheet **s, int sheet_id);
 int VM_Sheet_Get_Current(VMProgram *vmp);
 Task VM_Sheet_Set_Current(VMProgram *vmp, int sheet_id);
 Task VM_Sheet_Clear(VMProgram *vmp, int sheet_id);
-Task VM_Sheet_Install(VMProgram *vmp, Intg module, int sheet_id);
+Task VM_Sheet_Install(VMProgram *vmp, Int module, int sheet_id);
 Task VM_Sheet_Disassemble(VMProgram *vmp, int sheet_id, FILE *out);
 Task VM_Label_New(VMProgram *vmp, int *label, int sheet_id, int position);
 Task VM_Label_New_Here(VMProgram *vmp, int *label);
@@ -323,7 +323,7 @@ Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional);
 void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 
 /* Numero minimo di VMByteX4 che riesce a contenere tutti i tipi possibili
- * di argomenti (Intg, Real, Point, Obj)
+ * di argomenti (Int, Real, Point, Obj)
  */
 #  define MAX_SIZE_IN_IWORDS \
    ((sizeof(Point) + sizeof(VMByteX4) - 1) / sizeof(VMByteX4))

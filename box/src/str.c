@@ -116,14 +116,14 @@ char *Str_Dup(const char *s, UInt leng) {
  * NOTA: In ogni caso la stringa restituita viene allocata da Str_Cut
  *  e sara' quindi necessario eventualmente usare free(...) per eliminarla.
  */
-char *Str_Cut(const char *s, UInt maxleng, Intg start) {
+char *Str_Cut(const char *s, UInt maxleng, Int start) {
   return Str__Cut(s, strlen(s), maxleng, start);
 }
 
 /* DESCRIZIONE: Come Str_Cut, ma la lunghezza della stringa viene specificata
  *  direttamente attraverso il parametro leng.
  */
-char *Str__Cut(const char *s, UInt leng, UInt maxleng, Intg start) {
+char *Str__Cut(const char *s, UInt leng, UInt maxleng, Int start) {
   if ( leng <= maxleng )
     return Mem_Strdup(s);
 
@@ -170,8 +170,8 @@ unsigned char oct_digit(unsigned char c, int *status) {
  */
 unsigned char hex_digit(unsigned char c, int *status) {
   c = tolower(c);
-  if ( (c >= '0') && (c <= '9') ) return c - '0';
-   else if ( (c >= 'a') && (c <= 'f') ) return (c - 'a' + 10);
+  if (c >= '0' && c <= '9') return c - '0';
+   else if (c >= 'a' && c <= 'f') return (c - 'a' + 10);
   *status |= 1;
   return '\0';
 }
@@ -183,7 +183,7 @@ unsigned char hex_digit(unsigned char c, int *status) {
  *  (whose value is suitably translated into one single byte).
  * NOTE: This function is used by Str_ToChar and by Str_ToString.
  */
-static Task Str__ToChar(char *s, Intg l, Intg *f, char *c) {
+static Task Str__ToChar(char *s, Int l, Int *f, char *c) {
   Name nm = {l, s};
 
   if (l < 1) goto err_empty;
@@ -276,8 +276,8 @@ err_overflow:
 /* DESCRIPTION: This function scans the string s (whose length is l)
  *  and converts it into a Char.
  */
-Task Str_ToChar(char *s, Intg l, char *c) {
-  Intg f;
+Task Str_ToChar(char *s, Int l, char *c) {
+  Int f;
 
   if IS_FAILED( Str__ToChar(s, l, & f, c) ) return Failed;
   if ( f == l )
@@ -293,8 +293,8 @@ Task Str_ToChar(char *s, Intg l, char *c) {
  *  and converts it into a string (array of char), which will be copied
  *  into out (this function uses malloc to allocate the string of output).
  */
-char *Str_ToString(char *s, Intg l, Intg *new_length) {
-  Intg f, nl = 1; /* <-- incluso il '\0' di terminazione stringa */
+char *Str_ToString(char *s, Int l, Int *new_length) {
+  Int f, nl = 1; /* <-- incluso il '\0' di terminazione stringa */
   char *c, *out;
 
   c = out = (char *) Mem_Alloc(l+1);
@@ -314,11 +314,10 @@ char *Str_ToString(char *s, Intg l, Intg *new_length) {
  *  s e' il puntatore alla stringa, l la lunghezza. Il numero convertito verra'
  *  memorizzato in *i.
  */
-Task Str_ToIntg(char *s, UInt l, Intg *i)
-{
-  char sc[sizeof(Intg)*5 + 1], *endptr;
+Task Str_ToInt(char *s, UInt l, Int *i) {
+  char sc[sizeof(Int)*5 + 1], *endptr;
 
-  if ( l >= (sizeof(Intg)*5 + 1) ) {
+  if ( l >= (sizeof(Int)*5 + 1) ) {
     MSG_ERROR("Intero troppo grande!");
     return Failed;
   }

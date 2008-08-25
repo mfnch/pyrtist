@@ -93,42 +93,59 @@ static TSDesc *Fully_Resolve(TS *ts, Type *rt, Type t) {
   }
 }
 
-Type TS_Resolve_Named_Type(TS *ts, Type t) {
+int TS_Is_Anonimous(TS *ts, Type t) {
+  TSDesc *td;
+
+  if (t == TS_TYPE_NONE) return 1;
+
+  td = Type_Ptr(ts, t);
+  return (td->name == (char *) NULL);
+}
+
+Type TS_Resolve_Once(TS *ts, Type t, TSKindSelect select) {
+  int resolve, is_anonimous;
+  TSDesc *td;
+  Type rt;
+
+  if (t == TS_TYPE_NONE) return TS_TYPE_NONE;
+
+  td = Type_Ptr(ts, t);
+  is_anonimous = (td->name == (char *) NULL);
+  rt = td->target;
+  switch(td->kind) {
+  case TS_KIND_MEMBER:
+    resolve = 1; break;
+  case TS_KIND_ALIAS:
+    resolve = ((select & TS_KS_ALIAS) != 0); break;
+  case TS_KIND_DETACHED:
+    resolve = ((select & TS_KS_DETACHED) != 0); break;
+  case TS_KIND_SPECIES:
+    rt = td->data.last;
+    resolve = ((select & TS_KS_SPECIES) != 0);
+    break;
+  case TS_KIND_SUBTYPE:
+    resolve = ((select & TS_KS_SUBTYPE) != 0);
+    /* NOTE: the child of a subtype is never a subtype itself!
+     *  Consequently the resolution will take place only once!
+     */
+    break;
+  default:
+    resolve = 0;
+  }
+
+  if (resolve) return rt;
   return t;
 }
 
-Type TS_Resolve(TS *ts, Type t, Int select) {
-  if (t == TS_TYPE_NONE)
-    return TS_TYPE_NONE;
-  else {
-    int resolve;
-    while(1) {
-      TSDesc *td = Type_Ptr(ts, t);
-      Type rt = td->target;
-      switch(td->kind) {
-      case TS_KIND_MEMBER:
-        resolve = 1; break;
-      case TS_KIND_ALIAS:
-        resolve = ((select & TS_KS_ALIAS) != 0); break;
-      case TS_KIND_DETACHED:
-        resolve = ((select & TS_KS_DETACHED) != 0); break;
-      case TS_KIND_SPECIES:
-        rt = td->data.last;
-        resolve = ((select & TS_KS_SPECIES) != 0);
-        break;
-      case TS_KIND_SUBTYPE:
-        resolve = ((select & TS_KS_SUBTYPE) != 0);
-        /* NOTE: the child of a subtype is never a subtype itself!
-         *  Consequently the resolution will take place only once!
-         */
-        break;
-      default:
-        resolve = 0;
-      }
-      if (!resolve) return t;
-      t = rt;
-    }
-  }
+Type TS_Resolve(TS *ts, Type t, TSKindSelect select) {
+  Type rt = t;
+  do {
+    t = rt;
+    rt = TS_Resolve_Once(ts, t, select);
+    if ((select & TS_KS_ANONIMOUS) != 0 && !TS_Is_Anonimous(ts, rt))
+      return rt;
+  } while(rt != t);
+  return t;
 }
 
 #if 0
@@ -396,7 +413,7 @@ void TS_Procedure_Info(TS *ts, Type *parent, Type *child,
     *sym_num = proc_td->data.proc.sym_num;
 }
 
-Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
+void TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
                          Type parent, Type child, int kind) {
   TSDesc *p_td, *parent_td;
   Type p, dummy;
@@ -422,11 +439,26 @@ Task TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
       if (comparison != TS_TYPES_UNMATCH) {
         if (comparison == TS_TYPES_EXPAND) *expansion_type = p_td->target;
         *proc = p;
-        return Success;
+        return;
       }
     }
   }
-  return Success;
+}
+
+void TS_Procedure_Inherited_Search(TS *ts, Type *proc, Type *expansion_type,
+                                   Type parent, Type child, int kind) {
+  Type dummy, previous_parent;
+  assert(kind == 1 || kind == 2);
+  if (proc == (Type *) NULL) proc = & dummy;
+  do {
+    TS_Procedure_Search(ts, proc, expansion_type, parent, child, kind);
+    if (*proc != TS_TYPE_NONE) break;
+    /* Resolve the parent type and retry */
+    previous_parent = parent;
+    parent = TS_Resolve(ts, parent,
+                        TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES |
+                        TS_KS_SUBTYPE | TS_KS_ANONIMOUS);
+  } while (parent != previous_parent);
 }
 
 Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num) {
@@ -633,10 +665,6 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
  * This code re-implements typeman.c as a wrapper around typesys.c
  */
 
-void Tym_Procedure_Sym_Num(UInt *sym_num, Type p) {
-  TS_Procedure_Sym_Num(last_ts, sym_num, p);
-}
-
 #include <stdlib.h>
 
 #include "compiler.h"
@@ -735,7 +763,7 @@ Int Tym_Def_Alias_Of(Name *nm, Int type) {
   return alias;
 }
 
-int Tym_Compare_Types(Intg type1, Intg type2, int *need_expansion) {
+int Tym_Compare_Types(Int type1, Int type2, int *need_expansion) {
   int dummy;
   if (need_expansion == (int *) NULL) need_expansion = & dummy;
   switch(TS_Compare(last_ts, type1, type2)) {
@@ -770,16 +798,6 @@ Int Tym_Def_Procedure(Int proc, int second, Int of_type, Int sym_num) {
   return procedure;
 }
 
-Int Tym_Search_Procedure(Int proc, int second, Int of_type,
-                         Int *exp) {
-
-  Type found;
-  int kind = second ? 2 : 1;
-  Task t = TS_Procedure_Search(last_ts, & found, exp, of_type, proc, kind);
-  assert(t == Success);
-  return found;
-}
-
 Task Tym_Def_Specie(Int *specie, Int type) {
   if (*specie == TYPE_NONE) {
     TASK( TS_Species_Begin(last_ts, specie) );
@@ -787,7 +805,7 @@ Task Tym_Def_Specie(Int *specie, Int type) {
   return TS_Species_Add(last_ts, *specie, type);
 }
 
-Task Tym_Def_Structure(Int *strc, Intg type) {
+Task Tym_Def_Structure(Int *strc, Int type) {
   if (*strc == TYPE_NONE) {
     TASK( TS_Structure_Begin(last_ts, strc) );
   }
@@ -809,12 +827,6 @@ Task Tym_Structure_Get(Int *type) {
 Int Tym_Specie_Get_Target(Int type) {
   TSDesc *s_td = Type_Ptr(last_ts, type);
   return s_td->data.last;
-}
-
-UInt Tym_Proc_Get_Sym_Num(Int t) {
-  UInt sym_num;
-  TS_Procedure_Sym_Num(last_ts, & sym_num, t);
-  return sym_num;
 }
 
 Int Tym_Struct_Get_Num_Items(Int t) {

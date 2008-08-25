@@ -77,14 +77,14 @@ Task Box_Main_Begin(void);
 void Box_Main_End(void);
 Task Box_Instance_Begin(Expr *e, int kind);
 Task Box_Instance_End(Expr *e);
-Intg Box_Search_Opened(Intg type, Intg depth);
+Int Box_Search_Opened(Int type, Int depth);
 
 /** This function returns the pointer to the structure Box
  * corresponding to the box with depth 'depth'.
  * NOTE: Specifying a negative value for 'depth' is equivalent to specify
  *  the value 0.
  */
-Task Box_Get(Box **box, Intg depth);
+Task Box_Get(Box **box, Int depth);
 
 /** Create in '*e_parent' the expression corresponding to the parent
  * of the box whose depth level is 'depth'
@@ -100,6 +100,12 @@ Task Box_Parent_Get(Expr *e_parent, Int depth);
  */
 Task Box_Child_Get(Expr *e_child, Int depth);
 
+/** Returns the depth of the n-th to last definition box: Box_Def_Depth(0)
+ * returns the depth of the current (last) definition box (-1 if no definition
+ * box has been opened, yet).
+ */
+Int Box_Def_Depth(int n);
+
 /** Create in '*e_parent' the expression corresponding to level-th parent
  * of the box whose depth level is 'depth'.
  * NOTE: the first level parent is just the child (which means that
@@ -113,6 +119,6 @@ Task Box_Child_Get(Expr *e_child, Int depth);
  */
 Task Box_NParent_Get(Expr *e_parent, Int level, Int depth);
 
-Task Sym_Explicit_New(Symbol **sym, Name *nm, Intg depth);
+Task Sym_Explicit_New(Symbol **sym, Name *nm, Int depth);
 #  endif
 #endif

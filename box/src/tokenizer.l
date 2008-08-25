@@ -192,7 +192,7 @@ include BEGIN(include);
 {DIGIT}+ {
   Int i;
 
-  if IS_FAILED( Str_ToIntg(yytext, yyleng, & i) )
+  if IS_FAILED( Str_ToInt(yytext, yyleng, & i) )
     { parser_attr.no_syntax_err = 1; return TOK_ERR;}
   Expr_New_Imm_Int( & yylval.Ex, i );
   return TOK_EXPR;

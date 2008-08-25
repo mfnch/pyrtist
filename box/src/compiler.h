@@ -242,7 +242,8 @@ void Cmp_Imm_Destroy(void);
 Task Cmp_String_New(Expression *e, Name *str, int free_str);
 #define Cmp_String_New_And_Free(e, str) Cmp_String_New(e, str, 1)
 Task Cmp_Procedure_Search(int *found, Int procedure, Int suffix,
- Box **box, Int *prototype, Int *sym_num, int auto_define);
+                          Box **box, Int *prototype, UInt *sym_num,
+                          int auto_define);
 Task Cmp_Procedure(int *found, Expression *e, Int suffix, int auto_define);
 Task Cmp_Structure_Begin(void);
 Task Cmp_Structure_Add(Expression *e);

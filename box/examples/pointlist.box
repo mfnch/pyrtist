@@ -12,7 +12,7 @@ PointList@Print[
   i = 0
   "PointList["
   [If[++i <= n]
-     p = $::.Get[i], Print[p, If[i < n], ", "]
+     p = $.Get[i], Print[p, If[i < n], ", "]
    For[1]]
   "]"
 ]

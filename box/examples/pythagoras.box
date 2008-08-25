@@ -2,7 +2,7 @@ include "g"
 
 w = Window[][
   Style[.Border[1, color.black]] // Set black border
-  Color[color.red, .a=0.3]
+  Color[color.red, .a=0.3] // transparent red (alpha = 0.3) 
   t = .Poly[(0, 0), (0, 30), (50, 0)]
 
   Color[color.blue, .a=0.3]

@@ -233,7 +233,7 @@ Task VM_Proc_Disassemble_All(VMProgram *vmp, FILE *out) {
 /* This function returns the module-number which will be
  * associated with the next module that will be installed.
  */
-Intg VM_Module_Next(VMProgram *vmp) {
+Int VM_Module_Next(VMProgram *vmp) {
   if ( vmp->vm_modules_list == NULL ) return 1;
   return Arr_NumItem(vmp->vm_modules_list) + 1;
 }

@@ -231,7 +231,7 @@ Task Builtins_Init(void) {
 #else
   /* Definisco i tipi intrinseci */
   {
-    Intg t;
+    Int t;
     TASK( Tym_Def_Intrinsic(& t, & NAME("Char"), sizeof(Char)) );
     assert(t == TYPE_CHAR);
     TASK( Tym_Def_Intrinsic(& t, & NAME("Int"), sizeof(Int)  ) );
@@ -590,7 +590,7 @@ static Task Blt_Define_Basics(void) {
   Tym_Def_Explicit_Alias(& type_##name, & NAME(#name), type)
 
 static Task Blt_Define_Math(void) {
-  Intg type_Sin, type_Cos, type_Tan, type_Asin, type_Acos, type_Atan,
+  Int type_Sin, type_Cos, type_Tan, type_Asin, type_Acos, type_Atan,
    type_Exp, type_Log, type_Log10, type_Sqrt, type_Ceil, type_Floor,
    type_Abs, type_Min, type_Max, type_Vec;
 
@@ -633,7 +633,7 @@ static Task Blt_Define_Math(void) {
 }
 
 static Task Blt_Define_Print(void) {
-  Intg type_Print;
+  Int type_Print;
   TASK(Tym_Def_Explicit_Alias(& type_Print, & NAME("Print"), TYPE_VOID));
   TASK(Cmp_Builtin_Proc_Def(TYPE_CHAR,  BOX_CREATION,type_Print, Print_Char));
   TASK(Cmp_Builtin_Proc_Def(TYPE_INTG,  BOX_CREATION,type_Print, Print_Int));
@@ -652,7 +652,7 @@ typedef struct {
 } File;
 
 static Task Blt_Define_Sys(void) {
-  Intg type_Exit;
+  Int type_Exit;
   TASK( Tym_Def_Explicit_Alias(& type_Exit, & NAME("Exit"), TYPE_VOID) );
   TASK( Cmp_Builtin_Proc_Def(TYPE_INT, BOX_CREATION, type_Exit, Exit_Int) );
 
@@ -671,7 +671,7 @@ static Task Print_Char(VMProgram *vmp) {
   return Success;
 }
 static Task Print_Int(VMProgram *vmp) {
-  printf(SIntg, BOX_VM_ARG1(vmp, Intg));
+  printf(SInt, BOX_VM_ARG1(vmp, Int));
   return Success;
 }
 static Task Print_Real(VMProgram *vmp) {
@@ -697,7 +697,7 @@ static Task Print_NewLine(VMProgram *vmp) {
 
 /* This function is not politically correct!!! */
 static Task Exit_Int(VMProgram *vmp) {
-  exit(BOX_VM_ARG1(vmp, Intg));
+  exit(BOX_VM_ARG1(vmp, Int));
 }
 
 static Task C_File_Open(VMProgram *vmp) {
@@ -802,11 +802,11 @@ static Task Sqrt_RealNum(VMProgram *vmp) {
   return Success;
 }
 static Task Ceil_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Intg) = ceil(BOX_VM_ARG1(vmp, Real));
+  BOX_VM_CURRENT(vmp, Int) = ceil(BOX_VM_ARG1(vmp, Real));
   return Success;
 }
 static Task Floor_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Intg) = floor(BOX_VM_ARG1(vmp, Real));
+  BOX_VM_CURRENT(vmp, Int) = floor(BOX_VM_ARG1(vmp, Real));
   return Success;
 }
 static Task Abs_RealNum(VMProgram *vmp) {

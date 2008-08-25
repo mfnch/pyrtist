@@ -1558,8 +1558,8 @@ Task Cmp_String_New(Expression *e, Name *str, int free_str) {
  * The following functions are needed to compile procedures.                 *
  *****************************************************************************/
 
-/* This function is an interface for the function Tym_Search_Procedure.
- * In fact the purpose of the first is very similar to the purpose
+/* This function is an interface for the function TS_Procedure_Search.
+ * Indeed, the purpose of the first is very similar to the purpose
  * of the second: the function searches the procedure of type 'procedure'
  * which belongs to the opened box, whose suffix descriptor is 'suffix'.
  * If a suitable procedure is found, its actual type is assigned
@@ -1576,9 +1576,8 @@ Task Cmp_String_New(Expression *e, Name *str, int free_str) {
  *  of *found.
  */
 Task Cmp_Procedure_Search(int *found, Int procedure, Int suffix,
-                          Box **box, Int *prototype, Int *sym_num,
-                          int auto_define)
-{
+                          Box **box, Int *prototype, UInt *sym_num,
+                          int auto_define) {
   Box *b;
   Int p, dummy;
 
@@ -1596,7 +1595,10 @@ Task Cmp_Procedure_Search(int *found, Int procedure, Int suffix,
   *box = b;
 
   /* Now we search for the procedure associated with *e */
-  p = Tym_Search_Procedure(procedure, b->is.second, b->type, prototype);
+  /*p = Tym_Search_Procedure(procedure, b->is.second, b->type, prototype);*/
+  TS_Procedure_Inherited_Search(cmp->ts, & p, prototype, b->type, procedure,
+                                b->is.second ? 2 : 1);
+
 
   /* If a suitable procedure does not exist, we create it now,
    * and we mark it as "undefined"
@@ -1622,7 +1624,7 @@ Task Cmp_Procedure_Search(int *found, Int procedure, Int suffix,
 #endif
 
   } else {
-    *sym_num = Tym_Proc_Get_Sym_Num(p);
+    TS_Procedure_Sym_Num(cmp->ts, sym_num, p);
     *found = 1;
     return Success;
   }
@@ -1642,12 +1644,12 @@ Task Cmp_Procedure_Search(int *found, Int procedure, Int suffix,
  */
 Task Cmp_Procedure(int *found, Expr *e, Int suffix, int auto_define) {
   Box *b;
-  Int sym_num, t;
-  Int prototype;
+  UInt sym_num;
+  Int prototype, t;
   int dummy = 0;
   Expr e_parent;
 
-  if ( found == NULL ) found = & dummy;
+  if (found == NULL) found = & dummy;
 
   /* First of all we check the attributes of the expression *e */
   if ( e->is.ignore ) return Success;
@@ -1700,7 +1702,7 @@ Task Cmp_Procedure(int *found, Expr *e, Int suffix, int auto_define) {
 
 /*****************************************************************************/
 Task Cmp_Builtin_Proc_Def(Int procedure, int when_should_call, Int of_type,
- Task (*C_func)(VMProgram *)) {
+                          Task (*C_func)(VMProgram *)) {
   UInt proc = 0, sym_num, call_num;
 
   /* We then create the symbol associated with this name */

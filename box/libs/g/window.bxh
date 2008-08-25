@@ -10,6 +10,7 @@ P@Window ? "window_size"
 Color@&Window ? "window_color"
 Gradient@&Window ? "window_gradient"
 Style@&Window ? "window_style"
+Window@@Window ? "window_window"
 
 Window.Save = Void
 ([)@Window.Save ? "window_save_begin"

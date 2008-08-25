@@ -57,7 +57,7 @@ typedef struct {
     Int  i;
     Real  r;
     Point p;
-    Intg  reg;
+    Int   reg;
     Name  nm;
   } value;
 
