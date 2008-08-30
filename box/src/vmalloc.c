@@ -46,7 +46,9 @@ typedef struct {
  *           count and other information;
  *  - 'block' is all the allocated data: 'head' plus 'data';
  *  - 'block pointer' the pointer to the 'block' memory area;
- *  - 'user pointer' the pointer received by the user (point to 'data');
+ *  - 'data pointer' the pointer received by the user (points to 'data');
+ *  - 'object' an object of type 'Obj', i.e. an extended pointer made of two
+ *    pointers: the pointer to the 'data' and the pointer to the 'block'.
  */
 
 /** Get the size of the block containing 'data' of size 'dsize' */
@@ -65,50 +67,59 @@ typedef struct {
   ((void *) (uptr) - sizeof(VMAllocHead))
 
 /** Get the 'user pointer' from the 'block pointer' */
-#define GET_UPTR_FROM_BPTR(bptr) \
+#define GET_DPTR_FROM_BPTR(bptr) \
   ((void *) (bptr) + sizeof(VMAllocHead))
 
 /** Allocate size bytes and returns the pointer to that region.
  * The memory region is associated with the provided data 'type'
  * and has a initial reference counter equal to 1.
  */
-void *VM_Alloc(size_t size, Int type) {
-  void *bptr = malloc(SIZE_OF_BLOCK(size));
-  VMAllocHead *head = GET_HEAD_FROM_BPTR(bptr);
-  void *uptr = GET_UPTR_FROM_BPTR(bptr);
-  if (bptr == (void *) NULL) return (void *) NULL;
-  head->type = type;
-  head->references = 1;
-  return uptr;
+void VM_Alloc(Obj *obj, size_t size, Int type) {
+  obj->block = malloc(SIZE_OF_BLOCK(size));
+  if (obj->block != (void *) NULL) {
+    VMAllocHead *head = (VMAllocHead *) obj->block;
+    obj->ptr = GET_DPTR_FROM_BPTR(obj->block);
+    head->type = type;
+    head->references = 1;
+  }
+}
+
+static int Bad_Obj(const char *location, Obj *obj) {
+  if (obj->block != NULL) return 0;
+  fprintf(stderr, "%s: object was not allocated with VM_Alloc!\n", location);
+  return 1;
 }
 
 /** Increase the reference counter for the given object. */
-void VM_Link(void *uptr) {
-  VMAllocHead *head = GET_HEAD_FROM_UPTR(uptr);
+void VM_Link(Obj *obj) {
+  VMAllocHead *head = (VMAllocHead *) obj->block;
+  if (Bad_Obj("VM_Link", obj)) return;
   ++head->references;
 }
 
 /** Decrease the reference counter for the given object and proceed
  * with destroying it, if it has reached zero.
  */
-void VM_Unlink(VMProgram *vmp, void *uptr) {
-  VMAllocHead *head = GET_HEAD_FROM_UPTR(uptr);
-  Int references = --head->references;
+void VM_Unlink(VMProgram *vmp, Obj *obj) {
+  VMAllocHead *head = (VMAllocHead *) obj->block;;
+  Int references;
+  if (Bad_Obj("VM_Unlink", obj)) return;
+
+  references = --head->references;
   if (references > 0)
     return;
 
   else if (references == 0) {
-    void *bptr = GET_BPTR_FROM_UPTR(uptr);
     Int method_num = VM_Alloc_Method_Get(vmp, head->type, VM_ALC_DESTRUCTOR);
     if (method_num >= 0) {
-      void *save_this;
+      Obj save_this;
 #ifdef DEBUG_VMALLOC
       printf("VM_Unlink: calling destructor (call %d) for type "
-             SInt" at %p.\n", method_num, head->type, bptr);
+             SInt" at %p.\n", method_num, head->type, obj->block);
 #endif
 
       save_this = *vmp->box_vm_current;
-      *vmp->box_vm_current = uptr;
+      *vmp->box_vm_current = *obj;
       (void) VM_Module_Execute(vmp, method_num);
       *vmp->box_vm_current = save_this;
     }
@@ -116,7 +127,8 @@ void VM_Unlink(VMProgram *vmp, void *uptr) {
     printf("VM_Unlink: Deallocating object of type "SInt" at %p.\n",
            head->type, bptr);
 #endif
-    free(bptr);
+    free(obj->block);
+    obj->block = NULL;
     return;
 
   } else {

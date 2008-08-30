@@ -240,13 +240,19 @@ static void VM__Exec_ProjY_P(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Real *) vmcur->local[TYPE_REAL]) = ((Point *) vmcur->arg1)->y;
 }
+
 static void VM__Exec_PPtrX_P(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  *((Obj *) vmcur->local[TYPE_OBJ]) = & (((Point *) vmcur->arg1)->x);
+  Obj *obj = (Obj *) vmcur->local[TYPE_OBJ];
+  obj->block = (void *) NULL;
+  obj->ptr = & (((Point *) vmcur->arg1)->x);
 }
+
 static void VM__Exec_PPtrY_P(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  *((Obj *) vmcur->local[TYPE_OBJ]) = & (((Point *) vmcur->arg1)->y);
+  Obj *obj = (Obj *) vmcur->local[TYPE_OBJ];
+  obj->block = (void *) NULL;
+  obj->ptr = & (((Point *) vmcur->arg1)->y);
 }
 
 static void VM__Exec_Eq_II(VMProgram *vmp) {
@@ -342,35 +348,41 @@ static void VM__Exec_Malloc_II(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   Int size = *((Int *) vmcur->arg1),
       type = *((Int *) vmcur->arg2);
-  void *uptr = (Obj) VM_Alloc(size, type);
-  *((Obj *) vmcur->local[TYPE_OBJ]) = uptr;
-  if (uptr != (void *) NULL) return;
+  Obj *obj = (Obj *) vmcur->local[TYPE_OBJ];
+  VM_Alloc(obj, size, type);
+  if (obj->block != (void *) NULL) return;
   MSG_FATAL("VM_Exec_Malloc_II: memory request failed!");
 }
+
 static void VM__Exec_Mln_O(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  VM_Link(*((Obj *) vmcur->arg1));
+  VM_Link((Obj *) vmcur->arg1);
 }
+
 static void VM__Exec_MUnln_O(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  VM_Unlink(vmp, *((Obj *) vmcur->arg1));
+  VM_Unlink(vmp, (Obj *) vmcur->arg1);
 }
+
 static void VM__Exec_MCopy_OO(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  (void) memcpy(
-   *((Obj *) vmcur->arg1),             /* destination */
-   *((Obj *) vmcur->arg2),             /* source */
-   *((Int *) vmcur->local[TYPE_INT]) /* size */
-  );
+  (void) memcpy(((Obj *) vmcur->arg1)->ptr,         /* destination */
+                ((Obj *) vmcur->arg2)->ptr,         /* source */
+                *((Int *) vmcur->local[TYPE_INT])); /* size */
 }
 
 static void VM__Exec_Lea(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  *((Obj *) vmcur->local[TYPE_OBJ]) = (Obj) vmcur->arg1;
+  Obj *obj = (Obj *) vmcur->local[TYPE_OBJ];
+  obj->block = (void *) NULL;
+  obj->ptr = vmcur->arg1;
 }
+
 static void VM__Exec_Lea_OO(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  *((Obj *) vmcur->arg1) = (Obj) vmcur->arg2;
+  Obj *obj = (Obj *) vmcur->arg1;
+  obj->block = (void *) NULL;
+  obj->ptr = vmcur->arg2;
 }
 
 static void VM__Exec_Push_O(VMProgram *vmp) {
@@ -400,7 +412,7 @@ static void VM__Exec_Jc_I(VMProgram *vmp) {
 
 static void VM__Exec_Add_O(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  *((Obj *) vmcur->arg1) += *((Int *) vmcur->local[TYPE_INT]);
+  ((Obj *) vmcur->arg1)->ptr += *((Int *) vmcur->local[TYPE_INT]);
 }
 
 /******************************************************************************

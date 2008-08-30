@@ -701,18 +701,18 @@ static Task Exit_Int(VMProgram *vmp) {
 }
 
 static Task C_File_Open(VMProgram *vmp) {
-  File *f = BOX_VM_CURRENTPTR(vmp, File);
+  File *f = BOX_VM_THIS_PTR(vmp, File);
   f->opened = 0;
   f->name = "";
   return Success;
 }
 static Task C_File_String(VMProgram *vmp) {
-  File *f = BOX_VM_CURRENTPTR(vmp, File);
+  File *f = BOX_VM_THIS_PTR(vmp, File);
   f->name = BOX_VM_ARGPTR1(vmp, char);
   return Success;
 }
 static Task C_File_Close(VMProgram *vmp) {
-  File *f = BOX_VM_CURRENTPTR(vmp, File);
+  File *f = BOX_VM_THIS_PTR(vmp, File);
   f->file = fopen(f->name, "w");
   if ( f->file == NULL ) {
     fprintf(stderr, "Error opening the file. Exiting!\n");
@@ -722,7 +722,7 @@ static Task C_File_Close(VMProgram *vmp) {
   return Success;
 }
 static Task M_File_String(VMProgram *vmp) {
-  File *f = BOX_VM_CURRENTPTR(vmp, File);
+  File *f = BOX_VM_THIS_PTR(vmp, File);
   if ( ! f->opened ) {
     fprintf(stderr, "Error: writing to a not opened file. Exiting!\n");
     return Failed;
@@ -818,7 +818,7 @@ static Task Min_Open(VMProgram *vmp) {
   return Success;
 }
 static Task Min_RealNum(VMProgram *vmp) {
-  Real *cp = BOX_VM_CURRENTPTR(vmp, Real), c = *cp,
+  Real *cp = BOX_VM_THIS_PTR(vmp, Real), c = *cp,
        x = BOX_VM_ARG1(vmp, Real);
   *cp = (x < c) ? x : c;
   return Success;
@@ -828,14 +828,14 @@ static Task Max_Open(VMProgram *vmp) {
   return Success;
 }
 static Task Max_RealNum(VMProgram *vmp) {
-  Real *cp = BOX_VM_CURRENTPTR(vmp, Real), c = *cp,
+  Real *cp = BOX_VM_THIS_PTR(vmp, Real), c = *cp,
        x = BOX_VM_ARG1(vmp, Real);
   *cp = (x > c) ? x : c;
   return Success;
 }
 static Task Vec_RealNum(VMProgram *vmp) {
   Real angle = BOX_VM_ARG1(vmp, Real);
-  Point *p = BOX_VM_CURRENTPTR(vmp, Point);
+  Point *p = BOX_VM_THIS_PTR(vmp, Point);
   p->x = cos(angle);
   p->y = sin(angle);
   return Success;

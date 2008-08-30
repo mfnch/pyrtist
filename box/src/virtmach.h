@@ -105,14 +105,16 @@ typedef unsigned char VMByte;
 typedef unsigned long VMByteX4;
 typedef signed char VMSByte;
 
+#if 0
 /* Definisco il tipo Obj, che e' semplicemente il tipo puntatore */
 typedef void *Obj;
+#endif
 
 /** We need more than just a pointer when referring to Box objects */
 typedef struct {
-  void *block; /**< Pointer to the allocated memory block */
   void *ptr;   /**< Pointer to the data inside this block */
-} ObjPtr;
+  void *block; /**< Pointer to the allocated memory block */
+} Obj;
 
 /* This is an union of all possible types */
 typedef union {
@@ -328,9 +330,9 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 #  define MAX_SIZE_IN_IWORDS \
    ((sizeof(Point) + sizeof(VMByteX4) - 1) / sizeof(VMByteX4))
 
-#  define BOX_VM_THIS_PTR(vmp, Type) ((Type *) *(vmp)->box_vm_current)
+#  define BOX_VM_THIS_PTR(vmp, Type) ((Type *) (vmp)->box_vm_current->ptr)
 #  define BOX_VM_THIS(vmp, Type) (*BOX_VM_THIS_PTR(vmp, Type))
-#  define BOX_VM_ARG1_PTR(vmp, Type) ((Type *) *(vmp)->box_vm_arg1)
+#  define BOX_VM_ARG1_PTR(vmp, Type) ((Type *) (vmp)->box_vm_arg1->ptr)
 #  define BOX_VM_ARG1(vmp, Type) (*BOX_VM_ARG1_PTR(vmp, Type))
 #  define BOX_VM_ARG_PTR BOX_VM_ARG1_PTR
 #  define BOX_VM_ARG BOX_VM_ARG1

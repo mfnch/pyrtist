@@ -31,19 +31,19 @@ typedef enum {
   VM_ALC_DESTRUCTOR
 } VMAlcMethod;
 
-/** Allocate size bytes and returns the pointer to that region.
+/** Allocate size bytes and returns the corresponding object in 'obj'.
  * The memory region is associated with the provided data 'type'
  * and has a initial reference counter equal to 1.
  */
-void *VM_Alloc(size_t size, Int type);
+void VM_Alloc(Obj *obj, size_t size, Int type);
 
 /** Increase the reference counter for the given object. */
-void VM_Link(void *uptr);
+void VM_Link(Obj *obj);
 
 /** Decrease the reference counter for the given object and proceed
  * with destroying it, if it has reached zero.
  */
-void VM_Unlink(VMProgram *vmp, void *uptr);
+void VM_Unlink(VMProgram *vmp, Obj *obj);
 
 /** Initialise the memory handling system of the virtual machine 'vmp'
  *  (to be called internally by VM_Init).
