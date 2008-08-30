@@ -18,13 +18,57 @@
  ****************************************************************************/
 
 #include "types.h"
+#include "typesys.h"
+#include "compiler.h"
+#include "virtmach.h"
+#include "builtins.h"
 #include "bltinstr.h"
 
+Type type_Str;
+
+static Task Str_Register_All(void);
+
 Task Bltin_Str_Init(void) {
-  /* First define: STR = ++(Int length, Ptr) */
-  
+  /* First define: STR = ++(Int length, buffer_size, Ptr ptr) */
+  Type s, d;
+  TASK( TS_Structure_Begin(cmp->ts, & s) );
+  TASK( TS_Structure_Add(cmp->ts, s, type_IntNum, "length") );
+  TASK( TS_Structure_Add(cmp->ts, s, type_IntNum, "buffer_size") );
+  TASK( TS_Structure_Add(cmp->ts, s, TYPE_PTR, "ptr") );
+  TASK( TS_Detached_New(cmp->ts, & d, s) );
+  TASK( Tym_Def_Explicit_Alias(& type_Str, & NAME("STR"), d) );
+  TASK( Tym_Def_Explicit_Alias(& type_Str, & NAME("Str"), d) );
+
+  /* Now we register all the methods */
+  TASK( Str_Register_All() );
   return Success;
 }
 
 void Bltin_Str_Destroy(void) {}
 
+static Task Str_Begin(VMProgram *vmp) {
+  return Success;
+}
+
+static Task Str_Destroy(VMProgram *vmp) {
+  printf("Destroying string!\n");
+  return Success;
+}
+
+static Task Str_Register_All(void) {
+  struct {
+    Type child;
+    int kind;
+    Task (*proc)(VMProgram *);
+
+  } *item, table[] = {
+    {TYPE_OPEN, BOX_CREATION, Str_Begin},
+    {TYPE_DESTROY, BOX_CREATION | BOX_MODIFICATION, Str_Destroy},
+    {TYPE_NONE}
+  };
+
+  for(item = & table[0]; item->child != TYPE_NONE; item++) {
+    TASK(Cmp_Builtin_Proc_Def(item->child, item->kind, type_Str, item->proc));
+  }
+  return Success;
+}

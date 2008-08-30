@@ -1,12 +1,12 @@
 There are a number of things which needs to be done as soon as possible:
-The user may expect great improvements in future versions of the language.
+Great improvements should be expected in future versions of the language.
 
 TODO LIST FOR THE BOX COMPILER
 ------------------------------
 In order of importance:
 7 Copying types of all kinds should be possible, with eventual invocation
   of user defined procedures. It's not clear if we should allow the VM
-  to automatically copying objects, by introducing an ad-hoc instruction.
+  to automatically copy objects, by introducing an ad-hoc instruction.
 8 Pointers needs to be introduced, so that objects can be referred by other
   objects.
 9 We should allow automatic conversion of types, once they have been created.

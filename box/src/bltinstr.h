@@ -22,6 +22,11 @@
 
 #  include "types.h"
 
+typedef struct {
+  Int length, buffer_size;
+  void *ptr;
+} Str;
+
 Task Bltin_Str_Init(void);
 
 void Bltin_Str_Destroy(void);

@@ -797,7 +797,7 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
   }
 
   /* If we need white background, we paint the window accordingly. */
-  if (paint_background) {
+  if (paint_background && numptx > 0 && numpty > 0) {
     cairo_save(cr);
     cairo_rectangle(cr, 0.0, 0.0, numptx, numpty);
     cairo_set_source_rgb(cr, 1.0, 1.0, 1.0);
