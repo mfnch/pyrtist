@@ -24,8 +24,12 @@
 
 typedef struct {
   Int length, buffer_size;
-  void *ptr;
+  char *ptr;
 } Str;
+
+Task Str_Large_Enough(Str *s, Int length);
+
+Task Str_Concat(Str *s, const char *ca);
 
 Task Bltin_Str_Init(void);
 

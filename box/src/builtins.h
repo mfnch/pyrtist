@@ -23,7 +23,8 @@
 #  include "types.h"
 
 /* Important builtin types */
-extern Type type_Point, type_RealNum, type_IntNum, type_CharNum, type_String;
+extern Type type_Point, type_RealNum, type_IntNum, type_CharNum,
+            type_CharArray, type_Print;
 
 Task Builtins_Init(void);
 

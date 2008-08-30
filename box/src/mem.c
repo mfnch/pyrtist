@@ -54,6 +54,11 @@ void Mem_Free(void *ptr) {
   free(ptr);
 }
 
+void *Mem_Realloc(void *ptr, UInt size) {
+  if (ptr == NULL) return Mem_Alloc(size);
+  return realloc(ptr, size);
+}
+
 char *Mem_Strdup(const char *s) {
   size_t sl = strlen(s) + 1;
   char *sd = Mem_Alloc(sl);

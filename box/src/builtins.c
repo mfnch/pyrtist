@@ -41,8 +41,8 @@
 #include "bltinstr.h"
 
 /* Important builtin types */
-Type type_Point, type_RealNum, type_IntNum, type_String,
-     type_File;
+Type type_Point, type_RealNum, type_IntNum, type_CharArray,
+     type_File, type_Print;
 
 Int type_IntSpecies, type_RealSpecies, type_PointSpecies, type_RealCouple;
 
@@ -201,8 +201,8 @@ static Task Blt_Define_Types(void) {
   TASK( Tym_Def_Specie(& type_PointSpecies, TYPE_POINT) );
 
   /* Ora definisco il tipo stringa */
-  type_String = Tym_Def_Array_Of(-1, TYPE_CHAR);
-  if ( type_String == TYPE_NONE ) return Failed;
+  type_CharArray = Tym_Def_Array_Of(-1, TYPE_CHAR);
+  if ( type_CharArray == TYPE_NONE ) return Failed;
 
   /* Define the alias types */
   for(i = 0; alias2[i].target != (Type *) NULL; i++) {
@@ -530,8 +530,8 @@ static Task Blt_Define_Basics(void) {
 #if 1
 
   /* Ora definisco il tipo stringa */
-  type_String = Tym_Def_Array_Of(-1, TYPE_CHAR);
-  if ( type_String == TYPE_NONE ) return Failed;
+  type_CharArray = Tym_Def_Array_Of(-1, TYPE_CHAR);
+  if ( type_CharArray == TYPE_NONE ) return Failed;
 
   /* Definisco type_IntNum --> (Int < Char) */
   type_IntNum = TYPE_NONE;
@@ -633,13 +633,12 @@ static Task Blt_Define_Math(void) {
 }
 
 static Task Blt_Define_Print(void) {
-  Int type_Print;
   TASK(Tym_Def_Explicit_Alias(& type_Print, & NAME("Print"), TYPE_VOID));
   TASK(Cmp_Builtin_Proc_Def(TYPE_CHAR,  BOX_CREATION,type_Print, Print_Char));
   TASK(Cmp_Builtin_Proc_Def(TYPE_INTG,  BOX_CREATION,type_Print, Print_Int));
   TASK(Cmp_Builtin_Proc_Def(TYPE_REAL,  BOX_CREATION,type_Print, Print_Real));
   TASK(Cmp_Builtin_Proc_Def(type_Point, BOX_CREATION,type_Print, Print_Pnt));
-  TASK(Cmp_Builtin_Proc_Def(type_String,BOX_CREATION,type_Print, Print_String));
+  TASK(Cmp_Builtin_Proc_Def(type_CharArray,BOX_CREATION,type_Print, Print_String));
   TASK(Cmp_Builtin_Proc_Def(TYPE_PAUSE, BOX_CREATION,type_Print,Print_NewLine));
   /*Tym_Print_Procedure(stdout, type_new);*/
   return Success;
@@ -659,9 +658,9 @@ static Task Blt_Define_Sys(void) {
   TASK( Tym_Def_Intrinsic(& type_File, & NAME("File"), sizeof(File)) );
 
   TASK(Cmp_Builtin_Proc_Def(TYPE_OPEN,  BOX_CREATION, type_File, C_File_Open));
-  TASK(Cmp_Builtin_Proc_Def(type_String,BOX_CREATION, type_File, C_File_String));
+  TASK(Cmp_Builtin_Proc_Def(type_CharArray,BOX_CREATION, type_File, C_File_String));
   TASK(Cmp_Builtin_Proc_Def(TYPE_CLOSE, BOX_CREATION, type_File, C_File_Close));
-  TASK(Cmp_Builtin_Proc_Def(type_String,BOX_MODIFICATION,type_File,M_File_String));
+  TASK(Cmp_Builtin_Proc_Def(type_CharArray,BOX_MODIFICATION,type_File,M_File_String));
   return Success;
 }
 

@@ -35,6 +35,8 @@ size_t Mem_Size_Align(size_t n);
 
 void *Mem_Alloc(UInt size);
 
+void *Mem_Realloc(void *ptr, UInt size);
+
 void Mem_Free(void *ptr);
 
 char *Mem_Strdup(const char *s);
