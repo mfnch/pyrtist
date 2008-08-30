@@ -1,0 +1,30 @@
+
+Newton = (Real x0, dx, y0, dy, Int step)
+
+Newton.Fn = Real
+Real@Newton.Fn[$$ = Cos[$]]
+
+([)@Newton[.x0 = 0.0, .dx = 1e-6, .dy = 1e-4, step = 0]
+
+Newton.Step = Void
+([)@Newton.Step[
+  x0 = $$$.x0
+  $$$.y0 = y0 = $$$.Fn[x0]
+  dydx0 = ($$$.Fn[x0 + $$$.dx] - y0)/$$$.dx
+  $$$.x0 = x0 - y0/dydx0
+  $$$.step += 1
+]
+
+Newton.Converged = Int
+([)@Newton.Converged[$$ = Abs[$$$.y0] < $$$.dy]
+
+Newton@Print["Newton[.step = ", $.step
+             ", .x = ", $.x0, ", .y = ", $.Fn[$.x0], "]"]
+
+// Here we use the new object
+n = Newton[.x0 = 1.1]
+Print[n;]
+
+[n.Step[], For[!n.Converged[]]]
+
+Print[n;]
