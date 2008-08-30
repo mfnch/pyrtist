@@ -182,9 +182,11 @@ include BEGIN(include);
 [']([^'\n]|\\')*['] {
   Char c;
 
-  if IS_FAILED( Str_ToChar(yytext+1, yyleng-2, & c) )
-    { parser_attr.no_syntax_err = 1; return TOK_ERR;}
-  Expr_New_Imm_Char( & yylval.Ex, (Int) c );
+  if IS_FAILED( Str_ToChar(yytext+1, yyleng-2, (char *) & c) ) {
+    parser_attr.no_syntax_err = 1;
+    return TOK_ERR;
+  }
+  Expr_New_Imm_Char(& yylval.Ex, (Int) c);
   return TOK_EXPR;
  }
 
