@@ -2,7 +2,7 @@
  * The following part of this file handles structures.                       *
  *****************************************************************************/
 
-static Intg cmp_structure_type, cmp_structure_num, cmp_structure_size;
+static Int cmp_structure_type, cmp_structure_num, cmp_structure_size;
 static Array *cmp_structure_exprs;
 static Array *cmp_structure_data;
 
@@ -12,11 +12,11 @@ typedef struct {
   Expr expr; /* Espressione contenente il valore dell'elemento */
 } StructItem;
 
-static Task Cmp__Structure_Free(StructItem *first, Intg num);
-static Task Cmp__Structure_Backgnd(StructItem *first, Intg num,
- Intg size, int *only_backgnd, int *only_foregnd);
-static Task Cmp__Structure_Foregnd(Expression *new_struct, StructItem *first,
- Intg num, int only_foregnd);
+static Task Cmp__Structure_Free(StructItem *first, Int num);
+static Task Cmp__Structure_Backgnd(StructItem *first, Int num, Int size,
+                                   int *only_backgnd, int *only_foregnd);
+static Task Cmp__Structure_Foregnd(Expr *new_struct, StructItem *first,
+                                   Int num, int only_foregnd);
 
 /* DESCRIPTION: This function starts the creation of a new structure.
  * NOTE: It is possible to build a new structure inside another.
@@ -46,7 +46,7 @@ Task Cmp_Structure_Begin(void) {
  */
 Task Cmp_Structure_Add(Expr *e) {
   StructItem si;
-  register Int t, item_size;
+  Int t, item_size;
 
   TASK( Expr_Must_Have_Value(e) );
 
@@ -97,7 +97,7 @@ Task Cmp_Structure_End(Expr *new_struct) {
   only_backgnd = 0;
 
   if ( only_backgnd ) {
-    register Intg imm_addr;
+    Int imm_addr;
     /* La struttura e' interamente immediata */
     new_struct->categ = CAT_IMM;
     new_struct->type = type;
@@ -112,7 +112,7 @@ Task Cmp_Structure_End(Expr *new_struct) {
 
     /* Copio il background della struttura, se presente */
     if ( ! only_foregnd ) {
-      register Intg struct_addr;
+      Int struct_addr;
       /* Trasferisco il background nel segmento dati */
       struct_addr = Cmp_Data_Add(type,
        Arr_FirstItemPtr(cmp_structure_data, void), size);
@@ -127,7 +127,7 @@ Task Cmp_Structure_End(Expr *new_struct) {
     TASK( Cmp__Structure_Foregnd(new_struct, first, num, only_foregnd) );
   }
 
-  /* Expression are destroyed in Cmp__Structure_Foregnd */
+  /* Expr are destroyed in Cmp__Structure_Foregnd */
   //TASK( Cmp__Structure_Free(first, cmp_structure_num) );
 
   if ( cmp_structure_num + 1 > Arr_NumItem(cmp_structure_exprs) ) {
@@ -154,10 +154,10 @@ Task Cmp_Structure_End(Expr *new_struct) {
  * NOTE: If the array is entirely immediate the function sets
  *  *only_backgnd = 1 (in other cases only_backgnd = 0).
  */
-static Task Cmp__Structure_Backgnd(StructItem *first, Intg num, Intg size,
+static Task Cmp__Structure_Backgnd(StructItem *first, Int num, Int size,
                                    int *only_backgnd, int *only_foregnd) {
-  register Intg i, arg_size, arg_size_old;
-  register StructItem *si;
+  Int i, arg_size, arg_size_old;
+  StructItem *si;
 
   /* Se non e' gia' stato fatto, creo l'array che conterra'
    * "l'immagine di sfondo" della struttura (cioe' la sua parte immediata)
@@ -182,14 +182,14 @@ static Task Cmp__Structure_Backgnd(StructItem *first, Intg num, Intg size,
   si = first;
   arg_size_old = 0;
   for(i = 0; i < num; i++) {
-    register Expression *e = & si->expr;
+    Expr *e = & si->expr;
 
     arg_size = si->size - arg_size_old;
     arg_size_old = si->size;
 
     if ( e->categ == CAT_IMM ) {
       /* Remember that e->type is already resolved (see Cmp_Structure_Add)*/
-      register Intg t = e->type;
+      Int t = e->type;
       *only_foregnd = 0;
       if ( t < NUM_INTRINSICS ) {
         assert( (t >= 0) && (t < NUM_TYPES) );
@@ -218,10 +218,9 @@ static Task Cmp__Structure_Backgnd(StructItem *first, Intg num, Intg size,
  */
 static Task Cmp__Structure_Foregnd(Expr *new_struct, StructItem *first,
                                    Int num, int only_foregnd) {
-
-  register Intg i, arg_size, arg_size_old;
-  register StructItem *si;
-  Expression e_dest;
+  Int i, arg_size, arg_size_old;
+  StructItem *si;
+  Expr e_dest;
 
   assert( (new_struct->categ == CAT_LREG)
    || (new_struct->categ == CAT_GREG) );
@@ -235,7 +234,7 @@ static Task Cmp__Structure_Foregnd(Expr *new_struct, StructItem *first,
   si = first;
   arg_size_old = 0;
   for(i = 0; i < num; i++) {
-    register Expression *e_src = & si->expr;
+    Expr *e_src = & si->expr;
 
     if ( (e_src->categ != CAT_IMM) || only_foregnd ) {
       arg_size = si->size - arg_size_old;
@@ -258,7 +257,7 @@ static Task Cmp__Structure_Foregnd(Expr *new_struct, StructItem *first,
  *  to build the structure.
  */
 static Task Cmp__Structure_Free(StructItem *first, Int num) {
-  register Intg i;
+  Int i;
   for(i = 0; i < num; i++) {
     TASK( Cmp_Expr_Destroy_Tmp(& first->expr) );
     ++first;
@@ -281,45 +280,49 @@ e ha tipo (Int , Real)
 
  */
 
-Task Cmp_Expr_Expand(Int species, Expression *e) {
-  register Int type1, type2;
+Task Cmp_Expr_Expand(Int species, Expr *e) {
+  Int type1, type2;
 
-  assert( e->is.typed && e->is.value );
+  assert(e->is.typed && e->is.value);
 
   type1 = species;
   type2 = e->type;
 
 #ifdef DEBUG_SPECIES_EXPANSION
   printf("Espando: '%s' --> '%s'\n",
-   Tym_Type_Names(e->type), Tym_Type_Names(species));
+         Tym_Type_Names(e->type), Tym_Type_Names(species));
 #endif
 
-  if ( type1 == type2 ) return Success;
+  if (type1 == type2) return Success;
   type1 = Tym_Type_Resolve_Alias(type1);
   type2 = Tym_Type_Resolve_All(type2);
-  if ( type1 == type2 ) return Success;
+  if (type1 == type2) return Success;
 
-  switch(Tym_Type_TOT(type1)) {
-    case TOT_INSTANCE: /* type1 != type2 !!! */
+  switch(TS_Kind(cmp->ts, type1)) {
+  case TS_KIND_INTRINSIC: /* type1 != type2 !!! */
     MSG_ERROR("Type forbidden in species conversions.");
     return Failed;
 
-    case TOT_PTR_TO:
+  case TS_KIND_POINTER:
     MSG_ERROR("Not implemented yet!"); return Failed;
     /*if (td2->tot == TOT_PTR_TO) break;
     return 0;*/
 
-    case TOT_ARRAY_OF:
-    MSG_ERROR("Not implemented yet!"); return Failed;
-    /*if (td2->tot != TOT_ARRAY_OF) return 0;
-    {
-      register Intg td1s = td1->arr_size, td2s = td2->arr_size;
-      if (td1s == td2s) break;
-      if ((td1s < 1) && first) break;
-      return 0;
-    }*/
+  case TS_KIND_ARRAY:
+    switch(TS_Compare(cmp->ts, type1, type2)) {
+    case TS_TYPES_EQUAL:
+    case TS_TYPES_MATCH:
+      return Success;
+    case TS_TYPES_EXPAND:
+      MSG_ERROR("Expansion of array of species is not implemented yet!");
+      return Failed;
+    default:
+      MSG_ERROR("Cmp_Expr_Expand: Expansion to array involves "
+                "an incompatible type.");
+      return Failed;
+    }
 
-    case TOT_SPECIE: {
+  case TS_KIND_SPECIES: {
       Int member_type = type1;
       Int target_type = Tym_Specie_Get_Target(type1);
       TASK(Tym_Specie_Get(& member_type));
@@ -334,36 +337,15 @@ Task Cmp_Expr_Expand(Int species, Expression *e) {
       return Failed;
     }
 
-
-#if 0
-    {
-      register Intg t = td1->target, great_type = td1->greater;
-      do {
-        td1 = Tym_Type_Get(t);
-        if ( td1 == NULL ) {
-          MSG_ERROR("Array dei tipi danneggiata!");
-          return Failed;
-        }
-        if ( Tym_Compare_Types(t, type2, NULL) ) {
-          TASK( Cmp_Expr_Expand(t, e) );
-          return Cmp_Conversion(e->type, great_type, e);
-        }
-        t = td1->greater;
-      } while( td1->greater != TYPE_NONE );
-    }
-    MSG_ERROR("Cannot expand the species!");
-    return Failed;
-#endif
-
-    case TOT_PROCEDURE:
+  case TS_KIND_PROC:
     MSG_ERROR("Not implemented yet!"); return Failed;
     /*if (td2->tot != TOT_PROCEDURE) return 0;
     return (
           Tym_Compare_Types(td1->parent, td2->parent)
       && Tym_Compare_Types(td1->target, td2->target) );*/
 
-    case TOT_STRUCTURE: {
-      int need_expansion = 0;
+  case TS_KIND_STRUCTURE: {
+    int need_expansion = 0;
 
     /* Prima di eseguire la conversione verifico che si possa
       * effettivamente fare!
@@ -374,15 +356,12 @@ Task Cmp_Expr_Expand(Int species, Expression *e) {
       return Failed;
     }
 
-    /* Ora dobbiamo espandere la struttura, ma solo se necessario! */
-    if ( ! need_expansion ) return Success;
-
-    /* E' necessario: bisogna creare una nuova struttura per contenere
-     * il risultato dell'espansione
+    /* We have to expand the structure: we have to create a new structure
+     * which can contain the expanded one.
      */
-    {
+    if (need_expansion) {
       int n1, n2;
-      Expression new_struc, member1, member2, member2_copy;
+      Expr new_struc, member1, member2, member2_copy;
       Expr_Container_New(& new_struc, type1, CONTAINER_LREG_AUTO);
       Expr_Alloc(& new_struc);
       member1 = new_struc;
@@ -394,12 +373,13 @@ Task Cmp_Expr_Expand(Int species, Expression *e) {
         member2_copy = member2;
 #ifdef DEBUG_STRUCT_EXPANSION
         printf("Espando il membro: '%s' --> '%s'\n",
-         Tym_Type_Names(member2.type), Tym_Type_Names(member1.type));
+               Tym_Type_Names(member2.type), Tym_Type_Names(member1.type));
 #endif
         TASK( Cmp_Expr_Expand(member1.type, & member2_copy) );
 #ifdef DEBUG_STRUCT_EXPANSION
         printf("Dopo l'espansione: type='%s', resolved='%s'\n",
-         Tym_Type_Names(member2_copy.type), Tym_Type_Names(member2_copy.resolved));
+               Tym_Type_Names(member2_copy.type),
+               Tym_Type_Names(member2_copy.resolved));
 #endif
         TASK( Cmp_Expr_Move(& member1, & member2_copy) );
 
@@ -413,17 +393,17 @@ Task Cmp_Expr_Expand(Int species, Expression *e) {
     return Success;
     }
 
-    default:
+  default:
     MSG_ERROR("Cmp_Expr_Expand not fully implemented!");
-    return 0;
+    return Failed;
   }
 
   return Failed;
 }
 
 /*  An example of use (see also Tym_Structure_Get):
- *  Suppose that the Expression structure is a structure,
- *     Expression member = structure; int n;
+ *  Suppose that the Expr structure is a structure,
+ *     Expr member = structure; int n;
  *     do {TASK( Cmp_Structure_Get(& member, & n) );} while (n > 0);
  *  During the loop, member will contain each of the members of the structure:
  *  the first, the second, ..., the last.
@@ -431,19 +411,19 @@ Task Cmp_Expr_Expand(Int species, Expression *e) {
  *  When it is called again, it decreases n, until it is equal to 0.
  * NOTE: *member shouldn't change between the calls to Cmp_Structure_Get!
  *****************************************************************FULL EXAMPLE:
- *   Expression member = structure; int n;
+ *   Expr member = structure; int n;
  *   TASK(Cmp_Structure_Get(& member, & n));
  *   while (n > 0) {
  *     ... // <-- here we can use the Expression member
  *     TASK(Cmp_Structure_Get(& member, & n));
  *   };
  */
-Task Cmp_Structure_Get(Expression *member, int *n) {
-  Intg member_type = member->type;
+Task Cmp_Structure_Get(Expr *member, int *n) {
+  Int member_type = member->type;
   TASK( Tym_Structure_Get(& member_type) );
 
-  if ( Tym_Type_TOT(member->type) == TOT_STRUCTURE ) {
-    Expression first;
+  if (TS_Kind(cmp->ts, member->type) == TS_KIND_STRUCTURE) {
+    Expr first;
 
     /* (sotto) Manca parte dell'implementazione! */
     assert(member->categ == CAT_LREG || member->categ == CAT_GREG);

@@ -29,9 +29,18 @@
 #include "builtins.h"
 #include "bltinstr.h"
 
+#include "vmproc.h"
+#include "vmsymstuff.h"
+
 /****************************************************************************
  * Here we define some generic functions to handle Str objects              *
  ****************************************************************************/
+
+void Str_Init(Str *s) {
+  s->ptr = (char *) NULL;
+  s->length = 0;
+  s->buffer_size = 0;
+}
 
 Task Str_Large_Enough(Str *s, Int length) {
   Int l;
@@ -87,9 +96,7 @@ void Bltin_Str_Destroy(void) {}
 
 static Task Str_Begin(VMProgram *vmp) {
   Str *s = BOX_VM_THIS_PTR(vmp, Str);
-  s->ptr = (char *) NULL;
-  s->length = 0;
-  s->buffer_size = 0;
+  Str_Init(s);
   return Success;
 }
 
@@ -102,6 +109,14 @@ static Task Str_Destroy(VMProgram *vmp) {
     s->buffer_size = 0;
   }
   return Success;
+}
+
+/* Used for the conversion in the species Str = (()Char -> STR)*/
+static Task Str_From_CharArray(VMProgram *vmp) {
+  Str *s = BOX_VM_THIS_PTR(vmp, Str);
+  char *ca = BOX_VM_ARG1_PTR(vmp, char);
+  Str_Init(s);
+  return Str_Concat(s, ca);
 }
 
 static Task Str_Char(VMProgram *vmp) {
@@ -183,5 +198,10 @@ static Task Str_Register_All(void) {
     TASK(Cmp_Builtin_Proc_Def(item->child, item->kind,
                               item->parent, item->proc));
   }
+
+  /* We also register the conversion ()Char -> STR */
+  TASK( Cmp_Builtin_Conv_Def("conv_CharArray_to_STR",
+                             type_CharArray, type_Str, Str_From_CharArray) );
+
   return Success;
 }

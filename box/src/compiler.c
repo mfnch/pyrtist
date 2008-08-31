@@ -508,7 +508,7 @@ Exec_Opn_Error:
  *  corrispondente ad un gran numero di operazioni intrinseche.
  * NOTA: Viene chiamata da Cmp_Operation_Exec.
  */
-static Expression *Opn_Exec_Intrinsic(Operation *opn, Expr *e1, Expr *e2) {
+static Expr *Opn_Exec_Intrinsic(Operation *opn, Expr *e1, Expr *e2) {
 
   struct {unsigned int unary :1, right : 1, strange :1, immediate :1;} opn_is;
   Int rs_resolved = Tym_Type_Resolve_All(opn->type_rs);
@@ -562,7 +562,7 @@ static Expression *Opn_Exec_Intrinsic(Operation *opn, Expr *e1, Expr *e2) {
     if ( opn_is.unary ) {
       /* Ora compilo l'operazione */
       if ( opn_is.right ) {
-        Expression old_e2 = *e2;
+        Expr old_e2 = *e2;
         /*e2value = e2->value.i, e2categ = e2->categ;*/
         if IS_FAILED( Cmp_Expr_Force_To_LReg(e2) ) return NULL;
         if IS_FAILED( Cmp_Complete_Ptr_1(& old_e2) ) return NULL;
@@ -632,7 +632,7 @@ static Expression *Opn_Exec_Intrinsic(Operation *opn, Expr *e1, Expr *e2) {
 
         } else {
           if ( eq.er_e2 ) {
-            Expression *tmp; tmp = e1; e1 = e2; e2 = tmp;
+            Expr *tmp; tmp = e1; e1 = e2; e2 = tmp;
             goto er_equal_e1;
           }
 
@@ -669,7 +669,7 @@ er_equal_e1:
         * il risultato dell'operazione!
         */
         if ( result_in.e2 && !result_in.e1 && opn->is.commutative ) {
-          register Expression *tmp = e2;
+          register Expr *tmp = e2;
           e2 = e1; e1 = tmp;
           result_in.e1 = 1;
           result_in.e2 = 0;
@@ -702,7 +702,7 @@ er_equal_e1:
  *  NULL, e --> operazione unaria destra come e++
  *  e, NULL --> operazione unaria sinistra come ++e
  */
-Expression *Cmp_Operation_Exec(Operation *opn, Expr *e1, Expr *e2) {
+Expr *Cmp_Operation_Exec(Operation *opn, Expr *e1, Expr *e2) {
 
   int strange_case, result_in_e1;
 
@@ -743,7 +743,7 @@ Expression *Cmp_Operation_Exec(Operation *opn, Expr *e1, Expr *e2) {
                          * l'argomento 2 e' un registro locale e l'operazione e' commutativa:
                          * scambio e2 con e1 cosicche' e1 conterra' il risultato dell'oper.!
                          */
-                        register Expression *tmp = e2;
+                        register Expr *tmp = e2;
                         e2 = e1; e1 = tmp;
                         result_in_e1 = 1;
 
@@ -912,7 +912,7 @@ Task Cmp_Expr_To_X(Expr *expr, AsmArg categ, Int reg, int and_free) {
  *  solo per espressioni immediate di tipo TYPE_REAL e TYPE_POINT.
  */
 Task Cmp__Expr_To_LReg(Expr *expr, int force) {
-  Expression lreg;
+  Expr lreg;
 
   /* Se l'espressione e' gia' un registro locale, allora esco! */
   if ( expr->categ == CAT_LREG )
@@ -1148,7 +1148,7 @@ Task Cmp_Expr_Destroy(Expr *e, int destroy_target) {
 
 /* DESCRIPTION:
  */
-Task Cmp_Expr_Copy(Expression *e_dest, Expression *e_src) {
+Task Cmp_Expr_Copy(Expr *e_dest, Expr *e_src) {
   MSG_WARNING("Cmp_Expr_Copy non ancora implementata!");
   return Cmp_Expr_Move(e_dest, e_src);
 }
@@ -1157,7 +1157,7 @@ Task Cmp_Expr_Copy(Expression *e_dest, Expression *e_src) {
  * What is moved is the data contained inside the object.
  * Memory is not allocated nor freed!
  */
-Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src) {
+Task Cmp_Expr_Move(Expr *e_dest, Expr *e_src) {
   register Int t, c;
 
   assert(e_dest != NULL && e_src != NULL);
@@ -1211,8 +1211,8 @@ Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src) {
 /* DESCRIZIONE: Prende il valore dal registro zero per metterlo in un registro
  *  locale temporaneo (che viene occupato).
  */
-Expression *Cmp_Expr_Reg0_To_LReg(Int t) {
-  static Expression lreg;
+Expr *Cmp_Expr_Reg0_To_LReg(Int t) {
+  static Expr lreg;
 
   /* Metto in lreg un nuovo registro locale */
   Expr_Container_New(& lreg, t, CONTAINER_LREG_AUTO);
@@ -1249,7 +1249,7 @@ Expression *Cmp_Expr_Reg0_To_LReg(Int t) {
  *  (CAT_PTR) ) provvede a mettere l'espressione in un registro locale.
  * NOTA: Tutte queste operazioni sono eseguite su *e.
  */
-Task Cmp_Expr_O_To_OReg(Expression *e) {
+Task Cmp_Expr_O_To_OReg(Expr *e) {
   assert ( e->type >= NUM_INTRINSICS );
 
   switch ( e->categ ) {
@@ -1310,7 +1310,7 @@ Task Cmp_Expr_O_To_OReg(Expression *e) {
  *  Quindi bisogna caricare in ro0 il registro che fa da puntatore base.
  *  Questa funzione fa proprio questo.
  */
-Task Cmp_Complete_Ptr_2(Expression *e1, Expression *e2) {
+Task Cmp_Complete_Ptr_2(Expr *e1, Expr *e2) {
   Int addr_categ;
 
   switch ( (e1->categ == CAT_PTR) | (e2->categ == CAT_PTR) << 1) {
@@ -1335,7 +1335,7 @@ Task Cmp_Complete_Ptr_2(Expression *e1, Expression *e2) {
 /* DESCRIZIONE: Analoga alla precedente, ma questa funzione deve essere chiamata
  *  nel caso di istruzioni con 1 solo argomento.
  */
-Task Cmp_Complete_Ptr_1(Expression *e) {
+Task Cmp_Complete_Ptr_1(Expr *e) {
   if ( e->categ == CAT_PTR ) {
     register Int addr_categ = ( e->is.gaddr ) ? CAT_GREG : CAT_LREG;
     Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Int) 0, addr_categ, e->addr);
@@ -1520,7 +1520,7 @@ Task Cmp_Data_Display(FILE *stream) {
  * The following functions are needed to handle strings.                     *
  *****************************************************************************/
 
-Task Cmp_String_New(Expression *e, Name *str, int free_str) {
+Task Cmp_String_New(Expr *e, Name *str, int free_str) {
   Int ts, addr;
   Int length = str->length;
   MSG_LOCATION("Cmp_String_New");
@@ -1729,6 +1729,31 @@ Task Cmp_Builtin_Proc_Def(Int procedure, int when_should_call, Int of_type,
    "(noname)", Tym_Type_Name(proc)) );
   /* And define the symbol */
   TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
+  return Success;
+}
+
+Task Cmp_Builtin_CFunc_Def(UInt *sym_num, UInt *call_num,
+                           const char *name, VMFunc c_func) {
+  UInt dummy_sym_num, dummy_call_num;
+  if (sym_num == (UInt *) NULL) sym_num = & dummy_sym_num;
+  if (call_num == (UInt *) NULL) call_num = & dummy_call_num;
+  TASK( VM_Sym_New_Call(cmp->vm, sym_num) );
+  TASK( VM_Proc_Install_CCode(cmp->vm, call_num, c_func, "(noname)", name) );
+  TASK( VM_Sym_Def_Call(cmp->vm, *sym_num, *call_num) );
+  return Success;
+}
+
+Task Cmp_Builtin_Conv_Def(char *name, Type src, Type dest, VMFunc c_func) {
+  UInt sym_num;
+  Operation *opn;
+
+  TASK( Cmp_Builtin_CFunc_Def(& sym_num, (UInt *) NULL, name, c_func) );
+  opn = Cmp_Operation_Add(cmp_opr.converter, src, TYPE_NONE, dest);
+  if ( opn == NULL ) return Failed;
+  opn->is.commutative = 0;
+  opn->is.intrinsic = 0;
+  opn->is.assignment = 0;
+  opn->module = sym_num;
   return Success;
 }
 

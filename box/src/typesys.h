@@ -276,17 +276,6 @@ Int TS_Member_Count(TS *ts, Type s);
 TSCmp TS_Compare(TS *ts, Type t1, Type t2);
 
 #  if 1
-/* Enumero i tipi di tipo */
-typedef enum {
-  TOT_INSTANCE,
-  TOT_PTR_TO,
-  TOT_ARRAY_OF,
-  TOT_SPECIE,
-  TOT_PROCEDURE,
-  TOT_PROCEDURE2,
-  TOT_ALIAS_OF,
-  TOT_STRUCTURE
-} TypeOfType;
 
 /* Stringhe corrispondenti ai tipi di tipi */
 #define TOT_DESCRIPTIONS { \
@@ -299,36 +288,10 @@ enum {
   PROC_SPECIAL_NUM = 3
 };
 
-#if 0
-/* Struttura usata per descrivere i tipi di dati */
-/* This structure has changed too many times. Now it is very ugly and dirty,
- * it should be completely rewritten, but this needs some work, since many
- * functions make assumptions about it.
- */
-typedef struct {
-  TypeOfType tot;
-  Int size;       /* Spazio occupato in memoria dal tipo */
-  char *name;      /* Nome del tipo */
-
-  Int parent;     /* Specie a cui appartiene il tipo */
-  Int greater;    /* Tipo in cui puo' essere convertito */
-  Int target;     /* Per costruire puntatori a target, array di target, etc */
-  Int procedure;  /* Prima procedura corrispondente al tipo */
-  union{
-    Int sym_num;  /* Symbol ID for the procedure */
-    Int arr_size; /* Numero di elementi dell'array */
-    Int st_size;  /* Numero di elementi della struttura */
-    Int sp_size;  /* Numero di elementi della specie */
-/*    Symbol *sym;    Simbolo associato al tipo (NULL = non ce n'e'!)*/
-  };
-} TypeDesc;
-#endif
-
 /* Important builtin types */
 extern Int type_Point, type_RealNum, type_IntgNum, type_CharNum;
 
 Int Tym_Type_Size(Int t);
-TypeOfType Tym_Type_TOT(Int t);
 Int Tym_Struct_Get_Num_Items(Int t);
 const char *Tym_Type_Name(Int t);
 char *Tym_Type_Names(Int t);

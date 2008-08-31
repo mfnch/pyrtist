@@ -27,6 +27,8 @@ typedef struct {
   char *ptr;
 } Str;
 
+void Str_Init(Str *s);
+
 Task Str_Large_Enough(Str *s, Int length);
 
 Task Str_Concat(Str *s, const char *ca);

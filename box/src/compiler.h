@@ -135,7 +135,7 @@ struct symbol {
     unsigned int is_explicit : 1;
   } symattr;              /* Attributi del simbolo */
   SymbolType symtype;     /* Tipo di simbolo */
-  Expression value;       /* Valore dell'simbolo */
+  Expr value;             /* Valore dell'simbolo */
   struct symbol *child;   /* Catena dei simboli figli */
   struct symbol *brother; /* Prossimo simbolo nella catena (vedi sopra) */
 
@@ -211,25 +211,25 @@ Operator *Cmp_Operator_New(char *token);
 Operation *Cmp_Operation_Add(Operator *opr, Int type1, Int type2, Int typer);
 Operation *Cmp_Operation_Find(Operator *opr,
  Int type1, Int type2, Int typer, OpnInfo *oi);
-Task Cmp_Conversion(Int type1, Int type2, Expression *e);
-Task Cmp_Conversion_Exec(Expression *e, Int type_dest, Operation *c_opn);
-Expression *Cmp_Operator_Exec(Operator *opr, Expression *e1, Expression *e2);
-Expression *Cmp_Operation_Exec(Operation *opn, Expression *e1, Expression *e2);
-Task Cmp_Expr_Unvalued(Expression *e, Int type);
-Task Cmp_Expr_LReg(Expression *e, Int t, int zero);
-Task Cmp_Free(Expression *expr);
-Task Cmp_Expr_To_X(Expression *expr, AsmArg categ, Int reg, int and_free);
-Task Cmp__Expr_To_LReg(Expression *expr, int force);
-Task Cmp_Expr_To_Ptr(Expression *expr, AsmArg categ, Int reg, int and_free);
-Task Cmp_Expr_Container_Change(Expression *e, Container *c);
-Task Cmp_Expr_Destroy(Expression *e, int destroy_target);
-Task Cmp_Expr_Copy(Expression *e_dest, Expression *e_src);
-Task Cmp_Expr_Move(Expression *e_dest, Expression *e_src);
+Task Cmp_Conversion(Int type1, Int type2, Expr *e);
+Task Cmp_Conversion_Exec(Expr *e, Int type_dest, Operation *c_opn);
+Expr *Cmp_Operator_Exec(Operator *opr, Expr *e1, Expr *e2);
+Expr *Cmp_Operation_Exec(Operation *opn, Expr *e1, Expr *e2);
+Task Cmp_Expr_Unvalued(Expr *e, Int type);
+Task Cmp_Expr_LReg(Expr *e, Int t, int zero);
+Task Cmp_Free(Expr *expr);
+Task Cmp_Expr_To_X(Expr *expr, AsmArg categ, Int reg, int and_free);
+Task Cmp__Expr_To_LReg(Expr *expr, int force);
+Task Cmp_Expr_To_Ptr(Expr *expr, AsmArg categ, Int reg, int and_free);
+Task Cmp_Expr_Container_Change(Expr *e, Container *c);
+Task Cmp_Expr_Destroy(Expr *e, int destroy_target);
+Task Cmp_Expr_Copy(Expr *e_dest, Expr *e_src);
+Task Cmp_Expr_Move(Expr *e_dest, Expr *e_src);
 
-Expression *Cmp_Expr_Reg0_To_LReg(Int t);
-Task Cmp_Expr_O_To_OReg(Expression *e);
-Task Cmp_Complete_Ptr_1(Expression *e);
-Task Cmp_Complete_Ptr_2(Expression *e1, Expression *e2);
+Expr *Cmp_Expr_Reg0_To_LReg(Int t);
+Task Cmp_Expr_O_To_OReg(Expr *e);
+Task Cmp_Complete_Ptr_1(Expr *e);
+Task Cmp_Complete_Ptr_2(Expr *e1, Expr *e2);
 Task Cmp_Define_Builtins();
 Task Cmp_Data_Init(void);
 Int Cmp_Data_Add(Int type, void *data, Int size);
@@ -239,21 +239,26 @@ Task Cmp_Data_Display(FILE *stream);
 Task Cmp_Imm_Init(void);
 Int Cmp_Imm_Add(Int type, void *data, Int size);
 void Cmp_Imm_Destroy(void);
-Task Cmp_String_New(Expression *e, Name *str, int free_str);
+Task Cmp_String_New(Expr *e, Name *str, int free_str);
 #define Cmp_String_New_And_Free(e, str) Cmp_String_New(e, str, 1)
 Task Cmp_Procedure_Search(int *found, Int procedure, Int suffix,
                           Box **box, Int *prototype, UInt *sym_num,
                           int auto_define);
-Task Cmp_Procedure(int *found, Expression *e, Int suffix, int auto_define);
+Task Cmp_Procedure(int *found, Expr *e, Int suffix, int auto_define);
 Task Cmp_Structure_Begin(void);
-Task Cmp_Structure_Add(Expression *e);
-Task Cmp_Structure_End(Expression *new_struct);
-Task Cmp_Structure_Get(Expression *member, int *n);
-Task Cmp_Expr_Expand(Int species, Expression *e);
-Task Cmp_Convert(Int type, Expression *e);
+Task Cmp_Structure_Add(Expr *e);
+Task Cmp_Structure_End(Expr *new_struct);
+Task Cmp_Structure_Get(Expr *member, int *n);
+Task Cmp_Expr_Expand(Int species, Expr *e);
+Task Cmp_Convert(Int type, Expr *e);
 
+/* Used to define new C procedures for the builtin modules. */
 Task Cmp_Builtin_Proc_Def(Int procedure, int when_should_call, Int of_type,
- Task (*C_func)(VMProgram *));
+                          Task (*C_func)(VMProgram *));
+Task Cmp_Builtin_CFunc_Def(UInt *sym_num, UInt *call_num,
+                           const char *name, VMFunc c_func);
+Task Cmp_Builtin_Conv_Def(char *name, Type src, Type dest, VMFunc c_func);
+
 
 #define Cmp_Expr_Destroy_Tmp(e) Cmp_Expr_Destroy(e, 0)
 #define Cmp_Expr_To_LReg(expr) Cmp__Expr_To_LReg(expr, 0)

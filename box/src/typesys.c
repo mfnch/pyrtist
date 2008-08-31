@@ -672,26 +672,6 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
 
 Int Tym_Type_Size(Int t) {return (Int) TS_Size(last_ts, (Type) t);}
 
-TypeOfType Tym_Type_TOT(Int t) {
-  switch(TS_Kind(last_ts, (Type) t)) {
-  case TS_KIND_INTRINSIC: return TOT_INSTANCE;
-  case TS_KIND_ALIAS: return TOT_ALIAS_OF;
-  case TS_KIND_SPECIES: return TOT_SPECIE;
-  case TS_KIND_STRUCTURE: return TOT_STRUCTURE;
-  case TS_KIND_MEMBER: return TOT_ALIAS_OF;
-  case TS_KIND_ARRAY: return TOT_ARRAY_OF;
-  case TS_KIND_PROC:
-    return TOT_PROCEDURE;
-    return TOT_PROCEDURE2;
-  case TS_KIND_POINTER: return TOT_PTR_TO;
-  case TS_KIND_ENUM:
-  case TS_KIND_SUBTYPE:
-  default:
-    assert(0);
-    return 0;
-  }
-}
-
 const char *Tym_Type_Name(Int t) {
   static char *last_name = (char *) NULL;
   if (last_name != (char *) NULL) {

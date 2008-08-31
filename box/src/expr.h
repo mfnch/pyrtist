@@ -63,9 +63,6 @@ typedef struct {
 
 } Expr;
 
-/** For backward compatibility */
-#define Expression Expr
-
 /** Return the error state of the Expr referenced by the pointer 'e' */
 #define Expr_Is_Error(e) ((e)->is.error)
 

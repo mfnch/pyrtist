@@ -559,22 +559,8 @@ static Task Blt_Define_Basics(void) {
    * e definisco le conversioni automatiche che il compilatore
    * dovra' fare.
    */
-  {
-    UInt sym_num, call_num;
-    Operation *opn;
-
-    TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
-    TASK( VM_Proc_Install_CCode(cmp_vm, & call_num, Conv_2RealNum_to_Point,
-                                "(noname)", "conv_2Real_to_Point") );
-    TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
-
-    opn = Cmp_Operation_Add(cmp_opr.converter, type_RealCouple, TYPE_NONE, TYPE_POINT);
-    if ( opn == NULL ) return Failed;
-    opn->is.commutative = 0;
-    opn->is.intrinsic = 0;
-    opn->is.assignment = 0;
-    opn->module = sym_num;
-  }
+  TASK( Cmp_Builtin_Conv_Def("conv_2Real_to_Point", type_RealCouple,
+                             TYPE_POINT, Conv_2RealNum_to_Point) );
 
   /* Define the conversions (example: Real@Int such as: a = Int[ 1.2 ]) */
   TASK(Cmp_Builtin_Proc_Def(TYPE_CHAR, BOX_CREATION, TYPE_CHAR, Char_Char));

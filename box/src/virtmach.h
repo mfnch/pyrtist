@@ -105,10 +105,6 @@ typedef unsigned char VMByte;
 typedef unsigned long VMByteX4;
 typedef signed char VMSByte;
 
-#if 0
-/* Definisco il tipo Obj, che e' semplicemente il tipo puntatore */
-typedef void *Obj;
-#endif
 
 /** We need more than just a pointer when referring to Box objects */
 typedef struct {
@@ -281,6 +277,9 @@ void VM__D_GLPI_GLPI(VMProgram *vmp, char **iarg);
 void VM__D_CALL(VMProgram *vmp, char **iarg);
 void VM__D_JMP(VMProgram *vmp, char **iarg);
 void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg);
+
+/** This is the type of the C functions which can be called by the VM. */
+typedef Task (*VMFunc)(VMProgram *);
 
 /* These are the functions to use to control the VM */
 Task VM_Init(VMProgram **new_vmp);
