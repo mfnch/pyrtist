@@ -16,9 +16,13 @@ next:
     inherits also the procedures of OldType which are defined after
     the occurrence of 'NewType = OldType';
   * Window.Hot now returns the last point it received as argument.
+  * Str object has been introduced. This object allows to concatenate
+    strings, print integers, reals, ... to string. It can be safely
+    used in procedure definitions, since ()Char is automatically converted
+    (Str = (()Char -> STR))
 
 09 august 2008: Improved text formatting
-  * Removed a small horrible bug in the selection of font:
+  * Removed a small horrible bug in the selection of fonts:
     this was leading to crashes whenever a known postscript font
     was selected on Cairo terminals;
   * Introduced Window.Text.From to decide what corner of the text 

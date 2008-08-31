@@ -18,6 +18,7 @@ This is usually a file with name such as ``box-0.1.tar.gz``.
 Then untar and configure the package with::
 
   tar xzvf box-0.1.tar.gz
+  cd box-0.1
   ./configure --prefix=/usr
 
 ``configure`` outputs a summary at the end. Be sure it looks like that::
@@ -55,6 +56,19 @@ on the ``README`` and ``INSTALL`` files inside the package.
 
 The manual is online at `<http://boxc.sourceforge.net>`__.
 If you need further help, take a look at the examples.
+
+Note for installation on Mac OS
+-------------------------------
+
+If you compiled Box from source on Mac OS and you experience problems when
+loading libraries (``-l g`` seems not to work as it should), try to
+reconfigure Box with the additional option ``--with-included-ltdl``,
+such as::
+
+  ./configure --prefix=/usr --with-included-ltdl
+
+and then compile it again. This should force the use of the provided
+ltdl (libtool) library and should fix the bug.
 
 Installation on Ubuntu Linux
 ----------------------------
