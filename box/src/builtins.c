@@ -39,6 +39,7 @@
 #include "compiler.h"
 #include "builtins.h"
 #include "bltinstr.h"
+#include "bltinio.h"
 
 /* Important builtin types */
 Type type_Point, type_RealNum, type_IntNum, type_CharArray,
@@ -519,11 +520,13 @@ Task Builtins_Init(void) {
   if ( status == 1 ) return Failed;
 
   TASK( Bltin_Str_Init() );
+  TASK( Bltin_Io_Init() );
   return Success;
 }
 
 void Builtins_Destroy(void) {
   Bltin_Str_Destroy();
+  Bltin_Io_Destroy();
 }
 
 static Task Blt_Define_Basics(void) {

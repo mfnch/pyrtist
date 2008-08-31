@@ -58,7 +58,7 @@ Task Str_Concat(Str *s, const char *ca) {
  * Here we interface Str and register it for the compiler.                  *
  ****************************************************************************/
 
-Type type_Str;
+Type type_Str, type_StrSpecies;
 
 static Task Str_Register_All(void);
 
@@ -71,7 +71,12 @@ Task Bltin_Str_Init(void) {
   TASK( TS_Structure_Add(cmp->ts, s, TYPE_PTR, "ptr") );
   TASK( TS_Detached_New(cmp->ts, & d, s) );
   TASK( Tym_Def_Explicit_Alias(& type_Str, & NAME("STR"), d) );
-  TASK( Tym_Def_Explicit_Alias(& type_Str, & NAME("Str"), d) );
+
+  /* Then define Str = (()Char -> STR) */
+  TASK( TS_Species_Begin(cmp->ts, & s) );
+  TASK( TS_Species_Add(cmp->ts, s, type_CharArray) );
+  TASK( TS_Species_Add(cmp->ts, s, type_Str) );
+  TASK( Tym_Def_Explicit_Alias(& type_StrSpecies, & NAME("Str"), s) );
 
   /* Now we register all the methods */
   TASK( Str_Register_All() );

@@ -40,7 +40,7 @@ noinst_HEADERS = defaults.h types.h mem.h str.h print.h \
   msgbase.h messages.h debug.h \
   list.h array.h collection.h fileutils.h registers.h virtmach.h \
   tokenizer.h parserh.h typesys.h tsdef.c \
-  expr.h compiler.h box.h builtins.h bltinstr.h \
+  expr.h compiler.h box.h builtins.h bltinstr.h bltinio.h \
   hashfunc.h hashtable.h vmalloc.h vmproc.h vmsym.h vmcommon.h \
   vmsymstuff.h paths.h container.h autogen.h
 
@@ -49,7 +49,7 @@ box_SOURCES = mem.c str.c print.c msgbase.c messages.c \
   virtmach.c vmalloc.c vmexec.c vmproc.c vmsym.c \
   symbols.c tokenizer.l parser.y registers.c expr.c \
   typesys.c compiler.c box.c \
-  builtins.c bltinstr.c vmsymstuff.c \
+  builtins.c bltinstr.c bltinio.c vmsymstuff.c \
   paths.c main.c container.c autogen.c
 
 box_LDADD = $(LIBLTDL)
