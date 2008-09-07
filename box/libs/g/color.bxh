@@ -1,15 +1,43 @@
 // Definition of the type Color and some example of Color-s
+
+// Definition of Color, the RGB version
 Color = ++(R r, g, b, a)
-Color@Color[.r = $.r, .g = $.g, .b = $.b, .a = $.a]
+
 ([)@Color[.r = .g = .b = 0.0, .a = 1.0]
-R@Color[$$.r = $$.g = $$.b = $]
-(R r, g, b)@Color[$$.r = $.r, $$.g = $.g, $$.b = $.b]
-(R r, g, b, a)@Color[$$.r = $.r, $$.g = $.g, $$.b = $.b, $$.a = $.a]
+Color@&Color[.r = $.r, .g = $.g, .b = $.b, .a = $.a]
+
+R@&Color[$$.r = $$.g = $$.b = $]
+(R r, g, b)@&Color[$$.r = $.r, $$.g = $.g, $$.b = $.b]
+(R r, g, b, a)@&Color[$$.r = $.r, $$.g = $.g, $$.b = $.b, $$.a = $.a]
 
 Color@Print["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, ", .a=", $.a, "]"]
 
-color = (Color black, red, green, yellow, blue, magenta, cyan, white, _
-               dark_red, dark_green, dark_yellow, dark_blue, dark_magenta, _
+// Definition of the Hsv version of Color
+HSV = ++(Real h, s, v, a)
+Hsv = HSV
+
+([)@&HSV[.h = 0.0, .s = .v = .a = 1.0]
+HSV@&HSV[.h = $.h, .s = $.s, .v = $.v, .a = $.a]
+
+R@&HSV[$$.h = $, $$.s = $$.v = $$.a = 1.0]
+(R h, s, v)@&HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v]
+(R h, s, v, a)@&HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v, $$.a = $.a]
+
+HSV@Print["HSV[.h=", $.h, ", .s=", $.s, ", .v=", $.v, ", .a=", $.a, "]"]
+
+// Conversion Hsv <--> Color
+Color@&HSV ? "hsv_color"
+HSV@&Color ? "color_hsv"
+
+// To make a color darker
+Color.Darker = Void
+Real@Color.Darker[
+  c = Color[HSV[$$$, .v *= Max[0, $]]]
+  $$$.r = c.r, $$$.g = c.g, $$$.b = c.b
+]
+
+color = (Color black, red, green, yellow, blue, magenta, cyan, white
+               dark_red, dark_green, dark_yellow, dark_blue, dark_magenta
                dark_cyan, grey, none)
 
 [
@@ -38,15 +66,3 @@ color = (Color black, red, green, yellow, blue, magenta, cyan, white, _
   color.none.r = -1.0
   color.none.g = color.none.b = color.none.a = 0.0
 ]
-
-HSV = ++(Real h, s, v, a)
-([)@HSV[.h = 0.0, .s = .v = .a = 1.0]
-HSV@HSV[.h = $.h, .s = $.s, .v = $.v, .a = $.a]
-R@HSV[$$.h = $, $$.s = $$.v = $$.a = 1.0]
-(R h, s, v)@HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v]
-(R h, s, v, a)@HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v, $$.a = $.a]
-
-HSV@Print["HSV[.h=", $.h, ", .s=", $.s, ", .v=", $.v, ", .a=", $.a, "]"]
-Color@HSV ? "hsv_color"
-HSV@Color ? "color_hsv"
-

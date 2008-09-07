@@ -171,17 +171,7 @@ Task Box_Def_End(void) {
   TASK( VM_Label_Define_Here(cmp_vm, b->label_end) );
   TASK( VM_Label_Destroy(cmp_vm, b->label_end) );
 
-  VM_Assemble(cmp_vm, ASM_RET);
-  TASK(Box_Def_Prepare(b->head_sym_num));
-  proc_type = b->type;
-  proc_num = b->proc_num;
-  TS_Procedure_Sym_Num(cmp->ts, & sym_num, proc_type);
-  /* We finally install the code for the procedure */
-  TASK( VM_Proc_Install_Code(cmp_vm, & call_num, proc_num,
-                             "(noname)", Tym_Type_Name(proc_type)) );
-  /* And define the symbol */
-  TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
-
+  /* Induce the VM to free all the object defined in the procedure */
   {
     Symbol *s, *next;
 
@@ -192,6 +182,17 @@ Task Box_Def_End(void) {
       Sym_Symbol_Delete(s);
     }
   }
+
+  VM_Assemble(cmp_vm, ASM_RET);
+  TASK(Box_Def_Prepare(b->head_sym_num));
+  proc_type = b->type;
+  proc_num = b->proc_num;
+  TS_Procedure_Sym_Num(cmp->ts, & sym_num, proc_type);
+  /* We finally install the code for the procedure */
+  TASK( VM_Proc_Install_Code(cmp_vm, & call_num, proc_num,
+                             "(noname)", Tym_Type_Name(proc_type)) );
+  /* And define the symbol */
+  TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
   TASK( Reg_Frame_Pop() );
 
   TASK(Arr_Dec(bs->box));

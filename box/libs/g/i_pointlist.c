@@ -42,7 +42,7 @@ Task pointlist_begin(VMProgram *vmp) {
 }
 
 Task pointlist_end(VMProgram *vmp) {
-  PROC_OF_POINTLIST(vmp, ipl);
+  IPointList *ipl = BOX_VM_THIS(vmp, IPointListPtr);
   if (ipl->name != (char *) NULL) {
     g_warning("You gave a name, but not the corresponding point.");
     free(ipl->name);
@@ -52,7 +52,7 @@ Task pointlist_end(VMProgram *vmp) {
 }
 
 Task ipointlist_destroy(VMProgram *vmp) {
-  PROC_OF_POINTLIST(vmp, ipl);
+  IPointList *ipl = BOX_VM_THIS(vmp, IPointListPtr);
   pointlist_destroy(& ipl->pl);
   free(ipl->name);
   ipl->name = (char *) NULL;
@@ -60,13 +60,13 @@ Task ipointlist_destroy(VMProgram *vmp) {
 }
 
 Task pointlist_str(VMProgram *vmp) {
-  PROC_OF_POINTLIST(vmp, ipl);
+  IPointList *ipl = BOX_VM_THIS(vmp, IPointListPtr);
   ipl->name = strdup(BOX_VM_ARGPTR1(vmp, char));
   return Success;
 }
 
 Task pointlist_point(VMProgram *vmp) {
-  PROC_OF_POINTLIST(vmp, ipl);
+  IPointList *ipl = BOX_VM_THIS(vmp, IPointListPtr);
   Point *p = BOX_VM_ARGPTR1(vmp, Point);
   Task t = pointlist_add(& ipl->pl, p, ipl->name);
   free(ipl->name);
@@ -83,13 +83,14 @@ static Task _add_from_pointlist(Int index, char *name,
 }
 
 Task pointlist_pointlist(VMProgram *vmp) {
-  PROC_OF_POINTLIST(vmp, ipl);
+  IPointList *ipl = BOX_VM_THIS(vmp, IPointListPtr);
   IPointList *ipl_to_add = BOX_VM_ARG1(vmp, IPointList *);
   return pointlist_iter(& ipl_to_add->pl, _add_from_pointlist, & ipl->pl);
 }
 
 Task pointlist_get_str(VMProgram *vmp) {
-  PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, out_p, Point);
+  IPointList *ipl = BOX_VM_SUB_PARENT(vmp, IPointListPtr);
+  Point *out_p = BOX_VM_SUB_CHILD_PTR(vmp, Point);
   Point *p = pointlist_find(& ipl->pl, BOX_VM_ARGPTR1(vmp, char));
   if (p == (Point *) NULL) {
     g_error("The name you gave is not a name of a point in the PointList.");
@@ -100,7 +101,8 @@ Task pointlist_get_str(VMProgram *vmp) {
 }
 
 Task pointlist_get_int(VMProgram *vmp) {
-  PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, out_p, Point);
+  IPointList *ipl = BOX_VM_SUB_PARENT(vmp, IPointListPtr);
+  Point *out_p = BOX_VM_SUB_CHILD_PTR(vmp, Point);
   Point *p = pointlist_get(& ipl->pl, BOX_VM_ARG1(vmp, Int));
   if (p == (Point *) NULL) {
     g_error("Wrong index in PointList.Get");
@@ -131,19 +133,22 @@ static Task _get_from_point(Point *out_p, PointList *pl,
 }
 
 Task pointlist_get_real(VMProgram *vmp) {
-  PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, out_p, Point);
+  IPointList *ipl = BOX_VM_SUB_PARENT(vmp, IPointListPtr);
+  Point *out_p = BOX_VM_SUB_CHILD_PTR(vmp, Point);
   Real real_index = BOX_VM_ARG1(vmp, Real);
   return _get_from_point(out_p, & ipl->pl, real_index, 0.0);
 }
 
 Task pointlist_get_point(VMProgram *vmp) {
-  PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, out_p, Point);
+  IPointList *ipl = BOX_VM_SUB_PARENT(vmp, IPointListPtr);
+  Point *out_p = BOX_VM_SUB_CHILD_PTR(vmp, Point);
   Point *point_index = BOX_VM_ARG1_PTR(vmp, Point);
   return _get_from_point(out_p, & ipl->pl, point_index->x, point_index->y);
 }
 
 Task pointlist_num_begin(VMProgram *vmp) {
-  PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, out_num, Int);
+  IPointList *ipl = BOX_VM_SUB_PARENT(vmp, IPointListPtr);
+  Int *out_num = BOX_VM_SUB_CHILD_PTR(vmp, Int);
   *out_num = pointlist_num(& ipl->pl);
   return Success;
 }

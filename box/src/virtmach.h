@@ -105,13 +105,6 @@ typedef unsigned char VMByte;
 typedef unsigned long VMByteX4;
 typedef signed char VMSByte;
 
-
-/** We need more than just a pointer when referring to Box objects */
-typedef struct {
-  void *ptr;   /**< Pointer to the data inside this block */
-  void *block; /**< Pointer to the allocated memory block */
-} Obj;
-
 /* This is an union of all possible types */
 typedef union {
   Char  c;

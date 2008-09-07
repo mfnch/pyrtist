@@ -97,10 +97,10 @@ Task Clc_Occupy(Collection *c, void *item, UInt *assigned_index) {
     *((int *) item_dst) = CLC_ITEM_OCCUPIED;
 
     {
-      Intg ni = Arr_NumItem(a);
+      Int ni = Arr_NumItem(a);
       if (ni > a->max_idx) a->max_idx = ni;
 #ifdef DEBUG
-      printf("Clc_Occupy(1): %p: occupo (num="SIntg")\n", c, ni);
+      printf("Clc_Occupy(1): %p: occupo (num="SInt")\n", c, ni);
 #endif
       *assigned_index = ni;
     }
@@ -115,7 +115,7 @@ Task Clc_Occupy(Collection *c, void *item, UInt *assigned_index) {
     a->chain = *((int *) item_dst);
     *((int *) item_dst) = CLC_ITEM_OCCUPIED;
 #ifdef DEBUG
-    printf("Clc_Occupy(2): %p: occupo (num="SIntg")\n", c, free_item);
+    printf("Clc_Occupy(2): %p: occupo (num="SInt")\n", c, free_item);
 #endif
     *assigned_index = free_item;
     if (item == NULL || item_size == 0) return Success;
@@ -131,7 +131,7 @@ Task Clc_Release(Collection *c, UInt item_index) {
   Array *a = (Array *) c;
   void *item_ptr;
 #ifdef DEBUG
-  printf("Clc_Release: %p: rilascio (num="SIntg")\n", c, item_index);
+  printf("Clc_Release: %p: rilascio (num="SInt")\n", c, item_index);
 #endif
 
   if (item_index > Arr_NumItem(a)) {

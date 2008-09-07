@@ -49,14 +49,14 @@ Task Arr_Push(Array *a, const void *elem);
 Task Arr_MPush(Array *a, const void *elem, UInt numel);
 Task Arr_MPop(Array *a, UInt numel);
 #define Arr_Pop(a) Arr_MPop((a), 1)
-Task Arr_Insert(Array *a, Intg where, Intg how_many, void *items);
-Task Arr_Append_Blank(Array *a, Intg how_many);
+Task Arr_Insert(Array *a, Int where, Int how_many, void *items);
+Task Arr_Append_Blank(Array *a, Int how_many);
 Task Arr_BigEnough(Array *a, UInt numel);
 Task Arr_SmallEnough(Array *a, UInt numel);
 Task Arr_Clear(Array *a);
 Task Arr_Data_Only(Array *a, void **data_ptr);
 Task Arr_Iter(Array *a, Task (*action)(UInt, void *, void *), void *pass_data);
-Task Arr_Overwrite(Array *a, Intg dest, void *src, UInt n);
+Task Arr_Overwrite(Array *a, Int dest, void *src, UInt n);
 
 /* Valore che contrassegna le array correttamente inizializzate */
 #define ARR_ID 0x66626468

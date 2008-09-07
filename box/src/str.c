@@ -327,7 +327,7 @@ Task Str_ToInt(char *s, UInt l, Int *i) {
   sc[l] = '\0';
 
   errno = 0;
-  *i = strtointg(sc, & endptr, 10);
+  *i = strtoint(sc, & endptr, 10);
   if ( errno == 0 ) return Success;
 
   MSG_ERROR("L'intero e' troppo grande!");

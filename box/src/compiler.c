@@ -852,7 +852,7 @@ Task Cmp_Expr_To_X(Expr *expr, AsmArg categ, Int reg, int and_free) {
 
   if ( expr->resolved < TYPE_OBJ ) {
     /********** THIS PART OF THE FUNCTIONS HANDLES INTRINSIC TYPES ***********/
-    is_integer = (expr->resolved==TYPE_CHAR) || (expr->resolved==TYPE_INTG);
+    is_integer = (expr->resolved==TYPE_CHAR) || (expr->resolved==TYPE_INT);
     if ( (expr->categ == CAT_IMM) && (! is_integer) ) {
       switch ( expr->resolved ) {
        case TYPE_REAL:
@@ -920,7 +920,7 @@ Task Cmp__Expr_To_LReg(Expr *expr, int force) {
 
   if ( ! force ) {
     register int is_integer =
-     (expr->resolved == TYPE_CHAR) || (expr->resolved == TYPE_INTG);
+     (expr->resolved == TYPE_CHAR) || (expr->resolved == TYPE_INT);
     if ( is_integer || (expr->categ != CAT_IMM) ) return Success;
   }
 
@@ -1174,7 +1174,7 @@ Task Cmp_Expr_Move(Expr *e_dest, Expr *e_src) {
     register int is_integer;
 
     is_integer = (e_src->resolved == TYPE_CHAR)
-              || (e_src->resolved == TYPE_INTG);
+              || (e_src->resolved == TYPE_INT);
     if ( (e_src->categ == CAT_IMM) && (! is_integer) ) {
       TASK( Cmp_Complete_Ptr_1(e_dest) );
       switch ( t ) {
@@ -1224,7 +1224,7 @@ Expr *Cmp_Expr_Reg0_To_LReg(Int t) {
    case TYPE_CHAR:
     Cmp_Assemble(ASM_MOV_CC, lreg.categ, lreg.value.i, CAT_LREG, 0);
     return &lreg; break;
-   case TYPE_INTG:
+   case TYPE_INT:
     Cmp_Assemble(ASM_MOV_II, lreg.categ, lreg.value.i, CAT_LREG, 0);
     return &lreg; break;
    case TYPE_REAL:
@@ -1494,7 +1494,7 @@ Task Cmp_Data_Display(FILE *stream) {
   pos = 0;
   while ( pos + sizeof(DataItem) <= size ) {
     di = (DataItem *) data;
-    fprintf(stream, "  Address "SIntg", size "SIntg": data of type '%s':\n",
+    fprintf(stream, "  Address "SInt", size "SInt": data of type '%s':\n",
      pos, di->size, Tym_Type_Name(di->type) );
     if ( di->signature != signature ) {
       fprintf(stream, "Error: bad data-block.\n");

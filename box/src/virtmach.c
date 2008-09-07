@@ -23,6 +23,7 @@
  * of Box: defines functions to assemble, disassemble, execute basic
  * instructions.
  */
+/*#define DEBUG_EXEC*/
 
 #include <stdlib.h>
 #include <stdio.h>

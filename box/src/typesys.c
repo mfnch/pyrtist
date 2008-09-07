@@ -34,8 +34,15 @@
 
 static TS *last_ts; /* Just for transition: will be removed! */
 
+static Task Destroy_TSDesc(void *td) {
+  Mem_Free(((TSDesc *) td)->name);
+  ((TSDesc *) td)->name = 0;
+  return Success;
+}
+
 Task TS_Init(TS *ts) {
   TASK( Clc_New(& ts->type_descs, sizeof(TSDesc), TS_TSDESC_CLC_SIZE) );
+  Clc_Destructor(ts->type_descs, Destroy_TSDesc);
   HT(& ts->members,  TS_MEMB_HT_SIZE);
   HT(& ts->subtypes, TS_SUBT_HT_SIZE);
   TASK( Arr_New(& ts->name_buffer, sizeof(char), TS_NAME_BUFFER_SIZE) );
@@ -51,7 +58,7 @@ void TS_Destroy(TS *ts) {
 }
 
 static Task Type_New(TS *ts, Type *new_type, TSDesc *td) {
-  Int nt;
+  UInt nt;
   TASK( Clc_Occupy(ts->type_descs, td, & nt) );
   *new_type = nt-1;
   return Success;

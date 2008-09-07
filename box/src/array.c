@@ -330,10 +330,10 @@ Task Arr_SmallEnough(Array *a, UInt numel) {
 /* DESCRIPTION: This function inserts how_many items (items is the pointer
  *  to these items) into the array a at position where.
  */
-Task Arr_Insert(Array *a, Intg where, Intg how_many, void *items) {
+Task Arr_Insert(Array *a, Int where, Int how_many, void *items) {
   if ( how_many < 1 ) return Success;
   if ( a->ID == ARR_ID ) {
-    register Intg numel = a->numel, new_dim, elsize = a->elsize, to_move;
+    register Int numel = a->numel, new_dim, elsize = a->elsize, to_move;
     register void *src;
 
     if (where < 1) {
@@ -369,7 +369,7 @@ Task Arr_Insert(Array *a, Intg where, Intg how_many, void *items) {
 /* This function appends to the queque of the array a,
  * 'how_many' blank elements (initialized with 0).
  */
-Task Arr_Append_Blank(Array *a, Intg how_many) {
+Task Arr_Append_Blank(Array *a, Int how_many) {
     /* Very similar to Arr_Push */
   if (a->ID == ARR_ID) {
     UInt tpos;
@@ -437,7 +437,7 @@ Task Arr_Iter(Array *a, Task (*action)(UInt, void *, void *), void *pass_data)
  * first item) and copy them inside the array 'a', overwriting its elements.
  * The first overwritten element will be 'dest'.
  */
-Task Arr_Overwrite(Array *a, Intg dest, void *src, UInt n) {
+Task Arr_Overwrite(Array *a, Int dest, void *src, UInt n) {
   assert(a != NULL);
   if (a->ID == ARR_ID) {
     void *dest_ptr;

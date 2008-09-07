@@ -508,7 +508,7 @@ Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child) {
   }
 
   if (not_void_child) {
-    Cmp_Assemble(ASM_MOV_OO, CAT_PTR, sizeof(Ptr), CAT_LREG, child_expr.addr);
+    Cmp_Assemble(ASM_MOV_OO, CAT_PTR, sizeof(Obj), CAT_LREG, child_expr.addr);
     Cmp_Expr_Destroy_Tmp(& child_expr);
   }
 
@@ -576,7 +576,7 @@ Task Expr_Subtype_Get_Child(Expr *child, Expr *subtype) {
     Expr_Container_New(child, CONT_OBJ, CONTAINER_LREG_AUTO);
     Expr_Cont_Get(& child_cont, child);
     Expr_Cont_Get(& subtype_cont, subtype);
-    Cont_Ptr_Inc(& subtype_cont, & CONT_NEW_INT(sizeof(Ptr)));
+    Cont_Ptr_Inc(& subtype_cont, & CONT_NEW_INT(sizeof(Obj)));
     Cont_Move(& child_cont, & subtype_cont);
     Expr_Cast(child, child_type);
     /* Need to make this a target, since child was obtained originally

@@ -28,7 +28,6 @@
  * 32 bit elsewhere.
  */
 typedef long Int;
-typedef long Intg; /**< Alias for Int, which should disappear, one day... */
 
 /** The unsigned integer type that we will try to use whenever possible.
  * Same size of Int.
@@ -37,11 +36,13 @@ typedef unsigned long UInt;
 
 /* Qui definisco la "precisione" dei numeri interi e reali.
  * Dopo tali definizioni, definisco pure quelle macro che devono essere
- * cambiate, qualora si cambino le definizioni di Intg e Real.
+ * cambiate, qualora si cambino le definizioni di Int e Real.
  */
 typedef double Real; /* Numeri in virgola mobile */
-#define strtointg strtol /* Conversione stringa->Intg */
-#define strtoreal strtod /* Conversione stringa->Real */
+/* Conversione stringa->Int */
+#define strtoint strtol
+/* Conversione stringa->Real */
+#define strtoreal strtod
 
 #define REAL_MAX DBL_MAX
 #define REAL_MIN (-DBL_MAX)
@@ -54,20 +55,26 @@ typedef struct {
   Real x, y;
 } Point;
 
+/** We need more than just a pointer when referring to Box objects */
+typedef struct {
+  void *ptr;   /**< Pointer to the data inside this block */
+  void *block; /**< Pointer to the allocated memory block */
+} Obj;
+
 typedef void *Ptr;
 
 /** A subtype is simply a structure containing two pointers: one points
  * to the parent, one to the child.
  */
-typedef Ptr Subtype[2];
+typedef Obj Subtype[2];
 
 /* in this macro 'subtype_ptr' should have type 'Subtype *' */
 #define SUBTYPE_PARENT_PTR(subtype_ptr, parent_type) \
-  ((parent_type *) ((*(subtype_ptr))[0]))
+  ((parent_type *) ((*(subtype_ptr))[0].ptr))
 
 /* in this macro 'subtype_ptr' should have type 'Subtype *' */
 #define SUBTYPE_CHILD_PTR(subtype_ptr, child_type) \
-  (( child_type *) ((*(subtype_ptr))[1]))
+  (( child_type *) ((*(subtype_ptr))[1].ptr))
 
 #define NAME(str) ((Name) {sizeof(str)-1, str})
 typedef struct {
@@ -80,7 +87,7 @@ typedef Name Data;
 /* Stringhe da usare nelle printf per stampare i vari tipi */
 #define SUInt "%lu"
 #define SChar "%c"
-#define SIntg "%ld"
+#define SInt "%ld"
 #define SInt "%ld"
 #define SReal "%g"
 #define SPoint "(%g, %g)"

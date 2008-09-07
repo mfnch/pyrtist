@@ -37,14 +37,4 @@ Task ipl_create(IPointListPtr *ipl_ptr);
 
 #define IPL_POINTLIST(ipl) (& (ipl)->pl)
 
-#  define PROC_OF_POINTLIST(vmp, ipl) \
-    IPointList **ipl##_ptr = BOX_VM_CURRENTPTR(vmp, IPointList *), \
-              *ipl = *ipl##_ptr
-
-#  define PROC_OF_POINTLIST_SUBTYPE(vmp, ipl, child, child_type) \
-    IPointList *ipl = *( (IPointList **) \
-      SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), IPointList *) ); \
-    child_type *child = ( (child_type *) \
-      SUBTYPE_CHILD_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), child_type) )
-
 #endif
