@@ -27,6 +27,8 @@ typedef struct {
   char *ptr;
 } Str;
 
+extern Type type_Str, type_StrSpecies;
+
 void Str_Init(Str *s);
 
 Task Str_Large_Enough(Str *s, Int length);
@@ -36,5 +38,7 @@ Task Str_Concat(Str *s, const char *ca);
 Task Bltin_Str_Init(void);
 
 void Bltin_Str_Destroy(void);
+
+#  define Str_Get_CStr(s) ((s)->ptr)
 
 #endif

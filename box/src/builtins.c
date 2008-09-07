@@ -42,8 +42,7 @@
 #include "bltinio.h"
 
 /* Important builtin types */
-Type type_Point, type_RealNum, type_IntNum, type_CharArray,
-     type_File, type_Print;
+Type type_Point, type_RealNum, type_IntNum, type_CharArray, type_Print;
 
 Int type_IntSpecies, type_RealSpecies, type_PointSpecies, type_RealCouple;
 
@@ -60,10 +59,6 @@ static Task Print_Pnt(VMProgram *vmp);
 static Task Print_String(VMProgram *vmp);
 static Task Print_NewLine(VMProgram *vmp);
 static Task Exit_Int(VMProgram *vmp);
-static Task C_File_Open(VMProgram *vmp);
-static Task C_File_String(VMProgram *vmp);
-static Task C_File_Close(VMProgram *vmp);
-static Task M_File_String(VMProgram *vmp);
 /* Functions for conversions */
 static Task Conv_2RealNum_to_Point(VMProgram *vmp);
 static Task Char_Char(VMProgram *vmp);
@@ -633,23 +628,10 @@ static Task Blt_Define_Print(void) {
   return Success;
 }
 
-typedef struct {
-  unsigned int opened : 1;
-  char *name;
-  FILE *file;
-} File;
-
 static Task Blt_Define_Sys(void) {
   Int type_Exit;
   TASK( Tym_Def_Explicit_Alias(& type_Exit, & NAME("Exit"), TYPE_VOID) );
   TASK( Cmp_Builtin_Proc_Def(TYPE_INT, BOX_CREATION, type_Exit, Exit_Int) );
-
-  TASK( Tym_Def_Intrinsic(& type_File, & NAME("File"), sizeof(File)) );
-
-  TASK(Cmp_Builtin_Proc_Def(TYPE_OPEN,  BOX_CREATION, type_File, C_File_Open));
-  TASK(Cmp_Builtin_Proc_Def(type_CharArray,BOX_CREATION, type_File, C_File_String));
-  TASK(Cmp_Builtin_Proc_Def(TYPE_CLOSE, BOX_CREATION, type_File, C_File_Close));
-  TASK(Cmp_Builtin_Proc_Def(type_CharArray,BOX_MODIFICATION,type_File,M_File_String));
   return Success;
 }
 
@@ -686,37 +668,6 @@ static Task Print_NewLine(VMProgram *vmp) {
 /* This function is not politically correct!!! */
 static Task Exit_Int(VMProgram *vmp) {
   exit(BOX_VM_ARG1(vmp, Int));
-}
-
-static Task C_File_Open(VMProgram *vmp) {
-  File *f = BOX_VM_THIS_PTR(vmp, File);
-  f->opened = 0;
-  f->name = "";
-  return Success;
-}
-static Task C_File_String(VMProgram *vmp) {
-  File *f = BOX_VM_THIS_PTR(vmp, File);
-  f->name = BOX_VM_ARGPTR1(vmp, char);
-  return Success;
-}
-static Task C_File_Close(VMProgram *vmp) {
-  File *f = BOX_VM_THIS_PTR(vmp, File);
-  f->file = fopen(f->name, "w");
-  if ( f->file == NULL ) {
-    fprintf(stderr, "Error opening the file. Exiting!\n");
-    return Failed;
-  }
-  f->opened = 1;
-  return Success;
-}
-static Task M_File_String(VMProgram *vmp) {
-  File *f = BOX_VM_THIS_PTR(vmp, File);
-  if ( ! f->opened ) {
-    fprintf(stderr, "Error: writing to a not opened file. Exiting!\n");
-    return Failed;
-  }
-  fprintf(f->file, "%s", BOX_VM_ARGPTR1(vmp, char));
-  return Success;
 }
 
 /*****************************************************************************

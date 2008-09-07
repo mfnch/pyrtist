@@ -21,6 +21,9 @@
 #  define _BLTINIO_H
 
 #  include "types.h"
+#  include "typesys.h"
+
+extern Type type_File;
 
 Task Bltin_Io_Init(void);
 

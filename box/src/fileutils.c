@@ -55,7 +55,7 @@ int File_Exist(const char *file_name) {
   /* I feel this is not a good idea... */
   FILE *f = fopen(file_name, "r");
   int fopen_successful = (f != (FILE *) NULL);
-  if (f != (FILE *) NULL) (void) fclose(f);
+  if (fopen_successful) (void) fclose(f);
   return fopen_successful;
 #endif
 }
