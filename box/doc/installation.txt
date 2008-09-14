@@ -106,7 +106,18 @@ the examples directory::
 
 You can then view the produced output file ``translucency.png``
 with your favourite image viewer.
-You can move the entire directory ``box20080727`` to another location,
+As an alternative, to run a Box source file, you can just right click
+on the file icon and select "Open with...".
+Then browse the directory where you unzipped the binaries:
+select the file box-lg.bat under the directory ``box20080727\bin``
+which was created when unzipping the Box binaries
+(box-lg.bat is equivalent to ``box.exe -l g``).
+Proceed and open the file (tick on "Remember application" if you
+want Windows to use Box automatically when double clicking on Box
+sources). The file should be executed immediately
+and the output images should be generated, if any.
+
+Remember that the directory ``box20080727`` can be moved to another location,
 this won't affect the functionality of Box.
 However you have to move the whole directory, preserving
 its structure: the box executable searches for libraries and headers

@@ -175,6 +175,7 @@ typedef struct {
 typedef struct {
   VMProgram *vm;
   TS ts_obj, *ts;
+  Array *allocd_oprs;
 } Compiler;
 
 /* The main compiler data structure */
@@ -208,6 +209,7 @@ Task Cmp_Init(VMProgram *program);
 void Cmp_Destroy(void);
 Task Cmp_Parse(const char *file);
 Operator *Cmp_Operator_New(char *token);
+void Cmp_Operator_Destroy(Operator *opr);
 Operation *Cmp_Operation_Add(Operator *opr, Int type1, Int type2, Int typer);
 Operation *Cmp_Operation_Find(Operator *opr,
  Int type1, Int type2, Int typer, OpnInfo *oi);

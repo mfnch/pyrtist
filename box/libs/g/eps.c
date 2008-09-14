@@ -303,7 +303,7 @@ static void eps_text(Point *ctr, Point *right, Point *up, Point *from,
   private.sup_vec.y = 0.5;
   private.sup_scale = 0.5;
   private.sub_vec.x = 0.0;
-  private.sub_vec.y = 0.0;
+  private.sub_vec.y = -0.1;
   private.sub_scale = 0.5;
 
   fprintf(out,

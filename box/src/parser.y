@@ -734,7 +734,7 @@ void yyerror(char* s)
 Task Parser_Init(const char *f) {
 
   /* Leggo comunque dallo stdin (che puo' essere stato rediretto)! */
-  yyrestart( stdin );
+  yyrestart(stdin);
 
   /* Inizializzo il tokenizer */
   TASK( Tok_Init(TOK_MAX_INCLUDE, f) );
@@ -751,6 +751,7 @@ Task Parser_Init(const char *f) {
 /* Completa il parsing del file di input.
  */
 Task Parser_Finish(void) {
+  (void) yylex_destroy();
   return Success;
 }
 

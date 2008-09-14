@@ -265,8 +265,7 @@ include BEGIN(include);
  *  maxinc indica il numero massimo di file di include che possono essere
  *  aperti contemporaneamente.
  */
-Task Tok_Init(UInt maxinc, const char *f)
-{
+Task Tok_Init(UInt maxinc, const char *f) {
   tok_max_include_level = maxinc;
 
   /* La seguente variabile indica quanti file, aperti con include "nomefile",
@@ -284,17 +283,16 @@ Task Tok_Init(UInt maxinc, const char *f)
   /* Se f == "nomefile" (e quindi f != NULL), eseguo una:
    * include "nomefile"
    */
-  if ( f == NULL ) return Success;
+  if (f == NULL) return Success;
 
   return Tok_Include_Begin(f);
 }
 
 /* DESCRIZIONE: Conclude l'analisi lessicale del compilatore.
  */
-Task Tok_Finish(void)
-{
+Task Tok_Finish(void) {
   MSG_LOCATION("Tok_Finish");
-  Arr_Destroy( tok_include_list );
+  Arr_Destroy(tok_include_list);
   return Success;
 }
 
@@ -307,8 +305,8 @@ Task Tok_Include_Begin(const char *f) {
   FILE *incfile;
   TokIncludeData cur;
 
-  if ( tok_cur_include_level >= tok_max_include_level ) {
-    MSG_ERROR("Cannot include \"%s\": too many inclusions!", f);
+  if (tok_cur_include_level >= tok_max_include_level) {
+    MSG_ERROR("Cannot include \"%s\": too many file included!", f);
     return Failed;
   }
 
@@ -329,8 +327,7 @@ Task Tok_Include_Begin(const char *f) {
   ++tok_cur_include_level;
 
   tok_linenum = 1;
-  yy_switch_to_buffer(
-   yy_create_buffer((yyin = incfile), YY_BUF_SIZE) );
+  yy_switch_to_buffer(yy_create_buffer((yyin = incfile), YY_BUF_SIZE));
 
   MSG_CONTEXT_BEGIN("Entering the included file \"%s\"", f);
   return Success;
@@ -340,8 +337,7 @@ Task Tok_Include_Begin(const char *f) {
  *  restituendo 1 se non ci sono piu' file da leggere, 0 se bisogna riprendere
  *  la lettura dall'istruzione seguente la "include".
  */
-UInt Tok_Include_End(void)
-{
+UInt Tok_Include_End(void) {
   if ( tok_cur_include_level > 0 ) {
     TokIncludeData cur;
     UInt num_errs, num_warns;

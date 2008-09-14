@@ -258,12 +258,6 @@ Task Builtins_Init(void) {
   }
 #endif
 
-  /* Inizializzo il segmento-dati */
-  TASK( Cmp_Data_Init() );
-
-  /* Inizializzo il segmento che contiene gli oggetti con valore immediato */
-  TASK( Cmp_Imm_Init() );
-
   /* Creo gli operatori */
   status = 0; /* Se qualcosa va male trovero' status = 1, alla fine! */
 

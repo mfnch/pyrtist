@@ -72,6 +72,8 @@ Task Cmp_Init(VMProgram *program) {
   cmp = Mem_Alloc(sizeof(Compiler));
   cmp->vm = program;
   cmp->ts = & cmp->ts_obj;
+
+  TASK( Arr_New(& cmp->allocd_oprs, sizeof(Operator *), 64) );
   TASK( TS_Init(cmp->ts) );
 
   /* Initialization of the lists which hold the occupation status
@@ -87,6 +89,10 @@ Task Cmp_Parse(const char *file) {
   int parse_status;
   TASK( Box_Init() ); /* Init the box stack */
   TASK( Box_Main_Begin() ); /* Create the main box */
+  /* Inizializzo il segmento-dati */
+  TASK( Cmp_Data_Init() );
+  /* Inizializzo il segmento che contiene gli oggetti con valore immediato */
+  TASK( Cmp_Imm_Init() );
   TASK( Builtins_Init() ); /* Add builtin stuff */
   TASK( Parser_Init(file) ); /* Prepare the parser */
   parse_status = yyparse(); /* Parse the file */
@@ -101,6 +107,9 @@ Task Cmp_Parse(const char *file) {
 void Cmp_Destroy(void) {
   TS_Destroy(cmp->ts);
   Reg_Destroy();
+  Cmp_Data_Destroy();
+  Cmp_Imm_Destroy();
+  Arr_Destroy(cmp->allocd_oprs);
   Mem_Free(cmp);
 }
 
@@ -112,13 +121,14 @@ Operator *Cmp_Operator_New(char *name) {
   Operator *opr;
   int i, j;
 
-  MSG_LOCATION("Cmp_Operator_New");
-
-  opr = (Operator *) malloc( sizeof(Operator) );
+  opr = (Operator *) Mem_Alloc(sizeof(Operator));
   if ( opr == NULL ) {
     MSG_FATAL("Memory request failed.");
     return NULL;
   }
+
+  /* Just to remember what gets allocated, so we can destroy it later! */
+  TASK( Arr_Push(cmp->allocd_oprs, & opr) );
 
   opr->name = name;
   opr->can_define = 0;
@@ -133,22 +143,31 @@ Operator *Cmp_Operator_New(char *name) {
   return opr;
 }
 
+void Cmp_Operator_Destroy(Operator *opr) {
+  Operation *opn = opr->opn_chain;
+  for(; opn != (Operation *) NULL;) {
+    Operation *next = opn->next;
+    Mem_Free(opn);
+    opn = next;
+  }
+
+  Mem_Free(opr);
+}
+
 /* Aggiunge una nuova operazione di tipo type1 opr type2
  * all'operatore *opr. Se type1 o type2 sono uguali a TYPE_NONE si tratta
  * di un'operazione unaria (sinistra o destra rispettivamente).
  */
-Operation *Cmp_Operation_Add(
- Operator *opr, Int type1, Int type2, Int typer) {
+Operation *Cmp_Operation_Add(Operator *opr, Int type1, Int type2, Int typer) {
   Operation *opn;
   Int aa, t, t1, t2;
   int is_privileged;
 
-  MSG_LOCATION("Cmp_Operation_Add");
 #if 0
   printf("Adding operation (%s, %s) to operator '%s'\n",
    Tym_Type_Names(type1), Tym_Type_Names(type2), opr->name);
 #endif
-  opn = (Operation *) malloc( sizeof(Operation) );
+  opn = (Operation *) Mem_Alloc(sizeof(Operation));
   if ( opn == NULL ) {
     MSG_ERROR("Memory request failed.");
     return NULL;
@@ -157,20 +176,20 @@ Operation *Cmp_Operation_Add(
   /* Is it a privileged operation or not? */
   aa = (type1 == TYPE_NONE) + ((type2 == TYPE_NONE) << 1);
   switch (aa) {
-   case 0:
+  case 0:
     t = t1 = Tym_Type_Resolve_All(type1);
     t2     = Tym_Type_Resolve_All(type2);
     is_privileged = ( (t1 == t2) && (t <= CMP_PRIVILEGED) );
     break;
-   case 1:
+  case 1:
     t = Tym_Type_Resolve_All(type2);
     is_privileged = (t <= CMP_PRIVILEGED);
     break;
-   case 2:
+  case 2:
     t = Tym_Type_Resolve_All(type1);
     is_privileged = (t <= CMP_PRIVILEGED);
     break;
-   default:
+  default:
     MSG_ERROR("Operazione fra tipi nulli!");
     return NULL;
     break;
@@ -1373,7 +1392,6 @@ static Int signature;
  *  to store strings and the values of other objects.
  */
 Task Cmp_Data_Init(void) {
-  MSG_LOCATION("Cmp_Data_Init");
   /* Se l'array associata al segmento dati non e' inizializzata,
    * la inizializzo ora!
    */
@@ -1431,7 +1449,6 @@ void Cmp_Data_Destroy(void) {
  *  objects.
  */
 Task Cmp_Imm_Init(void) {
-  MSG_LOCATION("Cmp_Imm_Init");
   if ( cmp_imm_segment == NULL ) {
     cmp_imm_segment = Array_New(sizeof(char), CMP_TYPICAL_IMM_SIZE);
     if ( cmp_imm_segment == NULL ) return Failed;
@@ -1465,7 +1482,6 @@ Int Cmp_Imm_Add(Int type, void *data, Int size) {
 /* DESCRIPTION: This function destroys the segment of immediates.
  */
 void Cmp_Imm_Destroy(void) {
-  MSG_LOCATION("Cmp_Imm_Destroy");
   Arr_Destroy(cmp_imm_segment);
 }
 

@@ -3,7 +3,7 @@ REVISION=$Revision$
 
 Change log (recent come first)
 
-next:
+10 august 2008: Improved support of user defined procedures
   * exit status should now be treated more carefully:
     0, if all OK, 1 otherwise;
   * variables defined in the upper scope unit are globally defined and are
