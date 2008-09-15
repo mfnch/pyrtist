@@ -37,6 +37,9 @@
 
 #  define PRINT_BUF_SIZE 512
 
+/** To be called when exiting, to release the buffer allocated by print. */
+void Print_Finalize(void);
+
 /** A simplified version of sprintf, with a number of desirable features:
  * - handles memory in a nice way: the user does not need to allocate/free
  *   the memory or to worry about buffer overflow when using the %s

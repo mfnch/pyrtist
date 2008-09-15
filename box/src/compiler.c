@@ -66,6 +66,12 @@ struct cmp_opr_struct cmp_opr;
 
 /*****************************************************************************/
 
+static Task Opr_Destructor(void *opr_ptr) {
+  Operator *opr = *((Operator **) opr_ptr);
+  Cmp_Operator_Destroy(opr);
+  return Success;
+}
+
 /* Gets ready to start the compilation */
 Task Cmp_Init(VMProgram *program) {
   /* Initialization of the code which writes the bytecode program for the VM */
@@ -74,6 +80,7 @@ Task Cmp_Init(VMProgram *program) {
   cmp->ts = & cmp->ts_obj;
 
   TASK( Arr_New(& cmp->allocd_oprs, sizeof(Operator *), 64) );
+  Arr_Destructor(cmp->allocd_oprs, Opr_Destructor);
   TASK( TS_Init(cmp->ts) );
 
   /* Initialization of the lists which hold the occupation status
@@ -128,7 +135,8 @@ Operator *Cmp_Operator_New(char *name) {
   }
 
   /* Just to remember what gets allocated, so we can destroy it later! */
-  TASK( Arr_Push(cmp->allocd_oprs, & opr) );
+  if IS_FAILED(Arr_Push(cmp->allocd_oprs, & opr))
+    return NULL;
 
   opr->name = name;
   opr->can_define = 0;

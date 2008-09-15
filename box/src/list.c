@@ -48,6 +48,7 @@ void List_Destroy(List *l) {
     Mem_Free(lih);
     lih = lih_next;
   }
+  Mem_Free(l);
 }
 
 UInt List_Length(List *l) {

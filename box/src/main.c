@@ -118,6 +118,8 @@ Task Main_Execute(UInt main_module);
 
 static Task Stage_Init(void) {
   Path_Init();
+  /* Initialisation of the message module */
+  Msg_Main_Init(MSG_LEVEL_WARNING);
   return Success;
 }
 
@@ -125,14 +127,12 @@ static void Stage_Finalize(void) {
   VM_Destroy(program); /* This function accepts program = NULL */
   Path_Destroy();
   Cmp_Destroy();
+  Msg_Main_Destroy();
 }
 
 static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
   int i;
   UInt j;
-
-  /* Inizializzo la gestione dei messaggi */
-  Msg_Main_Init(MSG_LEVEL_WARNING);
 
   MSG_CONTEXT_BEGIN("Reading the command line options");
 

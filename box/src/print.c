@@ -25,7 +25,15 @@
 #include <assert.h>
 
 #include "types.h"
+#include "mem.h"
 #include "print.h"
+
+static char *msg = NULL;
+
+void Print_Finalize(void) {
+  Mem_Free(msg);
+  msg = (char *) NULL;
+}
 
 /* A simplified version of sprintf, with a number of desirable features:
  * - handles memory in a nice way: the user does not need to allocate/free
@@ -42,7 +50,6 @@
  *       msg = print("%S", Mem_Strdup("allocated string"));
  */
 const char *print(const char *fmt, ...) {
-  static char *msg = NULL;
   static int buf_size = 0;
   int do_write = 1, do_read = 1, do_continue = 1, do_dealloc = 1;
   char *str_dealloc = (char *) NULL;

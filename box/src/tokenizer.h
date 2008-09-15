@@ -27,7 +27,7 @@
 
 int yylex(void);
 Task Tok_Init(UInt maxinc, const char *f);
-Task Tok_Finish(void);
+void Tok_Finish(void);
 Task Tok_Include_Begin(const char *f);
 UInt Tok_Include_End(void);
 void Tok_Unput(int c);

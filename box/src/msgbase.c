@@ -34,6 +34,7 @@
 #include "defaults.h"
 #include "array.h"
 #include "msgbase.h"
+#include "print.h"
 
 /** Initialization of the message module */
 Task Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level) {
@@ -67,6 +68,7 @@ void Msg_Destroy(MsgStack *ms) {
   Arr_Destroy(ms->msgs);
   free(ms->level);
   free(ms);
+  Print_Finalize();
 }
 
 void Msg_Default_Filter_Set(MsgStack *ms, MsgFilter mf) {

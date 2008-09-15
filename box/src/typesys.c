@@ -21,6 +21,7 @@
 
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "defaults.h"
 #include "types.h"
@@ -33,6 +34,9 @@
 #include "hashtable.h"
 
 static TS *last_ts; /* Just for transition: will be removed! */
+
+/* This will disappear in the future */
+static char *last_name = (char *) NULL;
 
 static Task Destroy_TSDesc(void *td) {
   Mem_Free(((TSDesc *) td)->name);
@@ -55,6 +59,8 @@ void TS_Destroy(TS *ts) {
   HT_Destroy(ts->members);
   HT_Destroy(ts->subtypes);
   Arr_Destroy(ts->name_buffer);
+  Mem_Free(last_name);
+  last_name = (char *) NULL;
 }
 
 static Task Type_New(TS *ts, Type *new_type, TSDesc *td) {
@@ -680,7 +686,6 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
 Int Tym_Type_Size(Int t) {return (Int) TS_Size(last_ts, (Type) t);}
 
 const char *Tym_Type_Name(Int t) {
-  static char *last_name = (char *) NULL;
   if (last_name != (char *) NULL) {
     free(last_name);
     last_name = (char *) NULL;

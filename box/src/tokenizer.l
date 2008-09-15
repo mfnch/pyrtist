@@ -277,8 +277,8 @@ Task Tok_Init(UInt maxinc, const char *f) {
    * incontro una include
    */
   Arr_Destroy(tok_include_list);
-  tok_include_list = Array_New(sizeof(TokIncludeData), TOK_TYPICAL_MAX_INCLUDE);
-  if ( tok_include_list == NULL ) return Failed;
+  TASK( Arr_New(& tok_include_list, sizeof(TokIncludeData),
+                TOK_TYPICAL_MAX_INCLUDE) );
 
   /* Se f == "nomefile" (e quindi f != NULL), eseguo una:
    * include "nomefile"
@@ -290,10 +290,8 @@ Task Tok_Init(UInt maxinc, const char *f) {
 
 /* DESCRIZIONE: Conclude l'analisi lessicale del compilatore.
  */
-Task Tok_Finish(void) {
-  MSG_LOCATION("Tok_Finish");
+void Tok_Finish(void) {
   Arr_Destroy(tok_include_list);
-  return Success;
 }
 
 /* DESCRIZIONE: Esegue materialmente la direttiva include,
