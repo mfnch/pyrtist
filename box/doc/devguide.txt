@@ -1,0 +1,53 @@
+The Box compiler sources are all inside box/src, while the sources for the
+graphic library are inside the directory libs/g. The Box graphic library has
+the name "g", just as the math library of the C language is just "m". 
+
+The compiler
+============
+
+inside the box/src directory there are a number of files which constitute
+the different part of the compiler:
+
+basic library
+-------------
+*Files:* types.c, mem.c, array.c, collection.c, hashfunc.c, hashtable.c,
+list.c, str.c, print.c, msgbase.c, messages.c, fileutils.c
+
+*Description:* these files provide very basic functionality, such as creating
+hashtables, creating resizable arrays, printing strings on buffers, displaying messages.
+
+Virtual machine (VM)
+--------------------
+*Files:* virtmach.c vmexec.c vmalloc.c vmproc.c vmsys.c vmsymstuff.c
+
+*Description:* These files consitute the virtual machine of Box: the functions 
+used to create a new procedure (list of pseudo-assembly instructions which can
+be executed), to execute a procedure, to assemble and disasseble VM bytecode, 
+to resolve symbols from external C modules, to allocate VM objects, etc. 
+You can obtain the assembly code generated out of a Box source using::
+
+  box source.box -t -o source.bvm
+
+on the command line. Box creates a file source.bvm containing a text
+representation of all the procedures defined in ``source.box`` plus all the
+builtin procedures which can be used by the program.
+
+Compiler 
+--------
+
+*Files:* typesys.c tsdef.c registers.c expr.c compiler.c structure.c symbols.c
+box.c parser.y tokenizer.l builtins.c bltinstr.c bltinio.c autogen.c
+
+*Description:* These files define: the type-system of Box, the Expr object,
+the grammar of the Box language (parsed using Yacc) the tokenization system 
+(Lex), the builtin library (math, strings, IO).
+
+Box executable
+--------------
+
+*Files:* main.c paths.c
+
+*Description:* Parses the command line, decides which paths should be scanned
+when searching for things and invokes the compiler and VM to execute the
+compiled code.
+
