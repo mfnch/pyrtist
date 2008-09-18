@@ -60,3 +60,9 @@ inst-html: installation.txt
 	            --link-stylesheet -v installation.txt inst-html/installation.html \
 	            -r 1 -g -t -d -s
 
+dev-html: devguide.txt
+	mkdir -p dev-html
+	$(RST2HTML) --strict --stylesheet-path=dev-html/style.css \
+	            --link-stylesheet -v devguide.txt dev-html/devguide.html \
+	            -r 1 -g -t -d -s
+
