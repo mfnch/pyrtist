@@ -65,17 +65,21 @@ Expr object
 This is the central object in the compiler. Every expression found during
 parsing is converted into an appropriate ``Expr`` object.
 ``Expr`` objects can represent:
-- just a name, without type/value;
-- a type, without value;
-- a value (have both type and value).
+
+  - just a name, without type/value;
+  - a type, without value;
+  - a value (have both type and value).
+
 At present the Yacc file which defines the parsing is quite ugly, for some
 reasons:
-- we are not translating the program into an AST (abstract syntax tree):
-  we just compile the source of the fly;
-- as a consequence it is difficult to treat errors nicely;
-- it is also difficult to perform optimizations;
-- the grammar itself is defined in quite a dirty way: we should rewrite
-  it down with some more thoughts.
+
+  - we are not translating the program into an AST (abstract syntax tree):
+    we just compile the source on the fly;
+  - as a consequence it is difficult to treat errors nicely;
+  - it is also difficult to perform optimizations;
+  - the grammar itself is defined in quite a dirty way: we should rewrite
+    it down with some more thought.
+
 This is the oldest part of the project.
 What currently happens is that there are some procedures which manipulate
 ``Expr`` objects to produce VM code and these are called directly from 
