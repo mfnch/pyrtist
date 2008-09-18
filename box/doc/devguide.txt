@@ -2,14 +2,15 @@ The Box compiler sources are all inside box/src, while the sources for the
 graphic library are inside the directory libs/g. The Box graphic library has
 the name "g", just as the math library of the C language is just "m". 
 
+------------
 The compiler
-============
+------------
 
 inside the box/src directory there are a number of files which constitute
 the different part of the compiler:
 
 basic library
--------------
+=============
 *Files:* types.c, mem.c, array.c, collection.c, hashfunc.c, hashtable.c,
 list.c, str.c, print.c, msgbase.c, messages.c, fileutils.c
 
@@ -17,7 +18,7 @@ list.c, str.c, print.c, msgbase.c, messages.c, fileutils.c
 hashtables, creating resizable arrays, printing strings on buffers, displaying messages.
 
 Virtual machine (VM)
---------------------
+====================
 *Files:* virtmach.c vmexec.c vmalloc.c vmproc.c vmsys.c vmsymstuff.c
 
 *Description:* These files consitute the virtual machine of Box: the functions 
@@ -33,18 +34,58 @@ representation of all the procedures defined in ``source.box`` plus all the
 builtin procedures which can be used by the program.
 
 Compiler 
---------
+========
+*Files:* ``typesys.c tsdef.c registers.c expr.c compiler.c structure.c``
+``symbols.c box.c parser.y tokenizer.l builtins.c bltinstr.c bltinio.c``
+``autogen.c``
 
-*Files:* typesys.c tsdef.c registers.c expr.c compiler.c structure.c symbols.c
-box.c parser.y tokenizer.l builtins.c bltinstr.c bltinio.c autogen.c
-
-*Description:* These files define: the type-system of Box, the Expr object,
+*Brief:* These files define: the type-system of Box, the Expr object,
 the grammar of the Box language (parsed using Yacc) the tokenization system 
 (Lex), the builtin library (math, strings, IO).
 
-Box executable
---------------
+Type system
+-----------
+The type system is defined by ``typesys.c`` and ``tsdef.c``.
+To every type is associated an integer number (Type which is defined as
+``typedef Int Type;``). This integer number is also the index in the array
+of type descriptors which is handled privately by ``typesys.c``.
+Negative values for ``Type`` are forbidden, except the TYPE_NONE,
+which is often used to indicate an invalid type.
+The type-system provides procedures to create intrinsic types, 
+array of a given type, structures, species, etc.
+These procedures create a new entry in the internal array of types
+and correspondently create a new type.
+Currenty types can only be created: there is no way to remove one
+entry from the array of types. I did think about implementing functions
+to release types, but now I have some doubts and start to believe this is
+not really necessary and may be a bad idea, actually.
 
+Expr object
+-----------
+This is the central object in the compiler. Every expression found during
+parsing is converted into an appropriate ``Expr`` object.
+``Expr`` objects can represent:
+- just a name, without type/value;
+- a type, without value;
+- a value (have both type and value).
+At present the Yacc file which defines the parsing is quite ugly, for some
+reasons:
+- we are not translating the program into an AST (abstract syntax tree):
+  we just compile the source of the fly;
+- as a consequence it is difficult to treat errors nicely;
+- it is also difficult to perform optimizations;
+- the grammar itself is defined in quite a dirty way: we should rewrite
+  it down with some more thoughts.
+This is the oldest part of the project.
+What currently happens is that there are some procedures which manipulate
+``Expr`` objects to produce VM code and these are called directly from 
+``parser.y``.
+These procedures are mainly defined inside ``compiler.c`` and generate code
+using the function ``VM_Assemble`` which is provided by ``virtmach.c``.
+
+
+Box executable
+==============
 *Files:* main.c paths.c
 
 *Description:* Parses the command line, decides which paths should be scanned
