@@ -6,9 +6,9 @@ restindex
     page-description:
        Box language home page
     /description
-#    section-pages: , aboutme, projects, other, thoughts, links
-#    sectionlist: aboutme, projects, other, links
-#   section-pages: , publications, contact
+    section-pages: , language
+    sectionlist: , documentation, examples
+    # section-pages: download
 /restindex
 <script LANGUAGE ="JavaScript">
   <!--

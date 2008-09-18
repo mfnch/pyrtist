@@ -15,7 +15,7 @@ Compound statements
 -------------------
 One concept Box put emphasis in is the one of compound statement.
 For the C programming language a compound statement is just a list
-of statements separated by ';' and enclosed by curly braces::
+of statements separated by ';' and enclosed in curly braces::
 
   {statement1; statement2; ...; statementN}
 
@@ -35,9 +35,10 @@ where SEP is a separator. Three different separators can be used:
 - a newline
 - a semicolon ``;``
 
-Commas and newlines are ignored, just as it happens in C.
-On the other hand semicolons have a meaning and are not ignored,
-as we will see later.
+Commas and newlines have a pure syntactical role, just as it happens for
+semicolons in C. But, in Box, semicolons, beside their syntactical
+role as separators, have also a semantical value: they signal that something
+should be done and have effect on the execution. We'll return on this later.
 The main difference between a box and a C compound statment,
 is that the former can have a type::
 
@@ -45,12 +46,24 @@ is that the former can have a type::
 
 In the line above a box of type Int is used to create an integer,
 which is then assigned to the variable ``int``.
-The number between the square brackets is interpreted as a statement
-with type Real and value 1.0. This example shows that - Similarly to C -
-statements can have type and value.
+The reader may think, at this point, that ``box`` is a funny way
+to say ``function``. This is not true. A box is really a compound statement:
+it collects the statements required to create a certain object.
+You can put loops, conditionals and any other statement inside
+the square brackets. For example, the code::
+
+  Print["You can print from here!";]
+  int = Int[1, Print["but also from here!";]]
+
+is perfectly legitimate.
+And indeed, the number ``1.0`` in ``Int[1.0]`` is itself a statement
+with type Real and value 1.0.
+This example shows that - Similarly to C - statements often have
+type and value.
 However - unlike C - **values of statements are rarely ignored!**
-In the above line the value ``1.0`` is used to create the integer
+The value ``1.0`` is used to create the integer
 which is then assigned to the variable ``int``.
+
 We also notice that **type names always begin with an uppercase letter**,
 such as ``Int``, ``Real``, ``MyType``, while variable names
 always begin with a lowercase letter: ``int`` is a variable
@@ -69,7 +82,8 @@ Here we use the ``Print`` box to show a string.
 
 This example also shows how the semicolon may be used in Box programs.
 For the Print statement the semicolon means "go to the next line".
-In general the meaning of the semicolon changes from type to type.
+In general the meaning of the semicolon can change from type to type,
+but is meant to signal a kind-of pause in the Box construction.
 
 As said before statements inside a box are rarely ignored.
 One exception concerns the assignment operator::
@@ -92,7 +106,7 @@ This is the syntax to use in such cases::
 
   Print[\ 1, "nothing appears before the first occurrence 'nothing'";]
 
-The "\" character avoids the valued expression to be passed
+The ``\`` character avoids the valued expression to be passed
 to the underlying box.
 
 At this point it may be clear why boxes are so central:
@@ -115,14 +129,14 @@ or::
 One important difference between the two approaches concerns the order
 of the arguments. While for C the order matters, for Box the order
 is not crucial. this is a design goal of Box.
-One should not be forced to always remember the order of arguments:
-a circle is defined just by its center and its radius;
-there is no reason why one should specify center and radius
+One should not be forced to always remember the order of arguments,
+since it is often meaningless: a circle is defined just by its center
+and its radius; there is no reason why one should specify center and radius
 in this precise order and not the opposite!
 
-What is really happening in the line we have just seen
-is substantially different from a simple function call.
-One may translate it into the following C-code::
+At this point we can reveal what is really happening in the line
+we have just seen, which is substantially different
+from a simple function call. One may translate it into the following C-code::
 
   Circle *my_circle = circle_new();
   circle_begin(my_circle);
