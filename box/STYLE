@@ -1,4 +1,4 @@
-STYLE OF THE CODE (20/03/2006):
+STYLE OF THE CODE (21/09/2008):
   Unfortunatly the style is not omogeneous throughout the program!!!
   This problem is connected with the long life of this code and with my mind
   which changes with experience.
@@ -12,16 +12,10 @@ STYLE OF THE CODE (20/03/2006):
 
   Name for functions usually starts with a prefix, such that it is simple
   to recognize where they are defined. For example: 'Cmp_Operator_New' comes
-  from the file 'compiler.c'. Usually names for important functions defined
-  in the same file begin with the same prefix, but it can happen that a longer
-  prefix is used. Consider the file 'builtins.c' for example. Functions
-  defined here starts with the prefix 'Blt'. An exception is 'Builtins_Define'.
-  The reason for this choice is clear: avoid redundant letters (avoid things
-  such as 'Blt_Builtins_Define': longer name, but no added information!).
+  from the file 'compiler.c'.
+  The tab length is 2, example:
 
-  Tab length = 2, example:
-
-  while( 1 ) {
+  while(1) {
     printf("Nothing to print!\n");
     printf("Really nothing!\n");
   }
@@ -37,8 +31,7 @@ FUNCTIONS: HOW WE DEAL WITH ERRORS....
     /* This functions deals with a particular task and can exit with
      * or without errors
      */
-    Task Do_Do_Do(...)
-    {
+    Task Do_Do_Do(...) {
         ...
         if (...) return Failed;   /* Exits in case of errors! */
         ...
@@ -48,8 +41,8 @@ FUNCTIONS: HOW WE DEAL WITH ERRORS....
   Now we call this function, testing for errors:
 
     /* Main function */
-    int main(void)
-    {
+    int main(void) {
         if IS_FAILED(Do_Do_Do(...))
             fprintf(stderr, "Error!\n");
     }
+
