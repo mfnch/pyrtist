@@ -156,12 +156,12 @@ void HT_Statistics(Hashtable *ht, FILE *out);
 /** When an object is added the key is copied by default (using malloc).
  * This function can be used to avoid this behaviour.
  */
-void HT_Copy_Key(Hashtable *ht, int bool);
+void HT_Copy_Key(Hashtable *ht, int do_copy);
 
 /** When an object is added the object is copied by default (using malloc).
  * This function can be used to avoid this behaviour.
  */
-void HT_Copy_Obj(Hashtable *ht, int bool);
+void HT_Copy_Obj(Hashtable *ht, int do_copy);
 
 /** Create an hash table using the default hashing function
  * and the default comparison function

@@ -203,12 +203,15 @@ Task HT_Rename(Hashtable *ht, void *key, unsigned int key_size,
   return Success;
 }
 
-void HT_Copy_Key(Hashtable *ht, int bool) {
-  ht->settings.copy_keys = bool;
+/*
+ * doCopy whether to copy the key when a new object is made
+ */
+void HT_Copy_Key(Hashtable *ht, int do_copy) {
+  ht->settings.copy_keys = do_copy;
 }
 
-void HT_Copy_Obj(Hashtable *ht, int bool) {
-  ht->settings.copy_objs = bool;
+void HT_Copy_Obj(Hashtable *ht, int do_copy) {
+  ht->settings.copy_objs = do_copy;
 }
 
 /* Iterate over one or all the branches of an hashtable 'ht':
