@@ -1,4 +1,4 @@
-STYLE OF THE CODE (21/09/2008):
+STYLE OF THE CODE (24/09/2008):
   Unfortunatly the style is not omogeneous throughout the program!!!
   This problem is connected with the long life of this code and with my mind
   which changes with experience.
@@ -13,7 +13,7 @@ STYLE OF THE CODE (21/09/2008):
   Name for functions usually starts with a prefix, such that it is simple
   to recognize where they are defined. For example: 'Cmp_Operator_New' comes
   from the file 'compiler.c'.
-  The tab length is 2, example:
+  Use a tab length of 2 (ie, spaces instead of tabs), example:
 
   while(1) {
     printf("Nothing to print!\n");
@@ -46,4 +46,48 @@ FUNCTIONS: HOW WE DEAL WITH ERRORS....
             fprintf(stderr, "Error!\n");
     }
 
+NULL and casting:
+  Other than the obvious...
+  NB: remember casts are dangerous, annoying for maintenance and can cause performance hits (esp. float <-> int)
+
+  * Don't cast malloc() and friends
+  * Always use NULL for pointers instead of 0. However don't use NULL where
+    a 0 is required. For example, 
+
+    Reasons for doing so:
+    
+      * There is nothing stopping some systems from having NULL
+        resolve to something other than 0. Although they'd be stupid to do so.
+
+      * It tells the compiler you're dealing with a pointer and thus
+        implicit casts/errors can be picked up
+
+  * You can rely on implicit (void *) casts, it's part of the standard
+    However feel free to use the void casts in areas where redundancy
+    improves the quality or readability.
+
+  * If you don't indend on using the return value from a called function
+    then don't cast back to void. It's silly, 
+
+    ie, DO NOT:
+
+    int foo() {
+      return 5;
+    }
+
+    /* ... */
+
+    (void) foo();
+
+    The following is perfectly legal:
+
+    foo();
+
+    Adding the casts also prevents the compiler from warning you when returned values are ignored
+    with gcc -Wunused-value and chance has it you'll want to know this in the future.
+
+Keywords/Variable names:
+  Avoid use of C++ keywords as variable names, for example don't use
+  'bool' since it exists in C++ and will cause a clash if the code is
+  ever compiled as C++.
 
