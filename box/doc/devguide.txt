@@ -1,6 +1,6 @@
 The Box compiler sources are all inside box/src, while the sources for the
 graphic library are inside the directory libs/g. The Box graphic library has
-the name "g", just as the math library of the C language is just "m". 
+the name "g", just as the math library of the C language is just "m".
 
 ------------
 The compiler
@@ -21,10 +21,10 @@ Virtual machine (VM)
 ====================
 *Files:* virtmach.c vmexec.c vmalloc.c vmproc.c vmsys.c vmsymstuff.c
 
-*Description:* These files consitute the virtual machine of Box: the functions 
+*Description:* These files consitute the virtual machine of Box: the functions
 used to create a new procedure (list of pseudo-assembly instructions which can
-be executed), to execute a procedure, to assemble and disasseble VM bytecode, 
-to resolve symbols from external C modules, to allocate VM objects, etc. 
+be executed), to execute a procedure, to assemble and disasseble VM bytecode,
+to resolve symbols from external C modules, to allocate VM objects, etc.
 You can obtain the assembly code generated out of a Box source using::
 
   box source.box -t -o source.bvm
@@ -33,14 +33,36 @@ on the command line. Box creates a file source.bvm containing a text
 representation of all the procedures defined in ``source.box`` plus all the
 builtin procedures which can be used by the program.
 
-Compiler 
+Memory allocation
+-----------------
+The memory management system of Box is based on reference counting.
+When an object x of size s(x) is allocated, the VM acutally allocates
+a region which is larger than s(x). In particular it allocates extra space
+to keep a **reference counter** (an integer number) and a **type identifier**
+(again an integer number). The reference counter keeps the number
+of references to the object x: every object y which refers to x
+is associated with an increment 1 of the counter of references for x.
+If y is destroyed the reference counter for x has to be decreased.
+The type identifier is a number which is associated to the object
+and determines its type. The VM knows how to initialise, create, destroy,
+... objects and decides what method has to be called by looking at
+the type identifier.
+Objects can contain the full sub-objects, not just pointers to other objects.
+For example, an array of 1000 objects is not just an array of 1000 pointers
+to objects which are allocated independently.
+This mechanism requires to extend the concept of pointer: our pointers are
+actually tuple of two pointers: one pointer to the raw data and one
+pointer to the allocated object which contains it (or NULL if the
+object is static and was not allocated in a "traditional" way).
+
+Compiler
 ========
 *Files:* ``typesys.c tsdef.c registers.c expr.c compiler.c structure.c``
 ``symbols.c box.c parser.y tokenizer.l builtins.c bltinstr.c bltinio.c``
 ``autogen.c``
 
 *Brief:* These files define: the type-system of Box, the Expr object,
-the grammar of the Box language (parsed using Yacc) the tokenization system 
+the grammar of the Box language (parsed using Yacc) the tokenization system
 (Lex), the builtin library (math, strings, IO).
 
 Type system
@@ -51,7 +73,7 @@ To every type is associated an integer number (Type which is defined as
 of type descriptors which is handled privately by ``typesys.c``.
 Negative values for ``Type`` are forbidden, except the TYPE_NONE,
 which is often used to indicate an invalid type.
-The type-system provides procedures to create intrinsic types, 
+The type-system provides procedures to create intrinsic types,
 array of a given type, structures, species, etc.
 These procedures create a new entry in the internal array of types
 and correspondently create a new type.
@@ -82,7 +104,7 @@ reasons:
 
 This is the oldest part of the project.
 What currently happens is that there are some procedures which manipulate
-``Expr`` objects to produce VM code and these are called directly from 
+``Expr`` objects to produce VM code and these are called directly from
 ``parser.y``.
 These procedures are mainly defined inside ``compiler.c`` and generate code
 using the function ``VM_Assemble`` which is provided by ``virtmach.c``.
