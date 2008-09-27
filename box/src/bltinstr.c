@@ -37,29 +37,29 @@
  ****************************************************************************/
 
 void Str_Init(Str *s) {
-  s->ptr = (char *) NULL;
+  s->ptr = NULL;
   s->length = 0;
   s->buffer_size = 0;
 }
 
 Task Str_Large_Enough(Str *s, Int length) {
-  Int l;
+  Int len;
   assert(s->length >= 0 && length >= 0);
 
-  l = s->length + length + 1;
-  l = l + (l+1)/2;
-  s->ptr = (char *) Mem_Realloc(s->ptr, l);
-  s->buffer_size = l;
+  len = s->length + length + 1;
+  len = len + (len+1)/2;
+  s->ptr = (char *) Mem_Realloc(s->ptr, len);
+  s->buffer_size = len;
   return Success;
 }
 
 Task Str_Concat(Str *s, const char *ca) {
-  Int l = strlen(ca);
-  if (l < 1) return Success;
-  if (s->buffer_size - s->length - 1 < l) Str_Large_Enough(s, l);
-  assert(s->buffer_size - s->length - 1 >= l);
+  Int len = strlen(ca);
+  if (len < 1) return Success;
+  if (s->buffer_size - s->length - 1 < len) Str_Large_Enough(s, len);
+  assert(s->buffer_size - s->length - 1 >= len);
   (void) strcpy(s->ptr + s->length, ca);
-  s->length += l;
+  s->length += len;
   return Success;
 }
 
