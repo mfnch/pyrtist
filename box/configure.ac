@@ -23,18 +23,24 @@
 AC_INIT([box],[0.1],[fnch@libero.it])
 
 AC_PREREQ(2.61)
-AC_CONFIG_SRCDIR([src/compiler.c])
+
+# Libtool ltdl library directory
+AC_CONFIG_AUX_DIR([libltdl/config])
+AC_CONFIG_MACRO_DIR([libltdl/m4])
 
 AM_INIT_AUTOMAKE
+
+AC_CONFIG_SRCDIR([src/compiler.c])
 AC_CONFIG_HEADERS([config.h])
 
 # Libtool support
-AC_LIBTOOL_WIN32_DLL
-AC_LIBTOOL_DLOPEN
-LT_CONFIG_LTDL_DIR
-AC_WITH_LTDL
-AC_PROG_LIBTOOL
-LTDL_CONVENIENCE
+#AC_LIBTOOL_WIN32_DLL
+#AC_LIBTOOL_DLOPEN
+LT_CONFIG_LTDL_DIR([libltdl])
+LT_INIT([dlopen],[win32-dll])
+LTDL_INIT([convenience])
+LT_PREREQ([2.2])
+#LTDL_CONVENIENCE
 
 # Directories where to store specific box library files
 boxdir="$libdir/box"
