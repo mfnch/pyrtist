@@ -20,6 +20,8 @@
 
 # $Id$
 
+ACLOCAL_AMFLAGS=-I libltdl/m4
+
 boxlibdir=@boxlibdir@
 boxincdir=@boxincdir@
 

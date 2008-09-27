@@ -56,7 +56,7 @@ void Box_Destroy(void) {
   Arr_Destroy(bs->box);
 }
 
-Int Box_Depth(void) {
+Int Box_Num(void) {
   return (Arr_NumItem(bs->box) - 1);
 }
 
@@ -83,26 +83,135 @@ Task Box_Main_Begin(void) {
 }
 
 void Box_Main_End(void) {
-  UInt box_level = Box_Depth();
+  UInt level = Box_Num();
   Box *b = Arr_FirstItemPtr(bs->box, Box);
   UInt head_sym_num = b->head_sym_num;
-  if (box_level > 0) {
-    MSG_ERROR("Missing %I closing %s!", box_level,
-              box_level > 1 ? "braces" : "brace");
+  if (level > 0) {
+    MSG_ERROR("Missing %I closing %s!", level,
+              level > 1 ? "braces" : "brace");
   }
   (void) Box_Instance_End((Expr *) NULL);
   VM_Assemble(cmp_vm, ASM_RET);
   (void) Box_Def_Prepare(head_sym_num);
 }
 
+Task Box_Procedure_Search(int *found, Int procedure, BoxDepth depth,
+                          Box **box, Int *prototype, UInt *sym_num,
+                          int auto_define) {
+  Box *b;
+  Int p, dummy;
+
+  *found = 0;
+  if ( prototype == NULL ) prototype = & dummy; /* See later! */
+
+  /* Now we use depth to identify the box, which is the parent
+   * of the procedure
+   */
+  TASK( Box_Get(& b, depth) );
+  if ( b->type == TYPE_VOID ) {
+    MSG_WARNING("[...] does not admit any procedures.");
+    return Failed;
+  }
+  *box = b;
+
+  /* Now we search for the procedure associated with *e */
+  /*p = Tym_Search_Procedure(procedure, b->is.second, b->type, prototype);*/
+  TS_Procedure_Inherited_Search(cmp->ts, & p, prototype, b->type, procedure,
+                                b->is.second ? 2 : 1);
+
+
+  /* If a suitable procedure does not exist, we create it now,
+   * and we mark it as "undefined"
+   */
+  if ( p == TYPE_NONE ) {
+    if (! auto_define) return Success;
+
+    MSG_ERROR("Don't know how to use '%~s' expressions inside a '%~s' box.",
+              TS_Name_Get(cmp->ts, procedure), TS_Name_Get(cmp->ts, b->type));
+    return Failed;
+#if 0
+    *prototype = TYPE_NONE;
+    *asm_module = VM_Module_Next(cmp_vm);
+    p = Tym_Def_Procedure(procedure, b->attr.second, b->type, *asm_module);
+    if ( p == TYPE_NONE ) return Failed;
+    {
+      Int nm;
+      TASK(VM_Module_Undefined(cmp_vm, & nm, Tym_Type_Name(p)));
+      assert(nm == *asm_module);
+    }
+    *found = 1;
+    return Success;
+#endif
+
+  } else {
+    TS_Procedure_Sym_Num(cmp->ts, sym_num, p);
+    *found = 1;
+    return Success;
+  }
+}
+
+Task Box_Procedure_Call(Expr *child, BoxDepth depth) {
+  Box *b;
+  UInt sym_num;
+  Int prototype, t;
+  int dummy = 0, *found = & dummy, auto_define = 0;
+  Expr e_parent;
+
+  /* First of all we check the attributes of the expression *child */
+  if ( child->is.ignore ) return Success;
+  if ( !child->is.typed ) {
+    MSG_ERROR("This expression has no type!");
+    return Failed;
+  }
+
+  t = Tym_Type_Resolve_Alias(child->type);
+  if (t == TYPE_VOID) return Success;
+
+  if (child->type == TYPE_IF || child->type == TYPE_FOR) {
+    Cont src;
+    Box *b;
+    TASK( Box_Get(& b, depth) );
+    Expr_Cont_Get(& src, child);
+    Cont_Move(& CONT_NEW_LREG(TYPE_INT, 0), & src);
+    VM_Label_Jump(cmp->vm,
+                  child->type == TYPE_FOR ? b->label_begin : b->label_end,
+                  1);
+    return Success;
+  }
+
+  TASK( Box_Procedure_Search(found, child->type, depth, & b, & prototype,
+                             & sym_num, auto_define) );
+
+  if ( ! *found ) return Success;
+
+  /* Now we compile the procedure */
+  /* We pass the argument of the procedure if its size is > 0 */
+  if (Tym_Type_Size(t) > 0) {
+    if ( prototype != TYPE_NONE ) {
+      /* The argument must be converted first! */
+      TASK( Cmp_Expr_Expand(prototype, child) );
+    }
+
+    TASK( Cmp_Expr_To_Ptr(child, CAT_GREG, (Int) 2, 0) );
+  }
+
+  /* We pass the box which is the parent of the procedure */
+  TASK( Box_Parent_Get(& e_parent, depth) );
+  if ( e_parent.is.value ) {
+    if (Tym_Type_Size(e_parent.resolved) > 0) {
+      TASK( Cmp_Expr_Container_Change(& e_parent, CONTAINER_ARG(1)) );
+    }
+  }
+
+  return VM_Sym_Call(cmp_vm, sym_num);
+}
+
 /* This function calls a procedure without value, as (;), ([) or (]).
  */
-Task Box_Call_Void_Proc(int *found, Type type, int auto_define) {
+Task Box_Procedure_Call_Void(Type type, BoxDepth depth) {
   Expr e;
-  int dummy = 0;
-  if (found == NULL) found = & dummy;
   Expr_New_Type(& e, type);
-  TASK( Cmp_Procedure(found, & e, 0, auto_define) );
+  TASK( Box_Procedure_Call(& e, depth) );
   (void) Cmp_Expr_Destroy_Tmp(& e);
   return Success;
 }
@@ -249,7 +358,7 @@ Task Box_Instance_Begin(Expr *e, int kind) {
   TASK(Arr_Push(bs->box, & b));
 
   if (e != (Expr *) NULL)
-    TASK( Box_Call_Void_Proc((int *) NULL, TYPE_OPEN, 0) );
+    TASK( Box_Procedure_Call_Void(TYPE_OPEN, BOX_DEPTH_UPPER) );
 
   /* Creo le labels che puntano all'inizio ed alla fine della box */
   b_ptr = Arr_LastItemPtr(bs->box, Box);
@@ -267,7 +376,7 @@ Task Box_Instance_End(Expr *e) {
    * e puo' essere liberato!
    */
   if ( e != NULL ) {
-    TASK( Box_Call_Void_Proc((int *) NULL, TYPE_CLOSE, 0) );
+    TASK( Box_Procedure_Call_Void(TYPE_CLOSE, BOX_DEPTH_UPPER) );
     e->is.release = 1;
   }
 
@@ -304,13 +413,14 @@ Task Box_Instance_End(Expr *e) {
   return Success;
 }
 
-/* Cerca fra le scatole aperte di profondita' > depth,
- * la prima di tipo type. Se depth = 0 parte dall'ultima scatola aperta,
- * se depth = 1, dalla penultima, etc.
- * Restituisce la profondita' della scatola cercata o -1 in caso
- * di ricerca fallita.
+/** Search among the opened boxes with depth greater than 'depth'
+ * the first one with type 'type'. If 'depth == BOX_DEPTH_UPPER' search
+ * starting from the last opened box (the current one). If 'depth == 1'
+ * starts from the next to last and so on...
+ * Returns the depth of the found box or -1 if the such a box has not been
+ * found.
  */
-Int Box_Search_Opened(Int type, Int depth) {
+Int Box_Search_Opened(Int type, BoxDepth depth) {
   Int max_depth, d;
   Box *box;
 
@@ -337,10 +447,10 @@ Int Box_Search_Opened(Int type, Int depth) {
 /* This function returns the pointer to the structure Box
  * corresponding to the box with depth 'depth'.
  */
-Task Box_Get(Box **box, Int depth) {
+Task Box_Get(Box **box, BoxDepth depth) {
   Int max_depth;
   assert(bs->box != NULL);
-  if (depth < 0) depth = 0;
+  if (depth < BOX_DEPTH_UPPER) depth = BOX_DEPTH_UPPER;
   max_depth = Arr_NumItem(bs->box);
   if (depth >= max_depth) {
     MSG_ERROR("Invalid box depth.");
@@ -350,7 +460,7 @@ Task Box_Get(Box **box, Int depth) {
   return Success;
 }
 
-Task Box_Parent_Get(Expr *e_parent, Int depth) {
+Task Box_Parent_Get(Expr *e_parent, BoxDepth depth) {
   Box *b;
   TASK( Box_Get(& b, depth) );
   *e_parent = b->parent;
@@ -358,17 +468,13 @@ Task Box_Parent_Get(Expr *e_parent, Int depth) {
   return Success;
 }
 
-Task Box_Child_Get(Expr *e_child, Int depth) {
+Task Box_Child_Get(Expr *e_child, BoxDepth depth) {
   Box *b;
   TASK( Box_Get(& b, depth) );
   *e_child = b->child;
   return Success;
 }
 
-/** Returns the depth of the n-th to last definition box: Box_Def_Depth(0)
- * returns the depth of the current (last) definition box (-1 if no definition
- * box has been opened, yet).
- */
 Int Box_Def_Depth(int n) {
   Int depth, max_depth;
   Box *box;
@@ -412,13 +518,13 @@ Task Box_NParent_Get(Expr *parent, Int level, Int depth) {
 /*  Questa funzione definisce un nuovo simbolo di nome *nm,
  *  attribuendolo alla box di profondita' depth.
  */
-Task Sym_Explicit_New(Symbol **sym, Name *nm, Int depth) {
-  Int box_lev;
+Task Sym_Explicit_New(Symbol **sym, Name *nm, BoxDepth depth) {
+  Int level;
   Symbol *s;
   Box *b;
 
   /* Controllo che non esista un simbolo omonimo gia' definito */
-  assert(depth >= 0 && depth <= Box_Depth());
+  assert(depth >= 0 && depth <= Box_Num());
   s = Sym_Explicit_Find(nm, depth, EXACT_DEPTH);
   if (s != NULL) {
     MSG_ERROR("A symbol with name '%N' has already been defined", nm);
@@ -432,15 +538,15 @@ Task Sym_Explicit_New(Symbol **sym, Name *nm, Int depth) {
   /* Collego il nuovo simbolo alla lista delle variabili esplicite della
    * box corrente (in modo da eliminarle alla chiusura della box).
    */
-  box_lev = Box_Depth() - depth;
-  b = Arr_ItemPtr(bs->box, Box, box_lev + 1);
+  level = Box_Num() - depth;
+  b = Arr_ItemPtr(bs->box, Box, level + 1);
   s->brother = b->syms;
   b->syms = s;
 
   /* Inizializzo il simbolo */
   s->symattr.is_explicit = 1;
   s->child = NULL;
-  s->parent.exp = box_lev;
+  s->parent.exp = level;
   s->symtype = VARIABLE;
   *sym = s;
   return Success;

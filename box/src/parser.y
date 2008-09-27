@@ -72,7 +72,7 @@ static void Sep_Newline(void) {
 }
 
 static void Sep_Pause(void) {
-  (void) Prs_Procedure_Special(NULL, TYPE_PAUSE, 1);
+  (void) Prs_Procedure_Special(TYPE_PAUSE);
 }
 
 static Task Type_Struc_Begin(StrucMember *sm, Expr *type, char *m) {
@@ -228,7 +228,7 @@ static Task Subtype_Create(Expr *result, Expr *parent, Name *child) {
 
 static Task Expr_Statement(Expr *e) {
   TASK( Expr_Resolve_Subtype(e) );
-  TASK( Cmp_Procedure(NULL, e, -1, /* auto_define */ 1) );
+  TASK( Box_Procedure_Call(e, BOX_DEPTH_UPPER) );
   (void) Cmp_Expr_Destroy_Tmp(e);
   return Success;
 }
@@ -933,7 +933,7 @@ Task Prs_Suffix(Int *rs, Int suffix, Name *nm) {
       *rs = 0;
       return Success;
     } else {
-      if ( (*rs = suffix + 1) <= Box_Depth() ) {
+      if ( (*rs = suffix + 1) <= Box_Num() ) {
         return Success;
       } else {
         MSG_ERROR("Maximum box depth exceeded.");
@@ -1059,12 +1059,10 @@ Task Prs_Species_Add(Expr *species, Expr *old, Expr *type) {
 
 /* This function calls a procedure without value, as (;), ([) or (]).
  */
-Task Prs_Procedure_Special(int *found, int type, int auto_define) {
+Task Prs_Procedure_Special(Type type) {
   Expr e;
-  int dummy = 0;
-  if ( found == NULL ) found = & dummy;
   Expr_New_Type(& e, type);
-  TASK( Cmp_Procedure(found, & e, 0, auto_define) );
+  TASK( Box_Procedure_Call(& e, BOX_DEPTH_UPPER) );
   (void) Cmp_Expr_Destroy_Tmp(& e);
   return Success;
 }

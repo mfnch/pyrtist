@@ -66,7 +66,7 @@ Task Prs_Species_New(Expr *species, Expr *first, Expr *second);
 Task Prs_Species_Add(Expr *species, Expr *old, Expr *type);
 Task Prs_Struct_New(Expr *strc, Expr *first, Expr *second);
 Task Prs_Struct_Add(Expr *strc, Expr *old, Expr *type);
-Task Prs_Procedure_Special(int *found, int type, int auto_define);
+Task Prs_Procedure_Special(Type type);
 Task Prs_Rule_Typed_Eq_Typed(Expr *rs, Expr *typed1, Expr *typed2);
 Task Prs_Rule_Valued_Eq_Typed(Expr *rs, Expr *valued, Expr *typed);
 Task Prs_Rule_Typed_Eq_Valued(Expr *typed, Expr *valued);

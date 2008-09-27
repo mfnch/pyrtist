@@ -59,7 +59,7 @@ typedef struct {
 
 Task Box_Init(void);
 void Box_Destroy(void);
-Int Box_Depth(void);
+Int Box_Num(void);
 Int Box_Def_Num(void);
 
 /** This function calls a procedure without value, such as (;), ([) or (]).
@@ -71,40 +71,44 @@ Int Box_Def_Num(void);
  */
 Task Box_Call_Void_Proc(int *found, Type type, int auto_define);
 
-Task Box_Def_Begin(Int proc_type);
-Task Box_Def_End(void);
-Task Box_Main_Begin(void);
-void Box_Main_End(void);
-Task Box_Instance_Begin(Expr *e, int kind);
-Task Box_Instance_End(Expr *e);
-Int Box_Search_Opened(Int type, Int depth);
+/** Used to specify the Box we are referring to. For example, consider:
+ *
+ * CODE:  Int[ Real[ Int[ ..., *, ...]   ]   ]
+ * DEPTH: 3  [  2  [ 1  [      0     ] 1 ] 2 ] 3
+ *
+ * where the asterix * indicates where we are in the code.
+ * If we want to refer to a variable defined inside the first Int to the left
+ * we should use a BoxDepth equal to 2. For the Real[] depth we should use 1,
+ * and so on. BoxDepth allows to specify the scoping when referring to
+ * variables.
+ */
+typedef Int BoxDepth;
+
+/** The depth of the current Box, see BoxDepth */
+#define BOX_DEPTH_UPPER 0
 
 /** This function returns the pointer to the structure Box
  * corresponding to the box with depth 'depth'.
  * NOTE: Specifying a negative value for 'depth' is equivalent to specify
- *  the value 0.
+ *  the value 0 (BOX_DEPTH_UPPER).
  */
-Task Box_Get(Box **box, Int depth);
+Task Box_Get(Box **box, BoxDepth depth);
 
 /** Create in '*e_parent' the expression corresponding to the parent
  * of the box whose depth level is 'depth'
- * NOTE: Specifying a negative value for 'depth' is equivalent to specify
- *  the value 0.
  */
-Task Box_Parent_Get(Expr *e_parent, Int depth);
+Task Box_Parent_Get(Expr *e_parent, BoxDepth depth);
 
 /** Create in '*e_child' the expression corresponding to the child
  * of the box whose depth level is 'depth'
- * NOTE: Specifying a negative value for 'depth' is equivalent to specify
- *  the value 0.
  */
-Task Box_Child_Get(Expr *e_child, Int depth);
+Task Box_Child_Get(Expr *e_child, BoxDepth depth);
 
 /** Returns the depth of the n-th to last definition box: Box_Def_Depth(0)
  * returns the depth of the current (last) definition box (-1 if no definition
  * box has been opened, yet).
  */
-Int Box_Def_Depth(int n);
+BoxDepth Box_Def_Depth(int n);
 
 /** Create in '*e_parent' the expression corresponding to level-th parent
  * of the box whose depth level is 'depth'.
@@ -117,8 +121,52 @@ Int Box_Def_Depth(int n);
  *  For level=n+1, the function returns the subtype parent of the expression
  *  which would be returned for level=n (and has to be a subtype).
  */
-Task Box_NParent_Get(Expr *e_parent, Int level, Int depth);
+Task Box_NParent_Get(Expr *e_parent, Int level, BoxDepth depth);
 
-Task Sym_Explicit_New(Symbol **sym, Name *nm, Int depth);
+Task Box_Def_Begin(Int proc_type);
+Task Box_Def_End(void);
+Task Box_Main_Begin(void);
+void Box_Main_End(void);
+
+/** This function is an interface for the function TS_Procedure_Search.
+ * Indeed, the purpose of the first is very similar to the purpose
+ * of the second: the function searches the procedure of type 'procedure'
+ * which belongs to the opened box, whose depth descriptor is 'depth'.
+ * If a suitable procedure is found, its actual type is assigned
+ * to *prototype and its symbol number is put into *sym_num.
+ * If the searched procedure is not found, the behaviour will depend
+ * on the argument 'auto_define': if it is = 1, then the procedure will
+ * be added, marked as undefined and returned. If it is = 0, then
+ * the function will exit...
+ * NOTE: After the call *box will contain the pointer to the box
+ * whose depth is 'depth'.
+ * NOTE 2: This function returns Success, when no fatal errors occurred,
+ *  and can return Success even if the procedure was not found.
+ *  To understand if a procedure was actually found look at the value
+ *  of *found.
+ */
+Task Box_Procedure_Search(int *found, Int procedure, BoxDepth depth,
+                          Box **box, Int *prototype, UInt *sym_num,
+                          int auto_define);
+
+/** This function handles the procedures of the box corresponding to depth.
+ * It generates the assembly code that calls the procedure.
+ * '*e' is the object passed to the box whose depth is 'depth'.
+ * 'second' is 0, if the box has just been created, otherwise it is 1:
+ * Example:
+ *  b = Box[ ... ] <-- just created, second = 0
+ *  a = b[ ... ]   <-- old box, second = 1
+ * 'auto_define' allows the automatic definition of non found procedures
+ * (the definition should then be provided by the user later in the code).
+ * The function returns Success, even if the procedure is not found:
+ * check the content of *found for this purpose.
+ */
+Task Box_Procedure_Call(Expr *child, BoxDepth depth);
+
+Task Box_Instance_Begin(Expr *e, int kind);
+Task Box_Instance_End(Expr *e);
+Int Box_Search_Opened(Int type, BoxDepth depth);
+
+Task Sym_Explicit_New(Symbol **sym, Name *nm, BoxDepth depth);
 #  endif
 #endif

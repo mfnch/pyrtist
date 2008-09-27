@@ -126,6 +126,18 @@ Type TS_Resolve_Once(TS *ts, Type t, TSKindSelect select);
 /** TS_Resolve_Once is applied until the type is fully resolved. */
 Type TS_Resolve(TS *ts, Type t, TSKindSelect select);
 
+/** Return the core type of the provided type 't'.
+ * This means that alias, species and detached types are resolved and
+ * the underlying fundamental type is returned. For example, if:
+ *
+ *   MyType = ++(Int a, b, c)
+ *
+ * then the core type is just (Int a, b, c). This is what MyType intrinsically
+ * is. This function is used to perform operations where the structure
+ * of the type is needed, such as constructing the destructor of MyType.
+ */
+Type TS_Core_Type(TS *ts, Type t);
+
 TSKind TS_Kind(TS *ts, Type t);
 
 #define TS_Is_Member(ts, t) (TS_Kind((ts), (t)) == TS_KIND_MEMBER)

@@ -294,13 +294,13 @@ static UInt Sym__Explicit_Find_All(Symbol *s) {
  */
 Symbol *Sym_Explicit_Find(Name *nm, Int depth, int mode) {
   if ( mode == EXACT_DEPTH ) {
-    sym_find_box = Box_Depth() - depth;
+    sym_find_box = Box_Num() - depth;
     assert( (sym_find_box >= 0) && (depth >= 0) );
     return Sym_Symbol_Find(nm, Sym__Explicit_Find);
 
   } else {
     sym_found = NULL;
-    sym_find_box = Box_Depth() - depth;
+    sym_find_box = Box_Num() - depth;
     (void) Sym_Symbol_Find(nm, Sym__Explicit_Find_All);
     return sym_found;
   }

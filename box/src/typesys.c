@@ -161,11 +161,9 @@ Type TS_Resolve(TS *ts, Type t, TSKindSelect select) {
   return t;
 }
 
-#if 0
-void TS_Ref(TS *ts, Type *new, TSDesc *td) {}
-
-void TS_Unref(TS *ts, Type *t) {}
-#endif
+Type TS_Core_Type(TS *ts, Type t) {
+  return TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES);
+}
 
 Int TS_Size(TS *ts, Type t) {
   TSDesc *td = Type_Ptr(ts, t);
@@ -185,7 +183,8 @@ Task TS_Name_Set(TS *ts, Type t, const char *name) {
   TSDesc *td = Type_Ptr(ts, t);
   if (td->name != (char *) NULL) {
     MSG_ERROR("TS_Name_Set: trying to set the name '%s' for type %I: "
-     "this type has already been given the name '%s'!", name, t, td->name);
+              "this type has already been given the name '%s'!",
+              name, t, td->name);
     return Failed;
   }
   td->name = Mem_Strdup(name);

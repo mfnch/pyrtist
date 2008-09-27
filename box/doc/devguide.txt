@@ -43,6 +43,9 @@ to keep a **reference counter** (an integer number) and a **type identifier**
 of references to the object x: every object y which refers to x
 is associated with an increment 1 of the counter of references for x.
 If y is destroyed the reference counter for x has to be decreased.
+x is destroyed when the reference counter reaches 0. In this way many
+objects can refer to the same object: this will be deallocated only when
+there are no more objects referring to it.
 The type identifier is a number which is associated to the object
 and determines its type. The VM knows how to initialise, create, destroy,
 ... objects and decides what method has to be called by looking at
@@ -51,7 +54,7 @@ Objects can contain the full sub-objects, not just pointers to other objects.
 For example, an array of 1000 objects is not just an array of 1000 pointers
 to objects which are allocated independently.
 This mechanism requires to extend the concept of pointer: our pointers are
-actually tuple of two pointers: one pointer to the raw data and one
+actually tuples of two pointers: one pointer to the raw data and one
 pointer to the allocated object which contains it (or NULL if the
 object is static and was not allocated in a "traditional" way).
 
@@ -105,9 +108,12 @@ reasons:
 This is the oldest part of the project.
 What currently happens is that there are some procedures which manipulate
 ``Expr`` objects to produce VM code and these are called directly from
-``parser.y``.
+``parser.y``. For now we are working on the system underlying the compiler:
+when all the pieces will be there, it will be easy to adjust the parser
+and make it nicer.
 These procedures are mainly defined inside ``compiler.c`` and generate code
-using the function ``VM_Assemble`` which is provided by ``virtmach.c``.
+using the variadic function ``VM_Assemble`` which is provided
+by ``virtmach.c``.
 
 
 Box executable

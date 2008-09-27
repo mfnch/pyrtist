@@ -670,7 +670,7 @@ void Expr_Container_New(Expr *e, Type type, Container *c) {
     e->is.target = 1;
     if ( c->which_one < 0 ) {
       /* Automatically choses the local variables */
-      if ( (e->value.i = -Var_Occupy(type_of_register, Box_Depth())) >= 0 ) {
+      if ( (e->value.i = -Var_Occupy(type_of_register, Box_Num())) >= 0 ) {
         MSG_FATAL("Expr_Container_New: Var_Occupy failed!");
       }
       return;
@@ -710,7 +710,7 @@ void Expr_Container_New(Expr *e, Type type, Container *c) {
       return;
 
     } else {
-      if ( (e->addr = -Var_Occupy(TYPE_OBJ, Box_Depth())) >= 0 ) {
+      if ( (e->addr = -Var_Occupy(TYPE_OBJ, Box_Num())) >= 0 ) {
         MSG_FATAL("Expr_Container_New: Var_Occupy failed!");
       }
     }
