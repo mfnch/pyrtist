@@ -1,4 +1,4 @@
-.PHONY: all
+.PHONY: all dev2
 
 all:
 	libtoolize --ltdl
@@ -6,3 +6,13 @@ all:
 	autoconf
 	autoheader
 	automake --add-missing
+
+# Here we show how one can use another version of the libtool
+# installed on the user's directory
+dev2:
+	/home/fnch/local/bin/libtoolize --ltdl
+	aclocal -I /home/fnch/local/share/aclocal # --verbose
+	autoconf
+	autoheader
+	automake-1.10 --add-missing
+
