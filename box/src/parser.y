@@ -72,7 +72,8 @@ static void Sep_Newline(void) {
 }
 
 static void Sep_Pause(void) {
-  (void) Prs_Procedure_Special(TYPE_PAUSE);
+  (void) Box_Procedure_Call_Void(TYPE_PAUSE, BOX_DEPTH_UPPER,
+                                 BOX_MSG_SILENT);
 }
 
 static Task Type_Struc_Begin(StrucMember *sm, Expr *type, char *m) {
@@ -228,7 +229,7 @@ static Task Subtype_Create(Expr *result, Expr *parent, Name *child) {
 
 static Task Expr_Statement(Expr *e) {
   TASK( Expr_Resolve_Subtype(e) );
-  TASK( Box_Procedure_Call(e, BOX_DEPTH_UPPER) );
+  (void) Box_Procedure_Call(e, BOX_DEPTH_UPPER, BOX_MSG_VERBOSE);
   (void) Cmp_Expr_Destroy_Tmp(e);
   return Success;
 }
@@ -909,7 +910,7 @@ Task Prs_Suffix(Int *rs, Int suffix, Name *nm) {
 
     /* Cerco il simbolo a profondita' suffix o superiori */
     s = Sym_Explicit_Find(nm, suffix, NO_EXACT_DEPTH);
-    if ( s == NULL ) {
+    if (s == NULL) {
       MSG_ERROR("'%N' <-- type not found!", nm);
       return Failed;
     }
@@ -1054,16 +1055,6 @@ Task Prs_Species_Add(Expr *species, Expr *old, Expr *type) {
   assert( old_species != TYPE_NONE );
   TASK( Tym_Def_Specie( & old_species, type->type) );
   *species = *old;
-  return Success;
-}
-
-/* This function calls a procedure without value, as (;), ([) or (]).
- */
-Task Prs_Procedure_Special(Type type) {
-  Expr e;
-  Expr_New_Type(& e, type);
-  TASK( Box_Procedure_Call(& e, BOX_DEPTH_UPPER) );
-  (void) Cmp_Expr_Destroy_Tmp(& e);
   return Success;
 }
 

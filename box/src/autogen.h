@@ -26,4 +26,7 @@
 
 Task Auto_Destructor_Create(Type t);
 
+/** Used to acknowledge that a procedure is being used in the program */
+void Auto_Acknowledge_Call(Type parent, Type child, int kind);
+
 #endif

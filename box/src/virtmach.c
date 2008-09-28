@@ -867,8 +867,6 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
   const char *iname;
   char *iarg[VM_MAX_NUMARGS];
 
-  MSG_LOCATION("VM_Disassemble");
-
   vmp->vmcur = & vm;
   vm.flags.exit = vm.flags.error = 0;
   for ( pos = 0; pos < dim; ) {
@@ -1208,8 +1206,6 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
     Real  vr;   /* ...immediati degli argomenti */
     Point vp;
   } arg[VM_MAX_NUMARGS];
-
-  MSG_LOCATION("VM_Assemble");
 
   /* Esco subito se e' settato il flag di inibizione! */
   if ( pt->target_proc->status.inhibit ) return;

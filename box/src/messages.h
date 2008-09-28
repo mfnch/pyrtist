@@ -166,11 +166,4 @@ void Msg_Call_Fatal_Handler(void);
        Msg_Call_Fatal_Handler(); \
      }
 
-/* Obsolete */
-#  ifdef DEBUG
-#    define MSG_LOCATION(fname) fprintf(stderr, fname " function entered!\n");
-#  else
-#    define MSG_LOCATION(fname)
-#  endif
-
 #endif

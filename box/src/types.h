@@ -102,10 +102,9 @@ typedef enum {Success = 0, Failed = 1} Task;
 #define IS_SUCCESSFUL(x) (!x)
 #define IS_FAILED(x) (x)
 
-/* Macro per chiamare una funzione che restituisce Task,
- * da una funzione che restituisce Task.
+/** Macro to call a function returning Task from a function returning Task.
  */
-#define TASK(x) if ( x ) return Failed
+#define TASK(x) if ( (x) ) return Failed
 
 /* DESCRIZIONE: Questa macro permette di usare una indicizzazione "circolare",
  *  secondo cui, data una lista di num_items elementi, l'indice 1 si riferisce

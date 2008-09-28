@@ -42,3 +42,5 @@ Task Auto_Destructor_Create(Type t) {
   return Success;
 }
 
+void Auto_Acknowledge_Call(Type parent, Type child, int kind) {
+}

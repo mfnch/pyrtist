@@ -62,15 +62,6 @@ void Box_Destroy(void);
 Int Box_Num(void);
 Int Box_Def_Num(void);
 
-/** This function calls a procedure without value, such as (;), ([) or (]).
- * It does not complain if such a procedure is not defined for 'type'.
- * In such cases the behaviour is the following: if 'auto_define' is 1,
- * then a procedure is automatically declared (the user then has to define
- * it later), otherwise the procedure call is ignored.
- * In any case '*found' is set to 1 if the procedure has been somehow called.
- */
-Task Box_Call_Void_Proc(int *found, Type type, int auto_define);
-
 /** Used to specify the Box we are referring to. For example, consider:
  *
  * CODE:  Int[ Real[ Int[ ..., *, ...]   ]   ]
@@ -92,7 +83,7 @@ typedef Int BoxDepth;
  * NOTE: Specifying a negative value for 'depth' is equivalent to specify
  *  the value 0 (BOX_DEPTH_UPPER).
  */
-Task Box_Get(Box **box, BoxDepth depth);
+Box *Box_Get(BoxDepth depth);
 
 /** Create in '*e_parent' the expression corresponding to the parent
  * of the box whose depth level is 'depth'
@@ -128,26 +119,26 @@ Task Box_Def_End(void);
 Task Box_Main_Begin(void);
 void Box_Main_End(void);
 
+/** Decides whether a function should emit any error messages
+ * or just be silent.
+ */
+typedef enum {BOX_MSG_SILENT, BOX_MSG_VERBOSE} BoxMsg;
+
+#if 0
+/* OBSOLETE */
 /** This function is an interface for the function TS_Procedure_Search.
  * Indeed, the purpose of the first is very similar to the purpose
  * of the second: the function searches the procedure of type 'procedure'
- * which belongs to the opened box, whose depth descriptor is 'depth'.
+ * which belongs to the opened box 'b'.
  * If a suitable procedure is found, its actual type is assigned
- * to *prototype and its symbol number is put into *sym_num.
- * If the searched procedure is not found, the behaviour will depend
- * on the argument 'auto_define': if it is = 1, then the procedure will
- * be added, marked as undefined and returned. If it is = 0, then
- * the function will exit...
- * NOTE: After the call *box will contain the pointer to the box
- * whose depth is 'depth'.
- * NOTE 2: This function returns Success, when no fatal errors occurred,
- *  and can return Success even if the procedure was not found.
- *  To understand if a procedure was actually found look at the value
- *  of *found.
+ * to '*prototype' and its symbol number is put into '*sym_num'.
+ * 'verbosity' decides whether or not warning messages should be emmitted.
+ * RETURN VALUE: the function returns 1 if the procedure was found,
+ *  otherwise it returns 0.
  */
-Task Box_Procedure_Search(int *found, Int procedure, BoxDepth depth,
-                          Box **box, Int *prototype, UInt *sym_num,
-                          int auto_define);
+int Box_Procedure_Search(Box *b, Int procedure, Type *prototype,
+                         UInt *sym_num, BoxMsg verbosity);
+#endif
 
 /** This function handles the procedures of the box corresponding to depth.
  * It generates the assembly code that calls the procedure.
@@ -161,7 +152,16 @@ Task Box_Procedure_Search(int *found, Int procedure, BoxDepth depth,
  * The function returns Success, even if the procedure is not found:
  * check the content of *found for this purpose.
  */
-Task Box_Procedure_Call(Expr *child, BoxDepth depth);
+Task Box_Procedure_Call(Expr *child, BoxDepth depth, BoxMsg verbosity);
+
+/** This function calls a procedure without value, such as (;), ([) or (]).
+ * It does not complain if such a procedure is not defined for 'type'.
+ * In such cases the behaviour is the following: if 'auto_define' is 1,
+ * then a procedure is automatically declared (the user then has to define
+ * it later), otherwise the procedure call is ignored.
+ * In any case '*found' is set to 1 if the procedure has been somehow called.
+ */
+Task Box_Procedure_Call_Void(Type type, BoxDepth depth, BoxMsg verbosity);
 
 Task Box_Instance_Begin(Expr *e, int kind);
 Task Box_Instance_End(Expr *e);

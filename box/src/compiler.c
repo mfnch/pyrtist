@@ -540,8 +540,6 @@ static Expr *Opn_Exec_Intrinsic(Operation *opn, Expr *e1, Expr *e2) {
   struct {unsigned int unary :1, right : 1, strange :1, immediate :1;} opn_is;
   Int rs_resolved = Tym_Type_Resolve_All(opn->type_rs);
 
-  MSG_LOCATION("Opn_Exec_Intrinsic");
-
   /* Di solito argomenti e risultato sono tutti dello stesso tipo
     * In questi casi strange_case = 0, negli altri invece strange_case = 1!
     */
@@ -730,10 +728,7 @@ er_equal_e1:
  *  e, NULL --> operazione unaria sinistra come ++e
  */
 Expr *Cmp_Operation_Exec(Operation *opn, Expr *e1, Expr *e2) {
-
   int strange_case, result_in_e1;
-
-  MSG_LOCATION("Cmp_Operation_Exec");
 
   if ( opn->is.intrinsic )
     return Opn_Exec_Intrinsic(opn, e1, e2);
@@ -822,8 +817,6 @@ Expr *Cmp_Operation_Exec(Operation *opn, Expr *e1, Expr *e2) {
  -----------------------> OBSLOLETE <------------------------
  */
 Task Cmp_Expr_LReg(Expr *e, Int type, int zero) {
-  MSG_LOCATION("Cmp_Expr_LReg");
-
   e->is.imm = 0;
   e->is.value = 1;
   e->is.ignore = 0;
@@ -1418,7 +1411,6 @@ Task Cmp_Data_Init(void) {
 Int Cmp_Data_Add(Int type, void *data, Int size) {
   Int addr;
   DataItem di;
-  MSG_LOCATION("Cmp_Data_Add");
 
   /* Now we insert the data descriptor */
   di.signature = signature;
@@ -1438,7 +1430,6 @@ Int Cmp_Data_Add(Int type, void *data, Int size) {
  */
 Task Cmp_Data_Prepare(void) {
   void *data_ptr;
-  MSG_LOCATION("Cmp_Data_Prepare");
 
   data_ptr = (void *) Arr_FirstItemPtr(cmp_data_segment, char);
   TASK( VM_Module_Global_Set(cmp_vm, TYPE_OBJ, (Int) 0, & data_ptr) );
@@ -1448,7 +1439,6 @@ Task Cmp_Data_Prepare(void) {
 /* DESCRIPTION: This function destroys the data segment.
  */
 void Cmp_Data_Destroy(void) {
-  MSG_LOCATION("Cmp_Data_Destroy");
   Arr_Destroy(cmp_data_segment);
 }
 
@@ -1473,7 +1463,6 @@ Task Cmp_Imm_Init(void) {
 Int Cmp_Imm_Add(Int type, void *data, Int size) {
   Int addr;
   DataItem di;
-  MSG_LOCATION("Cmp_Imm_Add");
 
   /* Now we insert the data descriptor */
   di.signature = signature;
@@ -1499,7 +1488,6 @@ Task Cmp_Data_Display(FILE *stream) {
   char *data;
   Int size, pos, ds;
   DataItem *di;
-  MSG_LOCATION("Cmp_Data_Display");
 
   if ( cmp_data_segment == NULL ) {
     MSG_ERROR("Segmento dati non inizializzato!");
@@ -1547,7 +1535,6 @@ Task Cmp_Data_Display(FILE *stream) {
 Task Cmp_String_New(Expr *e, Name *str, int free_str) {
   Int ts, addr;
   Int length = str->length;
-  MSG_LOCATION("Cmp_String_New");
 
   /* Creo il tipo di dato corrispondente alla stringa */
   ts = Tym_Def_Array_Of(length, TYPE_CHAR);

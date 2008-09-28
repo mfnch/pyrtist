@@ -202,8 +202,6 @@ void *Arr_ItemPtr_Debug(Array *a, int n, const char *src, int line) {
  * NOTA: L'array creata sara' vuota.
  */
 Array *Arr_Recycle(Array *a, UInt elsize, UInt mindim) {
-  MSG_LOCATION("Arr_Recycle");
-
   if ( elsize < 1 ) {
   MSG_ERROR("Arr_Recycle: elsize is negative!");
   return NULL;

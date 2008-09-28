@@ -30,7 +30,6 @@
 #include "defaults.h"
 #include "messages.h"
 #include "array.h"
-// #include "str.h"
 #include "virtmach.h"
 #include "vmproc.h"
 #include "vmsym.h"
@@ -38,6 +37,7 @@
 #include "registers.h"
 #include "expr.h"
 #include "compiler.h"
+#include "autogen.h"
 
 /******************************************************************************
  *            FUNZIONI DI GESTIONE DELLE BOX (APERTURA E CHIUSURA)            *
@@ -95,66 +95,46 @@ void Box_Main_End(void) {
   (void) Box_Def_Prepare(head_sym_num);
 }
 
-Task Box_Procedure_Search(int *found, Int procedure, BoxDepth depth,
-                          Box **box, Int *prototype, UInt *sym_num,
-                          int auto_define) {
-  Box *b;
-  Int p, dummy;
+#if 0
+# OBSOLETE
+int Box_Procedure_Search(Box *b, Int procedure, Type *prototype,
+                         UInt *sym_num, BoxMsg verbosity) {
+  Int p;
+  Type dummy_prototype;
 
-  *found = 0;
-  if ( prototype == NULL ) prototype = & dummy; /* See later! */
+  if (prototype == NULL) prototype = & dummy_prototype;
 
-  /* Now we use depth to identify the box, which is the parent
-   * of the procedure
-   */
-  TASK( Box_Get(& b, depth) );
-  if ( b->type == TYPE_VOID ) {
-    MSG_WARNING("[...] does not admit any procedures.");
-    return Failed;
+  if (b->type == TYPE_VOID) {
+    if (verbosity == BOX_MSG_VERBOSE)
+      MSG_WARNING("[...] does not admit any procedures.");
+    return 0;
   }
-  *box = b;
 
   /* Now we search for the procedure associated with *e */
-  /*p = Tym_Search_Procedure(procedure, b->is.second, b->type, prototype);*/
   TS_Procedure_Inherited_Search(cmp->ts, & p, prototype, b->type, procedure,
                                 b->is.second ? 2 : 1);
-
 
   /* If a suitable procedure does not exist, we create it now,
    * and we mark it as "undefined"
    */
-  if ( p == TYPE_NONE ) {
-    if (! auto_define) return Success;
-
-    MSG_ERROR("Don't know how to use '%~s' expressions inside a '%~s' box.",
-              TS_Name_Get(cmp->ts, procedure), TS_Name_Get(cmp->ts, b->type));
-    return Failed;
-#if 0
-    *prototype = TYPE_NONE;
-    *asm_module = VM_Module_Next(cmp_vm);
-    p = Tym_Def_Procedure(procedure, b->attr.second, b->type, *asm_module);
-    if ( p == TYPE_NONE ) return Failed;
-    {
-      Int nm;
-      TASK(VM_Module_Undefined(cmp_vm, & nm, Tym_Type_Name(p)));
-      assert(nm == *asm_module);
-    }
-    *found = 1;
-    return Success;
-#endif
+  if (p == TYPE_NONE) {
+    if (verbosity == BOX_MSG_VERBOSE)
+      MSG_WARNING("Don't know how to use '%~s' expressions inside a '%~s' "
+                  "box.", TS_Name_Get(cmp->ts, procedure),
+                  TS_Name_Get(cmp->ts, b->type));
+    return 0;
 
   } else {
     TS_Procedure_Sym_Num(cmp->ts, sym_num, p);
-    *found = 1;
-    return Success;
+    return 1;
   }
 }
+#endif
 
-Task Box_Procedure_Call(Expr *child, BoxDepth depth) {
-  Box *b;
+Task Box_Procedure_Call(Expr *child, BoxDepth depth, BoxMsg verbosity) {
+  Box *b = Box_Get(depth);
   UInt sym_num;
-  Int prototype, t;
-  int dummy = 0, *found = & dummy, auto_define = 0;
+  Type prototype, t, p;
   Expr e_parent;
 
   /* First of all we check the attributes of the expression *child */
@@ -169,8 +149,6 @@ Task Box_Procedure_Call(Expr *child, BoxDepth depth) {
 
   if (child->type == TYPE_IF || child->type == TYPE_FOR) {
     Cont src;
-    Box *b;
-    TASK( Box_Get(& b, depth) );
     Expr_Cont_Get(& src, child);
     Cont_Move(& CONT_NEW_LREG(TYPE_INT, 0), & src);
     VM_Label_Jump(cmp->vm,
@@ -179,10 +157,29 @@ Task Box_Procedure_Call(Expr *child, BoxDepth depth) {
     return Success;
   }
 
-  TASK( Box_Procedure_Search(found, child->type, depth, & b, & prototype,
-                             & sym_num, auto_define) );
+  if (b->type == TYPE_VOID) {
+    if (verbosity == BOX_MSG_VERBOSE)
+      MSG_WARNING("[...] does not admit any procedures.");
+    return Success;
+  }
 
-  if ( ! *found ) return Success;
+  /* Just to allow the automatic creation of destructors and co. */
+  Auto_Acknowledge_Call(b->type, child->type, b->is.second ? 2 : 1);
+
+  /* Now we search for the procedure associated with *child */
+  TS_Procedure_Inherited_Search(cmp->ts, & p, & prototype,
+                                b->type, child->type, b->is.second ? 2 : 1);
+
+  if (p == TYPE_NONE) {
+    if (verbosity == BOX_MSG_SILENT)
+      return Success;
+    MSG_WARNING("Don't know how to use '%~s' expressions inside a '%~s' box.",
+                TS_Name_Get(cmp->ts, child->type),
+                TS_Name_Get(cmp->ts, b->type));
+    return Success;
+  }
+
+  TS_Procedure_Sym_Num(cmp->ts, & sym_num, p);
 
   /* Now we compile the procedure */
   /* We pass the argument of the procedure if its size is > 0 */
@@ -208,10 +205,10 @@ Task Box_Procedure_Call(Expr *child, BoxDepth depth) {
 
 /* This function calls a procedure without value, as (;), ([) or (]).
  */
-Task Box_Procedure_Call_Void(Type type, BoxDepth depth) {
+Task Box_Procedure_Call_Void(Type type, BoxDepth depth, BoxMsg verbosity) {
   Expr e;
   Expr_New_Type(& e, type);
-  TASK( Box_Procedure_Call(& e, depth) );
+  TASK( Box_Procedure_Call(& e, depth, verbosity) );
   (void) Cmp_Expr_Destroy_Tmp(& e);
   return Success;
 }
@@ -357,8 +354,9 @@ Task Box_Instance_Begin(Expr *e, int kind) {
   b.proc_num = bs->cur_proc_num; /* The procedure number where we are now */
   TASK(Arr_Push(bs->box, & b));
 
-  if (e != (Expr *) NULL)
-    TASK( Box_Procedure_Call_Void(TYPE_OPEN, BOX_DEPTH_UPPER) );
+  if (e != NULL)
+    (void) Box_Procedure_Call_Void(TYPE_OPEN, BOX_DEPTH_UPPER,
+                                   BOX_MSG_SILENT);
 
   /* Creo le labels che puntano all'inizio ed alla fine della box */
   b_ptr = Arr_LastItemPtr(bs->box, Box);
@@ -375,8 +373,9 @@ Task Box_Instance_End(Expr *e) {
   /* Il registro occupato per la sessione ora diventa un registro normale
    * e puo' essere liberato!
    */
-  if ( e != NULL ) {
-    TASK( Box_Procedure_Call_Void(TYPE_CLOSE, BOX_DEPTH_UPPER) );
+  if (e != NULL) {
+    (void) Box_Procedure_Call_Void(TYPE_CLOSE, BOX_DEPTH_UPPER,
+                                   BOX_MSG_SILENT);
     e->is.release = 1;
   }
 
@@ -447,30 +446,24 @@ Int Box_Search_Opened(Int type, BoxDepth depth) {
 /* This function returns the pointer to the structure Box
  * corresponding to the box with depth 'depth'.
  */
-Task Box_Get(Box **box, BoxDepth depth) {
+Box *Box_Get(BoxDepth depth) {
   Int max_depth;
   assert(bs->box != NULL);
   if (depth < BOX_DEPTH_UPPER) depth = BOX_DEPTH_UPPER;
   max_depth = Arr_NumItem(bs->box);
-  if (depth >= max_depth) {
-    MSG_ERROR("Invalid box depth.");
-    return Failed;
-  }
-  *box = Arr_LastItemPtr(bs->box, Box) - depth;
-  return Success;
+  assert(depth < max_depth);
+  return Arr_LastItemPtr(bs->box, Box) - depth;
 }
 
 Task Box_Parent_Get(Expr *e_parent, BoxDepth depth) {
-  Box *b;
-  TASK( Box_Get(& b, depth) );
+  Box *b = Box_Get(depth);
   *e_parent = b->parent;
   e_parent->is.allocd = e_parent->is.release = 0;
   return Success;
 }
 
 Task Box_Child_Get(Expr *e_child, BoxDepth depth) {
-  Box *b;
-  TASK( Box_Get(& b, depth) );
+  Box *b = Box_Get(depth);
   *e_child = b->child;
   return Success;
 }
