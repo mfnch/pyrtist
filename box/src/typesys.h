@@ -55,6 +55,7 @@ enum {
 };
 
 typedef enum {
+  TS_KS_NONE=0,
   TS_KS_ALIAS=1,
   TS_KS_SPECIES=2,
   TS_KS_SUBTYPE=4,
@@ -117,6 +118,10 @@ Int TS_Size(TS *ts, Type t);
  */
 int TS_Is_Anonimous(TS *ts, Type t);
 
+/** Return 1 if 't' is a special type (TYPE_OPEN, TYPE_CLOSE, etc.)
+ */
+int TS_Is_Special(Type t);
+
 /** Resolve types (useful for comparisons).
  * select is a combination (with operator |) of TSKindSelect
  * values which specify what exactly has to be resolved.
@@ -142,6 +147,7 @@ TSKind TS_Kind(TS *ts, Type t);
 
 #define TS_Is_Member(ts, t) (TS_Kind((ts), (t)) == TS_KIND_MEMBER)
 #define TS_Is_Subtype(ts, t) (TS_Kind((ts), (t)) == TS_KIND_SUBTYPE)
+#define TS_Is_Structure(ts, t) (TS_Kind((ts), (t)) == TS_KIND_STRUCTURE)
 
 Int TS_Align(TS *ts, Int address);
 

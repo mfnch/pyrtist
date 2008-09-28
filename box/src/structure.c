@@ -450,10 +450,10 @@ Task Cmp_Structure_Get(Expr *member, int *n) {
     /* (n == 0) if and only if (member_type == TYPE_NONE) */
     if ( (*n == 0) != (member_type == TYPE_NONE) ) {
       MSG_FATAL("Cmp_Structure_Get: errore interno: *n = %d, member_type = %d",
-        *n, member_type);
+                *n, member_type);
       return Failed;
     }
-    if ( n == 0 ) return Success;
+    if (n == 0) return Success;
     member->value.i += Tym_Type_Size(member->resolved);
     member->type = member_type;
     member->resolved = Tym_Type_Resolve_All(member_type);

@@ -18,6 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+#include <assert.h>
+
 #include "types.h"
 #include "typesys.h"
 #include "compiler.h"
@@ -42,5 +44,63 @@ Task Auto_Destructor_Create(Type t) {
   return Success;
 }
 
+static void Create_Iterator_Structure(Type t) {
+  Type ct = TS_Core_Type(cmp->ts, t);
+  Type member;
+  assert(TS_Is_Structure(cmp->ts, ct));
+  member = TS_Member_Next(cmp->ts, ct);
+  while(TS_Is_Member(cmp->ts, member)) {
+    /* Resolve the member into a proper type */
+#ifdef DEBUG
+    Type rm = TS_Resolve(cmp->ts, member, TS_KS_NONE);
+    printf("Structure member has type %s\n", TS_Name_Get(cmp->ts, rm));
+#endif
+    member = TS_Member_Next(cmp->ts, member);
+  }
+}
+
+#if 0
+One problem:
+
+  // Define MyType with a creator and a destructor
+  num_of_MyType_objs = 0
+  MyType = ++(Int id,)
+  ([)@MyType[.id = num_of_MyType_objs++]
+  (\)@MyType[Print["Destroying MyType object n. ", $$.n;]]
+
+  // Now we embed the object into another object
+  Container = (MyType n1, n2, n3)
+  c = Container[]
+
+This should work perfectly! But what if we define the desctructor
+at the end? Here we show what we mean:
+
+  // Define MyType with a creator and a destructor
+  num_of_MyType_objs = 0
+  MyType = ++(Int id,)
+  ([)@MyType[.id = num_of_MyType_objs++]
+
+  // Now we embed the object into another object
+  Container = (MyType n1, n2, n3)
+  c = Container[]
+  (\)@MyType[Print["Destroying MyType object n. ", $$.n;]]
+
+Should we accept that the MyType objects embedded into 'c'
+will not have the destructors called as appropriate
+or should we avoid this by signalling an error/warning?
+#endif
+
 void Auto_Acknowledge_Call(Type parent, Type child, int kind) {
+  if (TS_Is_Special(child)) {
+    Type parent_ct = TS_Core_Type(cmp->ts, parent);
+    switch(TS_Kind(cmp->ts, parent_ct)) {
+    case TS_KIND_STRUCTURE:
+      Create_Iterator_Structure(parent);
+      break;
+    case TS_KIND_SUBTYPE:
+      return;
+    default:
+      return;
+    }
+  }
 }

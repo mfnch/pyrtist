@@ -25,13 +25,15 @@
 
 #include "defaults.h"
 #include "types.h"
-#include "typesys.h"
 #include "messages.h"
 #include "mem.h"
 #include "str.h"
 #include "array.h"
 #include "collection.h"
 #include "hashtable.h"
+#include "virtmach.h"
+#include "typesys.h"
+
 
 static TS *last_ts; /* Just for transition: will be removed! */
 
@@ -113,6 +115,18 @@ int TS_Is_Anonimous(TS *ts, Type t) {
 
   td = Type_Ptr(ts, t);
   return (td->name == (char *) NULL);
+}
+
+int TS_Is_Special(Type t) {
+  switch(t) {
+  case TYPE_OPEN:
+  case TYPE_CLOSE:
+  case TYPE_PAUSE:
+  case TYPE_DESTROY:
+    return 1;
+  default:
+    return 0;
+  }
 }
 
 Type TS_Resolve_Once(TS *ts, Type t, TSKindSelect select) {
