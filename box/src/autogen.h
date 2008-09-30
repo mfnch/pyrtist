@@ -18,6 +18,16 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+/** @file autogen.h
+ * @brief Automatic generation of creators, destructors and similar methods.
+ *
+ * Imagine you have an object MyObj which has a destructor (= a function
+ * to be called before deallocation). Imagine this object is embedded into
+ * a structure, such as Struc = (MyObj a, b, c). Then we need to generate
+ * a proper destructor for Struc, which calls the destructors for all
+ * of its members. This is what this files does.
+ */
+
 #ifndef _AUTOGEN_H
 #  define _AUTOGEN_H
 

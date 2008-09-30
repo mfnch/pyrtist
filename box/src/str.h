@@ -19,6 +19,15 @@
 
 /* $Id$ */
 
+/** @file str.h
+ * @brief Extra functions to deal with strings (used only by the compiler).
+ *
+ * This file contains some functions used to manipulate strings.
+ * These functions are used only by the compiler and has nothing to do with
+ * the implementation of the built-in Box Str object, which can be found
+ * inside bltinstr.c
+ */
+
 #ifndef _STR_H
 #  define _STR_H
 

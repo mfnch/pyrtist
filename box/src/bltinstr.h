@@ -17,14 +17,24 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+/** @file bltinstr.h
+ * @brief BuiLTIN implementation of the STRing object.
+ *
+ * Here we provide the implementation of the Str object, used for in Box
+ * for storing strings which can be concatenated and resized easily.
+ */
+
 #ifndef _BLTINSTR_H
 #  define _BLTINSTR_H
 
 #  include "types.h"
 
+/** @brief The Str object.
+ */
 typedef struct {
-  Int length, buffer_size;
-  char *ptr;
+  Int length; /**< the current length of the string */
+  Int buffer_size; /**< the size of the block allocated to contain the string. */
+  char *ptr; /**< the pointer to the block allocated to contain the string. */
 } Str;
 
 extern Type type_Str, type_StrSpecies;

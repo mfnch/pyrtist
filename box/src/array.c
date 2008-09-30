@@ -31,12 +31,10 @@
 #include <string.h>
 #include <assert.h>
 
-/* De-commentare per includere i messaggi di debug */
 /*#define DEBUG*/
 /*#define DEBUG_RESIZE*/
 
 #include "types.h"
-#include "debug.h"
 #include "messages.h"
 #include "array.h"
 
@@ -46,8 +44,8 @@
 #define DEBUG_MSG(msg)
 #endif
 
-/* Questa macro provvede ad allargare l'array
- * in modo che riesca a contenere n elementi
+/** This macro is used to expand (resize) the Array a such that it can
+ * contain n elements.
  */
 #define ARRAY_EXPAND(a, n)                               \
   if ( n > a->dim ) {                                    \
@@ -68,10 +66,9 @@
     }                                                    \
   }
 
-/* Questa macro provvede a contrarre l'array
- * qualora sia vuota per piu' di 3/4
- * in modo tale che sia almeno mezza piena.
- * n e' il numero di elementi dell'array.
+/** This macro reduces the size of the array, whenever more than 3/4 is empty.
+ * The contraction makes sure that the array is - at least - half filled
+ * n is the number of elements in the array.
  */
 #define ARRAY_SHRINK(a, n)                               \
   if (a->dim > a->mindim) {                              \
@@ -150,8 +147,6 @@ static Task Destroy_Item(UInt item_num, void *item, void *destructor) {
 }
 
 
-/* Distrugge l'array.
- */
 #ifdef DEBUG_ARRAY
 void Arr_Destroy_Debug(Array *a, const char *src, int line)
 #else

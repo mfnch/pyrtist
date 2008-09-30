@@ -20,9 +20,11 @@
 
 /* $Id$ */
 
-/* tokenizer.h - maggio 2004
+/** @file tokenizer.h
+ * @brief The tokenizer for the Box language.
  *
- * File header per usare le funzioni definite in 'tokenizer.lex.c'
+ * This file declares the function used for the lexical analysis of Box
+ * sources, which is done using flex.
  */
 
 int yylex(void);

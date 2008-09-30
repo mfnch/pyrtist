@@ -19,6 +19,12 @@
 
 /* $Id$ */
 
+/** @file fileutils.h
+ * @brief Some utilities for searching files (used just by the compiler).
+ *
+ *
+ */
+
 #ifndef _FILEUTILS_H
 #  define _FILEUTILS_H
 
@@ -28,6 +34,6 @@ void File_Find(List **found_files, const char *file_name,
                List *prefixes, List *suffixes);
 
 void File_Find_First(char **found_file, const char *file_name,
-               List *prefixes, List *suffixes);
+                     List *prefixes, List *suffixes);
 
 #endif

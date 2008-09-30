@@ -20,9 +20,11 @@
 
 /* $Id$ */
 
-/* compiler.h - dicembre 2004
+/** @file compiler.h
+ * @brief Some parts of the compiler, such as the operator handling.
  *
- * Questo file contiene le dichiarazioni per typeman.c, symbol.c, compiler.c
+ * This file contains part of the compiler implementation together with
+ * container.c, expr.c, symbol.c.
  */
 
 #ifndef _COMPILER_H

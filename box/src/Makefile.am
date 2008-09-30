@@ -37,7 +37,7 @@ AM_CPPFLAGS = $(INCLTDL) \
 bin_PROGRAMS = box
 
 noinst_HEADERS = defaults.h types.h mem.h str.h print.h \
-  msgbase.h messages.h debug.h \
+  msgbase.h messages.h \
   list.h array.h collection.h fileutils.h registers.h virtmach.h \
   tokenizer.h parserh.h typesys.h tsdef.c \
   expr.h compiler.h box.h builtins.h bltinstr.h bltinio.h \

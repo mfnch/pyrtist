@@ -17,16 +17,25 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+/** @file bltinio.h
+ * @brief BuiLTIN Input/Output functions.
+ *
+ * This file collects the basic input/output functions of Box.
+ */
+
 #ifndef _BLTINIO_H
 #  define _BLTINIO_H
 
 #  include "types.h"
 #  include "typesys.h"
 
+/** The File data type. */
 extern Type type_File;
 
+/** Register the builtin IO functions. */
 Task Bltin_Io_Init(void);
 
+/** To be called when destroying the compiler data structures. */
 void Bltin_Io_Destroy(void);
 
 #endif

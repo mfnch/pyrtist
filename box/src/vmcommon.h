@@ -20,7 +20,7 @@
 /* $Id$ */
 
 /**
- * @file virtmach.h
+ * @file vmcommon.h
  * @brief The common declarations needed by all the VM sub-parts.
  */
 

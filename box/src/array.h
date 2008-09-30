@@ -19,7 +19,14 @@
 
 /* $Id$ */
 
-/* array.h - 3 maggio 2004 */
+/** @file array.h
+ * @brief Array object, contiguous resizable collection of objects.
+ *
+ * This file implements the Array object: a collection of blocks of equal
+ * specified size which are stored contiguously in memory and which
+ * can be resized easily. Useful to accumulate objects whose number
+ * is not known a priori and which have to be referred by index.
+ */
 
 #ifndef _ARRAY_H
 #  define _ARRAY_H
@@ -28,16 +35,16 @@
 
 /** @brief Array object */
 typedef struct {
-  long ID;      /**< Costante identificativa di struttura inizializzata */
-  void *ptr;    /**< Puntatore alla zona di memoria che contiene i dati */
-  long dim;     /**< Numero massimo di elementi contenibili */
-  long size;    /**< Dimensione in bytes della zona di memoria allocata */
-  long mindim;  /**< Valore minimo di dim */
-  short elsize; /**< Dimensione in bytes di ogni elemento */
-  long numel;   /**< Numero di elementi attualmente inseriti */
+  long ID;      /**< ID constant just used to check for intialisation */
+  void *ptr;    /**< Pointer to the region containing the array of blocks */
+  long dim;     /**< Size (in blocks) of the allocated region  */
+  long size;    /**< Size (in bytes) of the allocated region */
+  long mindim;  /**< Minimum value for dim */
+  short elsize; /**< Size of each block */
+  long numel;   /**< Number of block currently present on the array */
   Task (*destroy)(void *); /**< Used to finalize elements before destruction*/
-  long chain;   /**< Quantita riservata all'estensione Collection */
-  long max_idx; /**< Quantita riservata all'estensione Collection */
+  long chain;   /**< Reserved for Collection (an extension of Array) */
+  long max_idx; /**< Reserved for Collection */
 } Array;
 
 /** Gives a function used to destroy objects when 'Arr_Destroy' is called */
@@ -98,6 +105,9 @@ void *Arr_ItemPtr_Debug(Array *a, int n, const char *src, int line);
 #else
 Array *Array_New(UInt elsize, UInt mindim);
 Task Arr_New(Array **new_array, UInt elsize, UInt mindim);
+
+/** @brief Destroys the array.
+ */
 void Arr_Destroy(Array *a);
 
 #  define Arr_ItemPtr(a, type, n) ((type *) ((a)->ptr + ((n)-1)*((UInt) (a)->elsize)))

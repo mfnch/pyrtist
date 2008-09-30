@@ -19,6 +19,13 @@
 
 /* $Id$ */
 
+/** @file paths.h
+ * @brief Handles the paths used to search for Box headers and libraries.
+ *
+ * Box headers and libraries are searched in some well defined system paths.
+ * This files handles this list of paths.
+ */
+
 #ifndef _PATHS_H
 #  define _PATHS_H
 

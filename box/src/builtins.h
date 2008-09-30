@@ -17,6 +17,13 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+/** @file builtins.h
+ * @brief Register built-in types and functions(calling other bltin modules).
+ *
+ * This file registers the fundamental types of Box, calling also the init
+ * functions for other modules, such as bltinstr and bltinio.
+ */
+
 #ifndef _BUILTINS_H
 #  define _BUILTINS_H
 

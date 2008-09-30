@@ -18,6 +18,14 @@
  ****************************************************************************/
 
 /* $Id$ */
+
+/** @file types.h
+ * @brief Basic definition of frequently used types.
+ *
+ * Some basic definitions which are used throughout all the Box compiler
+ * and libraries.
+ */
+
 #ifndef _TYPES_H
 #  define _TYPES_H
 
