@@ -32,6 +32,7 @@
 #  include "collection.h"
 #  include "hashtable.h"
 #  include "virtmach.h"
+#  include "vmalloc.h"
 
 typedef Int Type;
 
@@ -122,6 +123,12 @@ int TS_Is_Anonimous(TS *ts, Type t);
 /** Return 1 if 't' is a special type (TYPE_OPEN, TYPE_CLOSE, etc.)
  */
 int TS_Is_Special(Type t);
+
+/** Convert a generic type 'm' to a VMObjMethod. If this cannot be done
+ * return VM_OBJ_METHOD_ERR. Example: if m == TYPE_OPEN, then returns
+ * VM_OBJ_METHOD_OPEN.
+ */
+VMObjMethod TS_Obj_Method_From_Type(Type m);
 
 /** Resolve types (useful for comparisons).
  * select is a combination (with operator |) of TSKindSelect

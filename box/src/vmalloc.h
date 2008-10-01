@@ -54,7 +54,8 @@
  * deallocating an object. VM_ALC_CONSTRUCTOR is still unused.
  */
 typedef enum {
-  VM_OBJ_METHOD_OPEN,
+  VM_OBJ_METHOD_ERR=-1,
+  VM_OBJ_METHOD_OPEN=0,
   VM_OBJ_METHOD_CLOSE,
   VM_OBJ_METHOD_PAUSE,
   VM_OBJ_METHOD_DESTROY

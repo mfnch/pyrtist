@@ -129,6 +129,16 @@ int TS_Is_Special(Type t) {
   }
 }
 
+VMObjMethod TS_Obj_Method_From_Type(Type m) {
+  switch(m) {
+  case TYPE_OPEN: return VM_OBJ_METHOD_OPEN;
+  case TYPE_CLOSE: return VM_OBJ_METHOD_CLOSE;
+  case TYPE_PAUSE: return VM_OBJ_METHOD_PAUSE;
+  case TYPE_DESTROY: return VM_OBJ_METHOD_DESTROY;
+  default: return VM_OBJ_METHOD_ERR;
+  }
+}
+
 Type TS_Resolve_Once(TS *ts, Type t, TSKindSelect select) {
   int resolve, is_anonimous;
   TSDesc *td;

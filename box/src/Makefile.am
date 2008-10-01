@@ -41,7 +41,7 @@ noinst_HEADERS = defaults.h types.h mem.h str.h print.h \
   list.h array.h collection.h fileutils.h registers.h virtmach.h \
   tokenizer.h parserh.h typesys.h tsdef.c \
   expr.h compiler.h box.h builtins.h bltinstr.h bltinio.h \
-  hashfunc.h hashtable.h vmalloc.h vmproc.h vmsym.h vmcommon.h \
+  hashfunc.h hashtable.h vmalloc.h vmproc.h vmsym.h \
   vmsymstuff.h paths.h container.h autogen.h
 
 box_SOURCES = mem.c str.c print.c msgbase.c messages.c \
