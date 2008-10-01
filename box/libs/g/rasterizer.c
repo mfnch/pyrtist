@@ -29,7 +29,6 @@
 /* De-commentare per includere i messaggi di debug */
 /*#define DEBUG*/
 
-#include "debug.h"
 #include "error.h"
 #include "graphic.h"
 #include "g.h"
@@ -468,7 +467,6 @@ void rst__line(Point *pa, Point *pb) {
       y2 = CV_MED_LW( CV_A_MED( pb->y ) );
 
     x = b + a*((Real) y1);
-    PRNMSG("Linea parte da: "); PRNINTG(y1); PRNMSG("\n");
     for(y = y1; y <= y2; y++) {
 
       MARK(y, x);
@@ -592,9 +590,7 @@ void rst__cong(Point *pa, Point *pb, Point *pc) {
   for (iy = iymin; iy <= iymax; iy++) {
     c2 = c*c;
 
-    PRNMSG("Cong: riga "); PRNINTG(iy);
     if (c2 <= 1.0) {
-      PRNMSG(":c2<=1.0");
       s1mc2 = sqrt(1.0 - c2);
       i1x = i2x = -a*c;
       i1y = i2y = -b*c;
@@ -603,25 +599,16 @@ void rst__cong(Point *pa, Point *pb, Point *pc) {
 
       /* Ecco i 2 punti di intersezione */
       if ( ((i1x += rx) < 0.0) || ((i1y += ry) < 0.0) ) {
-        PRNMSG(":ramo1");
         i2x -= rx; i2y -= ry;
         if ( (i2x >= 0.0) && (i2y >= 0.0) ) {
-          PRNMSG(":i2x="); PRNFLT(i2x);
-          PRNMSG(" :i2y="); PRNFLT(i2y); PRNMSG(":ok");
           x1 = pa->x + v01x*i2x + v21x*(i2y - 1.0);
           MARK(iy, x1);
-        } else {
-          PRNMSG(":i2x="); PRNFLT(i2x);
-          PRNMSG(" :i2y="); PRNFLT(i2y); PRNMSG(":no");
         }
       } else {
-        PRNMSG(":ramo2");
         if ( ((i2x -= rx) < 0.0) || ((i2y -= ry) < 0.0) ) {
-          PRNMSG(":ok1");
           x1 = pa->x + v01x*i1x + v21x*(i1y - 1.0);
           MARK(iy, x1);
         } else {
-          PRNMSG(":ok2");
           x1 = pa->x + v01x*i1x + v21x*(i1y - 1.0);
           x2 = pa->x + v01x*i2x + v21x*(i2y - 1.0);
           MARK(iy, x1);
@@ -629,7 +616,6 @@ void rst__cong(Point *pa, Point *pb, Point *pc) {
         }
       }
     }
-    PRNMSG("\n");
 
     c += cstep;
   }
@@ -732,14 +718,10 @@ static void rst_circle(Point *pctr, Point *pa, Point *pb) {
   /* Esco in caso di cerchio non visibile */
   if ( (ymax < GRP_AYMIN) || (ymin > GRP_AYMAX) ) return;
 
-  PRNMSG(" no! esco?");
-
   D = sqrt( a.x * a.x + b.x * b.x );
   xmin = ctr.x - D;
   xmax = ctr.x + D;
   if ( (xmax < GRP_AXMIN) || (xmin > GRP_AXMAX) ) return;
-
-  PRNMSG(" no!");
 
   k1 = ( a.x * a.y + b.x * b.y ) / C2;
   k2 = ( a.x * b.y - a.y * b.x ) / C2;
@@ -757,13 +739,6 @@ static void rst_circle(Point *pctr, Point *pa, Point *pb) {
 
   y = ((Real) y1) - ctr.y;
   x = ctr.x + y*k1;
-
-  PRNMSG("; C2 = "); PRNFLT(C2);
-  PRNMSG(" y1 ="); PRNINTG(y1);
-  PRNMSG("; y2 = "); PRNINTG(y2);
-  PRNMSG("; x = "); PRNFLT(x);
-  PRNMSG("; y = "); PRNFLT(y);
-  PRNMSG("]\n");
 
   for(iy = y1; iy <= y2; iy++) {
 

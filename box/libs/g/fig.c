@@ -35,7 +35,6 @@
 /* De-commentare per includere i messaggi di debug */
 /*#define DEBUG*/
 
-#include "debug.h"
 #include "error.h"
 #include "buffer.h"
 #include "graphic.h"  /* Dichiaro alcune strutture grafiche generali */
@@ -324,8 +323,6 @@ grp_window *fig_open_win(int numlayers) {
   buff *laylist;
   int i;
 
-  PRNMSG("fig_open_win:\n  ");
-
   if (numlayers < 1) {
     ERRORMSG("fig_open_win", "Figura senza layers");
     return NULL;
@@ -397,8 +394,6 @@ grp_window *fig_open_win(int numlayers) {
   wd->repair = fig_repair;
   wd->repair(wd);
   wd->win_type_str = fig_id_string;
-
-  PRNMSG("Ok!\n");
   return wd;
 }
 
@@ -410,8 +405,6 @@ int fig_destroy_layer(int l) {
   LayerHeader *flayh, *llayh, *layh;
   buff *laylist;
   int p, n;
-
-  PRNMSG("fig_destroy_layer:\n  ");
 
   /* Trovo l'header della figura attualmente attiva */
   figh = (FigHeader *) grp_win->wrdep;
@@ -486,8 +479,6 @@ int fig_new_layer(void) {
   buff *laylist;
   int l;
 
-  PRNMSG("fig_new_layer:\n  ");
-
   /* Trovo l'header della figura attualmente attiva */
   figh = (FigHeader *) grp_win->wrdep;
 
@@ -555,8 +546,6 @@ void fig_select_layer(int l) {
   FigHeader *figh;
   LayerHeader *layh;
 
-  PRNMSG("fig_select_layer:\n  ");
-
   /* Trovo l'header della figura attualmente attiva */
   figh = (FigHeader *) grp_win->wrdep;
 
@@ -577,8 +566,6 @@ void fig_clear_layer(int l) {
   buff *laylist;
   FigHeader *figh;
   LayerHeader *layh;
-
-  PRNMSG("fig_clear_layer:\n  ");
 
   /* Trovo l'header della figura attualmente attiva */
   figh = (FigHeader *) grp_win->wrdep;
@@ -660,8 +647,6 @@ void Fig_Draw_Layer(grp_window *source, int l) {
   } cmnd;
   long ID, ip, nc;
 
-  PRNMSG("Fig_Draw_Layer:\n  ");
-
   /* Trovo l'header della figura "source" */
   figh = (FigHeader *) source->wrdep;
 
@@ -679,8 +664,6 @@ void Fig_Draw_Layer(grp_window *source, int l) {
 
   ip = 0;    /* ip tiene traccia della posizione del buffer */
   nc = layh->numcmnd;      /* Numero dei comandi inseriti nel layer */
-
-  PRNMSG("Layer contenente "); PRNINTG(nc); PRNMSG(" comandi.\n");
 
   /* Continuo fino ad aver eseguito ogni comando */
   while (nc > 0) {

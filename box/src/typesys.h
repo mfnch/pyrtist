@@ -31,6 +31,7 @@
 #  include "types.h"
 #  include "collection.h"
 #  include "hashtable.h"
+#  include "virtmach.h"
 
 typedef Int Type;
 
@@ -50,8 +51,8 @@ typedef enum {
 } TSKind;
 
 enum {
-  TS_TYPE_NONE = -1,
-  TS_SIZE_UNKNOWN = -1
+  TS_TYPE_NONE = TYPE_NONE,
+  TS_SIZE_UNKNOWN = TYPE_NONE
 };
 
 typedef enum {

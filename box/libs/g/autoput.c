@@ -31,7 +31,6 @@
 /* De-commentare per includere i messaggi di debug */
 /*#define DEBUG*/
 
-#include "debug.h"
 #include "types.h"
 #include "error.h"
 #include "graphic.h"
@@ -93,13 +92,10 @@ int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed)
   register Real ix, iy, jx, jy, g2x, g2y, sg2x, sg2y;
   Point *Fptr, *Rptr;
 
-  PRNMSG("aput_autoput: Calcolo la trasformazione dai vincoli...\n");
-  PRNMSG("...needed = "); PRNINTG(needed); PRNMSG("\n...");
-
   /* n > 0 */
   if (n < 1) {
     WARNINGMSG("autoput", "Numero di punti inferiore a 1");
-    EXIT_ERR("n < 1\n");
+    return 0;
   }
 
   /* Stampo i vincoli, se sono in fase di DEBUG */
@@ -117,8 +113,6 @@ int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed)
     if ( ! AUTO_TRANSLATION_X(needed) ) {
       /* x manuale, y automatico */
       register Real MFx, MFy, MRy, w;
-
-      PRNMSG("auto-traslazione lungo y\n...");
 
       /* Calcoliamo le medie pesate di F.y e R.y */
       wsum = *(wptr = weight);
@@ -144,15 +138,12 @@ int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed)
       /* x automatico , y manuale */
       /* Calcoliamo le medie pesate di f.x e r.x */
 
-      PRNMSG("auto-traslazione lungo x\n...");
       printf("Non ancora implementato!\n");
       return 0;
 
     } else {
       /* x e y entrambi automatici */
       register Real MFx, MFy, MRx, MRy, w;
-
-      PRNMSG("auto-traslazione(lungo x-y)\n...");
 
       /* Calcoliamo le medie pesate di F e R */
       wsum = *(wptr = weight);
@@ -179,8 +170,6 @@ int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed)
     }
 
   } else {
-    PRNMSG("traslazione manuale\n...");
-
     /* Calcoliamo wsum */
     wsum = *(wptr = weight);
     for (i=1; i<n; i++)
@@ -244,7 +233,6 @@ int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed)
   /* Abbiamo ora 3 distinti casi da trattare */
   if ( FIXED_PROPORTION(needed) ) {
     /* CASO 1: Proporzioni fissate manualmente */
-    PRNMSG("proporzioni fisse\n...");
 
     Real A = ix * cos_tau + iy * sin_tau;
     Real B = jx * cos_tau + jy * sin_tau;
@@ -272,11 +260,9 @@ int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed)
 
   } else if ( AUTO_PROPORTION(needed) ) {
     /* CASO 2: Proporzioni automatiche */
-    PRNMSG("proporzioni automatiche\n...");
 
   } else if ( AUTO_INVERSION(needed) ) {
     /* CASO 3: Proporzioni fisse a meno di un inversione */
-    PRNMSG("proporzioni fisse, inversione automatica\n...");
 
   }
 
@@ -345,8 +331,6 @@ int aput_allow(char *permissions, int *needed)
   enum {NORMAL, WAIT_COMPONENT} status = NORMAL;
   enum {CLEAR=0, SET=-1} mode = SET;
 
-  PRNMSG("aput_allow: Inizio conversione stringa allow -> numero...\n...");
-
   p = tolower(*permissions);
   if ( p == ' ' ) { allow = *needed; }
 
@@ -375,11 +359,11 @@ int aput_allow(char *permissions, int *needed)
         break;
        case '\0':
         *needed = allow;
-        EXIT_OK("Ok!\n");
+        return 1;
        default:
-        ERRORMSG("aput_allow",
-         "La lettera non corrisponde ad una trasformazione ammessa" );
-        EXIT_ERR("fallito(1)\n");
+        ERRORMSG("aput_allow", "La lettera non corrisponde "
+                 "ad una trasformazione ammessa");
+        return 0;
       }
       ++permissions;
       break;
@@ -403,5 +387,5 @@ int aput_allow(char *permissions, int *needed)
 
   }
 
-  EXIT_ERR("Dovrebbe essere impossibile vedere questo messaggio!\n");
+  return 0;
 }

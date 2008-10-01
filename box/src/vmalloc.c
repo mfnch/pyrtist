@@ -110,7 +110,8 @@ void VM_Unlink(VMProgram *vmp, Obj *obj) {
     return;
 
   else if (references == 0) {
-    Int method_num = VM_Alloc_Method_Get(vmp, head->type, VM_ALC_DESTRUCTOR);
+    Int method_num = VM_Alloc_Method_Get(vmp, head->type,
+                                         VM_OBJ_METHOD_DESTROY);
     if (method_num >= 0) {
       Obj save_this;
 #ifdef DEBUG_VMALLOC
@@ -150,10 +151,10 @@ void VM_Alloc_Destroy(VMProgram *vmp) {
 
 typedef struct {
   Int type;
-  VMAlcMethod method;
+  VMObjMethod method;
 } Key;
 
-Task VM_Alloc_Method_Set(VMProgram *vmp, Int type, VMAlcMethod m, Int m_num) {
+Task VM_Alloc_Method_Set(VMProgram *vmp, Int type, VMObjMethod m, Int m_num) {
   Key k;
   k.type = type;
   k.method = m;
@@ -165,7 +166,7 @@ Task VM_Alloc_Method_Set(VMProgram *vmp, Int type, VMAlcMethod m, Int m_num) {
   return Success;
 }
 
-Int VM_Alloc_Method_Get(VMProgram *vmp, Int type, VMAlcMethod m) {
+Int VM_Alloc_Method_Get(VMProgram *vmp, Int type, VMObjMethod m) {
   HashItem *found;
   Key k;
   k.type = type;

@@ -31,7 +31,6 @@
 /* De-commentare per includere i messaggi di debug */
 /*#define DEBUG*/
 
-#include "debug.h"
 #include "error.h"
 #include "buffer.h"
 
@@ -215,24 +214,21 @@ int buff_mpush(buff *buffer, void *elem, long numel) {
  *  numel elementi. Restituisce 1 in caso di successo.
  */
 int buff_bigenough(buff *buffer, long numel) {
-  PRNMSG("buff_bigenough: Controllo se e' necessario allargare il buffer\n...");
   if (buffer->id == buffID) {
     if (numel < 0) {
       ERRORMSG("buff_bigenough", "Parametri errati");
-      EXIT_ERR("numel < 0!\n");
+      return 0;
     }
 
-    PRNMSG("Provo...\n");
     /* Controlla che il buffer non debba essere allargato */
     BUFF_EXPAND(buffer, numel);
-    PRNMSG("Fatto!\n");
 
   } else {
     ERRORMSG("buff_bigenough", "Buffer non inizializzato");
-    EXIT_ERR("buffer distrutto o non inizializzato!\n");
+    return 0;
   }
 
-  EXIT_OK("Ok!\n");
+  return 1;
 }
 
 /* NOME: buff_smallenough

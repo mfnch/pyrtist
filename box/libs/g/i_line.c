@@ -36,7 +36,6 @@
 #include "i_gradient.h"
 #include "i_line.h"
 
-#include "debug.h"
 #include "error.h"
 #include "buffer.h"
 #include "fig.h"

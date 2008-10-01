@@ -31,7 +31,7 @@
  * type.
  */
 Task Auto_Destructor_Create(Type t) {
-  Int method_num = VM_Alloc_Method_Get(cmp->vm, t, VM_ALC_DESTRUCTOR);
+  Int method_num = VM_Alloc_Method_Get(cmp->vm, t, VM_OBJ_METHOD_DESTROY);
   if (method_num < 0) {
     Type found;
     TS_Procedure_Search(cmp->ts, & found, (Type *) NULL, t, TYPE_DESTROY, 1);
@@ -91,7 +91,22 @@ or should we avoid this by signalling an error/warning?
 #endif
 
 void Auto_Acknowledge_Call(Type parent, Type child, int kind) {
+  /* We check if the child is a special type: ([), (]), (;), (\).
+   * These are the case for which we need to propagate the methods from
+   * contained objects to their container.
+   */
   if (TS_Is_Special(child)) {
+    Type proc, arg_proto;
+    /* Now we search if the method already exist */
+    TS_Procedure_Inherited_Search(cmp->ts, & proc, & arg_proto,
+                                  parent, child, kind);
+
+    /* If the method exist, then make sure that the VM agrees on that! */
+    /*if (proc != TYPE_NONE) {
+      Int VM_Alloc_Method_Get(cmp->vm, parent, VMAlcMethod m);
+
+    }*/
+
     Type parent_ct = TS_Core_Type(cmp->ts, parent);
     switch(TS_Kind(cmp->ts, parent_ct)) {
     case TS_KIND_STRUCTURE:

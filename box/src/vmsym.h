@@ -35,8 +35,15 @@
 #  include "types.h"
 #  include "array.h"
 #  include "hashtable.h"
-#  include "vmcommon.h"
 #  include "list.h"
+
+/* We cannot include "virtmach.h", since the structure VMProgram contains
+ * VMSymTable. For this reason, it is "virtmach.h" which actually includes
+ * "vmsym.h". We therefore declare the VMProgram structure and define a macro
+ * which we will undef later.
+ */
+struct __vmprogram;
+#  define VMProgram struct __vmprogram
 
 /** @brief The table of reference and definition for the Box VM.
  *
@@ -97,6 +104,8 @@ typedef struct {
   UInt size;
   VMSymCodeGen code_gen;
 } VMSymCodeRef;
+
+#  undef VMProgram
 
 #endif
 
@@ -193,5 +202,6 @@ Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen);
 #  define VM_Sym_Code_New VM_Sym_New
 #  define VM_Sym_Code_Def VM_Sym_Def
 #  define VM_Sym_Resolve_All(vmp) VM_Sym_Resolve(vmp, 0)
+
 #  endif
 #endif

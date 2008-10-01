@@ -34,8 +34,6 @@
 #  include "collection.h"
 #  include "hashtable.h"
 
-#  include "vmcommon.h"
-
 #  define _INSIDE_VIRTMACH_H
 #  include "vmproc.h"
 #  include "vmsym.h"
@@ -133,6 +131,20 @@ typedef enum {
   MODULE_UNDEFINED
 } VMModuleType;
 
+/* The struct __vmprogram and __vmstatus contain pointers to functions whose
+ * arguments are the structures themselves. This requires a trick.
+ * First we declare the structures and we use a macro to make the function
+ * declarations more natural. Later in this file we undef the macros
+ * and typedef the structures (to VMProgram and VMStatus).
+ * Silly, but - at least - this trick should not affect areas outside
+ * this header file.
+ */
+struct __vmprogram;
+struct __vmstatus;
+
+#  define VMProgram struct __vmprogram
+#  define VMStatus struct __vmstatus
+
 /* Tipo che descrive l'indirizzo del (codice-VM / funzione in C)
  * associato al modulo.
  */
@@ -199,6 +211,7 @@ struct __vmstatus {
   Int alc[NUM_TYPES];
 };
 
+/* Here we undef the VMStatus macro and typedef __vmstatus to VMStatus. */
 #undef VMStatus
 typedef struct __vmstatus VMStatus;
 
@@ -250,10 +263,7 @@ struct __vmprogram {
   VMStatus *vmcur;
 };
 
-/* VMProgram was set by 'vmcommon.h' as a macro which expanded to
- * "struct __vmprogram". Here we undefine this macro and we define
- * a corresponding typedef
- */
+/* Here we undef the VMProgram macro and typedef __vmprogram to VMProgram. */
 #  undef VMProgram
 typedef struct __vmprogram VMProgram;
 
