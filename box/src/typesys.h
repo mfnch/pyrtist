@@ -124,12 +124,6 @@ int TS_Is_Anonimous(TS *ts, Type t);
  */
 int TS_Is_Special(Type t);
 
-/** Convert a generic type 'm' to a VMObjMethod. If this cannot be done
- * return VM_OBJ_METHOD_ERR. Example: if m == TYPE_OPEN, then returns
- * VM_OBJ_METHOD_OPEN.
- */
-VMObjMethod TS_Obj_Method_From_Type(Type m);
-
 /** Resolve types (useful for comparisons).
  * select is a combination (with operator |) of TSKindSelect
  * values which specify what exactly has to be resolved.

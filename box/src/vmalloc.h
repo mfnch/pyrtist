@@ -50,17 +50,6 @@
 #  include "types.h"
 #  include "virtmach.h"
 
-/** Kind of method: VM_ALC_DESTRUCTOR is called by VM_Unlink before
- * deallocating an object. VM_ALC_CONSTRUCTOR is still unused.
- */
-typedef enum {
-  VM_OBJ_METHOD_ERR=-1,
-  VM_OBJ_METHOD_OPEN=0,
-  VM_OBJ_METHOD_CLOSE,
-  VM_OBJ_METHOD_PAUSE,
-  VM_OBJ_METHOD_DESTROY
-} VMObjMethod;
-
 /** Allocate size bytes and returns the corresponding object in 'obj'.
  * The memory region is associated with the provided data 'type'
  * and has a initial reference counter equal to 1.
@@ -87,11 +76,11 @@ void VM_Alloc_Destroy(VMProgram *vmp);
 /** Set 'm_num' to be the method of kind 'm' associated with type 'type'
  * in the scope of the virtual machine 'vmp'
  */
-Task VM_Alloc_Method_Set(VMProgram *vmp, Int type, VMObjMethod m, Int m_num);
+Task VM_Alloc_Method_Set(VMProgram *vmp, Int type, Int method, Int m_num);
 
 /** Find the method of kind 'm' associated with type 'type' in the scope
  * of the virtual machine 'vmp'. Return -1 if the method was not found.
  */
-Int VM_Alloc_Method_Get(VMProgram *vmp, Int type, VMObjMethod m);
+Int VM_Alloc_Method_Get(VMProgram *vmp, Int type, Int method);
 
 #endif

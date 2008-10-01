@@ -31,7 +31,7 @@
  * type.
  */
 Task Auto_Destructor_Create(Type t) {
-  Int method_num = VM_Alloc_Method_Get(cmp->vm, t, VM_OBJ_METHOD_DESTROY);
+  Int method_num = VM_Alloc_Method_Get(cmp->vm, t, TYPE_DESTROY);
   if (method_num < 0) {
     Type found;
     TS_Procedure_Search(cmp->ts, & found, (Type *) NULL, t, TYPE_DESTROY, 1);

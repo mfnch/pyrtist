@@ -110,8 +110,7 @@ void VM_Unlink(VMProgram *vmp, Obj *obj) {
     return;
 
   else if (references == 0) {
-    Int method_num = VM_Alloc_Method_Get(vmp, head->type,
-                                         VM_OBJ_METHOD_DESTROY);
+    Int method_num = VM_Alloc_Method_Get(vmp, head->type, TYPE_DESTROY);
     if (method_num >= 0) {
       Obj save_this;
 #ifdef DEBUG_VMALLOC
@@ -151,13 +150,13 @@ void VM_Alloc_Destroy(VMProgram *vmp) {
 
 typedef struct {
   Int type;
-  VMObjMethod method;
+  Int method;
 } Key;
 
-Task VM_Alloc_Method_Set(VMProgram *vmp, Int type, VMObjMethod m, Int m_num) {
+Task VM_Alloc_Method_Set(VMProgram *vmp, Int type, Int method, Int m_num) {
   Key k;
   k.type = type;
-  k.method = m;
+  k.method = method;
   /* Should I check for re-definition and how should I deal with that? */
   if (!HT_Insert_Obj(vmp->method_table,
                      & k, sizeof(Key),
@@ -166,11 +165,11 @@ Task VM_Alloc_Method_Set(VMProgram *vmp, Int type, VMObjMethod m, Int m_num) {
   return Success;
 }
 
-Int VM_Alloc_Method_Get(VMProgram *vmp, Int type, VMObjMethod m) {
+Int VM_Alloc_Method_Get(VMProgram *vmp, Int type, Int method) {
   HashItem *found;
   Key k;
   k.type = type;
-  k.method = m;
+  k.method = method;
   if (HT_Find(vmp->method_table, & k, sizeof(Key), & found))
     return *((Int *) found->object);
   return -1;

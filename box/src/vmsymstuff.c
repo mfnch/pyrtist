@@ -80,7 +80,7 @@ static Task Register_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
     assert(def_size == sizeof(UInt) && ref_size == sizeof(Int));
     call_num = *((UInt *) def);
     type = *((Int *) ref);
-    return VM_Alloc_Method_Set(vmp, type, VM_OBJ_METHOD_DESTROY, call_num);
+    return VM_Alloc_Method_Set(vmp, type, TYPE_DESTROY, call_num);
   }
   return Success;
 }
