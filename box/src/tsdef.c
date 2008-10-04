@@ -56,31 +56,7 @@
 /* Here we define the head of the function. We also specify what piece
  * of common code will be used to define it.
  */
-#if defined(TS_STRUCTURE_BEGIN)
-#  define TS_X_BEGIN TS_KIND_STRUCTURE
-Task TS_Structure_Begin(TS *ts, Type *s)
-
-#elif defined(TS_SPECIES_BEGIN)
-#  define TS_X_BEGIN TS_KIND_SPECIES
-Task TS_Species_Begin(TS *ts, Type *s)
-
-#elif defined(TS_ENUM_BEGIN)
-#  define TS_X_BEGIN TS_KIND_ENUM
-Task TS_Enum_Begin(TS *ts, Type *s)
-
-#elif defined(TS_STRUCTURE_ADD)
-#  define TS_X_ADD TS_KIND_STRUCTURE
-Task TS_Structure_Add(TS *ts, Type s, Type m, const char *m_name)
-
-#elif defined(TS_SPECIES_ADD)
-#  define TS_X_ADD TS_KIND_SPECIES
-Task TS_Species_Add(TS *ts, Type s, Type m)
-
-#elif defined(TS_ENUM_ADD)
-#  define TS_X_ADD TS_KIND_ENUM
-Task TS_Enum_Add(TS *ts, Type s, Type m)
-
-#elif defined(TS_NAME_GET_CASE_STRUCTURE)
+#if defined(TS_NAME_GET_CASE_STRUCTURE)
 #  define TS_NAME_GET_CASE_X TS_KIND_STRUCTURE
 #  define GROUP_EMPTY "(,)"
 #  define GROUP_ONE "(%~s,)"
@@ -100,67 +76,7 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
 #endif
 
 /* here we really define the body of the function */
-#if defined(TS_X_BEGIN)
-/* Code for TS_Structure_Begin, TS_Species_Begin, etc. */
-{
-  TSDesc td;
-  TS_TSDESC_INIT(& td);
-  td.kind = TS_X_BEGIN;
-  td.target = TS_TYPE_NONE;
-  td.data.last = TS_TYPE_NONE;
-  td.size = 0;
-  TASK( Type_New(ts, s, & td) );
-  return Success;
-}
-
-#elif defined(TS_X_ADD)
-/* Code for TS_Structure_Add, TS_Species_Add, etc. */
-{
-  TSDesc td, *m_td, *s_td;
-  Type new_m;
-  Int m_size;
-  m_td = Type_Ptr(ts, m);
-  m_size = m_td->size;
-  TS_TSDESC_INIT(& td);
-  td.kind = TS_KIND_MEMBER;
-  td.target = m;
-#  ifdef TS_STRUCTURE_ADD
-  if (m_name != (char *) NULL) td.name = Mem_Strdup(m_name);
-  td.size = TS_Align(ts, TS_Size(ts, s));
-#  else
-  td.size = m_size;
-#  endif
-  td.data.member_next = s;
-  TASK( Type_New(ts, & new_m, & td) );
-
-  s_td = Type_Ptr(ts, s);
-  assert(s_td->kind == TS_X_ADD);
-  if (s_td->data.last != TS_TYPE_NONE) {
-    m_td = Type_Ptr(ts, s_td->data.last);
-    assert(m_td->kind == TS_KIND_MEMBER);
-    m_td->data.member_next = new_m;
-  }
-  s_td->data.last = new_m;
-  if (s_td->target == TS_TYPE_NONE) s_td->target = new_m;
-#  ifdef TS_STRUCTURE_ADD
-  s_td->size += m_size;
-  /* We also add the member to the hashtable for fast search */
-  if (m_name != (char *) NULL) {
-    Name n;
-    TASK( Member_Full_Name(ts, & n, s, m_name) );
-    HT_Insert_Obj(ts->members, n.text, n.length, & new_m, sizeof(Type));
-  }
-
-#  elif defined(TS_ENUM_ADD)
-  m_size += TS_Align(ts, sizeof(Int));
-  if (m_size > s_td->size) s_td->size = m_size;
-#  else
-  if (m_size > s_td->size) s_td->size = m_size;
-#  endif
-  return Success;
-}
-
-#elif defined(TS_NAME_GET_CASE_X)
+#if defined(TS_NAME_GET_CASE_X)
   /* A case in the main switch statement of the TS_Name_Get function */
     if (td->size > 0) {
       char *name = (char *) NULL;
@@ -198,18 +114,6 @@ Task TS_Enum_Add(TS *ts, Type s, Type m)
     }
     return Mem_Strdup(GROUP_EMPTY);
 
-#endif
-
-#ifdef TS_X_NEW
-#  undef TS_X_NEW
-#endif
-
-#ifdef TS_X_BEGIN
-#  undef TS_X_BEGIN
-#endif
-
-#ifdef TS_X_ADD
-#  undef TS_X_ADD
 #endif
 
 #ifdef TS_NAME_GET_CASE_X

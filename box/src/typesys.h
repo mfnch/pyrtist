@@ -241,17 +241,30 @@ Task TS_Detached_New(TS *ts, Type *detached, Type origin);
 /** Create a new array type, with 'item_num' items with type 'item'. */
 Task TS_Array_New(TS *ts, Type *array, Type item, Int num_items);
 
-Task TS_Structure_Begin(TS *ts, Type *s);
+/** Function called to create an empty structure. Members can be added
+ * with TS_Structure_Add.
+ */
+Task TS_Structure_Begin(TS *ts, Type *structure);
 
-Task TS_Structure_Add(TS *ts, Type s, Type m, const char *m_name);
+/** Add a member to a structure type defined with TS_Structure_Begin. */
+Task TS_Structure_Add(TS *ts, Type structure, Type member_type,
+                      const char *member_name);
 
-Task TS_Species_Begin(TS *ts, Type *s);
+/** Function called to create an empty species. Members can be added
+ * with TS_Species_Add.
+ */
+Task TS_Species_Begin(TS *ts, Type *species);
 
-Task TS_Species_Add(TS *ts, Type s, Type m);
+/** Add a member to a species type defined with TS_Species_Begin. */
+Task TS_Species_Add(TS *ts, Type species, Type member);
 
-Task TS_Enum_Begin(TS *ts, Type *e);
+/** Function called to create an empty enumeration. Members can be added
+ * with TS_Structure_Enum.
+ */
+Task TS_Enum_Begin(TS *ts, Type *enumeration);
 
-Task TS_Enum_Add(TS *ts, Type e, Type t);
+/** Add a member to an enumeration type defined with TS_Enum_Begin. */
+Task TS_Enum_Add(TS *ts, Type enumeration, Type member);
 
 /** Get the child type of a subtype. */
 void TS_Subtype_Get_Child(TS *ts, Type *child, Type subtype);

@@ -205,6 +205,45 @@ Task TS_Name_Set(TS *ts, Type t, const char *name) {
   return Success;
 }
 
+static char *TS_Name_Get_Case(TSKind kind, TS *ts, TSDesc *td, Type t,
+                              char *empty, char *one, char *two, char *many) {
+  char *name = (char *) NULL;
+  Type m = td->target;
+  Type previous_type = TS_TYPE_NONE;
+
+  if (td->size < 1)
+    return Mem_Strdup(empty);
+
+  while (1) {
+    TSDesc *m_td = Type_Ptr(ts, m);
+    char *m_name = TS_Name_Get(ts, m_td->target);
+    if (kind == TS_KIND_STRUCTURE) {
+      if (m_td->name != (char *) NULL) {
+        if (m_td->target != previous_type)
+          m_name = printdup("%~s %s", m_name, m_td->name);
+        else {
+          Mem_Free(m_name);
+          m_name = Mem_Strdup(m_td->name);
+        }
+      }
+      previous_type = m_td->target;
+    }
+
+    m = m_td->data.member_next;
+    if (m == t) {
+      if (name == (char *) NULL)
+        return printdup(one, m_name);
+      else
+        return printdup(two, name, m_name);
+    } else {
+      if (name == (char *) NULL)
+        name = m_name; /* no need to free! */
+      else
+        name = printdup(many, name, m_name);
+    }
+  }
+}
+
 char *TS_Name_Get(TS *ts, Type t) {
   TSDesc *td = Type_Ptr(ts, t);
   td = Resolve(ts, & t, t, 0);
@@ -225,19 +264,16 @@ char *TS_Name_Get(TS *ts, Type t) {
       return printdup("()%~s", TS_Name_Get(ts, td->target));
 
   case TS_KIND_STRUCTURE:
-#define TS_NAME_GET_CASE_STRUCTURE
-#include "tsdef.c"
-#undef TS_NAME_GET_CASE_STRUCTURE
+    return TS_Name_Get_Case(TS_KIND_STRUCTURE, ts, td, t,
+                            "(,)", "(%~s,)", "(%~s, %~s)", "%~s, %~s");
 
   case TS_KIND_SPECIES:
-#define TS_NAME_GET_CASE_SPECIES
-#include "tsdef.c"
-#undef TS_NAME_GET_CASE_SPECIES
+    return TS_Name_Get_Case(TS_KIND_SPECIES, ts, td, t,
+                            "(->)", "(%~s->)", "(%~s->%~s)", "%~s->%~s");
 
   case TS_KIND_ENUM:
-#define TS_NAME_GET_CASE_ENUM
-#include "tsdef.c"
-#undef TS_NAME_GET_CASE_ENUM
+    return TS_Name_Get_Case(TS_KIND_ENUM, ts, td, t,
+                            "(|)", "(%~s|)", "(%~s|%~s)", "%~s|%~s");
 
   case TS_KIND_PROC:
     {
@@ -359,6 +395,8 @@ Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind) {
   return Success;
 }
 
+/*FUNCTIONS: TS_X_New *******************************************************/
+
 /* Common code for Ts_Alias_New, TS_Detached_New and TS_Array_New. */
 static Task TS_X_New(TSKind kind, TS *ts, Type *dst, Type src, Int size) {
   TSDesc td;
@@ -389,30 +427,97 @@ Task TS_Array_New(TS *ts, Type *array, Type item, Int num_items) {
 }
 
 /*FUNCTIONS: TS_X_Begin *****************************************************/
-#define TS_STRUCTURE_BEGIN
-#include "tsdef.c"
-#undef TS_STRUCTURE_BEGIN
 
-#define TS_SPECIES_BEGIN
-#include "tsdef.c"
-#undef TS_SPECIES_BEGIN
+/* Code for TS_Structure_Begin, TS_Species_Begin, etc. */
+static Task TS_X_Begin(TSKind kind, TS *ts, Type *s) {
+  TSDesc td;
+  TS_TSDESC_INIT(& td);
+  td.kind = kind;
+  td.target = TS_TYPE_NONE;
+  td.data.last = TS_TYPE_NONE;
+  td.size = 0;
+  return Type_New(ts, s, & td);
+}
 
-#define TS_ENUM_BEGIN
-#include "tsdef.c"
-#undef TS_ENUM_BEGIN
+Task TS_Structure_Begin(TS *ts, Type *structure) {
+  return TS_X_Begin(TS_KIND_STRUCTURE, ts, structure);
+}
+
+Task TS_Species_Begin(TS *ts, Type *species) {
+  return TS_X_Begin(TS_KIND_SPECIES, ts, species);
+}
+
+Task TS_Enum_Begin(TS *ts, Type *enumeration) {
+  return TS_X_Begin(TS_KIND_ENUM, ts, enumeration);
+}
 
 /*FUNCTIONS: TS_X_Add *******************************************************/
-#define TS_STRUCTURE_ADD
-#include "tsdef.c"
-#undef TS_STRUCTURE_ADD
 
-#define TS_SPECIES_ADD
-#include "tsdef.c"
-#undef TS_SPECIES_ADD
+/* Code for TS_Structure_Add, TS_Species_Add, etc. */
+static Task TS_X_Add(TSKind kind, TS *ts, Type s, Type m,
+                     const char *m_name) {
+  TSDesc td, *m_td, *s_td;
+  Type new_m;
+  Int m_size;
+  m_td = Type_Ptr(ts, m);
+  m_size = m_td->size;
+  TS_TSDESC_INIT(& td);
+  td.kind = TS_KIND_MEMBER;
+  td.target = m;
+  if (kind == TS_KIND_STRUCTURE) {
+    if (m_name != (char *) NULL) td.name = Mem_Strdup(m_name);
+    td.size = TS_Align(ts, TS_Size(ts, s));
+  } else {
+    td.size = m_size;
+  }
+  td.data.member_next = s;
+  TASK( Type_New(ts, & new_m, & td) );
 
-#define TS_ENUM_ADD
-#include "tsdef.c"
-#undef TS_ENUM_ADD
+  s_td = Type_Ptr(ts, s);
+  assert(s_td->kind == kind);
+  if (s_td->data.last != TS_TYPE_NONE) {
+    m_td = Type_Ptr(ts, s_td->data.last);
+    assert(m_td->kind == TS_KIND_MEMBER);
+    m_td->data.member_next = new_m;
+  }
+  s_td->data.last = new_m;
+  if (s_td->target == TS_TYPE_NONE) s_td->target = new_m;
+
+  switch(kind) {
+  case TS_KIND_STRUCTURE:
+    s_td->size += m_size;
+    /* We also add the member to the hashtable for fast search */
+    if (m_name != (char *) NULL) {
+      Name n;
+      TASK( Member_Full_Name(ts, & n, s, m_name) );
+      HT_Insert_Obj(ts->members, n.text, n.length, & new_m, sizeof(Type));
+    }
+    break;
+
+  case TS_KIND_ENUM:
+    m_size += TS_Align(ts, sizeof(Int));
+    if (m_size > s_td->size) s_td->size = m_size;
+    break;
+
+  default:
+    if (m_size > s_td->size) s_td->size = m_size;
+    break;
+  }
+  return Success;
+}
+
+Task TS_Structure_Add(TS *ts, Type structure, Type member_type,
+                      const char *member_name) {
+  return TS_X_Add(TS_KIND_STRUCTURE, ts, structure, member_type, member_name);
+}
+
+Task TS_Species_Add(TS *ts, Type species, Type member) {
+  return TS_X_Add(TS_KIND_SPECIES, ts, species, member, NULL);
+}
+
+Task TS_Enum_Add(TS *ts, Type enumeration, Type member) {
+  return TS_X_Add(TS_KIND_ENUM, ts, enumeration, member, NULL);
+}
 
 /****************************************************************************/
 /* Procedure registration and search */
