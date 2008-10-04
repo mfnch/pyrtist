@@ -411,33 +411,30 @@ Task Expr_Array_Member(Expr *member, Expr *array, Expr *index) {
  * This function should be used at the beginning of a function
  * to construct the expressions for the child and parent.
  */
-void Expr_Parent_And_Child(Expr *e_parent, Expr *e_child, Type t_proc) {
-  Type t_parent, t_child;
-  TS_Procedure_Info(cmp->ts, & t_parent, & t_child, (int *) NULL,
-   (UInt *) NULL, t_proc);
-
-  Expr_New_Value(e_parent, t_parent);
-  if (e_parent->is.value) {
+void Expr_Parent_And_Child(Expr *parent_e, Expr *child_e,
+                           Type parent_t, Type child_t) {
+  Expr_New_Value(parent_e, parent_t);
+  if (parent_e->is.value) {
     /* Here we occupy a TYPE_OBJ even if the type is TYPE_INT, etc.
      * This is because we have to get the object from the register go1
      */
-    e_parent->is.target = 1;
-    e_parent->categ = CAT_PTR;
-    e_parent->is.gaddr = 0;
-    e_parent->addr = Reg_Occupy(TYPE_OBJ);
-    e_parent->value.i = 0;
-    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, e_parent->addr, CAT_GREG, 1);
+    parent_e->is.target = 1;
+    parent_e->categ = CAT_PTR;
+    parent_e->is.gaddr = 0;
+    parent_e->addr = Reg_Occupy(TYPE_OBJ);
+    parent_e->value.i = 0;
+    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, parent_e->addr, CAT_GREG, 1);
   }
 
-  Expr_New_Value(e_child, t_child);
-  if (e_child->is.value) {
+  Expr_New_Value(child_e, child_t);
+  if (child_e->is.value) {
     /* See previous comment! */
-    e_child->is.target = 1;
-    e_child->categ = CAT_PTR;
-    e_child->is.gaddr = 0;
-    e_child->addr = Reg_Occupy(TYPE_OBJ);
-    e_child->value.i = 0;
-    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, e_child->addr, CAT_GREG, 2);
+    child_e->is.target = 1;
+    child_e->categ = CAT_PTR;
+    child_e->is.gaddr = 0;
+    child_e->addr = Reg_Occupy(TYPE_OBJ);
+    child_e->value.i = 0;
+    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, child_e->addr, CAT_GREG, 2);
   }
 }
 

@@ -27,7 +27,6 @@
  */
 
 #ifndef _COMPILER_H
-/* This file must be included only by "compiler.h" */
 #  include "compiler.h"
 
 #else
@@ -35,7 +34,7 @@
 #    define _BOX_H
 
 typedef struct {
-  UInt cur_proc_num;
+  UInt cur_sheet;
   Int num_defs; /**< 0 in global context, 1 inside procedure definitions. */
   Array *box;
 } BoxStack;
@@ -47,7 +46,7 @@ typedef struct {
     unsigned int definition : 1; /**< instance or definition of procedure? */
     unsigned int second : 1; /**< This is 1 only if it is a non-creation box */
   } is;
-  UInt   proc_num;     /**< Number of the procedure where the box is */
+  UInt   sheet;        /**< Number of the procedure where the box is */
   UInt   head_sym_num; /**< Symbol ID associated with the header of the proc. */
   Int    type;         /**< Type of the box */
   Expr   parent;       /**< Expression associated with the box */
@@ -114,8 +113,21 @@ BoxDepth Box_Def_Depth(int n);
  */
 Task Box_NParent_Get(Expr *e_parent, Int level, BoxDepth depth);
 
-Task Box_Def_Begin(Int proc_type);
+/** Invoked when a new procedure is being defined. */
+Task Box_Procedure_Begin(Type parent, Type child, Type procedure);
+
+/** Invoked to finalise and register a procedure created with
+ * Box_Procedure_Begin.
+ */
+Task Box_Procedure_End(UInt *call_num);
+
+/** Similar to Box_Procedure_Begin but find automatically 'parent' and 'child'
+ * from 'procedure'.
+ */
+Task Box_Def_Begin(Type procedure);
+
 Task Box_Def_End(void);
+
 Task Box_Main_Begin(void);
 void Box_Main_End(void);
 

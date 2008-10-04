@@ -204,7 +204,7 @@ Task HT_Rename(Hashtable *ht, void *key, unsigned int key_size,
 }
 
 /*
- * doCopy whether to copy the key when a new object is made
+ * do_copy: whether to copy the key when a new object is made
  */
 void HT_Copy_Key(Hashtable *ht, int do_copy) {
   ht->settings.copy_keys = do_copy;

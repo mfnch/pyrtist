@@ -180,7 +180,7 @@ Task TS_Procedure_Register(TS *ts, Type p, UInt sym_num);
 
 /** Obtain the symbol identification number of a registered procedure.
  */
-void TS_Procedure_Sym_Num(TS *ts, UInt *sym_num, Type p);
+void TS_Procedure_Sym_Num_Get(TS *ts, UInt *sym_num, Type p);
 
 /** Search the given procedure in the list of registered procedures.
  * Return the procedure in *proc, or TS_TYPE_NONE if the procedure

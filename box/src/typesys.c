@@ -417,7 +417,7 @@ Task TS_Procedure_Register(TS *ts, Type p, UInt sym_num) {
   return Success;
 }
 
-void TS_Procedure_Sym_Num(TS *ts, UInt *sym_num, Type p) {
+void TS_Procedure_Sym_Num_Get(TS *ts, UInt *sym_num, Type p) {
   TSDesc *proc_td;
   proc_td = Type_Ptr(ts, p);
   assert(proc_td->kind == TS_KIND_PROC);

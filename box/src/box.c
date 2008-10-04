@@ -48,7 +48,7 @@ static BoxStack box_stack, *bs = & box_stack;
 Task Box_Init(void) {
   TASK( Arr_New(& bs->box, sizeof(Box), BOX_ARR_SIZE) );
   bs->num_defs = 0;
-  bs->cur_proc_num = -1;
+  bs->cur_sheet = -1;
   return Success;
 }
 
@@ -75,7 +75,7 @@ Task Box_Main_Begin(void) {
   UInt main_sheet;
   TASK( VM_Proc_Code_New(cmp_vm, & main_sheet) );
   TASK( VM_Proc_Target_Set(cmp_vm, main_sheet) );
-  bs->cur_proc_num = main_sheet;
+  bs->cur_sheet = main_sheet;
   TASK( Box_Instance_Begin((Expr *) NULL, 1) );
   b = Arr_LastItemPtr(bs->box, Box);
   TASK( VM_Sym_Proc_Head(cmp_vm, & b->head_sym_num) );
@@ -125,7 +125,7 @@ int Box_Procedure_Search(Box *b, Int procedure, Type *prototype,
     return 0;
 
   } else {
-    TS_Procedure_Sym_Num(cmp->ts, sym_num, p);
+    TS_Procedure_Sym_Num_Get(cmp->ts, sym_num, p);
     return 1;
   }
 }
@@ -179,7 +179,7 @@ Task Box_Procedure_Call(Expr *child, BoxDepth depth, BoxMsg verbosity) {
     return Success;
   }
 
-  TS_Procedure_Sym_Num(cmp->ts, & sym_num, p);
+  TS_Procedure_Sym_Num_Get(cmp->ts, & sym_num, p);
 
   /* Now we compile the procedure */
   /* We pass the argument of the procedure if its size is > 0 */
@@ -213,7 +213,7 @@ Task Box_Procedure_Call_Void(Type type, BoxDepth depth, BoxMsg verbosity) {
   return Success;
 }
 
-Task Box_Def_Begin(Int proc_type) {
+Task Box_Procedure_Begin(Type parent, Type child, Type procedure) {
   UInt new_sheet;
   Box b, *b_ptr;
 
@@ -239,35 +239,33 @@ Task Box_Def_Begin(Int proc_type) {
   TASK( VM_Sym_Proc_Head(cmp_vm, & b.head_sym_num) );
 
   /* Now we get the parent and the child of the procedure.
-   * We create two expression which will be used to refer
+   * We create two expressions which will be used to refer
    * to these objects.
    */
-  Expr_Parent_And_Child(& b.parent, & b.child, proc_type);
+  Expr_Parent_And_Child(& b.parent, & b.child, parent, child);
 
   /* We finally collect all the other data about the box and we push
    * it in the array of opened boxes.
    */
   b.is.second = 0;
   b.syms = NULL;
-  b.type = proc_type;
+  b.type = procedure;
   b.is.definition = 1;
-  b.proc_num = new_sheet;
-  /*Expr_New_Void(& b.parent);*/
+  b.sheet = new_sheet;
   TASK(Arr_Push(bs->box, & b));
-  bs->cur_proc_num = new_sheet;
+  bs->cur_sheet = new_sheet;
   ++bs->num_defs;
 
-  /* Creo le labels che puntano all'inizio ed alla fine della box */
+  /* Used to create jump labels for If and For */
   b_ptr = Arr_LastItemPtr(bs->box, Box);
   TASK( VM_Label_New_Here(cmp_vm, & b_ptr->label_begin) );
   TASK( VM_Label_New_Undef(cmp_vm, & b_ptr->label_end) );
   return Success;
 }
 
-Task Box_Def_End(void) {
+Task Box_Procedure_End(UInt *call_num) {
   Box *b;
-  Int proc_type;
-  UInt sym_num, call_num, proc_num;
+  UInt my_call_num;
 
   b = Arr_LastItemPtr(bs->box, Box);
   assert(b->is.definition);
@@ -290,24 +288,51 @@ Task Box_Def_End(void) {
   }
 
   VM_Assemble(cmp_vm, ASM_RET);
+
+  /* Adjust register allocation instructions at the beginning
+   * of the procedure
+   */
   TASK(Box_Def_Prepare(b->head_sym_num));
-  proc_type = b->type;
-  proc_num = b->proc_num;
-  TS_Procedure_Sym_Num(cmp->ts, & sym_num, proc_type);
+
   /* We finally install the code for the procedure */
-  TASK( VM_Proc_Install_Code(cmp_vm, & call_num, proc_num,
-                             "(noname)", Tym_Type_Name(proc_type)) );
+  TASK( VM_Proc_Install_Code(cmp_vm, & my_call_num, b->sheet,
+                             "(noname)", Tym_Type_Name(b->type)) );
   /* And define the symbol */
-  TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
   TASK( Reg_Frame_Pop() );
 
+  /* Restore to the state before the call to Box_Procedure_Begin */
   TASK(Arr_Dec(bs->box));
   if (Arr_NumItem(bs->box) > 0) {
     b = Arr_LastItemPtr(bs->box, Box);
-    TASK( VM_Proc_Target_Set(cmp_vm, b->proc_num) );
-    bs->cur_proc_num = b->proc_num;
+    TASK( VM_Proc_Target_Set(cmp_vm, b->sheet) );
+    bs->cur_sheet = b->sheet;
   }
   --bs->num_defs;
+  if (call_num != NULL) *call_num = my_call_num;
+  return Success;
+}
+
+
+Task Box_Def_Begin(Type procedure) {
+  Type parent_t, child_t;
+  /* We get the parent and the child of the procedure. */
+  TS_Procedure_Info(cmp->ts, & parent_t, & child_t, (int *) NULL,
+                    (UInt *) NULL, procedure);
+  return Box_Procedure_Begin(parent_t, child_t, procedure);
+}
+
+Task Box_Def_End(void) {
+  Box *b = Box_Get(0);
+  UInt sym_num, call_num;
+
+  /* We first register the procedure for the VM: the VM knows about it */
+  TASK( Box_Procedure_End(& call_num) );
+
+  /* We then register the procedure for the compiler: Box programs will
+   * be able to link agains it.
+   */
+  TS_Procedure_Sym_Num_Get(cmp->ts, & sym_num, b->type);
+  TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
   return Success;
 }
 
@@ -351,7 +376,7 @@ Task Box_Instance_Begin(Expr *e, int kind) {
 
   /* Inserisce la nuova sessione */
   b.is.definition = 0; /* This is just an instance, not a definition */
-  b.proc_num = bs->cur_proc_num; /* The procedure number where we are now */
+  b.sheet = bs->cur_sheet; /* The procedure sheet number where we are now */
   TASK(Arr_Push(bs->box, & b));
 
   if (e != NULL)

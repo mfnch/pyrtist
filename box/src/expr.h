@@ -168,10 +168,11 @@ Task Expr_Array_Member(Expr *memb, Expr *array, Expr *index);
 
 /** This function gets the parent and the child of the given procedure
  * out of the global registers used for passing the respective pointers.
- * This function should be used at the beginning of a function
+ * This function should be used at the beginning of a procedure
  * to construct the expressions for the child and parent.
  */
-void Expr_Parent_And_Child(Expr *e_parent, Expr *e_child, Type t_proc);
+void Expr_Parent_And_Child(Expr *parent_e, Expr *child_e,
+                           Type parent_t, Type child_t);
 
 /** Called when the / stands as a prefix for the expression *e. */
 Task Expr_Ignore(Expr *e);
