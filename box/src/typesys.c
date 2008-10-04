@@ -262,7 +262,7 @@ Task TS_Array_Member(TS *ts, Type *memb, Type array, Int *array_size) {
   TSDesc *a_td = Type_Ptr(ts, a);
   if (a_td->kind != TS_KIND_ARRAY) {
     MSG_ERROR("Cannot extract element of the non-array type '%~s'",
-     TS_Name_Get(ts, array));
+              TS_Name_Get(ts, array));
     return Failed;
   }
   *memb = a_td->target;
@@ -296,6 +296,12 @@ void TS_Member_Get(TS *ts, Type *t, Int *address, Type m) {
   if (t != (Type *) NULL) *t = m_td->target;
   if (address != (Int *) NULL) *address = m_td->size;
 }
+
+/*char *TS_Member_Name_Get(TS *ts, Type *t) {
+  TSDesc *m_td = Type_Ptr(ts, m);
+  assert(m_td->kind == TS_KIND_MEMBER);
+  return ;
+}*/
 
 Type TS_Member_Next(TS *ts, Type m) {
   TSDesc *td = Type_Ptr(ts, m);
@@ -353,21 +359,34 @@ Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind) {
   return Success;
 }
 
-#define TS_ALIAS_NEW
-#include "tsdef.c"
-#undef TS_ALIAS_NEW
+/* Common code for Ts_Alias_New, TS_Detached_New and TS_Array_New. */
+static Task TS_X_New(TSKind kind, TS *ts, Type *dst, Type src, Int size) {
+  TSDesc td;
+  TSDesc *src_td = Type_Ptr(ts, src);
+  TS_TSDESC_INIT(& td);
+  td.kind = kind;
+  td.target = src;
+  if (kind == TS_KIND_ARRAY) {
+    td.size = size < 0 ? TS_SIZE_UNKNOWN : size*src_td->size;
+    td.data.array_size = size;
+  } else {
+    td.size = src_td->size;
+  }
+  TASK( Type_New(ts, dst, & td) );
+  return Success;
+}
 
-#define TS_LINK_NEW
-#include "tsdef.c"
-#undef TS_LINK_NEW
+Task TS_Alias_New(TS *ts, Type *alias, Type origin) {
+  return TS_X_New(TS_KIND_ALIAS, ts, alias, origin, -1);
+}
 
-#define TS_DETACHED_NEW
-#include "tsdef.c"
-#undef TS_DETACHED_NEW
+Task TS_Detached_New(TS *ts, Type *detached, Type origin) {
+  return TS_X_New(TS_KIND_DETACHED, ts, detached, origin, -1);
+}
 
-#define TS_ARRAY_NEW
-#include "tsdef.c"
-#undef TS_ARRAY_NEW
+Task TS_Array_New(TS *ts, Type *array, Type item, Int num_items) {
+  return TS_X_New(TS_KIND_ARRAY, ts, array, item, num_items);
+}
 
 /*FUNCTIONS: TS_X_Begin *****************************************************/
 #define TS_STRUCTURE_BEGIN

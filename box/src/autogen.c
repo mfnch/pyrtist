@@ -53,7 +53,8 @@ Task Auto_Destructor_Create(Type t) {
 
 static void Create_Iterator_Structure(Type t, Type proc) {
   Type ct = TS_Core_Type(cmp->ts, t);
-  Type member;
+  Type member_t;
+  Expr parent_e, member_e;
   /* A structure is fast if it contains only fast types. fast structures do not
    * need to have an iterator. They do not require to propagate the basic
    * methods.
@@ -61,14 +62,14 @@ static void Create_Iterator_Structure(Type t, Type proc) {
   int fast_structure = 0;
 
   assert(TS_Is_Structure(cmp->ts, ct));
-  member = TS_Member_Next(cmp->ts, ct);
-  while(TS_Is_Member(cmp->ts, member)) {
+  member_t = TS_Member_Next(cmp->ts, ct);
+  while(TS_Is_Member(cmp->ts, member_t)) {
     /* Resolve the member into a proper type */
 #if DEBUG == 1
-    Type rm = TS_Resolve(cmp->ts, member, TS_KS_NONE);
+    Type rm = TS_Resolve(cmp->ts, member_t, TS_KS_NONE);
     printf("Structure member has type %s\n", TS_Name_Get(cmp->ts, rm));
 #endif
-    member = TS_Member_Next(cmp->ts, member);
+    member_t = TS_Member_Next(cmp->ts, member_t);
   }
 
   if (fast_structure) return;
@@ -76,6 +77,17 @@ static void Create_Iterator_Structure(Type t, Type proc) {
   /* We need to create the iterator */
 #if 0
   ASSERT_TASK( Box_Procedure_Begin(TYPE_VOID, TYPE_VOID, TYPE_VOID) );
+  ASSERT_TASK( Box_Parent_Get(& parent_e, 0) );
+
+  member_t = TS_Member_Next(cmp->ts, ct);
+  while(TS_Is_Member(cmp->ts, member_t)) {
+    char *member_n = TS_Name_Get()
+    ASSERT_TASK( Expr_Struc_Member(& member_e, member_t, ) );
+    member_t = TS_Member_Next(cmp->ts, member_t);
+  }
+
+//   Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name)
+
   ASSERT_TASK( Box_Procedure_End(NULL) );
 #endif
 }

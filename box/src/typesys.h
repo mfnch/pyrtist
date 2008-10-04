@@ -222,26 +222,28 @@ Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type);
  */
 void TS_Subtype_Find(TS *ts, Type *subtype, Type parent, Name *child);
 
+/** Associate the name 'name' to the anonimous type 't'. */
 Task TS_Name_Set(TS *ts, Type t, const char *name);
 
+/** Create the string representation of the Type 't'. The returned string
+ * has to be freed by the user.
+ */
 char *TS_Name_Get(TS *ts, Type t);
 
-Task TS_Alias_New(TS *ts, Type *a, Type t);
+/** Create a new alias type from the type 'origin'. */
+Task TS_Alias_New(TS *ts, Type *alias, Type origin);
 
 /** Create a new detached type from the type t. The new type (in *d) will be
  * identical to t, but incompatible: TS_Compare will not match the two types.
  */
-Task TS_Detached_New(TS *ts, Type *a, Type t);
+Task TS_Detached_New(TS *ts, Type *detached, Type origin);
 
-#if 0
-Task TS_SubType_New(TS *ts, Type *s,)
-#endif
+/** Create a new array type, with 'item_num' items with type 'item'. */
+Task TS_Array_New(TS *ts, Type *array, Type item, Int num_items);
 
 Task TS_Structure_Begin(TS *ts, Type *s);
 
 Task TS_Structure_Add(TS *ts, Type s, Type m, const char *m_name);
-
-Task TS_Array_New(TS *ts, Type *a, Type t, Int size);
 
 Task TS_Species_Begin(TS *ts, Type *s);
 
