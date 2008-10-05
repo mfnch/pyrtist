@@ -1,14 +1,11 @@
 // Header file for the g library
 
-R = (Char -> Int -> Real)
-P = ((R, R) -> Point)
-
 const = (Real pi, degrees)
 const.pi = 3.14159265358979323844
 const.degrees = 0.01745329251994329576 // pi/180
 
-Deg = Real, R@Deg[$$ = $*0.01745329251994329576]
-Dpi = Real, R@Dpi[$$ = $/25.4]
+Deg = Real, Real@Deg[$$ = $*0.01745329251994329576]
+Dpi = Real, Real@Dpi[$$ = $/25.4]
 
 include "matrix"
 include "pointlist"

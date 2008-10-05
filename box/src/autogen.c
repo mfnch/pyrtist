@@ -22,6 +22,7 @@
 
 #include "types.h"
 /*#include "messages.h"*/
+#include "str.h"
 #include "typesys.h"
 #include "compiler.h"
 #include "vmalloc.h"
@@ -54,39 +55,44 @@ Task Auto_Destructor_Create(Type t) {
 static void Create_Iterator_Structure(Type t, Type proc) {
   Type ct = TS_Core_Type(cmp->ts, t);
   Type member_t;
-  Expr parent_e, member_e;
+  Expr structure_e;
   /* A structure is fast if it contains only fast types. fast structures do not
    * need to have an iterator. They do not require to propagate the basic
    * methods.
    */
-  int fast_structure = 0;
+  int fast_structure = 1;
 
   assert(TS_Is_Structure(cmp->ts, ct));
   member_t = TS_Member_Next(cmp->ts, ct);
   while(TS_Is_Member(cmp->ts, member_t)) {
     /* Resolve the member into a proper type */
-#if DEBUG == 1
-    Type rm = TS_Resolve(cmp->ts, member_t, TS_KS_NONE);
-    printf("Structure member has type %s\n", TS_Name_Get(cmp->ts, rm));
-#endif
+    fast_structure &= TS_Is_Fast(cmp->ts, member_t);
     member_t = TS_Member_Next(cmp->ts, member_t);
   }
 
   if (fast_structure) return;
 
   /* We need to create the iterator */
-#if 0
-  ASSERT_TASK( Box_Procedure_Begin(TYPE_VOID, TYPE_VOID, TYPE_VOID) );
-  ASSERT_TASK( Box_Parent_Get(& parent_e, 0) );
+#if 1
+  ASSERT_TASK( Box_Procedure_Begin(ct, TYPE_VOID, TYPE_VOID) );
+  ASSERT_TASK( Box_Parent_Get(& structure_e, 0) );
 
   member_t = TS_Member_Next(cmp->ts, ct);
   while(TS_Is_Member(cmp->ts, member_t)) {
-    char *member_n = TS_Name_Get()
-    ASSERT_TASK( Expr_Struc_Member(& member_e, member_t, ) );
+    if (TS_Is_Fast(cmp->ts, member_t)) {
+      Expr member_e;
+      char *member_str = TS_Member_Name_Get(cmp->ts, member_t);
+      Name member_n;
+      Name_From_Str(& member_n, member_str);
+      ASSERT_TASK( Expr_Struc_Member(& member_e, & structure_e, & member_n) );
+      if (member_e.is.value && Tym_Type_Size(member_e.resolved) > 0) {
+        ASSERT_TASK( Cmp_Expr_Container_Change(& member_e, CONTAINER_ARG(1)) );
+      }
+      ASSERT_TASK( Cmp_Expr_Destroy_Tmp(& member_e) );
+    }
+
     member_t = TS_Member_Next(cmp->ts, member_t);
   }
-
-//   Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name)
 
   ASSERT_TASK( Box_Procedure_End(NULL) );
 #endif

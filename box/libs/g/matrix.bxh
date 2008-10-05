@@ -1,16 +1,13 @@
-R = (Int -> Real)
-P = ((R, R) -> Point)
-
 Matrix = (Real m11, m12, m13, m21, m22, m23)
 
 // If a real is provided inside Matrix[] then we multiply the matrix
 // by the real
-R@&Matrix[
+Real@&Matrix[
   $$.m11 *= $, $$.m12 *= $, $$.m21 *= $, $$.m22 *= $, $$.m13 *= $, $$.m23 *= $
 ]
 
 // A point just translates the matrix
-P@&Matrix[$$.m13 += $.x, $$.m23 += $.y]
+Point@&Matrix[$$.m13 += $.x, $$.m23 += $.y]
 
 // We initialize with the identity matrix
 ([)@Matrix[
@@ -46,7 +43,7 @@ Matrix.Inverse = Matrix
 ]
 
 Matrix.Apply = Point
-P@Matrix.Apply[
+Point@Matrix.Apply[
   $$.x = $$$.m11 * $.x + $$$.m12 * $.y + $$$.m13
   $$.y = $$$.m21 * $.x + $$$.m22 * $.y + $$$.m23
 ]
@@ -57,4 +54,3 @@ Matrix@Print[
   "((", $.m11, v, $.m12, v, $.m13, ')', v
   '(', $.m21, v, $.m22, v, $.m23, "))"
 ]
-

@@ -74,7 +74,7 @@ void Expr_New_Value(Expr *e, Type t) {
   Expr_Background(e);
   e->is.typed = 1;
   e->type = t;
-  e->resolved = TS_Resolve(cmp->ts, t, TS_KS_ALIAS | TS_KS_SPECIES);
+  e->resolved = TS_Core_Type(cmp->ts, t);
   e->is.value = (TS_Size(cmp->ts, t) > 0) ? 1 : 0;
   e->categ = CAT_LREG;
   e->value.i = 0;
@@ -239,7 +239,7 @@ Int Expr_Allocation_Type(Expr *e) {
 
 void Expr_Cast(Expr *e, Type t) {
   Cont c;
-  Type r = TS_Resolve(cmp->ts, t, TS_KS_ALIAS | TS_KS_SPECIES);
+  Type r = TS_Core_Type(cmp->ts, t);
   ContType ct = (r > TYPE_OBJ) ? TYPE_OBJ : r;
   Expr_Cont_Get(& c, e);
   Cont_Ptr_Cast(& c, ct);
@@ -347,8 +347,7 @@ Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name) {
 
   /* Determino se si tratta di un oggetto intrinseco */
 #if 0
-  t = TS_Resolve(cmp->ts, s->type,  TS_KS_ALIAS | TS_KS_SPECIES
-                                  | TS_KS_DETACHED);
+  t = TS_Core_Type(cmp->ts, s->type);
 #endif
 
   if (s->resolved < NUM_INTRINSICS)
@@ -805,7 +804,7 @@ void Expr_Alloc(Expr *e) {
 
   t = e->type;
   size = TS_Size(cmp->ts, t);
-  is_intrinsic = (e->resolved < NUM_INTRINSICS);
+  is_intrinsic = TS_Is_Fast(cmp->ts, e->type);
 
   if (size < 1) return;
 

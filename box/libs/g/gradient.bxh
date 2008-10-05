@@ -6,14 +6,14 @@ Gradient = ++Ptr
 (\)@Gradient ? "gradient_destroy"
 
 Gradient.Line = Void
-P@Gradient.Line ? "gradient_line_point"
+Point@Gradient.Line ? "gradient_line_point"
 
 Gradient.Circle = Void
-P@Gradient.Circle ? "gradient_circle_point"
-R@Gradient.Circle ? "gradient_circle_real"
+Point@Gradient.Circle ? "gradient_circle_point"
+Real@Gradient.Circle ? "gradient_circle_real"
 (;)@Gradient.Circle ? "gradient_circle_pause"
 
-R@Gradient ? "gradient_real"
+Real@Gradient ? "gradient_real"
 Color@Gradient ? "gradient_color"
 ()Char@Gradient ? "gradient_string"
 

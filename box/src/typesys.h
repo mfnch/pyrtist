@@ -34,8 +34,6 @@
 #  include "virtmach.h"
 #  include "vmalloc.h"
 
-typedef Int Type;
-
 typedef enum {
   TS_KIND_INTRINSIC=1,
   TS_KIND_ALIAS,
@@ -56,13 +54,19 @@ enum {
   TS_SIZE_UNKNOWN = TYPE_NONE
 };
 
+/** Used with the TS_Resolve & co. to specify how the type should be resolved.
+ * NOTE: TS_KS_ANONYMOUS has a special interpretation. It is used to specify
+ *  that the only the anonymous types should be resolved, while the types with
+ *  name should not be resolved. If TS_KS_ANONYMOUS is not used, then both
+ *  anonymous and named types are resolved.
+ */
 typedef enum {
   TS_KS_NONE=0,
   TS_KS_ALIAS=1,
   TS_KS_SPECIES=2,
   TS_KS_SUBTYPE=4,
   TS_KS_DETACHED=8,
-  TS_KS_ANONIMOUS=16
+  TS_KS_ANONYMOUS=16
 } TSKindSelect;
 
 typedef struct {
@@ -115,10 +119,10 @@ void TS_Destroy(TS *ts);
 Int TS_Size(TS *ts, Type t);
 #define TS_Size_Get TS_Size
 
-/** True if 't' is an anonimous type: anonimous types are types without
+/** True if 't' is an anonymous type: anonymous types are types without
  * a name. A type can be named using 'TS_Name_Set'.
  */
-int TS_Is_Anonimous(TS *ts, Type t);
+int TS_Is_Anonymous(TS *ts, Type t);
 
 /** Return 1 if 't' is a special type (TYPE_OPEN, TYPE_CLOSE, etc.)
  */
@@ -146,6 +150,12 @@ Type TS_Resolve(TS *ts, Type t, TSKindSelect select);
 Type TS_Core_Type(TS *ts, Type t);
 
 TSKind TS_Kind(TS *ts, Type t);
+
+/** Box types can be subtivided into two cathegories: fast types and
+ * slow types. A type is fast if the Box VM has a corresponding register
+ * type, otherwise it is slow.
+ */
+int TS_Is_Fast(TS *ts, Type t);
 
 #define TS_Is_Member(ts, t) (TS_Kind((ts), (t)) == TS_KIND_MEMBER)
 #define TS_Is_Subtype(ts, t) (TS_Kind((ts), (t)) == TS_KIND_SUBTYPE)
@@ -222,7 +232,7 @@ Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type);
  */
 void TS_Subtype_Find(TS *ts, Type *subtype, Type parent, Name *child);
 
-/** Associate the name 'name' to the anonimous type 't'. */
+/** Associate the name 'name' to the anonymous type 't'. */
 Task TS_Name_Set(TS *ts, Type t, const char *name);
 
 /** Create the string representation of the Type 't'. The returned string
@@ -290,6 +300,9 @@ void TS_Member_Find(TS *ts, Type *m, Type s, const char *m_name);
  * with TS_Member_Find)
  */
 void TS_Member_Get(TS *ts, Type *t, Int *address, Type m);
+
+/** Obtain the name of a member from its type descriptor. */
+char *TS_Member_Name_Get(TS *ts, Type member);
 
 /** If m is a structure/species/enum returns its first member.
  * If m is a member, return the next member.

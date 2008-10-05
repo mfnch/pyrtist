@@ -39,24 +39,29 @@
 #  include "vmsym.h"
 #  undef _INSIDE_VIRTMACH_H
 
-/* Associo un numero a ciascun tipo, per poterlo identificare */
+/** To each type a number is associated. */
+typedef Int Type;
+
+/** Here is a list of builtin types. */
 typedef enum {
-  TYPE_NONE  = -1,
-  TYPE_CHAR  =  0,
-  TYPE_INTG  =  1,
-  TYPE_INT   =  1,
-  TYPE_REAL  =  2,
-  TYPE_POINT =  3,
-  TYPE_OBJ   =  4,
-  TYPE_FIRST_USER_DEF = 5,
-  TYPE_VOID  =  5,
-  TYPE_OPEN  =  6,
-  TYPE_CLOSE =  7,
-  TYPE_PAUSE =  8,
-  TYPE_DESTROY= 9,
-  TYPE_PTR   = 10,
-  TYPE_IF    = 11,
-  TYPE_FOR   = 12
+  TYPE_NONE           = -1,
+  TYPE_FAST_FIRST     =  0,
+  TYPE_CHAR           =  0,
+  TYPE_INTG           =  1,
+  TYPE_INT            =  1,
+  TYPE_REAL           =  2,
+  TYPE_POINT          =  3,
+  TYPE_OBJ            =  4,
+  TYPE_FAST_LAST      =  4,
+  TYPE_VOID           =  5,
+  TYPE_OPEN           =  6,
+  TYPE_CLOSE          =  7,
+  TYPE_PAUSE          =  8,
+  TYPE_DESTROY        =  9,
+  TYPE_ITER           = 10,
+  TYPE_PTR            = 11,
+  TYPE_IF             = 12,
+  TYPE_FOR            = 13
 } TypeID;
 
 /* Enumero gli header di istruzione della macchina virtuale.

@@ -108,7 +108,7 @@ static TSDesc *Fully_Resolve(TS *ts, Type *rt, Type t) {
   }
 }
 
-int TS_Is_Anonimous(TS *ts, Type t) {
+int TS_Is_Anonymous(TS *ts, Type t) {
   TSDesc *td;
 
   if (t == TS_TYPE_NONE) return 1;
@@ -130,14 +130,14 @@ int TS_Is_Special(Type t) {
 }
 
 Type TS_Resolve_Once(TS *ts, Type t, TSKindSelect select) {
-  int resolve, is_anonimous;
+  int resolve, resolve_only_anonimous, is_not_anonimous;
   TSDesc *td;
   Type rt;
 
   if (t == TS_TYPE_NONE) return TS_TYPE_NONE;
 
   td = Type_Ptr(ts, t);
-  is_anonimous = (td->name == (char *) NULL);
+
   rt = td->target;
   switch(td->kind) {
   case TS_KIND_MEMBER:
@@ -160,8 +160,10 @@ Type TS_Resolve_Once(TS *ts, Type t, TSKindSelect select) {
     resolve = 0;
   }
 
-  if (resolve) return rt;
-  return t;
+  resolve_only_anonimous = (select & TS_KS_ANONYMOUS) != 0;
+  is_not_anonimous = (td->name != (char *) NULL);
+  if (resolve_only_anonimous && is_not_anonimous) return t;
+  return resolve ? rt : t;
 }
 
 Type TS_Resolve(TS *ts, Type t, TSKindSelect select) {
@@ -169,14 +171,17 @@ Type TS_Resolve(TS *ts, Type t, TSKindSelect select) {
   do {
     t = rt;
     rt = TS_Resolve_Once(ts, t, select);
-    if ((select & TS_KS_ANONIMOUS) != 0 && !TS_Is_Anonimous(ts, rt))
-      return rt;
   } while(rt != t);
   return t;
 }
 
 Type TS_Core_Type(TS *ts, Type t) {
   return TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES);
+}
+
+int TS_Is_Fast(TS *ts, Type t) {
+  Type ct = TS_Core_Type(ts, t);
+  return (ct >= TYPE_FAST_FIRST && ct <= TYPE_FAST_LAST);
 }
 
 Int TS_Size(TS *ts, Type t) {
@@ -333,11 +338,11 @@ void TS_Member_Get(TS *ts, Type *t, Int *address, Type m) {
   if (address != (Int *) NULL) *address = m_td->size;
 }
 
-/*char *TS_Member_Name_Get(TS *ts, Type *t) {
-  TSDesc *m_td = Type_Ptr(ts, m);
+char *TS_Member_Name_Get(TS *ts, Type member) {
+  TSDesc *m_td = Type_Ptr(ts, member);
   assert(m_td->kind == TS_KIND_MEMBER);
-  return ;
-}*/
+  return m_td->name;
+}
 
 Type TS_Member_Next(TS *ts, Type m) {
   TSDesc *td = Type_Ptr(ts, m);
@@ -607,7 +612,7 @@ void TS_Procedure_Inherited_Search(TS *ts, Type *proc, Type *expansion_type,
     previous_parent = parent;
     parent = TS_Resolve(ts, parent,
                         TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES |
-                        TS_KS_SUBTYPE | TS_KS_ANONIMOUS);
+                        TS_KS_SUBTYPE | TS_KS_ANONYMOUS);
   } while (parent != previous_parent);
 }
 

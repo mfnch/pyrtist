@@ -6,7 +6,7 @@ Window = ++Ptr
 (\)@Window ? "window_destroy"
 
 ()Char@Window ? "window_str"
-P@Window ? "window_size"
+Point@Window ? "window_size"
 Color@&Window ? "window_color"
 Gradient@&Window ? "window_gradient"
 Style@&Window ? "window_style"
@@ -20,20 +20,20 @@ Window@Window.Save ? "window_save_window"
 
 Window.Hot = Point
 ([)@Window.Hot ? "window_hot_begin"
-P@Window.Hot ? "window_hot_point"
+Point@Window.Hot ? "window_hot_point"
 ()Char@Window.Hot ? "window_hot_string"
 PointList@Window.Hot ? "window_hot_pointlist"
 (])@Window.Hot ? "window_hot_end"
 
 Window.Res = Void
-R@Window.Res ? "window_res_real"
-P@Window.Res ? "window_res_point"
+Real@Window.Res ? "window_res_real"
+Point@Window.Res ? "window_res_point"
 
 Window.Origin = Void
-P@Window.Origin ? "window_origin_point"
+Point@Window.Origin ? "window_origin_point"
 
 Window.File = Void
 ()Char@Window.File ? "window_file_string"
 
 Window.Show = Void
-P@&Window.Show ? "window_show_point"
+Point@&Window.Show ? "window_show_point"

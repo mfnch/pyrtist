@@ -1,14 +1,14 @@
 // Definition of the type Color and some example of Color-s
 
 // Definition of Color, the RGB version
-Color = ++(R r, g, b, a)
+Color = ++(Real r, g, b, a)
 
 ([)@Color[.r = .g = .b = 0.0, .a = 1.0]
 Color@&Color[.r = $.r, .g = $.g, .b = $.b, .a = $.a]
 
-R@&Color[$$.r = $$.g = $$.b = $]
-(R r, g, b)@&Color[$$.r = $.r, $$.g = $.g, $$.b = $.b]
-(R r, g, b, a)@&Color[$$.r = $.r, $$.g = $.g, $$.b = $.b, $$.a = $.a]
+Real@&Color[$$.r = $$.g = $$.b = $]
+(Real r, g, b)@&Color[$$.r = $.r, $$.g = $.g, $$.b = $.b]
+(Real r, g, b, a)@&Color[$$.r = $.r, $$.g = $.g, $$.b = $.b, $$.a = $.a]
 
 Color@Print["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, ", .a=", $.a, "]"]
 
@@ -19,9 +19,9 @@ Hsv = HSV
 ([)@&HSV[.h = 0.0, .s = .v = .a = 1.0]
 HSV@&HSV[.h = $.h, .s = $.s, .v = $.v, .a = $.a]
 
-R@&HSV[$$.h = $, $$.s = $$.v = $$.a = 1.0]
-(R h, s, v)@&HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v]
-(R h, s, v, a)@&HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v, $$.a = $.a]
+Real@&HSV[$$.h = $, $$.s = $$.v = $$.a = 1.0]
+(Real h, s, v)@&HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v]
+(Real h, s, v, a)@&HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v, $$.a = $.a]
 
 HSV@Print["HSV[.h=", $.h, ", .s=", $.s, ", .v=", $.v, ", .a=", $.a, "]"]
 

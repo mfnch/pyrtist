@@ -438,7 +438,7 @@ Task Cmp_Structure_Get(Expr *member, int *n) {
     first.is.release = 0;
     first.addr = member->value.i;
     first.type = member_type;
-    first.resolved = Tym_Type_Resolve_All(member_type);
+    first.resolved = TS_Core_Type(cmp->ts, member_type);
     first.is.gaddr = (member->categ == CAT_GREG) ? 1 : 0;
     first.value.i = 0;
     *member = first;
@@ -456,7 +456,7 @@ Task Cmp_Structure_Get(Expr *member, int *n) {
     if (n == 0) return Success;
     member->value.i += Tym_Type_Size(member->resolved);
     member->type = member_type;
-    member->resolved = Tym_Type_Resolve_All(member_type);
+    member->resolved = TS_Core_Type(cmp->ts, member_type);
   }
   return Success;
 }

@@ -9,17 +9,17 @@ Style.Fill = Void
 
 Style.Border = Void
 Color@Style.Border ? "style_border_color"
-R@Style.Border ? "style_border_real"
+Real@Style.Border ? "style_border_real"
 ()Char@Style.Border ? "style_border_join"
 
 Style.Border.Dash = Void
 ([)@Style.Border.Dash ? "style_border_dash_begin"
-R@Style.Border.Dash ? "style_border_dash_real"
+Real@Style.Border.Dash ? "style_border_dash_real"
 (;)@Style.Border.Dash ? "style_border_dash_pause"
 (])@Style.Border.Dash ? "style_border_dash_end"
 
 Style.Border.MiterLimit = Void
-R@Style.Border.MiterLimit ? "style_border_miter_limit"
+Real@Style.Border.MiterLimit ? "style_border_miter_limit"
 
 Style.Border.Cap = Void
 ()Char@Style.Border.Cap ? "style_border_cap_string"

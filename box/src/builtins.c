@@ -136,6 +136,7 @@ static Task Blt_Define_Types(void) {
     {NAME("(])"),      0,             TYPE_CLOSE},
     {NAME("(;)"),      0,             TYPE_PAUSE},
     {NAME("(\\)"),     0,             TYPE_DESTROY},
+    {NAME("(?)"),      0,             TYPE_ITER},
     {NAME("Ptr"),      sizeof(Ptr),   TYPE_PTR},
     {NAME(""),        -1,             TYPE_NONE}
   };
@@ -218,45 +219,10 @@ Task Builtins_Init(void) {
   Operation *opn;
   int status;
 
-#if 0
   TASK( Blt_Define_Types() );
   type_Point = type_PointSpecies;
   type_RealNum = type_RealSpecies;
   type_IntNum = type_IntSpecies;
-
-#else
-  /* Definisco i tipi intrinseci */
-  {
-    Int t;
-    TASK( Tym_Def_Intrinsic(& t, & NAME("Char"), sizeof(Char)) );
-    assert(t == TYPE_CHAR);
-    TASK( Tym_Def_Intrinsic(& t, & NAME("Int"), sizeof(Int)  ) );
-    assert(t == TYPE_INTG);
-    TASK( Tym_Def_Intrinsic(& t, & NAME("Real"), sizeof(Real)  ) );
-    assert(t == TYPE_REAL);
-    TASK( Tym_Def_Intrinsic(& t, & NAME("Point"), sizeof(Point) ) );
-    assert(t == TYPE_POINT);
-    TASK( Tym_Def_Intrinsic(& t, & NAME("(Object)"), 0 ) ); /* NOTE: ??? */
-    assert(t == TYPE_OBJ);
-    TASK( Tym_Def_Intrinsic(& t, & NAME("Void"), 0 ) );
-    assert(t == TYPE_VOID);
-    TASK( Tym_Def_Intrinsic(& t, & NAME("([)"), 0 ) );
-    assert(t == TYPE_OPEN);
-    TASK( Tym_Def_Intrinsic(& t, & NAME("(])"), 0 ) );
-    assert(t == TYPE_CLOSE);
-    TASK( Tym_Def_Intrinsic(& t, & NAME("(;)"), 0 ) );
-    assert(t == TYPE_PAUSE);
-    TASK( Tym_Def_Intrinsic(& t, & NAME("(\\)"), 0 ) );
-    assert(t == TYPE_DESTROY);
-    TASK( Tym_Def_Intrinsic(& t, & NAME("Ptr"), sizeof(Ptr) ) );
-
-    /* Define conditional types */
-    TASK( Tym_Def_Explicit_Alias(& t, & NAME("If"), TYPE_INT) );
-    assert(t == TYPE_IF);
-    TASK( Tym_Def_Explicit_Alias(& t, & NAME("For"), TYPE_INT) );
-    assert(t == TYPE_FOR);
-  }
-#endif
 
   /* Creo gli operatori */
   status = 0; /* Se qualcosa va male trovero' status = 1, alla fine! */

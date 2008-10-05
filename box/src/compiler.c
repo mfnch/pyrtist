@@ -366,7 +366,7 @@ Task Cmp_Conversion(Int type1, Int type2, Expr *e) {
 
   if ( type1 == type2 ) return Success;
   t1 = TS_Resolve(cmp->ts, type1, TS_KS_ALIAS | TS_KS_SPECIES);
-  t2 = TS_Resolve(cmp->ts, type2, TS_KS_ALIAS);
+  t2 = TS_Resolve(cmp->ts, type2, TS_KS_ALIAS | TS_KS_SPECIES);
   if ( t1 == t2 ) return Success;
 
 #ifdef DEBUG_SPECIES_EXPANSION
@@ -379,7 +379,7 @@ Task Cmp_Conversion(Int type1, Int type2, Expr *e) {
   if ( opn == NULL ) {
     if ( ! do_it ) return Failed;
     MSG_ERROR("Conversion from '%s' to '%s' is undefined!",
-     Tym_Type_Names(type1), Tym_Type_Names(type2));
+              Tym_Type_Names(type1), Tym_Type_Names(type2));
     return Failed;
   }
 
@@ -829,7 +829,7 @@ Task Cmp_Expr_LReg(Expr *e, Int type, int zero) {
   e->type = type;
   e->resolved = Tym_Type_Resolve_All(type);
 
-  if (type < CMP_PRIVILEGED) {
+  if (TS_Is_Fast(cmp->ts, type)) {
     if ( zero ) { e->value.i = 0; return Success; }
     if ( (e->value.i = Reg_Occupy(type)) < 1 ) return Failed;
     return Success;
@@ -899,7 +899,7 @@ Task Cmp_Expr_To_X(Expr *expr, AsmArg categ, Int reg, int and_free) {
          addr_categ, expr->addr );
       }
 
-      if ( (t < 0) || (t >= NUM_INTRINSICS) ) {
+      if (t < 0 || t >= NUM_INTRINSICS) {
         MSG_ERROR("Errore interno in Cmp_Expr_To_X");
         return Failed;
       }
@@ -974,7 +974,7 @@ Task Cmp_Expr_To_Ptr(Expr *expr, AsmArg categ, Int reg, int and_free) {
     register Int t = expr->resolved;
 
     TASK( Cmp_Expr_To_X(expr, CAT_LREG, (Int) 0, and_free) );
-    assert( (t >= 0) && (t < NUM_INTRINSICS) );
+    assert(t >= 0 && t < NUM_INTRINSICS);
     Cmp_Assemble(asm_lea[t], CAT_LREG, (Int) 0);
     Cmp_Assemble(ASM_MOV_OO, categ, reg, CAT_LREG, (Int) 0);
     return Success;
@@ -983,7 +983,7 @@ Task Cmp_Expr_To_Ptr(Expr *expr, AsmArg categ, Int reg, int and_free) {
     register Int t = expr->resolved;
 
     assert(t >= 0);
-    if ( t < NUM_INTRINSICS ) {
+    if (t < NUM_INTRINSICS) {
       if ( expr->categ == CAT_PTR ) {
         /* L'espressione e' un puntatore, allora devo settare il puntatore
         * di riferimento, in modo da realizzare una cosa simile a:
@@ -1055,7 +1055,7 @@ Task Cmp_Expr_Container_Change(Expr *e, Container *c) {
       register Int t = e->resolved;
       assert(t >= 0);
 
-      if ( t < NUM_INTRINSICS ) {
+      if (t < NUM_INTRINSICS) {
         if ( e->categ == CAT_PTR ) {
           /* L'espressione e' un puntatore, allora devo settare il puntatore
           * di riferimento, in modo da realizzare una cosa simile a:
@@ -1195,16 +1195,16 @@ Task Cmp_Expr_Move(Expr *e_dest, Expr *e_src) {
 
     is_integer = (e_src->resolved == TYPE_CHAR)
               || (e_src->resolved == TYPE_INT);
-    if ( (e_src->categ == CAT_IMM) && (! is_integer) ) {
+    if (e_src->categ == CAT_IMM && !is_integer) {
       TASK( Cmp_Complete_Ptr_1(e_dest) );
       switch ( t ) {
        case TYPE_REAL:
         Cmp_Assemble(ASM_MOV_Rimm,
-         c, e_dest->value.i, CAT_IMM, e_src->value.r);
+                     c, e_dest->value.i, CAT_IMM, e_src->value.r);
         break;
        case TYPE_POINT:
         Cmp_Assemble(ASM_MOV_Pimm,
-         c, e_dest->value.i, CAT_IMM, e_src->value.p);
+                     c, e_dest->value.i, CAT_IMM, e_src->value.p);
         break;
        default:
         MSG_ERROR("Internal error in Cmp_Expr_Move");

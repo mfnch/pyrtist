@@ -3,7 +3,7 @@
 // Style for joining lines
 LineStyle = ++(Real a, b, c, d)
 
-R@LineStyle[.a = .b = .c = .d = $]
+Real@LineStyle[.a = .b = .c = .d = $]
 
 line = (LineStyle sharp, medium, smooth)
 line.sharp.a  = 0.0, line.sharp.b  =-1.0, line.sharp.c  = 0.0, line.sharp.d  =-1.0
@@ -13,8 +13,8 @@ line.smooth.a = 2.0, line.smooth.b = 2.0, line.smooth.c = 2.0, line.smooth.d = 2
 Window.Line = PointList
 ([)@Window.Line ? "line_begin"
 (])@Window.Line ? "line_end"
-R@Window.Line ? "line_real"
-P@Window.Line ? "line_point"
+Real@Window.Line ? "line_real"
+Point@Window.Line ? "line_point"
 (;)@Window.Line ? "line_pause"
 Color@Window.Line ? "line_color"
 Gradient@Window.Line ? "line_gradient"
@@ -24,7 +24,7 @@ Style@Window.Line ? "line_style"
 
 Window.Line.Close = Void
 ([)@Window.Line.Close ? "window_line_close_begin"
-Int@Window.Line.Close ? "window_line_close_int"
+INT@Window.Line.Close ? "window_line_close_int"
 
 Window.Line.ArrowScale = Void
-R@Window.Line.ArrowScale ? "window_line_arrowscale"
+Real@Window.Line.ArrowScale ? "window_line_arrowscale"
