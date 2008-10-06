@@ -610,9 +610,9 @@ void TS_Procedure_Inherited_Search(TS *ts, Type *proc, Type *expansion_type,
     if (*proc != TS_TYPE_NONE) break;
     /* Resolve the parent type and retry */
     previous_parent = parent;
-    parent = TS_Resolve(ts, parent,
-                        TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES |
-                        TS_KS_SUBTYPE | TS_KS_ANONYMOUS);
+    parent = TS_Resolve_Once(ts, parent,
+                             TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES |
+                             TS_KS_SUBTYPE);
   } while (parent != previous_parent);
 }
 

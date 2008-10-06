@@ -485,31 +485,6 @@ void Builtins_Destroy(void) {
 }
 
 static Task Blt_Define_Basics(void) {
-#if 1
-
-  /* Ora definisco il tipo stringa */
-  type_CharArray = Tym_Def_Array_Of(-1, TYPE_CHAR);
-  if ( type_CharArray == TYPE_NONE ) return Failed;
-
-  /* Definisco type_IntNum --> (Int < Char) */
-  type_IntNum = TYPE_NONE;
-  TASK( Tym_Def_Specie(& type_IntNum, TYPE_CHAR) );
-  TASK( Tym_Def_Specie(& type_IntNum, TYPE_INTG) );
-
-  /* Definisco type_RealNum --> (Real < Int < Char) */
-  type_RealNum = TYPE_NONE;
-  TASK( Tym_Def_Specie(& type_RealNum, TYPE_CHAR) );
-  TASK( Tym_Def_Specie(& type_RealNum, TYPE_INTG) );
-  TASK( Tym_Def_Specie(& type_RealNum, TYPE_REAL) );
-
-  type_RealCouple = TYPE_NONE;
-  TASK( Tym_Def_Structure(& type_RealCouple, type_RealNum) );
-  TASK( Tym_Def_Structure(& type_RealCouple, type_RealNum) );
-  type_Point = TYPE_NONE;
-  TASK( Tym_Def_Specie(& type_Point, type_RealCouple) );
-  TASK( Tym_Def_Specie(& type_Point, TYPE_POINT) );
-#endif
-
   /* Ora faccio l'overloading dell'operatore di conversione
    * e definisco le conversioni automatiche che il compilatore
    * dovra' fare.
@@ -521,8 +496,8 @@ static Task Blt_Define_Basics(void) {
   TASK(Cmp_Builtin_Proc_Def(TYPE_CHAR, BOX_CREATION, TYPE_CHAR, Char_Char));
   TASK(Cmp_Builtin_Proc_Def(TYPE_INT,  BOX_CREATION, TYPE_CHAR, Char_Int ));
   TASK(Cmp_Builtin_Proc_Def(TYPE_REAL, BOX_CREATION, TYPE_CHAR, Char_Real));
-  TASK(Cmp_Builtin_Proc_Def(type_IntNum, BOX_CREATION, TYPE_INTG, Int_IntNum ));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum, BOX_CREATION, TYPE_INTG, Int_RealNum));
+  TASK(Cmp_Builtin_Proc_Def(type_IntNum, BOX_CREATION, TYPE_INT, Int_IntNum ));
+  TASK(Cmp_Builtin_Proc_Def(type_RealNum, BOX_CREATION, TYPE_INT, Int_RealNum));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum, BOX_CREATION, TYPE_REAL, Real_RealNum));
   TASK(Cmp_Builtin_Proc_Def(type_Point, BOX_CREATION, TYPE_POINT, Point_RealNumCouple ));
   TASK(Cmp_Builtin_Proc_Def(type_IntNum, BOX_CREATION, TYPE_IF, If_IntNum ));
