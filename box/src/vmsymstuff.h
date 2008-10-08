@@ -43,7 +43,8 @@ Task VM_Sym_Def_Call(VMProgram *vmp, UInt sym_num, UInt proc_num);
 
 Task VM_Sym_Call(VMProgram *vmp, UInt sym_num);
 
-Task VM_Sym_Alloc_Method_Register(VMProgram *vmp, UInt sym_num, Int type);
+Task VM_Sym_Alloc_Method_Register(VMProgram *vmp, UInt sym_num,
+                                  Type type, Type method);
 
 Task VM_Sym_New_Cond_Jmp(VMProgram *vmp, UInt *sym_num);
 

@@ -346,6 +346,9 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 #  define BOX_VM_ARG2_PTR(vmp, Type) ((Type *) *(vmp)->box_vm_arg2)
 #  define BOX_VM_ARG2(vmp, Type) (*BOX_VM_ARG2_PTR(vmp, Type))
 
+#  define BOX_VM_THIS_OBJ(vmp) ((vmp)->box_vm_current)
+#  define BOX_VM_ARG1_OBJ(vmp) ((vmp)->box_vm_arg1)
+
 /* Subtype-related macros */
 #  define BOX_VM_SUB_PARENT_PTR(vmp, parent_t) \
    SUBTYPE_PARENT_PTR(BOX_VM_THIS_PTR(vmp, Subtype), parent_t)

@@ -25,10 +25,13 @@
 #include "str.h"
 #include "typesys.h"
 #include "compiler.h"
+#include "virtmach.h"
 #include "vmalloc.h"
+#include "vmproc.h"
 #include "vmsymstuff.h"
 #include "autogen.h"
 
+#if 0
 /** Function used to auto-generate the destructor method for the given
  * type.
  */
@@ -42,60 +45,80 @@ Task Auto_Destructor_Create(Type t) {
     if (found != TS_TYPE_NONE) {
       UInt sym_num;
       TS_Procedure_Sym_Num_Get(cmp->ts, & sym_num, found);
-      return VM_Sym_Alloc_Method_Register(cmp->vm, sym_num, (Int) t);
+      return VM_Sym_Alloc_Method_Register(cmp->vm, sym_num, t, TYPE_DESTROY);
     }
   }
   return Success;
 }
+#endif
 
 #define DEBUG 0
 
 #define ASSERT_TASK(x) assert(Success == (x))
 
-static void Create_Iterator_Structure(Type t, Type proc) {
-  Type ct = TS_Core_Type(cmp->ts, t);
-  Type member_t;
-  Expr structure_e;
-  /* A structure is fast if it contains only fast types. fast structures do not
-   * need to have an iterator. They do not require to propagate the basic
-   * methods.
-   */
-  int fast_structure = 1;
+static Task Struc_Destroy(VMProgram *vmp) {
+  Obj *structure = BOX_VM_THIS_OBJ(vmp);
 
-  assert(TS_Is_Structure(cmp->ts, ct));
-  member_t = TS_Member_Next(cmp->ts, ct);
-  while(TS_Is_Member(cmp->ts, member_t)) {
-    /* Resolve the member into a proper type */
-    fast_structure &= TS_Is_Fast(cmp->ts, member_t);
-    member_t = TS_Member_Next(cmp->ts, member_t);
-  }
+  /*printf("Destroying a structure!\n");*/
+  return Success;
+}
 
-  if (fast_structure) return;
+static void Create_Structure_Method(Type parent, Type child, int kind) {
+  Type parent_ct = TS_Core_Type(cmp->ts, parent);
+  Int call_num, destr_call_num;
 
-  /* We need to create the iterator */
-#if 1
-  ASSERT_TASK( Box_Procedure_Begin(ct, TYPE_VOID, TYPE_VOID) );
-  ASSERT_TASK( Box_Parent_Get(& structure_e, 0) );
+  if (TS_Structure_Is_Fast(cmp->ts, parent_ct)) return;
 
-  member_t = TS_Member_Next(cmp->ts, ct);
-  while(TS_Is_Member(cmp->ts, member_t)) {
-    if (TS_Is_Fast(cmp->ts, member_t)) {
-      Expr member_e;
-      char *member_str = TS_Member_Name_Get(cmp->ts, member_t);
-      Name member_n;
-      Name_From_Str(& member_n, member_str);
-      ASSERT_TASK( Expr_Struc_Member(& member_e, & structure_e, & member_n) );
-      if (member_e.is.value && Tym_Type_Size(member_e.resolved) > 0) {
-        ASSERT_TASK( Cmp_Expr_Container_Change(& member_e, CONTAINER_ARG(1)) );
+  /* Create an iterator for the core type, if it is not present yet */
+  call_num = VM_Alloc_Method_Get(cmp->vm, parent_ct, child);
+  if (call_num < 0) {
+    Type member_t;
+    Expr structure_e, callback_e;
+
+    ASSERT_TASK( Box_Procedure_Begin(parent_ct, child, child) );
+    ASSERT_TASK( Box_Parent_Get(& structure_e, 0) );
+
+    member_t = TS_Member_Next(cmp->ts, parent_ct);
+    while(TS_Is_Member(cmp->ts, member_t)) {
+      if (TS_Is_Fast(cmp->ts, member_t)) {
+        Expr member_e;
+        char *member_str = TS_Member_Name_Get(cmp->ts, member_t);
+        Name member_n;
+        Name_From_Str(& member_n, member_str);
+        /* NOTE: This is silly: we should able to iterate over structure members
+        * without hashtable lookups! We can already do it, see structure.c
+        * we should just make this more robust and change the following lines!
+        */
+        ASSERT_TASK( Expr_Struc_Member(& member_e, & structure_e, & member_n) );
+        if (member_e.is.value && Tym_Type_Size(member_e.resolved) > 0) {
+          ASSERT_TASK( Box_Hack2(& member_e, child, kind, BOX_MSG_SILENT) );
+          /*ASSERT_TASK( Cmp_Expr_Container_Change(& member_e, CONTAINER_ARG(1)) );*/
+          /*(void) Box_Procedure_Call_Void(TYPE_CLOSE, BOX_DEPTH_UPPER, BOX_MSG_SILENT);*/
+        }
+        ASSERT_TASK( Cmp_Expr_Destroy_Tmp(& member_e) );
       }
-      ASSERT_TASK( Cmp_Expr_Destroy_Tmp(& member_e) );
+
+      member_t = TS_Member_Next(cmp->ts, member_t);
     }
 
-    member_t = TS_Member_Next(cmp->ts, member_t);
+    ASSERT_TASK( Box_Procedure_End(& call_num) );
+
+    /* Now that a call number has been associated to the procedure, we register
+     * it as a special allocation method.
+     */
+    ASSERT_TASK( VM_Alloc_Method_Set(cmp->vm, parent_ct, child, call_num) );
   }
 
-  ASSERT_TASK( Box_Procedure_End(NULL) );
-#endif
+  /* We finally install the code (a C function) for destroying the structure:
+   * all the structures share the same destructor, which uses simply
+   * the structure iterator (which is different for each structure) to call
+   * the destructors of all its members.
+   */
+  ASSERT_TASK( VM_Proc_Install_CCode(cmp_vm, & destr_call_num, Struc_Destroy,
+                                     "#struc_destroy", "#struc_destroy") );
+  /* ... and register it as a destructor for the structure. */
+  ASSERT_TASK( VM_Alloc_Method_Set(cmp->vm, parent, TYPE_DESTROY,
+                                   destr_call_num) );
 }
 
 #if 0
@@ -129,28 +152,30 @@ will not have the destructors called as appropriate
 or should we avoid this by signalling an error/warning?
 #endif
 
+
 void Auto_Acknowledge_Call(Type parent, Type child, int kind) {
   /* We check if the child is a special type: ([), (]), (;), (\).
    * These are the case for which we need to propagate the methods from
    * contained objects to their container.
    */
   if (TS_Is_Special(child)) {
-    Type proc, arg_proto;
-    /* Now we search if the method already exist */
-    TS_Procedure_Inherited_Search(cmp->ts, & proc, & arg_proto,
-                                  parent, child, kind);
+    Type found;
+    Int call_num = VM_Alloc_Method_Get(cmp->vm, parent, child);
+    if (call_num >= 0) return;
 
-    /* If the method exist, then make sure that the VM agrees on that! */
-    /*if (proc != TYPE_NONE) {
-      Int VM_Alloc_Method_Get(cmp->vm, parent, child);
+    TS_Procedure_Search(cmp->ts, & found, (Type *) NULL, parent, child, 1);
+    if (found != TS_TYPE_NONE) {
+      UInt sym_num;
+      TS_Procedure_Sym_Num_Get(cmp->ts, & sym_num, found);
+      ASSERT_TASK( VM_Sym_Alloc_Method_Register(cmp->vm, sym_num,
+                                                parent, child) );
+      return;
 
-    }*/
-
-    if (proc == TS_TYPE_NONE) {
+    } else {
       Type parent_ct = TS_Core_Type(cmp->ts, parent);
       switch(TS_Kind(cmp->ts, parent_ct)) {
       case TS_KIND_STRUCTURE:
-        Create_Iterator_Structure(parent, child);
+        Create_Structure_Method(parent, child, kind);
         break;
       case TS_KIND_SUBTYPE:
         return;

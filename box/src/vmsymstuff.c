@@ -69,25 +69,33 @@ Task VM_Sym_Call(VMProgram *vmp, UInt sym_num) {
  * VM_Alloc_Method_Set.
  */
 
+typedef struct {
+  Type type;
+  Type method;
+} VMSymMethod;
+
 /* This is the function registers the method, if it is known. */
 static Task Register_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
                           int defined, void *def, UInt def_size,
                           void *ref, UInt ref_size) {
   assert(sym_type == VM_SYM_CALL);
   if (defined && def != NULL) {
+    VMSymMethod *m = (VMSymMethod *) ref;
     UInt call_num;
-    Int type;
-    assert(def_size == sizeof(UInt) && ref_size == sizeof(Int));
+    assert(def_size == sizeof(UInt) && ref_size == sizeof(VMSymMethod));
     call_num = *((UInt *) def);
-    type = *((Int *) ref);
-    return VM_Alloc_Method_Set(vmp, type, TYPE_DESTROY, call_num);
+    return VM_Alloc_Method_Set(vmp, m->type, m->method, call_num);
   }
   return Success;
 }
 
-Task VM_Sym_Alloc_Method_Register(VMProgram *vmp, UInt sym_num, Int type) {
+Task VM_Sym_Alloc_Method_Register(VMProgram *vmp, UInt sym_num,
+                                  Type type, Type method) {
+  VMSymMethod m;
+  m.type = type;
+  m.method = method;
   return VM_Sym_Ref(vmp, sym_num, Register_Call,
-                    & type, sizeof(Int), VM_SYM_UNRESOLVED);
+                    & m, sizeof(VMSymMethod), VM_SYM_UNRESOLVED);
 }
 
 /*** jumps ******************************************************************/

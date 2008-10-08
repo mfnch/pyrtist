@@ -1,6 +1,7 @@
 #!/bin/bash
-BOX="../src/box"
-BOXOPT="-st"
+BOXEXEC="../src/box"
+BOXOPTLG="-L ../libs/g/.libs -I ../libs/g -l g"
+BOXOPTST="-st"
 BOXOUT="output.log"
 ERRORS="errors.log"
 NUM_TEST=0
@@ -47,7 +48,11 @@ function check_successful {
 }
 
 function check_failed {
-  echo "  > "$RED"--> TEST FAILED! <--"$NO_COLOUR
+  if [ "$1" == "" ]; then
+    echo "  > "$RED"--> TEST FAILED! <--"$NO_COLOUR
+  else
+    echo "  > "$RED"--> TEST FAILED! <--"$NO_COLOUR": $1"
+  fi
 }
 
 function check_noerr {
@@ -91,9 +96,10 @@ function check_final {
 }
 
 #------------------------------------------------------------------------------
-if [ -x $BOX ]; then
-  BOX="$BOX $BOXOPT"
+if [ -x $BOXEXEC ]; then
+  BOX="$BOXEXEC $BOXOPTST"
+  BOXLG="$BOXEXEC $BOXOPTLG $BOXOPTST"
 else
-  echo "I cannot find the executable file '$BOX'!"
+  echo "I cannot find the executable file '$BOXEXEC'!"
   exit 1
 fi

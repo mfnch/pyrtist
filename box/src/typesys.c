@@ -184,6 +184,21 @@ int TS_Is_Fast(TS *ts, Type t) {
   return (ct >= TYPE_FAST_FIRST && ct <= TYPE_FAST_LAST);
 }
 
+int TS_Structure_Is_Fast(TS *ts, Type structure) {
+  int fast_structure = 1;
+  Type ct = TS_Core_Type(ts, structure), member_t;
+
+  assert(TS_Is_Structure(ts, ct));
+  member_t = TS_Member_Next(ts, ct);
+  while(TS_Is_Member(ts, member_t)) {
+    /* Resolve the member into a proper type */
+    fast_structure &= TS_Is_Fast(ts, member_t);
+    member_t = TS_Member_Next(ts, member_t);
+  }
+
+  return fast_structure;
+}
+
 Int TS_Size(TS *ts, Type t) {
   TSDesc *td = Type_Ptr(ts, t);
   return td->size;

@@ -166,6 +166,10 @@ int Box_Procedure_Search(Box *b, Int procedure, Type *prototype,
  */
 Task Box_Procedure_Call(Expr *child, BoxDepth depth, BoxMsg verbosity);
 
+/** Temporary hacks */
+Task Box_Hack1(Expr *parent, Expr *child, int kind, BoxMsg verbosity);
+Task Box_Hack2(Expr *parent, Type child, int kind, BoxMsg verbosity);
+
 /** This function calls a procedure without value, such as (;), ([) or (]).
  * It does not complain if such a procedure is not defined for 'type'.
  * In such cases the behaviour is the following: if 'auto_define' is 1,

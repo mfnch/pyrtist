@@ -939,9 +939,9 @@ Task Cmp__Expr_To_LReg(Expr *expr, int force) {
     if ( expr->value.reg > 0 ) return Success;
 
   if ( ! force ) {
-    register int is_integer =
+    int is_integer =
      (expr->resolved == TYPE_CHAR) || (expr->resolved == TYPE_INT);
-    if ( is_integer || (expr->categ != CAT_IMM) ) return Success;
+    if (is_integer || (expr->categ != CAT_IMM)) return Success;
   }
 
   Expr_Container_New(& lreg, expr->type, CONTAINER_LREG_AUTO);
@@ -1154,7 +1154,7 @@ Task Cmp_Expr_Destroy(Expr *e, int destroy_target) {
 
 
     if (!intrinsic && e->is.allocd && (!e->is.target || destroy_target)) {
-      TASK( Auto_Destructor_Create(e->type) );
+      Auto_Acknowledge_Call(e->type, TYPE_DESTROY, 1);
 
       /* NOTE: Should I use  Cmp_Complete_Ptr_1?
        * I think I shouldn't, since it makes no sense to call munln
@@ -1594,7 +1594,7 @@ Task Cmp_Builtin_Proc_Def(Int procedure, int when_should_call, Int of_type,
 
   /* We finally install the code (a C function) for the procedure */
   TASK( VM_Proc_Install_CCode(cmp_vm, & call_num, C_func,
-   "(noname)", Tym_Type_Name(proc)) );
+                              "(noname)", Tym_Type_Name(proc)) );
   /* And define the symbol */
   TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
   return Success;

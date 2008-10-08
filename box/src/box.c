@@ -179,8 +179,6 @@ Task Box_Procedure_Call(Expr *child, BoxDepth depth, BoxMsg verbosity) {
     return Success;
   }
 
-  TS_Procedure_Sym_Num_Get(cmp->ts, & sym_num, p);
-
   /* Now we compile the procedure */
   /* We pass the argument of the procedure if its size is > 0 */
   if (Tym_Type_Size(t) > 0) {
@@ -200,8 +198,72 @@ Task Box_Procedure_Call(Expr *child, BoxDepth depth, BoxMsg verbosity) {
     }
   }
 
+  TS_Procedure_Sym_Num_Get(cmp->ts, & sym_num, p);
   return VM_Sym_Call(cmp_vm, sym_num);
 }
+
+
+Task Box_Hack1(Expr *parent, Expr *child, int kind, BoxMsg verbosity) {
+  UInt sym_num;
+  Type prototype, p;
+  Expr e_parent;
+
+  /* First of all we check the attributes of the expression *child */
+  assert(!child->is.ignore && child->is.typed);
+
+  if (parent->type == TYPE_VOID) {
+    if (verbosity == BOX_MSG_VERBOSE)
+      MSG_WARNING("[...] does not admit any procedures.");
+    return Success;
+  }
+
+  /* Just to allow the automatic creation of destructors and co. */
+  Auto_Acknowledge_Call(parent->type, child->type, kind);
+
+  /* Now we search for the procedure associated with *child */
+  TS_Procedure_Inherited_Search(cmp->ts, & p, & prototype,
+                                b->type, child->type, kind);
+
+  if (p == TYPE_NONE) {
+    if (verbosity == BOX_MSG_SILENT)
+      return Success;
+    MSG_WARNING("Cannot find procedure '%~s' of '%~s'.",
+                TS_Name_Get(cmp->ts, child->type),
+                TS_Name_Get(cmp->ts, parent->type));
+    return Success;
+  }
+
+  /* Now we compile the procedure */
+  /* We pass the argument of the procedure if its size is > 0 */
+  if (Tym_Type_Size(child->type) > 0) {
+    if ( prototype != TYPE_NONE ) {
+      /* The argument must be converted first! */
+      TASK( Cmp_Expr_Expand(prototype, child) );
+    }
+
+    TASK( Cmp_Expr_To_Ptr(child, CAT_GREG, (Int) 2, 0) );
+  }
+
+  /* We pass the box which is the parent of the procedure */
+  if ( parent->is.value ) {
+    if (Tym_Type_Size(parent->resolved) > 0) {
+      TASK( Cmp_Expr_Container_Change(parent, CONTAINER_ARG(1)) );
+    }
+  }
+
+  TS_Procedure_Sym_Num_Get(cmp->ts, & sym_num, p);
+  return VM_Sym_Call(cmp_vm, sym_num);
+}
+
+Task Box_Hack2(Expr *parent, Type child, int kind, BoxMsg verbosity) {
+  Expr e;
+  Expr_New_Type(& e, type);
+  TASK( Box_Hack1(parent, & e, kind, verbosity) );
+  (void) Cmp_Expr_Destroy_Tmp(& e);
+  return Success;
+}
+
+
 
 /* This function calls a procedure without value, as (;), ([) or (]).
  */

@@ -29,7 +29,7 @@ static AsmCode asm_code_mov[] = {ASM_MOV_CC, ASM_MOV_II,
                                  ASM_MOV_RR, ASM_MOV_PP};
 
 
-static void prepare_ptr_access(Cont *c) {
+static void Prepare_Ptr_Access(Cont *c) {
   Int ptr_reg = c->ptr_reg;
   if (c->categ == CAT_PTR && ptr_reg != 0) {
     Int addr_categ = c->flags.ptr_is_greg ? CAT_GREG : CAT_LREG;
@@ -70,9 +70,9 @@ void Cont_Move(Cont *dest, Cont *src) {
        *  mov ro0, ro2
        *  pop o[ro0 + 16]
        */
-      prepare_ptr_access(src);
+      Prepare_Ptr_Access(src);
       Cmp_Assemble(ASM_PUSH_O, src->categ, src->reg);
-      prepare_ptr_access(dest);
+      Prepare_Ptr_Access(dest);
       Cmp_Assemble(ASM_POP_O, dest->categ, dest->reg);
       return;
 
@@ -85,9 +85,9 @@ void Cont_Move(Cont *dest, Cont *src) {
        */
       assert(t>=0 && t<TYPE_OBJ);
 
-      prepare_ptr_access(src);
+      Prepare_Ptr_Access(src);
       Cmp_Assemble(asm_code_mov[t], CAT_LREG, (Int) 0, src->categ, src->reg);
-      prepare_ptr_access(dest);
+      Prepare_Ptr_Access(dest);
       Cmp_Assemble(asm_code_mov[t], dest->categ, dest->reg, CAT_LREG, (Int) 0);
       return;
     }
@@ -98,8 +98,8 @@ void Cont_Move(Cont *dest, Cont *src) {
    *   mov ro0, ro1         <-- setto il puntatore di riferimento (ro0)
    *   mov rr1, real[ro0+8] <-- prelevo il valore
    */
-  prepare_ptr_access(dest);
-  prepare_ptr_access(src);
+  Prepare_Ptr_Access(dest);
+  Prepare_Ptr_Access(src);
 
   if (t != TYPE_OBJ) {
     int is_integer = (t==TYPE_CHAR) || (t==TYPE_INT);
@@ -155,7 +155,7 @@ void Cont_Ptr_Create(Cont *dest, Cont *src) {
   src_is_ptr = (src->categ == CAT_PTR);
   dest_is_ptr = (dest->categ == CAT_PTR);
   num_ptrs = src_is_ptr + dest_is_ptr;
-  prepare_ptr_access(src);
+  Prepare_Ptr_Access(src);
 
   if (src->type != TYPE_OBJ) {
     int t = src->type;
@@ -169,7 +169,7 @@ void Cont_Ptr_Create(Cont *dest, Cont *src) {
       if (dest_is_ptr) {
         Cmp_Assemble(ASM_LEA_OO, CAT_LREG, (Int) 0, src->categ, src->reg);
         Cmp_Assemble(ASM_PUSH_O, CAT_LREG, (Int) 0);
-        prepare_ptr_access(dest);
+        Prepare_Ptr_Access(dest);
         Cmp_Assemble(ASM_POP_O, dest->categ, dest->reg);
         return;
 
@@ -180,7 +180,7 @@ void Cont_Ptr_Create(Cont *dest, Cont *src) {
       }
 
     } else {
-      prepare_ptr_access(dest);
+      Prepare_Ptr_Access(dest);
       Cmp_Assemble(ASM_MOV_OO, dest->categ, dest->reg, src->categ, src->reg);
       return;
     }

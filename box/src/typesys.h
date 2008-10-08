@@ -157,6 +157,13 @@ TSKind TS_Kind(TS *ts, Type t);
  */
 int TS_Is_Fast(TS *ts, Type t);
 
+/** A structure is fast if it contains only fast types. fast structures do not
+ * need to have an iterator. They do not require to propagate the basic
+ * methods.
+ * NOTE: be careful, a fast structure is not a fast type itself.
+ */
+int TS_Structure_Is_Fast(TS *ts, Type structure);
+
 #define TS_Is_Member(ts, t) (TS_Kind((ts), (t)) == TS_KIND_MEMBER)
 #define TS_Is_Subtype(ts, t) (TS_Kind((ts), (t)) == TS_KIND_SUBTYPE)
 #define TS_Is_Structure(ts, t) (TS_Kind((ts), (t)) == TS_KIND_STRUCTURE)

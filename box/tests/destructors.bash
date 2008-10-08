@@ -10,7 +10,7 @@ rm -f $ERRORS
 
 #------------------------------------------------------------------------------
 test_next
-echo "Test 1: destructor for an independently allocated object (non member)"
+echo "destructor for an independently allocated object (non member)"
 $BOX << EOF  >$BOXOUT 2>&1
 MyObj = (Int a, b)
 (\)@MyObj[Print["answer=destroyed";]]
@@ -21,7 +21,7 @@ check_answer "destroyed"
 
 #------------------------------------------------------------------------------
 test_next
-echo "Test 2: another test"
+echo "another test"
 $BOX -o x << 'EOF'  >$BOXOUT 2>&1
 num_of_MyObjs = 0
 MyObj = (Int n,)
