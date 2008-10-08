@@ -206,7 +206,6 @@ Task Box_Procedure_Call(Expr *child, BoxDepth depth, BoxMsg verbosity) {
 Task Box_Hack1(Expr *parent, Expr *child, int kind, BoxMsg verbosity) {
   UInt sym_num;
   Type prototype, p;
-  Expr e_parent;
 
   /* First of all we check the attributes of the expression *child */
   assert(!child->is.ignore && child->is.typed);
@@ -222,7 +221,7 @@ Task Box_Hack1(Expr *parent, Expr *child, int kind, BoxMsg verbosity) {
 
   /* Now we search for the procedure associated with *child */
   TS_Procedure_Inherited_Search(cmp->ts, & p, & prototype,
-                                b->type, child->type, kind);
+                                parent->type, child->type, kind);
 
   if (p == TYPE_NONE) {
     if (verbosity == BOX_MSG_SILENT)
@@ -256,10 +255,10 @@ Task Box_Hack1(Expr *parent, Expr *child, int kind, BoxMsg verbosity) {
 }
 
 Task Box_Hack2(Expr *parent, Type child, int kind, BoxMsg verbosity) {
-  Expr e;
-  Expr_New_Type(& e, type);
-  TASK( Box_Hack1(parent, & e, kind, verbosity) );
-  (void) Cmp_Expr_Destroy_Tmp(& e);
+  Expr child_e;
+  Expr_New_Type(& child_e, child);
+  TASK( Box_Hack1(parent, & child_e, kind, verbosity) );
+  (void) Cmp_Expr_Destroy_Tmp(& child_e);
   return Success;
 }
 
@@ -375,12 +374,14 @@ Task Box_Procedure_End(UInt *call_num) {
 }
 
 
-Task Box_Def_Begin(Type procedure) {
-  Type parent_t, child_t;
-  /* We get the parent and the child of the procedure. */
-  TS_Procedure_Info(cmp->ts, & parent_t, & child_t, (int *) NULL,
-                    (UInt *) NULL, procedure);
-  return Box_Procedure_Begin(parent_t, child_t, procedure);
+Task Box_Def_Begin(Type parent, Type child, int kind) {
+  UInt sym_num;
+  Type procedure;
+
+  TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
+  procedure = TS_Procedure_Def(child, kind, parent, sym_num);
+  if (procedure == TYPE_NONE) return Failed;
+  return Box_Procedure_Begin(parent, child, procedure);
 }
 
 Task Box_Def_End(void) {

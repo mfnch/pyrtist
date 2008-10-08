@@ -768,13 +768,7 @@ static Task Declare_Proc(Expr *child_type, Int kind, Expr *parent_type,
 }
 
 static Task Proc_Def_Open(Expr *child_type, Int kind, Expr *parent_type) {
-  UInt sym_num;
-  Int proc_type;
-  TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
-  proc_type =
-    TS_Procedure_Def(child_type->type, kind, parent_type->type, sym_num);
-  if (proc_type == TYPE_NONE) return Failed;
-  return Box_Def_Begin(proc_type);
+  return Box_Def_Begin(parent_type->type, child_type->type, kind);
 }
 
 static Task Proc_Def_Close(void) {

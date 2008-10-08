@@ -121,10 +121,10 @@ Task Box_Procedure_Begin(Type parent, Type child, Type procedure);
  */
 Task Box_Procedure_End(UInt *call_num);
 
-/** Similar to Box_Procedure_Begin but find automatically 'parent' and 'child'
- * from 'procedure'.
+/** Similar to Box_Procedure_Begin but also register the procedure
+ * so that it can be found and used by Box code.
  */
-Task Box_Def_Begin(Type procedure);
+Task Box_Def_Begin(Type parent, Type child, int kind);
 
 Task Box_Def_End(void);
 
