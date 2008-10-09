@@ -72,8 +72,8 @@ static void Sep_Newline(void) {
 }
 
 static void Sep_Pause(void) {
-  (void) Box_Procedure_Call_Void(TYPE_PAUSE, BOX_DEPTH_UPPER,
-                                 BOX_MSG_SILENT);
+  (void) Box_Procedure_Quick_Call_Void(TYPE_PAUSE, BOX_DEPTH_UPPER,
+                                       BOX_MSG_SILENT);
 }
 
 static Task Type_Struc_Begin(StrucMember *sm, Expr *type, char *m) {
@@ -229,7 +229,7 @@ static Task Subtype_Create(Expr *result, Expr *parent, Name *child) {
 
 static Task Expr_Statement(Expr *e) {
   TASK( Expr_Resolve_Subtype(e) );
-  (void) Box_Procedure_Call(e, BOX_DEPTH_UPPER, BOX_MSG_VERBOSE);
+  (void) Box_Procedure_Quick_Call(e, BOX_DEPTH_UPPER, BOX_MSG_VERBOSE);
   (void) Cmp_Expr_Destroy_Tmp(e);
   return Success;
 }

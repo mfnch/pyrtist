@@ -131,7 +131,7 @@ int Box_Procedure_Search(Box *b, Int procedure, Type *prototype,
 }
 #endif
 
-Task Box_Procedure_Call(Expr *child, BoxDepth depth, BoxMsg verbosity) {
+Task Box_Procedure_Quick_Call(Expr *child, BoxDepth depth, BoxMsg verbosity) {
   Box *b = Box_Get(depth);
   UInt sym_num;
   Type prototype, t, p;
@@ -202,8 +202,8 @@ Task Box_Procedure_Call(Expr *child, BoxDepth depth, BoxMsg verbosity) {
   return VM_Sym_Call(cmp_vm, sym_num);
 }
 
-
-Task Box_Hack1(Expr *parent, Expr *child, int kind, BoxMsg verbosity) {
+Task Box_Procedure_Call(Expr *parent, Expr *child, int kind,
+                        BoxMsg verbosity) {
   UInt sym_num;
   Type prototype, p;
 
@@ -254,10 +254,11 @@ Task Box_Hack1(Expr *parent, Expr *child, int kind, BoxMsg verbosity) {
   return VM_Sym_Call(cmp_vm, sym_num);
 }
 
-Task Box_Hack2(Expr *parent, Type child, int kind, BoxMsg verbosity) {
+Task Box_Procedure_Call_Void(Expr *parent, Type child, int kind,
+                             BoxMsg verbosity) {
   Expr child_e;
   Expr_New_Type(& child_e, child);
-  TASK( Box_Hack1(parent, & child_e, kind, verbosity) );
+  TASK( Box_Procedure_Call(parent, & child_e, kind, verbosity) );
   (void) Cmp_Expr_Destroy_Tmp(& child_e);
   return Success;
 }
@@ -266,10 +267,11 @@ Task Box_Hack2(Expr *parent, Type child, int kind, BoxMsg verbosity) {
 
 /* This function calls a procedure without value, as (;), ([) or (]).
  */
-Task Box_Procedure_Call_Void(Type type, BoxDepth depth, BoxMsg verbosity) {
+Task Box_Procedure_Quick_Call_Void(Type type, BoxDepth depth,
+                                   BoxMsg verbosity) {
   Expr e;
   Expr_New_Type(& e, type);
-  TASK( Box_Procedure_Call(& e, depth, verbosity) );
+  TASK( Box_Procedure_Quick_Call(& e, depth, verbosity) );
   (void) Cmp_Expr_Destroy_Tmp(& e);
   return Success;
 }
@@ -443,8 +445,8 @@ Task Box_Instance_Begin(Expr *e, int kind) {
   TASK(Arr_Push(bs->box, & b));
 
   if (e != NULL)
-    (void) Box_Procedure_Call_Void(TYPE_OPEN, BOX_DEPTH_UPPER,
-                                   BOX_MSG_SILENT);
+    (void) Box_Procedure_Quick_Call_Void(TYPE_OPEN, BOX_DEPTH_UPPER,
+                                         BOX_MSG_SILENT);
 
   /* Creo le labels che puntano all'inizio ed alla fine della box */
   b_ptr = Arr_LastItemPtr(bs->box, Box);
@@ -462,8 +464,8 @@ Task Box_Instance_End(Expr *e) {
    * e puo' essere liberato!
    */
   if (e != NULL) {
-    (void) Box_Procedure_Call_Void(TYPE_CLOSE, BOX_DEPTH_UPPER,
-                                   BOX_MSG_SILENT);
+    (void) Box_Procedure_Quick_Call_Void(TYPE_CLOSE, BOX_DEPTH_UPPER,
+                                         BOX_MSG_SILENT);
     e->is.release = 1;
   }
 

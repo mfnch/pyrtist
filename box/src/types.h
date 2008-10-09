@@ -114,6 +114,20 @@ typedef enum {Success = 0, Failed = 1} Task;
  */
 #define TASK(x) if ( (x) ) return Failed
 
+/* Error handling in Box is not always sensible, unfortunately.
+ * There are situations where failures should not be tolerated. In such cases
+ * the best thing to do is just terminate the program, but this is not done
+ * and the error is propagated. We should change all the code and decide
+ * for each situation if there is a reason why we should propagate the error
+ * with task or if we should display a fatal error message and exit.
+ * For now we just define the macro ASSERT_TASK to correct these cases
+ * where propagating errors turn out to be unnecessary and a fatal error
+ * is preferable.
+ */
+
+/** When we do not tolerate a failure then we use the ASSERT_TASK macro. */
+#define ASSERT_TASK(x) assert(Success == (x))
+
 /* DESCRIZIONE: Questa macro permette di usare una indicizzazione "circolare",
  *  secondo cui, data una lista di num_items elementi, l'indice 1 si riferisce
  *  al primo elemento, 2 al secondo, ..., num_items all'ultimo, num_items+1 al primo,

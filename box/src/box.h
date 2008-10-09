@@ -164,11 +164,11 @@ int Box_Procedure_Search(Box *b, Int procedure, Type *prototype,
  * The function returns Success, even if the procedure is not found:
  * check the content of *found for this purpose.
  */
-Task Box_Procedure_Call(Expr *child, BoxDepth depth, BoxMsg verbosity);
+Task Box_Procedure_Quick_Call(Expr *child, BoxDepth depth, BoxMsg verbosity);
 
 /** Temporary hacks */
-Task Box_Hack1(Expr *parent, Expr *child, int kind, BoxMsg verbosity);
-Task Box_Hack2(Expr *parent, Type child, int kind, BoxMsg verbosity);
+Task Box_Procedure_Call(Expr *parent, Expr *child, int kind, BoxMsg verbosity);
+Task Box_Procedure_Call_Void(Expr *parent, Type child, int kind, BoxMsg verbosity);
 
 /** This function calls a procedure without value, such as (;), ([) or (]).
  * It does not complain if such a procedure is not defined for 'type'.
@@ -177,7 +177,8 @@ Task Box_Hack2(Expr *parent, Type child, int kind, BoxMsg verbosity);
  * it later), otherwise the procedure call is ignored.
  * In any case '*found' is set to 1 if the procedure has been somehow called.
  */
-Task Box_Procedure_Call_Void(Type type, BoxDepth depth, BoxMsg verbosity);
+Task Box_Procedure_Quick_Call_Void(Type type, BoxDepth depth,
+                                   BoxMsg verbosity);
 
 Task Box_Instance_Begin(Expr *e, int kind);
 Task Box_Instance_End(Expr *e);
