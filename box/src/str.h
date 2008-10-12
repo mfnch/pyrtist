@@ -44,6 +44,7 @@ unsigned char oct_digit(unsigned char c, int *status);
 unsigned char hex_digit(unsigned char c, int *status);
 Task Str_ToChar(char *s, Int l, char *c);
 Task Str_ToInt(char *s, UInt l, Int *i);
+Task Str_Hex_To_Int(char *s, UInt l, Int *out);
 Task Str_ToReal(char *s, UInt l, Real *r);
 char *Str_ToString(char *s, Int l, Int *new_length);
 Name *Name_Empty(void);

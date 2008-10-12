@@ -1,6 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2006 by Matteo Franchin                                 *
- *   fnch@libero.it                                                        *
+ *   Copyright (C) 2006 by Matteo Franchin (fnch@libero.it)                *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -68,6 +67,7 @@ static char *prog_name;
 static char *file_input;
 static char *file_output;
 static char *file_setup;
+static char *query = NULL;
 
 static VMProgram *program = NULL;
 
@@ -75,6 +75,8 @@ static VMProgram *program = NULL;
 static void set_file_input(char *arg) {file_input = arg;}
 static void set_file_output(char *arg) {file_output = arg;}
 static void set_file_setup(char *arg) {file_setup = arg;}
+static void Set_Query(char *arg) {query = arg;}
+static void Exec_Query(char *query);
 
 #define NO_ARG ((void (*)(char *)) NULL)
 
@@ -87,6 +89,7 @@ static struct opt {
   UInt     repeat; /* Numero di volte che l'opzione puo' essere invocata */
   UInt     *flags; /* Puntatore all'insieme dei flags */
   void     (*use_argument)(char *arg);
+
 } opt_tab[] = {
   {"help",    0, FLAG_HELP, 0, -1, & flags, NO_ARG},
   {"?",       0, FLAG_HELP, 0, -1, & flags, NO_ARG},
@@ -103,6 +106,7 @@ static struct opt {
   {"library", 0, 0, 0, -1, & flags, Path_Add_Lib},
   {"Include-path", 0, 0, 0, -1, & flags, Path_Add_Inc_Dir},
   {"Lib-path", 0, 0, 0, -1, & flags, Path_Add_Lib_Dir},
+  {"query",    0, 0, 0, -1, & flags, Set_Query},
   {NULL }
 }, opt_default =  {"input", 0, FLAG_INPUT, 0, 1, & flags, set_file_input};
 
@@ -211,7 +215,9 @@ static Task Stage_Interpret_Command_Line(UInt *f) {
   UInt flags = *f;
 
   /* Controllo se e' stata specificata l'opzione di help */
-  if ( flags & FLAG_HELP ) Main_Cmnd_Line_Help();
+  if (flags & FLAG_HELP) Main_Cmnd_Line_Help();
+
+  if (query != NULL) Exec_Query(query);
 
   /* Re-inizializzo la gestione dei messaggi! */
   if ( flags & FLAG_VERBOSE )
@@ -433,6 +439,36 @@ void Main_Cmnd_Line_Help(void) {
   " has the same effect of not using it at all.\n"
   );
   exit( EXIT_SUCCESS );
+}
+
+static void Exec_Query(char *query) {
+  struct {
+    char *name;
+    char *value;
+  } *v, vars[] = {
+#ifdef BUILTIN_LIBRARY_PATH
+    {"BUILTIN_LIBRARY_PATH", BUILTIN_LIBRARY_PATH},
+#endif
+#ifdef BUILTIN_INCLUDE_PATH
+    {"BUILTIN_INCLUDE_PATH", BUILTIN_INCLUDE_PATH},
+#endif
+    {NULL, NULL}
+  };
+
+  if (strcasecmp(query, "list") == 0) {
+    for (v = & vars[0]; v->name != NULL; v++)
+      printf("%s\n", v->name);
+    exit(EXIT_SUCCESS);
+  }
+
+  for (v = & vars[0]; v->name != NULL; v++) {
+    if (strcasecmp(v->name, query) == 0) {
+      printf("%s\n", v->value);
+      exit(EXIT_SUCCESS);
+    }
+  }
+
+  exit(EXIT_FAILURE);
 }
 
 /******************************************************************************/

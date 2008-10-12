@@ -334,6 +334,58 @@ Task Str_ToInt(char *s, UInt l, Int *i) {
   return Failed;
 }
 
+/** Return the numerical value of a charecter when interpreted
+ * as an hexadecimal digit. Returns -1 if the character is not an hex digit.
+ * NOTE: I may use something like:
+ *  return (digit >= '0' && digit <= '9') ?
+ *         digit - '0' :
+ *         ((digit >= 'a' && digit <= 'f') ? digit - 'a' : -1);
+ * But this makes assumptions on the order of the character codes.
+ * I feel unsure about that.
+ */
+static int Hex_Digit(char digit) {
+  switch(tolower(digit)) {
+  case '0': return 0;
+  case '1': return 1;
+  case '2': return 2;
+  case '3': return 3;
+  case '4': return 4;
+  case '5': return 5;
+  case '6': return 6;
+  case '7': return 7;
+  case '8': return 8;
+  case '9': return 9;
+  case 'a': return 10;
+  case 'b': return 11;
+  case 'c': return 12;
+  case 'd': return 13;
+  case 'e': return 14;
+  case 'f': return 15;
+  default: return -1;
+  }
+}
+
+Task Str_Hex_To_Int(char *s, UInt l, Int *out) {
+  char *c = s;
+  UInt i, n = 0;
+
+  for (i = 0; i < l; i++) {
+    UInt digit = Hex_Digit(*(c++)),
+         m = n << 4;
+    if (m < n) {
+      MSG_WARNING("Hexadecimal number is out of bounds!");
+      return Success;
+    }
+    if (digit < 0) {
+      MSG_ERROR("Bad digit in hexadecimal number!");
+      return Failed;
+    }
+    n = m | digit;
+  }
+  *out = (Int) n;
+  return Success;
+}
+
 /* Converte il numero da formato stringa a formato numerico.
  *  s e' il puntatore alla stringa, l la lunghezza. Il numero convertito verra'
  *  memorizzato in *r.

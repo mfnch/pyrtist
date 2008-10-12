@@ -1,6 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2006 by Matteo Franchin                                 *
- *   fnch@libero.it                                                        *
+ *   Copyright (C) 2006 by Matteo Franchin (fnch@libero.it)                *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -33,12 +32,11 @@
 
 static void Create_Structure_Method(Type parent, Type child, int kind) {
   Type parent_ct = TS_Core_Type(cmp->ts, parent);
-  Int call_num;
+  Type found;
 
-  if (TS_Structure_Is_Fast(cmp->ts, parent_ct)) return;
-
-  call_num = VM_Alloc_Method_Get(cmp->vm, parent_ct, child);
-  if (call_num < 0) {
+  TS_Procedure_Search(cmp->ts, & found, (Type *) NULL,
+                      parent_ct, child, kind);
+  if (found == TS_TYPE_NONE) {
     Type member_t;
     Expr structure_e;
 
@@ -79,7 +77,8 @@ void Auto_Acknowledge_Call(Type parent, Type child, int kind) {
    */
   if (TS_Is_Special(child)) {
     Type found;
-    TS_Procedure_Search(cmp->ts, & found, (Type *) NULL, parent, child, 1);
+    TS_Procedure_Search(cmp->ts, & found, (Type *) NULL,
+                        parent, child, kind);
     if (found != TS_TYPE_NONE) {
       if (child == TYPE_DESTROY) {
         UInt sym_num;

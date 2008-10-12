@@ -164,13 +164,22 @@ static Task Str_CharArray(VMProgram *vmp) {
   return Str_Concat(s, ca);
 }
 
+static Task Str_STR(VMProgram *vmp) {
+  Str *s = BOX_VM_THIS_PTR(vmp, Str);
+  Str *s2 = BOX_VM_ARG1_PTR(vmp, Str);
+  if (s2->length > 0)
+    return Str_Concat(s, s2->ptr);
+  return Success;
+}
+
 static Task Str_Pause(VMProgram *vmp) {
   return Str_Concat(BOX_VM_THIS_PTR(vmp, Str), "\n");
 }
 
 static Task Print_Str(VMProgram *vmp) {
   Str *s = BOX_VM_ARG1_PTR(vmp, Str);
-  printf("%s", s->ptr);
+  if (s->length > 0)
+    printf("%s", s->ptr);
   return Success;
 }
 
@@ -189,6 +198,7 @@ static Task Str_Register_All(void) {
     {type_Str, TYPE_REAL, BOX_CREATION | BOX_MODIFICATION, Str_Real},
     {type_Str, type_Point, BOX_CREATION | BOX_MODIFICATION, Str_Point},
     {type_Str, type_CharArray, BOX_CREATION | BOX_MODIFICATION, Str_CharArray},
+    {type_Str, type_Str, BOX_CREATION | BOX_MODIFICATION, Str_STR},
     {type_Str, TYPE_PAUSE, BOX_CREATION | BOX_MODIFICATION, Str_Pause},
     {type_Print, type_Str, BOX_CREATION, Print_Str},
     {TYPE_NONE}

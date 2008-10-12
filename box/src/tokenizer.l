@@ -67,11 +67,12 @@ static Array *tok_include_list = NULL;
 
 %}
 
-SPACES  [ \t]*
-DIGIT   [0-9]
-NAME    [A-Za-z][A-Za-z0-9_]*
-LNAME   [a-z][A-Za-z0-9_]*
-UNAME   [A-Z][A-Za-z0-9_]*
+SPACES   [ \t]*
+DIGIT    [0-9]
+HEXDIGIT [0-9A-Fa-f]
+NAME     [A-Za-z][A-Za-z0-9_]*
+LNAME    [a-z][A-Za-z0-9_]*
+UNAME    [A-Z][A-Za-z0-9_]*
 
 %option noyywrap
 
@@ -178,8 +179,8 @@ include BEGIN(include);
 
 "(\\)" { yylval.proc = TYPE_DESTROY; return TOK_PROC; }
 
- /* Numero intero di tipo carattere */
-[']([^'\n]|\\')*['] {
+ /* Number of type Char */
+[']([^'\n]|\\')+['] {
   Char c;
 
   if IS_FAILED( Str_ToChar(yytext+1, yyleng-2, (char *) & c) ) {
@@ -190,17 +191,30 @@ include BEGIN(include);
   return TOK_EXPR;
  }
 
- /* Numero di tipo intero */
+ /* for future use:
+   [']    {}
+   [']['] {}
+  */
+
+ /* Integer number */
 {DIGIT}+ {
   Int i;
-
   if IS_FAILED( Str_ToInt(yytext, yyleng, & i) )
     { parser_attr.no_syntax_err = 1; return TOK_ERR;}
   Expr_New_Imm_Int( & yylval.Ex, i );
   return TOK_EXPR;
  }
 
- /* Numero di tipo float */
+ /* Integer number in hexadecimal notation */
+[0][xX]{HEXDIGIT}+ {
+  Int i;
+  if IS_FAILED( Str_Hex_To_Int(yytext+2, yyleng-2, & i) )
+    { parser_attr.no_syntax_err = 1; return TOK_ERR;}
+  Expr_New_Imm_Int(& yylval.Ex, i);
+  return TOK_EXPR;
+ }
+
+ /* Floating point number */
 {DIGIT}+("."{DIGIT}+)?([eE][+-]?{DIGIT}+)? {
   Real r;
 
@@ -210,9 +224,7 @@ include BEGIN(include);
   return TOK_EXPR;
  }
 
- /* Stringa: una stringa e' un'insieme di caratteri racchiusi
-  * tra due caratteri ".
-  */
+ /* String */
 ["]([^"\n]|\\\")*["] {
   char *s;
   Int nl;
