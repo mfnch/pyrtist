@@ -64,7 +64,7 @@ void Msg_Destroy(MsgStack *ms) {
   UInt i, n;
   EXIT_IF_NOT_INIT(ms);
   n = Arr_NumItem(ms->msgs);
-  for(i=0; i<n; i++) free(Arr_ItemPtr(ms->msgs, Msg, i)->msg);
+  for(i=1; i<=n; i++) free(Arr_ItemPtr(ms->msgs, Msg, i)->msg);
   Arr_Destroy(ms->msgs);
   free(ms->level);
   free(ms);
