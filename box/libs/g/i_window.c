@@ -28,6 +28,9 @@
 #include "virtmach.h"
 #include "graphic.h"
 #include "g.h"
+#include "bb.h"
+#include "fig.h"
+#include "autoput.h"
 #include "pointlist.h"
 #include "i_pointlist.h"
 #include "i_window.h"
@@ -35,9 +38,7 @@
 #include "i_put.h"
 #include "i_style.h"
 #include "i_gradient.h"
-#include "bb.h"
-#include "fig.h"
-#include "autoput.h"
+#include "i_bbox.h"
 
 /*#define DEBUG*/
 
@@ -496,5 +497,13 @@ Task window_show_point(VMProgram *vmp) {
   grp_win = w->window;
   grp_fake_point(p);
   grp_win = cur_win;
+  return Success;
+}
+
+Task window_bbox(VMProgram *vmp) {
+  BBox *b = BOX_VM_THIS_PTR(vmp, BBox);
+  Window *w = BOX_VM_ARG1(vmp, WindowPtr);
+  int not_degenerate = bb_bounding_box(w->window, & b->min, & b->max);
+  b->n = not_degenerate ? 3 : 0;
   return Success;
 }

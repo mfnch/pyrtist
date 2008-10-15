@@ -37,3 +37,7 @@ Window.File = Void
 
 Window.Show = Void
 Point@&Window.Show ? "window_show_point"
+
+// Teach BBox how to deal with Window
+Window@&BBox ? "window_bbox"
+

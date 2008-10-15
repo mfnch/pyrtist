@@ -8,6 +8,7 @@ Deg = Real, Real@Deg[$$ = $*0.01745329251994329576]
 Dpi = Real, Real@Dpi[$$ = $/25.4]
 
 include "matrix"
+include "bbox"
 include "pointlist"
 include "color"
 include "style"

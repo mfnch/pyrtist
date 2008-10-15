@@ -17,13 +17,15 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#ifndef _BB_H
-#  define _BB_H
+#ifndef _I_BBOX_H
+#  define _I_BBOX_H
 
-/** Compute the bounding box of the given figure. If the bounding box
- * is degenerate returns 0. Returns 1 otherwise.
- */
-int bb_bounding_box(GrpWindow *figure, Point *bb_min, Point *bb_max);
+#  include "types.h"
+#  include "virtmach.h"
 
-#define BB_Bounding_Box bb_bounding_box
+typedef struct {
+  Point min, max;
+  Int n;
+} BBox;
+
 #endif
