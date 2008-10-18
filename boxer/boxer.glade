@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sat Oct 18 15:57:21 2008 -->
+<!--Generated with glade3 3.4.5 on Sat Oct 18 21:54:36 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="boxer">
     <property name="visible">True</property>
@@ -211,7 +211,6 @@
             <property name="icon_size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
             <child>
               <widget class="GtkToolButton" id="toolbutton_run">
-                <property name="visible">True</property>
                 <property name="label" translatable="yes">Run</property>
                 <property name="stock_id">gtk-media-play</property>
               </widget>

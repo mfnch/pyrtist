@@ -4,13 +4,7 @@ import gtk
 import gtk.glade
 import os
 
-# By default this is the text put inside a new program
-# created with File->New
-box_source_of_new = \
-"""w = Window[]
-w.Show[(0, 0), (100, 50)]
-GUI[w]
-"""
+import config
 
 def box_source_preamble(out_file, out_img_file):
   return """
@@ -80,17 +74,36 @@ class Boxer:
     y = box_max_y + (box_min_y - box_max_y)*py_y/py_sy
     return (x, y)
 
+  def map_coord_from_box(self, box_coord):
+    """Map Box coordinates to on the GTK widget."""
+
+    if self.bbox == None:
+      return None
+
+    ((box_min_x, box_min_y), (box_max_x, box_max_y)) = self.bbox
+    box_x, box_y = box_coord
+    py_sx = self.outimage.allocation.width
+    py_sy = self.outimage.allocation.height
+    x = py_sx*(box_x - box_min_x)/(box_max_x - box_min_x)
+    y = py_sy*(box_y - box_min_y)/(box_max_y - box_min_y)
+    return (x, y)
+
   def get_main_source(self):
     """Return the content of the main textview (just a string)."""
     tb = self.textbuffer
     return tb.get_text(tb.get_start_iter(), tb.get_end_iter())
 
-  def set_main_source(self, text):
+  def set_main_source(self, text, not_undoable=None):
     """Set the content of the main textview from the string 'text'."""
+    if not_undoable == None:
+      not_undoable = self.has_textview
+    if not_undoable: self.textbuffer.begin_not_undoable_action()
     self.textbuffer.set_text(text)
+    if not_undoable: self.textbuffer.end_not_undoable_action()
 
   def raw_file_new(self):
     """Start a new box program and set the content of the main textview."""
+    from config import box_source_of_new
     self.set_main_source(box_source_of_new)
     self.filename = None
 
@@ -98,9 +111,7 @@ class Boxer:
     """Load the file 'filename' into the textview."""
     try:
       f = open(filename, "r")
-      self.textbuffer.begin_not_undoable_action()
-      self.textbuffer.set_text(f.read())
-      self.textbuffer.end_not_undoable_action()
+      self.set_main_source(f.read())
       f.close()
       self.filename = filename
 
@@ -259,12 +270,21 @@ class Boxer:
     pass
 
   def outimage_click(self, eventbox, event):
+    """Called when clicking with the mouse over the image."""
     box_coord = self.map_coord_to_box(event.get_coords())
     if box_coord != None:
+      point_name = self.pointman.add(box_coord)
+      self.outimage_update_points()
       x, y = box_coord
       self.textbuffer.insert_at_cursor("(%s, %s), " % (x, y))
 
+  def outimage_update_points(self):
+    """Draw the reference point markers over the image."""
+    pass
+
   def __init__(self, gladefile="boxer.glade"):
+    self.config = config.Config()
+
     self.gladefile = gladefile
     self.boxer = gtk.glade.XML(self.gladefile, "boxer")
     self.mainwin = self.boxer.get_widget("boxer")
@@ -295,7 +315,8 @@ class Boxer:
            "on_outimage_click": self.outimage_click}
     self.boxer.signal_autoconnect(dic)
 
-    # Replace the TextView with a SourceView, if possible
+    # Replace the TextView with a SourceView, if possible...
+    self.has_textview = False
     try:
       import gtksourceview
       srcbuf = gtksourceview.SourceBuffer()
@@ -314,19 +335,28 @@ class Boxer:
       sw.add(self.textview)
       self.textbuffer = srcbuf
       sw.show_all()
-
-      font = "Monospace 10"
-      #if self.__client.get("/apps/scribes/font"):
-              #gconf_font = self.__client.get_string("/apps/scribes/font")
-      from pango import FontDescription
-      font = FontDescription(font)
-      srcview.modify_font(font)
-      #debug()
+      self.has_textview = True
 
     except:
       pass
 
+    # try to set the default font
+    try:
+      from pango import FontDescription
+      font = FontDescription(self.config.get_default("font"))
+      self.textview.modify_font(font)
+
+    except:
+      pass
+
+    # Used to manage the reference points
+    import pointman
+    self.pointman = pointman.RefPointManager()
+
     self.clipboard = gtk.Clipboard()
+
+    # Set a template program to start with...
+    self.raw_file_new()
 
 if __name__ == "__main__":
   form = Boxer()

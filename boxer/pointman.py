@@ -139,25 +139,26 @@ class RefPointManager:
       self.add(point, name)
     self.code_parse(code, callback)
 
-rp = RefPointManager()
-rp.add((3, 5))
-rp.add((4, 6))
-rp.add((5, 7))
-rp.add((6, 8))
-rp.add((3, 5))
-rp.add((4, 6))
-rp.add((5, 7))
-rp.add((6, 8))
-rp.add((3, 5))
-rp.add((4, 6))
-rp.add((5, 7))
-rp.add((6, 8))
+if __name__ == "__main__":
+  rp = RefPointManager()
+  rp.add((3, 5))
+  rp.add((4, 6))
+  rp.add((5, 7))
+  rp.add((6, 8))
+  rp.add((3, 5))
+  rp.add((4, 6))
+  rp.add((5, 7))
+  rp.add((6, 8))
+  rp.add((3, 5))
+  rp.add((4, 6))
+  rp.add((5, 7))
+  rp.add((6, 8))
 
-code = rp.code_gen()
-print "OUT:"
-print code
+  code = rp.code_gen()
+  print "OUT:"
+  print code
 
-print rp.add_from_code(code)
+  print rp.add_from_code(code)
 
-print "OUT:"
-print rp.code_gen()
+  print "OUT:"
+  print rp.code_gen()
