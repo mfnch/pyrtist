@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sat Oct 18 01:26:40 2008 -->
+<!--Generated with glade3 3.4.5 on Sat Oct 18 15:57:21 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="boxer">
     <property name="visible">True</property>
@@ -279,7 +279,7 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkScrolledWindow" id="scrolledwindow1">
+              <widget class="GtkScrolledWindow" id="srcview_scrolledwindow">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>

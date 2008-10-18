@@ -98,7 +98,9 @@ class Boxer:
     """Load the file 'filename' into the textview."""
     try:
       f = open(filename, "r")
+      self.textbuffer.begin_not_undoable_action()
       self.textbuffer.set_text(f.read())
+      self.textbuffer.end_not_undoable_action()
       f.close()
       self.filename = filename
 
@@ -166,11 +168,19 @@ class Boxer:
 
   def menu_edit_undo(self, image_menu_item):
     """Called on a CTRL+Z or menu->undo."""
-    print "Undo not implemented yet!"
+    try:
+      if self.textbuffer.can_undo():
+        self.textbuffer.undo()
+    except:
+      print "Cannot undo :("
 
   def menu_edit_redo(self, image_menu_item):
     """Called on a CTRL+SHIFT+Z or menu->redo."""
-    print "Redo not implemented yet!"
+    try:
+      if self.textbuffer.can_redo():
+        self.textbuffer.redo()
+    except:
+      print "Cannot redo :("
 
   def menu_edit_cut(self, image_menu_item):
     """Called on a CTRL+X (cut) command."""
@@ -284,6 +294,37 @@ class Boxer:
            "on_outimage_motion": self.outimage_motion,
            "on_outimage_click": self.outimage_click}
     self.boxer.signal_autoconnect(dic)
+
+    # Replace the TextView with a SourceView, if possible
+    try:
+      import gtksourceview
+      srcbuf = gtksourceview.SourceBuffer()
+      langman = gtksourceview.SourceLanguagesManager()
+
+      lang = langman.get_language_from_mime_type("text/x-csrc")
+      #langS.set_mime_types(["text/x-python"])
+      srcbuf.set_language(lang)
+      srcbuf.set_highlight(True)
+      srcview = gtksourceview.SourceView(srcbuf)
+      srcview.set_show_line_numbers(True)
+
+      sw = self.boxer.get_widget("srcview_scrolledwindow")
+      sw.remove(self.textview)
+      self.textview = srcview
+      sw.add(self.textview)
+      self.textbuffer = srcbuf
+      sw.show_all()
+
+      font = "Monospace 10"
+      #if self.__client.get("/apps/scribes/font"):
+              #gconf_font = self.__client.get_string("/apps/scribes/font")
+      from pango import FontDescription
+      font = FontDescription(font)
+      srcview.modify_font(font)
+      #debug()
+
+    except:
+      pass
 
     self.clipboard = gtk.Clipboard()
 
