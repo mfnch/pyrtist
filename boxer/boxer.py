@@ -2,6 +2,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 import gtk.glade
+import gtk.gdk
 import os
 
 import config
@@ -58,35 +59,6 @@ class Boxer:
 
   def destroy(self, widget, data=None):
     self.raw_quit()
-
-  def map_coord_to_box(self, py_coord):
-    """Map coordinates of the mouse on the GTK widget to Box coordinates."""
-
-    if self.bbox == None:
-      return None
-
-    py_x, py_y = py_coord
-    py_sx = self.outimage.allocation.width
-    py_sy = self.outimage.allocation.height
-
-    ((box_min_x, box_min_y), (box_max_x, box_max_y)) = self.bbox
-    x = box_min_x + (box_max_x - box_min_x)*py_x/py_sx
-    y = box_max_y + (box_min_y - box_max_y)*py_y/py_sy
-    return (x, y)
-
-  def map_coord_from_box(self, box_coord):
-    """Map Box coordinates to on the GTK widget."""
-
-    if self.bbox == None:
-      return None
-
-    ((box_min_x, box_min_y), (box_max_x, box_max_y)) = self.bbox
-    box_x, box_y = box_coord
-    py_sx = self.outimage.allocation.width
-    py_sy = self.outimage.allocation.height
-    x = py_sx*(box_x - box_min_x)/(box_max_x - box_min_x)
-    y = py_sy*(box_y - box_min_y)/(box_max_y - box_min_y)
-    return (x, y)
 
   def get_main_source(self):
     """Return the content of the main textview (just a string)."""
@@ -235,21 +207,20 @@ class Boxer:
     box_out_msgs = commands.getoutput("box -l g %s" % box_source_file)
     self.outtextbuffer.set_text(box_out_msgs)
 
+    bbox = None
     try:
       data = parse_out_file(box_out_file)
       bbox_n = int(data["bbox_n"])
       bbox_min = (float(data["bbox_min_x"]), float(data["bbox_min_y"]))
       bbox_max = (float(data["bbox_max_x"]), float(data["bbox_max_y"]))
       if bbox_n == 3:
-        self.bbox = [bbox_min, bbox_max]
-      else:
-        self.bbox = None
+        bbox = [bbox_min, bbox_max]
 
     except:
-      self.bbox = None
+      pass
 
     if os.access(box_out_img_file, os.R_OK):
-      self.outimage.set_from_file(box_out_img_file)
+      self.imgview.set_from_file(box_out_img_file, bbox)
 
   def menu_help_about(self, image_menu_item):
     """Called menu help->about command."""
@@ -266,21 +237,18 @@ class Boxer:
     ad.run()
     ad.destroy()
 
-  def outimage_motion(self, eventbox, event):
+  def imgview_motion(self, eventbox, event):
     pass
 
-  def outimage_click(self, eventbox, event):
+  def imgview_click(self, eventbox, event):
     """Called when clicking with the mouse over the image."""
-    box_coord = self.map_coord_to_box(event.get_coords())
+    py_coord = event.get_coords()
+    box_coord = self.imgview.map_coord_to_box(py_coord)
     if box_coord != None:
       point_name = self.pointman.add(box_coord)
-      self.outimage_update_points()
+      self.imgview.ref_point_draw(py_coord)
       x, y = box_coord
-      self.textbuffer.insert_at_cursor("(%s, %s), " % (x, y))
-
-  def outimage_update_points(self):
-    """Draw the reference point markers over the image."""
-    pass
+      #self.textbuffer.insert_at_cursor("(%s, %s), " % (x, y))
 
   def __init__(self, gladefile="boxer.glade"):
     self.config = config.Config()
@@ -292,7 +260,10 @@ class Boxer:
     self.textbuffer = self.textview.get_buffer()
     self.outtextview = self.boxer.get_widget("outtextview")
     self.outtextbuffer = self.outtextview.get_buffer()
-    self.outimage = self.boxer.get_widget("outimage")
+
+    import imgview
+    self.imgview = imgview.ImgView(self.boxer.get_widget("imgview"))
+
     self.bbox = None
     self.filename = None
 
@@ -311,8 +282,8 @@ class Boxer:
            "on_edit_delete_activate": self.menu_edit_delete,
            "on_run_execute_activate": self.menu_run_execute,
            "on_help_about_activate": self.menu_help_about,
-           "on_outimage_motion": self.outimage_motion,
-           "on_outimage_click": self.outimage_click}
+           "on_imgview_motion": self.imgview_motion,
+           "on_imgview_click": self.imgview_click}
     self.boxer.signal_autoconnect(dic)
 
     # Replace the TextView with a SourceView, if possible...
@@ -321,9 +292,7 @@ class Boxer:
       import gtksourceview
       srcbuf = gtksourceview.SourceBuffer()
       langman = gtksourceview.SourceLanguagesManager()
-
       lang = langman.get_language_from_mime_type("text/x-csrc")
-      #langS.set_mime_types(["text/x-python"])
       srcbuf.set_language(lang)
       srcbuf.set_highlight(True)
       srcview = gtksourceview.SourceView(srcbuf)

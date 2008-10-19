@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sat Oct 18 21:54:36 2008 -->
+<!--Generated with glade3 3.4.5 on Sun Oct 19 17:05:05 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="boxer">
     <property name="visible">True</property>
@@ -245,13 +245,13 @@
                         <property name="xalign">0</property>
                         <property name="yalign">0</property>
                         <child>
-                          <widget class="GtkEventBox" id="outimage_eventbox">
+                          <widget class="GtkEventBox" id="imgview_eventbox">
                             <property name="visible">True</property>
                             <property name="events">GDK_POINTER_MOTION_MASK | GDK_BUTTON_PRESS_MASK | GDK_STRUCTURE_MASK</property>
-                            <signal name="button_press_event" handler="on_outimage_click"/>
-                            <signal name="motion_notify_event" handler="on_outimage_motion"/>
+                            <signal name="button_press_event" handler="on_imgview_click"/>
+                            <signal name="motion_notify_event" handler="on_imgview_motion"/>
                             <child>
-                              <widget class="GtkImage" id="outimage">
+                              <widget class="GtkImage" id="imgview">
                                 <property name="visible">True</property>
                                 <property name="events">GDK_POINTER_MOTION_MASK | GDK_STRUCTURE_MASK</property>
                                 <property name="xalign">0</property>
