@@ -16,8 +16,15 @@ class RefPoint:
     self.point = point
     self.name = name
 
+  def get_name(self):
+    return self.name
+
+  def set_coords(self, coords):
+    x, y = coords
+    self.point = (float(x), float(y))
+
 class RefPointManager:
-  def __init__(self, radius=None, base_name="p"):
+  def __init__(self, radius=None, base_name="gui"):
     self.radius = radius
     self.base_name = base_name
 
@@ -69,9 +76,10 @@ class RefPointManager:
     current_d = None
     current = None
     for p in self.points:
-      d = self.distance(point, p)
+      d = self.distance(point, p.point)
       if current_d == None or d <= current_d:
         current = (p, d)
+        current_d = d
     return current
 
   def set_radius(self, radius):
@@ -85,10 +93,11 @@ class RefPointManager:
     (see set_radius), return None."""
     current = self.nearest(point)
     #if radius == None: return current
-    if current == None or current[0] > self.radius: return None
+    if self.radius == None: return current
+    if current == None or current[1] > self.radius: return None
     return current
 
-  def code_gen(self):
+  def code_gen(self, transform=lambda x: x):
     """Generate Box code to set the ref. points."""
     line_and_whole = ["", ""]
     def add_to_line(piece):
@@ -102,7 +111,8 @@ class RefPointManager:
         line_and_whole[0] += self.sep_comma + piece
 
     for p in self.points:
-      piece = "%s = (%s, %s)" % (p.name, p.point[0], p.point[1])
+      x, y = transform(p.point)
+      piece = "%s = (%s, %s)" % (p.name, x, y)
       add_to_line(piece)
 
     line_and_whole[1] += line_and_whole[0] + self.sep_newline

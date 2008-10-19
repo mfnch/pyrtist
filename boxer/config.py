@@ -16,7 +16,8 @@ class Config:
   """Class to store global configuration settings."""
 
   def __init__(self):
-    self.default = {"font": "Monospace 10"}
+    self.default = {"font": "Monospace 10",
+                    "ref_point_size": 4}
 
   def get_default(self, name, default=None):
     """Get a default configuration setting."""

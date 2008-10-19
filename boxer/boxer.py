@@ -188,11 +188,12 @@ class Boxer:
   def menu_run_execute(self, image_menu_item):
     """Called menu run->execute command."""
     tb = self.textbuffer
-    box_source = tb.get_text(tb.get_start_iter(), tb.get_end_iter())
+    box_source = self.get_main_source()
     box_source_file = tmp_file("source", "box")
     box_out_file = tmp_file("out", "dat")
     box_out_img_file = tmp_file("out", "png")
     preamble = box_source_preamble(box_out_file, box_out_img_file)
+    preamble += self.pointman.code_gen(self.imgview.map_coords_to_box)
     f = open(box_source_file, "w")
     f.write(preamble + box_source)
     f.close()
@@ -237,18 +238,45 @@ class Boxer:
     ad.run()
     ad.destroy()
 
-  def imgview_motion(self, eventbox, event):
-    pass
+  def imgview_drag_begin(self):
+    print "drag_begin"
+
+  def imgview_drag_end(self):
+    print "drag_end"
 
   def imgview_click(self, eventbox, event):
     """Called when clicking with the mouse over the image."""
-    py_coord = event.get_coords()
-    box_coord = self.imgview.map_coord_to_box(py_coord)
-    if box_coord != None:
-      point_name = self.pointman.add(box_coord)
-      self.imgview.ref_point_draw(py_coord)
-      x, y = box_coord
-      #self.textbuffer.insert_at_cursor("(%s, %s), " % (x, y))
+    py_coords = event.get_coords()
+    picked = self.pointman.pick(py_coords)
+    if picked != None:
+      print "Dragging point"
+      ref_point, _ = picked
+      self.dragging_ref_point = ref_point
+
+    else:
+      print "New point"
+      box_coords = self.imgview.map_coords_to_box(py_coords)
+      if box_coords != None:
+        point_name = self.pointman.add(py_coords)
+        self.imgview.ref_point_new(point_name, py_coords)
+        x, y = box_coords
+        self.textbuffer.insert_at_cursor("%s, " % point_name)
+
+  def imgview_motion(self, eventbox, event):
+    if self.dragging_ref_point != None:
+      name = self.dragging_ref_point.get_name()
+      py_coords = event.get_coords()
+      self.imgview.ref_point_move(name, py_coords)
+      self.dragging_ref_point.set_coords(py_coords)
+
+  def imgview_release(self, eventbox, event):
+    if self.dragging_ref_point != None:
+      name = self.dragging_ref_point.get_name()
+      py_coords = event.get_coords()
+      self.imgview.ref_point_move(name, py_coords)
+      self.dragging_ref_point.set_coords(py_coords)
+      self.dragging_ref_point = None
+      self.menu_run_execute(None)
 
   def __init__(self, gladefile="boxer.glade"):
     self.config = config.Config()
@@ -261,10 +289,18 @@ class Boxer:
     self.outtextview = self.boxer.get_widget("outtextview")
     self.outtextbuffer = self.outtextview.get_buffer()
 
-    import imgview
-    self.imgview = imgview.ImgView(self.boxer.get_widget("imgview"))
+    ref_point_size = self.config.get_default("ref_point_size")
 
-    self.bbox = None
+    import imgview
+    self.imgview = imgview.ImgView(self.boxer.get_widget("imgview"),
+                                   ref_point_size)
+
+    # Used to manage the reference points
+    import pointman
+    self.pointman = pointman.RefPointManager(radius=ref_point_size)
+
+    self.dragging_ref_point = None
+
     self.filename = None
 
     dic = {"on_boxer_destroy": self.destroy,
@@ -283,7 +319,8 @@ class Boxer:
            "on_run_execute_activate": self.menu_run_execute,
            "on_help_about_activate": self.menu_help_about,
            "on_imgview_motion": self.imgview_motion,
-           "on_imgview_click": self.imgview_click}
+           "on_imgview_click": self.imgview_click,
+           "on_imgview_release": self.imgview_release}
     self.boxer.signal_autoconnect(dic)
 
     # Replace the TextView with a SourceView, if possible...
@@ -318,9 +355,6 @@ class Boxer:
     except:
       pass
 
-    # Used to manage the reference points
-    import pointman
-    self.pointman = pointman.RefPointManager()
 
     self.clipboard = gtk.Clipboard()
 
