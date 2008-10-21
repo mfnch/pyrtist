@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sun Oct 19 18:51:57 2008 -->
+<!--Generated with glade3 3.4.5 on Tue Oct 21 00:35:18 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="boxer">
     <property name="visible">True</property>
@@ -238,7 +238,7 @@
                     <property name="visible">True</property>
                     <property name="label_xalign">0</property>
                     <property name="label_yalign">1</property>
-                    <property name="shadow_type">GTK_SHADOW_NONE</property>
+                    <property name="shadow_type">GTK_SHADOW_OUT</property>
                     <child>
                       <widget class="GtkAlignment" id="outimage_alignment1">
                         <property name="visible">True</property>

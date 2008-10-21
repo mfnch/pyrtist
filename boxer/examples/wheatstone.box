@@ -1,0 +1,50 @@
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui1 = (-0.255807878788, -19.5900623377)
+gui2 = (19.7791411043, -0.0303101075269), gui3 = (0.127607361963, 19.7838873118)
+gui4 = (-20.5447852761, 0.223718064516), gui5 = (-22.6152212121, 21.856384472)
+gui6 = (22.357695082, -21.4080237288)
+
+//!BOXER:REFPOINTS:END
+include "electric"
+
+// This is not a real Wheatstone bridge.
+// We replace some of the resistors with other components, just to make
+// the thing more interesting!
+wheatstone = Window["fig"][
+  d1 = 20.0 // d1 = half diagonal
+  .Show[gui5, gui6]
+  p1 = Point[gui1], p2 = Point[gui2]
+  p3 = Point[gui3], p4 = Point[gui4]
+
+  // Places the four components.
+  // Each component has two connections. Here we want to rotate and translate
+  // ("rt") a resistor such that the first of its terminals is near to
+  // the point p1 and the second one is near to p2.
+  r12 = .Put[resistor, "rt", .Near[1, p1], .Near[2, p2]]
+  // We proceed in a similar way for the other components:
+  r23 = .Put[diode, "rt", .Near[1, p2], .Near[2, p3]]
+  r34 = .Put[inductance, "rt", .Near[1, p3], .Near[2, p4]]
+  r41 = .Put[resistor, "rt", .Near[1, p4], .Near[2, p1]]
+
+  // Connecting the four resistors
+  \ .Line[0.2, p1, r12.Get[1]; r12.Get[2], p2; p2, r23.Get[1]; r23.Get[2], p3;
+          p3, r34.Get[1]; r34.Get[2], p4; p4, r41.Get[1]; r41.Get[2], p1]
+
+  // Drawing small circles on the nodes
+  // Here you see how a single Circle instruction can be used to draw many
+  // circles. To start a new circle one should use the separator ";" and
+  // specify only the quantities that changed with respect to the previous
+  // circle. Here we change only the center, so we need to specify the radius
+  // only once!
+  \ .Circle[0.8, p1; p2; p3; p4]
+
+  .Save["wheatstone.eps"]  // Saving to eps file
+]
+
+GUI[wheatstone]

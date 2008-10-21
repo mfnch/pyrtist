@@ -7,8 +7,18 @@ import os
 
 import config
 
-def box_source_preamble(out_file, out_img_file):
-  return """
+def box_source_preamble(out_files):
+  if out_files == None:
+    return """
+include "g"
+GUI = Void
+Window@GUI[]
+
+"""
+
+  else:
+    box_out_file, box_out_img_file = out_files
+    return """
 include "g"
 GUI = Void
 Window@GUI[
@@ -20,7 +30,7 @@ Window@GUI[
   $.Save["%s"]
 ]
 
-  """ % (out_file, out_img_file)
+""" % (box_out_file, box_out_img_file)
 
 def parse_out_file(out_file):
   """Get the data parsing the output file produced by the GUI Box object."""
@@ -79,16 +89,48 @@ class Boxer:
     self.set_main_source(box_source_of_new)
     self.filename = None
 
+  def wrap_src(self, out_files):
+    """Create the complete Box program to be passed to Box."""
+    src = box_source_preamble(out_files)
+    marker1 = self.config.get_default("src_marker_refpoints_begin")
+    marker2 = self.config.get_default("src_marker_refpoints_end")
+    src += "\n".join(["", marker1, self.imgview.code_gen(), marker2, ""])
+    src += self.get_main_source()
+    return src
+
+  def unwrap_src(self, src):
+    """Inverse of wrap_src: extract the part of the code edited by the user
+    and the part which contains the reference points and should be parsed.
+    The two strings are returned in a couple (ref_point_str, user_str)
+    """
+    marker1 = self.config.get_default("src_marker_refpoints_begin")
+    marker2 = self.config.get_default("src_marker_refpoints_end")
+    i0 = src.find(marker1)
+    i1 = src.find(marker2)
+    refpoint_str = src[i0+len(marker1):i1]
+    user_str = src[i1+len(marker2):]
+    return (refpoint_str.strip(), user_str.strip())
+
   def raw_file_open(self, filename):
     """Load the file 'filename' into the textview."""
     try:
       f = open(filename, "r")
-      self.set_main_source(f.read())
+      src = f.read()
       f.close()
-      self.filename = filename
-
     except:
       print "Error loading the file"
+      return
+
+    ref_point_str, user_str = self.unwrap_src(src)
+    self.set_main_source(user_str)
+    self.filename = filename
+
+    try:
+      self.imgview.add_from_code(ref_point_str)
+      self.menu_run_execute(None)
+
+    except:
+      print "Error parsing the reference point list"
 
   def raw_file_save(self, filename=None):
     """Save the textview content into the file 'filename'."""
@@ -96,7 +138,7 @@ class Boxer:
       if filename == None:
         filename = self.filename
       f = open(filename, "w")
-      f.write(self.get_main_source())
+      f.write(self.wrap_src(None))
       f.close()
       self.filename = filename
 
@@ -187,15 +229,11 @@ class Boxer:
 
   def menu_run_execute(self, image_menu_item):
     """Called menu run->execute command."""
-    tb = self.textbuffer
-    box_source = self.get_main_source()
     box_source_file = tmp_file("source", "box")
     box_out_file = tmp_file("out", "dat")
     box_out_img_file = tmp_file("out", "png")
-    preamble = box_source_preamble(box_out_file, box_out_img_file)
-    preamble += self.pointman.code_gen(self.imgview.map_coords_to_box)
     f = open(box_source_file, "w")
-    f.write(preamble + box_source)
+    f.write(self.wrap_src((box_out_file, box_out_img_file)))
     f.close()
     import commands
 
@@ -247,7 +285,7 @@ class Boxer:
   def imgview_click(self, eventbox, event):
     """Called when clicking with the mouse over the image."""
     py_coords = event.get_coords()
-    picked = self.pointman.pick(py_coords)
+    picked = self.imgview.pick(py_coords)
     if picked != None:
       print "Dragging point"
       ref_point, _ = picked
@@ -257,9 +295,7 @@ class Boxer:
       print "New point"
       box_coords = self.imgview.map_coords_to_box(py_coords)
       if box_coords != None:
-        point_name = self.pointman.add(py_coords)
-        self.imgview.ref_point_new(point_name, py_coords)
-        x, y = box_coords
+        point_name = self.imgview.ref_point_new(py_coords)
         self.textbuffer.insert_at_cursor("%s, " % point_name)
 
   def imgview_motion(self, eventbox, event):
@@ -267,14 +303,12 @@ class Boxer:
       name = self.dragging_ref_point.get_name()
       py_coords = event.get_coords()
       self.imgview.ref_point_move(name, py_coords)
-      self.dragging_ref_point.set_coords(py_coords)
 
   def imgview_release(self, eventbox, event):
     if self.dragging_ref_point != None:
       name = self.dragging_ref_point.get_name()
       py_coords = event.get_coords()
       self.imgview.ref_point_move(name, py_coords)
-      self.dragging_ref_point.set_coords(py_coords)
       self.dragging_ref_point = None
       self.menu_run_execute(None)
 
@@ -291,13 +325,10 @@ class Boxer:
 
     ref_point_size = self.config.get_default("ref_point_size")
 
+    # Used to manage the reference points
     import imgview
     self.imgview = imgview.ImgView(self.boxer.get_widget("imgview"),
                                    ref_point_size)
-
-    # Used to manage the reference points
-    import pointman
-    self.pointman = pointman.RefPointManager(radius=ref_point_size)
 
     self.dragging_ref_point = None
 
