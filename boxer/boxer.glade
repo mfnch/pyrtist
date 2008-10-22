@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Tue Oct 21 00:35:18 2008 -->
+<!--Generated with glade3 3.4.5 on Thu Oct 23 01:19:55 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="boxer">
     <property name="visible">True</property>
@@ -9,6 +9,7 @@
     <property name="default_width">600</property>
     <property name="default_height">480</property>
     <signal name="destroy" handler="on_boxer_destroy"/>
+    <signal name="delete_event" handler="on_boxer_delete_event"/>
     <child>
       <widget class="GtkVBox" id="vbox1">
         <property name="visible">True</property>
@@ -163,15 +164,11 @@
                       <widget class="GtkImageMenuItem" id="Execute">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Execute the Box program</property>
-                        <property name="label" translatable="yes">Execute</property>
+                        <property name="label" translatable="yes">gtk-execute</property>
                         <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
                         <signal name="activate" handler="on_run_execute_activate"/>
                         <accelerator key="Return" modifiers="GDK_CONTROL_MASK" signal="activate"/>
-                        <child internal-child="image">
-                          <widget class="GtkImage" id="menu-item-image1">
-                            <property name="stock">gtk-media-play</property>
-                          </widget>
-                        </child>
                       </widget>
                     </child>
                   </widget>
@@ -207,12 +204,54 @@
         <child>
           <widget class="GtkToolbar" id="toolbar">
             <property name="visible">True</property>
-            <property name="toolbar_style">GTK_TOOLBAR_BOTH</property>
-            <property name="icon_size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+            <child>
+              <widget class="GtkToolButton" id="toolbutton_new">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">New</property>
+                <property name="stock_id">gtk-new</property>
+                <signal name="clicked" handler="on_toolbutton_new"/>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkToolButton" id="toolbutton_open">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Open</property>
+                <property name="stock_id">gtk-open</property>
+                <signal name="clicked" handler="on_toolbutton_open"/>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkToolButton" id="toolbutton_save">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Save</property>
+                <property name="stock_id">gtk-save</property>
+                <signal name="clicked" handler="on_toolbutton_save"/>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkSeparatorToolItem" id="toolbutton_sep">
+                <property name="visible">True</property>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+                <property name="homogeneous">False</property>
+              </packing>
+            </child>
             <child>
               <widget class="GtkToolButton" id="toolbutton_run">
+                <property name="visible">True</property>
                 <property name="label" translatable="yes">Run</property>
-                <property name="stock_id">gtk-media-play</property>
+                <property name="stock_id">gtk-execute</property>
+                <signal name="clicked" handler="on_toolbutton_run"/>
               </widget>
               <packing>
                 <property name="expand">False</property>
@@ -304,10 +343,9 @@
           </packing>
         </child>
         <child>
-          <widget class="GtkExpander" id="expander">
+          <widget class="GtkExpander" id="outtextview_expander">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="expanded">True</property>
             <child>
               <widget class="GtkScrolledWindow" id="scrolledwindow2">
                 <property name="visible">True</property>

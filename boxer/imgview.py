@@ -44,13 +44,13 @@ class ImgView:
     self.ref_point = {}
     self.ref_point_list = []
     self.ref_point_size = ref_point_size
+    self.index = 0
     self.base_name = base_name
     self.metric = square_metric
     self.sep_newline = "\n"
     self.sep_comma = ", "
     self.code_max_row = 79
     self.comment_line = lambda line: (("// %s" % line) + self.sep_newline)
-    self.index = 0
 
   def distance(self, p1, p2):
     """Returns the distance between two given points, using the currently
@@ -64,8 +64,13 @@ class ImgView:
     Example: if 'base_name="p"', then returns p1, or p2 (if p1 has been already
     used, etc.)"""
     if name != None: return name
-    self.index += 1
-    return self.base_name + str(self.index)
+    if self.index == None:
+      self.__recompute_index()
+    while True:
+      self.index += 1
+      new_name = self.base_name + str(self.index)
+      if not self.ref_point.has_key(new_name):
+        return new_name
 
   def nearest(self, point):
     """Find the ref. point which is nearest to the given point.
@@ -297,8 +302,11 @@ class ImgView:
     # NOTE: should also adjust list!!!
 
   def ref_point_del_all(self):
-    for name in self.ref_point:
-      self.ref_point_del(name)
+    """Delete all the defined points."""
+    self.ref_point_hide_all()
+    self.ref_point = {}
+    self.ref_point_list = []
+    self.index = 0
 
   def ref_point_hide_all(self):
     for ref_point in self.ref_point_list:

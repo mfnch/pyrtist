@@ -61,7 +61,7 @@ def tmp_file(base, ext=""):
 
 class Boxer:
   def delete_event(self, widget, event, data=None):
-    return False
+    return not self.ensure_file_is_saved()
 
   def raw_quit(self):
     """Called to quit the program."""
@@ -69,6 +69,12 @@ class Boxer:
 
   def destroy(self, widget, data=None):
     self.raw_quit()
+
+  def assume_file_is_saved(self):
+    """Called just after saving a file, to communicate that this has just
+    happened.
+    """
+    self.textbuffer.set_modified(False)
 
   def get_main_source(self):
     """Return the content of the main textview (just a string)."""
@@ -88,6 +94,7 @@ class Boxer:
     from config import box_source_of_new
     self.set_main_source(box_source_of_new)
     self.filename = None
+    self.assume_file_is_saved()
 
   def wrap_src(self, out_files):
     """Create the complete Box program to be passed to Box."""
@@ -124,8 +131,10 @@ class Boxer:
     ref_point_str, user_str = self.unwrap_src(src)
     self.set_main_source(user_str)
     self.filename = filename
+    self.assume_file_is_saved()
 
     try:
+      self.imgview.ref_point_del_all()
       self.imgview.add_from_code(ref_point_str)
       self.menu_run_execute(None)
 
@@ -141,15 +150,36 @@ class Boxer:
       f.write(self.wrap_src(None))
       f.close()
       self.filename = filename
+      self.assume_file_is_saved()
 
     except:
       print "Error saving the file"
 
+  def ensure_file_is_saved(self):
+    """Give to the user a possibility of saving the work that otherwise would
+    be discarded (by an "open file" a "new" or an "application close" command)
+    Return True if the user decided Yes or No. Return False to cancel
+    the action.
+    """
+    if not self.textbuffer.get_modified(): return True
+    msg = "The file contains unsaved changes. Do you want to save it now?"
+    md = gtk.MessageDialog(parent=self.mainwin,
+                           type=gtk.MESSAGE_QUESTION,
+                           message_format=msg,
+                           buttons=gtk.BUTTONS_YES_NO)
+    response = md.run()
+    md.destroy()
+    if response == gtk.RESPONSE_YES:
+      self.menu_file_save(None)
+    return True
+
   def menu_file_new(self, image_menu_item):
+    if not self.ensure_file_is_saved(): return
     self.raw_file_new()
 
   def menu_file_open(self, image_menu_item):
     """Ivoked to open a file. Shows the dialog to select the file."""
+    if not self.ensure_file_is_saved(): return
     fc = gtk.FileChooserDialog(title="Open Box program",
                                parent=self.mainwin,
                                action=gtk.FILE_CHOOSER_ACTION_OPEN,
@@ -245,6 +275,7 @@ class Boxer:
 
     box_out_msgs = commands.getoutput("box -l g %s" % box_source_file)
     self.outtextbuffer.set_text(box_out_msgs)
+    self.outtextview_expander.set_expanded(len(box_out_msgs.strip()) > 0)
 
     bbox = None
     try:
@@ -322,6 +353,7 @@ class Boxer:
     self.textbuffer = self.textview.get_buffer()
     self.outtextview = self.boxer.get_widget("outtextview")
     self.outtextbuffer = self.outtextview.get_buffer()
+    self.outtextview_expander = self.boxer.get_widget("outtextview_expander")
 
     ref_point_size = self.config.get_default("ref_point_size")
 
@@ -349,6 +381,10 @@ class Boxer:
            "on_edit_delete_activate": self.menu_edit_delete,
            "on_run_execute_activate": self.menu_run_execute,
            "on_help_about_activate": self.menu_help_about,
+           "on_toolbutton_new": self.menu_file_new,
+           "on_toolbutton_open": self.menu_file_open,
+           "on_toolbutton_save": self.menu_file_save,
+           "on_toolbutton_run": self.menu_run_execute,
            "on_imgview_motion": self.imgview_motion,
            "on_imgview_click": self.imgview_click,
            "on_imgview_release": self.imgview_release}
