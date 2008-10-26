@@ -3,6 +3,19 @@ REVISION=$Revision$
 
 Change log (recent come first)
 
+next: created Boxer, a GUI for Box
+  * created Boxer, a GUI for Box, using PyGTK (Python bindings for GTK+).
+    The GUI can be run on Linux, Mac OS and Windows. The GUI has a text view
+    containing the edited source and an image view, to show the output.
+    The user can click on the image and add reference points, which can then
+    be used in the Box source. These points can then be dragged, giving
+    the possibility to change the position and shape of objects interactively.
+    In this way using Box becomes much easier, still retaining the advantages
+    of a vectorial language over the traditional mouse driven graphic editors.
+  * work on propagation of special procedures, such as creators, destructors
+    etc. Now members are created/destroyed when their container is created/
+    destroyed.
+
 10 august 2008: Improved support of user defined procedures
   * exit status should now be treated more carefully:
     0, if all OK, 1 otherwise;

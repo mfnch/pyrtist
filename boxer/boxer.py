@@ -1,3 +1,20 @@
+# Copyright (C) 2008 by Matteo Franchin (fnch@users.sourceforge.net)
+#
+# This file is part of Box.
+#
+#   Boxer is free software: you can redistribute it and/or modify it
+#   under the terms of the GNU General Public License as published
+#   by the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Boxer is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
+
 import pygtk
 pygtk.require('2.0')
 import gtk
@@ -18,6 +35,8 @@ Window@GUI[]
 
   else:
     box_out_file, box_out_img_file = out_files
+    box_out_file = box_out_file.replace("\\", "\\\\")
+    box_out_img_file = box_out_img_file.replace("\\", "\\\\")
     return """
 include "g"
 GUI = Void
@@ -56,8 +75,26 @@ def debug():
   IPShellEmbed([])(local_ns  = calling_frame.f_locals,
                    global_ns = calling_frame.f_globals)
 
-def tmp_file(base, ext=""):
-  return "/tmp/boxer_%s.%s" % (base, ext)
+_tmp_files = [[]]
+def tmp_file(base, ext="", remember=True):
+  try:
+    import os
+    prefix = "boxer%d%s" % (os.getpid(), base)
+  except:
+    prefix = "boxer%s" % base
+  import tempfile
+  filename = tempfile.mktemp(prefix=prefix, suffix="." + ext)
+  if remember: _tmp_files[0].append(filename)
+  return filename
+
+def tmp_remove():
+  """Remove all the temporary files created up to now."""
+  for filename in _tmp_files[0]:
+    try:
+      os.unlink(filename)
+    except:
+      pass
+  _tmp_files[0] = []
 
 class Boxer:
   def delete_event(self, widget, event, data=None):
@@ -92,6 +129,7 @@ class Boxer:
   def raw_file_new(self):
     """Start a new box program and set the content of the main textview."""
     from config import box_source_of_new
+    self.imgview.ref_point_del_all()
     self.set_main_source(box_source_of_new)
     self.filename = None
     self.assume_file_is_saved()
@@ -125,7 +163,7 @@ class Boxer:
       src = f.read()
       f.close()
     except:
-      print "Error loading the file"
+      self.error("Error loading the file")
       return
 
     ref_point_str, user_str = self.unwrap_src(src)
@@ -136,10 +174,11 @@ class Boxer:
     try:
       self.imgview.ref_point_del_all()
       self.imgview.add_from_code(ref_point_str)
-      self.menu_run_execute(None)
 
     except:
-      print "Error parsing the reference point list"
+      self.error("Error parsing the reference point list")
+
+    self.menu_run_execute(None)
 
   def raw_file_save(self, filename=None):
     """Save the textview content into the file 'filename'."""
@@ -151,9 +190,11 @@ class Boxer:
       f.close()
       self.filename = filename
       self.assume_file_is_saved()
+      return True
 
     except:
-      print "Error saving the file"
+      self.error("Error saving the file")
+      return False
 
   def ensure_file_is_saved(self):
     """Give to the user a possibility of saving the work that otherwise would
@@ -173,6 +214,14 @@ class Boxer:
       self.menu_file_save(None)
     return True
 
+  def error(self, msg):
+    md = gtk.MessageDialog(parent=self.mainwin,
+                           type=gtk.MESSAGE_ERROR,
+                           message_format=msg,
+                           buttons=gtk.BUTTONS_OK)
+    md.run()
+    md.destroy()
+
   def menu_file_new(self, image_menu_item):
     if not self.ensure_file_is_saved(): return
     self.raw_file_new()
@@ -185,14 +234,13 @@ class Boxer:
                                action=gtk.FILE_CHOOSER_ACTION_OPEN,
                                buttons=("_Cancel", gtk.RESPONSE_CANCEL,
                                         "_Open", gtk.RESPONSE_OK))
-    try:
-      response = fc.run()
-      if response == gtk.RESPONSE_OK:
-        self.raw_file_open(fc.get_filename())
-    except:
-      pass
 
+    response = fc.run()
+    filename = None
+    if response == gtk.RESPONSE_OK:
+      filename = fc.get_filename()
     fc.destroy()
+    if filename != None: self.raw_file_open(filename)
 
   def menu_file_save(self, image_menu_item):
     """Ivoked to save a file whose name has been already assigned."""
@@ -208,14 +256,13 @@ class Boxer:
                                action=gtk.FILE_CHOOSER_ACTION_SAVE,
                                buttons=("_Cancel", gtk.RESPONSE_CANCEL,
                                         "_Save", gtk.RESPONSE_OK))
-    try:
-      response = fc.run()
-      if response == gtk.RESPONSE_OK:
-        self.raw_file_save(fc.get_filename())
-    except:
-      pass
 
+    response = fc.run()
+    filename = None
+    if response == gtk.RESPONSE_OK:
+      filename = fc.get_filename()
     fc.destroy()
+    if filename != None: self.raw_file_save(filename)
 
   def menu_file_quit(self, image_menu_item):
     """Called on file->quit to quit the program."""
@@ -227,7 +274,7 @@ class Boxer:
       if self.textbuffer.can_undo():
         self.textbuffer.undo()
     except:
-      print "Cannot undo :("
+      self.error("Cannot undo :(")
 
   def menu_edit_redo(self, image_menu_item):
     """Called on a CTRL+SHIFT+Z or menu->redo."""
@@ -235,7 +282,7 @@ class Boxer:
       if self.textbuffer.can_redo():
         self.textbuffer.redo()
     except:
-      print "Cannot redo :("
+      self.error("Cannot redo :(")
 
   def menu_edit_cut(self, image_menu_item):
     """Called on a CTRL+X (cut) command."""
@@ -260,6 +307,7 @@ class Boxer:
   def menu_run_execute(self, image_menu_item):
     """Called menu run->execute command."""
     box_source_file = tmp_file("source", "box")
+    #box_pre_file = tmp_file("pre", "box")
     box_out_file = tmp_file("out", "dat")
     box_out_img_file = tmp_file("out", "png")
     f = open(box_source_file, "w")
@@ -290,7 +338,12 @@ class Boxer:
       pass
 
     if os.access(box_out_img_file, os.R_OK):
-      self.imgview.set_from_file(box_out_img_file, bbox)
+      try:
+        self.imgview.set_from_file(box_out_img_file, bbox)
+      except:
+        pass
+
+    tmp_remove()
 
   def menu_help_about(self, image_menu_item):
     """Called menu help->about command."""
@@ -307,27 +360,35 @@ class Boxer:
     ad.run()
     ad.destroy()
 
-  def imgview_drag_begin(self):
-    print "drag_begin"
-
-  def imgview_drag_end(self):
-    print "drag_end"
-
   def imgview_click(self, eventbox, event):
     """Called when clicking with the mouse over the image."""
     py_coords = event.get_coords()
     picked = self.imgview.pick(py_coords)
+    ref_point = None
     if picked != None:
-      print "Dragging point"
       ref_point, _ = picked
-      self.dragging_ref_point = ref_point
 
-    else:
-      print "New point"
-      box_coords = self.imgview.map_coords_to_box(py_coords)
-      if box_coords != None:
-        point_name = self.imgview.ref_point_new(py_coords)
-        self.textbuffer.insert_at_cursor("%s, " % point_name)
+    if event.button == self.button_left:
+      if ref_point != None:
+        self.dragging_ref_point = ref_point
+
+      else:
+        box_coords = self.imgview.map_coords_to_box(py_coords)
+        if box_coords != None:
+          point_name = self.imgview.ref_point_new(py_coords)
+          self.textbuffer.insert_at_cursor("%s, " % point_name)
+
+    elif self.dragging_ref_point != None:
+      return
+
+    elif event.button == self.button_center:
+      if ref_point != None:
+        self.textbuffer.insert_at_cursor("%s, " % ref_point.name)
+
+    elif event.button == self.button_right:
+      if ref_point != None:
+        self.imgview.ref_point_del(ref_point.name)
+
 
   def imgview_motion(self, eventbox, event):
     if self.dragging_ref_point != None:
@@ -345,6 +406,10 @@ class Boxer:
 
   def __init__(self, gladefile="boxer.glade"):
     self.config = config.Config()
+
+    self.button_left = self.config.get_default("button_left")
+    self.button_center = self.config.get_default("button_center")
+    self.button_right = self.config.get_default("button_right")
 
     self.gladefile = gladefile
     self.boxer = gtk.glade.XML(self.gladefile, "boxer")

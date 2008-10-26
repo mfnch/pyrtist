@@ -18,6 +18,6 @@
 #    59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             #
 ############################################################################
 
-EXTRA_DIST = README STYLE PROBLEMS
+EXTRA_DIST = README STYLE
 SUBDIRS = libltdl src libs tests man examples
 

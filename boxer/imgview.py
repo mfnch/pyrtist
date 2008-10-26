@@ -1,3 +1,20 @@
+# Copyright (C) 2008 by Matteo Franchin (fnch@users.sourceforge.net)
+#
+# This file is part of Box.
+#
+#   Boxer is free software: you can redistribute it and/or modify it
+#   under the terms of the GNU General Public License as published
+#   by the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Boxer is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
+
 """
 In this file we define the class ImgView, used to display the resulting image
 produced by a Box program and to handle the reference points.
@@ -33,6 +50,38 @@ class RefPoint:
   def get_name(self):
     return self.name
 
+class Grid:
+  def __init__(self, is_integer=False):
+    """Create a new grid. If is_integer == True the align function will return
+    a couple of integers, instead of reals."""
+    self.offset = (0, 0)
+    self.resolution = None
+    self.is_integer = is_integer
+
+  def set_offset(self, offset):
+    """Set the grid offset."""
+    x, y = offset
+    self.offset = (x, y)
+
+  def set_resolution(self, resolution):
+    """Set the grid offset."""
+    self.resolution = resolution
+
+  def align(self, point):
+    """Return the point aligned to the grid."""
+    x, y = point
+    if resolution == None:
+      return point
+
+    else:
+      ox, oy = self.offset
+      rx, ry = self.resolution
+      x = round(float(x - ox)/rx)*rx + ox
+      y = round(float(y - oy)/ry)*ry + oy
+      if is_integer:
+        return (int(x), int(y))
+      return (x, y)
+
 class ImgView:
   """Class which allows to display the image produced by Box and the reference
   points.
@@ -51,6 +100,7 @@ class ImgView:
     self.sep_comma = ", "
     self.code_max_row = 79
     self.comment_line = lambda line: (("// %s" % line) + self.sep_newline)
+    self.grid = Grid()
 
   def distance(self, p1, p2):
     """Returns the distance between two given points, using the currently
@@ -299,7 +349,15 @@ class ImgView:
     ref_point = self.ref_point[name]
     self.restore_background(ref_point.background)
     self.ref_point.pop(name)
-    # NOTE: should also adjust list!!!
+    j = None
+    for i in range(len(self.ref_point_list)):
+      if self.ref_point_list[i].name == name:
+        j = i
+        break
+    if j == None:
+      print "ImgView.ref_point_del: shouldn't happen!"
+      return
+    self.ref_point_list.pop(j)
 
   def ref_point_del_all(self):
     """Delete all the defined points."""
