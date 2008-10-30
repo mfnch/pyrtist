@@ -70,7 +70,7 @@ class Grid:
   def align(self, point):
     """Return the point aligned to the grid."""
     x, y = point
-    if resolution == None:
+    if self.resolution == None:
       return point
 
     else:
@@ -78,7 +78,7 @@ class Grid:
       rx, ry = self.resolution
       x = round(float(x - ox)/rx)*rx + ox
       y = round(float(y - oy)/ry)*ry + oy
-      if is_integer:
+      if self.is_integer:
         return (int(x), int(y))
       return (x, y)
 
@@ -101,6 +101,7 @@ class ImgView:
     self.code_max_row = 79
     self.comment_line = lambda line: (("// %s" % line) + self.sep_newline)
     self.grid = Grid()
+    self.grid.set_resolution((20, 20))
 
   def distance(self, p1, p2):
     """Returns the distance between two given points, using the currently

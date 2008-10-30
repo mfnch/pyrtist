@@ -1,0 +1,35 @@
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui1 = (18.320610687, 27.2959183673), gui2 = (50.6361323155, 46.6836734694)
+gui3 = (81.4249363868, 16.0714285714), gui4 = (38.6768447837, 3.31632653061)
+gui5 = (31.5521628499, 35.2040816327)
+
+//!BOXER:REFPOINTS:END
+// EXAMPLE 1: Window.Poly and edge smoothing
+// include the arrows definitions
+include "arrows"
+
+// define a function to compute the scalar product
+Scal = Real
+(Point a, b)@&Scal[$$ = $.a.x*$.b.x + $.a.y*$.b.y]
+
+w = Window[][
+  .Show[(0, 0), (100, 50)] // define the minimum window size
+
+  // Calculate x and print it as output
+  x = Scal[(gui2 - gui1, gui5 - gui1)]/Scal[(gui2 - gui1, gui2 - gui1)]
+  Print["The value of x is ", x;]
+
+  \ .Poly[gui1, x, gui2, gui3, gui4] // draw the polygon, smoothing edges
+
+  // Show the "try to move this" label
+  \ .Text[.Font["sans", 2], "try to\nmove this!", gui5, .From[(1, -1.0)]]
+  \ .Line[0.15, gui5+(-5, 2.5), arrow, gui5+(-1.5, 0)]
+]
+
+GUI[w] // show all this on the GUI
