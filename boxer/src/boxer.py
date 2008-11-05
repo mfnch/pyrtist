@@ -96,6 +96,17 @@ def tmp_remove():
       pass
   _tmp_files[0] = []
 
+def exec_command(cmd):
+  # This is not really how we should deal properly with this.
+  # (We should avoid .read()). It is just a temporary solution.
+  import os
+  in_fd, out_fd, err_fd  = os.popen3(cmd)
+  content = out_fd.read() + err_fd.read()
+  out_fd.close()
+  err_fd.close()
+  in_fd.close()
+  return content
+
 class Boxer:
   def delete_event(self, widget, event, data=None):
     return not self.ensure_file_is_saved()
@@ -313,7 +324,6 @@ class Boxer:
     f = open(box_source_file, "w")
     f.write(self.wrap_src((box_out_file, box_out_img_file)))
     f.close()
-    import commands
 
     for filename in [box_out_file, box_out_img_file]:
       try:
@@ -321,7 +331,7 @@ class Boxer:
       except:
         pass
 
-    box_out_msgs = commands.getoutput("box -l g %s" % box_source_file)
+    box_out_msgs = exec_command("box -l g %s" % box_source_file)
     self.outtextbuffer.set_text(box_out_msgs)
     self.outtextview_expander.set_expanded(len(box_out_msgs.strip()) > 0)
 
@@ -411,7 +421,7 @@ class Boxer:
     self.button_center = self.config.get_default("button_center")
     self.button_right = self.config.get_default("button_right")
 
-    self.gladefile = gladefile
+    self.gladefile = config.glade_path(gladefile)
     self.boxer = gtk.glade.XML(self.gladefile, "boxer")
     self.mainwin = self.boxer.get_widget("boxer")
     self.textview = self.boxer.get_widget("textview")
@@ -492,6 +502,10 @@ class Boxer:
 
     # Set a template program to start with...
     self.raw_file_new()
+
+def run():
+  main_window = Boxer()
+  gtk.main()
 
 if __name__ == "__main__":
   form = Boxer()

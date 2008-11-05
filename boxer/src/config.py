@@ -15,7 +15,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+import sys, os, os.path
 
 box_syntax_highlighting = sys.path[0]
 
@@ -28,6 +28,24 @@ box_source_of_new = \
 
 GUI[w]
 """
+
+def installation_path():
+  # Borrowed from wxglade.py
+  try:
+    root = __file__
+    if os.path.islink(root):
+      root = os.path.realpath(root)
+    return os.path.dirname(os.path.abspath(root))
+  except:
+    print "Problem determining data installation path."
+    sys.exit()
+
+def glade_path(filename=None):
+  base = os.path.join(installation_path(), 'glade')
+  if filename == None:
+    return base
+  else:
+    return os.path.join(base, filename)
 
 class Config:
   """Class to store global configuration settings."""
