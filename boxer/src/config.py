@@ -1,6 +1,6 @@
 # Copyright (C) 2008 by Matteo Franchin (fnch@users.sourceforge.net)
 #
-# This file is part of Box.
+# This file is part of Boxer.
 #
 #   Boxer is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published
@@ -29,7 +29,7 @@ box_source_of_new = \
 GUI[w]
 """
 
-def installation_path():
+def installation_path_linux():
   # Borrowed from wxglade.py
   try:
     root = __file__
@@ -39,6 +39,27 @@ def installation_path():
   except:
     print "Problem determining data installation path."
     sys.exit()
+
+def installation_path_windows():
+  try:
+    root = sys.argv[0]
+    if os.path.islink(root):
+      root = os.path.realpath(root)
+    return os.path.dirname(os.path.abspath(root))
+  except:
+    print "Problem determining data installation path."
+    sys.exit()
+
+installation_path = installation_path_linux
+
+import platform as p
+platform = p.system()
+platform_is_win = (platform == "Windows")
+platform_is_win_py2exe = platform_is_win # This may change in the future
+if platform_is_win_py2exe:
+  # This is what we need to use when running the py2exe
+  # executable generated for Windows
+  installation_path = installation_path_windows
 
 def glade_path(filename=None):
   base = os.path.join(installation_path(), 'glade')
@@ -66,3 +87,12 @@ class Config:
       return self.default[name]
     else:
       return default
+
+  def box_executable(self):
+    """Returns the absolute path of the Box executable."""
+    default = self.get_default("box_executable")
+    if default != None: return default
+    if platform_is_win:
+      return os.path.join(installation_path(), "box.exe")
+    else:
+      return "box"

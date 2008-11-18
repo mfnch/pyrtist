@@ -1,6 +1,6 @@
 # Copyright (C) 2008 by Matteo Franchin (fnch@users.sourceforge.net)
 #
-# This file is part of Box.
+# This file is part of Boxer.
 #
 #   Boxer is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published
@@ -96,11 +96,11 @@ def tmp_remove():
       pass
   _tmp_files[0] = []
 
-def exec_command(cmd):
+def exec_command(cmd, args=""):
   # This is not really how we should deal properly with this.
   # (We should avoid .read()). It is just a temporary solution.
   import os
-  in_fd, out_fd, err_fd  = os.popen3(cmd)
+  in_fd, out_fd, err_fd  = os.popen3("\"%s\" %s" % (cmd, args))
   content = out_fd.read() + err_fd.read()
   out_fd.close()
   err_fd.close()
@@ -331,7 +331,8 @@ class Boxer:
       except:
         pass
 
-    box_out_msgs = exec_command("box -l g %s" % box_source_file)
+    box_executable = self.config.box_executable()
+    box_out_msgs = exec_command(box_executable, "-l g %s" % box_source_file)
     self.outtextbuffer.set_text(box_out_msgs)
     self.outtextview_expander.set_expanded(len(box_out_msgs.strip()) > 0)
 
@@ -414,7 +415,7 @@ class Boxer:
       self.dragging_ref_point = None
       self.menu_run_execute(None)
 
-  def __init__(self, gladefile="boxer.glade"):
+  def __init__(self, gladefile="boxer.glade", filename=None):
     self.config = config.Config()
 
     self.button_left = self.config.get_default("button_left")
@@ -501,10 +502,16 @@ class Boxer:
     self.clipboard = gtk.Clipboard()
 
     # Set a template program to start with...
-    self.raw_file_new()
+    if filename == None:
+      self.raw_file_new()
+    else:
+      self.raw_file_open(filename)
 
-def run():
-  main_window = Boxer()
+def run(arg_list):
+  filename = None
+  if len(arg_list) > 1:
+    filename = arg_list[1]
+  main_window = Boxer(filename=filename)
   gtk.main()
 
 if __name__ == "__main__":

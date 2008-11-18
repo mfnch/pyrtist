@@ -1,6 +1,6 @@
 # Copyright (C) 2008 by Matteo Franchin (fnch@users.sourceforge.net)
 #
-# This file is part of Box.
+# This file is part of Boxer.
 #
 #   Boxer is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published
