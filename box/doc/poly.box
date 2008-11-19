@@ -45,7 +45,7 @@ w2.Save["html/ellipse.png"]
 
 //{etc
 // Rulers
-\ w.Line[Color[color.black, .a=0.5], 0.2, h=0.03
+\ w.Line[Color[color.black, .a=0.5], 0.4, h=0.03
          arrow_ruler, pl.Get[(1, -h)], arrow_ruler, pl.Get[(1.999, -h)];
          arrow_ruler, pl.Get[(1, h)], arrow_ruler, pl.Get[(1.2, h)];
          arrow_ruler, pl.Get[(1.8, h)], arrow_ruler, pl.Get[(1.999, h)]]

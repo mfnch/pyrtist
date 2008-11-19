@@ -36,7 +36,7 @@ w = (1.0-Exp[-rate])*0.05
 //-------------------------------------------------------------------------------
 // Descrizione fisica dello smiley:
 r = 10                   // Raggio della faccia
-s = 0.2                  // Spessore delle linee di contorno
+s = 0.4                  // Spessore delle linee di contorno
 ro = 2.5                 // Raggio degli occhi
 rp = 0.4*ro              // Raggio della pupilla
 od = Point[(3.5, -2.0)]  // Posizione dell'occhio destro
@@ -44,8 +44,6 @@ gr = 1                   // Raggio guancie
 gd = Point[(6.0, 2.0)]   // Posizione della guancia destra
 
 //-------------------------------------------------------------------------------
-s2 = s+s
-
 os = Point[(-od.x, od.y)] // Posizione dell'occhio sinistro
 gs = Point[(-gd.x, gd.y)] // Posizione della guancia sinistra
 // pd e ps sono le posizioni della pupilla destra e sinistra rispett.
@@ -59,7 +57,7 @@ cf_out = Color[.r = .g = 0.8, .b = cf_in.b]
 smile = Window[]
 
 \ smile[
-  \ .Circle[Style[.Fill[";"], .Border[color.black, s2]]
+  \ .Circle[Style[.Fill[";"], .Border[color.black, s]]
             Gradient[.Circle[(0, 0), 0; r], cf_in, 0.8, cf_in, cf_out]
             (0, 0), r;                   // face
             p := (0, 4.5), dp = (0, sy)

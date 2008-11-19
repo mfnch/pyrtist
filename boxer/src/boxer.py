@@ -21,6 +21,7 @@ import gtk
 import gtk.glade
 import gtk.gdk
 import os
+import os.path
 
 import config
 
@@ -400,7 +401,6 @@ class Boxer:
       if ref_point != None:
         self.imgview.ref_point_del(ref_point.name)
 
-
   def imgview_motion(self, eventbox, event):
     if self.dragging_ref_point != None:
       name = self.dragging_ref_point.get_name()
@@ -430,6 +430,7 @@ class Boxer:
     self.outtextview = self.boxer.get_widget("outtextview")
     self.outtextbuffer = self.outtextview.get_buffer()
     self.outtextview_expander = self.boxer.get_widget("outtextview_expander")
+    self.examplesmenu = self.boxer.get_widget("menu_file_examples")
 
     ref_point_size = self.config.get_default("ref_point_size")
 
@@ -501,11 +502,34 @@ class Boxer:
 
     self.clipboard = gtk.Clipboard()
 
+    # Find examples and populate the menu File->Examples
+    self._fill_example_menu()
+
     # Set a template program to start with...
     if filename == None:
       self.raw_file_new()
     else:
       self.raw_file_open(filename)
+
+  def _fill_example_menu(self):
+    """Populate the example submenu File->Examples"""
+    def create_callback(filename):
+      def save_file(menuitem):
+        if not self.ensure_file_is_saved(): return
+        self.raw_file_open(filename)
+      return save_file
+
+    example_files = config.get_example_files()
+    i = 0
+    for example_file in example_files:
+      example_file_basename = os.path.basename(example_file)
+      example_menuitem = gtk.MenuItem(label=example_file_basename,
+                                      use_underline=False)
+      callback = create_callback(example_file)
+      example_menuitem.connect("activate", callback)
+      self.examplesmenu.attach(example_menuitem, 0, 1, i, i+1)
+      example_menuitem.show()
+      i += 1
 
 def run(arg_list):
   filename = None

@@ -24,4 +24,3 @@ w = Window[][
 
 GUI[w]
 
-w.Save["bang.png"]

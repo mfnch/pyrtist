@@ -68,6 +68,12 @@ def glade_path(filename=None):
   else:
     return os.path.join(base, filename)
 
+def get_example_files():
+  """Return a list of example files for Boxer."""
+  import glob
+  pattern = os.path.join(installation_path(), "examples", "*")
+  return glob.glob(pattern)
+
 class Config:
   """Class to store global configuration settings."""
 

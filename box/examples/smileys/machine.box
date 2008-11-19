@@ -30,11 +30,11 @@ ww = Window[][
   r = wr - wh
   rs = wr*0.3
   \ .Circle[(0, 0), wr, c3; rs, c1; rs-0.2, c3]
-  \ .Line[v = rs*Vec[wa], c1, 0.2, -v, 0.2, v; (v = (-v.y, v.x)), -v]
+  \ .Line[v = rs*Vec[wa], c1, 0.4, -v, 0.4, v; (v = (-v.y, v.x)), -v]
   \ .Circle[(0, 0), c2, 0.5*r]
   \ .Poly[c5, (pp, pr), (cx2, pr), (cx2, -pr), (pp, -pr)]
   \ .Poly[(pp-pw, pr), (pp, pr), (pp, -pr), (pp-pw, -pr), c2]
-  \ .Line[line.sharp, 0.5, (pp-pw, pr), (pp, pr), (pp, -pr), (pp-pw, -pr), c1]
+  \ .Line[line.sharp, 1.0, (pp-pw, pr), (pp, pr), (pp, -pr), (pp-pw, -pr), c1]
   \ .Line[whp, php, c1]
   \ .Circle[whp, 0.8*r, c1; php; c2, 0.3*r; whp]
   Gradient[.Line[(0, cpy+cll), (0, cpy+cll-ch)], c5, c4]

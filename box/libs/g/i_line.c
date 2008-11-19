@@ -124,7 +124,7 @@ Task line_end(VMProgram *vmp) {
 
 Task line_real(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Real width = BOX_VM_ARG1(vmp, Real);
+  Real width = 0.5*BOX_VM_ARG1(vmp, Real);
 
   switch(w->line.state) {
   case GOT_NOTHING:

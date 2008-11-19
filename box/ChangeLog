@@ -12,9 +12,19 @@ next: created Boxer, a GUI for Box
     the possibility to change the position and shape of objects interactively.
     In this way using Box becomes much easier, still retaining the advantages
     of a vectorial language over the traditional mouse driven graphic editors.
+    The GUI makes Box a powerful tool which can be used effectively to create
+    complex figures for reports/papers/presentations.
+  * Real@Window.Line denotes now the width of the line, not the half width
+    (this is consistent with Real@Style.Border)
   * work on propagation of special procedures, such as creators, destructors
     etc. Now members are created/destroyed when their container is created/
     destroyed.
+  * updated to the latest versions of autotool/hell.
+  * Char, Int and Real are now species, while the raw types are named
+    CHAR, INT and REAL (needed a bugfix).
+  * Bugfix and improvements (also to the code style).
+  * Added the hidden option -q to query for Box configuration (may be used
+    in the future to assist installation of externally provided libraries).
 
 10 august 2008: Improved support of user defined procedures
   * exit status should now be treated more carefully:

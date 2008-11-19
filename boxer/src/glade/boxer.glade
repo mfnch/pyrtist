@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Tue Oct 28 17:12:03 2008 -->
+<!--Generated with glade3 3.4.5 on Wed Nov 19 21:48:35 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="boxer">
     <property name="visible">True</property>
@@ -44,6 +44,23 @@
                       </widget>
                     </child>
                     <child>
+                      <widget class="GtkMenuItem" id="file_examples">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">Examples</property>
+                        <property name="use_underline">True</property>
+                        <child>
+                          <widget class="GtkMenu" id="menu_file_examples">
+                            <property name="visible">True</property>
+                          </widget>
+                        </child>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkSeparatorMenuItem" id="file_separator1">
+                        <property name="visible">True</property>
+                      </widget>
+                    </child>
+                    <child>
                       <widget class="GtkImageMenuItem" id="file_save">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">gtk-save</property>
@@ -62,7 +79,7 @@
                       </widget>
                     </child>
                     <child>
-                      <widget class="GtkSeparatorMenuItem" id="file_separator1">
+                      <widget class="GtkSeparatorMenuItem" id="file_separator2">
                         <property name="visible">True</property>
                       </widget>
                     </child>
@@ -263,11 +280,14 @@
               </widget>
               <packing>
                 <property name="expand">False</property>
+                <property name="homogeneous">False</property>
               </packing>
             </child>
             <child>
               <widget class="GtkToolItem" id="toolbutton_gridres">
                 <property name="visible">True</property>
+                <property name="visible_horizontal">False</property>
+                <property name="visible_vertical">False</property>
                 <child>
                   <widget class="GtkSpinButton" id="spinbutton1">
                     <property name="visible">True</property>
@@ -278,6 +298,7 @@
               </widget>
               <packing>
                 <property name="expand">False</property>
+                <property name="homogeneous">False</property>
               </packing>
             </child>
           </widget>

@@ -9,3 +9,6 @@ src/config.py
 src/imgview.py
 src/info.py
 src/glade/boxer.glade
+src/examples/wheatstone.box
+src/examples/bang.box
+src/examples/poly.box

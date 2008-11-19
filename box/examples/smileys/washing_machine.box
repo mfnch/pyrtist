@@ -38,7 +38,7 @@ od = Point[(3.5, -2.0)] // Position of the right eye
 gd = Point[(6, 2.0)]    // Position of the right cheek
 
 //-------------------------------------------------------------------------------
-s2 = 0.75*s
+s2 = 1.5*s
 os = (-od.x, od.y) // Position of the left eye
 
 // PD e PS sono le posizioni della pupilla destra e sinistra rispett.
