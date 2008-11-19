@@ -331,6 +331,12 @@ Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional);
 
 void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 
+/** Similar to VM_Assemble, but use the long bytecode format. */
+#define VM_Assemble_Long(vmp, instr, ...) { \
+  int is_long = VM_Asm_Fmt_Is_Long(vmp, 1); \
+  VM_Assemble(vmp, instr, __VA_ARGS__); \
+  (void) VM_Asm_Fmt_Is_Long(vmp, is_long);}
+
 /* Numero minimo di VMByteX4 che riesce a contenere tutti i tipi possibili
  * di argomenti (Int, Real, Point, Obj)
  */

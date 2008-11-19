@@ -998,7 +998,7 @@ static Task Resolve_Reference(VMProgram *vmp, VMReference *r, VMLabel *l) {
   TASK( VM_Proc_Empty(vmp, pt->tmp_proc) );
   TASK( VM_Proc_Target_Set(vmp, pt->tmp_proc) );
   tmp_proc = pt->target_proc;
-  VM_Assemble(vmp, r->kind, CAT_IMM, l->position - r->position);
+  VM_Assemble_Long(vmp, r->kind, CAT_IMM, l->position - r->position);
   TASK( VM_Proc_Target_Set(vmp, saved_proc_num) );
 
   {
@@ -1102,7 +1102,7 @@ Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
     l->chain_unresolved = ref_index;
 
     /* For now we assemble a dummy instance of the jump instruction */
-    VM_Assemble(vmp, asm_of_jmp, CAT_IMM, (Int) 0);
+    VM_Assemble_Long(vmp, asm_of_jmp, CAT_IMM, (Int) 0);
     return Success;
   }
 }
