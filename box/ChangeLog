@@ -3,7 +3,7 @@ REVISION=$Revision$
 
 Change log (recent come first)
 
-next: created Boxer, a GUI for Box
+19 November 2008: created Boxer, a GUI for Box
   * created Boxer, a GUI for Box, using PyGTK (Python bindings for GTK+).
     The GUI can be run on Linux, Mac OS and Windows. The GUI has a text view
     containing the edited source and an image view, to show the output.

@@ -34,7 +34,6 @@ static Task Assemble_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
                           void *ref, UInt ref_size)
 {
   UInt call_num = 0;
-  int save_force_long;
   assert(sym_type == VM_SYM_CALL);
 
 
@@ -42,9 +41,7 @@ static Task Assemble_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
     assert(def_size == sizeof(UInt));
     call_num = *((UInt *) def);
   }
-  save_force_long = VM_Asm_Fmt_Is_Long(vmp, /* force_long */ 1);
-  VM_Assemble(vmp, ASM_CALL_I, CAT_IMM, call_num);
-  (void) VM_Asm_Fmt_Is_Long(vmp, save_force_long);
+  VM_Assemble_Long(vmp, ASM_CALL_I, CAT_IMM, call_num);
   return Success;
 }
 
@@ -110,7 +107,7 @@ static Task Assemble_Cond_Jmp(VMProgram *vmp, UInt sym_num, UInt sym_type,
     sheet_id = ((VMSymLabel *) def)->sheet_id;
     position = ((VMSymLabel *) def)->position;
   }
-  VM_Assemble(vmp, ASM_JC_I, CAT_IMM, position);
+  VM_Assemble_Long(vmp, ASM_JC_I, CAT_IMM, position);
   return Success;
 }
 
@@ -159,6 +156,7 @@ static Task Assemble_Proc_Head(VMProgram *vmp, UInt sym_num, UInt sym_type,
     Int nv = ph->num_var[i], nr = ph->num_reg[i];
     assert(nv >= 0 && nr >= 0);
     VM_Assemble(vmp, asm_code[i], CAT_IMM, nv, CAT_IMM, nr);
+    /* ^^^ should use VM_Assemble_Long for more than 127 regs/vars */
   }
   return Success;
 }
