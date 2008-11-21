@@ -147,13 +147,17 @@ class Boxer:
     self.assume_file_is_saved()
 
   def wrap_src(self, out_files):
-    """Create the complete Box program to be passed to Box."""
+    """Return the source preable and the source body of to be passed to Box.
+    The complete program can be obtained concatenating the two strings:
+
+      pre, src = xxx.wrap_src(out_files)
+      complete_box_program = pre + src
+    """
     src = box_source_preamble(out_files)
     marker1 = self.config.get_default("src_marker_refpoints_begin")
     marker2 = self.config.get_default("src_marker_refpoints_end")
     src += "\n".join(["", marker1, self.imgview.code_gen(), marker2, ""])
-    src += self.get_main_source()
-    return src
+    return (src, self.get_main_source())
 
   def unwrap_src(self, src):
     """Inverse of wrap_src: extract the part of the code edited by the user
@@ -179,18 +183,22 @@ class Boxer:
       return
 
     ref_point_str, user_str = self.unwrap_src(src)
-    self.set_main_source(user_str)
-    self.filename = filename
-    self.assume_file_is_saved()
+    execute = False
 
     try:
       self.imgview.ref_point_del_all()
       self.imgview.add_from_code(ref_point_str)
+      execute = True
 
     except:
-      self.error("Error parsing the reference point list")
+      self.imgview.ref_point_del_all()
+      user_str = src
 
-    self.menu_run_execute(None)
+    self.set_main_source(user_str)
+    self.filename = filename
+    self.assume_file_is_saved()
+
+    if execute: self.menu_run_execute(None)
 
   def raw_file_save(self, filename=None):
     """Save the textview content into the file 'filename'."""
@@ -198,7 +206,8 @@ class Boxer:
       if filename == None:
         filename = self.filename
       f = open(filename, "w")
-      f.write(self.wrap_src(None))
+      pre, src = self.wrap_src(None)
+      f.write(pre + src)
       f.close()
       self.filename = filename
       self.assume_file_is_saved()
@@ -319,11 +328,17 @@ class Boxer:
   def menu_run_execute(self, image_menu_item):
     """Called menu run->execute command."""
     box_source_file = tmp_file("source", "box")
-    #box_pre_file = tmp_file("pre", "box")
+    box_presource_file = tmp_file("pre", "box")
     box_out_file = tmp_file("out", "dat")
     box_out_img_file = tmp_file("out", "png")
-    f = open(box_source_file, "w")
-    f.write(self.wrap_src((box_out_file, box_out_img_file)))
+    pre, src = self.wrap_src((box_out_file, box_out_img_file))
+
+    f = open(box_presource_file, "wt")
+    f.write(pre)
+    f.close()
+
+    f = open(box_source_file, "wt")
+    f.write(src)
     f.close()
 
     for filename in [box_out_file, box_out_img_file]:
@@ -333,7 +348,9 @@ class Boxer:
         pass
 
     box_executable = self.config.box_executable()
-    box_out_msgs = exec_command(box_executable, "-l g %s" % box_source_file)
+    pre_path, pre_basename = os.path.split(box_presource_file)
+    args = "-l g -I %s -se %s %s" % (pre_path, pre_basename, box_source_file)
+    box_out_msgs = exec_command(box_executable, args)
     self.outtextbuffer.set_text(box_out_msgs)
     self.outtextview_expander.set_expanded(len(box_out_msgs.strip()) > 0)
 

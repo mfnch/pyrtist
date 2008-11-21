@@ -99,6 +99,6 @@ class Config:
     default = self.get_default("box_executable")
     if default != None: return default
     if platform_is_win:
-      return os.path.join(installation_path(), "box.exe")
+      return os.path.join(installation_path(), "box", "bin", "box.exe")
     else:
       return "box"

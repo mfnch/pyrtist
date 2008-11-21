@@ -9,6 +9,11 @@ src/config.py
 src/imgview.py
 src/info.py
 src/glade/boxer.glade
-src/examples/wheatstone.box
 src/examples/bang.box
+src/examples/bar.box
+src/examples/diagram.box
 src/examples/poly.box
+src/examples/wheatstone.box
+src/examples/losing_eyes.box
+src/examples/shy.box
+src/examples/surf_charges.box

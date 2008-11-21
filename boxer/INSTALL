@@ -1,8 +1,51 @@
+INSTALLATION
+============
+
+These are the instruction to compiler Boxer on your Unix (Linux/Mac) machine.
+If you want to use Boxer on Windows, just download the all in one package
+containing both Box and Boxer. You can find it on the sourceforge website:
+
+  http://sourceforge.net/projects/boxc/
+
+FIRST LET'S INSTALL BOX
+-----------------------
+
+Boxer is the graphical user interface for Box, you'll then need to install Box
+to be able to use Boxer. You can download Box from the aforementioned web 
+address.
+
+Once you have installed Box, check that it can be executed regularly from
+your shell by simply typing 'box'. You should see something like:
+
+  me@my-machine:~$ box
+  Error: You should specify an input file!
+  Try 'box -h' to get some help!
+
+where 'me@my-machine:~$' is the prompt displayed by your shell.
+If you get:
+
+  me@my-machine:~$ box
+  bash: box: command not found
+
+then probably you'll need to adjust your PATH environmental variable and add
+the directory containing the box executable. For example:
+
+  me@my-machine:~$ export PATH=/usr/local/bin:$PATH
+  me@my-machine:~$ box
+  Error: You should specify an input file!
+  Try 'box -h' to get some help!
+
+Here Box was configured with './configure --prefix=/usr/local' and hence the Box
+executable was installed inside /usr/local/bin.
+
+LET'S INSTALL BOXER NOW
+-----------------------
+
 To install Boxer:
 
 - make sure PyGTK is installed on the Python interpreter you want to use
 
-- run:
+- run 'python setup.py install' as a system administrator. For example,
 
     sudo python setup.py install
 
@@ -17,4 +60,6 @@ To install Boxer:
     boxer program.box
 
   where ``program.box'' is a Box program saved using Boxer.
+  Boxer will use the Box executable which is invoked by your shell when
+  you simply type 'box'.
 

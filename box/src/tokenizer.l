@@ -322,7 +322,7 @@ Task Tok_Include_Begin(const char *f) {
 
   incfile = Path_Open_Inc_File(f, "rt");
 
-  if ( incfile == NULL ) {
+  if (incfile == NULL) {
     MSG_ERROR("\"%s\" <-- Cannot open this file!", f);
     return Failed;
   }
