@@ -503,8 +503,6 @@ Task VM_Init(VMProgram **new_vmp) {
   nv->current_sheet_id = -1;
   nv->current_sheet = (VMSheet *) NULL;
 #endif
-  nv->labels = (Collection *) NULL;
-  nv->references = (Collection *) NULL;
   nv->vm_globals = 0;
   nv->vm_dflags.hexcode = 0;
   nv->vm_aflags.forcelong = 0;
@@ -538,8 +536,6 @@ void VM_Destroy(VMProgram *vmp) {
       MSG_WARNING("Run finished with non empty stack.");
     }
   }
-  Clc_Destroy(vmp->references);
-  Clc_Destroy(vmp->labels);
   Arr_Destroy(vmp->stack);
   VM_Alloc_Destroy(vmp);
   VM_Sym_Destroy(vmp);
@@ -952,159 +948,6 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
     pos += vm.i_len;
   }
   return Success;
-}
-
-/* This function creates a new label. A label is a number which refers to a
- * position in the assembled code. It can be a defined label (meaning that
- * the sheet and the position of the label in the sheet is known)
- * or can be an undefined label (meaning that we don't know where the label
- * will be pointing, but we want to jump there in some way).
- * This last behaviour is obtained passing position = -1.
- * In this case the function will create a list containing the unresolved
- * references to the label. Later, when the position of the label will be known
- * and is specified with VM_Label_Define, all the unresolved references
- * will be resolved.
- * NOTE: valid positions start from 0, not 1!
- */
-Task VM_Label_New(VMProgram *vmp, int *label, int sheet_id, int position) {
-  VMLabel l;
-  if ( vmp->labels == (Collection *) NULL ) {
-    TASK( Clc_New(& vmp->labels, sizeof(VMLabel), VM_TYPICAL_NUM_LABELS) );
-  }
-
-  l.sheet_id = sheet_id;
-  l.position = position;
-  l.chain_unresolved = -1; /* No unresolved references */
-  TASK( Clc_Occupy(vmp->labels, (void *) & l, label) );
-  return Success;
-}
-
-/* Same as VM_Label_New, but sheet_id is the current active sheet and
- * position is the current position in that sheet.
- */
-Task VM_Label_New_Here(VMProgram *vmp, int *label) {
-  return VM_Label_New( vmp, label, vmp->proc_table.target_proc_num,
-   Arr_NumItem(vmp->proc_table.target_proc->code) );
-}
-
-/* This function assemble the jump instruction corresponding to the
- * reference 'r' to the label 'l'. It is called by 'VM_Label_Define'.
- */
-static Task Resolve_Reference(VMProgram *vmp, VMReference *r, VMLabel *l) {
-  VMProcTable *pt = & vmp->proc_table;
-  unsigned int saved_proc_num = VM_Proc_Target_Get(vmp);
-  VMProc *tmp_proc;
-
-  TASK( VM_Proc_Empty(vmp, pt->tmp_proc) );
-  TASK( VM_Proc_Target_Set(vmp, pt->tmp_proc) );
-  tmp_proc = pt->target_proc;
-  VM_Assemble_Long(vmp, r->kind, CAT_IMM, l->position - r->position);
-  TASK( VM_Proc_Target_Set(vmp, saved_proc_num) );
-
-  {
-    void *src = Arr_FirstItemPtr(tmp_proc->code, void);
-    int src_size = Arr_NumItem(tmp_proc->code);
-    Array *dest =  pt->target_proc->code; /* Destination sheet */
-    int dest_pos = r->position + 1; /* NEED TO ADD 1 */
-    TASK(Arr_Overwrite(dest, dest_pos, src, src_size));
-  }
-  return Success;
-}
-
-/* Specify the position of a undefined label.
- */
-Task VM_Label_Define(VMProgram *vmp, int label, int sheet_id, int position) {
-  VMLabel *l = NULL;
-  TASK( Clc_Object_Ptr(vmp->labels,  (void **) & l, label) );
-  assert(l->position == -1); /* Should be undefined! */
-  assert(l->sheet_id == sheet_id);
-  l->position = position;
-
-  /* Now we need to resolve past references to this label */
-  while (l->chain_unresolved != -1) {
-    VMReference *r = NULL;
-    int cur_ref;
-    cur_ref = l->chain_unresolved;
-    TASK( Clc_Object_Ptr(vmp->references, (void **) & r, cur_ref) );
-
-    TASK( Resolve_Reference(vmp, r, l) );
-
-    l->chain_unresolved = r->next;
-    TASK( Clc_Release(vmp->references, cur_ref) );
-  };
-  return Success;
-}
-
-/* Same as VM_Label_Define, but sheet_id is the current active sheet and
- * position is the current position in that sheet.
- */
-Task VM_Label_Define_Here(VMProgram *vmp, int label) {
-  return VM_Label_Define( vmp, label, vmp->proc_table.target_proc_num,
-   Arr_NumItem(vmp->proc_table.target_proc->code) );
-}
-
-/* Remove a label from the list of labels. The label should not have
- * unresolved references.
- */
-Task VM_Label_Destroy(VMProgram *vmp, int label) {
-  VMLabel *l = NULL;
-  TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
-  if ( l->chain_unresolved != -1 ) {
-    MSG_ERROR("Trying to destroy a label with unresolved references.");
-    return Failed;
-  }
-  TASK( Clc_Release(vmp->labels, label) );
-  return Success;
-}
-
-Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional) {
-  VMProcTable *pt = & vmp->proc_table;
-  VMLabel *l = NULL;
-  int not_defined;
-  AsmCode asm_of_jmp = is_conditional ? ASM_JC_I : ASM_JMP_I;
-  Int target_proc_num = pt->target_proc_num;
-  Int current_position = Arr_NumItem(pt->target_proc->code);
-
-  TASK( Clc_Object_Ptr(vmp->labels, (void **) & l, label) );
-  not_defined = (l->position == -1);
-
-  if ( l->sheet_id != target_proc_num ) {
-    MSG_ERROR("This label refers to code outside the current sheet.");
-    return Failed;
-  }
-
-  if ( ! not_defined ) {
-    if ( l->position < 0 ) {
-      MSG_ERROR("Found label referring to invalid position.");
-      return Failed;
-    }
-    VM_Assemble(vmp, asm_of_jmp,
-                CAT_IMM, (Int) (l->position - current_position));
-    return Success;
-
-  } else {
-    /* We cannot assemble the instruction now, since we don't know where
-     * the label is. So we store this reference in the list of references.
-     */
-    VMReference r;
-    Int ref_index;
-
-    if ( vmp->references == (Collection *) NULL ) {
-      TASK( Clc_New(& vmp->references, sizeof(VMReference),
-       VM_TYPICAL_NUM_LABELS) );
-    }
-
-    r.kind = asm_of_jmp;
-    r.position = current_position;
-    r.next = l->chain_unresolved;
-    TASK( Clc_Occupy(vmp->references,  (void *) & r, & ref_index) );
-
-    l->chain_unresolved = ref_index;
-
-    /* For now we assemble a dummy instance of the jump instruction */
-    VM_Assemble_Long(vmp, asm_of_jmp, CAT_IMM, (Int) 0);
-    return Success;
-  }
 }
 
 /*****************************************************************************

@@ -35,6 +35,7 @@
 
 typedef struct {
   Int sheet_id, position;
+  int conditional;
 } VMSymLabel;
 
 Task VM_Sym_New_Call(VMProgram *vmp, UInt *sym_num);
@@ -46,16 +47,35 @@ Task VM_Sym_Call(VMProgram *vmp, UInt sym_num);
 Task VM_Sym_Alloc_Method_Register(VMProgram *vmp, UInt sym_num,
                                   Type type, Type method);
 
-Task VM_Sym_New_Cond_Jmp(VMProgram *vmp, UInt *sym_num);
+/** This function creates an undefined label. A label is a number which
+ * refers to a position in the assembled code.
+ */
+Task VM_Sym_New_Label(VMProgram *vmp, UInt *label_sym_num);
 
-Task VM_Sym_Def_Cond_Jmp(VMProgram *vmp, UInt sym_num,
-                         Int sheet_id, Int position);
+/** Same as VM_Sym_New_Label, but sheet_id is the current active sheet and
+ * position is the current position in that sheet.
+ */
+Task VM_Sym_New_Label_Here(VMProgram *vmp, UInt *label_sym_num);
 
-Task VM_Sym_Cond_Jmp(VMProgram *vmp, UInt sym_num);
+/** Specify the position of a undefined label. */
+Task VM_Sym_Def_Label(VMProgram *vmp, UInt label_sym_num,
+                      Int sheet_id, Int position);
+
+/** Same as VM_Sym_Def_Label, but sheet_id is the current active sheet and
+ * position is the current position in that sheet.
+ */
+Task VM_Sym_Def_Label_Here(VMProgram *vmp, UInt label_sym_num);
+
+Task VM_Sym_Jc(VMProgram *vmp, UInt sym_num);
+
+Task VM_Sym_Jmp(VMProgram *vmp, UInt sym_num);
+
+/** Called to signal that a label is not needed anymore. */
+Task VM_Sym_Destroy_Label(VMProgram *vmp, UInt sym_num);
 
 Task VM_Sym_Proc_Head(VMProgram *vmp, UInt *sym_num);
 
 Task VM_Sym_Def_Proc_Head(VMProgram *vmp, UInt sym_num,
- Int *num_var, Int *num_reg);
+                          Int *num_var, Int *num_reg);
 
 #endif

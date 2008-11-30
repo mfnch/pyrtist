@@ -440,7 +440,7 @@ static Task code_generator(VMProgram *vmp, UInt sym_num, UInt sym_type,
   tmp_proc = pt->target_proc;
   /* Call the procedure here! */
   TASK( ref_head->code_gen(vmp, sym_num, sym_type, defined,
-    def, def_size, ref_tail, ref_tail_size) );
+                           def, def_size, ref_tail, ref_tail_size) );
   TASK( VM_Proc_Target_Set(vmp, ref_head->proc_num) );
   /* Replace the referencing code with the generated code */
   {
@@ -460,27 +460,47 @@ static Task code_generator(VMProgram *vmp, UInt sym_num, UInt sym_type,
   return Success;
 }
 
-Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen) {
+Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen,
+                     void *ref, UInt ref_size) {
   VMSymTable *st = & vmp->sym_table;
   VMSym *s;
   void *def;
   VMProcTable *pt = & vmp->proc_table;
-  VMSymCodeRef ref_data;
+
+  UInt ref_all_size;
+  VMSymCodeRef *ref_head;
+  void *ref_all, *ref_tail;
+
+  Task t;
 
   s = Arr_ItemPtr(st->defs, VMSym, sym_num);
   def = (void *) Arr_ItemPtr(st->data, Char, s->def_addr);
-  ref_data.code_gen = code_gen;
-  ref_data.proc_num = pt->target_proc_num;
-  ref_data.pos = Arr_NumItem(pt->target_proc->code);
-  TASK( code_gen(vmp, sym_num, s->sym_type, s->defined, def, s->def_size, NULL, 0) );
-  if (pt->target_proc_num != ref_data.proc_num) {
+
+  ref_all_size = sizeof(VMSymCodeRef) + ref_size;
+  ref_all = Mem_Alloc(ref_all_size);
+  if (ref_all == NULL) return Failed;
+  ref_head = (VMSymCodeRef *) ref_all;
+  ref_tail = ref_all + sizeof(VMSymCodeRef);
+
+  /* fill the section describing the code */
+  ref_head->code_gen = code_gen;
+  ref_head->proc_num = pt->target_proc_num;
+  ref_head->pos = Arr_NumItem(pt->target_proc->code);
+
+  /* Copy the user provided reference data */
+  if (ref != NULL && ref_size > 0)
+    (void) memcpy(ref_tail, ref, ref_size);
+
+  TASK( code_gen(vmp, sym_num, s->sym_type, s->defined, def, s->def_size,
+                 ref, ref_size) );
+  if (pt->target_proc_num != ref_head->proc_num) {
     MSG_ERROR("VM_Sym_Code_Ref: the function 'code_gen' must not change "
               "the current target for compilation!");
   }
-  ref_data.size = Arr_NumItem(pt->target_proc->code) - ref_data.pos;
-  TASK( VM_Sym_Ref(vmp, sym_num, code_generator,
-                   & ref_data, sizeof(VMSymCodeRef), -1) );
-  return Success;
+  ref_head->size = Arr_NumItem(pt->target_proc->code) - ref_head->pos;
+  t = VM_Sym_Ref(vmp, sym_num, code_generator, ref_all, ref_all_size, -1);
+  Mem_Free(ref_all);
+  return t;
 }
 
 #if 0

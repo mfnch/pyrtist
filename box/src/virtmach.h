@@ -220,7 +220,7 @@ struct __vmstatus {
 #undef VMStatus
 typedef struct __vmstatus VMStatus;
 
-/* Tipo che serve a gestire la scrittura di codice per la VM */
+/* Used by the functions VM_Sheet_* */
 typedef struct {
   struct {
     unsigned int error : 1;
@@ -229,27 +229,12 @@ typedef struct {
   Array *program;
 } VMSheet;
 
-/* Used by the functions VM_Sheet_* */
-typedef struct {
-  Int sheet_id, position;
-  Int chain_unresolved;
-} VMLabel;
-
-/* A reference to a label */
-typedef struct {
-  int position, next;
-  AsmCode kind;
-} VMReference;
-
 /** @brief The full status of the virtual machine of Box.
  */
 struct __vmprogram {
   VMSymTable sym_table;    /**< Table of referenced and defined symbols */
   VMProcTable proc_table;  /**< Table of installed and uninstalled procedures*/
   Hashtable *method_table; /**< Hashtable containing destructors, etc. */
-
-  Collection *labels;     /**< Collection of the labels */
-  Collection *references; /**< References to these labels */
 
   int vm_globals;
   void *vm_global[NUM_TYPES];
@@ -322,12 +307,6 @@ Task VM_Sheet_Set_Current(VMProgram *vmp, int sheet_id);
 Task VM_Sheet_Clear(VMProgram *vmp, int sheet_id);
 Task VM_Sheet_Install(VMProgram *vmp, Int module, int sheet_id);
 Task VM_Sheet_Disassemble(VMProgram *vmp, int sheet_id, FILE *out);
-Task VM_Label_New(VMProgram *vmp, int *label, int sheet_id, int position);
-Task VM_Label_New_Here(VMProgram *vmp, int *label);
-Task VM_Label_Define(VMProgram *vmp, int label, int sheet_id, int position);
-Task VM_Label_Define_Here(VMProgram *vmp, int label);
-Task VM_Label_Destroy(VMProgram *vmp, int label);
-Task VM_Label_Jump(VMProgram *vmp, int label, int is_conditional);
 
 void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 
@@ -378,8 +357,5 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
 #  define BOX_VM_CURRENTPTR BOX_VM_THIS_PTR
 #  define BOX_VM_ARGPTR1 BOX_VM_ARG1_PTR
 #  define BOX_VM_ARGPTR2 BOX_VM_ARG2_PTR
-
-#  define VM_Label_New_Undef(vmp, label) \
-   VM_Label_New(vmp, label, vmp->proc_table.target_proc_num, -1)
 
 #endif

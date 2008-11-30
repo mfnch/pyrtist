@@ -197,7 +197,8 @@ Task VM_Sym_Resolve_CLibs(VMProgram *vmp, List *lib_paths, List *libs);
  * once the symbol has been defined.
  * The function 'code_gen' assembles parametrically a piece of VM byte-code.
  */
-Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen);
+Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen,
+                     void *ref, UInt ref_size);
 
 #  define VM_Sym_Code_New VM_Sym_New
 #  define VM_Sym_Code_Def VM_Sym_Def

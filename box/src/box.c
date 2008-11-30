@@ -149,11 +149,11 @@ Task Box_Procedure_Quick_Call(Expr *child, BoxDepth depth, BoxMsg verbosity) {
 
   if (child->type == TYPE_IF || child->type == TYPE_FOR) {
     Cont src;
+    UInt jump_label;
     Expr_Cont_Get(& src, child);
     Cont_Move(& CONT_NEW_LREG(TYPE_INT, 0), & src);
-    VM_Label_Jump(cmp->vm,
-                  child->type == TYPE_FOR ? b->label_begin : b->label_end,
-                  1);
+    jump_label = child->type == TYPE_FOR ? b->label_begin : b->label_end;
+    VM_Sym_Jc(cmp->vm, jump_label);
     return Success;
   }
 
@@ -321,8 +321,8 @@ Task Box_Procedure_Begin(Type parent, Type child, Type procedure) {
 
   /* Used to create jump labels for If and For */
   b_ptr = Arr_LastItemPtr(bs->box, Box);
-  TASK( VM_Label_New_Here(cmp_vm, & b_ptr->label_begin) );
-  TASK( VM_Label_New_Undef(cmp_vm, & b_ptr->label_end) );
+  TASK( VM_Sym_New_Label_Here(cmp_vm, & b_ptr->label_begin) );
+  TASK( VM_Sym_New_Label(cmp_vm, & b_ptr->label_end) );
   return Success;
 }
 
@@ -334,9 +334,9 @@ Task Box_Procedure_End(UInt *call_num) {
   assert(b->is.definition);
 
   /* Cancello le labels che puntano all'inizio ed alla fine della box */
-  TASK( VM_Label_Destroy(cmp_vm, b->label_begin) );
-  TASK( VM_Label_Define_Here(cmp_vm, b->label_end) );
-  TASK( VM_Label_Destroy(cmp_vm, b->label_end) );
+  TASK( VM_Sym_Destroy_Label(cmp_vm, b->label_begin) );
+  TASK( VM_Sym_Def_Label_Here(cmp_vm, b->label_end) );
+  TASK( VM_Sym_Destroy_Label(cmp_vm, b->label_end) );
 
   /* Induce the VM to free all the object defined in the procedure */
   {
@@ -450,8 +450,8 @@ Task Box_Instance_Begin(Expr *e, int kind) {
 
   /* Creo le labels che puntano all'inizio ed alla fine della box */
   b_ptr = Arr_LastItemPtr(bs->box, Box);
-  TASK( VM_Label_New_Here(cmp_vm, & b_ptr->label_begin) );
-  TASK( VM_Label_New_Undef(cmp_vm, & b_ptr->label_end) );
+  TASK( VM_Sym_New_Label_Here(cmp_vm, & b_ptr->label_begin) );
+  TASK( VM_Sym_New_Label(cmp_vm, & b_ptr->label_end) );
   return Success;
 }
 
@@ -486,9 +486,9 @@ Task Box_Instance_End(Expr *e) {
     Symbol *s, *next;
 
     /* Cancello le labels che puntano all'inizio ed alla fine della box */
-    TASK( VM_Label_Destroy(cmp_vm, box->label_begin) );
-    TASK( VM_Label_Define_Here(cmp_vm, box->label_end) );
-    TASK( VM_Label_Destroy(cmp_vm, box->label_end) );
+    TASK( VM_Sym_Destroy_Label(cmp_vm, box->label_begin) );
+    TASK( VM_Sym_Def_Label_Here(cmp_vm, box->label_end) );
+    TASK( VM_Sym_Destroy_Label(cmp_vm, box->label_end) );
 
     for (s = box->syms; s != (Symbol *) NULL;) {
       next = s->brother;

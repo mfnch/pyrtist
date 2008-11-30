@@ -54,7 +54,7 @@ Task VM_Sym_Def_Call(VMProgram *vmp, UInt sym_num, UInt proc_num) {
 }
 
 Task VM_Sym_Call(VMProgram *vmp, UInt sym_num) {
-  return VM_Sym_Code_Ref(vmp, sym_num, Assemble_Call);
+  return VM_Sym_Code_Ref(vmp, sym_num, Assemble_Call, NULL, 0);
 }
 
 /*** basic method registration **********************************************/
@@ -96,35 +96,87 @@ Task VM_Sym_Alloc_Method_Register(VMProgram *vmp, UInt sym_num,
 }
 
 /*** jumps ******************************************************************/
-static Task Assemble_Cond_Jmp(VMProgram *vmp, UInt sym_num, UInt sym_type,
-                              int defined, void *def, UInt def_size,
-                              void *ref, UInt ref_size)
-{
-  Int sheet_id, position=0;
+
+typedef struct {
+  int conditional;
+  Int sheet_id;
+  Int position;
+} VMSymLabelRef;
+
+static Task Assemble_Jmp(VMProgram *vmp, UInt sym_num, UInt sym_type,
+                         int defined, void *def, UInt def_size,
+                         void *ref, UInt ref_size) {
+  Int sheet_id, rel_position = 0;
+  AsmCode asm_code = ASM_JC_I;
+  VMSymLabelRef *label_ref = ref;
+
   assert(sym_type == VM_SYM_COND_JMP);
+  assert(ref_size == sizeof(VMSymLabelRef));
+  assert(ref != NULL);
+
   if (defined && def != NULL) {
+    Int def_position, ref_position;
     assert(def_size == sizeof(VMSymLabel));
     sheet_id = ((VMSymLabel *) def)->sheet_id;
-    position = ((VMSymLabel *) def)->position;
+    def_position = ((VMSymLabel *) def)->position;
+    ref_position = label_ref->position;
+    rel_position = def_position - ref_position;
   }
-  VM_Assemble_Long(vmp, ASM_JC_I, CAT_IMM, position);
+
+  asm_code = (label_ref->conditional) ? ASM_JC_I : ASM_JMP_I;
+  VM_Assemble_Long(vmp, asm_code, CAT_IMM, rel_position);
   return Success;
 }
 
-Task VM_Sym_New_Cond_Jmp(VMProgram *vmp, UInt *sym_num) {
+Task VM_Sym_New_Label(VMProgram *vmp, UInt *sym_num) {
   return VM_Sym_New(vmp, sym_num, VM_SYM_COND_JMP, sizeof(VMSymLabel));
 }
 
-Task VM_Sym_Def_Cond_Jmp(VMProgram *vmp, UInt sym_num,
-                         Int sheet_id, Int position) {
+Task VM_Sym_Def_Label(VMProgram *vmp, UInt sym_num,
+                      Int sheet_id, Int position) {
   VMSymLabel label;
   label.sheet_id = sheet_id;
   label.position = position;
   return VM_Sym_Def(vmp, sym_num, & label);
 }
 
-Task VM_Sym_Cond_Jmp(VMProgram *vmp, UInt sym_num) {
-  return VM_Sym_Code_Ref(vmp, sym_num, Assemble_Cond_Jmp);
+/* Same as VM_Label_Define, but sheet_id is the current active sheet and
+ * position is the current position in that sheet.
+ */
+Task VM_Sym_Def_Label_Here(VMProgram *vmp, UInt label_sym_num) {
+  Int sheet_id, position;
+  sheet_id = vmp->proc_table.target_proc_num;
+  position = Arr_NumItem(vmp->proc_table.target_proc->code);
+  return VM_Sym_Def_Label(vmp, label_sym_num, sheet_id, position);
+}
+
+/* Same as VM_Label_New, but sheet_id is the current active sheet and
+ * position is the current position in that sheet.
+ */
+Task VM_Sym_New_Label_Here(VMProgram *vmp, UInt *label_sym_num) {
+  TASK( VM_Sym_New_Label(vmp, label_sym_num) );
+  return VM_Sym_Def_Label_Here(vmp, *label_sym_num);
+}
+
+Task VM_Sym_Jmp_Generic(VMProgram *vmp, UInt sym_num, int conditional) {
+  VMSymLabelRef label_ref;
+  label_ref.conditional = conditional;
+  label_ref.sheet_id = vmp->proc_table.target_proc_num;
+  label_ref.position = Arr_NumItem(vmp->proc_table.target_proc->code);
+  return VM_Sym_Code_Ref(vmp, sym_num, Assemble_Jmp,
+                         & label_ref, sizeof(VMSymLabelRef));
+}
+
+Task VM_Sym_Jc(VMProgram *vmp, UInt sym_num) {
+  return VM_Sym_Jmp_Generic(vmp, sym_num, 1);
+}
+
+Task VM_Sym_Jmp(VMProgram *vmp, UInt sym_num) {
+  return VM_Sym_Jmp_Generic(vmp, sym_num, 0);
+}
+
+Task VM_Sym_Destroy_Label(VMProgram *vmp, UInt sym_num) {
+  return Success;
 }
 
 /*** procedure headers ******************************************************/
@@ -163,7 +215,7 @@ static Task Assemble_Proc_Head(VMProgram *vmp, UInt sym_num, UInt sym_type,
 
 Task VM_Sym_Proc_Head(VMProgram *vmp, UInt *sym_num) {
   TASK( VM_Sym_New(vmp, sym_num, VM_SYM_PROC_HEAD, sizeof(ProcHead)) );
-  return VM_Sym_Code_Ref(vmp, *sym_num, Assemble_Proc_Head);
+  return VM_Sym_Code_Ref(vmp, *sym_num, Assemble_Proc_Head, NULL, 0);
 }
 
 Task VM_Sym_Def_Proc_Head(VMProgram *vmp, UInt sym_num,

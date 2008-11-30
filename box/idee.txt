@@ -1,4 +1,35 @@
+29/11/2008
 
+# Resolution object
+Resolution = ++Point
+Point @0 Resolution[$$ = $]
+
+Dpi = Resolution
+Point @0 Dpi[$$ = $*1.2345678]
+
+# Window object
+Window = ++(Str type, Point size, res)
+Point      @0 Window[.size = $]
+Str        @0 Window[.type = $]
+Resolution @0 Window[.res = $]
+
+# Concrete realisation of a Window
+Window' = WindowInstance
+
+
+
+WindowInstance = ++Ptr
+Window' = WindowInstance
+
+# Operator overloading
+Vec3 = ++(Real x, y, z)
+Vec3.(+) = Vec3
+Vec3@Vec3.(+)[$$.x = $$$.x + $.x, $$.y = $$$.y + $.y, $$.z = $$$.z + $.z]
+
+(+) is identical to (+?)
+there is however also (?+)
+
+==============================================================================
 
 
 a = Point[.x = 0.0, .y = 0.0, .z = 0.0]

@@ -52,7 +52,7 @@ typedef struct {
   Expr   parent;       /**< Expression associated with the box */
   Expr   child;        /**< Expression associated with the child of a procedure */
   Symbol *syms;        /**< Child symbols which belong to this box */
-  int    label_begin,  /**< Labels located at the beginning */
+  UInt   label_begin,  /**< Labels located at the beginning */
          label_end;    /**< and at the end of the box */
 } Box;
 
