@@ -93,7 +93,7 @@ Task Cmp_Structure_End(Expr *new_struct) {
 
   /* Creo la parte immediata della struttura */
   TASK( Cmp__Structure_Backgnd(first, num, size,
-   & only_backgnd, & only_foregnd) );
+                               & only_backgnd, & only_foregnd) );
   only_backgnd = 0;
 
   if ( only_backgnd ) {
@@ -241,7 +241,7 @@ static Task Cmp__Structure_Foregnd(Expr *new_struct, StructItem *first,
       e_dest.type = e_src->type;
       e_dest.resolved = e_src->resolved;
       e_dest.value.i = arg_size_old;
-      TASK( Cmp_Expr_Move(& e_dest, e_src) );
+      TASK( Expr_Move(& e_dest, e_src) );
     } else {
       TASK( Cmp_Expr_Destroy_Tmp(e_src) );
     }
@@ -360,31 +360,21 @@ Task Cmp_Expr_Expand(Int species, Expr *e) {
      * which can contain the expanded one.
      */
     if (need_expansion) {
-      int n1, n2;
-      Expr new_struc, member1, member2, member2_copy;
+      int src_n, dest_n;
+      Expr new_struc, src_iter_e, dest_iter_e, src_e, dest_e;
       Expr_Container_New(& new_struc, type1, CONTAINER_LREG_AUTO);
       Expr_Alloc(& new_struc);
-      member1 = new_struc;
-      member2 = *e;
+      src_iter_e = *e;
+      dest_iter_e = new_struc;
 
-      TASK(Cmp_Structure_Get(& member1, & n1));
-      TASK(Cmp_Structure_Get(& member2, & n2));
-      while (n1 > 0) {
-        member2_copy = member2;
-#ifdef DEBUG_STRUCT_EXPANSION
-        printf("Espando il membro: '%s' --> '%s'\n",
-               Tym_Type_Names(member2.type), Tym_Type_Names(member1.type));
-#endif
-        TASK( Cmp_Expr_Expand(member1.type, & member2_copy) );
-#ifdef DEBUG_STRUCT_EXPANSION
-        printf("Dopo l'espansione: type='%s', resolved='%s'\n",
-               Tym_Type_Names(member2_copy.type),
-               Tym_Type_Names(member2_copy.resolved));
-#endif
-        TASK( Cmp_Expr_Move(& member1, & member2_copy) );
+      Expr_Struc_Iter(& dest_e, & dest_iter_e, & dest_n);
+      Expr_Struc_Iter(& src_e, & src_iter_e, & src_n);
+      while (dest_n > 0) {
+        TASK( Cmp_Expr_Expand(dest_e.type, & src_e) );
+        TASK( Expr_Move(& dest_e, & src_e) );
 
-        TASK( Cmp_Structure_Get(& member1, & n1) );
-        TASK( Cmp_Structure_Get(& member2, & n2) );
+        Expr_Struc_Iter(& src_e, & src_iter_e, & src_n);
+        Expr_Struc_Iter(& dest_e, & dest_iter_e, & dest_n);
       };
 
       TASK( Cmp_Expr_Destroy_Tmp(e) );
@@ -400,65 +390,3 @@ Task Cmp_Expr_Expand(Int species, Expr *e) {
 
   return Failed;
 }
-
-/*  An example of use (see also Tym_Structure_Get):
- *  Suppose that the Expr structure is a structure,
- *     Expr member = structure; int n;
- *     do {TASK( Cmp_Structure_Get(& member, & n) );} while (n > 0);
- *  During the loop, member will contain each of the members of the structure:
- *  the first, the second, ..., the last.
- *  The first time Cmp_Structure_Get is called, it sets n=[number of members].
- *  When it is called again, it decreases n, until it is equal to 0.
- * NOTE: *member shouldn't change between the calls to Cmp_Structure_Get!
- *****************************************************************FULL EXAMPLE:
- *   Expr member = structure; int n;
- *   TASK(Cmp_Structure_Get(& member, & n));
- *   while (n > 0) {
- *     ... // <-- here we can use the Expression member
- *     TASK(Cmp_Structure_Get(& member, & n));
- *   };
- */
-Task Cmp_Structure_Get(Expr *member, int *n) {
-  Int member_type = member->type;
-  TASK( Tym_Structure_Get(& member_type) );
-
-  if (TS_Kind(cmp->ts, member->type) == TS_KIND_STRUCTURE) {
-    Expr first;
-
-    /* (sotto) Manca parte dell'implementazione! */
-    assert(member->categ == CAT_LREG || member->categ == CAT_GREG);
-
-    if ( (*n = Tym_Struct_Get_Num_Items(member->type)) == 0 ) return Success;
-    assert( *n > 0 );
-
-    first.categ = CAT_PTR;
-    first.is.imm = 0; first.is.value = 1; first.is.typed = 1;
-    first.is.ignore = 1; first.is.target = 1;
-    first.is.allocd = 0; /* <-- importanti!!! */
-    first.is.release = 0;
-    first.addr = member->value.i;
-    first.type = member_type;
-    first.resolved = TS_Core_Type(cmp->ts, member_type);
-    first.is.gaddr = (member->categ == CAT_GREG) ? 1 : 0;
-    first.value.i = 0;
-    *member = first;
-    return Success;
-
-  } else {
-    assert( *n > 0 );
-    --(*n);
-    /* (n == 0) if and only if (member_type == TYPE_NONE) */
-    if ( (*n == 0) != (member_type == TYPE_NONE) ) {
-      MSG_FATAL("Cmp_Structure_Get: errore interno: *n = %d, member_type = %d",
-                *n, member_type);
-      return Failed;
-    }
-    if (n == 0) return Success;
-    member->value.i += Tym_Type_Size(member->resolved);
-    member->type = member_type;
-    member->resolved = TS_Core_Type(cmp->ts, member_type);
-  }
-  return Success;
-}
-
-

@@ -63,7 +63,7 @@ typedef struct {
   ContType   type;
   Int        reg;
   Int        ptr_reg;
-  void       *extra;
+  const void *extra;
   struct {
     int ptr_is_greg : 1;
   }          flags;
@@ -80,7 +80,7 @@ typedef struct {
 
 /** Move the content of container 'src' to the container 'dest'.
  */
-void Cont_Move(Cont *dest, Cont *src);
+void Cont_Move(const Cont *dest, const Cont *src);
 
 /** Create in 'dest' a pointer to the content of the container 'src'.
  * Consequently 'dest' has to have type==CONT_OBJ.

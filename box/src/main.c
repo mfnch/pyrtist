@@ -345,7 +345,7 @@ static Task Stage_Write_Asm(UInt flags) {
       close_file = 1;
     }
 
-    (void) Cmp_Data_Display(out);
+    Cmp_Data_Display(out);
     fprintf(out, "\n");
     VM_DSettings(program, 1);
     TASK( VM_Proc_Disassemble_All(program, out) );

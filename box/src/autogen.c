@@ -37,33 +37,25 @@ static void Create_Structure_Method(Type parent, Type child, int kind) {
   TS_Procedure_Search(cmp->ts, & found, (Type *) NULL,
                       parent_ct, child, kind);
   if (found == TS_TYPE_NONE) {
-    Type member_t;
-    Expr structure_e;
+    Expr structure_e, member_e, iter_e;
+    int members_left;
 
     ASSERT_TASK( Box_Def_Begin(parent_ct, child, kind) );
     ASSERT_TASK( Box_Parent_Get(& structure_e, 0) );
 
-    member_t = TS_Member_Next(cmp->ts, parent_ct);
-    while(TS_Is_Member(cmp->ts, member_t)) {
+    iter_e = structure_e;
+    Expr_Struc_Iter(& member_e, & iter_e, & members_left);
+    while (members_left > 0) {
+      Type member_t = member_e.type;
       if (!TS_Is_Fast(cmp->ts, member_t)) {
-        Expr member_e;
-        char *member_str = TS_Member_Name_Get(cmp->ts, member_t);
-        Name member_n;
-        Name_From_Str(& member_n, member_str);
-        /* NOTE: This is silly: we should able to iterate over structure members
-         * without hashtable lookups! We can already do it, see structure.c
-         * we should just make this more robust and change the following lines!
-         */
-        ASSERT_TASK( Expr_Struc_Member(& member_e, & structure_e, & member_n) );
         if (member_e.is.value && Tym_Type_Size(member_e.resolved) > 0) {
           (void) Box_Procedure_Call_Void(& member_e, child, kind,
                                          BOX_MSG_SILENT);
         }
-        ASSERT_TASK( Cmp_Expr_Destroy_Tmp(& member_e) );
       }
 
-      member_t = TS_Member_Next(cmp->ts, member_t);
-    }
+      Expr_Struc_Iter(& member_e, & iter_e, & members_left);
+    };
 
     ASSERT_TASK( Box_Def_End() );
   }

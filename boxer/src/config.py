@@ -24,6 +24,8 @@ box_syntax_highlighting = sys.path[0]
 box_source_of_new = \
 """w = Window[][
   .Show[(0, 0), (100, 50)]
+
+  //!BOXER:CURSOR:HERE
 ]
 
 GUI[w]

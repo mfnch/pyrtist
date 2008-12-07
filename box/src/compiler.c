@@ -55,6 +55,7 @@
 #include "typesys.h"
 #include "autogen.h"
 #include "expr.h"
+#include "container.h"
 
 /******************************************************************************/
 
@@ -492,22 +493,31 @@ Expr *Cmp_Operator_Exec(Operator *opr, Expr *e1, Expr *e2) {
 
   /* Prima cerco se esiste un'operazione fra i tipi di e1 e e2 */
   opn = Cmp_Operation_Find(opr, e1type, e2type, TYPE_NONE, & oi);
-  if ( opn == NULL ) goto Exec_Opn_Error;
+  if (opn != NULL) {
+    /* Ora eseguo le espansioni, se necessario */
+    if ( oi.expand1 ) {
+      if IS_FAILED( Cmp_Expr_Expand(oi.exp_type1, e1) ) return NULL;
+    }
+    if ( oi.expand2 ) {
+      if IS_FAILED( Cmp_Expr_Expand(oi.exp_type2, e2) ) return NULL;
+    }
 
-  /* Ora eseguo le espansioni, se necessario */
-  if ( oi.expand1 ) {
-    if IS_FAILED( Cmp_Expr_Expand(oi.exp_type1, e1) ) return NULL;
+    /* manca la valutazione della commutativita'! */
+
+    return Cmp_Operation_Exec(opn, e1, e2);
+
+  } else {
+    if (strcmp(opr->name, "=") != 0)
+      goto Exec_Opn_Error;
+
+    if IS_FAILED( Cmp_Expr_Expand(e1->type, e2) )
+      return NULL;
+
+    if IS_FAILED(Expr_Move(e1, e2))
+      return NULL;
+
+    return e1;
   }
-  if ( oi.expand2 ) {
-    if IS_FAILED( Cmp_Expr_Expand(oi.exp_type2, e2) ) return NULL;
-  }
-
-  /*
-    manca la valutazione della commutativita'!
-   */
-
-
-  return Cmp_Operation_Exec(opn, e1, e2);
 
 Exec_Opn_Error:
   if ( num_arg == 1 ) {
@@ -1166,68 +1176,6 @@ Task Cmp_Expr_Destroy(Expr *e, int destroy_target) {
   }
 }
 
-/* DESCRIPTION:
- */
-Task Cmp_Expr_Copy(Expr *e_dest, Expr *e_src) {
-  MSG_WARNING("Cmp_Expr_Copy non ancora implementata!");
-  return Cmp_Expr_Move(e_dest, e_src);
-}
-
-/* This function can moves intrinsic and non-intrinsic objects.
- * What is moved is the data contained inside the object.
- * Memory is not allocated nor freed!
- */
-Task Cmp_Expr_Move(Expr *e_dest, Expr *e_src) {
-  register Int t, c;
-
-  assert(e_dest != NULL && e_src != NULL);
-  assert(e_dest->resolved == e_src->resolved);
-  t = e_dest->resolved;
-  c = e_dest->categ;
-  assert(t >= 0);
-  assert((e_src->is.typed) && (e_src->is.value) && (c != CAT_IMM));
-
-  /* Qui devo controllare se il tipo ammette un mover user-defined! */
-
-  if (t < NUM_INTRINSICS) {
-    /* Sposto una quantita' intrinseca */
-    register int is_integer;
-
-    is_integer = (e_src->resolved == TYPE_CHAR)
-              || (e_src->resolved == TYPE_INT);
-    if (e_src->categ == CAT_IMM && !is_integer) {
-      TASK( Cmp_Complete_Ptr_1(e_dest) );
-      switch ( t ) {
-       case TYPE_REAL:
-        Cmp_Assemble(ASM_MOV_Rimm,
-                     c, e_dest->value.i, CAT_IMM, e_src->value.r);
-        break;
-       case TYPE_POINT:
-        Cmp_Assemble(ASM_MOV_Pimm,
-                     c, e_dest->value.i, CAT_IMM, e_src->value.p);
-        break;
-       default:
-        MSG_ERROR("Internal error in Cmp_Expr_Move");
-        return Failed;
-      }
-      return Cmp_Expr_Destroy_Tmp(e_src);
-
-    } else {
-      TASK( Cmp_Complete_Ptr_2(e_dest, e_src) );
-      Cmp_Assemble( asm_mov[t],
-       e_dest->categ, e_dest->value.i, e_src->categ, e_src->value.i );
-      return Cmp_Expr_Destroy_Tmp(e_src);
-    }
-
-  } else {
-    /* Sposto un oggetto user-defined */
-    MSG_ERROR("Internal error in Cmp_Expr_Move: still not implemented!");
-    fprintf(stderr, "e_src = ");  Expr_Print(e_src, stderr);
-    fprintf(stderr, "e_dest = "); Expr_Print(e_dest, stderr);
-    return Failed;
-  }
-}
-
 /* DESCRIZIONE: Prende il valore dal registro zero per metterlo in un registro
  *  locale temporaneo (che viene occupato).
  */
@@ -1484,21 +1432,21 @@ void Cmp_Imm_Destroy(void) {
 
 /* DESCRIPTION: This function displays the content of the data segment.
  */
-Task Cmp_Data_Display(FILE *stream) {
+void Cmp_Data_Display(FILE *stream) {
   char *data;
   Int size, pos, ds;
   DataItem *di;
 
-  if ( cmp_data_segment == NULL ) {
-    MSG_ERROR("Segmento dati non inizializzato!");
-    return Failed;
+  if (cmp_data_segment == NULL) {
+    MSG_ERROR("Data segment is not initialized!");
+    return;
   }
   data = Arr_FirstItemPtr(cmp_data_segment, char);
   size = Arr_NumItem(cmp_data_segment);
 
-  if ( size < 1 ) {
+  if (size < 1) {
     fprintf(stream, "*** EMPTY DATA-SEGMENT ***\n");
-    return Success;
+    return;
   }
 
   fprintf(stream, "*** CONTENT OF THE DATA-SEGMENT ***\n");
@@ -1507,25 +1455,25 @@ Task Cmp_Data_Display(FILE *stream) {
   while ( pos + sizeof(DataItem) <= size ) {
     di = (DataItem *) data;
     fprintf(stream, "  Address "SInt", size "SInt": data of type '%s':\n",
-     pos, di->size, Tym_Type_Name(di->type) );
-    if ( di->signature != signature ) {
+            pos, di->size, Tym_Type_Name(di->type));
+    if (di->signature != signature) {
       fprintf(stream, "Error: bad data-block.\n");
-      MSG_ERROR("Segmento-dati danneggiato alla posizione %d.", pos);
-      return Failed;
+      MSG_ERROR("Data segment is damaged at position %d.", pos);
+      return;
     }
 
     ds = sizeof(DataItem) + di->size;
     pos += ds;
     if ( (di->size < 0) || (pos > size) ) {
       fprintf(stream, "Error: bad data-block.\n");
-      MSG_ERROR("Dimensione errata del blocco di dati in posizione %d.", pos);
-      return Failed;
+      MSG_ERROR("Bad block size at position %d.", pos);
+      return;
     }
     data += ds;
   }
 
   fprintf(stream, "*** END OF THE DATA-SEGMENT ***\n");
-  return Failed;
+  return;
 }
 
 /*****************************************************************************
@@ -1542,10 +1490,10 @@ Task Cmp_String_New(Expr *e, Name *str, int free_str) {
 
   /* Copio la stringa nell'area dati */
   addr = Cmp_Data_Add(ts, str->text, length);
-  if ( addr < 0 ) return Failed;
+  if (addr < 0) return Failed;
 
   /* Libero la stringa se devo! */
-  if ( free_str ) Name_Free(str);
+  if (free_str) Name_Free(str);
 
   /* Costruisco l'espressione corrispondente alla stringa */
   e->is.imm = 0;

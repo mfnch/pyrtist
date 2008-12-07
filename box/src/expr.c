@@ -207,7 +207,7 @@ Task Expr_Must_Have_Value(Expr *e) {
   }
 }
 
-void Expr_Cont_Get(Cont *c, Expr *e) {
+void Expr_Cont_Get(Cont *c, const Expr *e) {
   assert(e->resolved >= 0);
   c->categ = e->categ;
   c->type = e->resolved < TYPE_OBJ ? e->resolved : TYPE_OBJ;
@@ -217,7 +217,7 @@ void Expr_Cont_Get(Cont *c, Expr *e) {
   c->flags.ptr_is_greg = e->is.gaddr;
 }
 
-void Expr_Cont_Set(Expr *e, Cont *c) {
+void Expr_Cont_Set(Expr *e, const Cont *c) {
   assert(e->resolved >= 0);
   assert((e->resolved >= TYPE_OBJ) == (c->type == TYPE_OBJ));
   e->categ = c->categ;
@@ -225,6 +225,13 @@ void Expr_Cont_Set(Expr *e, Cont *c) {
   e->addr = c->ptr_reg;
   e->is.gaddr = c->flags.ptr_is_greg;
   /* c->extra ??? */
+}
+
+void Expr_Container_Move(const Expr *dest, const Expr *src) {
+  Cont dest_c, src_c;
+  Expr_Cont_Get(& dest_c, dest);
+  Expr_Cont_Get(& src_c, src);
+  Cont_Move(& dest_c, & src_c);
 }
 
 /** Returns the allocation type for the given expression.
@@ -372,6 +379,51 @@ Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name) {
   return Success;
 }
 
+void Expr_Struc_Iter(Expr *member, Expr *iter, int *n) {
+  Int member_type = iter->type;
+  ASSERT_TASK( Tym_Structure_Get(& member_type) );
+
+  if (TS_Kind(cmp->ts, iter->type) == TS_KIND_STRUCTURE) {
+    Expr first;
+
+    *n = Tym_Struct_Get_Num_Items(iter->type);
+    if (*n == 0 ) return;
+    assert(*n > 0);
+
+    /* Convert the expression into a pointer expression */
+    first = *iter;
+    Expr_To_Ptr(& first);
+
+    /* Just change the type, and we get then the first member! */
+    first.type = member_type;
+    first.resolved = TS_Core_Type(cmp->ts, member_type);
+
+    first.is.ignore = 1; first.is.target = 1;
+    first.is.allocd = 0; /* <-- important!!! */
+    first.is.release = 0;
+    *iter = first;
+    /* continue... */
+
+
+  } else {
+    assert( *n > 0 );
+    --(*n);
+    /* (n == 0) if and only if (member_type == TYPE_NONE) */
+    if ((*n == 0) != (member_type == TYPE_NONE)) {
+      MSG_FATAL("Expr_Struc_Iter: internal error: *n = %d, member_type = %d",
+                *n, member_type);
+      return;
+    }
+    if (*n == 0) return;
+    iter->value.i += Tym_Type_Size(iter->resolved);
+    iter->type = member_type;
+    iter->resolved = TS_Core_Type(cmp->ts, member_type);
+  }
+
+  *member = *iter;
+  member->type = TS_Resolve_Once(cmp->ts, member->type, TS_KS_NONE);
+}
+
 Task Expr_Array_Member(Expr *member, Expr *array, Expr *index) {
   Type m_type;
   Int m_size;
@@ -513,7 +565,6 @@ Task Expr_Subtype_Create(Expr *subtype, Expr *parent, Name *child) {
 
 Task Expr_Subtype_Get_Parent(Expr *parent, Expr *subtype) {
   Type parent_type;
-  Cont parent_cont, subtype_cont;
   int not_void_parent;
 
   if (!subtype->is.typed) {
@@ -532,9 +583,7 @@ Task Expr_Subtype_Get_Parent(Expr *parent, Expr *subtype) {
   not_void_parent = (TS_Size(cmp->ts, parent_type) > 0);
   if (not_void_parent) {
     Expr_Container_New(parent, CONT_OBJ, CONTAINER_LREG_AUTO);
-    Expr_Cont_Get(& parent_cont, parent);
-    Expr_Cont_Get(& subtype_cont, subtype);
-    Cont_Move(& parent_cont, & subtype_cont);
+    Expr_Container_Move(parent, subtype);
     Expr_Cast(parent, parent_type);
     /* Need to make this a target, since child was obtained originally
      * by invoking Expr_Container_New with CONTAINER_LREG_AUTO and hence
@@ -551,7 +600,6 @@ Task Expr_Subtype_Get_Parent(Expr *parent, Expr *subtype) {
 
 Task Expr_Subtype_Get_Child(Expr *child, Expr *subtype) {
   Type child_type;
-  Cont child_cont, subtype_cont;
   int not_void_child;
 
   if (!subtype->is.typed) {
@@ -569,6 +617,7 @@ Task Expr_Subtype_Get_Child(Expr *child, Expr *subtype) {
 
   not_void_child = (TS_Size(cmp->ts, child_type) > 0);
   if (not_void_child) {
+    Cont child_cont, subtype_cont;
     Expr_Container_New(child, CONT_OBJ, CONTAINER_LREG_AUTO);
     Expr_Cont_Get(& child_cont, child);
     Expr_Cont_Get(& subtype_cont, subtype);
@@ -719,81 +768,6 @@ void Expr_Container_New(Expr *e, Type type, Container *c) {
   }
 }
 
-#if 0
-
-static AsmCode asm_mov[] = {
-  ASM_MOV_CC,
-  ASM_MOV_II,
-  ASM_MOV_RR,
-  ASM_MOV_PP,
-  ASM_MOV_OO
-};
-
-Task Expr_Container_Copy(Expr *dest, Expr *src) {
-  int is_intrinsic = (resolved < NUM_INTRINSICS);
-  Type t = src->resolved;
-  assert(dest->resolved == src->resolved);
-
-
-  /* cases which give rise to:
-   *  (mov ro0, ...)
-   *  mov A, B
-   */
-}
-
-Task Expr_Container_Copy(Expr *dest, Expr *src) {
-  register Int t, c;
-
-  assert(dest != NULL && src != NULL);
-  assert(e_dest->resolved == e_src->resolved);
-  t = e_dest->resolved;
-  c = e_dest->categ;
-  assert(t >= 0);
-  assert((e_src->is.typed) && (e_src->is.value) && (c != CAT_IMM));
-
-  /* Qui devo controllare se il tipo ammette un mover user-defined! */
-
-  if (t < NUM_INTRINSICS) {
-    /* Sposto una quantita' intrinseca */
-    register int is_integer;
-
-    is_integer = (e_src->resolved == TYPE_CHAR)
-              || (e_src->resolved == TYPE_INTG);
-    if ( (e_src->categ == CAT_IMM) && (! is_integer) ) {
-      TASK( Cmp_Complete_Ptr_1(e_dest) );
-      switch ( t ) {
-       case TYPE_REAL:
-        Cmp_Assemble(ASM_MOV_Rimm,
-         c, e_dest->value.i, CAT_IMM, e_src->value.r);
-        break;
-       case TYPE_POINT:
-        Cmp_Assemble(ASM_MOV_Pimm,
-         c, e_dest->value.i, CAT_IMM, e_src->value.p);
-        break;
-       default:
-        MSG_ERROR("Internal error in Cmp_Expr_Move");
-        return Failed;
-      }
-      return Cmp_Expr_Destroy_Tmp(e_src);
-
-    } else {
-      TASK( Cmp_Complete_Ptr_2(e_dest, e_src) );
-      Cmp_Assemble( asm_mov[t],
-       e_dest->categ, e_dest->value.i, e_src->categ, e_src->value.i );
-      return Cmp_Expr_Destroy_Tmp(e_src);
-    }
-
-  } else {
-    /* Sposto un oggetto user-defined */
-    MSG_ERROR("Internal error in Cmp_Expr_Move: still not implemented!");
-    fprintf(stderr, "e_src = ");  Expr_Print(e_src, stderr);
-    fprintf(stderr, "e_dest = "); Expr_Print(e_dest, stderr);
-    return Failed;
-  }
-}
-}
-#endif
-
 void Expr_Alloc(Expr *e) {
   int is_intrinsic;
   Type t;
@@ -831,5 +805,80 @@ void Expr_Alloc(Expr *e) {
       Cmp_Assemble(ASM_MOV_OO, e->categ, e->value.i, CAT_LREG, 0);
       e->is.allocd = 1;
     }
+  }
+}
+
+static Int asm_mov[NUM_INTRINSICS] = {
+  ASM_MOV_CC, ASM_MOV_II, ASM_MOV_RR, ASM_MOV_PP
+};
+
+Task Expr_Move(Expr *dest_e, Expr *src_e) {
+  Int t, c;
+
+  assert(dest_e != NULL && src_e != NULL);
+  /*assert(dest_e->resolved == src_e->resolved);*/
+  t = dest_e->resolved;
+  c = dest_e->categ;
+  assert(t >= 0);
+  assert((src_e->is.typed) && (src_e->is.value) && (c != CAT_IMM));
+
+  /* Qui devo controllare se il tipo ammette un mover user-defined! */
+
+  if (t < NUM_INTRINSICS) {
+    /* Sposto una quantita' intrinseca */
+    int is_integer;
+
+    is_integer = (src_e->resolved == TYPE_CHAR)
+              || (src_e->resolved == TYPE_INT);
+    if (src_e->categ == CAT_IMM && !is_integer) {
+      ASSERT_TASK( Cmp_Complete_Ptr_1(dest_e) );
+      switch ( t ) {
+       case TYPE_REAL:
+        Cmp_Assemble(ASM_MOV_Rimm,
+                     c, dest_e->value.i, CAT_IMM, src_e->value.r);
+        break;
+       case TYPE_POINT:
+        Cmp_Assemble(ASM_MOV_Pimm,
+                     c, dest_e->value.i, CAT_IMM, src_e->value.p);
+        break;
+       default:
+        MSG_FATAL("Internal error in Expr_Move");
+        return Failed;
+      }
+      ASSERT_TASK( Cmp_Expr_Destroy_Tmp(src_e) );
+      return Success;
+
+    } else {
+      TASK( Cmp_Complete_Ptr_2(dest_e, src_e) );
+      Cmp_Assemble(asm_mov[t], dest_e->categ, dest_e->value.i,
+                   src_e->categ, src_e->value.i );
+      ASSERT_TASK( Cmp_Expr_Destroy_Tmp(src_e) );
+      return Success;
+    }
+
+  } else {
+    Cont dest_c, src_c, tmp_c;
+    Expr tmp_e;
+
+    /*if (src_e->resolved != dest_e->resolved) {
+      MSG_ERROR("Type mismatch in object copy");
+      return Failed;
+    }*/
+
+    Expr_Container_New(& tmp_e, dest_e->type, CONTAINER_LREG_AUTO);
+    Expr_Cont_Get(& tmp_c, & tmp_e);
+    Expr_Cont_Get(& dest_c, dest_e);
+    Cont_Ptr_Create(& CONT_NEW_LREG(CONT_OBJ, tmp_e.value.i), & dest_c);
+
+    Expr_Cont_Get(& src_c, src_e);
+    Cont_Ptr_Create(& CONT_NEW_LREG(CONT_OBJ, 0), & src_c);
+
+    Cmp_Assemble(ASM_MOV_II, CAT_LREG, (Int) 0,
+                 CAT_IMM, (Int) Tym_Type_Size(tmp_e.type));
+    Cmp_Assemble(ASM_MCOPY_OO, tmp_e.categ, tmp_e.value.i,
+                 CAT_LREG, (Int) 0);
+    ASSERT_TASK( Cmp_Expr_Destroy_Tmp(& tmp_e) );
+    ASSERT_TASK( Cmp_Expr_Destroy_Tmp(src_e) );
+    return Success;
   }
 }

@@ -136,6 +136,16 @@ class Boxer:
       not_undoable = self.has_textview
     if not_undoable: self.textbuffer.begin_not_undoable_action()
     self.textbuffer.set_text(text)
+
+    # Remove the "here" marker and put the cursor there!
+    here_marker = self.config.get_default("src_marker_cursor_here")
+    si = self.textbuffer.get_start_iter()
+    found = si.forward_search(here_marker, gtk.TEXT_SEARCH_TEXT_ONLY)
+    if found != None:
+      mark0, mark1 = found
+      self.textbuffer.select_range(mark0, mark1)
+      self.textbuffer.delete_selection(True, True)
+
     if not_undoable: self.textbuffer.end_not_undoable_action()
 
   def raw_file_new(self):
@@ -405,7 +415,8 @@ class Boxer:
         box_coords = self.imgview.map_coords_to_box(py_coords)
         if box_coords != None:
           point_name = self.imgview.ref_point_new(py_coords)
-          self.textbuffer.insert_at_cursor("%s, " % point_name)
+          if self.get_paste_on_new():
+            self.textbuffer.insert_at_cursor("%s, " % point_name)
 
     elif self.dragging_ref_point != None:
       return
@@ -432,6 +443,12 @@ class Boxer:
       self.dragging_ref_point = None
       self.menu_run_execute(None)
 
+  def get_paste_on_new(self):
+    """Return true if the name of the reference points should be pasted
+    to the current edited source when they are created.
+    """
+    return self.pastenewbutton.get_active()
+
   def __init__(self, gladefile="boxer.glade", filename=None):
     self.config = config.Config()
 
@@ -448,6 +465,7 @@ class Boxer:
     self.outtextbuffer = self.outtextview.get_buffer()
     self.outtextview_expander = self.boxer.get_widget("outtextview_expander")
     self.examplesmenu = self.boxer.get_widget("menu_file_examples")
+    self.pastenewbutton = self.boxer.get_widget("toolbutton_pastenew")
 
     ref_point_size = self.config.get_default("ref_point_size")
 

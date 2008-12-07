@@ -130,8 +130,13 @@ Task Expr_Must_Have_Value(Expr *e);
 /** Get/Set the container of the expression *e. These function will disappear
  * as soon as Expr will be asjusted to contain a Cont object.
  */
-void Expr_Cont_Get(Cont *c, Expr *e);
-void Expr_Cont_Set(Expr *e, Cont *c);
+void Expr_Cont_Get(Cont *c, const Expr *e);
+void Expr_Cont_Set(Expr *e, const Cont *c);
+
+/** Convenience function which uses Expr_Cont_Get to get the containers
+ * for 'dest' and 'src' and then apply Cont_Move on them.
+ */
+void Expr_Container_Move(const Expr *dest, const Expr *src);
 
 /** Returns the allocation type for the given expression.
  * The allocation type is an integer associated to the type, which identifies
@@ -158,6 +163,30 @@ void Expr_To_Ptr(Expr *e);
  * Once the member has been obtained *s is released.
  */
 Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name);
+
+/** We explain the function with an example.
+ * Suppose that 's' is a structure expression,
+ *
+ *     Expr member, iter = s; int n;
+ *     do {Expr_Struc_Iter(& member, & iter, & n);} while (n > 0);
+ *
+ *  During the loop, 'member' contains each of the members of 's':
+ *  the first, the second, ..., the last, while 'n' contains the number
+ *  of members left in the iteration.
+ *  The first time 'Expr_Struc_Iter' is called, it sets 'n=[num of members]'.
+ *  When it is called again, it decreases 'n', until it is equal to 0.
+ * NOTE: *iter is an Expr object reserved for the iteration. It shouldn't
+ *  be used by the calling function.
+ * Here is a more useful example:
+ *
+ *   Expr member, iter = s; int n;
+ *   Expr_Struc_Iter(& member, & iter, & n);
+ *   while (n > 0) {
+ *     ... // <-- here we can use the Expression member
+ *     Expr_Struc_Iter(& member, & n);
+ *   };
+ */
+void Expr_Struc_Iter(Expr *member, Expr *iter, int *n);
 
 /** Given an array expression and an index expression,
  * build up an expression containing the corresponding member
@@ -224,6 +253,12 @@ void Expr_Container_New(Expr *e, Type type, Container *c);
  * intrinsic types can be stored inside their container (register).
  */
 void Expr_Alloc(Expr *e);
+
+/** This function can moves intrinsic and non-intrinsic objects.
+ * What is moved is the data contained inside the object.
+ * Memory is not allocated nor freed!
+ */
+Task Expr_Move(Expr *dest_e, Expr *src_e);
 
 /* These macros are used in functions such as Expr_Container_New
  * or Expr_Container_Change to specify the container for an expression.

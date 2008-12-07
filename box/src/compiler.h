@@ -227,8 +227,6 @@ Task Cmp__Expr_To_LReg(Expr *expr, int force);
 Task Cmp_Expr_To_Ptr(Expr *expr, AsmArg categ, Int reg, int and_free);
 Task Cmp_Expr_Container_Change(Expr *e, Container *c);
 Task Cmp_Expr_Destroy(Expr *e, int destroy_target);
-Task Cmp_Expr_Copy(Expr *e_dest, Expr *e_src);
-Task Cmp_Expr_Move(Expr *e_dest, Expr *e_src);
 
 Expr *Cmp_Expr_Reg0_To_LReg(Int t);
 Task Cmp_Expr_O_To_OReg(Expr *e);
@@ -239,7 +237,7 @@ Task Cmp_Data_Init(void);
 Int Cmp_Data_Add(Int type, void *data, Int size);
 void Cmp_Data_Destroy(void);
 Task Cmp_Data_Prepare(void);
-Task Cmp_Data_Display(FILE *stream);
+void Cmp_Data_Display(FILE *stream);
 Task Cmp_Imm_Init(void);
 Int Cmp_Imm_Add(Int type, void *data, Int size);
 void Cmp_Imm_Destroy(void);

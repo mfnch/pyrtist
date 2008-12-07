@@ -29,7 +29,7 @@ static AsmCode asm_code_mov[] = {ASM_MOV_CC, ASM_MOV_II,
                                  ASM_MOV_RR, ASM_MOV_PP};
 
 
-static void Prepare_Ptr_Access(Cont *c) {
+static void Prepare_Ptr_Access(const Cont *c) {
   Int ptr_reg = c->ptr_reg;
   if (c->categ == CAT_PTR && ptr_reg != 0) {
     Int addr_categ = c->flags.ptr_is_greg ? CAT_GREG : CAT_LREG;
@@ -37,7 +37,7 @@ static void Prepare_Ptr_Access(Cont *c) {
   }
 }
 
-void Cont_Move(Cont *dest, Cont *src) {
+void Cont_Move(const Cont *dest, const Cont *src) {
   ContType t = dest->type;
   int src_is_ptr, dest_is_ptr, ro0_conflict, num_ptrs;
 

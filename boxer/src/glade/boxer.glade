@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Wed Nov 19 21:48:35 2008 -->
+<!--Generated with glade3 3.4.5 on Sun Dec  7 17:23:38 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="boxer">
     <property name="visible">True</property>
@@ -224,6 +224,8 @@
             <child>
               <widget class="GtkToolButton" id="toolbutton_new">
                 <property name="visible">True</property>
+                <property name="is_focus">True</property>
+                <property name="tooltip" translatable="yes">Create a new document</property>
                 <property name="label" translatable="yes">New</property>
                 <property name="stock_id">gtk-new</property>
                 <signal name="clicked" handler="on_toolbutton_new"/>
@@ -235,6 +237,7 @@
             <child>
               <widget class="GtkToolButton" id="toolbutton_open">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Open a new file</property>
                 <property name="label" translatable="yes">Open</property>
                 <property name="stock_id">gtk-open</property>
                 <signal name="clicked" handler="on_toolbutton_open"/>
@@ -246,6 +249,7 @@
             <child>
               <widget class="GtkToolButton" id="toolbutton_save">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Save the file</property>
                 <property name="label" translatable="yes">Save</property>
                 <property name="stock_id">gtk-save</property>
                 <signal name="clicked" handler="on_toolbutton_save"/>
@@ -266,6 +270,7 @@
             <child>
               <widget class="GtkToolButton" id="toolbutton_run">
                 <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Execute the Box source</property>
                 <property name="label" translatable="yes">Run</property>
                 <property name="stock_id">gtk-execute</property>
                 <signal name="clicked" handler="on_toolbutton_run"/>
@@ -281,6 +286,16 @@
               <packing>
                 <property name="expand">False</property>
                 <property name="homogeneous">False</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkToggleToolButton" id="toolbutton_pastenew">
+                <property name="visible">True</property>
+                <property name="tooltip" translatable="yes">Paste the name of reference points whenever they are created</property>
+                <property name="stock_id">gtk-edit</property>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
               </packing>
             </child>
             <child>

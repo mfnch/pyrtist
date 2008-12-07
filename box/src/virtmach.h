@@ -108,15 +108,6 @@ typedef unsigned char VMByte;
 typedef unsigned long VMByteX4;
 typedef signed char VMSByte;
 
-/* This is an union of all possible types */
-typedef union {
-  Char  c;
-  Int   i;
-  Real  r;
-  Point p;
-  Obj   o;
-} Generic;
-
 /* Associo un numero a ciascun tipo, per poterlo identificare */
 typedef enum {
   SIZEOF_CHAR  = sizeof(Char),

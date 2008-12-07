@@ -733,7 +733,7 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
   VMProcInstalled *p;
   register VMByteX4 *i_pos;
   VMStatus vm, *vm_save;
-  Generic reg0[NUM_TYPES]; /* Registri locali numero zero */
+  BoxValue reg0[NUM_TYPES]; /* Registri locali numero zero */
 #ifdef DEBUG_EXEC
   Int i = 0;
 #endif

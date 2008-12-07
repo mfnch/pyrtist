@@ -31,88 +31,145 @@
 
 #  include <float.h>
 
+/* For now we always define the abbreviations */
+#  define BOX_ABBREV
+
+/** The BoxChar type, the smallest integer in terms of size. */
+typedef unsigned char BoxChar;
+
 /** The integer type of Box numbers and the integer type we will try
  * to use whenever possible: 64 bit on 64 bit architectures,
  * 32 bit elsewhere.
  */
-typedef long Int;
+typedef long BoxInt;
 
 /** The unsigned integer type that we will try to use whenever possible.
  * Same size of Int.
  */
-typedef unsigned long UInt;
+typedef unsigned long BoxUInt;
 
-/* Qui definisco la "precisione" dei numeri interi e reali.
- * Dopo tali definizioni, definisco pure quelle macro che devono essere
- * cambiate, qualora si cambino le definizioni di Int e Real.
+/** Here is the definition of the floating point type used by Box.
  */
-typedef double Real; /* Numeri in virgola mobile */
-/* Conversione stringa->Int */
-#define strtoint strtol
-/* Conversione stringa->Real */
-#define strtoreal strtod
+typedef double BoxReal;
 
-#define REAL_MAX DBL_MAX
-#define REAL_MIN (-DBL_MAX)
+/** Conversion string --> Int */
+#  define BoxInt_Of_Str strtol
 
-/* Definisco il tipo Char, che e' esattamente un char */
-typedef unsigned char Char;
+/** Conversion string --> Real  */
+#  define BoxReal_Of_Str strtod
 
-/* Tipo di dato "punto" */
+#  define BOXREAL_MAX DBL_MAX
+#  define BOXREAL_MIN (-DBL_MAX)
+
+/** The 2D point type */
 typedef struct {
-  Real x, y;
-} Point;
+  BoxReal x, y;
+} BoxPoint;
 
 /** We need more than just a pointer when referring to Box objects */
 typedef struct {
   void *ptr;   /**< Pointer to the data inside this block */
   void *block; /**< Pointer to the allocated memory block */
-} Obj;
+} BoxObj;
 
-typedef void *Ptr;
+/** Union of all the intrinsic Box types */
+typedef union {
+  BoxChar boxchar;
+  BoxInt boxint;
+  BoxReal boxreal;
+  BoxPoint boxpoint;
+  BoxObj boxobj;
+} BoxValue;
+
+typedef void *BoxPtr;
+
+/** Strings containing the printf formats for the various types */
+#  define BoxChar_Fmt "%c"
+#  define BoxUInt_Fmt "%lu"
+#  define BoxInt_Fmt "%ld"
+#  define BoxReal_Fmt "%g"
+#  define BoxPoint_Fmt "(%g, %g)"
 
 /** A subtype is simply a structure containing two pointers: one points
  * to the parent, one to the child.
  */
-typedef Obj Subtype[2];
+typedef BoxObj BoxSubtype[2];
 
-/* in this macro 'subtype_ptr' should have type 'Subtype *' */
-#define SUBTYPE_PARENT_PTR(subtype_ptr, parent_type) \
+/** in this macro 'subtype_ptr' should have type 'Subtype *' */
+#  define BOXSUBTYPE_PARENT_PTR(subtype_ptr, parent_type) \
   ((parent_type *) ((*(subtype_ptr))[0].ptr))
 
-/* in this macro 'subtype_ptr' should have type 'Subtype *' */
-#define SUBTYPE_CHILD_PTR(subtype_ptr, child_type) \
+/** in this macro 'subtype_ptr' should have type 'Subtype *' */
+#  define BOXSUBTYPE_CHILD_PTR(subtype_ptr, child_type) \
   (( child_type *) ((*(subtype_ptr))[1].ptr))
 
-#define NAME(str) ((Name) {sizeof(str)-1, str})
 typedef struct {
-  UInt length;
+  BoxInt length;
   char *text;
-} Name;
+} BoxName;
 
-typedef Name Data;
+#  define BOXNAME(str) ((BoxName) {sizeof(str)-1, str})
 
-/* Stringhe da usare nelle printf per stampare i vari tipi */
-#define SUInt "%lu"
-#define SChar "%c"
-#define SInt "%ld"
-#define SInt "%ld"
-#define SReal "%g"
-#define SPoint "(%g, %g)"
+typedef BoxName BoxData;
 
 /* Le funzioni spesso restituiscono un intero per indicare se tutto e' andato
  * bene o se si e' verificato un errore. Definisco il relativo tipo di dato:
  */
-typedef enum {Success = 0, Failed = 1} Task;
+typedef enum {BoxSuccess = 0, BoxFailure = 1} BoxTask;
 
 /* Macro per testare il successo o il fallimento di una funzione.
  */
-#define IS_SUCCESSFUL(x) (!x)
-#define IS_FAILED(x) (x)
+#  define BOXTASK_IS_SUCCESS(x) (!x)
+#  define BOXTASK_IS_FAILURE(x) (x)
 
 /** Macro to call a function returning Task from a function returning Task.
  */
-#define TASK(x) if ( (x) ) return Failed
+#  define BOXTASK(x) if ( (x) ) return BoxFailure
+
+/* Questa macro permette di usare una indicizzazione "circolare",
+ * secondo cui, data una lista di num_items elementi, l'indice 1 si riferisce
+ * al primo elemento, 2 al secondo, ..., num_items all'ultimo, num_items+1 al primo,
+ * num_items+2 al secondo, ...
+ * Inoltre l'indice 0 si riferisce all'ultimo elemento, -1 al pen'ultimo, ...
+ */
+#define BOX_CIRCULAR_INDEX(num_items, index) \
+  ( (index > 0) ? \
+    ( (index - 1) % num_items ) \
+    : num_items - 1 - ((-index) % num_items) )
+
+/** Use shorthands (without the Box prefix) */
+#ifdef BOX_ABBREV
+typedef BoxChar Char;
+typedef BoxInt Int;
+typedef BoxUInt UInt;
+typedef BoxReal Real;
+typedef BoxPoint Point;
+typedef BoxObj Obj;
+typedef BoxPtr Ptr;
+typedef BoxSubtype Subtype;
+
+typedef BoxName Name;
+typedef BoxName Data;
+typedef enum {Success = BoxSuccess, Failed = BoxFailure} Task;
+
+#    define strtoint BoxInt_Of_Str
+#    define strtoreal BoxReal_Of_Str
+#    define REAL_MAX BOXREAL_MAX
+#    define REAL_MIN BOXREAL_MIN
+#    define SUInt BoxUInt_Fmt
+#    define SChar BoxChar_Fmt
+#    define SInt BoxInt_Fmt
+#    define SReal BoxReal_Fmt
+#    define SPoint BoxPoint_Fmt
+
+#    define SUBTYPE_PARENT_PTR BOXSUBTYPE_PARENT_PTR
+#    define SUBTYPE_CHILD_PTR BOXSUBTYPE_CHILD_PTR
+#    define NAME BOXNAME
+#    define IS_SUCCESSFUL BOXTASK_IS_SUCCESS
+#    define IS_FAILED BOXTASK_IS_FAILURE
+#    define TASK BOXTASK
+
+#    define CIRCULAR_INDEX BOX_CIRCULAR_INDEX
 
 /* Error handling in Box is not always sensible, unfortunately.
  * There are situations where failures should not be tolerated. In such cases
@@ -121,22 +178,13 @@ typedef enum {Success = 0, Failed = 1} Task;
  * for each situation if there is a reason why we should propagate the error
  * with task or if we should display a fatal error message and exit.
  * For now we just define the macro ASSERT_TASK to correct these cases
- * where propagating errors turn out to be unnecessary and a fatal error
+ * where propagating errors turns out to be unnecessary and a fatal error
  * is preferable.
  */
 
 /** When we do not tolerate a failure then we use the ASSERT_TASK macro. */
-#define ASSERT_TASK(x) assert(Success == (x))
+#    define ASSERT_TASK(x) assert(Success == (x))
 
-/* DESCRIZIONE: Questa macro permette di usare una indicizzazione "circolare",
- *  secondo cui, data una lista di num_items elementi, l'indice 1 si riferisce
- *  al primo elemento, 2 al secondo, ..., num_items all'ultimo, num_items+1 al primo,
- *  num_items+2 al secondo, ...
- *  Inoltre l'indice 0 si riferisce all'ultimo elemento, -1 al pen'ultimo, ...
- */
-#define CIRCULAR_INDEX(num_items, index) \
-  ( (index > 0) ? \
-    ( (index - 1) % num_items ) \
-    : num_items - 1 - ( (-index) % num_items ) \
-  )
-#endif
+#  endif /* BOX_ABBREV */
+
+#endif /* _TYPES_H */
