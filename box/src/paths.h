@@ -50,6 +50,13 @@ void Path_Add_Lib_Dir(char *path);
 
 void Path_Add_Inc_Dir(char *path);
 
+/** Add the directory containing the currently executed script to the list
+ * of directories to be searched when including a file with "include".
+ * 'script_path' is the name of the script as passed to Box through
+ * the command line.
+ */
+void Path_Add_Script_Path_To_Inc_Dir(const char *script_path);
+
 FILE *Path_Open_Inc_File(const char *file, const char *mode);
 
 #endif

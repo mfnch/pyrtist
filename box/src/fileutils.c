@@ -86,8 +86,7 @@ static Task Find_File_Iterator(void **tuple, void *pass) {
 }
 
 void File_Find(List **found_files, const char *file_name,
-               List *prefixes, List *suffixes)
-{
+               List *prefixes, List *suffixes) {
   List *l;
   FindFileData ffd;
   ffd.only_first = 0;
@@ -105,8 +104,7 @@ void File_Find(List **found_files, const char *file_name,
  * This is a C-string which needs to be freed by the user.
  */
 void File_Find_First(char **found_file, const char *file_name,
-                     List *prefixes, List *suffixes)
-{
+                     List *prefixes, List *suffixes) {
   List *l;
   FindFileData ffd;
   ffd.only_first = 1;
@@ -118,6 +116,25 @@ void File_Find_First(char **found_file, const char *file_name,
   (void) List_Product_Iter(l, Find_File_Iterator, (void *) & ffd);
   List_Destroy(l);
   *found_file = ffd.first_file;
+}
+
+void File_Path_Split(char **dir, char **file, const char *full_path) {
+  const char *basename = strrchr(full_path, DIR_SEPARATOR);
+  assert(full_path != NULL);
+  if (basename == NULL) {
+    if (dir != NULL) *dir = NULL;
+    if (file != NULL) *file = Mem_Strdup(full_path);
+    return;
+
+  } else {
+    size_t i = (basename - full_path) + 1;
+    /* ^^^ cast from ptrdiff_t */
+    if (file != NULL) *file = Mem_Strdup(basename + 1);
+    if (dir != NULL) {
+      *dir = memcpy(Mem_Alloc(sizeof(char)*(i + 1)), full_path, i);
+      (*dir)[i] = '\0';
+    }
+  }
 }
 
 #if 0

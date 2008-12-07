@@ -36,4 +36,20 @@ void File_Find(List **found_files, const char *file_name,
 void File_Find_First(char **found_file, const char *file_name,
                      List *prefixes, List *suffixes);
 
+/** Split the given path in 'full_path' into its directory component,
+ * which is a string allocated in '*dir', and its file component,
+ * a string allocated in '*file'. If there is no directory component
+ * returns NULL. If 'dir' or 'file' are null, the corresponding string
+ * is not allocated/returned. Examples:
+ *
+ *  File_Path_Split(dir, file, "/dira/dirb/file.ext") -->
+ *           *dir = Mem_Strdup("/dira/dirb/"); *file = Mem_Strdup("file.ext");
+ *
+ *  File_Path_Split(dir, file, "/") -->
+ *                             *dir = Mem_Strdup("/"); *file = Mem_Strdup("");
+ *
+ *  File_Path_Split(dir, file, "") -->    *dir = NULL; *file = Mem_Strdup("");
+ */
+void File_Path_Split(char **dir, char **file, const char *full_path);
+
 #endif

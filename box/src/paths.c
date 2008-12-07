@@ -57,6 +57,7 @@ void Path_Init(void) {
   List_New(& inc_dirs, 0);
   List_New(& inc_exts, 0);
   List_Append_String(inc_exts, ".bxh");
+  List_Append_String(inc_exts, ".box");
   List_Append_String(inc_exts, "");
 }
 
@@ -125,6 +126,20 @@ void Path_Add_Lib_Dir(char *path) {
 
 void Path_Add_Inc_Dir(char *path) {
   List_Append_String(inc_dirs, path);
+}
+
+void Path_Add_Script_Path_To_Inc_Dir(const char *script_path) {
+  if (script_path != NULL) {
+    char *script_dir;
+    File_Path_Split(& script_dir, NULL, script_path);
+    if (script_dir != NULL) {
+      List_Append_String(inc_dirs, script_dir);
+      Mem_Free(script_dir);
+      return;
+    }
+  }
+
+  List_Append_String(inc_dirs, ".");
 }
 
 FILE *Path_Open_Inc_File(const char *file, const char *mode) {

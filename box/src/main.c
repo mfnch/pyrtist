@@ -64,7 +64,7 @@ enum {
 /* Variabili interne */
 static UInt flags = FLAG_EXECUTE; /* Stato di partenza dei flags */
 static char *prog_name;
-static char *file_input;
+static char *file_input = NULL;
 static char *file_output;
 static char *file_setup;
 static char *query = NULL;
@@ -238,7 +238,7 @@ static Task Stage_Interpret_Command_Line(UInt *f) {
     if ( (flags & FLAG_STDIN) == 0 ) {
       if ( freopen(file_input, "rt", stdin) == NULL ) {
         MSG_ERROR("%s <-- Cannot open the file for reading: %s",
-         file_input, strerror(errno));
+                  file_input, strerror(errno));
         Main_Error_Exit(NULL);
       }
     } else {
@@ -257,6 +257,7 @@ static Task Stage_Interpret_Command_Line(UInt *f) {
 
 static Task Stage_Add_Default_Paths(void) {
   Path_Set_All_From_Env();
+  Path_Add_Script_Path_To_Inc_Dir(file_input);
   return Success;
 }
 
@@ -479,7 +480,8 @@ int main(int argc, char** argv) {
   int exit_status = EXIT_SUCCESS;
   Task status;
 
-  if IS_FAILED( Stage_Init() ) Main_Error_Exit("Initialization failed!");
+  if IS_FAILED( Stage_Init() )
+    Main_Error_Exit("Initialization failed!");
 
   status = Stage_Parse_Command_Line(& flags, argc, argv);
   if (status == Failed) exit_status = EXIT_FAILURE;

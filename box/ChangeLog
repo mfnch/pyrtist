@@ -3,6 +3,13 @@ REVISION=$Revision$
 
 Change log (recent come first)
 
+Next:
+  * When using include we now search files also inside the directory
+    containing the currently executed script. If -st is specified,
+    then we search inside the current working directory.
+  * Automatic copy of objects is now implemented. However one should be very
+    careful when using this feature with complex objects, such as Str, etc.
+
 19 November 2008: created Boxer, a GUI for Box
   * created Boxer, a GUI for Box, using PyGTK (Python bindings for GTK+).
     The GUI can be run on Linux, Mac OS and Windows. The GUI has a text view
