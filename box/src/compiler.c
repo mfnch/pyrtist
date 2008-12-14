@@ -67,10 +67,9 @@ struct cmp_opr_struct cmp_opr;
 
 /*****************************************************************************/
 
-static Task Opr_Destructor(void *opr_ptr) {
+static void Opr_Destructor(void *opr_ptr) {
   Operator *opr = *((Operator **) opr_ptr);
   Cmp_Operator_Destroy(opr);
-  return Success;
 }
 
 /* Gets ready to start the compilation */
@@ -80,8 +79,8 @@ Task Cmp_Init(VMProgram *program) {
   cmp->vm = program;
   cmp->ts = & cmp->ts_obj;
 
-  TASK( Arr_New(& cmp->allocd_oprs, sizeof(Operator *), 64) );
-  Arr_Destructor(cmp->allocd_oprs, Opr_Destructor);
+  BoxArr_Init(& cmp->allocd_oprs, sizeof(Operator *), 64);
+  BoxArr_Set_Finalizer(& cmp->allocd_oprs, Opr_Destructor);
   TASK( TS_Init(cmp->ts) );
 
   /* Initialization of the lists which hold the occupation status
@@ -97,10 +96,10 @@ Task Cmp_Parse(const char *file) {
   int parse_status;
   TASK( Box_Init() ); /* Init the box stack */
   TASK( Box_Main_Begin() ); /* Create the main box */
-  /* Inizializzo il segmento-dati */
-  TASK( Cmp_Data_Init() );
+
   /* Inizializzo il segmento che contiene gli oggetti con valore immediato */
-  TASK( Cmp_Imm_Init() );
+  BoxArr_Init(& cmp->imm_segment, sizeof(char), CMP_TYPICAL_IMM_SIZE);
+
   TASK( Builtins_Init() ); /* Add builtin stuff */
   TASK( Parser_Init(file) ); /* Prepare the parser */
   parse_status = yyparse(); /* Parse the file */
@@ -115,9 +114,9 @@ Task Cmp_Parse(const char *file) {
 void Cmp_Destroy(void) {
   TS_Destroy(cmp->ts);
   Reg_Destroy();
-  Cmp_Data_Destroy();
-  Cmp_Imm_Destroy();
-  Arr_Destroy(cmp->allocd_oprs);
+
+  BoxArr_Finish(& cmp->imm_segment);
+  BoxArr_Finish(& cmp->allocd_oprs);
   Mem_Free(cmp);
 }
 
@@ -136,8 +135,7 @@ Operator *Cmp_Operator_New(char *name) {
   }
 
   /* Just to remember what gets allocated, so we can destroy it later! */
-  if IS_FAILED(Arr_Push(cmp->allocd_oprs, & opr))
-    return NULL;
+  BoxArr_Push(& cmp->allocd_oprs, & opr);
 
   opr->name = name;
   opr->can_define = 0;
@@ -1185,7 +1183,7 @@ Expr *Cmp_Expr_Reg0_To_LReg(Int t) {
   /* Metto in lreg un nuovo registro locale */
   Expr_Container_New(& lreg, t, CONTAINER_LREG_AUTO);
 
-  switch ( t ) {
+  switch (t) {
    case TYPE_NONE:
     MSG_ERROR("Internal error in Cmp_Expr_Reg0_To_LReg");
     return NULL; break;
@@ -1324,156 +1322,28 @@ Task Cmp_Complete_Ptr_1(Expr *e) {
  *****************************************************************************/
 
 typedef struct {
-  Int signature;
-/*  struct {
-    unsigned int used : 1;
-  } status;*/
   Int type;
   Int size;
 } DataItem;
-
-static Array *cmp_data_segment = NULL;
-static Array *cmp_imm_segment  = NULL;
-static char signature_str[4] = "data";
-static Int signature;
-
-/* DESCRIPTION: This function initializes the data segment, the area used
- *  to store strings and the values of other objects.
- */
-Task Cmp_Data_Init(void) {
-  /* Se l'array associata al segmento dati non e' inizializzata,
-   * la inizializzo ora!
-   */
-  if ( cmp_data_segment == NULL ) {
-    cmp_data_segment = Array_New(sizeof(char), CMP_TYPICAL_DATA_SIZE);
-    if ( cmp_data_segment == NULL ) return Failed;
-  }
-  signature = *((Int *) signature_str);
-  return Success;
-}
-
-/* DESCRIPTION: This function adds a new piece of data to the data segment.
- * NOTE: It returns the address of the data item with respect to the beginning
- *  of the data segment.
- */
-Int Cmp_Data_Add(Int type, void *data, Int size) {
-  Int addr;
-  DataItem di;
-
-  /* Now we insert the data descriptor */
-  di.signature = signature;
-  di.type = type;
-  di.size = size;
-  if IS_FAILED( Arr_MPush(cmp_data_segment, & di, sizeof(di)) ) return -1;
-
-  /* And now we insert the piece of data */
-  addr = Arr_NumItem(cmp_data_segment);
-  if IS_FAILED( Arr_MPush(cmp_data_segment, data, size) ) return -1;
-
-  return addr;
-}
-
-/* DESCRIPTION: This function sets the global register gro0 of the VM
- *  to be used as the pointer to the data-segment.
- */
-Task Cmp_Data_Prepare(void) {
-  void *data_ptr;
-
-  data_ptr = (void *) Arr_FirstItemPtr(cmp_data_segment, char);
-  TASK( VM_Module_Global_Set(cmp_vm, TYPE_OBJ, (Int) 0, & data_ptr) );
-  return Success;
-}
-
-/* DESCRIPTION: This function destroys the data segment.
- */
-void Cmp_Data_Destroy(void) {
-  Arr_Destroy(cmp_data_segment);
-}
-
-/* DESCRIPTION: This function initializes the segment of immediates,
- *  the portion of memory used to store strings and values of immediate
- *  objects.
- */
-Task Cmp_Imm_Init(void) {
-  if ( cmp_imm_segment == NULL ) {
-    cmp_imm_segment = Array_New(sizeof(char), CMP_TYPICAL_IMM_SIZE);
-    if ( cmp_imm_segment == NULL ) return Failed;
-  }
-  signature = *((Int *) signature_str);
-  return Success;
-}
 
 /* DESCRIPTION: This function adds a new piece of data to the segment
  *  of immediate objects.
  * NOTE: It returns the address of the data item with respect to the beginning
  *  of the segment.
  */
-Int Cmp_Imm_Add(Int type, void *data, Int size) {
+Int Cmp_Imm_Add(Compiler *cmp, Int type, void *data, Int size) {
   Int addr;
   DataItem di;
 
   /* Now we insert the data descriptor */
-  di.signature = signature;
   di.type = type;
   di.size = size;
-  if IS_FAILED( Arr_MPush(cmp_imm_segment, & di, sizeof(di)) ) return -1;
+  BoxArr_MPush(& cmp->imm_segment, & di, sizeof(di));
 
   /* And now we insert the piece of data */
-  addr = Arr_NumItem(cmp_imm_segment);
-  if IS_FAILED( Arr_MPush(cmp_imm_segment, data, size) ) return -1;
+  addr = Arr_NumItem(& cmp->imm_segment);
+  BoxArr_MPush(& cmp->imm_segment, data, size);
   return addr;
-}
-
-/* DESCRIPTION: This function destroys the segment of immediates.
- */
-void Cmp_Imm_Destroy(void) {
-  Arr_Destroy(cmp_imm_segment);
-}
-
-/* DESCRIPTION: This function displays the content of the data segment.
- */
-void Cmp_Data_Display(FILE *stream) {
-  char *data;
-  Int size, pos, ds;
-  DataItem *di;
-
-  if (cmp_data_segment == NULL) {
-    MSG_ERROR("Data segment is not initialized!");
-    return;
-  }
-  data = Arr_FirstItemPtr(cmp_data_segment, char);
-  size = Arr_NumItem(cmp_data_segment);
-
-  if (size < 1) {
-    fprintf(stream, "*** EMPTY DATA-SEGMENT ***\n");
-    return;
-  }
-
-  fprintf(stream, "*** CONTENT OF THE DATA-SEGMENT ***\n");
-
-  pos = 0;
-  while ( pos + sizeof(DataItem) <= size ) {
-    di = (DataItem *) data;
-    fprintf(stream, "  Address "SInt", size "SInt": data of type '%s':\n",
-            pos, di->size, Tym_Type_Name(di->type));
-    if (di->signature != signature) {
-      fprintf(stream, "Error: bad data-block.\n");
-      MSG_ERROR("Data segment is damaged at position %d.", pos);
-      return;
-    }
-
-    ds = sizeof(DataItem) + di->size;
-    pos += ds;
-    if ( (di->size < 0) || (pos > size) ) {
-      fprintf(stream, "Error: bad data-block.\n");
-      MSG_ERROR("Bad block size at position %d.", pos);
-      return;
-    }
-    data += ds;
-  }
-
-  fprintf(stream, "*** END OF THE DATA-SEGMENT ***\n");
-  return;
 }
 
 /*****************************************************************************
@@ -1489,7 +1359,7 @@ Task Cmp_String_New(Expr *e, Name *str, int free_str) {
   if ( ts < 0 ) return Failed;
 
   /* Copio la stringa nell'area dati */
-  addr = Cmp_Data_Add(ts, str->text, length);
+  addr = BoxVM_Data_Add(cmp->vm, str->text, length, ts);
   if (addr < 0) return Failed;
 
   /* Libero la stringa se devo! */

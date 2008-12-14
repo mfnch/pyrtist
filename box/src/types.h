@@ -32,7 +32,9 @@
 #  include <float.h>
 
 /* For now we always define the abbreviations */
-#  define BOX_ABBREV
+#  ifndef BOX_ABBREV
+#    define BOX_ABBREV
+#  endif
 
 /** The BoxChar type, the smallest integer in terms of size. */
 typedef unsigned char BoxChar;
@@ -150,7 +152,10 @@ typedef BoxSubtype Subtype;
 
 typedef BoxName Name;
 typedef BoxName Data;
-typedef enum {Success = BoxSuccess, Failed = BoxFailure} Task;
+
+#    define Task BoxTask
+#    define Success BoxSuccess
+#    define Failed BoxFailure
 
 #    define strtoint BoxInt_Of_Str
 #    define strtoreal BoxReal_Of_Str

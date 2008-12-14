@@ -387,16 +387,12 @@ static void VM__Exec_Lea_OO(VMProgram *vmp) {
 
 static void VM__Exec_Push_O(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  if ( vmp->stack == (Array *) NULL ) {
-    vmp->stack = Array_New(sizeof(Obj), 10);
-  }
-  (void) Arr_Push(vmp->stack, vmcur->arg1);
+  BoxArr_Push(& vmp->stack, vmcur->arg1);
 }
 
 static void VM__Exec_Pop_O(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  *((Obj *) vmcur->arg1) = Arr_LastItem(vmp->stack, Obj);
-  Arr_Dec(vmp->stack);
+  BoxArr_Pop(& vmp->stack, vmcur->arg1);
 }
 
 static void VM__Exec_Jmp_I(VMProgram *vmp) {

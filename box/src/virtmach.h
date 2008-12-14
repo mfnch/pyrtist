@@ -120,13 +120,6 @@ typedef enum {
 /* Numero massimo degli argomenti di un'istruzione */
 #  define VM_MAX_NUMARGS 2
 
-/* Enumerazione dei tipi di moduli */
-typedef enum {
-  MODULE_IS_VM_CODE,
-  MODULE_IS_C_FUNC,
-  MODULE_UNDEFINED
-} VMModuleType;
-
 /* The struct __vmprogram and __vmstatus contain pointers to functions whose
  * arguments are the structures themselves. This requires a trick.
  * First we declare the structures and we use a macro to make the function
@@ -140,24 +133,6 @@ struct __vmstatus;
 
 #  define VMProgram struct __vmprogram
 #  define VMStatus struct __vmstatus
-
-/* Tipo che descrive l'indirizzo del (codice-VM / funzione in C)
- * associato al modulo.
- */
-typedef union {
-  struct {
-    Int dim;
-    void *code;
-  } vm;
-  Task (*c_func)(VMProgram *);
-} VMModulePtr;
-
-typedef struct {
-  VMModuleType type;   /* Tipo di modulo */
-  const char   *name;  /* Nome del modulo */
-  VMModulePtr  ptr;    /* Puntatore al modulo */
-  Int          length; /* Dimensione del modulo (in numero di VMByteX4) */
-} VMModule;
 
 /* This type is used in the table 'vm_instr_desc_table', which collects
  * and describes all the instruction of the VM.
@@ -211,42 +186,40 @@ struct __vmstatus {
 #undef VMStatus
 typedef struct __vmstatus VMStatus;
 
-/* Used by the functions VM_Sheet_* */
-typedef struct {
-  struct {
-    unsigned int error : 1;
-    unsigned int inhibit : 1;
-  } status;
-  Array *program;
-} VMSheet;
-
 /** @brief The full status of the virtual machine of Box.
  */
 struct __vmprogram {
-  VMSymTable sym_table;    /**< Table of referenced and defined symbols */
-  VMProcTable proc_table;  /**< Table of installed and uninstalled procedures*/
-  Hashtable *method_table; /**< Hashtable containing destructors, etc. */
+  VMSymTable  sym_table;      /**< Table of referenced and defined symbols */
+  VMProcTable proc_table;     /**< Table of installed and uninstalled procs */
+  Hashtable   *method_table;  /**< Hashtable containing destructors, etc. */
+  BoxArr      stack,          /**< The stack for the VM object */
+              data_segment;   /**< The segment of data (strings, etc.)
+                                   which is accessible through the global
+                                   register gr0 */
+
+  /** Flags which control the behaviour of the VM. */
+  struct {
+    unsigned int
+              forcelong : 1,  /** Force long form assembly. */
+              hexcode : 1,    /** Show Hex values in disassemled code */
+              identdata : 1;  /** Add also identity info for data inserted
+                                  into the data segment */
+  } attr;
 
   int vm_globals;
   void *vm_global[NUM_TYPES];
   Int vm_gmin[NUM_TYPES], vm_gmax[NUM_TYPES];
   Obj *box_vm_current, *box_vm_arg1, *box_vm_arg2;
-  struct {unsigned int hexcode : 1;} vm_dflags;
   /** Array used with sprintf, when arguments are disassembled. */
   char iarg_str[VM_MAX_NUMARGS][64];
-  /** Flags which control the behaviour of the VM. */
-  struct {
-    /** Force the instructions to be assembled in the long form. */
-    unsigned int forcelong : 1;
-  } vm_aflags;
 
-  Array *stack;
   VMStatus *vmcur;
 };
 
 /* Here we undef the VMProgram macro and typedef __vmprogram to VMProgram. */
 #  undef VMProgram
 typedef struct __vmprogram VMProgram;
+typedef VMProgram BoxVM;
 
 extern VMInstrDesc vm_instr_desc_table[];
 
@@ -265,47 +238,84 @@ void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg);
 /** This is the type of the C functions which can be called by the VM. */
 typedef Task (*VMFunc)(VMProgram *);
 
-/* These are the functions to use to control the VM */
-Task VM_Init(VMProgram **new_vmp);
-void VM_Destroy(VMProgram *vmp);
 
-Task VM_Module_Globals(VMProgram *vmp, Int num_var[], Int num_reg[]);
+
+/** Initialise a BoxVM object for which space has been already allocated
+ * somehow. You'll need to use BoxVM_Finish to destroy the object.
+ * @see BoxVM_Finish, BoxVM_New
+ */
+Task BoxVM_Init(BoxVM *vm);
+
+/** Destroy a BoxVM object initialised with BoxVM_Init
+ * @see BoxVM_Init
+ */
+void BoxVM_Finish(BoxVM *vm);
+
+/** Allocate space for a BoxVM object and initialise it with BoxVM_Init.
+ * You'll need to call BoxVM_Destroy to destroy the object.
+ * @see BoxVM_Destroy, BoxVM_Init
+ */
+BoxVM *BoxVM_New(void);
+
+/** Destroy a BoxVM object created with BoxVM_New
+ * @see BoxVM_New
+ */
+void BoxVM_Destroy(BoxVM *vm);
+
+/** Specifies the number of global registers and variables used by the BoxVM.
+ */
+BoxTask BoxVM_Alloc_Global_Regs(BoxVM *vm, BoxInt num_var[], BoxInt num_reg[]);
+
 Task VM_Module_Global_Set(VMProgram *vmp, Int type, Int reg, void *value);
 
 Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg);
 Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num);
 
-void VM_DSettings(VMProgram *vmp, int hexcode);
+/** The attributes corresponding to different behaviours of the Box virtual
+ * machine.
+ * @see BoxVM_Set_Attr
+ */
+typedef enum {
+  BOXVM_ATTR_ASM_LONG_FMT=1,  /**< Use long format when assembling code */
+  BOXVM_ATTR_DASM_WITH_HEX=2, /**< Show also hex values when disassembling */
+  BOXVM_ATTR_ADD_DATA_IDENT=4 /**< Add identity info (debug) to data blocks */
+} BoxVMAttr;
+
+/** Set or unset the attributes which control the behaviour of the Box
+ * virtual machine.
+ * @param vmp an instance of the Box virtual machine
+ * @param mask specify what values to set/unset
+ * @param value specify to set/unset the values specified in mask
+ * @see BoxVMAttr
+ */
+void BoxVM_Set_Attr(BoxVM *vm, BoxVMAttr mask, BoxVMAttr value);
+
+/** Sets the force-long flag and return what was its previous value. */
+int BoxVM_Set_Force_Long(BoxVM *vm, int force_long);
+
 Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim);
 
-/** If 'force_long == 1', the VM assembler generator (function VM_Assemble)
- * is forced to use always the long format for the assembled instructions.
- * If 'force_long == 0', the VM assebler is instructed to use the short format
- * when possible. All the other values of 'force_long' do not produce any
- * changes on how the VM assembler deals with code generation.
- * The function returns the value of the force_long flag before the function
- * was called.
- */
-int VM_Asm_Fmt_Is_Long(VMProgram *vmp, int force_long);
 
 void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit);
 
-Task VM_Sheet_New(VMProgram *vmp, int *sheet_id);
-Task VM_Sheet_Destroy(VMProgram *vmp, int sheet_id);
-Task VM_Sheet(VMProgram *vmp, VMSheet **s, int sheet_id);
-int VM_Sheet_Get_Current(VMProgram *vmp);
-Task VM_Sheet_Set_Current(VMProgram *vmp, int sheet_id);
-Task VM_Sheet_Clear(VMProgram *vmp, int sheet_id);
-Task VM_Sheet_Install(VMProgram *vmp, Int module, int sheet_id);
-Task VM_Sheet_Disassemble(VMProgram *vmp, int sheet_id, FILE *out);
-
 void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
+
+/** Add the block of data pointed by 'data' with size 'size'
+ * to the data segment for the VM instance 'vm'.
+ */
+BoxUInt BoxVM_Data_Add(BoxVM *vm, const void *data, BoxUInt size,
+                       BoxInt type);
+
+/** Produce a human readable representation of the data segment of 'vm'
+ * and send it to the output stream 'stream'.
+ */
+void BoxVM_Data_Display(BoxVM *vm, FILE *stream);
 
 /** Similar to VM_Assemble, but use the long bytecode format. */
 #define VM_Assemble_Long(vmp, instr, ...) { \
-  int is_long = VM_Asm_Fmt_Is_Long(vmp, 1); \
+  int is_long = BoxVM_Set_Force_Long(vmp, 1); \
   VM_Assemble(vmp, instr, __VA_ARGS__); \
-  (void) VM_Asm_Fmt_Is_Long(vmp, is_long);}
+  (void) BoxVM_Set_Force_Long(vmp, is_long);}
 
 /* Numero minimo di VMByteX4 che riesce a contenere tutti i tipi possibili
  * di argomenti (Int, Real, Point, Obj)

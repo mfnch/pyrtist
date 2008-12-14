@@ -33,6 +33,7 @@
 
 #include "types.h"
 #include "defaults.h"
+#include "mem.h"
 #include "str.h"
 #include "messages.h"
 #include "array.h"
@@ -120,6 +121,9 @@
  *  Una volta calcolati gli indirizzi la VM chiamera' VM__Exec_Mov_II per    *
  *  eseguire materialmente l'operazione.                                     *
  *****************************************************************************/
+
+/* Static functions defined in this file */
+static void Update_gr0(BoxVM *vm);
 
 /* This array lets us to obtain the size of a type by type index.
  * (Useful in what follows)
@@ -493,25 +497,22 @@ void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
 /*****************************************************************************
  * Functions for (de)inizialization                                          *
  *****************************************************************************/
-Task VM_Init(VMProgram **new_vmp) {
-  VMProgram *nv;
-  nv = (VMProgram *) malloc(sizeof(VMProgram));
-  if (nv == NULL) return Failed;
-#if 0
-  nv->vm_modules_list = (Array *) NULL;
-  nv->sheets = (Collection *) NULL;
-  nv->current_sheet_id = -1;
-  nv->current_sheet = (VMSheet *) NULL;
-#endif
-  nv->vm_globals = 0;
-  nv->vm_dflags.hexcode = 0;
-  nv->vm_aflags.forcelong = 0;
-  nv->stack = (Array *) NULL;
 
-  TASK( VM_Proc_Init(nv) );
-  TASK( VM_Sym_Init(nv) );
-  TASK( VM_Alloc_Init(nv) );
-  *new_vmp = nv;
+Task BoxVM_Init(BoxVM *vm) {
+  vm->vm_globals = 0;
+  vm->attr.hexcode = 0;
+  vm->attr.forcelong = 0;
+  vm->attr.identdata = 0;
+
+  BoxArr_Init(& vm->stack, sizeof(Obj), 10);
+  BoxArr_Init(& vm->data_segment, sizeof(char), CMP_TYPICAL_DATA_SIZE);
+
+  if (BoxArr_Is_Err(& vm->stack) || BoxArr_Is_Err(& vm->data_segment))
+    return Failed;
+
+  TASK( VM_Proc_Init(vm) );
+  TASK( VM_Sym_Init(vm) );
+  TASK( VM_Alloc_Init(vm) );
   return Success;
 }
 
@@ -528,146 +529,45 @@ static void _Free_Globals(VMProgram *vmp) {
   vmp->vm_globals = 0;
 }
 
-void VM_Destroy(VMProgram *vmp) {
-  if (vmp == (VMProgram *) NULL) return;
-  if (vmp->vm_globals != 0) _Free_Globals(vmp);
-  if (vmp->stack != NULL) {
-    if (Arr_NumItem(vmp->stack) != 0) {
-      MSG_WARNING("Run finished with non empty stack.");
-    }
-  }
-  Arr_Destroy(vmp->stack);
-  VM_Alloc_Destroy(vmp);
-  VM_Sym_Destroy(vmp);
-  VM_Proc_Destroy(vmp);
-  free(vmp);
+void BoxVM_Finish(BoxVM *vm) {
+  if (vm == (VMProgram *) NULL) return;
+  if (vm->vm_globals != 0) _Free_Globals(vm);
+
+  if (BoxArr_Num_Items(& vm->stack) != 0)
+    MSG_WARNING("Run finished with non empty stack.");
+  BoxArr_Finish(& vm->stack);
+
+  BoxArr_Finish(& vm->data_segment);
+
+  VM_Alloc_Destroy(vm);
+  VM_Sym_Destroy(vm);
+  VM_Proc_Destroy(vm);
 }
 
-/** If 'force_long == 1', the VM assembler generator (function VM_Assemble)
- * is forced to use always the long format for the assembled instructions.
- * If 'force_long == 0', the VM assebler is instructed to use the short format
- * when possible. All the other values of 'force_long' do not produce any
- * changes on how the VM assembler deals with code generation.
- * The function returns the value of the force_long flag before the function
- * was called.
- */
-int VM_Asm_Fmt_Is_Long(VMProgram *vmp, int force_long) {
-  int is_long = vmp->vm_aflags.forcelong;
-  if ((force_long | 1) == 1) /* If force_long != 0, 1 the flag is not set */
-    vmp->vm_aflags.forcelong = force_long;
-  return is_long;
+BoxVM *BoxVM_New(void) {
+  BoxVM *vm = Mem_Alloc(sizeof(BoxVM));
+  if (vm == NULL) return NULL;
+  if (BoxVM_Init(vm) == Failed) {
+    Mem_Free(vm);
+    return NULL;
+  }
+  return vm;
 }
 
-#if 0
-/* Installa un nuovo modulo di programma con nome name.
- * Un modulo e' semplicemente un pezzo di codice che puo' essere eseguito.
- * E' possibile installare 2 tipi di moduli:
- *  1) (caso t = MODULE_IS_VM_CODE) il modulo e' costituito da
-      codice eseguibile dalla VM
- *    (p.vm_code e' il puntatore alla prima istruzione nel codice);
- *  2) (caso t = MODULE_IS_C_FUNC) il modulo e' semplicemente una funzione
- *    scritta in C (p.c_func e' il puntatore alla funzione)
- * Restituisce il numero assegnato al modulo (> 0), oppure 0 se qualcosa
- * e' andato storto. Tale numero, se usato da un istruzione call, provoca
- * l'esecuzione del modulo come procedura.
- */
-Task VM_Module_Install(VMProgram *vmp, Int *new_module,
- VMModuleType t, const char *name, VMModulePtr p) {
-
-  /* Creo la lista dei moduli se non esiste */
-  if ( vmp->vm_modules_list == NULL ) {
-    vmp->vm_modules_list = Array_New(sizeof(VMModule), VM_TYPICAL_NUM_MODULES);
-    if ( vmp->vm_modules_list == NULL ) return Failed;
-  }
-
-  {
-    VMModule new;
-    new.type = t;
-    new.name = Mem_Strdup(name);
-    new.ptr = p;
-    TASK( Arr_Push( vmp->vm_modules_list, & new ) );
-  }
-
-  *new_module = Arr_NumItem(vmp->vm_modules_list);
-  {
-    VMSym s;
-    Name n = {strlen(name), name};
-    VM_Sym_Procedure(& s, & n, *new_module);
-    TASK( VM_Sym_Add(vmp, & s) );
-  }
-  return Success;
+void BoxVM_Destroy(BoxVM *vm) {
+  if (vm == NULL) return;
+  BoxVM_Finish(vm);
+  Mem_Free(vm);
 }
-
-/* This function defines an undefined module (previously created
- * with VM_Module_Undefined).
- */
-Task VM_Module_Define(VMProgram *vmp, Int module_num,
- VMModuleType t, VMModulePtr p) {
-  VMModule *m;
-  if ( vmp->vm_modules_list == NULL ) {
-    MSG_ERROR("La lista dei moduli e' vuota!");
-    return Failed;
-  }
-  if ((module_num < 1) || (module_num > Arr_NumItem(vmp->vm_modules_list))) {
-    MSG_ERROR("Impossibile definire un modulo non esistente.");
-    return Failed;
-  }
-  m = ((VMModule *) vmp->vm_modules_list->ptr) + (module_num - 1);
-  if ( m->type != MODULE_UNDEFINED ) {
-    MSG_ERROR("Questo modulo non puo' essere definito!");
-    return Failed;
-  }
-  m->type = t;
-  m->ptr = p;
-  return Success;
-}
-
-/* This function creates a new undefined module with name name. */
-Task VM_Module_Undefined(VMProgram *vmp, Int *new_module, const char *name) {
-  return VM_Module_Install(vmp, new_module,
-   MODULE_UNDEFINED, name, (VMModulePtr) {{0, NULL}});
-}
-
-/* This function returns the module-number which will be
- * associated with the next module that will be installed.
- */
-Int VM_Module_Next(VMProgram *vmp) {
-  if ( vmp->vm_modules_list == NULL ) return 1;
-  return Arr_NumItem(vmp->vm_modules_list) + 1;
-}
-
-/* This function checks the status of definitions of all the
- * created modules. If one of the modules is undefined (and report_errs == 1)
- * it prints an error message for every undefined module.
- */
-Task VM_Module_Check(VMProgram *vmp, int report_errs) {
-  VMModule *m;
-  Int mn;
-  int status = Success;
-
-  if ( vmp->vm_modules_list == NULL ) return Success;
-  m = Arr_FirstItemPtr(vmp->vm_modules_list, VMModule);
-  for (mn = Arr_NumItem(vmp->vm_modules_list); mn > 0; mn--) {
-    if ( m->type == MODULE_UNDEFINED ) {
-      status = Failed;
-      if ( report_errs ) {
-        MSG_ERROR("'%s' <-- Modulo non definito!", m->name);
-      }
-    }
-    ++m;
-  }
-  return status;
-}
-#endif
 
 /* Sets the number of global registers and variables for each type. */
-Task VM_Module_Globals(VMProgram *vmp, Int num_var[], Int num_reg[]) {
+Task BoxVM_Alloc_Global_Regs(BoxVM *vm, Int num_var[], Int num_reg[]) {
   int i;
   Obj *reg_obj;
 
-  assert(vmp != (VMProgram *) NULL);
+  assert(vm != NULL);
 
-  if (vmp->vm_globals != 0) _Free_Globals(vmp);
+  if (vm->vm_globals != 0) _Free_Globals(vm);
 
   for(i = 0; i < NUM_TYPES; i++) {
     Int nv = num_var[i], nr = num_reg[i];
@@ -675,27 +575,29 @@ Task VM_Module_Globals(VMProgram *vmp, Int num_var[], Int num_reg[]) {
 
     if (nv < 0 || nr < 0) {
       MSG_ERROR("Wrong allocation numbers for global registers.");
-      _Free_Globals(vmp);
+      _Free_Globals(vm);
       return Failed;
     }
 
+    if (nr < 3) nr = 3; /* gro0, gro1, gro2 are always needed! */
     ptr = calloc(nv + nr + 1, size_of_type[i]);
     if (ptr == NULL) {
       MSG_ERROR("Error in the allocation of the local registers.");
-      _Free_Globals(vmp);
+      _Free_Globals(vm);
       return Failed;
     }
 
-    vmp->vm_global[i] = ptr + nv*size_of_type[i];
-    vmp->vm_gmin[i] = -nv;
-    vmp->vm_gmax[i] = nr;
-    vmp->vm_globals = 1; /* Do not move outside the loop! */
+    vm->vm_global[i] = ptr + nv*size_of_type[i];
+    vm->vm_gmin[i] = -nv;
+    vm->vm_gmax[i] = nr;
+    vm->vm_globals = 1; /* This line must stay here, not outside the loop! */
   }
 
-  reg_obj = (Obj *) vmp->vm_global[TYPE_OBJ];
-  vmp->box_vm_current = reg_obj + 1;
-  vmp->box_vm_arg1    = reg_obj + 2;
-  vmp->box_vm_arg2    = reg_obj + 3;
+  reg_obj = (Obj *) vm->vm_global[TYPE_OBJ];
+  vm->box_vm_current = reg_obj + 1;
+  vm->box_vm_arg1    = reg_obj + 2;
+  vm->box_vm_arg2    = reg_obj + 3;
+  Update_gr0(vm);
   return Success;
 }
 
@@ -775,7 +677,7 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
                                (UInt *) NULL, p->code.proc_num) );
   i_pos = vm.i_pos;
   vm.flags.exit = vm.flags.error = 0;
-  {register int i; for(i = 0; i < NUM_TYPES; i++) vm.alc[i] = 0;}
+  {int i; for(i = 0; i < NUM_TYPES; i++) vm.alc[i] = 0;}
 
   do {
     register int is_long;
@@ -841,15 +743,20 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
  * Functions to disassemble code                                             *
  *****************************************************************************/
 
-/* Imposta le opzioni per il disassemblaggio:
- * L'opzione puo' essere settata con un valore > 0, resettata con 0
- * e lasciata inalterata con un valore < 0.
- * 1) hexcode: scrive nel listato anche i codici esadecimali delle
- *  istruzioni.
- */
-void VM_DSettings(VMProgram *vmp, int hexcode) {
-  /* Per settare le opzioni di assemblaggio, disassemblaggio, etc. */
-  vmp->vm_dflags.hexcode = hexcode;
+int BoxVM_Set_Force_Long(BoxVM *vm, int force_long) {
+  int is_long = vm->attr.forcelong;
+  if ((force_long | 1) == 1) /* If force_long != 0, 1 the flag is not set */
+    vm->attr.forcelong = force_long;
+  return is_long;
+}
+
+void BoxVM_Set_Attr(BoxVM *vm, BoxVMAttr mask, BoxVMAttr value) {
+  if ((mask & BOXVM_ATTR_ASM_LONG_FMT) != 0)
+    vm->attr.forcelong = ((value & BOXVM_ATTR_ASM_LONG_FMT) != 0);
+  if ((mask & BOXVM_ATTR_DASM_WITH_HEX) != 0)
+    vm->attr.hexcode = ((value & BOXVM_ATTR_DASM_WITH_HEX) != 0);
+  if ((mask & BOXVM_ATTR_ADD_DATA_IDENT) != 0)
+    vm->attr.identdata = ((value & BOXVM_ATTR_ADD_DATA_IDENT) != 0);
 }
 
 /* Traduce il codice binario della VM, in formato testo.
@@ -919,7 +826,7 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
 
       /* Stampo l'istruzione e i suoi argomenti */
       fprintf( output, SUInt "\t", (UInt) (pos * sizeof(VMByteX4)) );
-      if ( vmp->vm_dflags.hexcode )
+      if ( vmp->attr.hexcode )
         fprintf(output, "%8.8lx\t", *(i_pos2++));
       fprintf(output, "%s", iname);
 
@@ -935,8 +842,8 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
       fprintf(output, "\n");
 
       /* Stampo i restanti codici dell'istruzione in esadecimale */
-      if ( vmp->vm_dflags.hexcode ) {
-        for( i = 1; i < vm.i_len; i++ )
+      if (vmp->attr.hexcode) {
+        for(i = 1; i < vm.i_len; i++)
           fprintf(output, "\t%8.8lx\n", *(i_pos2++));
       }
     }
@@ -966,7 +873,7 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
  */
 void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit) {
   VMProcTable *pt = & vmp->proc_table;
-  vmp->vm_aflags.forcelong = forcelong;
+  vmp->attr.forcelong = forcelong;
   pt->target_proc->status.error = error;
   pt->target_proc->status.inhibit = inhibit;
 }
@@ -1045,8 +952,8 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
     TypeID t;  /* Tipi degli argomenti */
     AsmArg c;  /* Categorie degli argomenti */
     void *ptr; /* Puntatori ai valori degli argomenti */
-    Int   vi;   /* Destinazione dei valori...   */
-    Real  vr;   /* ...immediati degli argomenti */
+    Int   vi;  /* Destinazione dei valori...   */
+    Real  vr;  /* ...immediati degli argomenti */
     Point vp;
   } arg[VM_MAX_NUMARGS];
 
@@ -1137,7 +1044,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
   assert(t == idesc->numargs);
 
   /* Cerco di capire se e' possibile scrivere l'istruzione in formato corto */
-  if ( vmp->vm_aflags.forcelong ) is_short = 0;
+  if ( vmp->attr.forcelong ) is_short = 0;
   if ( (is_short == 1) && (t <= 2) ) {
     /* L'istruzione va scritta in formato corto! */
     VMByteX4 buffer[1], *i_pos = buffer;
@@ -1209,4 +1116,84 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
                           /* i_len = */ idim, atype);
     }
   }
+}
+
+/****************************************************************************
+ * Code to handle the DATA SEGMENT, the region of memory where values for   *
+ * strings and other objects is put.                                        *
+ ****************************************************************************/
+
+typedef struct {
+  Int type;
+  Int size;
+} DataItem;
+
+/* This function adds a new piece of data to the data segment.
+ * NOTE: It returns the address of the data item with respect to the beginning
+ *  of the data segment.
+ */
+UInt BoxVM_Data_Add(BoxVM *vm, const void *data, UInt size, Int type) {
+  Int addr;
+
+  /* Now we insert the data descriptor (for debug mainly), if necessary */
+  if (vm->attr.identdata) {
+    DataItem di;
+    di.type = type;
+    di.size = size;
+    BoxArr_MPush(& vm->data_segment, & di, sizeof(di));
+  }
+
+  /* And now we insert the piece of data */
+  addr = BoxArr_Num_Items(& vm->data_segment);
+  BoxArr_MPush(& vm->data_segment, data, size);
+  return addr;
+}
+
+/* Make sure gr0 is pointing to the data segment */
+static void Update_gr0(BoxVM *vm) {
+  Obj data_segment_ptr;
+  data_segment_ptr.block = NULL; /* the VM will handle deallocation! */
+  data_segment_ptr.ptr = BoxArr_First_Item_Ptr(& vm->data_segment);
+  ASSERT_TASK( VM_Module_Global_Set(vm, TYPE_OBJ, (Int) 0,
+                                    & data_segment_ptr) );
+}
+
+void BoxVM_Data_Display(BoxVM *vm, FILE *stream) {
+  char *data;
+  Int size, pos, ds;
+  DataItem *di;
+
+  size = BoxArr_Num_Items(& vm->data_segment);
+
+  if (!vm->attr.identdata) {
+    fprintf(stream, "*** DATA SEGMENT WITH SIZE "SUInt" ***\n", size);
+    return;
+  }
+
+  data = (char *) BoxArr_First_Item_Ptr(& vm->data_segment);
+
+  if (size < 1) {
+    fprintf(stream, "*** EMPTY DATA-SEGMENT ***\n");
+    return;
+  }
+
+  fprintf(stream, "*** CONTENT OF THE DATA-SEGMENT ***\n");
+
+  pos = 0;
+  while (pos + sizeof(DataItem) <= size) {
+    di = (DataItem *) data;
+    fprintf(stream, "  Address "SInt", size "SInt": data of type '"SInt"':\n",
+            pos, di->size, di->type);
+
+    ds = sizeof(DataItem) + di->size;
+    pos += ds;
+    if (di->size < 0 || pos > size) {
+      fprintf(stream, "Error: bad data-block.\n");
+      MSG_ERROR("Bad block size at position %d.", pos);
+      return;
+    }
+    data += ds;
+  }
+
+  fprintf(stream, "*** END OF THE DATA-SEGMENT ***\n");
 }

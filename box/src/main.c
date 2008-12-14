@@ -128,9 +128,13 @@ static Task Stage_Init(void) {
 }
 
 static void Stage_Finalize(void) {
-  VM_Destroy(program); /* This function accepts program = NULL */
+  BoxVM_Destroy(program); /* This function accepts program = NULL */
+  program = NULL;
+
   Path_Destroy();
+
   Cmp_Destroy();
+
   Msg_Main_Destroy();
 }
 
@@ -265,7 +269,9 @@ static Task Stage_Compilation(char *file, UInt *main_module) {
   Msg_Main_Counter_Clear_All();
   MSG_CONTEXT_BEGIN("Compilation");
 
-  TASK( VM_Init(& program) );
+  program = BoxVM_New();
+  if (program == NULL) return Failed;
+
   TASK( Cmp_Init(program) );
   TASK( Cmp_Parse(file) );
 
@@ -346,9 +352,8 @@ static Task Stage_Write_Asm(UInt flags) {
       close_file = 1;
     }
 
-    Cmp_Data_Display(out);
-    fprintf(out, "\n");
-    VM_DSettings(program, 1);
+    BoxVM_Set_Attr(program, BOXVM_ATTR_DASM_WITH_HEX,
+                   BOXVM_ATTR_DASM_WITH_HEX);
     TASK( VM_Proc_Disassemble_All(program, out) );
     if (close_file) (void) fclose(out);
   }
@@ -365,9 +370,7 @@ Task Main_Prepare(void) {
     num_var[i] = GVar_Num(i);
     num_reg[i] = 3;
   }
-  TASK( VM_Module_Globals(program, num_var, num_reg) );
-  /* The following function sets gro0 to point to the data segment */
-  TASK( Cmp_Data_Prepare() );
+  TASK( BoxVM_Alloc_Global_Regs(program, num_var, num_reg) );
   return Success;
 }
 
@@ -409,7 +412,7 @@ void Main_Error_Exit(char *msg) {
     fprintf(stderr, "\n");
   }
 
-  VM_Destroy(program); /* This function accepts program = NULL */
+  BoxVM_Destroy(program); /* This function accepts program = NULL */
   exit(EXIT_FAILURE);
 }
 

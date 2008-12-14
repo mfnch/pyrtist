@@ -177,7 +177,8 @@ typedef struct {
 typedef struct {
   VMProgram *vm;
   TS ts_obj, *ts;
-  Array *allocd_oprs;
+  BoxArr imm_segment,
+         allocd_oprs;
 } Compiler;
 
 /* The main compiler data structure */
@@ -233,14 +234,7 @@ Task Cmp_Expr_O_To_OReg(Expr *e);
 Task Cmp_Complete_Ptr_1(Expr *e);
 Task Cmp_Complete_Ptr_2(Expr *e1, Expr *e2);
 Task Cmp_Define_Builtins();
-Task Cmp_Data_Init(void);
-Int Cmp_Data_Add(Int type, void *data, Int size);
-void Cmp_Data_Destroy(void);
-Task Cmp_Data_Prepare(void);
-void Cmp_Data_Display(FILE *stream);
-Task Cmp_Imm_Init(void);
-Int Cmp_Imm_Add(Int type, void *data, Int size);
-void Cmp_Imm_Destroy(void);
+Int Cmp_Imm_Add(Compiler *cmp, Int type, void *data, Int size);
 Task Cmp_String_New(Expr *e, Name *str, int free_str);
 #define Cmp_String_New_And_Free(e, str) Cmp_String_New(e, str, 1)
 Task Cmp_Procedure_Search(int *found, Int procedure, Int suffix,

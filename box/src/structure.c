@@ -12,7 +12,6 @@ typedef struct {
   Expr expr; /* Espressione contenente il valore dell'elemento */
 } StructItem;
 
-static Task Cmp__Structure_Free(StructItem *first, Int num);
 static Task Cmp__Structure_Backgnd(StructItem *first, Int num, Int size,
                                    int *only_backgnd, int *only_foregnd);
 static Task Cmp__Structure_Foregnd(Expr *new_struct, StructItem *first,
@@ -102,7 +101,7 @@ Task Cmp_Structure_End(Expr *new_struct) {
     new_struct->categ = CAT_IMM;
     new_struct->type = type;
     new_struct->addr = imm_addr =
-     Cmp_Imm_Add(type, Arr_FirstItemPtr(cmp_structure_data, void), size);
+     Cmp_Imm_Add(cmp, type, Arr_FirstItemPtr(cmp_structure_data, void), size);
     if ( imm_addr < 0 ) return Failed;
 
   } else {
@@ -114,8 +113,9 @@ Task Cmp_Structure_End(Expr *new_struct) {
     if ( ! only_foregnd ) {
       Int struct_addr;
       /* Trasferisco il background nel segmento dati */
-      struct_addr = Cmp_Data_Add(type,
-       Arr_FirstItemPtr(cmp_structure_data, void), size);
+      struct_addr = BoxVM_Data_Add(cmp->vm,
+                                   Arr_FirstItemPtr(cmp_structure_data, void),
+                                   size, type);
       if ( struct_addr < 0 ) return Failed;
       Cmp_Assemble(ASM_MOV_OO, CAT_LREG, 0, CAT_GREG, 0);
       Cmp_Assemble(ASM_LEA_OO, CAT_LREG, 0, CAT_PTR, struct_addr);
@@ -126,9 +126,6 @@ Task Cmp_Structure_End(Expr *new_struct) {
 
     TASK( Cmp__Structure_Foregnd(new_struct, first, num, only_foregnd) );
   }
-
-  /* Expr are destroyed in Cmp__Structure_Foregnd */
-  //TASK( Cmp__Structure_Free(first, cmp_structure_num) );
 
   if ( cmp_structure_num + 1 > Arr_NumItem(cmp_structure_exprs) ) {
     TASK( Arr_MDec(cmp_structure_exprs, cmp_structure_num) );
@@ -253,8 +250,10 @@ static Task Cmp__Structure_Foregnd(Expr *new_struct, StructItem *first,
   return Success;
 }
 
+#if 0
 /* DESCRIPTION: This function frees the expression that were collected
  *  to build the structure.
+ * shouldn't be necessary, since this is now done by Cmp__Structure_Foregnd
  */
 static Task Cmp__Structure_Free(StructItem *first, Int num) {
   Int i;
@@ -264,6 +263,7 @@ static Task Cmp__Structure_Free(StructItem *first, Int num) {
   }
   return Success;
 }
+#endif
 
 /* DESCRIPTION: This function converts an expression into the greater element
  *  of the species it belongs to. For example if *e is an Int, and Scalar is

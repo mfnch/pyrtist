@@ -46,9 +46,6 @@
 /* Variabili interne */
 static Symbol *hashtable[SYM_HASHSIZE];
 
-/* Funzioni statiche definite in questo file: */
-static UInt Imp_Check_Name_Conflicts(Symbol *s);
-
 /******************************************************************************
  *   FUNZIONI ELEMENTARI DI GESTIONE DEI SIMBOLI (CREAZIONE ED ELEMINAZIONE)  *
  ******************************************************************************
@@ -187,6 +184,8 @@ void Sym_Symbol_Delete(Symbol *s) {
 }
 /****************************************************************************/
 
+#if 0
+
 /* Tipo che funge da genitore per i tipi impliciti */
 static Int sym_cur_parent = TYPE_NONE;
 
@@ -202,6 +201,7 @@ static UInt Imp_Check_Name_Conflicts(Symbol *s) {
 
   return 0; /* Faccio continuare la ricerca */
 }
+#endif
 
 /* DESCRIPTION: This function search a member of parent with name nm.
  * NOTE: Returns NULL if it doesn't find any member with name nm.

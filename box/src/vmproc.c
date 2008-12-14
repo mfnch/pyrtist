@@ -172,8 +172,7 @@ Task VM_Proc_Disassemble(VMProgram *vmp, FILE *out, UInt proc_num) {
   return VM_Disassemble(vmp, out, ptr, length);
 }
 
-Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, UInt call_num)
-{
+Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, UInt call_num) {
   VMProcTable *pt = & vmp->proc_table;
   VMProcInstalled *p;
   char *mod_type;
@@ -215,6 +214,9 @@ Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, UInt call_num)
 Task VM_Proc_Disassemble_All(VMProgram *vmp, FILE *out) {
   VMProcTable *pt = & vmp->proc_table;
   UInt n, proc_num;
+
+  BoxVM_Data_Display(vmp, out);
+  fprintf(out, "\n");
 
   proc_num = Arr_NumItem(pt->installed);
   for(n = 1; n <= proc_num; n++) {
