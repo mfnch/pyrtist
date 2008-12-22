@@ -48,7 +48,7 @@ void Path_Add_Lib(char *lib);
 
 void Path_Add_Lib_Dir(char *path);
 
-void Path_Add_Inc_Dir(char *path);
+void Path_Add_Pkg_Dir(char *path);
 
 /** Add the directory containing the currently executed script to the list
  * of directories to be searched when including a file with "include".

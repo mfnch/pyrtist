@@ -85,8 +85,8 @@ void Path_Set_All_From_Env(void) {
   Path_Add_Lib_Dir(BUILTIN_LIBRARY_PATH);
 #endif
 
-#ifdef BUILTIN_INCLUDE_PATH
-  Path_Add_Inc_Dir(BUILTIN_INCLUDE_PATH);
+#ifdef BUILTIN_PKG_PATH
+  Path_Add_Pkg_Dir(BUILTIN_PKG_PATH);
 #endif
 
 #ifdef __WINDOWS__
@@ -102,8 +102,8 @@ void Path_Set_All_From_Env(void) {
         *bn = '\0';
         new_path = (char *) print("%s\\..\\lib\\box\\lib", fn);
         Path_Add_Lib_Dir(new_path);
-        new_path = (char *) print("%s\\..\\lib\\box\\include", fn);
-        Path_Add_Inc_Dir(new_path);
+        new_path = (char *) print("%s\\..\\lib\\box\\pkg", fn);
+        Path_Add_Pkg_Dir(new_path);
         success = 1;
       }
       Mem_Free(fn);
@@ -124,7 +124,7 @@ void Path_Add_Lib_Dir(char *path) {
   List_Append_String(lib_dirs, path);
 }
 
-void Path_Add_Inc_Dir(char *path) {
+void Path_Add_Pkg_Dir(char *path) {
   List_Append_String(inc_dirs, path);
 }
 

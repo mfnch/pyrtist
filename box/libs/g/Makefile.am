@@ -23,7 +23,7 @@
 ACLOCAL_AMFLAGS=-I libltdl/m4
 
 boxlibdir=@boxlibdir@
-boxincdir=@boxincdir@
+boxpkgdir=@boxpkgdir@
 
 AM_CFLAGS   = -Wall @CAIRO_CFLAGS@
 AM_CPPFLAGS = -I../../src -I../..
@@ -33,7 +33,7 @@ boxlib_LTLIBRARIES=libg.la
 
 libg_la_LIBADD=@CAIRO_LIBS@
 
-dist_boxinc_DATA=g.bxh color.bxh style.bxh gradient.bxh window.bxh line.bxh \
+dist_boxpkg_DATA=g.bxh color.bxh style.bxh gradient.bxh window.bxh line.bxh \
                  circle.bxh poly.bxh put.bxh arrows.bxh electric.bxh \
                  pointlist.bxh text.bxh matrix.bxh bbox.bxh bounce.bxh
 

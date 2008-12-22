@@ -20,7 +20,19 @@
 
 # $Id$
 
-AC_INIT([box],[0.1],[fnch@libero.it])
+AC_INIT([box],[0.1.0],[fnch@libero.it])
+
+# Date corresponding to the release of the current version
+BOX_RELEASE_DATE="Dec 21 2008, 12:36"
+
+# Major part of the version number
+BOX_VER_MAJOR="0"
+
+# Minor part of the version number
+BOX_VER_MINOR="1"
+
+# Maint part of the version number
+BOX_VER_MAINT="0"
 
 AC_PREREQ(2.61)
 
@@ -34,20 +46,20 @@ AC_CONFIG_SRCDIR([src/compiler.c])
 AC_CONFIG_HEADERS([config.h])
 
 # Libtool support
-#AC_LIBTOOL_WIN32_DLL
-#AC_LIBTOOL_DLOPEN
 LT_CONFIG_LTDL_DIR([libltdl])
 LT_INIT([dlopen],[win32-dll])
 LTDL_INIT([convenience])
 LT_PREREQ([2.2])
-#LTDL_CONVENIENCE
 
 # Directories where to store specific box library files
-boxdir="$libdir/box"
+boxbasename="box$BOX_VER_MAJOR.$BOX_VER_MINOR"
+boxdir="$libdir/$boxbasename"
 boxlibdir="$boxdir/lib"
-boxincdir="$boxdir/include"
+boxpkgdir="$boxdir/pkg"
+boxincdir="$includedir/$boxbasename"
 
 # Checks for programs.
+AC_PROG_LN_S
 AC_PROG_CC
 AC_PROG_LEX
 AC_PROG_YACC
@@ -91,6 +103,9 @@ if test "${use_libcairo}" = yes ; then
   AC_DEFINE(HAVE_LIBCAIRO, 1, [ Define to 1 if you have the `cairo' library. ])
 fi
 
+AC_DEFINE_UNQUOTED(BOX_RELEASE_DATE, ["$BOX_RELEASE_DATE"],
+  [ Date when the current version of Box was released. ])
+
 AM_CONDITIONAL(BUILD_WINCAIRO, test "${use_libcairo}" = yes)
 
 AC_SUBST(CAIRO_LIBS)
@@ -98,6 +113,11 @@ AC_SUBST(CAIRO_CFLAGS)
 
 AC_SUBST([boxlibdir])
 AC_SUBST([boxincdir])
+AC_SUBST([boxpkgdir])
+AC_SUBST([BOX_VER_MAJOR])
+AC_SUBST([BOX_VER_MINOR])
+AC_SUBST([BOX_VER_MAINT])
+
 AC_CONFIG_FILES([Makefile
                  src/Makefile
                  libs/Makefile
@@ -117,4 +137,3 @@ if test "${use_libcairo}" = yes; then
 else
   AC_MSG_RESULT([Support for the Cairo 2D graphic library: no])
 fi
-

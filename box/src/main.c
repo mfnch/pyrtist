@@ -33,6 +33,12 @@
 #  include "config.h"
 #endif
 
+#ifdef BOX_RELEASE_DATE
+#  define RELEASE_STRING "("BOX_RELEASE_DATE")"
+#else
+#  define RELEASE_STRING
+#endif
+
 #ifdef PACKAGE_STRING
 #  define BOX_VERSTR PACKAGE_STRING
 #else
@@ -104,7 +110,7 @@ static struct opt {
   {"write",   0, FLAG_OVERWRITE + FLAG_OUTPUT, 0, 1, & flags, set_file_output},
   {"setup",   0, FLAG_SETUP, 0, 1, & flags, set_file_setup},
   {"library", 0, 0, 0, -1, & flags, Path_Add_Lib},
-  {"Include-path", 0, 0, 0, -1, & flags, Path_Add_Inc_Dir},
+  {"Include-path", 0, 0, 0, -1, & flags, Path_Add_Pkg_Dir},
   {"Lib-path", 0, 0, 0, -1, & flags, Path_Add_Lib_Dir},
   {"query",    0, 0, 0, -1, & flags, Set_Query},
   {NULL }
@@ -418,9 +424,8 @@ void Main_Error_Exit(char *msg) {
 
 void Main_Cmnd_Line_Help(void) {
   fprintf( stderr,
-  BOX_VERSTR " - Language to describe graphic figures."
-  "\n Created and implemented by Matteo Franchin - "
-   VERSION_DATE ", " VERSION_TIME "\n\n"
+  BOX_VERSTR " " RELEASE_STRING " - Language to describe graphic figures."
+  "\n Created and implemented by Matteo Franchin.\n\n"
   "USAGE: " PROGRAM_NAME " options inputfile\n\n"
   "options: are the following:\n"
   " -h(elp)               show this help screen\n"
@@ -452,6 +457,9 @@ static void Exec_Query(char *query) {
   } *v, vars[] = {
 #ifdef BUILTIN_LIBRARY_PATH
     {"BUILTIN_LIBRARY_PATH", BUILTIN_LIBRARY_PATH},
+#endif
+#ifdef BUILTIN_PKG_PATH
+    {"BUILTIN_PKG_PATH", BUILTIN_PKG_PATH},
 #endif
 #ifdef BUILTIN_INCLUDE_PATH
     {"BUILTIN_INCLUDE_PATH", BUILTIN_INCLUDE_PATH},

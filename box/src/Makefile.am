@@ -22,6 +22,9 @@
 
 boxlibdir=@boxlibdir@
 boxincdir=@boxincdir@
+boxpkgdir=@boxpkgdir@
+ver_major=@BOX_VER_MAJOR@
+ver_minor=@BOX_VER_MINOR@
 
 BUILT_SOURCES = parser.h
 
@@ -31,35 +34,47 @@ AM_CFLAGS = -Wall
 
 AM_CPPFLAGS = $(INCLTDL) \
               '-DBUILTIN_LIBRARY_PATH="$(boxlibdir)"' \
+              '-DBUILTIN_PKG_PATH="$(boxpkgdir)"' \
               '-DBUILTIN_INCLUDE_PATH="$(boxincdir)"'
 # -DDEBUG_ARRAY -DDEBUG_EXEC
 
 bin_PROGRAMS = box
 
-noinst_HEADERS = defaults.h types.h mem.h str.h print.h \
-  msgbase.h messages.h \
-  list.h array.h collection.h fileutils.h registers.h virtmach.h \
+# *** libboxcore ***
+lib_LTLIBRARIES = libboxcore.la
+boxinc_HEADERS = types.h mem.h array.h msgbase.h messages.h \
+  str.h print.h
+libboxcore_la_SOURCES = types.h mem.c mem.h array.c array.h \
+  str.c print.c msgbase.c messages.c
+libboxcore_la_LDFLAGS = -version-info 1:0:0
+
+# *** box compiler ***
+noinst_HEADERS = defaults.h \
+  list.h collection.h fileutils.h registers.h virtmach.h \
   tokenizer.h parserh.h typesys.h \
   expr.h compiler.h box.h builtins.h bltinstr.h bltinio.h \
   hashfunc.h hashtable.h vmalloc.h vmproc.h vmsym.h \
   vmsymstuff.h paths.h container.h autogen.h
 
-box_SOURCES = mem.c str.c print.c msgbase.c messages.c \
-  list.c array.c collection.c hashfunc.c hashtable.c fileutils.c \
+box_SOURCES = \
+  list.c collection.c hashfunc.c hashtable.c fileutils.c \
   virtmach.c vmalloc.c vmexec.c vmproc.c vmsym.c \
   symbols.c tokenizer.l parser.y registers.c expr.c \
   typesys.c compiler.c box.c \
   builtins.c bltinstr.c bltinio.c vmsymstuff.c \
   paths.c main.c container.c autogen.c
 
-box_LDADD = $(LIBLTDL)
-box_DEPENDENCIES = $(LTDLDEPS)
+box_LDADD = $(LIBLTDL) libboxcore.la
+box_LDFLAGS = -static
+box_DEPENDENCIES=$(LTDLDEPS)
 
 EXTRA_DIST = structure.c
 
-# boxlib_LTLIBRARIES = libboxcore.la
-#
-# libboxcore_la_SOURCES = default.h mem.c mem.h str.c str.h \
-#   print.c print.h msgbase.c msgbase.h messages.c messages.h \
-#   list.c list.h array.c array.h collection.c collection.h \
-#   hashfunc.c hashfunc.h hashtable.c hashtable.h
+install-exec-hook:
+	cd $(DESTDIR)$(bindir) && \
+	  mv -f box$(EXEEXT) box$(ver_major).$(ver_minor)$(EXEEXT) && \
+	  $(LN_S) box$(ver_major).$(ver_minor)$(EXEEXT) box$(EXEEXT)
+
+uninstall-hook:
+	cd $(DESTDIR)$(bindir) && \
+	  rm -f box$(ver_major).$(ver_minor)$(EXEEXT)
