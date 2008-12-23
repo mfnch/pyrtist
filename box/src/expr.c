@@ -362,10 +362,10 @@ Task Expr_Struc_Member(Expr *m, Expr *s, Name *m_name) {
 
   str_m_name = Name_To_Str(m_name);
   TS_Member_Find(cmp->ts, & tm, s->type, str_m_name);
-  Mem_Free(str_m_name);
+  BoxMem_Free(str_m_name);
   if (tm == TYPE_NONE) {
     MSG_ERROR("'%s' has no member with name '%N'",
-     Tym_Type_Name(s->type), m_name);
+              Tym_Type_Name(s->type), m_name);
     return Failed;
   }
 

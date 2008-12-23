@@ -41,7 +41,7 @@ static TS *last_ts; /* Just for transition: will be removed! */
 static char *last_name = (char *) NULL;
 
 static Task Destroy_TSDesc(void *td) {
-  Mem_Free(((TSDesc *) td)->name);
+  BoxMem_Free(((TSDesc *) td)->name);
   ((TSDesc *) td)->name = 0;
   return Success;
 }
@@ -61,7 +61,7 @@ void TS_Destroy(TS *ts) {
   HT_Destroy(ts->members);
   HT_Destroy(ts->subtypes);
   Arr_Destroy(ts->name_buffer);
-  Mem_Free(last_name);
+  BoxMem_Free(last_name);
   last_name = (char *) NULL;
 }
 
@@ -221,7 +221,7 @@ Task TS_Name_Set(TS *ts, Type t, const char *name) {
               name, t, td->name);
     return Failed;
   }
-  td->name = Mem_Strdup(name);
+  td->name = BoxMem_Strdup(name);
   return Success;
 }
 
@@ -232,7 +232,7 @@ static char *TS_Name_Get_Case(TSKind kind, TS *ts, TSDesc *td, Type t,
   Type previous_type = TS_TYPE_NONE;
 
   if (td->size < 1)
-    return Mem_Strdup(empty);
+    return BoxMem_Strdup(empty);
 
   while (1) {
     TSDesc *m_td = Type_Ptr(ts, m);
@@ -242,8 +242,8 @@ static char *TS_Name_Get_Case(TSKind kind, TS *ts, TSDesc *td, Type t,
         if (m_td->target != previous_type)
           m_name = printdup("%~s %s", m_name, m_td->name);
         else {
-          Mem_Free(m_name);
-          m_name = Mem_Strdup(m_td->name);
+          BoxMem_Free(m_name);
+          m_name = BoxMem_Strdup(m_td->name);
         }
       }
       previous_type = m_td->target;
@@ -267,7 +267,7 @@ static char *TS_Name_Get_Case(TSKind kind, TS *ts, TSDesc *td, Type t,
 char *TS_Name_Get(TS *ts, Type t) {
   TSDesc *td = Type_Ptr(ts, t);
   td = Resolve(ts, & t, t, 0);
-  if (td->name != (char *) NULL) return Mem_Strdup(td->name);
+  if (td->name != (char *) NULL) return BoxMem_Strdup(td->name);
 
   switch(td->kind) {
   case TS_KIND_INTRINSIC:
@@ -308,7 +308,7 @@ char *TS_Name_Get(TS *ts, Type t) {
                     TS_Name_Get(ts, td->data.subtype.parent),
                     td->data.subtype.child_name);
   default:
-    return Mem_Strdup("<unknown type>");
+    return BoxMem_Strdup("<unknown type>");
   }
 }
 
@@ -485,7 +485,7 @@ static Task TS_X_Add(TSKind kind, TS *ts, Type s, Type m,
   td.kind = TS_KIND_MEMBER;
   td.target = m;
   if (kind == TS_KIND_STRUCTURE) {
-    if (m_name != (char *) NULL) td.name = Mem_Strdup(m_name);
+    if (m_name != (char *) NULL) td.name = BoxMem_Strdup(m_name);
     td.size = TS_Align(ts, TS_Size(ts, s));
   } else {
     td.size = m_size;
@@ -708,7 +708,7 @@ void TS_Subtype_Find(TS *ts, Type *subtype, Type parent, Name *child) {
   char *child_str = Name_To_Str(child);
   /*s = TS_Resolve(ts, s, 1, 1);*/
   Task t = Member_Full_Name(ts, & full_name, parent, child_str);
-  Mem_Free(child_str);
+  BoxMem_Free(child_str);
   *subtype = TS_TYPE_NONE;
   if IS_FAILED(t) return;
   if (HT_Find(ts->subtypes, full_name.text, full_name.length, & hi))
@@ -888,7 +888,7 @@ Task Tym_Def_Type(Int *new_type,
   }
   name = Name_To_Str(nm);
   (void) TS_Name_Set(last_ts, type, name);
-  Mem_Free(name);
+  BoxMem_Free(name);
 
   /* I set all the remaining values of the structure s */
   s->symtype = VARIABLE;

@@ -119,18 +119,18 @@ Task VM_Sym_Name_Set(VMProgram *vmp, UInt sym_num, Name *n) {
   n_str = Name_To_Str(n);
   n_len = n->length + 1; /* include also the terminating '\0' character */
   if ( HT_Find(st->syms, n_str, n_len, & hi) ) {
-    Mem_Free(n_str);
+    BoxMem_Free(n_str);
     MSG_ERROR("Another symbol exists having the name '%N'!", n);
     return Failed;
   }
 
   (void) HT_Insert_Obj(st->syms, n_str, n_len, & sym_num, sizeof(UInt));
   if ( ! HT_Find(st->syms, n_str, n_len, & hi) ) {
-    Mem_Free(n_str);
+    BoxMem_Free(n_str);
     MSG_ERROR("Hashtable seems not to work (from VM_Sym_Add)");
     return Failed;
   }
-  Mem_Free(n_str);
+  BoxMem_Free(n_str);
 
   s->name.text = (char *) hi->key;
   s->name.length = hi->key_size - 1; /* Without the final '\0' */
@@ -394,9 +394,9 @@ Task Iter_Over_Paths(void *string, void *pass_data) {
   char *lib_file;
   Task status;
   cld->path = (char *) string;
-  lib_file = Mem_Strdup(print("%s/lib%s", cld->path, cld->lib));
+  lib_file = BoxMem_Strdup(print("%s/lib%s", cld->path, cld->lib));
   status = VM_Sym_Resolve_CLib(cld->vmp, lib_file);
-  Mem_Free(lib_file);
+  BoxMem_Free(lib_file);
   if (status == Success) return Failed; /* Stop here, if we have found it! */
   return Success;
 }
@@ -477,7 +477,7 @@ Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen,
   def = (void *) Arr_ItemPtr(st->data, Char, s->def_addr);
 
   ref_all_size = sizeof(VMSymCodeRef) + ref_size;
-  ref_all = Mem_Alloc(ref_all_size);
+  ref_all = BoxMem_Alloc(ref_all_size);
   if (ref_all == NULL) return Failed;
   ref_head = (VMSymCodeRef *) ref_all;
   ref_tail = ref_all + sizeof(VMSymCodeRef);
@@ -499,7 +499,7 @@ Task VM_Sym_Code_Ref(VMProgram *vmp, UInt sym_num, VMSymCodeGen code_gen,
   }
   ref_head->size = Arr_NumItem(pt->target_proc->code) - ref_head->pos;
   t = VM_Sym_Ref(vmp, sym_num, code_generator, ref_all, ref_all_size, -1);
-  Mem_Free(ref_all);
+  BoxMem_Free(ref_all);
   return t;
 }
 

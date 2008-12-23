@@ -25,13 +25,11 @@ ACLOCAL_AMFLAGS=-I libltdl/m4
 boxlibdir=@boxlibdir@
 boxpkgdir=@boxpkgdir@
 
-AM_CFLAGS   = -Wall @CAIRO_CFLAGS@
-AM_CPPFLAGS = -I../../src -I../..
-AM_LDFLAGS  = -no-undefined -module -avoid-version
+AM_CFLAGS=-Wall @CAIRO_CFLAGS@
+AM_CPPFLAGS=-I../../src -I../..
+AM_LDFLAGS=-no-undefined -module -avoid-version
 
 boxlib_LTLIBRARIES=libg.la
-
-libg_la_LIBADD=@CAIRO_LIBS@
 
 dist_boxpkg_DATA=g.bxh color.bxh style.bxh gradient.bxh window.bxh line.bxh \
                  circle.bxh poly.bxh put.bxh arrows.bxh electric.bxh \
@@ -52,6 +50,8 @@ libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
                 i_circle.c i_circle.h i_poly.c i_poly.h \
                 i_put.c i_put.h i_text.c i_text.h \
                 i_style.c i_style.h
+
+libg_la_LIBADD=@CAIRO_LIBS@ ../../src/libboxcore.la
 
 if BUILD_WINCAIRO
 libg_la_SOURCES+=wincairo.c wincairo.h

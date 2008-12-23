@@ -54,10 +54,10 @@ void Name_From_Str(Name *dest, char *src);
 void Name_Free(Name *n);
 Name *Name_Dup(Name *n);
 Task Name_Cat(Name *nm, Name *nm1, Name *nm2, int free_args);
-void *Mem_Dup(const void *src, unsigned int length);
+void *BoxMem_Dup(const void *src, unsigned int length);
 
-/** Similar to Mem_Dup, but allocate extra space in the destination */
-void *Mem_Dup_Larger(const void *src, Int src_size, Int dest_size);
+/** Similar to BoxMem_Dup, but allocate extra space in the destination */
+void *BoxMem_Dup_Larger(const void *src, Int src_size, Int dest_size);
 
 #define Name_Cat_And_Free(nm, nm1, nm2) Name_Cat(nm, nm1, nm2, 1)
 

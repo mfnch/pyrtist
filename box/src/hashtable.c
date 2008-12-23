@@ -72,8 +72,8 @@ void HT_New(Hashtable **new_ht, unsigned int num_entries,
   } while ((num_entries >>= 1) != 0);
   num_entries = i;
 
-  ht = (Hashtable *) Mem_Alloc(sizeof(Hashtable));
-  hi = (HashItem **) Mem_Alloc(sizeof(HashItem)*num_entries);
+  ht = (Hashtable *) BoxMem_Alloc(sizeof(Hashtable));
+  hi = (HashItem **) BoxMem_Alloc(sizeof(HashItem)*num_entries);
   *new_ht = ht;
 
 #if DEBUG
@@ -113,15 +113,15 @@ void HT_Destroy(Hashtable *ht) {
   for(branch = 0; branch < ht->num_entries; branch++)
     for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = next) {
       next = hi->next;
-      if ( hi->allocated.key ) Mem_Free(hi->key);
-      if ( hi->allocated.obj ) Mem_Free(hi->object);
-      Mem_Free(hi);
+      if ( hi->allocated.key ) BoxMem_Free(hi->key);
+      if ( hi->allocated.obj ) BoxMem_Free(hi->object);
+      BoxMem_Free(hi);
     }
 
   /* Now we deallocate the table of branches */
-  Mem_Free(ht->item);
+  BoxMem_Free(ht->item);
   /* And at the end we free the main Hashtable structure */
-  Mem_Free(ht);
+  BoxMem_Free(ht);
 }
 
 void HT_Destructor(Hashtable *ht, Task (*destroy)(HashItem *)) {
@@ -138,11 +138,11 @@ int HT_Add(Hashtable *ht, unsigned int branch,
            void *object, unsigned int object_size) {
   HashItem *hi;
   assert(branch < ht->num_entries);
-  hi = (HashItem *) Mem_Alloc(sizeof(HashItem));
+  hi = (HashItem *) BoxMem_Alloc(sizeof(HashItem));
 
   hi->key_size = key_size;
   if (ht->settings.copy_keys) {
-    hi->key = Mem_Dup(key, key_size);
+    hi->key = BoxMem_Dup(key, key_size);
     hi->allocated.key = 1;
   } else {
     hi->key = key;
@@ -151,7 +151,7 @@ int HT_Add(Hashtable *ht, unsigned int branch,
 
   hi->object_size = object_size;
   if (ht->settings.copy_objs) {
-    hi->object = Mem_Dup(object, object_size);
+    hi->object = BoxMem_Dup(object, object_size);
     hi->allocated.obj = 1;
   } else {
     hi->object = object;
@@ -174,9 +174,9 @@ Task HT_Remove(Hashtable *ht, void *key, unsigned int key_size) {
   while( (hi = *hi_ptr) != (HashItem *) NULL ) {
     if ( ht->cmp(hi->key, key, hi->key_size, key_size) ) {
       *hi_ptr = hi->next;
-      if ( hi->allocated.key ) Mem_Free(hi->key);
-      if ( hi->allocated.obj ) Mem_Free(hi->object);
-      Mem_Free(hi);
+      if ( hi->allocated.key ) BoxMem_Free(hi->key);
+      if ( hi->allocated.obj ) BoxMem_Free(hi->object);
+      BoxMem_Free(hi);
       return Success;
     }
     hi_ptr = & hi->next;

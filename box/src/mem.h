@@ -24,23 +24,23 @@
  * @brief Wrappings for the system calls to allocate memory (malloc & co.).
  */
 
-#ifndef _MEM_H
-#  define _MEM_H
+#ifndef _BOX_MEM_H
+#  define _BOX_MEM_H
 
 #  include <stdlib.h> /* defines size_t */
 #  include "types.h"
 
 /** Return the lowest multiple of sizeof(uint32_t) which is greater than n */
-size_t Mem_Size_Align(size_t n);
+size_t BoxMem_Size_Align(size_t n);
 
-void *Mem_Alloc(UInt size);
+void *BoxMem_Alloc(UInt size);
 
-void *Mem_Realloc(void *ptr, UInt size);
+void *BoxMem_Realloc(void *ptr, UInt size);
 
-void Mem_Free(void *ptr);
+void BoxMem_Free(void *ptr);
 
-char *Mem_Strdup(const char *s);
+char *BoxMem_Strdup(const char *s);
 
-void Mem_Exit(const char *msg);
+void BoxMem_Exit(const char *msg);
 
 #endif

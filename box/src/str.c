@@ -85,7 +85,7 @@ Task Str_Eq2(char *s1, UInt l1, char *s2, UInt l2) {
 char *Str_DupLow(char *s, UInt leng)
 {
   char *ns, *nc;
-  ns = (char *) Mem_Alloc(leng);
+  ns = (char *) BoxMem_Alloc(leng);
   for (nc = ns; leng > 0; leng--) *(nc++) = tolower(*(s++));
   return ns;
 }
@@ -99,8 +99,8 @@ char *Str_Dup(const char *s, UInt leng) {
   char *ns, *nc;
 
   if (s == NULL || leng < 1)
-    return (char *) Mem_Strdup("");
-  ns = (char *) Mem_Alloc(leng + 1);
+    return (char *) BoxMem_Strdup("");
+  ns = (char *) BoxMem_Alloc(leng + 1);
   for (nc = ns; leng > 0; leng--) *(nc++) = *(s++);
   *nc = '\0';
   return ns;
@@ -125,11 +125,11 @@ char *Str_Cut(const char *s, UInt maxleng, Int start) {
  */
 char *Str__Cut(const char *s, UInt leng, UInt maxleng, Int start) {
   if ( leng <= maxleng )
-    return Mem_Strdup(s);
+    return BoxMem_Strdup(s);
 
   else {
     char *rets, *c;
-    rets = (char *) Mem_Alloc(maxleng + 1);
+    rets = (char *) BoxMem_Alloc(maxleng + 1);
 
     if ( start < 0 ) start = 0;
       else if ( start > 100 ) start = 100;
@@ -297,7 +297,7 @@ char *Str_ToString(char *s, Int l, Int *new_length) {
   Int f, nl = 1; /* <-- incluso il '\0' di terminazione stringa */
   char *c, *out;
 
-  c = out = (char *) Mem_Alloc(l+1);
+  c = out = (char *) BoxMem_Alloc(l+1);
   while (l > 0) {
     if IS_FAILED( Str__ToChar(s, l, & f, c) ) return NULL;
     ++c;
@@ -404,7 +404,7 @@ Task Str_ToReal(char *s, UInt l, Real *r) {
 
   } else {
     char *sc, *endptr;
-    sc = (char *) Mem_Alloc(sizeof(char)*(l+1));
+    sc = (char *) BoxMem_Alloc(sizeof(char)*(l+1));
 
     /* Copio la stringa in modo da poterla terminare con '\0' */
     strncpy(sc, s, l);
@@ -412,7 +412,7 @@ Task Str_ToReal(char *s, UInt l, Real *r) {
 
     errno = 0;
     *r = strtoreal(sc, & endptr);
-    Mem_Free(sc);
+    BoxMem_Free(sc);
     if ( errno == 0 ) return Success;
   }
 
@@ -438,9 +438,9 @@ Name *Name_Empty(void) {
  */
 const char *Name_Str(Name *n) {
   static char *asciiz = NULL;
-  Mem_Free(asciiz);
+  BoxMem_Free(asciiz);
   if (n->length == 0) return "";
-  asciiz = (char *) Mem_Alloc(n->length + 1);
+  asciiz = (char *) BoxMem_Alloc(n->length + 1);
   asciiz[n->length] = '\0';
   return strncpy(asciiz, n->text, n->length);
 }
@@ -450,8 +450,8 @@ const char *Name_Str(Name *n) {
  */
 char *Name_To_Str(Name *n) {
   char *asciiz = NULL;
-  if (n->length == 0) return Mem_Strdup("");
-  asciiz = (char *) Mem_Alloc(n->length + 1);
+  if (n->length == 0) return BoxMem_Strdup("");
+  asciiz = (char *) BoxMem_Alloc(n->length + 1);
   asciiz[n->length] = '\0';
   return strncpy(asciiz, n->text, n->length);
 }
@@ -463,7 +463,7 @@ void Name_From_Str(Name *dest, char *src) {
 
 /* DESCRIZIONE: Rimuove la stringa associata a *n (pone n --> "")
  */
-void Name_Free(Name *n) {Mem_Free(n->text); n->text = NULL; n->length = 0;}
+void Name_Free(Name *n) {BoxMem_Free(n->text); n->text = NULL; n->length = 0;}
 
 /* DESCRIZIONE: Duplica la stringa *n.
  */
@@ -490,7 +490,7 @@ Task Name_Cat(Name *nm, Name *nm1, Name *nm2, int free_args) {
   if ( nm2->text[l2-1] == '\0' ) --l2;
   l = l1 + l2;
 
-  nm->text = dest = (char *) Mem_Alloc( nm->length = l + 1 );
+  nm->text = dest = (char *) BoxMem_Alloc( nm->length = l + 1 );
   if ( l1 > 0 ) strncpy(dest, nm1->text, l1);
   if ( l2 > 0 ) strncpy(dest + l1, nm2->text, l2);
   *(dest + l) = '\0';
@@ -513,20 +513,20 @@ strange_cases: {
   }
 }
 
-void *Mem_Dup(const void *src, unsigned int length) {
+void *BoxMem_Dup(const void *src, unsigned int length) {
   void *copy;
   if (length < 1) return NULL;
-  copy = (void *) Mem_Alloc(length);
+  copy = (void *) BoxMem_Alloc(length);
   memcpy(copy, src, length);
   return copy;
 }
 
-/** Similar to Mem_Dup, but allocate extra space */
-void *Mem_Dup_Larger(const void *src, Int src_size, Int dest_size) {
+/** Similar to BoxMem_Dup, but allocate extra space */
+void *BoxMem_Dup_Larger(const void *src, Int src_size, Int dest_size) {
   void *copy;
   assert(dest_size >= src_size && src_size >= 0);
   if (dest_size < 1) return NULL;
-  copy = (void *) Mem_Alloc(dest_size);
+  copy = (void *) BoxMem_Alloc(dest_size);
   if (copy == NULL) return NULL;
   memcpy(copy, src, src_size);
   return copy;

@@ -77,7 +77,7 @@ void BoxArr_Finish(BoxArr *arr) {
 }
 
 BoxArr *BoxArr_New(UInt element_size, UInt initial_size) {
-  BoxArr *arr = Mem_Alloc(sizeof(BoxArr));
+  BoxArr *arr = BoxMem_Alloc(sizeof(BoxArr));
   if (arr == NULL) return NULL;
   BoxArr_Init(arr, element_size, initial_size);
   return arr;
@@ -85,7 +85,7 @@ BoxArr *BoxArr_New(UInt element_size, UInt initial_size) {
 
 void BoxArr_Destroy(BoxArr *arr) {
   BoxArr_Finish(arr);
-  Mem_Free(arr);
+  BoxMem_Free(arr);
 }
 
 void BoxArr_Set_Attr(BoxArr *arr, BoxArrAttr mask, BoxArrAttr value) {
@@ -143,7 +143,7 @@ void BoxArr_Clear(BoxArr *arr) {
   if (arr->fin != NULL)
     (void) BoxArr_Iter(arr, Finalise_Item, arr->fin);
 
-  Mem_Free(arr->ptr);
+  BoxMem_Free(arr->ptr);
   BoxArr_Reinit(arr); /* Re-init */
 }
 
@@ -162,12 +162,12 @@ static void BoxArr_Expand(BoxArr *arr, UInt num_items) {
     if (new_dim == 0) {
       for(new_dim = arr->mindim; new_dim < num_items; new_dim *= 2);
       new_size = new_dim*arr->elsize;
-      new_ptr = Mem_Alloc(new_size);
+      new_ptr = BoxMem_Alloc(new_size);
 
     } else {
       for(; new_dim < num_items; new_dim *= 2);
       new_size = new_dim*arr->elsize;
-      new_ptr = Mem_Realloc(arr->ptr, new_size);
+      new_ptr = BoxMem_Realloc(arr->ptr, new_size);
     }
     if (new_ptr == NULL) {
       BoxArr_Error(arr);
@@ -191,7 +191,7 @@ static void BoxArr_Shrink(BoxArr *arr, UInt num_items) {
     if (new_dim < arr->mindim)
       new_dim = arr->mindim;
     new_size = arr->dim*arr->elsize;
-    new_ptr = Mem_Realloc(arr->ptr, new_size);
+    new_ptr = BoxMem_Realloc(arr->ptr, new_size);
     if (new_ptr == NULL) {
       BoxArr_Error(arr);
       return;

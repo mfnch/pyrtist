@@ -28,7 +28,7 @@
 #include "list.h"
 
 void List_New(List **l, UInt item_size) {
-  List *nl = Mem_Alloc(sizeof(List));
+  List *nl = BoxMem_Alloc(sizeof(List));
   nl->item_size = item_size;
   nl->length = 0;
   nl->destructor = (ListDestructor) NULL;
@@ -45,10 +45,10 @@ void List_Destroy(List *l) {
       l->destructor(item);
     }
     lih_next = lih->next;
-    Mem_Free(lih);
+    BoxMem_Free(lih);
     lih = lih_next;
   }
-  Mem_Free(l);
+  BoxMem_Free(l);
 }
 
 UInt List_Length(List *l) {
@@ -67,14 +67,14 @@ void List_Remove(List *l, void *item) {
   *prev_lih = lih->next;
   *next_lih = lih->previous;
   if (l->destructor != (ListDestructor) NULL) l->destructor(item);
-  Mem_Free(lih);
+  BoxMem_Free(lih);
 }
 
 void List_Insert_With_Size(List *l, void *item_where,
                            const void *item_what, UInt size) {
   ListItemHead **prev_lih, **next_lih;
 
-  void *new_item = Mem_Alloc(sizeof(ListItemHead) + size);
+  void *new_item = BoxMem_Alloc(sizeof(ListItemHead) + size);
   ListItemHead *new_lih = (ListItemHead *) new_item;
   new_item += sizeof(ListItemHead);
   (void) memcpy(new_item, item_what, size);
@@ -138,7 +138,7 @@ void List_Append_Strings(List *l, const char *strings, char separator) {
       if (length > 0) {
         char *s_copy = Str_Dup(string, length);
         List_Append_With_Size(l, s_copy, length+1);
-        Mem_Free(s_copy);
+        BoxMem_Free(s_copy);
       }
       string = ++s;
       length = 0;
@@ -212,9 +212,9 @@ Task List_Product_Iter(List *l, ListProduct product, void *pass) {
     state.num_sublists = List_Length(l);
     state.item = l->head_tail.next;
     state.sublist_idx = 0;
-    state.tuple = (void **) Mem_Alloc(n*sizeof(void *));
+    state.tuple = (void **) BoxMem_Alloc(n*sizeof(void *));
     status = Product_Iter(& state);
-    Mem_Free(state.tuple);
+    BoxMem_Free(state.tuple);
     return status;
 
   } else

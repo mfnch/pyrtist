@@ -91,7 +91,7 @@ void Path_Set_All_From_Env(void) {
 
 #ifdef __WINDOWS__
   if (1) {
-    char *fn = (char *) Mem_Alloc(MAX_PATH);
+    char *fn = (char *) BoxMem_Alloc(MAX_PATH);
     int success = 0;
     if (fn != (char *) NULL) {
       char *bn;
@@ -106,7 +106,7 @@ void Path_Set_All_From_Env(void) {
         Path_Add_Pkg_Dir(new_path);
         success = 1;
       }
-      Mem_Free(fn);
+      BoxMem_Free(fn);
     }
 
     if (!success) {
@@ -134,7 +134,7 @@ void Path_Add_Script_Path_To_Inc_Dir(const char *script_path) {
     File_Path_Split(& script_dir, NULL, script_path);
     if (script_dir != NULL) {
       List_Append_String(inc_dirs, script_dir);
-      Mem_Free(script_dir);
+      BoxMem_Free(script_dir);
       return;
     }
   }
@@ -147,7 +147,7 @@ FILE *Path_Open_Inc_File(const char *file, const char *mode) {
   File_Find_First(& full_path, file, inc_dirs, inc_exts);
   if (full_path != (char *)NULL) {
     FILE *fd = fopen(full_path, mode);
-    Mem_Free(full_path);
+    BoxMem_Free(full_path);
     return fd;
 
   } else

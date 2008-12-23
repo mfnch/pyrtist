@@ -58,8 +58,8 @@ static Task C_File_Open(VMProgram *vmp) {
 static Task File_Destroy(VMProgram *vmp) {
   File *f = BOX_VM_THIS_PTR(vmp, File);
   if (f->opened) fclose(f->file);
-  Mem_Free(f->name);
-  Mem_Free(f->mode);
+  BoxMem_Free(f->name);
+  BoxMem_Free(f->mode);
   return Success;
 }
 
@@ -67,9 +67,9 @@ static Task C_File_String(VMProgram *vmp) {
   Str *s = BOX_VM_ARG1_PTR(vmp, Str);
   File *f = BOX_VM_THIS_PTR(vmp, File);
   if (f->name == (char *) NULL)
-    f->name = Mem_Strdup(Str_Get_CStr(s));
+    f->name = BoxMem_Strdup(Str_Get_CStr(s));
   else if (f->mode == (char *) NULL) 
-    f->mode = Mem_Strdup(Str_Get_CStr(s));
+    f->mode = BoxMem_Strdup(Str_Get_CStr(s));
   else {
     fprintf(stderr, "Too many arguments to File object\n");
     return Failed;
@@ -90,8 +90,8 @@ static Task C_File_Close(VMProgram *vmp) {
   else
     f->file = fopen(f->name, f->mode);
 
-  Mem_Free(f->name);
-  Mem_Free(f->mode);
+  BoxMem_Free(f->name);
+  BoxMem_Free(f->mode);
 
   f->name = (char *) NULL;
   f->mode = (char *) NULL;

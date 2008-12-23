@@ -75,7 +75,7 @@ static Task Find_File_Iterator(void **tuple, void *pass) {
                            ffd->file_name, suffix);
   if (File_Exist(file)) {
     if (ffd->only_first) {
-      ffd->first_file = Mem_Strdup(file);
+      ffd->first_file = BoxMem_Strdup(file);
       return Failed;
     } else {
       assert(file != (char *) NULL);
@@ -123,15 +123,15 @@ void File_Path_Split(char **dir, char **file, const char *full_path) {
   assert(full_path != NULL);
   if (basename == NULL) {
     if (dir != NULL) *dir = NULL;
-    if (file != NULL) *file = Mem_Strdup(full_path);
+    if (file != NULL) *file = BoxMem_Strdup(full_path);
     return;
 
   } else {
     size_t i = (basename - full_path) + 1;
     /* ^^^ cast from ptrdiff_t */
-    if (file != NULL) *file = Mem_Strdup(basename + 1);
+    if (file != NULL) *file = BoxMem_Strdup(basename + 1);
     if (dir != NULL) {
-      *dir = memcpy(Mem_Alloc(sizeof(char)*(i + 1)), full_path, i);
+      *dir = memcpy(BoxMem_Alloc(sizeof(char)*(i + 1)), full_path, i);
       (*dir)[i] = '\0';
     }
   }

@@ -75,7 +75,7 @@ static void Opr_Destructor(void *opr_ptr) {
 /* Gets ready to start the compilation */
 Task Cmp_Init(VMProgram *program) {
   /* Initialization of the code which writes the bytecode program for the VM */
-  cmp = Mem_Alloc(sizeof(Compiler));
+  cmp = BoxMem_Alloc(sizeof(Compiler));
   cmp->vm = program;
   cmp->ts = & cmp->ts_obj;
 
@@ -117,7 +117,7 @@ void Cmp_Destroy(void) {
 
   BoxArr_Finish(& cmp->imm_segment);
   BoxArr_Finish(& cmp->allocd_oprs);
-  Mem_Free(cmp);
+  BoxMem_Free(cmp);
 }
 
 /******************************************************************************/
@@ -128,7 +128,7 @@ Operator *Cmp_Operator_New(char *name) {
   Operator *opr;
   int i, j;
 
-  opr = (Operator *) Mem_Alloc(sizeof(Operator));
+  opr = (Operator *) BoxMem_Alloc(sizeof(Operator));
   if ( opr == NULL ) {
     MSG_FATAL("Memory request failed.");
     return NULL;
@@ -154,11 +154,11 @@ void Cmp_Operator_Destroy(Operator *opr) {
   Operation *opn = opr->opn_chain;
   for(; opn != (Operation *) NULL;) {
     Operation *next = opn->next;
-    Mem_Free(opn);
+    BoxMem_Free(opn);
     opn = next;
   }
 
-  Mem_Free(opr);
+  BoxMem_Free(opr);
 }
 
 /* Aggiunge una nuova operazione di tipo type1 opr type2
@@ -174,7 +174,7 @@ Operation *Cmp_Operation_Add(Operator *opr, Int type1, Int type2, Int typer) {
   printf("Adding operation (%s, %s) to operator '%s'\n",
    Tym_Type_Names(type1), Tym_Type_Names(type2), opr->name);
 #endif
-  opn = (Operation *) Mem_Alloc(sizeof(Operation));
+  opn = (Operation *) BoxMem_Alloc(sizeof(Operation));
   if ( opn == NULL ) {
     MSG_ERROR("Memory request failed.");
     return NULL;

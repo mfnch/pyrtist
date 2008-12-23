@@ -40,34 +40,34 @@
 #include "messages.h"
 #include "mem.h"
 
-size_t Mem_Size_Align(size_t n) {
+size_t BoxMem_Size_Align(size_t n) {
   return ((n + SIZEOF_BLOCK - 1)/SIZEOF_BLOCK)*SIZEOF_BLOCK;
 }
 
-void *Mem_Alloc(UInt size) {
-  void *ptr = malloc(Mem_Size_Align(size));
-  if (ptr == NULL) Mem_Exit("malloc failed!");
+void *BoxMem_Alloc(UInt size) {
+  void *ptr = malloc(BoxMem_Size_Align(size));
+  if (ptr == NULL) BoxMem_Exit("malloc failed!");
   return ptr;
 }
 
-void Mem_Free(void *ptr) {
+void BoxMem_Free(void *ptr) {
   free(ptr);
 }
 
-void *Mem_Realloc(void *ptr, UInt size) {
-  if (ptr == NULL) return Mem_Alloc(size);
+void *BoxMem_Realloc(void *ptr, UInt size) {
+  if (ptr == NULL) return BoxMem_Alloc(size);
   return realloc(ptr, size);
 }
 
-char *Mem_Strdup(const char *s) {
+char *BoxMem_Strdup(const char *s) {
   size_t sl = strlen(s) + 1;
-  char *sd = Mem_Alloc(sl);
-  if (sd == (char *) NULL) Mem_Exit("strdup failed!");
+  char *sd = BoxMem_Alloc(sl);
+  if (sd == (char *) NULL) BoxMem_Exit("strdup failed!");
   (void) memcpy(sd, s, sl);
   return sd;
 }
 
-void Mem_Exit(const char *msg) {
-  MSG_FATAL("Mem_Exit: %s", msg);
+void BoxMem_Exit(const char *msg) {
+  MSG_FATAL("BoxMem_Exit: %s", msg);
   exit(EXIT_FAILURE);
 }

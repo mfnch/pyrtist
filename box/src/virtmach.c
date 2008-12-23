@@ -545,10 +545,10 @@ void BoxVM_Finish(BoxVM *vm) {
 }
 
 BoxVM *BoxVM_New(void) {
-  BoxVM *vm = Mem_Alloc(sizeof(BoxVM));
+  BoxVM *vm = BoxMem_Alloc(sizeof(BoxVM));
   if (vm == NULL) return NULL;
   if (BoxVM_Init(vm) == Failed) {
-    Mem_Free(vm);
+    BoxMem_Free(vm);
     return NULL;
   }
   return vm;
@@ -557,7 +557,7 @@ BoxVM *BoxVM_New(void) {
 void BoxVM_Destroy(BoxVM *vm) {
   if (vm == NULL) return;
   BoxVM_Finish(vm);
-  Mem_Free(vm);
+  BoxMem_Free(vm);
 }
 
 /* Sets the number of global registers and variables for each type. */

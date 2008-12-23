@@ -48,7 +48,7 @@ Task Str_Large_Enough(Str *s, Int length) {
 
   len = s->length + length + 1;
   len = len + (len+1)/2;
-  s->ptr = (char *) Mem_Realloc(s->ptr, len);
+  s->ptr = (char *) BoxMem_Realloc(s->ptr, len);
   s->buffer_size = len;
   return Success;
 }
@@ -103,7 +103,7 @@ static Task Str_Begin(VMProgram *vmp) {
 static Task Str_Destroy(VMProgram *vmp) {
   Str *s = BOX_VM_THIS_PTR(vmp, Str);
   if (s->ptr != (char *) NULL) {
-    Mem_Free(s->ptr);
+    BoxMem_Free(s->ptr);
     s->ptr = (char *) NULL;
     s->length = 0;
     s->buffer_size = 0;
@@ -131,7 +131,7 @@ static Task Str_Int(VMProgram *vmp) {
   char *tmp = printdup("%I", i);
   if (tmp != (char *) NULL) {
     TASK( Str_Concat(s, tmp) );
-    Mem_Free(tmp);
+    BoxMem_Free(tmp);
   }
   return Success;
 }
@@ -142,7 +142,7 @@ static Task Str_Real(VMProgram *vmp) {
   char *tmp = printdup("%R", r);
   if (tmp != (char *) NULL) {
     TASK( Str_Concat(s, tmp) );
-    Mem_Free(tmp);
+    BoxMem_Free(tmp);
   }
   return Success;
 }
@@ -153,7 +153,7 @@ static Task Str_Point(VMProgram *vmp) {
   char *tmp = printdup("(%R, %R)", p->x, p->y);
   if (tmp != (char *) NULL) {
     TASK( Str_Concat(s, tmp) );
-    Mem_Free(tmp);
+    BoxMem_Free(tmp);
   }
   return Success;
 }

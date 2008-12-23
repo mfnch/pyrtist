@@ -43,12 +43,12 @@ void File_Find_First(char **found_file, const char *file_name,
  * is not allocated/returned. Examples:
  *
  *  File_Path_Split(dir, file, "/dira/dirb/file.ext") -->
- *           *dir = Mem_Strdup("/dira/dirb/"); *file = Mem_Strdup("file.ext");
+ *     *dir = BoxMem_Strdup("/dira/dirb/"); *file = BoxMem_Strdup("file.ext");
  *
  *  File_Path_Split(dir, file, "/") -->
- *                             *dir = Mem_Strdup("/"); *file = Mem_Strdup("");
+ *                       *dir = BoxMem_Strdup("/"); *file = BoxMem_Strdup("");
  *
- *  File_Path_Split(dir, file, "") -->    *dir = NULL; *file = Mem_Strdup("");
+ *  File_Path_Split(dir, file, "") --> *dir = NULL; *file = BoxMem_Strdup("");
  */
 void File_Path_Split(char **dir, char **file, const char *full_path);
 
