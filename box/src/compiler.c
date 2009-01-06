@@ -87,6 +87,12 @@ Task Cmp_Init(VMProgram *program) {
    * for registers and variables.
    */
   TASK( Reg_Init() );
+
+  /* Inizializzo il segmento che contiene gli oggetti con valore immediato */
+  BoxArr_Init(& cmp->imm_segment, sizeof(char), CMP_TYPICAL_IMM_SIZE);
+  BoxArr_Init(& cmp->struc.exprs, sizeof(StructItem), CMP_TYPICAL_STRUC_DIM);
+  BoxArr_Init(& cmp->struc.data, sizeof(char), CMP_TYPICAL_STRUC_SIZE);
+
   Msg_Line_Set((Int) 1);
   return Success;
 }
@@ -97,8 +103,8 @@ Task Cmp_Parse(const char *file) {
   TASK( Box_Init() ); /* Init the box stack */
   TASK( Box_Main_Begin() ); /* Create the main box */
 
-  /* Inizializzo il segmento che contiene gli oggetti con valore immediato */
-  BoxArr_Init(& cmp->imm_segment, sizeof(char), CMP_TYPICAL_IMM_SIZE);
+  BoxArr_Clear(& cmp->struc.exprs);
+  cmp->struc.type = TYPE_NONE;
 
   TASK( Builtins_Init() ); /* Add builtin stuff */
   TASK( Parser_Init(file) ); /* Prepare the parser */
@@ -1411,8 +1417,8 @@ Task Cmp_Builtin_Proc_Def(Int procedure, int when_should_call, Int of_type,
   }
 
   /* We finally install the code (a C function) for the procedure */
-  TASK( VM_Proc_Install_CCode(cmp_vm, & call_num, C_func,
-                              "(noname)", Tym_Type_Name(proc)) );
+  VM_Proc_Install_CCode(cmp_vm, & call_num, C_func,
+                        "(noname)", Tym_Type_Name(proc));
   /* And define the symbol */
   TASK( VM_Sym_Def_Call(cmp_vm, sym_num, call_num) );
   return Success;
@@ -1424,7 +1430,7 @@ Task Cmp_Builtin_CFunc_Def(UInt *sym_num, UInt *call_num,
   if (sym_num == (UInt *) NULL) sym_num = & dummy_sym_num;
   if (call_num == (UInt *) NULL) call_num = & dummy_call_num;
   TASK( VM_Sym_New_Call(cmp->vm, sym_num) );
-  TASK( VM_Proc_Install_CCode(cmp->vm, call_num, c_func, "(noname)", name) );
+  VM_Proc_Install_CCode(cmp->vm, call_num, c_func, "(noname)", name);
   TASK( VM_Sym_Def_Call(cmp->vm, *sym_num, *call_num) );
   return Success;
 }

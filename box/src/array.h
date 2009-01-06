@@ -210,6 +210,11 @@ void *BoxArr_Overwrite(BoxArr *arr, BoxUInt ow_index,
  */
 #define BoxArr_First_Item_Ptr(arr) ((arr)->ptr)
 
+/** Returns the pointer to the last item stored in the array.
+ */
+#define BoxArr_Last_Item_Ptr(arr) \
+  ((arr)->ptr + ((arr)->numel - 1)*((UInt) (arr)->elsize))
+
 
 /* OLD CODE, WHICH IS HERE JUST FOR COMPATIBILITY */
 

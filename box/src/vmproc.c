@@ -29,25 +29,23 @@
 #include "vmproc.h"
 
 static Task Procedure_Destroy(void *s) {
-  Array *code = ((VMProc *) s)->code;
-  if ( code != (Array *) NULL ) Arr_Destroy( code );
+  BoxArr *code = & ((VMProc *) s)->code;
+  if (code != NULL) BoxArr_Finish(code);
   return Success;
 }
 
-static Task Installed_Procedure_Destroy(void *s) {
+static void Installed_Procedure_Destroy(void *s) {
   VMProcInstalled *p = (VMProcInstalled *) s;
   BoxMem_Free(p->name);
   BoxMem_Free(p->desc);
-  return Success;
 }
 
 Task VM_Proc_Init(VMProgram *vmp) {
   VMProcTable *pt = & vmp->proc_table;
   TASK( Clc_New(& pt->uninstalled, sizeof(VMProc), VMPROC_UNINST_CLC_SIZE) );
   Clc_Destructor(pt->uninstalled, Procedure_Destroy);
-  TASK( Arr_New(& pt->installed, sizeof(VMProcInstalled),
-                VMPROC_INST_ARR_SIZE) );
-  Arr_Destructor(pt->installed, Installed_Procedure_Destroy);
+  BoxArr_Init(& pt->installed, sizeof(VMProcInstalled), VMPROC_INST_ARR_SIZE);
+  BoxArr_Set_Finalizer(& pt->installed, Installed_Procedure_Destroy);
   pt->target_proc_num = 0;
   pt->target_proc = (VMProc *) NULL;
   TASK( VM_Proc_Code_New(vmp, & pt->tmp_proc) );
@@ -57,7 +55,7 @@ Task VM_Proc_Init(VMProgram *vmp) {
 void VM_Proc_Destroy(VMProgram *vmp) {
   VMProcTable *pt = & vmp->proc_table;
   Clc_Destroy(pt->uninstalled);
-  Arr_Destroy(pt->installed);
+  BoxArr_Finish(& pt->installed);
 }
 
 /* This function whenever the Collection pt->uninstalled is touched:
@@ -78,7 +76,7 @@ Task VM_Proc_Code_New(VMProgram *vmp, UInt *proc_num) {
   VMProc procedure;
   procedure.status.error = 0;
   procedure.status.inhibit = 0;
-  TASK( Arr_New(& procedure.code, sizeof(VMByteX4), VM_PROC_CODE_SIZE) );
+  BoxArr_Init(& procedure.code, sizeof(VMByteX4), VM_PROC_CODE_SIZE);
   TASK( Clc_Occupy(pt->uninstalled, & procedure, proc_num) );
   target_proc_refresh(vmp);
   return Success;
@@ -108,10 +106,11 @@ Task VM_Proc_Empty(VMProgram *vmp, UInt proc_num) {
   VMProcTable *pt = & vmp->proc_table;
   void *procedure;
   TASK( Clc_Object_Ptr(pt->uninstalled, & procedure, proc_num) );
-  return Arr_Empty(((VMProc *) procedure)->code);
+  BoxArr_Clear(& ((VMProc *) procedure)->code);
+  return Success;
 }
 
-Task VM_Proc_Install_Code(VMProgram *vmp, UInt *call_num,
+void VM_Proc_Install_Code(VMProgram *vmp, UInt *call_num,
                           UInt proc_num, const char *name,
                           const char *desc) {
   VMProcTable *pt = & vmp->proc_table;
@@ -128,12 +127,11 @@ Task VM_Proc_Install_Code(VMProgram *vmp, UInt *call_num,
   procedure_inst.code.vm.ptr = code_ptr;
 #endif
 
-  *call_num = Arr_NumItem(pt->installed) + 1;
-  TASK( Arr_Push(pt->installed, & procedure_inst) );
-  return Success;
+  *call_num = BoxArr_Num_Items(& pt->installed) + 1;
+  BoxArr_Push(& pt->installed, & procedure_inst);
 }
 
-Task VM_Proc_Install_CCode(VMProgram *vmp, UInt *call_num,
+void VM_Proc_Install_CCode(VMProgram *vmp, UInt *call_num,
                            VMCCode c_proc, const char *name,
                            const char *desc) {
   VMProcTable *pt = & vmp->proc_table;
@@ -144,24 +142,23 @@ Task VM_Proc_Install_CCode(VMProgram *vmp, UInt *call_num,
   procedure_inst.desc = BoxMem_Strdup(desc);
   procedure_inst.code.c = (Task (*)(void *)) c_proc;
 
-  *call_num = Arr_NumItem(pt->installed) + 1;
-  TASK( Arr_Push(pt->installed, & procedure_inst) );
-  return Success;
+  *call_num = BoxArr_Num_Items(& pt->installed) + 1;
+  BoxArr_Push(& pt->installed, & procedure_inst);
 }
 
 UInt VM_Proc_Install_Number(VMProgram *vmp) {
-  return Arr_NumItem(vmp->proc_table.installed) + 1;
+  return BoxArr_Num_Items(& vmp->proc_table.installed) + 1;
 }
 
 Task VM_Proc_Ptr_And_Length(VMProgram *vmp, VMByteX4 **ptr,
                             UInt *length, int proc_num) {
   VMProcTable *pt = & vmp->proc_table;
   void *procedure;
-  Array *code;
+  BoxArr *code;
   TASK( Clc_Object_Ptr(pt->uninstalled, & procedure, proc_num) );
-  code = ((VMProc *) procedure)->code;
-  if (length != NULL) *length = Arr_NumItem(code);
-  if (ptr != NULL) *ptr = Arr_FirstItemPtr(code, VMByteX4);
+  code = & ((VMProc *) procedure)->code;
+  if (length != NULL) *length = BoxArr_Num_Items(code);
+  if (ptr != NULL) *ptr = (VMByteX4 *) BoxArr_First_Item_Ptr(code);
   return Success;
 }
 
@@ -178,12 +175,12 @@ Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, UInt call_num) {
   char *mod_type;
   int print_code;
 
-  if (call_num < 1 || call_num > Arr_NumItem(pt->installed)) {
+  if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
     MSG_ERROR("The procedure %d is not installed!", call_num);
     return Failed;
   }
 
-  p = Arr_ItemPtr( pt->installed, VMProcInstalled, call_num );
+  p = (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
   fprintf(out, "\n----------------------------------------\n");
   fprintf(out, "Procedure number: "SUInt"\n", (UInt) call_num);
   if ( p->name != NULL )
@@ -218,7 +215,7 @@ Task VM_Proc_Disassemble_All(VMProgram *vmp, FILE *out) {
   BoxVM_Data_Display(vmp, out);
   fprintf(out, "\n");
 
-  proc_num = Arr_NumItem(pt->installed);
+  proc_num = BoxArr_Num_Items(& pt->installed);
   for(n = 1; n <= proc_num; n++) {
     TASK( VM_Proc_Disassemble_One(vmp, out, n) );
   }

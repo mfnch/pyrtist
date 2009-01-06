@@ -51,16 +51,14 @@
 
 static RegAlloc ra_obj, *ra = & ra_obj;
 
-static Task Frame_Destructor(void *reg_frame_ptr) {
+static void Frame_Destructor(void *reg_frame_ptr) {
   RegFrame *reg_frame = (RegFrame *) reg_frame_ptr;
   int i;
   for(i=0; i<NUM_TYPES; i++) {
     if (reg_frame->reg_occ[i] != (Collection *) NULL)
       Clc_Destroy(reg_frame->reg_occ[i]);
-    if (reg_frame->lvar[i].occ != (Array *) NULL)
-      Arr_Destroy(reg_frame->lvar[i].occ);
+    BoxArr_Finish(& reg_frame->lvar[i].occ);
   }
-  return Success;
 }
 
 /*  Inizializza gli array che tengono nota dei registri occupati
@@ -70,38 +68,36 @@ static Task Frame_Destructor(void *reg_frame_ptr) {
  *  eseguite poche realloc.
  */
 Task Reg_Init(void) {
-  int i;
-  TASK( Arr_New(& ra->reg_frame, sizeof(RegFrame), 2) );
-  Arr_Destructor(ra->reg_frame, Frame_Destructor);
+  BoxArr_Init(& ra->reg_frame, sizeof(RegFrame), 2);
+  BoxArr_Set_Finalizer(& ra->reg_frame, Frame_Destructor);
   Reg_Frame_Push();
-  for(i=0; i<NUM_TYPES; i++) ra->gvar[i].occ = (Array *) NULL;
   return Success;
 }
 
 void Reg_Destroy(void) {
   int i;
-  Arr_Destroy(ra->reg_frame);
-  for(i=0; i<NUM_TYPES; i++) {
-    if (ra->gvar[i].occ != (Array *) NULL)
-      Arr_Destroy(ra->gvar[i].occ);
-  }
+  BoxArr_Finish(& ra->reg_frame);
+  for(i = 0; i < NUM_TYPES; i++)
+    BoxArr_Finish(& ra->gvar[i].occ);
 }
 
 void Reg_Frame_Push(void) {
   int i;
   RegFrame new_frame;
-  for(i=0; i<NUM_TYPES; i++) {
+  for(i=0; i < NUM_TYPES; i++) {
     new_frame.reg_occ[i] = (Collection *) NULL;
     new_frame.lvar[i].occ = (Array *) NULL;
   }
-  (void) Arr_Push(ra->reg_frame, & new_frame);
+  BoxArr_Push(& ra->reg_frame, & new_frame);
 }
 
 Task Reg_Frame_Pop(void) {
-  return Arr_Pop(ra->reg_frame);
+  return BoxArr_Pop(& ra->reg_frame, NULL);
 }
 
-Int Reg_Frame_Get(void) {return Arr_NumItem(ra->reg_frame);}
+Int Reg_Frame_Get(void) {
+  return BoxArr_Num_Items(& ra->reg_frame);
+}
 
 /*  Restituisce un numero di registro libero e lo occupa,
  *  in modo tale che questo numero di registro non venga piu' restituito
@@ -114,7 +110,7 @@ Int Reg_Frame_Get(void) {return Arr_NumItem(ra->reg_frame);}
  */
 Int Reg_Occupy(Int t) {
   UInt reg_num;
-  RegFrame *rf = Arr_LastItemPtr(ra->reg_frame, RegFrame);
+  RegFrame *rf = (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
   Task task;
 
   assert(t >= 0);
@@ -132,7 +128,7 @@ Int Reg_Occupy(Int t) {
 /* Vedi Reg_Occupy.
  */
 Task Reg_Release(Int t, UInt reg_num) {
-  RegFrame *rf = Arr_LastItemPtr(ra->reg_frame, RegFrame);
+  RegFrame *rf = (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
 
   assert(t >= 0);
   if (t >= NUM_TYPES) t = TYPE_OBJ;
@@ -144,10 +140,9 @@ Task Reg_Release(Int t, UInt reg_num) {
   return Clc_Release(rf->reg_occ[t], reg_num);
 }
 
-/* Restituisce il numero di registro massimo fin'ora utilizzato.
- */
+/* Restituisce il numero di registro massimo fin'ora utilizzato. */
 Int Reg_Num(Int t) {
-  RegFrame *rf = Arr_LastItemPtr(ra->reg_frame, RegFrame);
+  RegFrame *rf = (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
 
   assert(t >= 0);
   if (t >= NUM_TYPES) t = TYPE_OBJ;
@@ -253,7 +248,7 @@ Task _Var_Release(VarFrame *var, Int type, UInt varnum) {
 }
 
 static RegFrame *Cur_RegFrame(void) {
-  return Arr_LastItemPtr(ra->reg_frame, RegFrame);
+  return (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
 }
 
 static Int RegType(Int type) {

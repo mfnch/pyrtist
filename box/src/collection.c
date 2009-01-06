@@ -35,6 +35,129 @@
 #define CLC_END_OF_CHAIN -1
 #define CLC_ITEM_OCCUPIED 0
 
+void BoxOcc_Init(BoxOcc *occ, UInt element_size, UInt initial_size) {
+  element_size += sizeof(UInt);
+  BoxArr_Init(& occ->array, element_size, initial_size);
+  occ->elsize = element_size;
+  occ->chain = CLC_END_OF_CHAIN;
+  occ->max_idx = 0;
+  occ->fin = (BoxOccFinalizer) NULL;
+}
+
+void BoxOcc_Finish(BoxOcc *occ) {
+  BoxArr_Finish(& occ->array);
+}
+
+BoxOcc *BoxOcc_New(UInt element_size, UInt initial_size) {
+  BoxOcc *occ = BoxMem_Alloc(sizeof(BoxOcc));
+  if (occ == NULL) return NULL;
+  BoxOcc_Init(occ, element_size, initial_size);
+  return occ;
+}
+
+void BoxOcc_Destroy(BoxOcc *occ) {
+  BoxOcc_Finish(occ);
+  BoxMem_Free(occ);
+}
+
+static void Internal_Finalizer(void *item) {
+
+
+  /*if ( *((int *) item_container) == CLC_ITEM_OCCUPIED ) {
+    void *item = item_container + sizeof(UInt);
+    return ((Task (*)(void  *)) destructor)(item);
+  }*/
+}
+
+void BoxOcc_Set_Finalizer(BoxOcc *occ, BoxOccFinalizer fin) {
+  occ->fin = fin;
+  BoxArr_Set_Finalizer(& occ->array, Internal_Finalizer);
+}
+
+typedef struct {
+  BoxArrFinalizer occupied;
+  UInt            chain;
+} ItemHeader;
+
+UInt BoxOcc_Occupy(BoxOcc *occ, void *item) {
+  BoxArr *arr = & occ->array;
+  ItemHeader *head;
+  void *my_item;
+
+  if (occ->chain < 1) { /* empty chain */
+    my_item = BoxArr_Push(arr, NULL);
+    head = (ItemHeader *) my_item;
+    my_item += sizeof(ItemHeader);
+
+    head->chain = occ->chain;
+    occ->chain = BoxArr_Num_Items(arr);
+    head->occupied = Internal_Finalizer;
+    memcpy(my_item, item, occ->elsize);
+    if (occ->chain > occ->max_idx)
+      occ->max_idx = occ->chain;
+    return occ->chain;
+
+#ifdef DEBUG
+      printf("Clc_Occupy(1): %p: occupo (num="SInt")\n", c, ni);
+#endif
+
+  } else {
+    my_item = BoxArr_Item_Ptr(arr, occ->chain);
+    head = (ItemHeader *) my_item;
+    my_item += sizeof(ItemHeader);
+
+    occ->chain = head->chain;
+    head->occupied = Internal_Finalizer;
+    memcpy(my_item, item, occ->elsize);
+    return occ->chain;
+
+#ifdef DEBUG
+    printf("Clc_Occupy(2): %p: occupo (num="SInt")\n", c, free_item);
+#endif
+  }
+}
+
+void BoxOcc_Release(BoxOcc *occ, UInt item_index) {
+  BoxArr *arr = & occ->arr;
+  void *my_item;
+
+#ifdef DEBUG
+  printf("Clc_Release: %p: rilascio (num="SInt")\n", c, item_index);
+#endif
+
+  if (item_index > BoxArr_Num_Items(arr)) {
+    MSG_ERROR("BoxOcc_Release: Releasing a non occupied item");
+    return;
+  }
+
+  my_item = (void *) BoxArr_Item_Ptr(arr, item_index);
+  head = (ItemHeader *) my_item;
+  my_item += sizeof(ItemHeader);
+
+  if (head->occupied != NULL) {
+    MSG_ERROR("BoxOcc_Release: Item already released: num = %d", item_index);
+    return;
+  }
+
+  head->occupied = Internal_Finalizer;
+  head->chain = occ->chain;
+  occ->chain = item_index;
+
+  if ( c->destroy == (Task (*)(void *)) NULL ) return Success;
+  c->destroy(item_ptr + sizeof(UInt));
+}
+
+
+
+
+
+
+
+
+
+
+
+
 Task Clc_New(Collection **new_clc, UInt element_size, UInt min_dim) {
   Array *a;
   element_size += sizeof(UInt);

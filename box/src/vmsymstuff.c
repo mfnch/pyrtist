@@ -146,7 +146,7 @@ Task VM_Sym_Def_Label(VMProgram *vmp, UInt sym_num,
 Task VM_Sym_Def_Label_Here(VMProgram *vmp, UInt label_sym_num) {
   Int sheet_id, position;
   sheet_id = vmp->proc_table.target_proc_num;
-  position = Arr_NumItem(vmp->proc_table.target_proc->code);
+  position = BoxArr_Num_Items(& vmp->proc_table.target_proc->code);
   return VM_Sym_Def_Label(vmp, label_sym_num, sheet_id, position);
 }
 
@@ -162,7 +162,7 @@ Task VM_Sym_Jmp_Generic(VMProgram *vmp, UInt sym_num, int conditional) {
   VMSymLabelRef label_ref;
   label_ref.conditional = conditional;
   label_ref.sheet_id = vmp->proc_table.target_proc_num;
-  label_ref.position = Arr_NumItem(vmp->proc_table.target_proc->code);
+  label_ref.position = BoxArr_Num_Items(& vmp->proc_table.target_proc->code);
   return VM_Sym_Code_Ref(vmp, sym_num, Assemble_Jmp,
                          & label_ref, sizeof(VMSymLabelRef));
 }

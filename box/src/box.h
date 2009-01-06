@@ -33,10 +33,12 @@
 #  ifndef _BOX_H
 #    define _BOX_H
 
+#    include "array.h"
+
 typedef struct {
   UInt cur_sheet;
   Int num_defs; /**< 0 in global context, 1 inside procedure definitions. */
-  Array *box;
+  BoxArr box;
 } BoxStack;
 
 /** @brief This structure describes an opened box

@@ -51,10 +51,10 @@ struct __vmprogram;
  */
 typedef struct {
   Hashtable *syms;
-  Array *data;
-  Array *defs;
-  Array *refs;
-  Array *dylibs;
+  BoxArr data,
+         defs,
+         refs,
+         dylibs;
 } VMSymTable;
 
 /** This is the prototype for a function which generates a piece of code
@@ -160,10 +160,10 @@ Task VM_Sym_Resolver_Set(VMProgram *vmp, UInt sym_num, VMSymResolver r);
 #endif
 
 /** Set *all_resolved = 1 only if there are no unresolved references */
-Task VM_Sym_Ref_Check(VMProgram *vmp, int *all_resolved);
+void VM_Sym_Ref_Check(VMProgram *vmp, int *all_resolved);
 
 /** Print an error message for every unresolved reference */
-Task VM_Sym_Ref_Report(VMProgram *vmp);
+void VM_Sym_Ref_Report(VMProgram *vmp);
 
 /** Resolve the symbol 'sym_num'.
  * If sym_num=0, then try to resolve all the symbols.

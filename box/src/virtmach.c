@@ -371,14 +371,14 @@ void VM__D_CALL(VMProgram *vmp, char **iarg) {
     if ( iat == TYPE_CHAR ) call_num = (Int) ((Char) call_num);
     {
       VMProcTable *pt = & vmp->proc_table;
-      if ( (call_num < 1) || (call_num > Arr_NumItem(pt->installed)) ) {
+      if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
         sprintf(vmp->iarg_str[0], SInt, call_num);
         return;
 
       } else {
         char *call_name;
         VMProcInstalled *p;
-        p = Arr_ItemPtr(pt->installed, VMProcInstalled, call_num);
+        p = (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
         call_name = Str_Cut(p->desc, 40, 85);
         sprintf(vmp->iarg_str[0], SInt"('%.40s')", call_num, call_name);
         free(call_name);
@@ -641,12 +641,12 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
 #endif
 
   /* Controlliamo che il modulo sia installato! */
-  if (call_num < 1 || call_num > Arr_NumItem(pt->installed)) {
+  if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
     MSG_ERROR("Call to the undefined procedure %d.", call_num);
     return Failed;
   }
 
-  p = Arr_ItemPtr(pt->installed, VMProcInstalled, call_num);
+  p = (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
   switch (p->type) {
     case VMPROC_IS_C_CODE: return p->code.c(vmp);
     case VMPROC_IS_VM_CODE: break;
@@ -890,7 +890,7 @@ Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg) {
   VMProcTable *pt = & vmp->proc_table;
   int previous_sheet;
   UInt tmp_sheet_id = 0;
-  Array *entry = pt->target_proc->code;
+  BoxArr *entry = & pt->target_proc->code;
   Task exit_status = Failed;
 
   VM_Assemble(vmp, ASM_RET);
@@ -921,12 +921,10 @@ Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg) {
    * this function).
    */
   {
-    Array *code_to_insert = pt->target_proc->code;
-    int code_to_insert_len = Arr_NumItem(code_to_insert);
-    void *code_to_insert_ptr = Arr_Ptr(code_to_insert);
-
-    if IS_FAILED(Arr_Insert(entry, 1, code_to_insert_len, code_to_insert_ptr) )
-      goto exit;
+    BoxArr *code_to_insert = & pt->target_proc->code;
+    int code_to_insert_len = BoxArr_Num_Items(code_to_insert);
+    void *code_to_insert_ptr = BoxArr_First_Item_Ptr(code_to_insert);
+    BoxArr_Insert(entry, 1, code_to_insert_ptr, code_to_insert_len);
   }
 
   exit_status = Success;
@@ -1050,7 +1048,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
     VMByteX4 buffer[1], *i_pos = buffer;
     register VMByteX4 i_eye;
     UInt atype;
-    Array *prog = pt->target_proc->code;
+    BoxArr *prog = & pt->target_proc->code;
 
     for ( ; t < 2; t++ ) {
       arg[t].c = 0;
@@ -1062,25 +1060,21 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
                          /* i_len = */ 1, atype);
     ASM_SHORT_PUT_2ARGS(i_pos, i_eye, arg[0].vi, arg[1].vi);
 
-    if IS_FAILED( Arr_Push(prog, buffer) ) {
-      pt->target_proc->status.error = 1;
-      pt->target_proc->status.inhibit = 1;
-      return;
-    }
+    BoxArr_Push(prog, buffer);
     return;
 
   } else {
     /* L'istruzione va scritta in formato lungo! */
     UInt idim, iheadpos;
     VMByteX4 iw[MAX_SIZE_IN_IWORDS];
-    Array *prog = pt->target_proc->code;
+    BoxArr *prog = & pt->target_proc->code;
 
     /* Lascio il posto per la "testa" dell'istruzione (non conoscendo ancora
-    * la dimensione dell'istruzione, non posso scrivere adesso la testa.
-    * Potro' farlo solo alla fine, dopo aver scritto tutti gli argomenti!)
-    */
+     * la dimensione dell'istruzione, non posso scrivere adesso la testa.
+     * Potro' farlo solo alla fine, dopo aver scritto tutti gli argomenti!)
+     */
     iheadpos = Arr_NumItem(prog) + 1;
-    Arr_MInc(prog, idim = 2);
+    BoxArr_MPush(prog, NULL, idim = 2);
 
     for ( i = 0; i < t; i++ ) {
       UInt adim, aiwdim;
@@ -1090,12 +1084,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
       iw[aiwdim - 1] = 0;
       (void) memcpy( iw, arg[i].ptr, adim );
 
-      if IS_FAILED( Arr_MPush(prog, iw, aiwdim) ) {
-        pt->target_proc->status.error = 1;
-        pt->target_proc->status.inhibit = 1;
-        return;
-      }
-
+      BoxArr_MPush(prog, iw, aiwdim);
       idim += aiwdim;
     }
 

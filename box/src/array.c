@@ -109,7 +109,7 @@ void BoxArr_Set_Finalizer(BoxArr *arr, BoxArrFinalizer fin) {
 
 /* Apply a function to all the elements of an array */
 int BoxArr_Iter(BoxArr *arr, BoxArrIterator iter, void *pass_data) {
-  if (iter == NULL) {
+  if (iter != NULL) {
     int i;
     void *item_ptr, *ptr;
 

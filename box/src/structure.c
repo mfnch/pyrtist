@@ -2,16 +2,6 @@
  * The following part of this file handles structures.                       *
  *****************************************************************************/
 
-static Int cmp_structure_type, cmp_structure_num, cmp_structure_size;
-static Array *cmp_structure_exprs;
-static Array *cmp_structure_data;
-
-typedef struct {
-  Int  num;  /* Numero dell'elemento */
-  Int  size; /* Posizione dell'elemento nella struttura */
-  Expr expr; /* Espressione contenente il valore dell'elemento */
-} StructItem;
-
 static Task Cmp__Structure_Backgnd(StructItem *first, Int num, Int size,
                                    int *only_backgnd, int *only_foregnd);
 static Task Cmp__Structure_Foregnd(Expr *new_struct, StructItem *first,
@@ -22,21 +12,12 @@ static Task Cmp__Structure_Foregnd(Expr *new_struct, StructItem *first,
  */
 Task Cmp_Structure_Begin(void) {
   StructItem header;
-
-  if ( cmp_structure_exprs == NULL ) {
-    cmp_structure_exprs = Array_New(sizeof(StructItem), CMP_TYPICAL_STRUC_DIM);
-    if ( cmp_structure_exprs == NULL ) return Failed;
-    cmp_structure_type = TYPE_NONE;
-
-  } else {
-    TASK( Arr_Clear(cmp_structure_exprs) );
-  }
-
-  header.expr.type = cmp_structure_type;
-  TASK( Arr_Push(cmp_structure_exprs, & header) );
-  cmp_structure_type = TYPE_NONE;
-  cmp_structure_num = 0;
-  cmp_structure_size = 0;
+  header.expr.type = cmp->struc.type;
+  BoxArr_Clear(& cmp->struc.exprs);
+  BoxArr_Push(& cmp->struc.exprs, & header);
+  cmp->struc.type = TYPE_NONE;
+  cmp->struc.num = 0;
+  cmp->struc.size = 0;
   return Success;
 }
 
@@ -60,15 +41,16 @@ Task Cmp_Structure_Add(Expr *e) {
 
   /* Creo un tipo opportuno associato alla struttura */
   e->type = t = Tym_Type_Resolve_All(e->type);
-  TASK( Tym_Def_Structure(& cmp_structure_type, t) );
+  TASK( Tym_Def_Structure(& cmp->struc.type, t) );
 
   /* Memorizzo l'espressione *e per poterla trattare
    * in seguito in Cmp_Structure_End
    */
-  si.num = ++cmp_structure_num;
-  si.size = (cmp_structure_size += item_size);
+  si.num = ++cmp->struc.num;
+  si.size = (cmp->struc.size += item_size);
   si.expr = *e;
-  return Arr_Push(cmp_structure_exprs, & si);
+  BoxArr_Push(& cmp->struc.exprs, & si);
+  return Success;
 }
 
 /* DESCRIPTION: This function ends the creation of the current structure.
@@ -76,18 +58,15 @@ Task Cmp_Structure_Add(Expr *e) {
 Task Cmp_Structure_End(Expr *new_struct) {
   StructItem *si, *first;
   int only_backgnd, only_foregnd;
-  Int num = cmp_structure_num, size = cmp_structure_size,
-      type = cmp_structure_type;
+  Int num = cmp->struc.num, size = cmp->struc.size, type = cmp->struc.type;
 
-  assert(cmp_structure_exprs != NULL);
-
-  if ( num < 1 ) {
+  if (num < 1) {
     MSG_ERROR("Trying to create an empty structure.");
     return Failed;
   }
 
-  si = Arr_LastItemPtr(cmp_structure_exprs, StructItem);
-  assert( (si->num == num) && (si->size == size) );
+  si = (StructItem *) BoxArr_Last_Item_Ptr(& cmp->struc.exprs);
+  assert(si->num == num && si->size == size);
   first = si - (num - 1);
 
   /* Creo la parte immediata della struttura */
@@ -101,8 +80,8 @@ Task Cmp_Structure_End(Expr *new_struct) {
     new_struct->categ = CAT_IMM;
     new_struct->type = type;
     new_struct->addr = imm_addr =
-     Cmp_Imm_Add(cmp, type, Arr_FirstItemPtr(cmp_structure_data, void), size);
-    if ( imm_addr < 0 ) return Failed;
+     Cmp_Imm_Add(cmp, type, BoxArr_First_Item_Ptr(& cmp->struc.data), size);
+    if (imm_addr < 0) return Failed;
 
   } else {
     /* Alloco lo spazio dove mettero' la struttura */
@@ -114,7 +93,7 @@ Task Cmp_Structure_End(Expr *new_struct) {
       Int struct_addr;
       /* Trasferisco il background nel segmento dati */
       struct_addr = BoxVM_Data_Add(cmp->vm,
-                                   Arr_FirstItemPtr(cmp_structure_data, void),
+                                   BoxArr_First_Item_Ptr(& cmp->struc.data),
                                    size, type);
       if ( struct_addr < 0 ) return Failed;
       Cmp_Assemble(ASM_MOV_OO, CAT_LREG, 0, CAT_GREG, 0);
@@ -127,22 +106,23 @@ Task Cmp_Structure_End(Expr *new_struct) {
     TASK( Cmp__Structure_Foregnd(new_struct, first, num, only_foregnd) );
   }
 
-  if ( cmp_structure_num + 1 > Arr_NumItem(cmp_structure_exprs) ) {
-    TASK( Arr_MDec(cmp_structure_exprs, cmp_structure_num) );
-    si = Arr_LastItemPtr(cmp_structure_exprs, StructItem);
-    cmp_structure_type = si->expr.type;
-    TASK( Arr_Dec(cmp_structure_exprs) );
-    si = Arr_LastItemPtr(cmp_structure_exprs, StructItem);
-    cmp_structure_num = si->num;
-    cmp_structure_size = si->size;
+  if (cmp->struc.num + 1 > BoxArr_Num_Items(& cmp->struc.exprs) ) {
+    BoxArr_MPop(& cmp->struc.exprs, NULL, cmp->struc.num);
+    si = (StructItem *) BoxArr_Last_Item_Ptr(& cmp->struc.exprs);
+    cmp->struc.type = si->expr.type;
+    BoxArr_Pop(& cmp->struc.exprs, NULL);
+    si = (StructItem *) BoxArr_Last_Item_Ptr(& cmp->struc.exprs);
+    cmp->struc.num = si->num;
+    cmp->struc.size = si->size;
     return Success;
 
   } else {
-    assert(cmp_structure_num + 1 == Arr_NumItem(cmp_structure_exprs));
-    cmp_structure_num = TYPE_NONE;
-    cmp_structure_num = 0;
-    cmp_structure_size = 0;
-    return Arr_Clear(cmp_structure_exprs);
+    assert(cmp->struc.num + 1 == BoxArr_Num_Items(& cmp->struc.exprs));
+    cmp->struc.num = TYPE_NONE;
+    cmp->struc.num = 0;
+    cmp->struc.size = 0;
+    BoxArr_Clear(& cmp->struc.exprs);
+    return Success;
   }
 }
 
@@ -156,20 +136,13 @@ static Task Cmp__Structure_Backgnd(StructItem *first, Int num, Int size,
   Int i, arg_size, arg_size_old;
   StructItem *si;
 
-  /* Se non e' gia' stato fatto, creo l'array che conterra'
-   * "l'immagine di sfondo" della struttura (cioe' la sua parte immediata)
-   */
-  if ( cmp_structure_data == NULL ) {
-    cmp_structure_data = Array_New(sizeof(char), CMP_TYPICAL_STRUC_SIZE);
-    if ( cmp_structure_data == NULL ) return Failed;
-  } else {
-    TASK( Arr_Clear(cmp_structure_data) );
-  }
+  /* Empty the structure containing the immediate background */
+  BoxArr_Clear(& cmp->struc.data);
 
   /* Mi assicuro che riesca a contenere tutta la struttura
    * (cosi' evito inutili riallocazioni)if ( Cmp_Structure_Add(& $1) ) MY_ERR
-   */
-  TASK( Arr_BigEnough(cmp_structure_data, size) );
+   *
+  TASK( Arr_BigEnough(& cmp->struc.data, size) ); */
 
   /* Scorro le espressioni che compongono la struttura
    * alla ricerca di quelle immediate
@@ -190,17 +163,17 @@ static Task Cmp__Structure_Backgnd(StructItem *first, Int num, Int size,
       *only_foregnd = 0;
       if ( t < NUM_INTRINSICS ) {
         assert( (t >= 0) && (t < NUM_TYPES) );
-        TASK( Arr_MPush(cmp_structure_data, & e->value, size_of_type[t]) );
+        BoxArr_MPush(& cmp->struc.data, & e->value, size_of_type[t]);
 
       } else {
         char *imm_addr;
-        imm_addr = Arr_ItemPtr(cmp_structure_data, char, e->addr);
-        TASK( Arr_MPush(cmp_structure_data, imm_addr, arg_size) );
+        imm_addr = (char *) BoxArr_Item_Ptr(& cmp->struc.data, e->addr);
+        BoxArr_MPush(& cmp->struc.data, imm_addr, arg_size);
       }
 
     } else {
       *only_backgnd = 0;
-      TASK( Arr_Append_Blank(cmp_structure_data, si->size) );
+      BoxArr_MPush(& cmp->struc.data, NULL, si->size);
     }
 
     ++si;

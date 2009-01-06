@@ -39,7 +39,7 @@ typedef struct {
     unsigned int error : 1;
     unsigned int inhibit : 1;
   } status;
-  Array *code; /**< Array which contains effectively the code */
+  BoxArr code; /**< Array which contains effectively the code */
 } VMProc;
 
 /** This structure describes an installed procedure
@@ -77,7 +77,7 @@ typedef struct {
   UInt target_proc_num; /**< Number of the target procedure */
   UInt tmp_proc; /**< Procedure used as temporary buffer */
   VMProc *target_proc;  /**< The target procedure */
-  Array *installed; /**< Array of the installed procedures */
+  BoxArr installed; /**< Array of the installed procedures */
   Collection *uninstalled; /**< Collection of the uninstalled procedures */
 } VMProcTable;
 
@@ -134,7 +134,7 @@ UInt VM_Proc_Install_Number(VMProgram *vmp);
  * (this is necessary for symbol resolution: a procedure can be installed
  * even if it references are still undefined).
  */
-Task VM_Proc_Install_Code(VMProgram *vmp, UInt *call_num,
+void VM_Proc_Install_Code(VMProgram *vmp, UInt *call_num,
                           UInt proc_num, const char *name,
                           const char *desc);
 
@@ -147,7 +147,7 @@ typedef Task (*VMCCode)(VMProgram *);
  * 'c_proc' as a new procedure. The call-number is returned in '*call_num'.
  * @see VM_Proc_Install_Code
  */
-Task VM_Proc_Install_CCode(VMProgram *vmp, UInt *call_num,
+void VM_Proc_Install_CCode(VMProgram *vmp, UInt *call_num,
                            VMCCode c_proc, const char *name,
                            const char *desc);
 

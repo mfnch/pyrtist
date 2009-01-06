@@ -296,7 +296,7 @@ static Task Stage_Symbol_Resolution(UInt *flags) {
   MSG_CONTEXT_BEGIN("Symbol resolution");
   TASK( VM_Sym_Resolve_CLibs(program, lib_dirs, libraries) );
   TASK( VM_Sym_Resolve_All(program) );
-  TASK( VM_Sym_Ref_Check(program, & all_resolved) );
+  VM_Sym_Ref_Check(program, & all_resolved);
   if (! all_resolved) {
     VM_Sym_Ref_Report(program);
     MSG_ERROR("Unresolved references: program cannot be executed.");
@@ -383,8 +383,9 @@ Task Main_Prepare(void) {
 /* FASE DI ESECUZIONE */
 Task Main_Install(UInt *main_module) {
   TASK( Main_Prepare() );
-  return VM_Proc_Install_Code(program, main_module,
-                              VM_Proc_Target_Get(program), "main", "Entry");
+  VM_Proc_Install_Code(program, main_module,
+                       VM_Proc_Target_Get(program), "main", "Entry");
+  return Success;
 }
 
 Task Main_Execute(UInt main_module) {

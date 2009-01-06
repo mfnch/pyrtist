@@ -175,10 +175,20 @@ typedef struct {
 } OpnInfo;
 
 typedef struct {
+  Int  num;  /* Numero dell'elemento */
+  Int  size; /* Posizione dell'elemento nella struttura */
+  Expr expr; /* Espressione contenente il valore dell'elemento */
+} StructItem;
+
+typedef struct {
   VMProgram *vm;
   TS ts_obj, *ts;
   BoxArr imm_segment,
          allocd_oprs;
+  struct {
+    Int  type, num, size;
+    BoxArr exprs, data;
+  } struc;
 } Compiler;
 
 /* The main compiler data structure */

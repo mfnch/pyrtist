@@ -41,6 +41,21 @@
 #  include "types.h"
 #  include "array.h"
 
+typedef void (*BoxOccFinalizer)(void *);
+
+typedef struct {
+  BoxArr          array;   /**< Array obj of which BoxOcc is an extension */
+  UInt            chain,   /**< Chain of released objects */
+                  max_idx; /**< */
+  BoxOccFinalizer fin;     /**< BoxOcc finalizer */
+  UInt            elsize;  /**< Element size */
+} BoxOcc;
+
+
+
+
+
+
 typedef Array Collection;
 
 /** Creates a new Collection object.

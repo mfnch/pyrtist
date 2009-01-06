@@ -47,8 +47,8 @@
 #  include "collection.h"
 
 typedef struct {
-  Int max; /**< Total number of registers to allocate for variables */
-  Array *occ; /**< Variables occcupations */
+  Int max;    /**< Total number of registers to allocate for variables */
+  BoxArr occ; /**< Variables occcupations */
 } VarFrame;
 
 /** @brief The state of allocation of the registers in a single function.
@@ -61,7 +61,7 @@ typedef struct {
 /** @brief This structure keeps the full state of the register allocator.
  */
 typedef struct {
-  Array *reg_frame; /**< Array of register frames */
+  BoxArr reg_frame;         /**< Array of register frames */
   VarFrame gvar[NUM_TYPES]; /**< Global variables */
 } RegAlloc;
 

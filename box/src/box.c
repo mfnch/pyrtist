@@ -46,18 +46,18 @@
 static BoxStack box_stack, *bs = & box_stack;
 
 Task Box_Init(void) {
-  TASK( Arr_New(& bs->box, sizeof(Box), BOX_ARR_SIZE) );
+  BoxArr_Init(& bs->box, sizeof(Box), BOX_ARR_SIZE);
   bs->num_defs = 0;
   bs->cur_sheet = -1;
   return Success;
 }
 
 void Box_Destroy(void) {
-  Arr_Destroy(bs->box);
+  BoxArr_Finish(& bs->box);
 }
 
 Int Box_Num(void) {
-  return (Arr_NumItem(bs->box) - 1);
+  return BoxArr_Num_Items(& bs->box) - 1;
 }
 
 Int Box_Def_Num(void) {return bs->num_defs;}
@@ -77,14 +77,14 @@ Task Box_Main_Begin(void) {
   TASK( VM_Proc_Target_Set(cmp_vm, main_sheet) );
   bs->cur_sheet = main_sheet;
   TASK( Box_Instance_Begin((Expr *) NULL, 1) );
-  b = Arr_LastItemPtr(bs->box, Box);
+  b = (Box *) BoxArr_Last_Item_Ptr(& bs->box);
   TASK( VM_Sym_Proc_Head(cmp_vm, & b->head_sym_num) );
   return Success;
 }
 
 void Box_Main_End(void) {
   UInt level = Box_Num();
-  Box *b = Arr_FirstItemPtr(bs->box, Box);
+  Box *b = (Box *) BoxArr_First_Item_Ptr(& bs->box);
   UInt head_sym_num = b->head_sym_num;
   if (level > 0) {
     MSG_ERROR("Missing %I closing %s!", level,
@@ -315,12 +315,12 @@ Task Box_Procedure_Begin(Type parent, Type child, Type procedure) {
   b.type = procedure;
   b.is.definition = 1;
   b.sheet = new_sheet;
-  TASK(Arr_Push(bs->box, & b));
+  BoxArr_Push(& bs->box, & b);
   bs->cur_sheet = new_sheet;
   ++bs->num_defs;
 
   /* Used to create jump labels for If and For */
-  b_ptr = Arr_LastItemPtr(bs->box, Box);
+  b_ptr = (Box *) BoxArr_Last_Item_Ptr(& bs->box);
   TASK( VM_Sym_New_Label_Here(cmp_vm, & b_ptr->label_begin) );
   TASK( VM_Sym_New_Label(cmp_vm, & b_ptr->label_end) );
   return Success;
@@ -330,7 +330,7 @@ Task Box_Procedure_End(UInt *call_num) {
   Box *b;
   UInt my_call_num;
 
-  b = Arr_LastItemPtr(bs->box, Box);
+  b = (Box *) BoxArr_Last_Item_Ptr(& bs->box);
   assert(b->is.definition);
 
   /* Cancello le labels che puntano all'inizio ed alla fine della box */
@@ -358,15 +358,15 @@ Task Box_Procedure_End(UInt *call_num) {
   TASK(Box_Def_Prepare(b->head_sym_num));
 
   /* We finally install the code for the procedure */
-  TASK( VM_Proc_Install_Code(cmp_vm, & my_call_num, b->sheet,
-                             "(noname)", Tym_Type_Name(b->type)) );
+  VM_Proc_Install_Code(cmp_vm, & my_call_num, b->sheet,
+                       "(noname)", Tym_Type_Name(b->type));
   /* And define the symbol */
   TASK( Reg_Frame_Pop() );
 
   /* Restore to the state before the call to Box_Procedure_Begin */
-  TASK(Arr_Dec(bs->box));
-  if (Arr_NumItem(bs->box) > 0) {
-    b = Arr_LastItemPtr(bs->box, Box);
+  BoxArr_Pop(& bs->box, NULL);
+  if (BoxArr_Num_Items(& bs->box) > 0) {
+    b = (Box *) BoxArr_Last_Item_Ptr(& bs->box);
     TASK( VM_Proc_Target_Set(cmp_vm, b->sheet) );
     bs->cur_sheet = b->sheet;
   }
@@ -442,14 +442,14 @@ Task Box_Instance_Begin(Expr *e, int kind) {
   /* Inserisce la nuova sessione */
   b.is.definition = 0; /* This is just an instance, not a definition */
   b.sheet = bs->cur_sheet; /* The procedure sheet number where we are now */
-  TASK(Arr_Push(bs->box, & b));
+  BoxArr_Push(& bs->box, & b);
 
   if (e != NULL)
     (void) Box_Procedure_Quick_Call_Void(TYPE_OPEN, BOX_DEPTH_UPPER,
                                          BOX_MSG_SILENT);
 
   /* Creo le labels che puntano all'inizio ed alla fine della box */
-  b_ptr = Arr_LastItemPtr(bs->box, Box);
+  b_ptr = (Box *) BoxArr_Last_Item_Ptr(& bs->box);
   TASK( VM_Sym_New_Label_Here(cmp_vm, & b_ptr->label_begin) );
   TASK( VM_Sym_New_Label(cmp_vm, & b_ptr->label_end) );
   return Success;
@@ -470,19 +470,14 @@ Task Box_Instance_End(Expr *e) {
   }
 
   /* Eseguo dei controlli di sicurezza */
-  if ( bs->box == NULL ) {
-    MSG_ERROR("Nessuna box da terminare");
-    return Failed;
-  }
-
-  if ( Arr_NumItem(bs->box) < 1 ) {
-    MSG_ERROR("Nessuna box da terminare");
+  if (BoxArr_Num_Items(& bs->box) < 1) {
+    MSG_ERROR("Cannot close the box. All boxes have already been closed.");
     return Failed;
   }
 
   /* Cancello le variabili esplicite della sessione */
   {
-    Box *box = Arr_LastItemPtr(bs->box, Box);
+    Box *box = (Box *) BoxArr_Last_Item_Ptr(& bs->box);
     Symbol *s, *next;
 
     /* Cancello le labels che puntano all'inizio ed alla fine della box */
@@ -498,7 +493,7 @@ Task Box_Instance_End(Expr *e) {
     }
   }
 
-  TASK(Arr_Dec(bs->box));
+  BoxArr_Pop(& bs->box, NULL);
   return Success;
 }
 
@@ -513,21 +508,21 @@ Int Box_Search_Opened(Int type, BoxDepth depth) {
   Int max_depth, d;
   Box *box;
 
-  assert(bs->box != NULL && depth >= 0);
+  assert(depth >= 0);
 
-  max_depth = Arr_NumItem(bs->box);
-  if ( depth >= max_depth ) {
+  max_depth = BoxArr_Num_Items(& bs->box);
+  if (depth >= max_depth) {
     MSG_ERROR("Indirizzo di box troppo profondo.");
     return -1;
   }
 
-  box = Arr_LastItemPtr(bs->box, Box) - depth;
+  box = (Box *) BoxArr_Last_Item_Ptr(& bs->box) - depth;
   for (d = depth; d < max_depth; d++) {
 #if 0
     printf("Profondita': "SInt" -- Tipo: '%s'\n",
-     d, Tym_Type_Name(box->parent.type));
+           d, Tym_Type_Name(box->parent.type));
 #endif
-    if ( box->type == type ) return d; /* BUG: bad type comparison */
+    if (box->type == type) return d; /* BUG: bad type comparison */
     --box;
   }
   return -1;
@@ -538,11 +533,10 @@ Int Box_Search_Opened(Int type, BoxDepth depth) {
  */
 Box *Box_Get(BoxDepth depth) {
   Int max_depth;
-  assert(bs->box != NULL);
   if (depth < BOX_DEPTH_UPPER) depth = BOX_DEPTH_UPPER;
-  max_depth = Arr_NumItem(bs->box);
+  max_depth = BoxArr_Num_Items(& bs->box);
   assert(depth < max_depth);
-  return Arr_LastItemPtr(bs->box, Box) - depth;
+  return (Box *) BoxArr_Last_Item_Ptr(& bs->box) - depth;
 }
 
 Task Box_Parent_Get(Expr *e_parent, BoxDepth depth) {
@@ -562,9 +556,9 @@ Int Box_Def_Depth(int n) {
   Int depth, max_depth;
   Box *box;
 
-  assert(bs->box != NULL && n >= 0);
-  max_depth = Arr_NumItems(bs->box);
-  box = Arr_LastItemPtr(bs->box, Box);
+  assert(n >= 0);
+  max_depth = BoxArr_Num_Items(& bs->box);
+  box = (Box *) BoxArr_Last_Item_Ptr(& bs->box);
   for(depth = 0; depth < max_depth; depth++) {
     if (box->is.definition) {
       if (n == 0) return depth;
@@ -622,7 +616,7 @@ Task Sym_Explicit_New(Symbol **sym, Name *nm, BoxDepth depth) {
    * box corrente (in modo da eliminarle alla chiusura della box).
    */
   level = Box_Num() - depth;
-  b = Arr_ItemPtr(bs->box, Box, level + 1);
+  b = (Box *) BoxArr_Item_Ptr(& bs->box, level + 1);
   s->brother = b->syms;
   b->syms = s;
 
