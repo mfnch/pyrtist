@@ -40,40 +40,37 @@ static TS *last_ts; /* Just for transition: will be removed! */
 /* This will disappear in the future */
 static char *last_name = (char *) NULL;
 
-static Task Destroy_TSDesc(void *td) {
+static void Destroy_TSDesc(void *td) {
   BoxMem_Free(((TSDesc *) td)->name);
   ((TSDesc *) td)->name = 0;
-  return Success;
 }
 
 Task TS_Init(TS *ts) {
-  TASK( Clc_New(& ts->type_descs, sizeof(TSDesc), TS_TSDESC_CLC_SIZE) );
-  Clc_Destructor(ts->type_descs, Destroy_TSDesc);
+  BoxOcc_Init(& ts->type_descs, sizeof(TSDesc), TS_TSDESC_CLC_SIZE);
+  BoxOcc_Set_Finalizer(& ts->type_descs, Destroy_TSDesc);
   HT(& ts->members,  TS_MEMB_HT_SIZE);
   HT(& ts->subtypes, TS_SUBT_HT_SIZE);
-  TASK( Arr_New(& ts->name_buffer, sizeof(char), TS_NAME_BUFFER_SIZE) );
+  BoxArr_Init(& ts->name_buffer, sizeof(char), TS_NAME_BUFFER_SIZE);
   last_ts = ts; /* Just for transition: will be removed! */
   return Success;
 }
 
 void TS_Destroy(TS *ts) {
-  Clc_Destroy(ts->type_descs);
+  BoxOcc_Finish(& ts->type_descs);
   HT_Destroy(ts->members);
   HT_Destroy(ts->subtypes);
-  Arr_Destroy(ts->name_buffer);
+  BoxArr_Finish(& ts->name_buffer);
   BoxMem_Free(last_name);
   last_name = (char *) NULL;
 }
 
-static Task Type_New(TS *ts, Type *new_type, TSDesc *td) {
-  UInt nt;
-  TASK( Clc_Occupy(ts->type_descs, td, & nt) );
-  *new_type = nt-1;
-  return Success;
+static void Type_New(TS *ts, Type *new_type, TSDesc *td) {
+  UInt nt = BoxOcc_Occupy(& ts->type_descs, td);
+  *new_type = nt - 1;
 }
 
 static TSDesc *Type_Ptr(TS *ts, Type t) {
-  return Clc_ItemPtr(ts->type_descs, TSDesc, t+1);
+  return (TSDesc *) BoxOcc_Item_Ptr(& ts->type_descs, t + 1);
 }
 
 static TSDesc *Resolve(TS *ts, Type *rt, Type t, int ignore_names) {
@@ -327,13 +324,12 @@ Task TS_Array_Member(TS *ts, Type *memb, Type array, Int *array_size) {
 }
 
 /* The full name to use in the hashtable of members */
-static Task Member_Full_Name(TS *ts, Name *n, Type s, const char *m_name) {
-  TASK( Arr_Clear(ts->name_buffer) );
-  TASK( Arr_MPush(ts->name_buffer, & s, sizeof(Type)) );
-  TASK( Arr_MPush(ts->name_buffer, m_name, strlen(m_name)) );
-  n->text = Arr_FirstItemPtr(ts->name_buffer, char);
-  n->length = Arr_NumItem(ts->name_buffer);
-  return Success;
+static void Member_Full_Name(TS *ts, Name *n, Type s, const char *m_name) {
+  BoxArr_Clear(& ts->name_buffer);
+  BoxArr_MPush(& ts->name_buffer, & s, sizeof(Type));
+  BoxArr_MPush(& ts->name_buffer, m_name, strlen(m_name));
+  n->text = (char *) BoxArr_First_Item_Ptr(& ts->name_buffer);
+  n->length = BoxArr_Num_Items(& ts->name_buffer);
 }
 
 void TS_Member_Find(TS *ts, Type *m, Type s, const char *m_name) {
@@ -341,7 +337,7 @@ void TS_Member_Find(TS *ts, Type *m, Type s, const char *m_name) {
   HashItem *hi;
   *m = TS_TYPE_NONE;
   s = TS_Resolve(ts, s, TS_KS_ALIAS | TS_KS_SPECIES | TS_KS_DETACHED);
-  if IS_FAILED(Member_Full_Name(ts, & n, s, m_name)) return;
+  Member_Full_Name(ts, & n, s, m_name);
   if (HT_Find(ts->members, n.text, n.length, & hi))
     *m = *((Type *) hi->object);
 }
@@ -398,7 +394,7 @@ Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
   td.kind = TS_KIND_INTRINSIC;
   td.size = size;
   td.target = TS_TYPE_NONE;
-  TASK( Type_New(ts, i, & td) );
+  Type_New(ts, i, & td);
   return Success;
 }
 
@@ -411,7 +407,7 @@ Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind) {
   td.data.proc.parent = parent;
   td.data.proc.kind = kind & 3;
   td.data.proc.sym_num = 0;
-  TASK( Type_New(ts, p, & td) );
+  Type_New(ts, p, & td);
   return Success;
 }
 
@@ -430,7 +426,7 @@ static Task TS_X_New(TSKind kind, TS *ts, Type *dst, Type src, Int size) {
   } else {
     td.size = src_td->size;
   }
-  TASK( Type_New(ts, dst, & td) );
+  Type_New(ts, dst, & td);
   return Success;
 }
 
@@ -456,7 +452,8 @@ static Task TS_X_Begin(TSKind kind, TS *ts, Type *s) {
   td.target = TS_TYPE_NONE;
   td.data.last = TS_TYPE_NONE;
   td.size = 0;
-  return Type_New(ts, s, & td);
+  Type_New(ts, s, & td);
+  return Success;
 }
 
 Task TS_Structure_Begin(TS *ts, Type *structure) {
@@ -491,7 +488,7 @@ static Task TS_X_Add(TSKind kind, TS *ts, Type s, Type m,
     td.size = m_size;
   }
   td.data.member_next = s;
-  TASK( Type_New(ts, & new_m, & td) );
+  Type_New(ts, & new_m, & td);
 
   s_td = Type_Ptr(ts, s);
   assert(s_td->kind == kind);
@@ -509,7 +506,7 @@ static Task TS_X_Add(TSKind kind, TS *ts, Type s, Type m,
     /* We also add the member to the hashtable for fast search */
     if (m_name != (char *) NULL) {
       Name n;
-      TASK( Member_Full_Name(ts, & n, s, m_name) );
+      Member_Full_Name(ts, & n, s, m_name);
       HT_Insert_Obj(ts->members, n.text, n.length, & new_m, sizeof(Type));
     }
     break;
@@ -661,7 +658,8 @@ Task TS_Subtype_New(TS *ts, Type *new_subtype,
   td.target = TS_TYPE_NONE;
   td.data.subtype.parent = parent_type;
   td.data.subtype.child_name = Name_To_Str(child_name);
-  return Type_New(ts, new_subtype, & td);
+  Type_New(ts, new_subtype, & td);
+  return Success;
 }
 
 /* Register a previously created (and still unregistered) subtype.
@@ -695,7 +693,7 @@ Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type) {
   /* CHECK: MAYBE WE SHOULD RESOVE THE TYPE HERE */
   s_td->target = subtype_type;
   s_td->size = sizeof(Subtype);
-  TASK( Member_Full_Name(ts, & full_name, parent, child_str) );
+  Member_Full_Name(ts, & full_name, parent, child_str);
   HT_Insert_Obj(ts->subtypes,
                 full_name.text, full_name.length,
                 & subtype, sizeof(Type));
@@ -707,10 +705,9 @@ void TS_Subtype_Find(TS *ts, Type *subtype, Type parent, Name *child) {
   HashItem *hi;
   char *child_str = Name_To_Str(child);
   /*s = TS_Resolve(ts, s, 1, 1);*/
-  Task t = Member_Full_Name(ts, & full_name, parent, child_str);
+  Member_Full_Name(ts, & full_name, parent, child_str);
   BoxMem_Free(child_str);
   *subtype = TS_TYPE_NONE;
-  if IS_FAILED(t) return;
   if (HT_Find(ts->subtypes, full_name.text, full_name.length, & hi))
     *subtype = *((Type *) hi->object);
 }

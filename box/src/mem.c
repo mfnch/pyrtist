@@ -44,7 +44,7 @@ size_t BoxMem_Size_Align(size_t n) {
   return ((n + SIZEOF_BLOCK - 1)/SIZEOF_BLOCK)*SIZEOF_BLOCK;
 }
 
-void *BoxMem_Alloc(UInt size) {
+void *BoxMem_Alloc(size_t size) {
   void *ptr = malloc(BoxMem_Size_Align(size));
   if (ptr == NULL) BoxMem_Exit("malloc failed!");
   return ptr;
@@ -54,7 +54,7 @@ void BoxMem_Free(void *ptr) {
   free(ptr);
 }
 
-void *BoxMem_Realloc(void *ptr, UInt size) {
+void *BoxMem_Realloc(void *ptr, size_t size) {
   if (ptr == NULL) return BoxMem_Alloc(size);
   return realloc(ptr, size);
 }
@@ -70,4 +70,25 @@ char *BoxMem_Strdup(const char *s) {
 void BoxMem_Exit(const char *msg) {
   MSG_FATAL("BoxMem_Exit: %s", msg);
   exit(EXIT_FAILURE);
+}
+
+/** Executes *r = a*x, returning 0 in case of integer overflow, 1 otherwise. */
+int BoxMem_ax(size_t *r, size_t a, size_t x) {
+ *r = a*x;
+ return 1;
+}
+
+/** Executes *r = x + y, returning 0 in case of integer overflow, 1 otherwise.
+ */
+int BoxMem_x_Plus_y(size_t *r, size_t x, size_t y) {
+ *r = x + y;
+ return 1;
+}
+
+/** Executes *r = a*x + b*y, returning 0 in case of integer overflow,
+ *  1 otherwise.
+ */
+int BoxMem_ax_Plus_by(size_t *r, size_t a, size_t x, size_t b, size_t y) {
+ *r = a*x + b*y;
+ return 1;
 }

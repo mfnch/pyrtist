@@ -26,8 +26,8 @@
  * The hash table implementation used by the Box compiler, VM, etc.
  */
 
-#ifndef _HASHTABLE_H
-#  define _HASHTABLE_H
+#ifndef _BOX_HASHTABLE_H
+#  define _BOX_HASHTABLE_H
 
 #  include <stdio.h>
 
@@ -35,7 +35,7 @@
 
 typedef unsigned int (*HashFunction)(void *key, unsigned int key_size);
 typedef int (*HashComparison)(void *key1, void *key2,
- unsigned int size1, unsigned int size2);
+                              unsigned int size1, unsigned int size2);
 
 typedef struct ht {
   struct ht *next;
@@ -204,4 +204,4 @@ void HT_Copy_Obj(Hashtable *ht, int do_copy);
     item, \
     HT_Default_Action, NULL)
 
-#endif
+#endif /* _BOX_HASHTABLE_H */

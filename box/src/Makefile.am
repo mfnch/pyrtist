@@ -42,9 +42,9 @@ bin_PROGRAMS = box
 
 # *** libboxcore ***
 lib_LTLIBRARIES = libboxcore.la
-boxinc_HEADERS = types.h mem.h array.h msgbase.h messages.h \
+boxinc_HEADERS = types.h error.h mem.h array.h msgbase.h messages.h \
   str.h print.h
-libboxcore_la_SOURCES = types.h mem.c mem.h array.c array.h \
+libboxcore_la_SOURCES = types.h error.c mem.c mem.h array.c array.h \
   str.c print.c msgbase.c messages.c
 libboxcore_la_LDFLAGS = -version-info 1:0:0
 

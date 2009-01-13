@@ -99,10 +99,10 @@ typedef struct {
   (tsdesc)->first_proc = TS_TYPE_NONE
 
 typedef struct {
-  Collection *type_descs;
+  BoxOcc type_descs;
   Hashtable *members;
   Hashtable *subtypes;
-  Array *name_buffer;
+  BoxArr name_buffer;
 } TS;
 
 typedef enum {

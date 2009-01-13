@@ -673,8 +673,7 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
 
 
   vm.p = p;
-  TASK( VM_Proc_Ptr_And_Length(vmp, & vm.i_pos,
-                               (UInt *) NULL, p->code.proc_num) );
+  VM_Proc_Ptr_And_Length(vmp, & vm.i_pos, (UInt *) NULL, p->code.proc_num);
   i_pos = vm.i_pos;
   vm.flags.exit = vm.flags.error = 0;
   {int i; for(i = 0; i < NUM_TYPES; i++) vm.alc[i] = 0;}
@@ -897,7 +896,7 @@ Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg) {
 
   previous_sheet = VM_Proc_Target_Get(vmp);
   TASK( VM_Proc_Code_New(vmp, & tmp_sheet_id) );
-  if IS_FAILED( VM_Proc_Target_Set(vmp, tmp_sheet_id) ) goto exit;
+  VM_Proc_Target_Set(vmp, tmp_sheet_id);
 
   {
     register Int i;
@@ -1073,7 +1072,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
      * la dimensione dell'istruzione, non posso scrivere adesso la testa.
      * Potro' farlo solo alla fine, dopo aver scritto tutti gli argomenti!)
      */
-    iheadpos = Arr_NumItem(prog) + 1;
+    iheadpos = BoxArr_Num_Items(prog) + 1;
     BoxArr_MPush(prog, NULL, idim = 2);
 
     for ( i = 0; i < t; i++ ) {
@@ -1094,7 +1093,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
       UInt atype;
 
       /* Trovo il puntatore alla testa dell'istruzione */
-      i_pos = Arr_ItemPtr(prog, VMByteX4, iheadpos);
+      i_pos = (VMByteX4 *) BoxArr_Item_Ptr(prog, iheadpos);
 
       for ( ; t < 2; t++ )
         arg[t].c = 0;

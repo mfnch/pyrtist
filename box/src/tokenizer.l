@@ -63,7 +63,7 @@ typedef struct {
 /* Variabili gestite in questo file */
 UInt tok_linenum = 1;
 static UInt tok_cur_include_level = 1, tok_max_include_level;
-static Array *tok_include_list = NULL;
+static BoxArr tok_include_list;
 
 %}
 
@@ -288,9 +288,8 @@ Task Tok_Init(UInt maxinc, const char *f) {
   /* Creo una lista dove salvare i buffer, ogni qual volta
    * incontro una include
    */
-  Arr_Destroy(tok_include_list);
-  TASK( Arr_New(& tok_include_list, sizeof(TokIncludeData),
-                TOK_TYPICAL_MAX_INCLUDE) );
+  BoxArr_Init(& tok_include_list, sizeof(TokIncludeData),
+              TOK_TYPICAL_MAX_INCLUDE);
 
   /* Se f == "nomefile" (e quindi f != NULL), eseguo una:
    * include "nomefile"
@@ -303,7 +302,7 @@ Task Tok_Init(UInt maxinc, const char *f) {
 /* DESCRIZIONE: Conclude l'analisi lessicale del compilatore.
  */
 void Tok_Finish(void) {
-  Arr_Destroy(tok_include_list);
+  BoxArr_Finish(& tok_include_list);
 }
 
 /* DESCRIZIONE: Esegue materialmente la direttiva include,
@@ -332,7 +331,7 @@ Task Tok_Include_Begin(const char *f) {
   cur.num_errs = MSG_GT_ERRORS;
   cur.num_warns = MSG_NUM_WARNINGS;
   cur.buffer = YY_CURRENT_BUFFER;
-  if IS_FAILED( Arr_Push(tok_include_list, & cur) ) return Failed;
+  BoxArr_Push(& tok_include_list, & cur);
 
   ++tok_cur_include_level;
 
@@ -355,11 +354,11 @@ UInt Tok_Include_End(void) {
     /* Cancella il buffer corrente */
     yy_delete_buffer( YY_CURRENT_BUFFER );
     /* Imposta il nuovo buffer all'ultimo inserito nello "stack" */
-    cur = Arr_LastItem( tok_include_list, TokIncludeData );
+    cur = *((TokIncludeData *) BoxArr_Last_Item_Ptr(& tok_include_list));
     tok_linenum = cur.linenum;
-    yy_switch_to_buffer( cur.buffer );
+    yy_switch_to_buffer(cur.buffer);
     /* Cancella l'ultimo elemento dello stack */
-    (void) Arr_Dec( tok_include_list );
+    BoxArr_Pop(& tok_include_list, NULL);
     --tok_cur_include_level;
     /* Calcolo il numero di errori nel file incluso (+tutti i sotto-inclusi!) */
     num_errs = MSG_GT_ERRORS - cur.num_errs;

@@ -33,14 +33,26 @@
 /** Return the lowest multiple of sizeof(uint32_t) which is greater than n */
 size_t BoxMem_Size_Align(size_t n);
 
-void *BoxMem_Alloc(UInt size);
+void *BoxMem_Alloc(size_t size);
 
-void *BoxMem_Realloc(void *ptr, UInt size);
+void *BoxMem_Realloc(void *ptr, size_t size);
 
 void BoxMem_Free(void *ptr);
 
 char *BoxMem_Strdup(const char *s);
 
 void BoxMem_Exit(const char *msg);
+
+/** Executes *r = a*x, returning 0 in case of integer overflow, 1 otherwise. */
+int BoxMem_ax(size_t *r, size_t a, size_t x);
+
+/** Executes *r = x + y, returning 0 in case of integer overflow, 1 otherwise.
+ */
+int BoxMem_x_Plus_y(size_t *r, size_t x, size_t y);
+
+/** Executes *r = a*x + b*y, returning 0 in case of integer overflow,
+ *  1 otherwise.
+ */
+int BoxMem_ax_Plus_by(size_t *r, size_t a, size_t x, size_t b, size_t y);
 
 #endif

@@ -47,7 +47,7 @@ Task Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level) {
   ms->filter = ms->default_filter = (MsgFilter) NULL;
   ms->flush = 0;
   ms->out = stderr;
-  TASK( Arr_New(& ms->msgs, sizeof(Msg), MSG_TYPICAL_NUM_MSGS) );
+  BoxArr_Init(& ms->msgs, sizeof(Msg), MSG_TYPICAL_NUM_MSGS);
 
   num_levels = num_levels > 0 ? num_levels : 1;
   ms->level = (UInt *) malloc(num_levels*sizeof(UInt));
@@ -63,9 +63,12 @@ Task Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level) {
 void Msg_Destroy(MsgStack *ms) {
   UInt i, n;
   EXIT_IF_NOT_INIT(ms);
-  n = Arr_NumItem(ms->msgs);
-  for(i=1; i<=n; i++) free(Arr_ItemPtr(ms->msgs, Msg, i)->msg);
-  Arr_Destroy(ms->msgs);
+  n = BoxArr_Num_Items(& ms->msgs);
+  for(i=1; i<=n; i++) {
+    Msg *msg = (Msg *) BoxArr_Item_Ptr(& ms->msgs, i);
+    free(msg->msg);
+  }
+  BoxArr_Destroy(& ms->msgs);
   free(ms->level);
   free(ms);
   Print_Finalize();
@@ -116,24 +119,24 @@ void Msg_Counter_Clear_All(MsgStack *ms) {
 static void Msg_Clean(MsgStack *ms) {
   UInt i, num_msgs;
   EXIT_IF_NOT_INIT(ms);
-  num_msgs = Arr_NumItem(ms->msgs);
+  num_msgs = BoxArr_Num_Items(& ms->msgs);
   for(i=num_msgs; i>0; i--) {
-    Msg *m = Arr_ItemPtr(ms->msgs, Msg, i);
+    Msg *m = (Msg *) BoxArr_Item_Ptr(& ms->msgs, i);
     if (m->level == 0 || m->msg != (char *) NULL) {
       if (i < num_msgs) break;
       return;
     }
   }
-  (void) Arr_MDec(ms->msgs, num_msgs-i);
+  BoxArr_MPop(& ms->msgs, NULL, num_msgs - i);
 }
 
 /** Show the messages which have still not been shown */
 void Msg_Show(MsgStack *ms) {
   UInt i, num_msgs;
   EXIT_IF_NOT_INIT(ms);
-  num_msgs = Arr_NumItem(ms->msgs);
+  num_msgs = BoxArr_Num_Items(& ms->msgs);
   for(i=ms->last_shown+1; i<=num_msgs; i++) {
-    Msg *m = Arr_ItemPtr(ms->msgs, Msg, i);
+    Msg *m = BoxArr_Item_Ptr(& ms->msgs, i);
     if (m->filter != (MsgFilter) NULL) m->msg = m->filter(m->level, m->msg);
     fputs(m->msg, ms->out);
     if (ms->flush) fflush(ms->out);
@@ -141,7 +144,7 @@ void Msg_Show(MsgStack *ms) {
     m->msg = (char *) NULL;
   }
   Msg_Clean(ms);
-  ms->last_shown = Arr_NumItem(ms->msgs);
+  ms->last_shown = BoxArr_Num_Items(& ms->msgs);
 }
 
 void Msg_Context_Begin(MsgStack *ms, const char *msg, MsgFilter mf) {
@@ -150,7 +153,7 @@ void Msg_Context_Begin(MsgStack *ms, const char *msg, MsgFilter mf) {
   m.level = 0;
   m.msg = BoxMem_Strdup(msg);
   m.filter = ms->filter = mf;
-  (void) Arr_Push(ms->msgs, & m);
+  BoxArr_Push(& ms->msgs, & m);
 }
 
 void Msg_Context_End(MsgStack *ms, UInt repeat) {
@@ -158,16 +161,16 @@ void Msg_Context_End(MsgStack *ms, UInt repeat) {
   Msg *m;
   EXIT_IF_NOT_INIT(ms);
   for(i=0; i<repeat;) {
-    if (Arr_NumItem(ms->msgs) < 1) return;
-    m = Arr_LastItemPtr(ms->msgs, Msg);
+    if (BoxArr_Num_Items(& ms->msgs) < 1) return;
+    m = (Msg *) BoxArr_Last_Item_Ptr(& ms->msgs);
     if (m->level == 0) ++i;
     free(m->msg);
-    (void) Arr_Dec(ms->msgs);
+    BoxArr_Pop(& ms->msgs, NULL);
   }
-  i = Arr_NumItem(ms->msgs);
+  i = BoxArr_Num_Items(& ms->msgs);
   if (i < ms->last_shown) ms->last_shown = i;
   if (i > 0) {
-    m = Arr_LastItemPtr(ms->msgs, Msg);
+    m = (Msg *) BoxArr_Last_Item_Ptr(& ms->msgs);
     ms->filter = m->filter;
   } else {
     ms->filter = ms->default_filter;
@@ -183,7 +186,7 @@ void Msg_Add(MsgStack *ms, UInt level, const char *msg) {
   m.level = level;
   m.msg = BoxMem_Strdup(msg);
   m.filter = ms->filter;
-  (void) Arr_Push(ms->msgs, & m);
+  BoxArr_Push(& ms->msgs, & m);
   Msg_Show(ms);
 }
 

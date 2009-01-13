@@ -75,7 +75,7 @@ typedef struct {
   UInt *level;
   MsgFilter filter;
   MsgFilter default_filter;
-  Array *msgs;
+  BoxArr msgs;
   int flush;
   FILE *out;
 } MsgStack;

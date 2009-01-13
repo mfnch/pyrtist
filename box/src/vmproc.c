@@ -28,10 +28,9 @@
 #include "virtmach.h"
 #include "vmproc.h"
 
-static Task Procedure_Destroy(void *s) {
+static void Procedure_Destroy(void *s) {
   BoxArr *code = & ((VMProc *) s)->code;
   if (code != NULL) BoxArr_Finish(code);
-  return Success;
 }
 
 static void Installed_Procedure_Destroy(void *s) {
@@ -42,8 +41,8 @@ static void Installed_Procedure_Destroy(void *s) {
 
 Task VM_Proc_Init(VMProgram *vmp) {
   VMProcTable *pt = & vmp->proc_table;
-  TASK( Clc_New(& pt->uninstalled, sizeof(VMProc), VMPROC_UNINST_CLC_SIZE) );
-  Clc_Destructor(pt->uninstalled, Procedure_Destroy);
+  BoxOcc_Init(& pt->uninstalled, sizeof(VMProc), VMPROC_UNINST_CLC_SIZE);
+  BoxOcc_Set_Finalizer(& pt->uninstalled, Procedure_Destroy);
   BoxArr_Init(& pt->installed, sizeof(VMProcInstalled), VMPROC_INST_ARR_SIZE);
   BoxArr_Set_Finalizer(& pt->installed, Installed_Procedure_Destroy);
   pt->target_proc_num = 0;
@@ -54,7 +53,7 @@ Task VM_Proc_Init(VMProgram *vmp) {
 
 void VM_Proc_Destroy(VMProgram *vmp) {
   VMProcTable *pt = & vmp->proc_table;
-  Clc_Destroy(pt->uninstalled);
+  BoxOcc_Finish(& pt->uninstalled);
   BoxArr_Finish(& pt->installed);
 }
 
@@ -68,46 +67,44 @@ void VM_Proc_Destroy(VMProgram *vmp) {
 static void target_proc_refresh(VMProgram *vmp) {
   VMProcTable *pt = & vmp->proc_table;
   if (pt->target_proc_num)
-    (void) VM_Proc_Target_Set(vmp, pt->target_proc_num);
+    VM_Proc_Target_Set(vmp, pt->target_proc_num);
 }
 
 Task VM_Proc_Code_New(VMProgram *vmp, UInt *proc_num) {
   VMProcTable *pt = & vmp->proc_table;
   VMProc procedure;
+  UInt n;
+
   procedure.status.error = 0;
   procedure.status.inhibit = 0;
   BoxArr_Init(& procedure.code, sizeof(VMByteX4), VM_PROC_CODE_SIZE);
-  TASK( Clc_Occupy(pt->uninstalled, & procedure, proc_num) );
+  n = BoxOcc_Occupy(& pt->uninstalled, & procedure);
+  if (proc_num != NULL) *proc_num = n;
   target_proc_refresh(vmp);
   return Success;
 }
 
 Task VM_Proc_Code_Destroy(VMProgram *vmp, UInt proc_num) {
   VMProcTable *pt = & vmp->proc_table;
-  TASK( Clc_Release(pt->uninstalled, proc_num) );
+  BoxOcc_Release(& pt->uninstalled, proc_num);
   target_proc_refresh(vmp);
   return Success;
 }
 
-Task VM_Proc_Target_Set(VMProgram *vmp, UInt proc_num) {
+void VM_Proc_Target_Set(VMProgram *vmp, UInt proc_num) {
   VMProcTable *pt = & vmp->proc_table;
-  void *procedure;
-  TASK( Clc_Object_Ptr(pt->uninstalled, & procedure, proc_num) );
   pt->target_proc_num = proc_num;
-  pt->target_proc = (VMProc *) procedure;
-  return Success;
+  pt->target_proc = (VMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, proc_num);
 }
 
 UInt VM_Proc_Target_Get(VMProgram *vmp) {
   return vmp->proc_table.target_proc_num;
 }
 
-Task VM_Proc_Empty(VMProgram *vmp, UInt proc_num) {
+void VM_Proc_Empty(VMProgram *vmp, UInt proc_num) {
   VMProcTable *pt = & vmp->proc_table;
-  void *procedure;
-  TASK( Clc_Object_Ptr(pt->uninstalled, & procedure, proc_num) );
-  BoxArr_Clear(& ((VMProc *) procedure)->code);
-  return Success;
+  VMProc *procedure = (VMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, proc_num);
+  BoxArr_Clear(& procedure->code);
 }
 
 void VM_Proc_Install_Code(VMProgram *vmp, UInt *call_num,
@@ -150,22 +147,19 @@ UInt VM_Proc_Install_Number(VMProgram *vmp) {
   return BoxArr_Num_Items(& vmp->proc_table.installed) + 1;
 }
 
-Task VM_Proc_Ptr_And_Length(VMProgram *vmp, VMByteX4 **ptr,
+void VM_Proc_Ptr_And_Length(VMProgram *vmp, VMByteX4 **ptr,
                             UInt *length, int proc_num) {
   VMProcTable *pt = & vmp->proc_table;
-  void *procedure;
-  BoxArr *code;
-  TASK( Clc_Object_Ptr(pt->uninstalled, & procedure, proc_num) );
-  code = & ((VMProc *) procedure)->code;
+  VMProc *procedure = (VMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, proc_num);
+  BoxArr *code = & procedure->code;
   if (length != NULL) *length = BoxArr_Num_Items(code);
   if (ptr != NULL) *ptr = (VMByteX4 *) BoxArr_First_Item_Ptr(code);
-  return Success;
 }
 
 Task VM_Proc_Disassemble(VMProgram *vmp, FILE *out, UInt proc_num) {
   VMByteX4 *ptr;
   UInt length;
-  TASK( VM_Proc_Ptr_And_Length(vmp, & ptr, & length, proc_num) );
+  VM_Proc_Ptr_And_Length(vmp, & ptr, & length, proc_num);
   return VM_Disassemble(vmp, out, ptr, length);
 }
 

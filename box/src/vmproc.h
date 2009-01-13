@@ -75,10 +75,10 @@ typedef struct {
  */
 typedef struct {
   UInt target_proc_num; /**< Number of the target procedure */
-  UInt tmp_proc; /**< Procedure used as temporary buffer */
+  UInt tmp_proc;        /**< Procedure used as temporary buffer */
   VMProc *target_proc;  /**< The target procedure */
-  BoxArr installed; /**< Array of the installed procedures */
-  Collection *uninstalled; /**< Collection of the uninstalled procedures */
+  BoxArr installed;     /**< Array of the installed procedures */
+  BoxOcc uninstalled;   /**< Array of the uninstalled procedures */
 } VMProcTable;
 
 #endif
@@ -111,7 +111,7 @@ Task VM_Proc_Code_Destroy(VMProgram *vmp, UInt proc_num);
 /** Set 'proc_num' to be the target procedure: the place where
  * VM_Assemble put the assembled code
  */
-Task VM_Proc_Target_Set(VMProgram *vmp, UInt proc_num);
+void VM_Proc_Target_Set(VMProgram *vmp, UInt proc_num);
 
 /** Get the ID of the target procedure */
 UInt VM_Proc_Target_Get(VMProgram *vmp);
@@ -119,7 +119,7 @@ UInt VM_Proc_Target_Get(VMProgram *vmp);
 /** Remove all the code assembled inside the procedure 'proc_num'.
  * WARNING: Labels and their references are not removed!
  */
-Task VM_Proc_Empty(VMProgram *vmp, UInt proc_num);
+void VM_Proc_Empty(VMProgram *vmp, UInt proc_num);
 
 
 /** Returns the call-number which will be assigned to the next installed
@@ -157,7 +157,7 @@ void VM_Proc_Install_CCode(VMProgram *vmp, UInt *call_num,
  * If one of these pointer is NULL, then the corresponding information
  * is not written.
  */
-Task VM_Proc_Ptr_And_Length(VMProgram *vmp, VMByteX4 **ptr,
+void VM_Proc_Ptr_And_Length(VMProgram *vmp, VMByteX4 **ptr,
                             UInt *length, int proc_num);
 
 /** Print as plain text the code contained inside the procedure 'proc_num'.

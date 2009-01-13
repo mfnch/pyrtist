@@ -10,8 +10,8 @@ all:
 # Here we show how one can use another version of the libtool
 # installed on the user's directory
 dev2:
-	/home/user/local/bin/libtoolize --ltdl
-	aclocal -I /home/user/local/share/aclocal # --verbose
+	~/local/bin/libtoolize --ltdl
+	aclocal -I ~/local/share/aclocal # --verbose
 	autoconf
 	autoheader
 	automake-1.10 --add-missing

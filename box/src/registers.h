@@ -47,15 +47,16 @@
 #  include "collection.h"
 
 typedef struct {
-  Int max;    /**< Total number of registers to allocate for variables */
-  BoxArr occ; /**< Variables occcupations */
+  Int    chain; /**< Chain of released registers */
+  Int    max;   /**< Total number of registers to allocate for variables */
+  BoxArr regs;  /**< Registers corresponding to variables */
 } VarFrame;
 
 /** @brief The state of allocation of the registers in a single function.
  */
 typedef struct {
-  Collection *reg_occ[NUM_TYPES]; /**< Registers occupation */
-  VarFrame lvar[NUM_TYPES]; /**< Local variables */
+  BoxOcc reg_occ[NUM_TYPES]; /**< Registers occupation */
+  VarFrame lvar[NUM_TYPES];  /**< Local variables */
 } RegFrame;
 
 /** @brief This structure keeps the full state of the register allocator.
@@ -65,20 +66,19 @@ typedef struct {
   VarFrame gvar[NUM_TYPES]; /**< Global variables */
 } RegAlloc;
 
-Task Reg_Init(void);
+void Reg_Init(void);
 void Reg_Destroy(void);
 void Reg_Frame_Push(void);
-Task Reg_Frame_Pop(void);
+void Reg_Frame_Pop(void);
 Int Reg_Frame_Get(void);
 Int Reg_Occupy(Int t);
-Task Reg_Release(Int t, UInt regnum);
+void Reg_Release(Int t, UInt regnum);
 Int Reg_Num(Int t);
-Task Var_Init(void);
 Int Var_Occupy(Int type, Int level);
-Task Var_Release(Int type, UInt varnum);
+void Var_Release(Int type, UInt varnum);
 Int Var_Num(Int type);
 Int GVar_Occupy(Int type);
-Task GVar_Release(Int type, UInt varnum);
+void GVar_Release(Int type, UInt varnum);
 Int GVar_Num(Int type);
 void RegLVar_Get_Nums(Int *num_reg, Int *num_lvar);
 #endif

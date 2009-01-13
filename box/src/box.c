@@ -74,7 +74,7 @@ Task Box_Main_Begin(void) {
   /* Sets the output for the compiled code */
   UInt main_sheet;
   TASK( VM_Proc_Code_New(cmp_vm, & main_sheet) );
-  TASK( VM_Proc_Target_Set(cmp_vm, main_sheet) );
+  VM_Proc_Target_Set(cmp_vm, main_sheet);
   bs->cur_sheet = main_sheet;
   TASK( Box_Instance_Begin((Expr *) NULL, 1) );
   b = (Box *) BoxArr_Last_Item_Ptr(& bs->box);
@@ -284,7 +284,7 @@ Task Box_Procedure_Begin(Type parent, Type child, Type procedure) {
    * and set it as the target of code generation.
    */
   TASK( VM_Proc_Code_New(cmp_vm, & new_sheet) );
-  TASK( VM_Proc_Target_Set(cmp_vm, new_sheet) );
+  VM_Proc_Target_Set(cmp_vm, new_sheet);
 
   /* Create a new register frame for the new piece of code:
    * allocation of registers should start from scratch!
@@ -361,13 +361,13 @@ Task Box_Procedure_End(UInt *call_num) {
   VM_Proc_Install_Code(cmp_vm, & my_call_num, b->sheet,
                        "(noname)", Tym_Type_Name(b->type));
   /* And define the symbol */
-  TASK( Reg_Frame_Pop() );
+  Reg_Frame_Pop();
 
   /* Restore to the state before the call to Box_Procedure_Begin */
   BoxArr_Pop(& bs->box, NULL);
   if (BoxArr_Num_Items(& bs->box) > 0) {
     b = (Box *) BoxArr_Last_Item_Ptr(& bs->box);
-    TASK( VM_Proc_Target_Set(cmp_vm, b->sheet) );
+    VM_Proc_Target_Set(cmp_vm, b->sheet);
     bs->cur_sheet = b->sheet;
   }
   --bs->num_defs;

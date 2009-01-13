@@ -21,64 +21,72 @@
 /* $Id$ */
 
 /**
- * @file collection.h
- * @brief A collection is an array whose elements can be occupied or freed.
+ * @file occupation.h
+ * @brief A BoxOcc is an BoxArr whose elements can be occupied and released.
  *
- * This file defines the object Collection which is an extension
- * of the object Array.
- * This file adds to the Array object the possibility of releasing
- * an element. For example:
- *  you can insert three elements: 1, 2 and 3, then you can release
- *  the element number 2. Now when you insert another element, this will
- *  be put at the position occupied by 2: the most recently released item.
+ * This file defines the object BoxOcc (occupation array) which is an
+ * extension of the object BoxArr.
+ * With respect to the BoxArr object, the BoxOcc object adds the possibility
+ * of occupying and releasing an object. For example:
+ *   You can insert three elements: BoxOcc_Occupy will return the indices
+ *   1, 2 and 3, then you can release the element 2 with BoxOcc_Release.
+ *   Now when you insert another element with BoxOcc_Occupy, it will
+ *   be put at the position previously occupied by 2: the most recently
+ *   released item (i.e. BoxOcc_Occupy will return 2).
+ *   This object is mainly used to keep track of the occupied registers
+ *   for the Box VM.
  */
 
-/* collection.h,  June 2006 */
-
-#ifndef _COLLECTION_H
-#  define _COLLECTION_H
+#ifndef _BOX_OCCUPATION_H
+#  define _BOX_OCCUPATION_H
 
 #  include "types.h"
+#  include "error.h"
 #  include "array.h"
 
 typedef void (*BoxOccFinalizer)(void *);
 
 typedef struct {
+  BoxErr          err;     /**< Error state of the object */
   BoxArr          array;   /**< Array obj of which BoxOcc is an extension */
-  UInt            chain,   /**< Chain of released objects */
-                  max_idx; /**< */
+  BoxUInt         chain,   /**< Chain of released objects */
+                  max_idx, /**< Max index ever returned by BoxOcc_Occupy */
+                  elsize;  /**< Element size */
   BoxOccFinalizer fin;     /**< BoxOcc finalizer */
-  UInt            elsize;  /**< Element size */
 } BoxOcc;
 
-
-
-
-
-
-typedef Array Collection;
-
-/** Creates a new Collection object.
- * @param new_clc the address of the new created object is returned here.
- * @param element_size size of the elements contained in the collection.
- *  All elements have the same size.
- * @param min_dim this is the default size of the collection:
- *  the dimension when it is empty, which will be increased when needed.
+/** Initialise the BoxOcc object into the already allocated space pointed
+ * by 'occ'. See BoxArr_Init for meaning of 'element_size' and 'initial_size'.
  */
-Task Clc_New(Collection **new_clc, UInt element_size, UInt min_dim);
+void BoxOcc_Init(BoxOcc *occ, BoxUInt element_size, BoxUInt initial_size);
 
-void Clc_Destructor(Collection *c, Task (*destroy)(void *));
-void Clc_Destroy(Collection *c);
-Task Clc_Occupy(Collection *c, void *item, UInt *assigned_index);
-Task Clc_Release(Collection *c, UInt item_index);
-Task Clc_Object_Ptr(Collection *c, void **item_ptr, UInt item_index);
+/** Finalize the BoxOcc object without deallocating the memory where it lies
+ */
+void BoxOcc_Finish(BoxOcc *occ);
 
-#define Clc_MaxIndex(c) (c->max_idx)
+/** Allocate and initialize a BoxOcc object */
+BoxOcc *BoxOcc_New(BoxUInt element_size, BoxUInt initial_size);
 
-#define Clc_ItemPtr(c, type, n) \
-  ((type *) ((c)->ptr + ((n)-1)*((UInt) (c)->elsize) + sizeof(UInt)))
-#define Clc_FirstItemPtr(c, type) \
-  ((type *) ((c)->ptr + sizeof(UInt)))
-#define Clc_LastItemPtr(c, type) \
-  ((type *) ((c)->ptr + ((c)->numel-1)*((UInt) (c)->elsize) + sizeof(UInt)))
-#endif
+/** Finalize and deallocates a BoxOcc object */
+void BoxOcc_Destroy(BoxOcc *occ);
+
+/** Set the finalizer for a BoxOcc object (called when releasing items
+ * or when finalizing the BoxOcc object)
+ */
+void BoxOcc_Set_Finalizer(BoxOcc *occ, BoxOccFinalizer fin);
+
+/** Occupies a item in a BoxOcc object and return the corresponding index */
+BoxUInt BoxOcc_Occupy(BoxOcc *occ, void *item);
+
+/** Release the item corresponding to the index 'item_index' for the given
+ * BoxOcc object.
+ */
+void BoxOcc_Release(BoxOcc *occ, BoxUInt item_index);
+
+/** Return the pointer to the data corresponding to 'item_index' */
+void *BoxOcc_Item_Ptr(BoxOcc *occ, BoxUInt item_index);
+
+/** Return the maximum index ever returned by BoxOcc_Occupy */
+BoxUInt BoxOcc_Max_Index(BoxOcc *occ);
+
+#endif /* _BOX_OCCUPATION_H */

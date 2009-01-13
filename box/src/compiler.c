@@ -86,7 +86,7 @@ Task Cmp_Init(VMProgram *program) {
   /* Initialization of the lists which hold the occupation status
    * for registers and variables.
    */
-  TASK( Reg_Init() );
+  Reg_Init();
 
   /* Inizializzo il segmento che contiene gli oggetti con valore immediato */
   BoxArr_Init(& cmp->imm_segment, sizeof(char), CMP_TYPICAL_IMM_SIZE);
@@ -1153,12 +1153,12 @@ Task Cmp_Expr_Destroy(Expr *e, int destroy_target) {
       if ( ! e->is.release ) break;
       /* L'address e' un registro o variabile? */
       /* Se e' un registro, va liberato! */
-      if ( e->addr > 0 ) return Reg_Release(TYPE_OBJ, e->addr);
+      if ( e->addr > 0 ) {Reg_Release(TYPE_OBJ, e->addr); return Success;}
       break;
 
      case CAT_LREG:
       if ( (! e->is.release) || (e->value.i <= 0) ) break;
-      TASK( Reg_Release(type_of_register, e->value.i) );
+      Reg_Release(type_of_register, e->value.i);
       break;
 
      default: break;
@@ -1347,7 +1347,7 @@ Int Cmp_Imm_Add(Compiler *cmp, Int type, void *data, Int size) {
   BoxArr_MPush(& cmp->imm_segment, & di, sizeof(di));
 
   /* And now we insert the piece of data */
-  addr = Arr_NumItem(& cmp->imm_segment);
+  addr = BoxArr_Num_Items(& cmp->imm_segment);
   BoxArr_MPush(& cmp->imm_segment, data, size);
   return addr;
 }
