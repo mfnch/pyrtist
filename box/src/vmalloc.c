@@ -140,12 +140,12 @@ void VM_Unlink(VMProgram *vmp, Obj *obj) {
 }
 
 Task VM_Alloc_Init(VMProgram *vmp) {
-  HT(& vmp->method_table, VM_METHOD_HT_SIZE);
+  BoxHT_Init_Default(& vmp->method_table, VM_METHOD_HT_SIZE);
   return Success;
 }
 
 void VM_Alloc_Destroy(VMProgram *vmp) {
-  HT_Destroy(vmp->method_table);
+  BoxHT_Finish(& vmp->method_table);
 }
 
 typedef struct {
@@ -158,19 +158,19 @@ Task VM_Alloc_Method_Set(VMProgram *vmp, Int type, Int method, Int m_num) {
   k.type = type;
   k.method = method;
   /* Should I check for re-definition and how should I deal with that? */
-  if (!HT_Insert_Obj(vmp->method_table,
-                     & k, sizeof(Key),
-                     & m_num, sizeof(Int)))
+  if (!BoxHT_Insert_Obj(& vmp->method_table,
+                        & k, sizeof(Key),
+                        & m_num, sizeof(Int)))
     return Failed;
   return Success;
 }
 
 Int VM_Alloc_Method_Get(VMProgram *vmp, Int type, Int method) {
-  HashItem *found;
+  BoxHTItem *found;
   Key k;
   k.type = type;
   k.method = method;
-  if (HT_Find(vmp->method_table, & k, sizeof(Key), & found))
+  if (BoxHT_Find(& vmp->method_table, & k, sizeof(Key), & found))
     return *((Int *) found->object);
   return -1;
 }

@@ -48,8 +48,8 @@ static void Destroy_TSDesc(void *td) {
 Task TS_Init(TS *ts) {
   BoxOcc_Init(& ts->type_descs, sizeof(TSDesc), TS_TSDESC_CLC_SIZE);
   BoxOcc_Set_Finalizer(& ts->type_descs, Destroy_TSDesc);
-  HT(& ts->members,  TS_MEMB_HT_SIZE);
-  HT(& ts->subtypes, TS_SUBT_HT_SIZE);
+  BoxHT_Init_Default(& ts->members,  TS_MEMB_HT_SIZE);
+  BoxHT_Init_Default(& ts->subtypes, TS_SUBT_HT_SIZE);
   BoxArr_Init(& ts->name_buffer, sizeof(char), TS_NAME_BUFFER_SIZE);
   last_ts = ts; /* Just for transition: will be removed! */
   return Success;
@@ -57,8 +57,8 @@ Task TS_Init(TS *ts) {
 
 void TS_Destroy(TS *ts) {
   BoxOcc_Finish(& ts->type_descs);
-  HT_Destroy(ts->members);
-  HT_Destroy(ts->subtypes);
+  BoxHT_Finish(& ts->members);
+  BoxHT_Finish(& ts->subtypes);
   BoxArr_Finish(& ts->name_buffer);
   BoxMem_Free(last_name);
   last_name = (char *) NULL;
@@ -334,11 +334,11 @@ static void Member_Full_Name(TS *ts, Name *n, Type s, const char *m_name) {
 
 void TS_Member_Find(TS *ts, Type *m, Type s, const char *m_name) {
   Name n;
-  HashItem *hi;
+  BoxHTItem *hi;
   *m = TS_TYPE_NONE;
   s = TS_Resolve(ts, s, TS_KS_ALIAS | TS_KS_SPECIES | TS_KS_DETACHED);
   Member_Full_Name(ts, & n, s, m_name);
-  if (HT_Find(ts->members, n.text, n.length, & hi))
+  if (BoxHT_Find(& ts->members, n.text, n.length, & hi))
     *m = *((Type *) hi->object);
 }
 
@@ -507,7 +507,8 @@ static Task TS_X_Add(TSKind kind, TS *ts, Type s, Type m,
     if (m_name != (char *) NULL) {
       Name n;
       Member_Full_Name(ts, & n, s, m_name);
-      HT_Insert_Obj(ts->members, n.text, n.length, & new_m, sizeof(Type));
+      BoxHT_Insert_Obj(& ts->members, n.text, n.length,
+                       & new_m, sizeof(Type));
     }
     break;
 
@@ -694,21 +695,21 @@ Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type) {
   s_td->target = subtype_type;
   s_td->size = sizeof(Subtype);
   Member_Full_Name(ts, & full_name, parent, child_str);
-  HT_Insert_Obj(ts->subtypes,
-                full_name.text, full_name.length,
-                & subtype, sizeof(Type));
+  BoxHT_Insert_Obj(& ts->subtypes,
+                   full_name.text, full_name.length,
+                   & subtype, sizeof(Type));
   return Success;
 }
 
 void TS_Subtype_Find(TS *ts, Type *subtype, Type parent, Name *child) {
   Name full_name;
-  HashItem *hi;
+  BoxHTItem *hi;
   char *child_str = Name_To_Str(child);
   /*s = TS_Resolve(ts, s, 1, 1);*/
   Member_Full_Name(ts, & full_name, parent, child_str);
   BoxMem_Free(child_str);
   *subtype = TS_TYPE_NONE;
-  if (HT_Find(ts->subtypes, full_name.text, full_name.length, & hi))
+  if (BoxHT_Find(& ts->subtypes, full_name.text, full_name.length, & hi))
     *subtype = *((Type *) hi->object);
 }
 

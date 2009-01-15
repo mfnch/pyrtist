@@ -52,7 +52,7 @@ Task VM_Sym_Init(VMProgram *vmp) {
   assert(vmp != (VMProgram *) NULL);
   VMSymTable *st = & vmp->sym_table;
 
-  HT(& st->syms, VMSYM_SYM_HT_SIZE);
+  BoxHT_Init_Default(& st->syms, VMSYM_SYM_HT_SIZE);
   BoxArr_Init(& st->data, sizeof(Char), VMSYM_DATA_ARR_SIZE);
   BoxArr_Init(& st->defs, sizeof(VMSym), VMSYM_DEF_ARR_SIZE);
   BoxArr_Init(& st->refs, sizeof(VMSymRef), VMSYM_REF_ARR_SIZE);
@@ -70,7 +70,7 @@ Task VM_Sym_Init(VMProgram *vmp) {
 void VM_Sym_Destroy(VMProgram *vmp) {
   assert(vmp != (VMProgram *) NULL);
   VMSymTable *st = & vmp->sym_table;
-  HT_Destroy(st->syms);
+  BoxHT_Finish(& st->syms);
   BoxArr_Finish(& st->data);
   BoxArr_Finish(& st->defs);
   BoxArr_Finish(& st->refs);
@@ -104,7 +104,7 @@ Task VM_Sym_New(VMProgram *vmp, UInt *sym_num, UInt sym_type, UInt def_size) {
 
 Task VM_Sym_Name_Set(VMProgram *vmp, UInt sym_num, Name *n) {
   VMSymTable *st = & vmp->sym_table;
-  HashItem *hi;
+  BoxHTItem *hi;
   VMSym *s;
   char *n_str;
   UInt n_len;
@@ -117,14 +117,14 @@ Task VM_Sym_Name_Set(VMProgram *vmp, UInt sym_num, Name *n) {
 
   n_str = Name_To_Str(n);
   n_len = n->length + 1; /* include also the terminating '\0' character */
-  if ( HT_Find(st->syms, n_str, n_len, & hi) ) {
+  if (BoxHT_Find(& st->syms, n_str, n_len, & hi)) {
     BoxMem_Free(n_str);
     MSG_ERROR("Another symbol exists having the name '%N'!", n);
     return Failed;
   }
 
-  (void) HT_Insert_Obj(st->syms, n_str, n_len, & sym_num, sizeof(UInt));
-  if ( ! HT_Find(st->syms, n_str, n_len, & hi) ) {
+  (void) BoxHT_Insert_Obj(& st->syms, n_str, n_len, & sym_num, sizeof(UInt));
+  if (!BoxHT_Find(& st->syms, n_str, n_len, & hi) ) {
     BoxMem_Free(n_str);
     MSG_ERROR("Hashtable seems not to work (from VM_Sym_Add)");
     return Failed;

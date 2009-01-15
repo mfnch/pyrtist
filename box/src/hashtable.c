@@ -35,32 +35,37 @@
 
 
 /* Default hash-function */
-unsigned int HT_Default_Hash(void *key, unsigned int key_size) {
+unsigned int BoxHT_Default_Hash(void *key, size_t key_size) {
   return hashlittle(key, key_size, 1);
 }
 
 /* Default comparison function */
-int HT_Default_Cmp(void *key1, void *key2, unsigned int size1, unsigned int size2)
-{
+int BoxHT_Default_Cmp(void *key1, void *key2, size_t size1, size_t size2) {
   if (size1 != size2)
     return 0;
   else {
     char *k1 = (char *) key1, *k2 = (char *) key2; /* NOTE: Non optimal!!! */
-    int i;
+    size_t i;
     for(i = 0; i < size1; i++)
-      if ( *k1++ != *k2++ ) return 0;
+      if (*k1++ != *k2++) return 0;
     return 1;
   }
 }
 
-int HT_Default_Action(HashItem *it, void *pass_data) {return 1;}
+int BoxHT_Default_Action(BoxHTItem *it, void *pass_data) {return 1;}
 
 /* Create a new hashtable
  */
-void HT_New(Hashtable **new_ht, unsigned int num_entries,
-            HashFunction hash, HashComparison cmp) {
-  Hashtable *ht;
-  HashItem **hi;
+BoxHT *BoxHT_New(unsigned int num_entries, BoxHTFunc hash, BoxHTCmp cmp) {
+  BoxHT *ht = BoxMem_Alloc(sizeof(BoxHT));
+  if (ht == NULL) return NULL;
+  BoxHT_Init(ht, num_entries, hash, cmp);
+  return ht;
+}
+
+void BoxHT_Init(BoxHT *ht, unsigned int num_entries,
+                BoxHTFunc hash, BoxHTCmp cmp) {
+  BoxHTItem **hi;
   int i, mask;
 
   assert(num_entries > 0);
@@ -72,59 +77,53 @@ void HT_New(Hashtable **new_ht, unsigned int num_entries,
   } while ((num_entries >>= 1) != 0);
   num_entries = i;
 
-  ht = (Hashtable *) BoxMem_Alloc(sizeof(Hashtable));
-  hi = (HashItem **) BoxMem_Alloc(sizeof(HashItem)*num_entries);
-  *new_ht = ht;
+  hi = BoxMem_Alloc(sizeof(BoxHTItem)*num_entries);
 
 #if DEBUG
   printf("Created hashtable of size %d, mask = %8x\n", num_entries, mask);
 #endif
 
-  for(i = 0; i < num_entries; i++) hi[i] = (HashItem *) NULL;
+  for(i = 0; i < num_entries; i++) hi[i] = NULL;
   ht->num_entries = num_entries;
   ht->mask = mask;
   ht->settings.copy_keys = 1;
   ht->settings.copy_objs = 1;
   ht->destroy = NULL;
   ht->item = hi;
-
-  if ( hash == (HashFunction) NULL )
-    ht->hash = HT_Default_Hash;
-  else
-    ht->hash = hash;
-
-  if ( cmp == (HashComparison) NULL )
-    ht->cmp = HT_Default_Cmp;
-  else
-    ht->cmp = cmp;
+  ht->hash = (hash == NULL) ? BoxHT_Default_Hash : hash;
+  ht->cmp = (cmp == NULL) ? BoxHT_Default_Cmp : cmp;
 }
 
-Task Destroy_Item(HashItem *item, void *destructor) {
-  return ((Task (*)(HashItem *)) destructor)(item);
+Task Destroy_Item(BoxHTItem *item, void *destructor) {
+  return ((Task (*)(BoxHTItem *)) destructor)(item);
 }
 
-void HT_Destroy(Hashtable *ht) {
+void BoxHT_Destroy(BoxHT *ht) {
+  BoxHT_Finish(ht);
+  BoxMem_Free(ht);
+}
+
+void BoxHT_Finish(BoxHT *ht) {
   int branch;
-  HashItem *hi, *next;
+  BoxHTItem *hi, *next;
 
-  if (ht->destroy) (void) HT_Iter2(ht, -1, Destroy_Item, ht->destroy);
+  if (ht->destroy)
+    (void) BoxHT_Iter2(ht, -1, Destroy_Item, ht->destroy);
 
-  /* First we deallocate all the HashItem-s */
+  /* First we deallocate all the BoxHTItem-s */
   for(branch = 0; branch < ht->num_entries; branch++)
-    for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = next) {
+    for(hi = ht->item[branch]; hi != NULL; hi = next) {
       next = hi->next;
-      if ( hi->allocated.key ) BoxMem_Free(hi->key);
-      if ( hi->allocated.obj ) BoxMem_Free(hi->object);
+      if (hi->allocated.key) BoxMem_Free(hi->key);
+      if (hi->allocated.obj) BoxMem_Free(hi->object);
       BoxMem_Free(hi);
     }
 
   /* Now we deallocate the table of branches */
   BoxMem_Free(ht->item);
-  /* And at the end we free the main Hashtable structure */
-  BoxMem_Free(ht);
 }
 
-void HT_Destructor(Hashtable *ht, Task (*destroy)(HashItem *)) {
+void BoxHT_Destructor(BoxHT *ht, Task (*destroy)(BoxHTItem *)) {
   ht->destroy = destroy;
 }
 
@@ -133,12 +132,12 @@ void HT_Destructor(Hashtable *ht, Task (*destroy)(HashItem *)) {
  * key and object will only be referenced by the hashtable (not copied),
  * so you should allocate/free by yourself if you need to do so.
  */
-int HT_Add(Hashtable *ht, unsigned int branch,
-           void *key, unsigned int key_size,
-           void *object, unsigned int object_size) {
-  HashItem *hi;
+int BoxHT_Add(BoxHT *ht, unsigned int branch,
+              void *key, size_t key_size,
+              void *object, size_t object_size) {
+  BoxHTItem *hi;
   assert(branch < ht->num_entries);
-  hi = (HashItem *) BoxMem_Alloc(sizeof(HashItem));
+  hi = BoxMem_Alloc(sizeof(BoxHTItem));
 
   hi->key_size = key_size;
   if (ht->settings.copy_keys) {
@@ -167,11 +166,11 @@ int HT_Add(Hashtable *ht, unsigned int branch,
   return 1;
 }
 
-Task HT_Remove(Hashtable *ht, void *key, unsigned int key_size) {
-  HashItem **hi_ptr, *hi;
+Task BoxHT_Remove(BoxHT *ht, void *key, unsigned int key_size) {
+  BoxHTItem **hi_ptr, *hi;
   unsigned int branch = ht->mask & ht->hash(key, key_size);
   hi_ptr = & ht->item[branch];
-  while( (hi = *hi_ptr) != (HashItem *) NULL ) {
+  while((hi = *hi_ptr) != NULL) {
     if ( ht->cmp(hi->key, key, hi->key_size, key_size) ) {
       *hi_ptr = hi->next;
       if ( hi->allocated.key ) BoxMem_Free(hi->key);
@@ -184,19 +183,19 @@ Task HT_Remove(Hashtable *ht, void *key, unsigned int key_size) {
   return Failed;
 }
 
-Task HT_Rename(Hashtable *ht, void *key, unsigned int key_size,
-               void *new_key, unsigned int new_key_size) {
-  HashItem *item;
+Task BoxHT_Rename(BoxHT *ht, void *key, unsigned int key_size,
+                  void *new_key, unsigned int new_key_size) {
+  BoxHTItem *item;
   void *object;
   unsigned int object_size, allocated_obj;
-  TASK( HT_Find(ht, key, key_size, & item) );
+  TASK( BoxHT_Find(ht, key, key_size, & item) );
   object = item->object;
   object_size = item->object_size;
   allocated_obj = item->allocated.obj;
   item->allocated.obj = 0;
-  TASK( HT_Remove(ht, key, key_size) );
-  TASK( HT_Insert(ht, new_key, new_key_size) );
-  TASK( HT_Find(ht, new_key, new_key_size, & item) );
+  TASK( BoxHT_Remove(ht, key, key_size) );
+  TASK( BoxHT_Insert(ht, new_key, new_key_size) );
+  TASK( BoxHT_Find(ht, new_key, new_key_size, & item) );
   item->object = object;
   item->object_size = object_size;
   item->allocated.obj = allocated_obj;
@@ -206,11 +205,11 @@ Task HT_Rename(Hashtable *ht, void *key, unsigned int key_size,
 /*
  * do_copy: whether to copy the key when a new object is made
  */
-void HT_Copy_Key(Hashtable *ht, int do_copy) {
+void BoxHT_Copy_Key(BoxHT *ht, int do_copy) {
   ht->settings.copy_keys = do_copy;
 }
 
-void HT_Copy_Obj(Hashtable *ht, int do_copy) {
+void BoxHT_Copy_Obj(BoxHT *ht, int do_copy) {
   ht->settings.copy_objs = do_copy;
 }
 
@@ -225,19 +224,18 @@ void HT_Copy_Obj(Hashtable *ht, int do_copy) {
  * RETURN VALUE: this function returns 1 if the item has been succesfully found
  *  ('action' returned with 1), 0 otherwise.
  */
-int HT_Iter(Hashtable *ht, int branch,
-            void *key, unsigned int key_size,
- HashItem **result, HTIterator it, void *pass_data)
-{
+int BoxHT_Iter(BoxHT *ht, int branch,
+               void *key, size_t key_size,
+               BoxHTItem **result, BoxHTIterator it, void *pass_data) {
   if ( branch < 0 ) {
     return 0;
 
   } else {
-    HashItem *hi;
-    for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = hi->next)
+    BoxHTItem *hi;
+    for(hi = ht->item[branch]; hi != NULL; hi = hi->next)
       if ( ht->cmp(hi->key, key, hi->key_size, key_size) ) {
         if ( it(hi, pass_data) ) {
-          if (result != (HashItem **) NULL) *result = hi;
+          if (result != NULL) *result = hi;
           return 1;
         }
       }
@@ -254,29 +252,29 @@ int HT_Iter(Hashtable *ht, int branch,
  * RETURN VALUE: this function returns 1 if the item has been succesfully found
  *  ('action' returned with 1), 0 otherwise.
  */
-Task HT_Iter2(Hashtable *ht, int branch, HTIterator2 it2, void *pass_data) {
+Task BoxHT_Iter2(BoxHT *ht, int branch, BoxHTIterator2 it2, void *pass_data) {
   if ( branch < 0 ) {
     int i;
     for(i = 0; i < ht->num_entries; i++) {
-      TASK( HT_Iter2(ht, i, it2, pass_data) );
+      TASK( BoxHT_Iter2(ht, i, it2, pass_data) );
     }
     return Success;
 
   } else {
-    HashItem *hi;
-    for(hi = ht->item[branch]; hi != (HashItem *) NULL; hi = hi->next) {
+    BoxHTItem *hi;
+    for(hi = ht->item[branch]; hi != NULL; hi = hi->next) {
       TASK( it2(hi, pass_data) );
     }
     return Success;
   }
 }
 
-static Task count_action(HashItem *hi, void *branch_size) {
+static Task count_action(BoxHTItem *hi, void *branch_size) {
   ++*((int *) branch_size);
   return Success;
 }
 
-void HT_Statistics(Hashtable *ht, FILE *out) {
+void BoxHT_Statistics(BoxHT *ht, FILE *out) {
   int i;
   int branch_size;
   fprintf(out, "--------------------\n");
@@ -285,7 +283,7 @@ void HT_Statistics(Hashtable *ht, FILE *out) {
   fprintf(out, "occupation status\n");
   for(i = 0; i < ht->num_entries; i++) {
     branch_size = 0;
-    (void) HT_Iter2(ht, i, count_action, & branch_size);
+    (void) BoxHT_Iter2(ht, i, count_action, & branch_size);
     fprintf(out, "branch %d: %d\n", i, branch_size);
   }
   fprintf(out, "--------------------\n");
@@ -296,22 +294,22 @@ void HT_Statistics(Hashtable *ht, FILE *out) {
 #if HASHTABLE_TEST
 /* Test */
 int main(void) {
-  Hashtable *ht;
-  HashItem *hi;
+  BoxHT *ht;
+  BoxHTItem *hi;
 
-  (void) HT_New(& ht, 5, (HashFunction) NULL, (HashComparison) NULL);
-  (void) HT_Insert(ht, "Ciao", 4);
-  (void) HT_Insert(ht, "Matteo", 6);
-  (void) HT_Insert(ht, "Franchin", 8);
-  (void) HT_Insert(ht, "questo", 6);
-  (void) HT_Insert(ht, "e'", 2);
-  (void) HT_Insert(ht, "il", 2);
-  (void) HT_Insert(ht, "mio", 3);
-  (void) HT_Insert(ht, "nome", 4);
-  (void) HT_Insert(ht, "e questa e' una piccola frase.", 30);
-  (void) HT_Insert(ht, "due parole", 10);
-  HT_Statistics(ht, stdout);
-  if ( HT_Find(ht, "Matteo", 6, & hi) ) {
+  (void) BoxHT_New(& ht, 5, (BoxHTFunc) NULL, (BoxHTCmp) NULL);
+  (void) BoxHT_Insert(ht, "Ciao", 4);
+  (void) BoxHT_Insert(ht, "Matteo", 6);
+  (void) BoxHT_Insert(ht, "Franchin", 8);
+  (void) BoxHT_Insert(ht, "questo", 6);
+  (void) BoxHT_Insert(ht, "e'", 2);
+  (void) BoxHT_Insert(ht, "il", 2);
+  (void) BoxHT_Insert(ht, "mio", 3);
+  (void) BoxHT_Insert(ht, "nome", 4);
+  (void) BoxHT_Insert(ht, "e questa e' una piccola frase.", 30);
+  (void) BoxHT_Insert(ht, "due parole", 10);
+  BoxHT_Statistics(ht, stdout);
+  if ( BoxHT_Find(ht, "Matteo", 6, & hi) ) {
     printf("Item found\n");
   } else {
     printf("Item not found\n");

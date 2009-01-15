@@ -100,8 +100,8 @@ typedef struct {
 
 typedef struct {
   BoxOcc type_descs;
-  Hashtable *members;
-  Hashtable *subtypes;
+  BoxHT  members;
+  BoxHT  subtypes;
   BoxArr name_buffer;
 } TS;
 

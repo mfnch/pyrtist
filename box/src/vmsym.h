@@ -50,7 +50,7 @@ struct __vmprogram;
  * This structure is embedded in the main VM structure VMProgram.
  */
 typedef struct {
-  Hashtable *syms;
+  BoxHT  syms;
   BoxArr data,
          defs,
          refs,

@@ -752,7 +752,6 @@ Task Parser_Init(const char *f) {
 /* Completa il parsing del file di input.
  */
 Task Parser_Finish(void) {
-  (void) yylex_destroy();
   Tok_Finish();
   return Success;
 }

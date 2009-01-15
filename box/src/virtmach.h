@@ -191,7 +191,7 @@ typedef struct __vmstatus VMStatus;
 struct __vmprogram {
   VMSymTable  sym_table;      /**< Table of referenced and defined symbols */
   VMProcTable proc_table;     /**< Table of installed and uninstalled procs */
-  Hashtable   *method_table;  /**< Hashtable containing destructors, etc. */
+  BoxHT       method_table;   /**< Hashtable containing destructors, etc. */
   BoxArr      stack,          /**< The stack for the VM object */
               data_segment;   /**< The segment of data (strings, etc.)
                                    which is accessible through the global
