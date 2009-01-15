@@ -31,7 +31,7 @@
 #  include "types.h"
 #  include "defaults.h"
 #  include "array.h"
-#  include "collection.h"
+#  include "occupation.h"
 #  include "hashtable.h"
 
 #  define _INSIDE_VIRTMACH_H

@@ -68,7 +68,7 @@ void Msg_Destroy(MsgStack *ms) {
     Msg *msg = (Msg *) BoxArr_Item_Ptr(& ms->msgs, i);
     free(msg->msg);
   }
-  BoxArr_Destroy(& ms->msgs);
+  BoxArr_Finish(& ms->msgs);
   free(ms->level);
   free(ms);
   Print_Finalize();

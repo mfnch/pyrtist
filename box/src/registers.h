@@ -44,7 +44,7 @@
 
 #  include "types.h"
 #  include "array.h"
-#  include "collection.h"
+#  include "occupation.h"
 
 typedef struct {
   Int    chain; /**< Chain of released registers */

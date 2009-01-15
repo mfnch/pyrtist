@@ -36,7 +36,6 @@
 #  define SIZEOF_BLOCK 4
 #endif
 
-#define AVOIDIT
 #include "types.h"
 #include "messages.h"
 #include "mem.h"
@@ -50,19 +49,25 @@ size_t BoxMem_Size_Align(size_t n) {
 void *BoxMem_Alloc(size_t size) {
   void *ptr = malloc(BoxMem_Size_Align(size));
   if (ptr == NULL) BoxMem_Exit("malloc failed!");
+#ifdef DEBUG_MEM
   printf("BoxMem_Alloc: returning %p\n", ptr);
+#endif
   return ptr;
 }
 
 void BoxMem_Free(void *ptr) {
+#ifdef DEBUG_MEM
   printf("BoxMem_Free: freeing %p\n", ptr);
   fflush(stdout);
+#endif
   free(ptr);
 }
 
 void *BoxMem_Realloc(void *ptr, size_t size) {
   if (ptr == NULL) return BoxMem_Alloc(size);
+#ifdef DEBUG_MEM
   printf("BoxMem_Realloc: returning %p\n", ptr);
+#endif
   return realloc(ptr, size);
 }
 

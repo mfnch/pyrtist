@@ -37,7 +37,7 @@
 #include "str.h"
 #include "messages.h"
 #include "array.h"
-#include "collection.h"
+#include "occupation.h"
 #include "virtmach.h"
 #include "vmsym.h"
 #include "vmproc.h"

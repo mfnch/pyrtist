@@ -33,7 +33,7 @@
 #include "defaults.h"
 #include "messages.h"
 #include "array.h"
-#include "collection.h"
+#include "occupation.h"
 
 /** Index to signal end of the chain of released items */
 #define END_OF_CHAIN 0

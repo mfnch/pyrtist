@@ -29,7 +29,7 @@
 #  define _TYPESYS_H
 
 #  include "types.h"
-#  include "collection.h"
+#  include "occupation.h"
 #  include "hashtable.h"
 #  include "virtmach.h"
 #  include "vmalloc.h"

@@ -55,7 +55,7 @@ int BoxMem_x_Plus_y(size_t *r, size_t x, size_t y);
  */
 int BoxMem_ax_Plus_by(size_t *r, size_t a, size_t x, size_t b, size_t y);
 
-#ifndef AVOIDIT
+#if 0
 #  define BoxMem_Alloc(x) (BoxMem_Alloc(x) + 0*printf("BoxMem_Alloc in %s (%d) \n", __FILE__, __LINE__))
 #  define BoxMem_Realloc(x, y) (BoxMem_Realloc(x, y) + 0*printf("BoxMem_Relloc in %s (%d) \n", __FILE__, __LINE__))
 #  define BoxMem_Free(x) {BoxMem_Free(x); (void) printf("BoxMem_Free in %s (%d) \n", __FILE__, __LINE__);}

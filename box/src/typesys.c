@@ -29,7 +29,7 @@
 #include "mem.h"
 #include "str.h"
 #include "array.h"
-#include "collection.h"
+#include "occupation.h"
 #include "hashtable.h"
 #include "virtmach.h"
 #include "typesys.h"
