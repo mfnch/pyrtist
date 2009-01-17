@@ -19,5 +19,5 @@
 ############################################################################
 
 EXTRA_DIST = README STYLE
-SUBDIRS = libltdl src libs tests man examples
+SUBDIRS = libltdl box libs tests man examples
 
