@@ -26,7 +26,7 @@ boxlibdir=@boxlibdir@
 boxpkgdir=@boxpkgdir@
 
 AM_CFLAGS=-Wall @CAIRO_CFLAGS@
-AM_CPPFLAGS=-I../../src -I../..
+AM_CPPFLAGS=-I../../box -I../..
 AM_LDFLAGS=-no-undefined -module -avoid-version
 
 boxlib_LTLIBRARIES=libg.la
@@ -51,8 +51,9 @@ libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
                 i_put.c i_put.h i_text.c i_text.h \
                 i_style.c i_style.h
 
-libg_la_LIBADD=@CAIRO_LIBS@ ../../src/libboxcore.la
+libg_la_LIBADD=@CAIRO_LIBS@ ../../box/libboxcore.la
 
 if BUILD_WINCAIRO
 libg_la_SOURCES+=wincairo.c wincairo.h
 endif
+

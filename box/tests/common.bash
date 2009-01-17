@@ -1,5 +1,5 @@
 #!/bin/bash
-BOXEXEC="../src/box"
+BOXEXEC="../box/box"
 BOXOPTLG="-L ../libs/g/.libs -I ../libs/g -l g"
 BOXOPTST="-st"
 BOXOUT="output.log"

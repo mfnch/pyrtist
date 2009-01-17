@@ -42,7 +42,7 @@ AC_CONFIG_MACRO_DIR([libltdl/m4])
 
 AM_INIT_AUTOMAKE
 
-AC_CONFIG_SRCDIR([src/compiler.c])
+AC_CONFIG_SRCDIR([box/compiler.c])
 AC_CONFIG_HEADERS([config.h])
 
 # Libtool support
@@ -119,7 +119,7 @@ AC_SUBST([BOX_VER_MINOR])
 AC_SUBST([BOX_VER_MAINT])
 
 AC_CONFIG_FILES([Makefile
-                 src/Makefile
+                 box/Makefile
                  libs/Makefile
                  libs/g/Makefile
                  tests/Makefile

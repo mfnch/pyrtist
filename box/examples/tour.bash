@@ -2,7 +2,7 @@
 
 GV=gv
 SHOWPNG=display
-BOX=../src/box
+BOX=../box/box
 BOXLIBDIR=../libs/g
 
 export BOX_LIBRARY_PATH=$BOXLIBDIT:$BOX_LIBRARY_PATH
