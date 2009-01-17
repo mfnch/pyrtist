@@ -94,7 +94,7 @@ void BoxHT_Init(BoxHT *ht, unsigned int num_entries,
   ht->cmp = (cmp == NULL) ? BoxHT_Default_Cmp : cmp;
 }
 
-Task Destroy_Item(BoxHTItem *item, void *destructor) {
+static Task Destroy_Item(BoxHTItem *item, void *destructor) {
   return ((Task (*)(BoxHTItem *)) destructor)(item);
 }
 

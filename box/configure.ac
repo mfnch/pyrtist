@@ -56,7 +56,7 @@ boxbasename="box$BOX_VER_MAJOR.$BOX_VER_MINOR"
 boxdir="$libdir/$boxbasename"
 boxlibdir="$boxdir/lib"
 boxpkgdir="$boxdir/pkg"
-boxincdir="$includedir/$boxbasename"
+boxincdir="$includedir/$boxbasename/box"
 
 # Checks for programs.
 AC_PROG_LN_S
