@@ -31,8 +31,8 @@
 #ifndef _BOX_ARRAY_H
 #  define _BOX_ARRAY_H
 
-#  include "types.h"
-#  include "error.h"
+#  include <box/types.h>
+#  include <box/error.h>
 
 typedef void (*BoxArrFinalizer)(void *);
 

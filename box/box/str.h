@@ -31,7 +31,7 @@
 #ifndef _STR_H
 #  define _STR_H
 
-#  include "types.h"
+#  include <box/types.h>
 
 Task Str_Eq(char *a, char *b);
 Task Str_Eq2(char *s1, UInt l1, char *s2, UInt l2);

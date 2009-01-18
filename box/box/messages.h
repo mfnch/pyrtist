@@ -30,9 +30,9 @@
 #ifndef _MESSAGES_H
 #  define _MESSAGES_H
 
-#  include "types.h"
-#  include "print.h"
-#  include "msgbase.h"
+#  include <box/types.h>
+#  include <box/print.h>
+#  include <box/msgbase.h>
 
 extern MsgStack *msg_main_stack;
 

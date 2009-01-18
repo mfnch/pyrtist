@@ -44,8 +44,8 @@
 
 #include <stdio.h>
 
-#include "types.h"
-#include "array.h"
+#include <box/types.h>
+#include <box/array.h>
 
 /** Receives a string together with its deallocation responsibility,
  * returns a string together with its deallocation responsibility.

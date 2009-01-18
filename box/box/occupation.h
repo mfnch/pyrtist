@@ -40,9 +40,9 @@
 #ifndef _BOX_OCCUPATION_H
 #  define _BOX_OCCUPATION_H
 
-#  include "types.h"
-#  include "error.h"
-#  include "array.h"
+#  include <box/types.h>
+#  include <box/error.h>
+#  include <box/array.h>
 
 typedef void (*BoxOccFinalizer)(void *);
 

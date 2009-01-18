@@ -32,7 +32,7 @@
 #  include <stdlib.h>
 #  include <stdio.h>
 
-#  include "types.h"
+#  include <box/types.h>
 
 typedef unsigned int (*BoxHTFunc)(void *key, size_t key_size);
 typedef int (*BoxHTCmp)(void *key1, void *key2, size_t size1, size_t size2);

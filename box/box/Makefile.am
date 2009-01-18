@@ -20,13 +20,16 @@
 
 # $Id$
 
+boxtopincdir=@boxincdir@
 boxlibdir=@boxlibdir@
-boxincdir=@boxincdir@
+boxincdir=$(boxtopincdir)/box
 boxpkgdir=@boxpkgdir@
 ver_major=@BOX_VER_MAJOR@
 ver_minor=@BOX_VER_MINOR@
 
 BUILT_SOURCES = parser.h
+
+INCLUDES = -I$(top_srcdir)
 
 AM_YFLAGS = -d
 
@@ -35,7 +38,7 @@ AM_CFLAGS = -Wall
 AM_CPPFLAGS = $(INCLTDL) \
               '-DBUILTIN_LIBRARY_PATH="$(boxlibdir)"' \
               '-DBUILTIN_PKG_PATH="$(boxpkgdir)"' \
-              '-DBUILTIN_INCLUDE_PATH="$(boxincdir)"'
+              '-DBUILTIN_INCLUDE_PATH="$(boxtopincdir)"'
 # -DDEBUG_ARRAY -DDEBUG_EXEC
 
 bin_PROGRAMS = box

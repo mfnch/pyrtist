@@ -33,7 +33,7 @@
 
 #  include <stdarg.h>
 
-#  include "mem.h"
+#  include <box/mem.h>
 
 #  define PRINT_BUF_SIZE 512
 

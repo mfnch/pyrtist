@@ -28,7 +28,8 @@
 #  define _BOX_MEM_H
 
 #  include <stdlib.h> /* defines size_t */
-#  include "types.h"
+
+#  include <box/types.h>
 
 /** Return the lowest multiple of sizeof(uint32_t) which is greater than n */
 size_t BoxMem_Size_Align(size_t n);

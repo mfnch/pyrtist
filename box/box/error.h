@@ -52,8 +52,6 @@
 
 #  include <stdlib.h>
 
-#  include "error.h"
-
 /** Integer corresponding to a different array in the Box library */
 typedef enum {
   BOXERR_NO_ERROR=0,
