@@ -19,6 +19,7 @@
 
 /* $Id$ */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include "types.h"
@@ -27,70 +28,79 @@
 #include "str.h"
 #include "list.h"
 
-void List_New(List **l, UInt item_size) {
-  List *nl = BoxMem_Alloc(sizeof(List));
-  nl->item_size = item_size;
-  nl->length = 0;
-  nl->destructor = (ListDestructor) NULL;
-  nl->head_tail.next = (ListItemHead *) NULL;
-  nl->head_tail.previous = (ListItemHead *) NULL;
-  *l = nl;
+void BoxList_Init(BoxList *l, UInt item_size) {
+  l->item_size = item_size;
+  l->length = 0;
+  l->destructor = NULL;
+  l->head_tail.next = NULL;
+  l->head_tail.previous = NULL;
 }
 
-void List_Destroy(List *l) {
-  ListItemHead *lih, *lih_next;
-  for(lih=l->head_tail.next; lih != (ListItemHead *) NULL;) {
-    if (l->destructor != (ListDestructor) NULL) {
-      void *item = (void *) lih + sizeof(ListItemHead);
+void BoxList_Finish(BoxList *l) {
+  BoxListItemHead *lih, *lih_next;
+  for(lih=l->head_tail.next; lih != NULL;) {
+    if (l->destructor != NULL) {
+      void *item = (void *) lih + sizeof(BoxListItemHead);
       l->destructor(item);
     }
     lih_next = lih->next;
     BoxMem_Free(lih);
     lih = lih_next;
   }
+}
+
+BoxList *BoxList_New(UInt item_size) {
+  BoxList *l = BoxMem_Alloc(sizeof(BoxList));
+  if (l == NULL) return NULL;
+  BoxList_Init(l, item_size);
+  return l;
+}
+
+void BoxList_Destroy(BoxList *l) {
+  BoxList_Finish(l);
   BoxMem_Free(l);
 }
 
-UInt List_Length(List *l) {
+UInt BoxList_Length(BoxList *l) {
   return l->length;
 }
 
-void List_Remove(List *l, void *item) {
-  ListItemHead *lih = item - sizeof(ListItemHead);
-  ListItemHead **prev_lih, **next_lih;
+void BoxList_Remove(BoxList *l, void *item) {
+  BoxListItemHead *lih = item - sizeof(BoxListItemHead);
+  BoxListItemHead **prev_lih, **next_lih;
 
-  prev_lih = (lih->previous == (ListItemHead *) NULL) ?
+  prev_lih = (lih->previous == NULL) ?
              & l->head_tail.next : & lih->previous->next;
-  next_lih = (lih->next == (ListItemHead *) NULL) ?
+  next_lih = (lih->next == NULL) ?
              & l->head_tail.previous : & lih->next->previous;
 
   *prev_lih = lih->next;
   *next_lih = lih->previous;
-  if (l->destructor != (ListDestructor) NULL) l->destructor(item);
+  if (l->destructor != NULL) l->destructor(item);
   BoxMem_Free(lih);
 }
 
-void List_Insert_With_Size(List *l, void *item_where,
+void BoxList_Insert_With_Size(BoxList *l, void *item_where,
                            const void *item_what, UInt size) {
-  ListItemHead **prev_lih, **next_lih;
+  BoxListItemHead **prev_lih, **next_lih;
 
-  void *new_item = BoxMem_Alloc(sizeof(ListItemHead) + size);
-  ListItemHead *new_lih = (ListItemHead *) new_item;
-  new_item += sizeof(ListItemHead);
+  void *new_item = BoxMem_Alloc(sizeof(BoxListItemHead) + size);
+  BoxListItemHead *new_lih = (BoxListItemHead *) new_item;
+  new_item += sizeof(BoxListItemHead);
   (void) memcpy(new_item, item_what, size);
 
   if (item_where == NULL) {
     new_lih->previous = l->head_tail.previous;
-    new_lih->next = (ListItemHead *) NULL;
-    prev_lih = (l->head_tail.previous == (ListItemHead *) NULL) ?
+    new_lih->next = NULL;
+    prev_lih = (l->head_tail.previous == NULL) ?
                & l->head_tail.next : & l->head_tail.previous->next;
     next_lih = & l->head_tail.previous;
 
   } else {
-    ListItemHead *lih = item_where - sizeof(ListItemHead);
+    BoxListItemHead *lih = item_where - sizeof(BoxListItemHead);
     new_lih->next = lih;
     new_lih->previous = lih->previous;
-    prev_lih = (lih->previous == (ListItemHead *) NULL) ?
+    prev_lih = (lih->previous == NULL) ?
                & l->head_tail.next : & lih->previous->next;
     next_lih = & lih->previous;
   }
@@ -99,25 +109,25 @@ void List_Insert_With_Size(List *l, void *item_where,
   ++l->length;
 }
 
-Task List_Iter(List *l, ListIterator i, void *pass_data) {
-  ListItemHead *lih;
-  for(lih=l->head_tail.next; lih != (ListItemHead *) NULL; lih=lih->next) {
-    void *item = (void *) lih + sizeof(ListItemHead);
+Task BoxList_Iter(BoxList *l, BoxListIterator i, void *pass_data) {
+  BoxListItemHead *lih;
+  for(lih=l->head_tail.next; lih != NULL; lih=lih->next) {
+    void *item = (void *) lih + sizeof(BoxListItemHead);
     if IS_FAILED( i(item, pass_data) ) return Failed;
   }
   return Success;
 }
 
-Task List_Item_Get(List *l, void **item, UInt index) {
+Task BoxList_Item_Get(BoxList *l, void **item, UInt index) {
   if (index >= 1 && index <= l->length) {
-    ListItemHead *lih;
-    for(lih=l->head_tail.next; lih != (ListItemHead *) NULL; lih=lih->next) {
+    BoxListItemHead *lih;
+    for(lih=l->head_tail.next; lih != NULL; lih=lih->next) {
       if (--index == 0) {
-        *item = (void *) lih + sizeof(ListItemHead);
+        *item = (void *) lih + sizeof(BoxListItemHead);
         return Success;
       }
     }
-    MSG_ERROR("List seems to have more elements than what I thought!");
+    MSG_ERROR("BoxList seems to have more elements than what I thought!");
     return Failed;
   } else {
     MSG_ERROR("Trying to get item with index %U of a list with %U elements",
@@ -126,18 +136,18 @@ Task List_Item_Get(List *l, void **item, UInt index) {
   }
 }
 
-void List_Append_Strings(List *l, const char *strings, char separator) {
+void BoxList_Append_Strings(BoxList *l, const char *strings, char separator) {
   const char *s = strings, *string = s;
   UInt length = 0;
   while(1) {
     register char c = *s;
     if (c == '\0') {
-      if (length > 0) List_Append_With_Size(l, string, length+1);
+      if (length > 0) BoxList_Append_With_Size(l, string, length+1);
       return;
     } else if (c == separator) {
       if (length > 0) {
         char *s_copy = Str_Dup(string, length);
-        List_Append_With_Size(l, s_copy, length+1);
+        BoxList_Append_With_Size(l, s_copy, length+1);
         BoxMem_Free(s_copy);
       }
       string = ++s;
@@ -150,11 +160,11 @@ void List_Append_Strings(List *l, const char *strings, char separator) {
 }
 
 typedef struct {
-  ListProduct product;
+  BoxListProduct product;
   void *pass;
-  List *sublist;
+  BoxList *sublist;
   Int num_sublists;
-  ListItemHead *item;
+  BoxListItemHead *item;
   Int sublist_idx;
   void **tuple;
 } ListProductData;
@@ -169,7 +179,7 @@ static Task Product_Sublist_Iter(void *item, void *pass) {
   return Product_Iter(my_state);
 }
 
-/* Used internally (by List_Product_Iter) */
+/* Used internally (by BoxList_Product_Iter) */
 static Task Product_Iter(ListProductData *state) {
   if (state->sublist_idx >= state->num_sublists)
     /* The tuple has been fully filled: we can proceed
@@ -178,11 +188,11 @@ static Task Product_Iter(ListProductData *state) {
     return state->product(state->tuple, state->pass);
   else {
     ListProductData my_state = *state;
-    List *this_sublist =
-            *((List **) ((void *) state->item + sizeof(ListItemHead)));
+    BoxList *this_sublist =
+            *((BoxList **) ((void *) state->item + sizeof(BoxListItemHead)));
     my_state.item = my_state.item->next;
     ++my_state.sublist_idx;
-    return List_Iter(this_sublist, Product_Sublist_Iter, & my_state);
+    return BoxList_Iter(this_sublist, Product_Sublist_Iter, & my_state);
   }
 }
 
@@ -191,7 +201,7 @@ static Task Product_Iter(ListProductData *state) {
  * You want to iterate over all the couples made by one element of list1
  * and one of list2:
  *   list1 x list2 = [(1, a), (1, b), (1, c), (2, a), (2, b), ...]
- * Then you use List_Product_Iter, where 'l' is a list containing
+ * Then you use BoxList_Product_Iter, where 'l' is a list containing
  * the two lists 'list1' and 'list2'. 'product' is a function which
  * receives an array of pointers to the items of the tuple, as first
  * argument, and a pointer provided by the user, as second argument.
@@ -201,15 +211,15 @@ static Task Product_Iter(ListProductData *state) {
  * NOTE: the function iterates over the product of an aribtrary
  *  number of two (despite the examples, where we use only two lists).
  */
-Task List_Product_Iter(List *l, ListProduct product, void *pass) {
-  UInt n = List_Length(l);
+Task BoxList_Product_Iter(BoxList *l, BoxListProduct product, void *pass) {
+  UInt n = BoxList_Length(l);
   if (n > 0) {
     Task status;
     ListProductData state;
     state.product = product;
     state.pass = pass;
     state.sublist = l;
-    state.num_sublists = List_Length(l);
+    state.num_sublists = BoxList_Length(l);
     state.item = l->head_tail.next;
     state.sublist_idx = 0;
     state.tuple = (void **) BoxMem_Alloc(n*sizeof(void *));
@@ -239,55 +249,55 @@ Task Test_Product_Iter(void **tuple, void *pass) {
 
 int main(void) {
   int i;
-  List *l;
-  List_New(& l, 5);
-  List_Append(l, "ciao");
-  List_Append(l, "word");
-  List_Append(l, "caro");
-  List_Append(l, "judo");
-  List_Append(l, "karo");
-  List_Append(l, "razo");
-  (void) List_Iter(l, Print_List_Items, NULL);
+  BoxList *l;
+  BoxList_New(& l, 5);
+  BoxList_Append(l, "ciao");
+  BoxList_Append(l, "word");
+  BoxList_Append(l, "caro");
+  BoxList_Append(l, "judo");
+  BoxList_Append(l, "karo");
+  BoxList_Append(l, "razo");
+  (void) BoxList_Iter(l, Print_List_Items, NULL);
   printf("Removing elements!\n");
   for(i=0; i<20; i++) {
     int index = 3;
     void *item;
-    if IS_FAILED( List_Item_Get(l, & item, index) ) break;
+    if IS_FAILED( BoxList_Item_Get(l, & item, index) ) break;
     printf("Removing item '%s' at position %d\n", (char *) item, index);
-    List_Remove(l, item);
+    BoxList_Remove(l, item);
     printf("The followings items are still in the list:\n");
-    (void) List_Iter(l, Print_List_Items, NULL);
+    (void) BoxList_Iter(l, Print_List_Items, NULL);
   }
-  List_Destroy(l);
+  BoxList_Destroy(l);
 
   if (1) {
-    List *l, *greetings, *people, *terminators;
-    printf("*** Testing List_Product_Iter ***\n");
-    List_New(& l, sizeof(List *));
-    List_New(& greetings, 0);
-    List_New(& people, 0);
-    List_New(& terminators, 0);
+    BoxList *l, *greetings, *people, *terminators;
+    printf("*** Testing BoxList_Product_Iter ***\n");
+    BoxList_New(& l, sizeof(BoxList *));
+    BoxList_New(& greetings, 0);
+    BoxList_New(& people, 0);
+    BoxList_New(& terminators, 0);
 
-    List_Append_String(greetings, "Hello");
-    List_Append_String(greetings, "Bye");
-    List_Append_String(greetings, "See you");
+    BoxList_Append_String(greetings, "Hello");
+    BoxList_Append_String(greetings, "Bye");
+    BoxList_Append_String(greetings, "See you");
 
-    List_Append_String(people, "Matteo");
-    List_Append_String(people, "Terry");
+    BoxList_Append_String(people, "Matteo");
+    BoxList_Append_String(people, "Terry");
 
-    List_Append_String(terminators, ":-)");
-    List_Append_String(terminators, ":-(");
-    List_Append_String(terminators, "!");
+    BoxList_Append_String(terminators, ":-)");
+    BoxList_Append_String(terminators, ":-(");
+    BoxList_Append_String(terminators, "!");
 
-    List_Append(l, & greetings);
-    List_Append(l, & people);
-    List_Append(l, & terminators);
-    List_Product_Iter(l, Test_Product_Iter, "%s %s%s\n");
+    BoxList_Append(l, & greetings);
+    BoxList_Append(l, & people);
+    BoxList_Append(l, & terminators);
+    BoxList_Product_Iter(l, Test_Product_Iter, "%s %s%s\n");
 
-    List_Destroy(l);
-    List_Destroy(greetings);
-    List_Destroy(people);
-    List_Destroy(terminators);
+    BoxList_Destroy(l);
+    BoxList_Destroy(greetings);
+    BoxList_Destroy(people);
+    BoxList_Destroy(terminators);
   }
 
   return 0;

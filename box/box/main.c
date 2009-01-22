@@ -294,7 +294,7 @@ static Task Stage_Symbol_Resolution(UInt *flags) {
   int all_resolved;
   Task status = Success;
   MSG_CONTEXT_BEGIN("Symbol resolution");
-  TASK( VM_Sym_Resolve_CLibs(program, lib_dirs, libraries) );
+  TASK( VM_Sym_Resolve_CLibs(program, & lib_dirs, & libraries) );
   TASK( VM_Sym_Resolve_All(program) );
   VM_Sym_Ref_Check(program, & all_resolved);
   if (! all_resolved) {

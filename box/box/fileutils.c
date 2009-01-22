@@ -64,7 +64,7 @@ typedef struct {
   int only_first;
   const char *file_name;
   char *first_file;
-  List *found_files;
+  BoxList *found_files;
 } FindFileData;
 
 static Task Find_File_Iterator(void **tuple, void *pass) {
@@ -79,24 +79,24 @@ static Task Find_File_Iterator(void **tuple, void *pass) {
       return Failed;
     } else {
       assert(file != (char *) NULL);
-      List_Append_String(ffd->found_files, file);
+      BoxList_Append_String(ffd->found_files, file);
     }
   }
   return Success;
 }
 
-void File_Find(List **found_files, const char *file_name,
-               List *prefixes, List *suffixes) {
-  List *l;
+void File_Find(BoxList **found_files, const char *file_name,
+               BoxList *prefixes, BoxList *suffixes) {
+  BoxList l;
   FindFileData ffd;
   ffd.only_first = 0;
   ffd.file_name = file_name;
-  List_New(& ffd.found_files, 0);
-  List_New(& l, sizeof(List *));
-  List_Append(l, & prefixes);
-  List_Append(l, & suffixes);
-  (void) List_Product_Iter(l, Find_File_Iterator, (void *) & ffd);
-  List_Destroy(l);
+  ffd.found_files = BoxList_New(0);
+  BoxList_Init(& l, sizeof(BoxList *));
+  BoxList_Append(& l, & prefixes);
+  BoxList_Append(& l, & suffixes);
+  (void) BoxList_Product_Iter(& l, Find_File_Iterator, (void *) & ffd);
+  BoxList_Finish(& l);
   *found_files = ffd.found_files;
 }
 
@@ -104,17 +104,17 @@ void File_Find(List **found_files, const char *file_name,
  * This is a C-string which needs to be freed by the user.
  */
 void File_Find_First(char **found_file, const char *file_name,
-                     List *prefixes, List *suffixes) {
-  List *l;
+                     BoxList *prefixes, BoxList *suffixes) {
+  BoxList l;
   FindFileData ffd;
   ffd.only_first = 1;
   ffd.first_file = (char *) NULL;
   ffd.file_name = file_name;
-  List_New(& l, sizeof(List *));
-  List_Append(l, & prefixes);
-  List_Append(l, & suffixes);
-  (void) List_Product_Iter(l, Find_File_Iterator, (void *) & ffd);
-  List_Destroy(l);
+  BoxList_Init(& l, sizeof(BoxList *));
+  BoxList_Append(& l, & prefixes);
+  BoxList_Append(& l, & suffixes);
+  (void) BoxList_Product_Iter(& l, Find_File_Iterator, (void *) & ffd);
+  BoxList_Finish(& l);
   *found_file = ffd.first_file;
 }
 
@@ -139,16 +139,16 @@ void File_Path_Split(char **dir, char **file, const char *full_path) {
 
 #if 0
 int main(void) {
-  List *paths, *extensions, *found_files;
-  List_New(& paths, 0);
-  List_Append_String(paths, "/tmp/");
-  List_Append_String(paths, "/home/fnch/");
-  List_New(& extensions, 0);
-  List_Append_String(extensions, ".txt");
-  List_Append_String(extensions, ".dat");
+  BoxList *paths, *extensions, *found_files;
+  BoxList_New(& paths, 0);
+  BoxList_Append_String(paths, "/tmp/");
+  BoxList_Append_String(paths, "/home/fnch/");
+  BoxList_New(& extensions, 0);
+  BoxList_Append_String(extensions, ".txt");
+  BoxList_Append_String(extensions, ".dat");
   File_Find(& found_files, "removeme", paths, extensions);
-  List_Destroy(paths);
-  List_Destroy(extensions);
+  BoxList_Destroy(paths);
+  BoxList_Destroy(extensions);
   return 0;
 }
 #endif

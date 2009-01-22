@@ -30,11 +30,11 @@
 
 int File_Exist(const char *file_name);
 
-void File_Find(List **found_files, const char *file_name,
-               List *prefixes, List *suffixes);
+void File_Find(BoxList **found_files, const char *file_name,
+               BoxList *prefixes, BoxList *suffixes);
 
 void File_Find_First(char **found_file, const char *file_name,
-                     List *prefixes, List *suffixes);
+                     BoxList *prefixes, BoxList *suffixes);
 
 /** Split the given path in 'full_path' into its directory component,
  * which is a string allocated in '*dir', and its file component,

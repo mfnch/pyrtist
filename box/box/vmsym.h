@@ -189,7 +189,7 @@ Task VM_Sym_Resolve_CLib(VMProgram *vmp, char *lib_file);
 /** Resolution of functions defined in external dynamically loaded
  * C libraries.
  */
-Task VM_Sym_Resolve_CLibs(VMProgram *vmp, List *lib_paths, List *libs);
+Task VM_Sym_Resolve_CLibs(VMProgram *vmp, BoxList *lib_paths, BoxList *libs);
 
 /** This function calls the function given as argument 'VM_Sym_Code_Ref'
  * to assemble a piece of VM-code which makes reference to the symbol

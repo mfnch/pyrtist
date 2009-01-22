@@ -46,22 +46,23 @@ bin_PROGRAMS = box
 # *** libboxcore ***
 lib_LTLIBRARIES = libboxcore.la
 boxinc_HEADERS = types.h error.h mem.h array.h occupation.h \
-  msgbase.h messages.h str.h print.h hashfunc.h hashtable.h
+  msgbase.h messages.h str.h print.h hashfunc.h hashtable.h \
+  list.h
 libboxcore_la_SOURCES = types.h error.c mem.c mem.h array.c array.h \
   occupation.c occupation.h str.c print.c msgbase.c messages.c \
-  hashfunc.c hashfunc.h hashtable.c hashtable.h
-libboxcore_la_LDFLAGS = -version-info 1:0:0
+  hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h
+libboxcore_la_LDFLAGS = -version-info 0:0:0
 
 # *** box compiler ***
 noinst_HEADERS = defaults.h \
-  list.h fileutils.h registers.h virtmach.h \
+  fileutils.h registers.h virtmach.h \
   tokenizer.h parserh.h typesys.h \
   expr.h compiler.h box.h builtins.h bltinstr.h bltinio.h \
   vmalloc.h vmproc.h vmsym.h \
   vmsymstuff.h paths.h container.h autogen.h
 
 box_SOURCES = \
-  list.c fileutils.c virtmach.c vmalloc.c vmexec.c vmproc.c vmsym.c \
+  fileutils.c virtmach.c vmalloc.c vmexec.c vmproc.c vmsym.c \
   symbols.c tokenizer.l parser.y registers.c expr.c \
   typesys.c compiler.c box.c builtins.c bltinstr.c bltinio.c vmsymstuff.c \
   paths.c main.c container.c autogen.c

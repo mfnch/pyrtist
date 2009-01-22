@@ -912,7 +912,7 @@ Int Tym_Def_Alias_Of(Name *nm, Int type) {
 
 int Tym_Compare_Types(Int type1, Int type2, int *need_expansion) {
   int dummy;
-  if (need_expansion == (int *) NULL) need_expansion = & dummy;
+  if (need_expansion == NULL) need_expansion = & dummy;
   switch(TS_Compare(last_ts, type1, type2)) {
   case TS_TYPES_MATCH:
   case TS_TYPES_EXPAND:

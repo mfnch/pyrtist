@@ -294,8 +294,8 @@ Operation *Cmp_Operation_Find(Operator *opr,
 #ifdef USE_PRIVILEGED
     if ( is_privileged ) {
       opn = opr->opn[aa][type];
-      if ( opn != NULL ) {
-        if ( oi == NULL ) return opn;
+      if (opn != NULL) {
+        if (oi == NULL) return opn;
         oi->commute = 0;
         oi->expand1 = 0;
         oi->expand2 = 0;
@@ -311,6 +311,7 @@ Operation *Cmp_Operation_Find(Operator *opr,
 
     ok_1 = (t1 == type1);
     ok_2 = (t2 == type2);
+    ne1 = ne2 = 0;
     if ( ! (ok_1 || no_check_arg1) ) ok_1 = Tym_Compare_Types(t1, type1, & ne1);
     if ( ! (ok_2 || no_check_arg2) ) ok_2 = Tym_Compare_Types(t2, type2, & ne2);
 
@@ -318,9 +319,9 @@ Operation *Cmp_Operation_Find(Operator *opr,
       ok_rs = Tym_Compare_Types(typer, opn->type_rs, NULL);
     }
 
-    if ( ok_rs ) {
-      if ( ok_1 && ok_2 ) {
-        if ( oi == NULL ) return opn;
+    if (ok_rs) {
+      if (ok_1 && ok_2) {
+        if (oi == NULL) return opn;
         oi->commute = 0;
         oi->expand1 = ne1;
         oi->expand2 = ne2;
@@ -465,7 +466,7 @@ Expr *Cmp_Operator_Exec(Operator *opr, Expr *e1, Expr *e2) {
    Tym_Type_Names(e1->type), Tym_Type_Names(e2->type));
 #endif
 
-  if ( e1 == NULL ) {
+  if (e1 == NULL) {
     e1type = TYPE_NONE;
     num_arg = 1;
 
@@ -475,7 +476,7 @@ Expr *Cmp_Operator_Exec(Operator *opr, Expr *e1, Expr *e2) {
     e1valued = e1->is.value;
   }
 
-  if ( e2 == NULL ) {
+  if (e2 == NULL) {
     e2type = TYPE_NONE;
     num_arg = 1;
   } else {
@@ -484,7 +485,7 @@ Expr *Cmp_Operator_Exec(Operator *opr, Expr *e1, Expr *e2) {
     e2valued = e2->is.value;
   }
 
-  if ( !e1valued || !e2valued ) {
+  if (!e1valued || !e2valued) {
     if ( !e1valued ) {
       MSG_ERROR("The expression on the left of '%s' "
                 "must have a definite value!", opr->name);
@@ -499,11 +500,11 @@ Expr *Cmp_Operator_Exec(Operator *opr, Expr *e1, Expr *e2) {
   opn = Cmp_Operation_Find(opr, e1type, e2type, TYPE_NONE, & oi);
   if (opn != NULL) {
     /* Ora eseguo le espansioni, se necessario */
-    if ( oi.expand1 ) {
-      if IS_FAILED( Cmp_Expr_Expand(oi.exp_type1, e1) ) return NULL;
+    if (oi.expand1) {
+      if IS_FAILED(Cmp_Expr_Expand(oi.exp_type1, e1)) return NULL;
     }
-    if ( oi.expand2 ) {
-      if IS_FAILED( Cmp_Expr_Expand(oi.exp_type2, e2) ) return NULL;
+    if (oi.expand2) {
+      if IS_FAILED(Cmp_Expr_Expand(oi.exp_type2, e2)) return NULL;
     }
 
     /* manca la valutazione della commutativita'! */

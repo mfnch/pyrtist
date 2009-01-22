@@ -24,50 +24,53 @@
  */
 
 
-#ifndef _LIST_H
-#  define _LIST_H
+#ifndef _BOX_LIST_H
+#  define _BOX_LIST_H
 
-/* Used in List_Append_String */
+/* Used in BoxList_Append_String */
 #  include <string.h>
 
-#  include "types.h"
+#  include <types.h>
 
-typedef Task (*ListIterator)(void *item, void *pass_data);
-typedef void (*ListDestructor)(void *item);
+typedef Task (*BoxListIterator)(void *item, void *pass_data);
+typedef void (*BoxListDestruct)(void *item);
 
-typedef struct __ListItemHead {
-  struct __ListItemHead *previous;
-  struct __ListItemHead *next;
-} ListItemHead;
+typedef struct __BoxListItemHead {
+  struct __BoxListItemHead *previous;
+  struct __BoxListItemHead *next;
+} BoxListItemHead;
 
 typedef struct {
-  UInt item_size;
-  UInt length;
-  ListDestructor destructor;
-  ListItemHead head_tail;
-} List;
+  BoxUInt item_size;
+  BoxUInt length;
+  BoxListDestruct destructor;
+  BoxListItemHead head_tail;
+} BoxList;
 
-/* Used with the function List_Product_Iter */
-typedef Task (*ListProduct)(void **tuple, void *pass);
+/* Used with the function BoxList_Product_Iter */
+typedef Task (*BoxListProduct)(void **tuple, void *pass);
 
-void List_New(List **l, UInt item_size);
-void List_Destroy(List *l);
-UInt List_Length(List *l);
-void List_Remove(List *l, void *item);
-void List_Insert_With_Size(List *l, void *item_where,
-                           const void *item_what, UInt size);
-Task List_Iter(List *l, ListIterator i, void *pass_data);
-Task List_Item_Get(List *l, void **item, UInt index);
-void List_Append_Strings(List *l, const char *strings, char separator);
-Task List_Product_Iter(List *l, ListProduct product, void *pass);
 
-#  define List_Insert(list, item_where, item_what) \
-     List_Insert_With_Size((list), item_where, item_what, (list)->item_size)
-#  define List_Append_With_Size(list, item, size) \
-     List_Insert_With_Size((list), NULL, (item), size)
-#  define List_Append(list, item) \
-     List_Insert_With_Size((list), NULL, (item), (list)->item_size)
-#  define  List_Append_String(list, s) \
-     List_Insert_With_Size((list), NULL, (s), strlen(s)+1)
+void BoxList_Init(BoxList *l, UInt item_size);
+void BoxList_Finish(BoxList *l);
+BoxList *BoxList_New(UInt item_size);
+void BoxList_Destroy(BoxList *l);
+BoxUInt BoxList_Length(BoxList *l);
+void BoxList_Remove(BoxList *l, void *item);
+void BoxList_Insert_With_Size(BoxList *l, void *item_where,
+                              const void *item_what, BoxUInt size);
+Task BoxList_Iter(BoxList *l, BoxListIterator i, void *pass_data);
+Task BoxList_Item_Get(BoxList *l, void **item, BoxUInt index);
+void BoxList_Append_Strings(BoxList *l, const char *strings, char separator);
+Task BoxList_Product_Iter(BoxList *l, BoxListProduct product, void *pass);
+
+#  define BoxList_Insert(list, item_where, item_what) \
+     BoxList_Insert_With_Size((list), item_where, item_what, (list)->item_size)
+#  define BoxList_Append_With_Size(list, item, size) \
+     BoxList_Insert_With_Size((list), NULL, (item), size)
+#  define BoxList_Append(list, item) \
+     BoxList_Insert_With_Size((list), NULL, (item), (list)->item_size)
+#  define  BoxList_Append_String(list, s) \
+     BoxList_Insert_With_Size((list), NULL, (s), strlen(s)+1)
 
 #endif

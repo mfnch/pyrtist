@@ -33,10 +33,10 @@
 
 #  include "list.h"
 
-extern List *libraries;
-extern List *lib_dirs;
-extern List *inc_dirs;
-extern List *inc_exts;
+extern BoxList libraries;
+extern BoxList lib_dirs;
+extern BoxList inc_dirs;
+extern BoxList inc_exts;
 
 void Path_Init(void);
 

@@ -46,40 +46,40 @@
 #  include "windows.h"
 #endif
 
-List *libraries;
-List *lib_dirs;
-List *inc_dirs;
-List *inc_exts;
+BoxList libraries;
+BoxList lib_dirs;
+BoxList inc_dirs;
+BoxList inc_exts;
 
 void Path_Init(void) {
-  List_New(& libraries, 0);
-  List_New(& lib_dirs, 0);
-  List_New(& inc_dirs, 0);
-  List_New(& inc_exts, 0);
-  List_Append_String(inc_exts, ".bxh");
-  List_Append_String(inc_exts, ".box");
-  List_Append_String(inc_exts, "");
+  BoxList_Init(& libraries, 0);
+  BoxList_Init(& lib_dirs, 0);
+  BoxList_Init(& inc_dirs, 0);
+  BoxList_Init(& inc_exts, 0);
+  BoxList_Append_String(& inc_exts, ".bxh");
+  BoxList_Append_String(& inc_exts, ".box");
+  BoxList_Append_String(& inc_exts, "");
 }
 
 void Path_Destroy(void) {
-  List_Destroy(libraries);
-  List_Destroy(lib_dirs);
-  List_Destroy(inc_dirs);
-  List_Destroy(inc_exts);
+  BoxList_Finish(& libraries);
+  BoxList_Finish(& lib_dirs);
+  BoxList_Finish(& inc_dirs);
+  BoxList_Finish(& inc_exts);
 }
 
-static void Add_Env_To_List(const char *env_var, List *list) {
+static void Add_Env_To_List(const char *env_var, BoxList *list) {
 #ifdef HAVE_GETENV
   char *strings = getenv(env_var);
   if (strings != (char *) NULL)
-    List_Append_Strings(list, strings, PATH_SEPARATOR);
+    BoxList_Append_Strings(list, strings, PATH_SEPARATOR);
 #endif
 }
 
 void Path_Set_All_From_Env(void) {
-  Add_Env_To_List(BOX_LIBRARY_PATH, lib_dirs);
-  Add_Env_To_List(BOX_INCLUDE_PATH, inc_dirs);
-  Add_Env_To_List(BOX_DEFAULT_LIBS, libraries);
+  Add_Env_To_List(BOX_LIBRARY_PATH, & lib_dirs);
+  Add_Env_To_List(BOX_INCLUDE_PATH, & inc_dirs);
+  Add_Env_To_List(BOX_DEFAULT_LIBS, & libraries);
 
 #ifdef BUILTIN_LIBRARY_PATH
   Path_Add_Lib_Dir(BUILTIN_LIBRARY_PATH);
@@ -117,15 +117,15 @@ void Path_Set_All_From_Env(void) {
 }
 
 void Path_Add_Lib(char *lib) {
-  List_Append_String(libraries, lib);
+  BoxList_Append_String(& libraries, lib);
 }
 
 void Path_Add_Lib_Dir(char *path) {
-  List_Append_String(lib_dirs, path);
+  BoxList_Append_String(& lib_dirs, path);
 }
 
 void Path_Add_Pkg_Dir(char *path) {
-  List_Append_String(inc_dirs, path);
+  BoxList_Append_String(& inc_dirs, path);
 }
 
 void Path_Add_Script_Path_To_Inc_Dir(const char *script_path) {
@@ -133,18 +133,18 @@ void Path_Add_Script_Path_To_Inc_Dir(const char *script_path) {
     char *script_dir;
     File_Path_Split(& script_dir, NULL, script_path);
     if (script_dir != NULL) {
-      List_Append_String(inc_dirs, script_dir);
+      BoxList_Append_String(& inc_dirs, script_dir);
       BoxMem_Free(script_dir);
       return;
     }
   }
 
-  List_Append_String(inc_dirs, ".");
+  BoxList_Append_String(& inc_dirs, ".");
 }
 
 FILE *Path_Open_Inc_File(const char *file, const char *mode) {
   char *full_path;
-  File_Find_First(& full_path, file, inc_dirs, inc_exts);
+  File_Find_First(& full_path, file, & inc_dirs, & inc_exts);
   if (full_path != (char *)NULL) {
     FILE *fd = fopen(full_path, mode);
     BoxMem_Free(full_path);

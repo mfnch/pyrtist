@@ -385,7 +385,7 @@ Task VM_Sym_Resolve_CLib(VMProgram *vmp, char *lib_file) {
 
 struct clibs_data {
   VMProgram *vmp;
-  List *lib_paths;
+  BoxList *lib_paths;
   char *path;
   char *lib;
 };
@@ -409,18 +409,18 @@ Task Iter_Over_Libs(void *string, void *pass_data) {
    * the iteration. Therefore if we get Success, it means that the library
    * has not been found
    */
-  if (List_Iter(cld->lib_paths, Iter_Over_Paths, cld) == Success) {
+  if (BoxList_Iter(cld->lib_paths, Iter_Over_Paths, cld) == Success) {
     MSG_WARNING("'%s' <-- library has not been found or cannot be loaded!",
                 cld->lib);
   }
   return Success;
 }
 
-Task VM_Sym_Resolve_CLibs(VMProgram *vmp, List *lib_paths, List *libs) {
+Task VM_Sym_Resolve_CLibs(VMProgram *vmp, BoxList *lib_paths, BoxList *libs) {
   struct clibs_data cld;
   cld.vmp = vmp;
   cld.lib_paths = lib_paths;
-  return List_Iter(libs, Iter_Over_Libs, & cld);
+  return BoxList_Iter(libs, Iter_Over_Libs, & cld);
 }
 
 /****************************************************************************/
