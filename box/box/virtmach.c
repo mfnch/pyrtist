@@ -793,9 +793,9 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
     }
 #ifdef DEBUG_VM_D_EVERY_ONE
     printf("Instruction at position "SUInt": "
-     "{is_long = %d, length = "SUInt", type = "SUInt
-     ", arg_type = "SUInt")\n",
-     pos, vm.flags.is_long, vm.i_len, vm.i_type, vm.arg_type);
+           "{is_long = %d, length = "SUInt", type = "SUInt
+           ", arg_type = "SUInt")\n",
+           pos, vm.flags.is_long, vm.i_len, vm.i_type, vm.arg_type);
 #endif
 
     if ( (vm.i_type < 1) || (vm.i_type >= ASM_ILLEGAL) ) {

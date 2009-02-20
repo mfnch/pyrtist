@@ -1,4 +1,5 @@
 // Header file for the g library
+#provide "g"
 
 const = (Real pi, degrees)
 const.pi = 3.14159265358979323844

@@ -3,7 +3,7 @@
 # File containing all the relased versions
 VERSIONS=VERSIONS
 
-DATE=`date +"%b %d %Y, %H:%M"`
+DATE=`date +"%b %d %Y, %H:%M:%S"`
 
 # First let's read the latest version
 if [ -e $VERSIONS ]; then

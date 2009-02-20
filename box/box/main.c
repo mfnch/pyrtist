@@ -456,6 +456,15 @@ static void Exec_Query(char *query) {
     char *name;
     char *value;
   } *v, vars[] = {
+#ifdef PACKAGE_VERSION
+    {"VERSION", PACKAGE_VERSION},
+#endif
+#ifdef BOX_RELEASE_DATE
+    {"RELEASE_DATE", BOX_RELEASE_DATE},
+#endif
+#if defined(__DATE__) && defined(__TIME__)
+    {"BUILD_DATE", __DATE__", "__TIME__},
+#endif
 #ifdef BUILTIN_LIBRARY_PATH
     {"BUILTIN_LIBRARY_PATH", BUILTIN_LIBRARY_PATH},
 #endif

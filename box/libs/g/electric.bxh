@@ -1,4 +1,6 @@
 // Some symbols used in electronics
+#provide "electric"
+
 include "arrows"
 
 //-------------------------------------------------------------------------------

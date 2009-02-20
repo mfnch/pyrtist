@@ -140,21 +140,19 @@ int BoxHT_Add(BoxHT *ht, unsigned int branch,
   hi = BoxMem_Alloc(sizeof(BoxHTItem));
 
   hi->key_size = key_size;
+  hi->key = key;
+  hi->allocated.key = 0;
   if (ht->settings.copy_keys) {
     hi->key = BoxMem_Dup(key, key_size);
     hi->allocated.key = 1;
-  } else {
-    hi->key = key;
-    hi->allocated.key = 0;
   }
 
   hi->object_size = object_size;
-  if (ht->settings.copy_objs) {
+  hi->object = object;
+  hi->allocated.obj = 0;
+  if (ht->settings.copy_objs && object_size > 0) {
     hi->object = BoxMem_Dup(object, object_size);
     hi->allocated.obj = 1;
-  } else {
-    hi->object = object;
-    hi->allocated.obj = 0;
   }
 
   /* Add the new item to the list */

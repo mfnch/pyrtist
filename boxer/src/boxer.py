@@ -359,7 +359,12 @@ class Boxer:
 
     box_executable = self.config.box_executable()
     pre_path, pre_basename = os.path.split(box_presource_file)
-    args = "-l g -I %s -se %s %s" % (pre_path, pre_basename, box_source_file)
+    extra_opts = "-I ."
+    if self.filename != None:
+      p = os.path.split(self.filename)[0]
+      if len(p) > 0: extra_opts = "-I %s" % p
+    args = ("-l g -I %s %s -se %s %s"
+            % (pre_path, extra_opts, pre_basename, box_source_file))
     box_out_msgs = exec_command(box_executable, args)
     self.outtextbuffer.set_text(box_out_msgs)
     self.outtextview_expander.set_expanded(len(box_out_msgs.strip()) > 0)

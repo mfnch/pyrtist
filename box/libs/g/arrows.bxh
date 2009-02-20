@@ -1,4 +1,6 @@
 // Kind of arrows
+#provide "arrows"
+
 arrow = Window[][
   \ .Poly[(0, -1), (0.5, 0), (0, 1), (2, 0)]
   \ .Hot["head", (2, 0), "tail", (1.8, 0), "join", (0.5, 0)]

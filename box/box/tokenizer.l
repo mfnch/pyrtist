@@ -32,6 +32,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 #include "types.h"
@@ -48,6 +49,7 @@
 #include "builtins.h"
 #include "fileutils.h"
 #include "paths.h"
+#include "hashtable.h"
 
 /* Use our message handler */
 #define YY_FATAL_ERROR(msg) MSG_FATAL("%s", msg)
@@ -64,6 +66,15 @@ typedef struct {
 UInt tok_linenum = 1;
 static UInt tok_cur_include_level = 1, tok_max_include_level;
 static BoxArr tok_include_list;
+static BoxHT provided_features;
+
+static int Tok_Provided(const char *feature, int length) {
+  BoxHTItem *item;
+  if (BoxHT_Find(& provided_features, (void *) feature, length, & item))
+    return 1;
+  BoxHT_Insert(& provided_features, (void *) feature, length);
+  return 0;
+}
 
 %}
 
@@ -124,9 +135,19 @@ include BEGIN(include);
   * bisogna mettere un ' all'inizio di ogni riga di commento)
   */
 "//"[^\n]*  {}
+"#!"[^\n]*  {}
+
+"#"{SPACES}"provide"{SPACES}["][^"\n]*["] {
+  const char *feature = strchr(yytext, '"') + 1;
+  int length = strchr(feature, '"') - feature - 1;
+  if (Tok_Provided(feature, length)) {
+    if (Tok_Include_End()) {yyterminate();}
+  }
+}
 
  /* Ignora gli spazi */
 {SPACES}    {}
+
 
 "->"        {return TOK_TO;}
 "end"       {return TOK_END;}
@@ -291,6 +312,8 @@ Task Tok_Init(UInt maxinc, const char *f) {
   BoxArr_Init(& tok_include_list, sizeof(TokIncludeData),
               TOK_TYPICAL_MAX_INCLUDE);
 
+  BoxHT_Init_Default(& provided_features, 64);
+
   /* Se f == "nomefile" (e quindi f != NULL), eseguo una:
    * include "nomefile"
    */
@@ -302,6 +325,7 @@ Task Tok_Init(UInt maxinc, const char *f) {
 /* DESCRIZIONE: Conclude l'analisi lessicale del compilatore.
  */
 void Tok_Finish(void) {
+  BoxHT_Finish(& provided_features);
   BoxArr_Finish(& tok_include_list);
 }
 
