@@ -3,7 +3,7 @@ REVISION=$Revision$
 
 Change log (recent come first)
 
-21 January 2009: can copy "simple" objects + better versioning
+21 February 2009: can copy "simple" objects + better versioning
   * When using `include "file"' we now search files also inside the directory
     containing the currently executed script. If -st is specified,
     then we search inside the current working directory.
