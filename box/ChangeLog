@@ -3,8 +3,8 @@ REVISION=$Revision$
 
 Change log (recent come first)
 
-Next:
-  * When using include we now search files also inside the directory
+21 January 2009: can copy "simple" objects + better versioning
+  * When using `include "file"' we now search files also inside the directory
     containing the currently executed script. If -st is specified,
     then we search inside the current working directory.
   * Automatic copy of objects is now implemented. However one should be very
@@ -14,10 +14,11 @@ Next:
   * Accept now line-comments starting with #! to allow Box scripts to be
     launched directly from the OS (Unix)
   * Added some info to the -q query option (compilation date, time and version
-    string)
+    string, path and name of boxcore library, etc.)
   * Adjusted versioning conventions and automated the change of version
     numbers in configure.ac and in the Makefile.am-s.
-  * Bugfixes.
+  * Bugfixes and cleanup of the code. Created a libboxcore library, containing
+    the base infrastructure over which Box is built).
 
 19 November 2008: created Boxer, a GUI for Box
   * created Boxer, a GUI for Box, using PyGTK (Python bindings for GTK+).
