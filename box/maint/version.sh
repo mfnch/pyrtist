@@ -103,4 +103,7 @@ else
   echo "./version.sh --cur-minor  # print the YY of version XX.YY.ZZ"
   echo "./version.sh --cur-maint  # print the ZZ of version XX.YY.ZZ"
   echo "./version.sh --cur-date   # print the date for the current version"
+  echo "./version.sh --get-bc-cur # 'current' part of libboxcore version"
+  echo "./version.sh --get-bc-rev # 'revision' part of libboxcore version"
+  echo "./version.sh --get-bc-age # 'age' part of libboxcore version"
 fi

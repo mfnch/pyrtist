@@ -471,8 +471,14 @@ static void Exec_Query(char *query) {
 #ifdef BUILTIN_PKG_PATH
     {"BUILTIN_PKG_PATH", BUILTIN_PKG_PATH},
 #endif
-#ifdef BUILTIN_INCLUDE_PATH
-    {"BUILTIN_INCLUDE_PATH", BUILTIN_INCLUDE_PATH},
+#ifdef C_INCLUDE_PATH
+    {"C_INCLUDE_PATH", C_INCLUDE_PATH},
+#endif
+#ifdef C_LIBRARY_PATH
+    {"C_LIBRARY_PATH", C_LIBRARY_PATH},
+#endif
+#ifdef BOXCORE_NAME
+    {"BOXCORE_NAME", BOXCORE_NAME},
 #endif
     {NULL, NULL}
   };
