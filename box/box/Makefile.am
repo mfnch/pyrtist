@@ -44,14 +44,14 @@ AM_CPPFLAGS = $(INCLTDL) \
 bin_PROGRAMS = box
 
 # *** libboxcore ***
-lib_LTLIBRARIES = libboxcore.la
+lib_LTLIBRARIES = libboxcore0.1.la
 boxinc_HEADERS = types.h error.h mem.h array.h occupation.h \
   msgbase.h messages.h str.h print.h hashfunc.h hashtable.h \
   list.h
-libboxcore_la_SOURCES = types.h error.c mem.c mem.h array.c array.h \
+libboxcore0_1_la_SOURCES = types.h error.c mem.c mem.h array.c array.h \
   occupation.c occupation.h str.c print.c msgbase.c messages.c \
   hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h
-libboxcore_la_LDFLAGS = -version-info 0:0:0
+libboxcore0_1_la_LDFLAGS = -version-info 0:0:0
 
 # *** box compiler ***
 noinst_HEADERS = defaults.h \
@@ -67,7 +67,7 @@ box_SOURCES = \
   typesys.c compiler.c box.c builtins.c bltinstr.c bltinio.c vmsymstuff.c \
   paths.c main.c container.c autogen.c
 
-box_LDADD = $(LIBLTDL) libboxcore.la
+box_LDADD = $(LIBLTDL) libboxcore0.1.la
 box_LDFLAGS = -static
 box_DEPENDENCIES=$(LTDLDEPS)
 
