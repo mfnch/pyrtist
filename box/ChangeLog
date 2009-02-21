@@ -8,13 +8,15 @@ Next:
     containing the currently executed script. If -st is specified,
     then we search inside the current working directory.
   * Automatic copy of objects is now implemented. However one should be very
-    careful when using this feature with complex objects, such as Str, etc.
+    careful when using this feature with "complex" objects, such as Str, etc.
   * Introduced the temporary #provide directive, to deal properly with
     multiple inclusions of the same header.
   * Accept now line-comments starting with #! to allow Box scripts to be
     launched directly from the OS (Unix)
   * Added some info to the -q query option (compilation date, time and version
     string)
+  * Adjusted versioning conventions and automated the change of version
+    numbers in configure.ac and in the Makefile.am-s.
   * Bugfixes.
 
 19 November 2008: created Boxer, a GUI for Box
