@@ -48,6 +48,7 @@ Command reference
 
 .. include:: line.txt
 
+.. include:: versions.txt
 
 .. |box_website| replace:: `Box <http://boxc.sourceforge.net>`__
 .. |box_projsite| replace:: `Box <http://sourceforge.net/projects/boxc>`__

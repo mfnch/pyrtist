@@ -1,0 +1,28 @@
+
+How are version numbers stuck over Box?
+=======================================
+
+We adopt two version regimes. The young regime and the mature regime. In the
+young regime, the version string is composed by three numbers
+``MAJOR.MINOR.PATCH``. ``PATCH`` is increased just for bug fixes or for
+extensions of the language that are compatible with the previous version.
+``MINOR`` is increased when the new release is not compatible with the
+previous one. ``MAJOR`` will be increased to end the young regime and enter
+into the mature regime. Notice that the three parts of the version ``MAJOR``,
+``MINOR`` and ``PATCH`` are integer numbers and can be greater than 9.
+Different versions of Box can coexist, but only when they differ in their
+``MINOR`` or ``MAJOR`` part of the version. The idea here is
+that one always wants to replace a previous version of the Box compiler, with
+a newer one, if this is just a patch. For this reason the directories created
+inside ``lib/`` and ``include/`` have the form ``boxMAJOR.MINOR`` and the
+``PATCH`` part is omitted. The Box core library has the name
+``libboxcoreMAJOR.MINOR.so.CUR.REV.AGE`` meaning that each incompatible
+release of Box will have a different independent library. Releases just
+differing for the ``PATCH`` part have the same core library name and
+therefore the ``CUR.REV.AGE`` part should be handled with care (this is done
+automatically by ``box/maint/version.sh``). Regarding the mature regime, we
+are not defining here rigid rules. We anticipate that probably compatibility
+will be regarded as a more important issue in the mature regime. We indeed
+intend to pass to the mature regime only when the number of Box users will be
+big enough to limit our freedom of changing the language, hoping that this
+will really happen, soon or later...
