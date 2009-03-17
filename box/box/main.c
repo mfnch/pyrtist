@@ -487,6 +487,10 @@ static void Exec_Query(char *query) {
     for (v = & vars[0]; v->name != NULL; v++)
       printf("%s\n", v->name);
     exit(EXIT_SUCCESS);
+  } else if (strcasecmp(query, "all") == 0) {
+    for (v = & vars[0]; v->name != NULL; v++)
+      printf("%s=\"%s\"\n", v->name, v->value);
+    exit(EXIT_SUCCESS);
   }
 
   for (v = & vars[0]; v->name != NULL; v++) {
