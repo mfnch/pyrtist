@@ -28,19 +28,33 @@
 #  define _VIRTMACH_H
 
 #  include <stdio.h>
-#  include "types.h"
-#  include "defaults.h"
-#  include "array.h"
-#  include "occupation.h"
-#  include "hashtable.h"
+/*#  include <stdint.h>
+#  include <inttypes.h>*/
+
+#  include <box/types.h>
+#  include <box/defaults.h>
+#  include <box/array.h>
+#  include <box/occupation.h>
+#  include <box/hashtable.h>
 
 #  define _INSIDE_VIRTMACH_H
-#  include "vmproc.h"
-#  include "vmsym.h"
+#  include <box/vmproc.h>
+#  include <box/vmsym.h>
 #  undef _INSIDE_VIRTMACH_H
 
+/* Data type used to write/read binary codes for the instructions */
+typedef unsigned char BoxVMByte;
+typedef char BoxVMSByte;
+typedef unsigned long BoxVMByteX4;
+#  define BoxVMByteX4_Fmt "%8.8lx"
+
+#  ifdef BOX_ABBREV
+typedef BoxVMByteX4 VMByteX4;
+#    define VMByteX4_Fmt BoxVMByteX4_Fmt
+#  endif
+
 /** To each type a number is associated. */
-typedef Int Type;
+typedef BoxInt Type;
 
 /** Here is a list of builtin types. */
 typedef enum {
@@ -103,18 +117,13 @@ typedef enum {
  */
 typedef enum {CAT_NONE = -1, CAT_GREG = 0, CAT_LREG, CAT_PTR, CAT_IMM} AsmArg;
 
-/* Data type used to write/read binary codes for the instructions */
-typedef unsigned char VMByte;
-typedef unsigned long VMByteX4;
-typedef signed char VMSByte;
-
 /* Associo un numero a ciascun tipo, per poterlo identificare */
 typedef enum {
-  SIZEOF_CHAR  = sizeof(Char),
-  SIZEOF_INTG  = sizeof(Int),
-  SIZEOF_REAL  = sizeof(Real),
-  SIZEOF_POINT = sizeof(Point),
-  SIZEOF_OBJ   = sizeof(Obj), SIZEOF_PTR = SIZEOF_OBJ
+  SIZEOF_CHAR  = sizeof(BoxChar),
+  SIZEOF_INTG  = sizeof(BoxInt),
+  SIZEOF_REAL  = sizeof(BoxReal),
+  SIZEOF_POINT = sizeof(BoxPoint),
+  SIZEOF_OBJ   = sizeof(BoxObj), SIZEOF_PTR = SIZEOF_OBJ
 } SizeOfType;
 
 /* Numero massimo degli argomenti di un'istruzione */
@@ -131,7 +140,7 @@ typedef enum {
 struct __vmprogram;
 struct __vmstatus;
 
-#  define VMProgram struct __vmprogram
+#  define BoxVM struct __vmprogram
 #  define VMStatus struct __vmstatus
 
 /* This type is used in the table 'vm_instr_desc_table', which collects
@@ -139,13 +148,13 @@ struct __vmstatus;
  */
 typedef struct {
   const char *name;             /* Nome dell'istruzione */
-  UInt numargs;                 /* Numero di argomenti dell'istruzione */
+  BoxUInt numargs;              /* Numero di argomenti dell'istruzione */
   TypeID t_id;                  /* Numero che identifica il tipo
                                    degli argomenti (interi, reali, ...) */
   void (*get_args)(VMStatus *); /* Per trattare gli argomenti */
-  void (*execute)(VMProgram *); /* Per eseguire l'istruzione */
+  void (*execute)(BoxVM *); /* Per eseguire l'istruzione */
   /* Per disassemblare gli argomenti */
-  void (*disasm)(VMProgram *, char **);
+  void (*disasm)(BoxVM *, char **);
 } VMInstrDesc;
 
 /** This structure contains all the data which define the status for the VM.
@@ -159,27 +168,26 @@ struct __vmstatus {
     unsigned int is_long  : 1; /* L'istruzione e' in formato lungo? */
   } flags;
 
-  Int line;           /**< Number of line, as set by the 'line' instruction */
-  VMProcInstalled *p; /**< Procedure which is currently been executed */
+  BoxInt line;           /**< Number of line, as set by the 'line' instruction */
+  BoxVMProcInstalled *p; /**< Procedure which is currently been executed */
 
   /* Variabili che riguardano l'istruzione in esecuzione: */
-  UInt dasm_pos;      /* Position in num. of read bytes for the disassembler */
-  VMByteX4 *i_pos;    /* Puntatore all'istruzione */
-  VMByteX4 i_eye;     /* Occhio di lettura (gli ultimi 4 byte letti) */
-  UInt i_type, i_len; /* Tipo e dimensione dell'istruzione */
-  UInt arg_type;      /* Tipo degli argomenti dell'istruzione */
-  VMInstrDesc *idesc; /* Descrittore dell'istruzione corrente */
-  void *arg1, *arg2;  /* Puntatori agli argomenti del'istruzione */
-
-  /* Array di puntatori alle zone registri globali e locali */
-  void *global[NUM_TYPES];
+  BoxUInt dasm_pos;       /* Position in num. of read bytes for the disassembler */
+  BoxVMByteX4 *i_pos;     /* Puntatore all'istruzione */
+  BoxVMByteX4 i_eye;      /* Occhio di lettura (gli ultimi 4 byte letti) */
+  BoxUInt i_type,         /* Tipo e dimensione dell'istruzione */
+          i_len,
+          arg_type;       /* Tipo degli argomenti dell'istruzione */
+  VMInstrDesc *idesc;     /* Descrittore dell'istruzione corrente */
+  void *arg1, *arg2;      /* Puntatori agli argomenti del'istruzione */
+  void *global[NUM_TYPES]; /* Array di puntatori alle zone registri globali e locali */
   void *local[NUM_TYPES];
-  /* Numero di registro globale minimo e massimo */
-  Int gmin[NUM_TYPES], gmax[NUM_TYPES];
-  /* Numero di registro locale minimo e massimo */
-  Int lmin[NUM_TYPES], lmax[NUM_TYPES];
+  BoxInt gmin[NUM_TYPES],  /* Numero di registro globale minimo e massimo */
+         gmax[NUM_TYPES],
+         lmin[NUM_TYPES],  /* Numero di registro locale minimo e massimo */
+         lmax[NUM_TYPES];
   /* Stato di allocazione dei registri per il modulo in esecuzione */
-  Int alc[NUM_TYPES];
+  BoxInt alc[NUM_TYPES];
 };
 
 /* Here we undef the VMStatus macro and typedef __vmstatus to VMStatus. */
@@ -189,26 +197,26 @@ typedef struct __vmstatus VMStatus;
 /** @brief The full status of the virtual machine of Box.
  */
 struct __vmprogram {
-  VMSymTable  sym_table;      /**< Table of referenced and defined symbols */
-  VMProcTable proc_table;     /**< Table of installed and uninstalled procs */
-  BoxHT       method_table;   /**< Hashtable containing destructors, etc. */
-  BoxArr      stack,          /**< The stack for the VM object */
-              data_segment;   /**< The segment of data (strings, etc.)
-                                   which is accessible through the global
-                                   register gr0 */
+  BoxVMSymTable  sym_table;    /**< Table of referenced and defined symbols */
+  BoxVMProcTable proc_table;   /**< Table of installed and uninstalled procs */
+  BoxHT          method_table; /**< Hashtable containing destructors, etc. */
+  BoxArr         stack,        /**< The stack for the VM object */
+                 data_segment; /**< The segment of data (strings, etc.)
+                                    which is accessible through the global
+                                    register gr0 */
 
   /** Flags which control the behaviour of the VM. */
   struct {
     unsigned int
-              forcelong : 1,  /** Force long form assembly. */
-              hexcode : 1,    /** Show Hex values in disassemled code */
-              identdata : 1;  /** Add also identity info for data inserted
-                                  into the data segment */
+              forcelong : 1,   /** Force long form assembly. */
+              hexcode : 1,     /** Show Hex values in disassembled code */
+              identdata : 1;   /** Add also identity info for data inserted
+                                   into the data segment */
   } attr;
 
   int vm_globals;
   void *vm_global[NUM_TYPES];
-  Int vm_gmin[NUM_TYPES], vm_gmax[NUM_TYPES];
+  BoxInt vm_gmin[NUM_TYPES], vm_gmax[NUM_TYPES];
   Obj *box_vm_current, *box_vm_arg1, *box_vm_arg2;
   /** Array used with sprintf, when arguments are disassembled. */
   char iarg_str[VM_MAX_NUMARGS][64];
@@ -216,27 +224,26 @@ struct __vmprogram {
   VMStatus *vmcur;
 };
 
-/* Here we undef the VMProgram macro and typedef __vmprogram to VMProgram. */
-#  undef VMProgram
-typedef struct __vmprogram VMProgram;
-typedef VMProgram BoxVM;
+#  undef BoxVM
+typedef struct __vmprogram BoxVM;
+typedef BoxVM VMProgram;
 
 extern VMInstrDesc vm_instr_desc_table[];
 
-extern const UInt size_of_type[NUM_TYPES];
+extern const BoxUInt size_of_type[NUM_TYPES];
 
 /* These functions are intended to be used only inside 'vmexec.h' */
 void VM__GLP_GLPI(VMStatus *vmcur);
 void VM__GLP_Imm(VMStatus *vmcur);
 void VM__GLPI(VMStatus *vmcur);
 void VM__Imm(VMStatus *vmcur);
-void VM__D_GLPI_GLPI(VMProgram *vmp, char **iarg);
-void VM__D_CALL(VMProgram *vmp, char **iarg);
-void VM__D_JMP(VMProgram *vmp, char **iarg);
-void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg);
+void VM__D_GLPI_GLPI(BoxVM *vmp, char **iarg);
+void VM__D_CALL(BoxVM *vmp, char **iarg);
+void VM__D_JMP(BoxVM *vmp, char **iarg);
+void VM__D_GLPI_Imm(BoxVM *vmp, char **iarg);
 
 /** This is the type of the C functions which can be called by the VM. */
-typedef Task (*VMFunc)(VMProgram *);
+typedef BoxTask (*VMFunc)(BoxVM *);
 
 
 
@@ -244,7 +251,7 @@ typedef Task (*VMFunc)(VMProgram *);
  * somehow. You'll need to use BoxVM_Finish to destroy the object.
  * @see BoxVM_Finish, BoxVM_New
  */
-Task BoxVM_Init(BoxVM *vm);
+BoxTask BoxVM_Init(BoxVM *vm);
 
 /** Destroy a BoxVM object initialised with BoxVM_Init
  * @see BoxVM_Init
@@ -266,10 +273,10 @@ void BoxVM_Destroy(BoxVM *vm);
  */
 BoxTask BoxVM_Alloc_Global_Regs(BoxVM *vm, BoxInt num_var[], BoxInt num_reg[]);
 
-Task VM_Module_Global_Set(VMProgram *vmp, Int type, Int reg, void *value);
+BoxTask VM_Module_Global_Set(BoxVM *vmp, BoxInt type, BoxInt reg, void *value);
 
-Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg);
-Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num);
+BoxTask VM_Code_Prepare(BoxVM *vmp, BoxInt *num_var, BoxInt *num_reg);
+BoxTask VM_Module_Execute(BoxVM *vmp, unsigned int call_num);
 
 /** The attributes corresponding to different behaviours of the Box virtual
  * machine.
@@ -293,12 +300,12 @@ void BoxVM_Set_Attr(BoxVM *vm, BoxVMAttr mask, BoxVMAttr value);
 /** Sets the force-long flag and return what was its previous value. */
 int BoxVM_Set_Force_Long(BoxVM *vm, int force_long);
 
-Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim);
+BoxTask VM_Disassemble(BoxVM *vmp, FILE *output, void *prog, BoxUInt dim);
 
 
-void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit);
+void VM_ASettings(BoxVM *vmp, int forcelong, int error, int inhibit);
 
-void VM_Assemble(VMProgram *vmp, AsmCode instr, ...);
+void VM_Assemble(BoxVM *vmp, AsmCode instr, ...);
 
 /** Add the block of data pointed by 'data' with size 'size'
  * to the data segment for the VM instance 'vm'.
@@ -317,11 +324,11 @@ void BoxVM_Data_Display(BoxVM *vm, FILE *stream);
   VM_Assemble(vmp, instr, __VA_ARGS__); \
   (void) BoxVM_Set_Force_Long(vmp, is_long);}
 
-/* Numero minimo di VMByteX4 che riesce a contenere tutti i tipi possibili
+/* Numero minimo di BoxVMByteX4 che riesce a contenere tutti i tipi possibili
  * di argomenti (Int, Real, Point, Obj)
  */
 #  define MAX_SIZE_IN_IWORDS \
-   ((sizeof(Point) + sizeof(VMByteX4) - 1) / sizeof(VMByteX4))
+   ((sizeof(Point) + sizeof(BoxVMByteX4) - 1) / sizeof(BoxVMByteX4))
 
 #  define BOX_VM_THIS_PTR(vmp, Type) ((Type *) (vmp)->box_vm_current->ptr)
 #  define BOX_VM_THIS(vmp, Type) (*BOX_VM_THIS_PTR(vmp, Type))

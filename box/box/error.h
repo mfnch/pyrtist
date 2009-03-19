@@ -66,7 +66,7 @@ typedef enum {
 typedef struct {
   struct {
     unsigned int
-             tolerant; /**< 1 to trap erros, 0 to exit on errors */
+             tolerant; /**< 1 to trap errors, 0 to exit on errors */
   } is;
   BoxErrCode code;     /**< Error code */
 } BoxErr;

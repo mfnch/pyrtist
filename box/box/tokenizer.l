@@ -137,7 +137,7 @@ include BEGIN(include);
 "//"[^\n]*  {}
 "#!"[^\n]*  {}
 
-"#"{SPACES}"provide"{SPACES}["][^"\n]*["] {
+"#"{SPACES}"provide"{SPACES}["][^"\n]+["] {
   const char *feature = strchr(yytext, '"') + 1;
   int length = strchr(feature, '"') - feature - 1;
   if (Tok_Provided(feature, length)) {

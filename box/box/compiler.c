@@ -100,7 +100,7 @@ Task Cmp_Init(VMProgram *program) {
 
 Task Cmp_Parse(const char *file) {
   int parse_status;
-  TASK( Box_Init() ); /* Init the box stack */
+  Box_Init(); /* Init the box stack */
   TASK( Box_Main_Begin() ); /* Create the main box */
 
   BoxArr_Clear(& cmp->struc.exprs);
@@ -1399,7 +1399,7 @@ Task Cmp_Builtin_Proc_Def(Int procedure, int when_should_call, Int of_type,
   UInt proc = 0, sym_num, call_num;
 
   /* We then create the symbol associated with this name */
-  TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
+  sym_num = VM_Sym_New_Call(cmp_vm);
 
   /* We tell to the compiler that some procedures are associated with it */
   if ( when_should_call & BOX_CREATION ) {
@@ -1430,7 +1430,7 @@ Task Cmp_Builtin_CFunc_Def(UInt *sym_num, UInt *call_num,
   UInt dummy_sym_num, dummy_call_num;
   if (sym_num == (UInt *) NULL) sym_num = & dummy_sym_num;
   if (call_num == (UInt *) NULL) call_num = & dummy_call_num;
-  TASK( VM_Sym_New_Call(cmp->vm, sym_num) );
+  *sym_num = VM_Sym_New_Call(cmp->vm);
   VM_Proc_Install_CCode(cmp->vm, call_num, c_func, "(noname)", name);
   TASK( VM_Sym_Def_Call(cmp->vm, *sym_num, *call_num) );
   return Success;

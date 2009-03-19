@@ -74,17 +74,17 @@ static Task Str_Register_All(void);
 Task Bltin_Str_Init(void) {
   /* First define: STR = ++(Int length, buffer_size, Ptr ptr) */
   Type s, d;
-  TASK( TS_Structure_Begin(cmp->ts, & s) );
-  TASK( TS_Structure_Add(cmp->ts, s, type_IntNum, "length") );
-  TASK( TS_Structure_Add(cmp->ts, s, type_IntNum, "buffer_size") );
-  TASK( TS_Structure_Add(cmp->ts, s, TYPE_PTR, "ptr") );
-  TASK( TS_Detached_New(cmp->ts, & d, s) );
+  TS_Structure_Begin(cmp->ts, & s);
+  TS_Structure_Add(cmp->ts, s, type_IntNum, "length");
+  TS_Structure_Add(cmp->ts, s, type_IntNum, "buffer_size");
+  TS_Structure_Add(cmp->ts, s, TYPE_PTR, "ptr");
+  TS_Detached_New(cmp->ts, & d, s);
   TASK( Tym_Def_Explicit_Alias(& type_Str, & NAME("STR"), d) );
 
   /* Then define Str = (()Char -> STR) */
-  TASK( TS_Species_Begin(cmp->ts, & s) );
-  TASK( TS_Species_Add(cmp->ts, s, type_CharArray) );
-  TASK( TS_Species_Add(cmp->ts, s, type_Str) );
+  TS_Species_Begin(cmp->ts, & s);
+  TS_Species_Add(cmp->ts, s, type_CharArray);
+  TS_Species_Add(cmp->ts, s, type_Str);
   TASK( Tym_Def_Explicit_Alias(& type_StrSpecies, & NAME("Str"), s) );
 
   /* Now we register all the methods */

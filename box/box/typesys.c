@@ -387,7 +387,7 @@ Int TS_Member_Count(TS *ts, Type s) {
  ****************************************************************************/
 
 /*FUNCTIONS: TS_X_New *******************************************************/
-Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
+void TS_Intrinsic_New(TS *ts, Type *i, Int size) {
   TSDesc td;
   assert(size >= 0);
   TS_TSDESC_INIT(& td);
@@ -395,10 +395,9 @@ Task TS_Intrinsic_New(TS *ts, Type *i, Int size) {
   td.size = size;
   td.target = TS_TYPE_NONE;
   Type_New(ts, i, & td);
-  return Success;
 }
 
-Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind) {
+void TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind) {
   TSDesc td;
   TS_TSDESC_INIT(& td);
   td.kind = TS_KIND_PROC;
@@ -408,13 +407,12 @@ Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind) {
   td.data.proc.kind = kind & 3;
   td.data.proc.sym_num = 0;
   Type_New(ts, p, & td);
-  return Success;
 }
 
 /*FUNCTIONS: TS_X_New *******************************************************/
 
 /* Common code for Ts_Alias_New, TS_Detached_New and TS_Array_New. */
-static Task TS_X_New(TSKind kind, TS *ts, Type *dst, Type src, Int size) {
+static void TS_X_New(TSKind kind, TS *ts, Type *dst, Type src, Int size) {
   TSDesc td;
   TSDesc *src_td = Type_Ptr(ts, src);
   TS_TSDESC_INIT(& td);
@@ -427,25 +425,24 @@ static Task TS_X_New(TSKind kind, TS *ts, Type *dst, Type src, Int size) {
     td.size = src_td->size;
   }
   Type_New(ts, dst, & td);
-  return Success;
 }
 
-Task TS_Alias_New(TS *ts, Type *alias, Type origin) {
-  return TS_X_New(TS_KIND_ALIAS, ts, alias, origin, -1);
+void TS_Alias_New(TS *ts, Type *alias, Type origin) {
+  TS_X_New(TS_KIND_ALIAS, ts, alias, origin, -1);
 }
 
-Task TS_Detached_New(TS *ts, Type *detached, Type origin) {
-  return TS_X_New(TS_KIND_DETACHED, ts, detached, origin, -1);
+void TS_Detached_New(TS *ts, Type *detached, Type origin) {
+  TS_X_New(TS_KIND_DETACHED, ts, detached, origin, -1);
 }
 
-Task TS_Array_New(TS *ts, Type *array, Type item, Int num_items) {
-  return TS_X_New(TS_KIND_ARRAY, ts, array, item, num_items);
+void TS_Array_New(TS *ts, Type *array, Type item, Int num_items) {
+  TS_X_New(TS_KIND_ARRAY, ts, array, item, num_items);
 }
 
 /*FUNCTIONS: TS_X_Begin *****************************************************/
 
 /* Code for TS_Structure_Begin, TS_Species_Begin, etc. */
-static Task TS_X_Begin(TSKind kind, TS *ts, Type *s) {
+static void TS_X_Begin(TSKind kind, TS *ts, Type *s) {
   TSDesc td;
   TS_TSDESC_INIT(& td);
   td.kind = kind;
@@ -453,25 +450,24 @@ static Task TS_X_Begin(TSKind kind, TS *ts, Type *s) {
   td.data.last = TS_TYPE_NONE;
   td.size = 0;
   Type_New(ts, s, & td);
-  return Success;
 }
 
-Task TS_Structure_Begin(TS *ts, Type *structure) {
-  return TS_X_Begin(TS_KIND_STRUCTURE, ts, structure);
+void TS_Structure_Begin(TS *ts, Type *structure) {
+  TS_X_Begin(TS_KIND_STRUCTURE, ts, structure);
 }
 
-Task TS_Species_Begin(TS *ts, Type *species) {
-  return TS_X_Begin(TS_KIND_SPECIES, ts, species);
+void TS_Species_Begin(TS *ts, Type *species) {
+  TS_X_Begin(TS_KIND_SPECIES, ts, species);
 }
 
-Task TS_Enum_Begin(TS *ts, Type *enumeration) {
-  return TS_X_Begin(TS_KIND_ENUM, ts, enumeration);
+void TS_Enum_Begin(TS *ts, Type *enumeration) {
+  TS_X_Begin(TS_KIND_ENUM, ts, enumeration);
 }
 
 /*FUNCTIONS: TS_X_Add *******************************************************/
 
 /* Code for TS_Structure_Add, TS_Species_Add, etc. */
-static Task TS_X_Add(TSKind kind, TS *ts, Type s, Type m,
+static void TS_X_Add(TSKind kind, TS *ts, Type s, Type m,
                      const char *m_name) {
   TSDesc td, *m_td, *s_td;
   Type new_m;
@@ -521,20 +517,19 @@ static Task TS_X_Add(TSKind kind, TS *ts, Type s, Type m,
     if (m_size > s_td->size) s_td->size = m_size;
     break;
   }
-  return Success;
 }
 
-Task TS_Structure_Add(TS *ts, Type structure, Type member_type,
+void TS_Structure_Add(TS *ts, Type structure, Type member_type,
                       const char *member_name) {
-  return TS_X_Add(TS_KIND_STRUCTURE, ts, structure, member_type, member_name);
+  TS_X_Add(TS_KIND_STRUCTURE, ts, structure, member_type, member_name);
 }
 
-Task TS_Species_Add(TS *ts, Type species, Type member) {
-  return TS_X_Add(TS_KIND_SPECIES, ts, species, member, NULL);
+void TS_Species_Add(TS *ts, Type species, Type member) {
+  TS_X_Add(TS_KIND_SPECIES, ts, species, member, NULL);
 }
 
-Task TS_Enum_Add(TS *ts, Type enumeration, Type member) {
-  return TS_X_Add(TS_KIND_ENUM, ts, enumeration, member, NULL);
+void TS_Enum_Add(TS *ts, Type enumeration, Type member) {
+  TS_X_Add(TS_KIND_ENUM, ts, enumeration, member, NULL);
 }
 
 /****************************************************************************/
@@ -634,10 +629,8 @@ Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num) {
   /*MSG_ADVICE("TS_Procedure_Def: new procedure '%s' of '%s'",
              Tym_Type_Names(proc), Tym_Type_Names(of_type));*/
   assert(kind != 0 && (kind | 3) == 3); /* kind can be 1, 2 or 3 */
-  Task t = TS_Procedure_New(last_ts, & procedure, of_type, proc, kind);
-  assert(t == Success);
-  t = TS_Procedure_Register(last_ts, procedure, sym_num);
-  assert(t == Success);
+  TS_Procedure_New(last_ts, & procedure, of_type, proc, kind);
+  TS_Procedure_Register(last_ts, procedure, sym_num);
   return procedure;
 }
 
@@ -650,7 +643,7 @@ Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num) {
  * the parent type becomes aware of it. In order for the registration to be
  * completed the full type of the subtype must be specified.
  */
-Task TS_Subtype_New(TS *ts, Type *new_subtype,
+void TS_Subtype_New(TS *ts, Type *new_subtype,
                     Type parent_type, Name *child_name) {
   TSDesc td;
   TS_TSDESC_INIT(& td);
@@ -660,7 +653,6 @@ Task TS_Subtype_New(TS *ts, Type *new_subtype,
   td.data.subtype.parent = parent_type;
   td.data.subtype.child_name = Name_To_Str(child_name);
   Type_New(ts, new_subtype, & td);
-  return Success;
 }
 
 /* Register a previously created (and still unregistered) subtype.
@@ -879,10 +871,10 @@ Task Tym_Def_Type(Int *new_type,
 
   /* Now I create a new type for the box */
   if ( size < 0 ) {
-    TASK( TS_Alias_New(last_ts, & type, aliased_type) );
+    TS_Alias_New(last_ts, & type, aliased_type);
 
   } else {
-    TASK(TS_Intrinsic_New(last_ts, & type, size));
+    TS_Intrinsic_New(last_ts, & type, size);
   }
   name = Name_To_Str(nm);
   (void) TS_Name_Set(last_ts, type, name);
@@ -897,15 +889,13 @@ Task Tym_Def_Type(Int *new_type,
 
 Int Tym_Def_Array_Of(Int num, Int type) {
   Type array;
-  Task t = TS_Array_New(last_ts, & array, type, num);
-  assert(t == Success);
+  TS_Array_New(last_ts, & array, type, num);
   return array;
 }
 
 Int Tym_Def_Alias_Of(Name *nm, Int type) {
   Type alias;
-  Task t = TS_Alias_New(last_ts, & alias, type);
-  assert(t == Success);
+  TS_Alias_New(last_ts, & alias, type);
   TS_Name_Set(last_ts, alias, Name_To_Str(nm));
   return alias;
 }
@@ -938,25 +928,25 @@ Int Tym_Type_Resolve(Int type, int not_alias, int not_species) {
 Int Tym_Def_Procedure(Int proc, int second, Int of_type, Int sym_num) {
   Type procedure;
   int kind = second ? 2 : 1;
-  Task t = TS_Procedure_New(last_ts, & procedure, of_type, proc, kind);
-  assert(t == Success);
-  t = TS_Procedure_Register(last_ts, procedure, sym_num);
-  assert(t == Success);
+  TS_Procedure_New(last_ts, & procedure, of_type, proc, kind);
+  TS_Procedure_Register(last_ts, procedure, sym_num);
   return procedure;
 }
 
 Task Tym_Def_Specie(Int *specie, Int type) {
   if (*specie == TYPE_NONE) {
-    TASK( TS_Species_Begin(last_ts, specie) );
+    TS_Species_Begin(last_ts, specie);
   }
-  return TS_Species_Add(last_ts, *specie, type);
+  TS_Species_Add(last_ts, *specie, type);
+  return Success;
 }
 
 Task Tym_Def_Structure(Int *strc, Int type) {
   if (*strc == TYPE_NONE) {
-    TASK( TS_Structure_Begin(last_ts, strc) );
+    TS_Structure_Begin(last_ts, strc);
   }
-  return TS_Structure_Add(last_ts, *strc, type, NULL);
+  TS_Structure_Add(last_ts, *strc, type, NULL);
+  return Success;
 }
 
 Task Tym_Specie_Get(Int *type) {

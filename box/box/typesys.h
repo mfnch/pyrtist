@@ -170,12 +170,12 @@ int TS_Structure_Is_Fast(TS *ts, Type structure);
 
 Int TS_Align(TS *ts, Int address);
 
-Task TS_Intrinsic_New(TS *ts, Type *i, Int size);
+void TS_Intrinsic_New(TS *ts, Type *i, Int size);
 
 /** Create a new procedure type in p. init tells if the procedure
  * is an initialisation procedure or not.
  */
-Task TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind);
+void TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind);
 
 /** Get information about the procedure p. This information is stored
  * in the destination specified by the given pointers, but this happens
@@ -226,7 +226,7 @@ Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num);
  * the parent type becomes aware of it. In order for the registration to be
  * completed the full type of the subtype must be specified.
  */
-Task TS_Subtype_New(TS *ts, Type *new_subtype,
+void TS_Subtype_New(TS *ts, Type *new_subtype,
                     Type parent_type, Name *child_name);
 
 /** Register a previously created (and still unregistered) subtype.
@@ -248,40 +248,40 @@ Task TS_Name_Set(TS *ts, Type t, const char *name);
 char *TS_Name_Get(TS *ts, Type t);
 
 /** Create a new alias type from the type 'origin'. */
-Task TS_Alias_New(TS *ts, Type *alias, Type origin);
+void TS_Alias_New(TS *ts, Type *alias, Type origin);
 
 /** Create a new detached type from the type t. The new type (in *d) will be
  * identical to t, but incompatible: TS_Compare will not match the two types.
  */
-Task TS_Detached_New(TS *ts, Type *detached, Type origin);
+void TS_Detached_New(TS *ts, Type *detached, Type origin);
 
 /** Create a new array type, with 'item_num' items with type 'item'. */
-Task TS_Array_New(TS *ts, Type *array, Type item, Int num_items);
+void TS_Array_New(TS *ts, Type *array, Type item, Int num_items);
 
 /** Function called to create an empty structure. Members can be added
  * with TS_Structure_Add.
  */
-Task TS_Structure_Begin(TS *ts, Type *structure);
+void TS_Structure_Begin(TS *ts, Type *structure);
 
 /** Add a member to a structure type defined with TS_Structure_Begin. */
-Task TS_Structure_Add(TS *ts, Type structure, Type member_type,
+void TS_Structure_Add(TS *ts, Type structure, Type member_type,
                       const char *member_name);
 
 /** Function called to create an empty species. Members can be added
  * with TS_Species_Add.
  */
-Task TS_Species_Begin(TS *ts, Type *species);
+void TS_Species_Begin(TS *ts, Type *species);
 
 /** Add a member to a species type defined with TS_Species_Begin. */
-Task TS_Species_Add(TS *ts, Type species, Type member);
+void TS_Species_Add(TS *ts, Type species, Type member);
 
 /** Function called to create an empty enumeration. Members can be added
  * with TS_Structure_Enum.
  */
-Task TS_Enum_Begin(TS *ts, Type *enumeration);
+void TS_Enum_Begin(TS *ts, Type *enumeration);
 
 /** Add a member to an enumeration type defined with TS_Enum_Begin. */
-Task TS_Enum_Add(TS *ts, Type enumeration, Type member);
+void TS_Enum_Add(TS *ts, Type enumeration, Type member);
 
 /** Get the child type of a subtype. */
 void TS_Subtype_Get_Child(TS *ts, Type *child, Type subtype);

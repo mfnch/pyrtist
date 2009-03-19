@@ -54,7 +54,9 @@ boxinc_HEADERS = types.h error.h mem.h array.h occupation.h \
 libboxcore0_1_la_SOURCES = types.h error.c mem.c mem.h array.c array.h \
   occupation.c occupation.h str.c print.c msgbase.c messages.c \
   hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h
-libboxcore0_1_la_LDFLAGS = -version-info 0:0:0
+libboxcore0_1_la_LDFLAGS = -no-undefined -version-info 0:0:0
+# ^^^ -no-undefined is needed for libtool to create shared libs on win32
+# see http://article.gmane.org/gmane.comp.gnu.mingw.user/18727
 
 # *** box compiler ***
 noinst_HEADERS = defaults.h \
@@ -62,13 +64,13 @@ noinst_HEADERS = defaults.h \
   tokenizer.h parserh.h typesys.h \
   expr.h compiler.h box.h builtins.h bltinstr.h bltinio.h \
   vmalloc.h vmproc.h vmsym.h \
-  vmsymstuff.h paths.h container.h autogen.h
+  vmsymstuff.h paths.h container.h autogen.h cmpproc.h
 
 box_SOURCES = \
   fileutils.c virtmach.c vmalloc.c vmexec.c vmproc.c vmsym.c \
   symbols.c tokenizer.l parser.y registers.c expr.c \
   typesys.c compiler.c box.c builtins.c bltinstr.c bltinio.c vmsymstuff.c \
-  paths.c main.c container.c autogen.c
+  paths.c main.c container.c autogen.c cmpproc.c
 
 box_LDADD = $(LIBLTDL) libboxcore0.1.la
 box_LDFLAGS = -static

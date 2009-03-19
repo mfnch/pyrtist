@@ -511,7 +511,7 @@ Task BoxVM_Init(BoxVM *vm) {
     return Failed;
 
   TASK( VM_Proc_Init(vm) );
-  TASK( VM_Sym_Init(vm) );
+  BoxVMSymTable_Init(& vm->sym_table);
   TASK( VM_Alloc_Init(vm) );
   return Success;
 }
@@ -540,7 +540,7 @@ void BoxVM_Finish(BoxVM *vm) {
   BoxArr_Finish(& vm->data_segment);
 
   VM_Alloc_Destroy(vm);
-  VM_Sym_Destroy(vm);
+  BoxVMSymTable_Finish(& vm->sym_table);
   VM_Proc_Destroy(vm);
 }
 
@@ -816,7 +816,7 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
     }
 
     if ( vm.flags.error ) {
-      fprintf(output, SUInt "\t%8.8lx\tError!",
+      fprintf(output, SUInt "\t"BoxVMByteX4_Fmt"x\tError!",
               (UInt) (pos * sizeof(VMByteX4)), *i_pos);
 
     } else {
@@ -826,7 +826,7 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
       /* Stampo l'istruzione e i suoi argomenti */
       fprintf( output, SUInt "\t", (UInt) (pos * sizeof(VMByteX4)) );
       if ( vmp->attr.hexcode )
-        fprintf(output, "%8.8lx\t", *(i_pos2++));
+        fprintf(output, BoxVMByteX4_Fmt"\t", *(i_pos2++));
       fprintf(output, "%s", iname);
 
       if ( nargs > 0 ) {
@@ -843,7 +843,7 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
       /* Stampo i restanti codici dell'istruzione in esadecimale */
       if (vmp->attr.hexcode) {
         for(i = 1; i < vm.i_len; i++)
-          fprintf(output, "\t%8.8lx\n", *(i_pos2++));
+          fprintf(output, "\t"BoxVMByteX4_Fmt"\n", *(i_pos2++));
       }
     }
 

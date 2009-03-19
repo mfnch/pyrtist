@@ -87,45 +87,42 @@ static Task Type_Struc_Begin(StrucMember *sm, Expr *type, char *m) {
  * a two membered structure Sm1, Sm2 --> (Sm1, Sm2).
  * The type of the new structure of types is stored inside *st.
  */
-static Task Type_Struc_All_1(Struc *s, StrucMember *sm1, StrucMember *sm2) {
+static void Type_Struc_All_1(Struc *s, StrucMember *sm1, StrucMember *sm2) {
   Type st;
-  TASK( TS_Structure_Begin(cmp->ts, & st) );
+  TS_Structure_Begin(cmp->ts, & st);
   assert(sm1->type != TYPE_NONE);
-  TASK( TS_Structure_Add(cmp->ts, st, sm1->type, sm1->name) );
+  TS_Structure_Add(cmp->ts, st, sm1->type, sm1->name);
   free(sm1->name);
   sm1->name = (char *) NULL;
   if (sm2->type == TYPE_NONE) sm2->type = sm1->type;
-  TASK( TS_Structure_Add(cmp->ts, st, sm2->type, sm2->name) );
+  TS_Structure_Add(cmp->ts, st, sm2->type, sm2->name);
   free(sm2->name);
   sm2->name = (char *) NULL;
   s->type = st;
   s->previous = sm2->type;
-  return Success;
 }
 
 /* Add a new member to an existing structure type.
  * After the structure type se1 has been changed, it is copied into *se.
  */
-static Task Type_Struc_All_2(Struc *s, Struc *s1, StrucMember *sm2) {
+static void Type_Struc_All_2(Struc *s, Struc *s1, StrucMember *sm2) {
   if (sm2->type == TYPE_NONE) sm2->type = s1->previous;
-  TASK( TS_Structure_Add(cmp->ts, s1->type, sm2->type, sm2->name) );
+  TS_Structure_Add(cmp->ts, s1->type, sm2->type, sm2->name);
   free(sm2->name);
   sm2->name = (char *) NULL;
   s->type = s1->type;
   s->previous = sm2->type;
-  return Success;
 }
 
 /* Construct a single-member structure type.
  */
-static Task Type_Struc_1(Expr *se, StrucMember *sm) {
+static void Type_Struc_1(Expr *se, StrucMember *sm) {
   Type st;
-  TASK( TS_Structure_Begin(cmp->ts, & st) );
-  TASK( TS_Structure_Add(cmp->ts, st, sm->type, sm->name) );
+  TS_Structure_Begin(cmp->ts, & st);
+  TS_Structure_Add(cmp->ts, st, sm->type, sm->name);
   free(sm->name);
   sm->name = (char *) NULL;
   Expr_New_Type(se, st);
-  return Success;
 }
 
 /* Just convert the final structure type into an Expr */
@@ -182,7 +179,7 @@ static Task Unreg_Subtype(Expr *result, Name *parent, Name *child) {
               child, parent);
     return Failed;
   }
-  TASK( TS_Subtype_New(cmp->ts, & subtype_type, parent_expr.type, child) );
+  TS_Subtype_New(cmp->ts, & subtype_type, parent_expr.type, child);
   Expr_New_Type(result, subtype_type);
   return Success;
 }
@@ -195,7 +192,7 @@ static Task Unreg_SubSubtype(Expr *result, Expr *reg_parent, Name *child) {
     return Failed;
   }
   assert(TS_Is_Subtype(cmp->ts, reg_parent->type));
-  TASK( TS_Subtype_New(cmp->ts, & subtype_type, reg_parent->type, child) );
+  TS_Subtype_New(cmp->ts, & subtype_type, reg_parent->type, child);
   Expr_New_Type(result, subtype_type);
   return Success;
 }
@@ -237,11 +234,8 @@ static Task Expr_Statement(Expr *e) {
 static void Type_Detached(Expr *dst, Expr *src) {
   Type dt;
   if (Expr_Is_Error(src)) {*dst = *src; return;}
-  if (TS_Detached_New(cmp->ts, & dt, src->type) == Success) {
-    Expr_New_Type(dst, dt);
-    return;
-  }
-  Expr_New_Error(dst);
+  TS_Detached_New(cmp->ts, & dt, src->type);
+  Expr_New_Type(dst, dt);
 }
 
 /*****************************************************************************/
@@ -471,13 +465,13 @@ type.struc234:
 
 /* Matches a structure type with at least two elements */
 type.struc1234:
-  type.struc1 void.seps type.struc234    {DO(Type_Struc_All_1(& $$, & $1, & $3));}
-| type.struc1234 void.seps type.struc234 {DO(Type_Struc_All_2(& $$, & $1, & $3));}
+  type.struc1 void.seps type.struc234    {Type_Struc_All_1(& $$, & $1, & $3);}
+| type.struc1234 void.seps type.struc234 {Type_Struc_All_2(& $$, & $1, & $3);}
 ;
 
 /* Matches all sorts of structure types */
 type.struc:
-  '(' type.struc1 void.seps ')'          {DO(Type_Struc_1(& $$, & $2));}
+  '(' type.struc1 void.seps ')'          {Type_Struc_1(& $$, & $2);}
 | '(' type.struc1234 void.seps.opt ')'   {DO(Type_Struc_2(& $$, & $2));}
 ;
 
@@ -758,10 +752,10 @@ Task Parser_Finish(void) {
 
 static Task Declare_Proc(Expr *child_type, Int kind, Expr *parent_type,
                          Name *name) {
-  UInt sym_num;
+  BoxVMSymID sym_num;
   Int proc;
-  TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
-  TASK( VM_Sym_Name_Set(cmp_vm, sym_num, name) );
+  sym_num = VM_Sym_New_Call(cmp_vm);
+  TASK( BoxVMSym_Name_Set(cmp_vm, sym_num, name) );
   proc = TS_Procedure_Def(child_type->type, kind, parent_type->type, sym_num);
   return (proc == TYPE_NONE) ? Failed : Success;
 }

@@ -294,11 +294,11 @@ static Task Stage_Symbol_Resolution(UInt *flags) {
   int all_resolved;
   Task status = Success;
   MSG_CONTEXT_BEGIN("Symbol resolution");
-  TASK( VM_Sym_Resolve_CLibs(program, & lib_dirs, & libraries) );
-  TASK( VM_Sym_Resolve_All(program) );
-  VM_Sym_Ref_Check(program, & all_resolved);
+  TASK( BoxVMSym_Resolve_CLibs(program, & lib_dirs, & libraries) );
+  TASK( BoxVMSym_Resolve_All(program) );
+  BoxVMSym_Ref_Check(program, & all_resolved);
   if (! all_resolved) {
-    VM_Sym_Ref_Report(program);
+    BoxVMSym_Ref_Report(program);
     MSG_ERROR("Unresolved references: program cannot be executed.");
     *flags &= ~FLAG_EXECUTE;
     status = Failed;

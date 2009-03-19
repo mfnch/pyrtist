@@ -45,11 +45,10 @@
 
 static BoxStack box_stack, *bs = & box_stack;
 
-Task Box_Init(void) {
+void Box_Init(void) {
   BoxArr_Init(& bs->box, sizeof(Box), BOX_ARR_SIZE);
   bs->num_defs = 0;
   bs->cur_sheet = -1;
-  return Success;
 }
 
 void Box_Destroy(void) {
@@ -322,7 +321,7 @@ Task Box_Procedure_Begin(Type parent, Type child, Type procedure) {
   /* Used to create jump labels for If and For */
   b_ptr = (Box *) BoxArr_Last_Item_Ptr(& bs->box);
   TASK( VM_Sym_New_Label_Here(cmp_vm, & b_ptr->label_begin) );
-  TASK( VM_Sym_New_Label(cmp_vm, & b_ptr->label_end) );
+  b_ptr->label_end = VM_Sym_New_Label(cmp_vm);
   return Success;
 }
 
@@ -380,7 +379,7 @@ Task Box_Def_Begin(Type parent, Type child, int kind) {
   UInt sym_num;
   Type procedure;
 
-  TASK( VM_Sym_New_Call(cmp_vm, & sym_num) );
+  sym_num = VM_Sym_New_Call(cmp_vm);
   procedure = TS_Procedure_Def(child, kind, parent, sym_num);
   if (procedure == TYPE_NONE) return Failed;
   return Box_Procedure_Begin(parent, child, procedure);
@@ -451,7 +450,7 @@ Task Box_Instance_Begin(Expr *e, int kind) {
   /* Creo le labels che puntano all'inizio ed alla fine della box */
   b_ptr = (Box *) BoxArr_Last_Item_Ptr(& bs->box);
   TASK( VM_Sym_New_Label_Here(cmp_vm, & b_ptr->label_begin) );
-  TASK( VM_Sym_New_Label(cmp_vm, & b_ptr->label_end) );
+  b_ptr->label_end = VM_Sym_New_Label(cmp_vm);
   return Success;
 }
 

@@ -29,7 +29,7 @@
 
 /*** call references ********************************************************/
 /* This is the function which assembles the code for the function call */
-static Task Assemble_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
+static Task Assemble_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
                           int defined, void *def, UInt def_size,
                           void *ref, UInt ref_size)
 {
@@ -45,16 +45,16 @@ static Task Assemble_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
   return Success;
 }
 
-Task VM_Sym_New_Call(VMProgram *vmp, UInt *sym_num) {
-  return VM_Sym_New(vmp, sym_num, VM_SYM_CALL, sizeof(UInt));
+BoxVMSymID VM_Sym_New_Call(BoxVM *vmp) {
+  return BoxVMSym_New(vmp, VM_SYM_CALL, sizeof(UInt));
 }
 
-Task VM_Sym_Def_Call(VMProgram *vmp, UInt sym_num, UInt proc_num) {
-  return VM_Sym_Def(vmp, sym_num, & proc_num);
+Task VM_Sym_Def_Call(BoxVM *vmp, UInt sym_num, UInt proc_num) {
+  return BoxVMSym_Def(vmp, sym_num, & proc_num);
 }
 
-Task VM_Sym_Call(VMProgram *vmp, UInt sym_num) {
-  return VM_Sym_Code_Ref(vmp, sym_num, Assemble_Call, NULL, 0);
+Task VM_Sym_Call(BoxVM *vmp, UInt sym_num) {
+  return BoxVMSym_Code_Ref(vmp, sym_num, Assemble_Call, NULL, 0);
 }
 
 /*** basic method registration **********************************************/
@@ -72,7 +72,7 @@ typedef struct {
 } VMSymMethod;
 
 /* This is the function registers the method, if it is known. */
-static Task Register_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
+static Task Register_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
                           int defined, void *def, UInt def_size,
                           void *ref, UInt ref_size) {
   assert(sym_type == VM_SYM_CALL);
@@ -86,13 +86,13 @@ static Task Register_Call(VMProgram *vmp, UInt sym_num, UInt sym_type,
   return Success;
 }
 
-Task VM_Sym_Alloc_Method_Register(VMProgram *vmp, UInt sym_num,
+Task VM_Sym_Alloc_Method_Register(BoxVM *vmp, UInt sym_num,
                                   Type type, Type method) {
   VMSymMethod m;
   m.type = type;
   m.method = method;
-  return VM_Sym_Ref(vmp, sym_num, Register_Call,
-                    & m, sizeof(VMSymMethod), VM_SYM_UNRESOLVED);
+  return BoxVMSym_Ref(vmp, sym_num, Register_Call,
+                      & m, sizeof(VMSymMethod), BOXVMSYM_UNRESOLVED);
 }
 
 /*** jumps ******************************************************************/
@@ -103,7 +103,7 @@ typedef struct {
   Int position;
 } VMSymLabelRef;
 
-static Task Assemble_Jmp(VMProgram *vmp, UInt sym_num, UInt sym_type,
+static Task Assemble_Jmp(BoxVM *vmp, UInt sym_num, UInt sym_type,
                          int defined, void *def, UInt def_size,
                          void *ref, UInt ref_size) {
   Int sheet_id, rel_position = 0;
@@ -128,22 +128,22 @@ static Task Assemble_Jmp(VMProgram *vmp, UInt sym_num, UInt sym_type,
   return Success;
 }
 
-Task VM_Sym_New_Label(VMProgram *vmp, UInt *sym_num) {
-  return VM_Sym_New(vmp, sym_num, VM_SYM_COND_JMP, sizeof(VMSymLabel));
+BoxVMSymID VM_Sym_New_Label(BoxVM *vmp) {
+  return BoxVMSym_New(vmp, VM_SYM_COND_JMP, sizeof(VMSymLabel));
 }
 
-Task VM_Sym_Def_Label(VMProgram *vmp, UInt sym_num,
+Task VM_Sym_Def_Label(BoxVM *vmp, UInt sym_num,
                       Int sheet_id, Int position) {
   VMSymLabel label;
   label.sheet_id = sheet_id;
   label.position = position;
-  return VM_Sym_Def(vmp, sym_num, & label);
+  return BoxVMSym_Def(vmp, sym_num, & label);
 }
 
 /* Same as VM_Label_Define, but sheet_id is the current active sheet and
  * position is the current position in that sheet.
  */
-Task VM_Sym_Def_Label_Here(VMProgram *vmp, UInt label_sym_num) {
+Task VM_Sym_Def_Label_Here(BoxVM *vmp, UInt label_sym_num) {
   Int sheet_id, position;
   sheet_id = vmp->proc_table.target_proc_num;
   position = BoxArr_Num_Items(& vmp->proc_table.target_proc->code);
@@ -153,29 +153,29 @@ Task VM_Sym_Def_Label_Here(VMProgram *vmp, UInt label_sym_num) {
 /* Same as VM_Label_New, but sheet_id is the current active sheet and
  * position is the current position in that sheet.
  */
-Task VM_Sym_New_Label_Here(VMProgram *vmp, UInt *label_sym_num) {
-  TASK( VM_Sym_New_Label(vmp, label_sym_num) );
+Task VM_Sym_New_Label_Here(BoxVM *vmp, UInt *label_sym_num) {
+  *label_sym_num = VM_Sym_New_Label(vmp);
   return VM_Sym_Def_Label_Here(vmp, *label_sym_num);
 }
 
-Task VM_Sym_Jmp_Generic(VMProgram *vmp, UInt sym_num, int conditional) {
+Task VM_Sym_Jmp_Generic(BoxVM *vmp, UInt sym_num, int conditional) {
   VMSymLabelRef label_ref;
   label_ref.conditional = conditional;
   label_ref.sheet_id = vmp->proc_table.target_proc_num;
   label_ref.position = BoxArr_Num_Items(& vmp->proc_table.target_proc->code);
-  return VM_Sym_Code_Ref(vmp, sym_num, Assemble_Jmp,
-                         & label_ref, sizeof(VMSymLabelRef));
+  return BoxVMSym_Code_Ref(vmp, sym_num, Assemble_Jmp,
+                           & label_ref, sizeof(VMSymLabelRef));
 }
 
-Task VM_Sym_Jc(VMProgram *vmp, UInt sym_num) {
+Task VM_Sym_Jc(BoxVM *vmp, UInt sym_num) {
   return VM_Sym_Jmp_Generic(vmp, sym_num, 1);
 }
 
-Task VM_Sym_Jmp(VMProgram *vmp, UInt sym_num) {
+Task VM_Sym_Jmp(BoxVM *vmp, UInt sym_num) {
   return VM_Sym_Jmp_Generic(vmp, sym_num, 0);
 }
 
-Task VM_Sym_Destroy_Label(VMProgram *vmp, UInt sym_num) {
+Task VM_Sym_Destroy_Label(BoxVM *vmp, UInt sym_num) {
   return Success;
 }
 
@@ -192,7 +192,7 @@ typedef struct {
  * and variables is unknown, we use the symbol manager to adjust
  * automatically the header of procedures when the data is known.
  */
-static Task Assemble_Proc_Head(VMProgram *vmp, UInt sym_num, UInt sym_type,
+static Task Assemble_Proc_Head(BoxVM *vmp, UInt sym_num, UInt sym_type,
                                int defined, void *def, UInt def_size,
                                void *ref, UInt ref_size) {
   ProcHead *ph = (ProcHead *) def;
@@ -213,12 +213,12 @@ static Task Assemble_Proc_Head(VMProgram *vmp, UInt sym_num, UInt sym_type,
   return Success;
 }
 
-Task VM_Sym_Proc_Head(VMProgram *vmp, UInt *sym_num) {
-  TASK( VM_Sym_New(vmp, sym_num, VM_SYM_PROC_HEAD, sizeof(ProcHead)) );
-  return VM_Sym_Code_Ref(vmp, *sym_num, Assemble_Proc_Head, NULL, 0);
+Task VM_Sym_Proc_Head(BoxVM *vmp, UInt *sym_num) {
+  *sym_num = BoxVMSym_New(vmp, VM_SYM_PROC_HEAD, sizeof(ProcHead));
+  return BoxVMSym_Code_Ref(vmp, *sym_num, Assemble_Proc_Head, NULL, 0);
 }
 
-Task VM_Sym_Def_Proc_Head(VMProgram *vmp, UInt sym_num,
+Task VM_Sym_Def_Proc_Head(BoxVM *vmp, UInt sym_num,
                           Int *num_var, Int *num_reg) {
   ProcHead ph;
   int i;
@@ -226,5 +226,5 @@ Task VM_Sym_Def_Proc_Head(VMProgram *vmp, UInt sym_num,
     ph.num_var[i] = num_var[i];
     ph.num_reg[i] = num_reg[i];
   }
-  return VM_Sym_Def(vmp, sym_num, & ph);
+  return BoxVMSym_Def(vmp, sym_num, & ph);
 }

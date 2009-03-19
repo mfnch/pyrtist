@@ -58,7 +58,7 @@ typedef struct {
          label_end;    /**< and at the end of the box */
 } Box;
 
-Task Box_Init(void);
+void Box_Init(void);
 void Box_Destroy(void);
 Int Box_Num(void);
 Int Box_Def_Num(void);
