@@ -349,19 +349,19 @@ static void VM__Exec_Malloc_II(VMProgram *vmp) {
   Int size = *((Int *) vmcur->arg1),
       type = *((Int *) vmcur->arg2);
   Obj *obj = (Obj *) vmcur->local[TYPE_OBJ];
-  VM_Alloc(obj, size, type);
+  BoxVM_Alloc(obj, size, type);
   if (obj->block != (void *) NULL) return;
   MSG_FATAL("VM_Exec_Malloc_II: memory request failed!");
 }
 
 static void VM__Exec_Mln_O(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  VM_Link((Obj *) vmcur->arg1);
+  BoxVM_Link((Obj *) vmcur->arg1);
 }
 
 static void VM__Exec_MUnln_O(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  VM_Unlink(vmp, (Obj *) vmcur->arg1);
+  BoxVM_Unlink(vmp, (Obj *) vmcur->arg1);
 }
 
 static void VM__Exec_MCopy_OO(VMProgram *vmp) {

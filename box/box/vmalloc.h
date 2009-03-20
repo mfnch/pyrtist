@@ -47,40 +47,41 @@
 #ifndef _VMALLOC_H
 #  define _VMALLOC_H
 
-#  include "types.h"
-#  include "virtmach.h"
+#  include <box/types.h>
+#  include <box/virtmach.h>
 
 /** Allocate size bytes and returns the corresponding object in 'obj'.
  * The memory region is associated with the provided data 'type'
  * and has a initial reference counter equal to 1.
  */
-void VM_Alloc(Obj *obj, size_t size, Int type);
+void BoxVM_Alloc(BoxObj *obj, size_t size, BoxInt type);
 
 /** Increase the reference counter for the given object. */
-void VM_Link(Obj *obj);
+void BoxVM_Link(BoxObj *obj);
 
 /** Decrease the reference counter for the given object and proceed
  * with destroying it, if it has reached zero.
  */
-void VM_Unlink(VMProgram *vmp, Obj *obj);
+void BoxVM_Unlink(BoxVM *vm, BoxObj *obj);
 
 /** Initialise the memory handling system of the virtual machine 'vmp'
  *  (to be called internally by VM_Init).
  */
-Task VM_Alloc_Init(VMProgram *vmp);
+BoxTask BoxVM_Alloc_Init(BoxVM *vm);
 
 /** Finalises the memory handling system of the virtual machine 'vmp'.
  */
-void VM_Alloc_Destroy(VMProgram *vmp);
+void BoxVM_Alloc_Destroy(BoxVM *vm);
 
 /** Set 'm_num' to be the method of kind 'm' associated with type 'type'
  * in the scope of the virtual machine 'vmp'
  */
-Task VM_Alloc_Method_Set(VMProgram *vmp, Int type, Int method, Int m_num);
+BoxTask BoxVM_Alloc_Method_Set(BoxVM *vm, BoxInt type,
+                               BoxInt method, BoxInt m_num);
 
 /** Find the method of kind 'm' associated with type 'type' in the scope
  * of the virtual machine 'vmp'. Return -1 if the method was not found.
  */
-Int VM_Alloc_Method_Get(VMProgram *vmp, Int type, Int method);
+BoxInt BoxVM_Alloc_Method_Get(BoxVM *vm, BoxInt type, BoxInt method);
 
 #endif

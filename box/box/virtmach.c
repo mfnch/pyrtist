@@ -512,7 +512,7 @@ Task BoxVM_Init(BoxVM *vm) {
 
   TASK( VM_Proc_Init(vm) );
   BoxVMSymTable_Init(& vm->sym_table);
-  TASK( VM_Alloc_Init(vm) );
+  TASK( BoxVM_Alloc_Init(vm) );
   return Success;
 }
 
@@ -539,7 +539,7 @@ void BoxVM_Finish(BoxVM *vm) {
 
   BoxArr_Finish(& vm->data_segment);
 
-  VM_Alloc_Destroy(vm);
+  BoxVM_Alloc_Destroy(vm);
   BoxVMSymTable_Finish(& vm->sym_table);
   VM_Proc_Destroy(vm);
 }

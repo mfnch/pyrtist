@@ -74,7 +74,7 @@ void Auto_Acknowledge_Call(Type parent, Type child, int kind) {
     if (found != TS_TYPE_NONE) {
       if (child == TYPE_DESTROY) {
         UInt sym_num;
-        Int call_num = VM_Alloc_Method_Get(cmp->vm, parent, child);
+        Int call_num = BoxVM_Alloc_Method_Get(cmp->vm, parent, child);
         if (call_num >= 0) return;
         TS_Procedure_Sym_Num_Get(cmp->ts, & sym_num, found);
         ASSERT_TASK( VM_Sym_Alloc_Method_Register(cmp->vm, sym_num,

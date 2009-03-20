@@ -559,27 +559,28 @@ static Expr *Opn_Exec_Intrinsic(Operation *opn, Expr *e1, Expr *e2) {
     * In questi casi strange_case = 0, negli altri invece strange_case = 1!
     */
   switch( (e1 == NULL) + ((e2 == NULL) << 1) ) {
-   case 0: /* Operazione a 2 argomenti */
+  case 0: /* Operazione a 2 argomenti */
     opn_is.strange = (rs_resolved != e1->resolved)
-      || (rs_resolved != e2->resolved);
+                      || (rs_resolved != e2->resolved);
     opn_is.immediate = (e1->categ == CAT_IMM) && (e2->categ == CAT_IMM);
     opn_is.unary = 0;
+    opn_is.right = 0;
     break;
-   case 1: /* Operazione a 1 argomento (destro, cioe' e2) */
+  case 1: /* Operazione a 1 argomento (destro, cioe' e2) */
     opn_is.strange = (e2->resolved != rs_resolved);
     opn_is.immediate = (e2->categ == CAT_IMM);
     opn_is.unary = 1;
     opn_is.right = 1;
     e1 = e2;
     break;
-   case 2: /* Operazione a 1 argomento (sinistro, cioe' e1) */
+  case 2: /* Operazione a 1 argomento (sinistro, cioe' e1) */
     opn_is.strange = (e1->resolved != rs_resolved);
     opn_is.immediate = (e1->categ == CAT_IMM);
     opn_is.unary = 1;
     opn_is.right = 0;
     e2 = e1;
     break;
-   default:
+  default:
     MSG_ERROR("Internal error: operation has no arguments!");
     return NULL;
   }

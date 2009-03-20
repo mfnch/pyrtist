@@ -74,7 +74,7 @@ typedef struct {
  * The memory region is associated with the provided data 'type'
  * and has a initial reference counter equal to 1.
  */
-void VM_Alloc(Obj *obj, size_t size, Int type) {
+void BoxVM_Alloc(Obj *obj, size_t size, Int type) {
   obj->block = malloc(SIZE_OF_BLOCK(size));
   if (obj->block != (void *) NULL) {
     VMAllocHead *head = (VMAllocHead *) obj->block;
@@ -86,35 +86,36 @@ void VM_Alloc(Obj *obj, size_t size, Int type) {
 
 static int Bad_Obj(const char *location, Obj *obj) {
   if (obj->block != NULL) return 0;
-  fprintf(stderr, "%s: object was not allocated with VM_Alloc!\n", location);
+  fprintf(stderr, "%s: object was not allocated with BoxVM_Alloc!\n",
+          location);
   return 1;
 }
 
 /** Increase the reference counter for the given object. */
-void VM_Link(Obj *obj) {
+void BoxVM_Link(Obj *obj) {
   VMAllocHead *head = (VMAllocHead *) obj->block;
-  if (Bad_Obj("VM_Link", obj)) return;
+  if (Bad_Obj("BoxVM_Link", obj)) return;
   ++head->references;
 }
 
 /** Decrease the reference counter for the given object and proceed
  * with destroying it, if it has reached zero.
  */
-void VM_Unlink(VMProgram *vmp, Obj *obj) {
+void BoxVM_Unlink(VMProgram *vmp, Obj *obj) {
   VMAllocHead *head = (VMAllocHead *) obj->block;;
   Int references;
-  if (Bad_Obj("VM_Unlink", obj)) return;
+  if (Bad_Obj("BoxVM_Unlink", obj)) return;
 
   references = --head->references;
   if (references > 0)
     return;
 
   else if (references == 0) {
-    Int method_num = VM_Alloc_Method_Get(vmp, head->type, TYPE_DESTROY);
+    Int method_num = BoxVM_Alloc_Method_Get(vmp, head->type, TYPE_DESTROY);
     if (method_num >= 0) {
       Obj save_this;
 #ifdef DEBUG_VMALLOC
-      printf("VM_Unlink: calling destructor (call %d) for type "
+      printf("BoxVM_Unlink: calling destructor (call %d) for type "
              SInt" at %p.\n", method_num, head->type, obj->block);
 #endif
 
@@ -124,7 +125,7 @@ void VM_Unlink(VMProgram *vmp, Obj *obj) {
       *vmp->box_vm_current = save_this;
     }
 #ifdef DEBUG_VMALLOC
-    printf("VM_Unlink: Deallocating object of type "SInt" at %p.\n",
+    printf("BoxVM_Unlink: Deallocating object of type "SInt" at %p.\n",
            head->type, bptr);
 #endif
     free(obj->block);
@@ -133,18 +134,18 @@ void VM_Unlink(VMProgram *vmp, Obj *obj) {
 
   } else {
 #ifdef DEBUG_VMALLOC
-    printf("VM_Unlink: shouldn't happen!\n");
+    printf("BoxVM_Unlink: shouldn't happen!\n");
 #endif
     return;
   }
 }
 
-Task VM_Alloc_Init(VMProgram *vmp) {
+Task BoxVM_Alloc_Init(VMProgram *vmp) {
   BoxHT_Init_Default(& vmp->method_table, VM_METHOD_HT_SIZE);
   return Success;
 }
 
-void VM_Alloc_Destroy(VMProgram *vmp) {
+void BoxVM_Alloc_Destroy(VMProgram *vmp) {
   BoxHT_Finish(& vmp->method_table);
 }
 
@@ -153,7 +154,7 @@ typedef struct {
   Int method;
 } Key;
 
-Task VM_Alloc_Method_Set(VMProgram *vmp, Int type, Int method, Int m_num) {
+Task BoxVM_Alloc_Method_Set(VMProgram *vmp, Int type, Int method, Int m_num) {
   Key k;
   k.type = type;
   k.method = method;
@@ -165,7 +166,7 @@ Task VM_Alloc_Method_Set(VMProgram *vmp, Int type, Int method, Int m_num) {
   return Success;
 }
 
-Int VM_Alloc_Method_Get(VMProgram *vmp, Int type, Int method) {
+Int BoxVM_Alloc_Method_Get(VMProgram *vmp, Int type, Int method) {
   BoxHTItem *found;
   Key k;
   k.type = type;

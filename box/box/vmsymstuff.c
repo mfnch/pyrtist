@@ -81,7 +81,7 @@ static Task Register_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
     UInt call_num;
     assert(def_size == sizeof(UInt) && ref_size == sizeof(VMSymMethod));
     call_num = *((UInt *) def);
-    return VM_Alloc_Method_Set(vmp, m->type, m->method, call_num);
+    return BoxVM_Alloc_Method_Set(vmp, m->type, m->method, call_num);
   }
   return Success;
 }
