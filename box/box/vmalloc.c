@@ -70,12 +70,25 @@ typedef struct {
 #define GET_DPTR_FROM_BPTR(bptr) \
   ((void *) (bptr) + sizeof(VMAllocHead))
 
+void BoxObj_Set_To_Null(BoxObj *o) {
+  o->ptr = o->block = NULL;
+}
+
+int BoxObj_Is_Null(BoxObj *o) {
+  return o->ptr == NULL;
+}
+
+void BoxObj_Add_To_Ptr(BoxObj *item, size_t addr) {
+  item->ptr += addr;
+}
+
 /** Allocate size bytes and returns the pointer to that region.
  * The memory region is associated with the provided data 'type'
  * and has a initial reference counter equal to 1.
  */
 void BoxVM_Alloc(Obj *obj, size_t size, Int type) {
   obj->block = malloc(SIZE_OF_BLOCK(size));
+  obj->ptr = NULL;
   if (obj->block != (void *) NULL) {
     VMAllocHead *head = (VMAllocHead *) obj->block;
     obj->ptr = GET_DPTR_FROM_BPTR(obj->block);

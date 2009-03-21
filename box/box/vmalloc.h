@@ -50,6 +50,17 @@
 #  include <box/types.h>
 #  include <box/virtmach.h>
 
+/** Set an extended pointer to Null. */
+void BoxObj_Set_To_Null(BoxObj *o);
+
+/** Return 0 if the point is valid, 1 otherwise. */
+int BoxObj_Is_Null(BoxObj *o);
+
+/** Increase the extended pointer item by the given integer (in bytes).
+ * (the block pointer is not changed).
+ */
+void BoxObj_Add_To_Ptr(BoxObj *item, size_t addr);
+
 /** Allocate size bytes and returns the corresponding object in 'obj'.
  * The memory region is associated with the provided data 'type'
  * and has a initial reference counter equal to 1.
