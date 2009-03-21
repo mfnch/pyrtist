@@ -76,7 +76,7 @@ void BoxArray_Access(BoxArray *a, BoxObj *item, size_t addr);
  *   BoxArray_Calc_Address(& a, & addr, 1, 29);
  *   BoxArray_Access(& a, & item, addr);
  */
-Task BoxArray_Calc_Address(BoxArray *a, size_t *addr,
-                           BoxInt dim, BoxInt index);
+BoxTask BoxArray_Calc_Address(BoxArray *a, size_t *addr,
+                              BoxInt dim, BoxInt index);
 
 #endif

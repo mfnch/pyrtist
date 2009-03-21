@@ -26,10 +26,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 
 #include "messages.h"
 #include "virtmach.h"
 #include "vmalloc.h"
+#include "bltinarray.h"
 
 static void VM__Exec_Ret(VMProgram *vmp) {vmp->vmcur->flags.exit = 1;}
 
@@ -411,6 +413,48 @@ static void VM__Exec_Add_O(VMProgram *vmp) {
   ((Obj *) vmcur->arg1)->ptr += *((Int *) vmcur->local[TYPE_INT]);
 }
 
+static void VM__Exec_Arinit_I(BoxVM *vm) {
+  VMStatus *vmcur = vm->vmcur;
+  BoxArray *arr = (BoxArray *) ((Obj *) vmcur->local[TYPE_OBJ])->ptr;
+  BoxInt num_dim = *((Int *) vmcur->arg1);
+  ASSERT_TASK( BoxArray_Init(arr, num_dim) );
+}
+
+static void VM__Exec_Arsize_I(BoxVM *vm) {
+  VMStatus *vmcur = vm->vmcur;
+  BoxArray *arr = (BoxArray *) ((Obj *) vmcur->local[TYPE_OBJ])->ptr;
+  BoxInt size = *((Int *) vmcur->arg1);
+  ASSERT_TASK( BoxArray_Set_Size(arr, size) );
+}
+
+static void VM__Exec_Araddr_II(BoxVM *vm) {
+  VMStatus *vmcur = vm->vmcur;
+  BoxArray *arr = (BoxArray *) ((Obj *) vmcur->local[TYPE_OBJ])->ptr;
+  size_t addr =  *((Int *) vmcur->local[TYPE_INT]);
+  BoxInt index = *((Int *) vmcur->arg1),
+         dim = *((Int *) vmcur->arg2);
+  ASSERT_TASK( BoxArray_Calc_Address(arr, & addr, dim, index) );
+  *((Int *) vmcur->local[TYPE_INT]) = (Int) addr;
+}
+
+static void VM__Exec_Arget_OO(BoxVM *vm) {
+  VMStatus *vmcur = vm->vmcur;
+  BoxObj *item = (Obj *) vmcur->arg1;
+  BoxArray *arr = (BoxArray *) ((Obj *) vmcur->arg2)->ptr;
+  size_t addr =  *((Int *) vmcur->local[TYPE_INT]);
+  BoxArray_Access(arr, item, addr);
+}
+
+static void VM__Exec_Arnext_OO(BoxVM *vm) {
+  /** Not implemented yet */
+}
+
+static void VM__Exec_Ardest_O(BoxVM *vm) {
+  VMStatus *vmcur = vm->vmcur;
+  BoxArray *arr = (BoxArray *) ((Obj *) vmcur->arg1)->ptr;
+  BoxArray_Finish(vm, arr);
+}
+
 /******************************************************************************
  * La seguente tabella descrive le istruzioni e specifica quali funzioni      *
  * debbano essere chiamate per localizzare la posizione in memoria degli      *
@@ -495,13 +539,19 @@ VMInstrDesc vm_instr_desc_table[] = {
   { "munln",1, TYPE_OBJ,  VM__GLPI,    VM__Exec_MUnln_O, VM__D_GLPI_GLPI }, /* munln reg_o        */
   { "mcopy",2, TYPE_OBJ,  VM__GLP_GLPI,VM__Exec_MCopy_OO,VM__D_GLPI_GLPI }, /* mcopy reg_o, reg_o */
   {  "lea", 1, TYPE_CHAR, VM__GLPI,        VM__Exec_Lea, VM__D_GLPI_GLPI }, /* lea c[ro0+...]     */
-  {  "lea", 1, TYPE_INT, VM__GLPI,        VM__Exec_Lea, VM__D_GLPI_GLPI },  /* lea i[ro0+...]     */
+  {  "lea", 1, TYPE_INT, VM__GLPI,        VM__Exec_Lea,  VM__D_GLPI_GLPI }, /* lea i[ro0+...]     */
   {  "lea", 1, TYPE_REAL, VM__GLPI,        VM__Exec_Lea, VM__D_GLPI_GLPI }, /* lea r[ro0+...]     */
   {  "lea", 1, TYPE_POINT,VM__GLPI,        VM__Exec_Lea, VM__D_GLPI_GLPI }, /* lea p[ro0+...]     */
   {  "lea", 2, TYPE_OBJ,  VM__GLP_GLPI, VM__Exec_Lea_OO, VM__D_GLPI_GLPI }, /* lea reg_o, o[ro0+...] */
-  { "push", 1, TYPE_OBJ, VM__GLPI,     VM__Exec_Push_O, VM__D_GLPI_GLPI }, /* push reg_o         */
-  {  "pop", 1, TYPE_OBJ, VM__GLPI,      VM__Exec_Pop_O, VM__D_GLPI_GLPI }, /* pop reg_o          */
+  { "push", 1, TYPE_OBJ, VM__GLPI,     VM__Exec_Push_O,  VM__D_GLPI_GLPI }, /* push reg_o         */
+  {  "pop", 1, TYPE_OBJ, VM__GLPI,      VM__Exec_Pop_O,  VM__D_GLPI_GLPI }, /* pop reg_o          */
   {  "jmp", 1, TYPE_INT, VM__GLPI,      VM__Exec_Jmp_I,       VM__D_JMP  }, /* jmp reg_i          */
   {   "jc", 1, TYPE_INT, VM__GLPI,       VM__Exec_Jc_I,       VM__D_JMP  }, /* jc  reg_i          */
-  {  "add", 1, TYPE_OBJ, VM__GLPI,      VM__Exec_Add_O,  VM__D_GLPI_GLPI }  /* add reg_o          */
+  {  "add", 1, TYPE_OBJ, VM__GLPI,      VM__Exec_Add_O,  VM__D_GLPI_GLPI }, /* add reg_o          */
+  {"arinit",1, TYPE_INT, VM__GLPI,   VM__Exec_Arinit_I,  VM__D_GLPI_GLPI }, /* arinit reg_i       */
+  {"arsize",1, TYPE_INT, VM__GLPI,   VM__Exec_Arsize_I,  VM__D_GLPI_GLPI }, /* arsize reg_i       */
+  {"araddr",2, TYPE_INT,VM__GLP_GLPI,VM__Exec_Araddr_II, VM__D_GLPI_GLPI }, /* araddr reg_i, reg_i */
+  {"arget", 2, TYPE_OBJ,VM__GLP_GLPI, VM__Exec_Arget_OO, VM__D_GLPI_GLPI }, /* arget reg_o, reg_o  */
+  {"arnext",2, TYPE_OBJ,VM__GLP_GLPI,VM__Exec_Arnext_OO, VM__D_GLPI_GLPI }, /* arnext reg_o, reg_o */
+  {"ardest",1, TYPE_OBJ, VM__GLPI,    VM__Exec_Ardest_O, VM__D_GLPI_GLPI }  /* ardest reg_o */
 };

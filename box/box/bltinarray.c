@@ -42,16 +42,18 @@
    data of the array at the given address (the user must provide an address
    in bytes from the beginning of the array).
 
-     mov ro0, 3       # create a[10][20][30]
-     arinit
+   The VM provides 5 instructions to deal with BoxArray objects:
+   arinit, arsize, araddr, arget, arnext. For example:
+
+     arinit 3         # create a[10][20][30]
      arsize 10
      arsize 20
      arsize 30
 
      mov ri0, 9       # access a[9][19][28]; array in ro0
-     araddr 1, 19
-     araddr 2, 29
-     arget ro1
+     araddr 0, 19
+     araddr 1, 29
+     arget ro1, ro0
 
      arnext ro2, ro1  # array in ro0, ro2 contains element after ro1
  */
