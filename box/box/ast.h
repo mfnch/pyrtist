@@ -35,6 +35,7 @@ typedef struct __AstNode AstNode;
 /** Possible types of nodes in the AST */
 typedef enum {
   ASTNODETYPE_TYPENAME,
+  ASTNODETYPE_SUBTYPE,
   ASTNODETYPE_BOX,
   ASTNODETYPE_STATEMENT,
   ASTNODETYPE_CONST,
@@ -45,7 +46,6 @@ typedef enum {
   ASTNODETYPE_MEMBER,
   ASTNODETYPE_STRUC
 } AstNodeType;
-
 
 /** Type of constants */
 typedef enum {
@@ -85,6 +85,12 @@ typedef struct {
   char    *name;
   AstNode *scope;
 } AstNodeTypeName;
+
+/** Node for a subtype */
+typedef struct {
+  char    *name;
+  AstNode *scope;
+} AstNodeSubtype;
 
 /** Node for a Box: which is a list of statements */
 typedef struct {
@@ -151,6 +157,7 @@ struct __AstNode {
   AstNodeFinaliser   finaliser;
   union {
     AstNodeTypeName  typenm;
+    AstNodeSubtype   subtype;
     AstNodeBox       box;
     AstNodeStatement statement;
     AstNodeConst     constant;
