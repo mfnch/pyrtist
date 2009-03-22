@@ -79,6 +79,19 @@ char *BoxMem_Strdup(const char *s) {
   return sd;
 }
 
+char *BoxMem_Strndup(const char *s, size_t length) {
+  size_t size;
+  if (BoxMem_x_Plus_y(& size, length, 1)) {
+    char *sd = BoxMem_Alloc(size);
+    if (length > 0)
+      (void) memcpy(sd, s, length);
+    sd[length] = '\0';
+    return sd;
+  }
+  BoxMem_Exit("BoxMem_Strndup: integer overflow: 'length' is too big.");
+  return NULL;
+}
+
 void BoxMem_Exit(const char *msg) {
   MSG_FATAL("BoxMem_Exit: %s", msg);
   exit(EXIT_FAILURE);

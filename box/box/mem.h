@@ -42,6 +42,8 @@ void BoxMem_Free(void *ptr);
 
 char *BoxMem_Strdup(const char *s);
 
+char *BoxMem_Strndup(const char *s, size_t length);
+
 void BoxMem_Exit(const char *msg);
 
 /** Executes *r = a*x, returning 0 in case of integer overflow, 1 otherwise. */

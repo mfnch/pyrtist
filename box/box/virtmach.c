@@ -906,11 +906,11 @@ Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg) {
 
     for(i = 0; i < NUM_TYPES; i++) {
       register Int nv = num_var[i], nr = num_reg[i];
-      if ( nv < 0 || nr < 0 ) {
+      if (nv < 0 || nr < 0) {
         MSG_ERROR("Errore nella chiamata di VM_Code_Prepare.");
         goto exit;
       }
-      if ( nv > 0 || nr > 0 )
+      if (nv > 0 || nr > 0)
         VM_Assemble(vmp, instruction[i], CAT_IMM, nv, CAT_IMM, nr);
     }
   }
@@ -955,9 +955,9 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
   } arg[VM_MAX_NUMARGS];
 
   /* Esco subito se e' settato il flag di inibizione! */
-  if ( pt->target_proc->status.inhibit ) return;
+  if (pt->target_proc->status.inhibit) return;
 
-  if ( (instr < 1) || (instr >= ASM_ILLEGAL) ) {
+  if (instr < 1 || instr >= ASM_ILLEGAL) {
     MSG_ERROR("Istruzione non riconosciuta!");
     return;
   }
