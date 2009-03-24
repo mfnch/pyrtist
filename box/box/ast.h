@@ -26,6 +26,8 @@
 #ifndef _AST_H
 #  define _AST_H
 
+#  include <stdio.h>
+
 #  include "types.h"
 
 #  define AST_MAX_NUM_SUBNODES 3
@@ -62,6 +64,7 @@ typedef union {
 } AstConst;
 
 typedef enum {
+  ASTUNOP_PLUS,
   ASTUNOP_NEG,
   ASTUNOP_LINC,
   ASTUNOP_LDEC,
@@ -73,7 +76,8 @@ typedef enum {
   ASTBINOP_ADD,
   ASTBINOP_SUB,
   ASTBINOP_MUL,
-  ASTBINOP_DIV
+  ASTBINOP_DIV,
+  ASTBINOP_REM
 } AstBinOp;
 
 /* Each of the following structures corresponds to a possible node in the AST
@@ -169,5 +173,26 @@ struct __AstNode {
     AstNodeStruc     struc;
   } attr;
 };
+
+typedef AstNode *AstNodePtr;
+
+int AstNode_Get_Subnodes(AstNode *node,
+                         AstNode **subnodes[AST_MAX_NUM_SUBNODES]);
+AstNode *AstNode_New(AstNodeType t);
+void AstNode_Destroy(AstNode *node);
+void AstNode_Set_Error(AstNode *node);
+void AstNode_Print(FILE *out, AstNode *node);
+
+AstNode *AstNodeTypeName_New(const char *name, size_t name_len);
+AstNode *AstNodeSubtype_New(const char *name, size_t name_len);
+AstNode *AstNodeBox_New(AstNode *type);
+void AstNodeBox_Add_Statement(AstNode *box, AstNode *statement);
+AstNode *AstNodeConst_New(AstConstType t, AstConst c);
+AstNode *AstNodeString_New(const char *str, size_t str_len);
+AstNode *AstNodeVar_New(const char *name, size_t name_len);
+AstNode *AstNodeUnOp_New(AstUnOp op, AstNode *expr);
+AstNode *AstNodeBinOp_New(AstBinOp op, AstNode *left, AstNode *right);
+AstNode *AstNodeMember_New(AstNode *name, AstNode *expr);
+AstNode *AstNodeStruc_New(void);
 
 #endif /* _AST_H */

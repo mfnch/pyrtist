@@ -18,6 +18,7 @@
  ****************************************************************************/
 
 #include <assert.h>
+#include <stdio.h>
 
 #include "mem.h"
 #include "ast.h"
@@ -105,6 +106,79 @@ void AstNode_Destroy(AstNode *node) {
 
     BoxMem_Free(node); /* The free the structure */
   }
+}
+
+void AstNode_Set_Error(AstNode *node) {
+}
+
+/* Used to draw a tree using the characters | \ and - */
+typedef struct __IndentStr {
+  const char *this;
+  struct __IndentStr *next;
+} IndentStr;
+
+static void Indent_Push(IndentStr *indent, IndentStr *next) {
+  for(; indent->next != NULL; indent = indent->next);
+  indent->next = next;
+  next->next = NULL;
+}
+
+static void Indent_Pop(IndentStr *indent) {
+  if (indent->next != NULL) {
+    IndentStr *next = indent->next;
+    for(; next->next != NULL;) {
+      indent = next;
+      next = next->next;
+    }
+    indent->next = NULL;
+  }
+}
+
+static const char *branch_sep  = "--";
+static const char *branch_down = " |";
+static const char *branch_last = " \\";
+static const char *branch_end  = "  ";
+
+static void Indent_Print(FILE *out, IndentStr *indent) {
+  for(; indent != NULL; indent = indent->next) {
+    fprintf(out, "%s", indent->this);
+    if (indent->this == branch_last)
+      indent->this = branch_end;
+  }
+}
+
+static void My_Node_Print(FILE *out, AstNode *node, IndentStr *indent) {
+  AstNode **subnode[AST_MAX_NUM_SUBNODES];
+  int i, num_subnodes;
+
+  /* Get subnodes */
+  num_subnodes = AstNode_Get_Subnodes(node, subnode);
+
+  Indent_Print(out, indent);
+  fprintf(out, "%sNODE(type=%d, num_subnodes=%d)\n",
+          branch_sep, node->type, num_subnodes);
+
+  if (num_subnodes > 0) {
+    IndentStr new_indent;
+    new_indent.this = branch_down;
+    Indent_Push(indent, & new_indent);
+
+    for(i = 0; i < num_subnodes; i++) {
+      AstNode *child = *subnode[i];
+      if (i == num_subnodes - 1)
+        new_indent.this = branch_last;
+      My_Node_Print(out, child, indent);
+    }
+
+    Indent_Pop(indent);
+  }
+}
+
+void AstNode_Print(FILE *out, AstNode *node) {
+  IndentStr indent;
+  indent.this = "";
+  indent.next = NULL;
+  My_Node_Print(out, node, & indent);
 }
 
 static void AstNodeTypeName_Finaliser(AstNode *node) {

@@ -318,7 +318,8 @@ Task Str_ToInt(char *s, UInt l, Int *i) {
   char sc[sizeof(Int)*5 + 1], *endptr;
 
   if ( l >= (sizeof(Int)*5 + 1) ) {
-    MSG_ERROR("Intero troppo grande!");
+    MSG_ERROR("The integer number exceeds the range of values "
+              "representable by Int.");
     return Failed;
   }
 
@@ -330,7 +331,8 @@ Task Str_ToInt(char *s, UInt l, Int *i) {
   *i = strtoint(sc, & endptr, 10);
   if ( errno == 0 ) return Success;
 
-  MSG_ERROR("L'intero e' troppo grande!");
+  MSG_ERROR("The integer number exceeds the range of values "
+            "representable by Int.");
   return Failed;
 }
 
