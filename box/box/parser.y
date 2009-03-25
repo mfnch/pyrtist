@@ -29,11 +29,11 @@
 
 #include "types.h"
 #include "defaults.h"
+#include "mem.h"
 #include "ast.h"
+#include "messages.h"
 
 #if 0
-#include "types.h"
-#include "messages.h"
 #include "array.h"
 #include "str.h"
 #include "virtmach.h"
@@ -623,9 +623,10 @@ void.seps.opt:
 
 /* Possible types for the nodes of the tree */
 %union {
-  AstNodePtr Node;
+  char *     String;
   AstUnOp    UnaryOperator;
   AstBinOp   BinaryOperator;
+  AstNodePtr Node;
 }
 
 /* Lista dei token senza valore semantico
@@ -645,7 +646,6 @@ void.seps.opt:
  */
 %token <Ex> TOK_EXPR
 %token <Nm> TOK_UNAME
-%token <Nm> TOK_LMEMBER
 %token <Nm> TOK_UMEMBER
 %token <kind> TOK_AT
 %token <proc> TOK_PROC
@@ -654,24 +654,24 @@ void.seps.opt:
 %token TOK_INC TOK_DEC TOK_SHL TOK_SHR
 %token TOK_EQ TOK_NE TOK_LT TOK_LE TOK_GT TOK_GE
 %token TOK_LOR TOK_LAND
+%token TOK_APLUS TOK_AMINUS TOK_ATIMES TOK_ADIV TOK_AREM TOK_ABAND TOK_ABXOR
+%token TOK_ABOR TOK_ASHL TOK_ASHR
 
 /* List of tokens with semantical value */
-%token <Node> TOK_CONSTANT TOK_VAR TOK_STRING
-%token <UnaryOperator> POST_OP
+%token <String> TOK_IDENTIFIER
+%token <Node> TOK_CONSTANT TOK_STRING
 
 /* List of nodes with semantical value */
-%type <UnaryOperator> un_op
-%type <BinaryOperator> mul_op add_op shift_op cmp_op eq_op
+%type <UnaryOperator> un_op post_op
+%type <BinaryOperator> mul_op add_op shift_op cmp_op eq_op assign_op
 %type <Node> prim_expr postfix_expr unary_expr mul_expr add_expr
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
-%type <Node> land_expr lor_expr expr
-
+%type <Node> land_expr lor_expr assign_expr expr statement statement_list
 
 /* Lista dei token affetti da regole di precedenza
  */
-%right '=' TOK_APLUS TOK_AMINUS TOK_ATIMES TOK_ADIV TOK_AREM TOK_ABAND TOK_ABXOR TOK_ABOR TOK_ASHL TOK_ASHR
 %right TOK_POW
-%left TOK_LMEMBER TOK_UMEMBER
+%left TOK_UMEMBER
 
 
 /* Regola di partenza
@@ -698,6 +698,11 @@ un_op:
   | TOK_INC                   {$$ = ASTUNOP_LINC;}
   | TOK_DEC                   {$$ = ASTUNOP_LDEC;}
   | '~'                       {$$ = ASTUNOP_BNOT;}
+  ;
+
+post_op:
+    TOK_INC                   {$$ = ASTUNOP_RINC;}
+  | TOK_DEC                   {$$ = ASTUNOP_RDEC;}
   ;
 
 add_op:
@@ -728,17 +733,39 @@ cmp_op:
   | TOK_GE                    {$$ = ASTBINOP_GE;}
   ;
 
+assign_op:
+    '='                       {$$ = ASTBINOP_ASSIGN;}
+  | TOK_APLUS                 {$$ = ASTBINOP_APLUS;}
+  | TOK_AMINUS                {$$ = ASTBINOP_AMINUS;}
+  | TOK_ATIMES                {$$ = ASTBINOP_ATIMES;}
+  | TOK_AREM                  {$$ = ASTBINOP_AREM;}
+  | TOK_ADIV                  {$$ = ASTBINOP_ADIV;}
+  | TOK_ASHL                  {$$ = ASTBINOP_ASHL;}
+  | TOK_ASHR                  {$$ = ASTBINOP_ASHR;}
+  | TOK_ABAND                 {$$ = ASTBINOP_ABAND;}
+  | TOK_ABXOR                 {$$ = ASTBINOP_ABXOR;}
+  | TOK_ABOR                  {$$ = ASTBINOP_ABOR;}
+  ;
+
 /******************************* ARITHMETICS *******************************/
 prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
   | TOK_STRING                   {$$ = $1;}
-  | TOK_VAR                      {$$ = $1;}
+  | TOK_IDENTIFIER               {$$ = AstNodeVar_New($1, 0); BoxMem_Free($1);}
   | '(' expr ')'                 {$$ = $2;}
   ;
 
 postfix_expr:
     prim_expr                    {$$ = $1;}
-  | postfix_expr POST_OP         {$$ = AstNodeUnOp_New($2, $1);}
+  | postfix_expr '(' expr ')'    {$$ = AstNodeArrayGet_New($1, $3);}
+  | postfix_expr
+          '[' statement_list ']' {$$ = AstNodeBox_Set_Parent($3, $1);}
+  | postfix_expr
+              '.' TOK_IDENTIFIER {$$ = AstNodeMemberGet_New($1, $3, 0);
+                                  BoxMem_Free($3);}
+  | '.' TOK_IDENTIFIER           {$$ = AstNodeMemberGet_New(NULL, $2, 0);
+                                  BoxMem_Free($2);}
+  | postfix_expr post_op         {$$ = AstNodeUnOp_New($2, $1);}
   ;
 
 unary_expr:
@@ -783,7 +810,7 @@ bxor_expr:
 
 bor_expr:
     bxor_expr                    {$$ = $1;}
-  | bor_expr '^' bxor_expr       {$$ = AstNodeBinOp_New(ASTBINOP_BOR, $1, $3);}
+  | bor_expr '|' bxor_expr       {$$ = AstNodeBinOp_New(ASTBINOP_BOR, $1, $3);}
   ;
 
 land_expr:
@@ -793,60 +820,42 @@ land_expr:
 
 lor_expr:
     land_expr                    {$$ = $1;}
-  | lor_expr TOK_LAND land_expr  {$$ = AstNodeBinOp_New(ASTBINOP_LOR, $1, $3);}
+  | lor_expr TOK_LOR land_expr   {$$ = AstNodeBinOp_New(ASTBINOP_LOR, $1, $3);}
+  ;
+
+assign_expr:
+    lor_expr                     {$$ = $1;}
+  | assign_expr
+              assign_op lor_expr {$$ = AstNodeBinOp_New($2, $1, $3);}
   ;
 
 expr:
-    lor_expr                    {$$ = $1;}
+    assign_expr                  {$$ = $1;}
   ;
 
-
-
-
-
-
-
-
-
-
-
-
+/***************************** TYPE ARITHMETICS ****************************/
 
 
 
  /*************DEFINIZIONE DELLA STRUTTURA GENERICA DEI PROGRAMMI**************/
  /* Cio' che resta descrive la sintassi delle righe e del corpo del programma */
 statement:
- | expr {printf("matching expr\n"); AstNode_Print(stdout, $1);}
- | error {
-   printf("matching error\n");
-#if 0
-  if (! parser_attr.no_syntax_err ) {
-    MSG_ERROR("Syntax error.");
-  }
-  parser_attr.no_syntax_err = 0;
-    Tok_Unput(',');
-    /*yyclearin;*/
-    /*YYBACKUP(',', yylval);*/
-  yyerrok;
-  }
- | error ']' {
-  if (! parser_attr.no_syntax_err ) {
-    MSG_ERROR("Syntax error.");
-  }
-  parser_attr.no_syntax_err = 0;
-  yyerrok;
-#endif
-  }
-;
+                                 {$$ = NULL;}
+  | expr                         {$$ = AstNodeStatement_New($1);}
+  | '\\' expr                    {$$ = AstNodeStatement_New($2);}
+  | error sep                    {MSG_ERROR("Syntax error.");
+                                  $$ = AstNodeStatement_New(AstNodeError_New());
+                                  Tok_Unput(',');
+                                  yyerrok;}
+  ;
 
 statement_list:
-   statement
- | statement_list sep statement
- ;
+    statement                    {$$ = AstNodeBox_New(NULL, $1);}
+  | statement_list sep statement {$$ = AstNodeBox_Add_Statement($1, $3);}
+  ;
 
 program:
-    statement_list
+    statement_list               {AstNode_Print(stdout, $1);}
   ;
 
 %%

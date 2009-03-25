@@ -37,6 +37,7 @@
 
 #include "types.h"
 #include "defaults.h"
+#include "mem.h"
 #include "ast.h"
 #include "messages.h"
 #include "array.h"
@@ -150,8 +151,8 @@ include BEGIN(include);
 {SPACES}    {}
 
 
-"->"        {return TOK_TO;}
-"end"       {return TOK_END;}
+"->"  {return TOK_TO;}
+"end" {return TOK_END;}
 
  /* Operatori di assegnazione */
 "+="  { return TOK_APLUS; }
@@ -203,14 +204,13 @@ include BEGIN(include);
 
  /* Number of type Char */
 [']([^'\n]|\\')+['] {
-//   Char c;
-//
-//   if IS_FAILED( Str_ToChar(yytext+1, yyleng-2, (char *) & c) ) {
-//     parser_attr.no_syntax_err = 1;
-//     return TOK_ERR;
-//   }
-//   Expr_New_Imm_Char(& yylval.Ex, (Int) c);
-   return TOK_EXPR;
+  AstConst c;
+  if (Str_ToChar(yytext+1, yyleng-2, (char *) & c.c) == BoxFailure) {
+    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_CHAR, c);
+    AstNode_Set_Error(yylval.Node);
+  } else
+    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_CHAR, c);
+  return TOK_CONSTANT;
  }
 
  /* for future use:
@@ -259,8 +259,8 @@ include BEGIN(include);
 
  /* Nome di variabile */
 {LNAME} {
-  yylval.Node = AstNodeVar_New(yytext, yyleng);
-  return TOK_VAR;
+  yylval.String = BoxMem_Strndup(yytext, yyleng);
+  return TOK_IDENTIFIER;
  }
 
  /* Nome di variabile */
@@ -268,13 +268,6 @@ include BEGIN(include);
 //   Name nm = {yyleng, yytext};
 //   yylval.Nm = nm;
   return TOK_UNAME;
- }
-
- /* Membro di struttura */
-[.]{LNAME} {
-//   yylval.Nm.text = yytext + 1;
-//   yylval.Nm.length = yyleng - 1;
-  return TOK_LMEMBER;
  }
 
  /* Membro di struttura */

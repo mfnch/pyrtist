@@ -28,6 +28,8 @@
  */
 int AstNode_Get_Subnodes(AstNode *node, AstNode **subnodes[AST_MAX_NUM_SUBNODES]) {
   switch(node->type) {
+  case ASTNODETYPE_ERROR:
+    return 0;
   case ASTNODETYPE_TYPENAME:
     subnodes[0] = & node->attr.typenm.scope;
     return 1;
@@ -35,7 +37,7 @@ int AstNode_Get_Subnodes(AstNode *node, AstNode **subnodes[AST_MAX_NUM_SUBNODES]
     subnodes[0] = & node->attr.subtype.scope;
     return 1;
   case ASTNODETYPE_BOX:
-    subnodes[0] = & node->attr.box.type;
+    subnodes[0] = & node->attr.box.parent;
     subnodes[1] = & node->attr.box.first_statement;
     return 2;
   case ASTNODETYPE_STATEMENT:
@@ -64,9 +66,37 @@ int AstNode_Get_Subnodes(AstNode *node, AstNode **subnodes[AST_MAX_NUM_SUBNODES]
   case ASTNODETYPE_STRUC:
     subnodes[0] = & node->attr.struc.first_member;
     return 1;
+  case ASTNODETYPE_ARRAYGET:
+    subnodes[0] = & node->attr.array_get.array;
+    subnodes[1] = & node->attr.array_get.index;
+    return 2;
+  case ASTNODETYPE_MEMBERGET:
+    subnodes[0] = & node->attr.member_get.struc;
+    return 1;
   }
   assert(0); /* Should never happen! */
   return 0;
+}
+
+const char *AstNodeType_To_Str(AstNodeType t) {
+  switch(t) {
+  case ASTNODETYPE_ERROR:     return "Error";
+  case ASTNODETYPE_TYPENAME:  return "TypeName";
+  case ASTNODETYPE_SUBTYPE:   return "SubType";
+  case ASTNODETYPE_BOX:       return "Box";
+  case ASTNODETYPE_STATEMENT: return "Statement";
+  case ASTNODETYPE_CONST:     return "Const";
+  case ASTNODETYPE_STRING:    return "String";
+  case ASTNODETYPE_VAR:       return "Var";
+  case ASTNODETYPE_UNOP:      return "UnOp";
+  case ASTNODETYPE_BINOP:     return "BinOp";
+  case ASTNODETYPE_MEMBER:    return "Member";
+  case ASTNODETYPE_STRUC:     return "Struc";
+  case ASTNODETYPE_ARRAYGET:  return "ArrayGet";
+  case ASTNODETYPE_MEMBERGET: return "MemberGet";
+  default:                    return "UnknownNode";
+  }
+  return "???";
 }
 
 AstNode *AstNode_New(AstNodeType t) {
@@ -161,8 +191,8 @@ static void My_Node_Print(FILE *out, AstNode *node, IndentStr *indent) {
   num_subnodes = AstNode_Get_Subnodes(node, subnode);
 
   Indent_Print(out, indent);
-  fprintf(out, "%sNODE(type=%d, num_subnodes=%d)\n",
-          branch_sep, node->type, num_subnodes);
+  fprintf(out, "%s%s(num_subnodes=%d)\n",
+          branch_sep, AstNodeType_To_Str(node->type), num_subnodes);
 
   if (num_subnodes > 0) {
     IndentStr new_indent;
@@ -185,6 +215,10 @@ void AstNode_Print(FILE *out, AstNode *node) {
   indent.this = "";
   indent.next = NULL;
   My_Node_Print(out, node, & indent);
+}
+
+AstNode *AstNodeError_New(void) {
+  return AstNode_New(ASTNODETYPE_ERROR);
 }
 
 static void AstNodeTypeName_Finaliser(AstNode *node) {
@@ -215,28 +249,47 @@ AstNode *AstNodeSubtype_New(const char *name, size_t name_len) {
   return node;
 }
 
-AstNode *AstNodeBox_New(AstNode *type) {
-  AstNode *node = AstNode_New(ASTNODETYPE_BOX);
-  node->attr.box.first_statement = NULL;
-  node->attr.box.last_statement = NULL;
-  node->attr.box.type = type;
+AstNode *AstNodeStatement_New(AstNode *expr) {
+  AstNode *node = AstNode_New(ASTNODETYPE_STATEMENT);
+  node->attr.statement.expression = expr;
   return node;
 }
 
-void AstNodeBox_Add_Statement(AstNode *box, AstNode *statement) {
-  assert(box->type == ASTNODETYPE_BOX
-         && statement->type == ASTNODETYPE_STATEMENT);
+AstNode *AstNodeBox_New(AstNode *parent, AstNode *first_statement) {
+  AstNode *node = AstNode_New(ASTNODETYPE_BOX);
+  node->attr.box.first_statement = first_statement;
+  node->attr.box.last_statement = first_statement;
+  node->attr.box.parent = parent;
+  return node;
+}
 
-  AstNode *last_statement = box->attr.box.last_statement;
-  if (last_statement == NULL) {
-    assert(box->attr.box.first_statement == NULL);
-    box->attr.box.first_statement = box->attr.box.last_statement = statement;
+AstNode *AstNodeBox_Add_Statement(AstNode *box, AstNode *statement) {
+  assert(box->type == ASTNODETYPE_BOX);
+
+  if (statement == NULL) {
+    return box;
 
   } else {
-    AstNode *next_statement_after_last =
-      last_statement->attr.statement.next_statement;
-    next_statement_after_last = statement;
+    AstNode *last_statement = box->attr.box.last_statement;
+
+    assert(statement->type == ASTNODETYPE_STATEMENT);
+
+    if (last_statement == NULL) {
+      assert(box->attr.box.first_statement == NULL);
+      box->attr.box.first_statement = box->attr.box.last_statement = statement;
+
+    } else {
+      last_statement->attr.statement.next_statement = statement;
+      box->attr.box.last_statement = statement;
+    }
+    return box;
   }
+}
+
+AstNode *AstNodeBox_Set_Parent(AstNode *box, AstNode *parent) {
+  assert(box->type == ASTNODETYPE_BOX);
+  box->attr.box.parent = parent;
+  return box;
 }
 
 AstNode *AstNodeConst_New(AstConstType t, AstConst c) {
@@ -303,3 +356,25 @@ AstNode *AstNodeStruc_New(void) {
   return node;
 }
 
+AstNode *AstNodeArrayGet_New(AstNode *array, AstNode *index) {
+  AstNode *node = AstNode_New(ASTNODETYPE_ARRAYGET);
+  node->attr.array_get.array = array;
+  node->attr.array_get.index = index;
+  return node;
+}
+
+static void AstNodeMemberGet_Finaliser(AstNode *node) {
+  assert(node->type == ASTNODETYPE_MEMBERGET);
+  BoxMem_Free(node->attr.member_get.member);
+}
+
+AstNode *AstNodeMemberGet_New(AstNode *struc,
+                              const char *member, int member_len) {
+  AstNode *node = AstNode_New(ASTNODETYPE_MEMBERGET);
+  node->attr.member_get.struc = struc;
+  node->attr.member_get.member = (member_len > 0) ?
+                                  BoxMem_Strndup(member, member_len) :
+                                  BoxMem_Strdup(member);
+  node->finaliser = AstNodeMemberGet_Finaliser;
+  return node;
+}
