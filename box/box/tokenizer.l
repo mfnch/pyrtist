@@ -37,6 +37,7 @@
 
 #include "types.h"
 #include "defaults.h"
+#include "ast.h"
 #include "messages.h"
 #include "array.h"
 #include "str.h"
@@ -165,12 +166,12 @@ include BEGIN(include);
 "|="  { return TOK_ABOR; }
 
  /* Opertaori di incremento/decremento */
-"++"  { return TOK_INC; }
-"--"  { return TOK_DEC; }
+"++"  {return TOK_INC;}
+"--"  {return TOK_DEC;}
 
  /* Opertaori di incremento/decremento */
-"<<"  { return TOK_SHL; }
-">>"  { return TOK_SHR; }
+"<<"  {return TOK_SHL;}
+">>"  {return TOK_SHR;}
 
  /* Operatori di confronto */
 "=="  { return TOK_EQ; }
@@ -184,32 +185,32 @@ include BEGIN(include);
  /* Altri operatori */
 "**"  { return TOK_POW; }
 
-[$]+  { yylval.Int = yyleng; return TOK_NPARENT; }
+[$]+  { /*yylval.Int = yyleng;*/ return TOK_NPARENT; }
 
-"@"   { yylval.kind = 1; return TOK_AT; }
+"@"   { /*yylval.kind = 1;*/ return TOK_AT; }
 
-"@@"  { yylval.kind = 2; return TOK_AT; }
+"@@"  { /*yylval.kind = 2; */return TOK_AT; }
 
-"@&"  { yylval.kind = 3; return TOK_AT; }
+"@&"  { /*yylval.kind = 3;*/ return TOK_AT; }
 
-"([)" { yylval.proc = TYPE_OPEN; return TOK_PROC; }
+"([)" { /*yylval.proc = TYPE_OPEN;*/ return TOK_PROC; }
 
-"(])" { yylval.proc = TYPE_CLOSE; return TOK_PROC; }
+"(])" { /*yylval.proc = TYPE_CLOSE;*/ return TOK_PROC; }
 
-"(;)" { yylval.proc = TYPE_PAUSE; return TOK_PROC; }
+"(;)" { /*yylval.proc = TYPE_PAUSE;*/ return TOK_PROC; }
 
-"(\\)" { yylval.proc = TYPE_DESTROY; return TOK_PROC; }
+"(\\)" { /*yylval.proc = TYPE_DESTROY;*/ return TOK_PROC; }
 
  /* Number of type Char */
 [']([^'\n]|\\')+['] {
-  Char c;
-
-  if IS_FAILED( Str_ToChar(yytext+1, yyleng-2, (char *) & c) ) {
-    parser_attr.no_syntax_err = 1;
-    return TOK_ERR;
-  }
-  Expr_New_Imm_Char(& yylval.Ex, (Int) c);
-  return TOK_EXPR;
+//   Char c;
+//
+//   if IS_FAILED( Str_ToChar(yytext+1, yyleng-2, (char *) & c) ) {
+//     parser_attr.no_syntax_err = 1;
+//     return TOK_ERR;
+//   }
+//   Expr_New_Imm_Char(& yylval.Ex, (Int) c);
+   return TOK_EXPR;
  }
 
  /* for future use:
@@ -219,69 +220,67 @@ include BEGIN(include);
 
  /* Integer number */
 {DIGIT}+ {
-  Int i;
-  if IS_FAILED( Str_ToInt(yytext, yyleng, & i) )
-    { parser_attr.no_syntax_err = 1; return TOK_ERR;}
-  Expr_New_Imm_Int( & yylval.Ex, i );
-  return TOK_EXPR;
+  AstConst c;
+  if (Str_ToInt(yytext, yyleng, & c.i) == BoxFailure) {
+    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_INT, c);
+    AstNode_Set_Error(yylval.Node);
+  } else
+    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_INT, c);
+  return TOK_CONSTANT;
  }
 
  /* Integer number in hexadecimal notation */
 [0][xX]{HEXDIGIT}+ {
-  Int i;
-  if IS_FAILED( Str_Hex_To_Int(yytext+2, yyleng-2, & i) )
-    { parser_attr.no_syntax_err = 1; return TOK_ERR;}
-  Expr_New_Imm_Int(& yylval.Ex, i);
-  return TOK_EXPR;
+  AstConst c;
+  if (Str_Hex_To_Int(yytext+2, yyleng-2, & c.i) == BoxFailure) {
+    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_INT, c);
+    AstNode_Set_Error(yylval.Node);
+  } else
+    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_INT, c);
+  return TOK_CONSTANT;
  }
 
  /* Floating point number */
 {DIGIT}+("."{DIGIT}+)?([eE][+-]?{DIGIT}+)? {
-  Real r;
-
-  if IS_FAILED( Str_ToReal(yytext, yyleng, & r) )
-    { parser_attr.no_syntax_err = 1; return TOK_ERR;}
-  Expr_New_Imm_Real( & yylval.Ex, r );
-  return TOK_EXPR;
+  AstConst c;
+  if (Str_ToReal(yytext, yyleng, & c.r) == BoxFailure) {
+    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_REAL, c);
+    AstNode_Set_Error(yylval.Node);
+  } else
+    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_REAL, c);
+  return TOK_CONSTANT;
  }
 
  /* String */
 ["]([^"\n]|\\\")*["] {
-  char *s;
-  Int nl;
-
-  s = Str_ToString(yytext+1, yyleng-2, & nl);
-  if ( s == NULL ) return TOK_ERR;
-  yylval.Nm.length = nl;
-  yylval.Nm.text = s;
+  yylval.Node = AstNodeString_New(yytext + 1, yyleng - 2);
   return TOK_STRING;
  }
 
  /* Nome di variabile */
 {LNAME} {
-  Name nm = {yyleng, yytext};
-  yylval.Nm = nm;
-  return TOK_LNAME;
+  yylval.Node = AstNodeVar_New(yytext, yyleng);
+  return TOK_VAR;
  }
 
  /* Nome di variabile */
 {UNAME} {
-  Name nm = {yyleng, yytext};
-  yylval.Nm = nm;
+//   Name nm = {yyleng, yytext};
+//   yylval.Nm = nm;
   return TOK_UNAME;
  }
 
  /* Membro di struttura */
 [.]{LNAME} {
-  yylval.Nm.text = yytext + 1;
-  yylval.Nm.length = yyleng - 1;
+//   yylval.Nm.text = yytext + 1;
+//   yylval.Nm.length = yyleng - 1;
   return TOK_LMEMBER;
  }
 
  /* Membro di struttura */
 [.]{UNAME} {
-  yylval.Nm.text = yytext + 1;
-  yylval.Nm.length = yyleng - 1;
+//   yylval.Nm.text = yytext + 1;
+//   yylval.Nm.length = yyleng - 1;
   return TOK_UMEMBER;
  }
 
@@ -387,9 +386,9 @@ UInt Tok_Include_End(void) {
     /* Calcolo il numero di errori nel file incluso (+tutti i sotto-inclusi!) */
     num_errs = MSG_GT_ERRORS - cur.num_errs;
     num_warns = MSG_NUM_WARNINGS - cur.num_warns;
-    MSG_ADVICE( "Exiting from the included file. "
-     "%U errors and %U warnings were found.",
-     num_errs, num_warns );
+    MSG_ADVICE("Exiting from the included file. "
+               "%U errors and %U warnings were found.",
+               num_errs, num_warns );
     MSG_CONTEXT_END();
     return 0;
 

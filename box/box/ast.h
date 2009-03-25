@@ -69,7 +69,9 @@ typedef enum {
   ASTUNOP_LINC,
   ASTUNOP_LDEC,
   ASTUNOP_RINC,
-  ASTUNOP_RDEC
+  ASTUNOP_RDEC,
+  ASTUNOP_NOT,
+  ASTUNOP_BNOT
 } AstUnOp;
 
 typedef enum {
@@ -77,7 +79,20 @@ typedef enum {
   ASTBINOP_SUB,
   ASTBINOP_MUL,
   ASTBINOP_DIV,
-  ASTBINOP_REM
+  ASTBINOP_REM,
+  ASTBINOP_SHL,
+  ASTBINOP_SHR,
+  ASTBINOP_EQ,
+  ASTBINOP_NE,
+  ASTBINOP_LT,
+  ASTBINOP_LE,
+  ASTBINOP_GT,
+  ASTBINOP_GE,
+  ASTBINOP_BAND,
+  ASTBINOP_BXOR,
+  ASTBINOP_BOR,
+  ASTBINOP_LAND,
+  ASTBINOP_LOR
 } AstBinOp;
 
 /* Each of the following structures corresponds to a possible node in the AST

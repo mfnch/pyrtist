@@ -151,6 +151,12 @@ static void My_Node_Print(FILE *out, AstNode *node, IndentStr *indent) {
   AstNode **subnode[AST_MAX_NUM_SUBNODES];
   int i, num_subnodes;
 
+  if (node == NULL) {
+    Indent_Print(out, indent);
+    fprintf(out, "%sEMPTY NODE\n", branch_sep);
+    return;
+  }
+
   /* Get subnodes */
   num_subnodes = AstNode_Get_Subnodes(node, subnode);
 

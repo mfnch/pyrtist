@@ -29,6 +29,10 @@
 
 #include "types.h"
 #include "defaults.h"
+#include "ast.h"
+
+#if 0
+#include "types.h"
 #include "messages.h"
 #include "array.h"
 #include "str.h"
@@ -39,7 +43,6 @@
 #include "compiler.h"
 #include "box.h"
 #include "tokenizer.h"
-#include "parserh.h"
 #include "builtins.h"
 
 #define YYDEBUG 0
@@ -263,129 +266,23 @@ static void Type_Detached(Expr *dst, Expr *src) {
    else rs = *result;
 
 #define MY_ERR {parser_attr.no_syntax_err = 1; YYERROR;}
-%}
+#endif
 
 
-/* Union che contiene tutti i tipi di valore semantico
- * che possono avere i token
- */
-%union {
-  Expr          Ex;   /* Espressione generica */
-  Name          Nm;   /* Nome */
-  Int           Sf;   /* Suffisso che specifica lo scoping per le variabili */
-  Type          Ty;   /* Tipo */
-  Struc         Sc;   /* Incomplete structure type */
-  StrucMember   SM;   /* Member of structure type */
-  Int           kind; /* Per TOK_AT */
-  Int           Int;
-  Type          proc; /* Per TOK_PROC */
-}
-
-/* Lista dei token senza valore semantico
- */
-%token TOK_END
-
-%token TOK_ERR
-
-%token TOK_NEWLINE
-%token TOK_ERRSEP
-
-%token TOK_TO
-
-%token <Int> TOK_NPARENT
-
-/* Lista dei token aventi valore semantico
- */
-%token <Ex> TOK_EXPR
-%token <Nm> TOK_LNAME
-%token <Nm> TOK_UNAME
-%token <Nm> TOK_LMEMBER
-%token <Nm> TOK_UMEMBER
-%token <Nm> TOK_STRING
-%token <kind> TOK_AT
-%token <proc> TOK_PROC
-
-/* Lista delle espressioni aventi valore semantico
- */
-%type <Ex> name.type
-%type <Ex> prim.type
-%type <Ex> type
-%type <Ex> asgn.type
-%type <Ex> type.species
-%type <Ex> simple.expr
-%type <Ex> array.expr
-%type <Ex> expr
-%type <Ex> prim.expr
-%type <Ex> child
-%type <Ex> parent
-%type <Ex> parent.opt
-%type <Nm> prim.suffix
-%type <Sf> suffix
-%type <Sf> suffix.opt
-%type <Nm> string
 
 
-%type <Ex> expr.struc
-%type <Ex> expr.struc.all
 
-%type <SM> type.struc1
-%type <SM> type.struc234
-%type <Sc> type.struc1234
-%type <Ex> type.struc
 
-%type <Ex> array.type
-%type <Ex> detached.type
 
-%type <Ex> registered.subtype
-%type <Ex> unregistered.subtype
-%type <Ex> subtype.expr
 
-/* Lista dei token affetti da regole di precedenza
- */
-%right '=' TOK_APLUS TOK_AMINUS TOK_ATIMES TOK_ADIV TOK_AREM TOK_ABAND TOK_ABXOR TOK_ABOR TOK_ASHL TOK_ASHR
-%left TOK_LOR
-%left TOK_LAND
-%left '|'
-%left '^'
-%left '&'
-%left TOK_EQ TOK_NE
-%left '<' TOK_LE '>' TOK_GE
-%left TOK_SHL TOK_SHR
-%left '+' '-'
-%left '*' '/' '%'
-%left TOK_NEG
-%right TOK_POW
-%left '!' '~' TOK_INC TOK_DEC
-%left TOK_LMEMBER TOK_UMEMBER
 
-/* Regola di partenza
- */
-%start program
 
-%%
 
-/*****************************************************************************
- *                                 Separators                                *
- *****************************************************************************/
 
-void.sep:
-  ','                 { }
-| TOK_NEWLINE         { Sep_Newline(); }
-;
 
-void.seps:
-  void.sep            { }
-| void.seps void.sep  { }
-;
 
-sep:
-  void.sep            { }
-| ';'                 { Sep_Pause(); }
-;
 
-void.seps.opt:
-| void.seps           { }
-;
+#if 0
 
 /*****************************************************************************
  *       Grammatica relativa ai suffissi del tipo ::: o :tipo1:::tipo2::     *
@@ -669,15 +566,261 @@ proc.def:
    '?' TOK_STRING       {DO(Declare_Proc(& $1, $2, & $3, & $5))}
 ;
 
+%type <Ex> name.type
+%type <Ex> prim.type
+%type <Ex> type
+%type <Ex> asgn.type
+%type <Ex> type.species
+%type <Ex> simple.expr
+%type <Ex> array.expr
+%type <Ex> expr
+%type <Ex> prim.expr
+%type <Ex> child
+%type <Ex> parent
+%type <Ex> parent.opt
+%type <Nm> prim.suffix
+%type <Sf> suffix
+%type <Sf> suffix.opt
+%type <Nm> string
+
+
+%type <Ex> expr.struc
+%type <Ex> expr.struc.all
+
+%type <SM> type.struc1
+%type <SM> type.struc234
+%type <Sc> type.struc1234
+%type <Ex> type.struc
+
+%type <Ex> array.type
+%type <Ex> detached.type
+
+%type <Ex> registered.subtype
+%type <Ex> unregistered.subtype
+%type <Ex> subtype.expr
+#endif
+#if 0
+  Expr          Ex;   /* Espressione generica */
+  Name          Nm;   /* Nome */
+  Int           Sf;   /* Suffisso che specifica lo scoping per le variabili */
+  Type          Ty;   /* Tipo */
+  Struc         Sc;   /* Incomplete structure type */
+  StrucMember   SM;   /* Member of structure type */
+  Int           kind; /* Per TOK_AT */
+  Int           Int;
+  Type          proc; /* Per TOK_PROC */
+void.seps:
+  void.sep
+| void.seps void.sep
+;
+
+void.seps.opt:
+| void.seps
+;
+#endif
+
+%}
+
+/* Possible types for the nodes of the tree */
+%union {
+  AstNodePtr Node;
+  AstUnOp    UnaryOperator;
+  AstBinOp   BinaryOperator;
+}
+
+/* Lista dei token senza valore semantico
+ */
+%token TOK_END
+
+%token TOK_ERR
+
+%token TOK_NEWLINE
+%token TOK_ERRSEP
+
+%token TOK_TO
+
+%token <Int> TOK_NPARENT
+
+/* Lista dei token aventi valore semantico
+ */
+%token <Ex> TOK_EXPR
+%token <Nm> TOK_UNAME
+%token <Nm> TOK_LMEMBER
+%token <Nm> TOK_UMEMBER
+%token <kind> TOK_AT
+%token <proc> TOK_PROC
+
+/* List of tokens simple tokens */
+%token TOK_INC TOK_DEC TOK_SHL TOK_SHR
+%token TOK_EQ TOK_NE TOK_LT TOK_LE TOK_GT TOK_GE
+%token TOK_LOR TOK_LAND
+
+/* List of tokens with semantical value */
+%token <Node> TOK_CONSTANT TOK_VAR TOK_STRING
+%token <UnaryOperator> POST_OP
+
+/* List of nodes with semantical value */
+%type <UnaryOperator> un_op
+%type <BinaryOperator> mul_op add_op shift_op cmp_op eq_op
+%type <Node> prim_expr postfix_expr unary_expr mul_expr add_expr
+%type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
+%type <Node> land_expr lor_expr expr
+
+
+/* Lista dei token affetti da regole di precedenza
+ */
+%right '=' TOK_APLUS TOK_AMINUS TOK_ATIMES TOK_ADIV TOK_AREM TOK_ABAND TOK_ABXOR TOK_ABOR TOK_ASHL TOK_ASHR
+%right TOK_POW
+%left TOK_LMEMBER TOK_UMEMBER
+
+
+/* Regola di partenza
+ */
+%start program
+
+%%
+
+void.sep:
+  ','
+| TOK_NEWLINE
+;
+
+sep:
+  void.sep
+| ';'
+;
+
+/******************************** OPERATORS ********************************/
+un_op:
+    '+'                       {$$ = ASTUNOP_PLUS;}
+  | '-'                       {$$ = ASTUNOP_NEG;}
+  | '!'                       {$$ = ASTUNOP_NOT;}
+  | TOK_INC                   {$$ = ASTUNOP_LINC;}
+  | TOK_DEC                   {$$ = ASTUNOP_LDEC;}
+  | '~'                       {$$ = ASTUNOP_BNOT;}
+  ;
+
+add_op:
+    '+'                       {$$ = ASTBINOP_ADD;}
+  | '-'                       {$$ = ASTBINOP_SUB;}
+  ;
+
+mul_op:
+    '*'                       {$$ = ASTBINOP_MUL;}
+  | '/'                       {$$ = ASTBINOP_DIV;}
+  | '%'                       {$$ = ASTBINOP_REM;}
+  ;
+
+shift_op:
+    TOK_SHL                   {$$ = ASTBINOP_SHL;}
+  | TOK_SHR                   {$$ = ASTBINOP_SHR;}
+  ;
+
+eq_op:
+    TOK_EQ                    {$$ = ASTBINOP_EQ;}
+  | TOK_NE                    {$$ = ASTBINOP_NE;}
+  ;
+
+cmp_op:
+    '<'                       {$$ = ASTBINOP_LT;}
+  | TOK_LE                    {$$ = ASTBINOP_LE;}
+  | '>'                       {$$ = ASTBINOP_GT;}
+  | TOK_GE                    {$$ = ASTBINOP_GE;}
+  ;
+
+/******************************* ARITHMETICS *******************************/
+prim_expr:
+    TOK_CONSTANT                 {$$ = $1;}
+  | TOK_STRING                   {$$ = $1;}
+  | TOK_VAR                      {$$ = $1;}
+  | '(' expr ')'                 {$$ = $2;}
+  ;
+
+postfix_expr:
+    prim_expr                    {$$ = $1;}
+  | postfix_expr POST_OP         {$$ = AstNodeUnOp_New($2, $1);}
+  ;
+
+unary_expr:
+    postfix_expr                 {$$ = $1;}
+  | un_op unary_expr             {$$ = AstNodeUnOp_New($1, $2);}
+  ;
+
+mul_expr:
+    unary_expr                   {$$ = $1;}
+  | mul_expr mul_op unary_expr   {$$ = AstNodeBinOp_New($2, $1, $3);}
+  ;
+
+add_expr:
+    mul_expr                     {$$ = $1;}
+  | add_expr add_op mul_expr     {$$ = AstNodeBinOp_New($2, $1, $3);}
+  ;
+
+shift_expr:
+    add_expr                     {$$ = $1;}
+  | shift_expr shift_op add_expr {$$ = AstNodeBinOp_New($2, $1, $3);}
+  ;
+
+cmp_expr:
+    shift_expr                   {$$ = $1;}
+  | cmp_expr cmp_op shift_expr   {$$ = AstNodeBinOp_New($2, $1, $3);}
+  ;
+
+eq_expr:
+    cmp_expr                     {$$ = $1;}
+  | eq_expr eq_op cmp_expr       {$$ = AstNodeBinOp_New($2, $1, $3);}
+  ;
+
+band_expr:
+    eq_expr                      {$$ = $1;}
+  | band_expr '&' eq_expr        {$$ = AstNodeBinOp_New(ASTBINOP_BAND, $1, $3);}
+  ;
+
+bxor_expr:
+    band_expr                    {$$ = $1;}
+  | bxor_expr '^' band_expr      {$$ = AstNodeBinOp_New(ASTBINOP_BXOR, $1, $3);}
+  ;
+
+bor_expr:
+    bxor_expr                    {$$ = $1;}
+  | bor_expr '^' bxor_expr       {$$ = AstNodeBinOp_New(ASTBINOP_BOR, $1, $3);}
+  ;
+
+land_expr:
+    bor_expr                     {$$ = $1;}
+  | land_expr TOK_LAND bor_expr  {$$ = AstNodeBinOp_New(ASTBINOP_LAND, $1, $3);}
+  ;
+
+lor_expr:
+    land_expr                    {$$ = $1;}
+  | lor_expr TOK_LAND land_expr  {$$ = AstNodeBinOp_New(ASTBINOP_LOR, $1, $3);}
+  ;
+
+expr:
+    lor_expr                    {$$ = $1;}
+  ;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
  /*************DEFINIZIONE DELLA STRUTTURA GENERICA DEI PROGRAMMI**************/
  /* Cio' che resta descrive la sintassi delle righe e del corpo del programma */
 statement:
- | type.statement
- | expr.statement
- | end.statement
- | compound.statement
- | proc.def
- | error sep {
+ | expr {printf("matching expr\n"); AstNode_Print(stdout, $1);}
+ | error {
+   printf("matching error\n");
+#if 0
   if (! parser_attr.no_syntax_err ) {
     MSG_ERROR("Syntax error.");
   }
@@ -693,23 +836,18 @@ statement:
   }
   parser_attr.no_syntax_err = 0;
   yyerrok;
+#endif
   }
 ;
 
-statement.list:
+statement_list:
    statement
- | statement.list sep statement
- ;
-
-compound.statement:
- '['               { DO( Box_Instance_Begin(NULL, 1) ); }
- statement.list
- ']'               { DO( Box_Instance_End(NULL) ); }
+ | statement_list sep statement
  ;
 
 program:
-   statement.list
- ;
+    statement_list
+  ;
 
 %%
 
@@ -734,7 +872,7 @@ Task Parser_Init(const char *f) {
   /* Inizializzo il tokenizer */
   TASK( Tok_Init(TOK_MAX_INCLUDE, f) );
 
-  parser_attr.no_syntax_err = 0;
+  //parser_attr.no_syntax_err = 0;
 
 #if YYDEBUG == 1
   yydebug = 1;
@@ -750,6 +888,8 @@ Task Parser_Finish(void) {
   return Success;
 }
 
+
+#if 0
 static Task Declare_Proc(Expr *child_type, Int kind, Expr *parent_type,
                          Name *name) {
   BoxVMSymID sym_num;
@@ -1148,3 +1288,4 @@ Task Prs_Rule_Valued_Eq_Valued(Expr *rs,
     return Success;
   }
 }
+#endif
