@@ -306,10 +306,19 @@ static void AstNodeString_Finaliser(AstNode *node) {
 
 AstNode *AstNodeString_New(const char *str, size_t str_len) {
   AstNode *node = AstNode_New(ASTNODETYPE_STRING);
-  node->attr.var.name = (str_len > 0) ?
-                        BoxMem_Strndup(str, str_len) : BoxMem_Strdup(str);
+  node->attr.string.str = BoxMem_Strndup(str, str_len);
   node->finaliser = AstNodeString_Finaliser;
   return node;
+}
+
+AstNode *AstNodeString_Concat(AstNode *str1, AstNode *str2) {
+  assert(str1->type == ASTNODETYPE_STRING &&
+         str2->type == ASTNODETYPE_STRING);
+  char *old_str = str1->attr.string.str;
+  str1->attr.string.str = BoxMem_Str_Merge(old_str, str2->attr.string.str);
+  BoxMem_Free(old_str);
+  AstNode_Destroy(str2);
+  return str1;
 }
 
 static void AstNodeVar_Finaliser(AstNode *node) {

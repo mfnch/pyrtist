@@ -235,6 +235,7 @@ AstNode *AstNodeSubtype_New(const char *name, size_t name_len);
 AstNode *AstNodeStatement_New(AstNode *expr);
 AstNode *AstNodeBox_New(AstNode *type, AstNode *first_statement);
 AstNode *AstNodeBox_Add_Statement(AstNode *box, AstNode *statement);
+AstNode *AstNodeBox_Set_Parent(AstNode *box, AstNode *parent);
 AstNode *AstNodeConst_New(AstConstType t, AstConst c);
 AstNode *AstNodeString_New(const char *str, size_t str_len);
 AstNode *AstNodeVar_New(const char *name, size_t name_len);

@@ -33,6 +33,8 @@
 #include "ast.h"
 #include "messages.h"
 
+void yyerror(char *s);
+
 #if 0
 #include "array.h"
 #include "str.h"
@@ -49,8 +51,6 @@
 
 ParserAttr parser_attr;
 
-/* Funzioni definite in questo file */
-void yyerror(char* s);
 
 static Task Proc_Def_Open(Expr *child_type, Int kind, Expr *parent_type);
 static Task Proc_Def_Close(void);
@@ -609,6 +609,7 @@ proc.def:
   Int           kind; /* Per TOK_AT */
   Int           Int;
   Type          proc; /* Per TOK_PROC */
+
 void.seps:
   void.sep
 | void.seps void.sep
@@ -617,6 +618,11 @@ void.seps:
 void.seps.opt:
 | void.seps
 ;
+
+void_seps:
+    void_sep
+  | void_seps void_sep
+  ;
 #endif
 
 %}
@@ -645,8 +651,6 @@ void.seps.opt:
 /* Lista dei token aventi valore semantico
  */
 %token <Ex> TOK_EXPR
-%token <Nm> TOK_UNAME
-%token <Nm> TOK_UMEMBER
 %token <kind> TOK_AT
 %token <proc> TOK_PROC
 
@@ -658,15 +662,17 @@ void.seps.opt:
 %token TOK_ABOR TOK_ASHL TOK_ASHR
 
 /* List of tokens with semantical value */
-%token <String> TOK_IDENTIFIER
+%token <String> TOK_IDENTIFIER TOK_TYPE_IDENT
 %token <Node> TOK_CONSTANT TOK_STRING
 
 /* List of nodes with semantical value */
 %type <UnaryOperator> un_op post_op
 %type <BinaryOperator> mul_op add_op shift_op cmp_op eq_op assign_op
-%type <Node> prim_expr postfix_expr unary_expr mul_expr add_expr
+%type <Node> expr_sep sep_expr struc_expr
+%type <Node> string_concat prim_expr postfix_expr unary_expr mul_expr add_expr
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
 %type <Node> land_expr lor_expr assign_expr expr statement statement_list
+%type <Node> prim_type type
 
 /* Lista dei token affetti da regole di precedenza
  */
@@ -680,15 +686,15 @@ void.seps.opt:
 
 %%
 
-void.sep:
-  ','
-| TOK_NEWLINE
-;
+void_sep:
+    ','
+  | TOK_NEWLINE
+  ;
 
 sep:
-  void.sep
-| ';'
-;
+    void_sep
+  | ';'
+  ;
 
 /******************************** OPERATORS ********************************/
 un_op:
@@ -747,12 +753,34 @@ assign_op:
   | TOK_ABOR                  {$$ = ASTBINOP_ABOR;}
   ;
 
+/******************************* STRUCTURES ********************************/
+expr_sep:
+    expr void_sep                {}
+  | sep_expr void_sep            {}
+  ;
+
+sep_expr:
+    sep expr                     {}
+  | expr_sep expr                {}
+  ;
+
+struc_expr:
+    expr_sep                     {$$ = $1;}
+  | sep_expr                     {$$ = $1;}
+  ;
+
 /******************************* ARITHMETICS *******************************/
+string_concat:
+    TOK_STRING                   {$$ = $1;}
+  | string_concat TOK_STRING     {$$ = AstNodeString_Concat($1, $2);}
+  ;
+
 prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
-  | TOK_STRING                   {$$ = $1;}
+  | string_concat                {$$ = $1;}
   | TOK_IDENTIFIER               {$$ = AstNodeVar_New($1, 0); BoxMem_Free($1);}
-  | '(' expr ')'                 {$$ = $2;}
+  | '(' expr ')'                 {$$ = $2; printf("just (x)\n");}
+  | '(' struc_expr ')'           {$$ = $2; printf("structure! (x,)\n");}
   ;
 
 postfix_expr:
@@ -760,6 +788,7 @@ postfix_expr:
   | postfix_expr '(' expr ')'    {$$ = AstNodeArrayGet_New($1, $3);}
   | postfix_expr
           '[' statement_list ']' {$$ = AstNodeBox_Set_Parent($3, $1);}
+  | type  '[' statement_list ']' {$$ = AstNodeBox_Set_Parent($3, $1);}
   | postfix_expr
               '.' TOK_IDENTIFIER {$$ = AstNodeMemberGet_New($1, $3, 0);
                                   BoxMem_Free($3);}
@@ -835,6 +864,14 @@ expr:
 
 /***************************** TYPE ARITHMETICS ****************************/
 
+prim_type:
+    TOK_TYPE_IDENT               {$$ = AstNodeTypeName_New($1, 0);
+                                  BoxMem_Free($1);}
+  ;
+
+type:
+    prim_type                    {$$ = $1;}
+  ;
 
 
  /*************DEFINIZIONE DELLA STRUTTURA GENERICA DEI PROGRAMMI**************/

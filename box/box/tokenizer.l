@@ -265,16 +265,8 @@ include BEGIN(include);
 
  /* Nome di variabile */
 {UNAME} {
-//   Name nm = {yyleng, yytext};
-//   yylval.Nm = nm;
-  return TOK_UNAME;
- }
-
- /* Membro di struttura */
-[.]{UNAME} {
-//   yylval.Nm.text = yytext + 1;
-//   yylval.Nm.length = yyleng - 1;
-  return TOK_UMEMBER;
+  yylval.String = BoxMem_Strndup(yytext, yyleng);
+  return TOK_TYPE_IDENT;
  }
 
  /* Tutto il resto viene passato cosi' com'e' carattere per carattere al parser

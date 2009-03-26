@@ -92,6 +92,28 @@ char *BoxMem_Strndup(const char *s, size_t length) {
   return NULL;
 }
 
+char *BoxMem_Str_Merge_With_Len(const char *str1, size_t l1,
+                                const char *str2, size_t l2) {
+  size_t l;
+  char *s;
+  int ok1 = BoxMem_x_Plus_y(& l, l1, l2),
+      ok2 = BoxMem_x_Plus_y(& l, l, 1);
+  if (ok1 && ok2) {
+    s = BoxMem_Alloc(l*sizeof(char));
+    if (l1 > 0) memcpy(s, str1, l1);
+    if (l2 > 0) memcpy(s + l1, str2, l2);
+    s[l] = '\0';
+    return s;
+  }
+  BoxMem_Exit("BoxMem_Str_Merge_With_Len: integer overflow.");
+  return NULL;
+}
+
+char *BoxMem_Str_Merge(const char *str1, const char *str2) {
+  size_t l1 = strlen(str1), l2 = strlen(str2);
+  return BoxMem_Str_Merge_With_Len(str1, l1, str2, l2);
+}
+
 void BoxMem_Exit(const char *msg) {
   MSG_FATAL("BoxMem_Exit: %s", msg);
   exit(EXIT_FAILURE);

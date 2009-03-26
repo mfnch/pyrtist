@@ -44,6 +44,18 @@ char *BoxMem_Strdup(const char *s);
 
 char *BoxMem_Strndup(const char *s, size_t length);
 
+/** Merge the first l1 characters of str1 with the first l2 characters of str2
+ * and return a NUL terminated string made by the concatenation of the two
+ * parts.
+ */
+char *BoxMem_Str_Merge_With_Len(const char *str1, size_t l1,
+                                const char *str2, size_t l2);
+
+/** Merge two strings by callng BoxMem_Str_Merge_With_Len and using strlen to
+ * get the lengths of the two strings (wh)
+ */
+char *BoxMem_Str_Merge(const char *str1, const char *str2);
+
 void BoxMem_Exit(const char *msg);
 
 /** Executes *r = a*x, returning 0 in case of integer overflow, 1 otherwise. */
