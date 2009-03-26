@@ -358,11 +358,38 @@ AstNode *AstNodeMember_New(AstNode *name, AstNode *expr) {
   return node;
 }
 
-AstNode *AstNodeStruc_New(void) {
-  AstNode *node = AstNode_New(ASTNODETYPE_STRUC);
-  node->attr.struc.first_member = NULL;
-  node->attr.struc.last_member = NULL;
+AstNode *AstNodeStruc_New(AstNode *first_name, AstNode *first_expr) {
+  AstNode *first_member = NULL, *node;
+  assert(!(first_name != NULL && first_expr == NULL));
+  if (first_expr != NULL)
+    first_member = AstNodeMember_New(first_name, first_expr);
+
+  node = AstNode_New(ASTNODETYPE_STRUC);
+  node->attr.struc.first_member = first_member;
+  node->attr.struc.last_member = first_member;
   return node;
+}
+
+AstNode *AstNodeStruc_Add_Member(AstNode *struc,
+                                 AstNode *this_name, AstNode *this_expr) {
+  AstNode *this_member = NULL;
+  assert(struc->type == ASTNODETYPE_STRUC);
+  assert(!(this_name != NULL && this_expr == NULL));
+  if (this_expr == NULL) return struc;
+
+  this_member = AstNodeMember_New(this_name, this_expr);
+  if (struc->attr.struc.last_member == NULL) {
+    assert(struc->attr.struc.first_member == NULL);
+    struc->attr.struc.first_member = this_member;
+    struc->attr.struc.last_member = this_member;
+    return struc;
+
+  } else {
+    AstNode *last_member = struc->attr.struc.last_member;
+    last_member->attr.member.next = this_member;
+    struc->attr.struc.last_member = this_member;
+  }
+  return struc;
 }
 
 AstNode *AstNodeArrayGet_New(AstNode *array, AstNode *index) {

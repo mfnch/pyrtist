@@ -619,10 +619,6 @@ void.seps.opt:
 | void.seps
 ;
 
-void_seps:
-    void_sep
-  | void_seps void_sep
-  ;
 #endif
 
 %}
@@ -672,7 +668,7 @@ void_seps:
 %type <Node> string_concat prim_expr postfix_expr unary_expr mul_expr add_expr
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
 %type <Node> land_expr lor_expr assign_expr expr statement statement_list
-%type <Node> prim_type type
+%type <Node> member_type type_sep sep_type struc_type prim_type type
 
 /* Lista dei token affetti da regole di precedenza
  */
@@ -689,6 +685,11 @@ void_seps:
 void_sep:
     ','
   | TOK_NEWLINE
+  ;
+
+void_seps:
+    void_sep
+  | void_seps void_sep
   ;
 
 sep:
@@ -755,13 +756,13 @@ assign_op:
 
 /******************************* STRUCTURES ********************************/
 expr_sep:
-    expr void_sep                {}
-  | sep_expr void_sep            {}
+    expr void_seps               {$$ = AstNodeStruc_New(NULL, $1);}
+  | sep_expr void_seps           {$$ = $1;}
   ;
 
 sep_expr:
-    sep expr                     {}
-  | expr_sep expr                {}
+    void_seps expr               {$$ = AstNodeStruc_New(NULL, $2);}
+  | expr_sep expr                {$$ = AstNodeStruc_Add_Member($1, NULL, $2);}
   ;
 
 struc_expr:
@@ -779,8 +780,8 @@ prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
   | string_concat                {$$ = $1;}
   | TOK_IDENTIFIER               {$$ = AstNodeVar_New($1, 0); BoxMem_Free($1);}
-  | '(' expr ')'                 {$$ = $2; printf("just (x)\n");}
-  | '(' struc_expr ')'           {$$ = $2; printf("structure! (x,)\n");}
+  | '(' expr ')'                 {$$ = $2;}
+  | '(' struc_expr ')'           {$$ = $2;}
   ;
 
 postfix_expr:
@@ -864,18 +865,39 @@ expr:
 
 /***************************** TYPE ARITHMETICS ****************************/
 
+member_type:
+    type                         {}
+  | type TOK_IDENTIFIER          {}
+  ;
+
+type_sep:
+    member_type void_seps        {$$ = $1;}
+  | sep_type void_seps           {$$ = $1;}
+  ;
+
+sep_type:
+    void_seps member_type        {$$ = $2;}
+  | type_sep member_type         {$$ = $1;}
+  ;
+
+struc_type:
+    type_sep                     {$$ = $1;}
+  | sep_type                     {$$ = $1;}
+  ;
+
 prim_type:
     TOK_TYPE_IDENT               {$$ = AstNodeTypeName_New($1, 0);
                                   BoxMem_Free($1);}
+  | '(' type ')'                 {$$ = $2;}
+  | '(' struc_type ')'           {$$ = $2;}
   ;
 
 type:
     prim_type                    {$$ = $1;}
   ;
 
-
- /*************DEFINIZIONE DELLA STRUTTURA GENERICA DEI PROGRAMMI**************/
- /* Cio' che resta descrive la sintassi delle righe e del corpo del programma */
+/************************ STATEMENT LISTS AND BOXES ************************/
+/* Cio' che resta descrive la sintassi delle righe e del corpo del programma */
 statement:
                                  {$$ = NULL;}
   | expr                         {$$ = AstNodeStatement_New($1);}

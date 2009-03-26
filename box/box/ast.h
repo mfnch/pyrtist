@@ -242,7 +242,9 @@ AstNode *AstNodeVar_New(const char *name, size_t name_len);
 AstNode *AstNodeUnOp_New(AstUnOp op, AstNode *expr);
 AstNode *AstNodeBinOp_New(AstBinOp op, AstNode *left, AstNode *right);
 AstNode *AstNodeMember_New(AstNode *name, AstNode *expr);
-AstNode *AstNodeStruc_New(void);
+AstNode *AstNodeStruc_New(AstNode *first_name, AstNode *first_expr);
+AstNode *AstNodeStruc_Add_Member(AstNode *struc,
+                                 AstNode *this_name, AstNode *this_expr);
 AstNode *AstNodeArrayGet_New(AstNode *array, AstNode *index);
 AstNode *AstNodeMemberGet_New(AstNode *struc,
                               const char *member, int member_len);
