@@ -668,7 +668,8 @@ void.seps.opt:
 %type <Node> string_concat prim_expr postfix_expr unary_expr mul_expr add_expr
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
 %type <Node> land_expr lor_expr assign_expr expr statement statement_list
-%type <Node> member_type type_sep sep_type struc_type prim_type type
+%type <Node> struc_type_1st struc_type_2nd type_sep sep_type struc_type
+%type <Node> prim_type array_type type
 
 /* Lista dei token affetti da regole di precedenza
  */
@@ -865,25 +866,34 @@ expr:
 
 /***************************** TYPE ARITHMETICS ****************************/
 
-member_type:
+/* STRUCTURE TYPES */
+struc_type_1st:
     type                         {}
   | type TOK_IDENTIFIER          {}
   ;
 
+struc_type_2nd:
+    type                         {}
+  | TOK_IDENTIFIER               {}
+  | type TOK_IDENTIFIER          {}
+  ;
+
 type_sep:
-    member_type void_seps        {$$ = $1;}
+    struc_type_1st void_seps     {$$ = $1;}
   | sep_type void_seps           {$$ = $1;}
   ;
 
 sep_type:
-    void_seps member_type        {$$ = $2;}
-  | type_sep member_type         {$$ = $1;}
+    void_seps struc_type_1st     {$$ = $2;}
+  | type_sep struc_type_2nd      {$$ = $1;}
   ;
 
 struc_type:
     type_sep                     {$$ = $1;}
   | sep_type                     {$$ = $1;}
   ;
+
+/* PRIMARY TYPES */
 
 prim_type:
     TOK_TYPE_IDENT               {$$ = AstNodeTypeName_New($1, 0);
@@ -892,8 +902,13 @@ prim_type:
   | '(' struc_type ')'           {$$ = $2;}
   ;
 
+array_type:
+    prim_type                    {}
+  | '(' expr ')' array_type      {}
+  ;
+
 type:
-    prim_type                    {$$ = $1;}
+    array_type                   {$$ = $1;}
   ;
 
 /************************ STATEMENT LISTS AND BOXES ************************/
