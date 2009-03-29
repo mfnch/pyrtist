@@ -57,6 +57,9 @@
 #include "expr.h"
 #include "container.h"
 
+#include "new_compiler.h"
+#include "ast.h"
+
 /******************************************************************************/
 
 /* The main compiler data structure */
@@ -94,12 +97,15 @@ Task Cmp_Init(VMProgram *program) {
   BoxArr_Init(& cmp->struc.data, sizeof(char), CMP_TYPICAL_STRUC_SIZE);
 
   Msg_Line_Set((Int) 1);
+
+  BoxCmp_Init(& cmp->new_compiler);
   return Success;
 }
 
 
 Task Cmp_Parse(const char *file) {
-  int parse_status;
+  ASTNode *program_node;
+
   Box_Init(); /* Init the box stack */
   TASK( Box_Main_Begin() ); /* Create the main box */
 
@@ -107,14 +113,23 @@ Task Cmp_Parse(const char *file) {
   cmp->struc.type = TYPE_NONE;
 
   TASK( Builtins_Init() ); /* Add builtin stuff */
+
+
+  program_node = Parser_Parse(NULL, file);
+  BoxCmp_Compile(& cmp->new_compiler, program_node);
+
+
+#if 0
   TASK( Parser_Init(file) ); /* Prepare the parser */
   parse_status = yyparse(); /* Parse the file */
   Parser_Finish(); /* Finalize parsing */
+#endif
+
   Box_Main_End(); /* Close the main box */
   Box_Destroy(); /* Destroy the stack of boxes */
   Builtins_Destroy(); /* Finalises builtins stuff */
   Msg_Line_Set(MSG_UNDEF_LINE); /* Remove line numbers from error messages */
-  return (parse_status != 0) ? Failed : Success;
+  return Success;
 }
 
 void Cmp_Destroy(void) {
@@ -123,6 +138,7 @@ void Cmp_Destroy(void) {
 
   BoxArr_Finish(& cmp->imm_segment);
   BoxArr_Finish(& cmp->allocd_oprs);
+  BoxCmp_Finish(& cmp->new_compiler);
   BoxMem_Free(cmp);
 }
 

@@ -64,17 +64,27 @@ typedef struct {
   YY_BUFFER_STATE buffer;
 } TokIncludeData;
 
-/* Variabili gestite in questo file */
-UInt tok_linenum = 1;
-static UInt tok_cur_include_level = 1, tok_max_include_level;
-static BoxArr tok_include_list;
-static BoxHT provided_features;
+/** Structure defining the complete state of the scanner */
+typedef struct {
+  int is_initialised;
+  UInt line_num,
+       include_level,
+       max_include_level;
+  BoxArr include_list;
+  BoxHT provided_features;
+} TokState;
+
+/** The state of the scanner */
+static TokState state = {0};
 
 static int Tok_Provided(const char *feature, int length) {
+  assert(state.is_initialised);
+
   BoxHTItem *item;
-  if (BoxHT_Find(& provided_features, (void *) feature, length, & item))
+  if (BoxHT_Find(& state.provided_features,
+                 (void *) feature, length, & item))
     return 1;
-  BoxHT_Insert(& provided_features, (void *) feature, length);
+  BoxHT_Insert(& state.provided_features, (void *) feature, length);
   return 0;
 }
 
@@ -129,8 +139,8 @@ include BEGIN(include);
  /* Il carattere di continuazione riga mangia tutto ci che segue
   * fino alla nuova riga e annulla il carattere newline
   */
-"_"{SPACES}"\n"       {++tok_linenum;}
-"_"{SPACES}"'"[^\n]*"\n"  {++tok_linenum;}
+"_"{SPACES}"\n"       {++state.line_num;}
+"_"{SPACES}"'"[^\n]*"\n"  {++state.line_num;}
 
  /* Scarta i commenti (i commenti iniziano col carattere '
   * e terminano alla fine della riga; per commenti su piu' righe
@@ -204,12 +214,12 @@ include BEGIN(include);
 
  /* Number of type Char */
 [']([^'\n]|\\')+['] {
-  AstConst c;
+  ASTConst c;
   if (Str_ToChar(yytext+1, yyleng-2, (char *) & c.c) == BoxFailure) {
-    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_CHAR, c);
-    AstNode_Set_Error(yylval.Node);
+    yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_CHAR, c);
+    ASTNode_Set_Error(yylval.Node);
   } else
-    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_CHAR, c);
+    yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_CHAR, c);
   return TOK_CONSTANT;
  }
 
@@ -220,40 +230,40 @@ include BEGIN(include);
 
  /* Integer number */
 {DIGIT}+ {
-  AstConst c;
+  ASTConst c;
   if (Str_ToInt(yytext, yyleng, & c.i) == BoxFailure) {
-    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_INT, c);
-    AstNode_Set_Error(yylval.Node);
+    yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_INT, c);
+    ASTNode_Set_Error(yylval.Node);
   } else
-    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_INT, c);
+    yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_INT, c);
   return TOK_CONSTANT;
  }
 
  /* Integer number in hexadecimal notation */
 [0][xX]{HEXDIGIT}+ {
-  AstConst c;
+  ASTConst c;
   if (Str_Hex_To_Int(yytext+2, yyleng-2, & c.i) == BoxFailure) {
-    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_INT, c);
-    AstNode_Set_Error(yylval.Node);
+    yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_INT, c);
+    ASTNode_Set_Error(yylval.Node);
   } else
-    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_INT, c);
+    yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_INT, c);
   return TOK_CONSTANT;
  }
 
  /* Floating point number */
 {DIGIT}+("."{DIGIT}+)?([eE][+-]?{DIGIT}+)? {
-  AstConst c;
+  ASTConst c;
   if (Str_ToReal(yytext, yyleng, & c.r) == BoxFailure) {
-    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_REAL, c);
-    AstNode_Set_Error(yylval.Node);
+    yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_REAL, c);
+    ASTNode_Set_Error(yylval.Node);
   } else
-    yylval.Node = AstNodeConst_New(ASTCONSTTYPE_REAL, c);
+    yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_REAL, c);
   return TOK_CONSTANT;
  }
 
  /* String */
 ["]([^"\n]|\\\")*["] {
-  yylval.Node = AstNodeString_New(yytext + 1, yyleng - 2);
+  yylval.Node = ASTNodeString_New(yytext + 1, yyleng - 2);
   return TOK_STRING;
  }
 
@@ -282,21 +292,23 @@ include BEGIN(include);
  *  maxinc indica il numero massimo di file di include che possono essere
  *  aperti contemporaneamente.
  */
-Task Tok_Init(UInt maxinc, const char *f) {
-  tok_max_include_level = maxinc;
+Task Tok_Init(FILE *in, const char *f) {
+  assert(!state.is_initialised);
 
-  /* La seguente variabile indica quanti file, aperti con include "nomefile",
-   * non sono ancora stati chiusi
-   */
-  tok_cur_include_level = 0;
+  state.is_initialised = 1;
+  state.line_num = 1;
+  state.max_include_level = TOK_MAX_INCLUDE;
+
+  /* Number of files opened through the include directive */
+  state.include_level = 0;
 
   /* Creo una lista dove salvare i buffer, ogni qual volta
    * incontro una include
    */
-  BoxArr_Init(& tok_include_list, sizeof(TokIncludeData),
+  BoxArr_Init(& state.include_list, sizeof(TokIncludeData),
               TOK_TYPICAL_MAX_INCLUDE);
 
-  BoxHT_Init_Default(& provided_features, 64);
+  BoxHT_Init_Default(& state.provided_features, 64);
 
   /* Se f == "nomefile" (e quindi f != NULL), eseguo una:
    * include "nomefile"
@@ -309,8 +321,11 @@ Task Tok_Init(UInt maxinc, const char *f) {
 /* DESCRIZIONE: Conclude l'analisi lessicale del compilatore.
  */
 void Tok_Finish(void) {
-  BoxHT_Finish(& provided_features);
-  BoxArr_Finish(& tok_include_list);
+  assert(state.is_initialised);
+
+  BoxHT_Finish(& state.provided_features);
+  BoxArr_Finish(& state.include_list);
+  state.is_initialised = 0;
 }
 
 /* DESCRIZIONE: Esegue materialmente la direttiva include,
@@ -322,7 +337,9 @@ Task Tok_Include_Begin(const char *f) {
   FILE *incfile;
   TokIncludeData cur;
 
-  if (tok_cur_include_level >= tok_max_include_level) {
+  assert(state.is_initialised);
+
+  if (state.include_level >= state.max_include_level) {
     MSG_ERROR("Cannot include \"%s\": too many file included!", f);
     return Failed;
   }
@@ -334,16 +351,16 @@ Task Tok_Include_Begin(const char *f) {
     return Failed;
   }
 
-  cur.linenum = tok_linenum;
+  cur.linenum = state.line_num;
   cur.msgcontext = 0; /*Msg_Context_Num(); TODO ??? */
   cur.num_errs = MSG_GT_ERRORS;
   cur.num_warns = MSG_NUM_WARNINGS;
   cur.buffer = YY_CURRENT_BUFFER;
-  BoxArr_Push(& tok_include_list, & cur);
+  BoxArr_Push(& state.include_list, & cur);
 
-  ++tok_cur_include_level;
+  ++state.include_level;
 
-  tok_linenum = 1;
+  state.line_num = 1;
   yy_switch_to_buffer(yy_create_buffer((yyin = incfile), YY_BUF_SIZE));
 
   MSG_CONTEXT_BEGIN("Entering the included file \"%s\"", f);
@@ -355,19 +372,21 @@ Task Tok_Include_Begin(const char *f) {
  *  la lettura dall'istruzione seguente la "include".
  */
 UInt Tok_Include_End(void) {
-  if ( tok_cur_include_level > 0 ) {
+  assert(state.is_initialised);
+
+  if (state.include_level > 0) {
     TokIncludeData cur;
     UInt num_errs, num_warns;
 
     /* Cancella il buffer corrente */
     yy_delete_buffer( YY_CURRENT_BUFFER );
     /* Imposta il nuovo buffer all'ultimo inserito nello "stack" */
-    cur = *((TokIncludeData *) BoxArr_Last_Item_Ptr(& tok_include_list));
-    tok_linenum = cur.linenum;
+    cur = *((TokIncludeData *) BoxArr_Last_Item_Ptr(& state.include_list));
+    state.line_num = cur.linenum;
     yy_switch_to_buffer(cur.buffer);
     /* Cancella l'ultimo elemento dello stack */
-    BoxArr_Pop(& tok_include_list, NULL);
-    --tok_cur_include_level;
+    BoxArr_Pop(& state.include_list, NULL);
+    --state.include_level;
     /* Calcolo il numero di errori nel file incluso (+tutti i sotto-inclusi!) */
     num_errs = MSG_GT_ERRORS - cur.num_errs;
     num_warns = MSG_NUM_WARNINGS - cur.num_warns;

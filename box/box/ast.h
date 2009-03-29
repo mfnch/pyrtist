@@ -32,7 +32,7 @@
 
 #  define AST_MAX_NUM_SUBNODES 3
 
-typedef struct __AstNode AstNode;
+typedef struct __ASTNode ASTNode;
 
 /** Possible types of nodes in the AST */
 typedef enum {
@@ -50,21 +50,21 @@ typedef enum {
   ASTNODETYPE_STRUC,
   ASTNODETYPE_ARRAYGET,
   ASTNODETYPE_MEMBERGET
-} AstNodeType;
+} ASTNodeType;
 
 /** Type of constants */
 typedef enum {
   ASTCONSTTYPE_CHAR,
   ASTCONSTTYPE_INT,
   ASTCONSTTYPE_REAL
-} AstConstType;
+} ASTConstType;
 
 /** Union large enough to contain a value of any constant type */
 typedef union {
   Char c;
   Int  i;
   Real r;
-} AstConst;
+} ASTConst;
 
 /** Unary operators */
 typedef enum {
@@ -76,7 +76,7 @@ typedef enum {
   ASTUNOP_RDEC,
   ASTUNOP_NOT,
   ASTUNOP_BNOT
-} AstUnOp;
+} ASTUnOp;
 
 /** Binary operators */
 typedef enum {
@@ -109,7 +109,7 @@ typedef enum {
   ASTBINOP_ABAND,
   ASTBINOP_ABXOR,
   ASTBINOP_ABOR
-} AstBinOp;
+} ASTBinOp;
 
 /* Each of the following structures corresponds to a possible node in the AST
    and contains the characteristics attribute for that node type.
@@ -118,135 +118,136 @@ typedef enum {
 /** Node for a type name */
 typedef struct {
   char    *name;
-  AstNode *scope;
-} AstNodeTypeName;
+  ASTNode *scope;
+} ASTNodeTypeName;
 
 /** Node for a subtype */
 typedef struct {
   char    *name;
-  AstNode *scope;
-} AstNodeSubtype;
+  ASTNode *scope;
+} ASTNodeSubtype;
 
 /** Node for a Box: which is a list of statements */
 typedef struct {
-  AstNode *parent;
-  AstNode *first_statement;
-  AstNode *last_statement;
-} AstNodeBox;
+  ASTNode *parent;
+  ASTNode *first_statement;
+  ASTNode *last_statement;
+} ASTNodeBox;
 
 /** Node for a statement */
 typedef struct {
-  AstNode *expression;
-  AstNode *next_statement;
-} AstNodeStatement;
+  ASTNode *target;
+  ASTNode *next_statement;
+} ASTNodeStatement;
 
 /** Node for a constant expression */
 typedef struct {
-  AstConstType type;
-  AstConst     value;
-} AstNodeConst;
+  ASTConstType type;
+  ASTConst     value;
+} ASTNodeConst;
 
 /** Node for a string */
 typedef struct {
   char    *str;
-} AstNodeString;
+} ASTNodeString;
 
 /** Node for a variable */
 typedef struct {
   char    *name;
-  AstNode *scope;
-} AstNodeVar;
+  ASTNode *scope;
+} ASTNodeVar;
 
 /** Node for a unary operation */
 typedef struct {
-  AstUnOp  operation;
-  AstNode  *expr;
-} AstNodeUnOp;
+  ASTUnOp  operation;
+  ASTNode  *expr;
+} ASTNodeUnOp;
 
 /** Node for a binary operation */
 typedef struct {
-  AstBinOp operation;
-  AstNode  *left;
-  AstNode  *right;
-} AstNodeBinOp;
+  ASTBinOp operation;
+  ASTNode  *left;
+  ASTNode  *right;
+} ASTNodeBinOp;
 
 /** Node for one structure member */
 typedef struct {
-  AstNode  *name,
+  ASTNode  *name,
            *expr,
            *next;
-} AstNodeMember;
+} ASTNodeMember;
 
 /** Node for a structure */
 typedef struct {
-  AstNode  *first_member;
-  AstNode  *last_member;
-} AstNodeStruc;
+  ASTNode  *first_member;
+  ASTNode  *last_member;
+} ASTNodeStruc;
 
 /** Node for an array */
 typedef struct {
-  AstNode  *array;
-  AstNode  *index;
-} AstNodeArrayGet;
+  ASTNode  *array;
+  ASTNode  *index;
+} ASTNodeArrayGet;
 
 /** Node for an array */
 typedef struct {
-  AstNode  *struc;
+  ASTNode  *struc;
   char     *member;
-} AstNodeMemberGet;
+} ASTNodeMemberGet;
 
 /** Node finaliser (used only for few nodes) */
-typedef void (*AstNodeFinaliser)(AstNode *node);
+typedef void (*ASTNodeFinaliser)(ASTNode *node);
 
 /** Structure describing one node in the AST */
-struct __AstNode {
-  AstNodeType        type;
-  AstNodeFinaliser   finaliser;
+struct __ASTNode {
+  ASTNodeType        type;
+  ASTNodeFinaliser   finaliser;
   union {
-    AstNodeTypeName  typenm;
-    AstNodeSubtype   subtype;
-    AstNodeBox       box;
-    AstNodeStatement statement;
-    AstNodeConst     constant;
-    AstNodeString    string;
-    AstNodeUnOp      un_op;
-    AstNodeBinOp     bin_op;
-    AstNodeVar       var;
-    AstNodeMember    member;
-    AstNodeStruc     struc;
-    AstNodeArrayGet  array_get;
-    AstNodeMemberGet member_get;
+    ASTNodeTypeName  typenm;
+    ASTNodeSubtype   subtype;
+    ASTNodeBox       box;
+    ASTNodeStatement statement;
+    ASTNodeConst     constant;
+    ASTNodeString    string;
+    ASTNodeUnOp      un_op;
+    ASTNodeBinOp     bin_op;
+    ASTNodeVar       var;
+    ASTNodeMember    member;
+    ASTNodeStruc     struc;
+    ASTNodeArrayGet  array_get;
+    ASTNodeMemberGet member_get;
   } attr;
 };
 
-typedef AstNode *AstNodePtr;
+typedef ASTNode *ASTNodePtr;
 
-int AstNode_Get_Subnodes(AstNode *node,
-                         AstNode **subnodes[AST_MAX_NUM_SUBNODES]);
-const char *AstNodeType_To_Str(AstNodeType t);
-AstNode *AstNode_New(AstNodeType t);
-void AstNode_Destroy(AstNode *node);
-void AstNode_Set_Error(AstNode *node);
-void AstNode_Print(FILE *out, AstNode *node);
+int ASTNode_Get_Subnodes(ASTNode *node,
+                         ASTNode **subnodes[AST_MAX_NUM_SUBNODES]);
+const char *ASTNodeType_To_Str(ASTNodeType t);
+ASTNode *ASTNode_New(ASTNodeType t);
+void ASTNode_Destroy(ASTNode *node);
+void ASTNode_Set_Error(ASTNode *node);
+void ASTNode_Print(FILE *out, ASTNode *node);
 
-AstNode *AstNodeError_New(void);
-AstNode *AstNodeTypeName_New(const char *name, size_t name_len);
-AstNode *AstNodeSubtype_New(const char *name, size_t name_len);
-AstNode *AstNodeStatement_New(AstNode *expr);
-AstNode *AstNodeBox_New(AstNode *type, AstNode *first_statement);
-AstNode *AstNodeBox_Add_Statement(AstNode *box, AstNode *statement);
-AstNode *AstNodeBox_Set_Parent(AstNode *box, AstNode *parent);
-AstNode *AstNodeConst_New(AstConstType t, AstConst c);
-AstNode *AstNodeString_New(const char *str, size_t str_len);
-AstNode *AstNodeVar_New(const char *name, size_t name_len);
-AstNode *AstNodeUnOp_New(AstUnOp op, AstNode *expr);
-AstNode *AstNodeBinOp_New(AstBinOp op, AstNode *left, AstNode *right);
-AstNode *AstNodeMember_New(AstNode *name, AstNode *expr);
-AstNode *AstNodeStruc_New(AstNode *first_name, AstNode *first_expr);
-AstNode *AstNodeStruc_Add_Member(AstNode *struc,
-                                 AstNode *this_name, AstNode *this_expr);
-AstNode *AstNodeArrayGet_New(AstNode *array, AstNode *index);
-AstNode *AstNodeMemberGet_New(AstNode *struc,
+ASTNode *ASTNodeError_New(void);
+ASTNode *ASTNodeTypeName_New(const char *name, size_t name_len);
+ASTNode *ASTNodeSubtype_New(const char *name, size_t name_len);
+ASTNode *ASTNodeStatement_New(ASTNode *target);
+ASTNode *ASTNodeBox_New(ASTNode *type, ASTNode *first_statement);
+ASTNode *ASTNodeBox_Add_Statement(ASTNode *box, ASTNode *statement);
+ASTNode *ASTNodeBox_Set_Parent(ASTNode *box, ASTNode *parent);
+ASTNode *ASTNodeConst_New(ASTConstType t, ASTConst c);
+ASTNode *ASTNodeString_New(const char *str, size_t str_len);
+ASTNode *ASTNodeString_Concat(ASTNode *str1, ASTNode *str2);
+ASTNode *ASTNodeVar_New(const char *name, size_t name_len);
+ASTNode *ASTNodeUnOp_New(ASTUnOp op, ASTNode *expr);
+ASTNode *ASTNodeBinOp_New(ASTBinOp op, ASTNode *left, ASTNode *right);
+ASTNode *ASTNodeMember_New(ASTNode *name, ASTNode *expr);
+ASTNode *ASTNodeStruc_New(ASTNode *first_name, ASTNode *first_expr);
+ASTNode *ASTNodeStruc_Add_Member(ASTNode *struc,
+                                 ASTNode *this_name, ASTNode *this_expr);
+ASTNode *ASTNodeArrayGet_New(ASTNode *array, ASTNode *index);
+ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
                               const char *member, int member_len);
 
 #endif /* _AST_H */

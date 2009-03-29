@@ -30,9 +30,14 @@
 #include "types.h"
 #include "defaults.h"
 #include "mem.h"
-#include "ast.h"
 #include "messages.h"
+#include "tokenizer.h"
+#include "ast.h"
 
+static ASTNode *program_node = NULL;
+
+int yyparse(void);
+int yylex(void);
 void yyerror(char *s);
 
 #if 0
@@ -44,7 +49,6 @@ void yyerror(char *s);
 #include "expr.h"
 #include "compiler.h"
 #include "box.h"
-#include "tokenizer.h"
 #include "builtins.h"
 
 #define YYDEBUG 0
@@ -626,9 +630,9 @@ void.seps.opt:
 /* Possible types for the nodes of the tree */
 %union {
   char *     String;
-  AstUnOp    UnaryOperator;
-  AstBinOp   BinaryOperator;
-  AstNodePtr Node;
+  ASTUnOp    UnaryOperator;
+  ASTBinOp   BinaryOperator;
+  ASTNodePtr Node;
 }
 
 /* Lista dei token senza valore semantico
@@ -669,7 +673,7 @@ void.seps.opt:
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
 %type <Node> land_expr lor_expr assign_expr expr statement statement_list
 %type <Node> struc_type_1st struc_type_2nd type_sep sep_type struc_type
-%type <Node> prim_type array_type type
+%type <Node> prim_type array_type type assign_type
 
 /* Lista dei token affetti da regole di precedenza
  */
@@ -757,13 +761,13 @@ assign_op:
 
 /******************************* STRUCTURES ********************************/
 expr_sep:
-    expr void_seps               {$$ = AstNodeStruc_New(NULL, $1);}
+    expr void_seps               {$$ = ASTNodeStruc_New(NULL, $1);}
   | sep_expr void_seps           {$$ = $1;}
   ;
 
 sep_expr:
-    void_seps expr               {$$ = AstNodeStruc_New(NULL, $2);}
-  | expr_sep expr                {$$ = AstNodeStruc_Add_Member($1, NULL, $2);}
+    void_seps expr               {$$ = ASTNodeStruc_New(NULL, $2);}
+  | expr_sep expr                {$$ = ASTNodeStruc_Add_Member($1, NULL, $2);}
   ;
 
 struc_expr:
@@ -774,90 +778,90 @@ struc_expr:
 /******************************* ARITHMETICS *******************************/
 string_concat:
     TOK_STRING                   {$$ = $1;}
-  | string_concat TOK_STRING     {$$ = AstNodeString_Concat($1, $2);}
+  | string_concat TOK_STRING     {$$ = ASTNodeString_Concat($1, $2);}
   ;
 
 prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
   | string_concat                {$$ = $1;}
-  | TOK_IDENTIFIER               {$$ = AstNodeVar_New($1, 0); BoxMem_Free($1);}
+  | TOK_IDENTIFIER               {$$ = ASTNodeVar_New($1, 0); BoxMem_Free($1);}
   | '(' expr ')'                 {$$ = $2;}
   | '(' struc_expr ')'           {$$ = $2;}
   ;
 
 postfix_expr:
     prim_expr                    {$$ = $1;}
-  | postfix_expr '(' expr ')'    {$$ = AstNodeArrayGet_New($1, $3);}
+  | postfix_expr '(' expr ')'    {$$ = ASTNodeArrayGet_New($1, $3);}
   | postfix_expr
-          '[' statement_list ']' {$$ = AstNodeBox_Set_Parent($3, $1);}
-  | type  '[' statement_list ']' {$$ = AstNodeBox_Set_Parent($3, $1);}
+          '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1);}
+  | type  '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1);}
   | postfix_expr
-              '.' TOK_IDENTIFIER {$$ = AstNodeMemberGet_New($1, $3, 0);
+              '.' TOK_IDENTIFIER {$$ = ASTNodeMemberGet_New($1, $3, 0);
                                   BoxMem_Free($3);}
-  | '.' TOK_IDENTIFIER           {$$ = AstNodeMemberGet_New(NULL, $2, 0);
+  | '.' TOK_IDENTIFIER           {$$ = ASTNodeMemberGet_New(NULL, $2, 0);
                                   BoxMem_Free($2);}
-  | postfix_expr post_op         {$$ = AstNodeUnOp_New($2, $1);}
+  | postfix_expr post_op         {$$ = ASTNodeUnOp_New($2, $1);}
   ;
 
 unary_expr:
     postfix_expr                 {$$ = $1;}
-  | un_op unary_expr             {$$ = AstNodeUnOp_New($1, $2);}
+  | un_op unary_expr             {$$ = ASTNodeUnOp_New($1, $2);}
   ;
 
 mul_expr:
     unary_expr                   {$$ = $1;}
-  | mul_expr mul_op unary_expr   {$$ = AstNodeBinOp_New($2, $1, $3);}
+  | mul_expr mul_op unary_expr   {$$ = ASTNodeBinOp_New($2, $1, $3);}
   ;
 
 add_expr:
     mul_expr                     {$$ = $1;}
-  | add_expr add_op mul_expr     {$$ = AstNodeBinOp_New($2, $1, $3);}
+  | add_expr add_op mul_expr     {$$ = ASTNodeBinOp_New($2, $1, $3);}
   ;
 
 shift_expr:
     add_expr                     {$$ = $1;}
-  | shift_expr shift_op add_expr {$$ = AstNodeBinOp_New($2, $1, $3);}
+  | shift_expr shift_op add_expr {$$ = ASTNodeBinOp_New($2, $1, $3);}
   ;
 
 cmp_expr:
     shift_expr                   {$$ = $1;}
-  | cmp_expr cmp_op shift_expr   {$$ = AstNodeBinOp_New($2, $1, $3);}
+  | cmp_expr cmp_op shift_expr   {$$ = ASTNodeBinOp_New($2, $1, $3);}
   ;
 
 eq_expr:
     cmp_expr                     {$$ = $1;}
-  | eq_expr eq_op cmp_expr       {$$ = AstNodeBinOp_New($2, $1, $3);}
+  | eq_expr eq_op cmp_expr       {$$ = ASTNodeBinOp_New($2, $1, $3);}
   ;
 
 band_expr:
     eq_expr                      {$$ = $1;}
-  | band_expr '&' eq_expr        {$$ = AstNodeBinOp_New(ASTBINOP_BAND, $1, $3);}
+  | band_expr '&' eq_expr        {$$ = ASTNodeBinOp_New(ASTBINOP_BAND, $1, $3);}
   ;
 
 bxor_expr:
     band_expr                    {$$ = $1;}
-  | bxor_expr '^' band_expr      {$$ = AstNodeBinOp_New(ASTBINOP_BXOR, $1, $3);}
+  | bxor_expr '^' band_expr      {$$ = ASTNodeBinOp_New(ASTBINOP_BXOR, $1, $3);}
   ;
 
 bor_expr:
     bxor_expr                    {$$ = $1;}
-  | bor_expr '|' bxor_expr       {$$ = AstNodeBinOp_New(ASTBINOP_BOR, $1, $3);}
+  | bor_expr '|' bxor_expr       {$$ = ASTNodeBinOp_New(ASTBINOP_BOR, $1, $3);}
   ;
 
 land_expr:
     bor_expr                     {$$ = $1;}
-  | land_expr TOK_LAND bor_expr  {$$ = AstNodeBinOp_New(ASTBINOP_LAND, $1, $3);}
+  | land_expr TOK_LAND bor_expr  {$$ = ASTNodeBinOp_New(ASTBINOP_LAND, $1, $3);}
   ;
 
 lor_expr:
     land_expr                    {$$ = $1;}
-  | lor_expr TOK_LOR land_expr   {$$ = AstNodeBinOp_New(ASTBINOP_LOR, $1, $3);}
+  | lor_expr TOK_LOR land_expr   {$$ = ASTNodeBinOp_New(ASTBINOP_LOR, $1, $3);}
   ;
 
 assign_expr:
     lor_expr                     {$$ = $1;}
   | assign_expr
-              assign_op lor_expr {$$ = AstNodeBinOp_New($2, $1, $3);}
+              assign_op lor_expr {$$ = ASTNodeBinOp_New($2, $1, $3);}
   ;
 
 expr:
@@ -896,7 +900,7 @@ struc_type:
 /* PRIMARY TYPES */
 
 prim_type:
-    TOK_TYPE_IDENT               {$$ = AstNodeTypeName_New($1, 0);
+    TOK_TYPE_IDENT               {$$ = ASTNodeTypeName_New($1, 0);
                                   BoxMem_Free($1);}
   | '(' type ')'                 {$$ = $2;}
   | '(' struc_type ')'           {$$ = $2;}
@@ -904,41 +908,46 @@ prim_type:
 
 array_type:
     prim_type                    {}
-  | '(' expr ')' array_type      {}
+  | array_type '(' expr ')'      {}
   ;
 
 type:
     array_type                   {$$ = $1;}
   ;
 
+assign_type:
+    TOK_TYPE_IDENT '=' type      {}
+  | TOK_TYPE_IDENT '='
+                     assign_type {}
+  ;
+
 /************************ STATEMENT LISTS AND BOXES ************************/
 /* Cio' che resta descrive la sintassi delle righe e del corpo del programma */
 statement:
                                  {$$ = NULL;}
-  | expr                         {$$ = AstNodeStatement_New($1);}
-  | '\\' expr                    {$$ = AstNodeStatement_New($2);}
+  | assign_type                  {$$ = ASTNodeStatement_New($1);}
+  | expr                         {$$ = ASTNodeStatement_New($1);}
+  | '\\' expr                    {$$ = ASTNodeStatement_New($2);}
   | error sep                    {MSG_ERROR("Syntax error.");
-                                  $$ = AstNodeStatement_New(AstNodeError_New());
+                                  $$ = ASTNodeStatement_New(ASTNodeError_New());
                                   Tok_Unput(',');
                                   yyerrok;}
   ;
 
 statement_list:
-    statement                    {$$ = AstNodeBox_New(NULL, $1);}
-  | statement_list sep statement {$$ = AstNodeBox_Add_Statement($1, $3);}
+    statement                    {$$ = ASTNodeBox_New(NULL, $1);}
+  | statement_list sep statement {$$ = ASTNodeBox_Add_Statement($1, $3);}
   ;
 
 program:
-    statement_list               {AstNode_Print(stdout, $1);}
+    statement_list               {program_node = $1;}
   ;
 
 %%
 
 /* error function */
-void yyerror(char* s)
-{
- /* MSG_ERROR(s);*/
-  return;
+void yyerror(char* s) {
+  MSG_ERROR("%s", s);
 }
 
 /* Inizializza il parser. Se f != NULL il compilatore partira'
@@ -953,7 +962,7 @@ Task Parser_Init(const char *f) {
   yyrestart(stdin);
 
   /* Inizializzo il tokenizer */
-  TASK( Tok_Init(TOK_MAX_INCLUDE, f) );
+  TASK( Tok_Init(NULL, f) );
 
   //parser_attr.no_syntax_err = 0;
 
@@ -970,6 +979,46 @@ Task Parser_Finish(void) {
   Tok_Finish();
   return Success;
 }
+
+ASTNode *Parser_Parse(FILE *in, const char *auto_include) {
+  ASTNode *program;
+  int parse_status;
+
+  assert(program_node == NULL);
+
+  if (Tok_Init(in, auto_include) == BoxFailure)
+    return NULL;
+  parse_status = yyparse();
+  Tok_Finish();
+
+  if (parse_status) {
+    ASTNode_Destroy(program_node);
+    program_node = NULL;
+    return NULL;
+  }
+
+  program = program_node;
+  program_node = NULL;
+  return program;
+}
+
+
+
+#if 0
+Task Parse() {
+  struct yy_buffer_state *bufState = NULL;
+  yyin = stream_in;
+  bufState = yy_create_buffer( /* FILE *fh */ NULL, YY_BUF_SIZE );
+  if (! bufState) goto error;
+  yy_switch_to_buffer( bufState );
+
+  /* Parse, building the AST */
+  if (yyparse() != 0)
+      goto error;
+  yy_delete_buffer( bufState );
+      PRIVATE(yyin) = NULL;
+}
+#endif
 
 
 #if 0

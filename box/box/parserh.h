@@ -29,6 +29,7 @@
 #  define _PARSERH_H
 
 #  include "typesys.h"
+#  include "ast.h"
 
 typedef struct {
   unsigned int old_box : 1;
@@ -70,6 +71,8 @@ Task Prs_Rule_Typed_Eq_Typed(Expr *rs, Expr *typed1, Expr *typed2);
 Task Prs_Rule_Valued_Eq_Typed(Expr *rs, Expr *valued, Expr *typed);
 Task Prs_Rule_Typed_Eq_Valued(Expr *typed, Expr *valued);
 Task Prs_Rule_Valued_Eq_Valued(Expr *rs, Expr *valued1, Expr *valued2);
+
+ASTNode *Parser_Parse(FILE *in, const char *auto_include);
 int yyparse(void);
 
 #endif
