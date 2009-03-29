@@ -33,6 +33,27 @@
 #include "mem.h"
 #include "container.h"
 
+void Expr_Init(Expr *e) {
+  e->type = TS_TYPE_NONE;
+  e->resolved = TS_TYPE_NONE;
+  e->value.i = 0;
+  e->addr = 0;
+  e->categ = 0;
+  e->is.typed = 0;
+  e->is.value = 0;
+  e->is.ignore = 0;
+  e->is.imm = 0;
+  e->is.target = 0;
+  e->is.gaddr = 0;
+  e->is.allocd = 0;
+  e->is.release = 0;
+  e->is.error = 0;
+}
+
+void Expr_Finish(Expr *e) {
+
+}
+
 /* This fuction creates an expression with type, but without value.
  */
 void Expr_Background(Expr *e) {

@@ -36,6 +36,11 @@ size_t BoxMem_Size_Align(size_t n);
 
 void *BoxMem_Alloc(size_t size);
 
+/** Similar to BoxMem_Alloc, but never returns NULL (display an error message
+ * and abort, instead!).
+ */
+void *BoxMem_Safe_Alloc(size_t size);
+
 void *BoxMem_Realloc(void *ptr, size_t size);
 
 void BoxMem_Free(void *ptr);

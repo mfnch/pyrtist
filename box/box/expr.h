@@ -66,6 +66,10 @@ typedef struct {
 /** Return the error state of the Expr referenced by the pointer 'e' */
 #define Expr_Is_Error(e) ((e)->is.error)
 
+void Expr_Init(Expr *e);
+
+void Expr_Finish(Expr *e);
+
 /** Set *e to be the result of an error, which has already beed signaled
  * to the user and thus need to be propagated silently.
  */

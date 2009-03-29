@@ -46,13 +46,17 @@ size_t BoxMem_Size_Align(size_t n) {
 
 #include <stdio.h>
 
-void *BoxMem_Alloc(size_t size) {
+void *BoxMem_Safe_Alloc(size_t size) {
   void *ptr = malloc(BoxMem_Size_Align(size));
   if (ptr == NULL) BoxMem_Exit("malloc failed!");
 #ifdef DEBUG_MEM
-  printf("BoxMem_Alloc: returning %p\n", ptr);
+  printf("BoxMem_Safe_Alloc: returning %p\n", ptr);
 #endif
   return ptr;
+}
+
+void *BoxMem_Alloc(size_t size) {
+  return BoxMem_Safe_Alloc(size);
 }
 
 void BoxMem_Free(void *ptr) {
