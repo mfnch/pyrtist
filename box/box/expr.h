@@ -35,26 +35,30 @@
 
 
 typedef struct {
+  Int     ref_count;   /**< Used to keep track of the reference to the Expr */
+
   struct {
-    unsigned int imm     : 1; /* l'espressione e' immediata? */
-    unsigned int value   : 1; /* Possiede un valore determinato? */
-    unsigned int typed   : 1; /* Possiede tipo? */
-    unsigned int ignore  : 1; /* Va ignorata o passata alla box? */
-    unsigned int target  : 1; /* si puo' assegnare un valore all'espressione?*/
-    unsigned int gaddr   : 1; /* addr e' un registro globale (o locale)? */
-    unsigned int allocd  : 1; /* l'oggetto e' stato allocato? (va liberato?) */
-    unsigned int release : 1; /* il registro va rilasciato automaticamente? */
-    unsigned int error   : 1; /* An invalid expression coming from an error
-                                 which has already been communicated to
-                                 the user: we should propagate it silently! */
+    unsigned int
+          imm     : 1, /* l'espressione e' immediata? */
+          value   : 1, /* Possiede un valore determinato? */
+          typed   : 1, /* Possiede tipo? */
+          ignore  : 1, /* Va ignorata o passata alla box? */
+          target  : 1, /* si puo' assegnare un valore all'espressione?*/
+          gaddr   : 1, /* addr e' un registro globale (o locale)? */
+          allocd  : 1, /* l'oggetto e' stato allocato? (va liberato?) */
+          release : 1, /* il registro va rilasciato automaticamente? */
+          error   : 1; /* An invalid expression coming from an error
+                          which has already been communicated to
+                          the user: we should propagate it silently! */
   } is;
 
-  Int    addr;
-  Int    type;     /* The type of the expression */
-  Int    resolved; /* = Tym_Type_Resolve_All(type) */
+  Int     addr,
+          type,     /* The type of the expression */
+          resolved; /* = Tym_Type_Resolve_All(type) */
   AsmArg  categ;
+
   union {
-    Int  i;
+    Int   i;
     Real  r;
     Point p;
     Int   reg;
@@ -66,9 +70,24 @@ typedef struct {
 /** Return the error state of the Expr referenced by the pointer 'e' */
 #define Expr_Is_Error(e) ((e)->is.error)
 
+/** Initialise an expression assuming 'e' points to a region which can contain
+ * the Expr object (must have size >= sizeof(Expr)).
+ */
 void Expr_Init(Expr *e);
 
-void Expr_Finish(Expr *e);
+/** Finalise an expression initialised with Expr_Init (only if the reference
+ * count reaches zero)
+ */
+void Expr_Unlink(Expr *e);
+
+/** Increases the reference count to the given expression. */
+void Expr_Link(Expr *e);
+
+/** Allocates a new Expr object and initialise it by calling Expr_Init */
+Expr *Expr_New(void);
+
+/** Destroys an Expr object created with Expr_New */
+void Expr_Destroy(Expr *e);
 
 /** Set *e to be the result of an error, which has already beed signaled
  * to the user and thus need to be propagated silently.

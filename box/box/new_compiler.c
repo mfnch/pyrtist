@@ -45,7 +45,7 @@ typedef void (*StackItemDestructor)(void *item);
  * processed. This structure describes one of such expressions.
  * We actually store a pointer to the item and an integer number, which
  * identifies the type of such item. The type introduce some redundancy
- * which may help to track down bugs... 
+ * which may help to track down bugs...
  */
 typedef struct {
   StackItemType       type;
@@ -85,7 +85,7 @@ void BoxCmp_Pop_Any(BoxCmp *c, int num_items_to_pop) {
 
 /** Used to push an error into the stack. Errors are propagated. For example:
  * a binary operation where one of the two arguments is an error returns
- * silently an error into the stack. 
+ * silently an error into the stack.
  */
 void BoxCmp_Push_Error(BoxCmp *c, int num_errors) {
   int i;
@@ -103,7 +103,7 @@ void BoxCmp_Push_Error(BoxCmp *c, int num_errors) {
  * given number of errors and return 1.
  */
 int BoxCmp_Pop_Errors(BoxCmp *c, int items_to_pop, int errors_to_push) {
-  BoxInt n = BoxArr_Num_Items(& c->stack), i; 
+  BoxInt n = BoxArr_Num_Items(& c->stack), i;
   for(i = 0; i < items_to_pop; i++) {
     StackItem *si = (StackItem *) BoxArr_Item_Ptr(& c->stack, n - i);
     if (si->type == STACKITEM_ERROR) {
@@ -116,10 +116,14 @@ int BoxCmp_Pop_Errors(BoxCmp *c, int items_to_pop, int errors_to_push) {
 }
 
 void BoxCmp_Push_Expr(BoxCmp *c, Expr *expr) {
-  StackItem *si = (StackItem *) BoxArr_Push(& c->stack, NULL);
-  si->type = STACKITEM_EXPR;
-  si->item = expr;
-  si->destructor = (StackItemDestructor) Expr_Finish;
+  if (expr != NULL) {
+    StackItem *si = (StackItem *) BoxArr_Push(& c->stack, NULL);
+    si->type = STACKITEM_EXPR;
+    si->item = expr;
+    si->destructor = (StackItemDestructor) Expr_Unlink;
+
+  } else
+    BoxCmp_Push_Error(c, 1);
 }
 
 Expr *BoxCmp_Get_Expr(BoxCmp *c, BoxInt pos) {
@@ -164,7 +168,7 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
 static void My_Compile_Const(BoxCmp *c, ASTNode *n) {
   Expr *expr;
   assert(n->type = ASTNODETYPE_CONST);
-  expr = BoxMem_Safe_Alloc(sizeof(Expr));
+  expr = Expr_New();
   switch(n->attr.constant.type) {
   case ASTCONSTTYPE_CHAR:
     Expr_New_Imm_Char(expr, n->attr.constant.value.c);
@@ -176,12 +180,12 @@ static void My_Compile_Const(BoxCmp *c, ASTNode *n) {
     Expr_New_Imm_Real(expr, n->attr.constant.value.r);
     break;
   }
-  BoxCmp_Push_Expr(c, expr); 
+  BoxCmp_Push_Expr(c, expr);
   printf("Pushing constant into stack!\n");
 }
 
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
-  Expr *left, *right;
+  Expr *left, *right, *result;
 
   assert(n->type == ASTNODETYPE_BINOP);
 
@@ -193,6 +197,7 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
   right = BoxCmp_Get_Expr(c, 0);
   left  = BoxCmp_Get_Expr(c, 1);
 
+  result = NULL;
 #if 0
   if (left->is.typed && right->is.typed) {
     Expr *result = Cmp_Operator_Exec(opr, left, right);
@@ -210,7 +215,8 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
   }
 #endif
 
-  BoxCmp_Pop_Any(c, 1);
+  BoxCmp_Pop_Any(c, 2);
+  BoxCmp_Push_Expr(c, result);
 }
 
 
