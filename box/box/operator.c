@@ -18,13 +18,273 @@
  ****************************************************************************/
 
 #include "types.h"
+#include "mem.h"
 #include "ast.h"
 #include "expr.h"
+#include "new_compiler.h"
 #include "operator.h"
 
-const char *Opr_To_String(ASTBinOp *op) {
-  return "?";
+#if 0
+/* We have two concepts in this module. One is the concept of Operator
+ * (+ or - are two examples), the other is the concept of Operation,
+ * which is just an operator applied to definite types.
+ * We need here to be able to define an Operator, to associate new operations
+ * with it, to search for them and all this should be Scope dependent:
+ * an Operation is defined inside a given scope and can override previous
+ * Operations.
+ */
+
+/** INTERNAL: Called by BoxCmp_Init to initialise the operator table. */
+void BoxCmp_Operator_Init(BoxCmp *c) {
+  BoxArr_Init(& c->operators, sizeof(Operator), 35);
 }
+
+/** INTERNAL: Called by BoxCmp_Finish to finalise the operator table. */
+void BoxCmp_Operator_Finish(BoxCmp *c) {
+  BoxArr_Finish(& c->operators);
+}
+
+/* Create a new operator */
+void BoxCmp_Operator_Add(BoxCmp *c, char *name) {
+  Operator *op;
+
+  int i, j;
+
+  /* Just to remember what gets allocated, so we can destroy it later! */
+  op = BoxArr_Push(& c->operators, NULL);
+
+  op->name = name;
+  op->can_define = 0;
+
+  /* Pulisco i collegamenti alle operazioni */
+  opr->opn_chain = NULL;
+  for (j = 0; j < 3; j++ ) {
+    for (i = 0; i < CMP_PRIVILEGED; i++)
+      opr->opn[j][i] = NULL;
+  }
+
+  return opr;
+}
+
+void Cmp_Operator_Destroy(Operator *opr) {
+  Operation *opn = opr->opn_chain;
+  for(; opn != (Operation *) NULL;) {
+    Operation *next = opn->next;
+    BoxMem_Free(opn);
+    opn = next;
+  }
+
+  BoxMem_Free(opr);
+}
+
+/* Aggiunge una nuova operazione di tipo type1 opr type2
+ * all'operatore *opr. Se type1 o type2 sono uguali a TYPE_NONE si tratta
+ * di un'operazione unaria (sinistra o destra rispettivamente).
+ */
+Operation *Cmp_Operation_Add(Operator *opr, Int type1, Int type2, Int typer) {
+  Operation *opn;
+  Int aa, t, t1, t2;
+  int is_privileged;
+
+#if 0
+  printf("Adding operation (%s, %s) to operator '%s'\n",
+   Tym_Type_Names(type1), Tym_Type_Names(type2), opr->name);
+#endif
+  opn = (Operation *) BoxMem_Alloc(sizeof(Operation));
+  if ( opn == NULL ) {
+    MSG_ERROR("Memory request failed.");
+    return NULL;
+  }
+
+  /* Is it a privileged operation or not? */
+  aa = (type1 == TYPE_NONE) + ((type2 == TYPE_NONE) << 1);
+  switch (aa) {
+  case 0:
+    t = t1 = Tym_Type_Resolve_All(type1);
+    t2     = Tym_Type_Resolve_All(type2);
+    is_privileged = ( (t1 == t2) && (t <= CMP_PRIVILEGED) );
+    break;
+  case 1:
+    t = Tym_Type_Resolve_All(type2);
+    is_privileged = (t <= CMP_PRIVILEGED);
+    break;
+  case 2:
+    t = Tym_Type_Resolve_All(type1);
+    is_privileged = (t <= CMP_PRIVILEGED);
+    break;
+  default:
+    MSG_ERROR("Operazione fra tipi nulli!");
+    return NULL;
+    break;
+  }
+
+#ifdef USE_PRIVILEGED
+  /* Aggiungo l'operazione all'operatore: un'operazione privilegiata
+   * viene inserita non solo nella catena delle operazioni, ma pure
+   * in un'array che ne permette il ritrovamento in maniera immediata.
+   */
+  if ( is_privileged ) {
+    /* In tal caso l'operazione e' privilegiata: i collegamenti
+     * all'operatore sono diretti e quindi piu' veloci!
+     */
+    opr->opn[aa][t] = opn;
+  }
+#endif
+
+  /* Creo un collegamento di tipo "a catena"
+   */
+  opn->next = opr->opn_chain;
+  opr->opn_chain = opn;
+
+  opn->type1 = type1;
+  opn->type2 = type2;
+  opn->type_rs = typer;
+  return opn;
+}
+
+/* DESCRIPTION: Finds the unary or binary operation associated with
+ *  the operator *opr.
+ *  If type1 and type2 are both different from TYPE_NONE, then this function
+ *  will search for a binary operation of the following kind:
+ *                               type1 opr type2
+ *  If type1 = TYPE_NONE, then a left-unary operation will be searched:
+ *                                  opr type2
+ *  If type2 = TYPE_NONE, then a right-unary operation will be searched:
+ *                                  type1 opr
+ *  If typer != TYPE_NONE also the type of the result will be checked
+ *  during the search.
+ * NOTE: it should not happen that type1 = type2 = TYPE_NONE.
+ */
+Operation *Cmp_Operation_Find(Operator *opr,
+                              Type type1, Type type2, Type typer,
+                              OpnInfo *oi)
+{
+
+  Int type;
+  int no_check_arg1, no_check_arg2, check_rs, unary;
+  int ne1, ne2;
+  Operation *opn;
+
+#if 0
+  printf("Cmp_Operation_Find: Cerco %s OP %s\n",
+   Tym_Type_Names(type1), Tym_Type_Names(type2));
+#endif
+
+  no_check_arg1 = (type1 == TYPE_NONE);
+  no_check_arg2 = (type2 == TYPE_NONE);
+  check_rs      = (typer != TYPE_NONE);
+  unary = no_check_arg1 || no_check_arg2;
+
+  /* Is it a privileged operation or not? */
+  if ( ! check_rs ) {
+    Int aa;
+    int is_privileged;
+
+    aa = no_check_arg1 | (no_check_arg2 << 1);
+    switch (aa) {
+    case 0:
+      type = type1 = Tym_Type_Resolve_All(type1);
+      type2 = Tym_Type_Resolve_All(type2);
+      is_privileged = ( (type1 == type2) && (type <= CMP_PRIVILEGED) );
+      break;
+    case 1:
+      type = Tym_Type_Resolve_All(type2);
+      is_privileged = (type <= CMP_PRIVILEGED);
+      break;
+    case 2:
+      type = Tym_Type_Resolve_All(type1);
+      is_privileged = (type <= CMP_PRIVILEGED);
+      break;
+    default:
+      MSG_ERROR("Operazione fra tipi nulli!");
+      return NULL;
+      break;
+    }
+
+#ifdef USE_PRIVILEGED
+    if ( is_privileged ) {
+      opn = opr->opn[aa][type];
+      if (opn != NULL) {
+        if (oi == NULL) return opn;
+        oi->commute = 0;
+        oi->expand1 = 0;
+        oi->expand2 = 0;
+        return opn;
+      }
+    }
+#endif
+  }
+
+  for (opn = opr->opn_chain; opn != NULL; opn = opn->next ) {
+    register Int t1 = opn->type1, t2 = opn->type2;
+    int ok_1, ok_2, ok_rs = 1;
+
+    ok_1 = (t1 == type1);
+    ok_2 = (t2 == type2);
+    ne1 = ne2 = 0;
+    if ( ! (ok_1 || no_check_arg1) ) ok_1 = Tym_Compare_Types(t1, type1, & ne1);
+    if ( ! (ok_2 || no_check_arg2) ) ok_2 = Tym_Compare_Types(t2, type2, & ne2);
+
+    if ( check_rs ) {
+      ok_rs = Tym_Compare_Types(typer, opn->type_rs, NULL);
+    }
+
+    if (ok_rs) {
+      if (ok_1 && ok_2) {
+        if (oi == NULL) return opn;
+        oi->commute = 0;
+        oi->expand1 = ne1;
+        oi->expand2 = ne2;
+        oi->exp_type1 = t1;
+        oi->exp_type2 = t2;
+        return opn;
+      }
+
+      if ( !unary && opn->is.commutative ) {
+        ok_1 = (t1 == type2);
+        ok_2 = (t2 == type1);
+        if ( ! ok_1 ) ok_1 = Tym_Compare_Types(t1, type2, & ne2);
+        if ( ! ok_2 ) ok_2 = Tym_Compare_Types(t2, type1, & ne1);
+        if ( ok_1 && ok_2 ) {
+          if ( oi == NULL ) return opn;
+          oi->commute = 1;
+          oi->expand1 = ne1;
+          oi->expand2 = ne2;
+          oi->exp_type1 = t2;
+          oi->exp_type2 = t1;
+          return opn;
+        }
+      }
+    }
+  }
+  return NULL;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* DESCRIPTION: Finds the unary or binary operation associated with
  *  the operator *opr.
@@ -157,10 +417,10 @@ Expr *Opr_Emit_BinOp(ASTBinOp op, Expr *e1, Expr *e2) {
   if (!e1->is.value || !e2->is.value) {
     if (!e1->is.value) {
       MSG_ERROR("The expression on the left of '%s' "
-                "must have a definite value!", Opr_To_String(op));
+                "must have a definite value!", ASTBinOp_To_String(op));
     } else {
       MSG_ERROR("The expression on the right of '%s' "
-                "must have a definite value!", Opr_To_String(op));
+                "must have a definite value!", ASTBinOp_To_String(op));
     }
     return NULL;
   }
@@ -210,3 +470,4 @@ Exec_Opn_Error:
     return NULL;
   }
 }
+#endif

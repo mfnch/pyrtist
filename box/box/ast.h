@@ -224,6 +224,17 @@ typedef ASTNode *ASTNodePtr;
 int ASTNode_Get_Subnodes(ASTNode *node,
                          ASTNode **subnodes[AST_MAX_NUM_SUBNODES]);
 const char *ASTNodeType_To_Str(ASTNodeType t);
+
+/** Return the string representation of the unary operator passed as
+ * argument.
+ */
+const char *ASTUnOp_To_String(ASTUnOp op);
+
+/** Return the string representation of the binary operator passed as
+ * argument.
+ */
+const char *ASTBinOp_To_String(ASTBinOp op);
+
 ASTNode *ASTNode_New(ASTNodeType t);
 void ASTNode_Destroy(ASTNode *node);
 void ASTNode_Set_Error(ASTNode *node);

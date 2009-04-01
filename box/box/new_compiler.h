@@ -31,8 +31,9 @@
 #include "ast.h"
 
 typedef struct {
-  BoxArr stack;
-  BoxVM vm;
+  BoxArr stack;  /**< Using during compilation to pass around expressions */
+  BoxVM  vm;     /**< The target of the compilation */
+  BoxTS  ts;     /**< The type system */
 } BoxCmp;
 
 void BoxCmp_Init(BoxCmp *c);

@@ -103,7 +103,9 @@ typedef struct {
   BoxHT  members;
   BoxHT  subtypes;
   BoxArr name_buffer;
-} TS;
+} BoxTS;
+
+typedef BoxTS TS;
 
 typedef enum {
   TS_TYPES_EQUAL=7,

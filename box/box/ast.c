@@ -99,6 +99,55 @@ const char *ASTNodeType_To_Str(ASTNodeType t) {
   return "???";
 }
 
+const char *ASTUnOp_To_String(ASTUnOp op) {
+  switch(op) {
+  case ASTUNOP_PLUS: return "+";
+  case ASTUNOP_NEG: return "-";
+  case ASTUNOP_LINC: return "++";
+  case ASTUNOP_LDEC: return "--";
+  case ASTUNOP_RINC: return "++";
+  case ASTUNOP_RDEC: return "--";
+  case ASTUNOP_NOT: return "!";
+  case ASTUNOP_BNOT: return "~";
+  }
+  return "?";
+}
+
+const char *ASTBinOp_To_String(ASTBinOp op) {
+  switch(op) {
+  case ASTBINOP_ADD: return "+";
+  case ASTBINOP_SUB: return "-";
+  case ASTBINOP_MUL: return "*";
+  case ASTBINOP_DIV: return "/";
+  case ASTBINOP_REM: return "%";
+  case ASTBINOP_SHL: return "<<";
+  case ASTBINOP_SHR: return ">>";
+  case ASTBINOP_EQ: return "==";
+  case ASTBINOP_NE: return "!=";
+  case ASTBINOP_LT: return "<";
+  case ASTBINOP_LE: return "<=";
+  case ASTBINOP_GT: return ">";
+  case ASTBINOP_GE: return ">=";
+  case ASTBINOP_BAND: return "&";
+  case ASTBINOP_BXOR: return "^";
+  case ASTBINOP_BOR: return "|";
+  case ASTBINOP_LAND: return "&&";
+  case ASTBINOP_LOR: return "||";
+  case ASTBINOP_ASSIGN: return "=";
+  case ASTBINOP_APLUS: return "+=";
+  case ASTBINOP_AMINUS: return "-=";
+  case ASTBINOP_ATIMES: return "*=";
+  case ASTBINOP_AREM: return "%=";
+  case ASTBINOP_ADIV: return "/=";
+  case ASTBINOP_ASHL: return "<<=";
+  case ASTBINOP_ASHR: return ">>=";
+  case ASTBINOP_ABAND: return "&=";
+  case ASTBINOP_ABXOR: return "^=";
+  case ASTBINOP_ABOR: return "|=";
+  }
+  return "?";
+}
+
 ASTNode *ASTNode_New(ASTNodeType t) {
   ASTNode *node,
           **subnode[AST_MAX_NUM_SUBNODES];
