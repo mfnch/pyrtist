@@ -26,7 +26,7 @@
 #include "ast.h"
 #include "expr.h"
 #include "new_compiler.h"
-
+#include "operator.h"
 
 /** Type of items which may be inserted inside the compiler stack.
  * @see StackItem
@@ -55,10 +55,12 @@ typedef struct {
 
 void BoxCmp_Init(BoxCmp *c) {
   BoxArr_Init(& c->stack, sizeof(StackItem), 32);
+  BoxCmp_Operator_Init(c);
 }
 
 void BoxCmp_Finish(BoxCmp *c) {
   BoxArr_Finish(& c->stack);
+  BoxCmp_Operator_Finish(c);
 }
 
 BoxCmp *BoxCmp_New(void) {

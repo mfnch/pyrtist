@@ -24,7 +24,6 @@
 #include "new_compiler.h"
 #include "operator.h"
 
-#if 0
 /* We have two concepts in this module. One is the concept of Operator
  * (+ or - are two examples), the other is the concept of Operation,
  * which is just an operator applied to definite types.
@@ -46,9 +45,8 @@ void BoxCmp_Operator_Finish(BoxCmp *c) {
 
 /* Create a new operator */
 void BoxCmp_Operator_Add(BoxCmp *c, char *name) {
-  Operator *op;
-
   int i, j;
+  Operator *op;
 
   /* Just to remember what gets allocated, so we can destroy it later! */
   op = BoxArr_Push(& c->operators, NULL);
@@ -56,16 +54,17 @@ void BoxCmp_Operator_Add(BoxCmp *c, char *name) {
   op->name = name;
   op->can_define = 0;
 
+#if 0
   /* Pulisco i collegamenti alle operazioni */
   opr->opn_chain = NULL;
   for (j = 0; j < 3; j++ ) {
     for (i = 0; i < CMP_PRIVILEGED; i++)
       opr->opn[j][i] = NULL;
   }
-
-  return opr;
+#endif
 }
 
+#if 0
 void Cmp_Operator_Destroy(Operator *opr) {
   Operation *opn = opr->opn_chain;
   for(; opn != (Operation *) NULL;) {

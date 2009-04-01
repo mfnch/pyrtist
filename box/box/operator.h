@@ -26,6 +26,24 @@
 #ifndef _OPERATOR_H
 #  define _OPERATOR_H
 
+/** INTERNAL: Called by BoxCmp_Init to initialise the operator table. */
+void BoxCmp_Operator_Init(BoxCmp *c);
+
+/** INTERNAL: Called by BoxCmp_Finish to finalise the operator table. */
+void BoxCmp_Operator_Finish(BoxCmp *c);
+
+typedef struct {
+  unsigned int can_define : 1; /* E' un operatore di definizione? */
+  char *name; /* Token che rappresenta l'operatore */
+#if 0
+  /* Operazioni privilegiate, cioe' con collegamenti diretti */
+  Operation *opn[3][CMP_PRIVILEGED];
+  /* Operazioni non privilegiate, cioe' con collegamenti in catena */
+  Operation *opn_chain;
+#endif
+} Operator;
+
+#if 0
 struct Operation {
   struct {
     unsigned int intrinsic   : 1; /* E' una operazione intrinseca? */
@@ -43,15 +61,6 @@ struct Operation {
 };
 
 typedef struct Operation Operation;
-
-struct Operator {
-  unsigned int can_define : 1; /* E' un operatore di definizione? */
-  char *name; /* Token che rappresenta l'operatore */
-  /* Operazioni privilegiate, cioe' con collegamenti diretti */
-  Operation *opn[3][CMP_PRIVILEGED];
-  /* Operazioni non privilegiate, cioe' con collegamenti in catena */
-  Operation *opn_chain;
-};
 
 typedef struct Operator Operator;
 
@@ -108,5 +117,6 @@ struct cmp_opr_struct {
   Operator *land;
   Operator *lnot;
 };
+#endif
 
 #endif /* _OPERATOR_H */

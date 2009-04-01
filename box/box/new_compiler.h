@@ -27,13 +27,15 @@
 #  define _NEW_COMPILER_H
 
 #include "types.h"
+#include "array.h"
 #include "virtmach.h"
 #include "ast.h"
 
 typedef struct {
-  BoxArr stack;  /**< Using during compilation to pass around expressions */
-  BoxVM  vm;     /**< The target of the compilation */
-  BoxTS  ts;     /**< The type system */
+  BoxArr stack;     /**< Using during compilation to pass around expressions */
+  BoxVM  vm;        /**< The target of the compilation */
+  BoxTS  ts;        /**< The type system */
+  BoxArr operators;
 } BoxCmp;
 
 void BoxCmp_Init(BoxCmp *c);

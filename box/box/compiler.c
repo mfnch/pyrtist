@@ -608,8 +608,8 @@ static Expr *Opn_Exec_Intrinsic(Operation *opn, Expr *e1, Expr *e2) {
     }
 
     /* Mi assicuro che il primo argomento possa fungere da target
-      * dell'assegazione!
-      */
+     * dell'assegazione!
+     */
     if ( ! e1->is.target ) {
       MSG_ERROR("This expression of type %~s cannot be modified!",
                 TS_Name_Get(cmp->ts, e1->type));
@@ -723,8 +723,8 @@ er_equal_e1:
          && (e2->categ == CAT_LREG) && (! e2->is.target);
 
         /* Se l'operazione e' commutativa, posso usare e2 per contenere
-        * il risultato dell'operazione!
-        */
+         * il risultato dell'operazione!
+         */
         if ( result_in.e2 && !result_in.e1 && opn->is.commutative ) {
           register Expr *tmp = e2;
           e2 = e1; e1 = tmp;
@@ -733,8 +733,8 @@ er_equal_e1:
         }
 
         /* Se non posso mettere il risultato in e1, allora devo
-        * convertire e1 in un registro locale (che puo' contenerlo!)
-        */
+         * convertire e1 in un registro locale (che puo' contenerlo!)
+         */
         if ( ! result_in.e1 ) {
           if IS_FAILED( Cmp_Expr_Force_To_LReg(e1) ) return NULL;
         }
