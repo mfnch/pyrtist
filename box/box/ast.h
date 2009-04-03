@@ -78,9 +78,11 @@ typedef enum {
   ASTUNOP_BNOT
 } ASTUnOp;
 
+#define ASTUNOP__NUM_OPS (ASTUNOP_BNOT + 1)
+
 /** Binary operators */
 typedef enum {
-  ASTBINOP_ADD,
+  ASTBINOP_ADD=0,
   ASTBINOP_SUB,
   ASTBINOP_MUL,
   ASTBINOP_DIV,
@@ -110,6 +112,8 @@ typedef enum {
   ASTBINOP_ABXOR,
   ASTBINOP_ABOR
 } ASTBinOp;
+
+#define ASTBINOP__NUM_OPS (ASTBINOP_ABOR + 1)
 
 /* Each of the following structures corresponds to a possible node in the AST
    and contains the characteristics attribute for that node type.

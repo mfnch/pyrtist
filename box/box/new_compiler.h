@@ -31,12 +31,17 @@
 #include "virtmach.h"
 #include "ast.h"
 
-typedef struct {
-  BoxArr stack;     /**< Using during compilation to pass around expressions */
-  BoxVM  vm;        /**< The target of the compilation */
-  BoxTS  ts;        /**< The type system */
-  BoxArr operators;
-} BoxCmp;
+typedef struct _box_cmp BoxCmp;
+
+#include "operator.h"
+
+struct _box_cmp {
+  BoxArr    stack; /**< Using during compilation to pass around expressions */
+  BoxVM     vm;    /**< The target of the compilation */
+  BoxTS     ts;    /**< The type system */
+  Operator  bin_ops[ASTBINOP__NUM_OPS], /**< Table of binary operators */
+            un_ops[ASTUNOP__NUM_OPS];   /**< Table of unary operators */
+};
 
 void BoxCmp_Init(BoxCmp *c);
 

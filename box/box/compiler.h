@@ -35,7 +35,7 @@
 #  include "typesys.h"
 #  include "new_compiler.h"
 
-struct Operation {
+struct OldOperation {
   struct {
     unsigned int intrinsic   : 1; /* E' una operazione intrinseca? */
     unsigned int commutative : 1; /* E' commutativa? */
@@ -48,74 +48,74 @@ struct Operation {
     UInt asm_code;  /* Codice assembly dell'istruzione associata */
     Int module;    /* Modulo caricato nella VM per eseguire l'operazione */
   }; /* <-- questa e' una union senza nome! Non e' ISO C purtroppo! */
-  struct Operation *next;     /* Prossima operazione dello stesso operatore */
+  struct OldOperation *next;     /* Prossima operazione dello stesso operatore */
 };
 
-typedef struct Operation Operation;
+typedef struct OldOperation OldOperation;
 
-struct Operator {
+struct OldOperator {
   unsigned int can_define : 1; /* E' un operatore di definizione? */
   char *name; /* Token che rappresenta l'operatore */
   /* Operazioni privilegiate, cioe' con collegamenti diretti */
-  Operation *opn[3][CMP_PRIVILEGED];
+  OldOperation *opn[3][CMP_PRIVILEGED];
   /* Operazioni non privilegiate, cioe' con collegamenti in catena */
-  Operation *opn_chain;
+  OldOperation *opn_chain;
 };
 
-typedef struct Operator Operator;
+typedef struct OldOperator OldOperator;
 
 /* "Collezione" di tutti gli operatori */
 struct cmp_opr_struct {
   /* Operatore usato per la conversione fra tipi diversi */
-  Operator *converter;
+  OldOperator *converter;
 
   /* Operatori di assegnazione */
-  Operator *assign;
-  Operator *aplus;
-  Operator *aminus;
-  Operator *atimes;
-  Operator *adiv;
-  Operator *arem;
-  Operator *aband;
-  Operator *abxor;
-  Operator *abor;
-  Operator *ashl;
-  Operator *ashr;
+  OldOperator *assign;
+  OldOperator *aplus;
+  OldOperator *aminus;
+  OldOperator *atimes;
+  OldOperator *adiv;
+  OldOperator *arem;
+  OldOperator *aband;
+  OldOperator *abxor;
+  OldOperator *abor;
+  OldOperator *ashl;
+  OldOperator *ashr;
 
   /* Operatori di incremento/decremento */
-  Operator *inc;
-  Operator *dec;
+  OldOperator *inc;
+  OldOperator *dec;
 
   /* Operatori aritmetici convenzionali */
-  Operator *pow;
-  Operator *plus;
-  Operator *minus;
-  Operator *times;
-  Operator *div;
-  Operator *rem;
+  OldOperator *pow;
+  OldOperator *plus;
+  OldOperator *minus;
+  OldOperator *times;
+  OldOperator *div;
+  OldOperator *rem;
 
   /* Operatori bit-bit */
-  Operator *bor;
-  Operator *bxor;
-  Operator *band;
-  Operator *bnot;
+  OldOperator *bor;
+  OldOperator *bxor;
+  OldOperator *band;
+  OldOperator *bnot;
 
   /* Operatori di shift */
-  Operator *shl;
-  Operator *shr;
+  OldOperator *shl;
+  OldOperator *shr;
 
   /* Operatori di confronto */
-  Operator *eq;
-  Operator *ne;
-  Operator *gt;
-  Operator *ge;
-  Operator *lt;
-  Operator *le;
+  OldOperator *eq;
+  OldOperator *ne;
+  OldOperator *gt;
+  OldOperator *ge;
+  OldOperator *lt;
+  OldOperator *le;
 
   /* Operatori logici */
-  Operator *lor;
-  Operator *land;
-  Operator *lnot;
+  OldOperator *lor;
+  OldOperator *land;
+  OldOperator *lnot;
 };
 
 /* Tipi possibili per un simbolo */
@@ -223,15 +223,15 @@ Symbol *Sym_Explicit_Find(Name *nm, Int depth, int mode);
 Task Cmp_Init(VMProgram *program);
 void Cmp_Destroy(void);
 Task Cmp_Parse(const char *file);
-Operator *Cmp_Operator_New(char *token);
-void Cmp_Operator_Destroy(Operator *opr);
-Operation *Cmp_Operation_Add(Operator *opr, Int type1, Int type2, Int typer);
-Operation *Cmp_Operation_Find(Operator *opr,
+OldOperator *Cmp_Operator_New(char *token);
+void Cmp_Operator_Destroy(OldOperator *opr);
+OldOperation *Cmp_Operation_Add(OldOperator *opr, Int type1, Int type2, Int typer);
+OldOperation *Cmp_Operation_Find(OldOperator *opr,
  Int type1, Int type2, Int typer, OpnInfo *oi);
 Task Cmp_Conversion(Int type1, Int type2, Expr *e);
-Task Cmp_Conversion_Exec(Expr *e, Int type_dest, Operation *c_opn);
-Expr *Cmp_Operator_Exec(Operator *opr, Expr *e1, Expr *e2);
-Expr *Cmp_Operation_Exec(Operation *opn, Expr *e1, Expr *e2);
+Task Cmp_Conversion_Exec(Expr *e, Int type_dest, OldOperation *c_opn);
+Expr *Cmp_Operator_Exec(OldOperator *opr, Expr *e1, Expr *e2);
+Expr *Cmp_Operation_Exec(OldOperation *opn, Expr *e1, Expr *e2);
 Task Cmp_Expr_Unvalued(Expr *e, Int type);
 Task Cmp_Expr_LReg(Expr *e, Int t, int zero);
 Task Cmp_Free(Expr *expr);

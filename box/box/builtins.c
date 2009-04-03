@@ -216,7 +216,7 @@ static Task Blt_Define_Types(void) {
  *  2) Sets the output for compiled code.
  */
 Task Builtins_Init(void) {
-  Operation *opn;
+  OldOperation *opn;
   int status;
 
   TASK( Blt_Define_Types() );

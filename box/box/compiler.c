@@ -71,7 +71,7 @@ struct cmp_opr_struct cmp_opr;
 /*****************************************************************************/
 
 static void Opr_Destructor(void *opr_ptr) {
-  Operator *opr = *((Operator **) opr_ptr);
+  OldOperator *opr = *((OldOperator **) opr_ptr);
   Cmp_Operator_Destroy(opr);
 }
 
@@ -82,7 +82,7 @@ Task Cmp_Init(VMProgram *program) {
   cmp->vm = program;
   cmp->ts = & cmp->ts_obj;
 
-  BoxArr_Init(& cmp->allocd_oprs, sizeof(Operator *), 64);
+  BoxArr_Init(& cmp->allocd_oprs, sizeof(OldOperator *), 64);
   BoxArr_Set_Finalizer(& cmp->allocd_oprs, Opr_Destructor);
   TASK( TS_Init(cmp->ts) );
 
@@ -146,11 +146,11 @@ void Cmp_Destroy(void) {
 
 /* Crea un nuovo operatore.
  */
-Operator *Cmp_Operator_New(char *name) {
-  Operator *opr;
+OldOperator *Cmp_Operator_New(char *name) {
+  OldOperator *opr;
   int i, j;
 
-  opr = (Operator *) BoxMem_Alloc(sizeof(Operator));
+  opr = (OldOperator *) BoxMem_Alloc(sizeof(OldOperator));
   if ( opr == NULL ) {
     MSG_FATAL("Memory request failed.");
     return NULL;
@@ -172,10 +172,10 @@ Operator *Cmp_Operator_New(char *name) {
   return opr;
 }
 
-void Cmp_Operator_Destroy(Operator *opr) {
-  Operation *opn = opr->opn_chain;
-  for(; opn != (Operation *) NULL;) {
-    Operation *next = opn->next;
+void Cmp_Operator_Destroy(OldOperator *opr) {
+  OldOperation *opn = opr->opn_chain;
+  for(; opn != (OldOperation *) NULL;) {
+    OldOperation *next = opn->next;
     BoxMem_Free(opn);
     opn = next;
   }
@@ -187,8 +187,8 @@ void Cmp_Operator_Destroy(Operator *opr) {
  * all'operatore *opr. Se type1 o type2 sono uguali a TYPE_NONE si tratta
  * di un'operazione unaria (sinistra o destra rispettivamente).
  */
-Operation *Cmp_Operation_Add(Operator *opr, Int type1, Int type2, Int typer) {
-  Operation *opn;
+OldOperation *Cmp_Operation_Add(OldOperator *opr, Int type1, Int type2, Int typer) {
+  OldOperation *opn;
   Int aa, t, t1, t2;
   int is_privileged;
 
@@ -196,7 +196,7 @@ Operation *Cmp_Operation_Add(Operator *opr, Int type1, Int type2, Int typer) {
   printf("Adding operation (%s, %s) to operator '%s'\n",
    Tym_Type_Names(type1), Tym_Type_Names(type2), opr->name);
 #endif
-  opn = (Operation *) BoxMem_Alloc(sizeof(Operation));
+  opn = (OldOperation *) BoxMem_Alloc(sizeof(OldOperation));
   if ( opn == NULL ) {
     MSG_ERROR("Memory request failed.");
     return NULL;
@@ -261,7 +261,7 @@ Operation *Cmp_Operation_Add(Operator *opr, Int type1, Int type2, Int typer) {
  *  during the search.
  * NOTE: it should not happen that type1 = type2 = TYPE_NONE.
  */
-Operation *Cmp_Operation_Find(Operator *opr,
+OldOperation *Cmp_Operation_Find(OldOperator *opr,
                               Type type1, Type type2, Type typer,
                               OpnInfo *oi)
 {
@@ -269,7 +269,7 @@ Operation *Cmp_Operation_Find(Operator *opr,
   Int type;
   int no_check_arg1, no_check_arg2, check_rs, unary;
   int ne1, ne2;
-  Operation *opn;
+  OldOperation *opn;
 
 #if 0
   printf("Cmp_Operation_Find: Cerco %s OP %s\n",
@@ -374,7 +374,7 @@ Operation *Cmp_Operation_Find(Operator *opr,
 Task Cmp_Conversion(Int type1, Int type2, Expr *e) {
   int do_it = 0;
   Int t1, t2;
-  Operation *opn;
+  OldOperation *opn;
 
 #ifdef DEBUG_SPECIES_EXPANSION
   printf("INIZIO LA CONVERSIONE - Converto: '%s' in '%s'\n",
@@ -424,7 +424,7 @@ Task Cmp_Conversion(Int type1, Int type2, Expr *e) {
  *  remember that the register number 0 is often used for special purposes
  *  and shouldn't be left occupied for long periods).
  */
-Task Cmp_Conversion_Exec(Expr *e, Int type_dest, Operation *c_opn) {
+Task Cmp_Conversion_Exec(Expr *e, Int type_dest, OldOperation *c_opn) {
   if ( c_opn->is.intrinsic ) {
     if ( (e->categ == CAT_LREG) && (e->value.i == 0) ) {
       /* Si tratta del registro r0 (ri0, rr0, ...) */
@@ -471,10 +471,10 @@ Task Cmp_Conversion_Exec(Expr *e, Int type_dest, Operation *c_opn) {
  *  il codice eventualmente necessario. Si preoccupa anche di "liberare"
  *  le espressioni e1 ed e2.
  */
-Expr *Cmp_Operator_Exec(Operator *opr, Expr *e1, Expr *e2) {
+Expr *Cmp_Operator_Exec(OldOperator *opr, Expr *e1, Expr *e2) {
   int e1valued = 1, e2valued = 1;
   Int e1type, e2type, num_arg = 2;
-  Operation *opn;
+  OldOperation *opn;
   OpnInfo oi;
 
 #if 0
@@ -566,7 +566,7 @@ Exec_Opn_Error:
  *  corrispondente ad un gran numero di operazioni intrinseche.
  * NOTA: Viene chiamata da Cmp_Operation_Exec.
  */
-static Expr *Opn_Exec_Intrinsic(Operation *opn, Expr *e1, Expr *e2) {
+static Expr *Opn_Exec_Intrinsic(OldOperation *opn, Expr *e1, Expr *e2) {
 
   struct {unsigned int unary :1, right : 1, strange :1, immediate :1;} opn_is;
   Int rs_resolved = Tym_Type_Resolve_All(opn->type_rs);
@@ -759,7 +759,7 @@ er_equal_e1:
  *  NULL, e --> operazione unaria destra come e++
  *  e, NULL --> operazione unaria sinistra come ++e
  */
-Expr *Cmp_Operation_Exec(Operation *opn, Expr *e1, Expr *e2) {
+Expr *Cmp_Operation_Exec(OldOperation *opn, Expr *e1, Expr *e2) {
   int strange_case, result_in_e1;
 
   if ( opn->is.intrinsic )
@@ -1455,7 +1455,7 @@ Task Cmp_Builtin_CFunc_Def(UInt *sym_num, UInt *call_num,
 
 Task Cmp_Builtin_Conv_Def(char *name, Type src, Type dest, VMFunc c_func) {
   UInt sym_num;
-  Operation *opn;
+  OldOperation *opn;
 
   TASK( Cmp_Builtin_CFunc_Def(& sym_num, (UInt *) NULL, name, c_func) );
   opn = Cmp_Operation_Add(cmp_opr.converter, src, TYPE_NONE, dest);

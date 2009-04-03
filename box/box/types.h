@@ -63,6 +63,9 @@ typedef double BoxReal;
 #  define BOXREAL_MAX DBL_MAX
 #  define BOXREAL_MIN (-DBL_MAX)
 
+/** Used in the compiler to represent Box types. */
+typedef BoxInt BoxType;
+
 /** The 2D point type */
 typedef struct {
   BoxReal x, y;

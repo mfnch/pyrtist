@@ -17,6 +17,9 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+#include <assert.h>
+#include <stdlib.h>
+
 #include "types.h"
 #include "mem.h"
 #include "ast.h"
@@ -33,36 +36,51 @@
  * Operations.
  */
 
+
+/* Create a new operator */
+void Operator_Init(Operator *opr) {
+  opr->name = "?";
+  opr->can_define = 0;
+  opr->first_operation = NULL;
+}
+
+void Operator_Finish(Operator *opr) {
+
+}
+
+
+Operator *BoxCmp_BinOp_Get(BoxCmp *c, ASTBinOp bin_op) {
+  assert(bin_op >= 0 && bin_op < ASTBINOP__NUM_OPS);
+  return & c->bin_ops[bin_op];
+}
+
+Operator *BoxCmp_UnOp_Get(BoxCmp *c, ASTUnOp un_op) {
+  assert(un_op >= 0 && un_op < ASTUNOP__NUM_OPS);
+  return & c->un_ops[un_op];
+}
+
 /** INTERNAL: Called by BoxCmp_Init to initialise the operator table. */
-void BoxCmp_Operator_Init(BoxCmp *c) {
-  BoxArr_Init(& c->operators, sizeof(Operator), 35);
+void BoxCmp_Init__Operators(BoxCmp *c) {
+  int i;
+
+  for(i = 0; i < ASTUNOP__NUM_OPS; i++)
+    Operator_Init(BoxCmp_UnOp_Get(c, i));
+
+  for(i = 0; i < ASTBINOP__NUM_OPS; i++)
+    Operator_Init(BoxCmp_BinOp_Get(c, i));
 }
 
 /** INTERNAL: Called by BoxCmp_Finish to finalise the operator table. */
-void BoxCmp_Operator_Finish(BoxCmp *c) {
-  BoxArr_Finish(& c->operators);
+void BoxCmp_Finish__Operators(BoxCmp *c) {
+  int i;
+
+  for(i = 0; i < ASTUNOP__NUM_OPS; i++)
+    Operator_Finish(BoxCmp_UnOp_Get(c, i));
+
+  for(i = 0; i < ASTBINOP__NUM_OPS; i++)
+    Operator_Finish(BoxCmp_BinOp_Get(c, i));
 }
 
-/* Create a new operator */
-void BoxCmp_Operator_Add(BoxCmp *c, char *name) {
-  int i, j;
-  Operator *op;
-
-  /* Just to remember what gets allocated, so we can destroy it later! */
-  op = BoxArr_Push(& c->operators, NULL);
-
-  op->name = name;
-  op->can_define = 0;
-
-#if 0
-  /* Pulisco i collegamenti alle operazioni */
-  opr->opn_chain = NULL;
-  for (j = 0; j < 3; j++ ) {
-    for (i = 0; i < CMP_PRIVILEGED; i++)
-      opr->opn[j][i] = NULL;
-  }
-#endif
-}
 
 #if 0
 void Cmp_Operator_Destroy(Operator *opr) {

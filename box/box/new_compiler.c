@@ -55,12 +55,12 @@ typedef struct {
 
 void BoxCmp_Init(BoxCmp *c) {
   BoxArr_Init(& c->stack, sizeof(StackItem), 32);
-  BoxCmp_Operator_Init(c);
+  BoxCmp_Init__Operators(c);
 }
 
 void BoxCmp_Finish(BoxCmp *c) {
   BoxArr_Finish(& c->stack);
-  BoxCmp_Operator_Finish(c);
+  BoxCmp_Finish__Operators(c);
 }
 
 BoxCmp *BoxCmp_New(void) {

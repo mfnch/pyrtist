@@ -26,13 +26,12 @@
 #ifndef _OPERATOR_H
 #  define _OPERATOR_H
 
-/** INTERNAL: Called by BoxCmp_Init to initialise the operator table. */
-void BoxCmp_Operator_Init(BoxCmp *c);
+#  include "new_compiler.h"
 
-/** INTERNAL: Called by BoxCmp_Finish to finalise the operator table. */
-void BoxCmp_Operator_Finish(BoxCmp *c);
+typedef struct _operation_struc Operation;
+typedef struct _operator_struc Operator;
 
-typedef struct _operation_struc {
+struct _operation_struc {
   struct {
     unsigned int
           intrinsic   : 1, /**< has a corresponding VM instruction */
@@ -47,24 +46,26 @@ typedef struct _operation_struc {
           type_result;     /**< Type of the result */
 
   union {
-    UInt asm_code;         /**< Bytecode instrucion associated with the op. */
-    Int module;            /**<  */
+    UInt  asm_code;        /**< Bytecode instrucion associated with the op. */
+    Int   module;          /**<  */
   } implem;                /**< The implementation of the operation */
 
   struct _operation_struc
-    *next;     /* Prossima operazione dello stesso operatore */
-} Operation;
+          *next;           /**< Next operation of the current operator */
+};
 
-typedef struct {
-  unsigned int can_define : 1; /* E' un operatore di definizione? */
-  char *name; /* Token che rappresenta l'operatore */
-#if 0
-  /* Operazioni privilegiate, cioe' con collegamenti diretti */
-  Operation *opn[3][CMP_PRIVILEGED];
-  /* Operazioni non privilegiate, cioe' con collegamenti in catena */
-  Operation *opn_chain;
-#endif
-} Operator;
+struct _operator_struc {
+  unsigned int
+             can_define : 1;   /* E' un operatore di definizione? */
+  const char *name;            /* Token che rappresenta l'operatore */
+  Operation  *first_operation;
+};
+
+/** INTERNAL: Called by BoxCmp_Init to initialise the operator table. */
+void BoxCmp_Init__Operators(BoxCmp *c);
+
+/** INTERNAL: Called by BoxCmp_Finish to finalise the operator table. */
+void BoxCmp_Finish__Operators(BoxCmp *c);
 
 #if 0
 
