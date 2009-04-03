@@ -32,6 +32,29 @@ void BoxCmp_Operator_Init(BoxCmp *c);
 /** INTERNAL: Called by BoxCmp_Finish to finalise the operator table. */
 void BoxCmp_Operator_Finish(BoxCmp *c);
 
+typedef struct _operation_struc {
+  struct {
+    unsigned int
+          intrinsic   : 1, /**< has a corresponding VM instruction */
+          commutative : 1, /**< is commutative */
+          immediate   : 1, /**< allow immediate operands (constants) */
+          assignment  : 1, /**< is an assignment operation (=, +=, ...) */
+          link        : 1; /**< ???? */
+  } is;
+
+  BoxType type_left,       /**< Type of the left operand */
+          type_right,      /**< Type of the right operand */
+          type_result;     /**< Type of the result */
+
+  union {
+    UInt asm_code;         /**< Bytecode instrucion associated with the op. */
+    Int module;            /**<  */
+  } implem;                /**< The implementation of the operation */
+
+  struct _operation_struc
+    *next;     /* Prossima operazione dello stesso operatore */
+} Operation;
+
 typedef struct {
   unsigned int can_define : 1; /* E' un operatore di definizione? */
   char *name; /* Token che rappresenta l'operatore */
@@ -44,21 +67,6 @@ typedef struct {
 } Operator;
 
 #if 0
-struct Operation {
-  struct {
-    unsigned int intrinsic   : 1; /* E' una operazione intrinseca? */
-    unsigned int commutative : 1; /* E' commutativa? */
-    unsigned int immediate   : 1; /* Ammette l'operazione immediata? */
-    unsigned int assignment  : 1; /* E' una operazione di assegnazione? */
-    unsigned int link        : 1; /* E' una operazione di tipo "link"? */
-  } is;
-  Int type1, type2, type_rs;   /* Tipi dei due argomenti */
-  union {
-    UInt asm_code;  /* Codice assembly dell'istruzione associata */
-    Int module;    /* Modulo caricato nella VM per eseguire l'operazione */
-  }; /* <-- questa e' una union senza nome! Non e' ISO C purtroppo! */
-  struct Operation *next;     /* Prossima operazione dello stesso operatore */
-};
 
 typedef struct Operation Operation;
 
