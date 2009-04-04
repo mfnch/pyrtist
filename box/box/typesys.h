@@ -114,7 +114,7 @@ typedef enum {
   TS_TYPES_UNMATCH=0
 } TSCmp;
 
-Task TS_Init(TS *ts);
+void TS_Init(TS *ts);
 
 void TS_Destroy(TS *ts);
 

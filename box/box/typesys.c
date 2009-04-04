@@ -45,14 +45,13 @@ static void Destroy_TSDesc(void *td) {
   ((TSDesc *) td)->name = 0;
 }
 
-Task TS_Init(TS *ts) {
+void TS_Init(TS *ts) {
   BoxOcc_Init(& ts->type_descs, sizeof(TSDesc), TS_TSDESC_CLC_SIZE);
   BoxOcc_Set_Finalizer(& ts->type_descs, Destroy_TSDesc);
   BoxHT_Init_Default(& ts->members,  TS_MEMB_HT_SIZE);
   BoxHT_Init_Default(& ts->subtypes, TS_SUBT_HT_SIZE);
   BoxArr_Init(& ts->name_buffer, sizeof(char), TS_NAME_BUFFER_SIZE);
   last_ts = ts; /* Just for transition: will be removed! */
-  return Success;
 }
 
 void TS_Destroy(TS *ts) {

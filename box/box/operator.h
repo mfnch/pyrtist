@@ -51,7 +51,8 @@ struct _operation_struc {
   } implem;                /**< The implementation of the operation */
 
   struct _operation_struc
-          *next;           /**< Next operation of the current operator */
+          *next,           /**< Next operation of the current operator */
+          *previous;       /**< Prevous operation */
 };
 
 struct _operator_struc {
