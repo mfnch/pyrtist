@@ -114,9 +114,12 @@ typedef enum {
   TS_TYPES_UNMATCH=0
 } TSCmp;
 
+/** Used by the old Tym_* functions, to be removed in the future! */
+extern TS *last_ts;
+
 void TS_Init(TS *ts);
 
-void TS_Destroy(TS *ts);
+void TS_Finish(TS *ts);
 
 Int TS_Size(TS *ts, Type t);
 #define TS_Size_Get TS_Size

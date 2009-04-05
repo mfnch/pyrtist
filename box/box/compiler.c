@@ -84,7 +84,7 @@ Task Cmp_Init(VMProgram *program) {
 
   BoxArr_Init(& cmp->allocd_oprs, sizeof(OldOperator *), 64);
   BoxArr_Set_Finalizer(& cmp->allocd_oprs, Opr_Destructor);
-  TASK( TS_Init(cmp->ts) );
+  TS_Init(cmp->ts);
 
   /* Initialization of the lists which hold the occupation status
    * for registers and variables.
@@ -117,6 +117,7 @@ Task Cmp_Parse(const char *file) {
 
   program_node = Parser_Parse(NULL, file);
   BoxCmp_Compile(& cmp->new_compiler, program_node);
+  ASTNode_Destroy(program_node);
 
 
 #if 0
@@ -133,7 +134,7 @@ Task Cmp_Parse(const char *file) {
 }
 
 void Cmp_Destroy(void) {
-  TS_Destroy(cmp->ts);
+  TS_Finish(cmp->ts);
   Reg_Destroy();
 
   BoxArr_Finish(& cmp->imm_segment);

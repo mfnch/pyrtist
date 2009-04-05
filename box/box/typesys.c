@@ -34,8 +34,7 @@
 #include "virtmach.h"
 #include "typesys.h"
 
-
-static TS *last_ts; /* Just for transition: will be removed! */
+TS *last_ts; /* Just for transition: will be removed! */
 
 /* This will disappear in the future */
 static char *last_name = (char *) NULL;
@@ -54,7 +53,7 @@ void TS_Init(TS *ts) {
   last_ts = ts; /* Just for transition: will be removed! */
 }
 
-void TS_Destroy(TS *ts) {
+void TS_Finish(TS *ts) {
   BoxOcc_Finish(& ts->type_descs);
   BoxHT_Finish(& ts->members);
   BoxHT_Finish(& ts->subtypes);

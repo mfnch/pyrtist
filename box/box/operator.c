@@ -24,6 +24,7 @@
 #include "mem.h"
 #include "ast.h"
 #include "expr.h"
+#include "messages.h"
 #include "new_compiler.h"
 #include "operator.h"
 
@@ -36,9 +37,9 @@
  * Operations.
  */
 
-
 /* Create a new operator */
 void Operator_Init(Operator *opr, const char *name) {
+  opr->attr = 0;
   opr->name = name;
   opr->can_define = 0;
   opr->first_operation = NULL;
@@ -46,11 +47,18 @@ void Operator_Init(Operator *opr, const char *name) {
 
 void Operator_Finish(Operator *opr) {
   Operation *opn = opr->first_operation;
-  while (opn->next != NULL) { /* Destroy the chain of operations */
+  while (opn != NULL) { /* Destroy the chain of operations */
     Operation *this = opn;
     opn = opn->next;
     BoxMem_Free(this);
   }
+}
+
+/** Change attributes for operator. 'mask' tells what attributes to change,
+ * 'value' tells how to change them.
+ */
+void Operator_Attr_Set(Operator *opr, OprAttr mask, OprAttr attr) {
+  opr->attr = (opr->attr & (~mask)) | (attr & mask);
 }
 
 /* Aggiunge una nuova operazione di tipo type1 opr type2
@@ -62,6 +70,8 @@ Operation *Operator_Add_Opn(Operator *opr, BoxType type_left,
   Operation *opn;
 
   opn = (Operation *) BoxMem_Safe_Alloc(sizeof(Operation));
+  opn->attr_mask = 0;
+  opn->attr = 0;
   opn->type_left = type_left;
   opn->type_right = type_right;
   opn->type_result = type_result;
@@ -101,11 +111,17 @@ Operator *BoxCmp_UnOp_Get(BoxCmp *c, ASTUnOp un_op) {
 void BoxCmp_Init__Operators(BoxCmp *c) {
   int i;
 
-  for(i = 0; i < ASTUNOP__NUM_OPS; i++)
-    Operator_Init(BoxCmp_UnOp_Get(c, i), ASTBinOp_To_String(i));
+  for(i = 0; i < ASTUNOP__NUM_OPS; i++) {
+    Operator *opr = BoxCmp_UnOp_Get(c, i);
+    Operator_Init(opr, ASTBinOp_To_String(i));
+    Operator_Attr_Set(opr, OPR_ATTR_BINARY, 0);
+  }
 
-  for(i = 0; i < ASTBINOP__NUM_OPS; i++)
-    Operator_Init(BoxCmp_BinOp_Get(c, i), ASTUnOp_To_String(i));
+  for(i = 0; i < ASTBINOP__NUM_OPS; i++) {
+    Operator *opr = BoxCmp_BinOp_Get(c, i);
+    Operator_Init(opr, ASTUnOp_To_String(i));
+    Operator_Attr_Set(opr, OPR_ATTR_BINARY, OPR_ATTR_BINARY);
+  }
 }
 
 /** INTERNAL: Called by BoxCmp_Finish to finalise the operator table. */
@@ -120,9 +136,8 @@ void BoxCmp_Finish__Operators(BoxCmp *c) {
 }
 
 
-/* DESCRIPTION: Finds the unary or binary operation associated with
- *  the operator *opr.
- *  If type1 and type2 are both different from TYPE_NONE, then this function
+/** Finds the unary or binary operation associated with the operator *opr.
+ *  If type1 and type2 are both different from BOXTYPE_NONE, then the function
  *  will search for a binary operation of the following kind:
  *                               type1 opr type2
  *  If type1 = TYPE_NONE, then a left-unary operation will be searched:
@@ -133,13 +148,39 @@ void BoxCmp_Finish__Operators(BoxCmp *c) {
  *  during the search.
  * NOTE: it should not happen that type1 = type2 = TYPE_NONE.
  */
-Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr,
-                                    BoxType type_left, BoxType type_right,
-                                    BoxType type_result) {
+Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
+                                    BoxType type_left, BoxType type_right) {
+  int opr_is_unary = ((opr->attr & OPR_ATTR_BINARY) == 0);
+  Operation *opn;
+  for(opn = opr->first_operation; opn != NULL; opn = opn->next) {
+    printf("Operation at %p\n", opn);
+    TSCmp match_left, match_right;
+    match_left = TS_Compare(& c->ts, opn->type_left, type_left);
+    if (match_left != TS_TYPES_UNMATCH) {
+      if (opr_is_unary) {
+          match->opr = opr;
+          match->attr = (opr->attr & (~opn->attr_mask))
+                        | (opn->attr_mask & opn->attr);
+          match->match_left = match_left;
+          match->match_right = 0;
+          match->expand_type_left = opn->type_left;
+          match->expand_type_right = BOXTYPE_NONE;
+          return opn;
 
-  Operation *opn = opr->first_operation;
-  for(opn = opr->first_operation; opn->next != NULL; opn = opn->next) {
-
+      } else {
+        match_right = TS_Compare(& c->ts, opn->type_right, type_right);
+        if (match_right != TS_TYPES_UNMATCH) {
+          match->opr = opr;
+          match->attr = (opr->attr & (~opn->attr_mask))
+                        | (opn->attr_mask & opn->attr);
+          match->match_left = match_left;
+          match->match_right = match_right;
+          match->expand_type_left = opn->type_left;
+          match->expand_type_right = opn->type_right;
+          return opn;
+        }
+      }
+    }
   }
   return NULL;
 
@@ -204,311 +245,61 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr,
   return NULL;
 #endif
 
-}
-
-
-#if 0
-
-/* DESCRIPTION: Finds the unary or binary operation associated with
- *  the operator *opr.
- *  If type1 and type2 are both different from TYPE_NONE, then this function
- *  will search for a binary operation of the following kind:
- *                               type1 opr type2
- *  If type1 = TYPE_NONE, then a left-unary operation will be searched:
- *                                  opr type2
- *  If type2 = TYPE_NONE, then a right-unary operation will be searched:
- *                                  type1 opr
- *  If typer != TYPE_NONE also the type of the result will be checked
- *  during the search.
- * NOTE: it should not happen that type1 = type2 = TYPE_NONE.
- */
-Operation *Cmp_Operation_Find(Operator *opr,
-                              Type type1, Type type2, Type typer,
-                              OpnInfo *oi)
-{
-
-  Int type;
-  int no_check_arg1, no_check_arg2, check_rs, unary;
-  int ne1, ne2;
-  Operation *opn;
-
-#if 0
-  printf("Cmp_Operation_Find: Cerco %s OP %s\n",
-   Tym_Type_Names(type1), Tym_Type_Names(type2));
-#endif
-
-  no_check_arg1 = (type1 == TYPE_NONE);
-  no_check_arg2 = (type2 == TYPE_NONE);
-  check_rs      = (typer != TYPE_NONE);
-  unary = no_check_arg1 || no_check_arg2;
-
-  /* Is it a privileged operation or not? */
-  if ( ! check_rs ) {
-    Int aa;
-    int is_privileged;
-
-    aa = no_check_arg1 | (no_check_arg2 << 1);
-    switch (aa) {
-    case 0:
-      type = type1 = Tym_Type_Resolve_All(type1);
-      type2 = Tym_Type_Resolve_All(type2);
-      is_privileged = ( (type1 == type2) && (type <= CMP_PRIVILEGED) );
-      break;
-    case 1:
-      type = Tym_Type_Resolve_All(type2);
-      is_privileged = (type <= CMP_PRIVILEGED);
-      break;
-    case 2:
-      type = Tym_Type_Resolve_All(type1);
-      is_privileged = (type <= CMP_PRIVILEGED);
-      break;
-    default:
-      MSG_ERROR("Operazione fra tipi nulli!");
-      return NULL;
-      break;
-    }
-
-#ifdef USE_PRIVILEGED
-    if ( is_privileged ) {
-      opn = opr->opn[aa][type];
-      if (opn != NULL) {
-        if (oi == NULL) return opn;
-        oi->commute = 0;
-        oi->expand1 = 0;
-        oi->expand2 = 0;
-        return opn;
-      }
-    }
-#endif
-  }
-
-  for (opn = opr->opn_chain; opn != NULL; opn = opn->next ) {
-    register Int t1 = opn->type1, t2 = opn->type2;
-    int ok_1, ok_2, ok_rs = 1;
-
-    ok_1 = (t1 == type1);
-    ok_2 = (t2 == type2);
-    ne1 = ne2 = 0;
-    if ( ! (ok_1 || no_check_arg1) ) ok_1 = Tym_Compare_Types(t1, type1, & ne1);
-    if ( ! (ok_2 || no_check_arg2) ) ok_2 = Tym_Compare_Types(t2, type2, & ne2);
-
-    if ( check_rs ) {
-      ok_rs = Tym_Compare_Types(typer, opn->type_rs, NULL);
-    }
-
-    if (ok_rs) {
-      if (ok_1 && ok_2) {
-        if (oi == NULL) return opn;
-        oi->commute = 0;
-        oi->expand1 = ne1;
-        oi->expand2 = ne2;
-        oi->exp_type1 = t1;
-        oi->exp_type2 = t2;
-        return opn;
-      }
-
-      if ( !unary && opn->is.commutative ) {
-        ok_1 = (t1 == type2);
-        ok_2 = (t2 == type1);
-        if ( ! ok_1 ) ok_1 = Tym_Compare_Types(t1, type2, & ne2);
-        if ( ! ok_2 ) ok_2 = Tym_Compare_Types(t2, type1, & ne1);
-        if ( ok_1 && ok_2 ) {
-          if ( oi == NULL ) return opn;
-          oi->commute = 1;
-          oi->expand1 = ne1;
-          oi->expand2 = ne2;
-          oi->exp_type1 = t2;
-          oi->exp_type2 = t1;
-          return opn;
-        }
-      }
-    }
-  }
-  return NULL;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* DESCRIPTION: Finds the unary or binary operation associated with
- *  the operator *opr.
- *  If type1 and type2 are both different from TYPE_NONE, then this function
- *  will search for a binary operation of the following kind:
- *                               type1 opr type2
- *  If type1 = TYPE_NONE, then a left-unary operation will be searched:
- *                                  opr type2
- *  If type2 = TYPE_NONE, then a right-unary operation will be searched:
- *                                  type1 opr
- *  If typer != TYPE_NONE also the type of the result will be checked
- *  during the search.
- * NOTE: it should not happen that type1 = type2 = TYPE_NONE.
- */
-Operation *Cmp_Operation_Find(Operator *opr,
-                              Type type1, Type type2, Type typer,
-                              OpnInfo *oi)
-{
-
-  Int type;
-  int no_check_arg1, no_check_arg2, check_rs, unary;
-  int ne1, ne2;
-  Operation *opn;
-
-#if 0
-  printf("Cmp_Operation_Find: Cerco %s OP %s\n",
-   Tym_Type_Names(type1), Tym_Type_Names(type2));
-#endif
-
-  no_check_arg1 = (type1 == TYPE_NONE);
-  no_check_arg2 = (type2 == TYPE_NONE);
-  check_rs      = (typer != TYPE_NONE);
-  unary = no_check_arg1 || no_check_arg2;
-
-  /* Is it a privileged operation or not? */
-  if ( ! check_rs ) {
-    Int aa;
-    int is_privileged;
-
-    aa = no_check_arg1 | (no_check_arg2 << 1);
-    switch (aa) {
-    case 0:
-      type = type1 = Tym_Type_Resolve_All(type1);
-      type2 = Tym_Type_Resolve_All(type2);
-      is_privileged = ( (type1 == type2) && (type <= CMP_PRIVILEGED) );
-      break;
-    case 1:
-      type = Tym_Type_Resolve_All(type2);
-      is_privileged = (type <= CMP_PRIVILEGED);
-      break;
-    case 2:
-      type = Tym_Type_Resolve_All(type1);
-      is_privileged = (type <= CMP_PRIVILEGED);
-      break;
-    default:
-      MSG_ERROR("Operazione fra tipi nulli!");
-      return NULL;
-      break;
-    }
-
-#ifdef USE_PRIVILEGED
-    if ( is_privileged ) {
-      opn = opr->opn[aa][type];
-      if (opn != NULL) {
-        if (oi == NULL) return opn;
-        oi->commute = 0;
-        oi->expand1 = 0;
-        oi->expand2 = 0;
-        return opn;
-      }
-    }
-#endif
-  }
-
-  for (opn = opr->opn_chain; opn != NULL; opn = opn->next ) {
-    register Int t1 = opn->type1, t2 = opn->type2;
-    int ok_1, ok_2, ok_rs = 1;
-
-    ok_1 = (t1 == type1);
-    ok_2 = (t2 == type2);
-    ne1 = ne2 = 0;
-    if ( ! (ok_1 || no_check_arg1) ) ok_1 = Tym_Compare_Types(t1, type1, & ne1);
-    if ( ! (ok_2 || no_check_arg2) ) ok_2 = Tym_Compare_Types(t2, type2, & ne2);
-
-    if ( check_rs ) {
-      ok_rs = Tym_Compare_Types(typer, opn->type_rs, NULL);
-    }
-
-    if (ok_rs) {
-      if (ok_1 && ok_2) {
-        if (oi == NULL) return opn;
-        oi->commute = 0;
-        oi->expand1 = ne1;
-        oi->expand2 = ne2;
-        oi->exp_type1 = t1;
-        oi->exp_type2 = t2;
-        return opn;
-      }
-
-      if ( !unary && opn->is.commutative ) {
-        ok_1 = (t1 == type2);
-        ok_2 = (t2 == type1);
-        if ( ! ok_1 ) ok_1 = Tym_Compare_Types(t1, type2, & ne2);
-        if ( ! ok_2 ) ok_2 = Tym_Compare_Types(t2, type1, & ne1);
-        if ( ok_1 && ok_2 ) {
-          if ( oi == NULL ) return opn;
-          oi->commute = 1;
-          oi->expand1 = ne1;
-          oi->expand2 = ne2;
-          oi->exp_type1 = t2;
-          oi->exp_type2 = t1;
-          return opn;
-        }
-      }
-    }
-  }
-  return NULL;
 }
 
 /** Compiles an operation between the two expression e1 and e2, where
  * the operator is opr.
  */
-Expr *Opr_Emit_BinOp(ASTBinOp op, Expr *e1, Expr *e2) {
+Expr *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
+                            Expr *expr_left, Expr *expr_right) {
+  Operator *opr = BoxCmp_BinOp_Get(c, op);
   Operation *opn;
-  OpnInfo oi;
+  OprMatch match;
 
-  Expr_Resolve_Subtype(e1);
-  Expr_Resolve_Subtype(e2);
+  /* Subtypes cannot be used for operator overloading, so we expand
+   * them anyway!
+   */
+  Expr_Resolve_Subtype(expr_left);
+  Expr_Resolve_Subtype(expr_right);
 
-  if (!e1->is.value || !e2->is.value) {
-    if (!e1->is.value) {
+  /* Require operands have value. */
+  if (!expr_left->is.value || !expr_right->is.value) {
+    if (!expr_left->is.value) {
       MSG_ERROR("The expression on the left of '%s' "
-                "must have a definite value!", ASTBinOp_To_String(op));
+                "must have a definite value!", opr->name);
     } else {
       MSG_ERROR("The expression on the right of '%s' "
-                "must have a definite value!", ASTBinOp_To_String(op));
+                "must have a definite value!", opr->name);
     }
     return NULL;
   }
 
-  /* Prima cerco se esiste un'operazione fra i tipi di e1 e e2 */
-  opn = Cmp_Operation_Find(opr, e1type, e2type, TYPE_NONE, & oi);
+  /* Now we search the operation */
+  opn = BoxCmp_Operator_Find_Opn(c, opr, & match,
+                                 expr_left->type, expr_right->type);
   if (opn != NULL) {
     /* Ora eseguo le espansioni, se necessario */
-    if (oi.expand1) {
-      if IS_FAILED(Cmp_Expr_Expand(oi.exp_type1, e1)) return NULL;
+    if (match.match_left == TS_TYPES_EXPAND) {
+      printf("BoxCmp_Opr_Emit_BinOp: Expansion not implemented, yet!");
+      return NULL;
+      /*if (Cmp_Expr_Expand(oi.exp_type1, e1) == BoxFailure) return NULL;*/
     }
-    if (oi.expand2) {
-      if IS_FAILED(Cmp_Expr_Expand(oi.exp_type2, e2)) return NULL;
+    if (match.match_right == TS_TYPES_EXPAND) {
+      printf("BoxCmp_Opr_Emit_BinOp: Expansion not implemented, yet!");
+      return NULL;
+      /*if (Cmp_Expr_Expand(oi.exp_type2, e2) == BoxFailure) return NULL;*/
     }
 
+    return NULL;
+
+#if 0
     /* manca la valutazione della commutativita'! */
 
     return Cmp_Operation_Exec(opn, e1, e2);
+#endif
 
-  } else {
-    if (strcmp(opr->name, "=") != 0)
+  } else if (op == ASTBINOP_EQ) {
+    /*if (op != 0)
       goto Exec_Opn_Error;
 
     if IS_FAILED( Cmp_Expr_Expand(e1->type, e2) )
@@ -517,24 +308,14 @@ Expr *Opr_Emit_BinOp(ASTBinOp op, Expr *e1, Expr *e2) {
     if IS_FAILED(Expr_Move(e1, e2))
       return NULL;
 
-    return e1;
-  }
-
-Exec_Opn_Error:
-  if ( num_arg == 1 ) {
-    if ( e1type != TYPE_NONE ) {
-        MSG_ERROR("%s %s <-- Operation has not been defined!",
-         opr->name, Tym_Type_Name(e1->type) );
-    } else {
-        MSG_ERROR("%s %s <-- Operation has not been defined!",
-         Tym_Type_Name(e2->type), opr->name );
-    }
+    return e1;*/
     return NULL;
 
   } else {
     MSG_ERROR("%s %s %s <-- Operation has not been defined!",
-     Tym_Type_Names(e1->type), opr->name, Tym_Type_Names(e2->type) );
+              TS_Name_Get(& c->ts, expr_left->type), opr->name,
+              TS_Name_Get(& c->ts, expr_right->type));
     return NULL;
   }
+
 }
-#endif

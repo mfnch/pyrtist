@@ -66,6 +66,14 @@ typedef double BoxReal;
 /** Used in the compiler to represent Box types. */
 typedef BoxInt BoxType;
 
+enum {
+  BOXTYPE_NONE=-1,
+  BOXTYPE_CHAR=0,
+  BOXTYPE_INT,
+  BOXTYPE_REAL,
+  BOXTYPE_POINT
+};
+
 /** The 2D point type */
 typedef struct {
   BoxReal x, y;

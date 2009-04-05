@@ -55,12 +55,18 @@ typedef struct {
 
 void BoxCmp_Init(BoxCmp *c) {
   BoxArr_Init(& c->stack, sizeof(StackItem), 32);
+  {
+    TS *this_ts = last_ts;
+    TS_Init(& c->ts);
+    last_ts = this_ts;
+  }
   BoxCmp_Init__Operators(c);
 }
 
 void BoxCmp_Finish(BoxCmp *c) {
   BoxArr_Finish(& c->stack);
   BoxCmp_Finish__Operators(c);
+  TS_Finish(& c->ts);
 }
 
 BoxCmp *BoxCmp_New(void) {
@@ -199,23 +205,20 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
   right = BoxCmp_Get_Expr(c, 0);
   left  = BoxCmp_Get_Expr(c, 1);
 
-  result = NULL;
-#if 0
   if (left->is.typed && right->is.typed) {
-    Expr *result = Cmp_Operator_Exec(opr, left, right);
-    if (result == NULL) return Failed;
-    *rs = *result;
-    return Success;
+    result = BoxCmp_Opr_Emit_BinOp(c, n->attr.bin_op.operation, left, right);
 
   } else {
+    result = NULL;
+#if 0
     if ( opr->can_define ) {
       return Prs_Def_Operator(opr, rs, a, b);
     } else {
       MSG_ERROR("The expression should have type!");
       return Failed;
     }
-  }
 #endif
+  }
 
   BoxCmp_Pop_Any(c, 2);
   BoxCmp_Push_Expr(c, result);

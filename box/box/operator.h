@@ -28,16 +28,22 @@
 
 #  include "new_compiler.h"
 
+typedef enum {
+  OPR_ATTR_BINARY      = 1, /**< Is it a binary or unary operator? */
+  OPR_ATTR_COMMUTATIVE = 2, /**< Is it a commutative operator? */
+  OPR_ATTR_ASSIGNMENT  = 4  /**< Is it an assignment operator? */
+} OprAttr;
+
 typedef struct _operation_struc Operation;
 typedef struct _operator_struc Operator;
 
 struct _operation_struc {
+  OprAttr attr_mask,       /**< Mask of attributes overridden from operation */
+          attr;            /**< Attributes overridden from operation */
   struct {
     unsigned int
           intrinsic   : 1, /**< has a corresponding VM instruction */
-          commutative : 1, /**< is commutative */
           immediate   : 1, /**< allow immediate operands (constants) */
-          assignment  : 1, /**< is an assignment operation (=, +=, ...) */
           link        : 1; /**< ???? */
   } is;
 
@@ -56,11 +62,26 @@ struct _operation_struc {
 };
 
 struct _operator_struc {
+  OprAttr    attr;             /**< Operator attributes */
   unsigned int
              can_define : 1;   /* E' un operatore di definizione? */
   const char *name;            /* Token che rappresenta l'operatore */
   Operation  *first_operation;
 };
+
+/** Structure returned by BoxCmp_Operator_Find_Opn containing details about
+ * the Operation which was found.
+ */
+typedef struct {
+  Operator *opr;              /**< Operator for which we got the match. */
+  OprAttr  attr;              /**< Attributes of the matched operation */
+  TSCmp    match_left,        /**< How the left operand was matched. */
+           match_right;       /**< How the right operand was matched. */
+  BoxType  expand_type_left,  /**< Type to which the left operand should be
+                                   expanded */
+           expand_type_right; /**< Type to which the right operand should be
+                                   expanded */
+} OprMatch;
 
 /** INTERNAL: Called by BoxCmp_Init to initialise the operator table. */
 void BoxCmp_Init__Operators(BoxCmp *c);
@@ -68,65 +89,13 @@ void BoxCmp_Init__Operators(BoxCmp *c);
 /** INTERNAL: Called by BoxCmp_Finish to finalise the operator table. */
 void BoxCmp_Finish__Operators(BoxCmp *c);
 
-#if 0
+/** Change attributes for operator. 'mask' tells what attributes to change,
+ * 'value' tells how to change them.
+ */
+void Operator_Attr_Set(Operator *opr, OprAttr mask, OprAttr attr);
 
-typedef struct Operation Operation;
 
-typedef struct Operator Operator;
-
-/* "Collezione" di tutti gli operatori */
-struct cmp_opr_struct {
-  /* Operatore usato per la conversione fra tipi diversi */
-  Operator *converter;
-
-  /* Operatori di assegnazione */
-  Operator *assign;
-  Operator *aplus;
-  Operator *aminus;
-  Operator *atimes;
-  Operator *adiv;
-  Operator *arem;
-  Operator *aband;
-  Operator *abxor;
-  Operator *abor;
-  Operator *ashl;
-  Operator *ashr;
-
-  /* Operatori di incremento/decremento */
-  Operator *inc;
-  Operator *dec;
-
-  /* Operatori aritmetici convenzionali */
-  Operator *pow;
-  Operator *plus;
-  Operator *minus;
-  Operator *times;
-  Operator *div;
-  Operator *rem;
-
-  /* Operatori bit-bit */
-  Operator *bor;
-  Operator *bxor;
-  Operator *band;
-  Operator *bnot;
-
-  /* Operatori di shift */
-  Operator *shl;
-  Operator *shr;
-
-  /* Operatori di confronto */
-  Operator *eq;
-  Operator *ne;
-  Operator *gt;
-  Operator *ge;
-  Operator *lt;
-  Operator *le;
-
-  /* Operatori logici */
-  Operator *lor;
-  Operator *land;
-  Operator *lnot;
-};
-#endif
+Expr *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
+                            Expr *expr_left, Expr *expr_right);
 
 #endif /* _OPERATOR_H */
