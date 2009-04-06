@@ -58,6 +58,7 @@ void BoxCmp_Init(BoxCmp *c) {
   {
     TS *this_ts = last_ts;
     TS_Init(& c->ts);
+    TS_Init_Builtin_Types(& c->ts);
     last_ts = this_ts;
   }
   BoxCmp_Init__Operators(c);

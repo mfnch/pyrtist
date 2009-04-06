@@ -121,6 +121,9 @@ void TS_Init(TS *ts);
 
 void TS_Finish(TS *ts);
 
+/** Should disappear soon */
+void TS_Init_Builtin_Types(TS *ts);
+
 Int TS_Size(TS *ts, Type t);
 #define TS_Size_Get TS_Size
 

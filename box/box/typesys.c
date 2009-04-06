@@ -44,6 +44,35 @@ static void Destroy_TSDesc(void *td) {
   ((TSDesc *) td)->name = 0;
 }
 
+void TS_Init_Builtin_Types(TS *ts) {
+  static struct {
+    const char *name;
+    Type       expected;
+    Int        size;
+
+  } *builtin_type, builtin_types[] = {
+    { "Char",  BOXTYPE_CHAR, sizeof(BoxChar)},
+    {  "Int",   BOXTYPE_INT, sizeof(BoxInt)},
+    { "Real",  BOXTYPE_REAL, sizeof(BoxReal)},
+    {"Point", BOXTYPE_POINT, sizeof(BoxPoint)},
+    {NULL, 0, 0}
+  };
+
+  if (BoxOcc_Max_Index( & ts->type_descs) != 0) {
+    MSG_FATAL("Cannot setup intrinsic types: type system already used!");
+
+  } else {
+    for(builtin_type = & builtin_types[0];
+        builtin_type->name != NULL;
+        builtin_type++) {
+      Type type;
+      TS_Intrinsic_New(ts, & type, builtin_type->size);
+      TS_Name_Set(ts, type, builtin_type->name);
+      assert(type == builtin_type->expected);
+    }
+  }
+}
+
 void TS_Init(TS *ts) {
   BoxOcc_Init(& ts->type_descs, sizeof(TSDesc), TS_TSDESC_CLC_SIZE);
   BoxOcc_Set_Finalizer(& ts->type_descs, Destroy_TSDesc);

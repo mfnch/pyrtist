@@ -113,13 +113,13 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
 
   for(i = 0; i < ASTUNOP__NUM_OPS; i++) {
     Operator *opr = BoxCmp_UnOp_Get(c, i);
-    Operator_Init(opr, ASTBinOp_To_String(i));
+    Operator_Init(opr, ASTUnOp_To_String(i));
     Operator_Attr_Set(opr, OPR_ATTR_BINARY, 0);
   }
 
   for(i = 0; i < ASTBINOP__NUM_OPS; i++) {
     Operator *opr = BoxCmp_BinOp_Get(c, i);
-    Operator_Init(opr, ASTUnOp_To_String(i));
+    Operator_Init(opr, ASTBinOp_To_String(i));
     Operator_Attr_Set(opr, OPR_ATTR_BINARY, OPR_ATTR_BINARY);
   }
 }
