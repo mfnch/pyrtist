@@ -28,12 +28,11 @@ static AsmCode asm_code_lea[] = {ASM_LEA_C, ASM_LEA_I, ASM_LEA_R, ASM_LEA_P};
 static AsmCode asm_code_mov[] = {ASM_MOV_CC, ASM_MOV_II,
                                  ASM_MOV_RR, ASM_MOV_PP};
 
-
 static void Prepare_Ptr_Access(const Cont *c) {
-  Int ptr_reg = c->ptr_reg;
+  Int ptr_reg = c->value.ptr.reg;
   if (c->categ == CAT_PTR && ptr_reg != 0) {
-    Int addr_categ = c->flags.ptr_is_greg ? CAT_GREG : CAT_LREG;
-    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Int) 0, addr_categ, c->ptr_reg);
+    Int addr_categ = c->value.ptr.greg ? CAT_GREG : CAT_LREG;
+    Cmp_Assemble(ASM_MOV_OO, CAT_LREG, (Int) 0, addr_categ, ptr_reg);
   }
 }
 
@@ -60,8 +59,8 @@ void Cont_Move(const Cont *dest, const Cont *src) {
   src_is_ptr = (src->categ == CAT_PTR);
   dest_is_ptr = (dest->categ == CAT_PTR);
   num_ptrs = src_is_ptr + dest_is_ptr;
-  ro0_conflict = num_ptrs > 1 ||
-                 (num_ptrs == 1 && src->categ == CAT_LREG && src->reg == 0);
+  ro0_conflict = num_ptrs > 1 || (num_ptrs == 1 && src->categ == CAT_LREG
+                                  && src->value.reg == 0);
   if (ro0_conflict) {
     if (t == TYPE_OBJ) {
       /* Here we use the stack to do the job:
@@ -71,9 +70,9 @@ void Cont_Move(const Cont *dest, const Cont *src) {
        *  pop o[ro0 + 16]
        */
       Prepare_Ptr_Access(src);
-      Cmp_Assemble(ASM_PUSH_O, src->categ, src->reg);
+      Cmp_Assemble(ASM_PUSH_O, src->categ, src->value.any_int);
       Prepare_Ptr_Access(dest);
-      Cmp_Assemble(ASM_POP_O, dest->categ, dest->reg);
+      Cmp_Assemble(ASM_POP_O, dest->categ, dest->value.any_int);
       return;
 
     } else {
@@ -86,9 +85,11 @@ void Cont_Move(const Cont *dest, const Cont *src) {
       assert(t>=0 && t<TYPE_OBJ);
 
       Prepare_Ptr_Access(src);
-      Cmp_Assemble(asm_code_mov[t], CAT_LREG, (Int) 0, src->categ, src->reg);
+      Cmp_Assemble(asm_code_mov[t], CAT_LREG, (Int) 0,
+                   src->categ, src->value.any_int);
       Prepare_Ptr_Access(dest);
-      Cmp_Assemble(asm_code_mov[t], dest->categ, dest->reg, CAT_LREG, (Int) 0);
+      Cmp_Assemble(asm_code_mov[t], dest->categ, dest->value.any_int,
+                   CAT_LREG, (Int) 0);
       return;
     }
   }
@@ -105,14 +106,19 @@ void Cont_Move(const Cont *dest, const Cont *src) {
     int is_integer = (t==TYPE_CHAR) || (t==TYPE_INT);
     if (src->categ == CAT_IMM && !is_integer) {
       switch (t) {
+       case TYPE_INT:
+        Cmp_Assemble(ASM_MOV_Iimm, dest->categ, dest->value.any_int,
+                     CAT_IMM, src->value.imm.boxint);
+        return;
+
        case TYPE_REAL:
-        Cmp_Assemble(ASM_MOV_Rimm, dest->categ, dest->reg,
-                     CAT_IMM, *((Real *) src->extra));
+        Cmp_Assemble(ASM_MOV_Rimm, dest->categ, dest->value.any_int,
+                     CAT_IMM, src->value.imm.boxreal);
         return;
 
        case TYPE_POINT:
-        Cmp_Assemble(ASM_MOV_Pimm, dest->categ, dest->reg,
-                     CAT_IMM, *((Point *) src->extra));
+        Cmp_Assemble(ASM_MOV_Pimm, dest->categ, dest->value.any_int,
+                     CAT_IMM, src->value.imm.boxpoint);
         return;
 
        default:
@@ -123,14 +129,15 @@ void Cont_Move(const Cont *dest, const Cont *src) {
 
     } else {
       assert(t>=0 && t<TYPE_OBJ);
-      Cmp_Assemble(asm_code_mov[t], dest->categ, dest->reg,
-                   src->categ, src->reg);
+      Cmp_Assemble(asm_code_mov[t], dest->categ, dest->value.any_int,
+                   src->categ, src->value.any_int);
       return;
     }
 
   } else {
     assert(src->categ != CAT_IMM);
-    Cmp_Assemble(ASM_MOV_OO, dest->categ, dest->reg, src->categ, src->reg);
+    Cmp_Assemble(ASM_MOV_OO, dest->categ, dest->value.any_int,
+                 src->categ, src->value.any_int);
     return;
   }
 }
@@ -160,28 +167,30 @@ void Cont_Ptr_Create(Cont *dest, Cont *src) {
   if (src->type != TYPE_OBJ) {
     int t = src->type;
     assert(t>=0 && t<TYPE_OBJ);
-    Cmp_Assemble(asm_code_lea[t], src->categ, src->reg);
+    Cmp_Assemble(asm_code_lea[t], src->categ, src->value.any_int);
     Cont_Move(dest, & CONT_NEW_LREG(TYPE_OBJ, 0));
     return;
 
   } else {
     if (src_is_ptr) {
       if (dest_is_ptr) {
-        Cmp_Assemble(ASM_LEA_OO, CAT_LREG, (Int) 0, src->categ, src->reg);
+        Cmp_Assemble(ASM_LEA_OO, CAT_LREG, (Int) 0,
+                     src->categ, src->value.any_int);
         Cmp_Assemble(ASM_PUSH_O, CAT_LREG, (Int) 0);
         Prepare_Ptr_Access(dest);
-        Cmp_Assemble(ASM_POP_O, dest->categ, dest->reg);
+        Cmp_Assemble(ASM_POP_O, dest->categ, dest->value.any_int);
         return;
 
       } else {
-        Cmp_Assemble(ASM_LEA_OO, dest->categ, dest->reg,
-                     src->categ, src->reg);
+        Cmp_Assemble(ASM_LEA_OO, dest->categ, dest->value.any_int,
+                     src->categ, src->value.any_int);
         return;
       }
 
     } else {
       Prepare_Ptr_Access(dest);
-      Cmp_Assemble(ASM_MOV_OO, dest->categ, dest->reg, src->categ, src->reg);
+      Cmp_Assemble(ASM_MOV_OO, dest->categ, dest->value.any_int,
+                   src->categ, src->value.any_int);
       return;
     }
   }
@@ -192,17 +201,17 @@ void Cont_Ptr_Inc(Cont *ptr, Cont *offset) {
   assert(offset->type == TYPE_INT);
 
   if (offset->categ == CAT_IMM) {
-    Int int_offset = offset->reg;
+    Int int_offset = offset->value.imm.boxint;
     switch(ptr->categ) {
     case CAT_PTR:
-      ptr->reg += int_offset;
+      ptr->value.ptr.offset += int_offset;
       return;
 
     default:
       assert(ptr->type == TYPE_OBJ);
-      ptr->ptr_reg = ptr->reg;
-      ptr->reg = int_offset;
-      ptr->flags.ptr_is_greg = (ptr->categ == CAT_GREG);
+      ptr->value.ptr.reg = ptr->value.any_int;
+      ptr->value.ptr.offset = int_offset;
+      ptr->value.ptr.greg = (ptr->categ == CAT_GREG);
       ptr->categ = CAT_PTR;
       return;
     }
@@ -234,11 +243,11 @@ void Cont_Ptr_Cast(Cont *ptr, ContType type) {
 
     default:
       assert(ptr->type == TYPE_OBJ);
-      ptr->ptr_reg = ptr->reg;
-      ptr->reg = 0;
-      ptr->flags.ptr_is_greg = (ptr->categ == CAT_GREG);
       ptr->categ = CAT_PTR;
       ptr->type = type;
+      ptr->value.ptr.reg = ptr->value.reg;
+      ptr->value.ptr.offset = 0;
+      ptr->value.ptr.greg = (ptr->categ == CAT_GREG);
       return;
     }
   }

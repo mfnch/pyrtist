@@ -28,6 +28,7 @@
 #  define _VIRTMACH_H
 
 #  include <stdio.h>
+#  include <stdarg.h>
 /*#  include <stdint.h>
 #  include <inttypes.h>*/
 
@@ -305,6 +306,8 @@ BoxTask VM_Disassemble(BoxVM *vmp, FILE *output, void *prog, BoxUInt dim);
 
 
 void VM_ASettings(BoxVM *vmp, int forcelong, int error, int inhibit);
+
+void VM_VA_Assemble(BoxVM *vm, AsmCode instr, va_list ap);
 
 void VM_Assemble(BoxVM *vmp, AsmCode instr, ...);
 

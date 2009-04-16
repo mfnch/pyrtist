@@ -26,7 +26,10 @@
 #ifndef _OPERATOR_H
 #  define _OPERATOR_H
 
+#  include "typesys.h"
 #  include "new_compiler.h"
+#  include "ast.h"
+#  include "expr.h"
 
 typedef enum {
   OPR_ATTR_BINARY      = 1, /**< Is it a binary or unary operator? */

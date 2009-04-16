@@ -430,14 +430,14 @@ static Task code_generator(BoxVM *vmp, UInt sym_num, UInt sym_type,
   VMProc *tmp_proc;
   UInt saved_proc_num;
 
-  saved_proc_num = VM_Proc_Target_Get(vmp);
+  saved_proc_num = BoxVM_Proc_Target_Get(vmp);
   VM_Proc_Empty(vmp, pt->tmp_proc);
-  VM_Proc_Target_Set(vmp, pt->tmp_proc);
+  BoxVM_Proc_Target_Set(vmp, pt->tmp_proc);
   tmp_proc = pt->target_proc;
   /* Call the procedure here! */
   TASK( ref_head->code_gen(vmp, sym_num, sym_type, defined,
                            def, def_size, ref_tail, ref_tail_size) );
-  VM_Proc_Target_Set(vmp, ref_head->proc_num);
+  BoxVM_Proc_Target_Set(vmp, ref_head->proc_num);
   /* Replace the referencing code with the generated code */
   {
     void *src = BoxArr_First_Item_Ptr(& tmp_proc->code);
@@ -452,7 +452,7 @@ static Task code_generator(BoxVM *vmp, UInt sym_num, UInt sym_type,
     }
     BoxArr_Overwrite(dest, dest_pos, src, src_size);
   }
-  VM_Proc_Target_Set(vmp, saved_proc_num);
+  BoxVM_Proc_Target_Set(vmp, saved_proc_num);
   return Success;
 }
 

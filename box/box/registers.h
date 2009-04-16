@@ -66,19 +66,19 @@ typedef struct {
   VarFrame gvar[NUM_TYPES]; /**< Global variables */
 } RegAlloc;
 
-void Reg_Init(void);
-void Reg_Destroy(void);
-void Reg_Frame_Push(void);
-void Reg_Frame_Pop(void);
-Int Reg_Frame_Get(void);
-Int Reg_Occupy(Int t);
-void Reg_Release(Int t, UInt regnum);
-Int Reg_Num(Int t);
-Int Var_Occupy(Int type, Int level);
-void Var_Release(Int type, UInt varnum);
-Int Var_Num(Int type);
-Int GVar_Occupy(Int type);
-void GVar_Release(Int type, UInt varnum);
-Int GVar_Num(Int type);
-void RegLVar_Get_Nums(Int *num_reg, Int *num_lvar);
+void Reg_Init(RegAlloc *ra);
+void Reg_Destroy(RegAlloc *ra);
+void Reg_Frame_Push(RegAlloc *ra);
+void Reg_Frame_Pop(RegAlloc *ra);
+Int Reg_Frame_Get(RegAlloc *ra);
+Int Reg_Occupy(RegAlloc *ra, Int t);
+void Reg_Release(RegAlloc *ra, Int t, UInt regnum);
+Int Reg_Num(RegAlloc *ra, Int t);
+Int Var_Occupy(RegAlloc *ra, Int type, Int level);
+void Var_Release(RegAlloc *ra, Int type, UInt varnum);
+Int Var_Num(RegAlloc *ra, Int type);
+Int GVar_Occupy(RegAlloc *ra, Int type);
+void GVar_Release(RegAlloc *ra, Int type, UInt varnum);
+Int GVar_Num(RegAlloc *ra, Int type);
+void RegLVar_Get_Nums(RegAlloc *ra, Int *num_reg, Int *num_lvar);
 #endif

@@ -370,10 +370,10 @@ static Task Stage_Write_Asm(UInt flags) {
 Task Main_Prepare(void) {
   int i;
   Int num_reg[NUM_TYPES], num_var[NUM_TYPES];
-  RegLVar_Get_Nums(num_reg, num_var);
+  RegLVar_Get_Nums(& cmp->ra, num_reg, num_var);
   /* Preparo i registri globali */
   for(i = 0; i < NUM_TYPES; i++) {
-    num_var[i] = GVar_Num(i);
+    num_var[i] = GVar_Num(& cmp->ra, i);
     num_reg[i] = 3;
   }
   TASK( BoxVM_Alloc_Global_Regs(program, num_var, num_reg) );
@@ -384,7 +384,7 @@ Task Main_Prepare(void) {
 Task Main_Install(UInt *main_module) {
   TASK( Main_Prepare() );
   VM_Proc_Install_Code(program, main_module,
-                       VM_Proc_Target_Get(program), "main", "Entry");
+                       BoxVM_Proc_Target_Get(program), "main", "Entry");
   return Success;
 }
 

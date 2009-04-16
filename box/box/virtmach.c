@@ -894,9 +894,9 @@ Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg) {
 
   VM_Assemble(vmp, ASM_RET);
 
-  previous_sheet = VM_Proc_Target_Get(vmp);
+  previous_sheet = BoxVM_Proc_Target_Get(vmp);
   TASK( VM_Proc_Code_New(vmp, & tmp_sheet_id) );
-  VM_Proc_Target_Set(vmp, tmp_sheet_id);
+  BoxVM_Proc_Target_Set(vmp, tmp_sheet_id);
 
   {
     register Int i;
@@ -929,18 +929,16 @@ Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg) {
   exit_status = Success;
 
 exit:
-  (void) VM_Proc_Target_Set(vmp, previous_sheet);
+  (void) BoxVM_Proc_Target_Set(vmp, previous_sheet);
   if ( tmp_sheet_id > 0 )
     (void) VM_Proc_Code_Destroy(vmp, tmp_sheet_id);
   return exit_status;
 }
 
-/* Assembla l'istruzione specificata da instr, scrivendo il codice
- * binario ad essa corrispondente nella destinazione specificata
- * dalla funzione VM_Asm_Out_Set().
+/** Similar to VM_Assemble, but takes a va_list argument as a replacement
+ * for the extra arguments.
  */
-void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
-  va_list ap;
+void VM_VA_Assemble(BoxVM *vmp, AsmCode instr, va_list ap) {
   VMProcTable *pt = & vmp->proc_table;
   int i, t;
   VMInstrDesc *idesc;
@@ -966,8 +964,6 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
 
   assert( idesc->numargs <= VM_MAX_NUMARGS );
 
-  va_start(ap, instr);
-
   /* Prendo argomento per argomento */
   t = 0; /* Indice di argomento */
   is_short = 1;
@@ -977,7 +973,7 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
     /* Prendo dalla lista degli argomenti della funzione la categoria
     * dell'argomento dell'istruzione.
     */
-    switch ( arg[t].c = va_arg(ap, AsmArg) ) {
+    switch (arg[t].c = va_arg(ap, AsmArg)) {
       case CAT_LREG:
       case CAT_GREG:
       case CAT_PTR:
@@ -1035,8 +1031,6 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
 
     ++t;
   }
-
-  va_end(ap);
 
   assert(t == idesc->numargs);
 
@@ -1104,6 +1098,17 @@ void VM_Assemble(VMProgram *vmp, AsmCode instr, ...) {
                           /* i_len = */ idim, atype);
     }
   }
+}
+
+/** Assembla l'istruzione specificata da instr, scrivendo il codice
+ * binario ad essa corrispondente nella destinazione specificata
+ * dalla funzione VM_Asm_Out_Set().
+ */
+void VM_Assemble(BoxVM *vm, AsmCode instr, ...) {
+  va_list ap;
+  va_start(ap, instr);
+  VM_VA_Assemble(vm, instr, ap);
+  va_end(ap);
 }
 
 /****************************************************************************

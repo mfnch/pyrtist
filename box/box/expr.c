@@ -240,22 +240,30 @@ Task Expr_Must_Have_Value(Expr *e) {
 
 void Expr_Cont_Get(Cont *c, const Expr *e) {
   assert(e->resolved >= 0);
+#if 0
   c->categ = e->categ;
   c->type = e->resolved < TYPE_OBJ ? e->resolved : TYPE_OBJ;
-  c->reg = e->value.i;
-  c->ptr_reg = e->addr;
+  c->value.ptr.offset = e->value.i;
+  c->value.ptr.reg = e->addr;
   c->extra = & e->value.i;
   c->flags.ptr_is_greg = e->is.gaddr;
+#else
+  assert(0);
+#endif
 }
 
 void Expr_Cont_Set(Expr *e, const Cont *c) {
   assert(e->resolved >= 0);
   assert((e->resolved >= TYPE_OBJ) == (c->type == TYPE_OBJ));
+#if 0
   e->categ = c->categ;
   e->value.i = c->reg;
   e->addr = c->ptr_reg;
   e->is.gaddr = c->flags.ptr_is_greg;
   /* c->extra ??? */
+#else
+  assert(0);
+#endif
 }
 
 void Expr_Container_Move(const Expr *dest, const Expr *src) {
@@ -343,7 +351,7 @@ static Task Expr_Point_Member(Expr *m, Expr *s, Name *m_name) {
     TASK( Cmp_Expr_Destroy_Tmp(s) );
 
     /* ATTENZIONE: devo mettere ro0 in un registro locale temporaneo */
-    if ( (addr = Reg_Occupy(TYPE_OBJ)) < 1 ) return Failed;
+    if ( (addr = Reg_Occupy(& cmp->ra, TYPE_OBJ)) < 1 ) return Failed;
     Cmp_Assemble(ASM_MOV_OO, CAT_LREG, addr, CAT_LREG, 0);
 
     m->is.typed = 1;
@@ -503,7 +511,7 @@ void Expr_Parent_And_Child(Expr *parent_e, Expr *child_e,
     parent_e->is.target = 1;
     parent_e->categ = CAT_PTR;
     parent_e->is.gaddr = 0;
-    parent_e->addr = Reg_Occupy(TYPE_OBJ);
+    parent_e->addr = Reg_Occupy(& cmp->ra, TYPE_OBJ);
     parent_e->value.i = 0;
     Cmp_Assemble(ASM_MOV_OO, CAT_LREG, parent_e->addr, CAT_GREG, 1);
   }
@@ -514,7 +522,7 @@ void Expr_Parent_And_Child(Expr *parent_e, Expr *child_e,
     child_e->is.target = 1;
     child_e->categ = CAT_PTR;
     child_e->is.gaddr = 0;
-    child_e->addr = Reg_Occupy(TYPE_OBJ);
+    child_e->addr = Reg_Occupy(& cmp->ra, TYPE_OBJ);
     child_e->value.i = 0;
     Cmp_Assemble(ASM_MOV_OO, CAT_LREG, child_e->addr, CAT_GREG, 2);
   }
@@ -711,7 +719,7 @@ void Expr_Container_New(Expr *e, Type type, Container *c) {
     e->categ = CAT_LREG;
     if ( c->which_one < 0 ) {
       /* Automatically choses the local register */
-      if ( (e->value.i = Reg_Occupy(type_of_register)) < 1 ) {
+      if ( (e->value.i = Reg_Occupy(& cmp->ra, type_of_register)) < 1 ) {
         MSG_FATAL("Expr_Container_New: Reg_Occupy failed!");
       }
       e->is.release = 1;
@@ -729,7 +737,7 @@ void Expr_Container_New(Expr *e, Type type, Container *c) {
     e->is.target = 1;
     if (c->which_one < 0) {
       /* Automatically choses the local variables */
-      if ( (e->value.i = -GVar_Occupy(type_of_register)) >= 0 ) {
+      if ( (e->value.i = -GVar_Occupy(& cmp->ra, type_of_register)) >= 0 ) {
         MSG_FATAL("Expr_Container_New: GVar_Occupy failed!");
       }
       return;
@@ -746,7 +754,7 @@ void Expr_Container_New(Expr *e, Type type, Container *c) {
     e->is.target = 1;
     if ( c->which_one < 0 ) {
       /* Automatically choses the local variables */
-      if ( (e->value.i = -Var_Occupy(type_of_register, Box_Num())) >= 0 ) {
+      if ( (e->value.i = -Var_Occupy(& cmp->ra, type_of_register, Box_Num())) >= 0 ) {
         MSG_FATAL("Expr_Container_New: Var_Occupy failed!");
       }
       return;
@@ -779,14 +787,14 @@ void Expr_Container_New(Expr *e, Type type, Container *c) {
     if (is_gaddr || c->addr >= 0) return;
 
     if (c->type_of_container == CONTAINER_TYPE_LRPTR) {
-      if ( (e->addr = Reg_Occupy(TYPE_OBJ)) < 1 ) {
+      if ( (e->addr = Reg_Occupy(& cmp->ra, TYPE_OBJ)) < 1 ) {
         MSG_FATAL("Expr_Container_New: Reg_Occupy failed!");
       }
       e->is.release = 1;
       return;
 
     } else {
-      if ( (e->addr = -Var_Occupy(TYPE_OBJ, Box_Num())) >= 0 ) {
+      if ( (e->addr = -Var_Occupy(& cmp->ra, TYPE_OBJ, Box_Num())) >= 0 ) {
         MSG_FATAL("Expr_Container_New: Var_Occupy failed!");
       }
     }

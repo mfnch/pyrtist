@@ -190,7 +190,6 @@ static void My_Compile_Const(BoxCmp *c, ASTNode *n) {
     break;
   }
   BoxCmp_Push_Expr(c, expr);
-  printf("Pushing constant into stack!\n");
 }
 
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
@@ -202,7 +201,6 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
   My_Compile_Any(c, n->attr.bin_op.right);
   if (BoxCmp_Pop_Errors(c, /* pop */ 2, /* push err */ 1)) return;
 
-  printf("Compiling binary operation!\n");
   right = BoxCmp_Get_Expr(c, 0);
   left  = BoxCmp_Get_Expr(c, 1);
 

@@ -30,15 +30,17 @@
 #include "array.h"
 #include "virtmach.h"
 #include "ast.h"
+#include "registers.h"
 
 typedef struct _box_cmp BoxCmp;
 
 #include "operator.h"
 
 struct _box_cmp {
-  BoxArr    stack; /**< Using during compilation to pass around expressions */
+  BoxArr    stack; /**< Used during compilation to pass around expressions */
   BoxVM     vm;    /**< The target of the compilation */
   BoxTS     ts;    /**< The type system */
+  RegAlloc  regs;  /**< Register occupation handler */
   Operator  bin_ops[ASTBINOP__NUM_OPS], /**< Table of binary operators */
             un_ops[ASTUNOP__NUM_OPS];   /**< Table of unary operators */
 };

@@ -26,6 +26,7 @@
 #include "expr.h"
 #include "messages.h"
 #include "new_compiler.h"
+#include "cmpproc.h"
 #include "operator.h"
 
 /* We have two concepts in this module. One is the concept of Operator
@@ -79,7 +80,8 @@ Operation *Operator_Add_Opn(Operator *opr, BoxType type_left,
   /** Link to chain */
   opn->next = opr->first_operation;
   opn->previous = NULL;
-  opr->first_operation->previous = opn;
+  if (opr->first_operation != NULL)
+    opr->first_operation->previous = opn;
   opr->first_operation = opn;
 
   return opn;
@@ -121,6 +123,11 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
     Operator *opr = BoxCmp_BinOp_Get(c, i);
     Operator_Init(opr, ASTBinOp_To_String(i));
     Operator_Attr_Set(opr, OPR_ATTR_BINARY, OPR_ATTR_BINARY);
+  }
+
+  if (1) { /* Temporary code */
+    Operator *opr = BoxCmp_BinOp_Get(c, ASTBINOP_ADD);
+    Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
   }
 }
 
@@ -183,69 +190,241 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
     }
   }
   return NULL;
+}
+
+#if 1
+
+/*
+  Functions required by the following code:
+
+    Tym_Type_Resolve_All(opn->type_rs);
+
+    Cmp_Complete_Ptr_1(& old_e2)
+    Cmp_Complete_Ptr_2(e1, e2)
+
+    Cmp_Expr_Force_To_LReg(e2)
+    Cmp_Expr_To_LReg(e2)
+    Cmp_Expr_To_X(e2, CAT_LREG, 0, 1)
+    Cmp_Expr_Reg0_To_LReg(opn->type_rs)
+    Cmp_Expr_Destroy_Tmp(e2)
+
+    Cmp_Assemble(opn->asm_code, old_e2.categ, old_e2.value.i)
+*/
+
+/* DESCRIZIONE: Questa funzione gestisce la generazione del codice
+ *  corrispondente ad un gran numero di operazioni intrinseche.
+ * NOTA: Viene chiamata da Cmp_Operation_Exec.
+ */
+
+/** This is the function which actually emits the VM code for quite a number
+ * of Operations.
+ */
+static Expr *My_Opn_Emit(CmpProc *c, Operation *opn,
+                         Expr *e_left, Expr *e_right) {
+  return NULL;
 
 #if 0
-  Int type;
-  int no_check_arg1, no_check_arg2, check_rs, unary;
-  int ne1, ne2;
-  Operation *opn;
+  struct {
+    unsigned int unary     :1,
+                 right     :1,
+                 monotype  :1,
+                 immediate :1;} opn_is;
 
-#if 0
-  printf("Cmp_Operation_Find: Cerco %s OP %s\n",
-   Tym_Type_Names(type1), Tym_Type_Names(type2));
-#endif
+  /* Usually the operands and the result all have the same type. If this is
+   * the case, then we set opn_is.monotype to 1. If this is not the case
+   * then we set opn_is.monotype to 0.
+   */
+  switch((e1 == NULL) + ((e2 == NULL) << 1)) {
+  case 0: /* Operazione a 2 argomenti */
+    opn_is.monotype = (rs_resolved != e1->resolved)
+                      || (rs_resolved != e2->resolved);
+    opn_is.immediate = (e1->categ == CAT_IMM) && (e2->categ == CAT_IMM);
+    opn_is.unary = 0;
+    opn_is.right = 0;
+    break;
 
-  no_check_arg1 = (type1 == TYPE_NONE);
-  no_check_arg2 = (type2 == TYPE_NONE);
-  check_rs      = (typer != TYPE_NONE);
-  unary = no_check_arg1 || no_check_arg2;
+  case 1: /* Operazione a 1 argomento (destro, cioe' e2) */
+    opn_is.strange = (e2->resolved != rs_resolved);
+    opn_is.immediate = (e2->categ == CAT_IMM);
+    opn_is.unary = 1;
+    opn_is.right = 1;
+    e1 = e2;
+    break;
 
-  for (opn = opr->opn_chain; opn != NULL; opn = opn->next ) {
-    register Int t1 = opn->type1, t2 = opn->type2;
-    int ok_1, ok_2, ok_rs = 1;
+  case 2: /* Operazione a 1 argomento (sinistro, cioe' e1) */
+    opn_is.strange = (e1->resolved != rs_resolved);
+    opn_is.immediate = (e1->categ == CAT_IMM);
+    opn_is.unary = 1;
+    opn_is.right = 0;
+    e2 = e1;
+    break;
 
-    ok_1 = (t1 == type1);
-    ok_2 = (t2 == type2);
-    ne1 = ne2 = 0;
-    if ( ! (ok_1 || no_check_arg1) ) ok_1 = Tym_Compare_Types(t1, type1, & ne1);
-    if ( ! (ok_2 || no_check_arg2) ) ok_2 = Tym_Compare_Types(t2, type2, & ne2);
+  default:
+    MSG_FATAL("Internal error: operation has no arguments!");
+    return NULL;
+  }
 
-    if ( check_rs ) {
-      ok_rs = Tym_Compare_Types(typer, opn->type_rs, NULL);
+  return NULL;
+
+  Int rs_resolved = Tym_Type_Resolve_All(opn->type_rs);
+
+
+  if ( opn->is.assignment ) { /***********************************ASSIGNMENT*/
+    if ( opn_is.strange ) {
+      MSG_ERROR("Errore interno: operazione di assegnazione anomala!");
+      return NULL;
     }
 
-    if (ok_rs) {
-      if (ok_1 && ok_2) {
-        if (oi == NULL) return opn;
-        oi->commute = 0;
-        oi->expand1 = ne1;
-        oi->expand2 = ne2;
-        oi->exp_type1 = t1;
-        oi->exp_type2 = t2;
-        return opn;
-      }
+    /* Mi assicuro che il primo argomento possa fungere da target
+     * dell'assegazione!
+     */
+    if ( ! e1->is.target ) {
+      MSG_ERROR("This expression of type %~s cannot be modified!",
+                TS_Name_Get(cmp->ts, e1->type));
+      return NULL;
+    }
 
-      if ( !unary && opn->is.commutative ) {
-        ok_1 = (t1 == type2);
-        ok_2 = (t2 == type1);
-        if ( ! ok_1 ) ok_1 = Tym_Compare_Types(t1, type2, & ne2);
-        if ( ! ok_2 ) ok_2 = Tym_Compare_Types(t2, type1, & ne1);
-        if ( ok_1 && ok_2 ) {
-          if ( oi == NULL ) return opn;
-          oi->commute = 1;
-          oi->expand1 = ne1;
-          oi->expand2 = ne2;
-          oi->exp_type1 = t2;
-          oi->exp_type2 = t1;
-          return opn;
+    if ( opn_is.unary ) {
+      /* Ora compilo l'operazione */
+      if ( opn_is.right ) {
+        Expr old_e2 = *e2;
+        /*e2value = e2->value.i, e2categ = e2->categ;*/
+        if IS_FAILED( Cmp_Expr_Force_To_LReg(e2) ) return NULL;
+        if IS_FAILED( Cmp_Complete_Ptr_1(& old_e2) ) return NULL;
+        Cmp_Assemble(opn->asm_code, old_e2.categ, old_e2.value.i);
+        return e2;
+      } else {
+        if IS_FAILED( Cmp_Complete_Ptr_1(e1) ) return NULL;
+        Cmp_Assemble(opn->asm_code, e1->categ, e1->value.i);
+        return e1;
+      }
+    } else {
+      /* Se necessario, converto e2 in registro locale. */
+      if IS_FAILED( Cmp_Expr_To_LReg(e2) ) return NULL;
+
+      /* Ora compilo l'operazione */
+      if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
+      Cmp_Assemble(opn->asm_code,
+                   e1->categ, e1->value.i, e2->categ, e2->value.i);
+
+      /* Ora libero il registro che non contiene il risultato! */
+      Cmp_Expr_Destroy_Tmp(e2);
+      return e1;
+    }
+
+  } else { /**************************************************NOT ASSIGNMENT*/
+    struct {unsigned int e1 : 1, e2 : 1;} result_in;
+
+    /* Determino se e1 puo' contenere il risultato dell'operazione
+     * (il quale e' una espressione temporanea).
+     * A tale scopo bisogna che e1 abbia lo stesso tipo del risultato,
+     * che sia un registro locale e che non sia una variabile (cioe' un
+     * target per l'operazione di assegnazione).
+     */
+    result_in.e1 = (e1->resolved == rs_resolved)
+     && (e1->categ == CAT_LREG) && (! e1->is.target);
+
+    if ( opn_is.strange ) { /**************************************STRANGE*/
+      /* Le operazioni strane sono, ad esempio: il confronto fra numeri
+       * (operatori <, >, ==, ...), moltiplicazione fra un punto e
+       * un reale, etc.
+       */
+      if ( opn_is.unary ) {
+        MSG_ERROR("Still not implemented!");
+        return NULL;
+
+      } else {
+        /* Se l'operazione e' binaria ho 3 casi a seconda dei tipi
+        * delle 3 quantita' coinvolte dall'operazione (2 argomenti +
+        * 1 risultato):
+        */
+        struct {unsigned int er_e1 : 1, er_e2 : 1, e1_e2 : 1;} eq;
+        eq.e1_e2 = (e1->resolved == e2->resolved);
+        eq.er_e1 = (rs_resolved == e1->resolved);
+        eq.er_e2 = (rs_resolved == e2->resolved);
+        if ( eq.e1_e2 ) {
+          /* caso 1: argomenti dello stesso tipo, ma risultato
+           *  di tipo diverso (caso di <, <=, >, >=, ==, !=, ...)
+           */
+          if ( (Cmp_Expr_To_LReg(e1) == Failed)
+            || (Cmp_Expr_To_LReg(e2) == Failed) ) return NULL;
+          if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
+          Cmp_Assemble(opn->asm_code,
+           e1->categ, e1->value.i, e2->categ, e2->value.i);
+          Cmp_Expr_Destroy_Tmp(e1);
+          Cmp_Expr_Destroy_Tmp(e2);
+          return Cmp_Expr_Reg0_To_LReg(opn->type_rs);
+
+        } else {
+          if ( eq.er_e2 ) {
+            Expr *tmp; tmp = e1; e1 = e2; e2 = tmp;
+            goto er_equal_e1;
+          }
+
+          if ( eq.er_e1 ) { /* caso 2: un argomento e' dello stesso tipo
+                                del risultato */
+er_equal_e1:
+            if IS_FAILED( Cmp_Expr_Force_To_LReg(e1) ) return NULL;
+            if IS_FAILED( Cmp_Expr_To_X(e2, CAT_LREG, 0, 1) ) return NULL;
+            if IS_FAILED( Cmp_Complete_Ptr_1(e1) ) return NULL;
+            Cmp_Assemble(opn->asm_code, e1->categ, e1->value.i);
+            return e1;
+
+          } else { /* caso 3: tipi tutti diversi */
+            MSG_ERROR("Still not implemented!");
+            return NULL;
+          }
         }
+      }
+      return NULL;
+
+    } else { /*************************************************NOT STRANGE*/
+      if ( opn_is.unary ) {
+        if ( opn_is.right ) e1 = e2;
+        if IS_FAILED( Cmp_Expr_Force_To_LReg(e1) ) return NULL;
+        if IS_FAILED( Cmp_Complete_Ptr_1(e1) ) return NULL;
+        Cmp_Assemble(opn->asm_code, e1->categ, e1->value.i);
+        return e1;
+
+      } else {
+        result_in.e2 = (e2->resolved == rs_resolved)
+         && (e2->categ == CAT_LREG) && (! e2->is.target);
+
+        /* Se l'operazione e' commutativa, posso usare e2 per contenere
+         * il risultato dell'operazione!
+         */
+        if ( result_in.e2 && !result_in.e1 && opn->is.commutative ) {
+          register Expr *tmp = e2;
+          e2 = e1; e1 = tmp;
+          result_in.e1 = 1;
+          result_in.e2 = 0;
+        }
+
+        /* Se non posso mettere il risultato in e1, allora devo
+         * convertire e1 in un registro locale (che puo' contenerlo!)
+         */
+        if ( ! result_in.e1 ) {
+          if IS_FAILED( Cmp_Expr_Force_To_LReg(e1) ) return NULL;
+        }
+
+        /* Se necessario, converto e2 in registro locale. */
+        if IS_FAILED( Cmp_Expr_To_LReg(e2) ) return NULL;
+
+        /* Ora compilo l'operazione */
+        if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
+        Cmp_Assemble(opn->asm_code,
+                     e1->categ, e1->value.i, e2->categ, e2->value.i);
+
+        /* Ora libero il registro che non contiene il risultato! */
+        Cmp_Expr_Destroy_Tmp(e2);
+        return e1;
       }
     }
   }
-  return NULL;
 #endif
 
 }
+#endif
 
 /** Compiles an operation between the two expression e1 and e2, where
  * the operator is opr.
@@ -312,7 +491,7 @@ Expr *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
     return NULL;
 
   } else {
-    MSG_ERROR("%s %s %s <-- Operation has not been defined!",
+    MSG_ERROR("%~s %s %~s <-- Operation has not been defined!",
               TS_Name_Get(& c->ts, expr_left->type), opr->name,
               TS_Name_Get(& c->ts, expr_right->type));
     return NULL;

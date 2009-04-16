@@ -67,7 +67,7 @@ void VM_Proc_Destroy(VMProgram *vmp) {
 static void target_proc_refresh(VMProgram *vmp) {
   VMProcTable *pt = & vmp->proc_table;
   if (pt->target_proc_num)
-    VM_Proc_Target_Set(vmp, pt->target_proc_num);
+    BoxVM_Proc_Target_Set(vmp, pt->target_proc_num);
 }
 
 Task VM_Proc_Code_New(VMProgram *vmp, UInt *proc_num) {
@@ -91,13 +91,15 @@ Task VM_Proc_Code_Destroy(VMProgram *vmp, UInt proc_num) {
   return Success;
 }
 
-void VM_Proc_Target_Set(VMProgram *vmp, UInt proc_num) {
+BoxVMProcID BoxVM_Proc_Target_Set(BoxVM *vmp, BoxVMProcID proc_num) {
   VMProcTable *pt = & vmp->proc_table;
+  BoxVMProcID previous_target = pt->target_proc_num;
   pt->target_proc_num = proc_num;
   pt->target_proc = (VMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, proc_num);
+  return previous_target;
 }
 
-UInt VM_Proc_Target_Get(VMProgram *vmp) {
+BoxVMProcID BoxVM_Proc_Target_Get(VMProgram *vmp) {
   return vmp->proc_table.target_proc_num;
 }
 

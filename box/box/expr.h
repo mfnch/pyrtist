@@ -37,6 +37,8 @@
 typedef struct {
   Int     ref_count;   /**< Used to keep track of the reference to the Expr */
 
+  Cont    cont;        /**< Container for the Expr object */
+
   struct {
     unsigned int
           imm     : 1, /* l'espressione e' immediata? */

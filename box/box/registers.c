@@ -133,8 +133,6 @@ static void VarFrame_Release(VarFrame *vf, Int idx) {
  * al compilatore) e quali invece sono liberi.                                *
  ******************************************************************************/
 
-static RegAlloc ra_obj, *ra = & ra_obj;
-
 static void RegFrame_Init(RegFrame *rf) {
   int i;
   for(i = 0; i < NUM_TYPES; i++) {
@@ -158,32 +156,32 @@ static void RegFrame_Finish(void *rf_ptr) {
  *  ci si aspetta saranno occupati contemporanemente, in questo modo saranno
  *  eseguite poche realloc.
  */
-void Reg_Init(void) {
+void Reg_Init(RegAlloc *ra) {
   int i;
   BoxArr_Init(& ra->reg_frame, sizeof(RegFrame), 2);
   BoxArr_Set_Finalizer(& ra->reg_frame, RegFrame_Finish);
-  Reg_Frame_Push();
+  Reg_Frame_Push(ra);
   for(i = 0; i < NUM_TYPES; i++)
     VarFrame_Init(& ra->gvar[i]);
 }
 
-void Reg_Destroy(void) {
+void Reg_Destroy(RegAlloc *ra) {
   int i;
   BoxArr_Finish(& ra->reg_frame);
   for(i = 0; i < NUM_TYPES; i++)
     VarFrame_Finish(& ra->gvar[i]);
 }
 
-void Reg_Frame_Push(void) {
+void Reg_Frame_Push(RegAlloc *ra) {
   RegFrame *new_frame = BoxArr_Push(& ra->reg_frame, NULL);
   RegFrame_Init(new_frame);
 }
 
-void Reg_Frame_Pop(void) {
+void Reg_Frame_Pop(RegAlloc *ra) {
   BoxArr_Pop(& ra->reg_frame, NULL);
 }
 
-Int Reg_Frame_Get(void) {
+Int Reg_Frame_Get(RegAlloc *ra) {
   return BoxArr_Num_Items(& ra->reg_frame);
 }
 
@@ -196,25 +194,25 @@ Int Reg_Frame_Get(void) {
  * NOTA: Il numero di registro restituito e' sempre maggiore di 1,
  *  viene restituito 0 solo in caso di errori.
  */
-Int Reg_Occupy(Int t) {
+Int Reg_Occupy(RegAlloc *ra, Int t) {
   RegFrame *rf = (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
   return (Int) BoxOcc_Occupy(& rf->reg_occ[Reg_Type(t)], NULL);
 }
 
 /* Vedi Reg_Occupy.
  */
-void Reg_Release(Int t, UInt reg_num) {
+void Reg_Release(RegAlloc *ra, Int t, UInt reg_num) {
   RegFrame *rf = (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
   BoxOcc_Release(& rf->reg_occ[Reg_Type(t)], reg_num);
 }
 
 /* Restituisce il numero di registro massimo fin'ora utilizzato. */
-Int Reg_Num(Int t) {
+Int Reg_Num(RegAlloc *ra, Int t) {
   RegFrame *rf = (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
   return BoxOcc_Max_Index(& rf->reg_occ[Reg_Type(t)]);
 }
 
-static RegFrame *Cur_RegFrame(void) {
+static RegFrame *Cur_RegFrame(RegAlloc *ra) {
   return (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
 }
 
@@ -229,35 +227,35 @@ static RegFrame *Cur_RegFrame(void) {
  * NOTA: Il numero di registro restituito e' sempre maggiore di 1,
  *  viene restituito 0 solo in caso di errori.
  */
-Int Var_Occupy(Int type, Int level) {
+Int Var_Occupy(RegAlloc *ra, Int type, Int level) {
   Int t = Reg_Type(type);
-  return VarFrame_Occupy(& Cur_RegFrame()->lvar[t], level);
+  return VarFrame_Occupy(& Cur_RegFrame(ra)->lvar[t], level);
 }
 
 /* Vedi Var_Occupy. */
-void Var_Release(Int type, UInt varnum) {
+void Var_Release(RegAlloc *ra, Int type, UInt varnum) {
   Int t = Reg_Type(type);
-  VarFrame_Release(& Cur_RegFrame()->lvar[t], varnum);
+  VarFrame_Release(& Cur_RegFrame(ra)->lvar[t], varnum);
 }
 
 /* Restituisce il numero di variabile massimo fin'ora utilizzato.
  */
-Int Var_Num(Int type) {
-  return Cur_RegFrame()->lvar[Reg_Type(type)].max;
+Int Var_Num(RegAlloc *ra, Int type) {
+  return Cur_RegFrame(ra)->lvar[Reg_Type(type)].max;
 }
 
-Int GVar_Occupy(Int type) {
+Int GVar_Occupy(RegAlloc *ra, Int type) {
   return VarFrame_Occupy(& ra->gvar[Reg_Type(type)], 0);
 }
 
 /* Vedi Var_Occupy. */
-void GVar_Release(Int type, UInt varnum) {
+void GVar_Release(RegAlloc *ra, Int type, UInt varnum) {
   VarFrame_Release(& ra->gvar[Reg_Type(type)], varnum);
 }
 
 /* Restituisce il numero di variabile massimo fin'ora utilizzato.
  */
-Int GVar_Num(Int type) {
+Int GVar_Num(RegAlloc *ra, Int type) {
   return ra->gvar[Reg_Type(type)].max;
 }
 
@@ -265,10 +263,10 @@ Int GVar_Num(Int type) {
  * an array of Int with the number of used variables, and (address num_reg)
  * an array of Int with the number of used registers.
  */
-void RegLVar_Get_Nums(Int *num_reg, Int *num_lvar) {
+void RegLVar_Get_Nums(RegAlloc *ra, Int *num_reg, Int *num_lvar) {
   int i;
   for (i = 0; i < NUM_TYPES; i++) {
-    *(num_reg++) = Reg_Num(i);
-    *(num_lvar++) = Var_Num(i);
+    *(num_reg++) = Reg_Num(ra, i);
+    *(num_lvar++) = Var_Num(ra, i);
   }
 }

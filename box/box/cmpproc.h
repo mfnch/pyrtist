@@ -27,8 +27,11 @@
 #ifndef _CMPPROC_H
 #  define _CMPPROC_H
 
+#  include <stdarg.h>
+
 #  include "types.h"
 #  include "compiler.h"
+#  include "new_compiler.h"
 #  include "virtmach.h"
 #  include "vmsym.h"
 #  include "vmproc.h"
@@ -39,14 +42,14 @@ typedef struct {
   struct {
     unsigned int
                 sym      :1, /**< the procedure has an associated symbol */
-                proc_num :1, /**< the procedure has a procedure number */
+                proc_id  :1, /**< the procedure has a procedure number */
                 proc_name:1, /**< it has a name */
                 call_num :1, /**< it has a call number */
                 type     :1; /**< it has a type */
   } have;
-  Compiler      *cmp;        /**< Compiler corresponding to the procedure */
+  BoxCmp        *cmp;        /**< Compiler corresponding to the procedure */
   BoxVMSymID    sym;         /**< Symbol associated with the procedure */
-  BoxVMProcNum  proc_num;    /**< Proc. number (needed to write ASM to it) */
+  BoxVMProcNum  proc_id;     /**< Proc. number (needed to write ASM to it) */
   char          *proc_name;  /**< Procedure name */
   BoxVMCallNum  call_num;    /**< Call number (needed to call it from ASM) */
   Type          type;        /**< Type of the procedure */
@@ -55,7 +58,7 @@ typedef struct {
 /** Initialise a CmpProc object in the memory region pointed by p.
  * @param p A pointer to the space where the CmpProc object will be stored.
  */
-void CmpProc_Init(CmpProc *p, Compiler *c);
+void CmpProc_Init(CmpProc *p, BoxCmp *c);
 
 /** Finalise a CmpProc object initialised with CmpProc_Init.
  */
@@ -64,7 +67,7 @@ void CmpProc_Finish(CmpProc *p);
 /** Allocate space in the heap to hold a CmpProc object and initialise it with
  * CmpProc_Init.
  */
-CmpProc *CmpProc_New(Compiler *c);
+CmpProc *CmpProc_New(BoxCmp *c);
 
 /** Destroy a CmpProc object created with CmpProc_New.
  */
@@ -104,5 +107,16 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p);
  *  -2: if this is a C procedure;
  */
 Int CmpProc_Code_Size(CmpProc *p);
+
+/** Assemble the instruction calling VA_Assemble and putting the code inside
+ * the given CmpProc procedure p.
+ */
+void CmpProc_Assemble(CmpProc *p, AsmCode instr, ...);
+
+/** Non-variadic version of the function CmpProc_Assemble.
+ * Equivalent to the latter, but gets a va_list rather than a variable-length
+ * argument list
+ */
+void CmpProc_VA_Assemble(CmpProc *p, AsmCode instr, va_list ap);
 
 #endif

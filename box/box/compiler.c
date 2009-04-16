@@ -89,7 +89,7 @@ Task Cmp_Init(VMProgram *program) {
   /* Initialization of the lists which hold the occupation status
    * for registers and variables.
    */
-  Reg_Init();
+  Reg_Init(& cmp->ra);
 
   /* Inizializzo il segmento che contiene gli oggetti con valore immediato */
   BoxArr_Init(& cmp->imm_segment, sizeof(char), CMP_TYPICAL_IMM_SIZE);
@@ -135,7 +135,7 @@ Task Cmp_Parse(const char *file) {
 
 void Cmp_Destroy(void) {
   TS_Finish(cmp->ts);
-  Reg_Destroy();
+  Reg_Destroy(& cmp->ra);
 
   BoxArr_Finish(& cmp->imm_segment);
   BoxArr_Finish(& cmp->allocd_oprs);
@@ -864,7 +864,8 @@ Task Cmp_Expr_LReg(Expr *e, Int type, int zero) {
 
   if (TS_Is_Fast(cmp->ts, type)) {
     if ( zero ) { e->value.i = 0; return Success; }
-    if ( (e->value.i = Reg_Occupy(type)) < 1 ) return Failed;
+    if ( (e->value.i = Reg_Occupy(& cmp->ra, type)) < 1 )
+      return Failed;
     return Success;
 
   } else {
@@ -872,8 +873,11 @@ Task Cmp_Expr_LReg(Expr *e, Int type, int zero) {
     if ( s > 0 ) {
       Int at;
       e->is.allocd = 1;
-      if ( zero ) { e->value.i = 0; }
-        else { if ( (e->value.i = Reg_Occupy(TYPE_OBJ)) < 1 ) return Failed; }
+      if ( zero )
+        e->value.i = 0;
+      else
+        if ((e->value.i = Reg_Occupy(& cmp->ra, TYPE_OBJ)) < 1)
+          return Failed;
 
       at = Expr_Allocation_Type(e);
       Cmp_Assemble(ASM_MALLOC_I, CAT_IMM, s, CAT_IMM, at);
@@ -1172,12 +1176,15 @@ Task Cmp_Expr_Destroy(Expr *e, int destroy_target) {
       if ( ! e->is.release ) break;
       /* L'address e' un registro o variabile? */
       /* Se e' un registro, va liberato! */
-      if ( e->addr > 0 ) {Reg_Release(TYPE_OBJ, e->addr); return Success;}
+      if ( e->addr > 0 ) {
+        Reg_Release(& cmp->ra, TYPE_OBJ, e->addr);
+        return Success;
+      }
       break;
 
      case CAT_LREG:
       if ( (! e->is.release) || (e->value.i <= 0) ) break;
-      Reg_Release(type_of_register, e->value.i);
+      Reg_Release(& cmp->ra, type_of_register, e->value.i);
       break;
 
      default: break;

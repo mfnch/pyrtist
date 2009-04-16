@@ -51,10 +51,10 @@ void TS_Init_Builtin_Types(TS *ts) {
     Int        size;
 
   } *builtin_type, builtin_types[] = {
-    { "Char",  BOXTYPE_CHAR, sizeof(BoxChar)},
-    {  "Int",   BOXTYPE_INT, sizeof(BoxInt)},
-    { "Real",  BOXTYPE_REAL, sizeof(BoxReal)},
-    {"Point", BOXTYPE_POINT, sizeof(BoxPoint)},
+    { "CHAR",  BOXTYPE_CHAR, sizeof(BoxChar)},
+    {  "INT",   BOXTYPE_INT, sizeof(BoxInt)},
+    { "REAL",  BOXTYPE_REAL, sizeof(BoxReal)},
+    {"POINT", BOXTYPE_POINT, sizeof(BoxPoint)},
     {NULL, 0, 0}
   };
 

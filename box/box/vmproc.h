@@ -126,10 +126,10 @@ Task VM_Proc_Code_Destroy(BoxVM *vmp, BoxUInt proc_num);
 /** Set 'proc_num' to be the target procedure: the place where
  * VM_Assemble puts the assembled code
  */
-void VM_Proc_Target_Set(BoxVM *vmp, BoxUInt proc_num);
+BoxVMProcID BoxVM_Proc_Target_Set(BoxVM *vm, BoxVMProcID proc_num);
 
 /** Get the ID of the target procedure */
-UInt VM_Proc_Target_Get(BoxVM *vmp);
+BoxVMProcID BoxVM_Proc_Target_Get(BoxVM *vm);
 
 /** Remove all the code assembled inside the procedure 'proc_num'.
  * WARNING: Labels and their references are not removed!

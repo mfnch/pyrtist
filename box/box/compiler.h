@@ -33,6 +33,7 @@
 #  include "virtmach.h"
 #  include "expr.h"
 #  include "typesys.h"
+#  include "registers.h"
 #  include "new_compiler.h"
 
 struct OldOperation {
@@ -182,6 +183,7 @@ typedef struct {
 } StructItem;
 
 typedef struct {
+  RegAlloc ra;
   BoxCmp new_compiler;
   VMProgram *vm;
   TS ts_obj, *ts;

@@ -59,16 +59,23 @@ typedef enum {
 } ContType;
 
 typedef struct {
-  ContCateg  categ;
-  ContType   type;
-  Int        reg;
-  Int        ptr_reg;
-  const void *extra;
-  struct {
-    int ptr_is_greg : 1;
-  }          flags;
+  ContCateg  categ;       /**< Cathegory (immediate, register, pointer, ...)*/
+  ContType   type;        /**< Type (CHAR, INT, REAL, ...) */
+  union {
+    BoxValue   imm;       /**< The value (if immediate) */
+    BoxInt     reg,       /**< The register number (if register) */
+               any_int;   /**< Used for integers, when the specific case is
+                               not known (imm.boxint, reg or ptr.offset?) */
+    struct {
+      BoxInt     offset,  /**< Offset from the pointer */
+                 reg;     /**< Register containing the pointer */
+      unsigned int
+                 greg :1; /**< Whether ptr_reg is a global/local register */
+    }          ptr;       /**< Data necessary to identify a pointer Value */
+  }          value;       /**< Union of all possible values for a Container */
 } Cont;
 
+#if 0
 #define CONT_NEW_LREG(type, num) \
   ((Cont) {CONT_LREG, (type), (num)})
 
@@ -76,6 +83,13 @@ typedef struct {
   ((Cont) {CONT_PTR, (type), (offset), (ptr_reg), (void *) 0, {0}})
 
 #define CONT_NEW_INT(value) ((Cont) {CONT_IMM, CONT_INT, (value)})
+#else
+#define CONT_NEW_LREG(type, num) ((Cont) {})
+
+#define CONT_NEW_LPTR(type, ptr_reg, offset) ((Cont) {})
+
+#define CONT_NEW_INT(value) ((Cont) {})
+#endif
 
 
 /** Move the content of container 'src' to the container 'dest'.
