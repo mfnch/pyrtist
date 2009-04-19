@@ -51,12 +51,27 @@ typedef enum {
 } ContCateg;
 
 typedef enum {
-  CONT_CHAR  = TYPE_CHAR,
-  CONT_INT   = TYPE_INT,
-  CONT_REAL  = TYPE_REAL,
-  CONT_POINT = TYPE_POINT,
+  BOXCONTCATEG_GREG = CAT_GREG,
+  BOXCONTCATEG_LREG = CAT_LREG,
+  BOXCONTCATEG_PTR = CAT_PTR,
+  BOXCONTCATEG_IMM = CAT_IMM
+} BoxContCateg;
+
+typedef enum {
+  CONT_CHAR  = BOXTYPE_CHAR,
+  CONT_INT   = BOXTYPE_INT,
+  CONT_REAL  = BOXTYPE_REAL,
+  CONT_POINT = BOXTYPE_POINT,
   CONT_OBJ   = TYPE_OBJ
 } ContType;
+
+typedef enum {
+  BOXCONTTYPE_CHAR  = BOXTYPE_CHAR,
+  BOXCONTTYPE_INT   = BOXTYPE_INT,
+  BOXCONTTYPE_REAL  = BOXTYPE_REAL,
+  BOXCONTTYPE_POINT = BOXTYPE_POINT,
+  BOXCONTTYPE_OBJ   = TYPE_OBJ
+} BoxContType;
 
 typedef struct {
   ContCateg  categ;       /**< Cathegory (immediate, register, pointer, ...)*/
@@ -75,6 +90,21 @@ typedef struct {
   }          value;       /**< Union of all possible values for a Container */
 } Cont;
 
+typedef struct {
+  ContCateg categ;          /**< Cathegory (immediate, register, ptr, etc ) */
+  ContType  type;           /**< Type (CHAR, INT, REAL, ...) */
+  union {
+    BoxValue  imm;          /**< The value (if immediate) */
+    BoxInt    reg;          /**< The register number (if register) */
+    struct {
+      BoxInt    offset,     /**< Offset from the pointer */
+                reg;        /**< Register containing the pointer */
+      unsigned int
+                is_greg :1; /**< Whether ptr_reg is a global/local register */
+    }         ptr;          /**< Data necessary to identify a pointer Value */
+  }          value;         /**< Union of all possible vals for a Container */
+} BoxCont;
+
 #if 0
 #define CONT_NEW_LREG(type, num) \
   ((Cont) {CONT_LREG, (type), (num)})
@@ -91,6 +121,26 @@ typedef struct {
 #define CONT_NEW_INT(value) ((Cont) {})
 #endif
 
+
+/** Function to rapidly set the content of a container.
+ * The cathegory and type of the container are specified through the string
+ * that the user provides, the following arguments are used to set the value
+ * of the container. For example:
+ *
+ *  Cont c;
+ *  Cont_Set(& c, "ic", (Char) 'a');  --> immediate character with value 'a'
+ *  Cont_Set(& c, "ii", (Int) 123);   --> immediate integer with value 123
+ *  Cont_Set(& c, "ir", (Real) 1.23); --> immediate real with value 1.23
+ *  Cont_Set(& c, "ri", 2); --> second local integer register (ri2)
+ *  Cont_Set(& c, "rr", 3); --> third local real register (rr3)
+ *  Cont_Set(& c, "go", 1); --> first global object register (gro1)
+ *  Cont_Set(& c, "pc", 3, 8);  --> character pointed by ro3 + 8 (c[ro3 + 8])
+ *  Cont_Set(& c, "pig", 1, 8); --> integer pointed by gro3 + 8 (i[gro1 + 8])
+ *
+ * Note that for pointers, a third character can be used to specify that the
+ * base pointer is a global (and not a local register).
+ */
+void BoxCont_Set(BoxCont *c, const char *cont_type, ...);
 
 /** Move the content of container 'src' to the container 'dest'.
  */

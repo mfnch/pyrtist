@@ -17,6 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+#include <string.h>
+#include <stdarg.h>
 #include <assert.h>
 
 #include "messages.h"
@@ -251,4 +253,91 @@ void Cont_Ptr_Cast(Cont *ptr, ContType type) {
       return;
     }
   }
+}
+
+
+
+
+
+
+
+
+
+
+void BoxCont_Set(BoxCont *c, const char *cont_type, ...) {
+  va_list ap; /* to handle the optional arguments (see stdarg.h) */
+  BoxContCateg categ;
+  BoxContType type;
+  enum {READ_CHAR, READ_INT, READ_REAL, READ_POINT, READ_REG,
+        READ_PTR, ERROR} action = ERROR;
+
+  assert(strlen(cont_type) >= 2);
+
+  switch(cont_type[1]) {
+  case 'c': type = BOXCONTTYPE_CHAR;  action = READ_CHAR;  break; /* Char */
+  case 'i': type = BOXCONTTYPE_INT;   action = READ_INT;   break; /* Int */
+  case 'r': type = BOXCONTTYPE_REAL;  action = READ_REAL;  break; /* Real */
+  case 'p': type = BOXCONTTYPE_POINT; action = READ_POINT; break; /* Point */
+  case 'o': type = BOXCONTTYPE_OBJ;   action = ERROR;      break; /* Obj */
+  default:                                /* error */
+    MSG_FATAL("Cont_Set: unrecognized type for container '%c'.",
+              cont_type[1]);
+    assert(0);
+  }
+
+  switch(cont_type[0]) {
+  case 'i': /* immediate */
+    categ = BOXCONTCATEG_IMM; break;
+  case 'r': /* local reg */
+    categ = BOXCONTCATEG_LREG; action = READ_REG; break;
+  case 'g': /* global reg */
+    categ = BOXCONTCATEG_GREG; action = READ_REG; break;
+  case 'p': /* pointer */
+    categ = BOXCONTCATEG_PTR;  action = READ_PTR; break;
+  default:  /* error */
+    MSG_FATAL("Cont_Set: unrecognized container cathegory '%c'.",
+              cont_type[0]);
+    assert(0);
+  }
+
+
+  c->categ = categ;
+  c->type = type;
+
+  va_start(ap, cont_type);
+
+  /* We should not return without calling va_end! */
+  switch(action) {
+  case READ_CHAR:
+    c->value.imm.boxchar = (Char) va_arg(ap, Int); break;
+  case READ_INT:
+    c->value.imm.boxint = va_arg(ap, Int); break;
+  case READ_REAL:
+    c->value.imm.boxreal = va_arg(ap, Real); break;
+  case READ_POINT:
+    c->value.imm.boxpoint = va_arg(ap, Point); break;
+  case READ_REG:
+    c->value.reg = va_arg(ap, Int); break;
+  case READ_PTR:
+    c->value.ptr.reg = va_arg(ap, Int);
+    c->value.ptr.offset = va_arg(ap, Int);
+    c->value.ptr.is_greg = (cont_type[2] == 'g');
+    /* ^^^ if strlen(cont_type) == 2, then cont_type[0] will be '\0'.
+           that's fine. We'll assume local register in that case. */
+    break;
+  default:
+    assert(0);
+  }
+
+  va_end(ap);
+}
+
+char *BoxCont_To_String(const Cont *c) {
+  BoxCont ii_zero;
+  BoxCont_Set(& ii_zero, "ii", 0);
+  return "???";
+}
+
+void BoxVM_Assemble_With_Cont(BoxOpcode code, BoxCont *c1, BoxCont *c2) {
+
 }

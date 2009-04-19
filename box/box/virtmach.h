@@ -112,6 +112,8 @@ typedef enum {
   ASM_ILLEGAL
 } AsmCode;
 
+typedef AsmCode BoxOpcode;
+
 /* Enumerazione delle categorie di argomento, utilizzata da Asm_Assemble
  * per assemblare le istruzioni.
  * NOTA: Questa enumerazione deve essere coerente con l'ordine dell'array
