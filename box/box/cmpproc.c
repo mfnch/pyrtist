@@ -107,17 +107,87 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p) {
   }
 }
 
-void CmpProc_VA_Assemble(CmpProc *p, AsmCode instr, va_list ap) {
+void CmpProc_Raw_VA_Assemble(CmpProc *p, BoxOpcode op, va_list ap) {
   BoxVMProcID proc_id, previous_target;
   proc_id = CmpProc_Get_ProcID(p);
   previous_target = BoxVM_Proc_Target_Set(& p->cmp->vm, proc_id);
-  VM_VA_Assemble(& p->cmp->vm, instr, ap);
+  VM_VA_Assemble(& p->cmp->vm, op, ap);
   (void) BoxVM_Proc_Target_Set(& p->cmp->vm, previous_target);
 }
 
-void CmpProc_Assemble(CmpProc *p, AsmCode instr, ...) {
+void CmpProc_Raw_Assemble(CmpProc *p, BoxOpcode op, ...) {
   va_list ap;
-  va_start(ap, instr);
-  CmpProc_VA_Assemble(p, instr, ap);
+  va_start(ap, op);
+  CmpProc_Raw_VA_Assemble(p, op, ap);
+  va_end(ap);
+}
+
+static void My_Prepare_Ptr_Access(CmpProc *p, const Cont *c) {
+  Int ptr_reg = c->value.ptr.reg;
+  if (c->categ == CAT_PTR && ptr_reg != 0) {
+    Int addr_categ = c->value.ptr.greg ? CAT_GREG : CAT_LREG;
+    CmpProc_Raw_Assemble(p, ASM_MOV_OO, CAT_LREG, (Int) 0,
+                         addr_categ, ptr_reg);
+  }
+}
+
+void CmpProc_VA_Assemble(CmpProc *p, BoxOpcode op, va_list ap) {
+  BoxCont *arg1=NULL, *arg2=NULL;
+  int num_args = BoxOp_Get_Num_Args(op); /* Returns -1 if op is invalid */
+  BoxType arg_type = BoxOp_Get_Arg_Type(op);
+
+  assert(num_args >= 0 && num_args <= 2); /* This is an assumption
+                                             this code makes */
+
+  /* gets the two containers */
+  if (num_args >= 1) {
+    arg1 = va_arg(ap, BoxCont *);
+    assert(arg1->type == arg_type);
+  }
+
+  if (num_args >= 2) {
+    arg2 = va_arg(ap, BoxCont *);
+    assert(arg2->type == arg_type);
+  }
+
+  if (num_args == 1) {
+    My_Prepare_Ptr_Access(p, arg1);
+    switch(arg1->categ) {
+    case BOXCONTCATEG_GREG:
+    case BOXCONTCATEG_LREG:
+      CmpProc_Raw_VA_Assemble(p, op, arg1->categ, arg1->value.reg);
+      return;
+    case BOXCONTCATEG_PTR:
+      CmpProc_Raw_VA_Assemble(p, op, arg1->categ, arg1->value.ptr.offset);
+      return;
+    case BOXCONTCATEG_IMM:
+      assert(0);
+    }
+
+  } else if (num_args == 2) {
+    assert(0);
+  }
+}
+
+#if 0
+for X = c, i, r, p
+(example mov i[ro5+16], i[ro6+8])
+
+mov ro0, ro6
+mov rX0, X[ro0 + 8]
+mov ro0, ro5
+op X[ro0+16], rX0
+
+for X = o
+(example mov o[ro5+16], o[ro6+32])
+
+mov ro0, ro6
+mov ro1, o[ro0+32]
+#endif
+
+void CmpProc_Assemble(CmpProc *p, BoxOpcode op, ...) {
+  va_list ap;
+  va_start(ap, op);
+  CmpProc_VA_Assemble(p, op, ap);
   va_end(ap);
 }

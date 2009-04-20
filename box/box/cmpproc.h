@@ -108,15 +108,17 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p);
  */
 Int CmpProc_Code_Size(CmpProc *p);
 
-/** Assemble the instruction calling VA_Assemble and putting the code inside
+/** Assemble the instruction calling VM_Assemble and put the code inside
  * the given CmpProc procedure p.
+ * @see CmpProc_Raw_VA_Assemble
  */
-void CmpProc_Assemble(CmpProc *p, AsmCode instr, ...);
+void CmpProc_Raw_Assemble(CmpProc *p, BoxOpcode instr, ...);
 
-/** Non-variadic version of the function CmpProc_Assemble.
+/** Non-variadic version of the function CmpProc_Raw_Assemble.
  * Equivalent to the latter, but gets a va_list rather than a variable-length
  * argument list
+ * @see CmpProc_Raw_Assemble
  */
-void CmpProc_VA_Assemble(CmpProc *p, AsmCode instr, va_list ap);
+void CmpProc_Raw_VA_Assemble(CmpProc *p, BoxOpcode instr, va_list ap);
 
 #endif

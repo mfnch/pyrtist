@@ -322,7 +322,7 @@ void BoxCont_Set(BoxCont *c, const char *cont_type, ...) {
     c->value.ptr.reg = va_arg(ap, Int);
     c->value.ptr.offset = va_arg(ap, Int);
     c->value.ptr.is_greg = (cont_type[2] == 'g');
-    /* ^^^ if strlen(cont_type) == 2, then cont_type[0] will be '\0'.
+    /* ^^^ if strlen(cont_type) == 2, then cont_type[2] will be '\0'.
            that's fine. We'll assume local register in that case. */
     break;
   default:

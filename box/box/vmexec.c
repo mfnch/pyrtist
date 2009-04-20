@@ -462,96 +462,110 @@ static void VM__Exec_Ardest_O(BoxVM *vm) {
  ******************************************************************************/
 VMInstrDesc vm_instr_desc_table[] = {
   { },
-  { "line", 1, TYPE_INT, VM__GLPI,     VM__Exec_Line_I, VM__D_GLPI_GLPI },  /* line imm_i         */
-  { "call", 1, TYPE_INT, VM__GLPI,     VM__Exec_Call_I, VM__D_CALL      },  /* call reg_i         */
-  { "call", 1, TYPE_INT, VM__Imm,      VM__Exec_Call_I, VM__D_CALL      },  /* call imm_i         */
-  { "newc", 2, TYPE_INT, VM__GLP_GLPI, VM__Exec_NewC_II,VM__D_GLPI_GLPI },  /* newc imm_i, imm_i  */
-  { "newi", 2, TYPE_INT, VM__GLP_GLPI, VM__Exec_NewI_II,VM__D_GLPI_GLPI },  /* newi imm_i, imm_i  */
-  { "newr", 2, TYPE_INT, VM__GLP_GLPI, VM__Exec_NewR_II,VM__D_GLPI_GLPI },  /* newr imm_i, imm_i  */
-  { "newp", 2, TYPE_INT, VM__GLP_GLPI, VM__Exec_NewP_II,VM__D_GLPI_GLPI },  /* newp imm_i, imm_i  */
-  { "newo", 2, TYPE_INT, VM__GLP_GLPI, VM__Exec_NewO_II,VM__D_GLPI_GLPI },  /* newo imm_i, imm_i  */
-  { "mov",  2, TYPE_CHAR, VM__GLP_Imm,  VM__Exec_Mov_CC, VM__D_GLPI_Imm  }, /* mov reg_c, imm_c   */
-  { "mov",  2, TYPE_INT, VM__GLP_Imm,  VM__Exec_Mov_II, VM__D_GLPI_Imm  },  /* mov reg_i, imm_i   */
-  { "mov",  2, TYPE_REAL, VM__GLP_Imm,  VM__Exec_Mov_RR, VM__D_GLPI_Imm  }, /* mov reg_r, imm_r   */
-  { "mov",  2, TYPE_POINT,VM__GLP_Imm,  VM__Exec_Mov_PP, VM__D_GLPI_Imm  }, /* mov reg_p, imm_p   */
-  { "mov",  2, TYPE_CHAR, VM__GLP_GLPI, VM__Exec_Mov_CC, VM__D_GLPI_GLPI }, /* mov reg_c, reg_c   */
-  { "mov",  2, TYPE_INT, VM__GLP_GLPI, VM__Exec_Mov_II, VM__D_GLPI_GLPI },  /* mov reg_i, reg_i   */
-  { "mov",  2, TYPE_REAL, VM__GLP_GLPI, VM__Exec_Mov_RR, VM__D_GLPI_GLPI }, /* mov reg_r, reg_r   */
-  { "mov",  2, TYPE_POINT,VM__GLP_GLPI, VM__Exec_Mov_PP, VM__D_GLPI_GLPI }, /* mov reg_p, reg_p   */
-  { "mov",  2, TYPE_OBJ,  VM__GLP_GLPI, VM__Exec_Mov_OO, VM__D_GLPI_GLPI }, /* mov reg_o, reg_o   */
-  { "bnot", 1, TYPE_INT, VM__GLPI,     VM__Exec_BNot_I, VM__D_GLPI_GLPI },  /* bnot reg_i         */
-  { "band", 2, TYPE_INT, VM__GLP_GLPI, VM__Exec_BAnd_II,VM__D_GLPI_GLPI },  /* band reg_i, reg_i  */
-  { "bxor", 2, TYPE_INT, VM__GLP_GLPI, VM__Exec_BXor_II,VM__D_GLPI_GLPI },  /* bxor reg_i, reg_i  */
-  { "bor",  2, TYPE_INT, VM__GLP_GLPI, VM__Exec_BOr_II, VM__D_GLPI_GLPI },  /* bor reg_i, reg_i   */
-  { "shl",  2, TYPE_INT, VM__GLP_GLPI, VM__Exec_Shl_II, VM__D_GLPI_GLPI },  /* shl reg_i, reg_i   */
-  { "shr",  2, TYPE_INT, VM__GLP_GLPI, VM__Exec_Shr_II, VM__D_GLPI_GLPI },  /* shr reg_i, reg_i   */
-  { "inc",  1, TYPE_INT, VM__GLPI,     VM__Exec_Inc_I,  VM__D_GLPI_GLPI },  /* inc reg_i          */
-  { "inc",  1, TYPE_REAL, VM__GLPI,     VM__Exec_Inc_R,  VM__D_GLPI_GLPI }, /* inc reg_r          */
-  { "dec",  1, TYPE_INT, VM__GLPI,     VM__Exec_Dec_I,  VM__D_GLPI_GLPI },  /* dec reg_i          */
-  { "dec",  1, TYPE_REAL, VM__GLPI,     VM__Exec_Dec_R,  VM__D_GLPI_GLPI }, /* dec reg_r          */
-  { "pow",  2, TYPE_INT, VM__GLP_GLPI, VM__Exec_Pow_II, VM__D_GLPI_GLPI },  /* pow reg_i, reg_i   */
-  { "pow",  2, TYPE_REAL, VM__GLP_GLPI, VM__Exec_Pow_RR, VM__D_GLPI_GLPI }, /* pow reg_r, reg_r   */
-  { "add",  2, TYPE_INT, VM__GLP_GLPI, VM__Exec_Add_II, VM__D_GLPI_GLPI },  /* add reg_i, reg_i   */
-  { "add",  2, TYPE_REAL, VM__GLP_GLPI, VM__Exec_Add_RR, VM__D_GLPI_GLPI }, /* add reg_r, reg_r   */
-  { "add",  2, TYPE_POINT,VM__GLP_GLPI, VM__Exec_Add_PP, VM__D_GLPI_GLPI }, /* add reg_p, reg_p   */
-  { "sub",  2, TYPE_INT, VM__GLP_GLPI, VM__Exec_Sub_II, VM__D_GLPI_GLPI },  /* sub reg_i, reg_i   */
-  { "sub",  2, TYPE_REAL, VM__GLP_GLPI, VM__Exec_Sub_RR, VM__D_GLPI_GLPI }, /* sub reg_r, reg_r   */
-  { "sub",  2, TYPE_POINT,VM__GLP_GLPI, VM__Exec_Sub_PP, VM__D_GLPI_GLPI }, /* sub reg_p, reg_p   */
-  { "mul",  2, TYPE_INT, VM__GLP_GLPI, VM__Exec_Mul_II, VM__D_GLPI_GLPI },  /* mul reg_i, reg_i   */
-  { "mul",  2, TYPE_REAL, VM__GLP_GLPI, VM__Exec_Mul_RR, VM__D_GLPI_GLPI }, /* mul reg_r, reg_r   */
-  { "div",  2, TYPE_INT, VM__GLP_GLPI, VM__Exec_Div_II, VM__D_GLPI_GLPI },  /* div reg_i, reg_i   */
-  { "div",  2, TYPE_REAL, VM__GLP_GLPI, VM__Exec_Div_RR, VM__D_GLPI_GLPI }, /* div reg_r, reg_r   */
-  { "rem",  2, TYPE_INT, VM__GLP_GLPI, VM__Exec_Rem_II, VM__D_GLPI_GLPI },  /* rem reg_i, reg_i   */
-  { "neg",  1, TYPE_INT, VM__GLPI,     VM__Exec_Neg_I,  VM__D_GLPI_GLPI },  /* neg reg_i          */
-  { "neg",  1, TYPE_REAL, VM__GLPI,     VM__Exec_Neg_R,  VM__D_GLPI_GLPI }, /* neg reg_r          */
-  { "neg",  1, TYPE_POINT,VM__GLPI,     VM__Exec_Neg_P,  VM__D_GLPI_GLPI }, /* neg reg_p          */
-  { "pmulr",1, TYPE_POINT,VM__GLPI,   VM__Exec_PMulR_PR, VM__D_GLPI_GLPI }, /* pmulr reg_p        */
-  { "pdivr",1, TYPE_POINT,VM__GLPI,   VM__Exec_PDivR_PR, VM__D_GLPI_GLPI }, /* pdivr reg_p        */
-  { "eq?",  2, TYPE_INT, VM__GLP_GLPI,  VM__Exec_Eq_II, VM__D_GLPI_GLPI },  /* eq? reg_i, reg_i   */
-  { "eq?",  2, TYPE_REAL, VM__GLP_GLPI,  VM__Exec_Eq_RR, VM__D_GLPI_GLPI }, /* eq? reg_r, reg_r   */
-  { "eq?",  2, TYPE_POINT,VM__GLP_GLPI,  VM__Exec_Eq_PP, VM__D_GLPI_GLPI }, /* eq? reg_p, reg_p   */
-  { "ne?",  2, TYPE_INT, VM__GLP_GLPI,  VM__Exec_Ne_II, VM__D_GLPI_GLPI },  /* ne? reg_i, reg_i   */
-  { "ne?",  2, TYPE_REAL, VM__GLP_GLPI,  VM__Exec_Ne_RR, VM__D_GLPI_GLPI }, /* ne? reg_r, reg_r   */
-  { "ne?",  2, TYPE_POINT,VM__GLP_GLPI,  VM__Exec_Ne_PP, VM__D_GLPI_GLPI }, /* ne? reg_p, reg_p   */
-  { "lt?",  2, TYPE_INT, VM__GLP_GLPI,  VM__Exec_Lt_II, VM__D_GLPI_GLPI },  /* lt? reg_i, reg_i   */
-  { "lt?",  2, TYPE_REAL, VM__GLP_GLPI,  VM__Exec_Lt_RR, VM__D_GLPI_GLPI }, /* lt? reg_r, reg_r   */
-  { "le?",  2, TYPE_INT, VM__GLP_GLPI,  VM__Exec_Le_II, VM__D_GLPI_GLPI },  /* le? reg_i, reg_i   */
-  { "le?",  2, TYPE_REAL, VM__GLP_GLPI,  VM__Exec_Le_RR, VM__D_GLPI_GLPI }, /* le? reg_r, reg_r   */
-  { "gt?",  2, TYPE_INT, VM__GLP_GLPI,  VM__Exec_Gt_II, VM__D_GLPI_GLPI },  /* gt? reg_i, reg_i   */
-  { "gt?",  2, TYPE_REAL, VM__GLP_GLPI,  VM__Exec_Gt_RR, VM__D_GLPI_GLPI }, /* gt? reg_r, reg_r   */
-  { "ge?",  2, TYPE_INT, VM__GLP_GLPI,  VM__Exec_Ge_II, VM__D_GLPI_GLPI },  /* ge? reg_i, reg_i   */
-  { "ge?",  2, TYPE_REAL, VM__GLP_GLPI,  VM__Exec_Ge_RR, VM__D_GLPI_GLPI }, /* ge? reg_r, reg_r   */
-  { "lnot", 1, TYPE_INT, VM__GLP_GLPI, VM__Exec_LNot_I, VM__D_GLPI_GLPI },  /* lnot reg_i         */
-  { "land", 2, TYPE_INT, VM__GLP_GLPI,VM__Exec_LAnd_II, VM__D_GLPI_GLPI },  /* land reg_i, reg_i  */
-  { "lor",  2, TYPE_INT, VM__GLP_GLPI, VM__Exec_LOr_II, VM__D_GLPI_GLPI },  /* lor  reg_i, reg_i  */
-  { "real", 1, TYPE_CHAR, VM__GLPI,     VM__Exec_Real_C, VM__D_GLPI_GLPI }, /* real reg_c         */
-  { "real", 1, TYPE_INT, VM__GLPI,     VM__Exec_Real_I, VM__D_GLPI_GLPI },  /* real reg_i         */
-  { "intg", 1, TYPE_REAL, VM__GLPI,     VM__Exec_Int_R, VM__D_GLPI_GLPI },  /* intg reg_r         */
-  { "point",2, TYPE_INT, VM__GLP_GLPI,VM__Exec_Point_II,VM__D_GLPI_GLPI },  /* point reg_i, reg_i */
-  { "point",2, TYPE_REAL, VM__GLP_GLPI,VM__Exec_Point_RR,VM__D_GLPI_GLPI }, /* point reg_r, reg_r */
-  { "projx",1, TYPE_POINT,VM__GLPI,    VM__Exec_ProjX_P, VM__D_GLPI_GLPI }, /* projx reg_p        */
-  { "projy",1, TYPE_POINT,VM__GLPI,    VM__Exec_ProjY_P, VM__D_GLPI_GLPI }, /* projy reg_p        */
-  { "pptrx",1, TYPE_POINT,VM__GLPI,    VM__Exec_PPtrX_P, VM__D_GLPI_GLPI }, /* pptrx reg_p        */
-  { "pptry",1, TYPE_POINT,VM__GLPI,    VM__Exec_PPtrY_P, VM__D_GLPI_GLPI }, /* pptry reg_p        */
-  { "ret",  0, TYPE_NONE, NULL,            VM__Exec_Ret, VM__D_GLPI_GLPI }, /* ret                */
-  {"malloc",2, TYPE_INT,VM__GLP_GLPI,VM__Exec_Malloc_II, VM__D_GLPI_GLPI }, /* malloc reg_i       */
-  {   "mln",1, TYPE_OBJ,  VM__GLPI,      VM__Exec_Mln_O, VM__D_GLPI_GLPI }, /* mln reg_o        */
-  { "munln",1, TYPE_OBJ,  VM__GLPI,    VM__Exec_MUnln_O, VM__D_GLPI_GLPI }, /* munln reg_o        */
-  { "mcopy",2, TYPE_OBJ,  VM__GLP_GLPI,VM__Exec_MCopy_OO,VM__D_GLPI_GLPI }, /* mcopy reg_o, reg_o */
-  {  "lea", 1, TYPE_CHAR, VM__GLPI,        VM__Exec_Lea, VM__D_GLPI_GLPI }, /* lea c[ro0+...]     */
-  {  "lea", 1, TYPE_INT, VM__GLPI,        VM__Exec_Lea,  VM__D_GLPI_GLPI }, /* lea i[ro0+...]     */
-  {  "lea", 1, TYPE_REAL, VM__GLPI,        VM__Exec_Lea, VM__D_GLPI_GLPI }, /* lea r[ro0+...]     */
-  {  "lea", 1, TYPE_POINT,VM__GLPI,        VM__Exec_Lea, VM__D_GLPI_GLPI }, /* lea p[ro0+...]     */
-  {  "lea", 2, TYPE_OBJ,  VM__GLP_GLPI, VM__Exec_Lea_OO, VM__D_GLPI_GLPI }, /* lea reg_o, o[ro0+...] */
-  { "push", 1, TYPE_OBJ, VM__GLPI,     VM__Exec_Push_O,  VM__D_GLPI_GLPI }, /* push reg_o         */
-  {  "pop", 1, TYPE_OBJ, VM__GLPI,      VM__Exec_Pop_O,  VM__D_GLPI_GLPI }, /* pop reg_o          */
-  {  "jmp", 1, TYPE_INT, VM__GLPI,      VM__Exec_Jmp_I,       VM__D_JMP  }, /* jmp reg_i          */
-  {   "jc", 1, TYPE_INT, VM__GLPI,       VM__Exec_Jc_I,       VM__D_JMP  }, /* jc  reg_i          */
-  {  "add", 1, TYPE_OBJ, VM__GLPI,      VM__Exec_Add_O,  VM__D_GLPI_GLPI }, /* add reg_o          */
-  {"arinit",1, TYPE_INT, VM__GLPI,   VM__Exec_Arinit_I,  VM__D_GLPI_GLPI }, /* arinit reg_i       */
-  {"arsize",1, TYPE_INT, VM__GLPI,   VM__Exec_Arsize_I,  VM__D_GLPI_GLPI }, /* arsize reg_i       */
-  {"araddr",2, TYPE_INT,VM__GLP_GLPI,VM__Exec_Araddr_II, VM__D_GLPI_GLPI }, /* araddr reg_i, reg_i */
-  {"arget", 2, TYPE_OBJ,VM__GLP_GLPI, VM__Exec_Arget_OO, VM__D_GLPI_GLPI }, /* arget reg_o, reg_o  */
-  {"arnext",2, TYPE_OBJ,VM__GLP_GLPI,VM__Exec_Arnext_OO, VM__D_GLPI_GLPI }, /* arnext reg_o, reg_o */
-  {"ardest",1, TYPE_OBJ, VM__GLPI,    VM__Exec_Ardest_O, VM__D_GLPI_GLPI }  /* ardest reg_o */
+  {"line",  1, TYPE_INT,   VM__GLPI,     VM__Exec_Line_I,    VM__D_GLPI_GLPI}, /* line imm_i         */
+  {"call",  1, TYPE_INT,   VM__GLPI,     VM__Exec_Call_I,    VM__D_CALL     }, /* call reg_i         */
+  {"call",  1, TYPE_INT,   VM__Imm,      VM__Exec_Call_I,    VM__D_CALL     }, /* call imm_i         */
+  {"newc",  2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_NewC_II,   VM__D_GLPI_GLPI}, /* newc imm_i, imm_i  */
+  {"newi",  2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_NewI_II,   VM__D_GLPI_GLPI}, /* newi imm_i, imm_i  */
+  {"newr",  2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_NewR_II,   VM__D_GLPI_GLPI}, /* newr imm_i, imm_i  */
+  {"newp",  2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_NewP_II,   VM__D_GLPI_GLPI}, /* newp imm_i, imm_i  */
+  {"newo",  2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_NewO_II,   VM__D_GLPI_GLPI}, /* newo imm_i, imm_i  */
+  {"mov",   2, TYPE_CHAR,  VM__GLP_Imm,  VM__Exec_Mov_CC,    VM__D_GLPI_Imm }, /* mov reg_c, imm_c   */
+  {"mov",   2, TYPE_INT,   VM__GLP_Imm,  VM__Exec_Mov_II,    VM__D_GLPI_Imm }, /* mov reg_i, imm_i   */
+  {"mov",   2, TYPE_REAL,  VM__GLP_Imm,  VM__Exec_Mov_RR,    VM__D_GLPI_Imm }, /* mov reg_r, imm_r   */
+  {"mov",   2, TYPE_POINT, VM__GLP_Imm,  VM__Exec_Mov_PP,    VM__D_GLPI_Imm }, /* mov reg_p, imm_p   */
+  {"mov",   2, TYPE_CHAR,  VM__GLP_GLPI, VM__Exec_Mov_CC,    VM__D_GLPI_GLPI}, /* mov reg_c, reg_c   */
+  {"mov",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Mov_II,    VM__D_GLPI_GLPI}, /* mov reg_i, reg_i   */
+  {"mov",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Mov_RR,    VM__D_GLPI_GLPI}, /* mov reg_r, reg_r   */
+  {"mov",   2, TYPE_POINT, VM__GLP_GLPI, VM__Exec_Mov_PP,    VM__D_GLPI_GLPI}, /* mov reg_p, reg_p   */
+  {"mov",   2, TYPE_OBJ,   VM__GLP_GLPI, VM__Exec_Mov_OO,    VM__D_GLPI_GLPI}, /* mov reg_o, reg_o   */
+  {"bnot",  1, TYPE_INT,   VM__GLPI,     VM__Exec_BNot_I,    VM__D_GLPI_GLPI}, /* bnot reg_i         */
+  {"band",  2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_BAnd_II,   VM__D_GLPI_GLPI}, /* band reg_i, reg_i  */
+  {"bxor",  2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_BXor_II,   VM__D_GLPI_GLPI}, /* bxor reg_i, reg_i  */
+  {"bor",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_BOr_II,    VM__D_GLPI_GLPI}, /* bor reg_i, reg_i   */
+  {"shl",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Shl_II,    VM__D_GLPI_GLPI}, /* shl reg_i, reg_i   */
+  {"shr",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Shr_II,    VM__D_GLPI_GLPI}, /* shr reg_i, reg_i   */
+  {"inc",   1, TYPE_INT,   VM__GLPI,     VM__Exec_Inc_I,     VM__D_GLPI_GLPI}, /* inc reg_i          */
+  {"inc",   1, TYPE_REAL,  VM__GLPI,     VM__Exec_Inc_R,     VM__D_GLPI_GLPI}, /* inc reg_r          */
+  {"dec",   1, TYPE_INT,   VM__GLPI,     VM__Exec_Dec_I,     VM__D_GLPI_GLPI}, /* dec reg_i          */
+  {"dec",   1, TYPE_REAL,  VM__GLPI,     VM__Exec_Dec_R,     VM__D_GLPI_GLPI}, /* dec reg_r          */
+  {"pow",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Pow_II,    VM__D_GLPI_GLPI}, /* pow reg_i, reg_i   */
+  {"pow",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Pow_RR,    VM__D_GLPI_GLPI}, /* pow reg_r, reg_r   */
+  {"add",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Add_II,    VM__D_GLPI_GLPI}, /* add reg_i, reg_i   */
+  {"add",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Add_RR,    VM__D_GLPI_GLPI}, /* add reg_r, reg_r   */
+  {"add",   2, TYPE_POINT, VM__GLP_GLPI, VM__Exec_Add_PP,    VM__D_GLPI_GLPI}, /* add reg_p, reg_p   */
+  {"sub",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Sub_II,    VM__D_GLPI_GLPI}, /* sub reg_i, reg_i   */
+  {"sub",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Sub_RR,    VM__D_GLPI_GLPI}, /* sub reg_r, reg_r   */
+  {"sub",   2, TYPE_POINT, VM__GLP_GLPI, VM__Exec_Sub_PP,    VM__D_GLPI_GLPI}, /* sub reg_p, reg_p   */
+  {"mul",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Mul_II,    VM__D_GLPI_GLPI}, /* mul reg_i, reg_i   */
+  {"mul",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Mul_RR,    VM__D_GLPI_GLPI}, /* mul reg_r, reg_r   */
+  {"div",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Div_II,    VM__D_GLPI_GLPI}, /* div reg_i, reg_i   */
+  {"div",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Div_RR,    VM__D_GLPI_GLPI}, /* div reg_r, reg_r   */
+  {"rem",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Rem_II,    VM__D_GLPI_GLPI}, /* rem reg_i, reg_i   */
+  {"neg",   1, TYPE_INT,   VM__GLPI,     VM__Exec_Neg_I,     VM__D_GLPI_GLPI}, /* neg reg_i          */
+  {"neg",   1, TYPE_REAL,  VM__GLPI,     VM__Exec_Neg_R,     VM__D_GLPI_GLPI}, /* neg reg_r          */
+  {"neg",   1, TYPE_POINT, VM__GLPI,     VM__Exec_Neg_P,     VM__D_GLPI_GLPI}, /* neg reg_p          */
+  {"pmulr", 1, TYPE_POINT, VM__GLPI,     VM__Exec_PMulR_PR,  VM__D_GLPI_GLPI}, /* pmulr reg_p        */
+  {"pdivr", 1, TYPE_POINT, VM__GLPI,     VM__Exec_PDivR_PR,  VM__D_GLPI_GLPI}, /* pdivr reg_p        */
+  {"eq?",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Eq_II,     VM__D_GLPI_GLPI}, /* eq? reg_i, reg_i   */
+  {"eq?",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Eq_RR,     VM__D_GLPI_GLPI}, /* eq? reg_r, reg_r   */
+  {"eq?",   2, TYPE_POINT, VM__GLP_GLPI, VM__Exec_Eq_PP,     VM__D_GLPI_GLPI}, /* eq? reg_p, reg_p   */
+  {"ne?",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Ne_II,     VM__D_GLPI_GLPI}, /* ne? reg_i, reg_i   */
+  {"ne?",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Ne_RR,     VM__D_GLPI_GLPI}, /* ne? reg_r, reg_r   */
+  {"ne?",   2, TYPE_POINT, VM__GLP_GLPI, VM__Exec_Ne_PP,     VM__D_GLPI_GLPI}, /* ne? reg_p, reg_p   */
+  {"lt?",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Lt_II,     VM__D_GLPI_GLPI}, /* lt? reg_i, reg_i   */
+  {"lt?",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Lt_RR,     VM__D_GLPI_GLPI}, /* lt? reg_r, reg_r   */
+  {"le?",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Le_II,     VM__D_GLPI_GLPI}, /* le? reg_i, reg_i   */
+  {"le?",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Le_RR,     VM__D_GLPI_GLPI}, /* le? reg_r, reg_r   */
+  {"gt?",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Gt_II,     VM__D_GLPI_GLPI}, /* gt? reg_i, reg_i   */
+  {"gt?",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Gt_RR,     VM__D_GLPI_GLPI}, /* gt? reg_r, reg_r   */
+  {"ge?",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Ge_II,     VM__D_GLPI_GLPI}, /* ge? reg_i, reg_i   */
+  {"ge?",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Ge_RR,     VM__D_GLPI_GLPI}, /* ge? reg_r, reg_r   */
+  {"lnot",  1, TYPE_INT,   VM__GLP_GLPI, VM__Exec_LNot_I,    VM__D_GLPI_GLPI}, /* lnot reg_i         */
+  {"land",  2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_LAnd_II,   VM__D_GLPI_GLPI}, /* land reg_i, reg_i  */
+  {"lor",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_LOr_II,    VM__D_GLPI_GLPI}, /* lor  reg_i, reg_i  */
+  {"real",  1, TYPE_CHAR,  VM__GLPI,     VM__Exec_Real_C,    VM__D_GLPI_GLPI}, /* real reg_c         */
+  {"real",  1, TYPE_INT,   VM__GLPI,     VM__Exec_Real_I,    VM__D_GLPI_GLPI}, /* real reg_i         */
+  {"intg",  1, TYPE_REAL,  VM__GLPI,     VM__Exec_Int_R,     VM__D_GLPI_GLPI}, /* intg reg_r         */
+  {"point", 2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Point_II,  VM__D_GLPI_GLPI}, /* point reg_i, reg_i */
+  {"point", 2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Point_RR,  VM__D_GLPI_GLPI}, /* point reg_r, reg_r */
+  {"projx", 1, TYPE_POINT, VM__GLPI,     VM__Exec_ProjX_P,   VM__D_GLPI_GLPI}, /* projx reg_p        */
+  {"projy", 1, TYPE_POINT, VM__GLPI,     VM__Exec_ProjY_P,   VM__D_GLPI_GLPI}, /* projy reg_p        */
+  {"pptrx", 1, TYPE_POINT, VM__GLPI,     VM__Exec_PPtrX_P,   VM__D_GLPI_GLPI}, /* pptrx reg_p        */
+  {"pptry", 1, TYPE_POINT, VM__GLPI,     VM__Exec_PPtrY_P,   VM__D_GLPI_GLPI}, /* pptry reg_p        */
+  {"ret",   0, TYPE_NONE,  NULL,         VM__Exec_Ret,       VM__D_GLPI_GLPI}, /* ret                */
+  {"malloc",2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Malloc_II, VM__D_GLPI_GLPI}, /* malloc reg_i       */
+  {"mln",   1, TYPE_OBJ,   VM__GLPI,     VM__Exec_Mln_O,     VM__D_GLPI_GLPI}, /* mln reg_o          */
+  {"munln", 1, TYPE_OBJ,   VM__GLPI,     VM__Exec_MUnln_O,   VM__D_GLPI_GLPI}, /* munln reg_o        */
+  {"mcopy", 2, TYPE_OBJ,   VM__GLP_GLPI, VM__Exec_MCopy_OO,  VM__D_GLPI_GLPI}, /* mcopy reg_o, reg_o */
+  {"lea",   1, TYPE_CHAR,  VM__GLPI,     VM__Exec_Lea,       VM__D_GLPI_GLPI}, /* lea c[ro0+...]     */
+  {"lea",   1, TYPE_INT,   VM__GLPI,     VM__Exec_Lea,       VM__D_GLPI_GLPI}, /* lea i[ro0+...]     */
+  {"lea",   1, TYPE_REAL,  VM__GLPI,     VM__Exec_Lea,       VM__D_GLPI_GLPI}, /* lea r[ro0+...]     */
+  {"lea",   1, TYPE_POINT, VM__GLPI,     VM__Exec_Lea,       VM__D_GLPI_GLPI}, /* lea p[ro0+...]     */
+  {"lea",   2, TYPE_OBJ,   VM__GLP_GLPI, VM__Exec_Lea_OO,    VM__D_GLPI_GLPI}, /* lea reg_o, o[ro0+...] */
+  {"push",  1, TYPE_OBJ,   VM__GLPI,     VM__Exec_Push_O,    VM__D_GLPI_GLPI}, /* push reg_o         */
+  {"pop",   1, TYPE_OBJ,   VM__GLPI,     VM__Exec_Pop_O,     VM__D_GLPI_GLPI}, /* pop reg_o          */
+  {"jmp",   1, TYPE_INT,   VM__GLPI,     VM__Exec_Jmp_I,     VM__D_JMP      }, /* jmp reg_i          */
+  {"jc",    1, TYPE_INT,   VM__GLPI,     VM__Exec_Jc_I,      VM__D_JMP      }, /* jc  reg_i          */
+  {"add",   1, TYPE_OBJ,   VM__GLPI,     VM__Exec_Add_O,     VM__D_GLPI_GLPI}, /* add reg_o          */
+  {"arinit",1, TYPE_INT,   VM__GLPI,     VM__Exec_Arinit_I,  VM__D_GLPI_GLPI}, /* arinit reg_i       */
+  {"arsize",1, TYPE_INT,   VM__GLPI,     VM__Exec_Arsize_I,  VM__D_GLPI_GLPI}, /* arsize reg_i       */
+  {"araddr",2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Araddr_II, VM__D_GLPI_GLPI}, /* araddr reg_i, reg_i */
+  {"arget", 2, TYPE_OBJ,   VM__GLP_GLPI, VM__Exec_Arget_OO,  VM__D_GLPI_GLPI}, /* arget reg_o, reg_o  */
+  {"arnext",2, TYPE_OBJ,   VM__GLP_GLPI, VM__Exec_Arnext_OO, VM__D_GLPI_GLPI}, /* arnext reg_o, reg_o */
+  {"ardest",1, TYPE_OBJ,   VM__GLPI,     VM__Exec_Ardest_O,  VM__D_GLPI_GLPI}  /* ardest reg_o */
 };
+
+int BoxOp_Get_Num_Args(BoxOpcode op) {
+  if (op < 1 || op >= ASM_ILLEGAL)
+    return -1;
+  else
+    return vm_instr_desc_table[op].numargs;
+}
+
+BoxType BoxOp_Get_Arg_Type(BoxOpcode op) {
+  if (op < 1 || op >= ASM_ILLEGAL)
+    return BOXTYPE_NONE;
+  else
+    return vm_instr_desc_table[op].t_id;
+}

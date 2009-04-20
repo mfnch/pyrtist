@@ -112,7 +112,58 @@ typedef enum {
   ASM_ILLEGAL
 } AsmCode;
 
-typedef AsmCode BoxOpcode;
+/** The opcodes for the operations (instructions) understandable by the Box
+ * virtual machine.
+ * NOTE: the order of the enumeration matters! It corresponds to the order
+ *   in the table vm_instr_desc_table[]
+ */
+typedef enum {
+  BOXOP_LINE_Iimm=1, BOXOP_CALL_I, BOXOP_CALL_Iimm,
+  BOXOP_NEWC_II, BOXOP_NEWI_II, BOXOP_NEWR_II, BOXOP_NEWP_II, BOXOP_NEWO_II,
+  BOXOP_MOV_Cimm, BOXOP_MOV_Iimm, BOXOP_MOV_Rimm, BOXOP_MOV_Pimm,
+  BOXOP_MOV_CC, BOXOP_MOV_II, BOXOP_MOV_RR, BOXOP_MOV_PP, BOXOP_MOV_OO,
+  BOXOP_BNOT_I, BOXOP_BAND_II, BOXOP_BXOR_II, BOXOP_BOR_II,
+  BOXOP_SHL_II, BOXOP_SHR_II,
+  BOXOP_INC_I, BOXOP_INC_R, BOXOP_DEC_I, BOXOP_DEC_R,
+  BOXOP_POW_II, BOXOP_POW_RR,
+  BOXOP_ADD_II, BOXOP_ADD_RR, BOXOP_ADD_PP,
+  BOXOP_SUB_II, BOXOP_SUB_RR, BOXOP_SUB_PP,
+  BOXOP_MUL_II, BOXOP_MUL_RR, BOXOP_DIV_II, BOXOP_DIV_RR, BOXOP_REM_II,
+  BOXOP_NEG_I, BOXOP_NEG_R, BOXOP_NEG_P, BOXOP_PMULR_P, BOXOP_PDIVR_P,
+  BOXOP_EQ_II, BOXOP_EQ_RR, BOXOP_EQ_PP,
+  BOXOP_NE_II, BOXOP_NE_RR, BOXOP_NE_PP,
+  BOXOP_LT_II, BOXOP_LT_RR, BOXOP_LE_II, BOXOP_LE_RR,
+  BOXOP_GT_II, BOXOP_GT_RR, BOXOP_GE_II, BOXOP_GE_RR,
+  BOXOP_LNOT_I, BOXOP_LAND_II, BOXOP_LOR_II,
+  BOXOP_REAL_C, BOXOP_REAL_I, BOXOP_INT_R, BOXOP_POINT_II, BOXOP_POINT_RR,
+  BOXOP_PROJX_P, BOXOP_PROJY_P, BOXOP_PPTRX_P, BOXOP_PPTRY_P,
+  BOXOP_RET,
+  BOXOP_MALLOC_I, BOXOP_MLN_O, BOXOP_MUNLN_O, BOXOP_MCOPY_OO,
+  BOXOP_LEA_C, BOXOP_LEA_I, BOXOP_LEA_R, BOXOP_LEA_P, BOXOP_LEA_OO,
+  BOXOP_PUSH_O, BOXOP_POP_O,
+  BOXOP_JMP_I, BOXOP_JC_I,
+  BOXOP_ADD_O,
+  BOXOP_ARINIT, BOXOP_ARSIZE, BOXOP_ARADDR, BOXOP_ARGET, BOXOP_ARNEXT,
+  BOXOP_ARDEST,
+  BOXOP_ILLEGAL
+} BoxOp;
+
+typedef BoxOp BoxOpcode;
+
+/** Generic opcodes (type independent) */
+typedef enum {
+  BOXGOP_LINE=1, BOXGOP_CALL, BOXGOP_NEWC, BOXGOP_MOV,
+  BOXGOP_BNOT, BOXGOP_BAND, BOXGOP_BXOR, BOXGOP_BOR, BOXGOP_SHL, BOXGOP_SHR,
+  BOXGOP_INC, BOXGOP_DEC, BOXGOP_POW, BOXGOP_ADD, BOXGOP_SUB, BOXGOP_MUL,
+  BOXGOP_DIV, BOXGOP_REM, BOXGOP_NEG, BOXGOP_PMULR, BOXGOP_PDIVR,
+  BOXGOP_EQ, BOXGOP_NE, BOXGOP_LT, BOXGOP_LE, BOXGOP_GT, BOXGOP_GE,
+  BOXGOP_LNOT, BOXGOP_LAND, BOXGOP_LOR, BOXGOP_REAL, BOXGOP_INT, BOXGOP_POINT,
+  BOXGOP_PROJX, BOXGOP_PROJY, BOXGOP_PPTRX, BOXGOP_PPTRY,
+  BOXGOP_RET, BOXGOP_MALLOC, BOXGOP_MLN, BOXGOP_MUNLN, BOXGOP_MCOPY,
+  BOXGOP_LEA, BOXGOP_PUSH, BOXGOP_POP, BOXGOP_JMP, BOXGOP_JC,
+  BOXGOP_ARINIT, BOXGOP_ARSIZE, BOXGOP_ARADDR, BOXGOP_ARGET, BOXGOP_ARNEXT,
+  BOXGOP_ARDEST, BOXGOP_ILLEGAL
+} BoxGOp;
 
 /* Enumerazione delle categorie di argomento, utilizzata da Asm_Assemble
  * per assemblare le istruzioni.
@@ -151,14 +202,13 @@ struct __vmstatus;
  * and describes all the instruction of the VM.
  */
 typedef struct {
-  const char *name;             /* Nome dell'istruzione */
-  BoxUInt numargs;              /* Numero di argomenti dell'istruzione */
-  TypeID t_id;                  /* Numero che identifica il tipo
-                                   degli argomenti (interi, reali, ...) */
-  void (*get_args)(VMStatus *); /* Per trattare gli argomenti */
-  void (*execute)(BoxVM *); /* Per eseguire l'istruzione */
-  /* Per disassemblare gli argomenti */
-  void (*disasm)(BoxVM *, char **);
+  const char *name;                 /**< Nome dell'istruzione */
+  BoxUInt numargs;                  /**< Numero di argomenti dell'istruzione */
+  TypeID t_id;                      /**< Numero che identifica il tipo
+                                         degli argomenti (interi, reali, ...) */
+  void (*get_args)(VMStatus *);     /**< Per trattare gli argomenti */
+  void (*execute)(BoxVM *);         /**< Per eseguire l'istruzione */
+  void (*disasm)(BoxVM *, char **); /**< Per disassemblare gli argomenti */
 } VMInstrDesc;
 
 /** This structure contains all the data which define the status for the VM.
@@ -249,7 +299,16 @@ void VM__D_GLPI_Imm(BoxVM *vmp, char **iarg);
 /** This is the type of the C functions which can be called by the VM. */
 typedef BoxTask (*VMFunc)(BoxVM *);
 
+/** Returns the number of arguments for the VM operation 'op'.
+ * If 'op' is not a valid opcode returns -1.
+ */
+int BoxVM_Op_Get_Num_Args(BoxOpcode op);
 
+/** Returns the type of the explicit arguments for the VM operation 'op'.
+ * If 'op' is not a valid opcode returns BOXTYPE_NONE.
+ * NOTE: the explicit arguments of a VM operation have always the same type.
+ */
+BoxType BoxVM_Op_Get_Arg_Type(BoxOpcode op);
 
 /** Initialise a BoxVM object for which space has been already allocated
  * somehow. You'll need to use BoxVM_Finish to destroy the object.
