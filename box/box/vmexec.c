@@ -32,6 +32,7 @@
 #include "virtmach.h"
 #include "vmalloc.h"
 #include "bltinarray.h"
+#include "str.h"
 
 static void VM__Exec_Ret(VMProgram *vmp) {vmp->vmcur->flags.exit = 1;}
 
@@ -570,20 +571,18 @@ BoxType BoxOp_Get_Arg_Type(BoxOpcode op) {
 }
 
 typedef struct {
-  BoxGOp      g_op;            /**< Generic Opcode */
-  const char  *op_name;        /**< Name of the operation */
-  int         num_args;        /**< Number of explicit arguments */
+  BoxGOp      g_opcode;        /**< Generic Opcode */
+  const char  *name;           /**< Name of the operation */
+  char        num_args;        /**< Number of explicit arguments */
   char        arg_type;        /**< Type of the explicit arguments */
   const char  *input_regs,     /**< List of */
               *output_regs,    /**<*/
               *assembler,      /**<*/
               *disassembler;   /**<*/
-  void        *implementation; /**<*/
-} HumanOpTable;
+  void        *executor;       /**<*/
+} BoxOpTable4Humans;
 
-
-
-static HumanOpTable op_table_for_humans[] = {
+static BoxOpTable4Humans op_table_for_humans[] = {
   {  BOXGOP_LINE,   "line", 1, 'i',     "a1",  NULL, "x-", "xx", VM__Exec_Line_I   }, /* line ii       */
   {  BOXGOP_CALL,   "call", 1, 'i',     "a1",  NULL, "x-", "c-", VM__Exec_Call_I   }, /* call ri       */
   {  BOXGOP_CALL,   "call", 1, 'i',     "a1",  NULL, "i-", "c-", VM__Exec_Call_I   }, /* call ii       */
@@ -694,6 +693,11 @@ c  -> VM__D_CALL
 
 */
 
+
+/**< Enumeration of all the possible types of signatures for the ops
+ * (instructions of the Box VM). Different signature mean different
+ * number and/or type of arguments.
+ */
 typedef enum {
   BOXOPSIGNATURE_ANY,
   BOXOPSIGNATURE_IMM,
@@ -702,38 +706,163 @@ typedef enum {
 } BoxOpSignature;
 
 typedef enum {
-  BOXOPREGKIND_ARG,
-  BOXOPREGKIND_LREG
-} BoxOpRegKind;
-
-typedef struct {
-  BoxOpRegKind kind;
-  BoxType      type;
-  BoxInt       num;
-} BoxOpReg;
-
-typedef enum {
   BOXOPDASM_ANY_ANY,
   BOXOPDASM_ANY_IMM,
   BOXOPDASM_JMP,
   BOXOPDASM_CALL
 } BoxOpDAsm;
 
+typedef struct {
+  char kind, /**< 'a' for explicit argument, 'r' for implicit local register */
+       type, /**< 'c':Char, 'i':Int, 'r':Real, 'p':Point, 'o':Obj */
+       num;  /**< Numeber of argument or register (can be 0, 1, 2) */
+} BoxOpReg;
+
 typedef struct __BoxOpInfo BoxOpInfo;
 
+/** Structure containing information about one VM operation */
 struct __BoxOpInfo {
-  BoxOp      opcode;
-  BoxGOp     g_opcode;
-  BoxOpInfo  *next;
-  const char *name;
+  BoxOp      opcode;       /**< Opcode for the operation */
+  BoxGOp     g_opcode;     /**< Generic opcode */
+  BoxOpInfo  *next;        /**< Next operation with the same generic opcode */
+  const char *name;        /**< Literal name of the opcode (a string) */
   BoxOpSignature
-             signature;
-  BoxOpDAsm  dasm;
-  BoxType    arg_type;
-  int        num_args,
-             num_inputs,
-             num_outputs;
-  BoxOpReg   *input_regs,
-             *output_regs;
-  void       *exec;
+             signature;    /**< Operation kind (depends on the arguments) */
+  BoxOpDAsm  dasm;         /**< How to disassemble the operation */
+  char       arg_type,     /**< Type of the arguments */
+             num_args,     /**< Number of arguments */
+             num_inputs,   /**< Num. of input registers (explicit+implicit) */
+             num_outputs;  /**< Num. of output registers(explicit+implicit) */
+  BoxOpReg   *input_regs,  /**< Pointer to the list of input registers */
+             *output_regs; /**< Pointer to the list of output registers */
+  void       *executor;    /**< Pointer to the function which implements
+                                the operation */
 };
+
+typedef struct {
+  BoxOpInfo info[BOX_NUM_OPS];
+  BoxOpReg *regs;
+} BoxOpTable;
+
+/** Count how many commas are present on the given string. */
+static char My_Count_Commas(const char *s) {
+  char count = 0;
+  for(; *s != '\0'; s++)
+    count += (*s == ',');
+  return count;
+}
+
+static int My_Parse_Reg_List(const char **reg_list, char arg_type,
+                             BoxOpReg *r) {
+  const char *s = *reg_list;
+  if (*s == '\0')
+    return 0;
+
+  else {
+    char kind = *(s++), type, num_letter;
+    if (kind == 'a') {
+      type = arg_type;
+      num_letter = *(s++);
+
+    } else if (kind == 'r') {
+      type = *(s++);
+      num_letter = *(s++);
+
+    } else {
+      assert(0);
+      return 0;
+    }
+
+    r->kind = kind;
+    r->type = type;
+    r->num = Int_Of_Hex_Digit(num_letter);
+    *reg_list = s;
+    return 1;
+  }
+}
+
+void BoxOpTable_Build(BoxOpTable *ot) {
+  int i, outside_idx, num_regs_to_alloc;
+  BoxOpReg *reg;
+
+  /* The following is what we want to achieve here:
+   * The info table must contain BOX_NUM_OPS entries: one for each operation.
+   * The first BOX_NUM_GOPS operations correspond exactly to the generic
+   * operation (enum BoxGOp). This mean that, when we get a BoxGOp we can use
+   * it as the index to access the table.
+   * For example: if the gop is BOXGOP_MOV, then ot->info[BOXGOP_MOV] refers
+   * to one of the operations corresponding to BOXGOP_MOV. Let'say it refers
+   * to BOXOP_MOV_II. Then all the other operations (such as BOXOP_MOV_RR,
+   * BOXOP_MOV_PP, etc.) are linked in a chain starting from
+   * ot->info[BOXGOP_MOV]->next and are physically stored in the part of the
+   * ot->info array after the first BOX_NUM_GOPS operations.
+   */
+
+  /* To organize things this way we first clean the array */
+  for(i = 0; i < BOX_NUM_GOPS; i++)
+    ot->info[i].name = NULL; /* this is how we mark empty items */
+
+  /* Now we populate the table */
+  outside_idx = BOX_NUM_GOPS; /* index to items outside the lower table */
+  num_regs_to_alloc = 0; /* Need to count the total num of input and output
+                            args to allocate properly an array later */
+  for(i = 0; i < BOX_NUM_OPS; i++) {
+    BoxOpTable4Humans *h_ot = & op_table_for_humans[i];
+    BoxGOp g_opcode = h_ot->g_opcode;
+    BoxOpInfo *oi = & ot->info[g_opcode];
+
+    /* We first check if the entry is free or not */
+    if (oi->name == NULL) {
+      /* It is! Then we work on the first part of the table! */
+      oi->next = NULL;
+
+    } else {
+      /* No, it has been already occupied! We work outside the lower table! */
+      BoxOpInfo *next = oi->next;
+      oi->next = & ot->info[outside_idx++]; /* update the chain */
+      oi = oi->next;
+      oi->next = next;
+    }
+
+    oi->name = h_ot->name; /* This also marks the item as occupied */
+    oi->opcode = i;
+    oi->g_opcode = h_ot->g_opcode;
+    oi->signature = 0; /* change me */
+    oi->dasm = 0; /* change me */
+    oi->arg_type = h_ot->arg_type;
+    oi->num_args = h_ot->num_args;
+    oi->num_inputs = 1 + My_Count_Commas(h_ot->input_regs);
+    oi->num_outputs = 1 + My_Count_Commas(h_ot->output_regs);
+    oi->executor = h_ot->executor;
+
+    num_regs_to_alloc += oi->num_inputs + oi->num_outputs;
+  }
+
+  /* Now we can generate, for each operation, the list of input and output
+   * registers
+   */
+
+  reg = ot->regs = BoxMem_Safe_Alloc(sizeof(BoxOpReg)*num_regs_to_alloc);
+
+  for(i = 0; i < BOX_NUM_OPS; i++) {
+    BoxOpInfo *oi = & ot->info[i];
+    BoxOpTable4Humans *h_ot;
+    const char *token;
+    assert(oi->name != NULL);
+    h_ot = & op_table_for_humans[oi->opcode];
+
+    /* Parse the string containing the input registers and transform it into
+     * an array of BoxOpReg structure pointed by oi->input_regs
+     */
+    oi->input_regs = reg;
+    token = h_ot->input_regs;
+    while(My_Parse_Reg_List(& token, h_ot->arg_type, reg)) ++reg;
+
+    /* Do a similar things for the output registers */
+    oi->output_regs = reg;
+    token = h_ot->output_regs;
+    while(My_Parse_Reg_List(& token, h_ot->arg_type, reg)) ++reg;
+  }
+}
+
+
