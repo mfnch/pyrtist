@@ -461,7 +461,6 @@ static void VM__Exec_Ardest_O(BoxVM *vm) {
  * argomenti e quali per eseguire l'azione associata all'istruzione stessa.   *
  ******************************************************************************/
 VMInstrDesc vm_instr_desc_table[] = {
-  { },
   {"line",  1, TYPE_INT,   VM__GLPI,     VM__Exec_Line_I,    VM__D_GLPI_GLPI}, /* line imm_i         */
   {"call",  1, TYPE_INT,   VM__GLPI,     VM__Exec_Call_I,    VM__D_CALL     }, /* call reg_i         */
   {"call",  1, TYPE_INT,   VM__Imm,      VM__Exec_Call_I,    VM__D_CALL     }, /* call imm_i         */
@@ -569,3 +568,172 @@ BoxType BoxOp_Get_Arg_Type(BoxOpcode op) {
   else
     return vm_instr_desc_table[op].t_id;
 }
+
+typedef struct {
+  BoxGOp      g_op;            /**< Generic Opcode */
+  const char  *op_name;        /**< Name of the operation */
+  int         num_args;        /**< Number of explicit arguments */
+  char        arg_type;        /**< Type of the explicit arguments */
+  const char  *input_regs,     /**< List of */
+              *output_regs,    /**<*/
+              *assembler,      /**<*/
+              *disassembler;   /**<*/
+  void        *implementation; /**<*/
+} HumanOpTable;
+
+
+
+static HumanOpTable op_table_for_humans[] = {
+  {  BOXGOP_LINE,   "line", 1, 'i',     "a1",  NULL, "x-", "xx", VM__Exec_Line_I   }, /* line ii       */
+  {  BOXGOP_CALL,   "call", 1, 'i',     "a1",  NULL, "x-", "c-", VM__Exec_Call_I   }, /* call ri       */
+  {  BOXGOP_CALL,   "call", 1, 'i',     "a1",  NULL, "i-", "c-", VM__Exec_Call_I   }, /* call ii       */
+  {  BOXGOP_NEWC,   "newc", 2, 'i',  "a1,a2",  NULL, "xx", "xx", VM__Exec_NewC_II  }, /* newc ii, ii   */
+  {  BOXGOP_NEWC,   "newi", 2, 'i',  "a1,a2",  NULL, "xx", "xx", VM__Exec_NewI_II  }, /* newi ii, ii   */
+  {  BOXGOP_NEWC,   "newr", 2, 'i',  "a1,a2",  NULL, "xx", "xx", VM__Exec_NewR_II  }, /* newr ii, ii   */
+  {  BOXGOP_NEWC,   "newp", 2, 'i',  "a1,a2",  NULL, "xx", "xx", VM__Exec_NewP_II  }, /* newp ii, ii   */
+  {  BOXGOP_NEWC,   "newo", 2, 'i',  "a1,a2",  NULL, "xx", "xx", VM__Exec_NewO_II  }, /* newo ii, ii   */
+  {   BOXGOP_MOV,    "mov", 2, 'c',     "a2",  "a1", "xi", "xi", VM__Exec_Mov_CC   }, /* mov rc, ic    */
+  {   BOXGOP_MOV,    "mov", 2, 'i',     "a2",  "a1", "xi", "xi", VM__Exec_Mov_II   }, /* mov ri, ii    */
+  {   BOXGOP_MOV,    "mov", 2, 'r',     "a2",  "a1", "xi", "xi", VM__Exec_Mov_RR   }, /* mov rr, ir    */
+  {   BOXGOP_MOV,    "mov", 2, 'p',     "a2",  "a1", "xi", "xi", VM__Exec_Mov_PP   }, /* mov rp, ip    */
+  {   BOXGOP_MOV,    "mov", 2, 'c',     "a2",  "a1", "xx", "xx", VM__Exec_Mov_CC   }, /* mov rc, rc    */
+  {   BOXGOP_MOV,    "mov", 2, 'i',     "a2",  "a1", "xx", "xx", VM__Exec_Mov_II   }, /* mov ri, ri    */
+  {   BOXGOP_MOV,    "mov", 2, 'r',     "a2",  "a1", "xx", "xx", VM__Exec_Mov_RR   }, /* mov rr, rr    */
+  {   BOXGOP_MOV,    "mov", 2, 'p',     "a2",  "a1", "xx", "xx", VM__Exec_Mov_PP   }, /* mov rp, rp    */
+  {   BOXGOP_MOV,    "mov", 2, 'o',     "a2",  "a1", "xx", "xx", VM__Exec_Mov_OO   }, /* mov ro, ro    */
+  {  BOXGOP_BNOT,   "bnot", 1, 'i',     "a1",  "a1", "x-", "xx", VM__Exec_BNot_I   }, /* bnot ri       */
+  {  BOXGOP_BAND,   "band", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_BAnd_II  }, /* band ri, ri   */
+  {  BOXGOP_BXOR,   "bxor", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_BXor_II  }, /* bxor ri, ri   */
+  {   BOXGOP_BOR,    "bor", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_BOr_II   }, /* bor ri, ri    */
+  {   BOXGOP_SHL,    "shl", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Shl_II   }, /* shl ri, ri    */
+  {   BOXGOP_SHR,    "shr", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Shr_II   }, /* shr ri, ri    */
+  {   BOXGOP_INC,    "inc", 1, 'i',     "a1",  "a1", "x-", "xx", VM__Exec_Inc_I    }, /* inc ri        */
+  {   BOXGOP_INC,    "inc", 1, 'r',     "a1",  "a1", "x-", "xx", VM__Exec_Inc_R    }, /* inc rr        */
+  {   BOXGOP_DEC,    "dec", 1, 'i',     "a1",  "a1", "x-", "xx", VM__Exec_Dec_I    }, /* dec ri        */
+  {   BOXGOP_DEC,    "dec", 1, 'r',     "a1",  "a1", "x-", "xx", VM__Exec_Dec_R    }, /* dec rr        */
+  {   BOXGOP_POW,    "pow", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Pow_II   }, /* pow ri, ri    */
+  {   BOXGOP_POW,    "pow", 2, 'r',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Pow_RR   }, /* pow rr, rr    */
+  {   BOXGOP_ADD,    "add", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Add_II   }, /* add ri, ri    */
+  {   BOXGOP_ADD,    "add", 2, 'r',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Add_RR   }, /* add rr, rr    */
+  {   BOXGOP_ADD,    "add", 2, 'p',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Add_PP   }, /* add rp, rp    */
+  {   BOXGOP_SUB,    "sub", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Sub_II   }, /* sub ri, ri    */
+  {   BOXGOP_SUB,    "sub", 2, 'r',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Sub_RR   }, /* sub rr, rr    */
+  {   BOXGOP_SUB,    "sub", 2, 'p',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Sub_PP   }, /* sub rp, rp    */
+  {   BOXGOP_MUL,    "mul", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Mul_II   }, /* mul ri, ri    */
+  {   BOXGOP_MUL,    "mul", 2, 'r',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Mul_RR   }, /* mul rr, rr    */
+  {   BOXGOP_DIV,    "div", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Div_II   }, /* div ri, ri    */
+  {   BOXGOP_DIV,    "div", 2, 'r',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Div_RR   }, /* div rr, rr    */
+  {   BOXGOP_REM,    "rem", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Rem_II   }, /* rem ri, ri    */
+  {   BOXGOP_NEG,    "neg", 1, 'i',     "a1",  "a1", "x-", "xx", VM__Exec_Neg_I    }, /* neg ri        */
+  {   BOXGOP_NEG,    "neg", 1, 'r',     "a1",  "a1", "x-", "xx", VM__Exec_Neg_R    }, /* neg rr        */
+  {   BOXGOP_NEG,    "neg", 1, 'p',     "a1",  "a1", "x-", "xx", VM__Exec_Neg_P    }, /* neg rp        */
+  { BOXGOP_PMULR,  "pmulr", 1, 'p', "a1,rr0",  "a1", "x-", "xx", VM__Exec_PMulR_PR }, /* pmulr rp      */
+  { BOXGOP_PDIVR,  "pdivr", 1, 'p', "a1,rr0",  "a1", "x-", "xx", VM__Exec_PDivR_PR }, /* pdivr rp      */
+  {    BOXGOP_EQ,    "eq?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Eq_II    }, /* eq? ri, ri    */
+  {    BOXGOP_EQ,    "eq?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Eq_RR    }, /* eq? rr, rr    */
+  {    BOXGOP_EQ,    "eq?", 2, 'p',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Eq_PP    }, /* eq? rp, rp    */
+  {    BOXGOP_NE,    "ne?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_II    }, /* ne? ri, ri    */
+  {    BOXGOP_NE,    "ne?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_RR    }, /* ne? rr, rr    */
+  {    BOXGOP_NE,    "ne?", 2, 'p',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_PP    }, /* ne? rp, rp    */
+  {    BOXGOP_LT,    "lt?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Lt_II    }, /* lt? ri, ri    */
+  {    BOXGOP_LT,    "lt?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Lt_RR    }, /* lt? rr, rr    */
+  {    BOXGOP_LE,    "le?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Le_II    }, /* le? ri, ri    */
+  {    BOXGOP_LE,    "le?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Le_RR    }, /* le? rr, rr    */
+  {    BOXGOP_GT,    "gt?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Gt_II    }, /* gt? ri, ri    */
+  {    BOXGOP_GT,    "gt?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Gt_RR    }, /* gt? rr, rr    */
+  {    BOXGOP_GE,    "ge?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ge_II    }, /* ge? ri, ri    */
+  {    BOXGOP_GE,    "ge?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ge_RR    }, /* ge? rr, rr    */
+  {  BOXGOP_LNOT,   "lnot", 1, 'i',     "a1",  "a1", "xx", "xx", VM__Exec_LNot_I   }, /* lnot ri       */
+  {  BOXGOP_LAND,   "land", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_LAnd_II  }, /* land ri, ri   */
+  {   BOXGOP_LOR,    "lor", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_LOr_II   }, /* lor  ri, ri   */
+  {  BOXGOP_REAL,   "real", 1, 'c',     "a1", "rr0", "x-", "xx", VM__Exec_Real_C   }, /* real rc       */
+  {  BOXGOP_REAL,   "real", 1, 'i',     "a1", "rr0", "x-", "xx", VM__Exec_Real_I   }, /* real ri       */
+  {   BOXGOP_INT,    "int", 1, 'r',     "a1", "ri0", "x-", "xx", VM__Exec_Int_R    }, /* int rr        */
+  { BOXGOP_POINT,  "point", 2, 'i',  "a1,a2", "rp0", "xx", "xx", VM__Exec_Point_II }, /* point ri, ri  */
+  { BOXGOP_POINT,  "point", 2, 'r',  "a1,a2", "rp0", "xx", "xx", VM__Exec_Point_RR }, /* point rr, rr  */
+  { BOXGOP_PROJX,  "projx", 1, 'p',     "a1", "rr0", "x-", "xx", VM__Exec_ProjX_P  }, /* projx rp      */
+  { BOXGOP_PROJY,  "projy", 1, 'p',     "a1", "rr0", "x-", "xx", VM__Exec_ProjY_P  }, /* projy rp      */
+  { BOXGOP_PPTRX,  "pptrx", 1, 'p',     "a1", "ro0", "x-", "xx", VM__Exec_PPtrX_P  }, /* pptrx rp      */
+  { BOXGOP_PPTRY,  "pptry", 1, 'p',     "a1", "ro0", "x-", "xx", VM__Exec_PPtrY_P  }, /* pptry rp      */
+  {   BOXGOP_RET,    "ret", 0, 'n',     NULL,  NULL, "--", "xx", VM__Exec_Ret      }, /* ret           */
+  {BOXGOP_MALLOC, "malloc", 2, 'i',  "a1,a2", "ro0", "xx", "xx", VM__Exec_Malloc_II}, /* malloc ri, ri */
+  {   BOXGOP_MLN,    "mln", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_Mln_O    }, /* mln ro        */
+  { BOXGOP_MUNLN,  "munln", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_MUnln_O  }, /* munln ro      */
+  { BOXGOP_MCOPY,  "mcopy", 2, 'o',
+                                 "a1,a2,ri0",  NULL, "xx", "xx", VM__Exec_MCopy_OO }, /* mcopy ro, ro    */
+  {   BOXGOP_LEA,    "lea", 1, 'c',     "a1", "ro0", "x-", "xx", VM__Exec_Lea      }, /* lea c[ro0+...]  */
+  {   BOXGOP_LEA,    "lea", 1, 'i',     "a1", "ro0", "x-", "xx", VM__Exec_Lea      }, /* lea i[ro0+...]  */
+  {   BOXGOP_LEA,    "lea", 1, 'r',     "a1", "ro0", "x-", "xx", VM__Exec_Lea      }, /* lea r[ro0+...]  */
+  {   BOXGOP_LEA,    "lea", 1, 'p',     "a1", "ro0", "x-", "xx", VM__Exec_Lea      }, /* lea p[ro0+...]  */
+  {   BOXGOP_LEA,    "lea", 2, 'o',     "a2",  "a1", "xx", "xx", VM__Exec_Lea_OO   }, /* lea reg_o, o[ro0+...] */
+  {  BOXGOP_PUSH,   "push", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_Push_O   }, /* push ro         */
+  {   BOXGOP_POP,    "pop", 1, 'o',     NULL,  "a1", "x-", "xx", VM__Exec_Pop_O    }, /* pop ro          */
+  {   BOXGOP_JMP,    "jmp", 1, 'i',     "a1",  NULL, "x-", "j-", VM__Exec_Jmp_I    }, /* jmp ri          */
+  {    BOXGOP_JC,     "jc", 1, 'i', "a1,ri0",  NULL, "x-", "j-", VM__Exec_Jc_I     }, /* jc  ri          */
+  {   BOXGOP_ADD,    "add", 1, 'o',    "ri0",  NULL, "x-", "xx", VM__Exec_Add_O    }, /* add ro          */
+  {BOXGOP_ARINIT, "arinit", 1, 'i',     "a1", "ro0", "x-", "xx", VM__Exec_Arinit_I }, /* arinit ri       */
+  {BOXGOP_ARSIZE, "arsize", 1, 'i', "a1,ro0",  NULL, "x-", "xx", VM__Exec_Arsize_I }, /* arsize ri       */
+  {BOXGOP_ARADDR, "araddr", 2, 'i',
+                             "a1,a2,ro0,ri0", "ri0", "xx", "xx", VM__Exec_Araddr_II}, /* araddr ri, ri */
+  { BOXGOP_ARGET,  "arget", 2, 'o', "a2,ri0", " a1", "xx", "xx", VM__Exec_Arget_OO }, /* arget reg_o, reg_o  */
+  {BOXGOP_ARNEXT, "arnext", 2, 'o',     NULL,  NULL, "xx", "xx", VM__Exec_Arnext_OO}, /* arnext reg_o, reg_o */
+  {BOXGOP_ARDEST, "ardest", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_Ardest_O }  /* ardest reg_o        */
+};
+
+/*
+
+*  -> VM__GLPI
+** -> VM__GLP_GLPI
+*i -> VM__GLP_Imm
+i  -> VM__Imm
+
+** -> VM__D_GLPI_GLPI
+*i -> VM__D_GLPI_Imm
+j  -> VM__D_JMP
+c  -> VM__D_CALL
+
+*/
+
+typedef enum {
+  BOXOPSIGNATURE_ANY,
+  BOXOPSIGNATURE_IMM,
+  BOXOPSIGNATURE_ANY_ANY,
+  BOXOPSIGNATURE_ANY_IMM
+} BoxOpSignature;
+
+typedef enum {
+  BOXOPREGKIND_ARG,
+  BOXOPREGKIND_LREG
+} BoxOpRegKind;
+
+typedef struct {
+  BoxOpRegKind kind;
+  BoxType      type;
+  BoxInt       num;
+} BoxOpReg;
+
+typedef enum {
+  BOXOPDASM_ANY_ANY,
+  BOXOPDASM_ANY_IMM,
+  BOXOPDASM_JMP,
+  BOXOPDASM_CALL
+} BoxOpDAsm;
+
+typedef struct __BoxOpInfo BoxOpInfo;
+
+struct __BoxOpInfo {
+  BoxOp      opcode;
+  BoxGOp     g_opcode;
+  BoxOpInfo  *next;
+  const char *name;
+  BoxOpSignature
+             signature;
+  BoxOpDAsm  dasm;
+  BoxType    arg_type;
+  int        num_args,
+             num_inputs,
+             num_outputs;
+  BoxOpReg   *input_regs,
+             *output_regs;
+  void       *exec;
+};

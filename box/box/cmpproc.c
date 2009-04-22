@@ -122,17 +122,17 @@ void CmpProc_Raw_Assemble(CmpProc *p, BoxOpcode op, ...) {
   va_end(ap);
 }
 
-static void My_Prepare_Ptr_Access(CmpProc *p, const Cont *c) {
+static void My_Prepare_Ptr_Access(CmpProc *p, const BoxCont *c) {
   Int ptr_reg = c->value.ptr.reg;
   if (c->categ == CAT_PTR && ptr_reg != 0) {
-    Int addr_categ = c->value.ptr.greg ? CAT_GREG : CAT_LREG;
+    Int addr_categ = c->value.ptr.is_greg ? CAT_GREG : CAT_LREG;
     CmpProc_Raw_Assemble(p, ASM_MOV_OO, CAT_LREG, (Int) 0,
                          addr_categ, ptr_reg);
   }
 }
 
 void CmpProc_VA_Assemble(CmpProc *p, BoxOpcode op, va_list ap) {
-  BoxCont *arg1=NULL, *arg2=NULL;
+  const BoxCont *arg1=NULL, *arg2=NULL;
   int num_args = BoxOp_Get_Num_Args(op); /* Returns -1 if op is invalid */
   BoxType arg_type = BoxOp_Get_Arg_Type(op);
 
@@ -155,10 +155,10 @@ void CmpProc_VA_Assemble(CmpProc *p, BoxOpcode op, va_list ap) {
     switch(arg1->categ) {
     case BOXCONTCATEG_GREG:
     case BOXCONTCATEG_LREG:
-      CmpProc_Raw_VA_Assemble(p, op, arg1->categ, arg1->value.reg);
+      CmpProc_Raw_Assemble(p, op, arg1->categ, arg1->value.reg);
       return;
     case BOXCONTCATEG_PTR:
-      CmpProc_Raw_VA_Assemble(p, op, arg1->categ, arg1->value.ptr.offset);
+      CmpProc_Raw_Assemble(p, op, arg1->categ, arg1->value.ptr.offset);
       return;
     case BOXCONTCATEG_IMM:
       assert(0);

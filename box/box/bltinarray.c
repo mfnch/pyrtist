@@ -121,5 +121,7 @@ Task BoxArray_Calc_Address(BoxArray *a, size_t *addr,
   }
   BoxMem_ax(& new_addr, *addr, a->sizes[dim]);
   BoxMem_x_Plus_y(& new_addr, new_addr, index);
+  *addr = new_addr;
   return Success;
 }
+

@@ -85,7 +85,7 @@ typedef enum {
  * NUMERO ISTRUZIONI: 78
  */
 typedef enum {
-  ASM_LINE_Iimm=1, ASM_CALL_I, ASM_CALL_Iimm,
+  ASM_LINE_Iimm=0, ASM_CALL_I, ASM_CALL_Iimm,
   ASM_NEWC_II, ASM_NEWI_II, ASM_NEWR_II, ASM_NEWP_II, ASM_NEWO_II,
   ASM_MOV_Cimm, ASM_MOV_Iimm, ASM_MOV_Rimm, ASM_MOV_Pimm,
   ASM_MOV_CC, ASM_MOV_II, ASM_MOV_RR, ASM_MOV_PP, ASM_MOV_OO,
@@ -118,7 +118,7 @@ typedef enum {
  *   in the table vm_instr_desc_table[]
  */
 typedef enum {
-  BOXOP_LINE_Iimm=1, BOXOP_CALL_I, BOXOP_CALL_Iimm,
+  BOXOP_LINE_Iimm=0, BOXOP_CALL_I, BOXOP_CALL_Iimm,
   BOXOP_NEWC_II, BOXOP_NEWI_II, BOXOP_NEWR_II, BOXOP_NEWP_II, BOXOP_NEWO_II,
   BOXOP_MOV_Cimm, BOXOP_MOV_Iimm, BOXOP_MOV_Rimm, BOXOP_MOV_Pimm,
   BOXOP_MOV_CC, BOXOP_MOV_II, BOXOP_MOV_RR, BOXOP_MOV_PP, BOXOP_MOV_OO,
@@ -145,14 +145,14 @@ typedef enum {
   BOXOP_ADD_O,
   BOXOP_ARINIT, BOXOP_ARSIZE, BOXOP_ARADDR, BOXOP_ARGET, BOXOP_ARNEXT,
   BOXOP_ARDEST,
-  BOXOP_ILLEGAL
+  BOXOP_NUM_OPS
 } BoxOp;
 
 typedef BoxOp BoxOpcode;
 
 /** Generic opcodes (type independent) */
 typedef enum {
-  BOXGOP_LINE=1, BOXGOP_CALL, BOXGOP_NEWC, BOXGOP_MOV,
+  BOXGOP_LINE=0, BOXGOP_CALL, BOXGOP_NEWC, BOXGOP_MOV,
   BOXGOP_BNOT, BOXGOP_BAND, BOXGOP_BXOR, BOXGOP_BOR, BOXGOP_SHL, BOXGOP_SHR,
   BOXGOP_INC, BOXGOP_DEC, BOXGOP_POW, BOXGOP_ADD, BOXGOP_SUB, BOXGOP_MUL,
   BOXGOP_DIV, BOXGOP_REM, BOXGOP_NEG, BOXGOP_PMULR, BOXGOP_PDIVR,
@@ -162,7 +162,7 @@ typedef enum {
   BOXGOP_RET, BOXGOP_MALLOC, BOXGOP_MLN, BOXGOP_MUNLN, BOXGOP_MCOPY,
   BOXGOP_LEA, BOXGOP_PUSH, BOXGOP_POP, BOXGOP_JMP, BOXGOP_JC,
   BOXGOP_ARINIT, BOXGOP_ARSIZE, BOXGOP_ARADDR, BOXGOP_ARGET, BOXGOP_ARNEXT,
-  BOXGOP_ARDEST, BOXGOP_ILLEGAL
+  BOXGOP_ARDEST, BOX_NUM_GOPS
 } BoxGOp;
 
 /* Enumerazione delle categorie di argomento, utilizzata da Asm_Assemble
@@ -302,13 +302,13 @@ typedef BoxTask (*VMFunc)(BoxVM *);
 /** Returns the number of arguments for the VM operation 'op'.
  * If 'op' is not a valid opcode returns -1.
  */
-int BoxVM_Op_Get_Num_Args(BoxOpcode op);
+int BoxOp_Get_Num_Args(BoxOpcode op);
 
 /** Returns the type of the explicit arguments for the VM operation 'op'.
  * If 'op' is not a valid opcode returns BOXTYPE_NONE.
  * NOTE: the explicit arguments of a VM operation have always the same type.
  */
-BoxType BoxVM_Op_Get_Arg_Type(BoxOpcode op);
+BoxType BoxOp_Get_Arg_Type(BoxOpcode op);
 
 /** Initialise a BoxVM object for which space has been already allocated
  * somehow. You'll need to use BoxVM_Finish to destroy the object.
