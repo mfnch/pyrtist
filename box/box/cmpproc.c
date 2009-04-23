@@ -22,6 +22,7 @@
 
 #include "types.h"
 #include "mem.h"
+#include "messages.h"
 #include "virtmach.h"
 #include "vmsym.h"
 #include "vmproc.h"
@@ -131,7 +132,42 @@ static void My_Prepare_Ptr_Access(CmpProc *p, const BoxCont *c) {
   }
 }
 
-void CmpProc_VA_Assemble(CmpProc *p, BoxOpcode op, va_list ap) {
+void CmpProc_VA_Assemble(CmpProc *p, BoxGOp g_op, int num_args, va_list ap) {
+  const BoxCont *args[BOXOP_MAX_NUM_ARGS];
+  BoxOpInfo *oi;
+  int i;
+
+  if (num_args > BOXOP_MAX_NUM_ARGS) {
+    MSG_FATAL("CmpProc_Assemble: the given number of arguments is too high.");
+    assert(0);
+  }
+
+  for(i = 0; i < num_args; i++)
+    args[i] = va_arg(ap, BoxCont *);
+
+  /* Search for operations whose argument number and type match */
+  oi = BoxVM_Get_Op_Info(& p->cmp->vm, g_op);
+  for(; oi != NULL; oi = oi->next) {
+    if (oi->num_args == num_args) {
+      int i;
+      for(i = 0; i < num_args: i++) {
+        BoxOpReg *reg = & oi->regs[i];
+        if (1) break;
+      }
+
+      if (i >= num_args) {
+
+
+      }
+    }
+  }
+
+  if (oi == NULL) {
+    MSG_FATAL("CmpProc_Assemble: cannot find a matching operation.");
+    assert(0);
+  }
+
+#if 0
   const BoxCont *arg1=NULL, *arg2=NULL;
   int num_args = BoxOp_Get_Num_Args(op); /* Returns -1 if op is invalid */
   BoxType arg_type = BoxOp_Get_Arg_Type(op);
@@ -167,6 +203,7 @@ void CmpProc_VA_Assemble(CmpProc *p, BoxOpcode op, va_list ap) {
   } else if (num_args == 2) {
     assert(0);
   }
+#endif
 }
 
 #if 0
@@ -185,9 +222,9 @@ mov ro0, ro6
 mov ro1, o[ro0+32]
 #endif
 
-void CmpProc_Assemble(CmpProc *p, BoxOpcode op, ...) {
+void CmpProc_Assemble(CmpProc *p, BoxGOp g_op, int num_args, ...) {
   va_list ap;
-  va_start(ap, op);
-  CmpProc_VA_Assemble(p, op, ap);
+  va_start(ap, num_args);
+  CmpProc_VA_Assemble(p, g_op, num_args, ap);
   va_end(ap);
 }

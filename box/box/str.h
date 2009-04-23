@@ -44,7 +44,13 @@ unsigned char oct_digit(unsigned char c, int *status);
 unsigned char hex_digit(unsigned char c, int *status);
 Task Str_ToChar(char *s, Int l, char *c);
 Task Str_ToInt(char *s, UInt l, Int *i);
-int Int_Of_Hex_Digit(char digit);
+
+/** Return the int (0 to 15) corresponding to the given hex digit (a char). */
+int Box_Hex_Digit_To_Int(char digit);
+
+/** Return the hex digit (a char) corresponding to the given int value. */
+char Box_Hex_Digit_From_Int(int v);
+
 Task Str_Hex_To_Int(char *s, UInt l, Int *out);
 Task Str_ToReal(char *s, UInt l, Real *r);
 char *Str_ToString(char *s, Int l, Int *new_length);

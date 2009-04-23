@@ -504,6 +504,8 @@ Task BoxVM_Init(BoxVM *vm) {
   vm->attr.forcelong = 0;
   vm->attr.identdata = 0;
 
+  BoxOpTable_Build(& vm->op_table);
+
   BoxArr_Init(& vm->stack, sizeof(Obj), 10);
   BoxArr_Init(& vm->data_segment, sizeof(char), CMP_TYPICAL_DATA_SIZE);
 
@@ -542,6 +544,7 @@ void BoxVM_Finish(BoxVM *vm) {
   BoxVM_Alloc_Destroy(vm);
   BoxVMSymTable_Finish(& vm->sym_table);
   VM_Proc_Destroy(vm);
+  BoxOpTable_Destroy(& vm->op_table);
 }
 
 BoxVM *BoxVM_New(void) {
@@ -558,6 +561,11 @@ void BoxVM_Destroy(BoxVM *vm) {
   if (vm == NULL) return;
   BoxVM_Finish(vm);
   BoxMem_Free(vm);
+}
+
+BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op) {
+  assert(g_op >= 0 && g_op < BOX_NUM_GOPS);
+  return & vm->op_table.info[g_op];
 }
 
 /* Sets the number of global registers and variables for each type. */

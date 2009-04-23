@@ -345,7 +345,7 @@ Task Str_ToInt(char *s, UInt l, Int *i) {
  * But this makes assumptions on the order of the character codes.
  * I feel unsure about that.
  */
-int Int_Of_Hex_Digit(char digit) {
+int Box_Hex_Digit_To_Int(char digit) {
   switch(tolower(digit)) {
   case '0': return 0;
   case '1': return 1;
@@ -367,12 +367,35 @@ int Int_Of_Hex_Digit(char digit) {
   }
 }
 
+/** Return the hex digit (a char) corresponding to the given int value. */
+char Box_Hex_Digit_From_Int(int v) {
+  switch(v) {
+  case 0: return '0';
+  case 1: return '1';
+  case 2: return '2';
+  case 3: return '3';
+  case 4: return '4';
+  case 5: return '5';
+  case 6: return '6';
+  case 7: return '7';
+  case 8: return '8';
+  case 9: return '9';
+  case 10: return 'a';
+  case 11: return 'b';
+  case 12: return 'c';
+  case 13: return 'd';
+  case 14: return 'e';
+  case 15: return 'f';
+  default: return '?';
+  }
+}
+
 Task Str_Hex_To_Int(char *s, UInt l, Int *out) {
   char *c = s;
   UInt i, n = 0;
 
   for (i = 0; i < l; i++) {
-    UInt digit = Int_Of_Hex_Digit(*(c++)),
+    UInt digit = Box_Hex_Digit_To_Int(*(c++)),
          m = n << 4;
     if (m < n) {
       MSG_WARNING("Hexadecimal number is out of bounds!");

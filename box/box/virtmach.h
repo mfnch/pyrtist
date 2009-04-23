@@ -165,6 +165,68 @@ typedef enum {
   BOXGOP_ARDEST, BOX_NUM_GOPS
 } BoxGOp;
 
+/** Structure used in BoxOpInfo to list the input and output registers
+ * for each VM operation.
+ */
+typedef struct {
+  char kind, /**< 'a' for explicit argument, 'r' for implicit local register */
+       type, /**< 'c':Char, 'i':Int, 'r':Real, 'p':Point, 'o':Obj */
+       num,  /**< Numeber of argument or register (can be 0, 1, 2) */
+       io;   /**< 'o' for output, 'i' for input, 'b' for input/output */
+} BoxOpReg;
+
+/** Enumeration of all the possible types of signatures for the ops
+ * (instructions of the Box VM). Different signatures mean different
+ * number and/or type of arguments.
+ */
+typedef enum {
+  BOXOPSIGNATURE_ANY,
+  BOXOPSIGNATURE_IMM,
+  BOXOPSIGNATURE_ANY_ANY,
+  BOXOPSIGNATURE_ANY_IMM
+} BoxOpSignature;
+
+/** Possible methods for disassembling a Box VM operation.
+ * Each item in the enumeration corresponds to a different method to be used
+ * for disassembling the operation.
+ */
+typedef enum {
+  BOXOPDASM_ANY_ANY,
+  BOXOPDASM_ANY_IMM,
+  BOXOPDASM_JMP,
+  BOXOPDASM_CALL
+} BoxOpDAsm;
+
+/** Typedef of struc __BoxOpInfo */
+typedef struct __BoxOpInfo BoxOpInfo;
+
+/** Structure containing detailed information about one VM operation */
+struct __BoxOpInfo {
+  BoxOp      opcode;       /**< Opcode for the operation */
+  BoxGOp     g_opcode;     /**< Generic opcode */
+  BoxOpInfo  *next;        /**< Next operation with the same generic opcode */
+  const char *name;        /**< Literal name of the opcode (a string) */
+  BoxOpSignature
+             signature;    /**< Operation kind (depends on the arguments) */
+  BoxOpDAsm  dasm;         /**< How to disassemble the operation */
+  char       arg_type,     /**< Type of the arguments */
+             num_args,     /**< Number of arguments */
+             num_inputs,   /**< Num. of input registers (explicit+implicit) */
+             num_outputs,  /**< Num. of output registers(explicit+implicit) */
+             num_regs;     /**< Num. of distinct register involved by the
+                                operation (this is not just in + out) */
+  BoxOpReg   *regs;        /**< Pointer to the list of input/output regs */
+  void       *executor;    /**< Pointer to the function which implements
+                                the operation */
+};
+
+/** Table containing info about all the VM operations */
+typedef struct {
+  BoxOpInfo info[BOX_NUM_OPS]; /**< Table of BoxOpInfo strucs. One for each
+                                    VM operation */
+  BoxOpReg  *regs;             /**< Buffer used by the BoxOpTable.info */
+} BoxOpTable;
+
 /* Enumerazione delle categorie di argomento, utilizzata da Asm_Assemble
  * per assemblare le istruzioni.
  * NOTA: Questa enumerazione deve essere coerente con l'ordine dell'array
@@ -276,6 +338,8 @@ struct __vmprogram {
   char iarg_str[VM_MAX_NUMARGS][64];
 
   VMStatus *vmcur;
+
+  BoxOpTable op_table;
 };
 
 #  undef BoxVM
@@ -285,6 +349,26 @@ typedef BoxVM VMProgram;
 extern VMInstrDesc vm_instr_desc_table[];
 
 extern const BoxUInt size_of_type[NUM_TYPES];
+
+/** Maximum num of arguments (implicit + explicit) that an operation
+ * can have
+ */
+#define BOXOP_MAX_NUM_ARGS 4
+
+/** Build a table containing info on the Box VM operations for each of them.
+ * The table is addressable using a BoxGOp as index.
+ * This is quite an internal function.
+ */
+void BoxOpTable_Build(BoxOpTable *ot);
+
+/** Destroy a BoxOpTable object created with BoxOpTable_Build */
+void BoxOpTable_Destroy(BoxOpTable *ot);
+
+/** Print the given BoxOpTable to the given stream. */
+void BoxOpTable_Print(FILE *out, BoxOpTable *ot);
+
+/** Get information about the specified generic VM operation. */
+BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op);
 
 /* These functions are intended to be used only inside 'vmexec.h' */
 void VM__GLP_GLPI(VMStatus *vmcur);

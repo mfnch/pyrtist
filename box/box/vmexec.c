@@ -674,7 +674,7 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {BOXGOP_ARSIZE, "arsize", 1, 'i', "a1,ro0",  NULL, "x-", "xx", VM__Exec_Arsize_I }, /* arsize ri       */
   {BOXGOP_ARADDR, "araddr", 2, 'i',
                              "a1,a2,ro0,ri0", "ri0", "xx", "xx", VM__Exec_Araddr_II}, /* araddr ri, ri */
-  { BOXGOP_ARGET,  "arget", 2, 'o', "a2,ri0", " a1", "xx", "xx", VM__Exec_Arget_OO }, /* arget reg_o, reg_o  */
+  { BOXGOP_ARGET,  "arget", 2, 'o', "a2,ri0",  "a1", "xx", "xx", VM__Exec_Arget_OO }, /* arget reg_o, reg_o  */
   {BOXGOP_ARNEXT, "arnext", 2, 'o',     NULL,  NULL, "xx", "xx", VM__Exec_Arnext_OO}, /* arnext reg_o, reg_o */
   {BOXGOP_ARDEST, "ardest", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_Ardest_O }  /* ardest reg_o        */
 };
@@ -694,72 +694,35 @@ c  -> VM__D_CALL
 */
 
 
-/**< Enumeration of all the possible types of signatures for the ops
- * (instructions of the Box VM). Different signature mean different
- * number and/or type of arguments.
- */
-typedef enum {
-  BOXOPSIGNATURE_ANY,
-  BOXOPSIGNATURE_IMM,
-  BOXOPSIGNATURE_ANY_ANY,
-  BOXOPSIGNATURE_ANY_IMM
-} BoxOpSignature;
-
-typedef enum {
-  BOXOPDASM_ANY_ANY,
-  BOXOPDASM_ANY_IMM,
-  BOXOPDASM_JMP,
-  BOXOPDASM_CALL
-} BoxOpDAsm;
-
-typedef struct {
-  char kind, /**< 'a' for explicit argument, 'r' for implicit local register */
-       type, /**< 'c':Char, 'i':Int, 'r':Real, 'p':Point, 'o':Obj */
-       num;  /**< Numeber of argument or register (can be 0, 1, 2) */
-} BoxOpReg;
-
-typedef struct __BoxOpInfo BoxOpInfo;
-
-/** Structure containing information about one VM operation */
-struct __BoxOpInfo {
-  BoxOp      opcode;       /**< Opcode for the operation */
-  BoxGOp     g_opcode;     /**< Generic opcode */
-  BoxOpInfo  *next;        /**< Next operation with the same generic opcode */
-  const char *name;        /**< Literal name of the opcode (a string) */
-  BoxOpSignature
-             signature;    /**< Operation kind (depends on the arguments) */
-  BoxOpDAsm  dasm;         /**< How to disassemble the operation */
-  char       arg_type,     /**< Type of the arguments */
-             num_args,     /**< Number of arguments */
-             num_inputs,   /**< Num. of input registers (explicit+implicit) */
-             num_outputs;  /**< Num. of output registers(explicit+implicit) */
-  BoxOpReg   *input_regs,  /**< Pointer to the list of input registers */
-             *output_regs; /**< Pointer to the list of output registers */
-  void       *executor;    /**< Pointer to the function which implements
-                                the operation */
-};
-
-typedef struct {
-  BoxOpInfo info[BOX_NUM_OPS];
-  BoxOpReg *regs;
-} BoxOpTable;
-
 /** Count how many commas are present on the given string. */
 static char My_Count_Commas(const char *s) {
-  char count = 0;
-  for(; *s != '\0'; s++)
-    count += (*s == ',');
-  return count;
+  if (s == NULL)
+    return 0;
+
+  else {
+    char count = 0;
+    for(; *s != '\0'; s++)
+      count += (*s == ',');
+    return count + 1;
+  }
 }
 
 static int My_Parse_Reg_List(const char **reg_list, char arg_type,
-                             BoxOpReg *r) {
+                             char io, BoxOpReg *r) {
   const char *s = *reg_list;
-  if (*s == '\0')
+
+  if (s == NULL)
+    return 0;
+
+  else if (*s == '\0')
     return 0;
 
   else {
     char kind = *(s++), type, num_letter;
+
+    if (kind == ',')
+      kind = *(s++);
+
     if (kind == 'a') {
       type = arg_type;
       num_letter = *(s++);
@@ -769,16 +732,22 @@ static int My_Parse_Reg_List(const char **reg_list, char arg_type,
       num_letter = *(s++);
 
     } else {
+      fprintf(stderr, "My_Parse_Reg_List: found char '%c', aborting!", kind);
       assert(0);
       return 0;
     }
 
     r->kind = kind;
     r->type = type;
-    r->num = Int_Of_Hex_Digit(num_letter);
+    r->num  = Box_Hex_Digit_To_Int(num_letter);
+    r->io   = io;
     *reg_list = s;
     return 1;
   }
+}
+
+static int My_Regs_Are_Equal(const BoxOpReg *a, const BoxOpReg *b) {
+  return a->kind == b->kind && a->type == b->type && a->num == b->num;
 }
 
 void BoxOpTable_Build(BoxOpTable *ot) {
@@ -831,8 +800,8 @@ void BoxOpTable_Build(BoxOpTable *ot) {
     oi->dasm = 0; /* change me */
     oi->arg_type = h_ot->arg_type;
     oi->num_args = h_ot->num_args;
-    oi->num_inputs = 1 + My_Count_Commas(h_ot->input_regs);
-    oi->num_outputs = 1 + My_Count_Commas(h_ot->output_regs);
+    oi->num_inputs = My_Count_Commas(h_ot->input_regs);
+    oi->num_outputs = My_Count_Commas(h_ot->output_regs);
     oi->executor = h_ot->executor;
 
     num_regs_to_alloc += oi->num_inputs + oi->num_outputs;
@@ -848,21 +817,82 @@ void BoxOpTable_Build(BoxOpTable *ot) {
     BoxOpInfo *oi = & ot->info[i];
     BoxOpTable4Humans *h_ot;
     const char *token;
+    int num_regs, num_out_regs;
+
     assert(oi->name != NULL);
     h_ot = & op_table_for_humans[oi->opcode];
 
-    /* Parse the string containing the input registers and transform it into
-     * an array of BoxOpReg structure pointed by oi->input_regs
+    /* Parse the string containing the output registers and transform it into
+     * an array of BoxOpReg structures pointed by oi->regs
      */
-    oi->input_regs = reg;
-    token = h_ot->input_regs;
-    while(My_Parse_Reg_List(& token, h_ot->arg_type, reg)) ++reg;
-
-    /* Do a similar things for the output registers */
-    oi->output_regs = reg;
+    oi->regs = reg;
     token = h_ot->output_regs;
-    while(My_Parse_Reg_List(& token, h_ot->arg_type, reg)) ++reg;
+    num_regs = 0;
+    while(My_Parse_Reg_List(& token, h_ot->arg_type, 'o', reg)) {
+      ++num_regs;
+      ++reg;
+    }
+
+    assert(num_regs == oi->num_outputs);
+    num_out_regs = num_regs;
+
+    /* Do a similar things for the input registers */
+    token = h_ot->input_regs;
+    while(My_Parse_Reg_List(& token, h_ot->arg_type, 'i', reg)) {
+      int j, found;
+      /* Check if this register was also an output register */
+      found = 0;
+      for(j = 0; j < num_out_regs; j++)
+        if (My_Regs_Are_Equal(reg, & oi->regs[j])) {
+          /* yes. then mark it as input/output */
+          oi->regs[j].io = 'b';
+          found = 1;
+          break;
+        }
+
+      if (!found) {
+        /* no. then add it as input only */
+        ++num_regs;
+        ++reg;
+      }
+    }
+
+    assert(num_regs <= BOXOP_MAX_NUM_ARGS);
+
+    oi->num_regs = num_regs;
   }
+
+  BoxOpTable_Print(stdout, ot);
 }
 
+void BoxOpTable_Destroy(BoxOpTable *ot) {
+  BoxMem_Free(ot->regs);
+}
 
+void BoxOpTable_Print(FILE *out, BoxOpTable *ot) {
+  int i;
+  for(i = 0; i < BOX_NUM_GOPS; i++) {
+    BoxOpInfo *first_oi = & ot->info[i], *oi;
+    fprintf(out, "Operations for '%s':\n", first_oi->name);
+
+    for(oi = first_oi; oi != NULL; oi = oi->next) {
+      int j;
+      const char *sep = " ";
+      fprintf(out, "  %s", oi->name);
+      for(j = 0; j < oi->num_regs; j++) {
+        const char *io;
+        BoxOpReg *reg = & oi->regs[j];
+        switch(reg->io) {
+        case 'i': io = "i"; break;
+        case 'o': io = "o"; break;
+        case 'b': io = "i/o"; break;
+        default:  io = "?"; break;
+        }
+        fprintf(out, "%s%c%c%d(%s)", sep, reg->kind, reg->type,
+                (int) reg->num, io);
+        sep = ", ";
+      }
+      fprintf(out, "\n");
+    }
+  }
+}
