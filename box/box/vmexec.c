@@ -693,6 +693,22 @@ c  -> VM__D_CALL
 
 */
 
+#define COMBINE_3CHAR(c1, c2, c3) \
+  (((int) (c3)) | (((int) (c2)) << 8) | (((int) (c1)) << 16))
+
+/** Return a BoxOpSignature from the corresponding string representation. */
+static BoxOpSignature My_BoxOpSignature_From_String(const char *s) {
+  switch (COMBINE_3CHAR(s[0], s[1], s[2])) {
+  case COMBINE_3CHAR('-', '-', '\0'): return BOXOPSIGNATURE_NONE;
+  case COMBINE_3CHAR('i', '-', '\0'): return BOXOPSIGNATURE_IMM;
+  case COMBINE_3CHAR('x', '-', '\0'): return BOXOPSIGNATURE_ANY;
+  case COMBINE_3CHAR('x', 'i', '\0'): return BOXOPSIGNATURE_ANY_IMM;
+  case COMBINE_3CHAR('x', 'x', '\0'): return BOXOPSIGNATURE_ANY_ANY;
+  default:
+    printf("cannot classify '%s'!\n", s);
+    assert(0);
+  }
+}
 
 /** Count how many commas are present on the given string. */
 static char My_Count_Commas(const char *s) {
@@ -796,7 +812,7 @@ void BoxOpTable_Build(BoxOpTable *ot) {
     oi->name = h_ot->name; /* This also marks the item as occupied */
     oi->opcode = i;
     oi->g_opcode = h_ot->g_opcode;
-    oi->signature = 0; /* change me */
+    oi->signature = My_BoxOpSignature_From_String(h_ot->assembler);
     oi->dasm = 0; /* change me */
     oi->arg_type = h_ot->arg_type;
     oi->num_args = h_ot->num_args;

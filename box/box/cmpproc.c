@@ -27,6 +27,7 @@
 #include "vmsym.h"
 #include "vmproc.h"
 #include "vmsymstuff.h"
+#include "container.h"
 #include "typesys.h"
 
 #include "compiler.h"
@@ -135,7 +136,8 @@ static void My_Prepare_Ptr_Access(CmpProc *p, const BoxCont *c) {
 void CmpProc_VA_Assemble(CmpProc *p, BoxGOp g_op, int num_args, va_list ap) {
   const BoxCont *args[BOXOP_MAX_NUM_ARGS];
   BoxOpInfo *oi;
-  int i;
+  BoxOpSignature signature;
+  int i, num_exp_args;
 
   if (num_args > BOXOP_MAX_NUM_ARGS) {
     MSG_FATAL("CmpProc_Assemble: the given number of arguments is too high.");
@@ -150,15 +152,26 @@ void CmpProc_VA_Assemble(CmpProc *p, BoxGOp g_op, int num_args, va_list ap) {
   for(; oi != NULL; oi = oi->next) {
     if (oi->num_args == num_args) {
       int i;
-      for(i = 0; i < num_args: i++) {
+      num_exp_args = 0;
+      signature = BOXOPSIGNATURE_NONE;
+      for(i = 0; i < num_args; i++) {
         BoxOpReg *reg = & oi->regs[i];
-        if (1) break;
+        BoxContType t = BoxContType_From_Char(reg->type);
+        if (t != args[i]->type) break;
+        if (reg->kind == 'a') {
+          assert(num_exp_args < 2);
+          if (num_exp_args == 0)
+            signature = (args[i]->categ == BOXCONTCATEG_IMM) ?
+                        BOXOPSIGNATURE_IMM : BOXOPSIGNATURE_ANY;
+          else
+            signature = (args[i]->categ == BOXCONTCATEG_IMM) ?
+                        BOXOPSIGNATURE_ANY_IMM : BOXOPSIGNATURE_ANY_ANY;
+          ++num_exp_args;
+        }
       }
 
-      if (i >= num_args) {
-
-
-      }
+      if (i >= num_args && signature == oi->signature)
+        break;
     }
   }
 
@@ -167,6 +180,7 @@ void CmpProc_VA_Assemble(CmpProc *p, BoxGOp g_op, int num_args, va_list ap) {
     assert(0);
   }
 
+  printf("found match with opcode %d\n", oi->opcode);
 #if 0
   const BoxCont *arg1=NULL, *arg2=NULL;
   int num_args = BoxOp_Get_Num_Args(op); /* Returns -1 if op is invalid */

@@ -180,6 +180,7 @@ typedef struct {
  * number and/or type of arguments.
  */
 typedef enum {
+  BOXOPSIGNATURE_NONE,
   BOXOPSIGNATURE_ANY,
   BOXOPSIGNATURE_IMM,
   BOXOPSIGNATURE_ANY_ANY,

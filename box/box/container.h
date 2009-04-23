@@ -122,6 +122,9 @@ typedef struct {
 #endif
 
 
+/** Convert a container type character to a proper BoxType */
+BoxContType BoxContType_From_Char(char type_char);
+
 /** Function to rapidly set the content of a container.
  * The cathegory and type of the container are specified through the string
  * that the user provides, the following arguments are used to set the value

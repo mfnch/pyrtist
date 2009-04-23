@@ -262,7 +262,20 @@ void Cont_Ptr_Cast(Cont *ptr, ContType type) {
 
 
 
-
+/** Convert a container type character to a proper BoxType */
+BoxContType BoxContType_From_Char(char type_char) {
+  switch(type_char) {
+  case 'c': return BOXCONTTYPE_CHAR;
+  case 'i': return BOXCONTTYPE_INT;
+  case 'r': return BOXCONTTYPE_REAL;
+  case 'p': return BOXCONTTYPE_POINT;
+  case 'o': return BOXCONTTYPE_OBJ;
+  default:                                /* error */
+    MSG_FATAL("BoxType_From_Char: unrecognized type character '%c'.",
+              type_char);
+    assert(0);
+  }
+}
 
 void BoxCont_Set(BoxCont *c, const char *cont_type, ...) {
   va_list ap; /* to handle the optional arguments (see stdarg.h) */

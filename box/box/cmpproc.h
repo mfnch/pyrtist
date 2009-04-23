@@ -121,4 +121,8 @@ void CmpProc_Raw_Assemble(CmpProc *p, BoxOpcode instr, ...);
  */
 void CmpProc_Raw_VA_Assemble(CmpProc *p, BoxOpcode instr, va_list ap);
 
+/** High level routine to assemble bytecode for the Box virtual machine (VM).
+ */
+void CmpProc_Assemble(CmpProc *p, BoxGOp g_op, int num_args, ...);
+
 #endif

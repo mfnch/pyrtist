@@ -27,6 +27,7 @@
 #include "value.h"
 #include "new_compiler.h"
 #include "operator.h"
+#include "cmpproc.h"
 
 /** Type of items which may be inserted inside the compiler stack.
  * @see StackItem
@@ -54,6 +55,7 @@ typedef struct {
 } StackItem;
 
 void BoxCmp_Init(BoxCmp *c) {
+  BoxVM_Init(& c->vm);
   BoxArr_Init(& c->stack, sizeof(StackItem), 32);
   {
     TS *this_ts = last_ts;
@@ -62,12 +64,24 @@ void BoxCmp_Init(BoxCmp *c) {
     last_ts = this_ts;
   }
   BoxCmp_Init__Operators(c);
+
+
+  if (1) {
+    CmpProc cp;
+    BoxCont c1, c2;
+    CmpProc_Init(& cp, c);
+    BoxCont_Set(& c1, "ri", 5);
+    BoxCont_Set(& c2, "ii", 1979);
+    CmpProc_Assemble(& cp, BOXGOP_MOV, 2, & c1, & c2);
+    CmpProc_Finish(& cp);
+  }
 }
 
 void BoxCmp_Finish(BoxCmp *c) {
   BoxArr_Finish(& c->stack);
   BoxCmp_Finish__Operators(c);
   TS_Finish(& c->ts);
+  BoxVM_Finish(& c->vm);
 }
 
 BoxCmp *BoxCmp_New(void) {
