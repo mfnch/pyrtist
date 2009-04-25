@@ -29,9 +29,7 @@
 void Value_Init(Value *v) {
   v->type = BOXTYPE_NONE;
   v->attr.new_or_init = 1;
-  v->attr.is_temporary = 0;
-  v->attr.is_immediate = 0;
-  v->attr.is_target = 0;
+  v->kind = VALUEKIND_ERR;
   v->attr.own_register = 0;
   v->attr.own_reference = 0;
   v->attr.ignore = 0;
@@ -93,7 +91,7 @@ void Value_Container_Init(BoxCmp *c, Value *v,
 
   switch(vc->type_of_container) {
   case VALCONTTYPE_IMM:
-    v->attr.is_immediate = 1;
+    v->kind = VALUEKIND_IMM;
     v->cont.categ = CONT_IMM;
     return; break;
 
@@ -118,7 +116,7 @@ void Value_Container_Init(BoxCmp *c, Value *v,
 
   case VALCONTTYPE_GVAR:
     v->cont.categ = CONT_GREG;
-    v->attr.is_target = 1;
+    v->kind = VALUEKIND_TARGET;
     if (vc->which_one < 0) {
       Int reg = -GVar_Occupy(& c->regs, type_of_register);
       /* Automatically choses the local variables */

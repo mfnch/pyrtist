@@ -125,6 +125,8 @@ Task VM_Proc_Code_Destroy(BoxVM *vmp, BoxUInt proc_num);
 
 /** Set 'proc_num' to be the target procedure: the place where
  * VM_Assemble puts the assembled code
+ * NOTE: return 0, if a target procedure has not been set, yet.
+ *   If proc_num == 0, unset the target.
  */
 BoxVMProcID BoxVM_Proc_Target_Set(BoxVM *vm, BoxVMProcID proc_num);
 

@@ -35,21 +35,26 @@
 #  include "types.h"
 #  include "container.h"
 
+typedef enum {
+  VALUEKIND_ERR,              /**< An error */
+  VALUEKIND_IMM,              /**< A constant numerical value */
+  VALUEKIND_TEMP,             /**< A temporary value */
+  VALUEKIND_TARGET            /**< A target value (lvalue) */
+} ValueKind;
+
 typedef struct {
-  int     num_ref;          /**< Number of references to this Value */
-  BoxType type;             /**< Type of the Value */
-  Cont    cont;             /**< Value Container */
+  int       num_ref;          /**< Number of references to this Value */
+  BoxType   type;             /**< Type of the Value */
+  BoxCont   cont;             /**< Value Container */
+  ValueKind kind;             /**< Kind of Value */
   struct {
     unsigned int
-          new_or_init   :1, /**< Created with Value_New? (or Value_Init?) */
-          is_immediate  :1, /**< Is an immediate (constant) value. */
-          is_target     :1, /**< Can be the target for an assignment? */
-          is_temporary  :1, /**< Is this a temporary value? */
-          own_register  :1, /**< Need to release a register during
-                                 finalisation? */
-          own_reference :1, /**< Do we own a reference to the object? */
-          ignore        :1; /**< Should be ignored when passed to a Box. */
-  }       attr;             /**< Attributes for the Value */
+            new_or_init   :1, /**< Created with Value_New? (or Value_Init?) */
+            own_register  :1, /**< Need to release a register during
+                                   finalisation? */
+            own_reference :1, /**< Do we own a reference to the object? */
+            ignore        :1; /**< Should be ignored when passed to a Box. */
+  }         attr;             /**< Attributes for the Value */
 } Value;
 
 /** Initialise a Value 'v' assuming 'v' points to an already allocated memory

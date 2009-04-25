@@ -143,8 +143,8 @@ typedef enum {
   BOXOP_PUSH_O, BOXOP_POP_O,
   BOXOP_JMP_I, BOXOP_JC_I,
   BOXOP_ADD_O,
-  BOXOP_ARINIT, BOXOP_ARSIZE, BOXOP_ARADDR, BOXOP_ARGET, BOXOP_ARNEXT,
-  BOXOP_ARDEST,
+  BOXOP_ARINIT_I, BOXOP_ARSIZE_I, BOXOP_ARADDR_II, BOXOP_ARGET_OO,
+  BOXOP_ARNEXT_OO, BOXOP_ARDEST_O,
   BOX_NUM_OPS
 } BoxOp;
 
@@ -171,7 +171,7 @@ typedef enum {
 typedef struct {
   char kind, /**< 'a' for explicit argument, 'r' for implicit local register */
        type, /**< 'c':Char, 'i':Int, 'r':Real, 'p':Point, 'o':Obj */
-       num,  /**< Numeber of argument or register (can be 0, 1, 2) */
+       num,  /**< Number of argument or register (can be 0, 1, 2) */
        io;   /**< 'o' for output, 'i' for input, 'b' for input/output */
 } BoxOpReg;
 
@@ -214,7 +214,7 @@ struct __BoxOpInfo {
              num_args,     /**< Number of arguments */
              num_inputs,   /**< Num. of input registers (explicit+implicit) */
              num_outputs,  /**< Num. of output registers(explicit+implicit) */
-             num_regs;     /**< Num. of distinct register involved by the
+             num_regs;     /**< Num. of distinct registers involved by the
                                 operation (this is not just in + out) */
   BoxOpReg   *regs;        /**< Pointer to the list of input/output regs */
   void       *executor;    /**< Pointer to the function which implements
@@ -234,6 +234,13 @@ typedef struct {
  *  vm_gets[].
  */
 typedef enum {CAT_NONE = -1, CAT_GREG = 0, CAT_LREG, CAT_PTR, CAT_IMM} AsmArg;
+typedef enum {
+  BOXOPCAT_NONE = -1,
+  BOXOPCAT_GREG = 0,
+  BOXOPCAT_LREG,
+  BOXOPCAT_PTR,
+  BOXOPCAT_IMM
+} BoxOpCat;
 
 /* Associo un numero a ciascun tipo, per poterlo identificare */
 typedef enum {
@@ -325,10 +332,11 @@ struct __vmprogram {
   /** Flags which control the behaviour of the VM. */
   struct {
     unsigned int
-              forcelong : 1,   /** Force long form assembly. */
-              hexcode : 1,     /** Show Hex values in disassembled code */
-              identdata : 1;   /** Add also identity info for data inserted
-                                   into the data segment */
+              forcelong : 1,   /**< Force long form assembly. */
+              hexcode : 1,     /**< Show Hex values in disassembled code */
+              identdata : 1,   /**< Add also identity info for data inserted
+                                    into the data segment */
+            have_op_table : 1; /**< The operation table has been built */
   } attr;
 
   int vm_globals;
@@ -370,6 +378,9 @@ void BoxOpTable_Print(FILE *out, BoxOpTable *ot);
 
 /** Get information about the specified generic VM operation. */
 BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op);
+
+/** Print all the signatures for a the given BoxOpInfo object. */
+void BoxOpInfo_Print(FILE *out, BoxOpInfo *oi);
 
 /* These functions are intended to be used only inside 'vmexec.h' */
 void VM__GLP_GLPI(VMStatus *vmcur);

@@ -91,11 +91,14 @@ Task VM_Proc_Code_Destroy(VMProgram *vmp, UInt proc_num) {
   return Success;
 }
 
-BoxVMProcID BoxVM_Proc_Target_Set(BoxVM *vmp, BoxVMProcID proc_num) {
-  VMProcTable *pt = & vmp->proc_table;
+BoxVMProcID BoxVM_Proc_Target_Set(BoxVM *vm, BoxVMProcID proc_id) {
+  VMProcTable *pt = & vm->proc_table;
   BoxVMProcID previous_target = pt->target_proc_num;
-  pt->target_proc_num = proc_num;
-  pt->target_proc = (VMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, proc_num);
+  pt->target_proc_num = proc_id;
+  if (proc_id > 0)
+    pt->target_proc = (VMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, proc_id);
+  else
+    pt->target_proc = (VMProc *) NULL;
   return previous_target;
 }
 

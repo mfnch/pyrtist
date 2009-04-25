@@ -236,9 +236,9 @@ void VM__GLP_Imm(VMStatus *vmcur) {
   register UInt atype = vmcur->arg_type;
 
   if ( vmcur->flags.is_long ) {
-    ASM_LONG_GET_1ARG( vmcur->i_pos, vmcur->i_eye, narg1 );
+    ASM_LONG_GET_1ARG(vmcur->i_pos, vmcur->i_eye, narg1);
   } else {
-    ASM_SHORT_GET_1ARG( vmcur->i_pos, vmcur->i_eye, narg1 );
+    ASM_SHORT_GET_1ARG(vmcur->i_pos, vmcur->i_eye, narg1);
   }
 
   vmcur->arg1 = vm_gets[atype & 0x3](vmcur, narg1);
@@ -503,8 +503,7 @@ Task BoxVM_Init(BoxVM *vm) {
   vm->attr.hexcode = 0;
   vm->attr.forcelong = 0;
   vm->attr.identdata = 0;
-
-  BoxOpTable_Build(& vm->op_table);
+  vm->attr.have_op_table = 0;
 
   BoxArr_Init(& vm->stack, sizeof(Obj), 10);
   BoxArr_Init(& vm->data_segment, sizeof(char), CMP_TYPICAL_DATA_SIZE);
@@ -544,7 +543,9 @@ void BoxVM_Finish(BoxVM *vm) {
   BoxVM_Alloc_Destroy(vm);
   BoxVMSymTable_Finish(& vm->sym_table);
   VM_Proc_Destroy(vm);
-  BoxOpTable_Destroy(& vm->op_table);
+
+  if (vm->attr.have_op_table)
+    BoxOpTable_Destroy(& vm->op_table);
 }
 
 BoxVM *BoxVM_New(void) {
@@ -565,6 +566,10 @@ void BoxVM_Destroy(BoxVM *vm) {
 
 BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op) {
   assert(g_op >= 0 && g_op < BOX_NUM_GOPS);
+  if (!vm->attr.have_op_table) {
+    BoxOpTable_Build(& vm->op_table);
+    vm->attr.have_op_table = 1;
+  }
   return & vm->op_table.info[g_op];
 }
 
@@ -970,12 +975,12 @@ void VM_VA_Assemble(BoxVM *vmp, AsmCode instr, va_list ap) {
 
   idesc = & vm_instr_desc_table[instr];
 
-  assert( idesc->numargs <= VM_MAX_NUMARGS );
+  assert(idesc->numargs <= VM_MAX_NUMARGS);
 
   /* Prendo argomento per argomento */
   t = 0; /* Indice di argomento */
   is_short = 1;
-  for ( i = 0; i < idesc->numargs; i++ ) {
+  for (i = 0; i < idesc->numargs; i++) {
     Int vi = 0;
 
     /* Prendo dalla lista degli argomenti della funzione la categoria
@@ -1030,10 +1035,10 @@ void VM_VA_Assemble(BoxVM *vmp, AsmCode instr, va_list ap) {
 
     if (is_short) {
       /* Controllo che l'argomento possa essere "contenuto"
-      * nel formato corto.
-      */
+       * nel formato corto.
+       */
       vi &= ~0x7fL;
-      if ( (vi != 0) && (vi != ~0x7fL) )
+      if (vi != 0 && vi != ~0x7fL)
         is_short = 0;
     }
 
@@ -1043,15 +1048,15 @@ void VM_VA_Assemble(BoxVM *vmp, AsmCode instr, va_list ap) {
   assert(t == idesc->numargs);
 
   /* Cerco di capire se e' possibile scrivere l'istruzione in formato corto */
-  if ( vmp->attr.forcelong ) is_short = 0;
-  if ( (is_short == 1) && (t <= 2) ) {
+  if (vmp->attr.forcelong) is_short = 0;
+  if (is_short == 1 && t <= 2) {
     /* L'istruzione va scritta in formato corto! */
     VMByteX4 buffer[1], *i_pos = buffer;
     register VMByteX4 i_eye;
     UInt atype;
     BoxArr *prog = & pt->target_proc->code;
 
-    for ( ; t < 2; t++ ) {
+    for (; t < 2; t++) {
       arg[t].c = 0;
       arg[t].vi = 0;
     }

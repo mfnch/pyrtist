@@ -67,13 +67,17 @@ void BoxCmp_Init(BoxCmp *c) {
 
 
   if (1) {
+    Point p = {1.23, 4.56};
     CmpProc cp;
     BoxCont c1, c2;
     CmpProc_Init(& cp, c);
-    BoxCont_Set(& c1, "ri", 5);
-    BoxCont_Set(& c2, "ii", 1979);
-    CmpProc_Assemble(& cp, BOXGOP_MOV, 2, & c1, & c2);
+    BoxCont_Set(& c1, "vi", 5);
+    BoxCont_Set(& c2, "ii", 0);
+    CmpProc_Assemble(& cp, BOXGOP_MUL, 2, & c1, & c2);
+    CmpProc_Get_Call_Num(& cp);
     CmpProc_Finish(& cp);
+    BoxVM_Set_Attr(& c->vm, BOXVM_ATTR_DASM_WITH_HEX, BOXVM_ATTR_DASM_WITH_HEX);
+    VM_Proc_Disassemble_All(& c->vm, stdout);
   }
 }
 

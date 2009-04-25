@@ -675,11 +675,17 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {BOXGOP_ARADDR, "araddr", 2, 'i',
                              "a1,a2,ro0,ri0", "ri0", "xx", "xx", VM__Exec_Araddr_II}, /* araddr ri, ri */
   { BOXGOP_ARGET,  "arget", 2, 'o', "a2,ri0",  "a1", "xx", "xx", VM__Exec_Arget_OO }, /* arget reg_o, reg_o  */
-  {BOXGOP_ARNEXT, "arnext", 2, 'o',     NULL,  NULL, "xx", "xx", VM__Exec_Arnext_OO}, /* arnext reg_o, reg_o */
+  {BOXGOP_ARNEXT, "arnext", 2, 'o',     "a2",  "a1", "xx", "xx", VM__Exec_Arnext_OO}, /* arnext reg_o, reg_o */
   {BOXGOP_ARDEST, "ardest", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_Ardest_O }  /* ardest reg_o        */
 };
 
 /*
+
+mov ro0, array
+mov ro0, ro5
+arsize i[ro0 + 8]
+
+
 
 *  -> VM__GLPI
 ** -> VM__GLP_GLPI
@@ -885,30 +891,33 @@ void BoxOpTable_Destroy(BoxOpTable *ot) {
   BoxMem_Free(ot->regs);
 }
 
+void BoxOpInfo_Print(FILE *out, BoxOpInfo *oi) {
+  for(; oi != NULL; oi = oi->next) {
+    int j;
+    const char *sep = " ";
+    fprintf(out, "  %s", oi->name);
+    for(j = 0; j < oi->num_regs; j++) {
+      const char *io;
+      BoxOpReg *reg = & oi->regs[j];
+      switch(reg->io) {
+      case 'i': io = "i"; break;
+      case 'o': io = "o"; break;
+      case 'b': io = "i/o"; break;
+      default:  io = "?"; break;
+      }
+      fprintf(out, "%s%c%c%d(%s)", sep, reg->kind, reg->type,
+              (int) reg->num, io);
+      sep = ", ";
+    }
+    fprintf(out, "\n");
+  }
+}
+
 void BoxOpTable_Print(FILE *out, BoxOpTable *ot) {
   int i;
   for(i = 0; i < BOX_NUM_GOPS; i++) {
-    BoxOpInfo *first_oi = & ot->info[i], *oi;
-    fprintf(out, "Operations for '%s':\n", first_oi->name);
-
-    for(oi = first_oi; oi != NULL; oi = oi->next) {
-      int j;
-      const char *sep = " ";
-      fprintf(out, "  %s", oi->name);
-      for(j = 0; j < oi->num_regs; j++) {
-        const char *io;
-        BoxOpReg *reg = & oi->regs[j];
-        switch(reg->io) {
-        case 'i': io = "i"; break;
-        case 'o': io = "o"; break;
-        case 'b': io = "i/o"; break;
-        default:  io = "?"; break;
-        }
-        fprintf(out, "%s%c%c%d(%s)", sep, reg->kind, reg->type,
-                (int) reg->num, io);
-        sep = ", ";
-      }
-      fprintf(out, "\n");
-    }
+    BoxOpInfo *oi = & ot->info[i];
+    fprintf(out, "Operations for '%s':\n", oi->name);
+    BoxOpInfo_Print(out, oi);
   }
 }
