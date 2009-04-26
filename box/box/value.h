@@ -46,9 +46,9 @@ typedef enum {
 
 typedef struct {
   int       num_ref;          /**< Number of references to this Value */
+  ValueKind kind;             /**< Kind of Value */
   BoxType   type;             /**< Type of the Value */
   BoxCont   cont;             /**< Value Container */
-  ValueKind kind;             /**< Kind of Value */
   struct {
     unsigned int
             new_or_init   :1, /**< Created with Value_New? (or Value_Init?) */

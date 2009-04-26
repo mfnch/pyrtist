@@ -883,8 +883,6 @@ void BoxOpTable_Build(BoxOpTable *ot) {
 
     oi->num_regs = num_regs;
   }
-
-  BoxOpTable_Print(stdout, ot);
 }
 
 void BoxOpTable_Destroy(BoxOpTable *ot) {

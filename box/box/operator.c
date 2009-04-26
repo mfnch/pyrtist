@@ -127,10 +127,32 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
   }
 
   if (1) { /* Temporary code */
-    Operator *opr = BoxCmp_BinOp_Get(c, ASTBINOP_ADD);
-    Operation *opn =
-      Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
+    Operator *opr;
+    Operation *opn;
+
+    opr = BoxCmp_BinOp_Get(c, ASTBINOP_ADD);
+
+    opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
     opn->implem.opcode = BOXGOP_ADD;
+
+    opn = Operator_Add_Opn(opr, BOXTYPE_REAL, BOXTYPE_REAL, BOXTYPE_REAL);
+    opn->implem.opcode = BOXGOP_ADD;
+
+    opr = BoxCmp_BinOp_Get(c, ASTBINOP_SUB);
+
+    opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
+    opn->implem.opcode = BOXGOP_SUB;
+
+    opn = Operator_Add_Opn(opr, BOXTYPE_REAL, BOXTYPE_REAL, BOXTYPE_REAL);
+    opn->implem.opcode = BOXGOP_SUB;
+
+    opr = BoxCmp_BinOp_Get(c, ASTBINOP_MUL);
+
+    opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
+    opn->implem.opcode = BOXGOP_MUL;
+
+    opn = Operator_Add_Opn(opr, BOXTYPE_REAL, BOXTYPE_REAL, BOXTYPE_REAL);
+    opn->implem.opcode = BOXGOP_MUL;
   }
 }
 

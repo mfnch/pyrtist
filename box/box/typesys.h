@@ -56,7 +56,7 @@ enum {
 
 /** Used with the TS_Resolve & co. to specify how the type should be resolved.
  * NOTE: TS_KS_ANONYMOUS has a special interpretation. It is used to specify
- *  that the only the anonymous types should be resolved, while the types with
+ *  that only the anonymous types should be resolved, while the types with
  *  name should not be resolved. If TS_KS_ANONYMOUS is not used, then both
  *  anonymous and named types are resolved.
  */

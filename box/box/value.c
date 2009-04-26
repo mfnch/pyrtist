@@ -28,9 +28,9 @@
 #include "value.h"
 
 void Value_Init(Value *v) {
+  v->kind = VALUEKIND_ERR;
   v->type = BOXTYPE_NONE;
   v->attr.new_or_init = 1;
-  v->kind = VALUEKIND_ERR;
   v->attr.own_register = 0;
   v->attr.own_reference = 0;
   v->attr.ignore = 0;
@@ -98,6 +98,9 @@ void Value_Container_Init(BoxCmp *c, Value *v,
   e->is.target = 0;
   e->is.release = 0;*/
 
+  v->type = type;
+  v->cont.type = TS_Core_Type(& c->ts, type);
+
   switch(vc->type_of_container) {
   case VALCONTTYPE_IMM:
     v->kind = VALUEKIND_IMM;
@@ -106,9 +109,8 @@ void Value_Container_Init(BoxCmp *c, Value *v,
 
   case VALCONTTYPE_LREG:
     v->kind = VALUEKIND_TEMP;
-    v->cont.categ = CONT_LREG;
-    v->type = type;
-    v->cont.type = type;
+    v->cont.categ = BOXCONTCATEG_LREG;
+    v->attr.own_register = 1;
     if (vc->which_one < 0) {
       /* Automatically chooses the local register */
       Int reg = Reg_Occupy(& c->regs, v->cont.type);
@@ -212,9 +214,10 @@ void Value_Container_Init(BoxCmp *c, Value *v,
 
 void Value_Make_Temp(BoxCmp *c, Value *v) {
   if (v->kind != VALUEKIND_TEMP) {
-    Value old_value = *v;
+    Value old_v = *v;
     ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
     Value_Init(v);
-    Value_Container_Init(c, v, old_value.type, & vc);
+    Value_Container_Init(c, v, old_v.type, & vc);
+    CmpProc_Assemble(c->cur_proc, BOXGOP_MOV, 2, & v->cont, & old_v.cont);
   }
 }
