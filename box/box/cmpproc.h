@@ -31,29 +31,10 @@
 
 #  include "types.h"
 #  include "compiler.h"
-#  include "new_compiler.h"
 #  include "virtmach.h"
 #  include "vmsym.h"
 #  include "vmproc.h"
-
-/** @brief The CmpProc object.
- */
-typedef struct {
-  struct {
-    unsigned int
-                sym      :1, /**< the procedure has an associated symbol */
-                proc_id  :1, /**< the procedure has a procedure number */
-                proc_name:1, /**< it has a name */
-                call_num :1, /**< it has a call number */
-                type     :1; /**< it has a type */
-  } have;
-  BoxCmp        *cmp;        /**< Compiler corresponding to the procedure */
-  BoxVMSymID    sym;         /**< Symbol associated with the procedure */
-  BoxVMProcNum  proc_id;     /**< Proc. number (needed to write ASM to it) */
-  char          *proc_name;  /**< Procedure name */
-  BoxVMCallNum  call_num;    /**< Call number (needed to call it from ASM) */
-  Type          type;        /**< Type of the procedure */
-} CmpProc;
+#  include "new_compiler.h"
 
 /** Initialise a CmpProc object in the memory region pointed by p.
  * @param p A pointer to the space where the CmpProc object will be stored.

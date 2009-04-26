@@ -56,6 +56,7 @@ extern ParserAttr parser_attr;
 
 Task Parser_Init(const char *f);
 Task Parser_Finish(void);
+#if 0
 Task Prs_Operator(Operator *opr, Expr *rs, Expr *a, Expr *b);
 Task Prs_Name_To_Expr(Name *nm, Expr *e, Int suffix);
 Task Prs_Member_To_Expr(Name *nm, Expr *e, Int suffix);
@@ -71,6 +72,7 @@ Task Prs_Rule_Typed_Eq_Typed(Expr *rs, Expr *typed1, Expr *typed2);
 Task Prs_Rule_Valued_Eq_Typed(Expr *rs, Expr *valued, Expr *typed);
 Task Prs_Rule_Typed_Eq_Valued(Expr *typed, Expr *valued);
 Task Prs_Rule_Valued_Eq_Valued(Expr *rs, Expr *valued1, Expr *valued2);
+#endif
 
 ASTNode *Parser_Parse(FILE *in, const char *auto_include);
 int yyparse(void);

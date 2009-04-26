@@ -29,7 +29,7 @@
 #  include "typesys.h"
 #  include "new_compiler.h"
 #  include "ast.h"
-#  include "expr.h"
+#  include "value.h"
 
 typedef enum {
   OPR_ATTR_BINARY      = 1, /**< Is it a binary or unary operator? */
@@ -55,8 +55,8 @@ struct _operation_struc {
           type_result;     /**< Type of the result */
 
   union {
-    UInt  asm_code;        /**< Bytecode instrucion associated with the op. */
-    Int   module;          /**<  */
+    BoxGOp  opcode;        /**< Bytecode instrucion associated with the op. */
+    Int     module;        /**<  */
   } implem;                /**< The implementation of the operation */
 
   struct _operation_struc
@@ -98,7 +98,7 @@ void BoxCmp_Finish__Operators(BoxCmp *c);
 void Operator_Attr_Set(Operator *opr, OprAttr mask, OprAttr attr);
 
 
-Expr *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
-                            Expr *expr_left, Expr *expr_right);
+Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
+                             Value *v_left, Value *v_right);
 
 #endif /* _OPERATOR_H */

@@ -23,6 +23,7 @@
 #include "types.h"
 #include "mem.h"
 #include "messages.h"
+#include "container.h"
 #include "new_compiler.h"
 #include "value.h"
 
@@ -61,14 +62,22 @@ void Value_Link(Value *v) {
 }
 
 void Value_Set_Imm_Char(Value *v, Char c) {
+  v->kind = VALUEKIND_IMM;
+  v->type = BOXTYPE_CHAR;
+  BoxCont_Set(& v->cont, "ic", c);
 }
 
 void Value_Set_Imm_Int(Value *v, Int i) {
+  v->kind = VALUEKIND_IMM;
+  v->type = BOXTYPE_INT;
+  BoxCont_Set(& v->cont, "ii", i);
 }
 
 void Value_Set_Imm_Real(Value *v, Real r) {
+  v->kind = VALUEKIND_IMM;
+  v->type = BOXTYPE_REAL;
+  BoxCont_Set(& v->cont, "ir", r);
 }
-
 
 /* Create a new empty container. */
 void Value_Container_Init(BoxCmp *c, Value *v,
@@ -96,10 +105,13 @@ void Value_Container_Init(BoxCmp *c, Value *v,
     return; break;
 
   case VALCONTTYPE_LREG:
+    v->kind = VALUEKIND_TEMP;
     v->cont.categ = CONT_LREG;
+    v->type = type;
+    v->cont.type = type;
     if (vc->which_one < 0) {
       /* Automatically chooses the local register */
-      Int reg = Reg_Occupy(& c->regs, type_of_register);
+      Int reg = Reg_Occupy(& c->regs, v->cont.type);
       if (reg < 1) {
         MSG_FATAL("Value_Container_Init: Reg_Occupy failed!");
       }
@@ -165,6 +177,7 @@ void Value_Container_Init(BoxCmp *c, Value *v,
   case VALCONTTYPE_LVPTR:
   {
     int is_gaddr = (vc->type_of_container == VALCONTTYPE_GPTR);
+    assert(0);
 
 #if 0
     v->cont.is.gaddr = is_gaddr;
@@ -194,5 +207,14 @@ void Value_Container_Init(BoxCmp *c, Value *v,
 
   default:
     MSG_FATAL("Value_Container_Init: wrong type of container!");
+  }
+}
+
+void Value_Make_Temp(BoxCmp *c, Value *v) {
+  if (v->kind != VALUEKIND_TEMP) {
+    Value old_value = *v;
+    ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
+    Value_Init(v);
+    Value_Container_Init(c, v, old_value.type, & vc);
   }
 }

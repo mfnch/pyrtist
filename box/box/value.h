@@ -37,6 +37,8 @@
 
 typedef enum {
   VALUEKIND_ERR,              /**< An error */
+  VALUEKIND_IDENTIFIER,       /**< An identifier (no type, no value) */
+  VALUEKIND_TYPE,             /**< A type (no value) */
   VALUEKIND_IMM,              /**< A constant numerical value */
   VALUEKIND_TEMP,             /**< A temporary value */
   VALUEKIND_TARGET            /**< A target value (lvalue) */
@@ -101,5 +103,6 @@ void Value_Set_Imm_Char(Value *v, Char c);
 void Value_Set_Imm_Int(Value *v, Int i);
 
 void Value_Set_Imm_Real(Value *v, Real r);
+
 
 #endif /* _VALUE_H */

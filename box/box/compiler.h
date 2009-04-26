@@ -34,7 +34,6 @@
 #  include "expr.h"
 #  include "typesys.h"
 #  include "registers.h"
-#  include "new_compiler.h"
 
 struct OldOperation {
   struct {
@@ -184,7 +183,6 @@ typedef struct {
 
 typedef struct {
   RegAlloc ra;
-  BoxCmp new_compiler;
   VMProgram *vm;
   TS ts_obj, *ts;
   BoxArr imm_segment,

@@ -23,9 +23,10 @@
 #include "types.h"
 #include "mem.h"
 #include "ast.h"
-#include "expr.h"
+#include "value.h"
 #include "messages.h"
 #include "new_compiler.h"
+#include "virtmach.h"
 #include "cmpproc.h"
 #include "operator.h"
 
@@ -127,7 +128,9 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
 
   if (1) { /* Temporary code */
     Operator *opr = BoxCmp_BinOp_Get(c, ASTBINOP_ADD);
-    Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
+    Operation *opn =
+      Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
+    opn->implem.opcode = BOXGOP_ADD;
   }
 }
 
@@ -216,12 +219,18 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
  * NOTA: Viene chiamata da Cmp_Operation_Exec.
  */
 
+void Value_Make_Temp(BoxCmp *c, Value *v);
+
 /** This is the function which actually emits the VM code for quite a number
  * of Operations.
  */
-static Expr *My_Opn_Emit(CmpProc *c, Operation *opn,
-                         Expr *e_left, Expr *e_right) {
-  return NULL;
+static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
+                          Value *v_left, Value *v_right) {
+  Value_Make_Temp(c, v_left);
+  CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+                   2, & v_left->cont, & v_right->cont);
+  Value_Link(v_left);
+  return v_left;
 
 #if 0
   struct {
@@ -429,21 +438,16 @@ er_equal_e1:
 /** Compiles an operation between the two expression e1 and e2, where
  * the operator is opr.
  */
-Expr *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
-                            Expr *expr_left, Expr *expr_right) {
+Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
+                             Value *v_left, Value *v_right) {
   Operator *opr = BoxCmp_BinOp_Get(c, op);
   Operation *opn;
   OprMatch match;
 
-  /* Subtypes cannot be used for operator overloading, so we expand
-   * them anyway!
-   */
-  Expr_Resolve_Subtype(expr_left);
-  Expr_Resolve_Subtype(expr_right);
-
+#if 0
   /* Require operands have value. */
-  if (!expr_left->is.value || !expr_right->is.value) {
-    if (!expr_left->is.value) {
+  if (!v_left->is.value || !v_right->is.value) {
+    if (!v_left->is.value) {
       MSG_ERROR("The expression on the left of '%s' "
                 "must have a definite value!", opr->name);
     } else {
@@ -453,9 +457,16 @@ Expr *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
     return NULL;
   }
 
+  /* Subtypes cannot be used for operator overloading, so we expand
+   * them anyway!
+   */
+  Expr_Resolve_Subtype(v_left);
+  Expr_Resolve_Subtype(v_right);
+#endif
+
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, opr, & match,
-                                 expr_left->type, expr_right->type);
+                                 v_left->type, v_right->type);
   if (opn != NULL) {
     /* Ora eseguo le espansioni, se necessario */
     if (match.match_left == TS_TYPES_EXPAND) {
@@ -469,7 +480,7 @@ Expr *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
       /*if (Cmp_Expr_Expand(oi.exp_type2, e2) == BoxFailure) return NULL;*/
     }
 
-    return NULL;
+    return My_Opn_Emit(c, opn, v_left, v_right);
 
 #if 0
     /* manca la valutazione della commutativita'! */
@@ -492,8 +503,8 @@ Expr *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
 
   } else {
     MSG_ERROR("%~s %s %~s <-- Operation has not been defined!",
-              TS_Name_Get(& c->ts, expr_left->type), opr->name,
-              TS_Name_Get(& c->ts, expr_right->type));
+              TS_Name_Get(& c->ts, v_left->type), opr->name,
+              TS_Name_Get(& c->ts, v_right->type));
     return NULL;
   }
 

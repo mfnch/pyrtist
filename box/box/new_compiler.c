@@ -25,9 +25,9 @@
 #include "array.h"
 #include "ast.h"
 #include "value.h"
-#include "new_compiler.h"
-#include "operator.h"
 #include "cmpproc.h"
+#include "operator.h"
+#include "new_compiler.h"
 
 /** Type of items which may be inserted inside the compiler stack.
  * @see StackItem
@@ -57,6 +57,9 @@ typedef struct {
 void BoxCmp_Init(BoxCmp *c) {
   BoxVM_Init(& c->vm);
   BoxArr_Init(& c->stack, sizeof(StackItem), 32);
+
+  Reg_Init(& c->regs);
+
   {
     TS *this_ts = last_ts;
     TS_Init(& c->ts);
@@ -65,23 +68,14 @@ void BoxCmp_Init(BoxCmp *c) {
   }
   BoxCmp_Init__Operators(c);
 
-
-  if (1) {
-    Point p = {1.23, 4.56};
-    CmpProc cp;
-    BoxCont c1, c2;
-    CmpProc_Init(& cp, c);
-    BoxCont_Set(& c1, "vi", 5);
-    BoxCont_Set(& c2, "ii", 0);
-    CmpProc_Assemble(& cp, BOXGOP_MUL, 2, & c1, & c2);
-    CmpProc_Get_Call_Num(& cp);
-    CmpProc_Finish(& cp);
-    BoxVM_Set_Attr(& c->vm, BOXVM_ATTR_DASM_WITH_HEX, BOXVM_ATTR_DASM_WITH_HEX);
-    VM_Proc_Disassemble_All(& c->vm, stdout);
-  }
+  CmpProc_Init(& c->main_proc, c);
+  c->cur_proc = & c->main_proc;
 }
 
 void BoxCmp_Finish(BoxCmp *c) {
+  CmpProc_Get_Call_Num(& c->main_proc);
+  VM_Proc_Disassemble_All(& c->vm, stdout);
+  CmpProc_Finish(& c->main_proc);
   BoxArr_Finish(& c->stack);
   BoxCmp_Finish__Operators(c);
   TS_Finish(& c->ts);
@@ -219,24 +213,21 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
   My_Compile_Any(c, n->attr.bin_op.right);
   if (BoxCmp_Pop_Errors(c, /* pop */ 2, /* push err */ 1)) return;
 
+  /* Get values from stack */
   right = BoxCmp_Get_Value(c, 0);
   left  = BoxCmp_Get_Value(c, 1);
 
-#if 0
-  if (left->is.typed && right->is.typed) {
+  if (1 /*left->is.typed && right->is.typed*/) {
     result = BoxCmp_Opr_Emit_BinOp(c, n->attr.bin_op.operation, left, right);
 
   } else {
     result = NULL;
-    if ( opr->can_define ) {
+/*    if ( opr->can_define ) {
       return Prs_Def_Operator(opr, rs, a, b);
     } else {
       MSG_ERROR("The expression should have type!");
-      return Failed;
-    }
+      return Failed; */
   }
-#endif
-  result = NULL;
 
   BoxCmp_Pop_Any(c, 2);
   BoxCmp_Push_Value(c, result);

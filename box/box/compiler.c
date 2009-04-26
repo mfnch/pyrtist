@@ -98,7 +98,6 @@ Task Cmp_Init(VMProgram *program) {
 
   Msg_Line_Set((Int) 1);
 
-  BoxCmp_Init(& cmp->new_compiler);
   return Success;
 }
 
@@ -115,9 +114,12 @@ Task Cmp_Parse(const char *file) {
   TASK( Builtins_Init() ); /* Add builtin stuff */
 
 
+  BoxCmp new_compiler;
+  BoxCmp_Init(& new_compiler);
   program_node = Parser_Parse(NULL, file);
-  BoxCmp_Compile(& cmp->new_compiler, program_node);
+  BoxCmp_Compile(& new_compiler, program_node);
   ASTNode_Destroy(program_node);
+  BoxCmp_Finish(& new_compiler);
 
 
 #if 0
@@ -139,7 +141,6 @@ void Cmp_Destroy(void) {
 
   BoxArr_Finish(& cmp->imm_segment);
   BoxArr_Finish(& cmp->allocd_oprs);
-  BoxCmp_Finish(& cmp->new_compiler);
   BoxMem_Free(cmp);
 }
 
