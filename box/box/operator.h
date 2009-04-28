@@ -46,12 +46,6 @@ typedef struct _operator_struc Operator;
 
 struct _operation_struc {
   OprAttr attr;            /**< Attributes overridden from operation */
-  struct {
-    unsigned int
-          intrinsic   : 1, /**< has a corresponding VM instruction */
-          immediate   : 1, /**< allow immediate operands (constants) */
-          link        : 1; /**< ???? */
-  } is;
 
   BoxType type_left,       /**< Type of the left operand */
           type_right,      /**< Type of the right operand */
