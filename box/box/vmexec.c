@@ -628,7 +628,7 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {   BOXGOP_NEG,    "neg", 1, 'p',     "a1",  "a1", "x-", "xx", VM__Exec_Neg_P    }, /* neg rp        */
   { BOXGOP_PMULR,  "pmulr", 1, 'p', "a1,rr0",  "a1", "x-", "xx", VM__Exec_PMulR_PR }, /* pmulr rp      */
   { BOXGOP_PDIVR,  "pdivr", 1, 'p', "a1,rr0",  "a1", "x-", "xx", VM__Exec_PDivR_PR }, /* pdivr rp      */
-  {    BOXGOP_EQ,    "eq?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Eq_II    }, /* eq? ri, ri    */
+  {    BOXGOP_EQ,    "eq?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Eq_II    }, /* eq? ri, ri    */
   {    BOXGOP_EQ,    "eq?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Eq_RR    }, /* eq? rr, rr    */
   {    BOXGOP_EQ,    "eq?", 2, 'p',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Eq_PP    }, /* eq? rp, rp    */
   {    BOXGOP_NE,    "ne?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_II    }, /* ne? ri, ri    */

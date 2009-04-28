@@ -32,17 +32,20 @@
 #  include "value.h"
 
 typedef enum {
-  OPR_ATTR_BINARY      = 1, /**< Is it a binary or unary operator? */
-  OPR_ATTR_COMMUTATIVE = 2, /**< Is it a commutative operator? */
-  OPR_ATTR_ASSIGNMENT  = 4  /**< Is it an assignment operator? */
+  OPR_ATTR_NATIVE      = 1, /**< Is it a native operation (does the VM
+                                 implement the operation with dedicated
+                                 instruction or should we use a procedure)? */
+  OPR_ATTR_BINARY      = 2, /**< Is it a binary or unary operator? */
+  OPR_ATTR_COMMUTATIVE = 4, /**< Is it a commutative operator? */
+  OPR_ATTR_ASSIGNMENT  = 8, /**< Is it an assignment operator? */
+  OPR_ATTR_ALL         = 15 /**< Used as the full mask */
 } OprAttr;
 
 typedef struct _operation_struc Operation;
 typedef struct _operator_struc Operator;
 
 struct _operation_struc {
-  OprAttr attr_mask,       /**< Mask of attributes overridden from operation */
-          attr;            /**< Attributes overridden from operation */
+  OprAttr attr;            /**< Attributes overridden from operation */
   struct {
     unsigned int
           intrinsic   : 1, /**< has a corresponding VM instruction */
@@ -66,9 +69,7 @@ struct _operation_struc {
 
 struct _operator_struc {
   OprAttr    attr;             /**< Operator attributes */
-  unsigned int
-             can_define : 1;   /* E' un operatore di definizione? */
-  const char *name;            /* Token che rappresenta l'operatore */
+  const char *name;            /**< Name of the operator */
   Operation  *first_operation;
 };
 
@@ -96,6 +97,11 @@ void BoxCmp_Finish__Operators(BoxCmp *c);
  * 'value' tells how to change them.
  */
 void Operator_Attr_Set(Operator *opr, OprAttr mask, OprAttr attr);
+
+/** Change attributes for operation. 'mask' tells what attributes to change,
+ * 'value' tells how to change them.
+ */
+void Operation_Attr_Set(Operation *opn, OprAttr mask, OprAttr attr);
 
 
 Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,

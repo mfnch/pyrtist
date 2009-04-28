@@ -82,6 +82,10 @@ void Value_Unlink(Value *v);
 /** Add a reference to the specified Value. */
 void Value_Link(Value *v);
 
+/** Determine if the given value can be recycled, otherwise return Value_New()
+ */
+Value *Value_Recycle(Value *v);
+
 typedef enum {
   VALCONTTYPE_IMM = 0,
   VALCONTTYPE_LREG, VALCONTTYPE_LVAR,
@@ -104,5 +108,17 @@ void Value_Set_Imm_Int(Value *v, Int i);
 
 void Value_Set_Imm_Real(Value *v, Real r);
 
+#if 0
+/** Return a new temporary Value created from the given Value 'v'.
+ * NOTE: return a new value created with Value_New() or a new reference
+ *  to 'v', if it can be recycled (has just one reference).
+ */
+Value *Value_Make_Temp(BoxCmp *c, Value *v);
+#endif
+
+/** Return 1 if the value is a temporary value (it stores an intermediate
+ * result)
+ */
+int Value_Is_Temp(Value *v);
 
 #endif /* _VALUE_H */

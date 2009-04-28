@@ -43,7 +43,6 @@
 void Operator_Init(Operator *opr, const char *name) {
   opr->attr = 0;
   opr->name = name;
-  opr->can_define = 0;
   opr->first_operation = NULL;
 }
 
@@ -63,6 +62,13 @@ void Operator_Attr_Set(Operator *opr, OprAttr mask, OprAttr attr) {
   opr->attr = (opr->attr & (~mask)) | (attr & mask);
 }
 
+/** Change attributes for operation. 'mask' tells what attributes to change,
+ * 'value' tells how to change them.
+ */
+void Operation_Attr_Set(Operation *opn, OprAttr mask, OprAttr attr) {
+  opn->attr = (opn->attr & (~mask)) | (attr & mask);
+}
+
 /* Aggiunge una nuova operazione di tipo type1 opr type2
  * all'operatore *opr. Se type1 o type2 sono uguali a TYPE_NONE si tratta
  * di un'operazione unaria (sinistra o destra rispettivamente).
@@ -72,8 +78,7 @@ Operation *Operator_Add_Opn(Operator *opr, BoxType type_left,
   Operation *opn;
 
   opn = (Operation *) BoxMem_Safe_Alloc(sizeof(Operation));
-  opn->attr_mask = 0;
-  opn->attr = 0;
+  opn->attr = opr->attr;
   opn->type_left = type_left;
   opn->type_right = type_right;
   opn->type_result = type_result;
@@ -117,13 +122,13 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
   for(i = 0; i < ASTUNOP__NUM_OPS; i++) {
     Operator *opr = BoxCmp_UnOp_Get(c, i);
     Operator_Init(opr, ASTUnOp_To_String(i));
-    Operator_Attr_Set(opr, OPR_ATTR_BINARY, 0);
+    Operator_Attr_Set(opr, OPR_ATTR_ALL, OPR_ATTR_NATIVE);
   }
 
   for(i = 0; i < ASTBINOP__NUM_OPS; i++) {
     Operator *opr = BoxCmp_BinOp_Get(c, i);
     Operator_Init(opr, ASTBinOp_To_String(i));
-    Operator_Attr_Set(opr, OPR_ATTR_BINARY, OPR_ATTR_BINARY);
+    Operator_Attr_Set(opr, OPR_ATTR_ALL, OPR_ATTR_BINARY | OPR_ATTR_NATIVE);
   }
 
   if (1) { /* Temporary code */
@@ -133,9 +138,11 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
     opr = BoxCmp_BinOp_Get(c, ASTBINOP_ADD);
 
     opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
+    Operation_Attr_Set(opn, OPR_ATTR_COMMUTATIVE, OPR_ATTR_ALL);
     opn->implem.opcode = BOXGOP_ADD;
 
     opn = Operator_Add_Opn(opr, BOXTYPE_REAL, BOXTYPE_REAL, BOXTYPE_REAL);
+    Operation_Attr_Set(opn, OPR_ATTR_COMMUTATIVE, OPR_ATTR_ALL);
     opn->implem.opcode = BOXGOP_ADD;
 
     opr = BoxCmp_BinOp_Get(c, ASTBINOP_SUB);
@@ -149,10 +156,28 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
     opr = BoxCmp_BinOp_Get(c, ASTBINOP_MUL);
 
     opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
+    Operation_Attr_Set(opn, OPR_ATTR_COMMUTATIVE, OPR_ATTR_ALL);
     opn->implem.opcode = BOXGOP_MUL;
 
     opn = Operator_Add_Opn(opr, BOXTYPE_REAL, BOXTYPE_REAL, BOXTYPE_REAL);
+    Operation_Attr_Set(opn, OPR_ATTR_COMMUTATIVE, OPR_ATTR_ALL);
     opn->implem.opcode = BOXGOP_MUL;
+
+    opr = BoxCmp_BinOp_Get(c, ASTBINOP_DIV);
+
+    opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
+    opn->implem.opcode = BOXGOP_DIV;
+
+    opn = Operator_Add_Opn(opr, BOXTYPE_REAL, BOXTYPE_REAL, BOXTYPE_REAL);
+    opn->implem.opcode = BOXGOP_DIV;
+
+    opr = BoxCmp_BinOp_Get(c, ASTBINOP_EQ);
+
+    opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
+    opn->implem.opcode = BOXGOP_EQ;
+
+    opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_REAL, BOXTYPE_REAL);
+    opn->implem.opcode = BOXGOP_EQ;
   }
 }
 
@@ -185,14 +210,12 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
   int opr_is_unary = ((opr->attr & OPR_ATTR_BINARY) == 0);
   Operation *opn;
   for(opn = opr->first_operation; opn != NULL; opn = opn->next) {
-    printf("Operation at %p\n", opn);
     TSCmp match_left, match_right;
     match_left = TS_Compare(& c->ts, opn->type_left, type_left);
     if (match_left != TS_TYPES_UNMATCH) {
       if (opr_is_unary) {
           match->opr = opr;
-          match->attr = (opr->attr & (~opn->attr_mask))
-                        | (opn->attr_mask & opn->attr);
+          match->attr = opn->attr;
           match->match_left = match_left;
           match->match_right = 0;
           match->expand_type_left = opn->type_left;
@@ -203,8 +226,7 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
         match_right = TS_Compare(& c->ts, opn->type_right, type_right);
         if (match_right != TS_TYPES_UNMATCH) {
           match->opr = opr;
-          match->attr = (opr->attr & (~opn->attr_mask))
-                        | (opn->attr_mask & opn->attr);
+          match->attr = opn->attr;
           match->match_left = match_left;
           match->match_right = match_right;
           match->expand_type_left = opn->type_left;
@@ -241,18 +263,48 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
  * NOTA: Viene chiamata da Cmp_Operation_Exec.
  */
 
-void Value_Make_Temp(BoxCmp *c, Value *v);
+/** Return a new temporary Value created from the given Value 'v'.
+ * NOTE: return a new value created with Value_New() or a new reference
+ *  to 'v', if it can be recycled (has just one reference).
+ */
+Value *Value_Make_Temp(BoxCmp *c, Value *v);
 
 /** This is the function which actually emits the VM code for quite a number
  * of Operations.
  */
 static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
                           Value *v_left, Value *v_right) {
-  Value_Make_Temp(c, v_left);
-  CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
-                   2, & v_left->cont, & v_right->cont);
-  Value_Link(v_left);
-  return v_left;
+  if (opn->attr & OPR_ATTR_NATIVE) {
+    if (opn->attr & OPR_ATTR_BINARY) {
+      /* If the operation is commutative and v_left is not an intermediate
+       * value, then we check if the v_right is a temporary value.
+       * If it is, we exchange the operands, since the op is commutative,
+       * and this will save us one VM operation.
+       */
+      if (opn->attr & OPR_ATTR_COMMUTATIVE && !Value_Is_Temp(v_left)) {
+        if (Value_Is_Temp(v_right)) {
+          Value *v = v_left;
+          v_left = v_right;
+          v_right = v;
+        }
+      }
+
+      v_left = Value_Make_Temp(c, v_left);
+      CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+                       2, & v_left->cont, & v_right->cont);
+      return v_left;
+
+    } else {
+      v_left = Value_Make_Temp(c, v_left);
+      CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+                       1, & v_left->cont);
+      return v_left;
+    }
+
+  } else {
+    MSG_FATAL("Non-native operators not supported, yet!");
+    assert(0);
+  }
 
 #if 0
   struct {

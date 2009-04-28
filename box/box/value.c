@@ -30,7 +30,7 @@
 void Value_Init(Value *v) {
   v->kind = VALUEKIND_ERR;
   v->type = BOXTYPE_NONE;
-  v->attr.new_or_init = 1;
+  v->attr.new_or_init = 0;
   v->attr.own_register = 0;
   v->attr.own_reference = 0;
   v->attr.ignore = 0;
@@ -40,7 +40,7 @@ void Value_Init(Value *v) {
 Value *Value_New(void) {
   Value *v = BoxMem_Safe_Alloc(sizeof(Value));
   Value_Init(v);
-  v->attr.new_or_init = 0;
+  v->attr.new_or_init = 1;
   return v;
 }
 
@@ -59,6 +59,23 @@ void Value_Unlink(Value *v) {
 
 void Value_Link(Value *v) {
   v->num_ref += 1;
+}
+
+/** Determine if the given value can be recycled, otherwise return Value_New()
+ */
+Value *Value_Recycle(Value *v) {
+  if (v->num_ref == 1) {
+    /* one reference means nobody else owns the object, so we can do
+     * whatever we want with it!
+     */
+    int new_or_init = v->attr.new_or_init;
+    Value_Init(v);
+    v->attr.new_or_init = new_or_init;
+    Value_Link(v); /* Must return a new reference */
+    return v;
+
+  } else
+    return Value_New();
 }
 
 void Value_Set_Imm_Char(Value *v, Char c) {
@@ -82,22 +99,6 @@ void Value_Set_Imm_Real(Value *v, Real r) {
 /* Create a new empty container. */
 void Value_Container_Init(BoxCmp *c, Value *v,
                           BoxType type, ValContainer *vc) {
-  int intrinsic;
-  Int type_of_register, resolved;
-
-/*  e->is.typed = 1;
-  e->is.value = 1;
-  e->is.ignore = 0;
-  e->is.allocd = 0;
-  e->type = type;
-  e->resolved = resolved = Tym_Type_Resolve_All(type);
-  intrinsic = (resolved < NUM_INTRINSICS);
-  type_of_register = (intrinsic) ? resolved : TYPE_OBJ;
-
-  e->is.imm = 0;
-  e->is.target = 0;
-  e->is.release = 0;*/
-
   v->type = type;
   v->cont.type = TS_Core_Type(& c->ts, type);
 
@@ -110,7 +111,6 @@ void Value_Container_Init(BoxCmp *c, Value *v,
   case VALCONTTYPE_LREG:
     v->kind = VALUEKIND_TEMP;
     v->cont.categ = BOXCONTCATEG_LREG;
-    v->attr.own_register = 1;
     if (vc->which_one < 0) {
       /* Automatically chooses the local register */
       Int reg = Reg_Occupy(& c->regs, v->cont.type);
@@ -129,10 +129,10 @@ void Value_Container_Init(BoxCmp *c, Value *v,
     break;
 
   case VALCONTTYPE_GVAR:
-    v->cont.categ = CONT_GREG;
     v->kind = VALUEKIND_TARGET;
+    v->cont.categ = BOXCONTCATEG_GREG;
     if (vc->which_one < 0) {
-      Int reg = -GVar_Occupy(& c->regs, type_of_register);
+      Int reg = -GVar_Occupy(& c->regs, v->cont.type);
       /* Automatically choses the local variables */
       if (reg >= 0) {
         MSG_FATAL("Value_Container_Init: GVar_Occupy failed!");
@@ -147,26 +147,24 @@ void Value_Container_Init(BoxCmp *c, Value *v,
     }
     break;
 
-#if 0
   case VALCONTTYPE_LVAR:
-    v->cont.categ = CONT_LREG;
-    v->attr.is_target = 1;
+    v->kind = VALUEKIND_TARGET;
+    v->cont.categ = BOXCONTCATEG_LREG;
     if (vc->which_one < 0) {
       /* Automatically choses the local variables */
-      Int reg = -Var_Occupy(type_of_register, Box_Num());
+      Int reg = -Var_Occupy(& c->regs, v->cont.type, 0);
       if (reg >= 0) {
         MSG_FATAL("Value_Container_Init: Var_Occupy failed!");
       }
-      v->cont.reg = reg;
+      v->cont.value.reg = reg;
       return;
 
     } else {
       /* The user wants a particolar variable to be chosen */
-      v->cont.reg = c->which_one;
+      v->cont.value.reg = vc->which_one;
       return;
     }
     break;
-#endif
 
   case VALCONTTYPE_GREG:
     v->cont.categ = CAT_GREG;
@@ -178,10 +176,10 @@ void Value_Container_Init(BoxCmp *c, Value *v,
   case VALCONTTYPE_LRPTR:
   case VALCONTTYPE_LVPTR:
   {
-    int is_gaddr = (vc->type_of_container == VALCONTTYPE_GPTR);
     assert(0);
 
 #if 0
+    int is_gaddr = (vc->type_of_container == VALCONTTYPE_GPTR);
     v->cont.is.gaddr = is_gaddr;
     v->cont.is.target = 1;
     v->cont.categ = CONT_PTR;
@@ -212,12 +210,21 @@ void Value_Container_Init(BoxCmp *c, Value *v,
   }
 }
 
-void Value_Make_Temp(BoxCmp *c, Value *v) {
+Value *Value_Make_Temp(BoxCmp *c, Value *v) {
   if (v->kind != VALUEKIND_TEMP) {
     Value old_v = *v;
     ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
-    Value_Init(v);
+    v = Value_Recycle(v);
     Value_Container_Init(c, v, old_v.type, & vc);
     CmpProc_Assemble(c->cur_proc, BOXGOP_MOV, 2, & v->cont, & old_v.cont);
+    return v;
+
+  } else {
+    Value_Link(v);
+    return v;
   }
+}
+
+int Value_Is_Temp(Value *v) {
+  return (v->kind == VALUEKIND_TEMP);
 }
