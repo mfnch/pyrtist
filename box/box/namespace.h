@@ -26,5 +26,29 @@
 #ifndef _NAMESPACE_H
 #  define _NAMESPACE_H
 
+typedef struct {
+  int whatever;
+} Namespace;
+
+void Namespace_Init(Namespace *ns);
+
+void Namespace_Finish(Namespace *ns);
+
+Namespace *Namespace_New(void);
+
+void Namespace_Destroy(Namespace *ns);
+
+void Namespace_Floor_Up(Namespace *ns);
+
+void Namespace_Floor_Down(Namespace *ns);
+
+void Namespace_Add_Item(Namespace *ns, const char *item_name);
+
+void Namespace_Del_Item(Namespace *ns, const char *item_name);
+
+void Namespace_Plug(Namespace *ns, const char *name, Namespace *ns_to_plug);
+
+void Namespace_Unplug(Namespace *ns, const char *name);
+
 #endif /* _NAMESPACE_H */
 
