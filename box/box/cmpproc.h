@@ -30,7 +30,6 @@
 #  include <stdarg.h>
 
 #  include "types.h"
-#  include "compiler.h"
 #  include "virtmach.h"
 #  include "vmsym.h"
 #  include "vmproc.h"

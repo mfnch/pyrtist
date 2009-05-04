@@ -26,22 +26,83 @@
 #ifndef _NAMESPACE_H
 #  define _NAMESPACE_H
 
+#  include "types.h"
+#  include "array.h"
+#  include "hashtable.h"
+
+/** Namespace floor. Each floor can have its own variables which live just
+ * on that floor and are destroyed when the floor is destroyed.
+ */
+typedef int NmspFloor;
+
+/** Used to access a name from the default floor (the higher one where having
+ * such a name)
+ */
+#define NMSPFLOOR_DEFAULT -1
+
+/** The namespace object */
 typedef struct {
-  int whatever;
+  BoxHT  ht;     /**< Hash table containing all the names of the namespace */
+  BoxArr floors; /**< Array of pointers to the name chain for each floor */
 } Namespace;
 
+/** Possible types for item inserted into the namespace */
+typedef enum {
+  NMSPITEMTYPE_VALUE
+} NmspItemType;
+
+/** Item which can be inserted into the namespace */
+typedef struct nmsp_item_s {
+  struct nmsp_item_s
+                *next;     /**< Chain of all the names in the same floor */
+  NmspItemType  type;      /**< Type of item */
+  void          *data;     /**< Pointer to the item data */
+} NmspItem;
+
+/** Initialise a new Namespace object, in the space already allocated
+ * and pointed by ns. Namespace_Finish should be called to finalize
+ * the object.
+ */
 void Namespace_Init(Namespace *ns);
 
+/** Finalize an object initialized with Namespace_Init. */
 void Namespace_Finish(Namespace *ns);
 
+/** Allocate space for a Namespace object and call Namespace_Init
+ * to initialize it. Namespace_Destroy should be called to destroy the object.
+ */
 Namespace *Namespace_New(void);
 
+/** Destroy an object created with Namespace_New. */
 void Namespace_Destroy(Namespace *ns);
 
 void Namespace_Floor_Up(Namespace *ns);
 
 void Namespace_Floor_Down(Namespace *ns);
 
+
+/** Add a new item with name 'item_name' to the given floor of the namespace
+ * and return the pointer to the corresponding NmspItem object.
+ */
+NmspItem *Namespace_Add_Item(Namespace *ns, NmspFloor floor,
+                             const char *item_name);
+
+NmspItem *Namespace_Get_Item(Namespace *ns, NmspFloor floor,
+                             const char *item_name);
+
+#if 0
+/** Use 'Namespace_Add_Item' to add the value 'v' to the namespace. */
+void Namespace_Add_Value(Namespace *ns, NmspFloor floor,
+                         const char *item_name, Value *v);
+
+/** Get an item 'item_name' from the namespace, assuming this must be a
+ * Value.
+ */
+Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
+                           const char *item_name);
+#endif
+
+/*
 void Namespace_Add_Item(Namespace *ns, const char *item_name);
 
 void Namespace_Del_Item(Namespace *ns, const char *item_name);
@@ -49,6 +110,7 @@ void Namespace_Del_Item(Namespace *ns, const char *item_name);
 void Namespace_Plug(Namespace *ns, const char *name, Namespace *ns_to_plug);
 
 void Namespace_Unplug(Namespace *ns, const char *name);
+*/
 
 #endif /* _NAMESPACE_H */
 

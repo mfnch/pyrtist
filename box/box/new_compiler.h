@@ -26,13 +26,19 @@
 #ifndef _NEW_COMPILER_H
 #  define _NEW_COMPILER_H
 
-#include "types.h"
-#include "array.h"
-#include "virtmach.h"
-#include "ast.h"
-#include "registers.h"
-
 typedef struct _box_cmp BoxCmp;
+
+#  include "types.h"
+#  include "array.h"
+#  include "virtmach.h"
+#  include "ast.h"
+#  include "registers.h"
+#  include "namespace.h"
+
+#  define _BOX_NDECL_FNS
+#  include "operator.h"
+#  undef _BOX_NDECL_FNS
+
 
 /** @brief The CmpProc object.
  */
@@ -53,13 +59,13 @@ typedef struct {
   Type          type;        /**< Type of the procedure */
 } CmpProc;
 
-#include "operator.h"
 #include "cmpproc.h"
 
 struct _box_cmp {
   BoxArr    stack;     /**< Used during compilation to pass around expressions */
   BoxVM     vm;        /**< The target of the compilation */
   BoxTS     ts;        /**< The type system */
+  Namespace ns;        /**< The namespace */
   RegAlloc  regs;      /**< Register occupation handler */
   CmpProc   main_proc, /**< Main procedure in the module */
             *cur_proc; /**< Procedure on which we are working now */

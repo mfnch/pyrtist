@@ -34,6 +34,7 @@
 
 #  include "types.h"
 #  include "container.h"
+#  include "new_compiler.h"
 
 typedef enum {
   VALUEKIND_ERR,              /**< An error */
@@ -46,9 +47,13 @@ typedef enum {
 
 typedef struct {
   int       num_ref;          /**< Number of references to this Value */
+  BoxCmp    *cmp;             /**< The compiler to which this value refers */
   ValueKind kind;             /**< Kind of Value */
   BoxType   type;             /**< Type of the Value */
-  BoxCont   cont;             /**< Value Container */
+  struct {
+    BoxCont   cont;           /**< Container */
+    char      *name;          /**< Name (if kind=VALUEKIND_IDENTIFIER) */
+  }         value;            /**< Value of the container */
   struct {
     unsigned int
             new_or_init   :1, /**< Created with Value_New? (or Value_Init?) */
@@ -62,7 +67,7 @@ typedef struct {
 /** Initialise a Value 'v' assuming 'v' points to an already allocated memory
  * region able to contain a Value object.
  */
-void Value_Init(Value *v);
+void Value_Init(Value *v, BoxCmp *cmp);
 
 /** Allocate a Value object and initialise it by calling Value_Init.
  * Notice that the object is aware of its allocation mode (whether it was
@@ -70,7 +75,7 @@ void Value_Init(Value *v);
  * call a free() in case Value_New was used. free() won't be called if the
  * object was created with Value_Init.
  */
-Value *Value_New(void);
+Value *Value_New(BoxCmp *cmp);
 
 /** Remove one reference to the Value object 'v', destroying it if there are
  * no more reference to the Value. The object is destroyed coherently to how
@@ -108,13 +113,11 @@ void Value_Set_Imm_Int(Value *v, Int i);
 
 void Value_Set_Imm_Real(Value *v, Real r);
 
-#if 0
 /** Return a new temporary Value created from the given Value 'v'.
  * NOTE: return a new value created with Value_New() or a new reference
  *  to 'v', if it can be recycled (has just one reference).
  */
-Value *Value_Make_Temp(BoxCmp *c, Value *v);
-#endif
+Value *Value_Make_Temp(Value *v);
 
 /** Return 1 if the value is a temporary value (it stores an intermediate
  * result)

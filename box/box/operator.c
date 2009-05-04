@@ -264,12 +264,6 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
  * NOTA: Viene chiamata da Cmp_Operation_Exec.
  */
 
-/** Return a new temporary Value created from the given Value 'v'.
- * NOTE: return a new value created with Value_New() or a new reference
- *  to 'v', if it can be recycled (has just one reference).
- */
-Value *Value_Make_Temp(BoxCmp *c, Value *v);
-
 /** This is the function which actually emits the VM code for quite a number
  * of Operations.
  */
@@ -290,15 +284,15 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
         }
       }
 
-      v_left = Value_Make_Temp(c, v_left);
+      v_left = Value_Make_Temp(v_left);
       CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
-                       2, & v_left->cont, & v_right->cont);
+                       2, & v_left->value.cont, & v_right->value.cont);
       return v_left;
 
     } else {
-      v_left = Value_Make_Temp(c, v_left);
+      v_left = Value_Make_Temp(v_left);
       CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
-                       1, & v_left->cont);
+                       1, & v_left->value.cont);
       return v_left;
     }
 

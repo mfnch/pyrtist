@@ -34,8 +34,9 @@
 
 #  include <box/types.h>
 
-typedef unsigned int (*BoxHTFunc)(void *key, size_t key_size);
-typedef int (*BoxHTCmp)(void *key1, void *key2, size_t size1, size_t size2);
+typedef unsigned int (*BoxHTFunc)(const void *key, size_t key_size);
+typedef int (*BoxHTCmp)(const void *key1, const void *key2,
+                        size_t size1, size_t size2);
 
 typedef struct ht {
   struct ht *next;
@@ -49,32 +50,31 @@ typedef struct ht {
 
 /** @brief Hash table object */
 typedef struct {
-  /** Size of the hash table, should be a power of 2 */
-  int num_entries;
-  /** num_entries is a power of two, mask is num_entries-1 */
-  int mask;
-  /** Hash table settings */
+  size_t  num_entries,  /**< Size of the hash table, should be a power of 2 */
+          mask;         /**< num_entries is a power of two, mask is
+                             num_entries - 1 */
   struct {
-    /** Should we copy the key (using malloc)? */
-    unsigned int copy_keys: 1;
-    /** Should we copy the key (using malloc)? */
-    unsigned int copy_objs: 1;
-  } settings;
-  /** Used to finalize elements before destruction */
+    unsigned int
+       copy_keys: 1,    /**< Should we copy the key (using malloc)? */
+       copy_objs: 1;    /**< Should we copy the key (using malloc)? */
+  } settings;           /**< Hash table settings */
+
   Task (*destroy)(BoxHTItem *);
-  /** function to get the hash from the key */
-  BoxHTFunc hash;
-  /** function to compare two keys */
-  BoxHTCmp cmp;
-  /** Pointer to the table */
-  BoxHTItem **item;
+                        /**< Used to finalize elements before destruction */
+  BoxHTFunc
+       hash;            /**< function to get the hash from the key */
+  BoxHTCmp
+       cmp;             /**< function to compare two keys */
+  BoxHTItem
+       **item;          /**< Pointer to the table */
 } BoxHT;
 
 typedef int (*BoxHTIterator)(BoxHTItem *item, void *pass_data);
 typedef Task (*BoxHTIterator2)(BoxHTItem *item, void *pass_data);
 
-unsigned int BoxHT_Default_Hash(void *key, size_t key_size);
-int BoxHT_Default_Cmp(void *key1, void *key2, size_t size1, size_t size2);
+unsigned int BoxHT_Default_Hash(const void *key, size_t key_size);
+int BoxHT_Default_Cmp(const void *key1, const void *key2,
+                      size_t size1, size_t size2);
 int BoxHT_Default_Action(BoxHTItem *hi, void *pass_data);
 
 /** Create a new hashtable.
@@ -111,6 +111,8 @@ void BoxHT_Destructor(BoxHT *ht, Task (*destroy)(BoxHTItem *));
 /** Most general function to add a new element to the hashtable.
  * key and object will be duplicated or not, depending on the settings
  * of the hash table (see BoxHT_Copy_Key, BoxHT_Copy_Obj).
+ * The function return the BoxHTItem corresponding to the newly inserted
+ * item.
  * @param ht the hash table.
  * @param branch number of the branch in the hash table (should be computed
  *  using the hash function). This is done by the macro BoxHT_Insert.
@@ -120,8 +122,9 @@ void BoxHT_Destructor(BoxHT *ht, Task (*destroy)(BoxHTItem *));
  * @param object_size size of the object.
  * @see BoxHT_Insert, BoxHT_Insert_Obj, BoxHT_Copy_Key, BoxHT_Copy_Obj
  */
-int BoxHT_Add(BoxHT *ht, unsigned int branch, void *key,
-              size_t key_size, void *object, size_t object_size);
+BoxHTItem *BoxHT_Add(BoxHT *ht, unsigned int branch,
+                     const void *key, size_t key_size,
+                     const void *object, size_t object_size);
 
 /** Remove the element matching the given key from the hash-table.
  */
@@ -166,15 +169,20 @@ Task BoxHT_Iter2(BoxHT *ht, int branch, BoxHTIterator2 it2, void *pass_data);
  */
 void BoxHT_Statistics(BoxHT *ht, FILE *out);
 
-/** When an object is added the key is copied by default (using malloc).
- * This function can be used to avoid this behaviour.
- */
-void BoxHT_Copy_Key(BoxHT *ht, int do_copy);
+/** Attributes used with BoxHT_Set_Attr to control the HT behaviour. */
+typedef enum {
+  BOXHTATTR_COPY_KEYS=1, /**< When an object is added with BoxHT_Add, the key
+                              is copied (using malloc and memcpy), if this
+                              attribute is set. */
+  BOXHTATTR_COPY_OBJS=2  /**< The object is copied on insertion, if this
+                              attribute is set. */
+} BoxHTAttr;
 
-/** When an object is added the object is copied by default (using malloc).
- * This function can be used to avoid this behaviour.
+/** Function used to set the attributes which control the behaviour of the
+ * hash table. 'attr_mask' specifies the attribute that should be changed
+ * while 'attr_set' specifies how to change them. Here is a list
  */
-void BoxHT_Copy_Obj(BoxHT *ht, int do_copy);
+void BoxHT_Set_Attr(BoxHT *ht, int attr_mask, int attr_set);
 
 /** Create an hash table using the default hashing function
  * and the default comparison function
@@ -207,7 +215,7 @@ void BoxHT_Copy_Obj(BoxHT *ht, int do_copy);
            (key), (key_size), (object), (object_size))
 
 /** Uses BoxHT_Iter to find the given key in the hash table.
- * item will be set with the pointer to found the BoxHTItem.
+ * item will be set with the pointer to the found BoxHTItem.
  * @see BoxHT_Iter
  */
 #define BoxHT_Find(ht, key, key_size, item) \

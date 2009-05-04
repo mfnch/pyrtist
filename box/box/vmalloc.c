@@ -172,9 +172,9 @@ Task BoxVM_Alloc_Method_Set(VMProgram *vmp, Int type, Int method, Int m_num) {
   k.type = type;
   k.method = method;
   /* Should I check for re-definition and how should I deal with that? */
-  if (!BoxHT_Insert_Obj(& vmp->method_table,
-                        & k, sizeof(Key),
-                        & m_num, sizeof(Int)))
+  if (NULL == BoxHT_Insert_Obj(& vmp->method_table,
+                               & k, sizeof(Key),
+                               & m_num, sizeof(Int)))
     return Failed;
   return Success;
 }

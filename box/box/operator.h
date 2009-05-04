@@ -23,13 +23,13 @@
  * A nice description...
  */
 
-#ifndef _OPERATOR_H
-#  define _OPERATOR_H
+#ifndef _OPERATOR_H_TYPES
+#  define _OPERATOR_H_TYPES
 
 #  include "typesys.h"
+#  include "value.h"
 #  include "new_compiler.h"
 #  include "ast.h"
-#  include "value.h"
 
 typedef enum {
   OPR_ATTR_NATIVE      = 1, /**< Is it a native operation (does the VM
@@ -81,6 +81,11 @@ typedef struct {
                                    expanded */
 } OprMatch;
 
+#endif /* _OPERATOR_H_TYPES */
+
+#if !defined(_OPERATOR_H_FNS) && !defined(_BOX_NDECL_FNS)
+#  define _OPERATOR_H_FNS
+
 /** INTERNAL: Called by BoxCmp_Init to initialise the operator table. */
 void BoxCmp_Init__Operators(BoxCmp *c);
 
@@ -101,4 +106,4 @@ void Operation_Attr_Set(Operation *opn, OprAttr mask, OprAttr attr);
 Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
                              Value *v_left, Value *v_right);
 
-#endif /* _OPERATOR_H */
+#endif /* _OPERATOR_H_FNS */

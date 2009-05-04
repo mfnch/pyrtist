@@ -35,12 +35,13 @@
 
 
 /* Default hash-function */
-unsigned int BoxHT_Default_Hash(void *key, size_t key_size) {
+unsigned int BoxHT_Default_Hash(const void *key, size_t key_size) {
   return hashlittle(key, key_size, 1);
 }
 
 /* Default comparison function */
-int BoxHT_Default_Cmp(void *key1, void *key2, size_t size1, size_t size2) {
+int BoxHT_Default_Cmp(const void *key1, const void *key2,
+                      size_t size1, size_t size2) {
   if (size1 != size2)
     return 0;
   else {
@@ -69,6 +70,7 @@ void BoxHT_Init(BoxHT *ht, unsigned int num_entries,
   int i, mask;
 
   assert(num_entries > 0);
+
   i = 1;
   mask = 0;
   do {
@@ -132,15 +134,15 @@ void BoxHT_Destructor(BoxHT *ht, Task (*destroy)(BoxHTItem *)) {
  * key and object will only be referenced by the hashtable (not copied),
  * so you should allocate/free by yourself if you need to do so.
  */
-int BoxHT_Add(BoxHT *ht, unsigned int branch,
-              void *key, size_t key_size,
-              void *object, size_t object_size) {
+BoxHTItem *BoxHT_Add(BoxHT *ht, unsigned int branch,
+                     const void *key, size_t key_size,
+                     const void *object, size_t object_size) {
   BoxHTItem *hi;
   assert(branch < ht->num_entries);
   hi = BoxMem_Alloc(sizeof(BoxHTItem));
 
   hi->key_size = key_size;
-  hi->key = key;
+  hi->key = (void *) key;
   hi->allocated.key = 0;
   if (ht->settings.copy_keys) {
     hi->key = BoxMem_Dup(key, key_size);
@@ -148,7 +150,7 @@ int BoxHT_Add(BoxHT *ht, unsigned int branch,
   }
 
   hi->object_size = object_size;
-  hi->object = object;
+  hi->object = (void *) object;
   hi->allocated.obj = 0;
   if (ht->settings.copy_objs && object_size > 0) {
     hi->object = BoxMem_Dup(object, object_size);
@@ -161,7 +163,7 @@ int BoxHT_Add(BoxHT *ht, unsigned int branch,
 #ifdef DEBUG
   fprintf(stderr, "Adding item to branch %d\n", branch);
 #endif
-  return 1;
+  return hi;
 }
 
 Task BoxHT_Remove(BoxHT *ht, void *key, unsigned int key_size) {
@@ -169,12 +171,16 @@ Task BoxHT_Remove(BoxHT *ht, void *key, unsigned int key_size) {
   unsigned int branch = ht->mask & ht->hash(key, key_size);
   hi_ptr = & ht->item[branch];
   while((hi = *hi_ptr) != NULL) {
-    if ( ht->cmp(hi->key, key, hi->key_size, key_size) ) {
-      *hi_ptr = hi->next;
-      if ( hi->allocated.key ) BoxMem_Free(hi->key);
-      if ( hi->allocated.obj ) BoxMem_Free(hi->object);
-      BoxMem_Free(hi);
-      return Success;
+    if (ht->cmp(hi->key, key, hi->key_size, key_size)) {
+      if (ht->destroy(hi) == Success) {
+        *hi_ptr = hi->next;
+        if (hi->allocated.key) BoxMem_Free(hi->key);
+        if (hi->allocated.obj) BoxMem_Free(hi->object);
+        BoxMem_Free(hi);
+        return Success;
+
+      } else
+        return Failed;
     }
     hi_ptr = & hi->next;
   }
@@ -200,15 +206,11 @@ Task BoxHT_Rename(BoxHT *ht, void *key, unsigned int key_size,
   return Success;
 }
 
-/*
- * do_copy: whether to copy the key when a new object is made
- */
-void BoxHT_Copy_Key(BoxHT *ht, int do_copy) {
-  ht->settings.copy_keys = do_copy;
-}
-
-void BoxHT_Copy_Obj(BoxHT *ht, int do_copy) {
-  ht->settings.copy_objs = do_copy;
+void BoxHT_Set_Attr(BoxHT *ht, int attr_mask, int attr_set) {
+  if ((attr_mask & BOXHTATTR_COPY_KEYS) != 0)
+    ht->settings.copy_keys = ((attr_set & BOXHTATTR_COPY_KEYS) != 0);
+  if ((attr_mask & BOXHTATTR_COPY_OBJS) != 0)
+    ht->settings.copy_objs = ((attr_set & BOXHTATTR_COPY_OBJS) != 0);
 }
 
 /* Iterate over one or all the branches of an hashtable 'ht':
@@ -230,13 +232,14 @@ int BoxHT_Iter(BoxHT *ht, int branch,
 
   } else {
     BoxHTItem *hi;
-    for(hi = ht->item[branch]; hi != NULL; hi = hi->next)
+    for(hi = ht->item[branch]; hi != NULL; hi = hi->next) {
       if ( ht->cmp(hi->key, key, hi->key_size, key_size) ) {
         if ( it(hi, pass_data) ) {
           if (result != NULL) *result = hi;
           return 1;
         }
       }
+    }
     return 0;
   }
 }

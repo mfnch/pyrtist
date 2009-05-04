@@ -27,6 +27,7 @@
 #include "value.h"
 #include "cmpproc.h"
 #include "operator.h"
+#include "namespace.h"
 #include "new_compiler.h"
 
 /** Type of items which may be inserted inside the compiler stack.
@@ -70,9 +71,11 @@ void BoxCmp_Init(BoxCmp *c) {
 
   CmpProc_Init(& c->main_proc, c);
   c->cur_proc = & c->main_proc;
+  Namespace_Init(& c->ns);
 }
 
 void BoxCmp_Finish(BoxCmp *c) {
+  Namespace_Finish(& c->ns);
   CmpProc_Get_Call_Num(& c->main_proc);
   VM_Proc_Disassemble_All(& c->vm, stdout);
   CmpProc_Finish(& c->main_proc);
@@ -156,6 +159,7 @@ Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos) {
 
 static void My_Compile_Any(BoxCmp *c, ASTNode *node);
 static void My_Compile_Const(BoxCmp *c, ASTNode *n);
+static void My_Compile_Var(BoxCmp *c, ASTNode *n);
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n);
 
 void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
@@ -178,6 +182,8 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
   switch(node->type) {
   case ASTNODETYPE_CONST:
     My_Compile_Const(c, node); break;
+  case ASTNODETYPE_VAR:
+    My_Compile_Var(c, node); break;
   case ASTNODETYPE_BINOP:
     My_Compile_BinOp(c, node); break;
   default:
@@ -186,10 +192,43 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
   }
 }
 
+/** Use 'Namespace_Add_Item' to add the value 'v' to the namespace. */
+void Namespace_Add_Value(Namespace *ns, NmspFloor floor,
+                         const char *item_name, Value *v);
+
+/** Get an item 'item_name' from the namespace, assuming this must be a
+ * Value.
+ */
+Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
+                           const char *item_name);
+
+static void My_Compile_Var(BoxCmp *c, ASTNode *n) {
+  Value *v;
+  char *item_name = n->attr.var.name;
+
+  assert(n->type = ASTNODETYPE_VAR);
+
+  v = Namespace_Get_Value(& c->ns, 0, item_name);
+  if (v != NULL) {
+    BoxCmp_Push_Value(c, v);
+    return;
+
+  } else {
+    printf("Unknown identifier '%s'\n", item_name);
+    v = Value_New(c);
+    Namespace_Add_Value(& c->ns, 0, item_name, v);
+    BoxCmp_Push_Error(c, 1);
+    return;
+  }
+
+  assert(0);
+  return;
+}
+
 static void My_Compile_Const(BoxCmp *c, ASTNode *n) {
   Value *v;
   assert(n->type = ASTNODETYPE_CONST);
-  v = Value_New();
+  v = Value_New(c);
   switch(n->attr.constant.type) {
   case ASTCONSTTYPE_CHAR:
     Value_Set_Imm_Char(v, n->attr.constant.value.c);
