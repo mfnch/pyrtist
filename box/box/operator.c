@@ -178,6 +178,15 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
 
     opn = Operator_Add_Opn(opr, BOXTYPE_REAL, BOXTYPE_REAL, BOXTYPE_INT);
     opn->implem.opcode = BOXGOP_EQ;
+
+    opr = BoxCmp_BinOp_Get(c, ASTBINOP_ASSIGN);
+
+    opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
+    opn->implem.opcode = BOXGOP_MOV;
+
+    opn = Operator_Add_Opn(opr, BOXTYPE_REAL, BOXTYPE_REAL, BOXTYPE_REAL);
+    opn->implem.opcode = BOXGOP_MOV;
+
   }
 }
 
@@ -213,7 +222,6 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
     TSCmp match_left, match_right;
     match_left = TS_Compare(& c->ts, opn->type_left, type_left);
     if (match_left != TS_TYPES_UNMATCH) {
-      printf("match left\n");
       if (opr_is_unary) {
           match->opr = opr;
           match->attr = opn->attr;
@@ -555,10 +563,9 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
     /* manca la valutazione della commutativita'! */
 
     return Cmp_Operation_Exec(opn, e1, e2);
-#endif
 
   } else if (op == ASTBINOP_ASSIGN) {
-    /*if (op != 0)
+   /*if (op != 0)
       goto Exec_Opn_Error;
 
     if IS_FAILED( Cmp_Expr_Expand(e1->type, e2) )
@@ -569,6 +576,7 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
 
     return e1;*/
     return NULL;
+#endif
 
   } else {
     MSG_ERROR("%~s %s %~s <-- Operation has not been defined!",

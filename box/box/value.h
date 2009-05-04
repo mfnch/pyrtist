@@ -52,8 +52,8 @@ typedef struct {
   BoxType   type;             /**< Type of the Value */
   struct {
     BoxCont   cont;           /**< Container */
-    char      *name;          /**< Name (if kind=VALUEKIND_IDENTIFIER) */
   }         value;            /**< Value of the container */
+  char      *name;            /**< Optional name of the value */
   struct {
     unsigned int
             new_or_init   :1, /**< Created with Value_New? (or Value_Init?) */
@@ -100,6 +100,21 @@ typedef enum {
   VALCONTTYPE_ARG, VALCONTTYPE_STACK
 } ValContType;
 
+/** Return the name (a string) corresponding to the given ValueKind. */
+const char *ValueKind_To_Str(ValueKind vk);
+
+/** Check that the given value is of the wanted kind. 'wanted' is a pointer
+ * to an array of 'num_wanted' ValueKind items. This array specifies what
+ * kinds the Value 'v' is expected to have.
+ * If the value has one of the wanted kind, returns 1, otherwise print an
+ * error message (such as "Got a x expression, but expecting w, y or z.")
+ * and returns 0.
+ */
+int Value_Want(Value *v, int num_wanted, ValueKind *wanted);
+
+/** Check that the given value 'v' has both type and value. */
+int Value_Want_Value(Value *v);
+
 /** This type is used to specify a container (see the macros CONTAINER_...) */
 typedef struct {
   ValContType type_of_container;
@@ -107,11 +122,16 @@ typedef struct {
               addr;
 } ValContainer;
 
+/** Set the value to an identifier with the given name. */
+void Value_Set_Identifier(Value *v, const char *name);
+
 void Value_Set_Imm_Char(Value *v, Char c);
 
 void Value_Set_Imm_Int(Value *v, Int i);
 
 void Value_Set_Imm_Real(Value *v, Real r);
+
+void Value_Container_Init(Value *v, BoxType type, ValContainer *vc);
 
 /** Return a new temporary Value created from the given Value 'v'.
  * NOTE: return a new value created with Value_New() or a new reference
@@ -123,5 +143,11 @@ Value *Value_Make_Temp(Value *v);
  * result)
  */
 int Value_Is_Temp(Value *v);
+
+/** Return 1 if the value is an identifier (has no type/value) */
+int Value_Is_Identifier(Value *v);
+
+/** Return 1 if the value is a lvalue (can be target of assignments) */
+int Value_Is_Target(Value *v);
 
 #endif /* _VALUE_H */

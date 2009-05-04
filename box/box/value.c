@@ -22,6 +22,7 @@
 
 #include "types.h"
 #include "mem.h"
+#include "print.h"
 #include "messages.h"
 #include "container.h"
 #include "new_compiler.h"
@@ -31,6 +32,7 @@ void Value_Init(Value *v, BoxCmp *cmp) {
   v->cmp = cmp;
   v->kind = VALUEKIND_ERR;
   v->type = BOXTYPE_NONE;
+  v->name = NULL;
   v->attr.new_or_init = 0;
   v->attr.own_register = 0;
   v->attr.own_reference = 0;
@@ -46,6 +48,9 @@ Value *Value_New(BoxCmp *cmp) {
 }
 
 static void My_Value_Finalize(Value *v) {
+  if (v->name != NULL)
+    BoxMem_Free(v->name);
+
   switch(v->kind) {
   case VALUEKIND_ERR:
     return;
@@ -99,6 +104,61 @@ Value *Value_Recycle(Value *v) {
 
   } else
     return Value_New(v->cmp);
+}
+
+const char *ValueKind_To_Str(ValueKind vk) {
+  switch(vk) {
+  case VALUEKIND_ERR: return "an error expression";
+  case VALUEKIND_IDENTIFIER: return "an undefined identifier";
+  case VALUEKIND_TYPE: return "a type expression";
+  case VALUEKIND_IMM: return "a constant expression";
+  case VALUEKIND_TEMP: return "an intermediate expression";
+  case VALUEKIND_TARGET: return "a target expression";
+  default: return "??? (unknown value kind)";
+  }
+}
+
+int Value_Want(Value *v, int num_wanted, ValueKind *wanted) {
+  char *wanted_str = NULL;
+  int i;
+
+  for(i = 0; i < num_wanted; i++)
+    if (v->kind == wanted[i]) return 1;
+
+  for(i = 0; i < num_wanted; i++) {
+    if (i == 0)
+      wanted_str = printdup("%s", ValueKind_To_Str(wanted[i]));
+    else {
+      char *sep = (i < num_wanted - 1) ? ", " : " or ";
+      wanted_str = printdup("%~s%s%s", wanted_str, sep,
+                            ValueKind_To_Str(wanted[i]));
+    }
+  }
+
+  MSG_ERROR("Expected %~s, but got %s.",
+            wanted_str, ValueKind_To_Str(v->kind));
+  return 0;
+}
+
+int Value_Want_Value(Value *v) {
+  switch(v->kind) {
+  case VALUEKIND_IMM: case VALUEKIND_TEMP: case VALUEKIND_TARGET:
+    return 1;
+  default:
+    if (v->name != NULL) {
+      MSG_ERROR("%s is undefined: an expression with both value and type is "
+                "expected here.", v->name);
+    } else {
+      MSG_ERROR("Got %s, but an expression with both value and type is "
+                "expected here.", ValueKind_To_Str(v->kind));
+    }
+    return 0;
+  }
+}
+
+void Value_Set_Identifier(Value *v, const char *name) {
+  v->kind = VALUEKIND_IDENTIFIER;
+  v->name = BoxMem_Strdup(name);
 }
 
 void Value_Set_Imm_Char(Value *v, Char c) {
@@ -256,4 +316,12 @@ Value *Value_Make_Temp(Value *v) {
 
 int Value_Is_Temp(Value *v) {
   return (v->kind == VALUEKIND_TEMP);
+}
+
+int Value_Is_Identifier(Value *v) {
+  return (v->kind == VALUEKIND_IDENTIFIER);
+}
+
+int Value_Is_Target(Value *v) {
+  return (v->kind == VALUEKIND_TARGET);
 }

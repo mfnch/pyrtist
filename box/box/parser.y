@@ -928,6 +928,7 @@ statement:
   | assign_type                  {$$ = ASTNodeStatement_New($1);}
   | expr                         {$$ = ASTNodeStatement_New($1);}
   | '\\' expr                    {$$ = ASTNodeStatement_New($2);}
+  | '[' statement_list ']'       {$$ = ASTNodeStatement_New($2);}
   | error sep                    {MSG_ERROR("Syntax error.");
                                   $$ = ASTNodeStatement_New(ASTNodeError_New());
                                   Tok_Unput(',');

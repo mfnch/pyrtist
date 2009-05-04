@@ -28,6 +28,7 @@
 #include "cmpproc.h"
 #include "operator.h"
 #include "namespace.h"
+#include "messages.h"
 #include "new_compiler.h"
 
 /** Type of items which may be inserted inside the compiler stack.
@@ -210,19 +211,19 @@ static void My_Compile_Var(BoxCmp *c, ASTNode *n) {
 
   v = Namespace_Get_Value(& c->ns, 0, item_name);
   if (v != NULL) {
+    Value_Link(v);
     BoxCmp_Push_Value(c, v);
     return;
 
   } else {
-    printf("Unknown identifier '%s'\n", item_name);
     v = Value_New(c);
+    Value_Set_Identifier(v, item_name);
     Namespace_Add_Value(& c->ns, 0, item_name, v);
-    BoxCmp_Push_Error(c, 1);
+    Value_Link(v); /* we own a link and we need to pass another link when
+                      pushing the value with BoxCmp_Push_Value  */
+    BoxCmp_Push_Value(c, v);
     return;
   }
-
-  assert(0);
-  return;
 }
 
 static void My_Compile_Const(BoxCmp *c, ASTNode *n) {
@@ -244,32 +245,46 @@ static void My_Compile_Const(BoxCmp *c, ASTNode *n) {
 }
 
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
-  Value *left, *right, *result;
-
   assert(n->type == ASTNODETYPE_BINOP);
 
   My_Compile_Any(c, n->attr.bin_op.left);
   My_Compile_Any(c, n->attr.bin_op.right);
-  if (BoxCmp_Pop_Errors(c, /* pop */ 2, /* push err */ 1)) return;
+  if (BoxCmp_Pop_Errors(c, /* pop */ 2, /* push err */ 1))
+    return;
 
-  /* Get values from stack */
-  right = BoxCmp_Get_Value(c, 0);
-  left  = BoxCmp_Get_Value(c, 1);
+  else {
+    Value *left, *right, *result = NULL;
+    ASTBinOp op;
 
-  if (1 /*left->is.typed && right->is.typed*/) {
-    result = BoxCmp_Opr_Emit_BinOp(c, n->attr.bin_op.operation, left, right);
+    /* Get values from stack */
+    right = BoxCmp_Get_Value(c, 0);
+    left  = BoxCmp_Get_Value(c, 1);
 
-  } else {
-    result = NULL;
-/*    if ( opr->can_define ) {
-      return Prs_Def_Operator(opr, rs, a, b);
+    op = n->attr.bin_op.operation;
+    if (op == ASTBINOP_ASSIGN) {
+      if (Value_Want_Value(right)) {
+        if (Value_Is_Identifier(left)) {
+          ValContainer vc = {VALCONTTYPE_LVAR, -1, 0};
+          Value_Container_Init(left, right->type, & vc);
+        }
+
+        if (Value_Is_Target(left)) {
+          printf("assembling assignment\n");
+          result = BoxCmp_Opr_Emit_BinOp(c, op, left, right);
+
+        } else
+          MSG_ERROR("Invalid target for assignment (got %s).",
+                    ValueKind_To_Str(left->kind));
+      }
+
     } else {
-      MSG_ERROR("The expression should have type!");
-      return Failed; */
-  }
+      if (Value_Want_Value(left) && Value_Want_Value(right))
+        result = BoxCmp_Opr_Emit_BinOp(c, op, left, right);
+    }
 
-  BoxCmp_Pop_Any(c, 2);
-  BoxCmp_Push_Value(c, result);
+    BoxCmp_Pop_Any(c, 2);
+    BoxCmp_Push_Value(c, result);
+  }
 }
 
 
