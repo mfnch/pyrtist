@@ -77,6 +77,7 @@ void BoxCmp_Init(BoxCmp *c) {
 
 void BoxCmp_Finish(BoxCmp *c) {
   Namespace_Finish(& c->ns);
+  Reg_Finish(& c->regs);
   CmpProc_Get_Call_Num(& c->main_proc);
   VM_Proc_Disassemble_All(& c->vm, stdout);
   CmpProc_Finish(& c->main_proc);
@@ -159,28 +160,22 @@ Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos) {
 }
 
 static void My_Compile_Any(BoxCmp *c, ASTNode *node);
+static void My_Compile_Box(BoxCmp *c, ASTNode *node);
 static void My_Compile_Const(BoxCmp *c, ASTNode *n);
 static void My_Compile_Var(BoxCmp *c, ASTNode *n);
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n);
 
 void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
-  ASTNode *s;
-
   if (program == NULL)
     return;
 
-  assert(program->type == ASTNODETYPE_BOX);
-
-  for(s = program->attr.box.first_statement;
-      s != NULL;
-      s = s->attr.statement.next_statement) {
-    assert(s->type == ASTNODETYPE_STATEMENT);
-    My_Compile_Any(c, s->attr.statement.target);
-  }
+  My_Compile_Any(c, program);
 }
 
 static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
   switch(node->type) {
+  case ASTNODETYPE_BOX:
+    My_Compile_Box(c, node); break;
   case ASTNODETYPE_CONST:
     My_Compile_Const(c, node); break;
   case ASTNODETYPE_VAR:
@@ -191,6 +186,24 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     printf("Compilation of node is not implemented, yet!\n");
     break;
   }
+}
+
+static void My_Compile_Box(BoxCmp *c, ASTNode *program) {
+  ASTNode *s;
+
+  assert(program->type == ASTNODETYPE_BOX);
+
+  Namespace_Floor_Up(& c->ns); /* variables defined in this box will be
+                                  destroyed when it gets closed! */
+
+  for(s = program->attr.box.first_statement;
+      s != NULL;
+      s = s->attr.statement.next_statement) {
+    assert(s->type == ASTNODETYPE_STATEMENT);
+    My_Compile_Any(c, s->attr.statement.target);
+  }
+
+  Namespace_Floor_Down(& c->ns);
 }
 
 /** Use 'Namespace_Add_Item' to add the value 'v' to the namespace. */
@@ -263,6 +276,9 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
     op = n->attr.bin_op.operation;
     if (op == ASTBINOP_ASSIGN) {
       if (Value_Want_Value(right)) {
+        /* If the value is an identifier (thing without type, nor value),
+         * then we transform it to a proper target.
+         */
         if (Value_Is_Identifier(left)) {
           ValContainer vc = {VALCONTTYPE_LVAR, -1, 0};
           Value_Container_Init(left, right->type, & vc);
@@ -273,7 +289,7 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
           result = BoxCmp_Opr_Emit_BinOp(c, op, left, right);
 
         } else
-          MSG_ERROR("Invalid target for assignment (got %s).",
+          MSG_ERROR("Invalid target for assignment (%s).",
                     ValueKind_To_Str(left->kind));
       }
 

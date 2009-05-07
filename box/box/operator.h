@@ -61,10 +61,19 @@ struct _operation_struc {
           *previous;       /**< Prevous operation */
 };
 
+/** Describes the scheme to follow when assemblying the operation */
+typedef enum {
+  OPASMSCHEME_STD_BIN,
+  OPASMSCHEME_STD_UN,
+  OPASMSCHEME_ASGN_BIN,
+  OPASMSCHEME_ASGN_UN
+} OpAsmScheme;
+
 struct _operator_struc {
-  OprAttr    attr;             /**< Operator attributes */
-  const char *name;            /**< Name of the operator */
-  Operation  *first_operation;
+  OprAttr     attr;             /**< Operator attributes */
+  OpAsmScheme asm_scheme;       /**< Scheme for assemblying the operation */
+  const char  *name;            /**< Name of the operator */
+  Operation   *first_operation;
 };
 
 /** Structure returned by BoxCmp_Operator_Find_Opn containing details about

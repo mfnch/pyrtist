@@ -137,7 +137,7 @@ Task Cmp_Parse(const char *file) {
 
 void Cmp_Destroy(void) {
   TS_Finish(cmp->ts);
-  Reg_Destroy(& cmp->ra);
+  Reg_Finish(& cmp->ra);
 
   BoxArr_Finish(& cmp->imm_segment);
   BoxArr_Finish(& cmp->allocd_oprs);

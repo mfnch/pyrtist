@@ -77,10 +77,11 @@ void Namespace_Floor_Down(Namespace *ns) {
 
   BoxArr_Pop(& ns->floors, & floor_data);
 
-
-  for(item = floor_data.first_item; item != NULL; item = item->next) {
-    printf("Removing \"%s\" from floor\n", (char *) item->ht_item->key);
-    BoxHT_Remove_By_HTItem(& ns->ht, item->ht_item);
+  for(item = floor_data.first_item; item != NULL;) {
+    NmspItem *item_to_del = item;
+    item = item->next;
+    printf("Removing \"%s\" from floor\n", (char *) item_to_del->ht_item->key);
+    BoxHT_Remove_By_HTItem(& ns->ht, item_to_del->ht_item);
   }
 }
 

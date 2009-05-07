@@ -165,7 +165,7 @@ void Reg_Init(RegAlloc *ra) {
     VarFrame_Init(& ra->gvar[i]);
 }
 
-void Reg_Destroy(RegAlloc *ra) {
+void Reg_Finish(RegAlloc *ra) {
   int i;
   BoxArr_Finish(& ra->reg_frame);
   for(i = 0; i < NUM_TYPES; i++)

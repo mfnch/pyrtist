@@ -67,7 +67,7 @@ typedef struct {
 } RegAlloc;
 
 void Reg_Init(RegAlloc *ra);
-void Reg_Destroy(RegAlloc *ra);
+void Reg_Finish(RegAlloc *ra);
 void Reg_Frame_Push(RegAlloc *ra);
 void Reg_Frame_Pop(RegAlloc *ra);
 Int Reg_Frame_Get(RegAlloc *ra);

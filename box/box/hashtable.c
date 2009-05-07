@@ -176,22 +176,20 @@ BoxHTItem *BoxHT_Add(BoxHT *ht, unsigned int branch,
 }
 
 Task BoxHT_Remove_By_HTItem(BoxHT *ht, BoxHTItem *hi) {
-  assert(ht != NULL && hi != NULL);
-  printf("BoxHT_Remove_By_HTItem\n");
-  if (ht->destroy(hi) == Success) {
-    /* Unchain the item */
-    *hi->link_to_this = hi->next;
-    if (hi->next != NULL)
-      hi->next->link_to_this = hi->link_to_this;
+  if (ht->destroy != NULL)
+    if (ht->destroy(hi) != Success)
+      return Failed;
 
-    /* Free key, object and finally the BoxHTItem structure */
-    if (hi->allocated.key) BoxMem_Free(hi->key);
-    if (hi->allocated.obj) BoxMem_Free(hi->object);
-    BoxMem_Free(hi);
-    return Success;
+  /* Unchain the item */
+  *hi->link_to_this = hi->next;
+  if (hi->next != NULL)
+    hi->next->link_to_this = hi->link_to_this;
 
-  } else
-    return Failed;
+  /* Free key, object and finally the BoxHTItem structure */
+  if (hi->allocated.key) BoxMem_Free(hi->key);
+  if (hi->allocated.obj) BoxMem_Free(hi->object);
+  BoxMem_Free(hi);
+  return Success;
 }
 
 Task BoxHT_Remove(BoxHT *ht, void *key, unsigned int key_size) {
@@ -242,7 +240,7 @@ void BoxHT_Set_Attr(BoxHT *ht, int attr_mask, int attr_set) {
 int BoxHT_Iter(BoxHT *ht, int branch,
                void *key, size_t key_size,
                BoxHTItem **result, BoxHTIterator it, void *pass_data) {
-  if ( branch < 0 ) {
+  if (branch < 0) {
     return 0;
 
   } else {

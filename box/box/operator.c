@@ -180,6 +180,7 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
     opn->implem.opcode = BOXGOP_EQ;
 
     opr = BoxCmp_BinOp_Get(c, ASTBINOP_ASSIGN);
+    Operator_Attr_Set(opr, OPR_ATTR_ASSIGNMENT, OPR_ATTR_ALL);
 
     opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
     opn->implem.opcode = BOXGOP_MOV;
@@ -279,33 +280,42 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
                           Value *v_left, Value *v_right) {
   if (opn->attr & OPR_ATTR_NATIVE) {
     if (opn->attr & OPR_ATTR_BINARY) {
-      /* If the operation is commutative and v_left is not an intermediate
-       * value, then we check if the v_right is a temporary value.
-       * If it is, we exchange the operands, since the op is commutative,
-       * and this will save us one VM operation.
-       */
-      if (opn->attr & OPR_ATTR_COMMUTATIVE && !Value_Is_Temp(v_left)) {
-        if (Value_Is_Temp(v_right)) {
-          Value *v = v_left;
-          v_left = v_right;
-          v_right = v;
+      if (opn->attr & OPR_ATTR_ASSIGNMENT)
+        Value_Link(v_left);
+
+      else {
+        /* If the operation is commutative and v_left is not an intermediate
+         * value, then we check if the v_right is a temporary value.
+         * If it is, we exchange the operands, since the op is commutative,
+         * and this will save us one VM operation.
+         */
+        if (opn->attr & OPR_ATTR_COMMUTATIVE && !Value_Is_Temp(v_left)) {
+          if (Value_Is_Temp(v_right)) {
+            Value *v = v_left;
+            v_left = v_right;
+            v_right = v;
+          }
         }
+
+        v_left = Value_Make_Temp(v_left);
       }
 
-      v_left = Value_Make_Temp(v_left);
       CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
                        2, & v_left->value.cont, & v_right->value.cont);
       return v_left;
 
     } else {
-      v_left = Value_Make_Temp(v_left);
+      if (opn->attr & OPR_ATTR_ASSIGNMENT)
+        Value_Link(v_left);
+      else
+        v_left = Value_Make_Temp(v_left);
       CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
                        1, & v_left->value.cont);
       return v_left;
     }
 
   } else {
-    MSG_FATAL("Non-native operators not supported, yet!");
+    MSG_FATAL("Non-native operators are not supported, yet!");
     assert(0);
   }
 
