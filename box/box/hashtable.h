@@ -39,7 +39,7 @@ typedef int (*BoxHTCmp)(const void *key1, const void *key2,
                         size_t size1, size_t size2);
 
 typedef struct ht {
-  struct ht *next;
+  struct ht *next, **link_to_this;
   struct {
     unsigned int key: 1;
     unsigned int obj: 1;
@@ -129,6 +129,12 @@ BoxHTItem *BoxHT_Add(BoxHT *ht, unsigned int branch,
 /** Remove the element matching the given key from the hash-table.
  */
 Task BoxHT_Remove(BoxHT *ht, void *key, unsigned int key_size);
+
+/** Remove the element from the hash-table by knowing the corresponding
+ * BoxHTItem (this function does not require to know the key, and thus
+ * does not perform an hash).
+ */
+Task BoxHT_Remove_By_HTItem(BoxHT *ht, BoxHTItem *hi);
 
 /** Rename the key keeping the old associated object:
  * The couple (old_key, old_object) is deleted and the new couple

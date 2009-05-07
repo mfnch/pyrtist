@@ -209,7 +209,7 @@ static void My_Compile_Var(BoxCmp *c, ASTNode *n) {
 
   assert(n->type = ASTNODETYPE_VAR);
 
-  v = Namespace_Get_Value(& c->ns, 0, item_name);
+  v = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, item_name);
   if (v != NULL) {
     Value_Link(v);
     BoxCmp_Push_Value(c, v);
@@ -218,7 +218,7 @@ static void My_Compile_Var(BoxCmp *c, ASTNode *n) {
   } else {
     v = Value_New(c);
     Value_Set_Identifier(v, item_name);
-    Namespace_Add_Value(& c->ns, 0, item_name, v);
+    Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, item_name, v);
     Value_Link(v); /* we own a link and we need to pass another link when
                       pushing the value with BoxCmp_Push_Value  */
     BoxCmp_Push_Value(c, v);

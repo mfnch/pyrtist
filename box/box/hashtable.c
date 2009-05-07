@@ -86,6 +86,7 @@ void BoxHT_Init(BoxHT *ht, unsigned int num_entries,
 #endif
 
   for(i = 0; i < num_entries; i++) hi[i] = NULL;
+
   ht->num_entries = num_entries;
   ht->mask = mask;
   ht->settings.copy_keys = 1;
@@ -137,7 +138,7 @@ void BoxHT_Destructor(BoxHT *ht, Task (*destroy)(BoxHTItem *)) {
 BoxHTItem *BoxHT_Add(BoxHT *ht, unsigned int branch,
                      const void *key, size_t key_size,
                      const void *object, size_t object_size) {
-  BoxHTItem *hi;
+  BoxHTItem *hi, *old_first;
   assert(branch < ht->num_entries);
   hi = BoxMem_Alloc(sizeof(BoxHTItem));
 
@@ -158,31 +159,48 @@ BoxHTItem *BoxHT_Add(BoxHT *ht, unsigned int branch,
   }
 
   /* Add the new item to the list */
-  hi->next = ht->item[branch];
+  /* Make the new item points to the next and to the right hashtable branch */
+  old_first = ht->item[branch];
+  hi->next = old_first;
+  hi->link_to_this = & ht->item[branch];
+
+  /* Adjust the chain */
+  if (old_first != NULL)
+    old_first->link_to_this = & hi->next;
   ht->item[branch] = hi;
+
 #ifdef DEBUG
   fprintf(stderr, "Adding item to branch %d\n", branch);
 #endif
   return hi;
 }
 
+Task BoxHT_Remove_By_HTItem(BoxHT *ht, BoxHTItem *hi) {
+  assert(ht != NULL && hi != NULL);
+  printf("BoxHT_Remove_By_HTItem\n");
+  if (ht->destroy(hi) == Success) {
+    /* Unchain the item */
+    *hi->link_to_this = hi->next;
+    if (hi->next != NULL)
+      hi->next->link_to_this = hi->link_to_this;
+
+    /* Free key, object and finally the BoxHTItem structure */
+    if (hi->allocated.key) BoxMem_Free(hi->key);
+    if (hi->allocated.obj) BoxMem_Free(hi->object);
+    BoxMem_Free(hi);
+    return Success;
+
+  } else
+    return Failed;
+}
+
 Task BoxHT_Remove(BoxHT *ht, void *key, unsigned int key_size) {
   BoxHTItem **hi_ptr, *hi;
   unsigned int branch = ht->mask & ht->hash(key, key_size);
   hi_ptr = & ht->item[branch];
-  while((hi = *hi_ptr) != NULL) {
-    if (ht->cmp(hi->key, key, hi->key_size, key_size)) {
-      if (ht->destroy(hi) == Success) {
-        *hi_ptr = hi->next;
-        if (hi->allocated.key) BoxMem_Free(hi->key);
-        if (hi->allocated.obj) BoxMem_Free(hi->object);
-        BoxMem_Free(hi);
-        return Success;
-
-      } else
-        return Failed;
-    }
-    hi_ptr = & hi->next;
+  for(hi = ht->item[branch]; hi != NULL; hi = hi->next) {
+    if (ht->cmp(hi->key, key, hi->key_size, key_size))
+      return BoxHT_Remove_By_HTItem(ht, hi);
   }
   return Failed;
 }
@@ -197,11 +215,8 @@ Task BoxHT_Rename(BoxHT *ht, void *key, unsigned int key_size,
   object_size = item->object_size;
   allocated_obj = item->allocated.obj;
   item->allocated.obj = 0;
-  TASK( BoxHT_Remove(ht, key, key_size) );
-  TASK( BoxHT_Insert(ht, new_key, new_key_size) );
-  TASK( BoxHT_Find(ht, new_key, new_key_size, & item) );
-  item->object = object;
-  item->object_size = object_size;
+  TASK( BoxHT_Remove_By_HTItem(ht, item) );
+  item = BoxHT_Insert_Obj(ht, new_key, new_key_size, object, object_size);
   item->allocated.obj = allocated_obj;
   return Success;
 }
@@ -254,7 +269,7 @@ int BoxHT_Iter(BoxHT *ht, int branch,
  *  ('action' returned with 1), 0 otherwise.
  */
 Task BoxHT_Iter2(BoxHT *ht, int branch, BoxHTIterator2 it2, void *pass_data) {
-  if ( branch < 0 ) {
+  if (branch < 0) {
     int i;
     for(i = 0; i < ht->num_entries; i++) {
       TASK( BoxHT_Iter2(ht, i, it2, pass_data) );
@@ -270,7 +285,7 @@ Task BoxHT_Iter2(BoxHT *ht, int branch, BoxHTIterator2 it2, void *pass_data) {
   }
 }
 
-static Task count_action(BoxHTItem *hi, void *branch_size) {
+static Task My_Count_Action(BoxHTItem *hi, void *branch_size) {
   ++*((int *) branch_size);
   return Success;
 }
@@ -280,11 +295,11 @@ void BoxHT_Statistics(BoxHT *ht, FILE *out) {
   int branch_size;
   fprintf(out, "--------------------\n");
   fprintf(out, "HASHTABLE STATISTICS:\n");
-  fprintf(out, "number of branches %d\n", ht->num_entries);
+  fprintf(out, "number of branches %d\n", (int) ht->num_entries);
   fprintf(out, "occupation status\n");
   for(i = 0; i < ht->num_entries; i++) {
     branch_size = 0;
-    (void) BoxHT_Iter2(ht, i, count_action, & branch_size);
+    (void) BoxHT_Iter2(ht, i, My_Count_Action, & branch_size);
     fprintf(out, "branch %d: %d\n", i, branch_size);
   }
   fprintf(out, "--------------------\n");

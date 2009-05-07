@@ -33,7 +33,7 @@
 /** Namespace floor. Each floor can have its own variables which live just
  * on that floor and are destroyed when the floor is destroyed.
  */
-typedef int NmspFloor;
+typedef size_t NmspFloor;
 
 /** Used to access a name from the default floor (the higher one where having
  * such a name)
@@ -55,6 +55,7 @@ typedef enum {
 typedef struct nmsp_item_s {
   struct nmsp_item_s
                 *next;     /**< Chain of all the names in the same floor */
+  BoxHTItem     *ht_item;  /**< Corresponding BoxHTItem (for quick removal) */
   NmspItemType  type;      /**< Type of item */
   void          *data;     /**< Pointer to the item data */
 } NmspItem;
@@ -76,10 +77,15 @@ Namespace *Namespace_New(void);
 /** Destroy an object created with Namespace_New. */
 void Namespace_Destroy(Namespace *ns);
 
+/** Create a new floor. A floor is a container for the temporary things
+ * which can be put in a namespace. When the floor is destroyed by calling
+ * 'Namespace_Floor_Down', all the associated names are removed from the
+ * namespace.
+ */
 void Namespace_Floor_Up(Namespace *ns);
 
+/** Destroy the active floor in the given namespace. */
 void Namespace_Floor_Down(Namespace *ns);
-
 
 /** Add a new item with name 'item_name' to the given floor of the namespace
  * and return the pointer to the corresponding NmspItem object.
@@ -103,9 +109,6 @@ Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
 #endif
 
 /*
-void Namespace_Add_Item(Namespace *ns, const char *item_name);
-
-void Namespace_Del_Item(Namespace *ns, const char *item_name);
 
 void Namespace_Plug(Namespace *ns, const char *name, Namespace *ns_to_plug);
 

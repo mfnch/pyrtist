@@ -27,14 +27,21 @@
 #include "namespace.h"
 #include "value.h"
 
+typedef struct {
+  NmspItem *first_item;
+} NmspFloorData;
+
 void Namespace_Init(Namespace *ns) {
   BoxHT_Init_Default(& ns->ht, 1024);
   BoxHT_Set_Attr(& ns->ht, BOXHTATTR_COPY_KEYS | BOXHTATTR_COPY_OBJS,
                  BOXHTATTR_COPY_KEYS | BOXHTATTR_COPY_OBJS);
-  BoxArr_Init(& ns->floors, sizeof(NmspItem *), 16);
+  BoxArr_Init(& ns->floors, sizeof(NmspFloorData), 16);
+  Namespace_Floor_Up(ns);
 }
 
 void Namespace_Finish(Namespace *ns) {
+  Namespace_Floor_Down(ns);
+  assert(BoxArr_Num_Items(& ns->floors) == 0);
   BoxArr_Finish(& ns->floors);
   BoxHT_Finish(& ns->ht);
 }
@@ -50,16 +57,46 @@ void Namespace_Destroy(Namespace *ns) {
   BoxMem_Free(ns);
 }
 
+static NmspFloorData *My_Get_Floor(Namespace *ns, NmspFloor f) {
+  if (f == NMSPFLOOR_DEFAULT)
+    return (NmspFloorData *) BoxArr_Last_Item_Ptr(& ns->floors);
+
+  else
+    return (NmspFloorData *) BoxArr_Item_Ptr(& ns->floors, f);
+}
+
+void Namespace_Floor_Up(Namespace *ns) {
+  NmspFloorData *floor_data =
+    (NmspFloorData *) BoxArr_Push(& ns->floors, NULL);
+  floor_data->first_item = NULL;
+}
+
+void Namespace_Floor_Down(Namespace *ns) {
+  NmspFloorData floor_data;
+  NmspItem *item;
+
+  BoxArr_Pop(& ns->floors, & floor_data);
+
+
+  for(item = floor_data.first_item; item != NULL; item = item->next) {
+    printf("Removing \"%s\" from floor\n", (char *) item->ht_item->key);
+    BoxHT_Remove_By_HTItem(& ns->ht, item->ht_item);
+  }
+}
+
 NmspItem *Namespace_Add_Item(Namespace *ns, NmspFloor floor,
                              const char *item_name) {
   size_t item_name_len = strlen(item_name) + 1;
   NmspItem dummy, *new_item;
   BoxHTItem *hi;
+  NmspFloorData *floor_data = My_Get_Floor(ns, floor);
 
   hi = BoxHT_Insert_Obj(& ns->ht, item_name, item_name_len,
                         & dummy, sizeof(NmspItem));
   new_item = (NmspItem *) hi->object;
-  /* link the name to the current floor */
+  new_item->ht_item = hi;
+  new_item->next = floor_data->first_item;
+  floor_data->first_item = new_item;
   return new_item;
 }
 
@@ -71,7 +108,6 @@ NmspItem *Namespace_Get_Item(Namespace *ns, NmspFloor floor,
     return (NmspItem *) ht_item->object;
   } else
     return NULL;
-
 }
 
 void Namespace_Add_Value(Namespace *ns, NmspFloor floor,
