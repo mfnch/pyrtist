@@ -55,6 +55,21 @@ void Operator_Finish(Operator *opr) {
   }
 }
 
+/** Guess the operation assembly scheme from the arguments and the other
+ * attributes of the operation.
+ */
+static void My_Guess_AsmScheme(Operation *opn) {
+  if (opn->attr & OPR_ATTR_NATIVE) {
+    if (opn->attr & OPR_ATTR_BINARY)
+      opn->asm_scheme = OPASMSCHEME_STD_BIN;
+    else
+      opn->asm_scheme = OPASMSCHEME_STD_UN;
+
+  } else {
+    opn->asm_scheme = OPASMSCHEME_UNKNOWN;
+  }
+}
+
 /** Change attributes for operator. 'mask' tells what attributes to change,
  * 'value' tells how to change them.
  */
@@ -67,6 +82,7 @@ void Operator_Attr_Set(Operator *opr, OprAttr mask, OprAttr attr) {
  */
 void Operation_Attr_Set(Operation *opn, OprAttr mask, OprAttr attr) {
   opn->attr = (opn->attr & (~mask)) | (attr & mask);
+  My_Guess_AsmScheme(opn);
 }
 
 /* Aggiunge una nuova operazione di tipo type1 opr type2
@@ -78,6 +94,7 @@ Operation *Operator_Add_Opn(Operator *opr, BoxType type_left,
   Operation *opn;
 
   opn = (Operation *) BoxMem_Safe_Alloc(sizeof(Operation));
+  opn->opr = opr;
   opn->attr = opr->attr;
   opn->type_left = type_left;
   opn->type_right = type_right;
@@ -90,10 +107,12 @@ Operation *Operator_Add_Opn(Operator *opr, BoxType type_left,
     opr->first_operation->previous = opn;
   opr->first_operation = opn;
 
+  My_Guess_AsmScheme(opn);
   return opn;
 }
 
 void Operator_Del_Opn(Operator *opr, Operation *opn) {
+  assert(opn->opr == opr);
   if (opn->next != NULL)
     opn->next->previous = opn->previous;
   if (opn->previous != NULL)
@@ -129,65 +148,6 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
     Operator *opr = BoxCmp_BinOp_Get(c, i);
     Operator_Init(opr, ASTBinOp_To_String(i));
     Operator_Attr_Set(opr, OPR_ATTR_ALL, OPR_ATTR_BINARY | OPR_ATTR_NATIVE);
-  }
-
-  if (1) { /* Temporary code */
-    Operator *opr;
-    Operation *opn;
-
-    opr = BoxCmp_BinOp_Get(c, ASTBINOP_ADD);
-
-    opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
-    Operation_Attr_Set(opn, OPR_ATTR_COMMUTATIVE, OPR_ATTR_ALL);
-    opn->implem.opcode = BOXGOP_ADD;
-
-    opn = Operator_Add_Opn(opr, BOXTYPE_REAL, BOXTYPE_REAL, BOXTYPE_REAL);
-    Operation_Attr_Set(opn, OPR_ATTR_COMMUTATIVE, OPR_ATTR_ALL);
-    opn->implem.opcode = BOXGOP_ADD;
-
-    opr = BoxCmp_BinOp_Get(c, ASTBINOP_SUB);
-
-    opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
-    opn->implem.opcode = BOXGOP_SUB;
-
-    opn = Operator_Add_Opn(opr, BOXTYPE_REAL, BOXTYPE_REAL, BOXTYPE_REAL);
-    opn->implem.opcode = BOXGOP_SUB;
-
-    opr = BoxCmp_BinOp_Get(c, ASTBINOP_MUL);
-
-    opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
-    Operation_Attr_Set(opn, OPR_ATTR_COMMUTATIVE, OPR_ATTR_ALL);
-    opn->implem.opcode = BOXGOP_MUL;
-
-    opn = Operator_Add_Opn(opr, BOXTYPE_REAL, BOXTYPE_REAL, BOXTYPE_REAL);
-    Operation_Attr_Set(opn, OPR_ATTR_COMMUTATIVE, OPR_ATTR_ALL);
-    opn->implem.opcode = BOXGOP_MUL;
-
-    opr = BoxCmp_BinOp_Get(c, ASTBINOP_DIV);
-
-    opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
-    opn->implem.opcode = BOXGOP_DIV;
-
-    opn = Operator_Add_Opn(opr, BOXTYPE_REAL, BOXTYPE_REAL, BOXTYPE_REAL);
-    opn->implem.opcode = BOXGOP_DIV;
-
-    opr = BoxCmp_BinOp_Get(c, ASTBINOP_EQ);
-
-    opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
-    opn->implem.opcode = BOXGOP_EQ;
-
-    opn = Operator_Add_Opn(opr, BOXTYPE_REAL, BOXTYPE_REAL, BOXTYPE_INT);
-    opn->implem.opcode = BOXGOP_EQ;
-
-    opr = BoxCmp_BinOp_Get(c, ASTBINOP_ASSIGN);
-    Operator_Attr_Set(opr, OPR_ATTR_ASSIGNMENT, OPR_ATTR_ALL);
-
-    opn = Operator_Add_Opn(opr, BOXTYPE_INT, BOXTYPE_INT, BOXTYPE_INT);
-    opn->implem.opcode = BOXGOP_MOV;
-
-    opn = Operator_Add_Opn(opr, BOXTYPE_REAL, BOXTYPE_REAL, BOXTYPE_REAL);
-    opn->implem.opcode = BOXGOP_MOV;
-
   }
 }
 
@@ -275,49 +235,76 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
 
 /** This is the function which actually emits the VM code for quite a number
  * of Operations.
+ * NOTE: this function assumes that the two operands have both type and values
+ *  and checks only if the left operand is a target value, if the operation
+ *  requires that.
  */
 static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
                           Value *v_left, Value *v_right) {
-  if (opn->attr & OPR_ATTR_NATIVE) {
-    if (opn->attr & OPR_ATTR_BINARY) {
-      if (opn->attr & OPR_ATTR_ASSIGNMENT)
+  Value *result = NULL;
+
+  switch(opn->asm_scheme) {
+  case OPASMSCHEME_STD_UN:
+    if (opn->attr & OPR_ATTR_ASSIGNMENT) {
+      if (Value_Is_Target(v_left))
         Value_Link(v_left);
 
       else {
-        /* If the operation is commutative and v_left is not an intermediate
-         * value, then we check if the v_right is a temporary value.
-         * If it is, we exchange the operands, since the op is commutative,
-         * and this will save us one VM operation.
-         */
-        if (opn->attr & OPR_ATTR_COMMUTATIVE && !Value_Is_Temp(v_left)) {
-          if (Value_Is_Temp(v_right)) {
-            Value *v = v_left;
-            v_left = v_right;
-            v_right = v;
-          }
-        }
-
-        v_left = Value_Make_Temp(v_left);
+        MSG_ERROR("Unary operator '%s' cannot modify its operand (%s)",
+                  opn->opr->name, ValueKind_To_Str(v_left->kind));
+        return NULL;
       }
 
-      CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
-                       2, & v_left->value.cont, & v_right->value.cont);
-      return v_left;
+    } else
+      v_left = Value_Make_Temp(v_left);
+    CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+                     1, & v_left->value.cont);
+    result = v_left;
+    break;
+
+  case OPASMSCHEME_STD_BIN:
+    assert((opn->attr & OPR_ATTR_NATIVE) && (opn->attr & OPR_ATTR_BINARY));
+    if (opn->attr & OPR_ATTR_ASSIGNMENT) {
+      if (Value_Is_Target(v_left))
+        Value_Link(v_left);
+
+      else {
+        MSG_ERROR("Binary operator '%s' cannot modify its left operand (%s)",
+                  opn->opr->name, ValueKind_To_Str(v_left->kind));
+        return NULL;
+      }
 
     } else {
-      if (opn->attr & OPR_ATTR_ASSIGNMENT)
-        Value_Link(v_left);
-      else
-        v_left = Value_Make_Temp(v_left);
-      CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
-                       1, & v_left->value.cont);
-      return v_left;
+      /* If the operation is commutative and v_left is not an intermediate
+       * value, then we check if the v_right is a temporary value.
+       * If it is, we exchange the operands, since the op is commutative,
+       * and this will save us one VM operation.
+       */
+      if (opn->attr & OPR_ATTR_COMMUTATIVE && !Value_Is_Temp(v_left)) {
+        if (Value_Is_Temp(v_right)) {
+          Value *v = v_left;
+          v_left = v_right;
+          v_right = v;
+        }
+      }
+
+      v_left = Value_Make_Temp(v_left);
     }
 
-  } else {
+    CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+                     2, & v_left->value.cont, & v_right->value.cont);
+    result = v_left;
+    break;
+
+  default:
     MSG_FATAL("Non-native operators are not supported, yet!");
     assert(0);
   }
+
+  if (opn->attr & OPR_ATTR_IGNORE_RES) {
+    Value_Set_Ignorable(result, 1);
+  }
+  return result;
 
 #if 0
   struct {
@@ -525,6 +512,38 @@ er_equal_e1:
 /** Compiles an operation between the two expression e1 and e2, where
  * the operator is opr.
  */
+Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
+  Operator *opr = BoxCmp_UnOp_Get(c, op);
+  Operation *opn;
+  OprMatch match;
+
+#if 0
+  /* Subtypes cannot be used for operator overloading, so we expand
+   * them anyway!
+   */
+  Expr_Resolve_Subtype(v);
+#endif
+
+  /* Now we search the operation */
+  opn = BoxCmp_Operator_Find_Opn(c, opr, & match,
+                                 v->type, BOXTYPE_NONE);
+  if (opn != NULL) {
+    /* Now we expand the types, if necessary */
+    if (match.match_left == TS_TYPES_EXPAND)
+      v = Value_Expand(v, match.expand_type_left);
+
+    return My_Opn_Emit(c, opn, v, v);
+
+  } else {
+    MSG_ERROR("%s%~s <-- Operation has not been defined!",
+              opr->name, TS_Name_Get(& c->ts, v->type));
+    return NULL;
+  }
+}
+
+/** Compiles an operation between the two expression e1 and e2, where
+ * the operator is opr.
+ */
 Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
                              Value *v_left, Value *v_right) {
   Operator *opr = BoxCmp_BinOp_Get(c, op);
@@ -532,18 +551,6 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
   OprMatch match;
 
 #if 0
-  /* Require operands have value. */
-  if (!v_left->is.value || !v_right->is.value) {
-    if (!v_left->is.value) {
-      MSG_ERROR("The expression on the left of '%s' "
-                "must have a definite value!", opr->name);
-    } else {
-      MSG_ERROR("The expression on the right of '%s' "
-                "must have a definite value!", opr->name);
-    }
-    return NULL;
-  }
-
   /* Subtypes cannot be used for operator overloading, so we expand
    * them anyway!
    */
@@ -555,38 +562,14 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
   opn = BoxCmp_Operator_Find_Opn(c, opr, & match,
                                  v_left->type, v_right->type);
   if (opn != NULL) {
-    /* Ora eseguo le espansioni, se necessario */
-    if (match.match_left == TS_TYPES_EXPAND) {
-      printf("BoxCmp_Opr_Emit_BinOp: Expansion not implemented, yet!");
-      return NULL;
-      /*if (Cmp_Expr_Expand(oi.exp_type1, e1) == BoxFailure) return NULL;*/
-    }
-    if (match.match_right == TS_TYPES_EXPAND) {
-      printf("BoxCmp_Opr_Emit_BinOp: Expansion not implemented, yet!");
-      return NULL;
-      /*if (Cmp_Expr_Expand(oi.exp_type2, e2) == BoxFailure) return NULL;*/
-    }
+    /* Now we expand the types, if necessary */
+    if (match.match_left == TS_TYPES_EXPAND)
+      v_left = Value_Expand(v_left, match.expand_type_left);
+
+    if (match.match_right == TS_TYPES_EXPAND)
+      v_right = Value_Expand(v_right, match.expand_type_right);
 
     return My_Opn_Emit(c, opn, v_left, v_right);
-
-#if 0
-    /* manca la valutazione della commutativita'! */
-
-    return Cmp_Operation_Exec(opn, e1, e2);
-
-  } else if (op == ASTBINOP_ASSIGN) {
-   /*if (op != 0)
-      goto Exec_Opn_Error;
-
-    if IS_FAILED( Cmp_Expr_Expand(e1->type, e2) )
-      return NULL;
-
-    if IS_FAILED(Expr_Move(e1, e2))
-      return NULL;
-
-    return e1;*/
-    return NULL;
-#endif
 
   } else {
     MSG_ERROR("%~s %s %~s <-- Operation has not been defined!",
@@ -594,5 +577,4 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
               TS_Name_Get(& c->ts, v_right->type));
     return NULL;
   }
-
 }

@@ -32,6 +32,7 @@
 
 #include "compiler.h"
 #include "cmpproc.h"
+#include "new_compiler.h"
 
 void CmpProc_Init(CmpProc *p, BoxCmp *c) {
   p->cmp = c;

@@ -71,7 +71,10 @@ enum {
   BOXTYPE_CHAR=0,
   BOXTYPE_INT,
   BOXTYPE_REAL,
-  BOXTYPE_POINT
+  BOXTYPE_POINT,
+  BOXTYPE_OBJ,
+  BOXTYPE_VOID,
+  BOXTYPE_CPTR
 };
 
 /** The 2D point type */
@@ -94,6 +97,10 @@ typedef union {
   BoxObj boxobj;
 } BoxValue;
 
+/** Type representing C pointers from Box */
+typedef void *BoxCPtr;
+
+/** Obsolete, to be replaced by BoxCPtr */
 typedef void *BoxPtr;
 
 /** Strings containing the printf formats for the various types */

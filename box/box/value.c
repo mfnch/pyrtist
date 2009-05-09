@@ -54,7 +54,8 @@ static void My_Value_Finalize(Value *v) {
   switch(v->kind) {
   case VALUEKIND_ERR:
     return;
-  case VALUEKIND_IDENTIFIER:
+  case VALUEKIND_TYPE_NAME:
+  case VALUEKIND_VAR_NAME:
     return;
   case VALUEKIND_TYPE:
     return;
@@ -109,7 +110,8 @@ Value *Value_Recycle(Value *v) {
 const char *ValueKind_To_Str(ValueKind vk) {
   switch(vk) {
   case VALUEKIND_ERR: return "an error expression";
-  case VALUEKIND_IDENTIFIER: return "an undefined identifier";
+  case VALUEKIND_VAR_NAME: return "an undefined variable";
+  case VALUEKIND_TYPE_NAME: return "an undefined type";
   case VALUEKIND_TYPE: return "a type expression";
   case VALUEKIND_IMM: return "a constant expression";
   case VALUEKIND_TEMP: return "an intermediate expression";
@@ -141,10 +143,10 @@ int Value_Want(Value *v, int num_wanted, ValueKind *wanted) {
 }
 
 int Value_Want_Value(Value *v) {
-  switch(v->kind) {
-  case VALUEKIND_IMM: case VALUEKIND_TEMP: case VALUEKIND_TARGET:
+  if (Value_Is_Value(v))
     return 1;
-  default:
+
+  else {
     if (v->name != NULL) {
       MSG_ERROR("%s is undefined: an expression with both value and type is "
                 "expected here.", v->name);
@@ -156,24 +158,34 @@ int Value_Want_Value(Value *v) {
   }
 }
 
-void Value_Set_Identifier(Value *v, const char *name) {
-  v->kind = VALUEKIND_IDENTIFIER;
+void Value_Setup_As_Var_Name(Value *v, const char *name) {
+  v->kind = VALUEKIND_VAR_NAME;
   v->name = BoxMem_Strdup(name);
 }
 
-void Value_Set_Imm_Char(Value *v, Char c) {
+void Value_Setup_As_Type_Name(Value *v, const char *name) {
+  v->kind = VALUEKIND_TYPE_NAME;
+  v->name = BoxMem_Strdup(name);
+}
+
+void Value_Setup_As_Type(Value *v, BoxType t) {
+  v->kind = VALUEKIND_TYPE;
+  v->value.cont.type = t;
+}
+
+void Value_Setup_As_Imm_Char(Value *v, Char c) {
   v->kind = VALUEKIND_IMM;
   v->type = BOXTYPE_CHAR;
   BoxCont_Set(& v->value.cont, "ic", c);
 }
 
-void Value_Set_Imm_Int(Value *v, Int i) {
+void Value_Setup_As_Imm_Int(Value *v, Int i) {
   v->kind = VALUEKIND_IMM;
   v->type = BOXTYPE_INT;
   BoxCont_Set(& v->value.cont, "ii", i);
 }
 
-void Value_Set_Imm_Real(Value *v, Real r) {
+void Value_Setup_As_Imm_Real(Value *v, Real r) {
   v->kind = VALUEKIND_IMM;
   v->type = BOXTYPE_REAL;
   BoxCont_Set(& v->value.cont, "ir", r);
@@ -314,14 +326,156 @@ Value *Value_Make_Temp(Value *v) {
   }
 }
 
+void Value_Set_Ignorable(Value *v, int ignorable) {
+  v->attr.ignore = ignorable;
+}
+
+int Value_Is_Err(Value *v) {
+  return (v->kind == VALUEKIND_ERR);
+}
+
 int Value_Is_Temp(Value *v) {
   return (v->kind == VALUEKIND_TEMP);
 }
 
-int Value_Is_Identifier(Value *v) {
-  return (v->kind == VALUEKIND_IDENTIFIER);
+int Value_Is_Var_Name(Value *v) {
+  return (v->kind == VALUEKIND_VAR_NAME);
+}
+
+int Value_Is_Type_Name(Value *v) {
+  return (v->kind == VALUEKIND_TYPE_NAME);
 }
 
 int Value_Is_Target(Value *v) {
   return (v->kind == VALUEKIND_TARGET);
+}
+
+int Value_Is_Value(Value *v) {
+  switch(v->kind) {
+  case VALUEKIND_IMM: case VALUEKIND_TEMP: case VALUEKIND_TARGET:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
+int Value_Is_Ignorable(Value *v) {
+  return v->attr.ignore;
+}
+
+Value *Value_Expand(Value *v, BoxType expansion_type) {
+  MSG_FATAL("Value_Expand: not implemented, yet");
+  assert(0);
+  return NULL;
+
+#if 0
+  Int type1, type2;
+
+  assert(e->is.typed && e->is.value);
+
+  type1 = species;
+  type2 = e->type;
+
+#ifdef DEBUG_SPECIES_EXPANSION
+  printf("Espando: '%s' --> '%s'\n",
+         Tym_Type_Names(e->type), Tym_Type_Names(species));
+#endif
+
+  if (type1 == type2) return Success;
+  type1 = Tym_Type_Resolve_Alias(type1);
+  type2 = Tym_Type_Resolve_All(type2);
+  if (type1 == type2) return Success;
+
+  switch(TS_Kind(cmp->ts, type1)) {
+  case TS_KIND_INTRINSIC: /* type1 != type2 !!! */
+    MSG_ERROR("Type forbidden in species conversions.");
+    return Failed;
+
+  case TS_KIND_POINTER:
+    MSG_ERROR("Not implemented yet!"); return Failed;
+    /*if (td2->tot == TOT_PTR_TO) break;
+    return 0;*/
+
+  case TS_KIND_ARRAY:
+    switch(TS_Compare(cmp->ts, type1, type2)) {
+    case TS_TYPES_EQUAL:
+    case TS_TYPES_MATCH:
+      return Success;
+    case TS_TYPES_EXPAND:
+      MSG_ERROR("Expansion of array of species is not implemented yet!");
+      return Failed;
+    default:
+      MSG_ERROR("Cmp_Expr_Expand: Expansion to array involves "
+                "an incompatible type.");
+      return Failed;
+    }
+
+  case TS_KIND_SPECIES: {
+      Int member_type = type1;
+      Int target_type = Tym_Specie_Get_Target(type1);
+      TASK(Tym_Specie_Get(& member_type));
+      while (member_type != TYPE_NONE) {
+        if ( Tym_Compare_Types(member_type, type2, NULL) ) {
+          TASK( Cmp_Expr_Expand(member_type, e) );
+          return Cmp_Conversion(e->type, target_type, e);
+        }
+        TASK( Tym_Specie_Get(& member_type) );
+      };
+      MSG_ERROR("Cannot expand the species!");
+      return Failed;
+    }
+
+  case TS_KIND_PROC:
+    MSG_ERROR("Not implemented yet!"); return Failed;
+    /*if (td2->tot != TOT_PROCEDURE) return 0;
+    return (
+          Tym_Compare_Types(td1->parent, td2->parent)
+      && Tym_Compare_Types(td1->target, td2->target) );*/
+
+  case TS_KIND_STRUCTURE: {
+    int need_expansion = 0;
+
+    /* Prima di eseguire la conversione verifico che si possa
+      * effettivamente fare!
+      */
+    if ( ! Tym_Compare_Types(type1, type2, & need_expansion) ) {
+      MSG_ERROR("Cmp_Expr_Expand: "
+                "Expansion involves incompatible types!");
+      return Failed;
+    }
+
+    /* We have to expand the structure: we have to create a new structure
+     * which can contain the expanded one.
+     */
+    if (need_expansion) {
+      int src_n, dest_n;
+      Expr new_struc, src_iter_e, dest_iter_e, src_e, dest_e;
+      Expr_Container_New(& new_struc, type1, CONTAINER_LREG_AUTO);
+      Expr_Alloc(& new_struc);
+      src_iter_e = *e;
+      dest_iter_e = new_struc;
+
+      Expr_Struc_Iter(& dest_e, & dest_iter_e, & dest_n);
+      Expr_Struc_Iter(& src_e, & src_iter_e, & src_n);
+      while (dest_n > 0) {
+        TASK( Cmp_Expr_Expand(dest_e.type, & src_e) );
+        TASK( Expr_Move(& dest_e, & src_e) );
+
+        Expr_Struc_Iter(& src_e, & src_iter_e, & src_n);
+        Expr_Struc_Iter(& dest_e, & dest_iter_e, & dest_n);
+      };
+
+      TASK( Cmp_Expr_Destroy_Tmp(e) );
+      *e = new_struc;
+    }
+    return Success;
+    }
+
+  default:
+    MSG_ERROR("Cmp_Expr_Expand not fully implemented!");
+    return Failed;
+  }
+
+  return Failed;
+#endif
 }

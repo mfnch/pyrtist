@@ -29,6 +29,7 @@
 #  include "types.h"
 #  include "array.h"
 #  include "hashtable.h"
+#  include "value.h"
 
 /** Namespace floor. Each floor can have its own variables which live just
  * on that floor and are destroyed when the floor is destroyed.
@@ -96,7 +97,6 @@ NmspItem *Namespace_Add_Item(Namespace *ns, NmspFloor floor,
 NmspItem *Namespace_Get_Item(Namespace *ns, NmspFloor floor,
                              const char *item_name);
 
-#if 0
 /** Use 'Namespace_Add_Item' to add the value 'v' to the namespace. */
 void Namespace_Add_Value(Namespace *ns, NmspFloor floor,
                          const char *item_name, Value *v);
@@ -106,7 +106,6 @@ void Namespace_Add_Value(Namespace *ns, NmspFloor floor,
  */
 Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
                            const char *item_name);
-#endif
 
 /*
 

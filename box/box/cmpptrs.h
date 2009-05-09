@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2006, 2008 by Matteo Franchin                              *
+ * Copyright (C) 2009 by Matteo Franchin                                    *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -17,38 +17,22 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file builtins.h
- * @brief Register built-in types and functions(calling other bltin modules).
+/** @file cmpptrs.h
+ * @brief Helper headers included by the sources of the core Box compiler.
  *
- * This file registers the fundamental types of Box, calling also the init
- * functions for other modules, such as bltinstr and bltinio.
+ * This header solve one problem: some objects such as CmpProc store a pointer
+ * to the corresponding compiler. This allows the user not to specify always
+ * the couple (BoxCmp, CmpProc). On the other side also the BoxCmp structure
+ * needs to store a pointer to CmpProc. Since we want to declare the two
+ * things in different headers we then have a problem: BoxCmp references
+ * CmpProc, which in turn references BoxCmp. So what object do we need to
+ * define first? The solution is to typedef BoxCmp as a pointer to an
+ * anonymous structure. This is what BoxCmp needs and this is what we do here.
  */
 
-#ifndef _BUILTINS_H
-#  define _BUILTINS_H
+#ifndef _CMPPTRS_H
+#  define _CMPPTRS_H
 
-#  include "types.h"
-#  include "cmpptrs.h"
+typedef struct _box_cmp BoxCmp;
 
-/* Important builtin types */
-extern Type type_Point, type_RealNum, type_IntNum, type_CharNum,
-            type_CharArray, type_Print;
-
-Task Builtins_Init(void);
-
-void Builtins_Destroy(void);
-
-/** Builtin types */
-typedef struct {
-  BoxType string,
-          species_int,
-          species_real,
-          species_point,
-          species_string;
-} BltinStuff;
-
-void Bltin_Init(BoxCmp *c);
-
-void Bltin_Finish(BoxCmp *c);
-
-#endif
+#endif /* _CMPPTRS_H */

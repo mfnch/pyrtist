@@ -714,3 +714,185 @@ static Task Vec_RealNum(VMProgram *vmp) {
   p->y = sin(angle);
   return Success;
 }
+
+/****************************************************************************/
+/* NEW COMPILER */
+
+#include "typesys.h"
+#include "value.h"
+#include "operator.h"
+#include "namespace.h"
+#include "new_compiler.h"
+
+/* Define some core types such as Int, Real and Point (for example, define
+ * Int as (Char->Int) and Real as (Char->Int->Real)).
+ */
+static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
+  /* Define Int */
+  TS_Species_Begin(ts, & b->species_int);
+  TS_Species_Add(ts, b->species_int, BOXTYPE_CHAR);
+  TS_Species_Add(ts, b->species_int, BOXTYPE_INT);
+
+  /* Define Real */
+  TS_Species_Begin(ts, & b->species_real);
+  TS_Species_Add(ts, b->species_int, BOXTYPE_CHAR);
+  TS_Species_Add(ts, b->species_int, BOXTYPE_INT);
+  TS_Species_Add(ts, b->species_int, BOXTYPE_REAL);
+}
+
+/* Register the core types in the current namespace, so that Box programs
+ * can access and use them.
+ */
+static void My_Register_Core_Types(BoxCmp *c) {
+  struct {
+    const char *name;
+    Type       type;
+
+  } *type_to_register, types_to_register[] = {
+    {"CHAR",        BOXTYPE_CHAR},
+    {"INT",         BOXTYPE_INT},
+    {"REAL",        BOXTYPE_REAL},
+    {"POINT",       BOXTYPE_POINT},
+    {"Int",         c->bltin.species_int},
+    {"Real",        c->bltin.species_real},
+    {"Void",        BOXTYPE_VOID},
+    {(char *) NULL, BOXTYPE_NONE}
+  };
+
+  for(type_to_register = & types_to_register[0];
+      type_to_register->name != NULL;
+      ++type_to_register) {
+    Value *v = Value_New(c);
+    Value_Setup_As_Type(v, type_to_register->type);
+    Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT,
+                        type_to_register->name, v);
+    Value_Unlink(v);
+  }
+}
+
+/* Used to make the table of operations more compact in
+ * My_Register_BinOps. This function maps a character to a BoxType
+ * value. Example: My_Type_Of_Char(c, 'I') returns BOXTYPE_INT,
+ * My_Type_Of_Char(c, 'R') returns BOXTYPE_REAL, etc.
+ */
+static BoxType My_Type_Of_Char(BoxCmp *c, char t) {
+  switch(t) {
+  case ' ': return BOXTYPE_NONE;
+  case 'C': return BOXTYPE_CHAR;
+  case 'I': return BOXTYPE_INT;
+  case 'R': return BOXTYPE_REAL;
+  case 'P': return BOXTYPE_POINT;
+  case 'i': return BOXTYPE_INT; /*c->bltin.species_int;*/
+  case 'r': return BOXTYPE_REAL; /*c->bltin.species_real;*/
+  case 'p': return c->bltin.species_point;
+  default:
+    MSG_FATAL("My_Type_Of_Char: unexpected character.");
+    assert(0);
+    return BOXTYPE_NONE;
+  }
+}
+
+static OprAttr My_OprAttr_Of_Str(const char *s) {
+  if (s == NULL)
+    return OPR_ATTR_ALL;
+
+  else {
+    OprAttr a = 0;
+    for(;*s != '\0'; s++) {
+      switch(*s) {
+      case 'a': a |= OPR_ATTR_ASSIGNMENT; break;
+      case 'i': a |= OPR_ATTR_IGNORE_RES; break;
+      case 'c': a |= OPR_ATTR_COMMUTATIVE; break;
+      default:
+        MSG_FATAL("My_OprAttr_Of_Str: error parsing string.");
+        assert(0);
+        return BOXTYPE_NONE;
+      }
+    }
+    return a;
+  }
+}
+
+/* Register all the core unary operations for the Box compiler. */
+static void My_Register_UnOps(BoxCmp *c) {
+  struct {
+    const char *types; /* Two characters describing the types of the result
+                          and of the operand, following the map character->type
+                          implemented by My_Type_Of_Char) */
+    ASTUnOp    op;     /* Operator to which the operation refers */
+    const char *mask,  /* Mask of attributes (a string which is converted
+                          to an OprAttr by calling My_OprAttr_Of_Str) */
+               *attr;  /* Attributes to set */
+    BoxGOp     g_op;   /* Generic opcode to use for assembling the operation */
+
+  } *unop, unops[] = {
+    { "Rr",  ASTUNOP_NEG,   "", NULL, BOXGOP_NEG},
+    { "Ii",  ASTUNOP_NEG,   "", NULL, BOXGOP_NEG},
+    { "Rr", ASTUNOP_LINC, "ai", NULL, BOXGOP_INC},
+    { "Ii", ASTUNOP_LINC, "ai", NULL, BOXGOP_INC},
+    { NULL,            0, NULL, NULL,          0}
+  };
+
+  for(unop = & unops[0]; unop->types != NULL; ++unop) {
+    Operator *opr = BoxCmp_UnOp_Get(c, unop->op);
+    BoxType result = My_Type_Of_Char(c, unop->types[0]),
+            operand = My_Type_Of_Char(c, unop->types[1]);
+    OprAttr mask = My_OprAttr_Of_Str(unop->mask),
+            attr = My_OprAttr_Of_Str(unop->attr);
+    Operation *opn = Operator_Add_Opn(opr, operand, BOXTYPE_NONE, result);
+    Operation_Attr_Set(opn, mask, attr);
+    opn->implem.opcode = unop->g_op;
+  }
+}
+
+/* Register all the core binary operations for the Box compiler. */
+static void My_Register_BinOps(BoxCmp *c) {
+  struct {
+    const char *types; /* Three characters describing the types of the result,
+                          of the left and right operands (following the map
+                          character->type implemented by My_Type_Of_Char) */
+    ASTBinOp   op;     /* Operator to which the operation refers */
+    const char *mask,  /* Mask of attributes (a string which is converted
+                          to an OprAttr by calling My_OprAttr_Of_Str) */
+               *attr;  /* Attributes to set */
+    BoxGOp     g_op;   /* Generic opcode to use for assembling the operation */
+
+  } *binop, binops[] = {
+    {"Rrr", ASTBINOP_ASSIGN, "ai", NULL, BOXGOP_MOV},
+    {"Iii", ASTBINOP_ASSIGN, "ai", NULL, BOXGOP_MOV},
+    {"Rrr",    ASTBINOP_ADD,  "c", NULL, BOXGOP_ADD},
+    {"Iii",    ASTBINOP_ADD,  "c", NULL, BOXGOP_ADD},
+    {"Rrr",    ASTBINOP_SUB,   "", NULL, BOXGOP_SUB},
+    {"Iii",    ASTBINOP_SUB,   "", NULL, BOXGOP_SUB},
+    {"Rrr",    ASTBINOP_MUL,  "c", NULL, BOXGOP_MUL},
+    {"Iii",    ASTBINOP_MUL,  "c", NULL, BOXGOP_MUL},
+    {"Rrr",    ASTBINOP_DIV,   "", NULL, BOXGOP_DIV},
+    {"Iii",    ASTBINOP_DIV,   "", NULL, BOXGOP_DIV},
+    {"Rrr",     ASTBINOP_EQ,  "c", NULL,  BOXGOP_EQ},
+    {"Iii",     ASTBINOP_EQ,  "c", NULL,  BOXGOP_EQ},
+    { NULL,               0, NULL, NULL,          0}
+  };
+
+  for(binop = & binops[0]; binop->types != NULL; ++binop) {
+    Operator *opr = BoxCmp_BinOp_Get(c, binop->op);
+    BoxType result = My_Type_Of_Char(c, binop->types[0]),
+            left = My_Type_Of_Char(c, binop->types[1]),
+            right = My_Type_Of_Char(c, binop->types[2]);
+    OprAttr mask = My_OprAttr_Of_Str(binop->mask),
+            attr = My_OprAttr_Of_Str(binop->attr);
+    Operation *opn = Operator_Add_Opn(opr, left, right, result);
+    Operation_Attr_Set(opn, mask, attr);
+    opn->implem.opcode = binop->g_op;
+  }
+}
+
+/* Register bultin types, operation and functions */
+void Bltin_Init(BoxCmp *c) {
+  My_Define_Core_Types(& c->bltin, & c->ts);
+  My_Register_Core_Types(c);
+  My_Register_UnOps(c);
+  My_Register_BinOps(c);
+}
+
+void Bltin_Finish(BoxCmp *c) {
+}

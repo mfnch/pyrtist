@@ -34,11 +34,12 @@
 
 #  include "types.h"
 #  include "container.h"
-#  include "new_compiler.h"
+#  include "cmpptrs.h"
 
 typedef enum {
   VALUEKIND_ERR,              /**< An error */
-  VALUEKIND_IDENTIFIER,       /**< An identifier (no type, no value) */
+  VALUEKIND_VAR_NAME,         /**< A variable name (no type, no value) */
+  VALUEKIND_TYPE_NAME,        /**< A variable name (no type, no value) */
   VALUEKIND_TYPE,             /**< A type (no value) */
   VALUEKIND_IMM,              /**< A constant numerical value */
   VALUEKIND_TEMP,             /**< A temporary value */
@@ -122,14 +123,20 @@ typedef struct {
               addr;
 } ValContainer;
 
-/** Set the value to an identifier with the given name. */
-void Value_Set_Identifier(Value *v, const char *name);
+/** Set the value to a variable with the given name. */
+void Value_Setup_As_Var_Name(Value *v, const char *name);
 
-void Value_Set_Imm_Char(Value *v, Char c);
+/** Set the value to a type with the given name. */
+void Value_Setup_As_Type_Name(Value *v, const char *name);
 
-void Value_Set_Imm_Int(Value *v, Int i);
+/** Set the value to represent the given type */
+void Value_Setup_As_Type(Value *v, BoxType t);
 
-void Value_Set_Imm_Real(Value *v, Real r);
+void Value_Setup_As_Imm_Char(Value *v, Char c);
+
+void Value_Setup_As_Imm_Int(Value *v, Int i);
+
+void Value_Setup_As_Imm_Real(Value *v, Real r);
 
 void Value_Container_Init(Value *v, BoxType type, ValContainer *vc);
 
@@ -139,15 +146,32 @@ void Value_Container_Init(Value *v, BoxType type, ValContainer *vc);
  */
 Value *Value_Make_Temp(Value *v);
 
+/** Set the ignorable flag for the value. */
+void Value_Set_Ignorable(Value *v, int ignorable);
+
+/** Return 1 if the value represents an error. */
+int Value_Is_Err(Value *v);
+
 /** Return 1 if the value is a temporary value (it stores an intermediate
  * result)
  */
 int Value_Is_Temp(Value *v);
 
-/** Return 1 if the value is an identifier (has no type/value) */
-int Value_Is_Identifier(Value *v);
+/** Return 1 if the value is a variable name (has no type/value) */
+int Value_Is_Var_Name(Value *v);
+
+/** Return 1 if the value is a type name (has no type/value) */
+int Value_Is_Type_Name(Value *v);
 
 /** Return 1 if the value is a lvalue (can be target of assignments) */
 int Value_Is_Target(Value *v);
+
+/** Return 1 if the value has both type and value */
+int Value_Is_Value(Value *v);
+
+/** Whether the object's value should be ignored or not. */
+int Value_Is_Ignorable(Value *v);
+
+Value *Value_Expand(Value *v, BoxType expansion_type);
 
 #endif /* _VALUE_H */

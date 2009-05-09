@@ -80,7 +80,6 @@ void Namespace_Floor_Down(Namespace *ns) {
   for(item = floor_data.first_item; item != NULL;) {
     NmspItem *item_to_del = item;
     item = item->next;
-    printf("Removing \"%s\" from floor\n", (char *) item_to_del->ht_item->key);
     BoxHT_Remove_By_HTItem(& ns->ht, item_to_del->ht_item);
   }
 }
@@ -117,12 +116,16 @@ void Namespace_Add_Value(Namespace *ns, NmspFloor floor,
   assert(new_item != NULL);
   new_item->type = NMSPITEMTYPE_VALUE;
   new_item->data = v;
+  Value_Link(v); /* we now own a further reference to the value */
 }
 
 Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
                            const char *item_name) {
   NmspItem *new_item = Namespace_Get_Item(ns, floor, item_name);
+  Value *v;
   if (new_item == NULL) return NULL;
   assert(new_item->type == NMSPITEMTYPE_VALUE);
-  return (Value *) new_item->data;
+  v = (Value *) new_item->data;
+  Value_Link(v); /* we also return a new reference to the value */
+  return v;
 }

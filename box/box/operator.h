@@ -28,28 +28,44 @@
 
 #  include "typesys.h"
 #  include "value.h"
-#  include "new_compiler.h"
 #  include "ast.h"
+#  include "cmpptrs.h"
 
 typedef enum {
-  OPR_ATTR_NATIVE      = 1, /**< Is it a native operation (does the VM
-                                 implement the operation with dedicated
-                                 instruction or should we use a procedure)? */
-  OPR_ATTR_BINARY      = 2, /**< Is it a binary or unary operator? */
-  OPR_ATTR_COMMUTATIVE = 4, /**< Is it a commutative operator? */
-  OPR_ATTR_ASSIGNMENT  = 8, /**< Is it an assignment operator? */
-  OPR_ATTR_ALL         = 15 /**< Used as the full mask */
+  OPR_ATTR_NATIVE      = 1,  /**< Is it a native operation: does the VM
+                                  implement the operation with dedicated
+                                  instruction or should we use a procedure? */
+  OPR_ATTR_BINARY      = 2,  /**< Is it a binary or unary operator? */
+  OPR_ATTR_COMMUTATIVE = 4,  /**< Is it a commutative operator? */
+  OPR_ATTR_ASSIGNMENT  = 8,  /**< Is it an assignment operator? (is it
+                                  supposed to change its operand?) */
+  OPR_ATTR_IGNORE_RES  = 16, /**< Is the result ignorable? */
+  OPR_ATTR_ALL         = 31  /**< Used as the full mask */
 } OprAttr;
+
+/** Describes the scheme to follow when assemblying the operation */
+typedef enum {
+  OPASMSCHEME_STD_UN,
+  OPASMSCHEME_STD_BIN,
+  OPASMSCHEME_ASGN_BIN,
+  OPASMSCHEME_ASGN_UN,
+  OPASMSCHEME_UNKNOWN
+} OpAsmScheme;
 
 typedef struct _operation_struc Operation;
 typedef struct _operator_struc Operator;
 
 struct _operation_struc {
+  Operator *opr;           /**< The corresponding operator */
+
   OprAttr attr;            /**< Attributes overridden from operation */
 
   BoxType type_left,       /**< Type of the left operand */
           type_right,      /**< Type of the right operand */
           type_result;     /**< Type of the result */
+
+  OpAsmScheme
+          asm_scheme;      /**< Scheme for assemblying the operation */
 
   union {
     BoxGOp  opcode;        /**< Bytecode instrucion associated with the op. */
@@ -61,17 +77,8 @@ struct _operation_struc {
           *previous;       /**< Prevous operation */
 };
 
-/** Describes the scheme to follow when assemblying the operation */
-typedef enum {
-  OPASMSCHEME_STD_BIN,
-  OPASMSCHEME_STD_UN,
-  OPASMSCHEME_ASGN_BIN,
-  OPASMSCHEME_ASGN_UN
-} OpAsmScheme;
-
 struct _operator_struc {
   OprAttr     attr;             /**< Operator attributes */
-  OpAsmScheme asm_scheme;       /**< Scheme for assemblying the operation */
   const char  *name;            /**< Name of the operator */
   Operation   *first_operation;
 };
@@ -111,6 +118,20 @@ void Operator_Attr_Set(Operator *opr, OprAttr mask, OprAttr attr);
  */
 void Operation_Attr_Set(Operation *opn, OprAttr mask, OprAttr attr);
 
+/** Add a new operation with the given type of operands and results
+ * to the operator 'opr'.
+ * NOTE: for a unary operator type_right is ignore (BOXTYPE_NONE can be used).
+ */
+Operation *Operator_Add_Opn(Operator *opr, BoxType type_left,
+                            BoxType type_right, BoxType type_result);
+
+/** Get the Operator object corresponding to the given ASTBinOp constant. */
+Operator *BoxCmp_BinOp_Get(BoxCmp *c, ASTBinOp bin_op);
+
+/** Get the Operator object corresponding to the given ASTUnOp constant. */
+Operator *BoxCmp_UnOp_Get(BoxCmp *c, ASTUnOp un_op);
+
+Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v);
 
 Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
                              Value *v_left, Value *v_right);

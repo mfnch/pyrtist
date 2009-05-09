@@ -73,9 +73,11 @@ void BoxCmp_Init(BoxCmp *c) {
   CmpProc_Init(& c->main_proc, c);
   c->cur_proc = & c->main_proc;
   Namespace_Init(& c->ns);
+  Bltin_Init(c);
 }
 
 void BoxCmp_Finish(BoxCmp *c) {
+  Bltin_Finish(c);
   Namespace_Finish(& c->ns);
   Reg_Finish(& c->regs);
   CmpProc_Get_Call_Num(& c->main_proc);
@@ -155,14 +157,26 @@ void BoxCmp_Push_Value(BoxCmp *c, Value *v) {
 Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos) {
   BoxInt n = BoxArr_Num_Items(& c->stack);
   StackItem *si = BoxArr_Item_Ptr(& c->stack, n - pos);
-  assert(si->type == STACKITEM_VALUE);
-  return (Value *) si->item;
+  switch(si->type) {
+  case STACKITEM_ERROR:
+    return Value_New(c); /* return an error value */
+
+  case STACKITEM_VALUE:
+    return (Value *) si->item;
+
+  default:
+    MSG_FATAL("BoxCmp_Get_Value: want value, but top of stack contains "
+              "incompatible item.");
+    assert(0);
+  }
 }
 
 static void My_Compile_Any(BoxCmp *c, ASTNode *node);
+static void My_Compile_TypeName(BoxCmp *c, ASTNode *node);
 static void My_Compile_Box(BoxCmp *c, ASTNode *node);
 static void My_Compile_Const(BoxCmp *c, ASTNode *n);
 static void My_Compile_Var(BoxCmp *c, ASTNode *n);
+static void My_Compile_UnOp(BoxCmp *c, ASTNode *n);
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n);
 
 void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
@@ -174,12 +188,16 @@ void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
 
 static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
   switch(node->type) {
+  case ASTNODETYPE_TYPENAME:
+    My_Compile_TypeName(c, node); break;
   case ASTNODETYPE_BOX:
     My_Compile_Box(c, node); break;
   case ASTNODETYPE_CONST:
     My_Compile_Const(c, node); break;
   case ASTNODETYPE_VAR:
     My_Compile_Var(c, node); break;
+  case ASTNODETYPE_UNOP:
+    My_Compile_UnOp(c, node); break;
   case ASTNODETYPE_BINOP:
     My_Compile_BinOp(c, node); break;
   default:
@@ -188,33 +206,65 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
   }
 }
 
-static void My_Compile_Box(BoxCmp *c, ASTNode *program) {
+static void My_Compile_TypeName(BoxCmp *c, ASTNode *n) {
+  Value *v;
+  char *type_name = n->attr.var.name;
+  NmspFloor f;
+
+  assert(n->type == ASTNODETYPE_TYPENAME);
+
+  f = NMSPFLOOR_DEFAULT;
+  v = Namespace_Get_Value(& c->ns, f, type_name);
+  if (v != NULL) {
+    BoxCmp_Push_Value(c, v);
+    return;
+
+  } else {
+    v = Value_New(c);
+    Value_Setup_As_Type_Name(v, type_name);
+    Namespace_Add_Value(& c->ns, f, type_name, v);
+    BoxCmp_Push_Value(c, v);
+    return;
+  }
+}
+
+static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
   ASTNode *s;
 
-  assert(program->type == ASTNODETYPE_BOX);
+  assert(box->type == ASTNODETYPE_BOX);
+
+  if (box->attr.box.parent == NULL) {
+    printf("parent of box is NULL\n");
+
+  } else {
+    My_Compile_Any(c, box->attr.box.parent);
+
+    BoxCmp_Pop_Any(c, 1);
+  }
 
   Namespace_Floor_Up(& c->ns); /* variables defined in this box will be
                                   destroyed when it gets closed! */
 
-  for(s = program->attr.box.first_statement;
+  for(s = box->attr.box.first_statement;
       s != NULL;
       s = s->attr.statement.next_statement) {
+    Value *stmt_val;
+
     assert(s->type == ASTNODETYPE_STATEMENT);
+
     My_Compile_Any(c, s->attr.statement.target);
+    stmt_val = BoxCmp_Get_Value(c, 0);
+    if (Value_Is_Err(stmt_val) || Value_Is_Ignorable(stmt_val))
+      BoxCmp_Pop_Any(c, 1);
+
+    else {
+      MSG_ERROR("My_Compile_Box not implemented: proc not called!");
+      BoxCmp_Pop_Any(c, 1);
+    }
   }
 
   Namespace_Floor_Down(& c->ns);
 }
-
-/** Use 'Namespace_Add_Item' to add the value 'v' to the namespace. */
-void Namespace_Add_Value(Namespace *ns, NmspFloor floor,
-                         const char *item_name, Value *v);
-
-/** Get an item 'item_name' from the namespace, assuming this must be a
- * Value.
- */
-Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
-                           const char *item_name);
 
 static void My_Compile_Var(BoxCmp *c, ASTNode *n) {
   Value *v;
@@ -224,16 +274,13 @@ static void My_Compile_Var(BoxCmp *c, ASTNode *n) {
 
   v = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, item_name);
   if (v != NULL) {
-    Value_Link(v);
     BoxCmp_Push_Value(c, v);
     return;
 
   } else {
     v = Value_New(c);
-    Value_Set_Identifier(v, item_name);
+    Value_Setup_As_Var_Name(v, item_name);
     Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, item_name, v);
-    Value_Link(v); /* we own a link and we need to pass another link when
-                      pushing the value with BoxCmp_Push_Value  */
     BoxCmp_Push_Value(c, v);
     return;
   }
@@ -245,16 +292,38 @@ static void My_Compile_Const(BoxCmp *c, ASTNode *n) {
   v = Value_New(c);
   switch(n->attr.constant.type) {
   case ASTCONSTTYPE_CHAR:
-    Value_Set_Imm_Char(v, n->attr.constant.value.c);
+    Value_Setup_As_Imm_Char(v, n->attr.constant.value.c);
     break;
   case ASTCONSTTYPE_INT:
-    Value_Set_Imm_Int(v, n->attr.constant.value.i);
+    Value_Setup_As_Imm_Int(v, n->attr.constant.value.i);
     break;
   case ASTCONSTTYPE_REAL:
-    Value_Set_Imm_Real(v, n->attr.constant.value.r);
+    Value_Setup_As_Imm_Real(v, n->attr.constant.value.r);
     break;
   }
   BoxCmp_Push_Value(c, v);
+}
+
+static void My_Compile_UnOp(BoxCmp *c, ASTNode *n) {
+  Value *operand, *result = NULL;
+
+  assert(n->type == ASTNODETYPE_UNOP);
+
+  /* Compile operand and get it from the stack */
+  My_Compile_Any(c, n->attr.un_op.expr);
+  operand = BoxCmp_Get_Value(c, 0);
+
+  if (Value_Is_Err(operand))
+    return; /* Leave the error in the stack */
+
+  else if (Value_Is_Value(operand))
+    result = BoxCmp_Opr_Emit_UnOp(c, n->attr.un_op.operation, operand);
+
+  else
+    Value_Want_Value(operand);
+
+  BoxCmp_Pop_Any(c, 1);
+  BoxCmp_Push_Value(c, result);
 }
 
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
@@ -279,13 +348,12 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
         /* If the value is an identifier (thing without type, nor value),
          * then we transform it to a proper target.
          */
-        if (Value_Is_Identifier(left)) {
+        if (Value_Is_Var_Name(left)) {
           ValContainer vc = {VALCONTTYPE_LVAR, -1, 0};
           Value_Container_Init(left, right->type, & vc);
         }
 
         if (Value_Is_Target(left)) {
-          printf("assembling assignment\n");
           result = BoxCmp_Opr_Emit_BinOp(c, op, left, right);
 
         } else

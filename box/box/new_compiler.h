@@ -26,51 +26,29 @@
 #ifndef _NEW_COMPILER_H
 #  define _NEW_COMPILER_H
 
-typedef struct _box_cmp BoxCmp;
-
 #  include "types.h"
+#  include "cmpptrs.h"
 #  include "array.h"
 #  include "virtmach.h"
 #  include "ast.h"
 #  include "registers.h"
 #  include "namespace.h"
-
-#  define _BOX_NDECL_FNS
 #  include "operator.h"
-#  undef _BOX_NDECL_FNS
-
-
-/** @brief The CmpProc object.
- */
-typedef struct {
-  struct {
-    unsigned int
-                sym      :1, /**< the procedure has an associated symbol */
-                proc_id  :1, /**< the procedure has a procedure number */
-                proc_name:1, /**< it has a name */
-                call_num :1, /**< it has a call number */
-                type     :1; /**< it has a type */
-  } have;
-  BoxCmp        *cmp;        /**< Compiler corresponding to the procedure */
-  BoxVMSymID    sym;         /**< Symbol associated with the procedure */
-  BoxVMProcNum  proc_id;     /**< Proc. number (needed to write ASM to it) */
-  char          *proc_name;  /**< Procedure name */
-  BoxVMCallNum  call_num;    /**< Call number (needed to call it from ASM) */
-  Type          type;        /**< Type of the procedure */
-} CmpProc;
-
-#include "cmpproc.h"
+#  include "cmpproc.h"
+#  include "builtins.h"
 
 struct _box_cmp {
-  BoxArr    stack;     /**< Used during compilation to pass around expressions */
-  BoxVM     vm;        /**< The target of the compilation */
-  BoxTS     ts;        /**< The type system */
-  Namespace ns;        /**< The namespace */
-  RegAlloc  regs;      /**< Register occupation handler */
-  CmpProc   main_proc, /**< Main procedure in the module */
-            *cur_proc; /**< Procedure on which we are working now */
-  Operator  bin_ops[ASTBINOP__NUM_OPS], /**< Table of binary operators */
-            un_ops[ASTUNOP__NUM_OPS];   /**< Table of unary operators */
+  BoxArr     stack;     /**< Used during compilation to pass around
+                             expressions */
+  BoxVM      vm;        /**< The target of the compilation */
+  BoxTS      ts;        /**< The type system */
+  BltinStuff bltin;     /**< Builtin types, etc. */
+  Namespace  ns;        /**< The namespace */
+  RegAlloc   regs;      /**< Register occupation handler */
+  CmpProc    main_proc, /**< Main procedure in the module */
+             *cur_proc; /**< Procedure on which we are working now */
+  Operator   bin_ops[ASTBINOP__NUM_OPS], /**< Table of binary operators */
+             un_ops[ASTUNOP__NUM_OPS];   /**< Table of unary operators */
 };
 
 void BoxCmp_Init(BoxCmp *c);

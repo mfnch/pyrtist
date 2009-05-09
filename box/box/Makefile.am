@@ -65,7 +65,7 @@ noinst_HEADERS = defaults.h \
   expr.h compiler.h box.h builtins.h bltinstr.h bltinio.h \
   vmalloc.h vmproc.h vmsym.h \
   vmsymstuff.h paths.h container.h autogen.h \
-  cmpproc.h bltinarray.h ast.h value.h new_compiler.h operator.h \
+  cmpproc.h bltinarray.h ast.h cmpptrs.h value.h new_compiler.h operator.h \
   namespace.h
 
 box_SOURCES = \
