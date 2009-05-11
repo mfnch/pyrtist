@@ -38,6 +38,7 @@
 
 typedef enum {
   VALUEKIND_ERR,              /**< An error */
+  VALUEKIND_VOID,             /**< Empty type (no data associated with it) */
   VALUEKIND_VAR_NAME,         /**< A variable name (no type, no value) */
   VALUEKIND_TYPE_NAME,        /**< A variable name (no type, no value) */
   VALUEKIND_TYPE,             /**< A type (no value) */
@@ -123,6 +124,9 @@ typedef struct {
               addr;
 } ValContainer;
 
+/** Set the value to Void[] */
+void Value_Setup_As_Void(Value *v);
+
 /** Set the value to a variable with the given name. */
 void Value_Setup_As_Var_Name(Value *v, const char *name);
 
@@ -144,13 +148,16 @@ void Value_Container_Init(Value *v, BoxType type, ValContainer *vc);
  * NOTE: return a new value created with Value_New() or a new reference
  *  to 'v', if it can be recycled (has just one reference).
  */
-Value *Value_Make_Temp(Value *v);
+Value *Value_To_Temp(Value *v);
 
 /** Set the ignorable flag for the value. */
 void Value_Set_Ignorable(Value *v, int ignorable);
 
 /** Return 1 if the value represents an error. */
 int Value_Is_Err(Value *v);
+
+/** Return 1 if the value is Void[]. */
+int Value_Is_Void(Value *v);
 
 /** Return 1 if the value is a temporary value (it stores an intermediate
  * result)

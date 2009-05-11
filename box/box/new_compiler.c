@@ -228,23 +228,34 @@ static void My_Compile_TypeName(BoxCmp *c, ASTNode *n) {
   }
 }
 
+/* We may optimize this later, by just passing a reference to a Value
+ * object which is created once for all at the beginning!
+ */
+static Value *My_Get_Void_Value(BoxCmp *c) {
+  Value *v = Value_New(c);
+  Value_Setup_As_Void(v);
+  return v;
+}
+
 static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
   ASTNode *s;
+  Value *parent = NULL;
 
   assert(box->type == ASTNODETYPE_BOX);
 
   if (box->attr.box.parent == NULL) {
-    printf("parent of box is NULL\n");
+    parent = My_Get_Void_Value(c);
+    BoxCmp_Push_Value(c, parent);
 
   } else {
     My_Compile_Any(c, box->attr.box.parent);
-
-    BoxCmp_Pop_Any(c, 1);
+    parent = BoxCmp_Get_Value(c, 0);
   }
 
   Namespace_Floor_Up(& c->ns); /* variables defined in this box will be
                                   destroyed when it gets closed! */
 
+  /* Loop over all the statements of the box */
   for(s = box->attr.box.first_statement;
       s != NULL;
       s = s->attr.statement.next_statement) {
@@ -263,7 +274,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
     }
   }
 
-  Namespace_Floor_Down(& c->ns);
+  Namespace_Floor_Down(& c->ns); /* close the scope unit */
 }
 
 static void My_Compile_Var(BoxCmp *c, ASTNode *n) {

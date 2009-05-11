@@ -54,6 +54,8 @@ static void My_Value_Finalize(Value *v) {
   switch(v->kind) {
   case VALUEKIND_ERR:
     return;
+  case VALUEKIND_VOID:
+    return;
   case VALUEKIND_TYPE_NAME:
   case VALUEKIND_VAR_NAME:
     return;
@@ -110,6 +112,7 @@ Value *Value_Recycle(Value *v) {
 const char *ValueKind_To_Str(ValueKind vk) {
   switch(vk) {
   case VALUEKIND_ERR: return "an error expression";
+  case VALUEKIND_VOID: return "a void expression";
   case VALUEKIND_VAR_NAME: return "an undefined variable";
   case VALUEKIND_TYPE_NAME: return "an undefined type";
   case VALUEKIND_TYPE: return "a type expression";
@@ -189,6 +192,17 @@ void Value_Setup_As_Imm_Real(Value *v, Real r) {
   v->kind = VALUEKIND_IMM;
   v->type = BOXTYPE_REAL;
   BoxCont_Set(& v->value.cont, "ir", r);
+}
+
+void Value_Setup_As_Void(Value *v) {
+  v->kind = VALUEKIND_VOID;
+  v->type = BOXTYPE_VOID;
+}
+
+void Value_Setup_As_Temp(Value *v, BoxType type) {
+  BoxCmp *c = v->cmp;
+  BoxType core_type = TS_Core_Type(& c->ts, type);
+
 }
 
 /* Create a new empty container. */
@@ -310,7 +324,7 @@ void Value_Container_Init(Value *v, BoxType type, ValContainer *vc) {
   }
 }
 
-Value *Value_Make_Temp(Value *v) {
+Value *Value_To_Temp(Value *v) {
   if (v->kind != VALUEKIND_TEMP) {
     Value old_v = *v;
     ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
@@ -332,6 +346,10 @@ void Value_Set_Ignorable(Value *v, int ignorable) {
 
 int Value_Is_Err(Value *v) {
   return (v->kind == VALUEKIND_ERR);
+}
+
+int Value_Is_Void(Value *v) {
+  return (v->kind == VALUEKIND_VOID);
 }
 
 int Value_Is_Temp(Value *v) {

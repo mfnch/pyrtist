@@ -256,7 +256,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
       }
 
     } else
-      v_left = Value_Make_Temp(v_left);
+      v_left = Value_To_Temp(v_left);
     CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
                      1, & v_left->value.cont);
     result = v_left;
@@ -288,7 +288,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
         }
       }
 
-      v_left = Value_Make_Temp(v_left);
+      v_left = Value_To_Temp(v_left);
     }
 
     CmpProc_Assemble(c->cur_proc, opn->implem.opcode,

@@ -32,6 +32,7 @@
 #  include "virtmach.h"
 #  include "ast.h"
 #  include "registers.h"
+#  include "value.h"
 #  include "namespace.h"
 #  include "operator.h"
 #  include "cmpproc.h"
