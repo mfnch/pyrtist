@@ -199,14 +199,16 @@ void Value_Setup_As_Void(Value *v) {
   v->type = BOXTYPE_VOID;
 }
 
+#if 0
 void Value_Setup_As_Temp(Value *v, BoxType type) {
   BoxCmp *c = v->cmp;
   BoxType core_type = TS_Core_Type(& c->ts, type);
 
 }
+#endif
 
 /* Create a new empty container. */
-void Value_Container_Init(Value *v, BoxType type, ValContainer *vc) {
+void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
   BoxCmp *c = v->cmp;
   int use_greg;
 
@@ -226,7 +228,7 @@ void Value_Container_Init(Value *v, BoxType type, ValContainer *vc) {
       /* Automatically chooses the local register */
       Int reg = Reg_Occupy(& c->regs, v->value.cont.type);
       if (reg < 1) {
-        MSG_FATAL("Value_Container_Init: Reg_Occupy failed!");
+        MSG_FATAL("Value_Setup_Container: Reg_Occupy failed!");
         assert(0);
       }
       v->value.cont.value.reg = reg;
@@ -247,7 +249,7 @@ void Value_Container_Init(Value *v, BoxType type, ValContainer *vc) {
       Int reg = -GVar_Occupy(& c->regs, v->value.cont.type);
       /* Automatically choses the local variables */
       if (reg >= 0) {
-        MSG_FATAL("Value_Container_Init: GVar_Occupy failed!");
+        MSG_FATAL("Value_Setup_Container: GVar_Occupy failed!");
         assert(0);
       }
       v->value.cont.value.reg = reg;
@@ -267,7 +269,7 @@ void Value_Container_Init(Value *v, BoxType type, ValContainer *vc) {
       /* Automatically choses the local variables */
       Int reg = -Var_Occupy(& c->regs, v->value.cont.type, 0);
       if (reg >= 0) {
-        MSG_FATAL("Value_Container_Init: Var_Occupy failed!");
+        MSG_FATAL("Value_Setup_Container: Var_Occupy failed!");
         assert(0);
       }
       v->value.cont.value.reg = reg;
@@ -301,7 +303,7 @@ void Value_Container_Init(Value *v, BoxType type, ValContainer *vc) {
       Int reg = Reg_Occupy(& c->regs, TYPE_OBJ);
       v->value.cont.value.ptr.reg = reg;
       if (reg < 1) {
-        MSG_FATAL("Value_Container_Init: Reg_Occupy failed!");
+        MSG_FATAL("Value_Setup_Container: Reg_Occupy failed!");
         assert(0);
       }
       return;
@@ -310,7 +312,7 @@ void Value_Container_Init(Value *v, BoxType type, ValContainer *vc) {
       Int reg = -Var_Occupy(& c->regs, TYPE_OBJ, 0);
       v->value.cont.value.ptr.reg = reg;
       if (reg >= 0) {
-        MSG_FATAL("Value_Container_Init: Var_Occupy failed!");
+        MSG_FATAL("Value_Setup_Container: Var_Occupy failed!");
         assert(0);
       }
     }
@@ -319,7 +321,26 @@ void Value_Container_Init(Value *v, BoxType type, ValContainer *vc) {
     break;
 
   default:
-    MSG_FATAL("Value_Container_Init: wrong type of container!");
+    MSG_FATAL("Value_Setup_Container: wrong type of container!");
+    assert(0);
+  }
+}
+
+void Value_Emit_Allocate(Value *v) {
+  switch(v->kind) {
+  case VALUEKIND_ERR:
+  case VALUEKIND_VOID:
+    return;
+  case VALUEKIND_TEMP:
+  case VALUEKIND_TARGET:
+    if (v->value.cont.type == BOXCONTTYPE_OBJ) {
+      printf("Emitting alloc ops\n");
+      /*BoxCmp_Assemble(v->cmp->cur_proc, BOXGOP_MALLOC,
+                      3, );*/
+      return;
+    }
+  default:
+    MSG_FATAL("Value_Emit_Allocate: invalid argument.");
     assert(0);
   }
 }
@@ -329,7 +350,7 @@ Value *Value_To_Temp(Value *v) {
     Value old_v = *v;
     ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
     v = Value_Recycle(v);
-    Value_Container_Init(v, old_v.type, & vc);
+    Value_Setup_Container(v, old_v.type, & vc);
     CmpProc_Assemble(v->cmp->cur_proc, BOXGOP_MOV,
                      2, & v->value.cont, & old_v.value.cont);
     return v;

@@ -361,7 +361,7 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
          */
         if (Value_Is_Var_Name(left)) {
           ValContainer vc = {VALCONTTYPE_LVAR, -1, 0};
-          Value_Container_Init(left, right->type, & vc);
+          Value_Setup_Container(left, right->type, & vc);
         }
 
         if (Value_Is_Target(left)) {

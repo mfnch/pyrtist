@@ -142,7 +142,7 @@ void Value_Setup_As_Imm_Int(Value *v, Int i);
 
 void Value_Setup_As_Imm_Real(Value *v, Real r);
 
-void Value_Container_Init(Value *v, BoxType type, ValContainer *vc);
+void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc);
 
 /** Return a new temporary Value created from the given Value 'v'.
  * NOTE: return a new value created with Value_New() or a new reference
