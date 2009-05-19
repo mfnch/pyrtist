@@ -47,14 +47,14 @@ AM_CPPFLAGS = $(INCLTDL) \
 bin_PROGRAMS = box
 
 # *** libboxcore ***
-lib_LTLIBRARIES = libboxcore0.1.la
+lib_LTLIBRARIES = libboxcore0.2.la
 boxinc_HEADERS = types.h error.h mem.h array.h occupation.h \
   msgbase.h messages.h str.h print.h hashfunc.h hashtable.h \
   list.h
-libboxcore0_1_la_SOURCES = types.h error.c mem.c mem.h array.c array.h \
+libboxcore0_2_la_SOURCES = types.h error.c mem.c mem.h array.c array.h \
   occupation.c occupation.h str.c print.c msgbase.c messages.c \
   hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h
-libboxcore0_1_la_LDFLAGS = -no-undefined -version-info 0:0:0
+libboxcore0_2_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32
 # see http://article.gmane.org/gmane.comp.gnu.mingw.user/18727
 
@@ -75,7 +75,7 @@ box_SOURCES = \
   paths.c main.c container.c autogen.c cmpproc.c bltinarray.c ast.c value.c \
   new_compiler.c operator.c namespace.c
 
-box_LDADD = $(LIBLTDL) libboxcore0.1.la
+box_LDADD = $(LIBLTDL) libboxcore0.2.la
 box_LDFLAGS = -static
 box_DEPENDENCIES=$(LTDLDEPS)
 

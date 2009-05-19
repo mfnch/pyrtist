@@ -132,15 +132,32 @@ void BoxCmp_Push_Error(BoxCmp *c, int num_errors) {
  */
 int BoxCmp_Pop_Errors(BoxCmp *c, int items_to_pop, int errors_to_push) {
   BoxInt n = BoxArr_Num_Items(& c->stack), i;
+  int no_err = 1;
+
   for(i = 0; i < items_to_pop; i++) {
     StackItem *si = (StackItem *) BoxArr_Item_Ptr(& c->stack, n - i);
-    if (si->type == STACKITEM_ERROR) {
-      BoxCmp_Pop_Any(c, items_to_pop);
-      BoxCmp_Push_Error(c, errors_to_push);
-      return 1;
+
+    if (si->type == STACKITEM_VALUE) {
+      Value *v = (Value *) si->item;
+      if (Value_Is_Err(v)) {
+        no_err = 0;
+        break;
+      }
+
+    } else if (si->type == STACKITEM_ERROR) {
+      no_err = 0;
+      break;
     }
   }
-  return 0;
+
+  if (no_err)
+    return 0;
+
+  else {
+    BoxCmp_Pop_Any(c, items_to_pop);
+    BoxCmp_Push_Error(c, errors_to_push);
+    return 1;
+  }
 }
 
 void BoxCmp_Push_Value(BoxCmp *c, Value *v) {
@@ -237,9 +254,34 @@ static Value *My_Get_Void_Value(BoxCmp *c) {
   return v;
 }
 
+int XXX_Emit_Call(Value *parent, Value *child) {
+  BoxCmp *c = parent->cmp;
+  BoxType found_procedure, expansion_for_child;
+  BoxVMSymID sym_id;
+
+  assert(c == child->cmp);
+
+  /* Now we search for the procedure associated with *child */
+  TS_Procedure_Inherited_Search(& c->ts, & found_procedure,
+                                & expansion_for_child,
+                                parent->type, child->type, 1);
+
+  if (found_procedure == BOXTYPE_NONE) return 0;
+
+  if (expansion_for_child != BOXTYPE_NONE)
+    child = Value_Expand(child, expansion_for_child);
+
+  TS_Procedure_Sym_Num_Get(& c->ts, & sym_id, found_procedure);
+  printf("Found procedure with sym_id="SUInt"\n", sym_id);
+
+  MSG_WARNING("My_Compile_Box not implemented: proc not called!");
+  return 1;
+}
+
 static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
   ASTNode *s;
   Value *parent = NULL;
+  int parent_is_err = 0;
 
   assert(box->type == ASTNODETYPE_BOX);
 
@@ -248,8 +290,13 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
     BoxCmp_Push_Value(c, parent);
 
   } else {
+    Value *parent_type;
     My_Compile_Any(c, box->attr.box.parent);
-    parent = BoxCmp_Get_Value(c, 0);
+    parent_type = BoxCmp_Get_Value(c, 0);
+    parent = Value_To_Temp_Or_Target(parent_type);
+    parent_is_err = Value_Is_Err(parent);
+    BoxCmp_Pop_Any(c, 1);
+    BoxCmp_Push_Value(c, parent);
   }
 
   Namespace_Floor_Up(& c->ns); /* variables defined in this box will be
@@ -265,12 +312,20 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
 
     My_Compile_Any(c, s->attr.statement.target);
     stmt_val = BoxCmp_Get_Value(c, 0);
-    if (Value_Is_Err(stmt_val) || Value_Is_Ignorable(stmt_val))
+    if (parent_is_err || Value_Is_Err(stmt_val)
+        || Value_Is_Ignorable(stmt_val))
       BoxCmp_Pop_Any(c, 1);
 
     else {
-      MSG_ERROR("My_Compile_Box not implemented: proc not called!");
+      Value *child = BoxCmp_Get_Value(c, 0);
+      int have_found_it = XXX_Emit_Call(parent, child);
       BoxCmp_Pop_Any(c, 1);
+      if (!have_found_it) {
+        MSG_WARNING("Don't know how to use '%~s' expressions inside "
+                    "a '%~s' box.",
+                    TS_Name_Get(& c->ts, child->type),
+                    TS_Name_Get(& c->ts, parent->type));
+      }
     }
   }
 

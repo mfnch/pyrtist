@@ -201,7 +201,7 @@ void TS_Procedure_Info(TS *ts, Type *parent, Type *child,
  * the procedure p will belong to the list of procedures of its parent.
  * sym_num is the symbol associated with the procedure.
  */
-Task TS_Procedure_Register(TS *ts, Type p, UInt sym_num);
+void TS_Procedure_Register(TS *ts, Type p, UInt sym_num);
 
 /** Obtain the symbol identification number of a registered procedure.
  */

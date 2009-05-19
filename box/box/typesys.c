@@ -570,7 +570,7 @@ void TS_Enum_Add(TS *ts, Type enumeration, Type member) {
  * this could and should be improved, but we stick to the simple solution
  * for now!
  */
-Task TS_Procedure_Register(TS *ts, Type p, UInt sym_num) {
+void TS_Procedure_Register(TS *ts, Type p, UInt sym_num) {
   TSDesc *proc_td, *parent_td;
   Type parent;
   proc_td = Type_Ptr(ts, p);
@@ -581,7 +581,6 @@ Task TS_Procedure_Register(TS *ts, Type p, UInt sym_num) {
   proc_td->first_proc = parent_td->first_proc;
   parent_td->first_proc = p;
   proc_td->data.proc.sym_num = sym_num;
-  return Success;
 }
 
 void TS_Procedure_Sym_Num_Get(TS *ts, UInt *sym_num, Type p) {

@@ -31,8 +31,7 @@
 /* This is the function which assembles the code for the function call */
 static Task Assemble_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
                           int defined, void *def, UInt def_size,
-                          void *ref, UInt ref_size)
-{
+                          void *ref, UInt ref_size) {
   UInt call_num = 0;
   assert(sym_type == VM_SYM_CALL);
 

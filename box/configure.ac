@@ -20,16 +20,16 @@
 
 # $Id$
 
-AC_INIT([box],[0.1.0],[fnch@libero.it])
+AC_INIT([box],[0.2.0],[fnch@libero.it])
 
 # Date corresponding to the release of the current version
-BOX_RELEASE_DATE="Feb 21 2009, 18:45:23"
+BOX_RELEASE_DATE="May 14 2009, 16:44:27"
 
 # Major part of the version number
 BOX_VER_MAJOR="0"
 
 # Minor part of the version number
-BOX_VER_MINOR="1"
+BOX_VER_MINOR="2"
 
 # Maint part of the version number
 BOX_VER_MAINT="0"

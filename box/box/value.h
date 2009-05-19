@@ -144,11 +144,19 @@ void Value_Setup_As_Imm_Real(Value *v, Real r);
 
 void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc);
 
+/** Emit the VM code to generate the object 'v' is pointing to. */
+void Value_Emit_Allocate(Value *v);
+
 /** Return a new temporary Value created from the given Value 'v'.
  * NOTE: return a new value created with Value_New() or a new reference
  *  to 'v', if it can be recycled (has just one reference).
  */
 Value *Value_To_Temp(Value *v);
+
+/** Similar to 'Value_To_Temp' with just one difference: if v is a target
+ * do nothing (just return v with a new link to it).
+ */
+Value *Value_To_Temp_Or_Target(Value *v);
 
 /** Set the ignorable flag for the value. */
 void Value_Set_Ignorable(Value *v, int ignorable);

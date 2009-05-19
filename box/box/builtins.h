@@ -45,6 +45,7 @@ typedef struct {
           species_real,
           species_point,
           species_string;
+  BoxType print;
 } BltinStuff;
 
 void Bltin_Init(BoxCmp *c);

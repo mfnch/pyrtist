@@ -173,7 +173,7 @@ void Value_Setup_As_Type_Name(Value *v, const char *name) {
 
 void Value_Setup_As_Type(Value *v, BoxType t) {
   v->kind = VALUEKIND_TYPE;
-  v->value.cont.type = t;
+  v->type = t;
 }
 
 void Value_Setup_As_Imm_Char(Value *v, Char c) {
@@ -334,31 +334,76 @@ void Value_Emit_Allocate(Value *v) {
   case VALUEKIND_TEMP:
   case VALUEKIND_TARGET:
     if (v->value.cont.type == BOXCONTTYPE_OBJ) {
+      Value v_size, v_alloc_type;
       printf("Emitting alloc ops\n");
-      /*BoxCmp_Assemble(v->cmp->cur_proc, BOXGOP_MALLOC,
-                      3, );*/
-      return;
+      assert(v->attr.own_reference == 0);
+      Value_Init(& v_size, v->cmp);
+      Value_Setup_As_Imm_Int(& v_size, TS_Size(& v->cmp->ts, v->type));
+      Value_Init(& v_alloc_type, v->cmp);
+      Value_Setup_As_Imm_Int(& v_size, v->type);
+      CmpProc_Assemble(v->cmp->cur_proc, BOXGOP_MALLOC,
+                       3, & v->value.cont, & v_size, & v_alloc_type);
+      v->attr.own_reference = 1;
     }
+    return;
+
   default:
-    MSG_FATAL("Value_Emit_Allocate: invalid argument.");
+    MSG_FATAL("Value_Emit_Allocate: invalid argument (%s).",
+              ValueKind_To_Str(v->kind));
     assert(0);
   }
 }
 
 Value *Value_To_Temp(Value *v) {
-  if (v->kind != VALUEKIND_TEMP) {
-    Value old_v = *v;
-    ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
-    v = Value_Recycle(v);
-    Value_Setup_Container(v, old_v.type, & vc);
-    CmpProc_Assemble(v->cmp->cur_proc, BOXGOP_MOV,
-                     2, & v->value.cont, & old_v.value.cont);
-    return v;
+  ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
 
-  } else {
+  switch (v->kind) {
+  case VALUEKIND_ERR:
+  case VALUEKIND_VOID:
+  case VALUEKIND_TEMP:
     Value_Link(v);
     return v;
+
+  case VALUEKIND_VAR_NAME:
+  case VALUEKIND_TYPE_NAME:
+    MSG_ERROR("Got %s (%s), but a defined type or value is expected here!",
+              ValueKind_To_Str(v->kind), v->name);
+    return Value_Recycle(v); /* Return an error value (Value_Recycle set the
+                                leaves v with an error, if not initialised
+                                with a Value_Setup_* function) */
+
+  case VALUEKIND_TYPE:
+    {
+      BoxType t = v->type;
+      v = Value_Recycle(v);
+      Value_Setup_Container(v, t, & vc);
+      Value_Emit_Allocate(v);
+      return v;
+    }
+
+  case VALUEKIND_IMM:
+  case VALUEKIND_TARGET:
+    {
+      Value old_v = *v;
+      v = Value_Recycle(v);
+      Value_Setup_Container(v, old_v.type, & vc);
+      CmpProc_Assemble(v->cmp->cur_proc, BOXGOP_MOV,
+                      2, & v->value.cont, & old_v.value.cont);
+      return v;
+    }
   }
+
+  assert(0);
+  return NULL;
+}
+
+Value *Value_To_Temp_Or_Target(Value *v) {
+  if (v->kind == VALUEKIND_TARGET) {
+    Value_Link(v);
+    return v;
+
+  } else
+    return Value_To_Temp(v);
 }
 
 void Value_Set_Ignorable(Value *v, int ignorable) {

@@ -52,10 +52,10 @@ static Task Blt_Define_Print(void);
 static Task Blt_Define_Sys(void);
 
 /* box-procedures */
-static Task Print_Char(VMProgram *vmp);
-static Task Print_Int(VMProgram *vmp);
-static Task Print_Real(VMProgram *vmp);
-static Task Print_Pnt(VMProgram *vmp);
+static Task My_Print_Char(VMProgram *vmp);
+static Task My_Print_Int(VMProgram *vmp);
+static Task My_Print_Real(VMProgram *vmp);
+static Task My_Print_Pnt(VMProgram *vmp);
 static Task Print_String(VMProgram *vmp);
 static Task Print_NewLine(VMProgram *vmp);
 static Task Exit_Int(VMProgram *vmp);
@@ -553,10 +553,10 @@ static Task Blt_Define_Math(void) {
 
 static Task Blt_Define_Print(void) {
   TASK(Tym_Def_Explicit_Alias(& type_Print, & NAME("Print"), TYPE_VOID));
-  TASK(Cmp_Builtin_Proc_Def(TYPE_CHAR,  BOX_CREATION,type_Print, Print_Char));
-  TASK(Cmp_Builtin_Proc_Def(TYPE_INTG,  BOX_CREATION,type_Print, Print_Int));
-  TASK(Cmp_Builtin_Proc_Def(TYPE_REAL,  BOX_CREATION,type_Print, Print_Real));
-  TASK(Cmp_Builtin_Proc_Def(type_Point, BOX_CREATION,type_Print, Print_Pnt));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_CHAR,  BOX_CREATION,type_Print, My_Print_Char));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_INTG,  BOX_CREATION,type_Print, My_Print_Int));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_REAL,  BOX_CREATION,type_Print, My_Print_Real));
+  TASK(Cmp_Builtin_Proc_Def(type_Point, BOX_CREATION,type_Print, My_Print_Pnt));
   TASK(Cmp_Builtin_Proc_Def(type_CharArray,BOX_CREATION,type_Print, Print_String));
   TASK(Cmp_Builtin_Proc_Def(TYPE_PAUSE, BOX_CREATION,type_Print,Print_NewLine));
   /*Tym_Print_Procedure(stdout, type_new);*/
@@ -571,19 +571,19 @@ static Task Blt_Define_Sys(void) {
 }
 
 /*******************************BOX-PROCEDURES********************************/
-static Task Print_Char(VMProgram *vmp) {
+static Task My_Print_Char(VMProgram *vmp) {
   printf(SChar, BOX_VM_ARG1(vmp, Char));
   return Success;
 }
-static Task Print_Int(VMProgram *vmp) {
+static Task My_Print_Int(VMProgram *vmp) {
   printf(SInt, BOX_VM_ARG1(vmp, Int));
   return Success;
 }
-static Task Print_Real(VMProgram *vmp) {
+static Task My_Print_Real(VMProgram *vmp) {
   printf(SReal, BOX_VM_ARG1(vmp, Real));
   return Success;
 }
-static Task Print_Pnt(VMProgram *vmp) {
+static Task My_Print_Pnt(VMProgram *vmp) {
   Point *p = BOX_VM_ARGPTR1(vmp, Point);
   printf(SPoint, p->x, p->y);
   return Success;
@@ -732,12 +732,17 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
   TS_Species_Begin(ts, & b->species_int);
   TS_Species_Add(ts, b->species_int, BOXTYPE_CHAR);
   TS_Species_Add(ts, b->species_int, BOXTYPE_INT);
+  TS_Name_Set(ts, b->species_int, "Int");
 
   /* Define Real */
   TS_Species_Begin(ts, & b->species_real);
-  TS_Species_Add(ts, b->species_int, BOXTYPE_CHAR);
-  TS_Species_Add(ts, b->species_int, BOXTYPE_INT);
-  TS_Species_Add(ts, b->species_int, BOXTYPE_REAL);
+  TS_Species_Add(ts, b->species_real, BOXTYPE_CHAR);
+  TS_Species_Add(ts, b->species_real, BOXTYPE_INT);
+  TS_Species_Add(ts, b->species_real, BOXTYPE_REAL);
+  TS_Name_Set(ts, b->species_real, "Real");
+
+  TS_Alias_New(ts, & b->print, BOXTYPE_VOID);
+  TS_Name_Set(ts, b->print, "Print");
 }
 
 /* Register the core types in the current namespace, so that Box programs
@@ -756,6 +761,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {"Int",         c->bltin.species_int},
     {"Real",        c->bltin.species_real},
     {"Void",        BOXTYPE_VOID},
+    {"Print",       c->bltin.print},
     {(char *) NULL, BOXTYPE_NONE}
   };
 
@@ -886,12 +892,50 @@ static void My_Register_BinOps(BoxCmp *c) {
   }
 }
 
+static void My_Builtin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
+                                Task (*c_fn)(VMProgram *)) {
+  BoxVMSymID sym_num;
+  BoxVMCallNum call_num;
+  BoxType new_proc;
+  char *proc_name = NULL;
+
+  /* We create the symbol associated with this name */
+  sym_num = VM_Sym_New_Call(& c->vm);
+
+  /* We tell to the compiler that some procedures are associated with it */
+  TS_Procedure_New(& c->ts, & new_proc, parent, child, /*kind*/ 1);
+  TS_Procedure_Register(& c->ts, new_proc, sym_num);
+  proc_name = TS_Name_Get(& c->ts, new_proc);
+
+  /* We finally install the code (a C function) for the procedure */
+  VM_Proc_Install_CCode(& c->vm, & call_num, c_fn,
+                        "(noname)", proc_name);
+  BoxMem_Free(proc_name);
+
+  /* And define the symbol */
+  assert(VM_Sym_Def_Call(& c->vm, sym_num, call_num) == BoxSuccess);
+}
+
+static void My_Register_Std_IO(BoxCmp *c) {
+  My_Builtin_Proc_Def(c, c->bltin.print,  BOXTYPE_CHAR, My_Print_Char);
+  My_Builtin_Proc_Def(c, c->bltin.print,   BOXTYPE_INT, My_Print_Int);
+  My_Builtin_Proc_Def(c, c->bltin.print,  BOXTYPE_REAL, My_Print_Real);
+  My_Builtin_Proc_Def(c, c->bltin.print, BOXTYPE_POINT, My_Print_Pnt);
+
+#if 0
+  TASK(Cmp_Builtin_Proc_Def(type_CharArray,BOX_CREATION,type_Print, Print_String));
+  TASK(Cmp_Builtin_Proc_Def(TYPE_PAUSE, BOX_CREATION,type_Print,Print_NewLine));
+  /*Tym_Print_Procedure(stdout, type_new);*/
+#endif
+}
+
 /* Register bultin types, operation and functions */
 void Bltin_Init(BoxCmp *c) {
   My_Define_Core_Types(& c->bltin, & c->ts);
   My_Register_Core_Types(c);
   My_Register_UnOps(c);
   My_Register_BinOps(c);
+  My_Register_Std_IO(c);
 }
 
 void Bltin_Finish(BoxCmp *c) {
