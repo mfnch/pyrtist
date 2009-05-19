@@ -3,6 +3,13 @@ REVISION=$Revision$
 
 Change log (recent come first)
 
+13 May 2009: change to improve compatibility with the Box GUI (Boxer)
+  * Examples provided by Boxer were not working, since g.bxh included
+    a file with ``include "poly"'' causing the example poly.box to be
+    loaded instead of the right file, poly.bxh, which is provided by the g
+    library. The bug has been fixed by renaming the files which are not
+    meant to be included explicitly following the scheme name --> _name
+
 21 February 2009: can copy "simple" objects + better versioning
   * When using `include "file"' we now search files also inside the directory
     containing the currently executed script. If -st is specified,
