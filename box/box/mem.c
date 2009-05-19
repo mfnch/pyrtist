@@ -20,6 +20,10 @@
 
 /* $Id$ */
 
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 /* Allocate in blocks of size sizeof(uint32_t), to make Valgrind happy! */
 #define DO_ALIGN_SIZE
 
@@ -86,7 +90,7 @@ char *BoxMem_Strdup(const char *s) {
 char *BoxMem_Strndup(const char *s, size_t length) {
   size_t size;
   if (BoxMem_x_Plus_y(& size, length, 1)) {
-    char *sd = BoxMem_Alloc(size);
+    char *sd = BoxMem_Safe_Alloc(size);
     if (length > 0)
       (void) memcpy(sd, s, length);
     sd[length] = '\0';

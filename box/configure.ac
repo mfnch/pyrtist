@@ -32,7 +32,7 @@ BOX_VER_MAJOR="0"
 BOX_VER_MINOR="2"
 
 # Maint part of the version number
-BOX_VER_MAINT="1"
+BOX_VER_MAINT="2"
 
 AC_PREREQ(2.61)
 

@@ -68,9 +68,5 @@ void *BoxMem_Dup_Larger(const void *src, Int src_size, Int dest_size);
 
 #define Name_Cat_And_Free(nm, nm1, nm2) Name_Cat(nm, nm1, nm2, 1)
 
-#  ifndef HAVE_STRNDUP
-char *strndup(const char *s, int n);
-#  endif
-
 #endif
 

@@ -21,9 +21,6 @@
 
 /* 8 maggio 2004 - Semplici operazioni su stringhe. */
 
-/* Just to use strndup! */
-#define _GNU_SOURCE
-
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
@@ -497,7 +494,7 @@ Name *Name_Dup(Name *n) {
 
   if ( n > 0 ) {
     rs.length = n->length;
-    rs.text = strndup(n->text, n->length);
+    rs.text = BoxMem_Strndup(n->text, n->length);
     if ( rs.text == NULL ) {MSG_FATAL("Memoria esaurita!");}
     return & rs;
   }
@@ -557,17 +554,3 @@ void *BoxMem_Dup_Larger(const void *src, Int src_size, Int dest_size) {
   return copy;
 }
 
-#ifndef HAVE_STRNDUP
-char *strndup(const char *s, int n) {
-  int i, l;
-  char *ret, *r;
-
-  l = strlen(s);
-  if ( l < n ) n = l;
-  ret = r = (char *) malloc(n + 1);
-  if (r == NULL) return NULL;
-  for(i = 0; i < n; i++) *(r++) = *(s++);
-  *r = '\0';
-  return ret;
-}
-#endif
