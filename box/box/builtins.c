@@ -36,11 +36,11 @@
 #include "vmsym.h"
 #include "vmsymstuff.h"
 #include "registers.h"
-#include "compiler.h"
 #include "builtins.h"
 #include "bltinstr.h"
 #include "bltinio.h"
 
+# if 0
 /* Important builtin types */
 Type type_Point, type_RealNum, type_IntNum, type_CharArray, type_Print;
 
@@ -50,12 +50,15 @@ static Task Blt_Define_Basics(void);
 static Task Blt_Define_Math(void);
 static Task Blt_Define_Print(void);
 static Task Blt_Define_Sys(void);
+#endif
 
 /* box-procedures */
 static Task My_Print_Char(VMProgram *vmp);
 static Task My_Print_Int(VMProgram *vmp);
 static Task My_Print_Real(VMProgram *vmp);
 static Task My_Print_Pnt(VMProgram *vmp);
+
+#if 0
 static Task Print_String(VMProgram *vmp);
 static Task Print_NewLine(VMProgram *vmp);
 static Task Exit_Int(VMProgram *vmp);
@@ -569,6 +572,7 @@ static Task Blt_Define_Sys(void) {
   TASK( Cmp_Builtin_Proc_Def(TYPE_INT, BOX_CREATION, type_Exit, Exit_Int) );
   return Success;
 }
+#endif
 
 /*******************************BOX-PROCEDURES********************************/
 static Task My_Print_Char(VMProgram *vmp) {
@@ -588,6 +592,8 @@ static Task My_Print_Pnt(VMProgram *vmp) {
   printf(SPoint, p->x, p->y);
   return Success;
 }
+
+#if 0
 static Task Print_String(VMProgram *vmp) {
   printf("%s", BOX_VM_ARGPTR1(vmp, char));
   return Success;
@@ -714,6 +720,7 @@ static Task Vec_RealNum(VMProgram *vmp) {
   p->y = sin(angle);
   return Success;
 }
+#endif
 
 /****************************************************************************/
 /* NEW COMPILER */

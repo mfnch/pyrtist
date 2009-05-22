@@ -22,9 +22,9 @@
 #include <assert.h>
 
 #include "messages.h"
-#include "compiler.h"
 #include "container.h"
 
+#if 0
 static AsmCode asm_code_lea[] = {ASM_LEA_C, ASM_LEA_I, ASM_LEA_R, ASM_LEA_P};
 
 static AsmCode asm_code_mov[] = {ASM_MOV_CC, ASM_MOV_II,
@@ -255,7 +255,7 @@ void Cont_Ptr_Cast(Cont *ptr, ContType type) {
   }
 }
 
-
+#endif
 
 
 

@@ -66,7 +66,7 @@ BoxVMSymID CmpProc_Get_Sym(CmpProc *p) {
 
   else {
     p->have.sym = 1;
-    return VM_Sym_New_Call(cmp->vm);
+    return VM_Sym_New_Call(& p->cmp->vm);
   }
 }
 

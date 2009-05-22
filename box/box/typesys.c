@@ -887,6 +887,7 @@ char *Tym_Type_Names(Int t) {
   return str;
 }
 
+#if 0
 Task Tym_Def_Type(Int *new_type,
  Int parent, Name *nm, Int size, Int aliased_type) {
   Symbol *s;
@@ -915,6 +916,7 @@ Task Tym_Def_Type(Int *new_type,
   Expr_New_Type(& s->value, type);
   return Success;
 }
+#endif
 
 Int Tym_Def_Array_Of(Int num, Int type) {
   Type array;

@@ -194,7 +194,7 @@ typedef struct {
 } Compiler;
 
 /* The main compiler data structure */
-extern Compiler *cmp;
+//extern Compiler *cmp;
 
 #  define cmp_vm (cmp->vm)
 

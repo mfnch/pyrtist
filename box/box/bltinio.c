@@ -28,6 +28,7 @@
 #include "bltinstr.h"
 #include "bltinio.h"
 
+#if 0
 typedef struct {
   unsigned int opened : 1;
   char *name, *mode;
@@ -136,3 +137,5 @@ static Task IO_Register_All(void) {
   }
   return Success;
 }
+#endif
+

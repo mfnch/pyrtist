@@ -62,17 +62,17 @@ libboxcore0_2_la_LDFLAGS = -no-undefined -version-info 0:0:0
 noinst_HEADERS = defaults.h \
   fileutils.h registers.h virtmach.h \
   tokenizer.h parserh.h typesys.h \
-  expr.h compiler.h box.h builtins.h bltinstr.h bltinio.h \
+  builtins.h bltinstr.h bltinio.h \
   vmalloc.h vmproc.h vmsym.h \
-  vmsymstuff.h paths.h container.h autogen.h \
+  vmsymstuff.h paths.h container.h \
   cmpproc.h bltinarray.h ast.h cmpptrs.h value.h new_compiler.h operator.h \
   namespace.h
 
 box_SOURCES = \
   fileutils.c virtmach.c vmalloc.c vmexec.c vmproc.c vmsym.c \
-  symbols.c tokenizer.l parser.y registers.c expr.c \
-  typesys.c compiler.c box.c builtins.c bltinstr.c bltinio.c vmsymstuff.c \
-  paths.c main.c container.c autogen.c cmpproc.c bltinarray.c ast.c value.c \
+  tokenizer.l parser.y registers.c \
+  typesys.c builtins.c bltinstr.c bltinio.c vmsymstuff.c \
+  paths.c main.c container.c cmpproc.c bltinarray.c ast.c value.c \
   new_compiler.c operator.c namespace.c
 
 box_LDADD = $(LIBLTDL) libboxcore0.2.la

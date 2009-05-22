@@ -32,6 +32,7 @@
 #include "vmproc.h"
 #include "vmsymstuff.h"
 
+#if 0
 /****************************************************************************
  * Here we define some generic functions to handle Str objects              *
  ****************************************************************************/
@@ -215,3 +216,6 @@ static Task Str_Register_All(void) {
 
   return Success;
 }
+
+#endif
+

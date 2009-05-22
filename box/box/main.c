@@ -53,7 +53,6 @@
 #include "vmproc.h"
 #include "vmsym.h"
 #include "registers.h"
-#include "compiler.h"
 #include "paths.h"
 
 /* Visualizzo questo messaggio quando ho errori nella riga di comando: */
@@ -74,8 +73,6 @@ static char *file_input = NULL;
 static char *file_output;
 static char *file_setup;
 static char *query = NULL;
-
-static VMProgram *program = NULL;
 
 /* Functions called when the argument of an option is found */
 static void set_file_input(char *arg) {file_input = arg;}
@@ -134,12 +131,7 @@ static Task Stage_Init(void) {
 }
 
 static void Stage_Finalize(void) {
-  BoxVM_Destroy(program); /* This function accepts program = NULL */
-  program = NULL;
-
   Path_Destroy();
-
-  Cmp_Destroy();
 
   Msg_Main_Destroy();
 }
@@ -275,13 +267,11 @@ static Task Stage_Compilation(char *file, UInt *main_module) {
   Msg_Main_Counter_Clear_All();
   MSG_CONTEXT_BEGIN("Compilation");
 
-  program = BoxVM_New();
-  if (program == NULL) return Failed;
-
+#if 0
   TASK( Cmp_Init(program) );
   TASK( Cmp_Parse(file) );
-
   TASK( Main_Install(main_module) );
+#endif
 
   MSG_ADVICE("Compilaton finished. %U errors and %U warnings were found.",
              MSG_GT_ERRORS, MSG_NUM_WARNINGS );
@@ -294,6 +284,7 @@ static Task Stage_Symbol_Resolution(UInt *flags) {
   int all_resolved;
   Task status = Success;
   MSG_CONTEXT_BEGIN("Symbol resolution");
+#if 0
   TASK( BoxVMSym_Resolve_CLibs(program, & lib_dirs, & libraries) );
   TASK( BoxVMSym_Resolve_All(program) );
   BoxVMSym_Ref_Check(program, & all_resolved);
@@ -303,6 +294,7 @@ static Task Stage_Symbol_Resolution(UInt *flags) {
     *flags &= ~FLAG_EXECUTE;
     status = Failed;
   }
+#endif
   MSG_CONTEXT_END();
   return status;
 }
@@ -358,9 +350,11 @@ static Task Stage_Write_Asm(UInt flags) {
       close_file = 1;
     }
 
+#if 0
     BoxVM_Set_Attr(program, BOXVM_ATTR_DASM_WITH_HEX,
                    BOXVM_ATTR_DASM_WITH_HEX);
     TASK( VM_Proc_Disassemble_All(program, out) );
+#endif
     if (close_file) (void) fclose(out);
   }
   return Success;
@@ -370,39 +364,35 @@ static Task Stage_Write_Asm(UInt flags) {
 Task Main_Prepare(void) {
   int i;
   Int num_reg[NUM_TYPES], num_var[NUM_TYPES];
+#if 0
   RegLVar_Get_Nums(& cmp->ra, num_reg, num_var);
   /* Preparo i registri globali */
   for(i = 0; i < NUM_TYPES; i++) {
     num_var[i] = GVar_Num(& cmp->ra, i);
     num_reg[i] = 3;
   }
+
   TASK( BoxVM_Alloc_Global_Regs(program, num_var, num_reg) );
+#endif
   return Success;
 }
 
 /* FASE DI ESECUZIONE */
 Task Main_Install(UInt *main_module) {
   TASK( Main_Prepare() );
+#if 0
   VM_Proc_Install_Code(program, main_module,
                        BoxVM_Proc_Target_Get(program), "main", "Entry");
+#endif
   return Success;
 }
 
 Task Main_Execute(UInt main_module) {
-  /*Msg_Num_Reset_All();
-
-  Msg_Context_Enter("Controllo lo stato di definizione dei moduli.\n");
-  status = VM_Module_Check(program, 1);
-  Msg_Context_Exit(0);
-  if ( status == Failed ) {
-    MSG_ADVICE( "Trovati " SUInt " errori: l'esecuzione non verra' avviata!",
-     Msg_Num(MSG_NUM_ERRFAT) );
-    return Failed;
-  }
-  */
   Task t;
   Msg_Line_Set((Int) 1);
+#if 0
   t = VM_Module_Execute(program, main_module);
+#endif
   Msg_Line_Set(MSG_UNDEF_LINE);
   return t;
 }
@@ -419,7 +409,6 @@ void Main_Error_Exit(char *msg) {
     fprintf(stderr, "\n");
   }
 
-  BoxVM_Destroy(program); /* This function accepts program = NULL */
   exit(EXIT_FAILURE);
 }
 
