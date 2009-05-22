@@ -30,7 +30,6 @@
 #include "container.h"
 #include "typesys.h"
 
-#include "compiler.h"
 #include "cmpproc.h"
 #include "new_compiler.h"
 

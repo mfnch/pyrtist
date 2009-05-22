@@ -856,7 +856,6 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
 
 #include <stdlib.h>
 
-#include "compiler.h"
 #include "str.h"
 
 Int Tym_Type_Size(Int t) {return (Int) TS_Size(last_ts, (Type) t);}

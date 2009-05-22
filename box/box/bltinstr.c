@@ -23,7 +23,6 @@
 #include "types.h"
 #include "mem.h"
 #include "typesys.h"
-#include "compiler.h"
 #include "virtmach.h"
 #include "print.h"
 #include "builtins.h"

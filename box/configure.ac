@@ -42,7 +42,7 @@ AC_CONFIG_MACRO_DIR([libltdl/m4])
 
 AM_INIT_AUTOMAKE
 
-AC_CONFIG_SRCDIR([box/compiler.c])
+AC_CONFIG_SRCDIR([box/main.c])
 AC_CONFIG_HEADERS([config.h])
 
 # Libtool support

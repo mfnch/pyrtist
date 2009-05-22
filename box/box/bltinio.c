@@ -23,7 +23,6 @@
 #include "mem.h"
 #include "typesys.h"
 #include "virtmach.h"
-#include "compiler.h"
 #include "builtins.h"
 #include "bltinstr.h"
 #include "bltinio.h"
