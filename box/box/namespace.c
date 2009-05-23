@@ -71,6 +71,17 @@ void Namespace_Floor_Up(Namespace *ns) {
   floor_data->first_item = NULL;
 }
 
+static void My_NmspItem_Finish(NmspItem *item) {
+  switch(item->type) {
+  case NMSPITEMTYPE_VALUE:
+    Value_Unlink((Value *) item->data);
+    return;
+
+  default:
+    printf("My_NmspItem_Finish: don't know how to remove item!");
+  }
+}
+
 void Namespace_Floor_Down(Namespace *ns) {
   NmspFloorData floor_data;
   NmspItem *item;
@@ -80,6 +91,7 @@ void Namespace_Floor_Down(Namespace *ns) {
   for(item = floor_data.first_item; item != NULL;) {
     NmspItem *item_to_del = item;
     item = item->next;
+    My_NmspItem_Finish(item_to_del);
     BoxHT_Remove_By_HTItem(& ns->ht, item_to_del->ht_item);
   }
 }

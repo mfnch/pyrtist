@@ -65,7 +65,7 @@ BoxVMSymID CmpProc_Get_Sym(CmpProc *p) {
 
   else {
     p->have.sym = 1;
-    return VM_Sym_New_Call(& p->cmp->vm);
+    return VM_Sym_New_Call(p->cmp->vm);
   }
 }
 
@@ -75,7 +75,7 @@ BoxVMProcID CmpProc_Get_ProcID(CmpProc *p) {
 
   else {
     p->have.proc_id = 1;
-    ASSERT_TASK( VM_Proc_Code_New(& p->cmp->vm, & p->proc_id) );
+    ASSERT_TASK( VM_Proc_Code_New(p->cmp->vm, & p->proc_id) );
     return p->proc_id;
   }
 }
@@ -102,7 +102,7 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p) {
     BoxVMProcID pn = CmpProc_Get_ProcID(p);
     char *proc_desc = CmpProc_Get_Proc_Desc(p),
          *proc_name = (p->have.proc_name) ? p->proc_name : "(noname)";
-    VM_Proc_Install_Code(& p->cmp->vm, & p->call_num, pn,
+    VM_Proc_Install_Code(p->cmp->vm, & p->call_num, pn,
                          proc_name, proc_desc);
     BoxMem_Free(proc_desc);
     p->have.call_num = 1;
@@ -113,9 +113,9 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p) {
 void CmpProc_Raw_VA_Assemble(CmpProc *p, BoxOpcode op, va_list ap) {
   BoxVMProcID proc_id, previous_target;
   proc_id = CmpProc_Get_ProcID(p);
-  previous_target = BoxVM_Proc_Target_Set(& p->cmp->vm, proc_id);
-  VM_VA_Assemble(& p->cmp->vm, op, ap);
-  (void) BoxVM_Proc_Target_Set(& p->cmp->vm, previous_target);
+  previous_target = BoxVM_Proc_Target_Set(p->cmp->vm, proc_id);
+  VM_VA_Assemble(p->cmp->vm, op, ap);
+  (void) BoxVM_Proc_Target_Set(p->cmp->vm, previous_target);
 }
 
 void CmpProc_Raw_Assemble(CmpProc *p, BoxOpcode op, ...) {
@@ -294,7 +294,7 @@ static BoxOpInfo *My_Find_Op(CmpProc *p, FoundOP *info, BoxGOp g_op,
   int num_exp_args, ro0_arg_conflict, ro0_input_conflict;
 
   /* Search for operations whose argument number and type match */
-  oi = BoxVM_Get_Op_Info(& p->cmp->vm, g_op);
+  oi = BoxVM_Get_Op_Info(p->cmp->vm, g_op);
   for(; oi != NULL; oi = oi->next) {
     if (oi->num_regs == num_args) {
       /* Consider only operations with matching arg number */
@@ -386,7 +386,7 @@ void CmpProc_VA_Assemble(CmpProc *p, BoxGOp g_op, int num_args, va_list ap) {
     if (oi == NULL) {
       fprintf(stderr, "CmpProc_Assemble: cannot find a matching operation.\n");
       fprintf(stderr, "Possible signatures are:\n");
-      BoxOpInfo_Print(stderr, BoxVM_Get_Op_Info(& p->cmp->vm, g_op));
+      BoxOpInfo_Print(stderr, BoxVM_Get_Op_Info(p->cmp->vm, g_op));
       MSG_FATAL("CmpProc_Assemble: aborting!");
       assert(0);
 

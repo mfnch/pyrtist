@@ -907,7 +907,7 @@ static void My_Builtin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
   char *proc_name = NULL;
 
   /* We create the symbol associated with this name */
-  sym_num = VM_Sym_New_Call(& c->vm);
+  sym_num = VM_Sym_New_Call(c->vm);
 
   /* We tell to the compiler that some procedures are associated with it */
   TS_Procedure_New(& c->ts, & new_proc, parent, child, /*kind*/ 1);
@@ -915,12 +915,12 @@ static void My_Builtin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
   proc_name = TS_Name_Get(& c->ts, new_proc);
 
   /* We finally install the code (a C function) for the procedure */
-  VM_Proc_Install_CCode(& c->vm, & call_num, c_fn,
+  VM_Proc_Install_CCode(c->vm, & call_num, c_fn,
                         "(noname)", proc_name);
   BoxMem_Free(proc_name);
 
   /* And define the symbol */
-  assert(VM_Sym_Def_Call(& c->vm, sym_num, call_num) == BoxSuccess);
+  assert(VM_Sym_Def_Call(c->vm, sym_num, call_num) == BoxSuccess);
 }
 
 static void My_Register_Std_IO(BoxCmp *c) {

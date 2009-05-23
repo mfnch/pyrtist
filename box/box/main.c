@@ -54,6 +54,7 @@
 #include "vmsym.h"
 #include "registers.h"
 #include "paths.h"
+#include "compiler.h"
 
 /* Visualizzo questo messaggio quando ho errori nella riga di comando: */
 #define CMD_LINE_HELP "Try '%s -h' to get some help!"
@@ -66,6 +67,9 @@ enum {
   FLAG_FORCE_EXEC=0X400
 };
 
+/* The BoxVM object where the source is compiled */
+static BoxVM *target_vm = NULL;
+
 /* Variabili interne */
 static UInt flags = FLAG_EXECUTE; /* Stato di partenza dei flags */
 static char *prog_name;
@@ -75,11 +79,11 @@ static char *file_setup;
 static char *query = NULL;
 
 /* Functions called when the argument of an option is found */
-static void set_file_input(char *arg) {file_input = arg;}
-static void set_file_output(char *arg) {file_output = arg;}
-static void set_file_setup(char *arg) {file_setup = arg;}
-static void Set_Query(char *arg) {query = arg;}
-static void Exec_Query(char *query);
+static void My_Set_File_Input(char *arg) {file_input = arg;}
+static void My_Set_File_Output(char *arg) {file_output = arg;}
+static void My_Set_File_Setup(char *arg) {file_setup = arg;}
+static void My_Set_Query(char *arg) {query = arg;}
+static void My_Exec_Query(char *query);
 
 #define NO_ARG ((void (*)(char *)) NULL)
 
@@ -102,16 +106,16 @@ static struct opt {
   {"silent",  FLAG_VERBOSE + FLAG_ERRORS, 0, FLAG_SILENT, -1, & flags, NO_ARG},
   {"force",   0, 0, FLAG_FORCE_EXEC, -1, & flags, NO_ARG},
   {"stdin",   0, FLAG_INPUT+FLAG_STDIN, 0, 1, & flags, NO_ARG},
-  {"input",   FLAG_STDIN, FLAG_INPUT, 0, 1, & flags, set_file_input},
-  {"output",  FLAG_OVERWRITE, FLAG_OUTPUT, 0, 1, & flags, set_file_output},
-  {"write",   0, FLAG_OVERWRITE + FLAG_OUTPUT, 0, 1, & flags, set_file_output},
-  {"setup",   0, FLAG_SETUP, 0, 1, & flags, set_file_setup},
+  {"input",   FLAG_STDIN, FLAG_INPUT, 0, 1, & flags, My_Set_File_Input},
+  {"output",  FLAG_OVERWRITE, FLAG_OUTPUT, 0, 1, & flags, My_Set_File_Output},
+  {"write",   0, FLAG_OVERWRITE + FLAG_OUTPUT, 0, 1, & flags, My_Set_File_Output},
+  {"setup",   0, FLAG_SETUP, 0, 1, & flags, My_Set_File_Setup},
   {"library", 0, 0, 0, -1, & flags, Path_Add_Lib},
   {"Include-path", 0, 0, 0, -1, & flags, Path_Add_Pkg_Dir},
   {"Lib-path", 0, 0, 0, -1, & flags, Path_Add_Lib_Dir},
-  {"query",    0, 0, 0, -1, & flags, Set_Query},
+  {"query",    0, 0, 0, -1, & flags, My_Set_Query},
   {NULL }
-}, opt_default =  {"input", 0, FLAG_INPUT, 0, 1, & flags, set_file_input};
+}, opt_default =  {"input", 0, FLAG_INPUT, 0, 1, & flags, My_Set_File_Input};
 
 /* Funzioni definite inquesto file */
 int main(int argc, char** argv);
@@ -131,6 +135,9 @@ static Task Stage_Init(void) {
 }
 
 static void Stage_Finalize(void) {
+  if (target_vm != NULL)
+    BoxVM_Destroy(target_vm);
+
   Path_Destroy();
 
   Msg_Main_Destroy();
@@ -219,7 +226,7 @@ static Task Stage_Interpret_Command_Line(UInt *f) {
   /* Controllo se e' stata specificata l'opzione di help */
   if (flags & FLAG_HELP) Main_Cmnd_Line_Help();
 
-  if (query != NULL) Exec_Query(query);
+  if (query != NULL) My_Exec_Query(query);
 
   /* Re-inizializzo la gestione dei messaggi! */
   if ( flags & FLAG_VERBOSE )
@@ -264,14 +271,14 @@ static Task Stage_Add_Default_Paths(void) {
 }
 
 static Task Stage_Compilation(char *file, UInt *main_module) {
+  BoxVMCallNum main_proc;
+
   Msg_Main_Counter_Clear_All();
   MSG_CONTEXT_BEGIN("Compilation");
 
-#if 0
-  TASK( Cmp_Init(program) );
-  TASK( Cmp_Parse(file) );
-  TASK( Main_Install(main_module) );
-#endif
+  target_vm = Box_Compile_To_VM_From_File(& main_proc, /*target_vm*/ NULL,
+                                          /*file*/ NULL,
+                                          /*setup_file_name*/ file);
 
   MSG_ADVICE("Compilaton finished. %U errors and %U warnings were found.",
              MSG_GT_ERRORS, MSG_NUM_WARNINGS );
@@ -323,7 +330,7 @@ static Task Stage_Execution(UInt *flags, UInt main_module) {
 
   MSG_CONTEXT_BEGIN("Execution");
   Msg_Main_Counter_Clear_All();
-  status = Main_Execute(main_module);
+  //status = Main_Execute(main_module);
   MSG_ADVICE("Execution finished. %U errors and %U warnings were found.",
               MSG_GT_ERRORS, MSG_NUM_WARNINGS);
   MSG_CONTEXT_END();
@@ -350,11 +357,10 @@ static Task Stage_Write_Asm(UInt flags) {
       close_file = 1;
     }
 
-#if 0
-    BoxVM_Set_Attr(program, BOXVM_ATTR_DASM_WITH_HEX,
+    BoxVM_Set_Attr(target_vm, BOXVM_ATTR_DASM_WITH_HEX,
                    BOXVM_ATTR_DASM_WITH_HEX);
-    TASK( VM_Proc_Disassemble_All(program, out) );
-#endif
+    TASK( VM_Proc_Disassemble_All(target_vm, out) );
+
     if (close_file) (void) fclose(out);
   }
   return Success;
@@ -440,7 +446,7 @@ void Main_Cmnd_Line_Help(void) {
   exit( EXIT_SUCCESS );
 }
 
-static void Exec_Query(char *query) {
+static void My_Exec_Query(char *query) {
   struct {
     char *name;
     char *value;

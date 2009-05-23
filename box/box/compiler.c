@@ -30,6 +30,7 @@
 #include "namespace.h"
 #include "messages.h"
 #include "compiler.h"
+#include "parserh.h"
 
 /** Type of items which may be inserted inside the compiler stack.
  * @see StackItem
@@ -56,18 +57,17 @@ typedef struct {
   StackItemDestructor destructor;
 } StackItem;
 
-void BoxCmp_Init(BoxCmp *c) {
-  BoxVM_Init(& c->vm);
+void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
+  c->attr.own_vm = (target_vm == NULL);
+  c->vm = (target_vm != NULL) ? target_vm : BoxVM_New();
+
   BoxArr_Init(& c->stack, sizeof(StackItem), 32);
 
   Reg_Init(& c->regs);
 
-  {
-    TS *this_ts = last_ts;
-    TS_Init(& c->ts);
-    TS_Init_Builtin_Types(& c->ts);
-    last_ts = this_ts;
-  }
+  TS_Init(& c->ts);
+  TS_Init_Builtin_Types(& c->ts);
+
   BoxCmp_Init__Operators(c);
 
   CmpProc_Init(& c->main_proc, c);
@@ -80,25 +80,55 @@ void BoxCmp_Finish(BoxCmp *c) {
   Bltin_Finish(c);
   Namespace_Finish(& c->ns);
   Reg_Finish(& c->regs);
-  CmpProc_Get_Call_Num(& c->main_proc);
-  VM_Proc_Disassemble_All(& c->vm, stdout);
   CmpProc_Finish(& c->main_proc);
   BoxArr_Finish(& c->stack);
   BoxCmp_Finish__Operators(c);
   TS_Finish(& c->ts);
-  BoxVM_Finish(& c->vm);
+
+  if (c->attr.own_vm)
+    BoxVM_Destroy(c->vm);
 }
 
-BoxCmp *BoxCmp_New(void) {
+BoxCmp *BoxCmp_New(BoxVM *target_vm) {
   BoxCmp *c = BoxMem_Alloc(sizeof(BoxCmp));
   if (c == NULL) return NULL;
-  BoxCmp_Init(c);
+  BoxCmp_Init(c, target_vm);
   return c;
 }
 
 void BoxCmp_Destroy(BoxCmp *c) {
   BoxCmp_Finish(c);
   BoxMem_Free(c);
+}
+
+BoxVM *BoxCmp_Steal_VM(BoxCmp *c) {
+  BoxVM *vm = c->vm;
+  c->attr.own_vm = 0;
+  c->vm = 0;
+  return vm;
+}
+
+/* Function which does all the steps needed to get from a Box source file
+ * to a VM with the corresponding compiled bytecode.
+ */
+BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
+                                   FILE *file, const char *setup_file_name) {
+  ASTNode *program_node;
+  BoxCmp *compiler;
+  BoxVM *vm;
+  BoxVMCallNum dummy_cn;
+
+  if (main == NULL)
+    main = & dummy_cn;
+
+  compiler = BoxCmp_New(target_vm);
+  program_node = Parser_Parse(file, setup_file_name);
+  BoxCmp_Compile(compiler, program_node);
+  ASTNode_Destroy(program_node);
+  *main = CmpProc_Get_Call_Num(& compiler->main_proc);
+  vm = BoxCmp_Steal_VM(compiler);
+  BoxCmp_Destroy(compiler);
+  return vm;
 }
 
 void BoxCmp_Pop_Any(BoxCmp *c, int num_items_to_pop) {
@@ -201,6 +231,7 @@ void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
     return;
 
   My_Compile_Any(c, program);
+  BoxCmp_Pop_Any(c, 1);
 }
 
 static void My_Compile_Any(BoxCmp *c, ASTNode *node) {

@@ -39,9 +39,14 @@
 #  include "builtins.h"
 
 struct _box_cmp {
+  struct {
+    unsigned int
+             own_vm :1;   /**< Was the VM created by us, or given from
+                               outside? */
+  }          attr;      /**< Attributes of the compiler */
+  BoxVM      *vm;       /**< The target of the compilation */
   BoxArr     stack;     /**< Used during compilation to pass around
                              expressions */
-  BoxVM      vm;        /**< The target of the compilation */
   BoxTS      ts;        /**< The type system */
   BltinStuff bltin;     /**< Builtin types, etc. */
   Namespace  ns;        /**< The namespace */
@@ -52,13 +57,24 @@ struct _box_cmp {
              un_ops[ASTUNOP__NUM_OPS];   /**< Table of unary operators */
 };
 
-void BoxCmp_Init(BoxCmp *c);
+void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm);
 
 void BoxCmp_Finish(BoxCmp *c);
 
-BoxCmp *BoxCmp_New(void);
+BoxCmp *BoxCmp_New(BoxVM *target_vm);
 
 void BoxCmp_Destroy(BoxCmp *c);
+
+/** Steal the VM which is being used as the target for the compilation. */
+BoxVM *BoxCmp_Steal_VM(BoxCmp *c);
+
+/** Create the compiler and use it to parse the given file, returning the
+ * virtual machine object which was used as the target of the compilation
+ * and putting in '*main' the BoxVMCallNum of the main procedure of the
+ * compiled source.
+ */
+BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
+                                   FILE *file, const char *setup_file_name);
 
 void BoxCmp_Compile(BoxCmp *c, ASTNode *program);
 
