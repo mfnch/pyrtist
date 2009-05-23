@@ -29,7 +29,7 @@
 #include "operator.h"
 #include "namespace.h"
 #include "messages.h"
-#include "new_compiler.h"
+#include "compiler.h"
 
 /** Type of items which may be inserted inside the compiler stack.
  * @see StackItem

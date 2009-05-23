@@ -25,7 +25,7 @@
 #include "print.h"
 #include "messages.h"
 #include "container.h"
-#include "new_compiler.h"
+#include "compiler.h"
 #include "value.h"
 
 void Value_Init(Value *v, BoxCmp *cmp) {

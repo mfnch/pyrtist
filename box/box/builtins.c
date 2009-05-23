@@ -729,7 +729,7 @@ static Task Vec_RealNum(VMProgram *vmp) {
 #include "value.h"
 #include "operator.h"
 #include "namespace.h"
-#include "new_compiler.h"
+#include "compiler.h"
 
 /* Define some core types such as Int, Real and Point (for example, define
  * Int as (Char->Int) and Real as (Char->Int->Real)).

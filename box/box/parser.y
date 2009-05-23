@@ -46,9 +46,6 @@ void yyerror(char *s);
 #include "virtmach.h"
 #include "vmsym.h"
 #include "vmsymstuff.h"
-#include "expr.h"
-#include "compiler.h"
-#include "box.h"
 #include "builtins.h"
 
 #define YYDEBUG 0

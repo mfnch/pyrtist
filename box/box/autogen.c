@@ -23,7 +23,6 @@
 /*#include "messages.h"*/
 #include "str.h"
 #include "typesys.h"
-#include "compiler.h"
 #include "virtmach.h"
 #include "vmalloc.h"
 #include "vmproc.h"

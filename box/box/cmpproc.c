@@ -31,7 +31,7 @@
 #include "typesys.h"
 
 #include "cmpproc.h"
-#include "new_compiler.h"
+#include "compiler.h"
 
 void CmpProc_Init(CmpProc *p, BoxCmp *c) {
   p->cmp = c;

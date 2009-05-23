@@ -25,7 +25,7 @@
 #include "ast.h"
 #include "value.h"
 #include "messages.h"
-#include "new_compiler.h"
+#include "compiler.h"
 #include "virtmach.h"
 #include "cmpproc.h"
 #include "operator.h"

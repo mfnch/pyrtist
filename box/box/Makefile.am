@@ -65,7 +65,7 @@ noinst_HEADERS = defaults.h \
   builtins.h bltinstr.h bltinio.h \
   vmalloc.h vmproc.h vmsym.h \
   vmsymstuff.h paths.h container.h \
-  cmpproc.h bltinarray.h ast.h cmpptrs.h value.h new_compiler.h operator.h \
+  cmpproc.h bltinarray.h ast.h cmpptrs.h value.h compiler.h operator.h \
   namespace.h
 
 box_SOURCES = \
@@ -73,7 +73,7 @@ box_SOURCES = \
   tokenizer.l parser.y registers.c \
   typesys.c builtins.c bltinstr.c bltinio.c vmsymstuff.c \
   paths.c main.c container.c cmpproc.c bltinarray.c ast.c value.c \
-  new_compiler.c operator.c namespace.c
+  compiler.c operator.c namespace.c
 
 box_LDADD = $(LIBLTDL) libboxcore0.2.la
 box_LDFLAGS = -static
