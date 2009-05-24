@@ -161,6 +161,17 @@ int Value_Want_Value(Value *v) {
   }
 }
 
+void Value_Setup_As_Weak_Copy(Value *v_copy, Value *v) {
+  v_copy->cmp = v->cmp;
+  v_copy->kind = v->kind;
+  v_copy->type = v->type;
+  v_copy->value.cont = v->value.cont;
+  v_copy->name = (v->name == NULL) ? NULL : BoxMem_Strdup(v->name);
+  v_copy->attr.own_register = 0;
+  v_copy->attr.own_reference = 0;
+  v_copy->attr.ignore = 0;
+}
+
 void Value_Setup_As_Var_Name(Value *v, const char *name) {
   v->kind = VALUEKIND_VAR_NAME;
   v->name = BoxMem_Strdup(name);

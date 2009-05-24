@@ -223,6 +223,7 @@ static void My_Compile_TypeName(BoxCmp *c, ASTNode *node);
 static void My_Compile_Box(BoxCmp *c, ASTNode *node);
 static void My_Compile_Const(BoxCmp *c, ASTNode *n);
 static void My_Compile_Var(BoxCmp *c, ASTNode *n);
+static void My_Compile_DontIgnore(BoxCmp *c, ASTNode *n);
 static void My_Compile_UnOp(BoxCmp *c, ASTNode *n);
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n);
 
@@ -244,6 +245,8 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_Const(c, node); break;
   case ASTNODETYPE_VAR:
     My_Compile_Var(c, node); break;
+  case ASTNODETYPE_DONTIGNORE:
+    My_Compile_DontIgnore(c, node); break;
   case ASTNODETYPE_UNOP:
     My_Compile_UnOp(c, node); break;
   case ASTNODETYPE_BINOP:
@@ -297,13 +300,24 @@ int XXX_Emit_Call(Value *parent, Value *child) {
                                 & expansion_for_child,
                                 parent->type, child->type, 1);
 
-  if (found_procedure == BOXTYPE_NONE) return 0;
+  if (found_procedure == BOXTYPE_NONE)
+    return 0;
 
   if (expansion_for_child != BOXTYPE_NONE)
     child = Value_Expand(child, expansion_for_child);
 
   TS_Procedure_Sym_Num_Get(& c->ts, & sym_id, found_procedure);
   printf("Found procedure with sym_id="SUInt"\n", sym_id);
+
+  {
+    Value *v_to_pass = Value_To_Temp_Or_Target(child);
+    BoxCont cont_gro2;
+    BoxCont_Set(& cont_gro2, "go", 2);
+    CmpProc_Assemble(c->cur_proc, BOXGOP_LEA,
+                     2, & cont_gro2, & v_to_pass->value.cont);
+    Value_Unlink(v_to_pass);
+  }
+
   CmpProc_Assemble_Call(c->cur_proc, sym_id);
   return 1;
 }
@@ -366,11 +380,16 @@ static void My_Compile_Var(BoxCmp *c, ASTNode *n) {
   Value *v;
   char *item_name = n->attr.var.name;
 
-  assert(n->type = ASTNODETYPE_VAR);
+  assert(n->type == ASTNODETYPE_VAR);
 
   v = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, item_name);
   if (v != NULL) {
-    BoxCmp_Push_Value(c, v);
+    /* We just return a copy of the Value object corresponding to the
+     * variable 
+     */
+    Value *v_copy = Value_New(c);
+    Value_Setup_As_Weak_Copy(v_copy, v);
+    BoxCmp_Push_Value(c, v_copy);
     return;
 
   } else {
@@ -382,9 +401,21 @@ static void My_Compile_Var(BoxCmp *c, ASTNode *n) {
   }
 }
 
+static void My_Compile_DontIgnore(BoxCmp *c, ASTNode *n) {
+  Value *operand;
+
+  assert(n->type == ASTNODETYPE_DONTIGNORE);
+
+  /* Compile operand and get it from the stack */
+  My_Compile_Any(c, n->attr.dont_ignore.expr);
+  operand = BoxCmp_Get_Value(c, 0);
+
+  Value_Set_Ignorable(operand, 0);
+}
+
 static void My_Compile_Const(BoxCmp *c, ASTNode *n) {
   Value *v;
-  assert(n->type = ASTNODETYPE_CONST);
+  assert(n->type == ASTNODETYPE_CONST);
   v = Value_New(c);
   switch(n->attr.constant.type) {
   case ASTCONSTTYPE_CHAR:

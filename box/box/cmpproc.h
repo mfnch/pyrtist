@@ -35,9 +35,12 @@
 #  include "vmproc.h"
 #  include "cmpptrs.h"
 
+/** The CmpProc object. */
+typedef struct _cmp_proc CmpProc;
+
 /** @brief The CmpProc object.
  */
-typedef struct {
+struct _cmp_proc {
   struct {
     unsigned int
                 sym      :1, /**< the procedure has an associated symbol */
@@ -52,7 +55,7 @@ typedef struct {
   char          *proc_name;  /**< Procedure name */
   BoxVMCallNum  call_num;    /**< Call number (needed to call it from ASM) */
   Type          type;        /**< Type of the procedure */
-} CmpProc;
+};
 
 /** Initialise a CmpProc object in the memory region pointed by p.
  * @param p A pointer to the space where the CmpProc object will be stored.

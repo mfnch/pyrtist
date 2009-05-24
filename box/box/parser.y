@@ -782,7 +782,7 @@ prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
   | string_concat                {$$ = $1;}
   | TOK_IDENTIFIER               {$$ = ASTNodeVar_New($1, 0); BoxMem_Free($1);}
-  | '(' expr ')'                 {$$ = $2;}
+  | '(' expr ')'                 {$$ = ASTNodeDontIgnore_New($2);}
   | '(' struc_expr ')'           {$$ = $2;}
   ;
 
@@ -948,6 +948,7 @@ void yyerror(char* s) {
   MSG_ERROR("%s", s);
 }
 
+#if 0
 /* Inizializza il parser. Se f != NULL il compilatore partira'
  * come se la prima istruzione del programma fosse una "include nomefile"
  * dove nomefile e' la stringa a cui punta f.
@@ -977,6 +978,7 @@ Task Parser_Finish(void) {
   Tok_Finish();
   return Success;
 }
+#endif
 
 ASTNode *Parser_Parse(FILE *in, const char *auto_include) {
   ASTNode *program;

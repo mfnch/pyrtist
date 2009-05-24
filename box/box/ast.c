@@ -51,6 +51,9 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
   case ASTNODETYPE_VAR:
     subnodes[0] = & node->attr.var.scope;
     return 1;
+  case ASTNODETYPE_DONTIGNORE:
+    subnodes[0] = & node->attr.dont_ignore.expr;
+    return 1;
   case ASTNODETYPE_UNOP:
     subnodes[0] = & node->attr.un_op.expr;
     return 1;
@@ -80,21 +83,22 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
 
 const char *ASTNodeType_To_Str(ASTNodeType t) {
   switch(t) {
-  case ASTNODETYPE_ERROR:     return "Error";
-  case ASTNODETYPE_TYPENAME:  return "TypeName";
-  case ASTNODETYPE_SUBTYPE:   return "SubType";
-  case ASTNODETYPE_BOX:       return "Box";
-  case ASTNODETYPE_STATEMENT: return "Statement";
-  case ASTNODETYPE_CONST:     return "Const";
-  case ASTNODETYPE_STRING:    return "String";
-  case ASTNODETYPE_VAR:       return "Var";
-  case ASTNODETYPE_UNOP:      return "UnOp";
-  case ASTNODETYPE_BINOP:     return "BinOp";
-  case ASTNODETYPE_MEMBER:    return "Member";
-  case ASTNODETYPE_STRUC:     return "Struc";
-  case ASTNODETYPE_ARRAYGET:  return "ArrayGet";
-  case ASTNODETYPE_MEMBERGET: return "MemberGet";
-  default:                    return "UnknownNode";
+  case ASTNODETYPE_ERROR:      return "Error";
+  case ASTNODETYPE_TYPENAME:   return "TypeName";
+  case ASTNODETYPE_SUBTYPE:    return "SubType";
+  case ASTNODETYPE_BOX:        return "Box";
+  case ASTNODETYPE_STATEMENT:  return "Statement";
+  case ASTNODETYPE_CONST:      return "Const";
+  case ASTNODETYPE_STRING:     return "String";
+  case ASTNODETYPE_VAR:        return "Var";
+  case ASTNODETYPE_DONTIGNORE: return "DontIgnore"; 
+  case ASTNODETYPE_UNOP:       return "UnOp";
+  case ASTNODETYPE_BINOP:      return "BinOp";
+  case ASTNODETYPE_MEMBER:     return "Member";
+  case ASTNODETYPE_STRUC:      return "Struc";
+  case ASTNODETYPE_ARRAYGET:   return "ArrayGet";
+  case ASTNODETYPE_MEMBERGET:  return "MemberGet";
+  default:                     return "UnknownNode";
   }
   return "???";
 }
@@ -381,6 +385,12 @@ ASTNode *ASTNodeVar_New(const char *name, size_t name_len) {
                         BoxMem_Strndup(name, name_len) : BoxMem_Strdup(name);
   node->attr.var.scope = NULL;
   node->finaliser = ASTNodeVar_Finaliser;
+  return node;
+}
+
+ASTNode *ASTNodeDontIgnore_New(ASTNode *expr) {
+  ASTNode *node = ASTNode_New(ASTNODETYPE_DONTIGNORE);
+  node->attr.dont_ignore.expr = expr;
   return node;
 }
 

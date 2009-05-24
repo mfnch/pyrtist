@@ -127,6 +127,13 @@ typedef struct {
 /** Set the value to Void[] */
 void Value_Setup_As_Void(Value *v);
 
+/** Create a "weak" copy of the provided value. A weak copy is a copy which
+ * does not own the register nor references to the underlying object.
+ * A weak copy is done when returning a variable, since we just want to access
+ * the variable, knowing that we "do not own" it.
+ */
+void Value_Setup_As_Weak_Copy(Value *v_copy, Value *v);
+
 /** Set the value to a variable with the given name. */
 void Value_Setup_As_Var_Name(Value *v, const char *name);
 
