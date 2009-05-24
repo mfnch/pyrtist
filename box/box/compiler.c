@@ -304,8 +304,7 @@ int XXX_Emit_Call(Value *parent, Value *child) {
 
   TS_Procedure_Sym_Num_Get(& c->ts, & sym_id, found_procedure);
   printf("Found procedure with sym_id="SUInt"\n", sym_id);
-
-  MSG_WARNING("My_Compile_Box not implemented: proc not called!");
+  CmpProc_Assemble_Call(c->cur_proc, sym_id);
   return 1;
 }
 

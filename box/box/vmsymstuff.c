@@ -29,31 +29,31 @@
 
 /*** call references ********************************************************/
 /* This is the function which assembles the code for the function call */
-static Task Assemble_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
-                          int defined, void *def, UInt def_size,
-                          void *ref, UInt ref_size) {
-  UInt call_num = 0;
+static Task My_Assemble_Call(BoxVM *vm, UInt sym_num, UInt sym_type,
+                             int defined, void *def, UInt def_size,
+                             void *ref, UInt ref_size) {
+  BoxVMCallNum call_num = 0;
   assert(sym_type == VM_SYM_CALL);
 
 
   if (defined && def != NULL) {
-    assert(def_size == sizeof(UInt));
-    call_num = *((UInt *) def);
+    assert(def_size == sizeof(BoxVMCallNum));
+    call_num = *((BoxVMCallNum *) def);
   }
-  VM_Assemble_Long(vmp, ASM_CALL_I, CAT_IMM, call_num);
+  VM_Assemble_Long(vm, ASM_CALL_I, CAT_IMM, call_num);
   return Success;
 }
 
-BoxVMSymID VM_Sym_New_Call(BoxVM *vmp) {
-  return BoxVMSym_New(vmp, VM_SYM_CALL, sizeof(UInt));
+BoxVMSymID BoxVMSym_New_Call(BoxVM *vm) {
+  return BoxVMSym_New(vm, VM_SYM_CALL, sizeof(BoxVMCallNum));
 }
 
-Task VM_Sym_Def_Call(BoxVM *vmp, UInt sym_num, UInt proc_num) {
-  return BoxVMSym_Def(vmp, sym_num, & proc_num);
+Task BoxVMSym_Def_Call(BoxVM *vm, BoxVMSymID sym_id, BoxVMCallNum call_num) {
+  return BoxVMSym_Def(vm, sym_id, & call_num);
 }
 
-Task VM_Sym_Call(BoxVM *vmp, UInt sym_num) {
-  return BoxVMSym_Code_Ref(vmp, sym_num, Assemble_Call, NULL, 0);
+Task BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
+  return BoxVMSym_Code_Ref(vm, sym_id, My_Assemble_Call, NULL, 0);
 }
 
 /*** basic method registration **********************************************/

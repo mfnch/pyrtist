@@ -206,7 +206,7 @@ typedef BoxName Data;
  */
 
 /** When we do not tolerate a failure then we use the ASSERT_TASK macro. */
-#    define ASSERT_TASK(x) assert(Success == (x))
+#    define ASSERT_TASK(x) do{Task t = (x); assert(t == BoxSuccess);} while(0)
 
 #  endif /* BOX_ABBREV */
 

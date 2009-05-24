@@ -339,7 +339,7 @@ static int Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
     if (sym_name != (char *) NULL && s->sym_type == VM_SYM_CALL) {
       const char *err_msg;
       void *sym;
-      UInt call_num;
+      BoxVMCallNum call_num;
 
       err_msg = lt_dlerror();
       sym = lt_dlsym(clrd->dylib, sym_name);
@@ -353,7 +353,7 @@ static int Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
       VM_Proc_Install_CCode(vmp, & call_num,
                             (Task (*)(BoxVM *)) sym,
                             sym_name, sym_name);
-      ASSERT_TASK( VM_Sym_Def_Call(vmp, sym_num, call_num) );
+      ASSERT_TASK(BoxVMSym_Def_Call(vmp, sym_num, call_num));
     }
   }
   return 1;

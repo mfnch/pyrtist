@@ -21,7 +21,7 @@
  * @brief CmpProc, generic object used for handling procedures.
  *
  * The object CmpProc is used to handle operations on procedures, such as
- * declaration, installation, referencing, etc.
+ * declaration, installation, referencing, assembly, etc.
  */
 
 #ifndef _CMPPROC_H
@@ -108,17 +108,23 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p);
 Int CmpProc_Code_Size(CmpProc *p);
 
 /** Assemble the instruction calling VM_Assemble and put the code inside
- * the given CmpProc procedure p.
- * @see CmpProc_Raw_VA_Assemble
+ * the given CmpProc procedure p. A higher level function for assembling code
+ * is provided by CmpProc_Assemble.
+ * @see CmpProc_Raw_VA_Assemble, CmpProc_Assemble
  */
 void CmpProc_Raw_Assemble(CmpProc *p, BoxOpcode instr, ...);
 
 /** Non-variadic version of the function CmpProc_Raw_Assemble.
  * Equivalent to the latter, but gets a va_list rather than a variable-length
- * argument list
+ * argument list.
  * @see CmpProc_Raw_Assemble
  */
 void CmpProc_Raw_VA_Assemble(CmpProc *p, BoxOpcode instr, va_list ap);
+
+/** Assemble a 'call' instruction to call the procedure whose symbol ID is
+ * 'sym_id' (using BoxVMSym_Assemble_Call).
+ */
+void CmpProc_Assemble_Call(CmpProc *p, BoxVMSymID sym_id);
 
 /** High level routine to assemble bytecode for the Box virtual machine (VM).
  */

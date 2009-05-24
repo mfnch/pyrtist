@@ -65,7 +65,7 @@ BoxVMSymID CmpProc_Get_Sym(CmpProc *p) {
 
   else {
     p->have.sym = 1;
-    return VM_Sym_New_Call(p->cmp->vm);
+    return BoxVMSym_New_Call(p->cmp->vm);
   }
 }
 
@@ -123,6 +123,14 @@ void CmpProc_Raw_Assemble(CmpProc *p, BoxOpcode op, ...) {
   va_start(ap, op);
   CmpProc_Raw_VA_Assemble(p, op, ap);
   va_end(ap);
+}
+
+void CmpProc_Assemble_Call(CmpProc *p, BoxVMSymID sym_id) {
+  BoxVMProcID proc_id, previous_target;
+  proc_id = CmpProc_Get_ProcID(p);
+  previous_target = BoxVM_Proc_Target_Set(p->cmp->vm, proc_id);
+  ASSERT_TASK(BoxVMSym_Assemble_Call(p->cmp->vm, sym_id));
+  (void) BoxVM_Proc_Target_Set(p->cmp->vm, previous_target);
 }
 
 /** Internal function used by My_Unsafe_Assemble to assemble operation
