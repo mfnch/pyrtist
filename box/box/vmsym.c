@@ -138,7 +138,7 @@ const char *BoxVMSym_Name_Get(BoxVM *vmp, UInt sym_num) {
   return s->name.text;
 }
 
-Task BoxVMSym_Def(BoxVM *vmp, UInt sym_num, void *def) {
+Task BoxVMSym_Def(BoxVM *vmp, BoxVMSymID sym_num, void *def) {
   BoxVMSymTable *st = & vmp->sym_table;
   BoxVMSym *s;
   s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
@@ -156,7 +156,7 @@ Task BoxVMSym_Def(BoxVM *vmp, UInt sym_num, void *def) {
   return Success;
 }
 
-Task BoxVMSym_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymResolver r,
+void BoxVMSym_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymResolver r,
                   void *ref, UInt ref_size, BoxVMSymStatus resolved) {
   BoxVMSymTable *st = & vmp->sym_table;
   BoxVMSym *s;
@@ -183,7 +183,6 @@ Task BoxVMSym_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymResolver r,
   BoxArr_Push(& st->refs, & sr);
   /* Link the reference to the list of references for the symbol */
   s->first_ref = BoxArr_Num_Items(& st->refs);
-  return Success;
 }
 
 static int Check_Ref(UInt item_num, void *item, void *all_resolved) {
@@ -467,14 +466,11 @@ Task BoxVMSym_Code_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymCodeGen code_gen,
   BoxVMSymCodeRef *ref_head;
   void *ref_all, *ref_tail;
 
-  Task t;
-
   s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
   def = BoxArr_Item_Ptr(& st->data, s->def_addr);
 
   ref_all_size = sizeof(BoxVMSymCodeRef) + ref_size;
-  ref_all = BoxMem_Alloc(ref_all_size);
-  if (ref_all == NULL) return Failed;
+  ref_all = BoxMem_Safe_Alloc(ref_all_size);
   ref_head = (BoxVMSymCodeRef *) ref_all;
   ref_tail = ref_all + sizeof(BoxVMSymCodeRef);
 
@@ -494,9 +490,9 @@ Task BoxVMSym_Code_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymCodeGen code_gen,
               "the current target for compilation!");
   }
   ref_head->size = BoxArr_Num_Items(& pt->target_proc->code) - ref_head->pos;
-  t = BoxVMSym_Ref(vmp, sym_num, code_generator, ref_all, ref_all_size, -1);
+  BoxVMSym_Ref(vmp, sym_num, code_generator, ref_all, ref_all_size, -1);
   BoxMem_Free(ref_all);
-  return t;
+  return Success;
 }
 
 #if 0
@@ -514,7 +510,7 @@ Task Assemble_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
     assert(def_size=sizeof(UInt));
     call_num = *((UInt *) def);
   }
-  VM_Assemble(vmp, ASM_CALL_I, CAT_IMM, call_num);
+  BoxVM_Assemble(vmp, ASM_CALL_I, CAT_IMM, call_num);
   return Success;
 }
 

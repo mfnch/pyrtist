@@ -70,7 +70,7 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
 
   BoxCmp_Init__Operators(c);
 
-  CmpProc_Init(& c->main_proc, c);
+  CmpProc_Init(& c->main_proc, c, CMPPROCSTYLE_MAIN);
   c->cur_proc = & c->main_proc;
   Namespace_Init(& c->ns);
   Bltin_Init(c);

@@ -62,7 +62,6 @@ typedef enum {
   TYPE_NONE           = -1,
   TYPE_FAST_FIRST     =  0,
   TYPE_CHAR           =  0,
-  TYPE_INTG           =  1,
   TYPE_INT            =  1,
   TYPE_REAL           =  2,
   TYPE_POINT          =  3,
@@ -78,39 +77,6 @@ typedef enum {
   TYPE_IF             = 12,
   TYPE_FOR            = 13
 } TypeID;
-
-/* Enumero gli header di istruzione della macchina virtuale.
- * ATTENZIONE: L'ordine nella seguente enumerazione deve rispettare l'ordine
- *  nella tabella dei descrittori di istruzione ( vm_instr_desc_table[] )
- * NUMERO ISTRUZIONI: 78
- */
-typedef enum {
-  ASM_LINE_Iimm=0, ASM_CALL_I, ASM_CALL_Iimm,
-  ASM_NEWC_II, ASM_NEWI_II, ASM_NEWR_II, ASM_NEWP_II, ASM_NEWO_II,
-  ASM_MOV_Cimm, ASM_MOV_Iimm, ASM_MOV_Rimm, ASM_MOV_Pimm,
-  ASM_MOV_CC, ASM_MOV_II, ASM_MOV_RR, ASM_MOV_PP, ASM_MOV_OO,
-  ASM_BNOT_I, ASM_BAND_II, ASM_BXOR_II, ASM_BOR_II,
-  ASM_SHL_II, ASM_SHR_II,
-  ASM_INC_I, ASM_INC_R, ASM_DEC_I, ASM_DEC_R,
-  ASM_POW_II, ASM_POW_RR,
-  ASM_ADD_II, ASM_ADD_RR, ASM_ADD_PP, ASM_SUB_II, ASM_SUB_RR, ASM_SUB_PP,
-  ASM_MUL_II, ASM_MUL_RR, ASM_DIV_II, ASM_DIV_RR, ASM_REM_II,
-  ASM_NEG_I, ASM_NEG_R, ASM_NEG_P, ASM_PMULR_P, ASM_PDIVR_P,
-  ASM_EQ_II, ASM_EQ_RR, ASM_EQ_PP, ASM_NE_II, ASM_NE_RR, ASM_NE_PP,
-  ASM_LT_II, ASM_LT_RR, ASM_LE_II, ASM_LE_RR,
-  ASM_GT_II, ASM_GT_RR, ASM_GE_II, ASM_GE_RR,
-  ASM_LNOT_I, ASM_LAND_II, ASM_LOR_II,
-  ASM_REAL_C, ASM_REAL_I, ASM_INTG_R, ASM_POINT_II, ASM_POINT_RR,
-  ASM_PROJX_P, ASM_PROJY_P, ASM_PPTRX_P, ASM_PPTRY_P,
-  ASM_RET,
-  ASM_MALLOC_I, ASM_MLN_O, ASM_MUNLN_O, ASM_MCOPY_OO,
-  ASM_LEA_C, ASM_LEA_I, ASM_LEA_R, ASM_LEA_P, ASM_LEA_OO,
-  ASM_PUSH_O, ASM_POP_O,
-  ASM_JMP_I, ASM_JC_I,
-  ASM_ADD_O,
-  ASM_ARINIT, ASM_ARSIZE, ASM_ARADDR, ASM_ARGET, ASM_ARNEXT, ASM_ARDEST,
-  ASM_ILLEGAL
-} AsmCode;
 
 /** The opcodes for the operations (instructions) understandable by the Box
  * virtual machine.
@@ -459,14 +425,14 @@ void BoxVM_Set_Attr(BoxVM *vm, BoxVMAttr mask, BoxVMAttr value);
 /** Sets the force-long flag and return what was its previous value. */
 int BoxVM_Set_Force_Long(BoxVM *vm, int force_long);
 
-BoxTask VM_Disassemble(BoxVM *vmp, FILE *output, void *prog, BoxUInt dim);
+BoxTask BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, BoxUInt dim);
 
 
-void VM_ASettings(BoxVM *vmp, int forcelong, int error, int inhibit);
+void BoxVM_ASettings(BoxVM *vmp, int forcelong, int error, int inhibit);
 
-void VM_VA_Assemble(BoxVM *vm, AsmCode instr, va_list ap);
+void BoxVM_VA_Assemble(BoxVM *vm, BoxOp instr, va_list ap);
 
-void VM_Assemble(BoxVM *vmp, AsmCode instr, ...);
+void BoxVM_Assemble(BoxVM *vmp, BoxOp instr, ...);
 
 /** Add the block of data pointed by 'data' with size 'size'
  * to the data segment for the VM instance 'vm'.
@@ -480,10 +446,11 @@ BoxUInt BoxVM_Data_Add(BoxVM *vm, const void *data, BoxUInt size,
 void BoxVM_Data_Display(BoxVM *vm, FILE *stream);
 
 /** Similar to VM_Assemble, but use the long bytecode format. */
-#define VM_Assemble_Long(vmp, instr, ...) { \
-  int is_long = BoxVM_Set_Force_Long(vmp, 1); \
-  VM_Assemble(vmp, instr, __VA_ARGS__); \
-  (void) BoxVM_Set_Force_Long(vmp, is_long);}
+#define BoxVM_Assemble_Long(vm, instr, ...) \
+  do { \
+  int is_long = BoxVM_Set_Force_Long(vm, 1); \
+  BoxVM_Assemble(vm, instr, __VA_ARGS__); \
+  (void) BoxVM_Set_Force_Long(vm, is_long);} while(0)
 
 /* Numero minimo di BoxVMByteX4 che riesce a contenere tutti i tipi possibili
  * di argomenti (Int, Real, Point, Obj)

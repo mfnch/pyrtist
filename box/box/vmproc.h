@@ -117,11 +117,11 @@ void VM_Proc_Destroy(BoxVM *vmp);
  * by an integer assigned by this function. This integer is passed back
  * through *proc_num.
  */
-Task VM_Proc_Code_New(BoxVM *vmp, BoxUInt *proc_num);
+Task VM_Proc_Code_New(BoxVM *vm, BoxUInt *proc_num);
 
 /** Destroys the procedure whose number is 'proc_num'.
  */
-Task VM_Proc_Code_Destroy(BoxVM *vmp, BoxUInt proc_num);
+Task VM_Proc_Code_Destroy(BoxVM *vm, BoxUInt proc_num);
 
 /** Set 'proc_num' to be the target procedure: the place where
  * VM_Assemble puts the assembled code

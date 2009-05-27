@@ -269,7 +269,7 @@ void VM__GLPI(VMStatus *vmcur) {
 void VM__Imm(VMStatus *vmcur) {vmcur->arg1 = (void *) vmcur->i_pos;}
 
 /*****************************************************************************
- * Functions used to disassemble the instructions (see VM_Disassemble)       *
+ * Functions used to disassemble the instructions (see BoxVM_Disassemble)    *
  *****************************************************************************/
 
 /* Questa funzione serve a disassemblare gli argomenti di
@@ -714,7 +714,7 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
       vm.flags.is_long = 0;
     }
 
-    if ( vm.i_type >= ASM_ILLEGAL ) {
+    if (vm.i_type >= BOX_NUM_OPS) {
       MSG_ERROR("Istruzione non riconosciuta!");
       vmp->vmcur = vm_save;
       return Failed;
@@ -775,7 +775,7 @@ void BoxVM_Set_Attr(BoxVM *vm, BoxVMAttr mask, BoxVMAttr value) {
  * prog e' il puntatore all'inizio del codice, dim e' la dimensione del codice
  * da tradurre (espresso in "numero di VMByteX4").
  */
-Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
+Task BoxVM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
   register VMByteX4 *i_pos = (VMByteX4 *) prog;
   VMStatus vm;
   UInt pos, nargs;
@@ -811,7 +811,7 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
            pos, vm.flags.is_long, vm.i_len, vm.i_type, vm.arg_type);
 #endif
 
-    if ( (vm.i_type < 1) || (vm.i_type >= ASM_ILLEGAL) ) {
+    if (vm.i_type < 1 || vm.i_type >= BOX_NUM_OPS) {
       iname = "???";
       vm.i_len = 1;
       nargs = 0;
@@ -883,7 +883,7 @@ Task VM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
  * NOTA: Le opzioni da error in poi "appartengono" al programma attualmente
  *  in scrittura.
  */
-void VM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit) {
+void BoxVM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit) {
   VMProcTable *pt = & vmp->proc_table;
   vmp->attr.forcelong = forcelong;
   pt->target_proc->status.error = error;
@@ -905,7 +905,7 @@ Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg) {
   BoxArr *entry = & pt->target_proc->code;
   Task exit_status = Failed;
 
-  VM_Assemble(vmp, ASM_RET);
+  BoxVM_Assemble(vmp, BOXOP_RET);
 
   previous_sheet = BoxVM_Proc_Target_Get(vmp);
   TASK( VM_Proc_Code_New(vmp, & tmp_sheet_id) );
@@ -914,7 +914,8 @@ Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg) {
   {
     register Int i;
     Int instruction[NUM_TYPES] = {
-      ASM_NEWC_II, ASM_NEWI_II, ASM_NEWR_II, ASM_NEWP_II, ASM_NEWO_II
+      BOXOP_NEWC_II, BOXOP_NEWI_II, BOXOP_NEWR_II,
+      BOXOP_NEWP_II, BOXOP_NEWO_II
     };
 
     for(i = 0; i < NUM_TYPES; i++) {
@@ -924,7 +925,7 @@ Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg) {
         goto exit;
       }
       if (nv > 0 || nr > 0)
-        VM_Assemble(vmp, instruction[i], CAT_IMM, nv, CAT_IMM, nr);
+        BoxVM_Assemble(vmp, instruction[i], CAT_IMM, nv, CAT_IMM, nr);
     }
   }
 
@@ -948,17 +949,17 @@ exit:
   return exit_status;
 }
 
-/** Similar to VM_Assemble, but takes a va_list argument as a replacement
+/** Similar to BoxVM_Assemble, but takes a va_list argument as a replacement
  * for the extra arguments.
  */
-void VM_VA_Assemble(BoxVM *vmp, AsmCode instr, va_list ap) {
+void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
   VMProcTable *pt = & vmp->proc_table;
   int i, t;
   VMInstrDesc *idesc;
   int is_short;
   struct {
     TypeID t;  /* Tipi degli argomenti */
-    AsmArg c;  /* Categorie degli argomenti */
+    BoxOp c;   /* Categorie degli argomenti */
     void *ptr; /* Puntatori ai valori degli argomenti */
     Int   vi;  /* Destinazione dei valori...   */
     Real  vr;  /* ...immediati degli argomenti */
@@ -968,7 +969,7 @@ void VM_VA_Assemble(BoxVM *vmp, AsmCode instr, va_list ap) {
   /* Esco subito se e' settato il flag di inibizione! */
   if (pt->target_proc->status.inhibit) return;
 
-  if (instr < 1 || instr >= ASM_ILLEGAL) {
+  if (instr < 1 || instr >= BOX_NUM_OPS) {
     MSG_ERROR("Istruzione non riconosciuta!");
     return;
   }
@@ -1117,10 +1118,10 @@ void VM_VA_Assemble(BoxVM *vmp, AsmCode instr, va_list ap) {
  * binario ad essa corrispondente nella destinazione specificata
  * dalla funzione VM_Asm_Out_Set().
  */
-void VM_Assemble(BoxVM *vm, AsmCode instr, ...) {
+void BoxVM_Assemble(BoxVM *vm, BoxOp instr, ...) {
   va_list ap;
   va_start(ap, instr);
-  VM_VA_Assemble(vm, instr, ap);
+  BoxVM_VA_Assemble(vm, instr, ap);
   va_end(ap);
 }
 

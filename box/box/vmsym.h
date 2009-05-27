@@ -162,7 +162,7 @@ typedef enum {
  * as unresolved. If 'resolved' == BOXVMSYM_AUTO, then it is marked as resolved
  * only if the symbol is defined.
  */
-Task BoxVMSym_Ref(BoxVM *vm, BoxVMSymID sym_num, BoxVMSymResolver r,
+void BoxVMSym_Ref(BoxVM *vm, BoxVMSymID sym_num, BoxVMSymResolver r,
                   void *ref, BoxUInt ref_size, BoxVMSymStatus resolved);
 
 #if 0

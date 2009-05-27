@@ -30,6 +30,7 @@
 #  include <stdarg.h>
 
 #  include "types.h"
+#  include "registers.h"
 #  include "virtmach.h"
 #  include "vmsym.h"
 #  include "vmproc.h"
@@ -38,18 +39,62 @@
 /** The CmpProc object. */
 typedef struct _cmp_proc CmpProc;
 
+/** Procedure style: determines if a procedure preamble and closure should
+ * be inserted and if global (or local) variables should be used by default.
+ * Example: by using CMPPROCKIND_SUB, the instructions "newX YY, ZZ" will
+ * be inserted automatically at the beginning of the procedure, while the
+ * instruction "ret" will be appended at the end.
+ *
+ * NOTE: the preamble is emitted only when the user calls CmpProc_Assemble
+ *   (or equivalent) for the first time.
+ */
+typedef enum {
+  CMPPROCSTYLE_PLAIN, /**< Plain procedure without automatic generation of
+                           preamble and ending code. */
+  CMPPROCSTYLE_MAIN,  /**< Main procedure, with automatic generation of
+                           preamble and final ret instruction. Variables
+                           are global (and subprocedures can access them). */
+  CMPPROCSTYLE_SUB    /**< Sub-procedure, with automatic generation of
+                           preamble and ret instruction. Variables are local
+                           to the procedure. */
+} CmpProcStyle;
+
+/** Function called in order to generate the beginning of a procedure
+ * (such as the register allocation instructions 'newi xx, yy', etc.)
+ */
+typedef void (*CmpProcBegin)(CmpProc *p);
+
+/** Function called in order to generate tye ending of a procedure
+ * (such as the 'ret' bytecode)
+ */
+typedef void (*CmpProcEnd)(CmpProc *p);
+
 /** @brief The CmpProc object.
  */
 struct _cmp_proc {
   struct {
     unsigned int
-                sym      :1, /**< the procedure has an associated symbol */
-                proc_id  :1, /**< the procedure has a procedure number */
-                proc_name:1, /**< it has a name */
-                call_num :1, /**< it has a call number */
-                type     :1; /**< it has a type */
+                reg_alloc :1,  /**< it has automatic register allocation */
+                sym       :1,  /**< the procedure has an associated symbol */
+                proc_id   :1,  /**< the procedure has a procedure number */
+                proc_name :1,  /**< it has a name */
+                call_num  :1,  /**< it has a call number */
+                type      :1,  /**< it has a type */
+                wrote_beg :1,  /**< CmpProc->beginning has been called */
+                wrote_end :1,  /**< CmpProc->ending has been called */
+                head      :1;  /**< Head instructions new have been emitted */
   } have;
+  CmpProcStyle  style;       /**< Procedure style */
   BoxCmp        *cmp;        /**< Compiler corresponding to the procedure */
+  CmpProcBegin  beginning;   /**< If not NULL, this is called before emitting
+                                  any other instruction */
+  CmpProcEnd    ending;      /**< If not NULL, this function is called at the
+                                  end of the procedure */
+  RegAlloc      reg_alloc;   /**< Register allocator: keeps track of registers
+                                  which are being used and of those which are
+                                  not used.*/
+  BoxVMSymID    head_sym_id; /**< Symbol associated with the head block of
+                                  new instructions */
   BoxVMSymID    sym;         /**< Symbol associated with the procedure */
   BoxVMProcNum  proc_id;     /**< Proc. number (needed to write ASM to it) */
   char          *proc_name;  /**< Procedure name */
@@ -60,7 +105,7 @@ struct _cmp_proc {
 /** Initialise a CmpProc object in the memory region pointed by p.
  * @param p A pointer to the space where the CmpProc object will be stored.
  */
-void CmpProc_Init(CmpProc *p, BoxCmp *c);
+void CmpProc_Init(CmpProc *p, BoxCmp *c, CmpProcStyle style);
 
 /** Finalise a CmpProc object initialised with CmpProc_Init.
  */
@@ -69,24 +114,27 @@ void CmpProc_Finish(CmpProc *p);
 /** Allocate space in the heap to hold a CmpProc object and initialise it with
  * CmpProc_Init.
  */
-CmpProc *CmpProc_New(BoxCmp *c);
+CmpProc *CmpProc_New(BoxCmp *c, CmpProcStyle style);
 
 /** Destroy a CmpProc object created with CmpProc_New.
  */
 void CmpProc_Destroy(CmpProc *p);
 
+/** Get the register allocator for the procedure */
+RegAlloc *CmpProc_Get_RegAlloc(CmpProc *p);
+
 /** Returns the symbol associated to the procedure (creating it, if necessary)
  */
 BoxVMSymID CmpProc_Get_Sym(CmpProc *p);
 
-/** Get the procedure number, which is an integer number which the VM
+/** Get the procedure ID, which is an integer number which the VM
  * allocates when it creates a BoxVMProc (which is just a bytecode container,
  * a place where bytecode can be written).
  * If such a number does not exist, then a procedure is created, which
  * is associated to this CmpProc object and the corresponding number
  * is returned.
  */
-BoxVMProcNum CmpProc_Get_Proc_Num(CmpProc *p);
+BoxVMProcID CmpProc_Get_ProcID(CmpProc *p);
 
 /** Get the procedure description, which is just a help string to make
  * the bytecode more readable (may disappear in the future).

@@ -57,7 +57,7 @@ Task BoxVMSym_Def_Call(BoxVM *vm, BoxVMSymID sym_id, BoxVMCallNum call_num);
  */
 Task BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id);
 
-Task VM_Sym_Alloc_Method_Register(BoxVM *vmp, UInt sym_num,
+void VM_Sym_Alloc_Method_Register(BoxVM *vmp, UInt sym_num,
                                   Type type, Type method);
 
 /** This function creates an undefined label. A label is a number which
@@ -86,9 +86,10 @@ Task VM_Sym_Jmp(BoxVM *vmp, UInt sym_num);
 /** Called to signal that a label is not needed anymore. */
 Task VM_Sym_Destroy_Label(BoxVM *vmp, UInt sym_num);
 
-Task VM_Sym_Proc_Head(BoxVM *vmp, UInt *sym_num);
+Task BoxVMSym_Assemble_Proc_Head(BoxVM *vm, BoxVMSymID *sym_num);
 
-Task VM_Sym_Def_Proc_Head(BoxVM *vmp, UInt sym_num,
-                          Int *num_var, Int *num_reg);
+Task BoxVMSym_Def_Proc_Head(BoxVM *vmp, BoxVMSymID sym_id,
+                            Int *num_var, Int *num_reg);
 
 #endif
+

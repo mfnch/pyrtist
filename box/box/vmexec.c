@@ -557,14 +557,14 @@ VMInstrDesc vm_instr_desc_table[] = {
 };
 
 int BoxOp_Get_Num_Args(BoxOpcode op) {
-  if (op < 1 || op >= ASM_ILLEGAL)
+  if (op < 1 || op >= BOX_NUM_OPS)
     return -1;
   else
     return vm_instr_desc_table[op].numargs;
 }
 
 BoxType BoxOp_Get_Arg_Type(BoxOpcode op) {
-  if (op < 1 || op >= ASM_ILLEGAL)
+  if (op < 1 || op >= BOX_NUM_OPS)
     return BOXTYPE_NONE;
   else
     return vm_instr_desc_table[op].t_id;

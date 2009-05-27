@@ -165,7 +165,7 @@ Task VM_Proc_Disassemble(VMProgram *vmp, FILE *out, UInt proc_num) {
   VMByteX4 *ptr;
   UInt length;
   VM_Proc_Ptr_And_Length(vmp, & ptr, & length, proc_num);
-  return VM_Disassemble(vmp, out, ptr, length);
+  return BoxVM_Disassemble(vmp, out, ptr, length);
 }
 
 Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, UInt call_num) {

@@ -18,7 +18,7 @@
  ****************************************************************************/
 
 /** @file cmpptrs.h
- * @brief Helper headers included by the sources of the core Box compiler.
+ * @brief Helper header included by the sources of the core Box compiler.
  *
  * This header solve one problem: some objects such as CmpProc store a pointer
  * to the corresponding compiler. This allows the user not to specify always

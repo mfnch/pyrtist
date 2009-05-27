@@ -28,35 +28,120 @@
 #include "vmproc.h"
 #include "vmsymstuff.h"
 #include "container.h"
+#include "registers.h"
 #include "typesys.h"
 
 #include "cmpproc.h"
 #include "compiler.h"
 
-void CmpProc_Init(CmpProc *p, BoxCmp *c) {
+/* Function called to begin for CMPPROCKIND_MAIN or CMPPROCKIND_SUB */
+static void My_Proc_Begin(CmpProc *p) {
+  BoxVMProcID proc_id, previous_target;
+  BoxVMSymID sym_id;
+
+  (void) CmpProc_Get_RegAlloc(p); /* Force initialisation
+                                     of register allocator */
+
+  /* Assemble the newc, newi, ... instructions */
+  proc_id = CmpProc_Get_ProcID(p);
+  previous_target = BoxVM_Proc_Target_Set(p->cmp->vm, proc_id);
+  ASSERT_TASK(BoxVMSym_Assemble_Proc_Head(p->cmp->vm, & sym_id));
+  (void) BoxVM_Proc_Target_Set(p->cmp->vm, previous_target);
+
+  p->have.head = 1;
+  p->head_sym_id = sym_id;
+}
+
+/* Function called to end for CMPPROCKIND_MAIN or CMPPROCKIND_SUB */
+static void My_Proc_End(CmpProc *p) {
+  BoxVMProcID proc_id, previous_target;
+
+  if (p->have.head) {
+    Int num_reg[NUM_TYPES], num_var[NUM_TYPES];
+    RegAlloc *ra = CmpProc_Get_RegAlloc(p);
+    RegLVar_Get_Nums(ra, num_reg, num_var);
+    ASSERT_TASK(BoxVMSym_Def_Proc_Head(p->cmp->vm, p->head_sym_id,
+                                       num_var, num_reg));
+  }
+
+  
+  proc_id = CmpProc_Get_ProcID(p);
+  previous_target = BoxVM_Proc_Target_Set(p->cmp->vm, proc_id);
+  BoxVM_Assemble(p->cmp->vm, BOXOP_RET);
+  (void) BoxVM_Proc_Target_Set(p->cmp->vm, previous_target);
+}
+
+void CmpProc_Init(CmpProc *p, BoxCmp *c, CmpProcStyle style) {
+  p->beginning = NULL;
+  p->ending = NULL;
+
+  switch(style) {
+  case CMPPROCSTYLE_PLAIN:
+    break;
+  case CMPPROCSTYLE_SUB:
+  case CMPPROCSTYLE_MAIN:
+    p->beginning = My_Proc_Begin;
+    p->ending = My_Proc_End;
+    break;
+  default:
+    MSG_FATAL("CmpProc_Init: Invalid value for style (CmpProcStyle).");
+    assert(0);
+  }
+
+  p->style = style;
   p->cmp = c;
+  p->have.reg_alloc = 0;
   p->have.sym = 0;
   p->have.proc_id = 0;
   p->have.proc_name = 0;
   p->have.call_num = 0;
   p->have.type = 0;
+  p->have.wrote_beg = 0;
+  p->have.head = 0;
 }
 
 void CmpProc_Finish(CmpProc *p) {
   if (p->have.proc_name)
     BoxMem_Free(p->proc_name);
+  if (p->have.reg_alloc)
+    Reg_Finish(& p->reg_alloc);
 }
 
-CmpProc *CmpProc_New(BoxCmp *c) {
+CmpProc *CmpProc_New(BoxCmp *c, CmpProcStyle style) {
   CmpProc *p = BoxMem_Alloc(sizeof(CmpProc));
   if (p == NULL) return NULL;
-  CmpProc_Init(p, c);
+  CmpProc_Init(p, c, style);
   return p;
 }
 
 void CmpProc_Destroy(CmpProc *p) {
   CmpProc_Finish(p);
   BoxMem_Free(p);
+}
+
+void CmpProc_Begin(CmpProc *p) {
+  if (p->beginning != NULL && p->have.wrote_beg == 0) {
+    p->beginning(p);
+    p->have.wrote_beg = 1;
+  }
+}
+ 
+void CmpProc_End(CmpProc *p) {
+  if (p->ending != NULL && p->have.wrote_end == 0) {
+    p->ending(p);
+    p->have.wrote_end = 1;
+  }
+}
+
+RegAlloc *CmpProc_Get_RegAlloc(CmpProc *p) {
+  if (p->have.reg_alloc)
+    return & p->reg_alloc;
+
+  else {
+    Reg_Init(& p->reg_alloc);
+    p->have.reg_alloc = 1;
+    return & p->reg_alloc;
+  }
 }
 
 BoxVMSymID CmpProc_Get_Sym(CmpProc *p) {
@@ -102,6 +187,7 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p) {
     BoxVMProcID pn = CmpProc_Get_ProcID(p);
     char *proc_desc = CmpProc_Get_Proc_Desc(p),
          *proc_name = (p->have.proc_name) ? p->proc_name : "(noname)";
+    CmpProc_End(p); /* End the procedure, if not done explicitly */
     VM_Proc_Install_Code(p->cmp->vm, & p->call_num, pn,
                          proc_name, proc_desc);
     BoxMem_Free(proc_desc);
@@ -112,9 +198,10 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p) {
 
 void CmpProc_Raw_VA_Assemble(CmpProc *p, BoxOpcode op, va_list ap) {
   BoxVMProcID proc_id, previous_target;
+  CmpProc_Begin(p); /* Begin the procedure, if not done explicitly */
   proc_id = CmpProc_Get_ProcID(p);
   previous_target = BoxVM_Proc_Target_Set(p->cmp->vm, proc_id);
-  VM_VA_Assemble(p->cmp->vm, op, ap);
+  BoxVM_VA_Assemble(p->cmp->vm, op, ap);
   (void) BoxVM_Proc_Target_Set(p->cmp->vm, previous_target);
 }
 
@@ -127,6 +214,7 @@ void CmpProc_Raw_Assemble(CmpProc *p, BoxOpcode op, ...) {
 
 void CmpProc_Assemble_Call(CmpProc *p, BoxVMSymID sym_id) {
   BoxVMProcID proc_id, previous_target;
+  CmpProc_Begin(p); /* Begin the procedure, if not done explicitly */
   proc_id = CmpProc_Get_ProcID(p);
   previous_target = BoxVM_Proc_Target_Set(p->cmp->vm, proc_id);
   ASSERT_TASK(BoxVMSym_Assemble_Call(p->cmp->vm, sym_id));
@@ -184,8 +272,12 @@ static Int My_Int_Val_From_Cont(const BoxCont *c) {
  */
 static void My_Unsafe_Assemble(CmpProc *p, BoxOp op,
                                int num_args, const BoxCont **cs) {
-  assert(num_args == 1 || num_args == 2);
-  if (num_args == 1) {
+  assert(num_args >= 0 && num_args <= 2);
+  if (num_args == 0) {
+     CmpProc_Raw_Assemble(p, op);
+     return;
+
+  } else if (num_args == 1) {
     const BoxCont *c1 = cs[0];
     My_Prepare_Ptr_Access(p, c1);
     if (c1->categ != BOXCONTCATEG_IMM) {

@@ -40,7 +40,7 @@ static Task My_Assemble_Call(BoxVM *vm, UInt sym_num, UInt sym_type,
     assert(def_size == sizeof(BoxVMCallNum));
     call_num = *((BoxVMCallNum *) def);
   }
-  VM_Assemble_Long(vm, ASM_CALL_I, CAT_IMM, call_num);
+  BoxVM_Assemble_Long(vm, BOXOP_CALL_I, CAT_IMM, call_num);
   return Success;
 }
 
@@ -60,7 +60,7 @@ Task BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
 /* Some methods are special and need to be registered separately using
  * the vm allocator. These methods (constructors, destructors, ... of types)
  * are called automatically by the allocator during construction/destruction
- * of objects, rather than being called with an "ASM_CALL_I" instruction.
+ * of objects, rather than being called with an "BOXOP_CALL_I" instruction.
  * Here we are not generating VM code, we are just calling
  * VM_Alloc_Method_Set.
  */
@@ -85,13 +85,13 @@ static Task Register_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
   return Success;
 }
 
-Task VM_Sym_Alloc_Method_Register(BoxVM *vmp, UInt sym_num,
+void VM_Sym_Alloc_Method_Register(BoxVM *vmp, UInt sym_num,
                                   Type type, Type method) {
   VMSymMethod m;
   m.type = type;
   m.method = method;
-  return BoxVMSym_Ref(vmp, sym_num, Register_Call,
-                      & m, sizeof(VMSymMethod), BOXVMSYM_UNRESOLVED);
+  BoxVMSym_Ref(vmp, sym_num, Register_Call,
+               & m, sizeof(VMSymMethod), BOXVMSYM_UNRESOLVED);
 }
 
 /*** jumps ******************************************************************/
@@ -106,7 +106,7 @@ static Task Assemble_Jmp(BoxVM *vmp, UInt sym_num, UInt sym_type,
                          int defined, void *def, UInt def_size,
                          void *ref, UInt ref_size) {
   Int sheet_id, rel_position = 0;
-  AsmCode asm_code = ASM_JC_I;
+  BoxOp asm_code = BOXOP_JC_I;
   VMSymLabelRef *label_ref = ref;
 
   assert(sym_type == VM_SYM_COND_JMP);
@@ -122,8 +122,8 @@ static Task Assemble_Jmp(BoxVM *vmp, UInt sym_num, UInt sym_type,
     rel_position = def_position - ref_position;
   }
 
-  asm_code = (label_ref->conditional) ? ASM_JC_I : ASM_JMP_I;
-  VM_Assemble_Long(vmp, asm_code, CAT_IMM, rel_position);
+  asm_code = (label_ref->conditional) ? BOXOP_JC_I : BOXOP_JMP_I;
+  BoxVM_Assemble_Long(vmp, asm_code, CAT_IMM, rel_position);
   return Success;
 }
 
@@ -195,8 +195,9 @@ static Task Assemble_Proc_Head(BoxVM *vmp, UInt sym_num, UInt sym_type,
                                int defined, void *def, UInt def_size,
                                void *ref, UInt ref_size) {
   ProcHead *ph = (ProcHead *) def;
-  static Int asm_code[NUM_TYPES] = {ASM_NEWC_II, ASM_NEWI_II, ASM_NEWR_II,
-                                    ASM_NEWP_II, ASM_NEWO_II};
+  static Int asm_code[NUM_TYPES] = {BOXOP_NEWC_II, BOXOP_NEWI_II,
+                                    BOXOP_NEWR_II, BOXOP_NEWP_II,
+                                    BOXOP_NEWO_II};
   int i;
 
   assert(sym_type == VM_SYM_PROC_HEAD);
@@ -206,18 +207,18 @@ static Task Assemble_Proc_Head(BoxVM *vmp, UInt sym_num, UInt sym_type,
   for(i = 0; i < NUM_TYPES; i++) {
     Int nv = ph->num_var[i], nr = ph->num_reg[i];
     assert(nv >= 0 && nr >= 0);
-    VM_Assemble(vmp, asm_code[i], CAT_IMM, nv, CAT_IMM, nr);
-    /* ^^^ should use VM_Assemble_Long for more than 127 regs/vars */
+    BoxVM_Assemble(vmp, asm_code[i], CAT_IMM, nv, CAT_IMM, nr);
+    /* ^^^ should use BoxVM_Assemble_Long for more than 127 regs/vars */
   }
   return Success;
 }
 
-Task VM_Sym_Proc_Head(BoxVM *vmp, UInt *sym_num) {
-  *sym_num = BoxVMSym_New(vmp, VM_SYM_PROC_HEAD, sizeof(ProcHead));
-  return BoxVMSym_Code_Ref(vmp, *sym_num, Assemble_Proc_Head, NULL, 0);
+Task BoxVMSym_Assemble_Proc_Head(BoxVM *vm, BoxVMSymID *sym_num) {
+  *sym_num = BoxVMSym_New(vm, VM_SYM_PROC_HEAD, sizeof(ProcHead));
+  return BoxVMSym_Code_Ref(vm, *sym_num, Assemble_Proc_Head, NULL, 0);
 }
 
-Task VM_Sym_Def_Proc_Head(BoxVM *vmp, UInt sym_num,
+Task BoxVMSym_Def_Proc_Head(BoxVM *vmp, BoxVMSymID sym_num,
                           Int *num_var, Int *num_reg) {
   ProcHead ph;
   int i;
