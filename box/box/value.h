@@ -34,7 +34,7 @@
 
 #  include "types.h"
 #  include "container.h"
-#  include "cmpptrs.h"
+#  include "cmpproc.h"
 
 typedef enum {
   VALUEKIND_ERR,              /**< An error */
@@ -49,27 +49,27 @@ typedef enum {
 
 typedef struct {
   int       num_ref;          /**< Number of references to this Value */
-  BoxCmp    *cmp;             /**< The compiler to which this value refers */
+  CmpProc   *proc;            /**< The compiler to which this value refers */
   ValueKind kind;             /**< Kind of Value */
   BoxType   type;             /**< Type of the Value */
   struct {
-    BoxCont   cont;           /**< Container */
+    BoxCont   cont;             /**< Container */
   }         value;            /**< Value of the container */
   char      *name;            /**< Optional name of the value */
   struct {
     unsigned int
-            new_or_init   :1, /**< Created with Value_New? (or Value_Init?) */
-            own_register  :1, /**< Need to release a register during
-                                   finalisation? */
-            own_reference :1, /**< Do we own a reference to the object? */
-            ignore        :1; /**< Should be ignored when passed to a Box. */
+              new_or_init   :1, /**< Created with Value_New or Value_Init? */
+              own_register  :1, /**< Need to release a register during
+                                     finalisation? */
+              own_reference :1, /**< Do we own a reference to the object? */
+              ignore        :1; /**< To be ignored when passed to a Box? */
   }         attr;             /**< Attributes for the Value */
 } Value;
 
 /** Initialise a Value 'v' assuming 'v' points to an already allocated memory
  * region able to contain a Value object.
  */
-void Value_Init(Value *v, BoxCmp *cmp);
+void Value_Init(Value *v, CmpProc *proc);
 
 /** Allocate a Value object and initialise it by calling Value_Init.
  * Notice that the object is aware of its allocation mode (whether it was
@@ -77,7 +77,7 @@ void Value_Init(Value *v, BoxCmp *cmp);
  * call a free() in case Value_New was used. free() won't be called if the
  * object was created with Value_Init.
  */
-Value *Value_New(BoxCmp *cmp);
+Value *Value_New(CmpProc *proc);
 
 /** Remove one reference to the Value object 'v', destroying it if there are
  * no more reference to the Value. The object is destroyed coherently to how

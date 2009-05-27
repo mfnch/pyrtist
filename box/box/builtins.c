@@ -775,7 +775,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
   for(type_to_register = & types_to_register[0];
       type_to_register->name != NULL;
       ++type_to_register) {
-    Value *v = Value_New(c);
+    Value *v = Value_New(c->cur_proc);
     Value_Setup_As_Type(v, type_to_register->type);
     Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT,
                         type_to_register->name, v);

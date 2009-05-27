@@ -28,8 +28,8 @@
 #include "compiler.h"
 #include "value.h"
 
-void Value_Init(Value *v, BoxCmp *cmp) {
-  v->cmp = cmp;
+void Value_Init(Value *v, CmpProc *proc) {
+  v->proc = proc;
   v->kind = VALUEKIND_ERR;
   v->type = BOXTYPE_NONE;
   v->name = NULL;
@@ -40,9 +40,9 @@ void Value_Init(Value *v, BoxCmp *cmp) {
   v->num_ref = 1;
 }
 
-Value *Value_New(BoxCmp *cmp) {
+Value *Value_New(CmpProc *proc) {
   Value *v = BoxMem_Safe_Alloc(sizeof(Value));
-  Value_Init(v, cmp);
+  Value_Init(v, proc);
   v->attr.new_or_init = 1;
   return v;
 }
@@ -67,7 +67,7 @@ static void My_Value_Finalize(Value *v) {
     assert(v->value.cont.categ == BOXCONTCATEG_LREG
            && v->value.cont.value.reg >= 0);
     if (v->attr.own_register)
-      Reg_Release(& v->cmp->regs,
+      Reg_Release(& v->proc->reg_alloc,
                   v->value.cont.type, v->value.cont.value.reg);
     return;
   case VALUEKIND_TARGET:
@@ -95,18 +95,21 @@ void Value_Link(Value *v) {
 /** Determine if the given value can be recycled, otherwise return Value_New()
  */
 Value *Value_Recycle(Value *v) {
+  CmpProc *proc = v->proc->cmp->cur_proc; /* Be careful! We want to operate on
+                                             the cur_proc, not the proc of the
+                                             old value!!! */
   if (v->num_ref == 1) {
     /* one reference means nobody else owns the object, so we can do
      * whatever we want with it!
      */
     int new_or_init = v->attr.new_or_init;
-    Value_Init(v, v->cmp);
+    Value_Init(v, proc);
     v->attr.new_or_init = new_or_init;
     Value_Link(v); /* Must return a new reference */
     return v;
 
   } else
-    return Value_New(v->cmp);
+    return Value_New(proc);
 }
 
 const char *ValueKind_To_Str(ValueKind vk) {
@@ -162,7 +165,7 @@ int Value_Want_Value(Value *v) {
 }
 
 void Value_Setup_As_Weak_Copy(Value *v_copy, Value *v) {
-  v_copy->cmp = v->cmp;
+  v_copy->proc = v->proc;
   v_copy->kind = v->kind;
   v_copy->type = v->type;
   v_copy->value.cont = v->value.cont;
@@ -210,21 +213,13 @@ void Value_Setup_As_Void(Value *v) {
   v->type = BOXTYPE_VOID;
 }
 
-#if 0
-void Value_Setup_As_Temp(Value *v, BoxType type) {
-  BoxCmp *c = v->cmp;
-  BoxType core_type = TS_Core_Type(& c->ts, type);
-
-}
-#endif
-
 /* Create a new empty container. */
 void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
-  BoxCmp *c = v->cmp;
+  RegAlloc *ra = & v->proc->reg_alloc;
   int use_greg;
 
   v->type = type;
-  v->value.cont.type = TS_Core_Type(& c->ts, type);
+  v->value.cont.type = TS_Core_Type(& v->proc->cmp->ts, type);
 
   switch(vc->type_of_container) {
   case VALCONTTYPE_IMM:
@@ -237,7 +232,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
     v->value.cont.categ = BOXCONTCATEG_LREG;
     if (vc->which_one < 0) {
       /* Automatically chooses the local register */
-      Int reg = Reg_Occupy(& c->regs, v->value.cont.type);
+      Int reg = Reg_Occupy(ra, v->value.cont.type);
       if (reg < 1) {
         MSG_FATAL("Value_Setup_Container: Reg_Occupy failed!");
         assert(0);
@@ -257,7 +252,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
     v->kind = VALUEKIND_TARGET;
     v->value.cont.categ = BOXCONTCATEG_GREG;
     if (vc->which_one < 0) {
-      Int reg = -GVar_Occupy(& c->regs, v->value.cont.type);
+      Int reg = -GVar_Occupy(ra, v->value.cont.type);
       /* Automatically choses the local variables */
       if (reg >= 0) {
         MSG_FATAL("Value_Setup_Container: GVar_Occupy failed!");
@@ -278,7 +273,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
     v->value.cont.categ = BOXCONTCATEG_LREG;
     if (vc->which_one < 0) {
       /* Automatically choses the local variables */
-      Int reg = -Var_Occupy(& c->regs, v->value.cont.type, 0);
+      Int reg = -Var_Occupy(ra, v->value.cont.type, 0);
       if (reg >= 0) {
         MSG_FATAL("Value_Setup_Container: Var_Occupy failed!");
         assert(0);
@@ -311,7 +306,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
     if (use_greg || vc->addr >= 0) return;
 
     if (vc->type_of_container == VALCONTTYPE_LRPTR) {
-      Int reg = Reg_Occupy(& c->regs, TYPE_OBJ);
+      Int reg = Reg_Occupy(ra, TYPE_OBJ);
       v->value.cont.value.ptr.reg = reg;
       if (reg < 1) {
         MSG_FATAL("Value_Setup_Container: Reg_Occupy failed!");
@@ -320,7 +315,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
       return;
 
     } else {
-      Int reg = -Var_Occupy(& c->regs, TYPE_OBJ, 0);
+      Int reg = -Var_Occupy(ra, TYPE_OBJ, 0);
       v->value.cont.value.ptr.reg = reg;
       if (reg >= 0) {
         MSG_FATAL("Value_Setup_Container: Var_Occupy failed!");
@@ -345,14 +340,19 @@ void Value_Emit_Allocate(Value *v) {
   case VALUEKIND_TEMP:
   case VALUEKIND_TARGET:
     if (v->value.cont.type == BOXCONTTYPE_OBJ) {
+      BoxCmp *c = v->proc->cmp;
+      CmpProc *proc = c->cur_proc;
       Value v_size, v_alloc_type;
+
       printf("Emitting alloc ops\n");
       assert(v->attr.own_reference == 0);
-      Value_Init(& v_size, v->cmp);
-      Value_Setup_As_Imm_Int(& v_size, TS_Size(& v->cmp->ts, v->type));
-      Value_Init(& v_alloc_type, v->cmp);
+      assert(v->proc == proc);
+
+      Value_Init(& v_size, proc);
+      Value_Setup_As_Imm_Int(& v_size, TS_Size(& c->ts, v->type));
+      Value_Init(& v_alloc_type, proc);
       Value_Setup_As_Imm_Int(& v_size, v->type);
-      CmpProc_Assemble(v->cmp->cur_proc, BOXGOP_MALLOC,
+      CmpProc_Assemble(proc, BOXGOP_MALLOC,
                        3, & v->value.cont, & v_size, & v_alloc_type);
       v->attr.own_reference = 1;
     }
@@ -367,6 +367,7 @@ void Value_Emit_Allocate(Value *v) {
 
 Value *Value_To_Temp(Value *v) {
   ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
+  BoxCmp *c = v->proc->cmp;
 
   switch (v->kind) {
   case VALUEKIND_ERR:
@@ -398,8 +399,8 @@ Value *Value_To_Temp(Value *v) {
       Value old_v = *v;
       v = Value_Recycle(v);
       Value_Setup_Container(v, old_v.type, & vc);
-      CmpProc_Assemble(v->cmp->cur_proc, BOXGOP_MOV,
-                      2, & v->value.cont, & old_v.value.cont);
+      CmpProc_Assemble(c->cur_proc, BOXGOP_MOV,
+                       2, & v->value.cont, & old_v.value.cont);
       return v;
     }
   }

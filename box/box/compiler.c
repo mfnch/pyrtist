@@ -63,8 +63,6 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
 
   BoxArr_Init(& c->stack, sizeof(StackItem), 32);
 
-  Reg_Init(& c->regs);
-
   TS_Init(& c->ts);
   TS_Init_Builtin_Types(& c->ts);
 
@@ -79,7 +77,6 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
 void BoxCmp_Finish(BoxCmp *c) {
   Bltin_Finish(c);
   Namespace_Finish(& c->ns);
-  Reg_Finish(& c->regs);
   CmpProc_Finish(& c->main_proc);
   BoxArr_Finish(& c->stack);
   BoxCmp_Finish__Operators(c);
@@ -206,7 +203,7 @@ Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos) {
   StackItem *si = BoxArr_Item_Ptr(& c->stack, n - pos);
   switch(si->type) {
   case STACKITEM_ERROR:
-    return Value_New(c); /* return an error value */
+    return Value_New(c->cur_proc); /* return an error value */
 
   case STACKITEM_VALUE:
     return (Value *) si->item;
@@ -271,7 +268,7 @@ static void My_Compile_TypeName(BoxCmp *c, ASTNode *n) {
     return;
 
   } else {
-    v = Value_New(c);
+    v = Value_New(c->cur_proc);
     Value_Setup_As_Type_Name(v, type_name);
     Namespace_Add_Value(& c->ns, f, type_name, v);
     BoxCmp_Push_Value(c, v);
@@ -283,17 +280,17 @@ static void My_Compile_TypeName(BoxCmp *c, ASTNode *n) {
  * object which is created once for all at the beginning!
  */
 static Value *My_Get_Void_Value(BoxCmp *c) {
-  Value *v = Value_New(c);
+  Value *v = Value_New(c->cur_proc);
   Value_Setup_As_Void(v);
   return v;
 }
 
 int XXX_Emit_Call(Value *parent, Value *child) {
-  BoxCmp *c = parent->cmp;
+  BoxCmp *c = parent->proc->cmp;
   BoxType found_procedure, expansion_for_child;
   BoxVMSymID sym_id;
 
-  assert(c == child->cmp);
+  assert(c == child->proc->cmp);
 
   /* Now we search for the procedure associated with *child */
   TS_Procedure_Inherited_Search(& c->ts, & found_procedure,
@@ -385,15 +382,15 @@ static void My_Compile_Var(BoxCmp *c, ASTNode *n) {
   v = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, item_name);
   if (v != NULL) {
     /* We just return a copy of the Value object corresponding to the
-     * variable 
+     * variable
      */
-    Value *v_copy = Value_New(c);
+    Value *v_copy = Value_New(c->cur_proc);
     Value_Setup_As_Weak_Copy(v_copy, v);
     BoxCmp_Push_Value(c, v_copy);
     return;
 
   } else {
-    v = Value_New(c);
+    v = Value_New(c->cur_proc);
     Value_Setup_As_Var_Name(v, item_name);
     Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, item_name, v);
     BoxCmp_Push_Value(c, v);
@@ -416,7 +413,7 @@ static void My_Compile_DontIgnore(BoxCmp *c, ASTNode *n) {
 static void My_Compile_Const(BoxCmp *c, ASTNode *n) {
   Value *v;
   assert(n->type == ASTNODETYPE_CONST);
-  v = Value_New(c);
+  v = Value_New(c->cur_proc);
   switch(n->attr.constant.type) {
   case ASTCONSTTYPE_CHAR:
     Value_Setup_As_Imm_Char(v, n->attr.constant.value.c);

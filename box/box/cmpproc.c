@@ -39,9 +39,6 @@ static void My_Proc_Begin(CmpProc *p) {
   BoxVMProcID proc_id, previous_target;
   BoxVMSymID sym_id;
 
-  (void) CmpProc_Get_RegAlloc(p); /* Force initialisation
-                                     of register allocator */
-
   /* Assemble the newc, newi, ... instructions */
   proc_id = CmpProc_Get_ProcID(p);
   previous_target = BoxVM_Proc_Target_Set(p->cmp->vm, proc_id);
@@ -64,7 +61,6 @@ static void My_Proc_End(CmpProc *p) {
                                        num_var, num_reg));
   }
 
-  
   proc_id = CmpProc_Get_ProcID(p);
   previous_target = BoxVM_Proc_Target_Set(p->cmp->vm, proc_id);
   BoxVM_Assemble(p->cmp->vm, BOXOP_RET);
@@ -72,6 +68,17 @@ static void My_Proc_End(CmpProc *p) {
 }
 
 void CmpProc_Init(CmpProc *p, BoxCmp *c, CmpProcStyle style) {
+  p->style = style;
+  p->cmp = c;
+  p->have.reg_alloc = 0;
+  p->have.sym = 0;
+  p->have.proc_id = 0;
+  p->have.proc_name = 0;
+  p->have.call_num = 0;
+  p->have.type = 0;
+  p->have.wrote_beg = 0;
+  p->have.wrote_end = 0;
+  p->have.head = 0;
   p->beginning = NULL;
   p->ending = NULL;
 
@@ -82,22 +89,13 @@ void CmpProc_Init(CmpProc *p, BoxCmp *c, CmpProcStyle style) {
   case CMPPROCSTYLE_MAIN:
     p->beginning = My_Proc_Begin;
     p->ending = My_Proc_End;
+    (void) CmpProc_Get_RegAlloc(p); /* Force initialisation
+                                       of register allocator */
     break;
   default:
     MSG_FATAL("CmpProc_Init: Invalid value for style (CmpProcStyle).");
     assert(0);
   }
-
-  p->style = style;
-  p->cmp = c;
-  p->have.reg_alloc = 0;
-  p->have.sym = 0;
-  p->have.proc_id = 0;
-  p->have.proc_name = 0;
-  p->have.call_num = 0;
-  p->have.type = 0;
-  p->have.wrote_beg = 0;
-  p->have.head = 0;
 }
 
 void CmpProc_Finish(CmpProc *p) {
@@ -125,7 +123,7 @@ void CmpProc_Begin(CmpProc *p) {
     p->have.wrote_beg = 1;
   }
 }
- 
+
 void CmpProc_End(CmpProc *p) {
   if (p->ending != NULL && p->have.wrote_end == 0) {
     p->ending(p);

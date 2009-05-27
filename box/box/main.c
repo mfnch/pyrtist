@@ -270,18 +270,19 @@ static Task Stage_Add_Default_Paths(void) {
   return Success;
 }
 
-static Task Stage_Compilation(char *file, UInt *main_module) {
-  BoxVMCallNum main_proc;
-
+static Task Stage_Compilation(char *file, BoxVMCallNum *main_module) {
   Msg_Main_Counter_Clear_All();
   MSG_CONTEXT_BEGIN("Compilation");
 
-  target_vm = Box_Compile_To_VM_From_File(& main_proc, /*target_vm*/ NULL,
+  target_vm = Box_Compile_To_VM_From_File(main_module, /*target_vm*/ NULL,
                                           /*file*/ NULL,
                                           /*setup_file_name*/ file);
 
   MSG_ADVICE("Compilaton finished. %U errors and %U warnings were found.",
              MSG_GT_ERRORS, MSG_NUM_WARNINGS );
+
+  TASK( Main_Install(main_module) );
+
   MSG_CONTEXT_END();
   return Success;
 }
@@ -290,18 +291,19 @@ static Task Stage_Compilation(char *file, UInt *main_module) {
 static Task Stage_Symbol_Resolution(UInt *flags) {
   int all_resolved;
   Task status = Success;
+
   MSG_CONTEXT_BEGIN("Symbol resolution");
-#if 0
-  TASK( BoxVMSym_Resolve_CLibs(program, & lib_dirs, & libraries) );
-  TASK( BoxVMSym_Resolve_All(program) );
-  BoxVMSym_Ref_Check(program, & all_resolved);
+
+  TASK( BoxVMSym_Resolve_CLibs(target_vm, & lib_dirs, & libraries) );
+  TASK( BoxVMSym_Resolve_All(target_vm) );
+  BoxVMSym_Ref_Check(target_vm, & all_resolved);
   if (! all_resolved) {
-    BoxVMSym_Ref_Report(program);
+    BoxVMSym_Ref_Report(target_vm);
     MSG_ERROR("Unresolved references: program cannot be executed.");
     *flags &= ~FLAG_EXECUTE;
     status = Failed;
   }
-#endif
+
   MSG_CONTEXT_END();
   return status;
 }
@@ -330,7 +332,7 @@ static Task Stage_Execution(UInt *flags, UInt main_module) {
 
   MSG_CONTEXT_BEGIN("Execution");
   Msg_Main_Counter_Clear_All();
-  //status = Main_Execute(main_module);
+  status = Main_Execute(main_module);
   MSG_ADVICE("Execution finished. %U errors and %U warnings were found.",
               MSG_GT_ERRORS, MSG_NUM_WARNINGS);
   MSG_CONTEXT_END();
@@ -370,16 +372,14 @@ static Task Stage_Write_Asm(UInt flags) {
 Task Main_Prepare(void) {
   int i;
   Int num_reg[NUM_TYPES], num_var[NUM_TYPES];
-#if 0
-  RegLVar_Get_Nums(& cmp->ra, num_reg, num_var);
+
   /* Preparo i registri globali */
   for(i = 0; i < NUM_TYPES; i++) {
-    num_var[i] = GVar_Num(& cmp->ra, i);
+    num_var[i] = 3; /*GVar_Num(& cmp->ra, i);*/
     num_reg[i] = 3;
   }
 
-  TASK( BoxVM_Alloc_Global_Regs(program, num_var, num_reg) );
-#endif
+  TASK( BoxVM_Alloc_Global_Regs(target_vm, num_var, num_reg) );
   return Success;
 }
 
@@ -396,9 +396,7 @@ Task Main_Install(UInt *main_module) {
 Task Main_Execute(UInt main_module) {
   Task t;
   Msg_Line_Set((Int) 1);
-#if 0
-  t = VM_Module_Execute(program, main_module);
-#endif
+  t = VM_Module_Execute(target_vm, main_module);
   Msg_Line_Set(MSG_UNDEF_LINE);
   return t;
 }

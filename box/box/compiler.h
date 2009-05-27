@@ -50,7 +50,6 @@ struct _box_cmp {
   BoxTS      ts;        /**< The type system */
   BltinStuff bltin;     /**< Builtin types, etc. */
   Namespace  ns;        /**< The namespace */
-  RegAlloc   regs;      /**< Register occupation handler */
   CmpProc    main_proc, /**< Main procedure in the module */
              *cur_proc; /**< Procedure on which we are working now */
   Operator   bin_ops[ASTBINOP__NUM_OPS], /**< Table of binary operators */

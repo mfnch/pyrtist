@@ -144,7 +144,8 @@ static void *VM__Get_G(VMStatus *vmcur, Int n) {
 
 #ifdef VM_SAFE_EXEC1
   if (n < vmcur->gmin[t] || n > vmcur->gmax[t]) {
-    MSG_ERROR("Riferimento a registro globale non allocato!");
+    MSG_ERROR("Trying to access unallocated global register(t:%I,n:%I)!",
+              t,  n);
     vmcur->flags.error = vmcur->flags.exit = 1;
     return NULL;
   }
