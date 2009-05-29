@@ -631,7 +631,7 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {    BOXGOP_EQ,    "eq?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Eq_II    }, /* eq? ri, ri    */
   {    BOXGOP_EQ,    "eq?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Eq_RR    }, /* eq? rr, rr    */
   {    BOXGOP_EQ,    "eq?", 2, 'p',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Eq_PP    }, /* eq? rp, rp    */
-  {    BOXGOP_NE,    "ne?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_II    }, /* ne? ri, ri    */
+  {    BOXGOP_NE,    "ne?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Ne_II    }, /* ne? ri, ri    */
   {    BOXGOP_NE,    "ne?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_RR    }, /* ne? rr, rr    */
   {    BOXGOP_NE,    "ne?", 2, 'p',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_PP    }, /* ne? rp, rp    */
   {    BOXGOP_LT,    "lt?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Lt_II    }, /* lt? ri, ri    */
@@ -642,7 +642,7 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {    BOXGOP_GT,    "gt?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Gt_RR    }, /* gt? rr, rr    */
   {    BOXGOP_GE,    "ge?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ge_II    }, /* ge? ri, ri    */
   {    BOXGOP_GE,    "ge?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ge_RR    }, /* ge? rr, rr    */
-  {  BOXGOP_LNOT,   "lnot", 1, 'i',     "a1",  "a1", "xx", "xx", VM__Exec_LNot_I   }, /* lnot ri       */
+  {  BOXGOP_LNOT,   "lnot", 1, 'i',     "a1",  "a1", "x-", "xx", VM__Exec_LNot_I   }, /* lnot ri       */
   {  BOXGOP_LAND,   "land", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_LAnd_II  }, /* land ri, ri   */
   {   BOXGOP_LOR,    "lor", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_LOr_II   }, /* lor  ri, ri   */
   {  BOXGOP_REAL,   "real", 1, 'c',     "a1", "rr0", "x-", "xx", VM__Exec_Real_C   }, /* real rc       */

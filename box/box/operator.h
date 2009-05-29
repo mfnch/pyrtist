@@ -36,11 +36,12 @@ typedef enum {
                                   implement the operation with dedicated
                                   instruction or should we use a procedure? */
   OPR_ATTR_BINARY      = 2,  /**< Is it a binary or unary operator? */
-  OPR_ATTR_COMMUTATIVE = 4,  /**< Is it a commutative operator? */
-  OPR_ATTR_ASSIGNMENT  = 8,  /**< Is it an assignment operator? (is it
+  OPR_ATTR_UN_RIGHT    = 4,  /**< Is it a right (or left) unary operation? */
+  OPR_ATTR_COMMUTATIVE = 8,  /**< Is it a commutative operator? */
+  OPR_ATTR_ASSIGNMENT  = 16, /**< Is it an assignment operator? (is it
                                   supposed to change its operand?) */
-  OPR_ATTR_IGNORE_RES  = 16, /**< Is the result ignorable? */
-  OPR_ATTR_ALL         = 31  /**< Used as the full mask */
+  OPR_ATTR_IGNORE_RES  = 32, /**< Is the result ignorable? */
+  OPR_ATTR_ALL         = 63  /**< Used as the full mask */
 } OprAttr;
 
 /** Describes the scheme to follow when assemblying the operation */
@@ -48,7 +49,8 @@ typedef enum {
   OPASMSCHEME_STD_UN,
   OPASMSCHEME_STD_BIN,
   OPASMSCHEME_ASGN_BIN,
-  OPASMSCHEME_ASGN_UN,
+  OPASMSCHEME_ASGN_UN_LEFT,
+  OPASMSCHEME_ASGN_UN_RIGHT,
   OPASMSCHEME_UNKNOWN
 } OpAsmScheme;
 

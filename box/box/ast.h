@@ -246,6 +246,11 @@ const char *ASTUnOp_To_String(ASTUnOp op);
  */
 const char *ASTBinOp_To_String(ASTBinOp op);
 
+/** Returns 1 if the given operator is a "right" unary operator,
+ * meaning that it returs its operand before modifying it.
+ */
+int ASTUnOp_Is_Right(ASTUnOp op);
+
 ASTNode *ASTNode_New(ASTNodeType t);
 void ASTNode_Destroy(ASTNode *node);
 void ASTNode_Set_Error(ASTNode *node);

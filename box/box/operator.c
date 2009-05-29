@@ -139,9 +139,12 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
   int i;
 
   for(i = 0; i < ASTUNOP__NUM_OPS; i++) {
+    OprAttr attr;
     Operator *opr = BoxCmp_UnOp_Get(c, i);
     Operator_Init(opr, ASTUnOp_To_String(i));
-    Operator_Attr_Set(opr, OPR_ATTR_ALL, OPR_ATTR_NATIVE);
+    attr = OPR_ATTR_NATIVE |
+           (ASTUnOp_Is_Right(i) ? OPR_ATTR_UN_RIGHT : 0);
+    Operator_Attr_Set(opr, OPR_ATTR_ALL, attr);
   }
 
   for(i = 0; i < ASTBINOP__NUM_OPS; i++) {
@@ -535,9 +538,17 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
     return My_Opn_Emit(c, opn, v, v);
 
   } else {
-    MSG_ERROR("%s%~s <-- Operation has not been defined!",
-              opr->name, TS_Name_Get(& c->ts, v->type));
-    return NULL;
+    if ((opr->attr & OPR_ATTR_UN_RIGHT) != 0) {
+      MSG_ERROR("%~s%s <-- Operation has not been defined!",
+                TS_Name_Get(& c->ts, v->type), opr->name);
+      return NULL;
+
+    } else {
+      MSG_ERROR("%s%~s <-- Operation has not been defined!",
+                opr->name, TS_Name_Get(& c->ts, v->type));
+      return NULL;
+
+    }
   }
 }
 

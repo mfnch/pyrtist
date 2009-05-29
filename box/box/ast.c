@@ -117,6 +117,17 @@ const char *ASTUnOp_To_String(ASTUnOp op) {
   return "?";
 }
 
+int ASTUnOp_Is_Right(ASTUnOp op) {
+ switch(op) {
+  case ASTUNOP_RINC:
+  case ASTUNOP_RDEC:
+    return 1;
+  default:
+    return 0;
+  }
+  return 0;
+}
+
 const char *ASTBinOp_To_String(ASTBinOp op) {
   switch(op) {
   case ASTBINOP_ADD: return "+";

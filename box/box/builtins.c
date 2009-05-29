@@ -53,10 +53,10 @@ static Task Blt_Define_Sys(void);
 #endif
 
 /* box-procedures */
-static Task My_Print_Char(VMProgram *vmp);
-static Task My_Print_Int(VMProgram *vmp);
-static Task My_Print_Real(VMProgram *vmp);
-static Task My_Print_Pnt(VMProgram *vmp);
+static Task My_Print_Char(BoxVM *vm);
+static Task My_Print_Int(BoxVM *vm);
+static Task My_Print_Real(BoxVM *vm);
+static Task My_Print_Pnt(BoxVM *vm);
 
 #if 0
 static Task Print_String(VMProgram *vmp);
@@ -280,44 +280,15 @@ Task Builtins_Init(void) {
   TASK( Blt_Define_All() );
 
   status = 0; /* Se qualcosa va male trovero' status = 1, alla fine! */
-  /* § OPERATORE DI ASSEGNAZIONE */
-  /* §§ ASSEGNAZIONE DI PUNTI */
-  ADD_OPERATION(assign,TYPE_POINT, type_Point, TYPE_POINT, ASM_MOV_PP, 0, 1, 1);
-  /* §§ ASSEGNAZIONE DI REALI */
-  ADD_OPERATION(assign, TYPE_REAL,type_RealNum,TYPE_REAL, ASM_MOV_RR, 0, 1, 1);
-  /* §§ ASSEGNAZIONE DI INTERI */
-  ADD_OPERATION(assign, TYPE_INTG,type_IntNum,TYPE_INTG, ASM_MOV_II, 0, 1, 1);
-  /* §§ ASSEGNAZIONE DI CARATTERI */
-  ADD_OPERATION(assign, TYPE_CHAR, TYPE_CHAR,  TYPE_CHAR, ASM_MOV_CC, 0, 1, 1);
 
-  /* § OPPOSTO BIT-PER-BIT DI UN INTERO */
-  ADD_OPERATION(bnot, TYPE_INTG, TYPE_NONE,  TYPE_INTG, ASM_BNOT_I, 0, 1, 0);
-  /* § OPERATORE DI AND BIT-PER-BIT FRA INTERI */
-  ADD_OPERATION(band, TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_BAND_II, 1, 1, 0);
-  /* § OPERATORE DI XOR BIT-PER-BIT FRA INTERI */
-  ADD_OPERATION(bxor, TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_BXOR_II, 1, 1, 0);
-  /* § OPERATORE DI OR BIT-PER-BIT FRA INTERI */
-  ADD_OPERATION(bor, TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_BOR_II, 1, 1, 0);
-  /* § OPERATORE DI SHIFT-LEFT */
-  ADD_OPERATION(shl, TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_SHL_II, 0, 1, 0);
-  /* § OPERATORE DI SHIFT-RIGHT */
-  ADD_OPERATION(shr, TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_SHR_II, 0, 1, 0);
   /* § OPERATORE DI INCREMENTO */
-  /* §§ INCREMENTO(SINISTRO) DI UN INTERO */
-  ADD_OPERATION(inc, TYPE_INTG, TYPE_NONE,  TYPE_INTG,  ASM_INC_I, 0, 1, 1);
   /* §§ INCREMENTO(DESTRO) DI UN INTERO */
   ADD_OPERATION(inc, TYPE_NONE, TYPE_INTG,  TYPE_INTG,  ASM_INC_I, 0, 1, 1);
-  /* §§ INCREMENTO(SINISTRO) DI UN REALE */
-  ADD_OPERATION(inc, TYPE_REAL, TYPE_NONE,  TYPE_REAL,  ASM_INC_R, 0, 1, 1);
   /* §§ INCREMENTO(DESTRO) DI UN REALE */
   ADD_OPERATION(inc, TYPE_NONE, TYPE_REAL,  TYPE_REAL,  ASM_INC_R, 0, 1, 1);
   /* § OPERATORE DI DECREMENTO */
-  /* §§ DECREMENTO(SINISTRO) DI UN INTERO */
-  ADD_OPERATION(dec, TYPE_INTG, TYPE_NONE,  TYPE_INTG,  ASM_DEC_I, 0, 1, 1);
   /* §§ DECREMENTO(DESTRO) DI UN INTERO */
   ADD_OPERATION(dec, TYPE_NONE, TYPE_INTG,  TYPE_INTG,  ASM_DEC_I, 0, 1, 1);
-  /* §§ DECREMENTO(SINISTRO) DI UN REALE */
-  ADD_OPERATION(dec, TYPE_REAL, TYPE_NONE,  TYPE_REAL,  ASM_DEC_R, 0, 1, 1);
   /* §§ DECREMENTO(DESTRO) DI UN REALE */
   ADD_OPERATION(dec, TYPE_NONE, TYPE_REAL,  TYPE_REAL,  ASM_DEC_R, 0, 1, 1);
 
@@ -331,55 +302,22 @@ Task Builtins_Init(void) {
   /* §§ SOMMA FRA INTERI */
   //ADD_OPERATION(plus,   TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_ADD_II, 1, 1, 0);
 
-  /* §§ SOMMA FRA REALI E INTERI */
-  ADD_OPERATION(plus, type_RealNum, type_RealNum, type_RealNum, ASM_ADD_RR, 1, 1, 0);
-  ADD_OPERATION(plus, type_IntNum, type_IntNum, type_IntNum, ASM_ADD_II, 1, 1, 0);
-  /* §§ SOMMA FRA PUNTI */
-  ADD_OPERATION(plus,  type_Point,type_Point, TYPE_POINT,  ASM_ADD_PP, 1, 1, 0);
-
   /* § OPERATORE DI DIFFERENZA */
-  /* §§ OPPOSTO DI UN INTERO */
-  ADD_OPERATION(minus,  TYPE_INTG, TYPE_NONE,  TYPE_INTG,   ASM_NEG_I, 0, 1, 0);
-  /* §§ OPPOSTO DI UN REALE */
-  ADD_OPERATION(minus,  TYPE_REAL, TYPE_NONE,  TYPE_REAL,   ASM_NEG_R, 0, 1, 0);
   /* §§ OPPOSTO DI UN PUNTO */
   ADD_OPERATION(minus, type_Point, TYPE_NONE, TYPE_POINT,   ASM_NEG_P, 0, 1, 0);
 
-  /* §§ DIFFERENZA FRA REALI E INTERI */
-  ADD_OPERATION(minus, type_RealNum, type_RealNum, type_RealNum, ASM_SUB_RR, 0, 1, 0);
-  ADD_OPERATION(minus, type_IntNum, type_IntNum, type_IntNum, ASM_SUB_II, 0, 1, 0);
-  /* §§ DIFFERENZA FRA PUNTI */
-  ADD_OPERATION(minus, type_Point,type_Point, TYPE_POINT,  ASM_SUB_PP, 0, 1, 0);
-
   /* § OPERATORE DI PRODOTTO */
   /* §§ PRODOTTO FRA REALI E INTERI */
-  ADD_OPERATION(times, type_RealNum, type_RealNum, type_RealNum, ASM_MUL_RR, 1, 1, 0);
-  ADD_OPERATION(times, type_IntNum, type_IntNum, type_IntNum, ASM_MUL_II, 1, 1, 0);
-  /* §§ PRODOTTO REALE * PUNTO O VICEVERSA */
   ADD_OPERATION(times, type_Point, type_RealNum, TYPE_POINT, ASM_PMULR_P, 1, 1, 0);
 
   /* § OPERATORE DI DIVISIONE */
-  /* §§ DIVISIONE FRA REALI E INTERI */
-  ADD_OPERATION(div, type_RealNum, type_RealNum, type_RealNum, ASM_DIV_RR, 0, 1, 0);
-  ADD_OPERATION(div, type_IntNum, type_IntNum, type_IntNum, ASM_DIV_II, 0, 1, 0);
   /* §§ DIVISIONE PUNTO / REALE */
   ADD_OPERATION(div, type_Point, type_RealNum, TYPE_POINT, ASM_PDIVR_P, 0, 1, 0);
 
-  /* § RESTO DELLA DIVISIONE FRA INTERI */
-  ADD_OPERATION(rem,  TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_REM_II,  0, 1, 0);
-
   /* § OPERATORE DI UGUAGLIANZA */
-  /* §§ UGUAGLIANZA FRA INTERI */
-  ADD_OPERATION(eq,   TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_EQ_II,   1, 1, 0);
-  /* §§ UGUAGLIANZA FRA REALI */
-  ADD_OPERATION(eq,   TYPE_REAL, TYPE_REAL, TYPE_INTG, ASM_EQ_RR,   1, 1, 0);
   /* §§ UGUAGLIANZA FRA PUNTI */
   ADD_OPERATION(eq,  type_Point,type_Point, TYPE_INTG, ASM_EQ_PP,   1, 1, 0);
   /* § OPERATORE DI DISUGUAGLIANZA */
-  /* §§ DISUGUAGLIANZA FRA INTERI */
-  ADD_OPERATION(ne,   TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_NE_II,   1, 1, 0);
-  /* §§ DISUGUAGLIANZA FRA REALI */
-  ADD_OPERATION(ne,   TYPE_REAL, TYPE_REAL, TYPE_INTG, ASM_NE_RR,   1, 1, 0);
   /* §§ DISUGUAGLIANZA FRA PUNTI */
   ADD_OPERATION(ne,  type_Point,type_Point, TYPE_INTG, ASM_NE_PP,   1, 1, 0);
   /* § OPERATORE DI MINORE */
@@ -404,10 +342,6 @@ Task Builtins_Init(void) {
   ADD_OPERATION(ge,   TYPE_REAL, TYPE_REAL, TYPE_INTG, ASM_GE_RR,   0, 1, 0);
   /* § OPERATORE DI NOT LOGICO DI UN INTERO */
   ADD_OPERATION(lnot, TYPE_INTG, TYPE_NONE, TYPE_INTG, ASM_LNOT_I,  0, 1, 0);
-  /* § OPERATORE DI AND LOGICO FRA INTERI */
-  ADD_OPERATION(land, TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_LAND_II, 1, 1, 0);
-  /* § OPERATORE DI OR LOGICO FRA INTERI */
-  ADD_OPERATION(lor,  TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_LOR_II,  1, 1, 0);
 
   /*******OPERATORI DI ASSEGNAZIONE DEL TIPO x= DOVE x E' UN OPERATORE*******/
   /* § OPERATORE &= FRA INTERI */
@@ -575,20 +509,20 @@ static Task Blt_Define_Sys(void) {
 #endif
 
 /*******************************BOX-PROCEDURES********************************/
-static Task My_Print_Char(VMProgram *vmp) {
-  printf(SChar, BOX_VM_ARG1(vmp, Char));
+static Task My_Print_Char(BoxVM *vm) {
+  printf(SChar, BOX_VM_ARG1(vm, Char));
   return Success;
 }
-static Task My_Print_Int(VMProgram *vmp) {
-  printf(SInt, BOX_VM_ARG1(vmp, Int));
+static Task My_Print_Int(BoxVM *vm) {
+  printf(SInt, BOX_VM_ARG1(vm, Int));
   return Success;
 }
-static Task My_Print_Real(VMProgram *vmp) {
-  printf(SReal, BOX_VM_ARG1(vmp, Real));
+static Task My_Print_Real(BoxVM *vm) {
+  printf(SReal, BOX_VM_ARG1(vm, Real));
   return Success;
 }
-static Task My_Print_Pnt(VMProgram *vmp) {
-  Point *p = BOX_VM_ARGPTR1(vmp, Point);
+static Task My_Print_Pnt(BoxVM *vm) {
+  Point *p = BOX_VM_ARGPTR1(vm, Point);
   printf(SPoint, p->x, p->y);
   return Success;
 }
@@ -816,6 +750,7 @@ static OprAttr My_OprAttr_Of_Str(const char *s) {
       case 'a': a |= OPR_ATTR_ASSIGNMENT; break;
       case 'i': a |= OPR_ATTR_IGNORE_RES; break;
       case 'c': a |= OPR_ATTR_COMMUTATIVE; break;
+      case 'r': a |= OPR_ATTR_UN_RIGHT; break;
       default:
         MSG_FATAL("My_OprAttr_Of_Str: error parsing string.");
         assert(0);
@@ -841,8 +776,18 @@ static void My_Register_UnOps(BoxCmp *c) {
   } *unop, unops[] = {
     { "Rr",  ASTUNOP_NEG,   "", NULL, BOXGOP_NEG},
     { "Ii",  ASTUNOP_NEG,   "", NULL, BOXGOP_NEG},
-    { "Rr", ASTUNOP_LINC, "ai", NULL, BOXGOP_INC},
-    { "Ii", ASTUNOP_LINC, "ai", NULL, BOXGOP_INC},
+    { "Rr", ASTUNOP_LINC,  "a", NULL, BOXGOP_INC},
+    { "Ii", ASTUNOP_LINC,  "a", NULL, BOXGOP_INC},
+    { "Rr", ASTUNOP_LDEC,  "a", NULL, BOXGOP_DEC},
+    { "Ii", ASTUNOP_LDEC,  "a", NULL, BOXGOP_DEC},
+    { "Rr", ASTUNOP_RINC, "ar", NULL, BOXGOP_INC},
+    { "Ii", ASTUNOP_RINC, "ar", NULL, BOXGOP_INC},
+    { "Rr", ASTUNOP_RDEC, "ar", NULL, BOXGOP_DEC},
+    { "Ii", ASTUNOP_RDEC, "ar", NULL, BOXGOP_DEC},
+    { "Ii", ASTUNOP_BNOT,   "", NULL, BOXGOP_BNOT},
+    { "Ii", ASTUNOP_NOT,    "", NULL, BOXGOP_LNOT},
+
+
     { NULL,            0, NULL, NULL,          0}
   };
 
@@ -871,18 +816,33 @@ static void My_Register_BinOps(BoxCmp *c) {
     BoxGOp     g_op;   /* Generic opcode to use for assembling the operation */
 
   } *binop, binops[] = {
+    {"Ppp", ASTBINOP_ASSIGN, "ai", NULL, BOXGOP_MOV},
     {"Rrr", ASTBINOP_ASSIGN, "ai", NULL, BOXGOP_MOV},
     {"Iii", ASTBINOP_ASSIGN, "ai", NULL, BOXGOP_MOV},
+    {"CCC", ASTBINOP_ASSIGN, "ai", NULL, BOXGOP_MOV},
+    {"Ppp",    ASTBINOP_ADD,  "c", NULL, BOXGOP_ADD},
     {"Rrr",    ASTBINOP_ADD,  "c", NULL, BOXGOP_ADD},
     {"Iii",    ASTBINOP_ADD,  "c", NULL, BOXGOP_ADD},
+    {"Ppp",    ASTBINOP_SUB,   "", NULL, BOXGOP_SUB},
     {"Rrr",    ASTBINOP_SUB,   "", NULL, BOXGOP_SUB},
     {"Iii",    ASTBINOP_SUB,   "", NULL, BOXGOP_SUB},
     {"Rrr",    ASTBINOP_MUL,  "c", NULL, BOXGOP_MUL},
     {"Iii",    ASTBINOP_MUL,  "c", NULL, BOXGOP_MUL},
     {"Rrr",    ASTBINOP_DIV,   "", NULL, BOXGOP_DIV},
     {"Iii",    ASTBINOP_DIV,   "", NULL, BOXGOP_DIV},
-    {"Rrr",     ASTBINOP_EQ,  "c", NULL,  BOXGOP_EQ},
-    {"Iii",     ASTBINOP_EQ,  "c", NULL,  BOXGOP_EQ},
+    {"Iii",    ASTBINOP_REM,   "", NULL, BOXGOP_REM},
+    {"Rrr",     ASTBINOP_EQ,  "c", NULL, BOXGOP_EQ},
+    {"Iii",     ASTBINOP_EQ,  "c", NULL, BOXGOP_EQ},
+    {"Rrr",     ASTBINOP_NE,  "c", NULL, BOXGOP_NE},
+    {"Iii",     ASTBINOP_NE,  "c", NULL, BOXGOP_NE},
+    {"Iii",   ASTBINOP_BAND,  "c", NULL, BOXGOP_BAND},
+    {"Iii",   ASTBINOP_BXOR,  "c", NULL, BOXGOP_BXOR},
+    {"Iii",    ASTBINOP_BOR,  "c", NULL, BOXGOP_BOR},
+    {"Iii",    ASTBINOP_SHL,   "", NULL, BOXGOP_SHL},
+    {"Iii",    ASTBINOP_SHR,   "", NULL, BOXGOP_SHR},
+    {"Iii",   ASTBINOP_LAND,  "c", NULL, BOXGOP_LAND},
+    {"Iii",    ASTBINOP_LOR,  "c", NULL, BOXGOP_LOR},
+
     { NULL,               0, NULL, NULL,          0}
   };
 
@@ -900,7 +860,7 @@ static void My_Register_BinOps(BoxCmp *c) {
 }
 
 static void My_Builtin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
-                                Task (*c_fn)(VMProgram *)) {
+                                Task (*c_fn)(BoxVM *)) {
   BoxVMSymID sym_num;
   BoxVMCallNum call_num;
   BoxType new_proc;
@@ -947,3 +907,4 @@ void Bltin_Init(BoxCmp *c) {
 
 void Bltin_Finish(BoxCmp *c) {
 }
+
