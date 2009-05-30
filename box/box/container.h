@@ -125,6 +125,11 @@ typedef struct {
 /** Convert a container type character to a proper BoxType */
 BoxContType BoxContType_From_Char(char type_char);
 
+/** Convert a BoxType to a container type character (inverse of function
+ * BoxContType_From_Char)
+ */
+char BoxContType_To_Char(BoxType t);
+
 /** Function to rapidly set the content of a container.
  * The cathegory and type of the container are specified through the string
  * that the user provides, the following arguments are used to set the value
@@ -144,6 +149,13 @@ BoxContType BoxContType_From_Char(char type_char);
  * base pointer is a global (and not a local register).
  */
 void BoxCont_Set(BoxCont *c, const char *cont_type, ...);
+
+/** Return the string representation of the given container */
+char *BoxCont_To_String(const BoxCont *c);
+
+
+
+
 
 /** Move the content of container 'src' to the container 'dest'.
  */

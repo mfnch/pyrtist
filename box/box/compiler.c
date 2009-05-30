@@ -32,6 +32,11 @@
 #include "compiler.h"
 #include "parserh.h"
 
+/* For now it is safer not to cache const values!
+ * (will make easier to detect reference count problems)
+ */
+#define DONT_CACHE_CONST_VALUES 1
+
 /** Type of items which may be inserted inside the compiler stack.
  * @see StackItem
  */
@@ -57,6 +62,48 @@ typedef struct {
   StackItemDestructor destructor;
 } StackItem;
 
+/** Here we define, once for all, a number of useful Value instances which
+ * are used massively in the compiler. We could just allocate and create
+ * them whenever needed, but we do it here and just return new references
+ * to them whenever it is needed, with the hope to improve performance.
+ */
+void My_Init_Const_Values(BoxCmp *c) {
+  Value_Init(& c->value.error, & c->main_proc);
+  Value_Init(& c->value.void_val, & c->main_proc);
+  Value_Setup_As_Void(& c->value.void_val);
+}
+
+void My_Finish_Const_Values(BoxCmp *c) {
+  Value_Unlink(& c->value.error);
+  Value_Unlink(& c->value.void_val);
+}
+
+/** Return a new error value (actually a new reference to it,
+ * see My_Init_Const_Values)
+ */
+Value *My_Value_New_Error(BoxCmp *c) {
+#if DONT_CACHE_CONST_VALUES == 1
+  return Value_New(c->cur_proc);
+#else
+  Value_Link(c->value.error);
+  return & c->value.error; /* return an error value */
+#endif
+}
+
+/* We may optimize this later, by just passing a reference to a Value
+ * object which is created once for all at the beginning!
+ */
+static Value *My_Get_Void_Value(BoxCmp *c) {
+#if DONT_CACHE_CONST_VALUES == 1
+  Value *v = Value_New(c->cur_proc);
+  Value_Setup_As_Void(v);
+  return v;
+#else
+  Value_Link(& c->value.void_val);
+  return & c->value.void_val;
+#endif
+}
+
 void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
   c->attr.own_vm = (target_vm == NULL);
   c->vm = (target_vm != NULL) ? target_vm : BoxVM_New();
@@ -70,6 +117,8 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
 
   CmpProc_Init(& c->main_proc, c, CMPPROCSTYLE_MAIN);
   c->cur_proc = & c->main_proc;
+
+  My_Init_Const_Values(c);
   Namespace_Init(& c->ns);
   Bltin_Init(c);
 }
@@ -77,8 +126,13 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
 void BoxCmp_Finish(BoxCmp *c) {
   Bltin_Finish(c);
   Namespace_Finish(& c->ns);
+  My_Finish_Const_Values(c);
   CmpProc_Finish(& c->main_proc);
+
+  if (BoxArr_Num_Items(& c->stack) != 0)
+    MSG_WARNING("BoxCmp_Finish: stack is not empty at compiler destruction.");
   BoxArr_Finish(& c->stack);
+
   BoxCmp_Finish__Operators(c);
   TS_Finish(& c->ts);
 
@@ -128,10 +182,12 @@ BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
   return vm;
 }
 
-void BoxCmp_Pop_Any(BoxCmp *c, int num_items_to_pop) {
+void BoxCmp_Remove_Any(BoxCmp *c, int num_items_to_remove) {
   int i;
-  for(i = 0; i < num_items_to_pop; i++) {
+  for(i = 0; i < num_items_to_remove; i++) {
     StackItem *si = (StackItem *) BoxArr_Last_Item_Ptr(& c->stack);
+    if (si->type == STACKITEM_VALUE)
+      Value_Unlink((Value *) si->item);
     if (si->destructor != NULL)
       si->destructor(si->item);
     (void) BoxArr_Pop(& c->stack, NULL);
@@ -181,21 +237,49 @@ int BoxCmp_Pop_Errors(BoxCmp *c, int items_to_pop, int errors_to_push) {
     return 0;
 
   else {
-    BoxCmp_Pop_Any(c, items_to_pop);
+    BoxCmp_Remove_Any(c, items_to_pop);
     BoxCmp_Push_Error(c, errors_to_push);
     return 1;
   }
 }
 
+/** Pushes the given value 'v' into the compiler stack, stealing a reference
+ * to it.
+ * REFERENCES: v: -1;
+ */
 void BoxCmp_Push_Value(BoxCmp *c, Value *v) {
   if (v != NULL) {
     StackItem *si = (StackItem *) BoxArr_Push(& c->stack, NULL);
     si->type = STACKITEM_VALUE;
     si->item = v;
-    si->destructor = (StackItemDestructor) Value_Unlink;
+    si->destructor = NULL;
 
   } else
     BoxCmp_Push_Error(c, 1);
+}
+
+/** Pops the last value in the compiler stack and returns it, together with
+ * the corresponding reference.
+ * REFERENCES: return: new;
+ */
+Value *BoxCmp_Pop_Value(BoxCmp *c) {
+  StackItem *si = BoxArr_Last_Item_Ptr(& c->stack);
+  Value *v;
+
+  switch(si->type) {
+  case STACKITEM_ERROR:
+    return My_Value_New_Error(c); /* return an error value */
+
+  case STACKITEM_VALUE:
+    v = (Value *) si->item; /* return the value and its reference */
+    (void) BoxArr_Pop(& c->stack, NULL);
+    return v;
+
+  default:
+    MSG_FATAL("BoxCmp_Pop_Value: want value, but top of stack contains "
+              "incompatible item.");
+    assert(0);
+  }
 }
 
 Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos) {
@@ -216,6 +300,7 @@ Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos) {
 }
 
 static void My_Compile_Any(BoxCmp *c, ASTNode *node);
+static void My_Compile_Error(BoxCmp *c, ASTNode *node);
 static void My_Compile_TypeName(BoxCmp *c, ASTNode *node);
 static void My_Compile_Box(BoxCmp *c, ASTNode *node);
 static void My_Compile_Const(BoxCmp *c, ASTNode *n);
@@ -229,11 +314,13 @@ void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
     return;
 
   My_Compile_Any(c, program);
-  BoxCmp_Pop_Any(c, 1);
+  BoxCmp_Remove_Any(c, 1);
 }
 
 static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
   switch(node->type) {
+  case ASTNODETYPE_ERROR:
+    My_Compile_Error(c, node); break;
   case ASTNODETYPE_TYPENAME:
     My_Compile_TypeName(c, node); break;
   case ASTNODETYPE_BOX:
@@ -252,6 +339,10 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     printf("Compilation of node is not implemented, yet!\n");
     break;
   }
+}
+
+static void My_Compile_Error(BoxCmp *c, ASTNode *node) {
+  BoxCmp_Push_Value(c, Value_New(c->cur_proc));
 }
 
 static void My_Compile_TypeName(BoxCmp *c, ASTNode *n) {
@@ -276,15 +367,6 @@ static void My_Compile_TypeName(BoxCmp *c, ASTNode *n) {
   }
 }
 
-/* We may optimize this later, by just passing a reference to a Value
- * object which is created once for all at the beginning!
- */
-static Value *My_Get_Void_Value(BoxCmp *c) {
-  Value *v = Value_New(c->cur_proc);
-  Value_Setup_As_Void(v);
-  return v;
-}
-
 int XXX_Emit_Call(Value *parent, Value *child) {
   BoxCmp *c = parent->proc->cmp;
   BoxType found_procedure, expansion_for_child;
@@ -300,8 +382,10 @@ int XXX_Emit_Call(Value *parent, Value *child) {
   if (found_procedure == BOXTYPE_NONE)
     return 0;
 
-  if (expansion_for_child != BOXTYPE_NONE)
+  if (expansion_for_child != BOXTYPE_NONE) {
+    Value_Link(child); /* XXX */
     child = Value_Expand(child, expansion_for_child);
+  }
 
   TS_Procedure_Sym_Num_Get(& c->ts, & sym_id, found_procedure);
   printf("Found procedure with sym_id="SUInt"\n", sym_id);
@@ -333,10 +417,10 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
   } else {
     Value *parent_type;
     My_Compile_Any(c, box->attr.box.parent);
-    parent_type = BoxCmp_Get_Value(c, 0);
+    parent_type = BoxCmp_Pop_Value(c);
     parent = Value_To_Temp_Or_Target(parent_type);
+    Value_Unlink(parent_type); /* XXX */
     parent_is_err = Value_Is_Err(parent);
-    BoxCmp_Pop_Any(c, 1);
     BoxCmp_Push_Value(c, parent);
   }
 
@@ -352,19 +436,18 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
     assert(s->type == ASTNODETYPE_STATEMENT);
 
     My_Compile_Any(c, s->attr.statement.target);
-    stmt_val = BoxCmp_Get_Value(c, 0);
+    stmt_val = BoxCmp_Pop_Value(c);
     if (parent_is_err || Value_Is_Err(stmt_val)
         || Value_Is_Ignorable(stmt_val))
-      BoxCmp_Pop_Any(c, 1);
+      Value_Unlink(stmt_val);
 
     else {
-      Value *child = BoxCmp_Get_Value(c, 0);
-      int have_found_it = XXX_Emit_Call(parent, child);
-      BoxCmp_Pop_Any(c, 1);
+      int have_found_it = XXX_Emit_Call(parent, stmt_val);
+      Value_Unlink(stmt_val); /* XXX */
       if (!have_found_it) {
         MSG_WARNING("Don't know how to use '%~s' expressions inside "
                     "a '%~s' box.",
-                    TS_Name_Get(& c->ts, child->type),
+                    TS_Name_Get(& c->ts, stmt_val->type),
                     TS_Name_Get(& c->ts, parent->type));
       }
     }
@@ -435,10 +518,10 @@ static void My_Compile_UnOp(BoxCmp *c, ASTNode *n) {
 
   /* Compile operand and get it from the stack */
   My_Compile_Any(c, n->attr.un_op.expr);
-  operand = BoxCmp_Get_Value(c, 0);
+  operand = BoxCmp_Pop_Value(c);
 
   if (Value_Is_Err(operand))
-    return; /* Leave the error in the stack */
+    BoxCmp_Push_Value(c, operand); /* Re-put the error in the stack */
 
   else if (Value_Is_Value(operand))
     result = BoxCmp_Opr_Emit_UnOp(c, n->attr.un_op.operation, operand);
@@ -446,7 +529,7 @@ static void My_Compile_UnOp(BoxCmp *c, ASTNode *n) {
   else
     Value_Want_Value(operand);
 
-  BoxCmp_Pop_Any(c, 1);
+  Value_Unlink(operand); /* XXX */
   BoxCmp_Push_Value(c, result);
 }
 
@@ -463,8 +546,8 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
     ASTBinOp op;
 
     /* Get values from stack */
-    right = BoxCmp_Get_Value(c, 0);
-    left  = BoxCmp_Get_Value(c, 1);
+    right = BoxCmp_Pop_Value(c);
+    left  = BoxCmp_Pop_Value(c);
 
     op = n->attr.bin_op.operation;
     if (op == ASTBINOP_ASSIGN) {
@@ -490,7 +573,8 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
         result = BoxCmp_Opr_Emit_BinOp(c, op, left, right);
     }
 
-    BoxCmp_Pop_Any(c, 2);
+    Value_Unlink(left); /* XXX */
+    Value_Unlink(right); /* XXX */
     BoxCmp_Push_Value(c, result);
   }
 }

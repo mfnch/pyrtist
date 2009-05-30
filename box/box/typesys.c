@@ -202,18 +202,18 @@ Type TS_Resolve(TS *ts, Type t, TSKindSelect select) {
   return t;
 }
 
-Type TS_Core_Type(TS *ts, Type t) {
+Type TS_Get_Core_Type(TS *ts, Type t) {
   return TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES);
 }
 
 int TS_Is_Fast(TS *ts, Type t) {
-  Type ct = TS_Core_Type(ts, t);
+  Type ct = TS_Get_Core_Type(ts, t);
   return (ct >= TYPE_FAST_FIRST && ct <= TYPE_FAST_LAST);
 }
 
 int TS_Structure_Is_Fast(TS *ts, Type structure) {
   int fast_structure = 1;
-  Type ct = TS_Core_Type(ts, structure), member_t;
+  Type ct = TS_Get_Core_Type(ts, structure), member_t;
 
   assert(TS_Is_Structure(ts, ct));
   member_t = TS_Member_Next(ts, ct);
@@ -231,7 +231,7 @@ Int TS_Size(TS *ts, Type t) {
   return td->size;
 }
 
-TSKind TS_Kind(TS *ts, Type t) {
+TSKind TS_Get_Kind(TS *ts, Type t) {
   TSDesc *td = Type_Ptr(ts, t);
   return td->kind;
 }

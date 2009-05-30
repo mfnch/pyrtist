@@ -482,9 +482,17 @@ void CmpProc_VA_Assemble(CmpProc *p, BoxGOp g_op, int num_args, va_list ap) {
      */
     oi = My_Find_Op(p, & op, g_op, num_args, args, /*ignore_signature*/ 1);
     if (oi == NULL) {
+      int i;
+      char *sep = "";
       fprintf(stderr, "CmpProc_Assemble: cannot find a matching operation.\n");
       fprintf(stderr, "Possible signatures are:\n");
       BoxOpInfo_Print(stderr, BoxVM_Get_Op_Info(p->cmp->vm, g_op));
+      fprintf(stderr, "Got the following %d arguments: ", num_args);
+      for(i = 0; i < num_args; i++) {
+        fprintf(stderr, "%s%s", sep, BoxCont_To_String(args[i]));
+        sep = ", ";
+      }
+      fprintf(stderr, "\n");
       MSG_FATAL("CmpProc_Assemble: aborting!");
       assert(0);
 

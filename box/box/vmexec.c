@@ -634,13 +634,13 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {    BOXGOP_NE,    "ne?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Ne_II    }, /* ne? ri, ri    */
   {    BOXGOP_NE,    "ne?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_RR    }, /* ne? rr, rr    */
   {    BOXGOP_NE,    "ne?", 2, 'p',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_PP    }, /* ne? rp, rp    */
-  {    BOXGOP_LT,    "lt?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Lt_II    }, /* lt? ri, ri    */
+  {    BOXGOP_LT,    "lt?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Lt_II    }, /* lt? ri, ri    */
   {    BOXGOP_LT,    "lt?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Lt_RR    }, /* lt? rr, rr    */
-  {    BOXGOP_LE,    "le?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Le_II    }, /* le? ri, ri    */
+  {    BOXGOP_LE,    "le?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Le_II    }, /* le? ri, ri    */
   {    BOXGOP_LE,    "le?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Le_RR    }, /* le? rr, rr    */
-  {    BOXGOP_GT,    "gt?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Gt_II    }, /* gt? ri, ri    */
+  {    BOXGOP_GT,    "gt?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Gt_II    }, /* gt? ri, ri    */
   {    BOXGOP_GT,    "gt?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Gt_RR    }, /* gt? rr, rr    */
-  {    BOXGOP_GE,    "ge?", 2, 'i',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ge_II    }, /* ge? ri, ri    */
+  {    BOXGOP_GE,    "ge?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Ge_II    }, /* ge? ri, ri    */
   {    BOXGOP_GE,    "ge?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ge_RR    }, /* ge? rr, rr    */
   {  BOXGOP_LNOT,   "lnot", 1, 'i',     "a1",  "a1", "x-", "xx", VM__Exec_LNot_I   }, /* lnot ri       */
   {  BOXGOP_LAND,   "land", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_LAnd_II  }, /* land ri, ri   */

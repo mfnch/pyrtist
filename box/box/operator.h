@@ -47,10 +47,9 @@ typedef enum {
 /** Describes the scheme to follow when assemblying the operation */
 typedef enum {
   OPASMSCHEME_STD_UN,
+  OPASMSCHEME_RIGHT_UN,
   OPASMSCHEME_STD_BIN,
-  OPASMSCHEME_ASGN_BIN,
-  OPASMSCHEME_ASGN_UN_LEFT,
-  OPASMSCHEME_ASGN_UN_RIGHT,
+  OPASMSCHEME_BITYPE_BIN,
   OPASMSCHEME_UNKNOWN
 } OpAsmScheme;
 
@@ -80,6 +79,7 @@ struct _operation_struc {
 };
 
 struct _operator_struc {
+  BoxCmp      *cmp;             /**< Compiler to which the operator refers */
   OprAttr     attr;             /**< Operator attributes */
   const char  *name;            /**< Name of the operator */
   Operation   *first_operation;
@@ -137,5 +137,9 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v);
 
 Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
                              Value *v_left, Value *v_right);
+
+/** Emits the conversion from the source expression 'v', to the given type 't'
+ */
+Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest);
 
 #endif /* _OPERATOR_H_FNS */

@@ -657,6 +657,7 @@ void.seps.opt:
 %token TOK_LOR TOK_LAND
 %token TOK_APLUS TOK_AMINUS TOK_ATIMES TOK_ADIV TOK_AREM TOK_ABAND TOK_ABXOR
 %token TOK_ABOR TOK_ASHL TOK_ASHR
+%token TOK_POW
 
 /* List of tokens with semantical value */
 %token <String> TOK_IDENTIFIER TOK_TYPE_IDENT
@@ -666,20 +667,18 @@ void.seps.opt:
 %type <UnaryOperator> un_op post_op
 %type <BinaryOperator> mul_op add_op shift_op cmp_op eq_op assign_op
 %type <Node> expr_sep sep_expr struc_expr
-%type <Node> string_concat prim_expr postfix_expr unary_expr mul_expr add_expr
+%type <Node> string_concat prim_expr postfix_expr unary_expr pow_expr
+%type <Node> mul_expr add_expr
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
 %type <Node> land_expr lor_expr assign_expr expr statement statement_list
 %type <Node> struc_type_1st struc_type_2nd type_sep sep_type struc_type
 %type <Node> prim_type array_type type assign_type
 
-/* Lista dei token affetti da regole di precedenza
- */
-%right TOK_POW
+/* Lista dei token affetti da regole di precedenza */
 %left TOK_UMEMBER
 
 
-/* Regola di partenza
- */
+/* Starting rule */
 %start program
 
 %%
@@ -805,9 +804,14 @@ unary_expr:
   | un_op unary_expr             {$$ = ASTNodeUnOp_New($1, $2);}
   ;
 
-mul_expr:
+pow_expr:
     unary_expr                   {$$ = $1;}
-  | mul_expr mul_op unary_expr   {$$ = ASTNodeBinOp_New($2, $1, $3);}
+  | pow_expr TOK_POW unary_expr  {$$ = ASTNodeBinOp_New(ASTBINOP_POW, $1, $3);}
+  ;
+
+mul_expr:
+    pow_expr                     {$$ = $1;}
+  | mul_expr mul_op pow_expr     {$$ = ASTNodeBinOp_New($2, $1, $3);}
   ;
 
 add_expr:
@@ -926,8 +930,7 @@ statement:
   | expr                         {$$ = ASTNodeStatement_New($1);}
   | '\\' expr                    {$$ = ASTNodeStatement_New($2);}
   | '[' statement_list ']'       {$$ = ASTNodeStatement_New($2);}
-  | error sep                    {MSG_ERROR("Syntax error.");
-                                  $$ = ASTNodeStatement_New(ASTNodeError_New());
+  | error sep                    {$$ = ASTNodeStatement_New(ASTNodeError_New());
                                   Tok_Unput(',');
                                   yyerrok;}
   ;

@@ -60,5 +60,6 @@ void Print_Finalize(void);
 const char *print(const char *fmt, ...);
 
 #  define printdup(...) BoxMem_Strdup(print(__VA_ARGS__))
+#  define Box_SPrint(...) BoxMem_Strdup(print(__VA_ARGS__))
 
 #endif

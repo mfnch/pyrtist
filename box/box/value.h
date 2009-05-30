@@ -143,11 +143,17 @@ void Value_Setup_As_Type_Name(Value *v, const char *name);
 /** Set the value to represent the given type */
 void Value_Setup_As_Type(Value *v, BoxType t);
 
+/** Set the value to represent the given immediate char 'c' */
 void Value_Setup_As_Imm_Char(Value *v, Char c);
 
+/** Set the value to represent the given immediate int 'i' */
 void Value_Setup_As_Imm_Int(Value *v, Int i);
 
+/** Set the value to represent the given immediate real 'r' */
 void Value_Setup_As_Imm_Real(Value *v, Real r);
+
+/** Set the value to represent a temporary value of the given type */
+void Value_Setup_As_Temp(Value *v, BoxType t);
 
 void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc);
 

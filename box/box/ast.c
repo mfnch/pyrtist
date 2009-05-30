@@ -91,7 +91,7 @@ const char *ASTNodeType_To_Str(ASTNodeType t) {
   case ASTNODETYPE_CONST:      return "Const";
   case ASTNODETYPE_STRING:     return "String";
   case ASTNODETYPE_VAR:        return "Var";
-  case ASTNODETYPE_DONTIGNORE: return "DontIgnore"; 
+  case ASTNODETYPE_DONTIGNORE: return "DontIgnore";
   case ASTNODETYPE_UNOP:       return "UnOp";
   case ASTNODETYPE_BINOP:      return "BinOp";
   case ASTNODETYPE_MEMBER:     return "Member";
@@ -119,12 +119,12 @@ const char *ASTUnOp_To_String(ASTUnOp op) {
 
 int ASTUnOp_Is_Right(ASTUnOp op) {
  switch(op) {
-  case ASTUNOP_RINC:
-  case ASTUNOP_RDEC:
-    return 1;
-  default:
-    return 0;
-  }
+ case ASTUNOP_RINC:
+ case ASTUNOP_RDEC:
+   return 1;
+ default:
+   return 0;
+ }
   return 0;
 }
 
@@ -135,6 +135,7 @@ const char *ASTBinOp_To_String(ASTBinOp op) {
   case ASTBINOP_MUL: return "*";
   case ASTBINOP_DIV: return "/";
   case ASTBINOP_REM: return "%";
+  case ASTBINOP_POW: return "**";
   case ASTBINOP_SHL: return "<<";
   case ASTBINOP_SHR: return ">>";
   case ASTBINOP_EQ: return "==";

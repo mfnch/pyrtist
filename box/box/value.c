@@ -213,13 +213,19 @@ void Value_Setup_As_Void(Value *v) {
   v->type = BOXTYPE_VOID;
 }
 
+void Value_Setup_As_Temp(Value *v, BoxType t) {
+  ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
+  Value_Setup_Container(v, t, & vc);
+  Value_Emit_Allocate(v);
+}
+
 /* Create a new empty container. */
 void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
   RegAlloc *ra = & v->proc->reg_alloc;
   int use_greg;
 
   v->type = type;
-  v->value.cont.type = TS_Core_Type(& v->proc->cmp->ts, type);
+  v->value.cont.type = TS_Get_Core_Type(& v->proc->cmp->ts, type);
 
   switch(vc->type_of_container) {
   case VALCONTTYPE_IMM:
@@ -459,33 +465,62 @@ int Value_Is_Ignorable(Value *v) {
   return v->attr.ignore;
 }
 
-Value *Value_Expand(Value *v, BoxType expansion_type) {
-  MSG_FATAL("Value_Expand: not implemented, yet");
-  assert(0);
-  return NULL;
+/** Expands the value 'src' as prescribed by the species 'expansion_type'.
+ * REFERENCES: return: new, src: -1;
+ */
+Value *Value_Expand(Value *src, BoxType expansion_type) {
+  BoxCmp *c = src->proc->cmp;
+  TS *ts = & c->ts;
+  BoxInt t_src, t_dst;
 
-#if 0
-  Int type1, type2;
+//   assert(e->is.typed && e->is.value);
 
-  assert(e->is.typed && e->is.value);
-
-  type1 = species;
-  type2 = e->type;
+  t_dst = expansion_type;
+  t_src = src->type;
 
 #ifdef DEBUG_SPECIES_EXPANSION
-  printf("Espando: '%s' --> '%s'\n",
+  printf("Expand: '%s' --> '%s'\n",
          Tym_Type_Names(e->type), Tym_Type_Names(species));
 #endif
 
-  if (type1 == type2) return Success;
-  type1 = Tym_Type_Resolve_Alias(type1);
-  type2 = Tym_Type_Resolve_All(type2);
-  if (type1 == type2) return Success;
+  if (t_src == t_dst)
+    return src;
 
-  switch(TS_Kind(cmp->ts, type1)) {
-  case TS_KIND_INTRINSIC: /* type1 != type2 !!! */
-    MSG_ERROR("Type forbidden in species conversions.");
-    return Failed;
+  t_src = TS_Resolve(ts, t_src, TS_KS_ALIAS | TS_KS_SPECIES);
+  t_dst = TS_Resolve(ts, t_dst, TS_KS_ALIAS);
+
+  if (t_src == t_dst)
+    return src;
+
+  switch(TS_Get_Kind(ts, t_dst)) {
+  case TS_KIND_INTRINSIC: /* t_src != t_dst */
+    MSG_FATAL("Value_Expand: type forbidden in species conversions.");
+    assert(0);
+
+  case TS_KIND_SPECIES:
+    {
+      BoxType t_species_memb = TS_Member_Next(ts, t_dst);
+      for(t_species_memb = TS_Member_Next(ts, t_dst);
+          t_species_memb != BOXTYPE_NONE;
+          t_species_memb = TS_Member_Next(ts, t_species_memb)) {
+        TSCmp match = TS_Compare(ts, t_species_memb, t_dst);
+        if (match != TS_TYPES_UNMATCH) {
+          if (match == TS_TYPES_EXPAND) {
+            Value *dest = Value_Expand(src, t_species_memb);
+            Value_Unlink(src);
+            src = dest;
+          }
+          return BoxCmp_Opr_Emit_Conversion(c, src, t_species_memb);
+        }
+      }
+
+      MSG_FATAL("Value_Expand: type '%~s' is not compatible with '%~s'.",
+                TS_Name_Get(ts, t_src), TS_Name_Get(ts, t_dst));
+      assert(0);
+    }
+
+#if 0
+
 
   case TS_KIND_POINTER:
     MSG_ERROR("Not implemented yet!"); return Failed;
@@ -501,23 +536,8 @@ Value *Value_Expand(Value *v, BoxType expansion_type) {
       MSG_ERROR("Expansion of array of species is not implemented yet!");
       return Failed;
     default:
-      MSG_ERROR("Cmp_Expr_Expand: Expansion to array involves "
+      MSG_ERROR("Value_Expand: Expansion to array involves "
                 "an incompatible type.");
-      return Failed;
-    }
-
-  case TS_KIND_SPECIES: {
-      Int member_type = type1;
-      Int target_type = Tym_Specie_Get_Target(type1);
-      TASK(Tym_Specie_Get(& member_type));
-      while (member_type != TYPE_NONE) {
-        if ( Tym_Compare_Types(member_type, type2, NULL) ) {
-          TASK( Cmp_Expr_Expand(member_type, e) );
-          return Cmp_Conversion(e->type, target_type, e);
-        }
-        TASK( Tym_Specie_Get(& member_type) );
-      };
-      MSG_ERROR("Cannot expand the species!");
       return Failed;
     }
 
@@ -535,8 +555,7 @@ Value *Value_Expand(Value *v, BoxType expansion_type) {
       * effettivamente fare!
       */
     if ( ! Tym_Compare_Types(type1, type2, & need_expansion) ) {
-      MSG_ERROR("Cmp_Expr_Expand: "
-                "Expansion involves incompatible types!");
+      MSG_ERROR("Value_Expand: Expansion involves incompatible types!");
       return Failed;
     }
 
@@ -567,11 +586,11 @@ Value *Value_Expand(Value *v, BoxType expansion_type) {
     return Success;
     }
 
+#endif
   default:
-    MSG_ERROR("Cmp_Expr_Expand not fully implemented!");
-    return Failed;
+    MSG_FATAL("Value_Expand: not fully implemented!");
+    assert(0);
   }
 
-  return Failed;
-#endif
+  return NULL;
 }

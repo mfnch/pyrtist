@@ -281,31 +281,6 @@ Task Builtins_Init(void) {
 
   status = 0; /* Se qualcosa va male trovero' status = 1, alla fine! */
 
-  /* § OPERATORE DI INCREMENTO */
-  /* §§ INCREMENTO(DESTRO) DI UN INTERO */
-  ADD_OPERATION(inc, TYPE_NONE, TYPE_INTG,  TYPE_INTG,  ASM_INC_I, 0, 1, 1);
-  /* §§ INCREMENTO(DESTRO) DI UN REALE */
-  ADD_OPERATION(inc, TYPE_NONE, TYPE_REAL,  TYPE_REAL,  ASM_INC_R, 0, 1, 1);
-  /* § OPERATORE DI DECREMENTO */
-  /* §§ DECREMENTO(DESTRO) DI UN INTERO */
-  ADD_OPERATION(dec, TYPE_NONE, TYPE_INTG,  TYPE_INTG,  ASM_DEC_I, 0, 1, 1);
-  /* §§ DECREMENTO(DESTRO) DI UN REALE */
-  ADD_OPERATION(dec, TYPE_NONE, TYPE_REAL,  TYPE_REAL,  ASM_DEC_R, 0, 1, 1);
-
-  /* § OPERATORE DI POTENZA */
-  /* §§ POTENZA DI UN REALE */
-  ADD_OPERATION(pow, type_RealNum, type_RealNum, type_RealNum, ASM_POW_RR, 0, 1, 0);
-  /* §§ POTENZA DI UN INTERO */
-  ADD_OPERATION(pow, TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_POW_II, 0, 1, 0);
-
-  /* § OPERATORE DI SOMMA */
-  /* §§ SOMMA FRA INTERI */
-  //ADD_OPERATION(plus,   TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_ADD_II, 1, 1, 0);
-
-  /* § OPERATORE DI DIFFERENZA */
-  /* §§ OPPOSTO DI UN PUNTO */
-  ADD_OPERATION(minus, type_Point, TYPE_NONE, TYPE_POINT,   ASM_NEG_P, 0, 1, 0);
-
   /* § OPERATORE DI PRODOTTO */
   /* §§ PRODOTTO FRA REALI E INTERI */
   ADD_OPERATION(times, type_Point, type_RealNum, TYPE_POINT, ASM_PMULR_P, 1, 1, 0);
@@ -313,73 +288,6 @@ Task Builtins_Init(void) {
   /* § OPERATORE DI DIVISIONE */
   /* §§ DIVISIONE PUNTO / REALE */
   ADD_OPERATION(div, type_Point, type_RealNum, TYPE_POINT, ASM_PDIVR_P, 0, 1, 0);
-
-  /* § OPERATORE DI UGUAGLIANZA */
-  /* §§ UGUAGLIANZA FRA PUNTI */
-  ADD_OPERATION(eq,  type_Point,type_Point, TYPE_INTG, ASM_EQ_PP,   1, 1, 0);
-  /* § OPERATORE DI DISUGUAGLIANZA */
-  /* §§ DISUGUAGLIANZA FRA PUNTI */
-  ADD_OPERATION(ne,  type_Point,type_Point, TYPE_INTG, ASM_NE_PP,   1, 1, 0);
-  /* § OPERATORE DI MINORE */
-  /* §§ MINORE FRA INTERI */
-  ADD_OPERATION(lt,   TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_LT_II,   0, 1, 0);
-  /* §§ MINORE FRA REALI */
-  ADD_OPERATION(lt,   TYPE_REAL, TYPE_REAL, TYPE_INTG, ASM_LT_RR,   0, 1, 0);
-  /* § OPERATORE DI MINORE-UGUALE */
-  /* §§ MINORE-UGUALE FRA INTERI */
-  ADD_OPERATION(le,   TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_LE_II,   0, 1, 0);
-  /* §§ MINORE-UGUALE FRA REALI */
-  ADD_OPERATION(le,   TYPE_REAL, TYPE_REAL, TYPE_INTG, ASM_LE_RR,   0, 1, 0);
-  /* § OPERATORE DI MAGGIORE */
-  /* §§ MAGGIORE FRA INTERI */
-  ADD_OPERATION(gt,   TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_GT_II,   0, 1, 0);
-  /* §§ MAGGIORE FRA REALI */
-  ADD_OPERATION(gt,   TYPE_REAL, TYPE_REAL, TYPE_INTG, ASM_GT_RR,   0, 1, 0);
-  /* § OPERATORE DI MAGGIORE-UGUALE */
-  /* §§ MAGGIORE-UGUALE FRA INTERI */
-  ADD_OPERATION(ge,   TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_GE_II,   0, 1, 0);
-  /* §§ MAGGIORE-UGUALE FRA REALI */
-  ADD_OPERATION(ge,   TYPE_REAL, TYPE_REAL, TYPE_INTG, ASM_GE_RR,   0, 1, 0);
-  /* § OPERATORE DI NOT LOGICO DI UN INTERO */
-  ADD_OPERATION(lnot, TYPE_INTG, TYPE_NONE, TYPE_INTG, ASM_LNOT_I,  0, 1, 0);
-
-  /*******OPERATORI DI ASSEGNAZIONE DEL TIPO x= DOVE x E' UN OPERATORE*******/
-  /* § OPERATORE &= FRA INTERI */
-  ADD_OPERATION(aband, TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_BAND_II, 0, 1, 1);
-  /* § OPERATORE ^= FRA INTERI */
-  ADD_OPERATION(abxor, TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_BXOR_II, 0, 1, 1);
-  /* § OPERATORE |= FRA INTERI */
-  ADD_OPERATION(abor, TYPE_INTG, TYPE_INTG, TYPE_INTG, ASM_BOR_II, 0, 1, 1);
-  /* § OPERATORE <<= FRA INTERI */
-  ADD_OPERATION(ashl, TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_SHL_II, 0, 1, 1);
-  /* § OPERATORE >>= FRA INTERI */
-  ADD_OPERATION(ashr, TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_SHR_II, 0, 1, 1);
-  /* § OPERATORE += */
-  /* §§ += FRA INTERI */
-  ADD_OPERATION(aplus,  TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_ADD_II, 0, 1, 1);
-  /* §§ += FRA REALI */
-  ADD_OPERATION(aplus,  TYPE_REAL, TYPE_REAL,  TYPE_REAL,  ASM_ADD_RR, 0, 1, 1);
-  /* §§ += FRA PUNTI */
-  ADD_OPERATION(aplus, TYPE_POINT,type_Point, TYPE_POINT,  ASM_ADD_PP, 0, 1, 1);
-  /* § OPERATORE -= */
-  /* §§ -= FRA INTERI */
-  ADD_OPERATION(aminus, TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_SUB_II, 0, 1, 1);
-  /* §§ -= FRA REALI */
-  ADD_OPERATION(aminus, TYPE_REAL, TYPE_REAL,  TYPE_REAL,  ASM_SUB_RR, 0, 1, 1);
-  /* §§ -= FRA PUNTI */
-  ADD_OPERATION(aminus,TYPE_POINT,type_Point, TYPE_POINT,  ASM_SUB_PP, 0, 1, 1);
-  /* § OPERATORE *= */
-  /* §§ *= FRA INTERI */
-  ADD_OPERATION(atimes, TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_MUL_II, 0, 1, 1);
-  /* §§ *= FRA REALI */
-  ADD_OPERATION(atimes, TYPE_REAL, TYPE_REAL,  TYPE_REAL,  ASM_MUL_RR, 0, 1, 1);
-  /* § OPERATORE /= */
-  /* §§ /= FRA INTERI */
-  ADD_OPERATION(adiv,   TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_DIV_II, 0, 1, 1);
-  /* §§ /= FRA REALI */
-  ADD_OPERATION(adiv,   TYPE_REAL, TYPE_REAL,  TYPE_REAL,  ASM_DIV_RR, 0, 1, 1);
-  /* § OPERATORE %= FRA INTERI */
-  ADD_OPERATION(arem,   TYPE_INTG, TYPE_INTG,  TYPE_INTG,  ASM_REM_II, 0, 1, 1);
 
   /* OPERATORI CHE DEFINISCONO */
   cmp_opr.assign->can_define = 1;
@@ -695,7 +603,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
     Type       type;
 
   } *type_to_register, types_to_register[] = {
-    {"CHAR",        BOXTYPE_CHAR},
+    {"Char",        BOXTYPE_CHAR},
     {"INT",         BOXTYPE_INT},
     {"REAL",        BOXTYPE_REAL},
     {"POINT",       BOXTYPE_POINT},
@@ -729,8 +637,8 @@ static BoxType My_Type_Of_Char(BoxCmp *c, char t) {
   case 'I': return BOXTYPE_INT;
   case 'R': return BOXTYPE_REAL;
   case 'P': return BOXTYPE_POINT;
-  case 'i': return BOXTYPE_INT; /*c->bltin.species_int;*/
-  case 'r': return BOXTYPE_REAL; /*c->bltin.species_real;*/
+  case 'i': return c->bltin.species_int;
+  case 'r': return c->bltin.species_real;
   case 'p': return c->bltin.species_point;
   default:
     MSG_FATAL("My_Type_Of_Char: unexpected character.");
@@ -774,6 +682,7 @@ static void My_Register_UnOps(BoxCmp *c) {
     BoxGOp     g_op;   /* Generic opcode to use for assembling the operation */
 
   } *unop, unops[] = {
+    { "Pp",  ASTUNOP_NEG,   "", NULL, BOXGOP_NEG},
     { "Rr",  ASTUNOP_NEG,   "", NULL, BOXGOP_NEG},
     { "Ii",  ASTUNOP_NEG,   "", NULL, BOXGOP_NEG},
     { "Rr", ASTUNOP_LINC,  "a", NULL, BOXGOP_INC},
@@ -831,10 +740,8 @@ static void My_Register_BinOps(BoxCmp *c) {
     {"Rrr",    ASTBINOP_DIV,   "", NULL, BOXGOP_DIV},
     {"Iii",    ASTBINOP_DIV,   "", NULL, BOXGOP_DIV},
     {"Iii",    ASTBINOP_REM,   "", NULL, BOXGOP_REM},
-    {"Rrr",     ASTBINOP_EQ,  "c", NULL, BOXGOP_EQ},
-    {"Iii",     ASTBINOP_EQ,  "c", NULL, BOXGOP_EQ},
-    {"Rrr",     ASTBINOP_NE,  "c", NULL, BOXGOP_NE},
-    {"Iii",     ASTBINOP_NE,  "c", NULL, BOXGOP_NE},
+    {"Rrr",    ASTBINOP_POW,   "", NULL, BOXGOP_POW},
+    {"Iii",    ASTBINOP_POW,   "", NULL, BOXGOP_POW},
     {"Iii",   ASTBINOP_BAND,  "c", NULL, BOXGOP_BAND},
     {"Iii",   ASTBINOP_BXOR,  "c", NULL, BOXGOP_BXOR},
     {"Iii",    ASTBINOP_BOR,  "c", NULL, BOXGOP_BOR},
@@ -842,8 +749,37 @@ static void My_Register_BinOps(BoxCmp *c) {
     {"Iii",    ASTBINOP_SHR,   "", NULL, BOXGOP_SHR},
     {"Iii",   ASTBINOP_LAND,  "c", NULL, BOXGOP_LAND},
     {"Iii",    ASTBINOP_LOR,  "c", NULL, BOXGOP_LOR},
-
-    { NULL,               0, NULL, NULL,          0}
+    {"Ppp",  ASTBINOP_APLUS, "ai", NULL, BOXGOP_ADD},
+    {"Rrr",  ASTBINOP_APLUS, "ai", NULL, BOXGOP_ADD},
+    {"Iii",  ASTBINOP_APLUS, "ai", NULL, BOXGOP_ADD},
+    {"Ppp", ASTBINOP_AMINUS, "ai", NULL, BOXGOP_SUB},
+    {"Rrr", ASTBINOP_AMINUS, "ai", NULL, BOXGOP_SUB},
+    {"Iii", ASTBINOP_AMINUS, "ai", NULL, BOXGOP_SUB},
+    {"Rrr", ASTBINOP_ATIMES, "ai", NULL, BOXGOP_MUL},
+    {"Iii", ASTBINOP_ATIMES, "ai", NULL, BOXGOP_MUL},
+    {"Rrr",   ASTBINOP_ADIV, "ai", NULL, BOXGOP_DIV},
+    {"Iii",   ASTBINOP_ADIV, "ai", NULL, BOXGOP_DIV},
+    {"Iii",   ASTBINOP_AREM, "ai", NULL, BOXGOP_REM},
+    {"Iii",   ASTBINOP_ASHL, "ai", NULL, BOXGOP_SHL},
+    {"Iii",   ASTBINOP_ASHR, "ai", NULL, BOXGOP_SHR},
+    {"Iii",  ASTBINOP_ABAND, "ai", NULL, BOXGOP_BAND},
+    {"Iii",  ASTBINOP_ABXOR, "ai", NULL, BOXGOP_BXOR},
+    {"Iii",   ASTBINOP_ABOR, "ai", NULL, BOXGOP_BOR},
+    {"Ipp",     ASTBINOP_EQ,  "c", NULL, BOXGOP_EQ},
+    {"Irr",     ASTBINOP_EQ,  "c", NULL, BOXGOP_EQ},
+    {"Iii",     ASTBINOP_EQ,  "c", NULL, BOXGOP_EQ},
+    {"Ipp",     ASTBINOP_NE,  "c", NULL, BOXGOP_NE},
+    {"Irr",     ASTBINOP_NE,  "c", NULL, BOXGOP_NE},
+    {"Iii",     ASTBINOP_NE,  "c", NULL, BOXGOP_NE},
+    {"Irr",     ASTBINOP_LT,   "", NULL, BOXGOP_LT},
+    {"Iii",     ASTBINOP_LT,   "", NULL, BOXGOP_LT},
+    {"Irr",     ASTBINOP_LE,   "", NULL, BOXGOP_LE},
+    {"Iii",     ASTBINOP_LE,   "", NULL, BOXGOP_LE},
+    {"Irr",     ASTBINOP_GT,   "", NULL, BOXGOP_GT},
+    {"Iii",     ASTBINOP_GT,   "", NULL, BOXGOP_GT},
+    {"Irr",     ASTBINOP_GE,   "", NULL, BOXGOP_GE},
+    {"Iii",     ASTBINOP_GE,   "", NULL, BOXGOP_GE},
+    { NULL,               0, NULL, NULL, 0}
   };
 
   for(binop = & binops[0]; binop->types != NULL; ++binop) {
@@ -856,6 +792,35 @@ static void My_Register_BinOps(BoxCmp *c) {
     Operation *opn = Operator_Add_Opn(opr, left, right, result);
     Operation_Attr_Set(opn, mask, attr);
     opn->implem.opcode = binop->g_op;
+  }
+}
+
+/* Register all the conversion operations for the Box compiler. */
+static void My_Register_Conversions(BoxCmp *c) {
+  Operator *convert = & c->convert;
+
+  struct {
+    const char *types; /* Two characters describing the types of the source
+                          and destination of the conversion, following the map
+                          character->type implemented by My_Type_Of_Char) */
+    const char *mask,  /* Mask of attributes (a string which is converted
+                          to an OprAttr by calling My_OprAttr_Of_Str) */
+               *attr;  /* Attributes to set */
+    BoxGOp     g_op;   /* Generic opcode to use for assembling the operation */
+
+  } *conv, convs[] = {
+    { "IR",   "", NULL, BOXGOP_REAL},
+    { NULL, NULL, NULL, 0}
+  };
+
+  for(conv = & convs[0]; conv->types != NULL; ++conv) {
+    BoxType src = My_Type_Of_Char(c, conv->types[0]),
+            dst = My_Type_Of_Char(c, conv->types[1]);
+    OprAttr mask = My_OprAttr_Of_Str(conv->mask),
+            attr = My_OprAttr_Of_Str(conv->attr);
+    Operation *opn = Operator_Add_Opn(convert, src, BOXTYPE_NONE, dst);
+    Operation_Attr_Set(opn, mask, attr);
+    opn->implem.opcode = conv->g_op;
   }
 }
 
@@ -902,6 +867,7 @@ void Bltin_Init(BoxCmp *c) {
   My_Register_Core_Types(c);
   My_Register_UnOps(c);
   My_Register_BinOps(c);
+  My_Register_Conversions(c);
   My_Register_Std_IO(c);
 }
 

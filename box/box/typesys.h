@@ -155,9 +155,9 @@ Type TS_Resolve(TS *ts, Type t, TSKindSelect select);
  * is. This function is used to perform operations where the structure
  * of the type is needed, such as constructing the destructor of MyType.
  */
-Type TS_Core_Type(TS *ts, Type t);
+Type TS_Get_Core_Type(TS *ts, Type t);
 
-TSKind TS_Kind(TS *ts, Type t);
+TSKind TS_Get_Kind(TS *ts, Type t);
 
 /** Box types can be subtivided into two cathegories: fast types and
  * slow types. A type is fast if the Box VM has a corresponding register
@@ -172,9 +172,9 @@ int TS_Is_Fast(TS *ts, Type t);
  */
 int TS_Structure_Is_Fast(TS *ts, Type structure);
 
-#define TS_Is_Member(ts, t) (TS_Kind((ts), (t)) == TS_KIND_MEMBER)
-#define TS_Is_Subtype(ts, t) (TS_Kind((ts), (t)) == TS_KIND_SUBTYPE)
-#define TS_Is_Structure(ts, t) (TS_Kind((ts), (t)) == TS_KIND_STRUCTURE)
+#define TS_Is_Member(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_MEMBER)
+#define TS_Is_Subtype(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_SUBTYPE)
+#define TS_Is_Structure(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_STRUCTURE)
 
 Int TS_Align(TS *ts, Int address);
 

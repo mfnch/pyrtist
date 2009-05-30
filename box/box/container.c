@@ -21,6 +21,8 @@
 #include <stdarg.h>
 #include <assert.h>
 
+#include "mem.h"
+#include "print.h"
 #include "messages.h"
 #include "container.h"
 
@@ -277,6 +279,22 @@ BoxContType BoxContType_From_Char(char type_char) {
   }
 }
 
+/** Convert a BoxType to a container type character (inverse of function
+ * BoxContType_From_Char)
+ */
+char BoxContType_To_Char(BoxType t) {
+  switch(t) {
+  case BOXCONTTYPE_CHAR: return 'c';
+  case BOXCONTTYPE_INT: return 'i';
+  case BOXCONTTYPE_REAL: return 'r';
+  case BOXCONTTYPE_POINT: return 'p';
+  case BOXCONTTYPE_OBJ: return 'o';
+  default:                                /* error */
+    MSG_FATAL("BoxContType_To_Char: unrecognized container type "SInt".", t);
+    assert(0);
+  }
+}
+
 void BoxCont_Set(BoxCont *c, const char *cont_type, ...) {
   va_list ap; /* to handle the optional arguments (see stdarg.h) */
   BoxContCateg categ;
@@ -345,12 +363,6 @@ void BoxCont_Set(BoxCont *c, const char *cont_type, ...) {
   va_end(ap);
 }
 
-char *BoxCont_To_String(const Cont *c) {
-  BoxCont ii_zero;
-  BoxCont_Set(& ii_zero, "ii", 0);
-  return "???";
-}
-
-void BoxVM_Assemble_With_Cont(BoxOpcode code, BoxCont *c1, BoxCont *c2) {
-
+char *BoxCont_To_String(const BoxCont *c) {
+  return Box_SPrint("%c", BoxContType_To_Char(c->type));
 }

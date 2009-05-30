@@ -40,7 +40,8 @@
  */
 
 /* Create a new operator */
-void Operator_Init(Operator *opr, const char *name) {
+void Operator_Init(Operator *opr, BoxCmp *c, const char *name) {
+  opr->cmp = c;
   opr->attr = 0;
   opr->name = name;
   opr->first_operation = NULL;
@@ -60,10 +61,27 @@ void Operator_Finish(Operator *opr) {
  */
 static void My_Guess_AsmScheme(Operation *opn) {
   if (opn->attr & OPR_ATTR_NATIVE) {
-    if (opn->attr & OPR_ATTR_BINARY)
-      opn->asm_scheme = OPASMSCHEME_STD_BIN;
-    else
-      opn->asm_scheme = OPASMSCHEME_STD_UN;
+    if (opn->attr & OPR_ATTR_BINARY) {
+      TS *ts = & opn->opr->cmp->ts;
+      BoxType t_result = TS_Get_Core_Type(ts, opn->type_result),
+              t_left = TS_Get_Core_Type(ts, opn->type_left),
+              t_right = TS_Get_Core_Type(ts, opn->type_right);
+      int res_eq_l = (t_result == t_left),
+          l_eq_r = (t_left == t_right);
+      if (l_eq_r && res_eq_l)
+        opn->asm_scheme = OPASMSCHEME_STD_BIN;
+
+      else if (l_eq_r && !res_eq_l)
+        opn->asm_scheme = OPASMSCHEME_BITYPE_BIN;
+
+      else {
+        MSG_FATAL("Unknow operation scheme in My_Guess_AsmScheme");
+        assert(0);
+      }
+
+    } else
+      opn->asm_scheme = (opn->attr & OPR_ATTR_UN_RIGHT) != 0 ?
+                        OPASMSCHEME_RIGHT_UN : OPASMSCHEME_STD_UN;
 
   } else {
     opn->asm_scheme = OPASMSCHEME_UNKNOWN;
@@ -141,7 +159,7 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
   for(i = 0; i < ASTUNOP__NUM_OPS; i++) {
     OprAttr attr;
     Operator *opr = BoxCmp_UnOp_Get(c, i);
-    Operator_Init(opr, ASTUnOp_To_String(i));
+    Operator_Init(opr, c, ASTUnOp_To_String(i));
     attr = OPR_ATTR_NATIVE |
            (ASTUnOp_Is_Right(i) ? OPR_ATTR_UN_RIGHT : 0);
     Operator_Attr_Set(opr, OPR_ATTR_ALL, attr);
@@ -149,9 +167,12 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
 
   for(i = 0; i < ASTBINOP__NUM_OPS; i++) {
     Operator *opr = BoxCmp_BinOp_Get(c, i);
-    Operator_Init(opr, ASTBinOp_To_String(i));
+    Operator_Init(opr, c, ASTBinOp_To_String(i));
     Operator_Attr_Set(opr, OPR_ATTR_ALL, OPR_ATTR_BINARY | OPR_ATTR_NATIVE);
   }
+
+  Operator_Init(& c->convert, c, "(->)");
+  Operator_Attr_Set(& c->convert, OPR_ATTR_ALL, OPR_ATTR_NATIVE);
 }
 
 /** INTERNAL: Called by BoxCmp_Finish to finalise the operator table. */
@@ -163,6 +184,8 @@ void BoxCmp_Finish__Operators(BoxCmp *c) {
 
   for(i = 0; i < ASTBINOP__NUM_OPS; i++)
     Operator_Finish(BoxCmp_BinOp_Get(c, i));
+
+  Operator_Finish(& c->convert);
 }
 
 
@@ -212,30 +235,6 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
   return NULL;
 }
 
-#if 1
-
-/*
-  Functions required by the following code:
-
-    Tym_Type_Resolve_All(opn->type_rs);
-
-    Cmp_Complete_Ptr_1(& old_e2)
-    Cmp_Complete_Ptr_2(e1, e2)
-
-    Cmp_Expr_Force_To_LReg(e2)
-    Cmp_Expr_To_LReg(e2)
-    Cmp_Expr_To_X(e2, CAT_LREG, 0, 1)
-    Cmp_Expr_Reg0_To_LReg(opn->type_rs)
-    Cmp_Expr_Destroy_Tmp(e2)
-
-    Cmp_Assemble(opn->asm_code, old_e2.categ, old_e2.value.i)
-*/
-
-/* DESCRIZIONE: Questa funzione gestisce la generazione del codice
- *  corrispondente ad un gran numero di operazioni intrinseche.
- * NOTA: Viene chiamata da Cmp_Operation_Exec.
- */
-
 /** This is the function which actually emits the VM code for quite a number
  * of Operations.
  * NOTE: this function assumes that the two operands have both type and values
@@ -260,9 +259,31 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
 
     } else
       v_left = Value_To_Temp(v_left);
+
     CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
                      1, & v_left->value.cont);
     result = v_left;
+    break;
+
+  case OPASMSCHEME_RIGHT_UN:
+    assert(opn->attr & OPR_ATTR_ASSIGNMENT);
+
+    if (Value_Is_Target(v_left)) {
+      Value *v_temp;
+      Value_Link(v_left); /* Make sure v_left is not destroyed
+                             by Value_To_Temp */
+      v_temp = Value_To_Temp(v_left);
+      CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+                       1, & v_left->value.cont);
+      Value_Unlink(v_left); /* We don't need v_left anymore! */
+      result = v_temp;
+      break;
+
+    } else {
+      MSG_ERROR("Unary operator '%s' cannot modify its operand (%s)",
+                opn->opr->name, ValueKind_To_Str(v_left->kind));
+      return NULL;
+    }
     break;
 
   case OPASMSCHEME_STD_BIN:
@@ -298,6 +319,20 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
                      2, & v_left->value.cont, & v_right->value.cont);
     result = v_left;
     break;
+
+  case OPASMSCHEME_BITYPE_BIN:
+    assert((opn->attr & OPR_ATTR_NATIVE) && (opn->attr & OPR_ATTR_BINARY));
+
+    result = Value_New(c->cur_proc);
+    Value_Setup_As_Temp(result, opn->type_result);
+    v_left = Value_To_Temp_Or_Target(v_left);
+    v_right = Value_To_Temp_Or_Target(v_right);
+    CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+                     3, & result->value.cont,
+                     & v_left->value.cont, & v_right->value.cont);
+    Value_Unlink(v_left);
+    Value_Unlink(v_right);
+    return result;
 
   default:
     MSG_FATAL("Non-native operators are not supported, yet!");
@@ -356,48 +391,6 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
 
 
   if ( opn->is.assignment ) { /***********************************ASSIGNMENT*/
-    if ( opn_is.strange ) {
-      MSG_ERROR("Errore interno: operazione di assegnazione anomala!");
-      return NULL;
-    }
-
-    /* Mi assicuro che il primo argomento possa fungere da target
-     * dell'assegazione!
-     */
-    if ( ! e1->is.target ) {
-      MSG_ERROR("This expression of type %~s cannot be modified!",
-                TS_Name_Get(cmp->ts, e1->type));
-      return NULL;
-    }
-
-    if ( opn_is.unary ) {
-      /* Ora compilo l'operazione */
-      if ( opn_is.right ) {
-        Expr old_e2 = *e2;
-        /*e2value = e2->value.i, e2categ = e2->categ;*/
-        if IS_FAILED( Cmp_Expr_Force_To_LReg(e2) ) return NULL;
-        if IS_FAILED( Cmp_Complete_Ptr_1(& old_e2) ) return NULL;
-        Cmp_Assemble(opn->asm_code, old_e2.categ, old_e2.value.i);
-        return e2;
-      } else {
-        if IS_FAILED( Cmp_Complete_Ptr_1(e1) ) return NULL;
-        Cmp_Assemble(opn->asm_code, e1->categ, e1->value.i);
-        return e1;
-      }
-    } else {
-      /* Se necessario, converto e2 in registro locale. */
-      if IS_FAILED( Cmp_Expr_To_LReg(e2) ) return NULL;
-
-      /* Ora compilo l'operazione */
-      if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
-      Cmp_Assemble(opn->asm_code,
-                   e1->categ, e1->value.i, e2->categ, e2->value.i);
-
-      /* Ora libero il registro che non contiene il risultato! */
-      Cmp_Expr_Destroy_Tmp(e2);
-      return e1;
-    }
-
   } else { /**************************************************NOT ASSIGNMENT*/
     struct {unsigned int e1 : 1, e2 : 1;} result_in;
 
@@ -416,9 +409,6 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
        * un reale, etc.
        */
       if ( opn_is.unary ) {
-        MSG_ERROR("Still not implemented!");
-        return NULL;
-
       } else {
         /* Se l'operazione e' binaria ho 3 casi a seconda dei tipi
         * delle 3 quantita' coinvolte dall'operazione (2 argomenti +
@@ -429,18 +419,6 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
         eq.er_e1 = (rs_resolved == e1->resolved);
         eq.er_e2 = (rs_resolved == e2->resolved);
         if ( eq.e1_e2 ) {
-          /* caso 1: argomenti dello stesso tipo, ma risultato
-           *  di tipo diverso (caso di <, <=, >, >=, ==, !=, ...)
-           */
-          if ( (Cmp_Expr_To_LReg(e1) == Failed)
-            || (Cmp_Expr_To_LReg(e2) == Failed) ) return NULL;
-          if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
-          Cmp_Assemble(opn->asm_code,
-           e1->categ, e1->value.i, e2->categ, e2->value.i);
-          Cmp_Expr_Destroy_Tmp(e1);
-          Cmp_Expr_Destroy_Tmp(e2);
-          return Cmp_Expr_Reg0_To_LReg(opn->type_rs);
-
         } else {
           if ( eq.er_e2 ) {
             Expr *tmp; tmp = e1; e1 = e2; e2 = tmp;
@@ -465,52 +443,11 @@ er_equal_e1:
       return NULL;
 
     } else { /*************************************************NOT STRANGE*/
-      if ( opn_is.unary ) {
-        if ( opn_is.right ) e1 = e2;
-        if IS_FAILED( Cmp_Expr_Force_To_LReg(e1) ) return NULL;
-        if IS_FAILED( Cmp_Complete_Ptr_1(e1) ) return NULL;
-        Cmp_Assemble(opn->asm_code, e1->categ, e1->value.i);
-        return e1;
-
-      } else {
-        result_in.e2 = (e2->resolved == rs_resolved)
-         && (e2->categ == CAT_LREG) && (! e2->is.target);
-
-        /* Se l'operazione e' commutativa, posso usare e2 per contenere
-         * il risultato dell'operazione!
-         */
-        if ( result_in.e2 && !result_in.e1 && opn->is.commutative ) {
-          register Expr *tmp = e2;
-          e2 = e1; e1 = tmp;
-          result_in.e1 = 1;
-          result_in.e2 = 0;
-        }
-
-        /* Se non posso mettere il risultato in e1, allora devo
-         * convertire e1 in un registro locale (che puo' contenerlo!)
-         */
-        if ( ! result_in.e1 ) {
-          if IS_FAILED( Cmp_Expr_Force_To_LReg(e1) ) return NULL;
-        }
-
-        /* Se necessario, converto e2 in registro locale. */
-        if IS_FAILED( Cmp_Expr_To_LReg(e2) ) return NULL;
-
-        /* Ora compilo l'operazione */
-        if IS_FAILED( Cmp_Complete_Ptr_2(e1, e2) ) return NULL;
-        Cmp_Assemble(opn->asm_code,
-                     e1->categ, e1->value.i, e2->categ, e2->value.i);
-
-        /* Ora libero il registro che non contiene il risultato! */
-        Cmp_Expr_Destroy_Tmp(e2);
-        return e1;
-      }
     }
   }
 #endif
 
 }
-#endif
 
 /** Compiles an operation between the two expression e1 and e2, where
  * the operator is opr.
@@ -532,8 +469,10 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
                                  v->type, BOXTYPE_NONE);
   if (opn != NULL) {
     /* Now we expand the types, if necessary */
-    if (match.match_left == TS_TYPES_EXPAND)
+    if (match.match_left == TS_TYPES_EXPAND) {
+      Value_Link(v); /* XXX */
       v = Value_Expand(v, match.expand_type_left);
+    }
 
     return My_Opn_Emit(c, opn, v, v);
 
@@ -574,11 +513,15 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
                                  v_left->type, v_right->type);
   if (opn != NULL) {
     /* Now we expand the types, if necessary */
-    if (match.match_left == TS_TYPES_EXPAND)
+    if (match.match_left == TS_TYPES_EXPAND) {
+      Value_Link(v_left); /* XXX */
       v_left = Value_Expand(v_left, match.expand_type_left);
+    }
 
-    if (match.match_right == TS_TYPES_EXPAND)
+    if (match.match_right == TS_TYPES_EXPAND) {
+      Value_Link(v_right); /* XXX */
       v_right = Value_Expand(v_right, match.expand_type_right);
+    }
 
     return My_Opn_Emit(c, opn, v_left, v_right);
 
@@ -586,6 +529,45 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
     MSG_ERROR("%~s %s %~s <-- Operation has not been defined!",
               TS_Name_Get(& c->ts, v_left->type), opr->name,
               TS_Name_Get(& c->ts, v_right->type));
+    return NULL;
+  }
+}
+
+/** Emits the conversion from the source expression 'v', to the given type 't'
+ * REFERENCES: return: new, src: -1;
+ */
+Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
+  Operation *opn;
+  OprMatch match;
+
+#if 0
+  /* Subtypes cannot be used for operator overloading, so we expand
+   * them anyway!
+   */
+  Expr_Resolve_Subtype(v);
+#endif
+
+  /* Now we search the operation */
+  opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match, src->type, dest);
+  if (opn != NULL) {
+    Value *v_dest;
+
+#if 0
+    /* Now we expand the types, if necessary */
+    assert(match.match_left == TS_TYPES_EQUAL
+           && match.match_right == TS_TYPES_EQUAL);
+#endif
+    v_dest = Value_New(c->cur_proc);
+    Value_Setup_As_Temp(v_dest, dest);
+    CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+                     2, & v_dest->value.cont, & src->value.cont);
+    Value_Unlink(src);
+    return v_dest;
+
+  } else {
+    Value_Unlink(src);
+    MSG_ERROR("Don't know how to convert objects of type %~s to %~s.",
+              TS_Name_Get(& c->ts, src->type), TS_Name_Get(& c->ts, dest));
     return NULL;
   }
 }

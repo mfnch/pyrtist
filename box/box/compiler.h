@@ -41,7 +41,7 @@
 struct _box_cmp {
   struct {
     unsigned int
-             own_vm :1;   /**< Was the VM created by us, or given from
+               own_vm :1; /**< Was the VM created by us, or given from
                                outside? */
   }          attr;      /**< Attributes of the compiler */
   BoxVM      *vm;       /**< The target of the compilation */
@@ -52,8 +52,16 @@ struct _box_cmp {
   Namespace  ns;        /**< The namespace */
   CmpProc    main_proc, /**< Main procedure in the module */
              *cur_proc; /**< Procedure on which we are working now */
-  Operator   bin_ops[ASTBINOP__NUM_OPS], /**< Table of binary operators */
+  Operator   convert,   /**< Conversion operator */
+             bin_ops[ASTBINOP__NUM_OPS], /**< Table of binary operators */
              un_ops[ASTUNOP__NUM_OPS];   /**< Table of unary operators */
+  struct {
+    Value      error,     /**< Error value */
+               void_val;  /**< Void value */
+  } value;              /**< Bunch of constant values, which we do not want
+                             to allocate again and again (just to make the
+                             compiler a little bit faster and memory
+                             efficient). */
 };
 
 void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm);
