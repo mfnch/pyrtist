@@ -55,7 +55,7 @@ void TS_Init_Builtin_Types(TS *ts) {
     {  "INT",   BOXTYPE_INT, sizeof(BoxInt)},
     { "REAL",  BOXTYPE_REAL, sizeof(BoxReal)},
     {"POINT", BOXTYPE_POINT, sizeof(BoxPoint)},
-    {  "OBJ",   BOXTYPE_OBJ, sizeof(BoxObj)},
+    {  "PTR",   BOXTYPE_PTR, sizeof(BoxPtr)},
     { "VOID",  BOXTYPE_VOID, 0},
     { "CPTR",  BOXTYPE_CPTR, sizeof(BoxCPtr)},
     {NULL, 0, 0}

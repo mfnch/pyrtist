@@ -230,7 +230,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
   switch(vc->type_of_container) {
   case VALCONTTYPE_IMM:
     v->kind = VALUEKIND_IMM;
-    v->value.cont.categ = CONT_IMM;
+    v->value.cont.categ = BOXCONTCATEG_IMM;
     return; break;
 
   case VALCONTTYPE_LREG:
@@ -345,7 +345,7 @@ void Value_Emit_Allocate(Value *v) {
     return;
   case VALUEKIND_TEMP:
   case VALUEKIND_TARGET:
-    if (v->value.cont.type == BOXCONTTYPE_OBJ) {
+    if (v->value.cont.type == BOXCONTTYPE_PTR) {
       BoxCmp *c = v->proc->cmp;
       CmpProc *proc = c->cur_proc;
       Value v_size, v_alloc_type;

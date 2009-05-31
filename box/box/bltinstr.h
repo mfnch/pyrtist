@@ -32,10 +32,15 @@
 /** @brief The Str object.
  */
 typedef struct {
-  Int length; /**< the current length of the string */
-  Int buffer_size; /**< the size of the block allocated to contain the string. */
-  char *ptr; /**< the pointer to the block allocated to contain the string. */
-} Str;
+  BoxInt length;      /**< the current length of the string */
+  BoxInt buffer_size; /**< the size of the block allocated to contain
+                           the string. */
+  char   *ptr;        /**< the pointer to the block allocated to contain
+                           the string. */
+} BoxStr;
+
+/** Just for compatibility */
+typedef BoxStr Str;
 
 extern Type type_Str, type_StrSpecies;
 

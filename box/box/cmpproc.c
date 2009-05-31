@@ -587,7 +587,7 @@ void CmpProc_VA_Assemble(CmpProc *p, BoxGOp g_op, int num_args, va_list ap) {
          */
         BoxCont ro1;
         const BoxCont *cs[1];
-        ro1.type = BOXCONTTYPE_OBJ;
+        ro1.type = BOXCONTTYPE_PTR;
         ro1.categ = BOXCONTCATEG_LREG;
         ro1.value.reg = 1;
         cs[0] = & ro1;

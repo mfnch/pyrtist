@@ -72,7 +72,7 @@ enum {
   BOXTYPE_INT,
   BOXTYPE_REAL,
   BOXTYPE_POINT,
-  BOXTYPE_OBJ,
+  BOXTYPE_PTR,
   BOXTYPE_VOID,
   BOXTYPE_CPTR
 };
@@ -86,7 +86,10 @@ typedef struct {
 typedef struct {
   void *ptr;   /**< Pointer to the data inside this block */
   void *block; /**< Pointer to the allocated memory block */
-} BoxObj;
+} BoxPtr;
+
+/** Obsolete, to be replaced by BoxPtr */
+typedef BoxPtr BoxObj;
 
 /** Union of all the intrinsic Box types */
 typedef union {
@@ -99,9 +102,6 @@ typedef union {
 
 /** Type representing C pointers from Box */
 typedef void *BoxCPtr;
-
-/** Obsolete, to be replaced by BoxCPtr */
-typedef void *BoxPtr;
 
 /** Strings containing the printf formats for the various types */
 #  define BoxChar_Fmt "%c"

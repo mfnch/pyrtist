@@ -271,7 +271,7 @@ BoxContType BoxContType_From_Char(char type_char) {
   case 'i': return BOXCONTTYPE_INT;
   case 'r': return BOXCONTTYPE_REAL;
   case 'p': return BOXCONTTYPE_POINT;
-  case 'o': return BOXCONTTYPE_OBJ;
+  case 'o': return BOXCONTTYPE_PTR;
   default:                                /* error */
     MSG_FATAL("BoxType_From_Char: unrecognized type character '%c'.",
               type_char);
@@ -288,7 +288,7 @@ char BoxContType_To_Char(BoxType t) {
   case BOXCONTTYPE_INT: return 'i';
   case BOXCONTTYPE_REAL: return 'r';
   case BOXCONTTYPE_POINT: return 'p';
-  case BOXCONTTYPE_OBJ: return 'o';
+  case BOXCONTTYPE_PTR: return 'o';
   default:                                /* error */
     MSG_FATAL("BoxContType_To_Char: unrecognized container type "SInt".", t);
     assert(0);
@@ -309,7 +309,7 @@ void BoxCont_Set(BoxCont *c, const char *cont_type, ...) {
   case 'i': type = BOXCONTTYPE_INT;   action = READ_INT;   break; /* Int */
   case 'r': type = BOXCONTTYPE_REAL;  action = READ_REAL;  break; /* Real */
   case 'p': type = BOXCONTTYPE_POINT; action = READ_POINT; break; /* Point */
-  case 'o': type = BOXCONTTYPE_OBJ;   action = ERROR;      break; /* Obj */
+  case 'o': type = BOXCONTTYPE_PTR;   action = ERROR;      break; /* Ptr */
   default:                                /* error */
     MSG_FATAL("Cont_Set: unrecognized type for container '%c'.",
               cont_type[1]);

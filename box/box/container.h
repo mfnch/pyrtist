@@ -43,12 +43,6 @@
  *   specification, while the implementation in 'container.c' refers
  *   specifically to the box virtual machine and its instruction set.
  */
-typedef enum {
-  CONT_GREG = CAT_GREG,
-  CONT_LREG = CAT_LREG,
-  CONT_PTR = CAT_PTR,
-  CONT_IMM = CAT_IMM
-} ContCateg;
 
 typedef enum {
   BOXCONTCATEG_GREG = CAT_GREG,
@@ -58,20 +52,44 @@ typedef enum {
 } BoxContCateg;
 
 typedef enum {
+  BOXCONTTYPE_CHAR  = BOXTYPE_CHAR,
+  BOXCONTTYPE_INT   = BOXTYPE_INT,
+  BOXCONTTYPE_REAL  = BOXTYPE_REAL,
+  BOXCONTTYPE_POINT = BOXTYPE_POINT,
+  BOXCONTTYPE_PTR   = BOXTYPE_PTR
+} BoxContType;
+
+typedef struct {
+  BoxContCateg
+              categ;          /**< Cathegory (immediate, register, ptr, etc ) */
+  BoxContType type;           /**< Type (CHAR, INT, REAL, ...) */
+  union {
+    BoxValue  imm;          /**< The value (if immediate) */
+    BoxInt    reg;          /**< The register number (if register) */
+    struct {
+      BoxInt    offset,     /**< Offset from the pointer */
+                reg;        /**< Register containing the pointer */
+      unsigned int
+                is_greg :1; /**< Whether ptr_reg is a global/local register */
+    }         ptr;          /**< Data necessary to identify a pointer Value */
+  }          value;         /**< Union of all possible vals for a Container */
+} BoxCont;
+
+#if 0
+typedef enum {
+  CONT_GREG = CAT_GREG,
+  CONT_LREG = CAT_LREG,
+  CONT_PTR = CAT_PTR,
+  CONT_IMM = CAT_IMM
+} ContCateg;
+
+typedef enum {
   CONT_CHAR  = BOXTYPE_CHAR,
   CONT_INT   = BOXTYPE_INT,
   CONT_REAL  = BOXTYPE_REAL,
   CONT_POINT = BOXTYPE_POINT,
   CONT_OBJ   = TYPE_OBJ
 } ContType;
-
-typedef enum {
-  BOXCONTTYPE_CHAR  = BOXTYPE_CHAR,
-  BOXCONTTYPE_INT   = BOXTYPE_INT,
-  BOXCONTTYPE_REAL  = BOXTYPE_REAL,
-  BOXCONTTYPE_POINT = BOXTYPE_POINT,
-  BOXCONTTYPE_OBJ   = BOXTYPE_OBJ
-} BoxContType;
 
 typedef struct {
   ContCateg  categ;       /**< Cathegory (immediate, register, pointer, ...)*/
@@ -90,22 +108,26 @@ typedef struct {
   }          value;       /**< Union of all possible values for a Container */
 } Cont;
 
-typedef struct {
-  ContCateg categ;          /**< Cathegory (immediate, register, ptr, etc ) */
-  ContType  type;           /**< Type (CHAR, INT, REAL, ...) */
-  union {
-    BoxValue  imm;          /**< The value (if immediate) */
-    BoxInt    reg;          /**< The register number (if register) */
-    struct {
-      BoxInt    offset,     /**< Offset from the pointer */
-                reg;        /**< Register containing the pointer */
-      unsigned int
-                is_greg :1; /**< Whether ptr_reg is a global/local register */
-    }         ptr;          /**< Data necessary to identify a pointer Value */
-  }          value;         /**< Union of all possible vals for a Container */
-} BoxCont;
+/** Move the content of container 'src' to the container 'dest'.
+ */
+void Cont_Move(const Cont *dest, const Cont *src);
 
-#if 0
+/** Create in 'dest' a pointer to the content of the container 'src'.
+ * Consequently 'dest' has to have type==CONT_OBJ.
+ */
+void Cont_Ptr_Create(Cont *dest, Cont *src);
+
+/** Increase the pointer container *ptr by the integer value stored
+ * inside the container *offset. This can be both an immediate integer
+ * or a integer register.
+ */
+void Cont_Ptr_Inc(Cont *ptr, Cont *offset);
+
+/** Change the type of a container when possible (this operation does
+ * not produce any output code).
+ */
+void Cont_Ptr_Cast(Cont *ptr, ContType type);
+
 #define CONT_NEW_LREG(type, num) \
   ((Cont) {CONT_LREG, (type), (num)})
 
@@ -113,12 +135,13 @@ typedef struct {
   ((Cont) {CONT_PTR, (type), (offset), (ptr_reg), (void *) 0, {0}})
 
 #define CONT_NEW_INT(value) ((Cont) {CONT_IMM, CONT_INT, (value)})
-#else
+
 #define CONT_NEW_LREG(type, num) ((Cont) {})
 
 #define CONT_NEW_LPTR(type, ptr_reg, offset) ((Cont) {})
 
 #define CONT_NEW_INT(value) ((Cont) {})
+
 #endif
 
 
@@ -153,28 +176,5 @@ void BoxCont_Set(BoxCont *c, const char *cont_type, ...);
 /** Return the string representation of the given container */
 char *BoxCont_To_String(const BoxCont *c);
 
-
-
-
-
-/** Move the content of container 'src' to the container 'dest'.
- */
-void Cont_Move(const Cont *dest, const Cont *src);
-
-/** Create in 'dest' a pointer to the content of the container 'src'.
- * Consequently 'dest' has to have type==CONT_OBJ.
- */
-void Cont_Ptr_Create(Cont *dest, Cont *src);
-
-/** Increase the pointer container *ptr by the integer value stored
- * inside the container *offset. This can be both an immediate integer
- * or a integer register.
- */
-void Cont_Ptr_Inc(Cont *ptr, Cont *offset);
-
-/** Change the type of a container when possible (this operation does
- * not produce any output code).
- */
-void Cont_Ptr_Cast(Cont *ptr, ContType type);
 
 #endif

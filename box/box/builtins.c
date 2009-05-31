@@ -590,6 +590,10 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
   TS_Species_Add(ts, b->species_real, BOXTYPE_REAL);
   TS_Name_Set(ts, b->species_real, "Real");
 
+  /* Define Str */
+  TS_Intrinsic_New(ts, & b->string, sizeof(BoxStr));
+  TS_Name_Set(ts, b->string, "Str");
+
   TS_Alias_New(ts, & b->print, BOXTYPE_VOID);
   TS_Name_Set(ts, b->print, "Print");
 }
@@ -609,6 +613,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {"POINT",       BOXTYPE_POINT},
     {"Int",         c->bltin.species_int},
     {"Real",        c->bltin.species_real},
+    {"Str",         c->bltin.string},
     {"Void",        BOXTYPE_VOID},
     {"Print",       c->bltin.print},
     {(char *) NULL, BOXTYPE_NONE}

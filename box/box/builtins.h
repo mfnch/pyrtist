@@ -43,8 +43,7 @@ typedef struct {
   BoxType string,
           species_int,
           species_real,
-          species_point,
-          species_string;
+          species_point;
   BoxType print;
 } BltinStuff;
 
