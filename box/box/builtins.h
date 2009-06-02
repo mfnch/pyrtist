@@ -30,14 +30,6 @@
 #  include "types.h"
 #  include "cmpptrs.h"
 
-/* Important builtin types */
-extern Type type_Point, type_RealNum, type_IntNum, type_CharNum,
-            type_CharArray, type_Print;
-
-Task Builtins_Init(void);
-
-void Builtins_Destroy(void);
-
 /** Builtin types */
 typedef struct {
   BoxType string,
@@ -50,5 +42,8 @@ typedef struct {
 void Bltin_Init(BoxCmp *c);
 
 void Bltin_Finish(BoxCmp *c);
+
+void Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
+                    Task (*c_fn)(BoxVM *));
 
 #endif

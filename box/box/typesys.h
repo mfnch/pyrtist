@@ -124,8 +124,7 @@ void TS_Finish(TS *ts);
 /** Should disappear soon */
 void TS_Init_Builtin_Types(TS *ts);
 
-Int TS_Size(TS *ts, Type t);
-#define TS_Size_Get TS_Size
+Int TS_Get_Size(TS *ts, Type t);
 
 /** True if 't' is an anonymous type: anonymous types are types without
  * a name. A type can be named using 'TS_Name_Set'.
@@ -156,6 +155,13 @@ Type TS_Resolve(TS *ts, Type t, TSKindSelect select);
  * of the type is needed, such as constructing the destructor of MyType.
  */
 Type TS_Get_Core_Type(TS *ts, Type t);
+
+/** Get the fundamental type (Char, Int, ..., Ptr) used to store objects of
+ * the given type. Returns BOXTYPE_INT for integers, BOXTYPE_REAL for reals,
+ * etc. BOXTYPE_PTR is returned for objects which are not Char, Int, Real,
+ * Point, Ptr.
+ */
+BoxType TS_Get_Cont_Type(TS *ts, BoxType t);
 
 TSKind TS_Get_Kind(TS *ts, Type t);
 

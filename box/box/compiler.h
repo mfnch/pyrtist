@@ -58,10 +58,16 @@ struct _box_cmp {
   struct {
     Value      error,     /**< Error value */
                void_val;  /**< Void value */
-  } value;              /**< Bunch of constant values, which we do not want
+  } value;                /**< Bunch of values, which we do not want
                              to allocate again and again (just to make the
                              compiler a little bit faster and memory
                              efficient). */
+  struct {
+    BoxCont    pass_child,/**< Container used to pass child to procedures */
+               pass_parent;
+                          /**< Container used to pass parent to procedures */
+  }          cont;        /**< Constant containers (allocated once for all
+                               just for efficiency) */
 };
 
 void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm);

@@ -385,6 +385,11 @@ typedef struct {
   const BoxCont *exp_args[2];
 } FoundOP;
 
+int My_ContTypes_Match(BoxType t1, BoxType t2) {
+  return    ((t1 == BOXCONTTYPE_OBJ) ? BOXCONTTYPE_PTR : t1)
+         == ((t2 == BOXCONTTYPE_OBJ) ? BOXCONTTYPE_PTR : t2);
+}
+
 static BoxOpInfo *My_Find_Op(CmpProc *p, FoundOP *info, BoxGOp g_op,
                              int num_args, const BoxCont **args,
                              int ignore_signature) {
@@ -407,8 +412,8 @@ static BoxOpInfo *My_Find_Op(CmpProc *p, FoundOP *info, BoxGOp g_op,
       for(i = 0; i < num_args; i++) {
         BoxOpReg *reg = & oi->regs[i];
         BoxContType t = BoxContType_From_Char(reg->type);
-        if (t != args[i]->type) break; /* Exit if type for this arg
-                                          does not match */
+        if (!My_ContTypes_Match(t, args[i]->type))
+          break; /* Exit if type for this arg does not match */
 
         /* In the meanwhile we compute the signature: if types of args match
          * then we'll have to check also for matching signature!

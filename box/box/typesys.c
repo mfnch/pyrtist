@@ -56,6 +56,7 @@ void TS_Init_Builtin_Types(TS *ts) {
     { "REAL",  BOXTYPE_REAL, sizeof(BoxReal)},
     {"POINT", BOXTYPE_POINT, sizeof(BoxPoint)},
     {  "PTR",   BOXTYPE_PTR, sizeof(BoxPtr)},
+    {  "OBJ",   BOXTYPE_OBJ, sizeof(BoxPtr)},
     { "VOID",  BOXTYPE_VOID, 0},
     { "CPTR",  BOXTYPE_CPTR, sizeof(BoxCPtr)},
     {NULL, 0, 0}
@@ -206,6 +207,17 @@ Type TS_Get_Core_Type(TS *ts, Type t) {
   return TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES);
 }
 
+BoxType TS_Get_Cont_Type(TS *ts, BoxType t) {
+  if (TS_Get_Size(ts, t) == 0)
+    return BOXTYPE_VOID;
+
+  else {
+    BoxType r =
+      TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES);
+    return (r > BOXTYPE_PTR) ? BOXTYPE_OBJ : r;
+  }
+}
+
 int TS_Is_Fast(TS *ts, Type t) {
   Type ct = TS_Get_Core_Type(ts, t);
   return (ct >= TYPE_FAST_FIRST && ct <= TYPE_FAST_LAST);
@@ -226,7 +238,7 @@ int TS_Structure_Is_Fast(TS *ts, Type structure) {
   return fast_structure;
 }
 
-Int TS_Size(TS *ts, Type t) {
+Int TS_Get_Size(TS *ts, Type t) {
   TSDesc *td = Type_Ptr(ts, t);
   return td->size;
 }
@@ -509,7 +521,7 @@ static void TS_X_Add(TSKind kind, TS *ts, Type s, Type m,
   td.target = m;
   if (kind == TS_KIND_STRUCTURE) {
     if (m_name != (char *) NULL) td.name = BoxMem_Strdup(m_name);
-    td.size = TS_Align(ts, TS_Size(ts, s));
+    td.size = TS_Align(ts, TS_Get_Size(ts, s));
   } else {
     td.size = m_size;
   }
@@ -857,8 +869,6 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
 #include <stdlib.h>
 
 #include "str.h"
-
-Int Tym_Type_Size(Int t) {return (Int) TS_Size(last_ts, (Type) t);}
 
 const char *Tym_Type_Name(Int t) {
   if (last_name != (char *) NULL) {

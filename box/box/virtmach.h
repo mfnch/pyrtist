@@ -359,7 +359,9 @@ void VM__D_JMP(BoxVM *vmp, char **iarg);
 void VM__D_GLPI_Imm(BoxVM *vmp, char **iarg);
 
 /** This is the type of the C functions which can be called by the VM. */
-typedef BoxTask (*VMFunc)(BoxVM *);
+typedef BoxTask (*BoxVMFunc)(BoxVM *);
+
+typedef BoxVMFunc VMFunc;
 
 /** Returns the number of arguments for the VM operation 'op'.
  * If 'op' is not a valid opcode returns -1.

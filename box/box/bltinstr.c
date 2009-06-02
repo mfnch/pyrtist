@@ -25,22 +25,37 @@
 #include "typesys.h"
 #include "virtmach.h"
 #include "print.h"
+#include "compiler.h"
 #include "builtins.h"
 #include "bltinstr.h"
 
 #include "vmproc.h"
 #include "vmsymstuff.h"
 
-#if 0
-/****************************************************************************
- * Here we define some generic functions to handle Str objects              *
- ****************************************************************************/
-
-void Str_Init(Str *s) {
+void BoxStr_Init(BoxStr *s) {
   s->ptr = NULL;
   s->length = 0;
   s->buffer_size = 0;
 }
+
+void BoxStr_Finish(BoxStr *s) {
+
+}
+
+static Task My_Str_Begin(BoxVM *vm) {
+  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
+  BoxStr_Init(s);
+  return Success;
+}
+
+void Bltin_Str_Register_Procs(BoxCmp *c) {
+//  Bltin_Proc_Def(c, c->bltin.print, BOXTYPE_CHAR, My_Str_Begin);
+}
+
+#if 0
+/****************************************************************************
+ * Here we define some generic functions to handle Str objects              *
+ ****************************************************************************/
 
 Task Str_Large_Enough(Str *s, Int length) {
   Int len;

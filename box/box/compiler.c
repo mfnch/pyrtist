@@ -71,6 +71,8 @@ void My_Init_Const_Values(BoxCmp *c) {
   Value_Init(& c->value.error, & c->main_proc);
   Value_Init(& c->value.void_val, & c->main_proc);
   Value_Setup_As_Void(& c->value.void_val);
+  BoxCont_Set(& c->cont.pass_child, "go", 2);
+  BoxCont_Set(& c->cont.pass_parent, "go", 1);
 }
 
 void My_Finish_Const_Values(BoxCmp *c) {
@@ -388,14 +390,20 @@ int XXX_Emit_Call(Value *parent, Value *child) {
   }
 
   TS_Procedure_Sym_Num_Get(& c->ts, & sym_id, found_procedure);
-  printf("Found procedure with sym_id="SUInt"\n", sym_id);
 
-  {
+  if (parent->value.cont.type != BOXCONTTYPE_VOID) {
+    BoxGOp op = (child->value.cont.type == BOXCONTTYPE_OBJ) ?
+                BOXGOP_MOV : BOXGOP_LEA;
+    CmpProc_Assemble(c->cur_proc, op,
+                     2, & c->cont.pass_parent, & parent->value.cont);
+  }
+
+  if (child->value.cont.type != BOXCONTTYPE_VOID) {
     Value *v_to_pass = Value_To_Temp_Or_Target(child);
-    BoxCont cont_gro2;
-    BoxCont_Set(& cont_gro2, "go", 2);
-    CmpProc_Assemble(c->cur_proc, BOXGOP_LEA,
-                     2, & cont_gro2, & v_to_pass->value.cont);
+    BoxGOp op = (child->value.cont.type == BOXCONTTYPE_OBJ) ?
+                BOXGOP_MOV : BOXGOP_LEA;
+    CmpProc_Assemble(c->cur_proc, op,
+                     2, & c->cont.pass_child, & v_to_pass->value.cont);
     Value_Unlink(v_to_pass);
   }
 

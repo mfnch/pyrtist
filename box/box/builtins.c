@@ -58,6 +58,9 @@ static Task My_Print_Int(BoxVM *vm);
 static Task My_Print_Real(BoxVM *vm);
 static Task My_Print_Pnt(BoxVM *vm);
 
+/* Maths */
+static Task My_Math_Sin(BoxVM *vm);
+
 #if 0
 static Task Print_String(VMProgram *vmp);
 static Task Print_NewLine(VMProgram *vmp);
@@ -74,7 +77,6 @@ static Task Point_RealNumCouple(VMProgram *vmp);
 static Task If_IntNum(VMProgram *vmp);
 static Task For_IntNum(VMProgram *vmp);
 /* Mathematical functions */
-static Task Sin_RealNum(VMProgram *vmp);
 static Task Cos_RealNum(VMProgram *vmp);
 static Task Tan_RealNum(VMProgram *vmp);
 static Task Asin_RealNum(VMProgram *vmp);
@@ -421,25 +423,35 @@ static Task My_Print_Char(BoxVM *vm) {
   printf(SChar, BOX_VM_ARG1(vm, Char));
   return Success;
 }
+
 static Task My_Print_Int(BoxVM *vm) {
   printf(SInt, BOX_VM_ARG1(vm, Int));
   return Success;
 }
+
 static Task My_Print_Real(BoxVM *vm) {
   printf(SReal, BOX_VM_ARG1(vm, Real));
   return Success;
 }
+
 static Task My_Print_Pnt(BoxVM *vm) {
   Point *p = BOX_VM_ARGPTR1(vm, Point);
   printf(SPoint, p->x, p->y);
   return Success;
 }
 
-#if 0
-static Task Print_String(VMProgram *vmp) {
-  printf("%s", BOX_VM_ARGPTR1(vmp, char));
+static Task My_Print_Str(BoxVM *vm) {
+  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
+  printf("%s", s->ptr);
   return Success;
 }
+
+static Task My_Math_Sin(BoxVM *vm) {
+  BOX_VM_CURRENT(vm, Real) = sin(BOX_VM_ARG(vm, Real));
+  return Success;
+}
+
+#if 0
 static Task Print_NewLine(VMProgram *vmp) {
   printf("\n"); return Success;
 }
@@ -483,10 +495,6 @@ static Task For_IntNum(VMProgram *vmp)
 /*****************************************************************************
  *                        MATHEMATICAL FUNCTIONS                             *
  *****************************************************************************/
-static Task Sin_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = sin(BOX_VM_ARG1(vmp, Real));
-  return Success;
-}
 static Task Cos_RealNum(VMProgram *vmp) {
   BOX_VM_CURRENT(vmp, Real) = cos(BOX_VM_ARG1(vmp, Real));
   return Success;
@@ -829,8 +837,8 @@ static void My_Register_Conversions(BoxCmp *c) {
   }
 }
 
-static void My_Builtin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
-                                Task (*c_fn)(BoxVM *)) {
+void Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
+                    Task (*c_fn)(BoxVM *)) {
   BoxVMSymID sym_num;
   BoxVMCallNum call_num;
   BoxType new_proc;
@@ -853,17 +861,37 @@ static void My_Builtin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
   ASSERT_TASK(BoxVMSym_Def_Call(c->vm, sym_num, call_num));
 }
 
+void Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
+                         BoxType ret, BoxType arg, BoxVMFunc fn) {
+  BoxType new_type;
+  Value *v = Value_New(c->cur_proc);
+
+  TS_Alias_New(& c->ts, & new_type, ret);
+  TS_Name_Set(& c->ts, new_type, name);
+  Bltin_Proc_Def(c, new_type, arg, fn);
+  v = Value_New(c->cur_proc);
+  Value_Setup_As_Type(v, new_type);
+  Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, name, v);
+  Value_Unlink(v);
+
+}
+
 static void My_Register_Std_IO(BoxCmp *c) {
-  My_Builtin_Proc_Def(c, c->bltin.print,  BOXTYPE_CHAR, My_Print_Char);
-  My_Builtin_Proc_Def(c, c->bltin.print,   BOXTYPE_INT, My_Print_Int);
-  My_Builtin_Proc_Def(c, c->bltin.print,  BOXTYPE_REAL, My_Print_Real);
-  My_Builtin_Proc_Def(c, c->bltin.print, BOXTYPE_POINT, My_Print_Pnt);
+  Bltin_Proc_Def(c, c->bltin.print,  BOXTYPE_CHAR, My_Print_Char);
+  Bltin_Proc_Def(c, c->bltin.print,   BOXTYPE_INT, My_Print_Int);
+  Bltin_Proc_Def(c, c->bltin.print,  BOXTYPE_REAL, My_Print_Real);
+  Bltin_Proc_Def(c, c->bltin.print, BOXTYPE_POINT, My_Print_Pnt);
+  Bltin_Proc_Def(c, c->bltin.print, c->bltin.string, My_Print_Str);
 
 #if 0
   TASK(Cmp_Builtin_Proc_Def(type_CharArray,BOX_CREATION,type_Print, Print_String));
   TASK(Cmp_Builtin_Proc_Def(TYPE_PAUSE, BOX_CREATION,type_Print,Print_NewLine));
   /*Tym_Print_Procedure(stdout, type_new);*/
 #endif
+}
+
+static void My_Register_Math(BoxCmp *c) {
+  Bltin_Simple_Fn_Def(c, "Sin", BOXTYPE_REAL, BOXTYPE_REAL, My_Math_Sin);
 }
 
 /* Register bultin types, operation and functions */
@@ -874,6 +902,8 @@ void Bltin_Init(BoxCmp *c) {
   My_Register_BinOps(c);
   My_Register_Conversions(c);
   My_Register_Std_IO(c);
+  My_Register_Math(c);
+  Bltin_Str_Register_Procs(c);
 }
 
 void Bltin_Finish(BoxCmp *c) {

@@ -61,7 +61,7 @@ typedef struct {
                   register in the chain of non occupied registers. */
 } VarItem;
 
-static Int Reg_Type(Int type) {
+static BoxType Reg_Type(BoxType type) {
   assert(type >= 0);
   return (type >= NUM_TYPES) ? TYPE_OBJ : type;
 }
@@ -194,9 +194,12 @@ Int Reg_Frame_Get(RegAlloc *ra) {
  * NOTA: Il numero di registro restituito e' sempre maggiore di 1,
  *  viene restituito 0 solo in caso di errori.
  */
-Int Reg_Occupy(RegAlloc *ra, Int t) {
+Int Reg_Occupy(RegAlloc *ra, BoxType t) {
   RegFrame *rf = (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
-  return (Int) BoxOcc_Occupy(& rf->reg_occ[Reg_Type(t)], NULL);
+  if (t == BOXTYPE_VOID)
+    return 0;
+  else
+    return (Int) BoxOcc_Occupy(& rf->reg_occ[Reg_Type(t)], NULL);
 }
 
 /* Vedi Reg_Occupy.
@@ -227,9 +230,14 @@ static RegFrame *Cur_RegFrame(RegAlloc *ra) {
  * NOTA: Il numero di registro restituito e' sempre maggiore di 1,
  *  viene restituito 0 solo in caso di errori.
  */
-Int Var_Occupy(RegAlloc *ra, Int type, Int level) {
-  Int t = Reg_Type(type);
-  return VarFrame_Occupy(& Cur_RegFrame(ra)->lvar[t], level);
+Int Var_Occupy(RegAlloc *ra, BoxType type, Int level) {
+  if (type == BOXTYPE_VOID)
+    return 0;
+
+  else {
+    BoxType t = Reg_Type(type);
+    return VarFrame_Occupy(& Cur_RegFrame(ra)->lvar[t], level);
+  }
 }
 
 /* Vedi Var_Occupy. */
@@ -244,8 +252,11 @@ Int Var_Num(RegAlloc *ra, Int type) {
   return Cur_RegFrame(ra)->lvar[Reg_Type(type)].max;
 }
 
-Int GVar_Occupy(RegAlloc *ra, Int type) {
-  return VarFrame_Occupy(& ra->gvar[Reg_Type(type)], 0);
+Int GVar_Occupy(RegAlloc *ra, BoxType type) {
+  if (type == BOXTYPE_VOID)
+    return 0;
+  else
+    return VarFrame_Occupy(& ra->gvar[Reg_Type(type)], 0);
 }
 
 /* Vedi Var_Occupy. */

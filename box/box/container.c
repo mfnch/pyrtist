@@ -289,8 +289,10 @@ char BoxContType_To_Char(BoxType t) {
   case BOXCONTTYPE_REAL: return 'r';
   case BOXCONTTYPE_POINT: return 'p';
   case BOXCONTTYPE_PTR: return 'o';
-  default:                                /* error */
-    MSG_FATAL("BoxContType_To_Char: unrecognized container type "SInt".", t);
+  case BOXCONTTYPE_OBJ: return 'o';
+  default:
+    return '?'; /* error */
+    MSG_FATAL("BoxContType_To_Char: unrecognized container type %I.", t);
     assert(0);
   }
 }

@@ -28,6 +28,7 @@
 #  define _BLTINSTR_H
 
 #  include "types.h"
+#  include "cmpptrs.h"
 
 /** @brief The Str object.
  */
@@ -42,7 +43,7 @@ typedef struct {
 /** Just for compatibility */
 typedef BoxStr Str;
 
-extern Type type_Str, type_StrSpecies;
+void Bltin_Str_Register_Procs(BoxCmp *c);
 
 void Str_Init(Str *s);
 

@@ -225,7 +225,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
   int use_greg;
 
   v->type = type;
-  v->value.cont.type = TS_Get_Core_Type(& v->proc->cmp->ts, type);
+  v->value.cont.type = TS_Get_Cont_Type(& v->proc->cmp->ts, type);
 
   switch(vc->type_of_container) {
   case VALCONTTYPE_IMM:
@@ -237,14 +237,13 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
     v->kind = VALUEKIND_TEMP;
     v->value.cont.categ = BOXCONTCATEG_LREG;
     if (vc->which_one < 0) {
-      /* Automatically chooses the local register */
+      /* Automatically chooses the local register.
+         NOTE: if cont.type == BOXTYPE_VOID this function returns 0, meaning
+           that for this type there is no need for registers. */
       Int reg = Reg_Occupy(ra, v->value.cont.type);
-      if (reg < 1) {
-        MSG_FATAL("Value_Setup_Container: Reg_Occupy failed!");
-        assert(0);
-      }
+      assert(reg >= 0);
       v->value.cont.value.reg = reg;
-      v->attr.own_register = 1;
+      v->attr.own_register = (reg > 0);
       return;
 
     } else {
@@ -260,10 +259,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
     if (vc->which_one < 0) {
       Int reg = -GVar_Occupy(ra, v->value.cont.type);
       /* Automatically choses the local variables */
-      if (reg >= 0) {
-        MSG_FATAL("Value_Setup_Container: GVar_Occupy failed!");
-        assert(0);
-      }
+      assert(reg < 0);
       v->value.cont.value.reg = reg;
       return;
 
@@ -280,10 +276,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
     if (vc->which_one < 0) {
       /* Automatically choses the local variables */
       Int reg = -Var_Occupy(ra, v->value.cont.type, 0);
-      if (reg >= 0) {
-        MSG_FATAL("Value_Setup_Container: Var_Occupy failed!");
-        assert(0);
-      }
+      assert(reg < 0);
       v->value.cont.value.reg = reg;
       return;
 
@@ -312,21 +305,15 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
     if (use_greg || vc->addr >= 0) return;
 
     if (vc->type_of_container == VALCONTTYPE_LRPTR) {
-      Int reg = Reg_Occupy(ra, TYPE_OBJ);
+      Int reg = Reg_Occupy(ra, BOXTYPE_OBJ);
       v->value.cont.value.ptr.reg = reg;
-      if (reg < 1) {
-        MSG_FATAL("Value_Setup_Container: Reg_Occupy failed!");
-        assert(0);
-      }
+      assert(reg >= 1);
       return;
 
     } else {
-      Int reg = -Var_Occupy(ra, TYPE_OBJ, 0);
+      Int reg = -Var_Occupy(ra, BOXTYPE_OBJ, 0);
       v->value.cont.value.ptr.reg = reg;
-      if (reg >= 0) {
-        MSG_FATAL("Value_Setup_Container: Var_Occupy failed!");
-        assert(0);
-      }
+      assert(reg < 0);
     }
 
     return;
@@ -345,21 +332,21 @@ void Value_Emit_Allocate(Value *v) {
     return;
   case VALUEKIND_TEMP:
   case VALUEKIND_TARGET:
-    if (v->value.cont.type == BOXCONTTYPE_PTR) {
+    if (v->value.cont.type == BOXCONTTYPE_OBJ) {
       BoxCmp *c = v->proc->cmp;
       CmpProc *proc = c->cur_proc;
       Value v_size, v_alloc_type;
 
-      printf("Emitting alloc ops\n");
       assert(v->attr.own_reference == 0);
       assert(v->proc == proc);
 
       Value_Init(& v_size, proc);
-      Value_Setup_As_Imm_Int(& v_size, TS_Size(& c->ts, v->type));
+      Value_Setup_As_Imm_Int(& v_size, TS_Get_Size(& c->ts, v->type));
       Value_Init(& v_alloc_type, proc);
-      Value_Setup_As_Imm_Int(& v_size, v->type);
+      Value_Setup_As_Imm_Int(& v_alloc_type, v->type);
       CmpProc_Assemble(proc, BOXGOP_MALLOC,
-                       3, & v->value.cont, & v_size, & v_alloc_type);
+                       3, & v->value.cont, & v_size.value.cont,
+                       & v_alloc_type.value.cont);
       v->attr.own_reference = 1;
     }
     return;
