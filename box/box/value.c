@@ -188,6 +188,7 @@ void Value_Setup_As_Type_Name(Value *v, const char *name) {
 void Value_Setup_As_Type(Value *v, BoxType t) {
   v->kind = VALUEKIND_TYPE;
   v->type = t;
+  v->value.cont.type = TS_Get_Cont_Type(& v->proc->cmp->ts, t);
 }
 
 void Value_Setup_As_Imm_Char(Value *v, Char c) {
@@ -300,8 +301,8 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
     v->kind = VALUEKIND_TARGET;
     v->value.cont.categ = BOXCONTCATEG_PTR;
     v->value.cont.value.ptr.is_greg = use_greg;
-    v->value.cont.value.ptr.reg = vc->addr;
-    v->value.cont.value.ptr.offset = vc->which_one;
+    v->value.cont.value.ptr.reg = vc->which_one;
+    v->value.cont.value.ptr.offset = vc->addr;
     if (use_greg || vc->addr >= 0) return;
 
     if (vc->type_of_container == VALCONTTYPE_LRPTR) {
@@ -348,6 +349,9 @@ void Value_Emit_Allocate(Value *v) {
                        3, & v->value.cont, & v_size.value.cont,
                        & v_alloc_type.value.cont);
       v->attr.own_reference = 1;
+
+      /* Now let's invoke the creator */
+      Value_Emit_Call(v, & c->value.create);
     }
     return;
 
@@ -450,6 +454,48 @@ int Value_Is_Value(Value *v) {
 
 int Value_Is_Ignorable(Value *v) {
   return v->attr.ignore;
+}
+
+int Value_Emit_Call(Value *parent, Value *child) {
+  BoxCmp *c = parent->proc->cmp;
+  BoxType found_procedure, expansion_for_child;
+  BoxVMSymID sym_id;
+
+  assert(c == child->proc->cmp);
+
+  /* Now we search for the procedure associated with *child */
+  TS_Procedure_Inherited_Search(& c->ts, & found_procedure,
+                                & expansion_for_child,
+                                parent->type, child->type, 1);
+
+  if (found_procedure == BOXTYPE_NONE)
+    return 0;
+
+  if (expansion_for_child != BOXTYPE_NONE) {
+    Value_Link(child); /* XXX */
+    child = Value_Expand(child, expansion_for_child);
+  }
+
+  TS_Procedure_Sym_Num_Get(& c->ts, & sym_id, found_procedure);
+
+  if (parent->value.cont.type != BOXCONTTYPE_VOID) {
+    BoxGOp op = (parent->value.cont.type == BOXCONTTYPE_OBJ) ?
+                BOXGOP_MOV : BOXGOP_LEA;
+    CmpProc_Assemble(c->cur_proc, op,
+                     2, & c->cont.pass_parent, & parent->value.cont);
+  }
+
+  if (child->value.cont.type != BOXCONTTYPE_VOID) {
+    Value *v_to_pass = Value_To_Temp_Or_Target(child);
+    BoxGOp op = (child->value.cont.type == BOXCONTTYPE_OBJ) ?
+                BOXGOP_MOV : BOXGOP_LEA;
+    CmpProc_Assemble(c->cur_proc, op,
+                     2, & c->cont.pass_child, & v_to_pass->value.cont);
+    Value_Unlink(v_to_pass);
+  }
+
+  CmpProc_Assemble_Call(c->cur_proc, sym_id);
+  return 1;
 }
 
 /** Expands the value 'src' as prescribed by the species 'expansion_type'.

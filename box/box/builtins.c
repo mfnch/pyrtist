@@ -77,18 +77,6 @@ static Task Point_RealNumCouple(VMProgram *vmp);
 static Task If_IntNum(VMProgram *vmp);
 static Task For_IntNum(VMProgram *vmp);
 /* Mathematical functions */
-static Task Cos_RealNum(VMProgram *vmp);
-static Task Tan_RealNum(VMProgram *vmp);
-static Task Asin_RealNum(VMProgram *vmp);
-static Task Acos_RealNum(VMProgram *vmp);
-static Task Atan_RealNum(VMProgram *vmp);
-static Task Exp_RealNum(VMProgram *vmp);
-static Task Log_RealNum(VMProgram *vmp);
-static Task Log10_RealNum(VMProgram *vmp);
-static Task Sqrt_RealNum(VMProgram *vmp);
-static Task Ceil_RealNum(VMProgram *vmp);
-static Task Floor_RealNum(VMProgram *vmp);
-static Task Abs_RealNum(VMProgram *vmp);
 static Task Min_Open(VMProgram *vmp);
 static Task Min_RealNum(VMProgram *vmp);
 static Task Max_Open(VMProgram *vmp);
@@ -131,11 +119,6 @@ static Task Blt_Define_Types(void) {
     Type type;
 
   } intrinsic[] = {
-    {NAME("Char"),     sizeof(Char),  TYPE_CHAR},
-    {NAME("INT"),      sizeof(Int),   TYPE_INT},
-    {NAME("REAL"),     sizeof(Real),  TYPE_REAL},
-    {NAME("POINT"),    sizeof(Point), TYPE_POINT},
-    {NAME("(Object)"), 0,             TYPE_OBJ },
     {NAME("Void"),     0,             TYPE_VOID},
     {NAME("([)"),      0,             TYPE_OPEN},
     {NAME("(])"),      0,             TYPE_CLOSE},
@@ -360,36 +343,10 @@ static Task Blt_Define_Math(void) {
    type_Exp, type_Log, type_Log10, type_Sqrt, type_Ceil, type_Floor,
    type_Abs, type_Min, type_Max, type_Vec;
 
-  TASK( DEFINE_TYPE(Sin,   TYPE_REAL) );
-  TASK( DEFINE_TYPE(Cos,   TYPE_REAL) );
-  TASK( DEFINE_TYPE(Tan,   TYPE_REAL) );
-  TASK( DEFINE_TYPE(Asin,  TYPE_REAL) );
-  TASK( DEFINE_TYPE(Acos,  TYPE_REAL) );
-  TASK( DEFINE_TYPE(Atan,  TYPE_REAL) );
-  TASK( DEFINE_TYPE(Exp,   TYPE_REAL) );
-  TASK( DEFINE_TYPE(Log,   TYPE_REAL) );
-  TASK( DEFINE_TYPE(Log10, TYPE_REAL) );
-  TASK( DEFINE_TYPE(Sqrt,  TYPE_REAL) );
-  TASK( DEFINE_TYPE(Ceil,  TYPE_INT)  );
-  TASK( DEFINE_TYPE(Floor, TYPE_INT)  );
-  TASK( DEFINE_TYPE(Abs,   TYPE_REAL) );
   TASK( DEFINE_TYPE(Min,   TYPE_REAL) );
   TASK( DEFINE_TYPE(Max,   TYPE_REAL) );
   TASK( DEFINE_TYPE(Vec,   TYPE_POINT) );
 
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Cos,  Cos_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Sin,  Sin_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Tan,  Tan_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Asin, Asin_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Acos, Acos_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Atan, Atan_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Exp,  Exp_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Log,  Log_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Log10,Log10_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Sqrt, Sqrt_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Ceil, Ceil_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Floor,Floor_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Abs,  Abs_RealNum));
   TASK(Cmp_Builtin_Proc_Def(TYPE_OPEN,   BOX_CREATION,type_Min,  Min_Open));
   TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Min,  Min_RealNum));
   TASK(Cmp_Builtin_Proc_Def(TYPE_OPEN,   BOX_CREATION,type_Max,  Max_Open));
@@ -420,17 +377,17 @@ static Task Blt_Define_Sys(void) {
 
 /*******************************BOX-PROCEDURES********************************/
 static Task My_Print_Char(BoxVM *vm) {
-  printf(SChar, BOX_VM_ARG1(vm, Char));
+  printf(SChar, BOX_VM_ARG(vm, Char));
   return Success;
 }
 
 static Task My_Print_Int(BoxVM *vm) {
-  printf(SInt, BOX_VM_ARG1(vm, Int));
+  printf(SInt, BOX_VM_ARG(vm, Int));
   return Success;
 }
 
 static Task My_Print_Real(BoxVM *vm) {
-  printf(SReal, BOX_VM_ARG1(vm, Real));
+  printf(SReal, BOX_VM_ARG(vm, Real));
   return Success;
 }
 
@@ -442,12 +399,76 @@ static Task My_Print_Pnt(BoxVM *vm) {
 
 static Task My_Print_Str(BoxVM *vm) {
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
-  printf("%s", s->ptr);
+  if (s != NULL)
+    printf("%s", s->ptr);
   return Success;
 }
 
+
+/* Math procedures */
+
 static Task My_Math_Sin(BoxVM *vm) {
   BOX_VM_CURRENT(vm, Real) = sin(BOX_VM_ARG(vm, Real));
+  return Success;
+}
+
+static Task My_Math_Cos(BoxVM *vm) {
+  BOX_VM_CURRENT(vm, Real) = cos(BOX_VM_ARG(vm, Real));
+  return Success;
+}
+
+static Task My_Math_Tan(BoxVM *vm) {
+  BOX_VM_CURRENT(vm, Real) = tan(BOX_VM_ARG(vm, Real));
+  return Success;
+}
+
+static Task My_Math_Asin(BoxVM *vm) {
+  BOX_VM_CURRENT(vm, Real) = asin(BOX_VM_ARG(vm, Real));
+  return Success;
+}
+
+static Task My_Math_Acos(BoxVM *vm) {
+  BOX_VM_CURRENT(vm, Real) = acos(BOX_VM_ARG(vm, Real));
+  return Success;
+}
+
+static Task My_Math_Atan(BoxVM *vm) {
+  BOX_VM_CURRENT(vm, Real) = atan(BOX_VM_ARG(vm, Real));
+  return Success;
+}
+
+static Task My_Math_Exp(BoxVM *vm) {
+  BOX_VM_CURRENT(vm, Real) = exp(BOX_VM_ARG(vm, Real));
+  return Success;
+}
+
+static Task My_Math_Log(BoxVM *vm) {
+  BOX_VM_CURRENT(vm, Real) = log(BOX_VM_ARG(vm, Real));
+  return Success;
+}
+
+static Task My_Math_Log10(BoxVM *vm) {
+  BOX_VM_CURRENT(vm, Real) = log10(BOX_VM_ARG(vm, Real));
+  return Success;
+}
+
+static Task My_Math_Sqrt(BoxVM *vm) {
+  BOX_VM_CURRENT(vm, Real) = sqrt(BOX_VM_ARG(vm, Real));
+  return Success;
+}
+
+static Task My_Math_Ceil(BoxVM *vm) {
+  BOX_VM_CURRENT(vm, Int) = ceil(BOX_VM_ARG(vm, Real));
+  return Success;
+}
+
+static Task My_Math_Floor(BoxVM *vm) {
+  BOX_VM_CURRENT(vm, Int) = floor(BOX_VM_ARG(vm, Real));
+  return Success;
+}
+
+static Task My_Math_Abs(BoxVM *vm) {
+  BOX_VM_CURRENT(vm, Real) = fabs(BOX_VM_ARG(vm, Real));
   return Success;
 }
 
@@ -495,54 +516,6 @@ static Task For_IntNum(VMProgram *vmp)
 /*****************************************************************************
  *                        MATHEMATICAL FUNCTIONS                             *
  *****************************************************************************/
-static Task Cos_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = cos(BOX_VM_ARG1(vmp, Real));
-  return Success;
-}
-static Task Tan_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = tan(BOX_VM_ARG1(vmp, Real));
-  return Success;
-}
-static Task Asin_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = asin(BOX_VM_ARG1(vmp, Real));
-  return Success;
-}
-static Task Acos_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = acos(BOX_VM_ARG1(vmp, Real));
-  return Success;
-}
-static Task Atan_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = atan(BOX_VM_ARG1(vmp, Real));
-  return Success;
-}
-static Task Exp_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = exp(BOX_VM_ARG1(vmp, Real));
-  return Success;
-}
-static Task Log_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = log(BOX_VM_ARG1(vmp, Real));
-  return Success;
-}
-static Task Log10_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = log10(BOX_VM_ARG1(vmp, Real));
-  return Success;
-}
-static Task Sqrt_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = sqrt(BOX_VM_ARG1(vmp, Real));
-  return Success;
-}
-static Task Ceil_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Int) = ceil(BOX_VM_ARG1(vmp, Real));
-  return Success;
-}
-static Task Floor_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Int) = floor(BOX_VM_ARG1(vmp, Real));
-  return Success;
-}
-static Task Abs_RealNum(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = fabs(BOX_VM_ARG1(vmp, Real));
-  return Success;
-}
 static Task Min_Open(VMProgram *vmp) {
   BOX_VM_CURRENT(vmp, Real) = REAL_MAX;
   return Success;
@@ -891,7 +864,31 @@ static void My_Register_Std_IO(BoxCmp *c) {
 }
 
 static void My_Register_Math(BoxCmp *c) {
-  Bltin_Simple_Fn_Def(c, "Sin", BOXTYPE_REAL, BOXTYPE_REAL, My_Math_Sin);
+  struct {
+    const char *name;
+    BoxType    parent,
+               child;
+    BoxVMFunc  func;
+  } *fn, fns[] = {
+   { "Sqrt", BOXTYPE_REAL, c->bltin.species_real, My_Math_Sqrt},
+   {  "Sin", BOXTYPE_REAL, c->bltin.species_real, My_Math_Sin},
+   {  "Cos", BOXTYPE_REAL, c->bltin.species_real, My_Math_Cos},
+   {  "Tan", BOXTYPE_REAL, c->bltin.species_real, My_Math_Tan},
+   { "Asin", BOXTYPE_REAL, c->bltin.species_real, My_Math_Asin},
+   { "Acos", BOXTYPE_REAL, c->bltin.species_real, My_Math_Acos},
+   { "Atan", BOXTYPE_REAL, c->bltin.species_real, My_Math_Atan},
+   {  "Exp", BOXTYPE_REAL, c->bltin.species_real, My_Math_Exp},
+   {  "Log", BOXTYPE_REAL, c->bltin.species_real, My_Math_Log},
+   {"Log10", BOXTYPE_REAL, c->bltin.species_real, My_Math_Log10},
+   { "Ceil",  BOXTYPE_INT, c->bltin.species_real, My_Math_Ceil},
+   {"Floor",  BOXTYPE_INT, c->bltin.species_real, My_Math_Floor},
+   {  "Abs", BOXTYPE_REAL, c->bltin.species_real, My_Math_Abs},
+   {   NULL, BOXTYPE_NONE,          BOXTYPE_NONE, NULL}
+  };
+
+  for(fn = fns; fn->func != NULL; fn++) {
+    Bltin_Simple_Fn_Def(c, fn->name, fn->parent, fn->child, fn->func);
+  }
 }
 
 /* Register bultin types, operation and functions */

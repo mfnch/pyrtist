@@ -57,7 +57,10 @@ struct _box_cmp {
              un_ops[ASTUNOP__NUM_OPS];   /**< Table of unary operators */
   struct {
     Value      error,     /**< Error value */
-               void_val;  /**< Void value */
+               void_val,  /**< Void value */
+               create,    /**< Value for BOXTYPE_CREATE */
+               destroy,   /**< Value for BOXTYPE_DESTROY */
+               pause;     /**< Value for BOXTYPE_PAUSE */
   } value;                /**< Bunch of values, which we do not want
                              to allocate again and again (just to make the
                              compiler a little bit faster and memory

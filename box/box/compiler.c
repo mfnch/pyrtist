@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "types.h"
 #include "mem.h"
@@ -73,11 +74,21 @@ void My_Init_Const_Values(BoxCmp *c) {
   Value_Setup_As_Void(& c->value.void_val);
   BoxCont_Set(& c->cont.pass_child, "go", 2);
   BoxCont_Set(& c->cont.pass_parent, "go", 1);
+
+  Value_Init(& c->value.create, & c->main_proc);
+  Value_Setup_As_Type(& c->value.create, BOXTYPE_CREATE);
+  Value_Init(& c->value.destroy, & c->main_proc);
+  Value_Setup_As_Type(& c->value.destroy, BOXTYPE_DESTROY);
+  Value_Init(& c->value.pause, & c->main_proc);
+  Value_Setup_As_Type(& c->value.pause, BOXTYPE_PAUSE);
 }
 
 void My_Finish_Const_Values(BoxCmp *c) {
   Value_Unlink(& c->value.error);
   Value_Unlink(& c->value.void_val);
+  Value_Unlink(& c->value.create);
+  Value_Unlink(& c->value.destroy);
+  Value_Unlink(& c->value.pause);
 }
 
 /** Return a new error value (actually a new reference to it,
@@ -305,6 +316,7 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node);
 static void My_Compile_Error(BoxCmp *c, ASTNode *node);
 static void My_Compile_TypeName(BoxCmp *c, ASTNode *node);
 static void My_Compile_Box(BoxCmp *c, ASTNode *node);
+static void My_Compile_String(BoxCmp *c, ASTNode *node);
 static void My_Compile_Const(BoxCmp *c, ASTNode *n);
 static void My_Compile_Var(BoxCmp *c, ASTNode *n);
 static void My_Compile_DontIgnore(BoxCmp *c, ASTNode *n);
@@ -327,6 +339,9 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_TypeName(c, node); break;
   case ASTNODETYPE_BOX:
     My_Compile_Box(c, node); break;
+  case ASTNODETYPE_STRING:
+    My_Compile_String(c, node); break;
+    break;
   case ASTNODETYPE_CONST:
     My_Compile_Const(c, node); break;
   case ASTNODETYPE_VAR:
@@ -369,48 +384,6 @@ static void My_Compile_TypeName(BoxCmp *c, ASTNode *n) {
   }
 }
 
-int XXX_Emit_Call(Value *parent, Value *child) {
-  BoxCmp *c = parent->proc->cmp;
-  BoxType found_procedure, expansion_for_child;
-  BoxVMSymID sym_id;
-
-  assert(c == child->proc->cmp);
-
-  /* Now we search for the procedure associated with *child */
-  TS_Procedure_Inherited_Search(& c->ts, & found_procedure,
-                                & expansion_for_child,
-                                parent->type, child->type, 1);
-
-  if (found_procedure == BOXTYPE_NONE)
-    return 0;
-
-  if (expansion_for_child != BOXTYPE_NONE) {
-    Value_Link(child); /* XXX */
-    child = Value_Expand(child, expansion_for_child);
-  }
-
-  TS_Procedure_Sym_Num_Get(& c->ts, & sym_id, found_procedure);
-
-  if (parent->value.cont.type != BOXCONTTYPE_VOID) {
-    BoxGOp op = (child->value.cont.type == BOXCONTTYPE_OBJ) ?
-                BOXGOP_MOV : BOXGOP_LEA;
-    CmpProc_Assemble(c->cur_proc, op,
-                     2, & c->cont.pass_parent, & parent->value.cont);
-  }
-
-  if (child->value.cont.type != BOXCONTTYPE_VOID) {
-    Value *v_to_pass = Value_To_Temp_Or_Target(child);
-    BoxGOp op = (child->value.cont.type == BOXCONTTYPE_OBJ) ?
-                BOXGOP_MOV : BOXGOP_LEA;
-    CmpProc_Assemble(c->cur_proc, op,
-                     2, & c->cont.pass_child, & v_to_pass->value.cont);
-    Value_Unlink(v_to_pass);
-  }
-
-  CmpProc_Assemble_Call(c->cur_proc, sym_id);
-  return 1;
-}
-
 static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
   ASTNode *s;
   Value *parent = NULL;
@@ -450,7 +423,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
       Value_Unlink(stmt_val);
 
     else {
-      int have_found_it = XXX_Emit_Call(parent, stmt_val);
+      int have_found_it = Value_Emit_Call(parent, stmt_val);
       Value_Unlink(stmt_val); /* XXX */
       if (!have_found_it) {
         MSG_WARNING("Don't know how to use '%~s' expressions inside "
@@ -462,6 +435,34 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
   }
 
   Namespace_Floor_Down(& c->ns); /* close the scope unit */
+}
+
+static void My_Compile_String(BoxCmp *c, ASTNode *node) {
+  char *str;
+  size_t l, addr;
+  Value *v_str;
+  Value v_str_data;
+  ValContainer vc = {VALCONTTYPE_GPTR, 0, 0};
+
+  assert(node->type == ASTNODETYPE_STRING);
+
+  str = node->attr.string.str;
+  l = strlen(str) + 1;
+  addr = BoxVM_Data_Add(c->vm, str, l, BOXTYPE_NONE);
+  assert(addr >= 0);
+
+  vc.addr = addr;
+  Value_Init(& v_str_data, c->cur_proc);
+  Value_Setup_Container(& v_str_data, BOXTYPE_OBJ, & vc);
+
+  v_str = Value_New(c->cur_proc);
+  Value_Setup_As_Temp(v_str, c->bltin.string);
+  if (!Value_Emit_Call(v_str, & v_str_data)) {
+    MSG_FATAL("XXX: Failure while emitting string.");
+    assert(0);
+  }
+
+  BoxCmp_Push_Value(c, v_str);  
 }
 
 static void My_Compile_Var(BoxCmp *c, ASTNode *n) {

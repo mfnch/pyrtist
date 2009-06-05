@@ -200,6 +200,10 @@ int Value_Is_Value(Value *v);
 /** Whether the object's value should be ignored or not. */
 int Value_Is_Ignorable(Value *v);
 
+/** Emit the code corresponding to a call to child@parent. */
+int Value_Emit_Call(Value *parent, Value *child);
+
+/** Expand the value 'v' in agreement with the provided expansion type. */
 Value *Value_Expand(Value *v, BoxType expansion_type);
 
 #endif /* _VALUE_H */

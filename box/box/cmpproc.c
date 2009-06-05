@@ -228,7 +228,7 @@ void CmpProc_Assemble_Call(CmpProc *p, BoxVMSymID sym_id) {
  */
 static void My_Prepare_Ptr_Access(CmpProc *p, const BoxCont *c) {
   Int ptr_reg = c->value.ptr.reg;
-  if (c->categ == CAT_PTR && ptr_reg != 0) {
+  if (c->categ == CAT_PTR && (c->value.ptr.is_greg || ptr_reg != 0)) {
     Int addr_categ = c->value.ptr.is_greg ? CAT_GREG : CAT_LREG;
     CmpProc_Raw_Assemble(p, BOXOP_MOV_OO, BOXOPCAT_LREG, (Int) 0,
                          addr_categ, ptr_reg);
@@ -286,6 +286,8 @@ static void My_Unsafe_Assemble(CmpProc *p, BoxOp op,
     } else {
       switch(c1->type) {
       case BOXCONTTYPE_CHAR:
+        CmpProc_Raw_Assemble(p, op, c1->categ, c1->value.imm.boxchar);
+        return;
       case BOXCONTTYPE_INT:
         CmpProc_Raw_Assemble(p, op, c1->categ, c1->value.imm.boxint);
         return;
@@ -320,6 +322,9 @@ static void My_Unsafe_Assemble(CmpProc *p, BoxOp op,
                        c1->value.ptr.offset : c1->value.reg;
       switch(c1->type) {
       case BOXCONTTYPE_CHAR:
+        CmpProc_Raw_Assemble(p, op, c1->categ, c1_int_val,
+                             c2->categ, c2->value.imm.boxchar);
+        return;
       case BOXCONTTYPE_INT:
         CmpProc_Raw_Assemble(p, op, c1->categ, c1_int_val,
                              c2->categ, c2->value.imm.boxint);

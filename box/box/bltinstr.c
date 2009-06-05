@@ -32,6 +32,10 @@
 #include "vmproc.h"
 #include "vmsymstuff.h"
 
+/****************************************************************************
+ * Here we define some generic functions to handle Str objects              *
+ ****************************************************************************/
+
 void BoxStr_Init(BoxStr *s) {
   s->ptr = NULL;
   s->length = 0;
@@ -39,25 +43,15 @@ void BoxStr_Init(BoxStr *s) {
 }
 
 void BoxStr_Finish(BoxStr *s) {
-
+  if (s->ptr != (char *) NULL) {
+    BoxMem_Free(s->ptr);
+    s->ptr = (char *) NULL;
+    s->length = 0;
+    s->buffer_size = 0;
+  }
 }
 
-static Task My_Str_Begin(BoxVM *vm) {
-  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
-  BoxStr_Init(s);
-  return Success;
-}
-
-void Bltin_Str_Register_Procs(BoxCmp *c) {
-//  Bltin_Proc_Def(c, c->bltin.print, BOXTYPE_CHAR, My_Str_Begin);
-}
-
-#if 0
-/****************************************************************************
- * Here we define some generic functions to handle Str objects              *
- ****************************************************************************/
-
-Task Str_Large_Enough(Str *s, Int length) {
+Task BoxStr_Large_Enough(BoxStr *s, Int length) {
   Int len;
   assert(s->length >= 0 && length >= 0);
 
@@ -68,10 +62,11 @@ Task Str_Large_Enough(Str *s, Int length) {
   return Success;
 }
 
-Task Str_Concat(Str *s, const char *ca) {
+Task BoxStr_Concat(BoxStr *s, const char *ca) {
   Int len = strlen(ca);
   if (len < 1) return Success;
-  if (s->buffer_size - s->length - 1 < len) Str_Large_Enough(s, len);
+  if (s->buffer_size - s->length - 1 < len)
+    BoxStr_Large_Enough(s, len);
   assert(s->buffer_size - s->length - 1 >= len);
   (void) strcpy(s->ptr + s->length, ca);
   s->length += len;
@@ -81,6 +76,83 @@ Task Str_Concat(Str *s, const char *ca) {
 /****************************************************************************
  * Here we interface Str and register it for the compiler.                  *
  ****************************************************************************/
+static Task My_Str_Create(BoxVM *vm) {
+  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
+  BoxStr_Init(s);
+  return Success;
+}
+
+static Task My_Str_Destroy(BoxVM *vm) {
+  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
+  BoxStr_Finish(s);
+  return Success;
+}
+
+static Task My_Str_Char(BoxVM *vm) {
+  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
+  char ca[2] = {BOX_VM_ARG(vm, char), '\0'};
+  return BoxStr_Concat(s, ca);
+}
+
+static Task My_Str_Int(BoxVM *vm) {
+  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
+  Int i = BOX_VM_ARG(vm, Int);
+  char *tmp = printdup("%I", i);
+  if (tmp != (char *) NULL) {
+    TASK( BoxStr_Concat(s, tmp) );
+    BoxMem_Free(tmp);
+  }
+  return Success;
+}
+
+static Task My_Str_Real(BoxVM *vm) {
+  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
+  Real r = BOX_VM_ARG1(vm, Real);
+  char *tmp = printdup("%R", r);
+  if (tmp != (char *) NULL) {
+    TASK( BoxStr_Concat(s, tmp) );
+    BoxMem_Free(tmp);
+  }
+  return Success;
+}
+
+static Task My_Str_Point(BoxVM *vm) {
+  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
+  Point *p = BOX_VM_ARG_PTR(vm, Point);
+  char *tmp = printdup("(%R, %R)", p->x, p->y);
+  if (tmp != (char *) NULL) {
+    TASK( BoxStr_Concat(s, tmp) );
+    BoxMem_Free(tmp);
+  }
+  return Success;
+}
+
+static Task My_Str_Str(BoxVM *vm) {
+  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
+  BoxStr *s2 = BOX_VM_ARG_PTR(vm, BoxStr);
+  if (s2->length > 0)
+    return BoxStr_Concat(s, s2->ptr);
+  return Success;
+}
+
+static Task My_Str_CString(BoxVM *vm) {
+  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
+  char *c_s = BOX_VM_ARG_PTR(vm, char);
+  return BoxStr_Concat(s, c_s);
+}
+
+void Bltin_Str_Register_Procs(BoxCmp *c) {
+  Bltin_Proc_Def(c, c->bltin.string,  BOXTYPE_CREATE, My_Str_Create);
+  Bltin_Proc_Def(c, c->bltin.string, BOXTYPE_DESTROY, My_Str_Destroy);
+  Bltin_Proc_Def(c, c->bltin.string,    BOXTYPE_CHAR, My_Str_Char);
+  Bltin_Proc_Def(c, c->bltin.string,     BOXTYPE_INT, My_Str_Int);
+  Bltin_Proc_Def(c, c->bltin.string,    BOXTYPE_REAL, My_Str_Real);
+  Bltin_Proc_Def(c, c->bltin.string,   BOXTYPE_POINT, My_Str_Point);
+  Bltin_Proc_Def(c, c->bltin.string, c->bltin.string, My_Str_Str);
+  Bltin_Proc_Def(c, c->bltin.string,     BOXTYPE_OBJ, My_Str_CString);
+}
+
+#if 0
 
 Type type_Str, type_StrSpecies;
 
@@ -109,90 +181,27 @@ Task Bltin_Str_Init(void) {
 
 void Bltin_Str_Destroy(void) {}
 
-static Task Str_Begin(VMProgram *vmp) {
-  Str *s = BOX_VM_THIS_PTR(vmp, Str);
-  Str_Init(s);
-  return Success;
-}
-
-static Task Str_Destroy(VMProgram *vmp) {
-  Str *s = BOX_VM_THIS_PTR(vmp, Str);
-  if (s->ptr != (char *) NULL) {
-    BoxMem_Free(s->ptr);
-    s->ptr = (char *) NULL;
-    s->length = 0;
-    s->buffer_size = 0;
-  }
-  return Success;
-}
 
 /* Used for the conversion in the species Str = (()Char -> STR)*/
-static Task Str_From_CharArray(VMProgram *vmp) {
-  Str *s = BOX_VM_THIS_PTR(vmp, Str);
-  char *ca = BOX_VM_ARG1_PTR(vmp, char);
+static Task Str_From_CharArray(BoxVM *vm) {
+  Str *s = BOX_VM_THIS_PTR(vm, Str);
+  char *ca = BOX_VM_ARG1_PTR(vm, char);
   Str_Init(s);
-  return Str_Concat(s, ca);
+  return BoxStr_Concat(s, ca);
 }
 
-static Task Str_Char(VMProgram *vmp) {
-  Str *s = BOX_VM_THIS_PTR(vmp, Str);
-  char ca[2] = {BOX_VM_ARG1(vmp, char), '\0'};
-  return Str_Concat(s, ca);
+static Task Str_CharArray(BoxVM *vm) {
+  Str *s = BOX_VM_THIS_PTR(vm, Str);
+  char *ca = BOX_VM_ARG1_PTR(vm, char);
+  return BoxStr_Concat(s, ca);
 }
 
-static Task Str_Int(VMProgram *vmp) {
-  Str *s = BOX_VM_THIS_PTR(vmp, Str);
-  Int i = BOX_VM_ARG1(vmp, Int);
-  char *tmp = printdup("%I", i);
-  if (tmp != (char *) NULL) {
-    TASK( Str_Concat(s, tmp) );
-    BoxMem_Free(tmp);
-  }
-  return Success;
+static Task Str_Pause(BoxVM *vm) {
+  return BoxStr_Concat(BOX_VM_THIS_PTR(vm, Str), "\n");
 }
 
-static Task Str_Real(VMProgram *vmp) {
-  Str *s = BOX_VM_THIS_PTR(vmp, Str);
-  Real r = BOX_VM_ARG1(vmp, Real);
-  char *tmp = printdup("%R", r);
-  if (tmp != (char *) NULL) {
-    TASK( Str_Concat(s, tmp) );
-    BoxMem_Free(tmp);
-  }
-  return Success;
-}
-
-static Task Str_Point(VMProgram *vmp) {
-  Str *s = BOX_VM_THIS_PTR(vmp, Str);
-  Point *p = BOX_VM_ARG1_PTR(vmp, Point);
-  char *tmp = printdup("(%R, %R)", p->x, p->y);
-  if (tmp != (char *) NULL) {
-    TASK( Str_Concat(s, tmp) );
-    BoxMem_Free(tmp);
-  }
-  return Success;
-}
-
-static Task Str_CharArray(VMProgram *vmp) {
-  Str *s = BOX_VM_THIS_PTR(vmp, Str);
-  char *ca = BOX_VM_ARG1_PTR(vmp, char);
-  return Str_Concat(s, ca);
-}
-
-static Task Str_STR(VMProgram *vmp) {
-  Str *s = BOX_VM_THIS_PTR(vmp, Str);
-  Str *s2 = BOX_VM_ARG1_PTR(vmp, Str);
-  if (s2->length > 0)
-    return Str_Concat(s, s2->ptr);
-  return Success;
-}
-
-static Task Str_Pause(VMProgram *vmp) {
-  return Str_Concat(BOX_VM_THIS_PTR(vmp, Str), "\n");
-}
-
-static Task Print_Str(VMProgram *vmp) {
-  Str *s = BOX_VM_ARG1_PTR(vmp, Str);
+static Task Print_Str(BoxVM *vm) {
+  Str *s = BOX_VM_ARG1_PTR(vm, Str);
   if (s->length > 0)
     printf("%s", s->ptr);
   return Success;
@@ -203,7 +212,7 @@ static Task Str_Register_All(void) {
     Type parent;
     Type child;
     int kind;
-    Task (*proc)(VMProgram *);
+    Task (*proc)(BoxVM *);
 
   } *item, table[] = {
     {type_Str, TYPE_OPEN, BOX_CREATION, Str_Begin},

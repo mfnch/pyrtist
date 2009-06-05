@@ -51,14 +51,19 @@ void TS_Init_Builtin_Types(TS *ts) {
     Int        size;
 
   } *builtin_type, builtin_types[] = {
-    { "CHAR",  BOXTYPE_CHAR, sizeof(BoxChar)},
-    {  "INT",   BOXTYPE_INT, sizeof(BoxInt)},
-    { "REAL",  BOXTYPE_REAL, sizeof(BoxReal)},
-    {"POINT", BOXTYPE_POINT, sizeof(BoxPoint)},
-    {  "PTR",   BOXTYPE_PTR, sizeof(BoxPtr)},
-    {  "OBJ",   BOXTYPE_OBJ, sizeof(BoxPtr)},
-    { "VOID",  BOXTYPE_VOID, 0},
-    { "CPTR",  BOXTYPE_CPTR, sizeof(BoxCPtr)},
+    { "CHAR",    BOXTYPE_CHAR, sizeof(BoxChar)},
+    {  "INT",     BOXTYPE_INT, sizeof(BoxInt)},
+    { "REAL",    BOXTYPE_REAL, sizeof(BoxReal)},
+    {"POINT",   BOXTYPE_POINT, sizeof(BoxPoint)},
+    {  "PTR",     BOXTYPE_PTR, sizeof(BoxPtr)},
+    {  "OBJ",     BOXTYPE_OBJ, sizeof(BoxPtr)},
+    { "VOID",    BOXTYPE_VOID, 0},
+    {  "($)",  BOXTYPE_CREATE, 0},
+    {  "(\)", BOXTYPE_DESTROY, 0},
+    {  "([)",   BOXTYPE_BEGIN, 0},
+    {  "(])",     BOXTYPE_END, 0},
+    {  "(;)",   BOXTYPE_PAUSE, 0},
+    { "CPTR",    BOXTYPE_CPTR, sizeof(BoxCPtr)},
     {NULL, 0, 0}
   };
 
