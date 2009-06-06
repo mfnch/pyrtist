@@ -183,8 +183,8 @@ typedef struct {
 
 /** Node for one structure member */
 typedef struct {
-  ASTNode  *name,
-           *expr,
+  char     *name;
+  ASTNode  *expr,
            *next;
 } ASTNodeMember;
 
@@ -271,10 +271,10 @@ ASTNode *ASTNodeVar_New(const char *name, size_t name_len);
 ASTNode *ASTNodeDontIgnore_New(ASTNode *expr);
 ASTNode *ASTNodeUnOp_New(ASTUnOp op, ASTNode *expr);
 ASTNode *ASTNodeBinOp_New(ASTBinOp op, ASTNode *left, ASTNode *right);
-ASTNode *ASTNodeMember_New(ASTNode *name, ASTNode *expr);
-ASTNode *ASTNodeStruc_New(ASTNode *first_name, ASTNode *first_expr);
+ASTNode *ASTNodeMember_New(const char *name, ASTNode *expr);
+ASTNode *ASTNodeStruc_New(const char *first_name, ASTNode *first_expr);
 ASTNode *ASTNodeStruc_Add_Member(ASTNode *struc,
-                                 ASTNode *this_name, ASTNode *this_expr);
+                                 const char *this_name, ASTNode *this_expr);
 ASTNode *ASTNodeArrayGet_New(ASTNode *array, ASTNode *index);
 ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
                               const char *member, int member_len);

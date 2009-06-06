@@ -62,10 +62,9 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
     subnodes[1] = & node->attr.bin_op.right;
     return 2;
   case ASTNODETYPE_MEMBER:
-    subnodes[0] = & node->attr.member.name;
-    subnodes[1] = & node->attr.member.expr;
-    subnodes[2] = & node->attr.member.next;
-    return 3;
+    subnodes[0] = & node->attr.member.expr;
+    subnodes[1] = & node->attr.member.next;
+    return 2;
   case ASTNODETYPE_STRUC:
     subnodes[0] = & node->attr.struc.first_member;
     return 1;
@@ -421,15 +420,21 @@ ASTNode *ASTNodeBinOp_New(ASTBinOp op, ASTNode *left, ASTNode *right) {
   return node;
 }
 
-ASTNode *ASTNodeMember_New(ASTNode *name, ASTNode *expr) {
+static void My_ASTNodeMember_Finaliser(ASTNode *node) {
+  assert(node->type == ASTNODETYPE_MEMBER);
+  BoxMem_Free(node->attr.member.name);
+}
+
+ASTNode *ASTNodeMember_New(const char *name, ASTNode *expr) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_MEMBER);
-  node->attr.member.name = name;
+  node->attr.member.name = (name == NULL) ? NULL : BoxMem_Strdup(name);
   node->attr.member.expr = expr;
   node->attr.member.next = NULL;
+  node->finaliser = My_ASTNodeMember_Finaliser;
   return node;
 }
 
-ASTNode *ASTNodeStruc_New(ASTNode *first_name, ASTNode *first_expr) {
+ASTNode *ASTNodeStruc_New(const char *first_name, ASTNode *first_expr) {
   ASTNode *first_member = NULL, *node;
   assert(!(first_name != NULL && first_expr == NULL));
   if (first_expr != NULL)
@@ -442,7 +447,7 @@ ASTNode *ASTNodeStruc_New(ASTNode *first_name, ASTNode *first_expr) {
 }
 
 ASTNode *ASTNodeStruc_Add_Member(ASTNode *struc,
-                                 ASTNode *this_name, ASTNode *this_expr) {
+                                 const char *this_name, ASTNode *this_expr) {
   ASTNode *this_member = NULL;
   assert(struc->type == ASTNODETYPE_STRUC);
   assert(!(this_name != NULL && this_expr == NULL));

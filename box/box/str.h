@@ -42,7 +42,7 @@ char *Str_Cut(const char *s, UInt maxleng, Int start);
 char *Str__Cut(const char *s, UInt leng, UInt maxleng, Int start);
 unsigned char oct_digit(unsigned char c, int *status);
 unsigned char hex_digit(unsigned char c, int *status);
-Task Str_ToChar(char *s, Int l, char *c);
+
 Task Str_ToInt(char *s, UInt l, Int *i);
 
 /** Return the int (0 to 15) corresponding to the given hex digit (a char). */
@@ -53,7 +53,20 @@ char Box_Hex_Digit_From_Int(int v);
 
 Task Str_Hex_To_Int(char *s, UInt l, Int *out);
 Task Str_ToReal(char *s, UInt l, Real *r);
-char *Str_ToString(char *s, Int l, Int *new_length);
+
+/** Reads the escaped sequence in 's' whose length is 'l' and return
+ * the corresponding char value in '*c'.
+ * If 's' is a just a normal (unescaped) character, then this will be copied
+ * to '*c'.
+ */
+BoxTask Box_Reduce_Esc_Char(const char *s, size_t l, char *c);
+
+/** Reads the string 's' (with length 'l') and returns a string where the
+ * escaped sequences are replaced by the corresponding characters.
+ * The length of this new string is put into '*new_length'.
+ */
+char *Box_Reduce_Esc_String(const char *s, size_t l, size_t *new_length);
+
 Name *Name_Empty(void);
 const char *Name_Str(Name *n);
 char *Name_To_Str(Name *n);

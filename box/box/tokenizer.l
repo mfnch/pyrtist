@@ -213,7 +213,7 @@ include BEGIN(include);
  /* Number of type Char */
 [']([^'\n]|\\')+['] {
   ASTConst c;
-  if (Str_ToChar(yytext+1, yyleng-2, (char *) & c.c) == BoxFailure) {
+  if (Box_Reduce_Esc_Char(yytext+1, yyleng-2, (char *) & c.c) == BoxFailure) {
     yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_CHAR, c);
     ASTNode_Set_Error(yylval.Node);
   } else
@@ -261,7 +261,10 @@ include BEGIN(include);
 
  /* String */
 ["]([^"\n]|\\\")*["] {
-  yylval.Node = ASTNodeString_New(yytext + 1, yyleng - 2);
+  size_t length;
+  char *s = Box_Reduce_Esc_String(yytext + 1, yyleng - 2, & length);
+  yylval.Node = ASTNodeString_New(s, length);
+  BoxMem_Free(s);
   return TOK_STRING;
  }
 

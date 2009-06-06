@@ -180,54 +180,76 @@ unsigned char hex_digit(unsigned char c, int *status) {
  *  (whose value is suitably translated into one single byte).
  * NOTE: This function is used by Str_ToChar and by Str_ToString.
  */
-static Task Str__ToChar(char *s, Int l, Int *f, char *c) {
-  Name nm = {l, s};
+static Task My_Reduce_Esc_Char(const char *s, size_t l, size_t *f, char *c) {
+  Name nm = {l, (char *) s};
 
-  if (l < 1) goto err_empty;
+  if (l < 1)
+    goto err_empty;
 
-  if ( s[0] != '\\' ) {
-    *c = s[0]; *f = 1; return Success;
+  if (s[0] != '\\') {
+    *c = s[0];
+    *f = 1;
+    return Success;
 
   } else {
     register unsigned char s1 = s[1];
 
-    if (l < 2) goto err_miss;
-    if ( s1 == 'x' ) {
+    if (l < 2)
+      goto err_miss;
+
+    if (s1 == 'x') {
       register unsigned char d, d2;
       int err = 0;
 
-      if ( l < 3 ) goto err_miss;
+      if (l < 3)
+        goto err_miss;
+
       d = hex_digit(s[2], & err);
-      if ( err ) goto err_hex_digit;
+      if (err)
+        goto err_hex_digit;
 
-      if ( l > 3 ) {
+      if (l > 3) {
         d2 = hex_digit(s[3], & err);
-        if (! err) {*f = 3; *c = (d << 4) | d2; return Success;}
+        if (!err) {
+          *f = 3;
+          *c = (d << 4) | d2;
+          return Success;
+        }
       }
-      *f = 2; *c = d; return Success;
+      *f = 2;
+      *c = d;
+      return Success;
 
-    } else if ( (s1 >= '0') && (s1 <= '9') ) {
+    } else if (s1 >= '0' && s1 <= '9') {
       register unsigned int d, d2;
       int err = 0;
 
       d = oct_digit(s1, & err);
-      if ( err ) goto err_oct_digit;
-      if ( l > 2 ) {
+      if (err)
+        goto err_oct_digit;
+
+      if (l > 2) {
         d2 = oct_digit(s[2], & err);
-        if (! err) {
+        if (!err) {
           d = (d << 3) | d2;
-          if ( l > 3 ) {
+          if (l > 3) {
             d2 = oct_digit(s[3], & err);
-            if (! err) {
-              *f = 4; *c = d = (d << 3) | d2;
-              if (d <= 255) return Success;
+            if (!err) {
+              *f = 4;
+              *c = d = (d << 3) | d2;
+              if (d <= 255)
+                return Success;
               goto err_overflow;
             }
           }
-          *f = 3; *c = d; return Success;
+          *f = 3;
+          *c = d;
+          return Success;
         }
       }
-      *f = 2; *c = d; return Success;
+      *f = 2;
+      *c = d;
+      return Success;
 
     } else {
       *f = 2;
@@ -253,17 +275,21 @@ static Task Str__ToChar(char *s, Int l, Int *f, char *c) {
 err_empty:
   MSG_ERROR("'' <- Missing character.");
   return Failed;
+
 err_miss:
   MSG_ERROR("'%N' <- Unexpected end for the escape sequence.", & nm);
   return Failed;
+
 err_hex_digit:
   nm.length = 3;
   MSG_ERROR("'%N' <- Wrong hexadecimal digit.", & nm);
   return Failed;
+
 err_oct_digit:
   nm.length = 2;
-  MSG_ERROR("'%N' <- Wrong ocatal digit", & nm);
+  MSG_ERROR("'%N' <- Wrong octal digit", & nm);
   return Failed;
+
 err_overflow:
   nm.length = 4;
   MSG_ERROR("'%N' <- This octal number is greater than 255.", & nm);
@@ -273,14 +299,17 @@ err_overflow:
 /* DESCRIPTION: This function scans the string s (whose length is l)
  *  and converts it into a Char.
  */
-Task Str_ToChar(char *s, Int l, char *c) {
-  Int f;
+Task Box_Reduce_Esc_Char(const char *s, size_t l, char *c) {
+  size_t f;
 
-  if IS_FAILED( Str__ToChar(s, l, & f, c) ) return Failed;
-  if ( f == l )
+  if (My_Reduce_Esc_Char(s, l, & f, c) == Failed)
+    return Failed;
+
+  if (f == l)
     return Success;
+
   else {
-    Name nm = {l, s};
+    Name nm = {l, (char *) s};
     MSG_ERROR("'%N' <- Too many characters.", & nm);
     return Failed;
   }
@@ -290,20 +319,23 @@ Task Str_ToChar(char *s, Int l, char *c) {
  *  and converts it into a string (array of char), which will be copied
  *  into out (this function uses malloc to allocate the string of output).
  */
-char *Str_ToString(char *s, Int l, Int *new_length) {
-  Int f, nl = 1; /* <-- incluso il '\0' di terminazione stringa */
+char *Box_Reduce_Esc_String(const char *s, size_t l, size_t *new_length) {
+  size_t f, nl = 1; /* <-- incluso il '\0' di terminazione stringa */
   char *c, *out;
 
-  c = out = (char *) BoxMem_Alloc(l+1);
+  c = out = (char *) BoxMem_Alloc(l + 1);
   while (l > 0) {
-    if IS_FAILED( Str__ToChar(s, l, & f, c) ) return NULL;
+    if (My_Reduce_Esc_Char(s, l, & f, c) == Failed)
+      return NULL;
     ++c;
     ++nl;
     s += f;
     l -= f;
   }
+
   *c = '\0';
-  if ( new_length != NULL ) *new_length = nl;
+  if (new_length != NULL)
+    *new_length = nl;
   return out;
 }
 

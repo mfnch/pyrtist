@@ -571,6 +571,16 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
   TS_Species_Add(ts, b->species_real, BOXTYPE_REAL);
   TS_Name_Set(ts, b->species_real, "Real");
 
+  /* Define (Real, Real) */
+  TS_Structure_Begin(ts, & b->struc_real_real);
+  TS_Structure_Add(ts, b->struc_real_real, b->species_real, NULL);
+  TS_Structure_Add(ts, b->struc_real_real, b->species_real, NULL);
+
+  /* Define Point as ((Real, Real) -> POINT) */
+  TS_Species_Begin(ts, & b->species_point);
+  TS_Species_Add(ts, b->species_point, b->struc_real_real);
+  TS_Species_Add(ts, b->species_point, BOXTYPE_POINT);
+
   /* Define Str */
   TS_Intrinsic_New(ts, & b->string, sizeof(BoxStr));
   TS_Name_Set(ts, b->string, "Str");
@@ -594,6 +604,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {"POINT",       BOXTYPE_POINT},
     {"Int",         c->bltin.species_int},
     {"Real",        c->bltin.species_real},
+    {"Point",       c->bltin.species_point},
     {"Str",         c->bltin.string},
     {"Void",        BOXTYPE_VOID},
     {"Print",       c->bltin.print},
@@ -808,6 +819,11 @@ static void My_Register_Conversions(BoxCmp *c) {
     Operation_Attr_Set(opn, mask, attr);
     opn->implem.opcode = conv->g_op;
   }
+
+  /* Conversion (Real, Real) -> Point */
+  Operation *opn = Operator_Add_Opn(convert, c->bltin.struc_real_real,
+                                    BOXTYPE_NONE, BOXTYPE_POINT);
+  /*opn->implem.opcode = conv->g_op;*/
 }
 
 void Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
@@ -853,7 +869,7 @@ static void My_Register_Std_IO(BoxCmp *c) {
   Bltin_Proc_Def(c, c->bltin.print,  BOXTYPE_CHAR, My_Print_Char);
   Bltin_Proc_Def(c, c->bltin.print,   BOXTYPE_INT, My_Print_Int);
   Bltin_Proc_Def(c, c->bltin.print,  BOXTYPE_REAL, My_Print_Real);
-  Bltin_Proc_Def(c, c->bltin.print, BOXTYPE_POINT, My_Print_Pnt);
+  Bltin_Proc_Def(c, c->bltin.print, c->bltin.species_point, My_Print_Pnt);
   Bltin_Proc_Def(c, c->bltin.print, c->bltin.string, My_Print_Str);
 
 #if 0

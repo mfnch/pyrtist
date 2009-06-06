@@ -612,7 +612,6 @@ Task BoxVM_Alloc_Global_Regs(BoxVM *vm, Int num_var[], Int num_reg[]) {
   vm->box_vm_arg1    = reg_obj + 2;
   vm->box_vm_arg2    = reg_obj + 3;
   Update_gr0(vm);
-  printf("updated gro0 register!\n");
   return Success;
 }
 

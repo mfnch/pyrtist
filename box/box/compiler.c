@@ -300,7 +300,7 @@ Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos) {
   StackItem *si = BoxArr_Item_Ptr(& c->stack, n - pos);
   switch(si->type) {
   case STACKITEM_ERROR:
-    return Value_New(c->cur_proc); /* return an error value */
+    return My_Value_New_Error(c); /* return an error value */
 
   case STACKITEM_VALUE:
     return (Value *) si->item;
@@ -322,6 +322,7 @@ static void My_Compile_Var(BoxCmp *c, ASTNode *n);
 static void My_Compile_DontIgnore(BoxCmp *c, ASTNode *n);
 static void My_Compile_UnOp(BoxCmp *c, ASTNode *n);
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n);
+static void My_Compile_Struc(BoxCmp *c, ASTNode *n);
 
 void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
   if (program == NULL)
@@ -330,6 +331,7 @@ void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
   My_Compile_Any(c, program);
   BoxCmp_Remove_Any(c, 1);
 }
+
 
 static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
   switch(node->type) {
@@ -352,6 +354,8 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_UnOp(c, node); break;
   case ASTNODETYPE_BINOP:
     My_Compile_BinOp(c, node); break;
+  case ASTNODETYPE_STRUC:
+    My_Compile_Struc(c, node); break;
   default:
     printf("Compilation of node is not implemented, yet!\n");
     break;
@@ -438,31 +442,13 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
 }
 
 static void My_Compile_String(BoxCmp *c, ASTNode *node) {
-  char *str;
-  size_t l, addr;
   Value *v_str;
-  Value v_str_data;
-  ValContainer vc = {VALCONTTYPE_GPTR, 0, 0};
 
   assert(node->type == ASTNODETYPE_STRING);
 
-  str = node->attr.string.str;
-  l = strlen(str) + 1;
-  addr = BoxVM_Data_Add(c->vm, str, l, BOXTYPE_NONE);
-  assert(addr >= 0);
-
-  vc.addr = addr;
-  Value_Init(& v_str_data, c->cur_proc);
-  Value_Setup_Container(& v_str_data, BOXTYPE_OBJ, & vc);
-
   v_str = Value_New(c->cur_proc);
-  Value_Setup_As_Temp(v_str, c->bltin.string);
-  if (!Value_Emit_Call(v_str, & v_str_data)) {
-    MSG_FATAL("XXX: Failure while emitting string.");
-    assert(0);
-  }
-
-  BoxCmp_Push_Value(c, v_str);  
+  Value_Setup_As_String(v_str, node->attr.string.str);
+  BoxCmp_Push_Value(c, v_str);
 }
 
 static void My_Compile_Var(BoxCmp *c, ASTNode *n) {
@@ -479,14 +465,12 @@ static void My_Compile_Var(BoxCmp *c, ASTNode *n) {
     Value *v_copy = Value_New(c->cur_proc);
     Value_Setup_As_Weak_Copy(v_copy, v);
     BoxCmp_Push_Value(c, v_copy);
-    return;
 
   } else {
     v = Value_New(c->cur_proc);
     Value_Setup_As_Var_Name(v, item_name);
     Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, item_name, v);
     BoxCmp_Push_Value(c, v);
-    return;
   }
 }
 
@@ -588,4 +572,55 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
   }
 }
 
+static void My_Compile_Struc(BoxCmp *c, ASTNode *n) {
+  int i, num_members;
+  ASTNode *member;
+  BoxType t_struc;
+  Value *v_struc;
+  int no_err;
 
+  assert(n->type == ASTNODETYPE_STRUC);
+
+  /* Compile the members, check their types and leave them on the stack */
+  num_members = 0;
+  no_err = 1;
+  for(member = n->attr.struc.first_member;
+      member != NULL;
+      member = member->attr.member.next) {
+    Value *v_member;
+
+    assert(member->type == ASTNODETYPE_MEMBER);
+
+    My_Compile_Any(c, member->attr.member.expr);
+    v_member = BoxCmp_Get_Value(c, 0);
+
+    no_err &= Value_Want_Value(v_member);
+
+    ++num_members;
+  }
+
+  /* Check for errors */
+  if (!no_err) {
+    BoxCmp_Remove_Any(c, num_members);
+    BoxCmp_Push_Error(c, 1);
+    return;
+  }
+
+  /* built the type for the structure */
+  i = num_members;
+  TS_Structure_Begin(& c->ts, & t_struc);
+  for(member = n->attr.struc.first_member;
+      member != NULL;
+      member = member->attr.member.next) {
+    Value *v_member = BoxCmp_Get_Value(c, --i);
+    TS_Structure_Add(& c->ts, t_struc, v_member->type,
+                     member->attr.member.name);
+  }
+
+  v_struc = Value_New(c->cur_proc);
+  Value_Setup_As_Temp(v_struc, t_struc);
+
+
+  BoxCmp_Remove_Any(c, num_members);
+  BoxCmp_Push_Value(c, v_struc);
+}

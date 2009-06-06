@@ -114,7 +114,9 @@ const char *ValueKind_To_Str(ValueKind vk);
  */
 int Value_Want(Value *v, int num_wanted, ValueKind *wanted);
 
-/** Check that the given value 'v' has both type and value. */
+/** Check that the given value 'v' has both type and value.
+ * Return 1 if 'v' has type and value, otherwise return 0.
+ */
 int Value_Want_Value(Value *v);
 
 /** This type is used to specify a container (see the macros CONTAINER_...) */
@@ -154,6 +156,9 @@ void Value_Setup_As_Imm_Real(Value *v, Real r);
 
 /** Set the value to represent a temporary value of the given type */
 void Value_Setup_As_Temp(Value *v, BoxType t);
+
+/** Set the value to represent the given string 'str'. */
+void Value_Setup_As_String(Value *v_str, const char *str);
 
 void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc);
 

@@ -220,6 +220,29 @@ void Value_Setup_As_Temp(Value *v, BoxType t) {
   Value_Emit_Allocate(v);
 }
 
+void Value_Setup_As_String(Value *v_str, const char *str) {
+  BoxCmp *c = v_str->proc->cmp;
+  size_t l, addr;
+  Value v_str_data;
+  ValContainer vc = {VALCONTTYPE_GPTR, 0, 0};
+
+  l = strlen(str) + 1;
+  addr = BoxVM_Data_Add(c->vm, str, l, BOXTYPE_OBJ);
+  assert(addr >= 0);
+
+  vc.addr = addr;
+  Value_Init(& v_str_data, v_str->proc);
+  Value_Setup_Container(& v_str_data, BOXTYPE_OBJ, & vc);
+
+  Value_Setup_As_Temp(v_str, c->bltin.string);
+  if (!Value_Emit_Call(v_str, & v_str_data)) {
+    MSG_FATAL("Value_Setup_As_String: Failure while emitting string.");
+    assert(0);
+  }
+
+  Value_Unlink(& v_str_data);
+}
+
 /* Create a new empty container. */
 void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
   RegAlloc *ra = & v->proc->reg_alloc;
@@ -260,7 +283,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
     if (vc->which_one < 0) {
       Int reg = -GVar_Occupy(ra, v->value.cont.type);
       /* Automatically choses the local variables */
-      assert(reg < 0);
+      assert(reg <= 0);
       v->value.cont.value.reg = reg;
       return;
 
@@ -277,7 +300,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
     if (vc->which_one < 0) {
       /* Automatically choses the local variables */
       Int reg = -Var_Occupy(ra, v->value.cont.type, 0);
-      assert(reg < 0);
+      assert(reg <= 0);
       v->value.cont.value.reg = reg;
       return;
 
@@ -461,6 +484,7 @@ int Value_Emit_Call(Value *parent, Value *child) {
   BoxType found_procedure, expansion_for_child;
   BoxVMSymID sym_id;
 
+  assert(parent != NULL && child != NULL);
   assert(c == child->proc->cmp);
 
   /* Now we search for the procedure associated with *child */
@@ -474,12 +498,15 @@ int Value_Emit_Call(Value *parent, Value *child) {
   if (expansion_for_child != BOXTYPE_NONE) {
     Value_Link(child); /* XXX */
     child = Value_Expand(child, expansion_for_child);
+    if (child == NULL)
+      return 0;
   }
 
   TS_Procedure_Sym_Num_Get(& c->ts, & sym_id, found_procedure);
 
   if (parent->value.cont.type != BOXCONTTYPE_VOID) {
-    BoxGOp op = (parent->value.cont.type == BOXCONTTYPE_OBJ) ?
+    BoxGOp op = (parent->value.cont.type == BOXCONTTYPE_OBJ
+                 && parent->value.cont.categ != BOXCONTCATEG_PTR) ?
                 BOXGOP_MOV : BOXGOP_LEA;
     CmpProc_Assemble(c->cur_proc, op,
                      2, & c->cont.pass_parent, & parent->value.cont);
@@ -487,7 +514,8 @@ int Value_Emit_Call(Value *parent, Value *child) {
 
   if (child->value.cont.type != BOXCONTTYPE_VOID) {
     Value *v_to_pass = Value_To_Temp_Or_Target(child);
-    BoxGOp op = (child->value.cont.type == BOXCONTTYPE_OBJ) ?
+    BoxGOp op = (child->value.cont.type == BOXCONTTYPE_OBJ
+                 && child->value.cont.categ != BOXCONTCATEG_PTR) ?
                 BOXGOP_MOV : BOXGOP_LEA;
     CmpProc_Assemble(c->cur_proc, op,
                      2, & c->cont.pass_child, & v_to_pass->value.cont);
