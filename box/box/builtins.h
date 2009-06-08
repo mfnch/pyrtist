@@ -44,7 +44,21 @@ void Bltin_Init(BoxCmp *c);
 
 void Bltin_Finish(BoxCmp *c);
 
-void Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
-                    Task (*c_fn)(BoxVM *));
+/** Add a C procedure 'c_fn' (of type BoxVMFunc) with name 'proc_name' to
+ * the VM and returns its symbol ID, so that it can be called.
+ * NOTE: the function is not registered, meaning that Box programs do not
+ *  "see" the new function. The function can only be called by the compiler
+ *  generated code.
+ */
+BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
+                          Task (*c_fn)(BoxVM *));
+
+/** Add and register a new C procedure 'c_fn' (of type BoxVMFunc) for the
+ * given 'parent' and 'child' types. After this function has returned,
+ * Box programs will be able to find Child@Parent and will be able to call
+ * it!
+ */
+BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
+                          Task (*c_fn)(BoxVM *));
 
 #endif

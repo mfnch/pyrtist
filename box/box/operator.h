@@ -30,6 +30,7 @@
 #  include "value.h"
 #  include "ast.h"
 #  include "cmpptrs.h"
+#  include "virtmach.h"
 
 typedef enum {
   OPR_ATTR_NATIVE      = 1,  /**< Is it a native operation: does the VM
@@ -48,6 +49,7 @@ typedef enum {
 typedef enum {
   OPASMSCHEME_STD_UN,
   OPASMSCHEME_RIGHT_UN,
+  OPASMSCHEME_USR_UN,
   OPASMSCHEME_STD_BIN,
   OPASMSCHEME_BITYPE_BIN,
   OPASMSCHEME_UNKNOWN
@@ -70,7 +72,9 @@ struct _operation_struc {
 
   union {
     BoxGOp  opcode;        /**< Bytecode instrucion associated with the op. */
-    Int     module;        /**<  */
+    BoxVMSymID
+            sym_id;        /**< Symbol ID of the user defined procedure
+                                containing the implementation of the op. */
   } implem;                /**< The implementation of the operation */
 
   struct _operation_struc
@@ -114,6 +118,9 @@ void BoxCmp_Finish__Operators(BoxCmp *c);
  * 'value' tells how to change them.
  */
 void Operator_Attr_Set(Operator *opr, OprAttr mask, OprAttr attr);
+
+/** Provide the symbol for the procedure implementing the operation 'opn'. */
+void Operation_Set_User_Implem(Operation *opn, BoxVMSymID sym_id);
 
 /** Change attributes for operation. 'mask' tells what attributes to change,
  * 'value' tells how to change them.

@@ -213,7 +213,7 @@ include BEGIN(include);
  /* Number of type Char */
 [']([^'\n]|\\')+['] {
   ASTConst c;
-  if (Box_Reduce_Esc_Char(yytext+1, yyleng-2, (char *) & c.c) == BoxFailure) {
+  if (Box_Reduce_Esc_Char(yytext+1, yyleng-2, (char *) & c.c) != BOXTASK_OK) {
     yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_CHAR, c);
     ASTNode_Set_Error(yylval.Node);
   } else
@@ -229,7 +229,7 @@ include BEGIN(include);
  /* Integer number */
 {DIGIT}+ {
   ASTConst c;
-  if (Str_ToInt(yytext, yyleng, & c.i) == BoxFailure) {
+  if (Str_ToInt(yytext, yyleng, & c.i) != BOXTASK_OK) {
     yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_INT, c);
     ASTNode_Set_Error(yylval.Node);
   } else
@@ -240,7 +240,7 @@ include BEGIN(include);
  /* Integer number in hexadecimal notation */
 [0][xX]{HEXDIGIT}+ {
   ASTConst c;
-  if (Str_Hex_To_Int(yytext+2, yyleng-2, & c.i) == BoxFailure) {
+  if (Str_Hex_To_Int(yytext+2, yyleng-2, & c.i) != BOXTASK_OK) {
     yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_INT, c);
     ASTNode_Set_Error(yylval.Node);
   } else
@@ -251,7 +251,7 @@ include BEGIN(include);
  /* Floating point number */
 {DIGIT}+("."{DIGIT}+)?([eE][+-]?{DIGIT}+)? {
   ASTConst c;
-  if (Str_ToReal(yytext, yyleng, & c.r) == BoxFailure) {
+  if (Str_ToReal(yytext, yyleng, & c.r) == BOXTASK_OK) {
     yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_REAL, c);
     ASTNode_Set_Error(yylval.Node);
   } else

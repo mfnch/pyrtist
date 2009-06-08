@@ -35,15 +35,15 @@
 
 /* DESCRIZIONE: Questa funzione confronta due stringhe senza distinguere
  *  tra maiuscole e minuscole e restituisce Succesfull se le stringhe
- *  sono uguali, Failed se sono differenti
+ *  sono uguali, BOXTASK_FAILURE se sono differenti
  */
 Task Str_Eq(char *a, char *b) {
   while (*a != '\0') {
     if ( tolower(*(a++)) != tolower(*(b++)) )
-      return Failed;
+      return BOXTASK_FAILURE;
   }
-  if (*b == '\0') return Success;
-  return Failed;
+  if (*b == '\0') return BOXTASK_OK;
+  return BOXTASK_FAILURE;
 }
 
 /* DESCRIZIONE: Controlla se la prima stringa (s1 di lunghezza l1)
@@ -52,15 +52,15 @@ Task Str_Eq(char *a, char *b) {
  *  mentre nella prima possono essere presenti indifferentemente lettere
  *  minuscole o maiuscole; in questo modo l'uguaglianza viene stabilita
  *  a meno di differenze maiuscolo/minuscolo. Se le due stringhe coincidono
- *  restituisce Success, altrimenti restituisce Failed.
+ *  restituisce BOXTASK_OK, altrimenti restituisce BOXTASK_FAILURE.
  */
 Task Str_CaseEq2(char *s1, UInt l1, char *s2, UInt l2) {
-  if (l1 != l2) return Failed;
+  if (l1 != l2) return BOXTASK_FAILURE;
 
   for (; l1 > 0; l1--)
-    if (tolower(*(s1++)) != *(s2++)) return Failed;
+    if (tolower(*(s1++)) != *(s2++)) return BOXTASK_FAILURE;
 
-  return Success;
+  return BOXTASK_OK;
 }
 
 /* DESCRIZIONE: Controlla se la prima stringa (s1 di lunghezza l1)
@@ -68,10 +68,10 @@ Task Str_CaseEq2(char *s1, UInt l1, char *s2, UInt l2) {
  * NOTA: Distingue maiuscole da minuscole.
  */
 Task Str_Eq2(char *s1, UInt l1, char *s2, UInt l2) {
-  if (l1 != l2) return Failed;
+  if (l1 != l2) return BOXTASK_FAILURE;
   for (; l1 > 0; l1--)
-    if ( *(s1++) != *(s2++) ) return Failed;
-  return Success;
+    if ( *(s1++) != *(s2++) ) return BOXTASK_FAILURE;
+  return BOXTASK_OK;
 }
 
 /* DESCRIZIONE: Copia in minuscolo la stringa s (di lunghezza leng)
@@ -189,7 +189,7 @@ static Task My_Reduce_Esc_Char(const char *s, size_t l, size_t *f, char *c) {
   if (s[0] != '\\') {
     *c = s[0];
     *f = 1;
-    return Success;
+    return BOXTASK_OK;
 
   } else {
     register unsigned char s1 = s[1];
@@ -213,12 +213,12 @@ static Task My_Reduce_Esc_Char(const char *s, size_t l, size_t *f, char *c) {
         if (!err) {
           *f = 3;
           *c = (d << 4) | d2;
-          return Success;
+          return BOXTASK_OK;
         }
       }
       *f = 2;
       *c = d;
-      return Success;
+      return BOXTASK_OK;
 
     } else if (s1 >= '0' && s1 <= '9') {
       register unsigned int d, d2;
@@ -238,62 +238,62 @@ static Task My_Reduce_Esc_Char(const char *s, size_t l, size_t *f, char *c) {
               *f = 4;
               *c = d = (d << 3) | d2;
               if (d <= 255)
-                return Success;
+                return BOXTASK_OK;
               goto err_overflow;
             }
           }
           *f = 3;
           *c = d;
-          return Success;
+          return BOXTASK_OK;
         }
       }
       *f = 2;
       *c = d;
-      return Success;
+      return BOXTASK_OK;
 
     } else {
       *f = 2;
       switch(s1) {
-       case 'a':  *c = '\a'; return Success;
-       case 'b':  *c = '\b'; return Success;
-       case 'f':  *c = '\f'; return Success;
-       case 'n':  *c = '\n'; return Success;
-       case 'r':  *c = '\r'; return Success;
-       case 't':  *c = '\t'; return Success;
-       case 'v':  *c = '\v'; return Success;
-       case '\\': *c = '\\'; return Success;
-       case '\?': *c = '\?'; return Success;
-       case '\'': *c = '\''; return Success;
-       case '\"': *c = '\"'; return Success;
+       case 'a':  *c = '\a'; return BOXTASK_OK;
+       case 'b':  *c = '\b'; return BOXTASK_OK;
+       case 'f':  *c = '\f'; return BOXTASK_OK;
+       case 'n':  *c = '\n'; return BOXTASK_OK;
+       case 'r':  *c = '\r'; return BOXTASK_OK;
+       case 't':  *c = '\t'; return BOXTASK_OK;
+       case 'v':  *c = '\v'; return BOXTASK_OK;
+       case '\\': *c = '\\'; return BOXTASK_OK;
+       case '\?': *c = '\?'; return BOXTASK_OK;
+       case '\'': *c = '\''; return BOXTASK_OK;
+       case '\"': *c = '\"'; return BOXTASK_OK;
        default:
          MSG_ERROR("'%N' <- Wrong escape sequence.", & nm);
-         return Failed;
+         return BOXTASK_FAILURE;
       }
     }
   }
 
 err_empty:
   MSG_ERROR("'' <- Missing character.");
-  return Failed;
+  return BOXTASK_FAILURE;
 
 err_miss:
   MSG_ERROR("'%N' <- Unexpected end for the escape sequence.", & nm);
-  return Failed;
+  return BOXTASK_FAILURE;
 
 err_hex_digit:
   nm.length = 3;
   MSG_ERROR("'%N' <- Wrong hexadecimal digit.", & nm);
-  return Failed;
+  return BOXTASK_FAILURE;
 
 err_oct_digit:
   nm.length = 2;
   MSG_ERROR("'%N' <- Wrong octal digit", & nm);
-  return Failed;
+  return BOXTASK_FAILURE;
 
 err_overflow:
   nm.length = 4;
   MSG_ERROR("'%N' <- This octal number is greater than 255.", & nm);
-  return Failed;
+  return BOXTASK_FAILURE;
 }
 
 /* DESCRIPTION: This function scans the string s (whose length is l)
@@ -302,16 +302,16 @@ err_overflow:
 Task Box_Reduce_Esc_Char(const char *s, size_t l, char *c) {
   size_t f;
 
-  if (My_Reduce_Esc_Char(s, l, & f, c) == Failed)
-    return Failed;
+  if (My_Reduce_Esc_Char(s, l, & f, c) == BOXTASK_FAILURE)
+    return BOXTASK_FAILURE;
 
   if (f == l)
-    return Success;
+    return BOXTASK_OK;
 
   else {
     Name nm = {l, (char *) s};
     MSG_ERROR("'%N' <- Too many characters.", & nm);
-    return Failed;
+    return BOXTASK_FAILURE;
   }
 }
 
@@ -325,7 +325,7 @@ char *Box_Reduce_Esc_String(const char *s, size_t l, size_t *new_length) {
 
   c = out = (char *) BoxMem_Alloc(l + 1);
   while (l > 0) {
-    if (My_Reduce_Esc_Char(s, l, & f, c) == Failed)
+    if (My_Reduce_Esc_Char(s, l, & f, c) == BOXTASK_FAILURE)
       return NULL;
     ++c;
     ++nl;
@@ -349,7 +349,7 @@ Task Str_ToInt(char *s, UInt l, Int *i) {
   if ( l >= (sizeof(Int)*5 + 1) ) {
     MSG_ERROR("The integer number exceeds the range of values "
               "representable by Int.");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
 
   /* Copio la stringa in modo da poterla terminare con '\0' */
@@ -358,11 +358,11 @@ Task Str_ToInt(char *s, UInt l, Int *i) {
 
   errno = 0;
   *i = strtoint(sc, & endptr, 10);
-  if ( errno == 0 ) return Success;
+  if ( errno == 0 ) return BOXTASK_OK;
 
   MSG_ERROR("The integer number exceeds the range of values "
             "representable by Int.");
-  return Failed;
+  return BOXTASK_FAILURE;
 }
 
 /** Return the numerical value of a charecter when interpreted
@@ -428,16 +428,16 @@ Task Str_Hex_To_Int(char *s, UInt l, Int *out) {
          m = n << 4;
     if (m < n) {
       MSG_WARNING("Hexadecimal number is out of bounds!");
-      return Success;
+      return BOXTASK_OK;
     }
     if (digit < 0) {
       MSG_ERROR("Bad digit in hexadecimal number!");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
     n = m | digit;
   }
   *out = (Int) n;
-  return Success;
+  return BOXTASK_OK;
 }
 
 /* Converte il numero da formato stringa a formato numerico.
@@ -454,7 +454,7 @@ Task Str_ToReal(char *s, UInt l, Real *r) {
 
     errno = 0;
     *r = strtoreal(sc, NULL);
-    if ( errno == 0 ) return Success;
+    if ( errno == 0 ) return BOXTASK_OK;
 
   } else {
     char *sc, *endptr;
@@ -467,11 +467,11 @@ Task Str_ToReal(char *s, UInt l, Real *r) {
     errno = 0;
     *r = strtoreal(sc, & endptr);
     BoxMem_Free(sc);
-    if ( errno == 0 ) return Success;
+    if ( errno == 0 ) return BOXTASK_OK;
   }
 
   MSG_ERROR("Il numero reale sta fuori dai limiti consentiti!");
-  return Failed;
+  return BOXTASK_FAILURE;
 }
 
 
@@ -549,7 +549,7 @@ Task Name_Cat(Name *nm, Name *nm1, Name *nm2, int free_args) {
   if ( l2 > 0 ) strncpy(dest + l1, nm2->text, l2);
   *(dest + l) = '\0';
   if ( free_args ) {Name_Free(nm1); Name_Free(nm2);}
-  return Success;
+  return BOXTASK_OK;
 
 strange_cases: {
     Name *tmp = nm1;
@@ -558,11 +558,11 @@ strange_cases: {
       *nm = *tmp;
       tmp->text = NULL;
       tmp->length = 0;
-      return Success;
+      return BOXTASK_OK;
     } else {
       *nm = *Name_Dup(tmp);
-      if ( nm->length > 0 ) return Success;
-      return Failed;
+      if ( nm->length > 0 ) return BOXTASK_OK;
+      return BOXTASK_FAILURE;
     }
   }
 }

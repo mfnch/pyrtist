@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008 by Matteo Franchin                                    *
+ * Copyright (C) 2008, 2009 by Matteo Franchin                              *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *

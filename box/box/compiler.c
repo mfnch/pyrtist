@@ -427,9 +427,9 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
       Value_Unlink(stmt_val);
 
     else {
-      int have_found_it = Value_Emit_Call(parent, stmt_val);
+      BoxTask status = Value_Emit_Call(parent, stmt_val);
       Value_Unlink(stmt_val); /* XXX */
-      if (!have_found_it) {
+      if (status == BOXTASK_FAILURE) {
         MSG_WARNING("Don't know how to use '%~s' expressions inside "
                     "a '%~s' box.",
                     TS_Name_Get(& c->ts, stmt_val->type),

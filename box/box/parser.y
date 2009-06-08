@@ -989,7 +989,7 @@ ASTNode *Parser_Parse(FILE *in, const char *auto_include) {
 
   assert(program_node == NULL);
 
-  if (Tok_Init(in, auto_include) == BoxFailure)
+  if (Tok_Init(in, auto_include) != BOXTASK_OK)
     return NULL;
   parse_status = yyparse();
   Tok_Finish();

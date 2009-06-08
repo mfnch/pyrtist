@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008 by Matteo Franchin                                    *
+ * Copyright (C) 2008, 2009 by Matteo Franchin                              *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -39,27 +39,6 @@
 #include "builtins.h"
 #include "bltinstr.h"
 #include "bltinio.h"
-
-# if 0
-/* Important builtin types */
-Type type_Point, type_RealNum, type_IntNum, type_CharArray, type_Print;
-
-Int type_IntSpecies, type_RealSpecies, type_PointSpecies, type_RealCouple;
-
-static Task Blt_Define_Basics(void);
-static Task Blt_Define_Math(void);
-static Task Blt_Define_Print(void);
-static Task Blt_Define_Sys(void);
-#endif
-
-/* box-procedures */
-static Task My_Print_Char(BoxVM *vm);
-static Task My_Print_Int(BoxVM *vm);
-static Task My_Print_Real(BoxVM *vm);
-static Task My_Print_Pnt(BoxVM *vm);
-
-/* Maths */
-static Task My_Math_Sin(BoxVM *vm);
 
 #if 0
 static Task Print_String(VMProgram *vmp);
@@ -204,67 +183,6 @@ static Task Blt_Define_Types(void) {
  *  2) Sets the output for compiled code.
  */
 Task Builtins_Init(void) {
-  OldOperation *opn;
-  int status;
-
-  TASK( Blt_Define_Types() );
-  type_Point = type_PointSpecies;
-  type_RealNum = type_RealSpecies;
-  type_IntNum = type_IntSpecies;
-
-  /* Creo gli operatori */
-  status = 0; /* Se qualcosa va male trovero' status = 1, alla fine! */
-
-  /* Operatore usato per la conversione fra tipi diversi */
-  NEW_OPERATOR(converter, "of conversion");
-  /* Operatori di assegnazione */
-  NEW_OPERATOR(assign,"=");
-  NEW_OPERATOR(aplus, "+=");
-  NEW_OPERATOR(aminus,"-=");
-  NEW_OPERATOR(atimes,"*=");
-  NEW_OPERATOR(adiv,  "/=");
-  NEW_OPERATOR(arem,  "%=");
-  NEW_OPERATOR(aband, "&=");
-  NEW_OPERATOR(abxor, "^=");
-  NEW_OPERATOR(abor,  "|=");
-  NEW_OPERATOR(ashl,  "<<=");
-  NEW_OPERATOR(ashr,  ">>=");
-  /* Operatori di incremento/decremento */
-  NEW_OPERATOR(inc, "++");
-  NEW_OPERATOR(dec, "--");
-  /* Operatori aritmetici convenzionali */
-  NEW_OPERATOR(pow, "**");
-  NEW_OPERATOR(plus, "+");
-  NEW_OPERATOR(minus,"-");
-  NEW_OPERATOR(times,"*");
-  NEW_OPERATOR(div,  "/");
-  NEW_OPERATOR(rem,  "%");
-  /* Operatori bit-bit */
-  NEW_OPERATOR(bor,  "|");
-  NEW_OPERATOR(bxor, "^");
-  NEW_OPERATOR(band, "&");
-  NEW_OPERATOR(bnot, "~");
-  /* Operatori di shift */
-  NEW_OPERATOR(shl, "<<");
-  NEW_OPERATOR(shr, ">>");
-  /* Operatori di confronto */
-  NEW_OPERATOR(eq, "==");
-  NEW_OPERATOR(ne, "!=");
-  NEW_OPERATOR(gt, ">");
-  NEW_OPERATOR(ge, ">=");
-  NEW_OPERATOR(lt, "<");
-  NEW_OPERATOR(le, "<=");
-  /* Operatori logici */
-  NEW_OPERATOR(lnot, "!");
-  NEW_OPERATOR(land, "&&");
-  NEW_OPERATOR(lor,  "||");
-
-  /* Esco con errore se qualcuna delle precedenti creazioni e' fallita! */
-  if ( status == 1 ) return Failed;
-
-  TASK( Blt_Define_All() );
-
-  status = 0; /* Se qualcosa va male trovero' status = 1, alla fine! */
 
   /* § OPERATORE DI PRODOTTO */
   /* §§ PRODOTTO FRA REALI E INTERI */
@@ -274,44 +192,7 @@ Task Builtins_Init(void) {
   /* §§ DIVISIONE PUNTO / REALE */
   ADD_OPERATION(div, type_Point, type_RealNum, TYPE_POINT, ASM_PDIVR_P, 0, 1, 0);
 
-  /* OPERATORI CHE DEFINISCONO */
-  cmp_opr.assign->can_define = 1;
-
-  opn = Cmp_Operation_Add(cmp_opr.converter, TYPE_INTG, TYPE_NONE, TYPE_REAL);
-  status |= ( opn == NULL );
-  opn->is.commutative = 0;
-  opn->is.intrinsic = 1;
-  opn->is.assignment = 0;
-  opn->is.link = 0;
-  opn->asm_code = ASM_REAL_I;
-
-  opn = Cmp_Operation_Add(cmp_opr.converter, TYPE_CHAR, TYPE_NONE, TYPE_REAL);
-  status |= ( opn == NULL );
-  opn->is.commutative = 0;
-  opn->is.intrinsic = 1;
-  opn->is.assignment = 0;
-  opn->is.link = 0;
-  opn->asm_code = ASM_REAL_C;
-
-  opn = Cmp_Operation_Add(cmp_opr.converter, TYPE_REAL, TYPE_NONE, TYPE_INTG);
-  status |= ( opn == NULL );
-  opn->is.commutative = 0;
-  opn->is.intrinsic = 1;
-  opn->is.assignment = 0;
-  opn->is.link = 0;
-  opn->asm_code = ASM_INTG_R;
-
-  /* Se il caricamento degli operatori non e' perfettamente riuscito esco! */
-  if ( status == 1 ) return Failed;
-
-  TASK( Bltin_Str_Init() );
-  TASK( Bltin_Io_Init() );
   return Success;
-}
-
-void Builtins_Destroy(void) {
-  Bltin_Str_Destroy();
-  Bltin_Io_Destroy();
 }
 
 static Task Blt_Define_Basics(void) {
@@ -339,9 +220,7 @@ static Task Blt_Define_Basics(void) {
   Tym_Def_Explicit_Alias(& type_##name, & NAME(#name), type)
 
 static Task Blt_Define_Math(void) {
-  Int type_Sin, type_Cos, type_Tan, type_Asin, type_Acos, type_Atan,
-   type_Exp, type_Log, type_Log10, type_Sqrt, type_Ceil, type_Floor,
-   type_Abs, type_Min, type_Max, type_Vec;
+  Int type_Min, type_Max, type_Vec;
 
   TASK( DEFINE_TYPE(Min,   TYPE_REAL) );
   TASK( DEFINE_TYPE(Max,   TYPE_REAL) );
@@ -376,6 +255,11 @@ static Task Blt_Define_Sys(void) {
 #endif
 
 /*******************************BOX-PROCEDURES********************************/
+
+/**********************
+ * IO                 *
+ **********************/
+
 static Task My_Print_Char(BoxVM *vm) {
   printf(SChar, BOX_VM_ARG(vm, Char));
   return Success;
@@ -405,7 +289,9 @@ static Task My_Print_Str(BoxVM *vm) {
 }
 
 
-/* Math procedures */
+/**********************
+ * Math               *
+ **********************/
 
 static Task My_Math_Sin(BoxVM *vm) {
   BOX_VM_CURRENT(vm, Real) = sin(BOX_VM_ARG(vm, Real));
@@ -472,6 +358,15 @@ static Task My_Math_Abs(BoxVM *vm) {
   return Success;
 }
 
+/**********************
+ * Conversions        *
+ **********************/
+
+static Task My_2R_To_P(BoxVM *vm) {
+  BOX_VM_THIS(vm, Point) = *(BOX_VM_ARG_PTR(vm, Point));
+  return Success;
+}
+
 #if 0
 static Task Print_NewLine(VMProgram *vmp) {
   printf("\n"); return Success;
@@ -489,10 +384,6 @@ static Task Exit_Int(VMProgram *vmp) {
 /*****************************************************************************
  *                       FUNCTIONS FOR CONVERSION                            *
  *****************************************************************************/
-static Task Conv_2RealNum_to_Point(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Point) = *(BOX_VM_ARGPTR1(vmp, Point));
-  return Success;
-}
 
 static Task Char_Char(VMProgram *vmp)
   {BOX_VM_CURRENT(vmp, Char) = BOX_VM_ARG1(vmp, Char); return Success;}
@@ -553,6 +444,48 @@ static Task Vec_RealNum(VMProgram *vmp) {
 #include "operator.h"
 #include "namespace.h"
 #include "compiler.h"
+
+BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
+                          Task (*c_fn)(BoxVM *)) {
+  BoxVMSymID sym_num;
+  BoxVMCallNum call_num;
+
+  /* We create the symbol associated with this name */
+  sym_num = BoxVMSym_New_Call(c->vm);
+
+  /* We finally install the code (a C function) for the procedure */
+  VM_Proc_Install_CCode(c->vm, & call_num, c_fn,
+                        "(noname)", proc_name);
+
+  /* And define the symbol */
+  ASSERT_TASK(BoxVMSym_Def_Call(c->vm, sym_num, call_num));
+  return sym_num;
+}
+
+BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
+                          Task (*c_fn)(BoxVM *)) {
+  BoxVMSymID sym_num;
+  BoxVMCallNum call_num;
+  BoxType new_proc;
+  char *proc_name = NULL;
+
+  /* We create the symbol associated with this name */
+  sym_num = BoxVMSym_New_Call(c->vm);
+
+  /* We tell to the compiler that some procedures are associated with it */
+  TS_Procedure_New(& c->ts, & new_proc, parent, child, /*kind*/ 1);
+  TS_Procedure_Register(& c->ts, new_proc, sym_num);
+  proc_name = TS_Name_Get(& c->ts, new_proc);
+
+  /* We finally install the code (a C function) for the procedure */
+  VM_Proc_Install_CCode(c->vm, & call_num, c_fn,
+                        "(noname)", proc_name);
+  BoxMem_Free(proc_name);
+
+  /* And define the symbol */
+  ASSERT_TASK(BoxVMSym_Def_Call(c->vm, sym_num, call_num));
+  return sym_num;
+}
 
 /* Define some core types such as Int, Real and Point (for example, define
  * Int as (Char->Int) and Real as (Char->Int->Real)).
@@ -795,6 +728,7 @@ static void My_Register_BinOps(BoxCmp *c) {
 /* Register all the conversion operations for the Box compiler. */
 static void My_Register_Conversions(BoxCmp *c) {
   Operator *convert = & c->convert;
+  BoxVMSymID struc_to_point_sym_id;
 
   struct {
     const char *types; /* Two characters describing the types of the source
@@ -807,6 +741,8 @@ static void My_Register_Conversions(BoxCmp *c) {
 
   } *conv, convs[] = {
     { "IR",   "", NULL, BOXGOP_REAL},
+    { "CR",   "", NULL, BOXGOP_REAL},
+    { "RI",   "", NULL, BOXGOP_INT},
     { NULL, NULL, NULL, 0}
   };
 
@@ -823,31 +759,8 @@ static void My_Register_Conversions(BoxCmp *c) {
   /* Conversion (Real, Real) -> Point */
   Operation *opn = Operator_Add_Opn(convert, c->bltin.struc_real_real,
                                     BOXTYPE_NONE, BOXTYPE_POINT);
-  /*opn->implem.opcode = conv->g_op;*/
-}
-
-void Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
-                    Task (*c_fn)(BoxVM *)) {
-  BoxVMSymID sym_num;
-  BoxVMCallNum call_num;
-  BoxType new_proc;
-  char *proc_name = NULL;
-
-  /* We create the symbol associated with this name */
-  sym_num = BoxVMSym_New_Call(c->vm);
-
-  /* We tell to the compiler that some procedures are associated with it */
-  TS_Procedure_New(& c->ts, & new_proc, parent, child, /*kind*/ 1);
-  TS_Procedure_Register(& c->ts, new_proc, sym_num);
-  proc_name = TS_Name_Get(& c->ts, new_proc);
-
-  /* We finally install the code (a C function) for the procedure */
-  VM_Proc_Install_CCode(c->vm, & call_num, c_fn,
-                        "(noname)", proc_name);
-  BoxMem_Free(proc_name);
-
-  /* And define the symbol */
-  ASSERT_TASK(BoxVMSym_Def_Call(c->vm, sym_num, call_num));
+  struc_to_point_sym_id = Bltin_Proc_Add(c, "conv_2r_to_point", My_2R_To_P);
+  Operation_Set_User_Implem(opn, struc_to_point_sym_id);
 }
 
 void Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
@@ -857,23 +770,22 @@ void Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
 
   TS_Alias_New(& c->ts, & new_type, ret);
   TS_Name_Set(& c->ts, new_type, name);
-  Bltin_Proc_Def(c, new_type, arg, fn);
+  (void) Bltin_Proc_Def(c, new_type, arg, fn);
   v = Value_New(c->cur_proc);
   Value_Setup_As_Type(v, new_type);
   Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, name, v);
   Value_Unlink(v);
-
 }
 
 static void My_Register_Std_IO(BoxCmp *c) {
-  Bltin_Proc_Def(c, c->bltin.print,  BOXTYPE_CHAR, My_Print_Char);
-  Bltin_Proc_Def(c, c->bltin.print,   BOXTYPE_INT, My_Print_Int);
-  Bltin_Proc_Def(c, c->bltin.print,  BOXTYPE_REAL, My_Print_Real);
-  Bltin_Proc_Def(c, c->bltin.print, c->bltin.species_point, My_Print_Pnt);
-  Bltin_Proc_Def(c, c->bltin.print, c->bltin.string, My_Print_Str);
+  BoxType t_print = c->bltin.print;
+  (void) Bltin_Proc_Def(c, t_print,  BOXTYPE_CHAR, My_Print_Char);
+  (void) Bltin_Proc_Def(c, t_print,   BOXTYPE_INT, My_Print_Int);
+  (void) Bltin_Proc_Def(c, t_print,  BOXTYPE_REAL, My_Print_Real);
+  (void) Bltin_Proc_Def(c, t_print, c->bltin.species_point, My_Print_Pnt);
+  (void) Bltin_Proc_Def(c, t_print, c->bltin.string, My_Print_Str);
 
 #if 0
-  TASK(Cmp_Builtin_Proc_Def(type_CharArray,BOX_CREATION,type_Print, Print_String));
   TASK(Cmp_Builtin_Proc_Def(TYPE_PAUSE, BOX_CREATION,type_Print,Print_NewLine));
   /*Tym_Print_Procedure(stdout, type_new);*/
 #endif

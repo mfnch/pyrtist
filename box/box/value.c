@@ -235,7 +235,7 @@ void Value_Setup_As_String(Value *v_str, const char *str) {
   Value_Setup_Container(& v_str_data, BOXTYPE_OBJ, & vc);
 
   Value_Setup_As_Temp(v_str, c->bltin.string);
-  if (!Value_Emit_Call(v_str, & v_str_data)) {
+  if (Value_Emit_Call(v_str, & v_str_data) != BOXTASK_OK) {
     MSG_FATAL("Value_Setup_As_String: Failure while emitting string.");
     assert(0);
   }
@@ -374,7 +374,7 @@ void Value_Emit_Allocate(Value *v) {
       v->attr.own_reference = 1;
 
       /* Now let's invoke the creator */
-      Value_Emit_Call(v, & c->value.create);
+      (void) Value_Emit_Call(v, & c->value.create);
     }
     return;
 
@@ -479,30 +479,12 @@ int Value_Is_Ignorable(Value *v) {
   return v->attr.ignore;
 }
 
-int Value_Emit_Call(Value *parent, Value *child) {
+void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
+                                Value *parent, Value *child) {
   BoxCmp *c = parent->proc->cmp;
-  BoxType found_procedure, expansion_for_child;
-  BoxVMSymID sym_id;
 
   assert(parent != NULL && child != NULL);
   assert(c == child->proc->cmp);
-
-  /* Now we search for the procedure associated with *child */
-  TS_Procedure_Inherited_Search(& c->ts, & found_procedure,
-                                & expansion_for_child,
-                                parent->type, child->type, 1);
-
-  if (found_procedure == BOXTYPE_NONE)
-    return 0;
-
-  if (expansion_for_child != BOXTYPE_NONE) {
-    Value_Link(child); /* XXX */
-    child = Value_Expand(child, expansion_for_child);
-    if (child == NULL)
-      return 0;
-  }
-
-  TS_Procedure_Sym_Num_Get(& c->ts, & sym_id, found_procedure);
 
   if (parent->value.cont.type != BOXCONTTYPE_VOID) {
     BoxGOp op = (parent->value.cont.type == BOXCONTTYPE_OBJ
@@ -523,7 +505,35 @@ int Value_Emit_Call(Value *parent, Value *child) {
   }
 
   CmpProc_Assemble_Call(c->cur_proc, sym_id);
-  return 1;
+}
+
+BoxTask Value_Emit_Call(Value *parent, Value *child) {
+  BoxCmp *c = parent->proc->cmp;
+  BoxType found_procedure, expansion_for_child;
+  BoxVMSymID sym_id;
+
+  assert(parent != NULL && child != NULL);
+  assert(c == child->proc->cmp);
+
+  /* Now we search for the procedure associated with *child */
+  TS_Procedure_Inherited_Search(& c->ts, & found_procedure,
+                                & expansion_for_child,
+                                parent->type, child->type, 1);
+
+  if (found_procedure == BOXTYPE_NONE)
+    return BOXTASK_FAILURE;
+
+  if (expansion_for_child != BOXTYPE_NONE) {
+    Value_Link(child); /* XXX */
+    child = Value_Expand(child, expansion_for_child);
+    if (child == NULL)
+      return BOXTASK_ERROR;
+  }
+
+  TS_Procedure_Sym_Num_Get(& c->ts, & sym_id, found_procedure);
+
+  Value_Emit_Call_From_SymID(sym_id, parent, child);
+  return BOXTASK_OK;
 }
 
 /** Expands the value 'src' as prescribed by the species 'expansion_type'.

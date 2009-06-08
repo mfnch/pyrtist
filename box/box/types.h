@@ -141,7 +141,11 @@ typedef BoxName BoxData;
 /* Le funzioni spesso restituiscono un intero per indicare se tutto e' andato
  * bene o se si e' verificato un errore. Definisco il relativo tipo di dato:
  */
-typedef enum {BoxSuccess = 0, BoxFailure = 1} BoxTask;
+typedef enum {
+  BOXTASK_OK      = 0, /**< Function succeeded */
+  BOXTASK_FAILURE = 1, /**< Function failed: caller needs to report error */
+  BOXTASK_ERROR   = 2  /**< Function failed: error already reported */
+} BoxTask;
 
 /* Macro per testare il successo o il fallimento di una funzione.
  */
@@ -150,7 +154,7 @@ typedef enum {BoxSuccess = 0, BoxFailure = 1} BoxTask;
 
 /** Macro to call a function returning Task from a function returning Task.
  */
-#  define BOXTASK(x) if ( (x) ) return BoxFailure
+#  define BOXTASK(x) if ( (x) ) return BOXTASK_FAILURE
 
 /* Questa macro permette di usare una indicizzazione "circolare",
  * secondo cui, data una lista di num_items elementi, l'indice 1 si riferisce
@@ -178,8 +182,8 @@ typedef BoxName Name;
 typedef BoxName Data;
 
 #    define Task BoxTask
-#    define Success BoxSuccess
-#    define Failed BoxFailure
+#    define Success BOXTASK_OK
+#    define Failed BOXTASK_FAILURE
 
 #    define strtoint BoxInt_Of_Str
 #    define strtoreal BoxReal_Of_Str
@@ -212,7 +216,7 @@ typedef BoxName Data;
  */
 
 /** When we do not tolerate a failure then we use the ASSERT_TASK macro. */
-#    define ASSERT_TASK(x) do{Task t = (x); assert(t == BoxSuccess);} while(0)
+#    define ASSERT_TASK(x) do{Task t = (x); assert(t == BOXTASK_OK);} while(0)
 
 #  endif /* BOX_ABBREV */
 

@@ -103,6 +103,11 @@ void Operation_Attr_Set(Operation *opn, OprAttr mask, OprAttr attr) {
   My_Guess_AsmScheme(opn);
 }
 
+void Operation_Set_User_Implem(Operation *opn, BoxVMSymID sym_id) {
+  opn->asm_scheme = OPASMSCHEME_USR_UN;
+  opn->implem.sym_id = sym_id;
+}
+
 /* Aggiunge una nuova operazione di tipo type1 opr type2
  * all'operatore *opr. Se type1 o type2 sono uguali a TYPE_NONE si tratta
  * di un'operazione unaria (sinistra o destra rispettivamente).
@@ -345,51 +350,6 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
   return result;
 
 #if 0
-  struct {
-    unsigned int unary     :1,
-                 right     :1,
-                 monotype  :1,
-                 immediate :1;} opn_is;
-
-  /* Usually the operands and the result all have the same type. If this is
-   * the case, then we set opn_is.monotype to 1. If this is not the case
-   * then we set opn_is.monotype to 0.
-   */
-  switch((e1 == NULL) + ((e2 == NULL) << 1)) {
-  case 0: /* Operazione a 2 argomenti */
-    opn_is.monotype = (rs_resolved != e1->resolved)
-                      || (rs_resolved != e2->resolved);
-    opn_is.immediate = (e1->categ == CAT_IMM) && (e2->categ == CAT_IMM);
-    opn_is.unary = 0;
-    opn_is.right = 0;
-    break;
-
-  case 1: /* Operazione a 1 argomento (destro, cioe' e2) */
-    opn_is.strange = (e2->resolved != rs_resolved);
-    opn_is.immediate = (e2->categ == CAT_IMM);
-    opn_is.unary = 1;
-    opn_is.right = 1;
-    e1 = e2;
-    break;
-
-  case 2: /* Operazione a 1 argomento (sinistro, cioe' e1) */
-    opn_is.strange = (e1->resolved != rs_resolved);
-    opn_is.immediate = (e1->categ == CAT_IMM);
-    opn_is.unary = 1;
-    opn_is.right = 0;
-    e2 = e1;
-    break;
-
-  default:
-    MSG_FATAL("Internal error: operation has no arguments!");
-    return NULL;
-  }
-
-  return NULL;
-
-  Int rs_resolved = Tym_Type_Resolve_All(opn->type_rs);
-
-
   if ( opn->is.assignment ) { /***********************************ASSIGNMENT*/
   } else { /**************************************************NOT ASSIGNMENT*/
     struct {unsigned int e1 : 1, e2 : 1;} result_in;
@@ -550,19 +510,25 @@ Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match, src->type, dest);
   if (opn != NULL) {
-    Value *v_dest;
+    if (opn->asm_scheme == OPASMSCHEME_STD_UN) {
+      Value *v_dest = Value_New(c->cur_proc);
+      Value_Setup_As_Temp(v_dest, dest);
+      CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+                      2, & v_dest->value.cont, & src->value.cont);
+      Value_Unlink(src);
+      return v_dest;
 
-#if 0
-    /* Now we expand the types, if necessary */
-    assert(match.match_left == TS_TYPES_EQUAL
-           && match.match_right == TS_TYPES_EQUAL);
-#endif
-    v_dest = Value_New(c->cur_proc);
-    Value_Setup_As_Temp(v_dest, dest);
-    CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
-                     2, & v_dest->value.cont, & src->value.cont);
-    Value_Unlink(src);
-    return v_dest;
+    } else if (opn->asm_scheme == OPASMSCHEME_USR_UN) {
+      Value *v_dest = Value_New(c->cur_proc);
+      Value_Setup_As_Temp(v_dest, dest);
+      Value_Emit_Call_From_SymID(opn->implem.sym_id, v_dest, src);
+      Value_Unlink(src);
+      return v_dest;
+
+    } else {
+      MSG_FATAL("BoxCmp_Opr_Emit_Conversion: unexpected asm-scheme!");
+      assert(0);
+    }
 
   } else {
     Value_Unlink(src);
