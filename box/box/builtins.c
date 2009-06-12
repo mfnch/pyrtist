@@ -743,6 +743,7 @@ static void My_Register_Conversions(BoxCmp *c) {
     { "IR",   "", NULL, BOXGOP_REAL},
     { "CR",   "", NULL, BOXGOP_REAL},
     { "RI",   "", NULL, BOXGOP_INT},
+    { "CI",   "", NULL, BOXGOP_INT},
     { NULL, NULL, NULL, 0}
   };
 

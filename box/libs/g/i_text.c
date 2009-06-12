@@ -24,6 +24,8 @@
 
 #include "types.h"
 #include "virtmach.h"
+#include "bltinstr.h"
+
 #include "graphic.h"
 #include "g.h"
 #include "i_window.h"
@@ -148,10 +150,11 @@ Task window_text_point(VMProgram *vmp) {
   return Success;
 }
 
-Task window_text_str(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
+Task window_text_str(BoxVM *vm) {
+  SUBTYPE_OF_WINDOW(vm, w);
+  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
   free(w->text.text);
-  w->text.text = strdup(BOX_VM_ARGPTR1(vmp, char));
+  w->text.text = strdup(s->ptr);
   w->text.got.text = 1;
   return Success;
 }
@@ -163,10 +166,11 @@ Task window_text_style(VMProgram *vmp) {
   return Success;
 }
 
-Task window_text_font_str(VMProgram *vmp) {
-  SUBTYPE2_OF_WINDOW(vmp, w);
+Task window_text_font_str(BoxVM *vm) {
+  SUBTYPE2_OF_WINDOW(vm, w);
+  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
   free(w->text.font);
-  w->text.font = strdup(BOX_VM_ARGPTR1(vmp, char));
+  w->text.font = strdup(s->ptr);
   w->text.got.font = 1;
   return Success;
 }

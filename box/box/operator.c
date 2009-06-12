@@ -510,6 +510,10 @@ Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match, src->type, dest);
   if (opn != NULL) {
+    /* Now we expand the types, if necessary */
+    if (match.match_left == TS_TYPES_EXPAND)
+      src = Value_Expand(src, match.expand_type_left);
+
     if (opn->asm_scheme == OPASMSCHEME_STD_UN) {
       Value *v_dest = Value_New(c->cur_proc);
       Value_Setup_As_Temp(v_dest, dest);

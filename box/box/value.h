@@ -214,6 +214,11 @@ void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
 /** Emit the code corresponding to a call to child@parent. */
 BoxTask Value_Emit_Call(Value *parent, Value *child);
 
+/**
+ * REFERENCES: dest: 0, src: -1;
+ */
+BoxTask Value_Move_Content(Value *dest, Value *src);
+
 /** Expand the value 'v' in agreement with the provided expansion type. */
 Value *Value_Expand(Value *v, BoxType expansion_type);
 

@@ -225,6 +225,10 @@ static void VM__Exec_Int_R(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->local[TYPE_INT]) = (Int) *((Real *) vmcur->arg1);
 }
+static void VM__Exec_Int_C(BoxVM *vm) {
+  VMStatus *vmcur = vm->vmcur;
+  *((Int *) vmcur->local[TYPE_INT]) = (Int) *((Char *) vmcur->arg1);
+}
 static void VM__Exec_Point_II(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   ((Point *) vmcur->local[TYPE_POINT])->x = (Real) *((Int *) vmcur->arg1);
@@ -526,7 +530,8 @@ VMInstrDesc vm_instr_desc_table[] = {
   {"lor",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_LOr_II,    VM__D_GLPI_GLPI}, /* lor  reg_i, reg_i  */
   {"real",  1, TYPE_CHAR,  VM__GLPI,     VM__Exec_Real_C,    VM__D_GLPI_GLPI}, /* real reg_c         */
   {"real",  1, TYPE_INT,   VM__GLPI,     VM__Exec_Real_I,    VM__D_GLPI_GLPI}, /* real reg_i         */
-  {"intg",  1, TYPE_REAL,  VM__GLPI,     VM__Exec_Int_R,     VM__D_GLPI_GLPI}, /* intg reg_r         */
+  {"int",   1, TYPE_CHAR,  VM__GLPI,     VM__Exec_Int_C,     VM__D_GLPI_GLPI}, /* int reg_c          */
+  {"int",   1, TYPE_REAL,  VM__GLPI,     VM__Exec_Int_R,     VM__D_GLPI_GLPI}, /* int reg_r          */
   {"point", 2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Point_II,  VM__D_GLPI_GLPI}, /* point reg_i, reg_i */
   {"point", 2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Point_RR,  VM__D_GLPI_GLPI}, /* point reg_r, reg_r */
   {"projx", 1, TYPE_POINT, VM__GLPI,     VM__Exec_ProjX_P,   VM__D_GLPI_GLPI}, /* projx reg_p        */
@@ -647,7 +652,8 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {   BOXGOP_LOR,    "lor", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_LOr_II   }, /* lor  ri, ri   */
   {  BOXGOP_REAL,   "real", 1, 'c',     "a1", "rr0", "x-", "xx", VM__Exec_Real_C   }, /* real rc       */
   {  BOXGOP_REAL,   "real", 1, 'i',     "a1", "rr0", "x-", "xx", VM__Exec_Real_I   }, /* real ri       */
-  {   BOXGOP_INT,    "int", 1, 'r',     "a1", "ri0", "x-", "xx", VM__Exec_Int_R    }, /* int rr        */
+  {   BOXGOP_INT,    "int", 1, 'c',     "a1", "ri0", "x-", "xx", VM__Exec_Int_C    }, /* int rc        */
+  {   BOXGOP_INT,    "int", 1, 'r',     "a1", "ri0", "x-", "xx", VM__Exec_Int_R    }, /* int rr        */ 
   { BOXGOP_POINT,  "point", 2, 'i',  "a1,a2", "rp0", "xx", "xx", VM__Exec_Point_II }, /* point ri, ri  */
   { BOXGOP_POINT,  "point", 2, 'r',  "a1,a2", "rp0", "xx", "xx", VM__Exec_Point_RR }, /* point rr, rr  */
   { BOXGOP_PROJX,  "projx", 1, 'p',     "a1", "rr0", "x-", "xx", VM__Exec_ProjX_P  }, /* projx rp      */

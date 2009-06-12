@@ -526,6 +526,41 @@ static void My_Compile_UnOp(BoxCmp *c, ASTNode *n) {
   BoxCmp_Push_Value(c, result);
 }
 
+/** Deal with assignments.
+ * REFERENCES: result: new, left: -1, right: -1;
+ */
+static Value *My_Compile_Assignment(BoxCmp *c, Value *left, Value *right) {
+  if (Value_Want_Value(right)) {
+    /* If the value is an identifier (thing without type, nor value),
+     * then we transform it to a proper target.
+     */
+    if (Value_Is_Var_Name(left)) {
+      ValContainer vc = {VALCONTTYPE_LVAR, -1, 0};
+      Value_Setup_Container(left, right->type, & vc);
+      Value_Emit_Allocate(left);
+    }
+
+    if (Value_Is_Target(left)) {
+      Value_Move_Content(left, right);
+      Value_Set_Ignorable(left, 1);
+      /*return BoxCmp_Opr_Emit_BinOp(c, ASTBINOP_ASSIGN, left, right);*/
+      return left;
+
+    } else {
+      MSG_ERROR("Invalid target for assignment (%s).",
+                ValueKind_To_Str(left->kind));
+      Value_Unlink(left);
+      Value_Unlink(right);
+      return NULL;
+    }
+
+  } else {
+    Value_Unlink(left);
+    Value_Unlink(right);
+    return NULL;
+  }
+}
+
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
   assert(n->type == ASTNODETYPE_BINOP);
 
@@ -544,30 +579,15 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
 
     op = n->attr.bin_op.operation;
     if (op == ASTBINOP_ASSIGN) {
-      if (Value_Want_Value(right)) {
-        /* If the value is an identifier (thing without type, nor value),
-         * then we transform it to a proper target.
-         */
-        if (Value_Is_Var_Name(left)) {
-          ValContainer vc = {VALCONTTYPE_LVAR, -1, 0};
-          Value_Setup_Container(left, right->type, & vc);
-        }
-
-        if (Value_Is_Target(left)) {
-          result = BoxCmp_Opr_Emit_BinOp(c, op, left, right);
-
-        } else
-          MSG_ERROR("Invalid target for assignment (%s).",
-                    ValueKind_To_Str(left->kind));
-      }
+      result = My_Compile_Assignment(c, left, right);
 
     } else {
       if (Value_Want_Value(left) && Value_Want_Value(right))
         result = BoxCmp_Opr_Emit_BinOp(c, op, left, right);
+      Value_Unlink(left); /* XXX */
+      Value_Unlink(right); /* XXX */
     }
 
-    Value_Unlink(left); /* XXX */
-    Value_Unlink(right); /* XXX */
     BoxCmp_Push_Value(c, result);
   }
 }

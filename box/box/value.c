@@ -69,6 +69,11 @@ static void My_Value_Finalize(Value *v) {
     if (v->attr.own_register)
       Reg_Release(& v->proc->reg_alloc,
                   v->value.cont.type, v->value.cont.value.reg);
+    if (v->attr.own_reference) {
+      assert(v->value.cont.type == BOXTYPE_OBJ);
+      assert(v->value.cont.categ == BOXCONTCATEG_LREG); /* for now we don't support the general case... */
+      CmpProc_Assemble(v->proc, BOXGOP_MUNLN, 1, & v->value.cont);
+    }
     return;
   case VALUEKIND_TARGET:
     return;
@@ -199,13 +204,13 @@ void Value_Setup_As_Imm_Char(Value *v, Char c) {
 
 void Value_Setup_As_Imm_Int(Value *v, Int i) {
   v->kind = VALUEKIND_IMM;
-  v->type = BOXTYPE_INT;
+  v->type = v->proc->cmp->bltin.species_int;
   BoxCont_Set(& v->value.cont, "ii", i);
 }
 
 void Value_Setup_As_Imm_Real(Value *v, Real r) {
   v->kind = VALUEKIND_IMM;
-  v->type = BOXTYPE_REAL;
+  v->type = v->proc->cmp->bltin.species_real;
   BoxCont_Set(& v->value.cont, "ir", r);
 }
 
@@ -536,6 +541,76 @@ BoxTask Value_Emit_Call(Value *parent, Value *child) {
   return BOXTASK_OK;
 }
 
+/**
+ * REFERENCES: return: new, v_obj: -1;
+ */
+Value *Value_To_Straight_Ptr(Value *v_obj) {
+  assert(v_obj->value.cont.type == BOXTYPE_OBJ);
+
+  if (v_obj->value.cont.categ == BOXCONTCATEG_PTR) {
+    Value *v_ret = Value_New(v_obj->proc->cmp->cur_proc);
+    Value_Setup_As_Temp(v_ret, v_obj->type);
+    assert(v_ret->value.cont.type == BOXTYPE_OBJ);
+    CmpProc_Assemble(v_ret->proc, BOXGOP_LEA,
+                     2, & v_ret->value.cont, & v_obj->value.cont);
+    Value_Unlink(v_obj);
+    return v_ret;
+
+  } else
+    return v_obj;
+}
+
+/**
+ * REFERENCES: src: -1, dest: 0;
+ */
+BoxTask Value_Move_Content(Value *dest, Value *src) {
+  BoxCmp *c = src->proc->cmp;
+  TS *ts = & c->ts;
+  TSCmp match = TS_Compare(ts, dest->type, src->type);
+  if (match == TS_TYPES_UNMATCH) {
+    MSG_ERROR("Cannot move objects of type '%~s' into objects of type '%~s'",
+              TS_Name_Get(ts, src->type), TS_Name_Get(ts, dest->type));
+    return BOXTASK_ERROR;
+  }
+
+  if (match == TS_TYPES_EXPAND)
+    src = Value_Expand(src, dest->type);
+
+  if (dest->value.cont.type == BOXCONTTYPE_OBJ) {
+    /* Object types must be copied and destoyed */
+    Value v_size;
+
+    /* Put addresses in registers. EXAMPLE: o[ro2 + 4] is transformed to ro3
+     * through "lea ro3, o[ro2 + 4]"
+     */
+    Value_Link(dest);
+    src = Value_To_Straight_Ptr(src);
+    dest = Value_To_Straight_Ptr(dest);
+
+    /* First let's destroy the object (it is going to be overwritten) */
+    (void) Value_Emit_Call(dest, & c->value.destroy);
+    
+    /* Now we move src to dest, copying it byte by byte */
+    Value_Init(& v_size, c->cur_proc);
+    Value_Setup_As_Imm_Int(& v_size, TS_Get_Size(& c->ts, dest->type));
+    CmpProc_Assemble(c->cur_proc, BOXGOP_MCOPY,
+                     3, & dest->value.cont, & src->value.cont,
+                     & v_size.value.cont);
+    MSG_WARNING("Value_Move_Content: not fully implemented, yet.");
+    Value_Unlink(& v_size);
+    Value_Unlink(src);
+    return BOXTASK_OK;
+
+  } else {
+    /* All the other types can be moved "quickly" with a mov operation */
+    CmpProc_Assemble(dest->proc, BOXGOP_MOV,
+                     2, & dest->value.cont, & src->value.cont);
+  }
+
+  Value_Unlink(src);
+  return BOXTASK_OK;
+}
+
 /** Expands the value 'src' as prescribed by the species 'expansion_type'.
  * REFERENCES: return: new, src: -1;
  */
@@ -618,43 +693,46 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
     return (
           Tym_Compare_Types(td1->parent, td2->parent)
       && Tym_Compare_Types(td1->target, td2->target) );*/
+#endif
 
-  case TS_KIND_STRUCTURE: {
-    int need_expansion = 0;
+#if 0
+  case TS_KIND_STRUCTURE:
+    {
+      int need_expansion = 0;
 
-    /* Prima di eseguire la conversione verifico che si possa
-      * effettivamente fare!
-      */
-    if ( ! Tym_Compare_Types(type1, type2, & need_expansion) ) {
-      MSG_ERROR("Value_Expand: Expansion involves incompatible types!");
-      return Failed;
-    }
+      /* Prima di eseguire la conversione verifico che si possa
+       * effettivamente fare!
+       */
+      if ( ! Tym_Compare_Types(type1, type2, & need_expansion) ) {
+        MSG_ERROR("Value_Expand: Expansion involves incompatible types!");
+        return Failed;
+      }
 
-    /* We have to expand the structure: we have to create a new structure
-     * which can contain the expanded one.
-     */
-    if (need_expansion) {
-      int src_n, dest_n;
-      Expr new_struc, src_iter_e, dest_iter_e, src_e, dest_e;
-      Expr_Container_New(& new_struc, type1, CONTAINER_LREG_AUTO);
-      Expr_Alloc(& new_struc);
-      src_iter_e = *e;
-      dest_iter_e = new_struc;
+      /* We have to expand the structure: we have to create a new structure
+       * which can contain the expanded one.
+       */
+      if (need_expansion) {
+        int src_n, dest_n;
+        Expr new_struc, src_iter_e, dest_iter_e, src_e, dest_e;
+        Expr_Container_New(& new_struc, type1, CONTAINER_LREG_AUTO);
+        Expr_Alloc(& new_struc);
+        src_iter_e = *e;
+        dest_iter_e = new_struc;
 
-      Expr_Struc_Iter(& dest_e, & dest_iter_e, & dest_n);
-      Expr_Struc_Iter(& src_e, & src_iter_e, & src_n);
-      while (dest_n > 0) {
-        TASK( Cmp_Expr_Expand(dest_e.type, & src_e) );
-        TASK( Expr_Move(& dest_e, & src_e) );
-
-        Expr_Struc_Iter(& src_e, & src_iter_e, & src_n);
         Expr_Struc_Iter(& dest_e, & dest_iter_e, & dest_n);
-      };
+        Expr_Struc_Iter(& src_e, & src_iter_e, & src_n);
+        while (dest_n > 0) {
+          TASK( Cmp_Expr_Expand(dest_e.type, & src_e) );
+          TASK( Expr_Move(& dest_e, & src_e) );
 
-      TASK( Cmp_Expr_Destroy_Tmp(e) );
-      *e = new_struc;
-    }
-    return Success;
+          Expr_Struc_Iter(& src_e, & src_iter_e, & src_n);
+          Expr_Struc_Iter(& dest_e, & dest_iter_e, & dest_n);
+        };
+
+        TASK( Cmp_Expr_Destroy_Tmp(e) );
+        *e = new_struc;
+      }
+      return Success;
     }
 
 #endif
