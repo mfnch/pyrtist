@@ -44,7 +44,7 @@ typedef enum {
   ASTNODETYPE_CONST,
   ASTNODETYPE_STRING,
   ASTNODETYPE_VAR,
-  ASTNODETYPE_DONTIGNORE,
+  ASTNODETYPE_IGNORE,
   ASTNODETYPE_UNOP,
   ASTNODETYPE_BINOP,
   ASTNODETYPE_MEMBER,
@@ -166,7 +166,8 @@ typedef struct {
 /** Node for removal of ignore attribute */
 typedef struct {
   ASTNode *expr;
-} ASTNodeDontIgnore;
+  int     ignore;
+} ASTNodeIgnore;
 
 /** Node for a unary operation */
 typedef struct {
@@ -221,7 +222,7 @@ struct __ASTNode {
     ASTNodeConst      constant;
     ASTNodeString     string;
     ASTNodeVar        var;
-    ASTNodeDontIgnore dont_ignore;
+    ASTNodeIgnore     ignore;
     ASTNodeUnOp       un_op;
     ASTNodeBinOp      bin_op;
     ASTNodeMember     member;
@@ -268,7 +269,7 @@ ASTNode *ASTNodeConst_New(ASTConstType t, ASTConst c);
 ASTNode *ASTNodeString_New(const char *str, size_t str_len);
 ASTNode *ASTNodeString_Concat(ASTNode *str1, ASTNode *str2);
 ASTNode *ASTNodeVar_New(const char *name, size_t name_len);
-ASTNode *ASTNodeDontIgnore_New(ASTNode *expr);
+ASTNode *ASTNodeIgnore_New(ASTNode *expr, int do_ignore);
 ASTNode *ASTNodeUnOp_New(ASTUnOp op, ASTNode *expr);
 ASTNode *ASTNodeBinOp_New(ASTBinOp op, ASTNode *left, ASTNode *right);
 ASTNode *ASTNodeMember_New(const char *name, ASTNode *expr);

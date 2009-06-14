@@ -493,10 +493,10 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
   }
 }
 
-/** Emits the conversion from the source expression 'v', to the given type 't'
- * REFERENCES: return: new, src: -1;
+/** Map an object 'src' to an object 'dest' with (possibly) different type.
+ * REFERENCES: return: new, dest: -1, src: -1;
  */
-Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
+BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
   Operation *opn;
   OprMatch match;
 
@@ -508,26 +508,24 @@ Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
 #endif
 
   /* Now we search the operation */
-  opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match, src->type, dest);
+  opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match, src->type, dest->type);
   if (opn != NULL) {
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND)
       src = Value_Expand(src, match.expand_type_left);
 
     if (opn->asm_scheme == OPASMSCHEME_STD_UN) {
-      Value *v_dest = Value_New(c->cur_proc);
-      Value_Setup_As_Temp(v_dest, dest);
       CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
-                      2, & v_dest->value.cont, & src->value.cont);
+                      2, & dest->value.cont, & src->value.cont);
       Value_Unlink(src);
-      return v_dest;
+      Value_Unlink(dest);
+      return BOXTASK_OK;
 
     } else if (opn->asm_scheme == OPASMSCHEME_USR_UN) {
-      Value *v_dest = Value_New(c->cur_proc);
-      Value_Setup_As_Temp(v_dest, dest);
-      Value_Emit_Call_From_SymID(opn->implem.sym_id, v_dest, src);
+      Value_Emit_Call_From_SymID(opn->implem.sym_id, dest, src);
       Value_Unlink(src);
-      return v_dest;
+      Value_Unlink(dest);
+      return BOXTASK_OK;
 
     } else {
       MSG_FATAL("BoxCmp_Opr_Emit_Conversion: unexpected asm-scheme!");
@@ -536,8 +534,26 @@ Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
 
   } else {
     Value_Unlink(src);
+    Value_Unlink(dest);
+    return BOXTASK_FAILURE;
+  }
+}
+
+/** Emits the conversion from the source expression 'v', to the given type 't'
+ * REFERENCES: return: new, src: -1;
+ */
+Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
+  Value *v_dest = Value_New(c->cur_proc);
+  Value_Setup_As_Temp(v_dest, dest);
+  Value_Link(v_dest); /* We want to return a new reference! */
+  if (BoxCmp_Opr_Try_Emit_Conversion(c, v_dest, src) == BOXTASK_OK)
+    return v_dest;
+
+  else {
     MSG_ERROR("Don't know how to convert objects of type %~s to %~s.",
-              TS_Name_Get(& c->ts, src->type), TS_Name_Get(& c->ts, dest));
+              TS_Name_Get(& c->ts, src->type),
+              TS_Name_Get(& c->ts, dest));
+    Value_Unlink(v_dest); /* Unlink, since we are not returning it! */
     return NULL;
   }
 }

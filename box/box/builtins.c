@@ -767,7 +767,7 @@ static void My_Register_Conversions(BoxCmp *c) {
 void Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
                          BoxType ret, BoxType arg, BoxVMFunc fn) {
   BoxType new_type;
-  Value *v = Value_New(c->cur_proc);
+  Value *v;
 
   TS_Alias_New(& c->ts, & new_type, ret);
   TS_Name_Set(& c->ts, new_type, name);

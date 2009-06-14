@@ -51,8 +51,8 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
   case ASTNODETYPE_VAR:
     subnodes[0] = & node->attr.var.scope;
     return 1;
-  case ASTNODETYPE_DONTIGNORE:
-    subnodes[0] = & node->attr.dont_ignore.expr;
+  case ASTNODETYPE_IGNORE:
+    subnodes[0] = & node->attr.ignore.expr;
     return 1;
   case ASTNODETYPE_UNOP:
     subnodes[0] = & node->attr.un_op.expr;
@@ -90,7 +90,7 @@ const char *ASTNodeType_To_Str(ASTNodeType t) {
   case ASTNODETYPE_CONST:      return "Const";
   case ASTNODETYPE_STRING:     return "String";
   case ASTNODETYPE_VAR:        return "Var";
-  case ASTNODETYPE_DONTIGNORE: return "DontIgnore";
+  case ASTNODETYPE_IGNORE:     return "Ignore";
   case ASTNODETYPE_UNOP:       return "UnOp";
   case ASTNODETYPE_BINOP:      return "BinOp";
   case ASTNODETYPE_MEMBER:     return "Member";
@@ -399,9 +399,10 @@ ASTNode *ASTNodeVar_New(const char *name, size_t name_len) {
   return node;
 }
 
-ASTNode *ASTNodeDontIgnore_New(ASTNode *expr) {
-  ASTNode *node = ASTNode_New(ASTNODETYPE_DONTIGNORE);
-  node->attr.dont_ignore.expr = expr;
+ASTNode *ASTNodeIgnore_New(ASTNode *expr, int do_ignore) {
+  ASTNode *node = ASTNode_New(ASTNODETYPE_IGNORE);
+  node->attr.ignore.expr = expr;
+  node->attr.ignore.ignore = do_ignore;
   return node;
 }
 

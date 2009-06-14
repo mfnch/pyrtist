@@ -54,8 +54,6 @@ static void My_Value_Finalize(Value *v) {
   switch(v->kind) {
   case VALUEKIND_ERR:
     return;
-  case VALUEKIND_VOID:
-    return;
   case VALUEKIND_TYPE_NAME:
   case VALUEKIND_VAR_NAME:
     return;
@@ -120,7 +118,6 @@ Value *Value_Recycle(Value *v) {
 const char *ValueKind_To_Str(ValueKind vk) {
   switch(vk) {
   case VALUEKIND_ERR: return "an error expression";
-  case VALUEKIND_VOID: return "a void expression";
   case VALUEKIND_VAR_NAME: return "an undefined variable";
   case VALUEKIND_TYPE_NAME: return "an undefined type";
   case VALUEKIND_TYPE: return "a type expression";
@@ -163,6 +160,22 @@ int Value_Want_Value(Value *v) {
                 "expected here.", v->name);
     } else {
       MSG_ERROR("Got %s, but an expression with both value and type is "
+                "expected here.", ValueKind_To_Str(v->kind));
+    }
+    return 0;
+  }
+}
+
+int Value_Want_Has_Type(Value *v) {
+  if (Value_Has_Type(v))
+    return 1;
+
+  else {
+    if (v->name != NULL) {
+      MSG_ERROR("%s is undefined: an expression with definite type is "
+                "expected here.", v->name);
+    } else {
+      MSG_ERROR("Got %s, but an expression with definite type is "
                 "expected here.", ValueKind_To_Str(v->kind));
     }
     return 0;
@@ -215,8 +228,9 @@ void Value_Setup_As_Imm_Real(Value *v, Real r) {
 }
 
 void Value_Setup_As_Void(Value *v) {
-  v->kind = VALUEKIND_VOID;
+  v->kind = VALUEKIND_IMM;
   v->type = BOXTYPE_VOID;
+  v->value.cont.type = BOXCONTTYPE_VOID;
 }
 
 void Value_Setup_As_Temp(Value *v, BoxType t) {
@@ -357,7 +371,6 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
 void Value_Emit_Allocate(Value *v) {
   switch(v->kind) {
   case VALUEKIND_ERR:
-  case VALUEKIND_VOID:
     return;
   case VALUEKIND_TEMP:
   case VALUEKIND_TARGET:
@@ -396,7 +409,6 @@ Value *Value_To_Temp(Value *v) {
 
   switch (v->kind) {
   case VALUEKIND_ERR:
-  case VALUEKIND_VOID:
   case VALUEKIND_TEMP:
     Value_Link(v);
     return v;
@@ -451,10 +463,6 @@ int Value_Is_Err(Value *v) {
   return (v->kind == VALUEKIND_ERR);
 }
 
-int Value_Is_Void(Value *v) {
-  return (v->kind == VALUEKIND_VOID);
-}
-
 int Value_Is_Temp(Value *v) {
   return (v->kind == VALUEKIND_TEMP);
 }
@@ -484,6 +492,18 @@ int Value_Is_Ignorable(Value *v) {
   return v->attr.ignore;
 }
 
+int Value_Has_Type(Value *v) {
+  switch(v->kind) {
+  case VALUEKIND_TYPE_NAME:
+  case VALUEKIND_VAR_NAME:
+  case VALUEKIND_ERR:
+    return 0;
+  default:
+    return 1;
+  }
+}
+
+/* REFERENCES: parent: 0, child: 0; */
 void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
                                 Value *parent, Value *child) {
   BoxCmp *c = parent->proc->cmp;
@@ -548,12 +568,34 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
   assert(v_obj->value.cont.type == BOXTYPE_OBJ);
 
   if (v_obj->value.cont.categ == BOXCONTCATEG_PTR) {
-    Value *v_ret = Value_New(v_obj->proc->cmp->cur_proc);
+    Value *v_ret;
+    BoxCont cont = v_obj->value.cont;
+
+    Value_Unlink(v_obj);
+    v_ret = Value_New(v_obj->proc->cmp->cur_proc);
     Value_Setup_As_Temp(v_ret, v_obj->type);
     assert(v_ret->value.cont.type == BOXTYPE_OBJ);
-    CmpProc_Assemble(v_ret->proc, BOXGOP_LEA,
-                     2, & v_ret->value.cont, & v_obj->value.cont);
+    CmpProc_Assemble(v_ret->proc, BOXGOP_LEA, 2, & v_ret->value.cont, & cont);
+    return v_ret;
+
+  } else
+    return v_obj;
+}
+
+Value *Value_Get_Subfield(Value *v_obj, size_t offset) {
+  assert(v_obj->value.cont.type == BOXTYPE_OBJ);
+
+  return NULL;
+
+  if (v_obj->value.cont.categ == BOXCONTCATEG_PTR) {
+    Value *v_ret;
+    BoxCont cont = v_obj->value.cont;
+
     Value_Unlink(v_obj);
+    v_ret = Value_New(v_obj->proc->cmp->cur_proc);
+    Value_Setup_As_Temp(v_ret, v_obj->type);
+    assert(v_ret->value.cont.type == BOXTYPE_OBJ);
+    CmpProc_Assemble(v_ret->proc, BOXGOP_LEA, 2, & v_ret->value.cont, & cont);
     return v_ret;
 
   } else
@@ -587,19 +629,32 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
     src = Value_To_Straight_Ptr(src);
     dest = Value_To_Straight_Ptr(dest);
 
-    /* First let's destroy the object (it is going to be overwritten) */
+    /* First let's destroy the 'dest' obj (it is going to be overwritten) */
     (void) Value_Emit_Call(dest, & c->value.destroy);
-    
-    /* Now we move src to dest, copying it byte by byte */
-    Value_Init(& v_size, c->cur_proc);
-    Value_Setup_As_Imm_Int(& v_size, TS_Get_Size(& c->ts, dest->type));
-    CmpProc_Assemble(c->cur_proc, BOXGOP_MCOPY,
-                     3, & dest->value.cont, & src->value.cont,
-                     & v_size.value.cont);
-    MSG_WARNING("Value_Move_Content: not fully implemented, yet.");
-    Value_Unlink(& v_size);
-    Value_Unlink(src);
-    return BOXTASK_OK;
+
+    /* We try to use the method provided by the user, if possible */
+    Value_Link(src);
+    Value_Link(dest);
+    if (BoxCmp_Opr_Try_Emit_Conversion(c, dest, src) == BOXTASK_OK) {
+      /* OK, we found a user defined conversion and we used it! Now we just
+       * need to return!
+       */
+      Value_Unlink(src);
+      Value_Unlink(dest);
+      return BOXTASK_OK;
+
+    } else {
+      /* Now we move src to dest, copying it byte by byte */
+      Value_Init(& v_size, c->cur_proc);
+      Value_Setup_As_Imm_Int(& v_size, TS_Get_Size(& c->ts, dest->type));
+      CmpProc_Assemble(c->cur_proc, BOXGOP_MCOPY,
+                       3, & dest->value.cont, & src->value.cont,
+                       & v_size.value.cont);
+      Value_Unlink(& v_size);
+      Value_Unlink(src);
+      Value_Unlink(dest);
+      return BOXTASK_OK;
+    }
 
   } else {
     /* All the other types can be moved "quickly" with a mov operation */

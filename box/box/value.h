@@ -38,7 +38,6 @@
 
 typedef enum {
   VALUEKIND_ERR,              /**< An error */
-  VALUEKIND_VOID,             /**< Empty type (no data associated with it) */
   VALUEKIND_VAR_NAME,         /**< A variable name (no type, no value) */
   VALUEKIND_TYPE_NAME,        /**< A variable name (no type, no value) */
   VALUEKIND_TYPE,             /**< A type (no value) */
@@ -119,6 +118,11 @@ int Value_Want(Value *v, int num_wanted, ValueKind *wanted);
  */
 int Value_Want_Value(Value *v);
 
+/** Check that the given value 'v' has a definite type.
+ * Return 1 if 'v' has type, otherwise return 0.
+ */
+int Value_Want_Has_Type(Value *v);
+
 /** This type is used to specify a container (see the macros CONTAINER_...) */
 typedef struct {
   ValContType type_of_container;
@@ -182,9 +186,6 @@ void Value_Set_Ignorable(Value *v, int ignorable);
 /** Return 1 if the value represents an error. */
 int Value_Is_Err(Value *v);
 
-/** Return 1 if the value is Void[]. */
-int Value_Is_Void(Value *v);
-
 /** Return 1 if the value is a temporary value (it stores an intermediate
  * result)
  */
@@ -205,13 +206,18 @@ int Value_Is_Value(Value *v);
 /** Whether the object's value should be ignored or not. */
 int Value_Is_Ignorable(Value *v);
 
+/** Return 1, if v has a type */
+int Value_Has_Type(Value *v);
+
 /** Emit the code corresponding to a call to the procedure having symbol
  * 'sym_id'.
  */
 void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
                                 Value *parent, Value *child);
 
-/** Emit the code corresponding to a call to child@parent. */
+/** Emit the code corresponding to a call to child@parent.
+ * REFERENCES: parent: 0, child: 0;
+ */
 BoxTask Value_Emit_Call(Value *parent, Value *child);
 
 /**

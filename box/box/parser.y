@@ -781,7 +781,7 @@ prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
   | string_concat                {$$ = $1;}
   | TOK_IDENTIFIER               {$$ = ASTNodeVar_New($1, 0); BoxMem_Free($1);}
-  | '(' expr ')'                 {$$ = ASTNodeDontIgnore_New($2);}
+  | '(' expr ')'                 {$$ = ASTNodeIgnore_New($2, 0);}
   | '(' struc_expr ')'           {$$ = $2;}
   ;
 
@@ -928,7 +928,8 @@ statement:
                                  {$$ = NULL;}
   | assign_type                  {$$ = ASTNodeStatement_New($1);}
   | expr                         {$$ = ASTNodeStatement_New($1);}
-  | '\\' expr                    {$$ = ASTNodeStatement_New($2);}
+  | '\\' expr                    {$$ = ASTNodeStatement_New(
+                                         ASTNodeIgnore_New($2, 1));}
   | '[' statement_list ']'       {$$ = ASTNodeStatement_New($2);}
   | error sep                    {$$ = ASTNodeStatement_New(ASTNodeError_New());
                                   Tok_Unput(',');

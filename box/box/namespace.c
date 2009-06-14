@@ -22,6 +22,7 @@
 #include <assert.h>
 
 #include "mem.h"
+#include "messages.h"
 #include "hashtable.h"
 #include "array.h"
 #include "namespace.h"
@@ -40,6 +41,10 @@ void Namespace_Init(Namespace *ns) {
 }
 
 void Namespace_Finish(Namespace *ns) {
+  Int num_floors_left = BoxArr_Num_Items(& ns->floors);
+  if (num_floors_left != 1)
+    MSG_WARNING("num floors = %I at Namespace destruction!", num_floors_left);
+
   Namespace_Floor_Down(ns);
   assert(BoxArr_Num_Items(& ns->floors) == 0);
   BoxArr_Finish(& ns->floors);
@@ -74,6 +79,14 @@ void Namespace_Floor_Up(Namespace *ns) {
 static void My_NmspItem_Finish(NmspItem *item) {
   switch(item->type) {
   case NMSPITEMTYPE_VALUE:
+    if (((Value *) item->data)->num_ref != 1) {
+      Value *v = (Value *) item->data;
+      if (v->name != NULL)
+        MSG_WARNING("'%s' unlinked, but ref count == %I",
+                    v->name, v->num_ref - 1);
+      else
+        MSG_WARNING("Object unlinked, but ref count == %I", v->num_ref - 1);
+    }
     Value_Unlink((Value *) item->data);
     return;
 
@@ -122,6 +135,7 @@ NmspItem *Namespace_Get_Item(Namespace *ns, NmspFloor floor,
     return NULL;
 }
 
+/* REFERENCES: v: 0; */
 void Namespace_Add_Value(Namespace *ns, NmspFloor floor,
                          const char *item_name, Value *v) {
   NmspItem *new_item = Namespace_Add_Item(ns, floor, item_name);

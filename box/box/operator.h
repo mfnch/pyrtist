@@ -145,6 +145,14 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v);
 Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
                              Value *v_left, Value *v_right);
 
+/** Map an object 'src' to an object 'dest' with (possibly) different type.
+ * This function is similar to BoxCmp_Opr_Emit_Conversion, with the difference
+ * that the final object is put in the given 'dest' object (and is not created
+ * from scratch).
+ * REFERENCES: return: new, dest: -1, src: -1;
+ */
+BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src);
+
 /** Emits the conversion from the source expression 'v', to the given type 't'
  */
 Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest);

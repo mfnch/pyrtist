@@ -141,7 +141,20 @@ static Task My_Str_CString(BoxVM *vm) {
   return BoxStr_Concat(s, c_s);
 }
 
+static Task My_Str_Copy(BoxVM *vm) {
+  BoxStr *dest = BOX_VM_THIS_PTR(vm, BoxStr),
+         *src = BOX_VM_ARG_PTR(vm, BoxStr);
+  char *src_text = (char *) src->ptr; /* Need this (for case: src == dest) */
+  BoxStr_Init(dest);
+  if (src->length > 0)
+    return BoxStr_Concat(dest, src_text);
+  return Success;
+}
+
 void Bltin_Str_Register_Procs(BoxCmp *c) {
+  Operation *opn;
+  BoxVMSymID copy_str;
+
   Bltin_Proc_Def(c, c->bltin.string,  BOXTYPE_CREATE, My_Str_Create);
   Bltin_Proc_Def(c, c->bltin.string, BOXTYPE_DESTROY, My_Str_Destroy);
   Bltin_Proc_Def(c, c->bltin.string,    BOXTYPE_CHAR, My_Str_Char);
@@ -150,6 +163,12 @@ void Bltin_Str_Register_Procs(BoxCmp *c) {
   Bltin_Proc_Def(c, c->bltin.string,   BOXTYPE_POINT, My_Str_Point);
   Bltin_Proc_Def(c, c->bltin.string, c->bltin.string, My_Str_Str);
   Bltin_Proc_Def(c, c->bltin.string,     BOXTYPE_OBJ, My_Str_CString);
+
+  /* Copy Str to Str */
+  opn = Operator_Add_Opn(& c->convert, c->bltin.string,
+                         BOXTYPE_NONE, c->bltin.string);
+  copy_str = Bltin_Proc_Add(c, "copy_str", My_Str_Copy);
+  Operation_Set_User_Implem(opn, copy_str);
 }
 
 #if 0

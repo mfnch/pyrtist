@@ -278,6 +278,11 @@ static void VM__Exec_Eq_PP(VMProgram *vmp) {
      ( ((Point *) vmcur->arg1)->x == ((Point *) vmcur->arg2)->x )
   && ( ((Point *) vmcur->arg1)->y == ((Point *) vmcur->arg2)->y );
 }
+static void VM__Exec_Eq_OO(BoxVM *vm) {
+  VMStatus *vmcur = vm->vmcur;
+  *((Int *) vmcur->local[TYPE_INT]) =
+     (((Obj *) vmcur->arg1)->ptr == ((Obj *) vmcur->arg2)->ptr);
+}
 static void VM__Exec_Ne_II(VMProgram *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) =
@@ -293,6 +298,11 @@ static void VM__Exec_Ne_PP(VMProgram *vmp) {
   *((Int *) vmcur->local[TYPE_INT]) =
      ( ((Point *) vmcur->arg1)->x != ((Point *) vmcur->arg2)->x )
   || ( ((Point *) vmcur->arg1)->y != ((Point *) vmcur->arg2)->y );
+}
+static void VM__Exec_Ne_OO(BoxVM *vm) {
+  VMStatus *vmcur = vm->vmcur;
+  *((Int *) vmcur->local[TYPE_INT]) =
+     (((Obj *) vmcur->arg1)->ptr != ((Obj *) vmcur->arg2)->ptr);
 }
 
 static void VM__Exec_Lt_II(VMProgram *vmp) {
@@ -514,9 +524,11 @@ VMInstrDesc vm_instr_desc_table[] = {
   {"eq?",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Eq_II,     VM__D_GLPI_GLPI}, /* eq? reg_i, reg_i   */
   {"eq?",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Eq_RR,     VM__D_GLPI_GLPI}, /* eq? reg_r, reg_r   */
   {"eq?",   2, TYPE_POINT, VM__GLP_GLPI, VM__Exec_Eq_PP,     VM__D_GLPI_GLPI}, /* eq? reg_p, reg_p   */
+  {"eq?",   2, TYPE_OBJ,   VM__GLP_GLPI, VM__Exec_Eq_OO,     VM__D_GLPI_GLPI}, /* eq? reg_o, reg_o   */
   {"ne?",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Ne_II,     VM__D_GLPI_GLPI}, /* ne? reg_i, reg_i   */
   {"ne?",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Ne_RR,     VM__D_GLPI_GLPI}, /* ne? reg_r, reg_r   */
   {"ne?",   2, TYPE_POINT, VM__GLP_GLPI, VM__Exec_Ne_PP,     VM__D_GLPI_GLPI}, /* ne? reg_p, reg_p   */
+  {"ne?",   2, TYPE_OBJ,   VM__GLP_GLPI, VM__Exec_Ne_OO,     VM__D_GLPI_GLPI}, /* ne? reg_o, reg_o   */
   {"lt?",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Lt_II,     VM__D_GLPI_GLPI}, /* lt? reg_i, reg_i   */
   {"lt?",   2, TYPE_REAL,  VM__GLP_GLPI, VM__Exec_Lt_RR,     VM__D_GLPI_GLPI}, /* lt? reg_r, reg_r   */
   {"le?",   2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_Le_II,     VM__D_GLPI_GLPI}, /* le? reg_i, reg_i   */
@@ -636,9 +648,11 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {    BOXGOP_EQ,    "eq?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Eq_II    }, /* eq? ri, ri    */
   {    BOXGOP_EQ,    "eq?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Eq_RR    }, /* eq? rr, rr    */
   {    BOXGOP_EQ,    "eq?", 2, 'p',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Eq_PP    }, /* eq? rp, rp    */
+  {    BOXGOP_EQ,    "eq?", 2, 'o',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Eq_OO    }, /* eq? ro, ro    */
   {    BOXGOP_NE,    "ne?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Ne_II    }, /* ne? ri, ri    */
   {    BOXGOP_NE,    "ne?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_RR    }, /* ne? rr, rr    */
   {    BOXGOP_NE,    "ne?", 2, 'p',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_PP    }, /* ne? rp, rp    */
+  {    BOXGOP_NE,    "ne?", 2, 'o',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_OO    }, /* ne? rp, rp    */
   {    BOXGOP_LT,    "lt?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Lt_II    }, /* lt? ri, ri    */
   {    BOXGOP_LT,    "lt?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Lt_RR    }, /* lt? rr, rr    */
   {    BOXGOP_LE,    "le?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Le_II    }, /* le? ri, ri    */
@@ -653,7 +667,7 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {  BOXGOP_REAL,   "real", 1, 'c',     "a1", "rr0", "x-", "xx", VM__Exec_Real_C   }, /* real rc       */
   {  BOXGOP_REAL,   "real", 1, 'i',     "a1", "rr0", "x-", "xx", VM__Exec_Real_I   }, /* real ri       */
   {   BOXGOP_INT,    "int", 1, 'c',     "a1", "ri0", "x-", "xx", VM__Exec_Int_C    }, /* int rc        */
-  {   BOXGOP_INT,    "int", 1, 'r',     "a1", "ri0", "x-", "xx", VM__Exec_Int_R    }, /* int rr        */ 
+  {   BOXGOP_INT,    "int", 1, 'r',     "a1", "ri0", "x-", "xx", VM__Exec_Int_R    }, /* int rr        */
   { BOXGOP_POINT,  "point", 2, 'i',  "a1,a2", "rp0", "xx", "xx", VM__Exec_Point_II }, /* point ri, ri  */
   { BOXGOP_POINT,  "point", 2, 'r',  "a1,a2", "rp0", "xx", "xx", VM__Exec_Point_RR }, /* point rr, rr  */
   { BOXGOP_PROJX,  "projx", 1, 'p',     "a1", "rr0", "x-", "xx", VM__Exec_ProjX_P  }, /* projx rp      */
