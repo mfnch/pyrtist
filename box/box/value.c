@@ -582,10 +582,14 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     return v_obj;
 }
 
-/**
+/** Return a sub-field of an object type. 'offset' is the address of the 
+ * subfield with respect to the address of the given object 'v_obj', 
+ * 'subf_type' is the type of the sub-field.
  * REFERENCES: return: new, v_obj: -1;
  */
-Value *Value_Get_Subfield(Value *v_obj, size_t offset) {
+Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
+  BoxCont *cont = & v_obj->value.cont;
+
   assert(v_obj->value.cont.type == BOXTYPE_OBJ);
 
   if (v_obj->num_ref > 1) {
@@ -593,21 +597,40 @@ Value *Value_Get_Subfield(Value *v_obj, size_t offset) {
     assert(0);
   }
 
-  return NULL;
+  switch(cont->categ) {
+  case BOXCONTCATEG_GREG:
+  case BOXCONTCATEG_LREG:
+    {
+      BoxInt reg = cont->value.reg;
+      int is_greg = (cont->categ == BOXCONTCATEG_GREG);
+      cont->categ = BOXCONTCATEG_PTR;
+      cont->value.ptr.offset = offset;
+      cont->value.ptr.reg = reg;
+      cont->value.ptr.is_greg = is_greg;
+      cont->type = TS_Get_Cont_Type(& v_obj->proc->cmp->ts, subf_type); 
+      v_obj->type = subf_type;
+      return v_obj;
+    }
 
-  if (v_obj->value.cont.categ == BOXCONTCATEG_PTR) {
-    Value *v_ret;
-    BoxCont cont = v_obj->value.cont;
-
-    Value_Unlink(v_obj);
-    v_ret = Value_New(v_obj->proc->cmp->cur_proc);
-    Value_Setup_As_Temp(v_ret, v_obj->type);
-    assert(v_ret->value.cont.type == BOXTYPE_OBJ);
-    CmpProc_Assemble(v_ret->proc, BOXGOP_LEA, 2, & v_ret->value.cont, & cont);
-    return v_ret;
-
-  } else
+  case BOXCONTCATEG_PTR:
+    cont->value.ptr.offset += offset;
+    cont->type = TS_Get_Cont_Type(& v_obj->proc->cmp->ts, subf_type); 
+    v_obj->type = subf_type;
     return v_obj;
+
+  case BOXCONTCATEG_IMM:
+    MSG_FATAL("Value_Get_Subfield: immediate objects not supported, yet!");
+  }
+  return NULL;
+}
+
+/** Get the next member of a structure. If the given object 'v_memb' is a 
+ * structure, then returns its first member. If it is a member of a structure,
+ * then returns the next member of the same structure.
+ * REFERENCES: return: new, v_memb: -1;
+ */
+Value *Value_Struc_Get_Next_Member(Value *v_memb) {
+  return NULL;
 }
 
 /**
