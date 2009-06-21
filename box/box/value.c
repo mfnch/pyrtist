@@ -582,8 +582,16 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     return v_obj;
 }
 
+/**
+ * REFERENCES: return: new, v_obj: -1;
+ */
 Value *Value_Get_Subfield(Value *v_obj, size_t offset) {
   assert(v_obj->value.cont.type == BOXTYPE_OBJ);
+
+  if (v_obj->num_ref > 1) {
+    MSG_FATAL("Value_Get_Subfield: ref count > 1: not implemented, yet!");
+    assert(0);
+  }
 
   return NULL;
 
