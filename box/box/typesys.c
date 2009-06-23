@@ -234,11 +234,11 @@ int TS_Structure_Is_Fast(TS *ts, Type structure) {
   Type ct = TS_Get_Core_Type(ts, structure), member_t;
 
   assert(TS_Is_Structure(ts, ct));
-  member_t = TS_Member_Next(ts, ct);
+  member_t = TS_Get_Next_Member(ts, ct);
   while(TS_Is_Member(ts, member_t)) {
     /* Resolve the member into a proper type */
     fast_structure &= TS_Is_Fast(ts, member_t);
-    member_t = TS_Member_Next(ts, member_t);
+    member_t = TS_Get_Next_Member(ts, member_t);
   }
 
   return fast_structure;
@@ -403,7 +403,7 @@ char *TS_Member_Name_Get(TS *ts, Type member) {
   return m_td->name;
 }
 
-Type TS_Member_Next(TS *ts, Type m) {
+Type TS_Get_Next_Member(TS *ts, Type m) {
   TSDesc *td = Type_Ptr(ts, m);
   return td->kind == TS_KIND_MEMBER ? td->data.member_next : td->target;
 }
@@ -416,7 +416,7 @@ Int TS_Member_Count(TS *ts, Type s) {
   case TS_KIND_STRUCTURE:
   case TS_KIND_ENUM:
     while(1) {
-      next = TS_Member_Next(ts, next);
+      next = TS_Get_Next_Member(ts, next);
       if (! TS_Is_Member(ts, next)) break;
       ++count;
     };
@@ -806,10 +806,10 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
       {
         Type m = t1;
         while (1) {
-          m = TS_Member_Next(ts, m);
+          m = TS_Get_Next_Member(ts, m);
           if (m == t1) return TS_TYPES_UNMATCH;
           if (TS_Compare(ts, m, t2) != TS_TYPES_UNMATCH) {
-            if (TS_Member_Next(ts, m) == t1) return cmp;
+            if (TS_Get_Next_Member(ts, m) == t1) return cmp;
             return cmp & TS_TYPES_EXPAND;
           }
         }
@@ -829,8 +829,8 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
       else {
         Type m1=t1, m2=t2;
         while (1) {
-          m1 = TS_Member_Next(ts, m1);
-          m2 = TS_Member_Next(ts, m2);
+          m1 = TS_Get_Next_Member(ts, m1);
+          m2 = TS_Get_Next_Member(ts, m2);
           if (m1 == t1 || m2 == t2) break;
           cmp &= TS_Compare(ts, m1, m2);
           if (cmp == TS_TYPES_UNMATCH) return TS_TYPES_UNMATCH;
@@ -994,7 +994,7 @@ Task Tym_Def_Structure(Int *strc, Int type) {
   TS_Structure_Add(last_ts, *strc, type, NULL);
   return Success;
 }
-
+#if 0
 Task Tym_Specie_Get(Int *type) {
   *type = TS_Member_Next(last_ts, *type);
   if (! TS_Is_Member(last_ts, *type)) *type = TYPE_NONE;
@@ -1006,6 +1006,7 @@ Task Tym_Structure_Get(Int *type) {
   if (! TS_Is_Member(last_ts, *type)) *type = TYPE_NONE;
   return Success;
 }
+#endif
 
 Int Tym_Specie_Get_Target(Int type) {
   TSDesc *s_td = Type_Ptr(last_ts, type);

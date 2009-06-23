@@ -329,7 +329,7 @@ char *TS_Member_Name_Get(TS *ts, Type member);
  * If m is a member, return the next member.
  * It m is the last member, return the parent structure.
  */
-Type TS_Member_Next(TS *ts, Type m);
+Type TS_Get_Next_Member(TS *ts, Type m);
 
 /** Counts the member of a structure/species/enum (using TS_Member_Next) */
 Int TS_Member_Count(TS *ts, Type s);

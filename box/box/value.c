@@ -630,7 +630,16 @@ Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
  * REFERENCES: return: new, v_memb: -1;
  */
 Value *Value_Struc_Get_Next_Member(Value *v_memb) {
-  return NULL;
+  BoxCmp *cmp = v_memb->proc->cmp;
+  TS *ts = & cmp->ts;
+  BoxType t_next = TS_Get_Next_Member(ts, v_memb->type);
+  if (TS_Is_Member(ts, t_next)) {
+    size_t offset = TS_Get_Size(ts, t_next);
+    return Value_Get_Subfield(v_memb, offset, t_next);
+
+  } else {
+    return NULL;
+  }
 }
 
 /**
@@ -731,10 +740,10 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
 
   case TS_KIND_SPECIES:
     {
-      BoxType t_species_memb = TS_Member_Next(ts, t_dst);
-      for(t_species_memb = TS_Member_Next(ts, t_dst);
+      BoxType t_species_memb = TS_Get_Next_Member(ts, t_dst);
+      for(t_species_memb = TS_Get_Next_Member(ts, t_dst);
           t_species_memb != BOXTYPE_NONE;
-          t_species_memb = TS_Member_Next(ts, t_species_memb)) {
+          t_species_memb = TS_Get_Next_Member(ts, t_species_memb)) {
         TSCmp match = TS_Compare(ts, t_species_memb, t_dst);
         if (match != TS_TYPES_UNMATCH) {
           if (match == TS_TYPES_EXPAND) {
@@ -752,8 +761,6 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
     }
 
 #if 0
-
-
   case TS_KIND_POINTER:
     MSG_ERROR("Not implemented yet!"); return Failed;
     /*if (td2->tot == TOT_PTR_TO) break;
@@ -781,23 +788,25 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
       && Tym_Compare_Types(td1->target, td2->target) );*/
 #endif
 
-#if 0
   case TS_KIND_STRUCTURE:
     {
-      int need_expansion = 0;
+      TSCmp comparison = TS_Compare(ts, t_dst, t_src);
 
-      /* Prima di eseguire la conversione verifico che si possa
-       * effettivamente fare!
-       */
-      if ( ! Tym_Compare_Types(type1, type2, & need_expansion) ) {
-        MSG_ERROR("Value_Expand: Expansion involves incompatible types!");
-        return Failed;
+      /* We check that the comparison can actually be done */
+      if (comparison == TS_TYPES_UNMATCH) {
+        MSG_FATAL("Value_Expand: Expansion involves incompatible types!");
+        assert(0);
       }
 
       /* We have to expand the structure: we have to create a new structure
        * which can contain the expanded one.
        */
-      if (need_expansion) {
+      if (comparison == TS_TYPES_EXPAND) { /* need expansion */
+        Value *v_dest = Value_New(src->proc); /* same proc as src */
+        Value_Setup_As_Temp(v_dest, t_dst);
+#if 0
+//        type1 -> t_dest
+
         int src_n, dest_n;
         Expr new_struc, src_iter_e, dest_iter_e, src_e, dest_e;
         Expr_Container_New(& new_struc, type1, CONTAINER_LREG_AUTO);
@@ -817,11 +826,14 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
 
         TASK( Cmp_Expr_Destroy_Tmp(e) );
         *e = new_struc;
+#endif
+        Value_Unlink(src);
+        return v_dest;
       }
-      return Success;
+
+      return src;
     }
 
-#endif
   default:
     MSG_FATAL("Value_Expand: not fully implemented!");
     assert(0);
