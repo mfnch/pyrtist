@@ -607,7 +607,8 @@ Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
       cont->value.ptr.offset = offset;
       cont->value.ptr.reg = reg;
       cont->value.ptr.is_greg = is_greg;
-      cont->type = TS_Get_Cont_Type(& v_obj->proc->cmp->ts, subf_type); 
+      cont->type = TS_Get_Cont_Type(& v_obj->proc->cmp->ts, subf_type);
+      printf("cont->type = %s\n", TS_Name_Get(& v_obj->proc->cmp->ts, subf_type)); 
       v_obj->type = subf_type;
       return v_obj;
     }
@@ -638,6 +639,7 @@ Value *Value_Struc_Get_Next_Member(Value *v_memb) {
     return Value_Get_Subfield(v_memb, offset, t_next);
 
   } else {
+    Value_Unlink(v_memb);
     return NULL;
   }
 }
@@ -802,8 +804,23 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
        * which can contain the expanded one.
        */
       if (comparison == TS_TYPES_EXPAND) { /* need expansion */
-        Value *v_dest = Value_New(src->proc); /* same proc as src */
+        Value *v_dest = Value_New(src->proc), /* same proc as src */
+              *v_dest_memb = Value_New(src->proc),
+              *v_src_memb = Value_New(src->proc);
         Value_Setup_As_Temp(v_dest, t_dst);
+        Value_Setup_As_Weak_Copy(v_dest_memb, v_dest);
+        Value_Setup_As_Weak_Copy(v_src_memb, src);
+
+        do {
+          v_dest_memb = Value_Struc_Get_Next_Member(v_dest_memb);
+          v_src_memb  = Value_Struc_Get_Next_Member(v_src_memb);
+          printf("%s <- %s\n", TS_Name_Get(ts, v_dest_memb->value.cont.type),
+                 TS_Name_Get(ts, v_src_memb->value.cont.type));
+          Value_Move_Content(v_dest_memb, v_src_memb); 
+
+        } while(0);
+        
+
 #if 0
 //        type1 -> t_dest
 
