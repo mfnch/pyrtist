@@ -220,6 +220,13 @@ void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
  */
 BoxTask Value_Emit_Call(Value *parent, Value *child);
 
+/** Get the next member of a structure. If the given object 'v_memb' is a
+ * structure, then returns its first member. If it is a member of a structure,
+ * then returns the next member of the same structure.
+ * REFERENCES: return: new, v_memb: -1;
+ */
+Value *Value_Struc_Get_Next_Member(Value *v_memb);
+
 /**
  * REFERENCES: dest: 0, src: -1;
  */

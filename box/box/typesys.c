@@ -214,14 +214,14 @@ Type TS_Get_Core_Type(TS *ts, Type t) {
 }
 
 BoxType TS_Get_Cont_Type(TS *ts, BoxType t) {
-  if (TS_Get_Size(ts, t) == 0)
+  BoxType r =
+    TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES);
+
+  if (TS_Get_Size(ts, r) == 0)
     return BOXTYPE_VOID;
 
-  else {
-    BoxType r =
-      TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES);
+  else
     return (r > BOXTYPE_PTR) ? BOXTYPE_OBJ : r;
-  }
 }
 
 int TS_Is_Fast(TS *ts, Type t) {

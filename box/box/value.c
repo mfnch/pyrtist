@@ -62,17 +62,36 @@ static void My_Value_Finalize(Value *v) {
   case VALUEKIND_IMM:
     return;
   case VALUEKIND_TEMP:
-    assert(v->value.cont.categ == BOXCONTCATEG_LREG
-           && v->value.cont.value.reg >= 0);
-    if (v->attr.own_register)
-      Reg_Release(& v->proc->reg_alloc,
-                  v->value.cont.type, v->value.cont.value.reg);
-    if (v->attr.own_reference) {
-      assert(v->value.cont.type == BOXTYPE_OBJ);
-      assert(v->value.cont.categ == BOXCONTCATEG_LREG); /* for now we don't support the general case... */
-      CmpProc_Assemble(v->proc, BOXGOP_MUNLN, 1, & v->value.cont);
+    switch (v->value.cont.categ) {
+    case BOXCONTCATEG_LREG:
+      assert(v->value.cont.value.reg >= 0);
+      if (v->attr.own_register)
+        Reg_Release(& v->proc->reg_alloc,
+                    v->value.cont.type, v->value.cont.value.reg);
+      if (v->attr.own_reference) {
+        assert(v->value.cont.type == BOXTYPE_OBJ);
+        assert(v->value.cont.categ == BOXCONTCATEG_LREG); /* for now we don't support the general case... */
+        CmpProc_Assemble(v->proc, BOXGOP_MUNLN, 1, & v->value.cont);
+      }
+      return;
+
+    case BOXCONTCATEG_PTR:
+      if (v->attr.own_register) {
+        assert(!v->value.cont.value.ptr.is_greg);
+        Reg_Release(& v->proc->reg_alloc,
+                    v->value.cont.type, v->value.cont.value.ptr.reg);
+      }
+
+      if (v->attr.own_reference) {
+        MSG_WARNING("My_Value_Finalize: should we unlink also for members?");
+      }
+      return;
+
+    default:
+      MSG_WARNING("My_Value_Finalize: Destruction not implemented!");
+      return;
     }
-    return;
+
   case VALUEKIND_TARGET:
     return;
   }
@@ -590,8 +609,6 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
 Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
   BoxCont *cont = & v_obj->value.cont;
 
-  assert(v_obj->value.cont.type == BOXTYPE_OBJ);
-
   if (v_obj->num_ref > 1) {
     MSG_FATAL("Value_Get_Subfield: ref count > 1: not implemented, yet!");
     assert(0);
@@ -608,7 +625,6 @@ Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
       cont->value.ptr.reg = reg;
       cont->value.ptr.is_greg = is_greg;
       cont->type = TS_Get_Cont_Type(& v_obj->proc->cmp->ts, subf_type);
-      printf("cont->type = %s\n", TS_Name_Get(& v_obj->proc->cmp->ts, subf_type)); 
       v_obj->type = subf_type;
       return v_obj;
     }
@@ -814,37 +830,19 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
         do {
           v_dest_memb = Value_Struc_Get_Next_Member(v_dest_memb);
           v_src_memb  = Value_Struc_Get_Next_Member(v_src_memb);
-          printf("%s <- %s\n", TS_Name_Get(ts, v_dest_memb->value.cont.type),
-                 TS_Name_Get(ts, v_src_memb->value.cont.type));
-          Value_Move_Content(v_dest_memb, v_src_memb); 
+          if (v_dest_memb != NULL) {
+            assert(v_src_memb != NULL);
+            Value_Link(v_src_memb);
+            Value_Move_Content(v_dest_memb, v_src_memb);
+          }
 
-        } while(0);
-        
+        } while(v_dest_memb != NULL);
 
-#if 0
-//        type1 -> t_dest
-
-        int src_n, dest_n;
-        Expr new_struc, src_iter_e, dest_iter_e, src_e, dest_e;
-        Expr_Container_New(& new_struc, type1, CONTAINER_LREG_AUTO);
-        Expr_Alloc(& new_struc);
-        src_iter_e = *e;
-        dest_iter_e = new_struc;
-
-        Expr_Struc_Iter(& dest_e, & dest_iter_e, & dest_n);
-        Expr_Struc_Iter(& src_e, & src_iter_e, & src_n);
-        while (dest_n > 0) {
-          TASK( Cmp_Expr_Expand(dest_e.type, & src_e) );
-          TASK( Expr_Move(& dest_e, & src_e) );
-
-          Expr_Struc_Iter(& src_e, & src_iter_e, & src_n);
-          Expr_Struc_Iter(& dest_e, & dest_iter_e, & dest_n);
-        };
-
-        TASK( Cmp_Expr_Destroy_Tmp(e) );
-        *e = new_struc;
-#endif
+        assert(v_src_memb == NULL);
         Value_Unlink(src);
+        /* No need to Value_Unlink(v_dest_memb) and v_src_memb:
+         * Value_Struc_Get_Next_Member is doing this for us
+         */  
         return v_dest;
       }
 

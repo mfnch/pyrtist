@@ -601,7 +601,7 @@ static void My_Compile_Struc(BoxCmp *c, ASTNode *n) {
   int i, num_members;
   ASTNode *member;
   BoxType t_struc;
-  Value *v_struc;
+  Value *v_struc, *v_struc_memb;
   int no_err;
 
   assert(n->type == ASTNODETYPE_STRUC);
@@ -642,9 +642,20 @@ static void My_Compile_Struc(BoxCmp *c, ASTNode *n) {
                      member->attr.member.name);
   }
 
+  /* create and populate the structure */
   v_struc = Value_New(c->cur_proc);
   Value_Setup_As_Temp(v_struc, t_struc);
+  v_struc_memb = Value_New(c->cur_proc);
+  Value_Setup_As_Weak_Copy(v_struc_memb, v_struc);
+  for(i = 1; i <= num_members; i++) {
+    Value *v_member = BoxCmp_Get_Value(c, num_members - i);
+    v_struc_memb = Value_Struc_Get_Next_Member(v_struc_memb);
+    assert(v_struc_memb != NULL);
+    Value_Link(v_member);
+    Value_Move_Content(v_struc_memb, v_member);
+  }
 
   BoxCmp_Remove_Any(c, num_members);
   BoxCmp_Push_Value(c, v_struc);
 }
+
