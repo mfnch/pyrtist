@@ -173,7 +173,10 @@ int Value_Want_Value(Value *v) {
   if (Value_Is_Value(v))
     return 1;
 
-  else {
+  else if (Value_Is_Err(v)) {
+    return 0;
+
+  } else {
     if (v->name != NULL) {
       MSG_ERROR("'%s' is undefined: an expression with both value and type is"
                 " expected here.", v->name);
@@ -189,7 +192,10 @@ int Value_Want_Has_Type(Value *v) {
   if (Value_Has_Type(v))
     return 1;
 
-  else {
+  else if (Value_Is_Err(v)) {
+    return 0;
+
+  } else {
     if (v->name != NULL) {
       MSG_ERROR("'%s' is undefined: an expression with definite type is "
                 "expected here.", v->name);
@@ -603,8 +609,8 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     return v_obj;
 }
 
-/** Return a sub-field of an object type. 'offset' is the address of the 
- * subfield with respect to the address of the given object 'v_obj', 
+/** Return a sub-field of an object type. 'offset' is the address of the
+ * subfield with respect to the address of the given object 'v_obj',
  * 'subf_type' is the type of the sub-field.
  * REFERENCES: return: new, v_obj: -1;
  */
@@ -633,7 +639,7 @@ Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
 
   case BOXCONTCATEG_PTR:
     cont->value.ptr.offset += offset;
-    cont->type = TS_Get_Cont_Type(& v_obj->proc->cmp->ts, subf_type); 
+    cont->type = TS_Get_Cont_Type(& v_obj->proc->cmp->ts, subf_type);
     v_obj->type = subf_type;
     return v_obj;
 
@@ -643,7 +649,7 @@ Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
   return NULL;
 }
 
-/** Get the next member of a structure. If the given object 'v_memb' is a 
+/** Get the next member of a structure. If the given object 'v_memb' is a
  * structure, then returns its first member. If it is a member of a structure,
  * then returns the next member of the same structure.
  * REFERENCES: return: new, v_memb: -1;

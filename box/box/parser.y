@@ -626,10 +626,11 @@ void.seps.opt:
 
 /* Possible types for the nodes of the tree */
 %union {
-  char *     String;
-  ASTUnOp    UnaryOperator;
-  ASTBinOp   BinaryOperator;
-  ASTNodePtr Node;
+  char *           String;
+  ASTUnOp          UnaryOperator;
+  ASTBinOp         BinaryOperator;
+  ASTNodePtr       Node;
+  ASTStrucTypeMemb StrucMemb;
 }
 
 /* Lista dei token senza valore semantico
@@ -671,8 +672,9 @@ void.seps.opt:
 %type <Node> mul_expr add_expr
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
 %type <Node> land_expr lor_expr assign_expr expr statement statement_list
-%type <Node> struc_type_1st struc_type_2nd type_sep sep_type struc_type
+%type <Node> type_sep sep_type struc_type
 %type <Node> named_type prim_type array_type type assign_type
+%type <StrucMemb> struc_type_1st struc_type_2nd
 
 /* Lista dei token affetti da regole di precedenza */
 %left TOK_UMEMBER
@@ -873,24 +875,27 @@ expr:
 
 /* STRUCTURE TYPES */
 struc_type_1st:
-    type                         {}
-  | type TOK_IDENTIFIER          {}
+    type                         {$$.type = $1; $$.name = NULL;}
+  | type TOK_IDENTIFIER          {$$.type = $1; $$.name = $2;}
   ;
 
 struc_type_2nd:
-    type                         {}
-  | TOK_IDENTIFIER               {}
-  | type TOK_IDENTIFIER          {}
+    type                         {$$.type = $1; $$.name = NULL;}
+  | TOK_IDENTIFIER               {$$.type = NULL; $$.name = $1;}
+  | type TOK_IDENTIFIER          {$$.type = $1; $$.name = $2;}
   ;
 
 type_sep:
-    struc_type_1st void_seps     {$$ = $1;}
+    struc_type_1st void_seps     {$$ = ASTNodeStrucType_New(& $1);
+                                  BoxMem_Free($1.name);}
   | sep_type void_seps           {$$ = $1;}
   ;
 
 sep_type:
-    void_seps struc_type_1st     {$$ = $2;}
-  | type_sep struc_type_2nd      {$$ = $1;}
+    void_seps struc_type_1st     {$$ = ASTNodeStrucType_New(& $2);
+                                  BoxMem_Free($2.name);}
+  | type_sep struc_type_2nd      {$$ = ASTNodeStrucType_Add_Member($1, & $2);
+                                  BoxMem_Free($2.name);}
   ;
 
 struc_type:
@@ -904,7 +909,7 @@ named_type:
     TOK_TYPE_IDENT               {$$ = ASTNodeTypeName_New($1, 0);
                                   BoxMem_Free($1);}
   ;
-  
+
 prim_type:
     named_type                   {$$ = $1;}
   | '(' type ')'                 {$$ = $2;}

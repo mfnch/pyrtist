@@ -325,6 +325,7 @@ static void My_Compile_UnOp(BoxCmp *c, ASTNode *n);
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n);
 static void My_Compile_Struc(BoxCmp *c, ASTNode *n);
 static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n);
+static void My_Compile_StrucType(BoxCmp *c, ASTNode *n);
 
 void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
   if (program == NULL)
@@ -345,7 +346,6 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_Box(c, node); break;
   case ASTNODETYPE_STRING:
     My_Compile_String(c, node); break;
-    break;
   case ASTNODETYPE_CONST:
     My_Compile_Const(c, node); break;
   case ASTNODETYPE_VAR:
@@ -360,6 +360,8 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_Struc(c, node); break;
   case ASTNODETYPE_TYPEDEF:
     My_Compile_TypeDef(c, node); break;
+  case ASTNODETYPE_STRUCTYPE:
+    My_Compile_StrucType(c, node); break;
   default:
     printf("Compilation of node is not implemented, yet!\n");
     break;
@@ -674,33 +676,39 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
   TS *ts = & c->ts;
 
   assert(n->type == ASTNODETYPE_TYPEDEF);
-  
+
   My_Compile_Any(c, n->attr.type_def.name);
   My_Compile_Any(c, n->attr.type_def.src_type);
 
   v_type = BoxCmp_Pop_Value(c);
   v_name = BoxCmp_Pop_Value(c);
 
-  if (Value_Is_Type_Name(v_name)) {
-    Value *v = Value_New(c->cur_proc);
-    BoxType new_type;
- 
-    /* First create the alias type */
-    TS_Alias_New(ts, & new_type, v_type->type);
-    TS_Name_Set(ts, new_type, v_name->name);
- 
-    /* Register the type in the proper namespace */
-    v = Value_New(c->cur_proc);
-    Value_Setup_As_Type(v, new_type);
-    Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, v_name->name, v);
+  if (Value_Want_Has_Type(v_type)) {
+    if (Value_Is_Type_Name(v_name)) {
+      Value *v = Value_New(c->cur_proc);
+      BoxType new_type;
 
-    /* Return a copy of the created type */
-    v_named_type = Value_New(c->cur_proc);
-    Value_Setup_As_Weak_Copy(v_named_type, v);
-    Value_Unlink(v);
+      /* First create the alias type */
+      TS_Alias_New(ts, & new_type, v_type->type);
+      TS_Name_Set(ts, new_type, v_name->name);
 
-  } else {
-    printf("type assertion\n");
+      /* Register the type in the proper namespace */
+      v = Value_New(c->cur_proc);
+      Value_Setup_As_Type(v, new_type);
+      Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, v_name->name, v);
+
+      /* Return a copy of the created type */
+      v_named_type = Value_New(c->cur_proc);
+      Value_Setup_As_Weak_Copy(v_named_type, v);
+      Value_Unlink(v);
+
+    } else if (Value_Has_Type(v_name)) {
+      if (TS_Compare(ts, v_name->type, v_type->type) == TS_TYPES_UNMATCH)
+        MSG_ERROR("Inconsistent redefinition of type %s.",
+                  TS_Name_Get(ts, v_name->type));
+        Value_Link(v_name);
+        v_named_type = v_name;
+    }
   }
 
   Value_Unlink(v_type);
@@ -709,3 +717,52 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
   BoxCmp_Push_Value(c, v_named_type);
 }
 
+static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
+  int err;
+  ASTNode *member;
+  BoxType previous_type, struc_type;
+  Value *v_struc_type;
+
+  assert(n->type == ASTNODETYPE_STRUCTYPE);
+
+  /* Create a new structure type */
+  TS_Structure_Begin(& c->ts, & struc_type);
+
+  /* Compile the members, check their types and leave them on the stack */
+  err = 0;
+  for(member = n->attr.struc_type.first_member;
+      member != NULL;
+      member = member->attr.member_type.next) {
+    char *member_name = member->attr.member_type.name;
+
+    assert(member->type == ASTNODETYPE_MEMBERTYPE);
+
+    if (member->attr.member_type.type != NULL) {
+      Value *v_type;
+      My_Compile_Any(c, member->attr.member_type.type);
+      v_type = BoxCmp_Pop_Value(c);
+      if (Value_Want_Has_Type(v_type))
+        previous_type = v_type->type;
+      else
+        err = 1;
+      Value_Unlink(v_type);
+
+    } else {
+      assert(member != NULL);
+    }
+
+    if (previous_type != BOXTYPE_NONE && !err)
+      TS_Structure_Add(& c->ts, struc_type, previous_type, member_name);
+  }
+
+  /* Check for errors */
+  if (err) {
+    BoxCmp_Push_Error(c, 1);
+    return;
+
+  } else {
+    v_struc_type = Value_New(c->cur_proc);
+    Value_Setup_As_Type(v_struc_type, struc_type);
+    BoxCmp_Push_Value(c, v_struc_type);
+  }
+}

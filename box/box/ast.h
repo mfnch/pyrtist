@@ -51,7 +51,9 @@ typedef enum {
   ASTNODETYPE_STRUC,
   ASTNODETYPE_ARRAYGET,
   ASTNODETYPE_MEMBERGET,
-  ASTNODETYPE_TYPEDEF
+  ASTNODETYPE_TYPEDEF,
+  ASTNODETYPE_STRUCTYPE,
+  ASTNODETYPE_MEMBERTYPE
 } ASTNodeType;
 
 /** Type of constants */
@@ -214,6 +216,19 @@ typedef struct {
            *src_type;
 } ASTNodeTypeDef;
 
+/** Node for structure type definition */
+typedef struct {
+  ASTNode  *first_member,
+           *last_member;
+} ASTNodeStrucType;
+
+/** Node for member definition in structure types */
+typedef struct {
+  char     *name;
+  ASTNode  *type,
+           *next;
+} ASTNodeMemberType;
+
 /** Node finaliser (used only for few nodes) */
 typedef void (*ASTNodeFinaliser)(ASTNode *node);
 
@@ -237,10 +252,18 @@ struct __ASTNode {
     ASTNodeArrayGet   array_get;
     ASTNodeMemberGet  member_get;
     ASTNodeTypeDef    type_def;
+    ASTNodeStrucType  struc_type;
+    ASTNodeMemberType member_type;
   } attr;
 };
 
 typedef ASTNode *ASTNodePtr;
+
+/** Used to define structure types */
+typedef struct {
+  ASTNode *type; /**< Type of the member (NULL, if not present) */
+  char    *name; /**< Name of the member (NULL, if not present) */
+} ASTStrucTypeMemb;
 
 int ASTNode_Get_Subnodes(ASTNode *node,
                          ASTNode **subnodes[AST_MAX_NUM_SUBNODES]);
@@ -288,5 +311,8 @@ ASTNode *ASTNodeArrayGet_New(ASTNode *array, ASTNode *index);
 ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
                               const char *member, int member_len);
 ASTNode *ASTNodeTypeDef_New(ASTNode *name, ASTNode *src_type);
-#endif /* _AST_H */
+ASTNode *ASTNodeStrucType_New(ASTStrucTypeMemb *first_member);
+ASTNode *ASTNodeStrucType_Add_Member(ASTNode *struc_type,
+                                     ASTStrucTypeMemb *member);
 
+#endif /* _AST_H */

@@ -79,6 +79,13 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
     subnodes[0] = & node->attr.type_def.name;
     subnodes[1] = & node->attr.type_def.src_type;
     return 2;
+  case ASTNODETYPE_STRUCTYPE:
+    subnodes[0] = & node->attr.struc_type.first_member;
+    return 1;
+  case ASTNODETYPE_MEMBERTYPE:
+    subnodes[0] = & node->attr.member_type.type;
+    subnodes[1] = & node->attr.member_type.next;
+    return 2;
   }
   assert(0); /* Should never happen! */
   return 0;
@@ -504,3 +511,51 @@ ASTNode *ASTNodeTypeDef_New(ASTNode *name, ASTNode *src_type) {
   return node;
 }
 
+static void My_ASTNodeMemberType_Finaliser(ASTNode *node) {
+  assert(node->type == ASTNODETYPE_MEMBERTYPE);
+  BoxMem_Free(node->attr.member_type.name);
+}
+
+ASTNode *ASTNodeMemberType_New(ASTStrucTypeMemb *m) {
+  ASTNode *node = ASTNode_New(ASTNODETYPE_MEMBERTYPE);
+  node->attr.member_type.name = (m->name == NULL) ?
+                                NULL : BoxMem_Strdup(m->name);
+  node->attr.member_type.type = m->type;
+  node->attr.member_type.next = NULL;
+  node->finaliser = My_ASTNodeMemberType_Finaliser;
+  return node;
+}
+
+ASTNode *ASTNodeStrucType_New(ASTStrucTypeMemb *first_member) {
+  ASTNode *member = NULL, *node;
+  assert(first_member->type != NULL);
+  if (first_member != NULL)
+    member = ASTNodeMemberType_New(first_member);
+
+  node = ASTNode_New(ASTNODETYPE_STRUCTYPE);
+  node->attr.struc_type.first_member = member;
+  node->attr.struc_type.last_member = member;
+  return node;
+}
+
+ASTNode *ASTNodeStrucType_Add_Member(ASTNode *struc_type,
+                                     ASTStrucTypeMemb *member) {
+  ASTNode *this_member = NULL;
+  assert(struc_type->type == ASTNODETYPE_STRUCTYPE);
+  assert(member != NULL);
+  assert(!(member->type == NULL && member->name == NULL));
+
+  this_member = ASTNodeMemberType_New(member);
+  if (struc_type->attr.struc_type.last_member == NULL) {
+    assert(struc_type->attr.struc_type.first_member == NULL);
+    struc_type->attr.struc_type.first_member = this_member;
+    struc_type->attr.struc_type.last_member = this_member;
+    return struc_type;
+
+  } else {
+    ASTNode *last_member = struc_type->attr.struc_type.last_member;
+    last_member->attr.member_type.next = this_member;
+    struc_type->attr.struc_type.last_member = this_member;
+  }
+  return struc_type;
+}
