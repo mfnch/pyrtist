@@ -50,7 +50,8 @@ typedef enum {
   ASTNODETYPE_MEMBER,
   ASTNODETYPE_STRUC,
   ASTNODETYPE_ARRAYGET,
-  ASTNODETYPE_MEMBERGET
+  ASTNODETYPE_MEMBERGET,
+  ASTNODETYPE_TYPEDEF
 } ASTNodeType;
 
 /** Type of constants */
@@ -207,6 +208,12 @@ typedef struct {
   char     *member;
 } ASTNodeMemberGet;
 
+/** Node for type definition */
+typedef struct {
+  ASTNode  *name,
+           *src_type;
+} ASTNodeTypeDef;
+
 /** Node finaliser (used only for few nodes) */
 typedef void (*ASTNodeFinaliser)(ASTNode *node);
 
@@ -229,6 +236,7 @@ struct __ASTNode {
     ASTNodeStruc      struc;
     ASTNodeArrayGet   array_get;
     ASTNodeMemberGet  member_get;
+    ASTNodeTypeDef    type_def;
   } attr;
 };
 
@@ -279,6 +287,6 @@ ASTNode *ASTNodeStruc_Add_Member(ASTNode *struc,
 ASTNode *ASTNodeArrayGet_New(ASTNode *array, ASTNode *index);
 ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
                               const char *member, int member_len);
-
+ASTNode *ASTNodeTypeDef_New(ASTNode *name, ASTNode *src_type);
 #endif /* _AST_H */
 

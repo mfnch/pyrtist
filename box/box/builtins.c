@@ -513,6 +513,7 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
   TS_Species_Begin(ts, & b->species_point);
   TS_Species_Add(ts, b->species_point, b->struc_real_real);
   TS_Species_Add(ts, b->species_point, BOXTYPE_POINT);
+  TS_Name_Set(ts, b->species_point, "Point");
 
   /* Define Str */
   TS_Intrinsic_New(ts, & b->string, sizeof(BoxStr));

@@ -672,7 +672,7 @@ void.seps.opt:
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
 %type <Node> land_expr lor_expr assign_expr expr statement statement_list
 %type <Node> struc_type_1st struc_type_2nd type_sep sep_type struc_type
-%type <Node> prim_type array_type type assign_type
+%type <Node> named_type prim_type array_type type assign_type
 
 /* Lista dei token affetti da regole di precedenza */
 %left TOK_UMEMBER
@@ -900,9 +900,13 @@ struc_type:
 
 /* PRIMARY TYPES */
 
-prim_type:
+named_type:
     TOK_TYPE_IDENT               {$$ = ASTNodeTypeName_New($1, 0);
                                   BoxMem_Free($1);}
+  ;
+  
+prim_type:
+    named_type                   {$$ = $1;}
   | '(' type ')'                 {$$ = $2;}
   | '(' struc_type ')'           {$$ = $2;}
   ;
@@ -917,9 +921,8 @@ type:
   ;
 
 assign_type:
-    TOK_TYPE_IDENT '=' type      {}
-  | TOK_TYPE_IDENT '='
-                     assign_type {}
+    named_type '=' type          {$$ = ASTNodeTypeDef_New($1, $3);}
+  | named_type '=' assign_type   {$$ = ASTNodeTypeDef_New($1, $3);}
   ;
 
 /************************ STATEMENT LISTS AND BOXES ************************/

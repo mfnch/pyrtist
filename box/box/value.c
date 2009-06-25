@@ -175,10 +175,10 @@ int Value_Want_Value(Value *v) {
 
   else {
     if (v->name != NULL) {
-      MSG_ERROR("%s is undefined: an expression with both value and type is "
-                "expected here.", v->name);
+      MSG_ERROR("'%s' is undefined: an expression with both value and type is"
+                " expected here.", v->name);
     } else {
-      MSG_ERROR("Got %s, but an expression with both value and type is "
+      MSG_ERROR("Got '%s', but an expression with both value and type is "
                 "expected here.", ValueKind_To_Str(v->kind));
     }
     return 0;
@@ -191,10 +191,10 @@ int Value_Want_Has_Type(Value *v) {
 
   else {
     if (v->name != NULL) {
-      MSG_ERROR("%s is undefined: an expression with definite type is "
+      MSG_ERROR("'%s' is undefined: an expression with definite type is "
                 "expected here.", v->name);
     } else {
-      MSG_ERROR("Got %s, but an expression with definite type is "
+      MSG_ERROR("Got '%s', but an expression with definite type is "
                 "expected here.", ValueKind_To_Str(v->kind));
     }
     return 0;
@@ -434,7 +434,7 @@ Value *Value_To_Temp(Value *v) {
 
   case VALUEKIND_VAR_NAME:
   case VALUEKIND_TYPE_NAME:
-    MSG_ERROR("Got %s (%s), but a defined type or value is expected here!",
+    MSG_ERROR("Got %s ('%s'), but a defined type or value is expected here!",
               ValueKind_To_Str(v->kind), v->name);
     return Value_Recycle(v); /* Return an error value (Value_Recycle set the
                                 leaves v with an error, if not initialised
@@ -587,12 +587,14 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
   assert(v_obj->value.cont.type == BOXTYPE_OBJ);
 
   if (v_obj->value.cont.categ == BOXCONTCATEG_PTR) {
+    ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
     Value *v_ret;
     BoxCont cont = v_obj->value.cont;
 
     Value_Unlink(v_obj);
     v_ret = Value_New(v_obj->proc->cmp->cur_proc);
-    Value_Setup_As_Temp(v_ret, v_obj->type);
+    Value_Setup_Container(v_ret, v_obj->type, & vc);
+
     assert(v_ret->value.cont.type == BOXTYPE_OBJ);
     CmpProc_Assemble(v_ret->proc, BOXGOP_LEA, 2, & v_ret->value.cont, & cont);
     return v_ret;
@@ -646,17 +648,22 @@ Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
  * then returns the next member of the same structure.
  * REFERENCES: return: new, v_memb: -1;
  */
-Value *Value_Struc_Get_Next_Member(Value *v_memb) {
+Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxType *t_memb) {
   BoxCmp *cmp = v_memb->proc->cmp;
   TS *ts = & cmp->ts;
-  BoxType t_next = TS_Get_Next_Member(ts, v_memb->type);
+  BoxType t_next = *t_memb;
+
+  t_next = (t_next != BOXTYPE_NONE) ? t_next : v_memb->type;
+  t_next = TS_Get_Next_Member(ts, t_next);
   if (TS_Is_Member(ts, t_next)) {
     size_t offset = TS_Get_Size(ts, t_next);
+    *t_memb = t_next;
+    t_next = TS_Resolve_Once(ts, t_next, TS_KS_NONE);
     return Value_Get_Subfield(v_memb, offset, t_next);
 
   } else {
-    Value_Unlink(v_memb);
-    return NULL;
+    *t_memb = BOXTYPE_NONE;
+    return v_memb;
   }
 }
 
@@ -820,30 +827,36 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
        * which can contain the expanded one.
        */
       if (comparison == TS_TYPES_EXPAND) { /* need expansion */
-        Value *v_dest = Value_New(src->proc), /* same proc as src */
-              *v_dest_memb = Value_New(src->proc),
+        BoxType t_dst_memb, t_src_memb;
+        Value *v_dst = Value_New(src->proc), /* same proc as src */
+              *v_dst_memb = Value_New(src->proc),
               *v_src_memb = Value_New(src->proc);
-        Value_Setup_As_Temp(v_dest, t_dst);
-        Value_Setup_As_Weak_Copy(v_dest_memb, v_dest);
+        Value_Setup_As_Temp(v_dst, t_dst);
+        Value_Setup_As_Weak_Copy(v_dst_memb, v_dst);
         Value_Setup_As_Weak_Copy(v_src_memb, src);
 
+        t_dst_memb = BOXTYPE_NONE;
+        t_src_memb = BOXTYPE_NONE;
         do {
-          v_dest_memb = Value_Struc_Get_Next_Member(v_dest_memb);
-          v_src_memb  = Value_Struc_Get_Next_Member(v_src_memb);
-          if (v_dest_memb != NULL) {
-            assert(v_src_memb != NULL);
+          v_dst_memb = Value_Struc_Get_Next_Member(v_dst_memb, & t_dst_memb);
+          v_src_memb = Value_Struc_Get_Next_Member(v_src_memb, & t_src_memb);
+          if (t_dst_memb != BOXTYPE_NONE) {
+            assert(t_src_memb != BOXTYPE_NONE);
             Value_Link(v_src_memb);
-            Value_Move_Content(v_dest_memb, v_src_memb);
-          }
+            Value_Move_Content(v_dst_memb, v_src_memb);
+            continue;
 
-        } while(v_dest_memb != NULL);
+          } else
+            break;
 
-        assert(v_src_memb == NULL);
+        } while(1);
+
+        assert(t_src_memb == BOXTYPE_NONE);
+
         Value_Unlink(src);
-        /* No need to Value_Unlink(v_dest_memb) and v_src_memb:
-         * Value_Struc_Get_Next_Member is doing this for us
-         */  
-        return v_dest;
+        Value_Unlink(v_dst_memb);
+        Value_Unlink(v_src_memb);
+        return v_dst;
       }
 
       return src;

@@ -175,7 +175,7 @@ Type TS_Resolve_Once(TS *ts, Type t, TSKindSelect select) {
   rt = td->target;
   switch(td->kind) {
   case TS_KIND_MEMBER:
-    resolve = 1; break;
+    return rt;
   case TS_KIND_ALIAS:
     resolve = ((select & TS_KS_ALIAS) != 0); break;
   case TS_KIND_DETACHED:

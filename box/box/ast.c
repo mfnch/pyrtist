@@ -75,6 +75,10 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
   case ASTNODETYPE_MEMBERGET:
     subnodes[0] = & node->attr.member_get.struc;
     return 1;
+  case ASTNODETYPE_TYPEDEF:
+    subnodes[0] = & node->attr.type_def.name;
+    subnodes[1] = & node->attr.type_def.src_type;
+    return 2;
   }
   assert(0); /* Should never happen! */
   return 0;
@@ -97,6 +101,7 @@ const char *ASTNodeType_To_Str(ASTNodeType t) {
   case ASTNODETYPE_STRUC:      return "Struc";
   case ASTNODETYPE_ARRAYGET:   return "ArrayGet";
   case ASTNODETYPE_MEMBERGET:  return "MemberGet";
+  case ASTNODETYPE_TYPEDEF:    return "TypeDef";
   default:                     return "UnknownNode";
   }
   return "???";
@@ -491,3 +496,11 @@ ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
   node->finaliser = ASTNodeMemberGet_Finaliser;
   return node;
 }
+
+ASTNode *ASTNodeTypeDef_New(ASTNode *name, ASTNode *src_type) {
+  ASTNode *node = ASTNode_New(ASTNODETYPE_TYPEDEF);
+  node->attr.type_def.name = name;
+  node->attr.type_def.src_type = src_type;
+  return node;
+}
+

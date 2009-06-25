@@ -177,7 +177,8 @@ void BoxCmp_Init__Operators(BoxCmp *c) {
   }
 
   Operator_Init(& c->convert, c, "(->)");
-  Operator_Attr_Set(& c->convert, OPR_ATTR_ALL, OPR_ATTR_NATIVE);
+  Operator_Attr_Set(& c->convert, OPR_ATTR_ALL,
+                    OPR_ATTR_NATIVE | OPR_ATTR_MATCH_RESULT);
 }
 
 /** INTERNAL: Called by BoxCmp_Finish to finalise the operator table. */
@@ -207,11 +208,21 @@ void BoxCmp_Finish__Operators(BoxCmp *c) {
  * NOTE: it should not happen that type1 = type2 = TYPE_NONE.
  */
 Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
-                                    BoxType type_left, BoxType type_right) {
-  int opr_is_unary = ((opr->attr & OPR_ATTR_BINARY) == 0);
+                                    BoxType type_left, BoxType type_right,
+                                    BoxType type_result) {
+  int opr_is_unary = ((opr->attr & OPR_ATTR_BINARY) == 0),
+      do_match_res = ((opr->attr & OPR_ATTR_MATCH_RESULT) != 0);
   Operation *opn;
   for(opn = opr->first_operation; opn != NULL; opn = opn->next) {
-    TSCmp match_left, match_right;
+    TSCmp match_left;
+
+    /* Check for matching result, if required */
+    if (do_match_res) {
+      TSCmp match_result = TS_Compare(& c->ts, opn->type_result, type_result);
+      if (match_result == TS_TYPES_UNMATCH)
+        continue;
+    }
+
     match_left = TS_Compare(& c->ts, opn->type_left, type_left);
     if (match_left != TS_TYPES_UNMATCH) {
       if (opr_is_unary) {
@@ -224,7 +235,7 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
           return opn;
 
       } else {
-        match_right = TS_Compare(& c->ts, opn->type_right, type_right);
+        TSCmp match_right = TS_Compare(& c->ts, opn->type_right, type_right);
         if (match_right != TS_TYPES_UNMATCH) {
           match->opr = opr;
           match->attr = opn->attr;
@@ -426,7 +437,7 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
 
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, opr, & match,
-                                 v->type, BOXTYPE_NONE);
+                                 v->type, BOXTYPE_NONE, BOXTYPE_NONE);
   if (opn != NULL) {
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND) {
@@ -470,7 +481,7 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
 
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, opr, & match,
-                                 v_left->type, v_right->type);
+                                 v_left->type, v_right->type, BOXTYPE_NONE);
   if (opn != NULL) {
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND) {
@@ -508,8 +519,17 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
 #endif
 
   /* Now we search the operation */
-  opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match, src->type, dest->type);
+  opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match, 
+                                 src->type, BOXTYPE_NONE, dest->type);
+
   if (opn != NULL) {
+#if 0
+    MSG_WARNING("found conversion %~s -> %~s (%d)",
+                TS_Name_Get(& c->ts, src->type),
+                TS_Name_Get(& c->ts, dest->type),
+                opn->attr);
+#endif
+
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND)
       src = Value_Expand(src, match.expand_type_left);
