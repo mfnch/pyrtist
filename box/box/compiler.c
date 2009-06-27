@@ -398,6 +398,20 @@ static void My_Compile_TypeName(BoxCmp *c, ASTNode *n) {
   }
 }
 
+static void My_Compile_Statement(BoxCmp *c, ASTNode *s) {
+  assert(s->type == ASTNODETYPE_STATEMENT);
+
+  if (s->attr.statement.target != NULL) {
+    assert(s->attr.statement.sep == ASTSEP_VOID);
+    My_Compile_Any(c, s->attr.statement.target);
+
+  } else {
+    assert(s->attr.statement.sep != ASTSEP_VOID);
+    Value_Link(& c->value.pause);
+    BoxCmp_Push_Value(c, & c->value.pause);
+  }
+}
+
 static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
   ASTNode *s;
   Value *parent = NULL;
@@ -428,9 +442,8 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
       s = s->attr.statement.next_statement) {
     Value *stmt_val;
 
-    assert(s->type == ASTNODETYPE_STATEMENT);
+    My_Compile_Statement(c, s);
 
-    My_Compile_Any(c, s->attr.statement.target);
     stmt_val = BoxCmp_Pop_Value(c);
     if (parent_is_err || Value_Is_Err(stmt_val)
         || Value_Is_Ignorable(stmt_val)) {

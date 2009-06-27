@@ -41,11 +41,7 @@
 #include "bltinio.h"
 
 #if 0
-static Task Print_String(VMProgram *vmp);
-static Task Print_NewLine(VMProgram *vmp);
-static Task Exit_Int(VMProgram *vmp);
 /* Functions for conversions */
-static Task Conv_2RealNum_to_Point(VMProgram *vmp);
 static Task Char_Char(VMProgram *vmp);
 static Task Char_Int(VMProgram *vmp);
 static Task Char_Real(VMProgram *vmp);
@@ -200,9 +196,6 @@ static Task Blt_Define_Basics(void) {
    * e definisco le conversioni automatiche che il compilatore
    * dovra' fare.
    */
-  TASK( Cmp_Builtin_Conv_Def("conv_2Real_to_Point", type_RealCouple,
-                             TYPE_POINT, Conv_2RealNum_to_Point) );
-
   /* Define the conversions (example: Real@Int such as: a = Int[ 1.2 ]) */
   TASK(Cmp_Builtin_Proc_Def(TYPE_CHAR, BOX_CREATION, TYPE_CHAR, Char_Char));
   TASK(Cmp_Builtin_Proc_Def(TYPE_INT,  BOX_CREATION, TYPE_CHAR, Char_Int ));
@@ -234,18 +227,6 @@ static Task Blt_Define_Math(void) {
   return Success;
 }
 
-static Task Blt_Define_Print(void) {
-  TASK(Tym_Def_Explicit_Alias(& type_Print, & NAME("Print"), TYPE_VOID));
-  TASK(Cmp_Builtin_Proc_Def(TYPE_CHAR,  BOX_CREATION,type_Print, My_Print_Char));
-  TASK(Cmp_Builtin_Proc_Def(TYPE_INTG,  BOX_CREATION,type_Print, My_Print_Int));
-  TASK(Cmp_Builtin_Proc_Def(TYPE_REAL,  BOX_CREATION,type_Print, My_Print_Real));
-  TASK(Cmp_Builtin_Proc_Def(type_Point, BOX_CREATION,type_Print, My_Print_Pnt));
-  TASK(Cmp_Builtin_Proc_Def(type_CharArray,BOX_CREATION,type_Print, Print_String));
-  TASK(Cmp_Builtin_Proc_Def(TYPE_PAUSE, BOX_CREATION,type_Print,Print_NewLine));
-  /*Tym_Print_Procedure(stdout, type_new);*/
-  return Success;
-}
-
 static Task Blt_Define_Sys(void) {
   Int type_Exit;
   TASK( Tym_Def_Explicit_Alias(& type_Exit, & NAME("Exit"), TYPE_VOID) );
@@ -259,6 +240,11 @@ static Task Blt_Define_Sys(void) {
 /**********************
  * IO                 *
  **********************/
+
+static Task My_Print_Pause(BoxVM *vm) {
+  printf("\n");
+  return Success;
+}
 
 static Task My_Print_Char(BoxVM *vm) {
   printf(SChar, BOX_VM_ARG(vm, Char));
@@ -367,19 +353,16 @@ static Task My_2R_To_P(BoxVM *vm) {
   return Success;
 }
 
-#if 0
-static Task Print_NewLine(VMProgram *vmp) {
-  printf("\n"); return Success;
-}
-
-/*****************************************************************************
- *                           SYSTEM PROCEDURES                               *
- *****************************************************************************/
+/**********************
+ * Sys                *
+ **********************/
 
 /* This function is not politically correct!!! */
-static Task Exit_Int(VMProgram *vmp) {
-  exit(BOX_VM_ARG1(vmp, Int));
+static Task My_Exit_Int(BoxVM *vm) {
+  exit(BOX_VM_ARG(vm, Int));
 }
+
+#if 0
 
 /*****************************************************************************
  *                       FUNCTIONS FOR CONVERSION                            *
@@ -781,6 +764,7 @@ void Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
 
 static void My_Register_Std_IO(BoxCmp *c) {
   BoxType t_print = c->bltin.print;
+  (void) Bltin_Proc_Def(c, t_print, BOXTYPE_PAUSE, My_Print_Pause);
   (void) Bltin_Proc_Def(c, t_print,  BOXTYPE_CHAR, My_Print_Char);
   (void) Bltin_Proc_Def(c, t_print,   BOXTYPE_INT, My_Print_Int);
   (void) Bltin_Proc_Def(c, t_print,  BOXTYPE_REAL, My_Print_Real);
@@ -821,6 +805,11 @@ static void My_Register_Math(BoxCmp *c) {
   }
 }
 
+static void My_Register_Sys(BoxCmp *c) {
+  Bltin_Simple_Fn_Def(c, "Exit", BOXTYPE_VOID, c->bltin.species_int,
+                      My_Exit_Int);
+}
+
 /* Register bultin types, operation and functions */
 void Bltin_Init(BoxCmp *c) {
   My_Define_Core_Types(& c->bltin, & c->ts);
@@ -830,6 +819,7 @@ void Bltin_Init(BoxCmp *c) {
   My_Register_Conversions(c);
   My_Register_Std_IO(c);
   My_Register_Math(c);
+  My_Register_Sys(c);
   Bltin_Str_Register_Procs(c);
 }
 

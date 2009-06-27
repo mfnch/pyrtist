@@ -631,6 +631,7 @@ void.seps.opt:
   ASTBinOp         BinaryOperator;
   ASTNodePtr       Node;
   ASTStrucTypeMemb StrucMemb;
+  ASTSep           Sep;
 }
 
 /* Lista dei token senza valore semantico
@@ -665,6 +666,7 @@ void.seps.opt:
 %token <Node> TOK_CONSTANT TOK_STRING
 
 /* List of nodes with semantical value */
+%type <Sep> sep
 %type <UnaryOperator> un_op post_op
 %type <BinaryOperator> mul_op add_op shift_op cmp_op eq_op assign_op
 %type <Node> expr_sep sep_expr struc_expr
@@ -696,8 +698,8 @@ void_seps:
   ;
 
 sep:
-    void_sep
-  | ';'
+    void_sep                  {$$ = ASTSEP_VOID;}
+  | ';'                       {$$ = ASTSEP_PAUSE;}
   ;
 
 /******************************** OPERATORS ********************************/
@@ -940,13 +942,14 @@ statement:
                                          ASTNodeIgnore_New($2, 1));}
   | '[' statement_list ']'       {$$ = ASTNodeStatement_New($2);}
   | error sep                    {$$ = ASTNodeStatement_New(ASTNodeError_New());
-                                  Tok_Unput(',');
+                                  Tok_Unput(($2 == ASTSEP_PAUSE) ? ';' : ',');
                                   yyerrok;}
   ;
 
 statement_list:
     statement                    {$$ = ASTNodeBox_New(NULL, $1);}
-  | statement_list sep statement {$$ = ASTNodeBox_Add_Statement($1, $3);}
+  | statement_list sep statement {$$ = ASTNodeBox_Add_Sep($1, $2);
+                                  $$ = ASTNodeBox_Add_Statement($1, $3);}
   ;
 
 program:

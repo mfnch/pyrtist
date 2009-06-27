@@ -56,6 +56,9 @@ typedef enum {
   ASTNODETYPE_MEMBERTYPE
 } ASTNodeType;
 
+/**Separator between statements */
+typedef enum {ASTSEP_VOID, ASTSEP_PAUSE} ASTSep;
+
 /** Type of constants */
 typedef enum {
   ASTCONSTTYPE_CHAR,
@@ -147,6 +150,7 @@ typedef struct {
 typedef struct {
   ASTNode *target;
   ASTNode *next_statement;
+  ASTSep  sep;
 } ASTNodeStatement;
 
 /** Node for a constant expression */
@@ -293,8 +297,10 @@ ASTNode *ASTNodeError_New(void);
 ASTNode *ASTNodeTypeName_New(const char *name, size_t name_len);
 ASTNode *ASTNodeSubtype_New(const char *name, size_t name_len);
 ASTNode *ASTNodeStatement_New(ASTNode *target);
+ASTNode *ASTNodeSep_New(ASTSep sep);
 ASTNode *ASTNodeBox_New(ASTNode *type, ASTNode *first_statement);
 ASTNode *ASTNodeBox_Add_Statement(ASTNode *box, ASTNode *statement);
+ASTNode *ASTNodeBox_Add_Sep(ASTNode *box, ASTSep sep);
 ASTNode *ASTNodeBox_Set_Parent(ASTNode *box, ASTNode *parent);
 ASTNode *ASTNodeConst_New(ASTConstType t, ASTConst c);
 ASTNode *ASTNodeString_New(const char *str, size_t str_len);

@@ -328,6 +328,13 @@ ASTNode *ASTNodeSubtype_New(const char *name, size_t name_len) {
 ASTNode *ASTNodeStatement_New(ASTNode *target) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_STATEMENT);
   node->attr.statement.target = target;
+  node->attr.statement.sep = ASTSEP_VOID;
+  return node;
+}
+
+ASTNode *ASTNodeSep_New(ASTSep sep) {
+  ASTNode *node = ASTNode_New(ASTNODETYPE_STATEMENT);
+  node->attr.statement.sep = sep;
   return node;
 }
 
@@ -360,6 +367,14 @@ ASTNode *ASTNodeBox_Add_Statement(ASTNode *box, ASTNode *statement) {
     }
     return box;
   }
+}
+
+ASTNode *ASTNodeBox_Add_Sep(ASTNode *box, ASTSep sep) {
+  ASTNode *sep_node = ASTNodeSep_New(sep);
+  if (sep == ASTSEP_VOID)
+    return box;
+  else
+    return ASTNodeBox_Add_Statement(box, sep_node);
 }
 
 ASTNode *ASTNodeBox_Set_Parent(ASTNode *box, ASTNode *parent) {

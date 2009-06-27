@@ -88,6 +88,10 @@ static Task My_Str_Destroy(BoxVM *vm) {
   return Success;
 }
 
+static Task My_Str_Pause(BoxVM *vm) {
+  return BoxStr_Concat(BOX_VM_THIS_PTR(vm, Str), "\n");
+}
+
 static Task My_Str_Char(BoxVM *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   char ca[2] = {BOX_VM_ARG(vm, char), '\0'};
@@ -157,6 +161,7 @@ void Bltin_Str_Register_Procs(BoxCmp *c) {
 
   Bltin_Proc_Def(c, c->bltin.string,  BOXTYPE_CREATE, My_Str_Create);
   Bltin_Proc_Def(c, c->bltin.string, BOXTYPE_DESTROY, My_Str_Destroy);
+  Bltin_Proc_Def(c, c->bltin.string,   BOXTYPE_PAUSE, My_Str_Pause);
   Bltin_Proc_Def(c, c->bltin.string,    BOXTYPE_CHAR, My_Str_Char);
   Bltin_Proc_Def(c, c->bltin.string,     BOXTYPE_INT, My_Str_Int);
   Bltin_Proc_Def(c, c->bltin.string,    BOXTYPE_REAL, My_Str_Real);
@@ -213,10 +218,6 @@ static Task Str_CharArray(BoxVM *vm) {
   Str *s = BOX_VM_THIS_PTR(vm, Str);
   char *ca = BOX_VM_ARG1_PTR(vm, char);
   return BoxStr_Concat(s, ca);
-}
-
-static Task Str_Pause(BoxVM *vm) {
-  return BoxStr_Concat(BOX_VM_THIS_PTR(vm, Str), "\n");
 }
 
 static Task Print_Str(BoxVM *vm) {
