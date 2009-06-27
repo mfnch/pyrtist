@@ -324,6 +324,7 @@ static void My_Compile_Ignore(BoxCmp *c, ASTNode *n);
 static void My_Compile_UnOp(BoxCmp *c, ASTNode *n);
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n);
 static void My_Compile_Struc(BoxCmp *c, ASTNode *n);
+static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n);
 static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n);
 static void My_Compile_StrucType(BoxCmp *c, ASTNode *n);
 
@@ -358,6 +359,8 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_BinOp(c, node); break;
   case ASTNODETYPE_STRUC:
     My_Compile_Struc(c, node); break;
+  case ASTNODETYPE_MEMBERGET:
+    My_Compile_MemberGet(c, node); break;
   case ASTNODETYPE_TYPEDEF:
     My_Compile_TypeDef(c, node); break;
   case ASTNODETYPE_STRUCTYPE:
@@ -682,6 +685,14 @@ static void My_Compile_Struc(BoxCmp *c, ASTNode *n) {
   Value_Unlink(v_struc_memb);
   BoxCmp_Remove_Any(c, num_members);
   BoxCmp_Push_Value(c, v_struc);
+}
+
+static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
+  assert(n->type == ASTNODETYPE_MEMBERGET);
+
+  printf("get member not implemented, yet!\n");
+
+  BoxCmp_Push_Value(c, NULL);
 }
 
 static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {

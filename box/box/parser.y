@@ -677,6 +677,7 @@ void.seps.opt:
 %type <Node> type_sep sep_type struc_type
 %type <Node> named_type prim_type array_type type assign_type
 %type <StrucMemb> struc_type_1st struc_type_2nd
+%type <String> opt_c_name
 
 /* Lista dei token affetti da regole di precedenza */
 %left TOK_UMEMBER
@@ -932,8 +933,26 @@ assign_type:
   | named_type '=' assign_type   {$$ = ASTNodeTypeDef_New($1, $3);}
   ;
 
+/****************** PROCEDURE DECLARATION AND DEFINITION *******************/
+/* Definition and declaration of procedures */
+
+procedure:
+    type TOK_AT named_type       {}
+  ;
+
+opt_c_name:
+                                 {$$ = NULL;}
+  | string_concat                {$$ = $1;}
+  ;
+
+procedure_decl:
+    procedure opt_c_name '?'     {}
+  | procedure opt_c_name
+          '[' statement_list ']' {}
+  ;
+
 /************************ STATEMENT LISTS AND BOXES ************************/
-/* Cio' che resta descrive la sintassi delle righe e del corpo del programma */
+/* Syntax for the body of the program */
 statement:
                                  {$$ = NULL;}
   | assign_type                  {$$ = ASTNodeStatement_New($1);}
@@ -941,6 +960,7 @@ statement:
   | '\\' expr                    {$$ = ASTNodeStatement_New(
                                          ASTNodeIgnore_New($2, 1));}
   | '[' statement_list ']'       {$$ = ASTNodeStatement_New($2);}
+  | procedure_decl               {$$ = NULL;}
   | error sep                    {$$ = ASTNodeStatement_New(ASTNodeError_New());
                                   Tok_Unput(($2 == ASTSEP_PAUSE) ? ';' : ',');
                                   yyerrok;}
