@@ -775,8 +775,10 @@ static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
       assert(member != NULL);
     }
 
-    if (previous_type != BOXTYPE_NONE && !err)
+    if (previous_type != BOXTYPE_NONE && !err) {
+      /* XXX Check for duplicate structure members */
       TS_Structure_Add(& c->ts, struc_type, previous_type, member_name);
+    }
   }
 
   /* Check for errors */

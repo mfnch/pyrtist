@@ -643,7 +643,7 @@ void.seps.opt:
 %token TOK_NEWLINE
 %token TOK_ERRSEP
 
-%token TOK_TO
+%token TOK_TO TOK_MAPTO
 
 %token <Int> TOK_NPARENT
 
@@ -674,7 +674,7 @@ void.seps.opt:
 %type <Node> mul_expr add_expr
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
 %type <Node> land_expr lor_expr assign_expr expr statement statement_list
-%type <Node> type_sep sep_type struc_type
+%type <Node> type_sep sep_type struc_type species_type func_type
 %type <Node> named_type prim_type array_type type assign_type
 %type <StrucMemb> struc_type_1st struc_type_2nd
 %type <String> opt_c_name
@@ -906,6 +906,12 @@ struc_type:
   | sep_type                     {$$ = $1;}
   ;
 
+/* SPECIES TYPES */
+species_type:
+    type TOK_TO type             {}
+  | species_type TOK_TO type     {}
+  ;
+
 /* PRIMARY TYPES */
 
 named_type:
@@ -917,15 +923,22 @@ prim_type:
     named_type                   {$$ = $1;}
   | '(' type ')'                 {$$ = $2;}
   | '(' struc_type ')'           {$$ = $2;}
+  | '(' species_type ')'         {$$ = $2;}
   ;
 
 array_type:
-    prim_type                    {}
+    prim_type                    {$$ = $1;}
   | array_type '(' expr ')'      {}
   ;
 
-type:
+func_type:
     array_type                   {$$ = $1;}
+  | array_type TOK_MAPTO func_type
+                                 {}
+  ;
+
+type:
+    func_type                    {$$ = $1;}
   ;
 
 assign_type:

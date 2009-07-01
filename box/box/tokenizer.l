@@ -159,7 +159,8 @@ include BEGIN(include);
 {SPACES}    {}
 
 
-"->"  {return TOK_TO;}
+"=>"  {return TOK_TO;}
+"->"  {return TOK_MAPTO;}
 "end" {return TOK_END;}
 
  /* Operatori di assegnazione */
