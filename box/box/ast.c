@@ -75,6 +75,12 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
   case ASTNODETYPE_MEMBERGET:
     subnodes[0] = & node->attr.member_get.struc;
     return 1;
+  case ASTNODETYPE_PROCDEF:
+    subnodes[0] = & node->attr.proc_def.child_type;
+    subnodes[1] = & node->attr.proc_def.parent_type;
+    subnodes[2] = & node->attr.proc_def.c_name;
+    subnodes[3] = & node->attr.proc_def.implem;
+    return 4;
   case ASTNODETYPE_TYPEDEF:
     subnodes[0] = & node->attr.type_def.name;
     subnodes[1] = & node->attr.type_def.src_type;
@@ -86,6 +92,9 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
     subnodes[0] = & node->attr.member_type.type;
     subnodes[1] = & node->attr.member_type.next;
     return 2;
+  case ASTNODETYPE_SPECTYPE:
+    subnodes[0] = & node->attr.spec_type.first_member;
+    return 1;
   }
   assert(0); /* Should never happen! */
   return 0;
@@ -519,6 +528,23 @@ ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
   return node;
 }
 
+ASTNode *ASTNodeProcDef_New(ASTNode *child_type, ASTNode *parent_type) {
+  ASTNode *node = ASTNode_New(ASTNODETYPE_PROCDEF);
+  node->attr.proc_def.child_type = child_type;
+  node->attr.proc_def.parent_type = parent_type;
+  return node;
+}
+
+ASTNode *ASTNodeProcDef_Set(ASTNode *proc_def, ASTNode *c_name,
+                            ASTNode *implem) {
+  assert(proc_def->type == ASTNODETYPE_PROCDEF);
+  if (c_name != NULL)
+    proc_def->attr.proc_def.c_name = c_name;
+  if (implem != NULL)
+    proc_def->attr.proc_def.implem = implem;
+  return proc_def;
+}
+
 ASTNode *ASTNodeTypeDef_New(ASTNode *name, ASTNode *src_type) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_TYPEDEF);
   node->attr.type_def.name = name;
@@ -574,3 +600,16 @@ ASTNode *ASTNodeStrucType_Add_Member(ASTNode *struc_type,
   }
   return struc_type;
 }
+
+ASTNode *ASTNodeSpecType_New(ASTNode *first_type, ASTNode *second_type) {
+  ASTNode *node, *member = NULL;
+  node = ASTNode_New(ASTNODETYPE_SPECTYPE);
+  node->attr.spec_type.first_member = member;
+  node->attr.spec_type.last_member = member;
+  return node;
+}
+
+ASTNode *ASTNodeSpecType_Add_Member(ASTNode *species, ASTNode *memb) {
+  return NULL;
+}
+

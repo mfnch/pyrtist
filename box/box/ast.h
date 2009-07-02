@@ -30,7 +30,7 @@
 
 #  include "types.h"
 
-#  define AST_MAX_NUM_SUBNODES 3
+#  define AST_MAX_NUM_SUBNODES 4
 
 typedef struct __ASTNode ASTNode;
 
@@ -275,7 +275,7 @@ struct __ASTNode {
     ASTNodeTypeDef    type_def;
     ASTNodeStrucType  struc_type;
     ASTNodeMemberType member_type;
-    ASTNodeSpecType   species_type;
+    ASTNodeSpecType   spec_type;
   } attr;
 };
 
@@ -334,9 +334,14 @@ ASTNode *ASTNodeStruc_Add_Member(ASTNode *struc,
 ASTNode *ASTNodeArrayGet_New(ASTNode *array, ASTNode *index);
 ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
                               const char *member, int member_len);
+ASTNode *ASTNodeProcDef_New(ASTNode *child_type, ASTNode *parent_type);
+ASTNode *ASTNodeProcDef_Set(ASTNode *proc_def, ASTNode *c_name,
+                            ASTNode *implem);
 ASTNode *ASTNodeTypeDef_New(ASTNode *name, ASTNode *src_type);
 ASTNode *ASTNodeStrucType_New(ASTStrucTypeMemb *first_member);
 ASTNode *ASTNodeStrucType_Add_Member(ASTNode *struc_type,
                                      ASTStrucTypeMemb *member);
+ASTNode *ASTNodeSpecType_New(ASTNode *first_type, ASTNode *second_type);
+ASTNode *ASTNodeSpecType_Add_Member(ASTNode *species, ASTNode *memb);
 
 #endif /* _AST_H */

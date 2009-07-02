@@ -910,8 +910,8 @@ struc_type:
 
 /* SPECIES TYPES */
 species_type:
-    type TOK_TO type             {}
-  | species_type TOK_TO type     {}
+    type TOK_TO type             {$$ = ASTNodeSpecType_New($1, $3);}
+  | species_type TOK_TO type     {$$ = ASTNodeSpecType_Add_Member($1, $3);}
   ;
 
 /* PRIMARY TYPES */
