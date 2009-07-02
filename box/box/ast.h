@@ -51,9 +51,11 @@ typedef enum {
   ASTNODETYPE_STRUC,
   ASTNODETYPE_ARRAYGET,
   ASTNODETYPE_MEMBERGET,
+  ASTNODETYPE_PROCDEF,
   ASTNODETYPE_TYPEDEF,
   ASTNODETYPE_STRUCTYPE,
-  ASTNODETYPE_MEMBERTYPE
+  ASTNODETYPE_MEMBERTYPE,
+  ASTNODETYPE_SPECTYPE
 } ASTNodeType;
 
 /**Separator between statements */
@@ -214,6 +216,14 @@ typedef struct {
   char     *member;
 } ASTNodeMemberGet;
 
+/** Node for procedure definition/declaration */
+typedef struct {
+  ASTNode  *child_type,
+           *parent_type,
+           *c_name,
+           *implem;
+} ASTNodeProcDef;
+
 /** Node for type definition */
 typedef struct {
   ASTNode  *name,
@@ -232,6 +242,12 @@ typedef struct {
   ASTNode  *type,
            *next;
 } ASTNodeMemberType;
+
+/** Node for species type definition */
+typedef struct {
+  ASTNode  *first_member,
+           *last_member;
+} ASTNodeSpecType;
 
 /** Node finaliser (used only for few nodes) */
 typedef void (*ASTNodeFinaliser)(ASTNode *node);
@@ -255,9 +271,11 @@ struct __ASTNode {
     ASTNodeStruc      struc;
     ASTNodeArrayGet   array_get;
     ASTNodeMemberGet  member_get;
+    ASTNodeProcDef    proc_def;
     ASTNodeTypeDef    type_def;
     ASTNodeStrucType  struc_type;
     ASTNodeMemberType member_type;
+    ASTNodeSpecType   species_type;
   } attr;
 };
 

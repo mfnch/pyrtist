@@ -380,14 +380,15 @@ static void Member_Full_Name(TS *ts, Name *n, Type s, const char *m_name) {
   n->length = BoxArr_Num_Items(& ts->name_buffer);
 }
 
-void TS_Member_Find(TS *ts, Type *m, Type s, const char *m_name) {
+Type TS_Member_Find(TS *ts, Type s, const char *m_name) {
   Name n;
   BoxHTItem *hi;
-  *m = TS_TYPE_NONE;
   s = TS_Resolve(ts, s, TS_KS_ALIAS | TS_KS_SPECIES | TS_KS_DETACHED);
   Member_Full_Name(ts, & n, s, m_name);
   if (BoxHT_Find(& ts->members, n.text, n.length, & hi))
-    *m = *((Type *) hi->object);
+    return *((Type *) hi->object);
+  else
+    return BOXTYPE_NONE;
 }
 
 void TS_Member_Get(TS *ts, Type *t, Int *address, Type m) {

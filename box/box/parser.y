@@ -676,8 +676,9 @@ void.seps.opt:
 %type <Node> land_expr lor_expr assign_expr expr statement statement_list
 %type <Node> type_sep sep_type struc_type species_type func_type
 %type <Node> named_type prim_type array_type type assign_type
+%type <Node> procedure opt_c_name procedure_decl
 %type <StrucMemb> struc_type_1st struc_type_2nd
-%type <String> opt_c_name
+
 
 /* Lista dei token affetti da regole di precedenza */
 %left TOK_UMEMBER
@@ -793,6 +794,7 @@ prim_expr:
 postfix_expr:
     prim_expr                    {$$ = $1;}
   | postfix_expr '(' expr ')'    {$$ = ASTNodeArrayGet_New($1, $3);}
+  | procedure_decl               {$$ = $1;}
   | postfix_expr
           '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1);}
   | type  '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1);}
@@ -950,7 +952,7 @@ assign_type:
 /* Definition and declaration of procedures */
 
 procedure:
-    type TOK_AT named_type       {}
+    type TOK_AT named_type       {$$ = ASTNodeProcDef_New($1, $$);}
   ;
 
 opt_c_name:
@@ -959,9 +961,9 @@ opt_c_name:
   ;
 
 procedure_decl:
-    procedure opt_c_name '?'     {}
+    procedure opt_c_name '?'     {$$ = ASTNodeProcDef_Set($1, $2, NULL);}
   | procedure opt_c_name
-          '[' statement_list ']' {}
+          '[' statement_list ']' {$$ = ASTNodeProcDef_Set($1, $2, $4);}
   ;
 
 /************************ STATEMENT LISTS AND BOXES ************************/
@@ -973,7 +975,6 @@ statement:
   | '\\' expr                    {$$ = ASTNodeStatement_New(
                                          ASTNodeIgnore_New($2, 1));}
   | '[' statement_list ']'       {$$ = ASTNodeStatement_New($2);}
-  | procedure_decl               {$$ = NULL;}
   | error sep                    {$$ = ASTNodeStatement_New(ASTNodeError_New());
                                   Tok_Unput(($2 == ASTSEP_PAUSE) ? ';' : ',');
                                   yyerrok;}

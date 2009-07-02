@@ -514,7 +514,9 @@ int Value_Is_Value(Value *v) {
 }
 
 int Value_Is_Ignorable(Value *v) {
-  return v->attr.ignore;
+  return    (v->kind == VALUEKIND_ERR)
+         || (v->kind == VALUEKIND_TYPE)
+         || v->attr.ignore;
 }
 
 int Value_Has_Type(Value *v) {

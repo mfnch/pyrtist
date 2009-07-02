@@ -448,8 +448,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
     My_Compile_Statement(c, s);
 
     stmt_val = BoxCmp_Pop_Value(c);
-    if (parent_is_err || Value_Is_Err(stmt_val)
-        || Value_Is_Ignorable(stmt_val)) {
+    if (parent_is_err || Value_Is_Ignorable(stmt_val)) {
       Value_Unlink(stmt_val);
 
     } else {
@@ -744,7 +743,7 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
 static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
   int err;
   ASTNode *member;
-  BoxType previous_type, struc_type;
+  BoxType previous_type = BOXTYPE_NONE, struc_type;
   Value *v_struc_type;
 
   assert(n->type == ASTNODETYPE_STRUCTYPE);
@@ -776,7 +775,11 @@ static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
     }
 
     if (previous_type != BOXTYPE_NONE && !err) {
-      /* XXX Check for duplicate structure members */
+      /* Check for duplicate structure members */
+      if (member_name != NULL)
+        if (TS_Member_Find(& c->ts, struc_type, member_name) != BOXTYPE_NONE)
+          MSG_ERROR("Duplicate member '%s' in structure type definition.",
+                    member_name);
       TS_Structure_Add(& c->ts, struc_type, previous_type, member_name);
     }
   }
