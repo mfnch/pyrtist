@@ -626,12 +626,12 @@ void.seps.opt:
 
 /* Possible types for the nodes of the tree */
 %union {
-  char *           String;
-  ASTUnOp          UnaryOperator;
-  ASTBinOp         BinaryOperator;
-  ASTNodePtr       Node;
-  ASTStrucTypeMemb StrucMemb;
-  ASTSep           Sep;
+  char *        String;
+  ASTUnOp       UnaryOperator;
+  ASTBinOp      BinaryOperator;
+  ASTNodePtr    Node;
+  ASTTypeMemb   TypeMemb;
+  ASTSep        Sep;
 }
 
 /* Lista dei token senza valore semantico
@@ -677,7 +677,7 @@ void.seps.opt:
 %type <Node> type_sep sep_type struc_type species_type func_type
 %type <Node> named_type prim_type array_type type assign_type
 %type <Node> procedure opt_c_name procedure_decl
-%type <StrucMemb> struc_type_1st struc_type_2nd
+%type <TypeMemb> struc_type_1st struc_type_2nd
 
 
 /* Lista dei token affetti da regole di precedenza */

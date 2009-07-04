@@ -327,6 +327,7 @@ static void My_Compile_Struc(BoxCmp *c, ASTNode *n);
 static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n);
 static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n);
 static void My_Compile_StrucType(BoxCmp *c, ASTNode *n);
+static void My_Compile_SpecType(BoxCmp *c, ASTNode *n);
 
 void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
   if (program == NULL)
@@ -365,6 +366,8 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_TypeDef(c, node); break;
   case ASTNODETYPE_STRUCTYPE:
     My_Compile_StrucType(c, node); break;
+  case ASTNODETYPE_SPECTYPE:
+    My_Compile_SpecType(c, node); break;
   default:
     printf("Compilation of node is not implemented, yet!\n");
     break;
@@ -795,3 +798,9 @@ static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
     BoxCmp_Push_Value(c, v_struc_type);
   }
 }
+
+static void My_Compile_SpecType(BoxCmp *c, ASTNode *n) {
+  MSG_ERROR("Species type not implemented, yet!");
+  BoxCmp_Push_Error(c, 1);
+}
+

@@ -557,7 +557,7 @@ static void My_ASTNodeMemberType_Finaliser(ASTNode *node) {
   BoxMem_Free(node->attr.member_type.name);
 }
 
-ASTNode *ASTNodeMemberType_New(ASTStrucTypeMemb *m) {
+ASTNode *ASTNodeMemberType_New(ASTTypeMemb *m) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_MEMBERTYPE);
   node->attr.member_type.name = (m->name == NULL) ?
                                 NULL : BoxMem_Strdup(m->name);
@@ -567,7 +567,7 @@ ASTNode *ASTNodeMemberType_New(ASTStrucTypeMemb *m) {
   return node;
 }
 
-ASTNode *ASTNodeStrucType_New(ASTStrucTypeMemb *first_member) {
+ASTNode *ASTNodeStrucType_New(ASTTypeMemb *first_member) {
   ASTNode *member = NULL, *node;
   assert(first_member->type != NULL);
   if (first_member != NULL)
@@ -580,7 +580,7 @@ ASTNode *ASTNodeStrucType_New(ASTStrucTypeMemb *first_member) {
 }
 
 ASTNode *ASTNodeStrucType_Add_Member(ASTNode *struc_type,
-                                     ASTStrucTypeMemb *member) {
+                                     ASTTypeMemb *member) {
   ASTNode *this_member = NULL;
   assert(struc_type->type == ASTNODETYPE_STRUCTYPE);
   assert(member != NULL);
@@ -602,14 +602,34 @@ ASTNode *ASTNodeStrucType_Add_Member(ASTNode *struc_type,
 }
 
 ASTNode *ASTNodeSpecType_New(ASTNode *first_type, ASTNode *second_type) {
-  ASTNode *node, *member = NULL;
+  ASTNode *node;
   node = ASTNode_New(ASTNODETYPE_SPECTYPE);
-  node->attr.spec_type.first_member = member;
-  node->attr.spec_type.last_member = member;
+  node->attr.spec_type.first_member = NULL;
+  node->attr.spec_type.last_member = NULL;
+  node = ASTNodeSpecType_Add_Member(node, first_type);
+  node = ASTNodeSpecType_Add_Member(node, second_type);
   return node;
 }
 
-ASTNode *ASTNodeSpecType_Add_Member(ASTNode *species, ASTNode *memb) {
-  return NULL;
+ASTNode *ASTNodeSpecType_Add_Member(ASTNode *spec_type, ASTNode *type) {
+  ASTNode *memb_node;
+  ASTTypeMemb type_memb;
+
+  assert(spec_type->type == ASTNODETYPE_SPECTYPE);
+  
+  memb_node = ASTNodeMemberType_New(& type_memb);
+  if (spec_type->attr.spec_type.last_member == NULL) {
+    assert(spec_type->attr.spec_type.first_member == NULL);
+    spec_type->attr.spec_type.first_member =
+      spec_type->attr.spec_type.last_member = memb_node;
+    return spec_type;
+
+  } else {
+    ASTNode *last_member = spec_type->attr.struc_type.last_member;
+    last_member->attr.member_type.next = memb_node;
+    spec_type->attr.struc_type.last_member = memb_node;
+  }
+
+  return spec_type;
 }
 

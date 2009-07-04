@@ -281,11 +281,11 @@ struct __ASTNode {
 
 typedef ASTNode *ASTNodePtr;
 
-/** Used to define structure types */
+/** Used to define members of structure and species types */
 typedef struct {
   ASTNode *type; /**< Type of the member (NULL, if not present) */
   char    *name; /**< Name of the member (NULL, if not present) */
-} ASTStrucTypeMemb;
+} ASTTypeMemb;
 
 int ASTNode_Get_Subnodes(ASTNode *node,
                          ASTNode **subnodes[AST_MAX_NUM_SUBNODES]);
@@ -338,9 +338,9 @@ ASTNode *ASTNodeProcDef_New(ASTNode *child_type, ASTNode *parent_type);
 ASTNode *ASTNodeProcDef_Set(ASTNode *proc_def, ASTNode *c_name,
                             ASTNode *implem);
 ASTNode *ASTNodeTypeDef_New(ASTNode *name, ASTNode *src_type);
-ASTNode *ASTNodeStrucType_New(ASTStrucTypeMemb *first_member);
+ASTNode *ASTNodeStrucType_New(ASTTypeMemb *first_member);
 ASTNode *ASTNodeStrucType_Add_Member(ASTNode *struc_type,
-                                     ASTStrucTypeMemb *member);
+                                     ASTTypeMemb *member);
 ASTNode *ASTNodeSpecType_New(ASTNode *first_type, ASTNode *second_type);
 ASTNode *ASTNodeSpecType_Add_Member(ASTNode *species, ASTNode *memb);
 
