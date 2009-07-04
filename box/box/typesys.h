@@ -189,7 +189,7 @@ void TS_Intrinsic_New(TS *ts, Type *i, Int size);
 /** Create a new procedure type in p. init tells if the procedure
  * is an initialisation procedure or not.
  */
-void TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind);
+BoxType TS_Procedure_New(TS *ts, BoxType parent, BoxType child, int kind);
 
 /** Get information about the procedure p. This information is stored
  * in the destination specified by the given pointers, but this happens

@@ -325,6 +325,7 @@ static void My_Compile_UnOp(BoxCmp *c, ASTNode *n);
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n);
 static void My_Compile_Struc(BoxCmp *c, ASTNode *n);
 static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n);
+static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n);
 static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n);
 static void My_Compile_StrucType(BoxCmp *c, ASTNode *n);
 static void My_Compile_SpecType(BoxCmp *c, ASTNode *n);
@@ -362,6 +363,8 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_Struc(c, node); break;
   case ASTNODETYPE_MEMBERGET:
     My_Compile_MemberGet(c, node); break;
+  case ASTNODETYPE_PROCDEF:
+    My_Compile_ProcDef(c, node); break;
   case ASTNODETYPE_TYPEDEF:
     My_Compile_TypeDef(c, node); break;
   case ASTNODETYPE_STRUCTYPE:
@@ -697,6 +700,36 @@ static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
   BoxCmp_Push_Value(c, NULL);
 }
 
+static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
+  Value *v_child_type, *v_parent_type, *v_ret = NULL;
+  BoxType t_proc = BOXTYPE_NONE;
+  int no_err;
+
+  assert(n->type == ASTNODETYPE_PROCDEF);
+
+  My_Compile_Any(c, n->attr.proc_def.child_type);
+  v_child_type = BoxCmp_Pop_Value(c);
+  My_Compile_Any(c, n->attr.proc_def.parent_type);
+  v_parent_type = BoxCmp_Pop_Value(c);
+
+  no_err = ((Value_Want_Has_Type(v_child_type)
+             && Value_Want_Has_Type(v_parent_type)));
+
+  if (no_err)
+    t_proc = TS_Procedure_New(& c->ts,
+                              v_parent_type->type, v_child_type->type, 3);
+
+  Value_Unlink(v_child_type);
+  Value_Unlink(v_parent_type);
+
+  if (t_proc != BOXTYPE_NONE) {
+    v_ret = Value_New(c->cur_proc);
+    Value_Setup_As_Type(v_ret, t_proc);
+  }
+
+  BoxCmp_Push_Value(c, v_ret);
+}
+
 static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
   Value *v_name, *v_type, *v_named_type = NULL;
   TS *ts = & c->ts;
@@ -800,7 +833,39 @@ static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
 }
 
 static void My_Compile_SpecType(BoxCmp *c, ASTNode *n) {
-  MSG_ERROR("Species type not implemented, yet!");
-  BoxCmp_Push_Error(c, 1);
+  BoxType spec_type;
+  Value *v_spec_type;
+  ASTNode *member;
+
+  assert(n->type == ASTNODETYPE_SPECTYPE);
+
+  /* Create a new species type */
+  TS_Species_Begin(& c->ts, & spec_type);
+
+  for(member = n->attr.spec_type.first_member;
+      member != NULL;
+      member = member->attr.member_type.next) {
+    Value *v_type;
+
+    assert(member->type == ASTNODETYPE_MEMBERTYPE);
+    assert(member->attr.member_type.name == NULL
+           && member->attr.member_type.type != NULL);
+
+    My_Compile_Any(c, member->attr.member_type.type);
+    v_type = BoxCmp_Pop_Value(c);
+
+    if (Value_Want_Has_Type(v_type)) {
+      BoxType memb_type = v_type->type;
+      /* NOTE: should check for duplicate types in species */
+      TS_Species_Add(& c->ts, spec_type, memb_type);
+    }
+
+    Value_Unlink(v_type);
+  }
+
+  v_spec_type = Value_New(c->cur_proc);
+  Value_Setup_As_Type(v_spec_type, spec_type);
+
+  BoxCmp_Push_Value(c, v_spec_type);
 }
 

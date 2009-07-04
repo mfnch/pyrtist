@@ -446,8 +446,9 @@ void TS_Intrinsic_New(TS *ts, Type *i, Int size) {
   Type_New(ts, i, & td);
 }
 
-void TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind) {
+Type TS_Procedure_New(TS *ts, Type parent, Type child, int kind) {
   TSDesc td;
+  BoxType p;
   TS_TSDESC_INIT(& td);
   td.kind = TS_KIND_PROC;
   td.size = TS_SIZE_UNKNOWN;
@@ -455,7 +456,8 @@ void TS_Procedure_New(TS *ts, Type *p, Type parent, Type child, int kind) {
   td.data.proc.parent = parent;
   td.data.proc.kind = kind & 3;
   td.data.proc.sym_num = 0;
-  Type_New(ts, p, & td);
+  Type_New(ts, & p, & td);
+  return p;
 }
 
 /*FUNCTIONS: TS_X_New *******************************************************/
@@ -677,7 +679,7 @@ Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num) {
   /*MSG_ADVICE("TS_Procedure_Def: new procedure '%s' of '%s'",
              Tym_Type_Names(proc), Tym_Type_Names(of_type));*/
   assert(kind != 0 && (kind | 3) == 3); /* kind can be 1, 2 or 3 */
-  TS_Procedure_New(last_ts, & procedure, of_type, proc, kind);
+  procedure = TS_Procedure_New(last_ts, of_type, proc, kind);
   TS_Procedure_Register(last_ts, procedure, sym_num);
   return procedure;
 }
@@ -975,7 +977,7 @@ Int Tym_Type_Resolve(Int type, int not_alias, int not_species) {
 Int Tym_Def_Procedure(Int proc, int second, Int of_type, Int sym_num) {
   Type procedure;
   int kind = second ? 2 : 1;
-  TS_Procedure_New(last_ts, & procedure, of_type, proc, kind);
+  procedure = TS_Procedure_New(last_ts, of_type, proc, kind);
   TS_Procedure_Register(last_ts, procedure, sym_num);
   return procedure;
 }

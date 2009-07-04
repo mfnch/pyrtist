@@ -616,7 +616,9 @@ ASTNode *ASTNodeSpecType_Add_Member(ASTNode *spec_type, ASTNode *type) {
   ASTTypeMemb type_memb;
 
   assert(spec_type->type == ASTNODETYPE_SPECTYPE);
-  
+
+  type_memb.type = type;
+  type_memb.name = NULL;
   memb_node = ASTNodeMemberType_New(& type_memb);
   if (spec_type->attr.spec_type.last_member == NULL) {
     assert(spec_type->attr.spec_type.first_member == NULL);

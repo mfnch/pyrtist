@@ -456,7 +456,7 @@ BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
   sym_num = BoxVMSym_New_Call(c->vm);
 
   /* We tell to the compiler that some procedures are associated with it */
-  TS_Procedure_New(& c->ts, & new_proc, parent, child, /*kind*/ 1);
+  new_proc = TS_Procedure_New(& c->ts, parent, child, /*kind*/ 1);
   TS_Procedure_Register(& c->ts, new_proc, sym_num);
   proc_name = TS_Name_Get(& c->ts, new_proc);
 

@@ -952,7 +952,7 @@ assign_type:
 /* Definition and declaration of procedures */
 
 procedure:
-    type TOK_AT named_type       {$$ = ASTNodeProcDef_New($1, $$);}
+    type TOK_AT named_type       {$$ = ASTNodeProcDef_New($1, $3);}
   ;
 
 opt_c_name:
