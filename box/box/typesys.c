@@ -650,7 +650,8 @@ void TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
                  Tym_Type_Names(p_td->target), Tym_Type_Names(child));*/
       comparison = TS_Compare(ts, p_td->target, child);
       if (comparison != TS_TYPES_UNMATCH) {
-        if (comparison == TS_TYPES_EXPAND) *expansion_type = p_td->target;
+        if (comparison == TS_TYPES_EXPAND)
+          *expansion_type = p_td->target;
         *proc = p;
         return;
       }

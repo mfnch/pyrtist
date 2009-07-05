@@ -33,6 +33,9 @@
 #include "compiler.h"
 #include "parserh.h"
 
+#include "vmsymstuff.h"
+
+
 /* For now it is safer not to cache const values!
  * (will make easier to detect reference count problems)
  */
@@ -80,7 +83,7 @@ void My_Init_Const_Values(BoxCmp *c) {
   Value_Init(& c->value.destroy, & c->main_proc);
   Value_Setup_As_Type(& c->value.destroy, BOXTYPE_DESTROY);
   Value_Init(& c->value.pause, & c->main_proc);
-  Value_Setup_As_Type(& c->value.pause, BOXTYPE_PAUSE);
+  Value_Setup_As_Temp(& c->value.pause, BOXTYPE_PAUSE);
 }
 
 void My_Finish_Const_Values(BoxCmp *c) {
@@ -701,32 +704,104 @@ static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
 }
 
 static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
-  Value *v_child_type, *v_parent_type, *v_ret = NULL;
-  BoxType t_proc = BOXTYPE_NONE;
+  Value *v_child, *v_parent, *v_ret = NULL;
+  BoxType t_child, t_parent, t_proc = BOXTYPE_NONE;
+  ASTNode *n_c_name, *n_implem;
+  char *c_name = NULL;
+  CmpProc proc_implem;
   int no_err;
 
   assert(n->type == ASTNODETYPE_PROCDEF);
 
+  /* A CmpProc object is used to get the procedure symbol and to register and
+   * assemble it.
+   */
+  CmpProc_Init(& proc_implem, c, CMPPROCSTYLE_SUB);
+
+  /* first, get the type of child and parent */
   My_Compile_Any(c, n->attr.proc_def.child_type);
-  v_child_type = BoxCmp_Pop_Value(c);
+  v_child = BoxCmp_Pop_Value(c);
   My_Compile_Any(c, n->attr.proc_def.parent_type);
-  v_parent_type = BoxCmp_Pop_Value(c);
+  v_parent = BoxCmp_Pop_Value(c);
 
-  no_err = ((Value_Want_Has_Type(v_child_type)
-             && Value_Want_Has_Type(v_parent_type)));
+  no_err = Value_Want_Has_Type(v_child) && Value_Want_Has_Type(v_parent);
 
-  if (no_err)
-    t_proc = TS_Procedure_New(& c->ts,
-                              v_parent_type->type, v_child_type->type, 3);
-
-  Value_Unlink(v_child_type);
-  Value_Unlink(v_parent_type);
-
-  if (t_proc != BOXTYPE_NONE) {
-    v_ret = Value_New(c->cur_proc);
-    Value_Setup_As_Type(v_ret, t_proc);
+  if (no_err) {
+    t_child = v_child->type;
+    t_parent = v_parent->type;
   }
 
+  Value_Unlink(v_child);
+  Value_Unlink(v_parent);
+
+  /* now get the C-name, if present */
+  n_c_name = n->attr.proc_def.c_name;
+  if (n_c_name != NULL) {
+    assert(n_c_name->type == ASTNODETYPE_STRING);
+    c_name = n_c_name->attr.string.str;
+    if (strlen(c_name) < 1) {
+      /* NOTE: Should we test any other kind of "badness"? */
+      MSG_ERROR("Empty string in C-name for procedure declaration.");
+      no_err = 0;
+    }
+  }
+
+  /* Now let's look at the implementation */
+  n_implem = n->attr.proc_def.implem;
+  if (n_implem == NULL) {
+    if (c_name == NULL) {
+      /* no implementation. Case: X@Y ? */
+      TS_Procedure_Search(& c->ts, & t_proc, /*expansion_type*/ NULL,
+                          t_parent, t_child, 1);
+      if (t_proc == BOXTYPE_NONE) {
+        BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
+        t_proc = TS_Procedure_New(& c->ts, t_parent, t_child, 3);
+        TS_Procedure_Register(& c->ts, t_proc, sym_id);
+      }
+
+    } else {
+      /* external procedure. Case: X@Y "c_name" ? */
+      printf("X@Y \"...\" ? not implemented, yet!\n");
+
+    }
+
+  } else {
+    /* we have the implementation */
+    CmpProc *save_cur_proc = c->cur_proc;
+    Value *v_implem;
+    BoxVMCallNum call_num;
+
+    c->cur_proc = & proc_implem;
+
+    My_Compile_Any(c, n_implem);
+    v_implem = BoxCmp_Pop_Value(c);
+    /* NOTE: we should double check that this is void! */
+    Value_Unlink(v_implem);
+
+    c->cur_proc = save_cur_proc;
+
+    {
+      call_num = CmpProc_Get_Call_Num(& proc_implem);
+      BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
+      t_proc = TS_Procedure_New(& c->ts, t_parent, t_child, 3);
+      TS_Procedure_Register(& c->ts, t_proc, sym_id);
+      ASSERT_TASK( BoxVMSym_Def_Call(c->vm, sym_id, call_num) );
+    }
+
+  }
+
+  CmpProc_Finish(& proc_implem);
+
+  /* NOTE: for now we return Void[]. In future extensions we'll return
+   * a function object
+   */
+  if (t_proc != BOXTYPE_NONE) {
+    v_ret = My_Get_Void_Value(c);
+  }
+
+  /* for now we return v_ret = NULL. We'll return a function, when Box will
+   * support functions.
+   */
   BoxCmp_Push_Value(c, v_ret);
 }
 
