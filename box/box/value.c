@@ -514,9 +514,18 @@ int Value_Is_Value(Value *v) {
 }
 
 int Value_Is_Ignorable(Value *v) {
-  return    (v->kind == VALUEKIND_ERR)
-         || (v->kind == VALUEKIND_TYPE)
-         || v->attr.ignore;
+  int ignore =    (v->kind == VALUEKIND_ERR)
+               || (v->kind == VALUEKIND_TYPE)
+               || v->attr.ignore;
+  if (ignore)
+    return 1;
+
+  else if (Value_Is_Value(v))
+    return (TS_Compare(& v->proc->cmp->ts, BOXTYPE_VOID, v->type)
+            != TS_TYPES_UNMATCH);
+
+  else
+    return 0;
 }
 
 int Value_Has_Type(Value *v) {
@@ -673,6 +682,10 @@ Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxType *t_memb) {
     *t_memb = BOXTYPE_NONE;
     return v_memb;
   }
+}
+
+Value *Value_Struc_Get_Member(Value *v_memb, const char *memb) {
+  return NULL;
 }
 
 /**
