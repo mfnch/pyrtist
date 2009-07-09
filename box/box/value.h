@@ -243,6 +243,13 @@ BoxTask Value_Emit_Call(Value *parent, Value *child);
  */
 Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxType *t_memb);
 
+/** Returns the member 'memb' of the given structure 'v_struc'.
+ * Try to transform 'v_struc' into 'v_memb' passing to it the responsabilities
+ * for deallocation, etc.
+ * REFERENCES: return: new, v_struc: -1;
+ */
+Value *Value_Struc_Get_Member(Value *v_struc, const char *memb);
+
 /**
  * REFERENCES: dest: 0, src: -1;
  */

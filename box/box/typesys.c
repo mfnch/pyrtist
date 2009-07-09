@@ -391,11 +391,12 @@ Type TS_Member_Find(TS *ts, Type s, const char *m_name) {
     return BOXTYPE_NONE;
 }
 
-void TS_Member_Get(TS *ts, Type *t, Int *address, Type m) {
+BoxType TS_Member_Get(TS *ts, Type m, size_t *address) {
   TSDesc *m_td = Type_Ptr(ts, m);
   assert(m_td->kind == TS_KIND_MEMBER);
-  if (t != (Type *) NULL) *t = m_td->target;
-  if (address != (Int *) NULL) *address = m_td->size;
+  if (address != NULL)
+    *address = m_td->size;
+  return m_td->target;
 }
 
 char *TS_Member_Name_Get(TS *ts, Type member) {

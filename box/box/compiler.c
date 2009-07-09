@@ -696,11 +696,31 @@ static void My_Compile_Struc(BoxCmp *c, ASTNode *n) {
 }
 
 static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
+  Value *v_struc, *v_memb = NULL;
+  ASTNode *n_struc;
+
   assert(n->type == ASTNODETYPE_MEMBERGET);
 
-  printf("get member not implemented, yet!\n");
+  n_struc = n->attr.member_get.struc;
+  if (n_struc == NULL) {
+    MSG_FATAL("My_Compile_MemberGet: default members not available, yet!");
+  }
 
-  BoxCmp_Push_Value(c, NULL);
+  My_Compile_Any(c, n->attr.member_get.struc);
+  v_struc = BoxCmp_Pop_Value(c);
+
+  if (Value_Want_Value(v_struc)) {
+    BoxType t_struc = v_struc->type;
+    v_memb = Value_Struc_Get_Member(v_struc, n->attr.member_get.member);
+    /* No need to unlink v_struc here */
+    if (v_memb == NULL)
+      MSG_ERROR("Cannot find the member '%s' of an object with type '%~s'.",
+                n->attr.member_get.member, TS_Name_Get(& c->ts, t_struc));
+
+  } else
+    Value_Unlink(v_struc);
+
+  BoxCmp_Push_Value(c, v_memb);
 }
 
 static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {

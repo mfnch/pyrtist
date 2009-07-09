@@ -79,7 +79,7 @@ static void My_Value_Finalize(Value *v) {
       if (v->attr.own_register) {
         assert(!v->value.cont.value.ptr.is_greg);
         Reg_Release(& v->proc->reg_alloc,
-                    v->value.cont.type, v->value.cont.value.ptr.reg);
+                    BOXTYPE_OBJ, v->value.cont.value.ptr.reg);
       }
 
       if (v->attr.own_reference) {
@@ -655,8 +655,9 @@ Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
     return v_obj;
 
   case BOXCONTCATEG_IMM:
-    MSG_FATAL("Value_Get_Subfield: immediate objects not supported, yet!");
+    break;
   }
+  MSG_FATAL("Value_Get_Subfield: immediate objects not supported, yet!");
   return NULL;
 }
 
@@ -684,8 +685,45 @@ Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxType *t_memb) {
   }
 }
 
-Value *Value_Struc_Get_Member(Value *v_memb, const char *memb) {
+static Value *My_Point_Get_Member(Value *v_point, const char *memb) {
+  int first = memb[0];
+  if (first != '\0') {
+    if (memb[1] == '\0') {
+      BoxGOp g_op = -1;
+      switch(first) {
+      case 'x': g_op = BOXGOP_PPTRX; break;
+      case 'y': g_op = BOXGOP_PPTRY; break;
+      }
+      if (g_op != -1) {
+        BoxCmp *c = v_point->proc->cmp;
+        Value *v_memb = Value_New(c->cur_proc);
+        Value_Setup_As_Temp(v_memb, BOXTYPE_PTR);
+        CmpProc_Assemble(v_memb->proc, g_op, 2,
+                         & v_memb->value.cont, & v_point->value.cont);
+        Value_Unlink(v_point);
+        v_memb->kind = VALUEKIND_TARGET;
+        return Value_Get_Subfield(v_memb, (size_t) 0, c->bltin.species_real);
+      }
+    }
+  }
+  Value_Unlink(v_point);
   return NULL;
+}
+
+Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
+  BoxCmp *cmp = v_struc->proc->cmp;
+  if (v_struc->value.cont.type == BOXTYPE_POINT)
+    return My_Point_Get_Member(v_struc, memb);
+  BoxType t_memb = TS_Member_Find(& cmp->ts, v_struc->type, memb);
+  if (t_memb != BOXTYPE_NONE) {
+    size_t offset;
+    t_memb = TS_Member_Get(& cmp->ts, t_memb, & offset);
+    return Value_Get_Subfield(v_struc, offset, t_memb);
+
+  } else {
+    Value_Unlink(v_struc);
+    return NULL;
+  }
 }
 
 /**

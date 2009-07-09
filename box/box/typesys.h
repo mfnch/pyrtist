@@ -28,6 +28,8 @@
 #ifndef _TYPESYS_H
 #  define _TYPESYS_H
 
+#  include <stdlib.h>
+
 #  include "types.h"
 #  include "occupation.h"
 #  include "hashtable.h"
@@ -320,7 +322,7 @@ BoxType TS_Member_Find(TS *ts, Type s, const char *m_name);
 /** Obtain details about a member of a structure (to be used in conjunction
  * with TS_Member_Find)
  */
-void TS_Member_Get(TS *ts, Type *t, Int *address, Type m);
+BoxType TS_Member_Get(TS *ts, Type m, size_t *address);
 
 /** Obtain the name of a member from its type descriptor. */
 char *TS_Member_Name_Get(TS *ts, Type member);

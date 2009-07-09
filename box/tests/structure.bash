@@ -87,9 +87,7 @@ test_next
 echo "testing handling of the type 'point': conversion structure --> point"
 $BOX << EOF  >$BOXOUT 2>&1
   p1 = (1, 2.0)
-  p1 = (Int, Real)
   p2 = -(3.5, 4.0)
-  p2 = Point
   p3 = p1 + p2
   Print["answer=", p3;]
 EOF
