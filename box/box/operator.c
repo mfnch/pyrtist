@@ -67,12 +67,16 @@ static void My_Guess_AsmScheme(Operation *opn) {
               t_left = TS_Get_Core_Type(ts, opn->type_left),
               t_right = TS_Get_Core_Type(ts, opn->type_right);
       int res_eq_l = (t_result == t_left),
+          res_eq_r = (t_result == t_right),
           l_eq_r = (t_left == t_right);
       if (l_eq_r && res_eq_l)
         opn->asm_scheme = OPASMSCHEME_STD_BIN;
 
-      else if (l_eq_r && !res_eq_l)
-        opn->asm_scheme = OPASMSCHEME_BITYPE_BIN;
+      else if (l_eq_r)               /* and, implicitly, res_eq_l == 0 */
+        opn->asm_scheme = OPASMSCHEME_R_LR_BIN;
+
+      else if (res_eq_l || res_eq_r) /* and, implicitly, l_eq_r == 0 */
+        opn->asm_scheme = OPASMSCHEME_RL_R_BIN;
 
       else {
         MSG_FATAL("Unknow operation scheme in My_Guess_AsmScheme");
@@ -336,7 +340,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     result = v_left;
     break;
 
-  case OPASMSCHEME_BITYPE_BIN:
+  case OPASMSCHEME_R_LR_BIN:
     assert((opn->attr & OPR_ATTR_NATIVE) && (opn->attr & OPR_ATTR_BINARY));
 
     result = Value_New(c->cur_proc);
@@ -350,6 +354,25 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     Value_Unlink(v_right);
     return result;
 
+  case OPASMSCHEME_RL_R_BIN:
+    if (TS_Compare(& c->ts, opn->type_result, v_right->type)
+        != TS_TYPES_UNMATCH) {
+      Value *v_tmp = v_left;
+      v_left = v_right;
+      v_right = v_tmp;
+    }
+
+    v_left = Value_To_Temp(v_left);
+
+    result = Value_New(c->cur_proc);
+    Value_Setup_As_Temp(result, opn->type_result);
+
+    CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+                     2, & v_left->value.cont, & v_right->value.cont);
+
+    result = v_left;
+    break;
+
   default:
     MSG_FATAL("Non-native operators are not supported, yet!");
     assert(0);
@@ -359,65 +382,6 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     Value_Set_Ignorable(result, 1);
   }
   return result;
-
-#if 0
-  if ( opn->is.assignment ) { /***********************************ASSIGNMENT*/
-  } else { /**************************************************NOT ASSIGNMENT*/
-    struct {unsigned int e1 : 1, e2 : 1;} result_in;
-
-    /* Determino se e1 puo' contenere il risultato dell'operazione
-     * (il quale e' una espressione temporanea).
-     * A tale scopo bisogna che e1 abbia lo stesso tipo del risultato,
-     * che sia un registro locale e che non sia una variabile (cioe' un
-     * target per l'operazione di assegnazione).
-     */
-    result_in.e1 = (e1->resolved == rs_resolved)
-     && (e1->categ == CAT_LREG) && (! e1->is.target);
-
-    if ( opn_is.strange ) { /**************************************STRANGE*/
-      /* Le operazioni strane sono, ad esempio: il confronto fra numeri
-       * (operatori <, >, ==, ...), moltiplicazione fra un punto e
-       * un reale, etc.
-       */
-      if ( opn_is.unary ) {
-      } else {
-        /* Se l'operazione e' binaria ho 3 casi a seconda dei tipi
-        * delle 3 quantita' coinvolte dall'operazione (2 argomenti +
-        * 1 risultato):
-        */
-        struct {unsigned int er_e1 : 1, er_e2 : 1, e1_e2 : 1;} eq;
-        eq.e1_e2 = (e1->resolved == e2->resolved);
-        eq.er_e1 = (rs_resolved == e1->resolved);
-        eq.er_e2 = (rs_resolved == e2->resolved);
-        if ( eq.e1_e2 ) {
-        } else {
-          if ( eq.er_e2 ) {
-            Expr *tmp; tmp = e1; e1 = e2; e2 = tmp;
-            goto er_equal_e1;
-          }
-
-          if ( eq.er_e1 ) { /* caso 2: un argomento e' dello stesso tipo
-                                del risultato */
-er_equal_e1:
-            if IS_FAILED( Cmp_Expr_Force_To_LReg(e1) ) return NULL;
-            if IS_FAILED( Cmp_Expr_To_X(e2, CAT_LREG, 0, 1) ) return NULL;
-            if IS_FAILED( Cmp_Complete_Ptr_1(e1) ) return NULL;
-            Cmp_Assemble(opn->asm_code, e1->categ, e1->value.i);
-            return e1;
-
-          } else { /* caso 3: tipi tutti diversi */
-            MSG_ERROR("Still not implemented!");
-            return NULL;
-          }
-        }
-      }
-      return NULL;
-
-    } else { /*************************************************NOT STRANGE*/
-    }
-  }
-#endif
-
 }
 
 /** Compiles an operation between the two expression e1 and e2, where

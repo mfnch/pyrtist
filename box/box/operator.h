@@ -52,7 +52,8 @@ typedef enum {
   OPASMSCHEME_RIGHT_UN,
   OPASMSCHEME_USR_UN,
   OPASMSCHEME_STD_BIN,
-  OPASMSCHEME_BITYPE_BIN,
+  OPASMSCHEME_R_LR_BIN, /**< Left and right operands with same type */
+  OPASMSCHEME_RL_R_BIN, /**< Result and left operand with same type */
   OPASMSCHEME_UNKNOWN
 } OpAsmScheme;
 

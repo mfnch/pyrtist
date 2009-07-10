@@ -61,13 +61,16 @@ static void My_Value_Finalize(Value *v) {
     return;
   case VALUEKIND_IMM:
     return;
+  case VALUEKIND_TARGET:
   case VALUEKIND_TEMP:
     switch (v->value.cont.categ) {
     case BOXCONTCATEG_LREG:
-      assert(v->value.cont.value.reg >= 0);
-      if (v->attr.own_register)
-        Reg_Release(& v->proc->reg_alloc,
-                    v->value.cont.type, v->value.cont.value.reg);
+      if (v->attr.own_register) {
+        if (v->value.cont.value.reg >= 0)
+          Reg_Release(& v->proc->reg_alloc,
+                      v->value.cont.type, v->value.cont.value.reg);
+      }
+
       if (v->attr.own_reference) {
         assert(v->value.cont.type == BOXTYPE_OBJ);
         assert(v->value.cont.categ == BOXCONTCATEG_LREG); /* for now we don't support the general case... */
@@ -91,9 +94,6 @@ static void My_Value_Finalize(Value *v) {
       MSG_WARNING("My_Value_Finalize: Destruction not implemented!");
       return;
     }
-
-  case VALUEKIND_TARGET:
-    return;
   }
 }
 
