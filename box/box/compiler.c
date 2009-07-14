@@ -725,7 +725,8 @@ static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
 
 static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   Value *v_child, *v_parent, *v_ret = NULL;
-  BoxType t_child, t_parent, t_proc = BOXTYPE_NONE;
+  BoxType t_child = BOXTYPE_NONE, t_parent = BOXTYPE_NONE,
+          t_proc = BOXTYPE_NONE;
   ASTNode *n_c_name, *n_implem;
   char *c_name = NULL;
   CmpProc proc_implem;
@@ -777,6 +778,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
         BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
         t_proc = TS_Procedure_New(& c->ts, t_parent, t_child, 3);
         TS_Procedure_Register(& c->ts, t_proc, sym_id);
+        //Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT, t_proc);
       }
 
     } else {
@@ -805,6 +807,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
       BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
       t_proc = TS_Procedure_New(& c->ts, t_parent, t_child, 3);
       TS_Procedure_Register(& c->ts, t_proc, sym_id);
+      //Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT, t_proc);
       ASSERT_TASK( BoxVMSym_Def_Call(c->vm, sym_id, call_num) );
     }
 

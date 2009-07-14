@@ -61,6 +61,9 @@ typedef struct nmsp_item_s {
   void          *data;     /**< Pointer to the item data */
 } NmspItem;
 
+/** Function called by Namespace_Floor_Down */
+typedef void (*NmspAction)(Namespace *ns, void *data);
+
 /** Initialise a new Namespace object, in the space already allocated
  * and pointed by ns. Namespace_Finish should be called to finalize
  * the object.
@@ -87,6 +90,11 @@ void Namespace_Floor_Up(Namespace *ns);
 
 /** Destroy the active floor in the given namespace. */
 void Namespace_Floor_Down(Namespace *ns);
+
+/** Provide a function to be called when the namespace floor is removed with
+ * Namespace_Floor_Down
+ */
+void Namespace_Do_On_Down(Namespace *ns, NmspAction action, void *data);
 
 /** Add a new item with name 'item_name' to the given floor of the namespace
  * and return the pointer to the corresponding NmspItem object.

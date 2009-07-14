@@ -597,6 +597,10 @@ BoxTask Value_Emit_Call(Value *parent, Value *child) {
   return BOXTASK_OK;
 }
 
+BoxTask Value_Try_Emit_Call_Or_Blacklist(Value *parent, Value *child) {
+  return BOXTASK_FAILURE;
+}
+
 /**
  * REFERENCES: return: new, v_obj: -1;
  */

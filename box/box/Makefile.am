@@ -66,14 +66,14 @@ noinst_HEADERS = defaults.h \
   vmalloc.h vmproc.h vmsym.h \
   vmsymstuff.h paths.h container.h \
   cmpproc.h bltinarray.h ast.h cmpptrs.h value.h compiler.h operator.h \
-  namespace.h
+  namespace.h autogen.h
 
 box_SOURCES = \
   fileutils.c virtmach.c vmalloc.c vmexec.c vmproc.c vmsym.c \
   tokenizer.l parser.y registers.c \
   typesys.c builtins.c bltinstr.c bltinio.c vmsymstuff.c \
   paths.c main.c container.c cmpproc.c bltinarray.c ast.c value.c \
-  compiler.c operator.c namespace.c
+  compiler.c operator.c namespace.c autogen.c
 
 box_LDADD = $(LIBLTDL) libboxcore0.2.la
 box_LDFLAGS = -static

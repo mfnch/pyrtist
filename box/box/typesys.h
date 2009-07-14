@@ -211,6 +211,11 @@ void TS_Procedure_Info(TS *ts, Type *parent, Type *child,
  */
 void TS_Procedure_Register(TS *ts, Type p, UInt sym_num);
 
+/** Unregister a procedure which was previously registered with 
+ * TS_Procedure_Register 
+ */
+void TS_Procedure_Unregister(TS *ts, BoxType p);
+
 /** Obtain the symbol identification number of a registered procedure.
  */
 void TS_Procedure_Sym_Num_Get(TS *ts, UInt *sym_num, Type p);
@@ -229,6 +234,22 @@ void TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
  */
 void TS_Procedure_Inherited_Search(TS *ts, Type *proc, Type *expansion_type,
                                    Type parent, Type child, int kind);
+
+/** Put the procedure in the blacklist. Blacklisted procedure are cannot be
+ * registered. The feature is important to ensure that a procedure that
+ * was assumed not to be registered when emitting the bytecode is not
+ * registered later.
+ * @see TS_Procedure_Blacklist_Undo
+ */
+void TS_Procedure_Blacklist(TS *ts, BoxType p);
+
+/** Undo a blacklist operation.
+ * @see TS_Procedure_Blacklist
+ */
+void TS_Procedure_Blacklist_Undo(TS *ts, BoxType p);
+
+/** Return 1 if the procedure is blacklisted, 0 otherwise. */
+int TS_Procedure_Is_Blacklisted(TS *ts, BoxType p);
 
 /** Create and register a procedure by calling firt TS_Procedure_New
  * and then TS_Procedure_Register. sym_num is the associated symbol

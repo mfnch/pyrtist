@@ -220,6 +220,12 @@ void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
  */
 BoxTask Value_Emit_Call(Value *parent, Value *child);
 
+/** Try to call the procedure for the given parent with the given child.
+ * If the procedure is not found, than it is blacklisted, so that it won't
+ * be possible to define it later.
+ */
+BoxTask Value_Try_Emit_Call_Or_Blacklist(Value *parent, Value *child);
+
 /** Get the next member of a structure. If the given type '*t_memb' is a
  * structure, then return in 'v_memb' its first member. If '*t_memb' is a
  * member (which is the case after one call to this function), then

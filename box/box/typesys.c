@@ -605,6 +605,10 @@ void TS_Procedure_Register(TS *ts, Type p, UInt sym_num) {
   proc_td->data.proc.sym_num = sym_num;
 }
 
+void TS_Procedure_Unregister(TS *ts, BoxType p) {
+  MSG_WARNING("TS_Procedure_Unregister: not implemented.");
+}
+
 void TS_Procedure_Sym_Num_Get(TS *ts, UInt *sym_num, Type p) {
   TSDesc *proc_td;
   proc_td = Type_Ptr(ts, p);
@@ -674,6 +678,18 @@ void TS_Procedure_Inherited_Search(TS *ts, Type *proc, Type *expansion_type,
                              TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES |
                              TS_KS_SUBTYPE);
   } while (parent != previous_parent);
+}
+
+void TS_Procedure_Blacklist(TS *ts, BoxType p) {
+  MSG_WARNING("TS_Procedure_Blacklist: not implemented.");
+}
+
+void TS_Procedure_Blacklist_Undo(TS *ts, BoxType p) {
+  MSG_WARNING("TS_Procedure_Blacklist_Undo: not implemented.");
+}
+
+int TS_Procedure_Is_Blacklisted(TS *ts, BoxType p) {
+  return 0;
 }
 
 Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num) {
