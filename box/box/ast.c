@@ -75,6 +75,8 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
   case ASTNODETYPE_MEMBERGET:
     subnodes[0] = & node->attr.member_get.struc;
     return 1;
+  case ASTNODETYPE_SELFGET:
+    return 0;
   case ASTNODETYPE_PROCDEF:
     subnodes[0] = & node->attr.proc_def.child_type;
     subnodes[1] = & node->attr.proc_def.parent_type;
@@ -117,6 +119,7 @@ const char *ASTNodeType_To_Str(ASTNodeType t) {
   case ASTNODETYPE_STRUC:      return "Struc";
   case ASTNODETYPE_ARRAYGET:   return "ArrayGet";
   case ASTNODETYPE_MEMBERGET:  return "MemberGet";
+  case ASTNODETYPE_SELFGET:    return "SelfGet";
   case ASTNODETYPE_TYPEDEF:    return "TypeDef";
   default:                     return "UnknownNode";
   }
@@ -525,6 +528,12 @@ ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
                                   BoxMem_Strndup(member, member_len) :
                                   BoxMem_Strdup(member);
   node->finaliser = ASTNodeMemberGet_Finaliser;
+  return node;
+}
+
+ASTNode *ASTNodeSelfGet_New(BoxInt level) {
+  ASTNode *node = ASTNode_New(ASTNODETYPE_SELFGET);
+  node->attr.self_get.level = level;
   return node;
 }
 

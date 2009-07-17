@@ -177,6 +177,14 @@ char *CmpProc_Get_Proc_Desc(CmpProc *p) {
     return BoxMem_Strdup((p->have.proc_name) ? p->proc_name : "|unknown|");
 }
 
+size_t CmpProc_Get_Code_Size(CmpProc *p) {
+  if (p->have.proc_id)
+    return BoxVM_Proc_Get_Size(p->cmp->vm, p->proc_id);
+
+  else
+    return 0;
+}
+
 BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p) {
   if (p->have.call_num)
     return p->sym;

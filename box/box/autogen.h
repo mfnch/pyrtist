@@ -32,11 +32,15 @@
 #  define _AUTOGEN_H
 
 #  include "types.h"
-#  include "typesys.h"
+#  include "cmpptrs.h"
 
+BoxType Autogen_Procedure(BoxCmp *c, BoxType child, BoxType parent);
+
+#if 0
 Task Auto_Destructor_Create(Type t);
 
 /** Used to acknowledge that a procedure is being used in the program */
 void Auto_Acknowledge_Call(Type parent, Type child, int kind);
+#endif
 
 #endif

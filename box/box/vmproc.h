@@ -30,6 +30,8 @@
 #ifndef _VMPROC_H_TYPES
 #  define _VMPROC_H_TYPES
 
+#  include <stdlib.h>
+
 /** When a procedure is created, an ID (an integer number) is assigned to it.
  * BoxVMProcID is the type of such a thing (an alias for UInt).
  */
@@ -142,6 +144,8 @@ void VM_Proc_Empty(BoxVM *vmp, BoxUInt proc_num);
  * procedure.
  */
 UInt VM_Proc_Install_Number(BoxVM *vmp);
+
+size_t BoxVM_Proc_Get_Size(BoxVM *vm, BoxVMProcID id);
 
 /** Install the procedure 'proc_num' and assign to it the number 'call_num'.
  * After this function has been executed, the VM will recognize the instruction

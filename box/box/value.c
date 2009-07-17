@@ -27,6 +27,7 @@
 #include "container.h"
 #include "compiler.h"
 #include "value.h"
+#include "autogen.h"
 
 void Value_Init(Value *v, CmpProc *proc) {
   v->proc = proc;
@@ -417,7 +418,7 @@ void Value_Emit_Allocate(Value *v) {
       v->attr.own_reference = 1;
 
       /* Now let's invoke the creator */
-      (void) Value_Emit_Call(v, & c->value.create);
+      (void) Value_Emit_Call_Or_Blacklist(v, & c->value.create);
     }
     return;
 
@@ -568,21 +569,27 @@ void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
   CmpProc_Assemble_Call(c->cur_proc, sym_id);
 }
 
-BoxTask Value_Emit_Call(Value *parent, Value *child) {
+static BoxTask My_Emit_Call(Value *parent, Value *child, TSSearchMode mode) {
   BoxCmp *c = parent->proc->cmp;
+  TS *ts = & c->ts;
   BoxType found_procedure, expansion_for_child;
   BoxVMSymID sym_id;
 
   assert(parent != NULL && child != NULL);
   assert(c == child->proc->cmp);
 
-  /* Now we search for the procedure associated with *child */
-  TS_Procedure_Inherited_Search(& c->ts, & found_procedure,
-                                & expansion_for_child,
-                                parent->type, child->type, 1);
+  mode |= TSSEARCHMODE_INHERITED;
 
-  if (found_procedure == BOXTYPE_NONE)
+  /* Now we search for the procedure associated with *child */
+  found_procedure = TS_Procedure_Search(ts, & expansion_for_child,
+                                        child->type, parent->type, mode);
+
+  if (found_procedure == BOXTYPE_NONE) {
+    /* If the procedure is not there we try to auto-generate it */
+    expansion_for_child = BOXTYPE_NONE;
+    found_procedure = Autogen_Procedure(c, child->type, parent->type);
     return BOXTASK_FAILURE;
+  }
 
   if (expansion_for_child != BOXTYPE_NONE) {
     Value_Link(child); /* XXX */
@@ -591,14 +598,64 @@ BoxTask Value_Emit_Call(Value *parent, Value *child) {
       return BOXTASK_ERROR;
   }
 
-  TS_Procedure_Sym_Num_Get(& c->ts, & sym_id, found_procedure);
+  TS_Procedure_Sym_Num_Get(ts, & sym_id, found_procedure);
 
   Value_Emit_Call_From_SymID(sym_id, parent, child);
   return BOXTASK_OK;
 }
 
-BoxTask Value_Try_Emit_Call_Or_Blacklist(Value *parent, Value *child) {
-  return BOXTASK_FAILURE;
+BoxTask Value_Emit_Call(Value *parent, Value *child) {
+  return My_Emit_Call(parent, child, 0);
+}
+
+BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child) {
+  return My_Emit_Call(parent, child, TSSEARCHMODE_BLACKLIST);
+}
+
+/**
+ * REFERENCES: return: new, v_ptr: -1;
+ */
+Value *Value_Cast_Ptr(Value *v_ptr, BoxType new_type) {
+  BoxCmp *c = v_ptr->proc->cmp;
+
+  assert(v_ptr->value.cont.type == BOXTYPE_PTR);
+
+  if (v_ptr->num_ref == 1) {
+    BoxCont *cont = & v_ptr->value.cont;
+    BoxType new_cont_type = TS_Get_Cont_Type(& c->ts, new_type);
+
+    switch(cont->categ) {
+    case BOXCONTCATEG_GREG:
+    case BOXCONTCATEG_LREG:
+      v_ptr->type = new_type;
+      cont->type = new_cont_type;
+      if (new_cont_type == BOXTYPE_OBJ || new_cont_type == BOXTYPE_PTR)
+        return v_ptr;
+
+      else {
+        int is_greg = (cont->categ == BOXCONTCATEG_GREG);
+	BoxInt reg = cont->value.reg;
+        cont->categ = BOXCONTCATEG_PTR;
+	cont->value.ptr.reg = reg;
+	cont->value.ptr.is_greg = is_greg;
+	cont->value.ptr.offset = 0;
+      }
+      return v_ptr;
+
+    case BOXCONTCATEG_PTR:
+      /* not implemented */
+    default:
+      MSG_FATAL("Value_Cast_Ptr: unexpected container category!");
+      assert(0);
+    }
+
+  } else {
+    MSG_FATAL("Value_Cast_Ptr: not implemented, yet!");
+    assert(0);
+  }
+
+  assert(0);
+  return NULL;
 }
 
 /**
@@ -758,7 +815,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
     dest = Value_To_Straight_Ptr(dest);
 
     /* First let's destroy the 'dest' obj (it is going to be overwritten) */
-    (void) Value_Emit_Call(dest, & c->value.destroy);
+    (void) Value_Emit_Call_Or_Blacklist(dest, & c->value.destroy);
 
     /* We try to use the method provided by the user, if possible */
     Value_Link(src);
@@ -932,3 +989,34 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
 
   return NULL;
 }
+
+void My_Setup_From_Gro(Value *v, BoxType t, BoxInt gro_num) {
+  BoxCmp *c = v->proc->cmp;
+  TS *ts = & c->ts;
+  if (TS_Get_Size(ts, t) > 0) {
+    Value v_ptr;
+    ValContainer vc = {VALCONTTYPE_GREG, gro_num, 0};
+    Value_Init(& v_ptr, c->cur_proc);
+    Value_Setup_Container(& v_ptr, BOXTYPE_PTR, & vc); 
+
+    Value_Setup_As_Temp(v, BOXTYPE_PTR);
+    CmpProc_Assemble(c->cur_proc, BOXGOP_MOV,
+                     2, & v->value.cont, & v_ptr.value.cont);
+    Value_Unlink(& v_ptr);
+    v = Value_Cast_Ptr(v, t);
+    v->kind = VALUEKIND_TARGET;
+
+  } else { /* TS_get_Size(ts, parent_ts) == 0 */
+    Value_Setup_As_Temp(v, t);
+    v->kind = VALUEKIND_TARGET;
+  }
+}
+
+void Value_Setup_As_Parent(Value *v, BoxType parent_t) {
+  return My_Setup_From_Gro(v, parent_t, 1);
+}
+
+void Value_Setup_As_Child(Value *v, BoxType child_t) {
+  return My_Setup_From_Gro(v, child_t, 2);
+}
+

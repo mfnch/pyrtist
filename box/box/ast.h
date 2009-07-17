@@ -51,6 +51,7 @@ typedef enum {
   ASTNODETYPE_STRUC,
   ASTNODETYPE_ARRAYGET,
   ASTNODETYPE_MEMBERGET,
+  ASTNODETYPE_SELFGET,
   ASTNODETYPE_PROCDEF,
   ASTNODETYPE_TYPEDEF,
   ASTNODETYPE_STRUCTYPE,
@@ -124,6 +125,9 @@ typedef enum {
 } ASTBinOp;
 
 #define ASTBINOP__NUM_OPS (ASTBINOP_ABOR + 1)
+
+/** Integer indicating the self level: 0 --> $, 1 --> $$, 2 --> $$$, etc. */
+typedef BoxInt ASTSelfLevel;
 
 /* Each of the following structures corresponds to a possible node in the AST
    and contains the characteristics attribute for that node type.
@@ -216,6 +220,11 @@ typedef struct {
   char     *member;
 } ASTNodeMemberGet;
 
+/** Node for $, $$, $$$, etc. */
+typedef struct {
+  BoxInt   level;
+} ASTNodeSelfGet;
+
 /** Node for procedure definition/declaration */
 typedef struct {
   ASTNode  *child_type,
@@ -271,6 +280,7 @@ struct __ASTNode {
     ASTNodeStruc      struc;
     ASTNodeArrayGet   array_get;
     ASTNodeMemberGet  member_get;
+    ASTNodeSelfGet    self_get;
     ASTNodeProcDef    proc_def;
     ASTNodeTypeDef    type_def;
     ASTNodeStrucType  struc_type;
@@ -334,6 +344,7 @@ ASTNode *ASTNodeStruc_Add_Member(ASTNode *struc,
 ASTNode *ASTNodeArrayGet_New(ASTNode *array, ASTNode *index);
 ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
                               const char *member, int member_len);
+ASTNode *ASTNodeSelfGet_New(BoxInt level);
 ASTNode *ASTNodeProcDef_New(ASTNode *child_type, ASTNode *parent_type);
 ASTNode *ASTNodeProcDef_Set(ASTNode *proc_def, ASTNode *c_name,
                             ASTNode *implem);

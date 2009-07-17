@@ -41,13 +41,6 @@ int yylex(void);
 void yyerror(char *s);
 
 #if 0
-#include "array.h"
-#include "str.h"
-#include "virtmach.h"
-#include "vmsym.h"
-#include "vmsymstuff.h"
-#include "builtins.h"
-
 #define YYDEBUG 0
 
 ParserAttr parser_attr;
@@ -61,8 +54,6 @@ static Task Declare_Proc(Expr *child_type, Int kind, Expr *parent_type,
 /* Numero della linea che e' in fase di lettura dal tokenizer */
 extern UInt tok_linenum;
 
-
-
 /****************************************************************************
  * Here we define static function which implements the actions of some      *
  * rules. Actions are included directly into the grammar when possible,     *
@@ -73,66 +64,6 @@ extern UInt tok_linenum;
 static void Sep_Newline(void) {
   Cmp_Assemble(ASM_LINE_Iimm, CAT_IMM, ++tok_linenum);
   Msg_Line_Set(tok_linenum);
-}
-
-static void Sep_Pause(void) {
-  (void) Box_Procedure_Quick_Call_Void(TYPE_PAUSE, BOX_DEPTH_UPPER,
-                                       BOX_MSG_SILENT);
-}
-
-static Task Type_Struc_Begin(StrucMember *sm, Expr *type, char *m) {
-  TASK( Expr_Must_Have_Type(type) );
-  sm->type = type->type;
-  sm->name = m;
-  return Success;
-}
-
-/* Construct the core of a structure type: takes two members and construct
- * a two membered structure Sm1, Sm2 --> (Sm1, Sm2).
- * The type of the new structure of types is stored inside *st.
- */
-static void Type_Struc_All_1(Struc *s, StrucMember *sm1, StrucMember *sm2) {
-  Type st;
-  TS_Structure_Begin(cmp->ts, & st);
-  assert(sm1->type != TYPE_NONE);
-  TS_Structure_Add(cmp->ts, st, sm1->type, sm1->name);
-  free(sm1->name);
-  sm1->name = (char *) NULL;
-  if (sm2->type == TYPE_NONE) sm2->type = sm1->type;
-  TS_Structure_Add(cmp->ts, st, sm2->type, sm2->name);
-  free(sm2->name);
-  sm2->name = (char *) NULL;
-  s->type = st;
-  s->previous = sm2->type;
-}
-
-/* Add a new member to an existing structure type.
- * After the structure type se1 has been changed, it is copied into *se.
- */
-static void Type_Struc_All_2(Struc *s, Struc *s1, StrucMember *sm2) {
-  if (sm2->type == TYPE_NONE) sm2->type = s1->previous;
-  TS_Structure_Add(cmp->ts, s1->type, sm2->type, sm2->name);
-  free(sm2->name);
-  sm2->name = (char *) NULL;
-  s->type = s1->type;
-  s->previous = sm2->type;
-}
-
-/* Construct a single-member structure type.
- */
-static void Type_Struc_1(Expr *se, StrucMember *sm) {
-  Type st;
-  TS_Structure_Begin(cmp->ts, & st);
-  TS_Structure_Add(cmp->ts, st, sm->type, sm->name);
-  free(sm->name);
-  sm->name = (char *) NULL;
-  Expr_New_Type(se, st);
-}
-
-/* Just convert the final structure type into an Expr */
-static Task Type_Struc_2(Expr *se, Struc *s) {
-  Expr_New_Type(se, s->type);
-  return Success;
 }
 
 static Task Reg_Subtype(Expr *result, Name *parent, Name *child) {
@@ -228,13 +159,6 @@ static Task Subtype_Create(Expr *result, Expr *parent, Name *child) {
   return Success;
 }
 
-static Task Expr_Statement(Expr *e) {
-  TASK( Expr_Resolve_Subtype(e) );
-  (void) Box_Procedure_Quick_Call(e, BOX_DEPTH_UPPER, BOX_MSG_VERBOSE);
-  (void) Cmp_Expr_Destroy_Tmp(e);
-  return Success;
-}
-
 static void Type_Detached(Expr *dst, Expr *src) {
   Type dt;
   if (Expr_Is_Error(src)) {*dst = *src; return;}
@@ -242,31 +166,6 @@ static void Type_Detached(Expr *dst, Expr *src) {
   Expr_New_Type(dst, dt);
 }
 
-/*****************************************************************************/
-
-#define DO(action) \
-  if IS_FAILED( action ) {parser_attr.no_syntax_err = 1; YYERROR;}
-
-#define OPERATORA_EXEC(opr, rs, a, b) \
-  if IS_FAILED( Prs_Operator(opr, & (rs), a, b) ) \
-    {(rs).is.ignore = 1; parser_attr.no_syntax_err = 1; YYERROR;} \
-  (rs).is.ignore = 1;
-
-#define OPERATOR2_EXEC(opr, rs, a, b) \
-  if IS_FAILED( Prs_Operator(opr, & (rs), a, b) ) \
-    {parser_attr.no_syntax_err = 1; YYERROR;}
-
-#define OPERATOR1L_EXEC(opr, rs, a) \
-  Expr *result = Cmp_Operator_Exec(opr, a, NULL); \
-  if ( result == NULL ) {parser_attr.no_syntax_err = 1; YYERROR;} \
-   else rs = *result;
-
-#define OPERATOR1R_EXEC(opr, rs, a) \
-  Expr *result = Cmp_Operator_Exec(opr, NULL, a); \
-  if ( result == NULL ) {parser_attr.no_syntax_err = 1; YYERROR;} \
-   else rs = *result;
-
-#define MY_ERR {parser_attr.no_syntax_err = 1; YYERROR;}
 #endif
 
 
@@ -311,13 +210,6 @@ name.type:
   TOK_UNAME suffix.opt     { DO( Prs_Name_To_Expr(& $1, & $$, $2) ) }
  ;
 
-prim.type:
-  name.type                 { $$ = $1; }
-| '(' type ')'              { $$ = $2; }
-| type.struc                { $$ = $1; }
-| '(' type.species ')'      { $$ = $2; }
- ;
-
 array.type:
   prim.type                 { $$ = $1; }
 | '(' expr ')' type         { if ( Prs_Array_Of_X(& $$, & $2, & $4) ) MY_ERR }
@@ -340,40 +232,6 @@ asgn.type:
 | unregistered.subtype '=' asgn.type          {DO(Register_Subtype(& $$, & $1, & $3));}
  ;
 
-type.species:
-  type TOK_TO type          { if ( Prs_Species_New(& $$, & $1, & $3) ) MY_ERR }
-| type.species TOK_TO type  { if ( Prs_Species_Add(& $$, & $1, & $3) ) MY_ERR }
- ;
-
-/*****************************************************************************
- *                            Structure types                                *
- *****************************************************************************/
-
-/* Matches the first element of a structure type */
-type.struc1:
-  type                     {DO(Type_Struc_Begin(& $$, & $1, (char *) NULL));}
-| type TOK_LNAME           {DO(Type_Struc_Begin(& $$, & $1, Name_To_Str(& $2)));}
-;
-
-/* Matches the second, third, ... element of a structure type */
-type.struc234:
-  type.struc1              {$$ = $1;}
-| TOK_LNAME                {$$.type = TYPE_NONE; $$.name = Name_To_Str(& $1);}
-;
-
-/* Matches a structure type with at least two elements */
-type.struc1234:
-  type.struc1 void.seps type.struc234    {Type_Struc_All_1(& $$, & $1, & $3);}
-| type.struc1234 void.seps type.struc234 {Type_Struc_All_2(& $$, & $1, & $3);}
-;
-
-/* Matches all sorts of structure types */
-type.struc:
-  '(' type.struc1 void.seps ')'          {Type_Struc_1(& $$, & $2);}
-| '(' type.struc1234 void.seps.opt ')'   {DO(Type_Struc_2(& $$, & $2));}
-;
-
-
 registered.subtype:
   TOK_UNAME TOK_UMEMBER                  {DO(Reg_Subtype(& $$, & $1, & $2));}
 | registered.subtype TOK_UMEMBER         {DO(Reg_SubSubtype(& $$, & $1, & $2));}
@@ -383,31 +241,6 @@ unregistered.subtype:
   TOK_UNAME TOK_UMEMBER                  {DO(Unreg_Subtype(& $$, & $1, & $2));}
 | registered.subtype TOK_UMEMBER         {DO(Unreg_SubSubtype(& $$, & $1, & $2));}
 ;
-
-/*****************************************************************************
- *                           Structure expression                            *
- *****************************************************************************/
-expr.struc.all:
-  expr void.seps expr           { if ( Cmp_Structure_Begin()   ) MY_ERR
-                                  if ( Cmp_Structure_Add(& $1) ) MY_ERR
-                                  if ( Cmp_Structure_Add(& $3) ) MY_ERR }
-| expr.struc.all void.seps expr { if ( Cmp_Structure_Add(& $3) ) MY_ERR }
- ;
-
-expr.struc:
-  '(' expr void.seps ')'               { if ( Cmp_Structure_Begin()   ) MY_ERR
-                                         if ( Cmp_Structure_Add(& $2) ) MY_ERR
-                                         if ( Cmp_Structure_End(& $$) ) MY_ERR }
-| '(' expr.struc.all void.seps.opt ')' { if ( Cmp_Structure_End(& $$) ) MY_ERR }
-;
-
-/*****************************************************************************
- *                                 Strings                                   *
- *****************************************************************************/
-string:
-  TOK_STRING           { $$ = $1; }
-| string TOK_STRING    { if IS_FAILED( Name_Cat_And_Free(& $$, & $1, & $2) ) MY_ERR }
- ;
 
 /*****************************************************************************
  *                           Primary Expressions                             *
@@ -452,91 +285,9 @@ prim.expr:
    ']'                  { DO( Box_Instance_End(& $1)); }
  ;
 
-/* Espressioni secondarie */
-expr:
-   prim.expr           { $$ = $1; }
-
- | TOK_LMEMBER {
-    Expr e_parent;
-    TASK( Box_Parent_Get(& e_parent, 0) );
-    DO(Expr_Struc_Member(& $$, & e_parent, & $1));
-    $$.is.release = 0;
-  }
-
- | expr TOK_LMEMBER {DO(Expr_Struc_Member(& $$, & $1, & $2));}
-
- | expr '=' expr        { if (Prs_Rule_Valued_Eq_Valued(& $$, & $1, & $3) ) MY_ERR}
-
- | expr TOK_APLUS expr  { OPERATORA_EXEC(cmp_opr.aplus, $$, & $1, & $3); }
- | expr TOK_AMINUS expr { OPERATORA_EXEC(cmp_opr.aminus,$$, & $1, & $3); }
- | expr TOK_ATIMES expr { OPERATORA_EXEC(cmp_opr.atimes,$$, & $1, & $3); }
- | expr TOK_ADIV expr   { OPERATORA_EXEC(cmp_opr.adiv,  $$, & $1, & $3); }
- | expr TOK_AREM expr   { OPERATORA_EXEC(cmp_opr.arem,  $$, & $1, & $3); }
- | expr TOK_ABAND expr  { OPERATORA_EXEC(cmp_opr.aband, $$, & $1, & $3); }
- | expr TOK_ABXOR expr  { OPERATORA_EXEC(cmp_opr.abxor, $$, & $1, & $3); }
- | expr TOK_ABOR expr   { OPERATORA_EXEC(cmp_opr.abor,  $$, & $1, & $3); }
- | expr TOK_ASHL expr   { OPERATORA_EXEC(cmp_opr.ashl,  $$, & $1, & $3); }
- | expr TOK_ASHR expr   { OPERATORA_EXEC(cmp_opr.ashr,  $$, & $1, & $3); }
-
- | expr TOK_LOR expr    { OPERATOR2_EXEC(cmp_opr.lor,  $$, & $1, & $3); }
- | expr TOK_LAND expr   { OPERATOR2_EXEC(cmp_opr.land, $$, & $1, & $3); }
-
- | expr '|' expr        { OPERATOR2_EXEC(cmp_opr.bor,  $$, & $1, & $3); }
- | expr '^' expr        { OPERATOR2_EXEC(cmp_opr.bxor, $$, & $1, & $3); }
- | expr '&' expr        { OPERATOR2_EXEC(cmp_opr.band, $$, & $1, & $3); }
-
- | expr TOK_EQ expr     { OPERATOR2_EXEC(cmp_opr.eq, $$, & $1, & $3); }
- | expr TOK_NE expr     { OPERATOR2_EXEC(cmp_opr.ne, $$, & $1, & $3); }
- | expr '<' expr        { OPERATOR2_EXEC(cmp_opr.lt, $$, & $1, & $3); }
- | expr TOK_LE expr     { OPERATOR2_EXEC(cmp_opr.le, $$, & $1, & $3); }
- | expr '>' expr        { OPERATOR2_EXEC(cmp_opr.gt, $$, & $1, & $3); }
- | expr TOK_GE expr     { OPERATOR2_EXEC(cmp_opr.ge, $$, & $1, & $3); }
-
- | expr TOK_SHL expr    { OPERATOR2_EXEC(cmp_opr.shl, $$, & $1, & $3); }
- | expr TOK_SHR expr    { OPERATOR2_EXEC(cmp_opr.shr, $$, & $1, & $3); }
-
- | expr '+' expr        { OPERATOR2_EXEC(cmp_opr.plus, $$, & $1, & $3); }
- | expr '-' expr        { OPERATOR2_EXEC(cmp_opr.minus,$$, & $1, & $3); }
- | expr '*' expr        { OPERATOR2_EXEC(cmp_opr.times,$$, & $1, & $3); }
- | expr '/' expr        { OPERATOR2_EXEC( cmp_opr.div, $$, & $1, & $3); }
- | expr '%' expr        { OPERATOR2_EXEC( cmp_opr.rem, $$, & $1, & $3); }
- | expr TOK_POW expr    { OPERATOR2_EXEC( cmp_opr.pow, $$, & $1, & $3); }
- | '-' expr %prec TOK_NEG { OPERATOR1L_EXEC( cmp_opr.minus, $$, & $2 ); }
- | '+' expr %prec TOK_NEG { OPERATOR1L_EXEC(  cmp_opr.plus, $$, & $2 ); }
-
- | '!' expr             { OPERATOR1L_EXEC( cmp_opr.lnot, $$, & $2 ); }
-
- | '~' expr             { OPERATOR1L_EXEC( cmp_opr.bnot, $$, & $2 ); }
-
- | TOK_INC expr         { OPERATOR1L_EXEC( cmp_opr.inc, $$, & $2 ); }
- | TOK_DEC expr         { OPERATOR1L_EXEC( cmp_opr.dec, $$, & $2 ); }
-
- | expr TOK_INC         { OPERATOR1R_EXEC( cmp_opr.inc, $$, & $1 ); }
- | expr TOK_DEC         { OPERATOR1R_EXEC( cmp_opr.dec, $$, & $1 ); }
-;
-
 /******************************************************************************
  *               DEFINIZIONE DELL'ESPRESSIONE COME ISTRUZIONE                 *
  ******************************************************************************/
-type.statement:
-   asgn.type { }
-;
-
-/******************************************************************************
- *               DEFINIZIONE DELL'ESPRESSIONE COME ISTRUZIONE                 *
- ******************************************************************************/
-expr.statement:
-   expr      { DO(Expr_Statement(& $1)) }
-|  '\\' expr { DO(Expr_Ignore(& $2)) }
-;
-
-/******************************************************************************/
-/*               DEFINIZIONE DELLA SINTASSI DELL'ISTRUZIONE END               */
-/******************************************************************************/
-end.statement:
-  TOK_END { Cmp_Assemble(ASM_RET); }
-;
-
 child:
    type                 {$$ = $1;}
 |  TOK_PROC             {Expr_New_Type(& $$, $1);}
@@ -552,74 +303,6 @@ parent.opt:
  | parent               {$$ = $1;}
 ;
 
-proc.def:
-   TOK_AT parent
-   '['
-   statement.list
-   ']'                  {}
-
- | child TOK_AT parent.opt
-   '['                  {DO(Proc_Def_Open(& $1, $2, & $3))}
-   statement.list
-   ']'                  {DO(Proc_Def_Close())}
-
- | child TOK_AT parent.opt
-   '?' TOK_STRING       {DO(Declare_Proc(& $1, $2, & $3, & $5))}
-;
-
-%type <Ex> name.type
-%type <Ex> prim.type
-%type <Ex> type
-%type <Ex> asgn.type
-%type <Ex> type.species
-%type <Ex> simple.expr
-%type <Ex> array.expr
-%type <Ex> expr
-%type <Ex> prim.expr
-%type <Ex> child
-%type <Ex> parent
-%type <Ex> parent.opt
-%type <Nm> prim.suffix
-%type <Sf> suffix
-%type <Sf> suffix.opt
-%type <Nm> string
-
-
-%type <Ex> expr.struc
-%type <Ex> expr.struc.all
-
-%type <SM> type.struc1
-%type <SM> type.struc234
-%type <Sc> type.struc1234
-%type <Ex> type.struc
-
-%type <Ex> array.type
-%type <Ex> detached.type
-
-%type <Ex> registered.subtype
-%type <Ex> unregistered.subtype
-%type <Ex> subtype.expr
-#endif
-#if 0
-  Expr          Ex;   /* Espressione generica */
-  Name          Nm;   /* Nome */
-  Int           Sf;   /* Suffisso che specifica lo scoping per le variabili */
-  Type          Ty;   /* Tipo */
-  Struc         Sc;   /* Incomplete structure type */
-  StrucMember   SM;   /* Member of structure type */
-  Int           kind; /* Per TOK_AT */
-  Int           Int;
-  Type          proc; /* Per TOK_PROC */
-
-void.seps:
-  void.sep
-| void.seps void.sep
-;
-
-void.seps.opt:
-| void.seps
-;
-
 #endif
 
 %}
@@ -632,23 +315,18 @@ void.seps.opt:
   ASTNodePtr    Node;
   ASTTypeMemb   TypeMemb;
   ASTSep        Sep;
+  ASTSelfLevel  SelfLevel;
 }
 
-/* Lista dei token senza valore semantico
- */
-%token TOK_END
-
-%token TOK_ERR
 
 %token TOK_NEWLINE
 %token TOK_ERRSEP
 
 %token TOK_TO TOK_MAPTO
 
-%token <Int> TOK_NPARENT
+%token <SelfLevel> TOK_SELF
 
-/* Lista dei token aventi valore semantico
- */
+/* List of token that have semantial values */
 %token <Ex> TOK_EXPR
 %token <kind> TOK_AT
 %token <proc> TOK_PROC
@@ -660,6 +338,7 @@ void.seps.opt:
 %token TOK_APLUS TOK_AMINUS TOK_ATIMES TOK_ADIV TOK_AREM TOK_ABAND TOK_ABXOR
 %token TOK_ABOR TOK_ASHL TOK_ASHR
 %token TOK_POW
+%token TOK_ERR
 
 /* List of tokens with semantical value */
 %token <String> TOK_IDENTIFIER TOK_TYPE_IDENT
@@ -787,6 +466,7 @@ prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
   | string_concat                {$$ = $1;}
   | TOK_IDENTIFIER               {$$ = ASTNodeVar_New($1, 0); BoxMem_Free($1);}
+  | TOK_SELF                     {$$ = ASTNodeSelfGet_New($1);}
   | '(' expr ')'                 {$$ = ASTNodeIgnore_New($2, 0);}
   | '(' struc_expr ')'           {$$ = $2;}
   ;

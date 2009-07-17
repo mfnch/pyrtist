@@ -27,6 +27,7 @@
 #ifndef _CMPPROC_H
 #  define _CMPPROC_H
 
+#  include <stdlib.h>
 #  include <stdarg.h>
 
 #  include "types.h"
@@ -156,7 +157,7 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p);
  *  -1: if there has not been any attempt to write VM code on the procedure;
  *  -2: if this is a C procedure;
  */
-Int CmpProc_Code_Size(CmpProc *p);
+size_t CmpProc_Get_Code_Size(CmpProc *p);
 
 /** Assemble the instruction calling VM_Assemble and put the code inside
  * the given CmpProc procedure p. A higher level function for assembling code

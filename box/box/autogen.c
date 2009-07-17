@@ -17,18 +17,54 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-#if 0
 #include <assert.h>
 
 #include "types.h"
+#include "messages.h"
+#include "typesys.h"
+#include "virtmach.h"
+#include "cmpproc.h"
+#include "compiler.h"
+#include "value.h"
+#include "autogen.h"
+
+/* Here we assume that the procedure child@parent is not registered! */
+BoxType Autogen_Procedure(BoxCmp *c, BoxType child, BoxType parent) {
+  TS *ts = & c->ts;
+  if (!TS_Is_Special(child)) 
+    return BOXTYPE_NONE;
+
+  else {
+    Type parent_ct = TS_Get_Core_Type(ts, parent);
+    CmpProc *save_cur_proc = c->cur_proc;
+    c->cur_proc = CmpProc_New(c, CMPPROCSTYLE_SUB);
+
+    switch(TS_Get_Kind(ts, parent_ct)) {
+    case TS_KIND_STRUCTURE:
+      //Create_Structure_Method(parent, child, kind);
+      break;
+    case TS_KIND_SUBTYPE:
+      break;
+    default:
+      break;
+    }
+ 
+
+    /* If the procedure is not empty, we register it */
+    if (CmpProc_Get_Code_Size(c->cur_proc) > 0) {
+      MSG_WARNING("Registering auto-generated procedure!");
+    }
+
+    CmpProc_Destroy(c->cur_proc);
+    c->cur_proc = save_cur_proc;
+    return BOXTYPE_NONE;
+  }
+}
+
+#if 0
 /*#include "messages.h"*/
 #include "str.h"
 #include "typesys.h"
-#include "virtmach.h"
-#include "vmalloc.h"
-#include "vmproc.h"
-#include "vmsymstuff.h"
-#include "autogen.h"
 
 static void Create_Structure_Method(Type parent, Type child, int kind) {
   Type parent_ct = TS_Core_Type(cmp->ts, parent);
@@ -83,16 +119,6 @@ void Auto_Acknowledge_Call(Type parent, Type child, int kind) {
       return;
 
     } else {
-      Type parent_ct = TS_Core_Type(cmp->ts, parent);
-      switch(TS_Kind(cmp->ts, parent_ct)) {
-      case TS_KIND_STRUCTURE:
-        Create_Structure_Method(parent, child, kind);
-        break;
-      case TS_KIND_SUBTYPE:
-        return;
-      default:
-        return;
-      }
     }
   }
 }

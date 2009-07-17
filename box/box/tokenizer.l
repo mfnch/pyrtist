@@ -161,7 +161,6 @@ include BEGIN(include);
 
 "=>"  {return TOK_TO;}
 "->"  {return TOK_MAPTO;}
-"end" {return TOK_END;}
 
  /* Operatori di assegnazione */
 "+="  { return TOK_APLUS; }
@@ -195,7 +194,7 @@ include BEGIN(include);
  /* Altri operatori */
 "**"  { return TOK_POW; }
 
-[$]+  { /*yylval.Int = yyleng;*/ return TOK_NPARENT; }
+[$]+  { yylval.SelfLevel = yyleng; return TOK_SELF; }
 
 "@"   { /*yylval.kind = 1;*/ return TOK_AT; }
 

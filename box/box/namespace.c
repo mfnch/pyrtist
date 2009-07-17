@@ -105,20 +105,29 @@ void Namespace_Floor_Down(Namespace *ns) {
     NmspItem *item_to_del = item;
     item = item->next;
     My_NmspItem_Finish(item_to_del);
-    BoxHT_Remove_By_HTItem(& ns->ht, item_to_del->ht_item);
+    if (item_to_del->ht_item != NULL)
+      BoxHT_Remove_By_HTItem(& ns->ht, item_to_del->ht_item);
+
+    else
+      BoxMem_Free(item_to_del);
   }
 }
 
 NmspItem *Namespace_Add_Item(Namespace *ns, NmspFloor floor,
                              const char *item_name) {
-  size_t item_name_len = strlen(item_name) + 1;
   NmspItem dummy, *new_item;
-  BoxHTItem *hi;
+  BoxHTItem *hi = NULL;
   NmspFloorData *floor_data = My_Get_Floor(ns, floor);
 
-  hi = BoxHT_Insert_Obj(& ns->ht, item_name, item_name_len,
-                        & dummy, sizeof(NmspItem));
-  new_item = (NmspItem *) hi->object;
+  if (item_name != NULL) {
+    size_t item_name_len = strlen(item_name) + 1;
+    hi = BoxHT_Insert_Obj(& ns->ht, item_name, item_name_len,
+                          & dummy, sizeof(NmspItem));
+    new_item = (NmspItem *) hi->object;
+
+  } else
+    new_item = (NmspItem *) BoxMem_Safe_Alloc(sizeof(NmspItem));
+ 
   new_item->ht_item = hi;
   new_item->next = floor_data->first_item;
   floor_data->first_item = new_item;
@@ -127,7 +136,9 @@ NmspItem *Namespace_Add_Item(Namespace *ns, NmspFloor floor,
 
 NmspItem *Namespace_Get_Item(Namespace *ns, NmspFloor floor,
                              const char *item_name) {
-  size_t item_name_len = strlen(item_name) + 1;
+  size_t item_name_len;
+  assert(item_name != NULL);
+  item_name_len = strlen(item_name) + 1;
   BoxHTItem *ht_item;
   if (BoxHT_Find(& ns->ht, (char *) item_name, item_name_len, & ht_item)) {
     return (NmspItem *) ht_item->object;
@@ -155,3 +166,4 @@ Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
   Value_Link(v); /* we also return a new reference to the value */
   return v;
 }
+

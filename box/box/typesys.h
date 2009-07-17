@@ -220,20 +220,21 @@ void TS_Procedure_Unregister(TS *ts, BoxType p);
  */
 void TS_Procedure_Sym_Num_Get(TS *ts, UInt *sym_num, Type p);
 
+/** Options to be used when searching for procedure */
+typedef enum {
+  TSSEARCHMODE_INHERITED, /**< Search procedures inherited from extended 
+                               types */
+  TSSEARCHMODE_BLACKLIST  /**< If the procedure is not found, blacklist it! */
+} TSSearchMode;
+
 /** Search the given procedure in the list of registered procedures.
  * Return the procedure in *proc, or TS_TYPE_NONE if the procedure
  * has not been found. If the argument of the procedure needs to be expanded
  * *expansion_type is the target type for that expansion. If expansion
  * is not needed then *expansion_type = TS_TYPE_NONE.
  */
-void TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
-                         Type parent, Type child, int kind);
-
-/** Similar to TS_Procedure_Search, but search also the procedures inherited
- * from aliased types.
- */
-void TS_Procedure_Inherited_Search(TS *ts, Type *proc, Type *expansion_type,
-                                   Type parent, Type child, int kind);
+BoxType TS_Procedure_Search(TS *ts, Type *expansion_type,
+                            Type child, Type parent, TSSearchMode mode);
 
 /** Put the procedure in the blacklist. Blacklisted procedure are cannot be
  * registered. The feature is important to ensure that a procedure that
@@ -241,15 +242,15 @@ void TS_Procedure_Inherited_Search(TS *ts, Type *proc, Type *expansion_type,
  * registered later.
  * @see TS_Procedure_Blacklist_Undo
  */
-void TS_Procedure_Blacklist(TS *ts, BoxType p);
+void TS_Procedure_Blacklist(TS *ts, BoxType child, BoxType type);
 
 /** Undo a blacklist operation.
  * @see TS_Procedure_Blacklist
  */
-void TS_Procedure_Blacklist_Undo(TS *ts, BoxType p);
+void TS_Procedure_Blacklist_Undo(TS *ts, BoxType child, BoxType parent);
 
 /** Return 1 if the procedure is blacklisted, 0 otherwise. */
-int TS_Procedure_Is_Blacklisted(TS *ts, BoxType p);
+int TS_Procedure_Is_Blacklisted(TS *ts, BoxType child, BoxType parent);
 
 /** Create and register a procedure by calling firt TS_Procedure_New
  * and then TS_Procedure_Register. sym_num is the associated symbol

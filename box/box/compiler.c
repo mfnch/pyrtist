@@ -328,6 +328,7 @@ static void My_Compile_UnOp(BoxCmp *c, ASTNode *n);
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n);
 static void My_Compile_Struc(BoxCmp *c, ASTNode *n);
 static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n);
+static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n);
 static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n);
 static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n);
 static void My_Compile_StrucType(BoxCmp *c, ASTNode *n);
@@ -366,6 +367,8 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_Struc(c, node); break;
   case ASTNODETYPE_MEMBERGET:
     My_Compile_MemberGet(c, node); break;
+  case ASTNODETYPE_SELFGET:
+    My_Compile_SelfGet(c, node); break;
   case ASTNODETYPE_PROCDEF:
     My_Compile_ProcDef(c, node); break;
   case ASTNODETYPE_TYPEDEF:
@@ -462,7 +465,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
 
     } else {
       if (Value_Want_Has_Type(stmt_val)) {
-        BoxTask status = Value_Emit_Call(parent, stmt_val);
+        BoxTask status = Value_Emit_Call_Or_Blacklist(parent, stmt_val);
         if (status == BOXTASK_FAILURE) {
           MSG_WARNING("Don't know how to use '%~s' expressions inside "
                       "a '%~s' box.",
@@ -723,6 +726,10 @@ static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
   BoxCmp_Push_Value(c, v_memb);
 }
 
+static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
+  BoxCmp_Push_Value(c, NULL);
+}
+
 static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   Value *v_child, *v_parent, *v_ret = NULL;
   BoxType t_child = BOXTYPE_NONE, t_parent = BOXTYPE_NONE,
@@ -772,8 +779,8 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   if (n_implem == NULL) {
     if (c_name == NULL) {
       /* no implementation. Case: X@Y ? */
-      TS_Procedure_Search(& c->ts, & t_proc, /*expansion_type*/ NULL,
-                          t_parent, t_child, 1);
+      t_proc = TS_Procedure_Search(& c->ts, /*expansion_type*/ NULL,
+                                   t_child, t_parent, 0);
       if (t_proc == BOXTYPE_NONE) {
         BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
         t_proc = TS_Procedure_New(& c->ts, t_parent, t_child, 3);

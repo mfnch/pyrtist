@@ -631,64 +631,68 @@ void TS_Procedure_Info(TS *ts, Type *parent, Type *child,
     *sym_num = proc_td->data.proc.sym_num;
 }
 
-void TS_Procedure_Search(TS *ts, Type *proc, Type *expansion_type,
-                         Type parent, Type child, int kind) {
+static BoxType My_Procedure_Search(TS *ts, Type *expansion_type,
+                                   Type child, Type parent) {
   TSDesc *p_td, *parent_td;
   Type p, dummy;
-  assert(kind == 1 || kind == 2);
-  if (proc == (Type *) NULL) proc = & dummy;
-  if (expansion_type == (Type *) NULL) expansion_type = & dummy;
-  *proc = TS_TYPE_NONE;
-  *expansion_type = TS_TYPE_NONE;
+  if (expansion_type == NULL)
+    expansion_type = & dummy;
+  *expansion_type = BOXTYPE_NONE;
   parent_td = Type_Ptr(ts, parent);
   /*MSG_ADVICE("TS_Procedure_Search: searching procedure");*/
-  for(p = parent_td->first_proc; p != TS_TYPE_NONE; p = p_td->first_proc) {
+  for(p = parent_td->first_proc; p != BOXTYPE_NONE; p = p_td->first_proc) {
     TSCmp comparison;
-    int p_kind;
     p_td = Type_Ptr(ts, p);
     /*MSG_ADVICE("TS_Procedure_Search: considering %~s", TS_Name_Get(ts, p));*/
-    p_kind = p_td->data.proc.kind;
-    assert(p_kind != 0 && (p_kind | 3) == 3);
-    if ((p_kind & kind) != 0) {
-      /*MSG_ADVICE("TS_Procedure_Search: '%s', comparing '%s' == '%s'",
-                 Tym_Type_Names(parent),
-                 Tym_Type_Names(p_td->target), Tym_Type_Names(child));*/
-      comparison = TS_Compare(ts, p_td->target, child);
-      if (comparison != TS_TYPES_UNMATCH) {
-        if (comparison == TS_TYPES_EXPAND)
-          *expansion_type = p_td->target;
-        *proc = p;
-        return;
-      }
+    /*MSG_ADVICE("TS_Procedure_Search: '%s', comparing '%s' == '%s'",
+               Tym_Type_Names(parent),
+               Tym_Type_Names(p_td->target), Tym_Type_Names(child));*/
+    comparison = TS_Compare(ts, p_td->target, child);
+    if (comparison != TS_TYPES_UNMATCH) {
+      if (comparison == TS_TYPES_EXPAND)
+        *expansion_type = p_td->target;
+      return p;
     }
   }
+
+  return BOXTYPE_NONE;
 }
 
-void TS_Procedure_Inherited_Search(TS *ts, Type *proc, Type *expansion_type,
-                                   Type parent, Type child, int kind) {
-  Type dummy, previous_parent;
-  assert(kind == 1 || kind == 2);
-  if (proc == (Type *) NULL) proc = & dummy;
+BoxType TS_Procedure_Search(TS *ts, BoxType *expansion_type,
+                            BoxType child, BoxType parent, 
+			    TSSearchMode mode) {
+  BoxType previous_parent;
+  int search_inherited = (mode & TSSEARCHMODE_INHERITED) != 0;
+  BoxType proc;
+
   do {
-    TS_Procedure_Search(ts, proc, expansion_type, parent, child, kind);
-    if (*proc != TS_TYPE_NONE) break;
+    proc = My_Procedure_Search(ts, expansion_type, child, parent);
+    if (proc != BOXTYPE_NONE)
+      break;
+
+    if ((mode & TSSEARCHMODE_BLACKLIST) != 0)
+      TS_Procedure_Blacklist(ts, child, parent);
+
     /* Resolve the parent type and retry */
     previous_parent = parent;
     parent = TS_Resolve_Once(ts, parent,
                              TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES |
                              TS_KS_SUBTYPE);
-  } while (parent != previous_parent);
+  } while (parent != previous_parent && search_inherited);
+
+  return proc;
 }
 
-void TS_Procedure_Blacklist(TS *ts, BoxType p) {
-  MSG_WARNING("TS_Procedure_Blacklist: not implemented.");
+void TS_Procedure_Blacklist(TS *ts, BoxType child, BoxType parent) {
+  MSG_ADVICE("TS_Procedure_Blacklist: blacklisting %~s@%~s.",
+             TS_Name_Get(ts, child), TS_Name_Get(ts, parent));
 }
 
-void TS_Procedure_Blacklist_Undo(TS *ts, BoxType p) {
+void TS_Procedure_Blacklist_Undo(TS *ts, BoxType child, BoxType parent) {
   MSG_WARNING("TS_Procedure_Blacklist_Undo: not implemented.");
 }
 
-int TS_Procedure_Is_Blacklisted(TS *ts, BoxType p) {
+int TS_Procedure_Is_Blacklisted(TS *ts, BoxType child, BoxType parent) {
   return 0;
 }
 

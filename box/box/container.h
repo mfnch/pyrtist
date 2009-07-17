@@ -63,7 +63,7 @@ typedef enum {
 
 typedef struct {
   BoxContCateg
-              categ;          /**< Cathegory (immediate, register, ptr, etc ) */
+              categ;          /**< Category (immediate, register, ptr, etc ) */
   BoxContType type;           /**< Type (CHAR, INT, REAL, ...) */
   union {
     BoxValue  imm;          /**< The value (if immediate) */

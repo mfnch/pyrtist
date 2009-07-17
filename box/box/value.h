@@ -224,7 +224,12 @@ BoxTask Value_Emit_Call(Value *parent, Value *child);
  * If the procedure is not found, than it is blacklisted, so that it won't
  * be possible to define it later.
  */
-BoxTask Value_Try_Emit_Call_Or_Blacklist(Value *parent, Value *child);
+BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child);
+
+/** Cast a generic pointer (type BOXTYPE_PTR) to the given type.
+ * REFERENCES: return: new, v_ptr: -1;
+ */
+Value *Value_Cast_Ptr(Value *v_ptr, BoxType new_type);
 
 /** Get the next member of a structure. If the given type '*t_memb' is a
  * structure, then return in 'v_memb' its first member. If '*t_memb' is a
@@ -263,5 +268,15 @@ BoxTask Value_Move_Content(Value *dest, Value *src);
 
 /** Expand the value 'v' in agreement with the provided expansion type. */
 Value *Value_Expand(Value *v, BoxType expansion_type);
+
+/**
+ * REFERENCES: v: 0;
+ */
+void Value_Setup_As_Parent(Value *v, BoxType parent_t);
+
+/**
+ * REFERENCES: v: 0;
+ */
+void Value_Setup_As_Child(Value *v, BoxType child_t);
 
 #endif /* _VALUE_H */

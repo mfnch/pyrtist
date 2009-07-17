@@ -112,6 +112,12 @@ void VM_Proc_Empty(VMProgram *vmp, UInt proc_num) {
   BoxArr_Clear(& procedure->code);
 }
 
+size_t BoxVM_Proc_Get_Size(BoxVM *vm, BoxVMProcID id) {
+  VMProcTable *pt = & vm->proc_table;
+  VMProc *procedure = (VMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, id);
+  return BoxArr_Num_Items(& procedure->code);
+}
+
 void VM_Proc_Install_Code(VMProgram *vmp, UInt *call_num,
                           UInt proc_num, const char *name,
                           const char *desc) {
