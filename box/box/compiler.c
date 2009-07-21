@@ -727,7 +727,36 @@ static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
 }
 
 static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
-  BoxCmp_Push_Value(c, NULL);
+  Value *v_self = NULL;
+  const char *n_self = NULL;
+
+  assert(n->type == ASTNODETYPE_SELFGET);
+
+  switch (n->attr.self_get.level) {
+  case 1:
+    n_self = "$";
+    v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$");
+    break;
+
+  case 2:
+    n_self = "$$";
+    v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$");
+    break;
+
+  default:
+    MSG_FATAL("My_Compile_SelfGet: not implemented, yet.");
+    assert(0);
+  } 
+
+  if (v_self == NULL) {
+    if (n_self != NULL)
+      MSG_ERROR("%s is not defined in the current scope.", n_self);
+
+    else
+      MSG_ERROR("Unexpected error in My_Compile_SelfGet!");
+  }
+
+  BoxCmp_Push_Value(c, v_self);
 }
 
 static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
