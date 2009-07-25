@@ -319,7 +319,8 @@ Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos) {
 static void My_Compile_Any(BoxCmp *c, ASTNode *node);
 static void My_Compile_Error(BoxCmp *c, ASTNode *node);
 static void My_Compile_TypeName(BoxCmp *c, ASTNode *node);
-static void My_Compile_Box(BoxCmp *c, ASTNode *node);
+static void My_Compile_Box(BoxCmp *c, ASTNode *box,
+                           BoxType child_t, BoxType parent_t);
 static void My_Compile_String(BoxCmp *c, ASTNode *node);
 static void My_Compile_Const(BoxCmp *c, ASTNode *n);
 static void My_Compile_Var(BoxCmp *c, ASTNode *n);
@@ -350,7 +351,7 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
   case ASTNODETYPE_TYPENAME:
     My_Compile_TypeName(c, node); break;
   case ASTNODETYPE_BOX:
-    My_Compile_Box(c, node); break;
+    My_Compile_Box(c, node, BOXTYPE_NONE, BOXTYPE_NONE); break;
   case ASTNODETYPE_STRING:
     My_Compile_String(c, node); break;
   case ASTNODETYPE_CONST:
@@ -427,7 +428,8 @@ static void My_Compile_Statement(BoxCmp *c, ASTNode *s) {
   }
 }
 
-static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
+static void My_Compile_Box(BoxCmp *c, ASTNode *box,
+                           BoxType t_child, BoxType t_parent) {
   ASTNode *s;
   Value *parent = NULL;
   int parent_is_err = 0;
@@ -450,6 +452,24 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box) {
 
   Namespace_Floor_Up(& c->ns); /* variables defined in this box will be
                                   destroyed when it gets closed! */
+
+  /* Add $ (the child) to namespace */
+  if (t_child != BOXTYPE_NONE) {
+    Value *v_child = Value_New(c->cur_proc);
+    Value_Setup_As_Child(v_child, t_child);
+    Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT,
+                        "$", v_child);
+    Value_Unlink(v_child);
+  }
+
+  /* Add $$ (the parent) to namespace */
+  if (t_parent != BOXTYPE_NONE) {
+    Value *v_parent = Value_New(c->cur_proc);
+    Value_Setup_As_Parent(v_parent, t_parent);
+    Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT,
+                        "$$", v_parent);
+    Value_Unlink(v_parent);
+  }
 
   /* Loop over all the statements of the box */
   for(s = box->attr.box.first_statement;
@@ -746,7 +766,7 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
   default:
     MSG_FATAL("My_Compile_SelfGet: not implemented, yet.");
     assert(0);
-  } 
+  }
 
   if (v_self == NULL) {
     if (n_self != NULL)
@@ -754,6 +774,13 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
 
     else
       MSG_ERROR("Unexpected error in My_Compile_SelfGet!");
+
+  } else {
+    /* Return only a weak copy */
+    Value *v_copy = Value_New(c->cur_proc);
+    Value_Setup_As_Weak_Copy(v_copy, v_self);
+    Value_Unlink(v_self);
+    v_self = v_copy;
   }
 
   BoxCmp_Push_Value(c, v_self);
@@ -831,7 +858,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
 
     c->cur_proc = & proc_implem;
 
-    My_Compile_Any(c, n_implem);
+    My_Compile_Box(c, n_implem, t_child, t_parent);
     v_implem = BoxCmp_Pop_Value(c);
     /* NOTE: we should double check that this is void! */
     Value_Unlink(v_implem);
