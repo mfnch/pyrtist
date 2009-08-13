@@ -68,7 +68,7 @@ class GUIPoint:
       self.id, self.value = parse_guipoint(id)
 
   def __repr__(self):
-    return "%s = Point[.x = %f, .y = %f]" \
+    return "%s = Point[.x=%f, .y=%f]" \
            % (self.id, self.value[0], self.value[1])
  
 def default_notifier(level, msg):
@@ -117,12 +117,10 @@ def parse_guipoint_part(src, start=0):
     print GUIPoint(line)
 
 class Document:
-  def __init__(self, filename=None):
-    self.attributes = {}
+  def __init__(self):
     self.notifier = default_notifier
-    
-    if filename != None:
-      self.load_from_file(filename)
+    self.attributes = {}
+    self.parts = None
 
   def _get_arg_num(self, arg, possible_args):
     i = 0
@@ -133,7 +131,7 @@ class Document:
     self.notify("WARNING", "unrecognized marker argument '%s'" % arg)
     return None
     
-  def load_from_src(self, boxer_src):
+  def load_from_str(self, boxer_src):
     parts = {}           # different text parts of the source
     context = "preamble" # initial context/part
 
@@ -182,18 +180,20 @@ class Document:
               except:
                 self.notify("WARNING", "Cannot determine Boxer version which "
                             "generated the file")
+    self.parts = parts
 
-    print parts
     parse_guipoint_part(parts["refpoints"])
     return True
-      
 
   def load_from_file(self, filename):
     f = open(filename, "r")
-    self.load_from_src(f.read())
+    self.load_from_str(f.read())
     f.close()
 
-d = Document("experiment.box")
+  def save_to_str(self):
+    return ""
 
-
+d = Document()
+d.load_from_file("experiment.box")
+print d.save_to_str()
 
