@@ -1,13 +1,69 @@
 
+version = (0, 1, 1)
+max_chars_per_line = 79
+marker_begin = "//!BOXER"
+marker_sep = ":"
+
 endline = "\n"
 
-def get_marker(line):
+default_preamble = """
+include "g"
+GUI = Void
+Window@GUI[]
+
+"""
+
+def text_writer(pieces, sep=", ", line_sep=None, max_line_width=None):
+  """Similarly to str.join, this function concatenates the strings contained
+  in the list ``pieces`` separating them with the separator ``sep``.
+  However, the width of the line is always kept below ``max_line_width``,
+  if possible. This means that when a line would exceed this limit, a new line
+  is started.
+  NOTE: each element of pieces is filtered through the function str() before
+    being used.
+  """
+
+  mlw = max_line_width
+  if mlw == None:
+    mlw = max_chars_per_line
+  lsep = line_sep
+  if lsep == None:
+    lsep = endline
+  text = ""
+
+  this_line = ""
+  cur_sep = ""
+  for piece in pieces:
+    p = str(cur_sep) + str(piece)
+    lp = len(p)
+    lts = len(this_line)
+    if lts == 0 or lts + lp <= mlw:
+      this_line += p
+      cur_sep = sep
+
+    else:
+      text += this_line + lsep
+      this_line = str(piece)
+      cur_sep = sep
+ 
+  if len(this_line) > 0:
+    text += this_line + lsep
+  return text
+
+def marker_line_parse(line):
   """Extract the arguments of a marker line or return None if the given
   string is not a marker line."""
-  if not line.lstrip().startswith("//!BOXER"):
+  if not line.lstrip().startswith(marker_begin):
     return None
   else:
-    return line.split(":")[1:]
+    return line.split(marker_sep)[1:]
+
+def marker_line_assemble(attrs, newline=True):
+  """Crete a marker line from the given list of attributes."""
+  s = marker_sep.join([marker_begin] + attrs)
+  if newline:
+    s += endline
+  return s
 
 def parse_given_eq_smthg(s, fixed_part):
   """Parse the given string 's' assuming it has the form
@@ -67,10 +123,19 @@ class GUIPoint:
     else:
       self.id, self.value = parse_guipoint(id)
 
+  def to_str(self, version):
+    """Similar to str(guipoint), but use the proper format for the given 
+    verison."""
+    if version == (0, 1):
+      return "%s = (%s, %s)" % (self.id, self.value[0], self.value[1])
+
+    else:
+      return "%s = Point[.x=%s, .y=%s]" \
+             % (self.id, self.value[0], self.value[1])
+
   def __repr__(self):
-    return "%s = Point[.x=%f, .y=%f]" \
-           % (self.id, self.value[0], self.value[1])
- 
+    return self.to_str(version=version)
+
 def default_notifier(level, msg):
   print "%s: %s" % (level, msg)
 
@@ -84,9 +149,10 @@ def search_first(s, things, start=0):
       found = i
   return found
 
-def match_close(src, start):
+
+def match_close(src, start, pars):
   open_bracket = src[start]
-  close_bracket = {"(":")", "[":"]"}[open_bracket]
+  close_bracket = pars[open_bracket]
   while True:
     next = search_first(src, [open_bracket, close_bracket], start + 1)
     if next == -1:
@@ -96,31 +162,80 @@ def match_close(src, start):
     else:
       return next + 1
 
-def get_next_guipoint_string(src, start=0):
+def get_next_guipoint_string(src, start=0, seps=[",", endline],
+                             pars={"(": ")", "[": "]"}):
   pos = start
+  open_seps = pars.keys()
+  all_seps = seps + open_seps
   while True:
-    next = search_first(src, [",", endline, "(", "["], pos)
+    next = search_first(src, all_seps, pos)
     if next < 0:
       # no comma nor parenthesis: we are parsing the last bit
       return (src[start:], len(src))
 
     c = src[next]
-    if c == "," or c == endline :
+    if c in seps:
       # comma comes before next open parenthesis
       return (src[start:next], next + 1)
-    elif c == "(":
-      pos = match_close(src, next)
 
-def parse_guipoint_part(src, start=0):
+    elif c in open_seps:
+      pos = match_close(src, next, pars=pars)
+
+def parse_guipoint_part(src, guipoint_fn, start=0):
   while start < len(src):
     line, start = get_next_guipoint_string(src, start)
-    print GUIPoint(line)
+    guipoint_fn(line)
+
+def save_to_str_v0_1_1(document):
+  parts = document.parts
+  ml_version = marker_line_assemble(["VERSION", "0", "1", "1"])
+  ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"])
+  ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"])
+  refpoints_text = text_writer(parts["refpoints"])
+  s = (ml_version +
+       parts["preamble"] + endline +
+       ml_refpoints_begin + refpoints_text + ml_refpoints_end +
+       parts["userspace"])
+  return s
+
+def save_to_str_v0_1(document):
+  parts = document.parts
+  ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"])
+  ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"])
+  refpoints = [rp.to_str(version=(0, 1)) for rp in parts["refpoints"]]
+  refpoints_text = text_writer(refpoints)
+  s = (parts["preamble"] + endline +
+       ml_refpoints_begin + refpoints_text + ml_refpoints_end +
+       parts["userspace"])
+  return s
+
+_save_to_str_fns = {(0, 1): save_to_str_v0_1,
+                    (0, 1, 1): save_to_str_v0_1_1}
+
+def save_to_str(document, version=version):
+  if _save_to_str_fns.has_key(version):
+    fn = _save_to_str_fns[version]
+    return fn(document)
+
+  else:
+    raise ValueError("Cannot save document using version %s" % version)
 
 class Document:
   def __init__(self):
     self.notifier = default_notifier
     self.attributes = {}
     self.parts = None
+
+  def new(self):
+    self.parts = {
+      'preamble': default_preamble,
+      'refpoints_text': '',
+      'refpoints': [],
+      'userspace': ''
+    }
+    self.attributes = {
+      'version': version
+    }
 
   def _get_arg_num(self, arg, possible_args):
     i = 0
@@ -145,7 +260,7 @@ class Document:
     # process the file and interpret the markers
     lines = boxer_src.splitlines()
     for line in lines:
-      marker = get_marker(line)
+      marker = marker_line_parse(line)
       if marker == None:
         if parts.has_key(context):
           parts[context] += "\n" + line
@@ -171,7 +286,7 @@ class Document:
               if arg_num == None:
                 return False
               else:
-                context = ["refpoints", "userspace"][arg_num]
+                context = ["refpoints_text", "userspace"][arg_num]
 
             elif marker_name == "VERSION":
               try:
@@ -180,9 +295,15 @@ class Document:
               except:
                 self.notify("WARNING", "Cannot determine Boxer version which "
                             "generated the file")
-    self.parts = parts
 
-    parse_guipoint_part(parts["refpoints"])
+    guipoints = []
+    def guipoint_fn(p_str):
+      guipoints.append(GUIPoint(p_str))
+
+    parse_guipoint_part(parts["refpoints_text"], guipoint_fn)
+    parts["refpoints"] = guipoints
+
+    self.parts = parts
     return True
 
   def load_from_file(self, filename):
@@ -190,10 +311,12 @@ class Document:
     self.load_from_str(f.read())
     f.close()
 
-  def save_to_str(self):
-    return ""
+  def save_to_str(self, version=version):
+    return save_to_str(self, version)
 
+import sys
 d = Document()
-d.load_from_file("experiment.box")
+#d.load_from_file(sys.argv[1])
+d.new()
 print d.save_to_str()
 
