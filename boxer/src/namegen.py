@@ -48,6 +48,13 @@ def get_last_num(name):
     i += 1
   return (start, end)
   
+def generate_next_num(old_num):
+    l = len(old_num)
+    nn = str(int(old_num) + 1)
+    if len(nn) >= l:
+        return nn
+    else:
+        return nn.rjust(l, "0")
 
 def generate_next_name(old_name):
   """Given the name of the previous point, generate a new name, by incrementing
@@ -58,8 +65,8 @@ def generate_next_name(old_name):
   if start == None:
     return n + "1"
   else:
-    old_num = int(n[start:end])
-    return "%s%d%s" % (n[:start], old_num + 1, n[end:])
+    new_num = generate_next_num(n[start:end])
+    return n[:start] + new_num + n[end:]
 
 while True:
   n = adjust_name(raw_input())

@@ -24,6 +24,7 @@ import os
 import os.path
 
 import config
+import document
 
 def box_source_preamble(out_files):
   if out_files == None:
@@ -156,48 +157,22 @@ class Boxer:
     self.filename = None
     self.assume_file_is_saved()
 
-  def wrap_src(self, out_files):
-    """Return the source preable and the source body of to be passed to Box.
-    The complete program can be obtained concatenating the two strings:
-
-      pre, src = xxx.wrap_src(out_files)
-      complete_box_program = pre + src
-    """
-    src = box_source_preamble(out_files)
-    marker1 = self.config.get_default("src_marker_refpoints_begin")
-    marker2 = self.config.get_default("src_marker_refpoints_end")
-    src += "\n".join(["", marker1, self.imgview.code_gen(), marker2, ""])
-    return (src, self.get_main_source())
-
-  def unwrap_src(self, src):
-    """Inverse of wrap_src: extract the part of the code edited by the user
-    and the part which contains the reference points and should be parsed.
-    The two strings are returned in a couple (ref_point_str, user_str)
-    """
-    marker1 = self.config.get_default("src_marker_refpoints_begin")
-    marker2 = self.config.get_default("src_marker_refpoints_end")
-    i0 = src.find(marker1)
-    i1 = src.find(marker2)
-    refpoint_str = src[i0+len(marker1):i1]
-    user_str = src[i1+len(marker2):]
-    return (refpoint_str.strip(), user_str.strip())
-
   def raw_file_open(self, filename):
     """Load the file 'filename' into the textview."""
+    d = document.Document()
     try:
-      f = open(filename, "r")
-      src = f.read()
-      f.close()
+      d.load_from_file(filename)
     except:
       self.error("Error loading the file")
       return
 
-    ref_point_str, user_str = self.unwrap_src(src)
+    ref_points = d.get_refpoints()
+    user_str = d.get_user_part()
     execute = False
 
     try:
       self.imgview.ref_point_del_all()
-      self.imgview.add_from_code(ref_point_str)
+      self.imgview.add_from_list(ref_points)
       execute = True
 
     except:
@@ -215,10 +190,12 @@ class Boxer:
     try:
       if filename == None:
         filename = self.filename
-      f = open(filename, "w")
-      pre, src = self.wrap_src(None)
-      f.write(pre + src)
-      f.close()
+
+      d = document.Document()
+      d.new(refpoints=self.imgview.get_point_list(),
+            code=self.get_main_source())
+      d.save_to_file(filename)
+
       self.filename = filename
       self.assume_file_is_saved()
       return True
@@ -336,12 +313,19 @@ class Boxer:
                                      self.textview.get_editable())
 
   def menu_run_execute(self, image_menu_item):
-    """Called menu run->execute command."""
+    """Called by menu run->execute command."""
     box_source_file = tmp_file("source", "box")
     box_presource_file = tmp_file("pre", "box")
     box_out_file = tmp_file("out", "dat")
     box_out_img_file = tmp_file("out", "png")
-    pre, src = self.wrap_src((box_out_file, box_out_img_file))
+
+    d = document.Document()
+    d.new(preamble=box_source_preamble((box_out_file, box_out_img_file)),
+          refpoints=self.imgview.get_point_list(),
+          code="")
+
+    pre = d.save_to_str()
+    src = self.get_main_source()
 
     f = open(box_presource_file, "wt")
     f.write(pre)

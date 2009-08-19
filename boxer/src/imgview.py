@@ -22,6 +22,8 @@ produced by a Box program and to handle the reference points.
 
 import math
 
+import document
+
 def debug():
   import sys
   from IPython.Shell import IPShellEmbed
@@ -162,57 +164,19 @@ class ImgView:
     if current == None or current[1] > self.ref_point_size: return None
     return current
 
-  def code_gen(self):
-    """Generate Box code to set the ref. points."""
-    line_and_whole = ["", ""]
-    def add_to_line(piece):
-      l = len(line_and_whole[0])
-      if l == 0:
-        line_and_whole[0] = piece
-      elif l + len(piece) > self.code_max_row:
-        line_and_whole[1] += line_and_whole[0] + self.sep_newline
-        line_and_whole[0] = piece
-      else:
-        line_and_whole[0] += self.sep_comma + piece
-
+  def get_point_list(self):
+    """Return a list of GUIPoints corresponding to the current set of reference
+    points. The list is compatible to the one which is expected by the method
+    add_from_list."""
+    refpoints = []
     for p in self.ref_point_list:
-      x, y = p.box_coords
-      piece = "%s = (%s, %s)" % (p.name, x, y)
-      add_to_line(piece)
+      refpoints.append(document.GUIPoint(id=p.name, value=p.box_coords))
+    return refpoints
 
-    line_and_whole[1] += line_and_whole[0] + self.sep_newline
-    return line_and_whole[1]
-
-  def __parse_piece(self, line, callback):
-    left, right = line.split("=", 1)
-    name = left.strip()
-    left, remainder = right.split(")", 1)
-    left = left.strip()
-    if left[0] != "(":
-      raise "Error parsing reference point assignment."
-    left = left[1:]
-    left, right = left.split(",")
-    point = (float(left), float(right))
-    callback(point, name)
-    remainder = remainder.strip()
-    if len(remainder) > 0 and remainder[0] == ",":
-      remainder = remainder[1:]
-    return remainder
-
-  def code_parse(self, code, callback):
-    """Parse the Box code containing the reference point assignment.
-    For each point call callback with (point, name) as argument,
-    where point is a tuple of two float and name is the name of the point.
-    """
-    for line in code.splitlines():
-      remainder = line
-      while len(remainder.strip()) > 0:
-        remainder = self.__parse_piece(remainder, callback)
-
-  def add_from_code(self, code):
-    def callback(box_coords, name):
-      self.ref_point_box_new(box_coords, name)
-    self.code_parse(code, callback)
+  def add_from_list(self, refpoints):
+    """Add reference points from the given list of GUIPoints."""
+    for rp in refpoints:
+      self.ref_point_box_new(rp.value, rp.id)
 
   def get_size(self):
     """Return a couple of two reals: the width and height of the image

@@ -13,6 +13,9 @@ Window@GUI[]
 
 """
 
+default_code = """
+"""
+
 def text_writer(pieces, sep=", ", line_sep=None, max_line_width=None):
   """Similarly to str.join, this function concatenates the strings contained
   in the list ``pieces`` separating them with the separator ``sep``.
@@ -226,16 +229,27 @@ class Document:
     self.attributes = {}
     self.parts = None
 
-  def new(self):
+  def new(self, preamble=None, refpoints=[], code=None):
+    if code == None:
+      code = default_code
+    if preamble == None:
+        preamble = default_preamble
     self.parts = {
-      'preamble': default_preamble,
+      'preamble': preamble,
       'refpoints_text': '',
-      'refpoints': [],
-      'userspace': ''
+      'refpoints': refpoints,
+      'userspace': code
     }
     self.attributes = {
       'version': version
     }
+
+  def get_refpoints(self):
+    """Get a list of the reference points in the document (list of GUIPoint)"""
+    return self.parts['refpoints']
+
+  def get_user_part(self):
+    return self.parts['userspace']
 
   def _get_arg_num(self, arg, possible_args):
     i = 0
@@ -314,9 +328,14 @@ class Document:
   def save_to_str(self, version=version):
     return save_to_str(self, version)
 
-import sys
-d = Document()
-#d.load_from_file(sys.argv[1])
-d.new()
-print d.save_to_str()
+  def save_to_file(self, filename, version=version):
+    f = open(filename, "w")
+    f.write(self.save_to_str(version=version))
+    f.close()
+
+if __name__ == "__main__":
+  import sys
+  d = Document()
+  d.load_from_file(sys.argv[1])
+  print d.save_to_str()
 

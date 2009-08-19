@@ -6,6 +6,7 @@ scripts/boxer
 src/__init__.py
 src/boxer.py
 src/config.py
+src/document.py
 src/imgview.py
 src/info.py
 src/glade/boxer.glade
