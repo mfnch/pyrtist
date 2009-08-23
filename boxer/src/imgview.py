@@ -22,7 +22,7 @@ produced by a Box program and to handle the reference points.
 
 import math
 
-import document
+import document, namegen
 
 def debug():
   import sys
@@ -95,7 +95,6 @@ class ImgView:
     self.ref_point = {}
     self.ref_point_list = []
     self.ref_point_size = ref_point_size
-    self.index = 0
     self.base_name = base_name
     self.metric = square_metric
     self.sep_newline = "\n"
@@ -104,6 +103,19 @@ class ImgView:
     self.comment_line = lambda line: (("// %s" % line) + self.sep_newline)
     self.grid = Grid()
     self.grid.set_resolution((20, 20))
+
+    def set_next_refpoint(self, value): self.base_name = value
+
+    self.attrs = {"get_next_refpoint_name": lambda self: self.base_name,
+                  "set_next_refpoint_name": set_next_refpoint}
+
+  def set_attr(self, attr, value):
+    """Set an attribute of the class."""
+    if self.attrs.has_key(attr):
+      self.attrs[attr] = value
+
+    else:
+      raise "The ImgView class has not an attribute with name '%s'" % attr
 
   def distance(self, p1, p2):
     """Returns the distance between two given points, using the currently
@@ -117,13 +129,13 @@ class ImgView:
     Example: if 'base_name="p"', then returns p1, or p2 (if p1 has been already
     used, etc.)"""
     if name != None: return name
-    if self.index == None:
-      self.__recompute_index()
-    while True:
-      self.index += 1
-      new_name = self.base_name + str(self.index)
-      if not self.ref_point.has_key(new_name):
-        return new_name
+    get_next_refpoint = self.attrs["get_next_refpoint_name"]
+    next_name = get_next_refpoint(self)
+    while len(next_name.strip()) < 1 or self.ref_point.has_key(next_name):
+      next_name = namegen.generate_next_name(next_name)
+    set_next_refpoint = self.attrs["set_next_refpoint_name"]
+    set_next_refpoint(self, namegen.generate_next_name(next_name))
+    return next_name
 
   def nearest(self, point):
     """Find the ref. point which is nearest to the given point.
@@ -329,7 +341,6 @@ class ImgView:
     self.ref_point_hide_all()
     self.ref_point = {}
     self.ref_point_list = []
-    self.index = 0
 
   def ref_point_hide_all(self):
     for ref_point in self.ref_point_list:

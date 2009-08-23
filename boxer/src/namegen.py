@@ -68,7 +68,8 @@ def generate_next_name(old_name):
     new_num = generate_next_num(n[start:end])
     return n[:start] + new_num + n[end:]
 
-while True:
-  n = adjust_name(raw_input())
-  print n, generate_next_name(n)
+if __name__ == "__main__":
+  while True:
+    n = adjust_name(raw_input())
+    print n, generate_next_name(n)
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sun Aug 23 14:05:07 2009 -->
+<!--Generated with glade3 3.4.5 on Sun Aug 23 23:38:55 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="boxer">
     <property name="visible">True</property>
@@ -225,6 +225,7 @@
               <widget class="GtkToolbar" id="toolbar">
                 <property name="width_request">230</property>
                 <property name="visible">True</property>
+                <property name="icon_size_set">True</property>
                 <child>
                   <widget class="GtkToolButton" id="toolbutton_new">
                     <property name="visible">True</property>
@@ -336,18 +337,42 @@
               </packing>
             </child>
             <child>
-              <widget class="GtkHBox" id="hbox2">
+              <widget class="GtkVBox" id="vbox2">
                 <property name="visible">True</property>
-                <property name="border_width">4</property>
+                <property name="homogeneous">True</property>
                 <child>
-                  <widget class="GtkComboBoxEntry" id="comboboxentry1">
-                    <property name="width_request">100</property>
+                  <widget class="GtkHBox" id="hbox2">
                     <property name="visible">True</property>
-                    <child internal-child="entry">
-                      <widget class="GtkEntry" id="comboboxentry-entry1">
+                    <child>
+                      <widget class="GtkComboBoxEntry" id="refpoint_box">
+                        <property name="width_request">100</property>
+                        <property name="visible">True</property>
+                        <property name="add_tearoffs">True</property>
+                        <child internal-child="entry">
+                          <widget class="GtkEntry" id="refpoint_entry">
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <signal name="changed" handler="on_refpoint_entry_changed"/>
+                          </widget>
+                        </child>
+                      </widget>
+                      <packing>
+                        <property name="expand">False</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkCheckButton" id="refpoint_show">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="label" translatable="yes">show</property>
+                        <property name="response_id">0</property>
+                        <property name="draw_indicator">True</property>
                       </widget>
+                      <packing>
+                        <property name="expand">False</property>
+                        <property name="fill">False</property>
+                        <property name="position">1</property>
+                      </packing>
                     </child>
                   </widget>
                   <packing>
@@ -355,24 +380,8 @@
                     <property name="fill">False</property>
                   </packing>
                 </child>
-                <child>
-                  <widget class="GtkCheckButton" id="checkbutton1">
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="label" translatable="yes">show</property>
-                    <property name="response_id">0</property>
-                    <property name="draw_indicator">True</property>
-                  </widget>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">False</property>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
               </widget>
               <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
                 <property name="position">1</property>
               </packing>
             </child>

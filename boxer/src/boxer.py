@@ -432,6 +432,9 @@ class Boxer:
       self.dragging_ref_point = None
       self.menu_run_execute(None)
 
+  def refpoint_entry_changed(self, entry):
+    pass
+
   def get_paste_on_new(self):
     """Return true if the name of the reference points should be pasted
     to the current edited source when they are created.
@@ -456,12 +459,22 @@ class Boxer:
     self.examplesmenu = self.boxer.get_widget("menu_file_examples")
     self.pastenewbutton = self.boxer.get_widget("toolbutton_pastenew")
 
+    self.widget_refpoint_entry = self.boxer.get_widget("refpoint_entry")
+
     ref_point_size = self.config.get_default("ref_point_size")
 
     # Used to manage the reference points
     import imgview
     self.imgview = imgview.ImgView(self.boxer.get_widget("imgview"),
                                    ref_point_size)
+
+    def set_next_refpoint(_, value):
+      self.widget_refpoint_entry.set_text(value)
+    def get_next_refpoint(_):
+      return self.widget_refpoint_entry.get_text()
+    self.imgview.set_attr("get_next_refpoint_name", get_next_refpoint)
+    self.imgview.set_attr("set_next_refpoint_name", set_next_refpoint)
+    set_next_refpoint(self.imgview, "gui1")
 
     self.dragging_ref_point = None
 
@@ -488,7 +501,8 @@ class Boxer:
            "on_toolbutton_run": self.menu_run_execute,
            "on_imgview_motion": self.imgview_motion,
            "on_imgview_click": self.imgview_click,
-           "on_imgview_release": self.imgview_release}
+           "on_imgview_release": self.imgview_release,
+           "on_refpoint_entry_changed": self.refpoint_entry_changed}
     self.boxer.signal_autoconnect(dic)
 
     # Replace the TextView with a SourceView, if possible...
