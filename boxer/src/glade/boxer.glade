@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sun Dec  7 17:23:38 2008 -->
+<!--Generated with glade3 3.4.5 on Sun Aug 23 14:05:07 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="boxer">
     <property name="visible">True</property>
     <property name="title" translatable="yes">Boxer - the Box GUI</property>
-    <property name="window_position">GTK_WIN_POS_CENTER</property>
+    <property name="window_position">GTK_WIN_POS_CENTER_ON_PARENT</property>
     <property name="default_width">600</property>
     <property name="default_height">480</property>
     <signal name="destroy" handler="on_boxer_destroy"/>
@@ -219,106 +219,167 @@
           </packing>
         </child>
         <child>
-          <widget class="GtkToolbar" id="toolbar">
+          <widget class="GtkHBox" id="hbox1">
             <property name="visible">True</property>
             <child>
-              <widget class="GtkToolButton" id="toolbutton_new">
+              <widget class="GtkToolbar" id="toolbar">
+                <property name="width_request">230</property>
                 <property name="visible">True</property>
-                <property name="is_focus">True</property>
-                <property name="tooltip" translatable="yes">Create a new document</property>
-                <property name="label" translatable="yes">New</property>
-                <property name="stock_id">gtk-new</property>
-                <signal name="clicked" handler="on_toolbutton_new"/>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkToolButton" id="toolbutton_open">
-                <property name="visible">True</property>
-                <property name="tooltip" translatable="yes">Open a new file</property>
-                <property name="label" translatable="yes">Open</property>
-                <property name="stock_id">gtk-open</property>
-                <signal name="clicked" handler="on_toolbutton_open"/>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkToolButton" id="toolbutton_save">
-                <property name="visible">True</property>
-                <property name="tooltip" translatable="yes">Save the file</property>
-                <property name="label" translatable="yes">Save</property>
-                <property name="stock_id">gtk-save</property>
-                <signal name="clicked" handler="on_toolbutton_save"/>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkSeparatorToolItem" id="toolbutton_sep">
-                <property name="visible">True</property>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkToolButton" id="toolbutton_run">
-                <property name="visible">True</property>
-                <property name="tooltip" translatable="yes">Execute the Box source</property>
-                <property name="label" translatable="yes">Run</property>
-                <property name="stock_id">gtk-execute</property>
-                <signal name="clicked" handler="on_toolbutton_run"/>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkSeparatorToolItem" id="toolbutton_sep2">
-                <property name="visible">True</property>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-                <property name="homogeneous">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkToggleToolButton" id="toolbutton_pastenew">
-                <property name="visible">True</property>
-                <property name="tooltip" translatable="yes">Paste the name of reference points whenever they are created</property>
-                <property name="stock_id">gtk-edit</property>
-              </widget>
-              <packing>
-                <property name="expand">False</property>
-              </packing>
-            </child>
-            <child>
-              <widget class="GtkToolItem" id="toolbutton_gridres">
-                <property name="visible">True</property>
-                <property name="visible_horizontal">False</property>
-                <property name="visible_vertical">False</property>
                 <child>
-                  <widget class="GtkSpinButton" id="spinbutton1">
+                  <widget class="GtkToolButton" id="toolbutton_new">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="adjustment">0 0 100 1 10 10</property>
+                    <property name="is_focus">True</property>
+                    <property name="tooltip" translatable="yes">Create a new document</property>
+                    <property name="label" translatable="yes">New</property>
+                    <property name="stock_id">gtk-new</property>
+                    <signal name="clicked" handler="on_toolbutton_new"/>
                   </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkToolButton" id="toolbutton_open">
+                    <property name="visible">True</property>
+                    <property name="tooltip" translatable="yes">Open a new file</property>
+                    <property name="label" translatable="yes">Open</property>
+                    <property name="stock_id">gtk-open</property>
+                    <signal name="clicked" handler="on_toolbutton_open"/>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkToolButton" id="toolbutton_save">
+                    <property name="visible">True</property>
+                    <property name="tooltip" translatable="yes">Save the file</property>
+                    <property name="label" translatable="yes">Save</property>
+                    <property name="stock_id">gtk-save</property>
+                    <signal name="clicked" handler="on_toolbutton_save"/>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkSeparatorToolItem" id="toolbutton_sep">
+                    <property name="visible">True</property>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="homogeneous">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkToolButton" id="toolbutton_run">
+                    <property name="visible">True</property>
+                    <property name="tooltip" translatable="yes">Execute the Box source</property>
+                    <property name="label" translatable="yes">Run</property>
+                    <property name="stock_id">gtk-execute</property>
+                    <signal name="clicked" handler="on_toolbutton_run"/>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkSeparatorToolItem" id="toolbutton_sep2">
+                    <property name="visible">True</property>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="homogeneous">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkToggleToolButton" id="toolbutton_pastenew">
+                    <property name="visible">True</property>
+                    <property name="tooltip" translatable="yes">Paste the name of reference points whenever they are created</property>
+                    <property name="stock_id">gtk-edit</property>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkToolItem" id="toolbutton_gridres">
+                    <property name="visible">True</property>
+                    <property name="visible_horizontal">False</property>
+                    <property name="visible_vertical">False</property>
+                    <child>
+                      <widget class="GtkSpinButton" id="spinbutton1">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                        <property name="adjustment">0 0 100 1 10 10</property>
+                      </widget>
+                    </child>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="homogeneous">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkSeparatorToolItem" id="toolbutton_sep3">
+                    <property name="visible">True</property>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="homogeneous">False</property>
+                  </packing>
                 </child>
               </widget>
               <packing>
                 <property name="expand">False</property>
-                <property name="homogeneous">False</property>
+                <property name="fill">False</property>
+              </packing>
+            </child>
+            <child>
+              <widget class="GtkHBox" id="hbox2">
+                <property name="visible">True</property>
+                <property name="border_width">4</property>
+                <child>
+                  <widget class="GtkComboBoxEntry" id="comboboxentry1">
+                    <property name="width_request">100</property>
+                    <property name="visible">True</property>
+                    <child internal-child="entry">
+                      <widget class="GtkEntry" id="comboboxentry-entry1">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                      </widget>
+                    </child>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkCheckButton" id="checkbutton1">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="label" translatable="yes">show</property>
+                    <property name="response_id">0</property>
+                    <property name="draw_indicator">True</property>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+              </widget>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
               </packing>
             </child>
           </widget>
           <packing>
             <property name="expand">False</property>
+            <property name="fill">False</property>
             <property name="position">1</property>
           </packing>
         </child>
@@ -361,12 +422,6 @@
                           </widget>
                         </child>
                       </widget>
-                    </child>
-                    <child>
-                      <placeholder/>
-                      <packing>
-                        <property name="type">label_item</property>
-                      </packing>
                     </child>
                   </widget>
                 </child>
