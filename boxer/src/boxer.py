@@ -395,6 +395,7 @@ class Boxer:
     ref_point = None
     if picked != None:
       ref_point, _ = picked
+      self.widget_refpoint_entry.set_text(ref_point.get_name())
 
     if event.button == self.button_left:
       if ref_point != None:
@@ -435,6 +436,10 @@ class Boxer:
   def refpoint_entry_changed(self, entry):
     pass
 
+  def refpoint_show_toggled(self, button):
+    selection = self.widget_refpoint_entry.get_text()
+    self.imgview.show_refpoints(selection, hide=button.get_active())
+
   def get_paste_on_new(self):
     """Return true if the name of the reference points should be pasted
     to the current edited source when they are created.
@@ -460,6 +465,7 @@ class Boxer:
     self.pastenewbutton = self.boxer.get_widget("toolbutton_pastenew")
 
     self.widget_refpoint_entry = self.boxer.get_widget("refpoint_entry")
+    self.widget_refpoint_show = self.boxer.get_widget("refpoint_show")
 
     ref_point_size = self.config.get_default("ref_point_size")
 
@@ -502,7 +508,8 @@ class Boxer:
            "on_imgview_motion": self.imgview_motion,
            "on_imgview_click": self.imgview_click,
            "on_imgview_release": self.imgview_release,
-           "on_refpoint_entry_changed": self.refpoint_entry_changed}
+           "on_refpoint_entry_changed": self.refpoint_entry_changed,
+           "on_refpoint_show_toggled": self.refpoint_show_toggled}
     self.boxer.signal_autoconnect(dic)
 
     # Replace the TextView with a SourceView, if possible...

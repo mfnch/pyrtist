@@ -20,7 +20,7 @@ In this file we define the class ImgView, used to display the resulting image
 produced by a Box program and to handle the reference points.
 """
 
-import math
+import math, fnmatch
 
 import document, namegen
 
@@ -152,7 +152,7 @@ class ImgView:
 
   def set_from_file(self, filename, bbox):
     """Load the image from file with associated bounding box 'bbox'."""
-    self.ref_point_hide_all()
+    self.show_all_refpoints(hide=True)
     self.img.set_from_file(filename)
     self.img.show_now()
     # The py_coords changed when loading the new image file,
@@ -160,7 +160,7 @@ class ImgView:
     self.bbox = bbox
     for ref_point in self.ref_point_list:
       ref_point.coords = self.map_coords_from_box(ref_point.box_coords)
-    self.ref_point_show_all()
+    self.show_all_refpoints()
 
   def set_radius(self, radius):
     """Set the radius used to decide whether the method 'pick' should
@@ -338,7 +338,7 @@ class ImgView:
 
   def ref_point_del_all(self):
     """Delete all the defined points."""
-    self.ref_point_hide_all()
+    self.show_all_refpoints(hide=True)
     self.ref_point = {}
     self.ref_point_list = []
 
@@ -347,8 +347,37 @@ class ImgView:
       self.restore_background(ref_point.background)
       ref_point.background = None
 
-  def ref_point_show_all(self):
-    for _, ref_point in self.ref_point.items():
-      self.restore_background(ref_point.background)
-      ref_point.background = self.ref_point_draw(ref_point.coords,
-                                                 self.ref_point_size)
+  def _show_refpoint(self, rp, hide=False):
+    if hide:
+      self.restore_background(rp.background)
+      rp.background = None
+
+    else:
+      self.restore_background(rp.background)
+      rp.background = self.ref_point_draw(rp.coords, self.ref_point_size)
+
+  def show_refpoint(self, refpoint_name, hide=False):
+    """Show or hide the refpoint with the given name."""
+    rp = self.ref_point[refpoint_name]
+    self._show_refpoint(rp, hide=hide)
+
+  def show_all_refpoints(self, hide=False):
+    """Show or hide all the refpoints."""
+    for _, rp in self.ref_point.items():
+      self._show_refpoint(rp, hide=hide)
+
+  def show_refpoints(self, selection, hide=False):
+    """Show or hide the refpoints specified by the string ``selection``.
+    Jolly characters can be used. For example: gui* means any refpoints
+    whose name starts with "gui"
+    """
+    refpoints_names = self.ref_point.keys()
+    try:
+      selected_refpoints = fnmatch.filter(refpoints_names, selection)
+    except:
+      return
+
+    for rp_name in selected_refpoints:
+      self.show_refpoint(rp_name, hide=hide)
+
+
