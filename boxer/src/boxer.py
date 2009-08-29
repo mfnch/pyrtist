@@ -433,12 +433,36 @@ class Boxer:
       self.dragging_ref_point = None
       self.menu_run_execute(None)
 
-  def refpoint_entry_changed(self, entry):
-    pass
+  def refpoint_entry_changed(self, _):
+    self.refpoint_show_update()
 
-  def refpoint_show_toggled(self, button):
+  def notify_refpoint_new(self, name):
+    liststore = self.widget_refpoint_box.get_model()
+    liststore.insert(-1, row=(name,))
+
+  def notify_refpoint_del(self, name):
+    liststore = self.widget_refpoint_box.get_model()
+    for item in liststore:
+      if liststore.get_value(item.iter, 0) == name:
+        liststore.remove(item.iter)
+        return
+
+  def refpoint_show_update(self):
     selection = self.widget_refpoint_entry.get_text()
-    self.imgview.show_refpoints(selection, hide=button.get_active())
+    ratio = self.imgview.refpoint_get_visible_ratio(selection)
+    if ratio < 0.5:
+      label, show = "show", True
+    elif ratio > 0.5:
+      label, show = "hide", False
+    else:
+      return
+    self.widget_refpoint_show.set_label(label)
+
+  def refpoint_show_clicked(self, button):
+    do_show = (button.get_label() == "show")
+    selection = self.widget_refpoint_entry.get_text()
+    self.imgview.refpoint_set_visible(selection, do_show)
+    self.refpoint_show_update()
 
   def get_paste_on_new(self):
     """Return true if the name of the reference points should be pasted
@@ -464,10 +488,16 @@ class Boxer:
     self.examplesmenu = self.boxer.get_widget("menu_file_examples")
     self.pastenewbutton = self.boxer.get_widget("toolbutton_pastenew")
 
+    self.widget_refpoint_box = self.boxer.get_widget("refpoint_box")
     self.widget_refpoint_entry = self.boxer.get_widget("refpoint_entry")
     self.widget_refpoint_show = self.boxer.get_widget("refpoint_show")
 
     ref_point_size = self.config.get_default("ref_point_size")
+
+    import gobject
+    liststore = gtk.ListStore(gobject.TYPE_STRING)
+    self.widget_refpoint_box.set_model(liststore)
+    self.widget_refpoint_box.set_text_column(0)
 
     # Used to manage the reference points
     import imgview
@@ -480,6 +510,9 @@ class Boxer:
       return self.widget_refpoint_entry.get_text()
     self.imgview.set_attr("get_next_refpoint_name", get_next_refpoint)
     self.imgview.set_attr("set_next_refpoint_name", set_next_refpoint)
+    self.imgview.set_attr("notify_refpoint_new", self.notify_refpoint_new)
+    self.imgview.set_attr("notify_refpoint_del", self.notify_refpoint_del)
+
     set_next_refpoint(self.imgview, "gui1")
 
     self.dragging_ref_point = None
@@ -509,7 +542,7 @@ class Boxer:
            "on_imgview_click": self.imgview_click,
            "on_imgview_release": self.imgview_release,
            "on_refpoint_entry_changed": self.refpoint_entry_changed,
-           "on_refpoint_show_toggled": self.refpoint_show_toggled}
+           "on_refpoint_show_clicked": self.refpoint_show_clicked}
     self.boxer.signal_autoconnect(dic)
 
     # Replace the TextView with a SourceView, if possible...
@@ -553,8 +586,11 @@ class Boxer:
     # Set a template program to start with...
     if filename == None:
       self.raw_file_new()
+
     else:
       self.raw_file_open(filename)
+
+    self.menu_run_execute(None)
 
   def _fill_example_menu(self):
     """Populate the example submenu File->Examples"""

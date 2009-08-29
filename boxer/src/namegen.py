@@ -48,15 +48,15 @@ def get_last_num(name):
     i += 1
   return (start, end)
   
-def generate_next_num(old_num):
+def generate_next_num(old_num, increment=1):
     l = len(old_num)
-    nn = str(int(old_num) + 1)
+    nn = str(int(old_num) + increment)
     if len(nn) >= l:
         return nn
     else:
         return nn.rjust(l, "0")
 
-def generate_next_name(old_name):
+def generate_next_name(old_name, increment=1):
   """Given the name of the previous point, generate a new name, by incrementing
   the last integer number embedded in the name.
   Examples: "p1" --> "p2" "abc12ef34gh" --> abc12ef35gh""."""
@@ -65,7 +65,7 @@ def generate_next_name(old_name):
   if start == None:
     return n + "1"
   else:
-    new_num = generate_next_num(n[start:end])
+    new_num = generate_next_num(n[start:end], increment=increment)
     return n[:start] + new_num + n[end:]
 
 if __name__ == "__main__":

@@ -43,11 +43,12 @@ def square_metric(p1, p2):
   return max(abs(p2[0] - p1[0]), abs(p2[1] - p1[1]))
 
 class RefPoint:
-  def __init__(self, name):
+  def __init__(self, name, visible=True):
     self.coords = None
     self.box_coords = None # not supposed to be changed manually...
     self.background = None # ... use the method ImgView.ref_point_coords_set
     self.name = name
+    self.visible = visible
 
   def get_name(self):
     return self.name
@@ -107,7 +108,9 @@ class ImgView:
     def set_next_refpoint(self, value): self.base_name = value
 
     self.attrs = {"get_next_refpoint_name": lambda self: self.base_name,
-                  "set_next_refpoint_name": set_next_refpoint}
+                  "set_next_refpoint_name": set_next_refpoint,
+                  "notify_refpoint_new": None,
+                  "notify_refpoint_del": None}
 
   def set_attr(self, attr, value):
     """Set an attribute of the class."""
@@ -130,29 +133,31 @@ class ImgView:
     used, etc.)"""
     if name != None: return name
     get_next_refpoint = self.attrs["get_next_refpoint_name"]
-    next_name = get_next_refpoint(self)
+    next_name = namegen.generate_next_name(get_next_refpoint(self),
+                                           increment=0)
     while len(next_name.strip()) < 1 or self.ref_point.has_key(next_name):
       next_name = namegen.generate_next_name(next_name)
     set_next_refpoint = self.attrs["set_next_refpoint_name"]
     set_next_refpoint(self, namegen.generate_next_name(next_name))
     return next_name
 
-  def nearest(self, point):
+  def nearest(self, point, include_invisible=False):
     """Find the ref. point which is nearest to the given point.
     Returns a couple containing made of the reference point and the distance.
     """
     current_d = None
     current = None
     for p in self.ref_point_list:
-      d = self.distance(point, p.coords)
-      if current_d == None or d <= current_d:
-        current = (p, d)
-        current_d = d
+      if p.visible or include_invisible:
+        d = self.distance(point, p.coords)
+        if current_d == None or d <= current_d:
+          current = (p, d)
+          current_d = d
     return current
 
   def set_from_file(self, filename, bbox):
     """Load the image from file with associated bounding box 'bbox'."""
-    self.show_all_refpoints(hide=True)
+    self.refpoint_show_all(hide=True)
     self.img.set_from_file(filename)
     self.img.show_now()
     # The py_coords changed when loading the new image file,
@@ -160,18 +165,18 @@ class ImgView:
     self.bbox = bbox
     for ref_point in self.ref_point_list:
       ref_point.coords = self.map_coords_from_box(ref_point.box_coords)
-    self.show_all_refpoints()
+    self.refpoint_show_all()
 
   def set_radius(self, radius):
     """Set the radius used to decide whether the method 'pick' should
     pick a point or not."""
     self.ref_point_size = radius
 
-  def pick(self, point):
+  def pick(self, point, include_invisible=False):
     """Returns the ref. point closest to the given one (argument 'point').
     If the distance between the two is greater than the current 'radius'
     (see set_radius), return None."""
-    current = self.nearest(point)
+    current = self.nearest(point, include_invisible=include_invisible)
     if self.ref_point_size == None: return current
     if current == None or current[1] > self.ref_point_size: return None
     return current
@@ -295,6 +300,8 @@ class ImgView:
 
     self.ref_point[real_name] = ref_point
     self.ref_point_list.append(ref_point)
+    notify = self.attrs["notify_refpoint_new"]
+    if notify != None: notify(real_name)
     return real_name
 
   def ref_point_new(self, coords, name=None):
@@ -314,6 +321,8 @@ class ImgView:
 
     self.ref_point[real_name] = ref_point
     self.ref_point_list.append(ref_point)
+    notify = self.attrs["notify_refpoint_new"]
+    if notify != None: notify(real_name)
     return real_name
 
   def ref_point_move(self, name, coords):
@@ -335,10 +344,16 @@ class ImgView:
       print "ImgView.ref_point_del: shouldn't happen!"
       return
     self.ref_point_list.pop(j)
+    notify = self.attrs["notify_refpoint_del"]
+    if notify != None: notify(name)
 
   def ref_point_del_all(self):
     """Delete all the defined points."""
-    self.show_all_refpoints(hide=True)
+    self.refpoint_show_all(hide=True)
+    notify = self.attrs["notify_refpoint_del"]
+    if notify != None: 
+      for rp_name in self.ref_point:
+        notify(rp_name)
     self.ref_point = {}
     self.ref_point_list = []
 
@@ -353,6 +368,8 @@ class ImgView:
       rp.background = None
 
     else:
+      if not rp.visible:
+        return
       self.restore_background(rp.background)
       rp.background = self.ref_point_draw(rp.coords, self.ref_point_size)
 
@@ -361,12 +378,12 @@ class ImgView:
     rp = self.ref_point[refpoint_name]
     self._show_refpoint(rp, hide=hide)
 
-  def show_all_refpoints(self, hide=False):
+  def refpoint_show_all(self, hide=False):
     """Show or hide all the refpoints."""
     for _, rp in self.ref_point.items():
       self._show_refpoint(rp, hide=hide)
 
-  def show_refpoints(self, selection, hide=False):
+  def refpoint_set_visible(self, selection, visible):
     """Show or hide the refpoints specified by the string ``selection``.
     Jolly characters can be used. For example: gui* means any refpoints
     whose name starts with "gui"
@@ -378,6 +395,28 @@ class ImgView:
       return
 
     for rp_name in selected_refpoints:
-      self.show_refpoint(rp_name, hide=hide)
+      rp = self.ref_point[rp_name]
+      rp.visible = visible
+      self.show_refpoint(rp_name, hide=not visible)
 
+  def refpoint_get_visible_ratio(self, selection):
+    """Return a number between 0.0 and 1.0 indicating the ratio
+    (num. visible points)/(num. total points)."""
+    refpoints_names = self.ref_point.keys()
+    try:
+      selected_refpoints = fnmatch.filter(refpoints_names, selection)
+    except:
+      return 0.5
+
+    num_total = len(selected_refpoints)
+    if num_total < 1:
+      return 0.5
+
+    else:
+      num_visible = 0
+      for rp_name in selected_refpoints:
+        rp = self.ref_point[rp_name]
+        if rp.visible:
+          num_visible += 1
+      return num_visible/float(num_total)
 
