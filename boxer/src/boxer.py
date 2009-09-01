@@ -399,12 +399,16 @@ class Boxer:
 
     if event.button == self.button_left:
       if ref_point != None:
-        self.dragging_ref_point = ref_point
+        if ref_point == self.imgview.selected:
+          self.dragging_ref_point = ref_point
+        else:
+          self.imgview.refpoint_select(ref_point)
 
       else:
         box_coords = self.imgview.map_coords_to_box(py_coords)
         if box_coords != None:
           point_name = self.imgview.ref_point_new(py_coords)
+          self.imgview.refpoint_select(point_name)
           if self.get_paste_on_new():
             self.textbuffer.insert_at_cursor("%s, " % point_name)
 
@@ -591,6 +595,9 @@ class Boxer:
       self.raw_file_open(filename)
 
     self.menu_run_execute(None)
+
+    # Now set the focus on the text view
+    self.textview.grab_focus()
 
   def _fill_example_menu(self):
     """Populate the example submenu File->Examples"""

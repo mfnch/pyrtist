@@ -92,6 +92,9 @@ class ImgView:
 
   def __init__(self, drawable, ref_point_size=3, base_name="gui"):
     self.img = drawable
+    self.color_normal = 0xffffffff
+    self.color_selected = 0xffff00ff
+    self.color_moving = 0xffff0077
     self.bbox = None
     self.ref_point = {}
     self.ref_point_list = []
@@ -104,6 +107,7 @@ class ImgView:
     self.comment_line = lambda line: (("// %s" % line) + self.sep_newline)
     self.grid = Grid()
     self.grid.set_resolution((20, 20))
+    self.selected = None
 
     def set_next_refpoint(self, value): self.base_name = value
 
@@ -249,7 +253,8 @@ class ImgView:
     if sx < 1 or sy < 1: return (x0, y0, -1, -1)
     return (x0, y0, sx+1, sy+1)
 
-  def ref_point_draw(self, coords, size, return_background=True):
+  def ref_point_draw(self, coords, size, return_background=True,
+                     color=0xffffffff):
     x, y = coords
     l0 = size
     dl0 = l0*2
@@ -264,14 +269,14 @@ class ImgView:
     if return_background:
       background = (dx0, dy0, x0, y0, subbuf.copy())
 
-    subbuf.fill(0x000000ff) # Fill it!
+    subbuf.fill(color & 0xff) # Fill it!
 
     l1 = l0 - 1
     dl1 = 2*l1
     x1, y1, dx1, dy1 = self.__cut_square(x-l1, y-l1, dl1, dl1)
     if dx1 > 0 and dy1 > 0:
       subbuf = pixbuf.subpixbuf(x1, y1, dx1, dy1)
-      subbuf.fill(0xffffffff)
+      subbuf.fill(color)
 
     self.img.queue_draw_area(x0, y0, dx0, dy0)
     return background
@@ -329,10 +334,13 @@ class ImgView:
     ref_point = self.ref_point[name]
     self.restore_background(ref_point.background)
     self.ref_point_coords_set(ref_point, coords)
-    ref_point.background = self.ref_point_draw(coords, self.ref_point_size)
+    ref_point.background = self.ref_point_draw(coords, self.ref_point_size,
+                                               color=self.color_moving)
 
   def ref_point_del(self, name):
     ref_point = self.ref_point[name]
+    if ref_point == self.selected:
+      self.selected = None
     self.restore_background(ref_point.background)
     self.ref_point.pop(name)
     j = None
@@ -356,6 +364,7 @@ class ImgView:
         notify(rp_name)
     self.ref_point = {}
     self.ref_point_list = []
+    self.selected = None
 
   def ref_point_hide_all(self):
     for ref_point in self.ref_point_list:
@@ -371,7 +380,12 @@ class ImgView:
       if not rp.visible:
         return
       self.restore_background(rp.background)
-      rp.background = self.ref_point_draw(rp.coords, self.ref_point_size)
+      if rp == self.selected:
+        color = self.color_selected
+      else:
+        color = self.color_normal
+      rp.background = self.ref_point_draw(rp.coords, self.ref_point_size,
+                                          color=color)
 
   def show_refpoint(self, refpoint_name, hide=False):
     """Show or hide the refpoint with the given name."""
@@ -419,4 +433,15 @@ class ImgView:
         if rp.visible:
           num_visible += 1
       return num_visible/float(num_total)
+
+  def refpoint_select(self, refpoint):
+    if type(refpoint) == str:
+      refpoint = self.ref_point[refpoint]
+    selected_before = self.selected
+    self.selected = refpoint
+    self._show_refpoint(refpoint, hide=True)
+    self._show_refpoint(refpoint)
+    if selected_before != None:
+      self._show_refpoint(selected_before, hide=True)
+      self._show_refpoint(selected_before)
 

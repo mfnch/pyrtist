@@ -1,6 +1,7 @@
 README
 INSTALL
 COPYING
+ChangeLog
 setup.py
 scripts/boxer
 src/__init__.py

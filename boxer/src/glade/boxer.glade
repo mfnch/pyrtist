@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sun Aug 30 01:03:34 2009 -->
+<!--Generated with glade3 3.4.5 on Sun Aug 30 13:16:58 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="boxer">
     <property name="visible">True</property>
@@ -347,11 +347,13 @@
                       <widget class="GtkComboBoxEntry" id="refpoint_box">
                         <property name="width_request">100</property>
                         <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Click here to see a list of the reference points</property>
                         <property name="add_tearoffs">True</property>
                         <child internal-child="entry">
                           <widget class="GtkEntry" id="refpoint_entry">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="tooltip" translatable="yes">The name of the next or selected reference point. You can enter text here to select reference points. You can use wildcards, such as 'point*'. '*' selects all reference points.</property>
                             <signal name="changed" handler="on_refpoint_entry_changed"/>
                           </widget>
                         </child>
@@ -371,6 +373,7 @@
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
                             <property name="receives_default">True</property>
+                            <property name="tooltip" translatable="yes">Show or hide the selected reference point. Write 'point*' into the box to select point1, point2, etc.</property>
                             <property name="label" translatable="yes">show</property>
                             <property name="response_id">0</property>
                             <signal name="clicked" handler="on_refpoint_show_clicked"/>
