@@ -1,0 +1,36 @@
+
+CREATING TAGS FOR THE RELEASED VERSIONS
+---------------------------------------
+
+Before releasing a new version of Box one should use the maint script to
+adjust version numbers. For a patch which does produce an extension of
+libboxcore:
+
+  cd boxc/trunk/box/maint
+  bash version.sh --new-maint --new-bc-fix
+
+Type bash ``version.sh`` for help.
+Then one shoudl create a new tag:
+
+  svn copy \
+    https://boxc.svn.sourceforge.net/svnroot/boxc/trunk/box \
+    https://boxc.svn.sourceforge.net/svnroot/boxc/tags/box-X.Y.Z \
+    -m "Creating new version X.Y.Z"
+
+RELEASING PATCHES OF v 0.1 WHILE WORKING ON v 0.2
+-------------------------------------------------
+
+This was the command I used to create intermediate patch releases
+of version 0.1 while working on v 0.2.
+Indeed, after starting to make major changes for v 0.2 (such as introducing
+the AST, etc) I realised that 0.1.1 had some bugs. Therefore I used svn copy
+to create the tag 0.1.2 not from the trunk, but rather from tags/box-0.1.1
+thus creating a branch. This is the sort of command I used:
+
+  svn copy \
+    https://boxc.svn.sourceforge.net/svnroot/boxc/tags/box-0.1.2 \
+    https://boxc.svn.sourceforge.net/svnroot/boxc/tags/box-0.1.3 \
+    -m "Creating new version 0.1.3 from 0.1.2"
+
+I did this for 0.1.1 --> 0.1.2  and 0.1.2 --> 0.1.3.
+

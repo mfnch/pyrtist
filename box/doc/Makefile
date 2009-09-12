@@ -1,6 +1,6 @@
 .PHONY: all svn_version html
 
-BOX=$(HOME)/local/bin/box
+BOX=box
 RST2HTML=python rst2html.py
 
 all: html
