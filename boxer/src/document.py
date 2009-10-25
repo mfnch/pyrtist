@@ -186,9 +186,6 @@ def get_next_guipoint_string(src, start=0, seps=[",", endline],
 
 def parse_guipoint_part(src, guipoint_fn, start=0):
   if len(src.strip()) > 0:
-    print "---"
-    print src
-    print "---"
     while start < len(src):
       line, start = get_next_guipoint_string(src, start)
       guipoint_fn(line)
