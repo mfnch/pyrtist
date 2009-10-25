@@ -185,9 +185,13 @@ def get_next_guipoint_string(src, start=0, seps=[",", endline],
       pos = match_close(src, next, pars=pars)
 
 def parse_guipoint_part(src, guipoint_fn, start=0):
-  while start < len(src):
-    line, start = get_next_guipoint_string(src, start)
-    guipoint_fn(line)
+  if len(src.strip()) > 0:
+    print "---"
+    print src
+    print "---"
+    while start < len(src):
+      line, start = get_next_guipoint_string(src, start)
+      guipoint_fn(line)
 
 def save_to_str_v0_1_1(document):
   parts = document.parts
@@ -314,8 +318,18 @@ class Document:
     def guipoint_fn(p_str):
       guipoints.append(GUIPoint(p_str))
 
-    parse_guipoint_part(parts["refpoints_text"], guipoint_fn)
+    if parts.has_key("refpoints_text"):
+      parse_guipoint_part(parts["refpoints_text"], guipoint_fn)
     parts["refpoints"] = guipoints
+
+    if not parts.has_key("userspace"):
+      # This means that the file was not produced by Boxer, but it is likely
+      # to be a plain Box file.
+      if parts.has_key("preamble"):
+        parts["userspace"] = parts["preamble"]
+      else:
+        parts["userspace"] = ""
+      parts["preamble"] = ""
 
     self.parts = parts
     return True

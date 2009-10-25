@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sun Aug 30 13:16:58 2009 -->
+<!--Generated with glade3 3.4.5 on Sun Sep 13 16:24:27 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="boxer">
     <property name="visible">True</property>
@@ -223,7 +223,7 @@
             <property name="visible">True</property>
             <child>
               <widget class="GtkToolbar" id="toolbar">
-                <property name="width_request">230</property>
+                <property name="width_request">270</property>
                 <property name="visible">True</property>
                 <property name="icon_size_set">True</property>
                 <child>
@@ -279,6 +279,18 @@
                     <property name="label" translatable="yes">Run</property>
                     <property name="stock_id">gtk-execute</property>
                     <signal name="clicked" handler="on_toolbutton_run"/>
+                  </widget>
+                  <packing>
+                    <property name="expand">False</property>
+                  </packing>
+                </child>
+                <child>
+                  <widget class="GtkToolButton" id="toolbutton_stop">
+                    <property name="visible">True</property>
+                    <property name="tooltip" translatable="yes">Stop the Box program which is being executed</property>
+                    <property name="label" translatable="yes">Stop</property>
+                    <property name="stock_id">gtk-stop</property>
+                    <signal name="clicked" handler="on_toolbutton_stop"/>
                   </widget>
                   <packing>
                     <property name="expand">False</property>
