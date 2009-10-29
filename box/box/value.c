@@ -731,14 +731,19 @@ Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxType *t_memb) {
   BoxCmp *cmp = v_memb->proc->cmp;
   TS *ts = & cmp->ts;
   BoxType t_next = *t_memb;
+  size_t delta_offset = 0;
 
-  t_next = (t_next != BOXTYPE_NONE) ? t_next : v_memb->type;
+  if (t_next == BOXTYPE_NONE)
+    t_next = v_memb->type;
+
+  else
+    delta_offset = TS_Get_Size(ts, v_memb->type);
+
   t_next = TS_Get_Next_Member(ts, t_next);
   if (TS_Is_Member(ts, t_next)) {
-    size_t offset = TS_Get_Size(ts, t_next);
     *t_memb = t_next;
     t_next = TS_Resolve_Once(ts, t_next, TS_KS_NONE);
-    return Value_Get_Subfield(v_memb, offset, t_next);
+    return Value_Get_Subfield(v_memb, delta_offset, t_next);
 
   } else {
     *t_memb = BOXTYPE_NONE;
@@ -997,7 +1002,7 @@ void My_Setup_From_Gro(Value *v, BoxType t, BoxInt gro_num) {
     Value v_ptr;
     ValContainer vc = {VALCONTTYPE_GREG, gro_num, 0};
     Value_Init(& v_ptr, c->cur_proc);
-    Value_Setup_Container(& v_ptr, BOXTYPE_PTR, & vc); 
+    Value_Setup_Container(& v_ptr, BOXTYPE_PTR, & vc);
 
     Value_Setup_As_Temp(v, BOXTYPE_PTR);
     CmpProc_Assemble(c->cur_proc, BOXGOP_MOV,

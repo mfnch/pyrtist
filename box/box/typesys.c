@@ -530,8 +530,10 @@ static void TS_X_Add(TSKind kind, TS *ts, Type s, Type m,
   td.kind = TS_KIND_MEMBER;
   td.target = m;
   if (kind == TS_KIND_STRUCTURE) {
-    if (m_name != (char *) NULL) td.name = BoxMem_Strdup(m_name);
+    if (m_name != (char *) NULL)
+      td.name = BoxMem_Strdup(m_name);
     td.size = TS_Align(ts, TS_Get_Size(ts, s));
+
   } else {
     td.size = m_size;
   }
@@ -659,7 +661,7 @@ static BoxType My_Procedure_Search(TS *ts, Type *expansion_type,
 }
 
 BoxType TS_Procedure_Search(TS *ts, BoxType *expansion_type,
-                            BoxType child, BoxType parent, 
+                            BoxType child, BoxType parent,
 			    TSSearchMode mode) {
   BoxType previous_parent;
   int search_inherited = (mode & TSSEARCHMODE_INHERITED) != 0;
