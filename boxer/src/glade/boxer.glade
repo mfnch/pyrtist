@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--Generated with glade3 3.4.5 on Sun Sep 13 16:24:27 2009 -->
+<!--Generated with glade3 3.4.5 on Sat Nov  7 21:22:35 2009 -->
 <glade-interface>
   <widget class="GtkWindow" id="boxer">
     <property name="visible">True</property>
@@ -175,10 +175,10 @@
                 <property name="label" translatable="yes">_Run</property>
                 <property name="use_underline">True</property>
                 <child>
-                  <widget class="GtkMenu" id="run_execute">
+                  <widget class="GtkMenu" id="menu_run">
                     <property name="visible">True</property>
                     <child>
-                      <widget class="GtkImageMenuItem" id="Execute">
+                      <widget class="GtkImageMenuItem" id="run_execute">
                         <property name="visible">True</property>
                         <property name="tooltip" translatable="yes">Execute the Box program</property>
                         <property name="label" translatable="yes">gtk-execute</property>
@@ -186,6 +186,17 @@
                         <property name="use_stock">True</property>
                         <signal name="activate" handler="on_run_execute_activate"/>
                         <accelerator key="Return" modifiers="GDK_CONTROL_MASK" signal="activate"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkImageMenuItem" id="run_stop">
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Stop a running Box program</property>
+                        <property name="label" translatable="yes">gtk-stop</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <signal name="activate" handler="on_run_stop_activate"/>
+                        <accelerator key="BackSpace" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
                   </widget>
@@ -287,6 +298,7 @@
                 <child>
                   <widget class="GtkToolButton" id="toolbutton_stop">
                     <property name="visible">True</property>
+                    <property name="sensitive">False</property>
                     <property name="tooltip" translatable="yes">Stop the Box program which is being executed</property>
                     <property name="label" translatable="yes">Stop</property>
                     <property name="stock_id">gtk-stop</property>

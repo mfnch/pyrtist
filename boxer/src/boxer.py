@@ -105,6 +105,7 @@ class Boxer:
 
   def raw_quit(self):
     """Called to quit the program."""
+    self.config.save_configuration()
     gtk.main_quit()
 
   def destroy(self, widget, data=None):
@@ -342,29 +343,54 @@ class Boxer:
             extra_opts,
             "-se %s" % pre_basename,
             box_source_file]
-    box_out_msgs = execbox.exec_command(box_executable, args)
-    self.outtextbuffer.set_text(box_out_msgs)
-    self.outtextview_expander.set_expanded(len(box_out_msgs.strip()) > 0)
 
-    bbox = None
-    try:
-      data = parse_out_file(box_out_file)
-      bbox_n = int(data["bbox_n"])
-      bbox_min = (float(data["bbox_min_x"]), float(data["bbox_min_y"]))
-      bbox_max = (float(data["bbox_max_x"]), float(data["bbox_max_y"]))
-      if bbox_n == 3:
-        bbox = [bbox_min, bbox_max]
+    box_out_msgs = [""]
+    def out_fn(s):
+      box_out_msgs[0] += s
 
-    except:
-      pass
+    def do_at_exit():
+      gtk.gdk.threads_enter()
+      self.outtextbuffer.set_text(box_out_msgs[0])
+      self.outtextview_expander.set_expanded(len(box_out_msgs[0].strip()) > 0)
 
-    if os.access(box_out_img_file, os.R_OK):
+      bbox = None
       try:
-        self.imgview.set_from_file(box_out_img_file, bbox)
+        data = parse_out_file(box_out_file)
+        bbox_n = int(data["bbox_n"])
+        bbox_min = (float(data["bbox_min_x"]), float(data["bbox_min_y"]))
+        bbox_max = (float(data["bbox_max_x"]), float(data["bbox_max_y"]))
+        if bbox_n == 3:
+          bbox = [bbox_min, bbox_max]
+
       except:
         pass
 
-    tmp_remove()
+      if os.access(box_out_img_file, os.R_OK):
+        try:
+          self.imgview.set_from_file(box_out_img_file, bbox)
+        except:
+          pass
+
+      tmp_remove()
+      self.set_box_killer(None)
+      gtk.gdk.threads_leave()
+
+    killer = execbox.exec_command(box_executable, args,
+                                  out_fn=out_fn,
+                                  do_at_exit=do_at_exit)
+    self.set_box_killer(killer)
+
+  def menu_run_stop(self, image_menu_item):
+    if self.box_killer != None:
+      self.box_killer()
+
+  def set_box_killer(self, killer):
+    killer_given = (killer != None)
+    self.toolbutton_stop.set_sensitive(killer_given)
+    self.menubutton_run_stop.set_sensitive(killer_given)
+    self.toolbutton_run.set_sensitive(not killer_given)
+    self.menubutton_run_execute.set_sensitive(not killer_given)
+    self.box_killer = killer
 
   def menu_help_about(self, image_menu_item):
     """Called menu help->about command."""
@@ -470,9 +496,11 @@ class Boxer:
   def __init__(self, gladefile="boxer.glade", filename=None):
     self.config = config.get_configuration()
 
-    self.button_left = self.config.get("Behaviour", "button_left")
-    self.button_center = self.config.get("Behaviour", "button_center")
-    self.button_right = self.config.get("Behaviour", "button_right")
+    self.box_killer = None
+
+    self.button_left = self.config.getint("Behaviour", "button_left")
+    self.button_center = self.config.getint("Behaviour", "button_center")
+    self.button_right = self.config.getint("Behaviour", "button_right")
 
     self.gladefile = config.glade_path(gladefile)
     self.boxer = gtk.glade.XML(self.gladefile, "boxer")
@@ -484,12 +512,16 @@ class Boxer:
     self.outtextview_expander = self.boxer.get_widget("outtextview_expander")
     self.examplesmenu = self.boxer.get_widget("menu_file_examples")
     self.pastenewbutton = self.boxer.get_widget("toolbutton_pastenew")
+    self.toolbutton_run = self.boxer.get_widget("toolbutton_run")
+    self.toolbutton_stop = self.boxer.get_widget("toolbutton_stop")
+    self.menubutton_run_execute = self.boxer.get_widget("run_execute")
+    self.menubutton_run_stop = self.boxer.get_widget("run_stop")
 
     self.widget_refpoint_box = self.boxer.get_widget("refpoint_box")
     self.widget_refpoint_entry = self.boxer.get_widget("refpoint_entry")
     self.widget_refpoint_show = self.boxer.get_widget("refpoint_show")
 
-    ref_point_size = self.config.get("GUIView", "refpoint_size")
+    ref_point_size = self.config.getint("GUIView", "refpoint_size")
 
     import gobject
     liststore = gtk.ListStore(gobject.TYPE_STRING)
@@ -530,11 +562,13 @@ class Boxer:
            "on_edit_paste_activate": self.menu_edit_paste,
            "on_edit_delete_activate": self.menu_edit_delete,
            "on_run_execute_activate": self.menu_run_execute,
+           "on_run_stop_activate": self.menu_run_stop,
            "on_help_about_activate": self.menu_help_about,
            "on_toolbutton_new": self.menu_file_new,
            "on_toolbutton_open": self.menu_file_open,
            "on_toolbutton_save": self.menu_file_save,
            "on_toolbutton_run": self.menu_run_execute,
+           "on_toolbutton_stop": self.menu_run_stop,
            "on_imgview_motion": self.imgview_motion,
            "on_imgview_click": self.imgview_click,
            "on_imgview_release": self.imgview_release,
@@ -587,10 +621,10 @@ class Boxer:
     else:
       self.raw_file_open(filename)
 
-    self.menu_run_execute(None)
-
     # Now set the focus on the text view
     self.textview.grab_focus()
+
+    self.menu_run_execute(None)
 
   def _fill_example_menu(self):
     """Populate the example submenu File->Examples"""
@@ -621,4 +655,5 @@ def run(arg_list):
 
 if __name__ == "__main__":
   form = Boxer()
+  gtk.gdk.threads_init()
   gtk.main()

@@ -78,12 +78,13 @@ def get_example_files():
   return glob.glob(pattern)
 
 class BoxerConfigParser(cfgp.SafeConfigParser):
-  def __init__(self, defaults=None, default_config=[]):
+  def __init__(self, defaults=None, default_config=[],
+               user_cfg_file=None):
     cfgp.SafeConfigParser.__init__(self, defaults)
 
     # Generate default configuration
     default_config_dict = {}
-    for section, option, value in default_config:
+    for section, option, value, _ in default_config:
       if default_config_dict.has_key(section):
         section_dict = default_config_dict[section]
       else:
@@ -92,6 +93,8 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
       section_dict[option] = value
 
     self._default_config = default_config_dict
+    self.is_modified = False
+    self.user_cfg_file = user_cfg_file
 
   def has_default_option(self, section, option):
     if self._default_config.has_key(section):
@@ -106,6 +109,17 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
 
     else:
       return cfgp.SafeConfigParser.get(self, section, option, raw, vars)
+
+  def set(self, section, option, value):
+    self.is_modified = True
+    return cfgp.SafeConfigParser.get(self, section, option, value)
+
+  def save_configuration(self):
+    if not self.is_modified:
+      return
+
+    if self.user_cfg_file != None:
+      self.write(self.user_cfg_file)
 
 def get_configuration():
   # Create Boxer configuration directory
@@ -123,20 +137,22 @@ def get_configuration():
     box_exec = "box"
 
   default_config = \
-   [('Box', 'exec', box_exec),
-    ('GUI', 'font', 'Monospace 10'),
-    ('GUIView', 'refpoint_size', '4'),
-    ('Behaviour', 'button_left', '1'),
-    ('Behaviour', 'button_center', '2'),
-    ('Behaviour', 'button_right', '3'),
-    ('Internals', 'src_marker_refpoints_begin', '//!BOXER:REFPOINTS:BEGIN'),
-    ('Internals', 'src_marker_refpoints_end', '//!BOXER:REFPOINTS:END'),
-    ('Internals', 'src_marker_cursor_here', '//!BOXER:CURSOR:HERE')]
+   [('Box', 'exec', box_exec, 'The path to the Box executable'),
+    ('GUI', 'font', 'Monospace 10', 'The font used in the GUI'),
+    ('GUIView', 'refpoint_size', '4', 'The size of the squares used to mark '
+                                      'the reference points'),
+    ('Behaviour', 'button_left', '1', 'ID of the mouse left button'),
+    ('Behaviour', 'button_center', '2', 'ID of the mouse central button'),
+    ('Behaviour', 'button_right', '3', 'ID of the mouse right button'),
+    ('Internals', 'src_marker_refpoints_begin', '//!BOXER:REFPOINTS:BEGIN',
+                                                                        None),
+    ('Internals', 'src_marker_refpoints_end', '//!BOXER:REFPOINTS:END', None),
+    ('Internals', 'src_marker_cursor_here', '//!BOXER:CURSOR:HERE', None)]
 
   user_cfg_file = os.path.join(home_path, cfg_dir, cfg_file)
 
-  c = BoxerConfigParser(default_config=default_config)
+  c = BoxerConfigParser(default_config=default_config,
+                        user_cfg_file=user_cfg_file)
   successful_reads = c.read([user_cfg_file])
 
   return c
-
