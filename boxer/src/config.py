@@ -16,6 +16,7 @@
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys, os, os.path
+import ConfigParser as cfgp
 
 box_syntax_highlighting = sys.path[0]
 
@@ -76,31 +77,66 @@ def get_example_files():
   pattern = os.path.join(installation_path(), "examples", "*")
   return glob.glob(pattern)
 
-class Config:
-  """Class to store global configuration settings."""
+class BoxerConfigParser(cfgp.SafeConfigParser):
+  def __init__(self, defaults=None, default_config=[]):
+    cfgp.SafeConfigParser.__init__(self, defaults)
 
-  def __init__(self):
-    self.default = {"font": "Monospace 10",
-                    "ref_point_size": 4,
-                    "src_marker_refpoints_begin": "//!BOXER:REFPOINTS:BEGIN",
-                    "src_marker_refpoints_end": "//!BOXER:REFPOINTS:END",
-                    "src_marker_cursor_here": "//!BOXER:CURSOR:HERE",
-                    "button_left": 1,
-                    "button_center": 2,
-                    "button_right": 3}
+    # Generate default configuration
+    default_config_dict = {}
+    for section, option, value in default_config:
+      if default_config_dict.has_key(section):
+        section_dict = default_config_dict[section]
+      else:
+        section_dict = {}
+        default_config_dict[section] = section_dict
+      section_dict[option] = value
 
-  def get_default(self, name, default=None):
-    """Get a default configuration setting."""
-    if self.default.has_key(name):
-      return self.default[name]
+    self._default_config = default_config_dict
+
+  def has_default_option(self, section, option):
+    if self._default_config.has_key(section):
+      return self._default_config[section].has_key(option)
     else:
-      return default
+      return False
 
-  def box_executable(self):
-    """Returns the absolute path of the Box executable."""
-    default = self.get_default("box_executable")
-    if default != None: return default
-    if platform_is_win:
-      return os.path.join(installation_path(), "box", "bin", "box.exe")
+  def get(self, section, option, raw=False, vars=None):
+    if (not self.has_option(section, option)
+        and self.has_default_option(section, option)):
+      return self._default_config[section][option]
+
     else:
-      return "box"
+      return cfgp.SafeConfigParser.get(self, section, option, raw, vars)
+
+def get_configuration():
+  # Create Boxer configuration directory
+  home_path = os.path.expanduser("~")
+  if platform_is_win:
+    cfg_dir = "boxer_settings"
+  else:
+    cfg_dir = ".boxer"
+  cfg_file = "config.cfg"
+
+  # Create default box executable path
+  if platform_is_win:
+    box_exec = os.path.join(installation_path(), "box", "bin", "box.exe")
+  else:
+    box_exec = "box"
+
+  default_config = \
+   [('Box', 'exec', box_exec),
+    ('GUI', 'font', 'Monospace 10'),
+    ('GUIView', 'refpoint_size', '4'),
+    ('Behaviour', 'button_left', '1'),
+    ('Behaviour', 'button_center', '2'),
+    ('Behaviour', 'button_right', '3'),
+    ('Internals', 'src_marker_refpoints_begin', '//!BOXER:REFPOINTS:BEGIN'),
+    ('Internals', 'src_marker_refpoints_end', '//!BOXER:REFPOINTS:END'),
+    ('Internals', 'src_marker_cursor_here', '//!BOXER:CURSOR:HERE')]
+
+  user_cfg_file = os.path.join(home_path, cfg_dir, cfg_file)
+
+  c = BoxerConfigParser(default_config=default_config)
+  successful_reads = c.read([user_cfg_file])
+
+  return c
+

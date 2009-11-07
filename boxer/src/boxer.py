@@ -25,6 +25,7 @@ import os.path
 
 import config
 import document
+import execbox
 
 def box_source_preamble(out_files):
   if out_files == None:
@@ -98,17 +99,6 @@ def tmp_remove():
       pass
   _tmp_files[0] = []
 
-def exec_command(cmd, args=""):
-  # This is not really how we should deal properly with this.
-  # (We should avoid .read()). It is just a temporary solution.
-  import os
-  in_fd, out_fd, err_fd  = os.popen3("\"%s\" %s" % (cmd, args))
-  content = out_fd.read() + err_fd.read()
-  out_fd.close()
-  err_fd.close()
-  in_fd.close()
-  return content
-
 class Boxer:
   def delete_event(self, widget, event, data=None):
     return not self.ensure_file_is_saved()
@@ -139,7 +129,7 @@ class Boxer:
     self.textbuffer.set_text(text)
 
     # Remove the "here" marker and put the cursor there!
-    here_marker = self.config.get_default("src_marker_cursor_here")
+    here_marker = self.config.get("Internals", "src_marker_cursor_here")
     si = self.textbuffer.get_start_iter()
     found = si.forward_search(here_marker, gtk.TEXT_SEARCH_TEXT_ONLY)
     if found != None:
@@ -341,15 +331,18 @@ class Boxer:
       except:
         pass
 
-    box_executable = self.config.box_executable()
+    box_executable = self.config.get("Box", "exec")
     pre_path, pre_basename = os.path.split(box_presource_file)
     extra_opts = "-I ."
     if self.filename != None:
       p = os.path.split(self.filename)[0]
       if len(p) > 0: extra_opts = "-I %s" % p
-    args = ("-l g -I %s %s -se %s %s"
-            % (pre_path, extra_opts, pre_basename, box_source_file))
-    box_out_msgs = exec_command(box_executable, args)
+    args = ["-l g",
+            "-I %s" % pre_path,
+            extra_opts,
+            "-se %s" % pre_basename,
+            box_source_file]
+    box_out_msgs = execbox.exec_command(box_executable, args)
     self.outtextbuffer.set_text(box_out_msgs)
     self.outtextview_expander.set_expanded(len(box_out_msgs.strip()) > 0)
 
@@ -475,11 +468,11 @@ class Boxer:
     return self.pastenewbutton.get_active()
 
   def __init__(self, gladefile="boxer.glade", filename=None):
-    self.config = config.Config()
+    self.config = config.get_configuration()
 
-    self.button_left = self.config.get_default("button_left")
-    self.button_center = self.config.get_default("button_center")
-    self.button_right = self.config.get_default("button_right")
+    self.button_left = self.config.get("Behaviour", "button_left")
+    self.button_center = self.config.get("Behaviour", "button_center")
+    self.button_right = self.config.get("Behaviour", "button_right")
 
     self.gladefile = config.glade_path(gladefile)
     self.boxer = gtk.glade.XML(self.gladefile, "boxer")
@@ -496,7 +489,7 @@ class Boxer:
     self.widget_refpoint_entry = self.boxer.get_widget("refpoint_entry")
     self.widget_refpoint_show = self.boxer.get_widget("refpoint_show")
 
-    ref_point_size = self.config.get_default("ref_point_size")
+    ref_point_size = self.config.get("GUIView", "refpoint_size")
 
     import gobject
     liststore = gtk.ListStore(gobject.TYPE_STRING)
@@ -575,7 +568,7 @@ class Boxer:
     # try to set the default font
     try:
       from pango import FontDescription
-      font = FontDescription(self.config.get_default("font"))
+      font = FontDescription(self.config.get("GUI", "font"))
       self.textview.modify_font(font)
 
     except:
