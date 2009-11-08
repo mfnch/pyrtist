@@ -138,6 +138,10 @@ def get_configuration():
 
   default_config = \
    [('Box', 'exec', box_exec, 'The path to the Box executable'),
+    ('Box', 'stdout_buffer_size', '32', 'Maximum size in KB of Box scripts '
+                                        'stdout (negative for unlimited)'),
+    ('Box', 'stdout_update_delay', '0.2', 'Delay between updates of the '
+                               'textview showing the output of Box programs'),
     ('GUI', 'font', 'Monospace 10', 'The font used in the GUI'),
     ('GUIView', 'refpoint_size', '4', 'The size of the squares used to mark '
                                       'the reference points'),

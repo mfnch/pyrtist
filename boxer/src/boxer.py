@@ -20,8 +20,8 @@ pygtk.require('2.0')
 import gtk
 import gtk.glade
 import gtk.gdk
-import os
-import os.path
+import os, os.path
+import time
 
 import config
 import document
@@ -346,12 +346,14 @@ class Boxer:
 
     box_out_msgs = [""]
     def out_fn(s):
+      gtk.gdk.threads_enter()
       box_out_msgs[0] += s
+      box_out_msgs[0] = self._out_textview_refresh(box_out_msgs[0])
+      gtk.gdk.threads_leave()
 
     def do_at_exit():
       gtk.gdk.threads_enter()
-      self.outtextbuffer.set_text(box_out_msgs[0])
-      self.outtextview_expander.set_expanded(len(box_out_msgs[0].strip()) > 0)
+      self._out_textview_refresh(box_out_msgs[0], force=True)
 
       bbox = None
       try:
@@ -372,25 +374,41 @@ class Boxer:
           pass
 
       tmp_remove()
-      self.set_box_killer(None)
+      self._set_box_killer(None)
       gtk.gdk.threads_leave()
 
     killer = execbox.exec_command(box_executable, args,
                                   out_fn=out_fn,
                                   do_at_exit=do_at_exit)
-    self.set_box_killer(killer)
+    self._set_box_killer(killer)
 
   def menu_run_stop(self, image_menu_item):
     if self.box_killer != None:
       self.box_killer()
 
-  def set_box_killer(self, killer):
+  def _set_box_killer(self, killer):
     killer_given = (killer != None)
     self.toolbutton_stop.set_sensitive(killer_given)
     self.menubutton_run_stop.set_sensitive(killer_given)
     self.toolbutton_run.set_sensitive(not killer_given)
     self.menubutton_run_execute.set_sensitive(not killer_given)
     self.box_killer = killer
+
+  def _out_textview_refresh(self, text, force=False):
+    t = time.time()
+    if force == False:
+      if self.out_textbuffer_last_update_time != None:
+        t0 = self.out_textbuffer_last_update_time
+        if t - t0 < self.out_textbuffer_update_time:
+          return text
+
+    has_some_text = (len(text.strip()) > 0)
+    if len(text) > self.out_textbuffer_capacity:
+      text = text[-self.out_textbuffer_capacity:]
+    self.out_textview_expander.set_expanded(has_some_text)
+    self.out_textbuffer.set_text(text)
+    self.out_textbuffer_last_update_time = t
+    return text
 
   def menu_help_about(self, image_menu_item):
     """Called menu help->about command."""
@@ -507,9 +525,17 @@ class Boxer:
     self.mainwin = self.boxer.get_widget("boxer")
     self.textview = self.boxer.get_widget("textview")
     self.textbuffer = self.textview.get_buffer()
-    self.outtextview = self.boxer.get_widget("outtextview")
-    self.outtextbuffer = self.outtextview.get_buffer()
-    self.outtextview_expander = self.boxer.get_widget("outtextview_expander")
+    self.out_textview = self.boxer.get_widget("outtextview")
+    self.out_textbuffer = self.out_textview.get_buffer()
+    self.out_textview_expander = self.boxer.get_widget("outtextview_expander")
+    self.out_textbuffer_last_update_time = None
+    self.out_textbuffer_update_time = \
+      self.config.getfloat('Box', 'stdout_update_delay')
+    self.out_textbuffer_capacity = \
+      int(1024*self.config.getfloat('Box', 'stdout_buffer_size'))
+
+    32*1024
+
     self.examplesmenu = self.boxer.get_widget("menu_file_examples")
     self.pastenewbutton = self.boxer.get_widget("toolbutton_pastenew")
     self.toolbutton_run = self.boxer.get_widget("toolbutton_run")
@@ -650,10 +676,9 @@ def run(arg_list):
   filename = None
   if len(arg_list) > 1:
     filename = arg_list[1]
+  gtk.gdk.threads_init()
   main_window = Boxer(filename=filename)
   gtk.main()
 
 if __name__ == "__main__":
-  form = Boxer()
-  gtk.gdk.threads_init()
-  gtk.main()
+  run([])
