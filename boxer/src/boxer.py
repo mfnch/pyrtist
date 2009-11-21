@@ -117,6 +117,15 @@ class Boxer:
     """
     self.textbuffer.set_modified(False)
 
+  def update_title(self):
+    """Update the title in the main window. Must be called when the file name
+    changes or is set."""
+    filename = self.filename
+    if filename == None:
+      filename = "New file (not saved)"
+
+    self.mainwin.set_title("%s - Boxer" % filename)
+
   def get_main_source(self):
     """Return the content of the main textview (just a string)."""
     tb = self.textbuffer
@@ -147,6 +156,7 @@ class Boxer:
     self.set_main_source(box_source_of_new)
     self.filename = None
     self.assume_file_is_saved()
+    self.update_title()
 
   def raw_file_open(self, filename):
     """Load the file 'filename' into the textview."""
@@ -173,6 +183,7 @@ class Boxer:
     self.set_main_source(user_str)
     self.filename = filename
     self.assume_file_is_saved()
+    self.update_title()
 
     if execute: self.menu_run_execute(None)
 
@@ -188,6 +199,7 @@ class Boxer:
       d.save_to_file(filename)
 
       self.filename = filename
+      self.update_title()
       self.assume_file_is_saved()
       return True
 
@@ -415,7 +427,7 @@ class Boxer:
     ad = gtk.AboutDialog()
     import info
     ad.set_name(info.name)
-    ad.set_version(info.version)
+    ad.set_version(info.version_string)
     ad.set_comments(info.comment)
     ad.set_license(info.license)
     ad.set_authors(info.authors)

@@ -1,5 +1,5 @@
+from info import version
 
-version = (0, 1, 1)
 max_chars_per_line = 79
 marker_begin = "//!BOXER"
 marker_sep = ":"

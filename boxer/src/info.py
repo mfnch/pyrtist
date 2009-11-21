@@ -32,7 +32,9 @@ Software Foundation, Inc., 59 Temple Place, Suite 330,
 Boston, MA  02111-1307  USA"""
 
 name = "Boxer"
-version = "0.1"
+version = (0, 1, 1)
+version_string = "%d.%d.%d" % version
 comment = "Boxer, the Box editor!"
 authors = ["Matteo Franchin (fnch@users.sourceforge.net)"]
 website = "http://boxc.sourceforge.net"
+
