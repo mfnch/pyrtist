@@ -15,7 +15,7 @@ Window@@Window ? "window_window"
 Window.Save = Void
 ([)@Window.Save ? "window_save_begin"
 (])@Window.Save ? "window_save_end"
-()Char@Window.Save ? "window_save_str"
+Str@Window.Save ? "window_save_str"
 Window@Window.Save ? "window_save_window"
 
 Window.Hot = Point
@@ -33,7 +33,7 @@ Window.Origin = Void
 Point@Window.Origin ? "window_origin_point"
 
 Window.File = Void
-()Char@Window.File ? "window_file_string"
+Str@Window.File ? "window_file_string"
 
 Window.Show = Void
 Point@&Window.Show ? "window_show_point"

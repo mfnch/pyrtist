@@ -26,6 +26,7 @@
 
 #include "types.h"
 #include "virtmach.h"
+#include "bltinstr.h"
 #include "graphic.h"
 #include "g.h"
 #include "bb.h"
@@ -97,9 +98,9 @@ Task window_begin(VMProgram *vmp) {
   w->plan.resolution.x = 2.0;
   w->plan.resolution.y = 2.0;
   w->plan.have.file_name = 0;
-  w->plan.file_name = (char *) NULL;
+  w->plan.file_name = NULL;
 
-  w->save_file_name = (char *) NULL;
+  w->save_file_name = NULL;
 
   w->window = Grp_Window_Error(stderr, "Cannot use a window before "
                                "completing the initialization stage.");
@@ -144,6 +145,8 @@ Task window_destroy(VMProgram *vmp) {
 #ifdef DEBUG
   printf("Window object deallocated\n");
 #endif
+
+  free(w->plan.file_name);
 
   grp_win = w->window;
   grp_close_win();
@@ -239,22 +242,22 @@ Task window_origin_point(VMProgram *vmp) {
 
 Task window_save_begin(VMProgram *vmp) {
   Window *w  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
-  w->save_file_name = (char *) NULL;
+  w->save_file_name = NULL;
   w->saved = 0;
   return Success;
 }
 
-Task window_save_str(VMProgram *vmp) {
-  Window *w  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
-  char *file_name = BOX_VM_ARG1_PTR(vmp, char);
+Task window_save_str(VMProgram *vm) {
+  Window *w  = BOX_VM_SUB_PARENT(vm, WindowPtr);
+  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
 
-  if (w->save_file_name != (char *) NULL) {
-    free(w->save_file_name);
+  if (w->save_file_name != NULL) {
     printf("Window.Save: changing save target from '%s' to '%s'\n",
-           w->save_file_name, file_name);
+           w->save_file_name, s->ptr);
+    free(w->save_file_name);
   }
 
-  w->save_file_name = strdup(file_name);
+  w->save_file_name = strdup(s->ptr);
   return Success;
 }
 
@@ -294,9 +297,9 @@ Task window_save_window(VMProgram *vmp) {
       return Failed;
     }
 
-    if (src->save_file_name != (char *) NULL) {
+    if (src->save_file_name != NULL) {
       dest->plan.have.file_name = 1;
-      dest->plan.file_name = src->save_file_name;
+      dest->plan.file_name = strdup(src->save_file_name);
     }
 
     /*printf("Bounding box (%f, %f) - (%f, %f)\n",
@@ -353,12 +356,14 @@ Task window_save_window(VMProgram *vmp) {
   Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);
   Fig_Draw_Fig_With_Matrix(src->window, & m);
   if (dest->plan.have.file_name)
-    grp_save(dest->plan.file_name); /* Some terminals require an explicit save! */
+    grp_save(dest->plan.file_name);
+    /* ^^^ Some terminals require an explicit save! */
+
   grp_win = cur_win;
 
-  if (src->save_file_name != (char *) NULL) {
+  if (src->save_file_name != NULL) {
     free(src->save_file_name);
-    src->save_file_name = (char *) NULL;
+    src->save_file_name = NULL;
     dest->plan.file_name = "shouldnthappen.i_window.c";
   }
   src->saved = 1;
@@ -369,9 +374,9 @@ Task window_save_end(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
 
   if (w->saved) {
-    if (w->save_file_name != (char *) NULL) {
+    if (w->save_file_name != NULL) {
       free(w->save_file_name);
-      w->save_file_name = (char *) NULL;
+      w->save_file_name = NULL;
       g_warning("Window.Save: given file name was not used.\n");
     }
     return Success;
@@ -380,7 +385,7 @@ Task window_save_end(VMProgram *vmp) {
     GrpWindow *cur_win;
     int all_ok;
 
-    if (w->save_file_name == (char *) NULL) {
+    if (w->save_file_name == NULL) {
       g_error("window not saved: need a file name!\n");
       return Failed;
     }
@@ -390,7 +395,7 @@ Task window_save_end(VMProgram *vmp) {
     all_ok = grp_save(w->save_file_name);
     grp_win = cur_win;
     free(w->save_file_name);
-    w->save_file_name = (char *) NULL;
+    w->save_file_name = NULL;
     w->saved = 1;
     return (all_ok) ? Success : Failed;
   }
@@ -453,17 +458,16 @@ Task window_hot_end(VMProgram *vmp) {
   return Success;
 }
 
-/* FIXME: w->save_file_name needs to have a copy of the string. Box does
- *  not give the guarantee that the string will not be deallocated after
- *  this function has returned.
- */
-Task window_file_string(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
+Task window_file_string(BoxVM *vm) {
+  SUBTYPE_OF_WINDOW(vm, w);
+  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
+
   if (w->plan.have.file_name) {
     g_warning("You have already provided a file name for the window.");
+    free(w->plan.file_name);
   }
   w->plan.have.file_name = 1;
-  w->plan.file_name = BOX_VM_ARG1_PTR(vmp, char);
+  w->plan.file_name = strdup(s->ptr);
   return Success;
 }
 
