@@ -34,3 +34,63 @@ thus creating a branch. This is the sort of command I used:
 
 I did this for 0.1.1 --> 0.1.2  and 0.1.2 --> 0.1.3.
 
+COMPILING BOX ON WINDOWS (MinGW)
+--------------------------------
+
+You first need to install MinGW and MSYS. Currently you can download:
+
+MinGW
+MSYS
+
+This will create a directory C:\msys\1.0\ containing a Unix tree.
+You should then download the GTK+ bundle:
+
+GTK bundle: 
+http://ftp.gnome.org/pub/gnome/binaries/win32/gtk+/2.16/gtk+-bundle_2.16.6-20091013_win32.zip
+
+unzip the file, rename it to gtk and put in C:\msys\1.0.
+You then have a directory C:\msys\1.0\gtk which, which from MSYS can be
+accessed as /gtk.
+The directory itself contains a Unix hierarchy tree (this means that
+you can find directories such as /gtk/bin, gtk/lib, etc).
+You may be tempted to mix the two Unix trees (unzip the GTK bundle
+to C:\msys\1.0, rather than into C:\msys\1.0\gtk), but this does not seem to
+work properly! Not at the moment, at least.
+You should now download the box tarball and uncompress it into the directory
+C:\msys\1.0\home\yourusername\src\box-X.Y.Z so that from within MSYS
+you can access it as ~/src/box/X.Y.Z. Then do the following:
+
+# start MSYS
+cd # get to your home directory in MSYS
+export PATH=$PATH:/gtk/bin # this is needed to access pkg-config
+cd src/box-X.Y.Z
+./configure --prefix=/home/yourusername/local --with-included-ltdl
+make
+make install
+
+This will put libraries and Box headers inside the directory
+/home/yourusername/local. Next step is to copy the required libraries
+from /gtk/bin to /home/yourusername/local/bin.
+You - need in particular - libcairo*.dll, libpng*.dll, zlib*.png and
+maybe some others. I do not know, at the moment, how to determined
+the required libraries. One bad solution is to copy all the dlls from
+the /gtk/bin directory:
+
+cd # get to your home directory in MSYS
+cd local/bin
+
+There you should find the files box.exe boxX.Y.exe and libboxcore*.dll.
+Then:
+
+cp /gtk/bin/*.dll .
+
+Now check that Box works:
+
+echo "include \"g\"" > test.box
+./box.exe test.box -l g
+
+The command should execute without any warnings.
+If you get "Cannot load the library...", then there is some problem.
+If not, then you can delete the dlls that are not required in order
+for box.exe to run successfully.
+
