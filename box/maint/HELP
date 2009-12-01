@@ -9,8 +9,8 @@ libboxcore:
   cd boxc/trunk/box/maint
   bash version.sh --new-maint --new-bc-fix
 
-Type bash ``version.sh`` for help.
-Then one shoudl create a new tag:
+Type ``bash version.sh`` for help.
+Then one should create a new tag:
 
   svn copy \
     https://boxc.svn.sourceforge.net/svnroot/boxc/trunk/box \
