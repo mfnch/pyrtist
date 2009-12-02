@@ -76,9 +76,9 @@ Task objlist_dup(ObjList *dest, ObjList *src) {
   return Success;
 }
 
-void *objlist_find(ObjList *ol, char *name) {
+void *objlist_find(ObjList *ol, const char *name) {
   int i, n = buff_numitem(& ol->ol);
-  if (name == (char *) NULL) return (void *) NULL;
+  if (name == NULL) return (void *) NULL;
   for(i=1; i <= n; i++) {
     ObjListItem *oli = buff_itemptr(& ol->ol, ObjListItem, i);
     if (oli->name != (char *) NULL) {

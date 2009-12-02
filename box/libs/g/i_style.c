@@ -21,6 +21,7 @@
 
 #include "types.h"
 #include "virtmach.h"
+#include "bltinstr.h"
 
 #include "g.h"
 #include "i_style.h"
@@ -51,9 +52,11 @@ Task style_destroy(VMProgram *vmp) {
   return Success;
 }
 
-Task style_fill_string(VMProgram *vmp) {
-  IStylePtr s = BOX_VM_SUB_PARENT(vmp, IStylePtr);
-  char *string = BOX_VM_ARG_PTR(vmp, char);
+Task style_fill_string(BoxVM *vm) {
+  IStylePtr s = BOX_VM_SUB_PARENT(vm, IStylePtr);
+  BoxStr *box_string = BOX_VM_ARG_PTR(vm, BoxStr);
+
+  const char *string = (char *) box_string->ptr;
   char *style_strs[] = {"void", "plain", "eo",
                         "clip", "eoclip", (char *) NULL};
   FillStyle styles[] = {FILLSTYLE_VOID, FILLSTYLE_PLAIN, FILLSTYLE_EO,
@@ -104,9 +107,10 @@ Task style_border_real(VMProgram *vmp) {
   return Success;
 }
 
-Task style_border_join(VMProgram *vmp) {
-  IStylePtr s = BOX_VM_SUB_PARENT(vmp, IStylePtr);
-  char *join_style = BOX_VM_ARG_PTR(vmp, char);
+Task style_border_join(BoxVM *vm) {
+  IStylePtr s = BOX_VM_SUB_PARENT(vm, IStylePtr);
+  BoxStr *box_string = BOX_VM_ARG_PTR(vm, BoxStr);
+  const char *join_style = (char *) box_string->ptr;
   char *join_styles[] = {"miter", "round", "bevel", (char *) NULL};
   JoinStyle js[] = {JOIN_STYLE_MITER, JOIN_STYLE_ROUND, JOIN_STYLE_BEVEL};
   int index = g_string_find_in_list(join_styles, join_style);
@@ -164,10 +168,10 @@ Task style_border_miter_limit(VMProgram *vmp) {
   return Success;
 }
 
-Task style_border_cap_string(VMProgram *vmp) {
-  IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
-  char *cap_str = BOX_VM_ARG_PTR(vmp, char);
-
+Task style_border_cap_string(BoxVM *vm) {
+  IStylePtr s = BOX_VM_SUB2_PARENT(vm, IStylePtr);
+  BoxStr *box_string = BOX_VM_ARG_PTR(vm, BoxStr);
+  const char *cap_str = (char *) box_string->ptr;
   char *cap_styles[] = {"butt", "round", "square", (char *) NULL};
   CapStyle cs[] = {CAP_STYLE_BUTT, CAP_STYLE_ROUND, CAP_STYLE_SQUARE};
 

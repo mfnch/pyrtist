@@ -23,6 +23,7 @@
 
 #include "types.h"
 #include "virtmach.h"
+#include "bltinstr.h"
 #include "i_gradient.h"
 #include "i_window.h"
 #include "graphic.h"
@@ -64,9 +65,10 @@ static Task set_gradient_type(Gradient *g, ColorGradType t) {
   return Success;
 }
 
-Task gradient_string(VMProgram *vmp) {
-  Gradient *g = BOX_VM_THIS(vmp, GradientPtr);
-  char *ext_str = BOX_VM_ARG1_PTR(vmp, char);
+Task gradient_string(BoxVM *vm) {
+  Gradient *g = BOX_VM_THIS(vm, GradientPtr);
+  BoxStr *box_string = BOX_VM_ARG_PTR(vm, BoxStr);
+  const char *ext_str = (char *) box_string->ptr;
   char *ext_styles[] = {"single", "repeated", "repeat",
                         "reflected", "reflect",
                         "padded", "pad", (char *) NULL};

@@ -33,6 +33,6 @@ void aput_get(Point *rot_center, Point *trsl_vect,
 void aput_set(Point *rot_center, Point *trsl_vect,
               Real *rot_angle, Real *scale_x, Real *scale_y );
 int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed);
-int aput_allow(char *permissions, int *needed);
+int aput_allow(const char *permissions, int *needed);
 
 #endif

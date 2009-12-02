@@ -160,10 +160,11 @@ Task window_destroy(VMProgram *vmp) {
   return Success;
 }
 
-Task window_str(VMProgram *vmp) {
-  WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
+Task window_str(BoxVM *vm) {
+  WindowPtr wp = BOX_VM_CURRENT(vm, WindowPtr);
   Window *w = (Window *) wp;
-  char *type_str = BOX_VM_ARG1_PTR(vmp, char);
+  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
+  const char *type_str = (char *) s->ptr;
 
   if (w->plan.have.type) {
     g_warning("You have already specified the window type!");
@@ -423,10 +424,11 @@ Task window_hot_point(VMProgram *vmp) {
   return t;
 }
 
-Task window_hot_string(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
-  char *name = strdup(BOX_VM_ARG1_PTR(vmp, char));
-  w->hot.name = name;
+Task window_hot_string(BoxVM *vm) {
+  SUBTYPE_OF_WINDOW(vm, w);
+  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
+  const char *name = (char *) s->ptr;
+  w->hot.name = strdup(name);
   w->hot.got.name = 1;
   return Success;
 }

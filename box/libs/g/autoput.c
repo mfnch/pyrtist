@@ -324,8 +324,7 @@ void aput_get(Point *rot_center, Point *trsl_vect,
  *  allora x = aput_allow("sd", 0) )
  *  Gli altri spazi della stringa vengono ignorati.
  */
-int aput_allow(char *permissions, int *needed)
-{
+int aput_allow(const char *permissions, int *needed) {
   char p;
   int allow = 0;
   enum {NORMAL, WAIT_COMPONENT} status = NORMAL;

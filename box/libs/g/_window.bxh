@@ -5,7 +5,7 @@ Window = ++Ptr
 (])@Window ? "window_end"
 (\)@Window ? "window_destroy"
 
-()Char@Window ? "window_str"
+Str@Window ? "window_str"
 Point@Window ? "window_size"
 Color@&Window ? "window_color"
 Gradient@&Window ? "window_gradient"
@@ -21,7 +21,7 @@ Window@Window.Save ? "window_save_window"
 Window.Hot = Point
 ([)@Window.Hot ? "window_hot_begin"
 Point@Window.Hot ? "window_hot_point"
-()Char@Window.Hot ? "window_hot_string"
+Str@Window.Hot ? "window_hot_string"
 PointList@Window.Hot ? "window_hot_pointlist"
 (])@Window.Hot ? "window_hot_end"
 

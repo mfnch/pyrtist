@@ -15,6 +15,6 @@ Real@Gradient.Circle ? "gradient_circle_real"
 
 Real@Gradient ? "gradient_real"
 Color@Gradient ? "gradient_color"
-()Char@Gradient ? "gradient_string"
+Str@Gradient ? "gradient_string"
 
 Gradient@Print ? "print_gradient"

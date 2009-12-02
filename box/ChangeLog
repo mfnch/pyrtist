@@ -1,7 +1,20 @@
 REVISION=$Revision$
 # Do not change the previous line
 
-Change log (recent come first)
+Change log (recent comes first)
+
+02 Dec 2009: The graphic library g does now accept strings as Str objects
+  * '()Char' changed to 'Str' in the Box g library. This gives more
+  	flexibility (we now can, for example, save the frames of an animation
+		into different files).
+
+21 May 2009: bugfix (compilation failed with newer version of glibc/gcc)
+  * Compilation of Box failed with newer version of glibc/gcc. See:
+
+    https://sourceforge.net/tracker/?func=detail&aid=2791855&group_id=218051&atid=1041983
+
+    Many thanks to Gerardo Exequiel Pozzi for reporting this and for
+    maintaining the Arch Linux package for Box.
 
 13 May 2009: change to improve compatibility with the Box GUI (Boxer)
   * Examples provided by Boxer were not working, since g.bxh included

@@ -4,12 +4,12 @@ PointList = ++Ptr
 ([)@PointList ? "pointlist_begin"
 (\)@PointList ? "ipointlist_destroy"
 
-()Char@&PointList ? "pointlist_str"
+Str@&PointList ? "pointlist_str"
 Point@&PointList ? "pointlist_point"
 PointList@&PointList ? "pointlist_pointlist"
 
 PointList.Get = Point
-()Char@PointList.Get ? "pointlist_get_str"
+Str@PointList.Get ? "pointlist_get_str"
 INT@PointList.Get ? "pointlist_get_int"
 REAL@PointList.Get ? "pointlist_get_real"
 Point@PointList.Get ? "pointlist_get_point"

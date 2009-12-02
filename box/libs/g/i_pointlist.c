@@ -25,6 +25,7 @@
 
 #include "types.h"
 #include "virtmach.h"
+#include "bltinstr.h"
 #include "g.h"
 #include "pointlist.h"
 #include "i_pointlist.h"
@@ -59,9 +60,10 @@ Task ipointlist_destroy(VMProgram *vmp) {
   return Success;
 }
 
-Task pointlist_str(VMProgram *vmp) {
-  IPointList *ipl = BOX_VM_THIS(vmp, IPointListPtr);
-  ipl->name = strdup(BOX_VM_ARGPTR1(vmp, char));
+Task pointlist_str(BoxVM *vm) {
+  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
+  IPointList *ipl = BOX_VM_THIS(vm, IPointListPtr);
+  ipl->name = strdup((char *) s->ptr);
   return Success;
 }
 
@@ -88,11 +90,12 @@ Task pointlist_pointlist(VMProgram *vmp) {
   return pointlist_iter(& ipl_to_add->pl, _add_from_pointlist, & ipl->pl);
 }
 
-Task pointlist_get_str(VMProgram *vmp) {
-  IPointList *ipl = BOX_VM_SUB_PARENT(vmp, IPointListPtr);
-  Point *out_p = BOX_VM_SUB_CHILD_PTR(vmp, Point);
-  Point *p = pointlist_find(& ipl->pl, BOX_VM_ARGPTR1(vmp, char));
-  if (p == (Point *) NULL) {
+Task pointlist_get_str(BoxVM *vm) {
+  IPointList *ipl = BOX_VM_SUB_PARENT(vm, IPointListPtr);
+  Point *out_p = BOX_VM_SUB_CHILD_PTR(vm, Point);
+  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
+  Point *p = pointlist_find(& ipl->pl, (char *) s->ptr);
+  if (p == NULL) {
     g_error("The name you gave is not a name of a point in the PointList.");
     return Failed;
   }

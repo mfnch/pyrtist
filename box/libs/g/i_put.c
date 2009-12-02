@@ -23,6 +23,7 @@
 
 #include "types.h"
 #include "virtmach.h"
+#include "bltinstr.h"
 #include "graphic.h"
 #include "g.h"
 #include "i_window.h"
@@ -193,10 +194,11 @@ Task window_put_real(VMProgram *vmp) {
   return Success;
 }
 
-Task window_put_string(VMProgram *vmp) {
-  SUBTYPE_OF_WINDOW(vmp, w);
-  char *auto_transformations_str = BOX_VM_ARGPTR1(vmp, char);
-
+Task window_put_string(BoxVM *vm) {
+  SUBTYPE_OF_WINDOW(vm, w);
+  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
+  const char *auto_transformations_str = (char *) s->ptr;
+ 
   if (!aput_allow(auto_transformations_str, & w->put.auto_transforms)) {
     g_warning("aput_allow failed!");
     return Success;
@@ -335,9 +337,10 @@ Task window_put_near_point(VMProgram *vmp) {
   }
 }
 
-Task window_put_near_string(VMProgram *vmp) {
-  SUBTYPE2_OF_WINDOW(vmp, w);
-  char *name = BOX_VM_ARGPTR1(vmp, char);
+Task window_put_near_string(BoxVM *vm) {
+  SUBTYPE2_OF_WINDOW(vm, w);
+  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
+  const char *name = (char *) s->ptr;
   if (!w->put.near.have.on_src) {
     Window *figure;
     Point *on_src;
@@ -348,7 +351,7 @@ Task window_put_near_string(VMProgram *vmp) {
     }
     figure = (Window *) w->put.figure;
     on_src = pointlist_find(& figure->pointlist, name);
-    if (on_src == (Point *) NULL) {
+    if (on_src == NULL) {
       g_error("The name you provided to Window.Put.Near does not correspond "
               "to any of the hot points of the figure.");
       return Failed;
