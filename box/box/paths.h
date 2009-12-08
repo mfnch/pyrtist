@@ -42,6 +42,12 @@ void Path_Init(void);
 
 void Path_Destroy(void);
 
+/** Returns into '*pkg_path' and '*lib_path' two newly allocated strings
+ * containing the path to the packages and the path to the library files.
+ * NOTE: These two strings must be allocated by the caller with BoxMem_Free.
+ */
+void Path_Get_Bltin_Pkg_And_Lib_Paths(char **pkg_path, char **lib_path);
+
 void Path_Set_All_From_Env(void);
 
 void Path_Add_Lib(char *lib);

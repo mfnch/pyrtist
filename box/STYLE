@@ -13,12 +13,25 @@ STYLE OF THE CODE (24/09/2008):
   Name for functions usually starts with a prefix, such that it is simple
   to recognize where they are defined. For example: 'Cmp_Operator_New' comes
   from the file 'compiler.c'.
-  Use a tab length of 2 (ie, spaces instead of tabs), example:
+  Use indentation length of 2 (and spaces instead of tabs), example:
 
   while(1) {
     printf("Nothing to print!\n");
     printf("Really nothing!\n");
   }
+
+  Lines should not exceed 79 characters.
+
+LANGUAGE CONFORMANCE:
+  Our aim is to produce code which complies with the C99 standard.
+  This allows us some freedom:
+
+  * we try to declare the variables at the beginning of each scope block,
+    just to make the code more readable (it is then clear where to look for
+    variable declarations), but don't take this role to be "God's Law".
+    If we find useful to put a statement before a declaration, then we do it!
+
+  * we can use variadic macros.
 
 FUNCTIONS: HOW WE DEAL WITH ERRORS....
   This typedef is defined inside 'types.h' which is included in almost every
@@ -52,10 +65,10 @@ NULL and casting:
 
   * Don't cast malloc() and friends
   * Always use NULL for pointers instead of 0. However don't use NULL where
-    a 0 is required. For example, 
+    a 0 is required. For example,
 
     Reasons for doing so:
-    
+
       * There is nothing stopping some systems from having NULL
         resolve to something other than 0. Although they'd be stupid to do so.
 
@@ -67,7 +80,7 @@ NULL and casting:
     improves the quality or readability.
 
   * If you don't indend on using the return value from a called function
-    then don't cast back to void. It's silly, 
+    then don't cast back to void. It's silly,
 
     ie, DO NOT:
 

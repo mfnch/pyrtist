@@ -32,7 +32,7 @@ BOX_VER_MAJOR="0"
 BOX_VER_MINOR="2"
 
 # Maint part of the version number
-BOX_VER_MAINT="2"
+BOX_VER_MAINT="0"
 
 AC_PREREQ(2.61)
 
@@ -120,6 +120,7 @@ AC_SUBST([BOX_VER_MAINT])
 
 AC_CONFIG_FILES([Makefile
                  box/Makefile
+                 box/version.h
                  libs/Makefile
                  libs/g/Makefile
                  tests/Makefile

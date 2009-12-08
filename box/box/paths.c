@@ -36,6 +36,8 @@
 #include "fileutils.h"
 #include "paths.h"
 
+#include "version.h"
+
 #ifndef __WINDOWS__
 #  if defined WIN32 || defined _WIN32
 #    define __WINDOWS__
@@ -76,43 +78,75 @@ static void Add_Env_To_List(const char *env_var, BoxList *list) {
 #endif
 }
 
+char *Path_Get_Exec_Path(void) {
+#ifdef __WINDOWS__
+  char *out = (char *) BoxMem_Alloc(MAX_PATH);
+  if (out != NULL) {
+    char *bn;
+    GetModuleFileName(NULL, out, MAX_PATH);
+    bn = strrchr(out, '\\');
+    if (bn != NULL)
+      *bn = '\0';
+  }
+  return out;
+
+#else
+  return NULL;
+#endif
+}
+
+void Path_Get_Bltin_Pkg_And_Lib_Paths(char **pkg_path, char **lib_path) {
+  *pkg_path = NULL;
+  *lib_path = NULL;
+
+#ifdef __WINDOWS__
+  char *exec_path = Path_Get_Exec_Path();
+  if (exec_path != NULL) {
+    *pkg_path = printdup("%s\\..\\lib\\box"BOX_VERSTR_ROUGH
+                         "\\pkg", exec_path);
+    *lib_path = printdup("%s\\..\\lib\\box"BOX_VERSTR_ROUGH
+                         "\\lib", exec_path);
+    BoxMem_Free(exec_path);
+  }
+
+#else
+#  ifdef BUILTIN_PKG_PATH
+  *pkg_path = strdup(BUILTIN_PKG_PATH);
+#  endif
+#  ifdef BUILTIN_LIBRARY_PATH
+  *lib_path = strdup(BUILTIN_LIBRARY_PATH);
+#  endif
+#endif
+}
+
 void Path_Set_All_From_Env(void) {
   Add_Env_To_List(BOX_LIBRARY_PATH, & lib_dirs);
   Add_Env_To_List(BOX_INCLUDE_PATH, & inc_dirs);
   Add_Env_To_List(BOX_DEFAULT_LIBS, & libraries);
 
-#ifdef BUILTIN_LIBRARY_PATH
-  Path_Add_Lib_Dir(BUILTIN_LIBRARY_PATH);
-#endif
-
-#ifdef BUILTIN_PKG_PATH
-  Path_Add_Pkg_Dir(BUILTIN_PKG_PATH);
-#endif
-
 #ifdef __WINDOWS__
-  if (1) {
-    char *fn = (char *) BoxMem_Alloc(MAX_PATH);
-    int success = 0;
-    if (fn != (char *) NULL) {
-      char *bn;
-      GetModuleFileName(NULL, fn, MAX_PATH);
-      bn = strrchr(fn, '\\');
-      if (bn != (char *) NULL) {
-        char *new_path;
-        *bn = '\0';
-        new_path = (char *) print("%s\\..\\lib\\box\\lib", fn);
-        Path_Add_Lib_Dir(new_path);
-        new_path = (char *) print("%s\\..\\lib\\box\\pkg", fn);
-        Path_Add_Pkg_Dir(new_path);
-        success = 1;
-      }
-      BoxMem_Free(fn);
-    }
+  {
+    char *pkg_path, *lib_path;
+    Path_Get_Bltin_Pkg_And_Lib_Paths(& pkg_path, & lib_path);
+    if (pkg_path != NULL && lib_path != NULL) {
+      Path_Add_Pkg_Dir(pkg_path);
+      Path_Add_Lib_Dir(lib_path);
 
-    if (!success) {
+    } else {
       MSG_WARNING("Cannot add default paths for libraries and headers.");
     }
+
+    BoxMem_Free(pkg_path);
+    BoxMem_Free(lib_path);
   }
+#else
+#  ifdef BUILTIN_LIBRARY_PATH
+  Path_Add_Lib_Dir(BUILTIN_LIBRARY_PATH);
+#  endif
+
+#  ifdef BUILTIN_PKG_PATH
+  Path_Add_Pkg_Dir(BUILTIN_PKG_PATH);
+#  endif
 #endif
 }
 

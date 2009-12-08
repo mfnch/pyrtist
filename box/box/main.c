@@ -445,6 +445,9 @@ void Main_Cmnd_Line_Help(void) {
 }
 
 static void My_Exec_Query(char *query) {
+  char *pkg_path, *lib_path;
+  Path_Get_Bltin_Pkg_And_Lib_Paths(& pkg_path, & lib_path);
+
   struct {
     char *name;
     char *value;
@@ -459,10 +462,12 @@ static void My_Exec_Query(char *query) {
     {"BUILD_DATE", __DATE__", "__TIME__},
 #endif
 #ifdef BUILTIN_LIBRARY_PATH
-    {"BUILTIN_LIBRARY_PATH", BUILTIN_LIBRARY_PATH},
+    {"BUILTIN_LIBRARY_PATH",
+     (lib_path != NULL) ? lib_path : BUILTIN_LIBRARY_PATH},
 #endif
 #ifdef BUILTIN_PKG_PATH
-    {"BUILTIN_PKG_PATH", BUILTIN_PKG_PATH},
+    {"BUILTIN_PKG_PATH",
+     (pkg_path != NULL) ? pkg_path : BUILTIN_PKG_PATH},
 #endif
 #ifdef C_INCLUDE_PATH
     {"C_INCLUDE_PATH", C_INCLUDE_PATH},
@@ -480,6 +485,7 @@ static void My_Exec_Query(char *query) {
     for (v = & vars[0]; v->name != NULL; v++)
       printf("%s\n", v->name);
     exit(EXIT_SUCCESS);
+
   } else if (strcasecmp(query, "all") == 0) {
     for (v = & vars[0]; v->name != NULL; v++)
       printf("%s=\"%s\"\n", v->name, v->value);

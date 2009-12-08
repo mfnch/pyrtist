@@ -79,7 +79,7 @@ box_LDADD = $(LIBLTDL) libboxcore0.2.la
 box_LDFLAGS = -static
 box_DEPENDENCIES=$(LTDLDEPS)
 
-EXTRA_DIST = structure.c
+# EXTRA_DIST=
 
 install-exec-hook:
 	cd $(DESTDIR)$(bindir) && \
