@@ -346,7 +346,7 @@ class Boxer:
 
     box_executable = self.config.get("Box", "exec")
     pre_path, pre_basename = os.path.split(box_presource_file)
-    extra_opts = "-I ."
+    extra_opts = "-I '.'"
     if self.filename != None:
       p = os.path.split(self.filename)[0]
       if len(p) > 0: extra_opts = "-I %s" % p
@@ -617,15 +617,32 @@ class Boxer:
     # Replace the TextView with a SourceView, if possible...
     self.has_textview = False
     try:
-      import gtksourceview
-      srcbuf = gtksourceview.SourceBuffer()
-      langman = gtksourceview.SourceLanguagesManager()
-      lang = langman.get_language_from_mime_type("text/x-csrc")
+      import gtksourceview2 as gtksourceview
+      srcbuf = gtksourceview.Buffer()
+      langman = gtksourceview.LanguageManager()
+      lang = langman.get_language("c")
       srcbuf.set_language(lang)
-      srcbuf.set_highlight(True)
-      srcview = gtksourceview.SourceView(srcbuf)
+      srcbuf.set_highlight_syntax(True)
+      srcview = gtksourceview.View(srcbuf)
       srcview.set_show_line_numbers(True)
+      self.has_textview = True
 
+    except:
+      try:
+        import gtksourceview
+        srcbuf = gtksourceview.SourceBuffer()
+        langman = gtksourceview.SourceLanguagesManager()
+        lang = langman.get_language_from_mime_type("text/x-csrc")
+        srcbuf.set_language(lang)
+        srcbuf.set_highlight(True)
+        srcview = gtksourceview.SourceView(srcbuf)
+        srcview.set_show_line_numbers(True)
+        self.has_textview = True
+
+      except:
+        pass
+
+    if self.has_textview:
       sw = self.boxer.get_widget("srcview_scrolledwindow")
       sw.remove(self.textview)
       self.textview = srcview
@@ -633,9 +650,6 @@ class Boxer:
       self.textbuffer = srcbuf
       sw.show_all()
       self.has_textview = True
-
-    except:
-      pass
 
     # try to set the default font
     try:
@@ -645,7 +659,6 @@ class Boxer:
 
     except:
       pass
-
 
     self.clipboard = gtk.Clipboard()
 
@@ -688,9 +701,15 @@ def run(arg_list):
   filename = None
   if len(arg_list) > 1:
     filename = arg_list[1]
-  gtk.gdk.threads_init()
+
+  if config.use_threads:
+    gtk.gdk.threads_init()
+
   main_window = Boxer(filename=filename)
   gtk.main()
+
+  if config.use_threads:
+    gtk.gdk.threads_leave()
 
 if __name__ == "__main__":
   run([])

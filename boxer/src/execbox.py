@@ -5,6 +5,7 @@ def old_exec_command(cmd, args=[], out_fn=None, do_at_exit=None):
   import os
   args_str = " ".join(args)
   in_fd, out_fd, err_fd  = os.popen3("\"%s\" %s" % (cmd, args_str))
+
   content = out_fd.read() + err_fd.read()
   out_fd.close()
   err_fd.close()
@@ -79,7 +80,6 @@ try:
 except:
   exec_command = old_exec_command
 
+if not config.use_threads:
+  exec_command = old_exec_command
 
-class BoxInstance:
-  def __init__(self, cmd, args):
-    self.po = subprocess.Popen()

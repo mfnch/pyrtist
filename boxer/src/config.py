@@ -64,6 +64,9 @@ if platform_is_win_py2exe:
   # executable generated for Windows
   installation_path = installation_path_windows
 
+# Whether we should try to use threads
+use_threads = not platform_is_win
+
 def glade_path(filename=None):
   base = os.path.join(installation_path(), 'glade')
   if filename == None:
