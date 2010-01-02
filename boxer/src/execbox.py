@@ -16,7 +16,7 @@ def old_exec_command(cmd, args=[], out_fn=None, do_at_exit=None):
   if do_at_exit != None:
     do_at_exit()
 
-  return lambda:None
+  return None
 
 
 import config
@@ -43,7 +43,6 @@ def _killer(po):
 
   else:
     return lambda: _my_killer(po)
-
 
 try:
   from threading import Thread

@@ -358,13 +358,16 @@ class Boxer:
 
     box_out_msgs = [""]
     def out_fn(s):
-      gtk.gdk.threads_enter()
+      if config.use_threads:
+        gtk.gdk.threads_enter()
       box_out_msgs[0] += s
       box_out_msgs[0] = self._out_textview_refresh(box_out_msgs[0])
-      gtk.gdk.threads_leave()
+      if config.use_threads:
+        gtk.gdk.threads_leave()
 
     def do_at_exit():
-      gtk.gdk.threads_enter()
+      if config.use_threads:
+        gtk.gdk.threads_enter()
       self._out_textview_refresh(box_out_msgs[0], force=True)
 
       bbox = None
@@ -387,11 +390,15 @@ class Boxer:
 
       tmp_remove()
       self._set_box_killer(None)
-      gtk.gdk.threads_leave()
+      if config.use_threads:
+        gtk.gdk.threads_leave()
 
     killer = execbox.exec_command(box_executable, args,
                                   out_fn=out_fn,
                                   do_at_exit=do_at_exit)
+    f = open("out.txt", "w")
+    f.write("%s\n" % killer)
+    f.close()
     self._set_box_killer(killer)
 
   def menu_run_stop(self, image_menu_item):
