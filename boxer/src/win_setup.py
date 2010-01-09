@@ -5,8 +5,15 @@
 import pygtk
 pygtk.require('2.0')
 import gtk
+from boxer import debug
 
-class BoxerWindowSettings():
+spacing = 6
+
+class ConfigTab:
+  def __init__(self):
+    pass
+
+class BoxerWindowSettings:
 
   # close the window and quit
   def delete_event(self, widget, event, data=None):
@@ -16,36 +23,56 @@ class BoxerWindowSettings():
   def __init__(self):
     # Create a new window
     self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
+    self.window.set_border_width(spacing)
 
-    self.window.set_title("Basic TreeView Example")
+    self.window.set_title("Boxer configuration editor")
 
     self.window.set_size_request(400, 300)
 
     self.window.connect("delete_event", self.delete_event)
 
+    # The window has one top main region and a bottom region where the
+    # ok/cancel buttons are
+    self.window_versplit = gtk.VBox()
+    self.window.add(self.window_versplit)
+
     # The window is split horizontally into two parts:
     # - on the left we have the zone where we can select the setting to change
     # - on the right we can actually manipulate the setting
     self.window_horsplit = gtk.HPaned()
-    self.window.add(self.window_horsplit)
+    self.window_versplit.pack_start(self.window_horsplit, expand=True,
+                                    fill=True, padding=0)
+
+    self.window_button_ok = gtk.Button(label="_Ok")
+    self.window_button_cancel = gtk.Button(label="_Cancel")
+
+    self.window_butbox = gtk.HButtonBox()
+    self.window_butbox.add(self.window_button_ok)
+    self.window_butbox.add(self.window_button_cancel)
+    self.window_butbox.set_layout(gtk.BUTTONBOX_END)
+    self.window_butbox.set_spacing(spacing)
+    debug()
+    self.window_versplit.pack_start(self.window_butbox, expand=False,
+                                    fill=False, padding=0)
+
 
     # We first define the right part, which is split vertically in two
-    self.window_versplit = gtk.VBox(False, 4)
-    self.window_horsplit.pack2(self.window_versplit)
+    self.window_versplit2 = gtk.VBox(False, 4)
+    self.window_horsplit.pack2(self.window_versplit2)
 
     # RIGHT PART: In the upper part we have a text entry, which is initially
     # filled with the current setting and the user can edit in order to change
     # it.
     self.window_entry = gtk.Entry()
-    self.window_versplit.pack_start(self.window_entry, expand=False,
+    self.window_versplit2.pack_start(self.window_entry, expand=False,
                                     fill=False, padding=4)
 
     self.window_textview = gtk.TextView()
     self.window_textview.set_editable(False)
     self.window_textview.set_cursor_visible(False)
     self.window_textview.set_wrap_mode(gtk.WRAP_NONE)
-    self.window_versplit.pack_start(self.window_textview, expand=True,
-                                    fill=True, padding=4)
+    self.window_versplit2.pack_start(self.window_textview, expand=True,
+                                     fill=True, padding=4)
 
     # create a TreeStore with one string column to use as the model
     self.treestore = gtk.TreeStore(str)
