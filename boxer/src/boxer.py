@@ -393,13 +393,16 @@ class Boxer:
       if config.use_threads:
         gtk.gdk.threads_leave()
 
-    killer = execbox.exec_command(box_executable, args,
-                                  out_fn=out_fn,
-                                  do_at_exit=do_at_exit)
-    f = open("out.txt", "w")
-    f.write("%s\n" % killer)
-    f.close()
-    self._set_box_killer(killer)
+    try:
+      killer = execbox.exec_command(box_executable, args,
+                                    out_fn=out_fn,
+                                    do_at_exit=do_at_exit)
+      self._set_box_killer(killer)
+
+    except OSError:
+      self._out_textview_refresh("Could not find the Box executable \"%s\". "
+                                 "Check the configuration settings!"
+                                 % box_executable)
 
   def menu_run_stop(self, image_menu_item):
     if self.box_killer != None:
