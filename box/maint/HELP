@@ -72,7 +72,7 @@ This will put libraries and Box headers inside the directory
 /home/yourusername/local. Next step is to copy the required libraries
 from /gtk/bin to /home/yourusername/local/bin.
 You - need in particular - libcairo*.dll, libpng*.dll, zlib*.png and
-maybe some others. I do not know, at the moment, how to determined
+maybe some others. I do not know, at the moment, how to determine
 the required libraries. One bad solution is to copy all the dlls from
 the /gtk/bin directory:
 
@@ -90,7 +90,7 @@ echo "include \"g\"" > test.box
 ./box.exe test.box -l g
 
 The command should execute without any warnings.
-If you get "Cannot load the library...", then there is some problem.
+If you get "Cannot load the library...", then there are some problems.
 If not, then you can delete the dlls that are not required in order
 for box.exe to run successfully.
 
