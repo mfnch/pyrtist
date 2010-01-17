@@ -237,6 +237,16 @@ class Boxer:
     if not self.ensure_file_is_saved(): return
     self.raw_file_new()
 
+  def _add_filters(self, fc):
+    flt_box_sources = gtk.FileFilter()
+    flt_box_sources.set_name("Box sources")
+    flt_box_sources.add_pattern("*.box")
+    flt_all_files = gtk.FileFilter()
+    flt_all_files.set_name("All files")
+    flt_all_files.add_pattern("*")
+    fc.add_filter(flt_box_sources)
+    fc.add_filter(flt_all_files)
+
   def menu_file_open(self, image_menu_item):
     """Ivoked to open a file. Shows the dialog to select the file."""
     if not self.ensure_file_is_saved(): return
@@ -245,6 +255,7 @@ class Boxer:
                                action=gtk.FILE_CHOOSER_ACTION_OPEN,
                                buttons=("_Cancel", gtk.RESPONSE_CANCEL,
                                         "_Open", gtk.RESPONSE_OK))
+    self._add_filters(fc)
 
     response = fc.run()
     filename = None
@@ -267,6 +278,7 @@ class Boxer:
                                action=gtk.FILE_CHOOSER_ACTION_SAVE,
                                buttons=("_Cancel", gtk.RESPONSE_CANCEL,
                                         "_Save", gtk.RESPONSE_OK))
+    self._add_filters(fc)
 
     response = fc.run()
     filename = None
