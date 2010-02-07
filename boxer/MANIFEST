@@ -5,6 +5,7 @@ ChangeLog
 setup.py
 scripts/boxer
 src/__init__.py
+src/main.py
 src/boxer.py
 src/execbox.py
 src/config.py
@@ -18,5 +19,6 @@ src/examples/diagram.box
 src/examples/poly.box
 src/examples/wheatstone.box
 src/examples/losing_eyes.box
-src/examples/shy.box
 src/examples/surf_charges.box
+src/examples/degeneracy.box
+

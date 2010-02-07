@@ -1,4 +1,5 @@
-# Copyright (C) 2008 by Matteo Franchin (fnch@users.sourceforge.net)
+# Copyright (C) 2008, 2009, 2010
+#  by Matteo Franchin (fnch@users.sourceforge.net)
 #
 # This file is part of Boxer.
 #
@@ -411,6 +412,7 @@ class Boxer:
       self._set_box_killer(killer)
 
     except OSError:
+      self.config.mark_as_broken()
       self._out_textview_refresh("Could not find the Box executable \"%s\". "
                                  "Check the configuration settings!"
                                  % box_executable)
@@ -544,8 +546,10 @@ class Boxer:
     """
     return self.pastenewbutton.get_active()
 
-  def __init__(self, gladefile="boxer.glade", filename=None):
+  def __init__(self, gladefile="boxer.glade", filename=None, box_exec=None):
     self.config = config.get_configuration()
+    if box_exec != None:
+      self.config.set("Box", "exec", box_exec)
 
     self.box_killer = None
 
@@ -718,19 +722,13 @@ class Boxer:
       example_menuitem.show()
       i += 1
 
-def run(arg_list):
-  filename = None
-  if len(arg_list) > 1:
-    filename = arg_list[1]
-
+def run(filename=None, box_exec=None):
   if config.use_threads:
     gtk.gdk.threads_init()
 
-  main_window = Boxer(filename=filename)
+  main_window = Boxer(filename=filename, box_exec=box_exec)
   gtk.main()
 
   if config.use_threads:
     gtk.gdk.threads_leave()
 
-if __name__ == "__main__":
-  run([])

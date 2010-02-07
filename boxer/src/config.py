@@ -97,7 +97,14 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
 
     self._default_config = default_config_dict
     self.is_modified = False
+    self.broken = False
     self.user_cfg_file = user_cfg_file
+
+  def mark_as_broken(self, broken=True):
+    """Marks the configuration as broken. Broken configurations are not saved
+    by the methond 'save_configuration', unless the optional argument of the
+    same method 'force' is set to True."""
+    self.broken = broken
 
   def has_default_option(self, section, option):
     if self._default_config.has_key(section):
@@ -115,14 +122,19 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
 
   def set(self, section, option, value):
     self.is_modified = True
-    return cfgp.SafeConfigParser.get(self, section, option, value)
+    return cfgp.SafeConfigParser.set(self, section, option, value)
 
-  def save_configuration(self):
+  def save_configuration(self, force=False):
     if not self.is_modified:
       return
 
+    if self.broken and not force:
+      return
+
     if self.user_cfg_file != None:
-      self.write(self.user_cfg_file)
+      f = open(self.user_cfg_file, "w")
+      self.write(f)
+      f.close()
 
 def get_configuration():
   # Create Boxer configuration directory

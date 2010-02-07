@@ -34,6 +34,7 @@ Boston, MA  02111-1307  USA"""
 name = "Boxer"
 version = (0, 1, 1)
 version_string = "%d.%d.%d" % version
+full_name = "%s %s" % (name, version_string)
 comment = "Boxer, the Box editor!"
 authors = ["Matteo Franchin (fnch@users.sourceforge.net)"]
 website = "http://boxc.sourceforge.net"
