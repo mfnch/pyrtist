@@ -292,21 +292,33 @@ class Boxer:
     """Called on file->quit to quit the program."""
     self.raw_quit()
 
+  def show_undo_redo_warning(self):
+    if self._undo_redo_warning_shown:
+      return
+
+    self._undo_redo_warning_shown = True
+    self.error("Cannot undo/redo. Please install python-gtksourceview (or "
+               "python-gtksourceview2). This will give you undo-redo "
+               "capabilities, highlighting of the sources and other nice "
+               "features.")
+
   def menu_edit_undo(self, image_menu_item):
     """Called on a CTRL+Z or menu->undo."""
     try:
       if self.textbuffer.can_undo():
         self.textbuffer.undo()
+
     except:
-      self.error("Cannot undo :(")
+      self.show_undo_redo_warning()
 
   def menu_edit_redo(self, image_menu_item):
     """Called on a CTRL+SHIFT+Z or menu->redo."""
     try:
       if self.textbuffer.can_redo():
         self.textbuffer.redo()
+
     except:
-      self.error("Cannot redo :(")
+      self.show_undo_redo_warning()
 
   def menu_edit_cut(self, image_menu_item):
     """Called on a CTRL+X (cut) command."""
@@ -551,6 +563,7 @@ class Boxer:
     if box_exec != None:
       self.config.set("Box", "exec", box_exec)
 
+    self._undo_redo_warning_shown = False
     self.box_killer = None
 
     self.button_left = self.config.getint("Behaviour", "button_left")
@@ -570,8 +583,6 @@ class Boxer:
       self.config.getfloat('Box', 'stdout_update_delay')
     self.out_textbuffer_capacity = \
       int(1024*self.config.getfloat('Box', 'stdout_buffer_size'))
-
-    32*1024
 
     self.examplesmenu = self.boxer.get_widget("menu_file_examples")
     self.pastenewbutton = self.boxer.get_widget("toolbutton_pastenew")

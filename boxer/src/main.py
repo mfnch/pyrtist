@@ -18,7 +18,7 @@
 
 import optparse
 
-import info, config, boxer
+import info, config
 
 option_parser = None
 
@@ -53,6 +53,7 @@ def main(args):
     print ("WARNING: Boxer takes just one file from the command line. "
            "Ignoring the files %s." % other_files)
 
+  import boxer
   boxer.run(file_to_edit, box_exec=options.box_exec)
 
 if __name__ == "__main__":
