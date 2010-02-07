@@ -1,15 +1,27 @@
+import config
 
 def old_exec_command(cmd, args=[], out_fn=None, do_at_exit=None):
   # This is not really how we should deal properly with this.
   # (We should avoid .read()). It is just a temporary solution.
-  import os
-  args_str = " ".join(args)
-  in_fd, out_fd, err_fd  = os.popen3("\"%s\" %s" % (cmd, args_str))
 
-  content = out_fd.read() + err_fd.read()
-  out_fd.close()
-  err_fd.close()
-  in_fd.close()
+  from subprocess import Popen, PIPE, STDOUT
+
+  # Fix for the issue described at 
+  # http://www.py2exe.org/index.cgi/Py2ExeSubprocessInteractions
+  if config.platform_is_win_py2exe:
+    shell = True
+    creationflags = 0x08000000 # CREATE_NO_WINDOW
+
+  else:
+    shell = False
+    creationflags = 0
+
+  po = Popen([cmd] + args, stdin=PIPE, stdout=PIPE, stderr=STDOUT,
+             shell=shell, creationflags=creationflags)
+
+  content = po.stdout.read()
+  po.stdout.close()
+  po.stdin.close()
 
   if out_fn != None:
     out_fn(content)
@@ -18,8 +30,6 @@ def old_exec_command(cmd, args=[], out_fn=None, do_at_exit=None):
 
   return None
 
-
-import config
 if config.platform_is_win:
   def _my_killer(po):
     try:
@@ -51,8 +61,17 @@ try:
   def exec_command(cmd, args=[], out_fn=None, do_at_exit=None,
                    buffer_size=1024):
 
-    cmd_and_args = cmd + " " + " ".join(args)
-    po = Popen(cmd_and_args.split(), stdin=PIPE, stdout=PIPE, stderr=STDOUT,
+    # Fix for the issue described at 
+    # http://www.py2exe.org/index.cgi/Py2ExeSubprocessInteractions
+    if config.platform_is_win_py2exe:
+      shell = True
+      creationflags = 0x08000000 # CREATE_NO_WINDOW
+
+    else:
+      shell = False
+      creationflags = 0
+
+    po = Popen([cmd] + args, stdin=PIPE, stdout=PIPE, stderr=STDOUT,
                shell=False)
 
     # The following function will run on a separate thread
