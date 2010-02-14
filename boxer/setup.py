@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 name = 'boxer'
-version = '0.1.1'
+version = '0.1.2'
 description = ('A graphical user interface for '
                'the Box vector graphics language')
 author = 'Matteo Franchin'
