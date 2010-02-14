@@ -2,11 +2,11 @@
 CREATING TAGS FOR THE RELEASED VERSIONS
 ---------------------------------------
 
-Before releasing a new version of Box one should use the maint script to
+Before releasing a new version of Box one should use the admin script to
 adjust version numbers. For a patch which does produce an extension of
 libboxcore:
 
-  cd boxc/trunk/box/maint
+  cd boxc/trunk/box/admin
   bash version.sh --new-maint --new-bc-fix
 
 Type ``bash version.sh`` for help.

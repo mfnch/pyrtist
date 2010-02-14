@@ -20,7 +20,7 @@ inside ``lib/`` and ``include/`` have the form ``boxMAJOR.MINOR`` and the
 release of Box will have a different independent library. Releases just
 differing for the ``PATCH`` part have the same core library name and
 therefore the ``CUR.REV.AGE`` part should be handled with care (this is done
-automatically by ``box/maint/version.sh``). Regarding the mature regime, we
+automatically by ``box/admin/version.sh``). Regarding the mature regime, we
 are not defining here rigid rules. We anticipate that probably compatibility
 will be regarded as a more important issue in the mature regime. We indeed
 intend to pass to the mature regime only when the number of Box users will be
