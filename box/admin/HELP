@@ -34,6 +34,15 @@ thus creating a branch. This is the sort of command I used:
 
 I did this for 0.1.1 --> 0.1.2  and 0.1.2 --> 0.1.3.
 
+ADJUSTING THE RELEASE DATE (OR VERSION) MANUALLY
+------------------------------------------------
+
+In order to adjust manually the release date or the version (because, for 
+example, you already increased the version number but did some more work on
+the code) you can simply edit the VERSIONS file manually and then run the
+adjust_*.sh scripts on the admin directory. These scripts will read the
+VERSIONS file and update the code accordingly.
+
 COMPILING BOX ON WINDOWS (MinGW)
 --------------------------------
 
@@ -58,7 +67,7 @@ to C:\msys\1.0, rather than into C:\msys\1.0\gtk), but this does not seem to
 work properly! Not at the moment, at least.
 You should now download the box tarball and uncompress it into the directory
 C:\msys\1.0\home\yourusername\src\box-X.Y.Z so that from within MSYS
-you can access it as ~/src/box/X.Y.Z. Then do the following:
+you can access it as ~/src/box-X.Y.Z. Then do the following:
 
 # start MSYS
 cd # get to your home directory in MSYS
