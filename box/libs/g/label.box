@@ -1,0 +1,52 @@
+// Copyright (C) 2010 Matteo Franchin
+// Implementation of the Label object
+
+include "g"
+
+//default = (Real border_size
+//           Color border_color)
+
+//Border = Void
+//Color@Border[default.border_color = color]
+//Real@Border[default.border_size = size]
+
+Label = (Point ctr, size, Color c1, c2, Real rounding, Style s
+         (Int p, c, r, s) got_it)
+
+([)@Label[
+  .ctr = (0, 0), .size = (10, 10)
+  .got_it = (0, 0, 0, 0)
+  .c1 = Color[1, 1, 1]
+  .c2 = Color[1, 1, 1]
+  .rounding = 0.0
+]
+
+Real@Label[$$.rounding = $]
+
+Color@Label[
+  [If[$$.got_it.c == 0], $$.c1 = $]
+  [If[$$.got_it.c == 1], $$.c2 = $]
+  Print[If[$$.got_it.c > 1], "Got already two colors ignoring this one, ", $]
+  .got_it.c += 1
+]
+
+Point@&Label[
+  [If[$$.got_it.p == 0], $$.ctr = $]
+  [If[$$.got_it.p == 1], $$.size = $]
+  Print[If[$$.got_it.p > 1], "Got already two points (center and size) ignoring "
+        "this one, ", $]
+  .got_it.p += 1
+]
+
+//Style@&Label[]
+
+Label@@Window[
+  hs = $.size*0.5
+  p1 = $.ctr - hs
+  p2 = $.ctr + hs
+  r = Max[Abs[hs.x], Abs[hs.y]]
+  r1 = r*0.1, r2 = r*3
+  g = Gradient[.Circle[$.ctr, r1; r2], $.c2, $.c1]
+  \ $$.Poly[$.rounding, p1, (p1.x, p2.y), p2, (p2.x, p1.y), g, Style[.Border[color.black, 0.2]]]
+]
+
