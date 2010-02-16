@@ -1,0 +1,44 @@
+In version 0.1.2:
+  BRIEFLY: mainly bugfixes in the Windows port.
+  DETAILS:
+  - Improved launching of box by passing the right command line arguments.
+  - Fixed bugs in the execution of Box in the Windows port.
+  - Stopping a hanging Box application may now work also on MS Windows.
+  - Added proper command line parser.
+
+In version 0.1.1:
+  BRIEFLY: major improvements, in particular in the way reference points
+    are handled. Execution of Box subprocess can be halted (a separate thread
+	is now dealing with the execution of the Box program).
+  DETAILS:
+  - the file format has been updated: the reference points are now Points
+    objects (and not just tuples of Real-s). This allow to refer to the
+    coordinates explicitly in the Box source. For example, you can write
+    "gui1.x" to get the x coordinate of the reference point gui1. Before you
+    had to do "Point[gui1].x". This led the user to define "pN = Point[guiN]"
+    for every reference point.
+  - a reference point manager has been added, which allows to actively select
+    the name of the next reference point, to show and hide one or more
+    reference points. Reference points can be selected using wildcards.
+    For example "*" can be used to select all reference points, while "p*"
+    can be used to select all those which begin with "p".
+    When a reference point is deleted, the combo box entry gets its name
+    so that the next point which will be created will have the same name
+    as the one which just disappeared. This allows for easy recovery of
+    accidentally removed points. At the same time the user can change this
+    by inserting a new string in the combo box entry. He has full control
+    over what is happening!
+  - when clicking on one reference point for the first time, it gets selected.
+    It becomes yellow and do not move, while the combo box shows the name
+    of the point. You can then learn about the name of the point and hide
+    it without moving it (the point cannot be dragged immediately, a second
+    click is required for this).
+  - the configuration of Boxer can now be read from file. The file will be
+    $HOME/.boxer/config.cfg on Unix and $HOME/boxer_settings/config.cfg
+    on Windows. This can be used to decide which Box executable to use,
+    for example.
+  - Can now stop manually the execution of Box. For example, if an infinite
+    loop is accidentally inserted, then the user can stop Box from Boxer.
+    Improved also the way the standard output of the Box instance is
+    collected (don't work on Windows, yet).
+

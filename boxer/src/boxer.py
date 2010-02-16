@@ -736,6 +736,7 @@ class Boxer:
 def run(filename=None, box_exec=None):
   if config.use_threads:
     gtk.gdk.threads_init()
+    gtk.gdk.threads_enter()
 
   main_window = Boxer(filename=filename, box_exec=box_exec)
   gtk.main()
