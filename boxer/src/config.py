@@ -15,7 +15,28 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys, os, os.path
+import imp, sys, os
+
+# Trick to determine whether we are running under Py2exe or not  
+def main_is_frozen():
+  """Return True when running as a Py2exe executable."""
+  return (hasattr(sys, "frozen") or # new py2exe
+          hasattr(sys, "importers") # old py2exe
+          or imp.is_frozen("__main__")) # tools/freeze
+ 
+def get_main_dir():
+  """Return the path to the main Python source from which the execution
+  started."""
+  if main_is_frozen():
+    return os.path.dirname(sys.executable)
+  return os.path.dirname(sys.argv[0])
+
+# Platform information...
+import platform as p
+platform = p.system()
+platform_is_win = (platform == "Windows")
+platform_is_win_py2exe = main_is_frozen()
+
 import ConfigParser as cfgp
 
 box_syntax_highlighting = sys.path[0]
@@ -32,40 +53,19 @@ box_source_of_new = \
 GUI[w]
 """
 
-def installation_path_linux():
+def installation_path():
   # Borrowed from wxglade.py
   try:
-    root = __file__
+    root = sys.argv[0] if platform_is_win_py2exe else __file__
     if os.path.islink(root):
       root = os.path.realpath(root)
     return os.path.dirname(os.path.abspath(root))
   except:
     print "Problem determining data installation path."
     sys.exit()
-
-def installation_path_windows():
-  try:
-    root = sys.argv[0]
-    if os.path.islink(root):
-      root = os.path.realpath(root)
-    return os.path.dirname(os.path.abspath(root))
-  except:
-    print "Problem determining data installation path."
-    sys.exit()
-
-installation_path = installation_path_linux
-
-import platform as p
-platform = p.system()
-platform_is_win = (platform == "Windows")
-platform_is_win_py2exe = platform_is_win # This may change in the future
-if platform_is_win_py2exe:
-  # This is what we need to use when running the py2exe
-  # executable generated for Windows
-  installation_path = installation_path_windows
 
 # Whether we should try to use threads
-use_threads = not platform_is_win
+use_threads = True
 
 def glade_path(filename=None):
   base = os.path.join(installation_path(), 'glade')

@@ -1,4 +1,7 @@
+import os
 import config
+
+CREATE_NO_WINDOW = 0x08000000
 
 def old_exec_command(cmd, args=[], out_fn=None, do_at_exit=None):
   # This is not really how we should deal properly with this.
@@ -8,7 +11,7 @@ def old_exec_command(cmd, args=[], out_fn=None, do_at_exit=None):
 
   # Fix for the issue described at 
   # http://www.py2exe.org/index.cgi/Py2ExeSubprocessInteractions
-  if config.platform_is_win_py2exe:
+  if config.platform_is_win:
     shell = True
     creationflags = 0x08000000 # CREATE_NO_WINDOW
 
@@ -65,14 +68,18 @@ try:
     # http://www.py2exe.org/index.cgi/Py2ExeSubprocessInteractions
     if config.platform_is_win_py2exe:
       shell = True
-      creationflags = 0x08000000 # CREATE_NO_WINDOW
+      creationflags = CREATE_NO_WINDOW
 
+    elif config.platform_is_win:
+      shell = False
+      creationflags = CREATE_NO_WINDOW
+      
     else:
       shell = False
       creationflags = 0
 
     po = Popen([cmd] + args, stdin=PIPE, stdout=PIPE, stderr=STDOUT,
-               shell=False)
+               shell=shell, creationflags=creationflags)
 
     # The following function will run on a separate thread
     def read_box_output(out_fn, do_at_exit):

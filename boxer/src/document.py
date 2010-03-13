@@ -1,4 +1,24 @@
-from info import version
+# Copyright (C) 2010 by Matteo Franchin (fnch@users.sourceforge.net)
+#
+# This file is part of Boxer.
+#
+#   Boxer is free software: you can redistribute it and/or modify it
+#   under the terms of the GNU General Public License as published
+#   by the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Boxer is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
+
+# This is the version of the document (which may be different from the version
+# of Boxer which was used to write it. We should save to file all this info,
+# but we currently do not (have to improve this!)
+version = (0, 1, 1)
 
 max_chars_per_line = 79
 marker_begin = "//!BOXER"
@@ -222,7 +242,7 @@ def save_to_str(document, version=version):
     return fn(document)
 
   else:
-    raise ValueError("Cannot save document using version %s" % version)
+    raise ValueError("Cannot save document using version %s" % str(version))
 
 class Document:
   def __init__(self):
