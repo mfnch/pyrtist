@@ -120,11 +120,13 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
     else:
       return cfgp.SafeConfigParser.get(self, section, option, raw, vars)
 
-  def set(self, section, option, value):
+  def set(self, section, option, value, auto_add_section=True):
     self.is_modified = True
+    if not self.has_section(section):
+        self.add_section(section)
     return cfgp.SafeConfigParser.set(self, section, option, value)
 
-  def save_configuration(self, force=False):
+  def save_configuration(self, force=False, create_dir=True):
     if not self.is_modified:
       return
 
@@ -132,6 +134,15 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
       return
 
     if self.user_cfg_file != None:
+      try:
+        cfg_dir, _ = os.path.split(self.user_cfg_file)
+        if not os.path.exists(cfg_dir):
+          if create_dir:
+            os.mkdir(cfg_dir)
+
+      except:
+        pass
+
       f = open(self.user_cfg_file, "w")
       self.write(f)
       f.close()
