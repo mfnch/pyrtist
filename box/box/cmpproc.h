@@ -55,9 +55,11 @@ typedef enum {
   CMPPROCSTYLE_MAIN,  /**< Main procedure, with automatic generation of
                            preamble and final ret instruction. Variables
                            are global (and subprocedures can access them). */
-  CMPPROCSTYLE_SUB    /**< Sub-procedure, with automatic generation of
+  CMPPROCSTYLE_SUB,   /**< Sub-procedure, with automatic generation of
                            preamble and ret instruction. Variables are local
                            to the procedure. */
+  CMPPROCSTYLE_EXTERN /**< Externally defined procedure. Cannot be used as
+                           a target for compilation. */
 } CmpProcStyle;
 
 /** Function called in order to generate the beginning of a procedure
@@ -85,6 +87,10 @@ struct _cmp_proc {
                 wrote_end :1,  /**< CmpProc->ending has been called */
                 head      :1;  /**< Head instructions new have been emitted */
   } have;
+  struct {
+    unsigned int
+                proc_id   :1;  /**< Permission to create proc_id */
+  } perm;
   CmpProcStyle  style;       /**< Procedure style */
   BoxCmp        *cmp;        /**< Compiler corresponding to the procedure */
   CmpProcBegin  beginning;   /**< If not NULL, this is called before emitting

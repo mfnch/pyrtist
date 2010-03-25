@@ -79,6 +79,7 @@ void CmpProc_Init(CmpProc *p, BoxCmp *c, CmpProcStyle style) {
   p->have.wrote_beg = 0;
   p->have.wrote_end = 0;
   p->have.head = 0;
+  p->perm.proc_id = 1;
   p->beginning = NULL;
   p->ending = NULL;
 
@@ -91,6 +92,9 @@ void CmpProc_Init(CmpProc *p, BoxCmp *c, CmpProcStyle style) {
     p->ending = My_Proc_End;
     (void) CmpProc_Get_RegAlloc(p); /* Force initialisation
                                        of register allocator */
+    break;
+  case CMPPROCSTYLE_EXTERN:
+    p->perm.proc_id = 0; /* Deny permission to create proc_id */
     break;
   default:
     MSG_FATAL("CmpProc_Init: Invalid value for style (CmpProcStyle).");
@@ -153,6 +157,11 @@ BoxVMSymID CmpProc_Get_Sym(CmpProc *p) {
 }
 
 BoxVMProcID CmpProc_Get_ProcID(CmpProc *p) {
+  if (!p->perm.proc_id) {
+    MSG_FATAL("CmpProc_Get_ProcID: operation not permitted.");
+    assert(0);
+  }
+
   if (p->have.proc_id)
     return p->proc_id;
 
@@ -187,9 +196,13 @@ size_t CmpProc_Get_Code_Size(CmpProc *p) {
 
 BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p) {
   if (p->have.call_num)
-    return p->sym;
+    return p->call_num;
 
-  else {
+  else if (p->style == CMPPROCSTYLE_EXTERN) {
+    MSG_FATAL("CMPPROCSTYLE_EXTERN: Not implemented, yet!");
+    assert(0);
+
+  } else {
     BoxVMProcID pn = CmpProc_Get_ProcID(p);
     char *proc_desc = CmpProc_Get_Proc_Desc(p),
          *proc_name = (p->have.proc_name) ? p->proc_name : "(noname)";

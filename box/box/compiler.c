@@ -846,6 +846,9 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
 
     } else {
       /* external procedure. Case: X@Y "c_name" ? */
+      CmpProc_Finish(& proc_implem);
+      CmpProc_Init(& proc_implem, c, CMPPROCSTYLE_EXTERN);
+        
       printf("X@Y \"...\" ? not implemented, yet!\n");
 
     }
