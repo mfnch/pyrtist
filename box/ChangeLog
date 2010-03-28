@@ -3,6 +3,8 @@ REVISION=$Revision$
 
 Change log (recent comes first)
 
+XX YYY ZZZZ: Released v 0.2.0: major compiler restructuring and improvement
+
 02 Dec 2009: The graphic library g does now accept strings as Str objects
   * '()Char' changed to 'Str' in the Box g library. This gives more
   	flexibility (we now can, for example, save the frames of an animation
