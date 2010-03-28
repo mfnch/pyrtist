@@ -41,9 +41,9 @@ class TestSession:
     return test
 
   def run(self):
-    test_print(0, 'TEST: %s' % self.title)
+    test_print(0, 'SUITE: %s' % self.title)
     for test in self.tests:
-      test_print(1, 'TEST: %s' % test.title)
+      test_print(1, '  TEST: %s' % test.title)
       errors = test.run()
       if len(errors) > 0:
         for err in errors:
