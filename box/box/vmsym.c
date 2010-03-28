@@ -97,38 +97,34 @@ BoxVMSymID BoxVMSym_New(BoxVM *vmp, UInt sym_type, UInt def_size) {
   return sym_num;
 }
 
-Task BoxVMSym_Name_Set(BoxVM *vmp, UInt sym_num, Name *n) {
+void BoxVMSym_Name_Set(BoxVM *vmp, UInt sym_num, const char *name) {
   BoxVMSymTable *st = & vmp->sym_table;
   BoxHTItem *hi;
   BoxVMSym *s;
-  char *n_str;
-  UInt n_len;
+  /*char *n_str;*/
+  UInt name_len;
 
   s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
   if (s->name.length != 0) {
-    MSG_ERROR("This symbol has already been given a name!");
-    return Failed;
+    MSG_FATAL("This symbol has already been given a name!");
+    assert(0);
   }
 
-  n_str = Name_To_Str(n);
-  n_len = n->length + 1; /* include also the terminating '\0' character */
-  if (BoxHT_Find(& st->syms, n_str, n_len, & hi)) {
-    BoxMem_Free(n_str);
-    MSG_ERROR("Another symbol exists having the name '%N'!", n);
-    return Failed;
+  name_len = strlen(name) + 1; /* include also the terminating '\0' char */
+  if (BoxHT_Find(& st->syms, name, name_len, & hi)) {
+    MSG_FATAL("Another symbol exists having the name '%s'!", name);
+    assert(0);
   }
 
-  (void) BoxHT_Insert_Obj(& st->syms, n_str, n_len, & sym_num, sizeof(UInt));
-  if (!BoxHT_Find(& st->syms, n_str, n_len, & hi) ) {
-    BoxMem_Free(n_str);
-    MSG_ERROR("Hashtable seems not to work (from BoxVMSym_Add)");
-    return Failed;
+  (void) BoxHT_Insert_Obj(& st->syms, name, name_len,
+                          & sym_num, sizeof(UInt));
+  if (!BoxHT_Find(& st->syms, name, name_len, & hi) ) {
+    MSG_FATAL("Hashtable seems not to work (from BoxVMSym_Add)");
+    assert(0);
   }
-  BoxMem_Free(n_str);
 
   s->name.text = (char *) hi->key;
   s->name.length = hi->key_size - 1; /* Without the final '\0' */
-  return Success;
 }
 
 const char *BoxVMSym_Name_Get(BoxVM *vmp, UInt sym_num) {

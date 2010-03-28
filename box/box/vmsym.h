@@ -141,7 +141,7 @@ BoxVMSymID BoxVMSym_New(BoxVM *vmp, BoxUInt sym_type, BoxUInt def_size);
 
 /** Associate a name to the symbol sym_num.
  */
-Task BoxVMSym_Name_Set(BoxVM *vm, BoxVMSymID sym_num, BoxName *n);
+void BoxVMSym_Name_Set(BoxVM *vm, BoxVMSymID sym_num, const char *name);
 
 /** Get the name of the given symbol sym_num */
 const char *BoxVMSym_Name_Get(BoxVM *vm, BoxVMSymID sym_num);

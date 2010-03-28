@@ -238,7 +238,7 @@ void BoxHT_Set_Attr(BoxHT *ht, int attr_mask, int attr_set) {
  *  ('action' returned with 1), 0 otherwise.
  */
 int BoxHT_Iter(BoxHT *ht, int branch,
-               void *key, size_t key_size,
+               const void *key, size_t key_size,
                BoxHTItem **result, BoxHTIterator it, void *pass_data) {
   if (branch < 0) {
     return 0;

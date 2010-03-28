@@ -344,6 +344,18 @@ static Task My_Math_Abs(BoxVM *vm) {
   return Success;
 }
 
+static Task My_Math_Norm(BoxVM *vm) {
+  Point *p = BOX_VM_ARGPTR1(vm, Point);  
+  BOX_VM_CURRENT(vm, Real) = sqrt(p->x*p->x + p->y*p->y);
+  return Success;
+}
+
+static Task My_Math_Norm2(BoxVM *vm) {
+  Point *p = BOX_VM_ARGPTR1(vm, Point);
+  BOX_VM_CURRENT(vm, Real) = p->x*p->x + p->y*p->y;
+  return Success;
+}
+
 /**********************
  * Conversions        *
  **********************/
@@ -524,6 +536,8 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {"Point",       c->bltin.species_point},
     {"Str",         c->bltin.string},
     {"Void",        BOXTYPE_VOID},
+    {"Ptr",         BOXTYPE_PTR},
+    {"CPtr",        BOXTYPE_CPTR},
     {"Print",       c->bltin.print},
     {(char *) NULL, BOXTYPE_NONE}
   };
@@ -800,6 +814,8 @@ static void My_Register_Math(BoxCmp *c) {
    { "Ceil",  BOXTYPE_INT, c->bltin.species_real, My_Math_Ceil},
    {"Floor",  BOXTYPE_INT, c->bltin.species_real, My_Math_Floor},
    {  "Abs", BOXTYPE_REAL, c->bltin.species_real, My_Math_Abs},
+   { "Norm", BOXTYPE_REAL,c->bltin.species_point, My_Math_Norm},
+   {"Norm2", BOXTYPE_REAL,c->bltin.species_point, My_Math_Norm2},
    {   NULL, BOXTYPE_NONE,          BOXTYPE_NONE, NULL}
   };
 

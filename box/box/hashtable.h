@@ -157,7 +157,7 @@ Task BoxHT_Rename(BoxHT *ht, void *key, unsigned int key_size,
  * RETURN VALUE: this function returns 1 if the item has been succesfully
  *  found ('action' returned with 1), 0 otherwise.
  */
-int BoxHT_Iter(BoxHT *ht, int branch, void *key, size_t key_size,
+int BoxHT_Iter(BoxHT *ht, int branch, const void *key, size_t key_size,
                BoxHTItem **result, BoxHTIterator it, void *pass_data);
 
 /** Iterate over one or all the branches of an hashtable 'ht':

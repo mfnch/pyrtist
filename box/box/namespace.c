@@ -27,6 +27,7 @@
 #include "array.h"
 #include "namespace.h"
 #include "value.h"
+#include "typesys.h"
 
 typedef struct {
   NmspItem *first_item;
@@ -76,7 +77,17 @@ void Namespace_Floor_Up(Namespace *ns) {
   floor_data->first_item = NULL;
 }
 
-static void My_NmspItem_Finish(NmspItem *item) {
+typedef struct {
+  BoxTS   *ts;    /**< Typesystem in which the procedure is registered */
+  BoxType t_proc; /**< Type ID of the procedure */
+} MyProcedureNmspItem;
+
+typedef struct {
+  void         *data;    /**< Data passed to the callback */
+  NmspCallback callback; /**< Callback function */
+} MyCallbackNmspItem;
+
+static void My_NmspItem_Finish(Namespace *ns, NmspItem *item) {
   switch(item->type) {
   case NMSPITEMTYPE_VALUE:
     if (((Value *) item->data)->num_ref != 1) {
@@ -89,6 +100,22 @@ static void My_NmspItem_Finish(NmspItem *item) {
     }
     Value_Unlink((Value *) item->data);
     return;
+
+  case NMSPITEMTYPE_PROCEDURE:
+    {
+      MyProcedureNmspItem *p = (MyProcedureNmspItem *) item->data;
+      TS_Procedure_Unregister(p->ts, p->t_proc);
+      BoxMem_Free(p);
+      return;
+    }
+
+  case NMSPITEMTYPE_CALLBACK:
+    {
+      MyCallbackNmspItem *d = (MyCallbackNmspItem *) item->data;
+      if (d->callback != NULL)
+        d->callback(ns, item, d->data);
+      return;
+    }
 
   default:
     printf("My_NmspItem_Finish: don't know how to remove item!");
@@ -104,7 +131,7 @@ void Namespace_Floor_Down(Namespace *ns) {
   for(item = floor_data.first_item; item != NULL;) {
     NmspItem *item_to_del = item;
     item = item->next;
-    My_NmspItem_Finish(item_to_del);
+    My_NmspItem_Finish(ns, item_to_del);
     if (item_to_del->ht_item != NULL)
       BoxHT_Remove_By_HTItem(& ns->ht, item_to_del->ht_item);
 
@@ -167,3 +194,22 @@ Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
   return v;
 }
 
+void Namespace_Add_Procedure(Namespace *ns, NmspFloor floor,
+                             BoxTS *ts, BoxType t_proc) {
+  NmspItem *new_item = Namespace_Add_Item(ns, floor, (char *) NULL);
+  MyProcedureNmspItem *p =
+   (MyProcedureNmspItem *) BoxMem_Safe_Alloc(sizeof(MyProcedureNmspItem));
+  assert(new_item != NULL);
+  new_item->type = NMSPITEMTYPE_PROCEDURE;
+  new_item->data = p;
+  p->ts = ts;
+  p->t_proc = t_proc;
+}
+
+void Namespace_Add_Callback(Namespace *ns, NmspFloor floor,
+                            NmspCallback callback, void *data) {
+  NmspItem *new_item = Namespace_Add_Item(ns, floor, (char *) NULL);
+  assert(new_item != NULL);
+  new_item->type = NMSPITEMTYPE_CALLBACK;
+  new_item->data = callback;
+}

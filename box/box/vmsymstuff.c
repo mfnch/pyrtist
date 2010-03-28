@@ -207,7 +207,7 @@ static Task Assemble_Proc_Head(BoxVM *vmp, UInt sym_num, UInt sym_type,
   for(i = 0; i < NUM_TYPES; i++) {
     Int nv = ph->num_var[i], nr = ph->num_reg[i];
     assert(nv >= 0 && nr >= 0);
-    BoxVM_Assemble(vmp, asm_code[i], CAT_IMM, nv, CAT_IMM, nr);
+    BoxVM_Assemble_Long(vmp, asm_code[i], CAT_IMM, nv, CAT_IMM, nr);
     /* ^^^ should use BoxVM_Assemble_Long for more than 127 regs/vars */
   }
   return Success;

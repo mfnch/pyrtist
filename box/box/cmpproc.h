@@ -40,7 +40,7 @@
 /** The CmpProc object. */
 typedef struct _cmp_proc CmpProc;
 
-/** Procedure style: determines if a procedure preamble and closure should
+/** Procedure style: determines if a procedure preamble and conclusion should
  * be inserted and if global (or local) variables should be used by default.
  * Example: by using CMPPROCKIND_SUB, the instructions "newX YY, ZZ" will
  * be inserted automatically at the beginning of the procedure, while the
@@ -127,6 +127,10 @@ CmpProc *CmpProc_New(BoxCmp *c, CmpProcStyle style);
  */
 void CmpProc_Destroy(CmpProc *p);
 
+/** Provides a name for the procedure (necessary for CMPPROCSTYLE_EXTERN)
+ */
+void CmpProc_Set_Name(CmpProc *p, const char *proc_name);
+
 /** Get the register allocator for the procedure */
 RegAlloc *CmpProc_Get_RegAlloc(CmpProc *p);
 
@@ -146,8 +150,8 @@ BoxVMProcID CmpProc_Get_ProcID(CmpProc *p);
 /** Get the procedure description, which is just a help string to make
  * the bytecode more readable (may disappear in the future).
  * For now the procedure description is:
- *  - the type of the procedure, if this is known;
- *  - the name of the procedure, if this is known;
+ *  - the type of the procedure, if it is known;
+ *  - the name of the procedure, if it is known;
  *  - "|unknown|"
  */
 char *CmpProc_Get_Proc_Desc(CmpProc *p);

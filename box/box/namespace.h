@@ -30,6 +30,7 @@
 #  include "array.h"
 #  include "hashtable.h"
 #  include "value.h"
+#  include "typesys.h"
 
 /** Namespace floor. Each floor can have its own variables which live just
  * on that floor and are destroyed when the floor is destroyed.
@@ -49,7 +50,9 @@ typedef struct {
 
 /** Possible types for item inserted into the namespace */
 typedef enum {
-  NMSPITEMTYPE_VALUE
+  NMSPITEMTYPE_VALUE,     /**< Value which lives inside this floor */
+  NMSPITEMTYPE_PROCEDURE, /**< Procedure which lives inside this floor */
+  NMSPITEMTYPE_CALLBACK   /**< Callback to call when floor is cleared */
 } NmspItemType;
 
 /** Item which can be inserted into the namespace */
@@ -63,6 +66,11 @@ typedef struct nmsp_item_s {
 
 /** Function called by Namespace_Floor_Down */
 typedef void (*NmspAction)(Namespace *ns, void *data);
+
+/** Callback called for all items of type NMSPITEMTYPE_CALLBACK, when
+ * the floor in which they live gets cleared (by Namespace_Floor_Down)
+ */
+typedef void (*NmspCallback)(Namespace *ns, NmspItem *item, void *data);
 
 /** Initialise a new Namespace object, in the space already allocated
  * and pointed by ns. Namespace_Finish should be called to finalize
@@ -116,6 +124,19 @@ void Namespace_Add_Value(Namespace *ns, NmspFloor floor,
  */
 Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
                            const char *item_name);
+
+/** Add the procedure 't_proc' to the namespace, so that it is unregistered
+ * when the floor is cleared with Namespace_Floor_Down.
+ */
+void Namespace_Add_Procedure(Namespace *ns, NmspFloor floor,
+                             BoxTS *ts, BoxType t_proc);
+
+/** Use 'Namespace_Add_Item' to add a callback to be called when the floor
+ * gets cleared.
+ */
+void Namespace_Add_Callback(Namespace *ns, NmspFloor floor,
+                            NmspCallback callback, void *data);
+
 
 /*
 

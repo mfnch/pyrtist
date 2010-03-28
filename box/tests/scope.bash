@@ -109,6 +109,17 @@ check_noerr
 check_answer 4.56,1.23
 
 #------------------------------------------------------------------------------
+test_next
+echo "testing scoping of procedure definitions: 1"
+$BOX << EOF  >$BOXOUT 2>&1
+X = Void
+[Int@X[Print["answer=X"]], X[1]]
+[Int@X[Print["Y";]], X[1]]
+EOF
+check_noerr
+check_answer XY
+
+#------------------------------------------------------------------------------
 #------------------------------------------------------------------------------
 echo ">>"
 check_final

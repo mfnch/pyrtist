@@ -833,24 +833,23 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   /* Now let's look at the implementation */
   n_implem = n->attr.proc_def.implem;
   if (n_implem == NULL) {
-    if (c_name == NULL) {
-      /* no implementation. Case: X@Y ? */
-      t_proc = TS_Procedure_Search(& c->ts, /*expansion_type*/ NULL,
-                                   t_child, t_parent, 0);
-      if (t_proc == BOXTYPE_NONE) {
-        BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
-        t_proc = TS_Procedure_New(& c->ts, t_parent, t_child, 3);
-        TS_Procedure_Register(& c->ts, t_proc, sym_id);
-        //Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT, t_proc);
-      }
-
-    } else {
+    if (c_name != NULL) {
       /* external procedure. Case: X@Y "c_name" ? */
       CmpProc_Finish(& proc_implem);
       CmpProc_Init(& proc_implem, c, CMPPROCSTYLE_EXTERN);
-        
-      printf("X@Y \"...\" ? not implemented, yet!\n");
+      CmpProc_Set_Name(& proc_implem, c_name);
+    }
 
+    /* external procedure. Case: X@Y "c_name" ? 
+     * no implementation.  Case: X@Y ?
+     */
+    t_proc = TS_Procedure_Search(& c->ts, /*expansion_type*/ NULL,
+                                 t_child, t_parent, 0);
+    if (t_proc == BOXTYPE_NONE) {
+      BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
+      t_proc = TS_Procedure_New(& c->ts, t_parent, t_child, 3);
+      TS_Procedure_Register(& c->ts, t_proc, sym_id);
+      Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT, & c->ts, t_proc);
     }
 
   } else {
@@ -873,7 +872,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
       BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
       t_proc = TS_Procedure_New(& c->ts, t_parent, t_child, 3);
       TS_Procedure_Register(& c->ts, t_proc, sym_id);
-      //Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT, t_proc);
+      Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT, & c->ts, t_proc);
       ASSERT_TASK( BoxVMSym_Def_Call(c->vm, sym_id, call_num) );
     }
 

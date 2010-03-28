@@ -135,6 +135,19 @@ void CmpProc_End(CmpProc *p) {
   }
 }
 
+void CmpProc_Set_Name(CmpProc *p, const char *proc_name) {
+  if (p->have.sym) {
+    MSG_ERROR("CmpProc_Set_Name: too late to set the symbol name: "
+              "symbol ID has already been generated!");
+    return;
+  }
+
+  if (p->have.proc_name)
+    BoxMem_Free(p->proc_name);
+  p->proc_name = BoxMem_Strdup(proc_name);
+  p->have.proc_name = 1;
+}
+
 RegAlloc *CmpProc_Get_RegAlloc(CmpProc *p) {
   if (p->have.reg_alloc)
     return & p->reg_alloc;
@@ -151,8 +164,12 @@ BoxVMSymID CmpProc_Get_Sym(CmpProc *p) {
     return p->sym;
 
   else {
+    BoxVMSymID sym_id;
     p->have.sym = 1;
-    return BoxVMSym_New_Call(p->cmp->vm);
+    sym_id = BoxVMSym_New_Call(p->cmp->vm);
+    if (p->have.proc_name)
+      BoxVMSym_Name_Set(p->cmp->vm, sym_id, p->proc_name);
+    return sym_id;
   }
 }
 

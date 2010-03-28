@@ -107,7 +107,9 @@ static void Type_New(TS *ts, Type *new_type, TSDesc *td) {
 }
 
 static TSDesc *Type_Ptr(TS *ts, Type t) {
-  return (TSDesc *) BoxOcc_Item_Ptr(& ts->type_descs, t + 1);
+  TSDesc *td = (TSDesc *) BoxOcc_Item_Ptr(& ts->type_descs, t + 1);
+  assert(td != NULL);
+  return td;
 }
 
 static TSDesc *Resolve(TS *ts, Type *rt, Type t, int ignore_names) {
@@ -607,8 +609,68 @@ void TS_Procedure_Register(TS *ts, Type p, UInt sym_num) {
   proc_td->data.proc.sym_num = sym_num;
 }
 
+int TS_Procedure_Is_Registered(TS *ts, BoxType p) {
+  TSDesc *proc_td, *parent_td;
+  BoxType parent, child;
+
+  proc_td = Type_Ptr(ts, p);
+  assert(proc_td->kind == TS_KIND_PROC);
+
+  /* Get parent */
+  parent = proc_td->data.proc.parent;
+  parent_td = Type_Ptr(ts, parent);
+
+  /* Iter over procedure of parent and check whether the proc is there */
+  for(child = parent_td->first_proc;
+      child != BOXTYPE_NONE;
+      child = Type_Ptr(ts, child)->first_proc)
+    if (child == p)
+      return 1;
+
+  /* One may, at this point, do another iteration and try to use TS_Compare
+   * just not to rely to match of types IDs. It is not clear at this point
+   * if this will be ever required, so we postpone the implementation.
+   */
+  return 0;
+}
+
 void TS_Procedure_Unregister(TS *ts, BoxType p) {
-  MSG_WARNING("TS_Procedure_Unregister: not implemented.");
+  TSDesc *proc_td, *parent_td;
+  BoxType parent, child,
+          *prev_child_ptr;
+
+  /* The following check has to stay there until we know that we don't
+   * need to check for procedures with TS_Compare
+   */
+  if (!TS_Procedure_Is_Registered(ts, p)) {
+    MSG_FATAL("TS_Procedure_Unregister: procedure is not registered!");
+    assert(0);
+  }
+
+  proc_td = Type_Ptr(ts, p);
+  assert(proc_td->kind == TS_KIND_PROC);
+
+  /* Get parent */
+  parent = proc_td->data.proc.parent;
+  parent_td = Type_Ptr(ts, parent);
+
+  /* Iter over procedure of parent to find the proc in the chain */
+  prev_child_ptr = & parent_td->first_proc;
+  child = parent_td->first_proc;
+
+  while (child != BOXTYPE_NONE) {
+    TSDesc *child_td = Type_Ptr(ts, child);
+    if (child == p) {
+      *prev_child_ptr = child_td->first_proc;
+      return;
+    }
+
+    /* Go to next */
+    prev_child_ptr = & child_td->first_proc;
+    child = child_td->first_proc;
+  }
+
+  assert(0);
 }
 
 void TS_Procedure_Sym_Num_Get(TS *ts, UInt *sym_num, Type p) {

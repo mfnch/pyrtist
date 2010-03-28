@@ -252,6 +252,12 @@ void TS_Procedure_Blacklist_Undo(TS *ts, BoxType child, BoxType parent);
 /** Return 1 if the procedure is blacklisted, 0 otherwise. */
 int TS_Procedure_Is_Blacklisted(TS *ts, BoxType child, BoxType parent);
 
+/** Return whether a procedure is registered (does just check if one
+ * of the registered procedures of the parent of 'p' has type ID matching
+ * with 'p')
+ */
+int TS_Procedure_Is_Registered(TS *ts, BoxType p);
+
 /** Create and register a procedure by calling firt TS_Procedure_New
  * and then TS_Procedure_Register. sym_num is the associated symbol
  * identifier.
