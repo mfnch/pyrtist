@@ -108,4 +108,8 @@ class Test:
       if self._expect['answer'] != answer:
         errors.append('Expected answer="%s", but got "%s"'
                       % (self._expect['answer'], answer))
+
+    if len(errors) > 0:
+      errors.append("===[Script source]===:\n%s\n===[Output was]===\n%s"
+                    % (self.body, output))
     return errors

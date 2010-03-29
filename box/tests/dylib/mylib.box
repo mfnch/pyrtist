@@ -1,4 +1,5 @@
 // Header file for the library mylib
 
 MyLib = Void
-()Char@MyLib ? mylib_print_str
+Str@MyLib "mylib_print_str" ?
+

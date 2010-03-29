@@ -30,7 +30,7 @@
 /* Used in BoxList_Append_String */
 #  include <string.h>
 
-#  include <types.h>
+#  include <box/types.h>
 
 typedef Task (*BoxListIterator)(void *item, void *pass_data);
 typedef void (*BoxListDestruct)(void *item);
