@@ -1,17 +1,20 @@
-all: run_mylib
+DESTDIR=$(PWD)
+LIBTOOL=libtool
 
-libmylib.so: mylib.c
-	gcc -I../.. -fPIC -shared -o libmylib.so mylib.c
+all: run
 
-run_mylib: libmylib.so
+$(DESTDIR)/libmylib.la: mylib.c
+	$(LIBTOOL) --mode=compile gcc -c -I../.. mylib.c
+	$(LIBTOOL) --mode=link gcc -module -o libmylib.la mylib.lo -rpath $(DESTDIR)
+        $(LIBTOOL) --mode=install cp libmylib.la $(DESTDIR)/libmylib.la
+	#gcc -I../.. -fPIC -shared -o libmylib.so mylib.c
+
+clean:
+	  $(LIBTOOL) clean rm libmylib.la mylib.lo
+
+buildlib: $(DESTDIR)/libmylib.la
+
+run: $(DESTDIR)/libmylib.la
 	../../box/box -v -L ./ -l mylib -o test_mylib.bvm test_mylib.box
 
-libline.so: line.c
-	gcc -I../../src -fPIC -shared -o $@ $<
-
-run_line: libline.so
-	../../box/box -v -L ./ -l line -o test_line.bvm test_line.box
-
-check: run_mylib
-
-.PHONY: all run_mylib run_line check
+.PHONY: all clean buildlib run
