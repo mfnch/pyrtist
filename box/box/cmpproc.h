@@ -134,6 +134,9 @@ void CmpProc_Set_Name(CmpProc *p, const char *proc_name);
 /** Get the register allocator for the procedure */
 RegAlloc *CmpProc_Get_RegAlloc(CmpProc *p);
 
+/** Sets the symbol associated to the procedure. */
+void CmpProc_Set_Sym(CmpProc *p, BoxVMSymID sym_id);
+
 /** Returns the symbol associated to the procedure (creating it, if necessary)
  */
 BoxVMSymID CmpProc_Get_Sym(CmpProc *p);

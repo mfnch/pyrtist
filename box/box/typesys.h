@@ -218,13 +218,14 @@ void TS_Procedure_Unregister(TS *ts, BoxType p);
 
 /** Obtain the symbol identification number of a registered procedure.
  */
-void TS_Procedure_Sym_Num_Get(TS *ts, UInt *sym_num, Type p);
+UInt TS_Procedure_Get_Sym(TS *ts, Type p);
 
 /** Options to be used when searching for procedure */
 typedef enum {
-  TSSEARCHMODE_INHERITED, /**< Search procedures inherited from extended 
-                               types */
-  TSSEARCHMODE_BLACKLIST  /**< If the procedure is not found, blacklist it! */
+  TSSEARCHMODE_INHERITED=1, /**< Search procedures inherited from extended 
+                                 types */
+  TSSEARCHMODE_BLACKLIST=2  /**< If the procedure is not found,
+                                 blacklist it! */
 } TSSearchMode;
 
 /** Search the given procedure in the list of registered procedures.

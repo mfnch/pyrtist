@@ -8,8 +8,36 @@ def exec_cmd(cmd_args):
   output = p.communicate()[0]
   return (output, p.returncode)
 
-def test_print(level, msg):
-  print msg
+class XTermColors:
+  def __init__(self):
+    self.red   = '\033[00;31m'
+    self.green = '\033[00;32m'
+    self.yellow = '\033[00;33m'
+    self.no    = '\033[0m'
+
+colors = XTermColors()
+
+color_of_level = {
+  'normal' : None,
+  'success': colors.green,
+  'error'  : colors.red,
+  'info'   : colors.yellow
+}
+
+def test_print(level, msg, endline=''):
+  activate_color = ""
+  deactivate_color = ""
+
+  if color_of_level.has_key(level):
+    c = color_of_level[level]
+    if c != None:
+      activate_color = c
+      deactivate_color = colors.no
+
+  print activate_color + msg + deactivate_color + endline,
+
+def test_printl(level, msg, endline='\n'):
+  test_print(level, msg, endline)
 
 def check(error, thing_name, expectations, obtained_thing):
   if expectations.has_key(thing_name):
@@ -41,13 +69,20 @@ class TestSession:
     return test
 
   def run(self):
-    test_print(0, 'SUITE: %s' % self.title)
+    test_printl('normal', 'SUITE: %s' % self.title)
+    num_errors = 0
     for test in self.tests:
-      test_print(1, '  TEST: %s' % test.title)
+      test_print('normal', '  TEST: %50s' % test.title)
       errors = test.run()
-      if len(errors) > 0:
+      num_errors += len(errors)
+      if len(errors) == 0:
+        test_printl('success', '[SUCCESS]')
+
+      else:
+        test_printl('error', '[FAILED]')
         for err in errors:
-          test_print(2, err)
+          test_printl('info', err)
+    return num_errors
 
 class Test:
   def __init__(self, title=None, box_exec="box",
@@ -110,6 +145,6 @@ class Test:
                       % (self._expect['answer'], answer))
 
     if len(errors) > 0:
-      errors.append("===[Script source]===:\n%s\n===[Output was]===\n%s"
+      errors.append("===[Script source]===:\n%s\n===[Output was]===\n%s\n===[End]==="
                     % (self.body, output))
     return errors

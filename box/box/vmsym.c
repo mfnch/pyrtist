@@ -97,7 +97,7 @@ BoxVMSymID BoxVMSym_New(BoxVM *vmp, UInt sym_type, UInt def_size) {
   return sym_num;
 }
 
-void BoxVMSym_Name_Set(BoxVM *vmp, UInt sym_num, const char *name) {
+void BoxVMSym_Set_Name(BoxVM *vmp, UInt sym_num, const char *name) {
   BoxVMSymTable *st = & vmp->sym_table;
   BoxHTItem *hi;
   BoxVMSym *s;
@@ -127,19 +127,18 @@ void BoxVMSym_Name_Set(BoxVM *vmp, UInt sym_num, const char *name) {
   s->name.length = hi->key_size - 1; /* Without the final '\0' */
 }
 
-const char *BoxVMSym_Name_Get(BoxVM *vmp, UInt sym_num) {
+const char *BoxVMSym_Get_Name(BoxVM *vmp, UInt sym_num) {
   BoxVMSymTable *st = & vmp->sym_table;
-  BoxVMSym *s;
-  s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
+  BoxVMSym *s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
   return s->name.text;
 }
 
-Task BoxVMSym_Def(BoxVM *vmp, BoxVMSymID sym_num, void *def) {
-  BoxVMSymTable *st = & vmp->sym_table;
+Task BoxVMSym_Define(BoxVM *vm, BoxVMSymID sym_num, void *def) {
+  BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
   s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
   if (s->defined) {
-    const char *sym_name = BoxVMSym_Name_Get(vmp, sym_num);
+    const char *sym_name = BoxVMSym_Get_Name(vm, sym_num);
     MSG_ERROR("Double definition of the symbol '%s'.", sym_name);
     return Failed;
   }
@@ -150,6 +149,23 @@ Task BoxVMSym_Def(BoxVM *vmp, BoxVMSymID sym_num, void *def) {
   }
   s->defined = 1;
   return Success;
+}
+
+void *BoxVMSym_Get_Definition(BoxVM *vm, BoxVMSymID sym_id) {
+  BoxVMSymTable *st = & vm->sym_table;
+  BoxVMSym *s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_id);
+  if (s->defined) {
+    void *def_data_ptr = BoxArr_Item_Ptr(& st->data, s->def_addr);
+    return def_data_ptr;
+
+  } else
+    return NULL;
+}
+
+int BoxVMSym_Is_Defined(BoxVM *vm, BoxVMSymID sym_id) {
+  BoxVMSymTable *st = & vm->sym_table;
+  BoxVMSym *s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_id);
+  return s->defined;
 }
 
 void BoxVMSym_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymResolver r,
@@ -198,7 +214,7 @@ static int Report_Ref(UInt item_num, void *item, void *pass_data) {
   BoxVMSymRef *sr = (BoxVMSymRef *) item;
   if (! sr->resolved) {
     MSG_ERROR("Unresolved reference to the symbol (ID=%d, name='%s')",
-              sr->sym_num, BoxVMSym_Name_Get(vmp, sr->sym_num));
+              sr->sym_num, BoxVMSym_Get_Name(vmp, sr->sym_num));
   }
   return 1;
 }

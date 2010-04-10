@@ -7,9 +7,20 @@
 #include <box/virtmach.h>
 #include <box/bltinstr.h>
 
-Task mylib_print_str(BoxVM *vm) {
+Task mylib_simple(BoxVM *vm) {
+  printf("simple");
+  return Success;
+}
+
+Task mylib_print_str_a(BoxVM *vm) {
   BoxStr *s = BOX_VM_ARGPTR1(vm, BoxStr);
-  printf("%s", s->ptr);
+  printf("A:%s", s->ptr);
+  return Success;
+}
+
+Task mylib_print_str_b(BoxVM *vm) {
+  BoxStr *s = BOX_VM_ARGPTR1(vm, BoxStr);
+  printf("B:%s", s->ptr);
   return Success;
 }
 

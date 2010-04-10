@@ -124,6 +124,7 @@ AC_CONFIG_FILES([Makefile
                  libs/Makefile
                  libs/g/Makefile
                  tests/Makefile
+                 tests/dylib/Makefile
                  man/Makefile
                  examples/Makefile
                  examples/smileys/Makefile])

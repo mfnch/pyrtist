@@ -136,16 +136,19 @@ void CmpProc_End(CmpProc *p) {
 }
 
 void CmpProc_Set_Name(CmpProc *p, const char *proc_name) {
-  if (p->have.sym) {
-    MSG_ERROR("CmpProc_Set_Name: too late to set the symbol name: "
-              "symbol ID has already been generated!");
-    return;
-  }
-
   if (p->have.proc_name)
     BoxMem_Free(p->proc_name);
   p->proc_name = BoxMem_Strdup(proc_name);
   p->have.proc_name = 1;
+
+  if (p->have.sym) {
+    if (BoxVMSym_Get_Name(p->cmp->vm, p->sym) != NULL) {
+      MSG_FATAL("Cannot set the name: procedure symbol has already been "
+                "given a name!");
+      assert(0);
+    }
+    BoxVMSym_Set_Name(p->cmp->vm, p->sym, p->proc_name);
+  }
 }
 
 RegAlloc *CmpProc_Get_RegAlloc(CmpProc *p) {
@@ -159,6 +162,41 @@ RegAlloc *CmpProc_Get_RegAlloc(CmpProc *p) {
   }
 }
 
+void CmpProc_Set_Sym(CmpProc *p, BoxVMSymID sym_id) {
+  if (p->have.sym) {
+    MSG_FATAL("CmpProc_Set_Sym: cannot set symbol ID. The procedure has "
+              "already a symbol ID!");
+    assert(0);
+
+  } else {
+    p->have.sym = 1;
+    p->sym = sym_id;
+
+    if (BoxVMSym_Is_Defined(p->cmp->vm, sym_id)) {
+      /* Get the name from the symbol, if it has one */
+      const char *sym_name = BoxVMSym_Get_Name(p->cmp->vm, sym_id);
+      /* Get the definition (call number, if we have it) */
+      const BoxVMCallNum *call_num =
+        BoxVMSym_Get_Definition(p->cmp->vm, sym_id);
+
+      /* inherit symbol name and call number from the given symbol */
+      if (sym_name != NULL)
+        CmpProc_Set_Name(p, sym_name);
+
+      if (call_num != NULL) {
+        if (p->have.call_num) {
+          MSG_FATAL("CmpProc_Set_Sym: cannot set call number. The procedure "
+                    "has already got one!");
+          assert(0);
+        }
+
+        p->call_num = *call_num;
+        p->have.call_num = 1;
+      }
+    }
+  }
+}
+
 BoxVMSymID CmpProc_Get_Sym(CmpProc *p) {
   if (p->have.sym)
     return p->sym;
@@ -166,9 +204,9 @@ BoxVMSymID CmpProc_Get_Sym(CmpProc *p) {
   else {
     BoxVMSymID sym_id;
     p->have.sym = 1;
-    sym_id = BoxVMSym_New_Call(p->cmp->vm);
+    p->sym = sym_id = BoxVMSym_New_Call(p->cmp->vm);
     if (p->have.proc_name)
-      BoxVMSym_Name_Set(p->cmp->vm, sym_id, p->proc_name);
+      BoxVMSym_Set_Name(p->cmp->vm, sym_id, p->proc_name);
     return sym_id;
   }
 }

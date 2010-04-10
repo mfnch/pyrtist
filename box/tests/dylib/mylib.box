@@ -1,5 +1,8 @@
 // Header file for the library mylib
 
-MyLib = Void
-Str@MyLib "mylib_print_str" ?
+MyLibPrintA = Void
+Str@MyLibPrintA "mylib_print_str_a" ?
+
+MyLibPrintB = Void
+Str@MyLibPrintB "mylib_print_str_b" ?
 

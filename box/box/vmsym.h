@@ -141,13 +141,23 @@ BoxVMSymID BoxVMSym_New(BoxVM *vmp, BoxUInt sym_type, BoxUInt def_size);
 
 /** Associate a name to the symbol sym_num.
  */
-void BoxVMSym_Name_Set(BoxVM *vm, BoxVMSymID sym_num, const char *name);
+void BoxVMSym_Set_Name(BoxVM *vm, BoxVMSymID sym_id, const char *name);
 
-/** Get the name of the given symbol sym_num */
-const char *BoxVMSym_Name_Get(BoxVM *vm, BoxVMSymID sym_num);
+/** Get the name of the given symbol sym_id (NULL if the symbol has not
+ * a name)
+ */
+const char *BoxVMSym_Get_Name(BoxVM *vm, BoxVMSymID sym_id);
 
 /** Define a symbol which was previously created with BoxVMSym_New */
-Task BoxVMSym_Def(BoxVM *vm, BoxVMSymID sym_num, void *def);
+Task BoxVMSym_Define(BoxVM *vm, BoxVMSymID sym_num, void *def);
+
+/** If the symbol is defined, return the pointer to the definition data,
+ * otherwise, if the symbol is not defined, return NULL.
+ */
+void *BoxVMSym_Get_Definition(BoxVM *vm, BoxVMSymID sym_id);
+
+/** Return whether the symbol 'sym_id' has been defined or not */
+int BoxVMSym_Is_Defined(BoxVM *vm, BoxVMSymID sym_id);
 
 typedef enum {
   BOXVMSYM_AUTO,

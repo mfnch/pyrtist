@@ -598,7 +598,7 @@ static BoxTask My_Emit_Call(Value *parent, Value *child, TSSearchMode mode) {
       return BOXTASK_ERROR;
   }
 
-  TS_Procedure_Sym_Num_Get(ts, & sym_id, found_procedure);
+  sym_id = TS_Procedure_Get_Sym(ts, found_procedure);
 
   Value_Emit_Call_From_SymID(sym_id, parent, child);
   return BOXTASK_OK;

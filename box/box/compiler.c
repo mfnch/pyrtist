@@ -788,19 +788,16 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
 
 static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   Value *v_child, *v_parent, *v_ret = NULL;
-  BoxType t_child = BOXTYPE_NONE, t_parent = BOXTYPE_NONE,
+  BoxType t_child, t_parent,
           t_proc = BOXTYPE_NONE;
-  ASTNode *n_c_name, *n_implem;
+  ASTNode *n_c_name = n->attr.proc_def.c_name,
+          *n_implem = n->attr.proc_def.implem;
   char *c_name = NULL;
   CmpProc proc_implem;
-  int no_err;
+  CmpProcStyle proc_style;
+  int no_err, do_register = 1;
 
   assert(n->type == ASTNODETYPE_PROCDEF);
-
-  /* A CmpProc object is used to get the procedure symbol and to register and
-   * assemble it.
-   */
-  CmpProc_Init(& proc_implem, c, CMPPROCSTYLE_SUB);
 
   /* first, get the type of child and parent */
   My_Compile_Any(c, n->attr.proc_def.child_type);
@@ -809,17 +806,19 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   v_parent = BoxCmp_Pop_Value(c);
 
   no_err = Value_Want_Has_Type(v_child) && Value_Want_Has_Type(v_parent);
-
   if (no_err) {
     t_child = v_child->type;
     t_parent = v_parent->type;
+
+  } else {
+    t_child = BOXTYPE_NONE;
+    t_parent = BOXTYPE_NONE;
   }
 
   Value_Unlink(v_child);
   Value_Unlink(v_parent);
 
   /* now get the C-name, if present */
-  n_c_name = n->attr.proc_def.c_name;
   if (n_c_name != NULL) {
     assert(n_c_name->type == ASTNODETYPE_STRING);
     c_name = n_c_name->attr.string.str;
@@ -830,29 +829,56 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     }
   }
 
-  /* Now let's look at the implementation */
-  n_implem = n->attr.proc_def.implem;
-  if (n_implem == NULL) {
-    if (c_name != NULL) {
-      /* external procedure. Case: X@Y "c_name" ? */
-      CmpProc_Finish(& proc_implem);
-      CmpProc_Init(& proc_implem, c, CMPPROCSTYLE_EXTERN);
-      CmpProc_Set_Name(& proc_implem, c_name);
-    }
+  /* A CmpProc object is used to get the procedure symbol and to register and
+   * assemble it.
+   */
+  proc_style = (n_implem != NULL) ? CMPPROCSTYLE_SUB : CMPPROCSTYLE_EXTERN;
+  CmpProc_Init(& proc_implem, c, proc_style);
 
-    /* external procedure. Case: X@Y "c_name" ? 
-     * no implementation.  Case: X@Y ?
+  /* Now let's find whether a procedure of this kind is already registered */
+  t_proc = TS_Procedure_Search(& c->ts, /*expansion_type*/ NULL,
+                               t_child, t_parent, 0);
+
+  if (t_proc != BOXTYPE_NONE) {
+    /* A procedure of this kind is already registered: we need to know if
+     * it is defined or not
      */
-    t_proc = TS_Procedure_Search(& c->ts, /*expansion_type*/ NULL,
-                                 t_child, t_parent, 0);
-    if (t_proc == BOXTYPE_NONE) {
-      BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
-      t_proc = TS_Procedure_New(& c->ts, t_parent, t_child, 3);
-      TS_Procedure_Register(& c->ts, t_proc, sym_id);
-      Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT, & c->ts, t_proc);
+    BoxVMSymID sym_id = TS_Procedure_Get_Sym(& c->ts, t_proc);
+    int not_defined = !BoxVMSym_Is_Defined(c->vm, sym_id),
+        has_no_name = (BoxVMSym_Get_Name(c->vm, sym_id) == NULL);
+
+    fprintf(stderr, "name='%s'\n", BoxVMSym_Get_Name(c->vm, sym_id));
+
+    /* If the procedure is not defined and has no name then we re-use
+     * the previous registered one, without covering the old definition.
+     */
+    if (not_defined && has_no_name) {
+      fprintf(stderr, "setting from previous symbol!\n");
+      CmpProc_Set_Sym(& proc_implem, sym_id);
+      do_register = 0;
     }
 
-  } else {
+    /* The following means that X@Y ? has no effect if X@Y is already
+     * registered (no matter if defined or undefined)
+     */
+    if (c_name == NULL && n_implem == NULL)
+      do_register = 0;
+  }
+
+  /* Set the C-name of the procedure, if given */
+  if (c_name != NULL)
+    CmpProc_Set_Name(& proc_implem, c_name);
+
+  /* Register the procedure, covering old ones */
+  if (do_register) {
+    BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
+    t_proc = TS_Procedure_New(& c->ts, t_parent, t_child, 3);
+    TS_Procedure_Register(& c->ts, t_proc, sym_id);
+    Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT, & c->ts, t_proc);
+  }
+
+  /* If an implementation is also provided, then we define the procedure */
+  if (n_implem != NULL) {
     /* we have the implementation */
     CmpProc *save_cur_proc = c->cur_proc;
     Value *v_implem;
@@ -870,12 +896,8 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     {
       call_num = CmpProc_Get_Call_Num(& proc_implem);
       BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
-      t_proc = TS_Procedure_New(& c->ts, t_parent, t_child, 3);
-      TS_Procedure_Register(& c->ts, t_proc, sym_id);
-      Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT, & c->ts, t_proc);
       ASSERT_TASK( BoxVMSym_Def_Call(c->vm, sym_id, call_num) );
     }
-
   }
 
   CmpProc_Finish(& proc_implem);
@@ -883,9 +905,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   /* NOTE: for now we return Void[]. In future extensions we'll return
    * a function object
    */
-  if (t_proc != BOXTYPE_NONE) {
-    v_ret = My_Get_Void_Value(c);
-  }
+  v_ret = My_Get_Void_Value(c);
 
   /* for now we return v_ret = NULL. We'll return a function, when Box will
    * support functions.

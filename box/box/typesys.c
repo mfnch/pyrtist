@@ -673,11 +673,11 @@ void TS_Procedure_Unregister(TS *ts, BoxType p) {
   assert(0);
 }
 
-void TS_Procedure_Sym_Num_Get(TS *ts, UInt *sym_num, Type p) {
+UInt TS_Procedure_Get_Sym(TS *ts, Type p) {
   TSDesc *proc_td;
   proc_td = Type_Ptr(ts, p);
   assert(proc_td->kind == TS_KIND_PROC);
-  *sym_num = proc_td->data.proc.sym_num;
+  return proc_td->data.proc.sym_num;
 }
 
 void TS_Procedure_Info(TS *ts, Type *parent, Type *child,

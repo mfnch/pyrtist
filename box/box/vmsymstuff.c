@@ -49,7 +49,7 @@ BoxVMSymID BoxVMSym_New_Call(BoxVM *vm) {
 }
 
 Task BoxVMSym_Def_Call(BoxVM *vm, BoxVMSymID sym_id, BoxVMCallNum call_num) {
-  return BoxVMSym_Def(vm, sym_id, & call_num);
+  return BoxVMSym_Define(vm, sym_id, & call_num);
 }
 
 Task BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
@@ -136,7 +136,7 @@ Task VM_Sym_Def_Label(BoxVM *vmp, UInt sym_num,
   VMSymLabel label;
   label.sheet_id = sheet_id;
   label.position = position;
-  return BoxVMSym_Def(vmp, sym_num, & label);
+  return BoxVMSym_Define(vmp, sym_num, & label);
 }
 
 /* Same as VM_Label_Define, but sheet_id is the current active sheet and
@@ -219,12 +219,12 @@ Task BoxVMSym_Assemble_Proc_Head(BoxVM *vm, BoxVMSymID *sym_num) {
 }
 
 Task BoxVMSym_Def_Proc_Head(BoxVM *vmp, BoxVMSymID sym_num,
-                          Int *num_var, Int *num_reg) {
+                            Int *num_var, Int *num_reg) {
   ProcHead ph;
   int i;
   for(i = 0; i < NUM_TYPES; i++) {
     ph.num_var[i] = num_var[i];
     ph.num_reg[i] = num_reg[i];
   }
-  return BoxVMSym_Def(vmp, sym_num, & ph);
+  return BoxVMSym_Define(vmp, sym_num, & ph);
 }
