@@ -547,8 +547,8 @@ lor_expr:
 
 assign_expr:
     lor_expr                     {$$ = $1;}
-  | assign_expr
-              assign_op lor_expr {$$ = ASTNodeBinOp_New($2, $1, $3);}
+  | lor_expr assign_op
+                     assign_expr {$$ = ASTNodeBinOp_New($2, $1, $3);}
   ;
 
 expr:
