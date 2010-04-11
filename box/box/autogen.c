@@ -92,10 +92,16 @@ BoxType Autogen_Procedure(BoxCmp *c, BoxType t_child, BoxType t_parent) {
       /* Register the procedure in the type system */
       TS_Procedure_Register(ts, t_proc, sym_id);
 
-
     } else {
       /* Here we should destroy the code, since the procedure is not
        * going to be installed)
+       *
+       * BUT WE ARE NOT DOING THIS, YET!
+       */
+      CmpProc_End(c->cur_proc);
+      /* ^^^ this is a temporary fix, to avoid problems with sym resolution
+       *     (the procedure header needs to be defined...)
+       * XXX We should later do something about that and avoid all this...
        */
     }
 

@@ -38,6 +38,7 @@ typedef struct __ASTNode ASTNode;
 typedef enum {
   ASTNODETYPE_ERROR,
   ASTNODETYPE_TYPENAME,
+  ASTNODETYPE_TYPETAG,
   ASTNODETYPE_SUBTYPE,
   ASTNODETYPE_BOX,
   ASTNODETYPE_STATEMENT,
@@ -138,6 +139,11 @@ typedef struct {
   char    *name;
   ASTNode *scope;
 } ASTNodeTypeName;
+
+/** Node for a special type */
+typedef struct {
+  BoxType  type;
+} ASTNodeTypeTag;
 
 /** Node for a subtype */
 typedef struct {
@@ -267,6 +273,7 @@ struct __ASTNode {
   ASTNodeFinaliser    finaliser;
   union {
     ASTNodeTypeName   typenm;
+    ASTNodeTypeTag    typetag;
     ASTNodeSubtype    subtype;
     ASTNodeBox        box;
     ASTNodeStatement  statement;
@@ -323,6 +330,7 @@ void ASTNode_Print(FILE *out, ASTNode *node);
 
 ASTNode *ASTNodeError_New(void);
 ASTNode *ASTNodeTypeName_New(const char *name, size_t name_len);
+ASTNode *ASTNodeTypeTag_New(BoxType value);
 ASTNode *ASTNodeSubtype_New(const char *name, size_t name_len);
 ASTNode *ASTNodeStatement_New(ASTNode *target);
 ASTNode *ASTNodeSep_New(ASTSep sep);

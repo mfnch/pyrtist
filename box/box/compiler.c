@@ -82,6 +82,10 @@ void My_Init_Const_Values(BoxCmp *c) {
   Value_Setup_As_Type(& c->value.create, BOXTYPE_CREATE);
   Value_Init(& c->value.destroy, & c->main_proc);
   Value_Setup_As_Type(& c->value.destroy, BOXTYPE_DESTROY);
+  Value_Init(& c->value.begin, & c->main_proc);
+  Value_Setup_As_Type(& c->value.begin, BOXTYPE_BEGIN);
+  Value_Init(& c->value.end, & c->main_proc);
+  Value_Setup_As_Type(& c->value.end, BOXTYPE_END);
   Value_Init(& c->value.pause, & c->main_proc);
   Value_Setup_As_Temp(& c->value.pause, BOXTYPE_PAUSE);
 }
@@ -319,6 +323,7 @@ Value *BoxCmp_Get_Value(BoxCmp *c, BoxInt pos) {
 static void My_Compile_Any(BoxCmp *c, ASTNode *node);
 static void My_Compile_Error(BoxCmp *c, ASTNode *node);
 static void My_Compile_TypeName(BoxCmp *c, ASTNode *node);
+static void My_Compile_TypeTag(BoxCmp *c, ASTNode *node);
 static void My_Compile_Box(BoxCmp *c, ASTNode *box,
                            BoxType child_t, BoxType parent_t);
 static void My_Compile_String(BoxCmp *c, ASTNode *node);
@@ -350,6 +355,8 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_Error(c, node); break;
   case ASTNODETYPE_TYPENAME:
     My_Compile_TypeName(c, node); break;
+  case ASTNODETYPE_TYPETAG:
+    My_Compile_TypeTag(c, node); break;
   case ASTNODETYPE_BOX:
     My_Compile_Box(c, node, BOXTYPE_NONE, BOXTYPE_NONE); break;
   case ASTNODETYPE_STRING:
@@ -403,15 +410,26 @@ static void My_Compile_TypeName(BoxCmp *c, ASTNode *n) {
     Value_Setup_As_Weak_Copy(v_copy, v);
     Value_Unlink(v);
     BoxCmp_Push_Value(c, v_copy);
-    return;
 
   } else {
     v = Value_New(c->cur_proc);
     Value_Setup_As_Type_Name(v, type_name);
     Namespace_Add_Value(& c->ns, f, type_name, v);
     BoxCmp_Push_Value(c, v);
-    return;
   }
+}
+
+static void My_Compile_TypeTag(BoxCmp *c, ASTNode *n) {
+  Value *v;
+
+  assert(n->type == ASTNODETYPE_TYPETAG);
+  assert(TS_Is_Special(n->attr.typetag.type));
+
+  /* Should we use c->value.create, etc. ? */
+  v = Value_New(c->cur_proc);
+  Value_Init(v, c->cur_proc);
+  Value_Setup_As_Type(v, n->attr.typetag.type);
+  BoxCmp_Push_Value(c, v);
 }
 
 static void My_Compile_Statement(BoxCmp *c, ASTNode *s) {

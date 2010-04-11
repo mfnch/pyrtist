@@ -60,6 +60,8 @@ struct _box_cmp {
                void_val,  /**< Void value */
                create,    /**< Value for BOXTYPE_CREATE */
                destroy,   /**< Value for BOXTYPE_DESTROY */
+               begin,     /**< Value for BOXTYPE_BEGIN */
+               end,       /**< Value for BOXTYPE_END */
                pause;     /**< Value for BOXTYPE_PAUSE */
   } value;                /**< Bunch of values, which we do not want
                              to allocate again and again (just to make the

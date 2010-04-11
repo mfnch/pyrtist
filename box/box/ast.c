@@ -33,6 +33,8 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
   case ASTNODETYPE_TYPENAME:
     subnodes[0] = & node->attr.typenm.scope;
     return 1;
+  case ASTNODETYPE_TYPETAG:
+    return 0;
   case ASTNODETYPE_SUBTYPE:
     subnodes[0] = & node->attr.subtype.scope;
     return 1;
@@ -106,6 +108,7 @@ const char *ASTNodeType_To_Str(ASTNodeType t) {
   switch(t) {
   case ASTNODETYPE_ERROR:      return "Error";
   case ASTNODETYPE_TYPENAME:   return "TypeName";
+  case ASTNODETYPE_TYPETAG:    return "TypeTag";
   case ASTNODETYPE_SUBTYPE:    return "SubType";
   case ASTNODETYPE_BOX:        return "Box";
   case ASTNODETYPE_STATEMENT:  return "Statement";
@@ -320,6 +323,12 @@ ASTNode *ASTNodeTypeName_New(const char *name, size_t name_len) {
     (name_len > 0) ? BoxMem_Strndup(name, name_len) : BoxMem_Strdup(name);
   node->attr.typenm.scope = NULL;
   node->finaliser = ASTNodeTypeName_Finaliser;
+  return node;
+}
+
+ASTNode *ASTNodeTypeTag_New(BoxType value) {
+  ASTNode *node = ASTNode_New(ASTNODETYPE_TYPETAG);
+  node->attr.typetag.type = value;
   return node;
 }
 

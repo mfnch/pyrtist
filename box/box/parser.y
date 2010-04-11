@@ -310,6 +310,7 @@ parent.opt:
 /* Possible types for the nodes of the tree */
 %union {
   char *        String;
+  BoxType       TTag;
   ASTUnOp       UnaryOperator;
   ASTBinOp      BinaryOperator;
   ASTNodePtr    Node;
@@ -317,7 +318,6 @@ parent.opt:
   ASTSep        Sep;
   ASTSelfLevel  SelfLevel;
 }
-
 
 %token TOK_NEWLINE
 %token TOK_ERRSEP
@@ -327,9 +327,8 @@ parent.opt:
 %token <SelfLevel> TOK_SELF
 
 /* List of token that have semantial values */
-%token <Ex> TOK_EXPR
-%token <kind> TOK_AT
-%token <proc> TOK_PROC
+%token TOK_AT
+%token <TTag> TOK_TTAG
 
 /* List of tokens simple tokens */
 %token TOK_INC TOK_DEC TOK_SHL TOK_SHR
@@ -355,7 +354,7 @@ parent.opt:
 %type <Node> land_expr lor_expr assign_expr expr statement statement_list
 %type <Node> type_sep sep_type struc_type species_type func_type
 %type <Node> named_type prim_type array_type type assign_type
-%type <Node> procedure opt_c_name procedure_decl
+%type <Node> at_left procedure opt_c_name procedure_decl
 %type <TypeMemb> struc_type_1st struc_type_2nd
 
 
@@ -631,8 +630,14 @@ assign_type:
 /****************** PROCEDURE DECLARATION AND DEFINITION *******************/
 /* Definition and declaration of procedures */
 
+ /* left side of @ */
+at_left:
+    type                         {$$ = $1;}
+  | TOK_TTAG                     {$$ = ASTNodeTypeTag_New($1);}
+  ;
+
 procedure:
-    type TOK_AT named_type       {$$ = ASTNodeProcDef_New($1, $3);}
+    at_left TOK_AT named_type    {$$ = ASTNodeProcDef_New($1, $3);}
   ;
 
 opt_c_name:

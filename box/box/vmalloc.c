@@ -124,7 +124,7 @@ void BoxVM_Unlink(VMProgram *vmp, Obj *obj) {
     return;
 
   else if (references == 0) {
-    Int method_num = BoxVM_Alloc_Method_Get(vmp, head->type, TYPE_DESTROY);
+    Int method_num = BoxVM_Alloc_Method_Get(vmp, head->type, BOXTYPE_DESTROY);
     if (method_num >= 0) {
       Obj save_this;
 #ifdef DEBUG_VMALLOC

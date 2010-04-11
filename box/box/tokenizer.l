@@ -155,14 +155,14 @@ include BEGIN(include);
   }
 }
 
- /* Ignora gli spazi */
+ /* Spaces are ignored */
 {SPACES}    {}
 
 
 "=>"  {return TOK_TO;}
 "->"  {return TOK_MAPTO;}
 
- /* Operatori di assegnazione */
+ /* Assignment operators */
 "+="  { return TOK_APLUS; }
 "-="  { return TOK_AMINUS; }
 "*="  { return TOK_ATIMES; }
@@ -174,15 +174,15 @@ include BEGIN(include);
 "^="  { return TOK_ABXOR; }
 "|="  { return TOK_ABOR; }
 
- /* Opertaori di incremento/decremento */
+ /* Increment/decrement operators */
 "++"  {return TOK_INC;}
 "--"  {return TOK_DEC;}
 
- /* Opertaori di incremento/decremento */
+ /* Shift operators */
 "<<"  {return TOK_SHL;}
 ">>"  {return TOK_SHR;}
 
- /* Operatori di confronto */
+ /* Comparison operators */
 "=="  { return TOK_EQ; }
 "!="  { return TOK_NE; }
 "<="  { return TOK_LE; }
@@ -191,24 +191,19 @@ include BEGIN(include);
 "&&"  { return TOK_LAND; }
 "||"  { return TOK_LOR; }
 
- /* Altri operatori */
+ /* Other operators */
 "**"  { return TOK_POW; }
 
 [$]+  { yylval.SelfLevel = yyleng; return TOK_SELF; }
 
-"@"   { /*yylval.kind = 1;*/ return TOK_AT; }
+"@"   { return TOK_AT; }
 
-"@@"  { /*yylval.kind = 2; */return TOK_AT; }
-
-"@&"  { /*yylval.kind = 3;*/ return TOK_AT; }
-
-"([)" { /*yylval.proc = TYPE_OPEN;*/ return TOK_PROC; }
-
-"(])" { /*yylval.proc = TYPE_CLOSE;*/ return TOK_PROC; }
-
-"(;)" { /*yylval.proc = TYPE_PAUSE;*/ return TOK_PROC; }
-
-"(\\)" { /*yylval.proc = TYPE_DESTROY;*/ return TOK_PROC; }
+ /* Special tokens */
+"(.[)" { yylval.TTag = BOXTYPE_CREATE; return TOK_TTAG; }
+"(].)" { yylval.TTag = BOXTYPE_DESTROY; return TOK_TTAG; }
+"([)"  { yylval.TTag = BOXTYPE_BEGIN; return TOK_TTAG; }
+"(])"  { yylval.TTag = BOXTYPE_END; return TOK_TTAG; }
+"(;)"  { yylval.TTag = BOXTYPE_PAUSE; return TOK_TTAG; }
 
  /* Number of type Char */
 [']([^'\n]|\\')+['] {
@@ -268,19 +263,20 @@ include BEGIN(include);
   return TOK_STRING;
  }
 
- /* Nome di variabile */
+ /* Variable name */
 {LNAME} {
   yylval.String = BoxMem_Strndup(yytext, yyleng);
   return TOK_IDENTIFIER;
  }
 
- /* Nome di variabile */
+ /* Type name */
 {UNAME} {
   yylval.String = BoxMem_Strndup(yytext, yyleng);
   return TOK_TYPE_IDENT;
  }
 
- /* Tutto il resto viene passato cosi' com'e' carattere per carattere al parser
+ /* Everything which is not recognised is passed character by character to the
+  * parser.
   */
 . {return yytext[0];}
 

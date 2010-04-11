@@ -67,15 +67,11 @@ typedef enum {
   TYPE_POINT          =  3,
   TYPE_OBJ            =  4,
   TYPE_FAST_LAST      =  4,
-  TYPE_VOID           =  5,
-  TYPE_OPEN           =  6,
-  TYPE_CLOSE          =  7,
-  TYPE_PAUSE          =  8,
-  TYPE_DESTROY        =  9,
+/*  TYPE_VOID           =  6,
   TYPE_ITER           = 10,
   TYPE_PTR            = 11,
   TYPE_IF             = 12,
-  TYPE_FOR            = 13
+  TYPE_FOR            = 13*/
 } TypeID;
 
 /** The opcodes for the operations (instructions) understandable by the Box

@@ -155,10 +155,11 @@ int TS_Is_Anonymous(TS *ts, Type t) {
 
 int TS_Is_Special(Type t) {
   switch(t) {
-  case TYPE_OPEN:
-  case TYPE_CLOSE:
-  case TYPE_PAUSE:
-  case TYPE_DESTROY:
+  case BOXTYPE_CREATE:
+  case BOXTYPE_DESTROY:
+  case BOXTYPE_BEGIN:
+  case BOXTYPE_END:
+  case BOXTYPE_PAUSE:
     return 1;
   default:
     return 0;
