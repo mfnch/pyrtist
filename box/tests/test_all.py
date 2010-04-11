@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-test_suites_modules = ['scope', 'operator_prec', 'procdef']
+test_suites_modules = ['scope', 'operator_prec', 'procdef', 'structure']
 
 num_errors = 0
 for test_suite_module in test_suites_modules:

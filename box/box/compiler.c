@@ -847,13 +847,10 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     int not_defined = !BoxVMSym_Is_Defined(c->vm, sym_id),
         has_no_name = (BoxVMSym_Get_Name(c->vm, sym_id) == NULL);
 
-    fprintf(stderr, "name='%s'\n", BoxVMSym_Get_Name(c->vm, sym_id));
-
     /* If the procedure is not defined and has no name then we re-use
      * the previous registered one, without covering the old definition.
      */
     if (not_defined && has_no_name) {
-      fprintf(stderr, "setting from previous symbol!\n");
       CmpProc_Set_Sym(& proc_implem, sym_id);
       do_register = 0;
     }
