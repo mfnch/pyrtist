@@ -254,6 +254,49 @@ Value *Value_Cast_Ptr(Value *v_ptr, BoxType new_type);
  */
 Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxType *t_memb);
 
+typedef struct {
+  int     has_next;
+  int     index;
+  Value   v_member;
+  BoxType t_member;
+} ValueStrucIter;
+
+/** Convenience function to facilitate iteration of the member of a structure
+ * value. Here is and example of how it is supposed to be used:
+ *
+ *   ValueStrucIter vsi;
+ *   for(ValueStrucIter_Init(& vsi, v_struc, cmpproc);
+ *       vsi.has_next; ValueStrucIter_Do_Next(& vsi)) {
+ *     // access to 'vsi.member'
+ *   }
+ *   ValueStrucIter_Finish(& vsi);
+ *
+ * @see ValueStrucIter_Finish, ValueStrucIter_Do_Next
+ */
+void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, CmpProc *proc);
+
+/** Convenience function to facilitate iteration of the member of a structure
+ * value.
+ * @see ValueStrucIter_Init
+ */
+void ValueStrucIter_Do_Next(ValueStrucIter *vsi);
+
+/** Convenience function to facilitate iteration of the member of a structure
+ * value.
+ * @see ValueStrucIter_Init
+ */
+void ValueStrucIter_Finish(ValueStrucIter *vsi);
+
+/** Creator corresponding to ValueStrucIter_Init.
+ * @see ValueStrucIter_Init, ValueStrucIter_Destroy
+ */
+ValueStrucIter *ValueStrucIter_New(Value *v_struc, CmpProc *proc);
+
+/** Destructor fro ValueStrucIter_New.
+ * @see ValueStrucIter_New
+ */
+void ValueStrucIter_Destroy(ValueStrucIter *vsi);
+
 /** Returns the member 'memb' of the given structure 'v_struc'.
  * Try to transform 'v_struc' into 'v_memb' passing to it the responsabilities
  * for deallocation, etc.

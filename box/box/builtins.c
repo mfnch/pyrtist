@@ -269,7 +269,7 @@ static Task My_Print_Pnt(BoxVM *vm) {
 
 static Task My_Print_Str(BoxVM *vm) {
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
-  if (s != NULL)
+  if (s->ptr != NULL)
     printf("%s", s->ptr);
   return Success;
 }

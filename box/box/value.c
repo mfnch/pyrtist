@@ -588,7 +588,8 @@ static BoxTask My_Emit_Call(Value *parent, Value *child, TSSearchMode mode) {
     /* If the procedure is not there we try to auto-generate it */
     expansion_for_child = BOXTYPE_NONE;
     found_procedure = Autogen_Procedure(c, child->type, parent->type);
-    return BOXTASK_FAILURE;
+    if (found_procedure == BOXTYPE_NONE)
+      return BOXTASK_FAILURE;
   }
 
   if (expansion_for_child != BOXTYPE_NONE) {
@@ -690,6 +691,7 @@ Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
   BoxCont *cont = & v_obj->value.cont;
 
   if (v_obj->num_ref > 1) {
+    /* Here we cannor re-use the register, we have to copy it to a new one */
     MSG_FATAL("Value_Get_Subfield: ref count > 1: not implemented, yet!");
     assert(0);
   }
@@ -734,7 +736,7 @@ Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxType *t_memb) {
   size_t delta_offset = 0;
 
   if (t_next == BOXTYPE_NONE)
-    t_next = v_memb->type;
+    t_next = TS_Get_Core_Type(ts, v_memb->type);
 
   else
     delta_offset = TS_Get_Size(ts, v_memb->type);
@@ -790,6 +792,43 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
     Value_Unlink(v_struc);
     return NULL;
   }
+}
+
+void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, CmpProc *proc) {
+  Value *v_member = & vsi->v_member;
+
+  Value_Init(v_member, proc);
+  Value_Setup_As_Weak_Copy(v_member, v_struc);
+
+  vsi->t_member = BOXTYPE_NONE;
+  v_member = Value_Struc_Get_Next_Member(v_member, & vsi->t_member);
+  assert(& vsi->v_member == v_member);
+  vsi->has_next = (vsi->t_member != BOXTYPE_NONE);
+  vsi->index = 0;
+}
+
+void ValueStrucIter_Do_Next(ValueStrucIter *vsi) {
+  Value *v_member = & vsi->v_member;
+  assert(vsi->has_next);
+  v_member = Value_Struc_Get_Next_Member(v_member, & vsi->t_member);
+  assert(& vsi->v_member == v_member);
+  vsi->has_next = (vsi->t_member != BOXTYPE_NONE);
+  ++vsi->index;
+}
+
+void ValueStrucIter_Finish(ValueStrucIter *vsi) {
+  Value_Unlink(& vsi->v_member);
+}
+
+ValueStrucIter *ValueStrucIter_New(Value *v_struc, CmpProc *proc) {
+  ValueStrucIter *vsi = BoxMem_Safe_Alloc(sizeof(ValueStrucIter));
+  ValueStrucIter_Init(vsi, v_struc, proc);
+  return vsi;
+}
+
+void ValueStrucIter_Destroy(ValueStrucIter *vsi) {
+  ValueStrucIter_Finish(vsi);
+  BoxMem_Free(vsi);
 }
 
 /**
