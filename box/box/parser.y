@@ -480,6 +480,8 @@ postfix_expr:
   | postfix_expr
               '.' TOK_IDENTIFIER {$$ = ASTNodeMemberGet_New($1, $3, 0);
                                   BoxMem_Free($3);}
+  | postfix_expr '.' TOK_TYPE_IDENT
+                                 {}
   | '.' TOK_IDENTIFIER           {$$ = ASTNodeMemberGet_New(NULL, $2, 0);
                                   BoxMem_Free($2);}
   | postfix_expr post_op         {$$ = ASTNodeUnOp_New($2, $1);}
@@ -598,6 +600,9 @@ species_type:
 named_type:
     TOK_TYPE_IDENT               {$$ = ASTNodeTypeName_New($1, 0);
                                   BoxMem_Free($1);}
+  | named_type '.' TOK_TYPE_IDENT
+                                 {$$ = ASTNodeSubtype_New($1, $3);
+                                  BoxMem_Free($3);}
   ;
 
 prim_type:
@@ -623,7 +628,7 @@ type:
   ;
 
 assign_type:
-    named_type '=' type          {$$ = ASTNodeTypeDef_New($1, $3);}
+    named_type '=' type          {$$ = ASTNodeTypeDef_New($1, $3);;}
   | named_type '=' assign_type   {$$ = ASTNodeTypeDef_New($1, $3);}
   ;
 

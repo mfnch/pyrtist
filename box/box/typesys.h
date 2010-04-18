@@ -272,8 +272,18 @@ Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num);
  * the parent type becomes aware of it. In order for the registration to be
  * completed the full type of the subtype must be specified.
  */
-void TS_Subtype_New(TS *ts, Type *new_subtype,
-                    Type parent_type, Name *child_name);
+BoxType TS_Subtype_New(TS *ts, Type parent_type, const char *child_name);
+
+/** Get the parent type of the given subtype */
+BoxType TS_Subtype_Get_Parent_Type(TS *ts, Type st);
+
+/** Get the child type of the given subtype (return BOXTYPE_NONE, if the
+ * subtype has not been yet registered)
+ */
+BoxType TS_Subtype_Get_Child_Type(TS *ts, Type st);
+
+/**< Return whether the subtype is already registered */
+int TS_Subtype_Is_Registered(TS *ts, Type st);
 
 /** Register a previously created (and still unregistered) subtype.
  */
@@ -283,7 +293,7 @@ Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type);
  * parent. The found subtype is put inside *subtype. If no subtype is found
  * then TS_TYPE_NONE is returned inside *subtype.
  */
-void TS_Subtype_Find(TS *ts, Type *subtype, Type parent, Name *child);
+BoxType TS_Subtype_Find(TS *ts, Type parent, const char *name);
 
 /** Associate the name 'name' to the anonymous type 't'. */
 Task TS_Name_Set(TS *ts, Type t, const char *name);

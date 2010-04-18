@@ -74,6 +74,7 @@ void CmpProc_Init(CmpProc *p, BoxCmp *c, CmpProcStyle style) {
   p->have.sym = 0;
   p->have.proc_id = 0;
   p->have.proc_name = 0;
+  p->have.alter_name = 0;
   p->have.call_num = 0;
   p->have.type = 0;
   p->have.wrote_beg = 0;
@@ -105,6 +106,8 @@ void CmpProc_Init(CmpProc *p, BoxCmp *c, CmpProcStyle style) {
 void CmpProc_Finish(CmpProc *p) {
   if (p->have.proc_name)
     BoxMem_Free(p->proc_name);
+  if (p->have.alter_name)
+    BoxMem_Free(p->alter_name);
   if (p->have.reg_alloc)
     Reg_Finish(& p->reg_alloc);
 }
@@ -140,7 +143,7 @@ void CmpProc_Set_Name(CmpProc *p, const char *proc_name) {
     BoxMem_Free(p->proc_name);
   p->proc_name = BoxMem_Strdup(proc_name);
   p->have.proc_name = 1;
-
+  
   if (p->have.sym) {
     if (BoxVMSym_Get_Name(p->cmp->vm, p->sym) != NULL) {
       MSG_FATAL("Cannot set the name: procedure symbol has already been "
@@ -227,15 +230,29 @@ BoxVMProcID CmpProc_Get_ProcID(CmpProc *p) {
   }
 }
 
-char *CmpProc_Get_Proc_Desc(CmpProc *p) {
+void CmpProc_Set_Alter_Name(CmpProc *p, const char *alter_name) {
+  if (p->have.call_num) {
+    MSG_FATAL("Cannot set the alternative name: procedure has already "
+              "an alternative name!");
+    assert(0);
+  }
+
+  if (p->have.alter_name)
+    BoxMem_Free(p->alter_name);
+
+  p->alter_name = BoxMem_Strdup(alter_name);
+  p->have.alter_name = 1;
+}
+
+char *CmpProc_Get_Alter_Name(CmpProc *p) {
   /* The description is just a help string to make the ASM more readable
    * (may disappear in the future). For now it is:
    *  - the type of the procedure, if this is known;
    *  - the name of the procedure, if this is known;
    *  - "|unknown|"
    */
-  if (p->have.type)
-    return TS_Name_Get(& p->cmp->ts, p->type);
+  if (p->have.alter_name)
+    return BoxMem_Strdup(p->alter_name);
 
   else
     return BoxMem_Strdup((p->have.proc_name) ? p->proc_name : "|unknown|");
@@ -259,12 +276,12 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p) {
 
   } else {
     BoxVMProcID pn = CmpProc_Get_ProcID(p);
-    char *proc_desc = CmpProc_Get_Proc_Desc(p),
-         *proc_name = (p->have.proc_name) ? p->proc_name : "(noname)";
+    char *alter_name = CmpProc_Get_Alter_Name(p),
+         *proc_name  = (p->have.proc_name) ? p->proc_name : "(noname)";
     CmpProc_End(p); /* End the procedure, if not done explicitly */
     VM_Proc_Install_Code(p->cmp->vm, & p->call_num, pn,
-                         proc_name, proc_desc);
-    BoxMem_Free(proc_desc);
+                         proc_name, alter_name);
+    BoxMem_Free(alter_name);
     p->have.call_num = 1;
     return p->call_num;
   }

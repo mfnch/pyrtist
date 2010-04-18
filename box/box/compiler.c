@@ -137,6 +137,7 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
   BoxCmp_Init__Operators(c);
 
   CmpProc_Init(& c->main_proc, c, CMPPROCSTYLE_MAIN);
+  CmpProc_Set_Alter_Name(& c->main_proc, "main");
   c->cur_proc = & c->main_proc;
 
   My_Init_Const_Values(c);
@@ -229,10 +230,10 @@ void BoxCmp_Push_Error(BoxCmp *c, int num_errors) {
   }
 }
 
-/** Check the last num_errors stack entries for errors. If all these entries
- * have no errors, then do nothing and return 0. If one or more of these
- * entries have errors, then removes all of them from the stack, push the
- * given number of errors and return 1.
+/** Check the last 'items_to_pop' stack entries for errors. If all these
+ * entries have no errors, then do nothing and return 0. If one or more
+ * of these entries have errors, then removes all of them from the stack,
+ * push the given number of errors and return 1.
  */
 int BoxCmp_Pop_Errors(BoxCmp *c, int items_to_pop, int errors_to_push) {
   BoxInt n = BoxArr_Num_Items(& c->stack), i;
@@ -325,6 +326,7 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node);
 static void My_Compile_Error(BoxCmp *c, ASTNode *node);
 static void My_Compile_TypeName(BoxCmp *c, ASTNode *node);
 static void My_Compile_TypeTag(BoxCmp *c, ASTNode *node);
+static void My_Compile_Subtype(BoxCmp *c, ASTNode *node);
 static void My_Compile_Box(BoxCmp *c, ASTNode *box,
                            BoxType child_t, BoxType parent_t);
 static void My_Compile_String(BoxCmp *c, ASTNode *node);
@@ -358,6 +360,8 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_TypeName(c, node); break;
   case ASTNODETYPE_TYPETAG:
     My_Compile_TypeTag(c, node); break;
+  case ASTNODETYPE_SUBTYPE:
+    My_Compile_Subtype(c, node); break;
   case ASTNODETYPE_BOX:
     My_Compile_Box(c, node, BOXTYPE_NONE, BOXTYPE_NONE); break;
   case ASTNODETYPE_STRING:
@@ -431,6 +435,54 @@ static void My_Compile_TypeTag(BoxCmp *c, ASTNode *n) {
   Value_Init(v, c->cur_proc);
   Value_Setup_As_Type(v, n->attr.typetag.type);
   BoxCmp_Push_Value(c, v);
+}
+
+static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
+  TS *ts = & c->ts;
+  Value *parent_type;
+  const char *name = p->attr.subtype.name;
+  BoxType new_subtype = BOXTYPE_NONE;
+ 
+  assert(p->type == ASTNODETYPE_SUBTYPE);
+  assert(p->attr.subtype.parent != NULL);
+
+  My_Compile_Any(c, p->attr.subtype.parent);
+  if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
+    return;
+
+  parent_type = BoxCmp_Pop_Value(c);
+  if (Value_Want_Has_Type(parent_type)) {
+    BoxType pt = parent_type->type;
+    if (TS_Is_Subtype(ts, pt)) {
+      /* Our parent is already a subtype (example X.Y) and we want X.Y.Z:
+       * we then require X.Y to be a registered subtype
+       */
+      if (TS_Subtype_Is_Registered(ts, pt)) {
+        new_subtype = TS_Subtype_Find(ts, pt, name);
+        if (new_subtype == BOXTYPE_NONE)
+          new_subtype = TS_Subtype_New(ts, pt, name);
+
+      } else {
+        MSG_ERROR("Cannot build subtype '%s' of undefined subtype '%~s'.",
+                  name, TS_Name_Get(ts, pt));
+      }
+      
+    } else {
+      new_subtype = TS_Subtype_Find(ts, pt, name);
+      if (new_subtype == BOXTYPE_NONE)
+        new_subtype = TS_Subtype_New(ts, pt, name);
+    }
+  }
+
+  Value_Unlink(parent_type);
+
+  if (new_subtype != BOXTYPE_NONE) {
+    Value *v = Value_New(c->cur_proc);
+    Value_Setup_As_Type(v, new_subtype);
+    BoxCmp_Push_Value(c, v);
+
+  } else
+    BoxCmp_Push_Error(c, 1);
 }
 
 static void My_Compile_Statement(BoxCmp *c, ASTNode *s) {
@@ -910,8 +962,24 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     Value *v_implem;
     BoxVMCallNum call_num;
 
+    /* Set the alternative name to make the bytecode more readable */
+    if (t_proc != BOXTYPE_NONE) {
+      char *alter_name = TS_Name_Get(& c->ts, t_proc);
+      CmpProc_Set_Alter_Name(& proc_implem, alter_name);
+      BoxMem_Free(alter_name);
+    }
+
+    /* We change target of the compilation to the new procedure */
     c->cur_proc = & proc_implem;
 
+    /* If this is a creator then we should automatically insert some code at
+     * the beginning to initialise the stuff the user is not responsible of.
+     * For example, if X = (Int a, Str b, Real c) then (.[)@X should start
+     * with creating X.b, since X.b is a Str object and has a creator.
+     * We must do this in order to avoid segfaults. Box should never give
+     * the chance to get to segfaults, at least for programs written
+     * entirely in the Box language.
+     */
     if (TS_Is_Special(t_child) == BOXTYPE_CREATE) {
       (void) Auto_Generate_Code(c, t_child, t_parent);
     }
@@ -921,8 +989,12 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     /* NOTE: we should double check that this is void! */
     Value_Unlink(v_implem);
 
+    /* Similarly for creators, we need to automatically generate code to
+     * destroy composite objects.
+     */
     if (TS_Is_Special(t_child) == BOXTYPE_DESTROY) {
-      (void) Auto_Generate_Code(c, t_child, t_parent);
+      /*(void) Auto_Generate_Code(c, t_child, t_parent);*/
+      // XXX doesn't work at the moment!
     }
 
     c->cur_proc = save_cur_proc;
@@ -979,11 +1051,28 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
       Value_Unlink(v);
 
     } else if (Value_Has_Type(v_name)) {
-      if (TS_Compare(ts, v_name->type, v_type->type) == TS_TYPES_UNMATCH)
-        MSG_ERROR("Inconsistent redefinition of type %s.",
+      BoxType t = v_name->type;
+
+      if (TS_Is_Subtype(ts, t)) {
+        if (TS_Subtype_Is_Registered(ts, t)) {
+          BoxType ot = TS_Subtype_Get_Child_Type(ts, t);
+          if (TS_Compare(ts, ot, v_type->type) == TS_TYPES_UNMATCH)
+            MSG_ERROR("Inconsistent redefinition of type '%~s': was '%~s' "
+                      "and is now '%~s'", TS_Name_Get(ts, v_name->type),
+                      TS_Name_Get(ts, ot), TS_Name_Get(ts, v_type->type));
+          
+        } else {
+          (void) TS_Subtype_Register(ts, t, v_type->type);
+          /* ^^^ ignore state of success of operation */
+        }
+
+      } else if (TS_Compare(ts, t, v_type->type) == TS_TYPES_UNMATCH) {
+        MSG_ERROR("Inconsistent redefinition of type '%~s.''",
                   TS_Name_Get(ts, v_name->type));
-        Value_Link(v_name);
-        v_named_type = v_name;
+      }
+
+      v_named_type = v_type;
+      Value_Link(v_type);
     }
   }
 

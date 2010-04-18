@@ -427,7 +427,7 @@ Int TS_Member_Count(TS *ts, Type s) {
     };
     break;
   default:
-    MSG_FATAL("Trying to count members of the non-membered type %~s",
+    MSG_FATAL("Trying to count members of the non-membered type '%~s'",
      TS_Name_Get(ts, s));
   }
   return count;
@@ -780,24 +780,42 @@ Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num) {
  * the parent type becomes aware of it. In order for the registration to be
  * completed the full type of the subtype must be specified.
  */
-void TS_Subtype_New(TS *ts, Type *new_subtype,
-                    Type parent_type, Name *child_name) {
+BoxType TS_Subtype_New(TS *ts, Type parent_type, const char *child_name) {
   TSDesc td;
+  BoxType new_subtype;
   TS_TSDESC_INIT(& td);
   td.kind = TS_KIND_SUBTYPE;
   td.size = TS_SIZE_UNKNOWN;
   td.target = TS_TYPE_NONE;
   td.data.subtype.parent = parent_type;
-  td.data.subtype.child_name = Name_To_Str(child_name);
-  Type_New(ts, new_subtype, & td);
+  td.data.subtype.child_name = strdup(child_name);
+  Type_New(ts, & new_subtype, & td);
+  return new_subtype;
 }
 
-/* Register a previously created (and still unregistered) subtype.
- */
+int TS_Subtype_Is_Registered(TS *ts, Type st) {
+  TSDesc *st_td = Type_Ptr(ts, st);
+  assert(st_td->kind == TS_KIND_SUBTYPE);
+  return (st_td->target != TS_TYPE_NONE);
+}
+
+BoxType TS_Subtype_Get_Parent_Type(TS *ts, Type st) {
+  TSDesc *st_td = Type_Ptr(ts, st);
+  assert(st_td->kind == TS_KIND_SUBTYPE);
+  return st_td->data.subtype.parent;
+}
+
+BoxType TS_Subtype_Get_Child_Type(TS *ts, Type st) {
+  TSDesc *st_td = Type_Ptr(ts, st);
+  assert(st_td->kind == TS_KIND_SUBTYPE);
+  return st_td->target;
+}
+
+/* Register a previously created (and still unregistered) subtype. */
 Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type) {
   TSDesc *s_td = Type_Ptr(ts, subtype);
   Type parent, found_subtype;
-  Name child_name, full_name;
+  Name full_name;
   char *child_str;
 
   if (s_td->target != TS_TYPE_NONE) {
@@ -806,9 +824,8 @@ Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type) {
   }
 
   child_str = s_td->data.subtype.child_name;
-  Name_From_Str(& child_name, child_str);
   parent = s_td->data.subtype.parent;
-  TS_Subtype_Find(ts, & found_subtype, parent, & child_name);
+  found_subtype = TS_Subtype_Find(ts, parent, child_str);
   if (found_subtype != TS_TYPE_NONE) {
     TSDesc *found_subtype_td = Type_Ptr(ts, found_subtype);
     Type found_subtype_type = found_subtype_td->target;
@@ -830,16 +847,17 @@ Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type) {
   return Success;
 }
 
-void TS_Subtype_Find(TS *ts, Type *subtype, Type parent, Name *child) {
+BoxType TS_Subtype_Find(TS *ts, Type parent, const char *name) {
   Name full_name;
   BoxHTItem *hi;
-  char *child_str = Name_To_Str(child);
   /*s = TS_Resolve(ts, s, 1, 1);*/
-  Member_Full_Name(ts, & full_name, parent, child_str);
-  BoxMem_Free(child_str);
-  *subtype = TS_TYPE_NONE;
+  Member_Full_Name(ts, & full_name, parent, name);
+
   if (BoxHT_Find(& ts->subtypes, full_name.text, full_name.length, & hi))
-    *subtype = *((Type *) hi->object);
+    return *((Type *) hi->object);
+
+  else
+    return BOXTYPE_NONE;
 }
 
 void TS_Subtype_Get_Child(TS *ts, Type *child, Type subtype) {

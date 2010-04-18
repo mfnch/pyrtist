@@ -148,7 +148,7 @@ typedef struct {
 /** Node for a subtype */
 typedef struct {
   char    *name;
-  ASTNode *scope;
+  ASTNode *parent;
 } ASTNodeSubtype;
 
 /** Node for a Box: which is a list of statements */
@@ -331,7 +331,7 @@ void ASTNode_Print(FILE *out, ASTNode *node);
 ASTNode *ASTNodeError_New(void);
 ASTNode *ASTNodeTypeName_New(const char *name, size_t name_len);
 ASTNode *ASTNodeTypeTag_New(BoxType value);
-ASTNode *ASTNodeSubtype_New(const char *name, size_t name_len);
+ASTNode *ASTNodeSubtype_New(ASTNode *parent_type, const char *name);
 ASTNode *ASTNodeStatement_New(ASTNode *target);
 ASTNode *ASTNodeSep_New(ASTSep sep);
 ASTNode *ASTNodeBox_New(ASTNode *type, ASTNode *first_statement);

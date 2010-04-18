@@ -77,15 +77,16 @@ typedef void (*CmpProcEnd)(CmpProc *p);
 struct _cmp_proc {
   struct {
     unsigned int
-                reg_alloc :1,  /**< it has automatic register allocation */
-                sym       :1,  /**< the procedure has an associated symbol */
-                proc_id   :1,  /**< the procedure has a procedure number */
-                proc_name :1,  /**< it has a name */
-                call_num  :1,  /**< it has a call number */
-                type      :1,  /**< it has a type */
-                wrote_beg :1,  /**< CmpProc->beginning has been called */
-                wrote_end :1,  /**< CmpProc->ending has been called */
-                head      :1;  /**< Head instructions new have been emitted */
+               reg_alloc  :1,  /**< it has automatic register allocation */
+               sym        :1,  /**< the procedure has an associated symbol */
+               proc_id    :1,  /**< the procedure has a procedure number */
+               proc_name  :1,  /**< it has a name */
+               alter_name :1,  /**< has an alternative name */
+               call_num   :1,  /**< it has a call number */
+               type       :1,  /**< it has a type */
+               wrote_beg  :1,  /**< CmpProc->beginning has been called */
+               wrote_end  :1,  /**< CmpProc->ending has been called */
+               head       :1;  /**< Head instructions new have been emitted */
   } have;
   struct {
     unsigned int
@@ -104,9 +105,9 @@ struct _cmp_proc {
                                   new instructions */
   BoxVMSymID    sym;         /**< Symbol associated with the procedure */
   BoxVMProcNum  proc_id;     /**< Proc. number (needed to write ASM to it) */
-  char          *proc_name;  /**< Procedure name */
+  char          *proc_name,  /**< Procedure name */
+                *alter_name; /**< Alternative name */
   BoxVMCallNum  call_num;    /**< Call number (needed to call it from ASM) */
-  Type          type;        /**< Type of the procedure */
 };
 
 /** Initialise a CmpProc object in the memory region pointed by p.
@@ -127,9 +128,30 @@ CmpProc *CmpProc_New(BoxCmp *c, CmpProcStyle style);
  */
 void CmpProc_Destroy(CmpProc *p);
 
+/** Initialise the code in the procedure, coherently with the procedure style.
+ */
+void CmpProc_Begin(CmpProc *p);
+
+/** Finalise the code in the procedure, coherently with the procedure style.
+ */
+void CmpProc_End(CmpProc *p);
+
 /** Provides a name for the procedure (necessary for CMPPROCSTYLE_EXTERN)
+ * This is usually the C name of the procedure.
  */
 void CmpProc_Set_Name(CmpProc *p, const char *proc_name);
+
+/** Provides an alternative name for the procedure, this is usually the Box
+ * name of the procedure (such as Int@Print) and is the name displayed when
+ * disassembling the bytecode instruction call.
+ * If it is not provided, then the procedure name is used (CmpProc_Set_Name)
+ * or "|unknown|", if the name is not set either.
+ */
+void CmpProc_Set_Alter_Name(CmpProc *p, const char *alter_name);
+
+/** Retrieve the alternative name for the procedure.
+ */
+char *CmpProc_Get_Alter_Name(CmpProc *p);
 
 /** Get the register allocator for the procedure */
 RegAlloc *CmpProc_Get_RegAlloc(CmpProc *p);
@@ -149,15 +171,6 @@ BoxVMSymID CmpProc_Get_Sym(CmpProc *p);
  * is returned.
  */
 BoxVMProcID CmpProc_Get_ProcID(CmpProc *p);
-
-/** Get the procedure description, which is just a help string to make
- * the bytecode more readable (may disappear in the future).
- * For now the procedure description is:
- *  - the type of the procedure, if it is known;
- *  - the name of the procedure, if it is known;
- *  - "|unknown|"
- */
-char *CmpProc_Get_Proc_Desc(CmpProc *p);
 
 /** Get the procedure call number. If the procedure doesn't have a call number
  * then, it is installed and the call number returned by such installation

@@ -36,7 +36,7 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
   case ASTNODETYPE_TYPETAG:
     return 0;
   case ASTNODETYPE_SUBTYPE:
-    subnodes[0] = & node->attr.subtype.scope;
+    subnodes[0] = & node->attr.subtype.parent;
     return 1;
   case ASTNODETYPE_BOX:
     subnodes[0] = & node->attr.box.parent;
@@ -337,11 +337,10 @@ static void ASTNodeSubtype_Finaliser(ASTNode *node) {
   BoxMem_Free(node->attr.subtype.name);
 }
 
-ASTNode *ASTNodeSubtype_New(const char *name, size_t name_len) {
+ASTNode *ASTNodeSubtype_New(ASTNode *parent_type, const char *name) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_SUBTYPE);
-  node->attr.subtype.name =
-    (name_len > 0) ? BoxMem_Strndup(name, name_len) : BoxMem_Strdup(name);
-  node->attr.subtype.scope = NULL;
+  node->attr.subtype.name = BoxMem_Strdup(name);
+  node->attr.subtype.parent = parent_type;
   node->finaliser = ASTNodeSubtype_Finaliser;
   return node;
 }
