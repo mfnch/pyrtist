@@ -133,9 +133,10 @@ Int TS_Get_Size(TS *ts, Type t);
  */
 int TS_Is_Anonymous(TS *ts, Type t);
 
-/** Return 1 if 't' is a special type (TYPE_OPEN, TYPE_CLOSE, etc.)
+/** If 't' is a special type (BOXTYPE_CREATE, BOXTYPE_DESTROY, etc.)
+ * return 't', otherwise return BOXTYPE_NONE.
  */
-int TS_Is_Special(Type t);
+BoxType TS_Is_Special(BoxType t);
 
 /** Resolve types (useful for comparisons).
  * select is a combination (with operator |) of TSKindSelect

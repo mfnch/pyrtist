@@ -34,7 +34,17 @@
 #  include "types.h"
 #  include "cmpptrs.h"
 
-BoxType Autogen_Procedure(BoxCmp *c, BoxType child, BoxType parent);
+/** Write (in the current active code sheet) the code for the procedure
+ * t_child@t_parent. Return 1 if any code has been generated, otherwise
+ * return 0.
+ */
+int Auto_Generate_Code(BoxCmp *c, BoxType t_child, BoxType t_parent);
+
+/** Automatically generate a new procedure for t_child@t_parent, if needed.
+ * Return the type for the new procedure if it was generated, otherwise
+ * return BOXTYPE_NONE.
+ */
+BoxType Auto_Generate_Procedure(BoxCmp *c, BoxType t_child, BoxType t_parent);
 
 #if 0
 Task Auto_Destructor_Create(Type t);

@@ -153,16 +153,16 @@ int TS_Is_Anonymous(TS *ts, Type t) {
   return (td->name == (char *) NULL);
 }
 
-int TS_Is_Special(Type t) {
+BoxType TS_Is_Special(BoxType t) {
   switch(t) {
   case BOXTYPE_CREATE:
   case BOXTYPE_DESTROY:
   case BOXTYPE_BEGIN:
   case BOXTYPE_END:
   case BOXTYPE_PAUSE:
-    return 1;
+    return t;
   default:
-    return 0;
+    return BOXTYPE_NONE;
   }
 }
 

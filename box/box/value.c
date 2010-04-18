@@ -587,7 +587,7 @@ static BoxTask My_Emit_Call(Value *parent, Value *child, TSSearchMode mode) {
   if (found_procedure == BOXTYPE_NONE) {
     /* If the procedure is not there we try to auto-generate it */
     expansion_for_child = BOXTYPE_NONE;
-    found_procedure = Autogen_Procedure(c, child->type, parent->type);
+    found_procedure = Auto_Generate_Procedure(c, child->type, parent->type);
     if (found_procedure == BOXTYPE_NONE)
       return BOXTASK_FAILURE;
   }

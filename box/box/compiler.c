@@ -32,6 +32,7 @@
 #include "messages.h"
 #include "compiler.h"
 #include "parserh.h"
+#include "autogen.h"
 
 #include "vmsymstuff.h"
 
@@ -423,7 +424,7 @@ static void My_Compile_TypeTag(BoxCmp *c, ASTNode *n) {
   Value *v;
 
   assert(n->type == ASTNODETYPE_TYPETAG);
-  assert(TS_Is_Special(n->attr.typetag.type));
+  assert(TS_Is_Special(n->attr.typetag.type) != BOXTYPE_NONE);
 
   /* Should we use c->value.create, etc. ? */
   v = Value_New(c->cur_proc);
@@ -911,10 +912,18 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
 
     c->cur_proc = & proc_implem;
 
+    if (TS_Is_Special(t_child) == BOXTYPE_CREATE) {
+      (void) Auto_Generate_Code(c, t_child, t_parent);
+    }
+
     My_Compile_Box(c, n_implem, t_child, t_parent);
     v_implem = BoxCmp_Pop_Value(c);
     /* NOTE: we should double check that this is void! */
     Value_Unlink(v_implem);
+
+    if (TS_Is_Special(t_child) == BOXTYPE_DESTROY) {
+      (void) Auto_Generate_Code(c, t_child, t_parent);
+    }
 
     c->cur_proc = save_cur_proc;
 
