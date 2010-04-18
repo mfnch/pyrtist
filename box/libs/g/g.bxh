@@ -14,7 +14,7 @@ Dpi = Real, Real@Dpi[$$ = $/25.4]
 //include "_color"
 //include "_style"
 //include "_gradient"
-//include "_window"
+include "_window"
 //include "_line"
 //include "_circle"
 //include "_poly"

@@ -489,6 +489,11 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
     Value_Unlink(v_parent);
   }
 
+  /* Invoke the opening procedure */
+  if (box->attr.box.parent != NULL) {
+    (void) Value_Emit_Call_Or_Blacklist(parent, & c->value.begin);
+  }
+
   /* Loop over all the statements of the box */
   for(s = box->attr.box.first_statement;
       s != NULL;
@@ -514,6 +519,11 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
 
       Value_Unlink(stmt_val); /* XXX */
     }
+  }
+
+  /* Invoke the closing procedure */
+  if (box->attr.box.parent != NULL) {
+    (void) Value_Emit_Call_Or_Blacklist(parent, & c->value.end);
   }
 
   Namespace_Floor_Down(& c->ns); /* close the scope unit */
