@@ -99,15 +99,17 @@ static void My_Value_Finalize(Value *v) {
 }
 
 void Value_Unlink(Value *v) {
-  if (v->num_ref > 1)
-    --v->num_ref;
+  if (v != NULL) {
+    if (v->num_ref > 1)
+      --v->num_ref;
 
-  else {
-    assert(v->num_ref == 1);
-    My_Value_Finalize(v);
-    v->num_ref = 0;
-    if (v->attr.new_or_init)
-      BoxMem_Free(v);
+    else {
+      assert(v->num_ref == 1);
+      My_Value_Finalize(v);
+      v->num_ref = 0;
+      if (v->attr.new_or_init)
+        BoxMem_Free(v);
+    }
   }
 }
 
@@ -443,7 +445,7 @@ Value *Value_To_Temp(Value *v) {
   case VALUEKIND_TYPE_NAME:
     MSG_ERROR("Got %s ('%s'), but a defined type or value is expected here!",
               ValueKind_To_Str(v->kind), v->name);
-    return Value_Recycle(v); /* Return an error value (Value_Recycle set the
+    return Value_Recycle(v); /* Return an error value (Value_Recycle
                                 leaves v with an error, if not initialised
                                 with a Value_Setup_* function) */
 
@@ -616,7 +618,7 @@ BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child) {
 /**
  * REFERENCES: return: new, v_ptr: -1;
  */
-Value *Value_Cast_Ptr(Value *v_ptr, BoxType new_type) {
+Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType new_type) {
   BoxCmp *c = v_ptr->proc->cmp;
 
   assert(v_ptr->value.cont.type == BOXTYPE_PTR);
@@ -635,28 +637,42 @@ Value *Value_Cast_Ptr(Value *v_ptr, BoxType new_type) {
 
       else {
         int is_greg = (cont->categ == BOXCONTCATEG_GREG);
-	BoxInt reg = cont->value.reg;
+        BoxInt reg = cont->value.reg;
         cont->categ = BOXCONTCATEG_PTR;
-	cont->value.ptr.reg = reg;
-	cont->value.ptr.is_greg = is_greg;
-	cont->value.ptr.offset = 0;
+        cont->value.ptr.reg = reg;
+        cont->value.ptr.is_greg = is_greg;
+        cont->value.ptr.offset = 0;
       }
       return v_ptr;
 
     case BOXCONTCATEG_PTR:
       /* not implemented */
+
     default:
-      MSG_FATAL("Value_Cast_Ptr: unexpected container category!");
+      MSG_FATAL("Value_Cast_From_Ptr: unexpected container category!");
       assert(0);
     }
 
   } else {
-    MSG_FATAL("Value_Cast_Ptr: not implemented, yet!");
+    MSG_FATAL("Value_Cast_From_Ptr: not implemented, yet!");
     assert(0);
   }
 
   assert(0);
   return NULL;
+}
+
+Value *Value_Cast_To_Ptr(Value *v) {
+  BoxCmp *c = v->proc->cmp;
+  BoxCont v_cont = v->value.cont;
+  printf("num_refs = %d\n", v->num_ref);
+  Value *v_ptr = Value_Recycle(v);
+  BoxGOp op = (v_cont.type == BOXCONTTYPE_OBJ
+               && v_cont.categ != BOXCONTCATEG_PTR) ?
+              BOXGOP_MOV : BOXGOP_LEA;
+  Value_Setup_As_Temp(v_ptr, BOXTYPE_PTR);
+  CmpProc_Assemble(c->cur_proc, op, 2, & v_ptr->value.cont, & v_cont);
+  return v_ptr;
 }
 
 /**
@@ -669,10 +685,11 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
     Value *v_ret;
     BoxCont cont = v_obj->value.cont;
+    BoxType t = v_obj->type;
 
     Value_Unlink(v_obj);
     v_ret = Value_New(v_obj->proc->cmp->cur_proc);
-    Value_Setup_Container(v_ret, v_obj->type, & vc);
+    Value_Setup_Container(v_ret, t, & vc);
 
     assert(v_ret->value.cont.type == BOXTYPE_OBJ);
     CmpProc_Assemble(v_ret->proc, BOXGOP_LEA, 2, & v_ret->value.cont, & cont);
@@ -1047,7 +1064,7 @@ void My_Setup_From_Gro(Value *v, BoxType t, BoxInt gro_num) {
     CmpProc_Assemble(c->cur_proc, BOXGOP_MOV,
                      2, & v->value.cont, & v_ptr.value.cont);
     Value_Unlink(& v_ptr);
-    v = Value_Cast_Ptr(v, t);
+    v = Value_Cast_From_Ptr(v, t);
     v->kind = VALUEKIND_TARGET;
 
   } else { /* TS_get_Size(ts, parent_ts) == 0 */
@@ -1064,3 +1081,81 @@ void Value_Setup_As_Child(Value *v, BoxType child_t) {
   return My_Setup_From_Gro(v, child_t, 2);
 }
 
+Value *Value_Subtype_Expand(Value *v_subtype) {
+  MSG_ERROR("Value_Subtype_Expand: not implemented, yet!");
+  Value_Unlink(v_subtype);
+  return NULL;
+
+#if 0
+  Expr child;
+  int ignore = e->is.ignore;
+  if (!e->is.typed) return Success;
+  if (!TS_Is_Subtype(cmp->ts, e->resolved)) return Success;
+  TASK( Expr_Subtype_Get_Child(& child, e) );
+  Cmp_Expr_Destroy_Tmp(e);
+  *e = child;
+  e->is.ignore = ignore;
+  return Success;
+#endif
+}
+
+Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
+  BoxCmp *c = v_parent->proc->cmp;
+  TS *ts = & c->ts;
+  BoxType found_subtype, t_subtype_child;
+  Value *v_subtype = NULL, *v_subtype_child = NULL, *v_ptr = NULL;
+
+  /* If the method cannot be found, it could be a method of the child
+   * of the type. We then resolve the type to its child and try again.
+   * X.GetPoint = Point
+   * X.GetPoint[].Norm[] (Norm is a method of Point and not a method
+   *                       of GetPoint)
+   */
+  while (1) {
+    found_subtype = TS_Subtype_Find(ts, v_parent->type, subtype_name);
+    if (found_subtype != TS_TYPE_NONE)
+      break;
+
+    if (TS_Is_Subtype(ts, v_parent->type)) {
+      v_parent = Value_Subtype_Expand(v_parent);
+      if (v_parent == NULL)
+        return NULL;
+
+    } else {
+      MSG_ERROR("Type '%~s' has not a subtype of name '%s'",
+                TS_Name_Get(ts, v_parent->type), subtype_name);
+      Value_Unlink(v_parent);
+      return NULL;
+    }
+  }
+
+  assert(found_subtype != TS_TYPE_NONE);
+
+  /* First we create the child and we get a pointer to it */
+  t_subtype_child = TS_Subtype_Get_Child(ts, found_subtype);
+  v_subtype_child = Value_New(c->cur_proc);
+  Value_Setup_As_Temp(v_subtype_child, t_subtype_child);
+  v_subtype_child = Value_Cast_To_Ptr(v_subtype_child);
+
+  /* Then we create the subtype object (just two pointers to parent
+   * and child)
+   */
+  v_subtype = Value_New(c->cur_proc);
+  Value_Setup_As_Temp(v_subtype, found_subtype);
+
+  /* We now create a Value corresponding to the first pointer (the child) */
+  v_ptr = Value_New(c->cur_proc);
+  Value_Setup_As_Weak_Copy(v_ptr, v_subtype);
+  v_ptr = Value_Get_Subfield(v_ptr, /* offset */ 0, BOXTYPE_PTR);
+
+  /* Now we transfer the child pointer to the subtype */
+  (void) Value_Move_Content(v_ptr, v_subtype_child);
+
+  
+  Value_Unlink(v_parent);
+  return v_subtype;
+
+  
+  MSG_ERROR("My_Compile_SubtypeBld: not implemented, yet.");
+  return NULL;
+}

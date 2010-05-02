@@ -53,6 +53,7 @@ typedef enum {
   ASTNODETYPE_ARRAYGET,
   ASTNODETYPE_MEMBERGET,
   ASTNODETYPE_SELFGET,
+  ASTNODETYPE_SUBTYPEBLD,
   ASTNODETYPE_PROCDEF,
   ASTNODETYPE_TYPEDEF,
   ASTNODETYPE_STRUCTYPE,
@@ -226,6 +227,12 @@ typedef struct {
   char     *member;
 } ASTNodeMemberGet;
 
+/** Node for subtype building */
+typedef struct {
+  ASTNode  *parent;
+  char     *subtype;
+} ASTNodeSubtypeBld;
+
 /** Node for $, $$, $$$, etc. */
 typedef struct {
   BoxInt   level;
@@ -287,6 +294,7 @@ struct __ASTNode {
     ASTNodeStruc      struc;
     ASTNodeArrayGet   array_get;
     ASTNodeMemberGet  member_get;
+    ASTNodeSubtypeBld subtype_bld;
     ASTNodeSelfGet    self_get;
     ASTNodeProcDef    proc_def;
     ASTNodeTypeDef    type_def;
@@ -352,6 +360,7 @@ ASTNode *ASTNodeStruc_Add_Member(ASTNode *struc,
 ASTNode *ASTNodeArrayGet_New(ASTNode *array, ASTNode *index);
 ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
                               const char *member, int member_len);
+ASTNode *ASTNodeSubtype_Build(ASTNode *parent, const char *subtype);
 ASTNode *ASTNodeSelfGet_New(BoxInt level);
 ASTNode *ASTNodeProcDef_New(ASTNode *child_type, ASTNode *parent_type);
 ASTNode *ASTNodeProcDef_Set(ASTNode *proc_def, ASTNode *c_name,

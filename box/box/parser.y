@@ -232,59 +232,6 @@ asgn.type:
 | unregistered.subtype '=' asgn.type          {DO(Register_Subtype(& $$, & $1, & $3));}
  ;
 
-registered.subtype:
-  TOK_UNAME TOK_UMEMBER                  {DO(Reg_Subtype(& $$, & $1, & $2));}
-| registered.subtype TOK_UMEMBER         {DO(Reg_SubSubtype(& $$, & $1, & $2));}
-;
-
-unregistered.subtype:
-  TOK_UNAME TOK_UMEMBER                  {DO(Unreg_Subtype(& $$, & $1, & $2));}
-| registered.subtype TOK_UMEMBER         {DO(Unreg_SubSubtype(& $$, & $1, & $2));}
-;
-
-/*****************************************************************************
- *                           Primary Expressions                             *
- *****************************************************************************/
-simple.expr:
-  TOK_LNAME suffix.opt    { Prs_Name_To_Expr( & $1, & $$, $2); }
-| TOK_EXPR                { $$ = $1; }
-| string                  { if IS_FAILED( Cmp_String_New_And_Free(& $$, & $1) ) MY_ERR }
-| TOK_NPARENT suffix.opt  { DO( Box_NParent_Get(& $$, $1, $2) ); }
- ;
-
-array.expr:
-  simple.expr             { $$ = $1; }
-| array.expr '(' expr ')' { DO(Expr_Array_Member(& $$, & $1, & $3)); }
-;
-
-subtype.expr:
-  prim.expr TOK_UMEMBER {DO(Subtype_Create(& $$, & $1, & $2));}
-| TOK_UMEMBER           {DO(Subtype_Create(& $$, (Expr *) NULL, & $1));}
-;
-
-prim.expr:
-   array.expr           { $$ = $1; }
-
- | '(' expr ')'         { $$ = $2; $$.is.ignore = 0; }
-
- | expr.struc           { $$ = $1; }
-
- | prim.expr
-   '['                  { DO( Box_Instance_Begin(& $1, 2) ); }
-   statement.list
-   ']'                  { DO( Box_Instance_End(& $1) ); }
-
- | name.type
-   '['                  { DO( Box_Instance_Begin(& $1, 1) ); }
-   statement.list
-   ']'                  { DO( Box_Instance_End(& $1) ); }
-
-| subtype.expr
-   '['                  { DO( Box_Instance_Begin(& $1, 1) ); }
-   statement.list
-   ']'                  { DO( Box_Instance_End(& $1)); }
- ;
-
 /******************************************************************************
  *               DEFINIZIONE DELL'ESPRESSIONE COME ISTRUZIONE                 *
  ******************************************************************************/
@@ -480,8 +427,10 @@ postfix_expr:
   | postfix_expr
               '.' TOK_IDENTIFIER {$$ = ASTNodeMemberGet_New($1, $3, 0);
                                   BoxMem_Free($3);}
-  | postfix_expr '.' TOK_TYPE_IDENT
-                                 {}
+  | postfix_expr '.' TOK_TYPE_IDENT '[' statement_list ']'
+                                 {$$ = ASTNodeBox_Set_Parent($5,
+                                               ASTNodeSubtype_Build($1, $3));
+                                  BoxMem_Free($3);}
   | '.' TOK_IDENTIFIER           {$$ = ASTNodeMemberGet_New(NULL, $2, 0);
                                   BoxMem_Free($2);}
   | postfix_expr post_op         {$$ = ASTNodeUnOp_New($2, $1);}

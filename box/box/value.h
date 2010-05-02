@@ -229,7 +229,7 @@ BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child);
 /** Cast a generic pointer (type BOXTYPE_PTR) to the given type.
  * REFERENCES: return: new, v_ptr: -1;
  */
-Value *Value_Cast_Ptr(Value *v_ptr, BoxType new_type);
+Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType new_type);
 
 /** Get the next member of a structure. If the given type '*t_memb' is a
  * structure, then return in 'v_memb' its first member. If '*t_memb' is a
@@ -321,5 +321,13 @@ void Value_Setup_As_Parent(Value *v, BoxType parent_t);
  * REFERENCES: v: 0;
  */
 void Value_Setup_As_Child(Value *v, BoxType child_t);
+
+/** Build the subtype 'subtype_name' of 'v_parent'.
+ * If the subtype is not found and 'v_parent' is itself a subtype, then
+ * resolve it to its child and search among its subtypes.
+ * If the subtype cannot be built, then return NULL.
+ * REFERENCES: return: new, v_parent: -1;
+ */
+Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name);
 
 #endif /* _VALUE_H */

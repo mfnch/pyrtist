@@ -49,8 +49,8 @@ void BoxErr_Report(BoxErr *err, BoxErrCode code) {
     const char *msg = BoxErr_Msg(code);
     if (msg != NULL) {
       fprintf(stderr, "Fatal error: %s\n", msg);
-      assert(0); /* assert is better than exit for debugging */
-      exit(1);
+      /*assert(0); assert is better than exit for debugging */
+      abort();
     }
   }
 }

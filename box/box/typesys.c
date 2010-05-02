@@ -799,13 +799,13 @@ int TS_Subtype_Is_Registered(TS *ts, Type st) {
   return (st_td->target != TS_TYPE_NONE);
 }
 
-BoxType TS_Subtype_Get_Parent_Type(TS *ts, Type st) {
+BoxType TS_Subtype_Get_Parent(TS *ts, Type st) {
   TSDesc *st_td = Type_Ptr(ts, st);
   assert(st_td->kind == TS_KIND_SUBTYPE);
   return st_td->data.subtype.parent;
 }
 
-BoxType TS_Subtype_Get_Child_Type(TS *ts, Type st) {
+BoxType TS_Subtype_Get_Child(TS *ts, Type st) {
   TSDesc *st_td = Type_Ptr(ts, st);
   assert(st_td->kind == TS_KIND_SUBTYPE);
   return st_td->target;
@@ -860,6 +860,7 @@ BoxType TS_Subtype_Find(TS *ts, Type parent, const char *name) {
     return BOXTYPE_NONE;
 }
 
+#if 0
 void TS_Subtype_Get_Child(TS *ts, Type *child, Type subtype) {
   TSDesc *s_td = Type_Ptr(ts, subtype);
 
@@ -877,6 +878,7 @@ void TS_Subtype_Get_Parent(TS *ts, Type *parent, Type subtype) {
   assert(s_td->size != TS_SIZE_UNKNOWN);
   *parent = s_td->data.subtype.parent;
 }
+#endif
 
 #if 0
 ParentType.ChildName = ChildType;

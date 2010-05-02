@@ -77,6 +77,9 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
   case ASTNODETYPE_MEMBERGET:
     subnodes[0] = & node->attr.member_get.struc;
     return 1;
+  case ASTNODETYPE_SUBTYPEBLD:
+    subnodes[0] = & node->attr.subtype_bld.parent;
+    return 1;
   case ASTNODETYPE_SELFGET:
     return 0;
   case ASTNODETYPE_PROCDEF:
@@ -122,6 +125,7 @@ const char *ASTNodeType_To_Str(ASTNodeType t) {
   case ASTNODETYPE_STRUC:      return "Struc";
   case ASTNODETYPE_ARRAYGET:   return "ArrayGet";
   case ASTNODETYPE_MEMBERGET:  return "MemberGet";
+  case ASTNODETYPE_SUBTYPEBLD: return "SubtypeBld";
   case ASTNODETYPE_SELFGET:    return "SelfGet";
   case ASTNODETYPE_TYPEDEF:    return "TypeDef";
   default:                     return "UnknownNode";
@@ -536,6 +540,19 @@ ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
                                   BoxMem_Strndup(member, member_len) :
                                   BoxMem_Strdup(member);
   node->finaliser = ASTNodeMemberGet_Finaliser;
+  return node;
+}
+
+static void ASTNodeSubtype_Build_Finaliser(ASTNode *node) {
+  assert(node->type == ASTNODETYPE_SUBTYPEBLD);
+  BoxMem_Free(node->attr.subtype_bld.subtype);
+}
+
+ASTNode *ASTNodeSubtype_Build(ASTNode *parent, const char *subtype) {
+  ASTNode *node = ASTNode_New(ASTNODETYPE_SUBTYPEBLD);
+  node->attr.subtype_bld.parent = parent;
+  node->attr.subtype_bld.subtype = BoxMem_Strdup(subtype);
+  node->finaliser = ASTNodeSubtype_Build_Finaliser;
   return node;
 }
 

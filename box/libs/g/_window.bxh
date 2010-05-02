@@ -10,35 +10,35 @@ Str@Window "window_str" ?
 Point@Window "window_size" ?
 // Color@&Window ? "window_color"
 // Gradient@&Window ? "window_gradient"
-// Style@&Window ? "window_style"
-// Window@@Window ? "window_window"
-// 
-// Window.Save = Void
-// ([)@Window.Save ? "window_save_begin"
-// (])@Window.Save ? "window_save_end"
-// Str@Window.Save ? "window_save_str"
-// Window@Window.Save ? "window_save_window"
-// 
-// Window.Hot = Point
+// Style@&Window "window_style"
+// Window@@Window "window_window"
+
+Window.Save = Void
+([)@Window.Save "window_save_begin" ?
+(])@Window.Save "window_save_end" ?
+Str@Window.Save "window_save_str" ?
+Window@Window.Save "window_save_window" ?
+
+Window.Hot = Point
 // ([)@Window.Hot ? "window_hot_begin"
 // Point@Window.Hot ? "window_hot_point"
 // Str@Window.Hot ? "window_hot_string"
 // PointList@Window.Hot ? "window_hot_pointlist"
 // (])@Window.Hot ? "window_hot_end"
-// 
-// Window.Res = Void
+
+Window.Res = Void
 // Real@Window.Res ? "window_res_real"
 // Point@Window.Res ? "window_res_point"
-// 
-// Window.Origin = Void
+
+Window.Origin = Void
 // Point@Window.Origin ? "window_origin_point"
-// 
-// Window.File = Void
+
+Window.File = Void
 // Str@Window.File ? "window_file_string"
-// 
-// Window.Show = Void
+
+Window.Show = Void
 // Point@&Window.Show ? "window_show_point"
-// 
-// // Teach BBox how to deal with Window
+
+// Teach BBox how to deal with Window
 // Window@&BBox ? "window_bbox"
 

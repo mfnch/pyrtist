@@ -337,6 +337,7 @@ static void My_Compile_UnOp(BoxCmp *c, ASTNode *n);
 static void My_Compile_BinOp(BoxCmp *c, ASTNode *n);
 static void My_Compile_Struc(BoxCmp *c, ASTNode *n);
 static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n);
+static void My_Compile_SubtypeBld(BoxCmp *c, ASTNode *n);
 static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n);
 static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n);
 static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n);
@@ -380,6 +381,8 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_Struc(c, node); break;
   case ASTNODETYPE_MEMBERGET:
     My_Compile_MemberGet(c, node); break;
+  case ASTNODETYPE_SUBTYPEBLD:
+    My_Compile_SubtypeBld(c, node); break;
   case ASTNODETYPE_SELFGET:
     My_Compile_SelfGet(c, node); break;
   case ASTNODETYPE_PROCDEF:
@@ -827,6 +830,24 @@ static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
   BoxCmp_Push_Value(c, v_memb);
 }
 
+static void My_Compile_SubtypeBld(BoxCmp *c, ASTNode *n) {
+  Value *v_parent, *v_result = NULL;
+
+  assert(n->type == ASTNODETYPE_SUBTYPEBLD);
+
+  My_Compile_Any(c, n->attr.subtype_bld.parent);
+  if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
+    return;
+
+  v_parent = BoxCmp_Pop_Value(c);
+  if (Value_Want_Value(v_parent))
+    v_result = Value_Subtype_Build(v_parent, n->attr.subtype_bld.subtype);
+  else
+    Value_Unlink(v_parent);
+
+  BoxCmp_Push_Value(c, v_result);
+}
+
 static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
   Value *v_self = NULL;
   const char *n_self = NULL;
@@ -1055,7 +1076,7 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
 
       if (TS_Is_Subtype(ts, t)) {
         if (TS_Subtype_Is_Registered(ts, t)) {
-          BoxType ot = TS_Subtype_Get_Child_Type(ts, t);
+          BoxType ot = TS_Subtype_Get_Child(ts, t);
           if (TS_Compare(ts, ot, v_type->type) == TS_TYPES_UNMATCH)
             MSG_ERROR("Inconsistent redefinition of type '%~s': was '%~s' "
                       "and is now '%~s'", TS_Name_Get(ts, v_name->type),

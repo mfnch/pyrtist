@@ -275,12 +275,12 @@ Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num);
 BoxType TS_Subtype_New(TS *ts, Type parent_type, const char *child_name);
 
 /** Get the parent type of the given subtype */
-BoxType TS_Subtype_Get_Parent_Type(TS *ts, Type st);
+BoxType TS_Subtype_Get_Parent(TS *ts, Type st);
 
 /** Get the child type of the given subtype (return BOXTYPE_NONE, if the
  * subtype has not been yet registered)
  */
-BoxType TS_Subtype_Get_Child_Type(TS *ts, Type st);
+BoxType TS_Subtype_Get_Child(TS *ts, Type st);
 
 /**< Return whether the subtype is already registered */
 int TS_Subtype_Is_Registered(TS *ts, Type st);
@@ -338,12 +338,6 @@ void TS_Enum_Begin(TS *ts, Type *enumeration);
 
 /** Add a member to an enumeration type defined with TS_Enum_Begin. */
 void TS_Enum_Add(TS *ts, Type enumeration, Type member);
-
-/** Get the child type of a subtype. */
-void TS_Subtype_Get_Child(TS *ts, Type *child, Type subtype);
-
-/** Get the parent type of a subtype. */
-void TS_Subtype_Get_Parent(TS *ts, Type *parent, Type subtype);
 
 Task TS_Default_Value(TS *ts, Type *dv_t, Type t, Data *dv);
 
