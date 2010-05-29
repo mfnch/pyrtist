@@ -27,18 +27,18 @@ Window.Hot = Point
 // (])@Window.Hot ? "window_hot_end"
 
 Window.Res = Void
-// Real@Window.Res ? "window_res_real"
-// Point@Window.Res ? "window_res_point"
+Real@Window.Res "window_res_real" ?
+Point@Window.Res "window_res_point" ?
 
 Window.Origin = Void
-// Point@Window.Origin ? "window_origin_point"
+Point@Window.Origin "window_origin_point" ?
 
 Window.File = Void
-// Str@Window.File ? "window_file_string"
+Str@Window.File "window_file_string" ?
 
 Window.Show = Void
-// Point@&Window.Show ? "window_show_point"
+Point@Window.Show "window_show_point" ?
 
 // Teach BBox how to deal with Window
-// Window@&BBox ? "window_bbox"
+Window@BBox "window_bbox" ?
 

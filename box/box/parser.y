@@ -45,12 +45,6 @@ void yyerror(char *s);
 
 ParserAttr parser_attr;
 
-
-static Task Proc_Def_Open(Expr *child_type, Int kind, Expr *parent_type);
-static Task Proc_Def_Close(void);
-static Task Declare_Proc(Expr *child_type, Int kind, Expr *parent_type,
-                         Name *name);
-
 /* Numero della linea che e' in fase di lettura dal tokenizer */
 extern UInt tok_linenum;
 
@@ -223,31 +217,6 @@ detached.type:
 
 type:
   array.type                { $$ = $1; }
-;
-
-asgn.type:
-  detached.type             { $$ = $1; }
-| name.type '=' asgn.type   { if ( Prs_Rule_Typed_Eq_Typed(& $$, & $1, & $3) ) MY_ERR }
-| expr '=' asgn.type        { if (Prs_Rule_Valued_Eq_Typed(& $$, & $1, & $3) ) MY_ERR }
-| unregistered.subtype '=' asgn.type          {DO(Register_Subtype(& $$, & $1, & $3));}
- ;
-
-/******************************************************************************
- *               DEFINIZIONE DELL'ESPRESSIONE COME ISTRUZIONE                 *
- ******************************************************************************/
-child:
-   type                 {$$ = $1;}
-|  TOK_PROC             {Expr_New_Type(& $$, $1);}
-;
-
-parent:
-   type                 {$$ = $1;}
- | registered.subtype   {$$ = $1;}
-;
-
-parent.opt:
-                        {}
- | parent               {$$ = $1;}
 ;
 
 #endif

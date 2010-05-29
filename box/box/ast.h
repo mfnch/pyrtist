@@ -235,7 +235,8 @@ typedef struct {
 
 /** Node for $, $$, $$$, etc. */
 typedef struct {
-  BoxInt   level;
+  ASTSelfLevel
+           level;
 } ASTNodeSelfGet;
 
 /** Node for procedure definition/declaration */

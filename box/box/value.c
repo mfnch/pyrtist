@@ -72,11 +72,8 @@ static void My_Value_Finalize(Value *v) {
                       v->value.cont.type, v->value.cont.value.reg);
       }
 
-      if (v->attr.own_reference) {
-        assert(v->value.cont.type == BOXTYPE_OBJ);
-        assert(v->value.cont.categ == BOXCONTCATEG_LREG); /* for now we don't support the general case... */
-        CmpProc_Assemble(v->proc, BOXGOP_MUNLN, 1, & v->value.cont);
-      }
+      if (v->attr.own_reference)
+        Value_Emit_Unlink(v);
       return;
 
     case BOXCONTCATEG_PTR:
@@ -208,6 +205,13 @@ int Value_Want_Has_Type(Value *v) {
     }
     return 0;
   }
+}
+
+/** Whether we can change the content of the register associated with v
+ * (if any).
+ */
+static int My_Value_Can_Reuse_Reg(Value *v) {
+  return v->num_ref == 1 && v->attr.own_register;
 }
 
 void Value_Setup_As_Weak_Copy(Value *v_copy, Value *v) {
@@ -431,6 +435,28 @@ void Value_Emit_Allocate(Value *v) {
   }
 }
 
+/* Doesn't unlink v, for coherence with Value_Emit_Unlink. */
+void Value_Emit_Link(Value *v) {
+  BoxType cont_type = v->value.cont.type;
+  if (cont_type == BOXTYPE_OBJ || cont_type == BOXTYPE_PTR) {
+    assert(v->value.cont.categ == BOXCONTCATEG_LREG);
+    /* ^^^ for now we don't support the general case... */
+    CmpProc_Assemble(v->proc, BOXGOP_MLN, 1, & v->value.cont);
+  }
+}
+
+/* Doesn't unlink v, since the function is called by Value_Unlink in the
+ * finalisation.
+ */
+void Value_Emit_Unlink(Value *v) {
+  BoxType cont_type = v->value.cont.type;
+  if (cont_type == BOXTYPE_OBJ || cont_type == BOXTYPE_PTR) {
+    assert(v->value.cont.categ == BOXCONTCATEG_LREG);
+    /* ^^^ for now we don't support the general case... */
+    CmpProc_Assemble(v->proc, BOXGOP_MUNLN, 1, & v->value.cont);
+  }
+}
+
 Value *Value_To_Temp(Value *v) {
   ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
   BoxCmp *c = v->proc->cmp;
@@ -646,7 +672,23 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType new_type) {
       return v_ptr;
 
     case BOXCONTCATEG_PTR:
-      /* not implemented */
+      if (My_Value_Can_Reuse_Reg(v_ptr)) {
+        MSG_FATAL("Value_Cast_From_Ptr: cannot reuse register, yet!");
+        /* not implemented */
+
+      } else {
+        BoxCont v_ptr_cont = v_ptr->value.cont;
+        int own_reference = v_ptr->attr.own_reference;
+        v_ptr->attr.own_reference = 0;
+        Value_Unlink(v_ptr);
+        v_ptr = Value_New(c->cur_proc);
+        Value_Setup_As_Temp(v_ptr, BOXTYPE_PTR);
+        v_ptr->attr.own_reference = own_reference;
+        CmpProc_Assemble(c->cur_proc, BOXGOP_MOV, 2,
+                         & v_ptr->value.cont, & v_ptr_cont);
+        assert(v_ptr->value.cont.categ == BOXCONTCATEG_LREG);
+        return Value_Cast_From_Ptr(v_ptr, new_type);
+      }
 
     default:
       MSG_FATAL("Value_Cast_From_Ptr: unexpected container category!");
@@ -1131,7 +1173,6 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
   TS *ts = & c->ts;
   BoxType found_subtype, t_subtype_child;
   Value *v_subtype = NULL;
-  int have_non_void_parent = 1;
 
   /* If the method cannot be found, it could be a method of the child
    * of the type. We then resolve the type to its child and try again.
@@ -1183,18 +1224,75 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
   }
  
   /* We now create the value for the parent Pointer in the subtype */
-  if (have_non_void_parent) {
+  if (!TS_Is_Empty(ts, v_parent->type)) {
     Value *v_subtype_parent = Value_New(c->cur_proc),
           *v_ptr = Value_New(c->cur_proc);
     Value_Setup_As_Weak_Copy(v_ptr, v_subtype);
-    v_ptr = Value_Get_Subfield(v_ptr, /* offset */ sizeof(BoxPtr), BOXTYPE_PTR);
+    v_ptr = Value_Get_Subfield(v_ptr, /*offset*/ sizeof(BoxPtr), BOXTYPE_PTR);
     Value_Setup_As_Weak_Copy(v_subtype_parent, v_parent);
     v_subtype_parent = Value_Cast_To_Ptr(v_subtype_parent);
     (void) Value_Move_Content(v_ptr, v_subtype_parent);
     Value_Unlink(v_ptr);
-  }
-  
-  Value_Unlink(v_parent);
+    Value_Emit_Link(v_parent); /* The subtype gets a reference
+                                  to its parent */
+  } else
+    Value_Unlink(v_parent);
+
   return v_subtype;
 }
 
+Value *Value_Subtype_Get_Child(Value *v_subtype) {
+  Value_Unlink(v_subtype);
+  return NULL;
+}
+
+Value *Value_Subtype_Get_Parent(Value *v_subtype) {
+  BoxCmp *c = v_subtype->proc->cmp;
+  TS *ts = & c->ts;
+  Value *v_parent = NULL;
+
+  if (Value_Want_Value(v_subtype)) {
+    BoxType t_subtype = v_subtype->type;
+    if (TS_Is_Subtype(ts, t_subtype)) {
+      BoxType t_parent = TS_Subtype_Get_Parent(ts, t_subtype);
+      if (TS_Is_Empty(ts, t_parent)) {
+        MSG_FATAL("Value_Subtype_Get_Child: not implemented, yet!");
+
+      } else {
+        v_parent = Value_New(c->cur_proc);
+        Value_Setup_As_Weak_Copy(v_parent, v_subtype);
+        v_parent = Value_Get_Subfield(v_parent, /*offset*/ sizeof(BoxPtr),
+                                      BOXTYPE_PTR);
+        v_parent = Value_Cast_From_Ptr(v_parent, t_parent);
+      }
+
+    } else {
+      MSG_ERROR("Cannot get the parent of '%~s': this is not a subtype!",
+                TS_Name_Get(ts, t_subtype));
+    }
+  }
+
+  Value_Unlink(v_subtype);
+  return v_parent;
+
+#if 0
+  Type parent_type;
+  int not_void_parent;
+  if (not_void_parent) {
+    Expr_Container_New(parent, CONT_OBJ, CONTAINER_LREG_AUTO);
+    Expr_Container_Move(parent, subtype);
+    Expr_Cast(parent, parent_type);
+    /* Need to make this a target, since child was obtained originally
+     * by invoking Expr_Container_New with CONTAINER_LREG_AUTO and hence
+     * is not considered a target, yet.
+     */
+    Expr_Attr_Set(parent, EXPR_ATTR_TARGET, EXPR_ATTR_TARGET);
+    return Success;
+
+  } else {
+    Expr_New_Value(parent, parent_type);
+    return Success;
+  }
+#endif
+
+}

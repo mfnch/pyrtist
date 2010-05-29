@@ -169,6 +169,18 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc);
 /** Emit the VM code to generate the object 'v' is pointing to. */
 void Value_Emit_Allocate(Value *v);
 
+/** Emit a link instruction to the Value 'v' (which is supposed to be
+ * an object or a pointer).
+ * REFERENCES: v: -1;
+ */
+void Value_Emit_Link(Value *v);
+
+/** Emit an unlink instruction to the Value 'v' (which is supposed to be
+ * an object or a pointer).
+ * REFERENCES: v: -1;
+ */
+void Value_Emit_Unlink(Value *v);
+
 /** Return a new temporary Value created from the given Value 'v'.
  * NOTE: return a new value created with Value_New() or a new reference
  *  to 'v', if it can be recycled (has just one reference).
@@ -329,5 +341,15 @@ void Value_Setup_As_Child(Value *v, BoxType child_t);
  * REFERENCES: return: new, v_parent: -1;
  */
 Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name);
+
+/** Return the child of the subtype 'v_subtype'.
+ * REFERENCES: return: new, v_subtype: -1;
+ */
+Value *Value_Subtype_Get_Child(Value *v_subtype);
+
+/** Return the parent of the subtype 'v_parent'.
+ * REFERENCES: return: new, v_subtype: -1;
+ */
+Value *Value_Subtype_Get_Parent(Value *v_subtype);
 
 #endif /* _VALUE_H */

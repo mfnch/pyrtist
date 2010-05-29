@@ -161,7 +161,7 @@ Type TS_Get_Core_Type(TS *ts, Type t);
 
 /** Get the fundamental type (Char, Int, ..., Ptr) used to store objects of
  * the given type. Returns BOXTYPE_INT for integers, BOXTYPE_REAL for reals,
- * etc. BOXTYPE_PTR is returned for objects which are not Char, Int, Real,
+ * etc. BOXTYPE_OBJ is returned for objects which are not Char, Int, Real,
  * Point, Ptr.
  */
 BoxType TS_Get_Cont_Type(TS *ts, BoxType t);

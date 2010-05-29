@@ -851,10 +851,12 @@ static void My_Compile_SubtypeBld(BoxCmp *c, ASTNode *n) {
 static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
   Value *v_self = NULL;
   const char *n_self = NULL;
+  ASTSelfLevel self_level = n->attr.self_get.level;
+  int i;
 
   assert(n->type == ASTNODETYPE_SELFGET);
 
-  switch (n->attr.self_get.level) {
+  switch (self_level) {
   case 1:
     n_self = "$";
     v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$");
@@ -866,16 +868,14 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
     break;
 
   default:
-    MSG_FATAL("My_Compile_SelfGet: not implemented, yet.");
-    assert(0);
+    n_self = "$$, $3, ...";
+    v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$");
+    for (i = 2; i < self_level && v_self != NULL; i++)
+      v_self = Value_Subtype_Get_Parent(v_self);
   }
 
-  if (v_self == NULL) {
-    if (n_self != NULL)
-      MSG_ERROR("%s is not defined in the current scope.", n_self);
-
-    else
-      MSG_ERROR("Unexpected error in My_Compile_SelfGet!");
+  if (v_self == NULL) {    
+    MSG_ERROR("%s not defined in the current scope.", n_self);
 
   } else {
     /* Return only a weak copy */

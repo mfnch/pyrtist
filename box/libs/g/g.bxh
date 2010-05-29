@@ -9,9 +9,9 @@ Deg = Real, Real@Deg[$$ = $*0.01745329251994329576]
 Dpi = Real, Real@Dpi[$$ = $/25.4]
 
 //include "_matrix"
-//include "_bbox"
+include "_bbox"
 //include "_pointlist"
-//include "_color"
+include "_color"
 //include "_style"
 //include "_gradient"
 include "_window"
