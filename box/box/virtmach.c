@@ -776,7 +776,7 @@ void BoxVM_Set_Attr(BoxVM *vm, BoxVMAttr mask, BoxVMAttr value) {
  * prog e' il puntatore all'inizio del codice, dim e' la dimensione del codice
  * da tradurre (espresso in "numero di VMByteX4").
  */
-Task BoxVM_Disassemble(VMProgram *vmp, FILE *output, void *prog, UInt dim) {
+Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
   register VMByteX4 *i_pos = (VMByteX4 *) prog;
   VMStatus vm;
   UInt pos, nargs;

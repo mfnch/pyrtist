@@ -184,6 +184,7 @@ int TS_Structure_Is_Fast(TS *ts, Type structure);
 #define TS_Is_Member(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_MEMBER)
 #define TS_Is_Subtype(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_SUBTYPE)
 #define TS_Is_Structure(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_STRUCTURE)
+#define TS_Is_Empty(ts, t) (TS_Get_Size((ts), (t)) == 0)
 
 Int TS_Align(TS *ts, Int address);
 

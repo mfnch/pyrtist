@@ -48,6 +48,7 @@
 #include "types.h"
 #include "defaults.h"
 #include "messages.h"
+#include "str.h"
 #include "array.h"
 #include "virtmach.h"
 #include "vmproc.h"
@@ -349,7 +350,7 @@ static Task Stage_Write_Asm(UInt flags) {
                  "on the standart output.");
     } else {
       MSG_ADVICE("Writing the assembly code for the compiled program "
-                 "into \"%s\"!", file_output );
+                 "into \"%s\"!", file_output);
       out = fopen(file_output, "w");
       if (out == (FILE *) NULL) {
         MSG_ERROR("Cannot open '%s' for writing: %s",
@@ -359,12 +360,18 @@ static Task Stage_Write_Asm(UInt flags) {
       close_file = 1;
     }
 
-    BoxVM_Set_Attr(target_vm, BOXVM_ATTR_DASM_WITH_HEX,
-                   BOXVM_ATTR_DASM_WITH_HEX);
+    /* If the file name ends with'.bvmx' then we also include the hex '*/
+    if (Box_CStr_Ends_With(file_output, ".bvmx")) {
+      BoxVM_Set_Attr(target_vm, BOXVM_ATTR_DASM_WITH_HEX,
+                     BOXVM_ATTR_DASM_WITH_HEX);
+    }
+
     TASK( VM_Proc_Disassemble_All(target_vm, out) );
 
-    if (close_file) (void) fclose(out);
+    if (close_file)
+      (void) fclose(out);
   }
+
   return Success;
 }
 

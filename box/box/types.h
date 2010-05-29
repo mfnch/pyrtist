@@ -124,11 +124,11 @@ typedef BoxObj BoxSubtype[2];
 
 /** in this macro 'subtype_ptr' should have type 'Subtype *' */
 #  define BOXSUBTYPE_PARENT_PTR(subtype_ptr, parent_type) \
-  ((parent_type *) ((*(subtype_ptr))[0].ptr))
+  ((parent_type *) ((*(subtype_ptr))[1].ptr))
 
 /** in this macro 'subtype_ptr' should have type 'Subtype *' */
 #  define BOXSUBTYPE_CHILD_PTR(subtype_ptr, child_type) \
-  (( child_type *) ((*(subtype_ptr))[1].ptr))
+  (( child_type *) ((*(subtype_ptr))[0].ptr))
 
 typedef struct {
   BoxInt length;

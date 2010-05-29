@@ -586,3 +586,13 @@ void *BoxMem_Dup_Larger(const void *src, Int src_size, Int dest_size) {
   return copy;
 }
 
+int Box_CStr_Ends_With(const char *src, const char *end) {
+  size_t l_src = strlen(src), l_end = strlen(end);
+  if (l_src < l_end)
+    return 0;
+
+  else {
+    const char *src_end = src + (l_src - l_end);
+    return strcmp(src_end, end) == 0;
+  }
+}

@@ -220,7 +220,7 @@ BoxType TS_Get_Cont_Type(TS *ts, BoxType t) {
   BoxType r =
     TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES);
 
-  if (TS_Get_Size(ts, r) == 0)
+  if (TS_Is_Empty(ts, r))
     return BOXTYPE_VOID;
 
   else

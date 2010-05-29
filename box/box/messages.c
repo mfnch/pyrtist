@@ -76,7 +76,7 @@ void Msg_Line_Set(Int line_number) {
 }
 
 static void default_fatal_handler(void) {
-  assert(0); /* Useful for debugging! */
+  /* assert(0); Useful for debugging! */
   abort();
   exit(EXIT_FAILURE);
 }

@@ -664,15 +664,42 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType new_type) {
 
 Value *Value_Cast_To_Ptr(Value *v) {
   BoxCmp *c = v->proc->cmp;
-  BoxCont v_cont = v->value.cont;
-  printf("num_refs = %d\n", v->num_ref);
-  Value *v_ptr = Value_Recycle(v);
-  BoxGOp op = (v_cont.type == BOXCONTTYPE_OBJ
-               && v_cont.categ != BOXCONTCATEG_PTR) ?
-              BOXGOP_MOV : BOXGOP_LEA;
-  Value_Setup_As_Temp(v_ptr, BOXTYPE_PTR);
-  CmpProc_Assemble(c->cur_proc, op, 2, & v_ptr->value.cont, & v_cont);
-  return v_ptr;
+
+  if (v->value.cont.type == BOXCONTTYPE_OBJ
+      && v->value.cont.categ != BOXCONTCATEG_PTR) {
+    /* This is the case where we already have the pointer to the object
+     * stored inside a register. We then have two cases:
+     *  - such register is already in use. we cannot just change the
+     *    value into a Ptr value. We rather have to move the pointer
+     *    to a new register.
+     *  - the register is fully owned by us, we can recycle it!
+     */
+    assert(v->value.cont.categ == BOXCONTCATEG_LREG);
+    if (v->num_ref == 1) {
+      /* We own the sole reference to v, which is a temporary quantity:
+       * in other words we can do whathever we want with it!
+       */
+      v->type = BOXTYPE_PTR;
+      v->value.cont.type = BOXCONTTYPE_PTR;
+      return v;
+
+    } else {
+      MSG_FATAL("Value_Cast_To_Ptr: not implemented, yet!");
+      return v;
+    }  
+
+  } else {
+    /* We have to get the pointer with a lea instruction. */
+    BoxCont v_cont = v->value.cont;
+    int own_reference = v->attr.own_reference;
+    v->attr.own_reference = 0;
+    Value_Unlink(v);
+    v = Value_New(c->cur_proc);
+    Value_Setup_As_Temp(v, BOXTYPE_PTR);
+    v->attr.own_reference = own_reference;
+    CmpProc_Assemble(c->cur_proc, BOXGOP_LEA, 2, & v->value.cont, & v_cont);
+    return v;
+  }
 }
 
 /**
@@ -1054,7 +1081,7 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
 void My_Setup_From_Gro(Value *v, BoxType t, BoxInt gro_num) {
   BoxCmp *c = v->proc->cmp;
   TS *ts = & c->ts;
-  if (TS_Get_Size(ts, t) > 0) {
+  if (!TS_Is_Empty(ts, t)) {
     Value v_ptr;
     ValContainer vc = {VALCONTTYPE_GREG, gro_num, 0};
     Value_Init(& v_ptr, c->cur_proc);
@@ -1067,7 +1094,7 @@ void My_Setup_From_Gro(Value *v, BoxType t, BoxInt gro_num) {
     v = Value_Cast_From_Ptr(v, t);
     v->kind = VALUEKIND_TARGET;
 
-  } else { /* TS_get_Size(ts, parent_ts) == 0 */
+  } else {
     Value_Setup_As_Temp(v, t);
     v->kind = VALUEKIND_TARGET;
   }
@@ -1103,7 +1130,8 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
   BoxCmp *c = v_parent->proc->cmp;
   TS *ts = & c->ts;
   BoxType found_subtype, t_subtype_child;
-  Value *v_subtype = NULL, *v_subtype_child = NULL, *v_ptr = NULL;
+  Value *v_subtype = NULL;
+  int have_non_void_parent = 1;
 
   /* If the method cannot be found, it could be a method of the child
    * of the type. We then resolve the type to its child and try again.
@@ -1131,31 +1159,42 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
 
   assert(found_subtype != TS_TYPE_NONE);
 
-  /* First we create the child and we get a pointer to it */
-  t_subtype_child = TS_Subtype_Get_Child(ts, found_subtype);
-  v_subtype_child = Value_New(c->cur_proc);
-  Value_Setup_As_Temp(v_subtype_child, t_subtype_child);
-  v_subtype_child = Value_Cast_To_Ptr(v_subtype_child);
-
-  /* Then we create the subtype object (just two pointers to parent
-   * and child)
-   */
+  /* First, we create the subtype object (a pair of pointers) */
   v_subtype = Value_New(c->cur_proc);
   Value_Setup_As_Temp(v_subtype, found_subtype);
 
-  /* We now create a Value corresponding to the first pointer (the child) */
-  v_ptr = Value_New(c->cur_proc);
-  Value_Setup_As_Weak_Copy(v_ptr, v_subtype);
-  v_ptr = Value_Get_Subfield(v_ptr, /* offset */ 0, BOXTYPE_PTR);
+  t_subtype_child = TS_Subtype_Get_Child(ts, found_subtype);
+  if (!TS_Is_Empty(ts, t_subtype_child)) {
+    Value *v_subtype_child = Value_New(c->cur_proc),
+          *v_ptr = Value_New(c->cur_proc);
+    /* Next, we create the child and get a pointer to it */
+    Value_Setup_As_Temp(v_subtype_child, t_subtype_child);
+    v_subtype_child = Value_Cast_To_Ptr(v_subtype_child);
+    v_subtype_child->attr.own_reference = 0;
+    /* ^^^ we pass the ownership responsibility to the subtype */
 
-  /* Now we transfer the child pointer to the subtype */
-  (void) Value_Move_Content(v_ptr, v_subtype_child);
-
+    /* We now create a Value corresponding to the first pointer (the child)
+     * and transfer the child pointer to the subtype.
+     */
+    Value_Setup_As_Weak_Copy(v_ptr, v_subtype);
+    v_ptr = Value_Get_Subfield(v_ptr, /* offset */ 0, BOXTYPE_PTR);
+    (void) Value_Move_Content(v_ptr, v_subtype_child);
+    Value_Unlink(v_ptr);
+  }
+ 
+  /* We now create the value for the parent Pointer in the subtype */
+  if (have_non_void_parent) {
+    Value *v_subtype_parent = Value_New(c->cur_proc),
+          *v_ptr = Value_New(c->cur_proc);
+    Value_Setup_As_Weak_Copy(v_ptr, v_subtype);
+    v_ptr = Value_Get_Subfield(v_ptr, /* offset */ sizeof(BoxPtr), BOXTYPE_PTR);
+    Value_Setup_As_Weak_Copy(v_subtype_parent, v_parent);
+    v_subtype_parent = Value_Cast_To_Ptr(v_subtype_parent);
+    (void) Value_Move_Content(v_ptr, v_subtype_parent);
+    Value_Unlink(v_ptr);
+  }
   
   Value_Unlink(v_parent);
   return v_subtype;
-
-  
-  MSG_ERROR("My_Compile_SubtypeBld: not implemented, yet.");
-  return NULL;
 }
+

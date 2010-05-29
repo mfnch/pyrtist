@@ -79,6 +79,11 @@ void *BoxMem_Dup(const void *src, unsigned int length);
 /** Similar to BoxMem_Dup, but allocate extra space in the destination */
 void *BoxMem_Dup_Larger(const void *src, Int src_size, Int dest_size);
 
+/** Returns whether the string 'src' ends with 'end'. Both strings are
+ * supposed to be NUL-terminated.
+ */
+int Box_CStr_Ends_With(const char *src, const char *end);
+
 #define Name_Cat_And_Free(nm, nm1, nm2) Name_Cat(nm, nm1, nm2, 1)
 
 #endif

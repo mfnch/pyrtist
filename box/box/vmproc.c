@@ -177,8 +177,7 @@ Task VM_Proc_Disassemble(VMProgram *vmp, FILE *out, UInt proc_num) {
 Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, UInt call_num) {
   VMProcTable *pt = & vmp->proc_table;
   VMProcInstalled *p;
-  char *mod_type;
-  int print_code;
+  char *p_type, *p_name, *p_desc;
 
   if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
     MSG_ERROR("The procedure %d is not installed!", call_num);
@@ -186,29 +185,24 @@ Task VM_Proc_Disassemble_One(VMProgram *vmp, FILE *out, UInt call_num) {
   }
 
   p = (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
-  fprintf(out, "\n----------------------------------------\n");
-  fprintf(out, "Procedure number: "SUInt"\n", (UInt) call_num);
-  if ( p->name != NULL )
-    fprintf(out, "Name: '%s'\n", p->name);
-  else
-    fprintf(out, "Name: (undefined)\n");
 
-  if ( p->desc != NULL )
-    fprintf(out, "Description: '%s'\n", p->desc);
-  else
-    fprintf(out, "Description: (undefined)\n");
+  p_name = (p->name != NULL) ? p->name : "(undef)";
+  p_desc = (p->desc != NULL) ? p->desc : "(undef)";
 
-  print_code = 0;
   switch(p->type) {
-    case VMPROC_IS_VM_CODE: mod_type = "BOX-VM code"; print_code = 0; break;
-    case VMPROC_IS_C_CODE:  mod_type = "external C-function"; break;
-    default:  mod_type = "Broken procedure, Aarrggg..."; break;
+  case VMPROC_IS_VM_CODE: p_type = "VM"; break;
+  case VMPROC_IS_C_CODE:  p_type = "C"; break;
+  default: p_type = "(broken?)"; break;
   }
-  fprintf(out, "Type: %s\n", mod_type);
+
+  fprintf(out, "%s procedure "SUInt"; name=%s; desc=%s\n",
+          p_type, (UInt) call_num, p_name, p_desc);
 
   if (p->type == VMPROC_IS_VM_CODE) {
-/*   if ( print_code ) */
-    return VM_Proc_Disassemble(vmp, out, p->code.proc_num);
+    fprintf(out, "\n");
+    Task t = VM_Proc_Disassemble(vmp, out, p->code.proc_num);
+    fprintf(out, "----------------------------------------\n");
+    return t;
   }
   return Success;
 }
