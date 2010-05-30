@@ -228,13 +228,14 @@ void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
                                 Value *parent, Value *child);
 
 /** Emit the code corresponding to a call to child@parent.
- * REFERENCES: parent: 0, child: 0;
+ * REFERENCES: parent: 0, child: -1;
  */
 BoxTask Value_Emit_Call(Value *parent, Value *child);
 
 /** Try to call the procedure for the given parent with the given child.
  * If the procedure is not found, than it is blacklisted, so that it won't
  * be possible to define it later.
+ * REFERENCES: parent: 0, child: -1;
  */
 BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child);
 
@@ -321,7 +322,9 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb);
  */
 BoxTask Value_Move_Content(Value *dest, Value *src);
 
-/** Expand the value 'v' in agreement with the provided expansion type. */
+/** Expand the value 'v' in agreement with the provided expansion type.
+ * REFERENCES: return: new, src: -1;
+ */
 Value *Value_Expand(Value *v, BoxType expansion_type);
 
 /**
@@ -351,5 +354,10 @@ Value *Value_Subtype_Get_Child(Value *v_subtype);
  * REFERENCES: return: new, v_subtype: -1;
  */
 Value *Value_Subtype_Get_Parent(Value *v_subtype);
+
+/** If 'v' is a subtype, returns its child, otherwise return 'v'.
+ * REFERENCES: return: new, v: -1;
+ */
+Value *Value_Expand_Subtype(Value *v);
 
 #endif /* _VALUE_H */

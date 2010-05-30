@@ -22,10 +22,7 @@ test = tests.new_test(title="Testing Obj.Obj")
 test.body = """
   R = (Real x, y, z)
   R.Get_zy = Point
-  ([)@R.Get_zy[
-    Print[$$$.z]
-    //$$.x = $$$.y, $$.y = $$$.z
-  ]
+  ([)@R.Get_zy[$$.x = $$$.y, $$.y = $$$.z]
 
   r = R[] //.x=1, .y=2, .z=3]
   r.x = 1, r.y = 2, r.z = 3 // temp fix

@@ -547,6 +547,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
 
   /* Invoke the opening procedure */
   if (box->attr.box.parent != NULL) {
+    Value_Link(& c->value.begin);
     (void) Value_Emit_Call_Or_Blacklist(parent, & c->value.begin);
   }
 
@@ -572,13 +573,12 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
                       TS_Name_Get(& c->ts, parent->type));
         }
       }
-
-      Value_Unlink(stmt_val); /* XXX */
     }
   }
 
   /* Invoke the closing procedure */
   if (box->attr.box.parent != NULL) {
+    Value_Link(& c->value.end);
     (void) Value_Emit_Call_Or_Blacklist(parent, & c->value.end);
   }
 

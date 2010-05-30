@@ -290,8 +290,6 @@ void Value_Setup_As_String(Value *v_str, const char *str) {
     MSG_FATAL("Value_Setup_As_String: Failure while emitting string.");
     assert(0);
   }
-
-  Value_Unlink(& v_str_data);
 }
 
 /* Create a new empty container. */
@@ -424,6 +422,7 @@ void Value_Emit_Allocate(Value *v) {
       v->attr.own_reference = 1;
 
       /* Now let's invoke the creator */
+      Value_Link(& c->value.create);
       (void) Value_Emit_Call_Or_Blacklist(v, & c->value.create);
     }
     return;
@@ -597,6 +596,7 @@ void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
   CmpProc_Assemble_Call(c->cur_proc, sym_id);
 }
 
+/* REFERENCES: parent: 0, child: -1; */
 static BoxTask My_Emit_Call(Value *parent, Value *child, TSSearchMode mode) {
   BoxCmp *c = parent->proc->cmp;
   TS *ts = & c->ts;
@@ -606,9 +606,13 @@ static BoxTask My_Emit_Call(Value *parent, Value *child, TSSearchMode mode) {
   assert(parent != NULL && child != NULL);
   assert(c == child->proc->cmp);
 
-  mode |= TSSEARCHMODE_INHERITED;
+  /* We expand the child, since things like X.Y@Z are not allowed: in other
+   * words, subtypes can never be children of any type.
+   */
+  child = Value_Expand_Subtype(child);
 
   /* Now we search for the procedure associated with *child */
+  mode |= TSSEARCHMODE_INHERITED;
   found_procedure = TS_Procedure_Search(ts, & expansion_for_child,
                                         child->type, parent->type, mode);
 
@@ -616,12 +620,13 @@ static BoxTask My_Emit_Call(Value *parent, Value *child, TSSearchMode mode) {
     /* If the procedure is not there we try to auto-generate it */
     expansion_for_child = BOXTYPE_NONE;
     found_procedure = Auto_Generate_Procedure(c, child->type, parent->type);
-    if (found_procedure == BOXTYPE_NONE)
+    if (found_procedure == BOXTYPE_NONE) {
+      Value_Unlink(child);
       return BOXTASK_FAILURE;
+    }
   }
 
   if (expansion_for_child != BOXTYPE_NONE) {
-    Value_Link(child); /* XXX */
     child = Value_Expand(child, expansion_for_child);
     if (child == NULL)
       return BOXTASK_ERROR;
@@ -630,6 +635,7 @@ static BoxTask My_Emit_Call(Value *parent, Value *child, TSSearchMode mode) {
   sym_id = TS_Procedure_Get_Sym(ts, found_procedure);
 
   Value_Emit_Call_From_SymID(sym_id, parent, child);
+  Value_Unlink(child);
   return BOXTASK_OK;
 }
 
@@ -866,6 +872,10 @@ static Value *My_Point_Get_Member(Value *v_point, const char *memb) {
 
 Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
   BoxCmp *cmp = v_struc->proc->cmp;
+
+  /* If v_struc is a subtype, then expand it (subtypes do not have members) */
+  v_struc = Value_Expand_Subtype(v_struc);
+
   if (v_struc->value.cont.type == BOXTYPE_POINT)
     return My_Point_Get_Member(v_struc, memb);
   BoxType t_memb = TS_Member_Find(& cmp->ts, v_struc->type, memb);
@@ -945,6 +955,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
     dest = Value_To_Straight_Ptr(dest);
 
     /* First let's destroy the 'dest' obj (it is going to be overwritten) */
+    Value_Link(& c->value.destroy);
     (void) Value_Emit_Call_Or_Blacklist(dest, & c->value.destroy);
 
     /* We try to use the method provided by the user, if possible */
@@ -1150,24 +1161,6 @@ void Value_Setup_As_Child(Value *v, BoxType child_t) {
   return My_Setup_From_Gro(v, child_t, 2);
 }
 
-Value *Value_Subtype_Expand(Value *v_subtype) {
-  MSG_ERROR("Value_Subtype_Expand: not implemented, yet!");
-  Value_Unlink(v_subtype);
-  return NULL;
-
-#if 0
-  Expr child;
-  int ignore = e->is.ignore;
-  if (!e->is.typed) return Success;
-  if (!TS_Is_Subtype(cmp->ts, e->resolved)) return Success;
-  TASK( Expr_Subtype_Get_Child(& child, e) );
-  Cmp_Expr_Destroy_Tmp(e);
-  *e = child;
-  e->is.ignore = ignore;
-  return Success;
-#endif
-}
-
 Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
   BoxCmp *c = v_parent->proc->cmp;
   TS *ts = & c->ts;
@@ -1186,7 +1179,7 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
       break;
 
     if (TS_Is_Subtype(ts, v_parent->type)) {
-      v_parent = Value_Subtype_Expand(v_parent);
+      v_parent = Value_Expand_Subtype(v_parent);
       if (v_parent == NULL)
         return NULL;
 
@@ -1241,58 +1234,71 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
   return v_subtype;
 }
 
-Value *Value_Subtype_Get_Child(Value *v_subtype) {
-  Value_Unlink(v_subtype);
-  return NULL;
-}
-
-Value *Value_Subtype_Get_Parent(Value *v_subtype) {
+static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
   BoxCmp *c = v_subtype->proc->cmp;
   TS *ts = & c->ts;
-  Value *v_parent = NULL;
+  Value *v_ret = NULL;
 
   if (Value_Want_Value(v_subtype)) {
     BoxType t_subtype = v_subtype->type;
     if (TS_Is_Subtype(ts, t_subtype)) {
-      BoxType t_parent = TS_Subtype_Get_Parent(ts, t_subtype);
-      if (TS_Is_Empty(ts, t_parent)) {
+      BoxType t_ret = get_child ? TS_Subtype_Get_Child(ts, t_subtype)
+                                : TS_Subtype_Get_Parent(ts, t_subtype);
+      if (TS_Is_Empty(ts, t_ret)) {
         MSG_FATAL("Value_Subtype_Get_Child: not implemented, yet!");
 
       } else {
-        v_parent = Value_New(c->cur_proc);
-        Value_Setup_As_Weak_Copy(v_parent, v_subtype);
-        v_parent = Value_Get_Subfield(v_parent, /*offset*/ sizeof(BoxPtr),
-                                      BOXTYPE_PTR);
-        v_parent = Value_Cast_From_Ptr(v_parent, t_parent);
+        size_t offset = get_child ? 0 : sizeof(BoxPtr);
+        v_ret = Value_New(c->cur_proc);
+        Value_Setup_As_Weak_Copy(v_ret, v_subtype);
+        v_ret = Value_Get_Subfield(v_ret, offset, BOXTYPE_PTR);
+        v_ret = Value_Cast_From_Ptr(v_ret, t_ret);
       }
 
     } else {
-      MSG_ERROR("Cannot get the parent of '%~s': this is not a subtype!",
-                TS_Name_Get(ts, t_subtype));
+      const char *what = get_child ? "child" : "parent";
+      MSG_ERROR("Cannot get the %s of '%~s': this is not a subtype!",
+                what, TS_Name_Get(ts, t_subtype));
     }
   }
 
   Value_Unlink(v_subtype);
-  return v_parent;
+  return v_ret;
+}
+
+Value *Value_Subtype_Get_Child(Value *v_subtype) {
+  return My_Value_Subtype_Get(v_subtype, 1);
+}
+
+Value *Value_Subtype_Get_Parent(Value *v_subtype) {
+  return My_Value_Subtype_Get(v_subtype, 0);
+}
+
+Value *Value_Expand_Subtype(Value *v) {
+  if (Value_Is_Value(v)) {
+    BoxCmp *c = v->proc->cmp;
+    if (TS_Is_Subtype(& c->ts, v->type))
+      return Value_Subtype_Get_Child(v);
+  }
+
+  return v;
+}
 
 #if 0
-  Type parent_type;
-  int not_void_parent;
-  if (not_void_parent) {
-    Expr_Container_New(parent, CONT_OBJ, CONTAINER_LREG_AUTO);
-    Expr_Container_Move(parent, subtype);
-    Expr_Cast(parent, parent_type);
-    /* Need to make this a target, since child was obtained originally
-     * by invoking Expr_Container_New with CONTAINER_LREG_AUTO and hence
-     * is not considered a target, yet.
-     */
-    Expr_Attr_Set(parent, EXPR_ATTR_TARGET, EXPR_ATTR_TARGET);
-    return Success;
 
-  } else {
-    Expr_New_Value(parent, parent_type);
-    return Success;
-  }
-#endif
+Value *Value_Subtype_Expand(Value *v_subtype) {
+  MSG_ERROR("Value_Subtype_Expand: not implemented, yet!");
+  Value_Unlink(v_subtype);
+  return NULL;
 
+  Expr child;
+  int ignore = e->is.ignore;
+  if (!e->is.typed) return Success;
+  if (!TS_Is_Subtype(cmp->ts, e->resolved)) return Success;
+  TASK( Expr_Subtype_Get_Child(& child, e) );
+  Cmp_Expr_Destroy_Tmp(e);
+  *e = child;
+  e->is.ignore = ignore;
+  return Success;
 }
+#endif
