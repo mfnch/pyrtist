@@ -70,3 +70,32 @@ test.body = """
   Print["answer=", (p2.y, p2.x / 1.25);]
 """
 test.expect(exit_status=0, num_errors=0, num_warnings=0, answer="(-5, 4)")
+
+#----------------------------------------------------------------------------#
+test = tests.new_test(title="Implicit members of structs 1")
+test.body = """
+  X = (Int x, Real y, Point z)
+  r = X[.x = 123, .y=4.56, .z=(7, 8.9)]
+  Print["answer=", r.x; "answer=", r.y; "answer=", r.z;]
+"""
+test.expect(exit_status=0, num_errors=0, num_warnings=0,
+            answer=["123", "4.56", "(7, 8.9)"])
+
+#----------------------------------------------------------------------------#
+test = tests.new_test(title="Implicit members of structs 2")
+test.body = """
+  X = (Int x, (Real u, Point w) uw)
+  r = X[.x = 12, .uw.u=4.5, .uw.w=(7.2, 8.9)]
+  Print["answer=", r.x; "answer=", r.uw.u; "answer=", r.uw.w;]
+"""
+test.expect(exit_status=0, num_errors=0, num_warnings=0,
+            answer=["12", "4.5", "(7.2, 8.9)"])
+
+#----------------------------------------------------------------------------#
+test = tests.new_test(title="Implicit members of point")
+test.body = """
+  p = Point[.x = 12, .y=3.456]
+  Print["answer=", p; "answer=", Point[.x = 7.8, .y=9];]
+"""
+test.expect(exit_status=0, num_errors=0, num_warnings=0,
+            answer=["(12, 3.456)", "(7.8, 9)"])

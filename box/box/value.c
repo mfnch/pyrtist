@@ -508,6 +508,12 @@ Value *Value_To_Temp_Or_Target(Value *v) {
     return Value_To_Temp(v);
 }
 
+Value *Value_Promote_Temp_To_Target(Value *v) {
+  if (v->kind == VALUEKIND_TEMP)
+    v->kind = VALUEKIND_TARGET;
+  return v;
+}
+
 void Value_Set_Ignorable(Value *v, int ignorable) {
   v->attr.ignore = ignorable;
 }
@@ -780,13 +786,18 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
  * REFERENCES: return: new, v_obj: -1;
  */
 Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
-  BoxCont *cont = & v_obj->value.cont;
-
+  BoxCont *cont;
+ 
   if (v_obj->num_ref > 1) {
-    /* Here we cannor re-use the register, we have to copy it to a new one */
-    MSG_FATAL("Value_Get_Subfield: ref count > 1: not implemented, yet!");
-    assert(0);
+    /* Here we cannot re-use the register, we have to copy it to a new one */
+    BoxCmp *c = v_obj->proc->cmp;
+    Value *v_copy = Value_New(c->cur_proc);
+    Value_Setup_As_Weak_Copy(v_copy, v_obj);
+    Value_Unlink(v_obj);
+    v_obj = v_copy;
   }
+
+  cont = & v_obj->value.cont;
 
   switch(cont->categ) {
   case BOXCONTCATEG_GREG:
@@ -1245,7 +1256,8 @@ static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
       BoxType t_ret = get_child ? TS_Subtype_Get_Child(ts, t_subtype)
                                 : TS_Subtype_Get_Parent(ts, t_subtype);
       if (TS_Is_Empty(ts, t_ret)) {
-        MSG_FATAL("Value_Subtype_Get_Child: not implemented, yet!");
+        v_ret = Value_New(c->cur_proc);
+        Value_Setup_As_Temp(v_ret, t_ret);
 
       } else {
         size_t offset = get_child ? 0 : sizeof(BoxPtr);

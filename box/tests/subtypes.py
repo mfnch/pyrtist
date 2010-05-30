@@ -10,9 +10,7 @@ test.body = """
   R.Print = Void
   ([)@R.Print[Print['(', $$$.x, (v=", "), $$$.y, v, $$$.z, ')']]
 
-  r = R[] //.x=1, .y=2, .z=3]
-  r.x = 1, r.y = 2, r.z = 3 // temp fix
-
+  r = R[.x=1, .y=2, .z=3]
   Print["answer=", \ r.Print[];]
 """
 test.expect(exit_status=0, num_errors=0, num_warnings=0, answer="(1, 2, 3)")
@@ -24,9 +22,7 @@ test.body = """
   R.Get_zy = Point
   ([)@R.Get_zy[$$.x = $$$.y, $$.y = $$$.z]
 
-  r = R[] //.x=1, .y=2, .z=3]
-  r.x = 1, r.y = 2, r.z = 3 // temp fix
-
+  r = R[.x=1, .y=2, .z=3]
   Print["answer=", r.Get_zy[];]
 """
 test.expect(exit_status=0, num_errors=0, num_warnings=0, answer="(2, 3)")

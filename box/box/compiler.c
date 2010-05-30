@@ -531,8 +531,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
   if (t_child != BOXTYPE_NONE) {
     Value *v_child = Value_New(c->cur_proc);
     Value_Setup_As_Child(v_child, t_child);
-    Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT,
-                        "$", v_child);
+    Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, "$", v_child);
     Value_Unlink(v_child);
   }
 
@@ -540,8 +539,25 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
   if (t_parent != BOXTYPE_NONE) {
     Value *v_parent = Value_New(c->cur_proc);
     Value_Setup_As_Parent(v_parent, t_parent);
-    Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT,
-                        "$$", v_parent);
+    Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$", v_parent);
+    Value_Unlink(v_parent);
+
+  } else {
+    /* Not a procedure definition: then # represents internally the object
+     * the Box is constructing, so that implicit members can access it.
+     * Like:
+     *   X = (Real a, b)
+     *   x = X[.a = 1.0]
+     * The implicit member is .a and internally it is treated as #.a, even
+     * if such syntax is not available to the user.
+     */
+    Value *v_parent = Value_New(c->cur_proc);
+    Value_Setup_As_Weak_Copy(v_parent, parent);
+    v_parent = Value_Promote_Temp_To_Target(v_parent);
+    /* ^^^ Promote # (the Box object) to a target so that it can be
+     * changed inside the Box
+     */
+    Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, "#", v_parent);
     Value_Unlink(v_parent);
   }
 
@@ -810,11 +826,18 @@ static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
 
   n_struc = n->attr.member_get.struc;
   if (n_struc == NULL) {
-    MSG_FATAL("My_Compile_MemberGet: default members not available, yet!");
-  }
+    v_struc = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "#");
+    if (v_struc == NULL) {
+      MSG_ERROR("Cannot get implicit member '%s'. Default parent is not "
+                "defined in current scope.", n->attr.member_get.member);
+      BoxCmp_Push_Value(c, NULL);
+      return;
+    }
 
-  My_Compile_Any(c, n->attr.member_get.struc);
-  v_struc = BoxCmp_Pop_Value(c);
+  } else {
+    My_Compile_Any(c, n_struc);
+    v_struc = BoxCmp_Pop_Value(c);
+  }
 
   if (Value_Want_Value(v_struc)) {
     BoxType t_struc = v_struc->type;

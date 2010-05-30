@@ -192,6 +192,11 @@ Value *Value_To_Temp(Value *v);
  */
 Value *Value_To_Temp_Or_Target(Value *v);
 
+/** Promote a temporary expression to a target one.
+ * REFERENCES: return: new, v: -1;
+ */
+Value *Value_Promote_Temp_To_Target(Value *v);
+
 /** Set the ignorable flag for the value. */
 void Value_Set_Ignorable(Value *v, int ignorable);
 

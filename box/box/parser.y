@@ -1,6 +1,6 @@
 %{
 /***************************************************************************
- *   Copyright (C) 2006 by Matteo Franchin                                 *
+ *   Copyright (C) 2006-2010 by Matteo Franchin                            *
  *   fnch@libero.it                                                        *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -18,10 +18,6 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-
-/* $Id$ */
-
-/* parser.c - settembre 2002 */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,88 +56,6 @@ static void Sep_Newline(void) {
   Msg_Line_Set(tok_linenum);
 }
 
-static Task Reg_Subtype(Expr *result, Name *parent, Name *child) {
-  Expr parent_expr;
-  Type subtype;
-  TASK( Prs_Name_To_Expr(parent, & parent_expr, 0) );
-  if (!parent_expr.is.typed) {
-    MSG_ERROR("Cannot refer to the subtype '%N' of the undefined type '%N'",
-              child, parent);
-    return Failed;
-  }
-
-  TS_Subtype_Find(cmp->ts, & subtype, parent_expr.type, child);
-  if (subtype == TS_TYPE_NONE) {
-    MSG_ERROR("The type '%N' has not a subtype with name '%N'", parent, child);
-    return Failed;
-  }
-
-  Expr_New_Type(result, subtype);
-  return Success;
-}
-
-static Task Reg_SubSubtype(Expr *result, Expr *reg_parent, Name *child) {
-  Type subtype_type;
-  if (!reg_parent->is.typed) {
-    MSG_ERROR("Cannot refer to the subtype '%N' of the undefined type '%N'",
-              child, reg_parent->value.nm);
-    return Failed;
-  }
-
-  TS_Subtype_Find(cmp->ts, & subtype_type, reg_parent->type, child);
-  if (subtype_type == TS_TYPE_NONE) {
-    MSG_ERROR("The type '%~s' has not a subtype with name '%N'",
-              TS_Name_Get(cmp->ts, reg_parent->type), child);
-    return Failed;
-  }
-
-  Expr_New_Type(result, subtype_type);
-  return Success;
-}
-
-static Task Unreg_Subtype(Expr *result, Name *parent, Name *child) {
-  Expr parent_expr;
-  Type subtype_type;
-  TASK( Prs_Name_To_Expr(parent, & parent_expr, 0) );
-  if (!parent_expr.is.typed) {
-    MSG_ERROR("Cannot refer to the subtype '%N' of the undefined type '%N'",
-              child, parent);
-    return Failed;
-  }
-  TS_Subtype_New(cmp->ts, & subtype_type, parent_expr.type, child);
-  Expr_New_Type(result, subtype_type);
-  return Success;
-}
-
-static Task Unreg_SubSubtype(Expr *result, Expr *reg_parent, Name *child) {
-  Type subtype_type;
-  if (!reg_parent->is.typed) {
-    MSG_ERROR("Cannot refer to the subtype '%N' of the undefined type '%N'",
-              child, reg_parent->value.nm);
-    return Failed;
-  }
-  assert(TS_Is_Subtype(cmp->ts, reg_parent->type));
-  TS_Subtype_New(cmp->ts, & subtype_type, reg_parent->type, child);
-  Expr_New_Type(result, subtype_type);
-  return Success;
-}
-
-static Task Register_Subtype(Expr *result, Expr *unreg_subtype, Expr *type) {
-  *result = *type;
-  if (!unreg_subtype->is.typed) {
-    MSG_ERROR("Register_Subtype: '%N' is not a subtype!",
-              unreg_subtype->value.nm);
-    return Failed;
-  }
-  if (!type->is.typed) {
-    MSG_ERROR("Cannot define the subtype '%s': '%N' is untyped!",
-              Tym_Type_Name(unreg_subtype->type), & type->value.nm);
-    return Failed;
-  }
-  TASK( TS_Subtype_Register(cmp->ts, unreg_subtype->type, type->type) );
-  return Success;
-}
-
 static Task Subtype_Create(Expr *result, Expr *parent, Name *child) {
   Expr this_parent;
   if (parent == (Expr *) NULL) {
@@ -159,24 +73,6 @@ static void Type_Detached(Expr *dst, Expr *src) {
   TS_Detached_New(cmp->ts, & dt, src->type);
   Expr_New_Type(dst, dt);
 }
-
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if 0
 
 /*****************************************************************************
  *       Grammatica relativa ai suffissi del tipo ::: o :tipo1:::tipo2::     *
@@ -272,11 +168,6 @@ type:
 %type <Node> named_type prim_type array_type type assign_type
 %type <Node> at_left procedure opt_c_name procedure_decl
 %type <TypeMemb> struc_type_1st struc_type_2nd
-
-
-/* Lista dei token affetti da regole di precedenza */
-%left TOK_UMEMBER
-
 
 /* Starting rule */
 %start program
