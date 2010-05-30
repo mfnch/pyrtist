@@ -1,12 +1,12 @@
 // Interface to Window.Circle
 
 Window.Circle = Void
-([)@Window.Circle ? "circle_begin"
-(])@Window.Circle ? "circle_end"
-Point@Window.Circle ? "circle_point"
-Real@Window.Circle ? "circle_real"
-(;)@Window.Circle ? "circle_pause"
-Color@Window.Circle ? "circle_color"
-Gradient@Window.Circle ? "circle_gradient"
-Style@Window.Circle ? "circle_style"
-PointList@Window.Circle ? "circle_pointlist"
+([)@Window.Circle "circle_begin" ?
+(])@Window.Circle "circle_end" ?
+Point@Window.Circle "circle_point" ?
+Real@Window.Circle "circle_real" ?
+(;)@Window.Circle "circle_pause" ?
+// Color@Window.Circle ? "circle_color"
+// Gradient@Window.Circle ? "circle_gradient"
+// Style@Window.Circle ? "circle_style"
+// PointList@Window.Circle ? "circle_pointlist"

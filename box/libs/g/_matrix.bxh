@@ -2,21 +2,21 @@ Matrix = (Real m11, m12, m13, m21, m22, m23)
 
 // If a real is provided inside Matrix[] then we multiply the matrix
 // by the real
-Real@&Matrix[
+Real@Matrix[
   $$.m11 *= $, $$.m12 *= $, $$.m21 *= $, $$.m22 *= $, $$.m13 *= $, $$.m23 *= $
 ]
 
 // A point just translates the matrix
-Point@&Matrix[$$.m13 += $.x, $$.m23 += $.y]
+Point@Matrix[$$.m13 += $.x, $$.m23 += $.y]
 
 // We initialize with the identity matrix
-([)@Matrix[
+(.[)@Matrix[
   $$.m12 = $$.m13 = $$.m21 = $$.m23 = 0.0
   $$.m11 = $$.m22 = 1.0
 ]
 
 // If another matrix is provided, we right multiply it.
-Matrix@&Matrix[
+Matrix@Matrix[
   m11 = $.m11*$$.m11 + $.m12*$$.m21, m12 = $.m11*$$.m12 + $.m12*$$.m22
   m21 = $.m21*$$.m11 + $.m22*$$.m21, m22 = $.m21*$$.m12 + $.m22*$$.m22
   $$.m13 = $.m13 + $.m11*$$.m13 + $.m12*$$.m23
@@ -25,32 +25,32 @@ Matrix@&Matrix[
 ]
 
 Matrix.Invert = Void
-([)@&Matrix.Invert[
+([)@Matrix.Invert[
   m11 = $$$.m11, m12 = $$$.m12
   m21 = $$$.m21, m22 = $$$.m22
   det = m11*m22 - m12*m21
-  $$$.m11 =  m22/det, $$$.m12 = -m12/det
-  $$$.m21 = -m21/det, $$$.m22 =  m11/det
-  $$$.m13 = -$$$.m11*$$$.m13 - $$$.m12*$$$.m23
-  $$$.m23 = -$$$.m21*$$$.m13 - $$$.m22*$$$.m23
+//   $$$.m11 =  m22/det, $$$.m12 = -m12/det
+//   $$$.m21 = -m21/det, $$$.m22 =  m11/det
+//   $$$.m13 = -$$$.m11*$$$.m13 - $$$.m12*$$$.m23
+//   $$$.m23 = -$$$.m21*$$$.m13 - $$$.m22*$$$.m23
 ]
 
-Matrix.Inverse = Matrix
-([)@Matrix.Inverse[
-  $$.m11 = $$$.m11, $$.m12 = $$$.m12, $$.m13 = $$$.m13 // copy from $$$
-  $$.m21 = $$$.m21, $$.m22 = $$$.m22, $$.m23 = $$$.m23
-  .Invert[] // invert
-]
-
+// Matrix.Inverse = Matrix
+// ([)@Matrix.Inverse[
+//   $$.m11 = $$$.m11, $$.m12 = $$$.m12, $$.m13 = $$$.m13 // copy from $$$
+//   $$.m21 = $$$.m21, $$.m22 = $$$.m22, $$.m23 = $$$.m23
+//   .Invert[] // invert
+// ]
+// 
 Matrix.Apply = Point
 Point@Matrix.Apply[
   $$.x = $$$.m11 * $.x + $$$.m12 * $.y + $$$.m13
   $$.y = $$$.m21 * $.x + $$$.m22 * $.y + $$$.m23
 ]
 
-// We add to Print the ability to print a Matrix
-Matrix@Print[
-  v = ", "
-  "((", $.m11, v, $.m12, v, $.m13, ')', v
-  '(', $.m21, v, $.m22, v, $.m23, "))"
-]
+// // We add to Print the ability to print a Matrix
+// Matrix@Print[
+//   v = ", "
+//   "((", $.m11, v, $.m12, v, $.m13, ')', v
+//   '(', $.m21, v, $.m22, v, $.m23, "))"
+// ]

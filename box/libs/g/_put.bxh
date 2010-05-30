@@ -4,20 +4,20 @@ Window.Put = PointList
 Window.Put.Scale = Void
 Window.Put.Near = Void
 
-([)@Window.Put ? "window_put_begin"
-(])@Window.Put ? "window_put_end"
-Window@Window.Put ? "window_put_window"
-Point@Window.Put ? "window_put_point"
-Real@Window.Put ? "window_put_real"
-Str@Window.Put ? "window_put_string"
-Matrix@Window.Put ? "window_put_matrix"
+([)@Window.Put "window_put_begin" ?
+(])@Window.Put "window_put_end" ?
+Window@Window.Put "window_put_window" ?
+Point@Window.Put "window_put_point" ?
+Real@Window.Put "window_put_real" ?
+Str@Window.Put "window_put_string" ?
+Matrix@Window.Put "window_put_matrix" ?
 
-Real@Window.Put.Scale ? "window_put_scale_real"
-Point@Window.Put.Scale ? "window_put_scale_point"
+Real@Window.Put.Scale "window_put_scale_real" ?
+Point@Window.Put.Scale "window_put_scale_point" ?
 
-([)@Window.Put.Near ? "window_put_near_begin"
-(])@Window.Put.Near ? "window_put_near_end"
-Str@Window.Put.Near ? "window_put_near_string"
-INT@Window.Put.Near ? "window_put_near_int"
-REAL@Window.Put.Near ? "window_put_near_real"
-Point@Window.Put.Near ? "window_put_near_point"
+([)@Window.Put.Near "window_put_near_begin" ?
+(])@Window.Put.Near "window_put_near_end" ?
+Str@Window.Put.Near "window_put_near_string" ?
+INT@Window.Put.Near "window_put_near_int" ?
+REAL@Window.Put.Near "window_put_near_real" ?
+Point@Window.Put.Near "window_put_near_point" ?

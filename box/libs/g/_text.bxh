@@ -1,18 +1,18 @@
 // Interface to Window.Text
 
 Window.Text = Void
-([)@Window.Text ? "window_text_begin"
-(])@Window.Text ? "window_text_end"
-Str@Window.Text ? "window_text_str"
-Point@Window.Text ? "window_text_point"
-(;)@Window.Text ? "window_text_pause"
-Style@Window.Text ? "window_text_style"
-Color@Window.Text ? "window_text_color"
-Gradient@Window.Text ? "window_text_gradient"
+([)@Window.Text "window_text_begin" ?
+(])@Window.Text "window_text_end" ?
+Str@Window.Text "window_text_str" ?
+Point@Window.Text "window_text_point" ?
+(;)@Window.Text "window_text_pause" ?
+// Style@Window.Text "window_text_style" ?
+// Color@Window.Text "window_text_color" ?
+// Gradient@Window.Text "window_text_gradient" ?
 
 Window.Text.Font = Void
-Str@Window.Text.Font ? "window_text_font_str"
-Real@Window.Text.Font ? "window_text_font_real"
+Str@Window.Text.Font "window_text_font_str" ?
+Real@Window.Text.Font "window_text_font_real" ?
 
 Window.Text.From = Void
-Point@Window.Text.From ? "window_text_from_point"
+Point@Window.Text.From "window_text_from_point" ?

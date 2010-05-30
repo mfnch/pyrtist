@@ -1,20 +1,21 @@
 // Interface to Gradient
 
-Gradient = ++Ptr
-([)@Gradient ? "gradient_begin"
-(])@Gradient ? "gradient_end"
-(\)@Gradient ? "gradient_destroy"
+// Gradient = ++Ptr
+Gradient = CPtr
+([)@Gradient "gradient_begin" ?
+(])@Gradient "gradient_end" ?
+(].)@Gradient "gradient_destroy" ?
 
 Gradient.Line = Void
-Point@Gradient.Line ? "gradient_line_point"
+Point@Gradient.Line "gradient_line_point" ?
 
 Gradient.Circle = Void
-Point@Gradient.Circle ? "gradient_circle_point"
-Real@Gradient.Circle ? "gradient_circle_real"
-(;)@Gradient.Circle ? "gradient_circle_pause"
+Point@Gradient.Circle "gradient_circle_point" ?
+Real@Gradient.Circle "gradient_circle_real" ?
+(;)@Gradient.Circle "gradient_circle_pause" ?
 
-Real@Gradient ? "gradient_real"
-Color@Gradient ? "gradient_color"
-Str@Gradient ? "gradient_string"
+Real@Gradient "gradient_real" ?
+Color@Gradient "gradient_color" ?
+Str@Gradient "gradient_string" ?
 
-Gradient@Print ? "print_gradient"
+Gradient@Print "print_gradient" ?

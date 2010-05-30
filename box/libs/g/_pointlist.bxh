@@ -1,20 +1,21 @@
 // The PointList object
 
-PointList = ++Ptr
-([)@PointList ? "pointlist_begin"
-(\)@PointList ? "ipointlist_destroy"
+// PointList = ++Ptr
+PointList = CPtr
+(.[)@PointList "pointlist_begin" ?
+(].)@PointList "ipointlist_destroy" ?
 
-Str@&PointList ? "pointlist_str"
-Point@&PointList ? "pointlist_point"
-PointList@&PointList ? "pointlist_pointlist"
+Str@PointList "pointlist_str" ?
+Point@PointList "pointlist_point" ?
+PointList@PointList "pointlist_pointlist" ?
 
 PointList.Get = Point
-Str@PointList.Get ? "pointlist_get_str"
-INT@PointList.Get ? "pointlist_get_int"
-REAL@PointList.Get ? "pointlist_get_real"
-Point@PointList.Get ? "pointlist_get_point"
+Str@PointList.Get "pointlist_get_str" ?
+INT@PointList.Get "pointlist_get_int" ?
+REAL@PointList.Get "pointlist_get_real" ?
+Point@PointList.Get "pointlist_get_point" ?
 
 PointList.Num = Int
-([)@PointList.Num ? "pointlist_num_begin"
+([)@PointList.Num "pointlist_num_begin" ?
 
-PointList@Print ? "print_pointlist"
+PointList@Print "print_pointlist"?
