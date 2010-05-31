@@ -519,8 +519,8 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
     My_Compile_Any(c, box->attr.box.parent);
     parent_type = BoxCmp_Pop_Value(c);
     parent = Value_To_Temp_Or_Target(parent_type);
-    Value_Unlink(parent_type); /* XXX */
     parent_is_err = Value_Is_Err(parent);
+    Value_Unlink(parent_type); /* XXX */
     BoxCmp_Push_Value(c, parent);
   }
 
@@ -550,6 +550,8 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
      *   x = X[.a = 1.0]
      * The implicit member is .a and internally it is treated as #.a, even
      * if such syntax is not available to the user.
+     *
+     * NOTE: the following works also when parent = ERROR
      */
     Value *v_parent = Value_New(c->cur_proc);
     Value_Setup_As_Weak_Copy(v_parent, parent);
@@ -574,22 +576,23 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
     Value *stmt_val;
 
     My_Compile_Statement(c, s);
-
     stmt_val = BoxCmp_Pop_Value(c);
-    if (parent_is_err || Value_Is_Ignorable(stmt_val)) {
-      Value_Unlink(stmt_val);
 
-    } else {
+    if (!(parent_is_err || Value_Is_Ignorable(stmt_val))) {
       if (Value_Want_Has_Type(stmt_val)) {
+        BoxType stmt_type = stmt_val->type;
         BoxTask status = Value_Emit_Call_Or_Blacklist(parent, stmt_val);
+        stmt_val = NULL; /* so that it doesn't get unlinked again! */
         if (status == BOXTASK_FAILURE) {
           MSG_WARNING("Don't know how to use '%~s' expressions inside "
                       "a '%~s' box.",
-                      TS_Name_Get(& c->ts, stmt_val->type),
+                      TS_Name_Get(& c->ts, stmt_type),
                       TS_Name_Get(& c->ts, parent->type));
         }
-      }
+      } 
     }
+
+    Value_Unlink(stmt_val);
   }
 
   /* Invoke the closing procedure */

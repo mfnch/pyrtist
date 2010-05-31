@@ -610,6 +610,13 @@ static BoxTask My_Emit_Call(Value *parent, Value *child, TSSearchMode mode) {
   BoxVMSymID sym_id;
 
   assert(parent != NULL && child != NULL);
+
+  if (Value_Is_Err(parent) || Value_Is_Err(child)) {
+    /* In case of error silently exits. */
+    Value_Unlink(child);
+    return BOXTASK_OK;
+  }
+
   assert(c == child->proc->cmp);
 
   /* We expand the child, since things like X.Y@Z are not allowed: in other
