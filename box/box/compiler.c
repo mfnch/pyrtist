@@ -352,7 +352,6 @@ void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
   BoxCmp_Remove_Any(c, 1);
 }
 
-
 static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
   switch(node->type) {
   case ASTNODETYPE_ERROR:
@@ -857,19 +856,30 @@ static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
 }
 
 static void My_Compile_SubtypeBld(BoxCmp *c, ASTNode *n) {
-  Value *v_parent, *v_result = NULL;
+  Value *v_parent = NULL, *v_result = NULL;
 
   assert(n->type == ASTNODETYPE_SUBTYPEBLD);
 
-  My_Compile_Any(c, n->attr.subtype_bld.parent);
-  if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
-    return;
+  if (n->attr.subtype_bld.parent != NULL) {
+    My_Compile_Any(c, n->attr.subtype_bld.parent);
+    if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
+        return;
+    v_parent = BoxCmp_Pop_Value(c);
 
-  v_parent = BoxCmp_Pop_Value(c);
-  if (Value_Want_Value(v_parent))
-    v_result = Value_Subtype_Build(v_parent, n->attr.subtype_bld.subtype);
-  else
-    Value_Unlink(v_parent);
+  } else {
+    v_parent = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "#");
+    if (v_parent == NULL) {
+      MSG_ERROR("Cannot get implicit method '%s'. Default parent is not "
+                "defined in current scope.", n->attr.subtype_bld.subtype);
+    }
+  }
+
+  if (v_parent != NULL) {
+    if (Value_Want_Value(v_parent))
+        v_result = Value_Subtype_Build(v_parent, n->attr.subtype_bld.subtype);
+    else
+        Value_Unlink(v_parent);
+  }
 
   BoxCmp_Push_Value(c, v_result);
 }

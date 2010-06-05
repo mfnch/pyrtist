@@ -291,6 +291,10 @@ postfix_expr:
                                  {$$ = ASTNodeBox_Set_Parent($5,
                                                ASTNodeSubtype_Build($1, $3));
                                   BoxMem_Free($3);}
+  | '.' TOK_TYPE_IDENT '[' statement_list ']'
+                                 {$$ = ASTNodeBox_Set_Parent($4,
+                                             ASTNodeSubtype_Build(NULL, $2));
+                                  BoxMem_Free($2);}
   | '.' TOK_IDENTIFIER           {$$ = ASTNodeMemberGet_New(NULL, $2, 0);
                                   BoxMem_Free($2);}
   | postfix_expr post_op         {$$ = ASTNodeUnOp_New($2, $1);}

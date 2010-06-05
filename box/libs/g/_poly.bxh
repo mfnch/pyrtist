@@ -1,14 +1,14 @@
 // Interface to Window.Poly
 
 Window.Poly = PointList
-// Color@Window.Poly ? "poly_color"
+Color@Window.Poly "poly_color" ?
 // Gradient@Window.Poly ? "poly_gradient"
 ([)@Window.Poly "poly_begin" ?
 Point@Window.Poly "poly_point" ?
 Real@Window.Poly "poly_real" ?
 (])@Window.Poly "poly_end" ?
 (;)@Window.Poly "poly_pause" ?
-// Style@Window.Poly ? "poly_style"
+Style@Window.Poly "poly_style" ?
 PointList@Window.Poly "poly_pointlist" ?
 
 Window.Poly.Close = Void

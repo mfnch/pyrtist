@@ -6,7 +6,7 @@ Window.Circle = Void
 Point@Window.Circle "circle_point" ?
 Real@Window.Circle "circle_real" ?
 (;)@Window.Circle "circle_pause" ?
-// Color@Window.Circle ? "circle_color"
+Color@Window.Circle "circle_color" ?
 // Gradient@Window.Circle ? "circle_gradient"
-// Style@Window.Circle ? "circle_style"
-// PointList@Window.Circle ? "circle_pointlist"
+Style@Window.Circle "circle_style" ?
+PointList@Window.Circle "circle_pointlist" ?
