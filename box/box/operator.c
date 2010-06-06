@@ -386,11 +386,13 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
 
 /** Compiles an operation between the two expression e1 and e2, where
  * the operator is opr.
+ * REFERENCES: return: new, v: -1;
  */
 Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
   Operator *opr = BoxCmp_UnOp_Get(c, op);
   Operation *opn;
   OprMatch match;
+  Value *v_result = NULL;
 
   /* Subtypes cannot be used for operator overloading, so we expand
    * them anyway!
@@ -402,12 +404,10 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
                                  v->type, BOXTYPE_NONE, BOXTYPE_NONE);
   if (opn != NULL) {
     /* Now we expand the types, if necessary */
-    if (match.match_left == TS_TYPES_EXPAND) {
-      Value_Link(v); /* XXX */
+    if (match.match_left == TS_TYPES_EXPAND)
       v = Value_Expand(v, match.expand_type_left);
-    }
 
-    return My_Opn_Emit(c, opn, v, v);
+    v_result = My_Opn_Emit(c, opn, v, v); /* XXX */
 
   } else {
     if ((opr->attr & OPR_ATTR_UN_RIGHT) != 0) {
@@ -418,20 +418,23 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
     } else {
       MSG_ERROR("%s%~s <-- Operation has not been defined!",
                 opr->name, TS_Name_Get(& c->ts, v->type));
-      return NULL;
-
     }
   }
+
+  Value_Unlink(v);
+  return v_result;
 }
 
 /** Compiles an operation between the two expression e1 and e2, where
  * the operator is opr.
+ * REFERENCES: return: new, v_left: -1, v_right: -1;
  */
 Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
                              Value *v_left, Value *v_right) {
   Operator *opr = BoxCmp_BinOp_Get(c, op);
   Operation *opn;
   OprMatch match;
+  Value *v_result = NULL;
 
   /* Subtypes cannot be used for operator overloading, so we expand
    * them anyway!
@@ -444,24 +447,24 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
                                  v_left->type, v_right->type, BOXTYPE_NONE);
   if (opn != NULL) {
     /* Now we expand the types, if necessary */
-    if (match.match_left == TS_TYPES_EXPAND) {
-      Value_Link(v_left); /* XXX */
+    if (match.match_left == TS_TYPES_EXPAND)
       v_left = Value_Expand(v_left, match.expand_type_left);
-    }
 
-    if (match.match_right == TS_TYPES_EXPAND) {
-      Value_Link(v_right); /* XXX */
+    if (match.match_right == TS_TYPES_EXPAND)
       v_right = Value_Expand(v_right, match.expand_type_right);
-    }
 
-    return My_Opn_Emit(c, opn, v_left, v_right);
+    /* XXX */
+    v_result = My_Opn_Emit(c, opn, v_left, v_right);
 
   } else {
     MSG_ERROR("%~s %s %~s <-- Operation has not been defined!",
               TS_Name_Get(& c->ts, v_left->type), opr->name,
               TS_Name_Get(& c->ts, v_right->type));
-    return NULL;
   }
+
+  Value_Unlink(v_left);
+  Value_Unlink(v_right);
+  return v_result;
 }
 
 /** Map an object 'src' to an object 'dest' with (possibly) different type.

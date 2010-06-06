@@ -671,25 +671,20 @@ static void My_Compile_Const(BoxCmp *c, ASTNode *n) {
 }
 
 static void My_Compile_UnOp(BoxCmp *c, ASTNode *n) {
-  Value *operand, *result = NULL;
+  Value *operand, *v_result = NULL;
 
   assert(n->type == ASTNODETYPE_UNOP);
 
   /* Compile operand and get it from the stack */
   My_Compile_Any(c, n->attr.un_op.expr);
+  if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
+    return;
+
   operand = BoxCmp_Pop_Value(c);
+  if (Value_Want_Value(operand))
+    v_result = BoxCmp_Opr_Emit_UnOp(c, n->attr.un_op.operation, operand);
 
-  if (Value_Is_Err(operand))
-    BoxCmp_Push_Value(c, operand); /* Re-put the error in the stack */
-
-  else if (Value_Is_Value(operand))
-    result = BoxCmp_Opr_Emit_UnOp(c, n->attr.un_op.operation, operand);
-
-  else
-    Value_Want_Value(operand);
-
-  Value_Unlink(operand); /* XXX */
-  BoxCmp_Push_Value(c, result);
+  BoxCmp_Push_Value(c, v_result);
 }
 
 /** Deal with assignments.
@@ -750,8 +745,6 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
     } else {
       if (Value_Want_Value(left) && Value_Want_Value(right))
         result = BoxCmp_Opr_Emit_BinOp(c, op, left, right);
-      Value_Unlink(left); /* XXX */
-      Value_Unlink(right); /* XXX */
     }
 
     BoxCmp_Push_Value(c, result);

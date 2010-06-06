@@ -142,8 +142,16 @@ Operator *BoxCmp_BinOp_Get(BoxCmp *c, ASTBinOp bin_op);
 /** Get the Operator object corresponding to the given ASTUnOp constant. */
 Operator *BoxCmp_UnOp_Get(BoxCmp *c, ASTUnOp un_op);
 
+/** Compiles an operation between the two expression e1 and e2, where
+ * the operator is opr.
+ * REFERENCES: return: new, v: -1;
+ */
 Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v);
 
+/** Compiles an operation between the two expression e1 and e2, where
+ * the operator is opr.
+ * REFERENCES: return: new, v_left: -1, v_right: -1;
+ */
 Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
                              Value *v_left, Value *v_right);
 

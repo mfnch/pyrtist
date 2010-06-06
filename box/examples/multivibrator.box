@@ -34,7 +34,7 @@ w = Window[][
           r2.Get[2], (x2, y1), c1.Get[2]; c1.Get[1], (x1, y1);
           r3.Get[2], (x3, y1), c2.Get[2]; c2.Get[1], (x4, y1);
           (x2, y1), Point[t2.Get["B"]] - (sx*0.2, 0), t2.Get["B"];
-          (x3, y1), Point[t1.Get["B"]] + (sx*0.2, 0), t1.Get["B"]
+          (x3, y1), t1.Get["B"] + (sx*0.2, 0), t1.Get["B"]
   ]
 
   // Insert small circles, where more than 3 lines meet
