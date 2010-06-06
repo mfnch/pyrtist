@@ -624,6 +624,12 @@ static BoxTask My_Emit_Call(Value *parent, Value *child, TSSearchMode mode) {
    */
   child = Value_Expand_Subtype(child);
 
+  /* Types derived from Void are always ignored */
+  if (TS_Compare(ts, child->type, BOXTYPE_VOID)) {
+    Value_Unlink(child);
+    return BOXTASK_OK;
+  }
+
   /* Now we search for the procedure associated with *child */
   mode |= TSSEARCHMODE_INHERITED;
   found_procedure = TS_Procedure_Search(ts, & expansion_for_child,
@@ -1246,8 +1252,9 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
     Value_Unlink(v_ptr);
     Value_Emit_Link(v_parent); /* The subtype gets a reference
                                   to its parent */
-  } else
-    Value_Unlink(v_parent);
+  }
+
+  Value_Unlink(v_parent);
 
   return v_subtype;
 }

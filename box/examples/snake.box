@@ -23,7 +23,7 @@ tongue = Window[]
 
 // Now we can use the tongue and the eye figures to draw the face of a snake
 face = Window[][
-  a = b = c = d = Point
+  a = b = c = d = Point[]
   a = (5, -5), b = (7, 0), c = (4, 8), d = (0, 9)
   \ .Poly[color.dark_green, a, 0.5, b, c, d,
           (-c.x, c.y), (-b.x, b.y), (-a.x, a.y)]

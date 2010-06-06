@@ -165,7 +165,7 @@ type:
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
 %type <Node> land_expr lor_expr assign_expr expr statement statement_list
 %type <Node> type_sep sep_type struc_type species_type func_type
-%type <Node> named_type prim_type array_type type assign_type
+%type <Node> named_type prim_type array_type type inc_type assign_type
 %type <Node> at_left procedure opt_c_name procedure_decl
 %type <TypeMemb> struc_type_1st struc_type_2nd
 
@@ -440,8 +440,13 @@ type:
     func_type                    {$$ = $1;}
   ;
 
+inc_type:
+    type                         {$$ = $1;}
+  | TOK_INC type                 {$$ = ASTNodeIncType_New($2);}
+  ;
+
 assign_type:
-    named_type '=' type          {$$ = ASTNodeTypeDef_New($1, $3);;}
+    named_type '=' inc_type      {$$ = ASTNodeTypeDef_New($1, $3);;}
   | named_type '=' assign_type   {$$ = ASTNodeTypeDef_New($1, $3);}
   ;
 

@@ -102,6 +102,9 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
   case ASTNODETYPE_SPECTYPE:
     subnodes[0] = & node->attr.spec_type.first_member;
     return 1;
+  case ASTNODETYPE_INCTYPE:
+    subnodes[0] = & node->attr.inc_type.type;
+    return 1;
   }
   assert(0); /* Should never happen! */
   return 0;
@@ -669,3 +672,9 @@ ASTNode *ASTNodeSpecType_Add_Member(ASTNode *spec_type, ASTNode *type) {
   return spec_type;
 }
 
+ASTNode *ASTNodeIncType_New(ASTNode *type) {
+  ASTNode *node;
+  node = ASTNode_New(ASTNODETYPE_INCTYPE);
+  node->attr.inc_type.type = type;
+  return node;
+}

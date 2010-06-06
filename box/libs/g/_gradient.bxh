@@ -1,7 +1,6 @@
 // Interface to Gradient
 
-// Gradient = ++Ptr
-Gradient = CPtr
+Gradient = ++CPtr
 ([)@Gradient "gradient_begin" ?
 (])@Gradient "gradient_end" ?
 (].)@Gradient "gradient_destroy" ?

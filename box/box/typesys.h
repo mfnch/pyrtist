@@ -308,9 +308,9 @@ char *TS_Name_Get(TS *ts, Type t);
 void TS_Alias_New(TS *ts, Type *alias, Type origin);
 
 /** Create a new detached type from the type t. The new type (in *d) will be
- * identical to t, but incompatible: TS_Compare will not match the two types.
+ * similar to t, but incompatible: TS_Compare will not match the two types.
  */
-void TS_Detached_New(TS *ts, Type *detached, Type origin);
+BoxType TS_Detached_New(TS *ts, BoxType t_origin);
 
 /** Create a new array type, with 'item_num' items with type 'item'. */
 void TS_Array_New(TS *ts, Type *array, Type item, Int num_items);

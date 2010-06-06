@@ -8,10 +8,10 @@ Window = CPtr
 
 Str@Window "window_str" ?
 Point@Window "window_size" ?
-// Color@&Window ? "window_color"
-// Gradient@&Window ? "window_gradient"
-// Style@&Window "window_style"
-// Window@@Window "window_window"
+Color@Window "window_color" ?
+Gradient@Window "window_gradient" ?
+Style@Window "window_style" ?
+Window@Window "window_window" ?
 
 Window.Save = Void
 ([)@Window.Save "window_save_begin" ?
@@ -20,11 +20,11 @@ Str@Window.Save "window_save_str" ?
 Window@Window.Save "window_save_window" ?
 
 Window.Hot = Point
-// ([)@Window.Hot ? "window_hot_begin"
-// Point@Window.Hot ? "window_hot_point"
-// Str@Window.Hot ? "window_hot_string"
-// PointList@Window.Hot ? "window_hot_pointlist"
-// (])@Window.Hot ? "window_hot_end"
+([)@Window.Hot "window_hot_begin" ?
+Point@Window.Hot "window_hot_point" ?
+Str@Window.Hot "window_hot_string" ?
+PointList@Window.Hot "window_hot_pointlist" ?
+(])@Window.Hot "window_hot_end" ?
 
 Window.Res = Void
 Real@Window.Res "window_res_real" ?

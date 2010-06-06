@@ -58,7 +58,8 @@ typedef enum {
   ASTNODETYPE_TYPEDEF,
   ASTNODETYPE_STRUCTYPE,
   ASTNODETYPE_MEMBERTYPE,
-  ASTNODETYPE_SPECTYPE
+  ASTNODETYPE_SPECTYPE,
+  ASTNODETYPE_INCTYPE
 } ASTNodeType;
 
 /**Separator between statements */
@@ -272,6 +273,11 @@ typedef struct {
            *last_member;
 } ASTNodeSpecType;
 
+/** Node for species type increment */
+typedef struct {
+  ASTNode  *type;
+} ASTNodeIncType;
+
 /** Node finaliser (used only for few nodes) */
 typedef void (*ASTNodeFinaliser)(ASTNode *node);
 
@@ -302,6 +308,7 @@ struct __ASTNode {
     ASTNodeStrucType  struc_type;
     ASTNodeMemberType member_type;
     ASTNodeSpecType   spec_type;
+    ASTNodeIncType    inc_type;
   } attr;
 };
 
@@ -372,5 +379,6 @@ ASTNode *ASTNodeStrucType_Add_Member(ASTNode *struc_type,
                                      ASTTypeMemb *member);
 ASTNode *ASTNodeSpecType_New(ASTNode *first_type, ASTNode *second_type);
 ASTNode *ASTNodeSpecType_Add_Member(ASTNode *species, ASTNode *memb);
+ASTNode *ASTNodeIncType_New(ASTNode *type);
 
 #endif /* _AST_H */

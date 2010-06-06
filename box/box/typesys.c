@@ -486,8 +486,10 @@ void TS_Alias_New(TS *ts, Type *alias, Type origin) {
   TS_X_New(TS_KIND_ALIAS, ts, alias, origin, -1);
 }
 
-void TS_Detached_New(TS *ts, Type *detached, Type origin) {
-  TS_X_New(TS_KIND_DETACHED, ts, detached, origin, -1);
+BoxType TS_Detached_New(TS *ts, BoxType t_origin) {
+  BoxType t_ret;
+  TS_X_New(TS_KIND_DETACHED, ts, & t_ret, t_origin, -1);
+  return t_ret;
 }
 
 void TS_Array_New(TS *ts, Type *array, Type item, Int num_items) {

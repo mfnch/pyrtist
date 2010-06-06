@@ -1,7 +1,6 @@
 // Interface for the Style object
 
-// Style = ++Ptr
-Style = CPtr
+Style = ++CPtr
 ([)@Style "style_begin" ?
 (].)@Style "style_destroy" ?
 

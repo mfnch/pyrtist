@@ -1,5 +1,4 @@
-//BBox = ++(Point min, Point max, Int n)
-BBox = (Point min, Point max, Int n)
+BBox = ++(Point min, Point max, Int n)
 
 (.[)@BBox[$$.n = 0]
 
