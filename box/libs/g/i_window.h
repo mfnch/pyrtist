@@ -35,28 +35,29 @@
 #  undef _DEF_WINDOW_SUBOBJECTS
 
 typedef struct {
+  int           initialised;
   GrpWindowPlan plan;
-  GrpWindow *window;
-  GStyle style;
+  GrpWindow     *window;
+  GStyle        style;
 
-  PointList pointlist;
+  PointList     pointlist;
 
-  WindowLine line;
-  WindowCircle circle;
-  WindowPoly poly;
-  WindowPut put;
-  WindowText text;
+  WindowLine    line;
+  WindowCircle  circle;
+  WindowPoly    poly;
+  WindowPut     put;
+  WindowText    text;
 
   struct {
     struct {
-      int point : 1;
-      int name : 1;
-    } got;
-    char *name;
+      int         point :1;
+      int         name  :1;
+    }           got;
+    char        *name;
   } hot;
 
-  int saved;
-  char *save_file_name;
+  int           saved;
+  char          *save_file_name;
 } Window;
 
 typedef void *WindowPtr;

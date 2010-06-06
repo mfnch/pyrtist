@@ -86,6 +86,7 @@ Task window_begin(VMProgram *vmp) {
   printf("WindowPtr object: %p\n", wp);
 #endif
 
+  w->initialised = 0;
   w->plan.have.type = 0;
   w->plan.type = Grp_Window_Type_From_String("fig");
   w->plan.have.origin = 0;
@@ -206,12 +207,16 @@ Task window_end(VMProgram *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
   Window *w = (Window *) wp;
 
-  w->plan.have.resolution = 1;
-  w->plan.have.origin = 1;
-  w->window = Grp_Window_Open(& w->plan);
-  if (w->window == (GrpWindow *) NULL) {
-    g_error("cannot create the window!");
-    return Failed;
+  if (!w->initialised) {
+    w->plan.have.resolution = 1;
+    w->plan.have.origin = 1;
+    w->window = Grp_Window_Open(& w->plan);
+    if (w->window == (GrpWindow *) NULL) {
+      g_error("cannot create the window!");
+      return Failed;
+    }
+ 
+    w->initialised = 1;
   }
 
   return Success;

@@ -1,7 +1,6 @@
 // The Window object
 
-//Window = ++Ptr
-Window = CPtr
+Window = ++CPtr
 (.[)@Window "window_begin" ?
 (])@Window "window_end" ?
 (].)@Window "window_destroy" ?
