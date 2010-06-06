@@ -7,7 +7,7 @@ include "arrows"
 diode = Window["fig"][
   a = 2.0, b = 3.0, d1 = 4.0, s = 0.4
   p1 = (-d1, 0), p2 = (b+s/2+d1, 0)
-  p = Point
+  p = Point[]
   \ .Hot[p1, p2]
   \ .Poly[(0, -a), (0, a), (b, 0)]
   \ .Poly[(p=(b-s/2, -a)), (p+=(s, 0)), (p+=(0, 2*a)), (p-=(s, 0))]

@@ -392,12 +392,10 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
   Operation *opn;
   OprMatch match;
 
-#if 0
   /* Subtypes cannot be used for operator overloading, so we expand
    * them anyway!
    */
-  Expr_Resolve_Subtype(v);
-#endif
+  v = Value_Expand_Subtype(v);
 
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, opr, & match,
@@ -435,13 +433,11 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
   Operation *opn;
   OprMatch match;
 
-#if 0
   /* Subtypes cannot be used for operator overloading, so we expand
    * them anyway!
    */
-  Expr_Resolve_Subtype(v_left);
-  Expr_Resolve_Subtype(v_right);
-#endif
+  v_left = Value_Expand_Subtype(v_left);
+  v_right = Value_Expand_Subtype(v_right);
 
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, opr, & match,

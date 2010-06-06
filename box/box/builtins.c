@@ -41,74 +41,6 @@
 #include "bltinio.h"
 
 #if 0
-/* Functions for conversions */
-static Task Char_Char(VMProgram *vmp);
-static Task Char_Int(VMProgram *vmp);
-static Task Char_Real(VMProgram *vmp);
-static Task Int_IntNum(VMProgram *vmp);
-static Task Int_RealNum(VMProgram *vmp);
-static Task Real_RealNum(VMProgram *vmp);
-static Task Point_RealNumCouple(VMProgram *vmp);
-static Task If_IntNum(VMProgram *vmp);
-static Task For_IntNum(VMProgram *vmp);
-/* Mathematical functions */
-static Task Min_Open(VMProgram *vmp);
-static Task Min_RealNum(VMProgram *vmp);
-static Task Max_Open(VMProgram *vmp);
-static Task Max_RealNum(VMProgram *vmp);
-static Task Vec_RealNum(VMProgram *vmp);
-
-/******************************************************************************
- * Le procedure che seguono servono a inizializzare/resettare il compilatore. *
- ******************************************************************************/
-
-/* Con queste macro abbrevio la definizione delle operazioni */
-#define NEW_OPERATOR(o, str) \
-  status |= ( (cmp_opr.o = Cmp_Operator_New(str)) == NULL );
-
-#define ADD_OPERATION(o, a1, a2, rs, asm, attr_c, attr_i, attr_a) \
-  opn = Cmp_Operation_Add(cmp_opr.o, a1, a2, rs); \
-  status |= ( opn == NULL ); \
-  opn->is.commutative = attr_c; \
-  opn->is.intrinsic = attr_i; \
-  opn->is.assignment = attr_a; \
-  opn->is.link = 0; \
-  opn->asm_code = asm;
-
-/* Defines some types and some basic boxes.
- */
-Task Blt_Define_All(void) {
-  TASK( Blt_Define_Basics() );
-  TASK( Blt_Define_Math() );
-  TASK( Blt_Define_Print() );
-  TASK( Blt_Define_Sys() );
-  return Success;
-}
-
-static Task Blt_Define_Types(void) {
-  int i;
-
-  struct {
-    Name name;
-    Int size;
-    Type type;
-
-  } intrinsic[] = {
-    {NAME("Void"),     0,             TYPE_VOID},
-    {NAME("([)"),      0,             TYPE_OPEN},
-    {NAME("(])"),      0,             TYPE_CLOSE},
-    {NAME("(;)"),      0,             TYPE_PAUSE},
-    {NAME("(\\)"),     0,             TYPE_DESTROY},
-    {NAME("(?)"),      0,             TYPE_ITER},
-    {NAME("Ptr"),      sizeof(Ptr),   TYPE_PTR},
-    {NAME(""),        -1,             TYPE_NONE}
-  };
-
-  struct {
-    Name name;
-    Type target;
-    Type type;
-
   } alias[] = {
     {NAME("If"),   TYPE_INT,  TYPE_IF},
     {NAME("For"),  TYPE_INT,  TYPE_FOR},
@@ -116,121 +48,14 @@ static Task Blt_Define_Types(void) {
     {NAME(""),     TYPE_NONE, TYPE_NONE}
   };
 
-  struct {
-    Name name;
-    Type *target;
-
-  } alias2[] = {
-    {NAME("Int"),   & type_IntSpecies},
-    {NAME("Real"),  & type_RealSpecies},
-    {NAME("Point"), & type_PointSpecies},
-    {NAME(""),     (Type *) NULL}
-  };
-
-  /* Define the intrinsic types */
-  for(i = 0; intrinsic[i].size >= 0; i++) {
-    Type t;
-    TASK( Tym_Def_Intrinsic(& t, & intrinsic[i].name, intrinsic[i].size) );
-    assert(t == intrinsic[i].type || intrinsic[i].type == TYPE_NONE);
-  }
-
-  /* Define the alias types */
-  for(i = 0; alias[i].target != TYPE_NONE; i++) {
-    Type t;
-    TASK( Tym_Def_Explicit_Alias(& t, & alias[i].name, alias[i].target) );
-    assert(t == alias[i].type || alias[i].type == TYPE_NONE);
-  }
-
-  /* Define Int = (CHAR -> INT) */
-  type_IntSpecies = TYPE_NONE;
-  TASK( Tym_Def_Specie(& type_IntSpecies, TYPE_CHAR) );
-  TASK( Tym_Def_Specie(& type_IntSpecies, TYPE_INT) );
-
-  /* Define Real = (CHAR -> INT -> REAL) */
-  type_RealSpecies = TYPE_NONE;
-  TASK( Tym_Def_Specie(& type_RealSpecies, TYPE_CHAR) );
-  TASK( Tym_Def_Specie(& type_RealSpecies, TYPE_INT) );
-  TASK( Tym_Def_Specie(& type_RealSpecies, TYPE_REAL) );
-
-  /* Define Point = ((Real, Real) -> POINT)*/
-  type_RealCouple = TYPE_NONE;
-  TASK( Tym_Def_Structure(& type_RealCouple, type_RealSpecies) );
-  TASK( Tym_Def_Structure(& type_RealCouple, type_RealSpecies) );
-  type_PointSpecies = TYPE_NONE;
-  TASK( Tym_Def_Specie(& type_PointSpecies, type_RealCouple) );
-  TASK( Tym_Def_Specie(& type_PointSpecies, TYPE_POINT) );
-
-  /* Ora definisco il tipo stringa */
-  type_CharArray = Tym_Def_Array_Of(-1, TYPE_CHAR);
-  if ( type_CharArray == TYPE_NONE ) return Failed;
-
-  /* Define the alias types */
-  for(i = 0; alias2[i].target != (Type *) NULL; i++) {
-    Type t;
-    TASK( Tym_Def_Explicit_Alias(& t, & alias2[i].name, *alias2[i].target) );
-  }
-
-  return Success;
-}
-
-/* Initialize the compiler:
- *  1) Creates the fundamental operators and associated operations
- *     (those between intrinsic types)
- *  2) Sets the output for compiled code.
- */
-Task Builtins_Init(void) {
-
-  /* § OPERATORE DI PRODOTTO */
-  /* §§ PRODOTTO FRA REALI E INTERI */
-  ADD_OPERATION(times, type_Point, type_RealNum, TYPE_POINT, ASM_PMULR_P, 1, 1, 0);
-
-  /* § OPERATORE DI DIVISIONE */
-  /* §§ DIVISIONE PUNTO / REALE */
-  ADD_OPERATION(div, type_Point, type_RealNum, TYPE_POINT, ASM_PDIVR_P, 0, 1, 0);
-
-  return Success;
-}
-
 static Task Blt_Define_Basics(void) {
   /* Ora faccio l'overloading dell'operatore di conversione
    * e definisco le conversioni automatiche che il compilatore
    * dovra' fare.
    */
   /* Define the conversions (example: Real@Int such as: a = Int[ 1.2 ]) */
-  TASK(Cmp_Builtin_Proc_Def(TYPE_CHAR, BOX_CREATION, TYPE_CHAR, Char_Char));
-  TASK(Cmp_Builtin_Proc_Def(TYPE_INT,  BOX_CREATION, TYPE_CHAR, Char_Int ));
-  TASK(Cmp_Builtin_Proc_Def(TYPE_REAL, BOX_CREATION, TYPE_CHAR, Char_Real));
-  TASK(Cmp_Builtin_Proc_Def(type_IntNum, BOX_CREATION, TYPE_INT, Int_IntNum ));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum, BOX_CREATION, TYPE_INT, Int_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum, BOX_CREATION, TYPE_REAL, Real_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_Point, BOX_CREATION, TYPE_POINT, Point_RealNumCouple ));
   TASK(Cmp_Builtin_Proc_Def(type_IntNum, BOX_CREATION, TYPE_IF, If_IntNum ));
   TASK(Cmp_Builtin_Proc_Def(type_IntNum, BOX_CREATION, TYPE_FOR, For_IntNum ));
-  return Success;
-}
-
-#define DEFINE_TYPE(name, type) \
-  Tym_Def_Explicit_Alias(& type_##name, & NAME(#name), type)
-
-static Task Blt_Define_Math(void) {
-  Int type_Min, type_Max, type_Vec;
-
-  TASK( DEFINE_TYPE(Min,   TYPE_REAL) );
-  TASK( DEFINE_TYPE(Max,   TYPE_REAL) );
-  TASK( DEFINE_TYPE(Vec,   TYPE_POINT) );
-
-  TASK(Cmp_Builtin_Proc_Def(TYPE_OPEN,   BOX_CREATION,type_Min,  Min_Open));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Min,  Min_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(TYPE_OPEN,   BOX_CREATION,type_Max,  Max_Open));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Max,  Max_RealNum));
-  TASK(Cmp_Builtin_Proc_Def(type_RealNum,BOX_CREATION,type_Vec,  Vec_RealNum));
-  return Success;
-}
-
-static Task Blt_Define_Sys(void) {
-  Int type_Exit;
-  TASK( Tym_Def_Explicit_Alias(& type_Exit, & NAME("Exit"), TYPE_VOID) );
-  TASK( Cmp_Builtin_Proc_Def(TYPE_INT, BOX_CREATION, type_Exit, Exit_Int) );
   return Success;
 }
 #endif
@@ -273,7 +98,6 @@ static Task My_Print_Str(BoxVM *vm) {
     printf("%s", s->ptr);
   return Success;
 }
-
 
 /**********************
  * Math               *
@@ -356,6 +180,38 @@ static Task My_Math_Norm2(BoxVM *vm) {
   return Success;
 }
 
+static Task My_Min_Open(BoxVM *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = REAL_MAX;
+  return Success;
+}
+
+static Task My_Min_Real(BoxVM *vmp) {
+  Real *cp = BOX_VM_THIS_PTR(vmp, Real), c = *cp,
+       x = BOX_VM_ARG1(vmp, Real);
+  *cp = (x < c) ? x : c;
+  return Success;
+}
+
+static Task My_Max_Open(BoxVM *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = REAL_MIN;
+  return Success;
+}
+
+static Task My_Max_Real(BoxVM *vmp) {
+  Real *cp = BOX_VM_THIS_PTR(vmp, Real), c = *cp,
+       x = BOX_VM_ARG1(vmp, Real);
+  *cp = (x > c) ? x : c;
+  return Success;
+}
+
+static Task My_Vec_Real(BoxVM *vmp) {
+  Real angle = BOX_VM_ARG1(vmp, Real);
+  Point *p = BOX_VM_THIS_PTR(vmp, Point);
+  p->x = cos(angle);
+  p->y = sin(angle);
+  return Success;
+}
+
 /**********************
  * Conversions        *
  **********************/
@@ -374,60 +230,46 @@ static Task My_Exit_Int(BoxVM *vm) {
   exit(BOX_VM_ARG(vm, Int));
 }
 
-#if 0
-
 /*****************************************************************************
  *                       FUNCTIONS FOR CONVERSION                            *
  *****************************************************************************/
 
-static Task Char_Char(VMProgram *vmp)
-  {BOX_VM_CURRENT(vmp, Char) = BOX_VM_ARG1(vmp, Char); return Success;}
-static Task Char_Int(VMProgram *vmp)
-  {BOX_VM_CURRENT(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Int); return Success;}
-static Task Char_Real(VMProgram *vmp)
-  {BOX_VM_CURRENT(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Real); return Success;}
-static Task Int_IntNum(VMProgram *vmp)
-  {BOX_VM_CURRENT(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;}
-static Task Int_RealNum(VMProgram *vmp)
-  {BOX_VM_CURRENT(vmp, Int) = (Int) BOX_VM_ARG1(vmp, Real); return Success;}
-static Task Real_RealNum(VMProgram *vmp)
-  {BOX_VM_CURRENT(vmp, Real) = BOX_VM_ARG1(vmp, Real); return Success;}
-static Task Point_RealNumCouple(VMProgram *vmp)
-  {BOX_VM_CURRENT(vmp, Point) = BOX_VM_ARG1(vmp, Point); return Success;}
-static Task If_IntNum(VMProgram *vmp)
-  {BOX_VM_CURRENT(vmp, Int) = !BOX_VM_ARG1(vmp, Int); return Success;}
-static Task For_IntNum(VMProgram *vmp)
-  {BOX_VM_CURRENT(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;}
+static Task My_Char_Char(BoxVM *vmp) {
+  BOX_VM_CURRENT(vmp, Char) = BOX_VM_ARG1(vmp, Char); return Success;
+}
 
-/*****************************************************************************
- *                        MATHEMATICAL FUNCTIONS                             *
- *****************************************************************************/
-static Task Min_Open(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = REAL_MAX;
-  return Success;
+static Task My_Char_Int(BoxVM *vmp) {
+  BOX_VM_CURRENT(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Int); return Success;
 }
-static Task Min_RealNum(VMProgram *vmp) {
-  Real *cp = BOX_VM_THIS_PTR(vmp, Real), c = *cp,
-       x = BOX_VM_ARG1(vmp, Real);
-  *cp = (x < c) ? x : c;
-  return Success;
+
+static Task My_Char_Real(BoxVM *vmp) {
+  BOX_VM_CURRENT(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Real); return Success;
 }
-static Task Max_Open(VMProgram *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = REAL_MIN;
-  return Success;
+
+static Task My_Int_Int(BoxVM *vmp) {
+  BOX_VM_CURRENT(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;
 }
-static Task Max_RealNum(VMProgram *vmp) {
-  Real *cp = BOX_VM_THIS_PTR(vmp, Real), c = *cp,
-       x = BOX_VM_ARG1(vmp, Real);
-  *cp = (x > c) ? x : c;
-  return Success;
+
+static Task My_Int_Real(BoxVM *vmp) {
+  BOX_VM_CURRENT(vmp, Int) = (Int) BOX_VM_ARG1(vmp, Real); return Success;
 }
-static Task Vec_RealNum(VMProgram *vmp) {
-  Real angle = BOX_VM_ARG1(vmp, Real);
-  Point *p = BOX_VM_THIS_PTR(vmp, Point);
-  p->x = cos(angle);
-  p->y = sin(angle);
-  return Success;
+
+static Task My_Real_Real(BoxVM *vmp) {
+  BOX_VM_CURRENT(vmp, Real) = BOX_VM_ARG1(vmp, Real); return Success;
+}
+
+static Task My_Point_RealNumCouple(BoxVM *vmp) {
+  BOX_VM_CURRENT(vmp, Point) = BOX_VM_ARG1(vmp, Point); return Success;
+}
+
+#if 0
+
+static Task If_IntNum(BoxVM *vmp) {
+  BOX_VM_CURRENT(vmp, Int) = !BOX_VM_ARG1(vmp, Int); return Success;
+}
+
+static Task For_IntNum(BoxVM *vmp) {
+  BOX_VM_CURRENT(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;
 }
 #endif
 
@@ -765,8 +607,8 @@ static void My_Register_Conversions(BoxCmp *c) {
   Operation_Set_User_Implem(opn, struc_to_point_sym_id);
 }
 
-void Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
-                         BoxType ret, BoxType arg, BoxVMFunc fn) {
+BoxType Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
+                            BoxType ret, BoxType arg, BoxVMFunc fn) {
   BoxType new_type;
   Value *v;
 
@@ -777,6 +619,7 @@ void Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
   Value_Setup_As_Type(v, new_type);
   Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, name, v);
   Value_Unlink(v);
+  return new_type;
 }
 
 static void My_Register_Std_IO(BoxCmp *c) {
@@ -787,46 +630,64 @@ static void My_Register_Std_IO(BoxCmp *c) {
   (void) Bltin_Proc_Def(c, t_print,  BOXTYPE_REAL, My_Print_Real);
   (void) Bltin_Proc_Def(c, t_print, c->bltin.species_point, My_Print_Pnt);
   (void) Bltin_Proc_Def(c, t_print, c->bltin.string, My_Print_Str);
+}
 
-#if 0
-  TASK(Cmp_Builtin_Proc_Def(TYPE_PAUSE, BOX_CREATION,type_Print,Print_NewLine));
-  /*Tym_Print_Procedure(stdout, type_new);*/
-#endif
+static void My_Register_Std_Procs(BoxCmp *c) {
+  BoxType t_int   = c->bltin.species_int,
+          t_real  = c->bltin.species_real,
+          t_point = c->bltin.species_point;
+  (void) Bltin_Proc_Def(c,  BOXTYPE_CHAR, BOXTYPE_CHAR, My_Char_Char);
+  (void) Bltin_Proc_Def(c,  BOXTYPE_CHAR,  BOXTYPE_INT, My_Char_Int);
+  (void) Bltin_Proc_Def(c,  BOXTYPE_CHAR, BOXTYPE_REAL, My_Char_Real);
+  (void) Bltin_Proc_Def(c,   BOXTYPE_INT,        t_int, My_Int_Int);
+  (void) Bltin_Proc_Def(c,   BOXTYPE_INT, BOXTYPE_REAL, My_Int_Real);
+  (void) Bltin_Proc_Def(c,  BOXTYPE_REAL,       t_real, My_Real_Real);
+  (void) Bltin_Proc_Def(c, BOXTYPE_POINT,      t_point,
+                        My_Point_RealNumCouple);
 }
 
 static void My_Register_Math(BoxCmp *c) {
+  BoxType t_real = c->bltin.species_real,
+          t_point = c->bltin.species_point;
   struct {
     const char *name;
     BoxType    parent,
                child;
-    BoxVMFunc  func;
+    BoxVMFunc  func_begin,
+               func;
   } *fn, fns[] = {
-   { "Sqrt", BOXTYPE_REAL, c->bltin.species_real, My_Math_Sqrt},
-   {  "Sin", BOXTYPE_REAL, c->bltin.species_real, My_Math_Sin},
-   {  "Cos", BOXTYPE_REAL, c->bltin.species_real, My_Math_Cos},
-   {  "Tan", BOXTYPE_REAL, c->bltin.species_real, My_Math_Tan},
-   { "Asin", BOXTYPE_REAL, c->bltin.species_real, My_Math_Asin},
-   { "Acos", BOXTYPE_REAL, c->bltin.species_real, My_Math_Acos},
-   { "Atan", BOXTYPE_REAL, c->bltin.species_real, My_Math_Atan},
-   {  "Exp", BOXTYPE_REAL, c->bltin.species_real, My_Math_Exp},
-   {  "Log", BOXTYPE_REAL, c->bltin.species_real, My_Math_Log},
-   {"Log10", BOXTYPE_REAL, c->bltin.species_real, My_Math_Log10},
-   { "Ceil",  BOXTYPE_INT, c->bltin.species_real, My_Math_Ceil},
-   {"Floor",  BOXTYPE_INT, c->bltin.species_real, My_Math_Floor},
-   {  "Abs", BOXTYPE_REAL, c->bltin.species_real, My_Math_Abs},
-   { "Norm", BOXTYPE_REAL,c->bltin.species_point, My_Math_Norm},
-   {"Norm2", BOXTYPE_REAL,c->bltin.species_point, My_Math_Norm2},
-   {   NULL, BOXTYPE_NONE,          BOXTYPE_NONE, NULL}
+   { "Sqrt",  BOXTYPE_REAL,  t_real, NULL,  My_Math_Sqrt},
+   {  "Sin",  BOXTYPE_REAL,  t_real, NULL,   My_Math_Sin},
+   {  "Cos",  BOXTYPE_REAL,  t_real, NULL,   My_Math_Cos},
+   {  "Tan",  BOXTYPE_REAL,  t_real, NULL,   My_Math_Tan},
+   { "Asin",  BOXTYPE_REAL,  t_real, NULL,  My_Math_Asin},
+   { "Acos",  BOXTYPE_REAL,  t_real, NULL,  My_Math_Acos},
+   { "Atan",  BOXTYPE_REAL,  t_real, NULL,  My_Math_Atan},
+   {  "Exp",  BOXTYPE_REAL,  t_real, NULL,   My_Math_Exp},
+   {  "Log",  BOXTYPE_REAL,  t_real, NULL,   My_Math_Log},
+   {"Log10",  BOXTYPE_REAL,  t_real, NULL, My_Math_Log10},
+   { "Ceil",   BOXTYPE_INT,  t_real, NULL,  My_Math_Ceil},
+   {"Floor",   BOXTYPE_INT,  t_real, NULL, My_Math_Floor},
+   {  "Abs",  BOXTYPE_REAL,  t_real, NULL,   My_Math_Abs},
+   { "Norm",  BOXTYPE_REAL, t_point, NULL,  My_Math_Norm},
+   {"Norm2",  BOXTYPE_REAL, t_point, NULL, My_Math_Norm2},
+   {  "Vec", BOXTYPE_POINT,  t_real, NULL,   My_Vec_Real},
+   {  "Min",  BOXTYPE_REAL,  t_real, My_Min_Open, My_Min_Real},
+   {  "Max",  BOXTYPE_REAL,  t_real, My_Max_Open, My_Max_Real},
+   {   NULL,  BOXTYPE_NONE,  BOXTYPE_NONE, NULL, NULL}
   };
 
   for(fn = fns; fn->func != NULL; fn++) {
-    Bltin_Simple_Fn_Def(c, fn->name, fn->parent, fn->child, fn->func);
+    BoxType func_type =
+      Bltin_Simple_Fn_Def(c, fn->name, fn->parent, fn->child, fn->func);
+    if (fn->func_begin != NULL)
+      (void) Bltin_Proc_Def(c, func_type, BOXTYPE_BEGIN, fn->func_begin);
   }
 }
 
 static void My_Register_Sys(BoxCmp *c) {
-  Bltin_Simple_Fn_Def(c, "Exit", BOXTYPE_VOID, c->bltin.species_int,
-                      My_Exit_Int);
+  (void) Bltin_Simple_Fn_Def(c, "Exit", BOXTYPE_VOID, c->bltin.species_int,
+                             My_Exit_Int);
 }
 
 /* Register bultin types, operation and functions */
@@ -837,6 +698,7 @@ void Bltin_Init(BoxCmp *c) {
   My_Register_BinOps(c);
   My_Register_Conversions(c);
   My_Register_Std_IO(c);
+  My_Register_Std_Procs(c);
   My_Register_Math(c);
   My_Register_Sys(c);
   Bltin_Str_Register_Procs(c);
