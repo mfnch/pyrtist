@@ -97,11 +97,11 @@ suffix.opt:
 
 %token <SelfLevel> TOK_SELF
 
-/* List of token that have semantial values */
+/* List of tokens that have semantical values */
 %token TOK_AT
 %token <TTag> TOK_TTAG
 
-/* List of tokens simple tokens */
+/* List of simple tokens */
 %token TOK_INC TOK_DEC TOK_SHL TOK_SHR
 %token TOK_EQ TOK_NE TOK_LT TOK_LE TOK_GT TOK_GE
 %token TOK_LOR TOK_LAND

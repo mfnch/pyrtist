@@ -2,21 +2,21 @@ BBox = ++(Point min, Point max, Int n)
 
 (.[)@BBox[$$.n = 0]
 
-// Point@&BBox[
+Point@BBox[
 //   [If[$$.n == 0], $$.max = $, $$.min = $]
 //   [If[$$.n > 0]
 //     $$.min.x = Min[$$.min.x, $.x], $$.min.y = Min[$$.min.y, $.y]
 //     $$.max.x = Max[$$.max.x, $.x], $$.max.y = Max[$$.max.y, $.y]
 //     $$.n |= 2
 //   ]
-//   $$.n |= 1
-// ]
-// 
-// BBox@&BBox[$.min, $.max]
-// 
-// BBox@Print[
+  $$.n |= 1
+]
+
+BBox@BBox[$.min, $.max]
+
+BBox@Print[
 //   [If[$.n == 0], Print["BBox[]"]]
 //   [If[$.n == 1], Print["BBox[", $.min, "]"]]
 //   [If[$.n == 3], Print["BBox[", $.min, ", ", $.max, "]"]]
-// ]
+]
 

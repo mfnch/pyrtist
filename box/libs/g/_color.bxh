@@ -10,32 +10,32 @@ Real@Color[$$.r = $$.g = $$.b = $]
 (Real r, g, b)@Color[$$.r = $.r, $$.g = $.g, $$.b = $.b]
 (Real r, g, b, a)@Color[$$.r = $.r, $$.g = $.g, $$.b = $.b, $$.a = $.a]
 
-// Color@Print["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, ", .a=", $.a, "]"]
+Color@Print["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, ", .a=", $.a, "]"]
 
 // Definition of the Hsv version of Color
 HSV = ++(Real h, s, v, a)
 Hsv = HSV
 
-// ([)@&HSV[.h = 0.0, .s = .v = .a = 1.0]
-// HSV@&HSV[.h = $.h, .s = $.s, .v = $.v, .a = $.a]
-// 
-// Real@&HSV[$$.h = $, $$.s = $$.v = $$.a = 1.0]
-// (Real h, s, v)@&HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v]
-// (Real h, s, v, a)@&HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v, $$.a = $.a]
-// 
-// HSV@Print["HSV[.h=", $.h, ", .s=", $.s, ", .v=", $.v, ", .a=", $.a, "]"]
-// 
-// // Conversion Hsv <--> Color
-// Color@&HSV ? "hsv_color"
-// HSV@&Color ? "color_hsv"
-// 
-// // To make a color darker
-// Color.Darker = Void
-// Real@Color.Darker[
-//   c = Color[HSV[$$$, .v *= Max[0, $]]]
-//   $$$.r = c.r, $$$.g = c.g, $$$.b = c.b
-// ]
-// 
+(.[)@HSV[.h = 0.0, .s = .v = .a = 1.0]
+HSV@HSV[.h = $.h, .s = $.s, .v = $.v, .a = $.a]
+
+Real@HSV[$$.h = $, $$.s = $$.v = $$.a = 1.0]
+(Real h, s, v)@HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v]
+(Real h, s, v, a)@HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v, $$.a = $.a]
+
+HSV@Print["HSV[.h=", $.h, ", .s=", $.s, ", .v=", $.v, ", .a=", $.a, "]"]
+
+// Conversion Hsv <--> Color
+Color@HSV "hsv_color" ?
+HSV@Color "color_hsv" ?
+
+// To make a color darker
+Color.Darker = Void
+Real@Color.Darker[
+  c = Color[HSV[$$$, .v *= Max[0, $]]]
+  $$$.r = c.r, $$$.g = c.g, $$$.b = c.b
+]
+
 color = (Color black, red, green, yellow, blue, magenta, cyan, white
                dark_red, dark_green, dark_yellow, dark_blue, dark_magenta
                dark_cyan, grey, none)[

@@ -1303,28 +1303,14 @@ Value *Value_Subtype_Get_Parent(Value *v_subtype) {
 Value *Value_Expand_Subtype(Value *v) {
   if (Value_Is_Value(v)) {
     BoxCmp *c = v->proc->cmp;
-    if (TS_Is_Subtype(& c->ts, v->type))
-      return Value_Subtype_Get_Child(v);
+    if (TS_Is_Subtype(& c->ts, v->type)) {
+      int subtype_was_target = (v->kind == VALUEKIND_TARGET);
+      v = Value_Subtype_Get_Child(v);
+      if (subtype_was_target)
+        v = Value_Promote_Temp_To_Target(v);
+      return v;
+    }
   }
 
   return v;
 }
-
-#if 0
-
-Value *Value_Subtype_Expand(Value *v_subtype) {
-  MSG_ERROR("Value_Subtype_Expand: not implemented, yet!");
-  Value_Unlink(v_subtype);
-  return NULL;
-
-  Expr child;
-  int ignore = e->is.ignore;
-  if (!e->is.typed) return Success;
-  if (!TS_Is_Subtype(cmp->ts, e->resolved)) return Success;
-  TASK( Expr_Subtype_Get_Child(& child, e) );
-  Cmp_Expr_Destroy_Tmp(e);
-  *e = child;
-  e->is.ignore = ignore;
-  return Success;
-}
-#endif

@@ -542,14 +542,17 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
     Value *v_parent = Value_New(c->cur_proc);
     Value_Setup_As_Parent(v_parent, t_parent);
     Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$", v_parent);
-    Value_Unlink(v_parent);
+    Value_Unlink(v_parent); /* has already a link from the namespace */
+    parent = v_parent;      /* So that Int@X[] behaves somewhat like X[] */
+  }
 
-  } else {
-    /* Not a procedure definition: then # represents internally the object
-     * the Box is constructing, so that implicit members can access it.
-     * Like:
+  {
+    /* # represents internally the object the Box is constructing, so that
+     * implicit members can access it. Like:
      *   X = (Real a, b)
      *   x = X[.a = 1.0]
+     * It also works in procedure definitions:
+     *   Int@X[.a = $]
      * The implicit member is .a and internally it is treated as #.a, even
      * if such syntax is not available to the user.
      *
@@ -562,6 +565,9 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
      * changed inside the Box
      */
     Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, "#", v_parent);
+    /* ^^^ adding # to the namespace removes all spurious error messages
+     *     for parent == NULL.
+     */
     Value_Unlink(v_parent);
   }
 
@@ -884,7 +890,7 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
   Value *v_self = NULL;
   const char *n_self = NULL;
   ASTSelfLevel self_level = n->attr.self_get.level;
-  int i;
+  int i, promote_to_target = 0;
 
   assert(n->type == ASTNODETYPE_SELFGET);
 
@@ -897,6 +903,7 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
   case 2:
     n_self = "$$";
     v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$");
+    promote_to_target = 1;
     break;
 
   default:
@@ -904,6 +911,7 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
     v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$");
     for (i = 2; i < self_level && v_self != NULL; i++)
       v_self = Value_Subtype_Get_Parent(v_self);
+    promote_to_target = 1;
   }
 
   if (v_self == NULL) {    
@@ -915,6 +923,9 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
     Value_Setup_As_Weak_Copy(v_copy, v_self);
     Value_Unlink(v_self);
     v_self = v_copy;
+
+    if (promote_to_target)
+      v_self = Value_Promote_Temp_To_Target(v_self);
   }
 
   BoxCmp_Push_Value(c, v_self);
