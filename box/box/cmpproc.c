@@ -729,3 +729,48 @@ void CmpProc_Assemble(CmpProc *p, BoxGOp g_op, int num_args, ...) {
   CmpProc_VA_Assemble(p, g_op, num_args, ap);
   va_end(ap);
 }
+
+BoxVMSymID CmpProc_Jump_Label_New(CmpProc *p) {
+  return BoxVMSym_New_Label(p->cmp->vm);
+}
+
+BoxVMSymID CmpProc_Jump_Label_Here(CmpProc *p) {
+ BoxVMSymID jl = CmpProc_Jump_Label_New(p);
+ CmpProc_Jump_Label_Define(p, jl);
+ return jl;
+}
+
+/* Abbreviations for a few procedures sharing the same structure */
+#define MY_ASSEMBLE_BEGIN() \
+  BoxVMProcID proc_id, previous_target; \
+  CmpProc_Begin(p); \
+  proc_id = CmpProc_Get_ProcID(p); \
+  previous_target = BoxVM_Proc_Target_Set(p->cmp->vm, proc_id)
+
+#define MY_ASSEMBLE_END() \
+  (void) BoxVM_Proc_Target_Set(p->cmp->vm, previous_target)
+
+void CmpProc_Jump_Label_Define(CmpProc *p, BoxVMSymID jl) {
+  MY_ASSEMBLE_BEGIN();
+  ASSERT_TASK( BoxVMSym_Def_Label_Here(p->cmp->vm, jl) );
+  MY_ASSEMBLE_END();
+}
+
+void CmpProc_Jump_Label_Release(CmpProc *p, BoxVMSymID jl) {
+  ASSERT_TASK( BoxVMSym_Release_Label(p->cmp->vm, jl) );
+}
+
+void CmpProc_Assemble_Jump(CmpProc *p, BoxVMSymID jl) {
+  MY_ASSEMBLE_BEGIN();
+  ASSERT_TASK( BoxVMSym_Jmp(p->cmp->vm, jl) );
+  MY_ASSEMBLE_END();
+}
+
+void CmpProc_Assemble_CJump(CmpProc *p, BoxVMSymID jl, BoxCont *cont) {
+  BoxCont ri0_cont;
+  MY_ASSEMBLE_BEGIN();
+  BoxCont_Set(& ri0_cont, "ri", 0);
+  CmpProc_Assemble(p, BOXGOP_MOV, 2, & ri0_cont, cont);
+  ASSERT_TASK( BoxVMSym_Jc(p->cmp->vm, jl) );
+  MY_ASSEMBLE_END();
+}

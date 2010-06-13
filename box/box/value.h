@@ -181,6 +181,11 @@ void Value_Emit_Link(Value *v);
  */
 void Value_Emit_Unlink(Value *v);
 
+/** Given an If, For type emits a conditional jump to the specified jump
+ * label.
+ */
+void Value_Emit_CJump(Value *v, BoxVMSymID jump_label);
+
 /** Return a new temporary Value created from the given Value 'v'.
  * NOTE: return a new value created with Value_New() or a new reference
  *  to 'v', if it can be recycled (has just one reference).
@@ -232,10 +237,27 @@ int Value_Has_Type(Value *v);
 void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
                                 Value *parent, Value *child);
 
-/** Emit the code corresponding to a call to child@parent.
- * REFERENCES: parent: 0, child: -1;
+/** Emits the code corresponding to a call to child@parent. If the procedure
+ * cannot be found, then sets *success to BOXTASK_FAILURE and exits without
+ * displaying any messages and returns a new reference to child, so that it
+ * can be further processed (rationale: if a standard procedure has not
+ * been found you may still interpret it differently, rather than giving up
+ * immediately). Example:
+ *
+ *   child = Value_Emit_Call(parent1, child, & success);
+ *   if (child != NULL) // success == BOXTASK_FAILURE
+ *     child = Value_Emit_Call(parent2, child, & success);
+ *   Value_Unlink(child); // remember that Value_Unlink(NULL) is legal.
+ *   if (success == BOXTASK_FAILURE)
+ *     MSG_ERROR("Neither parent1 nor parent2 has got the procedure.");
+ *
+ * In the code, do child@parent2, if child@parent1 was not found.
+ * If the procedure is found and compiled, sets *success = BOXTASK_OK and
+ * returns NULL. In case of error, sets *success = BOXTASK_ERROR and return
+ * NULL.
+ * REFERENCES: return: new, parent: 0, child: -1;
  */
-BoxTask Value_Emit_Call(Value *parent, Value *child);
+Value *Value_Emit_Call(Value *parent, Value *child, BoxTask *success);
 
 /** Try to call the procedure for the given parent with the given child.
  * If the procedure is not found, than it is blacklisted, so that it won't

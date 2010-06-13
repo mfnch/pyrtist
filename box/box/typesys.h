@@ -188,7 +188,7 @@ int TS_Structure_Is_Fast(TS *ts, Type structure);
 
 Int TS_Align(TS *ts, Int address);
 
-void TS_Intrinsic_New(TS *ts, Type *i, Int size);
+BoxType TS_Intrinsic_New(TS *ts, Int size);
 
 /** Create a new procedure type in p. init tells if the procedure
  * is an initialisation procedure or not.
@@ -305,7 +305,7 @@ Task TS_Name_Set(TS *ts, Type t, const char *name);
 char *TS_Name_Get(TS *ts, Type t);
 
 /** Create a new alias type from the type 'origin'. */
-void TS_Alias_New(TS *ts, Type *alias, Type origin);
+BoxType TS_Alias_New(TS *ts, Type origin);
 
 /** Create a new detached type from the type t. The new type (in *d) will be
  * similar to t, but incompatible: TS_Compare will not match the two types.
@@ -380,51 +380,5 @@ Int TS_Member_Count(TS *ts, Type s);
  * - TS_TYPES_UNMATCH: the two types are not compatible;
  */
 TSCmp TS_Compare(TS *ts, Type t1, Type t2);
-
-#  if 1
-
-/* Stringhe corrispondenti ai tipi di tipi */
-#define TOT_DESCRIPTIONS { \
- "instance of ", "pointer to", "array of ", "set of types", "procedure " }
-
-/* Enumeration of special procedures */
-enum {
-  PROC_COPY    = -1,
-  PROC_DESTROY = -2,
-  PROC_SPECIAL_NUM = 3
-};
-
-/* Important builtin types */
-extern Int type_Point, type_RealNum, type_IntgNum, type_CharNum;
-
-Int Tym_Type_Size(Int t);
-Int Tym_Struct_Get_Num_Items(Int t);
-const char *Tym_Type_Name(Int t);
-char *Tym_Type_Names(Int t);
-Task Tym_Def_Type(Int *new_type,
- Int parent, Name *nm, Int size, Int aliased_type);
-Int Tym_Def_Array_Of(Int num, Int type);
-Int Tym_Def_Pointer_To(Int type);
-Int Tym_Def_Alias_Of(Name *nm, Int type);
-int Tym_Compare_Types(Int type1, Int type2, int *need_expansion);
-Int Tym_Type_Resolve(Int type, int not_alias, int not_species);
-#define Tym_Type_Resolve_Alias(type) Tym_Type_Resolve(type, 0, 1)
-#define Tym_Type_Resolve_Species(type) Tym_Type_Resolve(type, 1, 0)
-#define Tym_Type_Resolve_All(type) Tym_Type_Resolve(type, 0, 0)
-Int Tym_Def_Procedure(Int proc, int second, Int of_type, Int sym_num);
-void Tym_Print_Procedure(FILE *stream, Int of_type);
-Task Tym_Def_Specie(Int *specie, Int type);
-Task Tym_Def_Structure(Int *strc, Int type);
-Task Tym_Structure_Get(Int *type);
-Task Tym_Specie_Get(Int *type);
-Int Tym_Specie_Get_Target(Int type);
-
-/*#define Tym_Def_Explicit(new_type, nm) \
-  Tym_Def_Type(new_type, TYPE_NONE, nm, (Int) 0, TYPE_NONE)*/
-#define Tym_Def_Explicit_Alias(new_type, nm, type) \
-  Tym_Def_Type(new_type, TYPE_NONE, nm, (Int) -1, type)
-#define Tym_Def_Intrinsic(new_type, nm, size) \
-  Tym_Def_Type(new_type, TYPE_NONE, nm, size, TYPE_NONE)
-#  endif
 
 #endif

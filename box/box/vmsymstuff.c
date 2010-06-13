@@ -127,11 +127,11 @@ static Task Assemble_Jmp(BoxVM *vmp, UInt sym_num, UInt sym_type,
   return Success;
 }
 
-BoxVMSymID VM_Sym_New_Label(BoxVM *vmp) {
+BoxVMSymID BoxVMSym_New_Label(BoxVM *vmp) {
   return BoxVMSym_New(vmp, VM_SYM_COND_JMP, sizeof(VMSymLabel));
 }
 
-Task VM_Sym_Def_Label(BoxVM *vmp, UInt sym_num,
+Task BoxVMSym_Def_Label(BoxVM *vmp, UInt sym_num,
                       Int sheet_id, Int position) {
   VMSymLabel label;
   label.sheet_id = sheet_id;
@@ -142,39 +142,39 @@ Task VM_Sym_Def_Label(BoxVM *vmp, UInt sym_num,
 /* Same as VM_Label_Define, but sheet_id is the current active sheet and
  * position is the current position in that sheet.
  */
-Task VM_Sym_Def_Label_Here(BoxVM *vmp, UInt label_sym_num) {
+Task BoxVMSym_Def_Label_Here(BoxVM *vmp, UInt label_sym_num) {
   Int sheet_id, position;
   sheet_id = vmp->proc_table.target_proc_num;
   position = BoxArr_Num_Items(& vmp->proc_table.target_proc->code);
-  return VM_Sym_Def_Label(vmp, label_sym_num, sheet_id, position);
+  return BoxVMSym_Def_Label(vmp, label_sym_num, sheet_id, position);
 }
 
 /* Same as VM_Label_New, but sheet_id is the current active sheet and
  * position is the current position in that sheet.
  */
-Task VM_Sym_New_Label_Here(BoxVM *vmp, UInt *label_sym_num) {
-  *label_sym_num = VM_Sym_New_Label(vmp);
-  return VM_Sym_Def_Label_Here(vmp, *label_sym_num);
+Task BoxVMSym_New_Label_Here(BoxVM *vmp, UInt *label_sym_num) {
+  *label_sym_num = BoxVMSym_New_Label(vmp);
+  return BoxVMSym_Def_Label_Here(vmp, *label_sym_num);
 }
 
-Task VM_Sym_Jmp_Generic(BoxVM *vmp, UInt sym_num, int conditional) {
+Task VM_Sym_Jmp_Generic(BoxVM *vmp, BoxVMSymID sym_id, int conditional) {
   VMSymLabelRef label_ref;
   label_ref.conditional = conditional;
   label_ref.sheet_id = vmp->proc_table.target_proc_num;
   label_ref.position = BoxArr_Num_Items(& vmp->proc_table.target_proc->code);
-  return BoxVMSym_Code_Ref(vmp, sym_num, Assemble_Jmp,
+  return BoxVMSym_Code_Ref(vmp, sym_id, Assemble_Jmp,
                            & label_ref, sizeof(VMSymLabelRef));
 }
 
-Task VM_Sym_Jc(BoxVM *vmp, UInt sym_num) {
-  return VM_Sym_Jmp_Generic(vmp, sym_num, 1);
+Task BoxVMSym_Jc(BoxVM *vmp, BoxVMSymID sym_id) {
+  return VM_Sym_Jmp_Generic(vmp, sym_id, 1);
 }
 
-Task VM_Sym_Jmp(BoxVM *vmp, UInt sym_num) {
-  return VM_Sym_Jmp_Generic(vmp, sym_num, 0);
+Task BoxVMSym_Jmp(BoxVM *vmp, BoxVMSymID sym_id) {
+  return VM_Sym_Jmp_Generic(vmp, sym_id, 0);
 }
 
-Task VM_Sym_Destroy_Label(BoxVM *vmp, UInt sym_num) {
+Task BoxVMSym_Release_Label(BoxVM *vmp, BoxVMSymID sym_id) {
   return Success;
 }
 

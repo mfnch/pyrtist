@@ -34,6 +34,7 @@
 #  include "registers.h"
 #  include "virtmach.h"
 #  include "vmsym.h"
+#  include "container.h"
 #  include "vmproc.h"
 #  include "cmpptrs.h"
 
@@ -207,5 +208,34 @@ void CmpProc_Assemble_Call(CmpProc *p, BoxVMSymID sym_id);
 /** High level routine to assemble bytecode for the Box virtual machine (VM).
  */
 void CmpProc_Assemble(CmpProc *p, BoxGOp g_op, int num_args, ...);
+
+/** Create a new jump-label. The label can be used to assemble jump
+ * instructions with CmpProc_Assemble_Jump, CmpProc_Assemble_CJump.
+ * The label has to be defined using CmpProc_Jump_Label_Define.
+ */
+BoxVMSymID CmpProc_Jump_Label_New(CmpProc *p);
+
+/** Shorthand for:
+ * jl = CmpProc_Jump_Label_New(p);
+ * CmpProc_Jump_Label_Define(p, jl);
+ * return jl;
+ */
+BoxVMSymID CmpProc_Jump_Label_Here(CmpProc *p);
+
+/** Define an existing undefined label to point to the current position in
+ * the procedure.
+ */
+void CmpProc_Jump_Label_Define(CmpProc *p, BoxVMSymID jl);
+
+/** Release the given jump label. After this function has been called the jump
+ * label cannot be used anymore.
+ */
+void CmpProc_Jump_Label_Release(CmpProc *p, BoxVMSymID jl);
+
+/** Assemble a jump instruction to the given jump label. */
+void CmpProc_Assemble_Jump(CmpProc *p, BoxVMSymID jl);
+
+/** Assemble a conditional jump instruction to the given jump label. */
+void CmpProc_Assemble_CJump(CmpProc *p, BoxVMSymID jl, BoxCont *cont);
 
 #endif

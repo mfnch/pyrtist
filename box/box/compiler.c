@@ -506,9 +506,11 @@ static void My_Compile_Statement(BoxCmp *c, ASTNode *s) {
 
 static void My_Compile_Box(BoxCmp *c, ASTNode *box,
                            BoxType t_child, BoxType t_parent) {
+  TS *ts = & c->ts;
   ASTNode *s;
   Value *parent = NULL;
   int parent_is_err = 0;
+  BoxVMSymID jump_label_begin, jump_label_end;
 
   assert(box->type == ASTNODETYPE_BOX);
 
@@ -577,6 +579,10 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
     (void) Value_Emit_Call_Or_Blacklist(parent, & c->value.begin);
   }
 
+  /* Create jump-labels for If and For */
+  jump_label_begin = CmpProc_Jump_Label_Here(c->cur_proc);
+  jump_label_end = CmpProc_Jump_Label_New(c->cur_proc);
+
   /* Loop over all the statements of the box */
   for(s = box->attr.box.first_statement;
       s != NULL;
@@ -588,20 +594,41 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
 
     if (!(parent_is_err || Value_Is_Ignorable(stmt_val))) {
       if (Value_Want_Has_Type(stmt_val)) {
-        BoxType stmt_type = stmt_val->type;
-        BoxTask status = Value_Emit_Call_Or_Blacklist(parent, stmt_val);
-        stmt_val = NULL; /* so that it doesn't get unlinked again! */
-        if (status == BOXTASK_FAILURE) {
-          MSG_WARNING("Don't know how to use '%~s' expressions inside "
-                      "a '%~s' box.",
-                      TS_Name_Get(& c->ts, stmt_type),
-                      TS_Name_Get(& c->ts, parent->type));
+        BoxTask status;
+        stmt_val = Value_Emit_Call(parent, stmt_val, & status);
+
+        if (stmt_val != NULL) {
+          BoxType stmt_type = stmt_val->type;
+
+          assert(status == BOXTASK_FAILURE);
+
+          /* Treat the case where stmt_val is an If[] or For[] value */
+          if (TS_Compare(ts, stmt_type, c->bltin.alias_if))
+            Value_Emit_CJump(stmt_val, jump_label_end);
+
+          else if (TS_Compare(ts, stmt_type, c->bltin.alias_for))
+            Value_Emit_CJump(stmt_val, jump_label_begin);
+
+          else {
+            MSG_WARNING("Don't know how to use '%~s' expressions inside "
+                        "a '%~s' box.",
+                        TS_Name_Get(& c->ts, stmt_type),
+                        TS_Name_Get(& c->ts, parent->type));
+            Value_Unlink(stmt_val);
+          }
+
+          stmt_val = NULL; /* To prevent double unlink */
         }
       }
     }
 
     Value_Unlink(stmt_val);
   }
+
+  /* Define the end label and release it together with the begin label */
+  CmpProc_Jump_Label_Define(c->cur_proc, jump_label_end);
+  CmpProc_Jump_Label_Release(c->cur_proc, jump_label_end);
+  CmpProc_Jump_Label_Release(c->cur_proc, jump_label_begin);
 
   /* Invoke the closing procedure */
   if (box->attr.box.parent != NULL) {
@@ -1101,7 +1128,7 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
       BoxType new_type;
 
       /* First create the alias type */
-      TS_Alias_New(ts, & new_type, v_type->type);
+      new_type = TS_Alias_New(ts, v_type->type);
       TS_Name_Set(ts, new_type, v_name->name);
 
       /* Register the type in the proper namespace */

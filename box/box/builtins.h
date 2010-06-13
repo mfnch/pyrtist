@@ -36,8 +36,10 @@ typedef struct {
           struc_real_real,
           species_int,
           species_real,
-          species_point;
-  BoxType print,
+          species_point,
+          alias_if,
+          alias_for,
+          print,
           exit;
 } BltinStuff;
 

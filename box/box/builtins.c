@@ -40,26 +40,6 @@
 #include "bltinstr.h"
 #include "bltinio.h"
 
-#if 0
-  } alias[] = {
-    {NAME("If"),   TYPE_INT,  TYPE_IF},
-    {NAME("For"),  TYPE_INT,  TYPE_FOR},
-    {NAME("CHAR"), TYPE_CHAR, TYPE_NONE},
-    {NAME(""),     TYPE_NONE, TYPE_NONE}
-  };
-
-static Task Blt_Define_Basics(void) {
-  /* Ora faccio l'overloading dell'operatore di conversione
-   * e definisco le conversioni automatiche che il compilatore
-   * dovra' fare.
-   */
-  /* Define the conversions (example: Real@Int such as: a = Int[ 1.2 ]) */
-  TASK(Cmp_Builtin_Proc_Def(type_IntNum, BOX_CREATION, TYPE_IF, If_IntNum ));
-  TASK(Cmp_Builtin_Proc_Def(type_IntNum, BOX_CREATION, TYPE_FOR, For_IntNum ));
-  return Success;
-}
-#endif
-
 /*******************************BOX-PROCEDURES********************************/
 
 /**********************
@@ -262,16 +242,13 @@ static Task My_Point_RealNumCouple(BoxVM *vmp) {
   BOX_VM_CURRENT(vmp, Point) = BOX_VM_ARG1(vmp, Point); return Success;
 }
 
-#if 0
-
-static Task If_IntNum(BoxVM *vmp) {
+static Task My_If_Int(BoxVM *vmp) {
   BOX_VM_CURRENT(vmp, Int) = !BOX_VM_ARG1(vmp, Int); return Success;
 }
 
-static Task For_IntNum(BoxVM *vmp) {
+static Task My_For_Int(BoxVM *vmp) {
   BOX_VM_CURRENT(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;
 }
-#endif
 
 /****************************************************************************/
 /* NEW COMPILER */
@@ -352,11 +329,17 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
   TS_Species_Add(ts, b->species_point, BOXTYPE_POINT);
   TS_Name_Set(ts, b->species_point, "Point");
 
+  /* Define If and For */
+  b->alias_if = TS_Detached_New(ts, TS_Alias_New(ts, BOXTYPE_INT));
+  TS_Name_Set(ts, b->alias_if, "If");
+  b->alias_for = TS_Detached_New(ts, TS_Alias_New(ts, BOXTYPE_INT));
+  TS_Name_Set(ts, b->alias_for, "For");
+
   /* Define Str */
-  TS_Intrinsic_New(ts, & b->string, sizeof(BoxStr));
+  b->string = TS_Intrinsic_New(ts, sizeof(BoxStr));
   TS_Name_Set(ts, b->string, "Str");
 
-  TS_Alias_New(ts, & b->print, BOXTYPE_VOID);
+  b->print = TS_Alias_New(ts, BOXTYPE_VOID);
   TS_Name_Set(ts, b->print, "Print");
 }
 
@@ -380,6 +363,8 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {"Void",        BOXTYPE_VOID},
     {"Ptr",         BOXTYPE_PTR},
     {"CPtr",        BOXTYPE_CPTR},
+    {"If",          c->bltin.alias_if},
+    {"For",         c->bltin.alias_for},
     {"Print",       c->bltin.print},
     {(char *) NULL, BOXTYPE_NONE}
   };
@@ -612,7 +597,7 @@ BoxType Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
   BoxType new_type;
   Value *v;
 
-  TS_Alias_New(& c->ts, & new_type, ret);
+  new_type = TS_Alias_New(& c->ts, ret);
   TS_Name_Set(& c->ts, new_type, name);
   (void) Bltin_Proc_Def(c, new_type, arg, fn);
   v = Value_New(c->cur_proc);
@@ -635,7 +620,9 @@ static void My_Register_Std_IO(BoxCmp *c) {
 static void My_Register_Std_Procs(BoxCmp *c) {
   BoxType t_int   = c->bltin.species_int,
           t_real  = c->bltin.species_real,
-          t_point = c->bltin.species_point;
+          t_point = c->bltin.species_point,
+          t_if    = c->bltin.alias_if,
+          t_for   = c->bltin.alias_for;
   (void) Bltin_Proc_Def(c,  BOXTYPE_CHAR, BOXTYPE_CHAR, My_Char_Char);
   (void) Bltin_Proc_Def(c,  BOXTYPE_CHAR,  BOXTYPE_INT, My_Char_Int);
   (void) Bltin_Proc_Def(c,  BOXTYPE_CHAR, BOXTYPE_REAL, My_Char_Real);
@@ -644,6 +631,8 @@ static void My_Register_Std_Procs(BoxCmp *c) {
   (void) Bltin_Proc_Def(c,  BOXTYPE_REAL,       t_real, My_Real_Real);
   (void) Bltin_Proc_Def(c, BOXTYPE_POINT,      t_point,
                         My_Point_RealNumCouple);
+  (void) Bltin_Proc_Def(c,          t_if,        t_int, My_If_Int);
+  (void) Bltin_Proc_Def(c,         t_for,        t_int, My_For_Int);
 }
 
 static void My_Register_Math(BoxCmp *c) {
@@ -706,4 +695,3 @@ void Bltin_Init(BoxCmp *c) {
 
 void Bltin_Finish(BoxCmp *c) {
 }
-

@@ -75,8 +75,7 @@ void TS_Init_Builtin_Types(TS *ts) {
     for(builtin_type = & builtin_types[0];
         builtin_type->name != NULL;
         builtin_type++) {
-      Type type;
-      TS_Intrinsic_New(ts, & type, builtin_type->size);
+      Type type = TS_Intrinsic_New(ts, builtin_type->size);
       TS_Name_Set(ts, type, builtin_type->name);
       assert(type == builtin_type->expected);
     }
@@ -440,14 +439,16 @@ Int TS_Member_Count(TS *ts, Type s) {
  ****************************************************************************/
 
 /*FUNCTIONS: TS_X_New *******************************************************/
-void TS_Intrinsic_New(TS *ts, Type *i, Int size) {
+BoxType TS_Intrinsic_New(TS *ts, Int size) {
   TSDesc td;
+  BoxType new_type;
   assert(size >= 0);
   TS_TSDESC_INIT(& td);
   td.kind = TS_KIND_INTRINSIC;
   td.size = size;
   td.target = TS_TYPE_NONE;
-  Type_New(ts, i, & td);
+  Type_New(ts, & new_type, & td);
+  return new_type;
 }
 
 Type TS_Procedure_New(TS *ts, Type parent, Type child, int kind) {
@@ -482,8 +483,10 @@ static void TS_X_New(TSKind kind, TS *ts, Type *dst, Type src, Int size) {
   Type_New(ts, dst, & td);
 }
 
-void TS_Alias_New(TS *ts, Type *alias, Type origin) {
-  TS_X_New(TS_KIND_ALIAS, ts, alias, origin, -1);
+BoxType TS_Alias_New(TS *ts, Type origin) {
+  BoxType t_ret;
+  TS_X_New(TS_KIND_ALIAS, ts, & t_ret, origin, -1);
+  return t_ret;
 }
 
 BoxType TS_Detached_New(TS *ts, BoxType t_origin) {
@@ -977,154 +980,4 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
     t1 = td1->target;
     t2 = td2->target;
   }
-}
-
-/****************************************************************************/
-/* Code for transition from typeman.c to typesys.c
- * This code re-implements typeman.c as a wrapper around typesys.c
- */
-
-#include <stdlib.h>
-
-#include "str.h"
-
-const char *Tym_Type_Name(Int t) {
-  if (last_name != (char *) NULL) {
-    free(last_name);
-    last_name = (char *) NULL;
-  }
-  last_name = TS_Name_Get(last_ts, (Type) t);
-  return last_name;
-}
-
-char *Tym_Type_Names(Int t) {
-  static int tym_num_name = -1;
-  static char *tym_name[TYM_NUM_TYPE_NAMES];
-
-  register char *str;
-  if ( tym_num_name < 0 ) {
-    int i;
-    for(i = 0; i < TYM_NUM_TYPE_NAMES; i++) tym_name[i] = (char *) NULL;
-    tym_num_name = 0;
-  }
-  free(tym_name[tym_num_name]);
-  str = strdup(Tym_Type_Name(t));
-  tym_name[tym_num_name] = str;
-  tym_num_name = (tym_num_name + 1) % TYM_NUM_TYPE_NAMES;
-  return str;
-}
-
-#if 0
-Task Tym_Def_Type(Int *new_type,
- Int parent, Name *nm, Int size, Int aliased_type) {
-  Symbol *s;
-  Type type;
-  char *name;
-
-  /* First of all I create the symbol with name *nm */
-  assert(parent == TYPE_NONE);
-  TASK( Sym_Explicit_New(& s, nm, 0) );
-  s->symattr.is_explicit = 1;
-
-  /* Now I create a new type for the box */
-  if ( size < 0 ) {
-    TS_Alias_New(last_ts, & type, aliased_type);
-
-  } else {
-    TS_Intrinsic_New(last_ts, & type, size);
-  }
-  name = Name_To_Str(nm);
-  (void) TS_Name_Set(last_ts, type, name);
-  BoxMem_Free(name);
-
-  /* I set all the remaining values of the structure s */
-  s->symtype = VARIABLE;
-  *new_type = type;
-  Expr_New_Type(& s->value, type);
-  return Success;
-}
-#endif
-
-Int Tym_Def_Array_Of(Int num, Int type) {
-  Type array;
-  TS_Array_New(last_ts, & array, type, num);
-  return array;
-}
-
-Int Tym_Def_Alias_Of(Name *nm, Int type) {
-  Type alias;
-  TS_Alias_New(last_ts, & alias, type);
-  TS_Name_Set(last_ts, alias, Name_To_Str(nm));
-  return alias;
-}
-
-int Tym_Compare_Types(Int type1, Int type2, int *need_expansion) {
-  int dummy;
-  if (need_expansion == NULL) need_expansion = & dummy;
-  switch(TS_Compare(last_ts, type1, type2)) {
-  case TS_TYPES_MATCH:
-  case TS_TYPES_EXPAND:
-    *need_expansion = 1;
-    return 1;
-  case TS_TYPES_EQUAL:
-    *need_expansion = 0;
-    return 1;
-  default:
-  case TS_TYPES_UNMATCH:
-    *need_expansion = 0;
-    return 0;
-  }
-}
-
-Int Tym_Type_Resolve(Int type, int not_alias, int not_species) {
-  Int select;
-  select  = not_alias ? 0 : TS_KS_ALIAS;
-  select |= not_species ? 0 : TS_KS_SPECIES;
-  return TS_Resolve(last_ts, type, select);
-}
-
-Int Tym_Def_Procedure(Int proc, int second, Int of_type, Int sym_num) {
-  Type procedure;
-  int kind = second ? 2 : 1;
-  procedure = TS_Procedure_New(last_ts, of_type, proc, kind);
-  TS_Procedure_Register(last_ts, procedure, sym_num);
-  return procedure;
-}
-
-Task Tym_Def_Specie(Int *specie, Int type) {
-  if (*specie == TYPE_NONE) {
-    TS_Species_Begin(last_ts, specie);
-  }
-  TS_Species_Add(last_ts, *specie, type);
-  return Success;
-}
-
-Task Tym_Def_Structure(Int *strc, Int type) {
-  if (*strc == TYPE_NONE) {
-    TS_Structure_Begin(last_ts, strc);
-  }
-  TS_Structure_Add(last_ts, *strc, type, NULL);
-  return Success;
-}
-#if 0
-Task Tym_Specie_Get(Int *type) {
-  *type = TS_Member_Next(last_ts, *type);
-  if (! TS_Is_Member(last_ts, *type)) *type = TYPE_NONE;
-  return Success;
-}
-
-Task Tym_Structure_Get(Int *type) {
-  *type = TS_Member_Next(last_ts, *type);
-  if (! TS_Is_Member(last_ts, *type)) *type = TYPE_NONE;
-  return Success;
-}
-#endif
-
-Int Tym_Specie_Get_Target(Int type) {
-  TSDesc *s_td = Type_Ptr(last_ts, type);
-  return s_td->data.last;
-}
-
-Int Tym_Struct_Get_Num_Items(Int t) {
-  return TS_Member_Count(last_ts, t);
 }

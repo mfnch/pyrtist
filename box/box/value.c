@@ -272,6 +272,7 @@ void Value_Setup_As_Temp(Value *v, BoxType t) {
 }
 
 void Value_Setup_As_String(Value *v_str, const char *str) {
+  BoxTask success;
   BoxCmp *c = v_str->proc->cmp;
   size_t l, addr;
   Value v_str_data;
@@ -286,7 +287,9 @@ void Value_Setup_As_String(Value *v_str, const char *str) {
   Value_Setup_Container(& v_str_data, BOXTYPE_OBJ, & vc);
 
   Value_Setup_As_Temp(v_str, c->bltin.string);
-  if (Value_Emit_Call(v_str, & v_str_data) != BOXTASK_OK) {
+  
+  Value_Unlink(Value_Emit_Call(v_str, & v_str_data, & success));
+  if (success != BOXTASK_OK) {
     MSG_FATAL("Value_Setup_As_String: Failure while emitting string.");
     assert(0);
   }
@@ -456,6 +459,13 @@ void Value_Emit_Unlink(Value *v) {
   }
 }
 
+/* REFERENCES: v: -1 */
+void Value_Emit_CJump(Value *v, BoxVMSymID jump_label) {
+  BoxCmp *c = v->proc->cmp;
+  CmpProc_Assemble_CJump(c->cur_proc, jump_label, & v->value.cont);
+  Value_Unlink(v);
+}
+
 Value *Value_To_Temp(Value *v) {
   ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
   BoxCmp *c = v->proc->cmp;
@@ -602,19 +612,24 @@ void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
   CmpProc_Assemble_Call(c->cur_proc, sym_id);
 }
 
-/* REFERENCES: parent: 0, child: -1; */
-static BoxTask My_Emit_Call(Value *parent, Value *child, TSSearchMode mode) {
+/* REFERENCES: return: new, parent: 0, child: -1; */
+static Value *My_Emit_Call(Value *parent, Value *child, TSSearchMode mode,
+                           BoxTask *success) {
   BoxCmp *c = parent->proc->cmp;
   TS *ts = & c->ts;
   BoxType found_procedure, expansion_for_child;
   BoxVMSymID sym_id;
+  BoxTask dummy;
 
   assert(parent != NULL && child != NULL);
+
+  success = (success != NULL) ? success : & dummy;
 
   if (Value_Is_Err(parent) || Value_Is_Err(child)) {
     /* In case of error silently exits. */
     Value_Unlink(child);
-    return BOXTASK_OK;
+    *success = BOXTASK_OK;
+    return (Value *) NULL;
   }
 
   assert(c == child->proc->cmp);
@@ -627,7 +642,8 @@ static BoxTask My_Emit_Call(Value *parent, Value *child, TSSearchMode mode) {
   /* Types derived from Void are always ignored */
   if (TS_Compare(ts, child->type, BOXTYPE_VOID)) {
     Value_Unlink(child);
-    return BOXTASK_OK;
+    *success = BOXTASK_OK;
+    return (Value *) NULL;
   }
 
   /* Now we search for the procedure associated with *child */
@@ -640,30 +656,35 @@ static BoxTask My_Emit_Call(Value *parent, Value *child, TSSearchMode mode) {
     expansion_for_child = BOXTYPE_NONE;
     found_procedure = Auto_Generate_Procedure(c, child->type, parent->type);
     if (found_procedure == BOXTYPE_NONE) {
-      Value_Unlink(child);
-      return BOXTASK_FAILURE;
+      *success = BOXTASK_FAILURE;
+      return child; /* return child as it may be processed further */
     }
   }
 
   if (expansion_for_child != BOXTYPE_NONE) {
     child = Value_Expand(child, expansion_for_child);
-    if (child == NULL)
-      return BOXTASK_ERROR;
+    if (child == NULL) {
+      *success = BOXTASK_ERROR;
+      return (Value *) NULL; /* ERROR: Value_Expand does unlink child */
+    }
   }
 
   sym_id = TS_Procedure_Get_Sym(ts, found_procedure);
-
   Value_Emit_Call_From_SymID(sym_id, parent, child);
+
+  *success = BOXTASK_OK;
   Value_Unlink(child);
-  return BOXTASK_OK;
+  return (Value *) NULL;
 }
 
-BoxTask Value_Emit_Call(Value *parent, Value *child) {
-  return My_Emit_Call(parent, child, 0);
+Value *Value_Emit_Call(Value *parent, Value *child, BoxTask *success) {
+  return My_Emit_Call(parent, child, 0, success);
 }
 
 BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child) {
-  return My_Emit_Call(parent, child, TSSEARCHMODE_BLACKLIST);
+  BoxTask t;
+  Value_Unlink(My_Emit_Call(parent, child, TSSEARCHMODE_BLACKLIST, & t));
+  return t;
 }
 
 /**
