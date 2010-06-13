@@ -63,6 +63,9 @@ char *BoxMem_Str_Merge(const char *str1, const char *str2);
 
 void BoxMem_Exit(const char *msg);
 
+/** Called to signal a fatal error condition and exit immediately. */
+void Box_Fatal_Error(const char *file, unsigned long line_no);
+
 /** Executes *r = a*x, returning 0 in case of integer overflow, 1 otherwise. */
 int BoxMem_ax(size_t *r, size_t a, size_t x);
 

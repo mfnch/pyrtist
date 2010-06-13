@@ -1,7 +1,7 @@
 include "g"
 include "arrows"
 
-t = Real
+t = Real[]
 
 lmc = Color[color.red,    .a=0.5] // local moment color
 sc  = Color[.r=.g=.b=0.9, .a=1.0] // system color

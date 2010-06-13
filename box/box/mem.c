@@ -29,6 +29,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 /* I'm not really sure here if SIZEOF_BLOCK should always be sizeof(uint32_t).
  * This is why the following code here may seem a little bit non-sense.
@@ -52,7 +53,7 @@ size_t BoxMem_Size_Align(size_t n) {
 
 void *BoxMem_Safe_Alloc(size_t size) {
   void *ptr = malloc(BoxMem_Size_Align(size));
-  if (ptr == NULL) BoxMem_Exit("malloc failed!");
+  Box_Fatal_Error_If(ptr == NULL);
 #ifdef DEBUG_MEM
   printf("BoxMem_Safe_Alloc: returning %p\n", ptr);
 #endif
@@ -124,7 +125,12 @@ char *BoxMem_Str_Merge(const char *str1, const char *str2) {
 
 void BoxMem_Exit(const char *msg) {
   MSG_FATAL("BoxMem_Exit: %s", msg);
-  exit(EXIT_FAILURE);
+  abort();
+}
+
+void Box_Fatal_Error(const char *file, unsigned long line_no) {
+  fprintf(stderr, "Fatal error detected at '%s', line %ld.\n", file, line_no);
+  abort();
 }
 
 /** Executes *r = a*x, returning 0 in case of integer overflow, 1 otherwise. */

@@ -4,11 +4,11 @@ include "g"
 Wheel = ++(Real radius, Int slices)
 Wheel.Slices = Void
 
-(Int->Real)@Wheel[$$.radius = $]
+Real@Wheel[$$.radius = $]
 ([)@Wheel[$$.radius = 100.0, $$.slices = 10]
 Int@Wheel.Slices[$$$.slices = $]
 
-Wheel@@Window[
+Wheel@Window[
   r = $.radius, n = $.slices
   Print["Drawing wheel with radius = ", r, " and num. slices = ", n;]
 
@@ -20,9 +20,9 @@ Wheel@@Window[
   [
     angle = delta_angle*j
     c = Color[HSV[.h=angle*360.0/(2*pi), .v = .s = 1.0], .a=1.0]
-    \ $$::[Style[.Border[0.2, c]]]
+    \ $$[Style[.Border[0.2, c]]]
     i = 0
-    \ $$::.Poly[r*Vec[angle], angle += dangle, For[++i <= di], (0, 0), c]
+    \ $$.Poly[r*Vec[angle], angle += dangle, For[++i <= di], (0, 0), c]
     For[++j < n]
   ]
 ]

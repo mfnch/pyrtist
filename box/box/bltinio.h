@@ -28,14 +28,12 @@
 
 #  include "types.h"
 #  include "typesys.h"
-
-/** The File data type. */
-extern Type type_File;
+#  include "cmpptrs.h"
 
 /** Register the builtin IO functions. */
-Task Bltin_Io_Init(void);
+void Bltin_IO_Register(BoxCmp *c);
 
 /** To be called when destroying the compiler data structures. */
-void Bltin_Io_Destroy(void);
+void Bltin_IO_Unregister(BoxCmp *c);
 
 #endif

@@ -18,123 +18,103 @@
  ****************************************************************************/
 
 #include <stdlib.h>
+#include <assert.h>
 
 #include "types.h"
 #include "mem.h"
 #include "typesys.h"
+#include "messages.h"
 #include "virtmach.h"
 #include "builtins.h"
 #include "bltinstr.h"
 #include "bltinio.h"
+#include "compiler.h"
 
-#if 0
 typedef struct {
   unsigned int opened : 1;
   char *name, *mode;
   FILE *file;
 } File;
 
-Type type_File;
-
-static Task IO_Register_All(void);
-
-Task Bltin_Io_Init(void) {
-  TASK( Tym_Def_Intrinsic(& type_File, & NAME("File"), sizeof(File)) );
-
-  TASK( IO_Register_All() );
-  return Success;
-}
-
-void Bltin_Io_Destroy(void) {}
-
-static Task C_File_Open(VMProgram *vmp) {
-  File *f = BOX_VM_THIS_PTR(vmp, File);
+static Task My_File_Create(BoxVM *vm) {
+  File *f = BOX_VM_THIS_PTR(vm, File);
   f->opened = 0;
   f->name = (char *) NULL;
   f->mode = (char *) NULL;
   return Success;
 }
 
-static Task File_Destroy(VMProgram *vmp) {
-  File *f = BOX_VM_THIS_PTR(vmp, File);
-  if (f->opened) fclose(f->file);
+static Task My_File_Destroy(BoxVM *vm) {
+  File *f = BOX_VM_THIS_PTR(vm, File);
+  if (f->opened) {
+    fclose(f->file);
+    f->opened = 0;
+  }
   BoxMem_Free(f->name);
   BoxMem_Free(f->mode);
-  return Success;
-}
-
-static Task C_File_String(VMProgram *vmp) {
-  Str *s = BOX_VM_ARG1_PTR(vmp, Str);
-  File *f = BOX_VM_THIS_PTR(vmp, File);
-  if (f->name == (char *) NULL)
-    f->name = BoxMem_Strdup(Str_Get_CStr(s));
-  else if (f->mode == (char *) NULL) 
-    f->mode = BoxMem_Strdup(Str_Get_CStr(s));
-  else {
-    fprintf(stderr, "Too many arguments to File object\n");
-    return Failed;
-  }
-  return Success;
-}
-
-static Task C_File_Close(VMProgram *vmp) {
-  File *f = BOX_VM_THIS_PTR(vmp, File);
-
-  if (f->name == (char *) NULL) {
-    fprintf(stderr, "Missing file name for File object.\n");
-    return Failed;
-  }
-
-  if (f->mode == (char *) NULL)
-    f->file = fopen(f->name, "rt");
-  else
-    f->file = fopen(f->name, f->mode);
-
-  BoxMem_Free(f->name);
-  BoxMem_Free(f->mode);
-
   f->name = (char *) NULL;
   f->mode = (char *) NULL;
-  if (f->file == (FILE *) NULL) {
-    fprintf(stderr, "Error opening the file.\n");
-    return Failed;
-  }
-  f->opened = 1;
   return Success;
 }
 
-static Task M_File_String(VMProgram *vmp) {
-  Str *s = BOX_VM_ARG1_PTR(vmp, Str);
-  File *f = BOX_VM_THIS_PTR(vmp, File);
-  if (! f->opened) {
-    fprintf(stderr, "Error: writing to a not opened file. Exiting!\n");
-    return Failed;
-  }
-  fprintf(f->file, "%s", Str_Get_CStr(s)); /* should use fwrite instead */
-  return Success;
+static Task My_File_Close(BoxVM *vm) {
+  File *f = BOX_VM_THIS_PTR(vm, File);
+  if (!f->opened && f->name != NULL) {
+    const char *open_mode = (f->mode == NULL) ? "rt" : f->mode;
+    f->file = fopen(f->name, open_mode);
+    f->opened = (f->file != NULL);
+    if (!f->opened)
+      MSG_ERROR("Error opening the file \"%s\" (mode=\"%s\").",
+                f->name, open_mode);
+
+    BoxMem_Free(f->name);
+    BoxMem_Free(f->mode);
+    f->name = (char *) NULL;
+    f->mode = (char *) NULL;
+    return (f->opened) ? BOXTASK_OK : BOXTASK_FAILURE;
+
+  } else
+    return BOXTASK_OK;
 }
 
-static Task IO_Register_All(void) {
-  struct {
-    Type parent;
-    Type child;
-    int kind;
-    Task (*proc)(VMProgram *);
+static Task My_File_Str(BoxVM *vm) {
+  File *f = BOX_VM_THIS_PTR(vm, File);
+  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
 
-  } *item, table[] = {
-    {type_File, TYPE_OPEN, BOX_CREATION, C_File_Open},
-    {type_File, TYPE_CLOSE, BOX_CREATION, C_File_Close},
-    {type_File, TYPE_DESTROY, BOX_CREATION | BOX_MODIFICATION, File_Destroy},
-    {type_File, type_StrSpecies, BOX_CREATION, C_File_String},
-    {type_File, type_StrSpecies, BOX_MODIFICATION, M_File_String},
-    {TYPE_NONE}
-  };
+  if (f->opened) {
+    /* write string to disk */
+    const char *s_ptr = BoxStr_Get_Ptr(s);
+    size_t s_len = BoxStr_Get_Size(s);
+    if (s_ptr != NULL && s_len > 0)
+      fwrite(s_ptr, s_len, sizeof(char), f->file);
 
-  for(item = & table[0]; item->parent != TYPE_NONE; item++) {
-    TASK(Cmp_Builtin_Proc_Def(item->child, item->kind,
-                              item->parent, item->proc));
+  } else {
+    if (f->name == NULL) {
+      assert(f->mode == NULL);
+      f->name = BoxStr_To_C_String(s);
+
+    } else if (f->mode == NULL) {
+      assert(f->mode == NULL);
+      f->mode = BoxStr_To_C_String(s);
+
+    } else {
+      MSG_ERROR("File just takes only two string arguments: "
+                "File[filename, mode].");
+      return BOXTASK_FAILURE;
+    }
   }
-  return Success;
-}
-#endif
 
+  return BOXTASK_OK;
+}
+
+void Bltin_IO_Register(BoxCmp *c) {
+  /* Register the new type File */
+  BoxType t_file = Bltin_New_Type(c, "File", sizeof(File));
+  Bltin_Proc_Def(c, t_file,  BOXTYPE_CREATE, My_File_Create);
+  Bltin_Proc_Def(c, t_file,  BOXTYPE_DESTROY, My_File_Destroy);
+  Bltin_Proc_Def(c, t_file,  BOXTYPE_END, My_File_Close);
+  Bltin_Proc_Def(c, t_file, c->bltin.string, My_File_Str);
+}
+
+void Bltin_IO_Unregister(BoxCmp *c) {
+}

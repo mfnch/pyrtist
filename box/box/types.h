@@ -219,6 +219,12 @@ typedef BoxName Data;
 /** When we do not tolerate a failure then we use the ASSERT_TASK macro. */
 #    define ASSERT_TASK(x) do{Task t = (x); assert(t == BOXTASK_OK);} while(0)
 
+#    define Box_Fatal_Error_If(cond) \
+       do {if (cond) Box_Fatal_Error(__FILE__, __LINE__);} while (0)
+
+#    define Box_Fatal_Error_If_Not(cond) \
+       do {if (!cond) Box_Fatal_Error(__FILE__, __LINE__);} while (0)
+
 #  endif /* BOX_ABBREV */
 
 #endif /* _TYPES_H */

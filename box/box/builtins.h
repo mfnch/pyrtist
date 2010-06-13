@@ -40,7 +40,8 @@ typedef struct {
           alias_if,
           alias_for,
           print,
-          exit;
+          exit,
+          file;
 } BltinStuff;
 
 void Bltin_Init(BoxCmp *c);
@@ -63,5 +64,8 @@ BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
  */
 BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
                           Task (*c_fn)(BoxVM *));
+
+/** Define a new intrinsic type with the given name and size. */
+BoxType Bltin_New_Type(BoxCmp *c, const char *type_name, size_t type_size);
 
 #endif

@@ -691,7 +691,25 @@ void Bltin_Init(BoxCmp *c) {
   My_Register_Math(c);
   My_Register_Sys(c);
   Bltin_Str_Register_Procs(c);
+  Bltin_IO_Register(c);
 }
 
 void Bltin_Finish(BoxCmp *c) {
+  Bltin_IO_Unregister(c);
 }
+
+/*****************************************************************************
+ * Generic procedures for builtin stuff defined inside other files.
+ */
+
+BoxType Bltin_New_Type(BoxCmp *c, const char *type_name, size_t type_size) {
+  TS *ts = & c->ts;
+  Value *v = Value_New(c->cur_proc);
+  BoxType t = TS_Intrinsic_New(ts, type_size);
+  TS_Name_Set(ts, t, type_name);
+  Value_Setup_As_Type(v, t);
+  Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, type_name, v);
+  Value_Unlink(v);
+  return t;
+}
+

@@ -27,6 +27,8 @@
 #ifndef _BLTINSTR_H
 #  define _BLTINSTR_H
 
+#  include <stdlib.h>
+
 #  include "types.h"
 #  include "cmpptrs.h"
 
@@ -50,6 +52,17 @@ void Str_Init(Str *s);
 Task Str_Large_Enough(Str *s, Int length);
 
 Task Str_Concat(Str *s, const char *ca);
+
+/** Create a new C string from a BoxStr object. The string is freshly
+ * allocated with BoxMem_Safe_Alloc.
+ */
+char *BoxStr_To_C_String(BoxStr *s);
+
+/** Return the pointer to the raw data in the string. */
+char *BoxStr_Get_Ptr(BoxStr *s);
+
+/** Return the size of the data in the string. */
+size_t BoxStr_Get_Size(BoxStr *s);
 
 Task Bltin_Str_Init(void);
 
