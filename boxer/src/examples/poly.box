@@ -1,3 +1,4 @@
+//!BOXER:VERSION:0:1:1
 
 include "g"
 GUI = Void
@@ -5,10 +6,11 @@ Window@GUI[]
 
 
 //!BOXER:REFPOINTS:BEGIN
-gui1 = (18.320610687, 27.2959183673), gui2 = (50.6361323155, 46.6836734694)
-gui3 = (81.4249363868, 16.0714285714), gui4 = (38.6768447837, 3.31632653061)
-gui5 = (31.5521628499, 35.2040816327)
-
+gui1 = Point[.x=18.320610687, .y=27.2959183673]
+gui2 = Point[.x=50.6361323155, .y=46.6836734694]
+gui3 = Point[.x=81.4249363868, .y=16.0714285714]
+gui4 = Point[.x=38.6768447837, .y=3.31632653061]
+gui5 = Point[.x=31.5521628499, .y=35.2040816327]
 //!BOXER:REFPOINTS:END
 // EXAMPLE 1: Window.Poly and edge smoothing
 // include the arrows definitions
@@ -16,7 +18,7 @@ include "arrows"
 
 // define a function to compute the scalar product
 Scal = Real
-(Point a, b)@&Scal[$$ = $.a.x*$.b.x + $.a.y*$.b.y]
+(Point a, b)@Scal[$$ = $.a.x*$.b.x + $.a.y*$.b.y]
 
 w = Window[][
   .Show[(0, 0), (100, 50)] // define the minimum window size

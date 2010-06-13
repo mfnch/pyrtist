@@ -197,6 +197,8 @@ include BEGIN(include);
 [$]+  { yylval.SelfLevel = yyleng; return TOK_SELF; }
 
 "@"   { return TOK_AT; }
+"@@"  { return TOK_AT; } /* for compatibility with v 0.1 */
+"@&"  { return TOK_AT; } /* for compatibility with v 0.1 */
 
  /* Special tokens */
 "(.[)" { yylval.TTag = BOXTYPE_CREATE; return TOK_TTAG; }
@@ -307,10 +309,14 @@ Task Tok_Init(FILE *in, const char *f) {
 
   BoxHT_Init_Default(& state.provided_features, 64);
 
+  /* Read from stdin (which could have been redirected) */
+  yyrestart(stdin);
+
   /* Se f == "nomefile" (e quindi f != NULL), eseguo una:
    * include "nomefile"
    */
-  if (f == NULL) return Success;
+  if (f == NULL)
+    return Success;
 
   return Tok_Include_Begin(f);
 }
@@ -358,7 +364,8 @@ Task Tok_Include_Begin(const char *f) {
   ++state.include_level;
 
   state.line_num = 1;
-  yy_switch_to_buffer(yy_create_buffer((yyin = incfile), YY_BUF_SIZE));
+  yyin = incfile;
+  yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
 
   MSG_CONTEXT_BEGIN("Entering the included file \"%s\"", f);
   return Success;
