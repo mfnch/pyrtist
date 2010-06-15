@@ -79,6 +79,8 @@ void Var_Release(RegAlloc *ra, Int type, UInt varnum);
 Int Var_Num(RegAlloc *ra, Int type);
 Int GVar_Occupy(RegAlloc *ra, BoxType type);
 void GVar_Release(RegAlloc *ra, Int type, UInt varnum);
+Int GReg_Num(RegAlloc *ra, Int type);
 Int GVar_Num(RegAlloc *ra, Int type);
-void RegLVar_Get_Nums(RegAlloc *ra, Int *num_reg, Int *num_lvar);
+void Reg_Get_Local_Nums(RegAlloc *ra, Int *num_regs, Int *num_vars);
+void Reg_Get_Global_Nums(RegAlloc *ra, Int *num_regs, Int *num_vars);
 #endif

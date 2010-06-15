@@ -76,6 +76,11 @@ static void My_Value_Finalize(Value *v) {
         Value_Emit_Unlink(v);
       return;
 
+    case BOXCONTCATEG_GREG:
+      if (v->attr.own_reference)
+        Value_Emit_Unlink(v);
+      return;
+
     case BOXCONTCATEG_PTR:
       if (v->attr.own_register) {
         assert(!v->value.cont.value.ptr.is_greg);
@@ -271,6 +276,25 @@ void Value_Setup_As_Temp(Value *v, BoxType t) {
   Value_Emit_Allocate(v);
 }
 
+void Value_Setup_As_Var(Value *v, BoxType t) {
+  BoxCmp *c = v->proc->cmp;
+  CmpProc *p = c->cur_proc;
+  if (CmpProc_Get_Style(p) == CMPPROCSTYLE_MAIN) {
+    /* We are creating the main procedure so variables should get into global
+     * registers
+     */
+    ValContainer vc = {VALCONTTYPE_GVAR, -1, 0};
+    Value_Setup_Container(v, t, & vc);
+
+  } else {
+    /* We are not in the main: variables should go into local registers */
+    ValContainer vc = {VALCONTTYPE_LVAR, -1, 0};
+    Value_Setup_Container(v, t, & vc);
+  }
+
+  Value_Emit_Allocate(v);
+}
+
 void Value_Setup_As_String(Value *v_str, const char *str) {
   BoxTask success;
   BoxCmp *c = v_str->proc->cmp;
@@ -441,7 +465,8 @@ void Value_Emit_Allocate(Value *v) {
 void Value_Emit_Link(Value *v) {
   BoxType cont_type = v->value.cont.type;
   if (cont_type == BOXTYPE_OBJ || cont_type == BOXTYPE_PTR) {
-    assert(v->value.cont.categ == BOXCONTCATEG_LREG);
+    assert(v->value.cont.categ == BOXCONTCATEG_LREG
+           || v->value.cont.categ == BOXCONTCATEG_GREG);
     /* ^^^ for now we don't support the general case... */
     CmpProc_Assemble(v->proc, BOXGOP_MLN, 1, & v->value.cont);
   }
@@ -453,7 +478,8 @@ void Value_Emit_Link(Value *v) {
 void Value_Emit_Unlink(Value *v) {
   BoxType cont_type = v->value.cont.type;
   if (cont_type == BOXTYPE_OBJ || cont_type == BOXTYPE_PTR) {
-    assert(v->value.cont.categ == BOXCONTCATEG_LREG);
+    assert(v->value.cont.categ == BOXCONTCATEG_LREG
+           || v->value.cont.categ == BOXCONTCATEG_GREG);
     /* ^^^ for now we don't support the general case... */
     CmpProc_Assemble(v->proc, BOXGOP_MUNLN, 1, & v->value.cont);
   }
@@ -762,19 +788,21 @@ Value *Value_Cast_To_Ptr(Value *v) {
      *    to a new register.
      *  - the register is fully owned by us, we can recycle it!
      */
-    assert(v->value.cont.categ == BOXCONTCATEG_LREG);
-    if (v->num_ref == 1) {
+    if (v->num_ref > 1) {
+      MSG_FATAL("Value_Cast_To_Ptr: not implemented, yet!");
+      return v;
+       
+    } else {
+      assert(v->num_ref == 1);
+      assert(v->value.cont.categ == BOXCONTCATEG_LREG
+             || v->value.cont.categ == BOXCONTCATEG_GREG);
       /* We own the sole reference to v, which is a temporary quantity:
        * in other words we can do whathever we want with it!
        */
       v->type = BOXTYPE_PTR;
       v->value.cont.type = BOXCONTTYPE_PTR;
       return v;
-
-    } else {
-      MSG_FATAL("Value_Cast_To_Ptr: not implemented, yet!");
-      return v;
-    }  
+    }
 
   } else {
     /* We have to get the pointer with a lea instruction. */

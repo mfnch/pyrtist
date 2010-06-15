@@ -161,6 +161,9 @@ void Value_Setup_As_Imm_Real(Value *v, Real r);
 /** Set the value to represent a temporary value of the given type */
 void Value_Setup_As_Temp(Value *v, BoxType t);
 
+/** Set the value to represent a new variable of the given type */
+void Value_Setup_As_Var(Value *v, BoxType t);
+
 /** Set the value to represent the given string 'str'. */
 void Value_Setup_As_String(Value *v_str, const char *str);
 

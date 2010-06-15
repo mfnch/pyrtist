@@ -264,6 +264,16 @@ void GVar_Release(RegAlloc *ra, Int type, UInt varnum) {
   VarFrame_Release(& ra->gvar[Reg_Type(type)], varnum);
 }
 
+Int GReg_Num(RegAlloc *ra, Int type) {
+  switch(type) {
+  case BOXTYPE_PTR:
+    return 2;
+  default:
+    return 0;
+  }
+}
+
+
 /* Restituisce il numero di variabile massimo fin'ora utilizzato.
  */
 Int GVar_Num(RegAlloc *ra, Int type) {
@@ -274,10 +284,24 @@ Int GVar_Num(RegAlloc *ra, Int type) {
  * an array of Int with the number of used variables, and (address num_reg)
  * an array of Int with the number of used registers.
  */
-void RegLVar_Get_Nums(RegAlloc *ra, Int *num_reg, Int *num_lvar) {
+void Reg_Get_Local_Nums(RegAlloc *ra, Int *num_regs, Int *num_vars) {
   int i;
-  for (i = 0; i < NUM_TYPES; i++) {
-    *(num_reg++) = Reg_Num(ra, i);
-    *(num_lvar++) = Var_Num(ra, i);
-  }
+  if (num_regs != NULL)
+    for (i = 0; i < NUM_TYPES; i++)
+      *(num_regs++) = Reg_Num(ra, i);
+
+  if (num_vars != NULL)
+    for (i = 0; i < NUM_TYPES; i++)
+      *(num_vars++) = Var_Num(ra, i);
+}
+
+void Reg_Get_Global_Nums(RegAlloc *ra, Int *num_regs, Int *num_vars) {
+  int i;
+  if (num_regs != NULL)
+    for (i = 0; i < NUM_TYPES; i++)
+      *(num_regs++) = GReg_Num(ra, i);
+
+  if (num_vars != NULL)
+    for (i = 0; i < NUM_TYPES; i++)
+      *(num_vars++) = GVar_Num(ra, i);
 }

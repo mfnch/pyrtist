@@ -154,6 +154,11 @@ void CmpProc_Set_Alter_Name(CmpProc *p, const char *alter_name);
  */
 char *CmpProc_Get_Alter_Name(CmpProc *p);
 
+/** Get the procedure style (the parameter which was given during procedure
+ * creation).
+ */
+CmpProcStyle CmpProc_Get_Style(CmpProc *p);
+
 /** Get the register allocator for the procedure */
 RegAlloc *CmpProc_Get_RegAlloc(CmpProc *p);
 

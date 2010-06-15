@@ -290,7 +290,7 @@ struct __vmprogram {
   BoxArr         stack,        /**< The stack for the VM object */
                  data_segment; /**< The segment of data (strings, etc.)
                                     which is accessible through the global
-                                    register gr0 */
+                                    register gro0 */
 
   /** Flags which control the behaviour of the VM. */
   struct {

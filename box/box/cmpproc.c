@@ -54,11 +54,20 @@ static void My_Proc_End(CmpProc *p) {
   BoxVMProcID proc_id, previous_target;
 
   if (p->have.head) {
-    Int num_reg[NUM_TYPES], num_var[NUM_TYPES];
     RegAlloc *ra = CmpProc_Get_RegAlloc(p);
-    RegLVar_Get_Nums(ra, num_reg, num_var);
+    Int num_reg[NUM_TYPES], num_var[NUM_TYPES];
+
+    /* Global registers are allocated only for main */
+    if (p->style == CMPPROCSTYLE_MAIN) {
+      Reg_Get_Global_Nums(ra, num_reg, num_var);
+      ASSERT_TASK( BoxVM_Alloc_Global_Regs(p->cmp->vm, num_var, num_reg) );
+    }
+
+    /* Local register should be allocated anyway */
+    Reg_Get_Local_Nums(ra, num_reg, num_var);
     ASSERT_TASK(BoxVMSym_Def_Proc_Head(p->cmp->vm, p->head_sym_id,
                                        num_var, num_reg));
+
   }
 
   proc_id = CmpProc_Get_ProcID(p);
@@ -152,6 +161,10 @@ void CmpProc_Set_Name(CmpProc *p, const char *proc_name) {
     }
     BoxVMSym_Set_Name(p->cmp->vm, p->sym, p->proc_name);
   }
+}
+
+CmpProcStyle CmpProc_Get_Style(CmpProc *p) {
+  return p->style;
 }
 
 RegAlloc *CmpProc_Get_RegAlloc(CmpProc *p) {
