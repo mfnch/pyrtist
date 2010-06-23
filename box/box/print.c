@@ -51,7 +51,7 @@ void Print_Finalize(void) {
  */
 const char *print(const char *fmt, ...) {
   static int buf_size = 0;
-  int do_write = 1, do_read = 1, do_continue = 1, do_dealloc = 1;
+  unsigned int do_write = 1, do_read = 1, do_continue = 1, do_dealloc = 1, do_long = 0;
   char *str_dealloc = (char *) NULL;
   char cw = '?', cr = '?';
   const char *i;
@@ -105,6 +105,7 @@ const char *print(const char *fmt, ...) {
       } else {
         do_dealloc = 0;
         do_write = 0;
+        do_long = 0;
         state = STATE_CMND;
         break;
       }
@@ -119,6 +120,9 @@ const char *print(const char *fmt, ...) {
         break;
       case '~':
         do_dealloc = 1;
+        break;
+      case 'l':
+        do_long = 1;
         break;
       case 'c':
         cw = va_arg(ap, int);
@@ -137,7 +141,10 @@ const char *print(const char *fmt, ...) {
         break;
       case 'd':
         do_read = 0;
-        sprintf(aux_buf, "%d", va_arg(ap, int));
+        if (do_long)
+          sprintf(aux_buf, "%ld", va_arg(ap, long));
+        else
+          sprintf(aux_buf, "%d", va_arg(ap, int));
         substring = aux_buf;
         state = STATE_SUBSTRING;
         break;

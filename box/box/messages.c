@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,7 +32,7 @@ MsgStack *msg_main_stack = (MsgStack *) NULL;
 
 static Int line = -1;
 
-static char *show_type_and_msg(UInt level, char *original_msg) {
+static char *My_Show_Msg(UInt level, char *original_msg) {
   if (level == 0) {
     char *final_msg;
     final_msg = printdup("STAGE: %s:\n", original_msg);
@@ -60,12 +58,12 @@ static char *show_type_and_msg(UInt level, char *original_msg) {
 
 Task Msg_Main_Init(UInt show_level) {
   Task t = Msg_Init(& msg_main_stack, 4, show_level);
-  Msg_Default_Filter_Set(msg_main_stack, show_type_and_msg);
+  Msg_Default_Filter_Set(msg_main_stack, My_Show_Msg);
   return t;
 }
 
 void Msg_Main_Context_Begin(const char *msg) {
-  Msg_Context_Begin(msg_main_stack, msg, show_type_and_msg);
+  Msg_Context_Begin(msg_main_stack, msg, My_Show_Msg);
 }
 
 void Msg_Line_Set(Int line_number) {
@@ -75,18 +73,18 @@ void Msg_Line_Set(Int line_number) {
     line = -1;
 }
 
-static void default_fatal_handler(void) {
+static void My_Default_Fatal_Handler(void) {
   /* assert(0); Useful for debugging! */
   abort();
   exit(EXIT_FAILURE);
 }
 
-static FatalHandler fatal_handler = default_fatal_handler;
+static FatalHandler fatal_handler = My_Default_Fatal_Handler;
 
 /** Function used to set the fatal error message handler */
 void Msg_Set_Fatal_Handler(FatalHandler fh) {
   if (fh == (FatalHandler) NULL)
-    fatal_handler = default_fatal_handler;
+    fatal_handler = My_Default_Fatal_Handler;
   else
     fatal_handler = fh;
 }

@@ -56,24 +56,29 @@
 
 /* Dati che servono per la gestione della direttiva "include" */
 typedef struct {
-  UInt linenum;
+  ASTPos pos;
+  ASTSrc src;
   UInt msgcontext;
   UInt num_errs, num_warns;
   YY_BUFFER_STATE buffer;
 } TokIncludeData;
 
 /** Structure defining the complete state of the scanner */
-typedef struct {
-  int is_initialised;
-  UInt line_num,
-       include_level,
-       max_include_level;
-  BoxArr include_list;
-  BoxHT provided_features;
-} TokState;
+struct {
+  int     is_initialised;
+  ASTPos  pos;        /**< Current position in the source file */
+  ASTSrc  src;        /**< Current token in the source file */
+  UInt    include_level,
+          max_include_level;
+  BoxArr  include_list;
+  BoxHT   provided_features;
+} state = {0};
 
-/** The state of the scanner */
-static TokState state = {0};
+/** Variable to be used by the parser to get the current token location */
+ASTSrc *tok_src = & state.src;
+
+/** Function used to count lines and columns (updating tok_src) */
+static void My_Scan_Tok(void);
 
 static int Tok_Provided(const char *feature, int length) {
   assert(state.is_initialised);
@@ -124,21 +129,19 @@ include BEGIN(include);
  /* Se sto leggendo un file di include, quando arrivo alla sua fine
   * torno a leggere il precedente.
   */
-<<EOF>> {
-  if ( Tok_Include_End() ) {yyterminate();}
-}
+<<EOF>> {if (Tok_Include_End()) {yyterminate();}}
 
  /* Un istruzione deve stare tutta su una riga.
   * Se questo diventa problematico e' possibile usare il carattere
   * di continuazione riga _
   */
-"\n"    {return TOK_NEWLINE;}
+"\n"    {My_Scan_Tok(); return TOK_NEWLINE;}
 
  /* Il carattere di continuazione riga mangia tutto ci che segue
   * fino alla nuova riga e annulla il carattere newline
   */
-"_"{SPACES}"\n"       {++state.line_num;}
-"_"{SPACES}"'"[^\n]*"\n"  {++state.line_num;}
+"_"{SPACES}"\n"       {My_Scan_Tok();}
+"_"{SPACES}"//"[^\n]*"\n"  {My_Scan_Tok();}
 
  /* Scarta i commenti (i commenti iniziano col carattere '
   * e terminano alla fine della riga; per commenti su piu' righe
@@ -156,56 +159,56 @@ include BEGIN(include);
 }
 
  /* Spaces are ignored */
-{SPACES}    {}
+{SPACES}    {My_Scan_Tok();}
 
 
-"=>"  {return TOK_TO;}
-"->"  {return TOK_MAPTO;}
+"=>"  {My_Scan_Tok(); return TOK_TO;}
+"->"  {My_Scan_Tok(); return TOK_MAPTO;}
 
  /* Assignment operators */
-"+="  { return TOK_APLUS; }
-"-="  { return TOK_AMINUS; }
-"*="  { return TOK_ATIMES; }
-"%="  { return TOK_AREM; }
-"/="  { return TOK_ADIV; }
-"<<=" { return TOK_ASHL; }
-">>=" { return TOK_ASHR; }
-"&="  { return TOK_ABAND; }
-"^="  { return TOK_ABXOR; }
-"|="  { return TOK_ABOR; }
+"+="  {My_Scan_Tok(); return TOK_APLUS;}
+"-="  {My_Scan_Tok(); return TOK_AMINUS;}
+"*="  {My_Scan_Tok(); return TOK_ATIMES;}
+"%="  {My_Scan_Tok(); return TOK_AREM;}
+"/="  {My_Scan_Tok(); return TOK_ADIV;}
+"<<=" {My_Scan_Tok(); return TOK_ASHL;}
+">>=" {My_Scan_Tok(); return TOK_ASHR;}
+"&="  {My_Scan_Tok(); return TOK_ABAND;}
+"^="  {My_Scan_Tok(); return TOK_ABXOR;}
+"|="  {My_Scan_Tok(); return TOK_ABOR;}
 
  /* Increment/decrement operators */
-"++"  {return TOK_INC;}
-"--"  {return TOK_DEC;}
+"++"  {My_Scan_Tok(); return TOK_INC;}
+"--"  {My_Scan_Tok(); return TOK_DEC;}
 
  /* Shift operators */
-"<<"  {return TOK_SHL;}
-">>"  {return TOK_SHR;}
+"<<"  {My_Scan_Tok(); return TOK_SHL;}
+">>"  {My_Scan_Tok(); return TOK_SHR;}
 
  /* Comparison operators */
-"=="  { return TOK_EQ; }
-"!="  { return TOK_NE; }
-"<="  { return TOK_LE; }
-">="  { return TOK_GE; }
+"=="  {My_Scan_Tok(); return TOK_EQ;}
+"!="  {My_Scan_Tok(); return TOK_NE;}
+"<="  {My_Scan_Tok(); return TOK_LE;}
+">="  {My_Scan_Tok(); return TOK_GE;}
 
-"&&"  { return TOK_LAND; }
-"||"  { return TOK_LOR; }
+"&&"  {My_Scan_Tok(); return TOK_LAND;}
+"||"  {My_Scan_Tok(); return TOK_LOR;}
 
  /* Other operators */
-"**"  { return TOK_POW; }
+"**"  {My_Scan_Tok(); return TOK_POW;}
 
-[$]+  { yylval.SelfLevel = yyleng; return TOK_SELF; }
+[$]+  { yylval.SelfLevel = yyleng; My_Scan_Tok(); return TOK_SELF;}
 
-"@"   { return TOK_AT; }
-"@@"  { return TOK_AT; } /* for compatibility with v 0.1 */
-"@&"  { return TOK_AT; } /* for compatibility with v 0.1 */
+"@"   {My_Scan_Tok(); return TOK_AT;}
+"@@"  {My_Scan_Tok(); return TOK_AT;} /* for compatibility with v 0.1 */
+"@&"  {My_Scan_Tok(); return TOK_AT;} /* for compatibility with v 0.1 */
 
  /* Special tokens */
-"(.[)" { yylval.TTag = BOXTYPE_CREATE; return TOK_TTAG; }
-"(].)" { yylval.TTag = BOXTYPE_DESTROY; return TOK_TTAG; }
-"([)"  { yylval.TTag = BOXTYPE_BEGIN; return TOK_TTAG; }
-"(])"  { yylval.TTag = BOXTYPE_END; return TOK_TTAG; }
-"(;)"  { yylval.TTag = BOXTYPE_PAUSE; return TOK_TTAG; }
+"(.[)" {yylval.TTag = BOXTYPE_CREATE;  My_Scan_Tok(); return TOK_TTAG;}
+"(].)" {yylval.TTag = BOXTYPE_DESTROY; My_Scan_Tok(); return TOK_TTAG;}
+"([)"  {yylval.TTag = BOXTYPE_BEGIN; My_Scan_Tok(); return TOK_TTAG;}
+"(])"  {yylval.TTag = BOXTYPE_END; My_Scan_Tok(); return TOK_TTAG;}
+"(;)"  {yylval.TTag = BOXTYPE_PAUSE; My_Scan_Tok(); return TOK_TTAG;}
 
  /* Number of type Char */
 [']([^'\n]|\\')+['] {
@@ -215,6 +218,7 @@ include BEGIN(include);
     ASTNode_Set_Error(yylval.Node);
   } else
     yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_CHAR, c);
+  My_Scan_Tok();
   return TOK_CONSTANT;
  }
 
@@ -231,6 +235,7 @@ include BEGIN(include);
     ASTNode_Set_Error(yylval.Node);
   } else
     yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_INT, c);
+  My_Scan_Tok();
   return TOK_CONSTANT;
  }
 
@@ -242,6 +247,7 @@ include BEGIN(include);
     ASTNode_Set_Error(yylval.Node);
   } else
     yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_INT, c);
+  My_Scan_Tok();
   return TOK_CONSTANT;
  }
 
@@ -253,6 +259,7 @@ include BEGIN(include);
     ASTNode_Set_Error(yylval.Node);
   } else
     yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_REAL, c);
+  My_Scan_Tok();
   return TOK_CONSTANT;
  }
 
@@ -262,25 +269,28 @@ include BEGIN(include);
   char *s = Box_Reduce_Esc_String(yytext + 1, yyleng - 2, & length);
   yylval.Node = ASTNodeString_New(s, length);
   BoxMem_Free(s);
+  My_Scan_Tok();
   return TOK_STRING;
  }
 
  /* Variable name */
 {LNAME} {
   yylval.String = BoxMem_Strndup(yytext, yyleng);
+  My_Scan_Tok();
   return TOK_IDENTIFIER;
  }
 
  /* Type name */
 {UNAME} {
   yylval.String = BoxMem_Strndup(yytext, yyleng);
+  My_Scan_Tok();
   return TOK_TYPE_IDENT;
  }
 
  /* Everything which is not recognised is passed character by character to the
   * parser.
   */
-. {return yytext[0];}
+. {My_Scan_Tok(); return yytext[0];}
 
 %%
 
@@ -295,7 +305,10 @@ Task Tok_Init(FILE *in, const char *f) {
   assert(!state.is_initialised);
 
   state.is_initialised = 1;
-  state.line_num = 1;
+  ASTPos_Init(& state.pos, "(initial)");
+  state.src.begin = state.pos;
+  ASTPos_Set_Undef(& state.src.end);
+
   state.max_include_level = TOK_MAX_INCLUDE;
 
   /* Number of files opened through the include directive */
@@ -331,6 +344,36 @@ void Tok_Finish(void) {
   state.is_initialised = 0;
 }
 
+static void My_Scan_Tok(void) {
+  int i;
+  size_t l, c;
+
+  state.src.begin = state.pos;
+  l = state.pos.line;
+  c = state.pos.col;
+
+  for(i = 0; i < yyleng; i++) {
+    if (yytext[i] == '\n') {
+      state.src.end.line = l;
+      state.src.end.col = c;
+      c = 1;
+      l += 1;
+
+    } else {
+      c += 1;
+    }
+  }
+
+  state.pos.line = l;
+  state.pos.col = c;
+
+  /* Do not consider the token to be extending over the final line, if it
+   * does not include at least one character of that line.
+   */
+  if (c > 1)
+    state.src.end = state.pos;
+}
+
 /* DESCRIZIONE: Esegue materialmente la direttiva include,
  *  aprendo il file di nome f in lettura e deviando l'analisi lessicale
  *  su di esso. Bastera' poi eseguire tok_include_end() per ritornare al punto
@@ -343,18 +386,19 @@ Task Tok_Include_Begin(const char *f) {
   assert(state.is_initialised);
 
   if (state.include_level >= state.max_include_level) {
-    MSG_ERROR("Cannot include \"%s\": too many file included!", f);
+    MSG_ERROR("Cannot include \"%s\": too many files included!", f);
     return Failed;
   }
 
   incfile = Path_Open_Inc_File(f, "rt");
 
   if (incfile == NULL) {
-    MSG_ERROR("\"%s\" <-- Cannot open this file!", f);
+    MSG_ERROR("\"%s\" <-- Cannot open the file!", f);
     return Failed;
   }
 
-  cur.linenum = state.line_num;
+  cur.pos = state.pos;
+  cur.src = state.src;
   cur.msgcontext = 0; /*Msg_Context_Num(); TODO ??? */
   cur.num_errs = MSG_GT_ERRORS;
   cur.num_warns = MSG_NUM_WARNINGS;
@@ -363,7 +407,11 @@ Task Tok_Include_Begin(const char *f) {
 
   ++state.include_level;
 
-  state.line_num = 1;
+  /* Update position */
+  ASTPos_Init(& state.pos, "(included)");
+  state.src.begin = state.pos;
+  ASTPos_Set_Undef(& state.src.end);
+
   yyin = incfile;
   yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
 
@@ -386,7 +434,7 @@ UInt Tok_Include_End(void) {
     yy_delete_buffer( YY_CURRENT_BUFFER );
     /* Imposta il nuovo buffer all'ultimo inserito nello "stack" */
     cur = *((TokIncludeData *) BoxArr_Last_Item_Ptr(& state.include_list));
-    state.line_num = cur.linenum;
+    state.pos = cur.pos;
     yy_switch_to_buffer(cur.buffer);
     /* Cancella l'ultimo elemento dello stack */
     BoxArr_Pop(& state.include_list, NULL);
@@ -405,3 +453,5 @@ UInt Tok_Include_End(void) {
 }
 
 void Tok_Unput(int c) {unput(c);}
+
+

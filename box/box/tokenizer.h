@@ -27,9 +27,19 @@
  * sources, which is done using flex.
  */
 
+#ifndef _TOKENIZER_H
+#  define _TOKENIZER_H
+
+#  include "ast.h"
+
+/** Variable to be used by the parser to get the current token position */
+extern ASTSrc *tok_src;
+
 int yylex(void);
 Task Tok_Init(FILE *in, const char *f);
 void Tok_Finish(void);
 Task Tok_Include_Begin(const char *f);
 UInt Tok_Include_End(void);
 void Tok_Unput(int c);
+
+#endif /* _TOKENIZER_H */

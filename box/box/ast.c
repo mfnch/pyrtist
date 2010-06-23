@@ -22,6 +22,91 @@
 
 #include "mem.h"
 #include "ast.h"
+#include "print.h"
+
+void ASTPos_Init(ASTPos *pos, const char *file_name) {
+  pos->file_name = file_name;
+  pos->line = 1;
+  pos->col = 1;
+}
+
+void ASTPos_Next_Line(ASTPos *pos) {
+  if (pos->line > 0) {
+    pos->line += 1;
+    pos->col = 1;
+  }
+}
+
+int ASTPos_Is_Undef(ASTPos *pos) {
+  return pos->line < 1;
+}
+
+void ASTPos_Set_Undef(ASTPos *pos) {
+  pos->line = 0;
+  pos->col = 0;
+}
+
+const char *ASTSrc_To_Str(ASTSrc *loc) {
+  long bl = loc->begin.line, bc = loc->begin.col,
+       el = loc->end.line, ec = loc->end.col;
+
+  if (bl == 0)
+    return printdup("text ending at line %ld col %ld", el, ec);
+
+  else if (el == 0)
+    return printdup("from line %ld col %ld", bl, bc);
+
+  else if (bl == el) {
+    if (loc->begin.col >= loc->end.col - 1)
+      return printdup("line %ld col %ld", bl, bc);
+    else
+      return printdup("line %ld cols %ld-%ld", bl, bc, ec);
+  } else {
+    return printdup("line %ld-%ld cols %ld-%ld", bl, el, bc, ec);
+  }
+}
+
+void ASTSrc_Merge(ASTSrc *result, ASTSrc *first, ASTSrc *second) {
+  if (first->begin.line == 0)
+    result->begin = second->begin;
+
+  else if (second->begin.line == 0)
+    result->begin = first->begin;
+
+  else {
+    size_t bl = first->begin.line, bc = first->begin.col,
+           sbl = second->begin.line, sbc = second->begin.col;
+
+    if (sbl < bl || (sbl == bl && sbc < bc)) {
+      result->begin.line = sbl;
+      result->begin.col = sbc;
+
+    } else {
+      result->begin.line = bl;
+      result->begin.col = bc;
+    }
+  }
+
+  if (first->end.line == 0)
+    result->end = second->end;
+
+  else if (second->end.line == 0)
+    result->end = first->end;
+
+  else {
+    size_t el = first->end.line, ec = first->end.col,
+           sel = second->end.line, sec = second->end.col;
+
+    if (sel < el || (sel == el && sec < ec)) {
+      result->end.line = el;
+      result->end.col = ec;
+
+    } else {
+      result->end.line = sel;
+      result->end.col = sec;
+    }
+  }
+}
 
 /** Used for generic parsing of tree
  * (to destroy or print the tree, for example)

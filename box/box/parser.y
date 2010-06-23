@@ -39,23 +39,6 @@ void yyerror(char *s);
 #if 0
 #define YYDEBUG 0
 
-ParserAttr parser_attr;
-
-/* Numero della linea che e' in fase di lettura dal tokenizer */
-extern UInt tok_linenum;
-
-/****************************************************************************
- * Here we define static function which implements the actions of some      *
- * rules. Actions are included directly into the grammar when possible,     *
- * but sometimes - to keep acceptable readability we confine the code       *
- * in these static functions that are collected here.                       *
- ****************************************************************************/
-
-static void Sep_Newline(void) {
-  Cmp_Assemble(ASM_LINE_Iimm, CAT_IMM, ++tok_linenum);
-  Msg_Line_Set(tok_linenum);
-}
-
 /*****************************************************************************
  *       Grammatica relativa ai suffissi del tipo ::: o :tipo1:::tipo2::     *
  *****************************************************************************/
@@ -461,7 +444,11 @@ program:
 
 /* error function */
 void yyerror(char* s) {
+#if 0
   MSG_ERROR("%s", s);
+#else
+  MSG_ERROR("(%~s) %s", ASTSrc_To_Str(tok_src), s);
+#endif
 }
 
 #if 0
