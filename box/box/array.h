@@ -146,6 +146,22 @@ typedef int (*BoxArrIterator)(BoxUInt item_index, void *item_ptr,
  */
 int BoxArr_Iter(BoxArr *arr, BoxArrIterator iter, void *pass_data);
 
+/** Function which is expected to compare 'left' and 'right', returning
+ * 0 if they are equal, 1 if left > right or -1 if left < right.
+ * @see BoxArr_Find
+ */
+typedef int (*BoxArrCmp)(void *left, void *right, void *pass_data);
+
+/** Goes through the elements of the given array 'arr' and returns the
+ * index of the first item 'itm' for which 'cmp(itm, item, pass_data)'
+ * returned 0 ('item', 'cmp', and 'pass_data' are the second, third and fourth
+ * arguments given to the function).
+ * If the user specifies 'cmp == NULL', then return the index of the first
+ * element of the array which matches (via memcmp) with the one pointed by
+ * 'item'.
+ */
+size_t BoxArr_Find(BoxArr *arr, void *item, BoxArrCmp cmp, void *pass_data);
+
 /** Remove all the elements of the 'arr' invoking the destructor for each
  * removed item, if necessary. After the call to this function, the BoxArr
  * object will be empty and with no allocated space for its elements
@@ -203,6 +219,14 @@ void *BoxArr_Insert(BoxArr *arr, BoxUInt insert_index,
  */
 void *BoxArr_Overwrite(BoxArr *arr, BoxUInt ow_index,
                        const void *items, BoxUInt num_items);
+
+/** Reallocate the array so that it occupy just the amount of memory which
+ * is needed to store its elements. The function is useful to reduce the
+ * memory footprint and should be called when the array has been populated
+ * and no further element is going to be added to it (even if that may still
+ * happen without faults).
+ */
+void BoxArr_Compactify(BoxArr *arr);
 
 /** Returns the number of elements currently inserted in the provided array.
  */

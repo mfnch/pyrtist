@@ -21,6 +21,8 @@
 #  define _BOX_SRCPOS_H
 
 #  include <stdlib.h>
+#  include <box/types.h>
+#  include <box/array.h>
 
 /** Object which describes the position in a Box source file (which file,
  * which line and column). It is used to associate debug information to VM
@@ -31,5 +33,33 @@ typedef struct {
   const char *file_name;
   size_t     line, col;
 } BoxSrcPos;
+
+/** "Linear" position in the source */
+typedef long BoxOutPos;
+
+/** Association between the position in the source and the position in the
+ * output (just an integer) */
+typedef struct {  
+  BoxSrcPos src_pos;
+  BoxOutPos out_pos;
+} BoxSrcAssoc;
+
+/** Object containing information about where */
+typedef struct {
+  BoxArr     file_names;
+  BoxArr     assoc_table;
+} BoxSrcPosTable;
+
+/** Initialise the source position table pointed by 'pt'. */
+void BoxSrcPosTable_Init(BoxSrcPosTable *pt);
+
+/** Finalise the source position table pointed by 'pt'. */
+void BoxSrcPosTable_Finish(BoxSrcPosTable *pt);
+
+/** Associate the output position 'op' to the source position 'sp'. */
+void BoxSrcPosTable_Associate(BoxSrcPosTable *pt,
+                              BoxOutPos op, BoxSrcPos *sp);
+
+BoxSrcPos *BoxSrcPosTable_Get_Src_Of(BoxSrcPosTable *pt, BoxOutPos o_pos);
 
 #endif

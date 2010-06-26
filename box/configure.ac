@@ -75,6 +75,9 @@ AC_CHECK_LIB([m], [floor])
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 
+# Checks for types
+AC_CHECK_TYPE([ssize_t])
+
 # Checks for library functions.
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC

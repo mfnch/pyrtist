@@ -123,6 +123,32 @@ int BoxArr_Iter(BoxArr *arr, BoxArrIterator iter, void *pass_data) {
     return 1; /* iter == NULL */
 }
 
+typedef struct {
+  BoxArr    *arr;
+  void      *right;
+  void      *pass_data;
+  BoxArrCmp cmp;
+  size_t    idx;
+} MyIteratorForFind;
+
+static int My_Default_Cmp(BoxUInt idx, void *item_ptr, void *pass_data) {
+  MyIteratorForFind *d = (MyIteratorForFind *) pass_data;
+  d->idx = idx;
+  return (memcmp(item_ptr, d->right, d->arr->elsize) != 0);
+}
+
+static int My_User_Cmp(BoxUInt idx, void *item_ptr, void *pass_data) {
+  MyIteratorForFind *d = (MyIteratorForFind *) pass_data;
+  d->idx = idx;
+  return (d->cmp(item_ptr, d->right, d->pass_data) != 0);
+}
+
+size_t BoxArr_Find(BoxArr *arr, void *item, BoxArrCmp cmp, void *pass_data) {
+  MyIteratorForFind d = {arr, item, pass_data, cmp, (size_t) 0};
+  BoxArr_Iter(arr, (cmp != 0) ? My_User_Cmp : My_Default_Cmp, & d);
+  return d.idx;
+}
+
 static int Finalise_Item(UInt item_num, void *item, void *fin) {
   assert(fin != NULL);
   ((void (*)(void *)) fin)(item);
@@ -196,6 +222,23 @@ static void BoxArr_Shrink(BoxArr *arr, UInt num_items) {
     arr->ptr = new_ptr;
     arr->dim = new_dim;
     arr->size = new_size;
+  }
+}
+
+void BoxArr_Compactify(BoxArr *arr) {
+  if (arr->dim != arr->numel) {
+    if (arr->dim > arr->numel) {
+      size_t new_dim = arr->numel,
+             new_size = new_dim*arr->elsize;
+      void   *new_ptr = BoxMem_Realloc(arr->ptr, new_size);
+      if (new_ptr != NULL) {
+        arr->ptr = new_ptr;
+        arr->dim = new_dim;
+        arr->size = new_size;
+      }
+
+    } else
+      BoxErr_Report(& arr->err, BOXERR_OUT_OF_MEMORY);
   }
 }
 
