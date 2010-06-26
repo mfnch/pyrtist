@@ -29,8 +29,8 @@
 #include "vmproc.h"
 
 static void Procedure_Destroy(void *s) {
-  BoxArr *code = & ((BoxVMProc *) s)->code;
-  if (code != NULL) BoxArr_Finish(code);
+  BoxArr_Finish(& ((BoxVMProc *) s)->code);
+  BoxSrcPosTable_Finish(& ((BoxVMProc *) s)->pos_table);
 }
 
 static void Installed_Procedure_Destroy(void *s) {
@@ -77,6 +77,7 @@ BoxVMProcID BoxVM_Proc_Code_New(BoxVM *vm) {
   procedure.status.error = 0;
   procedure.status.inhibit = 0;
   BoxArr_Init(& procedure.code, sizeof(VMByteX4), VM_PROC_CODE_SIZE);
+  BoxSrcPosTable_Init(& procedure.pos_table);
   n = BoxOcc_Occupy(& pt->uninstalled, & procedure);
   My_Target_Proc_Refresh(vm);
   return n;
@@ -107,6 +108,7 @@ void BoxVM_Proc_Empty(BoxVM *vmp, BoxVMProcID proc_num) {
   VMProcTable *pt = & vmp->proc_table;
   BoxVMProc *p = (BoxVMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, proc_num);
   BoxArr_Clear(& p->code);
+  BoxSrcPosTable_Clear(& p->pos_table);
 }
 
 size_t BoxVM_Proc_Get_Size(BoxVM *vm, BoxVMProcID id) {
@@ -115,19 +117,25 @@ size_t BoxVM_Proc_Get_Size(BoxVM *vm, BoxVMProcID id) {
   return BoxArr_Num_Items(& p->code);
 }
 
-BoxVMCallNum BoxVM_Proc_Install_Code(BoxVM *vm, BoxVMProcID proc_id,
+BoxVMCallNum BoxVM_Proc_Install_Code(BoxVM *vm, BoxVMProcID id,
                                      const char *name, const char *desc) {
   VMProcTable *pt = & vm->proc_table;
+  BoxVMProc *p = (BoxVMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, id);
   VMProcInstalled procedure_inst;
   BoxVMCallNum cn;
+
+  /* Reduce the memory occupied by the procedure */
+  BoxSrcPosTable_Compactify(& p->pos_table);
+  BoxArr_Compactify(& p->code);
 
   procedure_inst.type = BOXVMPROC_IS_VM_CODE;
   procedure_inst.name = BoxMem_Strdup(name);
   procedure_inst.desc = BoxMem_Strdup(desc);
-  procedure_inst.code.proc_num = proc_id;
+  procedure_inst.code.proc_num = id;
 
   cn = BoxArr_Num_Items(& pt->installed) + 1;
   BoxArr_Push(& pt->installed, & procedure_inst);
+
   return cn;
 }
 

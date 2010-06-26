@@ -32,6 +32,8 @@
 
 #  include <stdlib.h>
 
+#  include <box/srcpos.h>
+
 /** When a procedure is created, an ID (an integer number) is assigned to it.
  * BoxVMProcID is the type of such a thing (an alias for UInt).
  */
@@ -48,12 +50,12 @@ typedef BoxUInt BoxVMCallNum;
  * of a procedure
  */
 typedef struct {
-  /** Structure with the settings to control the assembler */
   struct {
-    unsigned int error : 1;
-    unsigned int inhibit : 1;
-  } status;
-  BoxArr code; /**< Array which contains effectively the code */
+    unsigned int   error   :1;
+    unsigned int   inhibit :1;
+  }              status;    /**< Structure with the settings to control the assembler */
+  BoxSrcPosTable pos_table; /**< Info about the corresponding source files */
+  BoxArr         code;      /**< Array which contains effectively the code */
 } BoxVMProc;
 
 /** This structure describes an installed procedure

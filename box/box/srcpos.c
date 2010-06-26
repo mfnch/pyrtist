@@ -26,14 +26,29 @@
 #include "array.h"
 #include "srcpos.h"
 
+static void My_File_Name_Finalizer(void *ptr) {
+  BoxMem_Free(*((char **) ptr));
+}
+
 void BoxSrcPosTable_Init(BoxSrcPosTable *pt) {
   BoxArr_Init(& pt->file_names, sizeof(char *), 2);
+  BoxArr_Set_Finalizer(& pt->file_names, My_File_Name_Finalizer);
   BoxArr_Init(& pt->assoc_table, sizeof(BoxSrcAssoc), 5);
 }
 
 void BoxSrcPosTable_Finish(BoxSrcPosTable *pt) {
   BoxArr_Finish(& pt->file_names);
   BoxArr_Finish(& pt->assoc_table);
+}
+
+void BoxSrcPosTable_Clear(BoxSrcPosTable *pt) {
+  BoxSrcPosTable_Finish(pt);
+  BoxSrcPosTable_Init(pt);
+}
+
+void BoxSrcPosTable_Compactify(BoxSrcPosTable *pt) {
+  BoxArr_Compactify(& pt->file_names);
+  BoxArr_Compactify(& pt->assoc_table);
 }
 
 static int My_Cmp_Names(void *left, void *right, void *pass_data) {

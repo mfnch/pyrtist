@@ -56,6 +56,12 @@ void BoxSrcPosTable_Init(BoxSrcPosTable *pt);
 /** Finalise the source position table pointed by 'pt'. */
 void BoxSrcPosTable_Finish(BoxSrcPosTable *pt);
 
+/** Reset the position table clearing all its content. */
+void BoxSrcPosTable_Clear(BoxSrcPosTable *pt);
+
+/** Reduce the memory required by the table to the minimum necessary. */
+void BoxSrcPosTable_Compactify(BoxSrcPosTable *pt);
+
 /** Associate the output position 'op' to the source position 'sp'. */
 void BoxSrcPosTable_Associate(BoxSrcPosTable *pt,
                               BoxOutPos op, BoxSrcPos *sp);
