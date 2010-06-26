@@ -661,11 +661,11 @@ Task BoxVM_Module_Execute(BoxVM *vmp, unsigned int call_num) {
 
   p = (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
   switch (p->type) {
-    case BOXVMPROC_IS_C_CODE: return p->code.c(vmp);
-    case BOXVMPROC_IS_VM_CODE: break;
-    default:
-      MSG_ERROR("Call into the broken procedure %d.", call_num);
-      return Failed;
+  case BOXVMPROC_IS_C_CODE: return p->code.c(vmp);
+  case BOXVMPROC_IS_VM_CODE: break;
+  default:
+    MSG_ERROR("Call into the broken procedure %d.", call_num);
+    return Failed;
   }
 
   vm_save = vmp->vmcur;

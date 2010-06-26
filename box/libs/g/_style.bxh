@@ -2,7 +2,7 @@
 
 Style = ++CPtr
 ([)@Style "style_begin" ?
-(].)@Style "style_destroy" ?
+//(].)@Style "style_destroy" ?
 
 Style.Fill = Void
 Str@Style.Fill "style_fill_string" ?

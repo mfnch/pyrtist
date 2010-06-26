@@ -502,26 +502,28 @@ void TS_Array_New(TS *ts, Type *array, Type item, Int num_items) {
 /*FUNCTIONS: TS_X_Begin *****************************************************/
 
 /* Code for TS_Structure_Begin, TS_Species_Begin, etc. */
-static void TS_X_Begin(TSKind kind, TS *ts, Type *s) {
+static BoxType TS_X_Begin(TSKind kind, TS *ts) {
+  BoxType t;
   TSDesc td;
   TS_TSDESC_INIT(& td);
   td.kind = kind;
   td.target = TS_TYPE_NONE;
   td.data.last = TS_TYPE_NONE;
   td.size = 0;
-  Type_New(ts, s, & td);
+  Type_New(ts, & t, & td);
+  return t;
 }
 
-void TS_Structure_Begin(TS *ts, Type *structure) {
-  TS_X_Begin(TS_KIND_STRUCTURE, ts, structure);
+BoxType TS_Structure_Begin(TS *ts) {
+  return TS_X_Begin(TS_KIND_STRUCTURE, ts);
 }
 
 void TS_Species_Begin(TS *ts, Type *species) {
-  TS_X_Begin(TS_KIND_SPECIES, ts, species);
+  *species = TS_X_Begin(TS_KIND_SPECIES, ts);
 }
 
 void TS_Enum_Begin(TS *ts, Type *enumeration) {
-  TS_X_Begin(TS_KIND_ENUM, ts, enumeration);
+  *enumeration = TS_X_Begin(TS_KIND_ENUM, ts);
 }
 
 /*FUNCTIONS: TS_X_Add *******************************************************/

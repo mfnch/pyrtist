@@ -818,7 +818,7 @@ static void My_Compile_Struc(BoxCmp *c, ASTNode *n) {
 
   /* built the type for the structure */
   i = num_members;
-  TS_Structure_Begin(& c->ts, & t_struc);
+  t_struc = TS_Structure_Begin(& c->ts);
   for(member = n->attr.struc.first_member;
       member != NULL;
       member = member->attr.member.next) {
@@ -927,6 +927,7 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
   case 2:
     n_self = "$$";
     v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$");
+//     v_self = Value_Subtype_Get_Child(v_self); /* WARNING remove that later */
     promote_to_target = 1;
     break;
 
@@ -1179,7 +1180,7 @@ static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
   assert(n->type == ASTNODETYPE_STRUCTYPE);
 
   /* Create a new structure type */
-  TS_Structure_Begin(& c->ts, & struc_type);
+  struc_type = TS_Structure_Begin(& c->ts);
 
   /* Compile the members, check their types and leave them on the stack */
   err = 0;

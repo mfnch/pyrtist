@@ -318,7 +318,7 @@ void TS_Array_New(TS *ts, Type *array, Type item, Int num_items);
 /** Function called to create an empty structure. Members can be added
  * with TS_Structure_Add.
  */
-void TS_Structure_Begin(TS *ts, Type *structure);
+BoxType TS_Structure_Begin(TS *ts);
 
 /** Add a member to a structure type defined with TS_Structure_Begin. */
 void TS_Structure_Add(TS *ts, Type structure, Type member_type,

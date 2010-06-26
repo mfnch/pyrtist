@@ -1234,6 +1234,25 @@ void Value_Setup_As_Child(Value *v, BoxType child_t) {
   return My_Setup_From_Gro(v, child_t, 2);
 }
 
+static Value *My_Get_Ptr_To_New_Value(CmpProc *proc, BoxType t) {
+  TS *ts = & proc->cmp->ts;
+  if (TS_Is_Fast(ts, t)) {
+    /* Create a structure type containing just one item of type t, allocate
+     * that and get a pointer to it
+     */
+    Value *v = Value_New(proc);
+    BoxType t_struc = TS_Structure_Begin(ts);
+    TS_Structure_Add(ts, t_struc, t, (char *) NULL);
+    Value_Setup_As_Temp(v, t_struc);
+    return Value_Cast_To_Ptr(v);
+
+  } else {
+    Value *v = Value_New(proc);
+    Value_Setup_As_Temp(v, t);
+    return Value_Cast_To_Ptr(v);
+  }
+}
+
 Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
   BoxCmp *c = v_parent->proc->cmp;
   TS *ts = & c->ts;
@@ -1272,11 +1291,10 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
 
   t_subtype_child = TS_Subtype_Get_Child(ts, found_subtype);
   if (!TS_Is_Empty(ts, t_subtype_child)) {
-    Value *v_subtype_child = Value_New(c->cur_proc),
-          *v_ptr = Value_New(c->cur_proc);
     /* Next, we create the child and get a pointer to it */
-    Value_Setup_As_Temp(v_subtype_child, t_subtype_child);
-    v_subtype_child = Value_Cast_To_Ptr(v_subtype_child);
+    Value *v_ptr = Value_New(c->cur_proc),
+          *v_subtype_child;
+    v_subtype_child = My_Get_Ptr_To_New_Value(c->cur_proc, t_subtype_child);
     v_subtype_child->attr.own_reference = 0;
     /* ^^^ we pass the ownership responsibility to the subtype */
 

@@ -210,6 +210,10 @@ static Task My_Exit_Int(BoxVM *vm) {
   exit(BOX_VM_ARG(vm, Int));
 }
 
+static Task My_Fail(BoxVM *vm) {
+  return BOXTASK_FAILURE;
+}
+
 /*****************************************************************************
  *                       FUNCTIONS FOR CONVERSION                            *
  *****************************************************************************/
@@ -317,7 +321,7 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
   TS_Name_Set(ts, b->species_real, "Real");
 
   /* Define (Real, Real) */
-  TS_Structure_Begin(ts, & b->struc_real_real);
+  b->struc_real_real = TS_Structure_Begin(ts);
   TS_Structure_Add(ts, b->struc_real_real, b->species_real, NULL);
   TS_Structure_Add(ts, b->struc_real_real, b->species_real, NULL);
 
@@ -675,6 +679,7 @@ static void My_Register_Math(BoxCmp *c) {
 static void My_Register_Sys(BoxCmp *c) {
   (void) Bltin_Simple_Fn_Def(c, "Exit", BOXTYPE_VOID, c->bltin.species_int,
                              My_Exit_Int);
+  (void) Bltin_Simple_Fn_Def(c, "Fail", BOXTYPE_VOID, BOXTYPE_END, My_Fail);
 }
 
 /* Register bultin types, operation and functions */
