@@ -788,6 +788,6 @@ void CmpProc_Assemble_CJump(CmpProc *p, BoxVMSymID jl, BoxCont *cont) {
   MY_ASSEMBLE_END();
 }
 
-void CmpProc_Link_With_Source(CmpProc *p, BoxSrcPos *src_pos) {
-  /* Not implemented, yet */
+void CmpProc_Associate_Source(CmpProc *p, BoxSrcPos *src_pos) {
+  BoxVM_Proc_Associate_Source(p->cmp->vm, CmpProc_Get_ProcID(p), src_pos);
 }

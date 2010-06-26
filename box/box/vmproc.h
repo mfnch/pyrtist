@@ -197,5 +197,17 @@ Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out, BoxUInt call_num);
  */
 Task BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out);
 
+/** Associate the given position in the source file 'sp' with the current
+ * position in the procedure so that it can be later retrieved with
+ * BoxVM_Proc_Get_Source_Of.
+ * @see BoxVM_Proc_Get_Source_Of
+ */
+void BoxVM_Proc_Associate_Source(BoxVM *vm, BoxVMProcID id, BoxSrcPos *sp);
+
+/** Retrieve the position in the source corresponding to the given position
+ * 'op' in the procedure 'id'.
+ */
+BoxSrcPos *BoxVM_Proc_Get_Source_Of(BoxVM *vm, BoxVMProcID id, BoxOutPos op);
+
 #  endif
 #endif

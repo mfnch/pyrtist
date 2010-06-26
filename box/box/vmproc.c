@@ -27,6 +27,7 @@
 #include "mem.h"
 #include "virtmach.h"
 #include "vmproc.h"
+#include "srcpos.h"
 
 static void Procedure_Destroy(void *s) {
   BoxArr_Finish(& ((BoxVMProc *) s)->code);
@@ -220,4 +221,17 @@ Task BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out) {
     TASK( BoxVM_Proc_Disassemble_One(vmp, out, n) );
   }
   return Success;
+}
+
+void BoxVM_Proc_Associate_Source(BoxVM *vm, BoxVMProcID id, BoxSrcPos *sp) {
+  VMProcTable *pt = & vm->proc_table;
+  BoxVMProc *p = (BoxVMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, id);
+  BoxOutPos op = BoxArr_Num_Items(& p->code);
+  BoxSrcPosTable_Associate(& p->pos_table, op, sp);
+}
+
+BoxSrcPos *BoxVM_Proc_Get_Source_Of(BoxVM *vm, BoxVMProcID id, BoxOutPos op) {
+  VMProcTable *pt = & vm->proc_table;
+  BoxVMProc *p = (BoxVMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, id);
+  return BoxSrcPosTable_Get_Src_Of(& p->pos_table, op);
 }

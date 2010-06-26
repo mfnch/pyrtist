@@ -248,6 +248,6 @@ void CmpProc_Assemble_CJump(CmpProc *p, BoxVMSymID jl, BoxCont *cont);
  * to the given position in the source file. Use a NULL pointer to specify
  * that such information is not known.
  */
-void CmpProc_Link_With_Source(CmpProc *p, BoxSrcPos *src_pos);
+void CmpProc_Associate_Source(CmpProc *p, BoxSrcPos *src_pos);
 
 #endif
