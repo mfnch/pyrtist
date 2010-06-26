@@ -50,7 +50,7 @@ static void VM__Exec_Line_I(BoxVM *vmp) {
 }
 
 #define VM__NEW(name, TYPE_ID, Type)                                   \
-static void VM__Exec_ ## name ## _II(BoxVM *vmp) {                 \
+static void VM__Exec_ ## name ## _II(BoxVM *vmp) {                     \
   VMStatus *vmcur = vmp->vmcur;                                        \
   register Type *ptr;                                                  \
   register Int numvar = *((Int *) vmcur->arg1),                        \

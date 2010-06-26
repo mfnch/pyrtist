@@ -60,7 +60,7 @@ libboxcore0_2_la_LDFLAGS = -no-undefined -version-info 0:0:0
 
 # *** box compiler ***
 noinst_HEADERS = defaults.h \
-  fileutils.h registers.h virtmach.h \
+  fileutils.h registers.h srcpos.h virtmach.h \
   tokenizer.h parserh.h typesys.h \
   builtins.h bltinstr.h bltinio.h \
   vmalloc.h vmproc.h vmsym.h \
@@ -70,7 +70,7 @@ noinst_HEADERS = defaults.h \
 
 box_SOURCES = \
   fileutils.c virtmach.c vmalloc.c vmexec.c vmproc.c vmsym.c \
-  tokenizer.l parser.y registers.c \
+  tokenizer.l parser.y registers.c srcpos.c \
   typesys.c builtins.c bltinstr.c bltinio.c vmsymstuff.c \
   paths.c main.c container.c cmpproc.c bltinarray.c ast.c value.c \
   compiler.c operator.c namespace.c autogen.c

@@ -684,7 +684,6 @@ Task BoxVM_Module_Execute(BoxVM *vmp, unsigned int call_num) {
     }
   }
 
-
   vm.p = p;
   BoxVM_Proc_Get_Ptr_And_Length(vmp, & vm.i_pos, NULL, p->code.proc_num);
   i_pos = vm.i_pos;
@@ -724,9 +723,9 @@ Task BoxVM_Module_Execute(BoxVM *vmp, unsigned int call_num) {
     vm.idesc = & vm_instr_desc_table[vm.i_type];
 
     /* Localizza in memoria gli argomenti */
-    if ( vm.idesc->numargs > 0 ) vm.idesc->get_args(& vm);
+    if (vm.idesc->numargs > 0) vm.idesc->get_args(& vm);
     /* Esegue l'istruzione */
-    if ( ! vm.flags.error ) vm.idesc->execute(vmp);
+    if (!vm.flags.error) vm.idesc->execute(vmp);
 
     /* Passo alla prossima istruzione.
      * vm.i_len can be modified by 'vm.idesc->execute(vmp)' when executing
@@ -737,7 +736,7 @@ Task BoxVM_Module_Execute(BoxVM *vmp, unsigned int call_num) {
     i += vm.i_len;
 #endif
 
-  } while ( ! vm.flags.exit );
+  } while (!vm.flags.exit);
 
   /* Delete the registers allocated with the 'new*' instructions */
   {

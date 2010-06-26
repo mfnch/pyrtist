@@ -787,3 +787,7 @@ void CmpProc_Assemble_CJump(CmpProc *p, BoxVMSymID jl, BoxCont *cont) {
   ASSERT_TASK( BoxVMSym_Jc(p->cmp->vm, jl) );
   MY_ASSEMBLE_END();
 }
+
+void CmpProc_Link_With_Source(CmpProc *p, BoxSrcPos *src_pos) {
+  /* Not implemented, yet */
+}

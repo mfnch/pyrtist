@@ -37,6 +37,7 @@
 #  include "container.h"
 #  include "vmproc.h"
 #  include "cmpptrs.h"
+#  include "srcpos.h"
 
 /** The CmpProc object. */
 typedef struct _cmp_proc CmpProc;
@@ -242,5 +243,11 @@ void CmpProc_Assemble_Jump(CmpProc *p, BoxVMSymID jl);
 
 /** Assemble a conditional jump instruction to the given jump label. */
 void CmpProc_Assemble_CJump(CmpProc *p, BoxVMSymID jl, BoxCont *cont);
+
+/** State that the next code generated in the procedure will correspond
+ * to the given position in the source file. Use a NULL pointer to specify
+ * that such information is not known.
+ */
+void CmpProc_Link_With_Source(CmpProc *p, BoxSrcPos *src_pos);
 
 #endif

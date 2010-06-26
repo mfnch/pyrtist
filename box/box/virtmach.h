@@ -67,11 +67,6 @@ typedef enum {
   TYPE_POINT          =  3,
   TYPE_OBJ            =  4,
   TYPE_FAST_LAST      =  4,
-/*  TYPE_VOID           =  6,
-  TYPE_ITER           = 10,
-  TYPE_PTR            = 11,
-  TYPE_IF             = 12,
-  TYPE_FOR            = 13*/
 } TypeID;
 
 /** The opcodes for the operations (instructions) understandable by the Box
@@ -284,34 +279,37 @@ typedef struct __vmstatus VMStatus;
 /** @brief The full status of the virtual machine of Box.
  */
 struct __vmprogram {
-  BoxVMSymTable  sym_table;    /**< Table of referenced and defined symbols */
-  BoxVMProcTable proc_table;   /**< Table of installed and uninstalled procs */
-  BoxHT          method_table; /**< Hashtable containing destructors, etc. */
-  BoxArr         stack,        /**< The stack for the VM object */
-                 data_segment; /**< The segment of data (strings, etc.)
-                                    which is accessible through the global
-                                    register gro0 */
+  BoxVMSymTable
+            sym_table;    /**< Table of referenced and defined symbols */
+  BoxVMProcTable
+            proc_table;   /**< Table of installed and uninstalled procs */
+  BoxHT     method_table; /**< Hashtable containing destructors, etc. */
+  BoxArr    stack,        /**< The stack for the VM object */
+            data_segment; /**< The segment of data (strings, etc.)
+                               which is accessible through the global
+                               register gro0 */
 
   /** Flags which control the behaviour of the VM. */
   struct {
     unsigned int
-              forcelong : 1,   /**< Force long form assembly. */
-              hexcode : 1,     /**< Show Hex values in disassembled code */
-              identdata : 1,   /**< Add also identity info for data inserted
-                                    into the data segment */
-            have_op_table : 1; /**< The operation table has been built */
-  } attr;
+              forcelong     :1, /**< Force long form assembly. */
+              hexcode       :1, /**< Show Hex values in disassembled code */
+              identdata     :1, /**< Add also identity info for data inserted
+                                     into the data segment */
+              have_op_table :1; /**< The operation table has been built */
+  }         attr;
 
-  int vm_globals;
-  void *vm_global[NUM_TYPES];
-  BoxInt vm_gmin[NUM_TYPES], vm_gmax[NUM_TYPES];
-  Obj *box_vm_current, *box_vm_arg1, *box_vm_arg2;
+  int       vm_globals;
+  void      *vm_global[NUM_TYPES];
+  BoxInt    vm_gmin[NUM_TYPES], vm_gmax[NUM_TYPES];
+  BoxPtr    *box_vm_current, *box_vm_arg1, *box_vm_arg2;
   /** Array used with sprintf, when arguments are disassembled. */
-  char iarg_str[VM_MAX_NUMARGS][64];
+  char      iarg_str[VM_MAX_NUMARGS][64];
 
-  VMStatus *vmcur;
+  VMStatus  *vmcur;
 
-  BoxOpTable op_table;
+  BoxOpTable
+            op_table;
 };
 
 #  undef BoxVM
