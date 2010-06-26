@@ -91,11 +91,8 @@ typedef struct {
 } BoxVMProcTable;
 
 #ifdef BOX_ABBREV
-typedef BoxVMProc VMProc;
 typedef BoxVMProcInstalled VMProcInstalled;
 typedef BoxVMProcTable VMProcTable;
-#  define VMPROC_IS_VM_CODE BOXVMPROC_IS_VM_CODE
-#  define VMPROC_IS_C_CODE BOXVMPROC_IS_C_CODE
 #endif
 
 #endif
@@ -107,23 +104,22 @@ typedef BoxVMProcTable VMProcTable;
 /** Initialize the procedure table.
  * @param vmp is the VM-program.
  */
-Task VM_Proc_Init(BoxVM *vmp);
+void BoxVM_Proc_Init(BoxVM *vmp);
 
 /** Destroy the table of installed and uninstalled procedures.
  * @param vmp is the VM-program.
  */
-void VM_Proc_Destroy(BoxVM *vmp);
+void BoxVM_Proc_Finish(BoxVM *vmp);
 
 /** Creates a new procedure. A procedure is a place where to put
  * the assembly code (bytecode) produced by VM_Assemble and is identified
- * by an integer assigned by this function. This integer is passed back
- * through *proc_num.
+ * by an integer assigned by this function, which is returned.
  */
-Task VM_Proc_Code_New(BoxVM *vm, BoxUInt *proc_num);
+BoxVMProcID BoxVM_Proc_Code_New(BoxVM *vm);
 
 /** Destroys the procedure whose number is 'proc_num'.
  */
-Task VM_Proc_Code_Destroy(BoxVM *vm, BoxUInt proc_num);
+void BoxVM_Proc_Code_Destroy(BoxVM *vm, BoxVMProcID proc_id);
 
 /** Set 'proc_num' to be the target procedure: the place where
  * VM_Assemble puts the assembled code
@@ -135,28 +131,27 @@ BoxVMProcID BoxVM_Proc_Target_Set(BoxVM *vm, BoxVMProcID proc_num);
 /** Get the ID of the target procedure */
 BoxVMProcID BoxVM_Proc_Target_Get(BoxVM *vm);
 
-/** Remove all the code assembled inside the procedure 'proc_num'.
+/** Remove all the code assembled inside the procedure 'proc_id'.
  * WARNING: Labels and their references are not removed!
  */
-void VM_Proc_Empty(BoxVM *vmp, BoxUInt proc_num);
+void BoxVM_Proc_Empty(BoxVM *vm, BoxVMProcID proc_id);
 
 /** Returns the call-number which will be assigned to the next installed
  * procedure.
  */
-UInt VM_Proc_Install_Number(BoxVM *vmp);
+BoxVMCallNum BoxVM_Proc_Next_Call_Num(BoxVM *vmp);
 
 size_t BoxVM_Proc_Get_Size(BoxVM *vm, BoxVMProcID id);
 
-/** Install the procedure 'proc_num' and assign to it the number 'call_num'.
- * After this function has been executed, the VM will recognize the instruction
- * 'call call_num' as a call to the code contained inside 'proc_num'.
- * The procedure 'proc_num' is untouched it still exists and can be modified
+/** Install the procedure 'proc_id' and assign to it a call number 'n' which
+ * is returned. After this function has been executed, the VM can recognize
+ * the instruction 'call n' as a call to the code contained inside 'proc_id'.
+ * The procedure 'proc_id' is untouched it still exists and can be modified
  * (this is necessary for symbol resolution: a procedure can be installed
  * even if it references are still undefined).
  */
-void VM_Proc_Install_Code(BoxVM *vmp, BoxUInt *call_num,
-                          BoxUInt proc_num, const char *name,
-                          const char *desc);
+BoxVMCallNum BoxVM_Proc_Install_Code(BoxVM *vm, BoxVMProcID proc_id,
+                                     const char *name, const char *desc);
 
 /** The prototype of a C-function to be used as a procedure.
  * @see VM_Proc_Install_CCode
@@ -169,11 +164,10 @@ typedef BoxVMCCode VMCCode;
 
 /** Similar to VM_Proc_Install_Code, but install the given C-function
  * 'c_proc' as a new procedure. The call-number is returned in '*call_num'.
- * @see VM_Proc_Install_Code
+ * @see BoxVM_Proc_Install_Code
  */
-void VM_Proc_Install_CCode(BoxVM *vmp, BoxUInt *call_num,
-                           BoxVMCCode c_proc, const char *name,
-                           const char *desc);
+BoxVMCallNum BoxVM_Proc_Install_CCode(BoxVM *vmp, BoxVMCCode c_proc,
+                                      const char *name, const char *desc);
 
 /** Get the pointer to the bytecode of the procedure 'proc_num' and its
  * length, expressed as number of VMByteX4 elements.
@@ -181,35 +175,25 @@ void VM_Proc_Install_CCode(BoxVM *vmp, BoxUInt *call_num,
  * If one of these pointer is NULL, then the corresponding information
  * is not written.
  */
-void VM_Proc_Ptr_And_Length(BoxVM *vmp, VMByteX4 **ptr,
-                            BoxUInt *length, int proc_num);
+void BoxVM_Proc_Get_Ptr_And_Length(BoxVM *vmp, VMByteX4 **ptr,
+                                   BoxUInt *length, BoxVMProcID proc_id);
 
 /** Print as plain text the code contained inside the procedure 'proc_num'.
  * The stream out is the destination for the produced output.
  */
-Task VM_Proc_Disassemble(BoxVM *vmp, FILE *out, BoxUInt proc_num);
+Task BoxVM_Proc_Disassemble(BoxVM *vmp, FILE *out, BoxUInt proc_num);
 
 /** This function prints information and assembly source code
  * of the procedure, whose number is 'call_num'.
  * It is similar to VM_Proc_Disassemble, but gives some more details.
  * @see VM_Proc_Disassemble
  */
-Task VM_Proc_Disassemble_One(BoxVM *vmp, FILE *out, BoxUInt call_num);
+Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out, BoxUInt call_num);
 
 /** This function prints the assembly source code
  * of all the installed modules.
  */
-Task VM_Proc_Disassemble_All(BoxVM *vmp, FILE *out);
-
-#if 0
-void BoxVMSheet_Init(BoxVMSheet *vmsh, BoxVM *vm);
-void BoxVMSheet_Finish(BoxVMSheet *vmsh);
-BoxVMSheet *BoxVMSheet_New(BoxVM *vm);
-void BoxVMSheet_Destroy(BoxVMSheet *vmsh);
-
-void BoxVMSheet_Asm(...);
-
-#endif
+Task BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out);
 
 #  endif
 #endif

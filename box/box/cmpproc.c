@@ -238,7 +238,7 @@ BoxVMProcID CmpProc_Get_ProcID(CmpProc *p) {
 
   else {
     p->have.proc_id = 1;
-    ASSERT_TASK( VM_Proc_Code_New(p->cmp->vm, & p->proc_id) );
+    p->proc_id = BoxVM_Proc_Code_New(p->cmp->vm);
     return p->proc_id;
   }
 }
@@ -292,8 +292,8 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p) {
     char *alter_name = CmpProc_Get_Alter_Name(p),
          *proc_name  = (p->have.proc_name) ? p->proc_name : "(noname)";
     CmpProc_End(p); /* End the procedure, if not done explicitly */
-    VM_Proc_Install_Code(p->cmp->vm, & p->call_num, pn,
-                         proc_name, alter_name);
+    p->call_num =
+      BoxVM_Proc_Install_Code(p->cmp->vm, pn, proc_name, alter_name);
     BoxMem_Free(alter_name);
     p->have.call_num = 1;
     return p->call_num;

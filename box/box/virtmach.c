@@ -512,7 +512,7 @@ Task BoxVM_Init(BoxVM *vm) {
   if (BoxArr_Is_Err(& vm->stack) || BoxArr_Is_Err(& vm->data_segment))
     return Failed;
 
-  TASK( VM_Proc_Init(vm) );
+  BoxVM_Proc_Init(vm);
   BoxVMSymTable_Init(& vm->sym_table);
   TASK( BoxVM_Alloc_Init(vm) );
   return Success;
@@ -543,7 +543,7 @@ void BoxVM_Finish(BoxVM *vm) {
 
   BoxVM_Alloc_Destroy(vm);
   BoxVMSymTable_Finish(& vm->sym_table);
-  VM_Proc_Destroy(vm);
+  BoxVM_Proc_Finish(vm);
 
   if (vm->attr.have_op_table)
     BoxOpTable_Destroy(& vm->op_table);
@@ -662,8 +662,8 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
 
   p = (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
   switch (p->type) {
-    case VMPROC_IS_C_CODE: return p->code.c(vmp);
-    case VMPROC_IS_VM_CODE: break;
+    case BOXVMPROC_IS_C_CODE: return p->code.c(vmp);
+    case BOXVMPROC_IS_VM_CODE: break;
     default:
       MSG_ERROR("Call into the broken procedure %d.", call_num);
       return Failed;
@@ -687,7 +687,7 @@ Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
 
 
   vm.p = p;
-  VM_Proc_Ptr_And_Length(vmp, & vm.i_pos, (UInt *) NULL, p->code.proc_num);
+  BoxVM_Proc_Get_Ptr_And_Length(vmp, & vm.i_pos, NULL, p->code.proc_num);
   i_pos = vm.i_pos;
   vm.flags.exit = vm.flags.error = 0;
   {int i; for(i = 0; i < NUM_TYPES; i++) vm.alc[i] = 0;}
@@ -909,7 +909,7 @@ Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg) {
   BoxVM_Assemble(vmp, BOXOP_RET);
 
   previous_sheet = BoxVM_Proc_Target_Get(vmp);
-  TASK( VM_Proc_Code_New(vmp, & tmp_sheet_id) );
+  tmp_sheet_id = BoxVM_Proc_Code_New(vmp);
   BoxVM_Proc_Target_Set(vmp, tmp_sheet_id);
 
   {
@@ -945,8 +945,8 @@ Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg) {
 
 exit:
   (void) BoxVM_Proc_Target_Set(vmp, previous_sheet);
-  if ( tmp_sheet_id > 0 )
-    (void) VM_Proc_Code_Destroy(vmp, tmp_sheet_id);
+  if (tmp_sheet_id > 0)
+    BoxVM_Proc_Code_Destroy(vmp, tmp_sheet_id);
   return exit_status;
 }
 

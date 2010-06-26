@@ -361,9 +361,8 @@ static int Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
                   sym_name, clrd->lib_file);
         return 1;
       }
-      VM_Proc_Install_CCode(vmp, & call_num,
-                            (Task (*)(BoxVM *)) sym,
-                            sym_name, sym_name);
+      call_num =
+        BoxVM_Proc_Install_CCode(vmp, (BoxVMCCode) sym, sym_name, sym_name);
       ASSERT_TASK(BoxVMSym_Def_Call(vmp, sym_num, call_num));
     }
   }
@@ -438,11 +437,11 @@ static Task code_generator(BoxVM *vmp, UInt sym_num, UInt sym_type,
   void *ref_tail = ref + sizeof(BoxVMSymCodeRef);
   UInt ref_tail_size = ref_size - sizeof(BoxVMSymCodeRef);
   VMProcTable *pt = & vmp->proc_table;
-  VMProc *tmp_proc;
+  BoxVMProc *tmp_proc;
   UInt saved_proc_num;
 
   saved_proc_num = BoxVM_Proc_Target_Get(vmp);
-  VM_Proc_Empty(vmp, pt->tmp_proc);
+  BoxVM_Proc_Empty(vmp, pt->tmp_proc);
   BoxVM_Proc_Target_Set(vmp, pt->tmp_proc);
   tmp_proc = pt->target_proc;
   /* Call the procedure here! */

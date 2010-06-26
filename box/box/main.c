@@ -366,7 +366,7 @@ static Task Stage_Write_Asm(UInt flags) {
                      BOXVM_ATTR_DASM_WITH_HEX);
     }
 
-    TASK( VM_Proc_Disassemble_All(target_vm, out) );
+    TASK( BoxVM_Proc_Disassemble_All(target_vm, out) );
 
     if (close_file)
       (void) fclose(out);
