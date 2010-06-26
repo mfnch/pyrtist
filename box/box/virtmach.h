@@ -397,10 +397,9 @@ void BoxVM_Destroy(BoxVM *vm);
  */
 BoxTask BoxVM_Alloc_Global_Regs(BoxVM *vm, BoxInt num_var[], BoxInt num_reg[]);
 
-BoxTask VM_Module_Global_Set(BoxVM *vmp, BoxInt type, BoxInt reg, void *value);
+void BoxVM_Module_Global_Set(BoxVM *vmp, BoxInt type, BoxInt reg, void *value);
 
-BoxTask VM_Code_Prepare(BoxVM *vmp, BoxInt *num_var, BoxInt *num_reg);
-BoxTask VM_Module_Execute(BoxVM *vmp, unsigned int call_num);
+BoxTask BoxVM_Module_Execute(BoxVM *vmp, unsigned int call_num);
 
 /** The attributes corresponding to different behaviours of the Box virtual
  * machine.

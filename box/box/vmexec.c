@@ -34,22 +34,23 @@
 #include "bltinarray.h"
 #include "str.h"
 
-static void VM__Exec_Ret(VMProgram *vmp) {vmp->vmcur->flags.exit = 1;}
+static void VM__Exec_Ret(BoxVM *vmp) {vmp->vmcur->flags.exit = 1;}
 
-static void VM__Exec_Call_I(VMProgram *vmp) {
+static void VM__Exec_Call_I(BoxVM *vmp) {
   VMStatus *vm = vmp->vmcur;
-  if IS_SUCCESSFUL( VM_Module_Execute(vmp, *((Int *) vm->arg1)) ) return;
+  if IS_SUCCESSFUL( BoxVM_Module_Execute(vmp, *((Int *) vm->arg1)) )
+    return;
   vm->flags.error = vm->flags.exit = 1;
 }
 
-static void VM__Exec_Line_I(VMProgram *vmp) {
+static void VM__Exec_Line_I(BoxVM *vmp) {
   VMStatus *vm = vmp->vmcur;
   vm->line = *((Int *) vm->arg1);
   Msg_Line_Set(vm->line);
 }
 
 #define VM__NEW(name, TYPE_ID, Type)                                   \
-static void VM__Exec_ ## name ## _II(VMProgram *vmp) {                 \
+static void VM__Exec_ ## name ## _II(BoxVM *vmp) {                 \
   VMStatus *vmcur = vmp->vmcur;                                        \
   register Type *ptr;                                                  \
   register Int numvar = *((Int *) vmcur->arg1),                        \
@@ -72,156 +73,156 @@ VM__NEW(NewR, TYPE_REAL,  Real)
 VM__NEW(NewP, TYPE_POINT, Point)
 VM__NEW(NewO, TYPE_OBJ,   Obj)
 
-static void VM__Exec_Mov_CC(VMProgram *vmp) {
+static void VM__Exec_Mov_CC(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Char *) vmcur->arg1) = *((Char *) vmcur->arg2);
 }
-static void VM__Exec_Mov_II(VMProgram *vmp) {
+static void VM__Exec_Mov_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) = *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Mov_RR(VMProgram *vmp) {
+static void VM__Exec_Mov_RR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Real *) vmcur->arg1) = *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Mov_PP(VMProgram *vmp) {
+static void VM__Exec_Mov_PP(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Point *) vmcur->arg1) = *((Point *) vmcur->arg2);
 }
-static void VM__Exec_Mov_OO(VMProgram *vmp) {
+static void VM__Exec_Mov_OO(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Obj *) vmcur->arg1) = *((Obj *) vmcur->arg2);
 }
 
-static void VM__Exec_BNot_I(VMProgram *vmp) {
+static void VM__Exec_BNot_I(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) = ~ *((Int *) vmcur->arg1);
 }
-static void VM__Exec_BAnd_II(VMProgram *vmp) {
+static void VM__Exec_BAnd_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) &= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_BXor_II(VMProgram *vmp) {
+static void VM__Exec_BXor_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) ^= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_BOr_II(VMProgram *vmp) {
+static void VM__Exec_BOr_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) |= *((Int *) vmcur->arg2);
 }
 
-static void VM__Exec_Shl_II(VMProgram *vmp) {
+static void VM__Exec_Shl_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) <<= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Shr_II(VMProgram *vmp) {
+static void VM__Exec_Shr_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) >>= *((Int *) vmcur->arg2);
 }
 
-static void VM__Exec_Inc_I(VMProgram *vmp) { ++ *((Int *) vmp->vmcur->arg1); }
-static void VM__Exec_Inc_R(VMProgram *vmp) { ++ *((Real *) vmp->vmcur->arg1); }
-static void VM__Exec_Dec_I(VMProgram *vmp) { -- *((Int *) vmp->vmcur->arg1); }
-static void VM__Exec_Dec_R(VMProgram *vmp) { -- *((Real *) vmp->vmcur->arg1); }
+static void VM__Exec_Inc_I(BoxVM *vmp) { ++ *((Int *) vmp->vmcur->arg1); }
+static void VM__Exec_Inc_R(BoxVM *vmp) { ++ *((Real *) vmp->vmcur->arg1); }
+static void VM__Exec_Dec_I(BoxVM *vmp) { -- *((Int *) vmp->vmcur->arg1); }
+static void VM__Exec_Dec_R(BoxVM *vmp) { -- *((Real *) vmp->vmcur->arg1); }
 
-static void VM__Exec_Pow_II(VMProgram *vmp) { /* bad implementation!!! */
+static void VM__Exec_Pow_II(BoxVM *vmp) { /* bad implementation!!! */
   VMStatus *vmcur = vmp->vmcur;
   Int i, r = 1, b = *((Int *) vmcur->arg1), p = *((Int *) vmcur->arg2);
   for (i = 0; i < p; i++) r *= b;
   *((Int *) vmcur->arg1) = r;
 }
-static void VM__Exec_Pow_RR(VMProgram *vmp) {
+static void VM__Exec_Pow_RR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Real *) vmcur->arg1) =
    pow(*((Real *) vmcur->arg1), *((Real *) vmcur->arg2));
 }
 
-static void VM__Exec_Add_II(VMProgram *vmp) {
+static void VM__Exec_Add_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) += *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Add_RR(VMProgram *vmp) {
+static void VM__Exec_Add_RR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Real *) vmcur->arg1) += *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Add_PP(VMProgram *vmp) {
+static void VM__Exec_Add_PP(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   ((Point *) vmcur->arg1)->x += ((Point *) vmcur->arg2)->x;
   ((Point *) vmcur->arg1)->y += ((Point *) vmcur->arg2)->y;
 }
 
-static void VM__Exec_Sub_II(VMProgram *vmp) {
+static void VM__Exec_Sub_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) -= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Sub_RR(VMProgram *vmp) {
+static void VM__Exec_Sub_RR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Real *) vmcur->arg1) -= *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Sub_PP(VMProgram *vmp) {
+static void VM__Exec_Sub_PP(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   ((Point *) vmcur->arg1)->x -= ((Point *) vmcur->arg2)->x;
   ((Point *) vmcur->arg1)->y -= ((Point *) vmcur->arg2)->y;
 }
 
-static void VM__Exec_Mul_II(VMProgram *vmp) {
+static void VM__Exec_Mul_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) *= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Mul_RR(VMProgram *vmp) {
+static void VM__Exec_Mul_RR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Real *) vmcur->arg1) *= *((Real *) vmcur->arg2);
 }
 
-static void VM__Exec_Div_II(VMProgram *vmp) {
+static void VM__Exec_Div_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) /= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Div_RR(VMProgram *vmp) {
+static void VM__Exec_Div_RR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Real *) vmcur->arg1) /= *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Rem_II(VMProgram *vmp) {
+static void VM__Exec_Rem_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) %= *((Int *) vmcur->arg2);
 }
 
-static void VM__Exec_Neg_I(VMProgram *vmp) {
+static void VM__Exec_Neg_I(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) = -*((Int *) vmcur->arg1);
 }
-static void VM__Exec_Neg_R(VMProgram *vmp) {
+static void VM__Exec_Neg_R(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Real *) vmcur->arg1) = -*((Real *) vmcur->arg1);
 }
-static void VM__Exec_Neg_P(VMProgram *vmp) {
+static void VM__Exec_Neg_P(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   ((Point *) vmcur->arg1)->x = -((Point *) vmcur->arg1)->x;
   ((Point *) vmcur->arg1)->y = -((Point *) vmcur->arg1)->y;
 }
 
-static void VM__Exec_PMulR_PR(VMProgram *vmp) {
+static void VM__Exec_PMulR_PR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   Real r = *((Real *) vmcur->local[TYPE_REAL]);
   ((Point *) vmcur->arg1)->x *= r;
   ((Point *) vmcur->arg1)->y *= r;
 }
-static void VM__Exec_PDivR_PR(VMProgram *vmp) {
+static void VM__Exec_PDivR_PR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   Real r = *((Real *) vmcur->local[TYPE_REAL]);
   ((Point *) vmcur->arg1)->x /= r;
   ((Point *) vmcur->arg1)->y /= r;
 }
 
-static void VM__Exec_Real_C(VMProgram *vmp) {
+static void VM__Exec_Real_C(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Real *) vmcur->local[TYPE_REAL]) = (Real) *((Char *) vmcur->arg1);
 }
-static void VM__Exec_Real_I(VMProgram *vmp) {
+static void VM__Exec_Real_I(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Real *) vmcur->local[TYPE_REAL]) = (Real) *((Int *) vmcur->arg1);
 }
-static void VM__Exec_Int_R(VMProgram *vmp) {
+static void VM__Exec_Int_R(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->local[TYPE_INT]) = (Int) *((Real *) vmcur->arg1);
 }
@@ -229,50 +230,50 @@ static void VM__Exec_Int_C(BoxVM *vm) {
   VMStatus *vmcur = vm->vmcur;
   *((Int *) vmcur->local[TYPE_INT]) = (Int) *((Char *) vmcur->arg1);
 }
-static void VM__Exec_Point_II(VMProgram *vmp) {
+static void VM__Exec_Point_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   ((Point *) vmcur->local[TYPE_POINT])->x = (Real) *((Int *) vmcur->arg1);
   ((Point *) vmcur->local[TYPE_POINT])->y = (Real) *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Point_RR(VMProgram *vmp) {
+static void VM__Exec_Point_RR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   ((Point *) vmcur->local[TYPE_POINT])->x = *((Real *) vmcur->arg1);
   ((Point *) vmcur->local[TYPE_POINT])->y = *((Real *) vmcur->arg2);
 }
-static void VM__Exec_ProjX_P(VMProgram *vmp) {
+static void VM__Exec_ProjX_P(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Real *) vmcur->local[TYPE_REAL]) = ((Point *) vmcur->arg1)->x;
 }
-static void VM__Exec_ProjY_P(VMProgram *vmp) {
+static void VM__Exec_ProjY_P(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Real *) vmcur->local[TYPE_REAL]) = ((Point *) vmcur->arg1)->y;
 }
 
-static void VM__Exec_PPtrX_P(VMProgram *vmp) {
+static void VM__Exec_PPtrX_P(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   Obj *obj = (Obj *) vmcur->local[TYPE_OBJ];
   obj->block = (void *) NULL;
   obj->ptr = & (((Point *) vmcur->arg1)->x);
 }
 
-static void VM__Exec_PPtrY_P(VMProgram *vmp) {
+static void VM__Exec_PPtrY_P(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   Obj *obj = (Obj *) vmcur->local[TYPE_OBJ];
   obj->block = (void *) NULL;
   obj->ptr = & (((Point *) vmcur->arg1)->y);
 }
 
-static void VM__Exec_Eq_II(VMProgram *vmp) {
+static void VM__Exec_Eq_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) == *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Eq_RR(VMProgram *vmp) {
+static void VM__Exec_Eq_RR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->local[TYPE_INT]) =
    *((Real *) vmcur->arg1) == *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Eq_PP(VMProgram *vmp) {
+static void VM__Exec_Eq_PP(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->local[TYPE_INT]) =
      ( ((Point *) vmcur->arg1)->x == ((Point *) vmcur->arg2)->x )
@@ -283,17 +284,17 @@ static void VM__Exec_Eq_OO(BoxVM *vm) {
   *((Int *) vmcur->local[TYPE_INT]) =
      (((Obj *) vmcur->arg1)->ptr == ((Obj *) vmcur->arg2)->ptr);
 }
-static void VM__Exec_Ne_II(VMProgram *vmp) {
+static void VM__Exec_Ne_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) != *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Ne_RR(VMProgram *vmp) {
+static void VM__Exec_Ne_RR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->local[TYPE_INT]) =
    *((Real *) vmcur->arg1) != *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Ne_PP(VMProgram *vmp) {
+static void VM__Exec_Ne_PP(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->local[TYPE_INT]) =
      ( ((Point *) vmcur->arg1)->x != ((Point *) vmcur->arg2)->x )
@@ -305,63 +306,63 @@ static void VM__Exec_Ne_OO(BoxVM *vm) {
      (((Obj *) vmcur->arg1)->ptr != ((Obj *) vmcur->arg2)->ptr);
 }
 
-static void VM__Exec_Lt_II(VMProgram *vmp) {
+static void VM__Exec_Lt_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) < *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Lt_RR(VMProgram *vmp) {
+static void VM__Exec_Lt_RR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->local[TYPE_INT]) =
    *((Real *) vmcur->arg1) < *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Le_II(VMProgram *vmp) {
+static void VM__Exec_Le_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) <= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Le_RR(VMProgram *vmp) {
+static void VM__Exec_Le_RR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->local[TYPE_INT]) =
    *((Real *) vmcur->arg1) <= *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Gt_II(VMProgram *vmp) {
+static void VM__Exec_Gt_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) > *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Gt_RR(VMProgram *vmp) {
+static void VM__Exec_Gt_RR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->local[TYPE_INT]) =
    *((Real *) vmcur->arg1) > *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Ge_II(VMProgram *vmp) {
+static void VM__Exec_Ge_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) >= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Ge_RR(VMProgram *vmp) {
+static void VM__Exec_Ge_RR(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->local[TYPE_INT]) =
    *((Real *) vmcur->arg1) >= *((Real *) vmcur->arg2);
 }
 
-static void VM__Exec_LNot_I(VMProgram *vmp) {
+static void VM__Exec_LNot_I(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) = ! *((Int *) vmcur->arg1);
 }
-static void VM__Exec_LAnd_II(VMProgram *vmp) {
+static void VM__Exec_LAnd_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) && *((Int *) vmcur->arg2);
 }
-static void VM__Exec_LOr_II(VMProgram *vmp) {
+static void VM__Exec_LOr_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) || *((Int *) vmcur->arg2);
 }
 
-static void VM__Exec_Malloc_II(VMProgram *vmp) {
+static void VM__Exec_Malloc_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   Int size = *((Int *) vmcur->arg1),
       type = *((Int *) vmcur->arg2);
@@ -371,59 +372,59 @@ static void VM__Exec_Malloc_II(VMProgram *vmp) {
   MSG_FATAL("VM_Exec_Malloc_II: memory request failed!");
 }
 
-static void VM__Exec_Mln_O(VMProgram *vmp) {
+static void VM__Exec_Mln_O(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   BoxVM_Link((Obj *) vmcur->arg1);
 }
 
-static void VM__Exec_MUnln_O(VMProgram *vmp) {
+static void VM__Exec_MUnln_O(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   BoxVM_Unlink(vmp, (Obj *) vmcur->arg1);
 }
 
-static void VM__Exec_MCopy_OO(VMProgram *vmp) {
+static void VM__Exec_MCopy_OO(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   (void) memcpy(((Obj *) vmcur->arg1)->ptr,         /* destination */
                 ((Obj *) vmcur->arg2)->ptr,         /* source */
                 *((Int *) vmcur->local[TYPE_INT])); /* size */
 }
 
-static void VM__Exec_Lea(VMProgram *vmp) {
+static void VM__Exec_Lea(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   Obj *obj = (Obj *) vmcur->local[TYPE_OBJ];
   obj->block = (void *) NULL;
   obj->ptr = vmcur->arg1;
 }
 
-static void VM__Exec_Lea_OO(VMProgram *vmp) {
+static void VM__Exec_Lea_OO(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   Obj *obj = (Obj *) vmcur->arg1;
   obj->block = (void *) NULL;
   obj->ptr = vmcur->arg2;
 }
 
-static void VM__Exec_Push_O(VMProgram *vmp) {
+static void VM__Exec_Push_O(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   BoxArr_Push(& vmp->stack, vmcur->arg1);
 }
 
-static void VM__Exec_Pop_O(VMProgram *vmp) {
+static void VM__Exec_Pop_O(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   BoxArr_Pop(& vmp->stack, vmcur->arg1);
 }
 
-static void VM__Exec_Jmp_I(VMProgram *vmp) {
+static void VM__Exec_Jmp_I(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   vmcur->i_len = *((Int *) vmcur->arg1);
 }
 
-static void VM__Exec_Jc_I(VMProgram *vmp) {
+static void VM__Exec_Jc_I(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   if (*((Int *) vmcur->local[TYPE_INT]))
     vmcur->i_len = *((Int *) vmcur->arg1);
 }
 
-static void VM__Exec_Add_O(VMProgram *vmp) {
+static void VM__Exec_Add_O(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   ((Obj *) vmcur->arg1)->ptr += *((Int *) vmcur->local[TYPE_INT]);
 }

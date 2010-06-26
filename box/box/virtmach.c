@@ -278,7 +278,7 @@ void VM__Imm(VMStatus *vmcur) {vmcur->arg1 = (void *) vmcur->i_pos;}
  *  iarg e' una tabella di puntatori alle stringhe che corrisponderanno
  *  agli argomenti disassemblati.
  */
-void VM__D_GLPI_GLPI(VMProgram *vmp, char **iarg) {
+void VM__D_GLPI_GLPI(BoxVM *vmp, char **iarg) {
   VMStatus *vmcur = vmp->vmcur;
   UInt n, na = vmcur->idesc->numargs;
   UInt iaform[2] = {vmcur->arg_type & 3, (vmcur->arg_type >> 2) & 3};
@@ -349,7 +349,7 @@ void VM__D_GLPI_GLPI(VMProgram *vmp, char **iarg) {
 }
 
 /* Analoga alla precedente, ma per istruzioni CALL. */
-void VM__D_CALL(VMProgram *vmp, char **iarg) {
+void VM__D_CALL(BoxVM *vmp, char **iarg) {
   VMStatus *vmcur = vmp->vmcur;
   register UInt na = vmcur->idesc->numargs;
 
@@ -394,7 +394,7 @@ void VM__D_CALL(VMProgram *vmp, char **iarg) {
 }
 
 /* Analoga alla precedente, ma per istruzioni di salto (jmp, jc). */
-void VM__D_JMP(VMProgram *vmp, char **iarg) {
+void VM__D_JMP(BoxVM *vmp, char **iarg) {
   VMStatus *vmcur = vmp->vmcur;
   register UInt na = vmcur->idesc->numargs;
 
@@ -427,7 +427,7 @@ void VM__D_JMP(VMProgram *vmp, char **iarg) {
 }
 
 /* Analoga alla precedente, ma per istruzioni del tipo GLPI-Imm. */
-void VM__D_GLPI_Imm(VMProgram *vmp, char **iarg) {
+void VM__D_GLPI_Imm(BoxVM *vmp, char **iarg) {
   VMStatus *vmcur = vmp->vmcur;
   UInt iaf = vmcur->arg_type & 3, iat = vmcur->idesc->t_id;
   Int iai;
@@ -518,7 +518,7 @@ Task BoxVM_Init(BoxVM *vm) {
   return Success;
 }
 
-static void _Free_Globals(VMProgram *vmp) {
+static void _Free_Globals(BoxVM *vmp) {
   int i;
   for(i = 0; i < NUM_TYPES; i++) {
     void *ptr = vmp->vm_global[i];
@@ -532,7 +532,7 @@ static void _Free_Globals(VMProgram *vmp) {
 }
 
 void BoxVM_Finish(BoxVM *vm) {
-  if (vm == (VMProgram *) NULL) return;
+  if (vm == (BoxVM *) NULL) return;
   if (vm->vm_globals != 0) _Free_Globals(vm);
 
   if (BoxArr_Num_Items(& vm->stack) != 0)
@@ -619,22 +619,21 @@ Task BoxVM_Alloc_Global_Regs(BoxVM *vm, Int num_var[], Int num_reg[]) {
  * of type type, whose number is reg. *value is the value assigned
  * to the register (variable).
  */
-Task VM_Module_Global_Set(VMProgram *vmp, Int type, Int reg, void *value) {
+void BoxVM_Module_Global_Set(BoxVM *vmp, Int type, Int reg, void *value) {
   void *dest;
 
   if (type < 0 || type >= NUM_TYPES) {
-    MSG_ERROR("VM_Module_Global_Set: Unknown register type!");
-    return Failed;
+    MSG_FATAL("VM_Module_Global_Set: Unknown register type!");
+    assert(0);
   }
 
   if (reg < vmp->vm_gmin[type] || reg > vmp->vm_gmax[type]) {
-    MSG_ERROR("VM_Module_Global_Set: Reference to unallocated register!");
-    return Failed;
+    MSG_FATAL("VM_Module_Global_Set: Reference to unallocated register!");
+    assert(0);
   }
 
   dest = vmp->vm_global[type] + reg * size_of_type[type];
   memcpy(dest, value, size_of_type[type]);
-  return Success;
 }
 
 /*****************************************************************************
@@ -644,7 +643,7 @@ Task VM_Module_Global_Set(VMProgram *vmp, Int type, Int reg, void *value) {
 /* Execute the module number m of program vmp.
  * If initial != NULL, *initial is the initial status of the virtual machine.
  */
-Task VM_Module_Execute(VMProgram *vmp, unsigned int call_num) {
+Task BoxVM_Module_Execute(BoxVM *vmp, unsigned int call_num) {
   VMProcTable *pt = & vmp->proc_table;
   VMProcInstalled *p;
   register VMByteX4 *i_pos;
@@ -884,13 +883,14 @@ Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
  * NOTA: Le opzioni da error in poi "appartengono" al programma attualmente
  *  in scrittura.
  */
-void BoxVM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit) {
+void BoxVM_ASettings(BoxVM *vmp, int forcelong, int error, int inhibit) {
   VMProcTable *pt = & vmp->proc_table;
   vmp->attr.forcelong = forcelong;
   pt->target_proc->status.error = error;
   pt->target_proc->status.inhibit = inhibit;
 }
 
+#if 0
 /* This function executes the final steps to prepare the program
  * to be installed as a module and to be executed.
  * num_reg and num_var are the pointers to arrays of NUM_TYPES elements
@@ -899,7 +899,7 @@ void BoxVM_ASettings(VMProgram *vmp, int forcelong, int error, int inhibit) {
  * module is the module-number of an undefined module which will be used
  * to install the program.
  */
-Task VM_Code_Prepare(VMProgram *vmp, Int *num_var, Int *num_reg) {
+Task VM_Code_Prepare(BoxVM *vmp, Int *num_var, Int *num_reg) {
   VMProcTable *pt = & vmp->proc_table;
   int previous_sheet;
   UInt tmp_sheet_id = 0;
@@ -949,6 +949,7 @@ exit:
     BoxVM_Proc_Code_Destroy(vmp, tmp_sheet_id);
   return exit_status;
 }
+#endif
 
 /** Similar to BoxVM_Assemble, but takes a va_list argument as a replacement
  * for the extra arguments.
@@ -1162,8 +1163,7 @@ static void Update_gr0(BoxVM *vm) {
   Obj data_segment_ptr;
   data_segment_ptr.block = NULL; /* the VM will handle deallocation! */
   data_segment_ptr.ptr = BoxArr_First_Item_Ptr(& vm->data_segment);
-  ASSERT_TASK( VM_Module_Global_Set(vm, TYPE_OBJ, (Int) 0,
-                                    & data_segment_ptr) );
+  BoxVM_Module_Global_Set(vm, TYPE_OBJ, (Int) 0, & data_segment_ptr);
 }
 
 void BoxVM_Data_Display(BoxVM *vm, FILE *stream) {

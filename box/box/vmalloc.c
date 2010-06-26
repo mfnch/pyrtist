@@ -114,7 +114,7 @@ void BoxVM_Link(Obj *obj) {
 /** Decrease the reference counter for the given object and proceed
  * with destroying it, if it has reached zero.
  */
-void BoxVM_Unlink(VMProgram *vmp, Obj *obj) {
+void BoxVM_Unlink(BoxVM *vmp, Obj *obj) {
   VMAllocHead *head = (VMAllocHead *) obj->block;;
   Int references;
   if (Bad_Obj("BoxVM_Unlink", obj)) return;
@@ -134,7 +134,7 @@ void BoxVM_Unlink(VMProgram *vmp, Obj *obj) {
 
       save_this = *vmp->box_vm_current;
       *vmp->box_vm_current = *obj;
-      (void) VM_Module_Execute(vmp, method_num);
+      (void) BoxVM_Module_Execute(vmp, method_num);
       *vmp->box_vm_current = save_this;
     }
 #ifdef DEBUG_VMALLOC
@@ -153,12 +153,12 @@ void BoxVM_Unlink(VMProgram *vmp, Obj *obj) {
   }
 }
 
-Task BoxVM_Alloc_Init(VMProgram *vmp) {
+Task BoxVM_Alloc_Init(BoxVM *vmp) {
   BoxHT_Init_Default(& vmp->method_table, VM_METHOD_HT_SIZE);
   return Success;
 }
 
-void BoxVM_Alloc_Destroy(VMProgram *vmp) {
+void BoxVM_Alloc_Destroy(BoxVM *vmp) {
   BoxHT_Finish(& vmp->method_table);
 }
 
@@ -167,7 +167,7 @@ typedef struct {
   Int method;
 } Key;
 
-Task BoxVM_Alloc_Method_Set(VMProgram *vmp, Int type, Int method, Int m_num) {
+Task BoxVM_Alloc_Method_Set(BoxVM *vmp, Int type, Int method, Int m_num) {
   Key k;
   k.type = type;
   k.method = method;
@@ -179,7 +179,7 @@ Task BoxVM_Alloc_Method_Set(VMProgram *vmp, Int type, Int method, Int m_num) {
   return Success;
 }
 
-Int BoxVM_Alloc_Method_Get(VMProgram *vmp, Int type, Int method) {
+Int BoxVM_Alloc_Method_Get(BoxVM *vmp, Int type, Int method) {
   BoxHTItem *found;
   Key k;
   k.type = type;

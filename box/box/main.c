@@ -387,7 +387,7 @@ Task Main_Install(UInt *main_module) {
 Task Main_Execute(UInt main_module) {
   Task t;
   Msg_Line_Set((Int) 1);
-  t = VM_Module_Execute(target_vm, main_module);
+  t = BoxVM_Module_Execute(target_vm, main_module);
   Msg_Line_Set(MSG_UNDEF_LINE);
   return t;
 }

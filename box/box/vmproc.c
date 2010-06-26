@@ -63,7 +63,7 @@ void BoxVM_Proc_Finish(BoxVM *vmp) {
  * this address and update pt->target_proc.
  * Yes, I know. This is a great source of nasty bugs...
  */
-static void My_Target_Proc_Refresh(VMProgram *vmp) {
+static void My_Target_Proc_Refresh(BoxVM *vmp) {
   VMProcTable *pt = & vmp->proc_table;
   if (pt->target_proc_num)
     BoxVM_Proc_Target_Set(vmp, pt->target_proc_num);
