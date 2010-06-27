@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 /**
  * @file virtmach.h
  * @brief The virtual machine of Box.
@@ -29,6 +27,8 @@
 
 #  include <stdio.h>
 #  include <stdarg.h>
+#  include <stdlib.h>
+
 /*#  include <stdint.h>
 #  include <inttypes.h>*/
 
@@ -239,34 +239,40 @@ typedef struct {
   void (*disasm)(BoxVM *, char **); /**< Per disassemblare gli argomenti */
 } VMInstrDesc;
 
+typedef struct {
+  void   *ptr; /**< Pointer to the region allocated for the registers */
+  BoxInt min,  /**< Min register number */
+         max;  /**< Max register number */
+} BoxVMRegs;
+
 /** This structure contains all the data which define the status for the VM.
  * Status is allocated by 'VM_Module_Execute' inside its stack.
  */
 struct __vmstatus {
   /* Flags della VM */
   struct {
-    unsigned int error    : 1; /* L'istruzione ha provocato un errore! */
-    unsigned int exit     : 1; /* Bisogna uscire dall'esecuzione! */
-    unsigned int is_long  : 1; /* L'istruzione e' in formato lungo? */
+    unsigned int error    :1, /* L'istruzione ha provocato un errore! */
+                 exit     :1, /* Bisogna uscire dall'esecuzione! */
+                 is_long  :1; /* L'istruzione e' in formato lungo? */
   } flags;
 
   BoxVMProcInstalled *p; /**< Procedure which is currently been executed */
 
-  /* Variabili che riguardano l'istruzione in esecuzione: */
-  BoxUInt dasm_pos;       /* Position in num. of read bytes for the disassembler */
-  BoxVMByteX4 *i_pos;     /* Puntatore all'istruzione */
-  BoxVMByteX4 i_eye;      /* Occhio di lettura (gli ultimi 4 byte letti) */
-  BoxUInt i_type,         /* Tipo e dimensione dell'istruzione */
-          i_len,
-          arg_type;       /* Tipo degli argomenti dell'istruzione */
+  BoxUInt     dasm_pos;   /* Position in num. of read bytes for the disassembler */
+
+  BoxVMByteX4 *i_pos,     /**< Pointer to the current instruction */
+              i_eye;      /**< Execution "eye" (last four bytes processed) */
+  BoxUInt     i_type,     /**< Type of instruction */
+              i_len,      /**< Size of instruction */
+              arg_type;   /**< Type of arguments of instruction */
+
   VMInstrDesc *idesc;     /* Descrittore dell'istruzione corrente */
   void *arg1, *arg2;      /* Puntatori agli argomenti del'istruzione */
-  void *global[NUM_TYPES]; /* Array di puntatori alle zone registri globali e locali */
-  void *local[NUM_TYPES];
-  BoxInt gmin[NUM_TYPES],  /* Numero di registro globale minimo e massimo */
-         gmax[NUM_TYPES],
-         lmin[NUM_TYPES],  /* Numero di registro locale minimo e massimo */
-         lmax[NUM_TYPES];
+
+
+  BoxVMRegs global[NUM_TYPES], /**< Local register allocation status */
+            local[NUM_TYPES];  /**< Global register allocation status */
+
   /* Stato di allocazione dei registri per il modulo in esecuzione */
   BoxInt alc[NUM_TYPES];
 };
@@ -278,37 +284,43 @@ typedef struct __vmstatus VMStatus;
 /** @brief The full status of the virtual machine of Box.
  */
 struct __vmprogram {
-  BoxVMSymTable
-            sym_table;    /**< Table of referenced and defined symbols */
-  BoxVMProcTable
-            proc_table;   /**< Table of installed and uninstalled procs */
-  BoxHT     method_table; /**< Hashtable containing destructors, etc. */
-  BoxArr    stack,        /**< The stack for the VM object */
-            data_segment; /**< The segment of data (strings, etc.)
-                               which is accessible through the global
-                               register gro0 */
+  VMStatus  *vmcur;       /**< The current execution frame */
 
-  /** Flags which control the behaviour of the VM. */
   struct {
     unsigned int
-              forcelong     :1, /**< Force long form assembly. */
-              hexcode       :1, /**< Show Hex values in disassembled code */
-              identdata     :1, /**< Add also identity info for data inserted
-                                     into the data segment */
-              have_op_table :1; /**< The operation table has been built */
-  }         attr;
+              forcelong :1, /**< Force long form assembly. */
+              hexcode   :1, /**< Show Hex values in disassembled code */
+              identdata :1; /**< Add also identity info for data inserted
+                                 into the data segment */
+  }         attr;         /** Flags which controls the behaviour of the VM. */
 
-  int       vm_globals;
-  void      *vm_global[NUM_TYPES];
-  BoxInt    vm_gmin[NUM_TYPES], vm_gmax[NUM_TYPES];
-  BoxPtr    *box_vm_current, *box_vm_arg1, *box_vm_arg2;
-  /** Array used with sprintf, when arguments are disassembled. */
-  char      iarg_str[VM_MAX_NUMARGS][64];
+  struct {
+    unsigned int
+              globals   :1, /**< Global regs have been allocated */
+              op_table  :1; /**< The operation table has been built */
+  }         has;          /**< State of the VM */
 
-  VMStatus  *vmcur;
+  BoxArr    stack,        /**< The stack for the VM object */
+            data_segment; /**< The segment of data (strings, etc.) which is
+                               accessible through the global register gro0 */
+
+  BoxVMRegs global[NUM_TYPES]; /**< The values of the global registers */
+
+  BoxPtr    *box_vm_current,
+            *box_vm_arg1,
+            *box_vm_arg2;
+
+  BoxVMProcTable
+            proc_table;   /**< Table of installed and uninstalled procs */
+
+  BoxVMSymTable
+            sym_table;    /**< Table of referenced and defined symbols */
 
   BoxOpTable
             op_table;
+
+
+  BoxHT     method_table; /**< Hashtable containing destructors, etc. (TO BE REMOVED) */
 };
 
 #  undef BoxVM
@@ -317,7 +329,7 @@ typedef BoxVM VMProgram;
 
 extern VMInstrDesc vm_instr_desc_table[];
 
-extern const BoxUInt size_of_type[NUM_TYPES];
+extern const size_t size_of_type[NUM_TYPES];
 
 /** Maximum num of arguments (implicit + explicit) that an operation
  * can have

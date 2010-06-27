@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 /* This files implements the functionality of the Virtual Machine (VM)
  * of Box: defines functions to assemble, disassemble, execute basic
  * instructions.
@@ -128,7 +126,7 @@ static void Update_gr0(BoxVM *vm);
 /* This array lets us to obtain the size of a type by type index.
  * (Useful in what follows)
  */
-const UInt size_of_type[NUM_TYPES] = {
+const size_t size_of_type[NUM_TYPES] = {
   sizeof(Char),
   sizeof(Int),
   sizeof(Real),
@@ -136,69 +134,45 @@ const UInt size_of_type[NUM_TYPES] = {
   sizeof(Obj)
 };
 
-/* Restituisce il puntatore al registro globale n-esimo. */
-static void *VM__Get_G(VMStatus *vmcur, Int n) {
-  register TypeID t = vmcur->idesc->t_id;
-
-  assert(t >= 0 && t < NUM_TYPES);
-
-#ifdef VM_SAFE_EXEC1
-  if (n < vmcur->gmin[t] || n > vmcur->gmax[t]) {
-    MSG_ERROR("Trying to access unallocated global register(t:%I,n:%I)!",
-              t,  n);
-    vmcur->flags.error = vmcur->flags.exit = 1;
-    return NULL;
-  }
-#endif
-  return ((void *) vmcur->global[t] + (Int) (n * size_of_type[t]));
-}
-
-/* Restituisce il puntatore al registro locale n-esimo. */
-static void *VM__Get_L(VMStatus *vmcur, Int n) {
-  register TypeID t = vmcur->idesc->t_id;
-
-  assert(t >= 0 && t < NUM_TYPES);
+static void *My_Get_Arg_Ptrs(VMStatus *vmcur, int kind, Int n) {
+  if (kind < 2) { /* kind == 0, 1 */
+    BoxType t = vmcur->idesc->t_id;
+    BoxVMRegs *regs = & ((kind == 0) ? vmcur->global : vmcur->local)[t];
+    size_t s = size_of_type[t];
 
 #ifdef VM_SAFE_EXEC1
-  if ( (n < vmcur->lmin[t]) || (n > vmcur->lmax[t]) ) {
-  MSG_ERROR("Trying to access unallocated local register(t:%I,n:%I)!", t,  n);
-  vmcur->flags.error = vmcur->flags.exit = 1;
-  return NULL;
-  }
+    if (n < regs->min || n > regs->max) {
+      MSG_ERROR("Trying to access unallocated %s register(t:%I, n:%I)!",
+                (kind == 0) ? "global" : "local", t, n);
+      vmcur->flags.error = vmcur->flags.exit = 1;
+      return NULL;
+    }
 #endif
-  return ((void *) vmcur->local[t] + (Int) (n * size_of_type[t]));
-}
+    return regs->ptr + n*s;
 
-/* Restituisce il puntatore alla locazione di memoria (ro0 + n). */
-static void *VM__Get_P(VMStatus *vmcur, Int n) {
-  return *((void **) vmcur->local[TYPE_OBJ]) + n;
-}
+  } else if (kind == 2) {
+    return *((void **) vmcur->local[TYPE_OBJ].ptr) + n;
+    
+  } else {
+    register BoxType t = vmcur->idesc->t_id;
+    static Int i = 0;
+    static union {Char c; Int i; Real r;} v[2], *value;
 
-/* Restituisce il puntatore ad un intero/reale di valore n. */
-static void *VM__Get_I(VMStatus *vmcur, Int n) {
-  register TypeID t = vmcur->idesc->t_id;
-  static Int i = 0;
-  static union { Char c; Int i; Real r; } v[2], *value;
+    assert(t >= TYPE_CHAR && t <= TYPE_REAL);
 
-  assert(t >= TYPE_CHAR && t <= TYPE_REAL);
-
-  value = & v[i]; i ^= 1;
-  switch (t) {
-  case TYPE_CHAR:
-    value->c = (Char) n; return (void *) (& value->c);
-  case TYPE_INT:
-    value->i =  (Int) n; return (void *) (& value->i);
-  case TYPE_REAL:
-    value->r = (Real) n; return (void *) (& value->r);
-  default: /* This shouldn't happen! */
-    return (void *) (& value->i); break;
+    value = & v[i]; i ^= 1;
+    switch (t) {
+    case TYPE_CHAR:
+        value->c = (Char) n; return (void *) (& value->c);
+    case TYPE_INT:
+        value->i =  (Int) n; return (void *) (& value->i);
+    case TYPE_REAL:
+        value->r = (Real) n; return (void *) (& value->r);
+    default: /* This shouldn't happen! */
+        return (void *) (& value->i); break;
+    }
   }
 }
-
-/* Array di puntatori alle 4 funzioni sopra: */
-static void *(*vm_gets[4])(VMStatus *, Int) = {
-  VM__Get_G, VM__Get_L, VM__Get_P, VM__Get_I
-};
 
 /*******************************************************************************
  * Functions used to execute the instructions                                  *
@@ -216,13 +190,13 @@ void VM__GLP_GLPI(VMStatus *vmcur) {
   register UInt atype = vmcur->arg_type;
 
   if ( vmcur->flags.is_long ) {
-    ASM_LONG_GET_2ARGS( vmcur->i_pos, vmcur->i_eye, narg1, narg2);
+    ASM_LONG_GET_2ARGS(vmcur->i_pos, vmcur->i_eye, narg1, narg2);
   } else {
-    ASM_SHORT_GET_2ARGS( vmcur->i_pos, vmcur->i_eye, narg1, narg2);
+    ASM_SHORT_GET_2ARGS(vmcur->i_pos, vmcur->i_eye, narg1, narg2);
   }
 
-  vmcur->arg1 = vm_gets[atype & 0x3](vmcur, narg1);
-  vmcur->arg2 = vm_gets[(atype >> 2) & 0x3](vmcur, narg2);
+  vmcur->arg1 = My_Get_Arg_Ptrs(vmcur, atype & 0x3, narg1);
+  vmcur->arg2 = My_Get_Arg_Ptrs(vmcur, (atype >> 2) & 0x3, narg2);
 #ifdef DEBUG_EXEC
   printf("Cathegories: arg1 = %lu - arg2 = %lu\n",
          atype & 0x3, (atype >> 2) & 0x3);
@@ -242,7 +216,7 @@ void VM__GLP_Imm(VMStatus *vmcur) {
     ASM_SHORT_GET_1ARG(vmcur->i_pos, vmcur->i_eye, narg1);
   }
 
-  vmcur->arg1 = vm_gets[atype & 0x3](vmcur, narg1);
+  vmcur->arg1 = My_Get_Arg_Ptrs(vmcur, atype & 0x3, narg1);
   vmcur->arg2 = vmcur->i_pos;
 }
 
@@ -260,7 +234,7 @@ void VM__GLPI(VMStatus *vmcur) {
     ASM_SHORT_GET_1ARG( vmcur->i_pos, vmcur->i_eye, narg1 );
   }
 
-  vmcur->arg1 = vm_gets[atype & 0x3](vmcur, narg1);
+  vmcur->arg1 = My_Get_Arg_Ptrs(vmcur, atype & 0x3, narg1);
 }
 
 /* Questa funzione e' analoga alle precedenti, ma gestisce
@@ -274,11 +248,11 @@ void VM__Imm(VMStatus *vmcur) {vmcur->arg1 = (void *) vmcur->i_pos;}
  *****************************************************************************/
 
 /* Questa funzione serve a disassemblare gli argomenti di
- *  un'istruzione di tipo GLPI-GLPI.
- *  iarg e' una tabella di puntatori alle stringhe che corrisponderanno
- *  agli argomenti disassemblati.
+ * un'istruzione di tipo GLPI-GLPI.
+ * iarg e' una tabella di puntatori alle stringhe che corrisponderanno
+ * agli argomenti disassemblati.
  */
-void VM__D_GLPI_GLPI(BoxVM *vmp, char **iarg) {
+void VM__D_GLPI_GLPI(BoxVM *vmp, char **out) {
   VMStatus *vmcur = vmp->vmcur;
   UInt n, na = vmcur->idesc->numargs;
   UInt iaform[2] = {vmcur->arg_type & 3, (vmcur->arg_type >> 2) & 3};
@@ -288,24 +262,26 @@ void VM__D_GLPI_GLPI(BoxVM *vmp, char **iarg) {
 
   /* Recupero i numeri (interi) di registro/puntatore/etc. */
   switch (na) {
-    case 1: {
+  case 1:
+    {
       void *arg2;
 
-      if ( vmcur->flags.is_long ) {
-        ASM_LONG_GET_1ARG( vmcur->i_pos, vmcur->i_eye, iaint[0]);
+      if (vmcur->flags.is_long) {
+        ASM_LONG_GET_1ARG(vmcur->i_pos, vmcur->i_eye, iaint[0]);
         arg2 = vmcur->i_pos;
       } else {
-        ASM_SHORT_GET_1ARG( vmcur->i_pos, vmcur->i_eye, iaint[0]);
+        ASM_SHORT_GET_1ARG(vmcur->i_pos, vmcur->i_eye, iaint[0]);
         arg2 = vmcur->i_pos;
-      }
-      break; }
-    case 2:
-      if ( vmcur->flags.is_long ) {
-        ASM_LONG_GET_2ARGS( vmcur->i_pos, vmcur->i_eye, iaint[0], iaint[1]);
-      } else {
-        ASM_SHORT_GET_2ARGS( vmcur->i_pos, vmcur->i_eye, iaint[0], iaint[1]);
       }
       break;
+    }
+  case 2:
+    if (vmcur->flags.is_long) {
+      ASM_LONG_GET_2ARGS(vmcur->i_pos, vmcur->i_eye, iaint[0], iaint[1]);
+    } else {
+      ASM_SHORT_GET_2ARGS(vmcur->i_pos, vmcur->i_eye, iaint[0], iaint[1]);
+    }
+    break;
   }
 
   for (n = 0; n < na; n++) {
@@ -323,57 +299,53 @@ void VM__D_GLPI_GLPI(BoxVM *vmp, char **iarg) {
       if (uiai < 0) {uiai = -uiai; rc = 'v';} else rc = 'r';
       switch(iaf) {
         case CAT_GREG:
-          sprintf(vmp->iarg_str[n], "g%c%c" SInt, rc, tc, uiai);
+          sprintf(out[n], "g%c%c" SInt, rc, tc, uiai);
           break;
         case CAT_LREG:
-          sprintf(vmp->iarg_str[n], "%c%c" SInt, rc, tc, uiai);
+          sprintf(out[n], "%c%c" SInt, rc, tc, uiai);
           break;
         case CAT_PTR:
           if ( iai < 0 )
-            sprintf(vmp->iarg_str[n], "%c[ro0 - " SInt "]", tc, uiai);
+            sprintf(out[n], "%c[ro0 - " SInt "]", tc, uiai);
           else if ( iai == 0 )
-            sprintf(vmp->iarg_str[n], "%c[ro0]", tc);
+            sprintf(out[n], "%c[ro0]", tc);
           else
-            sprintf(vmp->iarg_str[n], "%c[ro0 + " SInt "]", tc, uiai);
+            sprintf(out[n], "%c[ro0 + " SInt "]", tc, uiai);
           break;
         case CAT_IMM:
-          if ( iat == TYPE_CHAR ) iai = (Int) ((Char) iai);
-          sprintf(vmp->iarg_str[n], SInt, iai);
+          if (iat == TYPE_CHAR) iai = (Int) ((Char) iai);
+          sprintf(out[n], SInt, iai);
           break;
       }
     }
-
-    *(iarg++) = vmp->iarg_str[n];
   }
-  return;
 }
 
 /* Analoga alla precedente, ma per istruzioni CALL. */
-void VM__D_CALL(BoxVM *vmp, char **iarg) {
+void VM__D_CALL(BoxVM *vmp, char **out) {
   VMStatus *vmcur = vmp->vmcur;
   register UInt na = vmcur->idesc->numargs;
 
   assert(na == 1);
 
-  *iarg = vmp->iarg_str[0];
-  if ( (vmcur->arg_type & 3) == CAT_IMM ) {
+  if ((vmcur->arg_type & 3) == CAT_IMM) {
     UInt iat = vmcur->idesc->t_id;
     Int call_num;
     void *arg2;
 
     if ( vmcur->flags.is_long ) {
-      ASM_LONG_GET_1ARG( vmcur->i_pos, vmcur->i_eye, call_num);
+      ASM_LONG_GET_1ARG(vmcur->i_pos, vmcur->i_eye, call_num);
       arg2 = vmcur->i_pos;
     } else {
-      ASM_SHORT_GET_1ARG( vmcur->i_pos, vmcur->i_eye, call_num);
+      ASM_SHORT_GET_1ARG(vmcur->i_pos, vmcur->i_eye, call_num);
       arg2 = vmcur->i_pos;
     }
 
-    if ( iat == TYPE_CHAR ) call_num = (Int) ((Char) call_num);
+    if (iat == TYPE_CHAR) call_num = (Int) ((Char) call_num);
     {
       VMProcTable *pt = & vmp->proc_table;
       if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
-        sprintf(vmp->iarg_str[0], SInt, call_num);
+        sprintf(out[0], SInt, call_num);
         return;
 
       } else {
@@ -381,7 +353,7 @@ void VM__D_CALL(BoxVM *vmp, char **iarg) {
         VMProcInstalled *p;
         p = (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
         call_name = Str_Cut(p->desc, 40, 85);
-        sprintf(vmp->iarg_str[0], SInt"('%.40s')", call_num, call_name);
+        sprintf(out[0], SInt"('%.40s')", call_num, call_name);
         free(call_name);
         return;
       }
@@ -389,45 +361,43 @@ void VM__D_CALL(BoxVM *vmp, char **iarg) {
     }
 
   } else {
-    VM__D_GLPI_GLPI(vmp, iarg);
+    VM__D_GLPI_GLPI(vmp, out);
   }
 }
 
 /* Analoga alla precedente, ma per istruzioni di salto (jmp, jc). */
-void VM__D_JMP(BoxVM *vmp, char **iarg) {
+void VM__D_JMP(BoxVM *vmp, char **out) {
   VMStatus *vmcur = vmp->vmcur;
   register UInt na = vmcur->idesc->numargs;
 
   assert(na == 1);
 
-  *iarg = vmp->iarg_str[0];
-  if ( (vmcur->arg_type & 3) == CAT_IMM ) {
+  if ((vmcur->arg_type & 3) == CAT_IMM) {
     UInt iat = vmcur->idesc->t_id;
     Int m_num;
     Int position;
     void *arg2;
 
-    if ( vmcur->flags.is_long ) {
-      ASM_LONG_GET_1ARG( vmcur->i_pos, vmcur->i_eye, m_num);
+    if (vmcur->flags.is_long) {
+      ASM_LONG_GET_1ARG(vmcur->i_pos, vmcur->i_eye, m_num);
       arg2 = vmcur->i_pos;
     } else {
-      ASM_SHORT_GET_1ARG( vmcur->i_pos, vmcur->i_eye, m_num);
+      ASM_SHORT_GET_1ARG(vmcur->i_pos, vmcur->i_eye, m_num);
       arg2 = vmcur->i_pos;
     }
 
-    if ( iat == TYPE_CHAR ) m_num = (Int) ((Char) m_num);
+    if (iat == TYPE_CHAR) m_num = (Int) ((Char) m_num);
 
     position = (vmcur->dasm_pos + m_num)*sizeof(VMByteX4);
-    sprintf(vmp->iarg_str[0], SInt, position);
-    return;
+    sprintf(out[0], SInt, position);
 
   } else {
-    VM__D_GLPI_GLPI(vmp, iarg);
+    VM__D_GLPI_GLPI(vmp, out);
   }
 }
 
 /* Analoga alla precedente, ma per istruzioni del tipo GLPI-Imm. */
-void VM__D_GLPI_Imm(BoxVM *vmp, char **iarg) {
+void VM__D_GLPI_Imm(BoxVM *vmp, char **out) {
   VMStatus *vmcur = vmp->vmcur;
   UInt iaf = vmcur->arg_type & 3, iat = vmcur->idesc->t_id;
   Int iai;
@@ -437,11 +407,11 @@ void VM__D_GLPI_Imm(BoxVM *vmp, char **iarg) {
   assert(iat < 4);
 
   /* Recupero il numero (intero) di registro/puntatore/etc. */
-  if ( vmcur->flags.is_long ) {
-    ASM_LONG_GET_1ARG( vmcur->i_pos, vmcur->i_eye, iai);
+  if (vmcur->flags.is_long) {
+    ASM_LONG_GET_1ARG(vmcur->i_pos, vmcur->i_eye, iai);
     arg2 = vmcur->i_pos;
   } else {
-    ASM_SHORT_GET_1ARG( vmcur->i_pos, vmcur->i_eye, iai);
+    ASM_SHORT_GET_1ARG(vmcur->i_pos, vmcur->i_eye, iai);
     arg2 = vmcur->i_pos;
   }
 
@@ -455,21 +425,21 @@ void VM__D_GLPI_Imm(BoxVM *vmp, char **iarg) {
     if (uiai < 0) {uiai = -uiai; rc = 'v';} else rc = 'r';
     switch(iaf) {
       case CAT_GREG:
-        sprintf(vmp->iarg_str[0], "g%c%c" SInt, rc, tc, uiai);
+        sprintf(out[0], "g%c%c" SInt, rc, tc, uiai);
         break;
       case CAT_LREG:
-        sprintf(vmp->iarg_str[0], "%c%c" SInt, rc, tc, uiai);
+        sprintf(out[0], "%c%c" SInt, rc, tc, uiai);
         break;
       case CAT_PTR:
         if ( iai < 0 )
-          sprintf(vmp->iarg_str[0], "%c[ro0 - " SInt "]", tc, uiai);
+          sprintf(out[0], "%c[ro0 - " SInt "]", tc, uiai);
         else if ( iai == 0 )
-          sprintf(vmp->iarg_str[0], "%c[ro0]", tc);
+          sprintf(out[0], "%c[ro0]", tc);
         else
-          sprintf(vmp->iarg_str[0], "%c[ro0 + " SInt "]", tc, uiai);
+          sprintf(out[0], "%c[ro0 + " SInt "]", tc, uiai);
         break;
       case CAT_IMM:
-        sprintf(vmp->iarg_str[0], SInt, iai);
+        sprintf(out[0], SInt, iai);
         break;
     }
   }
@@ -477,22 +447,19 @@ void VM__D_GLPI_Imm(BoxVM *vmp, char **iarg) {
   /* Secondo argomento */
   switch (iat) {
     case TYPE_CHAR:
-      sprintf( vmp->iarg_str[1], SChar, *((Char *) arg2) );
+      sprintf(out[1], SChar, *((Char *) arg2));
       break;
     case TYPE_INT:
-      sprintf( vmp->iarg_str[1], SInt, *((Int *) arg2) );
+      sprintf(out[1], SInt, *((Int *) arg2));
       break;
     case TYPE_REAL:
-      sprintf( vmp->iarg_str[1], SReal, *((Real *) arg2) );
+      sprintf(out[1], SReal, *((Real *) arg2));
       break;
     case TYPE_POINT:
-      sprintf( vmp->iarg_str[1], SPoint,
-               ((Point *) arg2)->x, ((Point *) arg2)->y );
+      sprintf(out[1], SPoint,
+               ((Point *) arg2)->x, ((Point *) arg2)->y);
       break;
   }
-
-  *(iarg++) = vmp->iarg_str[0];
-  *iarg = vmp->iarg_str[1];
 }
 
 /*****************************************************************************
@@ -500,11 +467,14 @@ void VM__D_GLPI_Imm(BoxVM *vmp, char **iarg) {
  *****************************************************************************/
 
 Task BoxVM_Init(BoxVM *vm) {
-  vm->vm_globals = 0;
   vm->attr.hexcode = 0;
   vm->attr.forcelong = 0;
   vm->attr.identdata = 0;
-  vm->attr.have_op_table = 0;
+
+  vm->has.globals = 0;
+  vm->has.op_table = 0;
+  
+
 
   BoxArr_Init(& vm->stack, sizeof(Obj), 10);
   BoxArr_Init(& vm->data_segment, sizeof(char), CMP_TYPICAL_DATA_SIZE);
@@ -521,19 +491,20 @@ Task BoxVM_Init(BoxVM *vm) {
 static void _Free_Globals(BoxVM *vmp) {
   int i;
   for(i = 0; i < NUM_TYPES; i++) {
-    void *ptr = vmp->vm_global[i];
-    if (ptr != NULL)
-      free(ptr + vmp->vm_gmin[i]*size_of_type[i]);
-    vmp->vm_global[i] = NULL;
-    vmp->vm_gmin[i] = 1;
-    vmp->vm_gmax[i] = -1;
+    BoxVMRegs *gregs = & vmp->global[i];
+    if (gregs->ptr != NULL)
+      BoxMem_Free(gregs->ptr + gregs->min*size_of_type[i]);
+    gregs->ptr = NULL;
+    gregs->min = 1;
+    gregs->max = -1;
   }
-  vmp->vm_globals = 0;
+  vmp->has.globals = 0;
 }
 
 void BoxVM_Finish(BoxVM *vm) {
   if (vm == (BoxVM *) NULL) return;
-  if (vm->vm_globals != 0) _Free_Globals(vm);
+  if (vm->has.globals)
+    _Free_Globals(vm);
 
   if (BoxArr_Num_Items(& vm->stack) != 0)
     MSG_WARNING("Run finished with non empty stack.");
@@ -545,7 +516,7 @@ void BoxVM_Finish(BoxVM *vm) {
   BoxVMSymTable_Finish(& vm->sym_table);
   BoxVM_Proc_Finish(vm);
 
-  if (vm->attr.have_op_table)
+  if (vm->has.op_table)
     BoxOpTable_Destroy(& vm->op_table);
 }
 
@@ -567,9 +538,9 @@ void BoxVM_Destroy(BoxVM *vm) {
 
 BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op) {
   assert(g_op >= 0 && g_op < BOX_NUM_GOPS);
-  if (!vm->attr.have_op_table) {
+  if (!vm->has.op_table) {
     BoxOpTable_Build(& vm->op_table);
-    vm->attr.have_op_table = 1;
+    vm->has.op_table = 1;
   }
   return & vm->op_table.info[g_op];
 }
@@ -577,14 +548,16 @@ BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op) {
 /* Sets the number of global registers and variables for each type. */
 Task BoxVM_Alloc_Global_Regs(BoxVM *vm, Int num_var[], Int num_reg[]) {
   int i;
-  Obj *reg_obj;
+  BoxObj *reg_obj;
 
   assert(vm != NULL);
 
-  if (vm->vm_globals != 0) _Free_Globals(vm);
+  if (vm->has.globals)
+    _Free_Globals(vm);
 
   for(i = 0; i < NUM_TYPES; i++) {
     Int nv = num_var[i], nr = num_reg[i];
+    BoxVMRegs *gregs = & vm->global[i];
     void *ptr;
 
     if (nv < 0 || nr < 0) {
@@ -601,13 +574,13 @@ Task BoxVM_Alloc_Global_Regs(BoxVM *vm, Int num_var[], Int num_reg[]) {
       return Failed;
     }
 
-    vm->vm_global[i] = ptr + nv*size_of_type[i];
-    vm->vm_gmin[i] = -nv;
-    vm->vm_gmax[i] = nr;
-    vm->vm_globals = 1; /* This line must stay here, not outside the loop! */
+    gregs->ptr = ptr + nv*size_of_type[i];
+    gregs->min = -nv;
+    gregs->max = nr;
+    vm->has.globals = 1; /* This line must stay here, not outside the loop! */
   }
 
-  reg_obj = (Obj *) vm->vm_global[TYPE_OBJ];
+  reg_obj = (Obj *) vm->global[TYPE_OBJ].ptr;
   vm->box_vm_current = reg_obj + 1;
   vm->box_vm_arg1    = reg_obj + 2;
   vm->box_vm_arg2    = reg_obj + 3;
@@ -621,18 +594,20 @@ Task BoxVM_Alloc_Global_Regs(BoxVM *vm, Int num_var[], Int num_reg[]) {
  */
 void BoxVM_Module_Global_Set(BoxVM *vmp, Int type, Int reg, void *value) {
   void *dest;
+  BoxVMRegs *gregs;
 
   if (type < 0 || type >= NUM_TYPES) {
     MSG_FATAL("VM_Module_Global_Set: Unknown register type!");
     assert(0);
   }
 
-  if (reg < vmp->vm_gmin[type] || reg > vmp->vm_gmax[type]) {
+  gregs = & vmp->global[type];
+  if (reg < gregs->min || reg > gregs->max) {
     MSG_FATAL("VM_Module_Global_Set: Reference to unallocated register!");
     assert(0);
   }
 
-  dest = vmp->vm_global[type] + reg * size_of_type[type];
+  dest = gregs->ptr + reg*size_of_type[type];
   memcpy(dest, value, size_of_type[type]);
 }
 
@@ -674,12 +649,18 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
   {
     int i;
     for(i = 0; i < NUM_TYPES; i++) {
-      vm.lmin[i] = 0; vm.lmax[i] = 0; vm.local[i] = & reg0[i];
-      if (vmp->vm_global[i] != NULL) {
-        vm.gmin[i] = vmp->vm_gmin[i]; vm.gmax[i] = vmp->vm_gmax[i];
-        vm.global[i] = vmp->vm_global[i];
-      } else {
-        vm.gmin[i] = 1; vm.gmax[i] = -1; vm.global[i] = NULL;
+      BoxVMRegs *gnew = & vm.global[i], *gold = & vmp->global[i],
+                *lnew = & vm.global[i];
+
+      lnew->min = lnew->max = 0;
+      lnew->ptr = & reg0[i];
+      if (gold->ptr != NULL)
+        *gnew = *gold;
+
+      else {
+        gnew->min = 1;
+        gnew->max = -1;
+        gnew->ptr = NULL;
       }
     }
   }
@@ -742,8 +723,10 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
   {
     register int i;
     for(i = 0; i < NUM_TYPES; i++)
-      if ((vm.alc[i] & 1) != 0)
-        BoxMem_Free(vm.local[i] + vm.lmin[i]*size_of_type[i]);
+      if ((vm.alc[i] & 1) != 0) {
+        BoxVMRegs *lregs = & vm.local[i];
+        BoxMem_Free(lregs->ptr + lregs->min*size_of_type[i]);
+      }
   }
 
   vmp->vmcur = vm_save;
@@ -779,13 +762,18 @@ Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
   VMStatus vm;
   UInt pos, nargs;
   const char *iname;
-  char *iarg[VM_MAX_NUMARGS];
+  char iarg_buffers[VM_MAX_NUMARGS][64], /* max 64 characters per argument */
+       *iarg[VM_MAX_NUMARGS];
+  int i;
+
+  for(i = 0; i < VM_MAX_NUMARGS; i++)
+    iarg[i] = iarg_buffers[i];
 
   vmp->vmcur = & vm;
   vm.flags.exit = vm.flags.error = 0;
-  for ( pos = 0; pos < dim; ) {
-    register VMByteX4 i_eye;
-    register int is_long;
+  for (pos = 0; pos < dim;) {
+    VMByteX4 i_eye;
+    int is_long;
 
     vm.i_pos = i_pos;
     vm.dasm_pos = pos;
@@ -793,7 +781,7 @@ Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
     /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
     ASM_GET_FORMAT(vm.i_pos, i_eye, is_long);
     vm.flags.is_long = is_long;
-    if ( is_long ) {
+    if (is_long) {
       ASM_LONG_GET_HEADER(vm.i_pos, i_eye, vm.i_type, vm.i_len, vm.arg_type);
       vm.i_eye = i_eye;
       vm.flags.is_long = 1;
@@ -810,7 +798,7 @@ Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
            pos, vm.flags.is_long, vm.i_len, vm.i_type, vm.arg_type);
 #endif
 
-    if (vm.i_type < 1 || vm.i_type >= BOX_NUM_OPS) {
+    if (vm.i_type < 0 || vm.i_type >= BOX_NUM_OPS) {
       iname = "???";
       vm.i_len = 1;
       nargs = 0;
@@ -824,10 +812,11 @@ Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
       nargs = vm.idesc->numargs;
 
       vm.idesc->disasm(vmp, iarg);
-      if ( vm.flags.exit ) return Failed;
+      if (vm.flags.exit)
+        return Failed;
     }
 
-    if ( vm.flags.error ) {
+    if (vm.flags.error) {
       fprintf(output, SUInt "\t"BoxVMByteX4_Fmt"x\tError!",
               (UInt) (pos * sizeof(VMByteX4)), *i_pos);
 
@@ -836,18 +825,18 @@ Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
       VMByteX4 *i_pos2 = i_pos;
 
       /* Stampo l'istruzione e i suoi argomenti */
-      fprintf( output, SUInt "\t", (UInt) (pos * sizeof(VMByteX4)) );
-      if ( vmp->attr.hexcode )
+      fprintf(output, SUInt "\t", (UInt) (pos * sizeof(VMByteX4)));
+      if (vmp->attr.hexcode)
         fprintf(output, BoxVMByteX4_Fmt"\t", *(i_pos2++));
       fprintf(output, "%s", iname);
 
-      if ( nargs > 0 ) {
+      if (nargs > 0) {
         UInt n;
 
         assert(nargs <= VM_MAX_NUMARGS);
 
         fprintf(output, " %s", iarg[0]);
-        for ( n = 1; n < nargs; n++ )
+        for (n = 1; n < nargs; n++)
           fprintf(output, ", %s", iarg[n]);
       }
       fprintf(output, "\n");
