@@ -1238,7 +1238,9 @@ static Value *My_Get_Ptr_To_New_Value(CmpProc *proc, BoxType t) {
   TS *ts = & proc->cmp->ts;
   if (TS_Is_Fast(ts, t)) {
     /* Create a structure type containing just one item of type t, allocate
-     * that and get a pointer to it
+     * that and get a pointer to it.
+     * NOTE: this can be improved. We should not keep generating new
+     *  structures each time the function is called, but rather cache them!
      */
     Value *v = Value_New(proc);
     BoxType t_struc = TS_Structure_Begin(ts);

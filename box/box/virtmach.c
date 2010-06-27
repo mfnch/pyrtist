@@ -643,7 +643,7 @@ void BoxVM_Module_Global_Set(BoxVM *vmp, Int type, Int reg, void *value) {
 /* Execute the module number m of program vmp.
  * If initial != NULL, *initial is the initial status of the virtual machine.
  */
-Task BoxVM_Module_Execute(BoxVM *vmp, unsigned int call_num) {
+Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
   VMProcTable *pt = & vmp->proc_table;
   VMProcInstalled *p;
   register VMByteX4 *i_pos;
@@ -702,7 +702,7 @@ Task BoxVM_Module_Execute(BoxVM *vmp, unsigned int call_num) {
     /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
     ASM_GET_FORMAT(vm.i_pos, i_eye, is_long);
     vm.flags.is_long = is_long;
-    if ( is_long ) {
+    if (is_long) {
       ASM_LONG_GET_HEADER(vm.i_pos, i_eye, vm.i_type, vm.i_len, vm.arg_type);
       vm.i_eye = i_eye;
       vm.flags.is_long = 1;
@@ -714,7 +714,7 @@ Task BoxVM_Module_Execute(BoxVM *vmp, unsigned int call_num) {
     }
 
     if (vm.i_type >= BOX_NUM_OPS) {
-      MSG_ERROR("Istruzione non riconosciuta!");
+      MSG_ERROR("Unknown VM instruction!");
       vmp->vmcur = vm_save;
       return Failed;
     }
@@ -742,8 +742,8 @@ Task BoxVM_Module_Execute(BoxVM *vmp, unsigned int call_num) {
   {
     register int i;
     for(i = 0; i < NUM_TYPES; i++)
-      if ( (vm.alc[i] & 1) != 0 )
-        free(vm.local[i] + vm.lmin[i]*size_of_type[i]);
+      if ((vm.alc[i] & 1) != 0)
+        BoxMem_Free(vm.local[i] + vm.lmin[i]*size_of_type[i]);
   }
 
   vmp->vmcur = vm_save;
@@ -860,7 +860,7 @@ Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
     }
 
     /* Passo alla prossima istruzione */
-    if ( vm.i_len < 1 ) return Failed;
+    if (vm.i_len < 1) return Failed;
 
     vm.i_pos = (i_pos += vm.i_len);
     pos += vm.i_len;
@@ -970,8 +970,9 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
   /* Esco subito se e' settato il flag di inibizione! */
   if (pt->target_proc->status.inhibit) return;
 
-  if (instr < 1 || instr >= BOX_NUM_OPS) {
-    MSG_ERROR("Istruzione non riconosciuta!");
+  if (instr < 0 || instr >= BOX_NUM_OPS) {
+    MSG_ERROR("Unrecognised VM instruction while assembling (%s).",
+              (instr < 0) ? "op < 0" : "op > BOX_NUM_OPS");
     return;
   }
 

@@ -43,12 +43,6 @@ static void VM__Exec_Call_I(BoxVM *vmp) {
   vm->flags.error = vm->flags.exit = 1;
 }
 
-static void VM__Exec_Line_I(BoxVM *vmp) {
-  VMStatus *vm = vmp->vmcur;
-  vm->line = *((Int *) vm->arg1);
-  Msg_Line_Set(vm->line);
-}
-
 #define VM__NEW(name, TYPE_ID, Type)                                   \
 static void VM__Exec_ ## name ## _II(BoxVM *vmp) {                     \
   VMStatus *vmcur = vmp->vmcur;                                        \
@@ -477,7 +471,6 @@ static void VM__Exec_Ardest_O(BoxVM *vm) {
  * argomenti e quali per eseguire l'azione associata all'istruzione stessa.   *
  ******************************************************************************/
 VMInstrDesc vm_instr_desc_table[] = {
-  {"line",  1, TYPE_INT,   VM__GLPI,     VM__Exec_Line_I,    VM__D_GLPI_GLPI}, /* line imm_i         */
   {"call",  1, TYPE_INT,   VM__GLPI,     VM__Exec_Call_I,    VM__D_CALL     }, /* call reg_i         */
   {"call",  1, TYPE_INT,   VM__Imm,      VM__Exec_Call_I,    VM__D_CALL     }, /* call imm_i         */
   {"newc",  2, TYPE_INT,   VM__GLP_GLPI, VM__Exec_NewC_II,   VM__D_GLPI_GLPI}, /* newc imm_i, imm_i  */
@@ -601,7 +594,6 @@ typedef struct {
 } BoxOpTable4Humans;
 
 static BoxOpTable4Humans op_table_for_humans[] = {
-  {  BOXGOP_LINE,   "line", 1, 'i',     "a1",  NULL, "x-", "xx", VM__Exec_Line_I   }, /* line ii       */
   {  BOXGOP_CALL,   "call", 1, 'i',     "a1",  NULL, "x-", "c-", VM__Exec_Call_I   }, /* call ri       */
   {  BOXGOP_CALL,   "call", 1, 'i',     "a1",  NULL, "i-", "c-", VM__Exec_Call_I   }, /* call ii       */
   {  BOXGOP_NEWC,   "newc", 2, 'i',  "a1,a2",  NULL, "xx", "xx", VM__Exec_NewC_II  }, /* newc ii, ii   */
@@ -800,7 +792,7 @@ void BoxOpTable_Build(BoxOpTable *ot) {
   /* The following is what we want to achieve here:
    * The info table must contain BOX_NUM_OPS entries: one for each operation.
    * The first BOX_NUM_GOPS operations correspond exactly to the generic
-   * operation (enum BoxGOp). This mean that, when we get a BoxGOp we can use
+   * operation (enum BoxGOp). This means that, when we get a BoxGOp we can use
    * it as the index to access the table.
    * For example: if the gop is BOXGOP_MOV, then ot->info[BOXGOP_MOV] refers
    * to one of the operations corresponding to BOXGOP_MOV. Let'say it refers

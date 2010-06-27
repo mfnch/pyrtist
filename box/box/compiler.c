@@ -976,15 +976,8 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   v_parent = BoxCmp_Pop_Value(c);
 
   no_err = Value_Want_Has_Type(v_child) && Value_Want_Has_Type(v_parent);
-  if (no_err) {
-    t_child = v_child->type;
-    t_parent = v_parent->type;
-
-  } else {
-    t_child = BOXTYPE_NONE;
-    t_parent = BOXTYPE_NONE;
-  }
-
+  t_child = v_child->type;
+  t_parent = v_parent->type;
   Value_Unlink(v_child);
   Value_Unlink(v_parent);
 
@@ -999,13 +992,21 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     }
   }
 
+  /* Now let's find whether a procedure of this kind is already registered */
+  if (!no_err) {
+    /* For now we cowardly refuse to examine the body of the procedure
+     * and immediately exit pushing an error.
+     */
+    BoxCmp_Push_Value(c, v_ret);
+    return;
+  }
+
   /* A CmpProc object is used to get the procedure symbol and to register and
    * assemble it.
    */
   proc_style = (n_implem != NULL) ? CMPPROCSTYLE_SUB : CMPPROCSTYLE_EXTERN;
   CmpProc_Init(& proc_implem, c, proc_style);
 
-  /* Now let's find whether a procedure of this kind is already registered */
   t_proc = TS_Procedure_Search(& c->ts, /*expansion_type*/ NULL,
                                t_child, t_parent, 0);
 

@@ -75,7 +75,7 @@ typedef enum {
  *   in the table vm_instr_desc_table[]
  */
 typedef enum {
-  BOXOP_LINE_Iimm=0, BOXOP_CALL_I, BOXOP_CALL_Iimm,
+  BOXOP_CALL_I=0, BOXOP_CALL_Iimm,
   BOXOP_NEWC_II, BOXOP_NEWI_II, BOXOP_NEWR_II, BOXOP_NEWP_II, BOXOP_NEWO_II,
   BOXOP_MOV_Cimm, BOXOP_MOV_Iimm, BOXOP_MOV_Rimm, BOXOP_MOV_Pimm,
   BOXOP_MOV_CC, BOXOP_MOV_II, BOXOP_MOV_RR, BOXOP_MOV_PP, BOXOP_MOV_OO,
@@ -110,7 +110,7 @@ typedef BoxOp BoxOpcode;
 
 /** Generic opcodes (type independent) */
 typedef enum {
-  BOXGOP_LINE=0, BOXGOP_CALL, BOXGOP_NEWC, BOXGOP_MOV,
+  BOXGOP_CALL=0, BOXGOP_NEWC, BOXGOP_MOV,
   BOXGOP_BNOT, BOXGOP_BAND, BOXGOP_BXOR, BOXGOP_BOR, BOXGOP_SHL, BOXGOP_SHR,
   BOXGOP_INC, BOXGOP_DEC, BOXGOP_POW, BOXGOP_ADD, BOXGOP_SUB, BOXGOP_MUL,
   BOXGOP_DIV, BOXGOP_REM, BOXGOP_NEG, BOXGOP_PMULR, BOXGOP_PDIVR,
@@ -250,7 +250,6 @@ struct __vmstatus {
     unsigned int is_long  : 1; /* L'istruzione e' in formato lungo? */
   } flags;
 
-  BoxInt line;           /**< Number of line, as set by the 'line' instruction */
   BoxVMProcInstalled *p; /**< Procedure which is currently been executed */
 
   /* Variabili che riguardano l'istruzione in esecuzione: */
@@ -397,7 +396,7 @@ BoxTask BoxVM_Alloc_Global_Regs(BoxVM *vm, BoxInt num_var[], BoxInt num_reg[]);
 
 void BoxVM_Module_Global_Set(BoxVM *vmp, BoxInt type, BoxInt reg, void *value);
 
-BoxTask BoxVM_Module_Execute(BoxVM *vmp, unsigned int call_num);
+BoxTask BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num);
 
 /** The attributes corresponding to different behaviours of the Box virtual
  * machine.
