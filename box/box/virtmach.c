@@ -189,7 +189,7 @@ void VM__GLP_GLPI(VMStatus *vmcur) {
   signed long narg1, narg2;
   register UInt atype = vmcur->arg_type;
 
-  if ( vmcur->flags.is_long ) {
+  if (vmcur->flags.is_long) {
     ASM_LONG_GET_2ARGS(vmcur->i_pos, vmcur->i_eye, narg1, narg2);
   } else {
     ASM_SHORT_GET_2ARGS(vmcur->i_pos, vmcur->i_eye, narg1, narg2);
@@ -354,7 +354,7 @@ void VM__D_CALL(BoxVM *vmp, char **out) {
         p = (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
         call_name = Str_Cut(p->desc, 40, 85);
         sprintf(out[0], SInt"('%.40s')", call_num, call_name);
-        free(call_name);
+        BoxMem_Free(call_name);
         return;
       }
 
@@ -388,7 +388,7 @@ void VM__D_JMP(BoxVM *vmp, char **out) {
 
     if (iat == TYPE_CHAR) m_num = (Int) ((Char) m_num);
 
-    position = (vmcur->dasm_pos + m_num)*sizeof(VMByteX4);
+    position = (vmp->dasm_pos + m_num)*sizeof(VMByteX4);
     sprintf(out[0], SInt, position);
 
   } else {
@@ -431,9 +431,9 @@ void VM__D_GLPI_Imm(BoxVM *vmp, char **out) {
         sprintf(out[0], "%c%c" SInt, rc, tc, uiai);
         break;
       case CAT_PTR:
-        if ( iai < 0 )
+        if (iai < 0)
           sprintf(out[0], "%c[ro0 - " SInt "]", tc, uiai);
-        else if ( iai == 0 )
+        else if (iai == 0)
           sprintf(out[0], "%c[ro0]", tc);
         else
           sprintf(out[0], "%c[ro0 + " SInt "]", tc, uiai);
@@ -467,17 +467,26 @@ void VM__D_GLPI_Imm(BoxVM *vmp, char **out) {
  *****************************************************************************/
 
 Task BoxVM_Init(BoxVM *vm) {
+  int i;
+
   vm->attr.hexcode = 0;
   vm->attr.forcelong = 0;
   vm->attr.identdata = 0;
 
   vm->has.globals = 0;
   vm->has.op_table = 0;
-  
 
+  /* Reset the global register boundaries and pointers */
+  for(i = 0; i < NUM_TYPES; i++) {
+    BoxVMRegs *gregs = & vm->global[i];
+    gregs->ptr = NULL;
+    gregs->min = 1;
+    gregs->max = -1;
+  }
 
   BoxArr_Init(& vm->stack, sizeof(Obj), 10);
   BoxArr_Init(& vm->data_segment, sizeof(char), CMP_TYPICAL_DATA_SIZE);
+  BoxArr_Init(& vm->backtrace, sizeof(BoxVMTrace), 32);
 
   if (BoxArr_Is_Err(& vm->stack) || BoxArr_Is_Err(& vm->data_segment))
     return Failed;
@@ -511,6 +520,7 @@ void BoxVM_Finish(BoxVM *vm) {
   BoxArr_Finish(& vm->stack);
 
   BoxArr_Finish(& vm->data_segment);
+  BoxArr_Finish(& vm->backtrace);
 
   BoxVM_Alloc_Destroy(vm);
   BoxVMSymTable_Finish(& vm->sym_table);
@@ -621,9 +631,10 @@ void BoxVM_Module_Global_Set(BoxVM *vmp, Int type, Int reg, void *value) {
 Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
   VMProcTable *pt = & vmp->proc_table;
   VMProcInstalled *p;
-  register VMByteX4 *i_pos;
+  register VMByteX4 *i_pos, *i_pos0;
   VMStatus vm, *vm_save;
   BoxValue reg0[NUM_TYPES]; /* Registri locali numero zero */
+
 #ifdef DEBUG_EXEC
   Int i = 0;
 #endif
@@ -648,28 +659,19 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
 
   {
     int i;
+    vm.global = vmp->global;
     for(i = 0; i < NUM_TYPES; i++) {
-      BoxVMRegs *gnew = & vm.global[i], *gold = & vmp->global[i],
-                *lnew = & vm.global[i];
-
+      BoxVMRegs *lnew = & vm.local[i];
       lnew->min = lnew->max = 0;
       lnew->ptr = & reg0[i];
-      if (gold->ptr != NULL)
-        *gnew = *gold;
-
-      else {
-        gnew->min = 1;
-        gnew->max = -1;
-        gnew->ptr = NULL;
-      }
+      vm.alc[i] = 0;
     }
   }
 
   vm.p = p;
-  BoxVM_Proc_Get_Ptr_And_Length(vmp, & vm.i_pos, NULL, p->code.proc_num);
-  i_pos = vm.i_pos;
+  BoxVM_Proc_Get_Ptr_And_Length(vmp, & vm.i_pos, NULL, p->code.proc_id);
+  i_pos0 = i_pos = vm.i_pos;
   vm.flags.exit = vm.flags.error = 0;
-  {int i; for(i = 0; i < NUM_TYPES; i++) vm.alc[i] = 0;}
 
   do {
     register int is_long;
@@ -704,9 +706,12 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
     vm.idesc = & vm_instr_desc_table[vm.i_type];
 
     /* Localizza in memoria gli argomenti */
-    if (vm.idesc->numargs > 0) vm.idesc->get_args(& vm);
+    if (vm.idesc->numargs > 0)
+      vm.idesc->get_args(& vm);
+
     /* Esegue l'istruzione */
-    if (!vm.flags.error) vm.idesc->execute(vmp);
+    if (!vm.flags.error)
+      vm.idesc->execute(vmp);
 
     /* Passo alla prossima istruzione.
      * vm.i_len can be modified by 'vm.idesc->execute(vmp)' when executing
@@ -718,6 +723,13 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
 #endif
 
   } while (!vm.flags.exit);
+
+  /* Fill the backtrace */
+  if (vm.flags.error) {
+    BoxVMTrace *trace = BoxArr_Push(& vmp->backtrace, NULL);
+    trace->call_num = call_num;
+    trace->vm_pos = vm.i_pos - i_pos0;
+  } 
 
   /* Delete the registers allocated with the 'new*' instructions */
   {
@@ -776,7 +788,7 @@ Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
     int is_long;
 
     vm.i_pos = i_pos;
-    vm.dasm_pos = pos;
+    vmp->dasm_pos = pos;
 
     /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
     ASM_GET_FORMAT(vm.i_pos, i_eye, is_long);
@@ -1194,3 +1206,28 @@ void BoxVM_Data_Display(BoxVM *vm, FILE *stream) {
 
   fprintf(stream, "*** END OF THE DATA-SEGMENT ***\n");
 }
+
+void BoxVM_Backtrace_Clear(BoxVM *vm) {
+  BoxArr_Clear(& vm->backtrace);
+}
+
+void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream) {
+  BoxVMTrace *traces = BoxArr_First_Item_Ptr(& vm->backtrace);
+  size_t n = BoxArr_Num_Items(& vm->backtrace);
+
+  if (n == 0)
+    fprintf(stream, "Empty traceback.\n");
+
+  else {
+    size_t i;
+    for(i = 0; i < n; i++) {
+      BoxVMTrace *trace = & traces[n - 1 - i];
+      BoxVMCallNum call_num = trace->call_num;
+      size_t vm_pos = trace->vm_pos;
+      char *desc = BoxVM_Proc_Get_Description(vm, call_num);
+      fprintf(stream, "In %s at %x.\n", desc, vm_pos);
+      BoxMem_Free(desc);
+    }
+  }
+}
+

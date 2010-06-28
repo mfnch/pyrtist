@@ -123,7 +123,6 @@ int main(int argc, char** argv);
 void Main_Error_Exit(char *msg);
 void Main_Cmnd_Line_Help(void);
 Task Main_Prepare(void);
-Task Main_Install(UInt *main_module);
 Task Main_Execute(UInt main_module);
 
 /******************************************************************************/
@@ -230,11 +229,11 @@ static Task Stage_Interpret_Command_Line(UInt *f) {
   if (query != NULL) My_Exec_Query(query);
 
   /* Re-inizializzo la gestione dei messaggi! */
-  if ( flags & FLAG_VERBOSE )
+  if (flags & FLAG_VERBOSE)
     Msg_Main_Show_Level_Set(MSG_LEVEL_ADVICE); /* Mostro tutti i messaggi! */
-  else if ( flags & FLAG_ERRORS )
+  else if (flags & FLAG_ERRORS)
     Msg_Main_Show_Level_Set(MSG_LEVEL_ERROR); /* Mostro solo i messaggi d'errore/gravi! */
-  else if ( flags & FLAG_SILENT )
+  else if (flags & FLAG_SILENT)
     Msg_Main_Show_Level_Set(MSG_LEVEL_MAX+1); /* Non mostro alcun messaggio! */
   else
     Msg_Main_Show_Level_Set(MSG_LEVEL_WARNING);
@@ -281,8 +280,6 @@ static Task Stage_Compilation(char *file, BoxVMCallNum *main_module) {
 
   MSG_ADVICE("Compilaton finished. %U errors and %U warnings were found.",
              MSG_GT_ERRORS, MSG_NUM_WARNINGS );
-
-  TASK( Main_Install(main_module) );
 
   MSG_CONTEXT_END();
   return Success;
@@ -375,20 +372,12 @@ static Task Stage_Write_Asm(UInt flags) {
   return Success;
 }
 
-/* FASE DI ESECUZIONE */
-Task Main_Install(UInt *main_module) {
-#if 0
-  VM_Proc_Install_Code(program, main_module,
-                       BoxVM_Proc_Target_Get(program), "main", "Entry");
-#endif
-  return Success;
-}
-
 Task Main_Execute(UInt main_module) {
-  Task t;
+  BoxTask t;
   Msg_Line_Set((Int) 1);
   t = BoxVM_Module_Execute(target_vm, main_module);
-  Msg_Line_Set(MSG_UNDEF_LINE);
+  if (t == BOXTASK_FAILURE && (flags & FLAG_SILENT) == 0)
+    BoxVM_Backtrace_Print(target_vm, stderr);
   return t;
 }
 

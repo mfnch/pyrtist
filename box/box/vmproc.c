@@ -90,6 +90,30 @@ void BoxVM_Proc_Code_Destroy(BoxVM *vm, BoxVMProcID proc_id) {
   My_Target_Proc_Refresh(vm);
 }
 
+VMProcInstalled *My_Get_Proc_From_Num(BoxVM *vmp, BoxVMCallNum call_num) {
+  VMProcTable *pt = & vmp->proc_table;
+  if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
+    MSG_ERROR("The procedure %d is not installed!", call_num);
+    return NULL;
+  }
+
+  return (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
+}
+
+char *BoxVM_Proc_Get_Description(BoxVM *vm, BoxVMCallNum call_num) {
+  VMProcInstalled *p = My_Get_Proc_From_Num(vm, call_num);
+  if (p != NULL) {
+    switch ((p->desc == NULL) | (p->name == NULL) << 1) {
+    case 0: return printdup("%s \"%s\"", p->desc, p->name);
+    case 1: return BoxMem_Strdup(p->name);
+    case 2: return BoxMem_Strdup(p->desc);
+    case 3: return BoxMem_Strdup("(undef)");
+    default: return BoxMem_Strdup("(error)");
+    }
+  }
+  return BoxMem_Strdup("(unknown)");
+}
+
 BoxVMProcID BoxVM_Proc_Target_Set(BoxVM *vm, BoxVMProcID proc_id) {
   VMProcTable *pt = & vm->proc_table;
   BoxVMProcID previous_target = pt->target_proc_num;
@@ -105,9 +129,9 @@ BoxVMProcID BoxVM_Proc_Target_Get(BoxVM *vmp) {
   return vmp->proc_table.target_proc_num;
 }
 
-void BoxVM_Proc_Empty(BoxVM *vmp, BoxVMProcID proc_num) {
+void BoxVM_Proc_Empty(BoxVM *vmp, BoxVMProcID id) {
   VMProcTable *pt = & vmp->proc_table;
-  BoxVMProc *p = (BoxVMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, proc_num);
+  BoxVMProc *p = (BoxVMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, id);
   BoxArr_Clear(& p->code);
   BoxSrcPosTable_Clear(& p->pos_table);
 }
@@ -130,9 +154,9 @@ BoxVMCallNum BoxVM_Proc_Install_Code(BoxVM *vm, BoxVMProcID id,
   BoxArr_Compactify(& p->code);
 
   procedure_inst.type = BOXVMPROC_IS_VM_CODE;
-  procedure_inst.name = BoxMem_Strdup(name);
-  procedure_inst.desc = BoxMem_Strdup(desc);
-  procedure_inst.code.proc_num = id;
+  procedure_inst.name = (name != NULL) ? BoxMem_Strdup(name) : NULL;
+  procedure_inst.desc = (desc != NULL) ? BoxMem_Strdup(desc) : NULL;
+  procedure_inst.code.proc_id = id;
 
   cn = BoxArr_Num_Items(& pt->installed) + 1;
   BoxArr_Push(& pt->installed, & procedure_inst);
@@ -147,8 +171,8 @@ BoxVMCallNum BoxVM_Proc_Install_CCode(BoxVM *vmp, BoxVMCCode c_proc,
   BoxVMCallNum cn;
 
   procedure_inst.type = BOXVMPROC_IS_C_CODE;
-  procedure_inst.name = BoxMem_Strdup(name);
-  procedure_inst.desc = BoxMem_Strdup(desc);
+  procedure_inst.name = (name != NULL) ? BoxMem_Strdup(name) : NULL;
+  procedure_inst.desc = (desc != NULL) ? BoxMem_Strdup(desc) : NULL;
   procedure_inst.code.c = (Task (*)(void *)) c_proc;
 
   cn = BoxArr_Num_Items(& pt->installed) + 1;
@@ -176,21 +200,16 @@ Task BoxVM_Proc_Disassemble(BoxVM *vmp, FILE *out, BoxVMProcID proc_id) {
   return BoxVM_Disassemble(vmp, out, ptr, length);
 }
 
-Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out, UInt call_num) {
-  VMProcTable *pt = & vmp->proc_table;
-  VMProcInstalled *p;
-  char *p_type, *p_name, *p_desc;
+Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out,
+                                BoxVMCallNum call_num) {
+  VMProcInstalled *p = My_Get_Proc_From_Num(vmp, call_num);
+  char *p_name, *p_desc, *p_type;
 
-  if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
-    MSG_ERROR("The procedure %d is not installed!", call_num);
+  if (p == NULL)
     return Failed;
-  }
-
-  p = (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
 
   p_name = (p->name != NULL) ? p->name : "(undef)";
-  p_desc = (p->desc != NULL) ? p->desc : "(undef)";
-
+  p_desc = (p->desc != NULL) ? p->desc : "(undef)";     
   switch(p->type) {
   case BOXVMPROC_IS_VM_CODE: p_type = "VM"; break;
   case BOXVMPROC_IS_C_CODE:  p_type = "C"; break;
@@ -202,7 +221,7 @@ Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out, UInt call_num) {
 
   if (p->type == BOXVMPROC_IS_VM_CODE) {
     fprintf(out, "\n");
-    Task t = BoxVM_Proc_Disassemble(vmp, out, p->code.proc_num);
+    Task t = BoxVM_Proc_Disassemble(vmp, out, p->code.proc_id);
     fprintf(out, "----------------------------------------\n");
     return t;
   }
@@ -211,13 +230,13 @@ Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out, UInt call_num) {
 
 Task BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out) {
   VMProcTable *pt = & vmp->proc_table;
-  UInt n, proc_num;
+  UInt n, proc_id;
 
   BoxVM_Data_Display(vmp, out);
   fprintf(out, "\n");
 
-  proc_num = BoxArr_Num_Items(& pt->installed);
-  for(n = 1; n <= proc_num; n++) {
+  proc_id = BoxArr_Num_Items(& pt->installed);
+  for(n = 1; n <= proc_id; n++) {
     TASK( BoxVM_Proc_Disassemble_One(vmp, out, n) );
   }
   return Success;

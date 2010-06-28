@@ -226,6 +226,14 @@ struct __vmstatus;
 #  define BoxVM struct __vmprogram
 #  define VMStatus struct __vmstatus
 
+/** Item used in a backtrace to identify where the exception caused the
+ * particular function to exit.
+ */
+typedef struct {
+  BoxVMCallNum call_num; /**< Call number of the function */
+  size_t       vm_pos;   /**< Position in the VM code */
+} BoxVMTrace;
+
 /* This type is used in the table 'vm_instr_desc_table', which collects
  * and describes all the instruction of the VM.
  */
@@ -249,16 +257,13 @@ typedef struct {
  * Status is allocated by 'VM_Module_Execute' inside its stack.
  */
 struct __vmstatus {
-  /* Flags della VM */
   struct {
-    unsigned int error    :1, /* L'istruzione ha provocato un errore! */
-                 exit     :1, /* Bisogna uscire dall'esecuzione! */
-                 is_long  :1; /* L'istruzione e' in formato lungo? */
+    unsigned int error    :1, /**< Error detected */
+                 exit     :1, /**< Exit current execution frame */
+                 is_long  :1; /**< Instruction is in long format */
   } flags;
 
-  BoxVMProcInstalled *p; /**< Procedure which is currently been executed */
-
-  BoxUInt     dasm_pos;   /* Position in num. of read bytes for the disassembler */
+  BoxVMProcInstalled *p;  /**< Procedure which is currently been executed */
 
   BoxVMByteX4 *i_pos,     /**< Pointer to the current instruction */
               i_eye;      /**< Execution "eye" (last four bytes processed) */
@@ -266,15 +271,16 @@ struct __vmstatus {
               i_len,      /**< Size of instruction */
               arg_type;   /**< Type of arguments of instruction */
 
-  VMInstrDesc *idesc;     /* Descrittore dell'istruzione corrente */
-  void *arg1, *arg2;      /* Puntatori agli argomenti del'istruzione */
+  VMInstrDesc *idesc;     /**< Descriptor for current instruction */
+  void        *arg1,
+              *arg2;      /**< Pointer to instruction arguments */
 
+  BoxVMRegs   local[NUM_TYPES], /**< Local register allocation status */
+              *global;          /**< Global register allocation status */
 
-  BoxVMRegs global[NUM_TYPES], /**< Local register allocation status */
-            local[NUM_TYPES];  /**< Global register allocation status */
-
-  /* Stato di allocazione dei registri per il modulo in esecuzione */
-  BoxInt alc[NUM_TYPES];
+  BoxInt      alc[NUM_TYPES]; /**< Allocation status of local registers
+                                   (whether a 'new num_regs, num_vars'
+                                   instruction has been used) */
 };
 
 /* Here we undef the VMStatus macro and typedef __vmstatus to VMStatus. */
@@ -319,6 +325,9 @@ struct __vmprogram {
   BoxOpTable
             op_table;
 
+  BoxArr    backtrace;    /**< Information about error location */
+
+  BoxUInt   dasm_pos;     /**< Position in num. of read bytes for the disassembler */
 
   BoxHT     method_table; /**< Hashtable containing destructors, etc. (TO BE REMOVED) */
 };
@@ -451,6 +460,14 @@ BoxUInt BoxVM_Data_Add(BoxVM *vm, const void *data, BoxUInt size,
  * and send it to the output stream 'stream'.
  */
 void BoxVM_Data_Display(BoxVM *vm, FILE *stream);
+
+/** Clear the backtrace of the program. */
+void BoxVM_Backtrace_Clear(BoxVM *vm);
+
+/** Print on 'stream' a human redable representation of the backtrace
+ * of the program.
+ */
+void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
 
 /** Similar to VM_Assemble, but use the long bytecode format. */
 #define BoxVM_Assemble_Long(vm, instr, ...) \

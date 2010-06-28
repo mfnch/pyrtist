@@ -290,7 +290,7 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p) {
   } else {
     BoxVMProcID pn = CmpProc_Get_ProcID(p);
     char *alter_name = CmpProc_Get_Alter_Name(p),
-         *proc_name  = (p->have.proc_name) ? p->proc_name : "(noname)";
+         *proc_name  = (p->have.proc_name) ? p->proc_name : (char *) NULL;
     CmpProc_End(p); /* End the procedure, if not done explicitly */
     p->call_num =
       BoxVM_Proc_Install_Code(p->cmp->vm, pn, proc_name, alter_name);

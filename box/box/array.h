@@ -178,6 +178,11 @@ void BoxArr_Clear(BoxArr *arr);
  * @param items the pointer to the items to be inserted
  * @param num_items the number of items to be inserted
  * @see BoxArr_Push, BoxArr_Set_Attr
+ * @note Return the pointer in memory to the last inserted item. One may
+ *   then pass 'items == NULL' and fill the items after they have been
+ *   allocated, like this:
+ *     ItemType *item = BoxArr_MPush(a, NULL, 2);
+ *     item[0] = ...; item[1] = ...;
  */
 void *BoxArr_MPush(BoxArr *arr, const void *items, BoxUInt num_items);
 

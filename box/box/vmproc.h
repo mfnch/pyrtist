@@ -75,7 +75,8 @@ typedef struct {
     /** Structure containing the details about the VM code,
      * which implements the procedure.
      */
-    BoxUInt proc_num; /**> Number of the procedure which contains the code */
+    BoxVMProcID proc_id; /**< Number of the procedure which contains
+                              the code */
   } code;
 } BoxVMProcInstalled;
 
@@ -122,6 +123,9 @@ BoxVMProcID BoxVM_Proc_Code_New(BoxVM *vm);
 /** Destroys the procedure whose number is 'proc_num'.
  */
 void BoxVM_Proc_Code_Destroy(BoxVM *vm, BoxVMProcID proc_id);
+
+/** Return a string that may serve to the user to identify the procedure */
+char *BoxVM_Proc_Get_Description(BoxVM *vm, BoxVMCallNum call_num);
 
 /** Set 'proc_num' to be the target procedure: the place where
  * VM_Assemble puts the assembled code
@@ -190,7 +194,7 @@ Task BoxVM_Proc_Disassemble(BoxVM *vmp, FILE *out, BoxUInt proc_num);
  * It is similar to VM_Proc_Disassemble, but gives some more details.
  * @see VM_Proc_Disassemble
  */
-Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out, BoxUInt call_num);
+Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out, BoxVMCallNum call_num);
 
 /** This function prints the assembly source code
  * of all the installed modules.
