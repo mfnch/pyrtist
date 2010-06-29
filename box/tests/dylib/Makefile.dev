@@ -10,7 +10,7 @@ $(DESTDIR)/libmylib.la: mylib.c
 	#gcc -I../.. -fPIC -shared -o libmylib.so mylib.c
 
 clean:
-	  $(LIBTOOL) clean rm libmylib.la mylib.lo
+	  $(LIBTOOL) clean rm -f libmylib.la mylib.lo
 
 buildlib: $(DESTDIR)/libmylib.la
 

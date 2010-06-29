@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-test_suites_modules = ['scope', 'ops', 'procdef', 'structure', 'subtypes']
+test_suites_modules = ['scope', 'ops', 'procdef', 'structure', 'subtypes',
+                       'bugs']
 
 num_errors = 0
 for test_suite_module in test_suites_modules:

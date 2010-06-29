@@ -728,7 +728,7 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
   if (vm.flags.error) {
     BoxVMTrace *trace = BoxArr_Push(& vmp->backtrace, NULL);
     trace->call_num = call_num;
-    trace->vm_pos = vm.i_pos - i_pos0;
+    trace->vm_pos = (void *) vm.i_pos - (void *) i_pos0;
   } 
 
   /* Delete the registers allocated with the 'new*' instructions */
@@ -1220,12 +1220,13 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream) {
 
   else {
     size_t i;
+    fprintf(stream, "Traceback (innermost call comes last):\n");
     for(i = 0; i < n; i++) {
       BoxVMTrace *trace = & traces[n - 1 - i];
       BoxVMCallNum call_num = trace->call_num;
       size_t vm_pos = trace->vm_pos;
       char *desc = BoxVM_Proc_Get_Description(vm, call_num);
-      fprintf(stream, "In %s at %x.\n", desc, vm_pos);
+      fprintf(stream, "  In %s at %ld.\n", desc, (long) vm_pos);
       BoxMem_Free(desc);
     }
   }
