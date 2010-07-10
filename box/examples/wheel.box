@@ -8,7 +8,7 @@ Real@Wheel[$$.radius = $]
 ([)@Wheel[$$.radius = 100.0, $$.slices = 10]
 Int@Wheel.Slices[$$$.slices = $]
 
-Wheel@Window[
+Wheel@@Window[
   r = $.radius, n = $.slices
   Print["Drawing wheel with radius = ", r, " and num. slices = ", n;]
 
@@ -28,7 +28,7 @@ Wheel@Window[
 ]
 
 w = Window[][
-  Wheel[40, .Slices[500]]
+  Wheel[40, .Slices[5000]]
   .Save["wheel.png"]
 ]
 

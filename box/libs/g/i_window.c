@@ -76,7 +76,7 @@ void err_not_init(const char *location) {
   g_error("Cannot use the window: it has not been initialized, yet!");
 }
 
-Task window_begin(VMProgram *vmp) {
+Task window_begin(BoxVM *vmp) {
   WindowPtr *wp = BOX_VM_CURRENTPTR(vmp, WindowPtr);
   Window *w;
   w = *wp = (WindowPtr) malloc(sizeof(Window)); /* Should use Mem_Alloc, but this requires to link against the internal box library (which still does not exist) */
@@ -115,7 +115,7 @@ Task window_begin(VMProgram *vmp) {
   return Success;
 }
 
-Task window_color(VMProgram *vmp) {
+Task window_color(BoxVM *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   Color *c = BOX_VM_ARG1_PTR(vmp, Color);
   if (w->window != (GrpWindow *) NULL) {
@@ -127,7 +127,7 @@ Task window_color(VMProgram *vmp) {
   return Success;
 }
 
-Task window_gradient(VMProgram *vmp) {
+Task window_gradient(BoxVM *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   Gradient *g = BOX_VM_ARG1(vmp, GradientPtr);
   if (w->window != (GrpWindow *) NULL) {
@@ -139,7 +139,7 @@ Task window_gradient(VMProgram *vmp) {
   return Success;
 }
 
-Task window_destroy(VMProgram *vmp) {
+Task window_destroy(BoxVM *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
   Window *w = (Window *) wp;
   GrpWindow *cur_win = grp_win;
@@ -181,7 +181,7 @@ Task window_str(BoxVM *vm) {
   return Success;
 }
 
-Task window_size(VMProgram *vmp) {
+Task window_size(BoxVM *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
   Window *w = (Window *) wp;
   Point *win_size = BOX_VM_ARG1_PTR(vmp, Point);
@@ -196,14 +196,14 @@ Task window_size(VMProgram *vmp) {
   return Success;
 }
 
-Task window_style(VMProgram *vmp) {
+Task window_style(BoxVM *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
   g_style_copy_selected(& w->style, & s->style, s->have);
   return Success;
 }
 
-Task window_end(VMProgram *vmp) {
+Task window_end(BoxVM *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
   Window *w = (Window *) wp;
 
@@ -222,7 +222,7 @@ Task window_end(VMProgram *vmp) {
   return Success;
 }
 
-Task window_window(VMProgram *vmp) {
+Task window_window(BoxVM *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   Window *src = BOX_VM_ARG1(vmp, WindowPtr);
   grp_window *cur_win = grp_win;
@@ -232,7 +232,7 @@ Task window_window(VMProgram *vmp) {
   return Success;
 }
 
-Task window_origin_point(VMProgram *vmp) {
+Task window_origin_point(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *origin = BOX_VM_ARG1_PTR(vmp, Point);
 
@@ -246,14 +246,14 @@ Task window_origin_point(VMProgram *vmp) {
   return Success;
 }
 
-Task window_save_begin(VMProgram *vmp) {
+Task window_save_begin(BoxVM *vmp) {
   Window *w  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   w->save_file_name = NULL;
   w->saved = 0;
   return Success;
 }
 
-Task window_save_str(VMProgram *vm) {
+Task window_save_str(BoxVM *vm) {
   Window *w  = BOX_VM_SUB_PARENT(vm, WindowPtr);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
 
@@ -267,13 +267,17 @@ Task window_save_str(VMProgram *vm) {
   return Success;
 }
 
-Task window_save_window(VMProgram *vmp) {
+Task window_save_window(BoxVM *vmp) {
   Window *src  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   Window *dest = BOX_VM_ARG1(vmp, WindowPtr);
   Point translation = {0.0, 0.0}, center = {0.0, 0.0};
   Real sx = 1.0, sy = 1.0, rot_angle = 0.0;
   Matrix m;
   GrpWindow *cur_win = grp_win;
+
+
+  printf("WINDOW SAVE WINDOW!\n");
+  
   int type_fig = Grp_Window_Type_From_String("fig");
   if (src->plan.type != type_fig) {
     g_error("Window.Save: Saving to arbitrary targets is only available "
@@ -376,7 +380,7 @@ Task window_save_window(VMProgram *vmp) {
   return Success;
 }
 
-Task window_save_end(VMProgram *vmp) {
+Task window_save_end(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
 
   if (w->saved) {
@@ -407,7 +411,7 @@ Task window_save_end(VMProgram *vmp) {
   }
 }
 
-Task window_hot_begin(VMProgram *vmp) {
+Task window_hot_begin(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->hot.got.name = 0;
   w->hot.got.point = 0;
@@ -415,7 +419,7 @@ Task window_hot_begin(VMProgram *vmp) {
   return Success;
 }
 
-Task window_hot_point(VMProgram *vmp) {
+Task window_hot_point(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *point = BOX_VM_ARG1_PTR(vmp, Point);
   char *name = (w->hot.got.name) ? w->hot.name : (char *) NULL;
@@ -446,13 +450,13 @@ static Task _add_from_pointlist(Int index, char *name,
   return pointlist_add(dest_pl, p, name);
 }
 
-Task window_hot_pointlist(VMProgram *vmp) {
+Task window_hot_pointlist(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   IPointList *ipl_to_add = BOX_VM_ARG1(vmp, IPointList *);
   return pointlist_iter(& ipl_to_add->pl, _add_from_pointlist, & w->pointlist);
 }
 
-Task window_hot_end(VMProgram *vmp) {
+Task window_hot_end(BoxVM *vmp) {
   Window *w  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   Point *p = BOX_VM_SUB_CHILD_PTR(vmp, Point);
 
@@ -478,7 +482,7 @@ Task window_file_string(BoxVM *vm) {
   return Success;
 }
 
-Task window_res_point(VMProgram *vmp) {
+Task window_res_point(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *res = BOX_VM_ARG1_PTR(vmp, Point);
   if (w->plan.have.resolution) {
@@ -490,7 +494,7 @@ Task window_res_point(VMProgram *vmp) {
   return Success;
 }
 
-Task window_res_real(VMProgram *vmp) {
+Task window_res_real(BoxVM *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   Real *res = BOX_VM_ARG1_PTR(vmp, Real);
   if (w->plan.have.resolution) {
@@ -501,7 +505,7 @@ Task window_res_real(VMProgram *vmp) {
   return Success;
 }
 
-Task window_show_point(VMProgram *vmp) {
+Task window_show_point(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *p = BOX_VM_ARG1_PTR(vmp, Point);
   GrpWindow *cur_win = grp_win;
@@ -511,7 +515,7 @@ Task window_show_point(VMProgram *vmp) {
   return Success;
 }
 
-Task window_bbox(VMProgram *vmp) {
+Task window_bbox(BoxVM *vmp) {
   BBox *b = BOX_VM_THIS_PTR(vmp, BBox);
   Window *w = BOX_VM_ARG1(vmp, WindowPtr);
   int not_degenerate = bb_bounding_box(w->window, & b->min, & b->max);

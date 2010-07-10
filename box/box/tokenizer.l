@@ -50,32 +50,34 @@
 #include "fileutils.h"
 #include "paths.h"
 #include "hashtable.h"
+#include "srcpos.h"
 
 /* Use our message handler */
 #define YY_FATAL_ERROR(msg) MSG_FATAL("%s", msg)
 
 /* Dati che servono per la gestione della direttiva "include" */
 typedef struct {
-  ASTPos pos;
-  ASTSrc src;
-  UInt msgcontext;
-  UInt num_errs, num_warns;
-  YY_BUFFER_STATE buffer;
+  BoxSrcPos pos;
+  BoxSrc    src;
+  UInt      msgcontext;
+  UInt      num_errs, num_warns;
+  YY_BUFFER_STATE
+            buffer;
 } TokIncludeData;
 
 /** Structure defining the complete state of the scanner */
 struct {
-  int     is_initialised;
-  ASTPos  pos;        /**< Current position in the source file */
-  ASTSrc  src;        /**< Current token in the source file */
-  UInt    include_level,
-          max_include_level;
-  BoxArr  include_list;
-  BoxHT   provided_features;
+  int       is_initialised;
+  BoxSrcPos pos;        /**< Current position in the source file */
+  BoxSrc    src;        /**< Current token in the source file */
+  UInt      include_level,
+            max_include_level;
+  BoxArr    include_list;
+  BoxHT     provided_features;
 } state = {0};
 
 /** Variable to be used by the parser to get the current token location */
-ASTSrc *tok_src = & state.src;
+BoxSrc *tok_src = & state.src;
 
 /** Function used to count lines and columns (updating tok_src) */
 static void My_Scan_Tok(void);
@@ -305,9 +307,9 @@ Task Tok_Init(FILE *in, const char *f) {
   assert(!state.is_initialised);
 
   state.is_initialised = 1;
-  ASTPos_Init(& state.pos, "(initial)");
+  BoxSrcPos_Init(& state.pos, "(initial)");
   state.src.begin = state.pos;
-  ASTPos_Set_Undef(& state.src.end);
+  BoxSrcPos_Set_Undef(& state.src.end);
 
   state.max_include_level = TOK_MAX_INCLUDE;
 
@@ -408,9 +410,9 @@ Task Tok_Include_Begin(const char *f) {
   ++state.include_level;
 
   /* Update position */
-  ASTPos_Init(& state.pos, "(included)");
+  BoxSrcPos_Init(& state.pos, "(included)");
   state.src.begin = state.pos;
-  ASTPos_Set_Undef(& state.src.end);
+  BoxSrcPos_Set_Undef(& state.src.end);
 
   yyin = incfile;
   yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));

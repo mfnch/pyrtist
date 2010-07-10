@@ -34,6 +34,14 @@ typedef struct {
   size_t     line, col;
 } BoxSrcPos;
 
+/** Object used to define a portion of the source file (to locate errors and
+ * add ability to complement error messages with the exact location they
+ * refer to)
+ */
+typedef struct {
+  BoxSrcPos begin, end;
+} BoxSrc;
+
 /** "Linear" position in the source */
 typedef long BoxOutPos;
 
@@ -67,5 +75,33 @@ void BoxSrcPosTable_Associate(BoxSrcPosTable *pt,
                               BoxOutPos op, BoxSrcPos *sp);
 
 BoxSrcPos *BoxSrcPosTable_Get_Src_Of(BoxSrcPosTable *pt, BoxOutPos o_pos);
+
+/** Initialise a source positon object, BoxSrcPos, to point at the beginning
+ * of the given file.
+ */
+void BoxSrcPos_Init(BoxSrcPos *pos, const char *file_name);
+
+/** Advance the given BoxSrcPos object to the beginning of the next line
+ * in the file.
+ */
+void BoxSrcPos_Next_Line(BoxSrcPos *pos);
+
+/** Return whether the given position object is undefined. */
+int BoxSrcPos_Is_Undef(BoxSrcPos *pos);
+
+/** Set the given position object to undefined. */
+void BoxSrcPos_Set_Undef(BoxSrcPos *pos);
+
+/** Return a string corresponding to the given BoxSrc object.
+ * NOTE: the returned string is allocated with BoxMem_Alloc and should be
+ *  deallocated by the user, calling BoxMem_Free.
+ * Example: "line 1 cols 5-15"
+ */
+const char *BoxSrc_To_Str(BoxSrc *loc);
+
+/** Return (in *result) the smallest ASTLoc object containing both first
+ * and second.
+ */
+void BoxSrc_Merge(BoxSrc *result, BoxSrc *first, BoxSrc *second);
 
 #endif

@@ -33,20 +33,6 @@
 
 #  define AST_MAX_NUM_SUBNODES 4
 
-/** Object used to define a location in the source file */
-typedef struct {
-  const char *file_name;
-  size_t     line, col;
-} ASTPos;
-
-/** Object used to define a portion of the source file (to locate errors and
- * add ability to complement error messages with the exact location they
- * refer to)
- */
-typedef struct {
-  ASTPos begin, end;
-} ASTSrc;
-
 typedef struct __ASTNode ASTNode;
 
 /** Possible types of nodes in the AST */
@@ -79,6 +65,9 @@ typedef enum {
 
 /**Separator between statements */
 typedef enum {ASTSEP_VOID, ASTSEP_PAUSE} ASTSep;
+
+/** Integer number which identifies the scope of a variable or a type */
+typedef int ASTScope;
 
 /** Type of constants */
 typedef enum {
@@ -334,35 +323,6 @@ typedef struct {
   ASTNode *type; /**< Type of the member (NULL, if not present) */
   char    *name; /**< Name of the member (NULL, if not present) */
 } ASTTypeMemb;
-
-
-/** Initialise a source positon object, ASTPos, to point at the beginning
- * of the given file.
- */
-void ASTPos_Init(ASTPos *pos, const char *file_name);
-
-/** Advance the given ASTPos object to the beginning of the next line
- * in the file.
- */
-void ASTPos_Next_Line(ASTPos *pos);
-
-/** Return whether the given position object is undefined. */
-int ASTPos_Is_Undef(ASTPos *pos);
-
-/** Set the given position object to undefined. */
-void ASTPos_Set_Undef(ASTPos *pos);
-
-/** Return a string corresponding to the given ASTSrc object.
- * NOTE: the returned string is allocated with BoxMem_Alloc and should be
- *  deallocated by the user, calling BoxMem_Free.
- * Example: "line 1 cols 5-15"
- */
-const char *ASTSrc_To_Str(ASTSrc *loc);
-
-/** Return (in *result) the smallest ASTLoc object containing both first
- * and second.
- */
-void ASTSrc_Merge(ASTSrc *result, ASTSrc *first, ASTSrc *second);
 
 int ASTNode_Get_Subnodes(ASTNode *node,
                          ASTNode **subnodes[AST_MAX_NUM_SUBNODES]);

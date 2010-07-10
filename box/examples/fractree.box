@@ -23,7 +23,7 @@ PythagTree@&Window[
                    .p1 = Point[t.Get[2]], .p2 = Point[t.Get[3]]]
 
   \ $$[If[level >= 1], pt1, pt2]
-  \ $$[If[level == 0], Fail[]] 
+//  \ $$[If[level == 0], Fail[]] 
 ]
 
 w = Window[][

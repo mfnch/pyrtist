@@ -28,6 +28,7 @@
 #include "mem.h"
 #include "messages.h"
 #include "tokenizer.h"
+#include "srcpos.h"
 #include "ast.h"
 
 static ASTNode *program_node = NULL;
@@ -44,7 +45,7 @@ void yyerror(char *s);
  *****************************************************************************/
 prim.suffix:
    ':'                 { $$ = *Name_Empty(); }
- | ':' TOK_UNAME       { $$ = *Name_Dup(& $2); if ($$.text == NULL ) MY_ERR }
+ | ':' TOK_TYPE_IDENT  { $$ = *Name_Dup(& $2); if ($$.text == NULL ) MY_ERR }
  ;
 
 suffix:
@@ -65,6 +66,7 @@ suffix.opt:
 %union {
   char *        String;
   BoxType       TTag;
+  ASTScope      Scope;
   ASTUnOp       UnaryOperator;
   ASTBinOp      BinaryOperator;
   ASTNodePtr    Node;
@@ -99,6 +101,7 @@ suffix.opt:
 
 /* List of nodes with semantical value */
 %type <Sep> sep
+%type <Scope> colons opt_scope
 %type <UnaryOperator> un_op post_op
 %type <BinaryOperator> mul_op add_op shift_op cmp_op eq_op assign_op
 %type <Node> expr_sep sep_expr struc_expr
@@ -116,6 +119,7 @@ suffix.opt:
 
 %%
 
+/******************************** SEPARATORS *******************************/
 void_sep:
     ','
   | TOK_NEWLINE
@@ -130,6 +134,18 @@ sep:
     void_sep                  {$$ = ASTSEP_VOID;}
   | ';'                       {$$ = ASTSEP_PAUSE;}
   ;
+
+/******************************* SCOPE SPECS *******************************/
+
+colons:
+   ':'                 {$$ = 1;}
+ | colons ':'          {$$ = $1 + 1;}
+ ;
+
+opt_scope:
+                       {$$ = 0;}
+ | colons              {$$ = $1;}
+ ;
 
 /******************************** OPERATORS ********************************/
 un_op:
@@ -213,7 +229,7 @@ string_concat:
 prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
   | string_concat                {$$ = $1;}
-  | TOK_IDENTIFIER               {$$ = ASTNodeVar_New($1, 0); BoxMem_Free($1);}
+  | TOK_IDENTIFIER opt_scope     {$$ = ASTNodeVar_New($1, 0); BoxMem_Free($1);}
   | TOK_SELF                     {$$ = ASTNodeSelfGet_New($1);}
   | '(' expr ')'                 {$$ = ASTNodeIgnore_New($2, 0);}
   | '(' struc_expr ')'           {$$ = $2;}
@@ -353,7 +369,7 @@ species_type:
 /* PRIMARY TYPES */
 
 named_type:
-    TOK_TYPE_IDENT               {$$ = ASTNodeTypeName_New($1, 0);
+    TOK_TYPE_IDENT opt_scope     {$$ = ASTNodeTypeName_New($1, 0);
                                   BoxMem_Free($1);}
   | named_type '.' TOK_TYPE_IDENT
                                  {$$ = ASTNodeSubtype_New($1, $3);
@@ -447,7 +463,7 @@ void yyerror(char* s) {
 #if 0
   MSG_ERROR("%s", s);
 #else
-  MSG_ERROR("(%~s) %s", ASTSrc_To_Str(tok_src), s);
+  MSG_ERROR("(%~s) %s", BoxSrc_To_Str(tok_src), s);
 #endif
 }
 

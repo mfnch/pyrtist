@@ -30,10 +30,11 @@
 #ifndef _TOKENIZER_H
 #  define _TOKENIZER_H
 
+#  include "srcpos.h"
 #  include "ast.h"
 
 /** Variable to be used by the parser to get the current token position */
-extern ASTSrc *tok_src;
+extern BoxSrc *tok_src;
 
 int yylex(void);
 Task Tok_Init(FILE *in, const char *f);
