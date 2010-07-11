@@ -357,12 +357,12 @@ void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
 
 static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
   BoxSrc *prev_src_of_err = Msg_Set_Src(& node->src);
-  BoxSrcPos *new_src_pos = & node->src.begin;
+  BoxSrcPos *new_src_pos = & node->src.end;
 
   /* Output line information to current procedure */
   if (/*c->src_pos.file_name != NULL && */ new_src_pos->line != 0 &&
       (new_src_pos->file_name != c->src_pos.file_name
-       || new_src_pos->line > c->src_pos.line)) {
+       || new_src_pos->line != c->src_pos.line)) {
     CmpProc_Associate_Source(c->cur_proc, new_src_pos);
     c->src_pos = *new_src_pos;
   }

@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "types.h"
@@ -78,7 +79,7 @@ static const char *My_New_Filename(BoxSrcPosTable *pt,
 void BoxSrcPosTable_Associate(BoxSrcPosTable *pt,
                               BoxOutPos op, BoxSrcPos *sp) {
   BoxArr *at = & pt->assoc_table;
-  BoxSrcAssoc *sa;
+  BoxSrcAssoc *sa = NULL;
 
   if (BoxArr_Num_Items(at) > 0) {
     BoxSrcAssoc *last_sa = BoxArr_Last_Item_Ptr(at);
@@ -87,12 +88,32 @@ void BoxSrcPosTable_Associate(BoxSrcPosTable *pt,
                 "from the lower to the greater.");
       assert(0);
     }
+
+    if (last_sa->out_pos == op)
+      sa = last_sa; /* Last item will be overwritten */
   }
 
-  sa = (BoxSrcAssoc *) BoxArr_Push(at, NULL);
+  if (sa == NULL)
+    sa = (BoxSrcAssoc *) BoxArr_Push(at, NULL);
+
   sa->src_pos = *sp;
   sa->src_pos.file_name = My_New_Filename(pt, sp->file_name);
   sa->out_pos = op;
+}
+
+void BoxSrcPosTable_Print(BoxSrcPosTable *pt, FILE *out) {
+  BoxArr *at = & pt->assoc_table;
+  BoxSrcAssoc *sa = BoxArr_First_Item_Ptr(at);
+  size_t n = BoxArr_Num_Items(at), i;
+
+  fprintf(out, "BoxSrcPosTable: content:\n");
+  for(i = 0; i < n; i++) {
+    char *src_pos_str = BoxSrcPos_To_Str(& sa[i].src_pos);
+    fprintf(out, "  out_pos=%ld, src_pos=\"%s\"\n",
+            sa[i].out_pos, src_pos_str);
+    BoxMem_Free(src_pos_str);
+  }
+  fprintf(out, "BoxSrcPosTable: end.\n");
 }
 
 BoxSrcPos *BoxSrcPosTable_Get_Src_Of(BoxSrcPosTable *pt, BoxOutPos op) {

@@ -254,7 +254,7 @@ Task BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out) {
 void BoxVM_Proc_Associate_Source(BoxVM *vm, BoxVMProcID id, BoxSrcPos *sp) {
   VMProcTable *pt = & vm->proc_table;
   BoxVMProc *p = (BoxVMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, id);
-  BoxOutPos op = BoxArr_Num_Items(& p->code);
+  BoxOutPos op = sizeof(VMByteX4)*BoxArr_Num_Items(& p->code);
   BoxSrcPosTable_Associate(& p->pos_table, op, sp);
 }
 
