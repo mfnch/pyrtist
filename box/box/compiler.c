@@ -354,6 +354,7 @@ void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
 }
 
 static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
+  BoxSrc *prev_src_of_err = Msg_Set_Src(& node->src);
   switch(node->type) {
   case ASTNODETYPE_ERROR:
     My_Compile_Error(c, node); break;
@@ -399,6 +400,7 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     printf("Compilation of node is not implemented, yet!\n");
     break;
   }
+  (void) Msg_Set_Src(prev_src_of_err);
 }
 
 static void My_Compile_Error(BoxCmp *c, ASTNode *node) {

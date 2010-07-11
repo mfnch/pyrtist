@@ -23,6 +23,7 @@
 #include "mem.h"
 #include "ast.h"
 #include "print.h"
+#include "srcpos.h"
 
 /** Used for generic parsing of tree
  * (to destroy or print the tree, for example)
@@ -212,6 +213,8 @@ ASTNode *ASTNode_New(ASTNodeType t) {
   assert(num_subnodes <= AST_MAX_NUM_SUBNODES);
   for(i = 0; i < num_subnodes; i++)
     *subnode[i] = NULL;
+
+  BoxSrc_Init(& node->src);
   return node;
 }
 
@@ -233,7 +236,7 @@ void ASTNode_Destroy(ASTNode *node) {
     if (node->finaliser != NULL)
       node->finaliser(node);
 
-    BoxMem_Free(node); /* The free the structure */
+    BoxMem_Free(node);
   }
 }
 

@@ -18,15 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* $Id$ */
-
-
- /* This file contains the rules used by flex to create the tokenizer. */
-
- /* include e' una start-condition che serve per prelevare il nome del file
-  * in una direttiva include
-  */
 %x include
+ /* ^^^ Start condition used to extract the file name in include directives */
 
 %{
 
@@ -55,10 +48,9 @@
 /* Use our message handler */
 #define YY_FATAL_ERROR(msg) MSG_FATAL("%s", msg)
 
-/* Dati che servono per la gestione della direttiva "include" */
+/** Data used to handle files included with "include" */
 typedef struct {
   BoxSrcPos pos;
-  BoxSrc    src;
   UInt      msgcontext;
   UInt      num_errs, num_warns;
   YY_BUFFER_STATE
@@ -69,29 +61,22 @@ typedef struct {
 struct {
   int       is_initialised;
   BoxSrcPos pos;        /**< Current position in the source file */
-  BoxSrc    src;        /**< Current token in the source file */
   UInt      include_level,
             max_include_level;
   BoxArr    include_list;
   BoxHT     provided_features;
 } state = {0};
 
-/** Variable to be used by the parser to get the current token location */
-BoxSrc *tok_src = & state.src;
-
 /** Function used to count lines and columns (updating tok_src) */
 static void My_Scan_Tok(void);
 
-static int Tok_Provided(const char *feature, int length) {
-  assert(state.is_initialised);
+/** Function called in the #provide directive to determine whether the
+ * feature has already been provided and the file should then be skipped.
+ */
+static int Tok_Provided(const char *feature, int length);
 
-  BoxHTItem *item;
-  if (BoxHT_Find(& state.provided_features,
-                 (void *) feature, length, & item))
-    return 1;
-  BoxHT_Insert(& state.provided_features, (void *) feature, length);
-  return 0;
-}
+/** Variable defined by yacc to pass the location of the scanned token */
+extern YYLTYPE yylloc;
 
 %}
 
@@ -308,8 +293,6 @@ Task Tok_Init(FILE *in, const char *f) {
 
   state.is_initialised = 1;
   BoxSrcPos_Init(& state.pos, "(initial)");
-  state.src.begin = state.pos;
-  BoxSrcPos_Set_Undef(& state.src.end);
 
   state.max_include_level = TOK_MAX_INCLUDE;
 
@@ -347,17 +330,20 @@ void Tok_Finish(void) {
 }
 
 static void My_Scan_Tok(void) {
-  int i;
-  size_t l, c;
+  size_t i;
+  BoxSrcPosLine l, el;
+  BoxSrcPosCol c, ec;
 
-  state.src.begin = state.pos;
-  l = state.pos.line;
-  c = state.pos.col;
+  el = l = state.pos.line;
+  ec = c = state.pos.col;
+  yylloc.first_line = l;
+  yylloc.first_column = c;
 
   for(i = 0; i < yyleng; i++) {
+    el = l; /* previous char */
+    ec = c;
+
     if (yytext[i] == '\n') {
-      state.src.end.line = l;
-      state.src.end.col = c;
       c = 1;
       l += 1;
 
@@ -369,11 +355,8 @@ static void My_Scan_Tok(void) {
   state.pos.line = l;
   state.pos.col = c;
 
-  /* Do not consider the token to be extending over the final line, if it
-   * does not include at least one character of that line.
-   */
-  if (c > 1)
-    state.src.end = state.pos;
+  yylloc.last_line = el;
+  yylloc.last_column = ec;
 }
 
 /* DESCRIZIONE: Esegue materialmente la direttiva include,
@@ -400,7 +383,6 @@ Task Tok_Include_Begin(const char *f) {
   }
 
   cur.pos = state.pos;
-  cur.src = state.src;
   cur.msgcontext = 0; /*Msg_Context_Num(); TODO ??? */
   cur.num_errs = MSG_GT_ERRORS;
   cur.num_warns = MSG_NUM_WARNINGS;
@@ -411,8 +393,6 @@ Task Tok_Include_Begin(const char *f) {
 
   /* Update position */
   BoxSrcPos_Init(& state.pos, "(included)");
-  state.src.begin = state.pos;
-  BoxSrcPos_Set_Undef(& state.src.end);
 
   yyin = incfile;
   yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
@@ -454,6 +434,13 @@ UInt Tok_Include_End(void) {
     return 1;
 }
 
-void Tok_Unput(int c) {unput(c);}
+static int Tok_Provided(const char *feature, int length) {
+  assert(state.is_initialised);
 
-
+  BoxHTItem *item;
+  if (BoxHT_Find(& state.provided_features,
+                 (void *) feature, length, & item))
+    return 1;
+  BoxHT_Insert(& state.provided_features, (void *) feature, length);
+  return 0;
+}

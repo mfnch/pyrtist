@@ -41,6 +41,5 @@ Task Tok_Init(FILE *in, const char *f);
 void Tok_Finish(void);
 Task Tok_Include_Begin(const char *f);
 UInt Tok_Include_End(void);
-void Tok_Unput(int c);
 
 #endif /* _TOKENIZER_H */

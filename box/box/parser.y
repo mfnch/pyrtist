@@ -36,29 +36,17 @@ static ASTNode *program_node = NULL;
 int yyparse(void);
 int yylex(void);
 void yyerror(char *s);
+static void My_Syntax_Error();
 
-#if 0
-#define YYDEBUG 0
-
-/*****************************************************************************
- *       Grammatica relativa ai suffissi del tipo ::: o :tipo1:::tipo2::     *
- *****************************************************************************/
-prim.suffix:
-   ':'                 { $$ = *Name_Empty(); }
- | ':' TOK_TYPE_IDENT  { $$ = *Name_Dup(& $2); if ($$.text == NULL ) MY_ERR }
- ;
-
-suffix:
-   prim.suffix         { DO( Prs_Suffix(& $$, -1, & $1) ) }
- | suffix prim.suffix  { DO( Prs_Suffix(& $$, $1, & $2) ) }
- ;
-
-suffix.opt:
-                       { $$ = -1; }
- | suffix              { $$ = $1; }
- ;
-
-#endif
+#define SRC(ast_node, node_src) \
+  do \
+    if (ast_node != NULL) { \
+      ast_node->src.begin.line = node_src.first_line; \
+      ast_node->src.begin.col = node_src.first_column; \
+      ast_node->src.end.line = node_src.last_line; \
+      ast_node->src.end.col = node_src.last_column; \
+    } \
+  while (0)
 
 %}
 
@@ -138,13 +126,13 @@ sep:
 /******************************* SCOPE SPECS *******************************/
 
 colons:
-   ':'                 {$$ = 1;}
- | colons ':'          {$$ = $1 + 1;}
+   ':'                        {$$ = 1;}
+ | colons ':'                 {$$ = $1 + 1;}
  ;
 
 opt_scope:
-                       {$$ = 0;}
- | colons              {$$ = $1;}
+                              {$$ = 0;}
+ | colons                     {$$ = $1;}
  ;
 
 /******************************** OPERATORS ********************************/
@@ -206,122 +194,126 @@ assign_op:
 
 /******************************* STRUCTURES ********************************/
 expr_sep:
-    expr void_seps               {$$ = ASTNodeStruc_New(NULL, $1);}
-  | sep_expr void_seps           {$$ = $1;}
+    expr void_seps            {$$ = ASTNodeStruc_New(NULL, $1); SRC($$, @$);}
+  | sep_expr void_seps        {$$ = $1;}
   ;
 
 sep_expr:
-    void_seps expr               {$$ = ASTNodeStruc_New(NULL, $2);}
-  | expr_sep expr                {$$ = ASTNodeStruc_Add_Member($1, NULL, $2);}
+    void_seps expr            {$$ = ASTNodeStruc_New(NULL, $2); SRC($$, @$);}
+  | expr_sep expr             {$$ = ASTNodeStruc_Add_Member($1, NULL, $2);
+                               SRC($$, @$);}
   ;
 
 struc_expr:
-    expr_sep                     {$$ = $1;}
-  | sep_expr                     {$$ = $1;}
+    expr_sep                  {$$ = $1;}
+  | sep_expr                  {$$ = $1;}
   ;
 
 /******************************* ARITHMETICS *******************************/
 string_concat:
     TOK_STRING                   {$$ = $1;}
-  | string_concat TOK_STRING     {$$ = ASTNodeString_Concat($1, $2);}
+  | string_concat TOK_STRING     {$$ = ASTNodeString_Concat($1, $2);
+                                  SRC($$, @$);}
   ;
 
 prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
   | string_concat                {$$ = $1;}
-  | TOK_IDENTIFIER opt_scope     {$$ = ASTNodeVar_New($1, 0); BoxMem_Free($1);}
-  | TOK_SELF                     {$$ = ASTNodeSelfGet_New($1);}
-  | '(' expr ')'                 {$$ = ASTNodeIgnore_New($2, 0);}
+  | TOK_IDENTIFIER opt_scope     {$$ = ASTNodeVar_New($1, 0);
+                                  BoxMem_Free($1); SRC($$, @$);}
+  | TOK_SELF                     {$$ = ASTNodeSelfGet_New($1); SRC($$, @$);}
+  | '(' expr ')'                 {$$ = ASTNodeIgnore_New($2, 0); SRC($$, @$);}
   | '(' struc_expr ')'           {$$ = $2;}
   ;
 
 postfix_expr:
     prim_expr                    {$$ = $1;}
-  | postfix_expr '(' expr ')'    {$$ = ASTNodeArrayGet_New($1, $3);}
+  | postfix_expr '(' expr ')'    {$$ = ASTNodeArrayGet_New($1, $3); SRC($$, @$);}
   | procedure_decl               {$$ = $1;}
   | postfix_expr
-          '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1);}
-  | type  '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1);}
+          '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1); SRC($$, @$);}
+  | type  '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1); SRC($$, @$);}
   | postfix_expr
               '.' TOK_IDENTIFIER {$$ = ASTNodeMemberGet_New($1, $3, 0);
-                                  BoxMem_Free($3);}
+                                  BoxMem_Free($3); SRC($$, @$);}
   | postfix_expr '.' TOK_TYPE_IDENT '[' statement_list ']'
                                  {$$ = ASTNodeBox_Set_Parent($5,
-                                               ASTNodeSubtype_Build($1, $3));
-                                  BoxMem_Free($3);}
+                                                ASTNodeSubtype_Build($1, $3));
+                                  BoxMem_Free($3); SRC($$, @$);}
   | '.' TOK_TYPE_IDENT '[' statement_list ']'
                                  {$$ = ASTNodeBox_Set_Parent($4,
                                              ASTNodeSubtype_Build(NULL, $2));
-                                  BoxMem_Free($2);}
+                                  BoxMem_Free($2); SRC($$, @$);}
   | '.' TOK_IDENTIFIER           {$$ = ASTNodeMemberGet_New(NULL, $2, 0);
-                                  BoxMem_Free($2);}
-  | postfix_expr post_op         {$$ = ASTNodeUnOp_New($2, $1);}
+                                  BoxMem_Free($2); SRC($$, @$);}
+  | postfix_expr post_op         {$$ = ASTNodeUnOp_New($2, $1); SRC($$, @$);}
   ;
 
 unary_expr:
     postfix_expr                 {$$ = $1;}
-  | un_op unary_expr             {$$ = ASTNodeUnOp_New($1, $2);}
+  | un_op unary_expr             {$$ = ASTNodeUnOp_New($1, $2); SRC($$, @$);}
   ;
 
 pow_expr:
     unary_expr                   {$$ = $1;}
-  | pow_expr TOK_POW unary_expr  {$$ = ASTNodeBinOp_New(ASTBINOP_POW, $1, $3);}
+  | pow_expr TOK_POW unary_expr  {$$ = ASTNodeBinOp_New(ASTBINOP_POW, $1, $3);
+                                  SRC($$, @$);}
   ;
 
 mul_expr:
     pow_expr                     {$$ = $1;}
-  | mul_expr mul_op pow_expr     {$$ = ASTNodeBinOp_New($2, $1, $3);}
+  | mul_expr mul_op pow_expr     {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
   ;
 
 add_expr:
     mul_expr                     {$$ = $1;}
-  | add_expr add_op mul_expr     {$$ = ASTNodeBinOp_New($2, $1, $3);}
+  | add_expr add_op mul_expr     {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
   ;
 
 shift_expr:
     add_expr                     {$$ = $1;}
-  | shift_expr shift_op add_expr {$$ = ASTNodeBinOp_New($2, $1, $3);}
+  | shift_expr shift_op add_expr {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
   ;
 
 cmp_expr:
     shift_expr                   {$$ = $1;}
-  | cmp_expr cmp_op shift_expr   {$$ = ASTNodeBinOp_New($2, $1, $3);}
+  | cmp_expr cmp_op shift_expr   {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
   ;
 
 eq_expr:
     cmp_expr                     {$$ = $1;}
-  | eq_expr eq_op cmp_expr       {$$ = ASTNodeBinOp_New($2, $1, $3);}
+  | eq_expr eq_op cmp_expr       {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
   ;
 
 band_expr:
     eq_expr                      {$$ = $1;}
-  | band_expr '&' eq_expr        {$$ = ASTNodeBinOp_New(ASTBINOP_BAND, $1, $3);}
+  | band_expr '&' eq_expr        {$$ = ASTNodeBinOp_New(ASTBINOP_BAND, $1, $3); SRC($$, @$);}
   ;
 
 bxor_expr:
     band_expr                    {$$ = $1;}
-  | bxor_expr '^' band_expr      {$$ = ASTNodeBinOp_New(ASTBINOP_BXOR, $1, $3);}
+  | bxor_expr '^' band_expr      {$$ = ASTNodeBinOp_New(ASTBINOP_BXOR, $1, $3); SRC($$, @$);}
   ;
 
 bor_expr:
     bxor_expr                    {$$ = $1;}
-  | bor_expr '|' bxor_expr       {$$ = ASTNodeBinOp_New(ASTBINOP_BOR, $1, $3);}
+  | bor_expr '|' bxor_expr       {$$ = ASTNodeBinOp_New(ASTBINOP_BOR, $1, $3); SRC($$, @$);}
   ;
 
 land_expr:
     bor_expr                     {$$ = $1;}
-  | land_expr TOK_LAND bor_expr  {$$ = ASTNodeBinOp_New(ASTBINOP_LAND, $1, $3);}
+  | land_expr TOK_LAND bor_expr  {$$ = ASTNodeBinOp_New(ASTBINOP_LAND, $1, $3); SRC($$, @$);}
   ;
 
 lor_expr:
     land_expr                    {$$ = $1;}
-  | lor_expr TOK_LOR land_expr   {$$ = ASTNodeBinOp_New(ASTBINOP_LOR, $1, $3);}
+  | lor_expr TOK_LOR land_expr   {$$ = ASTNodeBinOp_New(ASTBINOP_LOR, $1, $3); SRC($$, @$);}
   ;
 
 assign_expr:
     lor_expr                     {$$ = $1;}
   | lor_expr assign_op
-                     assign_expr {$$ = ASTNodeBinOp_New($2, $1, $3);}
+                     assign_expr {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
   ;
 
 expr:
@@ -344,15 +336,15 @@ struc_type_2nd:
 
 type_sep:
     struc_type_1st void_seps     {$$ = ASTNodeStrucType_New(& $1);
-                                  BoxMem_Free($1.name);}
+                                  BoxMem_Free($1.name); SRC($$, @$);}
   | sep_type void_seps           {$$ = $1;}
   ;
 
 sep_type:
     void_seps struc_type_1st     {$$ = ASTNodeStrucType_New(& $2);
-                                  BoxMem_Free($2.name);}
+                                  BoxMem_Free($2.name); SRC($$, @$);}
   | type_sep struc_type_2nd      {$$ = ASTNodeStrucType_Add_Member($1, & $2);
-                                  BoxMem_Free($2.name);}
+                                  BoxMem_Free($2.name); SRC($$, @$);}
   ;
 
 struc_type:
@@ -362,18 +354,18 @@ struc_type:
 
 /* SPECIES TYPES */
 species_type:
-    type TOK_TO type             {$$ = ASTNodeSpecType_New($1, $3);}
-  | species_type TOK_TO type     {$$ = ASTNodeSpecType_Add_Member($1, $3);}
+    type TOK_TO type             {$$ = ASTNodeSpecType_New($1, $3); SRC($$, @$);}
+  | species_type TOK_TO type     {$$ = ASTNodeSpecType_Add_Member($1, $3); SRC($$, @$);}
   ;
 
 /* PRIMARY TYPES */
 
 named_type:
     TOK_TYPE_IDENT opt_scope     {$$ = ASTNodeTypeName_New($1, 0);
-                                  BoxMem_Free($1);}
+                                  BoxMem_Free($1); SRC($$, @$);}
   | named_type '.' TOK_TYPE_IDENT
                                  {$$ = ASTNodeSubtype_New($1, $3);
-                                  BoxMem_Free($3);}
+                                  BoxMem_Free($3); SRC($$, @$);}
   ;
 
 prim_type:
@@ -400,12 +392,12 @@ type:
 
 inc_type:
     type                         {$$ = $1;}
-  | TOK_INC type                 {$$ = ASTNodeIncType_New($2);}
+  | TOK_INC type                 {$$ = ASTNodeIncType_New($2); SRC($$, @$);}
   ;
 
 assign_type:
-    named_type '=' inc_type      {$$ = ASTNodeTypeDef_New($1, $3);;}
-  | named_type '=' assign_type   {$$ = ASTNodeTypeDef_New($1, $3);}
+    named_type '=' inc_type      {$$ = ASTNodeTypeDef_New($1, $3); SRC($$, @$);}
+  | named_type '=' assign_type   {$$ = ASTNodeTypeDef_New($1, $3); SRC($$, @$);}
   ;
 
 /****************** PROCEDURE DECLARATION AND DEFINITION *******************/
@@ -414,11 +406,11 @@ assign_type:
  /* left side of @ */
 at_left:
     type                         {$$ = $1;}
-  | TOK_TTAG                     {$$ = ASTNodeTypeTag_New($1);}
+  | TOK_TTAG                     {$$ = ASTNodeTypeTag_New($1); SRC($$, @$);}
   ;
 
 procedure:
-    at_left TOK_AT named_type    {$$ = ASTNodeProcDef_New($1, $3);}
+    at_left TOK_AT named_type    {$$ = ASTNodeProcDef_New($1, $3); SRC($$, @$);}
   ;
 
 opt_c_name:
@@ -427,29 +419,31 @@ opt_c_name:
   ;
 
 procedure_decl:
-    procedure opt_c_name '?'     {$$ = ASTNodeProcDef_Set($1, $2, NULL);}
+    procedure opt_c_name '?'     {$$ = ASTNodeProcDef_Set($1, $2, NULL); SRC($$, @$);}
   | procedure opt_c_name
-          '[' statement_list ']' {$$ = ASTNodeProcDef_Set($1, $2, $4);}
+          '[' statement_list ']' {$$ = ASTNodeProcDef_Set($1, $2, $4); SRC($$, @$);}
   ;
 
 /************************ STATEMENT LISTS AND BOXES ************************/
 /* Syntax for the body of the program */
 statement:
                                  {$$ = NULL;}
-  | assign_type                  {$$ = ASTNodeStatement_New($1);}
-  | expr                         {$$ = ASTNodeStatement_New($1);}
+  | assign_type                  {$$ = ASTNodeStatement_New($1); SRC($$, @$);}
+  | expr                         {$$ = ASTNodeStatement_New($1); SRC($$, @$);}
   | '\\' expr                    {$$ = ASTNodeStatement_New(
-                                         ASTNodeIgnore_New($2, 1));}
-  | '[' statement_list ']'       {$$ = ASTNodeStatement_New($2);}
+                                         ASTNodeIgnore_New($2, 1)); SRC($$, @$);}
+  | '[' statement_list ']'       {$$ = ASTNodeStatement_New($2); SRC($$, @$);}
   | error sep                    {$$ = ASTNodeStatement_New(ASTNodeError_New());
-                                  Tok_Unput(($2 == ASTSEP_PAUSE) ? ';' : ',');
+                                  SRC($$, @$);
+                                  My_Syntax_Error(& @$, NULL);
+                                  assert(yychar == YYEMPTY); yychar = (int) ',';
                                   yyerrok;}
   ;
 
 statement_list:
-    statement                    {$$ = ASTNodeBox_New(NULL, $1);}
+    statement                    {$$ = ASTNodeBox_New(NULL, $1); SRC($$, @$);}
   | statement_list sep statement {$$ = ASTNodeBox_Add_Sep($1, $2);
-                                  $$ = ASTNodeBox_Add_Statement($1, $3);}
+                                  $$ = ASTNodeBox_Add_Statement($1, $3); SRC($$, @3);}
   ;
 
 program:
@@ -460,11 +454,21 @@ program:
 
 /* error function */
 void yyerror(char* s) {
-#if 0
-  MSG_ERROR("%s", s);
-#else
-  MSG_ERROR("(%~s) %s", BoxSrc_To_Str(tok_src), s);
-#endif
+  /* Do nothing, as - at the moment - we report error in error action */
+}
+
+static void My_Syntax_Error(YYLTYPE *src, char *s) {
+  BoxSrc my_src, *prev_src_of_err;
+  my_src.begin.line = src->first_line;
+  my_src.begin.col = src->first_column;
+  my_src.end.line = src->last_line;
+  my_src.end.col = src->last_column;
+  prev_src_of_err = Msg_Set_Src(& my_src);
+  if (s == NULL)
+    MSG_ERROR("Syntax error.");
+  else
+    MSG_ERROR("%s", s);
+  (void) Msg_Set_Src(prev_src_of_err);
 }
 
 #if 0

@@ -24,19 +24,21 @@
 #include <assert.h>
 
 #include "types.h"
+#include "mem.h"
+#include "srcpos.h"
 #include "print.h"
 #include "msgbase.h"
 #include "messages.h"
 
 MsgStack *msg_main_stack = (MsgStack *) NULL;
 
-static Int line = -1;
+static BoxSrc *my_src_of_err = NULL;
 
 static char *My_Show_Msg(UInt level, char *original_msg) {
   if (level == 0) {
     char *final_msg;
     final_msg = printdup("STAGE: %s:\n", original_msg);
-    free(original_msg);
+    BoxMem_Free(original_msg);
     return final_msg;
 
   } else {
@@ -47,11 +49,12 @@ static char *My_Show_Msg(UInt level, char *original_msg) {
     case MSG_LEVEL_ERROR: prefix = "Error"; break;
     case MSG_LEVEL_FATAL: prefix = "Fatal error"; break;
     }
-    if (line > 0)
-      final_msg = printdup("%s(line %I): %s\n", prefix, line, original_msg);
-    else
+    if (my_src_of_err != NULL) {
+      char *loc = BoxSrc_To_Str(my_src_of_err);
+      final_msg = printdup("%s(%~s): %s\n", prefix, loc, original_msg);
+    } else
       final_msg = printdup("%s: %s\n", prefix, original_msg);
-    free(original_msg);
+    BoxMem_Free(original_msg);
     return final_msg;
   }
 }
@@ -66,11 +69,10 @@ void Msg_Main_Context_Begin(const char *msg) {
   Msg_Context_Begin(msg_main_stack, msg, My_Show_Msg);
 }
 
-void Msg_Line_Set(Int line_number) {
-  if (line_number > 0)
-    line = line_number;
-  else
-    line = -1;
+BoxSrc *Msg_Set_Src(BoxSrc *src_of_err) {
+  BoxSrc *previous = my_src_of_err;
+  my_src_of_err = src_of_err;
+  return previous;
 }
 
 static void My_Default_Fatal_Handler(void) {

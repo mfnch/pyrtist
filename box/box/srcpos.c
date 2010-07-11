@@ -18,6 +18,7 @@
  ****************************************************************************/
 
 #include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "types.h"
@@ -150,7 +151,13 @@ void BoxSrcPos_Set_Undef(BoxSrcPos *pos) {
   pos->col = 0;
 }
 
-const char *BoxSrc_To_Str(BoxSrc *loc) {
+void BoxSrc_Init(BoxSrc *src) {
+  src->begin.line = src->begin.col = 1;
+  src->end.line = src->end.col = 0;
+  src->begin.file_name = src->end.file_name = (char *) NULL;
+}
+
+char *BoxSrc_To_Str(BoxSrc *loc) {
   long bl = loc->begin.line, bc = loc->begin.col,
        el = loc->end.line, ec = loc->end.col;
 
@@ -178,8 +185,8 @@ void BoxSrc_Merge(BoxSrc *result, BoxSrc *first, BoxSrc *second) {
     result->begin = first->begin;
 
   else {
-    size_t bl = first->begin.line, bc = first->begin.col,
-           sbl = second->begin.line, sbc = second->begin.col;
+    BoxSrcPosLine bl = first->begin.line, sbl = second->begin.line;
+    BoxSrcPosCol bc = first->begin.col, sbc = second->begin.col;
 
     if (sbl < bl || (sbl == bl && sbc < bc)) {
       result->begin.line = sbl;
@@ -198,8 +205,8 @@ void BoxSrc_Merge(BoxSrc *result, BoxSrc *first, BoxSrc *second) {
     result->end = first->end;
 
   else {
-    size_t el = first->end.line, ec = first->end.col,
-           sel = second->end.line, sec = second->end.col;
+    BoxSrcPosLine el = first->end.line, sel = second->end.line;
+    BoxSrcPosCol ec = first->end.col, sec = second->end.col;
 
     if (sel < el || (sel == el && sec < ec)) {
       result->end.line = el;

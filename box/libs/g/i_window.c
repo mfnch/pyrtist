@@ -274,9 +274,6 @@ Task window_save_window(BoxVM *vmp) {
   Real sx = 1.0, sy = 1.0, rot_angle = 0.0;
   Matrix m;
   GrpWindow *cur_win = grp_win;
-
-
-  printf("WINDOW SAVE WINDOW!\n");
   
   int type_fig = Grp_Window_Type_From_String("fig");
   if (src->plan.type != type_fig) {

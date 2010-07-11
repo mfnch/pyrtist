@@ -33,6 +33,7 @@
 #  include <box/types.h>
 #  include <box/print.h>
 #  include <box/msgbase.h>
+#  include <box/srcpos.h>
 
 extern MsgStack *msg_main_stack;
 
@@ -50,12 +51,10 @@ Task Msg_Main_Init(UInt show_level);
  */
 void Msg_Main_Context_Begin(const char *msg);
 
-/** Set the current line number in the source file.
- * The argument should be an Int number > 0.
- * Alternatively the user can pass MSG_UNDEF_LINE, to avoid the line number
- * to be present in error messages.
+/** Set the text in the source which may be the source for the next errors.
+ * If the pointer is NULL the source will be considered as "unset".
  */
-void Msg_Line_Set(Int line_number);
+BoxSrc *Msg_Set_Src(BoxSrc *src_of_err);
 
 #define MSG_UNDEF_LINE -1
 

@@ -30,6 +30,7 @@
 #  include <stdlib.h>
 
 #  include "types.h"
+#  include "srcpos.h"
 
 #  define AST_MAX_NUM_SUBNODES 4
 
@@ -287,8 +288,13 @@ typedef void (*ASTNodeFinaliser)(ASTNode *node);
 
 /** Structure describing one node in the AST */
 struct __ASTNode {
-  ASTNodeType         type;
-  ASTNodeFinaliser    finaliser;
+  ASTNodeType         type;      /**< Node type */
+  ASTNodeFinaliser    finaliser; /**< Destructor for node */
+  BoxSrc              src;       /**< Position in the source*/
+  /* ^^^ this last entry doubles the size of ASTNode
+   *     (from 24 bytes to 48 on 32 bit machine)
+   *     we may want to do something about that later.
+   */
   union {
     ASTNodeTypeName   typenm;
     ASTNodeTypeTag    typetag;

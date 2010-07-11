@@ -20,9 +20,14 @@
 #ifndef _BOX_SRCPOS_H
 #  define _BOX_SRCPOS_H
 
-#  include <stdlib.h>
 #  include <box/types.h>
 #  include <box/array.h>
+
+/** Type for number of line in a source file */
+typedef int BoxSrcPosLine;
+
+/** Type for number of column in a source file */
+typedef int BoxSrcPosCol;
 
 /** Object which describes the position in a Box source file (which file,
  * which line and column). It is used to associate debug information to VM
@@ -30,8 +35,9 @@
  * corresponds.
  */
 typedef struct {
-  const char *file_name;
-  size_t     line, col;
+  const char    *file_name;
+  BoxSrcPosLine line;
+  BoxSrcPosCol  col;
 } BoxSrcPos;
 
 /** Object used to define a portion of the source file (to locate errors and
@@ -92,12 +98,15 @@ int BoxSrcPos_Is_Undef(BoxSrcPos *pos);
 /** Set the given position object to undefined. */
 void BoxSrcPos_Set_Undef(BoxSrcPos *pos);
 
+/** Initialise a BoxSrc object as "undefined". */
+void BoxSrc_Init(BoxSrc *src);
+
 /** Return a string corresponding to the given BoxSrc object.
  * NOTE: the returned string is allocated with BoxMem_Alloc and should be
  *  deallocated by the user, calling BoxMem_Free.
  * Example: "line 1 cols 5-15"
  */
-const char *BoxSrc_To_Str(BoxSrc *loc);
+char *BoxSrc_To_Str(BoxSrc *loc);
 
 /** Return (in *result) the smallest ASTLoc object containing both first
  * and second.
