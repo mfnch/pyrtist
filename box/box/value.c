@@ -829,9 +829,10 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     Value *v_ret;
     BoxCont cont = v_obj->value.cont;
     BoxType t = v_obj->type;
+    CmpProc *cur_proc = v_obj->proc->cmp->cur_proc;
 
     Value_Unlink(v_obj);
-    v_ret = Value_New(v_obj->proc->cmp->cur_proc);
+    v_ret = Value_New(cur_proc);
     Value_Setup_Container(v_ret, t, & vc);
 
     assert(v_ret->value.cont.type == BOXTYPE_OBJ);

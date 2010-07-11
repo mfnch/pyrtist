@@ -184,6 +184,15 @@ BoxVMCallNum BoxVM_Proc_Next_Call_Num(BoxVM *vm) {
   return BoxArr_Num_Items(& vm->proc_table.installed) + 1;
 }
 
+BoxVMProcID BoxVM_Proc_Get_ID(BoxVM *vm, BoxVMCallNum call_num) {
+  VMProcInstalled *p = My_Get_Proc_From_Num(vm, call_num);
+  if (p->type == BOXVMPROC_IS_VM_CODE)
+    return p->code.proc_id;
+
+  else
+    return BOXVMPROCID_NONE;
+}
+
 void BoxVM_Proc_Get_Ptr_And_Length(BoxVM *vmp, VMByteX4 **ptr,
                                    UInt *length, BoxVMProcID proc_id) {
   VMProcTable *pt = & vmp->proc_table;

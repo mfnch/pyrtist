@@ -40,6 +40,11 @@
 typedef BoxUInt BoxVMProcID;
 typedef BoxVMProcID BoxVMProcNum; /* Alias for BoxVMProcID */
 
+/** Value for BoxVMProcID which indicates missing VM procedure
+ * (it can be returned by BoxVM_Proc_Get_ID, for example).
+ */
+#define BOXVMPROCID_NONE (0)
+
 /** When a procedure is installed a "call number" X is associated to it,
  * so that it can be called with "call X". BoxVMCallNum is the type for such
  * a number.
@@ -146,6 +151,11 @@ void BoxVM_Proc_Empty(BoxVM *vm, BoxVMProcID proc_id);
  * procedure.
  */
 BoxVMCallNum BoxVM_Proc_Next_Call_Num(BoxVM *vmp);
+
+/** Returns the call-number which will be assigned to the next installed
+ * procedure.
+ */
+BoxVMProcID BoxVM_Proc_Get_ID(BoxVM *vm, BoxVMCallNum call_num);
 
 size_t BoxVM_Proc_Get_Size(BoxVM *vm, BoxVMProcID id);
 

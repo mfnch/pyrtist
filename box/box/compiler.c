@@ -143,6 +143,8 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
   My_Init_Const_Values(c);
   Namespace_Init(& c->ns);
   Bltin_Init(c);
+
+  BoxSrcPos_Init(& c->src_pos, NULL);
 }
 
 void BoxCmp_Finish(BoxCmp *c) {
@@ -355,6 +357,16 @@ void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
 
 static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
   BoxSrc *prev_src_of_err = Msg_Set_Src(& node->src);
+  BoxSrcPos *new_src_pos = & node->src.begin;
+
+  /* Output line information to current procedure */
+  if (/*c->src_pos.file_name != NULL && */ new_src_pos->line != 0 &&
+      (new_src_pos->file_name != c->src_pos.file_name
+       || new_src_pos->line > c->src_pos.line)) {
+    CmpProc_Associate_Source(c->cur_proc, new_src_pos);
+    c->src_pos = *new_src_pos;
+  }
+
   switch(node->type) {
   case ASTNODETYPE_ERROR:
     My_Compile_Error(c, node); break;
@@ -400,6 +412,7 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     printf("Compilation of node is not implemented, yet!\n");
     break;
   }
+
   (void) Msg_Set_Src(prev_src_of_err);
 }
 
@@ -727,6 +740,9 @@ static void My_Compile_UnOp(BoxCmp *c, ASTNode *n) {
  */
 static Value *My_Compile_Assignment(BoxCmp *c, Value *left, Value *right) {
   if (Value_Want_Value(right)) {
+    /* Subtypes are always expanded in assignments */
+    left = Value_Expand_Subtype(left);
+
     /* If the value is an identifier (thing without type, nor value),
      * then we transform it to a proper target.
      */

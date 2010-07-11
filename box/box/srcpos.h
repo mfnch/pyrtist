@@ -87,6 +87,12 @@ BoxSrcPos *BoxSrcPosTable_Get_Src_Of(BoxSrcPosTable *pt, BoxOutPos o_pos);
  */
 void BoxSrcPos_Init(BoxSrcPos *pos, const char *file_name);
 
+/** Return a string corresponding to the given BoxSrcPos object.
+ * NOTE: the returned string is allocated with BoxMem_Alloc and should be
+ *  deallocated by the user, calling BoxMem_Free.
+ */
+char *BoxSrcPos_To_Str(BoxSrcPos *pos);
+
 /** Advance the given BoxSrcPos object to the beginning of the next line
  * in the file.
  */

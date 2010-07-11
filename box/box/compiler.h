@@ -27,6 +27,7 @@
 #  define _NEW_COMPILER_H
 
 #  include "types.h"
+#  include "srcpos.h"
 #  include "cmpptrs.h"
 #  include "array.h"
 #  include "virtmach.h"
@@ -55,6 +56,7 @@ struct _box_cmp {
   Operator   convert,   /**< Conversion operator */
              bin_ops[ASTBINOP__NUM_OPS], /**< Table of binary operators */
              un_ops[ASTUNOP__NUM_OPS];   /**< Table of unary operators */
+  BoxSrcPos  src_pos;   /**< Recent position in source while parsing AST */
   struct {
     Value      error,     /**< Error value */
                void_val,  /**< Void value */

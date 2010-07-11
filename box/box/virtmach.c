@@ -1224,10 +1224,26 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream) {
     for(i = 0; i < n; i++) {
       BoxVMTrace *trace = & traces[n - 1 - i];
       BoxVMCallNum call_num = trace->call_num;
-      size_t vm_pos = trace->vm_pos;
-      char *desc = BoxVM_Proc_Get_Description(vm, call_num);
-      fprintf(stream, "  In %s at %ld.\n", desc, (long) vm_pos);
-      BoxMem_Free(desc);
+      BoxVMProcID proc_id = BoxVM_Proc_Get_ID(vm, call_num);
+      if (proc_id != BOXVMPROCID_NONE) {
+        size_t vm_pos = trace->vm_pos;
+        char *desc = BoxVM_Proc_Get_Description(vm, call_num);
+        BoxSrcPos *src_pos = BoxVM_Proc_Get_Source_Of(vm, proc_id, vm_pos);
+
+        if (src_pos != NULL) {
+          char *src_pos_str = BoxSrcPos_To_Str(src_pos);
+          fprintf(stream, "  In %s at %s (VM address %ld).\n",
+                  desc, src_pos_str, (long) vm_pos);
+          BoxMem_Free(src_pos_str);
+
+        } else
+          fprintf(stream, "  In %s at %ld.\n", desc, (long) vm_pos);
+
+        BoxMem_Free(desc);
+
+      } else {
+        fprintf(stream, "  In C code (ERROR?).\n");
+      }
     }
   }
 }

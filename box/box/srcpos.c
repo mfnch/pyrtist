@@ -58,15 +58,20 @@ static int My_Cmp_Names(void *left, void *right, void *pass_data) {
 
 static const char *My_New_Filename(BoxSrcPosTable *pt,
                                    const char *file_name) {
-  BoxArr *fns = & pt->file_names;
-  size_t idx = BoxArr_Find(fns, & file_name, My_Cmp_Names, NULL);
-  if (idx > 0) {
-    return *((char **) BoxArr_Item_Ptr(fns, idx));
-    
-  } else {
-    char *s = BoxMem_Strdup(file_name);
-    BoxArr_Push(fns, & s);
-    return s;
+  if (file_name == NULL)
+    return NULL;
+
+  else {
+    BoxArr *fns = & pt->file_names;
+    size_t idx = BoxArr_Find(fns, & file_name, My_Cmp_Names, NULL);
+    if (idx > 0) {
+        return *((char **) BoxArr_Item_Ptr(fns, idx));
+
+    } else {
+        char *s = BoxMem_Strdup(file_name);
+        BoxArr_Push(fns, & s);
+        return s;
+    }
   }
 }
 
@@ -93,7 +98,7 @@ void BoxSrcPosTable_Associate(BoxSrcPosTable *pt,
 BoxSrcPos *BoxSrcPosTable_Get_Src_Of(BoxSrcPosTable *pt, BoxOutPos op) {
   BoxArr *at = & pt->assoc_table;
   BoxSrcAssoc *sa = BoxArr_First_Item_Ptr(at);
-  size_t n = BoxArr_Num_Items(at) - 1;
+  size_t n = BoxArr_Num_Items(at);
 
   /* First let's check that op is in the available interval */
   if (n < 1)
@@ -133,6 +138,10 @@ void BoxSrcPos_Init(BoxSrcPos *pos, const char *file_name) {
   pos->file_name = file_name;
   pos->line = 1;
   pos->col = 1;
+}
+
+char *BoxSrcPos_To_Str(BoxSrcPos *pos) {
+  return printdup("line %ld", pos->line);
 }
 
 void BoxSrcPos_Next_Line(BoxSrcPos *pos) {
