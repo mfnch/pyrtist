@@ -1,0 +1,87 @@
+include "g"
+include "arrows"
+
+// The position of the last bar: bar are placed from top to bottom
+// one after the other
+bar_defaults = (Color bg, fg, Point pos, size, spacing)[]
+bar_defaults.pos = (0, 0)
+bar_defaults.size = (50, 5)
+bar_defaults.spacing = (0, 6)
+bar_defaults.bg = Color[0.8]
+bar_defaults.fg = color.blue
+
+// Define an object to specify intervals
+Interval = (Int have, Real min, max)
+
+([)@Interval[.have = 0]
+
+Real@Interval[
+  [If[$$.have == 0], $$.min = $]
+  [If[$$.have == 1], $$.max = $]
+  Print[If[$$.have > 1], "Error: Interval already got min and max!";]
+  $$.have += 1
+]
+
+Interval@Print[
+  "Interval[", Print[If[$.have > 0], $.min]
+  Print[If[$.have > 1], ", ", $.max], "]"
+]
+
+// Define a progress bar
+GUIReal = (Real value, Interval interval
+           Point pos, size, cursor
+           Font font, Str label)
+
+// The default parameters for the bar
+([)@GUIReal[
+  .pos = bar_defaults.pos
+  .size = bar_defaults.size
+  bar_defaults.pos += bar_defaults.spacing
+  .font = Font[color.black]
+]
+
+Interval@GUIReal[.interval = $]
+
+// Bar[point] can be used to set the bar size
+Str@GUIReal[$$.label = $]
+
+Point@GUIReal[
+  .cursor = $
+  u = Min[1.0, Max[0.0, ($.x - $$.pos.x)/$$.size.x]]
+  dv = .interval.max - .interval.min
+  .value = .interval.min + dv*u
+]
+
+// Explain how the Window object should deal with Bar objects
+GUIReal@@Window[
+  p = $.pos,  px = p.x, py = p.y
+  s = $.size, sx = $.size.x, sy = $.size.y
+  qx = $.cursor.x - p.x
+
+  qx = Min[sx, Max[0, qx]]
+  \ .Poly[p, (px+sx, py), p+s, (px, py+sy), bar_defaults.bg]
+
+  \ .Poly[Gradient[.Line[p, (px, py+sy)]
+          bar_defaults.fg, color.white, bar_defaults.fg]
+          p, (px+qx, py), (px+qx, py+sy), (px, py+sy)]
+  \ .Poly[Style[.Fill["void"], .Border[color.black, 0.5]]
+          p, (px+sx, py), p+s, (px, py+sy), .Close[]]
+
+  \ .Text[$.font, p + 0.5*s, Str[$.label, $.value]]
+]
+
+Norm = Real
+Point@Norm[$$ = Sqrt[$.x*$.x + $.y*$.y]]
+
+Mark = (Point position, Str text)
+
+Point@Mark[.position = $]
+
+//Str@Mark[.text = $]
+
+Mark@&Window[
+  // Show the "try to move this" label
+  \ $$.Text[.Font["sans", 2], "try to\nmove this!", $.position, .From[(1, -1.0)]]
+  \ $$.Line[0.15, .ArrowScale[2], $.position+(-5, 2.5), arrow, $.position+(-1.5, 0)]
+]
+

@@ -1,0 +1,33 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui2 = Point[.x=-7.89410084615, .y=74.7416420202]
+gui3 = Point[.x=58.5253840304, .y=-2.24268072917]
+x1 = Point[.x=48.8551279693, .y=2.33064356436]
+x2 = Point[.x=11.7009249042, .y=8.93655537954]
+x3 = Point[.x=25.44289, .y=53.217179244]
+x4 = Point[.x=24.4249666154, .y=30.320907079]
+x5 = Point[.x=27.7332180077, .y=30.5328055446]
+x6 = Point[.x=24.6794474615, .y=42.5322522337]
+//!BOXER:REFPOINTS:END
+include "tools"
+
+w = Window[][
+  .Show[gui2, gui3]
+
+  (bar1 = GUIReal[Interval[0.01, 20], x1, "r_x="])
+  (bar2 = GUIReal[Interval[0.01, 20], x2, "r_y="])
+
+  radius_x = bar1.value
+  radius_y = bar2.value
+
+  \ .Circle[x3, radius_x, radius_y, color.black]  
+  \ .Circle[x4, (x5 - x4).x, (x6 - x4).y, color.red]
+]
+
+GUI[w]
