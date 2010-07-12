@@ -10,16 +10,31 @@ include "g"
 //Color@Border[default.border_color = color]
 //Real@Border[default.border_size = size]
 
+Font = ++(Str name, Real size, Color color, (Int color,) have)
+(.[)@Font[$$.size = 4.2, $$.name = "sans", $$.have.color = 0]
+Str@Font[$$.name = $]
+Real@Font[$$.size = $]
+Color@Font[$$.color = $, $$.have.color = 1]
+
+Font@Print[
+  color_part = Str[If[$.have.color], ", ", $.color]
+  "Font[.name=\"", $.name, "\", .size=", $.size, color_part, "]"
+]
+Font@Window.Text[$$.Font[$.name, $.size], If[$.have.color], $.color]
+
 Label = (Point ctr, size, Color c1, c2, Real rounding, Style s
-         (Int p, c, r, s) got_it)
+         Str text, Font font
+         (Int p, c, r, s, t, f) got_it)
 
 ([)@Label[
   .ctr = (0, 0), .size = (10, 10)
-  .got_it = (0, 0, 0, 0)
+  .got_it = (0, 0, 0, 0, 0, 0)
   .c1 = Color[1, 1, 1]
   .c2 = Color[1, 1, 1]
   .rounding = 0.0
 ]
+
+Label@Label[$$ = $]
 
 Real@Label[$$.rounding = $]
 
@@ -38,6 +53,10 @@ Point@&Label[
   .got_it.p += 1
 ]
 
+Str@Label[$$.text = $, $$.got_it.t = 1]
+
+Font@Label[$$.font = $]
+
 //Style@&Label[]
 
 Label@@Window[
@@ -48,5 +67,6 @@ Label@@Window[
   r1 = r*0.1, r2 = r*3
   g = Gradient[.Circle[$.ctr, r1; r2], $.c2, $.c1]
   \ $$.Poly[$.rounding, p1, (p1.x, p2.y), p2, (p2.x, p1.y), g, Style[.Border[color.black, 0.2]]]
+  [If[$.got_it.t], $$.Text[$.font, $.ctr, $.text, color.white]]
 ]
 
