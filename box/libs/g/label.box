@@ -3,25 +3,6 @@
 
 include "g"
 
-//default = (Real border_size
-//           Color border_color)
-
-//Border = Void
-//Color@Border[default.border_color = color]
-//Real@Border[default.border_size = size]
-
-Font = ++(Str name, Real size, Color color, (Int color,) have)
-(.[)@Font[$$.size = 4.2, $$.name = "sans", $$.have.color = 0]
-Str@Font[$$.name = $]
-Real@Font[$$.size = $]
-Color@Font[$$.color = $, $$.have.color = 1]
-
-Font@Print[
-  color_part = Str[If[$.have.color], ", ", $.color]
-  "Font[.name=\"", $.name, "\", .size=", $.size, color_part, "]"
-]
-Font@Window.Text[$$.Font[$.name, $.size], If[$.have.color], $.color]
-
 Label = (Point ctr, size, Color c1, c2, Real rounding, Style s
          Str text, Font font
          (Int p, c, r, s, t, f) got_it)

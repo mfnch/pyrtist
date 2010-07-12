@@ -16,3 +16,17 @@ Real@Window.Text.Font "window_text_font_real" ?
 
 Window.Text.From = Void
 Point@Window.Text.From "window_text_from_point" ?
+
+// Adding a Font object. Much more convenient than the Window.Text.Font subtype
+Font = ++(Str name, Real size, Color color, (Int color,) have)
+(.[)@Font[$$.size = 4.2, $$.name = "sans", $$.have.color = 0]
+Str@Font[$$.name = $]
+Real@Font[$$.size = $]
+Color@Font[$$.color = $, $$.have.color = 1]
+
+Font@Print[
+  color_part = Str[If[$.have.color], ", ", $.color]
+  "Font[.name=\"", $.name, "\", .size=", $.size, color_part, "]"
+]
+Font@Window.Text[$$.Font[$.name, $.size], If[$.have.color], $.color]
+

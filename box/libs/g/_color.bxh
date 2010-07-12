@@ -10,7 +10,8 @@ Real@Color[$$.r = $$.g = $$.b = $]
 (Real r, g, b)@Color[$$.r = $.r, $$.g = $.g, $$.b = $.b]
 (Real r, g, b, a)@Color[$$.r = $.r, $$.g = $.g, $$.b = $.b, $$.a = $.a]
 
-Color@Print["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, ", .a=", $.a, "]"]
+Color@Str["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, ", .a=", $.a, "]"]
+Color@Print[Str[$]]
 
 // Definition of the Hsv version of Color
 HSV = ++(Real h, s, v, a)
