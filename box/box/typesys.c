@@ -752,8 +752,10 @@ BoxType TS_Procedure_Search(TS *ts, BoxType *expansion_type,
 }
 
 void TS_Procedure_Blacklist(TS *ts, BoxType child, BoxType parent) {
+#if 0
   MSG_ADVICE("TS_Procedure_Blacklist: blacklisting %~s@%~s.",
              TS_Name_Get(ts, child), TS_Name_Get(ts, parent));
+#endif
 }
 
 void TS_Procedure_Blacklist_Undo(TS *ts, BoxType child, BoxType parent) {

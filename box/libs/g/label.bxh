@@ -40,6 +40,12 @@ Font@Label[$$.font = $]
 
 //Style@&Label[]
 
+Label.Get = Point
+Point@Label.Get[
+  size = $$$.size, ctr = $$$.ctr
+  $$ = ctr + (($.x - 0.5)*size.x, ($.y - 0.5)*size.y)
+]
+
 Label@@Window[
   hs = $.size*0.5
   p1 = $.ctr - hs
@@ -48,6 +54,6 @@ Label@@Window[
   r1 = r*0.1, r2 = r*3
   g = Gradient[.Circle[$.ctr, r1; r2], $.c2, $.c1]
   \ $$.Poly[$.rounding, p1, (p1.x, p2.y), p2, (p2.x, p1.y), g, Style[.Border[color.black, 0.2]]]
-  [If[$.got_it.t], $$.Text[$.font, $.ctr, $.text, color.white]]
+  [If[$.got_it.t], $$.Text[$.font, $.ctr, $.text]]
 ]
 

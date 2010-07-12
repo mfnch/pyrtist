@@ -33,8 +33,8 @@ boxlib_LTLIBRARIES=libg.la
 
 dist_boxpkg_DATA=g.bxh _color.bxh _style.bxh _gradient.bxh _window.bxh \
                  _line.bxh _circle.bxh _poly.bxh _put.bxh arrows.bxh \
-                 electric.bxh _pointlist.bxh _text.bxh _matrix.bxh \
-                 _bbox.bxh bounce.bxh
+                 _pointlist.bxh _text.bxh _matrix.bxh _bbox.bxh \
+                 label.bxh bounce.bxh electric.bxh
 
 libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
                 bm1bit.c bm4bit.c bm8bit.c bitmap.h \
