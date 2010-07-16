@@ -17,4 +17,3 @@ X = Void
 X[]
 """
 test.expect(exit_status=0, num_errors=0, num_warnings=0, answer="(1, 2)")
-

@@ -108,7 +108,7 @@ int ps_font_get_info(const char *full_name,
   if (w == (FontWeight *) NULL) w = & dummy_w;
   if (name == (const char **) NULL) name = & dummy_name;
 
-  fd = ps_find_font(full_name, *s, *w);
+  fd = ps_find_font(full_name, FONT_SLANT_NORMAL, FONT_SLANT_NORMAL);
   if (fd == (struct ps_font_desc *) NULL) {
     *name = (const char *) NULL;
     return 0;
