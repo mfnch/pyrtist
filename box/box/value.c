@@ -1163,8 +1163,9 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
        */
       if (comparison == TS_TYPES_EXPAND) { /* need expansion */
         BoxType t_dst_memb, t_src_memb;
-        Value *v_dst = Value_New(src->proc), /* same proc as src */
-              *v_dst_memb = Value_New(src->proc),
+        CmpProc *cur_proc = src->proc->cmp->cur_proc;
+        Value *v_dst = Value_New(cur_proc),
+              *v_dst_memb = Value_New(cur_proc),
               *v_src_memb = Value_New(src->proc);
         Value_Setup_As_Temp(v_dst, t_dst);
         Value_Setup_As_Weak_Copy(v_dst_memb, v_dst);

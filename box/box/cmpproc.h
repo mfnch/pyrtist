@@ -103,10 +103,10 @@ struct _cmp_proc {
   RegAlloc      reg_alloc;   /**< Register allocator: keeps track of registers
                                   which are being used and of those which are
                                   not used.*/
-  BoxVMSymID    head_sym_id; /**< Symbol associated with the head block of
+  BoxVMSymID    head_sym_id, /**< Symbol associated with the head block of
                                   new instructions */
-  BoxVMSymID    sym;         /**< Symbol associated with the procedure */
-  BoxVMProcNum  proc_id;     /**< Proc. number (needed to write ASM to it) */
+                sym;         /**< Symbol associated with the procedure */
+  BoxVMProcID   proc_id;     /**< Proc. number (needed to write ASM to it) */
   char          *proc_name,  /**< Procedure name */
                 *alter_name; /**< Alternative name */
   BoxVMCallNum  call_num;    /**< Call number (needed to call it from ASM) */

@@ -731,6 +731,8 @@ static void My_Compile_UnOp(BoxCmp *c, ASTNode *n) {
   operand = BoxCmp_Pop_Value(c);
   if (Value_Want_Value(operand))
     v_result = BoxCmp_Opr_Emit_UnOp(c, n->attr.un_op.operation, operand);
+  else
+    Value_Unlink(operand);
 
   BoxCmp_Push_Value(c, v_result);
 }
@@ -791,8 +793,13 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
       result = My_Compile_Assignment(c, left, right);
 
     } else {
-      if (Value_Want_Value(left) && Value_Want_Value(right))
+      if (Value_Want_Value(left) & Value_Want_Value(right))
+        /* NOTE: ^^^ We use & rather than &&*/
         result = BoxCmp_Opr_Emit_BinOp(c, op, left, right);
+      else {
+        Value_Unlink(left);
+        Value_Unlink(right);
+      }  
     }
 
     BoxCmp_Push_Value(c, result);
@@ -993,7 +1000,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   My_Compile_Any(c, n->attr.proc_def.parent_type);
   v_parent = BoxCmp_Pop_Value(c);
 
-  no_err = Value_Want_Has_Type(v_child) && Value_Want_Has_Type(v_parent);
+  no_err = Value_Want_Has_Type(v_child) & Value_Want_Has_Type(v_parent);
   t_child = v_child->type;
   t_parent = v_parent->type;
   Value_Unlink(v_child);

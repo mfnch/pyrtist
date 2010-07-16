@@ -127,9 +127,9 @@ class Test:
     answer = []
     lines = output.splitlines()
     for line in lines:
-      if line.startswith("Error:"):
+      if line.startswith("Error"):
         num_errors += 1
-      elif line.startswith("Warning:"):
+      elif line.startswith("Warning"):
         num_warnings += 1
       elif line.startswith("answer"):
         answer.append(line.split('=', 1)[1])
