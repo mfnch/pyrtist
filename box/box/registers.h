@@ -46,6 +46,9 @@
 #  include "array.h"
 #  include "occupation.h"
 
+/** Register number (an alias for integer) */
+typedef BoxInt BoxVMRegNum;
+
 typedef struct {
   Int    chain; /**< Chain of released registers */
   Int    max;   /**< Total number of registers to allocate for variables */

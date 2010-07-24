@@ -17,3 +17,15 @@ X = Void
 X[]
 """
 test.expect(exit_status=0, num_errors=0, num_warnings=0, answer="(1, 2)")
+
+#----------------------------------------------------------------------------#
+test = tests.new_test(title="bug 3")
+test.body = """
+MyObject = (Str one, two)
+MyObject@MyObject[$$.one = $.two, $$.two = $.one]
+Struc = (MyObject my_object, Int a)
+(.[)@Struc[.my_object = MyObject[("two", "one")], .a = 1234]
+struc = Struc[]
+Print["answer=", struc.my_object.one, struc.my_object.two, struc.a;]
+"""
+test.expect(exit_status=0, num_errors=0, num_warnings=0, answer="onetwo1234")

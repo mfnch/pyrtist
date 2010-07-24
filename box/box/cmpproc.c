@@ -29,7 +29,6 @@
 #include "vmsymstuff.h"
 #include "container.h"
 #include "registers.h"
-#include "typesys.h"
 
 #include "cmpproc.h"
 #include "compiler.h"
@@ -43,6 +42,19 @@ static void My_Proc_Begin(CmpProc *p) {
   proc_id = CmpProc_Get_ProcID(p);
   previous_target = BoxVM_Proc_Target_Set(p->cmp->vm, proc_id);
   ASSERT_TASK(BoxVMSym_Assemble_Proc_Head(p->cmp->vm, & sym_id));
+
+  if (p->style == CMPPROCSTYLE_SUB) {
+    /* If this is a subprocedure then we need to get parent and child
+     * from global registers and put them into local registers, so they can
+     * be utilised later.
+     */
+    if (p->have.parent)
+      p->reg_parent = Reg_Occupy(& p->reg_alloc, BOXTYPE_PTR);
+
+    if (p->have.child)
+      p->reg_child = Reg_Occupy(& p->reg_alloc, BOXTYPE_PTR);
+  }
+
   (void) BoxVM_Proc_Target_Set(p->cmp->vm, previous_target);
 
   p->have.head = 1;
@@ -79,13 +91,14 @@ static void My_Proc_End(CmpProc *p) {
 void CmpProc_Init(CmpProc *p, BoxCmp *c, CmpProcStyle style) {
   p->style = style;
   p->cmp = c;
+  p->have.parent = 0;
+  p->have.child = 0;
   p->have.reg_alloc = 0;
   p->have.sym = 0;
   p->have.proc_id = 0;
   p->have.proc_name = 0;
   p->have.alter_name = 0;
   p->have.call_num = 0;
-  p->have.type = 0;
   p->have.wrote_beg = 0;
   p->have.wrote_end = 0;
   p->have.head = 0;
@@ -145,6 +158,44 @@ void CmpProc_End(CmpProc *p) {
     p->ending(p);
     p->have.wrote_end = 1;
   }
+}
+
+void CmpProc_Set_Prototype(CmpProc *p, int have_child, int have_parent) {
+  if (p->have.wrote_beg) {
+    MSG_WARNING("CmpProc_Set_Prototype: cannot change the prototype for "
+                "the procedure: the procedure has been already generated!");
+
+  } else if (p->style != CMPPROCSTYLE_SUB) {
+    MSG_WARNING("CmpProc_Set_Prototype: the prototype can be set only for "
+                "CMPPROCSTYLE_SUB.");
+  }
+
+  p->have.parent = have_parent;
+  p->have.child = have_child;
+}
+
+BoxVMRegNum CmpProc_Get_Parent_Reg(CmpProc *p) {
+  if (!p->have.wrote_beg)
+    CmpProc_Begin(p);
+
+  if (p->have.parent)
+    return p->reg_parent;
+
+  MSG_FATAL("CmpProc_Get_Parent_Reg: procedure does not have the parent.");
+  assert(0);
+  return 0;
+}
+
+BoxVMRegNum CmpProc_Get_Child_Reg(CmpProc *p) {
+  if (!p->have.wrote_beg)
+    CmpProc_Begin(p);
+
+  if (p->have.child)
+    return p->reg_child;
+
+  MSG_FATAL("CmpProc_Get_Child_Reg: procedure does not have the child.");
+  assert(0);
+  return 0;
 }
 
 void CmpProc_Set_Name(CmpProc *p, const char *proc_name) {

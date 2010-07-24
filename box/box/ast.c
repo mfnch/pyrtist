@@ -401,11 +401,12 @@ ASTNode *ASTNodeBox_Add_Statement(ASTNode *box, ASTNode *statement) {
 }
 
 ASTNode *ASTNodeBox_Add_Sep(ASTNode *box, ASTSep sep) {
-  ASTNode *sep_node = ASTNodeSep_New(sep);
   if (sep == ASTSEP_VOID)
     return box;
-  else
+  else {
+    ASTNode *sep_node = ASTNodeSep_New(sep);
     return ASTNodeBox_Add_Statement(box, sep_node);
+  }
 }
 
 ASTNode *ASTNodeBox_Set_Parent(ASTNode *box, ASTNode *parent) {

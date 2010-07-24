@@ -79,16 +79,17 @@ typedef void (*CmpProcEnd)(CmpProc *p);
 struct _cmp_proc {
   struct {
     unsigned int
+               parent     :1,  /**< The procedure has a parent */
+               child      :1,  /**< The procedure has a child */
                reg_alloc  :1,  /**< it has automatic register allocation */
                sym        :1,  /**< the procedure has an associated symbol */
                proc_id    :1,  /**< the procedure has a procedure number */
                proc_name  :1,  /**< it has a name */
                alter_name :1,  /**< has an alternative name */
                call_num   :1,  /**< it has a call number */
-               type       :1,  /**< it has a type */
                wrote_beg  :1,  /**< CmpProc->beginning has been called */
                wrote_end  :1,  /**< CmpProc->ending has been called */
-               head       :1;  /**< Head instructions new have been emitted */
+               head       :1;  /**< Head new-instructions have been emitted */
   } have;
   struct {
     unsigned int
@@ -110,6 +111,8 @@ struct _cmp_proc {
   char          *proc_name,  /**< Procedure name */
                 *alter_name; /**< Alternative name */
   BoxVMCallNum  call_num;    /**< Call number (needed to call it from ASM) */
+  BoxVMRegNum   reg_parent,  /**< Register number for the parent */
+                reg_child;   /**< Register number for the child */
 };
 
 /** Initialise a CmpProc object in the memory region pointed by p.
@@ -137,6 +140,23 @@ void CmpProc_Begin(CmpProc *p);
 /** Finalise the code in the procedure, coherently with the procedure style.
  */
 void CmpProc_End(CmpProc *p);
+
+/** Set the prototype for the procedure. The prototype must be set for
+ * procedures of type CMPPROCSTYLE_SUB in order to be able to use the methods
+ * CmpProc_Get_Child_Reg and CmpProc_Get_Parent_Reg.
+ * @see CmpProc_Get_Child_Reg, CmpProc_Get_Parent_Reg
+ */
+void CmpProc_Set_Prototype(CmpProc *p, int have_child, int have_parent);
+
+/** Get the VM-register for the parent (a fatal error occurs if the procedure
+ * hasn't got a parent).
+ */
+BoxVMRegNum CmpProc_Get_Parent_Reg(CmpProc *p);
+
+/** Get the VM-register for the child (a fatal error occurs if the procedure
+ * hasn't got a child).
+ */
+BoxVMRegNum CmpProc_Get_Child_Reg(CmpProc *p);
 
 /** Provides a name for the procedure (necessary for CMPPROCSTYLE_EXTERN)
  * This is usually the C name of the procedure.
