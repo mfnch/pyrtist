@@ -48,11 +48,19 @@ static void My_Proc_Begin(CmpProc *p) {
      * from global registers and put them into local registers, so they can
      * be utilised later.
      */
-    if (p->have.parent)
+    if (p->have.parent) {
       p->reg_parent = Reg_Occupy(& p->reg_alloc, BOXTYPE_PTR);
+      BoxVM_Assemble(p->cmp->vm, BOXOP_MOV_OO,
+                     BOXOPCAT_LREG, p->reg_parent,
+                     BOXOPCAT_GREG, (BoxInt) 1);
+    }
 
-    if (p->have.child)
+    if (p->have.child) {
       p->reg_child = Reg_Occupy(& p->reg_alloc, BOXTYPE_PTR);
+      BoxVM_Assemble(p->cmp->vm, BOXOP_MOV_OO,
+                     BOXOPCAT_LREG, p->reg_child,
+                     BOXOPCAT_GREG, (BoxInt) 2);
+    }
   }
 
   (void) BoxVM_Proc_Target_Set(p->cmp->vm, previous_target);
@@ -203,7 +211,7 @@ void CmpProc_Set_Name(CmpProc *p, const char *proc_name) {
     BoxMem_Free(p->proc_name);
   p->proc_name = BoxMem_Strdup(proc_name);
   p->have.proc_name = 1;
-  
+
   if (p->have.sym) {
     if (BoxVMSym_Get_Name(p->cmp->vm, p->sym) != NULL) {
       MSG_FATAL("Cannot set the name: procedure symbol has already been "

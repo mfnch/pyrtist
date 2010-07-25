@@ -462,7 +462,7 @@ static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
   Value *parent_type;
   const char *name = p->attr.subtype.name;
   BoxType new_subtype = BOXTYPE_NONE;
- 
+
   assert(p->type == ASTNODETYPE_SUBTYPE);
   assert(p->attr.subtype.parent != NULL);
 
@@ -486,7 +486,7 @@ static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
         MSG_ERROR("Cannot build subtype '%s' of undefined subtype '%~s'.",
                   name, TS_Name_Get(ts, pt));
       }
-      
+
     } else {
       new_subtype = TS_Subtype_Find(ts, pt, name);
       if (new_subtype == BOXTYPE_NONE)
@@ -799,7 +799,7 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
       else {
         Value_Unlink(left);
         Value_Unlink(right);
-      }  
+      }
     }
 
     BoxCmp_Push_Value(c, result);
@@ -964,7 +964,7 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
     promote_to_target = 1;
   }
 
-  if (v_self == NULL) {    
+  if (v_self == NULL) {
     MSG_ERROR("%s not defined in the current scope.", n_self);
 
   } else {
@@ -1087,6 +1087,10 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     /* We change target of the compilation to the new procedure */
     c->cur_proc = & proc_implem;
 
+    /* Specify the prototype for the procedure */
+    CmpProc_Set_Prototype(& proc_implem, t_child != BOXTYPE_NONE,
+                          t_parent != BOXTYPE_NONE);
+
     /* If this is a creator then we should automatically insert some code at
      * the beginning to initialise the stuff the user is not responsible of.
      * For example, if X = (Int a, Str b, Real c) then (.[)@X should start
@@ -1175,7 +1179,7 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
             MSG_ERROR("Inconsistent redefinition of type '%~s': was '%~s' "
                       "and is now '%~s'", TS_Name_Get(ts, v_name->type),
                       TS_Name_Get(ts, ot), TS_Name_Get(ts, v_type->type));
-          
+
         } else {
           (void) TS_Subtype_Register(ts, t, v_type->type);
           /* ^^^ ignore state of success of operation */

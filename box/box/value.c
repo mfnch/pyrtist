@@ -311,7 +311,7 @@ void Value_Setup_As_String(Value *v_str, const char *str) {
   Value_Setup_Container(& v_str_data, BOXTYPE_OBJ, & vc);
 
   Value_Setup_As_Temp(v_str, c->bltin.string);
-  
+
   Value_Unlink(Value_Emit_Call(v_str, & v_str_data, & success));
   if (success != BOXTASK_OK) {
     MSG_FATAL("Value_Setup_As_String: Failure while emitting string.");
@@ -791,7 +791,7 @@ Value *Value_Cast_To_Ptr(Value *v) {
     if (v->num_ref > 1) {
       MSG_FATAL("Value_Cast_To_Ptr: not implemented, yet!");
       return v;
-       
+
     } else {
       assert(v->num_ref == 1);
       assert(v->value.cont.categ == BOXCONTCATEG_LREG
@@ -850,7 +850,7 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
  */
 Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
   BoxCont *cont;
- 
+
   if (v_obj->num_ref > 1) {
     /* Here we cannot re-use the register, we have to copy it to a new one */
     BoxCmp *c = v_obj->proc->cmp;
@@ -1206,6 +1206,7 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
   return NULL;
 }
 
+#if 0
 void My_Setup_From_Gro(Value *v, BoxType t, BoxInt gro_num) {
   BoxCmp *c = v->proc->cmp;
   TS *ts = & c->ts;
@@ -1227,13 +1228,36 @@ void My_Setup_From_Gro(Value *v, BoxType t, BoxInt gro_num) {
     v->kind = VALUEKIND_TARGET;
   }
 }
+#endif
+
+void My_Family_Setup(Value *v, BoxType t,
+                     int is_parent) {
+  BoxCmp *c = v->proc->cmp;
+  TS *ts = & c->ts;
+
+  assert(v->proc == c->cur_proc);
+
+  if (!TS_Is_Empty(ts, t)) {
+    CmpProc *p = v->proc->cmp->cur_proc;
+    BoxVMRegNum ro_num =
+      is_parent ? CmpProc_Get_Parent_Reg(p) : CmpProc_Get_Child_Reg(p);
+    ValContainer vc = {VALCONTTYPE_LREG, ro_num, 0};
+    Value_Setup_Container(v, BOXTYPE_PTR, & vc);
+    v = Value_Cast_From_Ptr(v, t);
+    v->kind = VALUEKIND_TARGET;
+
+  } else {
+    Value_Setup_As_Temp(v, t);
+    v->kind = VALUEKIND_TARGET;
+  }
+}
 
 void Value_Setup_As_Parent(Value *v, BoxType parent_t) {
-  return My_Setup_From_Gro(v, parent_t, 1);
+  return My_Family_Setup(v, parent_t, /* is_parent */ 1);
 }
 
 void Value_Setup_As_Child(Value *v, BoxType child_t) {
-  return My_Setup_From_Gro(v, child_t, 2);
+  return My_Family_Setup(v, child_t, /* is_parent */ 0);
 }
 
 static Value *My_Get_Ptr_To_New_Value(CmpProc *proc, BoxType t) {
@@ -1310,7 +1334,7 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
     (void) Value_Move_Content(v_ptr, v_subtype_child);
     Value_Unlink(v_ptr);
   }
- 
+
   /* We now create the value for the parent Pointer in the subtype */
   if (!TS_Is_Empty(ts, v_parent->type)) {
     Value *v_subtype_parent = Value_New(c->cur_proc),
