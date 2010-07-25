@@ -1112,8 +1112,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
      * destroy composite objects.
      */
     if (TS_Is_Special(t_child) == BOXTYPE_DESTROY) {
-      /*(void) Auto_Generate_Code(c, t_child, t_parent);*/
-      // XXX doesn't work at the moment!
+      (void) Auto_Generate_Code(c, t_child, t_parent);
     }
 
     c->cur_proc = save_cur_proc;

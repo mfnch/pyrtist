@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 /* Questo file contiene la funzioni che eseguono le istruzioni della macchina
  * virtuale (spesso denotata con VM).
  * Questo file e' incluso direttamente dal file "virtmach.c"
