@@ -1088,8 +1088,9 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     c->cur_proc = & proc_implem;
 
     /* Specify the prototype for the procedure */
-    CmpProc_Set_Prototype(& proc_implem, t_child != BOXTYPE_NONE,
-                          t_parent != BOXTYPE_NONE);
+    CmpProc_Set_Prototype(& proc_implem,
+                          !TS_Is_Empty(& c->ts, t_child),
+                          !TS_Is_Empty(& c->ts, t_parent));
 
     /* If this is a creator then we should automatically insert some code at
      * the beginning to initialise the stuff the user is not responsible of.
