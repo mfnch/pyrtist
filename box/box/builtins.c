@@ -149,7 +149,7 @@ static Task My_Math_Abs(BoxVM *vm) {
 }
 
 static Task My_Math_Norm(BoxVM *vm) {
-  Point *p = BOX_VM_ARGPTR1(vm, Point);  
+  Point *p = BOX_VM_ARGPTR1(vm, Point);
   BOX_VM_CURRENT(vm, Real) = sqrt(p->x*p->x + p->y*p->y);
   return Success;
 }
@@ -210,8 +210,21 @@ static Task My_Exit_Int(BoxVM *vm) {
   exit(BOX_VM_ARG(vm, Int));
 }
 
+static Task My_Fail_Clear_Msg(BoxVM *vm) {
+  BoxVM_Set_Fail_Msg(vm, (char *) NULL);
+  return BOXTASK_OK;
+}
+
 static Task My_Fail(BoxVM *vm) {
   return BOXTASK_FAILURE;
+}
+
+static Task My_Fail_Msg(BoxVM *vm) {
+  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
+  char *msg = BoxStr_To_C_String(s);
+  BoxVM_Set_Fail_Msg(vm, msg);
+  BoxMem_Free(msg);
+  return BOXTASK_OK;
 }
 
 /*****************************************************************************
@@ -677,9 +690,12 @@ static void My_Register_Math(BoxCmp *c) {
 }
 
 static void My_Register_Sys(BoxCmp *c) {
+  BoxType fail_t = Bltin_Simple_Fn_Def(c, "Fail", BOXTYPE_VOID,
+                                       c->bltin.string, My_Fail_Msg);
+  (void) Bltin_Proc_Def(c, fail_t, BOXTYPE_BEGIN, My_Fail_Clear_Msg);
+  (void) Bltin_Proc_Def(c, fail_t, BOXTYPE_END, My_Fail);
   (void) Bltin_Simple_Fn_Def(c, "Exit", BOXTYPE_VOID, c->bltin.species_int,
                              My_Exit_Int);
-  (void) Bltin_Simple_Fn_Def(c, "Fail", BOXTYPE_VOID, BOXTYPE_END, My_Fail);
 }
 
 /* Register bultin types, operation and functions */

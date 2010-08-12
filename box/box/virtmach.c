@@ -152,7 +152,7 @@ static void *My_Get_Arg_Ptrs(VMStatus *vmcur, int kind, Int n) {
 
   } else if (kind == 2) {
     return *((void **) vmcur->local[TYPE_OBJ].ptr) + n;
-    
+
   } else {
     register BoxType t = vmcur->idesc->t_id;
     static Int i = 0;
@@ -488,6 +488,8 @@ Task BoxVM_Init(BoxVM *vm) {
   BoxArr_Init(& vm->data_segment, sizeof(char), CMP_TYPICAL_DATA_SIZE);
   BoxArr_Init(& vm->backtrace, sizeof(BoxVMTrace), 32);
 
+  vm->fail_msg = (char *) NULL;
+
   if (BoxArr_Is_Err(& vm->stack) || BoxArr_Is_Err(& vm->data_segment))
     return Failed;
 
@@ -522,6 +524,9 @@ void BoxVM_Finish(BoxVM *vm) {
   BoxArr_Finish(& vm->data_segment);
   BoxArr_Finish(& vm->backtrace);
 
+  if (vm->fail_msg != NULL)
+    BoxMem_Free(vm->fail_msg);
+
   BoxVM_Alloc_Destroy(vm);
   BoxVMSymTable_Finish(& vm->sym_table);
   BoxVM_Proc_Finish(vm);
@@ -544,6 +549,12 @@ void BoxVM_Destroy(BoxVM *vm) {
   if (vm == NULL) return;
   BoxVM_Finish(vm);
   BoxMem_Free(vm);
+}
+
+void BoxVM_Set_Fail_Msg(BoxVM *vm, const char *msg) {
+  if (vm->fail_msg != NULL)
+    BoxMem_Free(vm->fail_msg);
+  vm->fail_msg = (msg != NULL) ? BoxMem_Strdup(msg) : NULL;
 }
 
 BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op) {
@@ -729,7 +740,7 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
     BoxVMTrace *trace = BoxArr_Push(& vmp->backtrace, NULL);
     trace->call_num = call_num;
     trace->vm_pos = (void *) vm.i_pos - (void *) i_pos0;
-  } 
+  }
 
   /* Delete the registers allocated with the 'new*' instructions */
   {
@@ -1246,5 +1257,7 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream) {
       }
     }
   }
-}
 
+  if (vm->fail_msg != NULL)
+    fprintf(stream, "Failure: %s\n", vm->fail_msg);
+}

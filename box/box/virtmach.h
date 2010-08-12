@@ -326,6 +326,7 @@ struct __vmprogram {
             op_table;
 
   BoxArr    backtrace;    /**< Information about error location */
+  char      *fail_msg;    /**< Failure message */
 
   BoxUInt   dasm_pos;     /**< Position in num. of read bytes for the disassembler */
 
@@ -410,6 +411,9 @@ BoxVM *BoxVM_New(void);
  * @see BoxVM_New
  */
 void BoxVM_Destroy(BoxVM *vm);
+
+/** Provide a failure message for a raised exception. */
+void BoxVM_Set_Fail_Msg(BoxVM *vm, const char *msg);
 
 /** Specifies the number of global registers and variables used by the BoxVM.
  */
