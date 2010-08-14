@@ -1,0 +1,40 @@
+
+include "g"
+
+Grid = ++(Point from, to, Int nx, ny, (Int p, i) have)
+
+([)@Grid[.nx = .ny = 10, .from = (0, 0), .to = (100, 100), .have.i = .have.p = 0]
+
+Point@Grid[
+  [If[$$.have.p == 0], $$.from = $]
+  [If[$$.have.p == 1], $$.to = $]
+  $$.have.p += 1
+]
+
+Int@Grid[
+  [If[$$.have.i == 0], $$.nx = $]
+  [If[$$.have.i == 1], $$.ny = $]
+  $$.have.i += 1
+]
+
+Grid@Window[
+  s = Style[.Fill["void"], .Border[color.black, 0.5]]
+  d = $.to - $.from, dx = d.x/$.nx, dy = d.y/$.ny
+
+  p1 = $.from, p2 = Point[p1, .y=$.to.y]
+  i = 0, n = $.nx
+  [\ $$.Poly[s, p1, p2], p1.x += dx, p2.x = p1.x, For[i++ < n]]
+
+  p1 = $.from, p2 = Point[p1, .x=$.to.x]
+  i = 0, n = $.ny
+  [ \ $$.Poly[s, p1, p2], p1.y += dy, p2.y = p1.y, For[i++ < n]]
+]
+
+Grid.GetCellSize = Point
+([)@Grid.GetCellSize[d = $$$.to - $$$.from, $$ = (d.x/$$$.nx, d.y/$$$.ny)]
+
+Grid.GetNX = Int, ([)@Grid.GetNX[$$ = $$$.nx]
+Grid.GetNY = Int, ([)@Grid.GetNY[$$ = $$$.ny]
+Grid.GetSize = Point, ([)@Grid.GetSize[$$ = $$$.to - $$$.from]
+Grid@BBox[$.from, $.to]
+

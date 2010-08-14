@@ -37,6 +37,7 @@ Str@Window.File "window_file_string" ?
 
 Window.Show = Void
 Point@Window.Show "window_show_point" ?
+BBox@Window.Show[\ $$[If[$.n & 1], $.min], \ $$[If[$.n & 2], $.max]]
 
 // Teach BBox how to deal with Window
 Window@BBox "window_bbox" ?
