@@ -30,7 +30,8 @@ Interval@Print[
 // Define a progress bar
 GUIReal = (Real value, Interval interval
            Point pos, size, cursor
-           Font font, Str label)
+           Font font, Str label
+           (Color bg, fg1, fg2) color)
 
 // The default parameters for the bar
 ([)@GUIReal[
@@ -38,7 +39,11 @@ GUIReal = (Real value, Interval interval
   .size = bar_defaults.size
   bar_defaults.pos += bar_defaults.spacing
   .font = Font[color.black]
+  .color.fg2 = .color.fg1 = bar_defaults.fg
+  .color.bg = bar_defaults.bg
 ]
+
+Color@GUIReal[.color.fg1 = $, .color.fg2 = Color[$, .Darker[0.5]]]
 
 Interval@GUIReal[.interval = $]
 
@@ -59,10 +64,10 @@ GUIReal@@Window[
   qx = $.cursor.x - p.x
 
   qx = Min[sx, Max[0, qx]]
-  \ .Poly[p, (px+sx, py), p+s, (px, py+sy), bar_defaults.bg]
+  \ .Poly[p, (px+sx, py), p+s, (px, py+sy), $.color.bg]
 
   \ .Poly[Gradient[.Line[p, (px, py+sy)]
-          bar_defaults.fg, color.white, bar_defaults.fg]
+          $.color.fg2, color.white, $.color.fg1]
           p, (px+qx, py), (px+qx, py+sy), (px, py+sy)]
   \ .Poly[Style[.Fill["void"], .Border[color.black, 0.5]]
           p, (px+sx, py), p+s, (px, py+sy), .Close[]]

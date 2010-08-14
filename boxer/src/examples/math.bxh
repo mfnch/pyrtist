@@ -1,0 +1,17 @@
+// Scalar product between points
+(Point a, b)@Real[$$ = $.a.x*$.b.x + $.a.y*$.b.y]
+
+// Notion of segment: just a couple of points
+Segment = (Point p1, p2)
+
+// Intersection between lines (containing two segments)
+Intersection = Point
+(Segment s1, s2)@Intersection[
+  // p = (a1 a12*ob12 - (a2 - a1) a1*ob12 + a12 b1*ob12) / a12*ob12
+  a1 = $.s1.p1, a2 = $.s1.p2, b1 = $.s2.p1, b2 = $.s2.p2
+  a12 = a2 - a1, b12 = b2 - b1, ob12 = Point[.x=b12.y, .y=-b12.x]
+  denom = Real[(ob12, a12)]
+  [If[denom == 0], Fail["Intersection not found: "_
+                        "segments are parallel"]]
+  $$ = a1 + a12 * (Real[(ob12, b1 - a1)]/denom)
+]

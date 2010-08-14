@@ -1,0 +1,92 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+//!BOXER:REFPOINTS:BEGIN
+bbox1 = Point[.x=-39.8689067734, .y=65.8780625424]
+bbox2 = Point[.x=146.843632129, .y=-72.3863575296]
+fg1 = Point[.x=25.9196635922, .y=-64.5110530769]
+fg2 = Point[.x=127.536394984, .y=-65.2736212928]
+bg1 = Point[.x=57.1668084951, .y=-17.4345117773]
+bg2 = Point[.x=133.379357039, .y=-17.7444020484]
+gui1 = Point[.x=-35.0423175368, .y=-17.7413972927]
+gui2 = Point[.x=-9.13119062918, .y=-14.9456086294]
+gui3 = Point[.x=12.9694764391, .y=-9.09986869712]
+gui4 = Point[.x=13.9855990629, .y=-2.49164094755]
+gui5 = Point[.x=9.9211085676, .y=3.35409898477]
+//!BOXER:REFPOINTS:END
+include "math"
+include "tools"
+
+w = Window[][
+  .Show[bbox1, bbox2]
+
+  // Colors of the planes
+  c1 = Color[(1, 1, 0)]
+  c2 = Color[(1, 0, 0)]
+  c3 = Color[(0, 1, 0)]
+  c4 = Color[(0, 0, 1)]
+
+  // Some controls to let you have some fun!
+  bar_defaults.pos = gui1
+  (plane1 = GUIReal[Interval[0, 1], gui2, c1])
+  (plane2 = GUIReal[Interval[0, 1], gui3, c2])
+  (plane3 = GUIReal[Interval[0, 1], gui4, c3])
+  (plane4 = GUIReal[Interval[0, 1], gui5, c4])
+  c1.a = plane1.value,  c2.a = plane2.value
+  c3.a = plane3.value, c4.a = plane4.value
+
+  s = Style[.Fill["void"], .Border[color.black, 0.5]]
+  s1 = Style[.Border[color.black, 0.5]]
+
+  fg2.y = fg1.y
+  lx = Point[fg2 - fg1]
+  ly = Point[.x=0, .y=lx.x]
+  fg3 = fg1 + ly, fg4 = fg2 + ly
+
+  bg2.y = bg1.y
+  lx = Point[bg2 - bg1]
+  ly = Point[.x=0, .y=lx.x]
+  bg3 = bg1 + ly, bg4 = bg2 + ly
+
+  center = Intersection[((fg1, bg4), (fg3, bg2))]
+  down = Intersection[((fg1, bg2), (bg1, fg2))]
+  up = Intersection[((fg3, bg4), (bg3, fg4))]
+  front = Intersection[((fg1, fg4), (fg2, fg3))]
+  rear = Intersection[((bg1, bg4), (bg2, bg3))]
+  
+  .Circle[2, color.black, bg1; bg2; bg3; bg4]
+
+  \ .Poly[c4, s1, bg2, rear, center]  
+  \ .Poly[c3, s1, bg4, rear, center]
+  \ .Poly[c3, s1, bg1, rear, center]
+  \ .Poly[c1, s1, bg2, down, center]
+  \ .Poly[c4, s1, fg2, center, bg2]
+  \ .Poly[c1, s1, bg2, center, bg4]
+  \ .Poly[c4, s1, bg3, rear, center]
+  \ .Poly[c2, s1, bg1, center, bg3]
+  \ .Poly[c2, s1, fg2, center, fg4]
+  \ .Poly[c2, s1, bg1, down, center]
+  \ .Poly[c2, s1, fg2, down, center]
+  \ .Poly[c1, s1, bg4, up, center]
+  \ .Poly[c3, s1, fg1, center, bg1]
+  \ .Poly[c3, s1, fg4, center, bg4]
+  \ .Poly[c2, s1, bg3, up, center]
+  \ .Poly[c4, s1, fg3, center, bg3]
+  \ .Poly[c2, s1, fg4, up, center]
+  \ .Poly[c1, s1, fg1, center, fg3]
+  \ .Poly[c1, s1, fg1, down, center]
+  \ .Poly[c1, s1, fg3, up, center]
+  \ .Poly[c4, s1, fg2, front, center]
+  \ .Poly[c3, s1, fg1, front, center]
+  \ .Poly[c3, s1, fg4, front, center]
+  \ .Poly[c4, s1, fg3, front, center]
+
+  .Circle[3, color.black, fg1; fg2; fg3; fg4]
+]
+
+GUI[w]
+  
