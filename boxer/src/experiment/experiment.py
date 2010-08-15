@@ -52,7 +52,6 @@ class CoordRect(object):
 
 
 
-# Fake Box image output
 class BoxImageOutput(object):
   def __init__(self):
     self.size = Size(100.0, 50.0) # Box coordinates
@@ -70,11 +69,59 @@ class BoxImageOutput(object):
         """
     pass
 
+# Fake Box image output
+class FakeBoxImageOutput(object):
+  def __init__(self):
+    self.size = Size(100.0, 50.0) # Box coordinates
+
+  def update(self, pixbuf_output, pix_size, coord_view=None):
+    # Clear the pixbuf
+    pixbuf_output.fill(0)
+
+    # First let's determine the coordinate mapping
+    lx, ly = (pix_size.x, pix_size.y)
+    if coord_view == None:
+      image_aspect = float(self.size.y)/self.size.x
+      view_aspect = float(ly)/lx
+      if image_aspect > view_aspect:
+        # fill vertically
+        zoom = ly/self.size.y
+      else:
+        # fill horizontally
+        zoom = lx/self.size.x
+
+      def coord2pix(cx, cy):
+        return (int(cx*zoom), int(cy*zoom))
+
+    else:
+      v1x = coord_view.corner1.x, c1y = coord_view.corner1.y
+      v2x = coord_view.corner2.x, c2y = coord_view.corner2.y
+
+      def coord2pix(cx, cy):
+        px, py = ((cx - v2x)*lx/(v1x - v2x), (cy - v2y)*ly/(v1y - v2y))
+        return (int(min(lx, max(0.0, px))),
+                int(min(ly, max(0.0, py))))
+
+    dx, dy = (self.size.x/10.0, self.size.y/10.0)
+    for ix in range(10):
+      for iy in range(10):
+        color = 0x10000*(ix + 1)*25 + 0x100*(iy + 1)*25
+        p1x, p1y = coord2pix(ix*dx, iy*dy)
+        p2x, p2y = coord2pix(ix*dx + dx, iy*dy + dy)
+        px, py = p1x, p1y
+        wx, wy = p2x - p1x, p2y - p1y
+        subbuf = pixbuf_output.subpixbuf(px, py, wx, wy)
+        subbuf.fill(0)
+        subbuf = pixbuf_output.subpixbuf(px + 1 , py + 1, wx - 2, wy - 2)
+        subbuf.fill(color)
+
+
+
 class BoxImageView(gtk.DrawingArea):
   def __init__(self):
     gtk.DrawingArea.__init__(self)
-    self.back_width = 200
-    self.back_height = 400
+    self.back_width = 2000
+    self.back_height = 1000
     self.frame = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8,
                                 self.back_width, self.back_height)
 
@@ -88,22 +135,27 @@ class BoxImageView(gtk.DrawingArea):
     self.connect("expose_event", self.expose_cb)
     self.connect("scroll_adjustment", self.scroll_adjustment)
 
+    self.drawer = FakeBoxImageOutput()
+
   def scroll_adjustment(self, a, b, c):
     print a, b, c
 
   def get_hadjustment(self):
-    return gtk.Adjustment(value=50, lower=10, upper=60, step_incr=10,
-                          page_incr=50, page_size=200)
+    return gtk.Adjustment(value=50.0, lower=0.0, upper=150.0, step_incr=10.0,
+                          page_incr=50.0, page_size=50.0)
 
   def get_vadjustment(self):
-    return gtk.Adjustment(value=50, lower=10, upper=60, step_incr=10,
-                          page_incr=50, page_size=200)
+    return gtk.Adjustment(value=50.0, lower=0.0, upper=150.0, step_incr=10.0,
+                          page_incr=50.0, page_size=50.0)
 
   def set_hadjustment(self, adjustment):
     pass
 
   def set_vadjustment(self, adjustment):
     pass
+
+  hadjustment = property(get_hadjustment, set_hadjustment)
+  vadjustment = property(get_vadjustment, set_vadjustment)
 
   def set_shadow_type(self, shadow_type):
     pass
@@ -113,13 +165,16 @@ class BoxImageView(gtk.DrawingArea):
 
   def expose_cb(self, draw_area, event):
     ''' Expose callback for the drawing area. '''
+
     print "expose_cb: entering"
     rowstride = self.frame.get_rowstride()
 
     # FIXME: what should be the result, string guchar an integer result?
     #pixels = frame.get_pixels() + rowstride * event.area.y + event.area.x * 3
     #pixels = frame.get_pixels()[len(frame.get_pixels()) + rowstride * event.area.y + event.area.x * 3]
+    self.drawer.update(self.frame, PixSize(event.area.width, event.area.height))
     pixels = self.frame.get_pixels()
+    dir(draw_area.style)
 
     draw_area.window.draw_rgb_image(
         draw_area.style.black_gc,
