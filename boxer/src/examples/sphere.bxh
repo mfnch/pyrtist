@@ -1,0 +1,19 @@
+Sphere = (Point center, Real radius, Color c1, c2, c3)
+Point@Sphere[$$.center = $]
+Real@Sphere[$$.radius = $]
+Color@Sphere[$$.c2 = $, $$.c1.a = $$.c3.a = $$.c2.a]
+([)@Sphere[
+  $$.center = (0, 0), $$.radius = 3
+  $$.c1 = color.white
+  $$.c2 = color.white
+  $$.c3 = color.black
+]
+
+Sphere@Sphere[$$ = $]
+
+Sphere@Window[
+  g = Gradient[.Circle[$.center + $.radius*(-0.2, 0.2), 0; $.radius]
+               $.c1, 0.4, $.c2, $.c3]
+  \ .Circle[$.center, $.radius, g]
+]
+

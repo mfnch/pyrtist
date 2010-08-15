@@ -31,6 +31,9 @@ class Config:
 config = Config()
 
 
+
+
+
 class Position(object):
   def __init__(self, x, y):
     self.x = x
@@ -41,13 +44,30 @@ class Size(Position): pass
 class CoordSize(Size): pass
 class PixSize(Size): pass
 
+class CoordRect(object):
+  def __init__(self, corner1, corner2):
+    self.corner1 = corner1
+    self.corner2 = corner2
+
+
+
 
 # Fake Box image output
 class BoxImageOutput(object):
   def __init__(self):
     self.size = Size(100.0, 50.0) # Box coordinates
 
-  def update(self, coord_top_left, coord_bot_right):
+  def update(self, pixbuf_output, pix_view, coord_view=None):
+    """This function is called by BoxImageView to update the view (redraw the
+    picture). There are two possibilities:
+     1. coord_view is not provided. The function knows how many pixel (in both
+        x and y directions) are available and has to draw the picture in the
+        best possible way in the available space (possibly, increasing the
+        image size until the picture hits one of the boundaries);
+     2. coord_view is provided. The function has to draw just the provided
+        coordinate view of the picture, producing an output filling the whole
+        pix_view.
+        """
     pass
 
 class BoxImageView(gtk.DrawingArea):
@@ -58,17 +78,17 @@ class BoxImageView(gtk.DrawingArea):
     self.frame = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8,
                                 self.back_width, self.back_height)
 
-    gobject.signal_new("xxx", self.__class__,
+    gobject.signal_new("scroll_adjustment", self.__class__,
                        gobject.SIGNAL_RUN_LAST,
                        gobject.TYPE_NONE,
                        (gtk.Adjustment, gtk.Adjustment))
 
-    self.set_set_scroll_adjustments_signal("xxx")
+    self.set_set_scroll_adjustments_signal("scroll_adjustment")
 
     self.connect("expose_event", self.expose_cb)
-    self.connect("xxx", self.xxx)
+    self.connect("scroll_adjustment", self.scroll_adjustment)
 
-  def xxx(self, a, b, c):
+  def scroll_adjustment(self, a, b, c):
     print a, b, c
 
   def get_hadjustment(self):
