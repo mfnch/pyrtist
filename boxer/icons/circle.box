@@ -16,7 +16,7 @@ gui6 = Point[.x=53.3119162437, .y=48.7203782313]
 include "grid"
 include "icon_theme"
 
-grid = Grid[(0, 0), (100, 100), 32, 32]
+grid = Grid[(0, 0), (100, 100), icon_size.nx, icon_size.ny]
 cell = grid.GetCellSize[]
 lw = width*cell.x
 
@@ -31,4 +31,4 @@ w = Window[][grid, icon]
 GUI[w]
 
 res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
-icon.Save["circle.png", Window["rgb24", .Res[res]]]
+icon.Save["circle.png", Window["argb32", .Res[res]]]

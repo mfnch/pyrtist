@@ -18,7 +18,7 @@ gui8 = Point[.x=138.865686941, .y=-57.9386530364]
 include "grid"
 include "icon_theme"
 
-grid = Grid[gui3, gui4, 32, 32]
+grid = Grid[gui3, gui4, icon_size.nx, icon_size.ny]
 cell = grid.GetCellSize[]
 
 icon = Window[][
@@ -34,4 +34,4 @@ w = Window[][grid, icon]
 GUI[w]
 
 res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
-icon.Save["line.png", Window["rgb24", .Res[res]]]
+icon.Save["line.png", Window["argb32", .Res[res]]]
