@@ -360,7 +360,7 @@ class ZoomableArea(gtk.DrawingArea):
     not yet been allocated."""
     return get_pixbuf_size(self.buf)
   
-  def alloc_buffer(self, copy_old=False, only_if_smaller=True):
+  def alloc_buffer(self, copy_old=True, only_if_smaller=True):
     """(internal) Updates the buffer to the new window size.
     Called whenever the screen view size changes (for example, when the user
     maximises the window). The old buffer is reused if possible, unless
@@ -384,10 +384,10 @@ class ZoomableArea(gtk.DrawingArea):
                              new_bsx, new_bsy)
 
     # And, if required, we copy from the old buffer the overlapping content
-    if copy_old:
+    old_buf = self.buf
+    if copy_old and old_buf != None:
       # The old buffer goes at the center of the new one
-      old_buf = self.buf
-      old_bsx, old_bsy = (old_buf.get_width(), old_buf.get_height())
+      old_bsx, old_bsy = get_pixbuf_size(old_buf)
       old_sub_xmin, new_sub_xmin, inters_xsize = \
         central_segments_intersection(old_bsx, new_bsx)
       old_sub_ymin, new_sub_ymin, inters_ysize = \
@@ -411,6 +411,7 @@ class ZoomableArea(gtk.DrawingArea):
   def redraw_buffer(self):
     """Redraw the picture and update the internal buffer."""
 
+    print "REDRAWING"
     # First, we check whether we have a large-enough buffer
     self.alloc_buffer()
     self.buf.fill(color_background) # we clean it
@@ -440,7 +441,7 @@ class ZoomableArea(gtk.DrawingArea):
       self.pic_bbox = pic_bbox
 
   def update_buffer(self):
-    # Check whether we have a large-enough buffer
+    # Check whether the buffer is large enough
     self.alloc_buffer()
 
     if not self.buf_needs_update:
@@ -486,7 +487,6 @@ class ZoomableArea(gtk.DrawingArea):
 
     if self.pic_bbox != None and self.magnification != None:
       visible_coords = self.get_visible_coords()
-      print "_update_scrollbars:", visible_coords
       pic_bbox = self.pic_bbox
       bb1 = self.pic_bbox.corner1
       bb2 = self.pic_bbox.corner2
@@ -504,7 +504,7 @@ class ZoomableArea(gtk.DrawingArea):
         page_size = abs(visible_coords.get_dy())
         va.set_lower(0.0)
         va.set_upper(abs(pic_bbox.get_dy()))
-        va.set_value(abs(visible_coords.corner2.y - bb2.y))
+        va.set_value(abs(visible_coords.corner1.y - bb1.y))
         va.set_page_size(page_size)
         va.set_page_increment(page_size*self.scrollbar_page_inc.y)
         va.set_step_increment(page_size*self.scrollbar_step_inc.y)
@@ -552,7 +552,6 @@ class ZoomableArea(gtk.DrawingArea):
 
   def _adjustments_changed(self, adjustment):
     visible_coords = self.get_visible_coords()
-    print "_adjustments_changed:", visible_coords
     pic_bbox = self.pic_bbox
 
     p1 = pic_bbox.corner1
@@ -564,8 +563,7 @@ class ZoomableArea(gtk.DrawingArea):
     dx = p1.x + sgn(visible_coords.get_dx())*ha.get_value() - v1.x
 
     va = self._vadjustment
-    dy = p2.y + sgn(visible_coords.get_dy())*va.get_value() - v2.y
-    print dy, va.get_value(), va.get_lower(), va.get_upper()
+    dy = p1.y + sgn(visible_coords.get_dy())*va.get_value() - v1.y
 
     dr = Point(dx, dy)
     self.last_view.translate(dr)
