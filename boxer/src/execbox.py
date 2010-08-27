@@ -1,3 +1,7 @@
+"""File which provides a function 'exec_command' to run a program and continue
+execution while it is running, using a different thread to get the output.
+"""
+
 import os
 import config
 
@@ -63,6 +67,13 @@ try:
 
   def exec_command(cmd, args=[], out_fn=None, do_at_exit=None,
                    buffer_size=1024):
+    """This function launches the command 'cmd' (an executable file) with the
+    given command line arguments 'args'. The function creates a new thread
+    to read the output of the program and returns while this may still be
+    running. The output is red in chunks of size not greater than
+    'buffer_size' and is passed back using the callback function 'out_fn'
+    (like this: 'out_fn(nth_chunk)'). Once the running program terminates
+    'do_at_exit()' is called (if it is provided)."""
 
     # Fix for the issue described at 
     # http://www.py2exe.org/index.cgi/Py2ExeSubprocessInteractions
