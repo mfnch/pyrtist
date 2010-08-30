@@ -26,7 +26,7 @@ import time
 
 import config
 import document
-import execbox
+from exec_command import exec_command
 
 def box_source_preamble(out_files):
   if out_files == None:
@@ -78,27 +78,6 @@ def debug():
   calling_frame = sys._getframe(1)
   IPShellEmbed([])(local_ns  = calling_frame.f_locals,
                    global_ns = calling_frame.f_globals)
-
-_tmp_files = [[]]
-def tmp_file(base, ext="", remember=True):
-  try:
-    import os
-    prefix = "boxer%d%s" % (os.getpid(), base)
-  except:
-    prefix = "boxer%s" % base
-  import tempfile
-  filename = tempfile.mktemp(prefix=prefix, suffix="." + ext)
-  if remember: _tmp_files[0].append(filename)
-  return filename
-
-def tmp_remove():
-  """Remove all the temporary files created up to now."""
-  for filename in _tmp_files[0]:
-    try:
-      os.unlink(filename)
-    except:
-      pass
-  _tmp_files[0] = []
 
 class Boxer:
   def delete_event(self, widget, event, data=None):
@@ -342,10 +321,10 @@ class Boxer:
 
   def menu_run_execute(self, image_menu_item):
     """Called by menu run->execute command."""
-    box_source_file = tmp_file("source", "box")
-    box_presource_file = tmp_file("pre", "box")
-    box_out_file = tmp_file("out", "dat")
-    box_out_img_file = tmp_file("out", "png")
+    box_source_file = config.tmp_new_filename("source", "box")
+    box_presource_file = config.tmp_new_filename("pre", "box")
+    box_out_file = config.tmp_new_filename("out", "dat")
+    box_out_img_file = config.tmp_new_filename("out", "png")
 
     d = document.Document()
     d.new(preamble=box_source_preamble((box_out_file, box_out_img_file)),
@@ -412,15 +391,15 @@ class Boxer:
         except:
           pass
 
-      tmp_remove()
+      config.tmp_remove_files()
       self._set_box_killer(None)
       if config.use_threads:
         gtk.gdk.threads_leave()
 
     try:
-      killer = execbox.exec_command(box_executable, args,
-                                    out_fn=out_fn,
-                                    do_at_exit=do_at_exit)
+      killer = exec_command(box_executable, args,
+                            out_fn=out_fn,
+                            do_at_exit=do_at_exit)
       self._set_box_killer(killer)
 
     except OSError:

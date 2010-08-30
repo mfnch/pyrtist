@@ -15,7 +15,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
-import imp, sys, os
+import imp, sys, os, tempfile, atexit
 
 # Trick to determine whether we are running under Py2exe or not  
 def main_is_frozen():
@@ -79,6 +79,48 @@ def get_example_files():
   import glob
   pattern = os.path.join(installation_path(), "examples", "*")
   return glob.glob(pattern)
+
+#-----------------------------------------------------------------------------
+# Temporary files
+
+_tmp_files = [[]] # Current created temporary files
+
+def tmp_new_filename(base, ext="", filenames=None, remember=True):
+  try:
+    prefix = "boxer%d%s" % (os.getpid(), base)
+  except:
+    prefix = "boxer%s" % base
+  filename = tempfile.mktemp(prefix=prefix, suffix="." + ext)
+  if remember: _tmp_files[0].append(filename)
+  if filenames != None:
+    filenames.append(filename)
+  return filename
+
+def tmp_remove_files(file_names):
+  """Remove all the temporary files created up to now."""
+  all_files = _tmp_files[0]
+  for filename in file_names:
+    try:
+      if filename in all_files:
+        all_files.remove(filename)
+      os.unlink(filename)
+    except:
+      pass
+  
+def tmp_remove_all_files():
+  """Remove all the temporary files created up to now."""
+  tmp_remove_files(_tmp_files[0])
+
+# We try to register a cleanup function to delete temporary files
+# That shouldn't be strictly neccessary, but keeps clean the system
+# during development and in case of unexpected crashes (bugs).
+try:
+  atexit.register(tmp_remove_all_files)
+except:
+  pass
+
+#-----------------------------------------------------------------------------
+# Saving and loading the program settings (at startup and exit)
 
 class BoxerConfigParser(cfgp.SafeConfigParser):
   def __init__(self, defaults=None, default_config=[],
@@ -184,5 +226,5 @@ def get_configuration():
   c = BoxerConfigParser(default_config=default_config,
                         user_cfg_file=user_cfg_file)
   successful_reads = c.read([user_cfg_file])
-
   return c
+

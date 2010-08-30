@@ -15,6 +15,11 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
+import config
+from exec_command import exec_command
+
 # This is the version of the document (which may be different from the version
 # of Boxer which was used to write it. We should save to file all this info,
 # but we currently do not (have to improve this!)
@@ -364,9 +369,66 @@ class Document:
     f.write(self.save_to_str(version=version))
     f.close()
 
+  def execute(self, preamble=None, out_fn=None, exit_fn=None):
+    tmp_fns = []
+    src_filename = config.tmp_new_filename("source", "box", tmp_fns)
+    presrc_filename = config.tmp_new_filename("pre", "box", tmp_fns)
+
+    original_preamble = self.parts["preamble"]
+    original_userspace = self.parts["userspace"]
+    try:
+      if preamble != None:
+        self.parts["preamble"] = preamble
+      self.parts["userspace"] = ""
+      presrc_content = self.save_to_str()
+    except Exception as the_exception:
+      raise the_exception
+    finally:
+      self.parts["preamble"] = original_preamble
+      self.parts["userspace"] = original_userspace
+
+    f = open(src_filename, "wt")
+    f.write(original_userspace)
+    f.close()
+
+    f = open(presrc_filename, "wt")
+    f.write(presrc_content)
+    f.close()
+
+    # In case accidentally one of such files was there already
+    #config.remove_files(tmp_fns)
+
+    box_executable = "box" #self.config.get("Box", "exec")
+    presrc_path, presrc_basename = os.path.split(presrc_filename)
+    extra_opts = ["-I", "."]
+    if False: #self.filename != None:
+      p = os.path.split(self.filename)[0]
+      if len(p) > 0: extra_opts = ["-I",  p]
+    args = ["-l", "g",
+            "-I", presrc_path] + extra_opts + [
+            "-se", presrc_basename,
+            src_filename]
+
+    def do_at_exit():
+      config.tmp_remove_files(tmp_fns)
+      if exit_fn:
+        exit_fn()
+
+    return exec_command(box_executable, args,
+                        out_fn=out_fn, do_at_exit=do_at_exit)
+
 if __name__ == "__main__":
   import sys
   d = Document()
   d.load_from_file(sys.argv[1])
-  print d.save_to_str()
+  print "Executing..."
+  raw_input()
+
+  def out_fn(s):
+    print s,
+
+  d.execute(out_fn=out_fn)
+  print "Done"
+  import time
+  time.sleep(0.1)
 
