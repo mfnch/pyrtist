@@ -370,6 +370,11 @@ class Document:
     f.close()
 
   def execute(self, preamble=None, out_fn=None, exit_fn=None):
+    # Have to find a convenient way to pass:
+    # - path to box executable
+    # - extra command line arguments
+    # - temporary directory, etc
+
     tmp_fns = []
     src_filename = config.tmp_new_filename("source", "box", tmp_fns)
     presrc_filename = config.tmp_new_filename("pre", "box", tmp_fns)

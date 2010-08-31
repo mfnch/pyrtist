@@ -16,142 +16,45 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import time
+
 import pygtk
 pygtk.require('2.0')
 import gtk
 import gtk.glade
 import gtk.gdk
-import os, os.path
-import time
 import gobject
+
+from config import debug, debug_msg
+from geom2 import *
 
 color_background = 0xffffff00
 
+class ImageDrawer(object):
+  def __init__(self):
+    pass
 
-#scroll:
-#  compute new view.
-#  Is it different from old view?
-#  no) ==> exit
-#  yes) ==> update_view
+  def update(self, pixbuf_output, pix_view, coord_view=None):
+    """This function is called by ZoomableArea to update the view (redraw the
+    picture). There are two possibilities:
+     1. coord_view is not provided. The function knows how many pixel (in both
+        x and y directions) are available and has to draw the picture in the
+        best possible way in the available space (possibly, increasing the
+        image size until the picture hits one of the boundaries);
+     2. coord_view is provided. The function has to draw just the provided
+        coordinate view of the picture, producing an output filling the whole
+        pix_view.
+    In both cases the total extent of the figure is returned as a Rectangle.
+    """
+    raise NotImplementedError("ImageDrawer.update is not implemented")
 
-
-
-def debug():
-  import sys
-  from IPython.Shell import IPShellEmbed
-  calling_frame = sys._getframe(1)
-  IPShellEmbed([])(local_ns  = calling_frame.f_locals,
-                   global_ns = calling_frame.f_globals)
-
-
-def debug_msg(msg):
-  print msg
-
-
-
-
-
-
-
-def sgn(x):
-  return (x >= 0.0) - (x <= 0.0)
 
 def get_pixbuf_size(buf):
   """If buf is a PixBuf returns its size as a tuple (width, height).
   If buf is None return (0, 0)."""
   return (Point(buf.get_width(), buf.get_height())
           if buf != None else Point(0, 0))
-
-def central_segments_intersection(s1_width, s2_width):
-  diff = (s2_width - s1_width)/2
-  return (0, diff, s1_width) if diff >= 0 else (-diff, 0, s2_width)
-
-class Point(object):
-  def __init__(self, x=None, y=None):
-    if y == None:
-      self.x, self.y = x if x != None else (0.0, 0.0)
-    else:
-      self.x = x
-      self.y = y
-
-  def __getitem__(self, idx):
-    if idx == 0:
-      return self.x
-    elif idx == 1:
-      return self.y
-    else:
-      raise IndexError("Point index out of range")
-
-  def __iter__(self):
-    return self.get_xy().__iter__()
-
-  def __repr__(self):
-    return "Point(%s, %s)" % self.xy
-
-  def __add__(self, p):
-    return Point(self.x + p.x, self.y + p.y)
-
-  def __sub__(self, p):
-    return Point(self.x - p.x, self.y - p.y)
-
-  def get_xy(self):
-    return (self.x, self.y)
-
-  def set_xy(self, xy):
-    try:
-      self.x, self.y = xy   # is iterable
-    except:
-      self.x = self.y = xy  # is not iterable
-    return self
-
-  xy = property(get_xy, set_xy)
-
-  def trunc(self, xmin, xmax, ymin, ymax):
-    self.x = min(xmax, max(xmin, self.x))
-    self.y = min(ymax, max(ymin, self.y))
-
-  def scale(self, scale_factor):
-    sf = Point()
-    sf.set_xy(scale_factor)
-    self.x *= sf.x
-    self.y *= sf.y
-
-class Rectangle(object):
-  def __init__(self, corner1, corner2):
-    self.corner1 = corner1
-    self.corner2 = corner2
-
-  def __repr__(self):
-    return "Rectangle(%s, %s)" % (self.corner1, self.corner2)
-
-  def get_dx(self):
-    return self.corner2.x - self.corner1.x
-
-  def get_dy(self):
-    return self.corner2.y - self.corner1.y
-
-  def translate(self, dr):
-    self.corner1 += dr
-    self.corner2 += dr
-
-  def new_scaled(self, scale_factor, scale_in=True):
-    sx, sy = Point(scale_factor)
-    if not scale_in:
-      sx, sy = (1/sx, 1/sy)
-    hc1x, hc1y = (0.5*self.corner1.x, 0.5*self.corner1.y)
-    hc2x, hc2y = (0.5*self.corner2.x, 0.5*self.corner2.y)
-    cx, cy = (hc1x + hc2x, hc1y + hc2y)
-    wx, wy = ((hc2x - hc1x)*sx, (hc2y - hc1y)*sy)
-    c1 = Point(cx - wx, cy - wy)
-    c2 = Point(cx + wx, cy + wy)
-    return Rectangle(c1, c2)
-
-  def new_reshaped(self, new_shape, scale_factor=None):
-    sf = Point(new_shape.x/abs(self.get_dx()),
-               new_shape.y/abs(self.get_dy()))
-    if scale_factor != None:
-      sf.scale(scale_factor)
-    return self.new_scaled(sf)
 
 class View(Rectangle):
   """Class to map pixel coordinate to arbitrary coordinates."""
@@ -222,24 +125,6 @@ class View(Rectangle):
     px, py = self.coord_to_pix(coord)
     return (int(max(0.0, min(self.view_size[0], px))),
             int(max(0.0, min(self.view_size[1], py))))
-
-class ImageDrawer(object):
-  def __init__(self):
-    pass
-
-  def update(self, pixbuf_output, pix_view, coord_view=None):
-    """This function is called by ZoomableArea to update the view (redraw the
-    picture). There are two possibilities:
-     1. coord_view is not provided. The function knows how many pixel (in both
-        x and y directions) are available and has to draw the picture in the
-        best possible way in the available space (possibly, increasing the
-        image size until the picture hits one of the boundaries);
-     2. coord_view is provided. The function has to draw just the provided
-        coordinate view of the picture, producing an output filling the whole
-        pix_view.
-    In both cases the total extent of the figure is returned as a Rectangle.
-    """
-    raise NotImplementedError("ImageDrawer.update is not implemented")
 
 class ZoomableArea(gtk.DrawingArea):
   def __init__(self, drawer,

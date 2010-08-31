@@ -18,27 +18,4 @@
 # Here we provide a Python interface to call Box and get back a view
 # (an image) of the picture.
 
-class PixSize:
-  def __init__(self, value):
-    x, y = value
-    self.x = x
-    self.y = y
-    self.xy = value
-
-class BoxWindow:
-  def __init__(self, screen_pix_size, buf_pix_size=None):
-    self.screen_pix_size = PixSize(screen_pix_size)
-
-    if bux_pix_size != None:
-      buf_pix_size = PixSize(buf_pix_size)
-    else:
-      f = 1.5
-      x = int(self.screen_pix_size.x*f)
-      y = int(self.screen_pix_size.x*f)
-      buf_pix_size = PixSize((x, y))
-
-    self.buf_pix_size = buf_pix_size
-
-  def draw(self, script, view_size=None):
-    pass
 

@@ -17,6 +17,16 @@
 
 import imp, sys, os, tempfile, atexit
 
+def debug():
+  import sys
+  from IPython.Shell import IPShellEmbed
+  calling_frame = sys._getframe(1)
+  IPShellEmbed([])(local_ns  = calling_frame.f_locals,
+                   global_ns = calling_frame.f_globals)
+
+def debug_msg(msg):
+  print msg
+
 # Trick to determine whether we are running under Py2exe or not  
 def main_is_frozen():
   """Return True when running as a Py2exe executable."""
