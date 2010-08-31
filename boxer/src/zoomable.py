@@ -29,7 +29,7 @@ import gobject
 from config import debug, debug_msg
 from geom2 import *
 
-color_background = 0xffffff00
+color_background = 0xffff0000
 
 class ImageDrawer(object):
   def __init__(self):
@@ -38,9 +38,9 @@ class ImageDrawer(object):
   def update(self, pixbuf_output, pix_view, coord_view=None):
     """This function is called by ZoomableArea to update the view (redraw the
     picture). There are two possibilities:
-     1. coord_view is not provided. The function knows how many pixel (in both
-        x and y directions) are available and has to draw the picture in the
-        best possible way in the available space (possibly, increasing the
+     1. coord_view is not provided. The function knows how many pixels (in
+        both x and y directions) are available and has to draw the picture in
+        the best possible way in the available space (possibly, increasing the
         image size until the picture hits one of the boundaries);
      2. coord_view is provided. The function has to draw just the provided
         coordinate view of the picture, producing an output filling the whole
@@ -55,6 +55,7 @@ def get_pixbuf_size(buf):
   If buf is None return (0, 0)."""
   return (Point(buf.get_width(), buf.get_height())
           if buf != None else Point(0, 0))
+
 
 class View(Rectangle):
   """Class to map pixel coordinate to arbitrary coordinates."""
@@ -125,6 +126,7 @@ class View(Rectangle):
     px, py = self.coord_to_pix(coord)
     return (int(max(0.0, min(self.view_size[0], px))),
             int(max(0.0, min(self.view_size[1], py))))
+
 
 class ZoomableArea(gtk.DrawingArea):
   def __init__(self, drawer,

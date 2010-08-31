@@ -84,7 +84,7 @@ try:
     elif config.platform_is_win:
       shell = False
       creationflags = CREATE_NO_WINDOW
-      
+
     else:
       shell = False
       creationflags = 0

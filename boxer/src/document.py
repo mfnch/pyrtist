@@ -73,7 +73,7 @@ def text_writer(pieces, sep=", ", line_sep=None, max_line_width=None):
       text += this_line + lsep
       this_line = str(piece)
       cur_sep = sep
- 
+
   if len(this_line) > 0:
     text += this_line + lsep
   return text
@@ -250,25 +250,27 @@ def save_to_str(document, version=version):
     raise ValueError("Cannot save document using version %s" % str(version))
 
 class Document:
-  def __init__(self):
+  """Class to load, save, display and edit Boxer documents.
+  A Boxer document is basically a Box program plus some metainfo contained
+  in comments."""
+
+  def __init__(self, filename=None):
+    """filename=None :the filename associated to the document."""
     self.notifier = default_notifier
     self.attributes = {}
     self.parts = None
+    self.filename = None
 
   def new(self, preamble=None, refpoints=[], code=None):
     if code == None:
       code = default_code
     if preamble == None:
         preamble = default_preamble
-    self.parts = {
-      'preamble': preamble,
-      'refpoints_text': '',
-      'refpoints': refpoints,
-      'userspace': code
-    }
-    self.attributes = {
-      'version': version
-    }
+    self.parts = {'preamble': preamble,
+                  'refpoints_text': '',
+                  'refpoints': refpoints,
+                  'userspace': code}
+    self.attributes = {'version': version}
 
   def get_refpoints(self):
     """Get a list of the reference points in the document (list of GUIPoint)"""
@@ -285,7 +287,7 @@ class Document:
       i += 1
     self.notify("WARNING", "unrecognized marker argument '%s'" % arg)
     return None
-    
+
   def load_from_str(self, boxer_src):
     parts = {}           # different text parts of the source
     context = "preamble" # initial context/part
@@ -356,18 +358,24 @@ class Document:
     self.parts = parts
     return True
 
-  def load_from_file(self, filename):
+  def load_from_file(self, filename, remember_filename=True):
     f = open(filename, "r")
     self.load_from_str(f.read())
     f.close()
 
+    if remember_filename:
+      self.filename = filename
+
   def save_to_str(self, version=version):
     return save_to_str(self, version)
 
-  def save_to_file(self, filename, version=version):
+  def save_to_file(self, filename, version=version, remember_filename=True):
     f = open(filename, "w")
     f.write(self.save_to_str(version=version))
     f.close()
+
+    if remember_filename:
+      self.filename = filename
 
   def execute(self, preamble=None, out_fn=None, exit_fn=None):
     # Have to find a convenient way to pass:
@@ -406,7 +414,7 @@ class Document:
     box_executable = "box" #self.config.get("Box", "exec")
     presrc_path, presrc_basename = os.path.split(presrc_filename)
     extra_opts = ["-I", "."]
-    if False: #self.filename != None:
+    if self.filename != None:
       p = os.path.split(self.filename)[0]
       if len(p) > 0: extra_opts = ["-I",  p]
     args = ["-l", "g",

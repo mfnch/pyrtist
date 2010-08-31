@@ -1,9 +1,10 @@
+import time
 import sys
 sys.path.append("../")
 
 import gtk
 from zoomable import Point, Rectangle, View, ZoomableArea, ImageDrawer
-import time
+from boxdraw import BoxImageDrawer
 
 # Fake Box image output
 class MyDrawerTest(ImageDrawer):
@@ -51,7 +52,8 @@ class MyDrawer(ImageDrawer):
   def __init__(self, filename):
     self.document = d = document.Document()
     d.load_from_file(filename)
-    
+    self.drawer = BoxImageDrawer(d)
+
     self.size = Point(100.0, 50.0) # Box coordinates
     self.view = View()
 
@@ -105,7 +107,11 @@ class Experiment(object):
     builder.connect_signals(sigs)
     self.window = builder.get_object("experiment")
 
-    drawer = MyDrawer(filename)
+    d = document.Document()
+    d.load_from_file(filename)
+    drawer = BoxImageDrawer(d)
+    drawer.out_fn = sys.stdout.write
+
     self.box_window = ZoomableArea(drawer)
     self.scrolledwindow = builder.get_object("scrolledwindow")
 
