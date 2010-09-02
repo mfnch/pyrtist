@@ -56,11 +56,13 @@ Window@GUI[
 _box_preamble_view = """
 Window@GUI[
   b = BBox[$]
-  out = Str[sep=",", b.n, sep
-            b.min.x, sep, b.min.y, sep, b.max.x, sep, b.max.y;]
-  \ File["$INFO_FILENAME$", "w"][out]
-  \ Window[($SX$, $SY$), .Res[($RX$, $RY$)], .Origin[($OX$, $OY$)]
+  size = Point[.x=$SX$, .y=$SY$], origin = Point[.x=$OX$, .y=$OY$]
+  \ Window[size, .Res[($RX$, $RY$)], .Origin[origin]
            "rgb24"][$, .Save["$IMG_FILENAME$"]]
+  out = Str[sep=",", b.n, sep
+            b.min.x, sep, b.min.y, sep, b.max.x, sep, b.max.y;
+            origin.x, sep, origin.y, sep, size.x, sep, size.y;]
+  \ File["$INFO_FILENAME$", "w"][out]
 ]
 """
 
@@ -77,6 +79,7 @@ class BoxImageDrawer(ImageDrawer):
   def __init__(self, document):
     self.document = document
     self.out_fn = None
+    self.bbox = None
     self.view = View()
     self.pixbuf = None
 
@@ -101,8 +104,9 @@ class BoxImageDrawer(ImageDrawer):
         ls = f.read().splitlines()
         f.close()
         _, bminx, bminy, bmaxx, bmaxy = [float(x) for x in ls[0].split(",")]
-        self.view.show(Point(bminx, bmaxy), Point(bmaxx, bminy),
-                       size_in_pixels=pix_size)
+        ox, oy, sx, sy = [float(x) for x in ls[1].split(",")]
+        self.bbox = Rectangle(Point(bminx, bmaxy), Point(bmaxx, bminy))
+        self.view.reset(pix_size, Point(ox, oy + sy), Point(ox + sx, oy))
 
       if os.path.exists(img_out_filename):
         self.pixbuf = pixbuf_new_from_file(img_out_filename)
@@ -118,8 +122,6 @@ class BoxImageDrawer(ImageDrawer):
     if coord_view == None:
       px, py = pix_view
       substs = [("$SX$", px), ("$SY$", py)]
-      print "XXX", px, py
-      
       preamble = _box_preamble_common + _box_preamble_centered
 
     else:
@@ -130,22 +132,24 @@ class BoxImageDrawer(ImageDrawer):
       ox, oy = (min(c1x, c2x), min(c1y, c2y))
       sx, sy = (abs(c2x - c1x), abs(c2y - c1y))
       rx, ry = (px/sx, py/sy)
-      substs = [("$OX$", c1x), ("$OY$", c1y),
+      substs = [("$OX$", ox), ("$OY$", oy),
                 ("$RX$", rx), ("$RY$", ry),
                 ("$SX$", sx), ("$SY$", sy)]
       preamble = _box_preamble_common + _box_preamble_view
 
     self._raw_execute(pix_view, preamble=preamble, extra_substs=substs,
                       img_out_filename=img_out_filename)
+
+
     import time
-    time.sleep(0.1)
+    time.sleep(0.2)
     #config.debug()
 
     sx = self.pixbuf.get_width()
     sy = self.pixbuf.get_height()
     self.pixbuf.copy_area(0, 0, sx, sy, pixbuf_output, 0, 0)
 
-    return (self.view, coord_view if coord_view != None else self.view)
+    return (self.bbox, self.view)
 
 if __name__ == "__main__":
   import sys
