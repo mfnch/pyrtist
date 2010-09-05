@@ -391,7 +391,7 @@ class Boxer:
         except:
           pass
 
-      config.tmp_remove_files()
+      config.tmp_remove_all_files()
       self._set_box_killer(None)
       if config.use_threads:
         gtk.gdk.threads_leave()

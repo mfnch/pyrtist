@@ -7,7 +7,10 @@ scripts/boxer
 src/__init__.py
 src/main.py
 src/boxer.py
-src/execbox.py
+src/geom2.py
+src/zoomable.py
+src/exec_command.py
+src/boxdraw.py
 src/config.py
 src/document.py
 src/imgview.py

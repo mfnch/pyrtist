@@ -87,7 +87,7 @@ def glade_path(filename=None):
 def get_example_files():
   """Return a list of example files for Boxer."""
   import glob
-  pattern = os.path.join(installation_path(), "examples", "*")
+  pattern = os.path.join(installation_path(), "examples", "*.box")
   return glob.glob(pattern)
 
 #-----------------------------------------------------------------------------
