@@ -142,7 +142,7 @@ class BoxImageDrawer(ImageDrawer):
 
 
     import time
-    time.sleep(0.2)
+    time.sleep(0.5)
     #config.debug()
 
     sx = self.pixbuf.get_width()

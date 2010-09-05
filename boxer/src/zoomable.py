@@ -32,20 +32,19 @@ from geom2 import *
 color_background = 0xffff0000
 
 class ImageDrawer(object):
-  def __init__(self):
-    pass
-
   def update(self, pixbuf_output, pix_view, coord_view=None):
-    """This function is called by ZoomableArea to update the view (redraw the
-    picture). There are two possibilities:
-     1. coord_view is not provided. The function knows how many pixels (in
-        both x and y directions) are available and has to draw the picture in
-        the best possible way in the available space (possibly, increasing the
-        image size until the picture hits one of the boundaries);
-     2. coord_view is provided. The function has to draw just the provided
+    """This function is called by ZoomableArea to update the view buffer.
+    There are two possibilities:
+     1. 'coord_view' is not provided. The function receives the size of the
+        buffer in 'pix_view' and has to draw the picture in the best possible
+        way in the available space (possibly, increasing the image size until
+        the picture hits one of the boundaries);
+     2. 'coord_view' is provided. The function has to draw just the provided
         coordinate view of the picture, producing an output filling the whole
-        pix_view.
-    In both cases the total extent of the figure is returned as a Rectangle.
+        buffer.
+    In both cases the function must return a tuple made of:
+     - the bounding box in a geom2.Rectangle object;
+     - the view in a View object.
     """
     raise NotImplementedError("ImageDrawer.update is not implemented")
 
@@ -67,6 +66,11 @@ class View(Rectangle):
     if (size_in_pixels != None and topleft_coord != None
         and botright_coord != None):
       self.reset()
+
+  def copy(self):
+    """Return a copy of the View object."""
+    return View(Point(self.view_size),
+                Point(self.corner1), Point(self.corner2))
 
   def reset(self, size_in_pixels=None, topleft_coord=None,
             botright_coord=None):
@@ -131,7 +135,7 @@ class View(Rectangle):
 class ZoomableArea(gtk.DrawingArea):
   def __init__(self, drawer,
                hadjustment=None, vadjustment=None,
-               buf_margin=0.25):
+               zoom_factor=1.5, zoom_margin=0.25, buf_margin=0.25):
     # Adjustment objects to control the scrolling
     self._hadjustment = hadjustment
     self._vadjustment = vadjustment
@@ -142,23 +146,28 @@ class ZoomableArea(gtk.DrawingArea):
     # Margin of the buffer outside the screen view (a big value increases
     # the amount of memory required, but reduces the need of redrawing the
     # picture when scrolling or zooming in).
-    self.buf_margin = margin = Point()
-    margin.set_xy(buf_margin)
+    self.buf_margin = margin = Point(buf_margin)
     margin.trunc(0.0, 1.0, 0.0, 1.0)
 
     self.buf = None              # The buffer where the output is first drawn
     self.buf_view = None         # The view for the buffer
-    self.buf_needs_update = True # Whether the buffer needs to updating
-    self.screen_view = None      # The view for the DrawableArea
+    self.buf_needs_update = True # Whether the buffer needs updating
     self.last_view = None        # The view as returned by the drawing routine
     self.pic_bbox = None         # The bounding box of the picture
+    self.pic_view = None         # The view of the picture
 
     # Magnification in pixel per unit coordinate (positive).
     # Controls how much the picture is zoomed in the current screen view.
     # None means "show the picture in full in the current view".
     self.magnification = None
-    self.last_magnification = None  # Magnification of most recent view 
-    self.zoom_factor = 1.5          # Zoom factor
+    self.last_magnification = None  # Magnification of most recent view
+    self.zoom_factor = zoom_factor  # Zoom factor
+    zoom_margin = Point(zoom_margin)
+    zoom_margin.trunc(0.0, 1.0, 0.0, 1.0)
+    self.extra_zoom = zoom_margin + zoom_margin + Point(1.0, 1.0)
+                                    # ^^^ Extra zoom (to move a little bit
+                                    #     beyond the bounding box)
+    
 
     self.scrollbar_page_inc = Point(0.9, 0.9) # Page increment for scrollbars
     self.scrollbar_step_inc = Point(0.1, 0.1) # Step increment for scrollbars
@@ -212,6 +221,13 @@ class ZoomableArea(gtk.DrawingArea):
       return
 
     self.magnification = (lm*scale_factor if scale_factor != None else lm)
+    self.adjust_view()
+
+  def adjust_view(self):
+    """Adjust the view in case it falls outside the bounding box."""
+    if self.magnification != None:
+      dr = rectangle_adjustment(self.pic_view, self.get_visible_coords())
+      self.last_view.translate(dr)
 
   def zoom_in(self):
     """Zoom in."""
@@ -229,7 +245,6 @@ class ZoomableArea(gtk.DrawingArea):
     """Return in full picture view, where the picture is scaled to fit
     the available portion of the screen (the DrawableArea)."""
     self.magnification = None
-    self.buf_needs_update = True
     self.queue_draw()
 
   def size_change(self, myself, event):
@@ -246,7 +261,7 @@ class ZoomableArea(gtk.DrawingArea):
     """Return the current size of the buffer (or (0, 0) if the buffer has
     not yet been allocated."""
     return get_pixbuf_size(self.buf)
-  
+
   def alloc_buffer(self, copy_old=True, only_if_smaller=True):
     """(internal) Updates the buffer to the new window size.
     Called whenever the screen view size changes (for example, when the user
@@ -259,7 +274,7 @@ class ZoomableArea(gtk.DrawingArea):
 
     # If the old buffer contains the new visible area we just exit
     if only_if_smaller and bsx >= lx and bsy >= ly:
-        return
+      return
 
     # Otherwise we allocate a new buffer
     fx, fy = (int(self.buf_margin.x*lx),
@@ -285,20 +300,40 @@ class ZoomableArea(gtk.DrawingArea):
                         new_buf, new_sub_xmin, new_sub_ymin)
 
     self.buf = new_buf
-    self.buf_needs_update = True
 
-  def get_visible_buf(self):
-    """(internal) Get the visible part of the buffer (a subpixbuf)."""
-    assert self.buf != None, "Cannot use get_visible_buf: buffer not present!"
+  def get_central_buf(self):
+    """(internal) Get the central part of the buffer (a subpixbuf).
+    The central part of the buffer is the one which is initially visible when
+    the buffer is refreshed. The user can then move the visible area off the
+    center. If the visible area stays inside the buffer, then no refresh
+    occurs (the image is refreshed from the buffer). If the visible area gets
+    outside the buffered one, then a refresh occurs and the new visible area
+    is positioned at the center of the refreshed buffer again.
+    """
+    assert self.buf != None, "Cannot use get_central_buf: buffer not present!"
     lx, ly = self.window.get_size()
     bsx, bsy = self.get_buf_size()
     marginx, marginy = ((bsx - lx)/2, (bsy - ly)/2)
     return self.buf.subpixbuf(marginx, marginy, lx, ly)
 
+  def get_visible_buf(self):
+    buf_view = self.buf_view
+    if self.magnification == None:
+      return self.get_central_buf()
+
+    else:
+      vis_view = self.get_visible_coords()
+      c1x, c1y = buf_view.coord_to_pix(vis_view.corner1)
+      c2x, c2y = buf_view.coord_to_pix(vis_view.corner2)
+      px, py = (int(min(c1x, c2x)), int(min(c1y, c2y)))
+      #lx, ly = (int(abs(c2x - c1x)), int(abs(c2y - c1y)))
+      lx, ly = self.window.get_size()
+      return self.buf.subpixbuf(px, py, lx, ly)
+
   def redraw_buffer(self):
     """Redraw the picture and update the internal buffer."""
 
-    print "REDRAWING"
+    print "REDRAWING ",
     # First, we check whether we have a large-enough buffer
     self.alloc_buffer()
     self.buf.fill(color_background) # we clean it
@@ -309,12 +344,9 @@ class ZoomableArea(gtk.DrawingArea):
       #   we want to draw all the picture in the DrawableArea
 
       # We then create a subpixbuf of the visible area of the buffer
-      visible_of_buf = self.get_visible_buf()
+      visible_of_buf = self.get_central_buf()
       pix_size = get_pixbuf_size(visible_of_buf)
       pic_bbox, view = self.drawer.update(visible_of_buf, pix_size)
-      self.last_view = view
-      self.last_magnification = abs(pix_size.x/view.get_dx())
-      self.pic_bbox = pic_bbox
 
     else:
       buf = self.buf
@@ -323,9 +355,14 @@ class ZoomableArea(gtk.DrawingArea):
         self.last_view.new_reshaped(pix_size, 1.0/self.magnification)
       pic_bbox, view = \
         self.drawer.update(buf, pix_size, coord_view=coord_view)
-      self.last_view = view
-      self.last_magnification = abs(pix_size.x/view.get_dx())
-      self.pic_bbox = pic_bbox
+
+    self.last_magnification = abs(pix_size.x/view.get_dx())
+    self.buf_view = view
+    self.pic_bbox = pic_bbox
+    self.pic_view = pic_bbox.new_scaled(self.extra_zoom)
+    # ^^^ we artificially expand the bounding box so that we can move the view
+    #     outside the bounding box
+    self.last_view = self.buf_view.copy()
 
   def update_buffer(self):
     # Check whether the buffer is large enough
@@ -333,7 +370,9 @@ class ZoomableArea(gtk.DrawingArea):
 
     if not self.buf_needs_update:
       # Determine whether we need to update the buffer
-      return
+      visible_area = self.get_visible_coords()
+      if self.buf_view != None and self.buf_view.contains(visible_area):
+        return
 
     self.redraw_buffer()
     self.buf_needs_update = False
@@ -372,16 +411,16 @@ class ZoomableArea(gtk.DrawingArea):
 
     self._block_scrollbar_signals(True)
 
-    if self.pic_bbox != None and self.magnification != None:
+    if self.pic_view != None and self.magnification != None:
       visible_coords = self.get_visible_coords()
-      pic_bbox = self.pic_bbox
-      bb1 = self.pic_bbox.corner1
-      bb2 = self.pic_bbox.corner2
+      pic_view = self.pic_view
+      bb1 = self.pic_view.corner1
+      bb2 = self.pic_view.corner2
 
       if self._hadjustment:
         page_size = abs(visible_coords.get_dx())
         ha.set_lower(0.0)
-        ha.set_upper(abs(pic_bbox.get_dx()))
+        ha.set_upper(abs(pic_view.get_dx()))
         ha.set_value(abs(visible_coords.corner1.x - bb1.x))
         ha.set_page_size(page_size)
         ha.set_page_increment(page_size*self.scrollbar_page_inc.x)
@@ -390,7 +429,7 @@ class ZoomableArea(gtk.DrawingArea):
       if self._vadjustment:
         page_size = abs(visible_coords.get_dy())
         va.set_lower(0.0)
-        va.set_upper(abs(pic_bbox.get_dy()))
+        va.set_upper(abs(pic_view.get_dy()))
         va.set_value(abs(visible_coords.corner1.y - bb1.y))
         va.set_page_size(page_size)
         va.set_page_increment(page_size*self.scrollbar_page_inc.y)
@@ -439,10 +478,10 @@ class ZoomableArea(gtk.DrawingArea):
 
   def _adjustments_changed(self, adjustment):
     visible_coords = self.get_visible_coords()
-    pic_bbox = self.pic_bbox
+    pic_view = self.pic_view
 
-    p1 = pic_bbox.corner1
-    p2 = pic_bbox.corner2
+    p1 = pic_view.corner1
+    p2 = pic_view.corner2
     v1 = visible_coords.corner1
     v2 = visible_coords.corner2
 
@@ -454,5 +493,5 @@ class ZoomableArea(gtk.DrawingArea):
 
     dr = Point(dx, dy)
     self.last_view.translate(dr)
-    self.buf_needs_update = True
+    self.adjust_view()
     self.queue_draw()
