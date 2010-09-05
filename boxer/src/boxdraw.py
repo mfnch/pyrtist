@@ -15,13 +15,13 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
-# Here we provide a Python interface to call Box and get back a view
-# (an image) of the picture.
-
-import sys
-sys.path.append("../")
+"""
+Here we provide a Python interface to call Box and get back a view
+(an image) of the picture.
+"""
 
 import os
+import time
 
 from gtk.gdk import pixbuf_new_from_file
 
@@ -82,6 +82,7 @@ class BoxImageDrawer(ImageDrawer):
     self.bbox = None
     self.view = View()
     self.pixbuf = None
+    self.executing = False
 
   def _raw_execute(self, pix_size, preamble=None, img_out_filename=None,
                    extra_substs=[]):
@@ -107,12 +108,14 @@ class BoxImageDrawer(ImageDrawer):
         ox, oy, sx, sy = [float(x) for x in ls[1].split(",")]
         self.bbox = Rectangle(Point(bminx, bmaxy), Point(bmaxx, bminy))
         self.view.reset(pix_size, Point(ox, oy + sy), Point(ox + sx, oy))
+        self.executing = False
 
       if os.path.exists(img_out_filename):
         self.pixbuf = pixbuf_new_from_file(img_out_filename)
 
       config.tmp_remove_files(tmp_fns)
 
+    self.executing = True
     return self.document.execute(preamble=preamble,
                                  out_fn=self.out_fn,
                                  exit_fn=exit_fn)
@@ -140,10 +143,8 @@ class BoxImageDrawer(ImageDrawer):
     self._raw_execute(pix_view, preamble=preamble, extra_substs=substs,
                       img_out_filename=img_out_filename)
 
-
-    import time
-    time.sleep(0.5)
-    #config.debug()
+    while self.executing: # Temporary solution
+      time.sleep(0.05)
 
     sx = self.pixbuf.get_width()
     sy = self.pixbuf.get_height()
@@ -162,4 +163,3 @@ if __name__ == "__main__":
   preamble = _box_preamble_common + _box_preamble_centered
   view = zoomable.View(Point(200, 200), Point(16.0, 47.0), Point(77.0, 4.0))
   bd.update(None, Point(200, 200), view, img_out_filename="poly.png")
-

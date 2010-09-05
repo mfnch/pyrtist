@@ -16,6 +16,11 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Implementation of the ZoomableArea object, which adds buffered rendering,
+zooming and scrolling capabilities to a DrawableArea object.
+"""
+
 import os
 import time
 

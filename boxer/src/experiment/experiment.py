@@ -101,4 +101,5 @@ def run(filename=None, box_exec=None):
   if config.use_threads:
     gtk.gdk.threads_leave()
 
-run("/home/fnch/mumag/thesis/sketch.box")
+run("poly.box")
+#run("/home/fnch/mumag/thesis/sketch.box")

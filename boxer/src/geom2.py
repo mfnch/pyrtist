@@ -16,7 +16,9 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
-# Basic 2D geometry functionality
+"""
+Basic 2D geometry functionality
+"""
 
 __all__ = ["sgn", "central_segments_intersection", "segment_adjustment",
            "rectangle_adjustment", "Point", "Rectangle"]
