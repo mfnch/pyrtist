@@ -21,7 +21,8 @@ Basic 2D geometry functionality
 """
 
 __all__ = ["sgn", "central_segments_intersection", "segment_adjustment",
-           "rectangle_adjustment", "Point", "Rectangle"]
+           "rectangle_adjustment", "round_metric", "square_metric",
+           "Point", "Rectangle"]
 
 def sgn(x):
   return (x >= 0.0) - (x <= 0.0)
@@ -58,6 +59,17 @@ def rectangle_adjustment(r1, r2):
                           r2.corner1.y, r2.corner2.y)
   return Point(dx, dy)
 
+def round_metric(p1, p2):
+  """Returns the common euclidean distance between two 2D points p1 and p2."""
+  return math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
+
+def square_metric(p1, p2):
+  """Square metric: the maximum of the absolute values of the coordinates
+  of the point p2 - p1.
+  When square_metric(p1, p2) <= x, the two 2D points p1, p2 lie inside
+  boundaries of a square of side x."""
+  return max(abs(p2[0] - p1[0]), abs(p2[1] - p1[1]))
+
 class Point(object):
   def __init__(self, x=None, y=None):
     if y == None:
@@ -93,9 +105,10 @@ class Point(object):
     return Point(self.x - p.x, self.y - p.y)
 
   def __mul__(self, r):
-    if type(r) == float:
+    try:
       return Point(r*self.x, r*self.y)
-    else:
+
+    except:
       raise ValueError("Multiplication between Point and '%s' is not "
                        "supported." % type(r))
 

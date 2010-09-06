@@ -268,7 +268,7 @@ class Document:
         preamble = default_preamble
     self.parts = {'preamble': preamble,
                   'refpoints_text': '',
-                  'refpoints': refpoints,
+                  'refpoints': list(refpoints),
                   'userspace': code}
     self.attributes = {'version': version}
 

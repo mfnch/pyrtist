@@ -20,9 +20,12 @@ In this file we define the class ImgView, used to display the resulting image
 produced by a Box program and to handle the reference points.
 """
 
-import math, fnmatch
+import math
+import fnmatch
 
-import document, namegen
+import document
+import namegen
+from geom2 import square_metric
 
 def debug():
   import sys
@@ -30,17 +33,6 @@ def debug():
   calling_frame = sys._getframe(1)
   IPShellEmbed([])(local_ns  = calling_frame.f_locals,
                    global_ns = calling_frame.f_globals)
-
-def round_metric(p1, p2):
-  """Returns the common euclidean distance between two 2D points p1 and p2."""
-  return math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
-
-def square_metric(p1, p2):
-  """Square metric: the maximum of the absolute values of the coordinates
-  of the point p2 - p1.
-  When square_metric(p1, p2) <= x, the two 2D points p1, p2 lie inside
-  boundaries of a square of side x."""
-  return max(abs(p2[0] - p1[0]), abs(p2[1] - p1[1]))
 
 class RefPoint:
   def __init__(self, name, visible=True):
