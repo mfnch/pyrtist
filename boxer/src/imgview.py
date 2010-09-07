@@ -23,6 +23,7 @@ produced by a Box program and to handle the reference points.
 import math
 import fnmatch
 
+import refpoints
 import document
 import namegen
 from geom2 import square_metric
@@ -181,10 +182,10 @@ class ImgView:
     """Return a list of GUIPoints corresponding to the current set of reference
     points. The list is compatible to the one which is expected by the method
     add_from_list."""
-    refpoints = []
+    l = []
     for p in self.ref_point_list:
-      refpoints.append(document.GUIPoint(id=p.name, value=p.box_coords))
-    return refpoints
+      l.append(refpoints.RefPoint(p.name, p.box_coords))
+    return l
 
   def add_from_list(self, refpoints):
     """Add reference points from the given list of GUIPoints."""

@@ -19,6 +19,7 @@ import os
 
 import config
 from exec_command import exec_command
+from refpoints import RefPoint, RefPoints
 
 # This is the version of the document (which may be different from the version
 # of Boxer which was used to write it. We should save to file all this info,
@@ -31,15 +32,9 @@ marker_sep = ":"
 
 endline = "\n"
 
-default_preamble = """
-include "g"
-GUI = Void
-Window@GUI[]
+default_preamble = 'include "g"\nGUI = Void\nWindow@GUI[]\n\n'
 
-"""
-
-default_code = """
-"""
+default_code = "\n"
 
 def text_writer(pieces, sep=", ", line_sep=None, max_line_width=None):
   """Similarly to str.join, this function concatenates the strings contained
@@ -104,7 +99,7 @@ def parse_given_eq_smthg(s, fixed_part):
   else:
     return None
 
-def parse_guipoint_new(s):
+def refpoint_from_string_latest(s):
   """Parse a string representation of a GUIPoint and return the corresponding
   GUIPoint object."""
   try:
@@ -116,12 +111,12 @@ def parse_guipoint_new(s):
     str_x, str_y = rem_str.split(",", 1)
     x = float(parse_given_eq_smthg(str_x, ".x"))
     y = float(parse_given_eq_smthg(str_y, ".y"))
-    return (lhs.strip(), [x, y])
+    return RefPoint(lhs.strip(), [x, y])
 
   except:
     return None
 
-def parse_guipoint_v0_1_0(s):
+def refpoint_from_string_v0_1_0(s):
   """Similar to parse_guipoint_new, but for Boxer 0.1."""
   try:
     lhs, rhs = s.split("=", 1)
@@ -130,39 +125,30 @@ def parse_guipoint_v0_1_0(s):
     if rem_str.strip() != "":
       return None
     str_x, str_y = x_y_str.split(",", 1)
-    return (lhs.strip(), [float(str_x), float(str_y)])
+    return RefPoint(lhs.strip(), [float(str_x), float(str_y)])
+
   except:
     return None
 
-def parse_guipoint(s):
-  """Try to parse a representation of a GUIPoint first with parse_guipoint_new
+def refpoint_from_string(s):
+  """Try to parse a representation of a RefPoint first with parse_guipoint_new
   and then with parse_guipoint_v0_1_0 if the former failed."""
-  guipoint = parse_guipoint_new(s)
-  if guipoint != None:
-    return guipoint
+  rp = refpoint_from_string_latest(s)
+  if rp != None:
+    return rp
   else:
-    return parse_guipoint_v0_1_0(s)
+    return refpoint_from_string_v0_1_0(s)
 
-class GUIPoint:
-  def __init__(self, id, value=None):
-    if value != None:
-      self.id = id
-      self.value = value
-    else:
-      self.id, self.value = parse_guipoint(id)
+def refpoint_to_string(rp, version=version):
+  """Return a string representation of the RefPoint according to the given
+  Boxer version. The returned string can be parsed by 'refpoint_from_string'.
+  """
+  if version == (0, 1):
+    return "%s = (%s, %s)" % (rp.name, rp.value[0], rp.value[1])
 
-  def to_str(self, version):
-    """Similar to str(guipoint), but use the proper format for the given 
-    verison."""
-    if version == (0, 1):
-      return "%s = (%s, %s)" % (self.id, self.value[0], self.value[1])
-
-    else:
-      return "%s = Point[.x=%s, .y=%s]" \
-             % (self.id, self.value[0], self.value[1])
-
-  def __repr__(self):
-    return self.to_str(version=version)
+  else:
+    return ("%s = Point[.x=%s, .y=%s]"
+            % (rp.name, rp.value[0], rp.value[1]))
 
 def default_notifier(level, msg):
   print "%s: %s" % (level, msg)
@@ -220,7 +206,9 @@ def save_to_str_v0_1_1(document):
   ml_version = marker_line_assemble(["VERSION", "0", "1", "1"])
   ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"])
   ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"])
-  refpoints_text = text_writer(parts["refpoints"])
+  refpoints = [refpoint_to_string(rp)
+               for rp in parts["refpoints"]]
+  refpoints_text = text_writer(refpoints)
   s = (ml_version +
        parts["preamble"] + endline +
        ml_refpoints_begin + refpoints_text + ml_refpoints_end +
@@ -231,7 +219,8 @@ def save_to_str_v0_1(document):
   parts = document.parts
   ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"])
   ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"])
-  refpoints = [rp.to_str(version=(0, 1)) for rp in parts["refpoints"]]
+  refpoints = [refpoint_to_string(rp, version=(0, 1))
+               for rp in parts["refpoints"]]
   refpoints_text = text_writer(refpoints)
   s = (parts["preamble"] + endline +
        ml_refpoints_begin + refpoints_text + ml_refpoints_end +
@@ -268,13 +257,15 @@ class Document:
         preamble = default_preamble
     self.parts = {'preamble': preamble,
                   'refpoints_text': '',
-                  'refpoints': list(refpoints),
+                  'refpoints': RefPoints(refpoints),
                   'userspace': code}
     self.attributes = {'version': version}
 
   def get_refpoints(self):
     """Get a list of the reference points in the document (list of GUIPoint)"""
     return self.parts['refpoints']
+
+  refpoints = property(get_refpoints)
 
   def get_user_part(self):
     return self.parts['userspace']
@@ -338,9 +329,9 @@ class Document:
                 self.notify("WARNING", "Cannot determine Boxer version which "
                             "generated the file")
 
-    guipoints = []
+    guipoints = RefPoints()
     def guipoint_fn(p_str):
-      guipoints.append(GUIPoint(p_str))
+      guipoints.append(refpoint_from_string(p_str))
 
     if parts.has_key("refpoints_text"):
       parse_guipoint_part(parts["refpoints_text"], guipoint_fn)
