@@ -24,10 +24,11 @@ import sys
 
 import gtk
 
-from geom2 import Point
+from geom2 import square_metric, Point
 import document
 from zoomable import ZoomableArea
 from boxdraw import BoxImageDrawer
+from refpoints import RefPoint
 
 from config import debug
 
@@ -64,16 +65,6 @@ def draw_ref_point(drawable, coords, size, gc, bord_gc):
   if dx1 > 0 and dy1 > 0:
     drawable.draw_rectangle(bord_gc, True, x1, y1, dx1, dy1)
 
-class RefPoint(object):
-  def __init__(self, name, visible=True):
-    self.coords = None
-    self.box_coords = None # not supposed to be changed manually...
-    self.background = None # ... use the method ImgView.ref_point_coords_set
-    self.name = name
-    self.visible = visible
-
-  def get_name(self):
-    return self.name
 
 class BoxViewArea(ZoomableArea):
   def __init__(self, filename=None, out_fn=None, **extra_args):
@@ -89,13 +80,52 @@ class BoxViewArea(ZoomableArea):
     # Create the ZoomableArea
     ZoomableArea.__init__(self, drawer, **extra_args)
 
-class BoxEditableArea(BoxViewArea):
+
+class Configurable(object):
+  def __init__(self):
+    self._config = {}
+
+  def set_config(self, name, value):
+    """Set the configuration option with name 'name' to 'value'."""
+    if type(name) == str:
+      self._config[name] = value
+    else:
+      for n, v in name:
+        self._config[n] = v
+
+  def set_config_default(self, name, value=None):
+    """Set the configuration option only if it is missing."""
+    if type(name) == str:
+      if name not in self._config:
+        self._config[name] = value
+    else:
+      for n, v in name:
+        if n not in self._config:
+          self._config[n] = v
+
+  def get_config(self, name, opt=None):
+    """Return the value of the configuration option 'name' or 'value'
+    if the configuration does not have such an option.
+    """
+    return self._config[name] if name in self._config else opt
+
+
+class BoxEditableArea(BoxViewArea, Configurable):
   def __init__(self, *args, **extra_args):
+    Configurable.__init__(self)
     BoxViewArea.__init__(self, *args, **extra_args)
 
-    self._dragged_refpoint = None # RefPoint which is being dragged
+    self._dragged_refpoint = None  # RefPoint which is being dragged
+    self._selected_refpoint = None # Currently selected RefPoint
+    self._fns = {}                 # External handler functions
 
     self.gc = None
+
+    # Set default configuration
+    self.set_config_default([("refpoint_size", 4),
+                             ("button_left", 1),
+                             ("button_center", 2),
+                             ("button_right", 3)])
 
     # Enable events and connect signals
     mask = (  gtk.gdk.POINTER_MOTION_MASK
@@ -105,9 +135,6 @@ class BoxEditableArea(BoxViewArea):
     self.connect("button-press-event", self._on_button_press_event)
     self.connect("motion-notify-event", self._on_motion_notify_event)
     self.connect("button-release-event", self._on_button_release_event)
-
-  def get_config(self, name, opt=None):
-    return opt
 
   def get_gc(self):
     gc = self.gc
@@ -119,30 +146,88 @@ class BoxEditableArea(BoxViewArea):
       gc.set_background(gtk.gdk.Color(blue=1.0))
       return gc
 
-  def refpoint_pick(self, point, include_invisible=False):
+  def refpoint_new(self, coords, name=None):
+    """Add a new reference point whose coordinates are 'point' (a couple
+    of floats) and the name is 'name'. If 'name' is not given, then a name
+    is generated automatically using the 'base_name' given during construction
+    of the class.
+    RETURN the name finally chosen for the point.
+    """
+    refpoints = self.document.refpoints
+    real_name = refpoints.new_name(name)
+    if real_name in refpoints:
+      raise ValueError("A reference point with the same name exists (%s)"
+                       % real_name)
+
+    rp = RefPoint(real_name, coords)
+    self._refpoint_show(rp)
+    refpoints.append(rp)
+    notify = self._fns.get("notify_refpoint_new", None)
+    if notify != None:
+      notify(real_name)
+    return real_name
+
+  def refpoint_pick(self, py_coords, include_invisible=False):
     """Returns the refpoint closest to the given one (argument 'point').
     If the distance between the two is greater than the current 'radius'
     (see set_radius), return None."""
-    current = self.document.refpoints.get_nearest(point, include_invisible)
-    s = self.get_config("refpoint_size", 4)
+    screen_view = self.get_visible_coords()
+    box_coords = screen_view.pix_to_coord(py_coords)
+    refpoints = self.document.refpoints
+    current = refpoints.get_nearest(box_coords,
+                                    include_invisible=include_invisible)
+    s = self.get_config("refpoint_size")
     if s == None:
       return current
-    elif current == None or current[1] > s:
+    elif current == None:
       return None
-    return current
+    else:
+      rp = current[0]
+      current_py_coords = screen_view.coord_to_pix(rp.value)
+      dist = square_metric(py_coords, current_py_coords)
+      if dist <= s:
+        return current
+      else:
+        return None
+
+  def refpoint_select(self, rp):
+    if type(rp) == str:
+      rp = self.document.refpoints[rp]
+    selected_before = self._selected_refpoint
+    self._selected_refpoint = rp
+    self._refpoint_show(rp)
+    if selected_before != None:
+      self._refpoint_show(selected_before)
+
+  def _refpoint_hide(self, rp):
+    pass
+
+  def _refpoint_show(self, rp):
+    view = self.get_visible_coords()
+    pix_coord = view.coord_to_pix(rp.value)
+    rp_size = self.get_config("refpoint_size")
+    draw_ref_point(self.window, pix_coord, rp_size,
+                   self.style.black_gc, self.get_gc())
 
   def refpoints_draw(self):
     refpoints = self.document.get_refpoints()
     view = self.get_visible_coords()
+    rp_size = self.get_config("refpoint_size")
     for refpoint in refpoints:
       pix_coord = view.coord_to_pix(refpoint.value)
-      draw_ref_point(self.window, pix_coord, 4,
+      draw_ref_point(self.window, pix_coord, rp_size,
                      self.style.black_gc, self.get_gc())
 
 
-  def refpoint_move(self, name, py_coords):
+  def refpoint_move(self, rp, py_coords):
     """Move a reference point to a new position."""
-    pass
+    self._refpoint_hide(rp)
+    screen_view = self.get_visible_coords()
+
+    py_coords = Point(py_coords)
+    box_coords = screen_view.pix_to_coord(py_coords)
+    rp.value = box_coords
+    self._refpoint_show(rp)
 
   def expose(self, draw_area, event):
     ret = ZoomableArea.expose(self, draw_area, event)
@@ -151,50 +236,49 @@ class BoxEditableArea(BoxViewArea):
 
   def _on_button_press_event(self, eventbox, event):
     """Called when clicking over the DrawingArea."""
-    print "click"
-    return
 
     py_coords = event.get_coords()
-    picked = self.imgview.pick(py_coords)
-    ref_point = None
+    picked = self.refpoint_pick(py_coords)
+    refpoint = None
     if picked != None:
-      ref_point, _ = picked
-      self.widget_refpoint_entry.set_text(ref_point.get_name())
+      refpoint, _ = picked
+      print "picked", refpoint.name
+      #self.widget_refpoint_entry.set_text(ref_point.name)
 
-    if event.button == self.button_left:
-      if ref_point != None:
-        if ref_point == self.imgview.selected:
-          self.dragging_ref_point = ref_point
+    if event.button == self.get_config("button_left"):
+      if refpoint != None:
+        if refpoint == self._selected_refpoint:
+          self._dragged_refpoint = refpoint
         else:
-          self.imgview.refpoint_select(ref_point)
+          self.refpoint_select(refpoint)
 
       else:
-        box_coords = self.imgview.map_coords_to_box(py_coords)
+        box_coords = self.get_visible_coords().pix_to_coord(py_coords)
         if box_coords != None:
-          point_name = self.imgview.ref_point_new(py_coords)
-          self.imgview.refpoint_select(point_name)
-          if self.get_paste_on_new():
-            self.textbuffer.insert_at_cursor("%s, " % point_name)
+          point_name = self.refpoint_new(py_coords)
+          self.refpoint_select(point_name)
+          #if self.get_paste_on_new():
+            #self.textbuffer.insert_at_cursor("%s, " % point_name)
 
-    elif self.dragging_ref_point != None:
+    elif self._dragged_refpoint != None:
       return
 
-    elif event.button == self.button_center:
-      if ref_point != None:
-        self.textbuffer.insert_at_cursor("%s, " % ref_point.name)
+    elif event.button == self.get_config("button_center"):
+      if refpoint != None:
+        self.textbuffer.insert_at_cursor("%s, " % refpoint.name)
 
-    elif event.button == self.button_right:
-      if ref_point != None:
-        self.imgview.ref_point_del(ref_point.name)
+    elif event.button == self.get_config("button_right"):
+      if refpoint != None:
+        self.imgview.ref_point_del(refpoint.name)
 
   def _on_motion_notify_event(self, eventbox, event):
     if self._dragged_refpoint != None:
       py_coords = event.get_coords()
-      self.imgview.ref_point_move(self.dragged_refpoint.name, py_coords)
+      self.refpoint_move(self._dragged_refpoint, py_coords)
 
   def _on_button_release_event(self, eventbox, event):
     if self._dragged_refpoint != None:
       py_coords = event.get_coords()
-      self.imgview.ref_point_move(self._dragged_refpoint, py_coords)
+      self.refpoint_move(self._dragged_refpoint, py_coords)
       self._dragged_refpoint = None
       #self.menu_run_execute(None)

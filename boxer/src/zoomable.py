@@ -121,7 +121,7 @@ class View(Rectangle):
     """Transform pixel coordinates to picture coordinates."""
     x1, y1 = self.corner1
     dx_dpx, dy_dpy = self.dpix_dcoord
-    return (x1 + pix[0]*dx_dpx, y1 + pix[0]*dy_dpy)
+    return (x1 + pix[0]*dx_dpx, y1 + pix[1]*dy_dpy)
 
   def coord_to_pix(self, coord):
     """Transform picture coordinates to pixel coordinates."""
