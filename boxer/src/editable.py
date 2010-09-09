@@ -122,7 +122,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
     self.set_config_default([("button_left", 1),
                              ("button_center", 2),
                              ("button_right", 3),
-                             ("refpoint_size", 4)])
+                             ("refpoint_size", 4),
+                             ("redraw_on_move", True)])
 
     # Enable events and connect signals
     mask = (  gtk.gdk.POINTER_MOTION_MASK
@@ -143,22 +144,24 @@ class BoxEditableArea(BoxViewArea, Configurable):
     self.set_config_default([("refpoint_gc", gc),
                              ("refpoint_sel_gc", gc_sel)])
 
-  def refpoint_new(self, coords, name=None):
+  def refpoint_new(self, py_coords, name=None):
     """Add a new reference point whose coordinates are 'point' (a couple
     of floats) and the name is 'name'. If 'name' is not given, then a name
     is generated automatically using the 'base_name' given during construction
     of the class.
     RETURN the name finally chosen for the point.
     """
+    screen_view = self.get_visible_coords()
+    box_coords = screen_view.pix_to_coord(py_coords)
     refpoints = self.document.refpoints
     real_name = refpoints.new_name(name)
     if real_name in refpoints:
       raise ValueError("A reference point with the same name exists (%s)"
                        % real_name)
 
-    rp = RefPoint(real_name, coords)
-    self._refpoint_show(rp)
+    rp = RefPoint(real_name, box_coords)
     refpoints.append(rp)
+    self._refpoint_show(rp)
     notify = self._fns.get("notify_refpoint_new", None)
     if notify != None:
       notify(real_name)
@@ -297,4 +300,6 @@ class BoxEditableArea(BoxViewArea, Configurable):
       py_coords = event.get_coords()
       self.refpoint_move(self._dragged_refpoint, py_coords)
       self._dragged_refpoint = None
-      #self.menu_run_execute(None)
+      if self.get_config("redraw_on_move"):
+        self.buf_needs_update = True
+        self.queue_draw()
