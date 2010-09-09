@@ -42,6 +42,9 @@ class RefPoints(object):
   def __contains__(self, name):
     return name in self.by_name
 
+  def __getitem__(self, key):
+    return self.by_name[key]
+
   def clear_selection(self):
     """Clear the current selection of RefPoint-s."""
     for rp in self.selection:
@@ -72,6 +75,12 @@ class RefPoints(object):
     self.by_name[rp.name] = rp
     self.content.append(rp)
 
+  def remove(self, rp):
+    self.content.remove(rp)
+    self.by_name.pop(rp.name)
+    if rp in self.selection:
+      self.selection.remove(rp)
+
   def get_nearest(self, point, include_invisible=False):
     """Find the refpoint which is nearest to the given point.
     Returns a couple made of the reference point and the distance.
@@ -86,8 +95,17 @@ class RefPoints(object):
           current_d = d
     return current
 
-  def __getitem__(self, key):
-    return self.by_name[key]
+  def get_neighbours(self, rp, distance=None):
+    """Find the RefPoint-s whose distance from 'rp' is not greater than 'd'.
+    """
+    if distance != None:
+      neighbours = []
+      for rpi in self.content:
+        if square_metric(rpi.value, rp.value) <= distance and rpi != rp:
+          neighbours.append(rpi)
+      return neighbours
+    else:
+      return [rpi for rpi in self.content if rpi != rp]
 
   def new_name(self, name=None):
     """If name is None or is not given, create automatically a name starting
