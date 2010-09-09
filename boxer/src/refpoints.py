@@ -24,6 +24,7 @@ class RefPoint(object):
     self.name = name
     self.value = value
     self.visible = visible
+    self.selected = False
 
 
 class RefPoints(object):
@@ -32,6 +33,7 @@ class RefPoints(object):
     self.by_name = {}
     for rp in content:
       self.by_name[rp.name] = rp
+    self.selection = []
     self._fns = {}
 
   def __iter__(self):
@@ -39,6 +41,29 @@ class RefPoints(object):
 
   def __contains__(self, name):
     return name in self.by_name
+
+  def clear_selection(self):
+    """Clear the current selection of RefPoint-s."""
+    for rp in self.selection:
+      rp.selected = False
+    self.selection = []
+
+  def select(self, rps):
+    """Add the RefPoint-s in rps to the current selected RefPoint-s."""
+    for rp in rps:
+      rp.selected = True
+    self.selection.extend(rps)
+
+  def set_selection(self, selection):
+    """Replace the current selection with the given one."""
+    self.clear_selection()
+    self.select(selection)
+
+  def is_selected(self, rp):
+    """Returns whether the given RefPoint belongs to the current selection.
+    """
+    assert rp.name in self.by_name
+    return rp.selected
 
   def append(self, rp):
     if rp.name in self.by_name:

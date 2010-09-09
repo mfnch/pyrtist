@@ -331,7 +331,6 @@ class ZoomableArea(gtk.DrawingArea):
       c1x, c1y = buf_view.coord_to_pix(vis_view.corner1)
       c2x, c2y = buf_view.coord_to_pix(vis_view.corner2)
       px, py = (int(min(c1x, c2x)), int(min(c1y, c2y)))
-      #lx, ly = (int(abs(c2x - c1x)), int(abs(c2y - c1y)))
       lx, ly = self.window.get_size()
       return self.buf.subpixbuf(px, py, lx, ly)
 
@@ -382,21 +381,23 @@ class ZoomableArea(gtk.DrawingArea):
     self.redraw_buffer()
     self.buf_needs_update = False
 
-  def expose(self, draw_area, event):
-    """Expose callback for the drawing area."""
-
-    self.update_buffer()
-
-    ea = event.area
+  def repaint(self, x, y, width, height):
+    """Just repaint the given area of the widget."""
     visible_of_buf = self.get_visible_buf()
-    buf_area = visible_of_buf.subpixbuf(ea.x, ea.y, ea.width, ea.height)
+    buf_area = visible_of_buf.subpixbuf(x, y, width, height)
     rowstride = buf_area.get_rowstride()
     pixels = buf_area.get_pixels()
-    draw_area.window.draw_rgb_image(draw_area.style.black_gc,
-                                    ea.x, ea.y, ea.width, ea.height,
-                                    'normal', pixels, rowstride,
-                                    ea.x, ea.y)
+    self.window.draw_rgb_image(self.style.black_gc,
+                               x, y, width, height,
+                               'normal', pixels, rowstride,
+                               x, y)
 
+  def expose(self, draw_area, event):
+    """Expose callback for the drawing area."""
+    assert draw_area == self
+    self.update_buffer()
+    ea = event.area
+    self.repaint(ea.x, ea.y, ea.width, ea.height)
     self._update_scrollbars()
     return True
 
