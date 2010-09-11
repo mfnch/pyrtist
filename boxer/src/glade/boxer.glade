@@ -419,8 +419,8 @@
             <child>
               <widget class="GtkAlignment" id="outimage_alignment">
                 <property name="visible">True</property>
-                <property name="xscale">0</property>
-                <property name="yscale">0</property>
+                <property name="xscale">1</property>
+                <property name="yscale">1</property>
                 <child>
                   <widget class="GtkFrame" id="outimage_frame">
                     <property name="visible">True</property>

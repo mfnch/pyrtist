@@ -30,7 +30,7 @@ from zoomable import ZoomableArea
 from boxdraw import BoxImageDrawer
 from refpoints import RefPoint
 
-from config import debug
+from config import Configurable
 
 def _cut_point(size, x, y):
   return (max(0, min(size[0]-1, x)), max(0, min(size[1]-1, y)))
@@ -65,11 +65,14 @@ def draw_ref_point(drawable, coords, size, gc):
     drawable.draw_rectangle(gc, True, x1, y1, dx1, dy1)
 
 class BoxViewArea(ZoomableArea):
-  def __init__(self, filename=None, out_fn=None, **extra_args):
+  def __init__(self, filename=None, out_fn=None, callbacks=None,
+               **extra_args):
     # Create the Document
-    self.document = d = document.Document()
+    self.document = d = document.Document(callbacks=callbacks)
     if filename != None:
       d.load_from_file(filename)
+    else:
+      d.new()
 
     # Create the Box drawer
     self.drawer = drawer = BoxImageDrawer(d)
@@ -79,44 +82,17 @@ class BoxViewArea(ZoomableArea):
     ZoomableArea.__init__(self, drawer, **extra_args)
 
 
-class Configurable(object):
-  def __init__(self):
-    self._config = {}
-
-  def set_config(self, name, value):
-    """Set the configuration option with name 'name' to 'value'."""
-    if type(name) == str:
-      self._config[name] = value
-    else:
-      for n, v in name:
-        self._config[n] = v
-
-  def set_config_default(self, name, value=None):
-    """Set the configuration option only if it is missing."""
-    if type(name) == str:
-      if name not in self._config:
-        self._config[name] = value
-    else:
-      for n, v in name:
-        if n not in self._config:
-          self._config[n] = v
-
-  def get_config(self, name, opt=None):
-    """Return the value of the configuration option 'name' or 'value'
-    if the configuration does not have such an option.
-    """
-    return self._config[name] if name in self._config else opt
-
-
 class BoxEditableArea(BoxViewArea, Configurable):
   def __init__(self, *args, **extra_args):
-    Configurable.__init__(self)
-    BoxViewArea.__init__(self, *args, **extra_args)
 
-    self._dragged_refpoint = None  # RefPoint which is being dragged
-    self._fns = {}                 # External handler functions
+    self._dragged_refpoint = None      # RefPoint which is being dragged
+    self._fns = {"refpoint_new": None, # External handler functions
+                 "refpoint_delete": None,
+                 "refpoint_pick": None,
+                 "refpoint_press": None}
 
-    self.gc = None
+    Configurable.__init__(self, from_args=extra_args)
+    BoxViewArea.__init__(self, *args, callbacks=self._fns, **extra_args)
 
     # Set default configuration
     self.set_config_default([("button_left", 1),
@@ -134,6 +110,14 @@ class BoxEditableArea(BoxViewArea, Configurable):
     self.connect("button-press-event", self._on_button_press_event)
     self.connect("motion-notify-event", self._on_motion_notify_event)
     self.connect("button-release-event", self._on_button_release_event)
+
+  def set_callback(self, name, callback):
+    """Set the callbacks."""
+    if name not in self._fns:
+      raise ValueError("Cannot find '%s'. Available callbacks are: %s."
+                       % (name, ", ".join(self._fns.keys())))
+    else:
+      self._fns[name] = callback
 
   def _realize(self, myself):
     # Set extra default configuration
@@ -162,10 +146,10 @@ class BoxEditableArea(BoxViewArea, Configurable):
     rp = RefPoint(real_name, box_coords)
     refpoints.append(rp)
     self._refpoint_show(rp)
-    notify = self._fns.get("notify_refpoint_new", None)
-    if notify != None:
-      notify(real_name)
-    return real_name
+    fn = self._fns["refpoint_new"]
+    if fn != None:
+      fn(rp)
+    return rp
 
   def refpoint_pick(self, py_coords, include_invisible=False):
     """Returns the refpoint closest to the given one (argument 'point').
@@ -259,6 +243,28 @@ class BoxEditableArea(BoxViewArea, Configurable):
     if rp.visible:
       self._refpoint_hide(rp)
       self.document.refpoints.remove(rp)
+      fn = self._fns["refpoint_delete"]
+      if fn != None:
+        fn(rp)
+
+  def refpoint_set_visibility(self, rp, show):
+    """Set the state of visibility of the given RefPoint."""
+    if rp.visible == show:
+      return
+    else:
+      self.document.refpoints.set_visibility(rp, show)
+      if show:
+        self._refpoint_show(rp)
+      else:
+        self._refpoint_hide(rp)
+
+  def refpoints_set_visibility(self, selection, visibility):
+    rps = self.document.refpoints.set_visibility(selection, visibility)
+    for rp in rps:
+      if rp.visible:
+        self._refpoint_show(rp)
+      else:
+        self._refpoint_hide(rp)
 
   def expose(self, draw_area, event):
     ret = ZoomableArea.expose(self, draw_area, event)
@@ -274,7 +280,9 @@ class BoxEditableArea(BoxViewArea, Configurable):
     rp = None
     if picked != None:
       rp, _ = picked
-      #self.widget_refpoint_entry.set_text(ref_point.name)
+      fn = self._fns["refpoint_pick"]
+      if fn != None:
+        fn(self, rp)
 
     if event.button == self.get_config("button_left"):
       if rp != None:
@@ -286,10 +294,11 @@ class BoxEditableArea(BoxViewArea, Configurable):
       else:
         box_coords = self.get_visible_coords().pix_to_coord(py_coords)
         if box_coords != None:
-          point_name = self.refpoint_new(py_coords)
-          self.refpoint_select(point_name)
-          #if self.get_paste_on_new():
-            #self.textbuffer.insert_at_cursor("%s, " % point_name)
+          rp = self.refpoint_new(py_coords)
+          self.refpoint_select(rp)
+          fn = self._fns["refpoint_press"]
+          if fn != None:
+            fn(rp)
 
     elif self._dragged_refpoint != None:
       return

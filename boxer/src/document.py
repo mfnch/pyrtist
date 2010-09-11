@@ -18,6 +18,7 @@
 import os
 
 import config
+from config import Configurable
 from exec_command import exec_command
 from refpoints import RefPoint, RefPoints
 
@@ -238,26 +239,31 @@ def save_to_str(document, version=version):
   else:
     raise ValueError("Cannot save document using version %s" % str(version))
 
-class Document:
+class Document(Configurable):
   """Class to load, save, display and edit Boxer documents.
   A Boxer document is basically a Box program plus some metainfo contained
   in comments."""
 
-  def __init__(self, filename=None):
+  def __init__(self, filename=None, callbacks=None, config=None):
     """filename=None :the filename associated to the document."""
+    Configurable.__init__(self, config=config)
     self.notifier = default_notifier
     self.attributes = {}
     self.parts = None
     self.filename = None
+    if callbacks != None:
+      callbacks.setdefault("box_document_execute", None)
+    self._fns = callbacks
 
   def new(self, preamble=None, refpoints=[], code=None):
     if code == None:
       code = default_code
     if preamble == None:
         preamble = default_preamble
+    rps = RefPoints(refpoints, callbacks=self._fns)
     self.parts = {'preamble': preamble,
                   'refpoints_text': '',
-                  'refpoints': RefPoints(refpoints),
+                  'refpoints': rps,
                   'userspace': code}
     self.attributes = {'version': version}
 
@@ -269,6 +275,11 @@ class Document:
 
   def get_user_part(self):
     return self.parts['userspace']
+
+  get_user_code = get_user_part
+
+  def set_user_code(self, code):
+    self.parts['userspace'] = code
 
   def _get_arg_num(self, arg, possible_args):
     i = 0
@@ -329,7 +340,7 @@ class Document:
                 self.notify("WARNING", "Cannot determine Boxer version which "
                             "generated the file")
 
-    guipoints = RefPoints()
+    guipoints = RefPoints(callbacks=self._fns)
     def guipoint_fn(p_str):
       guipoints.append(refpoint_from_string(p_str))
 
@@ -370,9 +381,11 @@ class Document:
 
   def execute(self, preamble=None, out_fn=None, exit_fn=None):
     # Have to find a convenient way to pass:
-    # - path to box executable
     # - extra command line arguments
     # - temporary directory, etc
+    fn = self._fns["box_document_execute"]
+    if fn != None:
+      fn(self, preamble, out_fn, exit_fn)
 
     tmp_fns = []
     src_filename = config.tmp_new_filename("source", "box", tmp_fns)
@@ -399,10 +412,8 @@ class Document:
     f.write(presrc_content)
     f.close()
 
-    # In case accidentally one of such files was there already
-    #config.remove_files(tmp_fns)
-
-    box_executable = "box" #self.config.get("Box", "exec")
+    box_executable = self.get_config("box_executable", "box")
+    box_args = self.get_config("box_extra_args", [])
     presrc_path, presrc_basename = os.path.split(presrc_filename)
     extra_opts = ["-I", "."]
     if self.filename != None:
@@ -411,7 +422,7 @@ class Document:
     args = ["-l", "g",
             "-I", presrc_path] + extra_opts + [
             "-se", presrc_basename,
-            src_filename]
+            src_filename] + box_args
 
     def do_at_exit():
       config.tmp_remove_files(tmp_fns)

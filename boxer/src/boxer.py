@@ -28,6 +28,8 @@ import config
 import document
 from exec_command import exec_command
 
+from editable import BoxEditableArea
+
 def box_source_preamble(out_files):
   if out_files == None:
     return """
@@ -132,40 +134,28 @@ class Boxer:
   def raw_file_new(self):
     """Start a new box program and set the content of the main textview."""
     from config import box_source_of_new
-    self.imgview.ref_point_del_all()
-    self.set_main_source(box_source_of_new)
+    d = self.editable_area.document
+    d.new(refpoints=[], code=box_source_of_new)
+    self.set_main_source(d.get_user_code())
     self.filename = None
     self.assume_file_is_saved()
     self.update_title()
+    self.editable_area.refresh()
 
   def raw_file_open(self, filename):
     """Load the file 'filename' into the textview."""
-    d = document.Document()
+    d = self.editable_area.document
     try:
       d.load_from_file(filename)
     except:
-      self.error("Error loading the file")
+      self.error('Error loading the file "%s"' % filename)
       return
-
-    ref_points = d.get_refpoints()
-    user_str = d.get_user_part()
-    execute = False
-
-    try:
-      self.imgview.ref_point_del_all()
-      self.imgview.add_from_list(ref_points)
-      execute = True
-
-    except:
-      self.imgview.ref_point_del_all()
-      user_str = src
-
-    self.set_main_source(user_str)
-    self.filename = filename
-    self.assume_file_is_saved()
-    self.update_title()
-
-    if execute: self.menu_run_execute(None)
+    finally:
+      self.set_main_source(d.get_user_code())
+      self.filename = filename
+      self.assume_file_is_saved()
+      self.update_title()
+      self.editable_area.refresh()
 
   def raw_file_save(self, filename=None):
     """Save the textview content into the file 'filename'."""
@@ -451,72 +441,24 @@ class Boxer:
     ad.run()
     ad.destroy()
 
-  def imgview_click(self, eventbox, event):
-    """Called when clicking with the mouse over the image."""
-    py_coords = event.get_coords()
-    picked = self.imgview.pick(py_coords)
-    ref_point = None
-    if picked != None:
-      ref_point, _ = picked
-      self.widget_refpoint_entry.set_text(ref_point.get_name())
-
-    if event.button == self.button_left:
-      if ref_point != None:
-        if ref_point == self.imgview.selected:
-          self.dragging_ref_point = ref_point
-        else:
-          self.imgview.refpoint_select(ref_point)
-
-      else:
-        box_coords = self.imgview.map_coords_to_box(py_coords)
-        if box_coords != None:
-          point_name = self.imgview.ref_point_new(py_coords)
-          self.imgview.refpoint_select(point_name)
-          if self.get_paste_on_new():
-            self.textbuffer.insert_at_cursor("%s, " % point_name)
-
-    elif self.dragging_ref_point != None:
-      return
-
-    elif event.button == self.button_center:
-      if ref_point != None:
-        self.textbuffer.insert_at_cursor("%s, " % ref_point.name)
-
-    elif event.button == self.button_right:
-      if ref_point != None:
-        self.imgview.ref_point_del(ref_point.name)
-
-  def imgview_motion(self, eventbox, event):
-    if self.dragging_ref_point != None:
-      name = self.dragging_ref_point.get_name()
-      py_coords = event.get_coords()
-      self.imgview.ref_point_move(name, py_coords)
-
-  def imgview_release(self, eventbox, event):
-    if self.dragging_ref_point != None:
-      name = self.dragging_ref_point.get_name()
-      py_coords = event.get_coords()
-      self.imgview.ref_point_move(name, py_coords)
-      self.dragging_ref_point = None
-      self.menu_run_execute(None)
-
   def refpoint_entry_changed(self, _):
     self.refpoint_show_update()
 
-  def notify_refpoint_new(self, name):
+  def notify_refpoint_new(self, rp):
     liststore = self.widget_refpoint_box.get_model()
-    liststore.insert(-1, row=(name,))
+    liststore.insert(-1, row=(rp.name,))
 
-  def notify_refpoint_del(self, name):
+  def notify_refpoint_del(self, rp):
     liststore = self.widget_refpoint_box.get_model()
     for item in liststore:
-      if liststore.get_value(item.iter, 0) == name:
+      if liststore.get_value(item.iter, 0) == rp.name:
         liststore.remove(item.iter)
         return
 
   def refpoint_show_update(self):
     selection = self.widget_refpoint_entry.get_text()
-    ratio = self.imgview.refpoint_get_visible_ratio(selection)
+    d = self.editable_area.document
+    ratio = d.refpoints.get_visible_ratio(selection)
     if ratio < 0.5:
       label, show = "show", True
     elif ratio > 0.5:
@@ -528,7 +470,7 @@ class Boxer:
   def refpoint_show_clicked(self, button):
     do_show = (button.get_label() == "show")
     selection = self.widget_refpoint_entry.get_text()
-    self.imgview.refpoint_set_visible(selection, do_show)
+    self.editable_area.refpoints_set_visibility(selection, do_show)
     self.refpoint_show_update()
 
   def get_paste_on_new(self):
@@ -581,23 +523,41 @@ class Boxer:
     self.widget_refpoint_box.set_model(liststore)
     self.widget_refpoint_box.set_text_column(0)
 
-    # Used to manage the reference points
-    import imgview
-    self.imgview = imgview.ImgView(self.boxer.get_widget("imgview"),
-                                   ref_point_size)
+    # Create the editable area and do all the wiring
+    self.editable_area = editable_area = BoxEditableArea()
+    editable_area.set_callback("refpoint_new", self.notify_refpoint_new)
+    editable_area.set_callback("refpoint_delete", self.notify_refpoint_del)
 
-    def set_next_refpoint(_, value):
-      self.widget_refpoint_entry.set_text(value)
-    def get_next_refpoint(_):
+    def get_next_refpoint(doc):
       return self.widget_refpoint_entry.get_text()
-    self.imgview.set_attr("get_next_refpoint_name", get_next_refpoint)
-    self.imgview.set_attr("set_next_refpoint_name", set_next_refpoint)
-    self.imgview.set_attr("notify_refpoint_new", self.notify_refpoint_new)
-    self.imgview.set_attr("notify_refpoint_del", self.notify_refpoint_del)
+    editable_area.set_callback("get_next_refpoint_name", get_next_refpoint)
 
-    set_next_refpoint(self.imgview, "gui1")
+    def set_next_refpoint_name(doc, rp_name):
+      self.widget_refpoint_entry.set_text(rp_name)
+    editable_area.set_callback("set_next_refpoint_name",
+                               set_next_refpoint_name)
 
-    self.dragging_ref_point = None
+    def set_next_refpoint(doc, rp):
+      self.widget_refpoint_entry.set_text(rp.name)
+    editable_area.set_callback("refpoint_pick", set_next_refpoint)
+
+    def box_document_execute(doc, preamble, out_fn, exit_fn):
+      doc.set_user_code(self.get_main_source())
+    editable_area.set_callback("box_document_execute", box_document_execute)
+
+
+
+    scroll_win = gtk.ScrolledWindow()
+    scroll_win.add(editable_area)
+
+    container = self.boxer.get_widget("outimage_alignment")
+    container.remove(container.child)
+    container.add(scroll_win)
+    container.show_all()
+
+
+    #set_next_refpoint(self.imgview, "gui1")
+
 
     self.filename = None
 
@@ -622,9 +582,6 @@ class Boxer:
            "on_toolbutton_save": self.menu_file_save,
            "on_toolbutton_run": self.menu_run_execute,
            "on_toolbutton_stop": self.menu_run_stop,
-           "on_imgview_motion": self.imgview_motion,
-           "on_imgview_click": self.imgview_click,
-           "on_imgview_release": self.imgview_release,
            "on_refpoint_entry_changed": self.refpoint_entry_changed,
            "on_refpoint_show_clicked": self.refpoint_show_clicked}
     self.boxer.signal_autoconnect(dic)
@@ -683,14 +640,13 @@ class Boxer:
     # Set a template program to start with...
     if filename == None:
       self.raw_file_new()
-
     else:
       self.raw_file_open(filename)
 
     # Now set the focus on the text view
     self.textview.grab_focus()
 
-    self.menu_run_execute(None)
+    #self.menu_run_execute(None)
 
   def _fill_example_menu(self):
     """Populate the example submenu File->Examples"""

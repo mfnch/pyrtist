@@ -172,7 +172,6 @@ class ZoomableArea(gtk.DrawingArea):
     self.extra_zoom = zoom_margin + zoom_margin + Point(1.0, 1.0)
                                     # ^^^ Extra zoom (to move a little bit
                                     #     beyond the bounding box)
-    
 
     self.scrollbar_page_inc = Point(0.9, 0.9) # Page increment for scrollbars
     self.scrollbar_step_inc = Point(0.1, 0.1) # Step increment for scrollbars
@@ -233,6 +232,11 @@ class ZoomableArea(gtk.DrawingArea):
     if self.magnification != None:
       dr = rectangle_adjustment(self.pic_view, self.get_visible_coords())
       self.last_view.translate(dr)
+
+  def refresh(self):
+    """Refresh the view."""
+    self.buf_needs_update = True
+    self.queue_draw()
 
   def zoom_in(self):
     """Zoom in."""

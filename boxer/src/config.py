@@ -199,6 +199,7 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
       self.write(f)
       f.close()
 
+
 def get_configuration():
   # Create Boxer configuration directory
   home_path = os.path.expanduser("~")
@@ -238,3 +239,36 @@ def get_configuration():
   successful_reads = c.read([user_cfg_file])
   return c
 
+
+class Configurable(object):
+  def __init__(self, config=None, from_args=None):
+    if from_args != None:
+      self._config = from_args.get("config", {})
+    elif config != None:
+      self._config = config
+    else:
+      self._config = {}
+
+  def set_config(self, name, value):
+    """Set the configuration option with name 'name' to 'value'."""
+    if type(name) == str:
+      self._config[name] = value
+    else:
+      for n, v in name:
+        self._config[n] = v
+
+  def set_config_default(self, name, value=None):
+    """Set the configuration option only if it is missing."""
+    if type(name) == str:
+      if name not in self._config:
+        self._config[name] = value
+    else:
+      for n, v in name:
+        if n not in self._config:
+          self._config[n] = v
+
+  def get_config(self, name, opt=None):
+    """Return the value of the configuration option 'name' or 'value'
+    if the configuration does not have such an option.
+    """
+    return self._config[name] if name in self._config else opt

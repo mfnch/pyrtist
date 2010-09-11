@@ -15,6 +15,8 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
+import fnmatch
+
 from geom2 import square_metric, Point
 import namegen
 
@@ -28,13 +30,15 @@ class RefPoint(object):
 
 
 class RefPoints(object):
-  def __init__(self, content=[]):
+  def __init__(self, content=[], callbacks=None):
     self.content = list(content)
     self.by_name = {}
     for rp in content:
       self.by_name[rp.name] = rp
     self.selection = []
-    self._fns = {}
+    self._fns = callbacks if callbacks != None else {}
+    callbacks.setdefault("get_next_refpoint_name", None)
+    callbacks.setdefault("set_next_refpoint_name", None)
 
   def __iter__(self):
     return self.content.__iter__()
@@ -67,6 +71,22 @@ class RefPoints(object):
     """
     assert rp.name in self.by_name
     return rp.selected
+
+  def set_visibility(self, selection, visible):
+    """Show or hide the refpoints specified by the string ``selection``.
+    Jolly characters can be used. For example: gui* means any refpoints
+    whose name starts with "gui"
+    """
+    refpoints_names = self.by_name.keys()
+    try:
+      selected_refpoints = fnmatch.filter(refpoints_names, selection)
+    except:
+      return
+
+    rps = map(lambda rp_name: self.by_name[rp_name], selected_refpoints)
+    for rp in rps:
+      rp.visible = visible
+    return rps
 
   def append(self, rp):
     if rp.name in self.by_name:
@@ -107,6 +127,27 @@ class RefPoints(object):
     else:
       return [rpi for rpi in self.content if rpi != rp]
 
+  def get_visible_ratio(self, selection):
+    """Return a number between 0.0 and 1.0 indicating the ratio
+    (num. visible points)/(num. total points)."""
+    refpoints_names = self.by_name.keys()
+    try:
+      selected_refpoints = fnmatch.filter(refpoints_names, selection)
+    except:
+      return 0.5
+
+    num_total = len(selected_refpoints)
+    if num_total < 1:
+      return 0.5
+
+    else:
+      num_visible = 0
+      for rp_name in selected_refpoints:
+        rp = self.by_name[rp_name]
+        if rp.visible:
+          num_visible += 1
+      return num_visible/float(num_total)
+
   def new_name(self, name=None):
     """If name is None or is not given, create automatically a name starting
     from the 'base_name' given during class initialisation.
@@ -115,12 +156,12 @@ class RefPoints(object):
     if name != None:
       return name
 
-    get_next_refpoint_name = self._fns.get("get_next_refpoint_name", None)
-    name = get_next_refpoint_name() if get_next_refpoint_name else "gui"
+    fn = self._fns["get_next_refpoint_name"]
+    name = fn(self) if fn != None else "gui"
     next_name = namegen.generate_next_name(name, increment=0)
     while len(next_name.strip()) < 1 or next_name in self.by_name:
       next_name = namegen.generate_next_name(next_name)
-    set_next_refpoint = self._fns.get("set_next_refpoint_name", None)
-    if set_next_refpoint:
-      set_next_refpoint(self, namegen.generate_next_name(next_name))
+    fn = self._fns["set_next_refpoint_name"]
+    if fn != None:
+      fn(self, namegen.generate_next_name(next_name))
     return next_name
