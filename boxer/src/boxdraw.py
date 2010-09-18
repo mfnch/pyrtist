@@ -100,20 +100,22 @@ class BoxImageDrawer(ImageDrawer):
       preamble = preamble.replace(var, str(val))
 
     def exit_fn():
-      if os.path.exists(info_out_filename):
-        f = open(info_out_filename, "r")
-        ls = f.read().splitlines()
-        f.close()
-        _, bminx, bminy, bmaxx, bmaxy = [float(x) for x in ls[0].split(",")]
-        ox, oy, sx, sy = [float(x) for x in ls[1].split(",")]
-        self.bbox = Rectangle(Point(bminx, bmaxy), Point(bmaxx, bminy))
-        self.view.reset(pix_size, Point(ox, oy + sy), Point(ox + sx, oy))
+      try:
+        if os.path.exists(info_out_filename):
+          f = open(info_out_filename, "r")
+          ls = f.read().splitlines()
+          f.close()
+          _, bminx, bminy, bmaxx, bmaxy = [float(x) for x in ls[0].split(",")]
+          ox, oy, sx, sy = [float(x) for x in ls[1].split(",")]
+          self.bbox = Rectangle(Point(bminx, bmaxy), Point(bmaxx, bminy))
+          self.view.reset(pix_size, Point(ox, oy + sy), Point(ox + sx, oy))
+
+        if os.path.exists(img_out_filename):
+          self.pixbuf = pixbuf_new_from_file(img_out_filename)
+
+      finally:
         self.executing = False
-
-      if os.path.exists(img_out_filename):
-        self.pixbuf = pixbuf_new_from_file(img_out_filename)
-
-      config.tmp_remove_files(tmp_fns)
+        config.tmp_remove_files(tmp_fns)
 
     self.executing = True
     return self.document.execute(preamble=preamble,

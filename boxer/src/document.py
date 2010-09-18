@@ -253,6 +253,7 @@ class Document(Configurable):
     self.filename = None
     if callbacks != None:
       callbacks.setdefault("box_document_execute", None)
+      callbacks.setdefault("box_exec_output", None)
     self._fns = callbacks
 
   def new(self, preamble=None, refpoints=[], code=None):
@@ -428,6 +429,9 @@ class Document(Configurable):
       config.tmp_remove_files(tmp_fns)
       if exit_fn:
         exit_fn()
+
+    if out_fn == None:
+      out_fn = self._fns["box_exec_output"]
 
     return exec_command(box_executable, args,
                         out_fn=out_fn, do_at_exit=do_at_exit)

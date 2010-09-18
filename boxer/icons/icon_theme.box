@@ -1,5 +1,5 @@
 IconSize = (Int nx, ny)
 icon_size = IconSize[.nx=16, .ny=16]
 color_inside = Color[(1, 1, 0.6)]
-width = 2
+width = 1
 

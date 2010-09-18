@@ -76,7 +76,7 @@ class BoxViewArea(ZoomableArea):
 
     # Create the Box drawer
     self.drawer = drawer = BoxImageDrawer(d)
-    drawer.out_fn = out_fn if out_fn != None else sys.stdout.write
+    drawer.out_fn = out_fn
 
     # Create the ZoomableArea
     ZoomableArea.__init__(self, drawer, **extra_args)
@@ -89,7 +89,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
     self._fns = {"refpoint_new": None, # External handler functions
                  "refpoint_delete": None,
                  "refpoint_pick": None,
-                 "refpoint_press": None}
+                 "refpoint_press": None,
+                 "refpoint_press_middle": None}
 
     Configurable.__init__(self, from_args=extra_args)
     BoxViewArea.__init__(self, *args, callbacks=self._fns, **extra_args)
@@ -305,7 +306,9 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
     elif event.button == self.get_config("button_center"):
       if rp != None:
-        self.textbuffer.insert_at_cursor("%s, " % rp.name)
+        fn = self._fns["refpoint_press_middle"]
+        if fn != None:
+          fn(self, rp)
 
     elif event.button == self.get_config("button_right"):
       if rp != None:

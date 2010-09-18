@@ -155,27 +155,25 @@ class Boxer:
       self.filename = filename
       self.assume_file_is_saved()
       self.update_title()
-      self.editable_area.refresh()
+      self.editable_area.zoom_off()
 
   def raw_file_save(self, filename=None):
     """Save the textview content into the file 'filename'."""
+    d = self.editable_area.document
     try:
       if filename == None:
         filename = self.filename
-
-      d = document.Document()
-      d.new(refpoints=self.imgview.get_point_list(),
-            code=self.get_main_source())
+      d.set_user_code(self.get_main_source())
       d.save_to_file(filename)
-
-      self.filename = filename
-      self.update_title()
-      self.assume_file_is_saved()
-      return True
 
     except:
       self.error("Error saving the file")
       return False
+
+    self.filename = filename
+    self.update_title()
+    self.assume_file_is_saved()
+    return True
 
   def ensure_file_is_saved(self):
     """Give to the user a possibility of saving the work that otherwise would
@@ -311,96 +309,20 @@ class Boxer:
 
   def menu_run_execute(self, image_menu_item):
     """Called by menu run->execute command."""
-    box_source_file = config.tmp_new_filename("source", "box")
-    box_presource_file = config.tmp_new_filename("pre", "box")
-    box_out_file = config.tmp_new_filename("out", "dat")
-    box_out_img_file = config.tmp_new_filename("out", "png")
-
-    d = document.Document()
-    d.new(preamble=box_source_preamble((box_out_file, box_out_img_file)),
-          refpoints=self.imgview.get_point_list(),
-          code="")
-
-    pre = d.save_to_str()
-    src = self.get_main_source()
-
-    f = open(box_presource_file, "wt")
-    f.write(pre)
-    f.close()
-
-    f = open(box_source_file, "wt")
-    f.write(src)
-    f.close()
-
-    for filename in [box_out_file, box_out_img_file]:
-      try:
-        os.unlink(filename)
-      except:
-        pass
-
-    box_executable = self.config.get("Box", "exec")
-    pre_path, pre_basename = os.path.split(box_presource_file)
-    extra_opts = ["-I", "."]
-    if self.filename != None:
-      p = os.path.split(self.filename)[0]
-      if len(p) > 0: extra_opts = ["-I",  p]
-    args = ["-l", "g",
-            "-I", pre_path] + extra_opts + [
-            "-se", pre_basename,
-            box_source_file]
-
-    box_out_msgs = [""]
-    def out_fn(s):
-      if config.use_threads:
-        gtk.gdk.threads_enter()
-      box_out_msgs[0] += s
-      box_out_msgs[0] = self._out_textview_refresh(box_out_msgs[0])
-      if config.use_threads:
-        gtk.gdk.threads_leave()
-
-    def do_at_exit():
-      if config.use_threads:
-        gtk.gdk.threads_enter()
-      self._out_textview_refresh(box_out_msgs[0], force=True)
-
-      bbox = None
-      try:
-        data = parse_out_file(box_out_file)
-        bbox_n = int(data["bbox_n"])
-        bbox_min = (float(data["bbox_min_x"]), float(data["bbox_min_y"]))
-        bbox_max = (float(data["bbox_max_x"]), float(data["bbox_max_y"]))
-        if bbox_n == 3:
-          bbox = [bbox_min, bbox_max]
-
-      except:
-        pass
-
-      if os.access(box_out_img_file, os.R_OK):
-        try:
-          self.imgview.set_from_file(box_out_img_file, bbox)
-        except:
-          pass
-
-      config.tmp_remove_all_files()
-      self._set_box_killer(None)
-      if config.use_threads:
-        gtk.gdk.threads_leave()
-
-    try:
-      killer = exec_command(box_executable, args,
-                            out_fn=out_fn,
-                            do_at_exit=do_at_exit)
-      self._set_box_killer(killer)
-
-    except OSError:
-      self.config.mark_as_broken()
-      self._out_textview_refresh("Could not find the Box executable \"%s\". "
-                                 "Check the configuration settings!"
-                                 % box_executable)
+    self.editable_area.refresh()
 
   def menu_run_stop(self, image_menu_item):
     if self.box_killer != None:
       self.box_killer()
+
+  def menu_zoom_in(self, image_menu_item):
+    self.editable_area.zoom_in()
+
+  def menu_zoom_out(self, image_menu_item):
+    self.editable_area.zoom_out()
+
+  def menu_zoom_norm(self, image_menu_item):
+    self.editable_area.zoom_off()
 
   def _set_box_killer(self, killer):
     killer_given = (killer != None)
@@ -495,7 +417,7 @@ class Boxer:
     self.boxer = gtk.glade.XML(self.gladefile, "boxer")
     self.mainwin = self.boxer.get_widget("boxer")
     self.textview = self.boxer.get_widget("textview")
-    self.textbuffer = self.textview.get_buffer()
+    self.textbuffer = textbuffer = self.textview.get_buffer()
     self.out_textview = self.boxer.get_widget("outtextview")
     self.out_textbuffer = self.out_textview.get_buffer()
     self.out_textview_expander = self.boxer.get_widget("outtextview_expander")
@@ -528,6 +450,10 @@ class Boxer:
     editable_area.set_callback("refpoint_new", self.notify_refpoint_new)
     editable_area.set_callback("refpoint_delete", self.notify_refpoint_del)
 
+    def refpoint_press_middle(_, rp):
+      self.textbuffer.insert_at_cursor("%s, " % rp.name)
+    editable_area.set_callback("refpoint_press_middle", refpoint_press_middle)
+
     def get_next_refpoint(doc):
       return self.widget_refpoint_entry.get_text()
     editable_area.set_callback("get_next_refpoint_name", get_next_refpoint)
@@ -547,16 +473,40 @@ class Boxer:
 
 
 
+
+    if False:
+      box_out_msgs = [""]
+      def out_fn(s):
+        if config.use_threads:
+          gtk.gdk.threads_enter()
+        box_out_msgs[0] += s
+        box_out_msgs[0] = self._out_textview_refresh(box_out_msgs[0])
+        if config.use_threads:
+          gtk.gdk.threads_leave()
+
+
+
+
+
+
+    def box_exec_output(s):
+      self._out_textview_refresh(s)
+      #print "X%sX" % s
+    editable_area.set_callback("box_exec_output", box_exec_output)
+
+    # Create the scrolled window
     scroll_win = gtk.ScrolledWindow()
     scroll_win.add(editable_area)
 
+    # Add the scrolled window to the alignment widget
     container = self.boxer.get_widget("outimage_alignment")
     container.remove(container.child)
     container.add(scroll_win)
     container.show_all()
 
+    # Set the name for the first reference point
+    set_next_refpoint_name(self.editable_area.document, "gui1")
 
-    #set_next_refpoint(self.imgview, "gui1")
 
 
     self.filename = None
@@ -582,6 +532,9 @@ class Boxer:
            "on_toolbutton_save": self.menu_file_save,
            "on_toolbutton_run": self.menu_run_execute,
            "on_toolbutton_stop": self.menu_run_stop,
+           "on_toolbutton_zoom_in": self.menu_zoom_in,
+           "on_toolbutton_zoom_out": self.menu_zoom_out,
+           "on_toolbutton_zoom_norm": self.menu_zoom_norm,
            "on_refpoint_entry_changed": self.refpoint_entry_changed,
            "on_refpoint_show_clicked": self.refpoint_show_clicked}
     self.boxer.signal_autoconnect(dic)
