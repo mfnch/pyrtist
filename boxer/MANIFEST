@@ -12,6 +12,7 @@ src/zoomable.py
 src/exec_command.py
 src/boxdraw.py
 src/config.py
+src/refpoints.py
 src/document.py
 src/info.py
 src/glade/boxer.glade
