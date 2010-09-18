@@ -208,7 +208,7 @@ def save_to_str_v0_1_1(document):
   ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"])
   ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"])
   refpoints = [refpoint_to_string(rp)
-               for rp in parts["refpoints"]]
+               for rp in document.refpoints]
   refpoints_text = text_writer(refpoints)
   s = (ml_version +
        parts["preamble"] + endline +
@@ -221,7 +221,7 @@ def save_to_str_v0_1(document):
   ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"])
   ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"])
   refpoints = [refpoint_to_string(rp, version=(0, 1))
-               for rp in parts["refpoints"]]
+               for rp in document.refpoints]
   refpoints_text = text_writer(refpoints)
   s = (parts["preamble"] + endline +
        ml_refpoints_begin + refpoints_text + ml_refpoints_end +
@@ -244,35 +244,36 @@ class Document(Configurable):
   A Boxer document is basically a Box program plus some metainfo contained
   in comments."""
 
-  def __init__(self, filename=None, callbacks=None, config=None):
+  def __init__(self, filename=None, callbacks=None,
+               config=None, from_args=None):
     """filename=None :the filename associated to the document."""
-    Configurable.__init__(self, config=config)
+    Configurable.__init__(self, config=config, from_args=from_args)
     self.notifier = default_notifier
     self.attributes = {}
     self.parts = None
     self.filename = None
-    if callbacks != None:
-      callbacks.setdefault("box_document_execute", None)
-      callbacks.setdefault("box_exec_output", None)
+    if callbacks == None:
+      callbacks = {}
+    callbacks.setdefault("box_document_execute", None)
+    callbacks.setdefault("box_document_executed", None)
+    callbacks.setdefault("box_exec_output", None)
     self._fns = callbacks
+    self.refpoints = RefPoints(callbacks=self._fns)
 
   def new(self, preamble=None, refpoints=[], code=None):
     if code == None:
       code = default_code
     if preamble == None:
         preamble = default_preamble
-    rps = RefPoints(refpoints, callbacks=self._fns)
+    self.refpoints.load(refpoints)
     self.parts = {'preamble': preamble,
                   'refpoints_text': '',
-                  'refpoints': rps,
                   'userspace': code}
     self.attributes = {'version': version}
 
   def get_refpoints(self):
     """Get a list of the reference points in the document (list of GUIPoint)"""
-    return self.parts['refpoints']
-
-  refpoints = property(get_refpoints)
+    return self.refpoints
 
   def get_user_part(self):
     return self.parts['userspace']
@@ -323,7 +324,7 @@ class Document(Configurable):
 
           else:
             if len(marker) < marker_wants[marker_name] + 1:
-              self.notify("WARNING", 
+              self.notify("WARNING",
                           "Marker has less arguments than expected")
 
             elif marker_name == "REFPOINTS":
@@ -341,13 +342,13 @@ class Document(Configurable):
                 self.notify("WARNING", "Cannot determine Boxer version which "
                             "generated the file")
 
-    guipoints = RefPoints(callbacks=self._fns)
+    refpoints = self.refpoints
+    refpoints.remove_all()
     def guipoint_fn(p_str):
-      guipoints.append(refpoint_from_string(p_str))
+      refpoints.append(refpoint_from_string(p_str))
 
     if parts.has_key("refpoints_text"):
       parse_guipoint_part(parts["refpoints_text"], guipoint_fn)
-    parts["refpoints"] = guipoints
 
     if not parts.has_key("userspace"):
       # This means that the file was not produced by Boxer, but it is likely
@@ -425,8 +426,11 @@ class Document(Configurable):
             "-se", presrc_basename,
             src_filename] + box_args
 
+    fn = self._fns["box_document_executed"]
     def do_at_exit():
       config.tmp_remove_files(tmp_fns)
+      if fn != None:
+        fn(self)
       if exit_fn:
         exit_fn()
 

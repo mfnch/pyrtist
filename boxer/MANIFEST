@@ -13,7 +13,6 @@ src/exec_command.py
 src/boxdraw.py
 src/config.py
 src/document.py
-src/imgview.py
 src/info.py
 src/glade/boxer.glade
 src/examples/bang.box

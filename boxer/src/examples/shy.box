@@ -1,3 +1,4 @@
+//!BOXER:VERSION:0:1:1
 
 include "g"
 GUI = Void
@@ -5,16 +6,13 @@ Window@GUI[]
 
 
 //!BOXER:REFPOINTS:BEGIN
-gui1 = (1.40981012658, -0.897151898734)
-
+gui1 = Point[.x=1.40981012658, .y=-0.897151898734]
 //!BOXER:REFPOINTS:END
 // Simple example of parametric figure: move the point upward 
 //  ìand see what happens
 //-------------------------------------------------------------------------------
 // Shyness level
 x = Min[Point[gui1].y/10.0, 0.45]
-
-x = Real
 x = Min[Max[x, 0.0], 0.5]
 pdg = 10 * Vec[2*const.pi*x] // Direction of the eyes
 f = 1 - 2*x                  // Happyness level

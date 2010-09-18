@@ -140,7 +140,8 @@ class View(Rectangle):
 class ZoomableArea(gtk.DrawingArea):
   def __init__(self, drawer,
                hadjustment=None, vadjustment=None,
-               zoom_factor=1.5, zoom_margin=0.25, buf_margin=0.25):
+               zoom_factor=1.5, zoom_margin=0.25, buf_margin=0.25,
+               config=None):
     # Adjustment objects to control the scrolling
     self._hadjustment = hadjustment
     self._vadjustment = vadjustment

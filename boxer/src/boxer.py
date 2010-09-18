@@ -16,6 +16,24 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
+
+# TODO (for v 0.2.0):
+# - it should be possible to terminate execution of running scripts
+# - configuration files should work as before
+# - refpoints should have yellow color
+# - paste button should work as before
+
+# TODO (for later):
+# - load and save dialogs should remember last opened directory(independently)
+# - initial script should have bounding box defined by two RefPoint-s
+# - bounding box should be visible somehow
+# - drawing tools (color window, polygons, lines, etc)
+# - multiple selection of points and transformation on them
+#   (translation, rotation,...)
+# - find and replace
+# - rename RefPoint? (dangerous, should be assisted)
+# - configuration window
+
 import pygtk
 pygtk.require('2.0')
 import gtk
@@ -366,11 +384,11 @@ class Boxer:
   def refpoint_entry_changed(self, _):
     self.refpoint_show_update()
 
-  def notify_refpoint_new(self, rp):
+  def notify_refpoint_new(self, obj, rp):
     liststore = self.widget_refpoint_box.get_model()
     liststore.insert(-1, row=(rp.name,))
 
-  def notify_refpoint_del(self, rp):
+  def notify_refpoint_del(self, obj, rp):
     liststore = self.widget_refpoint_box.get_model()
     for item in liststore:
       if liststore.get_value(item.iter, 0) == rp.name:
@@ -446,9 +464,10 @@ class Boxer:
     self.widget_refpoint_box.set_text_column(0)
 
     # Create the editable area and do all the wiring
-    self.editable_area = editable_area = BoxEditableArea()
-    editable_area.set_callback("refpoint_new", self.notify_refpoint_new)
-    editable_area.set_callback("refpoint_delete", self.notify_refpoint_del)
+    cfg = {"box_executable": self.config.get("Box", "exec")}
+    self.editable_area = editable_area = BoxEditableArea(config=cfg)
+    editable_area.set_callback("refpoint_append", self.notify_refpoint_new)
+    editable_area.set_callback("refpoint_remove", self.notify_refpoint_del)
 
     def refpoint_press_middle(_, rp):
       self.textbuffer.insert_at_cursor("%s, " % rp.name)
@@ -467,8 +486,10 @@ class Boxer:
       self.widget_refpoint_entry.set_text(rp.name)
     editable_area.set_callback("refpoint_pick", set_next_refpoint)
 
+    box_output = [None]
     def box_document_execute(doc, preamble, out_fn, exit_fn):
       doc.set_user_code(self.get_main_source())
+      box_output[0] = ""
     editable_area.set_callback("box_document_execute", box_document_execute)
 
 
@@ -489,10 +510,14 @@ class Boxer:
 
 
 
-    def box_exec_output(s):
-      self._out_textview_refresh(s)
-      #print "X%sX" % s
+    def box_exec_output(s, force=False):
+      box_output[0] += s
+      box_output[0] = self._out_textview_refresh(box_output[0], force=force)
     editable_area.set_callback("box_exec_output", box_exec_output)
+
+    def box_document_executed(doc):
+      box_exec_output("", force=True)
+    editable_area.set_callback("box_document_executed", box_document_executed)
 
     # Create the scrolled window
     scroll_win = gtk.ScrolledWindow()

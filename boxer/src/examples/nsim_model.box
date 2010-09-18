@@ -70,6 +70,6 @@ w = Window[][
           gradient3, gui7, arrow, gui8]
 ]
 
-w.Save["nsim_model.png", Window["rgb24", .Res[Dpi[100]]]]
+//w.Save["nsim_model.png", Window["rgb24", .Res[Dpi[100]]]]
 
 GUI[w]

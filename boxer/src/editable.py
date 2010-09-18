@@ -68,7 +68,8 @@ class BoxViewArea(ZoomableArea):
   def __init__(self, filename=None, out_fn=None, callbacks=None,
                **extra_args):
     # Create the Document
-    self.document = d = document.Document(callbacks=callbacks)
+    self.document = d = \
+      document.Document(callbacks=callbacks, from_args=extra_args)
     if filename != None:
       d.load_from_file(filename)
     else:
@@ -149,7 +150,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
     self._refpoint_show(rp)
     fn = self._fns["refpoint_new"]
     if fn != None:
-      fn(rp)
+      fn(self, rp)
     return rp
 
   def refpoint_pick(self, py_coords, include_invisible=False):
@@ -246,7 +247,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
       self.document.refpoints.remove(rp)
       fn = self._fns["refpoint_delete"]
       if fn != None:
-        fn(rp)
+        fn(self, rp)
 
   def refpoint_set_visibility(self, rp, show):
     """Set the state of visibility of the given RefPoint."""

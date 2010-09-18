@@ -39,6 +39,8 @@ class RefPoints(object):
     self._fns = callbacks if callbacks != None else {}
     callbacks.setdefault("get_next_refpoint_name", None)
     callbacks.setdefault("set_next_refpoint_name", None)
+    callbacks.setdefault("refpoint_append", None)
+    callbacks.setdefault("refpoint_remove", None)
 
   def __iter__(self):
     return self.content.__iter__()
@@ -48,6 +50,33 @@ class RefPoints(object):
 
   def __getitem__(self, key):
     return self.by_name[key]
+
+  def load(self, refpoints):
+    """Replace the current RefPoint-s with the given ones.
+    ('refpoints' is a list of RefPoint objects)
+    """
+
+    # Notify RefPoint removals
+    fn = self._fns["refpoint_remove"]
+    if fn != None:
+      for rp in self.content:
+        fn(self, rp)
+
+    self.content = list(refpoints)
+    self.by_name = {}
+    for rp in refpoints:
+      self.by_name[rp.name] = rp
+    self.selection = []
+
+    # Notify RefPoint additions
+    fn = self._fns["refpoint_append"]
+    if fn != None:
+      for rp in self.content:
+        fn(self, rp)
+
+  def remove_all(self):
+    """Remove all the RefPoint objects inserted so far."""
+    self.load([])
 
   def clear_selection(self):
     """Clear the current selection of RefPoint-s."""
@@ -95,11 +124,21 @@ class RefPoints(object):
     self.by_name[rp.name] = rp
     self.content.append(rp)
 
+    # Append notification
+    fn = self._fns["refpoint_append"]
+    if fn != None:
+      fn(self, rp)
+
   def remove(self, rp):
     self.content.remove(rp)
     self.by_name.pop(rp.name)
     if rp in self.selection:
       self.selection.remove(rp)
+
+    # Remove notification
+    fn = self._fns["refpoint_remove"]
+    if fn != None:
+      fn(self, rp)
 
   def get_nearest(self, point, include_invisible=False):
     """Find the refpoint which is nearest to the given point.
