@@ -23,16 +23,19 @@
 # x refpoints should have yellow color
 # x paste button should work as before
 
+# x initial script should have bounding box defined by two RefPoint-s
+# x bounding box should be visible somehow
+
 # TODO (for later):
-# - remember last window configuration (size of main window)
-# - extend do/undo to refpoints
 # - vertical placement of text editor and graphic view
 #   Now it is [--] while we should allow [ | ]
 #   There are four combinations [Text|Figure], [Figure|Text], etc.
+# - allow automatic placement (considers the shape of the figure
+#   and decide what is more appropriate)
+# - remember last window configuration (size of main window)
+# - extend do/undo to refpoints
 # - buffer geometry should be determined by memory available for buffer
 # - load and save dialogs should remember last opened directory(independently)
-# x initial script should have bounding box defined by two RefPoint-s
-# x bounding box should be visible somehow
 # - drawing tools (color window, polygons, lines, etc)
 # - multiple selection of points and transformation on them
 #   (translation, rotation,...)

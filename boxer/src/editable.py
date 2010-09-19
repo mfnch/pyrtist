@@ -234,9 +234,6 @@ class BoxEditableArea(BoxViewArea, Configurable):
         gc = gc_sel if refpoints.is_selected(rp) else gc_unsel
         draw_ref_point(self.window, pix_coord, rp_size, gc)
 
-  def _draw_bounding_box(self):
-    pass
-
   def refpoint_move(self, rp, py_coords):
     """Move a reference point to a new position."""
     if rp.visible:
@@ -277,7 +274,6 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
   def expose(self, draw_area, event):
     ret = ZoomableArea.expose(self, draw_area, event)
-    self._draw_bounding_box()
     self._draw_refpoints()
     return ret
 

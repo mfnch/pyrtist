@@ -342,7 +342,7 @@ class ZoomableArea(gtk.DrawingArea):
   def redraw_buffer(self):
     """Redraw the picture and update the internal buffer."""
 
-    print "REDRAWING ",
+    debug_msg("REDRAWING", " ")
     # First, we check whether we have a large-enough buffer
     self.alloc_buffer()
     self.buf.fill(color_background) # we clean it

@@ -24,8 +24,8 @@ def debug():
   IPShellEmbed([])(local_ns  = calling_frame.f_locals,
                    global_ns = calling_frame.f_globals)
 
-def debug_msg(msg):
-  print msg
+def debug_msg(msg, nl="\n"):
+  sys.stdout.write(msg + nl)
 
 # Trick to determine whether we are running under Py2exe or not
 def main_is_frozen():
