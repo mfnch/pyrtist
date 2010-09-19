@@ -27,13 +27,13 @@ def debug():
 def debug_msg(msg):
   print msg
 
-# Trick to determine whether we are running under Py2exe or not  
+# Trick to determine whether we are running under Py2exe or not
 def main_is_frozen():
   """Return True when running as a Py2exe executable."""
   return (hasattr(sys, "frozen") or # new py2exe
           hasattr(sys, "importers") # old py2exe
           or imp.is_frozen("__main__")) # tools/freeze
- 
+
 def get_main_dir():
   """Return the path to the main Python source from which the execution
   started."""
@@ -54,8 +54,17 @@ box_syntax_highlighting = sys.path[0]
 # By default this is the text put inside a new program
 # created with File->New
 box_source_of_new = \
-"""w = Window[][
-  .Show[(0, 0), (100, 50)]
+"""//!BOXER:VERSION:0:1:1
+include "g"
+GUI = Void
+Window@GUI[]
+
+//!BOXER:REFPOINTS:BEGIN
+bbox1 = Point[.x=0.0, .y=0.0]
+bbox2 = Point[.x=100.0, .y=50.0]
+//!BOXER:REFPOINTS:END
+w = Window[][
+  .Show[bbox1, bbox2]
 
   //!BOXER:CURSOR:HERE
 ]
@@ -116,7 +125,7 @@ def tmp_remove_files(file_names):
       os.unlink(filename)
     except:
       pass
-  
+
 def tmp_remove_all_files():
   """Remove all the temporary files created up to now."""
   tmp_remove_files(_tmp_files[0])

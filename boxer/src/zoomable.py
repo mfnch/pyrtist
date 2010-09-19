@@ -34,7 +34,7 @@ import gobject
 from config import debug, debug_msg
 from geom2 import *
 
-color_background = 0xffff0000
+color_background = 0x77777700
 
 class ImageDrawer(object):
   def update(self, pixbuf_output, pix_view, coord_view=None):
@@ -430,32 +430,32 @@ class ZoomableArea(gtk.DrawingArea):
 
       if self._hadjustment:
         page_size = abs(visible_coords.get_dx())
-        ha.set_lower(0.0)
-        ha.set_upper(abs(pic_view.get_dx()))
-        ha.set_value(abs(visible_coords.corner1.x - bb1.x))
-        ha.set_page_size(page_size)
-        ha.set_page_increment(page_size*self.scrollbar_page_inc.x)
-        ha.set_step_increment(page_size*self.scrollbar_step_inc.x)
+        ha.lower = 0.0
+        ha.upper = abs(pic_view.get_dx())
+        ha.value = abs(visible_coords.corner1.x - bb1.x)
+        ha.page_size = page_size
+        ha.page_increment = page_size*self.scrollbar_page_inc.x
+        ha.step_increment = page_size*self.scrollbar_step_inc.x
 
       if self._vadjustment:
         page_size = abs(visible_coords.get_dy())
-        va.set_lower(0.0)
-        va.set_upper(abs(pic_view.get_dy()))
-        va.set_value(abs(visible_coords.corner1.y - bb1.y))
-        va.set_page_size(page_size)
-        va.set_page_increment(page_size*self.scrollbar_page_inc.y)
-        va.set_step_increment(page_size*self.scrollbar_step_inc.y)
+        va.lower = 0.0
+        va.upper = abs(pic_view.get_dy())
+        va.value = abs(visible_coords.corner1.y - bb1.y)
+        va.page_size = page_size
+        va.page_increment = page_size*self.scrollbar_page_inc.y
+        va.step_increment = page_size*self.scrollbar_step_inc.y
 
     else:
-      ha.set_lower(0.0)
-      ha.set_upper(1.0)
-      ha.set_value(0.0)
-      ha.set_page_size(1.0)
+      ha.lower = 0.0
+      ha.upper = 1.0
+      ha.value = 0.0
+      ha.page_size = 1.0
 
-      va.set_lower(0.0)
-      va.set_upper(1.0)
-      va.set_value(0.0)
-      va.set_page_size(1.0)
+      va.lower = 0.0
+      va.upper = 1.0
+      va.value = 0.0
+      va.page_size = 1.0
 
     self._block_scrollbar_signals(False)
 

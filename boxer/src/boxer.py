@@ -20,12 +20,17 @@
 # TODO (for v 0.2.0):
 # - it should be possible to terminate execution of running scripts
 # - configuration files should work as before
-# - refpoints should have yellow color
-# - paste button should work as before
+# x refpoints should have yellow color
+# x paste button should work as before
 
 # TODO (for later):
+# - extend do/undo to refpoints
+# - vertical placement of text editor and graphic view
+#   Now it is [--] while we should allow [ | ]
+#   There are four combinations [Text|Figure], [Figure|Text], etc.
+# - buffer geometry should be determined by memory available for buffer
 # - load and save dialogs should remember last opened directory(independently)
-# - initial script should have bounding box defined by two RefPoint-s
+# x initial script should have bounding box defined by two RefPoint-s
 # - bounding box should be visible somehow
 # - drawing tools (color window, polygons, lines, etc)
 # - multiple selection of points and transformation on them
@@ -47,50 +52,6 @@ import document
 from exec_command import exec_command
 
 from editable import BoxEditableArea
-
-def box_source_preamble(out_files):
-  if out_files == None:
-    return """
-include "g"
-GUI = Void
-Window@GUI[]
-
-"""
-
-  else:
-    box_out_file, box_out_img_file = out_files
-    box_out_file = box_out_file.replace("\\", "\\\\")
-    box_out_img_file = box_out_img_file.replace("\\", "\\\\")
-    return """
-include "g"
-GUI = Void
-Window@GUI[
-  b = BBox[$]
-  out = Str["bbox_n = ", b.n;
-            "bbox_min_x = ", b.min.x; "bbox_min_y = ", b.min.y;
-            "bbox_max_x = ", b.max.x; "bbox_max_y = ", b.max.y;]
-  \ File["%s", "w"][out]
-  $.Save["%s"]
-]
-
-""" % (box_out_file, box_out_img_file)
-
-def parse_out_file(out_file):
-  """Get the data parsing the output file produced by the GUI Box object."""
-  known_vars = ["bbox_n", "bbox_min_x", "bbox_min_y",
-                "bbox_max_x", "bbox_max_y"]
-  f = open(out_file, "r")
-  lines = f.read().splitlines()
-  f.close()
-  data = {}
-  for line in lines:
-    sides = line.split("=")
-    if len(sides) == 2:
-      lhs = sides[0].strip()
-      rhs = sides[1].strip()
-      if lhs in known_vars:
-        data[lhs] = rhs
-  return data
 
 def debug():
   import sys
@@ -153,7 +114,8 @@ class Boxer:
     """Start a new box program and set the content of the main textview."""
     from config import box_source_of_new
     d = self.editable_area.document
-    d.new(refpoints=[], code=box_source_of_new)
+    d.load_from_str(box_source_of_new)
+
     self.set_main_source(d.get_user_code())
     self.filename = None
     self.assume_file_is_saved()
@@ -413,7 +375,7 @@ class Boxer:
     self.editable_area.refpoints_set_visibility(selection, do_show)
     self.refpoint_show_update()
 
-  def get_paste_on_new(self):
+  def should_paste_on_new(self):
     """Return true if the name of the reference points should be pasted
     to the current edited source when they are created.
     """
@@ -456,15 +418,14 @@ class Boxer:
     self.widget_refpoint_entry = self.boxer.get_widget("refpoint_entry")
     self.widget_refpoint_show = self.boxer.get_widget("refpoint_show")
 
-    ref_point_size = self.config.getint("GUIView", "refpoint_size")
-
     import gobject
     liststore = gtk.ListStore(gobject.TYPE_STRING)
     self.widget_refpoint_box.set_model(liststore)
     self.widget_refpoint_box.set_text_column(0)
 
     # Create the editable area and do all the wiring
-    cfg = {"box_executable": self.config.get("Box", "exec")}
+    cfg = {"box_executable": self.config.get("Box", "exec"),
+           "refpoint_size": self.config.getint("GUIView", "refpoint_size")}
     self.editable_area = editable_area = BoxEditableArea(config=cfg)
     editable_area.set_callback("refpoint_append", self.notify_refpoint_new)
     editable_area.set_callback("refpoint_remove", self.notify_refpoint_del)
@@ -472,6 +433,11 @@ class Boxer:
     def refpoint_press_middle(_, rp):
       self.textbuffer.insert_at_cursor("%s, " % rp.name)
     editable_area.set_callback("refpoint_press_middle", refpoint_press_middle)
+
+    def new_rp(_, rp):
+      if self.should_paste_on_new():
+        refpoint_press_middle(None, rp)
+    editable_area.set_callback("refpoint_new", new_rp)
 
     def get_next_refpoint(doc):
       return self.widget_refpoint_entry.get_text()
@@ -491,24 +457,6 @@ class Boxer:
       doc.set_user_code(self.get_main_source())
       box_output[0] = ""
     editable_area.set_callback("box_document_execute", box_document_execute)
-
-
-
-
-    if False:
-      box_out_msgs = [""]
-      def out_fn(s):
-        if config.use_threads:
-          gtk.gdk.threads_enter()
-        box_out_msgs[0] += s
-        box_out_msgs[0] = self._out_textview_refresh(box_out_msgs[0])
-        if config.use_threads:
-          gtk.gdk.threads_leave()
-
-
-
-
-
 
     def box_exec_output(s, force=False):
       box_output[0] += s
@@ -623,8 +571,6 @@ class Boxer:
 
     # Now set the focus on the text view
     self.textview.grab_focus()
-
-    #self.menu_run_execute(None)
 
   def _fill_example_menu(self):
     """Populate the example submenu File->Examples"""

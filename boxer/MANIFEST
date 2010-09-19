@@ -9,9 +9,11 @@ src/main.py
 src/boxer.py
 src/geom2.py
 src/zoomable.py
+src/editable.py
 src/exec_command.py
 src/boxdraw.py
 src/config.py
+src/namegen.py
 src/refpoints.py
 src/document.py
 src/info.py

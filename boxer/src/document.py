@@ -15,6 +15,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import os
 
 import config
@@ -77,10 +78,10 @@ def text_writer(pieces, sep=", ", line_sep=None, max_line_width=None):
 def marker_line_parse(line):
   """Extract the arguments of a marker line or return None if the given
   string is not a marker line."""
-  if not line.lstrip().startswith(marker_begin):
+  if not line.strip().startswith(marker_begin):
     return None
   else:
-    return line.split(marker_sep)[1:]
+    return [s.strip() for s in line.split(marker_sep)[1:]]
 
 def marker_line_assemble(attrs, newline=True):
   """Crete a marker line from the given list of attributes."""
@@ -259,6 +260,7 @@ class Document(Configurable):
     callbacks.setdefault("box_exec_output", None)
     self._fns = callbacks
     self.refpoints = RefPoints(callbacks=self._fns)
+    self.notify = lambda t, msg: sys.stdout.write("%s: %s\n" % (t, msg))
 
   def new(self, preamble=None, refpoints=[], code=None):
     if code == None:
@@ -300,16 +302,17 @@ class Document(Configurable):
     self.attributes["version"] = (0, 1, 0)
 
     # specify how many arguments each marker wants
-    marker_wants = {"REFPOINTS": 1,
+    marker_wants = {"CURSOR": None,
+                    "REFPOINTS": 1,
                     "VERSION": 3}
 
     # process the file and interpret the markers
-    lines = boxer_src.splitlines()
+    lines = boxer_src.splitlines(True)
     for line in lines:
       marker = marker_line_parse(line)
       if marker == None:
-        if parts.has_key(context):
-          parts[context] += "\n" + line
+        if context in parts:
+          parts[context] += line
         else:
           parts[context] = line
 
@@ -319,11 +322,12 @@ class Document(Configurable):
 
         else:
           marker_name = marker[0]
-          if not marker_wants.has_key(marker_name):
+          if not marker_name in marker_wants:
             self.notify("WARNING", "Unknown marker '%s'" % marker_name)
 
           else:
-            if len(marker) < marker_wants[marker_name] + 1:
+            marker_nargs = marker_wants[marker_name]
+            if marker_nargs != None and len(marker) < marker_nargs + 1:
               self.notify("WARNING",
                           "Marker has less arguments than expected")
 
@@ -341,6 +345,12 @@ class Document(Configurable):
               except:
                 self.notify("WARNING", "Cannot determine Boxer version which "
                             "generated the file")
+
+            else:
+              parts[context] += line
+              # ^^^  note that this requires context to already exist in the
+              #      dictionary. In other words, unrecognized markers cannot
+              #      be the first markers in the file.
 
     refpoints = self.refpoints
     refpoints.remove_all()

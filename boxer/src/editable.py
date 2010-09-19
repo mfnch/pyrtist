@@ -123,12 +123,16 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
   def _realize(self, myself):
     # Set extra default configuration
-    gc = gtk.gdk.GC(self.window)
-    gc.copy(self.style.white_gc)
-    gc_sel = gtk.gdk.GC(self.window)
-    gc_sel.background, gc_sel.foreground = (gc.foreground, gc.background)
-    self.set_config_default([("refpoint_gc", gc),
-                             ("refpoint_sel_gc", gc_sel)])
+    unsel_gc = self.window.new_gc()
+    unsel_gc.copy(self.style.white_gc)
+
+    sel_gc = self.window.new_gc()
+    sel_gc.copy(self.style.white_gc)
+    colormap = sel_gc.get_colormap()
+    sel_gc.foreground = colormap.alloc_color(gtk.gdk.Color(1.0, 1.0, 0.0))
+
+    self.set_config_default([("refpoint_gc", unsel_gc),
+                             ("refpoint_sel_gc", sel_gc)])
 
   def refpoint_new(self, py_coords, name=None):
     """Add a new reference point whose coordinates are 'point' (a couple
