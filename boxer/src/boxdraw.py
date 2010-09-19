@@ -45,7 +45,10 @@ Window@GUI[
   new_size = Point[.x=view.x/r, .y=view.y/r]
   tr = 0.5*(new_size - size), origin = b.min - tr
   \ Window[.Origin[origin], new_size, .Res[r]
-           "rgb24"][$, .Save["$IMG_FILENAME$"]]
+           "rgb24"][color.grey, Rectangle[origin, origin+new_size]
+                    color.white, Rectangle[b.min, b.max]
+                    color.black, $
+                    .Save["$IMG_FILENAME$"]]
   out = Str[sep=",", b.n, sep
             b.min.x, sep, b.min.y, sep, b.max.x, sep, b.max.y;
             origin.x, sep, origin.y, sep, new_size.x, sep, new_size.y;]
@@ -58,7 +61,10 @@ Window@GUI[
   b = BBox[$]
   size = Point[.x=$SX$, .y=$SY$], origin = Point[.x=$OX$, .y=$OY$]
   \ Window[size, .Res[($RX$, $RY$)], .Origin[origin]
-           "rgb24"][$, .Save["$IMG_FILENAME$"]]
+           "rgb24"][color.grey, Rectangle[origin, origin+size]
+                    color.white, Rectangle[b.min, b.max]
+                    color.black, $
+                    .Save["$IMG_FILENAME$"]]
   out = Str[sep=",", b.n, sep
             b.min.x, sep, b.min.y, sep, b.max.x, sep, b.max.y;
             origin.x, sep, origin.y, sep, size.x, sep, size.y;]

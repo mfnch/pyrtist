@@ -24,6 +24,7 @@
 # x paste button should work as before
 
 # TODO (for later):
+# - remember last window configuration (size of main window)
 # - extend do/undo to refpoints
 # - vertical placement of text editor and graphic view
 #   Now it is [--] while we should allow [ | ]
@@ -31,7 +32,7 @@
 # - buffer geometry should be determined by memory available for buffer
 # - load and save dialogs should remember last opened directory(independently)
 # x initial script should have bounding box defined by two RefPoint-s
-# - bounding box should be visible somehow
+# x bounding box should be visible somehow
 # - drawing tools (color window, polygons, lines, etc)
 # - multiple selection of points and transformation on them
 #   (translation, rotation,...)
@@ -127,8 +128,9 @@ class Boxer:
     d = self.editable_area.document
     try:
       d.load_from_file(filename)
-    except:
-      self.error('Error loading the file "%s"' % filename)
+    except Exception as the_exception:
+      self.error('Error loading the file "%s". Details: "%s"'
+                 % (filename, str(the_exception)))
       return
     finally:
       self.set_main_source(d.get_user_code())

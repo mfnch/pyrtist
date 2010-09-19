@@ -208,7 +208,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
     magnification = self.last_magnification
     distance = (dl0 + 1)/magnification if magnification != None else None
     overlapping_rps = self.document.refpoints.get_neighbours(rp, distance)
-    self.refpoints_draw(overlapping_rps)
+    self._draw_refpoints(overlapping_rps)
 
   def _refpoint_show(self, rp):
     if rp.visible:
@@ -220,7 +220,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
             else self.get_config("refpoint_gc"))
       draw_ref_point(self.window, pix_coord, rp_size, gc)
 
-  def refpoints_draw(self, rps=None):
+  def _draw_refpoints(self, rps=None):
     refpoints = self.document.refpoints
     if rps == None:
       rps = refpoints
@@ -233,6 +233,9 @@ class BoxEditableArea(BoxViewArea, Configurable):
         pix_coord = view.coord_to_pix(rp.value)
         gc = gc_sel if refpoints.is_selected(rp) else gc_unsel
         draw_ref_point(self.window, pix_coord, rp_size, gc)
+
+  def _draw_bounding_box(self):
+    pass
 
   def refpoint_move(self, rp, py_coords):
     """Move a reference point to a new position."""
@@ -274,7 +277,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
   def expose(self, draw_area, event):
     ret = ZoomableArea.expose(self, draw_area, event)
-    self.refpoints_draw()
+    self._draw_bounding_box()
+    self._draw_refpoints()
     return ret
 
   def _on_button_press_event(self, eventbox, event):

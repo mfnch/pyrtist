@@ -129,7 +129,8 @@ def refpoint_from_string_v0_1_0(s):
     str_x, str_y = x_y_str.split(",", 1)
     return RefPoint(lhs.strip(), [float(str_x), float(str_y)])
 
-  except:
+  except Exception as x:
+    print "original '%s' err: %s" % (s, x)
     return None
 
 def refpoint_from_string(s):
@@ -201,7 +202,9 @@ def parse_guipoint_part(src, guipoint_fn, start=0):
   if len(src.strip()) > 0:
     while start < len(src):
       line, start = get_next_guipoint_string(src, start)
-      guipoint_fn(line)
+      line = line.strip()
+      if len(line) > 0:
+        guipoint_fn(line)
 
 def save_to_str_v0_1_1(document):
   parts = document.parts

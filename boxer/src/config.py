@@ -60,8 +60,8 @@ GUI = Void
 Window@GUI[]
 
 //!BOXER:REFPOINTS:BEGIN
-bbox1 = Point[.x=0.0, .y=0.0]
-bbox2 = Point[.x=100.0, .y=50.0]
+bbox1 = Point[.x=0.0, .y=50.0]
+bbox2 = Point[.x=100.0, .y=0.0]
 //!BOXER:REFPOINTS:END
 w = Window[][
   .Show[bbox1, bbox2]
