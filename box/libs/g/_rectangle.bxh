@@ -1,0 +1,19 @@
+Rectangle = ++(Point corner1, corner2
+               Int   num_corners)
+
+(.[)@Rectangle[$$.num_corners = 0]
+
+Point@Rectangle[
+  [If[$$.num_corners == 0], $$.corner1 = $]
+  [If[$$.num_corners == 1], $$.corner2 = $]
+  [If[$$.num_corners > 1]
+   Fail["Rectangle got more than two points"]]
+  $$.num_corners += 1
+]
+
+Rectangle@Window[
+  If[$.num_corners > 1]
+  c1 = $.corner1, c2 = $.corner2
+  \ $$.Poly[c1, Point[c1, .y=c2.y], c2, Point[c1, .x=c2.x]]
+]
+
