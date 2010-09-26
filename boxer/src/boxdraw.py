@@ -102,6 +102,9 @@ class BoxImageDrawer(ImageDrawer):
     self.executing = False
     self.executed_successfully = False
 
+  def set_output_function(self, fn):
+    self.out_fn = fn
+
   def _raw_execute(self, pix_size, pixbuf_output, preamble=None,
                    img_out_filename=None, extra_substs=[]):
     tmp_fns = []
@@ -118,6 +121,7 @@ class BoxImageDrawer(ImageDrawer):
       preamble = preamble.replace(var, str(val))
 
     def exit_fn():
+      threads_enter()
       self.executed_successfully = False
       try:
         if os.path.exists(info_out_filename):
@@ -142,12 +146,15 @@ class BoxImageDrawer(ImageDrawer):
         self.finished_drawing(DrawSucceded(self.bbox, self.view)
                               if self.executed_successfully
                               else DrawFailed())
+      threads_leave()
 
     def my_out_fn(s):
       threads_enter()
-      rtn = self.out_fn(s)
+      out_fn = self.out_fn
+      if out_fn != None:
+        print s
+        out_fn(s)
       threads_leave()
-      return rtn
 
     self.executing = True
     return self.document.execute(preamble=preamble,
@@ -179,10 +186,17 @@ class BoxImageDrawer(ImageDrawer):
                                extra_substs=substs,
                                img_out_filename=img_out_filename)
 
+    # Here we wait for some time to see if we can just draw and proceed.
+    # If the time is not enough then we exit and get back the control of the
+    # GUI to the user. In this waiting loop it is important to release the
+    # lock of the GTK threads, otherwise the other thread will be waiting
+    # for this one (which is having a very high time per Python opcode...)
+    threads_leave()
     for i in range(10):
       if not self.executing:
         break
       time.sleep(0.05)
+    threads_enter()
 
     if self.executing:
       return DrawStillWorking(self, killer)

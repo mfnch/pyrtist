@@ -1,12 +1,15 @@
+//!BOXER:VERSION:0:1:1
 
 include "g"
 GUI = Void
 Window@GUI[]
 
 
-//!BOXER:REFPOINTS:BEGIN
-gui1 = (0.0, 0.0), gui2 = (-18.87, 14.535), gui3 = (21.42, -14.79)
 
+
+//!BOXER:REFPOINTS:BEGIN
+gui1 = Point[.x=0.0, .y=0.0], gui2 = Point[.x=-18.87, .y=14.535]
+gui3 = Point[.x=21.42, .y=-14.79]
 //!BOXER:REFPOINTS:END
 // Example of parametric figure: a smiley which literaly loses
 // his eyes.
@@ -15,6 +18,8 @@ gui1 = (0.0, 0.0), gui2 = (-18.87, 14.535), gui3 = (21.42, -14.79)
 //  a: damping of bouncing events
 //  g: acceleration due to gravity
 //  v0: velocity for the first bouncing
+
+include "tools"
 
 p = Point[gui1]
 t = Sqrt[p.x*p.x + p.y*p.y]/10.0

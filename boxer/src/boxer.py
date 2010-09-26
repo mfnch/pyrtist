@@ -471,7 +471,7 @@ class Boxer:
     def box_exec_output(s, force=False):
       box_output[0] += s
       box_output[0] = self._out_textview_refresh(box_output[0], force=force)
-    editable_area.set_callback("box_exec_output", box_exec_output)
+    editable_area.drawer.set_output_function(box_exec_output)
 
     def box_document_executed(doc):
       box_exec_output("", force=True)
