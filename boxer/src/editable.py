@@ -26,7 +26,7 @@ import gtk
 
 from geom2 import square_metric, Point
 import document
-from zoomable import ZoomableArea
+from zoomable import ZoomableArea, DrawSucceded, DrawFailed
 from boxdraw import BoxImageDrawer
 from refpoints import RefPoint
 
@@ -129,7 +129,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
     sel_gc = self.window.new_gc()
     sel_gc.copy(self.style.white_gc)
     colormap = sel_gc.get_colormap()
-    sel_gc.foreground = colormap.alloc_color(gtk.gdk.Color(1.0, 1.0, 0.0))
+    sel_gc.foreground = colormap.alloc_color(gtk.gdk.Color(65535, 65535, 0))
 
     self.set_config_default([("refpoint_gc", unsel_gc),
                              ("refpoint_sel_gc", sel_gc)])
@@ -274,7 +274,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
   def expose(self, draw_area, event):
     ret = ZoomableArea.expose(self, draw_area, event)
-    self._draw_refpoints()
+    if isinstance(self.drawer_state, (DrawSucceded, DrawFailed)):
+      self._draw_refpoints()
     return ret
 
   def _on_button_press_event(self, eventbox, event):

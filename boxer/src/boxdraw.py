@@ -23,12 +23,22 @@ Here we provide a Python interface to call Box and get back a view
 import os
 import time
 
+import gtk.gdk
 from gtk.gdk import pixbuf_new_from_file
 
 import config
 from geom2 import *
 from zoomable import View, ImageDrawer, DrawSucceded, DrawFailed, \
                      DrawStillWorking
+
+
+def threads_enter():
+  if config.use_threads:
+    gtk.gdk.threads_enter()
+
+def threads_leave():
+  if config.use_threads:
+    gtk.gdk.threads_leave()
 
 
 _box_preamble_common = """
@@ -133,9 +143,15 @@ class BoxImageDrawer(ImageDrawer):
                               if self.executed_successfully
                               else DrawFailed())
 
+    def my_out_fn(s):
+      threads_enter()
+      rtn = self.out_fn(s)
+      threads_leave()
+      return rtn
+
     self.executing = True
     return self.document.execute(preamble=preamble,
-                                 out_fn=self.out_fn,
+                                 out_fn=my_out_fn,
                                  exit_fn=exit_fn)
 
   def update(self, pixbuf_output, pix_view, coord_view=None,
