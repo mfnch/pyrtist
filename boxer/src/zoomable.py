@@ -21,6 +21,10 @@ Implementation of the ZoomableArea object, which adds buffered rendering,
 zooming and scrolling capabilities to a DrawableArea object.
 """
 
+__all__ = ["ImageDrawer", "DrawSucceded", "DrawStillWorking", "DrawFailed",
+           "View", "ZoomableArea"]
+
+
 import os
 import time
 
@@ -34,12 +38,57 @@ import gobject
 from config import debug, debug_msg
 from geom2 import *
 
-color_background = 0x77777700
+color_background = 0x808080ff
+
+
+class DrawState(object):
+  pass
+
+
+class DrawFailed(DrawState):
+  pass
+
+
+class DrawSucceded(DrawState):
+  def __init__(self, bounding_box, view):
+    self.bounding_box = bounding_box
+    self.view = view
+
+
+class DrawStillWorking(DrawState):
+  def __init__(self, imagedrawer, killer=None):
+    self.killer = killer
+    self.imagedrawer = imagedrawer
+
+  def kill(self):
+    """Kill the running drawing process if it is still running."""
+    if self.killer != None:
+      self.killer()
+      self.killer = None
+
 
 class ImageDrawer(object):
+  def __init__(self):
+    self._finished_callback = None
+
+  def set_on_finish_callback(self, callback):
+    self._finished_callback = callback
+
+  def finished_drawing(self, state):
+    """Function that 'update' may use in case it returns DrawStillWorking.
+    The method 'update' can indeed do the drawing in a separate thread and
+    let the execution of the program continue while the drawing is made.
+    To notify that the drawing has finished, the separate thread has to call
+    the method finished_drawing(state), passing the state of the operation
+    (either DrawSucceded or DrawFailed).
+    """
+    assert isinstance(state, (DrawSucceded, DrawFailed))
+    if self._finished_callback != None:
+      self._finished_callback(self, state)
+
   def update(self, pixbuf_output, pix_view, coord_view=None):
     """This function is called by ZoomableArea to update the view buffer.
-    There are two possibilities:
+    The function is required to carry out one of the two following tasks:
      1. 'coord_view' is not provided. The function receives the size of the
         buffer in 'pix_view' and has to draw the picture in the best possible
         way in the available space (possibly, increasing the image size until
@@ -47,9 +96,25 @@ class ImageDrawer(object):
      2. 'coord_view' is provided. The function has to draw just the provided
         coordinate view of the picture, producing an output filling the whole
         buffer.
-    In both cases the function must return a tuple made of:
-     - the bounding box in a geom2.Rectangle object;
-     - the view in a View object.
+    The function is required to return one of the following objects:
+     1. DrawSucceded(bounding_box, view): if the drawing operation succeded
+        then the function returns this object specifying:
+        - bounding_box: the bounding box in a geom2.Rectangle object;
+        - view: the view in a View object;
+     2. DrawFailed(): if the drawing operation failed, then this has to be
+        communicated to the parent ZoomableObject by returning this object;
+     3. DrawStillWorking(imagedrawer, killer): if the drawing operation is
+        taking too long then the 'update' method may want to create a separate
+        thread and return, so that the GUI can respond to user's requests.
+        In this case, the 'update' method is expected to return a
+        DrawStillWorking object. 'imagedrawer' must be 'self' (i.e. the
+        ImageDrawer object). 'killer' is a callback function that the
+        ZoomableObject may want to call in order to abort the drawing
+        operation (i.e. kill the thread which is performing the drawing
+        operation). Note that it is very important that the drawing thread
+        calls the method 'finished_drawing' to signal that the drawing
+        operation has terminated. Please, read the documentation for that
+        method.
     """
     raise NotImplementedError("ImageDrawer.update is not implemented")
 
@@ -141,13 +206,20 @@ class ZoomableArea(gtk.DrawingArea):
   def __init__(self, drawer,
                hadjustment=None, vadjustment=None,
                zoom_factor=1.5, zoom_margin=0.25, buf_margin=0.25,
-               config=None):
+               config=None, callbacks=None):
     # Adjustment objects to control the scrolling
     self._hadjustment = hadjustment
     self._vadjustment = vadjustment
 
+    # Callbacks to notify about events concerning the ZoomableArea
+    if callbacks == None:
+      callbacks = {}
+    callbacks.setdefault("zoomablearea_got_killer", None)
+    self._fns = callbacks
+
     # Drawer object: the one that actually draws things in the buffer
     self.drawer = drawer
+    self.drawer_state = None
 
     # Margin of the buffer outside the screen view (a big value increases
     # the amount of memory required, but reduces the need of redrawing the
@@ -195,6 +267,9 @@ class ZoomableArea(gtk.DrawingArea):
     self.connect("set-scroll-adjustment", ZoomableArea.scroll_adjustment)
     self.connect("configure_event", self.size_change)
 
+  def __del__(self):
+    self.kill_drawer()
+
   def get_hadjustment(self):
     return self._hadjustment
 
@@ -239,6 +314,12 @@ class ZoomableArea(gtk.DrawingArea):
     self.buf_needs_update = True
     self.queue_draw()
 
+  def kill_drawer(self):
+    """Kill the drawer thread in case it is still running."""
+    if isinstance(self.drawer_state, DrawStillWorking):
+      self.drawer_state.kill()
+      self.drawer_state = DrawFailed
+
   def zoom_in(self):
     """Zoom in."""
     self.zoom_here(self.zoom_factor)
@@ -255,6 +336,7 @@ class ZoomableArea(gtk.DrawingArea):
     """Return in full picture view, where the picture is scaled to fit
     the available portion of the screen (the DrawableArea)."""
     self.magnification = None
+    self.buf_needs_update = True
     self.queue_draw()
 
   def size_change(self, myself, event):
@@ -294,6 +376,7 @@ class ZoomableArea(gtk.DrawingArea):
     debug_msg("Creating buffer with size %s x %s" % (new_bsx, new_bsy))
     new_buf = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8,
                              new_bsx, new_bsy)
+    new_buf.fill(color_background) # we clean it
 
     # And, if required, we copy from the old buffer the overlapping content
     old_buf = self.buf
@@ -339,13 +422,56 @@ class ZoomableArea(gtk.DrawingArea):
       lx, ly = self.window.get_size()
       return self.buf.subpixbuf(px, py, lx, ly)
 
+  def _imagedrawer_update_finish(self, state, pix_view):
+      self.pic_bbox = pic_bbox = state.bounding_box
+      self.buf_view = view = state.view
+      self.last_magnification = abs(pix_view.x/view.get_dx())
+      self.buf_view = view
+      self.pic_bbox = pic_bbox
+      self.pic_view = pic_bbox.new_scaled(self.extra_zoom)
+      # ^^^ we artificially expand the bounding box so that we can move the view
+      #     outside the bounding box
+      self.last_view = self.buf_view.copy()
+
+  def _imagedrawer_update(self, pixbuf_output, pix_view, coord_view=None):
+    if isinstance(self.drawer_state, DrawStillWorking):
+      return
+
+    refresh_on_finish = [False]
+
+    def on_finish(imgdrawer, state):
+      fn = self._fns["zoomablearea_got_killer"]
+      if fn != None:
+        fn(None)
+      if isinstance(state, DrawSucceded):
+        self._imagedrawer_update_finish(state, pix_view)
+      self.drawer_state = state
+      if refresh_on_finish[0]:
+        self.queue_draw()
+
+    self.drawer.set_on_finish_callback(on_finish)
+
+    state = self.drawer.update(pixbuf_output, pix_view, coord_view=coord_view)
+    self.drawer_state = state
+    if not isinstance(state, DrawState):
+      raise ValueError("ImageDrawer.update function should return either "
+                       "a DrawSucceded, a DrawStillWorking or a DrawFailed "
+                       "object, but I got %s." % str(state))
+
+    if isinstance(state, DrawStillWorking):
+      refresh_on_finish[0] = True
+      fn = self._fns["zoomablearea_got_killer"]
+      if fn != None:
+        fn(self.kill_drawer)
+
+    self.buf_needs_update = False
+
   def redraw_buffer(self):
     """Redraw the picture and update the internal buffer."""
 
     debug_msg("REDRAWING", " ")
     # First, we check whether we have a large-enough buffer
     self.alloc_buffer()
-    self.buf.fill(color_background) # we clean it
 
     # We now have two cases depending whether or not we have the view
     if self.magnification == None:
@@ -355,23 +481,14 @@ class ZoomableArea(gtk.DrawingArea):
       # We then create a subpixbuf of the visible area of the buffer
       visible_of_buf = self.get_central_buf()
       pix_size = get_pixbuf_size(visible_of_buf)
-      pic_bbox, view = self.drawer.update(visible_of_buf, pix_size)
+      self._imagedrawer_update(visible_of_buf, pix_size)
 
     else:
       buf = self.buf
       pix_size = get_pixbuf_size(buf)
       coord_view = \
         self.last_view.new_reshaped(pix_size, 1.0/self.magnification)
-      pic_bbox, view = \
-        self.drawer.update(buf, pix_size, coord_view=coord_view)
-
-    self.last_magnification = abs(pix_size.x/view.get_dx())
-    self.buf_view = view
-    self.pic_bbox = pic_bbox
-    self.pic_view = pic_bbox.new_scaled(self.extra_zoom)
-    # ^^^ we artificially expand the bounding box so that we can move the view
-    #     outside the bounding box
-    self.last_view = self.buf_view.copy()
+      self._imagedrawer_update(buf, pix_size, coord_view=coord_view)
 
   def update_buffer(self):
     # Check whether the buffer is large enough
@@ -379,16 +496,27 @@ class ZoomableArea(gtk.DrawingArea):
 
     if not self.buf_needs_update:
       # Determine whether we need to update the buffer
-      visible_area = self.get_visible_coords()
-      if self.buf_view != None and self.buf_view.contains(visible_area):
+      if self.magnification == None:
         return
 
+      else:
+        visible_area = self.get_visible_coords()
+        if self.buf_view != None and self.buf_view.contains(visible_area):
+          return
+
     self.redraw_buffer()
-    self.buf_needs_update = False
 
   def repaint(self, x, y, width, height):
     """Just repaint the given area of the widget."""
     visible_of_buf = self.get_visible_buf()
+
+    if not isinstance(self.drawer_state, DrawSucceded):
+      # In case we could not redraw the image we comunicate it by making
+      # the picture darker than what it should be
+      new_buf = visible_of_buf.copy()
+      new_buf.saturate_and_pixelate(new_buf, 0.5, True)
+      visible_of_buf = new_buf
+
     buf_area = visible_of_buf.subpixbuf(x, y, width, height)
     rowstride = buf_area.get_rowstride()
     pixels = buf_area.get_pixels()

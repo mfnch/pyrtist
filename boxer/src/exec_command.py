@@ -13,7 +13,7 @@ def old_exec_command(cmd, args=[], out_fn=None, do_at_exit=None):
 
   from subprocess import Popen, PIPE, STDOUT
 
-  # Fix for the issue described at 
+  # Fix for the issue described at
   # http://www.py2exe.org/index.cgi/Py2ExeSubprocessInteractions
   if config.platform_is_win:
     shell = True
@@ -75,7 +75,7 @@ try:
     (like this: 'out_fn(nth_chunk)'). Once the running program terminates
     'do_at_exit()' is called (if it is provided)."""
 
-    # Fix for the issue described at 
+    # Fix for the issue described at
     # http://www.py2exe.org/index.cgi/Py2ExeSubprocessInteractions
     if config.platform_is_win_py2exe:
       shell = True

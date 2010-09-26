@@ -27,9 +27,10 @@ from gtk.gdk import pixbuf_new_from_file
 
 import config
 from geom2 import *
-from zoomable import View, \
-                     ImageDrawer # This file provides an implementation
-                                 # of the ImageDrawer interface
+from zoomable import View, ImageDrawer, DrawSucceded, DrawFailed, \
+                     DrawStillWorking
+
+
 _box_preamble_common = """
 include "g"
 GUI = Void
@@ -83,15 +84,16 @@ def escape_string(s):
 
 class BoxImageDrawer(ImageDrawer):
   def __init__(self, document):
+    ImageDrawer.__init__(self)
     self.document = document
     self.out_fn = None
     self.bbox = None
     self.view = View()
-    self.pixbuf = None
     self.executing = False
+    self.executed_successfully = False
 
-  def _raw_execute(self, pix_size, preamble=None, img_out_filename=None,
-                   extra_substs=[]):
+  def _raw_execute(self, pix_size, pixbuf_output, preamble=None,
+                   img_out_filename=None, extra_substs=[]):
     tmp_fns = []
     info_out_filename = config.tmp_new_filename("info", "dat", tmp_fns)
     if img_out_filename == None:
@@ -106,6 +108,7 @@ class BoxImageDrawer(ImageDrawer):
       preamble = preamble.replace(var, str(val))
 
     def exit_fn():
+      self.executed_successfully = False
       try:
         if os.path.exists(info_out_filename):
           f = open(info_out_filename, "r")
@@ -117,11 +120,18 @@ class BoxImageDrawer(ImageDrawer):
           self.view.reset(pix_size, Point(ox, oy + sy), Point(ox + sx, oy))
 
         if os.path.exists(img_out_filename):
-          self.pixbuf = pixbuf_new_from_file(img_out_filename)
+          pixbuf = pixbuf_new_from_file(img_out_filename)
+          sx = pixbuf.get_width()
+          sy = pixbuf.get_height()
+          pixbuf.copy_area(0, 0, sx, sy, pixbuf_output, 0, 0)
+          self.executed_successfully = True
 
       finally:
         self.executing = False
         config.tmp_remove_files(tmp_fns)
+        self.finished_drawing(DrawSucceded(self.bbox, self.view)
+                              if self.executed_successfully
+                              else DrawFailed())
 
     self.executing = True
     return self.document.execute(preamble=preamble,
@@ -148,17 +158,24 @@ class BoxImageDrawer(ImageDrawer):
                 ("$SX$", sx), ("$SY$", sy)]
       preamble = _box_preamble_common + _box_preamble_view
 
-    self._raw_execute(pix_view, preamble=preamble, extra_substs=substs,
-                      img_out_filename=img_out_filename)
+    killer = self._raw_execute(pix_view, pixbuf_output,
+                               preamble=preamble,
+                               extra_substs=substs,
+                               img_out_filename=img_out_filename)
 
-    while self.executing: # Temporary solution
+    for i in range(10):
+      if not self.executing:
+        break
       time.sleep(0.05)
 
-    sx = self.pixbuf.get_width()
-    sy = self.pixbuf.get_height()
-    self.pixbuf.copy_area(0, 0, sx, sy, pixbuf_output, 0, 0)
+    if self.executing:
+      return DrawStillWorking(self, killer)
 
-    return (self.bbox, self.view)
+    elif self.executed_successfully:
+      return DrawSucceded(self.bbox, self.view)
+
+    else:
+      return DrawFailed()
 
 if __name__ == "__main__":
   import sys

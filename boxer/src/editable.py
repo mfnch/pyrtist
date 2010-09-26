@@ -80,7 +80,7 @@ class BoxViewArea(ZoomableArea):
     drawer.out_fn = out_fn
 
     # Create the ZoomableArea
-    ZoomableArea.__init__(self, drawer, **extra_args)
+    ZoomableArea.__init__(self, drawer, callbacks=callbacks, **extra_args)
 
 
 class BoxEditableArea(BoxViewArea, Configurable):

@@ -18,15 +18,16 @@
 
 
 # TODO (for v 0.2.0):
-# - it should be possible to terminate execution of running scripts
-# - configuration files should work as before
+# x it should be possible to terminate execution of running scripts
 # x refpoints should have yellow color
 # x paste button should work as before
 
 # x initial script should have bounding box defined by two RefPoint-s
 # x bounding box should be visible somehow
+# x shade view when there are errors (drawing failed)
 
 # TODO (for later):
+# - configuration files should work as before
 # - vertical placement of text editor and graphic view
 #   Now it is [--] while we should allow [ | ]
 #   There are four combinations [Text|Figure], [Figure|Text], etc.
@@ -70,7 +71,8 @@ class Boxer:
 
   def raw_quit(self):
     """Called to quit the program."""
-    self.config.save_configuration()
+    self.editable_area.kill_drawer() # Terminate running processes if any
+    self.config.save_configuration() # Save the configuration to file
     gtk.main_quit()
 
   def destroy(self, widget, data=None):
@@ -120,6 +122,7 @@ class Boxer:
     d = self.editable_area.document
     d.load_from_str(box_source_of_new)
 
+    self.editable_area.kill_drawer()
     self.set_main_source(d.get_user_code())
     self.filename = None
     self.assume_file_is_saved()
@@ -136,6 +139,7 @@ class Boxer:
                  % (filename, str(the_exception)))
       return
     finally:
+      self.editable_area.kill_drawer()
       self.set_main_source(d.get_user_code())
       self.filename = filename
       self.assume_file_is_saved()
@@ -432,6 +436,7 @@ class Boxer:
     cfg = {"box_executable": self.config.get("Box", "exec"),
            "refpoint_size": self.config.getint("GUIView", "refpoint_size")}
     self.editable_area = editable_area = BoxEditableArea(config=cfg)
+    editable_area.set_callback("zoomablearea_got_killer", self._set_box_killer)
     editable_area.set_callback("refpoint_append", self.notify_refpoint_new)
     editable_area.set_callback("refpoint_remove", self.notify_refpoint_del)
 
@@ -477,9 +482,13 @@ class Boxer:
     scroll_win.add(editable_area)
 
     # Add the scrolled window to the alignment widget
-    container = self.boxer.get_widget("outimage_alignment")
-    container.remove(container.child)
-    container.add(scroll_win)
+    container = self.boxer.get_widget("vpaned")
+    for child in container.get_children():
+      container.remove(child)
+    container.pack1(scroll_win, resize=True, shrink=True)
+    sw = self.boxer.get_widget("srcview_scrolledwindow")
+    container.pack2(sw, resize=True, shrink=True)
+
     container.show_all()
 
     # Set the name for the first reference point
