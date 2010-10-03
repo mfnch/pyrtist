@@ -25,12 +25,12 @@
 # x initial script should have bounding box defined by two RefPoint-s
 # x bounding box should be visible somehow
 # x shade view when there are errors (drawing failed)
+# x vertical placement of text editor and graphic view
+#   Now it is [--] while we should allow [ | ]
+#   There are four combinations [Text|Figure], [Figure|Text], etc.
 
 # TODO (for later):
 # - configuration files should work as before
-# - vertical placement of text editor and graphic view
-#   Now it is [--] while we should allow [ | ]
-#   There are four combinations [Text|Figure], [Figure|Text], etc.
 # - allow automatic placement (considers the shape of the figure
 #   and decide what is more appropriate)
 # - remember last window configuration (size of main window)
@@ -57,6 +57,7 @@ import document
 from exec_command import exec_command
 
 from editable import BoxEditableArea
+from rotpaned import RotPaned
 
 def debug():
   import sys
@@ -304,6 +305,10 @@ class Boxer:
     if self.box_killer != None:
       self.box_killer()
 
+  def menu_view_rotate(self, _):
+    self.paned.rotate()
+    self.config.set("GUI", "rotation", str(self.paned.rotation))
+
   def menu_zoom_in(self, image_menu_item):
     self.editable_area.zoom_in()
 
@@ -482,12 +487,23 @@ class Boxer:
     scroll_win.add(editable_area)
 
     # Add the scrolled window to the alignment widget
-    container = self.boxer.get_widget("vpaned")
-    for child in container.get_children():
-      container.remove(child)
-    container.pack1(scroll_win, resize=True, shrink=True)
+    vpaned = self.boxer.get_widget("vpaned")
+    for child in vpaned.get_children():
+      vpaned.remove(child)
+
+    view_rot = self.config.getint("GUI", "rotation")
     sw = self.boxer.get_widget("srcview_scrolledwindow")
-    container.pack2(sw, resize=True, shrink=True)
+    self.paned = paned = RotPaned(scroll_win, sw, rotation=view_rot)
+
+    # Setup the main HBox
+    container = self.boxer.get_widget("vbox1")
+    c1, c2, cc, c3 = children = container.get_children()
+    for child in children:
+      container.remove(child)
+    container.pack_start(c1, expand=False)
+    container.pack_start(c2, expand=False)
+    container.pack_start(paned.get_container())
+    container.pack_start(c3, expand=False)
 
     container.show_all()
 
@@ -513,6 +529,7 @@ class Boxer:
            "on_edit_delete_activate": self.menu_edit_delete,
            "on_run_execute_activate": self.menu_run_execute,
            "on_run_stop_activate": self.menu_run_stop,
+           "on_view_rotate_activate": self.menu_view_rotate,
            "on_help_about_activate": self.menu_help_about,
            "on_toolbutton_new": self.menu_file_new,
            "on_toolbutton_open": self.menu_file_open,

@@ -204,6 +204,27 @@
               </widget>
             </child>
             <child>
+              <widget class="GtkMenuItem" id="menuitem_view">
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">_View</property>
+                <property name="use_underline">True</property>
+                <child>
+                  <widget class="GtkMenu" id="menu_view">
+                    <property name="visible">True</property>
+                    <child>
+                      <widget class="GtkMenuItem" id="view_rotate">
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Rotate the text view on the window</property>
+                        <property name="label" translatable="yes">Rotate view</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_view_rotate_activate"/>
+                      </widget>
+                    </child>
+                  </widget>
+                </child>
+              </widget>
+            </child>
+            <child>
               <widget class="GtkMenuItem" id="menuitem_help">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">_Help</property>
@@ -464,8 +485,6 @@
           <widget class="GtkVPaned" id="vpaned">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <child>
-            </child>
             <child>
               <widget class="GtkScrolledWindow" id="srcview_scrolledwindow">
                 <property name="visible">True</property>

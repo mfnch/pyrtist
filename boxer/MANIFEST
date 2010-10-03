@@ -8,6 +8,7 @@ src/__init__.py
 src/main.py
 src/boxer.py
 src/geom2.py
+src/rotpaned.py
 src/zoomable.py
 src/editable.py
 src/exec_command.py

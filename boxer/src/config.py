@@ -25,7 +25,7 @@ def debug():
                    global_ns = calling_frame.f_globals)
 
 def debug_msg(msg, nl="\n"):
-  sys.stdout.write(msg + nl)
+  pass #sys.stdout.write(msg + nl)
 
 # Trick to determine whether we are running under Py2exe or not
 def main_is_frozen():
@@ -231,6 +231,7 @@ def get_configuration():
     ('Box', 'stdout_update_delay', '0.2', 'Delay between updates of the '
                                'textview showing the output of Box programs'),
     ('GUI', 'font', 'Monospace 10', 'The font used in the GUI'),
+    ('GUI', 'rotation', '0', 'The displacement of text-view/drawing-area'),
     ('GUIView', 'refpoint_size', '4', 'The size of the squares used to mark '
                                       'the reference points'),
     ('Behaviour', 'button_left', '1', 'ID of the mouse left button'),
