@@ -28,11 +28,10 @@
 # x vertical placement of text editor and graphic view
 #   Now it is [--] while we should allow [ | ]
 #   There are four combinations [Text|Figure], [Figure|Text], etc.
+# x resize reference points
 
 # TODO (for later):
 # - configuration files should work as before
-# - allow automatic placement (considers the shape of the figure
-#   and decide what is more appropriate)
 # - remember last window configuration (size of main window)
 # - extend do/undo to refpoints
 # - buffer geometry should be determined by memory available for buffer
@@ -309,6 +308,20 @@ class Boxer:
     self.paned.rotate()
     self.config.set("GUI", "rotation", str(self.paned.rotation))
 
+  def menu_view_inc_refpoint(self, _):
+    rps = self.config.getint("GUIView", "refpoint_size")
+    new_rps = min(rps + 1, 20)
+    self.config.set("GUIView", "refpoint_size", str(new_rps))
+    self.editable_area.set_config("refpoint_size", new_rps)
+    self.editable_area.queue_draw()
+
+  def menu_view_dec_refpoint(self, _):
+    rps = self.config.getint("GUIView", "refpoint_size")
+    new_rps = max(rps - 1, 2)
+    self.config.set("GUIView", "refpoint_size", str(new_rps))
+    self.editable_area.set_config("refpoint_size", new_rps)
+    self.editable_area.queue_draw()
+
   def menu_zoom_in(self, image_menu_item):
     self.editable_area.zoom_in()
 
@@ -530,6 +543,8 @@ class Boxer:
            "on_run_execute_activate": self.menu_run_execute,
            "on_run_stop_activate": self.menu_run_stop,
            "on_view_rotate_activate": self.menu_view_rotate,
+           "on_view_inc_refpoint": self.menu_view_inc_refpoint,
+           "on_view_dec_refpoint": self.menu_view_dec_refpoint,
            "on_help_about_activate": self.menu_help_about,
            "on_toolbutton_new": self.menu_file_new,
            "on_toolbutton_open": self.menu_file_open,

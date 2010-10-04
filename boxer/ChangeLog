@@ -1,3 +1,16 @@
+In version 0.2.0:
+  BRIEFLY: major changes in viewer (most of the program was rewritten)
+  DETAILS:
+  - The view area was completely rewritten to allow zooming in and out
+    and scrolling. Buffering is used to reduce the invokations of the box
+    executable and enable faster updating. Failure to compile the Box program
+    are signalled by shading the view and hiding the refpoints.
+  - It is now possible to rotate the view area (change the way the window
+    is split from horizontal to vertical). Boxer remembers the user choice
+    when the program is closed and opened again later.
+  - Bounding box is now visible and resizable using two refpoints.
+  - Can resize reference points.
+
 In version 0.1.2:
   BRIEFLY: mainly bugfixes in the Windows port.
   DETAILS:
@@ -9,10 +22,10 @@ In version 0.1.2:
 In version 0.1.1:
   BRIEFLY: major improvements, in particular in the way reference points
     are handled. Execution of Box subprocess can be halted (a separate thread
-	is now dealing with the execution of the Box program).
+    is now dealing with the execution of the Box program).
   DETAILS:
   - the file format has been updated: the reference points are now Points
-    objects (and not just tuples of Real-s). This allow to refer to the
+    objects (and not just tuples of Real-s). This allows to refer to the
     coordinates explicitly in the Box source. For example, you can write
     "gui1.x" to get the x coordinate of the reference point gui1. Before you
     had to do "Point[gui1].x". This led the user to define "pN = Point[guiN]"
