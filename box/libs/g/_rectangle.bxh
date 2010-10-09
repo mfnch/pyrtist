@@ -14,6 +14,6 @@ Point@Rectangle[
 Rectangle@Window[
   If[$.num_corners > 1]
   c1 = $.corner1, c2 = $.corner2
-  \ $$.Poly[c1, Point[c1, .y=c2.y], c2, Point[c1, .x=c2.x]]
+  \ $$.Poly[c1, Point[c1, .y=c2.y], c2, Point[c1, .x=c2.x], .Close[]]
 ]
 

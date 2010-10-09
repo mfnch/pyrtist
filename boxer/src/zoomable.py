@@ -420,7 +420,11 @@ class ZoomableArea(gtk.DrawingArea):
       c2x, c2y = buf_view.coord_to_pix(vis_view.corner2)
       px, py = (int(min(c1x, c2x)), int(min(c1y, c2y)))
       lx, ly = self.window.get_size()
-      return self.buf.subpixbuf(px, py, lx, ly)
+      buf = self.buf
+      if px + lx < buf.get_width() and py + ly < buf.get_height():
+        return buf.subpixbuf(px, py, lx, ly)
+      else:
+        return None
 
   def _imagedrawer_update_finish(self, state, pix_view):
       self.pic_bbox = pic_bbox = state.bounding_box
@@ -509,6 +513,11 @@ class ZoomableArea(gtk.DrawingArea):
   def repaint(self, x, y, width, height):
     """Just repaint the given area of the widget."""
     visible_of_buf = self.get_visible_buf()
+
+    # If - for some reason - the sub-buffer is not available, we just give up
+    # repainting.
+    if visible_of_buf == None:
+      return
 
     if not isinstance(self.drawer_state, DrawSucceded):
       # In case we could not redraw the image we comunicate it by making
