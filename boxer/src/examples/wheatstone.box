@@ -10,6 +10,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=-0.255807878788, .y=-19.5900623377]
 gui2 = Point[.x=19.7791411043, .y=-0.0303101075269]
@@ -51,7 +52,5 @@ wheatstone = Window["fig"][
   // only once!
   \ .Circle[0.8, p1; p2; p3; p4]
 ]
-
-i = 0, [For[i++ < 5000000]]
 
 GUI[wheatstone]
