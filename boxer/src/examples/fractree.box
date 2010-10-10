@@ -1,0 +1,48 @@
+//!BOXER:VERSION:0:1:1
+
+
+
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui1 = Point[.x=33.5181081705, .y=1.85874773414]
+bbox1 = Point[.x=-33.3736933815, .y=87.8159051329]
+bbox2 = Point[.x=76.1030045728, .y=-1.65034200668]
+//!BOXER:REFPOINTS:END
+include "tools"
+
+// We define a new object, which contains all the details about
+// the Pythagorean tree
+PythagTree = (Int level, Point p1, p2, Real xmid, h)
+
+PythagTree@Window[
+  xmid = $.xmid, h = $.h, level = $.level, p1 = $.p1, p2 = $.p2, d = 1e-10
+  Color[g = 1.0/(level+1), b = 1 - g, (0.5*b, g, 0)]
+
+  side = PointList[p1, p2]
+  p = .Poly[side.Get[1], side.Get[2-d], side.Get[(2-d, 1)], side.Get[(1, 1)]]
+  t = PointList[p.Get[3], p.Get[4], p.Get[(3+xmid, -h)]]
+
+  pt1 = PythagTree[.level = level-1, .xmid = xmid, .h = h
+                   .p1 = Point[t.Get[3]], .p2 = Point[t.Get[1]]]
+  pt2 = PythagTree[.level = level-1, .xmid = xmid, .h = h
+                   .p1 = Point[t.Get[2]], .p2 = Point[t.Get[3]]]
+
+  \ $$[If[level >= 1], pt1, pt2]
+]
+
+w = Window[][
+  .Show[bbox1, bbox2]
+
+  // Now we can draw the tree with the following line
+  gui_r = GUIReal[Interval[0, 15], gui1, "level="]
+  gui_r.value = l = Int[gui_r.value]
+
+  PythagTree[.level=l, .xmid=0.6, .h=0.45, .p1=(5, 10), .p2=(25, 10)]
+
+//  .Save["fractree.png"]
+
+  gui_r // plot the bar
+]
+
+GUI[w]
