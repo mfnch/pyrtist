@@ -9,7 +9,8 @@ In version 0.2.0:
     is split from horizontal to vertical). Boxer remembers the user choice
     when the program is closed and opened again later.
   - Bounding box is now visible and resizable using two refpoints.
-  - Can resize reference points.
+  - Can make reference point markers bigger.
+  - Can rotate the view and text editor around the window center.
 
 In version 0.1.2:
   BRIEFLY: mainly bugfixes in the Windows port.

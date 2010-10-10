@@ -143,7 +143,6 @@ class BoxImageDrawer(ImageDrawer):
       threads_enter()
       out_fn = self.out_fn
       if out_fn != None:
-        print s
         out_fn(s)
       threads_leave()
 

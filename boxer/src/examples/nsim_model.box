@@ -8,6 +8,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui5 = Point[.x=130.851027047, .y=47.20078]
 bbox1 = Point[.x=107.666785067, .y=57.4159294906]
@@ -26,7 +27,6 @@ gui8 = Point[.x=222.363782133, .y=5.52757238606]
 //!BOXER:REFPOINTS:END
 include "arrows"
 include "label"
-include "arrow2d"
 
 w = Window[][
   .Show[bbox1, bbox2 ]

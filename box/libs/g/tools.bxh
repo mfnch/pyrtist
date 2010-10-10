@@ -1,3 +1,5 @@
+#provide "tools"
+
 include "g"
 include "arrows"
 
@@ -89,4 +91,3 @@ Mark@&Window[
   \ $$.Text[.Font["sans", 2], "try to\nmove this!", $.position, .From[(1, -1.0)]]
   \ $$.Line[0.15, .ArrowScale[2], $.position+(-5, 2.5), arrow, $.position+(-1.5, 0)]
 ]
-

@@ -1,14 +1,37 @@
-REVISION=$Revision$
-# Do not change the previous line
-
 Change log (recent comes first)
 
-XX YYY ZZZZ: Released v 0.2.0: major compiler restructuring and improvement
+10 Oct 2010: Released v 0.2.0: major compiler restructuring and improvements.
+  Rewrote most of the compiler core code from scratch. In particular,
+  * Rewrote the parser (fixing some small grammar issues);
+  * Introduced proper abstract syntax tree layer, from which the VM code
+    is then generated;
+  * Created an intermediate layer for VM code generation. The layer is now
+    aware of the instructions and what registers they modify. This could allow
+    to introduce a VM code optimizer later on (even if translation to C code
+    may have the priority on this);
+  * Introduced a new object for procedure handling (CmpProc) which reduces
+    drastically the complexity of generating VM code, making the compiler code
+    much simpler;
+  * Introduced a namespace module, which should allow future introduction of
+    namespaces;
+  * Autogeneration of procedures now correctly works, allowing to embed
+    any objects inside new ones (creators and destructors are automatically
+    included in the user-defined creators/destructors);
+  * Introduced exceptions. The VM builds a traceback similar to what happens
+    for Python. The user can raise an exception using Fail["message"] (only
+    one exception flavour is supported at the moment);
+  * Removed the `line' VM instruction. Error positions are now computed using
+    position in code and lookup tables. Also column-inside-line is available
+    in error messages;
+  * Second-procedures have been removed (but @@ and @& are still accepted
+    for compatibility reasons);
+  * Strings are now stored inside Str objects rather than ()Char;
+  * Changing version control system (from SVN) to Mercurial.
 
 02 Dec 2009: The graphic library g does now accept strings as Str objects
   * '()Char' changed to 'Str' in the Box g library. This gives more
-  	flexibility (we now can, for example, save the frames of an animation
-		into different files).
+    flexibility (we now can, for example, save the frames of an animation
+    into different files).
 
 21 May 2009: bugfix (compilation failed with newer version of glibc/gcc)
   * Compilation of Box failed with newer version of glibc/gcc. See:
@@ -87,17 +110,17 @@ XX YYY ZZZZ: Released v 0.2.0: major compiler restructuring and improvement
   * Removed a small horrible bug in the selection of fonts:
     this was leading to crashes whenever a known postscript font
     was selected on Cairo terminals;
-  * Introduced Window.Text.From to decide what corner of the text 
+  * Introduced Window.Text.From to decide what corner of the text
     should go in the provided point: useful for centering text;
   * Can now handle quite complex text formatting: subscripts,
     superscripts and newlines are rendered correctly both in native
     EPS and Cairo terminals.
   * Bugfix: native EPS can now show text containing parenthesis.
 
-27 july 2008: Improved Save method. Compile under Windows 
+27 july 2008: Improved Save method. Compile under Windows
   * Can define "incomplete windows": windows which throw an error
     whenever they are used. Creation of such windows, however,
-    does not produce any errors: this concept is useful for the 
+    does not produce any errors: this concept is useful for the
     new syntax of the Window.Save method;
   * Extended the syntax of the Window.Save method: it can now take
     a window and (1) complete it (if it is uncomplete) or (2) put
@@ -109,7 +132,7 @@ XX YYY ZZZZ: Released v 0.2.0: major compiler restructuring and improvement
 
 5 July 2008: Bugfixes in the transformation of draw styles and font
 
-28 June 2008: Filling with linear/radial color gradients (Gradient[]) 
+28 June 2008: Filling with linear/radial color gradients (Gradient[])
   * Can now express color in HSV (besides RGB) and convert RGB<-->HSV.
   * Can now fill objects using linear or radial color gradients
     (Gradient[] can be used for the purpose).

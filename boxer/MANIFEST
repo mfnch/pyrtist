@@ -19,9 +19,6 @@ src/refpoints.py
 src/document.py
 src/info.py
 src/glade/boxer.glade
-src/examples/math.bxh
-src/examples/tools.bxh
-src/examples/sphere.bxh
 src/examples/bang.box
 src/examples/box-logo.box
 src/examples/degeneracy.box

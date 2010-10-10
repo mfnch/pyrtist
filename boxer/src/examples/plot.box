@@ -8,10 +8,10 @@ Window@GUI[]
 //!BOXER:REFPOINTS:BEGIN
 gui2 = Point[.x=-18.2644413105, .y=96.3362989277]
 gui3 = Point[.x=72.9996881503, .y=-7.33061]
-x1 = Point[.x=34.867067688, .y=2.57872698529]
+p1 = Point[.x=34.867067688, .y=2.57872698529]
 origin1 = Point[.x=21.6286347692, .y=50.6717835878]
-x2 = Point[.x=37.6634607242, .y=8.42269495098]
-x3 = Point[.x=49.3574679666, .y=14.5207484804]
+p2 = Point[.x=37.6634607242, .y=8.42269495098]
+p3 = Point[.x=49.3574679666, .y=14.5207484804]
 //!BOXER:REFPOINTS:END
 include "tools"
 
@@ -20,9 +20,9 @@ w = Window[][
 
   r = 30.0, w1 = 2.0, u = 0.05, w2 = 0.5
 
-  (bar1 = GUIReal[Interval[0.01, 1.0], x1, "u="])
-  (bar2 = GUIReal[Interval[0.01, 20.0], x2, "r2="])
-  (bar3 = GUIReal[Interval[0.01, 20.0], x3, "w2="])
+  (bar1 = GUIReal[Interval[0.01, 1.0], p1, "u="])
+  (bar2 = GUIReal[Interval[0.01, 20.0], p2, "r2="])
+  (bar3 = GUIReal[Interval[0.01, 20.0], p3, "w2="])
 
   u = bar1.value
   r2 = bar2.value

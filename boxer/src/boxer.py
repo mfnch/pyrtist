@@ -488,10 +488,8 @@ class Boxer:
     editable_area.set_callback("box_document_execute", box_document_execute)
 
     def box_exec_output(s, force=False):
-      threads_enter()
       box_output[0] += s
       box_output[0] = self._out_textview_refresh(box_output[0], force=force)
-      threads_leave()
     editable_area.drawer.set_output_function(box_exec_output)
 
     def box_document_executed(doc):

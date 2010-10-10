@@ -23,7 +23,7 @@
 AC_INIT([box],[0.2.0],[fnch@libero.it])
 
 # Date corresponding to the release of the current version
-BOX_RELEASE_DATE="Feb 14 2010, 16:16:00"
+BOX_RELEASE_DATE="Oct 10 2010, 11:00:00"
 
 # Major part of the version number
 BOX_VER_MAJOR="0"
