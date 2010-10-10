@@ -52,6 +52,7 @@ import os, os.path
 import time
 
 import config
+from config import threads_init, threads_enter, threads_leave
 import document
 from exec_command import exec_command
 
@@ -487,8 +488,10 @@ class Boxer:
     editable_area.set_callback("box_document_execute", box_document_execute)
 
     def box_exec_output(s, force=False):
+      threads_enter()
       box_output[0] += s
       box_output[0] = self._out_textview_refresh(box_output[0], force=force)
+      threads_leave()
     editable_area.drawer.set_output_function(box_exec_output)
 
     def box_document_executed(doc):
@@ -639,13 +642,11 @@ class Boxer:
       i += 1
 
 def run(filename=None, box_exec=None):
-  if config.use_threads:
-    gtk.gdk.threads_init()
-    gtk.gdk.threads_enter()
+  threads_init()
+  threads_enter()
 
   main_window = Boxer(filename=filename, box_exec=box_exec)
   gtk.main()
 
-  if config.use_threads:
-    gtk.gdk.threads_leave()
+  threads_leave()
 

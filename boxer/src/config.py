@@ -15,7 +15,13 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
-import imp, sys, os, tempfile, atexit
+import imp
+import sys
+import os
+import tempfile
+import atexit
+
+import gtk
 
 def debug():
   import sys
@@ -282,3 +288,16 @@ class Configurable(object):
     if the configuration does not have such an option.
     """
     return self._config[name] if name in self._config else opt
+
+
+def threads_init():
+  if use_threads:
+    gtk.gdk.threads_init()
+
+def threads_enter():
+  if use_threads:
+    gtk.gdk.threads_enter()
+
+def threads_leave():
+  if use_threads:
+    gtk.gdk.threads_leave()

@@ -27,19 +27,10 @@ import gtk.gdk
 from gtk.gdk import pixbuf_new_from_file
 
 import config
+from config import threads_enter, threads_leave
 from geom2 import *
 from zoomable import View, ImageDrawer, DrawSucceded, DrawFailed, \
                      DrawStillWorking
-
-
-def threads_enter():
-  if config.use_threads:
-    gtk.gdk.threads_enter()
-
-def threads_leave():
-  if config.use_threads:
-    gtk.gdk.threads_leave()
-
 
 _box_preamble_common = """
 include "g"

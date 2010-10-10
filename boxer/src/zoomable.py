@@ -523,6 +523,10 @@ class ZoomableArea(gtk.DrawingArea):
       # In case we could not redraw the image we comunicate it by making
       # the picture darker than what it should be
       new_buf = visible_of_buf.copy()
+      dx = visible_of_buf.get_width()
+      dy = visible_of_buf.get_height()
+      new_buf = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, dx, dy)
+      visible_of_buf.copy_area(0, 0, dx, dy, new_buf, 0, 0)
       new_buf.saturate_and_pixelate(new_buf, 0.5, True)
       visible_of_buf = new_buf
 
