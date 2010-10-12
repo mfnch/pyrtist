@@ -6,7 +6,6 @@
 
 include "g"
 
-t = Real
 time = t
 rate = 5.0*t // velocita' di cambiamento (bocca e capelli)
 
@@ -15,7 +14,7 @@ g = 10.0
 v0 = 9.5
 
 Vers = Point
-(Int->Real)@Vers[angle=$*0.01745329251994329576, $$=(Cos[angle], Sin[angle])]
+Real@Vers[angle=$*0.01745329251994329576, $$=(Cos[angle], Sin[angle])]
 
 //-------------------------------------------------------------------------------
 // Calcoli per trovare l'altezza degli occhi

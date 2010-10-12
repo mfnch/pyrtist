@@ -58,6 +58,7 @@ def get_katehighlight_highliter(language):
     return highlighter
 
 def get_highlighter(language):
+    language = language.lower()
     if language == 'haskell':
         return highlight_haskell
 
@@ -99,7 +100,6 @@ def code_block(name, arguments, options, content, lineno,
     Currently support languages: python (requires pygments),
     haskell (requires HsColour), anything else supported by pygments
     """
-
 
     language = arguments[0]
     highlighter = get_highlighter(language)

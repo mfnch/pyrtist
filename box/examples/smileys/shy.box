@@ -5,7 +5,6 @@ include "g"
 // Shyness level
 // x = 0.60
 
-x = Real
 x = Min[Max[x, 0.0], 0.5]
 pdg = 10 * Vec[2*const.pi*x] // Direction of the eyes
 f = 1 - 2*x                  // Happyness level

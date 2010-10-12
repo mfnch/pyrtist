@@ -11,7 +11,7 @@ Bounce = (Real gravity, attenuation, Point up, down)
 ]
 
 Bounce.Pos = Point
-(Int->Real)@Bounce.Pos[
+Real@Bounce.Pos[
   // The trajectory is parabolic: if t' is the time measured from the previous
   // bouncing event and h is the height measured from the ground:
   //
@@ -35,7 +35,9 @@ Bounce.Pos = Point
   //
   //         hmax = 0.5*(v0)^2/g
   //
+  Print["Here";]
   t: = $, g: = $$$.gravity, a: = $$$.attenuation
+  Print["Here2";]
 
   // Here we take hmax = 1, hence:
   v0: = Sqrt[2*g]

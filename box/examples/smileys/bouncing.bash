@@ -15,7 +15,7 @@ cd $TMP_DIR
 FILE_LIST=""
 for (( i = 0; i < 120; i += 2 )); do
   cat << EOF > $TMP_FILE
-  t = 0.025*$i
+  time = 0.025*$i
 EOF
   cat ../$BOX_FILE >> $TMP_FILE
 

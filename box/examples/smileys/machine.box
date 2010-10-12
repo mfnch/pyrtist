@@ -8,7 +8,7 @@ c5 = Color[.r=.g=0.6, .b=1.0]
 c6 = Color[color.black]
 
 // Wheel Radius, Angle of rotation, Hinge radius and Position
-wr = 8.0, wa = Real, wh = 6.0, whp = wh*Vec[wa]
+wr = 8.0, wh = 6.0, whp = wh*Vec[wa]
 rl = 25.0 // Length of the piston Rod
 // Piston Position, Radius and Width
 pp = whp.x + Sqrt[rl**2 - whp.y**2], pr = 3.0, pw = 5.0
@@ -30,7 +30,7 @@ ww = Window[][
   r = wr - wh
   rs = wr*0.3
   \ .Circle[(0, 0), wr, c3; rs, c1; rs-0.2, c3]
-  \ .Line[v = rs*Vec[wa], c1, 0.4, -v, 0.4, v; (v = (-v.y, v.x)), -v]
+  \ .Line[v = rs*Vec[wa], c1, 0.4, -v, 0.4, v; (v = Point[(-v.y, v.x)]), -v]
   \ .Circle[(0, 0), c2, 0.5*r]
   \ .Poly[c5, (pp, pr), (cx2, pr), (cx2, -pr), (pp, -pr)]
   \ .Poly[(pp-pw, pr), (pp, pr), (pp, -pr), (pp-pw, -pr), c2]

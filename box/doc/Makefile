@@ -6,7 +6,8 @@ RST2HTML=python rst2html.py
 all: html
 
 svn_version:
-	echo ".. |svnversion| replace:: "`svnversion -n .` > svn_version.txt
+	VERSION=`tail -n1 ../admin/VERSIONS | cut -d / -f 1`  && \
+	echo ".. |boxversion| replace:: $$VERSION" > svn_version.txt
 
 html/box-logo.png: box-logo.box
 	$(BOX) -l g box-logo.box

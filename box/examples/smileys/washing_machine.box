@@ -3,7 +3,6 @@
 
 include "g"
 
-t = Int
 a = 0.8
 g = 10.0
 v0 = 9.5

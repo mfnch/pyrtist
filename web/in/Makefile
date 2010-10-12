@@ -9,6 +9,7 @@ anim:
 	bash anim.bash
 
 examples:
+	mkdir -p ../out/examples
 	(cd examples && make)
 
 doc:
