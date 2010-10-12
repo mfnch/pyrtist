@@ -154,6 +154,12 @@ const char *print(const char *fmt, ...) {
         substring = aux_buf;
         state = STATE_SUBSTRING;
         break;
+      case 'p':
+        do_read = 0;
+        sprintf(aux_buf, "%p", va_arg(ap, void *));
+        substring = aux_buf;
+        state = STATE_SUBSTRING;
+        break;
       case 'I':
         do_read = 0;
         sprintf(aux_buf, SInt, va_arg(ap, Int));

@@ -158,6 +158,28 @@ static Task My_Str_Point(BoxVM *vm) {
   return Success;
 }
 
+static Task My_Str_Ptr(BoxVM *vm) {
+  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
+  BoxPtr *p = BOX_VM_ARG_PTR(vm, Ptr);
+  char *tmp = printdup("Ptr[block:%p, data:%p]", p->block, p->ptr);
+  if (tmp != (char *) NULL) {
+    TASK( BoxStr_Concat(s, tmp) );
+    BoxMem_Free(tmp);
+  }
+  return Success;
+}
+
+static Task My_Str_CPtr(BoxVM *vm) {
+  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
+  BoxCPtr p = BOX_VM_ARG(vm, BoxCPtr);
+  char *tmp = printdup("CPtr[%p]", p);
+  if (tmp != (char *) NULL) {
+    TASK( BoxStr_Concat(s, tmp) );
+    BoxMem_Free(tmp);
+  }
+  return Success;
+}
+
 static Task My_Str_Str(BoxVM *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   BoxStr *s2 = BOX_VM_ARG_PTR(vm, BoxStr);
@@ -193,6 +215,8 @@ void Bltin_Str_Register_Procs(BoxCmp *c) {
   Bltin_Proc_Def(c, c->bltin.string,     BOXTYPE_INT, My_Str_Int);
   Bltin_Proc_Def(c, c->bltin.string,    BOXTYPE_REAL, My_Str_Real);
   Bltin_Proc_Def(c, c->bltin.string,   BOXTYPE_POINT, My_Str_Point);
+  Bltin_Proc_Def(c, c->bltin.string,     BOXTYPE_PTR, My_Str_Ptr);
+  Bltin_Proc_Def(c, c->bltin.string,    BOXTYPE_CPTR, My_Str_CPtr);
   Bltin_Proc_Def(c, c->bltin.string, c->bltin.string, My_Str_Str);
   Bltin_Proc_Def(c, c->bltin.string,     BOXTYPE_OBJ, My_Str_CString);
 
