@@ -35,9 +35,7 @@ Real@Bounce.Pos[
   //
   //         hmax = 0.5*(v0)^2/g
   //
-  Print["Here";]
   t: = $, g: = $$$.gravity, a: = $$$.attenuation
-  Print["Here2";]
 
   // Here we take hmax = 1, hence:
   v0: = Sqrt[2*g]
