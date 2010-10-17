@@ -1,33 +1,64 @@
-// Under a shell type: box box-logo.box -l g
-// ---
-// This Box source was created to draw the Box logo.
-// It is obtained by just four variable-width lines and one ring.
-
+//!BOXER:VERSION:0:1:1
 include "g"
+GUI = Void
+Window@GUI[]
 
-lsc = LineStyle[7.0]
-lsb = LineStyle[5.0]
-lsa = LineStyle[3.0]
+
+
+
+
+
+//!BOXER:REFPOINTS:BEGIN
+xa1 = Point[.x=31.0, .y=5.0], xa2 = Point[.x=28.0, .y=14.0]
+xa3 = Point[.x=24.0, .y=19.0], xa4 = Point[.x=24.0, .y=20.0]
+xb1 = Point[.x=25.0, .y=8.0], xb2 = Point[.x=28.0, .y=14.0]
+xb3 = Point[.x=33.5, .y=18.0], xb4 = Point[.x=34.0, .y=23.0]
+xb5 = Point[.x=32.0, .y=28.0], b1 = Point[.x=24.5, .y=15.5]
+b2 = Point[.x=16.0, .y=24.0], b3 = Point[.x=12.5, .y=24.5]
+b4 = Point[.x=12.6453939548, .y=23.6810566184], b5 = Point[.x=12.5, .y=27.5]
+b6 = Point[.x=16.0, .y=28.5], b7 = Point[.x=18.0, .y=26.0]
+b8 = Point[.x=18.5, .y=24.0], b9 = Point[.x=18.0, .y=22.0]
+b10 = Point[.x=17.0, .y=21.0], b11 = Point[.x=16.0, .y=22.0]
+b12 = Point[.x=16.5, .y=24.0], b13 = Point[.x=18.5, .y=25.5]
+b14 = Point[.x=24.0, .y=26.0], b15 = Point[.x=23.0, .y=20.0]
+b16 = Point[.x=19.0, .y=15.0], o1 = Point[.x=28.8, .y=19.2]
+o2 = Point[.x=28.9, .y=19.1], g1 = Point[.x=21.7568999576, .y=24.3186079388]
+g2 = Point[.x=14.8511517585, .y=27.0468877536]
+xxx1 = Point[.x=7.18000818584, .y=3.65671481499]
+b17 = Point[.x=12.2670571751, .y=24.9707371739]
+b18 = Point[.x=17.6235110215, .y=22.3726393272]
+g3 = Point[.x=17.1153440254, .y=20.0834648647]
+//!BOXER:REFPOINTS:END
+lsc = LineStyle[7.0], lsb = LineStyle[5.0], lsa = LineStyle[3.0]
+
 w = Window[][
+  .Show[xxx1, xxx1 + 0.8*(45, 32.5)]
+
   // The X is made by just two lines with variable widths
-  \ .Line[1.0, lsb,
-          (31, 45), 1.4, 0.8, (28, 36), 0.8, 1.0, (24, 31), 1.2, (24, 30);
-          (25, 42), 1.4, 1.2, (28, 36), 1.0, 0.8, (33.5, 32),
-          (34, 27), 0.8, 1.0, (32, 22)]
-  // The o is a ring
-  \ .Circle[(c=(28.8, 30.8)), 2.3; c+(0.1, 0.1), 1.5]
-  // The B is the more complicated thing to trace...
-  \ .Line[lsb
-          0.8, (24.5, 34.5), 0.9, (16, 26), 1.0, 1.1, (12.5, 25.5);
-          Color[color.red, .a=0.6]
-          0.2, (12.6, 25), 0.4, 0.5, (12.5, 22.5), 0.6, 0.7, (16, 21.5), 0.6
-          0.5, (18, 24), 0.4,  lsa, (18.5, 26), (18, 28), (17, 29), (16, 28)
-          (16.5, 26), (18.5, 24.5),  lsb, 0.6, 1.0, (24, 24), lsc, 0.8
-          0.7, (23, 30), 0.6, 0.4, (19, 35)]
+  \ .Line[0.5, lsb, xa1, 1.4, 0.8, xa2, 0.8, 1, xa3, 1.2, xa4;
+          xb1, 1.4, 1.2, xb2, 1, 0.8, xb3, xb4, 0.8, 1, xb5]
+
+  // The "B"
+  \ .Line[lsb, 0.8, b1, 0.9, b2, 1, 1.1, b3;
+          Gradient[.Circle[g3, 0; 2], Color[0], Color[(0.85, 0, 0)]]
+          0.2, b4, 0.3, 0.35, b17, 0.4, 0.5, b5, 0.6, 0.7, b6, 0.6, 0.5, b7
+          0.4, lsa, b8, b9, b10, b11, b12, b13, lsb, 0.6, 1, b14, lsc
+          0.8, 0.7, b15, 0.6, 0.4, b16]
+  \ .Line[color.black, lsb, 0.8, b1, 0.9, b18]
+
+  // The "o"
+  \ .Circle[color.black, o1, 2.3; o2, 1.5]
+
+  \ .Circle[g1, (r = 2)
+            Gradient[.Circle[g1, 0; r], Color[1, .a=1], Color[1, .a=0]]]
+
+  \ .Circle[g2, (r = 3)
+            Gradient[.Circle[g2, 0; r], Color[1, .a=1], Color[1, .a=0]]]
 ]
 
-\ Window[][
-  \ .Put[w, .Scale[(2, -2)]]
-  .Save["html/box-logo.png"]
-]
+//450x325
+
+GUI[w]
+
+w.Save["html/box-logo.png", Window["rgb24", .Res[Dpi[300]]]]
 

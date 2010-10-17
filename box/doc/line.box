@@ -1,0 +1,78 @@
+//!BOXER:VERSION:0:1:1
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+
+
+
+//!BOXER:REFPOINTS:BEGIN
+bbox1 = Point[.x=14.392398317, .y=53.6749525852]
+bbox2 = Point[.x=64.9463464236, .y=8.29988812788]
+p1 = Point[.x=25.1698579944, .y=13.5440057713]
+p2 = Point[.x=35.4407650771, .y=37.9232709296]
+p3 = Point[.x=60.4972636746, .y=17.3814826943]
+bbox3 = Point[.x=20.8258678121, .y=41.7632762654]
+bbox4 = Point[.x=186.189861501, .y=-11.3698121207]
+//!BOXER:REFPOINTS:END
+include "arrows"
+
+c1 = Color[(0.8, 0.8, 1)]
+c2 = Color[0]
+c3 = color.red
+
+i1 = 3, f1 = 10
+i2 = 15, f2 = 2
+
+w1 = Window[][
+  .Show[bbox1, bbox2]
+
+  \ .Line[LineStyle[-1], c1, p1, i1, f1,  p2, i2, f2, p3]
+
+  ps = .Poly[Style[.Fill["void"], .Border[0.3, c2, .Dash[1]]], p1, p2, p3]
+  \ .Circle[c2, 0.5, p1; p2; p3]
+
+  \ .Line[color.red, 0.2
+          arrow_ruler, ps.Get[(1, 0.06)], arrow_ruler, ps.Get[(1, -0.06)];
+          arrow_ruler, ps.Get[(1.99, 0.19)], arrow_ruler, ps.Get[(1.99, -0.19)]]
+
+  \ .Text[Font["sans", 3], c2
+          .From[(0.5, 1.5)], "p1", p1; .From[(0, -0.1)], "p2", p2; "p3", p3;
+          c3, .From[(-0.1, 0.2)], p1, "initial__width1"; .From[(1.1, 1)], p2, "final__width1"]
+]
+
+TheLine = (Real ls, Point pos, Color c)
+([)@TheLine[$$.ls = -1.0, $$.pos = (0, 0), $$.c = Color[0]]
+Real@TheLine[$$.ls = $]
+Point@TheLine[$$.pos = $]
+Color@TheLine[$$.c = $]
+
+TheLine@Window[
+  ls = LineStyle[$.ls]
+  pos = $.pos, q1 = p1 + pos, q2 = p2 + pos, q3 = p3 + pos
+  \ .Line[ls, $.c, q1, i1, f1, q2, i2, f2, q3]
+  \ .Poly[Style[.Fill["void"], .Border[0.3, c3, .Dash[1]]], q1, q2, q3]
+  \ .Circle[c3, 0.5, q1; q2; q3]
+  \ .Text[Font["sans", 5], color.black, pos + (45, 5), Str["LineStyle[", $.ls, "]"]]
+]
+
+w2 = Window[][
+  .Show[bbox3, bbox4]
+
+  TheLine[-1, (0, -10)]
+  TheLine[0, (40, -10)]
+  TheLine[1, (80, -10)]
+  TheLine[2, (120, -10)]
+]
+
+w3 = Window[][
+  .Show[bbox1, bbox2]
+  f0 = 3, i0 = 1
+  \ .Line[LineStyle[0], f0, c1, p1, i1, f1, p2, i2, f2, p3, i0, .Close[]]
+]
+
+GUI[w3]
+
+w1.Save["html/line1.png", Window["rgb24", .Res[Dpi[150]]]]
+w2.Save["html/line2.png", Window["rgb24", .Res[Dpi[100]]]]
