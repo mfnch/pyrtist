@@ -1,12 +1,14 @@
 #!/usr/bin/python
 
-example_order = ["snake", "cycloid", "wheatstone", "multivibrator",
-                 "yin-yang", "curved_arrow", "box-logo", "translucency",
-                 "gradient", "fractree", "pythagoras", "text",
-                 "cairo_set_line_cap", "cairo_gradient"]
-
 import sys
 import subst
+
+example_order = sys.argv[1:]
+
+#["snake", "cycloid", "wheatstone", "multivibrator",
+#                 "yin-yang", "curved_arrow", "box-logo", "translucency",
+#                 "gradient", "fractree", "pythagoras", "text",
+#                 "cairo_set_line_cap", "cairo_gradient"]
 
 f = open("thumbnails.dat")
 ls = f.readlines()

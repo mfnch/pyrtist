@@ -7,7 +7,7 @@ restindex
        Box language home page
     /description
     section-pages: , language
-    sectionlist: , documentation, examples
+    sectionlist: , documentation, examples, gui_examples
     # section-pages: download
 /restindex
 

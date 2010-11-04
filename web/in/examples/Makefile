@@ -4,7 +4,9 @@ EXAMPLES=*.example
 all: index.txt
 
 index.txt: thumbnails.dat index.txt.in
-	python thumbnails.py
+	python thumbnails.py snake cycloid wheatstone multivibrator \
+	  yin-yang curved_arrow box-logo translucency gradient fractree \
+	  pythagoras text cairo_set_line_cap cairo_gradient
 
 thumbnails.dat: $(EXAMPLES) create_example.py thumbnails.py
 	make force

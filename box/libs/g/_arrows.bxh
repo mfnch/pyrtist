@@ -11,7 +11,7 @@ Arrow2D = (Point p_start, Point p_end,
 Norm = Real
 Point@Norm[$$ = Sqrt[$.x*$.x + $.y*$.y]]
 
-([)@Arrow2D[
+(.[)@Arrow2D[
   $$.p_start = (0, 0)
   $$.p_end = (10, 10)
   $$.width = 2.0
@@ -26,19 +26,22 @@ Point@Norm[$$ = Sqrt[$.x*$.x + $.y*$.y]]
   $$.both = 0
 ]
 
-([)@@Arrow2D[
+([)@Arrow2D[
   $$.got_color = 0
   $$.got_start = 0
   $$.got_real = 0
+  $$.both = 0
 ]
 
-Point@&Arrow2D[
+Arrow2D@Arrow2D[$$ = $]
+
+Point@Arrow2D[
   [If[!$$.got_start], $$.p_start = $]
   [If[$$.got_start], $$.p_end = $]
   $$.got_start = 1
 ]
 
-Real@&Arrow2D[
+Real@Arrow2D[
   [If[$$.got_real == 0], $$.width = $]
   [If[$$.got_real == 1], $$.head_width = $]
   [If[$$.got_real == 2], $$.head_length = $]
@@ -48,13 +51,13 @@ Real@&Arrow2D[
   $$.got_real = Int[Min[3, $$.got_real + 1]]
 ]
 
-Color@&Arrow2D[
+Color@Arrow2D[
   [If[$$.got_color == 0], $$.col_inside = $]
   [If[$$.got_color == 1], $$.col_border = $]
   $$.got_color = ($$.got_color + 1) % 2
 ]
 
-Arrow2D@@Window[
+Arrow2D@Window[
   hw = $.head_width, hl = $.head_length
   w = 0.5*$.width, l = Norm[$.p_end - $.p_start] - hl
   a = Window[]
@@ -85,7 +88,7 @@ Arrow3D = (Point pos1, pos2,
            Color col1, col2, col3
            Int got_color, got_point)
 
-([)@Arrow3D[
+(.[)@Arrow3D[
   .pos1=(0, 0), .pos2=(10, 10),
    .width=3.0, .head_length=6.0, .head_width=5.0
   .border = 0.2, .prospective=0.5
@@ -93,7 +96,7 @@ Arrow3D = (Point pos1, pos2,
   .got_color = 0, .got_point = 0
 ]
 
-([)@@Arrow3D[
+([)@Arrow3D[
   .got_color = 0, .got_point = 0
 ]
 
