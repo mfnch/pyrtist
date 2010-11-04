@@ -1,0 +1,46 @@
+//!BOXER:VERSION:0:1:1
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+//!BOXER:REFPOINTS:BEGIN
+bbox1 = Point[.x=-32.3011838184, .y=79.7478484078]
+bbox2 = Point[.x=83.2685356767, .y=-2.58611539309]
+p1 = Point[.x=-20.2154615182, .y=30.6496131137]
+p2 = Point[.x=-2.9523785489, .y=65.0652930926]
+p3 = Point[.x=35.303325298, .y=77.1040972766]
+p4 = Point[.x=69.2944192672, .y=43.4906900368]
+p5 = Point[.x=25.8613547511, .y=9.49960406392]
+v1 = Point[.x=52.0608243954, .y=2.61783485327]
+//!BOXER:REFPOINTS:END
+// Here we define our Fractal object
+Fractal = ++(PointList pl, Int level, n, Color c, Real d)
+([)@Fractal[.n = .level = 500, .d = 0.5]
+Fractal@Fractal[$$.c = $.c, $$.d = $.d, $$.n = $.n]
+Point@Fractal[\ $$.pl[$]]
+Color@Fractal[.c = $]
+REAL@Fractal[.d = $]
+Int@Fractal[.n = .level = $]
+
+Fractal@Window[
+  pl = $$.Poly[$.pl, $.c]
+  c = Color[$.c, .Darker[1.0 - 5.0/$.n]]
+  If[$.level > 0]
+    i = 1, Fractal[pl.Get[i + $.d], For[++i <= pl.Num[]]
+                   $.level - 1, $, c]
+]
+
+// And here we used it!
+include "tools"
+
+w = Window[][
+  .Show[bbox1, bbox2]
+
+  (bar_n = GUIReal[Interval[10, 300], v1])
+  n = Int[bar_n.value]
+
+  Fractal[p1, p2, p3, p4, p5, color.red, 5.0/n, n]
+]
+
+GUI[w]
