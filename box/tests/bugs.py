@@ -52,3 +52,15 @@ a = X.Y[] // Shouldn't be possible
 """
 test.expect(exit_status=1, num_errors=1, num_warnings=0, answer=[])
 
+#----------------------------------------------------------------------------#
+test = tests.new_test(title="bug 6")
+test.body = """
+Object = ++Ptr
+Subtype = ++Ptr
+Object.Subtype = Subtype
+Structure = (Object o,)
+s = Structure[]
+y = s.o.Subtype[]
+"""
+test.expect(exit_status=0, num_errors=0, num_warnings=0, answer=[])
+
