@@ -29,3 +29,26 @@ struc = Struc[]
 Print["answer=", struc.my_object.one, struc.my_object.two, struc.a;]
 """
 test.expect(exit_status=0, num_errors=0, num_warnings=0, answer="onetwo1234")
+
+#----------------------------------------------------------------------------#
+test = tests.new_test(title="bug 4")
+test.body = """
+X = ++(Real ax, ay)    
+X.GetPoint = Point
+([)@X.GetPoint[$$.x = $$$.ax, $$.y = $$$.ay]
+a = Point[.x=1.2, .y=2.3]
+x = X[.ax=4.5, .ay=6.7]
+a = x.GetPoint[]
+Print["answer=", a;]
+"""
+test.expect(exit_status=0, num_errors=0, num_warnings=0, answer="(4.5, 6.7)")
+
+#----------------------------------------------------------------------------#
+test = tests.new_test(title="bug 5")
+test.body = """
+X = ++(Real x, y)
+X.Y = Point
+a = X.Y[] // Shouldn't be possible
+"""
+test.expect(exit_status=0, num_errors=0, num_warnings=0, answer="")
+
