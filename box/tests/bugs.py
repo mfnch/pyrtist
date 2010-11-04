@@ -50,5 +50,5 @@ X = ++(Real x, y)
 X.Y = Point
 a = X.Y[] // Shouldn't be possible
 """
-test.expect(exit_status=0, num_errors=0, num_warnings=0, answer="")
+test.expect(exit_status=1, num_errors=1, num_warnings=0, answer=[])
 

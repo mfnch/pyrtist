@@ -369,7 +369,8 @@ named_type:
   ;
 
 prim_type:
-    named_type                   {$$ = $1;}
+    TOK_TYPE_IDENT opt_scope     {$$ = ASTNodeTypeName_New($1, 0);
+                                  BoxMem_Free($1); SRC($$, @$);}
   | '(' type ')'                 {$$ = $2;}
   | '(' struc_type ')'           {$$ = $2;}
   | '(' species_type ')'         {$$ = $2;}

@@ -744,6 +744,23 @@ static Value *My_Compile_Assignment(BoxCmp *c, Value *left, Value *right) {
   if (Value_Want_Value(right)) {
     /* Subtypes are always expanded in assignments */
     left = Value_Expand_Subtype(left);
+    /* ^^^ XXX NOTE: The species expansion above is used to allow
+     * the following:
+     *
+     *   P = Point
+     *   P.Y = Real
+     *   P.Y[$$ = $.y]
+     *
+     * To expand $$ to the child and assign to it the value 1.
+     * If we remove this expansion, then $$ = $.y fails, because $$ is seen as
+     * an object of type P.Y, rather than an object of type Real.
+     */
+    right = Value_Expand_Subtype(right);
+    /* XXX NOTE: The line above will never allow one to have a variable with
+     * type X.Y
+     * Can we live with that?
+     * Maybe, we should expand types only when necessary...
+     */
 
     /* If the value is an identifier (thing without type, nor value),
      * then we transform it to a proper target.
@@ -914,7 +931,7 @@ static void My_Compile_SubtypeBld(BoxCmp *c, ASTNode *n) {
   if (n->attr.subtype_bld.parent != NULL) {
     My_Compile_Any(c, n->attr.subtype_bld.parent);
     if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
-        return;
+      return;
     v_parent = BoxCmp_Pop_Value(c);
 
   } else {
