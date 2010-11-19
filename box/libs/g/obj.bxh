@@ -1,0 +1,29 @@
+#provide "obj"
+
+Obj = ++CPtr
+
+ObjType = Int
+
+objtype = (ObjType empty, void, char, int, real, point)[]
+objtype = (0, 1, 2, 3, 4, 5)
+
+(.[)@Obj "GLib_Init_At_Obj" ?
+(].)@Obj "GLib_Finish_At_Obj" ?
+Char@Obj "GLib_Char_At_Obj" ?
+INT@Obj "GLib_Int_At_Obj" ?
+REAL@Obj "GLib_Real_At_Obj" ?
+Point@Obj "GLib_Point_At_Obj" ?
+Obj@Obj "GLib_Obj_At_Obj" ?
+
+Obj@Char "GLib_Obj_At_Char" ?
+Obj@Int "GLib_Obj_At_Int" ?
+Obj@Real "GLib_Obj_At_Real" ?
+Obj@Point "GLib_Obj_At_Point" ?
+
+Obj.Get = Obj
+Int@Obj.Get "GLib_Int_At_Obj_Get" ?
+
+//Obj.GetType = ObjType
+//Int@Obj.GetType "GLib_Int_At_Obj_Get" ?
+
+Obj@Length "GLib_Obj_At_Length" ?

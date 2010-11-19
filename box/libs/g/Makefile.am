@@ -35,6 +35,7 @@ dist_boxpkg_DATA=g.bxh _color.bxh _style.bxh _gradient.bxh _window.bxh \
                  _line.bxh _circle.bxh _poly.bxh _put.bxh arrows.bxh \
                  _arrows.bxh _pointlist.bxh _text.bxh _matrix.bxh _bbox.bxh \
                  math.bxh tools.bxh objects.bxh _sphere.bxh _rectangle.bxh \
+                 obj.bxh \
                  label.bxh bounce.bxh electric.bxh
 
 libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
@@ -51,7 +52,7 @@ libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
                 i_window.c i_window.h i_line.c i_line.h \
                 i_circle.c i_circle.h i_poly.c i_poly.h \
                 i_put.c i_put.h i_text.c i_text.h \
-                i_style.c i_style.h
+                i_style.c i_style.h obj.c obj.h
 
 libg_la_LIBADD=@CAIRO_LIBS@ ../../box/libboxcore0.2.la
 
