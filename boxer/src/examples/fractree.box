@@ -4,8 +4,9 @@
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
-gui1 = Point[.x=33.5181081705, .y=1.85874773414]
+gui1 = Point[.x=32.7743366593, .y=2.27319866085]
 bbox1 = Point[.x=-33.3736933815, .y=87.8159051329]
 bbox2 = Point[.x=76.1030045728, .y=-1.65034200668]
 //!BOXER:REFPOINTS:END
@@ -24,7 +25,7 @@ PythagTree@Window[
   t = PointList[p.Get[3], p.Get[4], p.Get[(3+xmid, -h)]]
 
   pt1 = PythagTree[.level = level-1, .xmid = xmid, .h = h
-                   .p1 = Point[t.Get[3]], .p2 = Point[t.Get[1]]]
+                   .p1 = t.Get[3], .p2 = t.Get[1]]
   pt2 = PythagTree[.level = level-1, .xmid = xmid, .h = h
                    .p1 = Point[t.Get[2]], .p2 = Point[t.Get[3]]]
 

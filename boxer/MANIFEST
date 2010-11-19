@@ -23,6 +23,8 @@ src/examples/bang.box
 src/examples/box-logo.box
 src/examples/degeneracy.box
 src/examples/planes.box
+src/examples/fractree.box
+src/examples/fractal.box
 src/examples/plot.box
 src/examples/poly.box
 src/examples/circle.box

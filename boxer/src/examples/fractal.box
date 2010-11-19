@@ -4,9 +4,10 @@ GUI = Void
 Window@GUI[]
 
 
+
 //!BOXER:REFPOINTS:BEGIN
-bbox1 = Point[.x=-32.3011838184, .y=79.7478484078]
-bbox2 = Point[.x=83.2685356767, .y=-2.58611539309]
+bbox1 = Point[.x=-23.0957515662, .y=79.6991129258]
+bbox2 = Point[.x=71.3423454797, .y=-1.88531784342]
 p1 = Point[.x=-20.2154615182, .y=30.6496131137]
 p2 = Point[.x=-2.9523785489, .y=65.0652930926]
 p3 = Point[.x=35.303325298, .y=77.1040972766]
@@ -31,7 +32,7 @@ Fractal@Window[
                    $.level - 1, $, c]
 ]
 
-// And here we used it!
+// And here we use it!
 include "tools"
 
 w = Window[][
