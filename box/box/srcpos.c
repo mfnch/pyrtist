@@ -28,6 +28,40 @@
 #include "array.h"
 #include "srcpos.h"
 
+BoxSrcName *BoxSrcName_New(void) {
+  BoxSrcName *srcname = BoxMem_Safe_Alloc(sizeof(BoxSrcName));
+  BoxSrcName_Init(srcname);
+  return srcname;
+}
+
+void BoxSrcName_Destroy(BoxSrcName *srcname) {
+  BoxSrcName_Finish(srcname);
+  BoxMem_Free(srcname);
+}
+
+static void My_SrcName_Finalizer(void *ptr) {
+  BoxMem_Free(*((char **) ptr));
+}
+
+void BoxSrcName_Init(BoxSrcName *srcname) {
+  BoxArr_Init(& srcname->names, sizeof(char *), 8);
+  BoxArr_Set_Finalizer(& srcname->names, My_SrcName_Finalizer);
+}
+
+void BoxSrcName_Finish(BoxSrcName *srcname) {
+  BoxArr_Finish(& srcname->names);
+}
+
+char *BoxSrcName_Add(BoxSrcName *srcname, const char *name) {
+  if (name != NULL) {
+    char *name_copy = BoxMem_Strdup(name);
+    BoxArr_Push(& srcname->names, & name_copy);
+    return name_copy;
+
+  } else
+    return NULL;
+}
+
 static void My_File_Name_Finalizer(void *ptr) {
   BoxMem_Free(*((char **) ptr));
 }
@@ -66,12 +100,12 @@ static const char *My_New_Filename(BoxSrcPosTable *pt,
     BoxArr *fns = & pt->file_names;
     size_t idx = BoxArr_Find(fns, & file_name, My_Cmp_Names, NULL);
     if (idx > 0) {
-        return *((char **) BoxArr_Item_Ptr(fns, idx));
+      return *((char **) BoxArr_Item_Ptr(fns, idx));
 
     } else {
-        char *s = BoxMem_Strdup(file_name);
-        BoxArr_Push(fns, & s);
-        return s;
+      char *s = BoxMem_Strdup(file_name);
+      BoxArr_Push(fns, & s);
+      return s;
     }
   }
 }
@@ -162,7 +196,10 @@ void BoxSrcPos_Init(BoxSrcPos *pos, const char *file_name) {
 }
 
 char *BoxSrcPos_To_Str(BoxSrcPos *pos) {
-  return printdup("line %ld", pos->line);
+  if (pos->file_name == NULL)
+    return printdup("line %ld", pos->line);
+  else
+    return printdup("line %ld of file \"%s\"", pos->line, pos->file_name);
 }
 
 void BoxSrcPos_Next_Line(BoxSrcPos *pos) {

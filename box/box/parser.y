@@ -30,6 +30,7 @@
 #include "tokenizer.h"
 #include "srcpos.h"
 #include "ast.h"
+#include "parserh.h"
 
 static ASTNode *program_node = NULL;
 
@@ -45,6 +46,7 @@ static void My_Syntax_Error();
       ast_node->src.begin.col = node_src.first_column; \
       ast_node->src.end.line = node_src.last_line; \
       ast_node->src.end.col = node_src.last_column; \
+      ast_node->src.begin.file_name = ast_node->src.end.file_name = "unknown"; \
     } \
   while (0)
 
@@ -504,25 +506,31 @@ Task Parser_Finish(void) {
 }
 #endif
 
-ASTNode *Parser_Parse(FILE *in, const char *auto_include) {
+ASTNode *Parser_Parse(FILE *in, const char *in_name,
+                      const char *auto_include) {
   ASTNode *program;
   int parse_status;
+  BoxSrcName *file_names = NULL;
 
   assert(program_node == NULL);
 
-  if (Tok_Init(in, auto_include) != BOXTASK_OK)
+  if (Tok_Init(in, in_name, auto_include) != BOXTASK_OK)
     return NULL;
   parse_status = yyparse();
-  Tok_Finish();
+  file_names = Tok_Finish();
 
   if (parse_status) {
     ASTNode_Destroy(program_node);
+    BoxSrcName_Destroy(file_names);
     program_node = NULL;
     return NULL;
   }
 
   program = program_node;
   program_node = NULL;
+
+  assert(program->type == ASTNODETYPE_BOX);
+  program->attr.box.file_names = file_names;
   return program;
 }
 

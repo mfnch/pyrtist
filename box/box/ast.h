@@ -160,9 +160,10 @@ typedef struct {
 
 /** Node for a Box: which is a list of statements */
 typedef struct {
-  ASTNode *parent;
-  ASTNode *first_statement;
-  ASTNode *last_statement;
+  ASTNode    *parent;
+  ASTNode    *first_statement;
+  ASTNode    *last_statement;
+  BoxSrcName *file_names;     /**< Names of all the files involved */
 } ASTNodeBox;
 
 /** Node for a statement */

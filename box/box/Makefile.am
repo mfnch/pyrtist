@@ -48,31 +48,30 @@ bin_PROGRAMS = box
 
 # *** libboxcore ***
 lib_LTLIBRARIES = libboxcore0.2.la
-boxinc_HEADERS = types.h error.h mem.h array.h occupation.h \
+boxinc_HEADERS = defaults.h types.h error.h mem.h array.h occupation.h \
   srcpos.h msgbase.h messages.h str.h print.h hashfunc.h hashtable.h \
-  list.h
+  list.h virtmach.h vmalloc.h vmproc.h vmsym.h vmsymstuff.h
 libboxcore0_2_la_SOURCES = types.h error.c mem.c mem.h array.c array.h \
   occupation.c occupation.h str.c print.c srcpos.c msgbase.c messages.c \
-  hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h
+  hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h \
+  container.c container.h virtmach.c virtmach.h vmalloc.c vmalloc.h \
+  vmexec.c vmproc.c vmproc.h vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h
+
 libboxcore0_2_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32
 # see http://article.gmane.org/gmane.comp.gnu.mingw.user/18727
 
 # *** box compiler ***
-noinst_HEADERS = defaults.h \
-  fileutils.h registers.h virtmach.h \
-  tokenizer.h parserh.h typesys.h \
-  builtins.h bltinstr.h bltinio.h \
-  vmalloc.h vmproc.h vmsym.h \
-  vmsymstuff.h paths.h container.h \
+noinst_HEADERS = \
+  fileutils.h registers.h tokenizer.h parserh.h typesys.h  paths.h \
   cmpproc.h bltinarray.h ast.h cmpptrs.h value.h compiler.h operator.h \
-  namespace.h autogen.h
+  namespace.h autogen.h bltinstr.h bltinio.h builtins.h
 
 box_SOURCES = \
-  fileutils.c virtmach.c vmalloc.c vmexec.c vmproc.c vmsym.c \
+  fileutils.c \
   tokenizer.l parser.y registers.c \
-  typesys.c builtins.c bltinstr.c bltinio.c vmsymstuff.c \
-  paths.c main.c container.c cmpproc.c bltinarray.c ast.c value.c \
+  typesys.c builtins.c bltinstr.c bltinio.c \
+  paths.c main.c cmpproc.c bltinarray.c ast.c value.c \
   compiler.c operator.c namespace.c autogen.c
 
 box_LDADD = $(LIBLTDL) libboxcore0.2.la

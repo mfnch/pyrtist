@@ -31,50 +31,11 @@
 #  include "typesys.h"
 #  include "ast.h"
 
-typedef struct {
-  unsigned int old_box : 1;
-  unsigned int no_syntax_err : 1;
-} ParserAttr;
-
-
-/*****************************************************************************
- * Data types used during parsing of structures                              *
- *****************************************************************************/
-typedef struct {
-  char *name;
-  Type type;
-} StrucMember;
-
-typedef struct {
-  Type type;
-  Type previous;
-} Struc;
-
-/*****************************************************************************/
-
-extern ParserAttr parser_attr;
-
 Task Parser_Init(const char *f);
 Task Parser_Finish(void);
-#if 0
-Task Prs_Operator(Operator *opr, Expr *rs, Expr *a, Expr *b);
-Task Prs_Name_To_Expr(Name *nm, Expr *e, Int suffix);
-Task Prs_Member_To_Expr(Name *nm, Expr *e, Int suffix);
-Task Prs_Suffix(Int *rs, Int suffix, Name *nm);
-Expr *Prs_Def_And_Assign(Name *nm, Expr *e);
-Task Prs_Array_Of_X(Expr *array, Expr *num, Expr *x);
-Task Prs_Alias_Of_X(Expr *alias, Expr *x);
-Task Prs_Species_New(Expr *species, Expr *first, Expr *second);
-Task Prs_Species_Add(Expr *species, Expr *old, Expr *type);
-Task Prs_Struct_New(Expr *strc, Expr *first, Expr *second);
-Task Prs_Struct_Add(Expr *strc, Expr *old, Expr *type);
-Task Prs_Rule_Typed_Eq_Typed(Expr *rs, Expr *typed1, Expr *typed2);
-Task Prs_Rule_Valued_Eq_Typed(Expr *rs, Expr *valued, Expr *typed);
-Task Prs_Rule_Typed_Eq_Valued(Expr *typed, Expr *valued);
-Task Prs_Rule_Valued_Eq_Valued(Expr *rs, Expr *valued1, Expr *valued2);
-#endif
 
-ASTNode *Parser_Parse(FILE *in, const char *auto_include);
+ASTNode *Parser_Parse(FILE *in, const char *in_name,
+                      const char *auto_include);
 int yyparse(void);
 
 #endif

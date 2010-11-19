@@ -239,13 +239,13 @@ static Task Stage_Interpret_Command_Line(UInt *f) {
     Msg_Main_Show_Level_Set(MSG_LEVEL_WARNING);
 
   /* Controllo che tutto sia apposto */
-  if ( (flags & FLAG_INPUT) == 0 ) {
+  if ((flags & FLAG_INPUT) == 0) {
     MSG_ERROR("You should specify an input file!");
     Main_Error_Exit(CMD_LINE_HELP);
 
   } else {
-    if ( (flags & FLAG_STDIN) == 0 ) {
-      if ( freopen(file_input, "rt", stdin) == NULL ) {
+    if ((flags & FLAG_STDIN) == 0) {
+      if (freopen(file_input, "rt", stdin) == NULL) {
         MSG_ERROR("%s <-- Cannot open the file for reading: %s",
                   file_input, strerror(errno));
         Main_Error_Exit(NULL);
@@ -276,6 +276,7 @@ static Task Stage_Compilation(char *file, BoxVMCallNum *main_module) {
 
   target_vm = Box_Compile_To_VM_From_File(main_module, /*target_vm*/ NULL,
                                           /*file*/ NULL,
+                                          /*filename*/ file_input,
                                           /*setup_file_name*/ file);
 
   MSG_ADVICE("Compilaton finished. %U errors and %U warnings were found.",

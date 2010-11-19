@@ -369,11 +369,20 @@ ASTNode *ASTNodeSep_New(ASTSep sep) {
   return node;
 }
 
+static void ASTNodeBox_Finaliser(ASTNode *node) {
+  assert(node->type == ASTNODETYPE_BOX);
+  BoxSrcName *srcname = node->attr.box.file_names;
+  if (srcname != NULL)
+    BoxSrcName_Destroy(srcname);
+}
+
 ASTNode *ASTNodeBox_New(ASTNode *parent, ASTNode *first_statement) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_BOX);
   node->attr.box.first_statement = first_statement;
   node->attr.box.last_statement = first_statement;
   node->attr.box.parent = parent;
+  node->attr.box.file_names = NULL;
+  node->finaliser = ASTNodeBox_Finaliser;
   return node;
 }
 

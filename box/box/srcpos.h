@@ -23,6 +23,13 @@
 #  include <box/types.h>
 #  include <box/array.h>
 
+/**< Type for storing the pointers to file names used by BoxSrcPos objects
+ * and friends.
+ */
+typedef struct {
+  BoxArr names;
+} BoxSrcName;
+
 /** Type for number of line in a source file */
 typedef int BoxSrcPosLine;
 
@@ -53,7 +60,7 @@ typedef long BoxOutPos;
 
 /** Association between the position in the source and the position in the
  * output (just an integer) */
-typedef struct {  
+typedef struct {
   BoxSrcPos src_pos;
   BoxOutPos out_pos;
 } BoxSrcAssoc;
@@ -63,6 +70,21 @@ typedef struct {
   BoxArr     file_names;
   BoxArr     assoc_table;
 } BoxSrcPosTable;
+
+/** Initialise a file name table. */
+void BoxSrcName_Init(BoxSrcName *srcname);
+
+/** Finalise a file name table. */
+void BoxSrcName_Finish(BoxSrcName *srcname);
+
+/** Object creator for BoxSrcName */
+BoxSrcName *BoxSrcName_New(void);
+
+/** Object destructor for BoxSrcName */
+void BoxSrcName_Destroy(BoxSrcName *srcname);
+
+/** Add a new name to the file name table. */
+char *BoxSrcName_Add(BoxSrcName *srcname, const char *name);
 
 /** Initialise the source position table pointed by 'pt'. */
 void BoxSrcPosTable_Init(BoxSrcPosTable *pt);

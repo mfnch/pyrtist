@@ -26,9 +26,9 @@
 #ifndef _BLTINIO_H
 #  define _BLTINIO_H
 
-#  include "types.h"
-#  include "typesys.h"
-#  include "cmpptrs.h"
+#  include <box/types.h>
+#  include <box/typesys.h>
+#  include <box/cmpptrs.h>
 
 /** Register the builtin IO functions. */
 void Bltin_IO_Register(BoxCmp *c);

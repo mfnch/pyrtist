@@ -94,7 +94,8 @@ BoxVM *BoxCmp_Steal_VM(BoxCmp *c);
  * compiled source.
  */
 BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
-                                   FILE *file, const char *setup_file_name);
+                                   FILE *file, const char *file_name,
+                                   const char *setup_file_name);
 
 void BoxCmp_Compile(BoxCmp *c, ASTNode *program);
 

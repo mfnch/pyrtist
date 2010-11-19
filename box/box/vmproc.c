@@ -218,7 +218,7 @@ Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out,
     return Failed;
 
   p_name = (p->name != NULL) ? p->name : "(undef)";
-  p_desc = (p->desc != NULL) ? p->desc : "(undef)";     
+  p_desc = (p->desc != NULL) ? p->desc : "(undef)";
   switch(p->type) {
   case BOXVMPROC_IS_VM_CODE: p_type = "VM"; break;
   case BOXVMPROC_IS_C_CODE:  p_type = "C"; break;

@@ -366,5 +366,5 @@ void BoxCont_Set(BoxCont *c, const char *cont_type, ...) {
 }
 
 char *BoxCont_To_String(const BoxCont *c) {
-  return Box_SPrint("%c", BoxContType_To_Char(c->type));
+  return Box_SPrintF("%c", BoxContType_To_Char(c->type));
 }

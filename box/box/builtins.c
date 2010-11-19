@@ -227,6 +227,12 @@ static Task My_Fail_Msg(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
+static Task My_Length_Init(BoxVM *vm) {
+  BoxInt *length = BOX_VM_THIS_PTR(vm, BoxInt);
+  *length = 0;
+  return BOXTASK_OK;
+}
+
 /*****************************************************************************
  *                       FUNCTIONS FOR CONVERSION                            *
  *****************************************************************************/
@@ -696,6 +702,8 @@ static void My_Register_Sys(BoxCmp *c) {
   (void) Bltin_Proc_Def(c, fail_t, BOXTYPE_END, My_Fail);
   (void) Bltin_Simple_Fn_Def(c, "Exit", BOXTYPE_VOID, c->bltin.species_int,
                              My_Exit_Int);
+  (void) Bltin_Simple_Fn_Def(c, "Length", BOXTYPE_INT, BOXTYPE_BEGIN,
+                             My_Length_Init);
 }
 
 /* Register bultin types, operation and functions */

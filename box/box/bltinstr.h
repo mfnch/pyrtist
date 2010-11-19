@@ -29,8 +29,8 @@
 
 #  include <stdlib.h>
 
-#  include "types.h"
-#  include "cmpptrs.h"
+#  include <box/types.h>
+#  include <box/cmpptrs.h>
 
 /** @brief The Str object.
  */

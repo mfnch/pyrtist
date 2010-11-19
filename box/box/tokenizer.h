@@ -37,8 +37,9 @@
 extern BoxSrc *tok_src;
 
 int yylex(void);
-Task Tok_Init(FILE *in, const char *f);
-void Tok_Finish(void);
+Task Tok_Init(FILE *main_file, const char *main_filename,
+              const char *pre_filename);
+BoxSrcName *Tok_Finish(void);
 Task Tok_Include_Begin(const char *f);
 UInt Tok_Include_End(void);
 

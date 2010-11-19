@@ -59,12 +59,13 @@ typedef struct {
 
 /** Structure defining the complete state of the scanner */
 struct {
-  int       is_initialised;
-  BoxSrcPos pos;        /**< Current position in the source file */
-  UInt      include_level,
-            max_include_level;
-  BoxArr    include_list;
-  BoxHT     provided_features;
+  int         is_initialised;
+  BoxSrcName  *fnames;    /**< File names referred by BoxSrcPos objects */
+  BoxSrcPos   pos;        /**< Current position in the source file */
+  UInt        include_level,
+              max_include_level;
+  BoxArr      include_list;
+  BoxHT       provided_features;
 } state = {0};
 
 /** Function used to count lines and columns (updating tok_src) */
@@ -288,11 +289,14 @@ include BEGIN(include);
  *  maxinc indica il numero massimo di file di include che possono essere
  *  aperti contemporaneamente.
  */
-Task Tok_Init(FILE *in, const char *f) {
+Task Tok_Init(FILE *main_file, const char *main_filename,
+              const char *pre_filename) {
   assert(!state.is_initialised);
 
   state.is_initialised = 1;
-  BoxSrcPos_Init(& state.pos, "(initial)");
+  state.fnames = BoxSrcName_New();
+
+  BoxSrcPos_Init(& state.pos, BoxSrcName_Add(state.fnames, main_filename));
 
   state.max_include_level = TOK_MAX_INCLUDE;
 
@@ -313,20 +317,21 @@ Task Tok_Init(FILE *in, const char *f) {
   /* Se f == "nomefile" (e quindi f != NULL), eseguo una:
    * include "nomefile"
    */
-  if (f == NULL)
+  if (pre_filename == NULL)
     return Success;
 
-  return Tok_Include_Begin(f);
+  return Tok_Include_Begin(pre_filename);
 }
 
 /* DESCRIZIONE: Conclude l'analisi lessicale del compilatore.
  */
-void Tok_Finish(void) {
+BoxSrcName *Tok_Finish(void) {
   assert(state.is_initialised);
 
   BoxHT_Finish(& state.provided_features);
   BoxArr_Finish(& state.include_list);
   state.is_initialised = 0;
+  return state.fnames;
 }
 
 static void My_Scan_Tok(void) {
@@ -392,7 +397,7 @@ Task Tok_Include_Begin(const char *f) {
   ++state.include_level;
 
   /* Update position */
-  BoxSrcPos_Init(& state.pos, "(included)");
+  BoxSrcPos_Init(& state.pos, BoxSrcName_Add(state.fnames, f));
 
   yyin = incfile;
   yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
