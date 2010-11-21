@@ -1,0 +1,79 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui1 = Point[.x=21.6284987277, .y=15.0510204082]
+gui2 = Point[.x=41.5125739757, .y=27.4731353636]
+gui3 = Point[.x=49.6183206107, .y=13.0102040816]
+gui4 = Point[.x=24.0728426396, .y=29.9640862944]
+gui5 = Point[.x=18.9890862944, .y=29.2003807107]
+gui6 = Point[.x=20.514213198, .y=33.7826142132]
+gui7 = Point[.x=24.8354060914, .y=34.546319797]
+gui8 = Point[.x=31.8591122155, .y=35.8835067005]
+gui9 = Point[.x=16.4472081218, .y=17.4902284264]
+gui10 = Point[.x=18.7348984772, .y=10.8714467005]
+gui11 = Point[.x=24.3270304569, .y=10.3623096447]
+gui12 = Point[.x=44.0529586495, .y=8.10798837563]
+gui13 = Point[.x=55.230651214, .y=16.0074477157]
+gui14 = Point[.x=52.6902665402, .y=25.4358346701]
+gui15 = Point[.x=46.0852663885, .y=31.2967238579]
+gui16 = Point[.x=39.4802662367, .y=33.5901152792]
+bbox1 = Point[.x=13.2469139896, .y=45.1300628743]
+bbox2 = Point[.x=157.931806323, .y=2.93529609467]
+label1 = Point[.x=34.6535353566, .y=39.451004467]
+//!BOXER:REFPOINTS:END
+b = 0.15 // border
+s1 = Style[.Border[b]]
+s2 = Style[.Fill["void"], .Border[b, .Dash[1.5]]]
+s3 = Style[.Fill["void"], .Border[b, .Dash[0.5]]]
+s4 = Style[.Fill["void"], .Border[b]]
+c1 = Color[color.green, .a=0.5]
+c2 = Color[c1, .Darker[0.4], .a=0.5]
+c3 = Color[c1, .a=0.5]
+c4 = Color[c1, .Darker[0.8], .a=0.5]
+
+mesh = Window[][
+  \ .Poly[gui1, gui2, gui3, s4, .Close[]]
+  \ .Poly[s3, gui1, gui4, gui2, gui15;
+          gui4, gui5; gui1, gui9; gui1, gui10; gui1, gui11;
+          gui3, gui12; gui3, gui13; gui4, gui6; gui4, gui7;
+          gui4, gui8; gui2, gui16; gui2, gui14]
+  \ .Hot[gui1, gui2, gui3, "label", label1]
+
+  \ .Text[.Font["times", 3.5], color.black,
+          gui1, .From[(1.5, 0.5)], "1"; 
+          gui2, .From[(0.65, 1.4)], "3";
+          gui3, .From[(-0.5, 0.5)], "2"]
+]
+
+w = Window[][
+  .Show[bbox1, bbox2, ]
+  m1 = .Put[mesh]
+  m2 = .Put[mesh, (50, 0)]
+  m3 = .Put[mesh, (100, 0)]
+
+  v = (0, 25)
+
+
+  p1 = .Poly[c1, s1, m1.Get[1] + v, m1.Get[2], m1.Get[3]]
+  p2 = .Poly[c2, s1, m2.Get[3] + v, m2.Get[1], m2.Get[2]]
+  p3 = .Poly[c1, s1, m3.Get[2] + 0.5*v, m3.Get[3], m3.Get[1]]
+
+  \ .Poly[s2, p1.Get[1], p1.Get[1] - v]
+  \ .Poly[s2, p2.Get[1], p2.Get[1] - v]
+  \ .Poly[s2, p3.Get[1], p3.Get[1] - 0.5*v]
+
+  \ .Text[.Font["times-italic", 4], color.black
+          m1.Get["label"], "L_1";
+          m2.Get["label"], "L_2";
+          m3.Get["label"], "L_3";]
+]
+
+w.Save["fem2d.png", Window["rgb24", .Res[Dpi[100]]]]
+
+GUI[w]
+

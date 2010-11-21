@@ -1,0 +1,85 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui1 = Point[.x=-117.457310125, .y=-45.553587782]
+gui2 = Point[.x=71.8443949495, .y=93.0393794521]
+mp = Point[.x=-26.6102232653, .y=0.240818907563]
+sp3 = Point[.x=41.9797089362, .y=53.877330137]
+sp1 = Point[.x=-88.6089585366, .y=51.0800409002]
+sp2 = Point[.x=-25.9824979866, .y=73.9669688073]
+gui7 = Point[.x=-26.7447855034, .y=38.3650972477]
+gui8 = Point[.x=-26.4906896644, .y=16.7496752294]
+gui9 = Point[.x=-85.6950201342, .y=15.2238807339]
+gui10 = Point[.x=-51.900273557, .y=-1.5598587156]
+gui11 = Point[.x=-3.36796832215, .y=0.983132110092]
+gui12 = Point[.x=29.6644907383, .y=17.5125724771]
+gui13 = Point[.x=-100.178482953, .y=14.7152825688]
+gui14 = Point[.x=-51.6461777181, .y=-9.95172844037]
+gui15 = Point[.x=-17.597335302, .y=38.6193963303]
+gui16 = Point[.x=-17.597335302, .y=17.0039743119]
+gui17 = Point[.x=45.9266244295, .y=17.0039743119]
+gui18 = Point[.x=-3.36796832215, .y=-9.44313027523]
+gui19 = Point[.x=-51.6461777181, .y=6.57771192661]
+gui20 = Point[.x=-71.2115573154, .y=15.7324788991]
+gui21 = Point[.x=-35.6381398658, .y=17.0039743119]
+gui22 = Point[.x=-35.6381398658, .y=38.6193963303]
+gui23 = Point[.x=-3.87616, .y=10.1378990826]
+gui24 = Point[.x=18.2301779866, .y=21.8356568807]
+gui25 = Point[.x=-78.3262408054, .y=1.7460293578]
+gui26 = Point[.x=12.3859736913, .y=8.61210458716]
+gui27 = Point[.x=-35.6381398658, .y=26.413040367]
+//!BOXER:REFPOINTS:END
+include "arrows"
+include "computer"
+
+master = Window[][Computer[.master = 1]]
+node = Computer[.master = 0]
+slave1  = Window[][node.num = 1, node]
+slave2  = Window[][node.num = 2, node]
+slave3  = Window[][node.num = 3, node]
+
+w = Window[][
+  .Show[gui1, gui2]
+  \ .Put[master, mp]
+  \ .Put[slave1, sp1]
+  \ .Put[slave2, sp2]
+  \ .Put[slave3, sp3]
+  c = (Color management, data, instructions)[]
+  c.data = color.white
+  c.management = color.red
+  c.instructions = Color[.r=0.3, .g=0.8, .b=0.3]
+
+  Arrow2D[gui7, gui8, 2, 2.5, 4.5, color.red, .Both[]]
+  Arrow2D[gui9, gui10, 2, 2.5, 4.5, color.red, .Both[]]
+  Arrow2D[gui11, gui12, 2, 2.5, 4.5, color.red, .Both[]]
+  Arrow2D[gui14, gui13, 2, 2.5, 4.5, c.management]
+  Arrow2D[gui16, gui15, 2, 2.5, 4.5, c.management]
+  Arrow2D[gui18, gui17, 2, 2.5, 4.5, c.management]
+  Arrow2D[gui19, gui20, 2, 2.5, 4.5, c.instructions]
+  Arrow2D[gui21, gui22, 2, 2.5, 4.5, c.instructions]
+  Arrow2D[gui23, gui24, 2, 2.5, 4.5, c.instructions]
+
+  \ .Circle[gui26, 5, Gradient[.Circle[gui26, 0; 10]
+                                Color[color.white, .a=1]
+                                Color[color.white, .a=0.0]]]
+  \ .Circle[gui25, 5, Gradient[.Circle[gui25, 0; 10]
+                                Color[color.white, .a=1]
+                                Color[color.white, .a=0.0]]]
+  \ .Circle[gui27, 5, Gradient[.Circle[gui27, 0; 10]
+                                Color[color.white, .a=1]
+                                Color[color.white, .a=0.0]]]
+
+  \ .Text[.Font["sans", 4.5], color.black
+          gui26, .From[(0.5, 0.5)], "Data";
+          gui25, .From[(0.8, 0.5)], "Management\ninstructions";
+          gui27, "Computing\ninstructions"]
+]
+
+GUI[w]
+
+w.Save["orchester.png", Window["rgb24", .Res[Dpi[80]]]]

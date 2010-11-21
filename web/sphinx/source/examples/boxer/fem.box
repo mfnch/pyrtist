@@ -1,0 +1,79 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui1 = Point[.x=22.6463104326, .y=20.1530612245]
+gui2 = Point[.x=28.6162436548, .y=12.297979798]
+gui3 = Point[.x=49.1240447419, .y=12.0103472727]
+gui4 = Point[.x=54.4623687097, .y=20.1621436364]
+gui5 = Point[.x=31.4164974619, .y=25.254040404]
+gui6 = Point[.x=45.4177664975, .y=25.254040404]
+gui7 = Point[.x=39.7184263226, .y=39.2679163636]
+gui8 = Point[.x=42.1083756345, .y=19.9191919192]
+gui9 = Point[.x=10.9408632, .y=14.7867554639]
+gui10 = Point[.x=16.3969543147, .y=27.0323232323]
+gui11 = Point[.x=17.9243654822, .y=4.42272727273]
+gui12 = Point[.x=41.7408808, .y=2.3788769802]
+gui13 = Point[.x=64.1408501455, .y=5.65008293194]
+gui14 = Point[.x=67.4499864, .y=16.8216725773]
+gui15 = Point[.x=59.5590339273, .y=28.7857752356]
+gui16 = Point[.x=40.3408577818, .y=17.4899572539]
+gui17 = Point[.x=27.7408657455, .y=33.107827644]
+gui18 = Point[.x=38.1772249091, .y=32.3451125131]
+gui19 = Point[.x=51.9226735636, .y=34.1247811518]
+gui20 = Point[.x=6.0692602623, .y=8.17327484536]
+gui21 = Point[.x=-1.38793373941, .y=47.8541585567]
+gui22 = Point[.x=67.4268697742, .y=5.64175636364]
+//!BOXER:REFPOINTS:END
+include "arrows"
+
+w = Window[][
+  .Show[gui21, gui22]
+  b = 0.15 // border
+  s1 = Style[.Border[b]]
+  s2 = Style[.Fill["void"], .Border[b, .Dash[2]]]
+  s3 = Style[.Fill["void"], .Border[b, .Dash[0.5]]]
+  \ .Poly[s3, gui10, gui1, gui9, gui2, gui11, gui12, gui2;
+          gui5, gui10, gui9, gui11;
+          gui4, gui14, gui3, gui13, gui12, gui3;
+          gui4, gui15, gui14, gui13;
+          gui6, gui15;
+          gui17, gui5, gui18, gui6, gui19]
+  \ .Circle[color.white, gui16, 25, 10; 37, 20]
+
+  c1 = Color[color.green, .a=0.5]
+  c2 = Color[c1, .Darker[0.4], .a=0.5]
+  c3 = Color[c1, .a=0.5]
+  c4 = Color[c1, .Darker[0.8], .a=0.5]
+  \ .Poly[s1, c1, gui2, gui3, gui4, gui6, gui5, gui1]
+  \ .Poly[s1, c2, gui1, gui7, gui2]
+  \ .Poly[s1, c3, gui2, gui7, gui3]
+  \ .Poly[s1, c4, gui3, gui7, gui4]
+  \ .Poly[s2, gui5, gui7, gui6]
+  center = Point[gui8, .x=Point[gui7].x]
+  \ .Poly[c := center, s2, c, gui7;
+          c, gui1; c, gui2; c, gui3; c, gui4; c, gui5; c, gui6]
+  \ .Circle[center, 2*b, color.black; gui7]
+
+  ax = gui20 + (10, 0), az = gui20 + (0, 10), ay = gui20 + (3, 5)
+  \ .Line[0.25, gui20, arrow, .ArrowScale[2], ax;
+          gui20, arrow, az; gui20, arrow, .ArrowScale[1.5], ay]
+
+  \ .Text[.Font["times-italic", 3.4]
+          "e_{i }(P) = 1", gui7, .From[(0.5, -0.1)];
+          "P", center, .From[(0.5, 1.3)];
+          .From[(-0.2, 0)], "x", ax; "y", ay;
+          .From[(0.5, 0)], "e_{i }(x, y)", az]
+]
+
+GUI[w]
+
+\ Window["rgb24", .Origin[gui21], ss = Point[gui22] - Point[gui21], (ss.x, ss.y), .Res[Dpi[150]]][
+  \ .Put[w]
+  .Save["fem.png"]
+]
+

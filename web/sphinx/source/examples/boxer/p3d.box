@@ -1,0 +1,22 @@
+// To have 3D graphs
+
+P3D = (Real x, y, z)
+P3D@Print["P3D[", $.x, (v = ", "), $.y, v, $.z, "]"]
+
+P3D.Add = P3D
+P3D@P3D.Add[$$.x = $$$.x + $.x, $$.y = $$$.y + $.y, $$.z = $$$.z + $.z]
+
+P3D@Point[
+  p = Point[($.x, $.y)]
+  $$ = p + (0.2, 0.2)*$.z
+]
+
+Sph = ++(Real r, theta, phi)
+Sph@P3D[
+  rct = $.r*Cos[$.theta], rst = $.r*Sin[$.theta]
+  cp = Cos[$.phi], sp = Sin[$.phi]
+  $$ = (rst*sp, rct, rst*cp)
+]
+
+Sph@Point[P3D[$]]
+

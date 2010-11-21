@@ -1,0 +1,197 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui1 = Point[.x=25.5173711187, .y=15.0382159091]
+gui2 = Point[.x=67.9417991169, .y=42.5137840909]
+gui3 = Point[.x=16.2507179545, .y=6.94322887701]
+gui4 = Point[.x=122.793297172, .y=5.9301744]
+gui5 = Point[.x=15.4882522727, .y=11.0090770053]
+gui6 = Point[.x=106.984134091, .y=8.72203743316]
+gui7 = Point[.x=38.6163779545, .y=7.45145989305]
+gui8 = Point[.x=13.0467310112, .y=89.9390269737]
+gui9 = Point[.x=124.366616629, .y=3.54001876833]
+gui10 = Point[.x=60.2195722727, .y=8.72203743316]
+gui11 = Point[.x=83.8560084091, .y=8.72203743316]
+gui12 = Point[.x=2.72526761269, .y=47.0889002079]
+gui13 = Point[.x=60.958856492, .y=27.1273880588]
+gui14 = Point[.x=13.7087977221, .y=88.0737285393]
+gui15 = Point[.x=26.1563938497, .y=40.8722670455]
+//!BOXER:REFPOINTS:END
+include "arrows"
+
+Cylinder = (Point pos, Real rx, ry, l)
+
+Cylinder@@Window[
+  p = $.pos, vx = Point[($.rx, 0)], vy = Point[(0, $.ry)]
+  vl = Point[($.l, 0)]
+  \ .Poly[p, (p += vl)
+          0, 1, (p += vx), (p += vy), (p += vy), (p -= vx)
+          0, 0, (p -= vl)
+          0, 1, (p += vx), (p -= vy), (p -= vy)]
+]
+
+InfoBox = (Point pos, size, Real round)
+
+([)@InfoBox[.pos = (0, 0), .size = (10, 10), .round = 0]
+
+InfoBox@@Window[
+  p = $.pos
+  vx = Point[$.size, .y = 0]
+  vy = Point[$.size, .x = 0]
+  \ .Poly[$.round, p, (p += vx), (p += vy), (p -= vx)]
+]
+
+FiveLayers = (Int on_the_left,)
+
+FiveLayers@@Window[
+  sx = 40, hx = 5, rx = 3, ry = 12           // Sizes
+  scol = Color[(0.7, 0.7, 1.0)], hcol = Color[(0.3, 0.3, 1.0)] // Colors
+//  scol = Color[(1.0, 0.95, 0.6)], hcol = Color[(0.4, 0.6, 1.0)]
+  fecol = color.white, dycol = color.white
+  jcol = color.black
+
+  draw_with_border = Style[.Border[0.1, color.black]]
+  draw_without_border = Style[.Border[0.0]]
+
+  p = Point[gui1]
+  c1 = Cylinder[.pos=p, .rx=-rx, .ry=ry, .l=hx]
+  c2 = Cylinder[.pos=p + (c1.l, 0), .rx=-rx, .ry=ry, .l=sx]
+  c3 = Cylinder[.pos=p += (c2.l, 0), .rx=-rx, .ry=ry, .l=hx]
+  c4 = Cylinder[.pos=p + (c3.l, 0), .rx=-rx, .ry=ry, .l=sx]
+  c5 = Cylinder[.pos=p += (c2.l, 0), .rx=-rx, .ry=ry, .l=hx]
+  
+  w = Window[][
+    draw_with_border
+    scol_g = Gradient[.Line[p, p + (0, 2*ry)], dk := Color[scol, .Darker[0.75]]
+                    dk, 0.3, scol, 0.5, scol, 0.75, color.white, 0.9, scol, 0.95, scol, dk]
+    hcol_g = Gradient[.Line[p, p + (0, 2*ry)], dk := Color[hcol, .Darker[0.75]]
+                      dk, 0.3, hcol, 0.5, hcol, 0.75, color.white, 0.9, hcol, 0.95, hcol, dk]
+
+    hcol_g, c1, scol_g, c2, hcol_g, c3, scol_g, c4, hcol_g, c5
+
+    hcol2 = Color[hcol, .Darker[0.7]]
+    \ .Circle[hcol2, c5.pos + (c5.l, ry), rx, ry]
+  ]
+
+  [If[!$.on_the_left],
+    \ w[p = gui2
+        Style[.Border[0.0, color.black]]
+        \ .Line[jcol, vx = (10, 0), 0.7, p - vx, arrow_triangle, p + 1.3*vx ]
+        \ .Text[.Font["helvetica", 4], p, .From[(0.5, -0.25)], "  flow of\nelectrons"]]]
+  
+  y0 = c1.pos.y + c1.ry
+  x0 = c1.pos.x, x1 = c3.pos.x, x2 = c5.pos.x + c3.l
+  
+  //[If[!$.on_the_left], x: = x2, x2 = x0, x0 = x]
+
+  v = 9  // Fe arrow size
+  n = 17 // Num arrows
+  dx = (x2 - x0)/n
+  dy1 = Point[(x0, y0)]
+  dy2 = Point[(x1, y0)]
+  dy3 = Point[(x2, y0)]
+
+  \ w.Line[Style[.Border[0]], 0.3, color.black, dy1, dy3]
+
+  arr = Arrow2D[.width=1.0, .head_width=1.5, .head_length=3.0, .border=0.1
+                .col_inside=color.white, .col_border=color.black]
+
+  x = x2
+  angle = 0.0
+  i = 0
+  [
+    x = Real[x0 + i*dx, If[$.on_the_left], x2 - i*dx]
+    p = (x, y0)
+    angle = Int[0]
+    [If[$.on_the_left], angle = Max[0, 180*(x - x1)/(x0 - x1)]]
+    [If[!$.on_the_left], angle = Min[180, 180*(x - x2)/(x1 - x2)]]
+    a = Deg[angle]
+    \ w[Arrow2D[arr, .p_start = p, .p_end = p  + v*(Cos[a], Sin[a])]]
+    For[++i <= n]
+  ]
+
+  [If[!$.on_the_left]
+     \ w.Circle[gui13, 8.0, Color[color.white, .a=0.5]]
+     \ w.Circle[gui13, 8.0, Style[.Border[0.8, color.red, .Dash[2]], .Fill["void"]]]
+  ]
+
+  \ w[
+    s = 1.2
+    hard_arr = Arrow2D[arr, .p_start=dy1, .p_end=dy1 - (v*s, 0)
+                       .col_inside=color.red
+                       .width*=s, .head_width*=s, .border*=1.5]
+    hard_arr
+    Arrow2D[hard_arr, .p_start=dy2, .p_end=dy2 + (v*s*(2*$.on_the_left-1), 0)]
+    Arrow2D[hard_arr, .p_start=dy3, .p_end=dy3 + (v*s, 0)]
+    draw_without_border
+  ]
+
+  [If[$.on_the_left+1]
+    \ w[
+      p = Point[gui3]
+      p2 = Point[gui4, .y = p.y]
+    
+      \ .Text[.Font["helvetica-bold", 5]
+              dy1, .From[(1.7, 1.7)], "M_H";
+              dy2 + (1.5*($.on_the_left-0.5)*v+3, 0), .From[(0.9, 1.6)], "M_H";
+              dy3, .From[(-0.9, 1.7)], "M_H";
+              draw_with_border
+              fecol, (0.5*(x0 + x1), y0), .From[(0.5, 1.5)], "M_S";
+              fecol, (0.5*(x1 + x2), y0), .From[(0.5, 1.5)], "M_S";
+              //color.black, .Font["times-italic"], p2, .From[(0.5, -0.8)], "x"
+      ]
+    ]
+
+  ]
+
+  \ w[
+    //\ .Line[color.black, p, 0.4, arrow, p2]
+    //\ .Circle[(0.5*(x0 + x1), p.y), 0.8]
+
+    Color[color.white, .a=0.5], draw_with_border
+    ib1 = InfoBox[.pos=gui5, .round=0.1, .size=(12, 6)]
+    ib2 = InfoBox[.pos=gui6, .round=0.1, .size=(12, 6)]
+    ib3 = InfoBox[.pos=gui7, .round=0.1, .size=(12, 6)]
+    ib4 = InfoBox[.pos=gui10, .round=0.1, .size=(12, 6)]
+    ib5 = InfoBox[.pos=gui11, .round=0.1, .size=(12, 6)]
+    ib5.pos.y = ib4.pos.y = ib2.pos.y = ib3.pos.y = ib1.pos.y
+
+    [If[$.on_the_left],
+      \ w[
+           ib1, ib2, ib3, ib4, ib5
+
+           color.white, draw_without_border, color.black
+           \ .Text[.Font["helvetica", 3.5], .From[(0.5, 0.5)]
+                  ib1.pos + 0.5*ib1.size, "HARD";
+                  ib2.pos + 0.5*ib2.size, "HARD";
+                  ib3.pos + 0.5*ib3.size, "SOFT";
+                  ib4.pos + 0.5*ib4.size, "HARD";
+                  ib5.pos + 0.5*ib5.size, "SOFT";]
+      ]
+    ]
+  ]
+
+  \ $$[w]
+]
+
+w = Window[][
+  .Show[gui8, gui9]
+  before = Window[][FiveLayers[.on_the_left=1]]
+  after = Window[][FiveLayers[.on_the_left=0]]
+
+  \ .Put[before, Point[gui12, .x=0]]
+  \ .Put[after]
+
+  .Text[.Font["arial", 5], color.black,
+        gui14, "(a)", .From[(0, 0)]; 
+        Point[gui15, .x=Point[gui14].x], "(b)"]
+]
+
+w.Save["fivelayers.png", Window["rgb24", .Res[Dpi[150]]]]
+
+GUI[w]

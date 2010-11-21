@@ -1,0 +1,77 @@
+include "g"
+include "gears"
+
+Program = (Point size, pos, Int n)
+
+([)@Program[.size=(10, 5), .pos=(0, 0), .n=10]
+
+Program@&Window[
+  x0 = $.pos.x, y0 = $.pos.y, x1 = x0 + $.size.x, y1 = y0 + $.size.y
+  \ $$.Poly[(x0, y0), (x1, y0), (x1, y1), (x0, y1),
+            color.white, Style[.Border[color.black, 0.2]]]
+  d = $.size.x*0.1
+  i = 1, \ $$.Line[color.black, 0.3, y = y0 + (y1 - y0)*i/$.n
+                   (x0+d, y), (x1-d, y);
+                   For[++i < $.n]]
+]
+
+Computer = (Int master, Int num, Point monitor, scr, keyboard,
+            (Color pc, scr, keys) color)
+
+([)@Computer[ // default params for Computer
+  .num = 1
+  .master = 0, .monitor = (40.0, 30.0)
+  .scr = .monitor*0.8
+  .keyboard = (35.0, 10.0)
+  .color.pc = color.black
+  .color.scr = Color[.b=1, .r=.g=0.7]
+  .color.keys = color.white
+]
+
+Computer@&Window[
+  hx = 0.5*$.monitor.x, hy = 0.5*$.monitor.y, y0 = hy*1.2
+  prospective = 1.3
+  \ $$.Poly[$.color.pc, (-hx, -hy), 0.05, (hx, -hy), (hx, hy), (-hx, hy)]
+  \ $$.Line[(0, -hy), hx*0.3, (0, -y0)]
+  x0 = 0.5*$.keyboard.x, x1 = prospective*x0, y1 = y0 + $.keyboard.y
+  \ $$.Poly[(-x0, -y0), 0.05, (x0, -y0), (x1, -y1), (-x1, -y1)]
+  [If[!$.master]
+     \ $$.Text[color.black, .Font["sans", 4.5]
+               .From[(0.5, 1.2)], (0, -y1)
+               Str["Computing node n. ", $.num]]]
+  [If[$.master]
+     \ $$.Text[color.red, .Font["sans", 5], .From[(0.5, 1.2)], (0, -y1)
+               "Coordination"; .From[(0.5, 2.2)], "& computing node"]]
+  d = x0*0.1, x2 = x0 - d, y2 = y0 + d, x3 = x1 - d*2.4, y3 = y1 - d*prospective
+  \ $$.Poly[$.color.keys, (-x2, -y2), 0.05, (x2, -y2), (x3, -y3), (-x3, -y3)]
+
+  n = 10
+  i = -n, [
+    ri = Real[i]/n
+    \ $$.Line[color.black, 0.2, (ri*x2, -y2), (ri*x3, -y3)]
+    For[++i < n]
+  ]
+
+  m = 6
+  i = 0, [
+    ri = Real[i]/m
+    x = x2 + (x3 - x2)*ri
+    y = y2 + (y3 - y2)*ri
+    \ $$.Line[color.black, 0.2, (-x, -y), (x, -y)]
+    For[++i < m]
+  ]
+
+  hx = 0.5*$.scr.x, hy = 0.5*$.scr.y
+  \ $$.Poly[Gradient[.Line[(-hx, -hy), (hx, hy)], $.color.scr, color.white],
+            (-hx, -hy), (hx, -hy), (hx, hy), (-hx, hy)]
+  [If[$.master]
+    \ $$.Put[gears, (hx*0.35, hy*0.18), .Scale[0.3]]
+    \ $$[Program[.pos=-0.9*(hx, hy), .size=(0.5*hx, 1.8*hy)]]]
+  [If[!$.master]
+    \ $$.Put[gears, (hx*0.05, hy*0.18), .Scale[0.48]]]
+//  \ $$.Poly[(-hx, -hy), (hx, -hy), (hx, hy), (-hx, hy),  // trying to emulate sun reflections
+//            Gradient[.Circle[(hx*0.1, -hy*0.7), 0.1*hx; 0.3*hx]
+//                     Color[color.white, .a=0.8], Color[color.white, .a=0.0]]]
+]
+
+

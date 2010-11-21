@@ -1,0 +1,28 @@
+include "g"
+
+Gear = (Point pos, Real rad, h, Int n)
+
+Gear@&Window[
+  m := $.n
+  n := 180
+  s := Style[.Border[color.black, 0.4]]
+  g := Gradient[.Circle[$.pos, $.rad*0.1; $.rad*0.9], color.white, color.grey]
+  i := 0, \ $$.Poly[s, g
+    angle := Deg[360.0*i/n]
+    r = $.rad + $.h*Int[a := i*m/Real[n], 2*(a - Int[a])]
+    $.pos + Point[.x=r*Cos[angle], .y=r*Sin[angle]]
+    For[++i < n]
+  ]
+  \  $$.Circle[$.pos, $.rad*0.2, color.grey, s]
+]
+
+([)@Gear[.pos=(0, 0), .rad = 10.0, .h = 1, .n = 20]
+
+gears = Window[][
+  gui3 := (-5.80503357401, 2.91855231481)
+  gui4 := (18.5917679487, -7.25533574661)
+  gui5 := (-22.8225615385, -17.1623063348)
+  Gear[.pos=gui3, .rad=15, .n=30]
+  Gear[.pos=gui4]
+  Gear[.pos=gui5]
+]

@@ -1,0 +1,115 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui1 = Point[.x=19.0839694656, .y=39.2857142857]
+gui2 = Point[.x=83.2061068702, .y=8.41836734694]
+gui3 = Point[.x=44.9984133122, .y=39.7857742564]
+gui4 = Point[.x=11.4673170347, .y=49.4646]
+gui5 = Point[.x=87.4480159624, .y=-35.3649412903]
+gui6 = Point[.x=32.3199644013, .y=32.6856284211]
+gui7 = Point[.x=26.7106367852, .y=-5.669515625]
+gui8 = Point[.x=19.0870386399, .y=-24.466671875]
+gui11 = Point[.x=64.5852933754, .y=38.7659802395]
+gui15 = Point[.x=18.333404644, .y=44.1108716418]
+gui16 = Point[.x=106.520537855, .y=43.8605610778]
+//!BOXER:REFPOINTS:END
+include "electric"
+
+GMRDevice = (Int parallel,)
+
+GMRDevice@@Window[
+  .Show[gui4, gui5]
+  corner1 = Point[gui1], corner2 = Point[gui2], p1 = Point[gui3]
+  color_soft = Color[color.grey, .a=0.3]
+  color_hard = Color[(0.6, 0.8, 1)]
+  color_up = Color[(1, 0.5, 0)]
+  color_down = Color[(0, 0.5, 1)]
+  style = Style[.Border[0.5, color.black]]
+
+  dx = p1.x - corner1.x
+  x0 = corner1.x, x1 = x0 + dx, x3 = corner2.x, x2 = x3 - dx
+  y0 = corner1.y, y1 = corner2.y
+   \ .Poly[color_hard, style
+           (x0, y0), (x1, y0), (x1, y1), (x0, y1);
+           (x2, y0), (x3, y0), (x3, y1), (x2, y1)]
+   \ .Poly[color_soft, style
+           (x1, y0), (x2, y0), (x2, y1), (x1, y1)]
+
+  p = Point[(0.5*(x0 + x3), y0 + 5)], v = Point[(15, 0)]
+  \ .Line[color.black, 1, p - v, arrow_triangle, p + v]
+  \ .Text[.Font["sans", 4], p, .From[(0.65, -0.5)], "electron flow"]
+
+  p2 = Point[gui6]
+  x = 0.5*(x0 + x1), y = 0.5*(y0 + y1)
+  \ .Line[color.red, (x, p2.y), 1.0, arrow_triangle, (x, y + (y - p2.y))]
+  x = 0.5*(x2 + x3)
+
+  big = 1.0, small = 0.7*big
+  size1 = small, size2 = big
+  [If[$.parallel == 0]
+     \ $$.Line[color.red, (x, y + (y - p2.y)), 1.0, arrow_triangle, (x, p2.y)]
+  ]
+  [If[$.parallel == 1]
+     \ $$.Line[color.red, (x, p2.y), 1.0, arrow_triangle, (x, y + (y - p2.y))]
+     size1 = big, size2 = small
+  ]
+
+  color.black
+  p1 = Point[gui7]
+  y = p1.y, x = p1.x
+  p00 = (x, y), p01 = (0.5*(x0 + x3), y), p02 = (x3 - (x - x0), y)
+  r00 = $$.Put[resistor, "rt", .Scale[big], .Near[1, p00], .Near[2, p01]]
+  r01 = $$.Put[resistor, "rt", .Scale[size1], .Near[1, p01], .Near[2, p02]]
+
+  y = Point[gui8].y
+  p10 = (x, y), p11 = (0.5*(x0 + x3), y), p12 = (Point[p02].x, y)
+  r10 = $$.Put[resistor, "rt", .Scale[small], .Near[1, p10], .Near[2, p11]]
+  r11 = $$.Put[resistor, "rt", .Scale[size2], .Near[1, p11], .Near[2, p12]]
+
+  p1 = 0.5*(p00 + p10), p2 = 0.5*(p02 + p12)
+  \ .Line[0.4, r00.Get[2], r01.Get[1]; r10.Get[2], r11.Get[1];
+          r10.Get[1], p10, p00, r00.Get[1]; r11.Get[2], p12, p02, r01.Get[2];
+          p1, (x0, p1.y); p2, (x3, p2.y)]
+  \ .Circle[0.5, p1; p2]
+  vs = Point[(2, 0)], p = (x0, p1.y) - vs, v = (0, 3)
+  \ .Line[color_up, p - v, arrow_triangle, p + v;
+          p00 - vs - v, arrow_triangle, p00 - vs + v]
+  p -= vs,
+  \ .Line[color_down, p + v, arrow_triangle, p - v;
+          p10 - vs + v, arrow_triangle, p10 - vs - v]
+  color.black
+
+  p1 = Point[r00.Get[(1.5, 0.3)]],  p2 = Point[r01.Get[(1.5, 0.3)]]
+  p3 = Point[r10.Get[(1.5, -0.3)]], p4 = Point[r11.Get[(1.5, -0.3)]]
+  [If[$.parallel == 0]
+     \ $$[.Text[.Font["sans", 5]
+                p1, .From[(0.5, 0)], "R_{HI}"; p2, "R_{LOW}";
+                p3, .From[(0.5, 1)], "R_{LOW}";  p4, "R_{HI}"]]
+  ]
+  [If[$.parallel == 1]
+     \ $$[.Text[.Font["sans", 5]
+                p1, .From[(0.5, 0)], "R_{HI}"; p2, "R_{HI}";
+                p3, .From[(0.5, 1)], "R_{LOW}";  p4, "R_{LOW}"]]
+  ]
+]
+
+w = Window[][
+  dev_par  = Window[][GMRDevice[.parallel=0]]
+  dev_anti = Window[][GMRDevice[.parallel=1]]
+  \ .Put[dev_par,  (0, 0)]
+  \ .Put[dev_anti, bb = BBox[dev_par], (bb.max.x, 0)]
+//  \ .Text[.Font["sans", 5], gui10, .From[(0.5, -0.1)], "ferromagnetic layers";
+//          gui14, "metallic layer"]
+  \ .Text[.Font["sans", 5], gui15, .From[(0, 0)], "a)";
+          (Point[gui16].x, Point[gui15].y), "b)"]
+]
+
+GUI[w]
+
+w.Save["gmr.png", Window["rgb24", .Res[Dpi[100]]]]
+

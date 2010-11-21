@@ -1,0 +1,228 @@
+//!BOXER:VERSION:0:1:1
+
+include "arrows"
+
+grains = Window[]
+arm = Window[]
+hd = Window[]
+
+////!BOXER:REFPOINTS:BEGIN
+[
+gui1 = Point[.x=10.3269035533, .y=3.97715736041]
+gui2 = Point[.x=22.7883248731, .y=5.50609137056]
+gui3 = Point[.x=43.1335025381, .y=7.54467005076]
+gui4 = Point[.x=52.7974619289, .y=5.76091370558]
+gui5 = Point[.x=72.8883248731, .y=6.52538071066]
+gui6 = Point[.x=89.9274111675, .y=4.48680203046]
+gui8 = Point[.x=27.3659898477, .y=11.8766497462]
+gui9 = Point[.x=26.0944162437, .y=17.9923857868]
+gui10 = Point[.x=9.81827411168, .y=14.4248730964]
+gui11 = Point[.x=60.6812182741, .y=13.9152284264]
+gui12 = Point[.x=41.6076142132, .y=16.9730964467]
+gui13 = Point[.x=31.6893401015, .y=11.6218274112]
+gui14 = Point[.x=83.823857868, .y=15.6989847716]
+gui15 = Point[.x=75.9401015228, .y=17.7375634518]
+gui16 = Point[.x=73.9055837563, .y=13.6604060914]
+gui17 = Point[.x=70.0908629442, .y=8.56395939086]
+gui18 = Point[.x=73.3969543147, .y=18.7568527919]
+gui19 = Point[.x=67.8020304569, .y=21.5598984772]
+gui20 = Point[.x=49.7456852792, .y=17.7375634518]
+gui21 = Point[.x=31.9436548223, .y=12.6411167513]
+gui22 = Point[.x=23.2969543147, .y=19.2664974619]
+gui23 = Point[.x=27.3659898477, .y=24.6177664975]
+gui24 = Point[.x=48.2197969543, .y=21.3050761421]
+gui25 = Point[.x=47.7111675127, .y=17.4827411168]
+gui26 = Point[.x=40.5903553299, .y=26.1467005076]
+gui27 = Point[.x=51.0172588832, .y=29.4593908629]
+gui28 = Point[.x=66.276142132, .y=23.5984771574]
+gui29 = Point[.x=97.5568527919, .y=10.092893401]
+gui30 = Point[.x=86.3670050761, .y=15.1893401015]
+gui31 = Point[.x=80.7720812183, .y=20.030964467]
+gui32 = Point[.x=89.4187817259, .y=24.3629441624]
+gui33 = Point[.x=77.4659898477, .y=19.0116751269]
+gui34 = Point[.x=65.2588832487, .y=23.8532994924]
+gui35 = Point[.x=60.1725888325, .y=27.6756345178]
+gui36 = Point[.x=77.2116751269, .y=27.1659898477]
+gui37 = Point[.x=85.8583756345, .y=25.1274111675]
+gui38 = Point[.x=7.78375634518, .y=16.4634517766]
+gui39 = Point[.x=10.0725888325, .y=23.5984771574]
+gui40 = Point[.x=19.4822335025, .y=26.9111675127]
+gui41 = Point[.x=26.8573604061, .y=19.521319797]
+gui42 = Point[.x=39.0644670051, .y=23.3436548223]
+gui43 = Point[.x=23.0426395939, .y=26.9111675127]
+gui44 = Point[.x=17.1934010152, .y=29.4593908629]
+gui45 = Point[.x=42.6248730964, .y=30.223857868]
+gui46 = Point[.x=84.3324873096, .y=26.9111675127]
+gui47 = Point[.x=69.8365482234, .y=29.4593908629]
+gui48 = Point[.x=62.4614213198, .y=30.9883248731]
+gui49 = Point[.x=73.3969543147, .y=34.0461928934]
+gui50 = Point[.x=83.0609137056, .y=32.2624365482]
+gui51 = Point[.x=44.1507614213, .y=29.2045685279]
+gui52 = Point[.x=43.6421319797, .y=32.5172588832]
+gui53 = Point[.x=56.3578680203, .y=34.0461928934]
+gui54 = Point[.x=63.9873096447, .y=29.2045685279]
+gui55 = Point[.x=23.0426395939, .y=35.5751269036]
+gui56 = Point[.x=48.7284263959, .y=33.5365482234]
+gui57 = Point[.x=20.7538071066, .y=30.478680203]
+gui58 = Point[.x=6.51218274112, .y=7.79949238579]
+gui59 = Point[.x=7.52944162437, .y=22.3243654822]
+gui60 = Point[.x=22.5340101523, .y=36.8492385787]
+gui61 = Point[.x=40.8446700508, .y=36.8492385787]
+gui62 = Point[.x=43.1335025381, .y=28.9497461929]
+gui63 = Point[.x=43.6421319797, .y=17.2279187817]
+gui64 = Point[.x=31.1807106599, .y=11.6218274112]
+gui65 = Point[.x=31.6893401015, .y=10.347715736]
+gui66 = Point[.x=41.3532994924, .y=16.7182741117]
+gui67 = Point[.x=44.6593908629, .y=21.5598984772]
+gui68 = Point[.x=43.9140101523, .y=35.5751269036]
+gui69 = Point[.x=61.6984771574, .y=34.3010152284]
+gui70 = Point[.x=79.2461928934, .y=35.3203045685]
+gui71 = Point[.x=86.3670050761, .y=28.9497461929]
+gui72 = Point[.x=79.0234517766, .y=14.4248730964]
+gui73 = Point[.x=99.740437037, .y=8.05431472081]
+gui74 = Point[.x=55.0862944162, .y=10.8573604061]
+gui75 = Point[.x=32.9609137056, .y=37.1040609137]
+gui76 = Point[.x=32.9741116751, .y=43.9842639594]
+gui77 = Point[.x=64.2416243655, .y=34.5558375635]
+gui78 = Point[.x=18.7268020305, .y=15.6681659794]
+gui79 = Point[.x=33.4829441624, .y=21.7719721649]
+gui80 = Point[.x=15.9282233503, .y=24.56955]
+gui81 = Point[.x=32.4652791878, .y=29.9103804124]
+gui82 = Point[.x=30.4299492386, .y=35.2512108247]
+gui83 = Point[.x=46.2037563452, .y=15.4138407216]
+gui84 = Point[.x=65.0305583756, .y=18.4657438144]
+gui85 = Point[.x=79.7867005076, .y=15.6681659794]
+gui86 = Point[.x=74.4439593909, .y=26.3498268041]
+gui87 = Point[.x=51.8009137056, .y=26.3498268041]
+gui88 = Point[.x=51.8009137056, .y=33.4709340206]
+gui89 = Point[.x=75.7160406091, .y=32.7079582474]
+gui90 = Point[.x=89.2001015228, .y=20.2460206186]
+gui91 = Point[.x=81.0587817259, .y=24.6177664975]
+gui92 = Point[.x=79.7867005076, .y=30.478680203]
+gui93 = Point[.x=87.1647715736, .y=20.5003458763]
+gui94 = Point[.x=88.1824365482, .y=44.2390862944]
+////!BOXER:REFPOINTS:END
+
+
+  \ grains[
+    x0 = 0.0, x1 = 100.0
+    y0 = 0.0, y1 = 10.0, y2 = 35.0
+    up_x0 = 20.0, up_x1 = 80.0
+    darker = 0.7
+
+    col1 = Color[(0.9, 0.9, 1)]
+    col2 = Color[(0.8, 0.7, 1)]
+    col3 = Color[(1.0, 1.0, 0.6)]
+    dcol1 = Color[col1, .Darker[darker]]
+    dcol2 = Color[col2, .Darker[darker]]
+    dcol3 = Color[col3, .Darker[darker]]
+
+    s = Style[.Border[color.black, 0.2]]
+    s2 = Style[.Fill["void"], .Border[color.red, 0.8, .Dash[2]]]
+
+    p1 = Point[gui1, .y=y1], p2 = Point[gui2, .y=y1]
+    p3 = Point[gui3, .y=y1], p4 = Point[gui4, .y=y1]
+    p5 = Point[gui5, .y=y1], p6 = Point[gui6, .y=y1]
+
+    s // draw black border of polygons
+
+    // side of section (background)
+    \ .Poly[dcol1, (x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+
+    // top view (background)
+    \ .Poly[col1, (x0, y1), (x1, y1), (up_x1, y2), (up_x0, y2)]
+
+    // side of section (magnetic grains)
+    \ .Poly[dcol2, p1, (p1.x, y0), (p2.x, y0), p2]
+    \ .Poly[dcol3, p3, (p3.x, y0), (p4.x, y0), p4]
+    \ .Poly[p5, (p5.x, y0), (p6.x, y0), p6]
+
+    // top view (magnetic grains which are cut in the section)
+    \ .Poly[col2, p1, p2, 0, 0.5, gui8, 0.5, gui9, gui10]
+    \ .Poly[col3, p3, p4, 0, 0.5, gui11, 0.5, gui12, gui13]
+    \ .Poly[col3, p5, p6, 0, 0.5, gui14, 0.5, gui15, gui16]
+
+    // top view (magnetic grains which are not seen in the section)
+    \ .Poly[col3, 0.5, gui17, gui18, gui19, gui20]
+    \ .Poly[col2, 0.5, gui21, gui22, gui23, gui24]
+    \ .Poly[col3, 0.5, gui25, gui26, gui27, gui28]
+    \ .Poly[col2, 0.5, gui29, gui30, gui31, gui32]
+    \ .Poly[col3, 0.5, gui33, gui34, gui35, gui36, gui37]
+    \ .Poly[col2, 0.5, gui38, gui39, gui40, gui41]
+    \ .Poly[col2, 0.5, gui42, gui43, gui44, gui45]
+    \ .Poly[col3, 0.5, gui46, gui47, gui48, gui49, gui50]
+    \ .Poly[col3, 0.5, gui51, gui52, gui53, gui54]
+    \ .Poly[col2, 0.5, gui55, gui56, gui57]
+
+    // A gradient just to make the figure "less flat"
+    \ .Poly[(x0, y1), (x1, y1), (up_x1, y2), (up_x0, y2)
+            Style[.Border[0]]
+            Gradient[.Line[(x0, y1), (x0, y2)]
+                    Color[color.white, .a=0.0], Color[color.black, .a=0.3]]]
+
+    // bit cells markers
+    \ .Poly[s2, 0.5, gui58, gui59, gui60, gui61, gui62, gui63, gui64, .Close[]]
+    \ .Poly[s2, 0.5, gui65, gui66, gui67, gui68, gui69, gui70, gui71
+            gui72, gui73, gui74, .Close[]]
+
+    // magnetisation arrows
+    m1 = Window[][\ .Line[1, (0, -3), .ArrowScale[0.8]
+                          arrow_triangle, (0, 3)]]
+    m2 = Window[][\ .Line[1, (0, 3), .ArrowScale[0.8]
+                          arrow_triangle, (0, -3)]]
+    Color[col2, .Darker[0.4]]
+    \ .Put[m1, gui78], \ .Put[m1, gui79], \ .Put[m1, gui80]
+    \ .Put[m1, gui81, .Scale[0.9]], \ .Put[m1, gui82, .Scale[0.7]]
+    \ .Put[m1, gui90]
+    Color[col3, .Darker[0.5]]
+    \ .Put[m2, gui83], \ .Put[m2, gui84], \ .Put[m2, gui85]
+    \ .Put[m2, gui86], \ .Put[m2, gui87], \ .Put[m2, gui88, .Scale[0.8]]
+    \ .Put[m2, gui89, .Scale[0.8]]
+
+    // labels
+    \ .Poly[Style[.Fill["void"], .Border[color.red, 0.3]]
+            gui75, gui76, gui77]
+    \ .Poly[Style[.Fill["void"], .Border[color.black, 0.3]]
+            gui91, gui94, gui93; gui94, gui92]
+    \ .Text[.Font[5, "sans"], color.red, Style[.Border[0]]
+            gui76, .From[(0.5, -0.4)], "bit cells";
+            color.black
+            .From[(0.8, -0.1)], gui94, "magnetic grains"]
+  ]
+]
+
+[
+  gui1 = (-3.87262156448, 13.2170289855), gui2 = (19.2717758985, 13.7264492754)
+  gui3 = (10.2508920705, 13.3524313901), gui4 = (15.8506674009, 21.2547484305)
+  gui5 = (-10.99397463, 2.77391304348), gui6 = (-20.2933370044, 18.1957869955)
+  gui7 = (28.9364693446, 31.5561594203), gui8 = (-28.5430232558, -24.9894927536)
+  gui9 = (-1.96679955947, 25.0)
+
+  \ arm[
+    r0 = 0.1, r1 = 0.02, c1 = (r0, 0), c2 = (1-r1, 0)
+    s = Style[.Border[color.black, 0.005]]
+    \ .Poly[color.grey, s
+            1, 0, (r0, -r0), (0, -r0), (0, 0), (0, r0), (r0, r0), 0, 0
+            (1-r1, r1), 0, 1, (1, r1), (1, 0), (1, -r1), (1-r1, -r1)]
+    \ .Circle[c1, r0*0.5, Color[0.4], s]
+    \ .Hot[c1, c2]
+  ]
+
+  \ hd[
+    .Show[gui7, gui8, ]
+
+    r = 20
+    .Circle[(0, 0), r; 3
+            Gradient[.Circle[(0, 0), 0; r*1.5]
+                    color.white, color.grey]
+            Style[.Border[color.black, 0.15]]]
+
+    \ .Put[arm, "rts", .Near[1, gui2], .Near[2, gui1]]
+    \ .Poly[Style[.Fill["void"], .Border[color.red, 0.2]],
+            gui4, gui3; gui6, gui5; gui1, gui9]
+    \ .Text[.Font[4.0, "sans"], color.red, .From[(0.5, 0)]
+            gui4, "arm"; gui6, "platter";
+            gui9, "read-write head"]
+  ]
+]
+
