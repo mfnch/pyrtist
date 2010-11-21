@@ -122,7 +122,7 @@ static void BoxGObj_Add_X(BoxGObj *gobj, BoxGObjKind kind, void *content) {
     BoxArr *a = (BoxArr *) content;
     size_t num_items = BoxArr_Num_Items(a), i;
 
-    for(i = 0; i < num_items; i++) {
+    for(i = 1; i <= num_items; i++) {
       BoxGObj *gobj_src = (BoxGObj *) BoxArr_Item_Ptr(a, i);
       BoxGObj_Add_X(gobj_dest, gobj_src->kind, & gobj_src->value);
     }
@@ -183,6 +183,16 @@ size_t BoxGObj_Get_Length(BoxGObj *gobj) {
   default:
     return 1;
   }
+}
+
+BoxInt BoxGObj_Get_Type(BoxGObj *gobj, BoxInt idx) {
+  if (gobj->kind == BOXGOBJKIND_ARRAY) {
+    BoxArr *a = (BoxArr *) & gobj->value;
+    return (idx >= 0 && idx < BoxArr_Num_Items(a)) ?
+           ((BoxGObj *) BoxArr_Item_Ptr(a, idx + 1))->kind : -1;
+
+  } else
+    return (idx == 0) ? gobj->kind : -1;
 }
 
 /****************************************************************************
@@ -286,4 +296,20 @@ BoxTask GLib_Obj_At_Length(BoxVM *vm) {
   BoxGObjPtr gobj = BOX_VM_ARG(vm, BoxGObjPtr);
   *length += (BoxInt) BoxGObj_Get_Length(gobj);
   return BOXTASK_OK;
+}
+
+BoxTask GLib_Int_At_Obj_GetType(BoxVM *vm) {
+  BoxSubtype *obj_get = BOX_VM_THIS_PTR(vm, BoxSubtype);
+  BoxGObjPtr gobj_parent = *BOXSUBTYPE_PARENT_PTR(obj_get, BoxGObjPtr);
+  BoxInt *gobj_type = BOXSUBTYPE_CHILD_PTR(obj_get, BoxInt);
+  BoxInt idx = BOX_VM_ARG(vm, BoxInt);
+  BoxInt t = BoxGObj_Get_Type(gobj_parent, idx);
+  if (t > 0) {
+    *gobj_type = t;
+    return BOXTASK_OK;
+
+  } else {
+    BoxVM_Set_Fail_Msg(vm, "Cannot get item type. Index out of bounds.");
+    return BOXTASK_FAILURE;
+  }
 }

@@ -4,8 +4,8 @@ Obj = ++CPtr
 
 ObjType = Int
 
-objtype = (ObjType empty, void, char, int, real, point)[]
-objtype = (0, 1, 2, 3, 4, 5)
+objtype = (ObjType empty, void, char, int, real, point, obj)[]
+objtype = (0, 1, 2, 3, 4, 5, 8)
 
 (.[)@Obj "GLib_Init_At_Obj" ?
 (].)@Obj "GLib_Finish_At_Obj" ?
@@ -23,7 +23,23 @@ Obj@Point "GLib_Obj_At_Point" ?
 Obj.Get = Obj
 Int@Obj.Get "GLib_Int_At_Obj_Get" ?
 
-//Obj.GetType = ObjType
-//Int@Obj.GetType "GLib_Int_At_Obj_Get" ?
+Obj.GetType = ObjType
+Int@Obj.GetType "GLib_Int_At_Obj_GetType" ?
 
 Obj@Length "GLib_Obj_At_Length" ?
+
+Obj@Str[
+  l = Length[$]
+  [If[l == 0], \ $$["Obj[]"]]
+  [If[l == 1]
+     \ $$[If[$.GetType[0] == objtype.char], Char[$]]
+     \ $$[If[$.GetType[0] == objtype.int], Int[$]]
+     \ $$[If[$.GetType[0] == objtype.real], Real[$]]
+     \ $$[If[$.GetType[0] == objtype.point], Point[$]]]
+  [If[l > 1]
+     \ $$["Obj["]
+     i = 0, sep = "", \ $$[sep, $.Get[i], sep = ", ", For[++i < l]]
+     \ $$["]"]]
+]
+
+Obj@Print[Str[$]]
