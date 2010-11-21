@@ -1,0 +1,9 @@
+rst_out = "fivelayers.rst"
+rst_skeleton = "skeleton"
+crumb = "fivelayers.box"
+description = "Domain wall in five-layer exchange spring system"
+figure_caption = \
+  ("Just one more example.")
+box_source = "./fivelayers.box"
+out_png = "fivelayers.png"
+

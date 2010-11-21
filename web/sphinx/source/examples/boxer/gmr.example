@@ -1,0 +1,9 @@
+rst_out = "gmr.rst"
+rst_skeleton = "skeleton"
+crumb = "gmr.box"
+description = "Simple explanation of GMR effect"
+figure_caption = \
+  ("")
+box_source = "./gmr.box"
+out_png = "gmr.png"
+

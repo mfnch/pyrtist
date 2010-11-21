@@ -1,0 +1,7 @@
+rst_out = "box-logo.rst"
+rst_skeleton = "skeleton"
+crumb = "box-logo.box"
+description = "The Box logo"
+figure_caption = "the output produced by Box"
+box_source = "../../../../../box/examples/box-logo.box"
+out_png = "box-logo.png"

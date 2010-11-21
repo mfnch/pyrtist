@@ -1,0 +1,8 @@
+rst_out = "multivibrator.rst"
+rst_skeleton = "skeleton"
+crumb = "multivibrator.box"
+description = "A simple electric circuit"
+figure_caption = "the output produced by Box"
+box_source = "../../../../../box/examples/multivibrator.box"
+out_eps = "multivibrator.eps"
+convert_opts = "-density 100 -antialias -size 300"

@@ -1,0 +1,9 @@
+rst_out = "fem.rst"
+rst_skeleton = "skeleton"
+crumb = "fem.box"
+description = "FEM tent function for a 2D mesh"
+figure_caption = \
+  ("Just one more example.")
+box_source = "./fem.box"
+out_png = "fem.png"
+

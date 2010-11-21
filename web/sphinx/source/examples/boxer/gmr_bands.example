@@ -1,0 +1,9 @@
+rst_out = "gmr_bands.rst"
+rst_skeleton = "skeleton"
+crumb = "gmr_bands.box"
+description = "Sketch of bands for a ferromagnetic conductor"
+figure_caption = \
+  ("Just one more example.")
+box_source = "./gmr_bands.box"
+out_png = "gmr_bands.png"
+

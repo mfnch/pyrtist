@@ -1,0 +1,22 @@
+BOX_EXAMPLES="snake,cycloid,wheatstone,multivibrator,yin-yang,curved_arrow,box-logo,translucency,gradient,fractree,pythagoras,text,cairo_set_line_cap,cairo_gradient"
+BOXER_EXAMPLES="fem2d,fem,gmr_bands,gmr,es_types,constriction,fivelayers,llg,hd,orchester"
+
+.PHONY: all clean
+
+all: gallery.rst
+	(cd box && make)
+	(cd boxer && make)
+
+box/Makefile: gen_makefile.sh
+	bash gen_makefile.sh box > $@
+
+boxer/Makefile: gen_makefile.sh
+	bash gen_makefile.sh boxer > $@
+
+gallery.rst: gallery.rst.in box/Makefile boxer/Makefile
+	python thumbnails.py box $(BOX_EXAMPLES) boxer $(BOXER_EXAMPLES)
+
+clean:
+	(cd box && make clean)
+	(cd boxer && make clean)
+

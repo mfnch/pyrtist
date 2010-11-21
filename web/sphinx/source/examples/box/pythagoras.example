@@ -1,0 +1,8 @@
+rst_out = "pythagoras.rst"
+rst_skeleton = "skeleton"
+crumb = "pythagoras.box"
+description = "How to label geometric shapes"
+figure_caption = "A figure which may be used to explain the Pythagorean theorem."
+box_source = "../../../../../box/examples/pythagoras.box"
+out_png = "pythagoras.png"
+

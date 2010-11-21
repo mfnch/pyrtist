@@ -1,0 +1,21 @@
+.. page-title: $title$
+
+$crumb$
+$=crumb$
+
+$description$
+$-description$
+
+.. figure:: $image$
+   :align: center
+
+   $figure_caption$
+   To run this example you will need the following file(s): $deps_links$.
+   If the example requires more than one file, then you should put
+   them into the same directory.
+   You can then launch Box/Boxer
+   with ``box -l g $box_file$`` or ``boxer $box_file$``.
+
+.. raw:: html
+
+$   htmlized_box_program$

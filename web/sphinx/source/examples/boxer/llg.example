@@ -1,0 +1,9 @@
+rst_out = "llg.rst"
+rst_skeleton = "skeleton"
+crumb = "llg.box"
+description = "Visualisation of damped and undamped LLG dynamics"
+figure_caption = \
+  ("Just one more example.")
+box_source = "./llg.box"
+out_png = "llg.png"
+

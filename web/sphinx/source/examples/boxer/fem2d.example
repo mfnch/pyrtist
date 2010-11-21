@@ -1,0 +1,9 @@
+rst_out = "fem2d.rst"
+rst_skeleton = "skeleton"
+crumb = "fem2d.box"
+description = "FEM basis functions for 2D mesh"
+figure_caption = \
+  ("Just one more example.")
+box_source = "./fem2d.box"
+out_png = "fem2d.png"
+

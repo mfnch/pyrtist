@@ -1,0 +1,9 @@
+rst_out = "hd.rst"
+rst_skeleton = "skeleton"
+crumb = "hd.box"
+description = "Schematic picture of hard disk"
+figure_caption = \
+  ("Just one more example.")
+box_source = "./hd.box"
+out_png = "hd.png"
+

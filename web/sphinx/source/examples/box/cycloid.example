@@ -1,0 +1,9 @@
+rst_out = "cycloid.rst"
+rst_skeleton = "skeleton"
+crumb = "cycloid.box"
+description = "Combined use of For, Line and Poly"
+figure_caption = "the output produced by Box"
+box_source = "../../../../../box/examples/cycloid.box"
+out_eps = "cycloid.eps"
+convert_opts = "-density 200 -antialias"
+

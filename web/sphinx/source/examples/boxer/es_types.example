@@ -1,0 +1,9 @@
+rst_out = "es_types.rst"
+rst_skeleton = "skeleton"
+crumb = "es_types.box"
+description = "Two different types of exchange springs"
+figure_caption = \
+  ("Just one more example.")
+box_source = "./es_types.box"
+out_png = "es_types.png"
+

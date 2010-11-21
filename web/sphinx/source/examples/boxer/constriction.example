@@ -1,0 +1,8 @@
+rst_out="constriction.rst"
+rst_skeleton="skeleton"
+crumb="constriction.box"
+description="DW in ferromagnetic constriction"
+figure_caption="Just one more example."
+box_source="./constriction.box"
+out_png="constriction.png"
+

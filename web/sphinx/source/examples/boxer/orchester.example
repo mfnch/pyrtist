@@ -1,0 +1,9 @@
+rst_out = "orchester.rst"
+rst_skeleton = "skeleton"
+crumb = "orchester.box"
+description = "Possible model of parallel architecture"
+figure_caption = \
+  ("Just one more example.")
+box_source = "./orchester.box"
+out_png = "orchester.png"
+
