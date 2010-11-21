@@ -26,6 +26,6 @@ for EXAMPLE_FILE in *.example; do
 done
 
 echo "clean:"
-echo "	rm -f *.png *.txt *.rst thumbnails.dat"
+echo "	rm -f *.png *.txt *.rst *.eps *.ps *.pdf *.bmp thumbnails.dat"
 echo
 
