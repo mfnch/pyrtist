@@ -1,9 +1,11 @@
 BOX_EXAMPLES="snake,cycloid,wheatstone,multivibrator,yin-yang,curved_arrow,box-logo,translucency,gradient,fractree,pythagoras,text,cairo_set_line_cap,cairo_gradient"
 BOXER_EXAMPLES="fem2d,fem,gmr_bands,gmr,es_types,constriction,fivelayers,llg,hd,orchester"
 
-.PHONY: all clean
+.PHONY: all clean build-examples
 
-all: gallery.rst
+all: build-examples gallery.rst
+
+build-examples:
 	(cd box && make)
 	(cd boxer && make)
 
