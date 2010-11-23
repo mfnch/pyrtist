@@ -4,6 +4,6 @@ crumb = "cairo_set_line_cap.box"
 description = "Caps available when drawing border lines"
 figure_caption = ("this sample shows the available cap styles "
                  "which can be selected when drawing border lines")
-box_source = "../../../../../box/examples/cairo_set_line_cap.box"
+box_source = "./cairo_set_line_cap.box"
 out_png = "cairo_set_line_cap.png"
 

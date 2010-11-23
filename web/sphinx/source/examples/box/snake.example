@@ -3,7 +3,7 @@ rst_skeleton = "skeleton"
 crumb = "snake.box"
 description = "An example showing how to use the Line command"
 figure_caption = ""
-box_source = "../../../../../box/examples/snake.box"
+box_source = "./snake.box"
 out_eps = "snake.eps"
 convert_opts = "-density 50 -antialias"
 

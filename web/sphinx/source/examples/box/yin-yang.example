@@ -5,6 +5,6 @@ description = "Yin-yang"
 figure_caption = \
   ("You can round the borders of a polygons to the point that they become "
    "arcs of circles or ellipses.")
-box_source = "../../../../../box/examples/yin-yang.box"
+box_source = "./yin-yang.box"
 out_png = "yin-yang.png"
 

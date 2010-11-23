@@ -6,6 +6,6 @@ figure_caption = \
   ("Note that the radial gradient becomes elliptical, when scaled. "
    "Here we create two color gradients, but more colors can be used. "
    "For more details, take a look at the documentation")
-box_source = "../../../../../box/examples/gradient.box"
+box_source = "./gradient.box"
 out_png = "gradient.png"
 

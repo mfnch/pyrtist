@@ -3,7 +3,7 @@ rst_skeleton = "skeleton"
 crumb = "text.box"
 description = "Example of text formatting"
 figure_caption = "most of the formatting capabilities of Window.Text"
-box_source = "../../../../../box/examples/text.box"
+box_source = "./text.box"
 out_eps = "text.eps"
 convert_opts = "-density 80 -antialias -size 100"
 

@@ -6,6 +6,6 @@ figure_caption = \
   ("It is highly recommended to compile Box with Cairo support. "
    "You'll then be able to use translucent colors, color gradients and "
    "many others useful features.")
-box_source = "../../../../../box/examples/translucency.box"
+box_source = "./translucency.box"
 out_png = "translucency.png"
 
