@@ -97,14 +97,14 @@ html_theme = 'default' #'mytheme' #'default'
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = \
-  {"footerbgcolor": "#000020",
+  {"footerbgcolor": "#1c87b2",
    "footertextcolor": "white",
-   "relbarbgcolor": "#101030",
-   "sidebarbgcolor": "#e0e0f0",
-   "sidebartextcolor": "#333343",
-   "sidebarlinkcolor": "#000010",
-   "headbgcolor": "#f0f0ff",
-   "headtextcolor": "#333343",
+   "relbarbgcolor": "#23aae0",
+   "sidebarbgcolor": "white", #"#acd1e0",
+   "sidebartextcolor": "#146282",
+   "sidebarlinkcolor": "#146282",
+   "headbgcolor": "#ffffff",
+   "headtextcolor": "#146282",
    "headlinkcolor": "#000000"
   }
 
@@ -141,8 +141,10 @@ html_static_path = ['_static']
 #html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
-html_sidebars = {"**": ["sflogo.html", "globaltoc.html", "searchbox.html",
-                        "sourcelink.html"]}
+html_sidebars = {"**": ["space.html", "globaltoc.html", 
+                        "space.html", "searchbox.html",
+                        "space.html", "sourcelink.html", 
+                        "space.html", "sflogo.html"]}
 
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
@@ -158,7 +160,7 @@ html_use_index = False
 #html_split_index = False
 
 # If true, links to the reST sources are added to the pages.
-html_show_sourcelink = False
+html_show_sourcelink = True
 
 # If true, an OpenSearch description file will be output, and all pages will
 # contain a <link> tag referring to it.  The value of this option must be the

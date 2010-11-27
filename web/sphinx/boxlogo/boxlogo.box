@@ -12,6 +12,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 xa1 = Point[.x=31.0, .y=5.0], xa2 = Point[.x=28.0, .y=14.0]
 xa3 = Point[.x=24.0, .y=19.0], xa4 = Point[.x=24.0, .y=20.0]
@@ -32,9 +33,12 @@ xxx1 = Point[.x=10.4233583422, .y=3.54491427859]
 b17 = Point[.x=12.2670571751, .y=24.9707371739]
 b18 = Point[.x=17.6235110215, .y=22.3726393272]
 g3 = Point[.x=17.1153440254, .y=20.0834648647]
-t1 = Point[.x=42.7331541796, .y=16.6281758228]
+t1 = Point[.x=43.2069051546, .y=16.6721985593]
 //!BOXER:REFPOINTS:END
 lsc = LineStyle[7.0], lsb = LineStyle[5.0], lsa = LineStyle[3.0]
+
+c = Color[(0x14/256.0, 0x62/256.0, 0x82/256.0)]
+c1 = Color[c, .Darker[1.7]]
 
 w = Window[][
   //.Show[xxx1, xxx1 + 0.8*(45, 32.5)]
@@ -42,19 +46,19 @@ w = Window[][
 
 
   // The X is made by just two lines with variable widths
-  \ .Line[0.5, lsb, xa1, 1.4, 0.8, xa2, 0.8, 1, xa3, 1.2, xa4;
+  \ .Line[c, 0.5, lsb, xa1, 1.4, 0.8, xa2, 0.8, 1, xa3, 1.2, xa4;
           xb1, 1.4, 1.2, xb2, 1, 0.8, xb3, xb4, 0.8, 1, xb5]
 
   // The "B"
   \ .Line[lsb, 0.8, b1, 0.9, b2, 1, 1.1, b3;
-          Gradient[.Circle[g3, 0; 2], Color[0], Color[(0.85, 0, 0)]]
+          Gradient[.Circle[g3, 0; 2], Color[0], c1]
           0.2, b4, 0.3, 0.35, b17, 0.4, 0.5, b5, 0.6, 0.7, b6, 0.6, 0.5, b7
           0.4, lsa, b8, b9, b10, b11, b12, b13, lsb, 0.6, 1, b14, lsc
           0.8, 0.7, b15, 0.6, 0.4, b16]
-  \ .Line[color.black, lsb, 0.8, b1, 0.9, b18]
+  \ .Line[c, lsb, 0.8, b1, 0.9, b18]
 
   // The "o"
-  \ .Circle[color.black, o1, 2.3; o2, 1.5]
+  \ .Circle[c, o1, 2.3; o2, 1.5]
 
   \ .Circle[g1, (r = 2)
             Gradient[.Circle[g1, 0; r], Color[1, .a=1], Color[1, .a=0]]]
@@ -62,7 +66,7 @@ w = Window[][
   \ .Circle[g2, (r = 3)
             Gradient[.Circle[g2, 0; r], Color[1, .a=1], Color[1, .a=0]]]
 
-  \ .Text[Font["sans", 7], Color[0.2]
+  \ .Text[Font["sans", 6.3], c
           t1, .From[(0, 0.5)], "The figure\ndescription\nlanguage"]
 ]
 
