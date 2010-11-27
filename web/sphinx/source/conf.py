@@ -100,7 +100,7 @@ html_theme_options = \
   {"footerbgcolor": "#1c87b2",
    "footertextcolor": "white",
    "relbarbgcolor": "#23aae0",
-   "sidebarbgcolor": "white", #"#acd1e0",
+   "sidebarbgcolor": "#f0f0ff", #"#acd1e0",
    "sidebartextcolor": "#146282",
    "sidebarlinkcolor": "#146282",
    "headbgcolor": "#ffffff",

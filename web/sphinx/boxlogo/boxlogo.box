@@ -74,6 +74,6 @@ w = Window[][
 
 GUI[w]
 
-w.Save["boxlogo.png", Window["rgb24", .Res[Dpi[770]]]]
+w.Save["boxlogo.png", Window["rgb24", .Res[Dpi[70]]]]
 //w.Save["boxlogo_32x32.png", Window["argb32", .Res[Dpi[31]]]]
 //w.Save["boxlogo_64x64.png", Window["argb32", .Res[Dpi[62]]]]
