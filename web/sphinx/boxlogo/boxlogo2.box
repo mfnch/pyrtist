@@ -11,7 +11,6 @@ Window@GUI[]
 
 
 
-
 //!BOXER:REFPOINTS:BEGIN
 xa1 = Point[.x=31.0, .y=5.0], xa2 = Point[.x=28.0, .y=14.0]
 xa3 = Point[.x=24.0, .y=19.0], xa4 = Point[.x=24.0, .y=20.0]
@@ -28,22 +27,21 @@ b14 = Point[.x=24.0, .y=26.0], b15 = Point[.x=23.0, .y=20.0]
 b16 = Point[.x=19.0, .y=15.0], o1 = Point[.x=28.8, .y=19.2]
 o2 = Point[.x=28.9, .y=19.1], g1 = Point[.x=21.7568999576, .y=24.3186079388]
 g2 = Point[.x=14.8511517585, .y=27.0468877536]
-xxx1 = Point[.x=10.4233583422, .y=3.54491427859]
+xxx1 = Point[.x=10.709954016, .y=13.7077526325]
 b17 = Point[.x=12.2670571751, .y=24.9707371739]
 b18 = Point[.x=17.6235110215, .y=22.3726393272]
 g3 = Point[.x=17.1153440254, .y=20.0834648647]
-t1 = Point[.x=42.7331541796, .y=16.6281758228]
 //!BOXER:REFPOINTS:END
 lsc = LineStyle[7.0], lsb = LineStyle[5.0], lsa = LineStyle[3.0]
 
 w = Window[][
   //.Show[xxx1, xxx1 + 0.8*(45, 32.5)]
-  .Show[xxx1, xxx1 + 0.8*(90, 33)]
+  .Show[xxx1, xxx1 + (16, 16)]
 
 
   // The X is made by just two lines with variable widths
-  \ .Line[0.5, lsb, xa1, 1.4, 0.8, xa2, 0.8, 1, xa3, 1.2, xa4;
-          xb1, 1.4, 1.2, xb2, 1, 0.8, xb3, xb4, 0.8, 1, xb5]
+  //\ .Line[0.5, lsb, xa1, 1.4, 0.8, xa2, 0.8, 1, xa3, 1.2, xa4;
+  //        xb1, 1.4, 1.2, xb2, 1, 0.8, xb3, xb4, 0.8, 1, xb5]
 
   // The "B"
   \ .Line[lsb, 0.8, b1, 0.9, b2, 1, 1.1, b3;
@@ -54,22 +52,19 @@ w = Window[][
   \ .Line[color.black, lsb, 0.8, b1, 0.9, b18]
 
   // The "o"
-  \ .Circle[color.black, o1, 2.3; o2, 1.5]
+  //\ .Circle[color.black, o1, 2.3; o2, 1.5]
 
-  \ .Circle[g1, (r = 2)
-            Gradient[.Circle[g1, 0; r], Color[1, .a=1], Color[1, .a=0]]]
+  //\ .Circle[g1, (r = 2)
+  //          Gradient[.Circle[g1, 0; r], Color[1, .a=1], Color[1, .a=0]]]
 
-  \ .Circle[g2, (r = 3)
-            Gradient[.Circle[g2, 0; r], Color[1, .a=1], Color[1, .a=0]]]
-
-  \ .Text[Font["sans", 7], Color[0.2]
-          t1, .From[(0, 0.5)], "The figure\ndescription\nlanguage"]
+  //\ .Circle[g2, (r = 3)
+  //          Gradient[.Circle[g2, 0; r], Color[1, .a=1], Color[1, .a=0]]]
 ]
 
 //450x325
 
 GUI[w]
 
-w.Save["boxlogo.png", Window["rgb24", .Res[Dpi[770]]]]
-//w.Save["boxlogo_32x32.png", Window["argb32", .Res[Dpi[31]]]]
-//w.Save["boxlogo_64x64.png", Window["argb32", .Res[Dpi[62]]]]
+w.Save["boxlogo_16x16.png", Window["argb32", .Res[Dpi[26]]]]
+w.Save["boxlogo_32x32.png", Window["argb32", .Res[Dpi[51]]]]
+w.Save["boxlogo_64x64.png", Window["argb32", .Res[Dpi[102]]]]

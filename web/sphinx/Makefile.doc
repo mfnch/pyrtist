@@ -4,6 +4,6 @@ OUT_DOC_DIR=build/html/doc
 all:
 	(cd $(DOC_DIR) && make html inst-html)
 	mkdir -p $(OUT_DOC_DIR)
-	cp $(DOC_DIR)/inst-html/* $(OUT_DOC_DIR)
+	#cp $(DOC_DIR)/inst-html/* $(OUT_DOC_DIR)
 	cp $(DOC_DIR)/html/* $(OUT_DOC_DIR)
 
