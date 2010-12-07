@@ -245,7 +245,7 @@ typedef struct {
   void (*get_args)(VMStatus *);     /**< Per trattare gli argomenti */
   void (*execute)(BoxVM *);         /**< Per eseguire l'istruzione */
   void (*disasm)(BoxVM *, char **); /**< Per disassemblare gli argomenti */
-} VMInstrDesc;
+} BoxVMInstrDesc;
 
 typedef struct {
   void   *ptr; /**< Pointer to the region allocated for the registers */
@@ -271,7 +271,8 @@ struct __vmstatus {
               i_len,      /**< Size of instruction */
               arg_type;   /**< Type of arguments of instruction */
 
-  VMInstrDesc *idesc;     /**< Descriptor for current instruction */
+  const BoxVMInstrDesc
+              *idesc;     /**< Descriptor for current instruction */
   void        *arg1,
               *arg2;      /**< Pointer to instruction arguments */
 
@@ -316,6 +317,10 @@ struct __vmprogram {
             *box_vm_arg1,
             *box_vm_arg2;
 
+  const BoxVMInstrDesc
+            *exec_table;  /**< Table collecting info about the instructions
+                               which are useful for execution. */
+
   BoxVMProcTable
             proc_table;   /**< Table of installed and uninstalled procs */
 
@@ -323,7 +328,8 @@ struct __vmprogram {
             sym_table;    /**< Table of referenced and defined symbols */
 
   BoxOpTable
-            op_table;
+            op_table;     /**< Table describing the instructions and their
+                               properties */
 
   BoxArr    backtrace;    /**< Information about error location */
   char      *fail_msg;    /**< Failure message */
@@ -336,8 +342,6 @@ struct __vmprogram {
 #  undef BoxVM
 typedef struct __vmprogram BoxVM;
 typedef BoxVM VMProgram;
-
-extern VMInstrDesc vm_instr_desc_table[];
 
 extern const size_t size_of_type[NUM_TYPES];
 
@@ -364,6 +368,9 @@ BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op);
 /** Print all the signatures for a the given BoxOpInfo object. */
 void BoxOpInfo_Print(FILE *out, BoxOpInfo *oi);
 
+/** (Internal) Get the execution table for the Box VM instructions. */
+const BoxVMInstrDesc *BoxVM_Get_Exec_Table(void);
+
 /* These functions are intended to be used only inside 'vmexec.h' */
 void VM__GLP_GLPI(VMStatus *vmcur);
 void VM__GLP_Imm(VMStatus *vmcur);
@@ -378,17 +385,6 @@ void VM__D_GLPI_Imm(BoxVM *vmp, char **iarg);
 typedef BoxTask (*BoxVMFunc)(BoxVM *);
 
 typedef BoxVMFunc VMFunc;
-
-/** Returns the number of arguments for the VM operation 'op'.
- * If 'op' is not a valid opcode returns -1.
- */
-int BoxOp_Get_Num_Args(BoxOpcode op);
-
-/** Returns the type of the explicit arguments for the VM operation 'op'.
- * If 'op' is not a valid opcode returns BOXTYPE_NONE.
- * NOTE: the explicit arguments of a VM operation have always the same type.
- */
-BoxType BoxOp_Get_Arg_Type(BoxOpcode op);
 
 /** Initialise a BoxVM object for which space has been already allocated
  * somehow. You'll need to use BoxVM_Finish to destroy the object.

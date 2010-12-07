@@ -30,6 +30,7 @@
 #  define _TYPES_H
 
 #  include <float.h>
+#  include <stdlib.h>
 
 /* For now we always define the abbreviations */
 #  ifndef BOX_ABBREV
@@ -226,5 +227,16 @@ typedef BoxName Data;
        do {if (!cond) Box_Fatal_Error(__FILE__, __LINE__);} while (0)
 
 #  endif /* BOX_ABBREV */
+
+/** Reset an extended BoxPtr pointer to NULL (point to nothing) */
+#  define BoxPtr_Nullify(p) \
+  do {(p)->block = (p)->ptr = NULL;} while(0)
+
+/** Detach a pointer so that it does not reference its source */
+#  define BoxPtr_Detach(p) \
+  do {(p)->block = NULL;} while(0)
+
+/** Whether a BoxPtr pointer is NULL */
+#  define BoxPtr_Is_Null(p) ((p)->ptr == NULL)
 
 #endif /* _TYPES_H */

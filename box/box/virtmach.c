@@ -476,6 +476,9 @@ Task BoxVM_Init(BoxVM *vm) {
   vm->has.globals = 0;
   vm->has.op_table = 0;
 
+  /* Table of actions for each VM instruction */
+  vm->exec_table = BoxVM_Get_Exec_Table();
+
   /* Reset the global register boundaries and pointers */
   for(i = 0; i < NUM_TYPES; i++) {
     BoxVMRegs *gregs = & vm->global[i];
@@ -640,6 +643,7 @@ void BoxVM_Module_Global_Set(BoxVM *vmp, Int type, Int reg, void *value) {
  * If initial != NULL, *initial is the initial status of the virtual machine.
  */
 Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
+  const BoxVMInstrDesc *exec_table = vmp->exec_table;
   VMProcTable *pt = & vmp->proc_table;
   VMProcInstalled *p;
   register VMByteX4 *i_pos, *i_pos0;
@@ -714,7 +718,7 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
     }
 
     /* Trovo il descrittore di istruzione */
-    vm.idesc = & vm_instr_desc_table[vm.i_type];
+    vm.idesc = & exec_table[vm.i_type];
 
     /* Localizza in memoria gli argomenti */
     if (vm.idesc->numargs > 0)
@@ -781,6 +785,7 @@ void BoxVM_Set_Attr(BoxVM *vm, BoxVMAttr mask, BoxVMAttr value) {
  * da tradurre (espresso in "numero di VMByteX4").
  */
 Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
+  const BoxVMInstrDesc *exec_table = vmp->exec_table;
   register VMByteX4 *i_pos = (VMByteX4 *) prog;
   VMStatus vm;
   UInt pos, nargs;
@@ -828,7 +833,7 @@ Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
 
     } else {
       /* Trovo il descrittore di istruzione */
-      vm.idesc = & vm_instr_desc_table[vm.i_type];
+      vm.idesc = & exec_table[vm.i_type];
       iname = vm.idesc->name;
 
       /* Localizza in memoria gli argomenti */
@@ -966,9 +971,9 @@ exit:
  * for the extra arguments.
  */
 void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
+  const BoxVMInstrDesc *exec_table = vmp->exec_table, *idesc;
   VMProcTable *pt = & vmp->proc_table;
   int i, t;
-  VMInstrDesc *idesc;
   int is_short;
   struct {
     TypeID t;  /* Tipi degli argomenti */
@@ -988,7 +993,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
     return;
   }
 
-  idesc = & vm_instr_desc_table[instr];
+  idesc = & exec_table[instr];
 
   assert(idesc->numargs <= VM_MAX_NUMARGS);
 
