@@ -204,6 +204,13 @@ static Task My_Str_Copy(BoxVM *vm) {
   return Success;
 }
 
+static Task My_Length_Str(BoxVM *vm) {
+  BoxInt *len = BOX_VM_THIS_PTR(vm, BoxInt);
+  BoxStr *src = BOX_VM_ARG_PTR(vm, BoxStr);
+  *len += src->length;
+  return Success;
+}
+
 void Bltin_Str_Register_Procs(BoxCmp *c) {
   Operation *opn;
   BoxVMSymID copy_str;
@@ -219,6 +226,7 @@ void Bltin_Str_Register_Procs(BoxCmp *c) {
   Bltin_Proc_Def(c, c->bltin.string,    BOXTYPE_CPTR, My_Str_CPtr);
   Bltin_Proc_Def(c, c->bltin.string, c->bltin.string, My_Str_Str);
   Bltin_Proc_Def(c, c->bltin.string,     BOXTYPE_OBJ, My_Str_CString);
+  Bltin_Proc_Def(c, c->bltin.length, c->bltin.string, My_Length_Str);
 
   /* Copy Str to Str */
   opn = Operator_Add_Opn(& c->convert, c->bltin.string,

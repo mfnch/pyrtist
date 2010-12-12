@@ -143,7 +143,7 @@ void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
   if (references > 0)
     return;
 
-  else if (references == 0) {
+  else if (references == 0 && 0) {
     if (head->id >= 1) {
       BoxVMMethodTable *mt = BoxVMMethodTable_From_Alloc_ID(vmp, head->id);
 #ifdef DEBUG_VMALLOC
@@ -206,17 +206,18 @@ BoxVMAllocID BoxVMAllocID_From_Method_Table(BoxVM *vm, BoxVMMethodTable *mt) {
     return *((BoxVMAllocID *) ht_item->key);
 
   } else {
-    BoxVMAllocID alloc_id = vm->next_alloc_id;
-    if (NULL != BoxHT_Insert_Obj(& vm->id_from_mettab,
-                                 mt, sizeof(BoxVMMethodTable),
-                                 & alloc_id, sizeof(BoxVMAllocID))) {
-      ++vm->next_alloc_id;
-      return alloc_id;
-    }
-  }
+    BoxVMMethodTable *new_mt =
+      (BoxVMMethodTable *) BoxArr_Push(& vm->mettab_from_id, mt);
+    BoxVMAllocID alloc_id = BoxArr_Num_Items(& vm->mettab_from_id);
 
-  MSG_FATAL("BoxVM_Get_Alloc_ID: Cannot allocate method table.");
-  assert(0);
+    if (NULL != BoxHT_Insert_Obj(& vm->id_from_mettab,
+                                 new_mt, sizeof(BoxVMMethodTable),
+                                 & alloc_id, sizeof(BoxVMAllocID))) {
+      MSG_WARNING("BoxVM_Get_Alloc_ID: Failure in hashtable.");
+    }
+
+    return alloc_id;
+  }
 }
 
 BoxVMMethodTable *BoxVMMethodTable_From_Alloc_ID(BoxVM *vm, BoxVMAllocID id) {
@@ -225,32 +226,3 @@ BoxVMMethodTable *BoxVMMethodTable_From_Alloc_ID(BoxVM *vm, BoxVMAllocID id) {
   else
     return (BoxVMMethodTable *) NULL;
 }
-
-#if 0
-typedef struct {
-  Int type;
-  Int method;
-} Key;
-
-Task BoxVM_Alloc_Method_Set(BoxVM *vmp, Int type, Int method, Int m_num) {
-  Key k;
-  k.type = type;
-  k.method = method;
-  /* Should I check for re-definition and how should I deal with that? */
-  if (NULL == BoxHT_Insert_Obj(& vmp->id_from_mettab,
-                               & k, sizeof(Key),
-                               & m_num, sizeof(Int)))
-    return Failed;
-  return Success;
-}
-
-Int BoxVM_Alloc_Method_Get(BoxVM *vmp, Int type, Int method) {
-  BoxHTItem *found;
-  Key k;
-  k.type = type;
-  k.method = method;
-  if (BoxHT_Find(& vmp->id_from_mettab, & k, sizeof(Key), & found))
-    return *((Int *) found->object);
-  return -1;
-}
-#endif

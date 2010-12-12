@@ -698,12 +698,14 @@ static void My_Register_Math(BoxCmp *c) {
 static void My_Register_Sys(BoxCmp *c) {
   BoxType fail_t = Bltin_Simple_Fn_Def(c, "Fail", BOXTYPE_VOID,
                                        c->bltin.string, My_Fail_Msg);
+
   (void) Bltin_Proc_Def(c, fail_t, BOXTYPE_BEGIN, My_Fail_Clear_Msg);
   (void) Bltin_Proc_Def(c, fail_t, BOXTYPE_END, My_Fail);
   (void) Bltin_Simple_Fn_Def(c, "Exit", BOXTYPE_VOID, c->bltin.species_int,
                              My_Exit_Int);
-  (void) Bltin_Simple_Fn_Def(c, "Length", BOXTYPE_INT, BOXTYPE_BEGIN,
-                             My_Length_Init);
+  c->bltin.length =
+    Bltin_Simple_Fn_Def(c, "Length", BOXTYPE_INT,
+                        BOXTYPE_BEGIN, My_Length_Init);
 }
 
 /* Register bultin types, operation and functions */

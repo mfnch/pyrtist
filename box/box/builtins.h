@@ -33,6 +33,7 @@
 /** Builtin types */
 typedef struct {
   BoxType string,
+          length,
           struc_real_real,
           species_int,
           species_real,
