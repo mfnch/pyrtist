@@ -100,13 +100,13 @@ Arrow3D = (Point pos1, pos2,
   .got_color = 0, .got_point = 0
 ]
 
-Point@&Arrow3D[
+Point@Arrow3D[
   [If[$$.got_point == 0], $$.pos1 = $]
   [If[$$.got_point == 1], $$.pos2 = $]
   $$.got_point = ($$.got_point + 1) % 2
 ]
 
-Color@&Arrow3D[
+Color@Arrow3D[
   [If[$$.got_color == 0], $$.col1 = $]
   [If[$$.got_color == 1], $$.col2 = $, $$.col3 = $]
   [If[$$.got_color == 2], $$.col3 = $]
