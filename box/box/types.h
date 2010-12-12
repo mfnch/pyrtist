@@ -239,4 +239,7 @@ typedef BoxName Data;
 /** Whether a BoxPtr pointer is NULL */
 #  define BoxPtr_Is_Null(p) ((p)->ptr == NULL)
 
+/** Whether a BoxPtr pointer is detached (not bound to a memory block) */
+#  define BoxPtr_Is_Detached(p) ((p)->block == NULL)
+
 #endif /* _TYPES_H */

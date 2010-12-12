@@ -31,7 +31,10 @@
 #  define _VMPROC_H_TYPES
 
 #  include <stdlib.h>
+#  include <stdio.h>
 
+#  include <box/occupation.h>
+#  include <box/vmptr.h>
 #  include <box/srcpos.h>
 
 /** When a procedure is created, an ID (an integer number) is assigned to it.

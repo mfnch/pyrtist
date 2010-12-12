@@ -70,7 +70,7 @@ typedef struct {
   Type method;
 } VMSymMethod;
 
-/* This is the function registers the method, if it is known. */
+/* This is the function that registers the method, if it is known. */
 static Task Register_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
                           int defined, void *def, UInt def_size,
                           void *ref, UInt ref_size) {
@@ -80,7 +80,10 @@ static Task Register_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
     UInt call_num;
     assert(def_size == sizeof(UInt) && ref_size == sizeof(VMSymMethod));
     call_num = *((UInt *) def);
+#if 0
+    /** XXX NOTE: Temporarily disabled */
     return BoxVM_Alloc_Method_Set(vmp, m->type, m->method, call_num);
+#endif
   }
   return Success;
 }

@@ -18,17 +18,23 @@
  ****************************************************************************/
 
 #include <stdlib.h>
+#include <assert.h>
 
 #include "types.h"
 #include "defaults.h"
+#include "mem.h"
+#include "messages.h"
 #include "virtmach.h"
 #include "vmalloc.h"
 
-/*#define DEBUG_VMALLOC*/
+#if 0
+#define DEBUG_VMALLOC
+#define DEBUG_VMALLOC_REFCHECK
+#endif
 
 typedef struct {
-  Int type;
-  Int references;
+  BoxVMAllocID id;
+  BoxInt       references;
 } VMAllocHead;
 
 /* When the user asks to allocate 'size' bytes, we actually allocate
@@ -86,82 +92,141 @@ void BoxObj_Add_To_Ptr(BoxObj *item, size_t addr) {
  * The memory region is associated with the provided data 'type'
  * and has a initial reference counter equal to 1.
  */
-void BoxVM_Alloc(Obj *obj, size_t size, Int type) {
-  obj->block = malloc(SIZE_OF_BLOCK(size));
+void BoxVM_Alloc(BoxVM *vm, BoxPtr *obj, size_t size, BoxVMAllocID id) {
+#ifdef DEBUG_VMALLOC
+  static int num_alloc = 0;
+#endif
+
+  obj->block = BoxMem_Alloc(SIZE_OF_BLOCK(size));
   obj->ptr = NULL;
   if (obj->block != (void *) NULL) {
     VMAllocHead *head = (VMAllocHead *) obj->block;
     obj->ptr = GET_DPTR_FROM_BPTR(obj->block);
-    head->type = type;
+    head->id = id;
     head->references = 1;
+#ifdef DEBUG_VMALLOC
+    printf("BoxVM_Alloc(%d): allocated object with id "SInt" at %p.\n",
+           num_alloc, id, obj->block);
+    ++num_alloc;
+#endif
+    return;
   }
-}
 
-static int Bad_Obj(const char *location, Obj *obj) {
-  if (obj->block != NULL) return 0;
-  fprintf(stderr, "%s: object was not allocated with BoxVM_Alloc!\n",
-          location);
-  return 1;
+#ifdef DEBUG_VMALLOC
+  printf("BoxVM_Alloc: failed to allocate object with ID "SInt" at %p.\n",
+         id, obj->block);
+#endif
 }
 
 /** Increase the reference counter for the given object. */
 void BoxVM_Link(Obj *obj) {
   VMAllocHead *head = (VMAllocHead *) obj->block;
-  if (Bad_Obj("BoxVM_Link", obj)) return;
+  if (BoxPtr_Is_Detached(obj))
+    return;
   ++head->references;
 }
 
 /** Decrease the reference counter for the given object and proceed
  * with destroying it, if it has reached zero.
  */
-void BoxVM_Unlink(BoxVM *vmp, Obj *obj) {
+void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
   VMAllocHead *head = (VMAllocHead *) obj->block;;
-  Int references;
-  if (Bad_Obj("BoxVM_Unlink", obj)) return;
+  BoxInt references;
+#ifdef DEBUG_VMALLOC
+  static int num_dealloc = 0;
+#endif
+
+  if (BoxPtr_Is_Detached(obj))
+    return;
 
   references = --head->references;
   if (references > 0)
     return;
 
   else if (references == 0) {
-    Int method_num = BoxVM_Alloc_Method_Get(vmp, head->type, BOXTYPE_DESTROY);
-    if (method_num >= 0) {
-      Obj save_this;
+    if (head->id >= 1) {
+      BoxVMMethodTable *mt = BoxVMMethodTable_From_Alloc_ID(vmp, head->id);
 #ifdef DEBUG_VMALLOC
-      printf("BoxVM_Unlink: calling destructor (call %d) for type "
-             SInt" at %p.\n", method_num, head->type, obj->block);
+      if (mt == NULL) {
+        printf("BoxVM_Unlink: no method table associated to the ID "SInt
+               " for object at %p.\n", head->id, obj->block);
+      }
 #endif
 
-      save_this = *vmp->box_vm_current;
-      *vmp->box_vm_current = *obj;
-      (void) BoxVM_Module_Execute(vmp, method_num);
-      *vmp->box_vm_current = save_this;
-    }
+      if (mt != NULL) {
+        BoxVMCallNum finalizer = mt->finalizer;
 #ifdef DEBUG_VMALLOC
-    printf("BoxVM_Unlink: Deallocating object of type "SInt" at %p.\n",
-           head->type, bptr);
+        printf("BoxVM_Unlink: calling destructor (call "SInt") for ID "
+               SInt" at %p.\n", finalizer, head->id, obj->block);
 #endif
-    free(obj->block);
+        BoxPtr save_current = *vmp->box_vm_current;
+        *vmp->box_vm_current = *obj;
+        (void) BoxVM_Module_Execute(vmp, finalizer);
+        *vmp->box_vm_current = save_current;
+      }
+    }
+
+#ifdef DEBUG_VMALLOC
+    printf("BoxVM_Unlink(%d): Deallocating object of type "SInt" at %p.\n",
+           num_dealloc, id, obj->block);
+    ++num_dealloc;
+#endif
+
+#ifndef DEBUG_VMALLOC_REFCHECK
+    BoxMem_Free(obj->block);
+#endif
     obj->block = NULL;
     return;
 
   } else {
-#ifdef DEBUG_VMALLOC
-    printf("BoxVM_Unlink: shouldn't happen!\n");
+#ifdef DEBUG_VMALLOC_REFCHECK
+    printf("BoxVM_Unlink: reference count is "SInt"!\n", references);
 #endif
     return;
   }
 }
 
-Task BoxVM_Alloc_Init(BoxVM *vmp) {
-  BoxHT_Init_Default(& vmp->method_table, VM_METHOD_HT_SIZE);
+Task BoxVM_Alloc_Init(BoxVM *vm) {
+  BoxHT_Init_Default(& vm->id_from_mettab, BOXVM_METHOD_HT_SIZE);
+  BoxArr_Init(& vm->mettab_from_id, sizeof(BoxVMMethodTable),
+              BOXVM_METHOD_HT_SIZE);
+  vm->next_alloc_id = 1;
   return Success;
 }
 
-void BoxVM_Alloc_Destroy(BoxVM *vmp) {
-  BoxHT_Finish(& vmp->method_table);
+void BoxVM_Alloc_Destroy(BoxVM *vm) {
+  BoxHT_Finish(& vm->id_from_mettab);
+  BoxArr_Finish(& vm->mettab_from_id);
 }
 
+BoxVMAllocID BoxVMAllocID_From_Method_Table(BoxVM *vm, BoxVMMethodTable *mt) {
+  BoxHTItem *ht_item;
+  if (BoxHT_Find(& vm->id_from_mettab, mt, sizeof(BoxVMMethodTable),
+                 & ht_item)) {
+    return *((BoxVMAllocID *) ht_item->key);
+
+  } else {
+    BoxVMAllocID alloc_id = vm->next_alloc_id;
+    if (NULL != BoxHT_Insert_Obj(& vm->id_from_mettab,
+                                 mt, sizeof(BoxVMMethodTable),
+                                 & alloc_id, sizeof(BoxVMAllocID))) {
+      ++vm->next_alloc_id;
+      return alloc_id;
+    }
+  }
+
+  MSG_FATAL("BoxVM_Get_Alloc_ID: Cannot allocate method table.");
+  assert(0);
+}
+
+BoxVMMethodTable *BoxVMMethodTable_From_Alloc_ID(BoxVM *vm, BoxVMAllocID id) {
+  if (id >= 1 && id < BoxArr_Num_Items(& vm->mettab_from_id))
+    return (BoxVMMethodTable *) BoxArr_Item_Ptr(& vm->mettab_from_id, id);
+  else
+    return (BoxVMMethodTable *) NULL;
+}
+
+#if 0
 typedef struct {
   Int type;
   Int method;
@@ -172,7 +237,7 @@ Task BoxVM_Alloc_Method_Set(BoxVM *vmp, Int type, Int method, Int m_num) {
   k.type = type;
   k.method = method;
   /* Should I check for re-definition and how should I deal with that? */
-  if (NULL == BoxHT_Insert_Obj(& vmp->method_table,
+  if (NULL == BoxHT_Insert_Obj(& vmp->id_from_mettab,
                                & k, sizeof(Key),
                                & m_num, sizeof(Int)))
     return Failed;
@@ -184,7 +249,8 @@ Int BoxVM_Alloc_Method_Get(BoxVM *vmp, Int type, Int method) {
   Key k;
   k.type = type;
   k.method = method;
-  if (BoxHT_Find(& vmp->method_table, & k, sizeof(Key), & found))
+  if (BoxHT_Find(& vmp->id_from_mettab, & k, sizeof(Key), & found))
     return *((Int *) found->object);
   return -1;
 }
+#endif

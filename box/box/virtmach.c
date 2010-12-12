@@ -746,8 +746,21 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
     trace->vm_pos = (void *) vm.i_pos - (void *) i_pos0;
   }
 
-  /* Delete the registers allocated with the 'new*' instructions */
+  /* Destroy the objects remaining in the roX registers */
+  if (vm.alc[BOXTYPE_PTR] & 1) {
+    BoxVMRegs *lregs = & vm.local[BOXTYPE_PTR];
+    BoxPtr *ro = (BoxPtr *) lregs->ptr + lregs->min;
+    int i, n = lregs->max - lregs->min + 1;
+    /* ^^^ NOTE: lregs->min is negative! */
+
+    for(i = 0; i < n; i++, ro++) {
+      if (!BoxPtr_Is_Detached(ro))
+        BoxVM_Unlink(vmp, ro);
+    }
+  }
+
   {
+    /* Delete the registers allocated with the 'new*' instructions */
     register int i;
     for(i = 0; i < NUM_TYPES; i++)
       if ((vm.alc[i] & 1) != 0) {
@@ -905,67 +918,6 @@ void BoxVM_ASettings(BoxVM *vmp, int forcelong, int error, int inhibit) {
   pt->target_proc->status.error = error;
   pt->target_proc->status.inhibit = inhibit;
 }
-
-#if 0
-/* This function executes the final steps to prepare the program
- * to be installed as a module and to be executed.
- * num_reg and num_var are the pointers to arrays of NUM_TYPES elements
- * containing the numbers of registers and variables used by the program
- * for every type.
- * module is the module-number of an undefined module which will be used
- * to install the program.
- */
-Task VM_Code_Prepare(BoxVM *vmp, Int *num_var, Int *num_reg) {
-  VMProcTable *pt = & vmp->proc_table;
-  int previous_sheet;
-  UInt tmp_sheet_id = 0;
-  BoxArr *entry = & pt->target_proc->code;
-  Task exit_status = Failed;
-
-  BoxVM_Assemble(vmp, BOXOP_RET);
-
-  previous_sheet = BoxVM_Proc_Target_Get(vmp);
-  tmp_sheet_id = BoxVM_Proc_Code_New(vmp);
-  BoxVM_Proc_Target_Set(vmp, tmp_sheet_id);
-
-  {
-    register Int i;
-    Int instruction[NUM_TYPES] = {
-      BOXOP_NEWC_II, BOXOP_NEWI_II, BOXOP_NEWR_II,
-      BOXOP_NEWP_II, BOXOP_NEWO_II
-    };
-
-    for(i = 0; i < NUM_TYPES; i++) {
-      register Int nv = num_var[i], nr = num_reg[i];
-      if (nv < 0 || nr < 0) {
-        MSG_ERROR("Errore nella chiamata di VM_Code_Prepare.");
-        goto exit;
-      }
-      if (nv > 0 || nr > 0)
-        BoxVM_Assemble(vmp, instruction[i], CAT_IMM, nv, CAT_IMM, nr);
-    }
-  }
-
-  /* Insert the program just written inside tmp_code at the beginning
-   * of the main program 'entry' (which is the one selected before entering
-   * this function).
-   */
-  {
-    BoxArr *code_to_insert = & pt->target_proc->code;
-    int code_to_insert_len = BoxArr_Num_Items(code_to_insert);
-    void *code_to_insert_ptr = BoxArr_First_Item_Ptr(code_to_insert);
-    BoxArr_Insert(entry, 1, code_to_insert_ptr, code_to_insert_len);
-  }
-
-  exit_status = Success;
-
-exit:
-  (void) BoxVM_Proc_Target_Set(vmp, previous_sheet);
-  if (tmp_sheet_id > 0)
-    BoxVM_Proc_Code_Destroy(vmp, tmp_sheet_id);
-  return exit_status;
-}
-#endif
 
 /** Similar to BoxVM_Assemble, but takes a va_list argument as a replacement
  * for the extra arguments.

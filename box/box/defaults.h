@@ -208,7 +208,7 @@
  * type-related methods needed by the memory handling system of the virtual
  * machine.
  */
-#define VM_METHOD_HT_SIZE 1024
+#define BOXVM_METHOD_HT_SIZE 128
 
 /*****************************************************************************
  *                 COSTANTI UTILIZZATE NEL FILE compiler.c                   *

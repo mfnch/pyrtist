@@ -37,22 +37,13 @@
 #  include <box/array.h>
 #  include <box/occupation.h>
 #  include <box/hashtable.h>
+#  include <box/vmptr.h>
+#  include <box/vmalloc.h>
 
 #  define _INSIDE_VIRTMACH_H
 #  include <box/vmproc.h>
 #  include <box/vmsym.h>
 #  undef _INSIDE_VIRTMACH_H
-
-/* Data type used to write/read binary codes for the instructions */
-typedef unsigned char BoxVMByte;
-typedef char BoxVMSByte;
-typedef unsigned long BoxVMByteX4;
-#  define BoxVMByteX4_Fmt "%8.8lx"
-
-#  ifdef BOX_ABBREV
-typedef BoxVMByteX4 VMByteX4;
-#    define VMByteX4_Fmt BoxVMByteX4_Fmt
-#  endif
 
 /** To each type a number is associated. */
 typedef BoxInt Type;
@@ -97,6 +88,7 @@ typedef enum {
   BOXOP_PROJX_P, BOXOP_PROJY_P, BOXOP_PPTRX_P, BOXOP_PPTRY_P,
   BOXOP_RET,
   BOXOP_MALLOC_I, BOXOP_MLN_O, BOXOP_MUNLN_O, BOXOP_MCOPY_OO,
+  BOXOP_SHIFT_OO, BOXOP_REF_OO, BOXOP_NULL_O,
   BOXOP_LEA_C, BOXOP_LEA_I, BOXOP_LEA_R, BOXOP_LEA_P, BOXOP_LEA_OO,
   BOXOP_PUSH_O, BOXOP_POP_O,
   BOXOP_JMP_I, BOXOP_JC_I,
@@ -118,6 +110,7 @@ typedef enum {
   BOXGOP_LNOT, BOXGOP_LAND, BOXGOP_LOR, BOXGOP_REAL, BOXGOP_INT, BOXGOP_POINT,
   BOXGOP_PROJX, BOXGOP_PROJY, BOXGOP_PPTRX, BOXGOP_PPTRY,
   BOXGOP_RET, BOXGOP_MALLOC, BOXGOP_MLN, BOXGOP_MUNLN, BOXGOP_MCOPY,
+  BOXGOP_SHIFT, BOXGOP_REF, BOXGOP_NULL,
   BOXGOP_LEA, BOXGOP_PUSH, BOXGOP_POP, BOXGOP_JMP, BOXGOP_JC,
   BOXGOP_ARINIT, BOXGOP_ARSIZE, BOXGOP_ARADDR, BOXGOP_ARGET, BOXGOP_ARNEXT,
   BOXGOP_ARDEST, BOX_NUM_GOPS
@@ -212,20 +205,6 @@ typedef enum {
 /* Numero massimo degli argomenti di un'istruzione */
 #  define VM_MAX_NUMARGS 2
 
-/* The struct __vmprogram and __vmstatus contain pointers to functions whose
- * arguments are the structures themselves. This requires a trick.
- * First we declare the structures and we use a macro to make the function
- * declarations more natural. Later in this file we undef the macros
- * and typedef the structures (to VMProgram and VMStatus).
- * Silly, but - at least - this trick should not affect areas outside
- * this header file.
- */
-struct __vmprogram;
-struct __vmstatus;
-
-#  define BoxVM struct __vmprogram
-#  define VMStatus struct __vmstatus
-
 /** Item used in a backtrace to identify where the exception caused the
  * particular function to exit.
  */
@@ -256,7 +235,7 @@ typedef struct {
 /** This structure contains all the data which define the status for the VM.
  * Status is allocated by 'VM_Module_Execute' inside its stack.
  */
-struct __vmstatus {
+struct _BoxVMStatus_struct {
   struct {
     unsigned int error    :1, /**< Error detected */
                  exit     :1, /**< Exit current execution frame */
@@ -284,64 +263,61 @@ struct __vmstatus {
                                    instruction has been used) */
 };
 
-/* Here we undef the VMStatus macro and typedef __vmstatus to VMStatus. */
-#undef VMStatus
-typedef struct __vmstatus VMStatus;
-
 /** @brief The full status of the virtual machine of Box.
  */
-struct __vmprogram {
-  VMStatus  *vmcur;       /**< The current execution frame */
+struct _BoxVM_struct {
+  VMStatus  *vmcur;         /**< The current execution frame */
 
   struct {
     unsigned int
-              forcelong :1, /**< Force long form assembly. */
-              hexcode   :1, /**< Show Hex values in disassembled code */
-              identdata :1; /**< Add also identity info for data inserted
-                                 into the data segment */
-  }         attr;         /** Flags which controls the behaviour of the VM. */
+              forcelong :1,   /**< Force long form assembly. */
+              hexcode   :1,   /**< Show Hex values in disassembled code */
+              identdata :1;   /**< Add also identity info for data inserted
+                                  into the data segment */
+  }         attr;           /** Flags controlling the behaviour of the VM */
 
   struct {
     unsigned int
-              globals   :1, /**< Global regs have been allocated */
-              op_table  :1; /**< The operation table has been built */
-  }         has;          /**< State of the VM */
+              globals   :1,   /**< Global regs have been allocated */
+              op_table  :1;   /**< The operation table has been built */
+  }         has;            /**< State of the VM */
 
-  BoxArr    stack,        /**< The stack for the VM object */
-            data_segment; /**< The segment of data (strings, etc.) which is
-                               accessible through the global register gro0 */
+  BoxArr    stack,          /**< The stack for the VM object */
+            data_segment;   /**< The segment of data (strings, etc.) which is
+                                 accessible through the register gro0 */
 
-  BoxVMRegs global[NUM_TYPES]; /**< The values of the global registers */
+  BoxVMRegs global[NUM_TYPES];  /**< The values of the global registers */
 
   BoxPtr    *box_vm_current,
             *box_vm_arg1,
             *box_vm_arg2;
 
   const BoxVMInstrDesc
-            *exec_table;  /**< Table collecting info about the instructions
-                               which are useful for execution. */
+            *exec_table;   /**< Table collecting info about the instructions
+                                which are useful for execution. */
 
   BoxVMProcTable
-            proc_table;   /**< Table of installed and uninstalled procs */
+            proc_table;     /**< Table of installed and uninstalled procs */
 
   BoxVMSymTable
-            sym_table;    /**< Table of referenced and defined symbols */
+            sym_table;      /**< Table of referenced and defined symbols */
 
   BoxOpTable
-            op_table;     /**< Table describing the instructions and their
-                               properties */
+            op_table;       /**< Table describing the instructions and their
+                                 properties */
 
-  BoxArr    backtrace;    /**< Information about error location */
-  char      *fail_msg;    /**< Failure message */
+  BoxArr    backtrace;      /**< Information about error location */
+  char      *fail_msg;      /**< Failure message */
 
-  BoxUInt   dasm_pos;     /**< Position in num. of read bytes for the disassembler */
+  BoxUInt   dasm_pos;       /**< Position in num. of read bytes for the
+                                 disassembler */
 
-  BoxHT     method_table; /**< Hashtable containing destructors, etc. (TO BE REMOVED) */
+  BoxHT     id_from_mettab; /**< Hashtable containing destructors, etc. */
+  BoxArr    mettab_from_id; /**< Table of method tables from allocation IDs */
+  BoxVMAllocID
+            next_alloc_id;  /**< Alloc ID to be associated to the next
+                                 installed BoxVMMethodTable */
 };
-
-#  undef BoxVM
-typedef struct __vmprogram BoxVM;
-typedef BoxVM VMProgram;
 
 extern const size_t size_of_type[NUM_TYPES];
 

@@ -119,7 +119,7 @@ static void VM__Exec_Mov_PP(BoxVM *vmp) {
 static void VM__Exec_Mov_OO(BoxVM *vm) {
   VMStatus *vmcur = vm->vmcur;
   *((BoxPtr *) vmcur->arg1) = *((BoxPtr *) vmcur->arg2);
-  BoxPtr_Detach((BoxPtr *) vmcur->arg2);
+  BoxPtr_Detach((BoxPtr *) vmcur->arg1);
 }
 
 static void VM__Exec_BNot_I(BoxVM *vmp) {
@@ -392,10 +392,10 @@ static void VM__Exec_LOr_II(BoxVM *vmp) {
 
 static void VM__Exec_Malloc_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  Int size = *((Int *) vmcur->arg1),
-      type = *((Int *) vmcur->arg2);
-  Obj *obj = (Obj *) vmcur->local[TYPE_OBJ].ptr;
-  BoxVM_Alloc(obj, size, type);
+  BoxInt size = *((Int *) vmcur->arg1),
+         id = *((Int *) vmcur->arg2);
+  BoxPtr *obj = (Obj *) vmcur->local[TYPE_OBJ].ptr;
+  BoxVM_Alloc(vmp, obj, size, id);
   if (!BoxPtr_Is_Null(obj))
     return;
   MSG_FATAL("VM_Exec_Malloc_II: memory request failed!");
@@ -416,6 +416,34 @@ static void VM__Exec_MCopy_OO(BoxVM *vmp) {
   (void) memcpy(((Obj *) vmcur->arg1)->ptr,             /* destination */
                 ((Obj *) vmcur->arg2)->ptr,             /* source */
                 *((Int *) vmcur->local[TYPE_INT].ptr)); /* size */
+}
+
+static void VM__Exec_Shift_OO(BoxVM *vm) {
+  VMStatus *vmcur = vm->vmcur;
+  BoxPtr *arg1 = (BoxPtr *) vmcur->arg1,
+         *arg2 = (BoxPtr *) vmcur->arg2;
+  if (arg1 != arg2) {
+    if (!BoxPtr_Is_Detached(arg1))
+      BoxVM_Unlink(vm, arg1);
+    *arg1 = *arg2;
+    BoxPtr_Detach(arg2);
+  }
+}
+
+static void VM__Exec_Ref_OO(BoxVM *vm) {
+  VMStatus *vmcur = vm->vmcur;
+  BoxPtr *arg1 = (BoxPtr *) vmcur->arg1,
+         *arg2 = (BoxPtr *) vmcur->arg2;
+  if (arg1 == arg2) {
+    if (!BoxPtr_Is_Detached(arg1))
+      BoxVM_Unlink(vm, arg1);
+    *arg1 = *arg2;
+    BoxVM_Link(arg2);
+  }
+}
+
+static void VM__Exec_Null_O(BoxVM *vm) {
+  BoxPtr_Nullify((BoxPtr *) vm->vmcur->arg1);
 }
 
 static void VM__Exec_Lea(BoxVM *vmp) {
@@ -592,6 +620,9 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   { BOXGOP_MUNLN,  "munln", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_MUnln_O  }, /* munln ro      */
   { BOXGOP_MCOPY,  "mcopy", 2, 'o',
                                  "a1,a2,ri0",  NULL, "xx", "xx", VM__Exec_MCopy_OO }, /* mcopy ro, ro    */
+  { BOXGOP_SHIFT,  "shift", 2, 'o',     "a2",  "a1", "xx", "xx", VM__Exec_Shift_OO }, /* shift ro, ro    */
+  {   BOXGOP_REF,    "ref", 2, 'o',     "a2",  "a1", "xx", "xx", VM__Exec_Ref_OO   }, /* ref ro, ro      */
+  {  BOXGOP_NULL,   "null", 1, 'o',     NULL,  "a1", "x-", "xx", VM__Exec_Null_O   }, /* null ro         */
   {   BOXGOP_LEA,    "lea", 1, 'c',     "a1", "ro0", "x-", "xx", VM__Exec_Lea      }, /* lea c[ro0+...]  */
   {   BOXGOP_LEA,    "lea", 1, 'i',     "a1", "ro0", "x-", "xx", VM__Exec_Lea      }, /* lea i[ro0+...]  */
   {   BOXGOP_LEA,    "lea", 1, 'r',     "a1", "ro0", "x-", "xx", VM__Exec_Lea      }, /* lea r[ro0+...]  */
@@ -611,25 +642,6 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {BOXGOP_ARDEST, "ardest", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_Ardest_O }  /* ardest reg_o        */
 };
 
-/*
-
-mov ro0, array
-mov ro0, ro5
-arsize i[ro0 + 8]
-
-
-
-*  -> VM__GLPI
-** -> VM__GLP_GLPI
-*i -> VM__GLP_Imm
-i  -> VM__Imm
-
-** -> VM__D_GLPI_GLPI
-*i -> VM__D_GLPI_Imm
-j  -> VM__D_JMP
-c  -> VM__D_CALL
-
-*/
 
 #define COMBINE_3CHAR(c1, c2, c3) \
   (((int) (c3)) | (((int) (c2)) << 8) | (((int) (c1)) << 16))

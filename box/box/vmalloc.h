@@ -48,7 +48,23 @@
 #  define _VMALLOC_H
 
 #  include <box/types.h>
-#  include <box/virtmach.h>
+#  include <box/vmproc.h>
+#  include <box/vmptr.h>
+
+/** This is a table of methods for a particular object type.
+ * Typically, we need to allocate one of such tables for each different object
+ * type. Obviously, many objects can have the same type and hence share the
+ * same table.
+ */
+typedef struct {
+  BoxVMCallNum finalizer; /**< Method to be called to finalize the object */
+} BoxVMMethodTable;
+
+/** Every installed BoxVMMethodTable has a unique identifier, which is just an
+ * integer number of this type. This is the number used in the malloc VM
+ * instruction.
+ */
+typedef BoxInt BoxVMAllocID;
 
 /** Set an extended pointer to Null. */
 void BoxObj_Set_To_Null(BoxObj *o);
@@ -65,7 +81,7 @@ void BoxObj_Add_To_Ptr(BoxObj *item, size_t addr);
  * The memory region is associated with the provided data 'type'
  * and has a initial reference counter equal to 1.
  */
-void BoxVM_Alloc(BoxObj *obj, size_t size, BoxInt type);
+void BoxVM_Alloc(BoxVM *vm, BoxPtr *obj, size_t size, BoxVMAllocID id);
 
 /** Increase the reference counter for the given object. */
 void BoxVM_Link(BoxObj *obj);
@@ -84,15 +100,16 @@ BoxTask BoxVM_Alloc_Init(BoxVM *vm);
  */
 void BoxVM_Alloc_Destroy(BoxVM *vm);
 
-/** Set 'm_num' to be the method of kind 'm' associated with type 'type'
- * in the scope of the virtual machine 'vmp'
+/** Install the method table and returns its ID (an integer number).
+ * If an equivalent table has been installed already, then return that
+ * rather than installing a new one. This way, object of the same type
+ * should end up sharing the same method table.
  */
-BoxTask BoxVM_Alloc_Method_Set(BoxVM *vm, BoxInt type,
-                               BoxInt method, BoxInt m_num);
+BoxVMAllocID BoxVMAllocID_From_Method_Table(BoxVM *vm, BoxVMMethodTable *mt);
 
-/** Find the method of kind 'm' associated with type 'type' in the scope
- * of the virtual machine 'vmp'. Return -1 if the method was not found.
+/** Return the method table for the given allocation ID. If there is no table
+ * associated to the ID, then return the NULL pointer.
  */
-BoxInt BoxVM_Alloc_Method_Get(BoxVM *vm, BoxInt type, BoxInt method);
+BoxVMMethodTable *BoxVMMethodTable_From_Alloc_ID(BoxVM *vm, BoxVMAllocID id);
 
 #endif

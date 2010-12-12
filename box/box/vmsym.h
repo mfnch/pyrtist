@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008, 2009 by Matteo Franchin                                    *
+ * Copyright (C) 2008, 2009, 2010 by Matteo Franchin                        *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -16,8 +16,6 @@
  *   You should have received a copy of the GNU Lesser General Public       *
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
-
-/* $Id$ */
 
 /** @file vmsym.h
  * @brief The implementation of the reference/definition list for the box VM.
@@ -36,14 +34,7 @@
 #  include <box/array.h>
 #  include <box/hashtable.h>
 #  include <box/list.h>
-
-/* We cannot include "virtmach.h", since the structure VMProgram contains
- * VMSymTable. For this reason, it is "virtmach.h" which actually includes
- * "vmsym.h". We therefore declare the VMProgram structure and define a macro
- * which we will undef later.
- */
-struct __vmprogram;
-#  define BoxVM struct __vmprogram
+#  include <box/vmptr.h>
 
 /** A symbol ID is just an integer number. The VM knows to what symbol
  * this number refers to.

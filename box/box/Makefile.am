@@ -48,9 +48,10 @@ bin_PROGRAMS = box
 
 # *** libboxcore ***
 lib_LTLIBRARIES = libboxcore0.2.la
-boxinc_HEADERS = defaults.h types.h error.h mem.h array.h occupation.h \
-  srcpos.h msgbase.h messages.h str.h print.h hashfunc.h hashtable.h \
-  list.h virtmach.h vmalloc.h vmproc.h vmsym.h vmsymstuff.h
+boxinc_HEADERS = version.h defaults.h types.h error.h mem.h \
+  array.h occupation.h srcpos.h msgbase.h messages.h str.h print.h \
+  hashfunc.h hashtable.h list.h virtmach.h vmalloc.h vmproc.h vmsym.h \
+  vmsymstuff.h
 libboxcore0_2_la_SOURCES = types.h error.c mem.c mem.h array.c array.h \
   occupation.c occupation.h str.c print.c srcpos.c msgbase.c messages.c \
   hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h \

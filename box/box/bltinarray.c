@@ -98,7 +98,12 @@ BoxTask BoxArray_Set_Size(BoxArray *a, BoxInt size) {
       assert( BoxMem_ax(& total_data_size, total_data_size, a->sizes[i]) );
 
     assert( BoxMem_ax(& total_data_size, total_data_size, a->item_size) );
+    assert(0);
+
+#if 0
+    /* Temporarily disabled */
     BoxVM_Alloc(& a->data, total_data_size, 0 /* ??? */);
+#endif
     if (BoxObj_Is_Null(& a->data)) return Failed;
     return Success;
   }
