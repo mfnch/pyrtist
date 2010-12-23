@@ -96,7 +96,7 @@ BoxType Auto_Generate_Procedure(BoxCmp *c, BoxType t_child,
 
       /* Define the symbol associated to the procedure */
       BoxVMSymID sym_id = CmpProc_Get_Sym(c->cur_proc);
-      BoxVMCallNum call_num = CmpProc_Get_Call_Num(c->cur_proc);
+      BoxVMCallNum call_num = CmpProc_Install(c->cur_proc);
       ASSERT_TASK( BoxVMSym_Def_Call(c->vm, sym_id, call_num) );
 
       /* Register the procedure in the type system */

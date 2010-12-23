@@ -343,11 +343,11 @@ struct clib_ref_data {
 #ifdef DYLIB
 static int Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
   BoxVMSym *s = (BoxVMSym *) item;
-  if (! s->defined) {
+  if (!s->defined) {
     struct clib_ref_data *clrd = (struct clib_ref_data *) pass_data;
     BoxVM *vmp = clrd->vmp;
     const char *sym_name = s->name.text;
-    if (sym_name != (char *) NULL && s->sym_type == VM_SYM_CALL) {
+    if (sym_name != NULL && s->sym_type == VM_SYM_CALL) {
       const char *err_msg;
       void *sym;
       BoxVMCallNum call_num;
@@ -355,14 +355,18 @@ static int Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
       err_msg = lt_dlerror();
       sym = lt_dlsym(clrd->dylib, sym_name);
       err_msg = lt_dlerror();
-      if (err_msg != (char *) NULL) return 1;
-      if (sym == (char *) NULL) {
+
+      if (err_msg != NULL)
+        return 1;
+
+      if (sym == NULL) {
         MSG_ERROR("Symbol '%s' from library '%s' is NULL",
                   sym_name, clrd->lib_file);
         return 1;
       }
       call_num =
-        BoxVM_Proc_Install_CCode(vmp, (BoxVMCCode) sym, sym_name, sym_name);
+        BoxVM_Proc_Install_CCode(vmp, BOXVMPROCID_NONE, (BoxVMCCode) sym,
+                                 sym_name, sym_name);
       ASSERT_TASK(BoxVMSym_Def_Call(vmp, sym_num, call_num));
     }
   }

@@ -246,4 +246,13 @@ void BoxArr_Compactify(BoxArr *arr);
 #define BoxArr_Last_Item_Ptr(arr) \
   ((arr)->ptr + ((arr)->numel - 1)*((UInt) (arr)->elsize))
 
+/*#define BOXARR_DEBUG_MACROS*/
+
+#ifdef BOXARR_DEBUG_MACROS
+#  define BOXARR_MACRO1(fn, ...) (fn(__VA_ARGS__) + 0*printf(#fn" in %s (%d) \n", __FILE__, __LINE__))
+#  define BOXARR_MACRO2(fn, ...) {fn(__VA_ARGS__); (void) printf(#fn" in %s (%d) \n", __FILE__, __LINE__);}
+
+#  define BoxArr_Init(...) BOXARR_MACRO2(BoxArr_Init, __VA_ARGS__)
+#endif
+
 #endif /* _BOX_ARRAY_H */

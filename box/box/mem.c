@@ -51,6 +51,21 @@ size_t BoxMem_Size_Align(size_t n) {
 
 #include <stdio.h>
 
+/* Undefine macros in case they have been defined in mem.h:
+ *   such macros are typically useful for debugging, but we don't need them
+ *   here!
+ */
+#ifdef BOXMEM_DEBUG_MACROS
+#  undef BoxMem_Safe_Alloc
+#  undef BoxMem_Alloc
+#  undef BoxMem_Free
+#  undef BoxMem_Realloc
+#  undef BoxMem_Strdup
+#  undef BoxMem_Strndup
+#  undef BoxMem_Str_Merge
+#  undef BoxMem_Str_Merge_With_Len
+#endif
+
 void *BoxMem_Safe_Alloc(size_t size) {
   void *ptr = malloc(BoxMem_Size_Align(size));
   Box_Fatal_Error_If(ptr == NULL);

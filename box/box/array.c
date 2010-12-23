@@ -30,6 +30,10 @@
 #include "mem.h"
 #include "array.h"
 
+#ifdef BOXARR_DEBUG_MACROS
+#  undef BoxArr_Init
+#endif
+
 /** Similar to memcpy, but if the src pointer is NULL, then it just clears
  * the destination region or, if clear == 0, it just returns dest.
  */

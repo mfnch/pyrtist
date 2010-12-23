@@ -66,8 +66,8 @@ Task BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
  */
 
 typedef struct {
-  Type type;
-  Type method;
+  BoxType type,
+          method;
 } VMSymMethod;
 
 /* This is the function that registers the method, if it is known. */

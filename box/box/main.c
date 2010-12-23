@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2006 by Matteo Franchin (fnch@libero.it)                *
+ *   Copyright (C) 2006-2010 by Matteo Franchin (fnch@libero.it)           *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -16,13 +16,6 @@
  *   Free Software Foundation, Inc.,                                       *
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
-
-/* $Id$ */
-
-/* main.c, maggio 2004
- *
- * Questo file legge le opzioni ed esegue le azioni associate.
- */
 
 #include <stdio.h>
 #include <stdlib.h>

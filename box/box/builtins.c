@@ -291,7 +291,8 @@ BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
   sym_num = BoxVMSym_New_Call(c->vm);
 
   /* We finally install the code (a C function) for the procedure */
-  call_num = BoxVM_Proc_Install_CCode(c->vm, c_fn, (char *) NULL, proc_name);
+  call_num = BoxVM_Proc_Install_CCode(c->vm, BOXVMPROCID_NONE, c_fn,
+                                      (char *) NULL, proc_name);
 
   /* And define the symbol */
   ASSERT_TASK(BoxVMSym_Def_Call(c->vm, sym_num, call_num));
@@ -314,7 +315,8 @@ BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
   proc_name = TS_Name_Get(& c->ts, new_proc);
 
   /* We finally install the code (a C function) for the procedure */
-  call_num = BoxVM_Proc_Install_CCode(c->vm, c_fn, (char *) NULL, proc_name);
+  call_num = BoxVM_Proc_Install_CCode(c->vm, BOXVMPROCID_NONE, c_fn,
+                                      (char *) NULL, proc_name);
   BoxMem_Free(proc_name);
 
   /* And define the symbol */

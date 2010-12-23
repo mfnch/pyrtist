@@ -212,6 +212,11 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p);
  */
 size_t CmpProc_Get_Code_Size(CmpProc *p);
 
+/** Install the procedure such that the code which calls it can be actually
+ * executed.
+ */
+BoxVMCallNum CmpProc_Install(CmpProc *p);
+
 /** Assemble the instruction calling VM_Assemble and put the code inside
  * the given CmpProc procedure p. A higher level function for assembling code
  * is provided by CmpProc_Assemble.

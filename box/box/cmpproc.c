@@ -347,12 +347,29 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p) {
     assert(0);
 
   } else {
+    p->call_num = BoxVM_Proc_Install_Missing(p->cmp->vm);
+    p->have.call_num = 1;
+    return p->call_num;
+  }
+}
+
+BoxVMCallNum CmpProc_Install(CmpProc *p) {
+  BoxVMCallNum required_call_num =
+    (p->have.call_num) ? p->call_num : BOXVMPROCID_NONE;
+
+  if (p->style == CMPPROCSTYLE_EXTERN) {
+    MSG_FATAL("CmpProc_Install: Case CMPPROCSTYLE_EXTERN not implemented!");
+    assert(0);
+    return BOXVMPROCID_NONE;
+
+  } else {
     BoxVMProcID pn = CmpProc_Get_ProcID(p);
     char *alter_name = CmpProc_Get_Alter_Name(p),
          *proc_name  = (p->have.proc_name) ? p->proc_name : (char *) NULL;
     CmpProc_End(p); /* End the procedure, if not done explicitly */
     p->call_num =
-      BoxVM_Proc_Install_Code(p->cmp->vm, pn, proc_name, alter_name);
+      BoxVM_Proc_Install_Code(p->cmp->vm, required_call_num, pn,
+                              proc_name, alter_name);
     BoxMem_Free(alter_name);
     p->have.call_num = 1;
     return p->call_num;
@@ -405,7 +422,7 @@ static void My_Prepare_Ptr_Access(CmpProc *p, const BoxCont *c) {
  * Containers having this property are: registers (both local and global)
  * pointers and immediate integers/chars.
  */
-static Int My_Int_Val_From_Cont(const BoxCont *c) {
+static BoxInt My_Int_Val_From_Cont(const BoxCont *c) {
   if (c->categ == BOXCONTCATEG_LREG || c->categ == BOXCONTCATEG_GREG)
     return c->value.reg;
 

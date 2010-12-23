@@ -18,8 +18,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* $Id$ */
-
 /** @file mem.h
  * @brief Wrappings for the system calls to allocate memory (malloc & co.).
  */
@@ -78,9 +76,20 @@ int BoxMem_x_Plus_y(size_t *r, size_t x, size_t y);
  */
 int BoxMem_ax_Plus_by(size_t *r, size_t a, size_t x, size_t b, size_t y);
 
-#if 0
-#  define BoxMem_Alloc(x) (BoxMem_Alloc(x) + 0*printf("BoxMem_Alloc in %s (%d) \n", __FILE__, __LINE__))
-#  define BoxMem_Realloc(x, y) (BoxMem_Realloc(x, y) + 0*printf("BoxMem_Relloc in %s (%d) \n", __FILE__, __LINE__))
-#  define BoxMem_Free(x) {BoxMem_Free(x); (void) printf("BoxMem_Free in %s (%d) \n", __FILE__, __LINE__);}
+/*#define BOXMEM_DEBUG_MACROS*/
+
+#ifdef BOXMEM_DEBUG_MACROS
+#  define BOXMEM_MACRO1(fn, ...) (fn(__VA_ARGS__) + 0*printf(#fn" in %s (%d) \n", __FILE__, __LINE__))
+#  define BOXMEM_MACRO2(fn, ...) {fn(__VA_ARGS__); (void) printf(#fn" in %s (%d) \n", __FILE__, __LINE__);}
+
+#  define BoxMem_Safe_Alloc(...) BOXMEM_MACRO1(BoxMem_Safe_Alloc, __VA_ARGS__)
+#  define BoxMem_Alloc(...) BOXMEM_MACRO1(BoxMem_Alloc, __VA_ARGS__)
+#  define BoxMem_Realloc(...) BOXMEM_MACRO1(BoxMem_Realloc, __VA_ARGS__)
+#  define BoxMem_Free(...) BOXMEM_MACRO2(BoxMem_Free, __VA_ARGS__)
+#  define BoxMem_Strdup(...) BOXMEM_MACRO1(BoxMem_Strdup, __VA_ARGS__)
+#  define BoxMem_Strndup(...) BOXMEM_MACRO1(BoxMem_Strndup, __VA_ARGS__)
+#  define BoxMem_Str_Merge(...) BOXMEM_MACRO1(BoxMem_Str_Merge, __VA_ARGS__)
+#  define BoxMem_Str_Merge_With_Len(...) \
+     BOXMEM_MACRO1(BoxMem_Str_Merge_With_Len, __VA_ARGS__)
 #endif
 #endif

@@ -54,6 +54,9 @@ typedef BoxVMProcID BoxVMProcNum; /* Alias for BoxVMProcID */
  */
 typedef BoxUInt BoxVMCallNum;
 
+/** Macro denoting invalid BoxVMCallNum. */
+#define BOXVMCALLNUM_NONE ((BoxVMCallNum) 0)
+
 /** This is the structure used to store the bytecode representation
  * of a procedure
  */
@@ -75,16 +78,15 @@ typedef struct {
   enum {
     BOXVMPROC_IS_VM_CODE,
     BOXVMPROC_IS_C_CODE,
-  } type; /**< Kind of procedure */
-  char *name; /**< Symbol-name of the procedure */
-  char *desc; /**< Description of the procedure */
+    BOXVMPROC_IS_MISSING
+  } type;                 /**< Kind of procedure */
+  char *name;             /**< Symbol-name of the procedure */
+  char *desc;             /**< Description of the procedure */
   union {
-    BoxTask (*c)(void *); /**< Pointer to the C function (can't use VMCCode!) */
-    /** Structure containing the details about the VM code,
-     * which implements the procedure.
-     */
-    BoxVMProcID proc_id; /**< Number of the procedure which contains
-                              the code */
+    BoxTask (*c)(void *); /**< Pointer to the C function (can't use
+                               VMCCode!) */
+    BoxVMCallNum proc_id; /**< Number of the procedure which contains
+                               the code */
   } code;
 } BoxVMProcInstalled;
 
@@ -162,15 +164,23 @@ BoxVMProcID BoxVM_Proc_Get_ID(BoxVM *vm, BoxVMCallNum call_num);
 
 size_t BoxVM_Proc_Get_Size(BoxVM *vm, BoxVMProcID id);
 
-/** Install the procedure 'proc_id' and assign to it a call number 'n' which
- * is returned. After this function has been executed, the VM can recognize
+/** Reserve a call number 'n' to the procedure. The call number is returned.
+ * After this function has been executed, the VM can recognize
  * the instruction 'call n' as a call to the code contained inside 'proc_id'.
  * The procedure 'proc_id' is untouched it still exists and can be modified
  * (this is necessary for symbol resolution: a procedure can be installed
  * even if it references are still undefined).
  */
-BoxVMCallNum BoxVM_Proc_Install_Code(BoxVM *vm, BoxVMProcID proc_id,
+BoxVMCallNum BoxVM_Proc_Install_Code(BoxVM *vm,
+                                     BoxVMCallNum required_call_num,
+                                     BoxVMProcID id,
                                      const char *name, const char *desc);
+
+/** Install a fake procedure and return its call number. The procedure can be
+ * defined later. This is useful to get (or "allocate") a call number when
+ * the exact definition of the procedure is not yet know
+ */
+BoxVMCallNum BoxVM_Proc_Install_Missing(BoxVM *vm);
 
 /** The prototype of a C-function to be used as a procedure.
  * @see VM_Proc_Install_CCode
@@ -185,7 +195,9 @@ typedef BoxVMCCode VMCCode;
  * 'c_proc' as a new procedure. The call-number is returned in '*call_num'.
  * @see BoxVM_Proc_Install_Code
  */
-BoxVMCallNum BoxVM_Proc_Install_CCode(BoxVM *vmp, BoxVMCCode c_proc,
+BoxVMCallNum BoxVM_Proc_Install_CCode(BoxVM *vm,
+                                      BoxVMCallNum required_call_num,
+                                      BoxVMCCode c_proc,
                                       const char *name, const char *desc);
 
 /** Get the pointer to the bytecode of the procedure 'proc_num' and its

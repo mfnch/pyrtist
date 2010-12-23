@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include "types.h"
 #include "messages.h"
@@ -140,42 +141,80 @@ size_t BoxVM_Proc_Get_Size(BoxVM *vm, BoxVMProcID id) {
   return BoxArr_Num_Items(& p->code);
 }
 
-BoxVMCallNum BoxVM_Proc_Install_Code(BoxVM *vm, BoxVMProcID id,
+
+static VMProcInstalled *My_Get_Inst_Proc_Desc(VMProcTable *pt,
+                                              BoxVMCallNum *cn_out,
+                                              BoxVMCallNum cn_in) {
+  if (cn_in > 0) {
+    VMProcInstalled *procedure_inst =
+      (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, cn_in);
+
+    if (procedure_inst->type == BOXVMPROC_IS_MISSING) {
+      *cn_out = cn_in;
+      return procedure_inst;
+
+    } else {
+      MSG_FATAL("BoxVM_Proc_Install_CCode: Double procedure installation")
+      assert(0);
+      *cn_out = BOXVMCALLNUM_NONE;
+      return (VMProcInstalled *) NULL;
+    }
+
+  } else {
+    VMProcInstalled *procedure_inst =
+      (VMProcInstalled *) BoxArr_Push(& pt->installed, NULL);
+    *cn_out = BoxArr_Num_Items(& pt->installed);
+    return procedure_inst;
+  }
+}
+
+BoxVMCallNum BoxVM_Proc_Install_Code(BoxVM *vm,
+                                     BoxVMCallNum required_call_num,
+                                     BoxVMProcID id,
                                      const char *name, const char *desc) {
   VMProcTable *pt = & vm->proc_table;
   BoxVMProc *p = (BoxVMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, id);
-  VMProcInstalled procedure_inst;
   BoxVMCallNum cn;
+  VMProcInstalled *procedure_inst =
+    My_Get_Inst_Proc_Desc(pt, & cn, required_call_num);
 
   /* Reduce the memory occupied by the procedure */
   BoxSrcPosTable_Compactify(& p->pos_table);
   BoxArr_Compactify(& p->code);
 
-  procedure_inst.type = BOXVMPROC_IS_VM_CODE;
-  procedure_inst.name = (name != NULL) ? BoxMem_Strdup(name) : NULL;
-  procedure_inst.desc = (desc != NULL) ? BoxMem_Strdup(desc) : NULL;
-  procedure_inst.code.proc_id = id;
-
-  cn = BoxArr_Num_Items(& pt->installed) + 1;
-  BoxArr_Push(& pt->installed, & procedure_inst);
-
+  procedure_inst->type = BOXVMPROC_IS_VM_CODE;
+  procedure_inst->name = (name != NULL) ? BoxMem_Strdup(name) : NULL;
+  procedure_inst->desc = (desc != NULL) ? BoxMem_Strdup(desc) : NULL;
+  procedure_inst->code.proc_id = id;
   return cn;
 }
 
-BoxVMCallNum BoxVM_Proc_Install_CCode(BoxVM *vmp, BoxVMCCode c_proc,
+BoxVMCallNum BoxVM_Proc_Install_CCode(BoxVM *vm,
+                                      BoxVMCallNum required_call_num,
+                                      BoxVMCCode c_proc,
                                       const char *name, const char *desc) {
-  VMProcTable *pt = & vmp->proc_table;
-  VMProcInstalled procedure_inst;
+  VMProcTable *pt = & vm->proc_table;
   BoxVMCallNum cn;
+  VMProcInstalled *procedure_inst =
+    My_Get_Inst_Proc_Desc(pt, & cn, required_call_num);
 
-  procedure_inst.type = BOXVMPROC_IS_C_CODE;
-  procedure_inst.name = (name != NULL) ? BoxMem_Strdup(name) : NULL;
-  procedure_inst.desc = (desc != NULL) ? BoxMem_Strdup(desc) : NULL;
-  procedure_inst.code.c = (Task (*)(void *)) c_proc;
-
-  cn = BoxArr_Num_Items(& pt->installed) + 1;
-  BoxArr_Push(& pt->installed, & procedure_inst);
+  assert(procedure_inst != NULL);
+  procedure_inst->type = BOXVMPROC_IS_C_CODE;
+  procedure_inst->name = (name != NULL) ? BoxMem_Strdup(name) : NULL;
+  procedure_inst->desc = (desc != NULL) ? BoxMem_Strdup(desc) : NULL;
+  procedure_inst->code.c = (Task (*)(void *)) c_proc;
   return cn;
+}
+
+BoxVMCallNum BoxVM_Proc_Install_Missing(BoxVM *vm) {
+  VMProcTable *pt = & vm->proc_table;
+  VMProcInstalled procedure_inst;
+
+  procedure_inst.type = BOXVMPROC_IS_MISSING;
+  procedure_inst.name = (char *) NULL;
+  procedure_inst.desc = (char *) NULL;
+  BoxArr_Push(& pt->installed, & procedure_inst);
+  return BoxArr_Num_Items(& pt->installed);
 }
 
 BoxVMCallNum BoxVM_Proc_Next_Call_Num(BoxVM *vm) {

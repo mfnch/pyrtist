@@ -201,7 +201,7 @@ BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
   program_node = Parser_Parse(file, file_name, setup_file_name);
   BoxCmp_Compile(compiler, program_node);
   ASTNode_Destroy(program_node);
-  *main = CmpProc_Get_Call_Num(& compiler->main_proc);
+  *main = CmpProc_Install(& compiler->main_proc);
   vm = BoxCmp_Steal_VM(compiler);
   BoxCmp_Destroy(compiler);
   return vm;
@@ -1137,7 +1137,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     c->cur_proc = save_cur_proc;
 
     {
-      call_num = CmpProc_Get_Call_Num(& proc_implem);
+      call_num = CmpProc_Install(& proc_implem);
       BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
       ASSERT_TASK( BoxVMSym_Def_Call(c->vm, sym_id, call_num) );
     }
