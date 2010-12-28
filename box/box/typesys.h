@@ -193,7 +193,7 @@ BoxType TS_Intrinsic_New(TS *ts, Int size);
 /** Create a new procedure type in p. init tells if the procedure
  * is an initialisation procedure or not.
  */
-BoxType TS_Procedure_New(TS *ts, BoxType parent, BoxType child, int kind);
+BoxType TS_Procedure_New(TS *ts, BoxType parent, BoxType child);
 
 /** Get information about the procedure p. This information is stored
  * in the destination specified by the given pointers, but this happens
@@ -213,8 +213,8 @@ void TS_Procedure_Info(TS *ts, Type *parent, Type *child,
  */
 void TS_Procedure_Register(TS *ts, Type p, UInt sym_num);
 
-/** Unregister a procedure which was previously registered with 
- * TS_Procedure_Register 
+/** Unregister a procedure which was previously registered with
+ * TS_Procedure_Register
  */
 void TS_Procedure_Unregister(TS *ts, BoxType p);
 
@@ -224,7 +224,7 @@ UInt TS_Procedure_Get_Sym(TS *ts, Type p);
 
 /** Options to be used when searching for procedure */
 typedef enum {
-  TSSEARCHMODE_INHERITED=1, /**< Search procedures inherited from extended 
+  TSSEARCHMODE_INHERITED=1, /**< Search procedures inherited from extended
                                  types */
   TSSEARCHMODE_BLACKLIST=2  /**< If the procedure is not found,
                                  blacklist it! */
@@ -265,7 +265,7 @@ int TS_Procedure_Is_Registered(TS *ts, BoxType p);
  * and then TS_Procedure_Register. sym_num is the associated symbol
  * identifier.
  */
-Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num);
+Int TS_Procedure_Def(Int proc, Int of_type, Int sym_num);
 
 /** Create a new unregistered subtype: a subtype is unregistered when
  * the parent is not aware of its existance. An unregistered type is defined

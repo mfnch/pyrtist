@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
@@ -75,6 +73,7 @@ void BoxVMSymTable_Finish(BoxVMSymTable *st) {
     MSG_WARNING("BoxVMSym_Destroy: lt_dlexit failed!");
   }
 }
+
 
 BoxVMSymID BoxVMSym_New(BoxVM *vmp, UInt sym_type, UInt def_size) {
   BoxVMSymTable *st = & vmp->sym_table;
@@ -154,12 +153,8 @@ Task BoxVMSym_Define(BoxVM *vm, BoxVMSymID sym_num, void *def) {
 void *BoxVMSym_Get_Definition(BoxVM *vm, BoxVMSymID sym_id) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_id);
-  if (s->defined) {
-    void *def_data_ptr = BoxArr_Item_Ptr(& st->data, s->def_addr);
-    return def_data_ptr;
-
-  } else
-    return NULL;
+  void *def_data_ptr = BoxArr_Item_Ptr(& st->data, s->def_addr);
+  return def_data_ptr;
 }
 
 int BoxVMSym_Is_Defined(BoxVM *vm, BoxVMSymID sym_id) {
@@ -175,7 +170,7 @@ void BoxVMSym_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymResolver r,
   BoxVMSymRef sr;
   void *ref_data_ptr;
 
-  assert(ref != NULL);
+  assert(ref_size > 0 || ref == NULL);
   s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
   sr.sym_num = sym_num;
   sr.next = s->first_ref;
@@ -187,10 +182,14 @@ void BoxVMSym_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymResolver r,
   default: sr.resolved = s->defined; break;
   }
   sr.resolver = r;
+
   /* Copy the data for the reference */
-  BoxArr_MPush(& st->data, NULL, ref_size);
-  ref_data_ptr = BoxArr_Item_Ptr(& st->data, sr.ref_addr);
-  (void) memcpy(ref_data_ptr, ref, ref_size);
+  if (ref_size > 0) {
+    BoxArr_MPush(& st->data, NULL, ref_size);
+    ref_data_ptr = BoxArr_Item_Ptr(& st->data, sr.ref_addr);
+    (void) memcpy(ref_data_ptr, ref, ref_size);
+  }
+
   /* Add the reference */
   BoxArr_Push(& st->refs, & sr);
   /* Link the reference to the list of references for the symbol */
@@ -263,14 +262,15 @@ Task BoxVMSym_Resolve(BoxVM *vmp, UInt sym_num) {
       return Failed;
     }
 
-    ref = BoxArr_Item_Ptr(& st->data, sr->ref_addr);
-    ref_size = sr->ref_size;
     if (!sr->resolved) {
       if (sr->resolver == NULL) {
         MSG_ERROR("BoxVMSym_Resolve: cannot resolve the symbol: "
                   "the resolver is not present!");
         return Failed;
       }
+
+      ref_size = sr->ref_size;
+      ref = (ref_size > 0) ? BoxArr_Item_Ptr(& st->data, sr->ref_addr) : 0;
 
       TASK( sr->resolver(vmp, sym_num, sym_type, 1, def, def_size,
                          ref, ref_size) );
@@ -316,10 +316,10 @@ void BoxVMSym_Table_Print(BoxVM *vmp, FILE *out, UInt sym_num) {
     }
 
     fprintf(out,
-     "  Reference number = "SUInt"; ref_addr = "SUInt"; "
-     "ref_size = "SUInt"; resolved = %d, resolver = %p\n",
-     ref_num, sr->ref_addr,
-     sr->ref_size, sr->resolved, sr->resolver);
+            "  Reference number = "SUInt"; ref_addr = "SUInt"; "
+            "ref_size = "SUInt"; resolved = %d, resolver = %p\n",
+            ref_num, sr->ref_addr,
+            sr->ref_size, sr->resolved, sr->resolver);
 
     next = sr->next;
     ++ref_num;
@@ -330,8 +330,7 @@ Task BoxVMSym_Check_Type(BoxVM *vmp, UInt sym_num, UInt sym_type) {
   BoxVMSymTable *st = & vmp->sym_table;
   BoxVMSym *s;
   s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
-  if ( s->sym_type == sym_type ) return Success;
-  return Failed;
+  return (s->sym_type == sym_type) ? Success : Failed;
 }
 
 struct clib_ref_data {
@@ -364,10 +363,10 @@ static int Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
                   sym_name, clrd->lib_file);
         return 1;
       }
-      call_num =
-        BoxVM_Proc_Install_CCode(vmp, BOXVMPROCID_NONE, (BoxVMCCode) sym,
-                                 sym_name, sym_name);
-      ASSERT_TASK(BoxVMSym_Def_Call(vmp, sym_num, call_num));
+      call_num = BoxVMSym_Get_Call_Num(vmp, sym_num);
+      (void) BoxVM_Proc_Install_CCode(vmp, call_num, (BoxVMCCode) sym,
+                                      sym_name, sym_name);
+      BoxVMSym_Def_Call(vmp, sym_num);
     }
   }
   return 1;

@@ -89,6 +89,7 @@ struct _cmp_proc {
                call_num   :1,  /**< it has a call number */
                wrote_beg  :1,  /**< CmpProc->beginning has been called */
                wrote_end  :1,  /**< CmpProc->ending has been called */
+               installed  :1,  /**< The procedure was installed */
                head       :1;  /**< Head new-instructions have been emitted */
   } have;
   struct {

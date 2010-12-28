@@ -149,7 +149,7 @@ static VMProcInstalled *My_Get_Inst_Proc_Desc(VMProcTable *pt,
     VMProcInstalled *procedure_inst =
       (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, cn_in);
 
-    if (procedure_inst->type == BOXVMPROC_IS_MISSING) {
+    if (procedure_inst->type == BOXVMPROC_IS_RESERVED) {
       *cn_out = cn_in;
       return procedure_inst;
 
@@ -206,15 +206,26 @@ BoxVMCallNum BoxVM_Proc_Install_CCode(BoxVM *vm,
   return cn;
 }
 
-BoxVMCallNum BoxVM_Proc_Install_Missing(BoxVM *vm) {
+BoxVMCallNum BoxVM_Proc_Install_Undefined(BoxVM *vm) {
   VMProcTable *pt = & vm->proc_table;
   VMProcInstalled procedure_inst;
 
-  procedure_inst.type = BOXVMPROC_IS_MISSING;
+  procedure_inst.type = BOXVMPROC_IS_RESERVED;
   procedure_inst.name = (char *) NULL;
   procedure_inst.desc = (char *) NULL;
   BoxArr_Push(& pt->installed, & procedure_inst);
   return BoxArr_Num_Items(& pt->installed);
+}
+
+BoxVMProcState BoxVM_Is_Installed(BoxVM *vm, BoxVMCallNum call_num) {
+  VMProcTable *pt = & vm->proc_table;
+  if (call_num > 0 && call_num <= BoxArr_Num_Items(& pt->installed)) {
+    VMProcInstalled *procedure_inst =
+      (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
+    return procedure_inst->type;
+
+  } else
+    return BOXVMPROC_IS_UNDEFINED;
 }
 
 BoxVMCallNum BoxVM_Proc_Next_Call_Num(BoxVM *vm) {

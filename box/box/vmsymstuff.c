@@ -28,13 +28,14 @@
 #include "vmsymstuff.h"
 
 /*** call references ********************************************************/
+
+#if 0
 /* This is the function which assembles the code for the function call */
 static Task My_Assemble_Call(BoxVM *vm, UInt sym_num, UInt sym_type,
                              int defined, void *def, UInt def_size,
                              void *ref, UInt ref_size) {
   BoxVMCallNum call_num = 0;
   assert(sym_type == VM_SYM_CALL);
-
 
   if (defined && def != NULL) {
     assert(def_size == sizeof(BoxVMCallNum));
@@ -56,6 +57,55 @@ Task BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
   return BoxVMSym_Code_Ref(vm, sym_id, My_Assemble_Call, NULL, 0);
 }
 
+#endif
+
+/*** call references (revised) **********************************************/
+/* This is the function which assembles the code for the function call */
+
+BoxTask My_Assemble_Call(BoxVM *vm, BoxVMSymID sym_num,
+                         BoxUInt sym_type, int defined,
+                         void *def, BoxUInt def_size,
+                         void *ref, BoxUInt ref_size) {
+
+  return BOXTASK_OK;
+}
+
+BoxVMSymID BoxVMSym_New_Call(BoxVM *vm, BoxVMCallNum call_num) {
+  BoxVMSymID sym_id = BoxVMSym_New(vm, VM_SYM_CALL, sizeof(BoxVMCallNum));
+  BoxVMCallNum *cn = (BoxVMCallNum *) BoxVMSym_Get_Definition(vm, sym_id);
+  if (call_num != BOXVMCALLNUM_NONE)
+    *cn = call_num;
+  else
+    *cn = BoxVM_Proc_Install_Undefined(vm);
+  return sym_id;
+}
+
+void BoxVMSym_Def_Call(BoxVM *vm, BoxVMSymID sym_id) {
+  ASSERT_TASK( BoxVMSym_Define(vm, sym_id, NULL) );
+}
+
+BoxVMCallNum BoxVMSym_Get_Call_Num(BoxVM *vm, BoxVMSymID sym_id) {
+  return *((BoxVMCallNum *) BoxVMSym_Get_Definition(vm, sym_id));
+}
+
+void BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
+  BoxVMCallNum call_num = *((BoxVMCallNum *) BoxVMSym_Get_Definition(vm, sym_id));
+  BoxVMSym_Ref(vm, sym_id, My_Assemble_Call, NULL, 0, BOXVMSYM_AUTO);
+  BoxVM_Assemble(vm, BOXOP_CALL_I, CAT_IMM, call_num);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 /*** basic method registration **********************************************/
 /* Some methods are special and need to be registered separately using
  * the vm allocator. These methods (constructors, destructors, ... of types)
@@ -76,11 +126,10 @@ static Task Register_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
                           void *ref, UInt ref_size) {
   assert(sym_type == VM_SYM_CALL);
   if (defined && def != NULL) {
-    VMSymMethod *m = (VMSymMethod *) ref;
-    UInt call_num;
     assert(def_size == sizeof(UInt) && ref_size == sizeof(VMSymMethod));
-    call_num = *((UInt *) def);
 #if 0
+    VMSymMethod *m = (VMSymMethod *) ref;
+    BoxVMCallNum call_num = *((UInt *) def);
     /** XXX NOTE: Temporarily disabled */
     return BoxVM_Alloc_Method_Set(vmp, m->type, m->method, call_num);
 #endif

@@ -109,6 +109,7 @@ void CmpProc_Init(CmpProc *p, BoxCmp *c, CmpProcStyle style) {
   p->have.call_num = 0;
   p->have.wrote_beg = 0;
   p->have.wrote_end = 0;
+  p->have.installed = 0;
   p->have.head = 0;
   p->perm.proc_id = 1;
   p->beginning = NULL;
@@ -251,23 +252,20 @@ void CmpProc_Set_Sym(CmpProc *p, BoxVMSymID sym_id) {
       /* Get the name from the symbol, if it has one */
       const char *sym_name = BoxVMSym_Get_Name(p->cmp->vm, sym_id);
       /* Get the definition (call number, if we have it) */
-      const BoxVMCallNum *call_num =
-        BoxVMSym_Get_Definition(p->cmp->vm, sym_id);
+      const BoxVMCallNum call_num = BoxVMSym_Get_Call_Num(p->cmp->vm, sym_id);
 
       /* inherit symbol name and call number from the given symbol */
       if (sym_name != NULL)
         CmpProc_Set_Name(p, sym_name);
 
-      if (call_num != NULL) {
-        if (p->have.call_num) {
-          MSG_FATAL("CmpProc_Set_Sym: cannot set call number. The procedure "
-                    "has already got one!");
-          assert(0);
-        }
-
-        p->call_num = *call_num;
-        p->have.call_num = 1;
+      if (p->have.call_num) {
+        MSG_FATAL("CmpProc_Set_Sym: cannot set call number. The procedure "
+                  "has already got one!");
+        assert(0);
       }
+
+      p->call_num = call_num;
+      p->have.call_num = 1;
     }
   }
 }
@@ -278,8 +276,10 @@ BoxVMSymID CmpProc_Get_Sym(CmpProc *p) {
 
   else {
     BoxVMSymID sym_id;
+    BoxVMCallNum call_num = CmpProc_Get_Call_Num(p);
+
     p->have.sym = 1;
-    p->sym = sym_id = BoxVMSym_New_Call(p->cmp->vm);
+    p->sym = sym_id = BoxVMSym_New_Call(p->cmp->vm, call_num);
     if (p->have.proc_name)
       BoxVMSym_Set_Name(p->cmp->vm, sym_id, p->proc_name);
     return sym_id;
@@ -303,9 +303,10 @@ BoxVMProcID CmpProc_Get_ProcID(CmpProc *p) {
 }
 
 void CmpProc_Set_Alter_Name(CmpProc *p, const char *alter_name) {
-  if (p->have.call_num) {
-    MSG_FATAL("Cannot set the alternative name: procedure has already "
-              "an alternative name!");
+  if (p->have.installed) {
+    MSG_FATAL("Too late to set the alternative name \"%s\"! "
+              "The procedure has already been installed using \"%s\".",
+              alter_name, p->alter_name);
     assert(0);
   }
 
@@ -342,12 +343,8 @@ BoxVMCallNum CmpProc_Get_Call_Num(CmpProc *p) {
   if (p->have.call_num)
     return p->call_num;
 
-  else if (p->style == CMPPROCSTYLE_EXTERN) {
-    MSG_FATAL("CMPPROCSTYLE_EXTERN: Not implemented, yet!");
-    assert(0);
-
-  } else {
-    p->call_num = BoxVM_Proc_Install_Missing(p->cmp->vm);
+  else {
+    p->call_num = BoxVM_Proc_Install_Undefined(p->cmp->vm);
     p->have.call_num = 1;
     return p->call_num;
   }
@@ -362,7 +359,7 @@ BoxVMCallNum CmpProc_Install(CmpProc *p) {
     assert(0);
     return BOXVMPROCID_NONE;
 
-  } else {
+  } else if (!p->have.installed) {
     BoxVMProcID pn = CmpProc_Get_ProcID(p);
     char *alter_name = CmpProc_Get_Alter_Name(p),
          *proc_name  = (p->have.proc_name) ? p->proc_name : (char *) NULL;
@@ -372,6 +369,11 @@ BoxVMCallNum CmpProc_Install(CmpProc *p) {
                               proc_name, alter_name);
     BoxMem_Free(alter_name);
     p->have.call_num = 1;
+    p->have.installed = 1;
+    return p->call_num;
+
+  } else {
+    assert(p->have.call_num);
     return p->call_num;
   }
 }
@@ -397,7 +399,7 @@ void CmpProc_Assemble_Call(CmpProc *p, BoxVMSymID sym_id) {
   CmpProc_Begin(p); /* Begin the procedure, if not done explicitly */
   proc_id = CmpProc_Get_ProcID(p);
   previous_target = BoxVM_Proc_Target_Set(p->cmp->vm, proc_id);
-  ASSERT_TASK(BoxVMSym_Assemble_Call(p->cmp->vm, sym_id));
+  BoxVMSym_Assemble_Call(p->cmp->vm, sym_id);
   (void) BoxVM_Proc_Target_Set(p->cmp->vm, previous_target);
 }
 

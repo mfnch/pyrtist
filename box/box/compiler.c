@@ -1083,7 +1083,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   /* Register the procedure, covering old ones */
   if (do_register) {
     BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
-    t_proc = TS_Procedure_New(& c->ts, t_parent, t_child, 3);
+    t_proc = TS_Procedure_New(& c->ts, t_parent, t_child);
     TS_Procedure_Register(& c->ts, t_proc, sym_id);
     Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT, & c->ts, t_proc);
   }
@@ -1139,7 +1139,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     {
       call_num = CmpProc_Install(& proc_implem);
       BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
-      ASSERT_TASK( BoxVMSym_Def_Call(c->vm, sym_id, call_num) );
+      BoxVMSym_Def_Call(c->vm, sym_id);
     }
   }
 

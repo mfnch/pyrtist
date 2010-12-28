@@ -43,6 +43,14 @@
 typedef BoxUInt BoxVMProcID;
 typedef BoxVMProcID BoxVMProcNum; /* Alias for BoxVMProcID */
 
+/** Procedure state. */
+typedef enum {
+  BOXVMPROC_IS_UNDEFINED, /**< Procedure not defined (nor reserved). */
+  BOXVMPROC_IS_VM_CODE,   /**< Procedure defined as VM code. */
+  BOXVMPROC_IS_C_CODE,    /**< Procedure defined as C code. */
+  BOXVMPROC_IS_RESERVED   /**< Procedure reserved, but not defined. */
+} BoxVMProcState;
+
 /** Value for BoxVMProcID which indicates missing VM procedure
  * (it can be returned by BoxVM_Proc_Get_ID, for example).
  */
@@ -75,11 +83,8 @@ typedef struct {
  * in the call instruction).
  */
 typedef struct {
-  enum {
-    BOXVMPROC_IS_VM_CODE,
-    BOXVMPROC_IS_C_CODE,
-    BOXVMPROC_IS_MISSING
-  } type;                 /**< Kind of procedure */
+  BoxVMProcState
+        type;             /**< Kind of procedure */
   char *name;             /**< Symbol-name of the procedure */
   char *desc;             /**< Description of the procedure */
   union {
@@ -180,7 +185,15 @@ BoxVMCallNum BoxVM_Proc_Install_Code(BoxVM *vm,
  * defined later. This is useful to get (or "allocate") a call number when
  * the exact definition of the procedure is not yet know
  */
-BoxVMCallNum BoxVM_Proc_Install_Missing(BoxVM *vm);
+BoxVMCallNum BoxVM_Proc_Install_Undefined(BoxVM *vm);
+
+/** Return the state of the procedure with the given call number.
+ * BOXVMPROC_IS_UNDEFINED is returned when no procedure with such call number
+ * has been ever installed. When the procedure has been installed, return its
+ * state, which depends on the routine used to do the installation.
+ * Example: return BOXVMPROC_IS_C_CODE if BoxVM_Proc_Install_CCode was used.
+ */
+BoxVMProcState BoxVM_Is_Installed(BoxVM *vm, BoxVMCallNum call_num);
 
 /** The prototype of a C-function to be used as a procedure.
  * @see VM_Proc_Install_CCode

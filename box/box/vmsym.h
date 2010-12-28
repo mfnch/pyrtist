@@ -142,8 +142,11 @@ const char *BoxVMSym_Get_Name(BoxVM *vm, BoxVMSymID sym_id);
 /** Define a symbol which was previously created with BoxVMSym_New */
 Task BoxVMSym_Define(BoxVM *vm, BoxVMSymID sym_num, void *def);
 
-/** If the symbol is defined, return the pointer to the definition data,
- * otherwise, if the symbol is not defined, return NULL.
+/** Return the pointer to the definition data.
+ * The pointer is returned even if the symbol is not defined (the area
+ * containing the definition is allocated when BoxVMSym_New is called).
+ * NOTE: Use BoxVMSym_Is_Defined to check whether the symbol is defined or
+ *   not.
  */
 void *BoxVMSym_Get_Definition(BoxVM *vm, BoxVMSymID sym_id);
 
@@ -156,14 +159,14 @@ typedef enum {
   BOXVMSYM_UNRESOLVED,
 } BoxVMSymStatus;
 
-/** Add a reference to the symbol 'sym_num'. The reference data is pointed
+/** Add a reference to the symbol 'sym_id'. The reference data is pointed
  * by 'ref' and has size 'ref_size'. 'r' is the function to be called for
  * resolving the symbol. If 'resolved' == BOXVMSYM_RESOLVED, the reference
  * is marked as resolved, if 'resolved' == BOXVMSYM_UNRESOLVED, it is marked
  * as unresolved. If 'resolved' == BOXVMSYM_AUTO, then it is marked as resolved
  * only if the symbol is defined.
  */
-void BoxVMSym_Ref(BoxVM *vm, BoxVMSymID sym_num, BoxVMSymResolver r,
+void BoxVMSym_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymResolver r,
                   void *ref, BoxUInt ref_size, BoxVMSymStatus resolved);
 
 #if 0

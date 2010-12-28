@@ -447,7 +447,7 @@ BoxType TS_Intrinsic_New(TS *ts, Int size) {
   return new_type;
 }
 
-Type TS_Procedure_New(TS *ts, Type parent, Type child, int kind) {
+Type TS_Procedure_New(TS *ts, Type parent, Type child) {
   TSDesc td;
   BoxType p;
   TS_TSDESC_INIT(& td);
@@ -455,7 +455,7 @@ Type TS_Procedure_New(TS *ts, Type parent, Type child, int kind) {
   td.size = TS_SIZE_UNKNOWN;
   td.target = child;
   td.data.proc.parent = parent;
-  td.data.proc.kind = kind & 3;
+  td.data.proc.kind = 3; /* OBSOLETE: should remove! */
   td.data.proc.sym_num = 0;
   Type_New(ts, & p, & td);
   return p;
@@ -766,12 +766,11 @@ int TS_Procedure_Is_Blacklisted(TS *ts, BoxType child, BoxType parent) {
   return 0;
 }
 
-Int TS_Procedure_Def(Int proc, int kind, Int of_type, Int sym_num) {
+Int TS_Procedure_Def(Int proc, Int of_type, Int sym_num) {
   Type procedure;
   /*MSG_ADVICE("TS_Procedure_Def: new procedure '%s' of '%s'",
              Tym_Type_Names(proc), Tym_Type_Names(of_type));*/
-  assert(kind != 0 && (kind | 3) == 3); /* kind can be 1, 2 or 3 */
-  procedure = TS_Procedure_New(last_ts, of_type, proc, kind);
+  procedure = TS_Procedure_New(last_ts, of_type, proc);
   TS_Procedure_Register(last_ts, procedure, sym_num);
   return procedure;
 }
