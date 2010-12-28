@@ -245,27 +245,28 @@ void CmpProc_Set_Sym(CmpProc *p, BoxVMSymID sym_id) {
     assert(0);
 
   } else {
-    p->have.sym = 1;
+    /* Set the symbol */
     p->sym = sym_id;
+    p->have.sym = 1;
+
+    /* Get the "old" call number from the symbol */
+    if (!p->have.call_num) {
+      p->call_num = BoxVMSym_Get_Call_Num(p->cmp->vm, sym_id);
+      p->have.call_num = 1;
+
+    } else {
+      MSG_FATAL("CmpProc_Set_Sym: cannot set call number. The procedure "
+                "has already got one!");
+      assert(0);
+    }
 
     if (BoxVMSym_Is_Defined(p->cmp->vm, sym_id)) {
       /* Get the name from the symbol, if it has one */
       const char *sym_name = BoxVMSym_Get_Name(p->cmp->vm, sym_id);
-      /* Get the definition (call number, if we have it) */
-      const BoxVMCallNum call_num = BoxVMSym_Get_Call_Num(p->cmp->vm, sym_id);
 
       /* inherit symbol name and call number from the given symbol */
       if (sym_name != NULL)
         CmpProc_Set_Name(p, sym_name);
-
-      if (p->have.call_num) {
-        MSG_FATAL("CmpProc_Set_Sym: cannot set call number. The procedure "
-                  "has already got one!");
-        assert(0);
-      }
-
-      p->call_num = call_num;
-      p->have.call_num = 1;
     }
   }
 }
