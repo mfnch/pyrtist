@@ -111,7 +111,7 @@ void BoxHT_Destructor(BoxHT *ht, Task (*destroy)(BoxHTItem *));
 /** Most general function to add a new element to the hashtable.
  * key and object will be duplicated or not, depending on the settings
  * of the hash table (see BoxHT_Copy_Key, BoxHT_Copy_Obj).
- * The function return the BoxHTItem corresponding to the newly inserted
+ * The function returns the BoxHTItem corresponding to the newly inserted
  * item.
  * @param ht the hash table.
  * @param branch number of the branch in the hash table (should be computed

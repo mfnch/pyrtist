@@ -88,6 +88,10 @@ void BoxObj_Add_To_Ptr(BoxObj *item, size_t addr) {
   item->ptr += addr;
 }
 
+void BoxVMMethodTable_Set(BoxVMMethodTable *mt, BoxVMCallNum finalizer) {
+  mt->finalizer = finalizer;
+}
+
 /** Allocate size bytes and returns the pointer to that region.
  * The memory region is associated with the provided data 'type'
  * and has a initial reference counter equal to 1.
@@ -143,7 +147,7 @@ void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
   if (references > 0)
     return;
 
-  else if (references == 0 && 0) {
+  else if (references == 0) {
     if (head->id >= 1) {
       BoxVMMethodTable *mt = BoxVMMethodTable_From_Alloc_ID(vmp, head->id);
 #ifdef DEBUG_VMALLOC
@@ -199,8 +203,20 @@ void BoxVM_Alloc_Destroy(BoxVM *vm) {
   BoxArr_Finish(& vm->mettab_from_id);
 }
 
+int BoxVMMethodTable_Is_Empty(BoxVMMethodTable *mt) {
+  return (mt->finalizer == BOXVMCALLNUM_NONE);
+}
+
 BoxVMAllocID BoxVMAllocID_From_Method_Table(BoxVM *vm, BoxVMMethodTable *mt) {
   BoxHTItem *ht_item;
+
+  /* If all the methods are BOXVMCALLNUM_NONE, then we return the ID 0, which
+   * is signals that the considered type is "simple" (does not require special
+   * handling for finalization, etc).
+   */
+  if (BoxVMMethodTable_Is_Empty(mt))
+    return (BoxVMAllocID) 0;
+
   if (BoxHT_Find(& vm->id_from_mettab, mt, sizeof(BoxVMMethodTable),
                  & ht_item)) {
     return *((BoxVMAllocID *) ht_item->key);
@@ -210,7 +226,7 @@ BoxVMAllocID BoxVMAllocID_From_Method_Table(BoxVM *vm, BoxVMMethodTable *mt) {
       (BoxVMMethodTable *) BoxArr_Push(& vm->mettab_from_id, mt);
     BoxVMAllocID alloc_id = BoxArr_Num_Items(& vm->mettab_from_id);
 
-    if (NULL != BoxHT_Insert_Obj(& vm->id_from_mettab,
+    if (NULL == BoxHT_Insert_Obj(& vm->id_from_mettab,
                                  new_mt, sizeof(BoxVMMethodTable),
                                  & alloc_id, sizeof(BoxVMAllocID))) {
       MSG_WARNING("BoxVM_Get_Alloc_ID: Failure in hashtable.");

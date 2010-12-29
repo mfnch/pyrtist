@@ -77,6 +77,14 @@ int BoxObj_Is_Null(BoxObj *o);
  */
 void BoxObj_Add_To_Ptr(BoxObj *item, size_t addr);
 
+/** Function used to populate the a method dable (BoxVMMethodTable).
+ * NOTE: The usage of this function is recommended, as it makes it easy to
+ *   adjust external code to newer version of the boxcore libary (it makes it
+ *   more difficult to forget to set one member of the structure).
+ *   This way the BoxVMMethodTable can be treated as an opaque structure.
+ */
+void BoxVMMethodTable_Set(BoxVMMethodTable *mt, BoxVMCallNum finalizer);
+
 /** Allocate size bytes and returns the corresponding object in 'obj'.
  * The memory region is associated with the provided data 'type'
  * and has a initial reference counter equal to 1.

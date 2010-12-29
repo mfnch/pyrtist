@@ -28,6 +28,7 @@
 #include "compiler.h"
 #include "value.h"
 #include "autogen.h"
+#include "vmsymstuff.h"
 
 void Value_Init(Value *v, CmpProc *proc) {
   v->proc = proc;
@@ -425,6 +426,54 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
   }
 }
 
+/** Similar to TS_Procedure_Search, but auto generates the procedure,
+ * if possible.
+ */
+static BoxType My_Procedure_Find_Or_Autogen(BoxCmp *c,
+                                            BoxType *expansion_for_child,
+                                            BoxType child, BoxType parent,
+                                            TSSearchMode mode) {
+  TS *ts = & c->ts;
+
+  /* Find the procedure associated to child */
+  BoxType found_procedure =
+    TS_Procedure_Search(ts, expansion_for_child, child, parent, mode);
+
+  /* If the procedure is not there we try to auto-generate it */
+  if (found_procedure != BOXTYPE_NONE) {
+    return found_procedure;
+
+  } else {
+    /* Note that we never generate X@Y where X requires expansion.
+     * Therefore, it is safe to set *expansion_for_child to BOXTYPE_NONE.
+     */
+    if (expansion_for_child != NULL)
+      *expansion_for_child = BOXTYPE_NONE;
+    return Auto_Generate_Procedure(c, child, parent);
+  }
+}
+
+static void My_MethodTable_Of_Type(BoxCmp *c, BoxVMMethodTable *mt,
+                                   BoxType t) {
+  BoxVMCallNum finalizer_call_num = BOXVMCALLNUM_NONE;
+  BoxType finalizer_type =
+    My_Procedure_Find_Or_Autogen(c, (BoxType *) NULL,
+                                 BOXTYPE_DESTROY, t,
+                                 TSSEARCHMODE_INHERITED);
+  if (finalizer_type != BOXTYPE_NONE) {
+    BoxVMSymID sym_id = TS_Procedure_Get_Sym(& c->ts, finalizer_type);
+    finalizer_call_num = BoxVMSym_Get_Call_Num(c->vm, sym_id);
+  }
+
+  BoxVMMethodTable_Set(mt, finalizer_call_num);
+}
+
+static BoxVMAllocID My_AllocID_Of_Type(BoxCmp *c, BoxType t) {
+  BoxVMMethodTable mt;
+  My_MethodTable_Of_Type(c, & mt, t);
+  return BoxVMAllocID_From_Method_Table(c->vm, & mt);
+}
+
 void Value_Emit_Allocate(Value *v) {
   switch(v->kind) {
   case VALUEKIND_ERR:
@@ -434,21 +483,26 @@ void Value_Emit_Allocate(Value *v) {
     if (v->value.cont.type == BOXCONTTYPE_OBJ) {
       BoxCmp *c = v->proc->cmp;
       CmpProc *proc = c->cur_proc;
-      Value v_size, v_alloc_type;
+      Value v_size, v_alloc_id;
+      BoxVMAllocID alloc_id;
 
       assert(v->attr.own_reference == 0);
       assert(v->proc == proc);
 
+      /* Get the alloc ID for the type */
+      alloc_id = My_AllocID_Of_Type(c, v->type);
+
+      /* Generate the allocation opcodes */
       Value_Init(& v_size, proc);
       Value_Setup_As_Imm_Int(& v_size, TS_Get_Size(& c->ts, v->type));
-      Value_Init(& v_alloc_type, proc);
-      Value_Setup_As_Imm_Int(& v_alloc_type, v->type);
+      Value_Init(& v_alloc_id, proc);
+      Value_Setup_As_Imm_Int(& v_alloc_id, alloc_id);
       CmpProc_Assemble(proc, BOXGOP_MALLOC,
                        3, & v->value.cont, & v_size.value.cont,
-                       & v_alloc_type.value.cont);
+                       & v_alloc_id.value.cont);
       v->attr.own_reference = 1;
 
-      /* Now let's invoke the creator */
+      /* Invoke the creator when necessary */
       Value_Link(& c->value.create);
       (void) Value_Emit_Call_Or_Blacklist(v, & c->value.create);
     }
@@ -677,9 +731,13 @@ static Value *My_Emit_Call(Value *parent, Value *child, TSSearchMode mode,
   found_procedure = TS_Procedure_Search(ts, & expansion_for_child,
                                         child->type, parent->type, mode);
 
+  /* If the procedure is not there we try to auto-generate it */
   if (found_procedure == BOXTYPE_NONE) {
-    /* If the procedure is not there we try to auto-generate it */
+    /* Note that we never generate X@Y where X requires expansion.
+     * Therefore, it is safe to set expansion_for_child to BOXTYPE_NONE.
+     */
     expansion_for_child = BOXTYPE_NONE;
+
     found_procedure = Auto_Generate_Procedure(c, child->type, parent->type);
     if (found_procedure == BOXTYPE_NONE) {
       *success = BOXTASK_FAILURE;
