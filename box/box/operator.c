@@ -482,7 +482,7 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
 #endif
 
   /* Now we search the operation */
-  opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match, 
+  opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match,
                                  src->type, BOXTYPE_NONE, dest->type);
 
   if (opn != NULL) {
@@ -499,7 +499,7 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
 
     if (opn->asm_scheme == OPASMSCHEME_STD_UN) {
       CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
-                      2, & dest->value.cont, & src->value.cont);
+                       2, & dest->value.cont, & src->value.cont);
       Value_Unlink(src);
       Value_Unlink(dest);
       return BOXTASK_OK;

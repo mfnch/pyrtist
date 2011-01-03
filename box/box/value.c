@@ -491,6 +491,7 @@ void Value_Emit_Allocate(Value *v) {
 
       /* Get the alloc ID for the type */
       alloc_id = My_AllocID_Of_Type(c, v->type);
+      (void) Auto_Generate_Copier(c, v->type);
 
       /* Generate the allocation opcodes */
       Value_Init(& v_size, proc);

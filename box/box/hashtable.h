@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008 by Matteo Franchin                                    *
+ * Copyright (C) 2008-2010 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -16,8 +16,6 @@
  *   You should have received a copy of the GNU Lesser General Public       *
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
-
-/* $Id$ */
 
 /**
  * @file hashtable.h

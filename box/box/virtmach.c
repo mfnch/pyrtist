@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008 by Matteo Franchin                                    *
+ * Copyright (C) 2008-2010 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -21,7 +21,7 @@
  * of Box: defines functions to assemble, disassemble, execute basic
  * instructions.
  */
-/*#define DEBUG_EXEC*/
+#define DEBUG_EXEC 0
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -197,7 +197,7 @@ void VM__GLP_GLPI(VMStatus *vmcur) {
 
   vmcur->arg1 = My_Get_Arg_Ptrs(vmcur, atype & 0x3, narg1);
   vmcur->arg2 = My_Get_Arg_Ptrs(vmcur, (atype >> 2) & 0x3, narg2);
-#ifdef DEBUG_EXEC
+#if DEBUG_EXEC == 1
   printf("Cathegories: arg1 = %lu - arg2 = %lu\n",
          atype & 0x3, (atype >> 2) & 0x3);
 #endif
@@ -650,7 +650,7 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
   VMStatus vm, *vm_save;
   BoxValue reg0[NUM_TYPES]; /* Registri locali numero zero */
 
-#ifdef DEBUG_EXEC
+#if DEBUG_EXEC == 1
   Int i = 0;
 #endif
 
@@ -659,6 +659,12 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
     MSG_ERROR("Call to the undefined procedure %d.", call_num);
     return Failed;
   }
+
+#if DEBUG_EXEC == 1
+    fprintf(stderr, "call module = "SInt": %p@%p\n",
+            call_num, BOX_VM_THIS_PTR(vmp, void),
+            BOX_VM_ARG_PTR(vmp, void));
+#endif
 
   p = (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
   switch (p->type) {
@@ -692,7 +698,7 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
     register int is_long;
     register VMByteX4 i_eye;
 
-#ifdef DEBUG_EXEC
+#if DEBUG_EXEC == 1
     fprintf(stderr, "module = "SInt", pos = "SInt" - reading instruction.\n",
             call_num, i*sizeof(VMByteX4));
 #endif
@@ -733,7 +739,7 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
      * instructions such as 'jmp' or 'jc'
      */
     vm.i_pos = (i_pos += vm.i_len);
-#ifdef DEBUG_EXEC
+#if DEBUG_EXEC == 1
     i += vm.i_len;
 #endif
 

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2006 by Matteo Franchin                                 *
+ *   Copyright (C) 2006-2011 by Matteo Franchin                            *
  *   fnch@libero.it                                                        *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -46,11 +46,9 @@ int Auto_Generate_Code(BoxCmp *c, BoxType t_child, BoxType t_parent);
  */
 BoxType Auto_Generate_Procedure(BoxCmp *c, BoxType t_child, BoxType t_parent);
 
-#if 0
-Task Auto_Destructor_Create(Type t);
-
-/** Used to acknowledge that a procedure is being used in the program */
-void Auto_Acknowledge_Call(Type parent, Type child, int kind);
-#endif
+/** Automatically generate the copier for the type t.
+ * Return 1 if a copier was generated.
+ */
+int Auto_Generate_Copier(BoxCmp *c, BoxType t);
 
 #endif

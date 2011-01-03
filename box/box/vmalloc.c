@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008 by Matteo Franchin                                    *
+ * Copyright (C) 2008-2010 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -27,10 +27,8 @@
 #include "virtmach.h"
 #include "vmalloc.h"
 
-#if 0
-#define DEBUG_VMALLOC
-#define DEBUG_VMALLOC_REFCHECK
-#endif
+#define DEBUG_VMALLOC 0
+#define DEBUG_VMALLOC_REFCHECK 1
 
 typedef struct {
   BoxVMAllocID id;
@@ -97,7 +95,7 @@ void BoxVMMethodTable_Set(BoxVMMethodTable *mt, BoxVMCallNum finalizer) {
  * and has a initial reference counter equal to 1.
  */
 void BoxVM_Alloc(BoxVM *vm, BoxPtr *obj, size_t size, BoxVMAllocID id) {
-#ifdef DEBUG_VMALLOC
+#if DEBUG_VMALLOC == 1
   static int num_alloc = 0;
 #endif
 
@@ -108,7 +106,7 @@ void BoxVM_Alloc(BoxVM *vm, BoxPtr *obj, size_t size, BoxVMAllocID id) {
     obj->ptr = GET_DPTR_FROM_BPTR(obj->block);
     head->id = id;
     head->references = 1;
-#ifdef DEBUG_VMALLOC
+#if DEBUG_VMALLOC == 1
     printf("BoxVM_Alloc(%d): allocated object with id "SInt" at %p.\n",
            num_alloc, id, obj->block);
     ++num_alloc;
@@ -116,7 +114,7 @@ void BoxVM_Alloc(BoxVM *vm, BoxPtr *obj, size_t size, BoxVMAllocID id) {
     return;
   }
 
-#ifdef DEBUG_VMALLOC
+#if DEBUG_VMALLOC == 1
   printf("BoxVM_Alloc: failed to allocate object with ID "SInt" at %p.\n",
          id, obj->block);
 #endif
@@ -136,7 +134,7 @@ void BoxVM_Link(Obj *obj) {
 void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
   VMAllocHead *head = (VMAllocHead *) obj->block;;
   BoxInt references;
-#ifdef DEBUG_VMALLOC
+#if DEBUG_VMALLOC == 1
   static int num_dealloc = 0;
 #endif
 
@@ -150,7 +148,7 @@ void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
   else if (references == 0) {
     if (head->id >= 1) {
       BoxVMMethodTable *mt = BoxVMMethodTable_From_Alloc_ID(vmp, head->id);
-#ifdef DEBUG_VMALLOC
+#if DEBUG_VMALLOC == 1
       if (mt == NULL) {
         printf("BoxVM_Unlink: no method table associated to the ID "SInt
                " for object at %p.\n", head->id, obj->block);
@@ -159,7 +157,7 @@ void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
 
       if (mt != NULL) {
         BoxVMCallNum finalizer = mt->finalizer;
-#ifdef DEBUG_VMALLOC
+#if DEBUG_VMALLOC == 1
         printf("BoxVM_Unlink: calling destructor (call "SInt") for ID "
                SInt" at %p.\n", finalizer, head->id, obj->block);
 #endif
@@ -170,20 +168,20 @@ void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
       }
     }
 
-#ifdef DEBUG_VMALLOC
+#if DEBUG_VMALLOC == 1
     printf("BoxVM_Unlink(%d): Deallocating object of type "SInt" at %p.\n",
-           num_dealloc, id, obj->block);
+           num_dealloc, head->id, obj->block);
     ++num_dealloc;
 #endif
 
-#ifndef DEBUG_VMALLOC_REFCHECK
+#if DEBUG_VMALLOC_REFCHECK == 0
     BoxMem_Free(obj->block);
 #endif
     obj->block = NULL;
     return;
 
   } else {
-#ifdef DEBUG_VMALLOC_REFCHECK
+#if DEBUG_VMALLOC_REFCHECK == 1
     printf("BoxVM_Unlink: reference count is "SInt"!\n", references);
 #endif
     return;
@@ -219,7 +217,7 @@ BoxVMAllocID BoxVMAllocID_From_Method_Table(BoxVM *vm, BoxVMMethodTable *mt) {
 
   if (BoxHT_Find(& vm->id_from_mettab, mt, sizeof(BoxVMMethodTable),
                  & ht_item)) {
-    return *((BoxVMAllocID *) ht_item->key);
+    return *((BoxVMAllocID *) ht_item->object);
 
   } else {
     BoxVMMethodTable *new_mt =
@@ -237,7 +235,7 @@ BoxVMAllocID BoxVMAllocID_From_Method_Table(BoxVM *vm, BoxVMMethodTable *mt) {
 }
 
 BoxVMMethodTable *BoxVMMethodTable_From_Alloc_ID(BoxVM *vm, BoxVMAllocID id) {
-  if (id >= 1 && id < BoxArr_Num_Items(& vm->mettab_from_id))
+  if (id >= 1 && id <= BoxArr_Num_Items(& vm->mettab_from_id))
     return (BoxVMMethodTable *) BoxArr_Item_Ptr(& vm->mettab_from_id, id);
   else
     return (BoxVMMethodTable *) NULL;
