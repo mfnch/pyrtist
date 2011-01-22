@@ -87,7 +87,8 @@ typedef enum {
   BOXOP_POINT_II, BOXOP_POINT_RR,
   BOXOP_PROJX_P, BOXOP_PROJY_P, BOXOP_PPTRX_P, BOXOP_PPTRY_P,
   BOXOP_RET,
-  BOXOP_MALLOC_I, BOXOP_MLN_O, BOXOP_MUNLN_O, BOXOP_MCOPY_OO,
+  BOXOP_CREATE_I, BOXOP_RELOC_OO,
+  BOXOP_MALLOC_II, BOXOP_MLN_O, BOXOP_MUNLN_O, BOXOP_MCOPY_OO,
   BOXOP_SHIFT_OO, BOXOP_REF_OO, BOXOP_NULL_O,
   BOXOP_LEA_C, BOXOP_LEA_I, BOXOP_LEA_R, BOXOP_LEA_P, BOXOP_LEA_OO,
   BOXOP_PUSH_O, BOXOP_POP_O,
@@ -109,7 +110,9 @@ typedef enum {
   BOXGOP_EQ, BOXGOP_NE, BOXGOP_LT, BOXGOP_LE, BOXGOP_GT, BOXGOP_GE,
   BOXGOP_LNOT, BOXGOP_LAND, BOXGOP_LOR, BOXGOP_REAL, BOXGOP_INT, BOXGOP_POINT,
   BOXGOP_PROJX, BOXGOP_PROJY, BOXGOP_PPTRX, BOXGOP_PPTRY,
-  BOXGOP_RET, BOXGOP_MALLOC, BOXGOP_MLN, BOXGOP_MUNLN, BOXGOP_MCOPY,
+  BOXGOP_RET,
+  BOXGOP_CREATE, BOXGOP_RELOC,
+  BOXGOP_MALLOC, BOXGOP_MLN, BOXGOP_MUNLN, BOXGOP_MCOPY,
   BOXGOP_SHIFT, BOXGOP_REF, BOXGOP_NULL,
   BOXGOP_LEA, BOXGOP_PUSH, BOXGOP_POP, BOXGOP_JMP, BOXGOP_JC,
   BOXGOP_ARINIT, BOXGOP_ARSIZE, BOXGOP_ARADDR, BOXGOP_ARGET, BOXGOP_ARNEXT,
@@ -394,6 +397,12 @@ BoxTask BoxVM_Alloc_Global_Regs(BoxVM *vm, BoxInt num_var[], BoxInt num_reg[]);
 void BoxVM_Module_Global_Set(BoxVM *vmp, BoxInt type, BoxInt reg, void *value);
 
 BoxTask BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num);
+
+/** Similar to BoxVM_Module_Execute, but takes also pointers to child
+ * and parent.
+ */
+BoxTask BoxVM_Module_Execute_With_Args(BoxVM *vm, BoxVMCallNum cn,
+                                       BoxPtr *parent, BoxPtr *child);
 
 /** The attributes corresponding to different behaviours of the Box virtual
  * machine.

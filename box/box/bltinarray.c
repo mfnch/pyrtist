@@ -61,7 +61,7 @@
 BoxTask BoxArray_Init(BoxArray *a, BoxInt num_dim) {
   assert(num_dim >= 1 && num_dim <= 127);
   a->num_dim = num_dim;
-  BoxObj_Set_To_Null(& a->data);
+  BoxPtr_Nullify(& a->data);
   a->sizes = BoxMem_Alloc(sizeof(BoxInt)*num_dim);
   if (a->sizes == NULL) return Failed;
   a->sizes[num_dim - 1] = 0; /* Used by BoxArray_Set_Size to detect the
@@ -73,14 +73,14 @@ void BoxArray_Finish(BoxVM *vm, BoxArray *a) {
   BoxMem_Free(a->sizes);
   BoxVM_Unlink(vm, & a->data);
   a->sizes = NULL;               /* Just to easily detect errors... */
-  BoxObj_Set_To_Null(& a->data);
+  BoxPtr_Nullify(& a->data);
   a->num_dim = 0;
 }
 
 BoxTask BoxArray_Set_Size(BoxArray *a, BoxInt size) {
   BoxInt num_given_sizes, last_size_index;
   assert(a->num_dim >= 1 && a->num_dim <= 127);
-  assert(BoxObj_Is_Null(& a->data) && a->sizes != NULL);
+  assert(BoxPtr_Is_Null(& a->data) && a->sizes != NULL);
   last_size_index = a->num_dim - 1;
   num_given_sizes = a->sizes[last_size_index];
   if (num_given_sizes < last_size_index) {
@@ -104,13 +104,13 @@ BoxTask BoxArray_Set_Size(BoxArray *a, BoxInt size) {
     /* Temporarily disabled */
     BoxVM_Alloc(& a->data, total_data_size, 0 /* ??? */);
 #endif
-    if (BoxObj_Is_Null(& a->data)) return Failed;
+    if (BoxPtr_Is_Null(& a->data)) return Failed;
     return Success;
   }
 }
 
 void BoxArray_Access(BoxArray *a, BoxObj *item, size_t addr) {
-  assert(!BoxObj_Is_Null(& a->data));
+  assert(!BoxPtr_Is_Null(& a->data));
   *item = a->data;
   BoxObj_Add_To_Ptr(item, addr);
 }
@@ -118,7 +118,7 @@ void BoxArray_Access(BoxArray *a, BoxObj *item, size_t addr) {
 Task BoxArray_Calc_Address(BoxArray *a, size_t *addr,
                            BoxInt dim, BoxInt index) {
   size_t new_addr;
-  assert(!BoxObj_Is_Null(& a->data) && a->sizes != NULL);
+  assert(!BoxPtr_Is_Null(& a->data) && a->sizes != NULL);
   assert(dim >= 0 && dim < a->num_dim - 1);
   if (index < 0 || index >= a->sizes[dim + 1]) {
     MSG_ERROR("Index out of bounds when accessing Array object.");

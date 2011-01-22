@@ -390,6 +390,26 @@ static void VM__Exec_LOr_II(BoxVM *vmp) {
    *((Int *) vmcur->arg1) || *((Int *) vmcur->arg2);
 }
 
+static void VM__Exec_Create_I(BoxVM *vm) {
+  VMStatus *vmcur = vm->vmcur;
+  BoxInt id = *((Int *) vmcur->arg1);
+  BoxPtr *obj = (Obj *) vmcur->local[TYPE_OBJ].ptr;
+  BoxVM_Obj_Create(vm, obj, id);
+  if (!BoxPtr_Is_Null(obj))
+    return;
+  MSG_FATAL("VM_Exec_Create_I: cannot create object with alloc-ID=%I.", id);
+}
+
+static void VM__Exec_Reloc_OO(BoxVM *vm) {
+  VMStatus *vmcur = vm->vmcur;
+  BoxPtr *dest = (BoxPtr *) vmcur->arg1,
+         *src = (BoxPtr *) vmcur->arg2;
+  if (BoxVM_Obj_Relocate(vm, dest, src) != BOXTASK_OK)
+    return;
+  vm->vmcur->flags.error = 1;
+  vm->vmcur->flags.exit = 1;
+}
+
 static void VM__Exec_Malloc_II(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
   BoxInt size = *((Int *) vmcur->arg1),
@@ -615,6 +635,8 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   { BOXGOP_PPTRX,  "pptrx", 1, 'p',     "a1", "ro0", "x-", "xx", VM__Exec_PPtrX_P  }, /* pptrx rp      */
   { BOXGOP_PPTRY,  "pptry", 1, 'p',     "a1", "ro0", "x-", "xx", VM__Exec_PPtrY_P  }, /* pptry rp      */
   {   BOXGOP_RET,    "ret", 0, 'n',     NULL,  NULL, "--", "xx", VM__Exec_Ret      }, /* ret           */
+  {BOXGOP_CREATE, "create", 1, 'i',     "a1", "ro0", "x-", "xx", VM__Exec_Create_I }, /* create ri     */
+  { BOXGOP_RELOC,  "reloc", 2, 'o',  "a1,a2",  "a2", "xx", "xx", VM__Exec_Reloc_OO }, /* reloc ro, ro  */
   {BOXGOP_MALLOC, "malloc", 2, 'i',  "a1,a2", "ro0", "xx", "xx", VM__Exec_Malloc_II}, /* malloc ri, ri */
   {   BOXGOP_MLN,    "mln", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_Mln_O    }, /* mln ro        */
   { BOXGOP_MUNLN,  "munln", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_MUnln_O  }, /* munln ro      */

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008-2010 by Matteo Franchin                               *
+ * Copyright (C) 2008-2011 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -978,3 +978,60 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
     t2 = td2->target;
   }
 }
+
+#if 0
+typedef struct {
+  int     has_more;
+  BoxType iter_type,
+          member;
+} BoxTSStrucIterator;
+#endif
+
+void BoxTSStrucIt_Init(BoxTS *ts, BoxTSStrucIt *it, BoxType s) {
+  BoxType s_core = TS_Get_Core_Type(ts, s);
+  TSDesc *s_core_td = Type_Ptr(ts, s_core);
+  BoxType member = s_core_td->target;
+  TSDesc *member_td = Type_Ptr(ts, member);
+
+  if (member_td->kind == TS_KIND_MEMBER) {
+    it->ts = ts;
+    it->position = 0;
+    it->td = member_td;
+    it->member = TS_Resolve_Once(ts, member, TS_KS_NONE);
+    it->has_more = 1;
+
+  } else {
+    it->has_more = 0;
+  }
+}
+
+void BoxTSStrucIt_Advance(BoxTSStrucIt *it) {
+  if (it->td->kind == TS_KIND_MEMBER && it->has_more) {
+    BoxType next_member = it->td->data.member_next;
+    TSDesc *next_member_td = Type_Ptr(it->ts, next_member);
+    it->position += it->td->size;
+    it->member = TS_Resolve_Once(it->ts, next_member, TS_KS_NONE);
+    it->td = next_member_td;
+  }
+}
+
+#if 0
+BoxType TS_Member_Get(TS *ts, Type m, size_t *address) {
+  TSDesc *m_td = Type_Ptr(ts, m);
+  assert(m_td->kind == TS_KIND_MEMBER);
+  if (address != NULL)
+    *address = m_td->size;
+  return m_td->target;
+}
+
+char *TS_Member_Name_Get(TS *ts, Type member) {
+  TSDesc *m_td = Type_Ptr(ts, member);
+  assert(m_td->kind == TS_KIND_MEMBER);
+  return m_td->name;
+}
+
+Type TS_Get_Next_Member(TS *ts, Type m) {
+  TSDesc *td = Type_Ptr(ts, m);
+  return td->kind == TS_KIND_MEMBER ? td->data.member_next : td->target;
+}
+#endif

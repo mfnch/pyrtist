@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008-2010 by Matteo Franchin                               *
+ * Copyright (C) 2008-2011 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -639,7 +639,22 @@ void BoxVM_Module_Global_Set(BoxVM *vmp, Int type, Int reg, void *value) {
  * Functions to execute code                                                 *
  *****************************************************************************/
 
-/* Execute the module number m of program vmp.
+BoxTask BoxVM_Module_Execute_With_Args(BoxVM *vm, BoxVMCallNum cn,
+                                       BoxPtr *parent, BoxPtr *child) {
+  BoxTask t;
+  BoxPtr *save_parent = vm->box_vm_current,
+         *save_child = vm->box_vm_arg1;
+
+  vm->box_vm_current = parent;
+  vm->box_vm_arg1 = child;
+  t = BoxVM_Module_Execute(vm, cn);
+
+  vm->box_vm_current = save_parent;
+  vm->box_vm_arg1 = save_child;
+  return t;
+}
+
+  /* Execute the module number m of program vmp.
  * If initial != NULL, *initial is the initial status of the virtual machine.
  */
 Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
@@ -656,6 +671,8 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
 
   /* Controlliamo che il modulo sia installato! */
   if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
+    vmp->vmcur->flags.error = 1;
+    vmp->vmcur->flags.exit = 1;
     MSG_ERROR("Call to the undefined procedure %d.", call_num);
     return Failed;
   }
@@ -668,8 +685,10 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
 
   p = (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
   switch (p->type) {
-  case BOXVMPROC_IS_C_CODE: return p->code.c(vmp);
-  case BOXVMPROC_IS_VM_CODE: break;
+  case BOXVMPROC_IS_C_CODE:
+    return p->code.c(vmp);
+  case BOXVMPROC_IS_VM_CODE:
+    break;
   default:
     MSG_ERROR("Call into the broken procedure %d.", call_num);
     return Failed;

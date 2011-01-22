@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008 by Matteo Franchin                                    *
+ * Copyright (C) 2008-2011 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -47,17 +47,30 @@
 #ifndef _VMALLOC_H
 #  define _VMALLOC_H
 
+#  include <stdlib.h>
+
 #  include <box/types.h>
 #  include <box/vmproc.h>
 #  include <box/vmptr.h>
+
+/** Used for allocations of blocks of memory without "type". */
+#  define  BOXVMALLOCID_NONE ((BoxVMAllocID) 0)
+#  define BOXVMALLOCID_ARRAY ((BoxVMAllocID) 1)
+#  define   BOXVMALLOCID_PTR ((BoxVMAllocID) 2)
+#  define BOXVMALLOCID_FIRST ((BoxVMAllocID) 3)
 
 /** This is a table of methods for a particular object type.
  * Typically, we need to allocate one of such tables for each different object
  * type. Obviously, many objects can have the same type and hence share the
  * same table.
+ *                                      O B S O L E T E
  */
 typedef struct {
-  BoxVMCallNum finalizer; /**< Method to be called to finalize the object */
+  size_t       size;        /**< Size of the object */
+  BoxVMCallNum initializer, /**< Method to initialize the object */
+               finalizer,   /**< Method to finalize the object */
+               copier,      /**< Method to copy the object */
+               mover;       /**< Method to move the object */
 } BoxVMMethodTable;
 
 /** Every installed BoxVMMethodTable has a unique identifier, which is just an
@@ -66,11 +79,34 @@ typedef struct {
  */
 typedef BoxInt BoxVMAllocID;
 
-/** Set an extended pointer to Null. */
-void BoxObj_Set_To_Null(BoxObj *o);
+/** Datastructure used to describe a sub-object inside an object. */
+typedef struct {
+  BoxVMAllocID alloc_id; /**< Type of the object */
+  size_t       position; /**< Position in the block */
+} BoxVMSubObj;
 
-/** Return 0 if the point is valid, 1 otherwise. */
-int BoxObj_Is_Null(BoxObj *o);
+/** Box Object descriptor. This is a data structure which describes an object
+ * and contains information about the size of the object, the position of
+ * the sub-objects inside the object and the various methods to initialize it,
+ * finalize it, etc.
+ */
+typedef struct {
+  struct {
+    unsigned int
+               initializer : 1, /**< Object requires special init */
+               finalizer   : 1, /**< Object requires special finish */
+               copier      : 1, /**< Object requires special copier */
+               mover       : 1; /**< Object requires special mover */
+  } has;                    /**< Tells whether the object or one of the
+                                 subobjects require special treatment */
+  BoxVMCallNum initializer, /**< Method to initialize the object */
+               finalizer,   /**< Method to finalize the object */
+               copier,      /**< Method to copy the object */
+               mover;       /**< Method to move the object */
+  size_t       size,        /**< Size of the object */
+               num_subs;    /**< Number of sub-objects */
+  BoxVMSubObj  subs[];      /**< Subobjects */
+} BoxVMObjDesc;
 
 /** Increase the extended pointer item by the given integer (in bytes).
  * (the block pointer is not changed).
@@ -83,7 +119,8 @@ void BoxObj_Add_To_Ptr(BoxObj *item, size_t addr);
  *   more difficult to forget to set one member of the structure).
  *   This way the BoxVMMethodTable can be treated as an opaque structure.
  */
-void BoxVMMethodTable_Set(BoxVMMethodTable *mt, BoxVMCallNum finalizer);
+void BoxVMMethodTable_Set(BoxVMMethodTable *mt, size_t size,
+                          BoxVMCallNum initializer, BoxVMCallNum finalizer);
 
 /** Allocate size bytes and returns the corresponding object in 'obj'.
  * The memory region is associated with the provided data 'type'
@@ -119,5 +156,15 @@ BoxVMAllocID BoxVMAllocID_From_Method_Table(BoxVM *vm, BoxVMMethodTable *mt);
  * associated to the ID, then return the NULL pointer.
  */
 BoxVMMethodTable *BoxVMMethodTable_From_Alloc_ID(BoxVM *vm, BoxVMAllocID id);
+
+/** Allocate the space for an object with alloc-ID equal to 'id'.
+ * The object is then initialized.
+ * If 'id' is not valid return BOXTASK_FAILURE, otherwise return BOXTASK_OK.
+ */
+BoxTask BoxVM_Obj_Create(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id);
+
+/** Relocate an object in memory: move the object from 'src' to 'dest'.
+ */
+BoxTask BoxVM_Obj_Relocate(BoxVM *vm, BoxPtr *dest, BoxPtr *src);
 
 #endif

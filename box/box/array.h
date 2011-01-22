@@ -225,10 +225,10 @@ void *BoxArr_Insert(BoxArr *arr, BoxUInt insert_index,
 void *BoxArr_Overwrite(BoxArr *arr, BoxUInt ow_index,
                        const void *items, BoxUInt num_items);
 
-/** Reallocate the array so that it occupy just the amount of memory which
+/** Reallocate the array so that it occupies just the amount of memory which
  * is needed to store its elements. The function is useful to reduce the
  * memory footprint and should be called when the array has been populated
- * and no further element is going to be added to it (even if that may still
+ * and no further elements are going to be added to it (even if that may still
  * happen without faults).
  */
 void BoxArr_Compactify(BoxArr *arr);
