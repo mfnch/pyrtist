@@ -64,14 +64,14 @@ libboxcore0_2_la_LDFLAGS = -no-undefined -version-info 0:0:0
 noinst_HEADERS = \
   fileutils.h registers.h tokenizer.h parserh.h typesys.h  paths.h \
   cmpproc.h bltinarray.h ast.h cmpptrs.h value.h compiler.h operator.h \
-  namespace.h autogen.h bltinstr.h bltinio.h builtins.h
+  namespace.h autogen.h tsdesc.h bltinstr.h bltinio.h builtins.h
 
 box_SOURCES = \
   fileutils.c \
   tokenizer.l parser.y registers.c \
   typesys.c builtins.c bltinstr.c bltinio.c \
   paths.c main.c cmpproc.c bltinarray.c ast.c value.c \
-  compiler.c operator.c namespace.c autogen.c
+  compiler.c operator.c namespace.c autogen.c tsdesc.c
 
 box_LDADD = $(LIBLTDL) libboxcore0.2.la
 box_LDFLAGS = -static

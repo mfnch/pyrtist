@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2009 by Matteo Franchin                                    *
+ * Copyright (C) 2009-2011 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -29,6 +29,7 @@
 #include "value.h"
 #include "autogen.h"
 #include "vmsymstuff.h"
+#include "tsdesc.h"
 
 void Value_Init(Value *v, CmpProc *proc) {
   v->proc = proc;
@@ -484,8 +485,6 @@ static BoxVMAllocID My_AllocID_Of_Type(BoxCmp *c, BoxType t) {
   return BoxVMAllocID_From_Method_Table(c->vm, & mt);
 }
 #endif
-
-BoxVMAllocID TS_Get_AllocID(BoxTS *ts, BoxVM *vm, BoxType t);
 
 void Value_Emit_Allocate(Value *v) {
   switch(v->kind) {
@@ -1125,6 +1124,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
       return BOXTASK_OK;
 
     } else {
+      /* Get the alloc ID for the source value */
 
       /* Now we move src to dest, copying it byte by byte */
       Value_Init(& v_size, c->cur_proc);
