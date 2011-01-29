@@ -315,11 +315,8 @@ struct _BoxVM_struct {
   BoxUInt   dasm_pos;       /**< Position in num. of read bytes for the
                                  disassembler */
 
-  BoxHT     id_from_mettab; /**< Hashtable containing destructors, etc. */
-  BoxArr    mettab_from_id; /**< Table of method tables from allocation IDs */
-  BoxVMAllocID
-            next_alloc_id;  /**< Alloc ID to be associated to the next
-                                 installed BoxVMMethodTable */
+  BoxHT     id_from_desc;   /**< Hashtable containing object descriptors */
+  BoxArr    desc_from_id;   /**< Table of descriptors from allocation IDs */
 };
 
 extern const size_t size_of_type[NUM_TYPES];

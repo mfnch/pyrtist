@@ -1,4 +1,6 @@
-STYLE OF THE CODE (24/09/2008):
+STYLE OF THE CODE
+-----------------
+
   Unfortunatly the style is not omogeneous throughout the program!!!
   This problem is connected with the long life of this code and with my mind
   which changes with experience.
@@ -6,13 +8,19 @@ STYLE OF THE CODE (24/09/2008):
 
   InThisWay   --> types
   in_this_way --> instances
-  IN_THIS_WAY --> macros
-  a, b, c, .. --> local instances (counters, and other instances)
+  a, b, c, .. --> local instances (counters, and other instances which are
+                  defined and used within few lines of code)
   In_This_Way --> functions
+  IN_THIS_WAY --> macros
 
-  Name for functions usually starts with a prefix, such that it is simple
+  Names for functions usually start with a prefix, such that it is simple
   to recognize where they are defined. For example: 'Cmp_Operator_New' comes
-  from the file 'compiler.c'.
+  from the file 'compiler.c'. Static functions use the prefix My_ to denote
+  they are defined in the same file. In principle, one should do the same for
+  static variables, but one should try to avoid using static variables unless
+  it is really necessary to use them, which means one should never use them
+  (even if, presently, this rule is not strictly always in the code. Mainly,
+  for messages.c, msgbase.c and lex, yacc files).
   Use indentation length of 2 (and spaces instead of tabs), example:
 
   while(1) {
@@ -22,7 +30,14 @@ STYLE OF THE CODE (24/09/2008):
 
   Lines should not exceed 79 characters.
 
-LANGUAGE CONFORMANCE:
+  Avoid use of C++ keywords as variable names, for example don't use
+  'bool' since it exists in C++ and will cause a clash if the code is
+  ever compiled as C++.
+
+
+LANGUAGE CONFORMANCE
+--------------------
+
   Our aim is to produce code which complies with the C99 standard.
   This allows us some freedom:
 
@@ -33,58 +48,102 @@ LANGUAGE CONFORMANCE:
 
   * we can use variadic macros.
 
-FUNCTIONS: HOW WE DEAL WITH ERRORS....
-  This typedef is defined inside 'types.h' which is included in almost every
-  source file of the program:
 
-    typedef enum {Failed, Success} Task;
+HOW WE DEAL WITH ERRORS
+-----------------------
+
+  This typedef is defined inside 'types.h':
+
+    typedef enum {
+      BOXTASK_OK      = 0, /**< Function succeeded */
+      BOXTASK_FAILURE = 1, /**< Function failed: caller needs to report error */
+      BOXTASK_ERROR   = 2  /**< Function failed: error already reported */
+    } BoxTask;
 
   This is how we define many functions:
 
     /* This functions deals with a particular task and can exit with
      * or without errors
      */
-    Task Do_Do_Do(...) {
-        ...
-        if (...) return Failed;   /* Exits in case of errors! */
-        ...
-        return Success;           /* Operation succesfully completed! */
+    BoxTask Do_Do_Do(...) {
+      ...
+      if (...)
+        return BOXTASK_FAILURE;   /* Exits in case of errors! */
+
+      if (...) {                  /* Exit, but report error first! */
+        MSG_ERROR("Error in Do_Do_Do!")
+        return BOXTASK_ERROR;
+
+      ...
+      return BOXTASK_OK;        /* Operation succesfully completed! */
     }
 
   Now we call this function, testing for errors:
 
     /* Main function */
     int main(void) {
-        if IS_FAILED(Do_Do_Do(...))
-            fprintf(stderr, "Error!\n");
+      if (Do_Do_Do(...) != BOXTASK_OK)
+        fprintf(stderr, "Error!\n");
     }
 
-NULL and casting:
+  Note that one shouldn't use such an infrastructure if it is not really
+  necessary. In other words, when an error compromises the whole execution of
+  the program, the error should not be handled in this way, but the program
+  should be halted. For example, if we cannot allocate 40 bytes to store - for
+  example - an AST node, then why should we continue at all?! If malloc fails to
+  give us 40 bytes, it is likely that the only thing we want to do is to abort
+  the execution as soon as we can. One should then use code like:
+
+    if (critical_error) {
+      MSG_FATAL("Critical error in Name_Of_Function.");
+      assert(0);
+      return; /* if needed to make the C compiler happy, even if these days
+                 gcc can cope well with such situation without complaining
+                 for execution reaching end of function without returning...
+               */    
+    }
+
+  (Note that in the aforementioned example of allocation you may want to use
+  BoxMem_Safe_Alloc, which aborts automatically on failure).
+  If - on the other hand - you are allowing the user to allocate a very big
+  array, then you may be interested in handling the NULL pointer returned by
+  BoxMem_Alloc.
+
+
+NULL and casting
+----------------
+
   Other than the obvious...
-  NB: remember casts are dangerous, annoying for maintenance and can cause performance hits (esp. float <-> int)
+  NB: remember casts are dangerous, annoying for maintenance and can cause
+      performance hits (esp. float <-> int)
 
-  * Don't cast malloc() and friends
-  * Always use NULL for pointers instead of 0. However don't use NULL where
-    a 0 is required. For example,
+  * Always use NULL for pointers instead of 0.
+    For example,
 
-    Reasons for doing so:
-
-      * There is nothing stopping some systems from having NULL
-        resolve to something other than 0. Although they'd be stupid to do so.
-
-      * It tells the compiler you're dealing with a pointer and thus
-        implicit casts/errors can be picked up
+  While the standard says that 0 and NULL are interchangable, NULL is specific
+  to pointers and thus is more readable and allows implicit casts/errors to be
+  picked up
 
   * You can rely on implicit (void *) casts, it's part of the standard
     However feel free to use the void casts in areas where redundancy
     improves the quality or readability.
 
-  * If you don't indend on using the return value from a called function
-    then don't cast back to void. It's silly,
+  * You shouldn't rely on cast from (void *) to (Object *).
+    The idea is that automatic casts should not allow an object to acquire
+    meaning. In other words, a pointer to Object is a pointer anyway, so it
+    is fine to pass it to a function requiring as argument (void *). On the
+    contrary, a pointer to void is not - in general - a pointer to Object,
+    therefore the cast should be explicit. For BoxMem_Alloc and friends, you
+    can feel free to omit the cast, to avoid redundancy (i.e. you can use
+    Object *obj = BoxMem_Alloc(sizeof(Object)) rather than
+    Object *obj = (Object *) BoxMem_Alloc(sizeof(Object)).
 
-    ie, DO NOT:
+  * Cast to (void) when you want to make it explicit on the code that you
+    want to discard the return value of a function.
 
-    int foo() {
+    Example:
+
+    int foo(void) {
       return 5;
     }
 
@@ -92,15 +151,15 @@ NULL and casting:
 
     (void) foo();
 
-    The following is perfectly legal:
+    The following is regular C:
 
     foo();
 
-    Adding the casts also prevents the compiler from warning you when returned values are ignored
-    with gcc -Wunused-value and chance has it you'll want to know this in the future.
-
-Keywords/Variable names:
-  Avoid use of C++ keywords as variable names, for example don't use
-  'bool' since it exists in C++ and will cause a clash if the code is
-  ever compiled as C++.
+    But one may wonder whether it is an error: why is it not using the
+    returned value? One may argue that - in general - the return value are
+    typically the reason why you call a function.
+    A (void) cast makes it explicit that you are aware that you know that the
+    function returns something, and you *WANT* to discard it.
+    This also helps when using -Wunused-value to find out whether you discarded
+    some return values without being aware of it.
 

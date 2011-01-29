@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008-2010 by Matteo Franchin                               *
+ * Copyright (C) 2008-2011 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -80,237 +80,151 @@ void BoxObj_Add_To_Ptr(BoxObj *item, size_t addr) {
   item->ptr += addr;
 }
 
-void BoxVMMethodTable_Set(BoxVMMethodTable *mt,
-                          size_t size,
-                          BoxVMCallNum initializer,
-                          BoxVMCallNum finalizer) {
-  mt->size = size;
-  mt->initializer = initializer;
-  mt->finalizer = finalizer;
-  mt->copier = BOXVMCALLNUM_NONE;
-  mt->mover = BOXVMCALLNUM_NONE;
+/** Structure used to store the object descriptors and their names */
+typedef struct {
+  char         *name;
+  BoxVMObjDesc *desc;
+} MyDescEntry;
+
+/** Finalizer for the MyDescEntry structures */
+static void My_DescEntry_Finalizer(void *entry) {
+  BoxMem_Free(((MyDescEntry *) entry)->name);
+  BoxMem_Free(((MyDescEntry *) entry)->desc);
 }
 
-/** Allocate size bytes and returns the pointer to that region.
- * The memory region is associated with the provided data 'type'
- * and has a initial reference counter equal to 1.
- */
-void BoxVM_Alloc(BoxVM *vm, BoxPtr *obj, size_t size, BoxVMAllocID id) {
-#if DEBUG_VMALLOC == 1
-  static int num_alloc = 0;
-#endif
+/** Initialises the table of object descriptors */
+BoxTask BoxVM_Alloc_Init(BoxVM *vm) {
+  /* Create an hash table which copies the keys, but not the objects */
+  BoxHT_Init_Default(& vm->id_from_desc, BOXVM_DESC_HT_SIZE);
+  BoxHT_Set_Attr(& vm->id_from_desc, BOXHTATTR_COPY_KEYS, 0);
 
-  obj->block = BoxMem_Alloc(SIZE_OF_BLOCK(size));
-  obj->ptr = NULL;
-  if (obj->block != NULL) {
-    VMAllocHead *head = (VMAllocHead *) obj->block;
-    obj->ptr = GET_DPTR_FROM_BPTR(obj->block);
-    head->id = id;
-    head->references = 1;
-#if DEBUG_VMALLOC == 1
-    printf("BoxVM_Alloc(%d): allocated object with id "SInt" at %p.\n",
-           num_alloc, id, obj->block);
-    ++num_alloc;
-#endif
-    return;
-  }
-
-#if DEBUG_VMALLOC == 1
-  printf("BoxVM_Alloc: failed to allocate object with ID "SInt" at %p.\n",
-         id, obj->block);
-#endif
-}
-
-/** Increase the reference counter for the given object. */
-void BoxVM_Link(Obj *obj) {
-  VMAllocHead *head = BoxPtr_Get_Head(obj);
-  if (BoxPtr_Is_Detached(obj))
-    return;
-  ++head->references;
-}
-
-/** Decrease the reference counter for the given object and proceed
- * with destroying it, if it has reached zero.
- */
-void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
-  VMAllocHead *head = BoxPtr_Get_Head(obj);
-  BoxInt references;
-#if DEBUG_VMALLOC == 1
-  static int num_dealloc = 0;
-#endif
-
-  if (BoxPtr_Is_Detached(obj))
-    return;
-
-  //references = --head->references;
-  if (references > 0)
-    return;
-
-  else if (references == 0) {
-    if (head->id >= 1) {
-      BoxVMMethodTable *mt = BoxVMMethodTable_From_Alloc_ID(vmp, head->id);
-#if DEBUG_VMALLOC == 1
-      if (mt == NULL) {
-        printf("BoxVM_Unlink: no method table associated to the ID "SInt
-               " for object at %p.\n", head->id, obj->block);
-      }
-#endif
-
-      if (mt != NULL) {
-        BoxVMCallNum finalizer = mt->finalizer;
-#if DEBUG_VMALLOC == 1
-        printf("BoxVM_Unlink: calling destructor (call "SInt") for ID "
-               SInt" at %p.\n", finalizer, head->id, obj->block);
-#endif
-        BoxPtr save_current = *vmp->box_vm_current;
-        *vmp->box_vm_current = *obj;
-        (void) BoxVM_Module_Execute(vmp, finalizer);
-        *vmp->box_vm_current = save_current;
-      }
-    }
-
-#if DEBUG_VMALLOC == 1
-    printf("BoxVM_Unlink(%d): Deallocating object of type "SInt" at %p.\n",
-           num_dealloc, head->id, obj->block);
-    ++num_dealloc;
-#endif
-
-#if DEBUG_VMALLOC_REFCHECK == 0
-    BoxMem_Free(obj->block);
-#endif
-    obj->block = NULL;
-    return;
-
-  } else {
-#if DEBUG_VMALLOC_REFCHECK == 1
-    printf("BoxVM_Unlink: reference count is "SInt"!\n", references);
-#endif
-    return;
-  }
-}
-
-Task BoxVM_Alloc_Init(BoxVM *vm) {
-  BoxHT_Init_Default(& vm->id_from_mettab, BOXVM_METHOD_HT_SIZE);
-  BoxArr_Init(& vm->mettab_from_id, sizeof(BoxVMMethodTable),
-              BOXVM_METHOD_HT_SIZE);
-  vm->next_alloc_id = 1;
+  BoxArr_Init(& vm->desc_from_id, sizeof(MyDescEntry), BOXVM_DESC_HT_SIZE);
+  BoxArr_Set_Finalizer(& vm->desc_from_id, My_DescEntry_Finalizer);
   return Success;
 }
 
+/** Finalises the table of object descriptors */
 void BoxVM_Alloc_Destroy(BoxVM *vm) {
-  BoxHT_Finish(& vm->id_from_mettab);
-  BoxArr_Finish(& vm->mettab_from_id);
+  BoxHT_Finish(& vm->id_from_desc);
+  BoxArr_Finish(& vm->desc_from_id);
 }
 
-int BoxVMMethodTable_Is_Empty(BoxVMMethodTable *mt) {
-  return (   mt->initializer == BOXVMCALLNUM_NONE
-          && mt->finalizer == BOXVMCALLNUM_NONE
-          && mt->copier == BOXVMCALLNUM_NONE
-          && mt->mover == BOXVMCALLNUM_NONE);
+/** Whether an object descriptor is empty */
+int BoxVMObjDesc_Is_Empty(BoxVMObjDesc *od) {
+  return (   od->initializer == BOXVMCALLNUM_NONE
+          && od->finalizer == BOXVMCALLNUM_NONE
+          && od->copier == BOXVMCALLNUM_NONE
+          && od->mover == BOXVMCALLNUM_NONE
+          && od->num_subs == 0);
 }
 
-BoxVMAllocID BoxVMAllocID_From_Method_Table(BoxVM *vm, BoxVMMethodTable *mt) {
+static char *My_ObjDesc_To_Str(BoxVM *vm, BoxVMAllocID id, char *indentation) {
+  MyDescEntry *de = (MyDescEntry *) BoxArr_Item_Ptr(& vm->desc_from_id, id);
+  BoxVMObjDesc *od = de->desc;
+  char *s =
+    Box_SPrintF("%s%s: size=%d, n.subs=%d, has=%s%s%s%s, "
+                "I=%d, F=%d, C=%d, R=%d\n",
+                indentation,
+                de->name, (int) od->size, (int) od->num_subs,
+                (od->has.initializer) ? "I" : "i",
+                (od->has.finalizer) ? "F" : "f",
+                (od->has.copier) ? "C" : "c",
+                (od->has.mover) ? "R" : "r",
+                (int) od->initializer,
+                (int) od->finalizer,
+                (int) od->copier,
+                (int) od->mover);
+  char *indentation2 = Box_SPrintF("  %s", indentation);
+  BoxVMSubObj *sub = & od->subs[0];
+  size_t i;
+
+  for (i = 0; i < od->num_subs; i++, sub++) {
+    char *ss = My_ObjDesc_To_Str(vm, sub->alloc_id, "");
+    s = Box_SPrintF("%~s%s%d (%d): %~s",
+                    s, indentation2, i, sub->position, ss);
+  }
+
+  BoxMem_Free(indentation2);
+  return s;
+}
+
+char *BoxVMObjDesc_To_Str(BoxVM *vm, BoxVMAllocID id) {
+  if (id >= 1 && id <= BoxArr_Num_Items(& vm->desc_from_id))
+    return My_ObjDesc_To_Str(vm, id, "");
+
+  else
+    return (char *) NULL;
+}
+
+char *BoxVM_ObjDesc_Table_To_Str(BoxVM *vm) {
+  char *s = NULL;
+  size_t id, n = BoxArr_Num_Items(& vm->desc_from_id);
+  for (id = 1; id <= n; id++) {
+    if (s == NULL)
+      s = BoxVMObjDesc_To_Str(vm, id);
+    else
+      s = Box_SPrintF("%~s%~s", s, BoxVMObjDesc_To_Str(vm, id));
+  }
+
+  return (s != NULL) ? s : Box_SPrintF("");
+}
+
+BoxVMAllocID BoxVMAllocID_From_ObjDesc(BoxVM *vm, BoxVMObjDesc **od_ptr) {
   BoxHTItem *ht_item;
+  BoxVMObjDesc *od = *od_ptr;
 
   /* If all the methods are BOXVMCALLNUM_NONE, then we return the ID 0, which
-   * is signals that the considered type is "simple" (does not require special
+   * signals that the considered type is "simple" (does not require special
    * handling for finalization, etc).
    */
-  if (BoxVMMethodTable_Is_Empty(mt))
+  if (BoxVMObjDesc_Is_Empty(od))
     return BOXVMALLOCID_NONE;
 
-  if (BoxHT_Find(& vm->id_from_mettab, mt, sizeof(BoxVMMethodTable),
-                 & ht_item)) {
+  if (BoxHT_Find(& vm->id_from_desc, od, BOXVMOBJDESC_SIZE(od), & ht_item)) {
     return *((BoxVMAllocID *) ht_item->object);
 
   } else {
-    BoxVMMethodTable *new_mt =
-      (BoxVMMethodTable *) BoxArr_Push(& vm->mettab_from_id, mt);
-    BoxVMAllocID alloc_id = BoxArr_Num_Items(& vm->mettab_from_id);
+    MyDescEntry *de = (MyDescEntry *) BoxArr_Push(& vm->desc_from_id, NULL);
+    BoxVMAllocID alloc_id = BoxArr_Num_Items(& vm->desc_from_id);
+    de->name = (char *) NULL;
+    de->desc = od;
+    *od_ptr = (BoxVMObjDesc *) NULL; /* To communicate we stole the pointer */
 
-    if (NULL == BoxHT_Insert_Obj(& vm->id_from_mettab,
-                                 new_mt, sizeof(BoxVMMethodTable),
+    if (NULL == BoxHT_Insert_Obj(& vm->id_from_desc,
+                                 od, BOXVMOBJDESC_SIZE(od),
                                  & alloc_id, sizeof(BoxVMAllocID))) {
-      MSG_WARNING("BoxVM_Get_Alloc_ID: Failure in hashtable.");
+      MSG_WARNING("BoxVMAllocID_From_ObjDesc: Failure in hashtable.");
     }
 
     return alloc_id;
   }
 }
 
-BoxVMMethodTable *BoxVMMethodTable_From_Alloc_ID(BoxVM *vm, BoxVMAllocID id) {
-  if (id >= 1 && id <= BoxArr_Num_Items(& vm->mettab_from_id))
-    return (BoxVMMethodTable *) BoxArr_Item_Ptr(& vm->mettab_from_id, id);
-  else
-    return (BoxVMMethodTable *) NULL;
-}
-
-BoxTask BoxVM_Obj_Create(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id) {
-  BoxVMMethodTable *mt = BoxVMMethodTable_From_Alloc_ID(vm, id);
-
-  if (mt == NULL)
-    return BOXTASK_FAILURE;
-
-  else {
-    BoxVMCallNum initializer = mt->initializer;
-    BoxVM_Alloc(vm, obj, mt->size, id);
-
-    if (initializer != BOXVMCALLNUM_NONE) {
-      BoxTask success;
-      BoxPtr save_current = *vm->box_vm_current;
-#if DEBUG_VMALLOC == 1
-      printf("BoxVM_Obj_Create: calling initializer (call "SInt") for ID "
-             SInt" at %p.\n", initializer, id, obj->block);
-#endif
-      *vm->box_vm_current = *obj;
-      success = BoxVM_Module_Execute(vm, initializer);
-      *vm->box_vm_current = save_current;
-      return success;
-
-    } else
-      return BOXTASK_OK;
-  }
-}
-
-BoxTask BoxVM_Obj_Copy(BoxVM *vm, BoxVMAllocID id,
-                       BoxPtr *dest, BoxPtr *src) {
-
-#if DEBUG_VMALLOC == 1
-    printf("BoxVM_Obj_Copy: %p:%p --[id:%d]--> %p:%p"
-           src->block, src->ptr, (int) id,
-           dest->block, dest->ptr,);
-#endif
-
-  BoxVMMethodTable *mt = BoxVMMethodTable_From_Alloc_ID(vm, id);
-  if (mt == NULL) {
-    MSG_ERROR("BoxVM_Obj_Copy: invalid alloc-ID.");
-    return BOXTASK_ERROR;
-  }
-
-  if (mt->copier != BOXVMCALLNUM_NONE) {
-    /* Custom copy */
-#if DEBUG_VMALLOC == 1
-    printf("BoxVM_Obj_Copy: calling custom copier: "SInt, mt->copier);
-#endif
-    return BoxVM_Module_Execute_With_Args(vm, mt->copier, dest, src);
-
-  } else {
-    /* Generic copy */
-    (void) memcpy(dest->ptr, src->ptr, mt->size);
-    return BOXTASK_OK;
-  }
-}
-
-
-
-
-
-
 BoxVMObjDesc *BoxVMObjDesc_From_Alloc_ID(BoxVM *vm, BoxVMAllocID id) {
-  assert(0);
-  return 0;
+  if (id >= 1 && id <= BoxArr_Num_Items(& vm->desc_from_id))
+    return ((MyDescEntry *) BoxArr_Item_Ptr(& vm->desc_from_id, id))->desc;
+  else
+    return (BoxVMObjDesc *) NULL;
 }
 
+const char *BoxVM_Get_Obj_Name(BoxVM *vm, BoxVMAllocID id) {
+  if (id >= 1 && id <= BoxArr_Num_Items(& vm->desc_from_id))
+    return ((MyDescEntry *) BoxArr_Item_Ptr(& vm->desc_from_id, id))->name;
+  else
+    return (char *) NULL;
+}
+
+void BoxVM_Set_Obj_Name(BoxVM *vm, BoxVMAllocID id, char *name) {
+  if (id >= 1 && id <= BoxArr_Num_Items(& vm->desc_from_id)) {
+    MyDescEntry *entry = BoxArr_Item_Ptr(& vm->desc_from_id, id);
+    BoxMem_Free(entry->name);
+    entry->name = name;
+  }
+}
+
+/** Function type used to iterate over the subobjects of an object
+ * (given a descriptor).
+ */
 typedef BoxTask (*BoxSubObjIterator)(BoxVM *vm, BoxVMObjDesc *desc,
                                      BoxPtr *sub, size_t addr, void *pass);
 
@@ -334,9 +248,6 @@ static BoxTask My_Obj_Iter(BoxVM *vm, BoxVMObjDesc *desc, BoxPtr *obj,
 
   return BOXTASK_OK;
 }
-
-
-
 
 static BoxTask My_Obj_Init(BoxVM *vm, BoxVMObjDesc *desc,
                            BoxPtr *obj, size_t addr, void *pass) {
@@ -380,6 +291,136 @@ BoxTask BoxVM_Obj_Finish(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id) {
     return My_Obj_Finish(vm, desc, obj, 0, NULL);
 }
 
+
+
+/** Allocate size bytes and returns the pointer to that region.
+ * The memory region is associated with the provided data 'type'
+ * and has a initial reference counter equal to 1.
+ */
+void BoxVM_Obj_Alloc(BoxVM *vm, BoxPtr *obj, size_t size, BoxVMAllocID id) {
+#if DEBUG_VMALLOC == 1
+  static int num_alloc = 0;
+#endif
+
+  obj->block = BoxMem_Alloc(SIZE_OF_BLOCK(size));
+  obj->ptr = NULL;
+  if (obj->block != NULL) {
+    VMAllocHead *head = (VMAllocHead *) obj->block;
+    obj->ptr = GET_DPTR_FROM_BPTR(obj->block);
+    head->id = id;
+    head->references = 1;
+#if DEBUG_VMALLOC == 1
+    printf("BoxVM_Obj_Alloc(%d): allocated object with id "SInt" at %p.\n",
+           num_alloc, id, obj->block);
+    ++num_alloc;
+#endif
+    return;
+  }
+
+#if DEBUG_VMALLOC == 1
+  printf("BoxVM_Obj_Alloc: failed to allocate object with ID "SInt" at %p.\n",
+         id, obj->block);
+#endif
+}
+
+/** Increase the reference counter for the given object. */
+void BoxVM_Link(Obj *obj) {
+  VMAllocHead *head = BoxPtr_Get_Head(obj);
+  if (BoxPtr_Is_Detached(obj))
+    return;
+  ++head->references;
+}
+
+/** Decrease the reference counter for the given object and proceed
+ * with destroying it, if it has reached zero.
+ */
+void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
+  VMAllocHead *head = BoxPtr_Get_Head(obj);
+  BoxInt references;
+#if DEBUG_VMALLOC == 1
+  static int num_dealloc = 0;
+#endif
+
+  if (BoxPtr_Is_Detached(obj))
+    return;
+
+  references = --head->references;
+  if (references > 0)
+    return;
+
+  else if (references == 0) {
+    if (head->id >= 1)
+      (void) BoxVM_Obj_Finish(vmp, obj, head->id);
+
+#if DEBUG_VMALLOC == 1
+    printf("BoxVM_Unlink(%d): Deallocating object of type "SInt" at %p.\n",
+           num_dealloc, head->id, obj->block);
+    ++num_dealloc;
+#endif
+
+#if DEBUG_VMALLOC_REFCHECK == 0
+    BoxMem_Free(obj->block);
+#endif
+    obj->block = NULL;
+    return;
+
+  } else {
+#if DEBUG_VMALLOC_REFCHECK == 1
+    printf("BoxVM_Unlink: reference count is "SInt"!\n", references);
+#endif
+    return;
+  }
+}
+
+BoxTask BoxVM_Obj_Create(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id) {
+  BoxVMObjDesc *od = BoxVMObjDesc_From_Alloc_ID(vm, id);
+
+  if (od == NULL)
+    return BOXTASK_FAILURE;
+
+  else {
+    BoxVM_Obj_Alloc(vm, obj, od->size, id);
+    return (obj->block != NULL) ?
+           My_Obj_Init(vm, od, obj, 0, NULL) : BOXTASK_FAILURE;
+  }
+}
+
+#if 0
+BoxTask BoxVM_Obj_Copy(BoxVM *vm, BoxVMAllocID id,
+                       BoxPtr *dest, BoxPtr *src) {
+
+#if DEBUG_VMALLOC == 1
+    printf("BoxVM_Obj_Copy: %p:%p --[id:%d]--> %p:%p"
+           src->block, src->ptr, (int) id,
+           dest->block, dest->ptr,);
+#endif
+
+  BoxVMMethodTable *mt = BoxVMMethodTable_From_Alloc_ID(vm, id);
+  if (mt == NULL) {
+    MSG_ERROR("BoxVM_Obj_Copy: invalid alloc-ID.");
+    return BOXTASK_ERROR;
+  }
+
+  if (mt->copier != BOXVMCALLNUM_NONE) {
+    /* Custom copy */
+#if DEBUG_VMALLOC == 1
+    printf("BoxVM_Obj_Copy: calling custom copier: "SInt, mt->copier);
+#endif
+    return BoxVM_Module_Execute_With_Args(vm, mt->copier, dest, src);
+
+  } else {
+    /* Generic copy */
+    (void) memcpy(dest->ptr, src->ptr, mt->size);
+    return BOXTASK_OK;
+  }
+}
+#endif
+
+
+
+
+
+
 static BoxTask My_Obj_Copy(BoxVM *vm, BoxVMObjDesc *desc,
                            BoxPtr *dest, size_t addr, void *pass) {
   BoxPtr src;
@@ -396,7 +437,7 @@ static BoxTask My_Obj_Copy(BoxVM *vm, BoxVMObjDesc *desc,
     return My_Obj_Iter(vm, desc, dest, My_Obj_Copy, & src);
 }
 
-BoxTask BoxVM_Obj_Copy2(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
+BoxTask BoxVM_Obj_Copy(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
                        BoxVMAllocID id) {
   BoxVMObjDesc *desc = BoxVMObjDesc_From_Alloc_ID(vm, id);
   if (desc != NULL) {
@@ -416,6 +457,8 @@ BoxTask BoxVM_Obj_Relocate(BoxVM *vm, BoxPtr *dest, BoxPtr *src) {
   assert(!BoxPtr_Is_Null(dest) && !BoxPtr_Is_Null(src));
   /* ^^^ For now we assume non detached pointers */
 
+  return BOXTASK_FAILURE;
+#if 0
   BoxVMMethodTable *mt;
   VMAllocHead *dest_head = BoxPtr_Get_Head(dest),
               *src_head = BoxPtr_Get_Head(src);
@@ -485,19 +528,36 @@ BoxTask BoxVM_Obj_Relocate(BoxVM *vm, BoxPtr *dest, BoxPtr *src) {
     MSG_FATAL("BoxVM_Obj_Move: not implemented, yet!");
     return BOXTASK_FAILURE;
   }
+#endif
 }
 
 #if 0
-typedef struct {
-  BoxVMCallNum initializer, /**< Method to initialize the object */
-               finalizer,   /**< Method to finalize the object */
-               copier,      /**< Method to copy the object */
-               mover;       /**< Method to move the object */
-  size_t       size,        /**< Size of the object */
-               num_subs;    /**< Number of sub-objects */
-  BoxVMSubObj  subs[];      /**< Subobjects */
-} BoxVMObjDesc;
+
+      BoxVMObjDesc *od = BoxVMObjDesc_From_Alloc_ID(vmp, );
+#if DEBUG_VMALLOC == 1
+      if (od == NULL) {
+        printf("BoxVM_Unlink: no object descriptor associated to the ID "SInt
+               " for object at %p.\n", head->id, obj->block);
+      }
 #endif
 
+      if (od != NULL) {
+        /* If the object has a finalizer, the we call it now! */
+        if (od->finalizer != BOXVMCALLNUM_NONE) {
+#if DEBUG_VMALLOC == 1
+          printf("BoxVM_Unlink: calling destructor (call "SInt") for ID "
+                 SInt" at %p.\n", od->finalizer, head->id, obj->block);
+#endif
+          (void) BoxVM_Module_Execute_With_Args(vmp, od->finalizer, obj, NULL);
+        }
 
+        /* If any of the sub-objects have a finalizer then we call them now */
+        if (od->has.finalizer) {
+#if DEBUG_VMALLOC == 1
+          printf("BoxVM_Unlink: calling destructor of sub-objects.");
+#endif
+          (void) BoxVM_Module_Execute_With_Args(vmp, od->finalizer, obj, NULL);
+        }
+      }
 
+#endif

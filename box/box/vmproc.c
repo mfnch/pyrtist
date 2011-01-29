@@ -288,9 +288,17 @@ Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out,
 Task BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out) {
   VMProcTable *pt = & vmp->proc_table;
   UInt n, proc_id;
+  char *s;
 
   BoxVM_Data_Display(vmp, out);
   fprintf(out, "\n");
+
+  fprintf(out, "*** OBJECT DESCRIPTOR TABLE ***\n");
+  s = BoxVM_ObjDesc_Table_To_Str(vmp);
+  fprintf(out, "%s", s);
+  BoxMem_Free(s);
+  fprintf(out, "*** END OF OBJECT DESCRIPTOR TABLE ***\n\n");
+
 
   proc_id = BoxArr_Num_Items(& pt->installed);
   for(n = 1; n <= proc_id; n++) {

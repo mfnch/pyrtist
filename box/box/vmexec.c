@@ -415,7 +415,7 @@ static void VM__Exec_Malloc_II(BoxVM *vmp) {
   BoxInt size = *((Int *) vmcur->arg1),
          id = *((Int *) vmcur->arg2);
   BoxPtr *obj = (Obj *) vmcur->local[TYPE_OBJ].ptr;
-  BoxVM_Alloc(vmp, obj, size, id);
+  BoxVM_Obj_Alloc(vmp, obj, size, id);
   if (!BoxPtr_Is_Null(obj))
     return;
   MSG_FATAL("VM_Exec_Malloc_II: memory request failed!");

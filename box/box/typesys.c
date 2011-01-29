@@ -979,14 +979,6 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
   }
 }
 
-#if 0
-typedef struct {
-  int     has_more;
-  BoxType iter_type,
-          member;
-} BoxTSStrucIterator;
-#endif
-
 void BoxTSStrucIt_Init(BoxTS *ts, BoxTSStrucIt *it, BoxType s) {
   BoxType s_core = TS_Get_Core_Type(ts, s);
   TSDesc *s_core_td = Type_Ptr(ts, s_core);
@@ -1009,9 +1001,10 @@ void BoxTSStrucIt_Advance(BoxTSStrucIt *it) {
   if (it->td->kind == TS_KIND_MEMBER && it->has_more) {
     BoxType next_member = it->td->data.member_next;
     TSDesc *next_member_td = Type_Ptr(it->ts, next_member);
-    it->position += it->td->size;
+    it->position = next_member_td->size;
     it->member = TS_Resolve_Once(it->ts, next_member, TS_KS_NONE);
     it->td = next_member_td;
+    it->has_more = (next_member_td->kind == TS_KIND_MEMBER);
   }
 }
 

@@ -59,21 +59,7 @@
 #  define   BOXVMALLOCID_PTR ((BoxVMAllocID) 2)
 #  define BOXVMALLOCID_FIRST ((BoxVMAllocID) 3)
 
-/** This is a table of methods for a particular object type.
- * Typically, we need to allocate one of such tables for each different object
- * type. Obviously, many objects can have the same type and hence share the
- * same table.
- *                                      O B S O L E T E
- */
-typedef struct {
-  size_t       size;        /**< Size of the object */
-  BoxVMCallNum initializer, /**< Method to initialize the object */
-               finalizer,   /**< Method to finalize the object */
-               copier,      /**< Method to copy the object */
-               mover;       /**< Method to move the object */
-} BoxVMMethodTable;
-
-/** Every installed BoxVMMethodTable has a unique identifier, which is just an
+/** Every installed BoxVMObjDesc has a unique identifier, which is just an
  * integer number of this type. This is the number used in the malloc VM
  * instruction.
  */
@@ -108,11 +94,16 @@ typedef struct {
   BoxVMSubObj  subs[];      /**< Subobjects */
 } BoxVMObjDesc;
 
+/** Macro to compute the size of a BoxVMObjDesc object. */
+#define BOXVMOBJDESC_SIZE(od) \
+  (sizeof(BoxVMObjDesc) + (od)->num_subs*sizeof(BoxVMSubObj))
+
 /** Increase the extended pointer item by the given integer (in bytes).
  * (the block pointer is not changed).
  */
 void BoxObj_Add_To_Ptr(BoxObj *item, size_t addr);
 
+#if 0
 /** Function used to populate the a method dable (BoxVMMethodTable).
  * NOTE: The usage of this function is recommended, as it makes it easy to
  *   adjust external code to newer version of the boxcore libary (it makes it
@@ -121,12 +112,18 @@ void BoxObj_Add_To_Ptr(BoxObj *item, size_t addr);
  */
 void BoxVMMethodTable_Set(BoxVMMethodTable *mt, size_t size,
                           BoxVMCallNum initializer, BoxVMCallNum finalizer);
+#endif
+
+/** Call the desctructor for the main object and all the subobjects
+ * without releasing (BoxMem_Free) the block of memory occupied by the object.
+ */
+BoxTask BoxVM_Obj_Finish(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id);
 
 /** Allocate size bytes and returns the corresponding object in 'obj'.
  * The memory region is associated with the provided data 'type'
  * and has a initial reference counter equal to 1.
  */
-void BoxVM_Alloc(BoxVM *vm, BoxPtr *obj, size_t size, BoxVMAllocID id);
+void BoxVM_Obj_Alloc(BoxVM *vm, BoxPtr *obj, size_t size, BoxVMAllocID id);
 
 /** Increase the reference counter for the given object. */
 void BoxVM_Link(BoxObj *obj);
@@ -145,17 +142,55 @@ BoxTask BoxVM_Alloc_Init(BoxVM *vm);
  */
 void BoxVM_Alloc_Destroy(BoxVM *vm);
 
-/** Install the method table and returns its ID (an integer number).
- * If an equivalent table has been installed already, then return that
- * rather than installing a new one. This way, object of the same type
- * should end up sharing the same method table.
- */
-BoxVMAllocID BoxVMAllocID_From_Method_Table(BoxVM *vm, BoxVMMethodTable *mt);
+/** Whether the object descriptor is empty (simple objects). */
+int BoxVMObjDesc_Is_Empty(BoxVMObjDesc *od);
 
-/** Return the method table for the given allocation ID. If there is no table
- * associated to the ID, then return the NULL pointer.
+/** Return a string representation of the object descriptor associated
+ * to the given alloc ID.
  */
-BoxVMMethodTable *BoxVMMethodTable_From_Alloc_ID(BoxVM *vm, BoxVMAllocID id);
+char *BoxVMObjDesc_To_Str(BoxVM *vm, BoxVMAllocID id);
+
+/** Return a string description of all the objects known to the VM
+ * (i.e. for which an object descriptor exists).
+ */
+char *BoxVM_ObjDesc_Table_To_Str(BoxVM *vm);
+
+/** Install the object descriptor and returns its ID (an integer number).
+ * The function takes a pointer to the pointer to the object descriptor.
+ * The reason is that the function will steal the descriptor rather than
+ * copying it. If this is the case, then *od_ptr is set to NULL.
+ * On the other hand, if an equivalent object descriptor has been installed
+ * already, then return that rather than installing a new one. This way,
+ * objects of the same type should end up sharing the same descriptor.
+ * Note that in the latter case *od_ptr is left untouched. An example of
+ * usage may further clarify the behaviour of this function:
+ *
+ *   BoxVMObjDesc *od = GeneratorOfObjDesc(...); // Here memory is allocated!
+ *   BoxVMAllocID id = BoxVMAllocID_From_ObjDesc(vm, & od);
+ *   if (od == NULL)
+ *     // Object descriptor has been installed: do not need to free
+ *     // We still may give a name (just for debugging purposes)
+ *     BoxVM_Set_Obj_Name(vm, id, BoxMem_Strdup("NameOfType"));
+ *   else
+ *     BoxMem_Free(od); // Deallocate object
+ *
+ */
+BoxVMAllocID BoxVMAllocID_From_ObjDesc(BoxVM *vm, BoxVMObjDesc **od_ptr);
+
+/** Return the object descriptor for the given allocation ID. If there is no
+ * object descriptor associated to the ID, then return the NULL pointer.
+ */
+BoxVMObjDesc *BoxVMObjDesc_From_Alloc_ID(BoxVM *vm, BoxVMAllocID id);
+
+/** Get the name of the object descriptor.
+ * @see BoxVM_Set_Obj_Name
+ */
+const char *BoxVM_Get_Obj_Name(BoxVM *vm, BoxVMAllocID id);
+
+/** Set a name for the object descriptor.
+ * @see BoxVMAllocID_From_ObjDesc
+ */
+void BoxVM_Set_Obj_Name(BoxVM *vm, BoxVMAllocID id, char *name);
 
 /** Allocate the space for an object with alloc-ID equal to 'id'.
  * The object is then initialized.

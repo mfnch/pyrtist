@@ -46,9 +46,4 @@ int Auto_Generate_Code(BoxCmp *c, BoxType t_child, BoxType t_parent);
  */
 BoxType Auto_Generate_Procedure(BoxCmp *c, BoxType t_child, BoxType t_parent);
 
-/** Automatically generate the copier for the type t.
- * Return 1 if a copier was generated.
- */
-int Auto_Generate_Copier(BoxCmp *c, BoxType t);
-
 #endif

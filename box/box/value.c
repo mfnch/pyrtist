@@ -426,6 +426,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
   }
 }
 
+#if 0
 /** Similar to TS_Procedure_Search, but auto generates the procedure,
  * if possible.
  */
@@ -482,6 +483,9 @@ static BoxVMAllocID My_AllocID_Of_Type(BoxCmp *c, BoxType t) {
   My_MethodTable_Of_Type(c, & mt, t);
   return BoxVMAllocID_From_Method_Table(c->vm, & mt);
 }
+#endif
+
+BoxVMAllocID TS_Get_AllocID(BoxTS *ts, BoxVM *vm, BoxType t);
 
 void Value_Emit_Allocate(Value *v) {
   switch(v->kind) {
@@ -498,7 +502,7 @@ void Value_Emit_Allocate(Value *v) {
       assert(v->proc == proc);
 
       /* Get the alloc ID for the type */
-      alloc_id = My_AllocID_Of_Type(c, v->type);
+      alloc_id = TS_Get_AllocID(& c->ts, c->vm, v->type);
 
       if (alloc_id == BOXVMALLOCID_NONE) {
         Value v_size, v_alloc_id;
