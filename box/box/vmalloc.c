@@ -122,9 +122,8 @@ static char *My_ObjDesc_To_Str(BoxVM *vm, BoxVMAllocID id, char *indentation) {
   MyDescEntry *de = (MyDescEntry *) BoxArr_Item_Ptr(& vm->desc_from_id, id);
   BoxVMObjDesc *od = de->desc;
   char *s =
-    Box_SPrintF("%s%s: size=%d, n.subs=%d, has=%s%s%s%s, "
+    Box_SPrintF("%s: size=%d, n.subs=%d, has=%s%s%s%s, "
                 "I=%d, F=%d, C=%d, R=%d\n",
-                indentation,
                 de->name, (int) od->size, (int) od->num_subs,
                 (od->has.initializer) ? "I" : "i",
                 (od->has.finalizer) ? "F" : "f",
@@ -139,7 +138,7 @@ static char *My_ObjDesc_To_Str(BoxVM *vm, BoxVMAllocID id, char *indentation) {
   size_t i;
 
   for (i = 0; i < od->num_subs; i++, sub++) {
-    char *ss = My_ObjDesc_To_Str(vm, sub->alloc_id, "");
+    char *ss = My_ObjDesc_To_Str(vm, sub->alloc_id, indentation2);
     s = Box_SPrintF("%~s%s%d (%d): %~s",
                     s, indentation2, i, sub->position, ss);
   }
@@ -242,7 +241,8 @@ static BoxTask My_Obj_Iter(BoxVM *vm, BoxVMObjDesc *desc, BoxPtr *obj,
     sub.ptr = obj->ptr + addr;
 
     BoxVMObjDesc *sub_desc = BoxVMObjDesc_From_Alloc_ID(vm, id);
-    if (iter(vm, sub_desc, & sub, addr, pass))
+
+    if (iter(vm, sub_desc, & sub, addr, pass) != BOXTASK_OK)
       return BOXTASK_FAILURE;
   }
 
@@ -254,7 +254,7 @@ static BoxTask My_Obj_Init(BoxVM *vm, BoxVMObjDesc *desc,
   BoxVMCallNum initializer = desc->initializer;
 
   /* First all the sub-objects are initialized */
-  if (My_Obj_Iter(vm, desc, obj, My_Obj_Init, NULL))
+  if (desc->num_subs > 0 && My_Obj_Iter(vm, desc, obj, My_Obj_Init, NULL))
     return BOXTASK_FAILURE;
 
   /* Now the parent object is initialized */
@@ -284,6 +284,7 @@ static BoxTask My_Obj_Finish(BoxVM *vm, BoxVMObjDesc *desc,
 }
 
 BoxTask BoxVM_Obj_Finish(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id) {
+  return BOXTASK_OK;
   BoxVMObjDesc *desc = BoxVMObjDesc_From_Alloc_ID(vm, id);
   if (desc == NULL)
     return BOXTASK_OK;
@@ -345,7 +346,7 @@ void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
     return;
 
   references = --head->references;
-  if (references > 0)
+  if (references > 0 || 1)
     return;
 
   else if (references == 0) {
@@ -374,7 +375,6 @@ void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
 
 BoxTask BoxVM_Obj_Create(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id) {
   BoxVMObjDesc *od = BoxVMObjDesc_From_Alloc_ID(vm, id);
-
   if (od == NULL)
     return BOXTASK_FAILURE;
 
@@ -439,6 +439,8 @@ static BoxTask My_Obj_Copy(BoxVM *vm, BoxVMObjDesc *desc,
 
 BoxTask BoxVM_Obj_Copy(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
                        BoxVMAllocID id) {
+//   printf("BoxVM_Obj_Copy: copying id=%d!\n", (int) id);
+
   BoxVMObjDesc *desc = BoxVMObjDesc_From_Alloc_ID(vm, id);
   if (desc != NULL) {
     /* Copy the raw data */
@@ -453,11 +455,12 @@ BoxTask BoxVM_Obj_Copy(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
   }
 }
 
-BoxTask BoxVM_Obj_Relocate(BoxVM *vm, BoxPtr *dest, BoxPtr *src) {
-  assert(!BoxPtr_Is_Null(dest) && !BoxPtr_Is_Null(src));
+BoxTask BoxVM_Obj_Relocate(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
+                           BoxVMAllocID id) {
+  //assert(!BoxPtr_Is_Null(dest) && !BoxPtr_Is_Null(src));
   /* ^^^ For now we assume non detached pointers */
+  return BoxVM_Obj_Copy(vm, dest, src, id);
 
-  return BOXTASK_FAILURE;
 #if 0
   BoxVMMethodTable *mt;
   VMAllocHead *dest_head = BoxPtr_Get_Head(dest),

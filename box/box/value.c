@@ -1097,7 +1097,6 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
 
   if (dest->value.cont.type == BOXCONTTYPE_OBJ) {
     /* Object types must be copied and destoyed */
-    Value v_size;
 
     /* Put addresses in registers. EXAMPLE: o[ro2 + 4] is transformed to ro3
      * through "lea ro3, o[ro2 + 4]"
@@ -1125,17 +1124,34 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
 
     } else {
       /* Get the alloc ID for the source value */
+      BoxVMAllocID id = TS_Get_AllocID(& c->ts, c->vm, src->type);
 
-      /* Now we move src to dest, copying it byte by byte */
-      Value_Init(& v_size, c->cur_proc);
-      Value_Setup_As_Imm_Int(& v_size, TS_Get_Size(& c->ts, dest->type));
-      CmpProc_Assemble(c->cur_proc, BOXGOP_MCOPY,
-                       3, & dest->value.cont, & src->value.cont,
-                       & v_size.value.cont);
-      Value_Unlink(& v_size);
-      Value_Unlink(src);
-      Value_Unlink(dest);
-      return BOXTASK_OK;
+      if (id != BOXVMALLOCID_NONE) {
+        /* We leave the copy operation to the Box memory management system */
+        Value v_id;
+        Value_Init(& v_id, c->cur_proc);
+        Value_Setup_As_Imm_Int(& v_id, id);
+        CmpProc_Assemble(c->cur_proc, BOXGOP_RELOC,
+                         3, & dest->value.cont, & src->value.cont,
+                         & v_id.value.cont);
+        Value_Unlink(& v_id);
+        Value_Unlink(src);
+        Value_Unlink(dest);
+        return BOXTASK_OK;
+
+      } else {
+        /* Now we move src to dest, copying it byte by byte */
+        Value v_size;
+        Value_Init(& v_size, c->cur_proc);
+        Value_Setup_As_Imm_Int(& v_size, TS_Get_Size(& c->ts, dest->type));
+        CmpProc_Assemble(c->cur_proc, BOXGOP_MCOPY,
+                         3, & dest->value.cont, & src->value.cont,
+                         & v_size.value.cont);
+        Value_Unlink(& v_size);
+        Value_Unlink(src);
+        Value_Unlink(dest);
+        return BOXTASK_OK;
+      }
     }
 
   } else {

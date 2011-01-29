@@ -200,6 +200,7 @@ BoxTask BoxVM_Obj_Create(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id);
 
 /** Relocate an object in memory: move the object from 'src' to 'dest'.
  */
-BoxTask BoxVM_Obj_Relocate(BoxVM *vm, BoxPtr *dest, BoxPtr *src);
+BoxTask BoxVM_Obj_Relocate(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
+                           BoxVMAllocID id);
 
 #endif

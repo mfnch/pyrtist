@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008, 2009, 2010 by Matteo Franchin                        *
+ * Copyright (C) 2008-2011 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -404,7 +404,8 @@ static void VM__Exec_Reloc_OO(BoxVM *vm) {
   VMStatus *vmcur = vm->vmcur;
   BoxPtr *dest = (BoxPtr *) vmcur->arg1,
          *src = (BoxPtr *) vmcur->arg2;
-  if (BoxVM_Obj_Relocate(vm, dest, src) != BOXTASK_OK)
+  BoxInt id = *((Int *) vmcur->local[TYPE_INT].ptr);
+  if (BoxVM_Obj_Relocate(vm, dest, src, id) == BOXTASK_OK)
     return;
   vm->vmcur->flags.error = 1;
   vm->vmcur->flags.exit = 1;
@@ -636,12 +637,13 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   { BOXGOP_PPTRY,  "pptry", 1, 'p',     "a1", "ro0", "x-", "xx", VM__Exec_PPtrY_P  }, /* pptry rp      */
   {   BOXGOP_RET,    "ret", 0, 'n',     NULL,  NULL, "--", "xx", VM__Exec_Ret      }, /* ret           */
   {BOXGOP_CREATE, "create", 1, 'i',     "a1", "ro0", "x-", "xx", VM__Exec_Create_I }, /* create ri     */
-  { BOXGOP_RELOC,  "reloc", 2, 'o',  "a1,a2",  "a2", "xx", "xx", VM__Exec_Reloc_OO }, /* reloc ro, ro  */
   {BOXGOP_MALLOC, "malloc", 2, 'i',  "a1,a2", "ro0", "xx", "xx", VM__Exec_Malloc_II}, /* malloc ri, ri */
   {   BOXGOP_MLN,    "mln", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_Mln_O    }, /* mln ro        */
   { BOXGOP_MUNLN,  "munln", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_MUnln_O  }, /* munln ro      */
   { BOXGOP_MCOPY,  "mcopy", 2, 'o',
-                                 "a1,a2,ri0",  NULL, "xx", "xx", VM__Exec_MCopy_OO }, /* mcopy ro, ro    */
+                                 "a1,a2,ri0",  NULL, "xx", "xx", VM__Exec_MCopy_OO }, /* mcopy ro, ro  */
+  { BOXGOP_RELOC,  "reloc", 2, 'o',
+                                 "a1,a2,ri0",  NULL, "xx", "xx", VM__Exec_Reloc_OO }, /* reloc ro, ro  */
   { BOXGOP_SHIFT,  "shift", 2, 'o',     "a2",  "a1", "xx", "xx", VM__Exec_Shift_OO }, /* shift ro, ro    */
   {   BOXGOP_REF,    "ref", 2, 'o',     "a2",  "a1", "xx", "xx", VM__Exec_Ref_OO   }, /* ref ro, ro      */
   {  BOXGOP_NULL,   "null", 1, 'o',     NULL,  "a1", "x-", "xx", VM__Exec_Null_O   }, /* null ro         */

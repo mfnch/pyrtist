@@ -642,15 +642,17 @@ void BoxVM_Module_Global_Set(BoxVM *vmp, Int type, Int reg, void *value) {
 BoxTask BoxVM_Module_Execute_With_Args(BoxVM *vm, BoxVMCallNum cn,
                                        BoxPtr *parent, BoxPtr *child) {
   BoxTask t;
-  BoxPtr *save_parent = vm->box_vm_current,
-         *save_child = vm->box_vm_arg1;
+  BoxPtr save_parent = *vm->box_vm_current,
+         save_child = *vm->box_vm_arg1;
 
-  vm->box_vm_current = parent;
-  vm->box_vm_arg1 = child;
+  if (parent != NULL)
+    *vm->box_vm_current = *parent;
+  if (child != NULL)
+    *vm->box_vm_arg1 = *child;
   t = BoxVM_Module_Execute(vm, cn);
 
-  vm->box_vm_current = save_parent;
-  vm->box_vm_arg1 = save_child;
+  *vm->box_vm_current = save_parent;
+  *vm->box_vm_arg1 = save_child;
   return t;
 }
 
