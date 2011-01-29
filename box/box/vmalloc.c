@@ -28,7 +28,7 @@
 #include "vmalloc.h"
 
 #define DEBUG_VMALLOC 0
-#define DEBUG_VMALLOC_REFCHECK 0
+#define DEBUG_VMALLOC_REFCHECK 1
 
 typedef struct {
   BoxVMAllocID id;
@@ -275,6 +275,7 @@ BoxTask BoxVM_Obj_Init(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id) {
 static BoxTask My_Obj_Finish(BoxVM *vm, BoxVMObjDesc *desc,
                              BoxPtr *obj, size_t addr, void *pass) {
   BoxVMCallNum finalizer = desc->finalizer;
+  /*return BOXTASK_OK;*/
 
   /* First we finalize the parent, then all its children */
   if (finalizer != BOXVMCALLNUM_NONE)
@@ -284,7 +285,6 @@ static BoxTask My_Obj_Finish(BoxVM *vm, BoxVMObjDesc *desc,
 }
 
 BoxTask BoxVM_Obj_Finish(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id) {
-  return BOXTASK_OK;
   BoxVMObjDesc *desc = BoxVMObjDesc_From_Alloc_ID(vm, id);
   if (desc == NULL)
     return BOXTASK_OK;
@@ -346,7 +346,7 @@ void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
     return;
 
   references = --head->references;
-  if (references > 0 || 1)
+  if (references > 0)
     return;
 
   else if (references == 0) {
@@ -354,7 +354,7 @@ void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
       (void) BoxVM_Obj_Finish(vmp, obj, head->id);
 
 #if DEBUG_VMALLOC == 1
-    printf("BoxVM_Unlink(%d): Deallocating object of type "SInt" at %p.\n",
+    printf("BoxVM_Unlink(%d): deallocated object of id "SInt" at %p.\n",
            num_dealloc, head->id, obj->block);
     ++num_dealloc;
 #endif

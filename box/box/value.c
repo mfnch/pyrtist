@@ -504,14 +504,11 @@ void Value_Emit_Allocate(Value *v) {
       alloc_id = TS_Get_AllocID(& c->ts, c->vm, v->type);
 
       if (alloc_id == BOXVMALLOCID_NONE) {
-        Value v_size, v_alloc_id;
+        Value v_size;
         Value_Init(& v_size, proc);
         Value_Setup_As_Imm_Int(& v_size, TS_Get_Size(& c->ts, v->type));
-        Value_Init(& v_alloc_id, proc);
-        Value_Setup_As_Imm_Int(& v_alloc_id, alloc_id);
         CmpProc_Assemble(proc, BOXGOP_MALLOC,
-                         3, & v->value.cont, & v_size.value.cont,
-                         & v_alloc_id.value.cont);
+                         2, & v->value.cont, & v_size.value.cont);
 
       } else {
         /* The 'create' instruction automatically invokes the creator

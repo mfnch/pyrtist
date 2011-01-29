@@ -726,7 +726,7 @@ static BoxType My_Procedure_Search(TS *ts, Type *expansion_type,
 
 BoxType TS_Procedure_Search(TS *ts, BoxType *expansion_type,
                             BoxType child, BoxType parent,
-			    TSSearchMode mode) {
+                            TSSearchMode mode) {
   BoxType previous_parent;
   int search_inherited = (mode & TSSEARCHMODE_INHERITED) != 0;
   BoxType proc;
@@ -742,8 +742,7 @@ BoxType TS_Procedure_Search(TS *ts, BoxType *expansion_type,
     /* Resolve the parent type and retry */
     previous_parent = parent;
     parent = TS_Resolve_Once(ts, parent,
-                             TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES |
-                             TS_KS_SUBTYPE);
+                             TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES);
   } while (parent != previous_parent && search_inherited);
 
   return proc;
