@@ -28,7 +28,7 @@
 #include "vmalloc.h"
 
 #define DEBUG_VMALLOC 0
-#define DEBUG_VMALLOC_REFCHECK 1
+#define DEBUG_VMALLOC_REFCHECK 0
 
 typedef struct {
   BoxVMAllocID id;
@@ -281,7 +281,8 @@ static BoxTask My_Obj_Finish(BoxVM *vm, BoxVMObjDesc *desc,
   if (finalizer != BOXVMCALLNUM_NONE)
     return BoxVM_Module_Execute_With_Args(vm, finalizer, obj, NULL);
 
-  return My_Obj_Iter(vm, desc, obj, My_Obj_Finish, NULL);
+  return (desc->num_subs > 0) ?
+         My_Obj_Iter(vm, desc, obj, My_Obj_Finish, NULL) : BOXTASK_OK;
 }
 
 BoxTask BoxVM_Obj_Finish(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id) {
@@ -330,6 +331,7 @@ void BoxVM_Link(Obj *obj) {
   if (BoxPtr_Is_Detached(obj))
     return;
   ++head->references;
+  assert(head->references >= 2);
 }
 
 /** Decrease the reference counter for the given object and proceed

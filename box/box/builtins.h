@@ -43,6 +43,9 @@ typedef struct {
           print,
           exit,
           file;
+  BoxVMSymID
+          subtype_init,
+          subtype_finish;
 } BltinStuff;
 
 void Bltin_Init(BoxCmp *c);

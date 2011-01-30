@@ -33,13 +33,14 @@ typedef struct {
   BoxArr       subs;
 } MyObjDescBuilder;
 
-static void My_Build_Struc_Desc(BoxTS *ts, BoxVM *vm,
+static void My_Build_Struc_Desc(BoxCmp *c,
                                 MyObjDescBuilder *bldr, BoxType t) {
+  BoxTS *ts = & c->ts;
   BoxTSStrucIt it;
   /*int i = 0;*/
   for (BoxTSStrucIt_Init(ts, & it, t); it.has_more;
        BoxTSStrucIt_Advance(& it)) {
-    BoxVMAllocID alloc_id = TS_Get_AllocID(ts, vm, it.member);
+    BoxVMAllocID alloc_id = TS_Get_AllocID(c, it.member);
     /*printf("num=%d, pos=%d, id=%d\n", i++, (int) it.position, (int) alloc_id);*/
     if (alloc_id != BOXVMALLOCID_NONE) {
       BoxVMSubObj *sub = (BoxVMSubObj *) BoxArr_Push(& bldr->subs, NULL);
@@ -50,21 +51,9 @@ static void My_Build_Struc_Desc(BoxTS *ts, BoxVM *vm,
   BoxTSStrucIt_Finish(& si);
 }
 
-static void My_Build_Obj_Desc(BoxTS *ts, BoxVM *vm,
-                              MyObjDescBuilder *bldr, BoxType t) {
-  BoxType ct = TS_Get_Core_Type(ts, t);
-  switch(TS_Get_Kind(ts, ct)) {
-  case TS_KIND_STRUCTURE:
-    My_Build_Struc_Desc(ts, vm, bldr, t);
-    break;
-
-  default:
-    break;
-  }
-}
-
-static BoxVMCallNum My_Find_Proc(TS *ts, BoxVM *vm,
-                                 BoxType child, BoxType parent) {
+static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxType child, BoxType parent) {
+  BoxVM *vm = c->vm;
+  BoxTS *ts = & c->ts;
   BoxType p =
     TS_Procedure_Search(ts, (BoxType *) NULL, child, parent,
                         TSSEARCHMODE_INHERITED);
@@ -77,7 +66,37 @@ static BoxVMCallNum My_Find_Proc(TS *ts, BoxVM *vm,
   }
 }
 
-BoxVMObjDesc *TS_Get_ObjDesc(BoxTS *ts, BoxVM *vm, BoxType t) {
+static void My_Build_Obj_Desc(BoxCmp *c, MyObjDescBuilder *bldr, BoxType t) {
+  BoxType ct = TS_Get_Core_Type(& c->ts, t);
+  TSKind tk = TS_Get_Kind(& c->ts, ct);
+
+  /* Here we populate the procedures for the object */
+  if (tk == TS_KIND_SUBTYPE) {
+    bldr->desc.initializer = c->bltin.subtype_init;
+    bldr->desc.finalizer = c->bltin.subtype_finish;
+    bldr->desc.copier = BOXVMCALLNUM_NONE;
+    bldr->desc.mover = BOXVMCALLNUM_NONE;
+    return;
+
+  } else {
+    bldr->desc.initializer = My_Find_Proc(c, BOXTYPE_CREATE, t);
+    bldr->desc.finalizer = My_Find_Proc(c, BOXTYPE_DESTROY, t);
+    bldr->desc.copier = BOXVMCALLNUM_NONE;
+    bldr->desc.mover = BOXVMCALLNUM_NONE;
+  }
+
+  switch(tk) {
+  case TS_KIND_STRUCTURE:
+    My_Build_Struc_Desc(c, bldr, t);
+    break;
+
+  default:
+    break;
+  }
+}
+
+BoxVMObjDesc *TS_Get_ObjDesc(BoxCmp *c, BoxType t) {
+  BoxTS *ts = & c->ts;
   if (TS_Is_Empty(ts, t) || TS_Is_Fast(ts, t))
     /* An empty (size == 0) or fast (Int, Real, ...) object does not need
      * an object descriptor!
@@ -98,14 +117,8 @@ BoxVMObjDesc *TS_Get_ObjDesc(BoxTS *ts, BoxVM *vm, BoxType t) {
     bldr.desc.has.mover = 0;
     BoxArr_Init(& bldr.subs, sizeof(BoxVMSubObj), 16);
 
-    /* Here we populate the procedures for the object */
-    bldr.desc.initializer = My_Find_Proc(ts, vm, BOXTYPE_CREATE, t);
-    bldr.desc.finalizer = My_Find_Proc(ts, vm, BOXTYPE_DESTROY, t);
-    bldr.desc.copier = BOXVMCALLNUM_NONE;
-    bldr.desc.mover = BOXVMCALLNUM_NONE;
-
     /* Here we actually build the list of subobjects */
-    My_Build_Obj_Desc(ts, vm, & bldr, t);
+    My_Build_Obj_Desc(c, & bldr, t);
 
     /* The following is necessary in order for BoxVMObjDesc_Is_Empty to work
      * properly!
@@ -131,15 +144,15 @@ BoxVMObjDesc *TS_Get_ObjDesc(BoxTS *ts, BoxVM *vm, BoxType t) {
   }
 }
 
-BoxVMAllocID TS_Get_AllocID(BoxTS *ts, BoxVM *vm, BoxType t) {
-  BoxVMObjDesc *od = TS_Get_ObjDesc(ts, vm, t);
+BoxVMAllocID TS_Get_AllocID(BoxCmp *c, BoxType t) {
+  BoxVMObjDesc *od = TS_Get_ObjDesc(c, t);
   if (od == NULL)
     return BOXVMALLOCID_NONE;
 
   else {
-    BoxVMAllocID id = BoxVMAllocID_From_ObjDesc(vm, & od);
+    BoxVMAllocID id = BoxVMAllocID_From_ObjDesc(c->vm, & od);
     if (od == NULL)
-      BoxVM_Set_Obj_Name(vm, id, TS_Name_Get(ts, t));
+      BoxVM_Set_Obj_Name(c->vm, id, TS_Name_Get(& c->ts, t));
     else
       BoxMem_Free(od); // Deallocate object
     return id;

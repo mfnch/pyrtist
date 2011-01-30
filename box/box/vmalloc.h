@@ -133,6 +133,8 @@ void BoxVM_Link(BoxObj *obj);
  */
 void BoxVM_Unlink(BoxVM *vm, BoxObj *obj);
 
+#define BoxVM_Obj_Unlink BoxVM_Unlink
+
 /** Initialise the memory handling system of the virtual machine 'vmp'
  *  (to be called internally by VM_Init).
  */

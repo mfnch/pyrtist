@@ -31,6 +31,10 @@
 #ifndef _BOX_TSDESC_H
 #  define _BOX_TSDESC_H
 
+#  include <box/types.h>
+#  include <box/vmalloc.h>
+#  include <box/compiler.h>
+
 /** Build the object descriptor for the given type 't'.
  * 'ts' and 'vm' are the type system and VM object.
  * @return A newly allocated BoxVMObjDesc object (it is responsability of the
@@ -38,12 +42,12 @@
  *   Return NULL if the object does have a simple structure and does not need
  *   an object descriptor.
  */
-BoxVMObjDesc *TS_Get_ObjDesc(BoxTS *ts, BoxVM *vm, BoxType t);
+BoxVMObjDesc *TS_Get_ObjDesc(BoxCmp *c, BoxType t);
 
 /** Return the alloc ID of the given object 't'.
  * This function internally creates the object descriptor and finds whether
  * it has been already created (to avoid duplication of IDs).
  */
-BoxVMAllocID TS_Get_AllocID(BoxTS *ts, BoxVM *vm, BoxType t);
+BoxVMAllocID TS_Get_AllocID(BoxCmp *c, BoxType t);
 
 #endif /* _BOX_TSDESC_H */

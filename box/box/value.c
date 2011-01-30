@@ -501,7 +501,7 @@ void Value_Emit_Allocate(Value *v) {
       assert(v->proc == proc);
 
       /* Get the alloc ID for the type */
-      alloc_id = TS_Get_AllocID(& c->ts, c->vm, v->type);
+      alloc_id = TS_Get_AllocID(c, v->type);
 
       if (alloc_id == BOXVMALLOCID_NONE) {
         Value v_size;
@@ -831,7 +831,7 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType new_type) {
         v_ptr = Value_New(c->cur_proc);
         Value_Setup_As_Temp(v_ptr, BOXTYPE_PTR);
         v_ptr->attr.own_reference = own_reference;
-        CmpProc_Assemble(c->cur_proc, BOXGOP_MOV, 2,
+        CmpProc_Assemble(c->cur_proc, BOXGOP_REF, 2,
                          & v_ptr->value.cont, & v_ptr_cont);
         assert(v_ptr->value.cont.categ == BOXCONTCATEG_LREG);
         return Value_Cast_From_Ptr(v_ptr, new_type);
@@ -1102,12 +1102,6 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
     src = Value_To_Straight_Ptr(src);
     dest = Value_To_Straight_Ptr(dest);
 
-#if 0
-    /* First let's destroy the 'dest' obj (it is going to be overwritten) */
-    Value_Link(& c->value.destroy);
-    (void) Value_Emit_Call_Or_Blacklist(dest, & c->value.destroy);
-#endif
-
     /* We try to use the method provided by the user, if possible */
     Value_Link(src);
     Value_Link(dest);
@@ -1121,7 +1115,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
 
     } else {
       /* Get the alloc ID for the source value */
-      BoxVMAllocID id = TS_Get_AllocID(& c->ts, c->vm, src->type);
+      BoxVMAllocID id = TS_Get_AllocID(c, src->type);
 
       if (id != BOXVMALLOCID_NONE) {
         /* We leave the copy operation to the Box memory management system */
@@ -1150,6 +1144,11 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
         return BOXTASK_OK;
       }
     }
+
+  } else if (dest->value.cont.type == BOXCONTTYPE_PTR) {
+    /* For pointers we need to pay special care: reference counts! */
+    CmpProc_Assemble(dest->proc, BOXGOP_REF,
+                     2, & dest->value.cont, & src->value.cont);
 
   } else {
     /* All the other types can be moved "quickly" with a mov operation */
@@ -1440,8 +1439,10 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
     v_subtype_parent = Value_Cast_To_Ptr(v_subtype_parent);
     (void) Value_Move_Content(v_ptr, v_subtype_parent);
     Value_Unlink(v_ptr);
+#if 0
     Value_Emit_Link(v_parent); /* The subtype gets a reference
                                   to its parent */
+#endif
   }
 
   Value_Unlink(v_parent);

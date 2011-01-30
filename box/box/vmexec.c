@@ -456,11 +456,13 @@ static void VM__Exec_Ref_OO(BoxVM *vm) {
   VMStatus *vmcur = vm->vmcur;
   BoxPtr *arg1 = (BoxPtr *) vmcur->arg1,
          *arg2 = (BoxPtr *) vmcur->arg2;
-  if (arg1 == arg2) {
+  if (arg1 != arg2) {
+    assert(arg1 != NULL);
     if (!BoxPtr_Is_Detached(arg1))
       BoxVM_Unlink(vm, arg1);
     *arg1 = *arg2;
-    BoxVM_Link(arg2);
+    if (!BoxPtr_Is_Detached(arg2))
+      BoxVM_Link(arg2);
   }
 }
 

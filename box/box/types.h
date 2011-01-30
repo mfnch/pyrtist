@@ -119,15 +119,17 @@ typedef void *BoxCPtr;
 /** A subtype is simply a structure containing two pointers: one points
  * to the parent, one to the child.
  */
-typedef BoxObj BoxSubtype[2];
+typedef struct {
+  BoxObj child, parent;
+} BoxSubtype;
 
 /** in this macro 'subtype_ptr' should have type 'Subtype *' */
 #  define BOXSUBTYPE_PARENT_PTR(subtype_ptr, parent_type) \
-  ((parent_type *) ((*(subtype_ptr))[1].ptr))
+  ((parent_type *) ((*(subtype_ptr)).parent.ptr))
 
 /** in this macro 'subtype_ptr' should have type 'Subtype *' */
 #  define BOXSUBTYPE_CHILD_PTR(subtype_ptr, child_type) \
-  (( child_type *) ((*(subtype_ptr))[0].ptr))
+  (( child_type *) ((*(subtype_ptr)).child.ptr))
 
 typedef struct {
   BoxInt length;

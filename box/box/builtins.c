@@ -35,12 +35,27 @@
 #include "vmproc.h"
 #include "vmsym.h"
 #include "vmsymstuff.h"
+#include "vmalloc.h"
 #include "registers.h"
 #include "builtins.h"
 #include "bltinstr.h"
 #include "bltinio.h"
 
 /*******************************BOX-PROCEDURES********************************/
+
+static Task My_Subtype_Init(BoxVM *vm) {
+  BoxSubtype *s = BOX_VM_THIS_PTR(vm, BoxSubtype);
+  BoxPtr_Nullify(& s->parent);
+  BoxPtr_Nullify(& s->child);
+  return Success;
+}
+
+static Task My_Subtype_Finish(BoxVM *vm) {
+  BoxSubtype *s = BOX_VM_THIS_PTR(vm, BoxSubtype);
+  BoxVM_Obj_Unlink(vm, & s->parent);
+  BoxVM_Obj_Unlink(vm, & s->child);
+  return Success;
+}
 
 /**********************
  * IO                 *
@@ -655,6 +670,10 @@ static void My_Register_Std_Procs(BoxCmp *c) {
                         My_Point_RealNumCouple);
   (void) Bltin_Proc_Def(c,          t_if,        t_int, My_If_Int);
   (void) Bltin_Proc_Def(c,         t_for,        t_int, My_For_Int);
+
+  c->bltin.subtype_init = Bltin_Proc_Add(c, "subtype_init", My_Subtype_Init);
+  c->bltin.subtype_finish = Bltin_Proc_Add(c, "subtype_finish",
+                                           My_Subtype_Finish);
 }
 
 static void My_Register_Math(BoxCmp *c) {
