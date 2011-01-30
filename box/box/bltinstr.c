@@ -191,7 +191,6 @@ static Task My_Str_Str(BoxVM *vm) {
 static Task My_Str_CString(BoxVM *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   char *c_s = BOX_VM_ARG_PTR(vm, char);
-  assert(c_s != 0x12);
   assert(s != NULL);
   return BoxStr_Concat(s, c_s);
 }

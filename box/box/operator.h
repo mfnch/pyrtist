@@ -167,4 +167,8 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src);
  */
 Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest);
 
+Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
+                                    BoxType type_left, BoxType type_right,
+                                    BoxType type_result);
+
 #endif /* _OPERATOR_H_FNS */

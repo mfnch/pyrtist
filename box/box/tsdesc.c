@@ -27,6 +27,7 @@
 #include "vmalloc.h"
 #include "tsdesc.h"
 #include "vmsymstuff.h"
+#include "operator.h"
 
 typedef struct {
   BoxVMObjDesc desc;
@@ -66,6 +67,20 @@ static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxType child, BoxType parent) {
   }
 }
 
+static BoxVMCallNum My_Find_Copier(BoxCmp *c, BoxType parent) {
+  OprMatch match;
+  Operation *opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match,
+                                            parent, BOXTYPE_NONE, parent);
+  if (opn == NULL)
+    return BOXVMCALLNUM_NONE;
+
+  else {
+    assert(opn->asm_scheme == OPASMSCHEME_USR_UN);
+    BoxVMSymID sym_id = opn->implem.sym_id;
+    return BoxVMSym_Get_Call_Num(c->vm, sym_id);
+  }
+}
+
 static void My_Build_Obj_Desc(BoxCmp *c, MyObjDescBuilder *bldr, BoxType t) {
   BoxType ct = TS_Get_Core_Type(& c->ts, t);
   TSKind tk = TS_Get_Kind(& c->ts, ct);
@@ -81,7 +96,7 @@ static void My_Build_Obj_Desc(BoxCmp *c, MyObjDescBuilder *bldr, BoxType t) {
   } else {
     bldr->desc.initializer = My_Find_Proc(c, BOXTYPE_CREATE, t);
     bldr->desc.finalizer = My_Find_Proc(c, BOXTYPE_DESTROY, t);
-    bldr->desc.copier = BOXVMCALLNUM_NONE;
+    bldr->desc.copier = My_Find_Copier(c, t);
     bldr->desc.mover = BOXVMCALLNUM_NONE;
   }
 
