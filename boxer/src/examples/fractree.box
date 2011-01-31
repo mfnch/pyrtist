@@ -1,9 +1,7 @@
 //!BOXER:VERSION:0:1:1
-
-
-
-
-
+include "g"
+GUI = Void
+Window@GUI[]
 
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=32.7743366593, .y=2.27319866085]
@@ -47,3 +45,4 @@ w = Window[][
 ]
 
 GUI[w]
+

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2011 by Matteo Franchin                                    *
+ * Copyright (C) 2010 by Matteo Franchin                                    *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -17,17 +17,25 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* This file contains part of the information which Box needs in order to work
- * properly. It contains, in particular, all the details about the version
- * of the program.
- */
+#ifndef _BOX_VMPTR_H
+#  define _BOX_VMPTR_H
 
-#define BOX_VER_MAJOR @BOX_VER_MAJOR@
-#define BOX_VER_MINOR @BOX_VER_MINOR@
-#define BOX_VER_MAINT @BOX_VER_MAINT@
+typedef struct _BoxVM_struct BoxVM;
 
-#define BOX_VERSTR_MAJOR "@BOX_VER_MAJOR@"
-#define BOX_VERSTR_MINOR "@BOX_VER_MINOR@"
-#define BOX_VERSTR_MAINT "@BOX_VER_MAINT@"
-#define BOX_VERSTR_ROUGH "@BOX_VER_MAJOR@.@BOX_VER_MINOR@"
-#define BOX_VERSTR "@BOX_VER_MAJOR@.@BOX_VER_MINOR@.@BOX_VER_MAINT@"
+typedef struct _BoxVMStatus_struct VMStatus;
+
+/* Data type used to write/read binary codes for the instructions */
+typedef unsigned char BoxVMByte;
+typedef char BoxVMSByte;
+typedef unsigned long BoxVMByteX4;
+#  define BoxVMByteX4_Fmt "%8.8lx"
+
+#  ifdef BOX_ABBREV
+typedef BoxVMByteX4 VMByteX4;
+#    define VMByteX4_Fmt BoxVMByteX4_Fmt
+#  endif
+
+/** Provided for compatibility */
+typedef BoxVM VMProgram;
+
+#endif /* _BOX_VMPTR_H */
