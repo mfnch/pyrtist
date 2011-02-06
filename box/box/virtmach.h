@@ -382,6 +382,49 @@ BoxVM *BoxVM_New(void);
  */
 void BoxVM_Destroy(BoxVM *vm);
 
+
+
+
+/** VM Executor. */
+typedef struct {
+  BoxVM *vm;              /**< The VM which is being executed */
+  BoxVMProcInstalled *p;  /**< Procedure which is currently been executed */
+
+  struct {
+    unsigned int error    :1, /**< Error detected */
+                 exit     :1, /**< Exit current execution frame */
+                 is_long  :1; /**< Instruction is in long format */
+  } flags;                /**< Execution flags */
+
+  BoxVMByteX4 *i_pos,     /**< Pointer to the current instruction */
+              i_eye;      /**< Execution "eye" (last four bytes processed) */
+  BoxUInt     i_type,     /**< Type of instruction */
+              i_len,      /**< Size of instruction */
+              arg_type;   /**< Type of arguments of instruction */
+
+  const BoxVMInstrDesc
+              *idesc;     /**< Descriptor for current instruction */
+  void        *arg1,
+              *arg2;      /**< Pointer to instruction arguments */
+
+  BoxVMRegs   local[NUM_TYPES], /**< Local register allocation status */
+              *global;          /**< Global register allocation status */
+
+  BoxInt      alc[NUM_TYPES]; /**< Allocation status of local registers
+                                   (whether a 'new num_regs, num_vars'
+                                   instruction has been used) */
+
+} BoxVMX;
+
+/** Initialize a new VM executor in 'vmx'. */
+void BoxVMX_Init(BoxVMX *vmx, BoxVM *vm);
+
+/** Finalize a new VM executor in 'vmx'. */
+void BoxVMX_Finish(BoxVMX *vmx);
+
+
+
+
 /** Provide a failure message for a raised exception. */
 void BoxVM_Set_Fail_Msg(BoxVM *vm, const char *msg);
 

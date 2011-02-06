@@ -260,6 +260,7 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
  * NOTE: this function assumes that the two operands have both type and values
  *  and checks only if the left operand is a target value, if the operation
  *  requires that.
+ * REFERENCES: return: new, v_left: ?, v_right: ?;
  */
 static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
                           Value *v_left, Value *v_right) {
@@ -332,6 +333,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
         }
       }
 
+      Value *v_save = v_left;
       v_left = Value_To_Temp(v_left);
     }
 

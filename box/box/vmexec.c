@@ -118,8 +118,20 @@ static void VM__Exec_Mov_PP(BoxVM *vmp) {
 }
 static void VM__Exec_Mov_OO(BoxVM *vm) {
   VMStatus *vmcur = vm->vmcur;
-  *((BoxPtr *) vmcur->arg1) = *((BoxPtr *) vmcur->arg2);
-  BoxPtr_Detach((BoxPtr *) vmcur->arg1);
+  BoxPtr *arg1 = (BoxPtr *) vmcur->arg1,
+         *arg2 = (BoxPtr *) vmcur->arg2;
+  if (arg1 != arg2) {
+    assert(arg1 != NULL);
+    if (!BoxPtr_Is_Detached(arg1))
+      BoxVM_Unlink(vm, arg1);
+    *arg1 = *arg2;
+#if 0
+    if (!BoxPtr_Is_Detached(arg2))
+      BoxVM_Link(arg2);
+#else
+    BoxPtr_Detach(arg1);
+#endif
+  }
 }
 
 static void VM__Exec_BNot_I(BoxVM *vmp) {
@@ -425,12 +437,13 @@ static void VM__Exec_Malloc_I(BoxVM *vmp) {
 
 static void VM__Exec_Mln_O(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  BoxVM_Link((Obj *) vmcur->arg1);
+  BoxVM_Obj_Link((Obj *) vmcur->arg1);
 }
 
 static void VM__Exec_MUnln_O(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  BoxVM_Unlink(vmp, (BoxPtr *) vmcur->arg1);
+  BoxVM_Obj_Unlink(vmp, (BoxPtr *) vmcur->arg1);
+  BoxPtr_Detach((BoxPtr *) vmcur->arg1);
 }
 
 static void VM__Exec_MCopy_OO(BoxVM *vmp) {
@@ -446,7 +459,7 @@ static void VM__Exec_Shift_OO(BoxVM *vm) {
          *arg2 = (BoxPtr *) vmcur->arg2;
   if (arg1 != arg2) {
     if (!BoxPtr_Is_Detached(arg1))
-      BoxVM_Unlink(vm, arg1);
+      BoxVM_Obj_Unlink(vm, arg1);
     *arg1 = *arg2;
     BoxPtr_Detach(arg2);
   }

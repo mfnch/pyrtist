@@ -121,7 +121,13 @@ void Value_Link(Value *v) {
   v->num_ref += 1;
 }
 
-/** Determine if the given value can be recycled, otherwise return Value_New()
+static Value *My_Link(Value *v) {
+  v->num_ref += 1;
+  return v;
+}
+
+/* Determine if the given value can be recycled, otherwise return Value_New()
+ * REFERENCES: return: new, v: -1;
  */
 Value *Value_Recycle(Value *v) {
   CmpProc *proc = v->proc->cmp->cur_proc; /* Be careful! We want to operate on
@@ -134,7 +140,7 @@ Value *Value_Recycle(Value *v) {
     int new_or_init = v->attr.new_or_init;
     Value_Init(v, proc);
     v->attr.new_or_init = new_or_init;
-    Value_Link(v); /* Must return a new reference */
+    Value_Link(v); /* XXX this seems to be wrong to me */
     return v;
 
   } else
@@ -563,6 +569,7 @@ void Value_Emit_CJump(Value *v, BoxVMSymID jump_label) {
   Value_Unlink(v);
 }
 
+/* REFERENCES: return: new, v_ptr: -1; */
 Value *Value_To_Temp(Value *v) {
   ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
   BoxCmp *c = v->proc->cmp;
@@ -700,7 +707,7 @@ void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
     Value *v_to_pass = Value_To_Temp_Or_Target(child);
     BoxGOp op = (child->value.cont.type == BOXCONTTYPE_OBJ
                  && child->value.cont.categ != BOXCONTCATEG_PTR) ?
-                BOXGOP_MOV : BOXGOP_LEA;
+                BOXGOP_REF : BOXGOP_LEA;
     CmpProc_Assemble(c->cur_proc, op,
                      2, & c->cont.pass_child, & v_to_pass->value.cont);
     Value_Unlink(v_to_pass);
@@ -788,7 +795,7 @@ BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child) {
   return t;
 }
 
-/**
+/*
  * REFERENCES: return: new, v_ptr: -1;
  */
 Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType new_type) {
@@ -893,7 +900,7 @@ Value *Value_Cast_To_Ptr(Value *v) {
   }
 }
 
-/**
+/*
  * REFERENCES: return: new, v_obj: -1;
  */
 Value *Value_To_Straight_Ptr(Value *v_obj) {
@@ -1076,7 +1083,7 @@ void ValueStrucIter_Destroy(ValueStrucIter *vsi) {
   BoxMem_Free(vsi);
 }
 
-/**
+/*
  * REFERENCES: src: -1, dest: 0;
  */
 BoxTask Value_Move_Content(Value *dest, Value *src) {

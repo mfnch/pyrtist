@@ -344,6 +344,8 @@ void BoxVM_Obj_Unlink(BoxVM *vmp, BoxPtr *obj) {
   static int num_dealloc = 0;
 #endif
 
+  //printf("Unlink of object at %p: id=%d, num_ref=%d\n", head, (int) head->id, (int) head->references);
+
   if (BoxPtr_Is_Detached(obj))
     return;
 
@@ -353,7 +355,7 @@ void BoxVM_Obj_Unlink(BoxVM *vmp, BoxPtr *obj) {
     return;
 
   } else if (references == 0) {
-    if (head->id == 1)
+    if (head->id > 0)
       (void) BoxVM_Obj_Finish(vmp, obj, head->id);
 
 #if DEBUG_VMALLOC == 1
@@ -462,27 +464,16 @@ BoxTask BoxVM_Obj_Relocate(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
                            BoxVMAllocID id) {
   //assert(!BoxPtr_Is_Null(dest) && !BoxPtr_Is_Null(src));
   /* ^^^ For now we assume non detached pointers */
-  return BoxVM_Obj_Copy(vm, dest, src, id);
+  if (src->ptr != dest->ptr) {
+    return BoxVM_Obj_Copy(vm, dest, src, id);
 
-#if 0
-  BoxVMMethodTable *mt;
-  VMAllocHead *dest_head = BoxPtr_Get_Head(dest),
-              *src_head = BoxPtr_Get_Head(src);
-  BoxVMAllocID id = dest_head->id;
-
-  /* If the two objects are the same, then clear the src pointer and exit */
-  if (src->ptr == dest->ptr) {
-    assert(src->block == dest->block);
+  } else {
+    /* If the two objects are the same, then clear the src pointer and exit */
     BoxPtr_Nullify(src);
     return BOXTASK_OK;
   }
 
-  if (src_head->id != id) {
-    MSG_ERROR("Cannot move object: source kind does not match "
-              "destination kind.");
-    return BOXTASK_ERROR;
-  }
-
+#if 0
   mt = BoxVMMethodTable_From_Alloc_ID(vm, id);
   if (mt == NULL) {
     MSG_ERROR("BoxVM_Obj_Move: don't know how to move objects with "
@@ -536,34 +527,3 @@ BoxTask BoxVM_Obj_Relocate(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
   }
 #endif
 }
-
-#if 0
-
-      BoxVMObjDesc *od = BoxVMObjDesc_From_Alloc_ID(vmp, );
-#if DEBUG_VMALLOC == 1
-      if (od == NULL) {
-        printf("BoxVM_Obj_Unlink: no object descriptor associated to the ID "
-               SInt" for object at %p.\n", head->id, obj->block);
-      }
-#endif
-
-      if (od != NULL) {
-        /* If the object has a finalizer, the we call it now! */
-        if (od->finalizer != BOXVMCALLNUM_NONE) {
-#if DEBUG_VMALLOC == 1
-          printf("BoxVM_Unlink: calling destructor (call "SInt") for ID "
-                 SInt" at %p.\n", od->finalizer, head->id, obj->block);
-#endif
-          (void) BoxVM_Module_Execute_With_Args(vmp, od->finalizer, obj, NULL);
-        }
-
-        /* If any of the sub-objects have a finalizer then we call them now */
-        if (od->has.finalizer) {
-#if DEBUG_VMALLOC == 1
-          printf("BoxVM_Unlink: calling destructor of sub-objects.");
-#endif
-          (void) BoxVM_Module_Execute_With_Args(vmp, od->finalizer, obj, NULL);
-        }
-      }
-
-#endif

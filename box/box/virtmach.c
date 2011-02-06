@@ -135,7 +135,7 @@ const size_t size_of_type[NUM_TYPES] = {
 };
 
 static void *My_Get_Arg_Ptrs(VMStatus *vmcur, int kind, Int n) {
-  if (kind < 2) { /* kind == 0, 1 */
+  if (kind < 2) {                 /* kind == 0, 1 (local, global registers) */
     BoxType t = vmcur->idesc->t_id;
     BoxVMRegs *regs = & ((kind == 0) ? vmcur->global : vmcur->local)[t];
     size_t s = size_of_type[t];
@@ -150,10 +150,10 @@ static void *My_Get_Arg_Ptrs(VMStatus *vmcur, int kind, Int n) {
 #endif
     return regs->ptr + n*s;
 
-  } else if (kind == 2) {
+  } else if (kind == 2) {                           /* kind == 2 (pointers) */
     return *((void **) vmcur->local[TYPE_OBJ].ptr) + n;
 
-  } else {
+  } else {                                        /* kind == 3 (immediates) */
     register BoxType t = vmcur->idesc->t_id;
     static Int i = 0;
     static union {Char c; Int i; Real r;} v[2], *value;
@@ -163,13 +163,13 @@ static void *My_Get_Arg_Ptrs(VMStatus *vmcur, int kind, Int n) {
     value = & v[i]; i ^= 1;
     switch (t) {
     case TYPE_CHAR:
-        value->c = (Char) n; return (void *) (& value->c);
+      value->c = (Char) n; return (void *) (& value->c);
     case TYPE_INT:
-        value->i =  (Int) n; return (void *) (& value->i);
+      value->i =  (Int) n; return (void *) (& value->i);
     case TYPE_REAL:
-        value->r = (Real) n; return (void *) (& value->r);
+      value->r = (Real) n; return (void *) (& value->r);
     default: /* This shouldn't happen! */
-        return (void *) (& value->i); break;
+      return (void *) (& value->i); break;
     }
   }
 }
@@ -652,12 +652,16 @@ BoxTask BoxVM_Module_Execute_With_Args(BoxVM *vm, BoxVMCallNum cn,
   if (parent != NULL) {
     *vm->box_vm_current = *parent;
     BoxVM_Obj_Link(vm->box_vm_current);
-  }
+
+  } else
+    BoxPtr_Nullify(vm->box_vm_current);
 
   if (child != NULL) {
     *vm->box_vm_arg1 = *child;
     BoxVM_Obj_Link(vm->box_vm_arg1);
-  }
+
+  } else
+    BoxPtr_Nullify(vm->box_vm_arg1);
 
   t = BoxVM_Module_Execute(vm, cn);
 
