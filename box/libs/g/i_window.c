@@ -215,7 +215,7 @@ Task window_end(BoxVM *vmp) {
       g_error("cannot create the window!");
       return Failed;
     }
- 
+
     w->initialised = 1;
   }
 
@@ -274,7 +274,7 @@ Task window_save_window(BoxVM *vmp) {
   Real sx = 1.0, sy = 1.0, rot_angle = 0.0;
   Matrix m;
   GrpWindow *cur_win = grp_win;
-  
+
   int type_fig = Grp_Window_Type_From_String("fig");
   if (src->plan.type != type_fig) {
     g_error("Window.Save: Saving to arbitrary targets is only available "
@@ -336,7 +336,7 @@ Task window_save_window(BoxVM *vmp) {
     grp_close_win();
     grp_win = cur_win;
     dest->window = Grp_Window_Open(& dest->plan);
-    if (dest->window == (GrpWindow *) NULL) {
+    if (dest->window == NULL) {
       g_error("Window.Save: cannot create the window!");
       return Failed;
     }
@@ -371,7 +371,7 @@ Task window_save_window(BoxVM *vmp) {
   if (src->save_file_name != NULL) {
     free(src->save_file_name);
     src->save_file_name = NULL;
-    dest->plan.file_name = "shouldnthappen.i_window.c";
+    dest->plan.file_name = NULL;
   }
   src->saved = 1;
   return Success;

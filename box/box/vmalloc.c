@@ -465,65 +465,40 @@ BoxTask BoxVM_Obj_Relocate(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
   //assert(!BoxPtr_Is_Null(dest) && !BoxPtr_Is_Null(src));
   /* ^^^ For now we assume non detached pointers */
   if (src->ptr != dest->ptr) {
+#if 1
     return BoxVM_Obj_Copy(vm, dest, src, id);
+
+#else
+    VMAllocHead *src_head = BoxPtr_Get_Head(src);
+
+    /* Depending on whether the source is referenced somewhere else in the Box
+     * program we act in two different ways:
+     */
+    if (src_head->references == 1) {
+      /* We relocate the object in memory: we move the content of the object
+       * from src to dest and dallocate src (only the container, we don't call
+       * the destructor!)
+       */
+      (void) memcpy(dest->ptr, src->ptr, mt->size);
+
+      /* Deallocate the source object */
+      src_head->id = 0;
+      BoxVM_Unlink(vm, src);
+      return BOXTASK_OK;
+
+    } else {
+      /* We cannot move the object in memory, as there are other parts of the
+       * code referring to it. We then duplicate the object.
+       */
+      assert(src_head->references > 1);
+      MSG_FATAL("BoxVM_Obj_Move: not implemented, yet!");
+      return BOXTASK_FAILURE;
+    }
+#endif
 
   } else {
     /* If the two objects are the same, then clear the src pointer and exit */
     BoxPtr_Nullify(src);
     return BOXTASK_OK;
   }
-
-#if 0
-  mt = BoxVMMethodTable_From_Alloc_ID(vm, id);
-  if (mt == NULL) {
-    MSG_ERROR("BoxVM_Obj_Move: don't know how to move objects with "
-              "alloc-id=%I", id);
-    return BOXTASK_ERROR;
-  }
-
-  assert(mt != NULL && mt->size > 0);
-
-  /* Call finalizer on destination (since it will be overwritten) */
-  if (mt->finalizer ) {
-    BoxVMCallNum finalizer = mt->finalizer;
-#if DEBUG_VMALLOC == 1
-    printf("BoxVM_Obj_Move: calling destructor on destination (call "SInt") "
-           "for ID "SInt" at %p.\n", finalizer, id, dest->block);
-#endif
-    BoxPtr save_current = *vm->box_vm_current;
-    *vm->box_vm_current = *dest;
-    (void) BoxVM_Module_Execute(vm, finalizer);
-    *vm->box_vm_current = save_current;
-  }
-
-  if (mt->mover != BOXVMCALLNUM_NONE) {
-    MSG_FATAL("BoxVM_Obj_Move: custom object movers are not supported, yet!");
-    assert(0);
-    return BOXTASK_FAILURE;
-  }
-
-  /* Depending on whether the source is referenced somewhere else in the Box
-   * program we act in two different ways:
-   */
-  if (src_head->references == 1) {
-    /* We relocate the object in memory: we move the content of the object
-     * from src to dest and dallocate src (only the container, we don't call
-     * the destructor!)
-     */
-    (void) memcpy(dest->ptr, src->ptr, mt->size);
-
-    /* Deallocate the source object */
-    src_head->id = 0;
-    BoxVM_Unlink(vm, src);
-    return BOXTASK_OK;
-
-  } else {
-    /* We cannot move the object in memory, as there are other parts of the
-     * code referring to it. We then duplicate the object.
-     */
-    assert(src_head->references > 1);
-    MSG_FATAL("BoxVM_Obj_Move: not implemented, yet!");
-    return BOXTASK_FAILURE;
-  }
-#endif
 }
