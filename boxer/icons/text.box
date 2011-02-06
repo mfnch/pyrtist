@@ -1,0 +1,43 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui1 = Point[.x=70.9274240664, .y=29.8008677721]
+gui2 = Point[.x=166.41221374, .y=-94.6428571429]
+gui3 = Point[.x=24.1528052356, .y=-89.8544763209]
+gui4 = Point[.x=161.865685395, .y=31.4343658824]
+gui5 = Point[.x=48.7537145228, .y=71.2307037936]
+gui6 = Point[.x=26.5800049793, .y=31.5514242237]
+//!BOXER:REFPOINTS:END
+include "grid"
+include "icon_theme"
+
+grid = Grid[(0, 0), (100, 100), icon_size.nx, icon_size.ny]
+cell = grid.GetCellSize[]
+lw = width*cell.x
+
+icon = Window[][
+  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
+  s1 = Style[.Border[color.black, lw]]
+  s2 = Style[.Border[0]]
+  \ .Text[Font["helvetica-bold", 70], gui6, "A", Color[(0.1, 0, 0.5)];
+          Font["courier-bold", 80], gui5, "b", Color[(1, 0, 0)], s1;
+          Font["times-bold", 80], gui1, "C", Color[(0, 0.5, 0)], s2;]
+]
+
+w = Window[][grid, icon]
+
+GUI[w]
+
+res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
+//icon.Save["text.png", Window["argb32", (100, 10), .Res[res]]]
+
+out = Window["argb32", (100, 100), .Res[res]][
+  icon
+  .Save["text.png"]
+]
