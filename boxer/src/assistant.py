@@ -16,7 +16,8 @@
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
 class Action(object):
-  pass
+  def execute(self, parent):
+    pass
 
 class Paste(Action):
   def __init__(self, text):
@@ -27,19 +28,35 @@ class Set(Action):
     self.property_name = property_name
     self.value = value
 
+class ExitMode(Action):
+  def execute(self, parent):
+    parent.exit_mode()
+    parent.exit_mode()
+
+
 class Button(object):
-  def __init__(self, filename):
+  def __init__(self, name="", filename=None):
     self.filename = filename
+    self.name = name
+
+
+def optlist(ol):
+  return ol if hasattr(ol, "__iter__") and type(ol) != str else [ol]
+  # ^^^ str has not __iter__ as attribute, but may in future versions...
 
 class Mode(object):
   def __init__(self, name, button=None, enter_actions=None, exit_actions=None,
                permanent=False, submodes=None):
     self.name = name
-    self.permanent = True
+    self.permanent = permanent
     self.button = button
-    self.enter_actions = enter_actions
-    self.exit_actions = exit_actions
+    self.enter_actions = optlist(enter_actions)
+    self.exit_actions = optlist(exit_actions)
     self.submodes = submodes
+
+  def execute_actions(self, parent):
+    for action in self.enter_actions:
+      action.execute(parent)
 
 class Assistant(object):
   def __init__(self, main_mode):
@@ -55,12 +72,18 @@ class Assistant(object):
     """Choose a submode from the ones available in the current mode."""
     modes = self.get_available_modes()
     mode_names = map(lambda m: m.name, modes)
+
+    # Add mode to opened modes
     try:
         mode_idx = mode_names.index(new_mode)
-        self.current_modes.append(modes[mode_idx])
+        mode = modes[mode_idx]
+        self.current_modes.append(mode)
 
     except ValueError:
       raise ValueError("Mode not found (%s)" % new_mode)
+
+    # Execute action for mode
+    mode.execute_actions(assistant)
 
   def exit_mode(self):
     if len(self.current_modes) > 1:
@@ -79,55 +102,70 @@ class Assistant(object):
     """Return the names of the modes currently available."""
     return map(lambda m: m.name, self.get_available_modes())
 
+  def get_button_modes(self):
+    """Return the buttons which should be currently displayed."""
+    perm_modes = self.permanent_modes
+    av_modes = self.get_available_modes()
+    other_modes = filter(lambda m: m not in perm_modes, av_modes)
+    return filter(lambda m: m.button != None, perm_modes + other_modes)
+
 #============================================================================#
+exit = \
+  Mode("Exit",
+       permanent=True,
+       button=Button("Exit"),
+       enter_actions=ExitMode())
+
 color = \
   Mode("Color",
        permanent=True,
-       button=Button("color.png"),
+       button=Button("Color", "color.png"),
        enter_actions=Paste("Color[$CURSORIN$]$CURSOROUT$"))
 
 style = Mode("Style",
-             permanent=True)
+             permanent=True,
+             button=Button("Style", "style.png"))
 
 poly = \
   Mode("Poly",
-       button=Button("poly.png"),
+       button=Button("Poly", "poly.png"),
        enter_actions=[Paste("Poly[$CURSORIN$]\n$CURSOROUT$"),
                       Set("PastePoint", True)],
-       submodes=[color, style])
+       submodes=[color, style, exit])
 
 circle = \
   Mode("Circle",
-       button=Button("circle.png"),
+       button=Button("Circle", "circle.png"),
        enter_actions=[Paste("Circle[$CURSORIN$]\n$CURSOROUT$"),
                       Set("PastePoint", True)],
-       submodes=[color, style])
+       submodes=[color, style, exit])
 
 line = \
   Mode("Line",
-       button=Button("line.png"),
+       button=Button("Line", "line.png"),
        enter_actions=[Paste("Line[$CURSORIN$]\n$CURSOROUT$"),
                       Set("PastePoint", True)],
-       submodes=[color, style])
+       submodes=[color, style, exit])
 
 text = \
   Mode("Text",
-       button=Button("text.png"),
+       button=Button("Text", "text.png"),
        enter_actions=[Paste("Text[$CURSORIN$]\n$CURSOROUT$"),
                       Set("PastePoint", True)],
-       submodes=[color, style])
+       submodes=[color, style, exit])
 
 main_mode = \
-  Mode("Main", submodes=[color, style, poly, circle, line, text])
+  Mode("Main", submodes=[exit, color, style, poly, circle, line, text])
 
 assistant = Assistant(main_mode)
 assistant.start()
 
-while True:
-  print assistant.get_available_mode_names()
-  print "Select mode (or write esc):",
-  new_mode = raw_input()
-  if new_mode.strip().lower() == "esc":
-    assistant.exit_mode()
-  else:
-    assistant.choose(new_mode)
+if __name__ == "__main__":
+  while True:
+    print assistant.get_available_mode_names()
+    print "Select mode (or write esc):",
+    new_mode = raw_input()
+    if new_mode.strip().lower() == "esc":
+      assistant.exit_mode()
+    else:
+      assistant.choose(new_mode)
