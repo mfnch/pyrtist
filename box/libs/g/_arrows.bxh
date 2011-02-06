@@ -132,7 +132,7 @@ Arrow3D@@Window[
   \ a.Circle[s, $.col1, (x1, y2), d*hw/w, hw]
 
   // Shaft
-  \ a.Poly[(x0, y1), 0, 1, (x0-d, y1), (x0-d, y2), (x0-d, y3), (x0, y3), 0, 0 
+  \ a.Poly[(x0, y1), 0, 1, (x0-d, y1), (x0-d, y2), (x0-d, y3), (x0, y3), 0, 0
            (x1, y3), 0, 1, (x1-d, y3), (x1-d, y2), (x1-d, y1), (x1, y1), g1, s]
 
   // Head

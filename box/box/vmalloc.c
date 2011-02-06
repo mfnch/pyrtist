@@ -326,7 +326,7 @@ void BoxVM_Obj_Alloc(BoxVM *vm, BoxPtr *obj, size_t size, BoxVMAllocID id) {
 }
 
 /** Increase the reference counter for the given object. */
-void BoxVM_Link(Obj *obj) {
+void BoxVM_Obj_Link(Obj *obj) {
   VMAllocHead *head = BoxPtr_Get_Head(obj);
   if (BoxPtr_Is_Detached(obj))
     return;
@@ -337,7 +337,7 @@ void BoxVM_Link(Obj *obj) {
 /** Decrease the reference counter for the given object and proceed
  * with destroying it, if it has reached zero.
  */
-void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
+void BoxVM_Obj_Unlink(BoxVM *vmp, BoxPtr *obj) {
   VMAllocHead *head = BoxPtr_Get_Head(obj);
   BoxInt references;
 #if DEBUG_VMALLOC == 1
@@ -347,16 +347,17 @@ void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
   if (BoxPtr_Is_Detached(obj))
     return;
 
-  references = --head->references;
-  if (references > 0)
+  references = head->references - 1;
+  if (references > 0) {
+    head->references = references;
     return;
 
-  else if (references == 0) {
-    if (head->id >= 1)
+  } else if (references == 0) {
+    if (head->id == 1)
       (void) BoxVM_Obj_Finish(vmp, obj, head->id);
 
 #if DEBUG_VMALLOC == 1
-    printf("BoxVM_Unlink(%d): deallocated object of id "SInt" at %p.\n",
+    printf("BoxVM_Obj_Unlink(%d): deallocated object of id "SInt" at %p.\n",
            num_dealloc, head->id, obj->block);
     ++num_dealloc;
 #endif
@@ -369,7 +370,7 @@ void BoxVM_Unlink(BoxVM *vmp, BoxPtr *obj) {
 
   } else {
 #if DEBUG_VMALLOC_REFCHECK == 1
-    printf("BoxVM_Unlink: reference count is "SInt"!\n", references);
+    printf("BoxVM_Obj_Unlink: reference count is "SInt"!\n", references);
 #endif
     return;
   }
@@ -541,8 +542,8 @@ BoxTask BoxVM_Obj_Relocate(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
       BoxVMObjDesc *od = BoxVMObjDesc_From_Alloc_ID(vmp, );
 #if DEBUG_VMALLOC == 1
       if (od == NULL) {
-        printf("BoxVM_Unlink: no object descriptor associated to the ID "SInt
-               " for object at %p.\n", head->id, obj->block);
+        printf("BoxVM_Obj_Unlink: no object descriptor associated to the ID "
+               SInt" for object at %p.\n", head->id, obj->block);
       }
 #endif
 

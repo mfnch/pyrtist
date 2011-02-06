@@ -394,7 +394,9 @@ void BoxVM_Module_Global_Set(BoxVM *vmp, BoxInt type, BoxInt reg, void *value);
 BoxTask BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num);
 
 /** Similar to BoxVM_Module_Execute, but takes also pointers to child
- * and parent.
+ * and parent. The register gro1 and gro2 are modified after this call: in
+ * particular, '*parent' is stored in gro1 and '*child' in gro2.
+ * This guarantee that the reference counting protocol is respected.
  */
 BoxTask BoxVM_Module_Execute_With_Args(BoxVM *vm, BoxVMCallNum cn,
                                        BoxPtr *parent, BoxPtr *child);

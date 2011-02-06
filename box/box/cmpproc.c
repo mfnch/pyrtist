@@ -50,14 +50,14 @@ static void My_Proc_Begin(CmpProc *p) {
      */
     if (p->have.parent) {
       p->reg_parent = Reg_Occupy(& p->reg_alloc, BOXTYPE_PTR);
-      BoxVM_Assemble(p->cmp->vm, BOXOP_MOV_OO,
+      BoxVM_Assemble(p->cmp->vm, BOXOP_SHIFT_OO,
                      BOXOPCAT_LREG, p->reg_parent,
                      BOXOPCAT_GREG, (BoxInt) 1);
     }
 
     if (p->have.child) {
       p->reg_child = Reg_Occupy(& p->reg_alloc, BOXTYPE_PTR);
-      BoxVM_Assemble(p->cmp->vm, BOXOP_MOV_OO,
+      BoxVM_Assemble(p->cmp->vm, BOXOP_SHIFT_OO,
                      BOXOPCAT_LREG, p->reg_child,
                      BOXOPCAT_GREG, (BoxInt) 2);
     }

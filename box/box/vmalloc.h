@@ -126,14 +126,15 @@ BoxTask BoxVM_Obj_Finish(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id);
 void BoxVM_Obj_Alloc(BoxVM *vm, BoxPtr *obj, size_t size, BoxVMAllocID id);
 
 /** Increase the reference counter for the given object. */
-void BoxVM_Link(BoxObj *obj);
+void BoxVM_Obj_Link(BoxObj *obj);
 
 /** Decrease the reference counter for the given object and proceed
  * with destroying it, if it has reached zero.
  */
-void BoxVM_Unlink(BoxVM *vm, BoxObj *obj);
+void BoxVM_Obj_Unlink(BoxVM *vm, BoxObj *obj);
 
-#define BoxVM_Obj_Unlink BoxVM_Unlink
+#define BoxVM_Unlink BoxVM_Obj_Unlink
+#define BoxVM_Link BoxVM_Obj_Link
 
 /** Initialise the memory handling system of the virtual machine 'vmp'
  *  (to be called internally by VM_Init).

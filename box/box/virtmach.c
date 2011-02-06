@@ -639,24 +639,40 @@ void BoxVM_Module_Global_Set(BoxVM *vmp, Int type, Int reg, void *value) {
  * Functions to execute code                                                 *
  *****************************************************************************/
 
+/* NOTE: we don't want this function to change gro1/gro2, as it may be
+ *   indirectly called by the instruction create, which is not supposed to do
+ *   so.
+ */
 BoxTask BoxVM_Module_Execute_With_Args(BoxVM *vm, BoxVMCallNum cn,
                                        BoxPtr *parent, BoxPtr *child) {
   BoxTask t;
   BoxPtr save_parent = *vm->box_vm_current,
          save_child = *vm->box_vm_arg1;
 
-  if (parent != NULL)
+  if (parent != NULL) {
     *vm->box_vm_current = *parent;
-  if (child != NULL)
+    BoxVM_Obj_Link(vm->box_vm_current);
+  }
+
+  if (child != NULL) {
     *vm->box_vm_arg1 = *child;
+    BoxVM_Obj_Link(vm->box_vm_arg1);
+  }
+
   t = BoxVM_Module_Execute(vm, cn);
+
+  if (!BoxPtr_Is_Detached(vm->box_vm_current))
+    BoxVM_Obj_Unlink(vm, vm->box_vm_current);
+
+  if (!BoxPtr_Is_Detached(vm->box_vm_arg1))
+    BoxVM_Obj_Unlink(vm, vm->box_vm_arg1);
 
   *vm->box_vm_current = save_parent;
   *vm->box_vm_arg1 = save_child;
   return t;
 }
 
-  /* Execute the module number m of program vmp.
+/* Execute the module number m of program vmp.
  * If initial != NULL, *initial is the initial status of the virtual machine.
  */
 Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
