@@ -103,13 +103,13 @@ Draw[1]
 \ w[
   Arrow3D[Point[(0, 0, 0)], Point[(0, 60, 0)]
           .width=1.5, color.white, color_happ, Color[color_happ, .Darker[0.7]]
-          .prospective=0.2]
+          .perspective=0.2]
   Arrow3D[Point[(0, 0, 0)], DampTrajectory[t1]
           .width=1.5, color.white, color_m, Color[color_m, .Darker[0.7]]]
 
   Arrow3D[Point[(0, 0, 0)] + v, Point[(0, 60, 0)] + v
           .width=1.5, color.white, color_happ, Color[color_happ, .Darker[0.7]]
-          .prospective=0.2]
+          .perspective=0.2]
   Arrow3D[Point[(0, 0, 0)] + v, UndampTrajectory[t1] + v
           .width=1.5, color.white, color_m, Color[color_m, .Darker[0.7]]]
 ]
