@@ -1,5 +1,13 @@
 Change log (recent comes first)
 
+06 Feb 2011: Released v 0.2.1: bugfixes and reworked memory management.
+  This release fixes some bugs. It does not bring new features. However, the
+  memory management system has been largely rewritten. The memory management
+  system is now aware of the "complex" types and knows how to create, destroy,
+  copy and relocate them.  The release prepares the ground for future features
+  (boxing/unboxing through the Obj type, which will allow several fundamental
+  improvements to both Box and Boxer).
+
 10 Oct 2010: Released v 0.2.0: major compiler restructuring and improvements.
   Rewrote most of the compiler core code from scratch. In particular,
   * Rewrote the parser (fixing some small grammar issues);
