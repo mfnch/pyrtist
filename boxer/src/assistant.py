@@ -36,17 +36,18 @@ class Action(object):
 
 
 def insert_char(tb, left=True, delims="[,", insert=", "):
-  it = tb.get_iter_at_mark(tb.get_insert())
-  border_reached = it.starts_line if left else it.ends_line
-  move_to_next = it.backward_char if left else it.forward_char
-  while not border_reached():
-    if move_to_next():
-      c = it.get_char()
-      if c in " \t":
-        continue
-      elif c not in delims:
-        tb.insert_at_cursor(insert)
-    return
+  if tb != None:
+    it = tb.get_iter_at_mark(tb.get_insert())
+    border_reached = it.starts_line if left else it.ends_line
+    move_to_next = it.backward_char if left else it.forward_char
+    while not border_reached():
+      if move_to_next():
+        c = it.get_char()
+        if c in " \t":
+          continue
+        elif c not in delims:
+          tb.insert_at_cursor(insert)
+      return
 
 
 class Paste(Action):
@@ -67,41 +68,42 @@ class Paste(Action):
     text = self.text
     tb = parent.textbuffer
 
-    pos = 0
-    cursorin = None
-    cursorout = None
-    while pos != -1:
-      s, tag, pos = get_str_tag_and_pos(text, pos)
-      if s != None:
-        tb.insert_at_cursor(s)
+    if tb != None:
+      pos = 0
+      cursorin = None
+      cursorout = None
+      while pos != -1:
+        s, tag, pos = get_str_tag_and_pos(text, pos)
+        if s != None:
+          tb.insert_at_cursor(s)
 
-      if tag == "CURSORIN":
-        it = tb.get_iter_at_mark(tb.get_insert())
-        cursorin = tb.create_mark(None, it, True)
+        if tag == "CURSORIN":
+          it = tb.get_iter_at_mark(tb.get_insert())
+          cursorin = tb.create_mark(None, it, True)
 
-      elif tag == "CURSOROUT":
-        it = tb.get_iter_at_mark(tb.get_insert())
-        cursorout = tb.create_mark(None, it, True)
+        elif tag == "CURSOROUT":
+          it = tb.get_iter_at_mark(tb.get_insert())
+          cursorout = tb.create_mark(None, it, True)
 
-      elif tag == "LCOMMA":
-        insert_char(tb, delims="[,")
+        elif tag == "LCOMMA":
+          insert_char(tb, delims="[,")
 
-      elif tag == "RCOMMA":
-        insert_char(tb, delims="],", left=False)
+        elif tag == "RCOMMA":
+          insert_char(tb, delims="],", left=False)
 
-      elif tag == "LNEWLINE":
-        insert_char(tb, delims="", insert="\n")
+        elif tag == "LNEWLINE":
+          insert_char(tb, delims="", insert="\n")
 
-      elif tag == "RNEWLINE":
-        insert_char(tb, delims="", insert="\n", left=False)
+        elif tag == "RNEWLINE":
+          insert_char(tb, delims="", insert="\n", left=False)
 
-    if cursorin:
-      it = tb.get_iter_at_mark(cursorin)
-      tb.place_cursor(it)
-      tb.delete_mark(cursorin)
+      if cursorin:
+        it = tb.get_iter_at_mark(cursorin)
+        tb.place_cursor(it)
+        tb.delete_mark(cursorin)
 
-    if cursorout:
-      parent._set_exit_mark(tb, cursorout)
+      if cursorout:
+        parent._set_exit_mark(tb, cursorout)
 
 
 class Set(Action):

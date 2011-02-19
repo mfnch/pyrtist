@@ -59,7 +59,7 @@ poly = \
        statusbar=("Select the vertices by clicking on the image view; "
                   "choose the color and filling style from the toolbox"),
        button=Button("Poly", "poly.png"),
-       enter_actions=[Paste("$LNEWLINE$Poly[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
+       enter_actions=[Paste("$LNEWLINE$\ .Poly[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       Set("PastePoint", True)],
        submodes=[color, style, exit])
 

@@ -512,14 +512,6 @@
                 <property name="can_focus">True</property>
                 <property name="hscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
                 <property name="vscrollbar_policy">GTK_POLICY_AUTOMATIC</property>
-                <child>
-                  <widget class="GtkTextView" id="textview">
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="tooltip" translatable="yes">Write here your Box program</property>
-                    <property name="indent">2</property>
-                  </widget>
-                </child>
               </widget>
               <packing>
                 <property name="resize">True</property>

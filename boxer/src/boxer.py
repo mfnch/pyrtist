@@ -56,6 +56,9 @@ from config import threads_init, threads_enter, threads_leave
 import document
 from exec_command import exec_command
 
+import boxmode
+from assistant import Assistant
+from toolbox import ToolBox
 from editable import BoxEditableArea
 from rotpaned import RotPaned
 
@@ -66,38 +69,48 @@ def debug():
   IPShellEmbed([])(local_ns  = calling_frame.f_locals,
                    global_ns = calling_frame.f_globals)
 
-def create_sourceview():
+def create_sourceview(use_gtksourceview=True):
   """Create a new sourceview using gtksourceview2 or gtksourceview,
-  if they are available."""
-  try:
-    import gtksourceview2 as gtksourceview
-    srcbuf = gtksourceview.Buffer()
-    langman = gtksourceview.LanguageManager()
-    lang = langman.get_language("c")
-    srcbuf.set_language(lang)
-    srcbuf.set_highlight_syntax(True)
-    srcview = gtksourceview.View(srcbuf)
-    srcview.set_show_line_numbers(True)
-    return (srcview, srcbuf)
+  if they are available, otherwiser return a TextView.
+  This function return the tuple:
+    (gtksourceview_version, src_view, src_buffer)
+  gtksourceview_version is an integer: 1 for gtksourceview, 2 for
+  gtksourceview2 and None for a normal TextView.
+  """
 
-  except:
-    pass
-
-  try:
-      import gtksourceview
-      srcbuf = gtksourceview.SourceBuffer()
-      langman = gtksourceview.SourceLanguagesManager()
-      lang = langman.get_language_from_mime_type("text/x-csrc")
+  if use_gtksourceview:
+    try:
+      import gtksourceview2 as gtksourceview
+      srcbuf = gtksourceview.Buffer()
+      langman = gtksourceview.LanguageManager()
+      lang = langman.get_language("c")
       srcbuf.set_language(lang)
-      srcbuf.set_highlight(True)
-      srcview = gtksourceview.SourceView(srcbuf)
+      srcbuf.set_highlight_syntax(True)
+      srcview = gtksourceview.View(srcbuf)
       srcview.set_show_line_numbers(True)
-      return (srcview, srcbuf)
+      return (2, srcview, srcbuf)
 
-  except:
-    pass
+    except:
+      pass
 
-  return None
+    try:
+        import gtksourceview
+        srcbuf = gtksourceview.SourceBuffer()
+        langman = gtksourceview.SourceLanguagesManager()
+        lang = langman.get_language_from_mime_type("text/x-csrc")
+        srcbuf.set_language(lang)
+        srcbuf.set_highlight(True)
+        srcview = gtksourceview.SourceView(srcbuf)
+        srcview.set_show_line_numbers(True)
+        return (1, srcview, srcbuf)
+
+    except:
+      pass
+
+  # Create a normal textview
+  srcview = gtk.TextView()
+  srcbuf = srcview.get_buffer()
+  return (None, srcview, srcbuf)
 
 
 class Boxer:
@@ -136,7 +149,7 @@ class Boxer:
   def set_main_source(self, text, not_undoable=None):
     """Set the content of the main textview from the string 'text'."""
     if not_undoable == None:
-      not_undoable = self.has_textview
+      not_undoable = self.has_srcview
     if not_undoable: self.textbuffer.begin_not_undoable_action()
     self.textbuffer.set_text(text)
 
@@ -458,8 +471,6 @@ class Boxer:
     self.gladefile = config.glade_path(gladefile)
     self.boxer = gtk.glade.XML(self.gladefile, "boxer")
     self.mainwin = self.boxer.get_widget("boxer")
-    self.textview = self.boxer.get_widget("textview")
-    self.textbuffer = textbuffer = self.textview.get_buffer()
     self.out_textview = self.boxer.get_widget("outtextview")
     self.out_textbuffer = self.out_textview.get_buffer()
     self.out_textview_expander = self.boxer.get_widget("outtextview_expander")
@@ -543,17 +554,47 @@ class Boxer:
     sw = self.boxer.get_widget("srcview_scrolledwindow")
     self.paned = paned = RotPaned(scroll_win, sw, rotation=view_rot)
 
+    # Create the text view
+    enhanced_src, srcview, srcbuf = create_sourceview()
+    self.has_srcview = (enhanced_src != None)
+    self.widget_srcview = srcview
+    self.widget_srcbuf = srcbuf
+
+    # Create the statusbar
+    self.statusbar = sbar = gtk.Statusbar()
+
+    # Create the assistant and the ToolBox
+    self.assistant = astn = Assistant(boxmode.main_mode)
+    self.widget_toolbox = tbox = ToolBox(astn, icon_path=config.icon_path)
+    astn.set_statusbar(sbar)
+    astn.set_textview(srcview)
+    astn.set_textbuffer(srcbuf)
+
     # Setup the main HBox
     container = self.boxer.get_widget("vbox1")
-    c1, c2, cc, c3 = children = container.get_children()
+    menu, tbar, _, boxout = children = container.get_children()
     for child in children:
       container.remove(child)
-    container.pack_start(c1, expand=False)
-    container.pack_start(c2, expand=False)
-    container.pack_start(paned.get_container())
-    container.pack_start(c3, expand=False)
 
-    container.show_all()
+    self.widget_main = mainwin = self.boxer.get_widget("boxer")
+    mainwin.remove(container)
+
+    # Create the layout in form of HBox-es and VBox-es and pack all widgets
+    self.widget_vbox1 = vb1 = gtk.VBox()
+    self.widget_hbox1 = hb1 = gtk.HBox()
+    self.widget_vbox2 = vb2 = gtk.VBox()
+    vb1.pack_start(menu, expand=False)
+    vb1.pack_start(tbar, expand=False)
+    vb1.pack_start(hb1, expand=True)
+    vb1.pack_start(sbar, expand=False)
+    hb1.pack_start(tbox, expand=False)
+    hb1.pack_start(vb2, expand=True)
+    vb2.pack_start(paned.get_container())
+    vb2.pack_start(boxout, expand=False)
+
+    mainwin.add(vb1)
+
+    mainwin.show_all()
 
     # Set the name for the first reference point
     set_next_refpoint_name(self.editable_area.document, "gui1")
@@ -591,18 +632,12 @@ class Boxer:
            "on_refpoint_show_clicked": self.refpoint_show_clicked}
     self.boxer.signal_autoconnect(dic)
 
-    # Replace the TextView with a SourceView, if possible...
-    srcview_and_buf = create_sourceview()
-    self.has_textview = (srcview_and_buf != None)
-    if self.has_textview:
-      srcview, srcbuf = srcview_and_buf
-      sw = self.boxer.get_widget("srcview_scrolledwindow")
-      sw.remove(self.textview)
-      self.textview = srcview
-      sw.add(self.textview)
-      self.textbuffer = srcbuf
-      sw.show_all()
-      self.has_textview = True
+
+    sw = self.boxer.get_widget("srcview_scrolledwindow")
+    sw.add(srcview)
+    self.textview = srcview
+    self.textbuffer = srcbuf
+    sw.show_all()
 
     # try to set the default font
     try:
