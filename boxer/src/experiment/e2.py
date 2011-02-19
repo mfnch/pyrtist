@@ -27,6 +27,7 @@ import gtk.gdk
 
 sys.path.append("..")
 import assistant
+import boxmode
 
 class ToolView(gtk.Table):
   def __init__(self, assistant, columns=1, homogeneous=False,
@@ -73,14 +74,15 @@ class ToolView(gtk.Table):
         but.set_image(img)
         but.set_label("")
 
-      if button_mode.tooltip != None:
-        but.set_tooltip_text(button_mode.tooltip)
+      if button_mode.tooltip_text != None:
+        but.set_tooltip_text(button_mode.tooltip_text)
 
       # Connect the button
       but.connect("clicked", self.button_clicked, button_mode)
 
       but.show()
       self.attach(but, c, c+1, r, r+1, xoptions=0, yoptions=0)
+
 
   def button_clicked(self, _, button_mode):
     """Called when a button in the toolbox is clicked."""
@@ -98,9 +100,15 @@ class MyWin(object):
     self.hpaned = builder.get_object("hpaned1")
     self.statusbar = builder.get_object("statusbar")
     self.textview = self.hpaned.get_children()[0]
-    assistant.assistant.textview = self.textview
-    assistant.assistant.textbuffer = self.textview.get_buffer()
-    self.toolview = ToolView(assistant.assistant)
+
+    # Create the assistant
+    self.assistant = assistant.Assistant(boxmode.main_mode)
+    self.assistant.start()
+    self.assistant.set_textview(self.textview)
+    self.assistant.set_textbuffer(self.textview.get_buffer())
+    self.assistant.set_statusbar(self.statusbar)
+
+    self.toolview = ToolView(self.assistant)
     self.hpaned.remove(self.textview)
     self.hpaned.pack1(self.toolview, shrink=False)
     self.hpaned.pack2(self.textview, shrink=False)

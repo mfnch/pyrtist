@@ -129,8 +129,8 @@ class Mode(object):
   def __init__(self, name, button=None, enter_actions=None, exit_actions=None,
                permanent=False, submodes=None, tooltip=None, statusbar=None):
     self.name = name
-    self.tooltip = tooltip
-    self.statusbar = statusbar
+    self.tooltip_text = tooltip
+    self.statusbar_text = statusbar
     self.permanent = permanent
     self.button = button
     self.enter_actions = optlist(enter_actions)
@@ -146,6 +146,21 @@ class Assistant(object):
     self.main_mode = main_mode
     self.start()
     self.permanent_modes = filter(lambda m: m.permanent, main_mode.submodes)
+    self.textview = None
+    self.textbuffer = None
+    self.statusbar = None
+
+  def set_textbuffer(self, tb):
+    """Set the textbuffer where to put the output of the selected modes."""
+    self.textbuffer = tb
+
+  def set_textview(self, tv):
+    """Set the textbuffer where to put the output of the selected modes."""
+    self.textview = tv
+
+  def set_statusbar(self, sb):
+    """Set the textbuffer where to put the output of the selected modes."""
+    self.statusbar = sb
 
   def start(self):
     """Set (or reset) the mode to the main one."""
@@ -167,13 +182,26 @@ class Assistant(object):
     except ValueError:
       raise ValueError("Mode not found (%s)" % new_mode)
 
+    if self.statusbar != None:
+      context_id = self.statusbar.get_context_id(mode.name)
+      msg = mode.statusbar_text
+      msg = "%s: %s" % (mode.name, msg) if msg else mode.name + "."
+      message_id = self.statusbar.push(context_id, msg)
+
     # Execute action for mode
-    mode.execute_actions(assistant)
+    mode.execute_actions(self)
 
   def exit_mode(self):
     if len(self.current_modes) > 1:
-      self.current_modes.pop(-1)
-      item = self._exit_marks.pop(-1)
+      # Remove mode
+      mode = self.current_modes.pop()
+
+      # Remove statusbar message
+      if self.statusbar != None:
+        context_id = self.statusbar.get_context_id(mode.name)
+        self.statusbar.pop(context_id)
+
+      item = self._exit_marks.pop()
       if item != None:
         tb, cursorout = item
         it = tb.get_iter_at_mark(cursorout)
@@ -206,3 +234,8 @@ class Assistant(object):
     av_modes = self.get_available_modes()
     other_modes = filter(lambda m: m not in perm_modes, av_modes)
     return filter(lambda m: m.button != None, perm_modes + other_modes)
+
+  def get_current_mode(self):
+    """Return the mode currently selected."""
+    return (self.current_modes[-1] if len(self.current_modes) > 0
+            else self.main_mode)

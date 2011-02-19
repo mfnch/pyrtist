@@ -15,7 +15,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
-from assistant import Mode, ExitMode, Button, Paste
+from assistant import Mode, ExitMode, Set, Paste, Button
 
 exit = \
   Mode("Exit",
