@@ -26,68 +26,11 @@ import gtk.glade
 import gtk.gdk
 
 sys.path.append("..")
+from config import icon_path
+from toolbox import ToolBox
 import assistant
 import boxmode
 
-class ToolView(gtk.Table):
-  def __init__(self, assistant, columns=1, homogeneous=False,
-               icon_path="../../icons"):
-    self.columns = columns
-    self.assistant = assistant
-    self.icon_path = icon_path
-    rows = self._compute_rows_from_cols()
-    gtk.Table.__init__(self, rows=rows, columns=columns,
-                       homogeneous=homogeneous)
-    self._update_buttons()
-
-  def _compute_rows_from_cols(self):
-    num_buttons = len(self.assistant.get_button_modes())
-    return int((num_buttons + self.columns - 1)/self.columns)
-
-  def _update_buttons(self):
-    columns = self.columns
-    rows = self._compute_rows_from_cols()
-    button_modes = self.assistant.get_button_modes()
-
-    for child in self.get_children():
-      self.remove(child)
-
-    # Populate the toolbox
-    for i, button_mode in enumerate(button_modes):
-      button = button_mode.button
-      #print "Adding", button.name
-
-      c = i % columns
-      r = int(i / columns)
-
-      # Find the button image, if there is one
-      img = None
-      if button.filename:
-        icon_filename = os.path.join(self.icon_path, button.filename)
-        if os.path.exists(icon_filename):
-          img = gtk.Image()
-          img.set_from_file(icon_filename)
-
-      # Create the button
-      but = gtk.Button(button.name)
-      if img != None:
-        but.set_image(img)
-        but.set_label("")
-
-      if button_mode.tooltip_text != None:
-        but.set_tooltip_text(button_mode.tooltip_text)
-
-      # Connect the button
-      but.connect("clicked", self.button_clicked, button_mode)
-
-      but.show()
-      self.attach(but, c, c+1, r, r+1, xoptions=0, yoptions=0)
-
-
-  def button_clicked(self, _, button_mode):
-    """Called when a button in the toolbox is clicked."""
-    self.assistant.choose(button_mode.name)
-    self._update_buttons()
 
 class MyWin(object):
   def __init__(self, gladefile="boxer.glade", filename=None, box_exec=None):
@@ -108,7 +51,7 @@ class MyWin(object):
     self.assistant.set_textbuffer(self.textview.get_buffer())
     self.assistant.set_statusbar(self.statusbar)
 
-    self.toolview = ToolView(self.assistant)
+    self.toolview = ToolBox(self.assistant, icon_path=icon_path)
     self.hpaned.remove(self.textview)
     self.hpaned.pack1(self.toolview, shrink=False)
     self.hpaned.pack2(self.textview, shrink=False)

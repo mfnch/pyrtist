@@ -94,10 +94,11 @@ use_threads = True
 
 def glade_path(filename=None):
   base = os.path.join(installation_path(), 'glade')
-  if filename == None:
-    return base
-  else:
-    return os.path.join(base, filename)
+  return base if filename == None else os.path.join(base, filename)
+
+def icon_path(filename=None):
+  base = os.path.join(installation_path(), 'icons')
+  return base if filename == None else os.path.join(base, filename)
 
 def get_example_files():
   """Return a list of example files for Boxer."""
