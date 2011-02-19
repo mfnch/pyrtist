@@ -581,13 +581,14 @@ class Boxer:
 
     # Create the layout in form of HBox-es and VBox-es and pack all widgets
     self.widget_vbox1 = vb1 = gtk.VBox()
-    self.widget_hbox1 = hb1 = gtk.HBox()
+    self.widget_hbox1 = hb1 = gtk.HBox(spacing=0)
     self.widget_vbox2 = vb2 = gtk.VBox()
     vb1.pack_start(menu, expand=False)
     vb1.pack_start(tbar, expand=False)
     vb1.pack_start(hb1, expand=True)
     vb1.pack_start(sbar, expand=False)
     hb1.pack_start(tbox, expand=False)
+    hb1.pack_start(gtk.VSeparator(), expand=False)
     hb1.pack_start(vb2, expand=True)
     vb2.pack_start(paned.get_container())
     vb2.pack_start(boxout, expand=False)
