@@ -96,6 +96,7 @@ class MyWin(object):
     builder.connect_signals(sigs)
     self.window = builder.get_object("experiment")
     self.hpaned = builder.get_object("hpaned1")
+    self.statusbar = builder.get_object("statusbar")
     self.textview = self.hpaned.get_children()[0]
     assistant.assistant.textview = self.textview
     assistant.assistant.textbuffer = self.textview.get_buffer()

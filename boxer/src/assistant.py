@@ -15,13 +15,94 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
+
+from config import debug
+
+_variable_re = re.compile("[$][^$]*[$]")
+
+def get_str_tag_and_pos(s, pos=0):
+  start = s.find("$", pos)
+  if start != -1:
+    end = s.find("$", start + 1)
+    if end != -1:
+      return (s[pos:start], s[start+1:end], end + 1)
+  return (s[pos:], None, -1)
+
+
 class Action(object):
   def execute(self, parent):
     pass
 
+
+def insert_char(tb, left=True, delims="[,", insert=", "):
+  it = tb.get_iter_at_mark(tb.get_insert())
+  border_reached = it.starts_line if left else it.ends_line
+  move_to_next = it.backward_char if left else it.forward_char
+  while not border_reached():
+    if move_to_next():
+      c = it.get_char()
+      if c in " \t":
+        continue
+      elif c not in delims:
+        tb.insert_at_cursor(insert)
+    return
+
+
 class Paste(Action):
   def __init__(self, text):
-    self.text = text
+    #self.substs = {}
+    #self.tags = {}
+
+    #def substitutor(var):
+    #  var_name = var.group(0)
+    #  self.tags[var_name] = (var.start(), var.end())
+    #  return self.substs.get(var_name, "")
+
+    self.text = text #re.sub(_variable_re, substitutor, text)
+    self.cursor_in = None
+    self.cursor_out = None
+
+  def execute(self, parent):
+    text = self.text
+    tb = parent.textbuffer
+
+    pos = 0
+    cursorin = None
+    cursorout = None
+    while pos != -1:
+      s, tag, pos = get_str_tag_and_pos(text, pos)
+      if s != None:
+        tb.insert_at_cursor(s)
+
+      if tag == "CURSORIN":
+        it = tb.get_iter_at_mark(tb.get_insert())
+        cursorin = tb.create_mark(None, it, True)
+
+      elif tag == "CURSOROUT":
+        it = tb.get_iter_at_mark(tb.get_insert())
+        cursorout = tb.create_mark(None, it, True)
+
+      elif tag == "LCOMMA":
+        insert_char(tb, delims="[,")
+
+      elif tag == "RCOMMA":
+        insert_char(tb, delims="],", left=False)
+
+      elif tag == "LNEWLINE":
+        insert_char(tb, delims="", insert="\n")
+
+      elif tag == "RNEWLINE":
+        insert_char(tb, delims="", insert="\n", left=False)
+
+    if cursorin:
+      it = tb.get_iter_at_mark(cursorin)
+      tb.place_cursor(it)
+      tb.delete_mark(cursorin)
+
+    if cursorout:
+      parent._set_exit_mark(tb, cursorout)
+
 
 class Set(Action):
   def __init__(self, property_name, value):
@@ -46,8 +127,10 @@ def optlist(ol):
 
 class Mode(object):
   def __init__(self, name, button=None, enter_actions=None, exit_actions=None,
-               permanent=False, submodes=None):
+               permanent=False, submodes=None, tooltip=None, statusbar=None):
     self.name = name
+    self.tooltip = tooltip
+    self.statusbar = statusbar
     self.permanent = permanent
     self.button = button
     self.enter_actions = optlist(enter_actions)
@@ -61,12 +144,13 @@ class Mode(object):
 class Assistant(object):
   def __init__(self, main_mode):
     self.main_mode = main_mode
-    self.current_modes = [main_mode]
+    self.start()
     self.permanent_modes = filter(lambda m: m.permanent, main_mode.submodes)
 
   def start(self):
     """Set (or reset) the mode to the main one."""
     self.current_modes = [self.main_mode]
+    self._exit_marks = [None]
 
   def choose(self, new_mode):
     """Choose a submode from the ones available in the current mode."""
@@ -78,6 +162,7 @@ class Assistant(object):
         mode_idx = mode_names.index(new_mode)
         mode = modes[mode_idx]
         self.current_modes.append(mode)
+        self._exit_marks.append(None)
 
     except ValueError:
       raise ValueError("Mode not found (%s)" % new_mode)
@@ -88,6 +173,19 @@ class Assistant(object):
   def exit_mode(self):
     if len(self.current_modes) > 1:
       self.current_modes.pop(-1)
+      item = self._exit_marks.pop(-1)
+      if item != None:
+        tb, cursorout = item
+        it = tb.get_iter_at_mark(cursorout)
+        tb.place_cursor(it)
+        tb.delete_mark(cursorout)
+
+  def _set_exit_mark(self, tb, mark):
+    item = self._exit_marks[-1]
+    if item != None:
+      tb, cursorout = item
+      tb.delete_mark(cursorout)
+    self._exit_marks[-1] = (tb, mark)
 
   def get_available_modes(self):
     """Return the modes currently available."""
@@ -108,64 +206,3 @@ class Assistant(object):
     av_modes = self.get_available_modes()
     other_modes = filter(lambda m: m not in perm_modes, av_modes)
     return filter(lambda m: m.button != None, perm_modes + other_modes)
-
-#============================================================================#
-exit = \
-  Mode("Exit",
-       permanent=True,
-       button=Button("Exit"),
-       enter_actions=ExitMode())
-
-color = \
-  Mode("Color",
-       permanent=True,
-       button=Button("Color", "color.png"),
-       enter_actions=Paste("Color[$CURSORIN$]$CURSOROUT$"))
-
-style = Mode("Style",
-             permanent=True,
-             button=Button("Style", "style.png"))
-
-poly = \
-  Mode("Poly",
-       button=Button("Poly", "poly.png"),
-       enter_actions=[Paste("Poly[$CURSORIN$]\n$CURSOROUT$"),
-                      Set("PastePoint", True)],
-       submodes=[color, style, exit])
-
-circle = \
-  Mode("Circle",
-       button=Button("Circle", "circle.png"),
-       enter_actions=[Paste("Circle[$CURSORIN$]\n$CURSOROUT$"),
-                      Set("PastePoint", True)],
-       submodes=[color, style, exit])
-
-line = \
-  Mode("Line",
-       button=Button("Line", "line.png"),
-       enter_actions=[Paste("Line[$CURSORIN$]\n$CURSOROUT$"),
-                      Set("PastePoint", True)],
-       submodes=[color, style, exit])
-
-text = \
-  Mode("Text",
-       button=Button("Text", "text.png"),
-       enter_actions=[Paste("Text[$CURSORIN$]\n$CURSOROUT$"),
-                      Set("PastePoint", True)],
-       submodes=[color, style, exit])
-
-main_mode = \
-  Mode("Main", submodes=[exit, color, style, poly, circle, line, text])
-
-assistant = Assistant(main_mode)
-assistant.start()
-
-if __name__ == "__main__":
-  while True:
-    print assistant.get_available_mode_names()
-    print "Select mode (or write esc):",
-    new_mode = raw_input()
-    if new_mode.strip().lower() == "esc":
-      assistant.exit_mode()
-    else:
-      assistant.choose(new_mode)
