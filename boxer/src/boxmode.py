@@ -89,6 +89,8 @@ font = \
 text = \
   Mode("Text",
        tooltip="Insert text into the figure",
+       statusbar=("Select the font, enter the text, the position "
+                  "and relative-positioning"),
        button=Button("Text", "text.png"),
        enter_actions=[Paste("$LNEWLINE$Text[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       Set("PastePoint", True)],

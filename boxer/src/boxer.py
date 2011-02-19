@@ -66,6 +66,40 @@ def debug():
   IPShellEmbed([])(local_ns  = calling_frame.f_locals,
                    global_ns = calling_frame.f_globals)
 
+def create_sourceview():
+  """Create a new sourceview using gtksourceview2 or gtksourceview,
+  if they are available."""
+  try:
+    import gtksourceview2 as gtksourceview
+    srcbuf = gtksourceview.Buffer()
+    langman = gtksourceview.LanguageManager()
+    lang = langman.get_language("c")
+    srcbuf.set_language(lang)
+    srcbuf.set_highlight_syntax(True)
+    srcview = gtksourceview.View(srcbuf)
+    srcview.set_show_line_numbers(True)
+    return (srcview, srcbuf)
+
+  except:
+    pass
+
+  try:
+      import gtksourceview
+      srcbuf = gtksourceview.SourceBuffer()
+      langman = gtksourceview.SourceLanguagesManager()
+      lang = langman.get_language_from_mime_type("text/x-csrc")
+      srcbuf.set_language(lang)
+      srcbuf.set_highlight(True)
+      srcview = gtksourceview.SourceView(srcbuf)
+      srcview.set_show_line_numbers(True)
+      return (srcview, srcbuf)
+
+  except:
+    pass
+
+  return None
+
+
 class Boxer:
   def delete_event(self, widget, event, data=None):
     return not self.ensure_file_is_saved()
@@ -524,8 +558,6 @@ class Boxer:
     # Set the name for the first reference point
     set_next_refpoint_name(self.editable_area.document, "gui1")
 
-
-
     self.filename = None
 
     dic = {"on_boxer_destroy": self.destroy,
@@ -560,34 +592,10 @@ class Boxer:
     self.boxer.signal_autoconnect(dic)
 
     # Replace the TextView with a SourceView, if possible...
-    self.has_textview = False
-    try:
-      import gtksourceview2 as gtksourceview
-      srcbuf = gtksourceview.Buffer()
-      langman = gtksourceview.LanguageManager()
-      lang = langman.get_language("c")
-      srcbuf.set_language(lang)
-      srcbuf.set_highlight_syntax(True)
-      srcview = gtksourceview.View(srcbuf)
-      srcview.set_show_line_numbers(True)
-      self.has_textview = True
-
-    except:
-      try:
-        import gtksourceview
-        srcbuf = gtksourceview.SourceBuffer()
-        langman = gtksourceview.SourceLanguagesManager()
-        lang = langman.get_language_from_mime_type("text/x-csrc")
-        srcbuf.set_language(lang)
-        srcbuf.set_highlight(True)
-        srcview = gtksourceview.SourceView(srcbuf)
-        srcview.set_show_line_numbers(True)
-        self.has_textview = True
-
-      except:
-        pass
-
+    srcview_and_buf = create_sourceview()
+    self.has_textview = (srcview_and_buf != None)
     if self.has_textview:
+      srcview, srcbuf = srcview_and_buf
       sw = self.boxer.get_widget("srcview_scrolledwindow")
       sw.remove(self.textview)
       self.textview = srcview

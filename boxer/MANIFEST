@@ -18,6 +18,8 @@ src/namegen.py
 src/refpoints.py
 src/document.py
 src/info.py
+src/assistant.py
+src/boxmode.py
 src/glade/boxer.glade
 src/examples/bang.box
 src/examples/box-logo.box
