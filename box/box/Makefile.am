@@ -54,7 +54,9 @@ libboxcore0_2_la_SOURCES = types.h error.c mem.c mem.h array.c array.h \
   occupation.c occupation.h str.c print.c srcpos.c msgbase.c messages.c \
   hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h \
   container.c container.h virtmach.c vmptr.h virtmach.h vmalloc.c vmalloc.h \
-  vmexec.c vmproc.c vmproc.h vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h
+  vmexec.c vmproc.c vmproc.h vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h \
+  builtins.c builtins.h bltinstr.h bltinstr.c bltinio.c bltinio.h \
+  bltinarray.c bltinarray.h
 
 libboxcore0_2_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32
@@ -63,14 +65,12 @@ libboxcore0_2_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # *** box compiler ***
 noinst_HEADERS = \
   fileutils.h registers.h tokenizer.h parserh.h typesys.h  paths.h \
-  cmpproc.h bltinarray.h ast.h cmpptrs.h value.h compiler.h operator.h \
-  namespace.h autogen.h tsdesc.h bltinstr.h bltinio.h builtins.h
+  cmpproc.h ast.h cmpptrs.h value.h compiler.h operator.h \
+  namespace.h autogen.h tsdesc.h
 
 box_SOURCES = \
-  fileutils.c \
-  tokenizer.l parser.y registers.c \
-  typesys.c builtins.c bltinstr.c bltinio.c \
-  paths.c main.c cmpproc.c bltinarray.c ast.c value.c \
+  fileutils.c tokenizer.l parser.y registers.c typesys.c \
+  paths.c main.c cmpproc.c ast.c value.c \
   compiler.c operator.c namespace.c autogen.c tsdesc.c
 
 box_LDADD = $(LIBLTDL) libboxcore0.2.la

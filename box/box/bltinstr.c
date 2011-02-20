@@ -128,7 +128,7 @@ static Task My_Str_Char(BoxVM *vm) {
 static Task My_Str_Int(BoxVM *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   Int i = BOX_VM_ARG(vm, Int);
-  char *tmp = printdup("%I", i);
+  char *tmp = Box_SPrintF("%I", i);
   if (tmp != (char *) NULL) {
     TASK( BoxStr_Concat(s, tmp) );
     BoxMem_Free(tmp);
@@ -139,7 +139,7 @@ static Task My_Str_Int(BoxVM *vm) {
 static Task My_Str_Real(BoxVM *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   Real r = BOX_VM_ARG1(vm, Real);
-  char *tmp = printdup("%R", r);
+  char *tmp = Box_SPrintF("%R", r);
   if (tmp != (char *) NULL) {
     TASK( BoxStr_Concat(s, tmp) );
     BoxMem_Free(tmp);
@@ -150,7 +150,7 @@ static Task My_Str_Real(BoxVM *vm) {
 static Task My_Str_Point(BoxVM *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   Point *p = BOX_VM_ARG_PTR(vm, Point);
-  char *tmp = printdup("(%R, %R)", p->x, p->y);
+  char *tmp = Box_SPrintF("(%R, %R)", p->x, p->y);
   if (tmp != (char *) NULL) {
     TASK( BoxStr_Concat(s, tmp) );
     BoxMem_Free(tmp);
@@ -235,90 +235,3 @@ void Bltin_Str_Register_Procs(BoxCmp *c) {
   copy_str = Bltin_Proc_Add(c, "copy_str", My_Str_Copy);
   Operation_Set_User_Implem(opn, copy_str);
 }
-
-#if 0
-
-Type type_Str, type_StrSpecies;
-
-static Task Str_Register_All(void);
-
-Task Bltin_Str_Init(void) {
-  /* First define: STR = ++(Int length, buffer_size, Ptr ptr) */
-  Type s, d;
-  TS_Structure_Begin(cmp->ts, & s);
-  TS_Structure_Add(cmp->ts, s, type_IntNum, "length");
-  TS_Structure_Add(cmp->ts, s, type_IntNum, "buffer_size");
-  TS_Structure_Add(cmp->ts, s, TYPE_PTR, "ptr");
-  TS_Detached_New(cmp->ts, & d, s);
-  TASK( Tym_Def_Explicit_Alias(& type_Str, & NAME("STR"), d) );
-
-  /* Then define Str = (()Char -> STR) */
-  TS_Species_Begin(cmp->ts, & s);
-  TS_Species_Add(cmp->ts, s, type_CharArray);
-  TS_Species_Add(cmp->ts, s, type_Str);
-  TASK( Tym_Def_Explicit_Alias(& type_StrSpecies, & NAME("Str"), s) );
-
-  /* Now we register all the methods */
-  TASK( Str_Register_All() );
-  return Success;
-}
-
-void Bltin_Str_Destroy(void) {}
-
-
-/* Used for the conversion in the species Str = (()Char -> STR)*/
-static Task Str_From_CharArray(BoxVM *vm) {
-  Str *s = BOX_VM_THIS_PTR(vm, Str);
-  char *ca = BOX_VM_ARG1_PTR(vm, char);
-  Str_Init(s);
-  return BoxStr_Concat(s, ca);
-}
-
-static Task Str_CharArray(BoxVM *vm) {
-  Str *s = BOX_VM_THIS_PTR(vm, Str);
-  char *ca = BOX_VM_ARG1_PTR(vm, char);
-  return BoxStr_Concat(s, ca);
-}
-
-static Task Print_Str(BoxVM *vm) {
-  Str *s = BOX_VM_ARG1_PTR(vm, Str);
-  if (s->length > 0)
-    printf("%s", s->ptr);
-  return Success;
-}
-
-static Task Str_Register_All(void) {
-  struct {
-    Type parent;
-    Type child;
-    int kind;
-    Task (*proc)(BoxVM *);
-
-  } *item, table[] = {
-    {type_Str, TYPE_OPEN, BOX_CREATION, Str_Begin},
-    {type_Str, TYPE_DESTROY, BOX_CREATION | BOX_MODIFICATION, Str_Destroy},
-    {type_Str, TYPE_CHAR, BOX_CREATION | BOX_MODIFICATION, Str_Char},
-    {type_Str, TYPE_INT, BOX_CREATION | BOX_MODIFICATION, Str_Int},
-    {type_Str, TYPE_REAL, BOX_CREATION | BOX_MODIFICATION, Str_Real},
-    {type_Str, type_Point, BOX_CREATION | BOX_MODIFICATION, Str_Point},
-    {type_Str, type_CharArray, BOX_CREATION | BOX_MODIFICATION, Str_CharArray},
-    {type_Str, type_Str, BOX_CREATION | BOX_MODIFICATION, Str_STR},
-    {type_Str, TYPE_PAUSE, BOX_CREATION | BOX_MODIFICATION, Str_Pause},
-    {type_Print, type_Str, BOX_CREATION, Print_Str},
-    {TYPE_NONE}
-  };
-
-  for(item = & table[0]; item->parent != TYPE_NONE; item++) {
-    TASK(Cmp_Builtin_Proc_Def(item->child, item->kind,
-                              item->parent, item->proc));
-  }
-
-  /* We also register the conversion ()Char -> STR */
-  TASK( Cmp_Builtin_Conv_Def("conv_CharArray_to_STR",
-                             type_CharArray, type_Str, Str_From_CharArray) );
-
-  return Success;
-}
-
-#endif
-
