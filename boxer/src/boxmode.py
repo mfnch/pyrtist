@@ -15,24 +15,32 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
-from assistant import Mode, ExitMode, Set, Paste, Button
+from assistant import Mode, ExitMode, GUISet, GUIAct, Paste, Button
+
+# Commonly used actions
+exit_action = ExitMode()
+update_now = GUIAct("update")
+push_settings = GUIAct("push_settings")
+pop_settings = GUIAct("pop_settings")
+update_on_paste = GUISet(update_on_paste=True)
+paste_on_new = GUISet(paste_point=True)
 
 exit = \
   Mode("Exit",
        permanent=True,
        tooltip="Exit the current mode",
        button=Button("Exit"),
-       enter_actions=ExitMode())
+       enter_actions=exit_action)
 
 color_red = Mode("Red",
                  button=Button("Red", "red.png"),
-                 enter_actions=[Paste("$LCOMMA$color.red$CURSOROUT$$RCOMMA$"),
-                                ExitMode()])
+                 enter_actions=[Paste("$LCOMMA$color.red$RCOMMA$"),
+                                update_now, exit_action])
 
 color_blue = Mode("Blue",
                   button=Button("Blue", "blue.png"),
-                  enter_actions=[Paste("$LCOMMA$color.blue$CURSOROUT$$RCOMMA$"),
-                                 ExitMode()])
+                  enter_actions=[Paste("$LCOMMA$color.blu$RCOMMA$"),
+                                 update_now, exit_action])
 
 color = \
   Mode("Color",
@@ -41,17 +49,45 @@ color = \
        button=Button("Color", "color.png"),
        submodes=[color_red, color_blue, exit])
 
+gradient_line = \
+  Mode("Gradient.Line",
+       tooltip="Select linear gradient",
+       statusbar="Enter initial and final point",
+       button=Button("Linear", "lingrad.png"),
+       enter_actions=[Paste("$LCOMMA$.Line[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+                      push_settings, paste_on_new],
+       exit_actions=[pop_settings],
+       submodes=[exit])
+
+gradient_circle = \
+  Mode("Gradient.Circle",
+       tooltip="Select radial gradient",
+       statusbar="Expecting: circle_centre_1, radius_1; circle_centre_2, radius_2",
+       button=Button("Circular", "circgrad.png"),
+       enter_actions=[Paste("$LCOMMA$.Circle[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+                      push_settings, paste_on_new],
+       exit_actions=[pop_settings],
+       submodes=[exit])
+
+gradient = \
+  Mode("Gradient",
+       tooltip="Create a color gradient",
+       statusbar="Waiting for you to choose between linear and radial gradient",
+       button=Button("Gradient", "gradient.png"),
+       enter_actions=[Paste("$LCOMMA$Gradient[$CURSORIN$]$CURSOROUT$$RCOMMA$")],
+       submodes=[gradient_line, gradient_circle, exit])
+
 fill_void = Mode("Not-filled",
                  button=Button("Not filled", "fillvoid.png"),
-                 enter_actions=[Paste("\"void\""), ExitMode()])
+                 enter_actions=[Paste("\"void\""), exit_action])
 
 fill_plain = Mode("Plain",
                   button=Button("Plain", "fillplain.png"),
-                  enter_actions=[Paste("\"plain\""), ExitMode()])
+                  enter_actions=[Paste("\"plain\""), exit_action])
 
 fill_eo = Mode("Even-Odd",
                button=Button("Even-Odd", "filleo.png"),
-               enter_actions=[Paste("\"eo\""), ExitMode()])
+               enter_actions=[Paste("\"eo\""), exit_action])
 
 fill = Mode("Fill mode",
             button=Button("Fill", "fill.png"),
@@ -71,6 +107,11 @@ style = Mode("Style",
              enter_actions=Paste("$LCOMMA$Style[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
              submodes=[fill, border, exit])
 
+poly_close = \
+  Mode("Poly.Close",
+       button=Button("Close", "polyclose.png"),
+       enter_actions=Paste("$LCOMMA$.Close[]$RCOMMA$"))
+
 poly = \
   Mode("Poly",
        tooltip="Create a polygon",
@@ -78,43 +119,51 @@ poly = \
                   "choose the color and filling style from the toolbox"),
        button=Button("Poly", "poly.png"),
        enter_actions=[Paste("$LNEWLINE$\ .Poly[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
-                      Set("PastePoint", True)],
-       submodes=[color, style, exit])
+                      push_settings, paste_on_new, update_on_paste],
+       exit_actions=pop_settings,
+       submodes=[color, style, poly_close, exit])
 
 circle = \
   Mode("Circle",
        tooltip="Create a new circle",
        button=Button("Circle", "circle.png"),
        enter_actions=[Paste("$LNEWLINE$\ .Circle[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
-                      Set("PastePoint", True)],
+                      push_settings, paste_on_new, update_on_paste],
+       exit_actions=pop_settings,
        submodes=[color, style, exit])
 
 line_sharp = \
   Mode("Sharp",
+       tooltip="Line corners are sharp (affects only the following points)",
        button=Button("Sharp", "linesharp.png"),
        enter_actions=Paste("$LCOMMA$line.sharp$CURSOROUT$$RCOMMA$"))
 
 line_smooth = \
   Mode("Smooth",
+       tooltip="Line corners are smooth (affects only the following points)",
        button=Button("Smooth", "linesmooth.png"),
        enter_actions=Paste("$LCOMMA$line.medium$CURSOROUT$$RCOMMA$"))
 
 line_vsmooth = \
   Mode("Very-Smooth",
+       tooltip="Line corners are very smooth (affects only the following points)",
        button=Button("V.Smooth", "linevsmooth.png"),
        enter_actions=Paste("$LCOMMA$line.smooth$CURSOROUT$$RCOMMA$"))
 
 line_close = \
-  Mode("Close",
+  Mode("Line.Close",
+       tooltip="Close the line",
        button=Button("Close", "lineclose.png"),
-       enter_actions=Paste("$LCOMMA$.Close[]$CURSOROUT$$RCOMMA$"))
+       enter_actions=[Paste("$LCOMMA$.Close[]$RCOMMA$"),
+                      update_now])
 
 line = \
   Mode("Line",
        tooltip="Create a new line with fixed or variable thickness",
        button=Button("Line", "line.png"),
        enter_actions=[Paste("$LNEWLINE$\ .Line[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
-                      Set("PastePoint", True)],
+                      push_settings, paste_on_new, update_on_paste],
+       exit_actions=pop_settings,
        submodes=[color, style, line_sharp, line_smooth, line_vsmooth,
                  line_close, exit])
 
@@ -132,11 +181,11 @@ text = \
                   "and relative-positioning"),
        button=Button("Text", "text.png"),
        enter_actions=[Paste("$LNEWLINE$\ .Text[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
-                      Set("PastePoint", True)],
+                      paste_on_new],
        submodes=[font, color, style, exit])
 
 main_mode = \
-  Mode("Main", submodes=[exit, color, style, poly, circle, line, text])
+  Mode("Main", submodes=[exit, color, gradient, style, poly, circle, line, text])
 
 if __name__ == "__main__":
   from assistant import Assistant

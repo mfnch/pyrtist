@@ -105,8 +105,8 @@ Task circle_style(VMProgram *vmp) {
 
 static Task _circle_draw(Window *w, DrawWhen when) {
   if (w->circle.got.center == GOT_NOT || w->circle.got.radius_a == GOT_NOT) {
-    g_warning("To draw a circle you have to specify at least "
-              "the center (a point) the radius (a real)");
+    /*g_warning("To draw a circle you have to specify at least "
+                "the center (a point) the radius (a real)");*/
     return Success;
 
   } else {

@@ -35,7 +35,7 @@ class Action(object):
     pass
 
 
-def insert_char(tb, left=True, delims="[,", insert=", "):
+def insert_char(tb, insert=", ", left=True, delims="[,"):
   if tb != None:
     it = tb.get_iter_at_mark(tb.get_insert())
     border_reached = it.starts_line if left else it.ends_line
@@ -106,10 +106,27 @@ class Paste(Action):
         parent._set_exit_mark(tb, cursorout)
 
 
-class Set(Action):
-  def __init__(self, property_name, value):
-    self.property_name = property_name
-    self.value = value
+class GUISet(Action):
+  def __init__(self, **values):
+    self.values = values
+
+  def execute(self, parent):
+    gui = parent.gui
+    if gui != None:
+      gui.set_props(**self.values)
+
+
+class GUIAct(Action):
+  def __init__(self, *unnamed_values, **values):
+    self.values = values
+    for name in unnamed_values:
+      values[name] = None
+
+  def execute(self, parent):
+    gui = parent.gui
+    if gui != None:
+      gui.do(**self.values)
+
 
 class ExitMode(Action):
   def execute(self, parent):
@@ -142,9 +159,17 @@ class Mode(object):
     self.exit_actions = optlist(exit_actions)
     self.submodes = submodes
 
-  def execute_actions(self, parent):
-    if self.enter_actions != None:
-      for action in self.enter_actions:
+  def execute_enter_actions(self, parent):
+    """Call all the actions registered for the entrance of the mode."""
+    self._execute_actions(self.enter_actions, parent)
+
+  def execute_exit_actions(self, parent):
+    """Call all the actions registered for the exit of the mode."""
+    self._execute_actions(self.exit_actions, parent)
+
+  def _execute_actions(self, actions, parent):
+    if actions != None:
+      for action in actions:
         action.execute(parent)
 
 class Assistant(object):
@@ -155,6 +180,7 @@ class Assistant(object):
     self.textview = None
     self.textbuffer = None
     self.statusbar = None
+    self.gui = None
 
   def set_textbuffer(self, tb):
     """Set the textbuffer where to put the output of the selected modes."""
@@ -167,6 +193,10 @@ class Assistant(object):
   def set_statusbar(self, sb):
     """Set the textbuffer where to put the output of the selected modes."""
     self.statusbar = sb
+
+  def set_gui(self, gui):
+    """Set the GUI which will be the target of the GUISet actions."""
+    self.gui = gui
 
   def start(self):
     """Set (or reset) the mode to the main one."""
@@ -198,19 +228,24 @@ class Assistant(object):
         message_id = self.statusbar.push(context_id, msg)
 
     # Execute action for mode
-    mode.execute_actions(self)
+    mode.execute_enter_actions(self)
+    if mode.submodes == None:
+      mode.execute_exit_actions(self)
 
   def exit_mode(self):
     if len(self.current_modes) > 1:
+      # Execute exit actions
+      self.get_current_mode().execute_exit_actions(self)
+
       # Remove mode
       mode = self.current_modes.pop()
+      item = self._exit_marks.pop()
 
       # Remove statusbar message
       if self.statusbar != None:
         context_id = self.statusbar.get_context_id(mode.name)
         self.statusbar.pop(context_id)
 
-      item = self._exit_marks.pop()
       if item != None:
         tb, cursorout = item
         it = tb.get_iter_at_mark(cursorout)

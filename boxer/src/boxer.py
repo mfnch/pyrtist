@@ -57,7 +57,7 @@ import document
 from exec_command import exec_command
 
 import boxmode
-from assistant import Assistant
+from assistant import Assistant, insert_char
 from toolbox import ToolBox
 from editable import BoxEditableArea
 from rotpaned import RotPaned
@@ -113,7 +113,42 @@ def create_sourceview(use_gtksourceview=True):
   return (None, srcview, srcbuf)
 
 
-class Boxer:
+class Settings(object):
+  """Class used to save settings when entering/exiting the assistant modes."""
+
+  def __init__(self):
+    """Create a new setting object."""
+    self.layers = []
+    self.push()
+
+  def push(self):
+    self.layers.append({})
+
+  def pop(self):
+    self.layers.pop()
+
+  def set_props(self, **props):
+    """Set a new property."""
+    # We could check whether the old value is the same and avoid setting
+    # but don't think this will make much difference here
+    layer = self.layers[-1]
+    for key, value in props.iteritems():
+      layer[key] = value
+
+  def set_prop(self, name, value):
+    """Equivalent to .set_prop("xyz", "value") is equivalent to
+    .set_props(xyz="value")"""
+    layer = self.layers[-1][name] = value
+
+  def get_prop(self, name):
+    for layer in reversed(self.layers):
+      if name in layer:
+        return layer[name]
+
+    raise KeyError("Property not found in Settings object")
+
+
+class Boxer(object):
   def delete_event(self, widget, event, data=None):
     return not self.ensure_file_is_saved()
 
@@ -346,6 +381,10 @@ class Boxer:
 
   def menu_run_execute(self, image_menu_item):
     """Called by menu run->execute command."""
+    self.update_draw_area()
+
+  def update_draw_area(self, only_if_quick=False):
+    """Update the draw area (executing the Box program)."""
     self.editable_area.refresh()
 
   def menu_run_stop(self, image_menu_item):
@@ -454,10 +493,29 @@ class Boxer:
     """Return true if the name of the reference points should be pasted
     to the current edited source when they are created.
     """
-    return self.pastenewbutton.get_active()
+    return self.widget_pastenewbutton.get_active()
+
+  def set_props(self, **props):
+    for key, value in props.iteritems():
+      if key == "paste_point":
+        self.widget_pastenewbutton.set_active(value)
+      else:
+        self.settings.set_prop(key, value)
+
+  def do(self, **props):
+    for key, value in props.iteritems():
+      if key == "push_settings":
+        self.settings.push()
+      elif key == "pop_settings":
+        self.settings.pop()
+      elif key == "update":
+        self.update_draw_area(only_if_quick=True)
 
   def __init__(self, gladefile="boxer.glade", filename=None, box_exec=None):
     self.config = config.get_configuration()
+    self.settings = Settings()
+    self.settings.set_props(update_on_paste=False)
+
     if box_exec != None:
       self.config.set("Box", "exec", box_exec)
 
@@ -481,7 +539,7 @@ class Boxer:
       int(1024*self.config.getfloat('Box', 'stdout_buffer_size'))
 
     self.examplesmenu = self.boxer.get_widget("menu_file_examples")
-    self.pastenewbutton = self.boxer.get_widget("toolbutton_pastenew")
+    self.widget_pastenewbutton = self.boxer.get_widget("toolbutton_pastenew")
     self.toolbutton_run = self.boxer.get_widget("toolbutton_run")
     self.toolbutton_stop = self.boxer.get_widget("toolbutton_stop")
     self.menubutton_run_execute = self.boxer.get_widget("run_execute")
@@ -490,6 +548,9 @@ class Boxer:
     self.widget_refpoint_box = self.boxer.get_widget("refpoint_box")
     self.widget_refpoint_entry = self.boxer.get_widget("refpoint_entry")
     self.widget_refpoint_show = self.boxer.get_widget("refpoint_show")
+
+    #-------------------------------------------------------------------------
+    # Below we setup the main window
 
     import gobject
     liststore = gtk.ListStore(gobject.TYPE_STRING)
@@ -505,7 +566,10 @@ class Boxer:
     editable_area.set_callback("refpoint_remove", self.notify_refpoint_del)
 
     def refpoint_press_middle(_, rp):
-      self.textbuffer.insert_at_cursor("%s, " % rp.name)
+      insert_char(self.textbuffer)
+      self.textbuffer.insert_at_cursor(rp.name)
+      if self.settings.get_prop("update_on_paste"):
+        self.update_draw_area(only_if_quick=True)
     editable_area.set_callback("refpoint_press_middle", refpoint_press_middle)
 
     def new_rp(_, rp):
@@ -569,6 +633,7 @@ class Boxer:
     astn.set_statusbar(sbar)
     astn.set_textview(srcview)
     astn.set_textbuffer(srcbuf)
+    astn.set_gui(self)
 
     # Setup the main HBox
     container = self.boxer.get_widget("vbox1")
@@ -596,6 +661,8 @@ class Boxer:
     mainwin.add(vb1)
 
     mainwin.show_all()
+
+    #-------------------------------------------------------------------------
 
     # Set the name for the first reference point
     set_next_refpoint_name(self.editable_area.document, "p1")

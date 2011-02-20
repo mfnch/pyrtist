@@ -119,7 +119,7 @@ static int lt_draw_opened(LineTracer *lt) {
   /* Una linea e' descritta da almeno 2 punti */
   numpnt = buff_numitem(& lt->pieces);
   if ( numpnt < 2 ) {
-    g_warning("Line with less than two points");
+    /*g_warning("Line with less than two points");*/
     return 1;
   }
 
