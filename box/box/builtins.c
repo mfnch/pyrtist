@@ -30,7 +30,7 @@
 #include "defaults.h"
 #include "messages.h"
 #include "array.h"
-#include "str.h"
+#include "strutils.h"
 #include "virtmach.h"
 #include "vmproc.h"
 #include "vmsym.h"
@@ -39,6 +39,7 @@
 #include "registers.h"
 #include "builtins.h"
 #include "bltinstr.h"
+#include "str.h"
 #include "bltinio.h"
 
 /*******************************BOX-PROCEDURES********************************/

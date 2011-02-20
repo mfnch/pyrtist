@@ -30,7 +30,7 @@
 #include "virtmach.h"
 #include "vmalloc.h"
 #include "bltinarray.h"
-#include "str.h"
+#include "strutils.h"
 
 static void VM__Exec_Ret(BoxVM *vmp) {vmp->vmcur->flags.exit = 1;}
 
@@ -524,20 +524,25 @@ static void VM__Exec_Add_O(BoxVM *vmp) {
 }
 
 static void VM__Exec_Arinit_I(BoxVM *vm) {
+#if 0
   VMStatus *vmcur = vm->vmcur;
   BoxArray *arr = (BoxArray *) ((Obj *) vmcur->local[TYPE_OBJ].ptr)->ptr;
   BoxInt num_dim = *((Int *) vmcur->arg1);
   ASSERT_TASK( BoxArray_Init(arr, num_dim) );
+#endif
 }
 
 static void VM__Exec_Arsize_I(BoxVM *vm) {
+#if 0
   VMStatus *vmcur = vm->vmcur;
   BoxArray *arr = (BoxArray *) ((Obj *) vmcur->local[TYPE_OBJ].ptr)->ptr;
   BoxInt size = *((Int *) vmcur->arg1);
   ASSERT_TASK( BoxArray_Set_Size(arr, size) );
+#endif
 }
 
 static void VM__Exec_Araddr_II(BoxVM *vm) {
+#if 0
   VMStatus *vmcur = vm->vmcur;
   BoxArray *arr = (BoxArray *) ((Obj *) vmcur->local[TYPE_OBJ].ptr)->ptr;
   size_t addr =  *((Int *) vmcur->local[TYPE_INT].ptr);
@@ -545,14 +550,17 @@ static void VM__Exec_Araddr_II(BoxVM *vm) {
          dim = *((Int *) vmcur->arg2);
   ASSERT_TASK( BoxArray_Calc_Address(arr, & addr, dim, index) );
   *((Int *) vmcur->local[TYPE_INT].ptr) = (Int) addr;
+#endif
 }
 
 static void VM__Exec_Arget_OO(BoxVM *vm) {
+#if 0
   VMStatus *vmcur = vm->vmcur;
   BoxObj *item = (Obj *) vmcur->arg1;
   BoxArray *arr = (BoxArray *) ((Obj *) vmcur->arg2)->ptr;
   size_t addr =  *((Int *) vmcur->local[TYPE_INT].ptr);
   BoxArray_Access(arr, item, addr);
+#endif
 }
 
 static void VM__Exec_Arnext_OO(BoxVM *vm) {
@@ -560,9 +568,11 @@ static void VM__Exec_Arnext_OO(BoxVM *vm) {
 }
 
 static void VM__Exec_Ardest_O(BoxVM *vm) {
+#if 0
   VMStatus *vmcur = vm->vmcur;
   BoxArray *arr = (BoxArray *) ((Obj *) vmcur->arg1)->ptr;
   BoxArray_Finish(vm, arr);
+#endif
 }
 
 typedef struct {

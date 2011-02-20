@@ -25,7 +25,7 @@
 #include "types.h"
 #include "messages.h"
 #include "mem.h"
-#include "str.h"
+#include "strutils.h"
 #include "array.h"
 #include "occupation.h"
 #include "hashtable.h"

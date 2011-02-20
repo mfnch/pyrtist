@@ -17,15 +17,13 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 #include <stdlib.h>
 #include <string.h>
 
 #include "types.h"
 #include "messages.h"
 #include "mem.h"
-#include "str.h"
+#include "strutils.h"
 #include "list.h"
 
 void BoxList_Init(BoxList *l, UInt item_size) {

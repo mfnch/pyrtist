@@ -26,7 +26,7 @@
 
 #include "types.h"
 #include "virtmach.h"
-#include "bltinstr.h"
+#include "str.h"
 #include "graphic.h"
 #include "g.h"
 #include "bb.h"

@@ -32,7 +32,7 @@
 #include "types.h"
 #include "defaults.h"
 #include "mem.h"
-#include "str.h"
+#include "strutils.h"
 #include "messages.h"
 #include "array.h"
 #include "occupation.h"

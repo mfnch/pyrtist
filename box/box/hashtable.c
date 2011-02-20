@@ -27,7 +27,7 @@
 #include "hashtable.h"
 #include "hashfunc.h"
 #include "mem.h"
-#include "str.h"
+#include "strutils.h"
 
 #include <ctype.h>
 

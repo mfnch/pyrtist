@@ -5,7 +5,7 @@
 
 #include <box/types.h>
 #include <box/virtmach.h>
-#include <box/bltinstr.h>
+#include <box/str.h>
 
 Task mylib_simple(BoxVM *vm) {
   printf("simple");

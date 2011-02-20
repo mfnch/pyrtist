@@ -24,7 +24,7 @@
 
 #include "types.h"
 #include "virtmach.h"
-#include "bltinstr.h"
+#include "str.h"
 
 #include "graphic.h"
 #include "g.h"
@@ -154,7 +154,7 @@ Task window_text_str(BoxVM *vm) {
   SUBTYPE_OF_WINDOW(vm, w);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
   free(w->text.text);
-  w->text.text = strdup(s->ptr);
+  w->text.text = BoxStr_To_C_String(s);
   w->text.got.text = 1;
   return Success;
 }

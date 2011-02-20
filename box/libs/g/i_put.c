@@ -23,7 +23,7 @@
 
 #include "types.h"
 #include "virtmach.h"
-#include "bltinstr.h"
+#include "str.h"
 #include "graphic.h"
 #include "g.h"
 #include "i_window.h"
@@ -198,7 +198,7 @@ Task window_put_string(BoxVM *vm) {
   SUBTYPE_OF_WINDOW(vm, w);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
   const char *auto_transformations_str = (char *) s->ptr;
- 
+
   if (!aput_allow(auto_transformations_str, & w->put.auto_transforms)) {
     g_warning("aput_allow failed!");
     return Success;

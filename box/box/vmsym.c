@@ -28,7 +28,7 @@
 
 #include "defaults.h"
 #include "types.h"
-#include "str.h"
+#include "strutils.h"
 #include "messages.h"
 #include "mem.h"
 #include "virtmach.h"

@@ -41,7 +41,7 @@
 #include "types.h"
 #include "defaults.h"
 #include "messages.h"
-#include "str.h"
+#include "strutils.h"
 #include "array.h"
 #include "virtmach.h"
 #include "vmproc.h"

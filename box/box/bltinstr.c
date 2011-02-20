@@ -28,77 +28,11 @@
 #include "print.h"
 #include "compiler.h"
 #include "builtins.h"
+#include "str.h"
 #include "bltinstr.h"
 
 #include "vmproc.h"
 #include "vmsymstuff.h"
-
-/****************************************************************************
- * Here we define some generic functions to handle Str objects              *
- ****************************************************************************/
-
-void BoxStr_Init(BoxStr *s) {
-  s->ptr = NULL;
-  s->length = 0;
-  s->buffer_size = 0;
-}
-
-void BoxStr_Finish(BoxStr *s) {
-  if (s->ptr != (char *) NULL) {
-    BoxMem_Free(s->ptr);
-    s->ptr = (char *) NULL;
-    s->length = 0;
-    s->buffer_size = 0;
-  }
-}
-
-Task BoxStr_Large_Enough(BoxStr *s, Int length) {
-  size_t len;
-  assert(s->length >= 0 && length >= 0);
-
-  len = s->length + length + 1;
-  len = len + (len+1)/2;
-  assert(len > length);
-  s->ptr = (char *) BoxMem_Realloc(s->ptr, len);
-  s->buffer_size = len;
-  return Success;
-}
-
-Task BoxStr_Concat(BoxStr *s, const char *ca) {
-  Int len = strlen(ca);
-  if (len < 1) return Success;
-  if (s->buffer_size - s->length - 1 < len)
-    BoxStr_Large_Enough(s, len);
-  assert(s->buffer_size - s->length - 1 >= len);
-  (void) strcpy(s->ptr + s->length, ca);
-  s->length += len;
-  return Success;
-}
-
-char *BoxStr_To_C_String(BoxStr *s) {
-  if (s->length == 0)
-    return BoxMem_Strdup((s->ptr == NULL) ?
-                         "" : "<broken Str: s->ptr != NULL>");
-
-  else {
-    if (s->ptr == NULL)
-      return BoxMem_Strdup("<broken Str: s->ptr == NULL>");
-
-    else {
-      size_t l = strlen(s->ptr), lp1 = l + 1;
-      char *cs;
-      Box_Fatal_Error_If_Not(lp1 > l); /* buffer overflow */
-      cs = BoxMem_Safe_Alloc(lp1);
-      strncpy(cs, s->ptr, l);
-      cs[l] = '\0';
-      return cs;
-    }
-  }
-}
-
-char *BoxStr_Get_Ptr(BoxStr *s) {return s->ptr;}
-
-size_t BoxStr_Get_Size(BoxStr *s) {return s->length;}
 
 /****************************************************************************
  * Here we interface Str and register it for the compiler.                  *

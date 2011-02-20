@@ -54,8 +54,18 @@ Task circle_begin(VMProgram *vmp) {
 
 static Task _circle_point(Window *w, Point *center) {
   if (w->circle.got.center == GOT_NOW) {
-    g_error("You already specified a center for the circle.");
-    return Failed;
+    if (!w->circle.got.radius_a) {
+      Real dx = w->circle.center.x - center->x,
+           dy = w->circle.center.y - center->y;
+      Real radius = sqrt(dx*dx + dy*dy);
+      w->circle.radius_b = w->circle.radius_a = radius;
+      w->circle.got.radius_a = GOT_NOW;
+      return Success;
+
+    } else {
+      g_error("You already specified a center for the circle.");
+      return Success;
+    }
   }
   w->circle.center = *center;
   w->circle.got.center = GOT_NOW;
@@ -72,8 +82,8 @@ Task circle_real(VMProgram *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Real radius = BOX_VM_ARG1(vmp, Real);
   if (w->circle.got.radius_b == GOT_NOW) {
-    g_error("You already specified radius_a and radius_b for the circle!");
-    return Failed;
+    g_warning("You already specified radius_a and radius_b for the circle!");
+    return Success;
 
   } else if (w->circle.got.radius_a == GOT_NOW) {
     w->circle.radius_b = radius;
@@ -95,9 +105,9 @@ Task circle_style(VMProgram *vmp) {
 
 static Task _circle_draw(Window *w, DrawWhen when) {
   if (w->circle.got.center == GOT_NOT || w->circle.got.radius_a == GOT_NOT) {
-    g_error("To draw a circle you have to specify at least "
-            "the center (a point) the radius (a real)");
-    return Failed;
+    g_warning("To draw a circle you have to specify at least "
+              "the center (a point) the radius (a real)");
+    return Success;
 
   } else {
     Point c, a, b;

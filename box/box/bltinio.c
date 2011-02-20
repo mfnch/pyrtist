@@ -29,6 +29,7 @@
 #include "bltinstr.h"
 #include "bltinio.h"
 #include "compiler.h"
+#include "str.h"
 
 typedef struct {
   unsigned int opened : 1;

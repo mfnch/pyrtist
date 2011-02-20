@@ -34,7 +34,7 @@
 #include "ast.h"
 #include "messages.h"
 #include "array.h"
-#include "str.h"
+#include "strutils.h"
 #include "virtmach.h"
 #include "tokenizer.h"
 #include "parserh.h"
