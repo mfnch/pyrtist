@@ -24,25 +24,43 @@ exit = \
        button=Button("Exit"),
        enter_actions=ExitMode())
 
+color_red = Mode("Red",
+                 button=Button("Red", "red.png"),
+                 enter_actions=[Paste("$LCOMMA$color.red$CURSOROUT$$RCOMMA$"),
+                                ExitMode()])
+
+color_blue = Mode("Blue",
+                  button=Button("Blue", "blue.png"),
+                  enter_actions=[Paste("$LCOMMA$color.blue$CURSOROUT$$RCOMMA$"),
+                                 ExitMode()])
+
 color = \
   Mode("Color",
        tooltip="Select the color or create a new one",
        statusbar="Waiting for you to choose a color or create a new one",
-       permanent=False,
        button=Button("Color", "color.png"),
-       enter_actions=Paste("$LCOMMA$Color[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
-       submodes=[exit])
+       submodes=[color_red, color_blue, exit])
+
+fill_void = Mode("Not-filled",
+                 button=Button("Not filled", "fillvoid.png"),
+                 enter_actions=[Paste("\"void\""), ExitMode()])
+
+fill_plain = Mode("Plain",
+                  button=Button("Plain", "fillplain.png"),
+                  enter_actions=[Paste("\"plain\""), ExitMode()])
+
+fill_eo = Mode("Even-Odd",
+               button=Button("Even-Odd", "filleo.png"),
+               enter_actions=[Paste("\"eo\""), ExitMode()])
 
 fill = Mode("Fill mode",
-            permanent=False,
             button=Button("Fill", "fill.png"),
-            enter_actions=Paste("$LCOMMA$Fill[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
-            submodes=[exit])
+            enter_actions=Paste("$LCOMMA$.Fill[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+            submodes=[fill_void, fill_plain, fill_eo, exit])
 
 border = Mode("Border",
-              permanent=False,
               button=Button("Border", "border.png"),
-              enter_actions=Paste("$LCOMMA$Border[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+              enter_actions=Paste("$LCOMMA$.Border[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
               submodes=[color, exit])
 
 style = Mode("Style",
@@ -67,17 +85,38 @@ circle = \
   Mode("Circle",
        tooltip="Create a new circle",
        button=Button("Circle", "circle.png"),
-       enter_actions=[Paste("$LNEWLINE$Circle[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
+       enter_actions=[Paste("$LNEWLINE$\ .Circle[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       Set("PastePoint", True)],
        submodes=[color, style, exit])
+
+line_sharp = \
+  Mode("Sharp",
+       button=Button("Sharp", "linesharp.png"),
+       enter_actions=Paste("$LCOMMA$line.sharp$CURSOROUT$$RCOMMA$"))
+
+line_smooth = \
+  Mode("Smooth",
+       button=Button("Smooth", "linesmooth.png"),
+       enter_actions=Paste("$LCOMMA$line.medium$CURSOROUT$$RCOMMA$"))
+
+line_vsmooth = \
+  Mode("Very-Smooth",
+       button=Button("V.Smooth", "linevsmooth.png"),
+       enter_actions=Paste("$LCOMMA$line.smooth$CURSOROUT$$RCOMMA$"))
+
+line_close = \
+  Mode("Close",
+       button=Button("Close", "lineclose.png"),
+       enter_actions=Paste("$LCOMMA$.Close[]$CURSOROUT$$RCOMMA$"))
 
 line = \
   Mode("Line",
        tooltip="Create a new line with fixed or variable thickness",
        button=Button("Line", "line.png"),
-       enter_actions=[Paste("$LNEWLINE$Line[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
+       enter_actions=[Paste("$LNEWLINE$\ .Line[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       Set("PastePoint", True)],
-       submodes=[color, style, exit])
+       submodes=[color, style, line_sharp, line_smooth, line_vsmooth,
+                 line_close, exit])
 
 font = \
   Mode("Font",
@@ -92,7 +131,7 @@ text = \
        statusbar=("Select the font, enter the text, the position "
                   "and relative-positioning"),
        button=Button("Text", "text.png"),
-       enter_actions=[Paste("$LNEWLINE$Text[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
+       enter_actions=[Paste("$LNEWLINE$\ .Text[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       Set("PastePoint", True)],
        submodes=[font, color, style, exit])
 

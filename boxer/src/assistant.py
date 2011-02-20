@@ -114,7 +114,6 @@ class Set(Action):
 class ExitMode(Action):
   def execute(self, parent):
     parent.exit_mode()
-    parent.exit_mode()
 
 
 class Button(object):
@@ -124,8 +123,12 @@ class Button(object):
 
 
 def optlist(ol):
-  return ol if hasattr(ol, "__iter__") and type(ol) != str else [ol]
-  # ^^^ str has not __iter__ as attribute, but may in future versions...
+  if ol != None:
+    return ol if hasattr(ol, "__iter__") and type(ol) != str else [ol]
+    # ^^^ str has not __iter__ as attribute, but may in future versions...
+  else:
+    return []
+
 
 class Mode(object):
   def __init__(self, name, button=None, enter_actions=None, exit_actions=None,
@@ -140,8 +143,9 @@ class Mode(object):
     self.submodes = submodes
 
   def execute_actions(self, parent):
-    for action in self.enter_actions:
-      action.execute(parent)
+    if self.enter_actions != None:
+      for action in self.enter_actions:
+        action.execute(parent)
 
 class Assistant(object):
   def __init__(self, main_mode):
@@ -176,19 +180,22 @@ class Assistant(object):
 
     # Add mode to opened modes
     try:
-        mode_idx = mode_names.index(new_mode)
-        mode = modes[mode_idx]
-        self.current_modes.append(mode)
-        self._exit_marks.append(None)
+      mode_idx = mode_names.index(new_mode)
+      mode = modes[mode_idx]
 
     except ValueError:
       raise ValueError("Mode not found (%s)" % new_mode)
 
-    if self.statusbar != None:
-      context_id = self.statusbar.get_context_id(mode.name)
-      msg = mode.statusbar_text
-      msg = "%s: %s" % (mode.name, msg) if msg else mode.name + "."
-      message_id = self.statusbar.push(context_id, msg)
+    # Enter the mode only if it has any submodes
+    if mode.submodes != None:
+      self.current_modes.append(mode)
+      self._exit_marks.append(None)
+
+      if self.statusbar != None:
+        context_id = self.statusbar.get_context_id(mode.name)
+        msg = mode.statusbar_text
+        msg = "%s: %s" % (mode.name, msg) if msg else mode.name + "."
+        message_id = self.statusbar.push(context_id, msg)
 
     # Execute action for mode
     mode.execute_actions(self)

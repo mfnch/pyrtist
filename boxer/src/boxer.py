@@ -598,7 +598,7 @@ class Boxer:
     mainwin.show_all()
 
     # Set the name for the first reference point
-    set_next_refpoint_name(self.editable_area.document, "gui1")
+    set_next_refpoint_name(self.editable_area.document, "p1")
 
     self.filename = None
 
