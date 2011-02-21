@@ -25,33 +25,31 @@
 #  include "gpath.h"
 
 typedef struct {
-  /* Lunghezze di giunzione interne ed esterne della linea corrente */
-  double ti, te;
-  /* Lunghezze di giunzione interne ed esterne della prossima linea */
-  double ni, ne;
+  BoxReal ti, te, /**< Internal, external joining lengths for this segment */
+          ni, ne; /**< Internal, external joining lengths for next segment */
 } LineJoinStyle;
 
 typedef struct {
-  Real width1, width2;
-  Point point;
+  BoxReal       width1, width2;
+  BoxPoint      point;
   LineJoinStyle style;
-  void *arrow;
-  Real arrow_scale;
+  void          *arrow;
+  BoxReal       arrow_scale;
 } LinePiece;
 
 /* Questa struttura tiene conto di cio' che si sta tracciando */
 typedef struct {
-  Point pnt1, pnt2; /* Vertici dell'asse della linea */
-  Real sp1, sp2;    /* Spessori in corrispondenza dei due vertici */
-  Point v;          /* Vettori dell'asse della linea */
-  Point u;          /* Vettore v normalizzato */
-  Point o;          /* Versore ortogonale al vettore dell'asse */
-  Point vb[2];      /* Vettori dei due lati della linea */
-  Point p[2];       /* I due punti laterali della linea */
-  Point cong[2];    /* Punti di congiuntura fra i lati delle linee */
-  Point vci;        /* Vettore di congiuntura interno */
-  Point vertex[4];  /* Vertici della linea precedente */
-  Real mod, mod2;   /* Lunghezza della linea */
+  BoxPoint pnt1, pnt2; /* Vertici dell'asse della linea */
+  BoxReal sp1, sp2;    /* Spessori in corrispondenza dei due vertici */
+  BoxPoint v,          /* Vettori dell'asse della linea */
+           u,          /* Vettore v normalizzato */
+           o,          /* Versore ortogonale al vettore dell'asse */
+           vb[2],      /* Vettori dei due lati della linea */
+           p[2],       /* I due punti laterali della linea */
+           cong[2],    /* Punti di congiuntura fra i lati delle linee */
+           vci,        /* Vettore di congiuntura interno */
+           vertex[4];  /* Vertici della linea precedente */
+  BoxReal mod, mod2;   /* Lunghezza della linea */
 } LineDesc;
 
 typedef struct {
@@ -85,3 +83,4 @@ void lt_join_style_from_array(LineJoinStyle *ljs,
 void lt_join_style_set(LineTracer *lt, LineJoinStyle *ljs);
 
 #endif
+

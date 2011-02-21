@@ -620,6 +620,7 @@ class Boxer(object):
 
     # Create the text view
     enhanced_src, srcview, srcbuf = create_sourceview()
+    srcview.set_wrap_mode(gtk.WRAP_WORD)
     self.has_srcview = (enhanced_src != None)
     self.widget_srcview = srcview
     self.widget_srcbuf = srcbuf
