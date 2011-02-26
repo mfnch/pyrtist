@@ -16,8 +16,23 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
+# TODO (for v 0.3.0):
+# - extend do/undo to refpoints
+# x load and save dialogs should remember last opened directory(independently)
+# x drawing tools (color window, polygons, lines, etc)
+# - add show all/hide all button
 
-# TODO (for v 0.2.0):
+# TODO (for later):
+# - configuration files should work as before
+# - remember last window configuration (size of main window)
+# - buffer geometry should be determined by memory available for buffer
+# - multiple selection of points and transformation on them
+#   (translation, rotation,...)
+# - find and replace
+# - rename RefPoint? (dangerous, should be assisted)
+# - configuration window
+
+# DONE IN VER 0.2.0:
 # x it should be possible to terminate execution of running scripts
 # x refpoints should have yellow color
 # x paste button should work as before
@@ -29,19 +44,6 @@
 #   Now it is [--] while we should allow [ | ]
 #   There are four combinations [Text|Figure], [Figure|Text], etc.
 # x resize reference points
-
-# TODO (for later):
-# - configuration files should work as before
-# - remember last window configuration (size of main window)
-# - extend do/undo to refpoints
-# - buffer geometry should be determined by memory available for buffer
-# - load and save dialogs should remember last opened directory(independently)
-# - drawing tools (color window, polygons, lines, etc)
-# - multiple selection of points and transformation on them
-#   (translation, rotation,...)
-# - find and replace
-# - rename RefPoint? (dangerous, should be assisted)
-# - configuration window
 
 import pygtk
 pygtk.require('2.0')
@@ -57,7 +59,7 @@ import document
 from exec_command import exec_command
 
 import boxmode
-from assistant import Assistant, insert_char
+from assistant import Assistant, insert_char, rinsert_char
 from toolbox import ToolBox
 from editable import BoxEditableArea
 from rotpaned import RotPaned
@@ -111,6 +113,24 @@ def create_sourceview(use_gtksourceview=True):
   srcview = gtk.TextView()
   srcbuf = srcview.get_buffer()
   return (None, srcview, srcbuf)
+
+def create_filechooser(parent, title="Choose a file", action=None,
+                       buttons=None, add_default_filters=True):
+  fc = gtk.FileChooserDialog(title=title,
+                             parent=parent,
+                             action=action,
+                             buttons=buttons)
+  if add_default_filters:
+    flt_box_sources = gtk.FileFilter()
+    flt_box_sources.set_name("Box sources")
+    flt_box_sources.add_pattern("*.box")
+    flt_all_files = gtk.FileFilter()
+    flt_all_files.set_name("All files")
+    flt_all_files.add_pattern("*")
+    fc.add_filter(flt_box_sources)
+    fc.add_filter(flt_all_files)
+
+  return fc
 
 
 class Settings(object):
@@ -277,32 +297,26 @@ class Boxer(object):
     if not self.ensure_file_is_saved(): return
     self.raw_file_new()
 
-  def _add_filters(self, fc):
-    flt_box_sources = gtk.FileFilter()
-    flt_box_sources.set_name("Box sources")
-    flt_box_sources.add_pattern("*.box")
-    flt_all_files = gtk.FileFilter()
-    flt_all_files.set_name("All files")
-    flt_all_files.add_pattern("*")
-    fc.add_filter(flt_box_sources)
-    fc.add_filter(flt_all_files)
-
   def menu_file_open(self, image_menu_item):
     """Ivoked to open a file. Shows the dialog to select the file."""
-    if not self.ensure_file_is_saved(): return
-    fc = gtk.FileChooserDialog(title="Open Box program",
-                               parent=self.mainwin,
-                               action=gtk.FILE_CHOOSER_ACTION_OPEN,
-                               buttons=("_Cancel", gtk.RESPONSE_CANCEL,
-                                        "_Open", gtk.RESPONSE_OK))
-    self._add_filters(fc)
+    if not self.ensure_file_is_saved():
+      return
 
+    if self.dialog_fileopen == None:
+      self.dialog_fileopen = \
+        create_filechooser(self.mainwin,
+                           title="Open Box program",
+                           action=gtk.FILE_CHOOSER_ACTION_OPEN,
+                           buttons=("_Cancel", gtk.RESPONSE_CANCEL,
+                                    "_Open", gtk.RESPONSE_OK))
+
+    fc = self.dialog_fileopen
     response = fc.run()
-    filename = None
-    if response == gtk.RESPONSE_OK:
-      filename = fc.get_filename()
-    fc.destroy()
-    if filename != None: self.raw_file_open(filename)
+    filename = fc.get_filename() if response == gtk.RESPONSE_OK else None
+    fc.hide()
+
+    if filename != None:
+      self.raw_file_open(filename)
 
   def menu_file_save(self, image_menu_item):
     """Ivoked to save a file whose name has been already assigned."""
@@ -313,19 +327,22 @@ class Boxer(object):
 
   def menu_file_save_with_name(self, image_menu_item):
     """Ivoked to save a file. Shows the dialog to select the file name."""
-    fc = gtk.FileChooserDialog(title="Save Box program",
-                               parent=self.mainwin,
-                               action=gtk.FILE_CHOOSER_ACTION_SAVE,
-                               buttons=("_Cancel", gtk.RESPONSE_CANCEL,
-                                        "_Save", gtk.RESPONSE_OK))
-    self._add_filters(fc)
 
+    if self.dialog_filesave == None:
+      self.dialog_filesave = \
+        create_filechooser(self.mainwin,
+                           title="Save Box program",
+                           action=gtk.FILE_CHOOSER_ACTION_SAVE,
+                           buttons=("_Cancel", gtk.RESPONSE_CANCEL,
+                                    "_Save", gtk.RESPONSE_OK))
+
+    fc = self.dialog_filesave
     response = fc.run()
-    filename = None
-    if response == gtk.RESPONSE_OK:
-      filename = fc.get_filename()
-    fc.destroy()
-    if filename != None: self.raw_file_save(filename)
+    filename = fc.get_filename() if response == gtk.RESPONSE_OK else None
+    fc.hide()
+
+    if filename != None:
+      self.raw_file_save(filename)
 
   def menu_file_quit(self, image_menu_item):
     """Called on file->quit to quit the program."""
@@ -516,6 +533,10 @@ class Boxer(object):
     self.settings = Settings()
     self.settings.set_props(update_on_paste=False)
 
+    # Dialogues
+    self.dialog_fileopen = None
+    self.dialog_filesave = None
+
     if box_exec != None:
       self.config.set("Box", "exec", box_exec)
 
@@ -528,7 +549,10 @@ class Boxer(object):
 
     self.gladefile = config.glade_path(gladefile)
     self.boxer = gtk.glade.XML(self.gladefile, "boxer")
-    self.mainwin = self.boxer.get_widget("boxer")
+
+    # Get the main window
+    self.mainwin = mainwin = self.boxer.get_widget("boxer")
+
     self.out_textview = self.boxer.get_widget("outtextview")
     self.out_textbuffer = self.out_textview.get_buffer()
     self.out_textview_expander = self.boxer.get_widget("outtextview_expander")
@@ -634,6 +658,7 @@ class Boxer(object):
     astn.set_statusbar(sbar)
     astn.set_textview(srcview)
     astn.set_textbuffer(srcbuf)
+    astn.set_window(mainwin)
     astn.set_gui(self)
 
     # Setup the main HBox
@@ -642,7 +667,6 @@ class Boxer(object):
     for child in children:
       container.remove(child)
 
-    self.widget_main = mainwin = self.boxer.get_widget("boxer")
     mainwin.remove(container)
 
     # Create the layout in form of HBox-es and VBox-es and pack all widgets

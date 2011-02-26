@@ -139,13 +139,13 @@ static int lt_draw_opened(LineTracer *lt) {
   }
 
   /* Ripeto per (numpnt - 2) volte */
-  for ( m = 2; m < numpnt; m++ ) {
+  for (m = 2; m < numpnt; m++) {
     /* Faccio uno shift dei puntatori, per passare al prossimo punto */
     ip = i; i = in++;
 
     lt_join_style_set(lt, & i->style);
 
-    if ( i->arrow == NULL ) {
+    if (i->arrow == NULL) {
       lt_next_point(lt, & (i->point), i->width2, in->width1 );
 
     } else {
@@ -157,7 +157,8 @@ static int lt_draw_opened(LineTracer *lt) {
   }
 
   /* Ora traccio l'ultima linea */
-  if ( in->arrow == NULL ) {
+  lt_join_style_set(lt, & in->style);
+  if (in->arrow == NULL) {
     lt_final_point(lt, & (in->point), in->width2 );
 
   } else {
@@ -208,6 +209,8 @@ static int lt_draw_closed(LineTracer *lt) {
     /* Faccio uno shift dei puntatori, per passare al prossimo punto */
     ip = i; i = in++;
 
+    lt_join_style_set(lt, & i->style);
+
     if ( i->arrow == NULL ) {
       lt_next_point(lt, & (i->point), i->width2, in->width1 );
 
@@ -220,6 +223,7 @@ static int lt_draw_closed(LineTracer *lt) {
   }
 
   /* in punta all'ultimo "punto" della lista, quello da cui siamo partiti! */
+  lt_join_style_set(lt, & in->style);
   if ( in->arrow == NULL ) {
     lt_closed_finish(lt, & (in->point), in->width1);
 

@@ -35,6 +35,9 @@ class Action(object):
     pass
 
 
+def rinsert_char(tb, insert=", ", left=False, delims="],"):
+  return insert_char(tb, insert=insert, left=left, delims=delims)
+
 def insert_char(tb, insert=", ", left=True, delims="[,"):
   if tb != None:
     it = tb.get_iter_at_mark(tb.get_insert())
@@ -52,15 +55,7 @@ def insert_char(tb, insert=", ", left=True, delims="[,"):
 
 class Paste(Action):
   def __init__(self, text):
-    #self.substs = {}
-    #self.tags = {}
-
-    #def substitutor(var):
-    #  var_name = var.group(0)
-    #  self.tags[var_name] = (var.start(), var.end())
-    #  return self.substs.get(var_name, "")
-
-    self.text = text #re.sub(_variable_re, substitutor, text)
+    self.text = text
     self.cursor_in = None
     self.cursor_out = None
 
@@ -105,6 +100,10 @@ class Paste(Action):
       if cursorout:
         parent._set_exit_mark(tb, cursorout)
 
+      tv = parent.textview
+      if tv != None:
+        tv.grab_focus()
+
 
 class GUISet(Action):
   def __init__(self, **values):
@@ -131,6 +130,11 @@ class GUIAct(Action):
 class ExitMode(Action):
   def execute(self, parent):
     parent.exit_mode()
+
+    tv = parent.textview
+    if tv != None:
+      tv.grab_focus()
+
 
 
 class Button(object):
@@ -177,10 +181,15 @@ class Assistant(object):
     self.main_mode = main_mode
     self.start()
     self.permanent_modes = filter(lambda m: m.permanent, main_mode.submodes)
+    self.window = None
     self.textview = None
     self.textbuffer = None
     self.statusbar = None
     self.gui = None
+
+  def set_window(self, w):
+    """Set the parent GUI window."""
+    self.window = w
 
   def set_textbuffer(self, tb):
     """Set the textbuffer where to put the output of the selected modes."""

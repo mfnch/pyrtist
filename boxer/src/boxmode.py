@@ -16,6 +16,7 @@
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
 from assistant import Mode, ExitMode, GUISet, GUIAct, Paste, Button
+from inputtool import InputAct
 
 # Commonly used actions
 exit_action = ExitMode()
@@ -39,7 +40,7 @@ color_red = Mode("Red",
 
 color_blue = Mode("Blue",
                   button=Button("Blue", "blue.png"),
-                  enter_actions=[Paste("$LCOMMA$color.blu$RCOMMA$"),
+                  enter_actions=[Paste("$LCOMMA$color.blue$RCOMMA$"),
                                  update_now, exit_action])
 
 color = \
@@ -94,10 +95,16 @@ fill = Mode("Fill mode",
             enter_actions=Paste("$LCOMMA$.Fill[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
             submodes=[fill_void, fill_plain, fill_eo, exit])
 
+border_width = \
+  Mode("Border width",
+       button=Button("Width", "borderwidth.png"),
+       enter_actions=[InputAct("$LCOMMA$$INPUT$$RCOMMA$",
+                               label="Width of border:")])
+
 border = Mode("Border",
               button=Button("Border", "border.png"),
               enter_actions=Paste("$LCOMMA$.Border[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
-              submodes=[color, exit])
+              submodes=[color, border_width, exit])
 
 style = Mode("Style",
              permanent=False,
@@ -109,8 +116,9 @@ style = Mode("Style",
 
 poly_close = \
   Mode("Poly.Close",
+       tooltip="Close the border (only useful for non filled polygons)",
        button=Button("Close", "polyclose.png"),
-       enter_actions=Paste("$LCOMMA$.Close[]$RCOMMA$"))
+       enter_actions=[Paste("$LCOMMA$.Close[]$RCOMMA$"), update_now])
 
 poly = \
   Mode("Poly",
@@ -136,19 +144,19 @@ line_sharp = \
   Mode("Sharp",
        tooltip="Line corners are sharp (affects only the following points)",
        button=Button("Sharp", "linesharp.png"),
-       enter_actions=Paste("$LCOMMA$line.sharp$CURSOROUT$$RCOMMA$"))
+       enter_actions=Paste("$LCOMMA$line.sharp$RCOMMA$"))
 
 line_smooth = \
   Mode("Smooth",
        tooltip="Line corners are smooth (affects only the following points)",
        button=Button("Smooth", "linesmooth.png"),
-       enter_actions=Paste("$LCOMMA$line.medium$CURSOROUT$$RCOMMA$"))
+       enter_actions=Paste("$LCOMMA$line.medium$RCOMMA$"))
 
 line_vsmooth = \
   Mode("Very-Smooth",
        tooltip="Line corners are very smooth (affects only the following points)",
        button=Button("V.Smooth", "linevsmooth.png"),
-       enter_actions=Paste("$LCOMMA$line.smooth$CURSOROUT$$RCOMMA$"))
+       enter_actions=Paste("$LCOMMA$line.smooth$RCOMMA$"))
 
 line_close = \
   Mode("Line.Close",

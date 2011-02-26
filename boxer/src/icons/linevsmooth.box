@@ -1,0 +1,39 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui1 = Point[.x=15.0127226463, .y=40.0510204082]
+gui2 = Point[.x=166.41221374, .y=-94.6428571429]
+gui3 = Point[.x=24.1528052356, .y=-89.8544763209]
+gui4 = Point[.x=161.865685395, .y=31.4343658824]
+gui5 = Point[.x=33.6630769759, .y=-8.05174152542]
+gui8 = Point[.x=129.133248797, .y=-2.37513559322]
+gui9 = Point[.x=118.296094158, .y=-79.2673432203]
+//!BOXER:REFPOINTS:END
+include "grid"
+include "icon_theme"
+
+grid = Grid[gui3, gui4, icon_size.nx, icon_size.ny]
+cell = grid.GetCellSize[]
+
+icon = Window[][
+  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
+
+  w = cell.x
+  \ .Line[line.smooth
+          gui5, 8*w, gui8, gui9]
+]
+
+w = Window[][grid, icon]
+
+GUI[w]
+
+res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
+icon.Save["linevsmooth.png", Window["argb32", .Res[res]]]
+
