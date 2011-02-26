@@ -136,7 +136,6 @@ class ExitMode(Action):
       tv.grab_focus()
 
 
-
 class Button(object):
   def __init__(self, name="", filename=None):
     self.filename = filename

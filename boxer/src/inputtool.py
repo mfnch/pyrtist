@@ -92,3 +92,6 @@ class InputAct(Action):
       v = self.text.replace("$INPUT$", value)
       self.paste.text = v
       self.paste.execute(parent)
+
+class FloatInputAct(InputAct):
+  pass

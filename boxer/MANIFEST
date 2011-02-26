@@ -19,6 +19,8 @@ src/refpoints.py
 src/document.py
 src/info.py
 src/assistant.py
+src/inputtool.py
+src/toolbox.py
 src/boxmode.py
 src/glade/boxer.glade
 src/examples/bang.box

@@ -18,6 +18,10 @@
 from assistant import Mode, ExitMode, GUISet, GUIAct, Paste, Button
 from inputtool import InputAct
 
+
+def shorten_string(s, max_length=5):
+  return "%s..." % s[:3] if len(s) > max_length else s
+
 # Commonly used actions
 exit_action = ExitMode()
 update_now = GUIAct("update")
@@ -32,6 +36,11 @@ exit = \
        tooltip="Exit the current mode",
        button=Button("Exit"),
        enter_actions=exit_action)
+
+color_black = Mode("Black",
+                   button=Button("Black", "black.png"),
+                   enter_actions=[Paste("$LCOMMA$color.black$RCOMMA$"),
+                                  update_now, exit_action])
 
 color_red = Mode("Red",
                  button=Button("Red", "red.png"),
@@ -48,7 +57,7 @@ color = \
        tooltip="Select the color or create a new one",
        statusbar="Waiting for you to choose a color or create a new one",
        button=Button("Color", "color.png"),
-       submodes=[color_red, color_blue, exit])
+       submodes=[color_black, color_red, color_blue, exit])
 
 gradient_line = \
   Mode("Gradient.Line",
@@ -114,6 +123,13 @@ style = Mode("Style",
              enter_actions=Paste("$LCOMMA$Style[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
              submodes=[fill, border, exit])
 
+poly_smoothing = \
+  Mode("Poly smoothing",
+       tooltip="Smooth the corners of the polygon",
+       button=Button("Corners", "polysmooth.png"),
+       enter_actions=[InputAct("$LCOMMA$$INPUT$$RCOMMA$",
+                               label="Smoothing of corners:")])
+
 poly_close = \
   Mode("Poly.Close",
        tooltip="Close the border (only useful for non filled polygons)",
@@ -129,7 +145,7 @@ poly = \
        enter_actions=[Paste("$LNEWLINE$\ .Poly[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
-       submodes=[color, style, poly_close, exit])
+       submodes=[color, style, poly_smoothing, poly_close, exit])
 
 circle = \
   Mode("Circle",
@@ -139,6 +155,13 @@ circle = \
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
        submodes=[color, style, exit])
+
+line_width = \
+  Mode("Line width",
+       tooltip="Set the width of the line",
+       button=Button("Width", "linewidth.png"),
+       enter_actions=[InputAct("$LCOMMA$$INPUT$$RCOMMA$",
+                               label="Width of the line:")])
 
 line_sharp = \
   Mode("Sharp",
@@ -172,15 +195,96 @@ line = \
        enter_actions=[Paste("$LNEWLINE$\ .Line[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
-       submodes=[color, style, line_sharp, line_smooth, line_vsmooth,
-                 line_close, exit])
+       submodes=[color, style, line_width, line_sharp, line_smooth,
+                 line_vsmooth, line_close, exit])
+
+no_variants = []
+default_fonts = \
+  (("AvantGarde", "-", ("Book", "BookOblique", "Demi", "DemiOblique")),
+   ("Bookman", "-", ("Demi", "DemiItalic", "Light", "LightItalic")),
+   ("Courier", "-", (None, "Oblique", "Bold", "BoldOblique")),
+   ("Helvetica", "-", (None, "Oblique", "Bold", "BoldOblique")),
+   ("Helvetica-Narrow", "-", (None, "Oblique", "Bold", "BoldOblique")),
+   ("NewCenturySchlbk", "-", ("Roman", "Italic", "Bold", "BoldItalic")),
+   ("Palatino", "-", ("Roman", "Italic", "Bold", "BoldItalic")),
+   ("Symbol", None, no_variants),
+   ("Times", "-", ("Roman", "Italic", "Bold", "BoldItalic")),
+   ("ZapfChancery-MediumItalic", None, no_variants),
+   ("ZapfDingbats", None, no_variants))
+
+# Create the modes for all the default fonts (in the table above)
+font_modes = []
+for font_name, sep, variants in default_fonts:
+  variant_modes = []
+  for i, variant in enumerate(variants):
+    full_name = (font_name + sep + variant
+                 if sep != None and variant != None
+                 else font_name)
+    variant_name = shorten_string(variant) if variant != None else "Normal"
+    variant_mode = \
+      Mode(full_name,
+           tooltip=full_name,
+           button=Button(variant_name, "font%s.png" % full_name),
+           enter_actions=[Paste("$LCOMMA$\"%s\"$RCOMMA$" % full_name),
+                          exit_action])
+    variant_modes.append(variant_mode)
+
+  if len(variants) == 0:
+    font_mode = \
+      Mode(font_name,
+           tooltip=font_name,
+           button=Button(shorten_string(font_name), "font%s.png" % font_name),
+           enter_actions=[Paste("$LCOMMA$\"%s\"$RCOMMA$" % font_name)])
+
+  else:
+    variant_modes.append(exit)
+    font_mode = \
+      Mode(font_name,
+           tooltip=font_name,
+           button=Button(shorten_string(font_name), "font%s.png" % font_name),
+           submodes=variant_modes)
+
+  font_modes.append(font_mode)
+
+font_size = \
+  Mode("Font size",
+       tooltip="Set the size of the font",
+       button=Button("Size", "fontsize.png"),
+       enter_actions=[InputAct("$LCOMMA$$INPUT$$RCOMMA$",
+                               label="Size of font:")])
 
 font = \
   Mode("Font",
        tooltip="Choose the font (and size) used to render the text",
        button=Button("Font", "font.png"),
        enter_actions=[Paste("$LCOMMA$Font[$CURSORIN$]$CURSOROUT$$RCOMMA$")],
-       submodes=[exit])
+       submodes=[font_size, exit] + font_modes)
+
+text_content = \
+  Mode("Text content",
+       tooltip="Enter the text to display",
+       button=Button("Text", "textcontent.png"),
+       enter_actions=[InputAct("$LCOMMA$\"$INPUT$\"$RCOMMA$",
+                               label="Text to display:")])
+
+text_from_submodes = []
+for alignx, aligny in ((0, 0), (2, 0), (2, 2), (0, 2), (1, 1)):
+  s = "(%g, %g)" % (alignx*0.5, aligny*0.5)
+  idxs = str(alignx) + str(aligny)
+  text_from_submode = \
+    Mode("From" + idxs,
+         tooltip="Position %s" % s,
+         button=Button("From" + idxs, "textfrom%s.png" % idxs),
+         enter_actions=[Paste(s), exit_action])
+  text_from_submodes.append(text_from_submode)
+text_from_submodes.append(exit)
+
+text_from = \
+  Mode("From",
+       tooltip="Choose the relative position",
+       button=Button("From", "textfrom.png"),
+       enter_actions=Paste("$LCOMMA$.From[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+       submodes=text_from_submodes)
 
 text = \
   Mode("Text",
@@ -190,7 +294,7 @@ text = \
        button=Button("Text", "text.png"),
        enter_actions=[Paste("$LNEWLINE$\ .Text[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       paste_on_new],
-       submodes=[font, color, style, exit])
+       submodes=[font, color, style, text_content, text_from, exit])
 
 main_mode = \
   Mode("Main", submodes=[exit, color, gradient, style, poly, circle, line, text])
