@@ -17,6 +17,7 @@
 
 from assistant import Mode, ExitMode, GUISet, GUIAct, Paste, Button
 from inputtool import InputAct
+from colortool import ColorSelect
 
 
 def shorten_string(s, max_length=5):
@@ -36,6 +37,11 @@ exit = \
        tooltip="Exit the current mode",
        button=Button("Exit"),
        enter_actions=exit_action)
+
+color_new = Mode("Color New",
+                 button=Button("New", "colornew.png"),
+                 enter_actions=[ColorSelect("$LCOMMA$$COLOR$$RCOMMA$"),
+                                update_now, exit_action])
 
 color_black = Mode("Black",
                    button=Button("Black", "black.png"),
@@ -57,7 +63,7 @@ color = \
        tooltip="Select the color or create a new one",
        statusbar="Waiting for you to choose a color or create a new one",
        button=Button("Color", "color.png"),
-       submodes=[color_black, color_red, color_blue, exit])
+       submodes=[color_new, color_black, color_red, color_blue, exit])
 
 gradient_line = \
   Mode("Gradient.Line",
@@ -85,7 +91,7 @@ gradient = \
        statusbar="Waiting for you to choose between linear and radial gradient",
        button=Button("Gradient", "gradient.png"),
        enter_actions=[Paste("$LCOMMA$Gradient[$CURSORIN$]$CURSOROUT$$RCOMMA$")],
-       submodes=[gradient_line, gradient_circle, exit])
+       submodes=[gradient_line, gradient_circle, color, exit])
 
 fill_void = Mode("Not-filled",
                  button=Button("Not filled", "fillvoid.png"),
@@ -145,7 +151,7 @@ poly = \
        enter_actions=[Paste("$LNEWLINE$\ .Poly[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
-       submodes=[color, style, poly_smoothing, poly_close, exit])
+       submodes=[color, gradient, style, poly_smoothing, poly_close, exit])
 
 circle = \
   Mode("Circle",
@@ -154,7 +160,7 @@ circle = \
        enter_actions=[Paste("$LNEWLINE$\ .Circle[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
-       submodes=[color, style, exit])
+       submodes=[color, gradient, style, exit])
 
 line_width = \
   Mode("Line width",
@@ -195,7 +201,7 @@ line = \
        enter_actions=[Paste("$LNEWLINE$\ .Line[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
-       submodes=[color, style, line_width, line_sharp, line_smooth,
+       submodes=[color, gradient, style, line_width, line_sharp, line_smooth,
                  line_vsmooth, line_close, exit])
 
 no_variants = []
@@ -294,7 +300,7 @@ text = \
        button=Button("Text", "text.png"),
        enter_actions=[Paste("$LNEWLINE$\ .Text[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       paste_on_new],
-       submodes=[font, color, style, text_content, text_from, exit])
+       submodes=[color, gradient, style, font, text_content, text_from, exit])
 
 main_mode = \
   Mode("Main", submodes=[exit, color, gradient, style, poly, circle, line, text])

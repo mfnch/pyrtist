@@ -18,8 +18,6 @@
 
 from assistant import Action, Paste
 
-import pygtk
-
 import gtk
 
 class InputTool(object):
@@ -75,6 +73,7 @@ class InputTool(object):
   value = property(get_value, set_value)
 
   def run(self):
+    self._value = None
     self.window.show()
     gtk.main()
     return self.value
@@ -84,9 +83,12 @@ class InputAct(Action):
     self.text = text if text != None else "$INPUT$"
     self.paste = Paste(text)
     self.inputtool_args = args
+    self.inputtool = None
 
   def execute(self, parent):
-    it = InputTool(parent.window, **self.inputtool_args)
+    if self.inputtool == None:
+      self.inputtool = InputTool(parent.window, **self.inputtool_args)
+    it = self.inputtool
     value = it.run()
     if value != None:
       v = self.text.replace("$INPUT$", value)
