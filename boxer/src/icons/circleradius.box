@@ -1,0 +1,35 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+
+
+
+//!BOXER:REFPOINTS:BEGIN
+//!BOXER:REFPOINTS:END
+include "grid"
+include "icon_theme"
+
+grid = Grid[(0, 0), (100, 100), icon_size.nx, icon_size.ny]
+cell = grid.GetCellSize[]
+lw = width*cell.x
+
+icon = Window[][
+  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
+  s = Style[.Border[color.black, lw]]
+  c = Point[(50, 50)], r = 40.0, a = Deg[30]
+  p = c + r*Point[.x=Cos[a], .y=Sin[a]]
+  \ .Circle[color_inside, s, c, r]
+  \ .Line[color.red, c, 6, p]
+  \ .Circle[c, 6; p]
+]
+
+w = Window[][grid, icon]
+
+GUI[w]
+
+res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
+icon.Save["circleradius.png", Window["argb32", .Res[res]]]

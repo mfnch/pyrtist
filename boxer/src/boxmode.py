@@ -121,20 +121,22 @@ border = Mode("Border",
               enter_actions=Paste("$LCOMMA$.Border[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
               submodes=[color, border_width, exit])
 
-style = Mode("Style",
-             permanent=False,
-             tooltip=("Choose the fill and border style for polygons, "
-                      "circles, etc."),
-             button=Button("Style", "style.png"),
-             enter_actions=Paste("$LCOMMA$Style[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
-             submodes=[fill, border, exit])
+style = \
+  Mode("Style",
+       permanent=False,
+       tooltip=("Choose the fill and border style for polygons, "
+                "circles, etc."),
+       button=Button("Style", "style.png"),
+       enter_actions=Paste("$LCOMMA$Style[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+       submodes=[fill, border, exit])
 
 poly_smoothing = \
   Mode("Poly smoothing",
        tooltip="Smooth the corners of the polygon",
        button=Button("Corners", "polysmooth.png"),
        enter_actions=[InputAct("$LCOMMA$$INPUT$$RCOMMA$",
-                               label="Smoothing of corners:")])
+                               label=("Smoothing of corners\n"
+                                      "(between 0.0 and 1.0):"))])
 
 poly_close = \
   Mode("Poly.Close",
@@ -153,6 +155,13 @@ poly = \
        exit_actions=pop_settings,
        submodes=[color, gradient, style, poly_smoothing, poly_close, exit])
 
+circle_radius = \
+  Mode("Circle radius",
+       tooltip="Provide the radius (use twice for ellipse)",
+       button=Button("Radius", "circleradius.png"),
+       enter_actions=[InputAct("$LCOMMA$$INPUT$$RCOMMA$",
+                               label="Radius:")])
+
 circle = \
   Mode("Circle",
        tooltip="Create a new circle",
@@ -160,7 +169,7 @@ circle = \
        enter_actions=[Paste("$LNEWLINE$\ .Circle[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
-       submodes=[color, gradient, style, exit])
+       submodes=[color, gradient, style, circle_radius, exit])
 
 line_width = \
   Mode("Line width",
