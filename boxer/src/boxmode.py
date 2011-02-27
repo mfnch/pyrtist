@@ -30,6 +30,7 @@ push_settings = GUIAct("push_settings")
 pop_settings = GUIAct("pop_settings")
 update_on_paste = GUISet(update_on_paste=True)
 paste_on_new = GUISet(paste_point=True)
+dont_paste_on_new = GUISet(paste_point=False)
 
 exit = \
   Mode("Exit",
@@ -90,7 +91,9 @@ gradient = \
        tooltip="Create a color gradient",
        statusbar="Waiting for you to choose between linear and radial gradient",
        button=Button("Gradient", "gradient.png"),
-       enter_actions=[Paste("$LCOMMA$Gradient[$CURSORIN$]$CURSOROUT$$RCOMMA$")],
+       enter_actions=[Paste("$LCOMMA$Gradient[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+                      push_settings, dont_paste_on_new],
+       exit_actions=pop_settings,
        submodes=[gradient_line, gradient_circle, color, exit])
 
 fill_void = Mode("Not-filled",
