@@ -8,38 +8,48 @@ Window@GUI[]
 
 
 
+
+
+
+
+
+
+
+
 //!BOXER:REFPOINTS:BEGIN
-gui2 = Point[.x=166.41221374, .y=-94.6428571429]
-gui3 = Point[.x=24.1528052356, .y=-89.8544763209]
-gui4 = Point[.x=161.865685395, .y=31.4343658824]
-gui5 = Point[.x=32.6621893204, .y=-29.21]
-gui8 = Point[.x=127.493520388, .y=8.01090786517]
-gui9 = Point[.x=151.440826214, .y=-82.3045303371]
-gui6 = Point[.x=67.8305184466, .y=-86.136094382]
-gui7 = Point[.x=81.788376699, .y=-50.5572853933]
-gui10 = Point[.x=85.0784797927, .y=27.7166646264]
-gui11 = Point[.x=85.2094203883, .y=-7.72587303371]
+gui5 = Point[.x=3.32363645653, .y=49.9846981227]
+gui8 = Point[.x=47.1157062063, .y=72.6134776233]
+gui9 = Point[.x=41.4217432284, .y=2.6784882417]
+gui6 = Point[.x=17.1939635605, .y=3.18097718496]
+gui7 = Point[.x=38.2454376223, .y=35.4660215795]
+gui10 = Point[.x=31.9870503166, .y=97.0278441721]
+gui11 = Point[.x=33.2387277778, .y=64.7544104684]
+gui12 = Point[.x=72.1586041996, .y=53.0993615364]
 //!BOXER:REFPOINTS:END
 include "grid"
 include "icon_theme"
 include "arrows"
 
-grid = Grid[gui3, gui4, icon_size.nx, icon_size.ny]
+grid = Grid[(0, 0), (100, 100), icon_size.nx, icon_size.ny]
 cell = grid.GetCellSize[]
 
 icon = Window[][
   .Show[BBox[grid]] // the whole grid is shown, even if it is empty
 
   w = cell.x
-  \ .Line[line.medium, gui5, 10.5*w, Point[gui8, .y=gui5.y], Point[gui9, .x=gui8.x]]
-  \ .Line[2.5*w, color.red, gui6, arrow_ruler, .ArrowScale[0.5], Point[gui7, .x=gui6.x]]
-  \ .Line[2.5*w, color.red, Point[gui10, .x=gui6.x], arrow_ruler, .ArrowScale[0.5], Point[gui11, .x=gui6.x]]
+  \ .Line[line.medium, gui5, 10*w, Point[gui8, .y=gui5.y], Point[gui9, .x=gui8.x]]
+  p1 = Point[gui7, .x=gui6.x], p2 = Point[gui11, .x=gui6.x]
+  \ .Line[3*w, color.red, gui6, arrow_ruler, .ArrowScale[0.5], p1]
+  \ .Line[3*w, color.red, Point[gui10, .x=gui6.x], arrow_ruler, .ArrowScale[0.5], p2]
+  \ .Line[2*w, p1, p2]
+  \ .Text[Font["Times-Bold", 120], "?", gui12, Style[.Border[color.red, w]], color.yellow]
 ]
 
 w = Window[][grid, icon]
-
 GUI[w]
 
 res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
-icon.Save["linewidth.png", Window["argb32", .Res[res]]]
-
+out = Window["argb32", (100, 100), .Res[res]][
+  icon
+  .Save["linewidth.png"]
+]
