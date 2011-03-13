@@ -73,7 +73,7 @@ gradient_line = \
        button=Button("Linear", "lingrad.png"),
        enter_actions=[Paste("$LCOMMA$.Line[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
                       push_settings, paste_on_new],
-       exit_actions=[pop_settings],
+       exit_actions=pop_settings,
        submodes=[exit])
 
 gradient_circle = \
@@ -83,7 +83,7 @@ gradient_circle = \
        button=Button("Circular", "circgrad.png"),
        enter_actions=[Paste("$LCOMMA$.Circle[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
                       push_settings, paste_on_new],
-       exit_actions=[pop_settings],
+       exit_actions=pop_settings,
        submodes=[exit])
 
 gradient = \

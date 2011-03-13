@@ -205,7 +205,8 @@ class Boxer(object):
     """Set the content of the main textview from the string 'text'."""
     if not_undoable == None:
       not_undoable = self.has_srcview
-    if not_undoable: self.textbuffer.begin_not_undoable_action()
+    if not_undoable:
+      self.textbuffer.begin_not_undoable_action()
     self.textbuffer.set_text(text)
 
     # Remove the "here" marker and put the cursor there!
@@ -217,7 +218,8 @@ class Boxer(object):
       self.textbuffer.select_range(mark0, mark1)
       self.textbuffer.delete_selection(True, True)
 
-    if not_undoable: self.textbuffer.end_not_undoable_action()
+    if not_undoable:
+      self.textbuffer.end_not_undoable_action()
 
   def raw_file_new(self):
     """Start a new box program and set the content of the main textview."""
@@ -226,6 +228,7 @@ class Boxer(object):
     d.load_from_str(box_source_of_new)
 
     self.editable_area.kill_drawer()
+    self.widget_toolbox.exit_all_modes(force=True)
     self.set_main_source(d.get_user_code())
     self.filename = None
     self.assume_file_is_saved()
@@ -243,6 +246,7 @@ class Boxer(object):
       return
     finally:
       self.editable_area.kill_drawer()
+      self.widget_toolbox.exit_all_modes(force=True)
       self.set_main_source(d.get_user_code())
       self.filename = filename
       self.assume_file_is_saved()
@@ -294,7 +298,8 @@ class Boxer(object):
     md.destroy()
 
   def menu_file_new(self, image_menu_item):
-    if not self.ensure_file_is_saved(): return
+    if not self.ensure_file_is_saved():
+      return
     self.raw_file_new()
 
   def menu_file_open(self, image_menu_item):
@@ -590,8 +595,12 @@ class Boxer(object):
     editable_area.set_callback("refpoint_remove", self.notify_refpoint_del)
 
     def refpoint_press_middle(_, rp):
-      insert_char(self.textbuffer)
-      self.textbuffer.insert_at_cursor(rp.name)
+      tb = self.textbuffer
+      tb.begin_user_action()
+      insert_char(tb)
+      tb.insert_at_cursor(rp.name)
+      tb.end_user_action()
+
       if self.settings.get_prop("update_on_paste"):
         self.update_draw_area(only_if_quick=True)
     editable_area.set_callback("refpoint_press_middle", refpoint_press_middle)

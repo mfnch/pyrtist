@@ -1,0 +1,50 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+
+
+
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui1 = Point[.x=3.10748126214, .y=65.6681514477]
+gui2 = Point[.x=96.8926987379, .y=34.4437639198]
+gui3 = Point[.x=9.01786813325, .y=50.0562074458]
+gui4 = Point[.x=90.1020887492, .y=50.2768448084]
+//!BOXER:REFPOINTS:END
+include "grid"
+include "icon_theme"
+include "arrows"
+
+grid = Grid[(0, 0), (100, 100), icon_size.nx, icon_size.ny]
+cell = grid.GetCellSize[]
+lw = width*cell.x
+
+icon = Window[][
+  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
+  s1 = Style[.Border[color.black, lw]]
+  s2 = Style[.Border[0]]
+
+  \ .Poly[gui1, Point[gui1, .y=gui2.y], gui2, Point[gui1, .x=gui2.x]
+          Gradient[.Line[gui1, Point[gui1, .x=gui2.x]]
+                   color.yellow, color.red]]
+  \ .Line[color.black, y = 0.5*(gui1 + gui2).y, .ArrowScale[0.5], 10
+          Point[gui3, .y=y], arrow_triangle, Point[gui4, .y=y]]
+]
+
+
+w = Window[][grid, icon]
+
+GUI[w]
+
+res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
+//icon.Save["text.png", Window["argb32", (100, 10), .Res[res]]]
+
+out = Window["argb32", (100, 100), .Res[res]][
+  icon
+  .Save["lingrad.png"]
+]
