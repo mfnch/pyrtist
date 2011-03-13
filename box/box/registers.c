@@ -43,7 +43,7 @@
 #define OCCUPIED 0
 
 /****************************************************************************
- * Here we implements the logic to associate registers to variables.        *
+ * Here we implement the logic to associate registers to variables.         *
  ****************************************************************************/
 
 /*

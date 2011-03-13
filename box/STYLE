@@ -1,7 +1,7 @@
 STYLE OF THE CODE
 -----------------
 
-  Unfortunatly the style is not omogeneous throughout the program!!!
+  Unfortunatly the style is not homogeneous throughout the program!!!
   This problem is connected with the long life of this code and with my mind
   which changes with experience.
   Better to write down here some conventions:
@@ -19,7 +19,7 @@ STYLE OF THE CODE
   they are defined in the same file. In principle, one should do the same for
   static variables, but one should try to avoid using static variables unless
   it is really necessary to use them, which means one should never use them
-  (even if, presently, this rule is not strictly always in the code. Mainly,
+  (even if, presently, this rule is not strictly followed in the code. Mainly,
   for messages.c, msgbase.c and lex, yacc files).
   Use indentation length of 2 (and spaces instead of tabs), example:
 
@@ -156,10 +156,9 @@ NULL and casting
     foo();
 
     But one may wonder whether it is an error: why is it not using the
-    returned value? One may argue that - in general - the return value are
+    returned value? One may argue that - in general - the return value is
     typically the reason why you call a function.
     A (void) cast makes it explicit that you are aware that you know that the
     function returns something, and you *WANT* to discard it.
     This also helps when using -Wunused-value to find out whether you discarded
     some return values without being aware of it.
-
