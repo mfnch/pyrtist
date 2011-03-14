@@ -367,9 +367,16 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
   TS_Species_Add(ts, b->species_point, BOXTYPE_POINT);
   TS_Name_Set(ts, b->species_point, "Point");
 
-  /* Define If and For */
+  /* Define If, Else, Elif and For */
   b->alias_if = TS_Detached_New(ts, TS_Alias_New(ts, BOXTYPE_INT));
   TS_Name_Set(ts, b->alias_if, "If");
+
+  b->alias_else = TS_Detached_New(ts, TS_Alias_New(ts, BOXTYPE_VOID));
+  TS_Name_Set(ts, b->alias_else, "Else");
+
+  b->alias_elif = TS_Detached_New(ts, TS_Alias_New(ts, BOXTYPE_INT));
+  TS_Name_Set(ts, b->alias_elif, "Elif");
+
   b->alias_for = TS_Detached_New(ts, TS_Alias_New(ts, BOXTYPE_INT));
   TS_Name_Set(ts, b->alias_for, "For");
 
@@ -402,6 +409,8 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {"Ptr",         BOXTYPE_PTR},
     {"CPtr",        BOXTYPE_CPTR},
     {"If",          c->bltin.alias_if},
+    {"Else",        c->bltin.alias_else},
+    {"Elif",        c->bltin.alias_elif},
     {"For",         c->bltin.alias_for},
     {"Print",       c->bltin.print},
     {(char *) NULL, BOXTYPE_NONE}
@@ -660,6 +669,7 @@ static void My_Register_Std_Procs(BoxCmp *c) {
           t_real  = c->bltin.species_real,
           t_point = c->bltin.species_point,
           t_if    = c->bltin.alias_if,
+          t_elif  = c->bltin.alias_elif,
           t_for   = c->bltin.alias_for;
   (void) Bltin_Proc_Def(c,  BOXTYPE_CHAR, BOXTYPE_CHAR, My_Char_Char);
   (void) Bltin_Proc_Def(c,  BOXTYPE_CHAR,  BOXTYPE_INT, My_Char_Int);
@@ -670,6 +680,7 @@ static void My_Register_Std_Procs(BoxCmp *c) {
   (void) Bltin_Proc_Def(c, BOXTYPE_POINT,      t_point,
                         My_Point_RealNumCouple);
   (void) Bltin_Proc_Def(c,          t_if,        t_int, My_If_Int);
+  (void) Bltin_Proc_Def(c,        t_elif,        t_int, My_If_Int);
   (void) Bltin_Proc_Def(c,         t_for,        t_int, My_For_Int);
 
   c->bltin.subtype_init = Bltin_Proc_Add(c, "subtype_init", My_Subtype_Init);

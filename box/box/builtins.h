@@ -39,6 +39,8 @@ typedef struct {
           species_real,
           species_point,
           alias_if,
+          alias_else,
+          alias_elif,
           alias_for,
           print,
           exit,

@@ -1,0 +1,57 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+
+
+
+
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui3 = Point[.x=47.6584067358, .y=49.6559570753]
+gui5 = Point[.x=13.2917948544, .y=92.3040089087]
+gui6 = Point[.x=83.6866657282, .y=7.69599109131]
+//!BOXER:REFPOINTS:END
+include "grid"
+include "icon_theme"
+include "arrows"
+
+grid = Grid[(0, 0), (100, 100), icon_size.nx, icon_size.ny]
+cell = grid.GetCellSize[]
+lw = width*cell.x
+
+gui2 = Point[gui5, .y=gui6.y]
+gui1 = Point[gui5, .x=gui6.x]
+
+icon = Window[][
+  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
+
+  \ .Text[color.grey, Font["Helvetica-Bold", 50], gui3, "FR\nOM"]
+  \ .Poly[gui5, gui2, gui6, gui1
+          Style[.Fill["void"], .Border[lw, color.black, .Dash[lw*3]]], .Close[]]
+]
+
+
+w = Window[][grid, icon]
+
+GUI[w]
+
+CreateIcon = Void
+(Int idx1, idx2)@CreateIcon[
+  res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
+
+  out = Window["argb32", (100, 100), .Res[res]][
+    icon
+    sz = gui1 - gui2
+    \ .Circle[lw*3, color.red, gui2 + 0.5*($.idx1*sz.x, $.idx2*sz.y)]
+    filename = Str["textfrom", $.idx1, $.idx2, ".png"]
+    .Save[filename]
+  ]
+]
+
+CreateIcon[(1, 1), (0, 0), (2, 0), (0, 2), (2, 2)]
+

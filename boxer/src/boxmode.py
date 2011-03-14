@@ -73,7 +73,7 @@ gradient_line = \
        button=Button("Linear", "lingrad.png"),
        enter_actions=[Paste("$LCOMMA$.Line[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
                       push_settings, paste_on_new],
-       exit_actions=[pop_settings],
+       exit_actions=pop_settings,
        submodes=[exit])
 
 gradient_circle = \
@@ -83,7 +83,7 @@ gradient_circle = \
        button=Button("Circular", "circgrad.png"),
        enter_actions=[Paste("$LCOMMA$.Circle[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
                       push_settings, paste_on_new],
-       exit_actions=[pop_settings],
+       exit_actions=pop_settings,
        submodes=[exit])
 
 gradient = \
@@ -282,11 +282,12 @@ text_content = \
   Mode("Text content",
        tooltip="Enter the text to display",
        button=Button("Text", "textcontent.png"),
-       enter_actions=[InputAct("$LCOMMA$\"$INPUT$\"$RCOMMA$",
+       enter_actions=[InputAct("$LCOMMA$$INPUT$$RCOMMA$",
+                               string_input=True,
                                label="Text to display:")])
 
 text_from_submodes = []
-for alignx, aligny in ((0, 0), (2, 0), (2, 2), (0, 2), (1, 1)):
+for alignx, aligny in ((1, 1), (0, 0), (2, 0), (0, 2), (2, 2)):
   s = "(%g, %g)" % (alignx*0.5, aligny*0.5)
   idxs = str(alignx) + str(aligny)
   text_from_submode = \

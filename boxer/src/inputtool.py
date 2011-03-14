@@ -79,11 +79,12 @@ class InputTool(object):
     return self.value
 
 class InputAct(Action):
-  def __init__(self, text=None, **args):
+  def __init__(self, text=None, string_input=False, **args):
     self.text = text if text != None else "$INPUT$"
     self.paste = Paste(text)
     self.inputtool_args = args
     self.inputtool = None
+    self.string_input = string_input
 
   def execute(self, parent):
     if self.inputtool == None:
@@ -91,9 +92,12 @@ class InputAct(Action):
     it = self.inputtool
     value = it.run()
     if value != None:
+      if self.string_input:
+        value = '"' + value.replace('"', '\\"') + '"'
       v = self.text.replace("$INPUT$", value)
       self.paste.text = v
       self.paste.execute(parent)
+
 
 class FloatInputAct(InputAct):
   pass

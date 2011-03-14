@@ -64,6 +64,8 @@ class Paste(Action):
     tb = parent.textbuffer
 
     if tb != None:
+      tb.begin_user_action() # So that it appears on the Undo list
+
       pos = 0
       cursorin = None
       cursorout = None
@@ -92,7 +94,7 @@ class Paste(Action):
         elif tag == "RNEWLINE":
           insert_char(tb, delims="", insert="\n", left=False)
 
-      if cursorin:
+      if cursorin and not cursorin.get_deleted():
         it = tb.get_iter_at_mark(cursorin)
         tb.place_cursor(it)
         tb.delete_mark(cursorin)
@@ -100,9 +102,12 @@ class Paste(Action):
       if cursorout:
         parent._set_exit_mark(tb, cursorout)
 
+      tb.end_user_action()
+
       tv = parent.textview
       if tv != None:
         tv.grab_focus()
+
 
 
 class GUISet(Action):
@@ -241,6 +246,7 @@ class Assistant(object):
       mode.execute_exit_actions(self)
 
   def exit_mode(self):
+    """Exit the current mode (executing exit actions, if necessary)."""
     if len(self.current_modes) > 1:
       # Execute exit actions
       self.get_current_mode().execute_exit_actions(self)
@@ -256,9 +262,17 @@ class Assistant(object):
 
       if item != None:
         tb, cursorout = item
-        it = tb.get_iter_at_mark(cursorout)
-        tb.place_cursor(it)
-        tb.delete_mark(cursorout)
+        if not cursorout.get_deleted():
+          it = tb.get_iter_at_mark(cursorout)
+          tb.place_cursor(it)
+          tb.delete_mark(cursorout)
+
+  def exit_all_modes(self, force=False):
+    """Exit all opened modes. When 'force=True', the modes are exited in non
+    interactive mode (this is ignored now, but may be used in future
+    versions)."""
+    while len(self.current_modes) > 1:
+      self.exit_mode()
 
   def _set_exit_mark(self, tb, mark):
     item = self._exit_marks[-1]

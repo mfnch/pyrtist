@@ -89,3 +89,8 @@ class ToolBox(gtk.Table):
     """Called when a button in the toolbox is clicked."""
     self.assistant.choose(button_mode.name)
     self._update_buttons()
+
+  def exit_all_modes(self, force=False):
+    """Exit all the modes."""
+    self.assistant.exit_all_modes(force=force)
+    self._update_buttons()

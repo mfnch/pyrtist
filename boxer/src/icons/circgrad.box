@@ -1,0 +1,56 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+
+
+
+
+
+
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui1 = Point[.x=50.2278702073, .y=96.8888156191]
+gui2 = Point[.x=93.6311234025, .y=6.25878155873]
+gui3 = Point[.x=50.1165544041, .y=49.9957029891]
+gui4 = Point[.x=79.3279790155, .y=63.5360548464]
+//!BOXER:REFPOINTS:END
+include "grid"
+include "icon_theme"
+include "arrows"
+
+grid = Grid[(0, 0), (100, 100), icon_size.nx, icon_size.ny]
+cell = grid.GetCellSize[]
+lw = width*cell.x
+
+icon = Window[][
+  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
+  s1 = Style[.Border[color.black, lw]]
+
+  p1 = (50, 50), p2 = (50, lw)
+  r2 = Norm[p1 - p2], r1 = r2*0.25
+  g = Gradient[.Circle[p1, 0; r2], color.yellow, color.red]
+  \ . Circle[p1, p2, g]
+  \ .Line[color.black, 3*lw, .ArrowScale[0.5]
+          vec =   Vec[Deg[0]], p1 + vec*r1, arrow_triangle, p1 + vec*r2;
+          vec =  Vec[Deg[90]], p1 + vec*r1, arrow_triangle, p1 + vec*r2;
+          vec = Vec[Deg[180]], p1 + vec*r1, arrow_triangle, p1 + vec*r2;
+          vec = Vec[Deg[270]], p1 + vec*r1, arrow_triangle, p1 + vec*r2;]
+]
+
+
+w = Window[][grid, icon]
+
+GUI[w]
+
+res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
+//icon.Save["text.png", Window["argb32", (100, 10), .Res[res]]]
+
+out = Window["argb32", (100, 100), .Res[res]][
+  icon
+  .Save["circgrad.png"]
+]
