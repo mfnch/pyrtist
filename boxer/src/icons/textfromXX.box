@@ -10,6 +10,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui3 = Point[.x=47.6584067358, .y=49.6559570753]
 gui5 = Point[.x=13.2917948544, .y=92.3040089087]
@@ -52,7 +53,5 @@ CreateIcon = Void
   ]
 ]
 
-idx1 = 0, [
-  idx2 = 0, CreateIcon[(idx1, idx2), For[++idx2 < 3]]
-  For[++idx1 < 3]
-]
+CreateIcon[(1, 1), (0, 0), (2, 0), (0, 2), (2, 2)]
+

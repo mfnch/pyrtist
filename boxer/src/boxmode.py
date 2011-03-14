@@ -282,11 +282,12 @@ text_content = \
   Mode("Text content",
        tooltip="Enter the text to display",
        button=Button("Text", "textcontent.png"),
-       enter_actions=[InputAct("$LCOMMA$\"$INPUT$\"$RCOMMA$",
+       enter_actions=[InputAct("$LCOMMA$$INPUT$$RCOMMA$",
+                               string_input=True,
                                label="Text to display:")])
 
 text_from_submodes = []
-for alignx, aligny in ((0, 0), (2, 0), (2, 2), (0, 2), (1, 1)):
+for alignx, aligny in ((1, 1), (0, 0), (2, 0), (0, 2), (2, 2)):
   s = "(%g, %g)" % (alignx*0.5, aligny*0.5)
   idxs = str(alignx) + str(aligny)
   text_from_submode = \
