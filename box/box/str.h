@@ -41,6 +41,8 @@ typedef BoxStr Str;
 
 void BoxStr_Init(BoxStr *s);
 
+void BoxStr_Finish(BoxStr *s);
+
 BoxTask BoxStr_Large_Enough(BoxStr *s, BoxInt length);
 
 BoxTask BoxStr_Concat(BoxStr *s, const char *ca);

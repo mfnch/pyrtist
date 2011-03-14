@@ -41,6 +41,9 @@
  */
 typedef BoxUInt BoxVMSymID;
 
+/** Invalid symbol ID */
+#define BOXVMSYMID_NONE ((BoxVMSymID) 0)
+
 /** @brief The table of reference and definition for the Box VM.
  *
  * This structure is embedded in the main VM structure VMProgram.

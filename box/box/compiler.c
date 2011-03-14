@@ -526,7 +526,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
   ASTNode *s;
   Value *parent = NULL;
   int parent_is_err = 0;
-  BoxVMSymID jump_label_begin, jump_label_end;
+  BoxVMSymID jump_label_begin, jump_label_end, jump_label_next;
 
   assert(box->type == ASTNODETYPE_BOX);
 
@@ -597,7 +597,8 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
 
   /* Create jump-labels for If and For */
   jump_label_begin = CmpProc_Jump_Label_Here(c->cur_proc);
-  jump_label_end = CmpProc_Jump_Label_New(c->cur_proc);
+  jump_label_next = CmpProc_Jump_Label_New(c->cur_proc);
+  jump_label_end = BOXVMSYMID_NONE;
 
   /* Loop over all the statements of the box */
   for(s = box->attr.box.first_statement;
@@ -620,9 +621,27 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
 
           /* Treat the case where stmt_val is an If[] or For[] value */
           if (TS_Compare(ts, stmt_type, c->bltin.alias_if))
-            Value_Emit_CJump(stmt_val, jump_label_end);
+            Value_Emit_CJump(stmt_val, jump_label_next);
 
-          else if (TS_Compare(ts, stmt_type, c->bltin.alias_for))
+          else if (TS_Compare(ts, stmt_type, c->bltin.alias_elif)) {
+            if (jump_label_end == BOXVMSYMID_NONE)
+              jump_label_end = CmpProc_Jump_Label_New(c->cur_proc);
+            CmpProc_Assemble_Jump(c->cur_proc, jump_label_end);
+            CmpProc_Jump_Label_Define(c->cur_proc, jump_label_next);
+            CmpProc_Jump_Label_Release(c->cur_proc, jump_label_next);
+            jump_label_next = CmpProc_Jump_Label_New(c->cur_proc);
+            Value_Emit_CJump(stmt_val, jump_label_next);
+
+          } else if (TS_Compare(ts, stmt_type, c->bltin.alias_else)) {
+            if (jump_label_end == BOXVMSYMID_NONE)
+              jump_label_end = CmpProc_Jump_Label_New(c->cur_proc);
+            CmpProc_Assemble_Jump(c->cur_proc, jump_label_end);
+            CmpProc_Jump_Label_Define(c->cur_proc, jump_label_next);
+            CmpProc_Jump_Label_Release(c->cur_proc, jump_label_next);
+            jump_label_next = CmpProc_Jump_Label_New(c->cur_proc);
+            Value_Unlink(stmt_val);
+
+          } else if (TS_Compare(ts, stmt_type, c->bltin.alias_for))
             Value_Emit_CJump(stmt_val, jump_label_begin);
 
           else {
@@ -642,9 +661,15 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
   }
 
   /* Define the end label and release it together with the begin label */
-  CmpProc_Jump_Label_Define(c->cur_proc, jump_label_end);
-  CmpProc_Jump_Label_Release(c->cur_proc, jump_label_end);
+  CmpProc_Jump_Label_Define(c->cur_proc, jump_label_next);
   CmpProc_Jump_Label_Release(c->cur_proc, jump_label_begin);
+  CmpProc_Jump_Label_Release(c->cur_proc, jump_label_next);
+
+  /* Define the end label, if used at all! */
+  if (jump_label_end != BOXVMSYMID_NONE) {
+    CmpProc_Jump_Label_Define(c->cur_proc, jump_label_end);
+    CmpProc_Jump_Label_Release(c->cur_proc, jump_label_end);
+  }
 
   /* Invoke the closing procedure */
   if (box->attr.box.parent != NULL) {
