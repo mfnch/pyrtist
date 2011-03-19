@@ -1,0 +1,69 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui3 = Point[.x=6.02012797927, .y=50.1092182937]
+gui1 = Point[.x=62.5372085492, .y=50.2215335983]
+gui2 = Point[.x=56.6994453913, .y=42.9474050989]
+gui5 = Point[.x=93.7599176166, .y=43.2845847127]
+//!BOXER:REFPOINTS:END
+include "grid"
+include "icon_theme"
+include "caps"
+
+grid = Grid[(0, 0), (100, 100), icon_size.nx, icon_size.ny]
+cell = grid.GetCellSize[]
+lw = width*cell.x
+
+icon = Window[][
+  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
+
+]
+
+w = Window[][grid, icon]
+
+GUI[w]
+
+res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
+//icon.Save["text.png", Window["argb32", (100, 10), .Res[res]]]
+
+\ Window["argb32", (100, 100), .Res[res]][
+  \ .Line[color.black, .ArrowScale[1], lw*4,
+          Point[gui1, .x=gui3.x], cap_arrow, Point[gui1, .x=gui5.x]]
+  icon
+  .Save["caparrow.png"]
+]
+
+\ Window["argb32", (100, 100), .Res[res]][
+  \ .Line[color.black, .ArrowScale[1], lw*4,
+          Point[gui1, .x=gui3.x], cap_circle, Point[gui1, .x=gui2.x]]
+  icon
+  .Save["capcircle.png"]
+]
+
+\ Window["argb32", (100, 100), .Res[res]][
+  \ .Line[color.black, .ArrowScale[1], lw*4,
+          Point[gui1, .x=gui3.x], cap_triangle, Point[gui1, .x=gui5.x]]
+  icon
+  .Save["captriang.png"]
+]
+
+\ Window["argb32", (100, 100), .Res[res]][
+  \ .Line[color.black, .ArrowScale[1], lw*4,
+          Point[gui1, .x=gui3.x], cap_ruler, Point[gui1, .x=gui5.x]]
+  icon
+  .Save["capruler.png"]
+]
+
+\ Window["argb32", (100, 100), .Res[res]][
+  \ .Line[color.black, .ArrowScale[1], lw*4,
+          Point[gui1, .x=gui3.x], cap_line_arrow, Point[gui1, .x=gui5.x]]
+  icon
+  .Save["caplarr.png"]
+]

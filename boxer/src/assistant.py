@@ -109,7 +109,6 @@ class Paste(Action):
         tv.grab_focus()
 
 
-
 class GUISet(Action):
   def __init__(self, **values):
     self.values = values
@@ -139,6 +138,33 @@ class ExitMode(Action):
     tv = parent.textview
     if tv != None:
       tv.grab_focus()
+
+
+def find_include(tb, includefile, startline=0):
+  begin_it = tb.get_iter_at_line(startline)
+  num_lines = tb.get_line_count()
+  while startline < num_lines:
+    startline += 1
+    end_it = tb.get_iter_at_line(startline)
+    line = tb.get_text(begin_it, end_it).strip().lower()
+    if line.startswith("include"):
+      if line[7:].strip().startswith('"%s"' % includefile):
+        return True
+    elif len(line) > 0 and not line.startswith("//"):
+      return False
+    begin_it = end_it
+
+
+class IncludeSrc(Action):
+  def __init__(self, include_filename):
+    self.include_filename = include_filename
+
+  def execute(self, parent):
+    tb = parent.textbuffer
+    if tb != None:
+      it = tb.get_iter_at_line(0)
+      if not find_include(tb, self.include_filename):
+        tb.insert(it, 'include "%s"\n' % self.include_filename)
 
 
 class Button(object):

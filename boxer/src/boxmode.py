@@ -15,7 +15,8 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
-from assistant import Mode, ExitMode, GUISet, GUIAct, Paste, Button
+from assistant \
+  import Mode, ExitMode, GUISet, GUIAct, Paste, Button, IncludeSrc
 from inputtool import InputAct
 from colortool import ColorSelect
 
@@ -206,6 +207,48 @@ line_close = \
        enter_actions=[Paste("$LCOMMA$.Close[]$RCOMMA$"),
                       update_now])
 
+line_cap_arrow =  \
+  Mode("Line.Cap.arrow",
+       tooltip="Regular arrow",
+       button=Button("Arrow", "caparrow.png"),
+       enter_actions=[IncludeSrc("caps"),
+                      Paste("$LCOMMA$cap_arrow$RCOMMA$"), update_now])
+
+line_cap_triang =  \
+  Mode("Line.Cap.triang",
+       tooltip="Triangular arrow",
+       button=Button("Triangle", "captriang.png"),
+       enter_actions=[IncludeSrc("caps"),
+                      Paste("$LCOMMA$cap_triangle$RCOMMA$"), update_now])
+
+line_cap_ruler =  \
+  Mode("Line.Cap.ruler",
+       tooltip="``Ruler'' arrow",
+       button=Button("Ruler", "capruler.png"),
+       enter_actions=[IncludeSrc("caps"),
+                      Paste("$LCOMMA$cap_ruler$RCOMMA$"), update_now])
+
+line_cap_line =  \
+  Mode("Line.Cap.line",
+       tooltip="Segment cap",
+       button=Button("Segment", "caplarr.png"),
+       enter_actions=[IncludeSrc("caps"),
+                      Paste("$LCOMMA$cap_line_arrow$RCOMMA$"), update_now])
+
+line_cap_circle =  \
+  Mode("Line.Cap.circle",
+       tooltip="Circle cap",
+       button=Button("Circle", "capcircle.png"),
+       enter_actions=[IncludeSrc("caps"),
+                      Paste("$LCOMMA$cap_circle$RCOMMA$"), update_now])
+
+line_cap =  \
+  Mode("Line.Cap",
+       tooltip="Select a line cap to insert at the beginning or end of the line",
+       button=Button("Cap", "linecaps.png"),
+       submodes=[line_cap_arrow, line_cap_triang, line_cap_ruler,
+                 line_cap_line, line_cap_circle, exit])
+
 line = \
   Mode("Line",
        tooltip="Create a new line with fixed or variable thickness",
@@ -214,7 +257,7 @@ line = \
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
        submodes=[color, gradient, style, line_width, line_sharp, line_smooth,
-                 line_vsmooth, line_close, exit])
+                 line_vsmooth, line_cap, line_close, exit])
 
 no_variants = []
 default_fonts = \
