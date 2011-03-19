@@ -98,14 +98,17 @@ gradient = \
        submodes=[gradient_line, gradient_circle, color, exit])
 
 fill_void = Mode("Not-filled",
+                 tooltip="Do not fill the polygon/path",
                  button=Button("Not filled", "fillvoid.png"),
                  enter_actions=[Paste("\"void\""), exit_action])
 
 fill_plain = Mode("Plain",
+                  tooltip="Fill the whole polygon/path",
                   button=Button("Plain", "fillplain.png"),
                   enter_actions=[Paste("\"plain\""), exit_action])
 
 fill_eo = Mode("Even-Odd",
+               tooltip="Alternate filling of the polygon/path (even-odd)",
                button=Button("Even-Odd", "filleo.png"),
                enter_actions=[Paste("\"eo\""), exit_action])
 

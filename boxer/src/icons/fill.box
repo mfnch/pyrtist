@@ -1,0 +1,64 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+
+
+
+
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui2 = Point[.x=4.17359274611, .y=88.9303709199]
+gui3 = Point[.x=47.0140392487, .y=93.4090834014]
+gui4 = Point[.x=92.4847765544, .y=89.2748872647]
+gui5 = Point[.x=92.8296927461, .y=74.0013293152]
+gui6 = Point[.x=80.1976323834, .y=66.9961636391]
+gui7 = Point[.x=39.4276830311, .y=68.6039065812]
+gui8 = Point[.x=6.58650608808, .y=69.7522943969]
+gui9 = Point[.x=35.17915, .y=89.734242391]
+gui10 = Point[.x=66.8732396373, .y=79.3987520492]
+gui11 = Point[.x=28.4025648964, .y=61.4839021235]
+//!BOXER:REFPOINTS:END
+include "grid"
+include "icon_theme"
+include "arrows"
+
+grid = Grid[(0, 0), (100, 100), icon_size.nx, icon_size.ny]
+cell = grid.GetCellSize[]
+lw = width*cell.x
+
+PolyExample = (Style s, Point t)
+PolyExample@Window[
+  pp = Window[][
+    \ .Poly[$.s, 0.5, color.yellow, gui8, gui2, gui3, gui4, gui5, gui6
+            gui7, gui9, gui10, gui11, .Close[]]
+  ]
+
+  \ .Put[pp, "t", $.t]
+]
+
+icon = Window[][
+  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
+
+  PolyExample[.s=Style[.Fill["void"], .Border[color.black, lw]], .t=(0, 3)]
+  PolyExample[.s=Style[.Fill["eo"], .Border[color.black, lw]], .t=(0, -28)]
+  PolyExample[.s=Style[.Fill["plain"], .Border[color.black, lw]], .t=(0, -60)]
+]
+
+
+w = Window[][grid, icon]
+
+GUI[w]
+
+res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
+//icon.Save["text.png", Window["argb32", (100, 10), .Res[res]]]
+
+out = Window["argb32", (100, 100), .Res[res]][
+  icon
+  .Save["fill.png"]
+]
+
