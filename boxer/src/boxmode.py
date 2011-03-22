@@ -113,20 +113,24 @@ fill_eo = Mode("Even-Odd",
                enter_actions=[Paste("\"eo\""), exit_action])
 
 fill = Mode("Fill mode",
+            tooltip="Select the filling mode for polygons/paths",
             button=Button("Fill", "fill.png"),
             enter_actions=Paste("$LCOMMA$.Fill[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
             submodes=[fill_void, fill_plain, fill_eo, exit])
 
 border_width = \
   Mode("Border width",
-       button=Button("Width", "borderwidth.png"),
+       tooltip="Width of the border",
+       button=Button("Width", "borderwd.png"),
        enter_actions=[InputAct("$LCOMMA$$INPUT$$RCOMMA$",
                                label="Width of border:")])
 
-border = Mode("Border",
-              button=Button("Border", "border.png"),
-              enter_actions=Paste("$LCOMMA$.Border[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
-              submodes=[color, border_width, exit])
+border = \
+  Mode("Border",
+       tooltip="Set the color, width and type of border of polygons and paths",
+       button=Button("Border", "border.png"),
+       enter_actions=Paste("$LCOMMA$.Border[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+       submodes=[color, border_width, exit])
 
 style = \
   Mode("Style",

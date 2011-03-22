@@ -28,7 +28,7 @@ lw = width*cell.x
 PolyExample = (Style s, Point t)
 PolyExample@Window[
   pp = Window[][
-    \ .Poly[$.s, 0.5, color.yellow, gui8, gui2, gui3, gui4, gui5, gui6
+    \ .Poly[$.s, 0.5, color_inside, gui8, gui2, gui3, gui4, gui5, gui6
             gui7, gui9, gui10, gui11, .Close[]]
   ]
 

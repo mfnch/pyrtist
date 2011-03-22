@@ -4,13 +4,6 @@ include "g"
 GUI = Void
 Window@GUI[]
 
-
-
-
-
-
-
-
 //!BOXER:REFPOINTS:BEGIN
 gui2 = Point[.x=4.17359274611, .y=88.9303709199]
 gui3 = Point[.x=47.0140392487, .y=93.4090834014]
@@ -34,7 +27,7 @@ lw = width*cell.x
 PolyExample = (Style s, Point t)
 PolyExample@Window[
   pp = Window[][
-    \ .Poly[$.s, 0.5, color.yellow, gui8, gui2, gui3, gui4, gui5, gui6
+    \ .Poly[$.s, 0.5, color_inside, gui8, gui2, gui3, gui4, gui5, gui6
             gui7, gui9, gui10, gui11, .Close[]]
   ]
 
