@@ -277,17 +277,30 @@ class Boxer(object):
     Return True if the user decided Yes or No. Return False to cancel
     the action.
     """
-    if not self.textbuffer.get_modified(): return True
+    if not self.textbuffer.get_modified():
+      return True
+
     msg = "The file contains unsaved changes. Do you want to save it now?"
     md = gtk.MessageDialog(parent=self.mainwin,
                            type=gtk.MESSAGE_QUESTION,
                            message_format=msg,
-                           buttons=gtk.BUTTONS_YES_NO)
+                           buttons=gtk.BUTTONS_NONE)
+    md.add_buttons(gtk.STOCK_YES, gtk.RESPONSE_YES,
+                   gtk.STOCK_NO, gtk.RESPONSE_NO,
+                   gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL)
+
     response = md.run()
     md.destroy()
-    if response == gtk.RESPONSE_YES:
+
+    if response == gtk.RESPONSE_CANCEL:
+      return False
+
+    elif response == gtk.RESPONSE_YES:
       self.menu_file_save(None)
-    return True
+      return (not self.textbuffer.get_modified())
+
+    else:
+      return True
 
   def error(self, msg):
     md = gtk.MessageDialog(parent=self.mainwin,
@@ -343,7 +356,8 @@ class Boxer(object):
 
     fc = self.dialog_filesave
     response = fc.run()
-    filename = fc.get_filename() if response == gtk.RESPONSE_OK else None
+    do_save_it = (response == gtk.RESPONSE_OK)
+    filename = fc.get_filename() if do_save_it else None
     fc.hide()
 
     if filename != None:
@@ -351,7 +365,8 @@ class Boxer(object):
 
   def menu_file_quit(self, image_menu_item):
     """Called on file->quit to quit the program."""
-    self.raw_quit()
+    if self.ensure_file_is_saved():
+      self.raw_quit()
 
   def show_undo_redo_warning(self):
     if self._undo_redo_warning_shown:
