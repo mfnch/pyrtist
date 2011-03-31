@@ -21,10 +21,10 @@
 # x load and save dialogs should remember last opened directory(independently)
 # x drawing tools (color window, polygons, lines, etc)
 # - add show all/hide all button
+# x remember last window configuration (size of main window)
 
 # TODO (for later):
 # - configuration files should work as before
-# - remember last window configuration (size of main window)
 # - buffer geometry should be determined by memory available for buffer
 # - multiple selection of points and transformation on them
 #   (translation, rotation,...)
@@ -431,6 +431,13 @@ class Boxer(object):
     self.editable_area.set_config("refpoint_size", new_rps)
     self.editable_area.queue_draw()
 
+  def menu_view_remember_win_size(self, _):
+    size_str = "%dx%d" % tuple(self.mainwin.get_size())
+    self.config.set("GUI", "window_size", size_str)
+
+  def menu_view_forget_win_size(self, _):
+    self.config.remove_option("GUI", "window_size")
+
   def menu_zoom_in(self, image_menu_item):
     self.editable_area.zoom_in()
 
@@ -557,6 +564,17 @@ class Boxer(object):
 
     # Get the main window
     self.mainwin = mainwin = self.boxer.get_widget("boxer")
+
+    # Set the last saved window size, if any
+    try:
+      wsx, wsy = map(int, self.config.get("GUI", "window_size").split("x", 1))
+      #print "setting default size to", wsx, wsy
+      mainwin.set_default_size(wsx, wsy)
+      mainwin.resize(wsx, wsy)
+      #print "done"
+
+    except:
+      pass
 
     self.out_textview = self.boxer.get_widget("outtextview")
     self.out_textbuffer = self.out_textview.get_buffer()
@@ -721,6 +739,8 @@ class Boxer(object):
            "on_view_rotate_activate": self.menu_view_rotate,
            "on_view_inc_refpoint": self.menu_view_inc_refpoint,
            "on_view_dec_refpoint": self.menu_view_dec_refpoint,
+           "on_view_win_size_remember": self.menu_view_remember_win_size,
+           "on_view_win_size_forget": self.menu_view_forget_win_size,
            "on_help_about_activate": self.menu_help_about,
            "on_toolbutton_new": self.menu_file_new,
            "on_toolbutton_open": self.menu_file_open,

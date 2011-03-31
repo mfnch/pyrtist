@@ -156,11 +156,7 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
     # Generate default configuration
     default_config_dict = {}
     for section, option, value, _ in default_config:
-      if default_config_dict.has_key(section):
-        section_dict = default_config_dict[section]
-      else:
-        section_dict = {}
-        default_config_dict[section] = section_dict
+      section_dict = default_config_dict.setdefault(section, {})
       section_dict[option] = value
 
     self._default_config = default_config_dict
@@ -175,8 +171,8 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
     self.broken = broken
 
   def has_default_option(self, section, option):
-    if self._default_config.has_key(section):
-      return self._default_config[section].has_key(option)
+    if section in self._default_config:
+      return (option in self._default_config[section])
     else:
       return False
 
@@ -187,6 +183,11 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
 
     else:
       return cfgp.SafeConfigParser.get(self, section, option, raw, vars)
+
+  def remove_option(self, section, option):
+    if self.has_option(section, option):
+      self.is_modified = True
+      cfgp.SafeConfigParser.remove_option(self, section, option)
 
   def set(self, section, option, value, auto_add_section=True):
     self.is_modified = True
@@ -239,6 +240,7 @@ def get_configuration():
                                'textview showing the output of Box programs'),
     ('GUI', 'font', 'Monospace 10', 'The font used in the GUI'),
     ('GUI', 'rotation', '0', 'The displacement of text-view/drawing-area'),
+    ('GUI', 'window_size', '600x600', 'The initial size of the window'),
     ('GUIView', 'refpoint_size', '4', 'The size of the squares used to mark '
                                       'the reference points'),
     ('Behaviour', 'button_left', '1', 'ID of the mouse left button'),

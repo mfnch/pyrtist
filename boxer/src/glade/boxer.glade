@@ -241,6 +241,24 @@
                         <accelerator key="minus" modifiers="GDK_CONTROL_MASK" signal="activate"/>
                       </widget>
                     </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="view_win_size_remember">
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Remember the current window size when launching Boxer the next time</property>
+                        <property name="label" translatable="yes">R_emember the current window size</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_view_win_size_remember"/>
+                      </widget>
+                    </child>
+                    <child>
+                      <widget class="GtkMenuItem" id="view_win_size_forget">
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Use the default window size when Boxer starts</property>
+                        <property name="label" translatable="yes">_Forget the saved window size</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_view_win_size_forget"/>
+                      </widget>
+                    </child>
                   </widget>
                 </child>
               </widget>
