@@ -12,7 +12,7 @@ download_url = ('http://sourceforge.net/project/'
 license = 'GPL'
 packages = ['boxer']
 package_dir = {'boxer': 'src'}
-package_data = {'boxer': ['glade/*', 'examples/*']}
+package_data = {'boxer': ['glade/*', 'examples/*', 'icons/*']}
 script = 'scripts/boxer'
 scripts = [script]
 
