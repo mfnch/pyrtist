@@ -18,7 +18,7 @@
 from assistant \
   import Mode, ExitMode, GUISet, GUIAct, Paste, Button, IncludeSrc
 from inputtool import InputAct
-from colortool import ColorSelect
+from colortool import ColorSelect, ColorHistory
 from fonttool import FontAct
 
 def shorten_string(s, max_length=5):
@@ -32,6 +32,14 @@ pop_settings = GUIAct("pop_settings")
 update_on_paste = GUISet(update_on_paste=True)
 paste_on_new = GUISet(paste_point=True)
 dont_paste_on_new = GUISet(paste_point=False)
+
+# The color history
+default_colors = \
+  [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (1.0, 1.0, 0.0),
+   (0.0, 0.0, 1.0), (1.0, 0.0, 1.0), (0.0, 1.0, 1.0), (1.0, 1.0, 1.0)]
+color_history_length = len(default_colors)
+color_history = ColorHistory(length=color_history_length)
+color_history.new_color(*default_colors)
 
 exit = \
   Mode("Exit",
@@ -60,12 +68,19 @@ color_blue = Mode("Blue",
                   enter_actions=[Paste("$LCOMMA$color.blue$RCOMMA$"),
                                  update_now, exit_action])
 
+color_submodes = \
+  [Mode("Color N. %d" % i,
+        button=color_history.color_button(i),
+        enter_actions=[color_history.paste(i, "$LCOMMA$$COLOR$$RCOMMA$"),
+                       update_now, exit_action])
+   for i in range(color_history_length)]
+
 color = \
   Mode("Color",
        tooltip="Select the color or create a new one",
        statusbar="Waiting for you to choose a color or create a new one",
        button=Button("Color", "color.png"),
-       submodes=[color_new, color_black, color_red, color_blue, exit])
+       submodes=[color_new] + color_submodes + [exit])
 
 gradient_line = \
   Mode("Gradient.Line",

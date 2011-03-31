@@ -22,6 +22,7 @@
 # x drawing tools (color window, polygons, lines, etc)
 # - add show all/hide all button
 # x remember last window configuration (size of main window)
+# x allow cancel exit in window asking whether to save or not unsaved changes
 
 # TODO (for later):
 # - configuration files should work as before

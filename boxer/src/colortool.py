@@ -16,7 +16,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
-from assistant import Action, Paste
+from assistant import Action, Paste, Button
 
 import gtk
 
@@ -64,8 +64,15 @@ def color_to_box_str(color, alpha=0):
       return "Color[(%s)]" % (", ".join(rgba))
 
 
+class MyColor(object):
+  def __init__(self, r, g, b):
+    self.red = r
+    self.green = g
+    self.blue = b
+
+
 class ColorSelect(Action):
-  def __init__(self, text=None):
+  def __init__(self, text=None, history=None):
     self.text = text if text != None else "$INPUT$"
     self.paste = Paste("")
     self.colordlg = None
@@ -92,3 +99,60 @@ class ColorSelect(Action):
 
     cd.hide()
 
+
+class ColorHistoryPaste(Action):
+  def __init__(self, history, index, text):
+    self.history = history
+    self.index = index
+    self.text = text if text != None else "$COLOR$"
+    self.paste = Paste("")
+
+  def execute(self, parent):
+    color = self.history.get_color(self.index)
+    alpha = int(color[3]*0xffff)
+    rgb = map(lambda ci: int(ci*0xffff), color[:3])
+    color_string = color_to_box_str(MyColor(*rgb), alpha)
+    self.paste.text = self.text.replace("$COLOR$", color_string)
+    self.paste.execute(parent)
+
+
+class ColorHistoryButton(Button):
+  def __init__(self, history, index):
+    Button.__init__(self, str(index), "ccc.png")
+    self.history = history
+    self.index = index
+
+
+class ColorHistory(object):
+  def __init__(self, length=10):
+    self.length = length
+    self.history = [None]*length
+    self.index = 0
+
+  def new_ColorSelect(self, **args):
+    """Return a new ColorSelect action bound to this ColorHistory."""
+    return ColorSelect(history=self, **args)
+
+  def new_color(self, *colors):
+    """Notify the usage of one or more new colors."""
+    for color in reversed(colors):
+      c = color + (1.0,) if len(color) == 3 else color
+      try:
+        idx = self.history.index(c)
+        item = self.history.pop(idx)
+        self.history.insert(self.index, item)
+        assert len(self.history) == self.length
+
+      except ValueError:
+        self.history[self.index] = c
+        self.index = (self.index + 1) % self.length
+
+  def get_color(self, history_index):
+    assert history_index < self.length
+    return self.history[(self.index - history_index) % self.length]
+
+  def color_button(self, history_index, default_color=None):
+    return ColorHistoryButton(self, history_index)
+
+  def paste(self, history_index, paste_str):
+    return ColorHistoryPaste(self, history_index, paste_str)
