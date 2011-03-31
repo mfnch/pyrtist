@@ -22,7 +22,7 @@ import gtk
 
 class ToolBox(gtk.Table):
   def __init__(self, assistant, columns=1, homogeneous=False,
-               icon_path=None):
+               icon_path=None, size_request=(55, -1)):
     self.columns = columns
     self.assistant = assistant
     self.icon_path = icon_path
@@ -30,7 +30,7 @@ class ToolBox(gtk.Table):
     gtk.Table.__init__(self, rows=rows, columns=columns,
                        homogeneous=homogeneous)
     self._update_buttons()
-    self.set_size_request(55, -1)
+    self.set_size_request(*size_request)
 
   def _compute_rows_from_cols(self):
     num_buttons = len(self.assistant.get_button_modes())

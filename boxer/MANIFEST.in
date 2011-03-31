@@ -1,0 +1,7 @@
+include README INSTALL COPYING ChangeLog
+include src/glade/boxer.glade
+recursive-include src/icons *.png
+recursive-include src/examples *.box
+recursive-exclude src imgview.py win_setup.py
+recursive-exclude src/examples bar.box diagram.box losing_eyes.box nsim_model.box shy.box slow.box
+

@@ -19,7 +19,7 @@ from assistant \
   import Mode, ExitMode, GUISet, GUIAct, Paste, Button, IncludeSrc
 from inputtool import InputAct
 from colortool import ColorSelect
-
+from fonttool import FontAct
 
 def shorten_string(s, max_length=5):
   return "%s..." % s[:3] if len(s) > max_length else s
@@ -321,17 +321,23 @@ font_size = \
        enter_actions=[InputAct("$LCOMMA$$INPUT$$RCOMMA$",
                                label="Size of font:")])
 
+font_select = \
+  Mode("Font select",
+       tooltip="Select the font type",
+       button=Button("Type", "fonttype.png"),
+       enter_actions=[FontAct()])
+
 font = \
   Mode("Font",
        tooltip="Choose the font (and size) used to render the text",
        button=Button("Font", "font.png"),
        enter_actions=[Paste("$LCOMMA$Font[$CURSORIN$]$CURSOROUT$$RCOMMA$")],
-       submodes=[font_size, exit] + font_modes)
+       submodes=[font_size, font_select, exit] + font_modes)
 
 text_content = \
   Mode("Text content",
        tooltip="Enter the text to display",
-       button=Button("Text", "textcontent.png"),
+       button=Button("Text", "textstr.png"),
        enter_actions=[InputAct("$LCOMMA$$INPUT$$RCOMMA$",
                                string_input=True,
                                label="Text to display:")])
