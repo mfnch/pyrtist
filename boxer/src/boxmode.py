@@ -16,10 +16,11 @@
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
 from assistant \
-  import Mode, ExitMode, GUISet, GUIAct, Paste, Button, IncludeSrc
+  import Mode, ExitMode, GUISet, GUIAct, Paste, IncludeSrc
 from inputtool import InputAct
 from colortool import ColorSelect, ColorHistory
 from fonttool import FontAct
+from toolbox import Button
 
 def shorten_string(s, max_length=5):
   return "%s..." % s[:3] if len(s) > max_length else s
@@ -35,8 +36,8 @@ dont_paste_on_new = GUISet(paste_point=False)
 
 # The color history
 default_colors = \
-  [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (1.0, 1.0, 0.0),
-   (0.0, 0.0, 1.0), (1.0, 0.0, 1.0), (0.0, 1.0, 1.0), (1.0, 1.0, 1.0)]
+  [(0.0, 1.0, 1.0), (1.0, 0.0, 1.0), (0.0, 0.0, 1.0), (1.0, 1.0, 0.0),
+   (0.0, 1.0, 0.0), (1.0, 0.0, 0.0), (0.0, 0.0, 0.0)]
 color_history_length = len(default_colors)
 color_history = ColorHistory(length=color_history_length)
 color_history.new_color(*default_colors)
@@ -50,7 +51,8 @@ exit = \
 
 color_new = Mode("Color New",
                  button=Button("New", "colornew.png"),
-                 enter_actions=[ColorSelect("$LCOMMA$$COLOR$$RCOMMA$"),
+                 enter_actions=[ColorSelect("$LCOMMA$$COLOR$$RCOMMA$",
+                                            history=color_history),
                                 update_now, exit_action])
 
 color_black = Mode("Black",

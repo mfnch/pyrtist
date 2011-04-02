@@ -19,56 +19,93 @@
 from assistant import Action, Paste, Button
 
 import gtk
+import gtk.gdk
 
 known_box_colors = {
   0x000000: "color.black",
-  0x0000ff: "color.red",
+  0xff0000: "color.red",
   0x00ff00: "color.green",
-  0x00ffff: "color.yellow",
-  0xff0000: "color.blue",
+  0xffff00: "color.yellow",
+  0x0000ff: "color.blue",
   0xff00ff: "color.magenta",
-  0xffff00: "color.cyan",
+  0x00ffff: "color.cyan",
   0xffffff: "color.white",
-  0x00007f: "color.dark_red",
+  0x7f0000: "color.dark_red",
   0x007f00: "color.dark_green",
-  0x007f7f: "color.dark_yellow",
-  0x7f0000: "color.dark_blue",
+  0x7f7f00: "color.dark_yellow",
+  0x00007f: "color.dark_blue",
   0x7f007f: "color.dark_magenta",
-  0x7f7f00: "color.dark_cyan",
+  0x007f7f: "color.dark_cyan",
   0x7f7f7f: "color.grey"
 }
 
-def _cstr(color_component):
-  return "%.3f" % (float(color_component)/0xffff)
-
-def color_to_box_str(color, alpha=0):
-  r = color.red
-  g = color.green
-  b = color.blue
-  c32 = (r >> 8) + (g & 0xff00) + ((b & 0xff00) << 8)
-  c = known_box_colors.get(c32, None)
-  if c != None:
-    return (c if alpha == 0xffff
-            else "Color[%s, .a=%s]" % (c, _cstr(alpha)))
-
-  else:
-    if r == g == b:
-      c = _cstr(r)
-      return ("Color[%s]" % c if alpha == 0xffff
-              else "Color[%s, .a=%s]" % (c, _cstr(alpha)))
-
-    else:
-      rgba = [_cstr(x) for x in (r, g, b)]
-      if alpha != 0xffff:
-        rgba.append(_cstr(alpha))
-      return "Color[(%s)]" % (", ".join(rgba))
-
 
 class MyColor(object):
-  def __init__(self, r, g, b):
+  def __init__(self, *components, **named_args):
+    max_color = 1.0
+    for key in named_args:
+      if key == "max_color":
+        max_color = named_args[key]
+      else:
+        raise TypeError("Unexpected keyword argument '%s'" % key)
+
+    l = len(components)
+    if l == 3:
+      r, g, b = map(lambda x: float(x)/max_color, components)
+      a = 1.0
+
+    elif l == 4:
+      r, g, b, a = map(lambda x: float(x)/max_color, components)
+
+    else:
+      raise ValueError("Bad usage of MyColor: you tried MyColor%s" % str(components))
+
     self.red = r
     self.green = g
     self.blue = b
+    self.alpha = a
+    self.adjust()
+
+  def __eq__(self, other_color):
+    return (isinstance(other_color, MyColor)
+            and (self.red == other_color.red
+                 and self.green == other_color.green
+                 and self.blue == other_color.blue
+                 and self.alpha == other_color.alpha))
+
+  def __iter__(self):
+    yield self.red
+    yield self.green
+    yield self.blue
+    yield self.alpha
+
+  def __int__(self):
+    rgba = tuple(self)
+    rgba_int = map(lambda x: int(max(0.0, min(255.0, round(x*255.0)))), rgba)
+    return reduce(lambda sofar, x: (sofar << 8) | x, rgba_int)
+
+  def adjust(self):
+    rgba = map(lambda x: max(0.0, min(1.0, x)), tuple(self))
+    self.red, self.green, self.blue, self.alpha = rgba
+
+  def to_box_source(self):
+    r, g, b, alpha = rgba = tuple(self)
+    c = known_box_colors.get((int(self) & 0xffffff00) >> 8, None)
+    if c != None:
+      return (c if alpha >= 1.0
+              else "Color[%s, .a=%s]" % (c, alpha))
+
+    else:
+      if r == g == b:
+        c = str(r)
+        return ("Color[%s]" % c if alpha >= 1.0
+                else "Color[%s, .a=%s]" % (c, alpha))
+
+      else:
+        rgba = [str(x) for x in (r, g, b)]
+        if alpha < 1.0:
+          rgba.append(str(alpha))
+        return "Color[(%s)]" % (", ".join(rgba))
 
 
 class ColorSelect(Action):
@@ -76,6 +113,7 @@ class ColorSelect(Action):
     self.text = text if text != None else "$INPUT$"
     self.paste = Paste("")
     self.colordlg = None
+    self.history = history
 
   def execute(self, parent):
     if self.colordlg == None:
@@ -91,11 +129,14 @@ class ColorSelect(Action):
     response = cd.run()
 
     if response == gtk.RESPONSE_OK:
-      color = colorsel.get_current_color()
+      c = colorsel.get_current_color()
       alpha = colorsel.get_current_alpha()
-      color_string = color_to_box_str(color, alpha)
+      my_c = MyColor(c.red, c.green, c.blue, alpha, max_color=0xffff)
+      color_string = my_c.to_box_source()
       self.paste.text = self.text.replace("$COLOR$", color_string)
       self.paste.execute(parent)
+      if self.history != None:
+        self.history.new_color(my_c)
 
     cd.hide()
 
@@ -109,18 +150,40 @@ class ColorHistoryPaste(Action):
 
   def execute(self, parent):
     color = self.history.get_color(self.index)
-    alpha = int(color[3]*0xffff)
-    rgb = map(lambda ci: int(ci*0xffff), color[:3])
-    color_string = color_to_box_str(MyColor(*rgb), alpha)
+    color_string = color.to_box_source()
     self.paste.text = self.text.replace("$COLOR$", color_string)
     self.paste.execute(parent)
+    self.history.new_color(color)
 
 
 class ColorHistoryButton(Button):
   def __init__(self, history, index):
-    Button.__init__(self, str(index), "ccc.png")
+    Button.__init__(self, str(index))
     self.history = history
     self.index = index
+
+  def create_widget(self, tooltip=None, width=32, height=32, **other_args):
+    # Find the button image, if there is one
+    img = None
+
+    # Create the button
+    b = gtk.Button("")
+    my_color = self.history.get_color(self.index)
+    if my_color != None:
+      pb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, width, height)
+      pb.fill(int(my_color))
+      img = gtk.Image()
+      img.set_from_pixbuf(pb)
+      b.set_image(img)
+
+    if tooltip == None:
+      tooltip = "Recent color # $INDEX$: $COLOR$"
+
+    if len(tooltip) > 0:
+      t = tooltip.replace("$INDEX$", str(self.index))
+      t = t.replace("$COLOR$", my_color.to_box_source())
+      b.set_tooltip_text(t)
+    return b
 
 
 class ColorHistory(object):
@@ -135,21 +198,23 @@ class ColorHistory(object):
 
   def new_color(self, *colors):
     """Notify the usage of one or more new colors."""
-    for color in reversed(colors):
-      c = color + (1.0,) if len(color) == 3 else color
+    for color in colors:
+      c = MyColor(*color)
       try:
         idx = self.history.index(c)
         item = self.history.pop(idx)
+        if idx < self.index:
+          self.index = (self.index - 1) % self.length
         self.history.insert(self.index, item)
         assert len(self.history) == self.length
 
       except ValueError:
-        self.history[self.index] = c
         self.index = (self.index + 1) % self.length
+        self.history[self.index] = c
 
   def get_color(self, history_index):
     assert history_index < self.length
-    return self.history[(self.index - history_index) % self.length]
+    return self.history[(self.index + history_index) % self.length]
 
   def color_button(self, history_index, default_color=None):
     return ColorHistoryButton(self, history_index)

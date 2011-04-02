@@ -172,6 +172,9 @@ class Button(object):
     self.filename = filename
     self.name = name
 
+  def create_widget(self, **other_args):
+    pass
+
 
 def optlist(ol):
   if ol != None:

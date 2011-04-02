@@ -20,6 +20,43 @@ import types
 
 import gtk
 
+import assistant
+
+def build_icon_path(filename, icon_path=None):
+  if icon_path == None:
+    return filename
+
+  elif type(icon_path) == types.FunctionType:
+    return icon_path(filename)
+
+  else:
+    return os.path.join(icon_path, filename)
+
+
+class Button(assistant.Button):
+  def __init__(self, name="", filename=None):
+    assistant.Button.__init__(self, name=name, filename=filename)
+
+  def create_widget(self, tooltip=None, icon_path=None, **other_args):
+    # Find the button image, if there is one
+    img = None
+    if self.filename:
+      icon_filename = build_icon_path(self.filename, icon_path=icon_path)
+      if os.path.exists(icon_filename):
+        img = gtk.Image()
+        img.set_from_file(icon_filename)
+
+    # Create the button
+    b = gtk.Button(self.name)
+    if img != None:
+      b.set_image(img)
+      b.set_label("")
+
+    if tooltip != None:
+      b.set_tooltip_text(tooltip)
+    return b
+
+
 class ToolBox(gtk.Table):
   def __init__(self, assistant, columns=1, homogeneous=False,
                icon_path=None, size_request=(55, -1)):
@@ -36,16 +73,6 @@ class ToolBox(gtk.Table):
     num_buttons = len(self.assistant.get_button_modes())
     return int((num_buttons + self.columns - 1)/self.columns)
 
-  def _build_icon_path(self, filename):
-    if self.icon_path == None:
-      return filename
-
-    elif type(self.icon_path) == types.FunctionType:
-      return self.icon_path(filename)
-
-    else:
-      return os.path.join(self.icon_path, filename)
-
   def _update_buttons(self):
     columns = self.columns
     rows = self._compute_rows_from_cols()
@@ -56,32 +83,12 @@ class ToolBox(gtk.Table):
 
     # Populate the toolbox
     for i, button_mode in enumerate(button_modes):
-      button = button_mode.button
-      #print "Adding", button.name
-
       c = i % columns
       r = int(i / columns)
 
-      # Find the button image, if there is one
-      img = None
-      if button.filename:
-        icon_filename = self._build_icon_path(button.filename)
-        if os.path.exists(icon_filename):
-          img = gtk.Image()
-          img.set_from_file(icon_filename)
-
-      # Create the button
-      but = gtk.Button(button.name)
-      if img != None:
-        but.set_image(img)
-        but.set_label("")
-
-      if button_mode.tooltip_text != None:
-        but.set_tooltip_text(button_mode.tooltip_text)
-
-      # Connect the button
+      but = button_mode.button.create_widget(tooltip=button_mode.tooltip_text,
+                                             icon_path=self.icon_path)
       but.connect("clicked", self.button_clicked, button_mode)
-
       but.show()
       self.attach(but, c, c+1, r, r+1, xoptions=0, yoptions=0)
 
