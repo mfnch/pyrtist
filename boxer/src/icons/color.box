@@ -8,9 +8,15 @@ Window@GUI[]
 
 
 
+
+
+
+
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=6.25881803016, .y=93.7412184413]
 gui2 = Point[.x=93.6311234025, .y=6.25878155873]
+gui3 = Point[.x=51.1606092593, .y=50.6963511889]
 //!BOXER:REFPOINTS:END
 include "grid"
 include "icon_theme"
@@ -25,14 +31,14 @@ icon = Window[][
   s2 = Style[.Border[0]]
 ]
 
-v = 0.0, dv = 0.0201
+v = 0.0, dv = 0.2501
 d = gui2 - gui1
 [
-  u = 0.0, du = 0.0201
+  u = 0.0, du = 0.2501
   [
     p1 = Point[.x = gui1.x + d.x*u, .y = gui1.y + d.y*v]
-    p2 = Point[.x = gui1.x + d.x*(u + du), .y = gui2.y]
-    c = Color[HSV[(-50.0+u*360, 1.2-u, v + u)]]
+    p2 = Point[.x = p1.x + d.x*du, .y = p1.y + d.y*dv]
+    c = Color[HSV[((u )*280, v+0.5, 1.3-v)]]
     \ icon.Poly[p1, (p1.x, p2.y), p2, (p2.x, p1.y)
                 c, Style[.Border[c, 0.5]]]
     For[(u += du) < 1.0]
