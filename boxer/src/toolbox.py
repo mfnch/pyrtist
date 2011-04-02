@@ -57,6 +57,20 @@ class Button(assistant.Button):
     return b
 
 
+class HelpAct(assistant.Action):
+  def __init__(self, help_text):
+    self.help_text = help_text
+
+  def execute(self, parent):
+    md = gtk.MessageDialog(parent=parent.window,
+                           flags=0,
+                           type=gtk.MESSAGE_INFO,
+                           buttons=gtk.BUTTONS_OK,
+                           message_format=self.help_text)
+    _ = md.run()
+    md.destroy()
+
+
 class ToolBox(gtk.Table):
   def __init__(self, assistant, columns=1, homogeneous=False,
                icon_path=None, size_request=(55, -1)):

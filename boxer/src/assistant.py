@@ -35,6 +35,14 @@ class Action(object):
     pass
 
 
+class CallAction(object):
+  def __init__(self, fn):
+    self.fn = fn
+
+  def execute(self, parent):
+    self.fn(parent)
+
+
 def rinsert_char(tb, insert=", ", left=False, delims="],"):
   return insert_char(tb, insert=insert, left=left, delims=delims)
 

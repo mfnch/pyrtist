@@ -211,7 +211,7 @@ class ColorHistory(object):
         assert len(self.history) == self.length
 
       except ValueError:
-        self.index = (self.index + 1) % self.length
+        self.index = (self.index - 1) % self.length
         self.history[self.index] = c
 
   def get_color(self, history_index):

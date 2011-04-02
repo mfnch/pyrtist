@@ -1,0 +1,38 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui1 = Point[.x=6.25881803016, .y=93.7412184413]
+gui2 = Point[.x=93.6311234025, .y=6.25878155873]
+gui3 = Point[.x=51.1606092593, .y=50.6963511889]
+//!BOXER:REFPOINTS:END
+include "grid"
+include "icon_theme"
+
+grid = Grid[(0, 0), (100, 100), icon_size.nx, icon_size.ny]
+cell = grid.GetCellSize[]
+lw = width*cell.x
+
+icon = Window[][
+  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
+  s1 = Style[.Border[color.black, lw]]
+  s2 = Style[.Border[0]]
+]
+
+\ icon.Text[Font["Times-Bold", 120], "?", gui3, Style[.Border[color.red, lw]], color.yellow]
+
+w = Window[][grid, icon]
+
+GUI[w]
+
+res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
+//icon.Save["text.png", Window["argb32", (100, 10), .Res[res]]]
+
+out = Window["argb32", (100, 100), .Res[res]][
+  icon
+  .Save["help.png"]
+]

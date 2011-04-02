@@ -20,7 +20,7 @@ from assistant \
 from inputtool import InputAct
 from colortool import ColorSelect, ColorHistory
 from fonttool import FontAct
-from toolbox import Button
+from toolbox import Button, HelpAct
 
 def shorten_string(s, max_length=5):
   return "%s..." % s[:3] if len(s) > max_length else s
@@ -71,6 +71,18 @@ color = \
        button=Button("Color", "color.png"),
        submodes=[color_new] + color_submodes + [exit])
 
+msg = ("You are building a linear color gradient.\n\n"
+       "You then need to specify an initial point and a final point for the "
+       "line which the gradient should follow. You can click on the view "
+       "to select the two points.\n\n"
+       "At the end, you should have something like:\n\n"
+       "Gradient[.Line[point1, point2], ...]")
+gradient_line_help = \
+  Mode("Gradient.Line help",
+       tooltip="Get help about this command",
+       button=Button("Help", "help.png"),
+       enter_actions=HelpAct(msg))
+
 gradient_line = \
   Mode("Gradient.Line",
        tooltip="Select linear gradient",
@@ -79,7 +91,7 @@ gradient_line = \
        enter_actions=[Paste("$LCOMMA$.Line[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
                       push_settings, paste_on_new],
        exit_actions=pop_settings,
-       submodes=[exit])
+       submodes=[exit, gradient_line_help])
 
 gradient_circle = \
   Mode("Gradient.Circle",
@@ -336,7 +348,7 @@ font = \
        tooltip="Choose the font (and size) used to render the text",
        button=Button("Font", "font.png"),
        enter_actions=[Paste("$LCOMMA$Font[$CURSORIN$]$CURSOROUT$$RCOMMA$")],
-       submodes=[font_size, font_select, exit] + font_modes)
+       submodes=[font_size, font_select, exit])
 
 text_content = \
   Mode("Text content",
