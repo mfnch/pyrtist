@@ -49,26 +49,13 @@ exit = \
        button=Button("Exit"),
        enter_actions=exit_action)
 
-color_new = Mode("Color New",
-                 button=Button("New", "colornew.png"),
-                 enter_actions=[ColorSelect("$LCOMMA$$COLOR$$RCOMMA$",
+color_new = \
+  Mode("Color New",
+       tooltip="Create a new color",
+       button=Button("New", "colornew.png"),
+       enter_actions=[ColorSelect("$LCOMMA$$COLOR$$RCOMMA$",
                                             history=color_history),
                                 update_now, exit_action])
-
-color_black = Mode("Black",
-                   button=Button("Black", "black.png"),
-                   enter_actions=[Paste("$LCOMMA$color.black$RCOMMA$"),
-                                  update_now, exit_action])
-
-color_red = Mode("Red",
-                 button=Button("Red", "red.png"),
-                 enter_actions=[Paste("$LCOMMA$color.red$RCOMMA$"),
-                                update_now, exit_action])
-
-color_blue = Mode("Blue",
-                  button=Button("Blue", "blue.png"),
-                  enter_actions=[Paste("$LCOMMA$color.blue$RCOMMA$"),
-                                 update_now, exit_action])
 
 color_submodes = \
   [Mode("Color N. %d" % i,

@@ -39,6 +39,8 @@ known_box_colors = {
   0x7f7f7f: "color.grey"
 }
 
+def _cstr(cc):
+  return "%.3f" % cc
 
 class MyColor(object):
   def __init__(self, *components, **named_args):
@@ -93,18 +95,18 @@ class MyColor(object):
     c = known_box_colors.get((int(self) & 0xffffff00) >> 8, None)
     if c != None:
       return (c if alpha >= 1.0
-              else "Color[%s, .a=%s]" % (c, alpha))
+              else "Color[%s, .a=%s]" % (c, _cstr(alpha)))
 
     else:
       if r == g == b:
-        c = str(r)
+        c = _cstr(r)
         return ("Color[%s]" % c if alpha >= 1.0
-                else "Color[%s, .a=%s]" % (c, alpha))
+                else "Color[%s, .a=%s]" % (c, _cstr(alpha)))
 
       else:
-        rgba = [str(x) for x in (r, g, b)]
+        rgba = [_cstr(x) for x in (r, g, b)]
         if alpha < 1.0:
-          rgba.append(str(alpha))
+          rgba.append(_cstr(alpha))
         return "Color[(%s)]" % (", ".join(rgba))
 
 
