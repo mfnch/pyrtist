@@ -30,6 +30,19 @@
 #  include <float.h>
 #  include <stdlib.h>
 
+/* Detect whether we are being compiled on MS Windows platforms */
+#  ifndef __WINDOWS__
+#    if defined(WIN32) || defined(_WIN32)
+#      define __WINDOWS__
+#    endif
+#  endif
+
+#  ifdef __WINDOWS__
+#    define BOXEXPORT extern __declspec(dllexport)
+#  else
+#    define BOXEXPORT extern
+#  endif
+
 /* For now we always define the abbreviations */
 #  ifndef BOX_ABBREV
 #    define BOX_ABBREV

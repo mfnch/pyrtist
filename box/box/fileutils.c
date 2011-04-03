@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
@@ -71,8 +69,8 @@ static Task Find_File_Iterator(void **tuple, void *pass) {
   char *prefix = (char *) tuple[0],
        *suffix = (char *) tuple[1];
   FindFileData *ffd = (FindFileData *) pass;
-  const char *file = print("%s%c%s%s", prefix, DIR_SEPARATOR,
-                           ffd->file_name, suffix);
+  const char *file = Box_Print("%s%c%s%s", prefix, DIR_SEPARATOR,
+                               ffd->file_name, suffix);
   if (File_Exist(file)) {
     if (ffd->only_first) {
       ffd->first_file = BoxMem_Strdup(file);

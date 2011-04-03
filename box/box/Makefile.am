@@ -61,6 +61,8 @@ libboxcore0_2_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32
 # see http://article.gmane.org/gmane.comp.gnu.mingw.user/18727
 
+libboxcore0_2_la_LIBADD = $(LIBLTDL)
+
 # *** box compiler ***
 noinst_HEADERS = \
   fileutils.h registers.h tokenizer.h parserh.h typesys.h  paths.h \
@@ -73,7 +75,7 @@ box_SOURCES = \
   compiler.c operator.c namespace.c autogen.c tsdesc.c \
   builtins.c bltinstr.c bltinio.c bltinarray.c
 
-box_LDADD = $(LIBLTDL) libboxcore0.2.la
+box_LDADD = libboxcore0.2.la
 box_LDFLAGS = -static
 box_DEPENDENCIES=$(LTDLDEPS)
 

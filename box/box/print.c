@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -49,7 +47,7 @@ void Print_Finalize(void) {
  *   ES:
  *       msg = print("%S", BoxMem_Strdup("allocated string"));
  */
-const char *print(const char *fmt, ...) {
+const char *Box_Print(const char *fmt, ...) {
   static int buf_size = 0;
   unsigned int do_write = 1, do_read = 1, do_continue = 1, do_dealloc = 1, do_long = 0;
   char *str_dealloc = (char *) NULL;

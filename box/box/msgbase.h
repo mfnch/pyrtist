@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 /** @file msgbase.h
  * @brief Centralized generic message handler.
  *

@@ -1,5 +1,10 @@
 Change log (recent comes first)
 
+03 Apr 2011: Released v 0.2.2: bugfixes in graphics library
+  This release fixes some bugs in the graphics library, making the new version
+  of Boxer (0.3.0) more usable. The library libboxcore was also fixed in some
+  of its references (this was noted when trying to run under Mac OS).
+
 06 Feb 2011: Released v 0.2.1: bugfixes and reworked memory management.
   This release fixes some bugs. It does not bring new features. However, the
   memory management system has been largely rewritten. The memory management

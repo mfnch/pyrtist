@@ -39,23 +39,23 @@ typedef struct {
 /** Just for compatibility */
 typedef BoxStr Str;
 
-void BoxStr_Init(BoxStr *s);
+BOXEXPORT void BoxStr_Init(BoxStr *s);
 
-void BoxStr_Finish(BoxStr *s);
+BOXEXPORT void BoxStr_Finish(BoxStr *s);
 
-BoxTask BoxStr_Large_Enough(BoxStr *s, BoxInt length);
+BOXEXPORT BoxTask BoxStr_Large_Enough(BoxStr *s, BoxInt length);
 
-BoxTask BoxStr_Concat(BoxStr *s, const char *ca);
+BOXEXPORT BoxTask BoxStr_Concat(BoxStr *s, const char *ca);
 
 /** Create a new C string from a BoxStr object. The string is freshly
  * allocated with BoxMem_Safe_Alloc.
  */
-char *BoxStr_To_C_String(BoxStr *s);
+BOXEXPORT char *BoxStr_To_C_String(BoxStr *s);
 
 /** Return the pointer to the raw data in the string. */
-char *BoxStr_Get_Ptr(BoxStr *s);
+BOXEXPORT char *BoxStr_Get_Ptr(BoxStr *s);
 
 /** Return the size of the data in the string. */
-size_t BoxStr_Get_Size(BoxStr *s);
+BOXEXPORT size_t BoxStr_Get_Size(BoxStr *s);
 
 #endif /* _BOX_STR_H */

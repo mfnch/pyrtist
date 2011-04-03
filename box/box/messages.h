@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 /** @file messages.h
  * @brief The message handler for the box copiler (wraps up msgbase)
  *
@@ -138,7 +136,8 @@ void Msg_Call_Fatal_Handler(void);
 /****************************************************************************
  * MACROS USED TO BEGIN AND END CONTEXTS
  */
-#  define MSG_CONTEXT_BEGIN(...) Msg_Main_Context_Begin(print(__VA_ARGS__))
+#  define MSG_CONTEXT_BEGIN(...) \
+  Msg_Main_Context_Begin(Box_Print(__VA_ARGS__))
 
 #  define MSG_CONTEXT_END() Msg_Context_End(msg_main_stack, 1)
 
@@ -148,21 +147,21 @@ void Msg_Call_Fatal_Handler(void);
 
 /** Macro to signal an information */
 #  define MSG_ADVICE(...) \
-     Msg_Add(msg_main_stack, MSG_LEVEL_ADVICE, print(__VA_ARGS__))
+     Msg_Add(msg_main_stack, MSG_LEVEL_ADVICE, Box_Print(__VA_ARGS__))
 
 /** Macro used to signal a warning message */
 #  define MSG_WARNING(...) \
-     Msg_Add(msg_main_stack, MSG_LEVEL_WARNING, print(__VA_ARGS__))
+     Msg_Add(msg_main_stack, MSG_LEVEL_WARNING, Box_Print(__VA_ARGS__))
 
 /** Macro used to signal an error message */
 #  define MSG_ERROR(...) \
-     Msg_Add(msg_main_stack, MSG_LEVEL_ERROR, print(__VA_ARGS__))
+     Msg_Add(msg_main_stack, MSG_LEVEL_ERROR, Box_Print(__VA_ARGS__))
 
 /** Macro used to signal a fatal error message */
 #  define MSG_FATAL(...) \
-     if (1) { \
-       Msg_Add(msg_main_stack, MSG_LEVEL_FATAL, print(__VA_ARGS__)); \
+     do { \
+       Msg_Add(msg_main_stack, MSG_LEVEL_FATAL, Box_Print(__VA_ARGS__)); \
        Msg_Call_Fatal_Handler(); \
-     }
+     } while(1)
 
 #endif

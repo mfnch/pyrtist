@@ -403,7 +403,7 @@ Task Iter_Over_Paths(void *string, void *pass_data) {
   char *lib_file;
   Task status;
   cld->path = (char *) string;
-  lib_file = BoxMem_Strdup(print("%s/lib%s", cld->path, cld->lib));
+  lib_file = BoxMem_Strdup(Box_Print("%s/lib%s", cld->path, cld->lib));
   status = BoxVMSym_Resolve_CLib(cld->vmp, lib_file);
   BoxMem_Free(lib_file);
   if (status == Success) return Failed; /* Stop here, if we have found it! */

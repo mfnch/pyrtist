@@ -422,11 +422,8 @@ void BoxVMX_Init(BoxVMX *vmx, BoxVM *vm);
 /** Finalize a new VM executor in 'vmx'. */
 void BoxVMX_Finish(BoxVMX *vmx);
 
-
-
-
 /** Provide a failure message for a raised exception. */
-void BoxVM_Set_Fail_Msg(BoxVM *vm, const char *msg);
+BOXEXPORT void BoxVM_Set_Fail_Msg(BoxVM *vm, const char *msg);
 
 /** Specifies the number of global registers and variables used by the BoxVM.
  */

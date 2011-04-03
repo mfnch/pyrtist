@@ -30,51 +30,51 @@
 #  include <box/types.h>
 
 /** Return the lowest multiple of sizeof(uint32_t) which is greater than n */
-size_t BoxMem_Size_Align(size_t n);
+BOXEXPORT size_t BoxMem_Size_Align(size_t n);
 
-void *BoxMem_Alloc(size_t size);
+BOXEXPORT void *BoxMem_Alloc(size_t size);
 
 /** Similar to BoxMem_Alloc, but never returns NULL (display an error message
  * and abort, instead!).
  */
-void *BoxMem_Safe_Alloc(size_t size);
+BOXEXPORT void *BoxMem_Safe_Alloc(size_t size);
 
-void *BoxMem_Realloc(void *ptr, size_t size);
+BOXEXPORT void *BoxMem_Realloc(void *ptr, size_t size);
 
-void BoxMem_Free(void *ptr);
+BOXEXPORT void BoxMem_Free(void *ptr);
 
-char *BoxMem_Strdup(const char *s);
+BOXEXPORT char *BoxMem_Strdup(const char *s);
 
-char *BoxMem_Strndup(const char *s, size_t length);
+BOXEXPORT char *BoxMem_Strndup(const char *s, size_t length);
 
 /** Merge the first l1 characters of str1 with the first l2 characters of str2
  * and return a NUL terminated string made by the concatenation of the two
  * parts.
  */
-char *BoxMem_Str_Merge_With_Len(const char *str1, size_t l1,
+BOXEXPORT char *BoxMem_Str_Merge_With_Len(const char *str1, size_t l1,
                                 const char *str2, size_t l2);
 
 /** Merge two strings by callng BoxMem_Str_Merge_With_Len and using strlen to
  * get the lengths of the two strings (wh)
  */
-char *BoxMem_Str_Merge(const char *str1, const char *str2);
+BOXEXPORT char *BoxMem_Str_Merge(const char *str1, const char *str2);
 
-void BoxMem_Exit(const char *msg);
+BOXEXPORT void BoxMem_Exit(const char *msg);
 
 /** Called to signal a fatal error condition and exit immediately. */
-void Box_Fatal_Error(const char *file, unsigned long line_no);
+BOXEXPORT void Box_Fatal_Error(const char *file, unsigned long line_no);
 
 /** Executes *r = a*x, returning 0 in case of integer overflow, 1 otherwise. */
-int BoxMem_ax(size_t *r, size_t a, size_t x);
+BOXEXPORT int BoxMem_ax(size_t *r, size_t a, size_t x);
 
 /** Executes *r = x + y, returning 0 in case of integer overflow, 1 otherwise.
  */
-int BoxMem_x_Plus_y(size_t *r, size_t x, size_t y);
+BOXEXPORT int BoxMem_x_Plus_y(size_t *r, size_t x, size_t y);
 
 /** Executes *r = a*x + b*y, returning 0 in case of integer overflow,
  *  1 otherwise.
  */
-int BoxMem_ax_Plus_by(size_t *r, size_t a, size_t x, size_t b, size_t y);
+BOXEXPORT int BoxMem_ax_Plus_by(size_t *r, size_t a, size_t x, size_t b, size_t y);
 
 /*#define BOXMEM_DEBUG_MACROS*/
 

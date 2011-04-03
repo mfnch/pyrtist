@@ -154,7 +154,7 @@ static VMProcInstalled *My_Get_Inst_Proc_Desc(VMProcTable *pt,
       return procedure_inst;
 
     } else {
-      MSG_FATAL("BoxVM_Proc_Install_CCode: Double procedure installation")
+      MSG_FATAL("BoxVM_Proc_Install_CCode: Double procedure installation");
       assert(0);
       *cn_out = BOXVMCALLNUM_NONE;
       return (VMProcInstalled *) NULL;

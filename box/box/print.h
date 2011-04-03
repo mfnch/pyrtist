@@ -55,9 +55,9 @@ void Print_Finalize(void);
  *   ES:
  *       msg = print("%~s", BoxMem_Strdup("allocated string"));
  */
-const char *print(const char *fmt, ...);
+BOXEXPORT const char *Box_Print(const char *fmt, ...);
 
-#  define printdup(...) BoxMem_Strdup(print(__VA_ARGS__))
-#  define Box_SPrintF(...) BoxMem_Strdup(print(__VA_ARGS__))
+#  define printdup(...) BoxMem_Strdup(Box_Print(__VA_ARGS__))
+#  define Box_SPrintF(...) BoxMem_Strdup(Box_Print(__VA_ARGS__))
 
 #endif

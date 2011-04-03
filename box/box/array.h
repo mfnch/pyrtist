@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 /** @file array.h
  * @brief Array object, contiguous resizable collection of objects.
  *
@@ -64,7 +62,8 @@ typedef struct {
  *                     array, even when no elements are contained in it)
  * @see BoxArr_Finish, BoxArr_New
  */
-void BoxArr_Init(BoxArr *arr, BoxUInt element_size, BoxUInt initial_size);
+BOXEXPORT void BoxArr_Init(BoxArr *arr, BoxUInt element_size,
+                           BoxUInt initial_size);
 
 /** Finalize a BoxArr object, calling the finalizer for each remaining
  * element, if necessary. The function does not deallocate the region
@@ -73,7 +72,7 @@ void BoxArr_Init(BoxArr *arr, BoxUInt element_size, BoxUInt initial_size);
  * in couple with BoxArr_Init.
  * @see BoxArr_Init
  */
-void BoxArr_Finish(BoxArr *arr);
+BOXEXPORT void BoxArr_Finish(BoxArr *arr);
 
 /** Similar to BoxArr_Init, but also allocates the memory region to contain
  * the BoxArr data structure. Consequently, if you use this function,
@@ -81,14 +80,14 @@ void BoxArr_Finish(BoxArr *arr);
  * BoxArr_Finish).
  * @see BoxArr_Destroy, BoxArr_Init
  */
-BoxArr *BoxArr_New(BoxUInt element_size, BoxUInt initial_size);
+BOXEXPORT BoxArr *BoxArr_New(BoxUInt element_size, BoxUInt initial_size);
 
 /** Similar to BoxArr_Init, but frees also the region containing
  * the BoxArr object. Suitable to be used with BoxArr_New (and must NOT
  * be used with BoxArr_Init).
  * @see BoxArr_New
  */
-void BoxArr_Destroy(BoxArr *arr);
+BOXEXPORT void BoxArr_Destroy(BoxArr *arr);
 
 /** Attributes corresponding to different behaviours of the BoxArr object:
  * BOXARR_ERR_STATUS correspond to the error status of the array, which is set
@@ -108,23 +107,24 @@ typedef enum {
 /** Set the attributes which control the behaviour of the BoxArr object.
  * @see BoxArrAttr
  */
-void BoxArr_Set_Attr(BoxArr *arr, BoxArrAttr mask, BoxArrAttr value);
+BOXEXPORT void BoxArr_Set_Attr(BoxArr *arr, BoxArrAttr mask,
+                               BoxArrAttr value);
 
 /** Returns 1 if the provided BoxArr object is in error state, 0 otherwise.
  */
-int BoxArr_Is_Err(BoxArr *arr);
+BOXEXPORT int BoxArr_Is_Err(BoxArr *arr);
 
 /** Sets a finalizer to call for each element which is removed
  * from the array (just before doing it).
  */
-void BoxArr_Set_Finalizer(BoxArr *arr, BoxArrFinalizer fin);
+BOXEXPORT void BoxArr_Set_Finalizer(BoxArr *arr, BoxArrFinalizer fin);
 
 /** Returns the pointer to the item of the provided array with index
  * item_index. Out of bounds errors are detected and treated conformly
  * to the error policy set with BoxArr_Set_Err_Policy
  * @see BoxArr_Set_Err_Policy
  */
-void *BoxArr_Item_Ptr(BoxArr *arr, BoxUInt item_index);
+BOXEXPORT void *BoxArr_Item_Ptr(BoxArr *arr, BoxUInt item_index);
 
 /** Prototype of function used by BoxArr_Iter to iterate over the elements
  * of the provided array.
@@ -144,7 +144,7 @@ typedef int (*BoxArrIterator)(BoxUInt item_index, void *item_ptr,
  * @return 0 if the iteration was broken by the iterator, 0 otherwise
  * @see BoxArrIterator
  */
-int BoxArr_Iter(BoxArr *arr, BoxArrIterator iter, void *pass_data);
+BOXEXPORT int BoxArr_Iter(BoxArr *arr, BoxArrIterator iter, void *pass_data);
 
 /** Function which is expected to compare 'left' and 'right', returning
  * 0 if they are equal, 1 if left > right or -1 if left < right.
@@ -160,7 +160,8 @@ typedef int (*BoxArrCmp)(void *left, void *right, void *pass_data);
  * element of the array which matches (via memcmp) with the one pointed by
  * 'item'.
  */
-size_t BoxArr_Find(BoxArr *arr, void *item, BoxArrCmp cmp, void *pass_data);
+BOXEXPORT size_t BoxArr_Find(BoxArr *arr, void *item, BoxArrCmp cmp,
+                             void *pass_data);
 
 /** Remove all the elements of the 'arr' invoking the destructor for each
  * removed item, if necessary. After the call to this function, the BoxArr
@@ -168,7 +169,7 @@ size_t BoxArr_Find(BoxArr *arr, void *item, BoxArrCmp cmp, void *pass_data);
  * (if an element is then inserted an automatic malloc will restore
  * the data block for the BoxArr object).
  */
-void BoxArr_Clear(BoxArr *arr);
+BOXEXPORT void BoxArr_Clear(BoxArr *arr);
 
 /** Push new elements into the provided array. The items are appended
  * to the array. If 'items' is the NULL pointer the items are inserted
@@ -184,7 +185,8 @@ void BoxArr_Clear(BoxArr *arr);
  *     ItemType *item = BoxArr_MPush(a, NULL, 2);
  *     item[0] = ...; item[1] = ...;
  */
-void *BoxArr_MPush(BoxArr *arr, const void *items, BoxUInt num_items);
+BOXEXPORT void *BoxArr_MPush(BoxArr *arr, const void *items,
+                             BoxUInt num_items);
 
 /** Similar to BoxArr_MPush, but pushes just one item into the array.
  * @see BoxArr_MPush
@@ -197,7 +199,7 @@ void *BoxArr_MPush(BoxArr *arr, const void *items, BoxUInt num_items);
  * the items, if defined.
  * @see BoxArr_Pop
  */
-void BoxArr_MPop(BoxArr *arr, void *items, BoxUInt num_items);
+BOXEXPORT void BoxArr_MPop(BoxArr *arr, void *items, BoxUInt num_items);
 
 /** Similar to BoxArr_MPop, but pops just one item into from the array.
  * @see BoxArr_MPop
@@ -213,8 +215,8 @@ void BoxArr_MPop(BoxArr *arr, void *items, BoxUInt num_items);
  * @param num_items the number of items to be inserted
  * @see BoxArr_Set_Attr, BoxArr_Push, BoxArr_Overwrite
  */
-void *BoxArr_Insert(BoxArr *arr, BoxUInt insert_index,
-                    const void *items, BoxUInt num_items);
+BOXEXPORT void *BoxArr_Insert(BoxArr *arr, BoxUInt insert_index,
+                              const void *items, BoxUInt num_items);
 
 /** Overwrite the array at position 'ow_index' with the provided items.
  * If 'items' is the NULL pointer the items are written as if they were zero
@@ -222,8 +224,8 @@ void *BoxArr_Insert(BoxArr *arr, BoxUInt insert_index,
  * the automatic clearing.
  * @see BoxArr_Set_Attr, BoxArr_Push, BoxArr_Insert
  */
-void *BoxArr_Overwrite(BoxArr *arr, BoxUInt ow_index,
-                       const void *items, BoxUInt num_items);
+BOXEXPORT void *BoxArr_Overwrite(BoxArr *arr, BoxUInt ow_index,
+                                 const void *items, BoxUInt num_items);
 
 /** Reallocate the array so that it occupies just the amount of memory which
  * is needed to store its elements. The function is useful to reduce the
@@ -231,7 +233,7 @@ void *BoxArr_Overwrite(BoxArr *arr, BoxUInt ow_index,
  * and no further elements are going to be added to it (even if that may still
  * happen without faults).
  */
-void BoxArr_Compactify(BoxArr *arr);
+BOXEXPORT void BoxArr_Compactify(BoxArr *arr);
 
 /** Returns the number of elements currently inserted in the provided array.
  */
