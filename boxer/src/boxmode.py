@@ -15,6 +15,9 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
+# TO DO:
+# Icona e opzione per Style.Border.Dash
+
 from assistant \
   import Mode, ExitMode, GUISet, GUIAct, Paste, IncludeSrc
 from inputtool import InputAct
@@ -93,6 +96,20 @@ gradient_line = \
        exit_actions=pop_settings,
        submodes=[exit, gradient_line_help])
 
+msg = ("You are building a radial color gradient.\n\n"
+       "You then need to specify center and radius of the initial and final "
+       "circles. At the end, you should have something like:\n\n"
+       "Gradient[.Circle[point1, radius1; radius2], ...] or,\n"
+       "Gradient[.Circle[point1, radius1; point2, radius2], ...]\n\n"
+       "The first case is the most common one, and is used when the two "
+       "circles share the same center. Pay attention to the semicolon ; "
+       "denoting the end of first circle specification. ")
+gradient_circle_help = \
+  Mode("Gradient.Circle help",
+       tooltip="Get help about this command",
+       button=Button("Help", "help.png"),
+       enter_actions=HelpAct(msg))
+
 gradient_circle = \
   Mode("Gradient.Circle",
        tooltip="Select radial gradient",
@@ -101,7 +118,7 @@ gradient_circle = \
        enter_actions=[Paste("$LCOMMA$.Circle[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
                       push_settings, paste_on_new],
        exit_actions=pop_settings,
-       submodes=[exit])
+       submodes=[exit, gradient_circle_help])
 
 gradient = \
   Mode("Gradient",
@@ -134,6 +151,14 @@ fill = Mode("Fill mode",
             enter_actions=Paste("$LCOMMA$.Fill[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
             submodes=[fill_void, fill_plain, fill_eo, exit])
 
+border_dash = \
+  Mode("Border dash",
+       tooltip="Dashed borders",
+       button=Button("Dash", "borderds.png"),
+       enter_actions=[InputAct("$LCOMMA$.Dash[$INPUT$]$RCOMMA$",
+                               label="Lengths for dash, space, dash, ...\n"
+                                     "(Example: 3, 1)")])
+
 border_width = \
   Mode("Border width",
        tooltip="Width of the border",
@@ -146,7 +171,7 @@ border = \
        tooltip="Set the color, width and type of border of polygons and paths",
        button=Button("Border", "border.png"),
        enter_actions=Paste("$LCOMMA$.Border[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
-       submodes=[color, border_width, exit])
+       submodes=[color, border_width, border_dash, exit])
 
 style = \
   Mode("Style",
@@ -387,8 +412,30 @@ text = \
                       paste_on_new],
        submodes=[color, gradient, style, font, text_content, text_from, exit])
 
+msg = ("This button bar gives you some guidance while writing your "
+       "scripts. Here are some hints:\n\n"
+       "When you press a button, you enter into a command mode and other "
+       "buttons appear, showing what options you have next.\n\n"
+       "To exit the current mode press the exit button at the top.\n\n"
+       "If you move the pointer over a button and wait for few seconds, "
+       "a message appears explaining what the button does.\n\n"
+       "The statusbar sometimes says what you are expected to do. "
+       "Help buttons similar to the one you just pressed may provide "
+       "further help.\n\n"
+       "If you have to enter a point you can use the keyboard "
+       "(typing \"(0, 0)\", for example) but it is often easier to "
+       "use the mouse, clicking on the output view.")
+       #"If you want to contribute to the project try: menu \"Help\" "
+       #"--> \"How to contribute...\"")
+main_help = \
+  Mode("Main help",
+       tooltip="Get general help about this button bar",
+       button=Button("Help", "help.png"),
+       enter_actions=HelpAct(msg))
+
 main_mode = \
-  Mode("Main", submodes=[exit, color, gradient, style, poly, circle, line, text])
+  Mode("Main", submodes=[exit, main_help, color, gradient, style, poly,
+                         circle, line, text])
 
 if __name__ == "__main__":
   from assistant import Assistant
