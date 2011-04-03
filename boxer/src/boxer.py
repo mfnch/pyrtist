@@ -16,15 +16,9 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
-# TODO (for v 0.3.0):
-# - extend do/undo to refpoints
-# x load and save dialogs should remember last opened directory(independently)
-# x drawing tools (color window, polygons, lines, etc)
-# - add show all/hide all button
-# x remember last window configuration (size of main window)
-# x allow cancel exit in window asking whether to save or not unsaved changes
-
 # TODO (for later):
+# - extend do/undo to refpoints
+# - add show all/hide all button
 # - configuration files should work as before
 # - buffer geometry should be determined by memory available for buffer
 # - multiple selection of points and transformation on them
@@ -32,6 +26,12 @@
 # - find and replace
 # - rename RefPoint? (dangerous, should be assisted)
 # - configuration window
+
+# DONE IN VER 0.3.0:
+# x added the Box assistant (color window, polygons, lines, etc)
+# x load and save dialogs should remember last opened directory(independently)
+# x remember last window configuration (size of main window)
+# x allow cancel exit in window asking whether to save or not unsaved changes
 
 # DONE IN VER 0.2.0:
 # x it should be possible to terminate execution of running scripts

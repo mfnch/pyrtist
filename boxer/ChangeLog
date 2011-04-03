@@ -1,3 +1,14 @@
+In version 0.3.0:
+  BRIEFLY: the Box assistant was implemented.
+  DETAILS:
+  - Added a new tool, providing buttons which can be clicked in order to
+    automatically create pieces of scripts in a easier way. The new tool (the
+    Box assistant) is meant to provide guidance for new users and speed up
+    the work for experienced users.
+  - load and save dialogs remember last opened directory (independently).
+  - allow cancel exit in window asking whether to save or not unsaved changes.
+  - remember last window configuration (size of main window).
+
 In version 0.2.0:
   BRIEFLY: major changes in viewer (most of the program was rewritten)
   DETAILS:
