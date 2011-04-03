@@ -47,10 +47,12 @@ class Button(assistant.Button):
         img.set_from_file(icon_filename)
 
     # Create the button
-    b = gtk.Button(self.name)
     if img != None:
+      b = gtk.Button()
       b.set_image(img)
-      b.set_label("")
+
+    else:
+      b = gtk.Button(self.name)
 
     if tooltip != None:
       b.set_tooltip_text(tooltip)

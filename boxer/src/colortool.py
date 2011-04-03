@@ -169,7 +169,7 @@ class ColorHistoryButton(Button):
     img = None
 
     # Create the button
-    b = gtk.Button("")
+    b = gtk.Button()
     my_color = self.history.get_color(self.index)
     if my_color != None:
       pb = gtk.gdk.Pixbuf(gtk.gdk.COLORSPACE_RGB, False, 8, width, height)
