@@ -1,0 +1,91 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+
+
+
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui3 = Point[.x=6.41914218107, .y=67.877354636]
+gui4 = Point[.x=5.6956909465, .y=40.676717502]
+gui5 = Point[.x=6.17632510288, .y=5.53218545269]
+gui6 = Point[.x=49.2338820988, .y=49.8361025559]
+wp1 = Point[.x=43.7064893004, .y=32.9823406145]
+wp2 = Point[.x=41.2996185185, .y=39.4816273633]
+gui7 = Point[.x=42.9773380658, .y=48.872430445]
+gui8 = Point[.x=46.5885942387, .y=57.056643388]
+gui9 = Point[.x=50.4403674897, .y=65.4816743587]
+gui10 = Point[.x=50.6812845679, .y=71.2588070243]
+gui11 = Point[.x=50.9223016461, .y=78.9616839119]
+gui12 = Point[.x=47.0711283951, .y=82.8130723556]
+gui13 = Point[.x=41.5348355967, .y=83.5351264388]
+gui14 = Point[.x=44.423740535, .y=79.9242560228]
+gui15 = Point[.x=46.5906942387, .y=73.1839512462]
+gui16 = Point[.x=42.7395209877, .y=63.5551301368]
+gui17 = Point[.x=31.9077524691, .y=61.6291859149]
+gui18 = Point[.x=24.2050059671, .y=65.4805743587]
+gui19 = Point[.x=20.5945497942, .y=72.9427332185]
+gui20 = Point[.x=23.0020205761, .y=81.3677641892]
+gui21 = Point[.x=28.7873304527, .y=88.826923049]
+gui22 = Point[.x=34.5642403292, .y=92.437793465]
+gui23 = Point[.x=40.581867284, .y=95.5672278256]
+gui24 = Point[.x=49.0067650206, .y=96.5301999365]
+gui25 = Point[.x=59.8387335391, .y=95.3267097978]
+gui26 = Point[.x=67.294162963, .y=91.4778213541]
+gui27 = Point[.x=73.7938240741, .y=86.4226427716]
+gui28 = Point[.x=76.9236460905, .y=78.7194658841]
+gui29 = Point[.x=77.6460973251, .y=68.849926747]
+gui30 = Point[.x=73.3133899177, .y=56.8139253602]
+gui31 = Point[.x=55.5006261317, .y=45.7407960844]
+gui32 = Point[.x=54.0477236626, .y=34.9117848364]
+gui33 = Point[.x=49.0020650206, .y=32.0195685035]
+gui34 = Point[.x=47.7887796296, .y=17.8209048672]
+gui35 = Point[.x=58.38013107, .y=27.4497259766]
+//!BOXER:REFPOINTS:END
+include "grid"
+include "icon_theme"
+include "arrows"
+
+grid = Grid[(0, 0), (100, 100), icon_size.nx, icon_size.ny]
+cell = grid.GetCellSize[]
+lw = width*cell.x
+
+icon = Window[][
+  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
+
+
+  \ .Text[color.black, .From[(0, 0)], Font["Helvetica-Bold", 35], gui3, "Helvetica"]
+  \ .Text[.From[(0, 0)], Font["Courier-Bold", 35], gui4, "Courier"]
+  \ .Text[.From[(0, 0)], Font["Times-Bold", 35], gui5, "Times"]
+
+  \ .Poly[color.white, wp1, wp2, gui7, gui8, gui9, gui10, gui11
+          gui12, gui13, gui14, gui15, gui16, gui17, gui18, gui19
+          gui20, gui21, gui22, gui23, gui24, gui25, gui26, gui27
+          gui28, gui29, gui30, gui31, gui32, gui33]
+  \ .Circle[gui34, gui35]
+\ .Text[Font[], ]
+  
+  \ .Text[Font["Times-Bold", 120], "?", gui6, 
+          Style[.Border[color.red, lw]], color.yellow]
+
+
+]
+
+
+w = Window[][grid, icon]
+
+GUI[w]
+
+res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
+//icon.Save["text.png", Window["argb32", (100, 10), .Res[res]]]
+
+out = Window["argb32", (100, 100), .Res[res]][
+  icon
+  .Save["fonttype.png"]
+]
+

@@ -1,0 +1,61 @@
+//!BOXER:VERSION:0:1:1
+
+include "g"
+GUI = Void
+Window@GUI[]
+
+
+
+
+
+
+
+
+
+
+
+//!BOXER:REFPOINTS:BEGIN
+gui3 = Point[.x=7.32912621359, .y=8.72275835189]
+//!BOXER:REFPOINTS:END
+include "grid"
+include "icon_theme"
+include "arrows"
+
+MyFontIcon = Void
+
+grid = Grid[(0, 0), (300, 50), 6*icon_size.nx, icon_size.ny]
+cell = grid.GetCellSize[]
+lw = width*cell.x
+
+
+(Str filename, fontname)@MyFontIcon[
+  res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
+  out = Window["argb32", (300, 50), .Res[res]][
+    \ .Text[color.black, .From[(0, 0)], Font[$.fontname, 40], gui3, $.fontname]
+    .Save[Str["fonts/", $.filename, ".png"]]
+  ]
+]
+
+icon = Window[][
+  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
+
+  \ .Text[color.black, .From[(0, 0)], Font["Helvetica-Bold", 40], gui3, "Helvetica-Bold"]
+]
+
+
+w = Window[][grid, icon]
+
+GUI[w]
+
+MyFontIcon[
+  ("avg_b", "AvantGarde-Book"), ("avg_bo", "AvantGarde-BookOblique"), ("avg_d", "AvantGarde-Demi"), ("avg_do", "AvantGarde-DemiOblique")
+  ("cour", "Courier"), ("cour_o", "Courier-Oblique"), ("cour_b", "Courier-Bold"), ("cour_bo", "Courier-BoldOblique")
+  ("helv", "Helvetica"), ("helv_o", "Helvetica-Oblique"), ("helv_b", "Helvetica-Bold"), ("helv_bo", "Helvetica-BoldOblique")
+  ("helvn", "Helvetica-Narrow"), ("helvn_o", "Helvetica-Narrow-Oblique"), ("helvn_b", "Helvetica-Narrow-Bold"), ("helvn_bo", "Helvetica-Narrow-BoldOblique")
+  ("ncsch", "NewCenturySchlbk-Roman"), ("ncsch_i", "NewCenturySchlbk-Italic"), ("ncsch_b", "NewCenturySchlbk-Bold"), ("ncsch_bi", "NewCenturySchlbk-BoldItalic")
+  ("palat", "Palatino-Roman"), ("palat_i", "Palatino-Italic"), ("palat_b", "Palatino-Bold"), ("palat_bi", "Palatino-BoldItalic")
+  ("symbol", "Symbol")
+  ("times", "Times-Roman"), ("times_i", "Times-Italic"), ("times_b", "Times-Bold"), ("times_bi", "Times-BoldItalic")
+  ("zapfchan", "ZapfChancery-MediumItalic")
+  ("zapfding", "ZapfDingbats")
+]
