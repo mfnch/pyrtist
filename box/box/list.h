@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 /** @file list.h
  * @brief Implementation of the list type.
  */
@@ -48,21 +46,23 @@ typedef struct {
 } BoxList;
 
 /* Used with the function BoxList_Product_Iter */
-typedef Task (*BoxListProduct)(void **tuple, void *pass);
+typedef BoxTask (*BoxListProduct)(void **tuple, void *pass);
 
-
-void BoxList_Init(BoxList *l, UInt item_size);
-void BoxList_Finish(BoxList *l);
-BoxList *BoxList_New(UInt item_size);
-void BoxList_Destroy(BoxList *l);
-BoxUInt BoxList_Length(BoxList *l);
-void BoxList_Remove(BoxList *l, void *item);
-void BoxList_Insert_With_Size(BoxList *l, void *item_where,
+BOXEXPORT void BoxList_Init(BoxList *l, UInt item_size);
+BOXEXPORT void BoxList_Finish(BoxList *l);
+BOXEXPORT BoxList *BoxList_New(UInt item_size);
+BOXEXPORT void BoxList_Destroy(BoxList *l);
+BOXEXPORT BoxUInt BoxList_Length(BoxList *l);
+BOXEXPORT void BoxList_Remove(BoxList *l, void *item);
+BOXEXPORT void BoxList_Insert_With_Size(BoxList *l, void *item_where,
                               const void *item_what, BoxUInt size);
-Task BoxList_Iter(BoxList *l, BoxListIterator i, void *pass_data);
-Task BoxList_Item_Get(BoxList *l, void **item, BoxUInt index);
-void BoxList_Append_Strings(BoxList *l, const char *strings, char separator);
-Task BoxList_Product_Iter(BoxList *l, BoxListProduct product, void *pass);
+BOXEXPORT BoxTask BoxList_Iter(BoxList *l, BoxListIterator i,
+                               void *pass_data);
+BOXEXPORT BoxTask BoxList_Item_Get(BoxList *l, void **item, BoxUInt index);
+BOXEXPORT void BoxList_Append_Strings(BoxList *l, const char *strings,
+                                      char separator);
+BOXEXPORT BoxTask BoxList_Product_Iter(BoxList *l, BoxListProduct product,
+                                       void *pass);
 
 #  define BoxList_Insert(list, item_where, item_what) \
      BoxList_Insert_With_Size((list), item_where, item_what, (list)->item_size)

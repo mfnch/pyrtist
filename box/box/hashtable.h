@@ -70,10 +70,10 @@ typedef struct {
 typedef int (*BoxHTIterator)(BoxHTItem *item, void *pass_data);
 typedef Task (*BoxHTIterator2)(BoxHTItem *item, void *pass_data);
 
-unsigned int BoxHT_Default_Hash(const void *key, size_t key_size);
-int BoxHT_Default_Cmp(const void *key1, const void *key2,
-                      size_t size1, size_t size2);
-int BoxHT_Default_Action(BoxHTItem *hi, void *pass_data);
+BOXEXPORT unsigned int BoxHT_Default_Hash(const void *key, size_t key_size);
+BOXEXPORT int BoxHT_Default_Cmp(const void *key1, const void *key2,
+                                size_t size1, size_t size2);
+BOXEXPORT int BoxHT_Default_Action(BoxHTItem *hi, void *pass_data);
 
 /** Create a new hashtable.
  * @param ht where to put the pointer to the created hash table.
@@ -83,28 +83,29 @@ int BoxHT_Default_Action(BoxHTItem *hi, void *pass_data);
  * @param hash hash function to be used.
  * @param cmp comparison function to be used.
  */
-BoxHT *BoxHT_New(unsigned int num_entries, BoxHTFunc hash, BoxHTCmp cmp);
+BOXEXPORT BoxHT *BoxHT_New(unsigned int num_entries, BoxHTFunc hash,
+                           BoxHTCmp cmp);
 
 /** Similar to BoxHT_New, but put the hashtable structure in ht, assuming
  * ht points to an allocated region of memory capable of containing
  * a BoxHT object.
  * @see BoxHT_New, BoxHT_Finish
  */
-void BoxHT_Init(BoxHT *ht, unsigned int num_entries,
-                BoxHTFunc hash, BoxHTCmp cmp);
+BOXEXPORT void BoxHT_Init(BoxHT *ht, unsigned int num_entries,
+                          BoxHTFunc hash, BoxHTCmp cmp);
 
 /** Destroy an hashtable created with BoxHT_Init
  * @see BoxHT_Init
  */
-void BoxHT_Finish(BoxHT *ht);
+BOXEXPORT void BoxHT_Finish(BoxHT *ht);
 
 /** Destroy an hashtable created with BoxHT_New
  * @see BoxHT_New
  */
-void BoxHT_Destroy(BoxHT *ht);
+BOXEXPORT void BoxHT_Destroy(BoxHT *ht);
 
 /** Gives a function used to destroy objects when 'BoxHT_Destroy' is called */
-void BoxHT_Destructor(BoxHT *ht, Task (*destroy)(BoxHTItem *));
+BOXEXPORT void BoxHT_Destructor(BoxHT *ht, Task (*destroy)(BoxHTItem *));
 
 /** Most general function to add a new element to the hashtable.
  * key and object will be duplicated or not, depending on the settings
@@ -120,19 +121,19 @@ void BoxHT_Destructor(BoxHT *ht, Task (*destroy)(BoxHTItem *));
  * @param object_size size of the object.
  * @see BoxHT_Insert, BoxHT_Insert_Obj, BoxHT_Copy_Key, BoxHT_Copy_Obj
  */
-BoxHTItem *BoxHT_Add(BoxHT *ht, unsigned int branch,
-                     const void *key, size_t key_size,
-                     const void *object, size_t object_size);
+BOXEXPORT BoxHTItem *BoxHT_Add(BoxHT *ht, unsigned int branch,
+                               const void *key, size_t key_size,
+                               const void *object, size_t object_size);
 
 /** Remove the element matching the given key from the hash-table.
  */
-Task BoxHT_Remove(BoxHT *ht, void *key, unsigned int key_size);
+BOXEXPORT BoxTask BoxHT_Remove(BoxHT *ht, void *key, unsigned int key_size);
 
 /** Remove the element from the hash-table by knowing the corresponding
  * BoxHTItem (this function does not require to know the key, and thus
  * does not perform an hash).
  */
-Task BoxHT_Remove_By_HTItem(BoxHT *ht, BoxHTItem *hi);
+BOXEXPORT BoxTask BoxHT_Remove_By_HTItem(BoxHT *ht, BoxHTItem *hi);
 
 /** Rename the key keeping the old associated object:
  * The couple (old_key, old_object) is deleted and the new couple
@@ -140,8 +141,8 @@ Task BoxHT_Remove_By_HTItem(BoxHT *ht, BoxHTItem *hi);
  * This function may be used to avoid deleting the data contained
  * in old_object.
  */
-Task BoxHT_Rename(BoxHT *ht, void *key, unsigned int key_size,
-                  void *new_key, unsigned int new_key_size);
+BOXEXPORT BoxTask BoxHT_Rename(BoxHT *ht, void *key, unsigned int key_size,
+                               void *new_key, unsigned int new_key_size);
 
 /** Iterate over one branch of an hashtable 'ht'.
  *
@@ -155,8 +156,10 @@ Task BoxHT_Rename(BoxHT *ht, void *key, unsigned int key_size,
  * RETURN VALUE: this function returns 1 if the item has been succesfully
  *  found ('action' returned with 1), 0 otherwise.
  */
-int BoxHT_Iter(BoxHT *ht, int branch, const void *key, size_t key_size,
-               BoxHTItem **result, BoxHTIterator it, void *pass_data);
+BOXEXPORT int BoxHT_Iter(BoxHT *ht, int branch,
+                         const void *key, size_t key_size,
+                         BoxHTItem **result, BoxHTIterator it,
+                         void *pass_data);
 
 /** Iterate over one or all the branches of an hashtable 'ht':
  * if 'branch < 0' iterate over all the branches, otherwise iterate over
@@ -167,11 +170,12 @@ int BoxHT_Iter(BoxHT *ht, int branch, const void *key, size_t key_size,
  * RETURN VALUE: this function returns 1 if the item has been succesfully
  *  found ('action' returned with 1), 0 otherwise.
  */
-Task BoxHT_Iter2(BoxHT *ht, int branch, BoxHTIterator2 it2, void *pass_data);
+BOXEXPORT BoxTask BoxHT_Iter2(BoxHT *ht, int branch, BoxHTIterator2 it2,
+                              void *pass_data);
 
 /** Prints some statistics about the usage of an hash table.
  */
-void BoxHT_Statistics(BoxHT *ht, FILE *out);
+BOXEXPORT void BoxHT_Statistics(BoxHT *ht, FILE *out);
 
 /** Attributes used with BoxHT_Set_Attr to control the HT behaviour. */
 typedef enum {
@@ -186,7 +190,7 @@ typedef enum {
  * hash table. 'attr_mask' specifies the attribute that should be changed
  * while 'attr_set' specifies how to change them. Here is a list
  */
-void BoxHT_Set_Attr(BoxHT *ht, int attr_mask, int attr_set);
+BOXEXPORT void BoxHT_Set_Attr(BoxHT *ht, int attr_mask, int attr_set);
 
 /** Create an hash table using the default hashing function
  * and the default comparison function
