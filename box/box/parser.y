@@ -95,8 +95,8 @@ static void My_Syntax_Error();
 %type <UnaryOperator> un_op post_op
 %type <BinaryOperator> mul_op add_op shift_op cmp_op eq_op assign_op
 %type <Node> expr_sep sep_expr struc_expr
-%type <Node> string_concat prim_expr postfix_expr unary_expr pow_expr
-%type <Node> mul_expr add_expr
+%type <Node> string_concat prim_expr postfix_expr opt_postfix_expr
+%type <Node> unary_expr pow_expr mul_expr add_expr
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
 %type <Node> land_expr lor_expr assign_expr expr statement statement_list
 %type <Node> type_sep sep_type struc_type species_type func_type
@@ -235,20 +235,19 @@ postfix_expr:
   | postfix_expr
           '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1); SRC($$, @$);}
   | type  '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1); SRC($$, @$);}
-  | postfix_expr
-              '.' TOK_IDENTIFIER {$$ = ASTNodeMemberGet_New($1, $3, 0);
+  | opt_postfix_expr '.' TOK_IDENTIFIER
+                                 {$$ = ASTNodeMemberGet_New($1, $3, 0);
                                   BoxMem_Free($3); SRC($$, @$);}
-  | postfix_expr '.' TOK_TYPE_IDENT '[' statement_list ']'
+  | opt_postfix_expr '.' TOK_TYPE_IDENT '[' statement_list ']'
                                  {$$ = ASTNodeBox_Set_Parent($5,
                                                 ASTNodeSubtype_Build($1, $3));
                                   BoxMem_Free($3); SRC($$, @$);}
-  | '.' TOK_TYPE_IDENT '[' statement_list ']'
-                                 {$$ = ASTNodeBox_Set_Parent($4,
-                                             ASTNodeSubtype_Build(NULL, $2));
-                                  BoxMem_Free($2); SRC($$, @$);}
-  | '.' TOK_IDENTIFIER           {$$ = ASTNodeMemberGet_New(NULL, $2, 0);
-                                  BoxMem_Free($2); SRC($$, @$);}
   | postfix_expr post_op         {$$ = ASTNodeUnOp_New($2, $1); SRC($$, @$);}
+  ;
+
+opt_postfix_expr:
+                                 {$$ = NULL;}
+  | postfix_expr                 {$$ = $1;}
   ;
 
 unary_expr:
