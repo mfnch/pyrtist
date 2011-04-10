@@ -238,9 +238,8 @@ postfix_expr:
   | opt_postfix_expr '.' TOK_IDENTIFIER
                                  {$$ = ASTNodeMemberGet_New($1, $3, 0);
                                   BoxMem_Free($3); SRC($$, @$);}
-  | opt_postfix_expr '.' TOK_TYPE_IDENT '[' statement_list ']'
-                                 {$$ = ASTNodeBox_Set_Parent($5,
-                                                ASTNodeSubtype_Build($1, $3));
+  | opt_postfix_expr '.' TOK_TYPE_IDENT
+                                 {$$ = ASTNodeSubtype_Build($1, $3);
                                   BoxMem_Free($3); SRC($$, @$);}
   | postfix_expr post_op         {$$ = ASTNodeUnOp_New($2, $1); SRC($$, @$);}
   ;
