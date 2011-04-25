@@ -8,6 +8,7 @@ const.degrees = 0.01745329251994329576 // pi/180
 Deg = Real, Real@Deg[$$ = $*0.01745329251994329576]
 Dpi = Real, Real@Dpi[$$ = $/25.4]
 
+include "_area"
 include "_matrix"
 include "_bbox"
 include "_pointlist"

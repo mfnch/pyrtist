@@ -1,19 +1,32 @@
-Rectangle = ++(Point corner1, corner2
-               Int   num_corners)
+#provide "g._rectangle"
 
-(.[)@Rectangle[$$.num_corners = 0]
+Rectangle = ++(Int have_color, have_style, have_gradient, num_corners
+               Color color, Style style, Gradient gradient
+               Point corner1, corner2)
 
-Point@Rectangle[
-  [If[$$.num_corners == 0], $$.corner1 = $]
-  [If[$$.num_corners == 1], $$.corner2 = $]
-  [If[$$.num_corners > 1]
-   Fail["Rectangle got more than two points"]]
-  $$.num_corners += 1
-]
+(.[)@Rectangle[.num_corners = 0, .have_color = 0, .have_style = 0, .have_gradient = 0]
+
+Color@Rectangle[.have_color = 1, .color = $]
+
+Style@Rectangle[.have_style = 1, .style = $]
+
+Gradient@Rectangle[.have_gradient = 1, .gradient = $]
+
+Point@Rectangle[have = $$.num_corners++
+                If[have == 0], $$.corner1 = $
+                Else[], $$.corner2 = $]
 
 Rectangle@Window[
+  \ $$[If[$.have_style], $.style]
+  \ $$[If[$.have_color], $.color]
+  \ $$[If[$.have_gradient], $.gradient]
   If[$.num_corners > 1]
-  c1 = $.corner1, c2 = $.corner2
-  \ $$.Poly[c1, Point[c1, .y=c2.y], c2, Point[c1, .x=c2.x], .Close[]]
+    \ $$.Poly[$.corner1, Point[.x=$.corner1.x, .y=$.corner2.y]
+              $.corner2, Point[.x=$.corner2.x, .y=$.corner1.y]]
 ]
+
+Rectangle@Area[diag = $.corner2 - $.corner1, $$ += Abs[diag.x*diag.y]]
+
+//Rectangle@Length[diag = 2.0*($.corner2 - $.corner1)
+//                 $$ += Abs[diag.x] + Abs[diag.y]]
 

@@ -32,7 +32,8 @@ boxlib_LTLIBRARIES=libg.la
 dist_boxpkg_DATA=g.bxh _color.bxh _style.bxh _gradient.bxh _window.bxh \
                  _line.bxh _circle.bxh _poly.bxh _put.bxh arrows.bxh \
                  caps.bxh _arrows.bxh _pointlist.bxh _text.bxh _matrix.bxh \
-                _bbox.bxh math.bxh tools.bxh _sphere.bxh _rectangle.bxh \
+                 _bbox.bxh math.bxh tools.bxh _sphere.bxh \
+                 _area.bxh _rectangle.bxh \
                  obj.bxh \
                  label.bxh bounce.bxh electric.bxh
 
