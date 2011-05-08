@@ -1,6 +1,6 @@
 %{
 /***************************************************************************
- *   Copyright (C) 2006 by Matteo Franchin                                 *
+ *   Copyright (C) 2006-2010 by Matteo Franchin                            *
  *   fnch@libero.it                                                        *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -19,697 +19,137 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* $Id: parser.y 568 2009-03-19 23:44:29Z fnch $ */
-
-/* parser.c - settembre 2002 */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
 #include "types.h"
 #include "defaults.h"
-#include "ast.h"
-
-#if 0
-#include "types.h"
+#include "mem.h"
 #include "messages.h"
-#include "array.h"
-#include "str.h"
-#include "virtmach.h"
-#include "vmsym.h"
-#include "vmsymstuff.h"
-#include "expr.h"
-#include "compiler.h"
-#include "box.h"
 #include "tokenizer.h"
-#include "builtins.h"
-
-#define YYDEBUG 0
-
-ParserAttr parser_attr;
-
-/* Funzioni definite in questo file */
-void yyerror(char* s);
-
-static Task Proc_Def_Open(Expr *child_type, Int kind, Expr *parent_type);
-static Task Proc_Def_Close(void);
-static Task Declare_Proc(Expr *child_type, Int kind, Expr *parent_type,
-                         Name *name);
-
-/* Numero della linea che e' in fase di lettura dal tokenizer */
-extern UInt tok_linenum;
-
-
-
-/****************************************************************************
- * Here we define static function which implements the actions of some      *
- * rules. Actions are included directly into the grammar when possible,     *
- * but sometimes - to keep acceptable readability we confine the code       *
- * in these static functions that are collected here.                       *
- ****************************************************************************/
-
-static void Sep_Newline(void) {
-  Cmp_Assemble(ASM_LINE_Iimm, CAT_IMM, ++tok_linenum);
-  Msg_Line_Set(tok_linenum);
-}
-
-static void Sep_Pause(void) {
-  (void) Box_Procedure_Quick_Call_Void(TYPE_PAUSE, BOX_DEPTH_UPPER,
-                                       BOX_MSG_SILENT);
-}
-
-static Task Type_Struc_Begin(StrucMember *sm, Expr *type, char *m) {
-  TASK( Expr_Must_Have_Type(type) );
-  sm->type = type->type;
-  sm->name = m;
-  return Success;
-}
-
-/* Construct the core of a structure type: takes two members and construct
- * a two membered structure Sm1, Sm2 --> (Sm1, Sm2).
- * The type of the new structure of types is stored inside *st.
- */
-static void Type_Struc_All_1(Struc *s, StrucMember *sm1, StrucMember *sm2) {
-  Type st;
-  TS_Structure_Begin(cmp->ts, & st);
-  assert(sm1->type != TYPE_NONE);
-  TS_Structure_Add(cmp->ts, st, sm1->type, sm1->name);
-  free(sm1->name);
-  sm1->name = (char *) NULL;
-  if (sm2->type == TYPE_NONE) sm2->type = sm1->type;
-  TS_Structure_Add(cmp->ts, st, sm2->type, sm2->name);
-  free(sm2->name);
-  sm2->name = (char *) NULL;
-  s->type = st;
-  s->previous = sm2->type;
-}
-
-/* Add a new member to an existing structure type.
- * After the structure type se1 has been changed, it is copied into *se.
- */
-static void Type_Struc_All_2(Struc *s, Struc *s1, StrucMember *sm2) {
-  if (sm2->type == TYPE_NONE) sm2->type = s1->previous;
-  TS_Structure_Add(cmp->ts, s1->type, sm2->type, sm2->name);
-  free(sm2->name);
-  sm2->name = (char *) NULL;
-  s->type = s1->type;
-  s->previous = sm2->type;
-}
-
-/* Construct a single-member structure type.
- */
-static void Type_Struc_1(Expr *se, StrucMember *sm) {
-  Type st;
-  TS_Structure_Begin(cmp->ts, & st);
-  TS_Structure_Add(cmp->ts, st, sm->type, sm->name);
-  free(sm->name);
-  sm->name = (char *) NULL;
-  Expr_New_Type(se, st);
-}
-
-/* Just convert the final structure type into an Expr */
-static Task Type_Struc_2(Expr *se, Struc *s) {
-  Expr_New_Type(se, s->type);
-  return Success;
-}
-
-static Task Reg_Subtype(Expr *result, Name *parent, Name *child) {
-  Expr parent_expr;
-  Type subtype;
-  TASK( Prs_Name_To_Expr(parent, & parent_expr, 0) );
-  if (!parent_expr.is.typed) {
-    MSG_ERROR("Cannot refer to the subtype '%N' of the undefined type '%N'",
-              child, parent);
-    return Failed;
-  }
-
-  TS_Subtype_Find(cmp->ts, & subtype, parent_expr.type, child);
-  if (subtype == TS_TYPE_NONE) {
-    MSG_ERROR("The type '%N' has not a subtype with name '%N'", parent, child);
-    return Failed;
-  }
-
-  Expr_New_Type(result, subtype);
-  return Success;
-}
-
-static Task Reg_SubSubtype(Expr *result, Expr *reg_parent, Name *child) {
-  Type subtype_type;
-  if (!reg_parent->is.typed) {
-    MSG_ERROR("Cannot refer to the subtype '%N' of the undefined type '%N'",
-              child, reg_parent->value.nm);
-    return Failed;
-  }
-
-  TS_Subtype_Find(cmp->ts, & subtype_type, reg_parent->type, child);
-  if (subtype_type == TS_TYPE_NONE) {
-    MSG_ERROR("The type '%~s' has not a subtype with name '%N'",
-              TS_Name_Get(cmp->ts, reg_parent->type), child);
-    return Failed;
-  }
-
-  Expr_New_Type(result, subtype_type);
-  return Success;
-}
-
-static Task Unreg_Subtype(Expr *result, Name *parent, Name *child) {
-  Expr parent_expr;
-  Type subtype_type;
-  TASK( Prs_Name_To_Expr(parent, & parent_expr, 0) );
-  if (!parent_expr.is.typed) {
-    MSG_ERROR("Cannot refer to the subtype '%N' of the undefined type '%N'",
-              child, parent);
-    return Failed;
-  }
-  TS_Subtype_New(cmp->ts, & subtype_type, parent_expr.type, child);
-  Expr_New_Type(result, subtype_type);
-  return Success;
-}
-
-static Task Unreg_SubSubtype(Expr *result, Expr *reg_parent, Name *child) {
-  Type subtype_type;
-  if (!reg_parent->is.typed) {
-    MSG_ERROR("Cannot refer to the subtype '%N' of the undefined type '%N'",
-              child, reg_parent->value.nm);
-    return Failed;
-  }
-  assert(TS_Is_Subtype(cmp->ts, reg_parent->type));
-  TS_Subtype_New(cmp->ts, & subtype_type, reg_parent->type, child);
-  Expr_New_Type(result, subtype_type);
-  return Success;
-}
-
-static Task Register_Subtype(Expr *result, Expr *unreg_subtype, Expr *type) {
-  *result = *type;
-  if (!unreg_subtype->is.typed) {
-    MSG_ERROR("Register_Subtype: '%N' is not a subtype!",
-              unreg_subtype->value.nm);
-    return Failed;
-  }
-  if (!type->is.typed) {
-    MSG_ERROR("Cannot define the subtype '%s': '%N' is untyped!",
-              Tym_Type_Name(unreg_subtype->type), & type->value.nm);
-    return Failed;
-  }
-  TASK( TS_Subtype_Register(cmp->ts, unreg_subtype->type, type->type) );
-  return Success;
-}
-
-static Task Subtype_Create(Expr *result, Expr *parent, Name *child) {
-  Expr this_parent;
-  if (parent == (Expr *) NULL) {
-    parent = & this_parent;
-    TASK( Box_Parent_Get(parent, 0) );
-  }
-  TASK( Expr_Subtype_Create(result, parent, child) );
-  TASK( Cmp_Expr_Destroy_Tmp(parent) );
-  return Success;
-}
-
-static Task Expr_Statement(Expr *e) {
-  TASK( Expr_Resolve_Subtype(e) );
-  (void) Box_Procedure_Quick_Call(e, BOX_DEPTH_UPPER, BOX_MSG_VERBOSE);
-  (void) Cmp_Expr_Destroy_Tmp(e);
-  return Success;
-}
-
-static void Type_Detached(Expr *dst, Expr *src) {
-  Type dt;
-  if (Expr_Is_Error(src)) {*dst = *src; return;}
-  TS_Detached_New(cmp->ts, & dt, src->type);
-  Expr_New_Type(dst, dt);
-}
-
-/*****************************************************************************/
-
-#define DO(action) \
-  if IS_FAILED( action ) {parser_attr.no_syntax_err = 1; YYERROR;}
-
-#define OPERATORA_EXEC(opr, rs, a, b) \
-  if IS_FAILED( Prs_Operator(opr, & (rs), a, b) ) \
-    {(rs).is.ignore = 1; parser_attr.no_syntax_err = 1; YYERROR;} \
-  (rs).is.ignore = 1;
-
-#define OPERATOR2_EXEC(opr, rs, a, b) \
-  if IS_FAILED( Prs_Operator(opr, & (rs), a, b) ) \
-    {parser_attr.no_syntax_err = 1; YYERROR;}
-
-#define OPERATOR1L_EXEC(opr, rs, a) \
-  Expr *result = Cmp_Operator_Exec(opr, a, NULL); \
-  if ( result == NULL ) {parser_attr.no_syntax_err = 1; YYERROR;} \
-   else rs = *result;
-
-#define OPERATOR1R_EXEC(opr, rs, a) \
-  Expr *result = Cmp_Operator_Exec(opr, NULL, a); \
-  if ( result == NULL ) {parser_attr.no_syntax_err = 1; YYERROR;} \
-   else rs = *result;
-
-#define MY_ERR {parser_attr.no_syntax_err = 1; YYERROR;}
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if 0
-
-/*****************************************************************************
- *       Grammatica relativa ai suffissi del tipo ::: o :tipo1:::tipo2::     *
- *****************************************************************************/
-prim.suffix:
-   ':'                 { $$ = *Name_Empty(); }
- | ':' TOK_UNAME       { $$ = *Name_Dup(& $2); if ($$.text == NULL ) MY_ERR }
- ;
-
-suffix:
-   prim.suffix         { DO( Prs_Suffix(& $$, -1, & $1) ) }
- | suffix prim.suffix  { DO( Prs_Suffix(& $$, $1, & $2) ) }
- ;
-
-suffix.opt:
-                       { $$ = -1; }
- | suffix              { $$ = $1; }
- ;
-
-/*****************************************************************************
- *                                  Types                                    *
- *****************************************************************************/
-
-name.type:
-  TOK_UNAME suffix.opt     { DO( Prs_Name_To_Expr(& $1, & $$, $2) ) }
- ;
-
-prim.type:
-  name.type                 { $$ = $1; }
-| '(' type ')'              { $$ = $2; }
-| type.struc                { $$ = $1; }
-| '(' type.species ')'      { $$ = $2; }
- ;
-
-array.type:
-  prim.type                 { $$ = $1; }
-| '(' expr ')' type         { if ( Prs_Array_Of_X(& $$, & $2, & $4) ) MY_ERR }
-| '(' ')' type              { if ( Prs_Array_Of_X(& $$, NULL, & $3) ) MY_ERR }
- ;
-
-detached.type:
-  array.type                { $$ = $1; }
-| TOK_INC array.type        { Type_Detached(& $$, & $2); }
-;
-
-type:
-  array.type                { $$ = $1; }
-;
-
-asgn.type:
-  detached.type             { $$ = $1; }
-| name.type '=' asgn.type   { if ( Prs_Rule_Typed_Eq_Typed(& $$, & $1, & $3) ) MY_ERR }
-| expr '=' asgn.type        { if (Prs_Rule_Valued_Eq_Typed(& $$, & $1, & $3) ) MY_ERR }
-| unregistered.subtype '=' asgn.type          {DO(Register_Subtype(& $$, & $1, & $3));}
- ;
-
-type.species:
-  type TOK_TO type          { if ( Prs_Species_New(& $$, & $1, & $3) ) MY_ERR }
-| type.species TOK_TO type  { if ( Prs_Species_Add(& $$, & $1, & $3) ) MY_ERR }
- ;
-
-/*****************************************************************************
- *                            Structure types                                *
- *****************************************************************************/
-
-/* Matches the first element of a structure type */
-type.struc1:
-  type                     {DO(Type_Struc_Begin(& $$, & $1, (char *) NULL));}
-| type TOK_LNAME           {DO(Type_Struc_Begin(& $$, & $1, Name_To_Str(& $2)));}
-;
-
-/* Matches the second, third, ... element of a structure type */
-type.struc234:
-  type.struc1              {$$ = $1;}
-| TOK_LNAME                {$$.type = TYPE_NONE; $$.name = Name_To_Str(& $1);}
-;
-
-/* Matches a structure type with at least two elements */
-type.struc1234:
-  type.struc1 void.seps type.struc234    {Type_Struc_All_1(& $$, & $1, & $3);}
-| type.struc1234 void.seps type.struc234 {Type_Struc_All_2(& $$, & $1, & $3);}
-;
-
-/* Matches all sorts of structure types */
-type.struc:
-  '(' type.struc1 void.seps ')'          {Type_Struc_1(& $$, & $2);}
-| '(' type.struc1234 void.seps.opt ')'   {DO(Type_Struc_2(& $$, & $2));}
-;
-
-
-registered.subtype:
-  TOK_UNAME TOK_UMEMBER                  {DO(Reg_Subtype(& $$, & $1, & $2));}
-| registered.subtype TOK_UMEMBER         {DO(Reg_SubSubtype(& $$, & $1, & $2));}
-;
-
-unregistered.subtype:
-  TOK_UNAME TOK_UMEMBER                  {DO(Unreg_Subtype(& $$, & $1, & $2));}
-| registered.subtype TOK_UMEMBER         {DO(Unreg_SubSubtype(& $$, & $1, & $2));}
-;
-
-/*****************************************************************************
- *                           Structure expression                            *
- *****************************************************************************/
-expr.struc.all:
-  expr void.seps expr           { if ( Cmp_Structure_Begin()   ) MY_ERR
-                                  if ( Cmp_Structure_Add(& $1) ) MY_ERR
-                                  if ( Cmp_Structure_Add(& $3) ) MY_ERR }
-| expr.struc.all void.seps expr { if ( Cmp_Structure_Add(& $3) ) MY_ERR }
- ;
-
-expr.struc:
-  '(' expr void.seps ')'               { if ( Cmp_Structure_Begin()   ) MY_ERR
-                                         if ( Cmp_Structure_Add(& $2) ) MY_ERR
-                                         if ( Cmp_Structure_End(& $$) ) MY_ERR }
-| '(' expr.struc.all void.seps.opt ')' { if ( Cmp_Structure_End(& $$) ) MY_ERR }
-;
-
-/*****************************************************************************
- *                                 Strings                                   *
- *****************************************************************************/
-string:
-  TOK_STRING           { $$ = $1; }
-| string TOK_STRING    { if IS_FAILED( Name_Cat_And_Free(& $$, & $1, & $2) ) MY_ERR }
- ;
-
-/*****************************************************************************
- *                           Primary Expressions                             *
- *****************************************************************************/
-simple.expr:
-  TOK_LNAME suffix.opt    { Prs_Name_To_Expr( & $1, & $$, $2); }
-| TOK_EXPR                { $$ = $1; }
-| string                  { if IS_FAILED( Cmp_String_New_And_Free(& $$, & $1) ) MY_ERR }
-| TOK_NPARENT suffix.opt  { DO( Box_NParent_Get(& $$, $1, $2) ); }
- ;
-
-array.expr:
-  simple.expr             { $$ = $1; }
-| array.expr '(' expr ')' { DO(Expr_Array_Member(& $$, & $1, & $3)); }
-;
-
-subtype.expr:
-  prim.expr TOK_UMEMBER {DO(Subtype_Create(& $$, & $1, & $2));}
-| TOK_UMEMBER           {DO(Subtype_Create(& $$, (Expr *) NULL, & $1));}
-;
-
-prim.expr:
-   array.expr           { $$ = $1; }
-
- | '(' expr ')'         { $$ = $2; $$.is.ignore = 0; }
-
- | expr.struc           { $$ = $1; }
-
- | prim.expr
-   '['                  { DO( Box_Instance_Begin(& $1, 2) ); }
-   statement.list
-   ']'                  { DO( Box_Instance_End(& $1) ); }
-
- | name.type
-   '['                  { DO( Box_Instance_Begin(& $1, 1) ); }
-   statement.list
-   ']'                  { DO( Box_Instance_End(& $1) ); }
-
-| subtype.expr
-   '['                  { DO( Box_Instance_Begin(& $1, 1) ); }
-   statement.list
-   ']'                  { DO( Box_Instance_End(& $1)); }
- ;
-
-/* Espressioni secondarie */
-expr:
-   prim.expr           { $$ = $1; }
-
- | TOK_LMEMBER {
-    Expr e_parent;
-    TASK( Box_Parent_Get(& e_parent, 0) );
-    DO(Expr_Struc_Member(& $$, & e_parent, & $1));
-    $$.is.release = 0;
-  }
-
- | expr TOK_LMEMBER {DO(Expr_Struc_Member(& $$, & $1, & $2));}
-
- | expr '=' expr        { if (Prs_Rule_Valued_Eq_Valued(& $$, & $1, & $3) ) MY_ERR}
-
- | expr TOK_APLUS expr  { OPERATORA_EXEC(cmp_opr.aplus, $$, & $1, & $3); }
- | expr TOK_AMINUS expr { OPERATORA_EXEC(cmp_opr.aminus,$$, & $1, & $3); }
- | expr TOK_ATIMES expr { OPERATORA_EXEC(cmp_opr.atimes,$$, & $1, & $3); }
- | expr TOK_ADIV expr   { OPERATORA_EXEC(cmp_opr.adiv,  $$, & $1, & $3); }
- | expr TOK_AREM expr   { OPERATORA_EXEC(cmp_opr.arem,  $$, & $1, & $3); }
- | expr TOK_ABAND expr  { OPERATORA_EXEC(cmp_opr.aband, $$, & $1, & $3); }
- | expr TOK_ABXOR expr  { OPERATORA_EXEC(cmp_opr.abxor, $$, & $1, & $3); }
- | expr TOK_ABOR expr   { OPERATORA_EXEC(cmp_opr.abor,  $$, & $1, & $3); }
- | expr TOK_ASHL expr   { OPERATORA_EXEC(cmp_opr.ashl,  $$, & $1, & $3); }
- | expr TOK_ASHR expr   { OPERATORA_EXEC(cmp_opr.ashr,  $$, & $1, & $3); }
-
- | expr TOK_LOR expr    { OPERATOR2_EXEC(cmp_opr.lor,  $$, & $1, & $3); }
- | expr TOK_LAND expr   { OPERATOR2_EXEC(cmp_opr.land, $$, & $1, & $3); }
-
- | expr '|' expr        { OPERATOR2_EXEC(cmp_opr.bor,  $$, & $1, & $3); }
- | expr '^' expr        { OPERATOR2_EXEC(cmp_opr.bxor, $$, & $1, & $3); }
- | expr '&' expr        { OPERATOR2_EXEC(cmp_opr.band, $$, & $1, & $3); }
-
- | expr TOK_EQ expr     { OPERATOR2_EXEC(cmp_opr.eq, $$, & $1, & $3); }
- | expr TOK_NE expr     { OPERATOR2_EXEC(cmp_opr.ne, $$, & $1, & $3); }
- | expr '<' expr        { OPERATOR2_EXEC(cmp_opr.lt, $$, & $1, & $3); }
- | expr TOK_LE expr     { OPERATOR2_EXEC(cmp_opr.le, $$, & $1, & $3); }
- | expr '>' expr        { OPERATOR2_EXEC(cmp_opr.gt, $$, & $1, & $3); }
- | expr TOK_GE expr     { OPERATOR2_EXEC(cmp_opr.ge, $$, & $1, & $3); }
-
- | expr TOK_SHL expr    { OPERATOR2_EXEC(cmp_opr.shl, $$, & $1, & $3); }
- | expr TOK_SHR expr    { OPERATOR2_EXEC(cmp_opr.shr, $$, & $1, & $3); }
-
- | expr '+' expr        { OPERATOR2_EXEC(cmp_opr.plus, $$, & $1, & $3); }
- | expr '-' expr        { OPERATOR2_EXEC(cmp_opr.minus,$$, & $1, & $3); }
- | expr '*' expr        { OPERATOR2_EXEC(cmp_opr.times,$$, & $1, & $3); }
- | expr '/' expr        { OPERATOR2_EXEC( cmp_opr.div, $$, & $1, & $3); }
- | expr '%' expr        { OPERATOR2_EXEC( cmp_opr.rem, $$, & $1, & $3); }
- | expr TOK_POW expr    { OPERATOR2_EXEC( cmp_opr.pow, $$, & $1, & $3); }
- | '-' expr %prec TOK_NEG { OPERATOR1L_EXEC( cmp_opr.minus, $$, & $2 ); }
- | '+' expr %prec TOK_NEG { OPERATOR1L_EXEC(  cmp_opr.plus, $$, & $2 ); }
-
- | '!' expr             { OPERATOR1L_EXEC( cmp_opr.lnot, $$, & $2 ); }
-
- | '~' expr             { OPERATOR1L_EXEC( cmp_opr.bnot, $$, & $2 ); }
-
- | TOK_INC expr         { OPERATOR1L_EXEC( cmp_opr.inc, $$, & $2 ); }
- | TOK_DEC expr         { OPERATOR1L_EXEC( cmp_opr.dec, $$, & $2 ); }
-
- | expr TOK_INC         { OPERATOR1R_EXEC( cmp_opr.inc, $$, & $1 ); }
- | expr TOK_DEC         { OPERATOR1R_EXEC( cmp_opr.dec, $$, & $1 ); }
-;
-
-/******************************************************************************
- *               DEFINIZIONE DELL'ESPRESSIONE COME ISTRUZIONE                 *
- ******************************************************************************/
-type.statement:
-   asgn.type { }
-;
-
-/******************************************************************************
- *               DEFINIZIONE DELL'ESPRESSIONE COME ISTRUZIONE                 *
- ******************************************************************************/
-expr.statement:
-   expr      { DO(Expr_Statement(& $1)) }
-|  '\\' expr { DO(Expr_Ignore(& $2)) }
-;
-
-/******************************************************************************/
-/*               DEFINIZIONE DELLA SINTASSI DELL'ISTRUZIONE END               */
-/******************************************************************************/
-end.statement:
-  TOK_END { Cmp_Assemble(ASM_RET); }
-;
-
-child:
-   type                 {$$ = $1;}
-|  TOK_PROC             {Expr_New_Type(& $$, $1);}
-;
-
-parent:
-   type                 {$$ = $1;}
- | registered.subtype   {$$ = $1;}
-;
-
-parent.opt:
-                        {}
- | parent               {$$ = $1;}
-;
-
-proc.def:
-   TOK_AT parent
-   '['
-   statement.list
-   ']'                  {}
-
- | child TOK_AT parent.opt
-   '['                  {DO(Proc_Def_Open(& $1, $2, & $3))}
-   statement.list
-   ']'                  {DO(Proc_Def_Close())}
-
- | child TOK_AT parent.opt
-   '?' TOK_STRING       {DO(Declare_Proc(& $1, $2, & $3, & $5))}
-;
-
-%type <Ex> name.type
-%type <Ex> prim.type
-%type <Ex> type
-%type <Ex> asgn.type
-%type <Ex> type.species
-%type <Ex> simple.expr
-%type <Ex> array.expr
-%type <Ex> expr
-%type <Ex> prim.expr
-%type <Ex> child
-%type <Ex> parent
-%type <Ex> parent.opt
-%type <Nm> prim.suffix
-%type <Sf> suffix
-%type <Sf> suffix.opt
-%type <Nm> string
-
-
-%type <Ex> expr.struc
-%type <Ex> expr.struc.all
-
-%type <SM> type.struc1
-%type <SM> type.struc234
-%type <Sc> type.struc1234
-%type <Ex> type.struc
-
-%type <Ex> array.type
-%type <Ex> detached.type
-
-%type <Ex> registered.subtype
-%type <Ex> unregistered.subtype
-%type <Ex> subtype.expr
-#endif
-#if 0
-  Expr          Ex;   /* Espressione generica */
-  Name          Nm;   /* Nome */
-  Int           Sf;   /* Suffisso che specifica lo scoping per le variabili */
-  Type          Ty;   /* Tipo */
-  Struc         Sc;   /* Incomplete structure type */
-  StrucMember   SM;   /* Member of structure type */
-  Int           kind; /* Per TOK_AT */
-  Int           Int;
-  Type          proc; /* Per TOK_PROC */
-void.seps:
-  void.sep
-| void.seps void.sep
-;
-
-void.seps.opt:
-| void.seps
-;
-#endif
+#include "srcpos.h"
+#include "ast.h"
+#include "parserh.h"
+
+static ASTNode *program_node = NULL;
+
+int yyparse(void);
+int yylex(void);
+void yyerror(char *s);
+static void My_Syntax_Error();
+
+#define SRC(ast_node, node_src) \
+  do \
+    if (ast_node != NULL) { \
+      ast_node->src.begin.line = node_src.first_line; \
+      ast_node->src.begin.col = node_src.first_column; \
+      ast_node->src.end.line = node_src.last_line; \
+      ast_node->src.end.col = node_src.last_column; \
+      ast_node->src.begin.file_name = ast_node->src.end.file_name = "unknown"; \
+    } \
+  while (0)
 
 %}
 
 /* Possible types for the nodes of the tree */
 %union {
-  AstNodePtr Node;
-  AstUnOp    UnaryOperator;
-  AstBinOp   BinaryOperator;
+  char *        String;
+  BoxType       TTag;
+  ASTScope      Scope;
+  ASTUnOp       UnaryOperator;
+  ASTBinOp      BinaryOperator;
+  ASTNodePtr    Node;
+  ASTTypeMemb   TypeMemb;
+  ASTSep        Sep;
+  ASTSelfLevel  SelfLevel;
 }
-
-/* Lista dei token senza valore semantico
- */
-%token TOK_END
-
-%token TOK_ERR
 
 %token TOK_NEWLINE
 %token TOK_ERRSEP
 
-%token TOK_TO
+%token TOK_TO TOK_MAPTO
 
-%token <Int> TOK_NPARENT
+%token <SelfLevel> TOK_SELF
 
-/* Lista dei token aventi valore semantico
- */
-%token <Ex> TOK_EXPR
-%token <Nm> TOK_LNAME
-%token <Nm> TOK_UNAME
-%token <Nm> TOK_LMEMBER
-%token <Nm> TOK_UMEMBER
-%token <Nm> TOK_STRING
-%token <kind> TOK_AT
-%token <proc> TOK_PROC
+/* List of tokens that have semantical values */
+%token TOK_AT
+%token <TTag> TOK_TTAG
+
+/* List of simple tokens */
+%token TOK_INC TOK_DEC TOK_SHL TOK_SHR
+%token TOK_EQ TOK_NE TOK_LT TOK_LE TOK_GT TOK_GE
+%token TOK_LOR TOK_LAND
+%token TOK_APLUS TOK_AMINUS TOK_ATIMES TOK_ADIV TOK_AREM TOK_ABAND TOK_ABXOR
+%token TOK_ABOR TOK_ASHL TOK_ASHR
+%token TOK_POW
+%token TOK_ERR
 
 /* List of tokens with semantical value */
-%token <Node> CONSTANT
-%token <UnaryOperator> POST_OP
-%token <BinaryOperator> SHIFT_OP
-%token <BinaryOperator> CMP_OP
+%token <String> TOK_IDENTIFIER TOK_TYPE_IDENT
+%token <Node> TOK_CONSTANT TOK_STRING
 
 /* List of nodes with semantical value */
-%type <UnaryOperator> un_op
-%type <BinaryOperator> mul_op
-%type <BinaryOperator> add_op
-%type <Node> prim_expr
-%type <Node> postfix_expr
-%type <Node> unary_expr
-%type <Node> mul_expr
-%type <Node> add_expr
-%type <Node> shift_expr
-%type <Node> cmp_expr
-%type <Node> expr
+%type <Sep> sep
+%type <Scope> colons opt_scope
+%type <UnaryOperator> un_op post_op
+%type <BinaryOperator> mul_op add_op shift_op cmp_op eq_op assign_op
+%type <Node> expr_sep sep_expr struc_expr
+%type <Node> string_concat prim_expr postfix_expr opt_postfix_expr
+%type <Node> unary_expr pow_expr mul_expr add_expr
+%type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
+%type <Node> land_expr lor_expr assign_expr expr statement statement_list
+%type <Node> type_sep sep_type struc_type species_type func_type
+%type <Node> named_type prim_type array_type type inc_type assign_type
+%type <Node> at_left procedure opt_c_name procedure_decl
+%type <TypeMemb> struc_type_1st struc_type_2nd
 
-/* Lista dei token affetti da regole di precedenza
- */
-%right '=' TOK_APLUS TOK_AMINUS TOK_ATIMES TOK_ADIV TOK_AREM TOK_ABAND TOK_ABXOR TOK_ABOR TOK_ASHL TOK_ASHR
-%left TOK_LOR
-%left TOK_LAND
-%left '|'
-%left '^'
-%left '&'
-%left TOK_EQ TOK_NE
-%left '<' TOK_LE '>' TOK_GE
-%left TOK_SHL TOK_SHR
-%left '+' '-'
-%left '*' '/' '%'
-%left TOK_NEG
-%right TOK_POW
-%left '!' '~' TOK_INC TOK_DEC
-%left TOK_LMEMBER TOK_UMEMBER
-
-
-/* Regola di partenza
- */
+/* Starting rule */
 %start program
 
 %%
 
-void.sep:
-  ','
-| TOK_NEWLINE
-;
+/******************************** SEPARATORS *******************************/
+void_sep:
+    ','
+  | TOK_NEWLINE
+  ;
+
+void_seps:
+    void_sep
+  | void_seps void_sep
+  ;
 
 sep:
-  void.sep
-| ';'
-;
+    void_sep                  {$$ = ASTSEP_VOID;}
+  | ';'                       {$$ = ASTSEP_PAUSE;}
+  ;
+
+/******************************* SCOPE SPECS *******************************/
+
+colons:
+   ':'                        {$$ = 1;}
+ | colons ':'                 {$$ = $1 + 1;}
+ ;
+
+opt_scope:
+                              {$$ = 0;}
+ | colons                     {$$ = $1;}
+ ;
 
 /******************************** OPERATORS ********************************/
 un_op:
     '+'                       {$$ = ASTUNOP_PLUS;}
   | '-'                       {$$ = ASTUNOP_NEG;}
+  | '!'                       {$$ = ASTUNOP_NOT;}
+  | TOK_INC                   {$$ = ASTUNOP_LINC;}
+  | TOK_DEC                   {$$ = ASTUNOP_LDEC;}
+  | '~'                       {$$ = ASTUNOP_BNOT;}
+  ;
+
+post_op:
+    TOK_INC                   {$$ = ASTUNOP_RINC;}
+  | TOK_DEC                   {$$ = ASTUNOP_RDEC;}
   ;
 
 add_op:
@@ -723,106 +163,316 @@ mul_op:
   | '%'                       {$$ = ASTBINOP_REM;}
   ;
 
+shift_op:
+    TOK_SHL                   {$$ = ASTBINOP_SHL;}
+  | TOK_SHR                   {$$ = ASTBINOP_SHR;}
+  ;
+
+eq_op:
+    TOK_EQ                    {$$ = ASTBINOP_EQ;}
+  | TOK_NE                    {$$ = ASTBINOP_NE;}
+  ;
+
+cmp_op:
+    '<'                       {$$ = ASTBINOP_LT;}
+  | TOK_LE                    {$$ = ASTBINOP_LE;}
+  | '>'                       {$$ = ASTBINOP_GT;}
+  | TOK_GE                    {$$ = ASTBINOP_GE;}
+  ;
+
+assign_op:
+    '='                       {$$ = ASTBINOP_ASSIGN;}
+  | TOK_APLUS                 {$$ = ASTBINOP_APLUS;}
+  | TOK_AMINUS                {$$ = ASTBINOP_AMINUS;}
+  | TOK_ATIMES                {$$ = ASTBINOP_ATIMES;}
+  | TOK_AREM                  {$$ = ASTBINOP_AREM;}
+  | TOK_ADIV                  {$$ = ASTBINOP_ADIV;}
+  | TOK_ASHL                  {$$ = ASTBINOP_ASHL;}
+  | TOK_ASHR                  {$$ = ASTBINOP_ASHR;}
+  | TOK_ABAND                 {$$ = ASTBINOP_ABAND;}
+  | TOK_ABXOR                 {$$ = ASTBINOP_ABXOR;}
+  | TOK_ABOR                  {$$ = ASTBINOP_ABOR;}
+  ;
+
+/******************************* STRUCTURES ********************************/
+expr_sep:
+    expr void_seps            {$$ = ASTNodeStruc_New(NULL, $1); SRC($$, @$);}
+  | sep_expr void_seps        {$$ = $1;}
+  ;
+
+sep_expr:
+    void_seps expr            {$$ = ASTNodeStruc_New(NULL, $2); SRC($$, @$);}
+  | expr_sep expr             {$$ = ASTNodeStruc_Add_Member($1, NULL, $2);
+                               SRC($$, @$);}
+  ;
+
+struc_expr:
+    expr_sep                  {$$ = $1;}
+  | sep_expr                  {$$ = $1;}
+  ;
+
 /******************************* ARITHMETICS *******************************/
+string_concat:
+    TOK_STRING                   {$$ = $1;}
+  | string_concat TOK_STRING     {$$ = ASTNodeString_Concat($1, $2);
+                                  SRC($$, @$);}
+  ;
+
 prim_expr:
-    CONSTANT                     {$$ = $1;}
-  | '(' expr ')'                 {$$ = $2;}
+    TOK_CONSTANT                 {$$ = $1;}
+  | string_concat                {$$ = $1;}
+  | TOK_IDENTIFIER opt_scope     {$$ = ASTNodeVar_New($1, 0);
+                                  BoxMem_Free($1); SRC($$, @$);}
+  | TOK_TYPE_IDENT opt_scope     {$$ = NULL;}
+  | TOK_SELF                     {$$ = ASTNodeSelfGet_New($1); SRC($$, @$);}
+  | '(' expr ')'                 {$$ = ASTNodeIgnore_New($2, 0); SRC($$, @$);}
+  | '(' struc_expr ')'           {$$ = $2;}
   ;
 
 postfix_expr:
     prim_expr                    {$$ = $1;}
-  | postfix_expr POST_OP         {$$ = AstNodeUnOp_New($2, $1);}
+  | postfix_expr '(' expr ')'    {$$ = ASTNodeArrayGet_New($1, $3); SRC($$, @$);}
+  | procedure_decl               {$$ = $1;}
+  | postfix_expr
+          '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1); SRC($$, @$);}
+  | opt_postfix_expr '.' TOK_IDENTIFIER
+                                 {$$ = ASTNodeMemberGet_New($1, $3, 0);
+                                  BoxMem_Free($3); SRC($$, @$);}
+  | opt_postfix_expr '.' TOK_TYPE_IDENT
+                                 {$$ = ASTNodeSubtype_Build($1, $3);
+                                  BoxMem_Free($3); SRC($$, @$);}
+  | postfix_expr post_op         {$$ = ASTNodeUnOp_New($2, $1); SRC($$, @$);}
+  ;
+
+opt_postfix_expr:
+                                 {$$ = NULL;}
+  | postfix_expr                 {$$ = $1;}
   ;
 
 unary_expr:
     postfix_expr                 {$$ = $1;}
-  | un_op unary_expr             {$$ = AstNodeUnOp_New($1, $2);}
+  | un_op unary_expr             {$$ = ASTNodeUnOp_New($1, $2); SRC($$, @$);}
   ;
 
+pow_expr:
+    unary_expr                   {$$ = $1;}
+  | pow_expr TOK_POW unary_expr  {$$ = ASTNodeBinOp_New(ASTBINOP_POW, $1, $3);
+                                  SRC($$, @$);}
+  ;
 
 mul_expr:
-    unary_expr                   {$$ = $1;}
-  | mul_expr mul_op unary_expr   {$$ = AstNodeBinOp_New($2, $1, $3);}
+    pow_expr                     {$$ = $1;}
+  | mul_expr mul_op pow_expr     {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
   ;
 
 add_expr:
     mul_expr                     {$$ = $1;}
-  | add_expr add_op mul_expr     {$$ = AstNodeBinOp_New($2, $1, $3);}
+  | add_expr add_op mul_expr     {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
   ;
-
 
 shift_expr:
     add_expr                     {$$ = $1;}
-  | shift_expr SHIFT_OP add_expr {$$ = AstNodeBinOp_New($2, $1, $3);}
+  | shift_expr shift_op add_expr {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
   ;
 
 cmp_expr:
     shift_expr                   {$$ = $1;}
-  | cmp_expr CMP_OP shift_expr   {$$ = AstNodeBinOp_New($2, $1, $3);}
+  | cmp_expr cmp_op shift_expr   {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
+  ;
+
+eq_expr:
+    cmp_expr                     {$$ = $1;}
+  | eq_expr eq_op cmp_expr       {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
+  ;
+
+band_expr:
+    eq_expr                      {$$ = $1;}
+  | band_expr '&' eq_expr        {$$ = ASTNodeBinOp_New(ASTBINOP_BAND, $1, $3); SRC($$, @$);}
+  ;
+
+bxor_expr:
+    band_expr                    {$$ = $1;}
+  | bxor_expr '^' band_expr      {$$ = ASTNodeBinOp_New(ASTBINOP_BXOR, $1, $3); SRC($$, @$);}
+  ;
+
+bor_expr:
+    bxor_expr                    {$$ = $1;}
+  | bor_expr '|' bxor_expr       {$$ = ASTNodeBinOp_New(ASTBINOP_BOR, $1, $3); SRC($$, @$);}
+  ;
+
+land_expr:
+    bor_expr                     {$$ = $1;}
+  | land_expr TOK_LAND bor_expr  {$$ = ASTNodeBinOp_New(ASTBINOP_LAND, $1, $3); SRC($$, @$);}
+  ;
+
+lor_expr:
+    land_expr                    {$$ = $1;}
+  | lor_expr TOK_LOR land_expr   {$$ = ASTNodeBinOp_New(ASTBINOP_LOR, $1, $3); SRC($$, @$);}
+  ;
+
+assign_expr:
+    lor_expr                     {$$ = $1;}
+  | lor_expr assign_op
+                     assign_expr {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
   ;
 
 expr:
-    cmp_expr                     {$$ = $1;}
+    assign_expr                  {$$ = $1;}
   ;
 
+/***************************** TYPE ARITHMETICS ****************************/
 
+/* STRUCTURE TYPES */
+struc_type_1st:
+    type                         {$$.type = $1; $$.name = NULL;}
+  | type TOK_IDENTIFIER          {$$.type = $1; $$.name = $2;}
+  ;
 
+struc_type_2nd:
+    type                         {$$.type = $1; $$.name = NULL;}
+  | TOK_IDENTIFIER               {$$.type = NULL; $$.name = $1;}
+  | type TOK_IDENTIFIER          {$$.type = $1; $$.name = $2;}
+  ;
 
+type_sep:
+    struc_type_1st void_seps     {$$ = ASTNodeStrucType_New(& $1);
+                                  BoxMem_Free($1.name); SRC($$, @$);}
+  | sep_type void_seps           {$$ = $1;}
+  ;
 
+sep_type:
+    void_seps struc_type_1st     {$$ = ASTNodeStrucType_New(& $2);
+                                  BoxMem_Free($2.name); SRC($$, @$);}
+  | type_sep struc_type_2nd      {$$ = ASTNodeStrucType_Add_Member($1, & $2);
+                                  BoxMem_Free($2.name); SRC($$, @$);}
+  ;
 
+struc_type:
+    type_sep                     {$$ = $1;}
+  | sep_type                     {$$ = $1;}
+  ;
 
+/* SPECIES TYPES */
+species_type:
+    type TOK_TO type             {$$ = ASTNodeSpecType_New($1, $3); SRC($$, @$);}
+  | species_type TOK_TO type     {$$ = ASTNodeSpecType_Add_Member($1, $3); SRC($$, @$);}
+  ;
 
+/* PRIMARY TYPES */
 
+named_type:
+    TOK_TYPE_IDENT opt_scope     {$$ = ASTNodeTypeName_New($1, 0);
+                                  BoxMem_Free($1); SRC($$, @$);}
+  | named_type '.' TOK_TYPE_IDENT
+                                 {$$ = ASTNodeSubtype_New($1, $3);
+                                  BoxMem_Free($3); SRC($$, @$);}
+  ;
 
+prim_type:
+    TOK_TYPE_IDENT opt_scope     {$$ = ASTNodeTypeName_New($1, 0);
+                                  BoxMem_Free($1); SRC($$, @$);}
+  | '(' type ')'                 {$$ = $2;}
+  | '(' struc_type ')'           {$$ = $2;}
+  | '(' species_type ')'         {$$ = $2;}
+  ;
 
+array_type:
+    prim_type                    {$$ = $1;}
+  | array_type '(' expr ')'      {}
+  ;
 
+func_type:
+    array_type                   {$$ = $1;}
+  | array_type TOK_MAPTO func_type
+                                 {}
+  ;
 
+type:
+    func_type                    {$$ = $1;}
+  ;
 
+inc_type:
+    type                         {$$ = $1;}
+  | TOK_INC type                 {$$ = ASTNodeIncType_New($2); SRC($$, @$);}
+  ;
 
- /*************DEFINIZIONE DELLA STRUTTURA GENERICA DEI PROGRAMMI**************/
- /* Cio' che resta descrive la sintassi delle righe e del corpo del programma */
+assign_type:
+    named_type '=' inc_type      {$$ = ASTNodeTypeDef_New($1, $3); SRC($$, @$);}
+  | named_type '=' assign_type   {$$ = ASTNodeTypeDef_New($1, $3); SRC($$, @$);}
+  ;
+
+/****************** PROCEDURE DECLARATION AND DEFINITION *******************/
+/* Definition and declaration of procedures */
+
+ /* left side of @ */
+at_left:
+    type                         {$$ = $1;}
+  | TOK_TTAG                     {$$ = ASTNodeTypeTag_New($1); SRC($$, @$);}
+  ;
+
+procedure:
+    at_left TOK_AT named_type    {$$ = ASTNodeProcDef_New($1, $3); SRC($$, @$);}
+  ;
+
+opt_c_name:
+                                 {$$ = NULL;}
+  | string_concat                {$$ = $1;}
+  ;
+
+procedure_decl:
+    procedure opt_c_name '?'     {$$ = ASTNodeProcDef_Set($1, $2, NULL); SRC($$, @$);}
+  | procedure opt_c_name
+          '[' statement_list ']' {$$ = ASTNodeProcDef_Set($1, $2, $4); SRC($$, @$);}
+  ;
+
+/************************ STATEMENT LISTS AND BOXES ************************/
+/* Syntax for the body of the program */
 statement:
- | expr {printf("matching expr\n"); AstNode_Print(stdout, $1);}
- | error {
-   printf("matching error\n");
-#if 0
-  if (! parser_attr.no_syntax_err ) {
-    MSG_ERROR("Syntax error.");
-  }
-  parser_attr.no_syntax_err = 0;
-    Tok_Unput(',');
-    /*yyclearin;*/
-    /*YYBACKUP(',', yylval);*/
-  yyerrok;
-  }
- | error ']' {
-  if (! parser_attr.no_syntax_err ) {
-    MSG_ERROR("Syntax error.");
-  }
-  parser_attr.no_syntax_err = 0;
-  yyerrok;
-#endif
-  }
-;
+                                 {$$ = NULL;}
+  | assign_type                  {$$ = ASTNodeStatement_New($1); SRC($$, @$);}
+  | expr                         {$$ = ASTNodeStatement_New($1); SRC($$, @$);}
+  | '\\' expr                    {$$ = ASTNodeStatement_New(
+                                         ASTNodeIgnore_New($2, 1)); SRC($$, @$);}
+  | '[' statement_list ']'       {$$ = ASTNodeStatement_New($2); SRC($$, @$);}
+  | error sep                    {$$ = ASTNodeStatement_New(ASTNodeError_New());
+                                  SRC($$, @$);
+                                  My_Syntax_Error(& @$, NULL);
+                                  assert(yychar == YYEMPTY); yychar = (int) ',';
+                                  yyerrok;}
+  ;
 
 statement_list:
-   statement
- | statement_list sep statement
- ;
+    statement                    {$$ = ASTNodeBox_New(NULL, $1); SRC($$, @$);}
+  | statement_list sep statement {$$ = ASTNodeBox_Add_Sep($1, $2);
+                                  $$ = ASTNodeBox_Add_Statement($1, $3); SRC($$, @3);}
+  ;
 
 program:
-    statement_list
+    statement_list               {program_node = $1;}
   ;
 
 %%
 
 /* error function */
-void yyerror(char* s)
-{
- /* MSG_ERROR(s);*/
-  return;
+void yyerror(char* s) {
+  /* Do nothing, as - at the moment - we report error in error action */
 }
 
+static void My_Syntax_Error(YYLTYPE *src, char *s) {
+  BoxSrc my_src, *prev_src_of_err;
+  my_src.begin.line = src->first_line;
+  my_src.begin.col = src->first_column;
+  my_src.end.line = src->last_line;
+  my_src.end.col = src->last_column;
+  prev_src_of_err = Msg_Set_Src(& my_src);
+  if (s == NULL)
+    MSG_ERROR("Syntax error.");
+  else
+    MSG_ERROR("%s", s);
+  (void) Msg_Set_Src(prev_src_of_err);
+}
+
+#if 0
 /* Inizializza il parser. Se f != NULL il compilatore partira'
  * come se la prima istruzione del programma fosse una "include nomefile"
  * dove nomefile e' la stringa a cui punta f.
@@ -835,7 +485,7 @@ Task Parser_Init(const char *f) {
   yyrestart(stdin);
 
   /* Inizializzo il tokenizer */
-  TASK( Tok_Init(TOK_MAX_INCLUDE, f) );
+  TASK( Tok_Init(NULL, f) );
 
   //parser_attr.no_syntax_err = 0;
 
@@ -852,141 +502,58 @@ Task Parser_Finish(void) {
   Tok_Finish();
   return Success;
 }
+#endif
 
+ASTNode *Parser_Parse(FILE *in, const char *in_name,
+                      const char *auto_include) {
+  ASTNode *program;
+  int parse_status;
+  BoxSrcName *file_names = NULL;
 
-#if 0
-static Task Declare_Proc(Expr *child_type, Int kind, Expr *parent_type,
-                         Name *name) {
-  BoxVMSymID sym_num;
-  Int proc;
-  sym_num = VM_Sym_New_Call(cmp_vm);
-  TASK( BoxVMSym_Name_Set(cmp_vm, sym_num, name) );
-  proc = TS_Procedure_Def(child_type->type, kind, parent_type->type, sym_num);
-  return (proc == TYPE_NONE) ? Failed : Success;
-}
+  assert(program_node == NULL);
 
-static Task Proc_Def_Open(Expr *child_type, Int kind, Expr *parent_type) {
-  return Box_Def_Begin(parent_type->type, child_type->type, kind);
-}
+  if (Tok_Init(in, in_name, auto_include) != BOXTASK_OK)
+    return NULL;
 
-static Task Proc_Def_Close(void) {
-  return Box_Def_End();
-}
+  parse_status = yyparse();
+  file_names = Tok_Finish();
 
-#if 0
-enum {EXPR_TYPE, EXPR_VALUE};
-
-Task Prs_Want(Expr *e, UInt want) {
-  switch(want) {
-  case EXPR_TYPE:
-    break;
-  case EXPR_VALUE:
-    break;
+  if (parse_status) {
+    MSG_ERROR("Parse error at end of input.");
+    ASTNode_Destroy(program_node);
+    BoxSrcName_Destroy(file_names);
+    program_node = NULL;
+    return NULL;
   }
+
+  program = program_node;
+  program_node = NULL;
+
+  assert(program->type == ASTNODETYPE_BOX);
+  program->attr.box.file_names = file_names;
+  return program;
+}
+
+
+
+#if 0
+Task Parse() {
+  struct yy_buffer_state *bufState = NULL;
+  yyin = stream_in;
+  bufState = yy_create_buffer( /* FILE *fh */ NULL, YY_BUF_SIZE );
+  if (! bufState) goto error;
+  yy_switch_to_buffer( bufState );
+
+  /* Parse, building the AST */
+  if (yyparse() != 0)
+      goto error;
+  yy_delete_buffer( bufState );
+      PRIVATE(yyin) = NULL;
 }
 #endif
 
-/* This function assigns the expression *e, to the untyped
- * expression *new_e: if *e is a target, *new_e will be a copy of *e,
- * otherwise *e will be simply copied into *new_e.
- */
-Task Prs_Def_Operator(Operator *opr,
-                      Expr *rs, Expr *new_e, Expr *e) {
-  Symbol *s;
-  Expr *result, *target;
-  Container *container;
 
-  if ( ! e->is.typed ) {
-    MSG_ERROR("The expression on the right of '%s' must have a type!",
-              opr->name);
-    return Failed;
-  }
-
-  assert( (!new_e->is.typed) && (opr->can_define) && (e->is.value) );
-
-  {
-    Task t = Sym_Explicit_New(& s, & new_e->value.nm, new_e->addr);
-    Cmp_Expr_Destroy_Tmp(new_e);
-    TASK( t );
-  }
-
-  container = (Box_Def_Num() == 0) ?
-              CONTAINER_GVAR_AUTO : CONTAINER_LVAR_AUTO;
-  target = & (s->value);
-  if ( e->is.target ) {
-    Expr_Container_New(target, e->type, container);
-    Expr_Alloc(target);
-    result = Cmp_Operator_Exec(opr, target, e);
-    if ( result == NULL ) return Failed;
-    *rs = *result;
-    return Success;
-
-  } else {
-    Expr_Container_New(target, e->type, container);
-    TASK( Cmp_Expr_To_X(e, target->categ, target->value.i, 0) );
-    target->is.allocd = e->is.allocd;
-    e->is.allocd = 0;
-    TASK( Cmp_Expr_Destroy_Tmp(e) );
-    *rs = *target;
-    return Success;
-  }
-}
-
-/* DESCRIPTION: This function compiles the binary operation opr.
- *  a and b are the two arguments, rs is the result.
- */
-Task Prs_Operator(Operator *opr, Expr *rs, Expr *a, Expr *b) {
-  if ( a->is.typed && b->is.typed ) {
-    Expr *result = Cmp_Operator_Exec(opr, a, b);
-    if ( result == NULL ) return Failed;
-    *rs = *result;
-    return Success;
-
-  } else {
-    if ( opr->can_define ) {
-      return Prs_Def_Operator(opr, rs, a, b);
-    } else {
-      MSG_ERROR("The expression should have type!");
-      return Failed;
-    }
-  }
-}
-
-/* If name:suffix is the name of an already defined symbol
- * this function puts the corresponding expression into *e, otherwise
- * it transforms the name *nm into an untyped expression *e.
- */
-Task Prs_Name_To_Expr(Name *nm, Expr *e, Int suffix) {
-  Symbol *s;
-
-  if ( suffix < 0 ) {
-    /* Non e' stata specificata la profondita' di scatola! */
-    s = Sym_Explicit_Find(nm, 0, NO_EXACT_DEPTH);
-    suffix = 0;
-  } else {
-    /* E' stata specificata la profondita' di scatola! */
-    s = Sym_Explicit_Find(nm, suffix, EXACT_DEPTH);
-  }
-
-  if ( s == NULL ) {
-    /* Il nome non corrisponde ad un simbolo gia' definito:
-     * restituisco una espressione (untyped) corrispondente.
-     */
-    e->is.typed = 0;
-    e->is.ignore = 0;
-    e->addr = suffix;
-    e->value.nm = *Name_Dup(nm);
-    if ( e->value.nm.text == NULL ) return Failed;
-    return Success;
-
-  } else {
-   /* Il nome corrisponde ad un simbolo gia' definito:
-    * restituisco l'espressione (typed) corrispondente!
-    */
-    *e = s->value;
-    return Success;
-  }
-}
+#if 0
 
 /* Every explicit symbol can be followed by a suffix,
  * which specifies which opened box contains the symbol.
@@ -1083,174 +650,4 @@ Task Prs_Array_Of_X(Expr *array, Expr *num, Expr *x) {
   return Failed;
 }
 
-/* DESCRIPTION: This function build an alias of the type *x.
- * NOTE: The new type will be put into *alias.
- */
-Task Prs_Alias_Of_X(Expr *alias, Expr *x) {
-  Symbol *s;
-  Expr *target;
-  register Int t;
-
-  assert( !alias->is.typed );
-
-  if ( ! x->is.typed ) {
-    MSG_ERROR("L'espressione alla destra di '=' deve avere tipo!");
-    return Failed;
-  }
-
-  TASK( Sym_Explicit_New(& s, & alias->value.nm, alias->addr) );
-
-  target = & (s->value);
-  target->is.typed = 1;
-  target->is.value = 0;
-  target->is.imm = target->is.target = 0;
-  target->type = t = Tym_Def_Alias_Of(& alias->value.nm, x->type);
-  TASK( Cmp_Expr_Destroy_Tmp(alias) );
-  *alias = *target;
-  if ( t != TYPE_NONE ) return Success;
-  return Failed;
-}
-
-#define CHECK_TYPE(t)                   \
-  if ( ! t->is.typed ) {                \
-     MSG_ERROR("'%s' <-- Unknown type", \
-      Name_To_Str(& t->value.nm));      \
-     return Failed;                     \
-  }                                     \
-  assert(! t->is.value)
-
-/* This function creates the new specie of types (first < second).
- */
-Task Prs_Species_New(Expr *species, Expr *first, Expr *second) {
-  Int new_species;
-
-  CHECK_TYPE(first); CHECK_TYPE(second);
-
-  new_species = TYPE_NONE;
-  TASK( Tym_Def_Specie( & new_species,  first->type) );
-  TASK( Tym_Def_Specie( & new_species, second->type) );
-
-  species->is.typed = 1;
-  species->is.value = 0;
-  species->type = new_species;
-  return Success;
-}
-
-/* This function adds a new type to an already existing species.
- */
-Task Prs_Species_Add(Expr *species, Expr *old, Expr *type) {
-  Int old_species;
-
-  CHECK_TYPE(old); CHECK_TYPE(type);
-
-  old_species = old->type;
-  assert( old_species != TYPE_NONE );
-  TASK( Tym_Def_Specie( & old_species, type->type) );
-  *species = *old;
-  return Success;
-}
-
-/* This function handles the rule: Type = Type
- */
-Task Prs_Rule_Typed_Eq_Typed(Expr *rs, Expr *typed1, Expr *typed2) {
-
-  if ( typed1->is.typed ) {
-    /* Assertion: 'typed2' must be equal to 'typed1'. */
-    *rs = *typed2;
-    if ( ! typed2->is.typed ) {
-      MSG_ERROR("The type on the right hand side of '=' "
-                "has not been defined yet!");
-      return Failed;
-    }
-    if ( Tym_Compare_Types(typed1->type, typed2->type, NULL) == 1 )
-      return Success;
-    MSG_ERROR("Type mismatch!");
-    return Failed;
-
-  } else {
-    /* Definition: Creation (into 'typed1') of an alias of 'typed2'. */
-    TASK( Prs_Alias_Of_X(typed1, typed2) );
-    *rs = *typed1;
-    return Success;
-  }
-}
-
-/* This function handles the rule: value = Type
- */
-Task Prs_Rule_Valued_Eq_Typed(Expr *rs, Expr *valued, Expr *typed) {
-  Container *container;
-  *rs = *typed;
-  rs->is.ignore = 1;
-  if ( ! typed->is.typed ) {
-    MSG_ERROR("Undefined type on the right of '='.");
-    (void) Cmp_Expr_Destroy_Tmp(valued);
-    return Failed;
-  }
-
-  if ( valued->is.typed ) {
-    /* Assertion: the type of 'valued' should be 'typed'. */
-    Int t = valued->type;
-    TASK( Cmp_Expr_Destroy_Tmp(valued) );
-
-    if ( Tym_Compare_Types(t, typed->type, NULL) == 1 ) return Success;
-    MSG_ERROR("Type mismatch!");
-    return Failed;
-
-  } else {
-    /* Definition: creating (into 'valued') a new object of type 'typed'. */
-    Symbol *s;
-    Expr *target;
-
-    {
-      Task t = Sym_Explicit_New(& s, & valued->value.nm, valued->addr);
-      TASK( Cmp_Expr_Destroy_Tmp(valued) );
-      TASK( t );
-    }
-
-    target = & (s->value);
-    container = (Box_Def_Num() == 0) ?
-                CONTAINER_GVAR_AUTO : CONTAINER_LVAR_AUTO;
-    Expr_Container_New(target, typed->type, container);
-    Expr_Alloc(target);
-    return Success;
-  }
-}
-
-/* This function handles the rule: Type = value
- */
-Task prs_rule_typed_eq_valued(Expr *typed, Expr *valued) {
-  return Success;
-}
-
-/* This function handles the rule: value = value
- */
-Task Prs_Rule_Valued_Eq_Valued(Expr *rs,
-                               Expr *valued1, Expr *valued2) {
-
-  *rs = *valued2;
-  rs->is.ignore = 1;
-  if ( ! valued2->is.typed ) {
-    MSG_ERROR("The expression on the right of '=' "
-              "has not a well defined type!");
-    (void) Cmp_Expr_Destroy_Tmp(valued1);
-    return Failed;
-  }
-
-  if ( valued1->is.typed ) {
-    /* Assignment: assigns 'valued2' to 'valued1'. */
-    Expr *result = Cmp_Operator_Exec(cmp_opr.assign, valued1, valued2);
-    if ( result == NULL ) return Failed;
-    *rs = *result;
-    rs->is.ignore = 1;
-    return Success;
-
-  } else {
-    /* Definition & assignment: define 'valued1' as an object with the same
-     *  type of 'valued2', and assigns 'valued2' to 'valued1'.
-     */
-    TASK( Prs_Def_Operator(cmp_opr.assign, rs, valued1, valued2) );
-    rs->is.ignore = 1;
-    return Success;
-  }
-}
 #endif

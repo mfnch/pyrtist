@@ -514,10 +514,12 @@ ASTNode *Parser_Parse(FILE *in, const char *in_name,
 
   if (Tok_Init(in, in_name, auto_include) != BOXTASK_OK)
     return NULL;
+
   parse_status = yyparse();
   file_names = Tok_Finish();
 
   if (parse_status) {
+    MSG_ERROR("Parse error at end of input.");
     ASTNode_Destroy(program_node);
     BoxSrcName_Destroy(file_names);
     program_node = NULL;

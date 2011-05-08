@@ -524,15 +524,21 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
                            BoxType t_child, BoxType t_parent) {
   TS *ts = & c->ts;
   ASTNode *s;
-  Value *parent = NULL;
+  Value *parent = NULL, *removeme = NULL;
   int parent_is_err = 0;
   BoxVMSymID jump_label_begin, jump_label_end, jump_label_next;
 
   assert(box->type == ASTNODETYPE_BOX);
 
   if (box->attr.box.parent == NULL) {
-    parent = My_Get_Void_Value(c);
-    BoxCmp_Push_Value(c, parent);
+    Value *v_void = My_Get_Void_Value(c);
+    BoxCmp_Push_Value(c, v_void);
+
+    parent = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "#");
+    if (parent == NULL)
+      parent = v_void;
+    else
+      removeme = parent;
 
   } else {
     Value *parent_type;
@@ -678,6 +684,9 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
   }
 
   Namespace_Floor_Down(& c->ns); /* close the scope unit */
+
+  if (removeme != NULL)
+    Value_Unlink(removeme);
 }
 
 static void My_Compile_String(BoxCmp *c, ASTNode *node) {

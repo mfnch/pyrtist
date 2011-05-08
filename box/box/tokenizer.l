@@ -131,10 +131,7 @@ include BEGIN(include);
 "_"{SPACES}"\n"       {My_Scan_Tok();}
 "_"{SPACES}"//"[^\n]*"\n"  {My_Scan_Tok();}
 
- /* Scarta i commenti (i commenti iniziano col carattere '
-  * e terminano alla fine della riga; per commenti su piu' righe
-  * bisogna mettere un ' all'inizio di ogni riga di commento)
-  */
+ /* Discard comments. Comments start either with // or with #! */
 "//"[^\n]*  {}
 "#!"[^\n]*  {}
 

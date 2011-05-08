@@ -444,8 +444,6 @@ static BoxTask My_Obj_Copy(BoxVM *vm, BoxVMObjDesc *desc,
 
 BoxTask BoxVM_Obj_Copy(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
                        BoxVMAllocID id) {
-//   printf("BoxVM_Obj_Copy: copying id=%d!\n", (int) id);
-
   BoxVMObjDesc *desc = BoxVMObjDesc_From_Alloc_ID(vm, id);
   if (desc != NULL) {
     /* Copy the raw data */
