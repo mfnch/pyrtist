@@ -16,6 +16,8 @@ Point@Rectangle[have = $$.num_corners++
                 If[have == 0], $$.corner1 = $
                 Else[], $$.corner2 = $]
 
+Rectangle@Rectangle[$$ = $]
+
 Rectangle@Window[
   \ $$[If[$.have_style], $.style]
   \ $$[If[$.have_color], $.color]
