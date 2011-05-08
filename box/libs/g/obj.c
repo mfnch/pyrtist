@@ -30,14 +30,15 @@
 #include "obj.h"
 
 size_t BoxGObjKind_Size(BoxGObjKind kind) {
-  switch(kind) {
+  switch (kind) {
   case BOXGOBJKIND_EMPTY: return 0;
   case BOXGOBJKIND_VOID: return 0;
   case BOXGOBJKIND_CHAR: return sizeof(BoxChar);
   case BOXGOBJKIND_INT: return sizeof(BoxInt);
   case BOXGOBJKIND_REAL: return sizeof(BoxReal);
   case BOXGOBJKIND_POINT: return sizeof(BoxPoint);
-  case BOXGOBJKIND_ARRAY: return sizeof(BoxArr);
+  case BOXGOBJKIND_STR: return sizeof(BoxStr);
+  case BOXGOBJKIND_COMPOSITE: return sizeof(BoxArr);
   default:
     assert(0);
     return 0;
@@ -45,14 +46,15 @@ size_t BoxGObjKind_Size(BoxGObjKind kind) {
 }
 
 const char *BoxGObjKind_Name(BoxGObjKind kind) {
-  switch(kind) {
+  switch (kind) {
   case BOXGOBJKIND_EMPTY: return "Empty";
   case BOXGOBJKIND_VOID: return "Void";
   case BOXGOBJKIND_CHAR: return "Char";
   case BOXGOBJKIND_INT: return "Int";
   case BOXGOBJKIND_REAL: return "Real";
   case BOXGOBJKIND_POINT: return "Point";
-  case BOXGOBJKIND_ARRAY: return "Obj";
+  case BOXGOBJKIND_STR: return "Str";
+  case BOXGOBJKIND_COMPOSITE: return "Obj";
   default:
     assert(0);
     return "Unknown";
@@ -64,8 +66,12 @@ void BoxGObj_Init(BoxGObj *gobj) {
 }
 
 void BoxGObj_Finish(BoxGObj *gobj) {
-  switch(gobj->kind) {
-  case BOXGOBJKIND_ARRAY:
+  switch (gobj->kind) {
+  case BOXGOBJKIND_STR:
+    BoxStr_Finish(& gobj->value.v_str);
+    return;
+
+  case BOXGOBJKIND_COMPOSITE:
     BoxArr_Finish(& gobj->value.v_array);
     return;
 
@@ -89,81 +95,84 @@ static void My_GObj_Array_Finalizer(void *item) {
   BoxGObj_Finish((BoxGObj *) item);
 }
 
-void BoxGObj_Transform_To_Array(BoxGObj *gobj) {
-  BoxGObj original_gobj = *gobj;
-  BoxArr *a = & gobj->value.v_array;
-  gobj->kind = BOXGOBJKIND_ARRAY;
-  BoxArr_Init(a, sizeof(BoxGObj), 2);
-  BoxArr_Set_Finalizer(a, My_GObj_Array_Finalizer);
-  (void) BoxArr_Push(a, & original_gobj);
+void BoxGObj_Transform_To_Composite(BoxGObj *gobj) {
+  if (gobj->kind != BOXGOBJKIND_COMPOSITE) {
+    BoxGObj original_gobj = *gobj;
+    BoxArr *a = & gobj->value.v_array;
+    gobj->kind = BOXGOBJKIND_COMPOSITE;
+    BoxArr_Init(a, sizeof(BoxGObj), 2);
+    BoxArr_Set_Finalizer(a, My_GObj_Array_Finalizer);
+    if (original_gobj.kind != BOXGOBJKIND_EMPTY)
+      (void) BoxArr_Push(a, & original_gobj);
+  }
 }
 
 /** Expanding the given BoxGObj adding another element to the list.
  * Return the pointer to the new (uninitalized) member of the Obj.
  */
-static BoxGObj *BoxGObj_Expand(BoxGObj *gobj) {
+static BoxGObj *BoxGObj_Expand(BoxGObj *gobj, int merge) {
+  BoxGObj *new_memb;
+
   if (gobj->kind == BOXGOBJKIND_EMPTY) {
-    return gobj;
-
-  } else {
-    if (gobj->kind != BOXGOBJKIND_ARRAY)
-      BoxGObj_Transform_To_Array(gobj);
-
-    assert(gobj->kind == BOXGOBJKIND_ARRAY);
-    return (BoxGObj *) BoxArr_Push((BoxArr *) & gobj->value, NULL);
+    if (merge)
+      return gobj;
   }
+
+  if (gobj->kind != BOXGOBJKIND_COMPOSITE)
+    BoxGObj_Transform_To_Composite(gobj);
+
+  assert(gobj->kind == BOXGOBJKIND_COMPOSITE);
+  new_memb = (BoxGObj *) BoxArr_Push(& gobj->value.v_array, NULL);
+  BoxGObj_Init(new_memb);
+  return new_memb;
 }
 
-static void BoxGObj_Add_X(BoxGObj *gobj, BoxGObjKind kind, void *content) {
-  BoxGObj *gobj_dest = BoxGObj_Expand(gobj);
-  BoxGObj_Init(gobj_dest);
-
-  if (kind == BOXGOBJKIND_ARRAY) {
+static void BoxGObj_Add_Or_Merge_X(BoxGObj *gobj, BoxGObjKind kind,
+                                   void *content, int merge) {
+  if (kind == BOXGOBJKIND_COMPOSITE) {
     BoxArr *a = (BoxArr *) content;
     size_t num_items = BoxArr_Num_Items(a), i;
+    BoxGObj *gobj_dest;
+
+    gobj_dest = BoxGObj_Expand(gobj, merge);
 
     for(i = 1; i <= num_items; i++) {
       BoxGObj *gobj_src = (BoxGObj *) BoxArr_Item_Ptr(a, i);
-      BoxGObj_Add_X(gobj_dest, gobj_src->kind, & gobj_src->value);
+      BoxGObj_Add_Or_Merge_X(gobj_dest, gobj_src->kind, & gobj_src->value, 0);
     }
 
   } else {
     size_t sz = BoxGObjKind_Size(kind);
+    BoxGObj *gobj_dest = BoxGObj_Expand(gobj, merge);
 
     gobj_dest->kind = kind;
-    if (content != NULL && sz > 0)
-      (void) memcpy(& gobj_dest->value, content, sz);
-    return;
+    if (content != NULL && sz > 0) {
+      switch (kind) {
+        case BOXGOBJKIND_STR:
+          assert(0);
+        default:
+          (void) memcpy(& gobj_dest->value, content, sz);
+          break;
+      }
+    }
   }
 }
 
-void BoxGObj_Add_Void(BoxGObj *gobj) {
-  BoxGObj_Add_X(gobj, BOXGOBJKIND_VOID, NULL);
+static void BoxGObj_Add_X(BoxGObj *gobj, BoxGObjKind kind, void *content) {
+  BoxGObj_Add_Or_Merge_X(gobj, kind, content, 0);
 }
 
-void BoxGObj_Add_Char(BoxGObj *gobj, BoxChar v) {
-  BoxGObj_Add_X(gobj, BOXGOBJKIND_CHAR, & v);
+static void BoxGObj_Merge_X(BoxGObj *gobj, BoxGObjKind kind, void *content) {
+  BoxGObj_Add_Or_Merge_X(gobj, kind, content, 1);
 }
 
-void BoxGObj_Add_Int(BoxGObj *gobj, BoxInt v) {
-  BoxGObj_Add_X(gobj, BOXGOBJKIND_INT, & v);
-}
+void BoxGObj_Add_Str(BoxGObj *gobj, const BoxStr *s) {
 
-void BoxGObj_Add_Real(BoxGObj *gobj, BoxReal v) {
-  BoxGObj_Add_X(gobj, BOXGOBJKIND_REAL, & v);
-}
-
-void BoxGObj_Add_Point(BoxGObj *gobj, BoxPoint v) {
-  BoxGObj_Add_X(gobj, BOXGOBJKIND_POINT, & v);
-}
-
-void BoxGObj_Add_Obj(BoxGObj *gobj, BoxGObj *new_child) {
-  BoxGObj_Add_X(gobj, new_child->kind, & new_child->value);
 }
 
 BoxGObj *BoxGObj_Get(BoxGObj *gobj, BoxInt idx) {
-  if (gobj->kind == BOXGOBJKIND_ARRAY) {
-    BoxArr *a = (BoxArr *) & gobj->value;
+  if (gobj->kind == BOXGOBJKIND_COMPOSITE) {
+    BoxArr *a = & gobj->value.v_array;
     return (idx >= 0 && idx < BoxArr_Num_Items(a)) ?
            BoxArr_Item_Ptr(a, idx + 1) : (BoxGObj *) NULL;
 
@@ -178,15 +187,15 @@ size_t BoxGObj_Get_Length(BoxGObj *gobj) {
   switch (gobj->kind) {
   case BOXGOBJKIND_EMPTY:
     return 0;
-  case BOXGOBJKIND_ARRAY:
-    return BoxArr_Num_Items((BoxArr *) & gobj->value);
+  case BOXGOBJKIND_COMPOSITE:
+    return BoxArr_Num_Items(& gobj->value.v_array);
   default:
     return 1;
   }
 }
 
 BoxInt BoxGObj_Get_Type(BoxGObj *gobj, BoxInt idx) {
-  if (gobj->kind == BOXGOBJKIND_ARRAY) {
+  if (gobj->kind == BOXGOBJKIND_COMPOSITE) {
     BoxArr *a = (BoxArr *) & gobj->value;
     return (idx >= 0 && idx < BoxArr_Num_Items(a)) ?
            ((BoxGObj *) BoxArr_Item_Ptr(a, idx + 1))->kind : -1;
@@ -214,7 +223,7 @@ BoxTask GLib_Finish_At_Obj(BoxVM *vm) {
 
 BoxTask GLib_X_At_Obj(BoxVM *vm, BoxGObjKind kind) {
   BoxGObjPtr gobj = BOX_VM_THIS(vm, BoxGObjPtr);
-  BoxGObj_Add_X(gobj, kind, BOX_VM_ARG_PTR(vm, void));
+  BoxGObj_Merge_X(gobj, kind, BOX_VM_ARG_PTR(vm, void));
   return BOXTASK_OK;
 }
 
@@ -234,8 +243,14 @@ BoxTask GLib_Point_At_Obj(BoxVM *vm) {
   return GLib_X_At_Obj(vm, BOXGOBJKIND_POINT);
 }
 
+BoxTask GLib_Str_At_Obj(BoxVM *vm) {
+  BoxGObj_Add_Str(BOX_VM_THIS(vm, BoxGObjPtr), BOX_VM_ARG_PTR(vm, BoxStr));
+  return BOXTASK_OK;
+}
+
 BoxTask GLib_Obj_At_Obj(BoxVM *vm) {
-  BoxGObj_Add_Obj(BOX_VM_THIS(vm, BoxGObjPtr), BOX_VM_ARG(vm, BoxGObjPtr));
+  BoxGObj *arg = BOX_VM_ARG(vm, BoxGObjPtr);
+  BoxGObj_Add_X(BOX_VM_THIS(vm, BoxGObjPtr), arg->kind, & arg->value);
   return BOXTASK_OK;
 }
 
@@ -272,6 +287,10 @@ BoxTask GLib_Obj_At_Point(BoxVM *vm) {
   return GLib_Obj_At_X(vm, BOXGOBJKIND_POINT);
 }
 
+BoxTask GLib_Obj_At_Str(BoxVM *vm) {
+  return GLib_Obj_At_X(vm, BOXGOBJKIND_STR);
+}
+
 BoxTask GLib_Int_At_Obj_Get(BoxVM *vm) {
   BoxSubtype *obj_get = BOX_VM_THIS_PTR(vm, BoxSubtype);
   BoxGObjPtr gobj_parent = *BOXSUBTYPE_PARENT_PTR(obj_get, BoxGObjPtr);
@@ -279,7 +298,7 @@ BoxTask GLib_Int_At_Obj_Get(BoxVM *vm) {
   BoxInt idx = BOX_VM_ARG(vm, BoxInt);
   BoxGObj *gobj_indexed = BoxGObj_Get(gobj_parent, idx);
   if (gobj_indexed != NULL) {
-    BoxGObj_Add_Obj(gobj_child, gobj_indexed);
+    BoxGObj_Merge_X(gobj_child, gobj_indexed->kind, & gobj_indexed->value);
     return BOXTASK_OK;
 
   } else {
@@ -304,7 +323,7 @@ BoxTask GLib_Int_At_Obj_GetType(BoxVM *vm) {
   BoxInt *gobj_type = BOXSUBTYPE_CHILD_PTR(obj_get, BoxInt);
   BoxInt idx = BOX_VM_ARG(vm, BoxInt);
   BoxInt t = BoxGObj_Get_Type(gobj_parent, idx);
-  if (t > 0) {
+  if (t >= 0) {
     *gobj_type = t;
     return BOXTASK_OK;
 

@@ -4,8 +4,8 @@ Obj = ++CPtr
 
 ObjType = Int
 
-objtype = (ObjType empty, void, char, int, real, point, obj)[]
-objtype = (0, 1, 2, 3, 4, 5, 8)
+objtype = (ObjType empty, void, char, int, real, point, str, obj, type)[]
+objtype = (0, 1, 2, 3, 4, 5, 8, 9, 10)
 
 (.[)@Obj "GLib_Init_At_Obj" ?
 (].)@Obj "GLib_Finish_At_Obj" ?
@@ -14,11 +14,13 @@ INT@Obj "GLib_Int_At_Obj" ?
 REAL@Obj "GLib_Real_At_Obj" ?
 Point@Obj "GLib_Point_At_Obj" ?
 Obj@Obj "GLib_Obj_At_Obj" ?
+Str@Obj "GLib_Str_At_Obj" ?
 
 Obj@Char "GLib_Obj_At_Char" ?
 Obj@Int "GLib_Obj_At_Int" ?
 Obj@Real "GLib_Obj_At_Real" ?
 Obj@Point "GLib_Obj_At_Point" ?
+Obj@Str "GLib_Obj_At_Str" ?
 
 Obj.Get = Obj
 Int@Obj.Get "GLib_Int_At_Obj_Get" ?
@@ -29,17 +31,29 @@ Int@Obj.GetType "GLib_Int_At_Obj_GetType" ?
 Obj@Length "GLib_Obj_At_Length" ?
 
 Obj@Str[
-  l = Length[$]
-  [If[l == 0], \ $$["Obj[]"]]
-  [If[l == 1]
-     \ $$[If[$.GetType[0] == objtype.char], Char[$]]
-     \ $$[If[$.GetType[0] == objtype.int], Int[$]]
-     \ $$[If[$.GetType[0] == objtype.real], Real[$]]
-     \ $$[If[$.GetType[0] == objtype.point], Point[$]]]
-  [If[l > 1]
-     \ $$["Obj["]
-     i = 0, sep = "", \ $$[sep, $.Get[i], sep = ", ", For[++i < l]]
-     \ $$["]"]]
+  "Obj["
+
+  [l = Length[$]
+  If[l > 0]
+    i = 0, sep = ""
+    [
+      sep, sep = ", "
+
+      [t = $.GetType[i], o = $.Get[i]
+       If[t == objtype.empty], "Obj[]"
+       Else[], If[t == objtype.char], Char[o]
+       Else[], If[t == objtype.int], Int[o]
+       Else[], If[t == objtype.real], Real[o]
+       Else[], If[t == objtype.point], Point[o]
+       Else[], If[t == objtype.str], Str[o]
+       Else[], If[t == objtype.obj], o]
+
+      For[++i < l]
+    ]
+  ]
+
+  "]"
 ]
 
 Obj@Print[Str[$]]
+

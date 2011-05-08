@@ -22,6 +22,7 @@
 
 #  include <box/types.h>
 #  include <box/array.h>
+#  include <box/str.h>
 
 typedef enum {
   BOXGOBJKIND_EMPTY,
@@ -30,9 +31,10 @@ typedef enum {
   BOXGOBJKIND_INT,
   BOXGOBJKIND_REAL,
   BOXGOBJKIND_POINT,
-  BOXGOBJKIND_STR,
   BOXGOBJKIND_OBJECT,
-  BOXGOBJKIND_ARRAY
+  BOXGOBJKIND_STR,
+  BOXGOBJKIND_COMPOSITE,
+  BOXGOBJKIND_TYPE
 } BoxGObjKind;
 
 typedef union {
@@ -41,7 +43,7 @@ typedef union {
   BoxReal     v_real;
   BoxPoint    v_point;
   BoxArr      v_array;
-  /*BoxStr      v_str;*/
+  BoxStr      v_str;
 } BoxGObjValue;
 
 typedef struct {
