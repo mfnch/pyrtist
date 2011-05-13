@@ -1,0 +1,35 @@
+include "obj"
+
+Compare = Int
+(Str, Str)@Compare "GLib_StrStr_Compare" ?
+
+Tests = ++(Int nr_test, success)
+(.[)@Tests[.nr_test=0, .success=1]
+
+Testreport = ++(Str msg, Int success)
+(.[)@Testreport[.success = 1]
+Str@Testreport[.msg = $, .success = 0]
+Testreport@Tests[
+  state = Str[If[$.success], "pass", Else[], "fail"]
+  Print["Test n. ", $$.nr_test++, ": ", state, "."; $.msg]
+  .success &= $.success
+]
+
+(Str left, right)@Tests[
+  Testreport[If[Compare[($.left, $.right)] != 0]
+             Str["wanted: ", $.left; "   had: ", $.right;]]
+]
+
+t = Tests[]
+
+\ t[("Obj[]", Str[Obj[]])
+    ("Obj[123]", Str[Obj[123]])
+    ("Obj[1.234]", Str[Obj[1.234]])
+    ("Obj[\"Hello world!!\"]", Str[Obj["Hello world!!"]])
+    ("Obj[Obj[]]", Str[Obj[Obj[]]])
+    ("Obj[Obj[1]]", Str[Obj[Obj[1]]])
+    ("Obj[Obj[Obj[Obj[5, 1], 1], 1], 1]", Str[Obj[Obj[Obj[Obj[5, 1], 1], 1], 1]])
+    ("Obj[Obj[Obj[Obj[5], 1], 1], 1]", Str[Obj[Obj[Obj[Obj[5], 1], 1], 1]])]
+
+Exit[!t.success]
+

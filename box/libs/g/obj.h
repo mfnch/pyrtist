@@ -53,5 +53,29 @@ typedef struct {
 
 typedef BoxGObj *BoxGObjPtr;
 
+/** Initialisation routine for BoxGObj objects. */
+void BoxGObj_Init(BoxGObj *gobj);
+
+/** Finalisation routine for BoxGObj objects. */
+void BoxGObj_Finish(BoxGObj *gobj);
+
+BoxGObj *BoxGObj_New(void);
+
+void BoxGObj_Destroy(BoxGObj *gobj);
+
+/** Create a copy of gobj_src in gobj_dest. gobj_dest should not contain
+ * a proper BoxGObj object. In other words it should be either uninitalized
+ * or be a BOXGOBJKIND_EMPTY object (just BoxGObj_Init has been called on it).
+ */
+void BoxGObj_Init_From(BoxGObj *gobj_dest, BoxGObj *gobj_src);
+
+/** Retrieve a subobject of the given BoxGObj object.
+ * Return NULL if the index it out of bounds.
+ */
+BoxGObj *BoxGObj_Get(BoxGObj *gobj, BoxInt idx);
+
+/** Get the number of subobject contained in gobj. */
+size_t BoxGObj_Get_Length(BoxGObj *gobj);
+
 #endif
 

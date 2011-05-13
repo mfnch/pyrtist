@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2010 by Matteo Franchin                                    *
+ * Copyright (C) 2010, 2011 by Matteo Franchin                              *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -58,6 +58,21 @@ const char *BoxGObjKind_Name(BoxGObjKind kind) {
   default:
     assert(0);
     return "Unknown";
+  }
+}
+
+static BoxTask My_Copy(void *dest, const void *src,
+                       BoxGObjKind kind, int init) {
+  switch (kind) {
+  case BOXGOBJKIND_STR:
+    if (init)
+      return BoxStr_Init_From((BoxStr *) dest, (BoxStr *) src);
+    else
+      return BoxStr_Concat((BoxStr *) dest, (BoxStr *) src);
+
+  default:
+    (void) memcpy(dest, src, BoxGObjKind_Size(kind));
+    return BOXTASK_OK;
   }
 }
 
@@ -127,47 +142,60 @@ static BoxGObj *BoxGObj_Expand(BoxGObj *gobj, int merge) {
   return new_memb;
 }
 
-static void BoxGObj_Add_Or_Merge_X(BoxGObj *gobj, BoxGObjKind kind,
-                                   void *content, int merge) {
+static void BoxGObj_Merge_X(BoxGObj *gobj, BoxGObjKind kind, void *content) {
+  size_t sz = BoxGObjKind_Size(kind);
+  BoxGObj *gobj_dest = BoxGObj_Expand(gobj, 1);
+
+  assert(kind != BOXGOBJKIND_COMPOSITE);
+
+  gobj_dest->kind = kind;
+  if (content != NULL && sz > 0)
+    My_Copy(& gobj_dest->value, content, kind, /*init*/1);
+}
+
+static void BoxGObj_Init_From_Ptr(BoxGObj *gobj_dest,
+                                  BoxGObjKind kind, void *data) {
+  gobj_dest->kind = kind;
   if (kind == BOXGOBJKIND_COMPOSITE) {
-    BoxArr *a = (BoxArr *) content;
-    size_t num_items = BoxArr_Num_Items(a), i;
-    BoxGObj *gobj_dest;
+    BoxArr *a_src = (BoxArr *) data,
+           *a_dest = & gobj_dest->value.v_array;
+    size_t num_items = BoxArr_Num_Items(a_src), i;
 
-    gobj_dest = BoxGObj_Expand(gobj, merge);
+    BoxArr_Init(a_dest, sizeof(BoxGObj), num_items);
+    (void) BoxArr_MPush(a_dest, NULL, num_items);
+    for (i = 1; i <= num_items; i++)
+      BoxGObj_Init_From((BoxGObj *) BoxArr_Item_Ptr(a_dest, i),
+                        (BoxGObj *) BoxArr_Item_Ptr(a_src, i));
+    BoxArr_Set_Finalizer(a_dest, My_GObj_Array_Finalizer);
 
-    for(i = 1; i <= num_items; i++) {
-      BoxGObj *gobj_src = (BoxGObj *) BoxArr_Item_Ptr(a, i);
-      BoxGObj_Add_Or_Merge_X(gobj_dest, gobj_src->kind, & gobj_src->value, 0);
-    }
-
-  } else {
-    size_t sz = BoxGObjKind_Size(kind);
-    BoxGObj *gobj_dest = BoxGObj_Expand(gobj, merge);
-
-    gobj_dest->kind = kind;
-    if (content != NULL && sz > 0) {
-      switch (kind) {
-        case BOXGOBJKIND_STR:
-          assert(0);
-        default:
-          (void) memcpy(& gobj_dest->value, content, sz);
-          break;
-      }
-    }
+  } else if (kind != BOXGOBJKIND_EMPTY) {
+    if (BoxGObjKind_Size(kind) > 0)
+      My_Copy(& gobj_dest->value, data, kind, /*init*/1);
   }
 }
 
-static void BoxGObj_Add_X(BoxGObj *gobj, BoxGObjKind kind, void *content) {
-  BoxGObj_Add_Or_Merge_X(gobj, kind, content, 0);
+/** Create a copy of gobj_src in gobj_dest. gobj_dest should not contain
+ * a proper BoxGObj object. In other words it should be either uninitalized
+ * or be a BOXGOBJKIND_EMPTY object (just BoxGObj_Init has been called on it).
+ */
+void BoxGObj_Init_From(BoxGObj *gobj_dest, BoxGObj *gobj_src) {
+  return BoxGObj_Init_From_Ptr(gobj_dest, gobj_src->kind, & gobj_src->value);
 }
 
-static void BoxGObj_Merge_X(BoxGObj *gobj, BoxGObjKind kind, void *content) {
-  BoxGObj_Add_Or_Merge_X(gobj, kind, content, 1);
+/** Add an object gobj_src to another object gobj_dest.
+ * This function is equivalent to the Box source gobj_dest[gobj_src],
+ * when both gobj_src and gobj_dest are Obj objects.
+ */
+static void BoxGObj_Add(BoxGObj *gobj_dest, BoxGObj *gobj_src) {
+  BoxGObj *gobj_dest_item = BoxGObj_Expand(gobj_dest, 0);
+  BoxGObjKind kind = gobj_src->kind;
+  if (kind != BOXGOBJKIND_EMPTY && kind != BOXGOBJKIND_COMPOSITE)
+    gobj_dest_item = BoxGObj_Expand(gobj_dest_item, 0);
+  BoxGObj_Init_From(gobj_dest_item, gobj_src);
 }
 
 void BoxGObj_Add_Str(BoxGObj *gobj, const BoxStr *s) {
-
+  BoxGObj_Merge_X(gobj, BOXGOBJKIND_STR, (void *) s);
 }
 
 BoxGObj *BoxGObj_Get(BoxGObj *gobj, BoxInt idx) {
@@ -249,8 +277,9 @@ BoxTask GLib_Str_At_Obj(BoxVM *vm) {
 }
 
 BoxTask GLib_Obj_At_Obj(BoxVM *vm) {
-  BoxGObj *arg = BOX_VM_ARG(vm, BoxGObjPtr);
-  BoxGObj_Add_X(BOX_VM_THIS(vm, BoxGObjPtr), arg->kind, & arg->value);
+  BoxGObj *gobj_src = BOX_VM_ARG(vm, BoxGObjPtr),
+          *gobj_dest = BOX_VM_THIS(vm, BoxGObjPtr);
+  BoxGObj_Add(gobj_dest, gobj_src);
   return BOXTASK_OK;
 }
 
@@ -258,7 +287,7 @@ static BoxTask GLib_Obj_At_X(BoxVM *vm, BoxGObjKind kind) {
   void *obj_data = BOX_VM_THIS_PTR(vm, void);
   BoxGObjPtr gobj = BOX_VM_ARG(vm, BoxGObjPtr);
   if (gobj->kind == kind) {
-    (void) memcpy(obj_data, & gobj->value, BoxGObjKind_Size(kind));
+    My_Copy(obj_data, & gobj->value, kind, /*init*/0);
     return BOXTASK_OK;
 
   } else {
@@ -298,7 +327,7 @@ BoxTask GLib_Int_At_Obj_Get(BoxVM *vm) {
   BoxInt idx = BOX_VM_ARG(vm, BoxInt);
   BoxGObj *gobj_indexed = BoxGObj_Get(gobj_parent, idx);
   if (gobj_indexed != NULL) {
-    BoxGObj_Merge_X(gobj_child, gobj_indexed->kind, & gobj_indexed->value);
+    BoxGObj_Init_From(gobj_child, gobj_indexed);
     return BOXTASK_OK;
 
   } else {
@@ -331,4 +360,11 @@ BoxTask GLib_Int_At_Obj_GetType(BoxVM *vm) {
     BoxVM_Set_Fail_Msg(vm, "Cannot get item type. Index out of bounds.");
     return BOXTASK_FAILURE;
   }
+}
+
+BoxTask GLib_StrStr_Compare(BoxVM *vm) {
+  BoxInt *result = BOX_VM_THIS_PTR(vm, BoxInt);
+  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
+  *result = strcmp(s[0].ptr, s[1].ptr);
+  return BOXTASK_OK;
 }

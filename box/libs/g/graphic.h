@@ -27,6 +27,7 @@
 
 #  include "types.h"
 #  include "gpath.h"
+#  include "obj.h"
 
 /****** DEFINIZIONE DELLE STRUTTURE NECESSARIE PER LA GRAFICA ******/
 
@@ -162,7 +163,9 @@ typedef struct {
 } ColorGrad;
 
 /** Descriptor of a graphic Window */
-typedef struct _grp_window {
+typedef struct _grp_window GrpWindow;
+
+struct _grp_window {
   /** String which identifies the type of the window */
   char *win_type_str;
 
@@ -183,6 +186,9 @@ typedef struct _grp_window {
   void (*fake_point)(Point *p);
   /** Used to save the window to a file */
   int (*save)(const char *file_name);
+
+  int (*interpret)(BoxGObj *commands); /**< Interpret the commands stored
+                                            inside the given BoxGObj. */
 
   /** If set to 1, inhibits error messages */
   int quiet;
@@ -218,7 +224,7 @@ typedef struct _grp_window {
   long bytesperline;   /* Byte occupati da una linea */
   long dim;            /* Dimensione totale in byte della finestra */
   void *wrdep;         /* Puntatore alla struttura dei dati dipendenti dalla scrittura */
-} GrpWindow;
+};
 
 /* Just for compatibility with past conventions */
 #define grp_window GrpWindow

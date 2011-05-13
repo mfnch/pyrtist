@@ -487,6 +487,7 @@ GrpWindow grp_dummy_win = {
   dummy_font,
   dummy_fake_point,
   dummy_save,
+  0, /* interpret */
   0, /* quiet */
   dummy_close_win,
   dummy_set_col,

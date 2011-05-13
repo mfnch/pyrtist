@@ -45,7 +45,12 @@ BOXEXPORT void BoxStr_Finish(BoxStr *s);
 
 BOXEXPORT BoxTask BoxStr_Large_Enough(BoxStr *s, BoxInt length);
 
-BOXEXPORT BoxTask BoxStr_Concat(BoxStr *s, const char *ca);
+BOXEXPORT BoxTask BoxStr_Concat(BoxStr *dest, const BoxStr *src);
+
+BOXEXPORT BoxTask BoxStr_Concat_C_String(BoxStr *s, const char *ca);
+
+/** Initialise a string 'new_str' from another existing string 'src'. */
+BOXEXPORT BoxTask BoxStr_Init_From(BoxStr *new_str, const BoxStr *src);
 
 /** Create a new C string from a BoxStr object. The string is freshly
  * allocated with BoxMem_Safe_Alloc.

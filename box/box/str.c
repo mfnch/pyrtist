@@ -40,7 +40,7 @@ void BoxStr_Finish(BoxStr *s) {
   }
 }
 
-Task BoxStr_Large_Enough(BoxStr *s, Int length) {
+BoxTask BoxStr_Large_Enough(BoxStr *s, Int length) {
   size_t len;
   assert(s->length >= 0 && length >= 0);
 
@@ -49,18 +49,29 @@ Task BoxStr_Large_Enough(BoxStr *s, Int length) {
   assert(len > length);
   s->ptr = (char *) BoxMem_Realloc(s->ptr, len);
   s->buffer_size = len;
-  return Success;
+  return BOXTASK_OK;
 }
 
-Task BoxStr_Concat(BoxStr *s, const char *ca) {
+BoxTask BoxStr_Concat_C_String(BoxStr *s, const char *ca) {
   Int len = strlen(ca);
-  if (len < 1) return Success;
+  if (len < 1) return BOXTASK_OK;
   if (s->buffer_size - s->length - 1 < len)
     BoxStr_Large_Enough(s, len);
   assert(s->buffer_size - s->length - 1 >= len);
   (void) strcpy(s->ptr + s->length, ca);
   s->length += len;
-  return Success;
+  return BOXTASK_OK;
+}
+
+BoxTask BoxStr_Concat(BoxStr *dest, const BoxStr *src) {
+  if (src->length > 0)
+    return BoxStr_Concat_C_String(dest, src->ptr);
+  return BOXTASK_OK;
+}
+
+BoxTask BoxStr_Init_From(BoxStr *new_str, const BoxStr *src) {
+  BoxStr_Init(new_str);
+  return BoxStr_Concat(new_str, src);
 }
 
 char *BoxStr_To_C_String(BoxStr *s) {

@@ -50,13 +50,13 @@ static Task My_Str_Destroy(BoxVM *vm) {
 }
 
 static Task My_Str_Pause(BoxVM *vm) {
-  return BoxStr_Concat(BOX_VM_THIS_PTR(vm, Str), "\n");
+  return BoxStr_Concat_C_String(BOX_VM_THIS_PTR(vm, Str), "\n");
 }
 
 static Task My_Str_Char(BoxVM *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   char ca[2] = {BOX_VM_ARG(vm, char), '\0'};
-  return BoxStr_Concat(s, ca);
+  return BoxStr_Concat_C_String(s, ca);
 }
 
 static Task My_Str_Int(BoxVM *vm) {
@@ -64,7 +64,7 @@ static Task My_Str_Int(BoxVM *vm) {
   Int i = BOX_VM_ARG(vm, Int);
   char *tmp = Box_SPrintF("%I", i);
   if (tmp != (char *) NULL) {
-    TASK( BoxStr_Concat(s, tmp) );
+    TASK( BoxStr_Concat_C_String(s, tmp) );
     BoxMem_Free(tmp);
   }
   return Success;
@@ -75,7 +75,7 @@ static Task My_Str_Real(BoxVM *vm) {
   Real r = BOX_VM_ARG1(vm, Real);
   char *tmp = Box_SPrintF("%R", r);
   if (tmp != (char *) NULL) {
-    TASK( BoxStr_Concat(s, tmp) );
+    TASK( BoxStr_Concat_C_String(s, tmp) );
     BoxMem_Free(tmp);
   }
   return Success;
@@ -86,7 +86,7 @@ static Task My_Str_Point(BoxVM *vm) {
   Point *p = BOX_VM_ARG_PTR(vm, Point);
   char *tmp = Box_SPrintF("(%R, %R)", p->x, p->y);
   if (tmp != (char *) NULL) {
-    TASK( BoxStr_Concat(s, tmp) );
+    TASK( BoxStr_Concat_C_String(s, tmp) );
     BoxMem_Free(tmp);
   }
   return Success;
@@ -97,7 +97,7 @@ static Task My_Str_Ptr(BoxVM *vm) {
   BoxPtr *p = BOX_VM_ARG_PTR(vm, Ptr);
   char *tmp = printdup("Ptr[block:%p, data:%p]", p->block, p->ptr);
   if (tmp != (char *) NULL) {
-    TASK( BoxStr_Concat(s, tmp) );
+    TASK( BoxStr_Concat_C_String(s, tmp) );
     BoxMem_Free(tmp);
   }
   return Success;
@@ -108,7 +108,7 @@ static Task My_Str_CPtr(BoxVM *vm) {
   BoxCPtr p = BOX_VM_ARG(vm, BoxCPtr);
   char *tmp = printdup("CPtr[%p]", p);
   if (tmp != (char *) NULL) {
-    TASK( BoxStr_Concat(s, tmp) );
+    TASK( BoxStr_Concat_C_String(s, tmp) );
     BoxMem_Free(tmp);
   }
   return Success;
@@ -118,7 +118,7 @@ static Task My_Str_Str(BoxVM *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   BoxStr *s2 = BOX_VM_ARG_PTR(vm, BoxStr);
   if (s2->length > 0)
-    return BoxStr_Concat(s, s2->ptr);
+    return BoxStr_Concat_C_String(s, s2->ptr);
   return Success;
 }
 
@@ -126,7 +126,7 @@ static Task My_Str_CString(BoxVM *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   char *c_s = BOX_VM_ARG_PTR(vm, char);
   assert(s != NULL);
-  return BoxStr_Concat(s, c_s);
+  return BoxStr_Concat_C_String(s, c_s);
 }
 
 static Task My_Str_Copy(BoxVM *vm) {
@@ -135,7 +135,7 @@ static Task My_Str_Copy(BoxVM *vm) {
   char *src_text = (char *) src->ptr; /* Need this (for case: src == dest) */
   BoxStr_Init(dest);
   if (src->length > 0)
-    return BoxStr_Concat(dest, src_text);
+    return BoxStr_Concat_C_String(dest, src_text);
   return Success;
 }
 
