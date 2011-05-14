@@ -11,6 +11,7 @@ Color@Window "window_color" ?
 Gradient@Window "window_gradient" ?
 Style@Window "window_style" ?
 Window@Window "window_window" ?
+//Obj@Window "GLib_Obj_At_Window" ?
 
 Window.Save = Void
 ([)@Window.Save "window_save_begin" ?

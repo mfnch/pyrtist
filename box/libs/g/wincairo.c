@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
+#include <stdarg.h>
 
 #include <cairo.h>
 #ifdef CAIRO_HAS_PS_SURFACE
@@ -32,14 +33,16 @@
 #  include <cairo-svg.h>
 #endif
 
+#include <box/types.h>
+
 #include "error.h"
-#include "types.h"
 #include "graphic.h"
 #include "g.h"
 #include "wincairo.h"
 #include "psfonts.h"
 #include "formatter.h"
 #include "buffer.h"
+#include "obj.h"
 
 /*#define DEBUG*/
 
@@ -71,7 +74,7 @@ static char *wincairo_stream_id_string  = "cairo:stream";
 static void wincairo_close_win(void) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   cairo_surface_t *surface = cairo_get_target(cr);
-  WHEREAMI;
+
   cairo_show_page(cr);
   cairo_destroy(cr);
   cairo_surface_destroy(surface);
@@ -85,25 +88,25 @@ static int same_points(Point *a, Point *b) {
   return (fabs(a->x - b->x) < 1e-10 && fabs(a->y - b->y) < 1e-10);
 }
 
-static void my_point(Point *out, Point *in) {
+static void My_Map_Point(Point *out, Point *in) {
   GrpWindow *w = grp_win;
-  WHEREAMI;
   out->x = (in->x - w->ltx)*w->resx;
   out->y = (in->y - w->lty)*w->resy;
 }
 
 /* Macros used to scale the point coordinates */
 #define MY_POINT(a) \
-  Point my_a; my_point(& my_a, (a)); (a) = & my_a
+  Point my_a; My_Map_Point(& my_a, (a)); (a) = & my_a
 
 #define MY_2POINTS(a, b) \
   Point my_a, my_b; \
-  my_point(& my_a, (a)); my_point(& my_b, (b)); \
+  My_Map_Point(& my_a, (a)); My_Map_Point(& my_b, (b)); \
   (a) = & my_a; (b) = & my_b
 
 #define MY_3POINTS(a, b, c) \
   Point my_a, my_b, my_c; \
-  my_point(& my_a, (a)); my_point(& my_b, (b));  my_point(& my_c, (c)); \
+  My_Map_Point(& my_a, (a)); My_Map_Point(& my_b, (b)); \
+  My_Map_Point(& my_c, (c)); \
   (a) = & my_a; (b) = & my_b; (c) = & my_c
 
 /* This is broken, but is required for fonts (fonts support is broken as well
@@ -111,6 +114,192 @@ static void my_point(Point *out, Point *in) {
  * a given Real size!)
  */
 #define MY_REAL(r) ((r)*grp_win->resx) \
+
+#define ITP_MAX_NUM_ARGS 4
+
+/** Used to store pointers to arguments */
+typedef union {
+  void    *ptr;
+  BoxInt  *i;
+  BoxReal *r;
+  BoxStr  *s;
+  BoxPoint p;
+} ItpType;
+
+static int My_Args_From_Obj(ItpType *args, BoxGObj *args_obj,
+                            size_t num_args, ...) {
+  size_t i;
+  int success = 0;
+  va_list ap;
+  va_start(ap, num_args);
+
+  assert(num_args <= ITP_MAX_NUM_ARGS);
+
+  if (BoxGObj_Get_Length(args_obj) >= num_args + 1) {
+    success = 1;
+    for (i = 1; i <= num_args; i++) {
+      int required_kind = va_arg(ap, int);
+      BoxGObj *arg_obj = BoxGObj_Get(args_obj, i);
+      void *val;
+      assert(arg_obj != NULL);
+      val = BoxGObj_To(arg_obj, required_kind);
+      assert(val != NULL);
+      if (required_kind == BOXGOBJKIND_POINT)
+        My_Map_Point(& (args++->p), (BoxPoint *) val);
+
+      else
+        (args++)->ptr = val;
+      success &= (val != NULL);
+    }
+  }
+
+  va_end(ap);
+  return success;
+}
+
+static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
+                                         BoxInt cmnd_id, BoxGObj *args_obj) {
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
+  ItpType args[ITP_MAX_NUM_ARGS];
+  enum {CMND_SET_ANTIALIAS=0,
+        CMND_MOVE_TO, CMND_LINE_TO, CMND_CURVE_TO, CMND_CLOSE_PATH,
+        CMND_NEW_PATH, CMND_NEW_SUB_PATH,
+        CMND_STROKE, CMND_STROKE_PRESERVE, CMND_FILL, CMND_FILL_PRESERVE,
+        CMND_CLIP, CMND_CLIP_PRESERVE,
+        CMND_SET_LINE_WIDTH, CMND_SET_SOURCE_RGBA};
+
+  switch (cmnd_id) {
+  case CMND_SET_ANTIALIAS:
+    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
+      int v;
+      switch(*args[0].i) {
+      case CAIRO_ANTIALIAS_DEFAULT: v = 0; break;
+      case CAIRO_ANTIALIAS_NONE: v = 1; break;
+      case CAIRO_ANTIALIAS_GRAY: v = 2; break;
+      case CAIRO_ANTIALIAS_SUBPIXEL: v = 3; break;
+      }
+      cairo_set_antialias(cr, v);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case CMND_MOVE_TO:
+    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_POINT)) {
+      cairo_move_to(cr, args[0].p.x, args[0].p.y);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case CMND_LINE_TO:
+    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_POINT)) {
+      cairo_line_to(cr, args[0].p.x, args[0].p.y);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case CMND_CURVE_TO:
+    if (My_Args_From_Obj(args, args_obj, 3, BOXGOBJKIND_POINT,
+                         BOXGOBJKIND_POINT, BOXGOBJKIND_POINT)) {
+      cairo_curve_to(cr,
+                     args[0].p.x, args[0].p.y,
+                     args[1].p.x, args[1].p.y,
+                     args[2].p.x, args[2].p.y);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case CMND_CLOSE_PATH:
+    cairo_close_path(cr);
+    return BOXTASK_OK;
+
+  case CMND_NEW_PATH:
+    cairo_new_path(cr);
+    return BOXTASK_OK;
+
+  case CMND_NEW_SUB_PATH:
+    cairo_new_sub_path(cr);
+    return BOXTASK_OK;
+
+  case CMND_STROKE:
+    cairo_stroke(cr);
+    return BOXTASK_OK;
+
+  case CMND_STROKE_PRESERVE:
+    cairo_stroke_preserve(cr);
+    return BOXTASK_OK;
+
+  case CMND_FILL:
+    cairo_fill(cr);
+    return BOXTASK_OK;
+
+  case CMND_FILL_PRESERVE:
+    cairo_fill_preserve(cr);
+    return BOXTASK_OK;
+
+  case CMND_CLIP:
+    cairo_clip(cr);
+    return BOXTASK_OK;
+
+  case CMND_CLIP_PRESERVE:
+    cairo_clip_preserve(cr);
+    return BOXTASK_OK;
+
+  case CMND_SET_LINE_WIDTH:
+    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_REAL)) {
+      cairo_set_line_width(cr, *args[0].r);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case CMND_SET_SOURCE_RGBA:
+    if (My_Args_From_Obj(args, args_obj, 4, BOXGOBJKIND_REAL, BOXGOBJKIND_REAL,
+                         BOXGOBJKIND_REAL, BOXGOBJKIND_REAL)) {
+      cairo_set_source_rgba(cr, *args[0].r, *args[1].r, *args[2].r,
+                            *args[3].r);
+      return BOXTASK_OK;
+    }
+    break;
+
+  default:
+    return BOXTASK_FAILURE;
+  }
+
+  return BOXTASK_FAILURE;
+}
+
+static BoxTask My_WinCairo_Interpret(BoxGWin *w, BoxGObj *obj) {
+  size_t i, n = BoxGObj_Get_Length(obj);
+  const char *msg = NULL;
+  for (i = 0; i < n; i++) {
+    BoxInt sub_type = BoxGObj_Get_Type(obj, i);
+    if (sub_type == BOXGOBJKIND_COMPOSITE) {
+      BoxGObj *obj_sub = BoxGObj_Get(obj, i);
+      size_t n_args = BoxGObj_Get_Length(obj_sub);
+      if (n_args >= 1) {
+        BoxInt *cmnd_id =
+          (BoxInt *) BoxGObj_To(BoxGObj_Get(obj_sub, 0), BOXGOBJKIND_INT);
+        if (cmnd_id != NULL) {
+          if (!My_WinCairo_Interpret_One(w, *cmnd_id, obj_sub) == BOXTASK_OK) {
+            msg = "Command failed";
+          }
+
+        } else
+          msg = "Expecting command number (type Int)";
+
+      } else
+        msg = "Empty command object";
+
+    } else
+      msg = "Expecting composite command object";
+
+    if (msg) {
+      printf("Error in command Obj: %s.\n", msg);
+      return BOXTASK_FAILURE;
+    }
+  }
+
+  return BOXTASK_OK;
+}
 
 static void wincairo_rreset(void) {
   WHEREAMI;
@@ -211,16 +400,16 @@ static void wincairo_rgradient(ColorGrad *cg) {
 
   switch(cg->type) {
   case COLOR_GRAD_TYPE_LINEAR:
-    my_point(& p1, & cg->point1);
-    my_point(& p2, & cg->point2);
+    My_Map_Point(& p1, & cg->point1);
+    My_Map_Point(& p2, & cg->point2);
     p = cairo_pattern_create_linear(p1.x, p1.y, p2.x, p2.y);
     break;
 
   case COLOR_GRAD_TYPE_RADIAL:
-    my_point(& p1, & cg->point1);
-    my_point(& p2, & cg->point2);
-    my_point(& ref1, & cg->ref1);
-    my_point(& ref2, & cg->ref2);
+    My_Map_Point(& p1, & cg->point1);
+    My_Map_Point(& p2, & cg->point2);
+    My_Map_Point(& ref1, & cg->ref1);
+    My_Map_Point(& ref2, & cg->ref2);
     ref1.x -= p1.x; ref1.y -= p1.y;
     ref2.x -= p1.x; ref2.y -= p1.y;
 
@@ -579,6 +768,7 @@ static int wincairo_save(const char *file_name) {
 static void wincairo_repair(GrpWindow *w) {
   WHEREAMI;
   grp_window_block(w);
+  w->interpret = My_WinCairo_Interpret;
   w->save = wincairo_save;
   w->close_win = wincairo_close_win;
   w->rreset = wincairo_rreset;
@@ -735,8 +925,8 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
       return (GrpWindow *) NULL;
     }
 
-    /* These quantities are used in the function my_point (macros MY_2POINTS
-     * and MY_3POINTS) to scale the coordinates of every point.
+    /* These quantities are used in the function My_Map_Point (macros
+     * MY_2POINTS and MY_3POINTS) to scale the coordinates of every point.
      * They express the number of postscript units per mm.
      */
     w->resy = w->resx = 1.0 / (grp_mm_per_inch * grp_inch_per_psunit);

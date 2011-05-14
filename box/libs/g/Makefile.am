@@ -34,7 +34,7 @@ dist_boxpkg_DATA=g.bxh _color.bxh _style.bxh _gradient.bxh _window.bxh \
                  caps.bxh _arrows.bxh _pointlist.bxh _text.bxh _matrix.bxh \
                  _bbox.bxh math.bxh tools.bxh _sphere.bxh \
                  _area.bxh _rectangle.bxh \
-                 obj.bxh \
+                 obj.bxh raw.bxh \
                  label.bxh bounce.bxh electric.bxh
 
 libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \

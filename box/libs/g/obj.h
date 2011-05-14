@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2010 by Matteo Franchin                                    *
+ * Copyright (C) 2010-2011 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -42,8 +42,8 @@ typedef union {
   BoxInt      v_int;
   BoxReal     v_real;
   BoxPoint    v_point;
-  BoxArr      v_array;
   BoxStr      v_str;
+  BoxArr      v_composite;
 } BoxGObjValue;
 
 typedef struct {
@@ -67,7 +67,7 @@ void BoxGObj_Destroy(BoxGObj *gobj);
  * a proper BoxGObj object. In other words it should be either uninitalized
  * or be a BOXGOBJKIND_EMPTY object (just BoxGObj_Init has been called on it).
  */
-void BoxGObj_Init_From(BoxGObj *gobj_dest, BoxGObj *gobj_src);
+void BoxGObj_Init_From(BoxGObj *gobj_dest, const BoxGObj *gobj_src);
 
 /** Retrieve a subobject of the given BoxGObj object.
  * Return NULL if the index it out of bounds.
@@ -77,5 +77,26 @@ BoxGObj *BoxGObj_Get(BoxGObj *gobj, BoxInt idx);
 /** Get the number of subobject contained in gobj. */
 size_t BoxGObj_Get_Length(BoxGObj *gobj);
 
-#endif
+/** Get an integer identifying the type of the subobject at index idx. */
+BoxInt BoxGObj_Get_Type(BoxGObj *gobj, BoxInt idx);
 
+/** If the object has the given kind, return a pointer to its content,
+ * otherwise return NULL
+ */
+void *BoxGObj_To(BoxGObj *gobj, BoxGObjKind kind);
+
+/** Function used to map a single BoxGObj object from 'gobj_src' to
+ * 'gobj_dest'.
+ */
+typedef void BoxGObjFilter(void *gobj_dest, const void *gobj_src,
+                           BoxGObjKind kind, void *pass);
+
+/** Copy gobj_src into gobj_dest, calling the provided function 'filter'
+ * to copy the single values. 'pass' is passed as a last argument for
+ * 'filter'.
+ * @see BoxGObjFilter
+ */
+void BoxGObj_Filter(BoxGObj *gobj_dest, BoxGObj *gobj_src,
+                    BoxGObjFilter filter, void *pass);
+
+#endif

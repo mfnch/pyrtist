@@ -87,7 +87,7 @@ void BoxGObj_Finish(BoxGObj *gobj) {
     return;
 
   case BOXGOBJKIND_COMPOSITE:
-    BoxArr_Finish(& gobj->value.v_array);
+    BoxArr_Finish(& gobj->value.v_composite);
     return;
 
   default:
@@ -113,7 +113,7 @@ static void My_GObj_Array_Finalizer(void *item) {
 void BoxGObj_Transform_To_Composite(BoxGObj *gobj) {
   if (gobj->kind != BOXGOBJKIND_COMPOSITE) {
     BoxGObj original_gobj = *gobj;
-    BoxArr *a = & gobj->value.v_array;
+    BoxArr *a = & gobj->value.v_composite;
     gobj->kind = BOXGOBJKIND_COMPOSITE;
     BoxArr_Init(a, sizeof(BoxGObj), 2);
     BoxArr_Set_Finalizer(a, My_GObj_Array_Finalizer);
@@ -137,7 +137,7 @@ static BoxGObj *BoxGObj_Expand(BoxGObj *gobj, int merge) {
     BoxGObj_Transform_To_Composite(gobj);
 
   assert(gobj->kind == BOXGOBJKIND_COMPOSITE);
-  new_memb = (BoxGObj *) BoxArr_Push(& gobj->value.v_array, NULL);
+  new_memb = (BoxGObj *) BoxArr_Push(& gobj->value.v_composite, NULL);
   BoxGObj_Init(new_memb);
   return new_memb;
 }
@@ -154,11 +154,11 @@ static void BoxGObj_Merge_X(BoxGObj *gobj, BoxGObjKind kind, void *content) {
 }
 
 static void BoxGObj_Init_From_Ptr(BoxGObj *gobj_dest,
-                                  BoxGObjKind kind, void *data) {
+                                  BoxGObjKind kind, const void *data) {
   gobj_dest->kind = kind;
   if (kind == BOXGOBJKIND_COMPOSITE) {
     BoxArr *a_src = (BoxArr *) data,
-           *a_dest = & gobj_dest->value.v_array;
+           *a_dest = & gobj_dest->value.v_composite;
     size_t num_items = BoxArr_Num_Items(a_src), i;
 
     BoxArr_Init(a_dest, sizeof(BoxGObj), num_items);
@@ -178,8 +178,31 @@ static void BoxGObj_Init_From_Ptr(BoxGObj *gobj_dest,
  * a proper BoxGObj object. In other words it should be either uninitalized
  * or be a BOXGOBJKIND_EMPTY object (just BoxGObj_Init has been called on it).
  */
-void BoxGObj_Init_From(BoxGObj *gobj_dest, BoxGObj *gobj_src) {
+void BoxGObj_Init_From(BoxGObj *gobj_dest, const BoxGObj *gobj_src) {
   return BoxGObj_Init_From_Ptr(gobj_dest, gobj_src->kind, & gobj_src->value);
+}
+
+void BoxGObj_Filter(BoxGObj *gobj_dest, BoxGObj *gobj_src,
+                    BoxGObjFilter filter, void *pass) {
+  BoxGObjKind kind = gobj_src->kind;
+  if (kind == BOXGOBJKIND_COMPOSITE) {
+    BoxArr *a_src = & gobj_src->value.v_composite,
+           *a_dest = & gobj_dest->value.v_composite;
+    size_t num_items = BoxArr_Num_Items(a_src), i;
+
+    gobj_dest->kind = kind;
+    BoxArr_Init(a_dest, sizeof(BoxGObj), num_items);
+    (void) BoxArr_MPush(a_dest, NULL, num_items);
+    for (i = 1; i <= num_items; i++)
+      BoxGObj_Filter((BoxGObj *) BoxArr_Item_Ptr(a_dest, i),
+                     (BoxGObj *) BoxArr_Item_Ptr(a_src, i),
+                     filter, pass);
+    BoxArr_Set_Finalizer(a_dest, My_GObj_Array_Finalizer);
+
+  } else {
+    assert(filter != NULL);
+    filter(& gobj_dest->value, & gobj_dest->value, kind, pass);
+  }
 }
 
 /** Add an object gobj_src to another object gobj_dest.
@@ -200,7 +223,7 @@ void BoxGObj_Add_Str(BoxGObj *gobj, const BoxStr *s) {
 
 BoxGObj *BoxGObj_Get(BoxGObj *gobj, BoxInt idx) {
   if (gobj->kind == BOXGOBJKIND_COMPOSITE) {
-    BoxArr *a = & gobj->value.v_array;
+    BoxArr *a = & gobj->value.v_composite;
     return (idx >= 0 && idx < BoxArr_Num_Items(a)) ?
            BoxArr_Item_Ptr(a, idx + 1) : (BoxGObj *) NULL;
 
@@ -216,7 +239,7 @@ size_t BoxGObj_Get_Length(BoxGObj *gobj) {
   case BOXGOBJKIND_EMPTY:
     return 0;
   case BOXGOBJKIND_COMPOSITE:
-    return BoxArr_Num_Items(& gobj->value.v_array);
+    return BoxArr_Num_Items(& gobj->value.v_composite);
   default:
     return 1;
   }
@@ -230,6 +253,10 @@ BoxInt BoxGObj_Get_Type(BoxGObj *gobj, BoxInt idx) {
 
   } else
     return (idx == 0) ? gobj->kind : -1;
+}
+
+void *BoxGObj_To(BoxGObj *gobj, BoxGObjKind kind) {
+  return (gobj->kind == kind) ? & gobj->value : NULL;
 }
 
 /****************************************************************************

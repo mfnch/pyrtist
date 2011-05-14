@@ -36,12 +36,14 @@
 /*#define DEBUG*/
 
 #include "error.h"
-#include "buffer.h"
 #include "graphic.h"  /* Dichiaro alcune strutture grafiche generali */
 #include "g.h"
 #include "fig.h"
 #include "bb.h"
 #include "autoput.h"
+#include <box/mem.h>
+#include <box/array.h>
+#include "obj.h"
 
 /*#define grp_activelayer (((struct fig_header *) grp_win->wrdep)->current)*/
 
@@ -65,20 +67,22 @@
                     num_items - ( (-index) % num_items ) )
 
 typedef struct {
-  int numlayers;  /* Numero dei layer della figura */
-  int current;    /* Layer attualmente in uso */
-  int top;        /* Primo layer della lista */
-  int bottom;     /* Ultimo layer della lista */
-  int firstfree;  /* Primo posto libero nella lista dei layer (0 = nessuno) */
-  buff layerlist; /* Buffer che gestisce la lista dei layer */
+  int numlayers,    /**< Number of layers in the figure */
+      current,      /**< Layer which is currently being used */
+      top,          /**< Top layer */
+      bottom,       /**< Bottom layer */
+      firstfree;    /**< First free layer (0 = none) */
+  BoxArr
+      layerlist;    /**< Buffer che gestisce la lista dei layer */
 } FigHeader;
 
 typedef struct {
-  unsigned long ID;
-  int numcmnd;
-  int previous;
-  int next;
-  buff layer;
+  unsigned long
+         ID;        /**< ID for consistency checks (debugging) */
+  int    numcmnd,   /**< Number of commands in this layer */
+         previous,  /**< Previous layer */
+         next;      /**< Next layer */
+  BoxArr layer;     /**< Layer data */
 } LayerHeader;
 
 static char *fig_id_string = "fig";
@@ -100,27 +104,94 @@ static char *fig_id_string = "fig";
 enum ID_type {
   ID_rreset = 1, ID_rinit, ID_rdraw, ID_rline,
   ID_rcong, ID_rclose, ID_rcircle, ID_rfgcolor, ID_rbgcolor,
-  ID_rgradient, ID_text, ID_font, ID_fake_point
+  ID_rgradient, ID_text, ID_font, ID_fake_point, ID_interpret
 };
 
-struct cmnd_header {
+#define FIGLAYER_ID_ACTIVE 0x7279616c /* "layr" */
+#define FIGLAYER_ID_FREE 0x65657266 /* "free" */
+
+typedef struct {
   long  ID;
   long  size;
-};
+} FigCmndHeader;
 
-typedef struct cmnd_header CmndHeader;
+typedef BoxTask (*FigCmndIter)(FigCmndHeader *cmnd_header, void *cmnd_data,
+                               void *pass);
 
 typedef struct {
   int arg_data_size;
   void *arg_data;
 } CmndArg;
 
+
+static BoxTask My_Fig_Iterate_Over_Layer(LayerHeader *layh,
+                                         FigCmndIter iter, void *pass) {
+  BoxArr *layer;
+  long ip, nc;
+
+  assert(layh->ID == FIGLAYER_ID_ACTIVE);
+
+  layer = & layh->layer;
+  nc = layh->numcmnd;    /* Numero dei comandi inseriti nel layer */
+  ip = 1;                /* ip tiene traccia della posizione del buffer */
+
+  /* Read all the commands in the layer */
+  while (nc > 0) {
+    /* Fint the address of the current instruction.
+     * NOTE: we need to recompute the address each time, as during the while
+     * loop the BoxArr may change (be reallocated). This happens when one
+     * layer is being written into itself.
+     */
+    FigCmndHeader *cmnd_header = (FigCmndHeader *) BoxArr_Item_Ptr(layer, ip);
+    size_t cmnd_header_size = cmnd_header->size;
+    void *cmnd_data = (void *) cmnd_header + sizeof(FigCmndHeader);
+    BoxTask task = iter(cmnd_header, cmnd_data, pass);
+
+    if (task != BOXTASK_OK)
+      return task;
+
+    /* Continue to next command */
+    ip += sizeof(FigCmndHeader) + cmnd_header_size;
+    --nc;
+  }
+
+  return BOXTASK_OK;
+}
+
+BoxTask BoxGWin_Fig_Iterate_Over_Layer(BoxGWin *source, int nr_layer,
+                                       FigCmndIter iter, void *pass) {
+  FigHeader *figh = (FigHeader *) source->wrdep;
+  int l = CIRCULAR_INDEX(figh->numlayers, nr_layer);
+  LayerHeader *lh = (LayerHeader *) BoxArr_Item_Ptr(& figh->layerlist, l);
+  return My_Fig_Iterate_Over_Layer(lh, iter, pass);
+}
+
+static BoxTask My_Layer_Finish_Iter(FigCmndHeader *cmnd_header,
+                                    void *cmnd_data, void *pass) {
+  switch (cmnd_header->ID) {
+  case ID_interpret:
+    BoxGObj_Finish((BoxGObj *) cmnd_data);
+    return BOXTASK_OK;
+
+  default:
+    return BOXTASK_OK;
+  }
+}
+
+static void My_Layer_Finish(LayerHeader *lh) {
+  (void) My_Fig_Iterate_Over_Layer(lh, My_Layer_Finish_Iter, NULL);
+  BoxArr_Finish(& lh->layer);
+}
+
 /* This function is used to insert a command in the current layer */
-static void _fig_insert_command(int id, CmndArg *args) {
-  LayerHeader *lh;
-  buff *layer;
+static void My_Fig_Push_Commands(int id, CmndArg *args) {
+  LayerHeader *lh = (LayerHeader *) grp_win->ptr;
+  BoxArr *layer;
   int total_size, i;
-  CmndHeader ch;
+  FigCmndHeader ch;
+
+  assert(lh->ID == FIGLAYER_ID_ACTIVE);
+  layer = & lh->layer;
 
   /* Calculate total size of arguments */
   total_size = 0;
@@ -131,25 +202,44 @@ static void _fig_insert_command(int id, CmndArg *args) {
   ch.ID = id;
   ch.size = total_size;
 
-  lh = (LayerHeader *) grp_win->ptr;
-  assert(lh->ID == 0x7279616c);  /* 0x7279616c = "layr" */
-  layer = & lh->layer;
-
-  assert(buff_mpush(layer, & ch, sizeof(CmndHeader)) == 1);
-  for (i=0; args[i].arg_data_size > 0; i++)
-    assert(buff_mpush(layer, args[i].arg_data, args[i].arg_data_size) == 1);
+  BoxArr_MPush(layer, & ch, sizeof(FigCmndHeader));
+  for (i = 0; args[i].arg_data_size > 0; i++)
+    BoxArr_MPush(layer, args[i].arg_data, args[i].arg_data_size);
 
   ++lh->numcmnd; /* Increase counter for number of commands in the layer */
 }
 
+static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj) {
+  BoxGObj copy;
+  CmndArg args[] = {{sizeof(BoxGObj), & copy},
+                    {0, (void *) NULL}};
+  BoxGWin *prev_win = grp_win;
+
+  assert(obj != NULL && w != NULL);
+
+  BoxGObj_Init_From(& copy, obj);
+  /* Note that here we are assuming that we can safely relocate BoxGObj
+   * objects in memory, i.e. memcopy them and completely forget about the
+   * originals (which means we do not call BoxGObj_Finish for them).
+   * We then treat the copies as if they were effectively equivalent to the
+   * originals. Typically this can be done for objects that are not being
+   * referenced by other objects. Here we can do this as we are creating
+   * a new copy of obj.
+   */
+  grp_win = w;
+  My_Fig_Push_Commands(ID_interpret, args);
+  grp_win = prev_win;
+  return BOXTASK_OK;
+}
+
 void fig_rreset(void) {
   CmndArg args[] = {{0, (void *) NULL}};
-  _fig_insert_command(ID_rreset, args);
+  My_Fig_Push_Commands(ID_rreset, args);
 }
 
 void fig_rinit(void) {
   CmndArg args[] = {{0, (void *) NULL}};
-  _fig_insert_command(ID_rinit, args);
+  My_Fig_Push_Commands(ID_rinit, args);
 }
 
 void fig_rdraw(DrawStyle *style) {
@@ -160,14 +250,14 @@ void fig_rdraw(DrawStyle *style) {
     args[1].arg_data_size = sizeof(Real)*style->bord_num_dashes;
     args[1].arg_data = style->bord_dashes;
   }
-  _fig_insert_command(ID_rdraw, args);
+  My_Fig_Push_Commands(ID_rdraw, args);
 }
 
 void fig_rline(Point *a, Point *b) {
   CmndArg args[] = {{sizeof(Point), a},
                     {sizeof(Point), b},
                     {0, (void *) NULL}};
-  _fig_insert_command(ID_rline, args);
+  My_Fig_Push_Commands(ID_rline, args);
 }
 
 void fig_rcong(Point *a, Point *b, Point *c) {
@@ -175,12 +265,12 @@ void fig_rcong(Point *a, Point *b, Point *c) {
                     {sizeof(Point), b},
                     {sizeof(Point), c},
                     {0, (void *) NULL}};
-  _fig_insert_command(ID_rcong, args);
+  My_Fig_Push_Commands(ID_rcong, args);
 }
 
 void fig_rclose(void) {
   CmndArg args[] = {{0, (void *) NULL}};
-  _fig_insert_command(ID_rclose, args);
+  My_Fig_Push_Commands(ID_rclose, args);
 }
 
 void fig_rcircle(Point *ctr, Point *a, Point *b) {
@@ -188,17 +278,17 @@ void fig_rcircle(Point *ctr, Point *a, Point *b) {
                     {sizeof(Point), a},
                     {sizeof(Point), b},
                     {0, (void *) NULL}};
-  _fig_insert_command(ID_rcircle, args);
+  My_Fig_Push_Commands(ID_rcircle, args);
 }
 
 void fig_rfgcolor(Color *c) {
   CmndArg args[] = {{sizeof(Color), c}, {0, (void *) NULL}};
-  _fig_insert_command(ID_rfgcolor, args);
+  My_Fig_Push_Commands(ID_rfgcolor, args);
 }
 
 void fig_rbgcolor(Color *c) {
   CmndArg args[] = {{sizeof(Color), c}, {0, (void *) NULL}};
-  _fig_insert_command(ID_rbgcolor, args);
+  My_Fig_Push_Commands(ID_rbgcolor, args);
 }
 
 typedef struct {
@@ -215,7 +305,7 @@ static void fig_text(Point *ctr, Point *right, Point *up, Point *from,
                     {0, (void *) NULL}};
   arg.ctr = *ctr; arg.right = *right; arg.up = *up; arg.from = *from;
   arg.text_size = text_size;
-  _fig_insert_command(ID_text, args);
+  My_Fig_Push_Commands(ID_text, args);
 }
 
 static void fig_font(const char *font) {
@@ -223,23 +313,26 @@ static void fig_font(const char *font) {
   CmndArg args[] = {{sizeof(Int), & font_size},
                     {font_size+1, (void *) font},
                     {0, (void *) NULL}};
-  _fig_insert_command(ID_font, args);
+  My_Fig_Push_Commands(ID_font, args);
 }
 
-static void fig_fake_point(Point *p) {
+static void My_Fig_Fake_Point(Point *p) {
   CmndArg args[] = {{sizeof(Point), p}, {0, (void *) NULL}};
-  _fig_insert_command(ID_fake_point, args);
+  My_Fig_Push_Commands(ID_fake_point, args);
 }
 
-static void fig_close_win(void) {
-  GrpWindow *w = grp_win;
+static void My_Fig_Close_Win(void) {
+  BoxGWin *w = grp_win;
   FigHeader *fh = (FigHeader *) w->wrdep;
-  LayerHeader *lh = buff_firstitemptr(& fh->layerlist, LayerHeader);
-  Int i, n = buff_numitem(& fh->layerlist);
-  for(i=0; i<n; i++) buff_free(& (lh++)->layer);
-  buff_free(& fh->layerlist);
-  free(fh);
-  free(w);
+  LayerHeader *lh = (LayerHeader *) BoxArr_First_Item_Ptr(& fh->layerlist);
+  size_t i, n = BoxArr_Num_Items(& fh->layerlist);
+
+  for (i = 0; i < n; i++)
+    My_Layer_Finish(& lh[i]);
+
+  BoxArr_Finish(& fh->layerlist);
+  BoxMem_Free(fh);
+  BoxMem_Free(w);
 }
 
 static void fig_rgradient(ColorGrad *cg) {
@@ -250,10 +343,10 @@ static void fig_rgradient(ColorGrad *cg) {
     args[1].arg_data_size = sizeof(ColorGradItem)*cg->num_items;
     args[1].arg_data = cg->items;
   }
-  _fig_insert_command(ID_rgradient, args);
+  My_Fig_Push_Commands(ID_rgradient, args);
 }
 
-static int fig_save(const char *file_name) {
+static int My_Fig_Save(const char *file_name) {
   char *out_type = "eps";
   GrpWindowPlan plan;
 
@@ -285,8 +378,8 @@ static int fig_save(const char *file_name) {
 }
 
 /** Set the default methods to the gr1b window */
-static void fig_repair(GrpWindow *w) {
-  grp_window_block(w);
+static void My_Fig_Repair(GrpWindow *w) {
+  BoxGWin_Block(w);
   w->rreset = fig_rreset;
   w->rinit = fig_rinit;
   w->rdraw = fig_rdraw;
@@ -299,9 +392,10 @@ static void fig_repair(GrpWindow *w) {
   w->rgradient = fig_rgradient;
   w->text = fig_text;
   w->font = fig_font;
-  w->fake_point = fig_fake_point;
-  w->save = fig_save;
-  w->close_win = fig_close_win;
+  w->fake_point = My_Fig_Fake_Point;
+  w->save = My_Fig_Save;
+  w->interpret = My_Fig_Interpret;
+  w->close_win = My_Fig_Close_Win;
 }
 
 /****************************************************************************/
@@ -316,11 +410,11 @@ static void fig_repair(GrpWindow *w) {
  *  Ad ogni layer e' associato un numero (da 1 a numlayers) e questo viene
  *  utilizzato per far riferimento ad esso.
  */
-grp_window *fig_open_win(int numlayers) {
-  grp_window *wd;
+BoxGWin *fig_open_win(int numlayers) {
+  BoxGWin *wd;
   FigHeader *figh;
   LayerHeader *layh;
-  buff *laylist;
+  BoxArr *laylist;
   int i;
 
   if (numlayers < 1) {
@@ -331,28 +425,16 @@ grp_window *fig_open_win(int numlayers) {
   /* Creo gli headers della figura (con tutte le informazioni utili
    * per la gestione dei layers)
    */
-  figh = (FigHeader *) malloc( sizeof(FigHeader) );
+  figh = (FigHeader *) BoxMem_Alloc(sizeof(FigHeader));
 
   if (figh == NULL) {
-    ERRORMSG("fig_open_win", "Memoria esaurita");
+    ERRORMSG("fig_open_win", "Out of memory");
     return NULL;
   }
 
   /* Creo la lista dei layers con numlayers elementi */
   laylist = & figh->layerlist;
-  if ( ! buff_create(laylist, sizeof(LayerHeader), numlayers) ) {
-    ERRORMSG("fig_open_win", "Memoria esaurita");
-    return NULL;
-  }
-
-  /* buff_create crea una lista vuota e usa malloc solo quando si tenta
-   * di riempirla (con buff_push, etc).
-   * Quindi ora forzo l'allocazione della lista!
-   */
-  if ( ! buff_bigenough( laylist, buff_numitem(laylist) = numlayers ) ) {
-    ERRORMSG("fig_open_win", "Memoria esaurita");
-    return NULL;
-  }
+  BoxArr_Init(& figh->layerlist, sizeof(LayerHeader), numlayers);
 
   /* Compilo l'header della figura */
   figh->numlayers = numlayers;
@@ -361,37 +443,32 @@ grp_window *fig_open_win(int numlayers) {
   figh->firstfree = 0;  /* Nessun layer libero */
 
   /* Adesso creo la lista dei layer */
-  layh = buff_firstitemptr(laylist, LayerHeader);
-  i = 0;
-  while (i < numlayers) {
-    /* Definisco lo spazio dove verranno memorizzate le istruzioni */
-    if ( ! buff_create( & layh->layer, 1, LAYER_INITIAL_SIZE) ) {
-      ERRORMSG("fig_open_win", "Memoria esaurita");
-      return NULL;
-    }
+  layh = (LayerHeader *) BoxArr_MPush(& figh->layerlist, NULL, numlayers);
+  for (i = 0; i < numlayers; i++, layh++) {
+    /* Intialise the data space for each layer */
+    BoxArr_Init(& layh->layer, 1, LAYER_INITIAL_SIZE);
 
-    /* Compilo l'header del layer */
-    layh->ID = 0x7279616c;  /* 0x7279616c = "layr" */
-    //layh->color = ???;
+    /* Fill the layer header */
+    layh->ID = FIGLAYER_ID_ACTIVE;
     layh->numcmnd = 0;
-    layh->previous = i++;
+    layh->previous = (i > 0) ? i - 1 : 0;
     layh->next = (i + 1) % numlayers;
-
-    ++layh;    /* Passo al prossimo layer */
   }
 
-  wd = (grp_window *) malloc( sizeof(grp_window) );
-  if ( (wd == NULL) ) {
+  wd = (BoxGWin *) BoxMem_Alloc(sizeof(BoxGWin));
+  if (wd == NULL) {
     ERRORMSG("fig_open_win", "Memoria esaurita");
     return NULL;
   }
 
-  wd->ptr = buff_ptr(laylist);
+  /* Window dependent data */
+  wd->wrdep = figh;
 
-  wd->wrdep = (void *) figh;
+  /* Pointer to current layer */
+  wd->ptr = BoxArr_First_Item_Ptr(laylist);
 
   wd->quiet = 0;
-  wd->repair = fig_repair;
+  wd->repair = My_Fig_Repair;
   wd->repair(wd);
   wd->win_type_str = fig_id_string;
   return wd;
@@ -401,13 +478,11 @@ grp_window *fig_open_win(int numlayers) {
  *  l e' il numero del layer da distruggere.
  */
 int fig_destroy_layer(int l) {
-  FigHeader *figh;
-  LayerHeader *flayh, *llayh, *layh;
-  buff *laylist;
+  FigHeader *figh = (FigHeader *) grp_win->wrdep;
+  BoxArr *laylist = & figh->layerlist;
+  LayerHeader *flayh = BoxArr_First_Item_Ptr(laylist),
+              *llayh, *layh;
   int p, n;
-
-  /* Trovo l'header della figura attualmente attiva */
-  figh = (FigHeader *) grp_win->wrdep;
 
   if (figh->numlayers < 2) {
     ERRORMSG("fig_destroy_layer", "Figura senza layers");
@@ -417,53 +492,45 @@ int fig_destroy_layer(int l) {
   l = CIRCULAR_INDEX(figh->numlayers, l);
 
   /* Trovo l'header del layer l */
-  laylist = & figh->layerlist;
-  flayh = buff_ptr(laylist);
   llayh = flayh + l - 1;
-
-  /* Iniziamo col cancellare i comandi inseriti nel layer */
-  buff_free(& llayh->layer);
-
-  /* Togliamo l'header del layer dalla lista */
   p = llayh->previous;
   n = llayh->next;
+
+  /* Mark the layer as free and put it in the chain of free layers */
+  llayh->ID = FIGLAYER_ID_FREE;
+  llayh->next = figh->firstfree;
+  figh->firstfree = l;
+  My_Layer_Finish(llayh); /* Finalise the layer data */
+
+  /* Unchain the removed layer */
   if (p == 0) {
-    /* l e' il primo elemento della lista, quindi non e' l'ultimo, cioe'
-     * n e' diverso da 0. n sara' il nuovo primo layer!
-     */
+    /* l is the first layer in the list: n will be the new first layer. */
+    assert(n > 0);
     figh->top = n;
     layh = flayh + n - 1;
     layh->previous = 0;
 
   } else if (n == 0) {
-    /* l e' l'ultimo elemento della lista, quindi non e' il primo, cioe'
-     * p e' diverso da 0. p sara' il nuovo ultimo layer!
-     */
+    /* l is the last layer in the list: p will be the new last layer */
+    assert(p > 0);
     figh->bottom = p;
     layh = flayh + p - 1;
     layh->next = 0;
 
   } else {
-    /* l non e' ne' il primo, ne' l'ultimo elemento della lista, cioe'
-     * n e p diversi entrambi da 0.
-     */
+    /* l is in the middle: n and p are both nonzero. */
+    assert(n > 0 && p > 0);
     layh = flayh + p - 1;
     layh->next = n;
     layh = flayh + n - 1;
     layh->previous = p;
   }
 
-  /* Contrassegno l'header come vuoto e lo metto nella catena
-   * degli header vuoti
-   */
-  llayh->ID = 0x65657266; /* 0x65657266 = "free" */
-  llayh->next = figh->firstfree;
-  figh->firstfree = l;
-
   /* Aggiorno i dati sulla figura */
   --figh->numlayers;
-  if ( (figh->current == l) ) {
-    WARNINGMSG("fig_destroy_layer", "Layer attivo distrutto: nuovo layer attivo = 1");
+  if (figh->current == l) {
+    WARNINGMSG("fig_destroy_layer",
+               "Layer attivo distrutto: nuovo layer attivo = 1");
     fig_select_layer(1);
   }
 
@@ -474,40 +541,31 @@ int fig_destroy_layer(int l) {
  *  identificativo (> 0) o 0 in caso di errore.
  */
 int fig_new_layer(void) {
-  FigHeader *figh;
+  FigHeader *figh = (FigHeader *) grp_win->wrdep;
   LayerHeader *flayh, *llayh, *layh;
-  buff *laylist;
+  BoxArr *laylist = & figh->layerlist;
   int l;
 
-  /* Trovo l'header della figura attualmente attiva */
-  figh = (FigHeader *) grp_win->wrdep;
-
-  laylist = & figh->layerlist;
-
   if (figh->firstfree == 0) {
-    /* Devo ingrandire la lista */
-    l = ++buff_numitem(laylist);
-    if ( ! buff_bigenough( laylist, l ) ) {
-      ERRORMSG("fig_new_layer", "Memoria esaurita");
-      return 0;
-    }
+    /* There are no spare free layers: we must create ea new one */
+    l = BoxArr_Num_Items(laylist) + 1;
+    llayh = (LayerHeader *) BoxArr_Push(laylist, NULL);
+    flayh = BoxArr_First_Item_Ptr(laylist);
 
-    /* Trovo l'header del nuovo layer */
-    flayh = buff_ptr(laylist);
-    llayh = flayh + l - 1;
-
-    /* buff_bigenough puo' cambiare l'indirizzo della lista dei layer */
-    fig_select_layer( figh->current );
+    /* BoxArr_Push may change the pointer to the list of layer: need
+     * to update the pointer to the current layer.
+     */
+    fig_select_layer(figh->current);
 
   } else {
     /* Esiste un posto vuoto: lo occupo! */
     /* Trovo l'header del layer libero (figh->firstfree) */
     l = figh->firstfree;
-    flayh = buff_ptr(laylist);
+    flayh = BoxArr_First_Item_Ptr(laylist);
     llayh = flayh + l - 1;
 
     /* Verifica che si tratta di un header libero */
-    if ( llayh->ID != 0x65657266 ) {  /* 0x65657266 = "free" */
+    if (llayh->ID != FIGLAYER_ID_FREE) {
       ERRORMSG("fig_new_layer", "Errore interno (bad layer ID, 1)");
       return 0;
     }
@@ -516,25 +574,19 @@ int fig_new_layer(void) {
   }
 
   /* Definisco lo spazio dove verranno memorizzate le istruzioni */
-  if ( ! buff_create( & llayh->layer, 1, LAYER_INITIAL_SIZE) ) {
-    ERRORMSG("fig_new_layer", "Memoria esaurita");
-    return 0;
-  }
+  BoxArr_Init(& llayh->layer, 1, LAYER_INITIAL_SIZE);
 
   /* Allungo la lista dei layers: il nuovo andra' sopra gli altri! */
   layh = flayh + figh->bottom - 1;
   layh->next = l;
 
   /* Compilo l'header del layer */
-  layh->ID = 0x7279616c;  /* 0x7279616c = "layr" */
-
-  //layh->color = ???;
+  layh->ID = FIGLAYER_ID_ACTIVE;
   llayh->numcmnd = 0;
   llayh->previous = figh->bottom;
   llayh->next = 0;
   figh->bottom = l;
   ++figh->numlayers;
-
   return l;
 }
 
@@ -542,7 +594,7 @@ int fig_new_layer(void) {
  * fig_select_layer, i comandi grafici saranno inviati a quel layer.
  */
 void fig_select_layer(int l) {
-  buff *laylist;
+  BoxArr *laylist;
   FigHeader *figh;
   LayerHeader *layh;
 
@@ -555,7 +607,7 @@ void fig_select_layer(int l) {
 
   /* Trovo l'header del layer l */
   laylist = & figh->layerlist;
-  layh = buff_ptr(laylist) + l - 1;
+  layh = BoxArr_First_Item_Ptr(laylist) + l - 1;
   /* Per convenzione grp_win->ptr punta a tale header: lo setto! */
   grp_win->ptr = layh;
 }
@@ -563,7 +615,7 @@ void fig_select_layer(int l) {
 /* DESCRIZIONE: Pulisce il contenuto del layer l.
  */
 void fig_clear_layer(int l) {
-  buff *laylist;
+  BoxArr *laylist;
   FigHeader *figh;
   LayerHeader *layh;
 
@@ -573,13 +625,11 @@ void fig_clear_layer(int l) {
   /* Trovo l'header del layer l */
   l = CIRCULAR_INDEX(figh->numlayers, l);
   laylist = & figh->layerlist;
-  layh = buff_ptr(laylist) + l - 1;
+  layh = BoxArr_First_Item_Ptr(laylist) + l - 1;
 
   /* Cancello il contenuto del layer */
   layh->numcmnd = 0;
-  if ( !buff_clear( & layh->layer ) ) {
-    ERRORMSG("fig_clear_layer", "Memoria esaurita");
-  }
+  BoxArr_Clear(& layh->layer);
 
   if ( figh->current == l )
     fig_select_layer(l);
@@ -628,6 +678,131 @@ static void Fig_Transform_Scalar(Real *r, int n, Real angle) {
 }
 #endif
 
+
+static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
+                                      void *cmnd_data, void *pass) {
+  BoxGWin *w = (BoxGWin *) pass;
+  Point tp[3];
+  Real tr;
+  ColorGrad cg;
+
+  switch (cmnd_header->ID) {
+  case ID_rreset:
+    grp_rreset();
+    return BOXTASK_OK;
+
+  case ID_rinit:
+    grp_rinit();
+    return BOXTASK_OK;
+
+  case ID_rdraw:
+    ((DrawStyle *) cmnd_data)->bord_dashes =
+      (Real *) (cmnd_data + sizeof(DrawStyle));
+    tr = ((DrawStyle *) cmnd_data)->scale;
+    ((DrawStyle *) cmnd_data)->scale *= Fig_Transform_Factor(0.0);
+    grp_rdraw((DrawStyle *) cmnd_data);
+    ((DrawStyle *) cmnd_data)->scale = tr;
+    return BOXTASK_OK;
+
+  case ID_rline:
+    tp[0] = *((Point *) cmnd_data);
+    tp[1] = *((Point *) (cmnd_data + sizeof(Point)));
+    Fig_Transform_Point(tp, 2);
+    grp_rline(& tp[0], & tp[1]);
+    return BOXTASK_OK;
+
+  case ID_rcong:
+    tp[0] = *((Point *) cmnd_data);
+    tp[1] = *((Point *) (cmnd_data + sizeof(Point)));
+    tp[2] = *((Point *) (cmnd_data + 2*sizeof(Point)));
+    Fig_Transform_Point(tp, 3);
+    grp_rcong(& tp[0], & tp[1], & tp[2]);
+    return BOXTASK_OK;
+
+  case ID_rclose:
+    grp_rclose();
+    return BOXTASK_OK;
+
+  case ID_rcircle:
+    tp[0] = *((Point *) cmnd_data);
+    tp[1] = *((Point *) (cmnd_data + sizeof(Point)));
+    tp[2] = *((Point *) (cmnd_data + 2*sizeof(Point)));
+    Fig_Transform_Point(tp, 3);
+    grp_rcircle(& tp[0], & tp[1], & tp[2]);
+    return BOXTASK_OK;
+
+  case ID_rfgcolor:
+    grp_rfgcolor((Color *) cmnd_data);
+    return BOXTASK_OK;
+
+  case ID_rbgcolor:
+    grp_rbgcolor((Color *) cmnd_data);
+    return BOXTASK_OK;
+
+  case ID_rgradient:
+    cg = *((ColorGrad *) cmnd_data);
+    cg.items = (ColorGradItem *) (cmnd_data + sizeof(ColorGrad));
+    Fig_Transform_Point(& cg.point1, 1);
+    Fig_Transform_Point(& cg.point2, 1);
+    Fig_Transform_Point(& cg.ref1, 1);
+    Fig_Transform_Point(& cg.ref2, 1);
+    grp_rgradient(& cg);
+    return BOXTASK_OK;
+
+  case ID_text:
+    {
+      Arg4Text arg = *((Arg4Text *) cmnd_data);
+      char *str = (char *) (cmnd_data + sizeof(Arg4Text));
+      if (sizeof(Arg4Text) + arg.text_size + 1 <= cmnd_header->size) {
+        char *ptr = (char *) (cmnd_data + sizeof(Arg4Text) + arg.text_size);
+        if (*ptr == '\0') {
+          Fig_Transform_Point(& arg.ctr, 1);
+          Fig_Transform_Point(& arg.right, 1);
+          Fig_Transform_Point(& arg.up, 1);
+          grp_text(& arg.ctr, & arg.right, & arg.up, & arg.from, str);
+        } else {
+          g_warning("Fig_Draw_Layer: Ignoring text command (bad str)!");
+        }
+      } else {
+        g_warning("Fig_Draw_Layer: Ignoring text command (bad size)!");
+      }
+    }
+    return BOXTASK_OK;
+
+  case ID_font:
+    {
+      void *ptr = cmnd_data;
+      Int str_size = *((Int *) ptr); ptr += sizeof(Int);
+      char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
+      if (str_size + sizeof(Int) <= cmnd_header->size) {
+        if (*((char *) ptr) == '\0') {
+          grp_font(str);
+        } else {
+          g_warning("Fig_Draw_Layer: Ignoring font command (bad str) 1!");
+        }
+      } else {
+        g_warning("Fig_Draw_Layer: Ignoring font command (bad size) 2!");
+      }
+    }
+    return BOXTASK_OK;
+
+  case ID_fake_point:
+    {
+      Point p = *((Point *) cmnd_data);
+      Fig_Transform_Point(& p, 1);
+      grp_fake_point(& p);
+    }
+    return BOXTASK_OK;
+
+  case ID_interpret:
+    return BoxGWin_Interpret_Obj(w, (BoxGObj *) cmnd_data);
+
+  default:
+    g_warning("Fig_Draw_Layer: unrecognized command (corrupted figure?)");
+    return BOXTASK_FAILURE;
+  }
+}
+
 /* DESCRIZIONE: Disegna il layer l della figura source sulla finestra grafica
  *  attualmente in uso. Questo disegno puo' essere "filtrato" e cioe' puo' essere
  *  ruotato, ridimensionato, traslato, ...
@@ -637,173 +812,11 @@ static void Fig_Transform_Scalar(Real *r, int n, Real angle) {
  *  In tal caso il Fig_Draw_Layer continuera' a leggere sui vecchi indirizzi,
  *  senza controllare questa eventualita'! (problema   R I M O S S O !))
  */
-void Fig_Draw_Layer(grp_window *source, int l) {
-  FigHeader *figh;
-  LayerHeader *layh;
-  buff *laylist, *layer;
-  union {
-   struct cmnd_header *hdr;
-   void *ptr;
-  } cmnd;
-  long ID, ip, nc;
-
-  /* Trovo l'header della figura "source" */
-  figh = (FigHeader *) source->wrdep;
-
-  l = CIRCULAR_INDEX(figh->numlayers, l);
-
-  /* Trovo l'header del layer l */
-  laylist = & figh->layerlist;
-  layh = buff_itemptr(laylist, LayerHeader, l);
-  if ( layh->ID != 0x7279616c) {  /* 0x7279616c = "layr" */
-    ERRORMSG( "Fig_Draw_Layer", "Errore interno (bad layer ID), 3" );
-    return;
-  }
-
-  layer = & layh->layer;
-
-  ip = 0;    /* ip tiene traccia della posizione del buffer */
-  nc = layh->numcmnd;      /* Numero dei comandi inseriti nel layer */
-
-  /* Continuo fino ad aver eseguito ogni comando */
-  while (nc > 0) {
-    /* Trovo l'indirizzo dell'istruzione corrente.
-     * NOTA: devo ricalcolarmelo ogni volta, dato che durante il ciclo while
-     *  il buffer potrebbe essere ri-allocato e buff_ptr(layer) potrebbe
-     *  cambiare! Questo accade quando copio un layer in se' stesso,
-     *  in tal caso le istruzioni lette dal layer vengono anche scritte
-     *  sullo stesso layer, cioe' le dimensioni del layer aumentano
-     *  e potrebbe essere necessaria una realloc.
-     */
-    int cmnd_header_size;
-    Point tp[3];
-    Real tr;
-    ColorGrad cg;
-
-    cmnd.ptr = (void *) buff_ptr(layer) + (long) ip;
-
-    cmnd_header_size = cmnd.hdr->size;
-    ID = cmnd.hdr->ID;
-    ip += sizeof(CmndHeader) + cmnd_header_size;
-    cmnd.ptr += sizeof(CmndHeader);
-
-    switch (ID) {
-    case ID_rreset:
-      grp_rreset();
-      break;
-
-    case ID_rinit:
-      grp_rinit();
-      break;
-
-    case ID_rdraw:
-      ((DrawStyle *) cmnd.ptr)->bord_dashes =
-        (Real *) (cmnd.ptr + sizeof(DrawStyle));
-      tr = ((DrawStyle *) cmnd.ptr)->scale;
-      ((DrawStyle *) cmnd.ptr)->scale *= Fig_Transform_Factor(0.0);
-      grp_rdraw((DrawStyle *) cmnd.ptr);
-      ((DrawStyle *) cmnd.ptr)->scale = tr;
-      break;
-
-    case ID_rline:
-      tp[0] = *((Point *) cmnd.ptr);
-      tp[1] = *((Point *) (cmnd.ptr + sizeof(Point)));
-      Fig_Transform_Point(tp, 2);
-      grp_rline(& tp[0], & tp[1]);
-      break;
-
-    case ID_rcong:
-      tp[0] = *((Point *) cmnd.ptr);
-      tp[1] = *((Point *) (cmnd.ptr + sizeof(Point)));
-      tp[2] = *((Point *) (cmnd.ptr + 2*sizeof(Point)));
-      Fig_Transform_Point(tp, 3);
-      grp_rcong(& tp[0], & tp[1], & tp[2]);
-      break;
-
-    case ID_rclose:
-      grp_rclose();
-      break;
-
-    case ID_rcircle:
-      tp[0] = *((Point *) cmnd.ptr);
-      tp[1] = *((Point *) (cmnd.ptr + sizeof(Point)));
-      tp[2] = *((Point *) (cmnd.ptr + 2*sizeof(Point)));
-      Fig_Transform_Point(tp, 3);
-      grp_rcircle(& tp[0], & tp[1], & tp[2]);
-      break;
-
-    case ID_rfgcolor:
-      grp_rfgcolor((Color *) cmnd.ptr); break;
-
-    case ID_rbgcolor:
-      grp_rbgcolor((Color *) cmnd.ptr); break;
-
-    case ID_rgradient:
-      cg = *((ColorGrad *) cmnd.ptr);
-      cg.items = (ColorGradItem *) (cmnd.ptr + sizeof(ColorGrad));
-      Fig_Transform_Point(& cg.point1, 1);
-      Fig_Transform_Point(& cg.point2, 1);
-      Fig_Transform_Point(& cg.ref1, 1);
-      Fig_Transform_Point(& cg.ref2, 1);
-      grp_rgradient(& cg);
-      break;
-
-    case ID_text:
-      {
-        Arg4Text arg = *((Arg4Text *) cmnd.ptr);
-        char *str = (char *) (cmnd.ptr + sizeof(Arg4Text));
-        if (sizeof(Arg4Text) + arg.text_size + 1 <= cmnd_header_size) {
-          char *ptr = (char *) (cmnd.ptr + sizeof(Arg4Text) + arg.text_size);
-          if (*ptr == '\0') {
-            Fig_Transform_Point(& arg.ctr, 1);
-            Fig_Transform_Point(& arg.right, 1);
-            Fig_Transform_Point(& arg.up, 1);
-            grp_text(& arg.ctr, & arg.right, & arg.up, & arg.from, str);
-          } else {
-            g_warning("Fig_Draw_Layer: Ignoring text command (bad str)!");
-          }
-        } else {
-          g_warning("Fig_Draw_Layer: Ignoring text command (bad size)!");
-        }
-      }
-      break;
-
-    case ID_font:
-      {
-        void *ptr = cmnd.ptr;
-        Int str_size = *((Int *) ptr); ptr += sizeof(Int);
-        char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
-        if (str_size + sizeof(Int) <= cmnd_header_size) {
-          if ( *((char *) ptr) == '\0' ) {
-            grp_font(str);
-          } else {
-            g_warning("Fig_Draw_Layer: Ignoring font command (bad str)!");
-          }
-        } else {
-          g_warning("Fig_Draw_Layer: Ignoring font command (bad size)!");
-        }
-      }
-      break;
-
-    case ID_fake_point:
-      {
-        Point p = *((Point *) cmnd.ptr);
-        Fig_Transform_Point(& p, 1);
-        grp_fake_point(& p);
-      }
-      break;
-
-    default:
-      g_warning("Fig_Draw_Layer: unrecognized command (corrupted figure?)");
-      return;
-      break;
-    }
-
-    /* Passo al prossimo comando */
-    --nc;
-  }
-
-  return;
+void BoxGWin_Fig_Draw_Layer(BoxGWin *dest, BoxGWin *src, int l) {
+  BoxGWin *save = grp_win;
+  grp_win = dest;
+  (void) BoxGWin_Fig_Iterate_Over_Layer(src, l, My_Fig_Draw_Layer_Iter, dest);
+  grp_win = save;
 }
 
 /* DESCRIZIONE: Disegna la figura source sulla finestra grafica attualmente
@@ -813,7 +826,7 @@ void Fig_Draw_Layer(grp_window *source, int l) {
 static void _Fig_Draw_Fig(GrpWindow *source) {
   FigHeader *figh;
   LayerHeader *layh;
-  buff *laylist;
+  BoxArr *laylist;
   long nl, cl;
 
   assert(source->win_type_str == fig_id_string);
@@ -826,13 +839,13 @@ static void _Fig_Draw_Fig(GrpWindow *source) {
   /* Parto dall'header che sta sotto tutti gli altri */
   cl = figh->bottom;
 
-  for ( nl = figh->numlayers; nl > 0; nl-- ) {
+  for (nl = figh->numlayers; nl > 0; nl--) {
     /* Disegno il layer cl */
-    Fig_Draw_Layer(source, cl);
+    BoxGWin_Fig_Draw_Layer(grp_win, source, cl);
 
     /* Ora passo a quello successivo che lo ricopre */
     /* Trovo l'header del layer cl */
-    layh = (void *) buff_ptr(laylist) + (long) (cl - 1);
+    layh = (void *) BoxArr_First_Item_Ptr(laylist) + (long) (cl - 1);
     cl = layh->previous;
   }
 

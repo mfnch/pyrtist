@@ -1,0 +1,15 @@
+// Header file for the g.raw library
+#provide "g.raw"
+
+include "g"
+include "obj"
+
+Obj@Window "GLib_Obj_At_Window" ?
+
+g = ((Int set_antialias, move_to, line_to, curve_to, close_path
+          new_path, new_sub_path
+          stroke, stroke_preserve, fill, fill_preserve, clip, clip_preserve
+          set_line_width, set_source_rgba) raw
+     (Int default, none, gray, subpixel) antialias)[]
+g = ((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
+     (0, 1, 2, 3))

@@ -33,6 +33,7 @@
 #include "fig.h"
 #include "autoput.h"
 #include "pointlist.h"
+#include "obj.h"
 #include "i_pointlist.h"
 #include "i_window.h"
 #include "i_line.h"
@@ -230,6 +231,13 @@ Task window_window(BoxVM *vmp) {
   Fig_Draw_Fig(src->window);
   grp_win = cur_win;
   return Success;
+}
+
+BoxTask GLib_Obj_At_Window(BoxVM *vm) {
+  Window *w = BOX_VM_THIS(vm, WindowPtr);
+  BoxGObjPtr gobj = BOX_VM_ARG(vm, BoxGObjPtr);
+  BoxGWin_Interpret_Obj(w->window, gobj);
+  return BOXTASK_OK;
 }
 
 Task window_origin_point(BoxVM *vmp) {

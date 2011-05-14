@@ -376,6 +376,12 @@ static int dummy_save(const char *file_name) {
   return 1;
 }
 
+static BoxTask My_NotImplem_Interpret(BoxGWin *w, BoxGObj *obj) {
+  BoxGWin_Fail("BoxGWin_Interpret_Obj",
+               "not implemented for this window type.");
+  return BOXTASK_FAILURE;
+}
+
 void dummy_close_win(void) {grp_win->_report_error("close_win");}
 void dummy_set_col(int col) {grp_win->_report_error("set_col");}
 void dummy_draw_point(Int ptx, Int pty) {
@@ -385,7 +391,7 @@ void dummy_hor_line(Int y, Int x1, Int x2) {
   grp_win->_report_error("hor_line");
 }
 
-void Grp_Window_Block(GrpWindow *w) {
+void BoxGWin_Block(BoxGWin *w) {
   w->rreset = dummy_rreset;
   w->rinit = dummy_rinit;
   w->rdraw = dummy_rdraw;
@@ -400,6 +406,7 @@ void Grp_Window_Block(GrpWindow *w) {
   w->font = dummy_font;
   w->fake_point = dummy_fake_point;
   w->save = dummy_save;
+  w->interpret = My_NotImplem_Interpret;
 
   w->close_win = dummy_close_win;
   w->set_col = dummy_set_col;
@@ -409,8 +416,8 @@ void Grp_Window_Block(GrpWindow *w) {
   w->_report_error = dummy_err;
 }
 
-void Grp_Window_Break(GrpWindow *w, GrpOnError on_error) {
-  Grp_Window_Block(w);
+void BoxGWin_Break(GrpWindow *w, GrpOnError on_error) {
+  BoxGWin_Block(w);
   w->_report_error = (on_error != (GrpOnError) NULL) ? on_error : dummy_err;
 }
 
@@ -452,7 +459,7 @@ static int Window_Error_Save(const char *file_name) {
 GrpWindow *Grp_Window_Error(FILE *out, const char *msg) {
   GrpWindow *w = (GrpWindow *) malloc(sizeof(GrpWindow));
   GrpWindowErrData *d = (GrpWindowErrData *) malloc(sizeof(GrpWindowErrData));
-  Grp_Window_Block(w);
+  BoxGWin_Block(w);
   w->win_type_str = err_id_string;
   w->save = Window_Error_Save;
   w->close_win = Window_Error_Close;
@@ -487,13 +494,13 @@ GrpWindow grp_dummy_win = {
   dummy_font,
   dummy_fake_point,
   dummy_save,
-  0, /* interpret */
+  My_NotImplem_Interpret,
   0, /* quiet */
   dummy_close_win,
   dummy_set_col,
   dummy_draw_point,
   dummy_hor_line,
-  Grp_Window_Block /* repair */
+  BoxGWin_Block /* repair */
 };
 
 /* This is the current window pointer. By default it produces error messages

@@ -37,7 +37,7 @@
 typedef struct {
   int           initialised;
   GrpWindowPlan plan;
-  GrpWindow     *window;
+  BoxGWin      *window;
   GStyle        style;
 
   PointList     pointlist;

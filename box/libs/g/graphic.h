@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008 by Matteo Franchin                                    *
+ * Copyright (C) 2008-2011 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -163,7 +163,8 @@ typedef struct {
 } ColorGrad;
 
 /** Descriptor of a graphic Window */
-typedef struct _grp_window GrpWindow;
+typedef struct _grp_window BoxGWin;
+typedef BoxGWin GrpWindow;
 
 struct _grp_window {
   /** String which identifies the type of the window */
@@ -187,8 +188,8 @@ struct _grp_window {
   /** Used to save the window to a file */
   int (*save)(const char *file_name);
 
-  int (*interpret)(BoxGObj *commands); /**< Interpret the commands stored
-                                            inside the given BoxGObj. */
+  /** Interpret the commands stored inside the given BoxGObj. */
+  BoxTask (*interpret)(GrpWindow *w, BoxGObj *commands);
 
   /** If set to 1, inhibits error messages */
   int quiet;
@@ -226,8 +227,13 @@ struct _grp_window {
   void *wrdep;         /* Puntatore alla struttura dei dati dipendenti dalla scrittura */
 };
 
+#define BoxGWin_Fail(source, msg)
+
+#define BoxGWin_Interpret_Obj(win, obj) \
+  ((win)->interpret)((win), (obj))
+
 /* Just for compatibility with past conventions */
-#define grp_window GrpWindow
+#define grp_window BoxGWin
 
 /* Dati importanti per la libreria */
 /* Finestra attualmente in uso */
@@ -290,15 +296,15 @@ int eps_save_fig(const char *file_name, GrpWindow *figure);
 typedef void (*GrpOnError)(const char *where);
 
 /** Block the window 'w', such that it reports errors when used. */
-void Grp_Window_Block(GrpWindow *w);
+void BoxGWin_Block(GrpWindow *w);
 
-/** Similar to Grp_Window_Block, but when the window 'w' is used,
+/** Similar to BoxGWin_Block, but when the window 'w' is used,
  * the function on_error is called, instead of reporting an error.
  */
-void Grp_Window_Break(GrpWindow *w, GrpOnError on_error);
+void BoxGWin_Break(GrpWindow *w, GrpOnError on_error);
 
-/** Restore the window 'w', after it has been broken with Grp_Window_Block
- * or Grp_Window_Break
+/** Restore the window 'w', after it has been broken with BoxGWin_Block
+ * or BoxGWin_Break
  */
 void Grp_Window_Repair(GrpWindow *w);
 
@@ -315,7 +321,7 @@ int Grp_Window_Is_Error(GrpWindow *w);
 /** Make 'w' a dummy window which just reports errors when used. */
 void Grp_Window_Make_Dummy(GrpWindow *w);
 
-#define grp_window_block Grp_Window_Block
+#define grp_window_block BoxGWin_Block
 
 /* Procedure per la gestione di una palette */
 void grp_color_build(Color *cb, ColorBytes *c);
