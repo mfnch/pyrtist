@@ -201,8 +201,36 @@ void BoxGObj_Filter(BoxGObj *gobj_dest, BoxGObj *gobj_src,
 
   } else {
     assert(filter != NULL);
-    filter(& gobj_dest->value, & gobj_dest->value, kind, pass);
+    filter(gobj_dest, gobj_src, pass);
   }
+}
+
+void BoxGObj_Merge_Filtered(BoxGObj *gobj_dest, BoxGObj *gobj_src,
+                            BoxGObjFilter filter, void *pass) {
+  BoxGObjKind kind = gobj_src->kind;
+  if (kind == BOXGOBJKIND_COMPOSITE) {
+    BoxArr *a_src = & gobj_src->value.v_composite;
+    size_t num_items = BoxArr_Num_Items(a_src), i;
+
+    for (i = 1; i <= num_items; i++) {
+      BoxGObj *gobj_src_item = (BoxGObj *) BoxArr_Item_Ptr(a_src, i);
+      BoxGObj *gobj_dest_item = BoxGObj_Expand(gobj_dest, 0);
+      filter(gobj_dest_item, gobj_src_item, pass);
+    }
+
+  } else {
+    BoxGObj *gobj_dest_item = BoxGObj_Expand(gobj_dest, 1);
+    filter(gobj_dest_item, gobj_src, pass);
+  }
+}
+
+static void My_BoxGObj_Merge_Filter(BoxGObj *gobj_dest,
+                                    const BoxGObj *gobj_src, void *pass) {
+  BoxGObj_Init_From(gobj_dest, gobj_src);
+}
+
+void BoxGObj_Merge(BoxGObj *gobj_dest, BoxGObj *gobj_src) {
+  BoxGObj_Merge_Filtered(gobj_dest, gobj_src, My_BoxGObj_Merge_Filter, NULL);
 }
 
 /** Add an object gobj_src to another object gobj_dest.
@@ -349,8 +377,8 @@ BoxTask GLib_Obj_At_Str(BoxVM *vm) {
 
 BoxTask GLib_Int_At_Obj_Get(BoxVM *vm) {
   BoxSubtype *obj_get = BOX_VM_THIS_PTR(vm, BoxSubtype);
-  BoxGObjPtr gobj_parent = *BOXSUBTYPE_PARENT_PTR(obj_get, BoxGObjPtr);
-  BoxGObjPtr gobj_child = *BOXSUBTYPE_CHILD_PTR(obj_get, BoxGObjPtr);
+  BoxGObjPtr gobj_parent = *((BoxGObjPtr *) BOXSUBTYPE_PARENT_PTR(obj_get));
+  BoxGObjPtr gobj_child = *((BoxGObjPtr *) BOXSUBTYPE_CHILD_PTR(obj_get));
   BoxInt idx = BOX_VM_ARG(vm, BoxInt);
   BoxGObj *gobj_indexed = BoxGObj_Get(gobj_parent, idx);
   if (gobj_indexed != NULL) {
@@ -375,8 +403,8 @@ BoxTask GLib_Obj_At_Length(BoxVM *vm) {
 
 BoxTask GLib_Int_At_Obj_GetType(BoxVM *vm) {
   BoxSubtype *obj_get = BOX_VM_THIS_PTR(vm, BoxSubtype);
-  BoxGObjPtr gobj_parent = *BOXSUBTYPE_PARENT_PTR(obj_get, BoxGObjPtr);
-  BoxInt *gobj_type = BOXSUBTYPE_CHILD_PTR(obj_get, BoxInt);
+  BoxGObjPtr gobj_parent = *((BoxGObjPtr *) BOXSUBTYPE_PARENT_PTR(obj_get));
+  BoxInt *gobj_type = (BoxInt *) BOXSUBTYPE_CHILD_PTR(obj_get);
   BoxInt idx = BOX_VM_ARG(vm, BoxInt);
   BoxInt t = BoxGObj_Get_Type(gobj_parent, idx);
   if (t >= 0) {
@@ -392,6 +420,17 @@ BoxTask GLib_Int_At_Obj_GetType(BoxVM *vm) {
 BoxTask GLib_StrStr_Compare(BoxVM *vm) {
   BoxInt *result = BOX_VM_THIS_PTR(vm, BoxInt);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
-  *result = strcmp(s[0].ptr, s[1].ptr);
+  *result = strcmp((s[0].length > 0) ? s[0].ptr : "",
+                   (s[1].length > 0) ? s[1].ptr : "");
   return BOXTASK_OK;
 }
+
+BoxTask GLib_Obj_At_MergeObjs(BoxVM *vm) {
+  BoxSubtype *obj_merge = BOX_VM_THIS_PTR(vm, BoxSubtype);
+  BoxGObjPtr gobj_dest = *((BoxGObjPtr *) BOXSUBTYPE_PARENT_PTR(obj_merge));
+  BoxGObjPtr gobj_src = BOX_VM_ARG(vm, BoxGObjPtr);
+  BoxGObj_Merge(gobj_dest, gobj_src);
+  return BOXTASK_OK;
+}
+
+

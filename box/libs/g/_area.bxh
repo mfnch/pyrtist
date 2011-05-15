@@ -1,0 +1,5 @@
+#provide "g._area"
+
+Area = Real
+([)@Area[$$ = 0.0]
+

@@ -29,7 +29,9 @@ t = Tests[]
     ("Obj[Obj[]]", Str[Obj[Obj[]]])
     ("Obj[Obj[1]]", Str[Obj[Obj[1]]])
     ("Obj[Obj[Obj[Obj[5, 1], 1], 1], 1]", Str[Obj[Obj[Obj[Obj[5, 1], 1], 1], 1]])
-    ("Obj[Obj[Obj[Obj[5], 1], 1], 1]", Str[Obj[Obj[Obj[Obj[5], 1], 1], 1]])]
+    ("Obj[Obj[Obj[Obj[5], 1], 1], 1]", Str[Obj[Obj[Obj[Obj[5], 1], 1], 1]])
+    ("Obj[Obj[1, 2], Obj[3, 4]]", Str[Obj[Obj[1, 2], Obj[3, 4]]])
+    ("Obj[1, 2, 3, 4]", Str[o = Obj[1, 2], o.Merge[Obj[3, 4]], o])]
 
 Exit[!t.success]
 

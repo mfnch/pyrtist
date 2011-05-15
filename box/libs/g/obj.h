@@ -88,8 +88,8 @@ void *BoxGObj_To(BoxGObj *gobj, BoxGObjKind kind);
 /** Function used to map a single BoxGObj object from 'gobj_src' to
  * 'gobj_dest'.
  */
-typedef void BoxGObjFilter(void *gobj_dest, const void *gobj_src,
-                           BoxGObjKind kind, void *pass);
+typedef void BoxGObjFilter(BoxGObj *gobj_dest, const BoxGObj *gobj_src,
+                           void *pass);
 
 /** Copy gobj_src into gobj_dest, calling the provided function 'filter'
  * to copy the single values. 'pass' is passed as a last argument for
@@ -98,5 +98,21 @@ typedef void BoxGObjFilter(void *gobj_dest, const void *gobj_src,
  */
 void BoxGObj_Filter(BoxGObj *gobj_dest, BoxGObj *gobj_src,
                     BoxGObjFilter filter, void *pass);
+
+/** Filter 'gobj_src' through the given function 'filter' and merge the
+ * result into 'gobj_dest'. 'pass' is passed as last argument for filter.
+ * @see BoxGObj_Merge
+ */
+void BoxGObj_Merge_Filtered(BoxGObj *gobj_dest, BoxGObj *gobj_src,
+                            BoxGObjFilter filter, void *pass);
+
+/** Merge 'gobj_src' into 'gobj_dest'. This uses BoxGObj_Merge_Filtered
+ * using a simple copy as a filter.
+ * @see BoxGObj_Merge_Filtered
+ */
+void BoxGObj_Merge(BoxGObj *gobj_dest, BoxGObj *gobj_src);
+
+#define BoxGObj_Is_Single(gobj) \
+  ((gobj)->kind != BOXGOBJKIND_COMPOSITE && (gobj)->kind != BOXGOBJKIND_EMPTY)
 
 #endif

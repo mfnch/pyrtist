@@ -136,13 +136,21 @@ typedef struct {
   BoxObj child, parent;
 } BoxSubtype;
 
+#if 0
 /** in this macro 'subtype_ptr' should have type 'Subtype *' */
-#  define BOXSUBTYPE_PARENT_PTR(subtype_ptr, parent_type) \
-  ((parent_type *) ((*(subtype_ptr)).parent.ptr))
+#  define BOXSUBTYPE_PARENT_PTR(subtype_ptr) \
+  ((subtype_ptr)->parent.ptr)
 
 /** in this macro 'subtype_ptr' should have type 'Subtype *' */
-#  define BOXSUBTYPE_CHILD_PTR(subtype_ptr, child_type) \
-  (( child_type *) ((*(subtype_ptr)).child.ptr))
+#  define BOXSUBTYPE_CHILD_PTR(subtype_ptr) \
+  ((subtype_ptr)->child.ptr)
+#endif
+
+#    define BOXSUBTYPE_PARENT_PTR(subtype_ptr) \
+       ((void *) ((*(subtype_ptr)).parent.ptr))
+
+#    define BOXSUBTYPE_CHILD_PTR(subtype_ptr) \
+       ((void *) ((*(subtype_ptr)).child.ptr))
 
 typedef struct {
   BoxInt length;
@@ -210,8 +218,12 @@ typedef BoxName Data;
 #    define SReal BoxReal_Fmt
 #    define SPoint BoxPoint_Fmt
 
-#    define SUBTYPE_PARENT_PTR BOXSUBTYPE_PARENT_PTR
-#    define SUBTYPE_CHILD_PTR BOXSUBTYPE_CHILD_PTR
+#    define SUBTYPE_PARENT_PTR(subtype_ptr, parent_type) \
+       ((parent_type *) ((*(subtype_ptr)).parent.ptr))
+
+#    define SUBTYPE_CHILD_PTR(subtype_ptr, child_type) \
+       (( child_type *) ((*(subtype_ptr)).child.ptr))
+
 #    define NAME BOXNAME
 #    define IS_SUCCESSFUL BOXTASK_IS_SUCCESS
 #    define IS_FAILED BOXTASK_IS_FAILURE
