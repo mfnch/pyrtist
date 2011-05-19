@@ -11,36 +11,28 @@ ObjType = Int
 objtype = (ObjType empty, void, char, int, real, point, str, obj, type)[]
 objtype = (0, 1, 2, 3, 4, 5, 7, 8, 9)
 
-(.[)@Obj "GLib_Init_At_Obj" ?    ///Intro: initialization
-(].)@Obj "GLib_Finish_At_Obj" ?  ///Intro: finalization
+(.[)@Obj "GLib_Init_At_Obj" ?
+(].)@Obj "GLib_Finish_At_Obj" ?
 
-///Begin.
 ///Intro: add (boxing) a {type(.@)} object to a {type(@.)} object
 ///Note: Many objects can be added to the same Obj object, making it a
 //  composite object.
 ///Example: {var(@.)} = {type(@.)}[{value(.@)}]
-
-Char@Obj "GLib_Char_At_Obj" ?    ///This.
-INT@Obj "GLib_Int_At_Obj" ?      ///This.
+Char@Obj "GLib_Char_At_Obj" ?
+INT@Obj "GLib_Int_At_Obj" ?      ///Same.
 REAL@Obj "GLib_Real_At_Obj" ?    ///This.
 Point@Obj "GLib_Point_At_Obj" ?  ///This.
 Str@Obj "GLib_Str_At_Obj" ?      ///This.
 Obj@Obj "GLib_Obj_At_Obj" ?      ///This.
 
-//End.
-
-///Begin.
 ///Intro: extract (unboxing) a {type(@.)} object from an {type(.@)} object
 ///Note: The object must just contain one single object of type {.@},
 //  otherwise and exception is raised.
 ///Example: {var(@.)} = {type(@.)}[{value(.@)}]
-
-Obj@Char "GLib_Obj_At_Char" ?    ///This.
-Obj@Int "GLib_Obj_At_Int" ?      ///This.
-Obj@Real "GLib_Obj_At_Real" ?    ///This.
-Obj@Point "GLib_Obj_At_Point" ?  ///This.
-
-//End.
+Obj@Char "GLib_Obj_At_Char" ?
+Obj@Int "GLib_Obj_At_Int" ?      ///Same.
+Obj@Real "GLib_Obj_At_Real" ?    ///Same.
+Obj@Point "GLib_Obj_At_Point" ?  ///Same.
 
 Obj.Get = Obj
 Int@Obj.Get "GLib_Int_At_Obj_Get" ?

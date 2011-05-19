@@ -161,22 +161,33 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
                                          BoxInt cmnd_id, BoxGObj *args_obj) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   ItpType args[ITP_MAX_NUM_ARGS];
-  enum {CMND_SET_ANTIALIAS=0,
+  enum {CMND_SAVE=0, CMND_RESTORE, CMND_SET_ANTIALIAS,
         CMND_MOVE_TO, CMND_LINE_TO, CMND_CURVE_TO, CMND_CLOSE_PATH,
         CMND_NEW_PATH, CMND_NEW_SUB_PATH,
         CMND_STROKE, CMND_STROKE_PRESERVE, CMND_FILL, CMND_FILL_PRESERVE,
         CMND_CLIP, CMND_CLIP_PRESERVE,
-        CMND_SET_LINE_WIDTH, CMND_SET_SOURCE_RGBA};
+        CMND_SET_LINE_WIDTH, CMND_SET_LINE_CAP, CMND_SET_LINE_JOIN,
+        CMND_SET_MITER_LIMIT, CMND_SET_DASH, CMND_SET_FILL_RULE,
+        CMND_SET_SOURCE_RGBA};
 
   switch (cmnd_id) {
+  case CMND_SAVE:
+    cairo_save(cr);
+    return BOXTASK_OK;
+
+  case CMND_RESTORE:
+    cairo_restore(cr);
+    return BOXTASK_OK;
+
   case CMND_SET_ANTIALIAS:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
-      int v;
+      cairo_antialias_t v;
       switch(*args[0].i) {
-      case CAIRO_ANTIALIAS_DEFAULT: v = 0; break;
-      case CAIRO_ANTIALIAS_NONE: v = 1; break;
-      case CAIRO_ANTIALIAS_GRAY: v = 2; break;
-      case CAIRO_ANTIALIAS_SUBPIXEL: v = 3; break;
+      default:
+      case 0: v = CAIRO_ANTIALIAS_DEFAULT; break;
+      case 1: v = CAIRO_ANTIALIAS_NONE; break;
+      case 2: v = CAIRO_ANTIALIAS_GRAY; break;
+      case 3: v = CAIRO_ANTIALIAS_SUBPIXEL; break;
       }
       cairo_set_antialias(cr, v);
       return BOXTASK_OK;
@@ -247,6 +258,53 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
   case CMND_SET_LINE_WIDTH:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_REAL)) {
       cairo_set_line_width(cr, *args[0].r);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case CMND_SET_LINE_CAP:
+    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
+      cairo_line_cap_t v;
+      switch(*args[0].i) {
+      default:
+      case 0: v = CAIRO_LINE_CAP_BUTT; break;
+      case 1: v = CAIRO_LINE_CAP_ROUND; break;
+      case 2: v = CAIRO_LINE_CAP_SQUARE; break;
+      }
+      cairo_set_line_cap(cr, v);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case CMND_SET_LINE_JOIN:
+    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
+      cairo_line_join_t v;
+      switch(*args[0].i) {
+      default:
+      case 0: v = CAIRO_LINE_JOIN_MITER; break;
+      case 1: v = CAIRO_LINE_JOIN_ROUND; break;
+      case 2: v = CAIRO_LINE_JOIN_BEVEL; break;
+      }
+      cairo_set_line_join(cr, v);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case CMND_SET_MITER_LIMIT:
+    break;
+
+  case CMND_SET_DASH:
+    break;
+
+  case CMND_SET_FILL_RULE:
+    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
+      cairo_fill_rule_t v;
+      switch(*args[0].i) {
+      default:
+      case 0: v = CAIRO_FILL_RULE_WINDING; break;
+      case 1: v = CAIRO_FILL_RULE_EVEN_ODD; break;
+      }
+      cairo_set_fill_rule(cr, v);
       return BOXTASK_OK;
     }
     break;

@@ -1,12 +1,28 @@
 // Interface to Window.Circle
 
+///Intro: drawing of circles.
 Window.Circle = Void
+
 ([)@Window.Circle "circle_begin" ?
 (])@Window.Circle "circle_end" ?
+
+///Intro: center of the circle.
 Point@Window.Circle "circle_point" ?
 Real@Window.Circle "circle_real" ?
+
+///Intro: stop drawing the current circle and start drawing a new one,
+// using the old center if only the radius is specified, or using the old
+// radius if only the center is specified.
 (;)@Window.Circle "circle_pause" ?
+
+///Intro: {type(.@)} used to fill the circle.
 Color@Window.Circle "circle_color" ?
+
+///Same.
 Gradient@Window.Circle "circle_gradient" ?
+
+///Intro: {type(.@)} used for the border of the circle and the filling mode.
 Style@Window.Circle "circle_style" ?
+
 PointList@Window.Circle "circle_pointlist" ?
+

@@ -1,22 +1,45 @@
 // The Window object
 
+///Intro: the {type(.)} object is the main object in the Box graphic library.
+//  It can correspond to a real drawing device (array of pixels allocated in
+//  memory, PDF/SVG file, etc) or can be simply a container of graphics
+//  commands to be stored for later manipulation.
 Window = ++CPtr
+
 (.[)@Window "window_begin" ?
 (])@Window "window_end" ?
 (].)@Window "window_destroy" ?
 
 Str@Window "window_str" ?
 Point@Window "window_size" ?
-Color@Window "window_color" ?
-Gradient@Window "window_gradient" ?
-Style@Window "window_style" ?
-Window@Window "window_window" ?
-//Obj@Window "GLib_Obj_At_Window" ?
 
+///Begin.
+///Intro: specifies a {type(.@)} to be used in the drawing commands which
+//  will follow in the Window.
+
+Color@Window "window_color" ?        ///This.
+Gradient@Window "window_gradient" ?  ///This.
+Style@Window "window_style" ?        ///This.
+
+///End.
+
+///Intro: draw the content of a {type(.@)} inside the opened {type(@.)}
+//  object.
+Window@Window "window_window" ?
+
+///Intro: method to be used to save the Window to a file.
 Window.Save = Void
+
 ([)@Window.Save "window_save_begin" ?
 (])@Window.Save "window_save_end" ?
+
+///Intro: name of the file where to save the {type(Window)}.
+//  The extension is read to determine the desired file format.
 Str@Window.Save "window_save_str" ?
+
+///Intro: a window object can be provided to specify where to save the content
+//  of the parent Window. It can be either a complete Window or an incomplete
+//  one.
 Window@Window.Save "window_save_window" ?
 
 Window.Hot = Point

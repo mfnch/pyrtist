@@ -3,7 +3,7 @@
 //  to metapost: move_to, line_to, close_path, stroke, etc.) to a Window
 //  object. The commands are passed through an Obj object.
 //  Most of the high level drawing routines are build (in Box) over this
-//  base. 
+//  base.
 ///Example:
 //  include "raw"
 //  w = Window[][
@@ -13,7 +13,7 @@
 //        Obj[g.raw.close_path]
 //        Obj[g.raw.stroke]]
 //  ]
-// 
+//
 #provide "g.raw"
 
 include "g"
@@ -23,11 +23,20 @@ include "obj"
 // pass a sequence of low-level commands to the Window via an Obj object
 Obj@Window "GLib_Obj_At_Window" ?
 
-g = ((Int set_antialias, move_to, line_to, curve_to, close_path
+g = ((Int save, restore, set_antialias,
+          move_to, line_to, curve_to, close_path
           new_path, new_sub_path
           stroke, stroke_preserve, fill, fill_preserve, clip, clip_preserve
-          set_line_width, set_source_rgba) raw
-     (Int default, none, gray, subpixel) antialias)[]
-g = ((0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14)
-     (0, 1, 2, 3))
+          set_line_width, set_line_cap, set_line_join, set_miter_limit,
+          set_dash, set_fill_rule, set_source_rgba) raw
+     (Int default, none, gray, subpixel) antialias
+     ((Int miter, round, bevel) join
+      (Int butt, round, square) cap) line
+     (Int winding, even_odd) fill_rule)[]
 
+g.raw = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
+         20, 21)
+g.antialias = (0, 1, 2, 3)
+g.line.join = (0, 1, 2)
+g.line.cap = (0, 1, 2)
+g.fill_rule = (0, 1)
