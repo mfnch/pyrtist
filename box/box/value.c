@@ -89,10 +89,6 @@ static void My_Value_Finalize(Value *v) {
         Reg_Release(& v->proc->reg_alloc,
                     BOXTYPE_OBJ, v->value.cont.value.ptr.reg);
       }
-
-      if (v->attr.own_reference) {
-        MSG_WARNING("My_Value_Finalize: should we unlink also for members?");
-      }
       return;
 
     default:

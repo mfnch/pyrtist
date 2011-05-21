@@ -27,16 +27,25 @@ g = ((Int save, restore, set_antialias,
           move_to, line_to, curve_to, close_path
           new_path, new_sub_path
           stroke, stroke_preserve, fill, fill_preserve, clip, clip_preserve
-          set_line_width, set_line_cap, set_line_join, set_miter_limit,
+          reset_clip, push_group, pop_group_to_source, set_operator
+          paint, paint_with_alpha, copy_page, show_page
+          set_line_width, set_line_cap, set_line_join, set_miter_limit
           set_dash, set_fill_rule, set_source_rgba) raw
      (Int default, none, gray, subpixel) antialias
      ((Int miter, round, bevel) join
       (Int butt, round, square) cap) line
-     (Int winding, even_odd) fill_rule)[]
+     (Int winding, even_odd) fill_rule
+     (Int clear, source, over, in, out, atop, dest, dest_over, dest_in
+          dest_out, dest_atop, xor, add, saturate, multiply, screen, overlay
+          darken, lighten, color_dodge, color_burn, hard_light, soft_light
+          difference, exclusion, hsl_hue, hsl_saturation, hsl_color
+          hsl_luminosity) operator)[]
 
 g.raw = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
-         20, 21)
+         20, 21, 22, 23, 24, 25, 26, 27, 28, 29)
 g.antialias = (0, 1, 2, 3)
 g.line.join = (0, 1, 2)
 g.line.cap = (0, 1, 2)
 g.fill_rule = (0, 1)
+g.operator = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18
+              19, 20, 21, 22, 23, 24, 25, 26, 27, 28)

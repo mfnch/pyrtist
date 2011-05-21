@@ -33,6 +33,7 @@ Obj@Char "GLib_Obj_At_Char" ?
 Obj@Int "GLib_Obj_At_Int" ?      ///Same.
 Obj@Real "GLib_Obj_At_Real" ?    ///Same.
 Obj@Point "GLib_Obj_At_Point" ?  ///Same.
+Obj@Str "GLib_Obj_At_Str" ?      ///Same.
 
 Obj.Get = Obj
 Int@Obj.Get "GLib_Int_At_Obj_Get" ?
@@ -40,17 +41,12 @@ Int@Obj.Get "GLib_Int_At_Obj_Get" ?
 Obj.GetType = ObjType
 Int@Obj.GetType "GLib_Int_At_Obj_GetType" ?
 
-Obj@Length "GLib_Obj_At_Length" ?
+Obj@Num "GLib_Obj_At_Length" ?
 
-Obj@Str[
-  // We need to define here how to stringify a string Obj
-  // to avoid infinite recursion
-  MyStr = Str
-  Obj@MyStr "GLib_Obj_At_Str" ?
-
+Obj@Repr[
   "Obj["
 
-  [l = Length[$]
+  [l = Num[$]
   If[l > 0]
     i = 0, sep = ""
     [
@@ -62,7 +58,7 @@ Obj@Str[
        Else[], If[t == objtype.int], Int[o]
        Else[], If[t == objtype.real], Real[o]
        Else[], If[t == objtype.point], Point[o]
-       Else[], If[t == objtype.str], MyStr['"', o, '"']
+       Else[], If[t == objtype.str], Str['"', o, '"']
        Else[], If[t == objtype.obj], o]
 
       For[++i < l]
@@ -72,7 +68,7 @@ Obj@Str[
   "]"
 ]
 
-Obj@Print[Str[$]]
+Obj@Print[Repr[$]]
 
 ///Intro: merges an {type(Obj)} into the parent {type(Obj)}
 ///Example:

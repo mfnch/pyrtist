@@ -1,0 +1,11 @@
+#provide "g.path"
+
+include "cmdstream"
+
+Path = ++(CmdStream cmdstream, Int empty)
+
+(.[)@Path[.empty = 1]
+
+Obj@Path[\ .cmdstream[$]]
+
+Path@CmdStream[$.cmdstream]

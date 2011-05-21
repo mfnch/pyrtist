@@ -249,6 +249,12 @@ static Task My_Length_Init(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
+static BoxTask My_Num_Init(BoxVM *vm) {
+  BoxInt *length = BOX_VM_THIS_PTR(vm, BoxInt);
+  *length = 0;
+  return BOXTASK_OK;
+}
+
 /*****************************************************************************
  *                       FUNCTIONS FOR CONVERSION                            *
  *****************************************************************************/
@@ -386,6 +392,9 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
 
   b->print = TS_Alias_New(ts, BOXTYPE_VOID);
   TS_Name_Set(ts, b->print, "Print");
+
+  b->repr = TS_Alias_New(ts, b->string);
+  TS_Name_Set(ts, b->repr, "Repr");
 }
 
 /* Register the core types in the current namespace, so that Box programs
@@ -413,6 +422,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {"Elif",        c->bltin.alias_elif},
     {"For",         c->bltin.alias_for},
     {"Print",       c->bltin.print},
+    {"Repr",        c->bltin.repr},
     {(char *) NULL, BOXTYPE_NONE}
   };
 
@@ -738,6 +748,10 @@ static void My_Register_Sys(BoxCmp *c) {
   c->bltin.length =
     Bltin_Simple_Fn_Def(c, "Length", BOXTYPE_INT,
                         BOXTYPE_BEGIN, My_Length_Init);
+
+  c->bltin.num =
+    Bltin_Simple_Fn_Def(c, "Num", BOXTYPE_INT,
+                        BOXTYPE_BEGIN, My_Num_Init);
 }
 
 /* Register bultin types, operation and functions */

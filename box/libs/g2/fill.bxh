@@ -1,0 +1,17 @@
+#provide "g.fill"
+
+include "raw"
+include "path"
+include "style"
+
+///Intro: fill the given paths.
+Fill = ++(Obj path, Sty style)
+
+//Intro: add a path to fill.
+Path@Fill[]
+
+///Intro: include the fill command in the current window.
+//Fill@Window[$.obj]
+
+//
+//  [If[!first_point], Obj[g.raw.fill]]

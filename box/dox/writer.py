@@ -65,8 +65,9 @@ def macro_splitter(text, start=0):
 
 
 class Writer(object):
-  def __init__(self, tree):
+  def __init__(self, tree, docinfo={}):
     self.tree = tree
+    self.docinfo = docinfo
 
   def gen_type_link(self, t):
     return "link(%s)" % str(t)

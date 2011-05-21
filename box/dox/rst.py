@@ -38,7 +38,7 @@ def get_item_intro(item):
   if item != None:
     db = item.doxblocks
     if db != None and "Intro" in db.content:
-      return " ".join(db.content["Intro"])
+      return " ".join(db.content["Intro"]).strip().capitalize()
   return None
 
 def rst_normalize(s):
@@ -48,9 +48,10 @@ def rst_normalize(s):
 
 
 class RSTWriter(Writer):
-  def __init__(self, tree):
-    Writer.__init__(self, tree)
+  def __init__(self, tree, docinfo={}, nest_subtypes=True):
+    Writer.__init__(self, tree, docinfo=docinfo)
     self.out = ""
+    self.nest_subtypes = nest_subtypes
     self.type_name_map = {}
     self._find_duplicates()
 
@@ -81,14 +82,28 @@ class RSTWriter(Writer):
     return ("`%s`_" % t_name if unique_name == None
             else "|%s|_" % unique_name)
 
-  def gen_type_section(self, t):
+  def gen_section_title(self, title, level=0):
+    char = "=-~.`"[min(level, 4)]
+    return "%s\n%s\n\n" % (title, char*len(title))
+
+  def gen_type_section_title(self, t, level=0):
     t_name = str(t)
     unique_name = self.type_name_map.get(t_name, None)
     s = ""
     if unique_name != None:
       s = (  ".. |%s| replace:: %s\n" % (unique_name, t_name)
            + ".. _%s:\n\n" % unique_name)
-    return s + "%s\n%s\n\n" % (t_name, "-"*len(t_name))
+    return s + self.gen_section_title(t_name, level)
+
+  def gen_target_section(self, target, section="Intro"):
+    pieces = Writer.gen_target_section(self, target, section)
+    if pieces != None:
+      text = "".join(pieces).strip()
+      text = text[0].upper() + text[1:] if len(text) > 0 else text
+      return text
+
+    else:
+      return None
 
   def write(self, s):
     self.out += s
@@ -96,68 +111,75 @@ class RSTWriter(Writer):
   def writeln(self, s=""):
     self.out += s + "\n"
 
-  def writesec(self, title):
-    self.writeln(title)
-    self.writeln(len(title)*"-")
-    self.writeln()
+  def gen_type_section(self, t, level=0):
+    self.write(self.gen_type_section_title(t, level=level))
+    intro = self.gen_target_section(t)
+    if intro != None:
+      self.writeln(intro)
+      self.writeln()
 
-  def gen_target_section(self, target, section="Intro"):
-    pieces = Writer.gen_target_section(self, target, section)
-    return "".join(pieces) if pieces != None else None
+    children = map(str, t.children)
+    if len(children) > 0:
+      children.sort()
+      links = map(self.gen_type_link, children)
+      s = "**Uses:** " + ", ".join(links)
+      self.writeln(s)
+      self.writeln()
 
-  def gen(self):
+    proc_list = []
+    for child in t.children:
+      proc = DoxProc(child, t)
+      intro = self.gen_target_section(self.tree.procs.get(str(proc), None))
+      if intro != None:
+        proc_list.append((self.gen_type_link(child), intro))
+
+    if len(proc_list) > 0:
+      self.writeln(table_to_string(proc_list))
+      self.writeln()
+
+    parents = map(str, t.parents)
+    if len(parents) > 0:
+      parents.sort()
+      links = map(self.gen_type_link, parents)
+      s = "**Used by:** " + ", ".join(links)
+      self.writeln(s)
+      self.writeln()
+
+    subtype_children = map(str, t.subtype_children)
+    if len(subtype_children) > 0:
+      subtype_children.sort()
+      links = map(self.gen_type_link, subtype_children)
+      s = "**Subtypes:** " + ", ".join(links)
+      self.writeln(s)
+      self.writeln()
+
+    if self.nest_subtypes:
+      for st in t.subtype_children:
+        self.gen_type_section(st, level=level+1)
+
+  def gen_index(self, level=0):
+    title = self.docinfo.get("index_title", "Documentation index")
+    return (  ".. contents:: %s\n" % title
+            + "   :depth: 3\n\n")
+
+  def gen(self, level=0):
     self.out = ""
 
+    title = self.docinfo.get("title", None)
+    if title != None:
+      self.write(self.gen_section_title(title))
+      level += 1
+
+    if self.docinfo.get("has_index", True):
+      self.write(self.gen_index(level))
+
     types = self.tree.types
-    procs = self.tree.procs
-
-    self.writeln(".. contents:: Index of available object types")
-    self.writeln("   :depth: 3")
-    self.writeln()
-
     typenames = types.keys()
     typenames.sort()
     for typename in typenames:
       t = types[typename]
-      self.write(self.gen_type_section(t))
-      intro = self.gen_target_section(t)
-      if intro != None:
-        self.writeln(intro)
-        self.writeln()
 
-      children = map(str, t.children)
-      if len(children) > 0:
-        children.sort()
-        links = map(self.gen_type_link, children)
-        s = "*Uses:* " + ", ".join(links)
-        self.writeln(s)
-        self.writeln()
-
-      proc_list = []
-      for child in t.children:
-        proc = DoxProc(child, t)
-        intro = self.gen_target_section(procs.get(str(proc), None))
-        if intro != None:
-          proc_list.append((self.gen_type_link(child), intro))
-
-      if len(proc_list) > 0:
-        self.writeln(table_to_string(proc_list))
-        self.writeln()
-
-      subtype_childrens = map(str, t.subtype_children)
-      if len(subtype_childrens) > 0:
-        subtype_childrens.sort()
-        links = map(self.gen_type_link, subtype_childrens)
-        s = "*Subtypes:* " + ", ".join(links)
-        self.writeln(s)
-        self.writeln()
-
-      parents = map(str, t.parents)
-      if len(parents) > 0:
-        parents.sort()
-        links = map(self.gen_type_link, parents)
-        s = "*Used by:* " + ", ".join(links)
-        self.writeln(s)
-        self.writeln()
+      if t.subtype_parent == None or self.nest_subtypes == False:
+        self.gen_type_section(t, level)
 
     return self.out

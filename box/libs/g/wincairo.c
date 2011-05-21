@@ -157,6 +157,41 @@ static int My_Args_From_Obj(ItpType *args, BoxGObj *args_obj,
   return success;
 }
 
+static cairo_operator_t My_Cairo_Operator_Of_Int(BoxInt v) {
+  switch (v) {
+  case  0: return CAIRO_OPERATOR_CLEAR;
+  case  1: return CAIRO_OPERATOR_SOURCE;
+  case  2: return CAIRO_OPERATOR_OVER;
+  case  3: return CAIRO_OPERATOR_IN;
+  case  4: return CAIRO_OPERATOR_OUT;
+  case  5: return CAIRO_OPERATOR_ATOP;
+  case  6: return CAIRO_OPERATOR_DEST;
+  case  7: return CAIRO_OPERATOR_DEST_OVER;
+  case  8: return CAIRO_OPERATOR_DEST_IN;
+  case  9: return CAIRO_OPERATOR_DEST_OUT;
+  case 10: return CAIRO_OPERATOR_DEST_ATOP;
+  case 11: return CAIRO_OPERATOR_XOR;
+  case 12: return CAIRO_OPERATOR_ADD;
+  case 13: return CAIRO_OPERATOR_SATURATE;
+  case 14: return CAIRO_OPERATOR_MULTIPLY;
+  case 15: return CAIRO_OPERATOR_SCREEN;
+  case 16: return CAIRO_OPERATOR_OVERLAY;
+  case 17: return CAIRO_OPERATOR_DARKEN;
+  case 18: return CAIRO_OPERATOR_LIGHTEN;
+  case 19: return CAIRO_OPERATOR_COLOR_DODGE;
+  case 20: return CAIRO_OPERATOR_COLOR_BURN;
+  case 21: return CAIRO_OPERATOR_HARD_LIGHT;
+  case 22: return CAIRO_OPERATOR_SOFT_LIGHT;
+  case 23: return CAIRO_OPERATOR_DIFFERENCE;
+  case 24: return CAIRO_OPERATOR_EXCLUSION;
+  case 25: return CAIRO_OPERATOR_HSL_HUE;
+  case 26: return CAIRO_OPERATOR_HSL_SATURATION;
+  case 27: return CAIRO_OPERATOR_HSL_COLOR;
+  case 28: return CAIRO_OPERATOR_HSL_LUMINOSITY;
+  default: return CAIRO_OPERATOR_OVER;
+  }
+}
+
 static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
                                          BoxInt cmnd_id, BoxGObj *args_obj) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
@@ -165,7 +200,9 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
         CMND_MOVE_TO, CMND_LINE_TO, CMND_CURVE_TO, CMND_CLOSE_PATH,
         CMND_NEW_PATH, CMND_NEW_SUB_PATH,
         CMND_STROKE, CMND_STROKE_PRESERVE, CMND_FILL, CMND_FILL_PRESERVE,
-        CMND_CLIP, CMND_CLIP_PRESERVE,
+        CMND_CLIP, CMND_CLIP_PRESERVE, CMND_RESET_CLIP,
+        CMND_PUSH_GROUP, CMND_POP_GROUP_TO_SOURCE, CMND_SET_OPERATOR,
+        CMND_PAINT, CMND_PAINT_WITH_ALPHA, CMND_COPY_PAGE, CMND_SHOW_PAGE,
         CMND_SET_LINE_WIDTH, CMND_SET_LINE_CAP, CMND_SET_LINE_JOIN,
         CMND_SET_MITER_LIMIT, CMND_SET_DASH, CMND_SET_FILL_RULE,
         CMND_SET_SOURCE_RGBA};
@@ -253,6 +290,44 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
 
   case CMND_CLIP_PRESERVE:
     cairo_clip_preserve(cr);
+    return BOXTASK_OK;
+
+  case CMND_RESET_CLIP:
+    cairo_reset_clip(cr);
+    return BOXTASK_OK;
+
+  case CMND_PUSH_GROUP:
+    cairo_push_group(cr);
+    return BOXTASK_OK;
+
+  case CMND_POP_GROUP_TO_SOURCE:
+    cairo_pop_group_to_source(cr);
+    return BOXTASK_OK;
+
+  case CMND_SET_OPERATOR:
+    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
+      cairo_set_operator(cr, My_Cairo_Operator_Of_Int(*args[0].i));
+      return BOXTASK_OK;
+    }
+    break;
+
+  case CMND_PAINT:
+    cairo_paint(cr);
+    return BOXTASK_OK;
+
+  case CMND_PAINT_WITH_ALPHA:
+    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_REAL)) {
+      cairo_paint_with_alpha(cr, *args[0].r);
+      return BOXTASK_OK;
+    }
+    return BOXTASK_OK;
+
+  case CMND_COPY_PAGE:
+    cairo_copy_page(cr);
+    return BOXTASK_OK;
+
+  case CMND_SHOW_PAGE:
+    cairo_show_page(cr);
     return BOXTASK_OK;
 
   case CMND_SET_LINE_WIDTH:

@@ -284,7 +284,12 @@ if __name__ == "__main__":
   tree.link_subtypes()
 
   from rst import RSTWriter
-  writer = RSTWriter(tree)
+  docinfo = \
+    {"title": "Box Reference Manual",
+     "has_index": True,
+     "index_title": "Index of available object types"}
+
+  writer = RSTWriter(tree, docinfo=docinfo)
   f = open("out.rst", "w")
   f.write(writer.gen())
   f.close()

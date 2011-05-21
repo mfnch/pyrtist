@@ -1,0 +1,12 @@
+#provide "g.cmdstream"
+
+include "raw"
+
+CmdStream = ++(Obj cmds,)
+
+Obj@CmdStream[\ .cmds[$]]
+
+CmdStream@CmdStream[\ $$.cmds.Merge[$.cmds]]
+
+CmdStream@Window[$.cmds]
+
