@@ -1,0 +1,47 @@
+#provide "g.circle"
+
+include "raw"
+include "style"
+include "path"
+
+///Intro: create a geometrical shape of type circle.
+Circle = ++((Int center, radius) have
+            Point center, Real radius, radius2, Sty style)
+
+(.[)@Circle[.have = (0, 0)]
+
+///Intro: the center of the circle.
+Point@Circle[.center = $, .have.center = 1]
+
+///Intro: the radius of the circle.
+Real@Circle[
+  have_radius = $$.have.radius
+  If[have_radius == 0], .radius = $, $$.have.radius = 1
+  Else[], If[have_radius == 1], .radius2 = $, $$.have.radius = 2
+]
+
+///Intro: style to use when drawing the polygon.
+Sty@Circle[\ .style[$]]
+
+///Intro: color for filling the circle.
+Color@Circle[\ .style[$]]
+
+///Intro: add the circle to the path.
+Circle@Path[
+  If[$.have.center && $.have.radius]
+    radiusx = $.radius
+    radiusy = Real[If[$.have.radius == 2], $.radius2, Else[], radiusx]
+    center = $.center
+    one_zero = $.center + Point[.x=radiusx, .y=0.0]
+    zero_one = $.center + Point[.x=0.0, .y=radiusy]
+    Obj[g.raw.ext_arc_to, center, one_zero, zero_one, 0.0, 2.0*const.pi]
+    .empty = 0
+]
+
+///Intro: pass the circle to the window for drawing.
+Circle@Window[
+  path = Path[$]
+  If[!path.empty]
+    path.cmdstream
+    CmdStream[$.style]
+]

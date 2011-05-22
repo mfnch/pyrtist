@@ -115,7 +115,44 @@ static void My_Map_Point(Point *out, Point *in) {
  */
 #define MY_REAL(r) ((r)*grp_win->resx) \
 
-#define ITP_MAX_NUM_ARGS 4
+static void My_Cairo_JoinArc(cairo_t *cr,
+                             const Point *a, const Point *b, const Point *c) {
+  cairo_matrix_t previous_m, m;
+
+  cairo_get_matrix(cr, & previous_m);
+  m.xx = b->x - c->x; m.yx = b->y - c->y;
+  m.xy = b->x - a->x; m.yy = b->y - a->y;
+  m.x0 = a->x - m.xx; m.y0 = a->y - m.yx;
+  cairo_transform(cr, & m);
+
+  cairo_arc(cr,
+            (double) 0.0, (double) 0.0,      /* center */
+            (double) 1.0,                    /* radius */
+            (double) 0.0, (double) M_PI/2.0); /* angle begin and end */
+
+  cairo_set_matrix(cr, & previous_m);
+}
+
+static void My_Cairo_Arc(cairo_t *cr,
+                         const Point *ctr, const Point *a, const Point *b,
+                         Real angle_begin, Real angle_end) {
+  cairo_matrix_t previous_m, m;
+
+  cairo_get_matrix(cr, & previous_m);
+  m.xx = a->x - ctr->x;  m.yx = a->y - ctr->y;
+  m.xy = b->x - ctr->x;  m.yy = b->y - ctr->y;
+  m.x0 = ctr->x; m.y0 = ctr->y;
+  cairo_transform(cr, & m);
+
+  cairo_arc(cr,
+            (double) 0, (double) 0,  /* center */
+            (double) 1,              /* radius */
+            angle_begin, angle_end); /* angle begin and end */
+
+  cairo_set_matrix(cr, & previous_m);
+}
+
+#define ITP_MAX_NUM_ARGS 5
 
 /** Used to store pointers to arguments */
 typedef union {
@@ -205,7 +242,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
         CMND_PAINT, CMND_PAINT_WITH_ALPHA, CMND_COPY_PAGE, CMND_SHOW_PAGE,
         CMND_SET_LINE_WIDTH, CMND_SET_LINE_CAP, CMND_SET_LINE_JOIN,
         CMND_SET_MITER_LIMIT, CMND_SET_DASH, CMND_SET_FILL_RULE,
-        CMND_SET_SOURCE_RGBA};
+        CMND_SET_SOURCE_RGBA, CMND_EXT_JOINARC_TO, CMND_EXT_ARC_TO};
 
   switch (cmnd_id) {
   case CMND_SAVE:
@@ -389,6 +426,24 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
                          BOXGOBJKIND_REAL, BOXGOBJKIND_REAL)) {
       cairo_set_source_rgba(cr, *args[0].r, *args[1].r, *args[2].r,
                             *args[3].r);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case CMND_EXT_JOINARC_TO:
+    if (My_Args_From_Obj(args, args_obj, 3, BOXGOBJKIND_POINT,
+                         BOXGOBJKIND_POINT, BOXGOBJKIND_POINT)) {
+      My_Cairo_JoinArc(cr, & args[0].p, & args[1].p, & args[2].p);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case CMND_EXT_ARC_TO:
+    if (My_Args_From_Obj(args, args_obj, 5, BOXGOBJKIND_POINT,
+                         BOXGOBJKIND_POINT, BOXGOBJKIND_POINT,
+                         BOXGOBJKIND_REAL, BOXGOBJKIND_REAL)) {
+      My_Cairo_Arc(cr, & args[0].p, & args[1].p, & args[2].p,
+                   *args[3].r, *args[4].r);
       return BOXTASK_OK;
     }
     break;

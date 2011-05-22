@@ -3,6 +3,7 @@ include "g"
 GUI = Void
 Window@GUI[]
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=32.7743366593, .y=2.27319866085]
 bbox1 = Point[.x=-33.3736933815, .y=87.8159051329]
@@ -22,12 +23,11 @@ PythagTree@Window[
   p = .Poly[side.Get[1], side.Get[2-d], side.Get[(2-d, 1)], side.Get[(1, 1)]]
   t = PointList[p.Get[3], p.Get[4], p.Get[(3+xmid, -h)]]
 
-  pt1 = PythagTree[.level = level-1, .xmid = xmid, .h = h
-                   .p1 = t.Get[3], .p2 = t.Get[1]]
-  pt2 = PythagTree[.level = level-1, .xmid = xmid, .h = h
-                   .p1 = Point[t.Get[2]], .p2 = Point[t.Get[3]]]
-
-  \ $$[If[level >= 1], pt1, pt2]
+  If[level >= 1]
+    PythagTree[.level = level-1, .xmid = xmid, .h = h
+               .p1 = t.Get[3], .p2 = t.Get[1]]
+    PythagTree[.level = level-1, .xmid = xmid, .h = h
+               .p1 = t.Get[2], .p2 = t.Get[3]]
 ]
 
 w = Window[][
@@ -39,7 +39,7 @@ w = Window[][
 
   PythagTree[.level=l, .xmid=0.6, .h=0.45, .p1=(5, 10), .p2=(25, 10)]
 
-//  .Save["fractree.png"]
+  //.Save["fractree.png"]
 
   gui_r // plot the bar
 ]

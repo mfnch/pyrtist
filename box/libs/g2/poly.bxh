@@ -20,6 +20,7 @@ Real@Poly[\ .args[$]]
 ///Intro: color to use for filling the polygon.
 Color@Poly[\ .style[$]]
 
+///Intro: style to use when drawing the polygon.
 Sty@Poly[\ .style[$]]
 
 ///Intro: add the polygon to the path.

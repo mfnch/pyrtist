@@ -30,7 +30,8 @@ g = ((Int save, restore, set_antialias,
           reset_clip, push_group, pop_group_to_source, set_operator
           paint, paint_with_alpha, copy_page, show_page
           set_line_width, set_line_cap, set_line_join, set_miter_limit
-          set_dash, set_fill_rule, set_source_rgba) raw
+          set_dash, set_fill_rule, set_source_rgba
+          ext_joinarc_to, ext_arc_to) raw
      (Int default, none, gray, subpixel) antialias
      ((Int miter, round, bevel) join
       (Int butt, round, square) cap) line
@@ -42,7 +43,7 @@ g = ((Int save, restore, set_antialias,
           hsl_luminosity) operator)[]
 
 g.raw = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
-         20, 21, 22, 23, 24, 25, 26, 27, 28, 29)
+         20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31)
 g.antialias = (0, 1, 2, 3)
 g.line.join = (0, 1, 2)
 g.line.cap = (0, 1, 2)

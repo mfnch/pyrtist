@@ -1,0 +1,41 @@
+//!BOXER:VERSION:0:1:1
+include "g"
+GUI = Void
+Window@GUI[]
+
+//!BOXER:REFPOINTS:BEGIN
+bbox1 = Point[.x=62.7481452312, .y=259.043341238]
+bbox2 = Point[.x=363.233694364, .y=11.6439931464]
+p1 = Point[.x=172.43672428, .y=220.913031624]
+p2 = Point[.x=317.131695087, .y=161.071064716]
+p3 = Point[.x=283.839677778, .y=115.630881326]
+p4 = Point[.x=278.697427778, .y=47.6396974596]
+p5 = Point[.x=89.7113261105, .y=155.580140275]
+p6 = Point[.x=259.842511111, .y=226.468228938]
+p7 = Point[.x=119.859038889, .y=109.338515224]
+//!BOXER:REFPOINTS:END
+include "raw"
+include "poly"
+include "circle"
+
+w = Window[][
+  .Show[bbox1, bbox2]
+
+  //Fill[Line[color.red, p5, p1, p2, p4, Close[]]]
+  //Line[color.black, p3, p6, p7, Close[]]
+  [If[1]
+     [If[0]
+        \ .Poly[p7, p3, p6, color.red, Style[.Border[5, color.black]], .Close[]]
+      Else[]
+        Poly[p7, p3, p6, color.red, Sty[Border[5, color.black]], Close[]]]]
+
+  [If[1]
+     [If[0]
+        \ .Circle[p4, 40, 20, color.red, Style[.Border[color.black, 2]]]
+      Else[]
+        Circle[p4, 40, 20, color.red, Sty[Border[5, color.black]]]]]
+
+  
+]
+
+GUI[w]
