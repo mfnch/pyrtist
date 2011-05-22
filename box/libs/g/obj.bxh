@@ -1,11 +1,14 @@
 #provide "obj"
 
-///Intro: an object which can contain one or more objects of different types.
-///Desc: this object is used to box one or more objects of different type
-//  into a single Obj object (which can contain also other Obj objects).
+///Intro: create an object which contains all the provided objects.
+// This function allows to wrap one or more objects of different types
+// into a single object of type {type(.)}. The new object can then be
+// inspected for its content and the original objects can be extracted.
+// Note that an {type(.)} object can contain other {type(.)} objects.
 ///Value: Obj[{value(Real)}, {value(Str)}, {value(.)}, {etc}]
 Obj = ++CPtr
 
+///Intro: an integer identifying the type of an {type(Obj)} object.
 ObjType = Int
 
 objtype = (ObjType empty, void, char, int, real, point, str, obj, type)[]
@@ -14,16 +17,14 @@ objtype = (0, 1, 2, 3, 4, 5, 7, 8, 9)
 (.[)@Obj "GLib_Init_At_Obj" ?
 (].)@Obj "GLib_Finish_At_Obj" ?
 
-///Intro: add (boxing) a {type(.@)} object to a {type(@.)} object
-///Note: Many objects can be added to the same Obj object, making it a
-//  composite object.
+///Intro: add one {type(.@)} object.
 ///Example: {var(@.)} = {type(@.)}[{value(.@)}]
 Char@Obj "GLib_Char_At_Obj" ?
 INT@Obj "GLib_Int_At_Obj" ?      ///Same.
-REAL@Obj "GLib_Real_At_Obj" ?    ///This.
-Point@Obj "GLib_Point_At_Obj" ?  ///This.
-Str@Obj "GLib_Str_At_Obj" ?      ///This.
-Obj@Obj "GLib_Obj_At_Obj" ?      ///This.
+REAL@Obj "GLib_Real_At_Obj" ?    ///Same.
+Point@Obj "GLib_Point_At_Obj" ?  ///Same.
+Str@Obj "GLib_Str_At_Obj" ?      ///Same.
+Obj@Obj "GLib_Obj_At_Obj" ?      ///Same.
 
 ///Intro: extract (unboxing) a {type(@.)} object from an {type(.@)} object
 ///Note: The object must just contain one single object of type {.@},
@@ -35,14 +36,26 @@ Obj@Real "GLib_Obj_At_Real" ?    ///Same.
 Obj@Point "GLib_Obj_At_Point" ?  ///Same.
 Obj@Str "GLib_Obj_At_Str" ?      ///Same.
 
+///Intro: extract a subobject from a {type(Obj)} object. The new object is
+// again an {type(Obj)} object. For example, ``Obj[1, 2].Get[1]`` returns
+// ``Obj[2]``. In order to extract the integer, you should use
+// ``Int[Obj[1, 2].Get[1]]``. Note that an exception is raised if the cast
+// cannot be done.
 Obj.Get = Obj
+
+///Intro: index of the object to extract.
 Int@Obj.Get "GLib_Int_At_Obj_Get" ?
 
+///Intro: get the type of an object contained inside an {type(Obj)} object.
 Obj.GetType = ObjType
+
+///Intro: index of the object whose type is wanted.
 Int@Obj.GetType "GLib_Int_At_Obj_GetType" ?
 
+///Intro: return the number of items of the {type(.@)} object.
 Obj@Num "GLib_Obj_At_Length" ?
 
+///Intro: create a string representation of {type(.@)}.
 Obj@Repr[
   "Obj["
 
@@ -68,6 +81,7 @@ Obj@Repr[
   "]"
 ]
 
+///Intro: print a string representation of the {type(Obj)} object.
 Obj@Print[Repr[$]]
 
 ///Intro: merges an {type(Obj)} into the parent {type(Obj)}
@@ -78,3 +92,4 @@ Obj.Merge = Void
 
 ///Intro: add a new Obj object to merge with the current content of {type(@.)}
 Obj@Obj.Merge "GLib_Obj_At_MergeObjs" ?
+

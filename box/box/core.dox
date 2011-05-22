@@ -56,7 +56,19 @@ Str = ...
 (;) = ...
 
 ///Intro: the number of objects stored inside the given object.
+// If more objects are provided, then return the cumulative sum of their
+// elements.
 Num = ...
 
 ///Intro: return a representation of the object in Box syntax.
 Repr = ...
+
+///Intro: print the given objects to the standard output.
+Print = ...
+
+Char@Print  [...] ///This.
+INT@Print   [...] ///This.
+REAL@Print  [...] ///This.
+Point@Print [...] ///This.
+Str@Print   [...] ///This.
+

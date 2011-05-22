@@ -654,14 +654,6 @@ static void wincairo_rline(Point *a, Point *b) {
 }
 
 static void wincairo_rcong(Point *a, Point *b, Point *c) {
-  WHEREAMI;
-#if 0
-  int a_eq_b = ax == bx && ay == by,
-      a_eq_c = ax == cx && ay == cy,
-      b_eq_c = bx == cx && by == cy,
-      n_eq = a_eq_b + a_eq_c + b_eq_c;
-  if (n_eq == 3) return;
-#endif
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   Point *first = a, *last = c;
   MY_3POINTS(a, b, c);
@@ -674,59 +666,30 @@ static void wincairo_rcong(Point *a, Point *b, Point *c) {
     return;
 
   } else {
-    cairo_matrix_t previous_m, m;
-
     if (beginning_of_path) {
       cairo_new_path(cr);
       beginning_of_path = 0;
     }
 
-    cairo_get_matrix(cr, & previous_m);
-    m.xx = b->x - c->x;  m.yx = b->y - c->y;
-    m.xy = b->x - a->x;  m.yy = b->y - a->y;
-    m.x0 = a->x - m.xx; m.y0 = a->y - m.yx;
-    cairo_transform(cr, & m);
-
-    cairo_arc(cr,
-              (double) 0, (double) 0, /* center */
-              (double) 1, /* radius */
-              (double) 0, (double) M_PI/2.0 /* angle begin and end */);
-
-    cairo_set_matrix(cr, & previous_m);
-
+    My_Cairo_JoinArc(cr, a, b, c);
     previous = *c;
   }
 }
 
 static void wincairo_rclose(void) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
-  WHEREAMI;
   if (!beginning_of_path) cairo_close_path(cr);
 }
 
 static void wincairo_rcircle(Point *ctr, Point *a, Point *b) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
-  cairo_matrix_t previous_m, m;
   MY_3POINTS(ctr, a, b);
-  WHEREAMI;
 
   if (beginning_of_path)
     cairo_new_path(cr);
 
-  cairo_get_matrix(cr, & previous_m);
-  m.xx = a->x - ctr->x;  m.yx = a->y - ctr->y;
-  m.xy = b->x - ctr->x;  m.yy = b->y - ctr->y;
-  m.x0 = ctr->x; m.y0 = ctr->y;
-  cairo_transform(cr, & m);
-
-  cairo_move_to(cr, (double) 1, (double) 0);
-  cairo_arc(cr,
-            (double) 0, (double) 0, /* center */
-            (double) 1, /* radius */
-            (double) 0, (double) 2.0*M_PI /* angle begin and end */);
-
-  cairo_set_matrix(cr, & previous_m);
-
+  cairo_move_to(cr, a->x, a->y);
+  My_Cairo_Arc(cr, ctr, a, b, 0.0, 2.0*M_PI);
   beginning_of_path = 0;
 }
 

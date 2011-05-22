@@ -15,6 +15,8 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Box.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
 from tree import DoxItem, DoxType, DoxProc, DoxTree
 from writer import Writer
 
@@ -34,12 +36,6 @@ def table_to_string(tab):
                   for row in tab) +
      first_row)
 
-def get_item_intro(item):
-  if item != None:
-    db = item.doxblocks
-    if db != None and "Intro" in db.content:
-      return " ".join(db.content["Intro"]).strip().capitalize()
-  return None
 
 def rst_normalize(s):
   """Normalize the string similarly to what RST does (so that reference names
@@ -49,7 +45,7 @@ def rst_normalize(s):
 
 class RSTWriter(Writer):
   def __init__(self, tree, docinfo={}, nest_subtypes=True):
-    Writer.__init__(self, tree, docinfo=docinfo)
+    Writer.__init__(self, tree, docinfo=docinfo, ext="rst")
     self.out = ""
     self.nest_subtypes = nest_subtypes
     self.type_name_map = {}
@@ -118,9 +114,12 @@ class RSTWriter(Writer):
       self.writeln(intro)
       self.writeln()
 
-    children = map(str, t.children)
-    if len(children) > 0:
-      children.sort()
+    # Sort the types
+    children_types = t.children
+    if len(children_types) > 0:
+      children_types.sort(lambda x, y: cmp(str(x), str(y)))
+
+      children = map(str, t.children)
       links = map(self.gen_type_link, children)
       s = "**Uses:** " + ", ".join(links)
       self.writeln(s)
@@ -183,3 +182,13 @@ class RSTWriter(Writer):
         self.gen_type_section(t, level)
 
     return self.out
+
+  def save(self):
+    """Generate the documentation and write it to file."""
+    filename = self.docinfo.get("out_file", "out")
+    root, ext = os.path.splitext(filename)
+    if len(ext) == 0:
+      filename = root + "." + self.default_extension
+    f = open(filename, "wt")
+    f.write(self.gen())
+    f.close()

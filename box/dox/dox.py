@@ -100,11 +100,12 @@ def dox_code_type(line):
 
 
 class DoxBlocks(object):
-  def __init__(self):
+  def __init__(self, prev=None):
     self.content = {}
     self.current_content = None
     self.current_name = None
     self.target = None
+    self.prev = prev
 
   def __str__(self):
     s = "Line '%s' is documented by:\n" % self.target
@@ -116,7 +117,7 @@ class DoxBlocks(object):
     n = self.current_name
     if n != None:
       self.content[n] = self.current_content
-    self.current_name = name
+    self.current_name = name.capitalize() if name != None else None
     self.current_content = []
 
   def append(self, line):
@@ -125,6 +126,18 @@ class DoxBlocks(object):
   def finish(self, line):
     self.new(None)
     self.target = line
+
+    # Init from previous, if requested
+    if "Same" in self.content:
+      if self.prev == None:
+        print "Warning: when using `Same' previous was not found."
+
+      else:
+        for prev_name, prev_block in self.prev.content.iteritems():
+          self.content.setdefault(prev_name, prev_block)
+
+  def process(self, tree, owner):
+    pass
 
 
 class DoxFileContentParser(object):
@@ -135,6 +148,7 @@ class DoxFileContentParser(object):
     self.line = None          # Current line after first preprocessing
     self.line_type = None     # Type of line as detected by preprocessing
     self.blocks = None
+    self.prev_blocks = None
     self.store = []
 
   def _parse(self, parse_line, continuing=True):
@@ -156,17 +170,19 @@ class DoxFileContentParser(object):
   def _parse_main(self):
     lt = self.line_type
     if lt == DOXLINETYPE_PRE:
-      self.blocks = blocks = DoxBlocks()
+      self.blocks = blocks = DoxBlocks(prev=self.prev_blocks)
       self._parse(self._parse_block)
       self.store.append(blocks)
+      self.prev_blocks = blocks
       self.blocks = None
 
     elif lt == DOXLINETYPE_POST:
-      blocks = DoxBlocks()
+      blocks = DoxBlocks(prev=self.prev_blocks)
       blocks.new(self.block_type)
       blocks.append(self.line)
       blocks.finish(self.original_line)
       self.store.append(blocks)
+      self.prev_blocks = blocks
 
     return False
 
@@ -178,13 +194,9 @@ class DoxFileContentParser(object):
       return False
 
     elif lt == DOXLINETYPE_PRE:
-      if self.block_type in ["Begin", "End"]:
-        pass
-
-      else:
-        self.blocks.new(self.block_type)
-        self.blocks.append(line)
-        return False
+      self.blocks.new(self.block_type)
+      self.blocks.append(line)
+      return False
 
     elif lt == DOXLINETYPE_SKIP:
       self.blocks.finish(line)
@@ -192,11 +204,6 @@ class DoxFileContentParser(object):
 
     else:
       return True
-
-  def _parse_post(self):
-    self.blocks.new(self.block_type)
-    self.blocks.append(self.line)
-    return True
 
 
 class DoxFileParser(DoxFileContentParser):
@@ -257,23 +264,6 @@ class Dox(object):
         else:
           self.log("Unrecognized documentation block.")
 
-  def show_types_and_procs(self):
-    type_names = self.types.keys()
-    type_names.sort()
-    for type_name in type_names:
-      t = self.types[type_name]
-      print "Type %s" % t
-
-      if len(t.children) > 0:
-        print "Gets the following children:"
-        for c in t.children:
-          print "  %s" % c
-
-      if len(t.parents) > 0:
-        print "Can be given to the following parents:"
-        for p in t.parents:
-          print "  %s" % p
-
 
 if __name__ == "__main__":
   import sys
@@ -282,14 +272,14 @@ if __name__ == "__main__":
   tree = dox.tree
   tree.build_links()
   tree.link_subtypes()
+  tree.process_blocks()
 
   from rst import RSTWriter
   docinfo = \
     {"title": "Box Reference Manual",
      "has_index": True,
-     "index_title": "Index of available object types"}
+     "index_title": "Index of available object types",
+     "out_file": "out"}
 
-  writer = RSTWriter(tree, docinfo=docinfo)
-  f = open("out.rst", "w")
-  f.write(writer.gen())
-  f.close()
+  writer = RSTWriter(dox.tree, docinfo=docinfo)
+  writer.save()

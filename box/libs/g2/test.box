@@ -3,6 +3,7 @@ include "g"
 GUI = Void
 Window@GUI[]
 
+
 //!BOXER:REFPOINTS:BEGIN
 bbox1 = Point[.x=62.7481452312, .y=259.043341238]
 bbox2 = Point[.x=363.233694364, .y=11.6439931464]
@@ -17,6 +18,7 @@ p7 = Point[.x=119.859038889, .y=109.338515224]
 include "raw"
 include "poly"
 include "circle"
+include "text"
 
 w = Window[][
   .Show[bbox1, bbox2]
@@ -35,7 +37,6 @@ w = Window[][
       Else[]
         Circle[p4, 40, 20, color.red, Sty[Border[5, color.black]]]]]
 
-  
 ]
 
 GUI[w]

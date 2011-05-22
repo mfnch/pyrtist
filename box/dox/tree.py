@@ -27,9 +27,14 @@ class DoxLeaf(DoxItem):
   def __init__(self, doxblocks=None):
     DoxItem.__init__(self)
     self.doxblocks = doxblocks
+    self.section = None
 
   def set_owned_blocks(self, doxblocks):
     self.doxblocks = doxblocks
+
+  def process_blocks(self, tree):
+    if self.doxblocks != None:
+      self.doxblocks.process(tree, self)
 
 
 class DoxType(DoxLeaf):
@@ -145,3 +150,9 @@ class DoxTree(DoxItem):
     self.add_type(*new_types)
     #for t_name in found_subtypes:
     #  self.types.pop(t_name)
+
+  def process_blocks(self):
+    for p in self.procs.itervalues():
+      p.process_blocks(self)
+    for t in self.types.itervalues():
+      t.process_blocks(self)
