@@ -1,3 +1,5 @@
+///Section: g
+
 // Interface to Window.Text
 
 Window.Text = Void
@@ -17,8 +19,9 @@ Real@Window.Text.Font "window_text_font_real" ?
 Window.Text.From = Void
 Point@Window.Text.From "window_text_from_point" ?
 
-// Adding a Font object. Much more convenient than the Window.Text.Font subtype
+///Intro: font object: encodes type, size and color of the Font.
 Font = ++(Str name, Real size, Color color, (Int color,) have)
+
 (.[)@Font[$$.size = 4.2, $$.have.color = 0, $$.name = "sans"]
 Str@Font[$$.name = $]
 Real@Font[$$.size = $]

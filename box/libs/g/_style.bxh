@@ -1,6 +1,10 @@
+///Section: g
+
 // Interface for the Style object
 
+///Intro: drawing style
 Style = ++CPtr
+
 ([)@Style "style_begin" ?
 //(].)@Style "style_destroy" ?
 

@@ -1,12 +1,16 @@
 #provide "g.cmdstream"
+///Section: g
 
 include "raw"
 
+///Intro: sequence of raw graphical commands.
 CmdStream = ++(Obj cmds,)
 
 Obj@CmdStream[\ .cmds[$]]
 
+///Intro: merge the command stream into the parent one.
 CmdStream@CmdStream[\ $$.cmds.Merge[$.cmds]]
 
+///Intro: give the command stream to the window for execution.
 CmdStream@Window[$.cmds]
 

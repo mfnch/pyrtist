@@ -46,7 +46,6 @@ def rst_normalize(s):
 class RSTWriter(Writer):
   def __init__(self, tree, docinfo={}, nest_subtypes=True):
     Writer.__init__(self, tree, docinfo=docinfo, ext="rst")
-    self.out = ""
     self.nest_subtypes = nest_subtypes
     self.type_name_map = {}
     self._find_duplicates()
@@ -79,6 +78,8 @@ class RSTWriter(Writer):
             else "|%s|_" % unique_name)
 
   def gen_section_title(self, title, level=0):
+    if title == None:
+      title = "Main section"
     char = "=-~.`"[min(level, 4)]
     return "%s\n%s\n\n" % (title, char*len(title))
 
@@ -101,18 +102,18 @@ class RSTWriter(Writer):
     else:
       return None
 
-  def write(self, s):
-    self.out += s
+  def gen_type_section(self, t, section_name, level=0):
+    # NOTE XXX XXX
+    # For now we move all the docs for a type into its section, even if it may
+    # contain extensions coming from other sections.
+    if t.get_section() != section_name:
+      return ""
 
-  def writeln(self, s=""):
-    self.out += s + "\n"
-
-  def gen_type_section(self, t, level=0):
-    self.write(self.gen_type_section_title(t, level=level))
+    out = ""
+    out += self.gen_type_section_title(t, level=level)
     intro = self.gen_target_section(t)
     if intro != None:
-      self.writeln(intro)
-      self.writeln()
+      out += "%s\n\n" % intro
 
     # Sort the types
     children_types = t.children
@@ -121,9 +122,7 @@ class RSTWriter(Writer):
 
       children = map(str, t.children)
       links = map(self.gen_type_link, children)
-      s = "**Uses:** " + ", ".join(links)
-      self.writeln(s)
-      self.writeln()
+      out += "**Uses:** %s\n\n" % (", ".join(links))
 
     proc_list = []
     for child in t.children:
@@ -133,44 +132,34 @@ class RSTWriter(Writer):
         proc_list.append((self.gen_type_link(child), intro))
 
     if len(proc_list) > 0:
-      self.writeln(table_to_string(proc_list))
-      self.writeln()
+      out += "%s\n\n" % table_to_string(proc_list)
 
     parents = map(str, t.parents)
     if len(parents) > 0:
       parents.sort()
       links = map(self.gen_type_link, parents)
-      s = "**Used by:** " + ", ".join(links)
-      self.writeln(s)
-      self.writeln()
+      out += "**Used by:** %s\n\n" % (", ".join(links))
 
     subtype_children = map(str, t.subtype_children)
     if len(subtype_children) > 0:
       subtype_children.sort()
       links = map(self.gen_type_link, subtype_children)
-      s = "**Subtypes:** " + ", ".join(links)
-      self.writeln(s)
-      self.writeln()
+      out += "**Subtypes:** %s\n\n" % (", ".join(links))
 
     if self.nest_subtypes:
       for st in t.subtype_children:
-        self.gen_type_section(st, level=level+1)
+        out += self.gen_type_section(st, section_name, level=level+1)
+
+    return out
 
   def gen_index(self, level=0):
     title = self.docinfo.get("index_title", "Documentation index")
     return (  ".. contents:: %s\n" % title
-            + "   :depth: 3\n\n")
+            + "   :depth: 5\n\n")
 
-  def gen(self, level=0):
-    self.out = ""
-
-    title = self.docinfo.get("title", None)
-    if title != None:
-      self.write(self.gen_section_title(title))
-      level += 1
-
-    if self.docinfo.get("has_index", True):
-      self.write(self.gen_index(level))
+  def gen_section(self, section_name, level=0):
+    out = self.gen_section_title(section_name, level=level)
+    level += 1
 
     types = self.tree.types
     typenames = types.keys()
@@ -179,9 +168,28 @@ class RSTWriter(Writer):
       t = types[typename]
 
       if t.subtype_parent == None or self.nest_subtypes == False:
-        self.gen_type_section(t, level)
+        out += self.gen_type_section(t, section_name, level)
 
-    return self.out
+    return out
+
+  def gen(self, level=0):
+    out = ""
+
+    # Generate the documentation title
+    title = self.docinfo.get("title", None)
+    if title != None:
+      out += self.gen_section_title(title, level=level)
+      level += 1
+
+    if self.docinfo.get("has_index", True):
+      out += self.gen_index(level)
+
+    section_names = self.tree.sections.keys()
+    section_names.sort()
+    for section_name in section_names:
+      out += self.gen_section(section_name, level=level)
+
+    return out
 
   def save(self):
     """Generate the documentation and write it to file."""

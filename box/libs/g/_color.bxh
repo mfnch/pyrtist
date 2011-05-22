@@ -1,5 +1,5 @@
+///Section: g
 ///Intro: Implementation of Color. Automatically included when including "g".
-
 // Definition of the type Color and some example of Color-s
 
 ///Intro: Color allows to define new colors.

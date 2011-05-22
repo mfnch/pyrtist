@@ -1,4 +1,4 @@
-///Section: Language Core
+///Section: core
 
 ///Intro: Box character type. Used to encode a single character in a string.
 Char = ...

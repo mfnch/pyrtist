@@ -1,6 +1,8 @@
-// Interface to Gradient
+///Section: g
 
+///Intro: color gradient.
 Gradient = ++CPtr
+
 (.[)@Gradient "gradient_begin" ?
 (])@Gradient "gradient_end" ?
 (].)@Gradient "gradient_destroy" ?

@@ -82,6 +82,9 @@ def extract_word(s, start=0, wanted=None):
   return s[start:idx]
 
 def dox_code_type(line):
+  if line == None:
+    return None
+
   nmax = len(line) + 1
   n1 = line.find(dox_asgn_sep) % nmax
   n2 = line.find(dox_proc_sep) % nmax
@@ -106,12 +109,16 @@ class DoxBlocks(object):
     self.current_name = None
     self.target = None
     self.prev = prev
+    self.section = None
 
   def __str__(self):
     s = "Line '%s' is documented by:\n" % self.target
     for topic in self.content:
       s += "Topic '%s': %s\n" % (topic, self.content[topic])
     return s
+
+  def set_section(self, prev_section):
+    return self.content.setdefault("Section", prev_section)
 
   def new(self, name):
     n = self.current_name
@@ -137,11 +144,18 @@ class DoxBlocks(object):
           self.content.setdefault(prev_name, prev_block)
 
   def process(self, tree, owner):
-    pass
+    # Select section for documentation block
+    section_title = self.content.get("Section", None)
+    if section_title != None:
+      self.section = " ".join(section_title).strip().capitalize()
+
+    else:
+      self.section = None
 
 
 class DoxFileContentParser(object):
   def __init__(self, content):
+    self.current_section = None
     self.lines = content.splitlines()
     self.nr_line = 0
     self.original_line = None # Current line as read by the parse routine
@@ -172,17 +186,23 @@ class DoxFileContentParser(object):
     if lt == DOXLINETYPE_PRE:
       self.blocks = blocks = DoxBlocks(prev=self.prev_blocks)
       self._parse(self._parse_block)
-      self.store.append(blocks)
-      self.prev_blocks = blocks
+
+      if blocks.target not in [None, '']:
+        self.store.append(blocks)
+        self.prev_blocks = blocks
+
       self.blocks = None
+      self.current_section = blocks.set_section(self.current_section)
 
     elif lt == DOXLINETYPE_POST:
       blocks = DoxBlocks(prev=self.prev_blocks)
       blocks.new(self.block_type)
       blocks.append(self.line)
       blocks.finish(self.original_line)
+      assert blocks.target != None
       self.store.append(blocks)
       self.prev_blocks = blocks
+      self.current_section = blocks.set_section(self.current_section)
 
     return False
 
@@ -263,6 +283,8 @@ class Dox(object):
 
         else:
           self.log("Unrecognized documentation block.")
+          print repr(doxblocks.target)
+          raw_input()
 
 
 if __name__ == "__main__":
@@ -270,9 +292,7 @@ if __name__ == "__main__":
   dox = Dox()
   dox.read_recursively(sys.argv[1])
   tree = dox.tree
-  tree.build_links()
-  tree.link_subtypes()
-  tree.process_blocks()
+  tree.process()
 
   from rst import RSTWriter
   docinfo = \

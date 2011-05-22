@@ -1,3 +1,4 @@
+///Section: g
 ///Intro: Allows to control graphics at the lowest level.
 ///Desc: This module allows the user to pass a sequence of commands (similar
 //  to metapost: move_to, line_to, close_path, stroke, etc.) to a Window
@@ -13,7 +14,7 @@
 //        Obj[g.raw.close_path]
 //        Obj[g.raw.stroke]]
 //  ]
-//
+
 #provide "g.raw"
 
 include "g"

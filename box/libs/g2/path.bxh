@@ -1,11 +1,15 @@
 #provide "g.path"
+///Section: g
 
 include "cmdstream"
 
+///Intro: represents a path.
 Path = ++(CmdStream cmdstream, Int empty)
 
 (.[)@Path[.empty = 1]
 
+///Intro: append a graphical command contained inside the {type(.@)} object.
 Obj@Path[\ .cmdstream[$]]
 
+///Intro: convert the path into graphical commands.
 Path@CmdStream[$.cmdstream]

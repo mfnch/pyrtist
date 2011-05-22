@@ -1,4 +1,5 @@
 #provide "obj"
+///Section: g
 
 ///Intro: create an object which contains all the provided objects.
 // This function allows to wrap one or more objects of different types

@@ -1,9 +1,11 @@
+///Section: g
+
 // The Window object
 
 ///Intro: the {type(.)} object is the main object in the Box graphic library.
-//  It can correspond to a real drawing device (array of pixels allocated in
-//  memory, PDF/SVG file, etc) or can be simply a container of graphics
-//  commands to be stored for later manipulation.
+// It can correspond to a real drawing device (array of pixels allocated in
+// memory, PDF/SVG file, etc) or can be simply a container of graphics
+// commands to be stored for later manipulation.
 Window = ++CPtr
 
 (.[)@Window "window_begin" ?
@@ -13,15 +15,11 @@ Window = ++CPtr
 Str@Window "window_str" ?
 Point@Window "window_size" ?
 
-///Begin.
 ///Intro: specifies a {type(.@)} to be used in the drawing commands which
 //  will follow in the Window.
-
-Color@Window "window_color" ?        ///This.
-Gradient@Window "window_gradient" ?  ///This.
-Style@Window "window_style" ?        ///This.
-
-///End.
+Color@Window "window_color" ?
+Gradient@Window "window_gradient" ?  ///Same.
+Style@Window "window_style" ?        ///Same.
 
 ///Intro: draw the content of a {type(.@)} inside the opened {type(@.)}
 //  object.

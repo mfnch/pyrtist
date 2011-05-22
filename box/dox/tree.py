@@ -24,10 +24,10 @@ class DoxItem(object):
 
 
 class DoxLeaf(DoxItem):
-  def __init__(self, doxblocks=None):
+  def __init__(self, doxblocks=None, section=None):
     DoxItem.__init__(self)
     self.doxblocks = doxblocks
-    self.section = None
+    self.section = section
 
   def set_owned_blocks(self, doxblocks):
     self.doxblocks = doxblocks
@@ -36,10 +36,13 @@ class DoxLeaf(DoxItem):
     if self.doxblocks != None:
       self.doxblocks.process(tree, self)
 
+  def get_section(self):
+    return self.doxblocks.section if self.doxblocks != None else None
+
 
 class DoxType(DoxLeaf):
-  def __init__(self, name, doxblocks=None):
-    DoxLeaf.__init__(self, doxblocks)
+  def __init__(self, name, doxblocks=None, section=None):
+    DoxLeaf.__init__(self, doxblocks, section=section)
 
     self.name = name
     self.children = []
@@ -65,8 +68,8 @@ class DoxType(DoxLeaf):
 
 
 class DoxProc(DoxLeaf):
-  def __init__(self, child, parent, doxblocks=None):
-    DoxLeaf.__init__(self, doxblocks)
+  def __init__(self, child, parent, doxblocks=None, section=None):
+    DoxLeaf.__init__(self, doxblocks, section=section)
     self.child = child
     self.parent = parent
 
@@ -80,17 +83,18 @@ class DoxProc(DoxLeaf):
     parent = types.get(self.parent, None)
     child = types.get(self.child, None)
 
+    # If the types are missing, create them and put them in the same section.
     missing = []
     if parent == None:
-      parent = DoxType(self.parent)
+      parent = DoxType(self.parent, section=self.section)
       missing.append(parent)
 
     if child == None:
-      child = DoxType(self.child)
+      child = DoxType(self.child, section=self.section)
       missing.append(child)
 
-    parent.add_child(child if child != None else DoxType(child))
-    child.add_parent(parent if parent != None else DoxType(parent))
+    parent.add_child(child)
+    child.add_parent(parent)
     return missing
 
 
@@ -99,6 +103,7 @@ class DoxTree(DoxItem):
     DoxItem.__init__(self)
     self.types = {}
     self.procs = {}
+    self.sections = []
 
   def log(self, msg):
     print msg
@@ -118,10 +123,11 @@ class DoxTree(DoxItem):
       return t
 
     else:
+      print "xxxxxxxxxxxxx Creating new type %s" % str(tn)
       self.types[tn] = t = DoxType(tn)
       return t
 
-  def build_links(self):
+  def _build_links(self):
     for proc in self.procs.itervalues():
       missing = proc.link_types(self.types)
       if missing:
@@ -133,7 +139,7 @@ class DoxTree(DoxItem):
         # Add missing types
         self.add_type(*missing)
 
-  def link_subtypes(self):
+  def _link_subtypes(self):
     new_types = []
     found_subtypes = []
 
@@ -151,8 +157,21 @@ class DoxTree(DoxItem):
     #for t_name in found_subtypes:
     #  self.types.pop(t_name)
 
-  def process_blocks(self):
+  def _process_blocks(self):
     for p in self.procs.itervalues():
       p.process_blocks(self)
     for t in self.types.itervalues():
       t.process_blocks(self)
+
+  def _build_section_list(self):
+    self.sections = sections = {}
+    for p in self.procs.itervalues():
+      sections.setdefault(p.get_section(), []).append(p)
+    for t in self.types.itervalues():
+      sections.setdefault(t.get_section(), []).append(t)
+
+  def process(self):
+    self._build_links()
+    self._link_subtypes()
+    self._process_blocks()
+    self._build_section_list()

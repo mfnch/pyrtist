@@ -1,4 +1,4 @@
-// Interface to Window.Circle
+///Section: g
 
 ///Intro: drawing of circles.
 Window.Circle = Void
