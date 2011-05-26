@@ -32,7 +32,7 @@ typedef struct {
   BoxInt num_dim;   /**< Number of dimensions of the array */
   size_t item_size; /**< Size of the items of the array */
   size_t *sizes;    /**< Pointer to the array of maximum indices */
-  BoxObj data;      /**< Pointer to the actual data */
+  BoxPtr data;      /**< Pointer to the actual data */
 } BoxArray;
 
 /** Create a new BoxArray with the specified number of dimensions.
@@ -64,13 +64,13 @@ void BoxArray_Finish(BoxVM *vm, BoxArray *a);
  * It returns on 'item' the extended pointer to the byte at address 'addr'
  * counting (in bytes) from the beginning of the data.
  */
-void BoxArray_Access(BoxArray *a, BoxObj *item, size_t addr);
+void BoxArray_Access(BoxArray *a, BoxPtr *item, size_t addr);
 
 /** Assist in calculating the address of an element of the array.
  * Example: suppose you have an array a[10][20][30] and you want to access
  * the element a[9][19][29], then you could use the following code:
  *
- *   BoxObj item;
+ *   BoxPtr item;
  *   size_t addr = 9;
  *   BoxArray_Calc_Address(& a, & addr, 0, 19);
  *   BoxArray_Calc_Address(& a, & addr, 1, 29);

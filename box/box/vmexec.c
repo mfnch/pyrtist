@@ -492,7 +492,7 @@ static void VM__Exec_Lea(BoxVM *vmp) {
 
 static void VM__Exec_Lea_OO(BoxVM *vmp) {
   VMStatus *vmcur = vmp->vmcur;
-  BoxObj *obj = (BoxObj *) vmcur->arg1;
+  BoxPtr *obj = (BoxPtr *) vmcur->arg1;
   obj->block = (void *) NULL;
   obj->ptr = vmcur->arg2;
 }
@@ -556,7 +556,7 @@ static void VM__Exec_Araddr_II(BoxVM *vm) {
 static void VM__Exec_Arget_OO(BoxVM *vm) {
 #if 0
   VMStatus *vmcur = vm->vmcur;
-  BoxObj *item = (Obj *) vmcur->arg1;
+  BoxPtr *item = (Obj *) vmcur->arg1;
   BoxArray *arr = (BoxArray *) ((Obj *) vmcur->arg2)->ptr;
   size_t addr =  *((Int *) vmcur->local[TYPE_INT].ptr);
   BoxArray_Access(arr, item, addr);

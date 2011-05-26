@@ -35,8 +35,8 @@ typedef enum {
   STATUS_WAIT_SUP
 } Status;
 
-static void _Add_Char(FmtStack *stack, char c) {
-  Fmt *fmt = stack->fmt;
+static void _Add_Char(BoxGFmtStack *stack, char c) {
+  BoxGFmt *fmt = stack->fmt;
   int i = fmt->buffer_pos++;
   if (fmt->buffer_pos > fmt->buffer_size) {
     if (fmt->buffer == (char *) NULL) {
@@ -55,47 +55,47 @@ static void _Add_Char(FmtStack *stack, char c) {
   fmt->buffer[i] = c;
 }
 
-char *Fmt_Buffer_Get(FmtStack *stack) {
-  Fmt *fmt = stack->fmt;
+char *Fmt_Buffer_Get(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = stack->fmt;
   _Add_Char(stack, '\0');
   --fmt->buffer_pos;
   return fmt->buffer;
 }
 
-void Fmt_Buffer_Clear(FmtStack *stack) {
-  Fmt *fmt = stack->fmt;
+void Fmt_Buffer_Clear(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = stack->fmt;
   fmt->buffer_pos = 0;
 }
 
-static int _Draw(FmtStack *stack) {
-  Fmt *fmt = stack->fmt;
+static int _Draw(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = stack->fmt;
   if (fmt->buffer_pos < 1) return stack->eye;
-  if (fmt->draw != (FmtAction) NULL) fmt->draw(stack);
+  if (fmt->draw != NULL) fmt->draw(stack);
   return stack->eye;
 }
 
-static void _Save(FmtStack *stack) {
-  Fmt *fmt = stack->fmt;
-  if (fmt->save != (FmtAction) NULL) fmt->save(stack);
+static void _Save(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = stack->fmt;
+  if (fmt->save != NULL) fmt->save(stack);
 }
 
-static void _Restore(FmtStack *stack) {
-  Fmt *fmt = stack->fmt;
-  if (fmt->restore != (FmtAction) NULL) fmt->restore(stack);
+static void _Restore(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = stack->fmt;
+  if (fmt->restore != NULL) fmt->restore(stack);
 }
 
-static void _Subscript(Fmt *fmt, FmtStack *stack) {
-  if (fmt->subscript != (FmtAction) NULL) fmt->subscript(stack);
+static void _Subscript(BoxGFmt *fmt, BoxGFmtStack *stack) {
+  if (fmt->subscript != NULL) fmt->subscript(stack);
 }
 
-static void _Superscript(Fmt *fmt, FmtStack *stack) {
-  if (fmt->superscript != (FmtAction) NULL) fmt->superscript(stack);
+static void _Superscript(BoxGFmt *fmt, BoxGFmtStack *stack) {
+  if (fmt->superscript != NULL) fmt->superscript(stack);
 }
 
-static int _Text_Formatter(FmtStack *stack) {
-  Fmt *fmt = stack->fmt;
+static int _Text_Formatter(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = stack->fmt;
   Status status;
-  FmtStack new_stack;
+  BoxGFmtStack new_stack;
 
   status = (stack->level >= MAX_STACK_LEVEL) ?
            STATUS_STACK_FULL : STATUS_NORMAL;
@@ -193,26 +193,26 @@ static int _Text_Formatter(FmtStack *stack) {
   }
 }
 
-void Fmt_Init(Fmt *fmt) {
+void Fmt_Init(BoxGFmt *fmt) {
   fmt->restore = fmt->save = fmt->draw = fmt->newline =
-    fmt->subscript = fmt->superscript = (FmtAction) NULL;
+    fmt->subscript = fmt->superscript = NULL;
   fmt->private_data = (void *) NULL;
 }
 
-Fmt *Fmt_Get(FmtStack *stack) {
+BoxGFmt *Fmt_Get(BoxGFmtStack *stack) {
   return stack->fmt;
 }
 
-void *Fmt_Private_Get(Fmt *fmt) {
+void *Fmt_Private_Get(BoxGFmt *fmt) {
   return fmt->private_data;
 }
 
-void Fmt_Private_Set(Fmt *fmt, void *private_data) {
+void Fmt_Private_Set(BoxGFmt *fmt, void *private_data) {
   fmt->private_data = private_data;
 }
 
-void Fmt_Text(Fmt *fmt, const char *text) {
-  FmtStack stack;
+void Fmt_Text(BoxGFmt *fmt, const char *text) {
+  BoxGFmtStack stack;
   stack.level = 0;
   stack.eye = 0;
   stack.text = text;

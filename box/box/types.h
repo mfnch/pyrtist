@@ -103,20 +103,17 @@ typedef struct {
 
 /** We need more than just a pointer when referring to Box objects */
 typedef struct {
-  void *ptr;   /**< Pointer to the data inside this block */
-  void *block; /**< Pointer to the allocated memory block */
+  void *ptr,   /**< Pointer to the data inside this block */
+       *block; /**< Pointer to the allocated memory block */
 } BoxPtr;
-
-/** Obsolete, to be replaced by BoxPtr */
-typedef BoxPtr BoxObj;
 
 /** Union of all the intrinsic Box types */
 typedef union {
-  BoxChar boxchar;
-  BoxInt boxint;
-  BoxReal boxreal;
+  BoxChar  boxchar;
+  BoxInt   boxint;
+  BoxReal  boxreal;
   BoxPoint boxpoint;
-  BoxObj boxobj;
+  BoxPtr   boxobj;
 } BoxValue;
 
 /** Type representing C pointers from Box */
@@ -133,7 +130,7 @@ typedef void *BoxCPtr;
  * to the parent, one to the child.
  */
 typedef struct {
-  BoxObj child, parent;
+  BoxPtr child, parent;
 } BoxSubtype;
 
 #if 0
@@ -197,7 +194,7 @@ typedef BoxInt Int;
 typedef BoxUInt UInt;
 typedef BoxReal Real;
 typedef BoxPoint Point;
-typedef BoxObj Obj;
+typedef BoxPtr Obj;
 typedef BoxPtr Ptr;
 typedef BoxSubtype Subtype;
 

@@ -109,10 +109,10 @@ BoxTask BoxArray_Set_Size(BoxArray *a, BoxInt size) {
   }
 }
 
-void BoxArray_Access(BoxArray *a, BoxObj *item, size_t addr) {
+void BoxArray_Access(BoxArray *a, BoxPtr *item, size_t addr) {
   assert(!BoxPtr_Is_Null(& a->data));
   *item = a->data;
-  BoxObj_Add_To_Ptr(item, addr);
+  BoxPtr_Add_To_Ptr(item, addr);
 }
 
 Task BoxArray_Calc_Address(BoxArray *a, size_t *addr,

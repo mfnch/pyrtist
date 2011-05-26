@@ -238,47 +238,47 @@ typedef struct {
   Real sub_scale, sup_scale;
 } TextPrivate;
 
-static void _Text_Fmt_Draw(FmtStack *stack) {
-  Fmt *fmt = Fmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
-  char *escaped_text = Escape_Text(Fmt_Buffer_Get(stack));
+static void _Text_Fmt_Draw(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  char *escaped_text = Escape_Text(BoxGFmt_Buffer_Get(stack));
   fprintf(private->out, " (%s) textdraw", escaped_text);
   free(escaped_text);
-  Fmt_Buffer_Clear(stack);
+  BoxGFmt_Buffer_Clear(stack);
 }
 
-static void _Text_Fmt_Superscript(FmtStack *stack) {
-  Fmt *fmt = Fmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+static void _Text_Fmt_Superscript(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
   fprintf(private->out, " textsup");
 }
 
-static void _Text_Fmt_Subscript(FmtStack *stack) {
-  Fmt *fmt = Fmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+static void _Text_Fmt_Subscript(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
   fprintf(private->out, " textsub");
 }
 
-static void _Text_Fmt_Save(FmtStack *stack) {
-  Fmt *fmt = Fmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+static void _Text_Fmt_Save(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
   fprintf(private->out, " textsave");
 }
 
-static void _Text_Fmt_Restore(FmtStack *stack) {
-  Fmt *fmt = Fmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+static void _Text_Fmt_Restore(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
   fprintf(private->out, " textrestore");
 }
 
-static void _Text_Fmt_Newline(FmtStack *stack) {
-  Fmt *fmt = Fmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+static void _Text_Fmt_Newline(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
   fprintf(private->out, " textnewline");
 }
 
-static void _Text_Fmt_Init(Fmt *fmt) {
-  Fmt_Init(fmt);
+static void _Text_Fmt_Init(BoxGFmt *fmt) {
+  BoxGFmt_Init(fmt);
   fmt->draw = _Text_Fmt_Draw;
   fmt->subscript = _Text_Fmt_Subscript;
   fmt->superscript = _Text_Fmt_Superscript;
@@ -291,13 +291,13 @@ static void eps_text(Point *ctr, Point *right, Point *up, Point *from,
                      const char *text) {
   FILE *out = (FILE *) grp_win->ptr;
   TextPrivate private;
-  Fmt fmt;
+  BoxGFmt fmt;
   EPS_POINT(ctr, ctrx, ctry);
   EPS_POINT(right, rx, ry);
   EPS_POINT(up, ux, uy);
 
   _Text_Fmt_Init(& fmt);
-  Fmt_Private_Set(& fmt, & private);
+  BoxGFmt_Private_Set(& fmt, & private);
   private.out = out;
   private.sup_vec.x = 0.0;
   private.sup_vec.y = 0.5;
@@ -317,9 +317,9 @@ static void eps_text(Point *ctr, Point *right, Point *up, Point *from,
           "  %ld %ld %ld %ld %ld %ld textbegin\n",
           ctrx, ctry, rx, ry, ux, uy);
 
-  Fmt_Text(& fmt, text);
+  BoxGFmt_Text(& fmt, text);
   fprintf(out, " textcalc\n");
-  Fmt_Text(& fmt, text);
+  BoxGFmt_Text(& fmt, text);
   fprintf(out, "\n  textend\nend\n");
   beginning_of_path = 0;
 }

@@ -46,6 +46,7 @@ libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
                 autoput.c autoput.h \
                 gpath.c gpath.h linetracer.c linetracer.h \
                 formatter.c formatter.h psfonts.c psfonts.h \
+                cmdtext.c cmdtext.h \
                 i_pointlist.c i_pointlist.h i_color.c \
                 i_bbox.h i_gradient.c i_gradient.h \
                 i_window.c i_window.h i_line.c i_line.h \

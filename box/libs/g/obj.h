@@ -17,8 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#ifndef _BOX_LIBG_CONTAINER_H
-#  define _BOX_LIBG_CONTAINER_H
+#ifndef _BOX_LIBG_OBJ_H
+#  define _BOX_LIBG_OBJ_H
 
 #  include <box/types.h>
 #  include <box/array.h>

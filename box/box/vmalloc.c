@@ -76,7 +76,7 @@ typedef struct {
 #define GET_DPTR_FROM_BPTR(bptr) \
   ((void *) (bptr) + sizeof(VMAllocHead))
 
-void BoxObj_Add_To_Ptr(BoxObj *item, size_t addr) {
+void BoxPtr_Add_To_Ptr(BoxPtr *item, size_t addr) {
   item->ptr += addr;
 }
 

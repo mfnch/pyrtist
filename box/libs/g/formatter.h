@@ -17,40 +17,46 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#ifndef _FORMATTER_H
-#  define _FORMATTER_H
+#ifndef _BOX_LIBG_FORMATTER_H
+#  define _BOX_LIBG_FORMATTER_H
 
-#  include "types.h"
+#  include <box/types.h>
 
 struct _fmt_stack;
-typedef void (*FmtAction)(struct _fmt_stack *stack);
+typedef void (*BoxGFmtAction)(struct _fmt_stack *stack);
 
 typedef struct {
-  int buffer_pos, buffer_size;
-  char *buffer;
-
-  void *private_data;
-  FmtAction save, restore, draw, subscript, superscript, newline;
-} Fmt;
+  int       buffer_pos,
+            buffer_size;
+  char      *buffer;
+  void      *private_data;
+  BoxGFmtAction
+            save,
+            restore,
+            draw,
+            subscript,
+            superscript,
+            newline;
+} BoxGFmt;
 
 typedef struct _fmt_stack {
-  int level;
-  int eye;
+  int        level,
+             eye;
   const char *text;
-  char short_text[3];
-  Point pos;
-  Fmt *fmt;
-} FmtStack;
+  char       short_text[3];
+  Point      pos;
+  BoxGFmt    *fmt;
+} BoxGFmtStack;
 
-void Fmt_Init(Fmt *fmt);
-char *Fmt_Buffer_Get(FmtStack *stack);
-void Fmt_Buffer_Clear(FmtStack *stack);
-void Fmt_Text(Fmt *fmt, const char *text);
+void BoxGFmt_Init(BoxGFmt *fmt);
+char *BoxGFmt_Buffer_Get(BoxGFmtStack *stack);
+void BoxGFmt_Buffer_Clear(BoxGFmtStack *stack);
+void BoxGFmt_Text(BoxGFmt *fmt, const char *text);
 
 
-Fmt *Fmt_Get(FmtStack *stack);
-void *Fmt_Private_Get(Fmt *fmt);
-void Fmt_Private_Set(Fmt *fmt, void *private_data);
+BoxGFmt *BoxGFmt_Get(BoxGFmtStack *stack);
+void *BoxGFmt_Private_Get(BoxGFmt *fmt);
+void BoxGFmt_Private_Set(BoxGFmt *fmt, void *private_data);
 
 #endif
 

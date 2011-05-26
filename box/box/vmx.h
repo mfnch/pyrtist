@@ -200,7 +200,7 @@ typedef enum {
   SIZEOF_INTG  = sizeof(BoxInt),
   SIZEOF_REAL  = sizeof(BoxReal),
   SIZEOF_POINT = sizeof(BoxPoint),
-  SIZEOF_OBJ   = sizeof(BoxObj), SIZEOF_PTR = SIZEOF_OBJ
+  SIZEOF_OBJ   = sizeof(BoxPtr), SIZEOF_PTR = SIZEOF_OBJ
 } SizeOfType;
 
 /* Numero massimo degli argomenti di un'istruzione */

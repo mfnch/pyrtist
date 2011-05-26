@@ -233,27 +233,17 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
                                          BoxInt cmnd_id, BoxGObj *args_obj) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   ItpType args[ITP_MAX_NUM_ARGS];
-  enum {CMND_SAVE=0, CMND_RESTORE, CMND_SET_ANTIALIAS,
-        CMND_MOVE_TO, CMND_LINE_TO, CMND_CURVE_TO, CMND_CLOSE_PATH,
-        CMND_NEW_PATH, CMND_NEW_SUB_PATH,
-        CMND_STROKE, CMND_STROKE_PRESERVE, CMND_FILL, CMND_FILL_PRESERVE,
-        CMND_CLIP, CMND_CLIP_PRESERVE, CMND_RESET_CLIP,
-        CMND_PUSH_GROUP, CMND_POP_GROUP_TO_SOURCE, CMND_SET_OPERATOR,
-        CMND_PAINT, CMND_PAINT_WITH_ALPHA, CMND_COPY_PAGE, CMND_SHOW_PAGE,
-        CMND_SET_LINE_WIDTH, CMND_SET_LINE_CAP, CMND_SET_LINE_JOIN,
-        CMND_SET_MITER_LIMIT, CMND_SET_DASH, CMND_SET_FILL_RULE,
-        CMND_SET_SOURCE_RGBA, CMND_EXT_JOINARC_TO, CMND_EXT_ARC_TO};
 
   switch (cmnd_id) {
-  case CMND_SAVE:
+  case CMD_SAVE:
     cairo_save(cr);
     return BOXTASK_OK;
 
-  case CMND_RESTORE:
+  case CMD_RESTORE:
     cairo_restore(cr);
     return BOXTASK_OK;
 
-  case CMND_SET_ANTIALIAS:
+  case CMD_SET_ANTIALIAS:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_antialias_t v;
       switch(*args[0].i) {
@@ -268,21 +258,21 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case CMND_MOVE_TO:
+  case CMD_MOVE_TO:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_POINT)) {
       cairo_move_to(cr, args[0].p.x, args[0].p.y);
       return BOXTASK_OK;
     }
     break;
 
-  case CMND_LINE_TO:
+  case CMD_LINE_TO:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_POINT)) {
       cairo_line_to(cr, args[0].p.x, args[0].p.y);
       return BOXTASK_OK;
     }
     break;
 
-  case CMND_CURVE_TO:
+  case CMD_CURVE_TO:
     if (My_Args_From_Obj(args, args_obj, 3, BOXGOBJKIND_POINT,
                          BOXGOBJKIND_POINT, BOXGOBJKIND_POINT)) {
       cairo_curve_to(cr,
@@ -293,88 +283,88 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case CMND_CLOSE_PATH:
+  case CMD_CLOSE_PATH:
     cairo_close_path(cr);
     return BOXTASK_OK;
 
-  case CMND_NEW_PATH:
+  case CMD_NEW_PATH:
     cairo_new_path(cr);
     return BOXTASK_OK;
 
-  case CMND_NEW_SUB_PATH:
+  case CMD_NEW_SUB_PATH:
     cairo_new_sub_path(cr);
     return BOXTASK_OK;
 
-  case CMND_STROKE:
+  case CMD_STROKE:
     cairo_stroke(cr);
     return BOXTASK_OK;
 
-  case CMND_STROKE_PRESERVE:
+  case CMD_STROKE_PRESERVE:
     cairo_stroke_preserve(cr);
     return BOXTASK_OK;
 
-  case CMND_FILL:
+  case CMD_FILL:
     cairo_fill(cr);
     return BOXTASK_OK;
 
-  case CMND_FILL_PRESERVE:
+  case CMD_FILL_PRESERVE:
     cairo_fill_preserve(cr);
     return BOXTASK_OK;
 
-  case CMND_CLIP:
+  case CMD_CLIP:
     cairo_clip(cr);
     return BOXTASK_OK;
 
-  case CMND_CLIP_PRESERVE:
+  case CMD_CLIP_PRESERVE:
     cairo_clip_preserve(cr);
     return BOXTASK_OK;
 
-  case CMND_RESET_CLIP:
+  case CMD_RESET_CLIP:
     cairo_reset_clip(cr);
     return BOXTASK_OK;
 
-  case CMND_PUSH_GROUP:
+  case CMD_PUSH_GROUP:
     cairo_push_group(cr);
     return BOXTASK_OK;
 
-  case CMND_POP_GROUP_TO_SOURCE:
+  case CMD_POP_GROUP_TO_SOURCE:
     cairo_pop_group_to_source(cr);
     return BOXTASK_OK;
 
-  case CMND_SET_OPERATOR:
+  case CMD_SET_OPERATOR:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_set_operator(cr, My_Cairo_Operator_Of_Int(*args[0].i));
       return BOXTASK_OK;
     }
     break;
 
-  case CMND_PAINT:
+  case CMD_PAINT:
     cairo_paint(cr);
     return BOXTASK_OK;
 
-  case CMND_PAINT_WITH_ALPHA:
+  case CMD_PAINT_WITH_ALPHA:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_REAL)) {
       cairo_paint_with_alpha(cr, *args[0].r);
       return BOXTASK_OK;
     }
     return BOXTASK_OK;
 
-  case CMND_COPY_PAGE:
+  case CMD_COPY_PAGE:
     cairo_copy_page(cr);
     return BOXTASK_OK;
 
-  case CMND_SHOW_PAGE:
+  case CMD_SHOW_PAGE:
     cairo_show_page(cr);
     return BOXTASK_OK;
 
-  case CMND_SET_LINE_WIDTH:
+  case CMD_SET_LINE_WIDTH:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_REAL)) {
       cairo_set_line_width(cr, *args[0].r);
       return BOXTASK_OK;
     }
     break;
 
-  case CMND_SET_LINE_CAP:
+  case CMD_SET_LINE_CAP:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_line_cap_t v;
       switch(*args[0].i) {
@@ -388,7 +378,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case CMND_SET_LINE_JOIN:
+  case CMD_SET_LINE_JOIN:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_line_join_t v;
       switch(*args[0].i) {
@@ -402,13 +392,13 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case CMND_SET_MITER_LIMIT:
+  case CMD_SET_MITER_LIMIT:
     break;
 
-  case CMND_SET_DASH:
+  case CMD_SET_DASH:
     break;
 
-  case CMND_SET_FILL_RULE:
+  case CMD_SET_FILL_RULE:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_fill_rule_t v;
       switch(*args[0].i) {
@@ -421,7 +411,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case CMND_SET_SOURCE_RGBA:
+  case CMD_SET_SOURCE_RGBA:
     if (My_Args_From_Obj(args, args_obj, 4, BOXGOBJKIND_REAL, BOXGOBJKIND_REAL,
                          BOXGOBJKIND_REAL, BOXGOBJKIND_REAL)) {
       cairo_set_source_rgba(cr, *args[0].r, *args[1].r, *args[2].r,
@@ -430,7 +420,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case CMND_EXT_JOINARC_TO:
+  case CMD_EXT_JOINARC_TO:
     if (My_Args_From_Obj(args, args_obj, 3, BOXGOBJKIND_POINT,
                          BOXGOBJKIND_POINT, BOXGOBJKIND_POINT)) {
       My_Cairo_JoinArc(cr, & args[0].p, & args[1].p, & args[2].p);
@@ -438,7 +428,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case CMND_EXT_ARC_TO:
+  case CMD_EXT_ARC_TO:
     if (My_Args_From_Obj(args, args_obj, 5, BOXGOBJKIND_POINT,
                          BOXGOBJKIND_POINT, BOXGOBJKIND_POINT,
                          BOXGOBJKIND_REAL, BOXGOBJKIND_REAL)) {
@@ -768,26 +758,26 @@ typedef struct {
   cairo_matrix_t m;
 } TextState;
 
-static void _Text_Fmt_Draw(FmtStack *stack) {
-  Fmt *fmt = Fmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
-  char *text = Fmt_Buffer_Get(stack);
+static void _Text_Fmt_Draw(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  char *text = BoxGFmt_Buffer_Get(stack);
   cairo_text_path(private->cr, text);
-  Fmt_Buffer_Clear(stack);
+  BoxGFmt_Buffer_Clear(stack);
 }
 
-static void _Text_Fmt_Save(FmtStack *stack) {
-  Fmt *fmt = Fmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+static void _Text_Fmt_Save(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
   TextState ss;
   cairo_get_matrix(private->cr, & ss.m);
   cairo_get_current_point(private->cr, & ss.cur_pos.x, & ss.cur_pos.y);
   (void) buff_push(& private->saved_states, & ss);
 }
 
-static void _Text_Fmt_Restore(FmtStack *stack) {
-  Fmt *fmt = Fmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+static void _Text_Fmt_Restore(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
   TextState *ts = buff_lastitemptr(& private->saved_states, TextState);
   double x, y;
   cairo_set_matrix(private->cr, & ts->m);
@@ -807,27 +797,27 @@ static void _Text_Fmt_Change(cairo_t *cr, Point *vec, Real scale) {
   cairo_move_to(cr, (double) 0.0, (double) 0.0);
 }
 
-static void _Text_Fmt_Superscript(FmtStack *stack) {
-  Fmt *fmt = Fmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+static void _Text_Fmt_Superscript(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
   _Text_Fmt_Change(private->cr, & private->sup_vec, private->sup_scale);
 }
 
-static void _Text_Fmt_Subscript(FmtStack *stack) {
-  Fmt *fmt = Fmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+static void _Text_Fmt_Subscript(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
   _Text_Fmt_Change(private->cr, & private->sub_vec, private->sub_scale);
 }
 
-static void _Text_Fmt_Newline(FmtStack *stack) {
-  Fmt *fmt = Fmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) Fmt_Private_Get(fmt);
+static void _Text_Fmt_Newline(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
   cairo_translate(private->cr, 0.0, -1.0);
   cairo_move_to(private->cr, 0.0, 0.0);
 }
 
-static void _Text_Fmt_Init(Fmt *fmt) {
-  Fmt_Init(fmt);
+static void _Text_Fmt_Init(BoxGFmt *fmt) {
+  BoxGFmt_Init(fmt);
   fmt->draw = _Text_Fmt_Draw;
   fmt->subscript = _Text_Fmt_Subscript;
   fmt->superscript = _Text_Fmt_Superscript;
@@ -842,7 +832,7 @@ static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
   cairo_matrix_t m;
   double x1, y1, x2, y2;
   TextPrivate private;
-  Fmt fmt;
+  BoxGFmt fmt;
   MY_3POINTS(ctr, right, up);
   WHEREAMI;
 
@@ -853,7 +843,7 @@ static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
   cairo_transform(cr, & m);
 
   _Text_Fmt_Init(& fmt);
-  Fmt_Private_Set(& fmt, & private);
+  BoxGFmt_Private_Set(& fmt, & private);
   private.cr = cr;
   private.sup_vec.x = 0.0;
   private.sup_vec.y = 0.5;
@@ -862,18 +852,19 @@ static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
   private.sub_vec.y = -0.1;
   private.sub_scale = 0.5;
 
-  assert(buff_create(& private.saved_states, sizeof(TextState), 8));
+  int state = buff_create(& private.saved_states, sizeof(TextState), 8);
+  assert(state == 1);
 
   cairo_save(cr);
   cairo_new_path(cr);
   cairo_move_to(cr, (double) 0, (double) 0);
-  Fmt_Text(& fmt, text);
+  BoxGFmt_Text(& fmt, text);
   cairo_restore(cr);
   cairo_fill_extents(cr, & x1, & y1, & x2, & y2);
 
   cairo_new_path(cr);
   cairo_translate(cr, -x1 - (x2 - x1)*from->x, -y1 - (y2 - y1)*from->y);
-  Fmt_Text(& fmt, text);
+  BoxGFmt_Text(& fmt, text);
   cairo_restore(cr);
 
   buff_free(& private.saved_states);

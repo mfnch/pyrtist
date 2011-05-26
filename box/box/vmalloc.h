@@ -101,7 +101,7 @@ typedef struct {
 /** Increase the extended pointer item by the given integer (in bytes).
  * (the block pointer is not changed).
  */
-void BoxObj_Add_To_Ptr(BoxObj *item, size_t addr);
+void BoxPtr_Add_To_Ptr(BoxPtr *item, size_t addr);
 
 #if 0
 /** Function used to populate the a method dable (BoxVMMethodTable).
@@ -126,12 +126,12 @@ BoxTask BoxVM_Obj_Finish(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id);
 void BoxVM_Obj_Alloc(BoxVM *vm, BoxPtr *obj, size_t size, BoxVMAllocID id);
 
 /** Increase the reference counter for the given object. */
-void BoxVM_Obj_Link(BoxObj *obj);
+void BoxVM_Obj_Link(BoxPtr *obj);
 
 /** Decrease the reference counter for the given object and proceed
  * with destroying it, if it has reached zero.
  */
-void BoxVM_Obj_Unlink(BoxVM *vm, BoxObj *obj);
+void BoxVM_Obj_Unlink(BoxVM *vm, BoxPtr *obj);
 
 #define BoxVM_Unlink BoxVM_Obj_Unlink
 #define BoxVM_Link BoxVM_Obj_Link
