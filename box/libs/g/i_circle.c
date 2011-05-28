@@ -121,8 +121,7 @@ static Task _circle_draw(Window *w, DrawWhen when) {
     grp_win = w->window;
     grp_rcircle(& c, & a, & b);
     if (w->circle.got.color) {
-      Color *color = & w->circle.color;
-      grp_rfgcolor(color);
+      BoxGWin_Set_Fg_Color(w->window, & w->circle.color);
       w->circle.got.color = 0;
     }
     (void) g_rdraw(& w->circle.style, & w->circle.default_style, when);

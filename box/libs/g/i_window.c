@@ -122,7 +122,7 @@ Task window_color(BoxVM *vmp) {
   if (w->window != (GrpWindow *) NULL) {
     GrpWindow *cur_win = grp_win;
     grp_win = w->window;
-    grp_rfgcolor(c);
+    BoxGWin_Set_Fg_Color(w->window, c);
     grp_win = cur_win;
   }
   return Success;
@@ -134,7 +134,7 @@ Task window_gradient(BoxVM *vmp) {
   if (w->window != (GrpWindow *) NULL) {
     GrpWindow *cur_win = grp_win;
     grp_win = w->window;
-    grp_rgradient(& g->gradient);
+    BoxGWin_Set_Gradient(w->window, & g->gradient);
     grp_win = cur_win;
   }
   return Success;
@@ -515,7 +515,7 @@ Task window_show_point(BoxVM *vmp) {
   Point *p = BOX_VM_ARG1_PTR(vmp, Point);
   GrpWindow *cur_win = grp_win;
   grp_win = w->window;
-  grp_fake_point(p);
+  BoxGWin_Add_Fake_Point(w->window, p);
   grp_win = cur_win;
   return Success;
 }

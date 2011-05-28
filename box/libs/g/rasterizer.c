@@ -98,9 +98,9 @@ static void rst_close(void);
 void rst_curve(Point *a, Point *b, Point *c, Real cut);
 static void rst_circle(Point *ctr, Point *a, Point *b);
 void rst_poly(Point *p, int n);
-static void rst_fgcolor(Color *c);
-static void rst_bgcolor(Color *c);
-static void rst_fake_point(Point *p);
+static void My_Fg_Color(BoxGWin *w, Color *c);
+static void My_Bg_Color(BoxGWin *w, Color *c);
+static void My_Add_Fake_Point(BoxGWin *w, Point *p);
 
 void rst_repair(grp_window *w) {
   w->rreset = rst_reset;
@@ -110,9 +110,9 @@ void rst_repair(grp_window *w) {
   w->rcong = rst_cong;
   w->rclose = rst_close;
   w->rcircle = rst_circle;
-  w->rfgcolor = rst_fgcolor;
-  w->rbgcolor = rst_bgcolor;
-  w->fake_point = rst_fake_point;
+  w->set_fg_color = My_Fg_Color;
+  w->set_bg_color = My_Bg_Color;
+  w->add_fake_point = My_Add_Fake_Point;
 }
 
 /***************************************************************************************/
@@ -804,22 +804,22 @@ void rst_poly(Point *p, int n) {
 
 /* DESCRIZIONE: Setta il colore di primo piano.
  */
-static void rst_fgcolor(Color *c) {
+static void My_Fg_Color(BoxGWin *w, Color *c) {
   color cb;
   palitem *newcol;
 
   grp_color_build(c, & cb);
-  newcol = grp_color_request(grp_win->pal, & cb);
+  newcol = grp_color_request(w->pal, & cb);
   if (newcol != NULL)
     grp_set_col(newcol->index);
 }
 
 /* DESCRIZIONE: Setta il colore di sfondo.
  */
-static void rst_bgcolor(Color *c) {
+static void My_Bg_Color(BoxGWin *w, Color *c) {
   color cb;
   grp_color_build(c, & cb);
-  (grp_win->bgcol)->c = cb;
+  (w->bgcol)->c = cb;
 }
 
-static void rst_fake_point(Point *p) {}
+static void My_Add_Fake_Point(BoxGWin *w, Point *p) {}

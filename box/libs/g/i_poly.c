@@ -193,8 +193,7 @@ static Task _poly_draw(Window *w, DrawWhen dw) {
   }
 
   if (w->poly.got.color) {
-    Color *c = & w->poly.color;
-    grp_rfgcolor(c);
+    BoxGWin_Set_Fg_Color(w->window, & w->poly.color);
     w->poly.got.color = 0;
   }
 

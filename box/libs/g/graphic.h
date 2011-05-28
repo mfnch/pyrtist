@@ -178,16 +178,27 @@ struct _grp_window {
   void (*rcong)(Point *a, Point *b, Point *c);
   void (*rclose)(void);
   void (*rcircle)(Point *ctr, Point *a, Point *b);
-  void (*rfgcolor)(Color *c);
-  void (*rbgcolor)(Color *c);
-  void (*rgradient)(ColorGrad *cg);
-  void (*text)(Point *ctr, Point *right, Point *up, Point *from,
-               const char *text);
 
-  /** Set the current font from a string containing its name */
+
+  /** @see BoxGWin_Set_Fg_Color */
+  void (*set_fg_color)(BoxGWin *w, Color *c);
+
+  /** @see BoxGWin_Set_Bg_Color */
+  void (*set_bg_color)(BoxGWin *w, Color *c);
+
+  /** @see BoxGWin_Set_Gradient */
+  void (*set_gradient)(BoxGWin *w, ColorGrad *cg);
+
+  /** @see BoxGWin_Set_Font */
   void (*set_font)(BoxGWin *w, const char *font_name);
 
-  void (*fake_point)(Point *p);
+  /** @see BoxGWin_Gen_Text_Path */
+  void (*gen_text_path)(BoxGWin *w,
+                        BoxPoint *ctr, BoxPoint *right, BoxPoint *up,
+                        BoxPoint *from, const char *text);
+
+  /** @see BoxGWin_Add_Fake_Point */
+  void (*add_fake_point)(BoxGWin *w, BoxPoint *p);
 
   /** Used to save the window to a file */
   int (*save)(const char *file_name);
@@ -238,6 +249,24 @@ struct _grp_window {
  * obj->method_name(obj, ...).
  */
 
+/** Set the foreground color. */
+#define BoxGWin_Set_Fg_Color(win, c) \
+  ((win)->set_fg_color)((win), (c))
+
+/** Set the background color. */
+#define BoxGWin_Set_Bg_Color(win, c) \
+  ((win)->set_bg_color)((win), (c))
+
+/** Set the gradient as a source for filling. */
+#define BoxGWin_Set_Gradient(win, cg) \
+  ((win)->set_gradient)((win), (cg))
+
+/** Add a fake point to the window. Fake points only have an effect on the
+ * bounding box (can be used to make sure a point is visible in the figure).
+ */
+#define BoxGWin_Add_Fake_Point(win, p) \
+  ((win)->add_fake_point)((win), (p))
+
 /** Interpret raw commands contained inside an Obj object. */
 #define BoxGWin_Interpret_Obj(win, obj) \
   ((win)->interpret)((win), (obj))
@@ -245,6 +274,16 @@ struct _grp_window {
 /** Set the current font from the font name provided in the string. */
 #define BoxGWin_Set_Font(win, name) \
   ((win)->set_font)((win), (name))
+
+/** Generate the path for the given text on the reference frame
+  * defined by the origin 'ctr' and the two axes ('ctr', 'right' and 'up'
+  * are the point at position (0, 0), (0, 1) and (1, 0), respectively in the
+  * reference frame. The text is printed in the direction (0, 0) -> (1, 0)
+  * with font size 1.0 (meaning that the three points 'ctr', 'right' and 'up'
+  * can be used to magnify the text and transform it in any way).
+  */
+#define BoxGWin_Gen_Text_Path(win, ctr, right, up, from, text) \
+  ((win)->gen_text_path)((win), (ctr), (right), (up), (from), (text))
 
 enum {BOXG_CMD_SAVE=0, BOXG_CMD_RESTORE, BOXG_CMD_SET_ANTIALIAS,
       BOXG_CMD_MOVE_TO, BOXG_CMD_LINE_TO, BOXG_CMD_CURVE_TO,
@@ -266,7 +305,7 @@ enum {BOXG_CMD_SAVE=0, BOXG_CMD_RESTORE, BOXG_CMD_SET_ANTIALIAS,
 
 /* Dati importanti per la libreria */
 /* Finestra attualmente in uso */
-extern GrpWindow *grp_win;
+extern BoxGWin *grp_win;
 
 /* Per convertire in millimetri, radianti, punti per millimetro */
 extern Real grp_tomm;
@@ -282,7 +321,7 @@ typedef enum {WT_NONE=-1, WT_BM1=0, WT_BM4, WT_BM8, WT_FIG,
 int Grp_Window_Type_From_String(const char *type_str);
 
 /** Unified function to open any kind of window */
-GrpWindow *Grp_Window_Open(GrpWindowPlan *plan);
+BoxGWin *Grp_Window_Open(GrpWindowPlan *plan);
 
 /** Initialise bounding box object */
 void Grp_BB_Init(BB *bb);
@@ -309,46 +348,46 @@ void Color_Trunc(Color *c);
 
 /* Dichiarazioni delle procedure della libreria */
 /* Funzioni grafiche di alto livello */
-GrpWindow *gr1b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
-                         Real resx, Real resy);
-GrpWindow *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
-                         Real resx, Real resy);
-GrpWindow *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
-                         Real resx, Real resy);
-GrpWindow *fig_open_win(int numlayers);
-GrpWindow *ps_open_win(const char *file);
-GrpWindow *eps_open_win(const char *file, Real x, Real y);
-int ps_save_fig(const char *file_name, GrpWindow *figure);
-int eps_save_fig(const char *file_name, GrpWindow *figure);
+BoxGWin *gr1b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
+                       Real resx, Real resy);
+BoxGWin *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
+                       Real resx, Real resy);
+BoxGWin *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
+                       Real resx, Real resy);
+BoxGWin *fig_open_win(int numlayers);
+BoxGWin *ps_open_win(const char *file);
+BoxGWin *eps_open_win(const char *file, Real x, Real y);
+int ps_save_fig(const char *file_name, BoxGWin *figure);
+int eps_save_fig(const char *file_name, BoxGWin *figure);
 
 /** Type of function called when Grp_Window_Break has been used. */
 typedef void (*GrpOnError)(const char *where);
 
 /** Block the window 'w', such that it reports errors when used. */
-void BoxGWin_Block(GrpWindow *w);
+void BoxGWin_Block(BoxGWin *w);
 
 /** Similar to BoxGWin_Block, but when the window 'w' is used,
  * the function on_error is called, instead of reporting an error.
  */
-void BoxGWin_Break(GrpWindow *w, GrpOnError on_error);
+void BoxGWin_Break(BoxGWin *w, GrpOnError on_error);
 
 /** Restore the window 'w', after it has been broken with BoxGWin_Block
  * or BoxGWin_Break
  */
-void Grp_Window_Repair(GrpWindow *w);
+void Grp_Window_Repair(BoxGWin *w);
 
 /** Create a Window which displays the given error message, when someone
  * tries to use it. The error message is fprinted to the give stream.
  */
-GrpWindow *Grp_Window_Error(FILE *out, const char *msg);
+BoxGWin *Grp_Window_Error(FILE *out, const char *msg);
 
 /** Returns 1 if the window has been created with Grp_Window_Error,
  * 0 otherwise.
  */
-int Grp_Window_Is_Error(GrpWindow *w);
+int Grp_Window_Is_Error(BoxGWin *w);
 
 /** Make 'w' a dummy window which just reports errors when used. */
-void Grp_Window_Make_Dummy(GrpWindow *w);
+void Grp_Window_Make_Dummy(BoxGWin *w);
 
 #define grp_window_block BoxGWin_Block
 
@@ -362,7 +401,7 @@ int grp_palette_transform(palette *p, int (*operation)(palitem *pi));
 void grp_palette_destroy(palette *p);
 void grp_draw_gpath(GPath *gp);
 
-void rst_repair(GrpWindow *gw);
+void rst_repair(BoxGWin *gw);
 
 Point *grp_ref(Point *o, Point *v, Point *p);
 
@@ -396,12 +435,6 @@ void Grp_Matrix_Mul_Vector(Matrix *m, Point *vecs, int num_vecs);
 #define grp_rcong      (grp_win->rcong)
 #define grp_rclose     (grp_win->rclose)
 #define grp_rcircle    (grp_win->rcircle)
-#define grp_rfgcolor   (grp_win->rfgcolor)
-#define grp_rbgcolor   (grp_win->rbgcolor)
-#define grp_rgradient  (grp_win->rgradient)
-#define grp_text       (grp_win->text)
-#define grp_font       (grp_win->font)
-#define grp_fake_point (grp_win->fake_point)
 #define grp_save       (grp_win->save)
 
 /* Macro per la conversione fra diverse unità di misura */

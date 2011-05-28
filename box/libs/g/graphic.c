@@ -351,23 +351,24 @@ static void dummy_rclose(void) {grp_win->_report_error("rclose");}
 static void dummy_rcircle(Point *ctr, Point *a, Point *b) {
   grp_win->_report_error("rcircle");
 }
-static void dummy_rfgcolor(Color *c) {
+static void My_Dummy_Set_Fg_Color(BoxGWin *w, Color *c) {
   grp_win->_report_error("rfgcolor");
 }
-static void dummy_rbgcolor(Color *c) {
+static void My_Dummy_Set_Bg_Color(BoxGWin *w, Color *c) {
   grp_win->_report_error("rbgcolor");
 }
-static void dummy_rgradient(ColorGrad *cg) {
-  grp_win->_report_error("rgradient");
+static void My_Dummy_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
+  w->_report_error("rgradient");
 }
-static void dummy_text(Point *ctr, Point *right, Point *up, Point *from,
-                       const char *text) {
+static void My_Dummy_Gen_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *right,
+                                   BoxPoint *up, BoxPoint *from,
+                                   const char *text) {
   grp_win->_report_error("text");
 }
-static void dummy_font(const char *font) {
+static void My_Dummy_Set_Font(BoxGWin *w, const char *font) {
   grp_win->_report_error("font");
 }
-static void dummy_fake_point(Point *p) {return;}
+static void My_Dummy_Add_Fake_Point(BoxGWin *w, Point *p) {}
 static int dummy_save(const char *file_name) {
   /* If this function is not provided by the specific terminal, then
    * the window is probably a stream window. The best thing to do is then
@@ -399,12 +400,12 @@ void BoxGWin_Block(BoxGWin *w) {
   w->rcong = dummy_rcong;
   w->rclose = dummy_rclose;
   w->rcircle = dummy_rcircle;
-  w->rfgcolor = dummy_rfgcolor;
-  w->rbgcolor = dummy_rbgcolor;
-  w->rgradient = dummy_rgradient;
-  w->text = dummy_text;
-  w->font = dummy_font;
-  w->fake_point = dummy_fake_point;
+  w->set_fg_color = My_Dummy_Set_Fg_Color;
+  w->set_bg_color = My_Dummy_Set_Bg_Color;
+  w->set_gradient = My_Dummy_Set_Gradient;
+  w->gen_text_path = My_Dummy_Gen_Text_Path;
+  w->set_font = My_Dummy_Set_Font;
+  w->add_fake_point = My_Dummy_Add_Fake_Point;
   w->save = dummy_save;
   w->interpret = My_NotImplem_Interpret;
 
@@ -487,12 +488,12 @@ GrpWindow grp_dummy_win = {
   dummy_rcong,
   dummy_rclose,
   dummy_rcircle,
-  dummy_rfgcolor,
-  dummy_rbgcolor,
-  dummy_rgradient,
-  dummy_text,
-  dummy_font,
-  dummy_fake_point,
+  My_Dummy_Set_Fg_Color,
+  My_Dummy_Set_Bg_Color,
+  My_Dummy_Set_Gradient,
+  My_Dummy_Set_Font,
+  My_Dummy_Gen_Text_Path,
+  My_Dummy_Add_Fake_Point,
   dummy_save,
   My_NotImplem_Interpret,
   0, /* quiet */

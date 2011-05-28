@@ -82,25 +82,24 @@ static int same_points(Point *a, Point *b) {
   return (fabs(a->x - b->x) < 1e-10 && fabs(a->y - b->y) < 1e-10);
 }
 
-static void My_Map_Point(Point *out, Point *in) {
-  GrpWindow *w = grp_win;
+static void My_Map_Point(BoxGWin *w, Point *out, Point *in) {
   out->x = (in->x - w->ltx)*w->resx;
   out->y = (in->y - w->lty)*w->resy;
 }
 
 /* Macros used to scale the point coordinates */
-#define MY_POINT(a) \
-  Point my_a; My_Map_Point(& my_a, (a)); (a) = & my_a
+#define MY_POINT(w, a) \
+  Point my_a; My_Map_Point((w), & my_a, (a)); (a) = & my_a
 
-#define MY_2POINTS(a, b) \
+#define MY_2POINTS(w, a, b) \
   Point my_a, my_b; \
-  My_Map_Point(& my_a, (a)); My_Map_Point(& my_b, (b)); \
+  My_Map_Point((w), & my_a, (a)); My_Map_Point((w), & my_b, (b)); \
   (a) = & my_a; (b) = & my_b
 
-#define MY_3POINTS(a, b, c) \
+#define MY_3POINTS(w, a, b, c) \
   Point my_a, my_b, my_c; \
-  My_Map_Point(& my_a, (a)); My_Map_Point(& my_b, (b)); \
-  My_Map_Point(& my_c, (c)); \
+  My_Map_Point((w), & my_a, (a)); My_Map_Point((w), & my_b, (b)); \
+  My_Map_Point((w), & my_c, (c)); \
   (a) = & my_a; (b) = & my_b; (c) = & my_c
 
 /* This is broken, but is required for fonts (fonts support is broken as well
@@ -377,7 +376,7 @@ static int My_Args_From_Obj(ItpType *args, BoxGObj *args_obj,
       val = BoxGObj_To(arg_obj, required_kind);
       assert(val != NULL);
       if (required_kind == BOXGOBJKIND_POINT)
-        My_Map_Point(& (args++->p), (BoxPoint *) val);
+        My_Map_Point(grp_win, & (args++->p), (BoxPoint *) val);
 
       else
         (args++)->ptr = val;
@@ -799,13 +798,13 @@ static void wincairo_rdraw(DrawStyle *style) {
   }
 }
 
-static void wincairo_rfgcolor(Color *c) {
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
+static void My_WinCairo_Set_Fg_Color(BoxGWin *w, Color *c) {
+  cairo_t *cr = (cairo_t *) w->ptr;
   cairo_set_source_rgba(cr, c->r, c->g, c->b, c->a);
 }
 
-static void wincairo_rgradient(ColorGrad *cg) {
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
+static void My_WinCairo_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
+  cairo_t *cr = (cairo_t *) w->ptr;
   cairo_pattern_t *p;
   cairo_matrix_t m, m_inv;
   Point p1, p2, ref1, ref2;
@@ -813,16 +812,16 @@ static void wincairo_rgradient(ColorGrad *cg) {
 
   switch(cg->type) {
   case COLOR_GRAD_TYPE_LINEAR:
-    My_Map_Point(& p1, & cg->point1);
-    My_Map_Point(& p2, & cg->point2);
+    My_Map_Point(w, & p1, & cg->point1);
+    My_Map_Point(w, & p2, & cg->point2);
     p = cairo_pattern_create_linear(p1.x, p1.y, p2.x, p2.y);
     break;
 
   case COLOR_GRAD_TYPE_RADIAL:
-    My_Map_Point(& p1, & cg->point1);
-    My_Map_Point(& p2, & cg->point2);
-    My_Map_Point(& ref1, & cg->ref1);
-    My_Map_Point(& ref2, & cg->ref2);
+    My_Map_Point(w, & p1, & cg->point1);
+    My_Map_Point(w, & p2, & cg->point2);
+    My_Map_Point(w, & ref1, & cg->ref1);
+    My_Map_Point(w, & ref2, & cg->ref2);
     ref1.x -= p1.x; ref1.y -= p1.y;
     ref2.x -= p1.x; ref2.y -= p1.y;
 
@@ -846,7 +845,7 @@ static void wincairo_rgradient(ColorGrad *cg) {
   }
 
   cairo_pattern_set_extend(p, cg->extend);
-  for(i=0; i<cg->num_items; i++) {
+  for (i = 0; i < cg->num_items; i++) {
     ColorGradItem *cgi = & cg->items[i];
     Color *c = & cgi->color;
     cairo_pattern_add_color_stop_rgba(p, cgi->position,
@@ -858,7 +857,7 @@ static void wincairo_rgradient(ColorGrad *cg) {
 
 static void wincairo_rline(Point *a, Point *b) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
-  MY_2POINTS(a, b);
+  MY_2POINTS(grp_win, a, b);
 
   int continuing = same_points(a, & previous),
       length_zero = same_points(a, b);
@@ -880,7 +879,7 @@ static void wincairo_rline(Point *a, Point *b) {
 static void wincairo_rcong(Point *a, Point *b, Point *c) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   Point *first = a, *last = c;
-  MY_3POINTS(a, b, c);
+  MY_3POINTS(grp_win, a, b, c);
 
   if (same_points(a, c))
     return;
@@ -907,7 +906,7 @@ static void wincairo_rclose(void) {
 
 static void wincairo_rcircle(Point *ctr, Point *a, Point *b) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
-  MY_3POINTS(ctr, a, b);
+  MY_3POINTS(grp_win, ctr, a, b);
 
   if (beginning_of_path)
     cairo_new_path(cr);
@@ -917,10 +916,11 @@ static void wincairo_rcircle(Point *ctr, Point *a, Point *b) {
   beginning_of_path = 0;
 }
 
-static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
-                          const char *text) {
-  MY_3POINTS(ctr, right, up);
-  My_Cairo_Text_Path(grp_win, ctr, right, up, from, text);
+static void My_WinCairo_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *right,
+                                  BoxPoint *up, BoxPoint *from,
+                                  const char *text) {
+  MY_3POINTS(w, ctr, right, up);
+  My_Cairo_Text_Path(w, ctr, right, up, from, text);
 }
 
 static int wincairo_save(const char *file_name) {
@@ -955,10 +955,6 @@ static int wincairo_save(const char *file_name) {
   }
 }
 
-static void wincairo_font(const char *font) {
-  My_Cairo_Set_Font(grp_win, font);
-}
-
 /** Set the default methods to the cairo windows */
 static void wincairo_repair(GrpWindow *w) {
   grp_window_block(w);
@@ -968,14 +964,14 @@ static void wincairo_repair(GrpWindow *w) {
   w->rreset = wincairo_rreset;
   w->rinit = wincairo_rinit;
   w->rdraw = wincairo_rdraw;
-  w->rfgcolor = wincairo_rfgcolor;
-  w->rgradient = wincairo_rgradient;
+  w->set_fg_color = My_WinCairo_Set_Fg_Color;
+  w->set_gradient = My_WinCairo_Set_Gradient;
   w->rline = wincairo_rline;
   w->rcong = wincairo_rcong;
   w->rclose = wincairo_rclose;
   w->rcircle = wincairo_rcircle;
-  w->font = wincairo_font;
-  w->text = wincairo_text;
+  w->set_font = My_Cairo_Set_Font;
+  w->gen_text_path = My_WinCairo_Text_Path;
 }
 
 GrpWindow *cairo_open_win(GrpWindowPlan *plan) {

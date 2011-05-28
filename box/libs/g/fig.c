@@ -184,8 +184,8 @@ static void My_Layer_Finish(LayerHeader *lh) {
 }
 
 /* This function is used to insert a command in the current layer */
-static void My_Fig_Push_Commands(int id, CmndArg *args) {
-  LayerHeader *lh = (LayerHeader *) grp_win->ptr;
+static void My_Fig_Push_Commands(BoxGWin *w, int id, CmndArg *args) {
+  LayerHeader *lh = (LayerHeader *) w->ptr;
   BoxArr *layer;
   int total_size, i;
   FigCmndHeader ch;
@@ -213,7 +213,6 @@ static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj) {
   BoxGObj copy;
   CmndArg args[] = {{sizeof(BoxGObj), & copy},
                     {0, (void *) NULL}};
-  BoxGWin *prev_win = grp_win;
 
   assert(obj != NULL && w != NULL);
 
@@ -226,20 +225,18 @@ static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj) {
    * referenced by other objects. Here we can do this as we are creating
    * a new copy of obj.
    */
-  grp_win = w;
-  My_Fig_Push_Commands(ID_interpret, args);
-  grp_win = prev_win;
+  My_Fig_Push_Commands(w, ID_interpret, args);
   return BOXTASK_OK;
 }
 
 void fig_rreset(void) {
   CmndArg args[] = {{0, (void *) NULL}};
-  My_Fig_Push_Commands(ID_rreset, args);
+  My_Fig_Push_Commands(grp_win, ID_rreset, args);
 }
 
 void fig_rinit(void) {
   CmndArg args[] = {{0, (void *) NULL}};
-  My_Fig_Push_Commands(ID_rinit, args);
+  My_Fig_Push_Commands(grp_win, ID_rinit, args);
 }
 
 void fig_rdraw(DrawStyle *style) {
@@ -250,14 +247,14 @@ void fig_rdraw(DrawStyle *style) {
     args[1].arg_data_size = sizeof(Real)*style->bord_num_dashes;
     args[1].arg_data = style->bord_dashes;
   }
-  My_Fig_Push_Commands(ID_rdraw, args);
+  My_Fig_Push_Commands(grp_win, ID_rdraw, args);
 }
 
 void fig_rline(Point *a, Point *b) {
   CmndArg args[] = {{sizeof(Point), a},
                     {sizeof(Point), b},
                     {0, (void *) NULL}};
-  My_Fig_Push_Commands(ID_rline, args);
+  My_Fig_Push_Commands(grp_win, ID_rline, args);
 }
 
 void fig_rcong(Point *a, Point *b, Point *c) {
@@ -265,12 +262,12 @@ void fig_rcong(Point *a, Point *b, Point *c) {
                     {sizeof(Point), b},
                     {sizeof(Point), c},
                     {0, (void *) NULL}};
-  My_Fig_Push_Commands(ID_rcong, args);
+  My_Fig_Push_Commands(grp_win, ID_rcong, args);
 }
 
 void fig_rclose(void) {
   CmndArg args[] = {{0, (void *) NULL}};
-  My_Fig_Push_Commands(ID_rclose, args);
+  My_Fig_Push_Commands(grp_win, ID_rclose, args);
 }
 
 void fig_rcircle(Point *ctr, Point *a, Point *b) {
@@ -278,17 +275,17 @@ void fig_rcircle(Point *ctr, Point *a, Point *b) {
                     {sizeof(Point), a},
                     {sizeof(Point), b},
                     {0, (void *) NULL}};
-  My_Fig_Push_Commands(ID_rcircle, args);
+  My_Fig_Push_Commands(grp_win, ID_rcircle, args);
 }
 
-void fig_rfgcolor(Color *c) {
+void My_Fig_Set_Fg_Color(BoxGWin *w, Color *c) {
   CmndArg args[] = {{sizeof(Color), c}, {0, (void *) NULL}};
-  My_Fig_Push_Commands(ID_rfgcolor, args);
+  My_Fig_Push_Commands(w, ID_rfgcolor, args);
 }
 
-void fig_rbgcolor(Color *c) {
+void My_Fig_Set_Bg_Color(BoxGWin *w, Color *c) {
   CmndArg args[] = {{sizeof(Color), c}, {0, (void *) NULL}};
-  My_Fig_Push_Commands(ID_rbgcolor, args);
+  My_Fig_Push_Commands(w, ID_rbgcolor, args);
 }
 
 typedef struct {
@@ -296,8 +293,9 @@ typedef struct {
   Int text_size;
 } Arg4Text;
 
-static void fig_text(Point *ctr, Point *right, Point *up, Point *from,
-                      const char *text) {
+static void My_Fig_Gen_Text_Path(BoxGWin *w,
+                                 Point *ctr, Point *right, Point *up,
+                                 Point *from, const char *text) {
   Int text_size = strlen(text);
   Arg4Text arg;
   CmndArg args[] = {{sizeof(Arg4Text), & arg},
@@ -305,20 +303,20 @@ static void fig_text(Point *ctr, Point *right, Point *up, Point *from,
                     {0, (void *) NULL}};
   arg.ctr = *ctr; arg.right = *right; arg.up = *up; arg.from = *from;
   arg.text_size = text_size;
-  My_Fig_Push_Commands(ID_text, args);
+  My_Fig_Push_Commands(w, ID_text, args);
 }
 
-static void fig_font(const char *font) {
+static void My_Fig_Set_Font(BoxGWin *w, const char *font) {
   Int font_size = strlen(font);
   CmndArg args[] = {{sizeof(Int), & font_size},
                     {font_size+1, (void *) font},
                     {0, (void *) NULL}};
-  My_Fig_Push_Commands(ID_font, args);
+  My_Fig_Push_Commands(w, ID_font, args);
 }
 
-static void My_Fig_Fake_Point(Point *p) {
+static void My_Fig_Fake_Point(BoxGWin *w, Point *p) {
   CmndArg args[] = {{sizeof(Point), p}, {0, (void *) NULL}};
-  My_Fig_Push_Commands(ID_fake_point, args);
+  My_Fig_Push_Commands(w, ID_fake_point, args);
 }
 
 static void My_Fig_Close_Win(void) {
@@ -335,7 +333,7 @@ static void My_Fig_Close_Win(void) {
   BoxMem_Free(w);
 }
 
-static void fig_rgradient(ColorGrad *cg) {
+static void My_Fig_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
   CmndArg args[] = {{sizeof(ColorGrad), cg},
                     {0, (void *) NULL},
                     {0, (void *) NULL}};
@@ -343,7 +341,7 @@ static void fig_rgradient(ColorGrad *cg) {
     args[1].arg_data_size = sizeof(ColorGradItem)*cg->num_items;
     args[1].arg_data = cg->items;
   }
-  My_Fig_Push_Commands(ID_rgradient, args);
+  My_Fig_Push_Commands(w, ID_rgradient, args);
 }
 
 static int My_Fig_Save(const char *file_name) {
@@ -387,12 +385,12 @@ static void My_Fig_Repair(GrpWindow *w) {
   w->rcong = fig_rcong;
   w->rclose = fig_rclose;
   w->rcircle = fig_rcircle;
-  w->rfgcolor = fig_rfgcolor;
-  w->rbgcolor = fig_rbgcolor;
-  w->rgradient = fig_rgradient;
-  w->text = fig_text;
-  w->font = fig_font;
-  w->fake_point = My_Fig_Fake_Point;
+  w->set_fg_color = My_Fig_Set_Fg_Color;
+  w->set_bg_color = My_Fig_Set_Bg_Color;
+  w->set_gradient = My_Fig_Set_Gradient;
+  w->gen_text_path = My_Fig_Gen_Text_Path;
+  w->set_font = My_Fig_Set_Font;
+  w->add_fake_point = My_Fig_Fake_Point;
   w->save = My_Fig_Save;
   w->interpret = My_Fig_Interpret;
   w->close_win = My_Fig_Close_Win;
@@ -732,11 +730,11 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
     return BOXTASK_OK;
 
   case ID_rfgcolor:
-    grp_rfgcolor((Color *) cmnd_data);
+    BoxGWin_Set_Fg_Color(grp_win, (Color *) cmnd_data);
     return BOXTASK_OK;
 
   case ID_rbgcolor:
-    grp_rbgcolor((Color *) cmnd_data);
+    BoxGWin_Set_Bg_Color(grp_win, (Color *) cmnd_data);
     return BOXTASK_OK;
 
   case ID_rgradient:
@@ -746,7 +744,7 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
     Fig_Transform_Point(& cg.point2, 1);
     Fig_Transform_Point(& cg.ref1, 1);
     Fig_Transform_Point(& cg.ref2, 1);
-    grp_rgradient(& cg);
+    BoxGWin_Set_Gradient(grp_win, & cg);
     return BOXTASK_OK;
 
   case ID_text:
@@ -759,7 +757,8 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
           Fig_Transform_Point(& arg.ctr, 1);
           Fig_Transform_Point(& arg.right, 1);
           Fig_Transform_Point(& arg.up, 1);
-          grp_text(& arg.ctr, & arg.right, & arg.up, & arg.from, str);
+          BoxGWin_Gen_Text_Path(grp_win, & arg.ctr, & arg.right, & arg.up,
+                                & arg.from, str);
         } else {
           g_warning("Fig_Draw_Layer: Ignoring text command (bad str)!");
         }
@@ -776,7 +775,7 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
       char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
       if (str_size + sizeof(Int) <= cmnd_header->size) {
         if (*((char *) ptr) == '\0') {
-          grp_font(str);
+          BoxGWin_Set_Font(grp_win, str);
         } else {
           g_warning("Fig_Draw_Layer: Ignoring font command (bad str) 1!");
         }
@@ -790,7 +789,7 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
     {
       Point p = *((Point *) cmnd_data);
       Fig_Transform_Point(& p, 1);
-      grp_fake_point(& p);
+      BoxGWin_Add_Fake_Point(grp_win, & p);
     }
     return BOXTASK_OK;
 

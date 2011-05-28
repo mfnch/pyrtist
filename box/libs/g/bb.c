@@ -33,9 +33,13 @@
 
 static BB bb_global, bb_local;
 
-static void got_point(Real x, Real y) {
+static void My_Got_Point(BoxGWin *w, Real x, Real y) {
   Point p = {x, y};
   Grp_BB_Must_Contain(& bb_local, & p);
+}
+
+static void got_point(Real x, Real y) {
+  My_Got_Point(grp_win, x, y);
 }
 
 static void bb_close_win(void) {return;}
@@ -80,14 +84,17 @@ static void bb_rcircle(Point *ctr, Point *a, Point *b) {
 
 }
 
-static void bb_text(Point *ctr, Point *left, Point *up, Point *from,
-                    const char *text) {
-  got_point(ctr->x, ctr->y);
-  got_point(left->x, left->y);
-  got_point(up->x, up->y);
+static void My_BB_Gen_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *left,
+                                BoxPoint *up, BoxPoint *from,
+                                const char *text) {
+  My_Got_Point(w, ctr->x, ctr->y);
+  My_Got_Point(w, left->x, left->y);
+  My_Got_Point(w, up->x, up->y);
 }
 
-static void bb_fake_point(Point *p) {got_point(p->x, p->y);}
+static void My_BB_Add_Fake_Point(BoxGWin *w, Point *p) {
+  My_Got_Point(w, p->x, p->y);
+}
 
 /** Set the default methods to the bb window */
 static void bb_repair(GrpWindow *w) {
@@ -96,8 +103,8 @@ static void bb_repair(GrpWindow *w) {
   w->rline = bb_rline;
   w->rcong = bb_rcong;
   w->rcircle = bb_rcircle;
-  w->text = bb_text;
-  w->fake_point = bb_fake_point;
+  w->gen_text_path = My_BB_Gen_Text_Path;
+  w->add_fake_point = My_BB_Add_Fake_Point;
 
   w->close_win = bb_close_win;
 }

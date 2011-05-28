@@ -40,9 +40,6 @@
 static int discretization_x = 1000, discretization_y = 1000;
 #endif
 
-#if 0
-static void eps_rbgcolor(Color *c);
-#endif
 static int eps_save(const char *unused);
 
 /* Variabili usate dalle procedure per scrivere il file postscript */
@@ -202,9 +199,9 @@ static void eps_rcircle(Point *ctr, Point *a, Point *b) {
   beginning_of_path = 0;
 }
 
-static void eps_rfgcolor(Color *c) {
-  fprintf( (FILE *) grp_win->ptr,
-   "  %g %g %g setrgbcolor\n", c->r, c->g, c->b );
+static void My_EPS_Set_Fg_Color(BoxGWin *w, Color *c) {
+  fprintf((FILE *) w->ptr,
+          "  %g %g %g setrgbcolor\n", c->r, c->g, c->b );
 }
 
 static char *Escape_Text(const char *src) {
@@ -287,9 +284,10 @@ static void _Text_Fmt_Init(BoxGFmt *fmt) {
   fmt->newline = _Text_Fmt_Newline;
 }
 
-static void eps_text(Point *ctr, Point *right, Point *up, Point *from,
-                     const char *text) {
-  FILE *out = (FILE *) grp_win->ptr;
+static void My_EPS_Gen_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *right,
+                                 BoxPoint *up, BoxPoint *from,
+                                 const char *text) {
+  FILE *out = (FILE *) w->ptr;
   TextPrivate private;
   BoxGFmt fmt;
   EPS_POINT(ctr, ctrx, ctry);
@@ -324,7 +322,7 @@ static void eps_text(Point *ctr, Point *right, Point *up, Point *from,
   beginning_of_path = 0;
 }
 
-static void eps_font(const char *font) {
+static void My_EPS_Set_Font(BoxGWin *w, const char *font) {
   const char *full_name;
 
   full_name = ps_font_get_full_name(font,
@@ -338,15 +336,11 @@ static void eps_font(const char *font) {
     fprintf(stderr, "Using default font '%s'\n", full_name);
   }
 
-  fprintf((FILE *) grp_win->ptr,
+  fprintf((FILE *) w->ptr,
           "  /%s findfont setfont\n", full_name);
 }
 
-static void eps_fake_point(Point *p) {return;}
-
-#if 0
-static void eps_rbgcolor(Color *c) {return;}
-#endif
+static void My_EPS_Add_Fake_Point(BoxGWin *w, BoxPoint *p) {}
 
 /***************************************************************************************/
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
@@ -362,10 +356,10 @@ static void eps_repair(GrpWindow *w) {
   w->rcong = eps_rcong;
   w->rclose = eps_rclose;
   w->rcircle = eps_rcircle;
-  w->rfgcolor = eps_rfgcolor;
-  w->text = eps_text;
-  w->font = eps_font;
-  w->fake_point = eps_fake_point;
+  w->set_fg_color = My_EPS_Set_Fg_Color;
+  w->gen_text_path = My_EPS_Gen_Text_Path;
+  w->set_font = My_EPS_Set_Font;
+  w->add_fake_point = My_EPS_Add_Fake_Point;
   w->save = eps_save;
 
   w->close_win = eps_close_win;
@@ -535,8 +529,8 @@ static void ps_repair(GrpWindow *w) {
   w->rcong = eps_rcong;
   w->rclose = eps_rclose;
   w->rcircle = eps_rcircle;
-  w->rfgcolor = eps_rfgcolor;
-  w->fake_point = eps_fake_point;
+  w->set_fg_color = My_EPS_Set_Fg_Color;
+  w->add_fake_point = My_EPS_Add_Fake_Point;
   w->save = eps_save;
 
   w->close_win = ps_close_win;

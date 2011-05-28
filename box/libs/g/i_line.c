@@ -109,10 +109,9 @@ Task line_end(BoxVM *vmp) {
   if (lt_num_pieces(w->line.lt) >= 1) {
     grp_window *cur_win = grp_win;
     grp_win = w->window;
-    if (w->line.got.color) {
-      Color *c = & w->line.color;
-      grp_rfgcolor(c);
-    }
+    if (w->line.got.color)
+      BoxGWin_Set_Fg_Color(w->window, & w->line.color);
+
     lt_draw(w->line.lt, w->line.close);
     (void) g_rdraw(& w->line.style, & w->line.default_style, DRAW_WHEN_END);
     grp_win = cur_win;
@@ -174,8 +173,7 @@ Task line_pause(BoxVM *vmp) {
   grp_window *cur_win = grp_win;
   grp_win = w->window;
   if (w->line.got.color) {
-    Color *c = & w->line.color;
-    grp_rfgcolor(c);
+    BoxGWin_Set_Fg_Color(w->window, & w->line.color);
     w->line.got.color = 0;
   }
   (void) lt_draw(w->line.lt, w->line.close);

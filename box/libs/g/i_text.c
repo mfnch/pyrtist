@@ -76,7 +76,7 @@ static void _place_text(Window *w) {
   dy.x = -dx->y; dy.y = dx->x;
   right.x = ctr->x + dx->x; right.y = ctr->y + dx->y;
   up.x    = ctr->x + dy.x;  up.y    = ctr->y + dy.y;
-  grp_text(ctr, & right, & up, from, w->text.text);
+  BoxGWin_Gen_Text_Path(grp_win, ctr, & right, & up, from, w->text.text);
 }
 
 static Task _sentence_end(Window *w, int *wrote_text) {
@@ -87,13 +87,12 @@ static Task _sentence_end(Window *w, int *wrote_text) {
     grp_window *cur_win = grp_win;
     grp_win = w->window;
     if (w->text.got.color) {
-      Color *c = & w->text.color;
-      grp_rfgcolor(c);
+      BoxGWin_Set_Fg_Color(w->window, & w->text.color);
       w->text.got.color = 0;
     }
 
     if (w->text.got.font && w->text.font != (char *) NULL) {
-      grp_font(w->text.font);
+      BoxGWin_Set_Font(grp_win, w->text.font);
 
     } else {
       if (w->text.got.font_size && !w->text.got.font_size)
