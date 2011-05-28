@@ -183,13 +183,17 @@ struct _grp_window {
   void (*rgradient)(ColorGrad *cg);
   void (*text)(Point *ctr, Point *right, Point *up, Point *from,
                const char *text);
-  void (*font)(const char *font_name);
+
+  /** Set the current font from a string containing its name */
+  void (*set_font)(BoxGWin *w, const char *font_name);
+
   void (*fake_point)(Point *p);
+
   /** Used to save the window to a file */
   int (*save)(const char *file_name);
 
   /** Interpret the commands stored inside the given BoxGObj. */
-  BoxTask (*interpret)(GrpWindow *w, BoxGObj *commands);
+  BoxTask (*interpret)(BoxGWin *w, BoxGObj *commands);
 
   /** If set to 1, inhibits error messages */
   int quiet;
@@ -229,19 +233,33 @@ struct _grp_window {
 
 #define BoxGWin_Fail(source, msg)
 
+/** Define some macros to provide functions which can be called as one would
+ * normally expect: Method_Of_Obj(obj, arg1, arg2, ...) rather than
+ * obj->method_name(obj, ...).
+ */
+
+/** Interpret raw commands contained inside an Obj object. */
 #define BoxGWin_Interpret_Obj(win, obj) \
   ((win)->interpret)((win), (obj))
 
-enum {CMD_SAVE=0, CMD_RESTORE, CMD_SET_ANTIALIAS,
-      CMD_MOVE_TO, CMD_LINE_TO, CMD_CURVE_TO, CMD_CLOSE_PATH,
-      CMD_NEW_PATH, CMD_NEW_SUB_PATH,
-      CMD_STROKE, CMD_STROKE_PRESERVE, CMD_FILL, CMD_FILL_PRESERVE,
-      CMD_CLIP, CMD_CLIP_PRESERVE, CMD_RESET_CLIP,
-      CMD_PUSH_GROUP, CMD_POP_GROUP_TO_SOURCE, CMD_SET_OPERATOR,
-      CMD_PAINT, CMD_PAINT_WITH_ALPHA, CMD_COPY_PAGE, CMD_SHOW_PAGE,
-      CMD_SET_LINE_WIDTH, CMD_SET_LINE_CAP, CMD_SET_LINE_JOIN,
-      CMD_SET_MITER_LIMIT, CMD_SET_DASH, CMD_SET_FILL_RULE,
-      CMD_SET_SOURCE_RGBA, CMD_EXT_JOINARC_TO, CMD_EXT_ARC_TO};
+/** Set the current font from the font name provided in the string. */
+#define BoxGWin_Set_Font(win, name) \
+  ((win)->set_font)((win), (name))
+
+enum {BOXG_CMD_SAVE=0, BOXG_CMD_RESTORE, BOXG_CMD_SET_ANTIALIAS,
+      BOXG_CMD_MOVE_TO, BOXG_CMD_LINE_TO, BOXG_CMD_CURVE_TO,
+      BOXG_CMD_CLOSE_PATH, BOXG_CMD_NEW_PATH, BOXG_CMD_NEW_SUB_PATH,
+      BOXG_CMD_STROKE, BOXG_CMD_STROKE_PRESERVE, BOXG_CMD_FILL,
+      BOXG_CMD_FILL_PRESERVE, BOXG_CMD_CLIP, BOXG_CMD_CLIP_PRESERVE,
+      BOXG_CMD_RESET_CLIP, BOXG_CMD_PUSH_GROUP, BOXG_CMD_POP_GROUP_TO_SOURCE,
+      BOXG_CMD_SET_OPERATOR, BOXG_CMD_PAINT, BOXG_CMD_PAINT_WITH_ALPHA,
+      BOXG_CMD_COPY_PAGE, BOXG_CMD_SHOW_PAGE, BOXG_CMD_SET_LINE_WIDTH,
+      BOXG_CMD_SET_LINE_CAP, BOXG_CMD_SET_LINE_JOIN, BOXG_CMD_SET_MITER_LIMIT,
+      BOXG_CMD_SET_DASH, BOXG_CMD_SET_FILL_RULE, BOXG_CMD_SET_SOURCE_RGBA,
+      BOXG_CMD_TEXT_PATH, BOXG_CMD_TRANSLATE,
+      BOXG_CMD_EXT_JOINARC_TO, BOXG_CMD_EXT_ARC_TO,
+      BOXG_CMD_EXT_SET_FONT, BOXG_CMD_EXT_TEXT_PATH
+      };
 
 /* Just for compatibility with past conventions */
 #define grp_window BoxGWin

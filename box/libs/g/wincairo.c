@@ -34,6 +34,7 @@
 #endif
 
 #include <box/types.h>
+#include <box/mem.h>
 
 #include "error.h"
 #include "graphic.h"
@@ -45,13 +46,6 @@
 #include "obj.h"
 
 /*#define DEBUG*/
-
-#ifdef DEBUG
-#  define WHEREAMI \
-   fprintf(stderr, "Inside '%s'\n", __func__), fflush(stderr)
-#else
-#  define WHEREAMI (void) 0
-#endif
 
 /* Invert the cairo matrix 'in' and put the result in 'result'.
  * The determinant of 'in' is returned and is 0.0, if the matrix
@@ -115,6 +109,140 @@ static void My_Map_Point(Point *out, Point *in) {
  */
 #define MY_REAL(r) ((r)*grp_win->resx) \
 
+/* BEGIN OF TEXT FORMATTING IMPLEMENTATION **********************************
+ * Here we implement some basic text formatting features, such as           *
+ * subscripts, superscripts and multi-line paragraphs. We exploit           *
+ * the parser provided by the formatter.c module.                           *
+ ****************************************************************************/
+
+typedef struct {
+  cairo_t *cr;
+  buff    saved_states;
+  Point   sub_vec,
+          sup_vec;
+  Real    sub_scale,
+          sup_scale;
+} TextPrivate;
+
+typedef struct {
+  Point          cur_pos;
+  cairo_matrix_t m;
+} TextState;
+
+static void My_Text_Fmt_Draw(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  char *text = BoxGFmt_Buffer_Get(stack);
+  cairo_text_path(private->cr, text);
+  BoxGFmt_Buffer_Clear(stack);
+}
+
+static void My_Text_Fmt_Save(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  TextState ss;
+  cairo_get_matrix(private->cr, & ss.m);
+  cairo_get_current_point(private->cr, & ss.cur_pos.x, & ss.cur_pos.y);
+  (void) buff_push(& private->saved_states, & ss);
+}
+
+static void My_Text_Fmt_Restore(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  TextState *ts = buff_lastitemptr(& private->saved_states, TextState);
+  double x, y;
+  cairo_set_matrix(private->cr, & ts->m);
+  cairo_get_current_point(private->cr, & x, & y);
+  cairo_move_to(private->cr, x, ts->cur_pos.y);
+  buff_dec(& private->saved_states);
+}
+
+static void My_Text_Fmt_Change(cairo_t *cr, Point *vec, Real scale) {
+  cairo_matrix_t m;
+  cairo_get_current_point(cr, & m.x0, & m.y0);
+  m.x0 += vec->x;
+  m.y0 += vec->y;
+  m.xx = m.yy = scale;
+  m.xy = m.yx = 0.0;
+  cairo_transform(cr, & m);
+  cairo_move_to(cr, (double) 0.0, (double) 0.0);
+}
+
+static void My_Text_Fmt_Superscript(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  My_Text_Fmt_Change(private->cr, & private->sup_vec, private->sup_scale);
+}
+
+static void My_Text_Fmt_Subscript(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  My_Text_Fmt_Change(private->cr, & private->sub_vec, private->sub_scale);
+}
+
+static void My_Text_Fmt_Newline(BoxGFmtStack *stack) {
+  BoxGFmt *fmt = BoxGFmt_Get(stack);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  cairo_translate(private->cr, 0.0, -1.0);
+  cairo_move_to(private->cr, 0.0, 0.0);
+}
+
+static void My_Text_Fmt_Init(BoxGFmt *fmt) {
+  BoxGFmt_Init(fmt);
+  fmt->draw = My_Text_Fmt_Draw;
+  fmt->subscript = My_Text_Fmt_Subscript;
+  fmt->superscript = My_Text_Fmt_Superscript;
+  fmt->newline = My_Text_Fmt_Newline;
+  fmt->save = My_Text_Fmt_Save;
+  fmt->restore = My_Text_Fmt_Restore;
+}
+
+static void My_Cairo_Text_Path(BoxGWin *w, Point *ctr, Point *right,
+                               Point *up, Point *from, const char *text) {
+
+  cairo_t *cr = (cairo_t *) grp_win->ptr;
+  cairo_matrix_t m;
+  double x1, y1, x2, y2;
+  TextPrivate private;
+  BoxGFmt fmt;
+
+  m.xx = right->x - ctr->x;  m.yx = right->y - ctr->y;
+  m.xy = up->x - ctr->x;  m.yy = up->y - ctr->y;
+  m.x0 = ctr->x; m.y0 = ctr->y;
+  cairo_save(cr);
+  cairo_transform(cr, & m);
+
+  My_Text_Fmt_Init(& fmt);
+  BoxGFmt_Private_Set(& fmt, & private);
+  private.cr = cr;
+  private.sup_vec.x = 0.0;
+  private.sup_vec.y = 0.5;
+  private.sup_scale = 0.5;
+  private.sub_vec.x = 0.0;
+  private.sub_vec.y = -0.1;
+  private.sub_scale = 0.5;
+
+  int state = buff_create(& private.saved_states, sizeof(TextState), 8);
+  assert(state == 1);
+
+  cairo_save(cr);
+  cairo_new_path(cr);
+  cairo_move_to(cr, (double) 0, (double) 0);
+  BoxGFmt_Text(& fmt, text);
+  cairo_restore(cr);
+  cairo_fill_extents(cr, & x1, & y1, & x2, & y2);
+
+  cairo_new_path(cr);
+  cairo_translate(cr, -x1 - (x2 - x1)*from->x, -y1 - (y2 - y1)*from->y);
+  BoxGFmt_Text(& fmt, text);
+  cairo_restore(cr);
+
+  buff_free(& private.saved_states);
+  beginning_of_path = 0;
+}
+
+/* END OF TEXT FORMATTING IMPLEMENTATION ************************************/
+
 static void My_Cairo_JoinArc(cairo_t *cr,
                              const Point *a, const Point *b, const Point *c) {
   cairo_matrix_t previous_m, m;
@@ -151,6 +279,73 @@ static void My_Cairo_Arc(cairo_t *cr,
 
   cairo_set_matrix(cr, & previous_m);
 }
+
+static void My_Cairo_Set_Font(BoxGWin *w, const char *font_name) {
+  BoxGWin *prev_win = grp_win;
+  cairo_t *cr = (cairo_t *) w->ptr;
+  const char *name;
+  FontSlant fs;
+  FontWeight fw;
+  cairo_font_slant_t cs;
+  cairo_font_weight_t cw;
+  cairo_font_face_t *ff;
+  cairo_status_t status;
+  cairo_matrix_t m;
+
+  grp_win = w;
+
+  if (ps_font_get_info(font_name, & name, & fs, & fw)) {
+    switch(fs) {
+    case FONT_SLANT_NORMAL: cs = CAIRO_FONT_SLANT_NORMAL; break;
+    case FONT_SLANT_ITALIC: cs = CAIRO_FONT_SLANT_ITALIC; break;
+    case FONT_SLANT_OBLIQUE: cs = CAIRO_FONT_SLANT_OBLIQUE; break;
+    default: cs = CAIRO_FONT_SLANT_NORMAL; break;
+    }
+
+    switch(fw) {
+    case FONT_WEIGHT_NORMAL: cw = CAIRO_FONT_WEIGHT_NORMAL; break;
+    case FONT_WEIGHT_BOLD: cw = CAIRO_FONT_WEIGHT_BOLD; break;
+    default: cw = CAIRO_FONT_WEIGHT_NORMAL; break;
+    }
+
+  } else {
+    name = font_name;
+    cs = CAIRO_FONT_SLANT_NORMAL;
+    cw = CAIRO_FONT_WEIGHT_NORMAL;
+  }
+
+  cairo_select_font_face(cr, name, cs, cw);
+  ff = cairo_get_font_face(cr);
+  status = cairo_font_face_status(ff);
+  if (status != CAIRO_STATUS_SUCCESS) {
+    fprintf(stderr, "Cannot set font: %s.\n", cairo_status_to_string(status));
+    cairo_select_font_face(cr, "sans", CAIRO_FONT_SLANT_NORMAL,
+                           CAIRO_FONT_WEIGHT_NORMAL);
+  }
+
+  /* Cairo coordinates use the following convention: increasing x goes from
+   * the left to the right side of the screen, while increasing y goes from
+   * the top to the bottom side. Postscript coordinates use the opposite
+   * convention. The Box graphics library also sticks to the Postscript
+   * convention, since this is the usual choice in geometry and mathematics.
+   * Care has to be put in converting from one to the other convention:
+   * we don't want to simply mirror the image: we want to do that only for
+   * graphics, while preserving the direction for fonts: mirroring fonts
+   * is not really what we want! Therefore we DON'T choose the identity
+   * matrix for fonts! We choose diag(1, -1)!
+   */
+  m.xx = 1.0; m.yy = -1.0;
+  m.xy = m.yx = m.x0 = m.y0 = 0.0;
+  cairo_set_font_matrix(cr, & m);
+
+  grp_win = prev_win;
+}
+
+
+
+
+
+
 
 #define ITP_MAX_NUM_ARGS 5
 
@@ -235,15 +430,15 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
   ItpType args[ITP_MAX_NUM_ARGS];
 
   switch (cmnd_id) {
-  case CMD_SAVE:
+  case BOXG_CMD_SAVE:
     cairo_save(cr);
     return BOXTASK_OK;
 
-  case CMD_RESTORE:
+  case BOXG_CMD_RESTORE:
     cairo_restore(cr);
     return BOXTASK_OK;
 
-  case CMD_SET_ANTIALIAS:
+  case BOXG_CMD_SET_ANTIALIAS:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_antialias_t v;
       switch(*args[0].i) {
@@ -258,21 +453,21 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case CMD_MOVE_TO:
+  case BOXG_CMD_MOVE_TO:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_POINT)) {
       cairo_move_to(cr, args[0].p.x, args[0].p.y);
       return BOXTASK_OK;
     }
     break;
 
-  case CMD_LINE_TO:
+  case BOXG_CMD_LINE_TO:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_POINT)) {
       cairo_line_to(cr, args[0].p.x, args[0].p.y);
       return BOXTASK_OK;
     }
     break;
 
-  case CMD_CURVE_TO:
+  case BOXG_CMD_CURVE_TO:
     if (My_Args_From_Obj(args, args_obj, 3, BOXGOBJKIND_POINT,
                          BOXGOBJKIND_POINT, BOXGOBJKIND_POINT)) {
       cairo_curve_to(cr,
@@ -283,88 +478,88 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case CMD_CLOSE_PATH:
+  case BOXG_CMD_CLOSE_PATH:
     cairo_close_path(cr);
     return BOXTASK_OK;
 
-  case CMD_NEW_PATH:
+  case BOXG_CMD_NEW_PATH:
     cairo_new_path(cr);
     return BOXTASK_OK;
 
-  case CMD_NEW_SUB_PATH:
+  case BOXG_CMD_NEW_SUB_PATH:
     cairo_new_sub_path(cr);
     return BOXTASK_OK;
 
-  case CMD_STROKE:
+  case BOXG_CMD_STROKE:
     cairo_stroke(cr);
     return BOXTASK_OK;
 
-  case CMD_STROKE_PRESERVE:
+  case BOXG_CMD_STROKE_PRESERVE:
     cairo_stroke_preserve(cr);
     return BOXTASK_OK;
 
-  case CMD_FILL:
+  case BOXG_CMD_FILL:
     cairo_fill(cr);
     return BOXTASK_OK;
 
-  case CMD_FILL_PRESERVE:
+  case BOXG_CMD_FILL_PRESERVE:
     cairo_fill_preserve(cr);
     return BOXTASK_OK;
 
-  case CMD_CLIP:
+  case BOXG_CMD_CLIP:
     cairo_clip(cr);
     return BOXTASK_OK;
 
-  case CMD_CLIP_PRESERVE:
+  case BOXG_CMD_CLIP_PRESERVE:
     cairo_clip_preserve(cr);
     return BOXTASK_OK;
 
-  case CMD_RESET_CLIP:
+  case BOXG_CMD_RESET_CLIP:
     cairo_reset_clip(cr);
     return BOXTASK_OK;
 
-  case CMD_PUSH_GROUP:
+  case BOXG_CMD_PUSH_GROUP:
     cairo_push_group(cr);
     return BOXTASK_OK;
 
-  case CMD_POP_GROUP_TO_SOURCE:
+  case BOXG_CMD_POP_GROUP_TO_SOURCE:
     cairo_pop_group_to_source(cr);
     return BOXTASK_OK;
 
-  case CMD_SET_OPERATOR:
+  case BOXG_CMD_SET_OPERATOR:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_set_operator(cr, My_Cairo_Operator_Of_Int(*args[0].i));
       return BOXTASK_OK;
     }
     break;
 
-  case CMD_PAINT:
+  case BOXG_CMD_PAINT:
     cairo_paint(cr);
     return BOXTASK_OK;
 
-  case CMD_PAINT_WITH_ALPHA:
+  case BOXG_CMD_PAINT_WITH_ALPHA:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_REAL)) {
       cairo_paint_with_alpha(cr, *args[0].r);
       return BOXTASK_OK;
     }
     return BOXTASK_OK;
 
-  case CMD_COPY_PAGE:
+  case BOXG_CMD_COPY_PAGE:
     cairo_copy_page(cr);
     return BOXTASK_OK;
 
-  case CMD_SHOW_PAGE:
+  case BOXG_CMD_SHOW_PAGE:
     cairo_show_page(cr);
     return BOXTASK_OK;
 
-  case CMD_SET_LINE_WIDTH:
+  case BOXG_CMD_SET_LINE_WIDTH:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_REAL)) {
       cairo_set_line_width(cr, *args[0].r);
       return BOXTASK_OK;
     }
     break;
 
-  case CMD_SET_LINE_CAP:
+  case BOXG_CMD_SET_LINE_CAP:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_line_cap_t v;
       switch(*args[0].i) {
@@ -378,7 +573,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case CMD_SET_LINE_JOIN:
+  case BOXG_CMD_SET_LINE_JOIN:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_line_join_t v;
       switch(*args[0].i) {
@@ -392,13 +587,13 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case CMD_SET_MITER_LIMIT:
+  case BOXG_CMD_SET_MITER_LIMIT:
     break;
 
-  case CMD_SET_DASH:
+  case BOXG_CMD_SET_DASH:
     break;
 
-  case CMD_SET_FILL_RULE:
+  case BOXG_CMD_SET_FILL_RULE:
     if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_fill_rule_t v;
       switch(*args[0].i) {
@@ -411,7 +606,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case CMD_SET_SOURCE_RGBA:
+  case BOXG_CMD_SET_SOURCE_RGBA:
     if (My_Args_From_Obj(args, args_obj, 4, BOXGOBJKIND_REAL, BOXGOBJKIND_REAL,
                          BOXGOBJKIND_REAL, BOXGOBJKIND_REAL)) {
       cairo_set_source_rgba(cr, *args[0].r, *args[1].r, *args[2].r,
@@ -420,7 +615,25 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case CMD_EXT_JOINARC_TO:
+  case BOXG_CMD_TEXT_PATH:
+    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_STR)) {
+      char *text = BoxStr_To_C_String(args[4].s);
+      if (text != NULL) {
+        cairo_text_path(cr, text);
+        BoxMem_Free(text);
+        return BOXTASK_OK;
+      }
+    }
+    break;
+
+  case BOXG_CMD_TRANSLATE:
+    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_POINT)) {
+      cairo_translate(cr, args[0].p.x, args[0].p.y);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXG_CMD_EXT_JOINARC_TO:
     if (My_Args_From_Obj(args, args_obj, 3, BOXGOBJKIND_POINT,
                          BOXGOBJKIND_POINT, BOXGOBJKIND_POINT)) {
       My_Cairo_JoinArc(cr, & args[0].p, & args[1].p, & args[2].p);
@@ -428,13 +641,39 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case CMD_EXT_ARC_TO:
+  case BOXG_CMD_EXT_ARC_TO:
     if (My_Args_From_Obj(args, args_obj, 5, BOXGOBJKIND_POINT,
                          BOXGOBJKIND_POINT, BOXGOBJKIND_POINT,
                          BOXGOBJKIND_REAL, BOXGOBJKIND_REAL)) {
       My_Cairo_Arc(cr, & args[0].p, & args[1].p, & args[2].p,
                    *args[3].r, *args[4].r);
       return BOXTASK_OK;
+    }
+    break;
+
+  case BOXG_CMD_EXT_SET_FONT:
+    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_STR)) {
+      char *font = BoxStr_To_C_String(args[0].s);
+      if (font != NULL) {
+        My_Cairo_Set_Font(w, font);
+        BoxMem_Free(font);
+        return BOXTASK_OK;
+      }
+    }
+    break;
+
+  case BOXG_CMD_EXT_TEXT_PATH:
+    if (My_Args_From_Obj(args, args_obj, 5, BOXGOBJKIND_POINT,
+                         BOXGOBJKIND_POINT, BOXGOBJKIND_POINT,
+                         BOXGOBJKIND_POINT, BOXGOBJKIND_STR)) {
+      char *text = BoxStr_To_C_String(args[4].s);
+      if (text != NULL) {
+        Point ppp = {0.5, 0.5};
+        My_Cairo_Text_Path(w, & args[0].p, & args[1].p, & args[2].p,
+                           & ppp /*& args[3].p*/, text);
+        BoxMem_Free(text);
+        return BOXTASK_OK;
+      }
     }
     break;
 
@@ -480,16 +719,14 @@ static BoxTask My_WinCairo_Interpret(BoxGWin *w, BoxGObj *obj) {
 }
 
 static void wincairo_rreset(void) {
-  WHEREAMI;
   beginning_of_path = 1;
 }
 
-static void wincairo_rinit(void) {WHEREAMI;}
+static void wincairo_rinit(void) {}
 
 static void wincairo_rdraw(DrawStyle *style) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   int do_fill, do_clip, do_even_odd, do_border = (style->bord_width > 0.0);
-  WHEREAMI;
 
   if ( ! beginning_of_path ) {
     Real scale = style->scale;
@@ -564,7 +801,6 @@ static void wincairo_rdraw(DrawStyle *style) {
 
 static void wincairo_rfgcolor(Color *c) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
-  WHEREAMI;
   cairo_set_source_rgba(cr, c->r, c->g, c->b, c->a);
 }
 
@@ -574,7 +810,6 @@ static void wincairo_rgradient(ColorGrad *cg) {
   cairo_matrix_t m, m_inv;
   Point p1, p2, ref1, ref2;
   Int i;
-  WHEREAMI;
 
   switch(cg->type) {
   case COLOR_GRAD_TYPE_LINEAR:
@@ -624,7 +859,6 @@ static void wincairo_rgradient(ColorGrad *cg) {
 static void wincairo_rline(Point *a, Point *b) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
   MY_2POINTS(a, b);
-  WHEREAMI;
 
   int continuing = same_points(a, & previous),
       length_zero = same_points(a, b);
@@ -683,195 +917,11 @@ static void wincairo_rcircle(Point *ctr, Point *a, Point *b) {
   beginning_of_path = 0;
 }
 
-static void wincairo_font(const char *font_name) {
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
-  const char *name;
-  FontSlant s;
-  FontWeight w;
-  cairo_font_slant_t cs;
-  cairo_font_weight_t cw;
-  cairo_font_face_t *ff;
-  cairo_status_t status;
-  cairo_matrix_t m;
-  WHEREAMI;
-
-  if (ps_font_get_info(font_name, & name, & s, & w)) {
-    switch(s) {
-    case FONT_SLANT_NORMAL: cs = CAIRO_FONT_SLANT_NORMAL; break;
-    case FONT_SLANT_ITALIC: cs = CAIRO_FONT_SLANT_ITALIC; break;
-    case FONT_SLANT_OBLIQUE: cs = CAIRO_FONT_SLANT_OBLIQUE; break;
-    default: cs = CAIRO_FONT_SLANT_NORMAL; break;
-    }
-
-    switch(w) {
-    case FONT_WEIGHT_NORMAL: cw = CAIRO_FONT_WEIGHT_NORMAL; break;
-    case FONT_WEIGHT_BOLD: cw = CAIRO_FONT_WEIGHT_BOLD; break;
-    default: cw = CAIRO_FONT_WEIGHT_NORMAL; break;
-    }
-
-  } else {
-    name = font_name;
-    cs = CAIRO_FONT_SLANT_NORMAL;
-    cw = CAIRO_FONT_WEIGHT_NORMAL;
-  }
-
-  cairo_select_font_face(cr, name, cs, cw);
-  ff = cairo_get_font_face(cr);
-  status = cairo_font_face_status(ff);
-  if (status != CAIRO_STATUS_SUCCESS) {
-    fprintf(stderr, "Cannot set font: %s.\n", cairo_status_to_string(status));
-    cairo_select_font_face(cr, "sans", CAIRO_FONT_SLANT_NORMAL,
-                           CAIRO_FONT_WEIGHT_NORMAL);
-  }
-
-  /* Cairo coordinates use the following convention: increasing x goes from
-   * the left to the right side of the screen, while increasing y goes from
-   * the top to the bottom side. Postscript coordinates use the opposite
-   * convention. The Box graphics library also sticks to the Postscript
-   * convention, since this is the usual choice in geometry and mathematics.
-   * Care has to be put in converting from one to the other convention:
-   * we don't want to simply mirror the image: we want to do that only for
-   * graphics, while preserving the direction for fonts: mirroring fonts
-   * is not really what we want! Therefore we DON'T choose the identity
-   * matrix for fonts! We choose diag(1, -1)!
-   */
-  m.xx = 1.0; m.yy = -1.0;
-  m.xy = m.yx = m.x0 = m.y0 = 0.0;
-  cairo_set_font_matrix(cr, & m);
-}
-
-/* BEGIN OF TEXT FORMATTING IMPLEMENTATION **********************************
- * Here we implement some basic text formatting features, such as           *
- * subscripts, superscripts and multi-line paragraphs. We exploit           *
- * the parser provided by the formatter.c module.                           *
- ****************************************************************************/
-
-typedef struct {
-  cairo_t *cr;
-  buff saved_states;
-  Point sub_vec, sup_vec;
-  Real sub_scale, sup_scale;
-} TextPrivate;
-
-typedef struct {
-  Point cur_pos;
-  cairo_matrix_t m;
-} TextState;
-
-static void _Text_Fmt_Draw(BoxGFmtStack *stack) {
-  BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
-  char *text = BoxGFmt_Buffer_Get(stack);
-  cairo_text_path(private->cr, text);
-  BoxGFmt_Buffer_Clear(stack);
-}
-
-static void _Text_Fmt_Save(BoxGFmtStack *stack) {
-  BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
-  TextState ss;
-  cairo_get_matrix(private->cr, & ss.m);
-  cairo_get_current_point(private->cr, & ss.cur_pos.x, & ss.cur_pos.y);
-  (void) buff_push(& private->saved_states, & ss);
-}
-
-static void _Text_Fmt_Restore(BoxGFmtStack *stack) {
-  BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
-  TextState *ts = buff_lastitemptr(& private->saved_states, TextState);
-  double x, y;
-  cairo_set_matrix(private->cr, & ts->m);
-  cairo_get_current_point(private->cr, & x, & y);
-  cairo_move_to(private->cr, x, ts->cur_pos.y);
-  buff_dec(& private->saved_states);
-}
-
-static void _Text_Fmt_Change(cairo_t *cr, Point *vec, Real scale) {
-  cairo_matrix_t m;
-  cairo_get_current_point(cr, & m.x0, & m.y0);
-  m.x0 += vec->x;
-  m.y0 += vec->y;
-  m.xx = m.yy = scale;
-  m.xy = m.yx = 0.0;
-  cairo_transform(cr, & m);
-  cairo_move_to(cr, (double) 0.0, (double) 0.0);
-}
-
-static void _Text_Fmt_Superscript(BoxGFmtStack *stack) {
-  BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
-  _Text_Fmt_Change(private->cr, & private->sup_vec, private->sup_scale);
-}
-
-static void _Text_Fmt_Subscript(BoxGFmtStack *stack) {
-  BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
-  _Text_Fmt_Change(private->cr, & private->sub_vec, private->sub_scale);
-}
-
-static void _Text_Fmt_Newline(BoxGFmtStack *stack) {
-  BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
-  cairo_translate(private->cr, 0.0, -1.0);
-  cairo_move_to(private->cr, 0.0, 0.0);
-}
-
-static void _Text_Fmt_Init(BoxGFmt *fmt) {
-  BoxGFmt_Init(fmt);
-  fmt->draw = _Text_Fmt_Draw;
-  fmt->subscript = _Text_Fmt_Subscript;
-  fmt->superscript = _Text_Fmt_Superscript;
-  fmt->newline = _Text_Fmt_Newline;
-  fmt->save = _Text_Fmt_Save;
-  fmt->restore = _Text_Fmt_Restore;
-}
-
 static void wincairo_text(Point *ctr, Point *right, Point *up, Point *from,
                           const char *text) {
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
-  cairo_matrix_t m;
-  double x1, y1, x2, y2;
-  TextPrivate private;
-  BoxGFmt fmt;
   MY_3POINTS(ctr, right, up);
-  WHEREAMI;
-
-  m.xx = right->x - ctr->x;  m.yx = right->y - ctr->y;
-  m.xy = up->x - ctr->x;  m.yy = up->y - ctr->y;
-  m.x0 = ctr->x; m.y0 = ctr->y;
-  cairo_save(cr);
-  cairo_transform(cr, & m);
-
-  _Text_Fmt_Init(& fmt);
-  BoxGFmt_Private_Set(& fmt, & private);
-  private.cr = cr;
-  private.sup_vec.x = 0.0;
-  private.sup_vec.y = 0.5;
-  private.sup_scale = 0.5;
-  private.sub_vec.x = 0.0;
-  private.sub_vec.y = -0.1;
-  private.sub_scale = 0.5;
-
-  int state = buff_create(& private.saved_states, sizeof(TextState), 8);
-  assert(state == 1);
-
-  cairo_save(cr);
-  cairo_new_path(cr);
-  cairo_move_to(cr, (double) 0, (double) 0);
-  BoxGFmt_Text(& fmt, text);
-  cairo_restore(cr);
-  cairo_fill_extents(cr, & x1, & y1, & x2, & y2);
-
-  cairo_new_path(cr);
-  cairo_translate(cr, -x1 - (x2 - x1)*from->x, -y1 - (y2 - y1)*from->y);
-  BoxGFmt_Text(& fmt, text);
-  cairo_restore(cr);
-
-  buff_free(& private.saved_states);
-  beginning_of_path = 0;
+  My_Cairo_Text_Path(grp_win, ctr, right, up, from, text);
 }
-
-/* END OF TEXT FORMATTING IMPLEMENTATION ************************************/
 
 static int wincairo_save(const char *file_name) {
   cairo_t *cr = (cairo_t *) grp_win->ptr;
@@ -879,7 +929,6 @@ static int wincairo_save(const char *file_name) {
   char *exts[] = {"png", "pdf", (char *) NULL};
   enum {EXT_PNG=0};
   cairo_status_t status;
-  WHEREAMI;
 
   if (grp_win->win_type_str != wincairo_image_id_string)
     return 1;
@@ -906,9 +955,12 @@ static int wincairo_save(const char *file_name) {
   }
 }
 
+static void wincairo_font(const char *font) {
+  My_Cairo_Set_Font(grp_win, font);
+}
+
 /** Set the default methods to the cairo windows */
 static void wincairo_repair(GrpWindow *w) {
-  WHEREAMI;
   grp_window_block(w);
   w->interpret = My_WinCairo_Interpret;
   w->save = wincairo_save;
@@ -940,7 +992,6 @@ GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
                                                   double width_in_points,
                                                   double height_in_points);
   StreamSurfaceCreate stream_surface_create = (StreamSurfaceCreate) NULL;
-  WHEREAMI;
 
   if (!plan->have.type) {
     g_error("cairo_open_win: missing window type!");

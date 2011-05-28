@@ -55,14 +55,14 @@ static void _Add_Char(BoxGFmtStack *stack, char c) {
   fmt->buffer[i] = c;
 }
 
-char *Fmt_Buffer_Get(BoxGFmtStack *stack) {
+char *BoxGFmt_Buffer_Get(BoxGFmtStack *stack) {
   BoxGFmt *fmt = stack->fmt;
   _Add_Char(stack, '\0');
   --fmt->buffer_pos;
   return fmt->buffer;
 }
 
-void Fmt_Buffer_Clear(BoxGFmtStack *stack) {
+void BoxGFmt_Buffer_Clear(BoxGFmtStack *stack) {
   BoxGFmt *fmt = stack->fmt;
   fmt->buffer_pos = 0;
 }
@@ -193,25 +193,25 @@ static int _Text_Formatter(BoxGFmtStack *stack) {
   }
 }
 
-void Fmt_Init(BoxGFmt *fmt) {
+void BoxGFmt_Init(BoxGFmt *fmt) {
   fmt->restore = fmt->save = fmt->draw = fmt->newline =
     fmt->subscript = fmt->superscript = NULL;
   fmt->private_data = (void *) NULL;
 }
 
-BoxGFmt *Fmt_Get(BoxGFmtStack *stack) {
+BoxGFmt *BoxGFmt_Get(BoxGFmtStack *stack) {
   return stack->fmt;
 }
 
-void *Fmt_Private_Get(BoxGFmt *fmt) {
+void *BoxGFmt_Private_Get(BoxGFmt *fmt) {
   return fmt->private_data;
 }
 
-void Fmt_Private_Set(BoxGFmt *fmt, void *private_data) {
+void BoxGFmt_Private_Set(BoxGFmt *fmt, void *private_data) {
   fmt->private_data = private_data;
 }
 
-void Fmt_Text(BoxGFmt *fmt, const char *text) {
+void BoxGFmt_Text(BoxGFmt *fmt, const char *text) {
   BoxGFmtStack stack;
   stack.level = 0;
   stack.eye = 0;

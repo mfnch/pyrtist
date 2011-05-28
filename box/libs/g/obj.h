@@ -115,4 +115,17 @@ void BoxGObj_Merge(BoxGObj *gobj_dest, BoxGObj *gobj_src);
 #define BoxGObj_Is_Single(gobj) \
   ((gobj)->kind != BOXGOBJKIND_COMPOSITE && (gobj)->kind != BOXGOBJKIND_EMPTY)
 
+/** Extract 'num' objects from 'gobj' starting at index 'start_idx'.
+ * The extracted objects are assumed to be of type 'kind' and the pointers
+ * to their raw data are stored in 'out' (which needs to be allocated by the
+ * user so that it can contain 'num' pointers). If there are objects which
+ * cannot be extracted (wrong type or 'gobj' has not enough items), then
+ * a NULL pointer is stored in the corresponding place in the 'out' array.
+ * In that case, BOXTASK_FAILURE is returned. If all the objects are extracted
+ * successfully BOXTASK_OK is returned.
+ */
+BoxTask BoxGObj_Extract_Array(BoxGObj *gobj, BoxGObjKind kind,
+                              size_t start_idx, size_t num,
+                              void **out);
+
 #endif

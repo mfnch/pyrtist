@@ -287,6 +287,27 @@ void *BoxGObj_To(BoxGObj *gobj, BoxGObjKind kind) {
   return (gobj->kind == kind) ? & gobj->value : NULL;
 }
 
+BoxTask BoxGObj_Extract_Array(BoxGObj *gobj, BoxGObjKind kind,
+                              size_t start_idx, size_t num,
+                              void **out) {
+  size_t i;
+  int fail = 0;
+
+  for (i = 0; i < num; i++) {
+    size_t idx = start_idx + i;
+    BoxGObj *sub_gobj = BoxGObj_Get(gobj, idx);
+    if (sub_gobj != NULL || BoxGObj_Get_Type(gobj, idx) == kind)
+      out[i] = & sub_gobj->value;
+    
+    else {
+      out[i] = NULL;
+      fail = 1;
+    }
+  }
+
+  return (fail) ? BOXTASK_FAILURE : BOXTASK_OK;
+}
+
 /****************************************************************************
  * WRAPPING FUNCTIONS FOR BOX                                               *
  ****************************************************************************/
