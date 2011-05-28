@@ -1,10 +1,17 @@
+=================
 STYLE OF THE CODE
------------------
+=================
 
   Unfortunatly the style is not homogeneous throughout the program!!!
   This problem is connected with the long life of this code and with my mind
   which changes with experience.
-  Better to write down here some conventions:
+ 
+
+NAMING CONVENTIONS
+------------------
+
+  Names are choosen differently for different entities in the code (types,
+  instances, macros). In particular,
 
   InThisWay   --> types
   in_this_way --> instances
@@ -20,7 +27,42 @@ STYLE OF THE CODE
   static variables, but one should try to avoid using static variables unless
   it is really necessary to use them, which means one should never use them
   (even if, presently, this rule is not strictly followed in the code. Mainly,
-  for messages.c, msgbase.c and lex, yacc files).
+  for messages.c, msgbase.c and lex, yacc files). For locally defined
+  typedef the same applies: ``typedef xxx MyType;``.
+
+  Here are some other rules which may help to make naming of library entities
+  more uniform and less arbitrary (having to go through the library to rename
+  things is not fun and may also require to change the library interface too
+  often):
+
+  * whatever goes into the standard library should be preceded by a ``Box``,
+    ``BOX`` or ``box`` prefix, to avoid clashes with names from other
+    libraries (C doesn't allow to pack things into namespaces!):
+
+    - for types: ``BoxOneType``, ``BoxAnotherType``, ...
+
+    - for methods which get ``BoxOneType`` as first argument:
+      ``BoxOneType_Method_One``, ``BoxOneType_Method_Two``.
+
+    - other functions should be named as ``Box_Func_One``.
+
+  * In general, a function does something, right? Therefore it is advisable
+    to choose a name that contains the verb describing what it does:
+
+    - ``BoxWin_Draw_Text`` rather than ``BoxWin_Text``, ``BoxWin_Set_Font``
+      rather than ``BoxWin_Font``.
+
+    - functions that are querying for attributes should have again a verb in
+      their name: ``Is``, ``Has`` in order of precedence: ``BoxWin_Has_Font``
+      rather than ``BoxWin_Font``.
+
+    - a function retrieving a property or sub-object of a parent object should
+      use the verb ``Get``: ``BoxParent_Get_Size``, ``BoxParent_Get_Item``.
+
+
+TYPESETTING CONVENTIONS
+-----------------------
+
   Use indentation length of 2 (and spaces instead of tabs), example:
 
   while(1) {
@@ -105,12 +147,14 @@ HOW WE DEAL WITH ERRORS
 
   (Note that in the aforementioned example of allocation you may want to use
   BoxMem_Safe_Alloc, which aborts automatically on failure).
+  You can use also ``abort();`` rather than ``assert(0)``, but do not use the
+  ``exit`` function (abort allows the debugger to do its job).
   If - on the other hand - you are allowing the user to allocate a very big
   array, then you may be interested in handling the NULL pointer returned by
   BoxMem_Alloc.
 
 
-NULL and casting
+NULL AND CASTING
 ----------------
 
   Other than the obvious...
@@ -162,3 +206,36 @@ NULL and casting
     function returns something, and you *WANT* to discard it.
     This also helps when using -Wunused-value to find out whether you discarded
     some return values without being aware of it.
+
+
+NOTES
+-----
+
+  Some other random notes:
+
+  * Never access the elements of a structure type explicitly, except for the
+    files which provide the implementation of the corresponding type. You can
+    always define a macro in the header where the structure is defined.
+    This will make interface between sources clearer.
+
+  * We are not caring much about binary compatibility of the interface: i.e.
+    types are not opaque pointers, but are defined in full in the headers we
+    install on the system with a ``make install``. Inside them we define
+    macros which pretend to be functions and can access the structure members.
+    This means that we may break binary compatility of the Box core library
+    by just reordering the elements in the datastructure. We tolerate this
+    for now.
+
+  * we are currently not caring much about the ``const`` attribute.
+    We may want to change this.
+
+  * Note that the source directory is currently named ``box`` this is to make
+    it easy to include the core headers. The idea is that one can use
+    ``#include <box/types.h>`` in his C source, and give a
+    ``-I/path/to/include/box0.2`` to the C compiler. Typically one can give
+    something like::
+
+      cc -c -I`box -q C_INCLUDE_PATH` myext.c -o myext.o
+
+   (try ``box -q all`` to see what Box knows about itself).
+
