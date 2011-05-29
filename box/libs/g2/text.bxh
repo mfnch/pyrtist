@@ -1,0 +1,47 @@
+#provide "g.text"
+///Section: g
+
+include "raw"
+include "style"
+include "path"
+
+///Intro: create a new text shape.
+Text = ++((Int pos,) have
+          Point pos
+          Str text, Font font, Sty style)
+
+(.[)@Text[.have = (0,)]
+
+///Intro: provide the text string.
+Str@Text[\ .text[$]]
+
+///Intro: the position where to place the text.
+Point@Text[.pos = $, .have.pos = 1]
+
+///Intro: the font to use.
+Font@Text[.font = $]
+
+///Intro: the color to use.
+Color@Text[\ .style[$]]
+
+///Intro: add the text to the path.
+Text@Path[
+  If[$.have.pos && Length[$.text] > 0 && $.font.size > 0.0]
+    p = $.pos
+    fsz = $.font.size
+    d = Point[.x=fsz, .y=0.0]
+    d_ort = Point[.x=-d.y, .y=d.x]
+    p_right = p + d
+    p_up = p + d_ort
+    Obj[g.raw.ext_set_font, $.font.name]
+    Obj[g.raw.ext_text_path, p, p_right, p_up, Point[(0, 0)], $.text]
+    $$.empty = 0
+]
+
+///Intro: pass the text to the window for drawing.
+Text@Window[
+  path = Path[$]
+  If[!path.empty]
+    path.cmdstream
+    CmdStream[$.style]
+]
