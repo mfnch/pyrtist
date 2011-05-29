@@ -65,8 +65,8 @@ static Real invert_cairo_matrix(cairo_matrix_t *result, cairo_matrix_t *in) {
 static char *wincairo_image_id_string   = "cairo:image";
 static char *wincairo_stream_id_string  = "cairo:stream";
 
-static void wincairo_close_win(void) {
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
+static void My_Wincairo_Finish_Drawing(BoxGWin *w) {
+  cairo_t *cr = (cairo_t *) w->ptr;
   cairo_surface_t *surface = cairo_get_target(cr);
 
   cairo_show_page(cr);
@@ -106,7 +106,7 @@ static void My_Map_Point(BoxGWin *w, Point *out, Point *in) {
  * and needs to be better done: font drawing should depend on Points, not on
  * a given Real size!)
  */
-#define MY_REAL(r) ((r)*grp_win->resx) \
+#define MY_REAL(w, r) ((r)*(w)->resx) \
 
 /* BEGIN OF TEXT FORMATTING IMPLEMENTATION **********************************
  * Here we implement some basic text formatting features, such as           *
@@ -199,7 +199,7 @@ static void My_Text_Fmt_Init(BoxGFmt *fmt) {
 static void My_Cairo_Text_Path(BoxGWin *w, Point *ctr, Point *right,
                                Point *up, Point *from, const char *text) {
 
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
+  cairo_t *cr = (cairo_t *) w->ptr;
   cairo_matrix_t m;
   double x1, y1, x2, y2;
   TextPrivate private;
@@ -280,7 +280,6 @@ static void My_Cairo_Arc(cairo_t *cr,
 }
 
 static void My_Cairo_Set_Font(BoxGWin *w, const char *font_name) {
-  BoxGWin *prev_win = grp_win;
   cairo_t *cr = (cairo_t *) w->ptr;
   const char *name;
   FontSlant fs;
@@ -290,8 +289,6 @@ static void My_Cairo_Set_Font(BoxGWin *w, const char *font_name) {
   cairo_font_face_t *ff;
   cairo_status_t status;
   cairo_matrix_t m;
-
-  grp_win = w;
 
   if (ps_font_get_info(font_name, & name, & fs, & fw)) {
     switch(fs) {
@@ -336,8 +333,6 @@ static void My_Cairo_Set_Font(BoxGWin *w, const char *font_name) {
   m.xx = 1.0; m.yy = -1.0;
   m.xy = m.yx = m.x0 = m.y0 = 0.0;
   cairo_set_font_matrix(cr, & m);
-
-  grp_win = prev_win;
 }
 
 
@@ -357,7 +352,7 @@ typedef union {
   BoxPoint p;
 } ItpType;
 
-static int My_Args_From_Obj(ItpType *args, BoxGObj *args_obj,
+static int My_Args_From_Obj(BoxGWin *w, ItpType *args, BoxGObj *args_obj,
                             size_t num_args, ...) {
   size_t i;
   int success = 0;
@@ -376,7 +371,7 @@ static int My_Args_From_Obj(ItpType *args, BoxGObj *args_obj,
       val = BoxGObj_To(arg_obj, required_kind);
       assert(val != NULL);
       if (required_kind == BOXGOBJKIND_POINT)
-        My_Map_Point(grp_win, & (args++->p), (BoxPoint *) val);
+        My_Map_Point(w, & (args++->p), (BoxPoint *) val);
 
       else
         (args++)->ptr = val;
@@ -425,7 +420,7 @@ static cairo_operator_t My_Cairo_Operator_Of_Int(BoxInt v) {
 
 static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
                                          BoxInt cmnd_id, BoxGObj *args_obj) {
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
+  cairo_t *cr = (cairo_t *) w->ptr;
   ItpType args[ITP_MAX_NUM_ARGS];
 
   switch (cmnd_id) {
@@ -438,7 +433,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     return BOXTASK_OK;
 
   case BOXG_CMD_SET_ANTIALIAS:
-    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_antialias_t v;
       switch(*args[0].i) {
       default:
@@ -453,21 +448,21 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_MOVE_TO:
-    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_POINT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_POINT)) {
       cairo_move_to(cr, args[0].p.x, args[0].p.y);
       return BOXTASK_OK;
     }
     break;
 
   case BOXG_CMD_LINE_TO:
-    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_POINT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_POINT)) {
       cairo_line_to(cr, args[0].p.x, args[0].p.y);
       return BOXTASK_OK;
     }
     break;
 
   case BOXG_CMD_CURVE_TO:
-    if (My_Args_From_Obj(args, args_obj, 3, BOXGOBJKIND_POINT,
+    if (My_Args_From_Obj(w, args, args_obj, 3, BOXGOBJKIND_POINT,
                          BOXGOBJKIND_POINT, BOXGOBJKIND_POINT)) {
       cairo_curve_to(cr,
                      args[0].p.x, args[0].p.y,
@@ -526,7 +521,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     return BOXTASK_OK;
 
   case BOXG_CMD_SET_OPERATOR:
-    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_set_operator(cr, My_Cairo_Operator_Of_Int(*args[0].i));
       return BOXTASK_OK;
     }
@@ -537,7 +532,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     return BOXTASK_OK;
 
   case BOXG_CMD_PAINT_WITH_ALPHA:
-    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_REAL)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_REAL)) {
       cairo_paint_with_alpha(cr, *args[0].r);
       return BOXTASK_OK;
     }
@@ -552,14 +547,14 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     return BOXTASK_OK;
 
   case BOXG_CMD_SET_LINE_WIDTH:
-    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_REAL)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_REAL)) {
       cairo_set_line_width(cr, *args[0].r);
       return BOXTASK_OK;
     }
     break;
 
   case BOXG_CMD_SET_LINE_CAP:
-    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_line_cap_t v;
       switch(*args[0].i) {
       default:
@@ -573,7 +568,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_SET_LINE_JOIN:
-    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_line_join_t v;
       switch(*args[0].i) {
       default:
@@ -593,7 +588,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_SET_FILL_RULE:
-    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_INT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_INT)) {
       cairo_fill_rule_t v;
       switch(*args[0].i) {
       default:
@@ -606,8 +601,9 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_SET_SOURCE_RGBA:
-    if (My_Args_From_Obj(args, args_obj, 4, BOXGOBJKIND_REAL, BOXGOBJKIND_REAL,
-                         BOXGOBJKIND_REAL, BOXGOBJKIND_REAL)) {
+    if (My_Args_From_Obj(w, args, args_obj, 4, BOXGOBJKIND_REAL,
+                         BOXGOBJKIND_REAL, BOXGOBJKIND_REAL,
+                         BOXGOBJKIND_REAL)) {
       cairo_set_source_rgba(cr, *args[0].r, *args[1].r, *args[2].r,
                             *args[3].r);
       return BOXTASK_OK;
@@ -615,7 +611,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_TEXT_PATH:
-    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_STR)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_STR)) {
       char *text = BoxStr_To_C_String(args[4].s);
       if (text != NULL) {
         cairo_text_path(cr, text);
@@ -626,14 +622,14 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_TRANSLATE:
-    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_POINT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_POINT)) {
       cairo_translate(cr, args[0].p.x, args[0].p.y);
       return BOXTASK_OK;
     }
     break;
 
   case BOXG_CMD_EXT_JOINARC_TO:
-    if (My_Args_From_Obj(args, args_obj, 3, BOXGOBJKIND_POINT,
+    if (My_Args_From_Obj(w, args, args_obj, 3, BOXGOBJKIND_POINT,
                          BOXGOBJKIND_POINT, BOXGOBJKIND_POINT)) {
       My_Cairo_JoinArc(cr, & args[0].p, & args[1].p, & args[2].p);
       return BOXTASK_OK;
@@ -641,7 +637,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_EXT_ARC_TO:
-    if (My_Args_From_Obj(args, args_obj, 5, BOXGOBJKIND_POINT,
+    if (My_Args_From_Obj(w, args, args_obj, 5, BOXGOBJKIND_POINT,
                          BOXGOBJKIND_POINT, BOXGOBJKIND_POINT,
                          BOXGOBJKIND_REAL, BOXGOBJKIND_REAL)) {
       My_Cairo_Arc(cr, & args[0].p, & args[1].p, & args[2].p,
@@ -651,7 +647,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_EXT_SET_FONT:
-    if (My_Args_From_Obj(args, args_obj, 1, BOXGOBJKIND_STR)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_STR)) {
       char *font = BoxStr_To_C_String(args[0].s);
       if (font != NULL) {
         My_Cairo_Set_Font(w, font);
@@ -662,7 +658,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_EXT_TEXT_PATH:
-    if (My_Args_From_Obj(args, args_obj, 5, BOXGOBJKIND_POINT,
+    if (My_Args_From_Obj(w, args, args_obj, 5, BOXGOBJKIND_POINT,
                          BOXGOBJKIND_POINT, BOXGOBJKIND_POINT,
                          BOXGOBJKIND_POINT, BOXGOBJKIND_STR)) {
       char *text = BoxStr_To_C_String(args[4].s);
@@ -717,14 +713,14 @@ static BoxTask My_WinCairo_Interpret(BoxGWin *w, BoxGObj *obj) {
   return BOXTASK_OK;
 }
 
-static void wincairo_rreset(void) {
+static void My_WinCairo_Create_Path(BoxGWin *w) {
   beginning_of_path = 1;
 }
 
-static void wincairo_rinit(void) {}
+static void My_WinCairo_Begin_Drawing(BoxGWin *w) {}
 
-static void wincairo_rdraw(DrawStyle *style) {
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
+static void My_WinCairo_Draw_Path(BoxGWin *w, DrawStyle *style) {
+  cairo_t *cr = (cairo_t *) w->ptr;
   int do_fill, do_clip, do_even_odd, do_border = (style->bord_width > 0.0);
 
   if ( ! beginning_of_path ) {
@@ -746,7 +742,7 @@ static void wincairo_rdraw(DrawStyle *style) {
                                         : CAIRO_FILL_RULE_WINDING);
     if (do_border) {
       Color *c = & style->bord_color;
-      Real border = MY_REAL(scale*style->bord_width);
+      Real border = MY_REAL(w, scale*style->bord_width);
       cairo_line_join_t lj;
       cairo_line_cap_t lc;
 
@@ -772,7 +768,7 @@ static void wincairo_rdraw(DrawStyle *style) {
       cairo_set_line_join(cr, lj);
       cairo_set_line_cap(cr, lc);
       if (lj == CAIRO_LINE_JOIN_MITER) {
-        Real miter_limit = MY_REAL(scale*style->bord_miter_limit);
+        Real miter_limit = MY_REAL(w, scale*style->bord_miter_limit);
         cairo_set_miter_limit(cr, miter_limit);
       }
       if (style->bord_num_dashes > 0) {
@@ -781,9 +777,9 @@ static void wincairo_rdraw(DrawStyle *style) {
         Real *dashes = (Real *) malloc(size_dashes);
         if (dashes != (Real *) NULL) {
           Int i;
-          Real dash_offset = MY_REAL(scale*style->bord_dash_offset);
+          Real dash_offset = MY_REAL(w, scale*style->bord_dash_offset);
           for(i=0; i<num_dashes; i++)
-            dashes[i] = MY_REAL(scale*style->bord_dashes[i]);
+            dashes[i] = MY_REAL(w, scale*style->bord_dashes[i]);
           cairo_set_dash(cr, dashes, num_dashes, dash_offset);
           free(dashes);
         }
@@ -855,9 +851,9 @@ static void My_WinCairo_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
   cairo_pattern_destroy(p);
 }
 
-static void wincairo_rline(Point *a, Point *b) {
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
-  MY_2POINTS(grp_win, a, b);
+static void My_WinCairo_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
+  cairo_t *cr = (cairo_t *) w->ptr;
+  MY_2POINTS(w, a, b);
 
   int continuing = same_points(a, & previous),
       length_zero = same_points(a, b);
@@ -876,16 +872,17 @@ static void wincairo_rline(Point *a, Point *b) {
   previous = *b;
 }
 
-static void wincairo_rcong(Point *a, Point *b, Point *c) {
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
+static void My_WinCairo_Add_Join_Path(BoxGWin *w,
+                                      Point *a, Point *b, Point *c) {
+  cairo_t *cr = (cairo_t *) w->ptr;
   Point *first = a, *last = c;
-  MY_3POINTS(grp_win, a, b, c);
+  MY_3POINTS(w, a, b, c);
 
   if (same_points(a, c))
     return;
 
   else if (same_points(a, b) || same_points(b, c)) {
-    wincairo_rline(first, last);
+    My_WinCairo_Add_Line_Path(w, first, last);
     return;
 
   } else {
@@ -899,14 +896,16 @@ static void wincairo_rcong(Point *a, Point *b, Point *c) {
   }
 }
 
-static void wincairo_rclose(void) {
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
-  if (!beginning_of_path) cairo_close_path(cr);
+static void My_WinCairo_Close_Path(BoxGWin *w) {
+  cairo_t *cr = (cairo_t *) w->ptr;
+  if (!beginning_of_path)
+    cairo_close_path(cr);
 }
 
-static void wincairo_rcircle(Point *ctr, Point *a, Point *b) {
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
-  MY_3POINTS(grp_win, ctr, a, b);
+static void My_WinCairo_Add_Circle_Path(BoxGWin *w,
+                                        Point *ctr, Point *a, Point *b) {
+  cairo_t *cr = (cairo_t *) w->ptr;
+  MY_3POINTS(w, ctr, a, b);
 
   if (beginning_of_path)
     cairo_new_path(cr);
@@ -923,14 +922,14 @@ static void My_WinCairo_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *right,
   My_Cairo_Text_Path(w, ctr, right, up, from, text);
 }
 
-static int wincairo_save(const char *file_name) {
-  cairo_t *cr = (cairo_t *) grp_win->ptr;
+static int My_WinCairo_Save_To_File(BoxGWin *w, const char *file_name) {
+  cairo_t *cr = (cairo_t *) w->ptr;
   cairo_surface_t *surface = cairo_get_target(cr);
   char *exts[] = {"png", "pdf", (char *) NULL};
   enum {EXT_PNG=0};
   cairo_status_t status;
 
-  if (grp_win->win_type_str != wincairo_image_id_string)
+  if (w->win_type_str != wincairo_image_id_string)
     return 1;
 
   switch(file_extension(exts, file_name)) {
@@ -956,26 +955,26 @@ static int wincairo_save(const char *file_name) {
 }
 
 /** Set the default methods to the cairo windows */
-static void wincairo_repair(GrpWindow *w) {
-  grp_window_block(w);
+static void wincairo_repair(BoxGWin *w) {
+  BoxGWin_Block(w);
   w->interpret = My_WinCairo_Interpret;
-  w->save = wincairo_save;
-  w->close_win = wincairo_close_win;
-  w->rreset = wincairo_rreset;
-  w->rinit = wincairo_rinit;
-  w->rdraw = wincairo_rdraw;
+  w->save_to_file = My_WinCairo_Save_To_File;
+  w->finish_drawing = My_Wincairo_Finish_Drawing;
+  w->create_path = My_WinCairo_Create_Path;
+  w->begin_drawing = My_WinCairo_Begin_Drawing;
+  w->draw_path = My_WinCairo_Draw_Path;
   w->set_fg_color = My_WinCairo_Set_Fg_Color;
   w->set_gradient = My_WinCairo_Set_Gradient;
-  w->rline = wincairo_rline;
-  w->rcong = wincairo_rcong;
-  w->rclose = wincairo_rclose;
-  w->rcircle = wincairo_rcircle;
+  w->add_line_path = My_WinCairo_Add_Line_Path;
+  w->add_join_path = My_WinCairo_Add_Join_Path;
+  w->close_path = My_WinCairo_Close_Path;
+  w->add_circle_path = My_WinCairo_Add_Circle_Path;
   w->set_font = My_Cairo_Set_Font;
-  w->gen_text_path = My_WinCairo_Text_Path;
+  w->add_text_path = My_WinCairo_Text_Path;
 }
 
-GrpWindow *cairo_open_win(GrpWindowPlan *plan) {
-  GrpWindow *w;
+BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
+  BoxGWin *w;
   cairo_surface_t *surface;
   cairo_t *cr;
   cairo_status_t status;

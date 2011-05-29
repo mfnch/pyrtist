@@ -69,10 +69,7 @@ Task poly_begin(VMProgram *vmp) {
 
   TASK( ipl_create(ipl_ptr) );
 
-  GrpWindow *cur_win = grp_win;
-  grp_win = w->window;
-  grp_rreset();
-  grp_win = cur_win;
+  BoxGWin_Create_Path(w->window);
 
   /* Stato dell'istruzione = iniziale */
   w->poly.state = POLY_GOT_NOTHING;
@@ -89,7 +86,6 @@ Task poly_begin(VMProgram *vmp) {
 
 static Task _poly_point_draw_only(Window *w, Point *p, int omit_line) {
   WindowPoly *wp = & w->poly;
-  GrpWindow *cur_win = grp_win;
   Real m1 = wp->margin[0], m2 = wp->margin[1];
 
   if (wp->num_points < 2) {
@@ -124,13 +120,12 @@ static Task _poly_point_draw_only(Window *w, Point *p, int omit_line) {
     pb.x = -dx * m2 + p->x;
     pb.y = -dy * m2 + p->y;
 
-    grp_win = w->window;
     if (wp->num_points > 1) {
 #ifdef DEBUG
       printf("Corner (%g, %g) (%g, %g) (%g, %g)\n",
              wp->lastb.x, wp->lastb.y, last->x, last->y, lastb.x, lastb.y);
 #endif
-      grp_rcong(& wp->lastb, last, & lastb);
+      BoxGWin_Add_Join_Path(w->window, & wp->lastb, last, & lastb);
     }
 
     if (!omit_line) {
@@ -138,9 +133,8 @@ static Task _poly_point_draw_only(Window *w, Point *p, int omit_line) {
       printf("Line (%g, %g) (%g, %g)\n",
              lastb.x, lastb.y, pb.x, pb.y);
 #endif
-      grp_rline(& lastb, & pb);
+      BoxGWin_Add_Line_Path(w->window, & lastb, & pb);
     }
-    grp_win = cur_win;
 
     wp->lastb = pb;
   }
@@ -174,7 +168,6 @@ Task poly_style(VMProgram *vmp) {
 }
 
 static Task _poly_draw(Window *w, DrawWhen dw) {
-  GrpWindow *cur_win = grp_win;
   WindowPoly *wp = & w->poly;
   FillStyle *fs;
   int close = wp->close;
@@ -183,13 +176,12 @@ static Task _poly_draw(Window *w, DrawWhen dw) {
   if (fs != (FillStyle *) NULL)
     if (*fs != FILLSTYLE_VOID) close = 1;
 
-  grp_win = w->window;
   if (close) {
     TASK( _poly_point_draw_only(w, & w->poly.first_points[0], 0) );
     wp->margin[0] = wp->first_margins[0];
     wp->margin[1] = wp->first_margins[1];
     TASK( _poly_point_draw_only(w, & w->poly.first_points[1], 1) );
-    grp_rclose();
+    BoxGWin_Close_Path(w->window);
   }
 
   if (w->poly.got.color) {
@@ -197,8 +189,8 @@ static Task _poly_draw(Window *w, DrawWhen dw) {
     w->poly.got.color = 0;
   }
 
-  (void) g_rdraw(& w->poly.style, & w->poly.default_style, dw);
-  grp_win = cur_win;
+  (void) BoxGWin_Draw_With_Style(w->window, & w->poly.style,
+                                 & w->poly.default_style, dw);
   return Success;
 }
 

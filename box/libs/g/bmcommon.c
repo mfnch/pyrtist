@@ -63,24 +63,20 @@ void write_leuint32(LEUInt32 *dest, unsigned long src) {
   dest->byte[3] = (src >> 24) & 0xff;
 }
 
-/* SUBROUTINE: grbm_draw_point
- * Disegna un punto in posizione (x, y) (espressa in millimetri)
- */
-void grbm_draw_point(Real x, Real y) {
+/* Disegna un punto in posizione (x, y) (espressa in millimetri) */
+void grbm_draw_point(BoxGWin *w, Real x, Real y) {
   long ptx, pty;
 
-  ptx = rint((x - grp_win->ltx)/grp_win->stepx);
-  pty = rint((y - grp_win->lty)/grp_win->stepy);
+  ptx = rint((x - w->ltx)/w->stepx);
+  pty = rint((y - w->lty)/w->stepy);
 
-  grp_draw_point(ptx, pty);
-
-  return;
+  BoxGWin_Draw_Point(w, ptx, pty);
 }
 
 /***************************************************************************************/
 /* PROCEDURE DI SALVATAGGIO SU DISCO DELLA FINESTRA GRAFICA */
 
-static int _grbm_save_to_bmp(FILE *stream) {
+static int _grbm_save_to_bmp(BoxGWin *w, FILE *stream) {
   int i;
   long bytesperline, imgsize, imgoffs;
   void *lineptr;
@@ -89,7 +85,7 @@ static int _grbm_save_to_bmp(FILE *stream) {
   struct bmp_file_header fh;
   struct bmp_image_header ih;
 
-  pal = grp_win->pal;
+  pal = w->pal;
   colormap = (struct bmp_color*)
    calloc( pal->dim, sizeof(struct bmp_color) );
   if (colormap == NULL ) {
@@ -102,24 +98,24 @@ static int _grbm_save_to_bmp(FILE *stream) {
    * (il formato BMP viene generato con questa particolarita'
    * le righe sono formate da un certo numero di dwords)
    */
-  bytesperline = (grp_win->bytesperline + 3)/4;
+  bytesperline = (w->bytesperline + 3)/4;
   bytesperline *= 4;
 
   /* Trova la dimensione dell'immagine  */
-  imgsize = bytesperline * grp_win->numpty;
+  imgsize = bytesperline * w->numpty;
 
 
   /* Compila l'header di immagine */
 #define BMP_HEADSIZE 40
   write_leuint32(& ih.headsize, BMP_HEADSIZE);
-  write_leuint32(& ih.width, grp_win->numptx);
-  write_leuint32(& ih.height, grp_win->numpty);
+  write_leuint32(& ih.width, w->numptx);
+  write_leuint32(& ih.height, w->numpty);
   write_leuint16(& ih.numplanes, 1);
-  write_leuint16(& ih.bitperpixel, grp_win->bitperpixel);
+  write_leuint16(& ih.bitperpixel, w->bitperpixel);
   write_leuint32(& ih.compression, 0);
   write_leuint32(& ih.compsize, imgsize);
-  write_leuint32(& ih.horres, grp_win->resx * 1000.0);
-  write_leuint32(& ih.vertres, grp_win->resy * 1000.0);
+  write_leuint32(& ih.horres, w->resx * 1000.0);
+  write_leuint32(& ih.vertres, w->resy * 1000.0);
   write_leuint32(& ih.impcolors, pal->dim);
   write_leuint32(& ih.numcolors, pal->dim);
 
@@ -157,15 +153,15 @@ static int _grbm_save_to_bmp(FILE *stream) {
   /* I file bitmap vengono scritti dall'ultima alla prima riga
    * dunque mi posiziono in fondo alla finestra
    */
-  lineptr = grp_win->ptr + grp_win->dim - grp_win->bytesperline;
+  lineptr = w->ptr + w->dim - w->bytesperline;
 
-  for (i=0; i<grp_win->numpty; i++) {
+  for (i=0; i<w->numpty; i++) {
     /* Scrive ciascuna linea della finestra */
     if (fwrite(lineptr, bytesperline, 1, stream)<1) {
       ERRORMSG("save_to_bmp", "Impossibile scrivere il file.");
       return 0;
     }
-    lineptr -= grp_win->bytesperline;
+    lineptr -= w->bytesperline;
   }
 
   return 1;
@@ -175,9 +171,9 @@ static int _grbm_save_to_bmp(FILE *stream) {
  * Salva la finestra in un file in formato BMP, scrivendolo su stream.
  * Restituisce 1 in caso di successo, 0 altrimenti.
  */
-int grbm_save_to_bmp(const char *file_name) {
+int grbm_save_to_bmp(BoxGWin *w, const char *file_name) {
   FILE *file = fopen(file_name, "w");
-  int status = _grbm_save_to_bmp(file);
+  int status = _grbm_save_to_bmp(w, file);
   fclose(file);
   return status;
 }

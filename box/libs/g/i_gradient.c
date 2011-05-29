@@ -293,9 +293,6 @@ Task print_gradient(VMProgram *vmp) {
 Task x_gradient(VMProgram *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   Gradient *g = BOX_VM_ARG1(vmp, GradientPtr);
-  GrpWindow *cur_win = grp_win;
-  grp_win = w->window;
   BoxGWin_Set_Gradient(w->window, & g->gradient);
-  grp_win = cur_win;
   return Success;
 }

@@ -26,16 +26,16 @@
 #  include "graphic.h"
 
 /* Procedure per gestire i layers */
-GrpWindow *fig_open_win(int numlayers);
-int fig_destroy_layer(int l);
-int fig_new_layer(void);
-void fig_select_layer(int l);
-void fig_clear_layer(int l);
+BoxGWin *fig_open_win(int numlayers);
+int BoxGWin_Fig_Destroy_Layer(BoxGWin *w, int l);
+int BoxGWin_Fig_New_Layer(BoxGWin *w);
+void BoxGWin_Fig_Select_Layer(BoxGWin *w, int l);
+void BoxGWin_Fig_Clear_Layer(BoxGWin *w, int l);
 Real fig_transform_factor(Real angle);
 
-void Fig_Draw_Fig(GrpWindow *src);
-void Fig_Draw_Fig_With_Matrix(GrpWindow *src, Matrix *m);
+void BoxGWin_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *src);
+void BoxGWin_Fig_Draw_Fig_With_Matrix(BoxGWin *dest, BoxGWin *src, Matrix *m);
 
-int fig_save_fig(GrpWindow *figure, GrpWindowPlan *plan);
+int BoxGWin_Fig_Save_Fig(BoxGWin *src, GrpWindowPlan *plan);
 
 #endif

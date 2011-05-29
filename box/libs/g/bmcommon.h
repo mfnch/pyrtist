@@ -18,5 +18,5 @@
  ****************************************************************************/
 
 /* Procedure definite in questo file */
-void grbm_draw_point(Real x, Real y);
-int grbm_save_to_bmp(const char *file_name);
+void grbm_draw_point(BoxGWin *w, Real x, Real y);
+int grbm_save_to_bmp(BoxGWin *w, const char *file_name);

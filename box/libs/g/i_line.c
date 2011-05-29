@@ -57,13 +57,9 @@ Task line_window_init(Window *w) {
    */
   LineJoinStyle *ls = & w->line.this_piece.style;
   ls->ti = ls->te = ls->ni = ls->ne = 0.0;
-  {
-    grp_window *cur_win = grp_win;
-    grp_win = w->window;
-    /* Mando le impostazioni alla libreria grafica */
-    lt_join_style_set(w->line.lt, ls);
-    grp_win = cur_win;
-  }
+
+  /* Mando le impostazioni alla libreria grafica */
+  lt_join_style_set(w->line.lt, ls);
 
   w->line.this_piece.width1 = w->line.this_piece.width2 = 1.0;
   w->line.this_piece.arrow = (void *) NULL;
@@ -107,14 +103,12 @@ Task line_begin(BoxVM *vmp) {
 Task line_end(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   if (lt_num_pieces(w->line.lt) >= 1) {
-    grp_window *cur_win = grp_win;
-    grp_win = w->window;
     if (w->line.got.color)
       BoxGWin_Set_Fg_Color(w->window, & w->line.color);
 
-    lt_draw(w->line.lt, w->line.close);
-    (void) g_rdraw(& w->line.style, & w->line.default_style, DRAW_WHEN_END);
-    grp_win = cur_win;
+    lt_draw(w->window, w->line.lt, w->line.close);
+    (void) BoxGWin_Draw_With_Style(w->window, & w->line.style,
+                                   & w->line.default_style, DRAW_WHEN_END);
   }
 
   g_style_clear(& w->line.style);
@@ -170,15 +164,13 @@ Task line_point(BoxVM *vmp) {
 
 Task line_pause(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  grp_window *cur_win = grp_win;
-  grp_win = w->window;
   if (w->line.got.color) {
     BoxGWin_Set_Fg_Color(w->window, & w->line.color);
     w->line.got.color = 0;
   }
-  (void) lt_draw(w->line.lt, w->line.close);
-  (void) g_rdraw(& w->line.style, & w->line.default_style, DRAW_WHEN_PAUSE);
-  grp_win = cur_win;
+  (void) lt_draw(w->window, w->line.lt, w->line.close);
+  (void) BoxGWin_Draw_With_Style(w->window, & w->line.style,
+                                 & w->line.default_style, DRAW_WHEN_PAUSE);
 
   w->line.state = GOT_NOTHING;
   w->line.num_points = 0;

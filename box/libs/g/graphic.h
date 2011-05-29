@@ -166,19 +166,36 @@ typedef struct {
 typedef struct _grp_window BoxGWin;
 typedef BoxGWin GrpWindow;
 
+/* BoxGWin would need some cleaning. At the moment it contains stuff which
+ * is not relevant for all kinds of windows...
+ */
 struct _grp_window {
   /** String which identifies the type of the window */
   char *win_type_str;
 
   /* High level functions */
-  void (*rreset)(void);
-  void (*rinit)(void);
-  void (*rdraw)(DrawStyle *style);
-  void (*rline)(Point *a, Point *b);
-  void (*rcong)(Point *a, Point *b, Point *c);
-  void (*rclose)(void);
-  void (*rcircle)(Point *ctr, Point *a, Point *b);
 
+  /** @see BoxGWin_Create_Path */
+  void (*create_path)(BoxGWin *w);
+
+  /** @see BoxGWin_Begin_Drawing */
+  void (*begin_drawing)(BoxGWin *w);
+
+  /** @see BoxGWin_Draw_Path */
+  void (*draw_path)(BoxGWin *w, DrawStyle *style);
+  
+  /** @see BoxGWin_Add_Line_Path */
+  void (*add_line_path)(BoxGWin *w, BoxPoint *a, BoxPoint *b);
+
+  /** @see BoxGWin_Add_Join_Path */
+  void (*add_join_path)(BoxGWin *w, BoxPoint *a, BoxPoint *b, BoxPoint *c);
+
+  /** @see BoxGWin_Close_Path */
+  void (*close_path)(BoxGWin *w);
+
+  /** @see BoxGWin_Add_Circle_Path */
+  void (*add_circle_path)(BoxGWin *w,
+                          BoxPoint *ctr, BoxPoint *a, BoxPoint *b);
 
   /** @see BoxGWin_Set_Fg_Color */
   void (*set_fg_color)(BoxGWin *w, Color *c);
@@ -192,62 +209,108 @@ struct _grp_window {
   /** @see BoxGWin_Set_Font */
   void (*set_font)(BoxGWin *w, const char *font_name);
 
-  /** @see BoxGWin_Gen_Text_Path */
-  void (*gen_text_path)(BoxGWin *w,
+  /** @see BoxGWin_Add_Text_Path */
+  void (*add_text_path)(BoxGWin *w,
                         BoxPoint *ctr, BoxPoint *right, BoxPoint *up,
                         BoxPoint *from, const char *text);
 
   /** @see BoxGWin_Add_Fake_Point */
   void (*add_fake_point)(BoxGWin *w, BoxPoint *p);
 
-  /** Used to save the window to a file */
-  int (*save)(const char *file_name);
+  /** @see BoxGWin_Save_To_File */
+  int (*save_to_file)(BoxGWin *w, const char *file_name);
 
-  /** Interpret the commands stored inside the given BoxGObj. */
+  /** @see BoxGWin_Interpret_Obj */
   BoxTask (*interpret)(BoxGWin *w, BoxGObj *commands);
 
   /** If set to 1, inhibits error messages */
   int quiet;
 
-  /* Low level functions */
-  void (*close_win)(void);
-  void (*set_col)(int col);
-  void (*draw_point)(Int ptx, Int pty);
-  void (*hor_line)(Int y, Int x1, Int x2);
+  /* Low level functions (should probably be moved out of here) */
+
+  /** @see BoxGWin_Finish_Drawing */
+  void (*finish_drawing)(BoxGWin *w);
+
+  /** @see BoxGWin_Set_Color */
+  void (*set_color)(BoxGWin *w, int col);
+
+  /** @see BoxGWin_Draw_Point */
+  void (*draw_point)(BoxGWin *w, Int ptx, Int pty);
+
+  /** @see BoxGWin_Draw_Hor_Line */
+  void (*draw_hor_line)(BoxGWin *w, Int y, Int x1, Int x2);
 
   /** Restore the window methods, which may have been changed after an error
    * has occurred.
    */
-  void (*repair)(struct _grp_window *w);
+  void (*repair)(BoxGWin *w);
 
   /** This function can be internally used to report errors. */
-  void (*_report_error)(const char *msg);
+  void (*_report_error)(BoxGWin *w, const char *msg);
 
-  void *ptr;           /* Puntatore alla zona di memoria della finestra */
-  Real ltx, lty;       /* Coordinate dell'angolo in alto a sinistra (in mm)*/
-  Real rdx, rdy;       /* Coordinate dell'angolo in basso a destra (in mm) */
-  Real minx, miny;     /* Coordinate minime visualizzabili (in mm) */
-  Real maxx, maxy;     /* Coordinate massime visualizzabili (in mm) */
-  Real lx, ly;         /* Larghezza e altezza (in mm, sono positive)*/
-  Real versox, versoy; /* Versori x e y (numeri uguali a +1 o -1) */
-  Real stepx, stepy;   /* Salto fra un punto e quello alla sua sinistra e in basso */
-  Real resx, resy;     /* Risoluzione x e y (in punti per mm) */
-  Int numptx, numpty;  /* Numero di punti nelle due direzioni */
-  palitem *bgcol;      /* Colore dello sfondo */
-  palitem *fgcol;      /* Colore attualmente in uso */
-  palette *pal;        /* Tavolazza dei colori relativi alla finestra */
-  long bitperpixel;    /* Numero di bit necessari a memorizzaze 1 pixel */
-  long bytesperline;   /* Byte occupati da una linea */
-  long dim;            /* Dimensione totale in byte della finestra */
-  void *wrdep;         /* Puntatore alla struttura dei dati dipendenti dalla scrittura */
+  void *ptr;           /**< Pointer to the window data */
+
+  BoxReal
+    ltx, lty,          /**< Coordinates of top left-corner (in mm)*/
+    rdx, rdy,          /**< Coordinates of bottom right-corner (in mm) */
+    minx, miny,        /**< Minimum coordinates (in mm) */
+    maxx, maxy,        /**< Maximum coordinates (in mm) */
+    lx, ly,            /**< Width and height (in mm, positive) */
+    versox, versoy,    /**< Unit vectors x and y (either +1 or -1) */
+    stepx, stepy,      /**< Coordinate variations to move a pixel on the left
+                            and on the bottom */
+    resx, resy;        /**< x and y resolution (points per mm) */
+
+  Int numptx, numpty;  /**< Number of points in each direction */
+  palitem *bgcol;      /**< Background color */
+  palitem *fgcol;      /**< Current foreground color */
+  palette *pal;        /**< Color palette */
+  long bitperpixel;    /**< Bit necessary to store a single pixel */
+  long bytesperline;   /**< Bytes required for each row */
+  long dim;            /**< Total size (in bytes) of the window */
+  void *wrdep;         /**< Pointer to extra data dependent on the window
+                            type */
 };
 
 #define BoxGWin_Fail(source, msg)
 
-/** Define some macros to provide functions which can be called as one would
+/* Define some macros to provide functions which can be called as one would
  * normally expect: Method_Of_Obj(obj, arg1, arg2, ...) rather than
  * obj->method_name(obj, ...).
  */
+
+/****************************************************************************
+ * HIGH LEVEL ROUTINES
+ */
+
+/** Initialize the window for drawing */
+#define BoxGWin_Begin_Drawing(win) ((win)->begin_drawing)(win)
+
+/** Finalize the window */
+#define BoxGWin_Finish_Drawing(win) ((win)->finish_drawing)(win)
+
+/** Create a new path (rreset) */
+#define BoxGWin_Create_Path(win) ((win)->create_path)(win)
+
+/** Close the current path (rclose) */
+#define BoxGWin_Close_Path(win) ((win)->close_path)(win)
+
+/** Draw the current path using the given drawing style. (rdraw) */
+#define BoxGWin_Draw_Path(win, style) ((win)->draw_path)((win), (style))
+
+/** Generate the path for a line connecting the two points 'a' and 'b' */
+#define BoxGWin_Add_Line_Path(win, a, b) \
+  ((win)->add_line_path)((win), (a), (b))
+
+/** Generate the join connecting point 'a' to 'c' with corner in 'b'. */
+#define BoxGWin_Add_Join_Path(win, a, b, c) \
+  ((win)->add_join_path)((win), (a), (b), (c))
+
+/** Generate the path for a circle in the reference system identified by
+ * the origin 'ctr' and the unit axis points 'a' and 'b'.
+ */
+#define BoxGWin_Add_Circle_Path(win, ctr, right, up) \
+  ((win)->add_circle_path)((win), (ctr), (right), (up))
 
 /** Set the foreground color. */
 #define BoxGWin_Set_Fg_Color(win, c) \
@@ -282,9 +345,32 @@ struct _grp_window {
   * with font size 1.0 (meaning that the three points 'ctr', 'right' and 'up'
   * can be used to magnify the text and transform it in any way).
   */
-#define BoxGWin_Gen_Text_Path(win, ctr, right, up, from, text) \
-  ((win)->gen_text_path)((win), (ctr), (right), (up), (from), (text))
+#define BoxGWin_Add_Text_Path(win, ctr, right, up, from, text) \
+  ((win)->add_text_path)((win), (ctr), (right), (up), (from), (text))
 
+/** Save the window to a file */
+#define BoxGWin_Save_To_File(win, filename) \
+  ((win)->save_to_file)((win), (filename))
+
+/****************************************************************************
+ * LOW LEVEL ROUTINES
+ */
+
+/** Draw a point. */
+#define BoxGWin_Draw_Point(win, x, y) \
+  ((win)->draw_point)((win), (x), (y))
+
+/** Draw an horizontal line. */
+#define BoxGWin_Draw_Hor_Line(win, y, x1, x2) \
+  ((win)->draw_hor_line)((win), (y), (x1), (x2))
+
+/** Finalize the window */
+#define BoxGWin_Set_Color(win, col_index) \
+  ((win)->set_color)((win), (col_index))
+
+/****************************************************************************/
+
+/** COMMANDS FOR BoxGWin_Interpret_Obj */
 enum {BOXG_CMD_SAVE=0, BOXG_CMD_RESTORE, BOXG_CMD_SET_ANTIALIAS,
       BOXG_CMD_MOVE_TO, BOXG_CMD_LINE_TO, BOXG_CMD_CURVE_TO,
       BOXG_CMD_CLOSE_PATH, BOXG_CMD_NEW_PATH, BOXG_CMD_NEW_SUB_PATH,
@@ -299,13 +385,6 @@ enum {BOXG_CMD_SAVE=0, BOXG_CMD_RESTORE, BOXG_CMD_SET_ANTIALIAS,
       BOXG_CMD_EXT_JOINARC_TO, BOXG_CMD_EXT_ARC_TO,
       BOXG_CMD_EXT_SET_FONT, BOXG_CMD_EXT_TEXT_PATH
       };
-
-/* Just for compatibility with past conventions */
-#define grp_window BoxGWin
-
-/* Dati importanti per la libreria */
-/* Finestra attualmente in uso */
-extern BoxGWin *grp_win;
 
 /* Per convertire in millimetri, radianti, punti per millimetro */
 extern Real grp_tomm;
@@ -361,7 +440,7 @@ int ps_save_fig(const char *file_name, BoxGWin *figure);
 int eps_save_fig(const char *file_name, BoxGWin *figure);
 
 /** Type of function called when Grp_Window_Break has been used. */
-typedef void (*GrpOnError)(const char *where);
+typedef void (*BoxGOnError)(BoxGWin *w, const char *where);
 
 /** Block the window 'w', such that it reports errors when used. */
 void BoxGWin_Block(BoxGWin *w);
@@ -369,7 +448,7 @@ void BoxGWin_Block(BoxGWin *w);
 /** Similar to BoxGWin_Block, but when the window 'w' is used,
  * the function on_error is called, instead of reporting an error.
  */
-void BoxGWin_Break(BoxGWin *w, GrpOnError on_error);
+void BoxGWin_Break(BoxGWin *w, BoxGOnError on_error);
 
 /** Restore the window 'w', after it has been broken with BoxGWin_Block
  * or BoxGWin_Break
@@ -389,8 +468,6 @@ int Grp_Window_Is_Error(BoxGWin *w);
 /** Make 'w' a dummy window which just reports errors when used. */
 void Grp_Window_Make_Dummy(BoxGWin *w);
 
-#define grp_window_block BoxGWin_Block
-
 /* Procedure per la gestione di una palette */
 void grp_color_build(Color *cb, ColorBytes *c);
 void grp_color_reduce(palette *p, ColorBytes *c);
@@ -399,7 +476,9 @@ palitem *grp_color_find(palette *p, ColorBytes *c);
 palitem *grp_color_request(palette *p, ColorBytes *c);
 int grp_palette_transform(palette *p, int (*operation)(palitem *pi));
 void grp_palette_destroy(palette *p);
-void grp_draw_gpath(GPath *gp);
+
+/** Draw a path encoded inside a GPath object. */
+void BoxGWin_Draw_GPath(BoxGWin *w, GPath *gp);
 
 void rst_repair(BoxGWin *gw);
 
@@ -421,37 +500,6 @@ void Grp_Matrix_Mul_Point(Matrix *m, Point *pts, int num_pts);
 /** Apply the matrix 'm' to the 'num_vecs' vectors in 'vecs'. */
 void Grp_Matrix_Mul_Vector(Matrix *m, Point *vecs, int num_vecs);
 
-/* Funzioni grafiche di basso livello (legate al tipo di finestra aperta) */
-#define grp_close_win  (grp_win->close_win)
-#define grp_set_col    (grp_win->set_col)
-#define grp_draw_point (grp_win->draw_point)
-#define grp_hor_line   (grp_win->hor_line)
-
-/* Funzioni grafiche di medio livello (di rasterizzazione) */
-#define grp_rreset     (grp_win->rreset)
-#define grp_rinit      (grp_win->rinit)
-#define grp_rdraw      (grp_win->rdraw)
-#define grp_rline      (grp_win->rline)
-#define grp_rcong      (grp_win->rcong)
-#define grp_rclose     (grp_win->rclose)
-#define grp_rcircle    (grp_win->rcircle)
-#define grp_save       (grp_win->save)
-
-/* Macro per la conversione fra diverse unità di misura */
-/* Lunghezze */
-#define grp_mm(x)  (x/grp_tomm)
-#define grp_cm(x)  (x*10.0/grp_tomm)
-#define grp_dm(x)  (x*100.0/grp_tomm)
-#define grp_m(x)  (x*1000.0/grp_tomm)
-/* Risoluzioni */
-#define grp_toppu(x)  (x*grp_toppmm*grp_tomm)
-#define grp_dpi(x)    (x/(25.4*grp_toppmm))
-#define grp_ppmm(x)    (x/grp_toppmm)
-/* Angoli */
-#define grp_rad(x)  (x/grp_torad)
-#define grp_deg(x)  (x*0.01745329252/grp_torad)
-#define grp_grad(x)  (x*0.01570796327/grp_torad)
-
 /* Costanti per la conversione */
 #define grp_mmperinch  25.4
 #define grp_radperdeg  0.01745329252
@@ -461,31 +509,21 @@ void Grp_Matrix_Mul_Vector(Matrix *m, Point *vecs, int num_vecs);
 #define grp_inch_per_psunit (1.0/72.0)
 
 /* Conversione da coordinate relative a coordinate assolute (floating) */
-#define CV_XF_A(x)  (((Real) x - grp_win->ltx)/grp_win->stepx)
-#define CV_YF_A(y)  (((Real) y - grp_win->lty)/grp_win->stepy)
+#define CV_XF_A(w, x)  (((Real) (x) - (w)->ltx)/(w)->stepx)
+#define CV_YF_A(w, y)  (((Real) (y) - (w)->lty)/(w)->stepy)
 /* Conversione di lunghezze relative in lunghezze assolute */
-#define CV_LXF_A(x)  (((Real) x)/grp_win->stepx)
-#define CV_LYF_A(y)  (((Real) y)/grp_win->stepy)
+#define CV_LXF_A(w, x)  (((Real) (x))/(w)->stepx)
+#define CV_LYF_A(w, y)  (((Real) (y))/(w)->stepy)
 /* Conversione da coordinate assolute a coordinate intermedie */
 #define CV_A_MED(x)  ((int) floor(x) + (int) ceil(x))
 /* Conversione da coordinate intermedie a coordinate intere */
-#define CV_MED_GT(x)  (((Int) x + 1) >> 1)
-#define CV_MED_LW(x)  (((Int) x - 1) >> 1)
+#define CV_MED_GT(x)  (((Int) (x) + 1) >> 1)
+#define CV_MED_LW(x)  (((Int) (x) - 1) >> 1)
 
 /* Restituisce 1 se la coordinata intermedia è un intero esatto, 0 altrimenti */
 #define IS_EXACT_INT(x)  ((Int) x & 1)
 
-#define WINNUMROW    grp_win->numpty
-
 /* Informazioni sulla corrente finestra grafica */
-#define GRP_AXMIN    0
-#define GRP_AXMAX    (grp_win->numptx - 1)
-#define GRP_AYMIN    0
-#define GRP_AYMAX    (grp_win->numpty - 1)
-#define GRP_IXMIN    0
-#define GRP_IXMAX    (grp_win->numptx - 1)
-#define GRP_IYMIN    0
-#define GRP_IYMAX    (grp_win->numpty - 1)
 #define GRP_MLOUT    -1
 #define GRP_MROUT    0x7fff
 

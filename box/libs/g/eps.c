@@ -40,7 +40,7 @@
 static int discretization_x = 1000, discretization_y = 1000;
 #endif
 
-static int eps_save(const char *unused);
+static int My_EPS_Save_To_File(BoxGWin *w, const char *unused);
 
 /* Variabili usate dalle procedure per scrivere il file postscript */
 static int beginning_of_path = 1;
@@ -57,24 +57,24 @@ static Real eps_point_scale = 283.46457;
 
 #define EPS_REAL(r) ((r)*eps_point_scale)
 
-static void eps_close_win(void) {
-  FILE *f = (FILE *) grp_win->ptr;
+static void My_EPS_Finish_Drawing(BoxGWin *w) {
+  FILE *f = (FILE *) w->ptr;
   assert(f != (FILE *) NULL);
   fprintf(f, "\nrestore\nshowpage\n%%%%Trailer\n%%EOF\n");
   fclose(f);
 }
 
-static void eps_rreset(void) {
+static void My_EPS_Create_Path(BoxGWin *w) {
   beginning_of_path = 1;
 }
 
-static void eps_rinit(void) {return;}
+static void My_EPS_Begin_Drawing(BoxGWin *w) {}
 
-static void eps_rdraw(DrawStyle *style) {
-  if ( ! beginning_of_path ) {
+static void My_EPS_Draw_Path(BoxGWin *w, DrawStyle *style) {
+  if (! beginning_of_path) {
     Real scale = style->scale;
     int do_border = (style->bord_width > 0.0);
-    FILE *out = (FILE *) grp_win->ptr;
+    FILE *out = (FILE *) w->ptr;
     char *fill;
 
     switch(style->fill_style) {
@@ -141,7 +141,7 @@ static void eps_rdraw(DrawStyle *style) {
   }
 }
 
-static void eps_rline(Point *a, Point *b) {
+static void My_EPS_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
   EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by);
   int continuing = (ax == previous_px) && (ay == previous_py),
       length_zero = (ax == bx && ay == by);
@@ -149,53 +149,47 @@ static void eps_rline(Point *a, Point *b) {
   if (continuing && length_zero) return;
 
   if (beginning_of_path) {
-    fprintf((FILE *) grp_win->ptr, " newpath");
+    fprintf((FILE *) w->ptr, " newpath");
     beginning_of_path = 0;
     continuing = 0;
   }
 
   if (!continuing)
-    fprintf((FILE *) grp_win->ptr, " %ld %ld moveto", ax, ay);
+    fprintf((FILE *) w->ptr, " %ld %ld moveto", ax, ay);
 
-  fprintf((FILE *) grp_win->ptr, " %ld %ld lineto", bx, by);
+  fprintf((FILE *) w->ptr, " %ld %ld lineto", bx, by);
   previous_px = bx; previous_py = by;
 }
 
-static void eps_rcong(Point *a, Point *b, Point *c) {
+static void My_EPS_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c) {
   EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by); EPS_POINT(c, cx, cy);
-#if 0
-  int a_eq_b = ax == bx && ay == by,
-      a_eq_c = ax == cx && ay == cy,
-      b_eq_c = bx == cx && by == cy,
-      n_eq = a_eq_b + a_eq_c + b_eq_c;
-  if (n_eq == 3) return;
-#endif
+
   if (ax == cx && ay == cy) return;
 
   if (beginning_of_path) {
-    fprintf( (FILE *) grp_win->ptr, " newpath" );
+    fprintf((FILE *) w->ptr, " newpath");
     beginning_of_path = 0;
   }
 
-  fprintf( (FILE *) grp_win->ptr,
-   " %ld %ld %ld %ld %ld %ld cong", ax, ay, bx, by, cx, cy );
+  fprintf((FILE *) w->ptr,
+          " %ld %ld %ld %ld %ld %ld cong", ax, ay, bx, by, cx, cy);
   previous_px = cx; previous_py = cy;
 }
 
-static void eps_rclose(void) {
-  FILE *out = (FILE *) grp_win->ptr;
+static void My_EPS_Close_Path(BoxGWin *w) {
   if (!beginning_of_path)
-    fprintf(out, " closepath");
+    fprintf((FILE *) w->ptr, " closepath");
 }
 
-static void eps_rcircle(Point *ctr, Point *a, Point *b) {
+static void My_EPS_Add_Circle_Path(BoxGWin *w,
+                                   Point *ctr, Point *a, Point *b) {
   EPS_POINT(ctr, cx, cy); EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by);
 
-  if ( beginning_of_path )
-    fprintf( (FILE *) grp_win->ptr, " newpath" );
+  if (beginning_of_path)
+    fprintf((FILE *) w->ptr, " newpath");
 
-  fprintf( (FILE *) grp_win->ptr,
-   " %ld %ld %ld %ld %ld %ld circle", cx, cy, ax, ay, bx, by );
+  fprintf((FILE *) w->ptr,
+          " %ld %ld %ld %ld %ld %ld circle", cx, cy, ax, ay, bx, by);
   beginning_of_path = 0;
 }
 
@@ -284,7 +278,7 @@ static void _Text_Fmt_Init(BoxGFmt *fmt) {
   fmt->newline = _Text_Fmt_Newline;
 }
 
-static void My_EPS_Gen_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *right,
+static void My_EPS_Add_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *right,
                                  BoxPoint *up, BoxPoint *from,
                                  const char *text) {
   FILE *out = (FILE *) w->ptr;
@@ -346,23 +340,23 @@ static void My_EPS_Add_Fake_Point(BoxGWin *w, BoxPoint *p) {}
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
 
 /** Set the default methods to the eps window */
-static void eps_repair(GrpWindow *w) {
-  grp_window_block(w);
+static void eps_repair(BoxGWin *w) {
+  BoxGWin_Block(w);
 
-  w->rreset = eps_rreset;
-  w->rinit = eps_rinit;
-  w->rdraw = eps_rdraw;
-  w->rline = eps_rline;
-  w->rcong = eps_rcong;
-  w->rclose = eps_rclose;
-  w->rcircle = eps_rcircle;
+  w->create_path = My_EPS_Create_Path;
+  w->begin_drawing = My_EPS_Begin_Drawing;
+  w->draw_path = My_EPS_Draw_Path;
+  w->add_line_path = My_EPS_Add_Line_Path;
+  w->add_join_path = My_EPS_Add_Join_Path;
+  w->close_path = My_EPS_Close_Path;
+  w->add_circle_path = My_EPS_Add_Circle_Path;
   w->set_fg_color = My_EPS_Set_Fg_Color;
-  w->gen_text_path = My_EPS_Gen_Text_Path;
+  w->add_text_path = My_EPS_Add_Text_Path;
   w->set_font = My_EPS_Set_Font;
   w->add_fake_point = My_EPS_Add_Fake_Point;
-  w->save = eps_save;
+  w->save_to_file = My_EPS_Save_To_File;
 
-  w->close_win = eps_close_win;
+  w->finish_drawing = My_EPS_Finish_Drawing;
 }
 
 static const char *ps_std_defs =
@@ -420,8 +414,8 @@ static const char *ps_std_defs =
  * to it. The window will have size size_x and size_y (in mm) and will
  * show coordinates from (0, 0) to (size_x, size_y).
  */
-GrpWindow *eps_open_win(const char *file, Real size_x, Real size_y) {
-  GrpWindow *wd;
+BoxGWin *eps_open_win(const char *file, Real size_x, Real size_y) {
+  BoxGWin *wd;
   FILE *winstream;
   Real size_x_psunit, size_y_psunit;
   int x_max, y_max;
@@ -434,7 +428,7 @@ GrpWindow *eps_open_win(const char *file, Real size_x, Real size_y) {
   y_max = (int) size_y_psunit+1;
 
   /* Creo la finestra */
-  wd = (GrpWindow *) malloc( sizeof(GrpWindow) );
+  wd = (BoxGWin *) malloc(sizeof(BoxGWin));
   if (wd == NULL) {
     ERRORMSG("eps_open_win", "Memoria esaurita");
     return NULL;
@@ -473,14 +467,14 @@ GrpWindow *eps_open_win(const char *file, Real size_x, Real size_y) {
   return wd;
 }
 
-static int eps_save(const char *unused) {
+static int My_EPS_Save_To_File(BoxGWin *w, const char *unused) {
   return 1;
 }
 
-int eps_save_fig(const char *file_name, GrpWindow *figure) {
+int eps_save_fig(const char *file_name, BoxGWin *figure) {
   Point bb_min, bb_max, translation, center, size;
   Real sx, sy, rot_angle;
-  GrpWindow *cur_win = grp_win;
+  BoxGWin *dest;
   Matrix m;
 
   bb_bounding_box(figure, & bb_min, & bb_max);
@@ -489,16 +483,15 @@ int eps_save_fig(const char *file_name, GrpWindow *figure) {
 
   size.x = fabs(bb_max.x - bb_min.x);
   size.y = fabs(bb_max.y - bb_min.y);
-  grp_win = eps_open_win(file_name, size.x, size.y);
+  dest = eps_open_win(file_name, size.x, size.y);
   translation.x = -bb_min.x;
   translation.y = -bb_min.y;
   center.y = center.x = 0.0;
   sy = sx = 1.0;
   rot_angle = 0.0;
   Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);
-  Fig_Draw_Fig_With_Matrix(figure, & m);
-  grp_close_win();
-  grp_win = cur_win;
+  BoxGWin_Fig_Draw_Fig_With_Matrix(dest, figure, & m);
+  BoxGWin_Finish_Drawing(dest);
   return 1;
 }
 
@@ -509,8 +502,8 @@ int eps_save_fig(const char *file_name, GrpWindow *figure) {
 /****************************************************************************/
 /* Here we define another window type: PS (postscript), very similar to EPS */
 
-static void ps_close_win(void) {
-  FILE *f = (FILE *) grp_win->ptr;
+static void My_PS_Close_Win(BoxGWin *w) {
+  FILE *f = (FILE *) w->ptr;
   assert(f != (FILE *) NULL);
   /*fprintf(f, "\nrestore\nshowpage\n%%%%Trailer\n%%EOF\n");*/
   fclose(f);
@@ -520,20 +513,20 @@ static void ps_close_win(void) {
 /* Here we define another window type: PS (postscript), very similar to EPS. */
 
 /** Set the default methods to the ps window */
-static void ps_repair(GrpWindow *w) {
-  grp_window_block(w);
-  w->rreset = eps_rreset;
-  w->rinit = eps_rinit;
-  w->rdraw = eps_rdraw;
-  w->rline = eps_rline;
-  w->rcong = eps_rcong;
-  w->rclose = eps_rclose;
-  w->rcircle = eps_rcircle;
+static void ps_repair(BoxGWin *w) {
+  BoxGWin_Block(w);
+  w->create_path = My_EPS_Create_Path;
+  w->begin_drawing = My_EPS_Begin_Drawing;
+  w->draw_path = My_EPS_Draw_Path;
+  w->add_line_path = My_EPS_Add_Line_Path;
+  w->add_join_path = My_EPS_Add_Join_Path;
+  w->close_path = My_EPS_Close_Path;
+  w->add_circle_path = My_EPS_Add_Circle_Path;
   w->set_fg_color = My_EPS_Set_Fg_Color;
   w->add_fake_point = My_EPS_Add_Fake_Point;
-  w->save = eps_save;
+  w->save_to_file = My_EPS_Save_To_File;
 
-  w->close_win = ps_close_win;
+  w->finish_drawing = My_PS_Close_Win;
 }
 
 /* NOME: ps_open_win
@@ -541,12 +534,12 @@ static void ps_repair(GrpWindow *w) {
  *  Tale finestra tradurra' i comandi grafici ricevuti in istruzioni postscript,
  *  che saranno scritte immediatamente su file.
  */
-GrpWindow *ps_open_win(const char *file) {
-  GrpWindow *wd;
+BoxGWin *ps_open_win(const char *file) {
+  BoxGWin *wd;
   FILE *winstream;
 
   /* Creo la finestra */
-  wd = (GrpWindow *) malloc( sizeof(GrpWindow) );
+  wd = (BoxGWin *) malloc( sizeof(BoxGWin) );
   if ( wd == NULL ) {
     ERRORMSG("ps_open_win", "Memoria esaurita");
     return NULL;
@@ -581,25 +574,24 @@ GrpWindow *ps_open_win(const char *file) {
   return wd;
 }
 
-int ps_save_fig(const char *file_name, GrpWindow *figure) {
+int ps_save_fig(const char *file_name, BoxGWin *figure) {
   Point bb_min, bb_max, translation, center;
   Real sx, sy, rot_angle;
-  GrpWindow *cur_win = grp_win;
+  BoxGWin *dest;
   Matrix m;
 
   bb_bounding_box(figure, & bb_min, & bb_max);
   printf("Bounding box (%f, %f) - (%f, %f)\n",
          bb_min.x, bb_min.y, bb_max.x, bb_max.y);
 
-  grp_win = ps_open_win(file_name);
+  dest = ps_open_win(file_name);
   translation.x = -bb_min.x;
   translation.y = -bb_min.y;
   center.y = center.x = 0.0;
   sy = sx = 1.0;
   rot_angle = 0.0;
   Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);
-  Fig_Draw_Fig_With_Matrix(figure, & m);
-  grp_close_win();
-  grp_win = cur_win;
+  BoxGWin_Fig_Draw_Fig_With_Matrix(dest, figure, & m);
+  BoxGWin_Finish_Drawing(dest);
   return 1;
 }

@@ -127,7 +127,6 @@ static Task _transform_pl(Int index, char *name, void *object, void *data) {
 
 Task window_put_end(VMProgram *vmp) {
   PROC_OF_WINDOW_SUBTYPE(vmp, w, out_pl, IPointList *);
-  grp_window *cur_win = grp_win;
   Window *figure;
   IPointList *returned_pl;
 
@@ -151,9 +150,8 @@ Task window_put_end(VMProgram *vmp) {
 
   /* Disegno l'oggetto */
   figure = (Window *) w->put.figure;
-  grp_win = w->window;
-  Fig_Draw_Fig_With_Matrix(figure->window, & w->put.matrix);
-  grp_win = cur_win;
+  BoxGWin_Fig_Draw_Fig_With_Matrix(w->window, figure->window,
+                                   & w->put.matrix);
   returned_pl = (IPointList *) malloc(sizeof(IPointList));
   if (returned_pl == (IPointList *) NULL) {
     g_error("window_put_end: malloc failed!");

@@ -119,40 +119,29 @@ Task window_begin(BoxVM *vmp) {
 Task window_color(BoxVM *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   Color *c = BOX_VM_ARG1_PTR(vmp, Color);
-  if (w->window != (GrpWindow *) NULL) {
-    GrpWindow *cur_win = grp_win;
-    grp_win = w->window;
+  if (w->window != (GrpWindow *) NULL)
     BoxGWin_Set_Fg_Color(w->window, c);
-    grp_win = cur_win;
-  }
   return Success;
 }
 
 Task window_gradient(BoxVM *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   Gradient *g = BOX_VM_ARG1(vmp, GradientPtr);
-  if (w->window != (GrpWindow *) NULL) {
-    GrpWindow *cur_win = grp_win;
-    grp_win = w->window;
+  if (w->window != NULL)
     BoxGWin_Set_Gradient(w->window, & g->gradient);
-    grp_win = cur_win;
-  }
   return Success;
 }
 
 Task window_destroy(BoxVM *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
   Window *w = (Window *) wp;
-  GrpWindow *cur_win = grp_win;
 #ifdef DEBUG
   printf("Window object deallocated\n");
 #endif
 
   free(w->plan.file_name);
 
-  grp_win = w->window;
-  grp_close_win();
-  grp_win = cur_win;
+  BoxGWin_Finish_Drawing(w->window);
 
   destroy_styles(w);
   pointlist_destroy(& w->pointlist);
@@ -226,10 +215,7 @@ Task window_end(BoxVM *vmp) {
 Task window_window(BoxVM *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   Window *src = BOX_VM_ARG1(vmp, WindowPtr);
-  grp_window *cur_win = grp_win;
-  grp_win = w->window;
-  Fig_Draw_Fig(src->window);
-  grp_win = cur_win;
+  BoxGWin_Fig_Draw_Fig(w->window, src->window);
   return Success;
 }
 
@@ -281,7 +267,6 @@ Task window_save_window(BoxVM *vmp) {
   Point translation = {0.0, 0.0}, center = {0.0, 0.0};
   Real sx = 1.0, sy = 1.0, rot_angle = 0.0;
   Matrix m;
-  GrpWindow *cur_win = grp_win;
 
   int type_fig = Grp_Window_Type_From_String("fig");
   if (src->plan.type != type_fig) {
@@ -340,9 +325,7 @@ Task window_save_window(BoxVM *vmp) {
       dest->plan.have.size = 1;
     }
 
-    grp_win = dest->window;
-    grp_close_win();
-    grp_win = cur_win;
+    BoxGWin_Finish_Drawing(dest->window);
     dest->window = Grp_Window_Open(& dest->plan);
     if (dest->window == NULL) {
       g_error("Window.Save: cannot create the window!");
@@ -367,14 +350,11 @@ Task window_save_window(BoxVM *vmp) {
     sy = dest->plan.size.y/(bb_max.y - bb_min.y);
   }
 
-  grp_win = dest->window;
   Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);
-  Fig_Draw_Fig_With_Matrix(src->window, & m);
+  BoxGWin_Fig_Draw_Fig_With_Matrix(dest->window, src->window, & m);
   if (dest->plan.have.file_name)
-    grp_save(dest->plan.file_name);
+    BoxGWin_Save_To_File(dest->window, dest->plan.file_name);
     /* ^^^ Some terminals require an explicit save! */
-
-  grp_win = cur_win;
 
   if (src->save_file_name != NULL) {
     free(src->save_file_name);
@@ -397,7 +377,6 @@ Task window_save_end(BoxVM *vmp) {
     return Success;
 
   } else {
-    GrpWindow *cur_win;
     int all_ok;
 
     if (w->save_file_name == NULL) {
@@ -405,10 +384,7 @@ Task window_save_end(BoxVM *vmp) {
       return Failed;
     }
 
-    cur_win = grp_win;
-    grp_win = w->window;
-    all_ok = grp_save(w->save_file_name);
-    grp_win = cur_win;
+    all_ok = BoxGWin_Save_To_File(w->window, w->save_file_name);
     free(w->save_file_name);
     w->save_file_name = NULL;
     w->saved = 1;
@@ -513,10 +489,7 @@ Task window_res_real(BoxVM *vmp) {
 Task window_show_point(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *p = BOX_VM_ARG1_PTR(vmp, Point);
-  GrpWindow *cur_win = grp_win;
-  grp_win = w->window;
   BoxGWin_Add_Fake_Point(w->window, p);
-  grp_win = cur_win;
   return Success;
 }
 

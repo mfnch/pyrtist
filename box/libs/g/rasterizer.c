@@ -39,6 +39,22 @@
 #define WORD      unsigned short
 #define SWORD     short
 
+#define GRP_AXMIN(w) (0)
+#define GRP_AXMAX(w) ((w)->numptx - 1)
+#define GRP_AYMIN(w) (0)
+#define GRP_AYMAX(w) ((w)->numpty - 1)
+#define GRP_IXMIN(w) (0)
+#define GRP_IXMAX(w) ((w)->numptx - 1)
+#define GRP_IYMIN(w) (0)
+#define GRP_IYMAX(w) ((w)->numpty - 1)
+
+#define GRP_IXMIN(w) (0)
+#define GRP_IXMAX(w) ((w)->numptx - 1)
+#define GRP_IYMIN(w) (0)
+#define GRP_IYMAX(w) ((w)->numpty - 1)
+
+#define WINNUMROW(w) ((w)->numpty)
+
 struct block_desc {
   SWORD  ymin;    /* Coordinata y corrispondente alla prima riga descritta */
   SWORD  ymax;    /* Coordinata y corrispondente all'ultima riga descritta */
@@ -64,13 +80,13 @@ extern void err_print(FILE *stream);
  * (nelle procedure rst__line e rst__cong) e serve a tenere conto
  * degli eventuali "sconfinamenti" del bordo rispetto allo schermo.
  */
-#define MARK(y, x)            \
-  if (x < GRP_AXMIN)          \
-    rst__mark(y, GRP_MLOUT);    \
-  else if (x > GRP_AXMAX)        \
-    rst__mark(y, GRP_MROUT);    \
-  else                \
-    rst__mark(y, CV_A_MED(x))
+#define MARK(w, y, x) \
+  if ((x) < GRP_AXMIN(w)) \
+    rst__mark((w), (y), GRP_MLOUT); \
+  else if (x > GRP_AXMAX(w)) \
+    rst__mark((w), (y), GRP_MROUT); \
+  else \
+    rst__mark((w), (y), CV_A_MED(x))
 
 /***************************************************************************************/
 /* DICHIARAZIONE DELLE PROCEDURE DEFINITE IN QUESTO FILE */
@@ -79,37 +95,37 @@ extern void err_print(FILE *stream);
  * scritte per essere utilizzate solo da altre procedure di questo file
  */
 void rst__block_reset(block_desc *rstblock);
-block_desc *rst__trytomark(SWORD y, SWORD x);
-void rst__mark(SWORD y, SWORD x);
-void rst__line(Point *pa, Point *pb);
-void rst__cong(Point *pa, Point *pb, Point *pc);
-void rst__curve(Point *pa, Point *pb, Point *pc, Real c);
-void rst__poly(Point *p, int n);
+block_desc *rst__trytomark(BoxGWin *w, SWORD y, SWORD x);
+void rst__mark(BoxGWin *w, SWORD y, SWORD x);
+void rst__line(BoxGWin *w, Point *pa, Point *pb);
+void rst__cong(BoxGWin *w, Point *pa, Point *pb, Point *pc);
+void rst__curve(BoxGWin *w, Point *pa, Point *pb, Point *pc, Real c);
+void rst__poly(BoxGWin *w, Point *p, int n);
 
 /* Le procedure "di libreria" definite per essere chiamate dall'esterno
  * iniziano con rst_
  */
-static void rst_reset(void);
-static void rst_init(void);
-static void rst_draw(DrawStyle *style);
-static void rst_line(Point *a, Point *b);
-static void rst_cong(Point *a, Point *b, Point *c);
-static void rst_close(void);
-void rst_curve(Point *a, Point *b, Point *c, Real cut);
-static void rst_circle(Point *ctr, Point *a, Point *b);
-void rst_poly(Point *p, int n);
+static void My_Add_Create_Path(BoxGWin *w);
+static void My_Begin_Drawing(BoxGWin *w);
+static void My_Draw_Path(BoxGWin *w, DrawStyle *style);
+static void My_Add_Line_Path(BoxGWin *w, Point *a, Point *b);
+static void My_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c);
+static void My_Close_Path(BoxGWin *w);
+void rst_curve(BoxGWin *w, Point *a, Point *b, Point *c, Real cut);
+static void My_Add_Circle_Path(BoxGWin *w, Point *ctr, Point *a, Point *b);
+void rst_poly(BoxGWin *w, Point *p, int n);
 static void My_Fg_Color(BoxGWin *w, Color *c);
 static void My_Bg_Color(BoxGWin *w, Color *c);
 static void My_Add_Fake_Point(BoxGWin *w, Point *p);
 
-void rst_repair(grp_window *w) {
-  w->rreset = rst_reset;
-  w->rinit = rst_init;
-  w->rdraw = rst_draw;
-  w->rline = rst_line;
-  w->rcong = rst_cong;
-  w->rclose = rst_close;
-  w->rcircle = rst_circle;
+void rst_repair(BoxGWin *w) {
+  w->create_path = My_Add_Create_Path;
+  w->begin_drawing = My_Begin_Drawing;
+  w->draw_path = My_Draw_Path;
+  w->add_line_path = My_Add_Line_Path;
+  w->add_join_path = My_Add_Join_Path;
+  w->close_path = My_Close_Path;
+  w->add_circle_path = My_Add_Circle_Path;
   w->set_fg_color = My_Fg_Color;
   w->set_bg_color = My_Bg_Color;
   w->add_fake_point = My_Add_Fake_Point;
@@ -135,11 +151,11 @@ void rst__block_reset(block_desc *rstblock) {
     *ptr = (WORD) 0;
 }
 
-/* NOME: rst_reset
+/* NOME: My_Add_Create_Path
  * DESCRIZIONE: Pulisce il buffer di rasterizzazione,
  *  senza deallocare memoria.
  */
-static void rst_reset(void) {
+static void My_Add_Create_Path(BoxGWin *w) {
   block_desc *rstblock;
 
   /* Facciamo un loop su tutti i blocchi */
@@ -147,18 +163,18 @@ static void rst_reset(void) {
     rst__block_reset(rstblock);  /* Puliamo ciascun blocco */
 }
 
-/* NOME: rst_init
+/* NOME: My_Begin_Drawing
  * DESCRIZIONE: Prepara il sistema nel suo stato iniziale,
  *  pronto per rasterizzare.
  */
-static void rst_init(void) {
+static void My_Begin_Drawing(BoxGWin *w) {
   int i, numblockmin, numblockalc = 0;
   WORD ymin, ymax;
   WORD *bufptr;
   block_desc *rstblock;
 
   ymax = -1;
-  numblockmin = (WINNUMROW + MAXROWPERBLOCK - 1) / MAXROWPERBLOCK;
+  numblockmin = (WINNUMROW(w) + MAXROWPERBLOCK - 1) / MAXROWPERBLOCK;
 
   /* Ora conto i blocchi fin'ora allocati */
   for(rstblock = first; rstblock != (block_desc *) 0; rstblock = rstblock->next)
@@ -173,7 +189,7 @@ static void rst_init(void) {
       bufptr = (WORD *) malloc( RSTBLOCKDIM * sizeof(WORD) );
 
       if ( (rstblock == (block_desc *) 0) || (bufptr == (WORD *) 0) ) {
-        ERRORMSG("rst_init", "Memoria esaurita");
+        ERRORMSG("My_Begin_Drawing", "Memoria esaurita");
         return;
       }
 
@@ -203,7 +219,7 @@ static void rst_init(void) {
   for(i=0; i<numblockalc; i++) {
     ymin = ymax + 1;
     ymax += MAXROWPERBLOCK;
-    if (ymax < WINNUMROW) {
+    if (ymax < WINNUMROW(w)) {
       rstblock->ymin = ymin;
       rstblock->ymax = ymax;
       rst__block_reset(rstblock);
@@ -211,7 +227,7 @@ static void rst_init(void) {
       rstblock = rstblock->next;
     } else {
       rstblock->ymin = ymin;
-      rstblock->ymax = WINNUMROW - 1;
+      rstblock->ymax = WINNUMROW(w) - 1;
       rst__block_reset(rstblock);
     }
   }
@@ -225,14 +241,13 @@ static void rst_init(void) {
  *  In tal caso, a meno che non si sia verificato un errore,
  *  l'operazione e' stata completata con successo.
  */
-block_desc *rst__trytomark(SWORD y, SWORD x) {
+block_desc *rst__trytomark(BoxGWin *w, SWORD y, SWORD x) {
   WORD *ptr, *newptr;
   block_desc *rstblock;
 
   /* Cerchiamo la riga y fra quelle presenti nei blocchi */
-  for(rstblock = first; rstblock != (block_desc *) 0; rstblock = rstblock->next)
-  {
-    if ( (y >= rstblock->ymin) && (y <= rstblock->ymax) ) {
+  for(rstblock = first; rstblock != NULL; rstblock = rstblock->next) {
+    if (y >= rstblock->ymin && y <= rstblock->ymax) {
       /* Ho trovato il blocco che "contiene" la riga y.
        * Ora controllo se questo blocco pu contenere un altro bordo
        */
@@ -247,10 +262,9 @@ block_desc *rst__trytomark(SWORD y, SWORD x) {
          */
         y -= rstblock->ymin;
         for (newptr = (WORD *) rstblock->buffer + (WORD) y;
-         *newptr != (WORD) 0; newptr = ptr)
-        {
+             *newptr != (WORD) 0; newptr = ptr) {
           ptr = (WORD *) rstblock->buffer + (WORD) *newptr;
-          if ( *(ptr+1) > x )
+          if (*(ptr+1) > x)
             break;
         }
 
@@ -264,12 +278,12 @@ block_desc *rst__trytomark(SWORD y, SWORD x) {
         rstblock->numfree -= 2;
       }
 
-      return (block_desc *) 0;
+      return NULL;
     }
   }
 
   ERRORMSG("rst__trytomark", "Nessun blocco contiene la riga y");
-  return (block_desc *) 0;
+  return NULL;
 }
 
 /* NOME: rst__mark
@@ -277,17 +291,17 @@ block_desc *rst__trytomark(SWORD y, SWORD x) {
  *  Se non c'e' abbastanza memoria nella riga, alloca nuova memoria
  * in modo da poter concludere l'operazione.
  */
-void rst__mark(SWORD y, SWORD x) {
+void rst__mark(BoxGWin *w, SWORD y, SWORD x) {
   block_desc *rstblock;
 
   /* Se la libreria di rasterizzazione non e' stata ancora inizializzata
    * allora provvediamo subito!
    */
-  if ( first == (block_desc *) 0 )
-    rst_init();
+  if (first == NULL)
+    My_Begin_Drawing(w);
 
-  rstblock = rst__trytomark(y, x);
-  if ( rstblock != (block_desc *) 0 ) {
+  rstblock = rst__trytomark(w, y, x);
+  if (rstblock != NULL) {
     /* In questo caso non c'e' spazio sufficiente nel blocco rstblock
      * per inserire un nuovo marcatore di bordo: dobbiamo allocare
      * un nuovo blocco.
@@ -299,7 +313,7 @@ void rst__mark(SWORD y, SWORD x) {
     newrstblock = (block_desc *) malloc( sizeof(block_desc) );
     bufptr = (WORD *) malloc( RSTBLOCKDIM * sizeof(WORD) );
 
-    if ( (newrstblock == (block_desc *) 0) || (bufptr = (WORD *) 0) ) {
+    if (newrstblock == NULL || bufptr == NULL) {
       ERRORMSG("rst_mark", "Memoria esaurita");
       return;
     }
@@ -316,26 +330,21 @@ void rst__mark(SWORD y, SWORD x) {
     row2 = newrstblock->buffer;
 
     /* Facciamo un loop su tutte le righe contenute nel blocco */
-    for(y = rstblock->ymin;
-     y <= rstblock->ymax; y++)
-    {
+    for(y = rstblock->ymin; y <= rstblock->ymax; y++) {
       col2 = row2++;
       for (col1 = row1++; *col1 != (WORD) 0;
-       col1 = (WORD *) rstblock->buffer + (WORD) *col1)
-      {
-
-      }
+           col1 = (WORD *) rstblock->buffer + (WORD) *col1) {}
     }
 
     ERRORMSG("rst_mark", "Feature in fase di implementazione");
   }
 }
 
-/* NOME: rst_draw
+/* NOME: My_Draw_Path
  * DESCRIZIONE: Legge il contenuto del buffer di rasterizzazione
  *  e traccia il disegno corrispondente sulla finestra grafica.
  */
-static void rst_draw(DrawStyle *style) {
+static void My_Draw_Path(BoxGWin *w, DrawStyle *style) {
   int border;
   FillStyle fs = style->fill_style;
   SWORD y, x1=0, x2, xmin;
@@ -377,7 +386,7 @@ static void rst_draw(DrawStyle *style) {
             x2 = CV_MED_LW(*(col+1));
 
             if (x2 >= xmin) {
-              grp_hor_line(y, x1, x2);
+              BoxGWin_Draw_Hor_Line(w, y, x1, x2);
               xmin = x2 + 1;
             }
           } else {
@@ -399,29 +408,31 @@ static void rst_draw(DrawStyle *style) {
             x2 = CV_MED_GT(*(col+1));
           ++num;
         }
-        if (num > 1) grp_hor_line(y, x1, x2);
+
+        if (num > 1)
+          BoxGWin_Draw_Hor_Line(w, y, x1, x2);
       }
     }
   }
 }
 
-/* NOME: rst_line
+/* NOME: My_Add_Line_Path
  * DESCRIZIONE: Rasterizza la linea congiungente i due punti a e b.
  * NOTA: Le coordinate dei punti sono coordinate relative.
  */
-static void rst_line(Point *a, Point *b) {
+static void My_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
   Point ia, ib;
-  ia.x = CV_XF_A(a->x); ia.y = CV_YF_A(a->y);
-  ib.x = CV_XF_A(b->x); ib.y = CV_YF_A(b->y);
+  ia.x = CV_XF_A(w, a->x); ia.y = CV_YF_A(w, a->y);
+  ib.x = CV_XF_A(w, b->x); ib.y = CV_YF_A(w, b->y);
 
-  rst__line(& ia, & ib);
+  rst__line(w, & ia, & ib);
 }
 
 /* NOME: rst__line
  * DESCRIZIONE: Rasterizza la linea congiungente i due punti *pa e *pb.
  * NOTA: Le coordinate dei punti sono coordinate assolute.
  */
-void rst__line(Point *pa, Point *pb) {
+void rst__line(BoxGWin *w, Point *pa, Point *pb) {
   Real ly;
 
   if (pa->y > pb->y) { register Point *tmp; tmp = pa; pa = pb; pb = tmp; }
@@ -431,10 +442,10 @@ void rst__line(Point *pa, Point *pb) {
     /* In tal caso ho solo un valore di y, oppure nessuno */
     Int y1, y2;
 
-    if ( (pb->y < GRP_AYMIN) || (pa->y > GRP_AYMAX) ) return;
+    if (pb->y < GRP_AYMIN(w) || pa->y > GRP_AYMAX(w)) return;
 
-    y1 = CV_MED_GT( CV_A_MED( pa->y ) );
-    y2 = CV_MED_LW( CV_A_MED( pb->y ) );
+    y1 = CV_MED_GT(CV_A_MED(pa->y));
+    y2 = CV_MED_LW(CV_A_MED(pb->y));
 
     if (y1 == y2) {
       /* Solo in questo caso la retta "si vede" */
@@ -442,7 +453,7 @@ void rst__line(Point *pa, Point *pb) {
 
       x = pa->x + ((((Real) y1) - pa->y)/ly)*(pb->x - pa->x);
 
-      MARK(y1, x);
+      MARK(w, y1, x);
     }
 
   } else {
@@ -451,32 +462,32 @@ void rst__line(Point *pa, Point *pb) {
     Real a, b, x;
 
     /* Esco in caso di linea non visibile (sopra o sotto) */
-    if ( (pb->y < GRP_AYMIN) || (pa->y > GRP_AYMAX) ) return;
+    if (pb->y < GRP_AYMIN(w) || pa->y > GRP_AYMAX(w)) return;
 
     a = (pb->x - pa->x)/ly;
     b = pa->x - pa->y * a;
 
-    if (pa->y < GRP_AYMIN)
-          y1 = GRP_IYMIN;
+    if (pa->y < GRP_AYMIN(w))
+          y1 = GRP_IYMIN(w);
         else
-      y1 = CV_MED_GT( CV_A_MED( pa->y ) );
+      y1 = CV_MED_GT(CV_A_MED(pa->y));
 
-    if (pb->y > GRP_AYMAX)
-      y2 = GRP_IYMAX;
+    if (pb->y > GRP_AYMAX(w))
+      y2 = GRP_IYMAX(w);
     else
-      y2 = CV_MED_LW( CV_A_MED( pb->y ) );
+      y2 = CV_MED_LW(CV_A_MED(pb->y));
 
     x = b + a*((Real) y1);
     for(y = y1; y <= y2; y++) {
 
-      MARK(y, x);
+      MARK(w, y, x);
 
       x += a;
     }
   }
 }
 
-/* NOME: rst_cong
+/* NOME: My_Add_Join_Path
  * DESCRIZIONE: Rasterizza una curva tipo "quarto di cerchio stirato".
  *  Dati 3 punti a, b, c questo tipo di curva e' un quarto di cerchio
  *  stirato lungo il parallelogramma che ha per vertici a, b, c (il quarto
@@ -485,24 +496,24 @@ void rst__line(Point *pa, Point *pb) {
  *  e curva finendo in c.
  * NOTA: Le coordinate dei punti sono coordinate relative.
  */
-static void rst_cong(Point *a, Point *b, Point *c) {
+static void My_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c) {
   Point ia, ib, ic;
-  ia.x = CV_XF_A(a->x);
-  ia.y = CV_YF_A(a->y);
-  ib.x = CV_XF_A(b->x);
-  ib.y = CV_YF_A(b->y);
-  ic.x = CV_XF_A(c->x);
-  ic.y = CV_YF_A(c->y);
+  ia.x = CV_XF_A(w, a->x);
+  ia.y = CV_YF_A(w, a->y);
+  ib.x = CV_XF_A(w, b->x);
+  ib.y = CV_YF_A(w, b->y);
+  ic.x = CV_XF_A(w, c->x);
+  ic.y = CV_YF_A(w, c->y);
 
-  rst__cong(& ia, & ib, & ic);
+  rst__cong(w, & ia, & ib, & ic);
 }
 
-static void rst_close(void) {return;}
+static void My_Close_Path(BoxGWin *w) {}
 
 /* NOME: rst__cong
- * DESCRIZIONE: Come rst_cong, ma utilizza coordinate assolute.
+ * DESCRIZIONE: Come My_Add_Join_Path, ma utilizza coordinate assolute.
  */
-void rst__cong(Point *pa, Point *pb, Point *pc) {
+void rst__cong(BoxGWin *w, Point *pa, Point *pb, Point *pc) {
   Int iymin, iymax, iy;
   Real ymin, ymax;
   Real v01x, v01y, v21x, v21y, v02x, v02y, h;
@@ -526,15 +537,15 @@ void rst__cong(Point *pa, Point *pb, Point *pc) {
     ymin = pc->y;
 
   /* Se l'intervallo sta sopra o sotto lo "schermo" e' come se non ci fosse */
-  if ( (ymax < GRP_AYMIN) || (ymin > GRP_AYMAX) ) return;
+  if (ymax < GRP_AYMIN(w) || ymin > GRP_AYMAX(w)) return;
 
   /* Devo per tagliare l'eventuale parte "invisibile" dell'intervallo */
-  if (ymin < GRP_AYMIN) ymin = GRP_AYMIN;
-  if (ymax > GRP_AYMAX) ymax = GRP_AYMAX;
+  if (ymin < GRP_AYMIN(w)) ymin = GRP_AYMIN(w);
+  if (ymax > GRP_AYMAX(w)) ymax = GRP_AYMAX(w);
 
   /* Ora converto le coordinate in coordinate intere */
-  iymin = CV_MED_GT( CV_A_MED( ymin ) );
-  iymax = CV_MED_LW( CV_A_MED( ymax ) );
+  iymin = CV_MED_GT(CV_A_MED(ymin));
+  iymax = CV_MED_LW(CV_A_MED(ymax));
 
   /* Calcolo i due vettori che descrivono il parallelogramma
    * in cui e' inserita la curva, diretti "fuori dall'origine".
@@ -560,7 +571,7 @@ void rst__cong(Point *pa, Point *pb, Point *pc) {
    */
   h = pow(v21x * v01y - v21y * v01x, 2.0)/(v02x*v02x + v02y*v02y);
   if (h < 0.01) {
-    rst__line( pa, pc );
+    rst__line(w, pa, pc);
     return;
   }
 
@@ -602,17 +613,17 @@ void rst__cong(Point *pa, Point *pb, Point *pc) {
         i2x -= rx; i2y -= ry;
         if ( (i2x >= 0.0) && (i2y >= 0.0) ) {
           x1 = pa->x + v01x*i2x + v21x*(i2y - 1.0);
-          MARK(iy, x1);
+          MARK(w, iy, x1);
         }
       } else {
         if ( ((i2x -= rx) < 0.0) || ((i2y -= ry) < 0.0) ) {
           x1 = pa->x + v01x*i1x + v21x*(i1y - 1.0);
-          MARK(iy, x1);
+          MARK(w, iy, x1);
         } else {
           x1 = pa->x + v01x*i1x + v21x*(i1y - 1.0);
           x2 = pa->x + v01x*i2x + v21x*(i2y - 1.0);
-          MARK(iy, x1);
-          MARK(iy, x2);
+          MARK(w, iy, x1);
+          MARK(w, iy, x2);
         }
       }
     }
@@ -625,10 +636,10 @@ void rst__cong(Point *pa, Point *pb, Point *pc) {
 
 /* NOME: rst_curve
  * DESCRIZIONE: Rasterizza una curva tipo "quarto di cerchio stirato".
- *  La procedura e' molto simile a rst_cong ma e' piu' generale.
+ *  La procedura e' molto simile a My_Add_Join_Path ma e' piu' generale.
  *  Infatti e' possibile specificare un ulteriore parametro cut, che chiamiamo
  *  parametro di taglio, che consente di "tagliare" la curva.
- *  Se questo e' 0 la rst_curve e' equivalente a rst_cong, mentre
+ *  Se questo e' 0 la rst_curve e' equivalente a My_Add_Join_Path, mentre
  *  man mano che esso si avvicina a 1 la curva si smorza sempre di piu'
  *  fino a trasformarsi nella retta che va dal punto a al c.
  *  Viceversa per cut negativi la curva aumenta la sua "spigolosita'"
@@ -636,22 +647,22 @@ void rst__cong(Point *pa, Point *pb, Point *pc) {
  *  i punti a, b e c.
  * NOTA: Le coordinate dei punti sono coordinate relative.
  */
-void rst_curve(Point *a, Point *b, Point *c, Real cut) {
+void rst_curve(BoxGWin *w, Point *a, Point *b, Point *c, Real cut) {
   Point ia, ib, ic;
-  ia.x = CV_XF_A(a->x);
-  ia.y = CV_YF_A(a->y);
-  ib.x = CV_XF_A(b->x);
-  ib.y = CV_YF_A(b->y);
-  ic.x = CV_XF_A(c->x);
-  ic.y = CV_YF_A(c->y);
+  ia.x = CV_XF_A(w, a->x);
+  ia.y = CV_YF_A(w, a->y);
+  ib.x = CV_XF_A(w, b->x);
+  ib.y = CV_YF_A(w, b->y);
+  ic.x = CV_XF_A(w, c->x);
+  ic.y = CV_YF_A(w, c->y);
 
-  rst__curve(& ia, & ib, & ic, cut);
+  rst__curve(w, & ia, & ib, & ic, cut);
 }
 
 /* NOME: rst__curve
  * DESCRIZIONE: Come rst_curve ma utilizza coordinate assolute.
  */
-void rst__curve(Point *pa, Point *pb, Point *pc, Real c) {
+void rst__curve(BoxGWin *w, Point *pa, Point *pb, Point *pc, Real c) {
   Real v10x, v10y, v12x, v12y;
   Point q[5], *pq;
 
@@ -680,8 +691,8 @@ void rst__curve(Point *pa, Point *pb, Point *pc, Real c) {
   q[2].y = (q[1].y + q[3].y)/2.0;
 
   pq = q;
-  rst__cong( pq, pq+1, pq+2 );
-  rst__cong( pq+3, pq+4, pq+5 );
+  rst__cong(w, pq, pq+1, pq+2);
+  rst__cong(w, pq+3, pq+4, pq+5);
 }
 
 /* DESCRIZIONE: Rasterizza una curva tipo "cerchio stirato" (cioe'
@@ -694,20 +705,21 @@ void rst__curve(Point *pa, Point *pb, Point *pc, Real c) {
  *  P(theta) e' il punto della curva corrispondente all'angolo theta, il quale
  *  varia tra 0 e 2 pigreco, va e vb sono i due vettori dati da:
  *   va = a - ctr  e  vb = b - ctr, dove a e b sono passati come argomenti
- *  a rst_circle.
+ *  a My_Add_Circle_Path.
  */
-static void rst_circle(Point *pctr, Point *pa, Point *pb) {
+static void My_Add_Circle_Path(BoxGWin *w,
+                               Point *pctr, Point *pa, Point *pb) {
   Point ctr, a, b;
   Int iy, y1, y2;
   Real xmin, xmax, ymin, ymax;
   Real C, C2, D, k1, k2, x, dx, y;
 
-  a.x = CV_XF_A(pa->x - pctr->x);
-  a.y = CV_YF_A(pa->y - pctr->y);
-  b.x = CV_XF_A(pb->x - pctr->x);
-  b.y = CV_YF_A(pb->y - pctr->y);
-  ctr.x = CV_XF_A(pctr->x);
-  ctr.y = CV_YF_A(pctr->y);
+  a.x = CV_XF_A(w, pa->x - pctr->x);
+  a.y = CV_YF_A(w, pa->y - pctr->y);
+  b.x = CV_XF_A(w, pb->x - pctr->x);
+  b.y = CV_YF_A(w, pb->y - pctr->y);
+  ctr.x = CV_XF_A(w, pctr->x);
+  ctr.y = CV_YF_A(w, pctr->y);
 
   C2 = a.y * a.y + b.y * b.y;
   C = sqrt(C2);
@@ -716,26 +728,26 @@ static void rst_circle(Point *pctr, Point *pa, Point *pb) {
   ymax = ctr.y + C;
 
   /* Esco in caso di cerchio non visibile */
-  if ( (ymax < GRP_AYMIN) || (ymin > GRP_AYMAX) ) return;
+  if (ymax < GRP_AYMIN(w) || ymin > GRP_AYMAX(w)) return;
 
   D = sqrt( a.x * a.x + b.x * b.x );
   xmin = ctr.x - D;
   xmax = ctr.x + D;
-  if ( (xmax < GRP_AXMIN) || (xmin > GRP_AXMAX) ) return;
+  if (xmax < GRP_AXMIN(w) || xmin > GRP_AXMAX(w)) return;
 
   k1 = ( a.x * a.y + b.x * b.y ) / C2;
   k2 = ( a.x * b.y - a.y * b.x ) / C2;
 
   /* Taglio le parti che escono sopra o sotto lo "schermo" */
-  if (ymin < GRP_AYMIN)
-    y1 = GRP_IYMIN;
+  if (ymin < GRP_AYMIN(w))
+    y1 = GRP_IYMIN(w);
   else
-    y1 = CV_MED_GT( CV_A_MED(ymin) );
+    y1 = CV_MED_GT(CV_A_MED(ymin));
 
-  if (ymax > GRP_AYMAX)
-    y2 = GRP_IYMAX;
+  if (ymax > GRP_AYMAX(w))
+    y2 = GRP_IYMAX(w);
   else
-    y2 = CV_MED_LW( CV_A_MED(ymax) );
+    y2 = CV_MED_LW(CV_A_MED(ymax));
 
   y = ((Real) y1) - ctr.y;
   x = ctr.x + y*k1;
@@ -743,8 +755,8 @@ static void rst_circle(Point *pctr, Point *pa, Point *pb) {
   for(iy = y1; iy <= y2; iy++) {
 
     dx = k2 * sqrt(C2 - y*y);
-    MARK(iy, x - dx);
-    MARK(iy, x + dx);
+    MARK(w, iy, x - dx);
+    MARK(w, iy, x + dx);
 
     x += k1;
     ++y;
@@ -755,7 +767,7 @@ static void rst_circle(Point *pctr, Point *pa, Point *pb) {
  * DESCRIZIONE: Rasterizza un poligono chiuso di n vertici:
  * p[0], p[1], ..., p[n-1] (punti espressi in coordinate assolute).
  */
-void rst__poly(Point *p, int n) {
+void rst__poly(BoxGWin *w, Point *p, int n) {
   int i;
   Point q;
 
@@ -769,17 +781,17 @@ void rst__poly(Point *p, int n) {
 
   for(i=1; i<n; i++) {
     Point *previous_p = p++;
-    rst__line(previous_p, p);
+    rst__line(w, previous_p, p);
   }
 
-  rst__line( & q, p );
+  rst__line(w, & q, p);
 }
 
 /* NOME: rst_poly
  * DESCRIZIONE: Rasterizza un poligono chiuso di n vertici:
  * p[0], p[1], ..., p[n-1]
  */
-void rst_poly(Point *p, int n) {
+void rst_poly(BoxGWin *w, Point *p, int n) {
   int i, j = 1;
   Point r, q[2];
 
@@ -788,18 +800,18 @@ void rst_poly(Point *p, int n) {
     return;
   }
 
-  r.x = q[0].x = CV_XF_A(p->x);
-  r.y = q[0].y = CV_YF_A(p->y);
+  r.x = q[0].x = CV_XF_A(w, p->x);
+  r.y = q[0].y = CV_YF_A(w, p->y);
 
   for(i=1; i<n; i++) {
     ++p;
-    q[j].x = CV_XF_A(p->x);
-    q[j].y = CV_YF_A(p->y);
-    rst__line( & q[0], & q[1] );
+    q[j].x = CV_XF_A(w, p->x);
+    q[j].y = CV_YF_A(w, p->y);
+    rst__line(w, & q[0], & q[1]);
     j ^= 1;
   }
 
-  rst__line( & r, & q[j ^ 1] );
+  rst__line(w, & r, & q[j ^ 1]);
 }
 
 /* DESCRIZIONE: Setta il colore di primo piano.
@@ -811,7 +823,7 @@ static void My_Fg_Color(BoxGWin *w, Color *c) {
   grp_color_build(c, & cb);
   newcol = grp_color_request(w->pal, & cb);
   if (newcol != NULL)
-    grp_set_col(newcol->index);
+    BoxGWin_Set_Color(w, newcol->index);
 }
 
 /* DESCRIZIONE: Setta il colore di sfondo.

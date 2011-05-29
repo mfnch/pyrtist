@@ -76,7 +76,7 @@ static void _place_text(Window *w) {
   dy.x = -dx->y; dy.y = dx->x;
   right.x = ctr->x + dx->x; right.y = ctr->y + dx->y;
   up.x    = ctr->x + dy.x;  up.y    = ctr->y + dy.y;
-  BoxGWin_Gen_Text_Path(grp_win, ctr, & right, & up, from, w->text.text);
+  BoxGWin_Add_Text_Path(w->window, ctr, & right, & up, from, w->text.text);
 }
 
 static Task _sentence_end(Window *w, int *wrote_text) {
@@ -84,15 +84,13 @@ static Task _sentence_end(Window *w, int *wrote_text) {
   if (wrote_text == (int *) NULL) wrote_text = & dummy;
   *wrote_text = 0;
   if (w->text.got.text && w->text.text != (char *) NULL) {
-    grp_window *cur_win = grp_win;
-    grp_win = w->window;
     if (w->text.got.color) {
       BoxGWin_Set_Fg_Color(w->window, & w->text.color);
       w->text.got.color = 0;
     }
 
     if (w->text.got.font && w->text.font != (char *) NULL) {
-      BoxGWin_Set_Font(grp_win, w->text.font);
+      BoxGWin_Set_Font(w->window, w->text.font);
 
     } else {
       if (w->text.got.font_size && !w->text.got.font_size)
@@ -102,7 +100,6 @@ static Task _sentence_end(Window *w, int *wrote_text) {
 
     _place_text(w);
     *wrote_text = 1;
-    grp_win = cur_win;
   }
 
   free(w->text.text); w->text.text = (char *) NULL;
@@ -118,12 +115,9 @@ Task window_text_end(VMProgram *vmp) {
   int wrote_text;
 
   TASK( _sentence_end(w, & wrote_text) );
-  if (wrote_text) {
-    grp_window *cur_win = grp_win;
-    grp_win = w->window;
-    (void) g_rdraw(& w->text.style, & w->text.default_style, DRAW_WHEN_END);
-    grp_win = cur_win;
-  }
+  if (wrote_text)
+    (void) BoxGWin_Draw_With_Style(w->window, & w->text.style,
+                                   & w->text.default_style, DRAW_WHEN_END);
 
   g_style_clear(& w->text.style);
   return Success;
@@ -134,12 +128,9 @@ Task window_text_pause(VMProgram *vmp) {
   int wrote_text;
 
   TASK( _sentence_end(w, & wrote_text) );
-  if (wrote_text) {
-    grp_window *cur_win = grp_win;
-    grp_win = w->window;
-    (void) g_rdraw(& w->text.style, & w->text.default_style, DRAW_WHEN_PAUSE);
-    grp_win = cur_win;
-  }
+  if (wrote_text)
+    (void) BoxGWin_Draw_With_Style(w->window, & w->text.style,
+                                   & w->text.default_style, DRAW_WHEN_PAUSE);
   return Success;
 }
 

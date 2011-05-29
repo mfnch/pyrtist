@@ -117,15 +117,13 @@ static Task _circle_draw(Window *w, DrawWhen when) {
     a.y = c.y;
     b.x = c.x;
 
-    grp_window *cur_win = grp_win;
-    grp_win = w->window;
-    grp_rcircle(& c, & a, & b);
+    BoxGWin_Add_Circle_Path(w->window, & c, & a, & b);
     if (w->circle.got.color) {
       BoxGWin_Set_Fg_Color(w->window, & w->circle.color);
       w->circle.got.color = 0;
     }
-    (void) g_rdraw(& w->circle.style, & w->circle.default_style, when);
-    grp_win = cur_win;
+    (void) BoxGWin_Draw_With_Style(w->window, & w->circle.style,
+                                   & w->circle.default_style, when);
 
     w->circle.got.center = (w->circle.got.center == GOT_NOT)
                            ? GOT_NOT : GOT_BEFORE;

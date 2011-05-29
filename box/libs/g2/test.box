@@ -9,6 +9,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 bbox1 = Point[.x=62.7481452312, .y=259.043341238]
 bbox2 = Point[.x=363.233694364, .y=11.6439931464]
@@ -19,9 +20,7 @@ p4 = Point[.x=278.697427778, .y=47.6396974596]
 p5 = Point[.x=89.7113261105, .y=155.580140275]
 p6 = Point[.x=259.842511111, .y=226.468228938]
 p7 = Point[.x=119.859038889, .y=109.338515224]
-p8 = Point[.x=-95.4517191358, .y=249.115293577]
-p9 = Point[.x=-77.4477973251, .y=250.40085598]
-p10 = Point[.x=-96.7352849794, .y=227.260732714]
+p8 = Point[.x=184.79354465, .y=69.7577179952]
 //!BOXER:REFPOINTS:END
 include "raw"
 include "poly"
@@ -31,8 +30,8 @@ include "text"
 w = Window[][
   .Show[bbox1, bbox2]
 
-  //Fill[Line[color.red, p5, p1, p2, p4, Close[]]]
-  //Line[color.black, p3, p6, p7, Close[]]
+  // Fill[Line[color.red, p5, p1, p2, p4, Close[]]]
+  // Line[color.black, p3, p6, p7, Close[]]
   [If[1]
      [If[0]
         \ .Poly[p7, p3, p6, color.red, Style[.Border[5, color.black]], .Close[]]
@@ -45,17 +44,10 @@ w = Window[][
       Else[]
         Circle[p4, 40, 20, color.red, Sty[Border[5, color.black]]]]]
 
+  Text[p8, "hello world", color.black, Font["sans", 20]]
 
-  Obj[Obj[g.raw.move_to, p10]
-      Obj[g.raw.line_to, p8]
-      Obj[g.raw.line_to, p9]
-      Obj[g.raw.new_path]]
 
-  Obj[Obj[g.raw.move_to, p7]
-      Obj[g.raw.ext_set_font, "sans"]
-      Obj[g.raw.ext_text_path, p8, p9, p10, Point[(0.0, 0.0)], "hello world"]
-      Obj[g.raw.set_source_rgba, 0.0, 0.0, 0.0, 1.0]
-      Obj[g.raw.fill]]
+
 ]
 
 GUI[w]

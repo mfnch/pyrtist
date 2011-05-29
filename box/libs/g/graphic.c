@@ -302,15 +302,16 @@ static unsigned long color_hash(palette *p, color *c) {
 
 /* NEW CODE */
 
-static int grp_draw_gpath_iterator(Int index, GPathPiece *piece, void *data) {
+static int My_Draw_GPath_Iterator(Int index, GPathPiece *piece, void *data) {
+  BoxGWin *w = (BoxGWin *) data;
   Point *p = & (piece->p[0]);
   switch(piece->kind) {
   case GPATHKIND_LINE:
-    grp_rline(& p[0], & p[1]);
+    BoxGWin_Add_Line_Path(w, & p[0], & p[1]);
     return 0;
 
   case GPATHKIND_ARC:
-    grp_rcong(& p[0], & p[1], & p[2]);
+    BoxGWin_Add_Join_Path(w, & p[0], & p[1], & p[2]);
     return 0;
 
   default:
@@ -318,8 +319,8 @@ static int grp_draw_gpath_iterator(Int index, GPathPiece *piece, void *data) {
   }
 }
 
-void grp_draw_gpath(GPath *gp) {
-  (void) gpath_iter(gp, grp_draw_gpath_iterator, (void *) NULL);
+void BoxGWin_Draw_GPath(BoxGWin *w, GPath *gp) {
+  (void) gpath_iter(gp, My_Draw_GPath_Iterator, w);
 }
 
 /****************************************************************************/
@@ -333,43 +334,67 @@ void grp_draw_gpath(GPath *gp) {
  * accidentali "segmentation fault").
  */
 
-static void dummy_err(const char *method) {
-  if (! grp_win->quiet) {
+static void My_Dummy_Report_Err(BoxGWin *w, const char *method) {
+  if (! w->quiet) {
     fprintf(stderr, "%s.%s: method is not implemented.\n",
-            grp_win->win_type_str, method);
+            w->win_type_str, method);
   }
 }
 
-static void dummy_rreset(void) {grp_win->_report_error("rreset");}
-static void dummy_rinit(void) {grp_win->_report_error("rinit");}
-static void dummy_rdraw(DrawStyle *style) {grp_win->_report_error("rdraw");}
-static void dummy_rline(Point *a, Point *b) {grp_win->_report_error("rline");}
-static void dummy_rcong(Point *a, Point *b, Point *c) {
-  grp_win->_report_error("rcong");
+static void My_Dummy_Create_Path(BoxGWin *w) {
+  w->_report_error(w, "rreset");
 }
-static void dummy_rclose(void) {grp_win->_report_error("rclose");}
-static void dummy_rcircle(Point *ctr, Point *a, Point *b) {
-  grp_win->_report_error("rcircle");
+
+static void My_Dummy_Begin_Drawing(BoxGWin *w) {
+  w->_report_error(w, "rinit");
 }
+
+static void My_Dummy_Draw_Path(BoxGWin *w, DrawStyle *style) {
+  w->_report_error(w, "rdraw");
+}
+
+static void My_Dummy_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
+  w->_report_error(w, "rline");
+}
+
+static void My_Dummy_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c) {
+  w->_report_error(w, "rcong");
+}
+
+static void My_Dummy_Close_Path(BoxGWin *w) {
+  w->_report_error(w, "rclose");
+}
+
+static void My_Dummy_Add_Circle_Path(BoxGWin *w,
+                                     Point *ctr, Point *a, Point *b) {
+  w->_report_error(w, "rcircle");
+}
+
 static void My_Dummy_Set_Fg_Color(BoxGWin *w, Color *c) {
-  grp_win->_report_error("rfgcolor");
+  w->_report_error(w, "rfgcolor");
 }
+
 static void My_Dummy_Set_Bg_Color(BoxGWin *w, Color *c) {
-  grp_win->_report_error("rbgcolor");
+  w->_report_error(w, "rbgcolor");
 }
+
 static void My_Dummy_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
-  w->_report_error("rgradient");
+  w->_report_error(w, "rgradient");
 }
-static void My_Dummy_Gen_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *right,
+
+static void My_Dummy_Add_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *right,
                                    BoxPoint *up, BoxPoint *from,
                                    const char *text) {
-  grp_win->_report_error("text");
+  w->_report_error(w, "text");
 }
+
 static void My_Dummy_Set_Font(BoxGWin *w, const char *font) {
-  grp_win->_report_error("font");
+  w->_report_error(w, "font");
 }
+
 static void My_Dummy_Add_Fake_Point(BoxGWin *w, Point *p) {}
-static int dummy_save(const char *file_name) {
+
+static int My_Dummy_Save_To_File(BoxGWin *w, const char *file_name) {
   /* If this function is not provided by the specific terminal, then
    * the window is probably a stream window. The best thing to do is then
    * to silently ignore the command.
@@ -383,46 +408,53 @@ static BoxTask My_NotImplem_Interpret(BoxGWin *w, BoxGObj *obj) {
   return BOXTASK_FAILURE;
 }
 
-void dummy_close_win(void) {grp_win->_report_error("close_win");}
-void dummy_set_col(int col) {grp_win->_report_error("set_col");}
-void dummy_draw_point(Int ptx, Int pty) {
-  grp_win->_report_error("draw_point");
+void My_Dummy_Finish_Drawing(BoxGWin *w) {
+  w->_report_error(w, "close_win");
 }
-void dummy_hor_line(Int y, Int x1, Int x2) {
-  grp_win->_report_error("hor_line");
+
+void My_Dummy_Set_Color(BoxGWin *w, int col) {
+  w->_report_error(w, "set_col");
+}
+
+void My_Dummy_Draw_Point(BoxGWin *w, Int ptx, Int pty) {
+  w->_report_error(w, "draw_point");
+}
+
+void My_Dummy_Draw_Hor_Line(BoxGWin *w, Int y, Int x1, Int x2) {
+  w->_report_error(w, "hor_line");
 }
 
 void BoxGWin_Block(BoxGWin *w) {
-  w->rreset = dummy_rreset;
-  w->rinit = dummy_rinit;
-  w->rdraw = dummy_rdraw;
-  w->rline = dummy_rline;
-  w->rcong = dummy_rcong;
-  w->rclose = dummy_rclose;
-  w->rcircle = dummy_rcircle;
+  w->create_path = My_Dummy_Create_Path;
+  w->begin_drawing = My_Dummy_Begin_Drawing;
+  w->draw_path = My_Dummy_Draw_Path;
+  w->add_line_path = My_Dummy_Add_Line_Path;
+  w->add_join_path = My_Dummy_Add_Join_Path;
+  w->close_path = My_Dummy_Close_Path;
+  w->add_circle_path = My_Dummy_Add_Circle_Path;
   w->set_fg_color = My_Dummy_Set_Fg_Color;
   w->set_bg_color = My_Dummy_Set_Bg_Color;
   w->set_gradient = My_Dummy_Set_Gradient;
-  w->gen_text_path = My_Dummy_Gen_Text_Path;
+  w->add_text_path = My_Dummy_Add_Text_Path;
   w->set_font = My_Dummy_Set_Font;
   w->add_fake_point = My_Dummy_Add_Fake_Point;
-  w->save = dummy_save;
+  w->save_to_file = My_Dummy_Save_To_File;
   w->interpret = My_NotImplem_Interpret;
 
-  w->close_win = dummy_close_win;
-  w->set_col = dummy_set_col;
-  w->draw_point = dummy_draw_point;
-  w->hor_line = dummy_hor_line;
+  w->finish_drawing = My_Dummy_Finish_Drawing;
+  w->set_color = My_Dummy_Set_Color;
+  w->draw_point = My_Dummy_Draw_Point;
+  w->draw_hor_line = My_Dummy_Draw_Hor_Line;
 
-  w->_report_error = dummy_err;
+  w->_report_error = My_Dummy_Report_Err;
 }
 
-void BoxGWin_Break(GrpWindow *w, GrpOnError on_error) {
+void BoxGWin_Break(BoxGWin *w, BoxGOnError on_error) {
   BoxGWin_Block(w);
-  w->_report_error = (on_error != (GrpOnError) NULL) ? on_error : dummy_err;
+  w->_report_error = (on_error != NULL) ? on_error : My_Dummy_Report_Err;
 }
 
-void Grp_Window_Repair(GrpWindow *w) {
+void Grp_Window_Repair(BoxGWin *w) {
   w->repair(w);
 }
 
@@ -434,36 +466,36 @@ typedef struct {
   char *msg;
 } GrpWindowErrData;
 
-static void Window_Error_Close(void) {
-  assert(grp_win->win_type_str == err_id_string);
-  free(grp_win->ptr);
-  free(grp_win);
+static void Window_Error_Close(BoxGWin *w) {
+  assert(w->win_type_str == err_id_string);
+  free(w->ptr);
+  free(w);
 }
 
-static void Window_Error_Report(const char *location) {
-  assert(grp_win->win_type_str == err_id_string);
-  GrpWindowErrData *d = (GrpWindowErrData *) grp_win->ptr;
-  if (! grp_win->quiet) {
+static void Window_Error_Report(BoxGWin *w, const char *location) {
+  assert(w->win_type_str == err_id_string);
+  GrpWindowErrData *d = (GrpWindowErrData *) w->ptr;
+  if (! w->quiet) {
     fprintf(d->out, "%s\n", d->msg);
-    grp_win->quiet = 1;
+    w->quiet = 1;
   }
 }
 
-static int Window_Error_Save(const char *file_name) {
-  grp_win->_report_error("save");
+static int My_Window_Error_Save(BoxGWin *w, const char *file_name) {
+  w->_report_error(w, "save");
   return 0;
 }
 
 /** Create a Window which displays the given error message, when someone
  * tries to use it. The error message is fprinted to the give stream.
  */
-GrpWindow *Grp_Window_Error(FILE *out, const char *msg) {
-  GrpWindow *w = (GrpWindow *) malloc(sizeof(GrpWindow));
+BoxGWin *Grp_Window_Error(FILE *out, const char *msg) {
+  BoxGWin *w = (BoxGWin *) malloc(sizeof(BoxGWin));
   GrpWindowErrData *d = (GrpWindowErrData *) malloc(sizeof(GrpWindowErrData));
   BoxGWin_Block(w);
   w->win_type_str = err_id_string;
-  w->save = Window_Error_Save;
-  w->close_win = Window_Error_Close;
+  w->save_to_file = My_Window_Error_Save;
+  w->finish_drawing = Window_Error_Close;
   w->_report_error = Window_Error_Report;
   w->quiet = 0;
 
@@ -473,43 +505,38 @@ GrpWindow *Grp_Window_Error(FILE *out, const char *msg) {
   return w;
 }
 
-int Grp_Window_Is_Error(GrpWindow *w) {
+int Grp_Window_Is_Error(BoxGWin *w) {
  return w->win_type_str == err_id_string;
 }
 
 /****************************************************************************/
 
-GrpWindow grp_dummy_win = {
+BoxGWin grp_dummy_win = {
   "blocked",
-  dummy_rreset,
-  dummy_rinit,
-  dummy_rdraw,
-  dummy_rline,
-  dummy_rcong,
-  dummy_rclose,
-  dummy_rcircle,
+  My_Dummy_Create_Path,
+  My_Dummy_Begin_Drawing,
+  My_Dummy_Draw_Path,
+  My_Dummy_Add_Line_Path,
+  My_Dummy_Add_Join_Path,
+  My_Dummy_Close_Path,
+  My_Dummy_Add_Circle_Path,
   My_Dummy_Set_Fg_Color,
   My_Dummy_Set_Bg_Color,
   My_Dummy_Set_Gradient,
   My_Dummy_Set_Font,
-  My_Dummy_Gen_Text_Path,
+  My_Dummy_Add_Text_Path,
   My_Dummy_Add_Fake_Point,
-  dummy_save,
+  My_Dummy_Save_To_File,
   My_NotImplem_Interpret,
   0, /* quiet */
-  dummy_close_win,
-  dummy_set_col,
-  dummy_draw_point,
-  dummy_hor_line,
+  My_Dummy_Finish_Drawing,
+  My_Dummy_Set_Color,
+  My_Dummy_Draw_Point,
+  My_Dummy_Draw_Hor_Line,
   BoxGWin_Block /* repair */
 };
 
-/* This is the current window pointer. By default it produces error messages
- * until it is set properly.
- */
-GrpWindow *grp_win = & grp_dummy_win;
-
-void Grp_Window_Make_Dummy(GrpWindow *w) {
+void Grp_Window_Make_Dummy(BoxGWin *w) {
   *w = grp_dummy_win;
 }
 
@@ -611,7 +638,7 @@ int Grp_Window_Type_From_String(const char *type_str) {
 /** Define a function which can create new windows of all
  * the different types.
  */
-GrpWindow *Grp_Window_Open(GrpWindowPlan *plan) {
+BoxGWin *Grp_Window_Open(GrpWindowPlan *plan) {
   int must_have = 0;
   WL win_lib;
   WT win_type;

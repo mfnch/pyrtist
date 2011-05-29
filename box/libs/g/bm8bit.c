@@ -42,12 +42,9 @@ typedef struct {
 } gr8b_wrdep;
 
 /* Procedure definite in questo file */
-grp_window *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
+BoxGWin *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
                           Real resx, Real resy);
-void gr8b_close_win(void);
-void gr8b_set_col(int col);
-void gr8b_draw_point(Int ptx, Int pty);
-void gr8b_hor_line(Int y, Int x1, Int x2);
+static void gr8b_repair(BoxGWin *wd);
 
 /* Questa macro restituisce il segno di un double
  * (1 se il numero e' positivo, -1 se e' negativo)
@@ -62,18 +59,6 @@ void gr8b_hor_line(Int y, Int x1, Int x2);
 /***************************************************************************************/
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
 
-/** Set the default methods to the gr1b window */
-static void gr8b_repair(GrpWindow *wd) {
-  grp_window_block(wd);
-  rst_repair(wd);
-  wd->save = grbm_save_to_bmp;
-
-  wd->close_win = gr8b_close_win;
-  wd->set_col = gr8b_set_col;
-  wd->draw_point = gr8b_draw_point;
-  wd->hor_line = gr8b_hor_line;
-}
-
 /* DESCRIZIONE: Apre una finestra grafica di forma rettangolare
  *  associando all'angolo in alto a sinistra le coordinate (ltx, lty)
  *  e all'angolo in basso a destra le coordinate (rdx, rdy).
@@ -87,20 +72,21 @@ static void gr8b_repair(GrpWindow *wd) {
  *  per la gestione della finestra stessa.
  *  In caso di errore invece restituisce 0.
  */
-grp_window *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
+BoxGWin *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
                           Real resx, Real resy) {
    void *winptr;
-   grp_window *wd;
+   BoxGWin *wd;
   long numptx, numpty, bytesperline, windim;
   Real lx, ly, versox, versoy;
 
-  if (
-   (wd = (grp_window *) malloc(sizeof(grp_window))) == NULL ) {
+  wd = (BoxGWin *) malloc(sizeof(BoxGWin));
+  if (wd == NULL ) {
     ERRORMSG("gr4b_open_win", "Memoria esaurita");
     return NULL;
   }
 
-  if ( (wd->wrdep = (gr8b_wrdep *) malloc(sizeof(gr8b_wrdep))) == NULL ) {
+  wd->wrdep = (gr8b_wrdep *) malloc(sizeof(gr8b_wrdep));
+  if (wd->wrdep == NULL) {
     ERRORMSG("gr4b_open_win", "Memoria esaurita");
     return NULL;
   }
@@ -201,34 +187,34 @@ grp_window *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
 /* DESCRIZIONE: Chiude una finestra grafica aperta in precedenza
  *  con la funzione gr8b_open_win.
  */
-void gr8b_close_win(void) {
-  free( grp_win->ptr );
-  free( grp_win->wrdep );
-  grp_palette_destroy( grp_win->pal );
-  free( grp_win );
+static void My_Finish_Drawing(BoxGWin *w) {
+  free(w->ptr);
+  free(w->wrdep );
+  grp_palette_destroy(w->pal);
+  free(w);
 }
 
 /***************************************************************************************/
 /* PROCEDURE DI GRAFICA ELEMENTARI
  */
 
-/* DESCRIZIONE: Disegna un punto in posizione (ptx, pty)
+/* Disegna un punto in posizione (ptx, pty)
  * (espressa in coordinate fisiche, cioe' numero riga, numero colonna)
  */
-void gr8b_draw_point(Int ptx, Int pty) {
+static void My_Draw_Point(BoxGWin *w, Int ptx, Int pty) {
   char *ptr;
 
-  if ((ptx < 0) || (ptx >= grp_win->numptx)) return;
-  if ((pty < 0) || (pty >= grp_win->numpty)) return;
+  if (   ptx < 0 || ptx >= w->numptx
+      || pty < 0 || pty >= w->numpty)
+    return;
 
-  ptr = grp_win->ptr + pty * grp_win->bytesperline + ptx;
+  ptr = w->ptr + pty * w->bytesperline + ptx;
 
-  *ptr &= WRDP(grp_win)->andmask;
-  *ptr ^= WRDP(grp_win)->xormask;
+  *ptr &= WRDP(w)->andmask;
+  *ptr ^= WRDP(w)->xormask;
 }
 
-/* DESCRIZIONE: Setta il colore di tracciatura.
- * Se il numero di colore specificato e' positivo viene usata la modalita'
+/* Se il numero di colore specificato e' positivo viene usata la modalita'
  * "colore ricoprente" (lo sfondo viene ricoperto dai nuovi disegni),
  * se e' negativo viene usata la modalita' xor ( i nuovi disegni si "combinano"
  * con quelli nello sfondo per dar luogo a nuovi colori).
@@ -236,21 +222,21 @@ void gr8b_draw_point(Int ptx, Int pty) {
  * viene utilizzato un colore "trasparente", cioe' le procedure di tracciatura
  * non hanno alcun effetto.
  */
-void gr8b_set_col(int col) {
-  if ( (col < -255) || (col > 255) ) {
-    WRDP(grp_win)->andmask = 0xff;
-    WRDP(grp_win)->xormask = 0x00;
+static void My_Set_Color(BoxGWin *w, int col) {
+  if (col < -255 || col > 255) {
+    WRDP(w)->andmask = 0xff;
+    WRDP(w)->xormask = 0x00;
     return;
   }
 
   if (col < 0) {
     col = -col;
-    WRDP(grp_win)->andmask = 0xff;
-    WRDP(grp_win)->xormask = col;
+    WRDP(w)->andmask = 0xff;
+    WRDP(w)->xormask = col;
 
   } else {
-    WRDP(grp_win)->andmask = 0x00;
-    WRDP(grp_win)->xormask = col;
+    WRDP(w)->andmask = 0x00;
+    WRDP(w)->xormask = col;
   }
 }
 
@@ -260,23 +246,35 @@ void gr8b_set_col(int col) {
 /* DESCRIZIONE: Scrive una linea sulla riga y, da colonna x1 a x2
  * (queste sono tutte coordinate intere).
  */
-void gr8b_hor_line(Int y, Int x1, Int x2) {
-  long lenght, i;
+static void My_Draw_Hor_Line(BoxGWin *w, Int y, Int x1, Int x2) {
+  long length, i;
   char *ptr;
 
   if (x1 < 0) x1 = 0;
-  if (x2 >= grp_win->numptx) x2 = grp_win->numptx - 1;
+  if (x2 >= w->numptx) x2 = w->numptx - 1;
 
-  if (
-   ( (lenght = x2 - x1 + 1) <= 0 ) || (y < 0) || (y >= grp_win->numpty) )
+  length = x2 - x1 + 1 <= 0;
+  if (length <= 0 || y < 0 || y >= w->numpty)
    return;
 
   /* Calcola l'indirizzo del byte che contiene il punto */
-  ptr = ((char *) grp_win->ptr) + (grp_win->bytesperline * y + x1);
+  ptr = ((char *) w->ptr) + (w->bytesperline * y + x1);
 
-  for (i = 0; i < lenght; i++) {
-    *ptr &= WRDP(grp_win)->andmask;
-    *ptr ^= WRDP(grp_win)->xormask;
+  for (i = 0; i < length; i++) {
+    *ptr &= WRDP(w)->andmask;
+    *ptr ^= WRDP(w)->xormask;
     ++ptr;
   }
+}
+
+/** Set the default methods to the gr1b window */
+static void gr8b_repair(BoxGWin *wd) {
+  BoxGWin_Block(wd);
+  rst_repair(wd);
+  wd->save_to_file = grbm_save_to_bmp;
+
+  wd->finish_drawing = My_Finish_Drawing;
+  wd->set_color = My_Set_Color;
+  wd->draw_point = My_Draw_Point;
+  wd->draw_hor_line = My_Draw_Hor_Line;
 }

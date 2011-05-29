@@ -259,7 +259,8 @@ void g_style_copy_selected(GStyle *dest, GStyle *src,
   }
 }
 
-int g_rdraw(GStyle *gs, GStyle *default_style, DrawWhen now) {
+int BoxGWin_Draw_With_Style(BoxGWin *w, GStyle *gs, GStyle *default_style,
+                            DrawWhen now) {
   DrawWhen *when = g_style_get_draw_when(gs, default_style),
            predef_when = DRAW_WHEN_PAUSE;
   FillStyle *fill_style = g_style_get_fill_style(gs, default_style),
@@ -300,7 +301,7 @@ int g_rdraw(GStyle *gs, GStyle *default_style, DrawWhen now) {
   style.bord_num_dashes = bord_num_dashes;
   style.bord_dashes = bord_dashes;
   style.bord_dash_offset = bord_dash_offset;
-  grp_rdraw(& style);
-  grp_rreset();
+  BoxGWin_Draw_Path(w, & style);
+  BoxGWin_Create_Path(w);
   return 1;
 }

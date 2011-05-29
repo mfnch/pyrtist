@@ -43,9 +43,10 @@ static Point lt_entered_first_pnt;
 static Real lt_entered_s;
 
 /* Procedure contenente gli algoritmi usati per tracciare le linee */
-static int lt_draw_opened(LineTracer *lt);
+static int lt_draw_opened(BoxGWin *w, LineTracer *lt);
 static int lt_draw_closed(LineTracer *lt);
-static int lt_put_to_begin_or_end(LineTracer *lt, Point *p1, Point *p2,
+static int lt_put_to_begin_or_end(BoxGWin *win,
+                                  LineTracer *lt, Point *p1, Point *p2,
                                   Real w, Real fw, void *f, int final);
 static int lt_put_to_join(LineTracer *lt, Point *p1, Point *p2, Point *p3,
                           Real w1, Real w2, Real fw, void *f, int first);
@@ -112,7 +113,7 @@ Int lt_num_pieces(LineTracer *lt) {
 
 /* DESCRIZIONE: Disegna la linea aperta i cui dati sono contenuti in line_desc.
  */
-static int lt_draw_opened(LineTracer *lt) {
+static int lt_draw_opened(BoxGWin *w, LineTracer *lt) {
   long numpnt, m;
   LinePiece *ip, *i, *in; /* p --> previous, n --> next */
 
@@ -133,7 +134,7 @@ static int lt_draw_opened(LineTracer *lt) {
 
   } else {
     /* Attenzione: in->width1 e' lo spessore uscente di i->pnt! */
-    if ( ! lt_put_to_begin_or_end(lt, & (i->point), & (in->point),
+    if ( ! lt_put_to_begin_or_end(w, lt, & (i->point), & (in->point),
                                   in->width1, in->arrow_scale, i->arrow, 0 ) )
       return 0;
   }
@@ -162,7 +163,7 @@ static int lt_draw_opened(LineTracer *lt) {
     lt_final_point(lt, & (in->point), in->width2 );
 
   } else {
-    if ( ! lt_put_to_begin_or_end(lt, & (in->point), & (i->point),
+    if ( ! lt_put_to_begin_or_end(w, lt, & (in->point), & (i->point),
                                   in->width1, in->arrow_scale, in->arrow, 1) )
       return 0;
   }
@@ -235,7 +236,7 @@ static int lt_draw_closed(LineTracer *lt) {
 }
 
 /** Traccia la linea e pulisce line_desc (i dati relativi). */
-int lt_draw(LineTracer *lt, int closed) {
+int lt_draw(BoxGWin *w, LineTracer *lt, int closed) {
 /*    FILE *f;*/
 
   if (closed) {
@@ -245,7 +246,7 @@ int lt_draw(LineTracer *lt, int closed) {
 
     gpath_append_gpath(lt->border[0], lt->border[1],
                       GPATH_INVERT | GPATH_JOIN | GPATH_CLOSE);
-    grp_draw_gpath(lt->border[0]);
+    BoxGWin_Draw_GPath(w, lt->border[0]);
 
     /*f = fopen("part0.dat", "w");
     gpath_print_points(lt->border[0], f);
@@ -256,14 +257,14 @@ int lt_draw(LineTracer *lt, int closed) {
     gpath_print_points(lt->border[1], stdout);*/
 
   } else {
-    if (!lt_draw_opened(lt)) return 0;
+    if (!lt_draw_opened(w, lt)) return 0;
     gpath_append_gpath(lt->border[0], lt->border[1],
                       GPATH_INVERT | GPATH_JOIN | GPATH_CLOSE);
     /*f = fopen("part.dat", "w");
     gpath_print_points(lt->border[0], f);
     fclose(f);*/
 
-    grp_draw_gpath(lt->border[0]);
+    BoxGWin_Draw_GPath(w, lt->border[0]);
     /*gpath_print_points(lt->border[0], stdout);*/
 /*    printf("---\nBORDER 1+2\n");
     gpath_print(lt->border[0], stdout);*/
@@ -291,7 +292,8 @@ int lt_draw(LineTracer *lt, int closed) {
  *  Se i punti non sono 3, ma solo 1 (f1), allora verra' assunto f2=f3=(0, 0).
  *  Se i punti sono solo 2, verra' assunto f3=(0, 0).
  */
-static int lt_put_to_begin_or_end(LineTracer *lt, Point *p1, Point *p2,
+static int lt_put_to_begin_or_end(BoxGWin *win,
+                                  LineTracer *lt, Point *p1, Point *p2,
                                   Real w, Real fig_w, void *f, int final) {
   long num_hp;
   Real rot_angle = 0.0, scale_x = 1.0, scale_y = 1.0;
@@ -385,7 +387,7 @@ static int lt_put_to_begin_or_end(LineTracer *lt, Point *p1, Point *p2,
   /* Calcolo dove vanno a finire pfi[0] = f3 e pfi[1] = f5,
    * quando trasformo la figura
    */
-  if ( num_hp < 3 )
+  if (num_hp < 3)
     pfi = (Point) {0.0, 0.0};
   else
     pfi = pnt[2];
@@ -393,10 +395,10 @@ static int lt_put_to_begin_or_end(LineTracer *lt, Point *p1, Point *p2,
   Grp_Matrix_Mul_Point(& m, & pfi, 1);
 
   /* Disegno l'oggetto */
-  Fig_Draw_Fig_With_Matrix(fw->window, & m);
+  BoxGWin_Fig_Draw_Fig_With_Matrix(win, fw->window, & m);
 
   /* Continuo a disegnare le linee */
-  if ( final )
+  if (final)
     lt_final_point(lt, & pfi, w );
   else
     lt_first_point(lt, & pfi, w );

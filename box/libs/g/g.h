@@ -254,7 +254,8 @@ Real g_style_get_bord_dash_offset(GStyle *gs, GStyle *default_style);
 /** Draw following the style 'gs' and only if 'now' is allowed
  * by the DrawWhen value set in 'gs'.
  */
-int g_rdraw(GStyle *gs, GStyle *deafult_style, DrawWhen now);
+int BoxGWin_Draw_With_Style(BoxGWin *w, GStyle *gs, GStyle *deafult_style,
+                            DrawWhen now);
 
 /** Copy the attributes specified in the array sel from 'src' to 'dest'. */
 void g_style_copy_selected(GStyle *dest, GStyle *src,

@@ -17,8 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#ifndef _GPATH_H
-#  define _GPATH_H
+#ifndef _BOX_LIBG_GPATH_H
+#  define _BOX_LIBG_GPATH_H
 
 #  include <stdio.h>
 

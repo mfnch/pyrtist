@@ -75,7 +75,7 @@ Int lt_num_pieces(LineTracer *lt);
 
 void lt_clear(LineTracer *lt);
 
-int lt_draw(LineTracer *lt, int closed);
+int lt_draw(BoxGWin *w, LineTracer *lt, int closed);
 
 void lt_join_style_from_array(LineJoinStyle *ljs,
                               Real ti, Real te, Real ni, Real ne);

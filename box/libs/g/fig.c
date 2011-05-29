@@ -45,8 +45,6 @@
 #include <box/array.h>
 #include "obj.h"
 
-/*#define grp_activelayer (((struct fig_header *) grp_win->wrdep)->current)*/
-
 /* Dimensione iniziale di un layer in bytes = dimensione iniziale dello spazio
  * in cui vengono memorizzate le istruzioni di ciascun layer
  */
@@ -229,17 +227,17 @@ static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj) {
   return BOXTASK_OK;
 }
 
-void fig_rreset(void) {
+void My_Fig_Create_Path(BoxGWin *w) {
   CmndArg args[] = {{0, (void *) NULL}};
-  My_Fig_Push_Commands(grp_win, ID_rreset, args);
+  My_Fig_Push_Commands(w, ID_rreset, args);
 }
 
-void fig_rinit(void) {
+void My_Fig_Begin_Drawing(BoxGWin *w) {
   CmndArg args[] = {{0, (void *) NULL}};
-  My_Fig_Push_Commands(grp_win, ID_rinit, args);
+  My_Fig_Push_Commands(w, ID_rinit, args);
 }
 
-void fig_rdraw(DrawStyle *style) {
+void My_Fig_Draw_Path(BoxGWin *w, DrawStyle *style) {
   CmndArg args[] = {{sizeof(DrawStyle), style},
                     {0, (void *) NULL},
                     {0, (void *) NULL}};
@@ -247,35 +245,35 @@ void fig_rdraw(DrawStyle *style) {
     args[1].arg_data_size = sizeof(Real)*style->bord_num_dashes;
     args[1].arg_data = style->bord_dashes;
   }
-  My_Fig_Push_Commands(grp_win, ID_rdraw, args);
+  My_Fig_Push_Commands(w, ID_rdraw, args);
 }
 
-void fig_rline(Point *a, Point *b) {
+void My_Fig_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
   CmndArg args[] = {{sizeof(Point), a},
                     {sizeof(Point), b},
                     {0, (void *) NULL}};
-  My_Fig_Push_Commands(grp_win, ID_rline, args);
+  My_Fig_Push_Commands(w, ID_rline, args);
 }
 
-void fig_rcong(Point *a, Point *b, Point *c) {
+void My_Fig_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c) {
   CmndArg args[] = {{sizeof(Point), a},
                     {sizeof(Point), b},
                     {sizeof(Point), c},
                     {0, (void *) NULL}};
-  My_Fig_Push_Commands(grp_win, ID_rcong, args);
+  My_Fig_Push_Commands(w, ID_rcong, args);
 }
 
-void fig_rclose(void) {
+void My_Fig_Close_Path(BoxGWin *w) {
   CmndArg args[] = {{0, (void *) NULL}};
-  My_Fig_Push_Commands(grp_win, ID_rclose, args);
+  My_Fig_Push_Commands(w, ID_rclose, args);
 }
 
-void fig_rcircle(Point *ctr, Point *a, Point *b) {
+void My_Fig_Circle_Path(BoxGWin *w, Point *ctr, Point *a, Point *b) {
   CmndArg args[] = {{sizeof(Point), ctr},
                     {sizeof(Point), a},
                     {sizeof(Point), b},
                     {0, (void *) NULL}};
-  My_Fig_Push_Commands(grp_win, ID_rcircle, args);
+  My_Fig_Push_Commands(w, ID_rcircle, args);
 }
 
 void My_Fig_Set_Fg_Color(BoxGWin *w, Color *c) {
@@ -293,7 +291,7 @@ typedef struct {
   Int text_size;
 } Arg4Text;
 
-static void My_Fig_Gen_Text_Path(BoxGWin *w,
+static void My_Fig_Add_Text_Path(BoxGWin *w,
                                  Point *ctr, Point *right, Point *up,
                                  Point *from, const char *text) {
   Int text_size = strlen(text);
@@ -319,8 +317,7 @@ static void My_Fig_Fake_Point(BoxGWin *w, Point *p) {
   My_Fig_Push_Commands(w, ID_fake_point, args);
 }
 
-static void My_Fig_Close_Win(void) {
-  BoxGWin *w = grp_win;
+static void My_Fig_Finish_Drawing(BoxGWin *w) {
   FigHeader *fh = (FigHeader *) w->wrdep;
   LayerHeader *lh = (LayerHeader *) BoxArr_First_Item_Ptr(& fh->layerlist);
   size_t i, n = BoxArr_Num_Items(& fh->layerlist);
@@ -344,7 +341,7 @@ static void My_Fig_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
   My_Fig_Push_Commands(w, ID_rgradient, args);
 }
 
-static int My_Fig_Save(const char *file_name) {
+static int My_Fig_Save_To_File(BoxGWin *w, const char *file_name) {
   char *out_type = "eps";
   GrpWindowPlan plan;
 
@@ -372,28 +369,28 @@ static int My_Fig_Save(const char *file_name) {
   plan.resolution.x = plan.resolution.y = 100.0/grp_mmperinch; /* ~ 100 dpi */
   plan.have.resolution = 1;
   plan.have.num_layers = 0;
-  return fig_save_fig(grp_win, & plan);
+  return BoxGWin_Fig_Save_Fig(w, & plan);
 }
 
 /** Set the default methods to the gr1b window */
-static void My_Fig_Repair(GrpWindow *w) {
+static void My_Fig_Repair(BoxGWin *w) {
   BoxGWin_Block(w);
-  w->rreset = fig_rreset;
-  w->rinit = fig_rinit;
-  w->rdraw = fig_rdraw;
-  w->rline = fig_rline;
-  w->rcong = fig_rcong;
-  w->rclose = fig_rclose;
-  w->rcircle = fig_rcircle;
+  w->create_path = My_Fig_Create_Path;
+  w->begin_drawing = My_Fig_Begin_Drawing;
+  w->draw_path = My_Fig_Draw_Path;
+  w->add_line_path = My_Fig_Add_Line_Path;
+  w->add_join_path = My_Fig_Add_Join_Path;
+  w->close_path = My_Fig_Close_Path;
+  w->add_circle_path = My_Fig_Circle_Path;
   w->set_fg_color = My_Fig_Set_Fg_Color;
   w->set_bg_color = My_Fig_Set_Bg_Color;
   w->set_gradient = My_Fig_Set_Gradient;
-  w->gen_text_path = My_Fig_Gen_Text_Path;
+  w->add_text_path = My_Fig_Add_Text_Path;
   w->set_font = My_Fig_Set_Font;
   w->add_fake_point = My_Fig_Fake_Point;
-  w->save = My_Fig_Save;
+  w->save_to_file = My_Fig_Save_To_File;
   w->interpret = My_Fig_Interpret;
-  w->close_win = My_Fig_Close_Win;
+  w->finish_drawing = My_Fig_Finish_Drawing;
 }
 
 /****************************************************************************/
@@ -475,15 +472,15 @@ BoxGWin *fig_open_win(int numlayers) {
 /* DESCRIZIONE: Elimina un layer con tutto il suo contenuto.
  *  l e' il numero del layer da distruggere.
  */
-int fig_destroy_layer(int l) {
-  FigHeader *figh = (FigHeader *) grp_win->wrdep;
+int BoxGWin_Fig_Destroy_Layer(BoxGWin *w, int l) {
+  FigHeader *figh = (FigHeader *) w->wrdep;
   BoxArr *laylist = & figh->layerlist;
   LayerHeader *flayh = BoxArr_First_Item_Ptr(laylist),
               *llayh, *layh;
   int p, n;
 
   if (figh->numlayers < 2) {
-    ERRORMSG("fig_destroy_layer", "Figura senza layers");
+    ERRORMSG("BoxGWin_Fig_Destroy_Layer", "Figura senza layers");
     return 0;
   }
 
@@ -527,9 +524,9 @@ int fig_destroy_layer(int l) {
   /* Aggiorno i dati sulla figura */
   --figh->numlayers;
   if (figh->current == l) {
-    WARNINGMSG("fig_destroy_layer",
+    WARNINGMSG("BoxGWin_Fig_Destroy_Layer",
                "Layer attivo distrutto: nuovo layer attivo = 1");
-    fig_select_layer(1);
+    BoxGWin_Fig_Select_Layer(w, 1);
   }
 
   return 1;
@@ -538,8 +535,8 @@ int fig_destroy_layer(int l) {
 /* DESCRIZIONE: Crea un nuovo layer vuoto e ne restituisce il numero
  *  identificativo (> 0) o 0 in caso di errore.
  */
-int fig_new_layer(void) {
-  FigHeader *figh = (FigHeader *) grp_win->wrdep;
+int BoxGWin_Fig_New_Layer(BoxGWin *w) {
+  FigHeader *figh = (FigHeader *) w->wrdep;
   LayerHeader *flayh, *llayh, *layh;
   BoxArr *laylist = & figh->layerlist;
   int l;
@@ -553,7 +550,7 @@ int fig_new_layer(void) {
     /* BoxArr_Push may change the pointer to the list of layer: need
      * to update the pointer to the current layer.
      */
-    fig_select_layer(figh->current);
+    BoxGWin_Fig_Select_Layer(w, figh->current);
 
   } else {
     /* Esiste un posto vuoto: lo occupo! */
@@ -564,7 +561,7 @@ int fig_new_layer(void) {
 
     /* Verifica che si tratta di un header libero */
     if (llayh->ID != FIGLAYER_ID_FREE) {
-      ERRORMSG("fig_new_layer", "Errore interno (bad layer ID, 1)");
+      ERRORMSG("BoxGWin_Fig_New_Layer", "Errore interno (bad layer ID, 1)");
       return 0;
     }
     /* Ora posso prendermelo! */
@@ -589,15 +586,15 @@ int fig_new_layer(void) {
 }
 
 /* DESCRIZIONE: Seleziona il layer l: fino alla prossima istruzione
- * fig_select_layer, i comandi grafici saranno inviati a quel layer.
+ * BoxGWin_Fig_Select_Layer, i comandi grafici saranno inviati a quel layer.
  */
-void fig_select_layer(int l) {
+void BoxGWin_Fig_Select_Layer(BoxGWin *w, int l) {
   BoxArr *laylist;
   FigHeader *figh;
   LayerHeader *layh;
 
   /* Trovo l'header della figura attualmente attiva */
-  figh = (FigHeader *) grp_win->wrdep;
+  figh = (FigHeader *) w->wrdep;
 
   /* Setto il layer attivo a l */
   l = CIRCULAR_INDEX(figh->numlayers, l);
@@ -606,19 +603,19 @@ void fig_select_layer(int l) {
   /* Trovo l'header del layer l */
   laylist = & figh->layerlist;
   layh = BoxArr_First_Item_Ptr(laylist) + l - 1;
-  /* Per convenzione grp_win->ptr punta a tale header: lo setto! */
-  grp_win->ptr = layh;
+  /* Per convenzione w->ptr punta a tale header: lo setto! */
+  w->ptr = layh;
 }
 
 /* DESCRIZIONE: Pulisce il contenuto del layer l.
  */
-void fig_clear_layer(int l) {
+void BoxGWin_Fig_Clear_Layer(BoxGWin *w, int l) {
   BoxArr *laylist;
   FigHeader *figh;
   LayerHeader *layh;
 
   /* Trovo l'header della figura attualmente attiva */
-  figh = (FigHeader *) grp_win->wrdep;
+  figh = (FigHeader *) w->wrdep;
 
   /* Trovo l'header del layer l */
   l = CIRCULAR_INDEX(figh->numlayers, l);
@@ -630,7 +627,7 @@ void fig_clear_layer(int l) {
   BoxArr_Clear(& layh->layer);
 
   if ( figh->current == l )
-    fig_select_layer(l);
+    BoxGWin_Fig_Select_Layer(w, l);
 }
 
 /***************************************************************************************/
@@ -686,11 +683,11 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
 
   switch (cmnd_header->ID) {
   case ID_rreset:
-    grp_rreset();
+    BoxGWin_Create_Path(w);
     return BOXTASK_OK;
 
   case ID_rinit:
-    grp_rinit();
+    BoxGWin_Begin_Drawing(w);
     return BOXTASK_OK;
 
   case ID_rdraw:
@@ -698,7 +695,7 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
       (Real *) (cmnd_data + sizeof(DrawStyle));
     tr = ((DrawStyle *) cmnd_data)->scale;
     ((DrawStyle *) cmnd_data)->scale *= Fig_Transform_Factor(0.0);
-    grp_rdraw((DrawStyle *) cmnd_data);
+    BoxGWin_Draw_Path(w, (DrawStyle *) cmnd_data);
     ((DrawStyle *) cmnd_data)->scale = tr;
     return BOXTASK_OK;
 
@@ -706,7 +703,7 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
     tp[0] = *((Point *) cmnd_data);
     tp[1] = *((Point *) (cmnd_data + sizeof(Point)));
     Fig_Transform_Point(tp, 2);
-    grp_rline(& tp[0], & tp[1]);
+    BoxGWin_Add_Line_Path(w, & tp[0], & tp[1]);
     return BOXTASK_OK;
 
   case ID_rcong:
@@ -714,11 +711,11 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
     tp[1] = *((Point *) (cmnd_data + sizeof(Point)));
     tp[2] = *((Point *) (cmnd_data + 2*sizeof(Point)));
     Fig_Transform_Point(tp, 3);
-    grp_rcong(& tp[0], & tp[1], & tp[2]);
+    BoxGWin_Add_Join_Path(w, & tp[0], & tp[1], & tp[2]);
     return BOXTASK_OK;
 
   case ID_rclose:
-    grp_rclose();
+    BoxGWin_Close_Path(w);
     return BOXTASK_OK;
 
   case ID_rcircle:
@@ -726,15 +723,15 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
     tp[1] = *((Point *) (cmnd_data + sizeof(Point)));
     tp[2] = *((Point *) (cmnd_data + 2*sizeof(Point)));
     Fig_Transform_Point(tp, 3);
-    grp_rcircle(& tp[0], & tp[1], & tp[2]);
+    BoxGWin_Add_Circle_Path(w, & tp[0], & tp[1], & tp[2]);
     return BOXTASK_OK;
 
   case ID_rfgcolor:
-    BoxGWin_Set_Fg_Color(grp_win, (Color *) cmnd_data);
+    BoxGWin_Set_Fg_Color(w, (Color *) cmnd_data);
     return BOXTASK_OK;
 
   case ID_rbgcolor:
-    BoxGWin_Set_Bg_Color(grp_win, (Color *) cmnd_data);
+    BoxGWin_Set_Bg_Color(w, (Color *) cmnd_data);
     return BOXTASK_OK;
 
   case ID_rgradient:
@@ -744,7 +741,7 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
     Fig_Transform_Point(& cg.point2, 1);
     Fig_Transform_Point(& cg.ref1, 1);
     Fig_Transform_Point(& cg.ref2, 1);
-    BoxGWin_Set_Gradient(grp_win, & cg);
+    BoxGWin_Set_Gradient(w, & cg);
     return BOXTASK_OK;
 
   case ID_text:
@@ -757,7 +754,7 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
           Fig_Transform_Point(& arg.ctr, 1);
           Fig_Transform_Point(& arg.right, 1);
           Fig_Transform_Point(& arg.up, 1);
-          BoxGWin_Gen_Text_Path(grp_win, & arg.ctr, & arg.right, & arg.up,
+          BoxGWin_Add_Text_Path(w, & arg.ctr, & arg.right, & arg.up,
                                 & arg.from, str);
         } else {
           g_warning("Fig_Draw_Layer: Ignoring text command (bad str)!");
@@ -775,7 +772,7 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
       char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
       if (str_size + sizeof(Int) <= cmnd_header->size) {
         if (*((char *) ptr) == '\0') {
-          BoxGWin_Set_Font(grp_win, str);
+          BoxGWin_Set_Font(w, str);
         } else {
           g_warning("Fig_Draw_Layer: Ignoring font command (bad str) 1!");
         }
@@ -789,7 +786,7 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
     {
       Point p = *((Point *) cmnd_data);
       Fig_Transform_Point(& p, 1);
-      BoxGWin_Add_Fake_Point(grp_win, & p);
+      BoxGWin_Add_Fake_Point(w, & p);
     }
     return BOXTASK_OK;
 
@@ -812,17 +809,14 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
  *  senza controllare questa eventualita'! (problema   R I M O S S O !))
  */
 void BoxGWin_Fig_Draw_Layer(BoxGWin *dest, BoxGWin *src, int l) {
-  BoxGWin *save = grp_win;
-  grp_win = dest;
   (void) BoxGWin_Fig_Iterate_Over_Layer(src, l, My_Fig_Draw_Layer_Iter, dest);
-  grp_win = save;
 }
 
 /* DESCRIZIONE: Disegna la figura source sulla finestra grafica attualmente
  *  in uso. I layer vengono disegnati uno dietro l'altro con Fig_Draw_Layer
  *  a partire dal "layer bottom", fino ad arrivare al "layer top".
  */
-static void _Fig_Draw_Fig(GrpWindow *source) {
+static void My_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *source) {
   FigHeader *figh;
   LayerHeader *layh;
   BoxArr *laylist;
@@ -840,7 +834,7 @@ static void _Fig_Draw_Fig(GrpWindow *source) {
 
   for (nl = figh->numlayers; nl > 0; nl--) {
     /* Disegno il layer cl */
-    BoxGWin_Fig_Draw_Layer(grp_win, source, cl);
+    BoxGWin_Fig_Draw_Layer(dest, source, cl);
 
     /* Ora passo a quello successivo che lo ricopre */
     /* Trovo l'header del layer cl */
@@ -854,33 +848,34 @@ static void _Fig_Draw_Fig(GrpWindow *source) {
   }
 }
 
-void Fig_Draw_Fig_With_Matrix(GrpWindow *src, Matrix *m) {
+void BoxGWin_Fig_Draw_Fig_With_Matrix(BoxGWin *dest, BoxGWin *src,
+                                      Matrix *m) {
   Matrix save_matrix = fig_matrix;
   fig_matrix = *m;
-  _Fig_Draw_Fig(src);
+  My_Fig_Draw_Fig(dest, src);
   fig_matrix = save_matrix;
 }
 
-void Fig_Draw_Fig(GrpWindow *src) {
+void BoxGWin_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *src) {
   Matrix save_matrix = fig_matrix;
   Grp_Matrix_Set_Identity(& fig_matrix);
-  _Fig_Draw_Fig(src);
+  My_Fig_Draw_Fig(dest, src);
   fig_matrix = save_matrix;
 }
 
-int fig_save_fig(GrpWindow *figure, GrpWindowPlan *plan) {
+int BoxGWin_Fig_Save_Fig(BoxGWin *src, GrpWindowPlan *plan) {
   Point translation, center;
   Real sx, sy, rot_angle;
-  GrpWindow *cur_win = grp_win;
+  BoxGWin *dest;
 
-  if (!plan->have.file_name || plan->file_name == (char *) NULL) {
+  if (!plan->have.file_name || plan->file_name == NULL) {
     g_error("To save the \"fig\" Window you need to provide a filename!");
     return 0;
   }
 
   if (!(plan->have.size && plan->have.origin)) {
     Point bb_min, bb_max;
-    if (!bb_bounding_box(figure, & bb_min, & bb_max)) {
+    if (!bb_bounding_box(src, & bb_min, & bb_max)) {
       g_warning("Computed bounding box is degenerate: "
                 "cannot save the figure!");
       return 0;
@@ -905,17 +900,15 @@ int fig_save_fig(GrpWindow *figure, GrpWindowPlan *plan) {
   plan->origin.x = 0.0;
   plan->origin.y = 0.0;
   plan->have.origin = 1;
-  grp_win = Grp_Window_Open(plan);
-  if (grp_win != (GrpWindow *) NULL) {
+  dest = Grp_Window_Open(plan);
+  if (dest != NULL) {
     Matrix m;
     Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);
-    Fig_Draw_Fig_With_Matrix(figure, & m);
-    grp_save(plan->file_name); /* Some terminals require an explicit save! */
-    grp_close_win();
-    grp_win = cur_win;
+    BoxGWin_Fig_Draw_Fig_With_Matrix(dest, src, & m);
+    BoxGWin_Save_To_File(dest, plan->file_name); /* Some terminals require an explicit save! */
+    BoxGWin_Finish_Drawing(dest);
     return 1;
   }
 
-  grp_win = cur_win;
   return 0;
 }

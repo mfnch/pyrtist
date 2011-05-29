@@ -46,6 +46,7 @@ Poly@Path[
   .empty = first_point
 ]
 
+///Intro: pass the polygon to the window for drawing.
 Poly@Window[
   path = Path[$]
   If[!path.empty]
@@ -56,4 +57,5 @@ Poly@Window[
 ///Intro: close a polygon.
 Close = ++Void
 
+///Intro: close the polygon.
 Close@Poly[.close = 1]

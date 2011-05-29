@@ -38,13 +38,9 @@ static void My_Got_Point(BoxGWin *w, Real x, Real y) {
   Grp_BB_Must_Contain(& bb_local, & p);
 }
 
-static void got_point(Real x, Real y) {
-  My_Got_Point(grp_win, x, y);
-}
+static void My_BB_Finish_Drawing(BoxGWin *w) {}
 
-static void bb_close_win(void) {return;}
-
-static void bb_rdraw(DrawStyle *style) {
+static void My_BB_Draw_Path(BoxGWin *w, DrawStyle *style) {
   int do_border = (style->bord_width > 0.0);
   Real scale = style->scale;
   if (do_border)
@@ -54,22 +50,22 @@ static void bb_rdraw(DrawStyle *style) {
   Grp_BB_Init(& bb_local);
 }
 
-static void bb_rline(Point *a, Point *b) {
+static void My_BB_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
 #ifdef DEBUG
   printf("line\n");
 #endif
-  got_point(a->x, a->y); got_point(b->x, b->y);
+  My_Got_Point(w, a->x, a->y); My_Got_Point(w, b->x, b->y);
 }
 
-static void bb_rcong(Point *a, Point *b, Point *c) {
+static void My_BB_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c) {
 #ifdef DEBUG
   printf("cong\n");
 #endif
-  got_point(a->x, a->y); got_point(b->x, b->y);
-  got_point(c->x, c->y); got_point(a->x + c->x - b->x, a->y + c->y - b->y);
+  My_Got_Point(w, a->x, a->y); My_Got_Point(w, b->x, b->y);
+  My_Got_Point(w, c->x, c->y); My_Got_Point(w, a->x + c->x - b->x, a->y + c->y - b->y);
 }
 
-static void bb_rcircle(Point *ctr, Point *a, Point *b) {
+static void My_BB_Add_Circle_Path(BoxGWin *w, Point *ctr, Point *a, Point *b) {
   Point va, vb;
 #ifdef DEBUG
   printf("circle\n");
@@ -77,14 +73,14 @@ static void bb_rcircle(Point *ctr, Point *a, Point *b) {
   va.x = a->x - ctr->x; va.y = a->y - ctr->y;
   vb.x = b->x - ctr->x; vb.y = b->y - ctr->y;
 
-  got_point(a->x + vb.x, a->y + vb.y);
-  got_point(a->x - vb.x, a->y - vb.y);
-  got_point(ctr->x - va.x - vb.x, ctr->y - va.y - vb.y);
-  got_point(ctr->x - va.x + vb.x, ctr->y - va.y + vb.y);
+  My_Got_Point(w, a->x + vb.x, a->y + vb.y);
+  My_Got_Point(w, a->x - vb.x, a->y - vb.y);
+  My_Got_Point(w, ctr->x - va.x - vb.x, ctr->y - va.y - vb.y);
+  My_Got_Point(w, ctr->x - va.x + vb.x, ctr->y - va.y + vb.y);
 
 }
 
-static void My_BB_Gen_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *left,
+static void My_BB_Add_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *left,
                                 BoxPoint *up, BoxPoint *from,
                                 const char *text) {
   My_Got_Point(w, ctr->x, ctr->y);
@@ -97,20 +93,20 @@ static void My_BB_Add_Fake_Point(BoxGWin *w, Point *p) {
 }
 
 /** Set the default methods to the bb window */
-static void bb_repair(GrpWindow *w) {
-  grp_window_block(w);
-  w->rdraw = bb_rdraw;
-  w->rline = bb_rline;
-  w->rcong = bb_rcong;
-  w->rcircle = bb_rcircle;
-  w->gen_text_path = My_BB_Gen_Text_Path;
+static void bb_repair(BoxGWin *w) {
+  BoxGWin_Block(w);
+  w->draw_path = My_BB_Draw_Path;
+  w->add_line_path = My_BB_Add_Line_Path;
+  w->add_join_path = My_BB_Add_Join_Path;
+  w->add_circle_path = My_BB_Add_Circle_Path;
+  w->add_text_path = My_BB_Add_Text_Path;
   w->add_fake_point = My_BB_Add_Fake_Point;
 
-  w->close_win = bb_close_win;
+  w->finish_drawing = My_BB_Finish_Drawing;
 }
 
-int bb_bounding_box(GrpWindow *figure, Point *bb_min, Point *bb_max) {
-  GrpWindow *cur_win = grp_win, bb;
+int bb_bounding_box(BoxGWin *figure, Point *bb_min, Point *bb_max) {
+  BoxGWin bb;
   /* Ora do' le procedure per gestire la finestra */
   bb.quiet = 1;
   bb.repair = bb_repair;
@@ -118,9 +114,7 @@ int bb_bounding_box(GrpWindow *figure, Point *bb_min, Point *bb_max) {
   bb.win_type_str = "bb";
   Grp_BB_Init(& bb_global);
   Grp_BB_Init(& bb_local);
-  grp_win = & bb;
-  Fig_Draw_Fig(figure);
-  grp_win = cur_win;
+  BoxGWin_Fig_Draw_Fig(& bb, figure);
   Grp_BB_Fuse(& bb_global, & bb_local);
   if (bb_min != (Point *) NULL) *bb_min = bb_global.min;
   if (bb_max != (Point *) NULL) *bb_max = bb_global.max;
