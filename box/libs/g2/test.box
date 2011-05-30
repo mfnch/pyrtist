@@ -10,17 +10,18 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
-bbox1 = Point[.x=62.7481452312, .y=259.043341238]
-bbox2 = Point[.x=363.233694364, .y=11.6439931464]
+bbox1 = Point[.x=58.5102335391, .y=272.563848732]
+bbox2 = Point[.x=377.827846708, .y=1.57551022257]
 p1 = Point[.x=172.43672428, .y=220.913031624]
 p2 = Point[.x=317.131695087, .y=161.071064716]
-p3 = Point[.x=283.839677778, .y=115.630881326]
+p3 = Point[.x=312.06958179, .y=113.751937907]
 p4 = Point[.x=278.697427778, .y=47.6396974596]
 p5 = Point[.x=89.7113261105, .y=155.580140275]
-p6 = Point[.x=259.842511111, .y=226.468228938]
-p7 = Point[.x=119.859038889, .y=109.338515224]
-p8 = Point[.x=184.79354465, .y=69.7577179952]
+p6 = Point[.x=251.569878086, .y=220.256523953]
+p7 = Point[.x=131.200675926, .y=116.272756512]
+p8 = Point[.x=186.658737654, .y=75.309454186]
 //!BOXER:REFPOINTS:END
 include "raw"
 include "poly"
@@ -39,10 +40,10 @@ w = Window[][
         Poly[p7, p3, p6, color.red, Sty[Border[5, color.black]], Close[]]]]
 
   [If[1]
-     [If[0]
+     [If[1]
         \ .Circle[p4, 40, 20, color.red, Style[.Border[color.black, 2]]]
       Else[]
-        Circle[p4, 40, 20, color.red, Sty[Border[5, color.black]]]]]
+        Circle[p4, 40, 20, color.red, Sty[Border[2, color.black]]]]]
 
   Text[p8, "hello world", color.black, Font["sans", 20]]
 

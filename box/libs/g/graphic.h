@@ -383,8 +383,29 @@ enum {BOXG_CMD_SAVE=0, BOXG_CMD_RESTORE, BOXG_CMD_SET_ANTIALIAS,
       BOXG_CMD_SET_DASH, BOXG_CMD_SET_FILL_RULE, BOXG_CMD_SET_SOURCE_RGBA,
       BOXG_CMD_TEXT_PATH, BOXG_CMD_TRANSLATE,
       BOXG_CMD_EXT_JOINARC_TO, BOXG_CMD_EXT_ARC_TO,
-      BOXG_CMD_EXT_SET_FONT, BOXG_CMD_EXT_TEXT_PATH
-      };
+      BOXG_CMD_EXT_SET_FONT, BOXG_CMD_EXT_TEXT_PATH};
+
+/** Possible types for arguments of a raw graphical command */
+typedef enum {
+  BOXGARG_INT,    /**< Integer: no transformation */
+  BOXGARG_REAL,   /**< Real: no transformation */
+  BOXGARG_STR,    /**< String: no transformation */
+  BOXGARG_POINT,  /**< Point: transformed at drawing */
+  BOXGARG_VECTOR, /**< Vector: transformed as a non applied vector */
+  BOXGARG_REALP,  /**< Real couple: no transformation */
+  BOXGARG_WIDTH   /**< Transformed as a width (real number) */
+} BoxGArgKind;
+
+/** Used to store pointers to arguments */
+typedef union {
+  void     *ptr;
+  BoxInt   *i;
+  BoxReal  *r,
+           w;
+  BoxStr   *s;
+  BoxPoint p,
+           v;
+} BoxGArg;
 
 /* Per convertire in millimetri, radianti, punti per millimetro */
 extern Real grp_tomm;

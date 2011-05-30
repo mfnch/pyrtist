@@ -82,9 +82,21 @@ static int same_points(Point *a, Point *b) {
   return (fabs(a->x - b->x) < 1e-10 && fabs(a->y - b->y) < 1e-10);
 }
 
+/** This is the function used to map points. */
 static void My_Map_Point(BoxGWin *w, Point *out, Point *in) {
   out->x = (in->x - w->ltx)*w->resx;
   out->y = (in->y - w->lty)*w->resy;
+}
+
+/** This is the function used to map applied vectors. */
+static void My_Map_Vector(BoxGWin *w, Point *out, Point *in) {
+  out->x = in->x * w->resx;
+  out->y = in->y * w->resy;
+}
+
+/** This is the function used to map widths. */
+static void My_Map_Width(BoxGWin *w, Real *out, Real *in) {
+  *out = *in * w->resx;
 }
 
 /* Macros used to scale the point coordinates */
@@ -335,24 +347,42 @@ static void My_Cairo_Set_Font(BoxGWin *w, const char *font_name) {
   cairo_set_font_matrix(cr, & m);
 }
 
+static BoxGObjKind My_BoxGObjKind_Of_Arg(BoxGArgKind t) {
+  switch (t) {
+  case BOXGARG_INT: return BOXGOBJKIND_INT;
+  case BOXGARG_REAL: return BOXGOBJKIND_REAL;
+  case BOXGARG_STR: return BOXGOBJKIND_STR;
+  case BOXGARG_POINT: case BOXGARG_VECTOR: case BOXGARG_REALP:
+    return BOXGOBJKIND_POINT;
+  case BOXGARG_WIDTH: return BOXGOBJKIND_REAL;
+  default: return BOXGOBJKIND_EMPTY;
+  }
+}
 
+void My_Extract_Arg(BoxGWin *w,
+                    void *out, void *in, BoxGArgKind required_kind) {
+  switch (required_kind) {
+  case BOXGARG_POINT:
+    My_Map_Point(w, (BoxPoint *) out, (BoxPoint *) in);
+    break;
 
+  case BOXGARG_VECTOR:
+    My_Map_Vector(w, (BoxPoint *) out, (BoxPoint *) in);
+    break;
 
+  case BOXGARG_WIDTH:
+    My_Map_Width(w, (BoxReal *) out, (BoxReal *) in);
+    break;
 
-
+  default:
+    *((void **) out) = in;
+    break;
+  }
+}
 
 #define ITP_MAX_NUM_ARGS 5
 
-/** Used to store pointers to arguments */
-typedef union {
-  void    *ptr;
-  BoxInt  *i;
-  BoxReal *r;
-  BoxStr  *s;
-  BoxPoint p;
-} ItpType;
-
-static int My_Args_From_Obj(BoxGWin *w, ItpType *args, BoxGObj *args_obj,
+static int My_Args_From_Obj(BoxGWin *w, BoxGArg *args, BoxGObj *args_obj,
                             size_t num_args, ...) {
   size_t i;
   int success = 0;
@@ -368,19 +398,81 @@ static int My_Args_From_Obj(BoxGWin *w, ItpType *args, BoxGObj *args_obj,
       BoxGObj *arg_obj = BoxGObj_Get(args_obj, i);
       void *val;
       assert(arg_obj != NULL);
-      val = BoxGObj_To(arg_obj, required_kind);
+      val = BoxGObj_To(arg_obj, My_BoxGObjKind_Of_Arg(required_kind));
       assert(val != NULL);
-      if (required_kind == BOXGOBJKIND_POINT)
-        My_Map_Point(w, & (args++->p), (BoxPoint *) val);
 
-      else
-        (args++)->ptr = val;
+      My_Extract_Arg(w, args++, val, required_kind);
       success &= (val != NULL);
     }
   }
 
   va_end(ap);
   return success;
+}
+
+/**< Data structure to be passed through BoxObj_Iter to
+ * My_Arg_Array_From_Obj_Iter.
+ */
+typedef struct {
+  BoxGWin     *w;                   /**< The destination window object */
+  BoxGArgKind arg_kind;             /**< Type of argument of the raw graphical
+                                         command */
+  BoxGObjKind required_subobj_kind; /**< Corresponding type of Obj */
+  size_t      item_size,            /**< Size of the destination array item */
+              num_items;            /**< Num. of items in the dest. array */
+  void        *array;               /**< The destination array */
+
+} MyArgArrayFromObjData;
+
+static BoxTask My_Arg_Array_From_Obj_Iter(size_t idx, BoxGObjKind k,
+                                          BoxGObj *sub, void *pass) {
+  MyArgArrayFromObjData *data = (MyArgArrayFromObjData *) pass;
+
+  if (k == data->required_subobj_kind) {
+    void *val = BoxGObj_To(sub, k),
+         *item_ptr = data->array + idx*data->item_size;
+    assert(idx < data->num_items);
+    My_Extract_Arg(data->w, item_ptr, val, data->arg_kind);
+    return BOXTASK_OK;
+
+  } else
+    return BOXTASK_FAILURE;
+}
+
+static void *My_Arg_Array_From_Obj(BoxGWin *w, BoxGObj *args_obj,
+                                   BoxGArgKind arg_kind,
+                                   size_t start_idx, size_t *num_args) {
+  MyArgArrayFromObjData data;
+  size_t max_idx = BoxGObj_Get_Num(args_obj);
+
+  assert(num_args != NULL);
+
+  if (start_idx < max_idx) {
+    size_t max_n = max_idx - start_idx,
+           n = (*num_args > 0 && *num_args < max_n) ? *num_args : max_n,
+           item_size;
+
+    switch (arg_kind) {
+    case BOXGARG_WIDTH: item_size = sizeof(BoxReal); break;
+    default:
+      *num_args = 0;
+      return NULL;
+    }
+
+    data.w = w;
+    data.arg_kind = arg_kind;
+    data.required_subobj_kind = My_BoxGObjKind_Of_Arg(arg_kind);
+    data.num_items = n;
+    data.item_size = item_size;
+    data.array = BoxMem_Safe_Alloc(item_size*n);
+    (void) BoxGObj_Iter(args_obj, start_idx, num_args,
+                        My_Arg_Array_From_Obj_Iter, & data);
+    return data.array;
+
+  } else {
+    *num_args = 0;
+    return NULL;
+  }
 }
 
 static cairo_operator_t My_Cairo_Operator_Of_Int(BoxInt v) {
@@ -421,7 +513,7 @@ static cairo_operator_t My_Cairo_Operator_Of_Int(BoxInt v) {
 static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
                                          BoxInt cmnd_id, BoxGObj *args_obj) {
   cairo_t *cr = (cairo_t *) w->ptr;
-  ItpType args[ITP_MAX_NUM_ARGS];
+  BoxGArg args[ITP_MAX_NUM_ARGS];
 
   switch (cmnd_id) {
   case BOXG_CMD_SAVE:
@@ -433,7 +525,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     return BOXTASK_OK;
 
   case BOXG_CMD_SET_ANTIALIAS:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_INT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_INT)) {
       cairo_antialias_t v;
       switch(*args[0].i) {
       default:
@@ -448,22 +540,22 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_MOVE_TO:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_POINT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_POINT)) {
       cairo_move_to(cr, args[0].p.x, args[0].p.y);
       return BOXTASK_OK;
     }
     break;
 
   case BOXG_CMD_LINE_TO:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_POINT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_POINT)) {
       cairo_line_to(cr, args[0].p.x, args[0].p.y);
       return BOXTASK_OK;
     }
     break;
 
   case BOXG_CMD_CURVE_TO:
-    if (My_Args_From_Obj(w, args, args_obj, 3, BOXGOBJKIND_POINT,
-                         BOXGOBJKIND_POINT, BOXGOBJKIND_POINT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 3, BOXGARG_POINT,
+                         BOXGARG_POINT, BOXGARG_POINT)) {
       cairo_curve_to(cr,
                      args[0].p.x, args[0].p.y,
                      args[1].p.x, args[1].p.y,
@@ -521,7 +613,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     return BOXTASK_OK;
 
   case BOXG_CMD_SET_OPERATOR:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_INT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_INT)) {
       cairo_set_operator(cr, My_Cairo_Operator_Of_Int(*args[0].i));
       return BOXTASK_OK;
     }
@@ -532,7 +624,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     return BOXTASK_OK;
 
   case BOXG_CMD_PAINT_WITH_ALPHA:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_REAL)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_REAL)) {
       cairo_paint_with_alpha(cr, *args[0].r);
       return BOXTASK_OK;
     }
@@ -547,14 +639,14 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     return BOXTASK_OK;
 
   case BOXG_CMD_SET_LINE_WIDTH:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_REAL)) {
-      cairo_set_line_width(cr, *args[0].r);
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_WIDTH)) {
+      cairo_set_line_width(cr, args[0].w);
       return BOXTASK_OK;
     }
     break;
 
   case BOXG_CMD_SET_LINE_CAP:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_INT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_INT)) {
       cairo_line_cap_t v;
       switch(*args[0].i) {
       default:
@@ -568,7 +660,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_SET_LINE_JOIN:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_INT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_INT)) {
       cairo_line_join_t v;
       switch(*args[0].i) {
       default:
@@ -582,13 +674,30 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_SET_MITER_LIMIT:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_WIDTH)) {
+      cairo_set_miter_limit(cr, args[0].w);
+      return BOXTASK_OK;
+    }
     break;
 
   case BOXG_CMD_SET_DASH:
-    break;
+    {
+      size_t num_args = 0;
+      BoxReal *rs = My_Arg_Array_From_Obj(w, args_obj, BOXGARG_WIDTH,
+                                          1, & num_args);
+      if (rs != NULL && num_args > 1) {
+        BoxReal offset = rs[0],
+                *dashes = rs + 1;
+        size_t num_dashes = num_args - 1;
+        cairo_set_dash(cr, dashes, num_dashes, offset);
+        BoxMem_Free(rs);
+        return BOXTASK_OK;
+      }
+      break;
+    }
 
   case BOXG_CMD_SET_FILL_RULE:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_INT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_INT)) {
       cairo_fill_rule_t v;
       switch(*args[0].i) {
       default:
@@ -601,9 +710,9 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_SET_SOURCE_RGBA:
-    if (My_Args_From_Obj(w, args, args_obj, 4, BOXGOBJKIND_REAL,
-                         BOXGOBJKIND_REAL, BOXGOBJKIND_REAL,
-                         BOXGOBJKIND_REAL)) {
+    if (My_Args_From_Obj(w, args, args_obj, 4, BOXGARG_REAL,
+                         BOXGARG_REAL, BOXGARG_REAL,
+                         BOXGARG_REAL)) {
       cairo_set_source_rgba(cr, *args[0].r, *args[1].r, *args[2].r,
                             *args[3].r);
       return BOXTASK_OK;
@@ -611,7 +720,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_TEXT_PATH:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_STR)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_STR)) {
       char *text = BoxStr_To_C_String(args[4].s);
       if (text != NULL) {
         cairo_text_path(cr, text);
@@ -622,24 +731,24 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_TRANSLATE:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_POINT)) {
-      cairo_translate(cr, args[0].p.x, args[0].p.y);
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_VECTOR)) {
+      cairo_translate(cr, args[0].v.x, args[0].v.y);
       return BOXTASK_OK;
     }
     break;
 
   case BOXG_CMD_EXT_JOINARC_TO:
-    if (My_Args_From_Obj(w, args, args_obj, 3, BOXGOBJKIND_POINT,
-                         BOXGOBJKIND_POINT, BOXGOBJKIND_POINT)) {
+    if (My_Args_From_Obj(w, args, args_obj, 3, BOXGARG_POINT,
+                         BOXGARG_POINT, BOXGARG_POINT)) {
       My_Cairo_JoinArc(cr, & args[0].p, & args[1].p, & args[2].p);
       return BOXTASK_OK;
     }
     break;
 
   case BOXG_CMD_EXT_ARC_TO:
-    if (My_Args_From_Obj(w, args, args_obj, 5, BOXGOBJKIND_POINT,
-                         BOXGOBJKIND_POINT, BOXGOBJKIND_POINT,
-                         BOXGOBJKIND_REAL, BOXGOBJKIND_REAL)) {
+    if (My_Args_From_Obj(w, args, args_obj, 5, BOXGARG_POINT,
+                         BOXGARG_POINT, BOXGARG_POINT,
+                         BOXGARG_REAL, BOXGARG_REAL)) {
       My_Cairo_Arc(cr, & args[0].p, & args[1].p, & args[2].p,
                    *args[3].r, *args[4].r);
       return BOXTASK_OK;
@@ -647,7 +756,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_EXT_SET_FONT:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGOBJKIND_STR)) {
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_STR)) {
       char *font = BoxStr_To_C_String(args[0].s);
       if (font != NULL) {
         My_Cairo_Set_Font(w, font);
@@ -658,14 +767,13 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     break;
 
   case BOXG_CMD_EXT_TEXT_PATH:
-    if (My_Args_From_Obj(w, args, args_obj, 5, BOXGOBJKIND_POINT,
-                         BOXGOBJKIND_POINT, BOXGOBJKIND_POINT,
-                         BOXGOBJKIND_POINT, BOXGOBJKIND_STR)) {
+    if (My_Args_From_Obj(w, args, args_obj, 5, BOXGARG_POINT,
+                         BOXGARG_POINT, BOXGARG_POINT,
+                         BOXGARG_REALP, BOXGARG_STR)) {
       char *text = BoxStr_To_C_String(args[4].s);
       if (text != NULL) {
-        Point ppp = {0.5, 0.5};
         My_Cairo_Text_Path(w, & args[0].p, & args[1].p, & args[2].p,
-                           & ppp /*& args[3].p*/, text);
+                           & args[3].p, text);
         BoxMem_Free(text);
         return BOXTASK_OK;
       }

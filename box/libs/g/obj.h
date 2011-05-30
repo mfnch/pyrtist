@@ -20,6 +20,8 @@
 #ifndef _BOX_LIBG_OBJ_H
 #  define _BOX_LIBG_OBJ_H
 
+#  include <stdlib.h>
+
 #  include <box/types.h>
 #  include <box/array.h>
 #  include <box/str.h>
@@ -75,7 +77,9 @@ void BoxGObj_Init_From(BoxGObj *gobj_dest, const BoxGObj *gobj_src);
 BoxGObj *BoxGObj_Get(BoxGObj *gobj, BoxInt idx);
 
 /** Get the number of subobject contained in gobj. */
-size_t BoxGObj_Get_Length(BoxGObj *gobj);
+size_t BoxGObj_Get_Num(BoxGObj *gobj);
+
+#define BoxGObj_Get_Length BoxGObj_Get_Num
 
 /** Get an integer identifying the type of the subobject at index idx. */
 BoxInt BoxGObj_Get_Type(BoxGObj *gobj, BoxInt idx);
@@ -127,5 +131,23 @@ void BoxGObj_Merge(BoxGObj *gobj_dest, BoxGObj *gobj_src);
 BoxTask BoxGObj_Extract_Array(BoxGObj *gobj, BoxGObjKind kind,
                               size_t start_idx, size_t num,
                               void **out);
+
+typedef BoxTask (*BoxGObjIterator)(size_t relative_idx, BoxGObjKind k,
+                                   BoxGObj *sub_obj, void *pass);
+
+/** Iterate over the subobjects of 'gobj' starting at index 'start_idx' and
+ * going over '*num_args' objects. If 'num_args' is NULL, then run over all
+ * the subobjects available from index 'start_idx'. For each of them the
+ * function 'iter' is called, passing the relative index (the first call
+ * always receives 0), the pointer to the subobject, and the the user provided
+ * pointer 'pass'. If the function returns 'BOXTASK_OK' then the iteration
+ * continues to the next element, otherwise the iteration is stopped and
+ * the 'BoxGObj_Iter' whatever 'iter' returned. Before returning, '*num_args'
+ * is set to the total number of arguments over which the iteration was done
+ * (which would be 1 if the first call to 'iter' does not return BOXTASK_OK).
+ * NOTE: 'gobj' is not supposed to change in size while the iteration is done.
+ */
+BoxTask BoxGObj_Iter(BoxGObj *gobj, size_t start_idx, size_t *num_args,
+                     BoxGObjIterator iter, void *pass);
 
 #endif

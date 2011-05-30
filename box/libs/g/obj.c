@@ -308,6 +308,49 @@ BoxTask BoxGObj_Extract_Array(BoxGObj *gobj, BoxGObjKind kind,
   return (fail) ? BOXTASK_FAILURE : BOXTASK_OK;
 }
 
+BoxTask BoxGObj_Iter(BoxGObj *gobj, size_t start_idx, size_t *num_args,
+                     BoxGObjIterator iter, void *pass) {
+  size_t max_idx = BoxGObj_Get_Num(gobj),
+         dummy,
+         *out_num_args = (num_args != NULL) ? num_args : & dummy;
+
+  if (start_idx < max_idx) {
+    size_t max_n = max_idx - start_idx,
+           n = (   num_args != NULL
+                && *num_args > 0
+                && *num_args < max_n) ? *num_args : max_n;
+
+    if (gobj->kind == BOXGOBJKIND_COMPOSITE) {
+      BoxGObj *sub_obj =
+        BoxArr_Item_Ptr(& gobj->value.v_composite, start_idx + 1);
+      size_t i;
+
+      for (i = 0; i < n; i++) {
+        BoxGObjKind sk = sub_obj->kind;
+        BoxTask t = iter(i, sk, sub_obj++, pass);
+        if (t != BOXTASK_OK) {
+          *out_num_args = i;
+          return t;
+        }
+      }
+
+      *out_num_args = n;
+      return BOXTASK_OK;
+
+    } else {
+      BoxTask t;
+      assert(gobj->kind != BOXGOBJKIND_EMPTY && start_idx == 0);
+      t = iter(0, gobj->kind, gobj, pass);
+      *out_num_args = (t == BOXTASK_OK) ? 1 : 0;
+      return t;
+    }
+
+  } else {
+    *out_num_args = 0;
+    return BOXTASK_OK;
+  }
+}
+
 /****************************************************************************
  * WRAPPING FUNCTIONS FOR BOX                                               *
  ****************************************************************************/
