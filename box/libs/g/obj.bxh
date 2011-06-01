@@ -17,6 +17,7 @@ objtype = (0, 1, 2, 3, 4, 5, 7, 8, 9)
 
 (.[)@Obj "GLib_Init_At_Obj" ?
 (].)@Obj "GLib_Finish_At_Obj" ?
+Obj(=)Obj "GLib_Obj_Copy_Obj" ?
 
 ///Intro: add one {type(.@)} object.
 ///Example: {var(@.)} = {type(@.)}[{value(.@)}]

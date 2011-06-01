@@ -368,6 +368,14 @@ BoxTask GLib_Finish_At_Obj(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
+BoxTask GLib_Obj_Copy_Obj(BoxVM *vm) {
+  BoxGObjPtr *dest = BOX_VM_THIS_PTR(vm, BoxGObjPtr),
+             gobj_src = BOX_VM_ARG(vm, BoxGObjPtr);
+  *dest = BoxGObj_New();
+  BoxGObj_Init_From(*dest, gobj_src);
+  return BOXTASK_OK;
+}
+
 BoxTask GLib_X_At_Obj(BoxVM *vm, BoxGObjKind kind) {
   BoxGObjPtr gobj = BOX_VM_THIS(vm, BoxGObjPtr);
   BoxGObj_Merge_X(gobj, kind, BOX_VM_ARG_PTR(vm, void));
