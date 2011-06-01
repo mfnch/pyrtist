@@ -13,6 +13,7 @@ Introduction to the Box Language
 
 Compound statements
 -------------------
+
 One concept Box put emphasis in is the one of compound statement.
 For the C programming language a compound statement is just a list
 of statements separated by ';' and enclosed in curly braces::
@@ -158,6 +159,17 @@ We will explain in details the syntax in the next sections.
 
 Types and values
 ----------------
+
+The Box approach to programming is somewhat different to the one
+of traditional programming languages (C/C++, Java, Python, Haskell, OCaml).
+Rather than having to think continuosly about names of functions/methods
+and the arguments they take (how many, how they are named
+and their order), you are invited to think about types and how to combine
+them together to perform a certain task.
+
+This allows to reduce the number of names the programmer needs to remember
+and also the precise signature of the functions in the language.
+
 
 more to come soon...
 
