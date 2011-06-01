@@ -164,8 +164,15 @@ void Bltin_Str_Register_Procs(BoxCmp *c) {
   Bltin_Proc_Def(c, c->bltin.length, c->bltin.string, My_Length_Str);
 
   /* Copy Str to Str */
+#if 0
   opn = Operator_Add_Opn(& c->convert, c->bltin.string,
                          BOXTYPE_NONE, c->bltin.string);
   copy_str = Bltin_Proc_Add(c, "copy_str", My_Str_Copy);
   Operation_Set_User_Implem(opn, copy_str);
+#endif
+
+#if 1
+  Bltin_Comb_Def(c, c->bltin.string, BOXCOMB_COPYTO, c->bltin.string,
+                 My_Str_Copy);
+#endif
 }

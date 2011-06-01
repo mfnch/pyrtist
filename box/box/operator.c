@@ -333,7 +333,6 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
         }
       }
 
-      Value *v_save = v_left;
       v_left = Value_To_Temp(v_left);
     }
 

@@ -56,6 +56,7 @@ static void My_Syntax_Error();
 %union {
   char *        String;
   BoxType       TTag;
+  BoxComb       Combine;
   ASTScope      Scope;
   ASTUnOp       UnaryOperator;
   ASTBinOp      BinaryOperator;
@@ -73,7 +74,7 @@ static void My_Syntax_Error();
 %token <SelfLevel> TOK_SELF
 
 /* List of tokens that have semantical values */
-%token TOK_AT
+%token <Combine> TOK_COMBINE
 %token <TTag> TOK_TTAG
 
 /* List of simple tokens */
@@ -411,7 +412,9 @@ at_left:
   ;
 
 procedure:
-    at_left TOK_AT named_type    {$$ = ASTNodeProcDef_New($1, $3); SRC($$, @$);}
+    at_left TOK_COMBINE named_type
+                                 {$$ = ASTNodeProcDef_New($1, $2, $3);
+                                  SRC($$, @$);}
   ;
 
 opt_c_name:

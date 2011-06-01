@@ -52,12 +52,14 @@ static void My_Build_Struc_Desc(BoxCmp *c,
   BoxTSStrucIt_Finish(& si);
 }
 
-static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxType child, BoxType parent) {
+static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxType child,
+                                 BoxComb comb, BoxType parent) {
   BoxVM *vm = c->vm;
   BoxTS *ts = & c->ts;
   BoxType p =
-    TS_Procedure_Search(ts, (BoxType *) NULL, child, parent,
-                        TSSEARCHMODE_INHERITED);
+    BoxTS_Procedure_Search(ts, (BoxType *) NULL,
+                           child, comb, parent,
+                           TSSEARCHMODE_INHERITED);
   if (p == BOXTYPE_NONE)
     return BOXVMCALLNUM_NONE;
 
@@ -67,6 +69,7 @@ static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxType child, BoxType parent) {
   }
 }
 
+#if 0
 static BoxVMCallNum My_Find_Copier(BoxCmp *c, BoxType parent) {
   OprMatch match;
   Operation *opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match,
@@ -80,6 +83,7 @@ static BoxVMCallNum My_Find_Copier(BoxCmp *c, BoxType parent) {
     return BoxVMSym_Get_Call_Num(c->vm, sym_id);
   }
 }
+#endif
 
 static void My_Build_Obj_Desc(BoxCmp *c, MyObjDescBuilder *bldr, BoxType t) {
   BoxType ct = TS_Get_Core_Type(& c->ts, t);
@@ -94,10 +98,12 @@ static void My_Build_Obj_Desc(BoxCmp *c, MyObjDescBuilder *bldr, BoxType t) {
     return;
 
   } else {
-    bldr->desc.initializer = My_Find_Proc(c, BOXTYPE_CREATE, t);
-    bldr->desc.finalizer = My_Find_Proc(c, BOXTYPE_DESTROY, t);
-    bldr->desc.copier = My_Find_Copier(c, t);
-    bldr->desc.mover = BOXVMCALLNUM_NONE;
+    bldr->desc.initializer =
+      My_Find_Proc(c, BOXTYPE_CREATE, BOXCOMB_CHILDOF, t);
+    bldr->desc.finalizer =
+      My_Find_Proc(c, BOXTYPE_DESTROY, BOXCOMB_CHILDOF, t);
+    bldr->desc.copier = My_Find_Proc(c, t, BOXCOMB_COPYTO, t);
+    bldr->desc.mover = My_Find_Proc(c, t, BOXCOMB_MOVETO, t);
   }
 
   switch(tk) {

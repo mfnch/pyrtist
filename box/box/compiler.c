@@ -524,7 +524,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
                            BoxType t_child, BoxType t_parent) {
   TS *ts = & c->ts;
   ASTNode *s;
-  Value *parent = NULL, *removeme = NULL;
+  Value *parent = NULL, *outer_parent = NULL;
   int parent_is_err = 0;
   BoxVMSymID jump_label_begin, jump_label_end, jump_label_next;
 
@@ -538,7 +538,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
     if (parent == NULL)
       parent = v_void;
     else
-      removeme = parent;
+      outer_parent = parent;
 
   } else {
     Value *parent_type;
@@ -685,8 +685,8 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
 
   Namespace_Floor_Down(& c->ns); /* close the scope unit */
 
-  if (removeme != NULL)
-    Value_Unlink(removeme);
+  if (outer_parent != NULL)
+    Value_Unlink(outer_parent);
 }
 
 static void My_Compile_String(BoxCmp *c, ASTNode *node) {
@@ -1037,6 +1037,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   Value *v_child, *v_parent, *v_ret = NULL;
   BoxType t_child, t_parent,
           t_proc = BOXTYPE_NONE;
+  BoxComb comb_type;
   ASTNode *n_c_name = n->attr.proc_def.c_name,
           *n_implem = n->attr.proc_def.implem;
   char *c_name = NULL;
@@ -1051,6 +1052,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   v_child = BoxCmp_Pop_Value(c);
   My_Compile_Any(c, n->attr.proc_def.parent_type);
   v_parent = BoxCmp_Pop_Value(c);
+  comb_type = n->attr.proc_def.combine;
 
   no_err = Value_Want_Has_Type(v_child) & Value_Want_Has_Type(v_parent);
   t_child = v_child->type;
@@ -1084,8 +1086,8 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   proc_style = (n_implem != NULL) ? CMPPROCSTYLE_SUB : CMPPROCSTYLE_EXTERN;
   CmpProc_Init(& proc_implem, c, proc_style);
 
-  t_proc = TS_Procedure_Search(& c->ts, /*expansion_type*/ NULL,
-                               t_child, t_parent, 0);
+  t_proc = BoxTS_Procedure_Search(& c->ts, /*expansion_type*/ NULL,
+                                  t_child, comb_type, t_parent, 0);
 
   if (t_proc != BOXTYPE_NONE) {
     /* A procedure of this kind is already registered: we need to know if
@@ -1117,9 +1119,10 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   /* Register the procedure, covering old ones */
   if (do_register) {
     BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
-    t_proc = TS_Procedure_New(& c->ts, t_parent, t_child);
-    TS_Procedure_Register(& c->ts, t_proc, sym_id);
-    Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT, & c->ts, t_proc);
+    t_proc = BoxTS_Procedure_New(& c->ts, t_child, comb_type, t_parent);
+    BoxTS_Procedure_Register(& c->ts, t_proc, sym_id);
+    Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT,
+                            & c->ts, comb_type, t_proc);
   }
 
   /* If an implementation is also provided, then we define the procedure */

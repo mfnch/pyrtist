@@ -81,7 +81,7 @@ typedef struct {
     BoxType last,
             member_next;
     struct {
-      int     kind;
+      BoxComb combine;
       BoxType parent;
       BoxUInt sym_num;
     } proc;
@@ -191,7 +191,8 @@ BoxType TS_Intrinsic_New(BoxTS *ts, BoxInt size);
 /** Create a new procedure type in p. init tells if the procedure
  * is an initialisation procedure or not.
  */
-BoxType TS_Procedure_New(BoxTS *ts, BoxType parent, BoxType child);
+BoxType BoxTS_Procedure_New(BoxTS *ts, BoxType child,
+                            BoxComb comb, BoxType parent);
 
 /** Get information about the procedure p. This information is stored
  * in the destination specified by the given pointers, but this happens
@@ -202,19 +203,20 @@ BoxType TS_Procedure_New(BoxTS *ts, BoxType parent, BoxType child);
  * @param kind the kind of the procedure
  * @param sym_num the symbol identification (for registered procedures)
  */
-void TS_Procedure_Info(BoxTS *ts, BoxType *parent, BoxType *child,
-                       int *kind, BoxUInt *sym_num, BoxType p);
+void BoxTS_Procedure_Info(BoxTS *ts, BoxType *parent, BoxType *child,
+                          BoxComb *comb, BoxVMSymID *sym_num, BoxType p);
 
 /** Register the procedure p. After this function has been called
  * the procedure p will belong to the list of procedures of its parent.
  * sym_num is the symbol associated with the procedure.
  */
-void TS_Procedure_Register(BoxTS *ts, BoxType p, BoxUInt sym_num);
+void BoxTS_Procedure_Register(BoxTS *ts, BoxType p,
+                              BoxVMSymID sym_num);
 
 /** Unregister a procedure which was previously registered with
- * TS_Procedure_Register
+ * BoxTS_Procedure_Register
  */
-void TS_Procedure_Unregister(BoxTS *ts, BoxType p);
+void BoxTS_Procedure_Unregister(BoxTS *ts, BoxComb comb, BoxType p);
 
 /** Obtain the symbol identification number of a registered procedure.
  */
@@ -234,8 +236,9 @@ typedef enum {
  * *expansion_type is the target type for that expansion. If expansion
  * is not needed then *expansion_type = TS_TYPE_NONE.
  */
-BoxType TS_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
-                            BoxType child, BoxType parent, TSSearchMode mode);
+BoxType BoxTS_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
+                               BoxType child, BoxComb comb, BoxType parent,
+                               TSSearchMode mode);
 
 /** Put the procedure in the blacklist. Blacklisted procedure are cannot be
  * registered. The feature is important to ensure that a procedure that
@@ -257,7 +260,7 @@ int TS_Procedure_Is_Blacklisted(BoxTS *ts, BoxType child, BoxType parent);
  * of the registered procedures of the parent of 'p' has type ID matching
  * with 'p')
  */
-int TS_Procedure_Is_Registered(BoxTS *ts, BoxType p);
+int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxComb comb, BoxType p);
 
 /** Create and register a procedure by calling firt TS_Procedure_New
  * and then TS_Procedure_Register. sym_num is the associated symbol

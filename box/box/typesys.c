@@ -445,7 +445,8 @@ BoxType TS_Intrinsic_New(TS *ts, Int size) {
   return new_type;
 }
 
-Type TS_Procedure_New(TS *ts, Type parent, Type child) {
+BoxType BoxTS_Procedure_New(BoxTS *ts, BoxType child,
+                            BoxComb comb, BoxType parent) {
   TSDesc td;
   BoxType p;
   TS_TSDESC_INIT(& td);
@@ -453,7 +454,7 @@ Type TS_Procedure_New(TS *ts, Type parent, Type child) {
   td.size = TS_SIZE_UNKNOWN;
   td.target = child;
   td.data.proc.parent = parent;
-  td.data.proc.kind = 3; /* OBSOLETE: should remove! */
+  td.data.proc.combine = comb;
   td.data.proc.sym_num = 0;
   Type_New(ts, & p, & td);
   return p;
@@ -598,7 +599,7 @@ void TS_Enum_Add(TS *ts, Type enumeration, Type member) {
  * this could and should be improved, but we stick to the simple solution
  * for now!
  */
-void TS_Procedure_Register(TS *ts, Type p, UInt sym_num) {
+void BoxTS_Procedure_Register(BoxTS *ts, BoxType p, BoxVMSymID sym_num) {
   TSDesc *proc_td, *parent_td;
   Type parent;
   proc_td = Type_Ptr(ts, p);
@@ -611,7 +612,7 @@ void TS_Procedure_Register(TS *ts, Type p, UInt sym_num) {
   proc_td->data.proc.sym_num = sym_num;
 }
 
-int TS_Procedure_Is_Registered(TS *ts, BoxType p) {
+int BoxTS_Procedure_Is_Registered(TS *ts, BoxComb comb, BoxType p) {
   TSDesc *proc_td, *parent_td;
   BoxType parent, child;
 
@@ -623,11 +624,13 @@ int TS_Procedure_Is_Registered(TS *ts, BoxType p) {
   parent_td = Type_Ptr(ts, parent);
 
   /* Iter over procedure of parent and check whether the proc is there */
-  for(child = parent_td->first_proc;
-      child != BOXTYPE_NONE;
-      child = Type_Ptr(ts, child)->first_proc)
-    if (child == p)
+  for (child = parent_td->first_proc; child != BOXTYPE_NONE; ) {
+    TSDesc *child_td = Type_Ptr(ts, child);
+    if (child_td->data.proc.combine == comb && child == p)
       return 1;
+
+    child = child_td->first_proc;
+  }
 
   /* One may, at this point, do another iteration and try to use TS_Compare
    * just not to rely to match of types IDs. It is not clear at this point
@@ -636,7 +639,7 @@ int TS_Procedure_Is_Registered(TS *ts, BoxType p) {
   return 0;
 }
 
-void TS_Procedure_Unregister(TS *ts, BoxType p) {
+void BoxTS_Procedure_Unregister(TS *ts, BoxComb comb, BoxType p) {
   TSDesc *proc_td, *parent_td;
   BoxType parent, child,
           *prev_child_ptr;
@@ -644,8 +647,8 @@ void TS_Procedure_Unregister(TS *ts, BoxType p) {
   /* The following check has to stay there until we know that we don't
    * need to check for procedures with TS_Compare
    */
-  if (!TS_Procedure_Is_Registered(ts, p)) {
-    MSG_FATAL("TS_Procedure_Unregister: procedure is not registered!");
+  if (!BoxTS_Procedure_Is_Registered(ts, comb, p)) {
+    MSG_FATAL("BoxTS_Procedure_Unregister: procedure is not registered!");
     assert(0);
   }
 
@@ -662,7 +665,7 @@ void TS_Procedure_Unregister(TS *ts, BoxType p) {
 
   while (child != BOXTYPE_NONE) {
     TSDesc *child_td = Type_Ptr(ts, child);
-    if (child == p) {
+    if (child_td->data.proc.combine == comb && child == p) {
       *prev_child_ptr = child_td->first_proc;
       return;
     }
@@ -675,64 +678,68 @@ void TS_Procedure_Unregister(TS *ts, BoxType p) {
   assert(0);
 }
 
-UInt TS_Procedure_Get_Sym(TS *ts, Type p) {
+BoxVMSymID TS_Procedure_Get_Sym(TS *ts, Type p) {
   TSDesc *proc_td;
   proc_td = Type_Ptr(ts, p);
   assert(proc_td->kind == TS_KIND_PROC);
   return proc_td->data.proc.sym_num;
 }
 
-void TS_Procedure_Info(TS *ts, Type *parent, Type *child,
-                       int *kind, UInt *sym_num, Type p) {
+void BoxTS_Procedure_Info(BoxTS *ts, BoxType *parent, BoxType *child,
+                          BoxComb *comb, BoxVMSymID *sym_num, BoxType p) {
   TSDesc *proc_td;
   proc_td = Type_Ptr(ts, p);
   assert(proc_td->kind == TS_KIND_PROC);
-  if (parent != (Type *) NULL)
+  if (parent != NULL)
     *parent = proc_td->data.proc.parent;
-  if (child != (Type *) NULL)
+  if (child != NULL)
     *child = proc_td->target;
-  if (kind != (int *) NULL)
-    *kind = proc_td->data.proc.kind;
-  if (sym_num != (UInt *) NULL)
+  if (comb != NULL)
+    *comb = proc_td->data.proc.combine;
+  if (sym_num != NULL)
     *sym_num = proc_td->data.proc.sym_num;
 }
 
-static BoxType My_Procedure_Search(TS *ts, Type *expansion_type,
-                                   Type child, Type parent) {
+static BoxType My_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
+                                   BoxType child, BoxComb comb,
+                                   BoxType parent) {
   TSDesc *p_td, *parent_td;
   Type p, dummy;
   if (expansion_type == NULL)
     expansion_type = & dummy;
   *expansion_type = BOXTYPE_NONE;
   parent_td = Type_Ptr(ts, parent);
-  /*MSG_ADVICE("TS_Procedure_Search: searching procedure");*/
-  for(p = parent_td->first_proc; p != BOXTYPE_NONE; p = p_td->first_proc) {
+  /*MSG_ADVICE("BoxTS_Procedure_Search: searching procedure");*/
+  for (p = parent_td->first_proc; p != BOXTYPE_NONE; p = p_td->first_proc) {
     TSCmp comparison;
     p_td = Type_Ptr(ts, p);
-    /*MSG_ADVICE("TS_Procedure_Search: considering %~s", TS_Name_Get(ts, p));*/
-    /*MSG_ADVICE("TS_Procedure_Search: '%s', comparing '%s' == '%s'",
+    /*MSG_ADVICE("BoxTS_Procedure_Search: considering %~s",
+                 TS_Name_Get(ts, p));*/
+    /*MSG_ADVICE("BoxTS_Procedure_Search: '%s', comparing '%s' == '%s'",
                Tym_Type_Names(parent),
                Tym_Type_Names(p_td->target), Tym_Type_Names(child));*/
-    comparison = TS_Compare(ts, p_td->target, child);
-    if (comparison != TS_TYPES_UNMATCH) {
-      if (comparison == TS_TYPES_EXPAND)
-        *expansion_type = p_td->target;
-      return p;
+    if (p_td->data.proc.combine == comb) {
+      comparison = TS_Compare(ts, p_td->target, child);
+      if (comparison != TS_TYPES_UNMATCH) {
+        if (comparison == TS_TYPES_EXPAND)
+          *expansion_type = p_td->target;
+        return p;
+      }
     }
   }
 
   return BOXTYPE_NONE;
 }
 
-BoxType TS_Procedure_Search(TS *ts, BoxType *expansion_type,
-                            BoxType child, BoxType parent,
-                            TSSearchMode mode) {
+BoxType BoxTS_Procedure_Search(TS *ts, BoxType *expansion_type,
+                               BoxType child, BoxComb comb, BoxType parent,
+                               TSSearchMode mode) {
   BoxType previous_parent;
   int search_inherited = (mode & TSSEARCHMODE_INHERITED) != 0;
   BoxType proc;
 
   do {
-    proc = My_Procedure_Search(ts, expansion_type, child, parent);
+    proc = My_Procedure_Search(ts, expansion_type, child, comb, parent);
     if (proc != BOXTYPE_NONE)
       break;
 
@@ -761,15 +768,6 @@ void TS_Procedure_Blacklist_Undo(TS *ts, BoxType child, BoxType parent) {
 
 int TS_Procedure_Is_Blacklisted(TS *ts, BoxType child, BoxType parent) {
   return 0;
-}
-
-Int TS_Procedure_Def(Int proc, Int of_type, Int sym_num) {
-  Type procedure;
-  /*MSG_ADVICE("TS_Procedure_Def: new procedure '%s' of '%s'",
-             Tym_Type_Names(proc), Tym_Type_Names(of_type));*/
-  procedure = TS_Procedure_New(last_ts, of_type, proc);
-  TS_Procedure_Register(last_ts, procedure, sym_num);
-  return procedure;
 }
 
 /****************************************************************************/
@@ -958,10 +956,9 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
       break;
 
     case TS_KIND_PROC:
-      {
-        int k1 = td1->data.proc.kind, k2 = td2->data.proc.kind;
-        if ((k1 & k2) == 0) return TS_TYPES_UNMATCH;
-      }
+      if (td1->data.proc.combine != td2->data.proc.combine)
+        return TS_TYPES_UNMATCH;
+      
       if (TS_Compare(ts, td1->data.proc.parent, td2->data.proc.parent)
           != TS_TYPES_EQUAL)
         return TS_TYPES_UNMATCH;

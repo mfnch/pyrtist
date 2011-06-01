@@ -319,8 +319,8 @@ BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
   return sym_num;
 }
 
-BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
-                          Task (*c_fn)(BoxVM *)) {
+BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxType child, BoxComb comb,
+                          BoxType parent, Task (*c_fn)(BoxVM *)) {
   BoxVMSymID sym_num;
   BoxVMCallNum call_num;
   BoxType new_proc;
@@ -331,8 +331,8 @@ BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
   sym_num = BoxVMSym_New_Call(c->vm, call_num);
 
   /* We tell to the compiler that some procedures are associated to sym_num */
-  new_proc = TS_Procedure_New(& c->ts, parent, child);
-  TS_Procedure_Register(& c->ts, new_proc, sym_num);
+  new_proc = BoxTS_Procedure_New(& c->ts, child, comb, parent);
+  BoxTS_Procedure_Register(& c->ts, new_proc, sym_num);
   proc_name = TS_Name_Get(& c->ts, new_proc);
 
   /* We finally install the code (a C function) for the procedure */
@@ -343,6 +343,11 @@ BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
   /* Mark the symbol as defined */
   BoxVMSym_Def_Call(c->vm, sym_num);
   return sym_num;
+}
+
+BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
+                          Task (*c_fn)(BoxVM *)) {
+  return Bltin_Comb_Def(c, child, BOXCOMB_CHILDOF, parent, c_fn);
 }
 
 /* Define some core types such as Int, Real and Point (for example, define

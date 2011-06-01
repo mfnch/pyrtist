@@ -184,9 +184,12 @@ include BEGIN(include);
 
 [$]+  { yylval.SelfLevel = yyleng; My_Scan_Tok(); return TOK_SELF;}
 
-"@"   {My_Scan_Tok(); return TOK_AT;}
-"@@"  {My_Scan_Tok(); return TOK_AT;} /* for compatibility with v 0.1 */
-"@&"  {My_Scan_Tok(); return TOK_AT;} /* for compatibility with v 0.1 */
+ /* Combination symbols */
+"@"   {yylval.Combine = BOXCOMB_CHILDOF; My_Scan_Tok(); return TOK_COMBINE;}
+"(=)" {yylval.Combine = BOXCOMB_COPYTO; My_Scan_Tok(); return TOK_COMBINE;}
+ /* for compatibility with v 0.1 */
+"@@"  {yylval.Combine = BOXCOMB_CHILDOF; My_Scan_Tok(); return TOK_COMBINE;}
+"@&"  {yylval.Combine = BOXCOMB_CHILDOF; My_Scan_Tok(); return TOK_COMBINE;}
 
  /* Special tokens */
 "(.[)" {yylval.TTag = BOXTYPE_CREATE;  My_Scan_Tok(); return TOK_TTAG;}

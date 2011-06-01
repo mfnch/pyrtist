@@ -66,9 +66,15 @@ BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
                           Task (*c_fn)(BoxVM *));
 
 /** Add and register a new C procedure 'c_fn' (of type BoxVMFunc) for the
- * given 'parent' and 'child' types. After this function has returned,
- * Box programs will be able to find Child@Parent and will be able to call
- * it!
+ * combination 'comb' between the types 'left' and 'right'. After this
+ * function has returned, Box programs will be able to find the combination
+ * and use it!
+ */
+BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxType child, BoxComb comb,
+                          BoxType parent, Task (*c_fn)(BoxVM *));
+
+/** Similar to 'Bltin_Comb_Def' but assumes 'comb == BOXCOMB_CHILDOF'.
+ * @see Bltin_Comb_Def
  */
 BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
                           Task (*c_fn)(BoxVM *));

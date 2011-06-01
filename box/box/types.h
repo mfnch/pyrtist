@@ -78,6 +78,13 @@ typedef double BoxReal;
 /** Used in the compiler to represent Box types. */
 typedef BoxInt BoxType;
 
+/** Type of combination */
+typedef enum {
+  BOXCOMB_CHILDOF, /**< Left@Right combination */
+  BOXCOMB_COPYTO,  /**< Left copied to Right */
+  BOXCOMB_MOVETO   /**< Left relocated in memory into Right */
+} BoxComb;
+
 enum {
   BOXTYPE_NONE=-1,
   BOXTYPE_CHAR=0,
@@ -132,16 +139,6 @@ typedef void *BoxCPtr;
 typedef struct {
   BoxPtr child, parent;
 } BoxSubtype;
-
-#if 0
-/** in this macro 'subtype_ptr' should have type 'Subtype *' */
-#  define BOXSUBTYPE_PARENT_PTR(subtype_ptr) \
-  ((subtype_ptr)->parent.ptr)
-
-/** in this macro 'subtype_ptr' should have type 'Subtype *' */
-#  define BOXSUBTYPE_CHILD_PTR(subtype_ptr) \
-  ((subtype_ptr)->child.ptr)
-#endif
 
 #    define BOXSUBTYPE_PARENT_PTR(subtype_ptr) \
        ((void *) ((*(subtype_ptr)).parent.ptr))

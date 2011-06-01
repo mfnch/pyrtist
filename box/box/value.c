@@ -748,8 +748,9 @@ static Value *My_Emit_Call(Value *parent, Value *child, TSSearchMode mode,
 
   /* Now we search for the procedure associated with *child */
   mode |= TSSEARCHMODE_INHERITED;
-  found_procedure = TS_Procedure_Search(ts, & expansion_for_child,
-                                        child->type, parent->type, mode);
+  found_procedure =
+    BoxTS_Procedure_Search(ts, & expansion_for_child,
+                           child->type, BOXCOMB_CHILDOF, parent->type, mode);
 
   /* If the procedure is not there we try to auto-generate it */
   if (found_procedure == BOXTYPE_NONE) {

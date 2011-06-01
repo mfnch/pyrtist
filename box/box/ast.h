@@ -252,6 +252,7 @@ typedef struct {
            *parent_type,
            *c_name,
            *implem;
+  BoxComb  combine;
 } ASTNodeProcDef;
 
 /** Node for type definition */
@@ -382,7 +383,8 @@ ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
                               const char *member, int member_len);
 ASTNode *ASTNodeSubtype_Build(ASTNode *parent, const char *subtype);
 ASTNode *ASTNodeSelfGet_New(BoxInt level);
-ASTNode *ASTNodeProcDef_New(ASTNode *child_type, ASTNode *parent_type);
+ASTNode *ASTNodeProcDef_New(ASTNode *child_type, BoxComb combine,
+                            ASTNode *parent_type);
 ASTNode *ASTNodeProcDef_Set(ASTNode *proc_def, ASTNode *c_name,
                             ASTNode *implem);
 ASTNode *ASTNodeTypeDef_New(ASTNode *name, ASTNode *src_type);

@@ -579,10 +579,12 @@ ASTNode *ASTNodeSelfGet_New(BoxInt level) {
   return node;
 }
 
-ASTNode *ASTNodeProcDef_New(ASTNode *child_type, ASTNode *parent_type) {
+ASTNode *ASTNodeProcDef_New(ASTNode *child_type, BoxComb combine,
+                            ASTNode *parent_type) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_PROCDEF);
   node->attr.proc_def.child_type = child_type;
   node->attr.proc_def.parent_type = parent_type;
+  node->attr.proc_def.combine = combine;
   return node;
 }
 

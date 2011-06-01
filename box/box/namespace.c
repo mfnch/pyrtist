@@ -79,6 +79,7 @@ void Namespace_Floor_Up(Namespace *ns) {
 
 typedef struct {
   BoxTS   *ts;    /**< Typesystem in which the procedure is registered */
+  BoxComb comb;   /**< Combination type */
   BoxType t_proc; /**< Type ID of the procedure */
 } MyProcedureNmspItem;
 
@@ -104,7 +105,7 @@ static void My_NmspItem_Finish(Namespace *ns, NmspItem *item) {
   case NMSPITEMTYPE_PROCEDURE:
     {
       MyProcedureNmspItem *p = (MyProcedureNmspItem *) item->data;
-      TS_Procedure_Unregister(p->ts, p->t_proc);
+      BoxTS_Procedure_Unregister(p->ts, p->comb, p->t_proc);
       BoxMem_Free(p);
       return;
     }
@@ -195,7 +196,7 @@ Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
 }
 
 void Namespace_Add_Procedure(Namespace *ns, NmspFloor floor,
-                             BoxTS *ts, BoxType t_proc) {
+                             BoxTS *ts, BoxComb comb, BoxType t_proc) {
   NmspItem *new_item = Namespace_Add_Item(ns, floor, (char *) NULL);
   MyProcedureNmspItem *p =
    (MyProcedureNmspItem *) BoxMem_Safe_Alloc(sizeof(MyProcedureNmspItem));
@@ -203,6 +204,7 @@ void Namespace_Add_Procedure(Namespace *ns, NmspFloor floor,
   new_item->type = NMSPITEMTYPE_PROCEDURE;
   new_item->data = p;
   p->ts = ts;
+  p->comb = comb;
   p->t_proc = t_proc;
 }
 
