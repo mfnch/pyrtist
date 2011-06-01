@@ -114,7 +114,7 @@ Color@Arrow3D[
   $$.got_color = ($$.got_color + 1) % 3
 ]
 
-Arrow3D@@Window[
+Arrow3D@Window[
   p = $.pos1, w = 0.5*$.width
   hl = $.head_length, hw = 0.5*$.head_width
   l = 0.5*(Norm[$.pos2 - $.pos1] - hl)

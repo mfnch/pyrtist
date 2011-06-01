@@ -737,6 +737,20 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
+  case BOXG_CMD_SCALE:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_VECTOR)) {
+      cairo_scale(cr, args[0].v.x, args[0].v.y);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXG_CMD_ROTATE:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_REAL)) {
+      cairo_rotate(cr, *args[0].r);
+      return BOXTASK_OK;
+    }
+    break;
+
   case BOXG_CMD_EXT_JOINARC_TO:
     if (My_Args_From_Obj(w, args, args_obj, 3, BOXGARG_POINT,
                          BOXGARG_POINT, BOXGARG_POINT)) {
@@ -777,6 +791,19 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
         BoxMem_Free(text);
         return BOXTASK_OK;
       }
+    }
+    break;
+
+  case BOXG_CMD_EXT_TRANSFORM:
+    if (My_Args_From_Obj(w, args, args_obj, 3, BOXGARG_POINT,
+                         BOXGARG_POINT, BOXGARG_POINT)) {
+      
+      /* this command should change the ref frame to the one which
+       * has origin in the first point and coordinate (1, 0) at the
+       * second point and (0, 1) at the third (not an ortogonal frame)
+       * NOT IMPLEMENTED, YET.
+       */
+      return BOXTASK_OK;
     }
     break;
 

@@ -32,8 +32,9 @@ g = ((Int save, restore, set_antialias,
           paint, paint_with_alpha, copy_page, show_page
           set_line_width, set_line_cap, set_line_join, set_miter_limit
           set_dash, set_fill_rule, set_source_rgba,
-          text_path, translate,
-          ext_joinarc_to, ext_arc_to, ext_set_font, ext_text_path) raw
+          text_path, translate, scale, rotate
+          ext_joinarc_to, ext_arc_to, ext_set_font, ext_text_path
+          ext_transform) raw
      (Int default, none, gray, subpixel) antialias
      ((Int miter, round, bevel) join
       (Int butt, round, square) cap) line
@@ -45,7 +46,8 @@ g = ((Int save, restore, set_antialias,
           hsl_luminosity) operator)[]
 
 g.raw = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
-         20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35)
+         20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36
+         37, 38)
 g.antialias = (0, 1, 2, 3)
 g.line.join = (0, 1, 2)
 g.line.cap = (0, 1, 2)

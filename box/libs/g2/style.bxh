@@ -22,14 +22,20 @@ Real@Dash[If[$$ .have.semicolon], .offset = $, Else[], \ .dashes[$]]
          Else[], .have.semicolon = 1]
 
 ///Intro: add the graphicals commands encoding a ``Dash`` object.
-Dash@CmdStream[]
+Dash@CmdStream[
+  n = Num[$.dashes]
+  If[n > 0]
+    Obj[g.raw.set_dash, $.offset
+        i = 0
+        [If[i < n], Real[$.dashes.Get[i]], i += 1, For[1]]]
+]
 
 ///Intro: border width and color to be used when tracing the next
 // polygon (for {type(Poly)}, {type(Circle)}, etc).
-Border = ++((Int color, width) have
+Border = ++((Int color, width, dash) have
             Color color, Real width, Dash dash)
 
-(.[)@Border[.have = (0, 0), .width = 0.0]
+(.[)@Border[.have = (0, 0, 0), .width = 0.0]
 
 ///Intro: specify the border width.
 Real@Border[.width = $, .have.width = 1]
@@ -41,10 +47,11 @@ Color@Border[.color = $, .have.color = 1]
 Border@Border[
   [If[$.have.width], $$.width = $.width, $$.have.width = 1]
   [If[$.have.color], $$.color = $.color, $$.have.color = 1]
+  [If[$.have.dash], $$.dash = $.dash, $$.have.dash = 1]
 ]
 
 ///Intro: add the dash pattern specification to the border.
-Dash@Border[.dash = $]
+Dash@Border[.dash = $, .have.dash = 1]
 
 ///Intro: add the graphicals commands encoding a ``Border`` object.
 Border@CmdStream[
@@ -55,6 +62,8 @@ Border@CmdStream[
 
   [If[$.have.width], w = $.width, If[w > 0.0]
      Obj[g.raw.set_line_width, w]]
+
+  [If[$.have.dash], $.dash]
 
   Obj[g.raw.stroke]
   Obj[g.raw.restore]
