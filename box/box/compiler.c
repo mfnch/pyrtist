@@ -991,7 +991,7 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
   Value *v_self = NULL;
   const char *n_self = NULL;
   ASTSelfLevel self_level = n->attr.self_get.level;
-  int i, promote_to_target = 0;
+  int i, promote_to_target = 0, return_weak_copy = 0;
 
   assert(n->type == ASTNODETYPE_SELFGET);
 
@@ -999,6 +999,7 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
   case 1:
     n_self = "$";
     v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$");
+    return_weak_copy = 1;
     break;
 
   case 2:
@@ -1006,6 +1007,7 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
     v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$");
 //     v_self = Value_Subtype_Get_Child(v_self); /* WARNING remove that later */
     promote_to_target = 1;
+    return_weak_copy = 1;
     break;
 
   default:
@@ -1013,18 +1015,22 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
     v_self = Namespace_Get_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$");
     for (i = 2; i < self_level && v_self != NULL; i++)
       v_self = Value_Subtype_Get_Parent(v_self);
+      /* FIXME: see Value_Init */
     promote_to_target = 1;
+    return_weak_copy = 0;
   }
 
   if (v_self == NULL) {
     MSG_ERROR("%s not defined in the current scope.", n_self);
 
   } else {
-    /* Return only a weak copy */
-    Value *v_copy = Value_New(c->cur_proc);
-    Value_Setup_As_Weak_Copy(v_copy, v_self);
-    Value_Unlink(v_self);
-    v_self = v_copy;
+    /* Return only a weak copy? */
+    if (return_weak_copy) {
+      Value *v_copy = Value_New(c->cur_proc);
+      Value_Setup_As_Weak_Copy(v_copy, v_self);
+      Value_Unlink(v_self);
+      v_self = v_copy;
+    }
 
     if (promote_to_target)
       v_self = Value_Promote_Temp_To_Target(v_self);

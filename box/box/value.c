@@ -31,6 +31,23 @@
 #include "vmsymstuff.h"
 #include "tsdesc.h"
 
+/* FIXME: there is a flaw in the design of the Value datastructure.
+ *  We keep track of references to Value objects, but we shouldn't do this.
+ *  We should rather keep track of resources used by Value objects.
+ *  For example, we should keep track of registers used by a Value object
+ *  (i.e. keep a reference counter for registers, so that we know how many
+ *  Value-s are referring to a given register). I think this should simplify
+ *  considerably the compiler code and should make the code cleaner.
+ *  The notion of weak copy of a Value should then become unnecessary.
+ *  Moreover, Value will become much simpler to use: one should need just to
+ *  use them as ordinary objects (remember to call _Init and _Finish methods
+ *  properly), rather than having to define how many reference counts every
+ *  function consumes, etc...
+ *  We should redesign registers.c and value.c with this in mind and also
+ *  paying attention to make sure we are not initialising and destroying
+ *  continuously BoxArr objects for every couple of [ ] the compiler
+ *  encounters.
+ */
 void Value_Init(Value *v, CmpProc *proc) {
   v->proc = proc;
   v->kind = VALUEKIND_ERR;
@@ -56,14 +73,12 @@ static void My_Value_Finalize(Value *v) {
 
   switch(v->kind) {
   case VALUEKIND_ERR:
-    return;
   case VALUEKIND_TYPE_NAME:
   case VALUEKIND_VAR_NAME:
-    return;
   case VALUEKIND_TYPE:
-    return;
   case VALUEKIND_IMM:
     return;
+
   case VALUEKIND_TARGET:
   case VALUEKIND_TEMP:
     switch (v->value.cont.categ) {
@@ -74,13 +89,23 @@ static void My_Value_Finalize(Value *v) {
                       v->value.cont.type, v->value.cont.value.reg);
       }
 
+      /* Explicit unlinks are not necessary anymore with the new memory
+       * handling protocol of Box.
+       */
+#if 0
       if (v->attr.own_reference)
         Value_Emit_Unlink(v);
+#endif
       return;
 
     case BOXCONTCATEG_GREG:
+      /* Explicit unlinks are not necessary anymore with the new memory
+       * handling protocol of Box.
+       */
+#if 0
       if (v->attr.own_reference)
         Value_Emit_Unlink(v);
+#endif
       return;
 
     case BOXCONTCATEG_PTR:
@@ -1471,9 +1496,16 @@ static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
       } else {
         size_t offset = get_child ? 0 : sizeof(BoxPtr);
         v_ret = Value_New(c->cur_proc);
-        Value_Setup_As_Weak_Copy(v_ret, v_subtype);
+        /* FIXME: see Value_Init */
+        Value_Setup_As_Weak_Copy(v_ret, v_subtype);          
         v_ret = Value_Get_Subfield(v_ret, offset, BOXTYPE_PTR);
         v_ret = Value_Cast_From_Ptr(v_ret, t_ret);
+
+        /* Temporary fix: transfer ownership of register, if needed */
+        if (v_subtype->num_ref == 1) {
+          v_ret->attr.own_register = v_subtype->attr.own_register;
+          v_subtype->attr.own_register = 0;
+        }
       }
 
     } else {

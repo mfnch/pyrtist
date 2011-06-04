@@ -46,6 +46,7 @@ typedef enum {
   VALUEKIND_TARGET            /**< A target value (lvalue) */
 } ValueKind;
 
+/* This datastructure has a major design flaw. See: value.c (Value_Init). */
 typedef struct {
   int       num_ref;          /**< Number of references to this Value */
   CmpProc   *proc;            /**< The compiler to which this value refers */
