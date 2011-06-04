@@ -5,9 +5,26 @@ include "raw"
 include "style"
 include "path"
 
+///Intro: specifies a reference point used when translating objects (such as
+// text, for example). In particular, if you specify that your figure should
+// be translated to a point ``p``, then using ``From[(0.5, 0.5)]`` will make
+// sure that the center of the bouding box of the figure will end up at ``p``.
+// Using ``From[(0, 0)]`` will make sure that the upper-left corner ends up
+// to be in ``p``.
+From = ++(Point point,)
+
+(.[)@From[.point.x = .point.y = 0.5]
+
+///Intro: set the reference point.
+Point@From[.point = $]
+
+///Intro: From[r] is equivalent to From[(r, r)]
+Real@From[.point.x = .point.y = $]
+
 ///Intro: create a new text shape.
 Text = ++((Int pos,) have
           Point pos
+          From from
           Str text, Font font, Sty style)
 
 (.[)@Text[.have = (0,)]
@@ -15,8 +32,11 @@ Text = ++((Int pos,) have
 ///Intro: provide the text string.
 Str@Text[\ .text[$]]
 
-///Intro: the position where to place the text.
+///Intro: the position point where to place the text.
 Point@Text[.pos = $, .have.pos = 1]
+
+///Intro: how to position the text with respect to the give position point.
+From@Text[.from = $]
 
 ///Intro: the font to use.
 Font@Text[.font = $]
@@ -34,7 +54,7 @@ Text@Path[
     p_right = p + d
     p_up = p + d_ort
     Obj[g.raw.ext_set_font, $.font.name]
-    Obj[g.raw.ext_text_path, p, p_right, p_up, Point[(0, 0)], $.text]
+    Obj[g.raw.ext_text_path, p, p_right, p_up, $.from.point, $.text]
     $$.empty = 0
 ]
 

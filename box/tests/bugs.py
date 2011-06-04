@@ -64,3 +64,44 @@ y = s.o.Subtype[]
 """
 test.expect(exit_status=0, num_errors=0, num_warnings=0, answer=[])
 
+#----------------------------------------------------------------------------#
+test = tests.new_test(title="bug 7")
+test.body = """
+Y = (Int num_args, Real a1, a2, a3)
+(.[)@Y[.num_args = 0]
+Int@Y[
+  [If[$$.num_args == 0], $$.a1 = $
+   Else[], If[$$.num_args == 1], $$.a2 = $
+   Else[], If[$$.num_args == 2], $$.a3 = $
+   Else[], Fail["Y object is full"]]
+  .num_args += 1
+]
+
+Y.Get = Real
+Int@Y.Get[
+  [If[$ >= 0 && $ < $$$.num_args]
+     [If[$ == 0], $$ = $$$.a1
+      Else[], If[$ == 1], $$ = $$$.a2
+      Else[], If[$ == 2], $$ = $$$.a3]
+   Else[], Fail["Index ouf of bound"]]
+]
+
+X = (Y y,)
+Int@X[\ .y[$]]
+
+X.Get = Real
+Int@X.Get[$$ = $$$.y.Get[$]]
+
+x = X[123, 124, 125]
+
+CheckX = Void
+Int@CheckX[
+  got = x.Get[$], expected = $ + 123.0
+  If[got != expected]
+    Fail[Str["Failure at index ", $, ". Got ", got, " Expected ", expected]]
+]
+
+CheckX[0, 1, 2]
+"""
+test.expect(exit_status=0, num_errors=0, num_warnings=0, answer=[])
+

@@ -6,17 +6,48 @@ include "style"
 include "path"
 
 ///Intro: create a polygon.
-Poly = ++(Obj args, Sty style, Int close)
+Poly = ++(Obj args, Sty style, Int close
+          (Real left, right) margin
+          Int num_margins)
 
-(.[)@Poly[.close = 0]
-
-///Intro: next vertex of the polygon.
-Point@Poly[\ .args[$]]
+(.[)@Poly[.close = 0, .num_margins = 0, $$.margin = (0.0, 0.0)]
 
 ///Intro: real number between 0 and 1 used to round the corners of the
 // polygon. 0.0 gives sharp corners, 0.5 gives smooth corners, 1.0 gives
 // alternating smooth and sharp corners.
-Real@Poly[\ .args[$]]
+Real@Poly[
+  [If[$$.num_margins == 0]
+     $$.margin.left = ml = Max[0.0, Min[1.0, $]]
+     $$.margin.right = Max[0.0, Min[1.0 - ml, ml]]
+   Else[], If[$$.num_margins == 1]
+     $$.margin.right = Max[0.0, Min[1.0 - $$.margin.left, $]]]
+  $$.num_margins += 1
+]
+
+///Intro: next vertex of the polygon.
+Point@Poly[
+  // Store margins and point
+  \ .args[$$.margin.left, $$.margin.right, $]
+
+  // Swap margins by default for new vertices
+  $$.num_margins = 0
+  $$.margin.right = Real[$$.margin.left, $$.margin.left = $$.margin.right]
+]
+
+///Intro: the number of vertices of the polygon.
+Poly@Num[Num[$.args]/3]
+
+///Intro: retrieval of vertices of the polygon (or intermediate points).
+Poly.Get = Point
+
+///Intro: get the polygon vertex having the given index.
+Int@Poly.Get[
+  If[$ < 0], n = Num[$$$], $$ = Point[$$$.args.Get[2 + 3*(n + $)]]
+  Else[], $$ = Point[$$$.args.Get[2 + 3*$]]
+]
+
+//NOTE: BUG: the following doesn't work!
+//  Int@Poly.Get[$$ = Point[$$$.args.Get[2 + 3*$]]]
 
 ///Intro: color to use for filling the polygon.
 Color@Poly[\ .style[$]]
@@ -26,24 +57,45 @@ Sty@Poly[\ .style[$]]
 
 ///Intro: add the polygon to the path.
 Poly@Path[
-  n = Num[$.args]
+  num_args = Num[$.args]
+  num_vertices = num_args/3
+  If[num_vertices >= 3]
+    vertex0 = $.Get[-2]
+    vertex1 = $.Get[-1]
+    prev_margin = Real[$.args.Get[num_args - 2]]
+    point0 = vertex1 + (vertex0 - vertex1)*prev_margin
 
-  i = 0
-  first_point = 1
+    Obj[g.raw.move_to, point0]
 
-  [If[i < n]
-    arg_type = $.args.GetType[i]
-    [If[arg_type = objtype.point]
-       pt = Point[$.args.Get[i]]
-       [If[first_point], Obj[g.raw.move_to, pt], first_point=0
-        Else[], Obj[g.raw.line_to, pt]]
-     Else[]]
-  \ ++i, For[1]]
+    i = 0
+    [If[i < num_args]
+       margin_left = Real[$.args.Get[i++]]
+       margin_right = Real[$.args.Get[i++]]
+       vertex2 = Point[$.args.Get[i++]]
 
-  // Close the polygon, if requested
-  [If[$.close], Obj[g.raw.close_path]]
+       degenerate_corner = (prev_margin == 0.0) || (margin_left == 0.0)
 
-  .empty = first_point
+       segment_vector = vertex2 - vertex1
+       point1 = vertex1 + margin_left*segment_vector
+       point2 = vertex2 - margin_right*segment_vector
+
+       [If[degenerate_corner]
+          Obj[g.raw.line_to, point2]
+        Else[]
+          Obj[g.raw.ext_joinarc_to, point0, vertex1, point1]
+          Obj[g.raw.line_to, point2]]
+
+       prev_margin = margin_right
+       point0 = point2
+       vertex0 = vertex1
+       vertex1 = vertex2
+     For[1]]
+
+    // Close the polygon, if requested
+    [If[$.close], Obj[g.raw.close_path]]
+
+    // Mark the path as "non empty"
+    .empty = 0
 ]
 
 ///Intro: pass the polygon to the window for drawing.
