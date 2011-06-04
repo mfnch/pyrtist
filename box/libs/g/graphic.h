@@ -403,7 +403,8 @@ typedef union {
   BoxReal  *r,
            w;
   BoxStr   *s;
-  BoxPoint p,
+  BoxPoint *pp,
+           p,
            v;
 } BoxGArg;
 

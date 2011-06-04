@@ -22,16 +22,16 @@ Testreport@Tests[
 
 t = Tests[]
 
-\ t[("Obj[]", Str[Obj[]])
-    ("Obj[123]", Str[Obj[123]])
-    ("Obj[1.234]", Str[Obj[1.234]])
-    ("Obj[\"Hello world!!\"]", Str[Obj["Hello world!!"]])
-    ("Obj[Obj[]]", Str[Obj[Obj[]]])
-    ("Obj[Obj[1]]", Str[Obj[Obj[1]]])
-    ("Obj[Obj[Obj[Obj[5, 1], 1], 1], 1]", Str[Obj[Obj[Obj[Obj[5, 1], 1], 1], 1]])
-    ("Obj[Obj[Obj[Obj[5], 1], 1], 1]", Str[Obj[Obj[Obj[Obj[5], 1], 1], 1]])
-    ("Obj[Obj[1, 2], Obj[3, 4]]", Str[Obj[Obj[1, 2], Obj[3, 4]]])
-    ("Obj[1, 2, 3, 4]", Str[o = Obj[1, 2], o.Merge[Obj[3, 4]], o])]
+\ t[("Obj[]", Repr[Obj[]])
+    ("Obj[123]", Repr[Obj[123]])
+    ("Obj[1.234]", Repr[Obj[1.234]])
+    ("Obj[\"Hello world!!\"]", Repr[Obj["Hello world!!"]])
+    ("Obj[Obj[]]", Repr[Obj[Obj[]]])
+    ("Obj[Obj[1]]", Repr[Obj[Obj[1]]])
+    ("Obj[Obj[Obj[Obj[5, 1], 1], 1], 1]", Repr[Obj[Obj[Obj[Obj[5, 1], 1], 1], 1]])
+    ("Obj[Obj[Obj[Obj[5], 1], 1], 1]", Repr[Obj[Obj[Obj[Obj[5], 1], 1], 1]])
+    ("Obj[Obj[1, 2], Obj[3, 4]]", Repr[Obj[Obj[1, 2], Obj[3, 4]]])
+    ("Obj[1, 2, 3, 4]", Repr[o = Obj[1, 2], o.Merge[Obj[3, 4]], o])]
 
 Exit[!t.success]
 

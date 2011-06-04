@@ -787,7 +787,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
       char *text = BoxStr_To_C_String(args[4].s);
       if (text != NULL) {
         My_Cairo_Text_Path(w, & args[0].p, & args[1].p, & args[2].p,
-                           & args[3].p, text);
+                           args[3].pp, text);
         BoxMem_Free(text);
         return BOXTASK_OK;
       }
