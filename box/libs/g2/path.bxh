@@ -13,3 +13,6 @@ Obj@Path[\ .cmdstream[$]]
 
 ///Intro: convert the path into graphical commands.
 Path@CmdStream[$.cmdstream]
+
+///Intro: pass the path to the window for drawing with the default style.
+Path@Window[If[!$.empty], $.cmdstream, Obj[Obj[g.raw.fill]]]

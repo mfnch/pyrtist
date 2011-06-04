@@ -40,8 +40,7 @@ w = Window[][
      [If[0]
         \ .Poly[0.2, p7, p3, p6, color.red, Style[.Border[5, color.black]], .Close[]]
       Else[]
-        p = Poly[0.4, p7, p3, p6, color.red, Sty[Border[5, color.black]], Close[]]
-        Print["Point: ", p.args], p
+        Poly[0.4, p7, p3, p6, color.red, Sty[Border[5, color.black]], Close[]]
       ]]
 
   [If[1]

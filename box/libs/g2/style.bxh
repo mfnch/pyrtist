@@ -102,3 +102,22 @@ Sty@CmdStream[
   // Commands for the style of the border
   [If[$.have.border], $.border]
 ]
+
+///Intro: fill style.
+FillStyle = ++(Int style,)
+
+(.[)@FillStyle[.style = -1]  // -1 means: unspecified
+
+///Intro: the fill style. One of the following: "void", "plain", "eo".
+Str@FillStyle[
+  If[0]
+  Else[], If[0], .style = g.fill_rule.even_odd
+  Else[], If[0], .style = g.fill_rule.winding
+  Else[]
+    Print["Unknown fill style. Known styles: \"void\", \"plain\", \"eo\"";]
+]
+
+///Intro: fill style (for compatibility with Box 0.2.2).
+Sty.Fill = Void
+
+Str@Sty.Fill[]

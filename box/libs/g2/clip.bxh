@@ -1,0 +1,13 @@
+
+///Section: g
+
+include "raw"
+
+///Intro: create a stroked path command
+Clip = ++(Obj obj,)
+
+Obj@Clip[\ $$.obj[$]]
+
+///Intro:
+Clip@Window[$.obj]
+
