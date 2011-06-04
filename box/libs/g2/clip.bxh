@@ -2,12 +2,25 @@
 ///Section: g
 
 include "raw"
+include "path"
 
-///Intro: create a stroked path command
-Clip = ++(Obj obj,)
+///Intro: create a clipped window. A clipped window is similar to a regular
+// {type(Window)} object, except that it gets clipped along a given path
+// before being shown.
+Clip = ++(Path path, Window window)
 
-Obj@Clip[\ $$.obj[$]]
+(.[)@Clip[.window = Window[]]
 
-///Intro:
-Clip@Window[$.obj]
+///Intro: add the content of the given window to the clipped window.
+Window@Clip[\ $$.window[$]]
 
+///Intro: add the path to the clipping path.
+Path@Clip[\ $$.path[$]]
+
+///Intro: send the clipped object to the window.
+Clip@Window[
+  Obj[Obj[g.raw.save]]
+  [If[!$.path.empty], $.path.cmdstream, Obj[Obj[g.raw.clip]]]
+  $.window
+  Obj[Obj[g.raw.restore]]
+]
