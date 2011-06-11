@@ -4,16 +4,6 @@ GUI = Void
 Window@GUI[]
 
 
-
-
-
-
-
-
-
-
-
-
 //!BOXER:REFPOINTS:BEGIN
 bbox1 = Point[.x=58.5102335391, .y=272.563848732]
 bbox2 = Point[.x=377.827846708, .y=1.57551022257]
@@ -26,10 +16,7 @@ p6 = Point[.x=251.569878086, .y=220.256523953]
 p7 = Point[.x=131.200675926, .y=116.272756512]
 p8 = Point[.x=186.658737654, .y=75.309454186]
 //!BOXER:REFPOINTS:END
-include "raw"
-include "poly"
-include "circle"
-include "text"
+include "g2"
 
 w = Window[][
   .Show[bbox1, bbox2]
@@ -40,7 +27,7 @@ w = Window[][
      [If[0]
         \ .Poly[0.2, p7, p3, p6, color.red, Style[.Border[5, color.black]], .Close[]]
       Else[]
-        Poly[0.4, p7, p3, p6, color.red, Sty[Border[5, color.black]], Close[]]
+        Poly[p7, p3, p6, color.red, Sty[Border[5, color.black]], Close[]]
       ]]
 
   [If[1]
@@ -55,7 +42,7 @@ w = Window[][
 
   Text[p8, "hello world", color.black, Font["sans", 20]]
 
-  //.Save["test.png"]
+  //.Save["test.png", Window["argb32", .Res[Dpi[50]]]]
 
 ]
 

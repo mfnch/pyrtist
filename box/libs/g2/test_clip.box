@@ -4,6 +4,7 @@ GUI = Void
 Window@GUI[]
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 bbox1 = Point[.x=0.0, .y=50.0], bbox2 = Point[.x=100.0, .y=0.0]
 gui5 = Point[.x=30.8641975309, .y=17.5925491469]
@@ -30,10 +31,14 @@ myw = Window[][
 w = Window[][
   .Show[bbox1, bbox2]
 
+  do_clip = 1 // Whether to clip or not
+
   p = Poly[gui5, gui6, gui7, gui8]
   c = Circle[gui9, 5]
 
-  Clip[Path[p, c], myw]
+  Clip[myw, If[do_clip], Path[p, c]]
+
+  Circle[gui10, 5]
 ]
 
 GUI[w]

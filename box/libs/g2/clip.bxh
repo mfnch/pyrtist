@@ -1,4 +1,4 @@
-
+#provide "g.clip"
 ///Section: g
 
 include "raw"
