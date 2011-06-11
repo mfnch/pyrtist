@@ -22,11 +22,14 @@ import namegen
 
 
 class RefPoint(object):
-  def __init__(self, name, value=None, visible=True):
+  def __init__(self, name, value=None, visible=True, selected=False):
     self.name = name
     self.value = value
     self.visible = visible
-    self.selected = False
+    self.selected = selected
+
+  def copy(self):
+    return RefPoint(self.name, self.value, self.visible, self.selected)
 
 
 class RefPoints(object):
@@ -35,7 +38,7 @@ class RefPoints(object):
     self.by_name = {}
     for rp in content:
       self.by_name[rp.name] = rp
-    self.selection = []
+    self.selection = {}
     self._fns = callbacks if callbacks != None else {}
     callbacks.setdefault("get_next_refpoint_name", None)
     callbacks.setdefault("set_next_refpoint_name", None)
@@ -66,7 +69,7 @@ class RefPoints(object):
     self.by_name = {}
     for rp in refpoints:
       self.by_name[rp.name] = rp
-    self.selection = []
+    self.selection = {}
 
     # Notify RefPoint additions
     fn = self._fns["refpoint_append"]
@@ -80,20 +83,38 @@ class RefPoints(object):
 
   def clear_selection(self):
     """Clear the current selection of RefPoint-s."""
-    for rp in self.selection:
+    for rp in self.selection.itervalues():
       rp.selected = False
-    self.selection = []
+    self.selection = {}
 
-  def select(self, rps):
+  def select(self, *rps, **named_args):
     """Add the RefPoint-s in rps to the current selected RefPoint-s."""
-    for rp in rps:
-      rp.selected = True
-    self.selection.extend(rps)
+    selection = self.selection
+    if named_args.get("flip", False):
+      for rp in rps:
+        rp.selected = not rp.selected
+        if rp.selected:
+          selection[rp.name] = rp
+        else:
+          selection.pop(rp.name, None)
 
-  def set_selection(self, selection):
+    else:
+      for rp in rps:
+        rp.selected = True
+        selection[rp.name] = rp
+
+  def deselect(self, *rps):
+    """Remove the RefPoint-s in rps from the current selected RefPoint-s."""
+    selection = self.selection
+    for rp in rps:
+      if rp.name in selection:
+        rp.selected = False
+        selection.pop(rp.name)
+
+  def set_selection(self, *selection):
     """Replace the current selection with the given one."""
     self.clear_selection()
-    self.select(selection)
+    self.select(*selection)
 
   def is_selected(self, rp):
     """Returns whether the given RefPoint belongs to the current selection.
@@ -132,8 +153,7 @@ class RefPoints(object):
   def remove(self, rp):
     self.content.remove(rp)
     self.by_name.pop(rp.name)
-    if rp in self.selection:
-      self.selection.remove(rp)
+    self.selection.pop(rp.name, None)
 
     # Remove notification
     fn = self._fns["refpoint_remove"]

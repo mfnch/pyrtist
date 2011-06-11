@@ -236,7 +236,7 @@ _save_to_str_fns = {(0, 1): save_to_str_v0_1,
                     (0, 1, 1): save_to_str_v0_1_1}
 
 def save_to_str(document, version=version):
-  if _save_to_str_fns.has_key(version):
+  if version in _save_to_str_fns:
     fn = _save_to_str_fns[version]
     return fn(document)
 
@@ -360,16 +360,13 @@ class Document(Configurable):
     def guipoint_fn(p_str):
       refpoints.append(refpoint_from_string(p_str))
 
-    if parts.has_key("refpoints_text"):
+    if "refpoints_text" in parts:
       parse_guipoint_part(parts["refpoints_text"], guipoint_fn)
 
-    if not parts.has_key("userspace"):
+    if "userspace" not in parts:
       # This means that the file was not produced by Boxer, but it is likely
       # to be a plain Box file.
-      if parts.has_key("preamble"):
-        parts["userspace"] = parts["preamble"]
-      else:
-        parts["userspace"] = ""
+      parts["userspace"] = parts.get("preamble", "")
       parts["preamble"] = ""
 
     self.parts = parts

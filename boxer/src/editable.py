@@ -83,10 +83,16 @@ class BoxViewArea(ZoomableArea):
     ZoomableArea.__init__(self, drawer, callbacks=callbacks, **extra_args)
 
 
+class DraggedPoints(object):
+  def __init__(self, points, py_initial_pos):
+    self.initial_points = dict((k, v.copy()) for k, v in points.iteritems())
+    self.py_initial_pos = py_initial_pos
+
+
 class BoxEditableArea(BoxViewArea, Configurable):
   def __init__(self, *args, **extra_args):
 
-    self._dragged_refpoint = None      # RefPoint which is being dragged
+    self._dragged_refpoints = None     # RefPoint which is being dragged
     self._fns = {"refpoint_new": None, # External handler functions
                  "refpoint_delete": None,
                  "refpoint_pick": None,
@@ -180,45 +186,48 @@ class BoxEditableArea(BoxViewArea, Configurable):
       else:
         return None
 
-  def refpoint_select(self, rp):
+  def refpoint_select(self, rp, add=False):
     refpoints = self.document.refpoints
     if type(rp) == str:
       rp = refpoints[rp]
-    if len(refpoints.selection) > 0:
-      prev_rp = refpoints.selection[0]
-      refpoints.set_selection([rp])
-      self._refpoint_show(prev_rp)
-      self._refpoint_show(rp)
-    else:
-      refpoints.set_selection([rp])
-      self._refpoint_show(rp)
 
-  def _refpoint_hide(self, rp):
+    touched_points = dict(refpoints.selection)
+    if add:
+      refpoints.select(rp, flip=True)
+    else:
+      refpoints.clear_selection()
+      refpoints.select(rp)
+    touched_points.update(refpoints.selection)
+    self._refpoint_show(*touched_points.values())
+
+  def _refpoint_hide(self, *rps):
     """Hide the given RefPoint. This is a purely graphical operation, it does
     not change the status of the RefPoint object.
     """
-    x, y = self.get_visible_coords().coord_to_pix(rp.value)
-    l0 = self.get_config("refpoint_size")
-    dl0 = l0*2
-    wsize = self.window.get_size()
-    x0, y0, dx0, dy0 = _cut_square(wsize, x-l0, y-l0, dl0, dl0)
-    if dx0 > 0 and dy0 > 0:
-      self.repaint(x0, y0, dx0, dy0)
+    for rp in rps:
+      x, y = self.get_visible_coords().coord_to_pix(rp.value)
+      l0 = self.get_config("refpoint_size")
+      dl0 = l0*2
+      wsize = self.window.get_size()
+      x0, y0, dx0, dy0 = _cut_square(wsize, x-l0, y-l0, dl0, dl0)
+      if dx0 > 0 and dy0 > 0:
+        self.repaint(x0, y0, dx0, dy0)
 
-    magnification = self.last_magnification
-    distance = (dl0 + 1)/magnification if magnification != None else None
-    overlapping_rps = self.document.refpoints.get_neighbours(rp, distance)
-    self._draw_refpoints(overlapping_rps)
+      magnification = self.last_magnification
+      distance = (dl0 + 1)/magnification if magnification != None else None
+      overlapping_rps = self.document.refpoints.get_neighbours(rp, distance)
+      self._draw_refpoints(overlapping_rps)
 
-  def _refpoint_show(self, rp):
-    if rp.visible:
-      refpoints = self.document.get_refpoints()
-      view = self.get_visible_coords()
-      pix_coord = view.coord_to_pix(rp.value)
-      rp_size = self.get_config("refpoint_size")
-      gc = (self.get_config("refpoint_sel_gc") if refpoints.is_selected(rp)
-            else self.get_config("refpoint_gc"))
-      draw_ref_point(self.window, pix_coord, rp_size, gc)
+  def _refpoint_show(self, *rps):
+    for rp in rps:
+      if rp.visible:
+        refpoints = self.document.get_refpoints()
+        view = self.get_visible_coords()
+        pix_coord = view.coord_to_pix(rp.value)
+        rp_size = self.get_config("refpoint_size")
+        gc = (self.get_config("refpoint_sel_gc") if refpoints.is_selected(rp)
+              else self.get_config("refpoint_gc"))
+        draw_ref_point(self.window, pix_coord, rp_size, gc)
 
   def _draw_refpoints(self, rps=None):
     refpoints = self.document.refpoints
@@ -236,11 +245,10 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
   def refpoint_move(self, rp, py_coords):
     """Move a reference point to a new position."""
+    screen_view = self.get_visible_coords()
+    box_coords = screen_view.pix_to_coord(Point(py_coords))
     if rp.visible:
-      py_coords = Point(py_coords)
       self._refpoint_hide(rp)
-      screen_view = self.get_visible_coords()
-      box_coords = screen_view.pix_to_coord(py_coords)
       rp.value = box_coords
       self._refpoint_show(rp)
 
@@ -280,10 +288,10 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
   def _on_button_press_event(self, eventbox, event):
     """Called when clicking over the DrawingArea."""
-
     refpoints = self.document.refpoints
     py_coords = event.get_coords()
     picked = self.refpoint_pick(py_coords)
+    state = event.get_state()
     rp = None
     if picked != None:
       rp, _ = picked
@@ -292,13 +300,16 @@ class BoxEditableArea(BoxViewArea, Configurable):
         fn(self, rp)
 
     if event.button == self.get_config("button_left"):
+      shift_pressed = (state & gtk.gdk.SHIFT_MASK)
       if rp != None:
-        if refpoints.is_selected(rp):
-          self._dragged_refpoint = rp
+        if refpoints.is_selected(rp) and not shift_pressed:
+          self._dragged_refpoints = \
+            DraggedPoints(refpoints.selection, py_coords)
         else:
-          self.refpoint_select(rp)
+          self.refpoint_select(rp, add=shift_pressed)
 
-      else:
+      elif not shift_pressed:
+        #  ^^^ don't want to create a new point while we are selecting others
         box_coords = self.get_visible_coords().pix_to_coord(py_coords)
         if box_coords != None:
           rp = self.refpoint_new(py_coords)
@@ -307,7 +318,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
           if fn != None:
             fn(rp)
 
-    elif self._dragged_refpoint != None:
+    elif self._dragged_refpoints != None:
       return
 
     elif event.button == self.get_config("button_center"):
@@ -321,15 +332,44 @@ class BoxEditableArea(BoxViewArea, Configurable):
         self.refpoint_delete(rp)
 
   def _on_motion_notify_event(self, eventbox, event):
-    if self._dragged_refpoint != None:
+    if self._dragged_refpoints != None:
       py_coords = event.get_coords()
-      self.refpoint_move(self._dragged_refpoint, py_coords)
+      self._drag_refpoints(py_coords)
 
   def _on_button_release_event(self, eventbox, event):
-    if self._dragged_refpoint != None:
+    if self._dragged_refpoints != None:
       py_coords = event.get_coords()
-      self.refpoint_move(self._dragged_refpoint, py_coords)
-      self._dragged_refpoint = None
+      self._drag_refpoints(py_coords)
+      if event.button == self.get_config("button_left"):
+        self._drag_confirm(py_coords)
+      self._dragged_refpoints = None
       if self.get_config("redraw_on_move"):
         self.buf_needs_update = True
         self.queue_draw()
+
+  def _drag_refpoints(self, py_coords):
+    drps = self._dragged_refpoints
+    rps = self.document.refpoints.selection
+    assert drps != None
+    screen_view = self.get_visible_coords()
+    transform = screen_view.pix_to_coord
+    box_vec = (Point(transform(Point(py_coords))) -
+               Point(transform(Point(drps.py_initial_pos))))
+    for rp_name, rp in drps.initial_points.iteritems():
+      if rp.visible:
+        self._refpoint_hide(rp)
+        rp.value = Point(rps[rp_name].value) + box_vec
+        self._refpoint_show(rp)
+
+  def _drag_confirm(self, py_coords):
+    drps = self._dragged_refpoints
+    rps = self.document.refpoints.selection
+    assert drps != None
+    screen_view = self.get_visible_coords()
+    transform = screen_view.pix_to_coord
+    box_vec = (Point(transform(Point(py_coords))) -
+               Point(transform(Point(drps.py_initial_pos))))
+    for rp_name, rp in drps.initial_points.iteritems():
+      if rp.visible:
+        rps[rp_name].value = Point(rps[rp_name].value) + box_vec
+    
