@@ -34,7 +34,7 @@ g = ((Int save, restore, set_antialias,
           set_dash, set_fill_rule, set_source_rgba,
           text_path, translate, scale, rotate
           ext_joinarc_to, ext_arc_to, ext_set_font, ext_text_path
-          ext_transform) raw
+          ext_transform, ext_fill_stroke) raw
      (Int default, none, gray, subpixel) antialias
      ((Int miter, round, bevel) join
       (Int butt, round, square) cap) line

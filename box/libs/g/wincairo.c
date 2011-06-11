@@ -807,6 +807,15 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
+  case BOXG_CMD_EXT_FILL_STROKE:
+    if (cairo_get_line_width(cr) > 0.0) {
+      cairo_fill_preserve(cr);
+      cairo_stroke(cr);
+
+    } else
+      cairo_fill(cr);
+    return BOXTASK_OK;
+
   default:
     return BOXTASK_FAILURE;
   }
