@@ -148,6 +148,100 @@ except:
 #-----------------------------------------------------------------------------
 # Saving and loading the program settings (at startup and exit)
 
+
+class ConfigOption(object):
+  def __init__(self, name, default_val, desc=None):
+    self.name = name
+    self.default_value = default_val
+    self.desc = desc
+
+  def get_range(self):
+    return self.name
+
+  def get(self, val):
+    return val
+
+  def set(self, val):
+    return val
+
+  def normalize(self, val):
+    return self.get(self.set(val))
+
+  def __str__(self):
+    return self.desc or ""
+
+
+class StringOption(ConfigOption):
+  def __init__(self, default_val, desc=None):
+    ConfigOption.__init__(self, "String", default_val, desc=desc)
+
+
+class FileOption(StringOption):
+  def __init__(self, default_val, must_exist=False, desc=None):
+    ConfigOption.__init__(self, "File", default_val, desc=desc)
+    self.must_exist = must_exist
+
+
+class ScalarOption(ConfigOption):
+  def __init__(self, name, default_val,
+               minimum=None, maximum=None, scalar_type=int, desc=None):
+    ConfigOption.__init__(self, name, default_val, desc=desc)
+    self.minimum = minimum
+    self.maximum = maximum
+    self.scalar_type = scalar_type
+
+  def set(self, value):
+    v = self.scalar_type(value)
+    mn = self.minimum
+    mx = self.maximum
+    if mx != None and v > mx:
+      v = mx
+    elif mn != None and v < mn:
+      v = mn
+    return mn
+
+  def __str__(self):
+    return ConfigOption.__str__(self)
+
+  def get_range(self):
+    mn = self.minimum
+    mx = self.maximum
+    idx = 2*int(mx != None) + int(mn != 0)
+    return self.name + \
+           ["",
+            " greater than %s" % mn,
+            " lower than %s" % mx,
+            " between %s and %s" % (mn, mx)][idx]
+
+
+class IntOption(ScalarOption):
+  def __init__(self, default_val, minimum=None, maximum=None, desc=None):
+    ScalarOption.__init__(self, "Int", default_val, minimum, maximum,
+                          int, desc=desc)
+
+
+class FloatOption(ScalarOption):
+  def __init__(self, default_val, minimum=None, maximum=None, desc=None):
+    ScalarOption.__init__(self, "Real", default_val, minimum, maximum,
+                          float, desc=desc)
+
+
+class EnumOption(ConfigOption):
+  def __init__(self, key_val_pairs, desc=None):
+    self.key_to_val = dict(key_val_pairs)
+    self.val_to_key = dict((i, s) for s, i in key_val_pairs)
+    ConfigOption.__init__(self, "Enum", key_val_pairs[0][1], desc=desc)
+
+  def get(self, val):
+    return self.val_to_key.get(val, self.val_to_key[self.default_value])
+
+  def set(self, key):
+    return self.key_to_val[key]
+
+  def get_range(self):
+    return "one of: " + ", ".join(self.key_to_val.keys())
+
+
 class BoxerConfigParser(cfgp.SafeConfigParser):
   def __init__(self, defaults=None, default_config=[],
                user_cfg_file=None):
@@ -155,11 +249,15 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
 
     # Generate default configuration
     default_config_dict = {}
-    for section, option, value, _ in default_config:
+    descs = {}
+    for section, option, desc in default_config:
       section_dict = default_config_dict.setdefault(section, {})
-      section_dict[option] = value
+      section_dict[option] = desc.default_value
+      desc_section_dict = descs.setdefault(section, {})
+      desc_section_dict[option] = desc
 
     self._default_config = default_config_dict
+    self._option_descs = descs
     self.is_modified = False
     self.broken = False
     self.user_cfg_file = user_cfg_file
@@ -175,6 +273,18 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
       return (option in self._default_config[section])
     else:
       return False
+
+  def get_sections(self):
+    """Get all the available sections."""
+    return self._default_config.keys()
+
+  def get_options(self, section):
+    """Get all the available options for the given section."""
+    return self._default_config[section].keys()
+
+  def get_desc(self, section, option):
+    """Get a description for the option in the section."""
+    return self._option_descs[section][option]
 
   def get(self, section, option, raw=False, vars=None):
     if (not self.has_option(section, option)
@@ -192,7 +302,7 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
   def set(self, section, option, value, auto_add_section=True):
     self.is_modified = True
     if not self.has_section(section):
-        self.add_section(section)
+      self.add_section(section)
     return cfgp.SafeConfigParser.set(self, section, option, value)
 
   def save_configuration(self, force=False, create_dir=True):
@@ -233,23 +343,33 @@ def get_configuration():
     box_exec = "box"
 
   default_config = \
-   [('Box', 'exec', box_exec, 'The path to the Box executable'),
-    ('Box', 'stdout_buffer_size', '32', 'Maximum size in KB of Box scripts '
-                                        'stdout (negative for unlimited)'),
-    ('Box', 'stdout_update_delay', '0.2', 'Delay between updates of the '
-                               'textview showing the output of Box programs'),
-    ('GUI', 'font', 'Monospace 10', 'The font used in the GUI'),
-    ('GUI', 'rotation', '0', 'The displacement of text-view/drawing-area'),
-    ('GUI', 'window_size', '600x600', 'The initial size of the window'),
-    ('GUIView', 'refpoint_size', '4', 'The size of the squares used to mark '
-                                      'the reference points'),
-    ('Behaviour', 'button_left', '1', 'ID of the mouse left button'),
-    ('Behaviour', 'button_center', '2', 'ID of the mouse central button'),
-    ('Behaviour', 'button_right', '3', 'ID of the mouse right button'),
-    ('Internals', 'src_marker_refpoints_begin', '//!BOXER:REFPOINTS:BEGIN',
-                                                                        None),
-    ('Internals', 'src_marker_refpoints_end', '//!BOXER:REFPOINTS:END', None),
-    ('Internals', 'src_marker_cursor_here', '//!BOXER:CURSOR:HERE', None)]
+   [('Box', 'exec',
+     FileOption(box_exec, must_exist=True,
+                desc='The path to the Box executable')),
+    ('Box', 'stdout_buffer_size',
+     IntOption(32, -1, 1024, desc=('Maximum size in KB of Box scripts stdout '
+                                  '(negative for unlimited)'))),
+    ('Box', 'stdout_update_delay',
+     FloatOption(0.2, 0.1, 10.0,
+                 desc=('Delay between updates of the textview showing the '
+                       'output of Box programs'))),
+    ('GUI', 'font',
+     StringOption('Monospace 10', desc='The font used in the GUI')),
+    ('GUI', 'rotation',
+     EnumOption((("bottom", "0"), ("left", "1"), ("top", "2"), ("right", "3")),
+                desc='The displacement of text-view with respect to the '
+                     'drawing-area')),
+    ('GUI', 'window_size',
+     StringOption('600x600', desc='The initial size of the window')),
+    ('GUIView', 'refpoint_size',
+     IntOption(4, 1, 50, desc='The size of the squares used to mark '
+                              'the reference points')),
+    ('Behaviour', 'button_left',
+     IntOption(1, 1, 5, desc='ID of the mouse left button')),
+    ('Behaviour', 'button_center',
+     IntOption(2, 1, 5, desc='ID of the mouse central button')),
+    ('Behaviour', 'button_right',
+     IntOption(3, 1, 5, desc='ID of the mouse right button'))]
 
   user_cfg_file = os.path.join(home_path, cfg_dir, cfg_file)
 

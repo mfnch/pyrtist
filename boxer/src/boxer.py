@@ -211,7 +211,7 @@ class Boxer(object):
     self.textbuffer.set_text(text)
 
     # Remove the "here" marker and put the cursor there!
-    here_marker = self.config.get("Internals", "src_marker_cursor_here")
+    here_marker = document.marker_cursor_here
     si = self.textbuffer.get_start_iter()
     found = si.forward_search(here_marker, gtk.TEXT_SEARCH_TEXT_ONLY)
     if found != None:

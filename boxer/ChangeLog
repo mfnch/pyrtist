@@ -1,3 +1,9 @@
+In version 0.3.1:
+  BRIEFLY: minor feature enhancements.
+  - Can now select and drag more points (just press shift and left click).
+    Points can be selected, deselected and dragged. To cancel dragging just
+    right click.
+
 In version 0.3.0:
   BRIEFLY: the Box assistant was implemented.
   DETAILS:

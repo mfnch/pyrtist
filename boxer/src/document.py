@@ -30,6 +30,7 @@ version = (0, 1, 1)
 
 max_chars_per_line = 79
 marker_begin = "//!BOXER"
+marker_cursor_here = "//!BOXER:CURSOR:HERE"
 marker_sep = ":"
 
 endline = "\n"
