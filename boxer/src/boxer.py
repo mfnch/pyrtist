@@ -86,7 +86,10 @@ def create_sourceview(use_gtksourceview=True):
       import gtksourceview2 as gtksourceview
       srcbuf = gtksourceview.Buffer()
       langman = gtksourceview.LanguageManager()
-      lang = langman.get_language("c")
+      search_paths = langman.get_search_path()
+      search_paths.append(config.get_hl_path())
+      langman.set_search_path(search_paths)
+      lang = langman.get_language("box")
       srcbuf.set_language(lang)
       srcbuf.set_highlight_syntax(True)
       srcview = gtksourceview.View(srcbuf)

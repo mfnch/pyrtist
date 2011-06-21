@@ -3,6 +3,8 @@ In version 0.3.1:
   - Can now select and drag more points (just press shift and left click).
     Points can be selected, deselected and dragged. To cancel dragging just
     right click.
+  - Adding syntax highlighting specific to the Box language (we were using
+    C highlighting so far).
 
 In version 0.3.0:
   BRIEFLY: the Box assistant was implemented.

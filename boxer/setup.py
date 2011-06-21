@@ -13,7 +13,8 @@ license = 'GPL'
 packages = ['boxer']
 package_dir = {'boxer': 'src'}
 package_data = {'boxer': ['glade/*', 'examples/*',
-                          'icons/*.png', 'icons/fonts/*.png']}
+                          'icons/*.png', 'icons/fonts/*.png',
+                          'hl/*.lang']}
 script = 'scripts/boxer'
 scripts = [script]
 
