@@ -164,12 +164,13 @@ class BoxerWindowSettings(object):
     value = self.option_changed_vals.get(section, {}).get(option, None)
     if value == None:
       value = self.config.get(section, option)
+    value = str(desc.get(value))
 
     entry = self.window_entry
     label = self.window_label
     opt_str = "%s.%s: %s" % (section, option, range_str)
     label.set_text("%s\n%s" % (opt_str, desc))
-    entry.set_text(str(desc.get(value)))
+    entry.set_text(value)
     entry.set_tooltip_text(range_str)
 
     self.option_section = section
@@ -181,7 +182,7 @@ class BoxerWindowSettings(object):
     for section, section_dict in self.option_changed_vals.iteritems():
       for option, val in section_dict.iteritems():
         desc = self.config.get_desc(section, option)
-        self.config.set(section, option, desc.set(val))
+        self.config.set(section, option, str(desc.set(val)))
 
 
 def main():

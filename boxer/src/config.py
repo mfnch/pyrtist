@@ -100,6 +100,10 @@ def icon_path(filename=None):
   base = os.path.join(installation_path(), 'icons')
   return base if filename == None else os.path.join(base, filename)
 
+def get_hl_path(filename=None):
+  base = os.path.join(installation_path(), 'hl')
+  return base if filename == None else os.path.join(base, filename)
+
 def get_example_files():
   """Return a list of example files for Boxer."""
   import glob
@@ -198,7 +202,7 @@ class ScalarOption(ConfigOption):
       v = mx
     elif mn != None and v < mn:
       v = mn
-    return mn
+    return v
 
   def __str__(self):
     return ConfigOption.__str__(self)
@@ -236,7 +240,7 @@ class EnumOption(ConfigOption):
     return self.val_to_key.get(val, self.val_to_key[self.default_value])
 
   def set(self, key):
-    return self.key_to_val[key]
+    return self.key_to_val.get(key, self.default_value)
 
   def get_range(self):
     return "one of: " + ", ".join(self.key_to_val.keys())
