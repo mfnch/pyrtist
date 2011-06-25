@@ -1,8 +1,93 @@
 Introduction to the Box Language
 ================================
 
-Compound statements
--------------------
+Creating objects
+----------------
+
+There are two main entities in the Box language: **types** and **objects**.
+Types have names starting with an uppercase letter.
+For example, ``Int``, ``Real`` are two fundamental types in the Box language.
+*Types can then be combined together to form new types.* For example::
+
+  NewType = Int            // NewType is just a new name for the type Int
+  Tuple = (Int, Real)      // A tuple with anonymous members
+  Point3D = (Real x, y, z) // A tuple formed by three members of type Real
+
+The lines above show three ways of defining a new type in Box.
+There are many more ways of combining already existing types to create new
+ones. Note also the way **comments** can be added to the sources: whatever
+follows the comment mark ``//`` is treated as a comment and is ignored by
+the compiler.
+
+There are a number of **intrinsic types** the user can start from.
+``Int`` is the type for integer numbers, ``Real`` for real numbers,
+``Str`` is the type for strings, ``Char`` is the type for characters.
+Types can then be used to create new objects. For example, a new empty string
+can be created as follows::
+
+  s = Str[]
+
+In general, one can create a new instance for a given type ``MyType`` using
+the syntax ``MyType[]``. In the line above, we are also giving a name to
+the new emtpy string created with ``Str[]``.
+Names for instances, do start with a lowercase letter. For example,
+``myvariable`` or ``myVariable``.
+
+The language also offers facilities to quickly create objects for most
+of the intrinsic types. For example::
+
+  s = "my string"  // String
+  i = 123          // Integer number
+  r = 1.23         // Real number
+  c = 'a'          // Character
+
+Similarly to types, also **objects can be combined together to create new
+objects**. For example::
+
+  Tuple = (Real, Real) // Creates a new structure type containing two Reals
+  tuple = (1.2, 3.4)   // Creates a new instance of the type (Real, Real)
+                       // containing the numbers 1.2 and 3.4
+
+Creating types is useful, as it simplifies creating instances. For example::
+
+  Triple = (Real x, y, z)
+  triple1 = Triple[]
+  triple2 = Triple[.x = .y = .z = 1.0]
+
+But, creating instances is not the only thing one may wants to do in a
+program. It is also important to **combine objects together in order to do
+something useful** with them.
+
+And here is one of the main peculiarities of the Box language with respect
+to other popular programming languages (such as C, Python, etc.) where
+functions (or object methods) are the means through which objects are
+manipulated.
+The Box way of performing tasks is through what we call
+"**type combinations**".
+
+Boxes and type combinations
+---------------------------
+
+It may be worth at this point to enter a little bit more into the technical
+details of the language.
+
+
+
+We have seen that an instance for a type ``MyType`` can be created like this::
+
+  instance = MyType[]
+
+Sometimes, however it is necessary to create an object out of other objects.
+For example, in order to create a circle we need to know center and radius.
+We then need to combine together two objects to create a new one.
+
+
+
+
+Why Boxes rather than functions?
+--------------------------------
+
+
 One concept Box put emphasis in is the one of compound statement.
 For the C programming language a compound statement is just a list
 of statements separated by ';' and enclosed in curly braces::
