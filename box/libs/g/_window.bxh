@@ -61,6 +61,9 @@ Window.Show = Void
 Point@Window.Show "window_show_point" ?
 BBox@Window.Show[\ $$[If[$.n & 1], $.min], \ $$[If[$.n & 2], $.max]]
 
+///Intro: make sure the Window is large enough to contain the bounding box.
+BBox@Window[.Show[$]]
+
 // Teach BBox how to deal with Window
 Window@BBox "window_bbox" ?
 

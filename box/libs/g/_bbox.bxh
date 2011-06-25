@@ -1,7 +1,11 @@
+///Section: g
+
+///Intro: bounding box object.
 BBox = ++(Point min, Point max, Int n)
 
 (.[)@BBox[$$.n = 0]
 
+///Intro: expand the bounding box to contain the specified point.
 Point@BBox[
   [If[$$.n == 0], $$.max = $, $$.min = $]
   [If[$$.n > 0]
@@ -12,8 +16,10 @@ Point@BBox[
   $$.n |= 1
 ]
 
+///Intro: expand the bounding box to contain another bounding box.
 BBox@BBox[$.min, $.max]
 
+///Intro: print the bounding box object.
 BBox@Print[
   [If[$.n == 0], Print["BBox[]"]]
   [If[$.n == 1], Print["BBox[", $.min, "]"]]

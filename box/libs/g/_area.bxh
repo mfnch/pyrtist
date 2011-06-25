@@ -1,5 +1,9 @@
 #provide "g._area"
 
+//Section: g
+
+///Intro: the area of a geometric entity.
 Area = Real
+
 ([)@Area[$$ = 0.0]
 

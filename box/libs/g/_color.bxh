@@ -25,21 +25,31 @@ Real@Color[$$.r = $$.g = $$.b = $]
 Color@Str["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, ", .a=", $.a, "]"]
 Color@Print[Str[$]]
 
-// Definition of the Hsv version of Color
+///Intro: a color given in terms of Hue, Saturation and Value.
 HSV = ++(Real h, s, v, a)
 Hsv = HSV
 
 (.[)@HSV[.h = 0.0, .s = .v = .a = 1.0]
+
+///Intro: set the HSV object from the given HSV object.
 HSV@HSV[.h = $.h, .s = $.s, .v = $.v, .a = $.a]
 
 Real@HSV[$$.h = $, $$.s = $$.v = $$.a = 1.0]
+
+///Intro: set the HSV object from a triple ``(hue, saturation, value)``.
 (Real h, s, v)@HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v]
+
+///Intro: set the HSV object from a quadruple
+// ``(hue, saturation, value, alpha)``.
 (Real h, s, v, a)@HSV[$$.h = $.h, $$.s = $.s, $$.v = $.v, $$.a = $.a]
 
+///Intro: print the HSV object.
 HSV@Print["HSV[.h=", $.h, ", .s=", $.s, ", .v=", $.v, ", .a=", $.a, "]"]
 
-// Conversion Hsv <--> Color
+///Intro: get the color corresponding to the given HSV object.
 Color@HSV "hsv_color" ?
+
+///Intro: get the HSV value for the given color.
 HSV@Color "color_hsv" ?
 
 // To make a color darker

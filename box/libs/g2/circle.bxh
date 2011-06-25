@@ -27,6 +27,9 @@ Sty@Circle[\ .style[$]]
 ///Intro: color for filling the circle.
 Color@Circle[\ .style[$]]
 
+///Intro: area of the Circle.
+Circle@Area[If[$.have.radius], const.pi*$.radius**2, Else[], 0.0]
+
 ///Intro: add the circle to the path.
 Circle@Path[
   If[$.have.center && $.have.radius]

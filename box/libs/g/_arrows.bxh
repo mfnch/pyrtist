@@ -3,6 +3,70 @@ include "g"
 //----------------------------------------------------------------------------
 // TWO DIMENSIONAL ARROW WITH BORDER
 
+///Intro: arrow connecting two points.
+Arrow = (Int type
+         (Int points, reals, colors) num
+         Point start, end
+         Real width, head_width, head_length
+         Color color1, color2, color3, color4)
+
+(.[)@Arrow[.type = 0, .num = (0, 0, 0)]
+
+///Intro: specifies initial and final points.
+Point@Arrow[
+  [np = $$.num.points, If[np == 0], $$.start = $, Else[], $$.end = $]
+  $$.num.points += 1
+]
+
+///Intro: specifies: width, head-width and head-length.
+Real@Arrow[
+  [nr = $$.num.reals
+   If[nr == 0], $$.width = $
+   Else[], If[nr == 1], $$.head_width = $
+   Else[], $$.head_length = $]
+  $$.num.reals += 1
+]
+
+///Intro: specifies the colors to use for the arrow.
+Color@Arrow[
+  [nc = $$.num.colors
+   If[nc == 0], $$.color1 = $
+   Else[], If[nc == 1], $$.color2 = $
+   Else[], If[nc == 2], $$.color3 = $
+   Else[], $$.color4 = $]
+  $$.num.colors += 1
+]
+
+///Intro: copy the arrow attributes.
+Arrow@Arrow[$$ = $]
+
+// A 2D specialisation of {type(Arrow)}.
+Arrow_2D = ++(Arrow arrow,)
+
+// How to draw 2D arrows...
+Arrow_2D@Window[
+  \ $$.Line[$.arrow.start, $.arrow.end]
+]
+
+// A 3D specialisation of {type(Arrow)}.
+Arrow_3D = ++(Arrow arrow,)
+
+// How to draw 3D arrows...
+Arrow_3D@Window[]
+
+///Intro: draw the arrow on the Window.
+Arrow@Window[
+  If[$.num.points >= 2]
+    t = $.type
+    [If[t == 0], Arrow_2D[.arrow = $]
+     Else[], If[t == 1], Arrow_3D[.arrow = $]]
+]
+
+
+
+
+
+
 Arrow2D = (Point p_start, Point p_end,
            Real width, head_length, head_width, border
            Color col_inside, col_border
