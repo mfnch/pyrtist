@@ -16,12 +16,12 @@ class ConfigTab(object):
     pass
 
 class BoxerWindowSettings(object):
-  def __init__(self):
+  def __init__(self, size=(600, 400)):
     # Create a new window
     self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
     self.window.set_border_width(spacing)
     self.window.set_title("Boxer configuration editor")
-    self.window.set_size_request(600, 400)
+    self.window.set_size_request(*size)
 
     self.window.connect("delete_event", self._on_delete_event)
 
@@ -112,7 +112,13 @@ class BoxerWindowSettings(object):
                                   self._on_button_ok_press)
     self.window_button_cancel.connect("button-press-event",
                                       self._on_button_cancel_press)
-    self.window_horsplit.pack1(self.treeview)
+
+    # Insert objects one inside the other
+    self.window_scrolledwin = scrolledwin = gtk.ScrolledWindow()
+    scrolledwin.set_size_request(int(size[0]/3), -1)
+    scrolledwin.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    scrolledwin.add(self.treeview)
+    self.window_horsplit.pack1(scrolledwin)
 
     self.window.show_all()
 
