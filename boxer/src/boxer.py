@@ -440,14 +440,14 @@ class Boxer(object):
     rps = self.config.getint("GUIView", "refpoint_size")
     new_rps = min(rps + 1, 20)
     self.config.set("GUIView", "refpoint_size", str(new_rps))
-    self.editable_area.set_config("refpoint_size", new_rps)
+    self.editable_area.set_config(refpoint_size=new_rps)
     self.editable_area.queue_draw()
 
   def menu_view_dec_refpoint(self, _):
     rps = self.config.getint("GUIView", "refpoint_size")
     new_rps = max(rps - 1, 2)
     self.config.set("GUIView", "refpoint_size", str(new_rps))
-    self.editable_area.set_config("refpoint_size", new_rps)
+    self.editable_area.set_config(refpoint_size=new_rps)
     self.editable_area.queue_draw()
 
   def menu_view_remember_win_size(self, _):

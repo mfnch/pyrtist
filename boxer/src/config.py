@@ -70,7 +70,7 @@ bbox1 = Point[.x=0.0, .y=50.0]
 bbox2 = Point[.x=100.0, .y=0.0]
 //!BOXER:REFPOINTS:END
 w = Window[][
-  .Show[bbox1, bbox2]
+  BBox[bbox1, bbox2]
 
   //!BOXER:CURSOR:HERE
 ]
@@ -383,32 +383,50 @@ def get_configuration():
   return c
 
 
+class ConfigurableData(dict):
+  def __init__(self, parent=None, children=None):
+    dict.__init__(self)
+    self.parent = parent
+    self.children = children
+
+
 class Configurable(object):
   def __init__(self, config=None, from_args=None):
+    self._config = data = ConfigurableData()
+
+    if config != None:
+      data.update(config)
+
     if from_args != None:
-      self._config = from_args.get("config", {})
-    elif config != None:
-      self._config = config
-    else:
-      self._config = {}
+      data.update(from_args.get("config", {}))
 
-  def set_config(self, name, value):
+  def __del__(self):
+    pass
+
+  def set_config_parent(self, parent):
+    self._config.parent = parent
+
+  def set_config_children(self, *children):
+    self._config.children = children
+
+  def set_config(self, *nameval_list, **nameval_dict):
     """Set the configuration option with name 'name' to 'value'."""
-    if type(name) == str:
-      self._config[name] = value
-    else:
-      for n, v in name:
-        self._config[n] = v
+    n = len(nameval_list)
+    assert n % 2 == 0, \
+      "no value given for name %s" % nameval_list[-1]
+    for i in range(0, n/2, 2):
+      self._config[nameval_list[i]] = nameval_list[i + 1]
+    self._config.update(nameval_dict)
 
-  def set_config_default(self, name, value=None):
+  def set_config_default(self, *nameval_list, **nameval_dict):
     """Set the configuration option only if it is missing."""
-    if type(name) == str:
-      if name not in self._config:
-        self._config[name] = value
-    else:
-      for n, v in name:
-        if n not in self._config:
-          self._config[n] = v
+    n = len(nameval_list)
+    assert n % 2 == 0, \
+      "no value given for name %s" % nameval_list[-1]
+    for i in range(0, n/2, 2):
+      self._config.setdefault(nameval_list[i], nameval_list[i + 1])
+    for name, val in nameval_dict.iteritems():
+      self._config.setdefault(name, val)
 
   def get_config(self, name, opt=None):
     """Return the value of the configuration option 'name' or 'value'

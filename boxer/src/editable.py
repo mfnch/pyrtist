@@ -103,11 +103,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
     BoxViewArea.__init__(self, *args, callbacks=self._fns, **extra_args)
 
     # Set default configuration
-    self.set_config_default([("button_left", 1),
-                             ("button_center", 2),
-                             ("button_right", 3),
-                             ("refpoint_size", 4),
-                             ("redraw_on_move", True)])
+    self.set_config_default(button_left=1, button_center=2, button_right=3,
+                            refpoint_size=4, redraw_on_move=True)
 
     # Enable events and connect signals
     mask = (  gtk.gdk.POINTER_MOTION_MASK
@@ -137,8 +134,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
     colormap = sel_gc.get_colormap()
     sel_gc.foreground = colormap.alloc_color(gtk.gdk.Color(65535, 65535, 0))
 
-    self.set_config_default([("refpoint_gc", unsel_gc),
-                             ("refpoint_sel_gc", sel_gc)])
+    self.set_config_default(refpoint_gc=unsel_gc, refpoint_sel_gc=sel_gc)
 
   def refpoint_new(self, py_coords, name=None):
     """Add a new reference point whose coordinates are 'point' (a couple
