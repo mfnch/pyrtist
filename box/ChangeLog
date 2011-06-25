@@ -1,5 +1,16 @@
 Change log (recent comes first)
 
+DD MMM YYYY: Released v 0.2.3: bugfixes and internal improvements
+  This release fixes bugs in the compiler and the graphics library.
+  * Fixed a bug in the compiler (bug 7, ownership of register in subtypes)
+  * Encapsulating objects into Obj is now possible. 
+  * Raw access to the Cairo library can be obtained by sending commands
+    encapsulated into Obj objects. A considerable part of Box which is now
+    written in C can then be rewritten in Box itself (this has been started
+    but not completed). 
+  * Written a prototype for a Box documentation system, Dox. Documented some
+    parts of Box using Dox.
+
 03 Apr 2011: Released v 0.2.2: bugfixes in graphics library
   This release fixes some bugs in the graphics library, making the new version
   of Boxer (0.3.0) more usable. The library libboxcore was also fixed in some
