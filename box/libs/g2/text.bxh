@@ -8,9 +8,9 @@ include "path"
 ///Intro: specifies a reference point used when translating objects (such as
 // text, for example). In particular, if you specify that your figure should
 // be translated to a point ``p``, then using ``From[(0.5, 0.5)]`` will make
-// sure that the center of the bouding box of the figure will end up at ``p``.
-// Using ``From[(0, 0)]`` will make sure that the upper-left corner ends up
-// to be in ``p``.
+// sure that the center of the bounding box of the figure will end up at
+// ``p``. Using ``From[(0, 0)]`` will make sure that the upper-left corner
+// ends up to be in ``p``.
 From = ++(Point point,)
 
 (.[)@From[.point.x = .point.y = 0.5]
