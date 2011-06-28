@@ -73,6 +73,7 @@ class DoxTextView(gtk.TextView):
                                  foreground="#0000ff")
     tags["title1"] = tb.create_tag("title1", scale=pango.SCALE_LARGE,
                                    scale_set=True, weight=pango.WEIGHT_BOLD)
+    tags["title1"] = tb.create_tag("title2", weight=pango.WEIGHT_BOLD)
     tags["code"] = tb.create_tag("code") #, background="")
 
     self.connect("button-press-event", self.dox_on_click)
@@ -114,7 +115,7 @@ class DoxTextView(gtk.TextView):
         # ^^^ this is to just update the mouse pointer in case the function
         # self.dox_on_click_link changes the text view.
 
-  def set_content(self, content):
+  def set_content(self, content, clear=True):
     """Output to textbuffer. output should be a list of items.
     Each item is either:
     - None (has no effect);
@@ -125,6 +126,10 @@ class DoxTextView(gtk.TextView):
     using the provided tags, if given.
     """
     tb = self.get_buffer()
+
+    if clear:
+      tb.set_text("")
+
     for piece in content:
       if piece != None:
         it = tb.get_iter_at_mark(tb.get_insert())
@@ -137,92 +142,59 @@ class DoxTextView(gtk.TextView):
           tb.insert_with_tags_by_name(it, *piece)
 
 
+class DoxTable(gtk.Table):
+  def __init__(self, rows=1, cols=2):
+    gtk.Table.__init__(self)
+    self.dox_cells = []
+    self.dox_cur_cell = 0
 
+  def _get_doxtextview(self):
+    cells = self.dox_cells
+    nr_cell = self.dox_cur_cell
+    if nr_cell < len(cells):
+      doxtextview = cells[nr_cell]
+    else:
+      doxtextview = DoxTextView()
+      cells.append(doxtextview)
+    self.dox_cur_cell += 1
+    return doxtextview
 
+  def populate(self, rows, title=None,
+               xoptions=gtk.EXPAND|gtk.FILL,
+               yoptions=gtk.FILL,
+               xpadding=0, ypadding=0):
+    nr_rows = len(rows)
+    nr_cols = (len(rows[0]) if nr_rows > 0 else 1)
 
+    # First, we remove the cells previously inserted
+    nr_cells_inserted = self.dox_cur_cell
+    for nr_cell in range(nr_cells_inserted):
+      self.remove(self.dox_cells[nr_cell])
+    self.dox_cur_cell = 0
 
+    # Now we add the title, if necessary
+    extra_rows = 0
+    if title:
+      extra_rows = 1
+      doxtextview = self._get_doxtextview()
+      doxtextview.set_content(title)
+      self.attach(doxtextview, 0, nr_cols, 0, 1,
+                  xoptions=xoptions, yoptions=yoptions,
+                  xpadding=xpadding, ypadding=ypadding)
 
+    # We finally, fill the table
+    if nr_rows > 0:
+      self.resize(nr_rows + extra_rows, 2)
+      for nr_row_rel, row in enumerate(rows):
+        nr_row = nr_row_rel + extra_rows
+        for nr_col, col in enumerate(row):
+          doxtextview = self._get_doxtextview()
+          doxtextview.set_content(col)
+          self.attach(doxtextview, nr_col, nr_col+1, nr_row, nr_row+1,
+                      xoptions=xoptions, yoptions=yoptions,
+                      xpadding=xpadding, ypadding=ypadding)
 
-
-
-
-
-
-
-
-class CellRendererDoxText(gtk.GenericCellRenderer):
-  __gproperties__ = {"text": (gobject.TYPE_STRING, 'text to show',
-                              'the text to show in the cell',
-                              '', gobject.PARAM_READWRITE)}
-
-  def __init__(self, **args):
-    gtk.GenericCellRenderer.__init__(self)
-    self.doxtextview = DoxTextView(**args)
-    self.doxtextview.get_buffer().set_text("hello")
-
-  def do_set_property(self, pspec, value):
-    setattr(self, pspec.name, value)
-
-  def do_get_property(self, pspec):
-    return getattr(self, pspec.name)
-
-  def on_get_size(self, widget, cell_area=None):
-    return ((cell_area.x, cell_area.y, cell_area.width, cell_area.height)
-            if cell_area != None else (0, 0, 0, 0))
-
-  def on_render(self, window, widget, background_area, cell_area, expose_area, flags):
-    widget.style.paint_layout(window, gtk.STATE_NORMAL, True,
-                              cell_area, widget, 'footext',
-                              cell_area.x, cell_area.y,
-                              layout)
-    print cell_area
-    self.doxtextview.draw(cell_area) #window, widget, cell_area.x, cell_area.y)
-
-  def get_text(self):
-    tb = self.doxtextview.get_buffer()
-    return tb.get_text()
-
-  def set_text(self, text):
-    print "Setting text"
-    tb = self.doxtextview.get_buffer()
-    tb.set_text(text)
-  
-  text = property(get_text, set_text)
-
-
-gobject.type_register(CellRendererDoxText)
-
-
-class DoxTable(object):
-  def __init__(self):
-    self.treestore = ts = gtk.TreeStore(str, str)
-    self.treeview = tv = gtk.TreeView(ts)
-    tvcol1 = gtk.TreeViewColumn("Type")
-    tvcol2 = gtk.TreeViewColumn("Description")
-    tv.append_column(tvcol1)
-    tv.append_column(tvcol2)
-
-    # create a CellRendererText to render the data
-    cell1 = gtk.CellRendererText()
-    cell2 = CellRendererDoxText()
-    #cell2.set_property("wrap-width", 200)
-    tvcol1.pack_start(cell1, True)
-    tvcol2.pack_start(cell2, True)
-
-    # set the cell "text" attribute to column 0 - retrieve text
-    # from that column in treestore
-    tvcol1.add_attribute(cell1, 'text', 0)
-    tvcol2.add_attribute(cell2, 'text', 1)
-
-    tv.set_search_column(0)
-    tvcol1.set_sort_column_id(0)
-    tv.set_reorderable(True)
-
-  def populate(self, rows):
-    ts = self.treestore
-    ts.clear()
-    for nr_row, row in enumerate(rows):
-      ts.append(None, row)
+    self.show_all()
 
 
 class GtkWriter(Writer):
@@ -238,12 +210,12 @@ class GtkWriter(Writer):
   def gen_type_link(self, t):
     return (str(t), "link")
   
-  def gen_target_section(self, target, section="Intro"):
+  def gen_target_section(self, target, section="Intro", newline="\n"):
     pieces = Writer.gen_target_section(self, target, section)
     if pieces != None and len(pieces) >= 1:
       first = pieces[0].lstrip()
       pieces[0] = (first[0].upper() + first[1:] if len(first) > 0 else first)
-      pieces[-1] = pieces[-1].rstrip() + "\n"
+      pieces[-1] = pieces[-1].rstrip() + newline
     return pieces or []
 
   def gen_type_section_title(self, t, level=0):
@@ -259,17 +231,18 @@ class GtkWriter(Writer):
       ls.append("\n")
     return ls
 
-  def gen_proc_table(self, t):
+  def gen_proc_table(self, t, title=[("Uses the following types:", "title2")]):
     children = t.children
     procs = self.tree.procs
     child_intro_list = []
     for child in children:
       proc_name = str(DoxProc(child, t))
-      intro = self.gen_target_section(procs.get(proc_name, None))
+      type_name = [self.gen_type_link(child)]
+      intro = self.gen_target_section(procs.get(proc_name, None), newline="")
       if intro != None and len(intro) > 0:
-        child_intro_list.append((child, get_content_text(intro).strip()))
+        child_intro_list.append((type_name, intro))
 
-    self.table.populate(child_intro_list)
+    self.table.populate(child_intro_list, title=title)
     return []
 
   def gen_type_section(self, t, section_name, level=0):

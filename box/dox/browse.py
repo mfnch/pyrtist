@@ -45,7 +45,7 @@ class BoxerWindowSettings(object):
     self.window_table = dox_table = DoxTable()
     self.window_scrolledwin2 = scrolledwin = gtk.ScrolledWindow()
     scrolledwin.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-    scrolledwin.add(dox_table.treeview)
+    scrolledwin.add_with_viewport(dox_table)
 
     dox_textbuffer = dox_textview.get_buffer()
     self.dox_writer = GtkWriter(dox.tree, dox_textbuffer, dox_table)
