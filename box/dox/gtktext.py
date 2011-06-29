@@ -20,6 +20,7 @@ import gtk
 
 import pango
 
+import rstparser
 from tree import DoxItem, DoxType, DoxProc, DoxTree
 from writer import Writer
 
@@ -74,7 +75,7 @@ class DoxTextView(gtk.TextView):
     tags["title1"] = tb.create_tag("title1", scale=pango.SCALE_LARGE,
                                    scale_set=True, weight=pango.WEIGHT_BOLD)
     tags["title1"] = tb.create_tag("title2", weight=pango.WEIGHT_BOLD)
-    tags["code"] = tb.create_tag("code") #, background="")
+    tags["code"] = tb.create_tag("code", font="Courier", background="#dfdfff")
 
     self.connect("button-press-event", self.dox_on_click)
     self.connect("motion-notify-event", self.dox_on_move)
@@ -219,6 +220,7 @@ class GtkWriter(Writer):
       pieces[-1] = pieces[-1]
       if newline:
         pieces.append(newline)
+      pieces = rstparser.parse(pieces)
     return pieces or []
 
   def gen_type_section_title(self, t, level=0):

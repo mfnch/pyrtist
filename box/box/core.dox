@@ -26,7 +26,7 @@ Int = ...
 // to give integers rather than reals.
 REAL = ...
 
-///Intro: alternative for {type(REAL)}, which allows implicit type conversions
+///Intro: alternative to {type(REAL)}, which allows implicit type conversions
 // from {type(INT)} or {type(Char)}.
 // Defined as ``Real = (Char -> INT -> REAL)``.
 // Behaves similarly to {type(REAL)}, but allows implicit conversion of
