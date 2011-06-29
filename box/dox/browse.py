@@ -25,7 +25,13 @@ def _populate_treestore_from_dox(ts, dox):
     for type_name in type_names:
       t = types[type_name]
       if t.get_section() == section_name:
-        ts.append(piter, [type_name])
+        if t.subtype_parent == None:
+          _add_entry_to_treestore(ts, dox, piter, t)
+
+def _add_entry_to_treestore(ts, dox, piter, t):  
+  new_piter = ts.append(piter, [t.name])
+  for st in t.subtype_children:
+    _add_entry_to_treestore(ts, dox, new_piter, st)
 
 
 class BoxerWindowSettings(object):
@@ -42,7 +48,8 @@ class BoxerWindowSettings(object):
     scrolledwin.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
     scrolledwin.add(dox_textview)
 
-    self.window_table = dox_table = DoxTable()
+    self.window_table = dox_table = \
+      DoxTable(on_click_link=self._on_click_link)
     self.window_scrolledwin2 = scrolledwin = gtk.ScrolledWindow()
     scrolledwin.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
     scrolledwin.add_with_viewport(dox_table)
@@ -85,44 +92,26 @@ class BoxerWindowSettings(object):
     self.window_vsplit2 = gtk.VBox(False, 4)
     self.window_horsplit.pack2(self.window_vsplit2)
 
-    # RIGHT PART: In the upper part we have a text entry, which is initially
-    # filled with the current setting and the user can edit in order to change
-    # it.
-
     self.window_vsplit2.pack_start(self.window_scrolledwin1, expand=True,
                                    fill=True, padding=4)
     self.window_vsplit2.pack_start(self.window_scrolledwin2, expand=True,
                                    fill=True, padding=4)
 
-    # create a TreeStore with one string column to use as the model
+    # create and populate the treestore
     self.treestore = treestore = gtk.TreeStore(str)
-
     _populate_treestore_from_dox(treestore, dox)
 
-    # create the TreeView using treestore
-    self.treeview = gtk.TreeView(self.treestore)
+    # create the TreeView using the treestore
+    self.treeview = tv = gtk.TreeView(self.treestore)
+    tvcol = gtk.TreeViewColumn('Available settings')
+    tv.append_column(tvcol)
+    cell = gtk.CellRendererText()
+    tvcol.pack_start(cell, True)
+    tvcol.add_attribute(cell, 'text', 0)
+    tvcol.set_sort_column_id(0)
+    tv.set_search_column(0)
 
-    # create the TreeViewColumn to display the data
-    self.tvcolumn = gtk.TreeViewColumn('Available settings')
-
-    # add tvcolumn to treeview
-    self.treeview.append_column(self.tvcolumn)
-
-    # create a CellRendererText to render the data
-    self.cell = gtk.CellRendererText()
-
-    # add the cell to the tvcolumn and allow it to expand
-    self.tvcolumn.pack_start(self.cell, True)
-
-    # set the cell "text" attribute to column 0 - retrieve text
-    # from that column in treestore
-    self.tvcolumn.add_attribute(self.cell, 'text', 0)
-
-    self.treeview.set_search_column(0)       # Make it searchable
-    self.tvcolumn.set_sort_column_id(0)      # Allow sorting on the column
-    self.treeview.set_reorderable(True)      # Allow drag and drop reordering of rows
-
-    self.treeview.connect("row-activated", self._on_row_activated)
+    tv.connect("row-activated", self._on_row_activated)
     self.window_button_ok.connect("button-press-event",
                                   self._on_button_ok_press)
     self.window_button_cancel.connect("button-press-event",

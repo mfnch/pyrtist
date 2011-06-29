@@ -111,7 +111,7 @@ class DoxTextView(gtk.TextView):
 
       if callable(self.dox_on_click_link):
         self.dox_on_click_link(myself, link, event)
-        self.dox_on_move(myself, event)
+        #self.dox_on_move(myself, event)
         # ^^^ this is to just update the mouse pointer in case the function
         # self.dox_on_click_link changes the text view.
 
@@ -143,10 +143,11 @@ class DoxTextView(gtk.TextView):
 
 
 class DoxTable(gtk.Table):
-  def __init__(self, rows=1, cols=2):
+  def __init__(self, rows=1, cols=2, on_click_link=None):
     gtk.Table.__init__(self)
     self.dox_cells = []
     self.dox_cur_cell = 0
+    self.dox_on_click_link = on_click_link
 
   def _get_doxtextview(self):
     cells = self.dox_cells
@@ -154,7 +155,7 @@ class DoxTable(gtk.Table):
     if nr_cell < len(cells):
       doxtextview = cells[nr_cell]
     else:
-      doxtextview = DoxTextView()
+      doxtextview = DoxTextView(on_click_link=self.dox_on_click_link)
       cells.append(doxtextview)
     self.dox_cur_cell += 1
     return doxtextview
@@ -173,17 +174,17 @@ class DoxTable(gtk.Table):
     self.dox_cur_cell = 0
 
     # Now we add the title, if necessary
-    extra_rows = 0
-    if title:
-      extra_rows = 1
-      doxtextview = self._get_doxtextview()
-      doxtextview.set_content(title)
-      self.attach(doxtextview, 0, nr_cols, 0, 1,
-                  xoptions=xoptions, yoptions=yoptions,
-                  xpadding=xpadding, ypadding=ypadding)
-
-    # We finally, fill the table
     if nr_rows > 0:
+      extra_rows = 0
+      if title:
+        extra_rows = 1
+        doxtextview = self._get_doxtextview()
+        doxtextview.set_content(title)
+        self.attach(doxtextview, 0, nr_cols, 0, 1,
+                    xoptions=xoptions, yoptions=yoptions,
+                    xpadding=xpadding, ypadding=ypadding)
+
+      # We finally, fill the table
       self.resize(nr_rows + extra_rows, 2)
       for nr_row_rel, row in enumerate(rows):
         nr_row = nr_row_rel + extra_rows
@@ -215,7 +216,9 @@ class GtkWriter(Writer):
     if pieces != None and len(pieces) >= 1:
       first = pieces[0].lstrip()
       pieces[0] = (first[0].upper() + first[1:] if len(first) > 0 else first)
-      pieces[-1] = pieces[-1].rstrip() + newline
+      pieces[-1] = pieces[-1]
+      if newline:
+        pieces.append(newline)
     return pieces or []
 
   def gen_type_section_title(self, t, level=0):
@@ -231,7 +234,7 @@ class GtkWriter(Writer):
       ls.append("\n")
     return ls
 
-  def gen_proc_table(self, t, title=[("Uses the following types:", "title2")]):
+  def gen_proc_table(self, t, title=None):
     children = t.children
     procs = self.tree.procs
     child_intro_list = []
@@ -253,7 +256,8 @@ class GtkWriter(Writer):
     uses_line = self.gen_type_list("Uses: ", t.children)
     used_line = self.gen_type_list("Used by: ", t.parents)
     subtypes = self.gen_type_list("Subtypes: ", t.subtype_children)
-    proc_table = self.gen_proc_table(t)
+    table_title = [("Uses the following types:", "title2")]
+    proc_table = self.gen_proc_table(t, title=table_title)
 
     return title + body + subtypes + used_line + uses_line + proc_table
 
