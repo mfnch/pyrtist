@@ -207,19 +207,22 @@ class ZoomableArea(gtk.DrawingArea):
                hadjustment=None, vadjustment=None,
                zoom_factor=1.5, zoom_margin=0.25, buf_margin=0.25,
                config=None, callbacks=None):
-    # Adjustment objects to control the scrolling
-    self._hadjustment = hadjustment
-    self._vadjustment = vadjustment
-
-    # Callbacks to notify about events concerning the ZoomableArea
-    if callbacks == None:
-      callbacks = {}
-    callbacks.setdefault("zoomablearea_got_killer", None)
-    self._fns = callbacks
 
     # Drawer object: the one that actually draws things in the buffer
     self.drawer = drawer
     self.drawer_state = None
+
+    # Adjustment objects to control the scrolling
+    self._hadjustment = hadjustment
+    self._vadjustment = vadjustment
+
+    self.zoom_factor = zoom_factor  # Zoom factor
+
+    zoom_margin = Point(zoom_margin)
+    zoom_margin.trunc(0.0, 1.0, 0.0, 1.0)
+    self.extra_zoom = zoom_margin + zoom_margin + Point(1.0, 1.0)
+                                    # ^^^ Extra zoom (to move a little bit
+                                    #     beyond the bounding box)
 
     # Margin of the buffer outside the screen view (a big value increases
     # the amount of memory required, but reduces the need of redrawing the
@@ -227,27 +230,16 @@ class ZoomableArea(gtk.DrawingArea):
     self.buf_margin = margin = Point(buf_margin)
     margin.trunc(0.0, 1.0, 0.0, 1.0)
 
-    self.buf = None              # The buffer where the output is first drawn
-    self.buf_view = None         # The view for the buffer
-    self.buf_needs_update = True # Whether the buffer needs updating
-    self.last_view = None        # The view as returned by the drawing routine
-    self.pic_bbox = None         # The bounding box of the picture
-    self.pic_view = None         # The view of the picture
-
-    # Magnification in pixel per unit coordinate (positive).
-    # Controls how much the picture is zoomed in the current screen view.
-    # None means "show the picture in full in the current view".
-    self.magnification = None
-    self.last_magnification = None  # Magnification of most recent view
-    self.zoom_factor = zoom_factor  # Zoom factor
-    zoom_margin = Point(zoom_margin)
-    zoom_margin.trunc(0.0, 1.0, 0.0, 1.0)
-    self.extra_zoom = zoom_margin + zoom_margin + Point(1.0, 1.0)
-                                    # ^^^ Extra zoom (to move a little bit
-                                    #     beyond the bounding box)
+    # Callbacks to notify about events concerning the ZoomableArea
+    if callbacks == None:
+      callbacks = {}
+    callbacks.setdefault("zoomablearea_got_killer", None)
+    self._fns = callbacks
 
     self.scrollbar_page_inc = Point(0.9, 0.9) # Page increment for scrollbars
     self.scrollbar_step_inc = Point(0.1, 0.1) # Step increment for scrollbars
+
+    self.reset()
 
     # Signal handlers for the value-changed signal of the two adjustment
     # objects used for the horizontal and vertical scrollbars
@@ -267,9 +259,29 @@ class ZoomableArea(gtk.DrawingArea):
     self.connect("set-scroll-adjustment", ZoomableArea.scroll_adjustment)
     self.connect("configure_event", self.size_change)
 
+  def reset(self):
+    """Bring the object to its initial state.
+    Useful when the picture which is been shown suddenly changes
+    (the coordinates changes, etc.)
+    """
+    self.kill_drawer()           # Stop the drawing process, if required
+
+    self.buf = None              # The buffer where the output is first drawn
+    self.buf_view = None         # The view for the buffer
+    self.buf_needs_update = True # Whether the buffer needs updating
+    self.last_view = None        # The view as returned by the drawing routine
+    self.pic_bbox = None         # The bounding box of the picture
+    self.pic_view = None         # The view of the picture
+
+    # Magnification in pixel per unit coordinate (positive).
+    # Controls how much the picture is zoomed in the current screen view.
+    # None means "show the picture in full in the current view".
+    self.magnification = None
+    self.last_magnification = None  # Magnification of most recent view
+    
   def __del__(self):
     self.kill_drawer()
-
+    
   def get_hadjustment(self):
     return self._hadjustment
 
@@ -284,6 +296,13 @@ class ZoomableArea(gtk.DrawingArea):
 
   hadjustment = property(get_hadjustment, set_hadjustment)
   vadjustment = property(get_vadjustment, set_vadjustment)
+
+  def has_box_coords(self):
+    """Returns True only when the window was already built previously
+    and the Box coordinate system is defined. Note, that this may be True even
+    if the last call to Box failed and the window is current "broken".
+    """
+    return (self.last_view != None)
 
   def zoom_here(self, scale_factor=None):
     """Fixes the magnification of the picture, exiting the picture view mode,
@@ -318,7 +337,7 @@ class ZoomableArea(gtk.DrawingArea):
     """Kill the drawer thread in case it is still running."""
     if isinstance(self.drawer_state, DrawStillWorking):
       self.drawer_state.kill()
-      self.drawer_state = DrawFailed
+      self.drawer_state = DrawFailed()
 
   def zoom_in(self):
     """Zoom in."""
@@ -549,12 +568,17 @@ class ZoomableArea(gtk.DrawingArea):
 
   def get_visible_coords(self):
     """Return the coordinate view corresponding to the DrawableArea."""
-    if self.magnification != None:
-      pix_size = Point(self.window.get_size())
-      return self.last_view.new_reshaped(pix_size, 1.0/self.magnification)
+    last_view = self.last_view
+    if last_view != None:
+      if self.magnification != None:
+        pix_size = Point(self.window.get_size())
+        return last_view.new_reshaped(pix_size, 1.0/self.magnification)
+
+      else:
+        return last_view.new_scaled(1.0)
 
     else:
-      return self.last_view.new_scaled(1.0)
+      return None
 
   def _update_scrollbars(self):
     """(internal) Update the ranges and positions of the scrollbars."""

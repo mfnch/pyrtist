@@ -231,7 +231,7 @@ class Boxer(object):
     d = self.editable_area.document
     d.load_from_str(box_source_of_new)
 
-    self.editable_area.kill_drawer()
+    self.editable_area.reset()
     self.widget_toolbox.exit_all_modes(force=True)
     self.set_main_source(d.get_user_code())
     self.filename = None
@@ -249,7 +249,7 @@ class Boxer(object):
                  % (filename, str(the_exception)))
       return
     finally:
-      self.editable_area.kill_drawer()
+      self.editable_area.reset()
       self.widget_toolbox.exit_all_modes(force=True)
       self.set_main_source(d.get_user_code())
       self.filename = filename

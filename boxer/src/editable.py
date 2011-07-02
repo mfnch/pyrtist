@@ -164,23 +164,27 @@ class BoxEditableArea(BoxViewArea, Configurable):
     If the distance between the two is greater than the current 'radius'
     (see set_radius), return None."""
     screen_view = self.get_visible_coords()
-    box_coords = screen_view.pix_to_coord(py_coords)
-    refpoints = self.document.refpoints
-    current = refpoints.get_nearest(box_coords,
-                                    include_invisible=include_invisible)
-    s = self.get_config("refpoint_size")
-    if s == None:
-      return current
-    elif current == None:
-      return None
-    else:
-      rp = current[0]
-      current_py_coords = screen_view.coord_to_pix(rp.value)
-      dist = square_metric(py_coords, current_py_coords)
-      if dist <= s:
+    if screen_view:
+      box_coords = screen_view.pix_to_coord(py_coords)
+      refpoints = self.document.refpoints
+      current = refpoints.get_nearest(box_coords,
+                                      include_invisible=include_invisible)
+      s = self.get_config("refpoint_size")
+      if s == None:
         return current
-      else:
+      elif current == None:
         return None
+      else:
+        rp = current[0]
+        current_py_coords = screen_view.coord_to_pix(rp.value)
+        dist = square_metric(py_coords, current_py_coords)
+        if dist <= s:
+          return current
+        else:
+          return None
+
+    else:
+      return None
 
   def refpoint_select(self, rp, add=False):
     refpoints = self.document.refpoints
@@ -230,14 +234,15 @@ class BoxEditableArea(BoxViewArea, Configurable):
     if rps == None:
       rps = refpoints
     view = self.get_visible_coords()
-    rp_size = self.get_config("refpoint_size")
-    gc_unsel = self.get_config("refpoint_gc")
-    gc_sel = self.get_config("refpoint_sel_gc")
-    for rp in rps:
-      if rp.visible:
-        pix_coord = view.coord_to_pix(rp.value)
-        gc = gc_sel if refpoints.is_selected(rp) else gc_unsel
-        draw_ref_point(self.window, pix_coord, rp_size, gc)
+    if view != None:
+      rp_size = self.get_config("refpoint_size")
+      gc_unsel = self.get_config("refpoint_gc")
+      gc_sel = self.get_config("refpoint_sel_gc")
+      for rp in rps:
+        if rp.visible:
+          pix_coord = view.coord_to_pix(rp.value)
+          gc = gc_sel if refpoints.is_selected(rp) else gc_unsel
+          draw_ref_point(self.window, pix_coord, rp_size, gc)
 
   def refpoint_move(self, rp, py_coords):
     """Move a reference point to a new position."""
@@ -284,6 +289,11 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
   def _on_button_press_event(self, eventbox, event):
     """Called when clicking over the DrawingArea."""
+
+    # If we don't have Box coordinates we just ignore all click events
+    if not self.has_box_coords():
+      return
+
     refpoints = self.document.refpoints
     py_coords = event.get_coords()
     picked = self.refpoint_pick(py_coords)
@@ -306,7 +316,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
       elif not shift_pressed:
         #  ^^^ don't want to create a new point while we are selecting others
-        box_coords = self.get_visible_coords().pix_to_coord(py_coords)
+        visible_coords = self.get_visible_coords()
+        box_coords = visible_coords.pix_to_coord(py_coords)
         if box_coords != None:
           rp = self.refpoint_new(py_coords)
           self.refpoint_select(rp)
