@@ -491,6 +491,8 @@ static cairo_operator_t My_Cairo_Operator_Of_Int(BoxInt v) {
   case 11: return CAIRO_OPERATOR_XOR;
   case 12: return CAIRO_OPERATOR_ADD;
   case 13: return CAIRO_OPERATOR_SATURATE;
+#if defined(CAIRO_VERSION) && defined(CAIRO_VERSION_ENCODE)
+#  if CAIRO_VERSION > CAIRO_VERSION_ENCODE(1, 10, 0)
   case 14: return CAIRO_OPERATOR_MULTIPLY;
   case 15: return CAIRO_OPERATOR_SCREEN;
   case 16: return CAIRO_OPERATOR_OVERLAY;
@@ -506,6 +508,8 @@ static cairo_operator_t My_Cairo_Operator_Of_Int(BoxInt v) {
   case 26: return CAIRO_OPERATOR_HSL_SATURATION;
   case 27: return CAIRO_OPERATOR_HSL_COLOR;
   case 28: return CAIRO_OPERATOR_HSL_LUMINOSITY;
+#  endif
+#endif
   default: return CAIRO_OPERATOR_OVER;
   }
 }

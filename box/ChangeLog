@@ -1,6 +1,6 @@
 Change log (recent comes first)
 
-DD MMM YYYY: Released v 0.2.3: bugfixes and internal improvements
+02 Jul 2011: Released v 0.2.3: bugfixes and internal improvements
   This release fixes bugs in the compiler and the graphics library.
   * Fixed a bug in the compiler (bug 7, ownership of register in subtypes)
   * Encapsulating objects into Obj is now possible. 

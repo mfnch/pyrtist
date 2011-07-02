@@ -44,7 +44,7 @@
         </context>
 
         <context id="types" style-ref="type">
-          <match>(\.)?[A-Z][a-zA-Z]*</match>
+          <match>(\.)?[A-Z][a-zA-Z0-9]*</match>
         </context>
 
         <context id="preprocessor" style-ref="preprocessor">
