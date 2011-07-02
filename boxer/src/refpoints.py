@@ -20,16 +20,24 @@ import fnmatch
 from geom2 import square_metric, Point
 import namegen
 
+(REFPOINT_UNSELECTED,
+ REFPOINT_SELECTED,
+ REFPOINT_DRAGGED) = range(3)
 
 class RefPoint(object):
-  def __init__(self, name, value=None, visible=True, selected=False):
+  def __init__(self, name, value=None, visible=True,
+               selected=REFPOINT_UNSELECTED):
     self.name = name
     self.value = value
     self.visible = visible
     self.selected = selected
 
-  def copy(self):
-    return RefPoint(self.name, self.value, self.visible, self.selected)
+  def copy(self, state=None):
+    state = (state if state != None else self.selected)
+    return RefPoint(self.name, self.value, self.visible, state)
+
+  def get_state(self):
+    return self.selected
 
 
 class RefPoints(object):
@@ -84,7 +92,7 @@ class RefPoints(object):
   def clear_selection(self):
     """Clear the current selection of RefPoint-s."""
     for rp in self.selection.itervalues():
-      rp.selected = False
+      rp.selected = REFPOINT_UNSELECTED
     self.selection = {}
 
   def select(self, *rps, **named_args):
@@ -92,15 +100,16 @@ class RefPoints(object):
     selection = self.selection
     if named_args.get("flip", False):
       for rp in rps:
-        rp.selected = not rp.selected
         if rp.selected:
-          selection[rp.name] = rp
-        else:
+          rp.selected = REFPOINT_UNSELECTED
           selection.pop(rp.name, None)
+        else:
+          rp.selected = REFPOINT_SELECTED
+          selection[rp.name] = rp
 
     else:
       for rp in rps:
-        rp.selected = True
+        rp.selected = REFPOINT_SELECTED
         selection[rp.name] = rp
 
   def deselect(self, *rps):
@@ -108,7 +117,7 @@ class RefPoints(object):
     selection = self.selection
     for rp in rps:
       if rp.name in selection:
-        rp.selected = False
+        rp.selected = REFPOINT_UNSELECTED
         selection.pop(rp.name)
 
   def set_selection(self, *selection):
@@ -120,7 +129,7 @@ class RefPoints(object):
     """Returns whether the given RefPoint belongs to the current selection.
     """
     assert rp.name in self.by_name
-    return rp.selected
+    return (rp.selected != REFPOINT_UNSELECTED)
 
   def set_visibility(self, selection, visible):
     """Show or hide the refpoints specified by the string ``selection``.

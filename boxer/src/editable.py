@@ -28,7 +28,8 @@ from geom2 import square_metric, Point
 import document
 from zoomable import ZoomableArea, DrawSucceded, DrawFailed
 from boxdraw import BoxImageDrawer
-from refpoints import RefPoint
+from refpoints \
+  import RefPoint, REFPOINT_UNSELECTED, REFPOINT_SELECTED, REFPOINT_DRAGGED
 
 from config import Configurable
 
@@ -85,7 +86,9 @@ class BoxViewArea(ZoomableArea):
 
 class DraggedPoints(object):
   def __init__(self, points, py_initial_pos):
-    self.initial_points = dict((k, v.copy()) for k, v in points.iteritems())
+    self.initial_points = \
+      dict((k, v.copy(state=REFPOINT_DRAGGED))
+           for k, v in points.iteritems())
     self.py_initial_pos = py_initial_pos
 
 
@@ -134,7 +137,15 @@ class BoxEditableArea(BoxViewArea, Configurable):
     colormap = sel_gc.get_colormap()
     sel_gc.foreground = colormap.alloc_color(gtk.gdk.Color(65535, 65535, 0))
 
-    self.set_config_default(refpoint_gc=unsel_gc, refpoint_sel_gc=sel_gc)
+    drag_gc = self.window.new_gc()
+    drag_gc.copy(self.style.white_gc)
+    colormap = drag_gc.get_colormap()
+    drag_gc.foreground = \
+      colormap.alloc_color(gtk.gdk.Color(32767, 65535, 32767))
+
+    self.set_config_default(refpoint_gc=unsel_gc,
+                            refpoint_sel_gc=sel_gc,
+                            refpoint_drag_gc=drag_gc)
 
   def refpoint_new(self, py_coords, name=None):
     """Add a new reference point whose coordinates are 'point' (a couple
@@ -204,30 +215,23 @@ class BoxEditableArea(BoxViewArea, Configurable):
     """Hide the given RefPoint. This is a purely graphical operation, it does
     not change the status of the RefPoint object.
     """
-    for rp in rps:
-      x, y = self.get_visible_coords().coord_to_pix(rp.value)
+    visible_coords = self.get_visible_coords()
+    if visible_coords != None:
       l0 = self.get_config("refpoint_size")
       dl0 = l0*2
       wsize = self.window.get_size()
-      x0, y0, dx0, dy0 = _cut_square(wsize, x-l0, y-l0, dl0, dl0)
-      if dx0 > 0 and dy0 > 0:
-        self.repaint(x0, y0, dx0, dy0)
-
       magnification = self.last_magnification
-      distance = (dl0 + 1)/magnification if magnification != None else None
-      overlapping_rps = self.document.refpoints.get_neighbours(rp, distance)
-      self._draw_refpoints(overlapping_rps)
+      distance = ((dl0 + 1)/magnification if magnification != None else None)
+      for rp in rps:
+        x, y = visible_coords.coord_to_pix(rp.value)
+        x0, y0, dx0, dy0 = _cut_square(wsize, x-l0, y-l0, dl0, dl0)
+        if dx0 > 0 and dy0 > 0:
+          self.repaint(x0, y0, dx0, dy0)
+        overlapping_rps = self.document.refpoints.get_neighbours(rp, distance)
+        self._draw_refpoints(overlapping_rps)
 
   def _refpoint_show(self, *rps):
-    for rp in rps:
-      if rp.visible:
-        refpoints = self.document.get_refpoints()
-        view = self.get_visible_coords()
-        pix_coord = view.coord_to_pix(rp.value)
-        rp_size = self.get_config("refpoint_size")
-        gc = (self.get_config("refpoint_sel_gc") if refpoints.is_selected(rp)
-              else self.get_config("refpoint_gc"))
-        draw_ref_point(self.window, pix_coord, rp_size, gc)
+    return self._draw_refpoints(rps)
 
   def _draw_refpoints(self, rps=None):
     refpoints = self.document.refpoints
@@ -238,10 +242,14 @@ class BoxEditableArea(BoxViewArea, Configurable):
       rp_size = self.get_config("refpoint_size")
       gc_unsel = self.get_config("refpoint_gc")
       gc_sel = self.get_config("refpoint_sel_gc")
+      gc_drag = self.get_config("refpoint_drag_gc")
       for rp in rps:
         if rp.visible:
           pix_coord = view.coord_to_pix(rp.value)
-          gc = gc_sel if refpoints.is_selected(rp) else gc_unsel
+          state = rp.get_state()
+          gc = (gc_sel if state == REFPOINT_SELECTED
+                else gc_unsel if state == REFPOINT_UNSELECTED
+                else gc_drag)
           draw_ref_point(self.window, pix_coord, rp_size, gc)
 
   def refpoint_move(self, rp, py_coords):
