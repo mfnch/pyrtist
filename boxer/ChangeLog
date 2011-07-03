@@ -6,6 +6,7 @@ In version 0.3.1:
     right click.
   - Adding syntax highlighting specific to the Box language (we were using
     C highlighting so far).
+  - Bugfixes: loading broken files is handled correctly, now.
 
 In version 0.3.0:
   BRIEFLY: the Box assistant was implemented.
