@@ -505,6 +505,16 @@ class Boxer(object):
     ad.run()
     ad.destroy()
 
+  def menu_help_docbrowser(self, _):
+    from dox.dox import Dox
+    from dox.browse import DoxBrowser
+    dox = Dox()
+    dox.read_recursively("../../box")
+    tree = dox.tree
+    tree.process()
+
+    tmp = DoxBrowser(dox)
+
   def refpoint_entry_changed(self, _):
     self.refpoint_show_update()
 
@@ -761,6 +771,7 @@ class Boxer(object):
            "on_view_win_size_remember": self.menu_view_remember_win_size,
            "on_view_win_size_forget": self.menu_view_forget_win_size,
            "on_help_about_activate": self.menu_help_about,
+           "on_help_show_docbrowser_activate": self.menu_help_docbrowser,
            "on_toolbutton_new": self.menu_file_new,
            "on_toolbutton_open": self.menu_file_open,
            "on_toolbutton_save": self.menu_file_save,

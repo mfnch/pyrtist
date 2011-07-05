@@ -272,6 +272,15 @@
                   <widget class="GtkMenu" id="menu_help">
                     <property name="visible">True</property>
                     <child>
+                      <widget class="GtkMenuItem" id="help_show_docbrowser">
+                        <property name="visible">True</property>
+                        <property name="tooltip" translatable="yes">Launch the Box documentation browser</property>
+                        <property name="label" translatable="yes">_Documentation browser</property>
+                        <property name="use_underline">True</property>
+                        <signal name="activate" handler="on_help_show_docbrowser_activate"/>
+                      </widget>
+                    </child>
+                    <child>
                       <widget class="GtkImageMenuItem" id="help_about">
                         <property name="visible">True</property>
                         <property name="label" translatable="yes">gtk-about</property>

@@ -10,10 +10,11 @@ from dox import Dox
 from gtktext import DoxTextView, DoxTable, GtkWriter
 
 
-class BoxerWindowSettings(object):
+class DoxBrowser(object):
   def __init__(self, dox, size=(760, 560), spacing=6,
                title="Box documentation browser"):
     self.dox = dox
+    tree = dox.tree
     self.option_section = None
     self.option_name = None
     self.option_initial_value = None
@@ -39,7 +40,7 @@ class BoxerWindowSettings(object):
     vsplit3.pack_start(scrolledwin2, expand=True, fill=True, padding=4)
 
     dox_textbuffer = dox_textview.get_buffer()
-    self.dox_writer = GtkWriter(dox.tree, dox_textbuffer, dox_table)
+    self.dox_writer = GtkWriter(tree, dox_textbuffer, dox_table)
 
     # Create a new window
     self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -182,9 +183,9 @@ def main():
 if __name__ == "__main__":
 
   dox = Dox()
-  dox.read_recursively("../")
+  dox.read_recursively("../../../box")
   tree = dox.tree
   tree.process()
 
-  tmp = BoxerWindowSettings(dox)
+  tmp = DoxBrowser(dox)
   main()
