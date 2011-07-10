@@ -33,11 +33,34 @@
 MsgStack *msg_main_stack = (MsgStack *) NULL;
 
 static BoxSrc *my_src_of_err = NULL;
+static const char *current_file_name = NULL;
+
+static void My_Update_Context(BoxSrc *current) {
+  if (current != NULL) {
+    const char *new_file_name = current->begin.file_name;
+
+    if (new_file_name != current_file_name) {
+      if (current_file_name != NULL)
+        Msg_Context_End(msg_main_stack, 1);
+
+      if (new_file_name != NULL)
+        Msg_Main_Context_Begin(Box_Print("File '%s'", new_file_name));
+
+      current_file_name = new_file_name;
+    }
+
+  } else { /* current == NULL */
+    if (current_file_name != NULL) {
+      Msg_Context_End(msg_main_stack, 1);
+      current_file_name = (const char *) NULL;
+    }
+  }
+}
 
 static char *My_Show_Msg(UInt level, char *original_msg) {
   if (level == 0) {
     char *final_msg;
-    final_msg = printdup("STAGE: %s:\n", original_msg);
+    final_msg = printdup("NOTE: %s:\n", original_msg);
     BoxMem_Free(original_msg);
     return final_msg;
 
@@ -49,11 +72,14 @@ static char *My_Show_Msg(UInt level, char *original_msg) {
     case MSG_LEVEL_ERROR: prefix = "Error"; break;
     case MSG_LEVEL_FATAL: prefix = "Fatal error"; break;
     }
+
     if (my_src_of_err != NULL) {
       char *loc = BoxSrc_To_Str(my_src_of_err);
-      final_msg = printdup("%s(%~s): %s\n", prefix, loc, original_msg);
+      final_msg = Box_SPrintF("%s(%~s): %s\n", prefix, loc, original_msg);
+
     } else
-      final_msg = printdup("%s: %s\n", prefix, original_msg);
+      final_msg = Box_SPrintF("%s: %s\n", prefix, original_msg);
+
     BoxMem_Free(original_msg);
     return final_msg;
   }
@@ -72,6 +98,8 @@ void Msg_Main_Context_Begin(const char *msg) {
 BoxSrc *Msg_Set_Src(BoxSrc *src_of_err) {
   BoxSrc *previous = my_src_of_err;
   my_src_of_err = src_of_err;
+  if (0)
+    My_Update_Context(src_of_err);
   return previous;
 }
 

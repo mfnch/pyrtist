@@ -61,12 +61,16 @@ typedef struct {
 /** Function used to count lines and columns (updating tok_src) */
 static void My_Scan_Tok(yyscan_t scanner);
 
-/** Shorthand macrom for My_Scan_Tok. */
+/** Shorthand macro for My_Scan_Tok. */
 #define MY_SCAN_TOK() My_Scan_Tok(yyscanner)
-
 
 /** Variable defined by yacc to pass the location of the scanned token */
 extern YYLTYPE yylloc;
+
+/** We want 'yylex' to be a static function, it is not meant to be called
+ * directly. BoxLex_Next_Token should be used instead.
+ */
+#define YY_DECL static int yylex (yyscan_t yyscanner)
 
 %}
 
@@ -344,7 +348,7 @@ BoxTask BoxLex_Begin_Include_FILE(BoxLex *bl, FILE *f, const char *fn) {
 BoxTask BoxLex_Begin_Include(BoxLex *bl, const char *fn) {
   FILE *f = Path_Open_Inc_File(fn, "rt");
   if (f == NULL) {
-    MSG_ERROR("\"%s\" <-- Cannot open the file!", f);
+    MSG_ERROR("\"%s\" <-- Cannot open the file!", fn);
     return BOXTASK_ERROR;
   }
 
@@ -394,8 +398,7 @@ static void My_Scan_Tok(yyscan_t scanner) {
 
   el = l = box_lexer->pos.line;
   ec = c = box_lexer->pos.col;
-  yylloc.first_line = l;
-  yylloc.first_column = c;
+  yylloc.begin = box_lexer->pos;
 
   for(i = 0; i < tok_length; i++) {
     el = l; /* previous char */
@@ -412,6 +415,7 @@ static void My_Scan_Tok(yyscan_t scanner) {
   box_lexer->pos.line = l;
   box_lexer->pos.col = c;
 
-  yylloc.last_line = el;
-  yylloc.last_column = ec;
+  yylloc.end.line = el;
+  yylloc.end.col = ec;
+  yylloc.end.file_name = box_lexer->pos.file_name;
 }

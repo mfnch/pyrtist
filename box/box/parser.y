@@ -38,25 +38,11 @@ static int yyparse(BoxLex *box_lexer);
 static void yyerror(BoxLex *box_lexer, char *s);
 static void My_Syntax_Error();
 
-
-/* Not sure whether there is a better way of doing this. */
-#define yylex BoxLex_Next_Token
-
 #define SRC(ast_node, node_src) \
-  do \
-    if (ast_node != NULL) { \
-      ast_node->src.begin.line = node_src.first_line; \
-      ast_node->src.begin.col = node_src.first_column; \
-      ast_node->src.end.line = node_src.last_line; \
-      ast_node->src.end.col = node_src.last_column; \
-      ast_node->src.begin.file_name = ast_node->src.end.file_name = "unknown"; \
-    } \
-  while (0)
+  do {(ast_node)->src = (node_src);} while(0)
 
-/** We want yylex to be a static function, it is not meant to be called
- * directly. BoxLex_Next_Token should be used instead.
- */
-#define YY_DECL static int yylex (yyscan_t yyscanner)
+/* Trick to induce yyparse to call BoxLex_Next_Token rather than yylex. */
+#define yylex BoxLex_Next_Token
 
 %}
 
@@ -77,6 +63,19 @@ static void My_Syntax_Error();
   ASTSelfLevel  SelfLevel;
 }
 
+%code requires {
+  /** Redefine YYLTYPE so that it contains an extra member, file_name */
+  #define YYLTYPE BoxSrc
+
+  #define YYLLOC_DEFAULT(Current, Rhs, N)                       \
+    do {                                                        \
+      if (N > 0) {                                              \
+        (Current).begin = YYRHSLOC(Rhs, 1).begin;               \
+        (Current).end   = YYRHSLOC(Rhs, N).end;                 \
+      } else                                                    \
+        (Current).begin = (Current).end = YYRHSLOC(Rhs, 0).end; \
+    } while (0)
+}
 
 %token TOK_NEWLINE
 %token TOK_ERRSEP
@@ -474,12 +473,8 @@ static void yyerror(BoxLex *box_lexer, char* s) {
 }
 
 static void My_Syntax_Error(YYLTYPE *src, char *s) {
-  BoxSrc my_src, *prev_src_of_err;
-  my_src.begin.line = src->first_line;
-  my_src.begin.col = src->first_column;
-  my_src.end.line = src->last_line;
-  my_src.end.col = src->last_column;
-  prev_src_of_err = Msg_Set_Src(& my_src);
+  BoxSrc *prev_src_of_err;
+  prev_src_of_err = Msg_Set_Src(src);
   if (s == NULL)
     MSG_ERROR("Syntax error.");
   else

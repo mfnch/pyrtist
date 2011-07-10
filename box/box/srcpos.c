@@ -27,6 +27,7 @@
 #include "msgbase.h"
 #include "array.h"
 #include "srcpos.h"
+#include "print.h"
 
 BoxSrcName *BoxSrcName_New(void) {
   BoxSrcName *srcname = BoxMem_Safe_Alloc(sizeof(BoxSrcName));
@@ -227,21 +228,23 @@ void BoxSrc_Init(BoxSrc *src) {
 char *BoxSrc_To_Str(BoxSrc *loc) {
   long bl = loc->begin.line, bc = loc->begin.col,
        el = loc->end.line, ec = loc->end.col;
+  const char *fn =
+    (loc->begin.file_name != NULL) ?
+    Box_SPrintF("\"%s\", ", loc->begin.file_name) : BoxMem_Strdup("");
 
-  printf("Source: '%s'\n", loc->begin.file_name);
   if (bl == 0)
-    return printdup("text ending at line %ld col %ld", el, ec);
+    return Box_SPrintF("%~stext ending at line %ld col %ld", fn, el, ec);
 
   else if (el == 0)
-    return printdup("from line %ld col %ld", bl, bc);
+    return Box_SPrintF("%~sfrom line %ld col %ld", fn, bl, bc);
 
   else if (bl == el) {
     if (loc->begin.col >= loc->end.col - 1)
-      return printdup("line %ld col %ld", bl, bc);
+      return Box_SPrintF("%~sline %ld col %ld", fn, bl, bc);
     else
-      return printdup("line %ld cols %ld-%ld", bl, bc, ec);
+      return Box_SPrintF("%~sline %ld cols %ld-%ld", fn, bl, bc, ec);
   } else {
-    return printdup("line %ld-%ld cols %ld-%ld", bl, el, bc, ec);
+    return Box_SPrintF("%~sline %ld-%ld cols %ld-%ld", fn, bl, el, bc, ec);
   }
 }
 
