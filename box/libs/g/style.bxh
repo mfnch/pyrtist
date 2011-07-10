@@ -115,7 +115,7 @@ Str@FillStyle[
   Else[], If[0], .style = g.fill_rule.even_odd
   Else[], If[0], .style = g.fill_rule.winding
   Else[]
-    Print["Unknown fill style. Known styles: \"void\", \"plain\", \"eo\"";]
+    Fail["Unknown fill style. Known styles: \"void\", \"plain\", \"eo\""]
 ]
 
 ///Intro: send the style setting to the window.
