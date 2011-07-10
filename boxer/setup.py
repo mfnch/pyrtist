@@ -10,7 +10,7 @@ url = 'http://boxc.sourceforge.net/',
 download_url = ('http://sourceforge.net/project/'
                 'platformdownload.php?group_id=218051')
 license = 'GPL'
-packages = ['boxer']
+packages = ['boxer', 'boxer.dox']
 package_dir = {'boxer': 'src'}
 package_data = {'boxer': ['glade/*', 'examples/*',
                           'icons/*.png', 'icons/fonts/*.png',
@@ -52,4 +52,4 @@ except:
         package_dir=package_dir,
         package_data=package_data,
         scripts=scripts)
-        #data_files=[('share/boxer', ['src/boxer.glade'])]
+

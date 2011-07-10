@@ -20,7 +20,9 @@ Color@Window.Line "line_color" ?
 Gradient@Window.Line "line_gradient" ?
 Window@Window.Line "line_window" ?
 LineStyle@Window.Line "line_linestyle" ?
-Style@Window.Line "line_style" ?
+
+OldStyle@Window.Line "line_style" ?
+Style@Window.Line[OldStyle[$]]
 
 Window.Line.Close = Void
 ([)@Window.Line.Close "window_line_close_begin" ?

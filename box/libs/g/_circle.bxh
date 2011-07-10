@@ -22,7 +22,9 @@ Color@Window.Circle "circle_color" ?
 Gradient@Window.Circle "circle_gradient" ?
 
 ///Intro: {type(.@)} used for the border of the circle and the filling mode.
-Style@Window.Circle "circle_style" ?
+OldStyle@Window.Circle "circle_style" ?
+
+Style@Window.Circle[OldStyle[$]]
 
 PointList@Window.Circle "circle_pointlist" ?
 

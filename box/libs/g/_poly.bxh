@@ -27,7 +27,9 @@ Real@Window.Poly "poly_real" ?
 
 ///Intro: the {type(.@)} to be used for the polygon border and the filling
 // mode.
-Style@Window.Poly "poly_style" ?
+OldStyle@Window.Poly "poly_style" ?
+
+Style@Window.Poly[OldStyle[$]]
 
 PointList@Window.Poly "poly_pointlist" ?
 

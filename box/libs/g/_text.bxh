@@ -8,9 +8,11 @@ Window.Text = Void
 Str@Window.Text "window_text_str" ?
 Point@Window.Text "window_text_point" ?
 (;)@Window.Text "window_text_pause" ?
-Style@Window.Text "window_text_style" ?
+OldStyle@Window.Text "window_text_style" ?
 Color@Window.Text "window_text_color" ?
 Gradient@Window.Text "window_text_gradient" ?
+
+Style@Window.Text[OldStyle[$]]
 
 Window.Text.Font = Void
 Str@Window.Text.Font "window_text_font_str" ?

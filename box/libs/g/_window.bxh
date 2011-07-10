@@ -19,7 +19,10 @@ Point@Window "window_size" ?
 //  will follow in the Window.
 Color@Window "window_color" ?
 Gradient@Window "window_gradient" ?  ///Same.
-Style@Window "window_style" ?        ///Same.
+OldStyle@Window "window_style" ?     ///Same.
+
+///Intro: use the drawing style as a default in the next drawing commands.
+Style@Window[OldStyle[$]]
 
 ///Intro: draw the content of a {type(.@)} inside the opened {type(@.)}
 //  object.

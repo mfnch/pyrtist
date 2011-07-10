@@ -1,0 +1,34 @@
+///Section: g
+
+// Interface for the OldStyle object
+
+///Intro: drawing style. This is now obsolete. You should use {type(Style)}
+// instead
+OldStyle = ++CPtr
+
+Style = ++(Int a, b, c)
+
+Style@OldStyle[]
+
+([)@OldStyle "style_begin" ?
+//(].)@OldStyle "style_destroy" ?
+
+OldStyle.Fill = Void
+Str@OldStyle.Fill "style_fill_string" ?
+
+OldStyle.Border = Void
+Color@OldStyle.Border "style_border_color" ?
+Real@OldStyle.Border "style_border_real" ?
+Str@OldStyle.Border "style_border_join" ?
+
+OldStyle.Border.Dash = Void
+([)@OldStyle.Border.Dash "style_border_dash_begin" ?
+Real@OldStyle.Border.Dash "style_border_dash_real" ?
+(;)@OldStyle.Border.Dash "style_border_dash_pause" ?
+(])@OldStyle.Border.Dash "style_border_dash_end" ?
+
+OldStyle.Border.MiterLimit = Void
+Real@OldStyle.Border.MiterLimit "style_border_miter_limit" ?
+
+OldStyle.Border.Cap = Void
+Str@OldStyle.Border.Cap "style_border_cap_string" ?
