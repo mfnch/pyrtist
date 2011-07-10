@@ -34,10 +34,13 @@
 
 static ASTNode *program_node = NULL;
 
-int yyparse(void);
-int yylex(void);
-void yyerror(char *s);
+static int yyparse(BoxLex *box_lexer);
+static void yyerror(BoxLex *box_lexer, char *s);
 static void My_Syntax_Error();
+
+
+/* Not sure whether there is a better way of doing this. */
+#define yylex BoxLex_Next_Token
 
 #define SRC(ast_node, node_src) \
   do \
@@ -50,7 +53,15 @@ static void My_Syntax_Error();
     } \
   while (0)
 
+/** We want yylex to be a static function, it is not meant to be called
+ * directly. BoxLex_Next_Token should be used instead.
+ */
+#define YY_DECL static int yylex (yyscan_t yyscanner)
+
 %}
+
+%parse-param {BoxLex *bl}
+%lex-param   {BoxLex *bl}
 
 /* Possible types for the nodes of the tree */
 %union {
@@ -65,6 +76,7 @@ static void My_Syntax_Error();
   ASTSep        Sep;
   ASTSelfLevel  SelfLevel;
 }
+
 
 %token TOK_NEWLINE
 %token TOK_ERRSEP
@@ -457,7 +469,7 @@ program:
 %%
 
 /* error function */
-void yyerror(char* s) {
+static void yyerror(BoxLex *box_lexer, char* s) {
   /* Do nothing, as - at the moment - we report error in error action */
 }
 
@@ -475,182 +487,45 @@ static void My_Syntax_Error(YYLTYPE *src, char *s) {
   (void) Msg_Set_Src(prev_src_of_err);
 }
 
-#if 0
-/* Inizializza il parser. Se f != NULL il compilatore partira'
- * come se la prima istruzione del programma fosse una "include nomefile"
- * dove nomefile e' la stringa a cui punta f.
- * maxinc indica il numero massimo di file di include che possono essere
- * aperti contemporaneamente.
- */
-Task Parser_Init(const char *f) {
-
-  /* Leggo comunque dallo stdin (che puo' essere stato rediretto)! */
-  yyrestart(stdin);
-
-  /* Inizializzo il tokenizer */
-  TASK( Tok_Init(NULL, f) );
-
-  //parser_attr.no_syntax_err = 0;
-
-#if YYDEBUG == 1
-  yydebug = 1;
-#endif
-
-  return Success;
-}
-
-/* Completa il parsing del file di input.
- */
-Task Parser_Finish(void) {
-  Tok_Finish();
-  return Success;
-}
-#endif
-
 ASTNode *Parser_Parse(FILE *in, const char *in_name,
                       const char *auto_include) {
   ASTNode *program;
-  int parse_status;
+  BoxTask parse_error;
   BoxSrcName *file_names = NULL;
+  BoxLex *box_lexer;
 
   assert(program_node == NULL);
 
-  if (Tok_Init(in, in_name, auto_include) != BOXTASK_OK)
-    return NULL;
+  box_lexer = BoxLex_Create();
+  assert(box_lexer != NULL);
 
-  parse_status = yyparse();
-  file_names = Tok_Finish();
+  in_name = (in_name != NULL) ? in_name : "<stdin>";
+  in = (in != NULL) ? in : stdin;
+  parse_error = BoxLex_Begin_Include_FILE(box_lexer, in, in_name);
 
-  if (parse_status) {
-    MSG_ERROR("Parse error at end of input.");
+  if (auto_include != NULL && parse_error == BOXTASK_OK)
+    parse_error = BoxLex_Begin_Include(box_lexer, auto_include);
+
+  if (parse_error == BOXTASK_OK)
+    parse_error = yyparse(box_lexer);
+
+  file_names = BoxLex_Destroy(box_lexer);
+
+  if (parse_error == BOXTASK_OK) {
+    program = program_node;
+    program_node = NULL;
+
+    assert(program->type == ASTNODETYPE_BOX);
+    program->attr.box.file_names = file_names;
+    return program;
+
+  } else {
+    if (parse_error == BOXTASK_FAILURE)
+      MSG_ERROR("Parse error at end of input.");
+
     ASTNode_Destroy(program_node);
     BoxSrcName_Destroy(file_names);
     program_node = NULL;
     return NULL;
   }
-
-  program = program_node;
-  program_node = NULL;
-
-  assert(program->type == ASTNODETYPE_BOX);
-  program->attr.box.file_names = file_names;
-  return program;
 }
-
-
-
-#if 0
-Task Parse() {
-  struct yy_buffer_state *bufState = NULL;
-  yyin = stream_in;
-  bufState = yy_create_buffer( /* FILE *fh */ NULL, YY_BUF_SIZE );
-  if (! bufState) goto error;
-  yy_switch_to_buffer( bufState );
-
-  /* Parse, building the AST */
-  if (yyparse() != 0)
-      goto error;
-  yy_delete_buffer( bufState );
-      PRIVATE(yyin) = NULL;
-}
-#endif
-
-
-#if 0
-
-/* Every explicit symbol can be followed by a suffix,
- * which specifies which opened box contains the symbol.
- * For example: variable::box1:box2
- * The compiler interprets the string '::box1:box2' as the specification
- * of the box which contains the variable 'v'.
- * The association string --> box-level is obtained by the following
- * function.
- */
-Task Prs_Suffix(Int *rs, Int suffix, Name *nm) {
-  if ( nm->length > 0 ) {
-    Symbol *s;
-
-    /* Cerco il simbolo a profondita' suffix o superiori */
-    s = Sym_Explicit_Find(nm, suffix, NO_EXACT_DEPTH);
-    if (s == NULL) {
-      MSG_ERROR("'%N' <-- type not found!", nm);
-      return Failed;
-    }
-
-    /* Controllo che sia un tipo, ossia un simbolo con tipo e senza valore. */
-    assert( s->value.is.typed );
-    if ( s->value.is.value ) {
-      MSG_ERROR("'%N' has to be a type!", nm);
-      return Failed;
-    }
-
-    suffix = (suffix < 0) ? 0 : suffix;
-    if ( (*rs = Box_Search_Opened(s->value.type, suffix + 1)) >= 0 )
-      return Success;
-
-    MSG_ERROR("'%N' <-- none of the opened box have this type!", nm);
-    return Failed;
-
-  } else {
-    if ( suffix < 0 ) {
-      *rs = 0;
-      return Success;
-    } else {
-      if ( (*rs = suffix + 1) <= Box_Num() ) {
-        return Success;
-      } else {
-        MSG_ERROR("Maximum box depth exceeded.");
-        return Failed;
-      }
-    }
-  }
-}
-
-/* DESCRIPTION: This function build an array of *num objects of type *x.
- * NOTE: *num is an integer expression. The new type will be put into *array.
- */
-Task Prs_Array_Of_X(Expr *array, Expr *num, Expr *x) {
-  register Int t, n;
-
-  /* Checks on *num */
-  if ( num != NULL ) {
-    if ( ! num->is.typed ) {
-      MSG_ERROR("L'indice dell'array e' una espressione senza tipo.");
-      return Failed;
-    }
-
-    if ( ! Tym_Compare_Types(TYPE_INTG, num->type, NULL) ) {
-      MSG_ERROR("L'indice dell'array non e' di tipo intero.");
-      return Failed;
-    }
-
-    if ( (! num->is.value) || (num->categ != CAT_IMM) ) {
-      MSG_ERROR(
-       "L'indice dell'array deve essere una costante intera positiva.");
-      return Failed;
-    }
-
-    n = num->value.i;
-    if ( n < 1 ) {
-      MSG_ERROR("L'indice dell'array e' non positivo!");
-      return Failed;
-    }
-
-  } else {
-    n = -1;
-  }
-
-  /* Checks on *x */
-  if ( ! x->is.typed ) {
-    MSG_ERROR("Cannot create an array of objects with undefined type!");
-    return Failed;
-  }
-
-  array->is.typed = 1;
-  array->is.value = 0;
-  array->type = t = Tym_Def_Array_Of(n, x->type);
-  if ( t != TYPE_NONE ) return Success;
-  return Failed;
-}
-
-#endif

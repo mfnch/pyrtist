@@ -18,8 +18,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* $Id$ */
-
 /** @file tokenizer.h
  * @brief The tokenizer for the Box language.
  *
@@ -36,11 +34,48 @@
 /** Variable to be used by the parser to get the current token position */
 extern BoxSrc *tok_src;
 
-int yylex(void);
-Task Tok_Init(FILE *main_file, const char *main_filename,
-              const char *pre_filename);
-BoxSrcName *Tok_Finish(void);
-Task Tok_Include_Begin(const char *f);
-UInt Tok_Include_End(void);
+typedef struct _struct_TokState TokState;
+
+TokState *Tok_Init(FILE *main_file, const char *main_filename,
+                   const char *pre_filename);
+BoxSrcName *Tok_Finish(TokState *s);
+Task Tok_Include_Begin(TokState *s, const char *f);
+UInt Tok_Include_End(TokState *s);
+
+
+
+/** Box lexer */
+typedef struct _struct_BoxLex BoxLex;
+
+/** Create a new Box lexer object. */
+BoxLex *BoxLex_Create();
+
+/** Destroy a Box lexer create with BoxLex_Create.
+ * @return the list of source file names used in the code labels.
+ */
+BoxSrcName *BoxLex_Destroy(BoxLex *bl);
+
+/** Return the next token. */
+int BoxLex_Next_Token(BoxLex *bl);
+
+/** Include a new source file. */
+BoxTask BoxLex_Begin_Include(BoxLex *bl, const char *f);
+
+/** Include a new source file, given its descriptor and filename. */
+BoxTask BoxLex_Begin_Include_FILE(BoxLex *bl, FILE *f, const char *fn);
+
+/** Exit from an included source file.
+ * @return 1 if this was the last included file, 0 otherwise.
+ */
+int BoxLex_End_Include(BoxLex *bl);
+
+/** Checks whether the string feature of length 'length' has been already
+ * provided to this function. If the string was never seen before, then
+ * return 0 (and does remember the string for the next time the function
+ * is called). If the feature was seen before, then return 1.
+ * NOTE: This function is called in the '#provide' directive.
+ * @return 1 if the feature was found, 0 otherwise.
+ */
+int BoxLex_Was_Provided(BoxLex *bl, const char *feature, int length);
 
 #endif /* _TOKENIZER_H */

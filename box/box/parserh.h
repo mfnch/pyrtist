@@ -18,8 +18,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* $Id$ */
-
 /*
  * Questo file contiene le dichiarazioni delle funzioni del compilatore,
  * che servono per inizializzare ed avviare il compilatore.
@@ -31,11 +29,7 @@
 #  include "typesys.h"
 #  include "ast.h"
 
-Task Parser_Init(const char *f);
-Task Parser_Finish(void);
-
 ASTNode *Parser_Parse(FILE *in, const char *in_name,
                       const char *auto_include);
-int yyparse(void);
 
 #endif

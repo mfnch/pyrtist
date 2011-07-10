@@ -18,6 +18,9 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
+%option reentrant
+%option extra-type="BoxLex *"
+%option noyywrap
 %x include
  /* ^^^ Start condition used to extract the file name in include directives */
 
@@ -53,28 +56,14 @@ typedef struct {
   BoxSrcPos pos;
   UInt      msgcontext;
   UInt      num_errs, num_warns;
-  YY_BUFFER_STATE
-            buffer;
-} TokIncludeData;
-
-/** Structure defining the complete state of the scanner */
-struct {
-  int         is_initialised;
-  BoxSrcName  *fnames;    /**< File names referred by BoxSrcPos objects */
-  BoxSrcPos   pos;        /**< Current position in the source file */
-  UInt        include_level,
-              max_include_level;
-  BoxArr      include_list;
-  BoxHT       provided_features;
-} state = {0};
+} MyIncludeData;
 
 /** Function used to count lines and columns (updating tok_src) */
-static void My_Scan_Tok(void);
+static void My_Scan_Tok(yyscan_t scanner);
 
-/** Function called in the #provide directive to determine whether the
- * feature has already been provided and the file should then be skipped.
- */
-static int Tok_Provided(const char *feature, int length);
+/** Shorthand macrom for My_Scan_Tok. */
+#define MY_SCAN_TOK() My_Scan_Tok(yyscanner)
+
 
 /** Variable defined by yacc to pass the location of the scanned token */
 extern YYLTYPE yylloc;
@@ -87,8 +76,6 @@ HEXDIGIT [0-9A-Fa-f]
 NAME     [A-Za-z][A-Za-z0-9_]*
 LNAME    [a-z][A-Za-z0-9_]*
 UNAME    [A-Z][A-Za-z0-9_]*
-
-%option noyywrap
 
 %%
 
@@ -105,8 +92,8 @@ include BEGIN(include);
 
   BEGIN(INITIAL);
 
-  (void) Tok_Include_Begin(f);
-  free(f);
+  (void) BoxLex_Begin_Include(yyextra, f);
+  BoxMem_Free(f);
 }
  /* Tutto il resto da' errori! */
 <include>. {
@@ -117,19 +104,19 @@ include BEGIN(include);
  /* Se sto leggendo un file di include, quando arrivo alla sua fine
   * torno a leggere il precedente.
   */
-<<EOF>> {if (Tok_Include_End()) {yyterminate();}}
+<<EOF>> {if (BoxLex_End_Include(yyextra)) yyterminate();}
 
  /* Un istruzione deve stare tutta su una riga.
   * Se questo diventa problematico e' possibile usare il carattere
   * di continuazione riga _
   */
-"\n"    {My_Scan_Tok(); return TOK_NEWLINE;}
+"\n"    {MY_SCAN_TOK(); return TOK_NEWLINE;}
 
  /* Il carattere di continuazione riga mangia tutto ci che segue
   * fino alla nuova riga e annulla il carattere newline
   */
-"_"{SPACES}"\n"       {My_Scan_Tok();}
-"_"{SPACES}"//"[^\n]*"\n"  {My_Scan_Tok();}
+"_"{SPACES}"\n"            {MY_SCAN_TOK();}
+"_"{SPACES}"//"[^\n]*"\n"  {MY_SCAN_TOK();}
 
  /* Discard comments. Comments start either with // or with #! */
 "//"[^\n]*  {}
@@ -138,65 +125,66 @@ include BEGIN(include);
 "#"{SPACES}"provide"{SPACES}["][^"\n]+["] {
   const char *feature = strchr(yytext, '"') + 1;
   int length = strchr(feature, '"') - feature - 1;
-  if (Tok_Provided(feature, length)) {
-    if (Tok_Include_End()) {yyterminate();}
+  if (BoxLex_Was_Provided(yyextra, feature, length)) {
+    if (BoxLex_End_Include(yyextra))
+      yyterminate();
   }
 }
 
  /* Spaces are ignored */
-{SPACES}    {My_Scan_Tok();}
+{SPACES}    {MY_SCAN_TOK();}
 
 
-"=>"  {My_Scan_Tok(); return TOK_TO;}
-"->"  {My_Scan_Tok(); return TOK_MAPTO;}
+"=>"  {MY_SCAN_TOK(); return TOK_TO;}
+"->"  {MY_SCAN_TOK(); return TOK_MAPTO;}
 
  /* Assignment operators */
-"+="  {My_Scan_Tok(); return TOK_APLUS;}
-"-="  {My_Scan_Tok(); return TOK_AMINUS;}
-"*="  {My_Scan_Tok(); return TOK_ATIMES;}
-"%="  {My_Scan_Tok(); return TOK_AREM;}
-"/="  {My_Scan_Tok(); return TOK_ADIV;}
-"<<=" {My_Scan_Tok(); return TOK_ASHL;}
-">>=" {My_Scan_Tok(); return TOK_ASHR;}
-"&="  {My_Scan_Tok(); return TOK_ABAND;}
-"^="  {My_Scan_Tok(); return TOK_ABXOR;}
-"|="  {My_Scan_Tok(); return TOK_ABOR;}
+"+="  {MY_SCAN_TOK(); return TOK_APLUS;}
+"-="  {MY_SCAN_TOK(); return TOK_AMINUS;}
+"*="  {MY_SCAN_TOK(); return TOK_ATIMES;}
+"%="  {MY_SCAN_TOK(); return TOK_AREM;}
+"/="  {MY_SCAN_TOK(); return TOK_ADIV;}
+"<<=" {MY_SCAN_TOK(); return TOK_ASHL;}
+">>=" {MY_SCAN_TOK(); return TOK_ASHR;}
+"&="  {MY_SCAN_TOK(); return TOK_ABAND;}
+"^="  {MY_SCAN_TOK(); return TOK_ABXOR;}
+"|="  {MY_SCAN_TOK(); return TOK_ABOR;}
 
  /* Increment/decrement operators */
-"++"  {My_Scan_Tok(); return TOK_INC;}
-"--"  {My_Scan_Tok(); return TOK_DEC;}
+"++"  {MY_SCAN_TOK(); return TOK_INC;}
+"--"  {MY_SCAN_TOK(); return TOK_DEC;}
 
  /* Shift operators */
-"<<"  {My_Scan_Tok(); return TOK_SHL;}
-">>"  {My_Scan_Tok(); return TOK_SHR;}
+"<<"  {MY_SCAN_TOK(); return TOK_SHL;}
+">>"  {MY_SCAN_TOK(); return TOK_SHR;}
 
  /* Comparison operators */
-"=="  {My_Scan_Tok(); return TOK_EQ;}
-"!="  {My_Scan_Tok(); return TOK_NE;}
-"<="  {My_Scan_Tok(); return TOK_LE;}
-">="  {My_Scan_Tok(); return TOK_GE;}
+"=="  {MY_SCAN_TOK(); return TOK_EQ;}
+"!="  {MY_SCAN_TOK(); return TOK_NE;}
+"<="  {MY_SCAN_TOK(); return TOK_LE;}
+">="  {MY_SCAN_TOK(); return TOK_GE;}
 
-"&&"  {My_Scan_Tok(); return TOK_LAND;}
-"||"  {My_Scan_Tok(); return TOK_LOR;}
+"&&"  {MY_SCAN_TOK(); return TOK_LAND;}
+"||"  {MY_SCAN_TOK(); return TOK_LOR;}
 
  /* Other operators */
-"**"  {My_Scan_Tok(); return TOK_POW;}
+"**"  {MY_SCAN_TOK(); return TOK_POW;}
 
-[$]+  { yylval.SelfLevel = yyleng; My_Scan_Tok(); return TOK_SELF;}
+[$]+  { yylval.SelfLevel = yyleng; MY_SCAN_TOK(); return TOK_SELF;}
 
  /* Combination symbols */
-"@"   {yylval.Combine = BOXCOMB_CHILDOF; My_Scan_Tok(); return TOK_COMBINE;}
-"(=)" {yylval.Combine = BOXCOMB_COPYTO; My_Scan_Tok(); return TOK_COMBINE;}
+"@"   {yylval.Combine = BOXCOMB_CHILDOF; MY_SCAN_TOK(); return TOK_COMBINE;}
+"(=)" {yylval.Combine = BOXCOMB_COPYTO; MY_SCAN_TOK(); return TOK_COMBINE;}
  /* for compatibility with v 0.1 */
-"@@"  {yylval.Combine = BOXCOMB_CHILDOF; My_Scan_Tok(); return TOK_COMBINE;}
-"@&"  {yylval.Combine = BOXCOMB_CHILDOF; My_Scan_Tok(); return TOK_COMBINE;}
+"@@"  {yylval.Combine = BOXCOMB_CHILDOF; MY_SCAN_TOK(); return TOK_COMBINE;}
+"@&"  {yylval.Combine = BOXCOMB_CHILDOF; MY_SCAN_TOK(); return TOK_COMBINE;}
 
  /* Special tokens */
-"(.[)" {yylval.TTag = BOXTYPE_CREATE;  My_Scan_Tok(); return TOK_TTAG;}
-"(].)" {yylval.TTag = BOXTYPE_DESTROY; My_Scan_Tok(); return TOK_TTAG;}
-"([)"  {yylval.TTag = BOXTYPE_BEGIN; My_Scan_Tok(); return TOK_TTAG;}
-"(])"  {yylval.TTag = BOXTYPE_END; My_Scan_Tok(); return TOK_TTAG;}
-"(;)"  {yylval.TTag = BOXTYPE_PAUSE; My_Scan_Tok(); return TOK_TTAG;}
+"(.[)" {yylval.TTag = BOXTYPE_CREATE;  MY_SCAN_TOK(); return TOK_TTAG;}
+"(].)" {yylval.TTag = BOXTYPE_DESTROY; MY_SCAN_TOK(); return TOK_TTAG;}
+"([)"  {yylval.TTag = BOXTYPE_BEGIN; MY_SCAN_TOK(); return TOK_TTAG;}
+"(])"  {yylval.TTag = BOXTYPE_END; MY_SCAN_TOK(); return TOK_TTAG;}
+"(;)"  {yylval.TTag = BOXTYPE_PAUSE; MY_SCAN_TOK(); return TOK_TTAG;}
 
  /* Number of type Char */
 [']([^'\n]|\\')+['] {
@@ -206,7 +194,7 @@ include BEGIN(include);
     ASTNode_Set_Error(yylval.Node);
   } else
     yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_CHAR, c);
-  My_Scan_Tok();
+  MY_SCAN_TOK();
   return TOK_CONSTANT;
  }
 
@@ -223,7 +211,7 @@ include BEGIN(include);
     ASTNode_Set_Error(yylval.Node);
   } else
     yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_INT, c);
-  My_Scan_Tok();
+  MY_SCAN_TOK();
   return TOK_CONSTANT;
  }
 
@@ -235,7 +223,7 @@ include BEGIN(include);
     ASTNode_Set_Error(yylval.Node);
   } else
     yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_INT, c);
-  My_Scan_Tok();
+  MY_SCAN_TOK();
   return TOK_CONSTANT;
  }
 
@@ -247,7 +235,7 @@ include BEGIN(include);
     ASTNode_Set_Error(yylval.Node);
   } else
     yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_REAL, c);
-  My_Scan_Tok();
+  MY_SCAN_TOK();
   return TOK_CONSTANT;
  }
 
@@ -257,195 +245,173 @@ include BEGIN(include);
   char *s = Box_Reduce_Esc_String(yytext + 1, yyleng - 2, & length);
   yylval.Node = ASTNodeString_New(s, length);
   BoxMem_Free(s);
-  My_Scan_Tok();
+  MY_SCAN_TOK();
   return TOK_STRING;
  }
 
  /* Variable name */
 {LNAME} {
   yylval.String = BoxMem_Strndup(yytext, yyleng);
-  My_Scan_Tok();
+  MY_SCAN_TOK();
   return TOK_IDENTIFIER;
  }
 
  /* Type name */
 {UNAME} {
   yylval.String = BoxMem_Strndup(yytext, yyleng);
-  My_Scan_Tok();
+  MY_SCAN_TOK();
   return TOK_TYPE_IDENT;
  }
 
  /* Everything which is not recognised is passed character by character to the
   * parser.
   */
-. {My_Scan_Tok(); return yytext[0];}
+. {MY_SCAN_TOK(); return yytext[0];}
 
 %%
 
-/* DESCRIZIONE: Prepara le funzioni di analisi lessicale del compilatore.
- *  Se f != NULL il compilatore partira' come se la prima istruzione
- *  del programma fosse una "include nomefile" dove nomefile e' la stringa
- *  a cui punta f.
- *  maxinc indica il numero massimo di file di include che possono essere
- *  aperti contemporaneamente.
- */
-Task Tok_Init(FILE *main_file, const char *main_filename,
-              const char *pre_filename) {
-  assert(!state.is_initialised);
+struct _struct_BoxLex {
+  yyscan_t    scanner;           /**< The Lex scanner */
 
-  state.is_initialised = 1;
-  state.fnames = BoxSrcName_New();
+  BoxSrcName  *fnames;           /**< File names referred by BoxSrcPos
+                                      objects */
+  BoxSrcPos   pos;               /**< Current position in the source file */
+  size_t      max_include_level; /**< Max number of includeable files */
+  BoxArr      include_list;      /**< Stack of saved data for include files */
+  BoxHT       provided_features; /**< Hashtb. to remember provided features */
+};
 
-  BoxSrcPos_Init(& state.pos, BoxSrcName_Add(state.fnames, main_filename));
+BoxLex *BoxLex_Create(void) {
+  BoxLex *bl = BoxMem_Safe_Alloc(sizeof(BoxLex));
+  yylex_init(& bl->scanner);
+  yyset_extra(bl, bl->scanner);
 
-  state.max_include_level = TOK_MAX_INCLUDE;
+  bl->fnames = BoxSrcName_New();
+  BoxSrcPos_Init(& bl->pos, "<stdin>");
 
-  /* Number of files opened through the include directive */
-  state.include_level = 0;
-
-  /* Creo una lista dove salvare i buffer, ogni qual volta
-   * incontro una include
-   */
-  BoxArr_Init(& state.include_list, sizeof(TokIncludeData),
+  bl->max_include_level = TOK_MAX_INCLUDE;
+  BoxArr_Init(& bl->include_list, sizeof(MyIncludeData),
               TOK_TYPICAL_MAX_INCLUDE);
 
-  BoxHT_Init_Default(& state.provided_features, 64);
-
-  /* Read from stdin (which could have been redirected) */
-  yyrestart(stdin);
-
-  /* Se f == "nomefile" (e quindi f != NULL), eseguo una:
-   * include "nomefile"
-   */
-  if (pre_filename == NULL)
-    return Success;
-
-  return Tok_Include_Begin(pre_filename);
+  BoxHT_Init_Default(& bl->provided_features, 64);
+  return bl;
 }
 
-/* DESCRIZIONE: Conclude l'analisi lessicale del compilatore.
- */
-BoxSrcName *Tok_Finish(void) {
-  assert(state.is_initialised);
-
-  BoxHT_Finish(& state.provided_features);
-  BoxArr_Finish(& state.include_list);
-  state.is_initialised = 0;
-  return state.fnames;
+BoxSrcName *BoxLex_Destroy(BoxLex *bl) {
+  BoxSrcName *filenames = bl->fnames;
+  yylex_destroy(bl->scanner);
+  BoxHT_Finish(& bl->provided_features);
+  BoxArr_Finish(& bl->include_list);
+  BoxMem_Free(bl);
+  return filenames;
 }
 
-static void My_Scan_Tok(void) {
-  size_t i;
-  BoxSrcPosLine l, el;
-  BoxSrcPosCol c, ec;
+int BoxLex_Next_Token(BoxLex *bl) {
+  if (BoxArr_Num_Items(& bl->include_list) > 0)
+    return yylex(bl->scanner);
 
-  el = l = state.pos.line;
-  ec = c = state.pos.col;
-  yylloc.first_line = l;
-  yylloc.first_column = c;
+  else
+    MSG_FATAL("BoxLex_Next_Token: the source file has not been specified. "
+              "Use BoxLex_Begin_Include to set it.");
+}
 
-  for(i = 0; i < yyleng; i++) {
-    el = l; /* previous char */
-    ec = c;
+BoxTask BoxLex_Begin_Include_FILE(BoxLex *bl, FILE *f, const char *fn) {
+  size_t include_level = BoxArr_Num_Items(& bl->include_list);
 
-    if (yytext[i] == '\n') {
-      c = 1;
-      l += 1;
+  if (include_level >= bl->max_include_level) {
+    MSG_ERROR("Cannot include \"%s\": too many files included!", fn);
+    return BOXTASK_ERROR;
 
-    } else {
-      c += 1;
-    }
+  } else {
+    YY_BUFFER_STATE buffer;
+    MyIncludeData cur;  
+    cur.pos = bl->pos;
+    cur.msgcontext = 0; /*Msg_Context_Num(); TODO ??? */
+    cur.num_errs = MSG_GT_ERRORS;
+    cur.num_warns = MSG_NUM_WARNINGS;
+    BoxArr_Push(& bl->include_list, & cur);
+
+    buffer = yy_create_buffer(f, YY_BUF_SIZE, bl->scanner);
+    assert(buffer != NULL);    
+    yypush_buffer_state(buffer, bl->scanner);
+    BoxSrcPos_Init(& bl->pos, BoxSrcName_Add(bl->fnames, fn));
+
+    MSG_CONTEXT_BEGIN("Entering the included file \"%s\"", fn);
+    return BOXTASK_OK;
   }
-
-  state.pos.line = l;
-  state.pos.col = c;
-
-  yylloc.last_line = el;
-  yylloc.last_column = ec;
 }
 
-/* DESCRIZIONE: Esegue materialmente la direttiva include,
- *  aprendo il file di nome f in lettura e deviando l'analisi lessicale
- *  su di esso. Bastera' poi eseguire tok_include_end() per ritornare al punto
- *  in cui la direttiva include aveva interrotto la lettura.
- */
-Task Tok_Include_Begin(const char *f) {
-  FILE *incfile;
-  TokIncludeData cur;
-
-  assert(state.is_initialised);
-
-  if (state.include_level >= state.max_include_level) {
-    MSG_ERROR("Cannot include \"%s\": too many files included!", f);
-    return Failed;
-  }
-
-  incfile = Path_Open_Inc_File(f, "rt");
-
-  if (incfile == NULL) {
+BoxTask BoxLex_Begin_Include(BoxLex *bl, const char *fn) {
+  FILE *f = Path_Open_Inc_File(fn, "rt");
+  if (f == NULL) {
     MSG_ERROR("\"%s\" <-- Cannot open the file!", f);
-    return Failed;
+    return BOXTASK_ERROR;
   }
 
-  cur.pos = state.pos;
-  cur.msgcontext = 0; /*Msg_Context_Num(); TODO ??? */
-  cur.num_errs = MSG_GT_ERRORS;
-  cur.num_warns = MSG_NUM_WARNINGS;
-  cur.buffer = YY_CURRENT_BUFFER;
-  BoxArr_Push(& state.include_list, & cur);
-
-  ++state.include_level;
-
-  /* Update position */
-  BoxSrcPos_Init(& state.pos, BoxSrcName_Add(state.fnames, f));
-
-  yyin = incfile;
-  yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
-
-  MSG_CONTEXT_BEGIN("Entering the included file \"%s\"", f);
-  return Success;
+  return BoxLex_Begin_Include_FILE(bl, f, fn);
 }
 
-/* DESCRIZIONE: Conclude la lettura di un file incluso con "include",
- *  restituendo 1 se non ci sono piu' file da leggere, 0 se bisogna riprendere
- *  la lettura dall'istruzione seguente la "include".
- */
-UInt Tok_Include_End(void) {
-  assert(state.is_initialised);
+int BoxLex_End_Include(BoxLex *bl) {
+  size_t include_level = BoxArr_Num_Items(& bl->include_list);
+  if (include_level > 0) {
+    size_t num_errs, num_warns;
+    MyIncludeData cur;
 
-  if (state.include_level > 0) {
-    TokIncludeData cur;
-    UInt num_errs, num_warns;
+    /* Retrieve the last include data block and remove it from the stack */
+    BoxArr_Pop(& bl->include_list, & cur);
 
-    /* Cancella il buffer corrente */
-    yy_delete_buffer( YY_CURRENT_BUFFER );
-    /* Imposta il nuovo buffer all'ultimo inserito nello "stack" */
-    cur = *((TokIncludeData *) BoxArr_Last_Item_Ptr(& state.include_list));
-    state.pos = cur.pos;
-    yy_switch_to_buffer(cur.buffer);
-    /* Cancella l'ultimo elemento dello stack */
-    BoxArr_Pop(& state.include_list, NULL);
-    --state.include_level;
-    /* Calcolo il numero di errori nel file incluso (+tutti i sotto-inclusi!) */
+    /* Return to the previous buffer and restore the previous position */
+    yypop_buffer_state(bl->scanner);
+    bl->pos = cur.pos;
+
+    /* Compute the number of errors in the included file */
     num_errs = MSG_GT_ERRORS - cur.num_errs;
     num_warns = MSG_NUM_WARNINGS - cur.num_warns;
     MSG_ADVICE("Exiting from the included file. "
                "%U errors and %U warnings were found.",
                num_errs, num_warns );
     MSG_CONTEXT_END();
-    return 0;
+    return (include_level == 1);
 
   } else
     return 1;
 }
 
-static int Tok_Provided(const char *feature, int length) {
-  assert(state.is_initialised);
-
+int BoxLex_Was_Provided(BoxLex *bl, const char *feature, int length) {
   BoxHTItem *item;
-  if (BoxHT_Find(& state.provided_features,
-                 (void *) feature, length, & item))
+  if (BoxHT_Find(& bl->provided_features, (void *) feature, length, & item))
     return 1;
-  BoxHT_Insert(& state.provided_features, (void *) feature, length);
+  BoxHT_Insert(& bl->provided_features, (void *) feature, length);
   return 0;
+}
+
+static void My_Scan_Tok(yyscan_t scanner) {
+  size_t i, tok_length = yyget_leng(scanner);
+  const char *tok_text = yyget_text(scanner);
+  BoxSrcPosLine l, el;
+  BoxSrcPosCol c, ec;
+  BoxLex *box_lexer = yyget_extra(scanner);
+
+  el = l = box_lexer->pos.line;
+  ec = c = box_lexer->pos.col;
+  yylloc.first_line = l;
+  yylloc.first_column = c;
+
+  for(i = 0; i < tok_length; i++) {
+    el = l; /* previous char */
+    ec = c;
+
+    if (tok_text[i] == '\n') {
+      c = 1;
+      l += 1;
+
+    } else
+      c += 1;
+  }
+
+  box_lexer->pos.line = l;
+  box_lexer->pos.col = c;
+
+  yylloc.last_line = el;
+  yylloc.last_column = ec;
 }

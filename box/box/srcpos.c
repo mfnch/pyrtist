@@ -228,6 +228,7 @@ char *BoxSrc_To_Str(BoxSrc *loc) {
   long bl = loc->begin.line, bc = loc->begin.col,
        el = loc->end.line, ec = loc->end.col;
 
+  printf("Source: '%s'\n", loc->begin.file_name);
   if (bl == 0)
     return printdup("text ending at line %ld col %ld", el, ec);
 
