@@ -29,11 +29,13 @@ AM_LDFLAGS=-no-undefined -module -avoid-version
 
 boxlib_LTLIBRARIES=libg.la
 
-dist_boxpkg_DATA=g.bxh _color.bxh _oldstyle.bxh _style.bxh _gradient.bxh \
+dist_boxpkg_DATA=\
+  obj.bxh gcore.bxh raw.bxh cmdstream.bxh style.bxh \
+                 g.bxh _color.bxh _oldstyle.bxh _gradient.bxh \
                  _window.bxh _line.bxh _circle.bxh _poly.bxh _put.bxh \
                  arrows.bxh caps.bxh _arrows.bxh _pointlist.bxh _text.bxh \
                  _matrix.bxh _bbox.bxh math.bxh tools.bxh _sphere.bxh \
-                 _area.bxh _rectangle.bxh obj.bxh raw.bxh \
+                 _area.bxh _rectangle.bxh \
                  label.bxh bounce.bxh electric.bxh
 
 libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \

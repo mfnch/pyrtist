@@ -1,19 +1,14 @@
 // Header file for the g library
 #provide "g"
 
-const = (Real pi, degrees)[]
-const.pi = 3.14159265358979323844
-const.degrees = 0.01745329251994329576 // pi/180
-
-Deg = Real, Real@Deg[$$ = $*0.01745329251994329576]
-Dpi = Real, Real@Dpi[$$ = $/25.4]
+include "gcore"
 
 include "_area"
 include "_matrix"
 include "_bbox"
 include "_pointlist"
 include "_color"
-include "_style"
+include "style"
 include "_oldstyle"
 include "_gradient"
 include "_window"

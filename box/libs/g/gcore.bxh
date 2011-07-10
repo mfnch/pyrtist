@@ -1,0 +1,25 @@
+///Section: g
+
+#provide "g.core"
+
+///Intro: the {type(.)} object is the main object in the Box graphic library.
+// It can correspond to a real drawing device (array of pixels allocated in
+// memory, PDF/SVG file, etc) or can be simply a container of graphics
+// commands to be stored for later manipulation.
+Window = ++CPtr
+
+const = (Real pi, degrees)[]
+const.pi = 3.14159265358979323844
+const.degrees = 0.01745329251994329576 // pi/180
+
+///Intro: transform an angle from degrees to radians.
+Deg = Real
+
+///Intro: the angle in degrees to be transformed to radians.
+Real@Deg[$$ = $*0.01745329251994329576]
+
+///Intro: specify a resolution in DPI (Dips Per Inch).
+Dpi = Real
+
+///Intro: the resolution in DPI as a Real number.
+Real@Dpi[$$ = $/25.4]

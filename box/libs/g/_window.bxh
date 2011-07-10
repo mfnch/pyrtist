@@ -2,12 +2,6 @@
 
 // The Window object
 
-///Intro: the {type(.)} object is the main object in the Box graphic library.
-// It can correspond to a real drawing device (array of pixels allocated in
-// memory, PDF/SVG file, etc) or can be simply a container of graphics
-// commands to be stored for later manipulation.
-Window = ++CPtr
-
 (.[)@Window "window_begin" ?
 (])@Window "window_end" ?
 (].)@Window "window_destroy" ?

@@ -17,7 +17,7 @@
 
 #provide "g.raw"
 
-include "g"
+include "gcore"
 include "obj"
 
 ///Intro:

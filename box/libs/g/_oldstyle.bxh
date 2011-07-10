@@ -1,12 +1,11 @@
 ///Section: g
-
 // Interface for the OldStyle object
+
+include "style"
 
 ///Intro: drawing style. This is now obsolete. You should use {type(Style)}
 // instead
 OldStyle = ++CPtr
-
-Style = ++(Int a, b, c)
 
 Style@OldStyle[]
 

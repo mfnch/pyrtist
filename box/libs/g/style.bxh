@@ -70,27 +70,27 @@ Border@CmdStream[
 ]
 
 ///Intro: a container of drawing style settings.
-// A {type(Sty)} object determines the style for tracing the next polygon
+// A {type(Style)} object determines the style for tracing the next polygon
 // (for {type(Poly)}, {type(Circle)}, etc).
-Sty = ++((Int border, color) have
-         Border border, Color color)
+Style = ++((Int border, color) have
+           Border border, Color color)
 
-(.[)@Sty[.have = (0, 0)]
+(.[)@Style[.have = (0, 0)]
 
 ///Intro: set the filling color.
-Color@Sty[.color = $, .have.color = 1]
+Color@Style[.color = $, .have.color = 1]
 
 ///Intro: add the border settings to the {type(@.)} object.
-Border@Sty[.border = $, .have.border = 1]
+Border@Style[.border = $, .have.border = 1]
 
-///Intro: copy the style settings from another {type(Sty)} object.
-Sty@Sty[
+///Intro: copy the style settings from another {type(Style)} object.
+Style@Style[
   [If[$.have.color], $$.have.color = 1, $$.color = $.color]
   [If[$.have.border], $$.have.border = 1, $$.border = $.border]
 ]
 
 ///Intro: translate the style object into raw commands.
-Sty@CmdStream[
+Style@CmdStream[
   do_stroke = $.have.border
 
   // Commands for filling
@@ -118,14 +118,24 @@ Str@FillStyle[
     Print["Unknown fill style. Known styles: \"void\", \"plain\", \"eo\"";]
 ]
 
-///Intro: fill style (for compatibility with Box 0.2.2).
-Sty.Fill = Void
-
-Str@Sty.Fill[]
-
 ///Intro: send the style setting to the window.
-Sty@Window[CmdStream[$]]
+Style@Window[CmdStream[$]]
 
 ///Intro: send the border setting to the window.
 Border@Window[CmdStream[$]]
 
+
+//-------------PROVIDED FOR COMPATIBILITY WITH box 0.2.3------------------//
+
+///Intro: fill style (for compatibility with Box 0.2.3).
+Style.Fill = Void
+
+Str@Style.Fill[]
+
+///Intro: border (for compatibility with Box 0.2.3).
+Style.Border = Border
+
+///Intro: provided for compatibility with Box 0.2.3.
+// See {type(Border)} instead.
+Real@Style.Border[$]
+Color@Style.Border[$] ///Same.
