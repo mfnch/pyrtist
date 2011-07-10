@@ -7,8 +7,6 @@ include "style"
 // instead
 OldStyle = ++CPtr
 
-Style@OldStyle[]
-
 ([)@OldStyle "style_begin" ?
 //(].)@OldStyle "style_destroy" ?
 
@@ -31,3 +29,9 @@ Real@OldStyle.Border.MiterLimit "style_border_miter_limit" ?
 
 OldStyle.Border.Cap = Void
 Str@OldStyle.Border.Cap "style_border_cap_string" ?
+
+Style@OldStyle[
+  [If[$.have.border]
+    .Border[[If[$.border.have.color], $.border.color]
+            [If[$.border.have.width], $.border.width]]]
+]

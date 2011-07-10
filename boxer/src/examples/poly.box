@@ -5,6 +5,7 @@ GUI = Void
 Window@GUI[]
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=18.320610687, .y=27.2959183673]
 gui2 = Point[.x=50.6361323155, .y=46.6836734694]
@@ -21,7 +22,7 @@ Scal = Real
 (Point a, b)@Scal[$$ = $.a.x*$.b.x + $.a.y*$.b.y]
 
 w = Window[][
-  .Show[(0, 0), (100, 50)] // define the minimum window size
+  BBox[(0, 0), (100, 50)] // define the minimum window size
 
   // Calculate x and print it as output
   x = Scal[(gui2 - gui1, gui5 - gui1)]/Scal[(gui2 - gui1, gui2 - gui1)]
@@ -30,7 +31,7 @@ w = Window[][
   \ .Poly[gui1, x, gui2, gui3, gui4] // draw the polygon, smoothing edges
 
   // Show the "try to move this" label
-  \ .Text[.Font["sans", 2], "try to\nmove this!", gui5, .From[(1, -1.0)]]
+  \ .Text[Font["sans", 2], "try to\nmove this!", gui5, .From[(1, -1.0)]]
   \ .Line[0.15, gui5+(-5, 2.5), arrow, gui5+(-1.5, 0)]
 ]
 

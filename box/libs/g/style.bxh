@@ -133,9 +133,9 @@ Style.Fill = Void
 Str@Style.Fill[]
 
 ///Intro: border (for compatibility with Box 0.2.3).
-Style.Border = Border
+Style.Border = Void
 
 ///Intro: provided for compatibility with Box 0.2.3.
 // See {type(Border)} instead.
-Real@Style.Border[$]
-Color@Style.Border[$] ///Same.
+Real@Style.Border[\ $$$.border[$], $$$.have.border = 1]
+Color@Style.Border[\ $$$.border[$], $$$.have.border = 1] ///Same.
