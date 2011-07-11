@@ -25,7 +25,7 @@ Real@Dash[If[$$ .have.semicolon], .offset = $, Else[], \ .dashes[$]]
 Dash@CmdStream[
   n = Num[$.dashes]
   If[n > 0]
-    Obj[g.raw.set_dash, $.offset
+    Obj[const.raw.set_dash, $.offset
         i = 0
         [If[i < n], Real[$.dashes.Get[i]], i += 1, For[1]]]
 ]
@@ -55,18 +55,18 @@ Dash@Border[.dash = $, .have.dash = 1]
 
 ///Intro: add the graphicals commands encoding a ``Border`` object.
 Border@CmdStream[
-  Obj[g.raw.save]
+  Obj[const.raw.save]
   [If[$.have.color]
      c = $.color
-     Obj[g.raw.set_source_rgba, c.r, c.g, c.b, c.a]]
+     Obj[const.raw.set_source_rgba, c.r, c.g, c.b, c.a]]
 
   [If[$.have.width], w = $.width, If[w >= 0.0]
-     Obj[g.raw.set_line_width, w]]
+     Obj[const.raw.set_line_width, w]]
 
   [If[$.have.dash], $.dash]
 
-  Obj[g.raw.stroke]
-  Obj[g.raw.restore]
+  Obj[const.raw.stroke]
+  Obj[const.raw.restore]
 ]
 
 ///Intro: a container of drawing style settings.
@@ -95,10 +95,10 @@ Style@CmdStream[
 
   // Commands for filling
   [If[$.have.color]
-     c = $.color, Obj[g.raw.set_source_rgba, c.r, c.g, c.b, c.a]]
+     c = $.color, Obj[const.raw.set_source_rgba, c.r, c.g, c.b, c.a]]
 
-  Obj[If[do_stroke], g.raw.fill_preserve
-      Else[], g.raw.fill]
+  Obj[If[do_stroke], const.raw.fill_preserve
+      Else[], const.raw.fill]
 
   // Commands for the style of the border
   [If[$.have.border], $.border]
@@ -112,8 +112,8 @@ FillStyle = ++(Int style,)
 ///Intro: the fill style. One of the following: "void", "plain", "eo".
 Str@FillStyle[
   If[0]
-  Else[], If[0], .style = g.fill_rule.even_odd
-  Else[], If[0], .style = g.fill_rule.winding
+  Else[], If[0], .style = const.fill_rule.even_odd
+  Else[], If[0], .style = const.fill_rule.winding
   Else[]
     Fail["Unknown fill style. Known styles: \"void\", \"plain\", \"eo\""]
 ]
@@ -139,3 +139,4 @@ Style.Border = Void
 // See {type(Border)} instead.
 Real@Style.Border[\ $$$.border[$], $$$.have.border = 1]
 Color@Style.Border[\ $$$.border[$], $$$.have.border = 1] ///Same.
+

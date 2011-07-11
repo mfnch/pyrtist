@@ -1,6 +1,7 @@
 // Header file for the g library
 #provide "g"
 
+include "const"
 include "gcore"
 
 include "_area"

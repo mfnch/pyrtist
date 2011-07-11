@@ -30,7 +30,7 @@ AM_LDFLAGS=-no-undefined -module -avoid-version
 boxlib_LTLIBRARIES=libg.la
 
 dist_boxpkg_DATA=\
-  obj.bxh gcore.bxh raw.bxh cmdstream.bxh style.bxh \
+  obj.bxh const.bxh gcore.bxh raw.bxh cmdstream.bxh style.bxh \
                  g.bxh _color.bxh _oldstyle.bxh _gradient.bxh \
                  _window.bxh _line.bxh _circle.bxh _poly.bxh _put.bxh \
                  arrows.bxh caps.bxh _arrows.bxh _pointlist.bxh _text.bxh \
