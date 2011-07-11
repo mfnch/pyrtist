@@ -32,10 +32,8 @@
 #include "ast.h"
 #include "parserh.h"
 
-static ASTNode *program_node = NULL;
-
-static int yyparse(BoxLex *box_lexer);
-static void yyerror(BoxLex *box_lexer, char *s);
+static int yyparse(BoxLex *box_lexer, ASTNode **program_node);
+static void yyerror(BoxLex *box_lexer, ASTNode **program_node, char *s);
 static void My_Syntax_Error();
 
 #define SRC(ast_node, node_src) \
@@ -48,6 +46,7 @@ static void My_Syntax_Error();
 
 %parse-param {BoxLex *bl}
 %lex-param   {BoxLex *bl}
+%parse-param {ASTNode **program_node}
 
 /* Possible types for the nodes of the tree */
 %union {
@@ -462,13 +461,13 @@ statement_list:
   ;
 
 program:
-    statement_list               {program_node = $1;}
+    statement_list               {*program_node = $1;}
   ;
 
 %%
 
 /* error function */
-static void yyerror(BoxLex *box_lexer, char* s) {
+static void yyerror(BoxLex *box_lexer, ASTNode **program_node, char* s) {
   /* Do nothing, as - at the moment - we report error in error action */
 }
 
@@ -484,12 +483,10 @@ static void My_Syntax_Error(YYLTYPE *src, char *s) {
 
 ASTNode *Parser_Parse(FILE *in, const char *in_name,
                       const char *auto_include) {
-  ASTNode *program;
+  ASTNode *program_node = NULL;
   BoxTask parse_error;
   BoxSrcName *file_names = NULL;
   BoxLex *box_lexer;
-
-  assert(program_node == NULL);
 
   box_lexer = BoxLex_Create();
   assert(box_lexer != NULL);
@@ -502,17 +499,14 @@ ASTNode *Parser_Parse(FILE *in, const char *in_name,
     parse_error = BoxLex_Begin_Include(box_lexer, auto_include);
 
   if (parse_error == BOXTASK_OK)
-    parse_error = yyparse(box_lexer);
+    parse_error = yyparse(box_lexer, & program_node);
 
   file_names = BoxLex_Destroy(box_lexer);
 
   if (parse_error == BOXTASK_OK) {
-    program = program_node;
-    program_node = NULL;
-
-    assert(program->type == ASTNODETYPE_BOX);
-    program->attr.box.file_names = file_names;
-    return program;
+    assert(program_node->type == ASTNODETYPE_BOX);
+    program_node->attr.box.file_names = file_names;
+    return program_node;
 
   } else {
     if (parse_error == BOXTASK_FAILURE)
@@ -520,7 +514,6 @@ ASTNode *Parser_Parse(FILE *in, const char *in_name,
 
     ASTNode_Destroy(program_node);
     BoxSrcName_Destroy(file_names);
-    program_node = NULL;
     return NULL;
   }
 }
