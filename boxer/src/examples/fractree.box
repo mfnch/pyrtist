@@ -31,7 +31,7 @@ PythagTree@Window[
 ]
 
 w = Window[][
-  .Show[bbox1, bbox2]
+  BBox[bbox1, bbox2]
 
   // Now we can draw the tree with the following line
   gui_r = GUIReal[Interval[0, 15], gui1, "level="]

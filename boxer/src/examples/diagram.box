@@ -61,7 +61,7 @@ r4 = Rect[(Point[gui3, .x = x0 + dx], (20, 10))]        // red rectangles
 r5 = Rect[(Point[gui2, .x = x0], (38, 15))]
 
 w = Window[][
-  .Show[gui7, gui8]  // Control the visible area of the picture
+  BBox[gui7, gui8]  // Control the visible area of the picture
 
   r1, r2, r3, r4, r5 // Draw all the rectangles
 

@@ -42,7 +42,7 @@ ruler_3 = Point[.x=68.1080481622, .y=34.6069620253]
 include "arrows"
 
 w = Window[][
-  .Show[bbox_1, bbox_2]
+  BBox[bbox_1, bbox_2]
 
   c = Color[(0.3, 0.7, 1)]
   c2 = Color[color.yellow, .a=0.8]

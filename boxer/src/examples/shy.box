@@ -50,7 +50,7 @@ smiley = Window[][
   \ .Circle[color.black, rp, rp*1.4, pd; ps]
   \ .Poly[(-5, b+f), 0.2, 0.2, (0, b), (5, b+f), (0, b-f)]
   \ .Circle[cg, gr, gs; gd]
-  .Show[gui1]
+  BBox[gui1]
 ]
 
 GUI[smiley]

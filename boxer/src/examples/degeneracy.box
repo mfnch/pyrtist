@@ -58,7 +58,7 @@ phase_space = Window[][
 ]
 
 w = Window[][
-  .Show[(-60, -6), (80, 50)]
+  BBox[(-60, -6), (80, 50)]
 
   \ .Put[phase_space]
   \ .Put[phase_space, (-70, 0)]

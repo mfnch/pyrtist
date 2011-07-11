@@ -29,7 +29,7 @@ include "arrows"
 include "label"
 
 w = Window[][
-  .Show[bbox1, bbox2 ]
+  BBox[bbox1, bbox2 ]
 
   font0 = Font[color.black, 4]
   font1 = Font[color.black, 4]

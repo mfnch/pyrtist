@@ -31,7 +31,7 @@ Bar@@Window[
 
 // Example using the Bar object
 w = Window[][
-  .Show[gui2, gui3]
+  BBox[gui2, gui3]
 
   Bar[(50, 5), .completed = Point[gui1].x/50]
 ]

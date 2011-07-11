@@ -26,7 +26,7 @@ include "electric"
 // the thing more interesting!
 wheatstone = Window["fig"][
   d1 = 20.0 // d1 = half diagonal
-  .Show[gui5, gui6]
+  BBox[gui5, gui6]
   p1 = Point[gui1], p2 = Point[gui2]
   p3 = Point[gui3], p4 = Point[gui4]
 

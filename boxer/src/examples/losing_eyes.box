@@ -90,7 +90,7 @@ smile = Window[]
   i = -n
   color.black
   \ .Line[s, v: = Vers[angle], v*r, v*(r+q); For[angle += dangle, ++i <= n]]
-  .Show[gui1, gui2, gui3]
+  BBox[gui1, gui2, gui3]
 ]
 
 GUI[smile]

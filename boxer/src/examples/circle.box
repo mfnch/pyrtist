@@ -18,7 +18,7 @@ p6 = Point[.x=24.6794474615, .y=42.5322522337]
 include "tools"
 
 w = Window[][
-  .Show[gui2, gui3]
+  BBox[gui2, gui3]
 
   (rx = GUIReal[Interval[0.01, 20], p1, "r_x="])
   (ry = GUIReal[Interval[0.01, 20], p2, "r_y="])

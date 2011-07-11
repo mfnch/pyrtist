@@ -24,7 +24,7 @@ include "tools"
 include "objects"
 
 w = Window[][
-  .Show[bbox1, bbox2]
+  BBox[bbox1, bbox2]
 
   // Colors of the planes
   c1 = Color[(1, 1, 0)]

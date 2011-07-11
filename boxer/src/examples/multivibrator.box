@@ -63,7 +63,7 @@ w = Window[][
 
   // Enlarge bounding box: the Show[] instruction specify some points that
   // should be visible anyway (the bounding box is enlarged accordingly)
-  \ .Show[gui1, gui2]
+  BBox[gui1, gui2]
 ]
 
 // Save the figure into a postscript file

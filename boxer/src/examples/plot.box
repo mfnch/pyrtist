@@ -16,7 +16,7 @@ p3 = Point[.x=49.3574679666, .y=14.5207484804]
 include "tools"
 
 w = Window[][
-  .Show[gui2, gui3]
+  BBox[gui2, gui3]
 
   r = 30.0, w1 = 2.0, u = 0.05, w2 = 0.5
 

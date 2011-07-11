@@ -36,7 +36,7 @@ Fractal@Window[
 include "tools"
 
 w = Window[][
-  .Show[bbox1, bbox2]
+  BBox[bbox1, bbox2]
 
   (bar_n = GUIReal[Interval[10, 300], v1])
   n = Int[bar_n.value]
