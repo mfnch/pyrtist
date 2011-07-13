@@ -32,6 +32,23 @@ Str@OldStyle.Border.Cap "style_border_cap_string" ?
 
 Style@OldStyle[
   [If[$.have.border]
-    .Border[[If[$.border.have.color], $.border.color]
-            [If[$.border.have.width], $.border.width]]]
+    .Border[
+      [If[$.border.have.color], $.border.color]
+      [If[$.border.have.width], $.border.width]
+      [If[$.border.have.dash]
+         .Dash[i = 0, n = Num[$.border.dash.dashes]
+               [If[i < n]
+                Real[$.border.dash.dashes.Get[i]]
+                i += 1
+                For[1]]
+               [If[$.border.dash.have.semicolon]; $.border.dash.offset]]
+      ]
+    ]
+  ]
+
+  fill_style = $.fill_style.style
+  [If[fill_style >= -1]
+    .Fill[If[fill_style == -1], "void"
+          Else[], If[fill_style == const.fill_rule.winding], "plain"
+          Else[], "eo"]]
 ]

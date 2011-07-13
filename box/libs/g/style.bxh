@@ -69,11 +69,27 @@ Border@CmdStream[
   Obj[const.raw.restore]
 ]
 
+///Intro: fill style.
+FillStyle = ++(Int style,)
+
+(.[)@FillStyle[.style = -2]  // -2 means: unspecified
+
+///Intro: the fill style. One of the following: "void", "plain", "eo".
+// "void" indicates that the polygons should not be filled.
+// "plain" indicates normal filling, while "eo" indicates even-odd filling.
+Str@FillStyle[
+  If[Compare[($, "void")] == 0], .style = -1
+  Else[], If[Compare[($, "plain")] == 0], .style = const.fill_rule.winding
+  Else[], If[Compare[($, "eo")] == 0], .style = const.fill_rule.even_odd
+  Else[]
+    Fail["Unknown fill style. Known styles: \"void\", \"plain\", \"eo\""]
+]
+
 ///Intro: a container of drawing style settings.
 // A {type(Style)} object determines the style for tracing the next polygon
 // (for {type(Poly)}, {type(Circle)}, etc).
 Style = ++((Int border, color) have
-           Border border, Color color)
+           FillStyle fill_style, Border border, Color color)
 
 (.[)@Style[.have = (0, 0)]
 
@@ -82,6 +98,9 @@ Color@Style[.color = $, .have.color = 1]
 
 ///Intro: add the border settings to the {type(@.)} object.
 Border@Style[.border = $, .have.border = 1]
+
+///Intro: add the fill style to the {type(@.)} object.
+FillStyle@Style[.fill_style = $]
 
 ///Intro: copy the style settings from another {type(Style)} object.
 Style@Style[
@@ -104,20 +123,6 @@ Style@CmdStream[
   [If[$.have.border], $.border]
 ]
 
-///Intro: fill style.
-FillStyle = ++(Int style,)
-
-(.[)@FillStyle[.style = -1]  // -1 means: unspecified
-
-///Intro: the fill style. One of the following: "void", "plain", "eo".
-Str@FillStyle[
-  If[0]
-  Else[], If[0], .style = const.fill_rule.even_odd
-  Else[], If[0], .style = const.fill_rule.winding
-  Else[]
-    Fail["Unknown fill style. Known styles: \"void\", \"plain\", \"eo\""]
-]
-
 ///Intro: send the style setting to the window.
 Style@Window[CmdStream[$]]
 
@@ -129,8 +134,7 @@ Border@Window[CmdStream[$]]
 
 ///Intro: fill style (for compatibility with Box 0.2.3).
 Style.Fill = Void
-
-Str@Style.Fill[]
+Str@Style.Fill[\ $$$.fill_style[$]]
 
 ///Intro: border (for compatibility with Box 0.2.3).
 Style.Border = Void
@@ -140,3 +144,12 @@ Style.Border = Void
 Real@Style.Border[\ $$$.border[$], $$$.have.border = 1]
 Color@Style.Border[\ $$$.border[$], $$$.have.border = 1] ///Same.
 
+Style.Border.Dash = Void
+Real@Style.Border.Dash[
+  \ $$$$.border.dash[$]
+  $$$$.have.border = $$$$.border.have.dash = 1
+]
+(;)@Style.Border.Dash[
+  $$$$.border.dash.have.semicolon = 1
+  $$$$.have.border = $$$$.border.have.dash = 1
+]

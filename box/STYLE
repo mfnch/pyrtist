@@ -20,7 +20,7 @@ NAMING CONVENTIONS
   In_This_Way --> functions
   IN_THIS_WAY --> macros
 
-  Names for functions usually start with a prefix, such that it is simple
+  Names for functions usually start with a prefix, so that it is simple
   to recognize where they are defined. For example: 'Cmp_Operator_New' comes
   from the file 'compiler.c'. Static functions use the prefix My_ to denote
   they are defined in the same file. In principle, one should do the same for

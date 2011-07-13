@@ -6,7 +6,7 @@ include "style"
 include "path"
 
 ///Intro: create a polygon.
-Poly = ++(Obj args, Sty style, Int close
+Poly = ++(Obj args, Style style, Int close
           (Real left, right) margin
           Int num_margins)
 
@@ -53,7 +53,7 @@ Int@Poly.Get[
 Color@Poly[\ .style[$]]
 
 ///Intro: style to use when drawing the polygon.
-Sty@Poly[\ .style[$]]
+Style@Poly[\ .style[$]]
 
 ///Intro: add the polygon to the path.
 Poly@Path[
@@ -65,7 +65,7 @@ Poly@Path[
     prev_margin = Real[$.args.Get[num_args - 2]]
     point0 = vertex1 + (vertex0 - vertex1)*prev_margin
 
-    Obj[g.raw.move_to, point0]
+    Obj[const.raw.move_to, point0]
 
     i = 0
     [If[i < num_args]
@@ -80,10 +80,10 @@ Poly@Path[
        point2 = vertex2 - margin_right*segment_vector
 
        [If[degenerate_corner]
-          Obj[g.raw.line_to, point2]
+          Obj[const.raw.line_to, point2]
         Else[]
-          Obj[g.raw.ext_joinarc_to, point0, vertex1, point1]
-          Obj[g.raw.line_to, point2]]
+          Obj[const.raw.ext_joinarc_to, point0, vertex1, point1]
+          Obj[const.raw.line_to, point2]]
 
        prev_margin = margin_right
        point0 = point2
@@ -92,7 +92,7 @@ Poly@Path[
      For[1]]
 
     // Close the polygon, if requested
-    [If[$.close], Obj[g.raw.close_path]]
+    [If[$.close], Obj[const.raw.close_path]]
 
     // Mark the path as "non empty"
     .empty = 0
