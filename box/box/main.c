@@ -273,7 +273,7 @@ static Task Stage_Compilation(char *file, BoxVMCallNum *main_module) {
                                           /*setup_file_name*/ file);
 
   MSG_ADVICE("Compilaton finished. %U errors and %U warnings were found.",
-             MSG_GT_ERRORS, MSG_NUM_WARNINGS );
+             MSG_GT_ERRORS, MSG_NUM_WARNINGS);
 
   MSG_CONTEXT_END();
   return Success;

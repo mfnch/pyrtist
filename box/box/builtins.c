@@ -255,6 +255,12 @@ static BoxTask My_Num_Init(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
+static BoxTask My_Compare_Init(BoxVM *vm) {
+  BoxInt *compare = BOX_VM_THIS_PTR(vm, BoxInt);
+  *compare = 0;
+  return BOXTASK_OK;
+}
+
 /*****************************************************************************
  *                       FUNCTIONS FOR CONVERSION                            *
  *****************************************************************************/
@@ -757,7 +763,13 @@ static void My_Register_Sys(BoxCmp *c) {
   c->bltin.num =
     Bltin_Simple_Fn_Def(c, "Num", BOXTYPE_INT,
                         BOXTYPE_BEGIN, My_Num_Init);
+
+  c->bltin.compare =
+    Bltin_Simple_Fn_Def(c, "Compare", BOXTYPE_INT,
+                        BOXTYPE_BEGIN, My_Compare_Init);
 }
+
+
 
 /* Register bultin types, operation and functions */
 void Bltin_Init(BoxCmp *c) {

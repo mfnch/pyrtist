@@ -63,4 +63,10 @@ BOXEXPORT char *BoxStr_Get_Ptr(BoxStr *s);
 /** Return the size of the data in the string. */
 BOXEXPORT size_t BoxStr_Get_Size(BoxStr *s);
 
+/** Compare two strings and return an integer less than, equal to, or greater
+ * than zero if s1 is found, respectively, to be less than, to match, or be
+ * greater than s2.
+ */
+BOXEXPORT int BoxStr_Compare(const BoxStr *s1, const BoxStr *s2);
+
 #endif /* _BOX_STR_H */

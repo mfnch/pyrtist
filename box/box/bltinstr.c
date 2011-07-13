@@ -146,6 +146,22 @@ static Task My_Length_Str(BoxVM *vm) {
   return Success;
 }
 
+static BoxTask My_Compare_Str(BoxVM *vm) {
+  BoxInt *compare = BOX_VM_THIS_PTR(vm, BoxInt);
+  struct struc_str_couple {BoxStr left, right;} *str_couple;
+  str_couple = BOX_VM_ARG_PTR(vm, struct struc_str_couple);
+  *compare = BoxStr_Compare(& str_couple->left, & str_couple->right);
+  return BOXTASK_OK;
+}
+
+static void My_Register_Compare_Str(BoxCmp *c) {
+  BoxTS *ts = & c->ts;
+  BoxType str_couple = TS_Structure_Begin(ts);
+  TS_Structure_Add(ts, str_couple, c->bltin.string, NULL);
+  TS_Structure_Add(ts, str_couple, c->bltin.string, NULL);
+  Bltin_Proc_Def(c, c->bltin.compare, str_couple, My_Compare_Str);
+}
+
 void Bltin_Str_Register_Procs(BoxCmp *c) {
   Operation *opn;
   BoxVMSymID copy_str;
@@ -162,17 +178,12 @@ void Bltin_Str_Register_Procs(BoxCmp *c) {
   Bltin_Proc_Def(c, c->bltin.string, c->bltin.string, My_Str_Str);
   Bltin_Proc_Def(c, c->bltin.string,     BOXTYPE_OBJ, My_Str_CString);
   Bltin_Proc_Def(c, c->bltin.length, c->bltin.string, My_Length_Str);
+  Bltin_Proc_Def(c,    c->bltin.num, c->bltin.string, My_Length_Str);
 
   /* Copy Str to Str */
-#if 0
-  opn = Operator_Add_Opn(& c->convert, c->bltin.string,
-                         BOXTYPE_NONE, c->bltin.string);
-  copy_str = Bltin_Proc_Add(c, "copy_str", My_Str_Copy);
-  Operation_Set_User_Implem(opn, copy_str);
-#endif
-
-#if 1
   Bltin_Comb_Def(c, c->bltin.string, BOXCOMB_COPYTO, c->bltin.string,
                  My_Str_Copy);
-#endif
+
+  /* String comparison */
+  My_Register_Compare_Str(c);
 }

@@ -98,3 +98,19 @@ char *BoxStr_To_C_String(BoxStr *s) {
 char *BoxStr_Get_Ptr(BoxStr *s) {return s->ptr;}
 
 size_t BoxStr_Get_Size(BoxStr *s) {return s->length;}
+
+int BoxStr_Compare(const BoxStr *left, const BoxStr *right) {
+  size_t l1 = left->length,
+         l2 = right->length,
+         lmin = (l1 < l2) ? l1 : l2;
+  const char *s1 = left->ptr,
+             *s2 = right->ptr;
+  if (lmin > 0) {
+    int result = strncmp(s1, s2, lmin);
+    if (result != 0)
+      return result;
+  }
+
+  return (l1 < l2) ? -1 : ((l1 > l2) ? 1 : 0);
+  /* ^^^ not being particularly clever here... */
+}

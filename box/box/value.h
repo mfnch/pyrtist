@@ -61,7 +61,6 @@ typedef struct {
               new_or_init   :1, /**< Created with Value_New or Value_Init? */
               own_register  :1, /**< Need to release a register during
                                      finalisation? */
-              own_reference :1, /**< Do we own a reference to the object? */
               ignore        :1; /**< To be ignored when passed to a Box? */
   }         attr;             /**< Attributes for the Value */
 } Value;

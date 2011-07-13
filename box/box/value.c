@@ -55,7 +55,6 @@ void Value_Init(Value *v, CmpProc *proc) {
   v->name = NULL;
   v->attr.new_or_init = 0;
   v->attr.own_register = 0;
-  v->attr.own_reference = 0;
   v->attr.ignore = 0;
   v->num_ref = 1;
 }
@@ -88,24 +87,9 @@ static void My_Value_Finalize(Value *v) {
           Reg_Release(& v->proc->reg_alloc,
                       v->value.cont.type, v->value.cont.value.reg);
       }
-
-      /* Explicit unlinks are not necessary anymore with the new memory
-       * handling protocol of Box.
-       */
-#if 0
-      if (v->attr.own_reference)
-        Value_Emit_Unlink(v);
-#endif
       return;
 
     case BOXCONTCATEG_GREG:
-      /* Explicit unlinks are not necessary anymore with the new memory
-       * handling protocol of Box.
-       */
-#if 0
-      if (v->attr.own_reference)
-        Value_Emit_Unlink(v);
-#endif
       return;
 
     case BOXCONTCATEG_PTR:
@@ -255,7 +239,6 @@ void Value_Setup_As_Weak_Copy(Value *v_copy, Value *v) {
   v_copy->value.cont = v->value.cont;
   v_copy->name = (v->name == NULL) ? NULL : BoxMem_Strdup(v->name);
   v_copy->attr.own_register = 0;
-  v_copy->attr.own_reference = 0;
   v_copy->attr.ignore = 0;
 }
 
@@ -524,7 +507,6 @@ void Value_Emit_Allocate(Value *v) {
       CmpProc *proc = c->cur_proc;
       BoxVMAllocID alloc_id;
 
-      assert(v->attr.own_reference == 0);
       assert(v->proc == proc);
 
       /* Get the alloc ID for the type */
@@ -547,8 +529,6 @@ void Value_Emit_Allocate(Value *v) {
         CmpProc_Assemble(proc, BOXGOP_CREATE,
                          2, & v->value.cont, & v_alloc_id.value.cont);
       }
-
-      v->attr.own_reference = 1;
     }
     return;
 
@@ -854,12 +834,9 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType new_type) {
 
       } else {
         BoxCont v_ptr_cont = v_ptr->value.cont;
-        int own_reference = v_ptr->attr.own_reference;
-        v_ptr->attr.own_reference = 0;
         Value_Unlink(v_ptr);
         v_ptr = Value_New(c->cur_proc);
         Value_Setup_As_Temp(v_ptr, BOXTYPE_PTR);
-        v_ptr->attr.own_reference = own_reference;
         CmpProc_Assemble(c->cur_proc, BOXGOP_REF, 2,
                          & v_ptr->value.cont, & v_ptr_cont);
         assert(v_ptr->value.cont.categ == BOXCONTCATEG_LREG);
@@ -911,12 +888,9 @@ Value *Value_Cast_To_Ptr(Value *v) {
   } else {
     /* We have to get the pointer with a lea instruction. */
     BoxCont v_cont = v->value.cont;
-    int own_reference = v->attr.own_reference;
-    v->attr.own_reference = 0;
     Value_Unlink(v);
     v = Value_New(c->cur_proc);
     Value_Setup_As_Temp(v, BOXTYPE_PTR);
-    v->attr.own_reference = own_reference;
     CmpProc_Assemble(c->cur_proc, BOXGOP_LEA, 2, & v->value.cont, & v_cont);
     return v;
   }
@@ -1446,8 +1420,6 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
     Value *v_ptr = Value_New(c->cur_proc),
           *v_subtype_child;
     v_subtype_child = My_Get_Ptr_To_New_Value(c->cur_proc, t_subtype_child);
-    v_subtype_child->attr.own_reference = 0;
-    /* ^^^ we pass the ownership responsibility to the subtype */
 
     /* We now create a Value corresponding to the first pointer (the child)
      * and transfer the child pointer to the subtype.

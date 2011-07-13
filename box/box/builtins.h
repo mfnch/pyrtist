@@ -35,6 +35,7 @@ typedef struct {
   BoxType string,
           length,
           num,
+          compare,
           repr,
           struc_real_real,
           species_int,
