@@ -246,7 +246,7 @@ struct _BoxVM_struct {
               forcelong :1,   /**< Force long form assembly. */
               hexcode   :1,   /**< Show Hex values in disassembled code */
               identdata :1;   /**< Add also identity info for data inserted
-                                  into the data segment */
+                                   into the data segment */
   }         attr;           /** Flags controlling the behaviour of the VM */
 
   struct {

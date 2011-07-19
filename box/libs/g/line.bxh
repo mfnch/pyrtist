@@ -1,0 +1,33 @@
+#provide "g.line"
+///Section: g
+
+include "raw"
+include "style"
+include "path"
+
+///Intro: create a geometrical shape of type circle.
+Line = ++((Int first_point, close, variable_width) have
+          Obj args
+          Style style)
+
+(.[)@Line[.have = (0, 0, 0)]
+
+///Intro: next vertex in the line.
+Point@Line[\ $$.args[$]]
+
+///Intro: number of points of the line.
+Line@Num[$.args]
+
+///Intro: retrieve a point in the line.
+Line.Get = Point
+
+///Intro: index of the point to retrieve.
+Int@Line.Get[$$ = Point[.x=.y=0]]
+
+///Intro: get a point along the line.
+// If the given real is integer (``Real[Int[real]] == real``)
+// then return the same as ``Int@Line.Get``, otherwise return an intermediate
+// point. For example, ``line.Get[0.5]`` returns the point in the middle of
+// the segment having vertices ``line.Get[0]`` and ``line.Get[1]``.
+REAL@Line.Get[$$ = Point[.x=.y=0.0]]
+

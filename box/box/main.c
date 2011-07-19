@@ -63,6 +63,7 @@ enum {
 
 /* The BoxVM object where the source is compiled */
 static BoxVM *target_vm = NULL;
+static BoxPaths box_paths;
 
 /* Variabili interne */
 static UInt flags = FLAG_EXECUTE; /* Stato di partenza dei flags */
@@ -73,23 +74,23 @@ static char *file_setup;
 static char *query = NULL;
 
 /* Functions called when the argument of an option is found */
-static void My_Set_File_Input(char *arg) {file_input = arg;}
-static void My_Set_File_Output(char *arg) {file_output = arg;}
-static void My_Set_File_Setup(char *arg) {file_setup = arg;}
-static void My_Set_Query(char *arg) {query = arg;}
+static void My_Set_File_Input(BoxPaths *bp, char *arg) {file_input = arg;}
+static void My_Set_File_Output(BoxPaths *bp, char *arg) {file_output = arg;}
+static void My_Set_File_Setup(BoxPaths *bp, char *arg) {file_setup = arg;}
+static void My_Set_Query(BoxPaths *bp, char *arg) {query = arg;}
 static void My_Exec_Query(char *query);
 
-#define NO_ARG ((void (*)(char *)) NULL)
+#define NO_ARG ((void (*)(BoxPaths *, char *)) NULL)
 
 /* Tabella contenente i nomi delle opzioni e i dati relativi */
 static struct opt {
   char     *name;  /* Nome dell'opzione */
-  UInt     cflag;  /* Se part = PAR_NONE, esegue *((UInt *) arg) &= ~cflag */
-  UInt     sflag;  /* Se part = PAR_NONE, esegue *((UInt *) arg) |= sflag */
-  UInt     xflag;  /* Se part = PAR_NONE, esegue *((UInt *) arg) ^= xflag */
-  UInt     repeat; /* Numero di volte che l'opzione puo' essere invocata */
-  UInt     *flags; /* Puntatore all'insieme dei flags */
-  void     (*use_argument)(char *arg);
+  UInt     cflag,  /* Se part = PAR_NONE, esegue *((UInt *) arg) &= ~cflag */
+           sflag,  /* Se part = PAR_NONE, esegue *((UInt *) arg) |= sflag */
+           xflag,  /* Se part = PAR_NONE, esegue *((UInt *) arg) ^= xflag */
+           repeat, /* Numero di volte che l'opzione puo' essere invocata */
+           *flags; /* Puntatore all'insieme dei flags */
+  void     (*use_argument)(BoxPaths *bp, char *arg);
 
 } opt_tab[] = {
   {"help",    0, FLAG_HELP, 0, -1, & flags, NO_ARG},
@@ -104,9 +105,9 @@ static struct opt {
   {"output",  FLAG_OVERWRITE, FLAG_OUTPUT, 0, 1, & flags, My_Set_File_Output},
   {"write",   0, FLAG_OVERWRITE + FLAG_OUTPUT, 0, 1, & flags, My_Set_File_Output},
   {"setup",   0, FLAG_SETUP, 0, 1, & flags, My_Set_File_Setup},
-  {"library", 0, 0, 0, -1, & flags, Path_Add_Lib},
-  {"Include-path", 0, 0, 0, -1, & flags, Path_Add_Pkg_Dir},
-  {"Lib-path", 0, 0, 0, -1, & flags, Path_Add_Lib_Dir},
+  {"library", 0, 0, 0, -1, & flags, BoxPaths_Add_Lib},
+  {"Include-path", 0, 0, 0, -1, & flags, BoxPaths_Add_Pkg_Dir},
+  {"Lib-path", 0, 0, 0, -1, & flags, BoxPaths_Add_Lib_Dir},
   {"query",    0, 0, 0, -1, & flags, My_Set_Query},
   {NULL }
 }, opt_default =  {"input", 0, FLAG_INPUT, 0, 1, & flags, My_Set_File_Input};
@@ -121,7 +122,7 @@ Task Main_Execute(UInt main_module);
 /******************************************************************************/
 
 static Task Stage_Init(void) {
-  Path_Init();
+  BoxPaths_Init(& box_paths);
   /* Initialisation of the message module */
   Msg_Main_Init(MSG_LEVEL_WARNING);
   return Success;
@@ -131,7 +132,7 @@ static void Stage_Finalize(void) {
   if (target_vm != NULL)
     BoxVM_Destroy(target_vm);
 
-  Path_Destroy();
+  BoxPaths_Finish(& box_paths);
 
   Msg_Main_Destroy();
 }
@@ -199,13 +200,13 @@ static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
     *opt_desc->flags |= opt_desc->sflag;
     *opt_desc->flags ^= opt_desc->xflag;
 
-    if ( opt_desc->use_argument != NO_ARG ) {
-      if ( ++i >= argc ) {
+    if (opt_desc->use_argument != NO_ARG) {
+      if (++i >= argc) {
         MSG_ERROR("%s%s <-- Option requires an argument!", opt_prefix, option);
         Main_Error_Exit(CMD_LINE_HELP);
       }
 
-      opt_desc->use_argument(argv[i]);
+      opt_desc->use_argument(& box_paths, argv[i]);
     }
   } /* Fine del ciclo for */
 
@@ -258,8 +259,8 @@ static Task Stage_Interpret_Command_Line(UInt *f) {
 }
 
 static Task Stage_Add_Default_Paths(void) {
-  Path_Set_All_From_Env();
-  Path_Add_Script_Path_To_Inc_Dir(file_input);
+  BoxPaths_Set_All_From_Env(& box_paths);
+  BoxPaths_Add_Script_Path_To_Inc_Dir(& box_paths, file_input);
   return Success;
 }
 
@@ -270,7 +271,8 @@ static Task Stage_Compilation(char *file, BoxVMCallNum *main_module) {
   target_vm = Box_Compile_To_VM_From_File(main_module, /*target_vm*/ NULL,
                                           /*file*/ NULL,
                                           /*filename*/ file_input,
-                                          /*setup_file_name*/ file);
+                                          /*setup_file_name*/ file,
+                                          /*paths*/ & box_paths);
 
   MSG_ADVICE("Compilaton finished. %U errors and %U warnings were found.",
              MSG_GT_ERRORS, MSG_NUM_WARNINGS);
@@ -286,7 +288,9 @@ static Task Stage_Symbol_Resolution(UInt *flags) {
 
   MSG_CONTEXT_BEGIN("Symbol resolution");
 
-  TASK( BoxVMSym_Resolve_CLibs(target_vm, & lib_dirs, & libraries) );
+  TASK( BoxVMSym_Resolve_CLibs(target_vm,
+                               BoxPaths_Get_Lib_Dir(& box_paths),
+                               BoxPaths_Get_Libs(& box_paths)) );
   TASK( BoxVMSym_Resolve_All(target_vm) );
   BoxVMSym_Ref_Check(target_vm, & all_resolved);
   if (! all_resolved) {
@@ -419,7 +423,7 @@ void Main_Cmnd_Line_Help(void) {
 
 static void My_Exec_Query(char *query) {
   char *pkg_path, *lib_path;
-  Path_Get_Bltin_Pkg_And_Lib_Paths(& pkg_path, & lib_path);
+  Box_Get_Bltin_Pkg_And_Lib_Paths(& pkg_path, & lib_path);
 
   struct {
     char *name;

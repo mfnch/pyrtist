@@ -38,6 +38,7 @@
 #  include "operator.h"
 #  include "cmpproc.h"
 #  include "builtins.h"
+#  include "paths.h"
 
 struct _box_cmp {
   struct {
@@ -95,7 +96,8 @@ BoxVM *BoxCmp_Steal_VM(BoxCmp *c);
  */
 BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
                                    FILE *file, const char *file_name,
-                                   const char *setup_file_name);
+                                   const char *setup_file_name,
+                                   BoxPaths *paths);
 
 void BoxCmp_Compile(BoxCmp *c, ASTNode *program);
 

@@ -42,7 +42,7 @@
 #include "list.h"
 #include "fileutils.h"
 
-int File_Exist(const char *file_name) {
+int Box_File_Exist(const char *file_name) {
 #ifdef HAVE_STAT
   /* I don't know if this implementation is strictly
    * correct/optimal. For now I don't care!
@@ -59,41 +59,51 @@ int File_Exist(const char *file_name) {
 }
 
 typedef struct {
-  int only_first;
-  const char *file_name;
-  char *first_file;
-  BoxList *found_files;
-} FindFileData;
+  int        only_first;
+  const char *file_name,
+             *prefix;
+  char       *first_file;
+  BoxList    *found_files;
+} MyFindFileData;
 
-static Task Find_File_Iterator(void **tuple, void *pass) {
-  char *prefix = (char *) tuple[0],
-       *suffix = (char *) tuple[1];
-  FindFileData *ffd = (FindFileData *) pass;
-  const char *file = Box_Print("%s%c%s%s", prefix, DIR_SEPARATOR,
-                               ffd->file_name, suffix);
-  if (File_Exist(file)) {
+static BoxTask My_Find_File(MyFindFileData *ffd,
+                            const char *prefix, const char *suffix) {
+  const char *file = Box_Print("%s%c%s%s",
+                               (char *) prefix, DIR_SEPARATOR,
+                               ffd->file_name, (char *) suffix);
+  if (Box_File_Exist(file)) {
     if (ffd->only_first) {
       ffd->first_file = BoxMem_Strdup(file);
-      return Failed;
+      return BOXTASK_FAILURE;
+
     } else {
       assert(file != (char *) NULL);
       BoxList_Append_String(ffd->found_files, file);
+      return BOXTASK_OK;
     }
   }
-  return Success;
+
+  return BOXTASK_OK;  
 }
 
-void File_Find(BoxList **found_files, const char *file_name,
-               BoxList *prefixes, BoxList *suffixes) {
+static BoxTask My_Find_File_Prod_Iterator(void **tuple, void *pass) {
+  char *prefix = (char *) tuple[0],
+       *suffix = (char *) tuple[1];
+  MyFindFileData *ffd = (MyFindFileData *) pass;
+  return My_Find_File(ffd, prefix, suffix);
+}
+
+void Box_Find_Files_In_Dirs(BoxList **found_files, const char *file_name,
+                            BoxList *prefixes, BoxList *suffixes) {
   BoxList l;
-  FindFileData ffd;
+  MyFindFileData ffd;
   ffd.only_first = 0;
   ffd.file_name = file_name;
   ffd.found_files = BoxList_New(0);
   BoxList_Init(& l, sizeof(BoxList *));
   BoxList_Append(& l, & prefixes);
   BoxList_Append(& l, & suffixes);
-  (void) BoxList_Product_Iter(& l, Find_File_Iterator, (void *) & ffd);
+  (void) BoxList_Product_Iter(& l, My_Find_File_Prod_Iterator, & ffd);
   BoxList_Finish(& l);
   *found_files = ffd.found_files;
 }
@@ -101,35 +111,57 @@ void File_Find(BoxList **found_files, const char *file_name,
 /** Returns the full path of the file in '*found_file'.
  * This is a C-string which needs to be freed by the user.
  */
-void File_Find_First(char **found_file, const char *file_name,
-                     BoxList *prefixes, BoxList *suffixes) {
+void Box_Find_File_In_Dirs(char **found_file, const char *file_name,
+                           BoxList *prefixes, BoxList *suffixes) {
   BoxList l;
-  FindFileData ffd;
+  MyFindFileData ffd;
   ffd.only_first = 1;
   ffd.first_file = (char *) NULL;
   ffd.file_name = file_name;
   BoxList_Init(& l, sizeof(BoxList *));
   BoxList_Append(& l, & prefixes);
   BoxList_Append(& l, & suffixes);
-  (void) BoxList_Product_Iter(& l, Find_File_Iterator, (void *) & ffd);
+  (void) BoxList_Product_Iter(& l, My_Find_File_Prod_Iterator, & ffd);
   BoxList_Finish(& l);
   *found_file = ffd.first_file;
 }
 
-void File_Path_Split(char **dir, char **file, const char *full_path) {
+static BoxTask My_Find_File_Iterator(void *item, void *pass) {
+  MyFindFileData *ffd = (MyFindFileData *) pass;
+  char *suffix = (char *) item;
+  assert(ffd->only_first);
+  BoxTask t = My_Find_File(ffd, ffd->prefix, suffix);
+  return t;
+}
+
+void Box_Find_File_In_Dir(char **found_file, const char *file_name,
+                          const char *prefix, BoxList *suffixes) {
+  MyFindFileData ffd;
+  ffd.only_first = 1;
+  ffd.first_file = (char *) NULL;
+  ffd.prefix = prefix;
+  ffd.file_name = file_name;
+  (void) BoxList_Iter(suffixes, My_Find_File_Iterator, & ffd);
+  *found_file = ffd.first_file;
+}
+
+void Box_Split_Path(char **dir, char **file, const char *full_path) {
   const char *basename = strrchr(full_path, DIR_SEPARATOR);
   assert(full_path != NULL);
   if (basename == NULL) {
-    if (dir != NULL) *dir = NULL;
-    if (file != NULL) *file = BoxMem_Strdup(full_path);
-    return;
+    if (dir != NULL)
+      *dir = NULL;
+    if (file != NULL)
+      *file = BoxMem_Strdup(full_path);
 
   } else {
     size_t i = (basename - full_path) + 1;
     /* ^^^ cast from ptrdiff_t */
-    if (file != NULL) *file = BoxMem_Strdup(basename + 1);
+    if (file != NULL)
+      *file = BoxMem_Strdup(basename + 1);
     if (dir != NULL) {
-      *dir = memcpy(BoxMem_Alloc(sizeof(char)*(i + 1)), full_path, i);
+      *dir = memcpy(BoxMem_Safe_Alloc(sizeof(char)*(i + 1)),
+                    full_path, i);
       (*dir)[i] = '\0';
     }
   }
@@ -144,7 +176,7 @@ int main(void) {
   BoxList_New(& extensions, 0);
   BoxList_Append_String(extensions, ".txt");
   BoxList_Append_String(extensions, ".dat");
-  File_Find(& found_files, "removeme", paths, extensions);
+  Box_Find_Files_In_Dirs(& found_files, "removeme", paths, extensions);
   BoxList_Destroy(paths);
   BoxList_Destroy(extensions);
   return 0;

@@ -30,25 +30,13 @@
 
 #  include "srcpos.h"
 #  include "ast.h"
-
-/** Variable to be used by the parser to get the current token position */
-extern BoxSrc *tok_src;
-
-typedef struct _struct_TokState TokState;
-
-TokState *Tok_Init(FILE *main_file, const char *main_filename,
-                   const char *pre_filename);
-BoxSrcName *Tok_Finish(TokState *s);
-Task Tok_Include_Begin(TokState *s, const char *f);
-UInt Tok_Include_End(TokState *s);
-
-
+#  include <box/paths.h>
 
 /** Box lexer */
 typedef struct _struct_BoxLex BoxLex;
 
 /** Create a new Box lexer object. */
-BoxLex *BoxLex_Create();
+BoxLex *BoxLex_Create(BoxPaths *paths);
 
 /** Destroy a Box lexer create with BoxLex_Create.
  * @return the list of source file names used in the code labels.

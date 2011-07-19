@@ -29,6 +29,7 @@
 #include <stdarg.h>
 #include <assert.h>
 
+#if 0
 #include "types.h"
 #include "defaults.h"
 #include "mem.h"
@@ -173,7 +174,7 @@ static void *My_Get_Arg_Ptrs(BoxVMX *vmx, int kind, BoxInt n) {
     case TYPE_REAL:
       value->boxreal = (BoxReal) n; return & value->boxreal;
     default:
-      MSG_FATAL("My_Get_Arg_Ptrs: Unexpected type.")
+      MSG_FATAL("My_Get_Arg_Ptrs: Unexpected type.");
       assert(0);
       return NULL; break;
     }
@@ -855,6 +856,7 @@ Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
   for(i = 0; i < VM_MAX_NUMARGS; i++)
     iarg[i] = iarg_buffers[i];
 
+#if 0
   vmp->vmcur = & vm;
   vm.flags.exit = vm.flags.error = 0;
   for (pos = 0; pos < dim;) {
@@ -940,6 +942,7 @@ Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
     vm.i_pos = (i_pos += vm.i_len);
     pos += vm.i_len;
   }
+#endif
   return Success;
 }
 
@@ -1263,3 +1266,5 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream) {
   if (vm->fail_msg != NULL)
     fprintf(stream, "Failure: %s\n", vm->fail_msg);
 }
+
+#endif

@@ -46,26 +46,29 @@
 #  include "windows.h"
 #endif
 
-BoxList libraries;
-BoxList lib_dirs;
-BoxList inc_dirs;
-BoxList inc_exts;
 
-void Path_Init(void) {
-  BoxList_Init(& libraries, 0);
-  BoxList_Init(& lib_dirs, 0);
-  BoxList_Init(& inc_dirs, 0);
-  BoxList_Init(& inc_exts, 0);
-  BoxList_Append_String(& inc_exts, ".bxh");
-  BoxList_Append_String(& inc_exts, ".box");
-  BoxList_Append_String(& inc_exts, "");
+void BoxPaths_Init(BoxPaths *bp) {
+  BoxList_Init(& bp->libraries, 0);
+  BoxList_Init(& bp->lib_dirs, 0);
+  BoxList_Init(& bp->inc_dirs, 0);
+  BoxList_Init(& bp->inc_exts, 0);
+  BoxList_Append_String(& bp->inc_exts, ".bxh");
+  BoxList_Append_String(& bp->inc_exts, ".box");
+  BoxList_Append_String(& bp->inc_exts, "");
+  bp->flags = BOXPATHSFLAG_INC_SCRIPT_DIR;
 }
 
-void Path_Destroy(void) {
-  BoxList_Finish(& libraries);
-  BoxList_Finish(& lib_dirs);
-  BoxList_Finish(& inc_dirs);
-  BoxList_Finish(& inc_exts);
+void BoxPaths_Finish(BoxPaths *bp) {
+  BoxList_Finish(& bp->libraries);
+  BoxList_Finish(& bp->lib_dirs);
+  BoxList_Finish(& bp->inc_dirs);
+  BoxList_Finish(& bp->inc_exts);
+}
+
+void BoxPaths_Set_Flags(BoxPaths *bp, BoxPathsFlag mask, BoxPathsFlag val) {
+  mask &= BOXPATHSFLAG_SET;
+  bp->flags &= ~mask;
+  bp->flags |= (val & mask);
 }
 
 static void Add_Env_To_List(const char *env_var, BoxList *list) {
@@ -93,17 +96,17 @@ char *Path_Get_Exec_Path(void) {
 #endif
 }
 
-void Path_Get_Bltin_Pkg_And_Lib_Paths(char **pkg_path, char **lib_path) {
+void Box_Get_Bltin_Pkg_And_Lib_Paths(char **pkg_path, char **lib_path) {
   *pkg_path = NULL;
   *lib_path = NULL;
 
 #ifdef __WINDOWS__
   char *exec_path = Path_Get_Exec_Path();
   if (exec_path != NULL) {
-    *pkg_path = printdup("%s\\..\\lib\\box"BOX_VERSTR_ROUGH
-                         "\\pkg", exec_path);
-    *lib_path = printdup("%s\\..\\lib\\box"BOX_VERSTR_ROUGH
-                         "\\lib", exec_path);
+    *pkg_path = Box_SPrintF("%s\\..\\lib\\box"BOX_VERSTR_ROUGH
+                            "\\pkg", exec_path);
+    *lib_path = Box_SPrintF("%s\\..\\lib\\box"BOX_VERSTR_ROUGH
+                            "\\lib", exec_path);
     BoxMem_Free(exec_path);
   }
 
@@ -117,15 +120,15 @@ void Path_Get_Bltin_Pkg_And_Lib_Paths(char **pkg_path, char **lib_path) {
 #endif
 }
 
-void Path_Set_All_From_Env(void) {
-  Add_Env_To_List(BOX_LIBRARY_PATH, & lib_dirs);
-  Add_Env_To_List(BOX_INCLUDE_PATH, & inc_dirs);
-  Add_Env_To_List(BOX_DEFAULT_LIBS, & libraries);
+void BoxPaths_Set_All_From_Env(BoxPaths *bp) {
+  Add_Env_To_List(BOX_LIBRARY_PATH, & bp->lib_dirs);
+  Add_Env_To_List(BOX_INCLUDE_PATH, & bp->inc_dirs);
+  Add_Env_To_List(BOX_DEFAULT_LIBS, & bp->libraries);
 
 #ifdef __WINDOWS__
   {
     char *pkg_path, *lib_path;
-    Path_Get_Bltin_Pkg_And_Lib_Paths(& pkg_path, & lib_path);
+    Box_Get_Bltin_Pkg_And_Lib_Paths(& pkg_path, & lib_path);
     if (pkg_path != NULL && lib_path != NULL) {
       Path_Add_Pkg_Dir(pkg_path);
       Path_Add_Lib_Dir(lib_path);
@@ -139,49 +142,61 @@ void Path_Set_All_From_Env(void) {
   }
 #else
 #  ifdef BUILTIN_LIBRARY_PATH
-  Path_Add_Lib_Dir(BUILTIN_LIBRARY_PATH);
+  BoxPaths_Add_Lib_Dir(bp, BUILTIN_LIBRARY_PATH);
 #  endif
 
 #  ifdef BUILTIN_PKG_PATH
-  Path_Add_Pkg_Dir(BUILTIN_PKG_PATH);
+  BoxPaths_Add_Pkg_Dir(bp, BUILTIN_PKG_PATH);
 #  endif
 #endif
 }
 
-void Path_Add_Lib(char *lib) {
-  BoxList_Append_String(& libraries, lib);
+void BoxPaths_Add_Lib(BoxPaths *bp, char *lib) {
+  BoxList_Append_String(& bp->libraries, lib);
 }
 
-void Path_Add_Lib_Dir(char *path) {
-  BoxList_Append_String(& lib_dirs, path);
+void BoxPaths_Add_Lib_Dir(BoxPaths *bp, char *path) {
+  BoxList_Append_String(& bp->lib_dirs, path);
 }
 
-void Path_Add_Pkg_Dir(char *path) {
-  BoxList_Append_String(& inc_dirs, path);
+void BoxPaths_Add_Pkg_Dir(BoxPaths *bp, char *path) {
+  BoxList_Append_String(& bp->inc_dirs, path);
 }
 
-void Path_Add_Script_Path_To_Inc_Dir(const char *script_path) {
+void BoxPaths_Add_Script_Path_To_Inc_Dir(BoxPaths *bp,
+                                         const char *script_path) {
   if (script_path != NULL) {
     char *script_dir;
-    File_Path_Split(& script_dir, NULL, script_path);
+    Box_Split_Path(& script_dir, NULL, script_path);
     if (script_dir != NULL) {
-      BoxList_Append_String(& inc_dirs, script_dir);
+      BoxList_Append_String(& bp->inc_dirs, script_dir);
       BoxMem_Free(script_dir);
       return;
     }
   }
 
-  BoxList_Append_String(& inc_dirs, ".");
+  BoxList_Append_String(& bp->inc_dirs, ".");
 }
 
-FILE *Path_Open_Inc_File(const char *file, const char *mode) {
-  char *full_path;
-  File_Find_First(& full_path, file, & inc_dirs, & inc_exts);
-  if (full_path != (char *)NULL) {
-    FILE *fd = fopen(full_path, mode);
-    BoxMem_Free(full_path);
-    return fd;
+char *BoxPaths_Find_Inc_File(BoxPaths *bp, const char *current_dir,
+                             const char *file) {
+  char *full_path = NULL;
 
-  } else
-    return (FILE *) NULL;
+  if (bp->flags & BOXPATHSFLAG_INC_SCRIPT_DIR) {
+    if (current_dir != NULL)
+      Box_Find_File_In_Dir(& full_path, file, current_dir, & bp->inc_exts);
+  }
+
+  if (full_path == NULL)
+    Box_Find_File_In_Dirs(& full_path, file, & bp->inc_dirs, & bp->inc_exts);
+
+  return full_path;
+}
+
+BoxList *BoxPaths_Get_Lib_Dir(BoxPaths *bp) {
+  return & bp->lib_dirs;
+}
+
+BoxList *BoxPaths_Get_Libs(BoxPaths *bp) {
+  return & bp->libraries;
 }

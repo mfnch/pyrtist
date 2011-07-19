@@ -31,6 +31,7 @@
 #include "srcpos.h"
 #include "ast.h"
 #include "parserh.h"
+#include "paths.h"
 
 static int yyparse(BoxLex *box_lexer, ASTNode **program_node);
 static void yyerror(BoxLex *box_lexer, ASTNode **program_node, char *s);
@@ -482,13 +483,13 @@ static void My_Syntax_Error(YYLTYPE *src, char *s) {
 }
 
 ASTNode *Parser_Parse(FILE *in, const char *in_name,
-                      const char *auto_include) {
+                      const char *auto_include, BoxPaths *paths) {
   ASTNode *program_node = NULL;
   BoxTask parse_error;
   BoxSrcName *file_names = NULL;
   BoxLex *box_lexer;
 
-  box_lexer = BoxLex_Create();
+  box_lexer = BoxLex_Create(paths);
   assert(box_lexer != NULL);
 
   in_name = (in_name != NULL) ? in_name : "<stdin>";

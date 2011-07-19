@@ -55,7 +55,7 @@ libboxcore0_2_la_SOURCES = types.h error.c mem.c mem.h array.c array.h \
   hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h \
   container.c container.h virtmach.c vmptr.h virtmach.h vmalloc.c vmalloc.h \
   vmexec.c vmproc.c vmproc.h vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h \
-  str.c str.h
+  str.c str.h vmx.c vmx.h
 
 libboxcore0_2_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32

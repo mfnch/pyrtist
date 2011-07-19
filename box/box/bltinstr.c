@@ -163,9 +163,6 @@ static void My_Register_Compare_Str(BoxCmp *c) {
 }
 
 void Bltin_Str_Register_Procs(BoxCmp *c) {
-  Operation *opn;
-  BoxVMSymID copy_str;
-
   Bltin_Proc_Def(c, c->bltin.string,  BOXTYPE_CREATE, My_Str_Create);
   Bltin_Proc_Def(c, c->bltin.string, BOXTYPE_DESTROY, My_Str_Destroy);
   Bltin_Proc_Def(c, c->bltin.string,   BOXTYPE_PAUSE, My_Str_Pause);

@@ -28,8 +28,9 @@
 
 #  include "typesys.h"
 #  include "ast.h"
+#  include "paths.h"
 
 ASTNode *Parser_Parse(FILE *in, const char *in_name,
-                      const char *auto_include);
+                      const char *auto_include, BoxPaths *paths);
 
 #endif

@@ -7,7 +7,7 @@ include "path"
 
 ///Intro: create a geometrical shape of type circle.
 Circle = ++((Int center, radius) have
-            Point center, Real radius, radius2, Sty style)
+            Point center, Real radius, radius2, Style style)
 
 (.[)@Circle[.have = (0, 0)]
 
@@ -22,7 +22,7 @@ Real@Circle[
 ]
 
 ///Intro: style to use when drawing the polygon.
-Sty@Circle[\ .style[$]]
+Style@Circle[\ .style[$]]
 
 ///Intro: color for filling the circle.
 Color@Circle[\ .style[$]]
@@ -38,7 +38,7 @@ Circle@Path[
     center = $.center
     one_zero = $.center + Point[.x=radiusx, .y=0.0]
     zero_one = $.center + Point[.x=0.0, .y=radiusy]
-    Obj[g.raw.ext_arc_to, center, one_zero, zero_one, 0.0, 2.0*const.pi]
+    Obj[const.raw.ext_arc_to, center, one_zero, zero_one, 0.0, 2.0*const.pi]
     .empty = 0
 ]
 

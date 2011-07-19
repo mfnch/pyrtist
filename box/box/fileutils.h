@@ -17,24 +17,41 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 /** @file fileutils.h
  * @brief Some utilities for searching files (used just by the compiler).
- *
- *
  */
 
 #ifndef _FILEUTILS_H
 #  define _FILEUTILS_H
 
-int File_Exist(const char *file_name);
+#  include <box/types.h>
+#  include <box/list.h>
 
-void File_Find(BoxList **found_files, const char *file_name,
-               BoxList *prefixes, BoxList *suffixes);
+BOXEXPORT int Box_File_Exist(const char *file_name);
 
-void File_Find_First(char **found_file, const char *file_name,
-                     BoxList *prefixes, BoxList *suffixes);
+BOXEXPORT void Box_Find_Files_In_Dirs(BoxList **found_files,
+                                      const char *file_name,
+                                      BoxList *prefixes, BoxList *suffixes);
+
+/** Search a file with the given name (file_name) combining together all the
+ * given prefixes and suffixes. Note that the function only returns the first
+ * found file, searching sequentially in the provided directories and
+ * considering sequentially the given extensions. The order of the element of
+ * the two BoxList object matters for that.
+ * @param found_file a pointer to the found file
+ * @param file_name the name of the file to find
+ * @param prefixes the directories (or prefixes) to consider
+ * @param suffixes the extensions (or suffixes) to consider
+ */
+BOXEXPORT void Box_Find_File_In_Dirs(char **found_file, const char *file_name,
+                                     BoxList *prefixes, BoxList *suffixes);
+
+/** Similar to Box_Find_File_In_Dirs, but search only inside one directory.
+ * This is why this function only takes a string (prefix) rather than a
+ * BoxList (prefixes).
+ */
+BOXEXPORT void Box_Find_File_In_Dir(char **found_file, const char *file_name,
+                                    const char *prefix, BoxList *suffixes);
 
 /** Split the given path in 'full_path' into its directory component,
  * which is a string allocated in '*dir', and its file component,
@@ -42,14 +59,14 @@ void File_Find_First(char **found_file, const char *file_name,
  * returns NULL. If 'dir' or 'file' are null, the corresponding string
  * is not allocated/returned. Examples:
  *
- *  File_Path_Split(dir, file, "/dira/dirb/file.ext") -->
+ *  Box_Split_Path(dir, file, "/dira/dirb/file.ext") -->
  *     *dir = BoxMem_Strdup("/dira/dirb/"); *file = BoxMem_Strdup("file.ext");
  *
- *  File_Path_Split(dir, file, "/") -->
+ *  Box_Split_Path(dir, file, "/") -->
  *                       *dir = BoxMem_Strdup("/"); *file = BoxMem_Strdup("");
  *
- *  File_Path_Split(dir, file, "") --> *dir = NULL; *file = BoxMem_Strdup("");
+ *  Box_Split_Path(dir, file, "") --> *dir = NULL; *file = BoxMem_Strdup("");
  */
-void File_Path_Split(char **dir, char **file, const char *full_path);
+BOXEXPORT void Box_Split_Path(char **dir, char **file, const char *full_path);
 
 #endif

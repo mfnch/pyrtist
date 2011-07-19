@@ -25,7 +25,7 @@ Real@From[.point.x = .point.y = $]
 Text = ++((Int pos,) have
           Point pos
           From from
-          Str text, Font font, Sty style)
+          Str text, Font font, Style style)
 
 (.[)@Text[.have = (0,)]
 
@@ -53,8 +53,8 @@ Text@Path[
     d_ort = Point[.x=-d.y, .y=d.x]
     p_right = p + d
     p_up = p + d_ort
-    Obj[g.raw.ext_set_font, $.font.name]
-    Obj[g.raw.ext_text_path, p, p_right, p_up, $.from.point, $.text]
+    Obj[const.raw.ext_set_font, $.font.name]
+    Obj[const.raw.ext_text_path, p, p_right, p_up, $.from.point, $.text]
     $$.empty = 0
 ]
 

@@ -47,18 +47,20 @@
 #include "paths.h"
 #include "hashtable.h"
 #include "srcpos.h"
+#include "paths.h"
 
 /* Use our message handler */
 #define YY_FATAL_ERROR(msg) MSG_FATAL("%s", msg)
 
 /** Data used to handle files included with "include" */
 typedef struct {
+  char      *script_dir;
   BoxSrcPos pos;
   UInt      msgcontext;
   UInt      num_errs, num_warns;
 } MyIncludeData;
 
-/** Function used to count lines and columns (updating tok_src) */
+/** Function used to count lines and columns */
 static void My_Scan_Tok(yyscan_t scanner);
 
 /** Shorthand macro for My_Scan_Tok. */
@@ -275,8 +277,8 @@ include BEGIN(include);
 %%
 
 struct _struct_BoxLex {
+  BoxPaths    *paths;            /**< Paths used to search for files */
   yyscan_t    scanner;           /**< The Lex scanner */
-
   BoxSrcName  *fnames;           /**< File names referred by BoxSrcPos
                                       objects */
   BoxSrcPos   pos;               /**< Current position in the source file */
@@ -285,11 +287,12 @@ struct _struct_BoxLex {
   BoxHT       provided_features; /**< Hashtb. to remember provided features */
 };
 
-BoxLex *BoxLex_Create(void) {
+BoxLex *BoxLex_Create(BoxPaths *paths) {
   BoxLex *bl = BoxMem_Safe_Alloc(sizeof(BoxLex));
   yylex_init(& bl->scanner);
   yyset_extra(bl, bl->scanner);
 
+  bl->paths = paths;
   bl->fnames = BoxSrcName_New();
   BoxSrcPos_Init(& bl->pos, "<stdin>");
 
@@ -328,8 +331,9 @@ BoxTask BoxLex_Begin_Include_FILE(BoxLex *bl, FILE *f, const char *fn) {
 
   } else {
     YY_BUFFER_STATE buffer;
-    MyIncludeData cur;  
+    MyIncludeData cur;
     cur.pos = bl->pos;
+    cur.script_dir = (char *) NULL;
     cur.msgcontext = 0; /*Msg_Context_Num(); TODO ??? */
     cur.num_errs = MSG_GT_ERRORS;
     cur.num_warns = MSG_NUM_WARNINGS;
@@ -345,14 +349,41 @@ BoxTask BoxLex_Begin_Include_FILE(BoxLex *bl, FILE *f, const char *fn) {
   }
 }
 
+const char *BoxLex_Get_Script_Dir(BoxLex *bl) {
+  size_t num_included_files = BoxArr_Num_Items(& bl->include_list);
+  if (num_included_files > 0) {
+    MyIncludeData *cur = BoxArr_Last_Item_Ptr(& bl->include_list);
+    return cur->script_dir;
+
+  } else
+    return NULL;
+}
+
 BoxTask BoxLex_Begin_Include(BoxLex *bl, const char *fn) {
-  FILE *f = Path_Open_Inc_File(fn, "rt");
-  if (f == NULL) {
-    MSG_ERROR("\"%s\" <-- Cannot open the file!", fn);
+  const char *script_dir = BoxLex_Get_Script_Dir(bl);
+  char *full_path = BoxPaths_Find_Inc_File(bl->paths, script_dir, fn);
+  FILE *f = NULL;
+
+  if (full_path == NULL) {
+    MSG_ERROR("\"%s\" <-- Cannot find the file!", fn);
     return BOXTASK_ERROR;
   }
 
-  return BoxLex_Begin_Include_FILE(bl, f, fn);
+  f = fopen(full_path, "rt");
+  if (f == NULL) {
+    MSG_ERROR("\"%s\" <-- Cannot open the file!", fn);
+    return BOXTASK_ERROR;
+
+  } else {
+    BoxTask t = BoxLex_Begin_Include_FILE(bl, f, fn);
+    if (t == BOXTASK_OK) {
+      MyIncludeData *cur = BoxArr_Last_Item_Ptr(& bl->include_list);
+      Box_Split_Path(& cur->script_dir, NULL, full_path);
+      return BOXTASK_OK;
+
+    } else
+      return t;
+  }
 }
 
 int BoxLex_End_Include(BoxLex *bl) {
@@ -367,6 +398,8 @@ int BoxLex_End_Include(BoxLex *bl) {
     /* Return to the previous buffer and restore the previous position */
     yypop_buffer_state(bl->scanner);
     bl->pos = cur.pos;
+
+    BoxMem_Free(cur.script_dir);
 
     /* Compute the number of errors in the included file */
     num_errs = MSG_GT_ERRORS - cur.num_errs;
