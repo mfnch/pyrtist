@@ -1,12 +1,14 @@
+//!BOXER:VERSION:0:1:1
 
 include "g"
 GUI = Void
 Window@GUI[]
 
 
-//!BOXER:REFPOINTS:BEGIN
-gui1 = (-1.78114006536, 62.385), gui2 = (76.8434514839, -2.13)
 
+//!BOXER:REFPOINTS:BEGIN
+gui1 = Point[.x=-1.78114006536, .y=62.385]
+gui2 = Point[.x=76.8434514839, .y=-2.13]
 //!BOXER:REFPOINTS:END
 // Under a shell type: box -l g multivibrator.box
 // ---
@@ -51,7 +53,7 @@ w = Window[][
             (x2, y1); (x3, y1); (x1, y1); (x4, y1)]
 
   // Some labels near the components
-  \ .Text[.Font["Helvetica", 4.0],
+  \ .Text[Font["Helvetica", 4.0],
           "T1", t1.Get[1.5], .From[(2.1, 0.5)];
           "R1", r1.Get[1.5];
           "R2", r2.Get[1.5], .From[(1.9, 0.5)];

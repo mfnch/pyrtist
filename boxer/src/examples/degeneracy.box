@@ -6,6 +6,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=30.6720812183, .y=34.8106598985]
 gui2 = Point[.x=20.7538071066, .y=22.0695431472]
@@ -72,7 +73,7 @@ w = Window[][
           "M x H = 0", gui24]
   \ .Line[color.red, 0.2, p4, p2, p11]
 
-  \ .Circle[color.red, 0.7, p12; p13, ]
+  \ .Circle[color.red, 0.7, p12; p13]
 ]
 
 //w.Save["degeneracy.png", Window["rgb24", .Res[Dpi[200]]]]

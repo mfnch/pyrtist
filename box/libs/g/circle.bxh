@@ -16,12 +16,33 @@ Point@Circle[.center = $, .have.center = 1]
 
 ///Intro: the radius of the circle.
 Real@Circle[
-  have_radius = $$.have.radius
-  If[have_radius == 0], .radius = $, $$.have.radius = 1
-  Else[], If[have_radius == 1], .radius2 = $, $$.have.radius = 2
+  nr = $$.have.radius
+  $$.radius2 = $
+  [If[nr != 2], $$.radius = $, nr = 2
+   Else[], nr = 1]
+  $$.have.radius = nr
 ]
 
-///Intro: style to use when drawing the polygon.
+///Intro: convert a Circle to Obj
+Circle@Obj[
+  If[$.have.center && $.have.radius]
+    Obj[$.center, $.radius, $.radius2]
+  Else[]
+    Fail[Str["Cannot convert Circle to Obj: the "
+             Str[If[!$.have.center], "center", Else[], "radius"]
+             " is missing"]]
+]
+
+///Intro: convert an Obj to a Circle
+Obj@Circle[
+  [If[Num[$] != 3], Fail["Cannot convert Obj to Circle"]]
+  .center = Point[$.Get[0]]
+  .radius = Real[$.Get[1]]
+  .radius2 = Real[$.Get[2]]
+  .have = (1, 1)
+]
+
+///Intro: style to use when drawing the circle.
 Style@Circle[\ .style[$]]
 
 ///Intro: color for filling the circle.
@@ -34,10 +55,11 @@ Circle@Area[If[$.have.radius], const.pi*$.radius**2, Else[], 0.0]
 Circle@Path[
   If[$.have.center && $.have.radius]
     radiusx = $.radius
-    radiusy = Real[If[$.have.radius == 2], $.radius2, Else[], radiusx]
+    radiusy = $.radius2
     center = $.center
     one_zero = $.center + Point[.x=radiusx, .y=0.0]
     zero_one = $.center + Point[.x=0.0, .y=radiusy]
+    Obj[const.raw.move_to, one_zero]
     Obj[const.raw.ext_arc_to, center, one_zero, zero_one, 0.0, 2.0*const.pi]
     .empty = 0
 ]
@@ -49,3 +71,49 @@ Circle@Window[
     path.cmdstream
     CmdStream[$.style]
 ]
+
+///Intro: a collection of {type(Circle)} objects.
+Circles = ++(Obj circles, Circle last, Style style)
+
+///Intro: add a {type(.@)} to the circle collection.
+Circle@Circles[\ .circles[$]]
+
+///Intro: use the parameters given so far to create a new {type(Circle)} and
+// add it to the circle collection.
+(;)@Circles[$$.last, $$.last.have.radius = 1]
+
+///Intro: provide the radius for the next circle to add.
+Real@Circles[\ $$.last[$]]
+
+///Intro: provide the center for the next circle to add.
+Point@Circles[\ $$.last[$]]
+
+///Intro: style to use when drawing the circles.
+Style@Circles[\ .style[$]]
+
+///Intro: color for filling the circles.
+Color@Circles[\ .style[$]]
+
+///Intro: the number of circles added to {type(@.)}.
+Circles@Num[$[;].circles]
+
+///Intro: get one {type(Circle)} in the collection.
+Circles.Get = Circle
+
+///Intro: index of the circle in the collection.
+Int@Circles.Get[$$ = Circle[$$$.circles.Get[$]]]
+
+///Intro: add the circle collection to the path.
+Circles@Path[
+  n = Num[$], i = 0
+  [If[i < n], $.Get[i++], For[1]]
+]
+
+///Intro: pass the circle collection to the window for drawing.
+Circles@Window[
+  path = Path[$]
+  If[!path.empty]
+    path.cmdstream
+    CmdStream[$.style]
+]
+

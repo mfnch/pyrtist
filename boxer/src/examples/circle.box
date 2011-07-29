@@ -5,6 +5,7 @@ GUI = Void
 Window@GUI[]
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui2 = Point[.x=-7.89410084615, .y=74.7416420202]
 gui3 = Point[.x=58.5253840304, .y=-2.24268072917]
@@ -23,8 +24,8 @@ w = Window[][
   (rx = GUIReal[Interval[0.01, 20], p1, "r_x="])
   (ry = GUIReal[Interval[0.01, 20], p2, "r_y="])
 
-  \ .Circle[p3, rx.value, ry.value, color.black]  
-  \ .Circle[p4, (p5 - p4).x, (p6 - p4).y, color.red]
+  Circle[p3, rx.value, ry.value, color.black]  
+  Circle[p4, (p5 - p4).x, (p6 - p4).y, color.red]
 ]
 
 GUI[w]

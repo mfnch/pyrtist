@@ -5,4 +5,5 @@ include "circle"
 include "poly"
 include "line"
 include "text"
+include "gradient"
 

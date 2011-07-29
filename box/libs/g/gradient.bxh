@@ -1,0 +1,38 @@
+///Section: g
+
+#provide "g.gradient"
+
+include "g"
+
+Grad = ++(Int type
+          Point point1, point2
+          Real real1, real2
+          Obj colors)
+
+(.[)@Grad[.type = 0]
+
+///Intro: add a new color to the gradient
+Color@Grad[\ $$.colors[Obj[$.r, $.g, $.b, $.a]]]
+
+///Intro: specify the position of the gradient (a number between 0 and 1)
+Real@Grad[\ $$.colors[Obj[$]]]
+
+///Intro: set the gradient shape to a line.
+// The line should have two points and the color will change linearly
+// between these two points.
+Line@Grad[
+  [If[Num[$] != 2]
+     Fail["The line given to Gradient should have exactly 2 points"]]
+  .type = 1
+  
+]
+
+///Intro: set the gradient shape to a circle.
+Circles@Grad[
+  [n = Num[$], If[n != 1 && n != 2]
+     Fail["The Circles object given to Gradient "
+          "should contain one or two circles"]]
+  .type = 2
+
+]
+

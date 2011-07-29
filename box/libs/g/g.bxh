@@ -19,4 +19,5 @@ include "_poly"
 include "_put"
 include "_text"
 include "_rectangle"
+include "g2"
 
