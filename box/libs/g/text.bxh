@@ -44,6 +44,14 @@ Font@Text[.font = $]
 ///Intro: the color to use.
 Color@Text[\ .style[$]]
 
+///Intro: convert a Text to Obj
+Text@Obj[
+]
+
+///Intro: convert an Obj to a Text
+Obj@Text[
+]
+
 ///Intro: add the text to the path.
 Text@Path[
   If[$.have.pos && Length[$.text] > 0 && $.font.size > 0.0]
@@ -65,3 +73,4 @@ Text@Window[
     path.cmdstream
     CmdStream[$.style]
 ]
+

@@ -2,8 +2,10 @@
 
 include "raw"
 include "circle"
+include "circles"
 include "poly"
 include "line"
 include "text"
+include "texts"
 include "gradient"
 

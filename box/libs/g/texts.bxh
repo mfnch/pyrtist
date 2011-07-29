@@ -1,0 +1,38 @@
+#provide "g.texts"
+///Section: g
+
+include "text"
+
+///Intro: a collection of {type(Text)} objects.
+Texts = ++(Obj texts, Text last, Style style)
+
+///Intro: add a {type(.@)} to the circle collection.
+Text@Texts[\ .texts[$]]
+
+///Intro: use the parameters given so far to create a new {type(Text)} and
+// add it to the text collection.
+(;)@Texts[$$.last]
+
+///Intro: the number of texts added to {type(@.)}.
+Texts@Num[$[;].texts]
+
+///Intro: get one {type(Text)} in the collection.
+Texts.Get = Text
+
+///Intro: index of the text in the collection.
+Int@Texts.Get[$$ = Text[$$$.texts.Get[$]]]
+
+///Intro: add the text pieces to the path.
+Texts@Path[
+  n = Num[$], i = 0
+  [If[i < n], $.Get[i++], For[1]]
+]
+
+///Intro: pass the text to the window for drawing.
+Texts@Window[
+  path = Path[$]
+  If[!path.empty]
+    path.cmdstream
+    CmdStream[$.style]
+]
+
