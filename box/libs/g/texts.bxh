@@ -3,15 +3,33 @@
 
 include "text"
 
-///Intro: a collection of {type(Text)} objects.
+///Intro: a collection of text pieces ({type(Text)} objects).
 Texts = ++(Obj texts, Text last, Style style)
+
+///Intro: set the style used to draw the text pieces.
+Style@Texts[\ .style[$]]
+
+///Intro: set the text color.
+Color@Texts[\ .style[$]]
 
 ///Intro: add a {type(.@)} to the circle collection.
 Text@Texts[\ .texts[$]]
 
+///Intro: set the relative position of the text piece.
+From@Texts[\ .last[$]]
+
+///Intro: the font to use for the current text piece.
+Font@Texts[\ .last[$]]
+
+///Intro: the position of the current text piece.
+Point@Texts[\ .last[$]]
+
+///Intro: the content of the current text piece.
+Str@Texts[\ .last[$]]
+
 ///Intro: use the parameters given so far to create a new {type(Text)} and
 // add it to the text collection.
-(;)@Texts[$$.last]
+(;)@Texts[$$.last, $$.last.text = ""]
 
 ///Intro: the number of texts added to {type(@.)}.
 Texts@Num[$[;].texts]

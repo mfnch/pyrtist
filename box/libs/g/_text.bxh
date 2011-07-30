@@ -25,13 +25,30 @@ Point@Window.Text.From "window_text_from_point" ?
 Font = ++(Str name, Real size, Color color, (Int color,) have)
 
 (.[)@Font[$$.size = 4.2, $$.have.color = 0, $$.name = "sans"]
+
+///Intro: the font name.
 Str@Font[$$.name = $]
+
+//Intro: the font size.
 Real@Font[$$.size = $]
+
+//Intro: the font color.
 Color@Font[$$.color = $, $$.have.color = 1]
 
+///Intro: print the object to screen.
 Font@Print[
   color_part = Str[If[$.have.color], ", ", $.color]
   "Font[.name=\"", $.name, "\", .size=", $.size, color_part, "]"
 ]
+
 Font@Window.Text[$$.Font[$.name, $.size], If[$.have.color], $.color]
+
+Font@Obj[
+  Obj[$.name, $.size]
+]
+
+Obj@Font[
+  .name = Str[$.Get[0]]
+  .size = Real[$.Get[1]]
+]
 

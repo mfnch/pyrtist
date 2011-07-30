@@ -46,10 +46,20 @@ Color@Text[\ .style[$]]
 
 ///Intro: convert a Text to Obj
 Text@Obj[
+  If[$.have.pos]
+    Obj[$.font, $.pos, $.from.point, $.text]
+  Else[]
+    Fail["Cannot convert Text to Obj: the position is missing"]
 ]
 
 ///Intro: convert an Obj to a Text
 Obj@Text[
+  [If[Num[$] != 4], Fail["Cannot convert Obj to Text"]]
+  .have.pos = 1
+  .font = Font[$.Get[0]]
+  .pos = Point[$.Get[1]]
+  .from.point = Point[$.Get[2]]
+  .text = Str[$.Get[3]]
 ]
 
 ///Intro: add the text to the path.
