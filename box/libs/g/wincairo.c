@@ -35,6 +35,7 @@
 
 #include <box/types.h>
 #include <box/mem.h>
+#include <box/array.h>
 
 #include "error.h"
 #include "graphic.h"
@@ -42,7 +43,6 @@
 #include "wincairo.h"
 #include "psfonts.h"
 #include "formatter.h"
-#include "buffer.h"
 #include "obj.h"
 
 /*#define DEBUG*/
@@ -128,44 +128,44 @@ static void My_Map_Width(BoxGWin *w, Real *out, Real *in) {
 
 typedef struct {
   cairo_t *cr;
-  buff    saved_states;
+  BoxArr  saved_states;
   Point   sub_vec,
           sup_vec;
   Real    sub_scale,
           sup_scale;
-} TextPrivate;
+} MyTextPrivate;
 
 typedef struct {
   Point          cur_pos;
   cairo_matrix_t m;
-} TextState;
+} MyTextState;
 
 static void My_Text_Fmt_Draw(BoxGFmtStack *stack) {
   BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
-  char *text = BoxGFmt_Buffer_Get(stack);
+  MyTextPrivate *private = BoxGFmt_Get_Private(fmt);
+  char *text = BoxGFmt_Get_Buffer(stack);
   cairo_text_path(private->cr, text);
-  BoxGFmt_Buffer_Clear(stack);
+  BoxGFmt_Clear_Buffer(stack);
 }
 
 static void My_Text_Fmt_Save(BoxGFmtStack *stack) {
   BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
-  TextState ss;
+  MyTextPrivate *private = BoxGFmt_Get_Private(fmt);
+  MyTextState ss;
   cairo_get_matrix(private->cr, & ss.m);
   cairo_get_current_point(private->cr, & ss.cur_pos.x, & ss.cur_pos.y);
-  (void) buff_push(& private->saved_states, & ss);
+  (void) BoxArr_Push(& private->saved_states, & ss);
 }
 
 static void My_Text_Fmt_Restore(BoxGFmtStack *stack) {
   BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
-  TextState *ts = buff_lastitemptr(& private->saved_states, TextState);
+  MyTextPrivate *private = BoxGFmt_Get_Private(fmt);
+  MyTextState *ts = BoxArr_Last_Item_Ptr(& private->saved_states);
   double x, y;
   cairo_set_matrix(private->cr, & ts->m);
   cairo_get_current_point(private->cr, & x, & y);
   cairo_move_to(private->cr, x, ts->cur_pos.y);
-  buff_dec(& private->saved_states);
+  BoxArr_Pop(& private->saved_states, NULL);
 }
 
 static void My_Text_Fmt_Change(cairo_t *cr, Point *vec, Real scale) {
@@ -181,19 +181,19 @@ static void My_Text_Fmt_Change(cairo_t *cr, Point *vec, Real scale) {
 
 static void My_Text_Fmt_Superscript(BoxGFmtStack *stack) {
   BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  MyTextPrivate *private = BoxGFmt_Get_Private(fmt);
   My_Text_Fmt_Change(private->cr, & private->sup_vec, private->sup_scale);
 }
 
 static void My_Text_Fmt_Subscript(BoxGFmtStack *stack) {
   BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  MyTextPrivate *private = BoxGFmt_Get_Private(fmt);
   My_Text_Fmt_Change(private->cr, & private->sub_vec, private->sub_scale);
 }
 
 static void My_Text_Fmt_Newline(BoxGFmtStack *stack) {
   BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  MyTextPrivate *private = BoxGFmt_Get_Private(fmt);
   cairo_translate(private->cr, 0.0, -1.0);
   cairo_move_to(private->cr, 0.0, 0.0);
 }
@@ -210,46 +210,99 @@ static void My_Text_Fmt_Init(BoxGFmt *fmt) {
 
 static void My_Cairo_Text_Path(BoxGWin *w, Point *ctr, Point *right,
                                Point *up, Point *from, const char *text) {
-
   cairo_t *cr = (cairo_t *) w->ptr;
-  cairo_matrix_t m;
-  double x1, y1, x2, y2;
-  TextPrivate private;
-  BoxGFmt fmt;
 
-  m.xx = right->x - ctr->x;  m.yx = right->y - ctr->y;
-  m.xy = up->x - ctr->x;  m.yy = up->y - ctr->y;
-  m.x0 = ctr->x; m.y0 = ctr->y;
-  cairo_save(cr);
-  cairo_transform(cr, & m);
+  /* Here we need to first generate the path, calculate its extent
+   * and then position it according to the value of 'from'. The problem:
+   * how do we do this without disturbing the path sitting in the main cairo
+   * context 'cr'. At the moment, the only option I see is to create a second
+   * cairo_t from 'cr' and do the path computation in there.
+   * NOTE: it may be worth to store 'my_cr' so that it can be reused in other
+   *   calls to this function (mainly to reuse the font face).
+   */
+  cairo_surface_t *cs = cairo_get_target(cr);
+  assert(cairo_surface_status(cs) == CAIRO_STATUS_SUCCESS);
+  /* Status should always be successful, unless cr is broken. In this case
+   * also cs will be "broken" (see doc for cairo_get_target).
+   * The assertion above excludes this case.
+   */
 
-  My_Text_Fmt_Init(& fmt);
-  BoxGFmt_Private_Set(& fmt, & private);
-  private.cr = cr;
-  private.sup_vec.x = 0.0;
-  private.sup_vec.y = 0.5;
-  private.sup_scale = 0.5;
-  private.sub_vec.x = 0.0;
-  private.sub_vec.y = -0.1;
-  private.sub_scale = 0.5;
+  cairo_t *my_cr = cairo_create(cs);
+  if (cairo_status(my_cr) == CAIRO_STATUS_SUCCESS) {
+    /* We first copy settings from 'cr' to 'my_cr' */
+    cairo_font_face_t *ff = cairo_get_font_face(cr);
+    if (cairo_font_face_status(ff) == CAIRO_STATUS_SUCCESS) {
+      /* Copy the coordinate system, first */
+      cairo_matrix_t m, m0;
+      cairo_get_matrix(cr, & m0);
 
-  int state = buff_create(& private.saved_states, sizeof(TextState), 8);
-  assert(state == 1);
+      /* Set the matrix to the region defined by 'ctr', 'up' and 'right' */
+      m.xx = right->x - ctr->x;  m.yx = right->y - ctr->y;
+      m.xy = up->x - ctr->x;  m.yy = up->y - ctr->y;
+      m.x0 = ctr->x; m.y0 = ctr->y;
+      cairo_transform(cr, & m);
 
-  cairo_save(cr);
-  cairo_new_path(cr);
-  cairo_move_to(cr, (double) 0, (double) 0);
-  BoxGFmt_Text(& fmt, text);
-  cairo_restore(cr);
-  cairo_fill_extents(cr, & x1, & y1, & x2, & y2);
+      cairo_get_matrix(cr, & m);
+      cairo_set_matrix(my_cr, & m);
+      cairo_move_to(my_cr, 0.0, 0.0);
 
-  cairo_new_path(cr);
-  cairo_translate(cr, -x1 - (x2 - x1)*from->x, -y1 - (y2 - y1)*from->y);
-  BoxGFmt_Text(& fmt, text);
-  cairo_restore(cr);
+      /* Set the font face and matrix */
+      cairo_set_font_face(my_cr, ff);
+      m.xx = 1.0; m.yy = -1.0;
+      m.xy = m.yx = m.x0 = m.y0 = 0.0;
+      cairo_set_font_matrix(my_cr, & m);
 
-  buff_free(& private.saved_states);
-  beginning_of_path = 0;
+      {
+        /* We now draw the path to 'my_cr' */
+        MyTextPrivate private;
+        BoxGFmt fmt;
+
+        My_Text_Fmt_Init(& fmt);
+        BoxGFmt_Set_Private(& fmt, & private);
+        private.cr = my_cr;
+        private.sup_vec.x = 0.0;
+        private.sup_vec.y = 0.5;
+        private.sup_scale = 0.5;
+        private.sub_vec.x = 0.0;
+        private.sub_vec.y = -0.1;
+        private.sub_scale = 0.5;
+        BoxArr_Init(& private.saved_states, sizeof(MyTextState), 8);
+        BoxGFmt_Draw_Text(& fmt, text);
+
+        BoxArr_Finish(& private.saved_states);
+      }
+
+      {
+        cairo_path_t *text_path;
+        double x1, y1, x2, y2;
+
+        /* Go back to cr's coordinates */
+        cairo_get_matrix(cr, & m);
+        cairo_set_matrix(my_cr, & m);
+
+        /* Get extent and path */
+        cairo_fill_extents(my_cr, & x1, & y1, & x2, & y2);
+        text_path = cairo_copy_path(my_cr);
+        assert(text_path->status == CAIRO_STATUS_SUCCESS);
+
+        /* Translate 'cr' as specified by 'from', and draw the stored path */
+        cairo_translate(cr,
+                        -x1 - (x2 - x1)*from->x,
+                        -y1 - (y2 - y1)*from->y);
+        cairo_append_path(cr, text_path);
+        cairo_path_destroy(text_path);
+
+        /* Restore the coordinate system */
+        cairo_set_matrix(cr, & m0);
+      }
+            
+      beginning_of_path = 0;
+    }
+
+  } else
+    g_warning("My_Cairo_Text_Path: Cannot create cairo context. ");
+
+  cairo_destroy(my_cr);
 }
 
 /* END OF TEXT FORMATTING IMPLEMENTATION ************************************/
@@ -1138,14 +1191,15 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
 
   if (!plan->have.type) {
     g_error("cairo_open_win: missing window type!");
-    return (GrpWindow *) NULL;
+    return NULL;
   }
 
   wt = (WT) plan->type;
 
-  if ((w = (GrpWindow *) malloc(sizeof(GrpWindow))) == (GrpWindow *) NULL) {
+  w = (GrpWindow *) malloc(sizeof(GrpWindow));
+  if (w == NULL) {
     g_error("cairo_open_win: malloc failed!");
-    return (GrpWindow *) NULL;
+    return NULL;
   }
 
   switch(wt) {
@@ -1178,7 +1232,7 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
 #else
     g_error("cairo_open_win: Cairo was not compiled "
             "with support for the PostScript backend!");
-    return (GrpWindow *) NULL;
+    return NULL;
 #endif
 
   case WT_EPS:
@@ -1189,7 +1243,7 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
 #else
     g_error("cairo_open_win: Cairo was not compiled "
             "with support for the PostScript backend!");
-    return (GrpWindow *) NULL;
+    return NULL;
 #endif
 
   case WT_PDF:
@@ -1200,7 +1254,7 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
 #else
     g_error("cairo_open_win: Cairo was not compiled "
             "with support for the PDF backend!");
-    return (GrpWindow *) NULL;
+    return NULL;
 #endif
 
   case WT_SVG:
@@ -1211,17 +1265,17 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
 #else
     g_error("cairo_open_win: Cairo was not compiled "
             "with support for the SVG backend!");
-    return (GrpWindow *) NULL;
+    return NULL;
 #endif
 
   default:
     g_error("cairo_open_win: unknown window type!");
-    return (GrpWindow *) NULL;
+    return NULL;
   }
 
-  if (! plan->have.size ) {
+  if (!plan->have.size ) {
     g_error("Cannot create Cairo image surface: size missing!");
-    return (GrpWindow *) NULL;
+    return NULL;
   }
 
   w->lx = plan->size.x;
@@ -1240,7 +1294,7 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
   w->rdy = w->lty + plan->size.y;
 
   if (win_class == WC_IMAGE) {
-    if (! plan->have.resolution) {
+    if (!plan->have.resolution) {
       g_error("Cannot create Cairo image surface: resolution missing!");
       return (GrpWindow *) NULL;
     }
@@ -1275,8 +1329,8 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
     width  = plan->size.x * w->resx;
     height = plan->size.y * w->resy;
 
-    if (stream_surface_create == (StreamSurfaceCreate) NULL)
-      return (GrpWindow *) NULL;
+    if (stream_surface_create == NULL)
+      return NULL;
 
     surface = stream_surface_create(plan->file_name, width, height);
     w->win_type_str = wincairo_stream_id_string;
@@ -1292,7 +1346,7 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
 
   } else {
     g_error("cairo_open_win: shouldn't happen!");
-    return (GrpWindow *) NULL;
+    return NULL;
   }
 
   if (plan->size.y >= 0.0) {
@@ -1311,7 +1365,7 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
   if (status != CAIRO_STATUS_SUCCESS) {
     g_error("Cannot create Cairo surface:");
     g_error(cairo_status_to_string(status));
-    return (GrpWindow *) NULL;
+    return NULL;
   }
 
   cr = cairo_create(surface);
@@ -1319,7 +1373,7 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
   if (status != CAIRO_STATUS_SUCCESS) {
     g_error("Cannot create Cairo context:");
     g_error(cairo_status_to_string(status));
-    return (GrpWindow *) NULL;
+    return NULL;
   }
 
   /* If we need white background, we paint the window accordingly. */

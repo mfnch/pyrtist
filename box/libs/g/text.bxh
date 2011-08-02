@@ -41,6 +41,9 @@ From@Text[.from = $]
 ///Intro: the font to use.
 Font@Text[.font = $]
 
+///Intro: set the style used to draw the text.
+Style@Text[\ .style[$]]
+
 ///Intro: the color to use.
 Color@Text[\ .style[$]]
 

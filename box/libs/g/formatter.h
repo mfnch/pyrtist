@@ -49,14 +49,14 @@ typedef struct _fmt_stack {
 } BoxGFmtStack;
 
 void BoxGFmt_Init(BoxGFmt *fmt);
-char *BoxGFmt_Buffer_Get(BoxGFmtStack *stack);
-void BoxGFmt_Buffer_Clear(BoxGFmtStack *stack);
-void BoxGFmt_Text(BoxGFmt *fmt, const char *text);
+char *BoxGFmt_Get_Buffer(BoxGFmtStack *stack);
+void BoxGFmt_Clear_Buffer(BoxGFmtStack *stack);
+void BoxGFmt_Draw_Text(BoxGFmt *fmt, const char *text);
 
 
 BoxGFmt *BoxGFmt_Get(BoxGFmtStack *stack);
-void *BoxGFmt_Private_Get(BoxGFmt *fmt);
-void BoxGFmt_Private_Set(BoxGFmt *fmt, void *private_data);
+void *BoxGFmt_Get_Private(BoxGFmt *fmt);
+void BoxGFmt_Set_Private(BoxGFmt *fmt, void *private_data);
 
 #endif
 

@@ -231,40 +231,40 @@ typedef struct {
 
 static void _Text_Fmt_Draw(BoxGFmtStack *stack) {
   BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
-  char *escaped_text = Escape_Text(BoxGFmt_Buffer_Get(stack));
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Get_Private(fmt);
+  char *escaped_text = Escape_Text(BoxGFmt_Get_Buffer(stack));
   fprintf(private->out, " (%s) textdraw", escaped_text);
   free(escaped_text);
-  BoxGFmt_Buffer_Clear(stack);
+  BoxGFmt_Clear_Buffer(stack);
 }
 
 static void _Text_Fmt_Superscript(BoxGFmtStack *stack) {
   BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Get_Private(fmt);
   fprintf(private->out, " textsup");
 }
 
 static void _Text_Fmt_Subscript(BoxGFmtStack *stack) {
   BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Get_Private(fmt);
   fprintf(private->out, " textsub");
 }
 
 static void _Text_Fmt_Save(BoxGFmtStack *stack) {
   BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Get_Private(fmt);
   fprintf(private->out, " textsave");
 }
 
 static void _Text_Fmt_Restore(BoxGFmtStack *stack) {
   BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Get_Private(fmt);
   fprintf(private->out, " textrestore");
 }
 
 static void _Text_Fmt_Newline(BoxGFmtStack *stack) {
   BoxGFmt *fmt = BoxGFmt_Get(stack);
-  TextPrivate *private = (TextPrivate *) BoxGFmt_Private_Get(fmt);
+  TextPrivate *private = (TextPrivate *) BoxGFmt_Get_Private(fmt);
   fprintf(private->out, " textnewline");
 }
 
@@ -289,7 +289,7 @@ static void My_EPS_Add_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *right,
   EPS_POINT(up, ux, uy);
 
   _Text_Fmt_Init(& fmt);
-  BoxGFmt_Private_Set(& fmt, & private);
+  BoxGFmt_Set_Private(& fmt, & private);
   private.out = out;
   private.sup_vec.x = 0.0;
   private.sup_vec.y = 0.5;
@@ -309,9 +309,9 @@ static void My_EPS_Add_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *right,
           "  %ld %ld %ld %ld %ld %ld textbegin\n",
           ctrx, ctry, rx, ry, ux, uy);
 
-  BoxGFmt_Text(& fmt, text);
+  BoxGFmt_Draw_Text(& fmt, text);
   fprintf(out, " textcalc\n");
-  BoxGFmt_Text(& fmt, text);
+  BoxGFmt_Draw_Text(& fmt, text);
   fprintf(out, "\n  textend\nend\n");
   beginning_of_path = 0;
 }
