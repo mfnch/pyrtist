@@ -1,3 +1,5 @@
+#provide "g.points"
+
 ///Section: g
 
 ///Intro: array of {type(Point)} objects.
@@ -6,10 +8,15 @@ Points = ++(Obj points,)
 ///Intro: add the point to the array.
 Point@Points[\ $$.points[$]]
 
+///Intro: number of points of the {type(Points)} object.
+Points@Num[$.points]
+
 ///Intro: retrieve a point from the array.
 Points.Get = Point
 
 ///Intro: index of the point to retrieve.
+// The index can be negative. In particular, ``ps.Get[-1]`` returns
+// ``ps.Get[Num[ps] - 1]``..
 Int@Points.Get[
   idx = $
   [If[idx < 0]
@@ -23,15 +30,16 @@ Int@Points.Get[
 // returned. If the number is not integer, then an interpolation is returned.
 // For example, ``ps.Get[0.5]`` returns ``0.5*(ps.Get[0] + ps.Get[1])``.
 REAL@Points.Get[
-  idx = $
   num = Num[$$$.points]
-  [If[idx < 0.0]
-     idx += num
-     [If[idx < 0.0], Fail["Index out of bounds"]]]
-
+  idx = Real[If[$ >= 0], $, Else[], (1 - Int[$]/num)*num + $]
   idx_before = Int[idx]
-  idx_after = (idx_before + 1) % num
-  p_before = Point[$$$.points.Get[idx_before]]
-  p_after = Point[$$$.points.Get[idx_after]]
+  idx_after = idx_before + 1
+  p_before = Point[$$$.points.Get[idx_before % num]]
+  p_after = Point[$$$.points.Get[idx_after % num]]
   $$ = p_before + (idx - idx_before)*(p_after - p_before)
+]
+
+///Intro: not implemented, yet.
+Point@Points.Get[
+  Fail["Not implemented, yet!"]
 ]
