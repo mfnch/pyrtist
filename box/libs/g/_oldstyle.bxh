@@ -1,4 +1,5 @@
 ///Section: g
+
 // Interface for the OldStyle object
 
 include "style"

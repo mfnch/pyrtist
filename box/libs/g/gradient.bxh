@@ -4,6 +4,7 @@
 
 include "g"
 
+///Intro: color gradient to be used for painting.
 Grad = ++(Int type
           Point point1, point2
           Real real1, real2
@@ -14,7 +15,13 @@ Grad = ++(Int type
 ///Intro: add a new color to the gradient
 Color@Grad[\ $$.colors[Obj[$.r, $.g, $.b, $.a]]]
 
-///Intro: specify the position of the gradient (a number between 0 and 1)
+///Intro: the position of the color in the gradient (number between 0 and 1).
+// For example, in
+// ``Grad[Line[point1, point2], real1, color1, real2, color2, ...]``
+// ``real1`` is the offset (along the line) for ``color1``.
+// In other words it is the position in the line (``0`` corresponding to
+// ``point1``, and ``1`` to ``point2``) where the gradient becomes equal to
+// ``color1``.
 Real@Grad[\ $$.colors[Obj[$]]]
 
 ///Intro: set the gradient shape to a line.

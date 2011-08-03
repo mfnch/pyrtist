@@ -19,8 +19,8 @@ Path@Clip[\ $$.path[$]]
 
 ///Intro: send the clipped object to the window.
 Clip@Window[
-  Obj[Obj[g.raw.save]]
-  [If[!$.path.empty], $.path.cmdstream, Obj[Obj[g.raw.clip]]]
+  Obj[Obj[const.raw.save]]
+  [If[!$.path.empty], $.path.cmdstream, Obj[Obj[const.raw.clip]]]
   $.window
-  Obj[Obj[g.raw.restore]]
+  Obj[Obj[const.raw.restore]]
 ]

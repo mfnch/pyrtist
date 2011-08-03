@@ -1,0 +1,37 @@
+///Section: g
+
+///Intro: array of {type(Point)} objects.
+Points = ++(Obj points,)
+
+///Intro: add the point to the array.
+Point@Points[\ $$.points[$]]
+
+///Intro: retrieve a point from the array.
+Points.Get = Point
+
+///Intro: index of the point to retrieve.
+Int@Points.Get[
+  idx = $
+  [If[idx < 0]
+     idx += Num[$$$.points]
+     [If[idx < 0], Fail["Index out of bounds"]]]
+  $$ = Point[$$$.points.Get[idx]]
+]
+
+///Intro: index of the point to retrieve.
+// When the {type(Real)} is an integer, then the corresponding point is
+// returned. If the number is not integer, then an interpolation is returned.
+// For example, ``ps.Get[0.5]`` returns ``0.5*(ps.Get[0] + ps.Get[1])``.
+REAL@Points.Get[
+  idx = $
+  num = Num[$$$.points]
+  [If[idx < 0.0]
+     idx += num
+     [If[idx < 0.0], Fail["Index out of bounds"]]]
+
+  idx_before = Int[idx]
+  idx_after = (idx_before + 1) % num
+  p_before = Point[$$$.points.Get[idx_before]]
+  p_after = Point[$$$.points.Get[idx_after]]
+  $$ = p_before + (idx - idx_before)*(p_after - p_before)
+]
