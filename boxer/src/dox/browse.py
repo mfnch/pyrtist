@@ -12,13 +12,15 @@ from gtktext import DoxTextView, DoxTable, GtkWriter
 
 class DoxBrowser(object):
   def __init__(self, dox, size=(760, 560), spacing=6,
-               title="Box documentation browser"):
+               title="Box documentation browser",
+               quit_gtk=False):
     self.dox = dox
     tree = dox.tree
     self.option_section = None
     self.option_name = None
     self.option_initial_value = None
     self.option_changed_vals = {}
+    self.quit_gtk = quit_gtk
 
     # Create the TextView where the documentation will be shown
     self.window_textview = dox_textview = \
@@ -113,7 +115,13 @@ class DoxBrowser(object):
     self.window_button_cancel.connect("button-press-event",
                                       self._on_button_cancel_press)
 
+  def show(self):
+    """Show the window."""
     self.window.show_all()
+
+  def hide(self):
+    """Hide the window."""
+    self.window.hide()
 
   def _populate_treestore_from_dox(self, types):
     ts = self.treestore
@@ -142,11 +150,12 @@ class DoxBrowser(object):
 
   def quit(self):
     self.window.hide()
-    gtk.main_quit()
+    if self.quit_gtk:
+      gtk.main_quit()
 
   def _on_delete_event(self, widget, event, data=None):
-    gtk.main_quit()
-    return False
+    self.quit()
+    return True
 
   def _on_button_ok_press(self, *args):
     self.quit()
@@ -187,5 +196,6 @@ if __name__ == "__main__":
   tree = dox.tree
   tree.process()
 
-  tmp = DoxBrowser(dox)
+  tmp = DoxBrowser(dox, quit_gtk=True)
+  tmp.show()
   main()

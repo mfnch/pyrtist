@@ -46,13 +46,14 @@
 #   There are four combinations [Text|Figure], [Figure|Text], etc.
 # x resize reference points
 
+import time
+
 import pygtk
 pygtk.require('2.0')
 import gtk
 import gtk.glade
 import gtk.gdk
 import os, os.path
-import time
 
 import config
 from config import threads_init, threads_enter, threads_leave
@@ -64,6 +65,9 @@ from assistant import Assistant, insert_char, rinsert_char
 from toolbox import ToolBox
 from editable import BoxEditableArea
 from rotpaned import RotPaned
+
+from dox.dox import Dox
+from dox.browse import DoxBrowser
 
 def debug():
   import sys
@@ -506,14 +510,16 @@ class Boxer(object):
     ad.destroy()
 
   def menu_help_docbrowser(self, _):
-    from dox.dox import Dox
-    from dox.browse import DoxBrowser
-    dox = Dox()
-    dox.read_recursively("../../box")
-    tree = dox.tree
-    tree.process()
+    dox_browser = self.dialog_dox_browser
+    if dox_browser == None:
+      dox_path = self.editable_area.document.box_query("BUILTIN_PKG_PATH")
+      dox = Dox()
+      dox.read_recursively(dox_path)
+      tree = dox.tree
+      tree.process()
+      self.dialog_dox_browser = dox_browser = DoxBrowser(dox)
 
-    tmp = DoxBrowser(dox)
+    dox_browser.window.show_all()
 
   def refpoint_entry_changed(self, _):
     self.refpoint_show_update()
@@ -577,6 +583,7 @@ class Boxer(object):
     # Dialogues
     self.dialog_fileopen = None
     self.dialog_filesave = None
+    self.dialog_dox_browser = None
 
     if box_exec != None:
       self.config.set("Box", "exec", box_exec)

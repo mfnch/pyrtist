@@ -63,6 +63,8 @@ libboxcore0_2_la_LDFLAGS = -no-undefined -version-info 0:0:0
 
 libboxcore0_2_la_LIBADD = $(LIBLTDL)
 
+dist_boxpkg_DATA=core.dox
+
 # *** box compiler ***
 noinst_HEADERS = \
   fileutils.h registers.h tokenizer.h parserh.h typesys.h  paths.h \

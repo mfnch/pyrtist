@@ -17,6 +17,7 @@
 
 import sys
 import os
+import time
 
 import config
 from config import Configurable
@@ -391,6 +392,34 @@ class Document(Configurable):
 
     if remember_filename:
       self.filename = filename
+
+  def box_query(self, variable):
+    """Obtain the value of 'variable' by calling the Box executable
+    associated to this document with the option '-q'. This is useful to obtain
+    information about the configuration of the compiler which is executing the
+    document.
+    NOTE: at the moment the choice of the Box compiler is global, but the plan
+    is to make this choice document-wise (we may even store a comment into the
+    document source to specify which Box version to use. This may then be used
+    to discriminate between different Box executable to call)."""
+    box_executable = self.get_config("box_executable", "box")
+    box_args = ["-q", str(variable)]
+
+    box_finished = []
+    def do_at_exit():
+      box_finished.append(True)
+
+    box_output = []
+    def out_fn(line):
+      box_output.append(line)
+
+    killer = exec_command(box_executable, box_args,
+                          out_fn=out_fn, do_at_exit=do_at_exit)
+
+    while not box_finished:
+      time.sleep(0.1)
+
+    return "".join(box_output).rstrip()
 
   def execute(self, preamble=None, out_fn=None, exit_fn=None):
     # Have to find a convenient way to pass:

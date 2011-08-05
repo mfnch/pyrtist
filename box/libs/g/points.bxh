@@ -15,8 +15,9 @@ Points@Num[$.points]
 Points.Get = Point
 
 ///Intro: index of the point to retrieve.
+// (where 0 is the index for the first point).
 // The index can be negative. In particular, ``ps.Get[-1]`` returns
-// ``ps.Get[Num[ps] - 1]``..
+// ``ps.Get[Num[ps] - 1]``.
 Int@Points.Get[
   idx = $
   [If[idx < 0]
@@ -26,7 +27,7 @@ Int@Points.Get[
 ]
 
 ///Intro: index of the point to retrieve.
-// When the {type(Real)} is an integer, then the corresponding point is
+// When the {type(Real)} is an integer the corresponding point is
 // returned. If the number is not integer, then an interpolation is returned.
 // For example, ``ps.Get[0.5]`` returns ``0.5*(ps.Get[0] + ps.Get[1])``.
 REAL@Points.Get[
