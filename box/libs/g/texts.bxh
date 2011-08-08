@@ -3,7 +3,7 @@
 
 include "text"
 
-///Intro: a collection of text pieces ({type(Text)} objects).
+///Intro: a collection of {type(Text)} shapes.
 Texts = ++(Obj texts, Text last, Style style)
 
 ///Intro: set the style used to draw the text pieces.
@@ -31,7 +31,7 @@ Str@Texts[\ .last[$]]
 // add it to the text collection.
 (;)@Texts[$$.last, $$.last.text = ""]
 
-///Intro: the number of texts added to {type(@.)}.
+///Intro: the number of texts in the {type(.@)} object.
 Texts@Num[$[;].texts]
 
 ///Intro: get one {type(Text)} in the collection.

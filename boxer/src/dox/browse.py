@@ -5,6 +5,7 @@
 import pygtk
 pygtk.require('2.0')
 import gtk
+import gobject
 
 from dox import Dox
 from gtktext import DoxTextView, DoxTable, GtkWriter
@@ -62,14 +63,22 @@ class DoxBrowser(object):
     butbox.set_spacing(spacing)
 
     # create and populate the treestore
-    self.treestore = treestore = gtk.TreeStore(str, str)
+    self.treestore = treestore = \
+      gtk.TreeStore(gobject.TYPE_STRING,  # Type name
+                    gobject.TYPE_STRING,  # Brief description
+                    gobject.TYPE_BOOLEAN) # Visible?
     self._populate_treestore_from_dox(tree.types)
 
+    # the treestore filter (to show and hide rows as a result of a search)
+    self.treestore_flt = treestore_flt = treestore.filter_new()
+    treestore_flt.set_visible_column(2)
+
     # create the TreeView using the treestore
-    self.treeview = tv = gtk.TreeView(self.treestore)
+    self.treeview = tv = gtk.TreeView(treestore_flt)
     tvcols = []
     for nr_col, tvcol_name in enumerate(("Type", "Description")):
       tvcol = gtk.TreeViewColumn(tvcol_name)
+      tvcol.set_resizable(True)
       tvcols.append(tvcol)
       tv.append_column(tvcol)
       cell = gtk.CellRendererText()
@@ -86,10 +95,12 @@ class DoxBrowser(object):
     scrolledwin.add(tv)
 
     label = gtk.Label("Search:")
-    entry = gtk.Entry()
+    self.entry = entry = gtk.Entry()
     hsplit1 = gtk.HBox(False, 4)
     hsplit1.pack_start(label, expand=False, fill=True, padding=4)
     hsplit1.pack_start(entry, expand=True, fill=True, padding=4)
+
+    entry.connect("activate", self._on_entry_search_activated)
 
     vsplit2 = gtk.VBox(False, 4)
     vsplit2.pack_start(hsplit1, expand=False, fill=True, padding=4)
@@ -123,7 +134,7 @@ class DoxBrowser(object):
     """Hide the window."""
     self.window.hide()
 
-  def _populate_treestore_from_dox(self, types):
+  def _populate_treestore_from_dox(self, types, flt=None, visible=True):
     ts = self.treestore
     tree = self.dox.tree
     section_names = tree.sections.keys()
@@ -133,20 +144,21 @@ class DoxBrowser(object):
     section_names.sort()
     for section_name in section_names:
       sn = (section_name if section_name else "Other stuff...")
-      piter = ts.append(None, [sn, "Section description"])
+      piter = ts.append(None, [sn, "Section description", visible])
 
       for type_name in type_names:
         t = types[type_name]
         if t.get_section() == section_name:
           if t.subtype_parent == None:
-            self._add_entry_to_treestore(piter, t)
+            self._add_entry_to_treestore(piter, t, flt=flt, visible=visible)
 
-  def _add_entry_to_treestore(self, piter, t):
+  def _add_entry_to_treestore(self, piter, t, flt=None, visible=True):
     ts = self.treestore
     description = self.dox_writer.gen_brief_intro(t)
-    new_piter = ts.append(piter, [t.name, description])
-    for st in t.subtype_children:
-      self._add_entry_to_treestore(new_piter, st)
+    if flt == None or flt(t, description):
+      new_piter = ts.append(piter, [t.name, description, visible])
+      for st in t.subtype_children:
+        self._add_entry_to_treestore(new_piter, st, flt)
 
   def quit(self):
     self.window.hide()
@@ -164,16 +176,79 @@ class DoxBrowser(object):
     self.quit()
 
   def _on_row_activated(self, treeview, path, view_column):
-    selection = treeview.get_selection()
-    ts, ti = selection.get_selected()
+    ts = self.treestore
+    flt_ti = treeview.get_selection().get_selected()[1]
+    ti = self.treestore_flt.convert_iter_to_child_iter(flt_ti)
+
     parent_iter = ts.iter_parent(ti)
     if parent_iter:
-      section = ts.get_value(parent_iter, 0)
-      option = ts.get_value(ti, 0)
+      section = ts[parent_iter][0]
+      option = ts[ti][0]
       self._show_doc(section, option)
 
   def _on_click_link(self, widget, link, event):
     self._show_doc(None, link)
+
+  def _filter_type_in_treeview(self, treemodelrow, flt):
+
+    type_name = treemodelrow[0]
+    brief_description = treemodelrow[1]
+
+    # Find whether this entry matches the filter
+    self_visible = flt(type_name, brief_description)
+    children_visible = False
+
+    # Find whether some of the children match the filter
+    children = treemodelrow.iterchildren()
+    if children:
+      for child in children:
+        children_visible |= self._filter_type_in_treeview(child, flt)
+
+    # Show the entry if it or one of its children are visible
+    visible = self_visible or children_visible
+    treemodelrow[-1] = visible
+    return visible
+
+  def filter_treeview(self, flt):
+    types = self.dox.tree.types
+    ts = self.treestore
+    for section in ts:
+      visible = False
+      types_of_section = section.iterchildren()
+      if types_of_section:
+        for t in types_of_section:
+          visible |= self._filter_type_in_treeview(t, flt)
+      section[-1] = visible
+
+  def expand_visible_rows(self, treemodelrow=None):
+    if treemodelrow == None:
+      for section in self.treestore:
+        assert section != None
+        self.expand_visible_rows(section)
+      return
+
+    visible = treemodelrow[-1]
+    children = treemodelrow.iterchildren()
+    if children:
+      # First expand the children
+      for child in children:
+        self.expand_visible_rows(child)
+
+      # Then expand itself
+      print "Expanding", treemodelrow.path
+      path = treemodelrow.path #self.treestore_flt.convert_child_path_to_path(treemodelrow.path)
+      self.treeview.expand_row(path, False)
+
+  def _on_entry_search_activated(self, widget):
+    search_str = widget.get_text()
+    def flt(*args):
+      for arg in args:
+        if search_str.lower() in arg.lower():
+          return True
+      return False
+
+    self.filter_treeview(flt)
+    #self.expand_visible_rows()
     
   def _show_doc(self, section, type_name):
     tree = self.dox.tree

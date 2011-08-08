@@ -3,7 +3,7 @@
 
 include "circle"
 
-///Intro: a collection of {type(Circle)} objects.
+///Intro: a collection of {type(Circle)} shapes.
 Circles = ++(Obj circles, Circle last, Style style)
 
 ///Intro: add a {type(.@)} to the circle collection.
@@ -25,7 +25,7 @@ Style@Circles[\ .style[$]]
 ///Intro: color for filling the circles.
 Color@Circles[\ .style[$]]
 
-///Intro: the number of circles added to {type(@.)}.
+///Intro: the number of circles in the {type(.@)} object.
 Circles@Num[$[;].circles]
 
 ///Intro: get one {type(Circle)} in the collection.

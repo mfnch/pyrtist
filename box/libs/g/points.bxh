@@ -3,6 +3,8 @@
 ///Section: g
 
 ///Intro: array of {type(Point)} objects.
+// Allow to interpolate between the points and perform other geometrical
+// calculations.
 Points = ++(Obj points,)
 
 ///Intro: add the point to the array.
@@ -44,3 +46,4 @@ REAL@Points.Get[
 Point@Points.Get[
   Fail["Not implemented, yet!"]
 ]
+
