@@ -229,15 +229,16 @@ class DoxBrowser(object):
 
     visible = treemodelrow[-1]
     children = treemodelrow.iterchildren()
-    if children:
-      # First expand the children
-      for child in children:
-        self.expand_visible_rows(child)
-
-      # Then expand itself
-      print "Expanding", treemodelrow.path
-      path = treemodelrow.path #self.treestore_flt.convert_child_path_to_path(treemodelrow.path)
+    if visible and children:
+      # First, expand itself
+      path = self.treestore_flt.convert_child_path_to_path(treemodelrow.path)
       self.treeview.expand_row(path, False)
+ 
+      # Then expand the children
+      for child in children:
+        visible = child[-1]
+        if visible:
+          self.expand_visible_rows(child)
 
   def _on_entry_search_activated(self, widget):
     search_str = widget.get_text()
@@ -248,7 +249,9 @@ class DoxBrowser(object):
       return False
 
     self.filter_treeview(flt)
-    #self.expand_visible_rows()
+
+    if search_str != "":
+      self.expand_visible_rows()
     
   def _show_doc(self, section, type_name):
     tree = self.dox.tree
