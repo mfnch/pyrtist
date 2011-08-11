@@ -4,11 +4,15 @@
 include "raw"
 include "style"
 include "path"
+include "points"
 
-///Intro: create a polygon.
-Poly = ++(Obj args, Style style, Int close
+///Intro: polygonal shape (supports corner rounding).
+Poly = ++(Points points
+          Obj margins
           (Real left, right) margin
-          Int num_margins)
+          Int num_margins
+          Int close
+          Style style)
 
 (.[)@Poly[.close = 0, .num_margins = 0, $$.margin = (0.0, 0.0)]
 
@@ -27,7 +31,8 @@ Real@Poly[
 ///Intro: next vertex of the polygon.
 Point@Poly[
   // Store margins and point
-  \ .args[$$.margin.left, $$.margin.right, $]
+  \ .points[$]
+  \ .margins[($$.margin.left, $$.margin.right)]
 
   // Swap margins by default for new vertices
   $$.num_margins = 0
@@ -35,16 +40,22 @@ Point@Poly[
 ]
 
 ///Intro: the number of vertices of the polygon.
-Poly@Num[Num[$.args]/3]
+Poly@Num[$.points]
 
-///Intro: retrieval of vertices of the polygon (or intermediate points).
+///Intro: add the points of the {type(.@)} object.
+Poly@Points[$.points]
+
+///Intro: retrieve a vertex of the polygon (or intermediate points).
 Poly.Get = Point
 
 ///Intro: get the polygon vertex having the given index.
-Int@Poly.Get[
-  If[$ < 0], n = Num[$$$], $$ = Point[$$$.args.Get[2 + 3*(n + $)]]
-  Else[], $$ = Point[$$$.args.Get[2 + 3*$]]
-]
+Int@Poly.Get[$$ = $$$.points.Get[$]]
+
+///Intro: interpolate the vertex (see {type(Points.Get)}).
+Real@Poly.Get[$$ = $$$.points.Get[$]]
+
+///Intro: interpolate the vertex (see {type(Points.Get)}).
+Point@Poly.Get[$$ = $$$.points.Get[$]]
 
 //NOTE: BUG: the following doesn't work!
 //  Int@Poly.Get[$$ = Point[$$$.args.Get[2 + 3*$]]]
@@ -57,21 +68,21 @@ Style@Poly[\ .style[$]]
 
 ///Intro: add the polygon to the path.
 Poly@Path[
-  num_args = Num[$.args]
-  num_vertices = num_args/3
+  num_vertices = Num[$.points]
   If[num_vertices >= 3]
-    vertex0 = $.Get[-2]
-    vertex1 = $.Get[-1]
-    prev_margin = Real[$.args.Get[num_args - 2]]
+    vertex0 = $.points.Get[-2]
+    vertex1 = $.points.Get[-1]
+    prev_margin = Point[$.margins.Get[num_vertices - 1]].x
     point0 = vertex1 + (vertex0 - vertex1)*prev_margin
 
     Obj[const.raw.move_to, point0]
 
     i = 0
-    [If[i < num_args]
-       margin_left = Real[$.args.Get[i++]]
-       margin_right = Real[$.args.Get[i++]]
-       vertex2 = Point[$.args.Get[i++]]
+    [If[i < num_vertices]
+       vertex2 = Point[$.points.Get[i]]
+       margins = Point[$.margins.Get[i]]
+       margin_left = margins.x
+       margin_right = margins.y
 
        degenerate_corner = (prev_margin == 0.0) || (margin_left == 0.0)
 
@@ -89,7 +100,7 @@ Poly@Path[
        point0 = point2
        vertex0 = vertex1
        vertex1 = vertex2
-     For[1]]
+     i += 1, For[1]]
 
     // Close the polygon, if requested
     [If[$.close], Obj[const.raw.close_path]]

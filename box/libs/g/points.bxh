@@ -10,8 +10,28 @@ Points = ++(Obj points,)
 ///Intro: add the point to the array.
 Point@Points[\ $$.points[$]]
 
+///Intro: add all the points of the Points object.
+Points@Points[$$.points.Merge[$.points]]
+
 ///Intro: number of points of the {type(Points)} object.
 Points@Num[$.points]
+
+///Intro: string representation of the {type(.@)} object.
+Points@Str[
+  "Points["
+  num = Num[$.points]
+  i = 0
+  sep = ""
+  [If[i < num]
+     sep
+     sep = ", "
+     Point[$.points.Get[i++]]
+   For[1]]
+  "]"
+]
+
+///Intro: print the object to stdout.
+Points@Print[Str[$]]
 
 ///Intro: retrieve a point from the array.
 Points.Get = Point
@@ -46,4 +66,3 @@ REAL@Points.Get[
 Point@Points.Get[
   Fail["Not implemented, yet!"]
 ]
-

@@ -92,6 +92,5 @@ Obj@Print[Repr[$]]
 //   o1.Merge[Obj[3, 4]] // gives o1 == Obj[1, 2, 3, 4]
 Obj.Merge = Void
 
-///Intro: add a new Obj object to merge with the current content of {type(@.)}
+///Intro: add the content of the provided object to the parent object.
 Obj@Obj.Merge "GLib_Obj_At_MergeObjs" ?
-
