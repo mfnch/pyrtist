@@ -6,7 +6,7 @@ include "path"
 include "style"
 
 ///Intro: fill the given paths.
-Fill = ++(Obj path, Sty style)
+Fill = ++(Obj path,)
 
 //Intro: add a path to fill.
 Path@Fill[]

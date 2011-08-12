@@ -52,7 +52,7 @@ Poly.Get = Point
 Int@Poly.Get[$$ = $$$.points.Get[$]]
 
 ///Intro: interpolate the vertex (see {type(Points.Get)}).
-Real@Poly.Get[$$ = $$$.points.Get[$]]
+REAL@Poly.Get[$$ = $$$.points.Get[$]]
 
 ///Intro: interpolate the vertex (see {type(Points.Get)}).
 Point@Poly.Get[$$ = $$$.points.Get[$]]

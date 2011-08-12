@@ -6,16 +6,46 @@ include "style"
 include "path"
 include "points"
 
-///Intro: create a geometrical shape of type circle.
-Line = ++((Int first_point, close, variable_width) have
-          Points points
-          Obj args
-          Style style)
+///Intro: create a {type(Line)} geometrical shape.
+Line = ++((Int close, point, widths) have
+          Points points, Point point
+          Obj widths, Real width_enter, width_exit, width_next
+          StrokeStyle style)
 
-(.[)@Line[.have = (0, 0, 0)]
+(.[)@Line[.have = (0, 0, 1), .width_next = 1.0]
 
 ///Intro: next vertex in the line.
-Point@Line[\ $$.points[$], \ $$.args[$]]
+Point@Line[
+  // Build point list and width list
+  [If[$$.have.point]
+     \ .points[$$.point]
+     \ .widths[($$.width_enter, $$.width_exit)]]
+
+  // Propagate widths to next point
+  $$.width_exit = $$.width_enter = $$.width_next
+
+  // Save point
+  $$.point = $
+  $$.have.point = 1
+
+  // Reset width state
+  $$.have.widths = 0
+]
+
+///Intro: specify entering and exiting widths of the line.
+Real@Line[
+  num_widths = $$.have.widths
+  [If[num_widths == 0], $$.width_exit = $$.width_next = $
+   Else[], If[num_widths == 1], $$.width_next = $
+   Else[], Fail["Only two widths can be given between two points"]]
+  $$.have.widths += 1
+]
+
+///Intro: change the stroke style for the line.
+// This allow to change the line width, the join style, etc.
+StrokeStyle@Line[\ .style[$]]
+
+Close@Line[.have.close = 1]
 
 ///Intro: number of points of the line.
 Line@Num[$.points]
@@ -33,3 +63,25 @@ Int@Line.Get[$$ = $$$.points.Get[$]]
 // the segment having vertices ``line.Get[0]`` and ``line.Get[1]``.
 REAL@Line.Get[$$ = $$$.points.Get[$]]
 
+///Intro: stroke the line.
+Line@Stroke[
+  num_points = Num[$.points]
+  [If[num_points > 0]
+    Obj[const.raw.move_to, $.points.Get[0]]]
+
+  point_idx = 1
+  [If[point_idx < num_points]
+     point = $.points.Get[point_idx++]
+     Obj[const.raw.line_to, point]
+   For[1]]
+
+   Obj[const.raw.line_to, $.point]
+]
+
+///Intro: add the path of the {type(Line)}.
+Line@Path[
+  
+]
+
+///Intro: draw the line in the window.
+Line@Window[Stroke[$, $.style]]

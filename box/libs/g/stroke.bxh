@@ -1,0 +1,22 @@
+#provide "g.stroke"
+
+///Section: g
+
+include "raw"
+include "style"
+
+///Intro: strokes the given objects and paths (into a Stroke object).
+Stroke = ++(Path path, StrokeStyle style)
+
+///Intro: set the stroke style (like width, line join, dashes, etc).
+StrokeStyle@Stroke[\ .style[$]]
+
+///Intro: add a path piece to the stroke path.
+Obj@Stroke[\ .path[$]]
+
+///Intro: stroke the path into a new Stroke object.
+Stroke@Window[
+  If[!$.path.empty]
+    $.path.cmdstream
+    CmdStream[$.style]
+]

@@ -1,6 +1,8 @@
 #provide "g2"
 
 include "raw"
+include "fill"
+include "stroke"
 include "circle"
 include "circles"
 include "poly"

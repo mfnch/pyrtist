@@ -129,6 +129,8 @@ Style@Window[CmdStream[$]]
 ///Intro: send the border setting to the window.
 Border@Window[CmdStream[$]]
 
+///Intro: an alias for {type(Border)}.
+StrokeStyle = Border
 
 //-------------PROVIDED FOR COMPATIBILITY WITH box 0.2.3------------------//
 
