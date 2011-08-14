@@ -24,7 +24,8 @@ Real@Poly[
      $$.margin.left = ml = Max[0.0, Min[1.0, $]]
      $$.margin.right = Max[0.0, Min[1.0 - ml, ml]]
    Else[], If[$$.num_margins == 1]
-     $$.margin.right = Max[0.0, Min[1.0 - $$.margin.left, $]]]
+     $$.margin.right = Max[0.0, Min[1.0 - $$.margin.left, $]]
+   Else[], Fail["Only two margins can be given between two points!"]]
   $$.num_margins += 1
 ]
 
@@ -70,9 +71,15 @@ Style@Poly[\ .style[$]]
 Poly@Path[
   num_vertices = Num[$.points]
   If[num_vertices >= 3]
+    // Correct margins (this is quite tricky, but is needed to get Poly behave
+    // how the user expects)
+    num_margins = $.num_margins
+    margins_at_0 = Point[$.margins.Get[0], .x=$.margin.left
+                         If[num_margins > 1], .y=$.margin.right]
+
     vertex0 = $.points.Get[-2]
     vertex1 = $.points.Get[-1]
-    prev_margin = Point[$.margins.Get[num_vertices - 1]].x
+    prev_margin = Point[$.margins.Get[num_vertices - 1]].y
     point0 = vertex1 + (vertex0 - vertex1)*prev_margin
 
     Obj[const.raw.move_to, point0]
@@ -80,7 +87,8 @@ Poly@Path[
     i = 0
     [If[i < num_vertices]
        vertex2 = Point[$.points.Get[i]]
-       margins = Point[$.margins.Get[i]]
+       margins = Point[If[i > 0], $.margins.Get[i]
+                       Else[], margins_at_0]
        margin_left = margins.x
        margin_right = margins.y
 
@@ -91,6 +99,8 @@ Poly@Path[
        point2 = vertex2 - margin_right*segment_vector
 
        [If[degenerate_corner]
+          [If[prev_margin != 0.0]
+             Obj[const.raw.line_to, vertex1]]
           Obj[const.raw.line_to, point2]
         Else[]
           Obj[const.raw.ext_joinarc_to, point0, vertex1, point1]
