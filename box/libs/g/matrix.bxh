@@ -1,21 +1,27 @@
+#provide "g.matrix"
+
+///Intro: transformation matrix (used to transform figures).
+// Transformation matrices can be specified manually or calculated
+// automatically and are used to transform (rotate, translate, distort) figures
+// (i.e. the content of a {type(Window)} object) and put them inside other
+// figures. 
 Matrix = (Real m11, m12, m13, m21, m22, m23)
 
-// If a real is provided inside Matrix[] then we multiply the matrix
-// by the real
-Real@Matrix[
-  $$.m11 *= $, $$.m12 *= $, $$.m21 *= $, $$.m22 *= $, $$.m13 *= $, $$.m23 *= $
-]
-
-// A point just translates the matrix
-Point@Matrix[$$.m13 += $.x, $$.m23 += $.y]
-
-// We initialize with the identity matrix
+// We initialize with the identity matrix.
 (.[)@Matrix[
   $$.m12 = $$.m13 = $$.m21 = $$.m23 = 0.0
   $$.m11 = $$.m22 = 1.0
 ]
 
-// If another matrix is provided, we right multiply it.
+///Intro: multiply the matrix by a Real number.
+Real@Matrix[
+  $$.m11 *= $, $$.m12 *= $, $$.m21 *= $, $$.m22 *= $, $$.m13 *= $, $$.m23 *= $
+]
+
+///Intro: translate the matrix by the given amount.
+Point@Matrix[$$.m13 += $.x, $$.m23 += $.y]
+
+///Intro: right multiply the parent matrix by the given onw.
 Matrix@Matrix[
   m11 = $.m11*$$.m11 + $.m12*$$.m21, m12 = $.m11*$$.m12 + $.m12*$$.m22
   m21 = $.m21*$$.m11 + $.m22*$$.m21, m22 = $.m21*$$.m12 + $.m22*$$.m22
@@ -24,31 +30,42 @@ Matrix@Matrix[
   $$.m11 = m11, $$.m12 = m12, $$.m21 = m21, $$.m22 = m22
 ]
 
+///Intro: in-place matrix inversion (invert the parent matrix).
 Matrix.Invert = Void
+
 ([)@Matrix.Invert[
   m11 = $$$.m11, m12 = $$$.m12
   m21 = $$$.m21, m22 = $$$.m22
+
   det = m11*m22 - m12*m21
+  [If[det == 0.0]
+     Fail["The matrix is singular: cannot invert it!"]]
+
   $$$.m11 =  m22/det, $$$.m12 = -m12/det
   $$$.m21 = -m21/det, $$$.m22 =  m11/det
   $$$.m13 = -$$$.m11*$$$.m13 - $$$.m12*$$$.m23
   $$$.m23 = -$$$.m21*$$$.m13 - $$$.m22*$$$.m23
 ]
 
+///Intro: compute the inverse of the parent matrix.
 Matrix.Inverse = Matrix
+
 ([)@Matrix.Inverse[
   $$.m11 = $$$.m11, $$.m12 = $$$.m12, $$.m13 = $$$.m13 // copy from $$$
   $$.m21 = $$$.m21, $$.m22 = $$$.m22, $$.m23 = $$$.m23
   .Invert[] // invert
 ]
 
+///Intro: apply the matrix to the given point.
 Matrix.Apply = Point
+
+///Intro: point to which the matrix should be applied.
 Point@Matrix.Apply[
   $$.x = $$$.m11 * $.x + $$$.m12 * $.y + $$$.m13
   $$.y = $$$.m21 * $.x + $$$.m22 * $.y + $$$.m23
 ]
 
-// We add to Print the ability to print a Matrix
+///Intro: print a matrix.
 Matrix@Print[
   v = ", "
   "((", $.m11, v, $.m12, v, $.m13, ')', v

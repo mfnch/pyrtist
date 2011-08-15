@@ -4,7 +4,7 @@
 include "const"
 include "gcore"
 
-include "_area"
+include "area"
 include "matrix"
 include "_bbox"
 include "_pointlist"
