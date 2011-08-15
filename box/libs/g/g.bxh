@@ -5,7 +5,7 @@ include "const"
 include "gcore"
 
 include "_area"
-include "_matrix"
+include "matrix"
 include "_bbox"
 include "_pointlist"
 include "_color"

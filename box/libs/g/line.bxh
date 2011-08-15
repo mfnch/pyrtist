@@ -7,75 +7,62 @@ include "path"
 include "points"
 
 ///Intro: create a {type(Line)} geometrical shape.
-Line = ++((Int close, point, widths) have
-          Points points, Point point
-          Obj widths, Real width_enter, width_exit, width_next
+Line = ++((Int close,) have
+          Points points, Real width
           StrokeStyle style)
 
-(.[)@Line[.have = (0, 0, 1), .width_next = 1.0]
+(.[)@Line[.have = (0,)]
 
 ///Intro: next vertex in the line.
-Point@Line[
-  // Build point list and width list
-  [If[$$.have.point]
-     \ .points[$$.point]
-     \ .widths[($$.width_enter, $$.width_exit)]]
-
-  // Propagate widths to next point
-  $$.width_exit = $$.width_enter = $$.width_next
-
-  // Save point
-  $$.point = $
-  $$.have.point = 1
-
-  // Reset width state
-  $$.have.widths = 0
-]
+Point@Line[\ .points[$]]
 
 ///Intro: specify entering and exiting widths of the line.
-Real@Line[
-  num_widths = $$.have.widths
-  [If[num_widths == 0], $$.width_exit = $$.width_next = $
-   Else[], If[num_widths == 1], $$.width_next = $
-   Else[], Fail["Only two widths can be given between two points"]]
-  $$.have.widths += 1
-]
+Real@Line[\ .style[$]]
 
 ///Intro: change the stroke style for the line.
 // This allow to change the line width, the join style, etc.
 StrokeStyle@Line[\ .style[$]]
 
+///Intro: set the color to use when drawing the line.
+Color@Line[\ .style[$]]
+
+///Intro: set the {type(Dash)} style for drawing the line.
+Dash@Line[\ .style[$]]
+
+///Intro: close the line.
 Close@Line[.have.close = 1]
 
 ///Intro: number of points of the line.
 Line@Num[$.points]
 
+///Intro: add the vertices of the line to the {type(@.)} object.
+Line@Points[$.points]
+
 ///Intro: retrieve a point in the line.
+// ``line.Get[x]`` is equivalent to ``Points[line].Get[x]``.
+// See {type(Points.Get)}.
 Line.Get = Point
 
-///Intro: index of the point to retrieve.
+///Intro: see {type(Points.Get)}.
 Int@Line.Get[$$ = $$$.points.Get[$]]
-
-///Intro: get a point along the line.
-// If the given real is integer (``Real[Int[real]] == real``)
-// then return the same as ``Int@Line.Get``, otherwise return an intermediate
-// point. For example, ``line.Get[0.5]`` returns the point in the middle of
-// the segment having vertices ``line.Get[0]`` and ``line.Get[1]``.
-REAL@Line.Get[$$ = $$$.points.Get[$]]
+REAL@Line.Get[$$ = $$$.points.Get[$]]  ///Same.
+Point@Line.Get[$$ = $$$.points.Get[$]] ///Same.
 
 ///Intro: stroke the line.
 Line@Stroke[
   num_points = Num[$.points]
   [If[num_points > 0]
-    Obj[const.raw.move_to, $.points.Get[0]]]
+     Obj[const.raw.move_to, $.points.Get[0]]
 
-  point_idx = 1
-  [If[point_idx < num_points]
-     point = $.points.Get[point_idx++]
-     Obj[const.raw.line_to, point]
-   For[1]]
-
-   Obj[const.raw.line_to, $.point]
+     point_idx = 1
+     [If[point_idx < num_points]
+      point = $.points.Get[point_idx++]
+      Obj[const.raw.line_to, point]
+      For[1]]
+  
+     [If[$.have.close]
+        Obj[const.raw.close_path]]
+     $$.path.empty = 0]
 ]
 
 ///Intro: add the path of the {type(Line)}.
