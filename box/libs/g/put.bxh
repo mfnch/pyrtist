@@ -1,5 +1,7 @@
 #provide "g.put"
 
+///Section: g
+
 ///Intro: constraint used by {type(Put)} to compute transformation matrices.
 Near = ++((Int src, dst) have
           Str src_name, Point src
@@ -44,3 +46,12 @@ Put = ++(Window window,)
 Near@Put[
   [If[!$.Completed[]], Fail["Put got an incomplete Near constraint."]]  
 ]
+
+///Intro: Provide the allowed transformations for the automatic placing
+// of figures.
+// This is a string made of several letters. Each letter specifies an allowed
+// transformation. For example ``"rt"`` means that the algorithm should try
+// rotate and translate the source figure until the {type(Near)} constraints
+// are best satisfied. The available letters are ``t`` for translation,
+// ``r`` for rotation, ``s`` for scale.
+Str@Put[]

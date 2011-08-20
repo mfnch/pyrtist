@@ -44,6 +44,7 @@
 #include "psfonts.h"
 #include "formatter.h"
 #include "obj.h"
+#include "cmd.h"
 
 /*#define DEBUG*/
 
@@ -400,30 +401,18 @@ static void My_Cairo_Set_Font(BoxGWin *w, const char *font_name) {
   cairo_set_font_matrix(cr, & m);
 }
 
-static BoxGObjKind My_BoxGObjKind_Of_Arg(BoxGArgKind t) {
-  switch (t) {
-  case BOXGARG_INT: return BOXGOBJKIND_INT;
-  case BOXGARG_REAL: return BOXGOBJKIND_REAL;
-  case BOXGARG_STR: return BOXGOBJKIND_STR;
-  case BOXGARG_POINT: case BOXGARG_VECTOR: case BOXGARG_REALP:
-    return BOXGOBJKIND_POINT;
-  case BOXGARG_WIDTH: return BOXGOBJKIND_REAL;
-  default: return BOXGOBJKIND_EMPTY;
-  }
-}
-
 void My_Extract_Arg(BoxGWin *w,
-                    void *out, void *in, BoxGArgKind required_kind) {
+                    void *out, void *in, BoxGCmdArgKind required_kind) {
   switch (required_kind) {
-  case BOXGARG_POINT:
+  case BOXGCMDARGKIND_POINT:
     My_Map_Point(w, (BoxPoint *) out, (BoxPoint *) in);
     break;
 
-  case BOXGARG_VECTOR:
+  case BOXGCMDARGKIND_VECTOR:
     My_Map_Vector(w, (BoxPoint *) out, (BoxPoint *) in);
     break;
 
-  case BOXGARG_WIDTH:
+  case BOXGCMDARGKIND_WIDTH:
     My_Map_Width(w, (BoxReal *) out, (BoxReal *) in);
     break;
 
@@ -433,16 +422,14 @@ void My_Extract_Arg(BoxGWin *w,
   }
 }
 
-#define ITP_MAX_NUM_ARGS 5
-
-static int My_Args_From_Obj(BoxGWin *w, BoxGArg *args, BoxGObj *args_obj,
+static int My_Args_From_Obj(BoxGWin *w, BoxGCmdArg *args, BoxGObj *args_obj,
                             size_t num_args, ...) {
   size_t i;
   int success = 0;
   va_list ap;
   va_start(ap, num_args);
 
-  assert(num_args <= ITP_MAX_NUM_ARGS);
+  assert(num_args <= BOXG_MAX_NUM_CMD_ARGS);
 
   if (BoxGObj_Get_Length(args_obj) >= num_args + 1) {
     success = 1;
@@ -451,7 +438,7 @@ static int My_Args_From_Obj(BoxGWin *w, BoxGArg *args, BoxGObj *args_obj,
       BoxGObj *arg_obj = BoxGObj_Get(args_obj, i);
       void *val;
       assert(arg_obj != NULL);
-      val = BoxGObj_To(arg_obj, My_BoxGObjKind_Of_Arg(required_kind));
+      val = BoxGObj_To(arg_obj, BoxGCmdArgKind_To_Obj_Kind(required_kind));
       assert(val != NULL);
 
       My_Extract_Arg(w, args++, val, required_kind);
@@ -468,7 +455,8 @@ static int My_Args_From_Obj(BoxGWin *w, BoxGArg *args, BoxGObj *args_obj,
  */
 typedef struct {
   BoxGWin     *w;                   /**< The destination window object */
-  BoxGArgKind arg_kind;             /**< Type of argument of the raw graphical
+  BoxGCmdArgKind
+              arg_kind;             /**< Type of argument of the raw graphical
                                          command */
   BoxGObjKind required_subobj_kind; /**< Corresponding type of Obj */
   size_t      item_size,            /**< Size of the destination array item */
@@ -493,7 +481,7 @@ static BoxTask My_Arg_Array_From_Obj_Iter(size_t idx, BoxGObjKind k,
 }
 
 static void *My_Arg_Array_From_Obj(BoxGWin *w, BoxGObj *args_obj,
-                                   BoxGArgKind arg_kind,
+                                   BoxGCmdArgKind arg_kind,
                                    size_t start_idx, size_t *num_args) {
   MyArgArrayFromObjData data;
   size_t max_idx = BoxGObj_Get_Num(args_obj);
@@ -506,7 +494,8 @@ static void *My_Arg_Array_From_Obj(BoxGWin *w, BoxGObj *args_obj,
            item_size;
 
     switch (arg_kind) {
-    case BOXGARG_WIDTH: item_size = sizeof(BoxReal); break;
+    case BOXGCMDARGKIND_WIDTH:
+      item_size = sizeof(BoxReal); break;
     default:
       *num_args = 0;
       return NULL;
@@ -514,7 +503,7 @@ static void *My_Arg_Array_From_Obj(BoxGWin *w, BoxGObj *args_obj,
 
     data.w = w;
     data.arg_kind = arg_kind;
-    data.required_subobj_kind = My_BoxGObjKind_Of_Arg(arg_kind);
+    data.required_subobj_kind = BoxGCmdArgKind_To_Obj_Kind(arg_kind);
     data.num_items = n;
     data.item_size = item_size;
     data.array = BoxMem_Safe_Alloc(item_size*n);
@@ -570,19 +559,19 @@ static cairo_operator_t My_Cairo_Operator_Of_Int(BoxInt v) {
 static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
                                          BoxInt cmnd_id, BoxGObj *args_obj) {
   cairo_t *cr = (cairo_t *) w->ptr;
-  BoxGArg args[ITP_MAX_NUM_ARGS];
+  BoxGCmdArg args[BOXG_MAX_NUM_CMD_ARGS];
 
   switch (cmnd_id) {
-  case BOXG_CMD_SAVE:
+  case BOXGCMD_SAVE:
     cairo_save(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_RESTORE:
+  case BOXGCMD_RESTORE:
     cairo_restore(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_SET_ANTIALIAS:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_INT)) {
+  case BOXGCMD_SET_ANTIALIAS:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_INT)) {
       cairo_antialias_t v;
       switch(*args[0].i) {
       default:
@@ -596,23 +585,23 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case BOXG_CMD_MOVE_TO:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_POINT)) {
+  case BOXGCMD_MOVE_TO:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_POINT)) {
       cairo_move_to(cr, args[0].p.x, args[0].p.y);
       return BOXTASK_OK;
     }
     break;
 
-  case BOXG_CMD_LINE_TO:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_POINT)) {
+  case BOXGCMD_LINE_TO:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_POINT)) {
       cairo_line_to(cr, args[0].p.x, args[0].p.y);
       return BOXTASK_OK;
     }
     break;
 
-  case BOXG_CMD_CURVE_TO:
-    if (My_Args_From_Obj(w, args, args_obj, 3, BOXGARG_POINT,
-                         BOXGARG_POINT, BOXGARG_POINT)) {
+  case BOXGCMD_CURVE_TO:
+    if (My_Args_From_Obj(w, args, args_obj, 3, BOXGCMDARGKIND_POINT,
+                         BOXGCMDARGKIND_POINT, BOXGCMDARGKIND_POINT)) {
       cairo_curve_to(cr,
                      args[0].p.x, args[0].p.y,
                      args[1].p.x, args[1].p.y,
@@ -621,89 +610,89 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case BOXG_CMD_CLOSE_PATH:
+  case BOXGCMD_CLOSE_PATH:
     cairo_close_path(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_NEW_PATH:
+  case BOXGCMD_NEW_PATH:
     cairo_new_path(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_NEW_SUB_PATH:
+  case BOXGCMD_NEW_SUB_PATH:
     cairo_new_sub_path(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_STROKE:
+  case BOXGCMD_STROKE:
     cairo_stroke(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_STROKE_PRESERVE:
+  case BOXGCMD_STROKE_PRESERVE:
     cairo_stroke_preserve(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_FILL:
+  case BOXGCMD_FILL:
     cairo_fill(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_FILL_PRESERVE:
+  case BOXGCMD_FILL_PRESERVE:
     cairo_fill_preserve(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_CLIP:
+  case BOXGCMD_CLIP:
     cairo_clip(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_CLIP_PRESERVE:
+  case BOXGCMD_CLIP_PRESERVE:
     cairo_clip_preserve(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_RESET_CLIP:
+  case BOXGCMD_RESET_CLIP:
     cairo_reset_clip(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_PUSH_GROUP:
+  case BOXGCMD_PUSH_GROUP:
     cairo_push_group(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_POP_GROUP_TO_SOURCE:
+  case BOXGCMD_POP_GROUP_TO_SOURCE:
     cairo_pop_group_to_source(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_SET_OPERATOR:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_INT)) {
+  case BOXGCMD_SET_OPERATOR:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_INT)) {
       cairo_set_operator(cr, My_Cairo_Operator_Of_Int(*args[0].i));
       return BOXTASK_OK;
     }
     break;
 
-  case BOXG_CMD_PAINT:
+  case BOXGCMD_PAINT:
     cairo_paint(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_PAINT_WITH_ALPHA:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_REAL)) {
+  case BOXGCMD_PAINT_WITH_ALPHA:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_REAL)) {
       cairo_paint_with_alpha(cr, *args[0].r);
       return BOXTASK_OK;
     }
     return BOXTASK_OK;
 
-  case BOXG_CMD_COPY_PAGE:
+  case BOXGCMD_COPY_PAGE:
     cairo_copy_page(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_SHOW_PAGE:
+  case BOXGCMD_SHOW_PAGE:
     cairo_show_page(cr);
     return BOXTASK_OK;
 
-  case BOXG_CMD_SET_LINE_WIDTH:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_WIDTH)) {
+  case BOXGCMD_SET_LINE_WIDTH:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_WIDTH)) {
       cairo_set_line_width(cr, args[0].w);
       return BOXTASK_OK;
     }
     break;
 
-  case BOXG_CMD_SET_LINE_CAP:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_INT)) {
+  case BOXGCMD_SET_LINE_CAP:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_INT)) {
       cairo_line_cap_t v;
       switch(*args[0].i) {
       default:
@@ -716,8 +705,8 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case BOXG_CMD_SET_LINE_JOIN:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_INT)) {
+  case BOXGCMD_SET_LINE_JOIN:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_INT)) {
       cairo_line_join_t v;
       switch(*args[0].i) {
       default:
@@ -730,17 +719,17 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case BOXG_CMD_SET_MITER_LIMIT:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_WIDTH)) {
+  case BOXGCMD_SET_MITER_LIMIT:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_WIDTH)) {
       cairo_set_miter_limit(cr, args[0].w);
       return BOXTASK_OK;
     }
     break;
 
-  case BOXG_CMD_SET_DASH:
+  case BOXGCMD_SET_DASH:
     {
       size_t num_args = 0;
-      BoxReal *rs = My_Arg_Array_From_Obj(w, args_obj, BOXGARG_WIDTH,
+      BoxReal *rs = My_Arg_Array_From_Obj(w, args_obj, BOXGCMDARGKIND_WIDTH,
                                           1, & num_args);
       if (rs != NULL && num_args > 1) {
         BoxReal offset = rs[0],
@@ -753,8 +742,8 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
       break;
     }
 
-  case BOXG_CMD_SET_FILL_RULE:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_INT)) {
+  case BOXGCMD_SET_FILL_RULE:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_INT)) {
       cairo_fill_rule_t v;
       switch(*args[0].i) {
       default:
@@ -766,18 +755,18 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case BOXG_CMD_SET_SOURCE_RGBA:
-    if (My_Args_From_Obj(w, args, args_obj, 4, BOXGARG_REAL,
-                         BOXGARG_REAL, BOXGARG_REAL,
-                         BOXGARG_REAL)) {
+  case BOXGCMD_SET_SOURCE_RGBA:
+    if (My_Args_From_Obj(w, args, args_obj, 4, BOXGCMDARGKIND_REAL,
+                         BOXGCMDARGKIND_REAL, BOXGCMDARGKIND_REAL,
+                         BOXGCMDARGKIND_REAL)) {
       cairo_set_source_rgba(cr, *args[0].r, *args[1].r, *args[2].r,
                             *args[3].r);
       return BOXTASK_OK;
     }
     break;
 
-  case BOXG_CMD_TEXT_PATH:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_STR)) {
+  case BOXGCMD_TEXT_PATH:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_STR)) {
       char *text = BoxStr_To_C_String(args[4].s);
       if (text != NULL) {
         cairo_text_path(cr, text);
@@ -787,47 +776,47 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case BOXG_CMD_TRANSLATE:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_VECTOR)) {
+  case BOXGCMD_TRANSLATE:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_VECTOR)) {
       cairo_translate(cr, args[0].v.x, args[0].v.y);
       return BOXTASK_OK;
     }
     break;
 
-  case BOXG_CMD_SCALE:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_VECTOR)) {
+  case BOXGCMD_SCALE:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_VECTOR)) {
       cairo_scale(cr, args[0].v.x, args[0].v.y);
       return BOXTASK_OK;
     }
     break;
 
-  case BOXG_CMD_ROTATE:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_REAL)) {
+  case BOXGCMD_ROTATE:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_REAL)) {
       cairo_rotate(cr, *args[0].r);
       return BOXTASK_OK;
     }
     break;
 
-  case BOXG_CMD_EXT_JOINARC_TO:
-    if (My_Args_From_Obj(w, args, args_obj, 3, BOXGARG_POINT,
-                         BOXGARG_POINT, BOXGARG_POINT)) {
+  case BOXGCMD_EXT_JOINARC_TO:
+    if (My_Args_From_Obj(w, args, args_obj, 3, BOXGCMDARGKIND_POINT,
+                         BOXGCMDARGKIND_POINT, BOXGCMDARGKIND_POINT)) {
       My_Cairo_JoinArc(cr, & args[0].p, & args[1].p, & args[2].p);
       return BOXTASK_OK;
     }
     break;
 
-  case BOXG_CMD_EXT_ARC_TO:
-    if (My_Args_From_Obj(w, args, args_obj, 5, BOXGARG_POINT,
-                         BOXGARG_POINT, BOXGARG_POINT,
-                         BOXGARG_REAL, BOXGARG_REAL)) {
+  case BOXGCMD_EXT_ARC_TO:
+    if (My_Args_From_Obj(w, args, args_obj, 5, BOXGCMDARGKIND_POINT,
+                         BOXGCMDARGKIND_POINT, BOXGCMDARGKIND_POINT,
+                         BOXGCMDARGKIND_REAL, BOXGCMDARGKIND_REAL)) {
       My_Cairo_Arc(cr, & args[0].p, & args[1].p, & args[2].p,
                    *args[3].r, *args[4].r);
       return BOXTASK_OK;
     }
     break;
 
-  case BOXG_CMD_EXT_SET_FONT:
-    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGARG_STR)) {
+  case BOXGCMD_EXT_SET_FONT:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_STR)) {
       char *font = BoxStr_To_C_String(args[0].s);
       if (font != NULL) {
         My_Cairo_Set_Font(w, font);
@@ -837,10 +826,10 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case BOXG_CMD_EXT_TEXT_PATH:
-    if (My_Args_From_Obj(w, args, args_obj, 5, BOXGARG_POINT,
-                         BOXGARG_POINT, BOXGARG_POINT,
-                         BOXGARG_REALP, BOXGARG_STR)) {
+  case BOXGCMD_EXT_TEXT_PATH:
+    if (My_Args_From_Obj(w, args, args_obj, 5, BOXGCMDARGKIND_POINT,
+                         BOXGCMDARGKIND_POINT, BOXGCMDARGKIND_POINT,
+                         BOXGCMDARGKIND_REALP, BOXGCMDARGKIND_STR)) {
       char *text = BoxStr_To_C_String(args[4].s);
       if (text != NULL) {
         My_Cairo_Text_Path(w, & args[0].p, & args[1].p, & args[2].p,
@@ -851,9 +840,9 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case BOXG_CMD_EXT_TRANSFORM:
-    if (My_Args_From_Obj(w, args, args_obj, 3, BOXGARG_POINT,
-                         BOXGARG_POINT, BOXGARG_POINT)) {
+  case BOXGCMD_EXT_TRANSFORM:
+    if (My_Args_From_Obj(w, args, args_obj, 3, BOXGCMDARGKIND_POINT,
+                         BOXGCMDARGKIND_POINT, BOXGCMDARGKIND_POINT)) {
       
       /* this command should change the ref frame to the one which
        * has origin in the first point and coordinate (1, 0) at the
@@ -864,7 +853,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
-  case BOXG_CMD_EXT_FILL_STROKE:
+  case BOXGCMD_EXT_FILL_STROKE:
     if (cairo_get_line_width(cr) > 0.0) {
       cairo_fill_preserve(cr);
       cairo_stroke(cr);

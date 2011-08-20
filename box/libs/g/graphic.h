@@ -370,45 +370,6 @@ struct _grp_window {
 
 /****************************************************************************/
 
-/** COMMANDS FOR BoxGWin_Interpret_Obj */
-enum {BOXG_CMD_SAVE=0, BOXG_CMD_RESTORE, BOXG_CMD_SET_ANTIALIAS,
-      BOXG_CMD_MOVE_TO, BOXG_CMD_LINE_TO, BOXG_CMD_CURVE_TO,
-      BOXG_CMD_CLOSE_PATH, BOXG_CMD_NEW_PATH, BOXG_CMD_NEW_SUB_PATH,
-      BOXG_CMD_STROKE, BOXG_CMD_STROKE_PRESERVE, BOXG_CMD_FILL,
-      BOXG_CMD_FILL_PRESERVE, BOXG_CMD_CLIP, BOXG_CMD_CLIP_PRESERVE,
-      BOXG_CMD_RESET_CLIP, BOXG_CMD_PUSH_GROUP, BOXG_CMD_POP_GROUP_TO_SOURCE,
-      BOXG_CMD_SET_OPERATOR, BOXG_CMD_PAINT, BOXG_CMD_PAINT_WITH_ALPHA,
-      BOXG_CMD_COPY_PAGE, BOXG_CMD_SHOW_PAGE, BOXG_CMD_SET_LINE_WIDTH,
-      BOXG_CMD_SET_LINE_CAP, BOXG_CMD_SET_LINE_JOIN, BOXG_CMD_SET_MITER_LIMIT,
-      BOXG_CMD_SET_DASH, BOXG_CMD_SET_FILL_RULE, BOXG_CMD_SET_SOURCE_RGBA,
-      BOXG_CMD_TEXT_PATH, BOXG_CMD_TRANSLATE, BOXG_CMD_SCALE, BOXG_CMD_ROTATE,
-      BOXG_CMD_EXT_JOINARC_TO, BOXG_CMD_EXT_ARC_TO,
-      BOXG_CMD_EXT_SET_FONT, BOXG_CMD_EXT_TEXT_PATH, BOXG_CMD_EXT_TRANSFORM,
-      BOXG_CMD_EXT_FILL_STROKE};
-
-/** Possible types for arguments of a raw graphical command */
-typedef enum {
-  BOXGARG_INT,    /**< Integer: no transformation */
-  BOXGARG_REAL,   /**< Real: no transformation */
-  BOXGARG_STR,    /**< String: no transformation */
-  BOXGARG_POINT,  /**< Point: transformed at drawing */
-  BOXGARG_VECTOR, /**< Vector: transformed as a non applied vector */
-  BOXGARG_REALP,  /**< Real couple: no transformation */
-  BOXGARG_WIDTH   /**< Transformed as a width (real number) */
-} BoxGArgKind;
-
-/** Used to store pointers to arguments */
-typedef union {
-  void     *ptr;
-  BoxInt   *i;
-  BoxReal  *r,
-           w;
-  BoxStr   *s;
-  BoxPoint *pp,
-           p,
-           v;
-} BoxGArg;
-
 /* Per convertire in millimetri, radianti, punti per millimetro */
 extern Real grp_tomm;
 extern Real grp_torad;

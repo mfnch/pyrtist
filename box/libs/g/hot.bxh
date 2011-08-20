@@ -1,5 +1,7 @@
 #provide "g.hot"
 
+///Section: g
+
 ///Intro: list of hot points.
 // A {type(Hot)} object is a named list of points, which can be used with
 // {type(Put)} to place figures. The idea is that the user specifies where a

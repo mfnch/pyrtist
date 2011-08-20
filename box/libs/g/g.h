@@ -17,8 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#ifndef _G_H
-#  define _G_H
+#ifndef _BOX_LIBG_G_H
+#  define _BOX_LIBG_G_H
 
 #  include <stdlib.h>
 #  include <stdio.h>
@@ -261,4 +261,4 @@ int BoxGWin_Draw_With_Style(BoxGWin *w, GStyle *gs, GStyle *deafult_style,
 void g_style_copy_selected(GStyle *dest, GStyle *src,
                            int sel[G_STYLE_ATTR_NUM]);
 
-#endif
+#endif /* _BOX_LIBG_G_H */

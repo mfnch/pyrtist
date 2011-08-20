@@ -1,5 +1,7 @@
 #provide "g.matrix"
 
+///Section: g
+
 ///Intro: transformation matrix (used to transform figures).
 // Transformation matrices can be specified manually or calculated
 // automatically and are used to transform (rotate, translate, distort) figures
