@@ -89,6 +89,33 @@ BoxInt BoxGObj_Get_Type(BoxGObj *gobj, BoxInt idx);
  */
 void *BoxGObj_To(BoxGObj *gobj, BoxGObjKind kind);
 
+/** Append a C value to 'gobj'. 'content' is the pointer to the C value and
+ * 'kind' is its type. Note that only simple C values can be appended, meaning
+ * that 'kind != BOXGOBJKIND_COMPOSITE'.
+ */
+void BoxGObj_Append_C_Value(BoxGObj *gobj, BoxGObjKind kind, void *content);
+
+/** Append a BoxGObj composite object to 'gobj' and return the corresponding
+ * pointer. 'num_items' is the expected number of the composite object.
+ * This allows to add sub-objects to a give object and populate them.
+ * NOTE: 'gobj' is guaranteed to be non-NULL.
+ * For example, let's say you want to create something like Obj[1, Obj[2, 3]].
+ * You can then use the following code:
+ *  
+ *   BoxGObj gobj = BoxGObj_New();
+ *   BoxGObj_Append_C_Value(gobj, BOXGOBJKIND_INT, & ((BoxInt) 1));
+ *   BoxGObj sub_gobj = BoxGObj_Append_Composite(gobj, 2);
+ *   BoxGObj_Append_C_Value(sub_gobj, BOXGOBJKIND_INT, & ((BoxInt) 2));
+ *   BoxGObj_Append_C_Value(sub_gobj, BOXGOBJKIND_INT, & ((BoxInt) 3));
+ */
+BoxGObj *BoxGObj_Append_Composite(BoxGObj *gobj, size_t num_items);
+
+/** Add an object gobj_src to another object gobj_dest.
+ * This function is equivalent to the Box source gobj_dest[gobj_src],
+ * when both gobj_src and gobj_dest are Obj objects.
+ */
+void BoxGObj_Append_Obj(BoxGObj *gobj_dest, BoxGObj *gobj_src);
+
 /** Function used to map a single BoxGObj object from 'gobj_src' to
  * 'gobj_dest'.
  */
@@ -111,7 +138,9 @@ void BoxGObj_Merge_Filtered(BoxGObj *gobj_dest, BoxGObj *gobj_src,
                             BoxGObjFilter filter, void *pass);
 
 /** Merge 'gobj_src' into 'gobj_dest'. This uses BoxGObj_Merge_Filtered
- * using a simple copy as a filter.
+ * using a simple copy as a filter. If 'gobj_dest' is Obj[1, 2] and 'gobj_src'
+ * is Obj[3, 4], then this function will append 3 and 4 to 'gobj_desc' which
+ * after the call, will be Obj[1, 2, 3, 4].
  * @see BoxGObj_Merge_Filtered
  */
 void BoxGObj_Merge(BoxGObj *gobj_dest, BoxGObj *gobj_src);

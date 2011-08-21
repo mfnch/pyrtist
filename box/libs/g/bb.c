@@ -29,6 +29,7 @@
 #include "graphic.h"
 #include "fig.h"
 #include "autoput.h"
+#include "cmd.h"
 #include "bb.h"
 
 static BB bb_global, bb_local;
@@ -92,6 +93,31 @@ static void My_BB_Add_Fake_Point(BoxGWin *w, Point *p) {
   My_Got_Point(w, p->x, p->y);
 }
 
+
+static BoxTask My_BB_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
+                                    BoxGCmdArgKind *kinds, void **args,
+                                    void *pass) {
+  BoxGWin *w = (BoxGWin *) pass;
+  size_t i;
+  for (i = 0; i < num_args; i++) {
+    void *arg = args[i];
+    BoxGCmdArgKind kind = kinds[i];
+    switch (kind) {
+    case BOXGCMDARGKIND_POINT:
+      My_Got_Point(w, ((BoxPoint *) arg)->x, ((BoxPoint *) arg)->y);
+      break;
+    default:
+      break;
+    }
+  }
+
+  return BOXTASK_OK;
+}
+
+static BoxTask My_BB_Interpret(BoxGWin *w, BoxGObj *obj) {
+  return BoxGCmdIter_Iter(My_BB_Interpret_Iter, obj, w);
+}
+
 /** Set the default methods to the bb window */
 static void bb_repair(BoxGWin *w) {
   BoxGWin_Block(w);
@@ -101,11 +127,11 @@ static void bb_repair(BoxGWin *w) {
   w->add_circle_path = My_BB_Add_Circle_Path;
   w->add_text_path = My_BB_Add_Text_Path;
   w->add_fake_point = My_BB_Add_Fake_Point;
-
+  w->interpret = My_BB_Interpret;
   w->finish_drawing = My_BB_Finish_Drawing;
 }
 
-int bb_bounding_box(BoxGWin *figure, Point *bb_min, Point *bb_max) {
+int BoxGBBox_Compute(BoxGBBox *bbox, BoxGWin *figure) {
   BoxGWin bb;
   /* Ora do' le procedure per gestire la finestra */
   bb.quiet = 1;
@@ -116,8 +142,7 @@ int bb_bounding_box(BoxGWin *figure, Point *bb_min, Point *bb_max) {
   Grp_BB_Init(& bb_local);
   BoxGWin_Fig_Draw_Fig(& bb, figure);
   Grp_BB_Fuse(& bb_global, & bb_local);
-  if (bb_min != (Point *) NULL) *bb_min = bb_global.min;
-  if (bb_max != (Point *) NULL) *bb_max = bb_global.max;
+  bbox->min = bb_global.min;
+  bbox->max = bb_global.max;
   return (Grp_BB_Volume(& bb_global) > 0.0);
 }
-

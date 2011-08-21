@@ -52,7 +52,6 @@
 /* Quantita' che definiscono la trasformazione */
 static Real Qx, Qy, Tx, Ty;
 static Real theta, cos_theta, sin_theta, s, cos_tau, sin_tau/*,tau*/;
-#endif
 
 #define AUTO_TRANSLATION(n) ( ((n) & 0x3) != 0 )
 #define AUTO_TRANSLATION_X(n) ( ((n) & 0x1) != 0 )
@@ -71,6 +70,7 @@ static Real theta, cos_theta, sin_theta, s, cos_tau, sin_tau/*,tau*/;
 #define SET_SCALE(n, mode)    ( n = (n & ~0x8) | (mode & 0x8) )
 #define SET_DEFORM(n, mode)    ( n = (n & ~0x10) | (mode & 0x10) )
 #define SET_INVERSION(n, mode)  ( n = (n & ~0x20) | (mode & 0x20) )
+#endif
 
 typedef enum {
   BOXGAUTOTRANSFORMERR_NO_POINTS = 1,
@@ -258,11 +258,11 @@ BoxG_Auto_Transform(BoxGTransform *transform,
       }
       
     } else if (allowed_transforms & BOXGALLOW_ANISOTROPIC) {
-      /* CASO 2: Proportions have to be determined automatically. */
+      /* CASE 2: Proportions have to be determined automatically. */
       return BOXGAUTOTRANSFORMERR_NOT_IMPLEMENTED;
       
     } else if (allowed_transforms & BOXGALLOW_INVERT) {
-      /* CASO 3: Proportions are fixed, but can invert. */
+      /* CASE 3: Proportions are fixed, but can invert. */
       return BOXGAUTOTRANSFORMERR_NOT_IMPLEMENTED;      
     }
   }

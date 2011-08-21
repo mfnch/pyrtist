@@ -20,10 +20,18 @@
 #ifndef _BB_H
 #  define _BB_H
 
+#include <box/types.h>
+
+typedef struct {
+  BoxPoint min,
+           max;
+  BoxInt   n;
+
+} BoxGBBox;
+
 /** Compute the bounding box of the given figure. If the bounding box
  * is degenerate returns 0. Returns 1 otherwise.
  */
-int bb_bounding_box(GrpWindow *figure, Point *bb_min, Point *bb_max);
+int BoxGBBox_Compute(BoxGBBox *bbox, BoxGWin *figure);
 
-#define BB_Bounding_Box bb_bounding_box
 #endif

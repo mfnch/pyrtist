@@ -130,8 +130,8 @@ int BoxGCmdSig_Get_Num_Args(BoxGCmdSig sig) {
   return n;
 }
                                
-const char *My_Iter_One_Cmd(BoxGCmdIter iter, BoxGObj *args_obj,
-                            void *pass) {
+static const char *My_Iter_One_Cmd(BoxGCmdIter iter, BoxGObj *args_obj,
+                                   void *pass) {
   size_t args_obj_len = BoxGObj_Get_Length(args_obj);
   if (args_obj_len >= 1) {
     BoxInt *first_item =
@@ -144,7 +144,7 @@ const char *My_Iter_One_Cmd(BoxGCmdIter iter, BoxGObj *args_obj,
       assert(num_args <= BOXG_MAX_NUM_CMD_ARGS);
 
       if (args_obj_len >= num_args + 1) {
-        BoxGCmdArg args[BOXG_MAX_NUM_CMD_ARGS];
+        void *args[BOXG_MAX_NUM_CMD_ARGS];
         size_t i;
         for (i = 0; i < num_args; i++) {
           int required_kind = kinds[i];
@@ -153,7 +153,7 @@ const char *My_Iter_One_Cmd(BoxGCmdIter iter, BoxGObj *args_obj,
           assert(arg_obj != NULL);
           val = BoxGObj_To(arg_obj, BoxGCmdArgKind_To_Obj_Kind(required_kind));
           if (val != NULL)
-            args[i].ptr = val;   
+            args[i] = val;   
           else
             return "Error parsing command arguments (wrong type)";
         }
@@ -174,18 +174,14 @@ const char *My_Iter_One_Cmd(BoxGCmdIter iter, BoxGObj *args_obj,
 }
 
 
-BoxTask BoxGCmd_Iter_Over_Obj(BoxGObj *obj, BoxGCmdIter iter, void *pass) {
+BoxTask BoxGCmdIter_Iter(BoxGCmdIter iter, BoxGObj *obj, void *pass) {
   size_t i, n = BoxGObj_Get_Length(obj);
   const char *msg = NULL;
   for (i = 0; i < n; i++) {
     BoxInt sub_type = BoxGObj_Get_Type(obj, i);
     if (sub_type == BOXGOBJKIND_COMPOSITE) {
       BoxGObj *obj_sub = BoxGObj_Get(obj, i);
-      size_t n_args = BoxGObj_Get_Length(obj_sub);
-      if (n_args >= 1)
-        msg = My_Iter_One_Cmd(iter, obj_sub, pass);
-      else
-        msg = "Empty command object";
+      msg = My_Iter_One_Cmd(iter, obj_sub, pass);
 
     } else
       msg = "Expecting composite command object";
@@ -196,5 +192,66 @@ BoxTask BoxGCmd_Iter_Over_Obj(BoxGObj *obj, BoxGCmdIter iter, void *pass) {
     }
   }
 
+  return BOXTASK_OK;
+}
+
+/** Type of the 'pass' argument used by BoxGCmdIter_Filter_Append. */
+typedef struct {
+  BoxGCmdIter filter;
+  void        *pass;
+  BoxGObj     *dst;
+
+} MyFilterData;
+
+static BoxTask My_Filter_Append_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
+                                     BoxGCmdArgKind *kinds, void **args,
+                                     void *pass) {
+  MyFilterData *data = (MyFilterData *) pass;
+  BoxTask t = data->filter(cmd, sig, num_args, kinds, args, data->pass);
+
+  if (t == BOXTASK_OK) {
+    BoxGObj *cmd_obj = BoxGObj_Append_Composite(data->dst, num_args + 1);
+    BoxInt cmd_int = (BoxInt) cmd;
+    size_t i;
+
+    BoxGObj_Append_C_Value(cmd_obj, BOXGOBJKIND_INT, & cmd_int);
+    for (i = 0; i < num_args; i++) {
+      BoxGObjKind arg_kind =  BoxGCmdArgKind_To_Obj_Kind(kinds[i]);
+      void *arg_data = args[i];
+      BoxGObj_Append_C_Value(cmd_obj, arg_kind, arg_data);
+    }
+
+    return BOXTASK_OK;
+
+  } else
+    return BOXTASK_FAILURE;
+}
+
+BoxTask BoxGCmdIter_Filter_Append(BoxGCmdIter filter,
+                                  BoxGObj *src, BoxGObj *dst, void *pass) {
+  MyFilterData data;
+  data.filter = filter;
+  data.pass = pass;
+  data.dst = dst;
+  return BoxGCmdIter_Iter(My_Filter_Append_Iter, src, & data);
+}
+
+
+
+
+#include <box/virtmach.h>
+
+BoxTask My_Dummy_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
+                      BoxGCmdArgKind *kinds, void **args, void *pass) {
+
+  printf("Command: %d; num_args=%d\n", cmd, num_args);
+  return BOXTASK_OK;
+}
+
+BoxTask GLib_Obj_At_CmdIter(BoxVM *vm) {
+  //void *obj_data = BOX_VM_THIS_PTR(vm, void);
+  BoxGObjPtr gobj = BOX_VM_ARG(vm, BoxGObjPtr);
+
+  BoxGCmdIter_Iter(My_Dummy_Iter, gobj, NULL);
   return BOXTASK_OK;
 }

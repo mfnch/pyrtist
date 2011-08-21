@@ -88,7 +88,7 @@ typedef enum {
 
 /** Function called while iterating over the commands. */
 typedef BoxTask (*BoxGCmdIter)(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
-                               BoxGCmdArgKind *kinds, BoxGCmdArg *args,
+                               BoxGCmdArgKind *kinds, void **args,
                                void *pass);
 
 /** Return a BoxGObjKind which can contain a command argument of the given
@@ -107,5 +107,17 @@ int BoxGCmdSig_Get_Num_Args(BoxGCmdSig sig);
  * of the command.
  */
 int BoxGCmdSig_Get_Arg_Kinds(BoxGCmdSig sig, BoxGCmdArgKind *kinds);
+
+/** Iterate over the commands stored inside an Obj object. The iterator 'iter'
+ * is called for every command in the Obj, passing the pointer 'pass'.
+ */
+BoxTask BoxGCmdIter_Iter(BoxGCmdIter iter, BoxGObj *obj, void *pass);
+
+/** Append the commands in 'src' to 'dst', filtering them through the iterator
+ * 'filter'. The iterator can filter the command only by changing the
+ * arguments (for example applying a scale transformation to all the points).
+ */
+BoxTask BoxGCmdIter_Filter_Append(BoxGCmdIter filter,
+                                  BoxGObj *src, BoxGObj *dst, void *pass);
 
 #endif /* _BOX_LIBG_RAW_H */

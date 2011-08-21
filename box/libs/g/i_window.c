@@ -40,7 +40,6 @@
 #include "i_put.h"
 #include "i_style.h"
 #include "i_gradient.h"
-#include "i_bbox.h"
 
 /*#define DEBUG*/
 
@@ -290,11 +289,11 @@ Task window_save_window(BoxVM *vmp) {
    *    the bounding box of 'dest'.
    */
   if (Grp_Window_Is_Error(dest->window)) {
-    Point bb_min, bb_max;
-    if (!BB_Bounding_Box(src->window, & bb_min, & bb_max)) {
+    BoxGBBox bbox;
+    if (!BoxGBBox_Compute(& bbox, src->window)) {
       g_warning("Computed bounding box is degenerate: "
                 "cannot save the figure!");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
 
     if (src->save_file_name != NULL) {
@@ -306,22 +305,22 @@ Task window_save_window(BoxVM *vmp) {
              bb_min.x, bb_min.y, bb_max.x, bb_max.y);*/
 
     if (dest->plan.have.origin) {
-      translation.x = -bb_min.x;
-      translation.y = -bb_min.y;
+      translation.x = -bbox.min.x;
+      translation.y = -bbox.min.y;
 
     } else{
-      dest->plan.origin.x = bb_min.x;
-      dest->plan.origin.y = bb_min.y;
+      dest->plan.origin.x = bbox.min.x;
+      dest->plan.origin.y = bbox.min.y;
       dest->plan.have.origin = 1;
     }
 
     if (dest->plan.have.size) {
-      sx = dest->plan.size.x/(bb_max.x - bb_min.x);
-      sy = dest->plan.size.y/(bb_max.y - bb_min.y);
+      sx = dest->plan.size.x/(bbox.max.x - bbox.min.x);
+      sy = dest->plan.size.y/(bbox.max.y - bbox.min.y);
 
     } else {
-      dest->plan.size.x = bb_max.x - bb_min.x;
-      dest->plan.size.y = bb_max.y - bb_min.y;
+      dest->plan.size.x = bbox.max.x - bbox.min.x;
+      dest->plan.size.y = bbox.max.y - bbox.min.y;
       dest->plan.have.size = 1;
     }
 
@@ -338,16 +337,16 @@ Task window_save_window(BoxVM *vmp) {
     }
 
   } else {
-    Point bb_min, bb_max;
-    if (!BB_Bounding_Box(src->window, & bb_min, & bb_max)) {
+    BoxGBBox bbox;
+    if (!BoxGBBox_Compute(& bbox, src->window)) {
       g_warning("Computed bounding box is degenerate: "
                 "cannot save the figure!");
       return Failed;
     }
-    translation.x = -bb_min.x;
-    translation.y = -bb_min.y;
-    sx = dest->plan.size.x/(bb_max.x - bb_min.x);
-    sy = dest->plan.size.y/(bb_max.y - bb_min.y);
+    translation.x = -bbox.min.x;
+    translation.y = -bbox.min.y;
+    sx = dest->plan.size.x/(bbox.max.x - bbox.min.x);
+    sy = dest->plan.size.y/(bbox.max.y - bbox.min.y);
   }
 
   Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);
@@ -493,10 +492,10 @@ Task window_show_point(BoxVM *vmp) {
   return Success;
 }
 
-Task window_bbox(BoxVM *vmp) {
-  BBox *b = BOX_VM_THIS_PTR(vmp, BBox);
-  Window *w = BOX_VM_ARG1(vmp, WindowPtr);
-  int not_degenerate = bb_bounding_box(w->window, & b->min, & b->max);
+BoxTask window_bbox(BoxVM *vm) {
+  BoxGBBox *b = BOX_VM_THIS_PTR(vm, BoxGBBox);
+  Window *w = BOX_VM_ARG1(vm, WindowPtr);
+  int not_degenerate = BoxGBBox_Compute(b, w->window);
   b->n = not_degenerate ? 3 : 0;
-  return Success;
+  return BOXTASK_OK;
 }

@@ -142,7 +142,7 @@ static BoxGObj *BoxGObj_Expand(BoxGObj *gobj, int merge) {
   return new_memb;
 }
 
-static void BoxGObj_Merge_X(BoxGObj *gobj, BoxGObjKind kind, void *content) {
+void BoxGObj_Append_C_Value(BoxGObj *gobj, BoxGObjKind kind, void *content) {
   size_t sz = BoxGObjKind_Size(kind);
   BoxGObj *gobj_dest = BoxGObj_Expand(gobj, 1);
 
@@ -151,6 +151,14 @@ static void BoxGObj_Merge_X(BoxGObj *gobj, BoxGObjKind kind, void *content) {
   gobj_dest->kind = kind;
   if (content != NULL && sz > 0)
     My_Copy(& gobj_dest->value, content, kind, /*init*/1);
+}
+
+BoxGObj *BoxGObj_Append_Composite(BoxGObj *gobj, size_t num_items) {
+  BoxGObj *sub_gobj = BoxGObj_Expand(gobj, 0);
+  BoxArr *a_sub_gobj = & sub_gobj->value.v_composite;
+  sub_gobj->kind = BOXGOBJKIND_COMPOSITE;
+  assert(num_items > 0);
+  BoxArr_Init(a_sub_gobj, sizeof(BoxGObj), num_items);
 }
 
 static void BoxGObj_Init_From_Ptr(BoxGObj *gobj_dest,
@@ -233,11 +241,7 @@ void BoxGObj_Merge(BoxGObj *gobj_dest, BoxGObj *gobj_src) {
   BoxGObj_Merge_Filtered(gobj_dest, gobj_src, My_BoxGObj_Merge_Filter, NULL);
 }
 
-/** Add an object gobj_src to another object gobj_dest.
- * This function is equivalent to the Box source gobj_dest[gobj_src],
- * when both gobj_src and gobj_dest are Obj objects.
- */
-static void BoxGObj_Add(BoxGObj *gobj_dest, BoxGObj *gobj_src) {
+void BoxGObj_Append_Obj(BoxGObj *gobj_dest, BoxGObj *gobj_src) {
   BoxGObj *gobj_dest_item = BoxGObj_Expand(gobj_dest, 0);
   BoxGObjKind kind = gobj_src->kind;
   if (kind != BOXGOBJKIND_EMPTY && kind != BOXGOBJKIND_COMPOSITE)
@@ -245,8 +249,8 @@ static void BoxGObj_Add(BoxGObj *gobj_dest, BoxGObj *gobj_src) {
   BoxGObj_Init_From(gobj_dest_item, gobj_src);
 }
 
-void BoxGObj_Add_Str(BoxGObj *gobj, const BoxStr *s) {
-  BoxGObj_Merge_X(gobj, BOXGOBJKIND_STR, (void *) s);
+void BoxGObj_Append_Str(BoxGObj *gobj, const BoxStr *s) {
+  BoxGObj_Append_C_Value(gobj, BOXGOBJKIND_STR, (void *) s);
 }
 
 BoxGObj *BoxGObj_Get(BoxGObj *gobj, BoxInt idx) {
@@ -378,7 +382,7 @@ BoxTask GLib_Obj_Copy_Obj(BoxVM *vm) {
 
 BoxTask GLib_X_At_Obj(BoxVM *vm, BoxGObjKind kind) {
   BoxGObjPtr gobj = BOX_VM_THIS(vm, BoxGObjPtr);
-  BoxGObj_Merge_X(gobj, kind, BOX_VM_ARG_PTR(vm, void));
+  BoxGObj_Append_C_Value(gobj, kind, BOX_VM_ARG_PTR(vm, void));
   return BOXTASK_OK;
 }
 
@@ -399,14 +403,14 @@ BoxTask GLib_Point_At_Obj(BoxVM *vm) {
 }
 
 BoxTask GLib_Str_At_Obj(BoxVM *vm) {
-  BoxGObj_Add_Str(BOX_VM_THIS(vm, BoxGObjPtr), BOX_VM_ARG_PTR(vm, BoxStr));
+  BoxGObj_Append_Str(BOX_VM_THIS(vm, BoxGObjPtr), BOX_VM_ARG_PTR(vm, BoxStr));
   return BOXTASK_OK;
 }
 
 BoxTask GLib_Obj_At_Obj(BoxVM *vm) {
   BoxGObj *gobj_src = BOX_VM_ARG(vm, BoxGObjPtr),
           *gobj_dest = BOX_VM_THIS(vm, BoxGObjPtr);
-  BoxGObj_Add(gobj_dest, gobj_src);
+  BoxGObj_Append_Obj(gobj_dest, gobj_src);
   return BOXTASK_OK;
 }
 

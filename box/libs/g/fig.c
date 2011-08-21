@@ -874,8 +874,8 @@ int BoxGWin_Fig_Save_Fig(BoxGWin *src, GrpWindowPlan *plan) {
   }
 
   if (!(plan->have.size && plan->have.origin)) {
-    Point bb_min, bb_max;
-    if (!bb_bounding_box(src, & bb_min, & bb_max)) {
+    BoxGBBox bbox;
+    if (!BoxGBBox_Compute(& bbox, src)) {
       g_warning("Computed bounding box is degenerate: "
                 "cannot save the figure!");
       return 0;
@@ -883,12 +883,12 @@ int BoxGWin_Fig_Save_Fig(BoxGWin *src, GrpWindowPlan *plan) {
     /*printf("Bounding box (%f, %f) - (%f, %f)\n",
            bb_min.x, bb_min.y, bb_max.x, bb_max.y);*/
 
-    plan->size.x = fabs(bb_max.x - bb_min.x);
-    plan->size.y = fabs(bb_max.y - bb_min.y);
+    plan->size.x = fabs(bbox.max.x - bbox.min.x);
+    plan->size.y = fabs(bbox.max.y - bbox.min.y);
     plan->have.size = 1;
 
-    plan->origin.x = bb_min.x;
-    plan->origin.y = bb_min.y;
+    plan->origin.x = bbox.min.x;
+    plan->origin.y = bbox.min.y;
   }
 
   translation.x = -plan->origin.x;

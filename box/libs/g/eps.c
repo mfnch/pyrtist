@@ -472,20 +472,19 @@ static int My_EPS_Save_To_File(BoxGWin *w, const char *unused) {
 }
 
 int eps_save_fig(const char *file_name, BoxGWin *figure) {
-  Point bb_min, bb_max, translation, center, size;
+  BoxGBBox bbox;
+  Point translation, center, size;
   Real sx, sy, rot_angle;
   BoxGWin *dest;
   Matrix m;
 
-  bb_bounding_box(figure, & bb_min, & bb_max);
-  /*printf("Bounding box (%f, %f) - (%f, %f)\n",
-         bb_min.x, bb_min.y, bb_max.x, bb_max.y);*/
+  BoxGBBox_Compute(& bbox, figure);
 
-  size.x = fabs(bb_max.x - bb_min.x);
-  size.y = fabs(bb_max.y - bb_min.y);
+  size.x = fabs(bbox.max.x - bbox.min.x);
+  size.y = fabs(bbox.max.y - bbox.min.y);
   dest = eps_open_win(file_name, size.x, size.y);
-  translation.x = -bb_min.x;
-  translation.y = -bb_min.y;
+  translation.x = -bbox.min.x;
+  translation.y = -bbox.min.y;
   center.y = center.x = 0.0;
   sy = sx = 1.0;
   rot_angle = 0.0;
@@ -575,18 +574,17 @@ BoxGWin *ps_open_win(const char *file) {
 }
 
 int ps_save_fig(const char *file_name, BoxGWin *figure) {
-  Point bb_min, bb_max, translation, center;
+  BoxGBBox bbox;
+  Point translation, center;
   Real sx, sy, rot_angle;
   BoxGWin *dest;
   Matrix m;
 
-  bb_bounding_box(figure, & bb_min, & bb_max);
-  printf("Bounding box (%f, %f) - (%f, %f)\n",
-         bb_min.x, bb_min.y, bb_max.x, bb_max.y);
+  BoxGBBox_Compute(& bbox, figure);
 
   dest = ps_open_win(file_name);
-  translation.x = -bb_min.x;
-  translation.y = -bb_min.y;
+  translation.x = -bbox.min.x;
+  translation.y = -bbox.min.y;
   center.y = center.x = 0.0;
   sy = sx = 1.0;
   rot_angle = 0.0;
