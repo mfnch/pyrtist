@@ -118,6 +118,6 @@ BoxTask BoxGCmdIter_Iter(BoxGCmdIter iter, BoxGObj *obj, void *pass);
  * arguments (for example applying a scale transformation to all the points).
  */
 BoxTask BoxGCmdIter_Filter_Append(BoxGCmdIter filter,
-                                  BoxGObj *src, BoxGObj *dst, void *pass);
+                                  BoxGObj *dst, BoxGObj *src, void *pass);
 
 #endif /* _BOX_LIBG_RAW_H */

@@ -44,6 +44,7 @@
 #include <box/mem.h>
 #include <box/array.h>
 #include "obj.h"
+#include "cmd.h"
 
 /* Dimensione iniziale di un layer in bytes = dimensione iniziale dello spazio
  * in cui vengono memorizzate le istruzioni di ciascun layer
@@ -207,6 +208,7 @@ static void My_Fig_Push_Commands(BoxGWin *w, int id, CmndArg *args) {
   ++lh->numcmnd; /* Increase counter for number of commands in the layer */
 }
 
+#if 0
 static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj) {
   BoxGObj copy;
   CmndArg args[] = {{sizeof(BoxGObj), & copy},
@@ -226,6 +228,77 @@ static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj) {
   My_Fig_Push_Commands(w, ID_interpret, args);
   return BOXTASK_OK;
 }
+
+#else
+
+static void Fig_Transform_Point(Point *p, int n);
+static void Fig_Transform_Vector(Point *p, int n);
+
+typedef struct {
+  BoxPoint points[BOXG_MAX_NUM_CMD_ARGS];
+
+} MyFigInterpretData;
+
+BoxTask My_Transform_Commands(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
+                              BoxGCmdArgKind *kinds, void **args,
+                              void *pass) {
+  MyFigInterpretData *data = (MyFigInterpretData *) pass;
+  int i;
+
+  for (i = 0; i < num_args; i++) {
+    BoxPoint *p = & data->points[i];
+    void *arg = args[i];
+    BoxGCmdArgKind kind = kinds[i];
+    switch (kind) {
+    case BOXGCMDARGKIND_POINT:
+      *p = *((BoxPoint *) arg);
+      Fig_Transform_Point(p, 1);
+      args[i] = p;
+      break;
+    case BOXGCMDARGKIND_VECTOR:
+      *p = *((BoxPoint *) arg);
+      Fig_Transform_Vector(p, 1);
+      args[i] = p;
+      break;
+    default:
+      break;
+    }
+  }
+
+  return BOXTASK_OK;
+}
+
+static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj) {
+  MyFigInterpretData data;
+  BoxGObj copy;
+
+  assert(obj != NULL && w != NULL);
+
+  BoxGObj_Init(& copy);
+  if (BoxGCmdIter_Filter_Append(My_Transform_Commands,
+                                & copy, obj, & data) == BOXTASK_OK) {
+    /* Note that here we are assuming that we can safely relocate BoxGObj
+     * objects in memory, i.e. memcopy them and completely forget about the
+     * originals (which means we do not call BoxGObj_Finish for them).
+     * We then treat the copies as if they were effectively equivalent to the
+     * originals. Typically this can be done for objects that are not being
+     * referenced by other objects. Here we can do this as we are creating
+     * a new copy of obj.
+     */
+    CmndArg args[] = {{sizeof(BoxGObj), & copy},
+                      {0, (void *) NULL}};
+    My_Fig_Push_Commands(w, ID_interpret, args);
+    return BOXTASK_OK;
+
+  } else
+    return BOXTASK_FAILURE;
+}
+
+
+
+
+
+#endif
 
 void My_Fig_Create_Path(BoxGWin *w) {
   CmndArg args[] = {{0, (void *) NULL}};
@@ -630,7 +703,7 @@ void BoxGWin_Fig_Clear_Layer(BoxGWin *w, int l) {
     BoxGWin_Fig_Select_Layer(w, l);
 }
 
-/***************************************************************************************/
+/*****************************************************************************/
 /* PROCEDURE PER DISEGNARE I LAYER SULLA FINESTRA ATTIVA */
 
 /* Matrice usata nella trasformazione lineare di Fig_Transform_Point */

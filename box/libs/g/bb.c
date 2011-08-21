@@ -98,7 +98,7 @@ static BoxTask My_BB_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                                     BoxGCmdArgKind *kinds, void **args,
                                     void *pass) {
   BoxGWin *w = (BoxGWin *) pass;
-  size_t i;
+  int i;
   for (i = 0; i < num_args; i++) {
     void *arg = args[i];
     BoxGCmdArgKind kind = kinds[i];

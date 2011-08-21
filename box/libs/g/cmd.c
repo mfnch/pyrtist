@@ -228,7 +228,7 @@ static BoxTask My_Filter_Append_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
 }
 
 BoxTask BoxGCmdIter_Filter_Append(BoxGCmdIter filter,
-                                  BoxGObj *src, BoxGObj *dst, void *pass) {
+                                  BoxGObj *dst, BoxGObj *src, void *pass) {
   MyFilterData data;
   data.filter = filter;
   data.pass = pass;
@@ -237,7 +237,7 @@ BoxTask BoxGCmdIter_Filter_Append(BoxGCmdIter filter,
 }
 
 
-
+#if 0
 
 #include <box/virtmach.h>
 
@@ -255,3 +255,4 @@ BoxTask GLib_Obj_At_CmdIter(BoxVM *vm) {
   BoxGCmdIter_Iter(My_Dummy_Iter, gobj, NULL);
   return BOXTASK_OK;
 }
+#endif
