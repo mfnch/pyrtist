@@ -355,7 +355,7 @@ Task Str_ToInt(char *s, UInt l, Int *i) {
   sc[l] = '\0';
 
   errno = 0;
-  *i = strtoint(sc, & endptr, 10);
+  *i = BoxInt_Of_Str(sc, & endptr, 10);
   if ( errno == 0 ) return BOXTASK_OK;
 
   MSG_ERROR("The integer number exceeds the range of values "
@@ -451,7 +451,7 @@ Task Str_ToReal(char *s, UInt l, Real *r) {
     sc[l] = '\0';
 
     errno = 0;
-    *r = strtoreal(sc, NULL);
+    *r = BoxReal_Of_Str(sc, NULL);
     if ( errno == 0 ) return BOXTASK_OK;
 
   } else {
@@ -463,7 +463,7 @@ Task Str_ToReal(char *s, UInt l, Real *r) {
     sc[l] = '\0';
 
     errno = 0;
-    *r = strtoreal(sc, & endptr);
+    *r = BoxReal_Of_Str(sc, & endptr);
     BoxMem_Free(sc);
     if ( errno == 0 ) return BOXTASK_OK;
   }

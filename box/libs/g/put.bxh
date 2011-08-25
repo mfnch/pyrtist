@@ -2,6 +2,8 @@
 
 ///Section: g
 
+include "matrix"
+
 ///Intro: constraint used by {type(Put)} to compute transformation matrices.
 Near = ++((Int src, dst) have
           Str src_name, Point src
@@ -36,22 +38,46 @@ Near.Completed = Int
 
 ([)@Near.Completed[$$ = $$$.have.src && $$$.have.dst]
 
-///Intro: put {type(Window)} objects inside other {type(Window)} object.
-// The {type(Put)} object allows to transform manually (by givin translation
-// vectors or rotation angles) or automatically (by giving constraints through
-// the {type(Near)} object) a source figure and put it inside a target figure.
-Put = ++(Window window,)
+// Object providing a subset of functionality of Put.
+// In particular this object allows only to manually place figures.
+// (Undocumented as it is not expected to be used directly. Use Put, instead!)
+SimplePut = ++(Window src, Matrix matrix)
+Matrix@SimplePut[.matrix = $]
+Window@SimplePut[.src = $]
+SimplePut@Window "Box_Lib_G_SimplePut_At_Window" ?
+
+///Intro: put {type(Window)} objects inside other {type(Window)} objects.
+// The {type(Put)} object allows to transform manually (by giving translation
+// vectors or rotation angles) or automatically (by giving {type(Near)}
+// constraints) a source figure and put it inside a target figure.
+Put = ++((Int freedom, src, matrix, any) have
+         Str freedom
+         SimplePut simple_put
+         Window target)
+
+(.[)@Put[.have = (0, 0, 0, 0)]
+
+///Intro: place the figure as specified so far and start a new specification.
+// This is useful to place many figure with just one {type(Put)} instruction.
+(;)@Put[.have.any = 0]
 
 ///Intro: provide a {type(Near)} constraint to place the source figure.
 Near@Put[
-  [If[!$.Completed[]], Fail["Put got an incomplete Near constraint."]]  
+  [If[!$.Completed[]], Fail["Put got an incomplete Near constraint."]]
+
 ]
+
+///Intro: provide a {type(Matrix)} for placing the figure manually.
+Matrix@Put[]
+
+///Intro: provide the figure to be placed.
+Window@Put[.simple_put.src = $, .have.src = 1, .have.any = 1]
 
 ///Intro: Provide the allowed transformations for the automatic placing
 // of figures.
 // This is a string made of several letters. Each letter specifies an allowed
-// transformation. For example ``"rt"`` means that the algorithm should try
+// transformation. For example ``"rt"`` means that the algorithm should try to
 // rotate and translate the source figure until the {type(Near)} constraints
 // are best satisfied. The available letters are ``t`` for translation,
 // ``r`` for rotation, ``s`` for scale.
-Str@Put[]
+Str@Put[.freedom = $, .have.freedom = 1, .have.any = 1]

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008 by Matteo Franchin                                    *
+ * Copyright (C) 2008-2011 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -23,10 +23,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 
-#include "types.h"
-#include "virtmach.h"
-#include "str.h"
+#include <box/types.h>
+#include <box/mem.h>
+#include <box/virtmach.h>
+#include <box/str.h>
+
 #include "graphic.h"
 #include "g.h"
 #include "bb.h"
@@ -76,15 +79,28 @@ void err_not_init(const char *location) {
   g_error("Cannot use the window: it has not been initialized, yet!");
 }
 
-Task window_begin(BoxVM *vmp) {
-  WindowPtr *wp = BOX_VM_CURRENTPTR(vmp, WindowPtr);
+BoxTask Box_Lib_G_Window_Init(BoxVM *vm) {
+  WindowPtr *wp = (WindowPtr *) BoxVM_Get_Parent_Target(vm);
   Window *w;
-  w = *wp = (WindowPtr) malloc(sizeof(Window)); /* Should use Mem_Alloc, but this requires to link against the internal box library (which still does not exist) */
-  if (w == (WindowPtr) NULL) return Failed;
+
+  w = *wp = (WindowPtr) BoxMem_Alloc(sizeof(Window));
+  if (w == NULL)
+    return BOXTASK_FAILURE;
+
 #ifdef DEBUG
   printf("Window object allocated (%p)\n", w);
   printf("WindowPtr object: %p\n", wp);
 #endif
+
+  /* NOTE: using reference counting for the Window object is somewhat silly and
+   * we should rather use Box memory handling system. However, most of the C
+   * code in the G library (including this) is to be soon substituted with Box
+   * code replacements. The solution of adding a reference counting mechanism
+   * for Window object is simply the quickest way to achieve what I need now
+   * (making Window behaving as a pointer) and will later be replaced by more
+   * appropriate code (as soon as pointers are introduced in Box).
+   */
+  w->num_references = 1;
 
   w->initialised = 0;
   w->plan.have.type = 0;
@@ -112,7 +128,46 @@ Task window_begin(BoxVM *vmp) {
 
   TASK( line_window_init(w) );
   TASK( put_window_init(w) );
-  return Success;
+  return BOXTASK_OK;
+}
+
+static void My_Window_Reference(Window *w) {
+  ++(w->num_references);
+}
+
+static void My_Window_Unreference(Window **w_ptr) {
+  Window *w = *w_ptr;
+
+  --(w->num_references);
+  assert(w->num_references >= 0);
+
+  if (w->num_references == 0) {
+    BoxMem_Free(w->plan.file_name);
+
+    BoxGWin_Finish_Drawing(w->window);
+
+    destroy_styles(w);
+    pointlist_destroy(& w->pointlist);
+    put_window_destroy(w);
+    line_window_destroy(w);
+    BoxMem_Free(w);
+    *w_ptr = (Window *) NULL;
+  }
+}
+
+BoxTask Box_Lib_G_Window_Finish(BoxVM *vm) {
+  WindowPtr *wp = BoxVM_Get_Parent_Target(vm);
+  My_Window_Unreference(wp);
+  return BOXTASK_OK;
+}
+
+BoxTask Box_Lib_G_Window_Copy(BoxVM *vm) {
+  WindowPtr *wp_dst = BoxVM_Get_Parent_Target(vm),
+            w_src = *((WindowPtr *) BoxVM_Get_Child_Target(vm));
+  My_Window_Reference(w_src);
+  My_Window_Unreference(wp_dst);
+  *wp_dst = w_src;
+  return BOXTASK_OK;
 }
 
 Task window_color(BoxVM *vmp) {
@@ -131,28 +186,9 @@ Task window_gradient(BoxVM *vmp) {
   return Success;
 }
 
-Task window_destroy(BoxVM *vmp) {
-  WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
-  Window *w = (Window *) wp;
-#ifdef DEBUG
-  printf("Window object deallocated\n");
-#endif
-
-  free(w->plan.file_name);
-
-  BoxGWin_Finish_Drawing(w->window);
-
-  destroy_styles(w);
-  pointlist_destroy(& w->pointlist);
-  put_window_destroy(w);
-  line_window_destroy(w);
-  free(wp);
-  return Success;
-}
-
 Task window_str(BoxVM *vm) {
   WindowPtr wp = BOX_VM_CURRENT(vm, WindowPtr);
-  Window *w = (Window *) wp;
+  Window *w = wp;
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
   const char *type_str = (char *) s->ptr;
 
@@ -200,7 +236,7 @@ Task window_end(BoxVM *vmp) {
     w->plan.have.resolution = 1;
     w->plan.have.origin = 1;
     w->window = Grp_Window_Open(& w->plan);
-    if (w->window == (GrpWindow *) NULL) {
+    if (w->window == NULL) {
       g_error("cannot create the window!");
       return Failed;
     }
@@ -246,18 +282,18 @@ Task window_save_begin(BoxVM *vmp) {
   return Success;
 }
 
-Task window_save_str(BoxVM *vm) {
+BoxTask window_save_str(BoxVM *vm) {
   Window *w  = BOX_VM_SUB_PARENT(vm, WindowPtr);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
 
   if (w->save_file_name != NULL) {
     printf("Window.Save: changing save target from '%s' to '%s'\n",
            w->save_file_name, s->ptr);
-    free(w->save_file_name);
+    BoxMem_Free(w->save_file_name);
   }
 
-  w->save_file_name = strdup(s->ptr);
-  return Success;
+  w->save_file_name = BoxMem_Strdup(s->ptr);
+  return BOXTASK_OK;
 }
 
 Task window_save_window(BoxVM *vmp) {
@@ -298,7 +334,7 @@ Task window_save_window(BoxVM *vmp) {
 
     if (src->save_file_name != NULL) {
       dest->plan.have.file_name = 1;
-      dest->plan.file_name = strdup(src->save_file_name);
+      dest->plan.file_name = BoxMem_Strdup(src->save_file_name);
     }
 
     /*printf("Bounding box (%f, %f) - (%f, %f)\n",
@@ -369,7 +405,7 @@ Task window_save_end(BoxVM *vmp) {
 
   if (w->saved) {
     if (w->save_file_name != NULL) {
-      free(w->save_file_name);
+      BoxMem_Free(w->save_file_name);
       w->save_file_name = NULL;
       g_warning("Window.Save: given file name was not used.\n");
     }
@@ -384,7 +420,7 @@ Task window_save_end(BoxVM *vmp) {
     }
 
     all_ok = BoxGWin_Save_To_File(w->window, w->save_file_name);
-    free(w->save_file_name);
+    BoxMem_Free(w->save_file_name);
     w->save_file_name = NULL;
     w->saved = 1;
     return (all_ok) ? Success : Failed;
@@ -455,10 +491,10 @@ Task window_file_string(BoxVM *vm) {
 
   if (w->plan.have.file_name) {
     g_warning("You have already provided a file name for the window.");
-    free(w->plan.file_name);
+    BoxMem_Free(w->plan.file_name);
   }
   w->plan.have.file_name = 1;
-  w->plan.file_name = strdup(s->ptr);
+  w->plan.file_name = BoxMem_Strdup(s->ptr);
   return Success;
 }
 

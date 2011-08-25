@@ -60,6 +60,9 @@ Str = ...
 // elements.
 Num = ...
 
+///Intro: number of characters in the string.
+Str@Num[...]
+
 ///Intro: return a representation of the object in Box syntax.
 Repr = ...
 

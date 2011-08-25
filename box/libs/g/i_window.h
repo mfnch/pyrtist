@@ -35,9 +35,10 @@
 #  undef _DEF_WINDOW_SUBOBJECTS
 
 typedef struct {
+  size_t        num_references;
   int           initialised;
   GrpWindowPlan plan;
-  BoxGWin      *window;
+  BoxGWin       *window;
   GStyle        style;
 
   PointList     pointlist;
@@ -50,8 +51,9 @@ typedef struct {
 
   struct {
     struct {
-      int         point :1;
-      int         name  :1;
+      unsigned int
+                point :1,
+                name  :1;
     }           got;
     char        *name;
   } hot;
@@ -60,7 +62,7 @@ typedef struct {
   char          *save_file_name;
 } Window;
 
-typedef void *WindowPtr;
+typedef Window *WindowPtr;
 
 
 #  define SUBTYPE_OF_WINDOW(vmp, w) \

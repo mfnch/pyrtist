@@ -55,7 +55,8 @@ libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
                 i_window.c i_window.h i_line.c i_line.h \
                 i_circle.c i_circle.h i_poly.c i_poly.h \
                 i_put.c i_put.h i_text.c i_text.h \
-                i_style.c i_style.h obj.c obj.h
+                i_style.c i_style.h obj.c obj.h bridge.c bridge.h \
+                csimpleput.c
 
 libg_la_LIBADD=@CAIRO_LIBS@ ../../box/libboxcore0.2.la
 

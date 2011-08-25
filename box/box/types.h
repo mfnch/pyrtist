@@ -202,10 +202,6 @@ typedef BoxName Data;
 #    define Success BOXTASK_OK
 #    define Failed BOXTASK_FAILURE
 
-#    define strtoint BoxInt_Of_Str
-#    define strtoreal BoxReal_Of_Str
-#    define REAL_MAX BOXREAL_MAX
-#    define REAL_MIN BOXREAL_MIN
 #    define SUInt BoxUInt_Fmt
 #    define SChar BoxChar_Fmt
 #    define SInt BoxInt_Fmt
@@ -260,5 +256,11 @@ typedef BoxName Data;
 
 /** Whether a BoxPtr pointer is detached (not bound to a memory block) */
 #  define BoxPtr_Is_Detached(p) ((p)->block == NULL)
+
+/** Get the target pointer associated to the given BoxPtr extended pointer. */
+#  define BoxPtr_Get_Target(p) ((p)->ptr)
+
+/** Get the block of the given BoxPtr extended pointer. */
+#  define BoxPtr_Get_Block(p) ((p)->block)
 
 #endif /* _TYPES_H */

@@ -504,6 +504,22 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
 #  define MAX_SIZE_IN_IWORDS \
    ((sizeof(Point) + sizeof(BoxVMByteX4) - 1) / sizeof(BoxVMByteX4))
 
+/** Get the parent of the current combination (this is something with type
+ * ``BoxPtr *``.
+ */
+#  define BoxVM_Get_Parent(vm) ((vm)->box_vm_current)
+
+/** Get the child of the current combination (this is something with type
+ * ``BoxPtr *`` 
+ */
+#  define BoxVM_Get_Child(vm) ((vm)->box_vm_arg1)
+
+/** Shorthand for BoxPtr_Get_Target(BoxVM_Get_Parent(vm)). */
+#  define BoxVM_Get_Parent_Target(vm) (BoxPtr_Get_Target(BoxVM_Get_Parent(vm)))
+
+/** Shorthand for BoxPtr_Get_Target(BoxVM_Get_Child(vm)). */
+#  define BoxVM_Get_Child_Target(vm) (BoxPtr_Get_Target(BoxVM_Get_Child(vm)))
+
 #  define BOX_VM_THIS_PTR(vmp, Type) ((Type *) (vmp)->box_vm_current->ptr)
 #  define BOX_VM_THIS(vmp, Type) (*BOX_VM_THIS_PTR(vmp, Type))
 #  define BOX_VM_ARG1_PTR(vmp, Type) ((Type *) (vmp)->box_vm_arg1->ptr)

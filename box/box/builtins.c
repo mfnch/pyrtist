@@ -177,7 +177,7 @@ static Task My_Math_Norm2(BoxVM *vm) {
 }
 
 static Task My_Min_Open(BoxVM *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = REAL_MAX;
+  BOX_VM_CURRENT(vmp, Real) = BOXREAL_MAX;
   return Success;
 }
 
@@ -189,7 +189,7 @@ static Task My_Min_Real(BoxVM *vmp) {
 }
 
 static Task My_Max_Open(BoxVM *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = REAL_MIN;
+  BOX_VM_CURRENT(vmp, Real) = BOXREAL_MIN;
   return Success;
 }
 
