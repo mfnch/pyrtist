@@ -3,6 +3,7 @@
 ///Section: g
 
 include "matrix"
+include "transform"
 
 ///Intro: constraint used by {type(Put)} to compute transformation matrices.
 Near = ++((Int src, dst) have
@@ -43,6 +44,7 @@ Near.Completed = Int
 // (Undocumented as it is not expected to be used directly. Use Put, instead!)
 SimplePut = ++(Window src, Matrix matrix)
 Matrix@SimplePut[.matrix = $]
+Transform@SimplePut[.matrix = $.GetMatrix[]]
 Window@SimplePut[.src = $]
 SimplePut@Window "Box_Lib_G_SimplePut_At_Window" ?
 

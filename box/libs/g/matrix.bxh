@@ -67,9 +67,12 @@ Point@Matrix.Apply[
   $$.y = $$$.m21 * $.x + $$$.m22 * $.y + $$$.m23
 ]
 
-///Intro: print a matrix.
-Matrix@Print[
+///Intro: get a string representation of the {type(Matrix)}.
+Matrix@Str[
   v = ", "
-  "((", $.m11, v, $.m12, v, $.m13, ')', v
-  '(', $.m21, v, $.m22, v, $.m23, "))"
+  "Matrix[.m11=", $.m11, v, "m12=", $.m12, v, ".m13=", $.m13;
+  "       .m12=", $.m21, v, "m22=", $.m22, v, ".m23=", $.m23, "]"
 ]
+
+///Intro: print a matrix.
+Matrix@Print[Str[$]]
