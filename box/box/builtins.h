@@ -81,6 +81,11 @@ BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
                           Task (*c_fn)(BoxVM *));
 
 /** Define a new intrinsic type with the given name and size. */
-BoxType Bltin_New_Type(BoxCmp *c, const char *type_name, size_t type_size);
+BoxType Bltin_New_Type(BoxCmp *c, const char *type_name,
+                       size_t type_size, size_t alignment);
+
+/** Convenient function to define a new intrinsic type from a given C type. */
+#define BLTIN_NEW_TYPE(c, type_name, type) \
+  Bltin_New_Type((c), (type_name), sizeof(type), __alignof__(type))
 
 #endif

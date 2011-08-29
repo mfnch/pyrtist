@@ -361,50 +361,50 @@ BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
  */
 static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
   /* Define Int */
-  TS_Species_Begin(ts, & b->species_int);
-  TS_Species_Add(ts, b->species_int, BOXTYPE_CHAR);
-  TS_Species_Add(ts, b->species_int, BOXTYPE_INT);
+  b->species_int = BoxTS_Begin_Species(ts);
+  BoxTS_Add_Species_Member(ts, b->species_int, BOXTYPE_CHAR);
+  BoxTS_Add_Species_Member(ts, b->species_int, BOXTYPE_INT);
   TS_Name_Set(ts, b->species_int, "Int");
 
   /* Define Real */
-  TS_Species_Begin(ts, & b->species_real);
-  TS_Species_Add(ts, b->species_real, BOXTYPE_CHAR);
-  TS_Species_Add(ts, b->species_real, BOXTYPE_INT);
-  TS_Species_Add(ts, b->species_real, BOXTYPE_REAL);
+  b->species_real = BoxTS_Begin_Species(ts);
+  BoxTS_Add_Species_Member(ts, b->species_real, BOXTYPE_CHAR);
+  BoxTS_Add_Species_Member(ts, b->species_real, BOXTYPE_INT);
+  BoxTS_Add_Species_Member(ts, b->species_real, BOXTYPE_REAL);
   TS_Name_Set(ts, b->species_real, "Real");
 
   /* Define (Real, Real) */
-  b->struc_real_real = TS_Structure_Begin(ts);
-  TS_Structure_Add(ts, b->struc_real_real, b->species_real, NULL);
-  TS_Structure_Add(ts, b->struc_real_real, b->species_real, NULL);
+  b->struc_real_real = BoxTS_Begin_Struct(ts);
+  BoxTS_Add_Struct_Member(ts, b->struc_real_real, b->species_real, NULL);
+  BoxTS_Add_Struct_Member(ts, b->struc_real_real, b->species_real, NULL);
 
   /* Define Point as ((Real, Real) -> POINT) */
-  TS_Species_Begin(ts, & b->species_point);
-  TS_Species_Add(ts, b->species_point, b->struc_real_real);
-  TS_Species_Add(ts, b->species_point, BOXTYPE_POINT);
+  b->species_point = BoxTS_Begin_Species(ts);
+  BoxTS_Add_Species_Member(ts, b->species_point, b->struc_real_real);
+  BoxTS_Add_Species_Member(ts, b->species_point, BOXTYPE_POINT);
   TS_Name_Set(ts, b->species_point, "Point");
 
   /* Define If, Else, Elif and For */
-  b->alias_if = TS_Detached_New(ts, TS_Alias_New(ts, BOXTYPE_INT));
+  b->alias_if = BoxTS_New_Detached(ts, BoxTS_New_Alias(ts, BOXTYPE_INT));
   TS_Name_Set(ts, b->alias_if, "If");
 
-  b->alias_else = TS_Detached_New(ts, TS_Alias_New(ts, BOXTYPE_VOID));
+  b->alias_else = BoxTS_New_Detached(ts, BoxTS_New_Alias(ts, BOXTYPE_VOID));
   TS_Name_Set(ts, b->alias_else, "Else");
 
-  b->alias_elif = TS_Detached_New(ts, TS_Alias_New(ts, BOXTYPE_INT));
+  b->alias_elif = BoxTS_New_Detached(ts, BoxTS_New_Alias(ts, BOXTYPE_INT));
   TS_Name_Set(ts, b->alias_elif, "Elif");
 
-  b->alias_for = TS_Detached_New(ts, TS_Alias_New(ts, BOXTYPE_INT));
+  b->alias_for = BoxTS_New_Detached(ts, BoxTS_New_Alias(ts, BOXTYPE_INT));
   TS_Name_Set(ts, b->alias_for, "For");
 
   /* Define Str */
-  b->string = TS_Intrinsic_New(ts, sizeof(BoxStr));
+  b->string = BOXTS_NEW_INTRINSIC(ts, BoxStr);
   TS_Name_Set(ts, b->string, "Str");
 
-  b->print = TS_Alias_New(ts, BOXTYPE_VOID);
+  b->print = BoxTS_New_Alias(ts, BOXTYPE_VOID);
   TS_Name_Set(ts, b->print, "Print");
 
-  b->repr = TS_Alias_New(ts, b->string);
+  b->repr = BoxTS_New_Alias(ts, b->string);
   TS_Name_Set(ts, b->repr, "Repr");
 }
 
@@ -665,7 +665,7 @@ BoxType Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
   BoxType new_type;
   Value *v;
 
-  new_type = TS_Alias_New(& c->ts, ret);
+  new_type = BoxTS_New_Alias(& c->ts, ret);
   TS_Name_Set(& c->ts, new_type, name);
   (void) Bltin_Proc_Def(c, new_type, arg, fn);
   v = Value_New(c->cur_proc);
@@ -794,10 +794,11 @@ void Bltin_Finish(BoxCmp *c) {
  * Generic procedures for builtin stuff defined inside other files.
  */
 
-BoxType Bltin_New_Type(BoxCmp *c, const char *type_name, size_t type_size) {
+BoxType Bltin_New_Type(BoxCmp *c, const char *type_name,
+                       size_t type_size, size_t alignment) {
   TS *ts = & c->ts;
   Value *v = Value_New(c->cur_proc);
-  BoxType t = TS_Intrinsic_New(ts, type_size);
+  BoxType t = BoxTS_New_Intrinsic(ts, type_size, alignment);
   TS_Name_Set(ts, t, type_name);
   Value_Setup_As_Type(v, t);
   Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, type_name, v);

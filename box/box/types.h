@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008 by Matteo Franchin                                    *
+ * Copyright (C) 2008-2011 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -24,8 +24,8 @@
  * and libraries.
  */
 
-#ifndef _TYPES_H
-#  define _TYPES_H
+#ifndef _BOX_TYPES_H
+#  define _BOX_TYPES_H
 
 #  include <float.h>
 #  include <stdlib.h>
@@ -47,6 +47,31 @@
 #  ifndef BOX_ABBREV
 #    define BOX_ABBREV
 #  endif
+
+/** Enumeration of fundamental Box types. 
+ * The constants defined below can be used to retrieve information about
+ * fundamental Box types (size, alignment, etc).
+ */
+typedef enum {
+  BOXTYPE_NONE=-1,
+  BOXTYPE_FAST_LOWER = 0,
+  BOXTYPE_CHAR  = 0,
+  BOXTYPE_INT   = 1,
+  BOXTYPE_REAL  = 2,
+  BOXTYPE_POINT = 3,
+  BOXTYPE_PTR   = 4,
+  BOXTYPE_FAST_UPPER = 4,
+  BOXTYPE_OBJ,
+  BOXTYPE_VOID,
+  BOXTYPE_CREATE,
+  BOXTYPE_DESTROY,
+  BOXTYPE_COPY,
+  BOXTYPE_BEGIN,
+  BOXTYPE_END,
+  BOXTYPE_PAUSE,
+  BOXTYPE_CPTR
+
+} BoxType;
 
 /** The BoxChar type, the smallest integer in terms of size. */
 typedef unsigned char BoxChar;
@@ -75,33 +100,12 @@ typedef double BoxReal;
 #  define BOXREAL_MAX DBL_MAX
 #  define BOXREAL_MIN (-DBL_MAX)
 
-/** Used in the compiler to represent Box types. */
-typedef BoxInt BoxType;
-
 /** Type of combination */
 typedef enum {
   BOXCOMB_CHILDOF, /**< Left@Right combination */
   BOXCOMB_COPYTO,  /**< Left copied to Right */
   BOXCOMB_MOVETO   /**< Left relocated in memory into Right */
 } BoxComb;
-
-enum {
-  BOXTYPE_NONE=-1,
-  BOXTYPE_CHAR=0,
-  BOXTYPE_INT,
-  BOXTYPE_REAL,
-  BOXTYPE_POINT,
-  BOXTYPE_PTR,
-  BOXTYPE_OBJ,
-  BOXTYPE_VOID,
-  BOXTYPE_CREATE,
-  BOXTYPE_DESTROY,
-  BOXTYPE_COPY,
-  BOXTYPE_BEGIN,
-  BOXTYPE_END,
-  BOXTYPE_PAUSE,
-  BOXTYPE_CPTR
-};
 
 /** The 2D point type */
 typedef struct {
@@ -263,4 +267,4 @@ typedef BoxName Data;
 /** Get the block of the given BoxPtr extended pointer. */
 #  define BoxPtr_Get_Block(p) ((p)->block)
 
-#endif /* _TYPES_H */
+#endif /* _BOX_TYPES_H */

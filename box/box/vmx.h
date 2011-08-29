@@ -51,13 +51,11 @@ typedef BoxInt Type;
 /** Here is a list of builtin types. */
 typedef enum {
   TYPE_NONE           = -1,
-  TYPE_FAST_FIRST     =  0,
   TYPE_CHAR           =  0,
   TYPE_INT            =  1,
   TYPE_REAL           =  2,
   TYPE_POINT          =  3,
   TYPE_OBJ            =  4,
-  TYPE_FAST_LAST      =  4,
 } TypeID;
 
 /** The opcodes for the operations (instructions) understandable by the Box

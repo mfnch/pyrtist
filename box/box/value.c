@@ -985,7 +985,7 @@ Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxType *t_memb) {
   else
     delta_offset = TS_Get_Size(ts, v_memb->type);
 
-  t_next = TS_Get_Next_Member(ts, t_next);
+  t_next = BoxTS_Get_Next_Struct_Member(ts, t_next);
   if (TS_Is_Member(ts, t_next)) {
     *t_memb = t_next;
     t_next = TS_Resolve_Once(ts, t_next, TS_KS_NONE);
@@ -1030,10 +1030,10 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
 
   if (v_struc->value.cont.type == BOXTYPE_POINT)
     return My_Point_Get_Member(v_struc, memb);
-  BoxType t_memb = TS_Member_Find(& cmp->ts, v_struc->type, memb);
+  BoxType t_memb = BoxTS_Find_Struct_Member(& cmp->ts, v_struc->type, memb);
   if (t_memb != BOXTYPE_NONE) {
     size_t offset;
-    t_memb = TS_Member_Get(& cmp->ts, t_memb, & offset);
+    t_memb = BoxTS_Get_Struct_Member(& cmp->ts, t_memb, & offset);
     return Value_Get_Subfield(v_struc, offset, t_memb);
 
   } else {
@@ -1197,10 +1197,10 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
 
   case TS_KIND_SPECIES:
     {
-      BoxType t_species_memb = TS_Get_Next_Member(ts, t_dst);
-      for(t_species_memb = TS_Get_Next_Member(ts, t_dst);
+      BoxType t_species_memb = BoxTS_Get_Next_Struct_Member(ts, t_dst);
+      for(t_species_memb = BoxTS_Get_Next_Struct_Member(ts, t_dst);
           t_species_memb != BOXTYPE_NONE;
-          t_species_memb = TS_Get_Next_Member(ts, t_species_memb)) {
+          t_species_memb = BoxTS_Get_Next_Struct_Member(ts, t_species_memb)) {
         TSCmp match = TS_Compare(ts, t_species_memb, t_dst);
         if (match != TS_TYPES_UNMATCH) {
           if (match == TS_TYPES_EXPAND) {
@@ -1366,8 +1366,8 @@ static Value *My_Get_Ptr_To_New_Value(CmpProc *proc, BoxType t) {
      *  structures each time the function is called, but rather cache them!
      */
     Value *v = Value_New(proc);
-    BoxType t_struc = TS_Structure_Begin(ts);
-    TS_Structure_Add(ts, t_struc, t, (char *) NULL);
+    BoxType t_struc = BoxTS_Begin_Struct(ts);
+    BoxTS_Add_Struct_Member(ts, t_struc, t, NULL);
     Value_Setup_As_Temp(v, t_struc);
     return Value_Cast_To_Ptr(v);
 
@@ -1392,7 +1392,7 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
    */
   while (1) {
     found_subtype = TS_Subtype_Find(ts, v_parent->type, subtype_name);
-    if (found_subtype != TS_TYPE_NONE)
+    if (found_subtype != BOXTYPE_NONE)
       break;
 
     if (TS_Is_Subtype(ts, v_parent->type)) {
@@ -1408,7 +1408,7 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
     }
   }
 
-  assert(found_subtype != TS_TYPE_NONE);
+  assert(found_subtype != BOXTYPE_NONE);
 
   /* First, we create the subtype object (a pair of pointers) */
   v_subtype = Value_New(c->cur_proc);

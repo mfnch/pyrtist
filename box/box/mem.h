@@ -32,6 +32,13 @@
 /** Return the lowest multiple of sizeof(uint32_t) which is greater than n */
 BOXEXPORT size_t BoxMem_Size_Align(size_t n);
 
+/** Align the given offset to the next multiple of 'alignment'. */
+BOXEXPORT size_t BoxMem_Align_Offset(size_t offset, size_t alignment);
+
+/** Increase the given 'size' so that it is multiple of 'alignment'. */
+#define BoxMem_Get_Multiple_Size(size, alignment) \
+  BoxMem_Align_Offset((size), (alignment))
+
 BOXEXPORT void *BoxMem_Alloc(size_t size);
 
 /** Similar to BoxMem_Alloc, but never returns NULL (display an error message

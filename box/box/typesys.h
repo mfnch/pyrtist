@@ -49,11 +49,6 @@ typedef enum {
   TS_KIND_SUBTYPE
 } TSKind;
 
-enum {
-  TS_TYPE_NONE = TYPE_NONE,
-  TS_SIZE_UNKNOWN = TYPE_NONE
-};
-
 /** Used with the TS_Resolve & co. to specify how the type should be resolved.
  * NOTE: TS_KS_ANONYMOUS has a special interpretation. It is used to specify
  *  that only the anonymous types should be resolved, while the types with
@@ -71,7 +66,8 @@ typedef enum {
 
 typedef struct {
   TSKind  kind;
-  BoxInt  size;
+  BoxInt  size,
+          alignment;
   char    *name;
   void    *val;
   BoxType target,
@@ -93,10 +89,12 @@ typedef struct {
 } TSDesc;
 
 /* Used to initialise the structure TSDesc */
-#define TS_TSDESC_INIT(tsdesc) \
-  (tsdesc)->val = (char *) NULL; \
-  (tsdesc)->name = (char *) NULL; \
-  (tsdesc)->first_proc = TS_TYPE_NONE
+#define TS_TSDESC_INIT(tsdesc)           \
+  do {                                   \
+    (tsdesc)->val = NULL;                \
+    (tsdesc)->name = NULL;               \
+    (tsdesc)->first_proc = BOXTYPE_NONE; \
+  } while(0)
 
 typedef struct {
   BoxOcc type_descs;
@@ -114,8 +112,7 @@ typedef enum {
   TS_TYPES_UNMATCH=0
 } TSCmp;
 
-/** Used by the old Tym_* functions, to be removed in the future! */
-extern BoxTS *last_ts;
+#define BOX_SIZE_UNKNOWN ((BoxInt) -1)
 
 void TS_Init(BoxTS *ts);
 
@@ -186,7 +183,11 @@ int TS_Structure_Is_Fast(BoxTS *ts, BoxType structure);
 
 BoxInt TS_Align(BoxTS *ts, BoxInt address);
 
-BoxType TS_Intrinsic_New(BoxTS *ts, BoxInt size);
+BoxType BoxTS_New_Intrinsic(BoxTS *ts, size_t size, size_t alignment);
+
+/** Convenient function to define an intrinsic Box type out of a C type. */
+#define BOXTS_NEW_INTRINSIC(ts, type) \
+  BoxTS_New_Intrinsic((ts), sizeof(type), __alignof__(type))
 
 /** Create a new procedure type in p. init tells if the procedure
  * is an initialisation procedure or not.
@@ -231,10 +232,10 @@ typedef enum {
 } TSSearchMode;
 
 /** Search the given procedure in the list of registered procedures.
- * Return the procedure in *proc, or TS_TYPE_NONE if the procedure
+ * Return the procedure in *proc, or BOXTYPE_NONE if the procedure
  * has not been found. If the argument of the procedure needs to be expanded
  * *expansion_type is the target type for that expansion. If expansion
- * is not needed then *expansion_type = TS_TYPE_NONE.
+ * is not needed then *expansion_type = BOXTYPE_NONE.
  */
 BoxType BoxTS_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
                                BoxType child, BoxComb comb, BoxType parent,
@@ -294,7 +295,7 @@ BoxTask TS_Subtype_Register(BoxTS *ts, BoxType subtype, BoxType subtype_type);
 
 /** Find the registered subtype with name child among the subtypes of type
  * parent. The found subtype is put inside *subtype. If no subtype is found
- * then TS_TYPE_NONE is returned inside *subtype.
+ * then BOXTYPE_NONE is returned inside *subtype.
  */
 BoxType TS_Subtype_Find(BoxTS *ts, BoxType parent, const char *name);
 
@@ -307,40 +308,40 @@ BoxTask TS_Name_Set(BoxTS *ts, BoxType t, const char *name);
 char *TS_Name_Get(BoxTS *ts, BoxType t);
 
 /** Create a new alias type from the type 'origin'. */
-BoxType TS_Alias_New(BoxTS *ts, BoxType origin);
+BoxType BoxTS_New_Alias(BoxTS *ts, BoxType origin);
 
 /** Create a new detached type from the type t. The new type (in *d) will be
  * similar to t, but incompatible: TS_Compare will not match the two types.
  */
-BoxType TS_Detached_New(BoxTS *ts, BoxType t_origin);
+BoxType BoxTS_New_Detached(BoxTS *ts, BoxType t_origin);
 
 /** Create a new array type, with 'item_num' items with type 'item'. */
-void TS_Array_New(BoxTS *ts, BoxType *array, BoxType item, BoxInt num_items);
+BoxType BoxTS_New_Array(BoxTS *ts, BoxType item, BoxInt num_items);
 
 /** Function called to create an empty structure. Members can be added
- * with TS_Structure_Add.
+ * with BoxTS_Add_Struct_Member.
  */
-BoxType TS_Structure_Begin(BoxTS *ts);
+BoxType BoxTS_Begin_Struct(BoxTS *ts);
 
 /** Add a member to a structure type defined with TS_Structure_Begin. */
-void TS_Structure_Add(BoxTS *ts, BoxType structure, BoxType member_type,
-                      const char *member_name);
+void BoxTS_Add_Struct_Member(BoxTS *ts, BoxType structure, BoxType member_type,
+                             const char *member_name);
 
 /** Function called to create an empty species. Members can be added
  * with TS_Species_Add.
  */
-void TS_Species_Begin(BoxTS *ts, BoxType *species);
+BoxType BoxTS_Begin_Species(BoxTS *ts);
 
 /** Add a member to a species type defined with TS_Species_Begin. */
-void TS_Species_Add(BoxTS *ts, BoxType species, BoxType member);
+void BoxTS_Add_Species_Member(BoxTS *ts, BoxType species, BoxType member);
 
 /** Function called to create an empty enumeration. Members can be added
  * with TS_Structure_Enum.
  */
-void TS_Enum_Begin(BoxTS *ts, BoxType *enumeration);
+BoxType BoxTS_Begin_Enum(BoxTS *ts);
 
 /** Add a member to an enumeration type defined with TS_Enum_Begin. */
-void TS_Enum_Add(BoxTS *ts, BoxType enumeration, BoxType member);
+void BoxTS_Add_Enum_Member(BoxTS *ts, BoxType enumeration, BoxType member);
 
 BoxTask TS_Default_Value(BoxTS *ts, BoxType *dv_t, BoxType t, Data *dv);
 
@@ -348,31 +349,31 @@ BoxTask TS_Default_Value(BoxTS *ts, BoxType *dv_t, BoxType t, Data *dv);
  * of the array in *array_size.
  * An error is generated if array is not an array type.
  */
-BoxTask TS_Array_Member(BoxTS *ts, BoxType *memb, BoxType array,
-                        BoxInt *array_size);
+BoxTask BoxTS_Get_Array_Member(BoxTS *ts, BoxType *memb, BoxType array,
+                               BoxInt *array_size);
 
 /** Search the member 'm_name' from the members of the structure s.
  * If the member is found then return its type number, otherwise return
  * BOXTYPE_NONE
  */
-BoxType TS_Member_Find(BoxTS *ts, BoxType s, const char *m_name);
+BoxType BoxTS_Find_Struct_Member(BoxTS *ts, BoxType s, const char *m_name);
 
 /** Obtain details about a member of a structure (to be used in conjunction
- * with TS_Member_Find)
+ * with BoxTS_Find_Struct_Member)
  */
-BoxType TS_Member_Get(BoxTS *ts, BoxType m, size_t *address);
+BoxType BoxTS_Get_Struct_Member(BoxTS *ts, BoxType m, size_t *address);
 
 /** Obtain the name of a member from its type descriptor. */
-char *TS_Member_Name_Get(BoxTS *ts, BoxType member);
+const char *BoxTS_Get_Struct_Member_Name(BoxTS *ts, BoxType member);
 
 /** If m is a structure/species/enum returns its first member.
  * If m is a member, return the next member.
  * It m is the last member, return the parent structure.
  */
-BoxType TS_Get_Next_Member(BoxTS *ts, BoxType m);
+BoxType BoxTS_Get_Next_Struct_Member(BoxTS *ts, BoxType m);
 
 /** Counts the member of a structure/species/enum (using TS_Member_Next) */
-BoxInt TS_Member_Count(BoxTS *ts, BoxType s);
+size_t BoxTS_Count_Struct_Members(BoxTS *ts, BoxType s);
 
 /** This function tells if a type t2 is contained into a type t1.
  * The return value is the following:

@@ -413,7 +413,7 @@ void CmpProc_Assemble_Call(CmpProc *p, BoxVMSymID sym_id) {
  */
 static void My_Prepare_Ptr_Access(CmpProc *p, const BoxCont *c) {
   Int ptr_reg = c->value.ptr.reg;
-  if (c->categ == CAT_PTR && (c->value.ptr.is_greg || ptr_reg != 0)) {
+  if (c->categ == BOXCONTCATEG_PTR && (c->value.ptr.is_greg || ptr_reg != 0)) {
     Int addr_categ = c->value.ptr.is_greg ? CAT_GREG : CAT_LREG;
     CmpProc_Raw_Assemble(p, BOXOP_MOV_OO, BOXOPCAT_LREG, (Int) 0,
                          addr_categ, ptr_reg);
@@ -577,7 +577,7 @@ typedef struct {
   const BoxCont *exp_args[2];
 } FoundOP;
 
-int My_ContTypes_Match(BoxType t1, BoxType t2) {
+int My_ContTypes_Match(BoxContType t1, BoxContType t2) {
   return    ((t1 == BOXCONTTYPE_OBJ) ? BOXCONTTYPE_PTR : t1)
          == ((t2 == BOXCONTTYPE_OBJ) ? BOXCONTTYPE_PTR : t2);
 }

@@ -18,36 +18,42 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* $Id$ */
-
 #ifdef HAVE_CONFIG_H
 #  include "config.h"
 #endif
 
-/* Allocate in blocks of size sizeof(uint32_t), to make Valgrind happy! */
-#define DO_ALIGN_SIZE
+/* Allocate in blocks of size 4, to make Valgrind happy! */
+#define ALLOCATE_INT32_BLOCKS 1
 
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 
-/* I'm not really sure here if SIZEOF_BLOCK should always be sizeof(uint32_t).
- * This is why the following code here may seem a little bit non-sense.
- */
-#ifdef HAVE_STDINT_H
-#  include <stdint.h>
-#  define SIZEOF_BLOCK (sizeof(uint32_t))
-#else
-#  define SIZEOF_BLOCK 4
-#endif
-
 #include "types.h"
 #include "messages.h"
 #include "mem.h"
 
-size_t BoxMem_Size_Align(size_t n) {
-  return ((n + SIZEOF_BLOCK - 1)/SIZEOF_BLOCK)*SIZEOF_BLOCK;
+size_t BoxMem_Align_Offset(size_t offset, size_t alignment) {
+  return ((offset + alignment - 1)/alignment)*alignment;
 }
+
+#if 0
+/** Box-C interface relies on Box aligning datastructures the same way it is
+ * done by the C compiler which has been used to compile it. In general, it may
+ * pretty difficult to get this right. Fortunately, many copilers (including
+ * gcc) provide ``__alignof__'', a way to obtain the alignment for a given
+ * type.
+ */
+size_t BoxMem_Size_Align(size_t offset, size_t align) {
+  size_t align_block;
+  if (size <= sizeof(void *))
+    align_block = size;
+  else
+    align_block = sizeof(void *);
+  return ((n + align_block - 1)/align_block)*align_block;
+}
+#endif
+
 
 #include <stdio.h>
 
@@ -67,7 +73,13 @@ size_t BoxMem_Size_Align(size_t n) {
 #endif
 
 void *BoxMem_Safe_Alloc(size_t size) {
-  void *ptr = malloc(BoxMem_Size_Align(size));
+#if ALLOCATE_INT32_BLOCKS == 1
+  size_t alloc_size = (size + 3) & ~((size_t) 3);
+  void *ptr = (alloc_size >= size) ? malloc(alloc_size) : NULL;
+#else
+  void *ptr = malloc(size);
+#endif
+
   Box_Fatal_Error_If(ptr == NULL);
 #ifdef DEBUG_MEM
   printf("BoxMem_Safe_Alloc: returning %p\n", ptr);

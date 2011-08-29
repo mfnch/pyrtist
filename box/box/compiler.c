@@ -896,13 +896,13 @@ static void My_Compile_Struc(BoxCmp *c, ASTNode *n) {
 
   /* built the type for the structure */
   i = num_members;
-  t_struc = TS_Structure_Begin(& c->ts);
+  t_struc = BoxTS_Begin_Struct(& c->ts);
   for(member = n->attr.struc.first_member;
       member != NULL;
       member = member->attr.member.next) {
     Value *v_member = BoxCmp_Get_Value(c, --i);
-    TS_Structure_Add(& c->ts, t_struc, v_member->type,
-                     member->attr.member.name);
+    BoxTS_Add_Struct_Member(& c->ts, t_struc, v_member->type,
+                            member->attr.member.name);
   }
 
   /* create and populate the structure */
@@ -1218,7 +1218,7 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
       BoxType new_type;
 
       /* First create the alias type */
-      new_type = TS_Alias_New(ts, v_type->type);
+      new_type = BoxTS_New_Alias(ts, v_type->type);
       TS_Name_Set(ts, new_type, v_name->name);
 
       /* Register the type in the proper namespace */
@@ -1272,7 +1272,7 @@ static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
   assert(n->type == ASTNODETYPE_STRUCTYPE);
 
   /* Create a new structure type */
-  struc_type = TS_Structure_Begin(& c->ts);
+  struc_type = BoxTS_Begin_Struct(& c->ts);
 
   /* Compile the members, check their types and leave them on the stack */
   err = 0;
@@ -1300,10 +1300,11 @@ static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
     if (previous_type != BOXTYPE_NONE && !err) {
       /* Check for duplicate structure members */
       if (member_name != NULL)
-        if (TS_Member_Find(& c->ts, struc_type, member_name) != BOXTYPE_NONE)
+        if (BoxTS_Find_Struct_Member(& c->ts, struc_type, member_name)
+            != BOXTYPE_NONE)
           MSG_ERROR("Duplicate member '%s' in structure type definition.",
                     member_name);
-      TS_Structure_Add(& c->ts, struc_type, previous_type, member_name);
+      BoxTS_Add_Struct_Member(& c->ts, struc_type, previous_type, member_name);
     }
   }
 
@@ -1327,7 +1328,7 @@ static void My_Compile_SpecType(BoxCmp *c, ASTNode *n) {
   assert(n->type == ASTNODETYPE_SPECTYPE);
 
   /* Create a new species type */
-  TS_Species_Begin(& c->ts, & spec_type);
+  spec_type = BoxTS_Begin_Species(& c->ts);
 
   for(member = n->attr.spec_type.first_member;
       member != NULL;
@@ -1344,7 +1345,7 @@ static void My_Compile_SpecType(BoxCmp *c, ASTNode *n) {
     if (Value_Want_Has_Type(v_type)) {
       BoxType memb_type = v_type->type;
       /* NOTE: should check for duplicate types in species */
-      TS_Species_Add(& c->ts, spec_type, memb_type);
+      BoxTS_Add_Species_Member(& c->ts, spec_type, memb_type);
     }
 
     Value_Unlink(v_type);
@@ -1368,7 +1369,7 @@ static void My_Compile_IncType(BoxCmp *c, ASTNode *n) {
 
   v_type = BoxCmp_Pop_Value(c);
   if (Value_Want_Has_Type(v_type)) {
-    t_inc_type = TS_Detached_New(& c->ts, v_type->type);
+    t_inc_type = BoxTS_New_Detached(& c->ts, v_type->type);
     v_inc_type = Value_New(c->cur_proc);
     Value_Setup_As_Type(v_inc_type, t_inc_type);
   }
