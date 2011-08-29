@@ -4,40 +4,7 @@
 
 include "matrix"
 include "transform"
-
-///Intro: constraint used by {type(Put)} to compute transformation matrices.
-Near = ++((Int src, dst) have
-          Str src_name, Point src
-          Point dst
-          Real weight)
-
-(.[)@Near[.have = (0, 0)]
-
-///Intro: the name of the hot point in the source figure.
-Str@Near[
-  [If[$$.have.src]
-     Fail["Near[] already received the source point."]]
-  $$.src_name = $
-  $$.have.src = 2
-]
-
-///Intro: provide source and destination points.
-Point@Near[
-  [If[$$.have.src == 0], $$.src = $, $$.have.src = 1
-   Else[], If[$$.have.dst == 0], $$.dst = $, $$.have.dst = 1
-   Else[]
-     Fail["Near[] got both the source and the destination points."]]
-]
-
-///Intro: provide the weight for the {type(Near)} constraint.
-Real@Near[.weight = $]
-
-///Intro: whether a {type(Near)} constraint is complete.
-// A Near constraint is complete when it has both a source hot point and
-// a destination point.
-Near.Completed = Int
-
-([)@Near.Completed[$$ = $$$.have.src && $$$.have.dst]
+include "place"
 
 // Object providing a subset of functionality of Put.
 // In particular this object allows only to manually place figures.

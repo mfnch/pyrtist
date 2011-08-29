@@ -509,7 +509,7 @@ BoxType BoxTS_New_Array(BoxTS *ts, BoxType item, Int num_items) {
 
 /*FUNCTIONS: My_Begin_Composite **********************************************/
 
-/* Code for TS_Structure_Begin, TS_Species_Begin, etc. */
+/* Code for BoxTS_Begin_Structure, BoxTS_Begin_Species, etc. */
 static BoxType My_Begin_Composite(TSKind kind, TS *ts) {
   BoxType t;
   TSDesc td;
@@ -537,7 +537,7 @@ BoxType BoxTS_Begin_Enum(BoxTS *ts) {
 
 /*FUNCTIONS: My_Add_Member ***************************************************/
 
-/* Code for BoxTS_Add_Struct_Member, TS_Species_Add, etc. */
+/* Code for BoxTS_Add_Struct_Member, BoxTS_Add_Species_Member, etc. */
 static void My_Add_Member(TSKind kind, BoxTS *ts, BoxType s, BoxType m,
                           const char *m_name) {
 
@@ -623,7 +623,10 @@ static void My_Add_Member(TSKind kind, BoxTS *ts, BoxType s, BoxType m,
 
   case TS_KIND_ENUM:
     {
-      size_t m_size = TS_Align(ts, m_td->size + sizeof(Int));
+      /* We need to do soemthing about alignment, here (but first, we should
+       * implement enums ;-)
+       */
+      size_t m_size = m_td->size + sizeof(Int);
       if (m_size > s_td->size)
         s_td->size = m_size;
       break;
