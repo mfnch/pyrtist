@@ -22,6 +22,7 @@ ACLOCAL_AMFLAGS=-I libltdl/m4
 
 boxlibdir=@boxlibdir@
 boxpkgdir=@boxpkgdir@
+boxlibgdir=$(boxpkgdir)/g
 
 AM_CFLAGS=-Wall @CAIRO_CFLAGS@
 AM_CPPFLAGS=-I../../box -I../..
@@ -29,17 +30,17 @@ AM_LDFLAGS=-no-undefined -module -avoid-version
 
 boxlib_LTLIBRARIES=libg.la
 
-dist_boxpkg_DATA=\
+dist_boxlibg_DATA=\
   obj.bxh const.bxh gcore.bxh matrix.bxh transform.bxh \
   raw.bxh cmdstream.bxh points.bxh path.bxh fill.bxh stroke.bxh style.bxh \
   poly.bxh text.bxh texts.bxh circle.bxh circles.bxh line.bxh gradient.bxh \
   clip.bxh hot.bxh place.bxh put.bxh g2.bxh \
-                 g.bxh _color.bxh _oldstyle.bxh _gradient.bxh \
-                 _window.bxh _line.bxh _circle.bxh _poly.bxh _put.bxh \
-                 arrows.bxh caps.bxh _arrows.bxh _pointlist.bxh _text.bxh \
-                 _bbox.bxh math.bxh tools.bxh _sphere.bxh \
-                 area.bxh _rectangle.bxh \
-                 label.bxh bounce.bxh electric.bxh
+  init.box _color.bxh _oldstyle.bxh _gradient.bxh _window.bxh _line.bxh \
+  _circle.bxh _poly.bxh _put.bxh _pointlist.bxh _text.bxh bbox.box area.bxh
+
+dist_boxpkg_DATA=\
+  arrows.bxh caps.bxh _arrows.bxh math.bxh tools.bxh _sphere.bxh \
+  _rectangle.bxh label.bxh bounce.bxh electric.bxh
 
 libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
                 bm1bit.c bm4bit.c bm8bit.c bitmap.h \
