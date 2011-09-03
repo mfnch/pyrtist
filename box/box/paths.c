@@ -36,22 +36,22 @@
 
 #include "version.h"
 
-#ifndef __WINDOWS__
-#  if defined WIN32 || defined _WIN32
-#    define __WINDOWS__
-#  endif
-#endif
-
 #ifdef __WINDOWS__
 #  include "windows.h"
 #endif
 
 
 void BoxPaths_Init(BoxPaths *bp) {
+#ifdef __WINDOWS__
+  const char *init_suffix = "\\init.box";
+#else
+  const char *init_suffix = "/init.box";
+#endif
   BoxList_Init(& bp->libraries, 0);
   BoxList_Init(& bp->lib_dirs, 0);
   BoxList_Init(& bp->inc_dirs, 0);
   BoxList_Init(& bp->inc_exts, 0);
+  BoxList_Append_String(& bp->inc_exts, init_suffix);
   BoxList_Append_String(& bp->inc_exts, ".bxh");
   BoxList_Append_String(& bp->inc_exts, ".box");
   BoxList_Append_String(& bp->inc_exts, "");
