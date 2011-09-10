@@ -8,11 +8,11 @@
 // commands to be stored for later manipulation.
 Window = ++CPtr
 
-(.[)@Window "Box_Lib_G_Window_Init" ?
+(.[)@Window "Box_Lib_G_Init_At_Window" ?
 
-(].)@Window "Box_Lib_G_Window_Finish" ?
+(].)@Window "Box_Lib_G_Finish_At_Window" ?
 
-Window(=)Window "Box_Lib_G_Window_Copy" ?
+Window(=)Window "Box_Lib_G_Window_Copy_Window" ?
 
 ///Intro: transform an angle from degrees to radians.
 Deg = Real

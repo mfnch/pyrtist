@@ -9,7 +9,7 @@ Near = ++((Int src, dst) have
           Point dst
           Real weight)
 
-(.[)@Near[.have = (0, 0)]
+(.[)@Near[.have = (0, 0), .weight = 1.0]
 
 ///Intro: the name of the hot point in the source figure.
 Str@Near[
@@ -37,6 +37,44 @@ Near.Completed = Int
 
 ([)@Near.Completed[$$ = $$$.have.src && $$$.have.dst]
 
+///Intro: Obj-ify the constraint.
+Near@Obj[
+  If[$.Completed[]]
+    Obj[
+      [If[$.have.src == 1], $.src
+       Else[], $.src_name]
+      $.dst, $.weight
+    ]
+  Else[]
+    Fail["Cannot convert Near to Obj. Near object is incomplete."]
+]
+
+///Intro: transform an Obj into a Near constraint.
+Obj@Near[
+  If[$$.have.src == 0 && $$.have.dst == 0]
+    src = $.Get[0]
+    [If[src.GetType[] == objtype.point], Point[src], Else[], Str[src]]
+                    // src ^^^
+    Point[$.Get[1]] // dst
+    Real[$.Get[2]]  // weight
+
+  Else[]
+    Fail["Trying to set a partial Near object from an Obj object"]
+]
+
+///Intro: provide the {type(Window)} to which the hot point name refers to.
+// The window is used to resolve the Near constraint. For example, if
+// the constraint is specified as ``n = Near["name", p1]``, where ``"name"``
+// is the name of a {type(Hot)} point of the {type{Window)} ``w``, then
+// ``\ n[w]`` transforms ``n`` to ``Near[w.Get["name"], p1]``.
+// In other words the named hot point is substituted with the hot point
+// coordinates.
+Window@Near[
+  If[$$.have.src == 2]
+    $$.src = $.Get[$$.src_name]
+    $$.have.src = 1
+]
+
 ///Intro: Object containing instructions on how to place objects.
 // This object allows to specify how to place a source figure on a destination
 // figure. This is done by providing a set of allowed transformations and a set
@@ -47,4 +85,5 @@ Place = ++(Str freedom, Obj constraints)
 ///Intro: provide the allowed transformations in form of a string.
 Str@Place[.freedom = $]
 
-Near@Place[\ $$.constraints[]]
+///Intro: provide a {type{Near)} constraint.
+Near@Place[\ $$.constraints[$]]

@@ -1,0 +1,110 @@
+///Section: g
+
+// The Window object
+
+(])@Window "Box_Lib_G_Close_At_Window" ?
+
+///Intro: whether the window is valid (complete) and can be used.
+Window@Valid "Box_Lib_G_Window_At_Valid" ?
+
+///Intro: specify the type of the window.
+// Available choices are: ``"fig"`` for abstract windows (windows which act
+// as command containers), ``"a1"``, ``"a8"``, ``"rgb24"`` or ``"argb32"`` for
+// 1, 8, 24 and 32 bit bit-mapped windows, ``"svg"``, ``"pdf"``,
+// ``"cairo:eps"``, ``"cairo:ps"``, ``"eps"`` or ``"eps"`` for vectorial
+// windows.
+// Note that depending on the selected type of window, you may have to provide
+// extra parameters, such as the file name, the window size, etc.
+Str@Window "Box_Lib_G_Str_At_Window" ?
+
+///Intro: provide the size of the window.
+// Note that this has effect only when creating the window (inside the first
+// pair of square brackets). For example, ``Window[(10, 20)]`` works, but
+// ``Window[][(10, 20]`` does not work.
+Point@Window "window_size" ?
+
+///Intro: specifies a {type(.@)} to be used in the drawing commands which
+//  will follow in the Window.
+Color@Window "Box_Lib_G_Color_At_Window" ?
+Gradient@Window "Box_Lib_G_Gradient_At_Window" ?  ///Same.
+OldStyle@Window "Box_Lib_G_OldStyle_At_Window" ?  ///Same.
+
+///Intro: use the drawing style as a default in the next drawing commands.
+Style@Window[OldStyle[$]]
+
+///Intro: draw the content of a {type(.@)} inside the opened {type(@.)}
+//  object.
+Window@Window "window_window" ?
+
+///Intro: method to be used to save the Window to a file.
+Window.Save = Void
+
+([)@Window.Save "window_save_begin" ?
+(])@Window.Save "window_save_end" ?
+
+///Intro: name of the file where to save the {type(Window)}.
+//  The extension is read to determine the desired file format.
+Str@Window.Save "window_save_str" ?
+
+///Intro: a window object can be provided to specify where to save the content
+//  of the parent Window. It can be either a complete Window or an incomplete
+//  one.
+Window@Window.Save "window_save_window" ?
+
+Window.Hot = Point
+([)@Window.Hot "window_hot_begin" ?
+Point@Window.Hot "window_hot_point" ?
+Str@Window.Hot "window_hot_string" ?
+PointList@Window.Hot "window_hot_pointlist" ?
+(])@Window.Hot "window_hot_end" ?
+
+///Intro: specify the resolution of the window.
+Window.Res = Void
+
+///Intro: provide the resolution to be used both in x and y direction.
+Real@Window.Res "window_res_real" ?
+
+///Intro: provide separate resolutions for x and y.
+Point@Window.Res "window_res_point" ?
+
+///Intro: provide the coordiate of the origin in the window.
+Window.Origin = Void
+
+///Intro: the origin coordinates.
+Point@Window.Origin "window_origin_point" ?
+
+///Intro: provide the file name associated with the window.
+// This may be necessary for those window types which output their content
+// to file (for example, ``Window["svg"]``, ``Window["pdf"]``, etc).
+Window.File = Void
+Str@Window.File "window_file_string" ?
+
+///Intro: enlarge the bounding box of the window.
+Window.Show = Void
+
+///Intro: enlarge the bounding box so that it contains the provided point.
+Point@Window.Show "window_show_point" ?
+
+BBox@Window.Show[\ $$[If[$.n & 1], $.min], \ $$[If[$.n & 2], $.max]]
+
+///Intro: make sure the Window is large enough to contain the bounding box.
+BBox@Window[.Show[$]]
+
+///Intro: get the bounding box of the window.
+Window@BBox "window_bbox" ?
+
+///Intro: retrieve a {type(Hot)} point of the window.
+Window.Get = Point
+
+///Intro: retrieve the {type(Hot)} point by name.
+Str@Window.Get "Box_Lib_G_Str_At_Window_Get" ?
+
+///Intro: retrieve the {type(Hot)} point by index (starting from 0).
+Int@Window.Get "Box_Lib_G_Int_At_Window_Get" ?
+
+///Intro: retrieve the {type(Hot)} point by interpolated index.
+// For a description of interpolated indices see {type(Points)}.
+REAL@Window.Get "Box_Lib_G_Real_At_Window_Get" ?
+
+///Same.
+Point@Window.Get "Box_Lib_G_Point_At_Window_Get" ?

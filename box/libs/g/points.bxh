@@ -4,7 +4,8 @@
 
 ///Intro: array of {type(Point)} objects.
 // Allow to interpolate between the points and perform other geometrical
-// calculations.
+// calculations through what we call "interpolated indices" (indices which
+// are resolved by interpolating two neighbouring points).
 Points = ++(Obj points,)
 
 ///Intro: add the point to the array.
@@ -48,9 +49,10 @@ Int@Points.Get[
   $$ = Point[$$$.points.Get[idx]]
 ]
 
-///Intro: index of the point to retrieve.
-// When the {type(Real)} is an integer the corresponding point is
-// returned. If the number is not integer, then an interpolation is returned.
+///Intro: interpolated index.
+// If the interpolated index is an integer (real = Int[real]) the corresponding
+// point is returned. If the index is not integer, then an interpolation is
+// returned.
 // For example, ``ps.Get[0.5]`` returns ``0.5*(ps.Get[0] + ps.Get[1])``.
 REAL@Points.Get[
   num = Num[$$$.points]

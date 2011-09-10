@@ -218,6 +218,12 @@ typedef BoxName Data;
 #    define SUBTYPE_CHILD_PTR(subtype_ptr, child_type) \
        (( child_type *) ((*(subtype_ptr)).child.ptr))
 
+#    define BoxSubtype_Get_Parent_Target(subtype_ptr) \
+       ((subtype_ptr)->parent.ptr)
+
+#    define BoxSubtype_Get_Child_Target(subtype_ptr) \
+       ((subtype_ptr)->child.ptr)
+
 #    define NAME BOXNAME
 #    define IS_SUCCESSFUL BOXTASK_IS_SUCCESS
 #    define IS_FAILED BOXTASK_IS_FAILURE

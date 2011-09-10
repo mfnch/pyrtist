@@ -46,20 +46,20 @@
 
 /*#define DEBUG*/
 
-static void set_default_style(GStyle *gs, FillStyle ds, DrawWhen dw) {
+static void My_Init_Style(GStyle *gs, FillStyle ds, DrawWhen dw) {
   g_style_new(gs, G_STYLE_NONE);
   g_style_set_fill_style(gs, ds);
   g_style_set_draw_when(gs, dw);
 }
 
-static void init_default_styles(Window *w) {
+static void My_Init_Win_Styles(Window *w) {
   /* For Circle, we set a style which allows easily to draw dognuts */
-  set_default_style(& w->circle.default_style, FILLSTYLE_EO, DRAW_WHEN_END);
+  My_Init_Style(& w->circle.default_style, FILLSTYLE_EO, DRAW_WHEN_END);
   /* For Poly, we use the same style as Circle to easily allow holes */
-  set_default_style(& w->poly.default_style, FILLSTYLE_EO, DRAW_WHEN_END);
+  My_Init_Style(& w->poly.default_style, FILLSTYLE_EO, DRAW_WHEN_END);
   /* For Text and Line, we usually don't want holes to appear! */
-  set_default_style(& w->text.default_style, FILLSTYLE_PLAIN,DRAW_WHEN_PAUSE);
-  set_default_style(& w->line.default_style, FILLSTYLE_PLAIN,DRAW_WHEN_PAUSE);
+  My_Init_Style(& w->text.default_style, FILLSTYLE_PLAIN,DRAW_WHEN_PAUSE);
+  My_Init_Style(& w->line.default_style, FILLSTYLE_PLAIN,DRAW_WHEN_PAUSE);
 
   /* The main Window style is left completely unset (i.e. transparent
    * to the default styles.
@@ -67,7 +67,7 @@ static void init_default_styles(Window *w) {
   g_style_new(& w->style, (GStyle *) NULL);
 }
 
-static void destroy_styles(Window *w) {
+static void My_Finish_Win_Styles(Window *w) {
   g_style_clear(& w->circle.default_style);
   g_style_clear(& w->poly.default_style);
   g_style_clear(& w->text.default_style);
@@ -75,11 +75,7 @@ static void destroy_styles(Window *w) {
   g_style_clear(& w->style);
 }
 
-void err_not_init(const char *location) {
-  g_error("Cannot use the window: it has not been initialized, yet!");
-}
-
-BoxTask Box_Lib_G_Window_Init(BoxVM *vm) {
+BoxTask Box_Lib_G_Init_At_Window(BoxVM *vm) {
   WindowPtr *wp = (WindowPtr *) BoxVM_Get_Parent_Target(vm);
   Window *w;
 
@@ -122,7 +118,7 @@ BoxTask Box_Lib_G_Window_Init(BoxVM *vm) {
   w->window = Grp_Window_Error(stderr, "Cannot use a window before "
                                "completing the initialization stage.");
 
-  init_default_styles(w);
+  My_Init_Win_Styles(w);
 
   TASK( pointlist_init(& w->pointlist) );
 
@@ -146,7 +142,7 @@ static void My_Window_Unreference(Window **w_ptr) {
 
     BoxGWin_Finish_Drawing(w->window);
 
-    destroy_styles(w);
+    My_Finish_Win_Styles(w);
     pointlist_destroy(& w->pointlist);
     put_window_destroy(w);
     line_window_destroy(w);
@@ -155,13 +151,13 @@ static void My_Window_Unreference(Window **w_ptr) {
   }
 }
 
-BoxTask Box_Lib_G_Window_Finish(BoxVM *vm) {
+BoxTask Box_Lib_G_Finish_At_Window(BoxVM *vm) {
   WindowPtr *wp = BoxVM_Get_Parent_Target(vm);
   My_Window_Unreference(wp);
   return BOXTASK_OK;
 }
 
-BoxTask Box_Lib_G_Window_Copy(BoxVM *vm) {
+BoxTask Box_Lib_G_Window_Copy_Window(BoxVM *vm) {
   WindowPtr *wp_dst = BoxVM_Get_Parent_Target(vm),
             w_src = *((WindowPtr *) BoxVM_Get_Child_Target(vm));
   My_Window_Reference(w_src);
@@ -170,15 +166,22 @@ BoxTask Box_Lib_G_Window_Copy(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
-Task window_color(BoxVM *vmp) {
+BoxTask Box_Lib_G_Window_At_Valid(BoxVM *vm) {
+  BoxInt *valid = BoxVM_Get_Parent_Target(vm);
+  Window *w = *((WindowPtr *) BoxVM_Get_Child_Target(vm));
+  *valid = (*valid && w->initialised);
+  return BOXTASK_OK;
+}
+
+BoxTask Box_Lib_G_Color_At_Window(BoxVM *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   Color *c = BOX_VM_ARG1_PTR(vmp, Color);
-  if (w->window != (GrpWindow *) NULL)
+  if (w->window != NULL)
     BoxGWin_Set_Fg_Color(w->window, c);
   return Success;
 }
 
-Task window_gradient(BoxVM *vmp) {
+BoxTask Box_Lib_G_Gradient_At_Window(BoxVM *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   Gradient *g = BOX_VM_ARG1(vmp, GradientPtr);
   if (w->window != NULL)
@@ -186,7 +189,7 @@ Task window_gradient(BoxVM *vmp) {
   return Success;
 }
 
-Task window_str(BoxVM *vm) {
+BoxTask Box_Lib_G_Str_At_Window(BoxVM *vm) {
   WindowPtr wp = BOX_VM_CURRENT(vm, WindowPtr);
   Window *w = wp;
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
@@ -200,20 +203,20 @@ Task window_str(BoxVM *vm) {
   w->plan.type = Grp_Window_Type_From_String(type_str);
   if (w->plan.type < 0) {
     g_error("Unrecognized window type!");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   w->plan.have.type = 1;
   return Success;
 }
 
-Task window_size(BoxVM *vmp) {
+BoxTask window_size(BoxVM *vmp) {
   WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
   Window *w = (Window *) wp;
   Point *win_size = BOX_VM_ARG1_PTR(vmp, Point);
 
   if (w->plan.have.size) {
     g_error("You have already specified the window size!");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
 
   w->plan.have.size = 1;
@@ -221,16 +224,15 @@ Task window_size(BoxVM *vmp) {
   return Success;
 }
 
-Task window_style(BoxVM *vmp) {
+BoxTask Box_Lib_G_OldStyle_At_Window(BoxVM *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
   g_style_copy_selected(& w->style, & s->style, s->have);
   return Success;
 }
 
-Task window_end(BoxVM *vmp) {
-  WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
-  Window *w = (Window *) wp;
+BoxTask Box_Lib_G_Close_At_Window(BoxVM *vm) {
+  WindowPtr w = *((WindowPtr *) BoxVM_Get_Parent_Target(vm));
 
   if (!w->initialised) {
     w->plan.have.resolution = 1;
@@ -238,7 +240,7 @@ Task window_end(BoxVM *vmp) {
     w->window = Grp_Window_Open(& w->plan);
     if (w->window == NULL) {
       g_error("cannot create the window!");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
 
     w->initialised = 1;
@@ -247,7 +249,7 @@ Task window_end(BoxVM *vmp) {
   return Success;
 }
 
-Task window_window(BoxVM *vmp) {
+BoxTask window_window(BoxVM *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   Window *src = BOX_VM_ARG1(vmp, WindowPtr);
   BoxGWin_Fig_Draw_Fig(w->window, src->window);
@@ -261,25 +263,25 @@ BoxTask GLib_Obj_At_Window(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
-Task window_origin_point(BoxVM *vmp) {
+BoxTask window_origin_point(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *origin = BOX_VM_ARG1_PTR(vmp, Point);
 
   if (w->plan.have.origin) {
     g_error("You have already specified the origin of the window!");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
 
   w->plan.have.origin = 1;
   w->plan.origin = *origin;
-  return Success;
+  return BOXTASK_OK;
 }
 
-Task window_save_begin(BoxVM *vmp) {
+BoxTask window_save_begin(BoxVM *vmp) {
   Window *w  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   w->save_file_name = NULL;
   w->saved = 0;
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxTask window_save_str(BoxVM *vm) {
@@ -296,7 +298,7 @@ BoxTask window_save_str(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
-Task window_save_window(BoxVM *vmp) {
+BoxTask window_save_window(BoxVM *vmp) {
   Window *src  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   Window *dest = BOX_VM_ARG1(vmp, WindowPtr);
   Point translation = {0.0, 0.0}, center = {0.0, 0.0};
@@ -308,11 +310,11 @@ Task window_save_window(BoxVM *vmp) {
     g_error("Window.Save: Saving to arbitrary targets is only available "
             "for \"fig\" windows. Windows of different type accept only "
             "the syntax window.Save[\"filename\"]");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   if (src == dest) {
     g_error("Window.Save: saving a window into itself is not allowed.");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
 
   /* Here we have two possibilities:
@@ -364,12 +366,12 @@ Task window_save_window(BoxVM *vmp) {
     dest->window = Grp_Window_Open(& dest->plan);
     if (dest->window == NULL) {
       g_error("Window.Save: cannot create the window!");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
 
     if (Grp_Window_Is_Error(dest->window)) {
       g_error("Window.Save: cannot complete the given window!");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
 
   } else {
@@ -377,7 +379,7 @@ Task window_save_window(BoxVM *vmp) {
     if (!BoxGBBox_Compute(& bbox, src->window)) {
       g_warning("Computed bounding box is degenerate: "
                 "cannot save the figure!");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
     translation.x = -bbox.min.x;
     translation.y = -bbox.min.y;
@@ -397,10 +399,10 @@ Task window_save_window(BoxVM *vmp) {
     dest->plan.file_name = NULL;
   }
   src->saved = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
-Task window_save_end(BoxVM *vmp) {
+BoxTask window_save_end(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
 
   if (w->saved) {
@@ -409,37 +411,37 @@ Task window_save_end(BoxVM *vmp) {
       w->save_file_name = NULL;
       g_warning("Window.Save: given file name was not used.\n");
     }
-    return Success;
+    return BOXTASK_OK;
 
   } else {
     int all_ok;
 
     if (w->save_file_name == NULL) {
       g_error("window not saved: need a file name!\n");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
 
     all_ok = BoxGWin_Save_To_File(w->window, w->save_file_name);
     BoxMem_Free(w->save_file_name);
     w->save_file_name = NULL;
     w->saved = 1;
-    return (all_ok) ? Success : Failed;
+    return (all_ok) ? BOXTASK_OK : BOXTASK_FAILURE;
   }
 }
 
-Task window_hot_begin(BoxVM *vmp) {
+BoxTask window_hot_begin(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->hot.got.name = 0;
   w->hot.got.point = 0;
   w->hot.name = (char *) NULL;
-  return Success;
+  return BOXTASK_OK;
 }
 
-Task window_hot_point(BoxVM *vmp) {
+BoxTask window_hot_point(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *point = BOX_VM_ARG1_PTR(vmp, Point);
   char *name = (w->hot.got.name) ? w->hot.name : (char *) NULL;
-  Task t = pointlist_add(& w->pointlist, point, name);
+  BoxTask t = pointlist_add(& w->pointlist, point, name);
   if (w->hot.got.name) {
     w->hot.got.name = 0;
     free(w->hot.name);
@@ -449,30 +451,30 @@ Task window_hot_point(BoxVM *vmp) {
   return t;
 }
 
-Task window_hot_string(BoxVM *vm) {
+BoxTask window_hot_string(BoxVM *vm) {
   SUBTYPE_OF_WINDOW(vm, w);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
   const char *name = (char *) s->ptr;
   w->hot.name = strdup(name);
   w->hot.got.name = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
-static Task _add_from_pointlist(Int index, char *name,
-                                void *object, void *data)
+static BoxTask _add_from_pointlist(Int index, char *name,
+                                   void *object, void *data)
 {
   PointList *dest_pl = (PointList *) data;
   Point *p = (Point *) object;
   return pointlist_add(dest_pl, p, name);
 }
 
-Task window_hot_pointlist(BoxVM *vmp) {
+BoxTask window_hot_pointlist(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   IPointList *ipl_to_add = BOX_VM_ARG1(vmp, IPointList *);
   return pointlist_iter(& ipl_to_add->pl, _add_from_pointlist, & w->pointlist);
 }
 
-Task window_hot_end(BoxVM *vmp) {
+BoxTask window_hot_end(BoxVM *vmp) {
   Window *w  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   Point *p = BOX_VM_SUB_CHILD_PTR(vmp, Point);
 
@@ -482,10 +484,10 @@ Task window_hot_end(BoxVM *vmp) {
     g_warning("Hot[] got a name, but not the corresponding point!");
 
   *p = *pointlist_get(& w->pointlist, 0); /* return the last point */
-  return Success;
+  return BOXTASK_OK;
 }
 
-Task window_file_string(BoxVM *vm) {
+BoxTask window_file_string(BoxVM *vm) {
   SUBTYPE_OF_WINDOW(vm, w);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
 
@@ -495,10 +497,10 @@ Task window_file_string(BoxVM *vm) {
   }
   w->plan.have.file_name = 1;
   w->plan.file_name = BoxMem_Strdup(s->ptr);
-  return Success;
+  return BOXTASK_OK;
 }
 
-Task window_res_point(BoxVM *vmp) {
+BoxTask window_res_point(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *res = BOX_VM_ARG1_PTR(vmp, Point);
   if (w->plan.have.resolution) {
@@ -507,10 +509,10 @@ Task window_res_point(BoxVM *vmp) {
   w->plan.resolution.x = res->x;
   w->plan.resolution.y = res->y;
   w->plan.have.resolution = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
-Task window_res_real(BoxVM *vmp) {
+BoxTask window_res_real(BoxVM *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   Real *res = BOX_VM_ARG1_PTR(vmp, Real);
   if (w->plan.have.resolution) {
@@ -518,14 +520,14 @@ Task window_res_real(BoxVM *vmp) {
   }
   w->plan.resolution.y = w->plan.resolution.x = *res;
   w->plan.have.resolution = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
-Task window_show_point(BoxVM *vmp) {
+BoxTask window_show_point(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *p = BOX_VM_ARG1_PTR(vmp, Point);
   BoxGWin_Add_Fake_Point(w->window, p);
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxTask window_bbox(BoxVM *vm) {
@@ -535,3 +537,28 @@ BoxTask window_bbox(BoxVM *vm) {
   b->n = not_degenerate ? 3 : 0;
   return BOXTASK_OK;
 }
+
+BoxTask Box_Lib_G_Str_At_Window_Get(BoxVM *vm) {
+  BoxSubtype *window_get = BoxVM_Get_Child_Target(vm);
+  BoxPoint *point = BoxSubtype_Get_Child_Target(window_get);
+  WindowPtr *wp = BoxSubtype_Get_Parent_Target(window_get);
+
+  BoxStr *s = BoxVM_Get_Child_Target(vm);
+  return BOXTASK_FAILURE;
+}
+
+BoxTask Box_Lib_G_Int_At_Window_Get(BoxVM *vm) {
+  BoxStr *s = BoxVM_Get_Child_Target(vm);
+  return BOXTASK_FAILURE;
+}
+
+BoxTask Box_Lib_G_REAL_At_Window_Get(BoxVM *vm) {
+  BoxStr *s = BoxVM_Get_Child_Target(vm);
+  return BOXTASK_FAILURE;
+}
+
+BoxTask Box_Lib_G_Point_At_Window_Get(BoxVM *vm) {
+  BoxStr *s = BoxVM_Get_Child_Target(vm);
+  return BOXTASK_FAILURE;
+}
+

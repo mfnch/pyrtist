@@ -75,3 +75,6 @@ REAL@Print  [...] ///This.
 Point@Print [...] ///This.
 Str@Print   [...] ///This.
 
+///Intro: whether an object is valid and can be used.
+// If more objects are given, return whether all of them are valid.
+Valid = ...
