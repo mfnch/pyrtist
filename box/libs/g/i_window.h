@@ -64,6 +64,8 @@ typedef struct {
 
 typedef Window *WindowPtr;
 
+/** C counterpart of the Box Window object. */
+typedef Window *BoxLibGWindow;
 
 #  define SUBTYPE_OF_WINDOW(vmp, w) \
     Window *w = *( (Window **) \

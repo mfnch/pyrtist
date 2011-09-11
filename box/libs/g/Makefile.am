@@ -34,7 +34,7 @@ dist_boxlibg_DATA=\
   obj.bxh const.bxh gcore.bxh matrix.bxh transform.bxh \
   raw.bxh cmdstream.bxh points.bxh path.bxh fill.bxh stroke.bxh style.bxh \
   poly.bxh text.bxh texts.bxh circle.bxh circles.bxh line.bxh gradient.bxh \
-  clip.bxh hot.bxh place.bxh put.bxh window.box bbox.box g2.bxh \
+  clip.bxh hot.bxh constraints.box put.bxh window.box bbox.box g2.bxh \
   init.box color.box _oldstyle.bxh _gradient.bxh _line.bxh \
   _circle.bxh _poly.bxh _put.bxh _pointlist.bxh _text.bxh area.bxh
 
@@ -57,7 +57,7 @@ libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
                 i_circle.c i_circle.h i_poly.c i_poly.h \
                 i_put.c i_put.h i_text.c i_text.h \
                 i_style.c i_style.h obj.c obj.h bridge.c bridge.h \
-                csimpleput.c
+  csimpleput.c constraints.c constraints.h transform.c transform.h
 
 libg_la_LIBADD=@CAIRO_LIBS@ ../../box/libboxcore0.2.la
 

@@ -288,7 +288,9 @@ BoxInt BoxGObj_Get_Type(BoxGObj *gobj, BoxInt idx) {
 }
 
 void *BoxGObj_To(BoxGObj *gobj, BoxGObjKind kind) {
-  return (gobj->kind == kind) ? & gobj->value : NULL;
+  if (gobj != NULL)
+    return (gobj->kind == kind) ? & gobj->value : NULL;
+  return NULL;
 }
 
 BoxTask BoxGObj_Extract_Array(BoxGObj *gobj, BoxGObjKind kind,

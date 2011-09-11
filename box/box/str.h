@@ -57,6 +57,8 @@ BOXEXPORT BoxTask BoxStr_Init_From(BoxStr *new_str, const BoxStr *src);
  */
 BOXEXPORT char *BoxStr_To_C_String(BoxStr *s);
 
+
+
 /** Return the pointer to the raw data in the string. */
 BOXEXPORT char *BoxStr_Get_Ptr(BoxStr *s);
 

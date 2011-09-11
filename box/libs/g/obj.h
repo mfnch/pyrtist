@@ -55,6 +55,9 @@ typedef struct {
 
 typedef BoxGObj *BoxGObjPtr;
 
+/** C counterpart of the Box Obj object. */
+typedef BoxGObj *BoxLibGObj;
+
 /** Initialisation routine for BoxGObj objects. */
 void BoxGObj_Init(BoxGObj *gobj);
 
@@ -85,7 +88,10 @@ size_t BoxGObj_Get_Num(BoxGObj *gobj);
 BoxInt BoxGObj_Get_Type(BoxGObj *gobj, BoxInt idx);
 
 /** If the object has the given kind, return a pointer to its content,
- * otherwise return NULL
+ * otherwise return NULL. BoxGObj_To(NULL, whatever) returns NULL.
+ * This allows safely using: BoxGObj_To(BoxGObj_Get(gobj, idx), kind).
+ * Indeed, if the index 'idx' is out of bounds, then BoxGObj_Get returns NULL,
+ * which is happily propagated by BoxGObj_To.
  */
 void *BoxGObj_To(BoxGObj *gobj, BoxGObjKind kind);
 

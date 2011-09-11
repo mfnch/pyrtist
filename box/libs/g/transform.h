@@ -55,17 +55,13 @@ typedef struct {
 
 } BoxGTransform;
 
-#if 0
-Transform = ++(Point translation, rotation_center, scale_factors
-               Real rotation_angle)
-#endif
-
 /** Used by BoxG_Auto_Transform to signal errors. */
 typedef enum {
   BOXGAUTOTRANSFORMERR_NO_ERR=0,
   BOXGAUTOTRANSFORMERR_NOT_ENOUGH_POINTS,
   BOXGAUTOTRANSFORMERR_ZERO_WEIGHTS,
   BOXGAUTOTRANSFORMERR_NOT_IMPLEMENTED
+
 } BoxGAutoTransformErr;
 
 

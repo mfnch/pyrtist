@@ -93,6 +93,9 @@ BBox@Window[.Show[$]]
 ///Intro: get the bounding box of the window.
 Window@BBox "window_bbox" ?
 
+///Intro: number of hot points in the window.
+Window@Num "Box_Lib_G_Window_At_Num" ?
+
 ///Intro: retrieve a {type(Hot)} point of the window.
 Window.Get = Point
 
@@ -104,7 +107,11 @@ Int@Window.Get "Box_Lib_G_Int_At_Window_Get" ?
 
 ///Intro: retrieve the {type(Hot)} point by interpolated index.
 // For a description of interpolated indices see {type(Points)}.
-REAL@Window.Get "Box_Lib_G_Real_At_Window_Get" ?
+REAL@Window.Get[
+  Fail["Not implemented yet!"]
+]
 
 ///Same.
-Point@Window.Get "Box_Lib_G_Point_At_Window_Get" ?
+Point@Window.Get[
+  Fail["Not implemented yet!"]
+]

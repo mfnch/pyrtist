@@ -538,27 +538,37 @@ BoxTask window_bbox(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
-BoxTask Box_Lib_G_Str_At_Window_Get(BoxVM *vm) {
-  BoxSubtype *window_get = BoxVM_Get_Child_Target(vm);
-  BoxPoint *point = BoxSubtype_Get_Child_Target(window_get);
-  WindowPtr *wp = BoxSubtype_Get_Parent_Target(window_get);
 
-  BoxStr *s = BoxVM_Get_Child_Target(vm);
-  return BOXTASK_FAILURE;
+BoxTask Box_Lib_G_Window_At_Num(BoxVM *vm) {
+  BoxInt *num = BoxVM_Get_Parent_Target(vm);
+  Window *w = *((WindowPtr *) BoxVM_Get_Child_Target(vm));
+  *num += pointlist_num(& w->pointlist);
+  return BOXTASK_OK;
+}
+
+BoxTask Box_Lib_G_Str_At_Window_Get(BoxVM *vm) {
+  BoxSubtype *window_get = BoxVM_Get_Parent_Target(vm);
+  BoxPoint *point = BoxSubtype_Get_Child_Target(window_get);
+  Window *w = *((WindowPtr *) BoxSubtype_Get_Parent_Target(window_get));
+  BoxStr *name = BoxVM_Get_Child_Target(vm);
+  char *c_name = BoxStr_To_C_String(name);
+  BoxPoint *found = pointlist_find(& w->pointlist, c_name);
+  if (found) {
+    *point = *found;
+    return BOXTASK_OK;
+
+  } else {
+    BoxVM_Set_Fail_Msg(vm, "Cannot find hot point with the given name "
+                           "in the Window");
+    return BOXTASK_FAILURE;
+  }
 }
 
 BoxTask Box_Lib_G_Int_At_Window_Get(BoxVM *vm) {
-  BoxStr *s = BoxVM_Get_Child_Target(vm);
-  return BOXTASK_FAILURE;
+  BoxSubtype *window_get = BoxVM_Get_Parent_Target(vm);
+  BoxPoint *point = BoxSubtype_Get_Child_Target(window_get);
+  Window *w = *((WindowPtr *) BoxSubtype_Get_Parent_Target(window_get));
+  BoxInt idx = *((BoxInt *) BoxVM_Get_Child_Target(vm)) + 1;
+  *point = *(pointlist_get(& w->pointlist, idx));
+  return BOXTASK_OK;
 }
-
-BoxTask Box_Lib_G_REAL_At_Window_Get(BoxVM *vm) {
-  BoxStr *s = BoxVM_Get_Child_Target(vm);
-  return BOXTASK_FAILURE;
-}
-
-BoxTask Box_Lib_G_Point_At_Window_Get(BoxVM *vm) {
-  BoxStr *s = BoxVM_Get_Child_Target(vm);
-  return BOXTASK_FAILURE;
-}
-

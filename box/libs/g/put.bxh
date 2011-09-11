@@ -4,7 +4,7 @@
 
 include "matrix"
 include "transform"
-include "place"
+include "constraints"
 
 // Object providing a subset of functionality of Put.
 // In particular this object allows only to manually place figures.

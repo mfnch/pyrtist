@@ -44,6 +44,7 @@
 
 #include "error.h"
 #include "graphic.h"
+#include "constraints.h"
 #include "transform.h"
 
 /*#define DEBUG*/
@@ -101,8 +102,6 @@ BoxG_Auto_Transform(BoxGTransform *transform,
     return BOXGAUTOTRANSFORMERR_ZERO_WEIGHTS;
 
   if (allowed_transforms & BOXGALLOW_TRANSLATE) {
-    int allowed_translations = allowed_transforms & BOXGALLOW_TRANSLATE;
-
     /* One or both of the translational degrees of freedom have to be
      * handled automatically: we automatically determine Q and T.
      */
@@ -151,11 +150,13 @@ BoxG_Auto_Transform(BoxGTransform *transform,
 
   else {	
     /* Now we compute all the averages we need in the next steps */
-    BoxPoint g_avg, g2_avg, i_avg, j_avg;
+    BoxPoint g_avg,
+             g2_avg = {0.0, 0.0},
+             i_avg = {0.0, 0.0},
+             j_avg = {0.0, 0.0};
     BoxPoint U = 
       (BoxPoint) {transform->translation.x + transform->rotation_center.x,
 		  transform->translation.y + transform->rotation_center.y};
-
     for (i = 0; i < n; i++) {
       BoxReal w = weight[i];
       BoxPoint
@@ -211,7 +212,7 @@ BoxG_Auto_Transform(BoxGTransform *transform,
 	transform->rotation_cos = A/modAB,
 	transform->rotation_sin = B/modAB;
 	transform->rotation_angle =
-          atan2(transform->rotation_sin, transform->rotation_sin);
+          atan2(transform->rotation_sin, transform->rotation_cos);
 
       } else {
 	/* Se la rotazione e' manuale, conosco theta, ma non sin e cos! */
@@ -221,7 +222,6 @@ BoxG_Auto_Transform(BoxGTransform *transform,
 
       /* What is missing is just the scaling factor! */
       if (allowed_transforms & BOXGALLOW_SCALE) {
-
 	BoxReal C = cos_tau*cos_tau*g2_avg.x + sin_tau*sin_tau*g2_avg.y;
 	transform->scale_factor = 
           (A*transform->rotation_cos + B*transform->rotation_sin)/C;
