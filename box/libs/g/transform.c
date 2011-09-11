@@ -237,7 +237,7 @@ BoxG_Auto_Transform(BoxGTransform *transform,
     }
   }
 
-  return 1;
+  return 0;
 }
 
 BoxTask BoxGAllow_Of_String(BoxGAllow *allow, const char *string) {
