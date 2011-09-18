@@ -31,15 +31,28 @@ Line@Grad[
   [If[Num[$] != 2]
      Fail["The line given to Gradient should have exactly 2 points"]]
   .type = 1
-  
+  .point1 = $.Get[0]
+  .point2 = $.Get[1]
+
+  Print["Line from ", $$.point1, " to ", $$.point2;]
 ]
 
 ///Intro: set the gradient shape to a circle.
 Circles@Grad[
-  [n = Num[$], If[n != 1 && n != 2]
+  n = Num[$]
+  [If[n != 1 && n != 2]
      Fail["The Circles object given to Gradient "
           "should contain one or two circles"]]
   .type = 2
+  circle1 = $.Get[0]
+  circle2 = Circle[If[n >= 2], $.Get[1], Else[], circle1, 0]
 
+  Print["Circle 1: center=", circle1.center, ", radius=", circle1.radius;
+        "Circle 2: center=", circle2.center, ", radius=", circle2.radius;]
 ]
 
+///Intro: convert the gradient into a command stream.
+Grad@CmdStream[
+
+
+]

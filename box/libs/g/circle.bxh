@@ -23,6 +23,13 @@ Real@Circle[
   $$.have.radius = nr
 ]
 
+///Intro: copy the circle shape.
+Circle@Circle[
+  [If[$.have.center], $$.center = $.center]
+  [If[$.have.radius], $$.radius = $.radius]
+  \ $$.style[$.style]
+]
+
 ///Intro: convert a Circle to Obj
 Circle@Obj[
   If[$.have.center && $.have.radius]

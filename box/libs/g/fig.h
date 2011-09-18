@@ -26,7 +26,7 @@
 #  include "graphic.h"
 
 /* Procedure per gestire i layers */
-BoxGWin *fig_open_win(int numlayers);
+BoxGWin *BoxGWin_Create_Fig(int numlayers);
 int BoxGWin_Fig_Destroy_Layer(BoxGWin *w, int l);
 int BoxGWin_Fig_New_Layer(BoxGWin *w);
 void BoxGWin_Fig_Select_Layer(BoxGWin *w, int l);
@@ -36,6 +36,6 @@ Real fig_transform_factor(Real angle);
 void BoxGWin_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *src);
 void BoxGWin_Fig_Draw_Fig_With_Matrix(BoxGWin *dest, BoxGWin *src, Matrix *m);
 
-int BoxGWin_Fig_Save_Fig(BoxGWin *src, GrpWindowPlan *plan);
+int BoxGWin_Fig_Save_Fig(BoxGWin *src, BoxGWinPlan *plan);
 
 #endif

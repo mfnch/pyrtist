@@ -45,6 +45,7 @@
 #include "i_gradient.h"
 
 /*#define DEBUG*/
+#define DEBUG_WIN_REFS 0
 
 static void My_Init_Style(GStyle *gs, FillStyle ds, DrawWhen dw) {
   g_style_new(gs, G_STYLE_NONE);
@@ -98,9 +99,13 @@ BoxTask Box_Lib_G_Init_At_Window(BoxVM *vm) {
    */
   w->num_references = 1;
 
+#if DEBUG_WIN_REFS == 1
+  printf("Creating Window object at %p\n", w);
+#endif
+
   w->initialised = 0;
   w->plan.have.type = 0;
-  w->plan.type = Grp_Window_Type_From_String("fig");
+  w->plan.type = BoxGWin_Type_From_String("fig");
   w->plan.have.origin = 0;
   w->plan.origin.x = 0.0;
   w->plan.origin.y = 0.0;
@@ -129,6 +134,10 @@ BoxTask Box_Lib_G_Init_At_Window(BoxVM *vm) {
 
 static void My_Window_Reference(Window *w) {
   ++(w->num_references);
+#if DEBUG_WIN_REFS == 1
+  printf("Referencing Window object at %p (refs --> %d)\n",
+         w, (int) w->num_references);
+#endif
 }
 
 static void My_Window_Unreference(Window **w_ptr) {
@@ -136,6 +145,11 @@ static void My_Window_Unreference(Window **w_ptr) {
 
   --(w->num_references);
   assert(w->num_references >= 0);
+
+#if DEBUG_WIN_REFS == 1
+  printf("Unreferencing Window object at %p (refs --> %d)\n",
+         w, (int) w->num_references);
+#endif
 
   if (w->num_references == 0) {
     BoxMem_Free(w->plan.file_name);
@@ -200,7 +214,7 @@ BoxTask Box_Lib_G_Str_At_Window(BoxVM *vm) {
   }
 
 
-  w->plan.type = Grp_Window_Type_From_String(type_str);
+  w->plan.type = BoxGWin_Type_From_String(type_str);
   if (w->plan.type < 0) {
     g_error("Unrecognized window type!");
     return BOXTASK_FAILURE;
@@ -237,7 +251,7 @@ BoxTask Box_Lib_G_Close_At_Window(BoxVM *vm) {
   if (!w->initialised) {
     w->plan.have.resolution = 1;
     w->plan.have.origin = 1;
-    w->window = Grp_Window_Open(& w->plan);
+    w->window = BoxGWin_Create(& w->plan);
     if (w->window == NULL) {
       g_error("cannot create the window!");
       return BOXTASK_FAILURE;
@@ -305,7 +319,7 @@ BoxTask window_save_window(BoxVM *vmp) {
   Real sx = 1.0, sy = 1.0, rot_angle = 0.0;
   Matrix m;
 
-  int type_fig = Grp_Window_Type_From_String("fig");
+  int type_fig = BoxGWin_Type_From_String("fig");
   if (src->plan.type != type_fig) {
     g_error("Window.Save: Saving to arbitrary targets is only available "
             "for \"fig\" windows. Windows of different type accept only "
@@ -363,7 +377,7 @@ BoxTask window_save_window(BoxVM *vmp) {
     }
 
     BoxGWin_Finish_Drawing(dest->window);
-    dest->window = Grp_Window_Open(& dest->plan);
+    dest->window = BoxGWin_Create(& dest->plan);
     if (dest->window == NULL) {
       g_error("Window.Save: cannot create the window!");
       return BOXTASK_FAILURE;

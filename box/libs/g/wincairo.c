@@ -1145,7 +1145,7 @@ static int My_WinCairo_Save_To_File(BoxGWin *w, const char *file_name) {
 }
 
 /** Set the default methods to the cairo windows */
-static void wincairo_repair(BoxGWin *w) {
+static void My_Wincairo_Repair(BoxGWin *w) {
   BoxGWin_Block(w);
   w->interpret = My_WinCairo_Interpret;
   w->save_to_file = My_WinCairo_Save_To_File;
@@ -1163,7 +1163,7 @@ static void wincairo_repair(BoxGWin *w) {
   w->add_text_path = My_WinCairo_Text_Path;
 }
 
-BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
+BoxGWin *BoxGWin_Create_Cairo(BoxGWinPlan *plan, BoxGErr *err) {
   BoxGWin *w;
   cairo_surface_t *surface;
   cairo_t *cr;
@@ -1178,18 +1178,27 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
                                                   double height_in_points);
   StreamSurfaceCreate stream_surface_create = (StreamSurfaceCreate) NULL;
 
+  /* If err == NULL, err points to a dummy BoxGErr, which simplifies coding */
+  if (err != NULL)
+    *err = BOXGERR_NO_ERR;
+
+  else {
+    static BoxGErr dummy_err;
+    err = & dummy_err;
+  }
+
   if (!plan->have.type) {
-    g_error("cairo_open_win: missing window type!");
+    *err = BOXGERR_MISS_WIN_TYPE;
     return NULL;
   }
 
   wt = (WT) plan->type;
 
-  w = (GrpWindow *) malloc(sizeof(GrpWindow));
-  if (w == NULL) {
-    g_error("cairo_open_win: malloc failed!");
+  w = BoxGWin_Create_Invalid(err);
+  if (*err)
     return NULL;
-  }
+  else
+    assert(w != NULL);
 
   switch(wt) {
   case WT_A1:
@@ -1219,8 +1228,7 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
     win_class = WC_STREAM;
     break;
 #else
-    g_error("cairo_open_win: Cairo was not compiled "
-            "with support for the PostScript backend!");
+    *err = BOXGWIN_CAIRO_MISSES_PS;
     return NULL;
 #endif
 
@@ -1230,8 +1238,7 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
     win_class = WC_STREAM;
     break;
 #else
-    g_error("cairo_open_win: Cairo was not compiled "
-            "with support for the PostScript backend!");
+    *err = BOXGWIN_CAIRO_MISSES_PS;
     return NULL;
 #endif
 
@@ -1241,8 +1248,7 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
     win_class = WC_STREAM;
     break;
 #else
-    g_error("cairo_open_win: Cairo was not compiled "
-            "with support for the PDF backend!");
+    *err = BOXGWIN_CAIRO_MISSES_PDF;
     return NULL;
 #endif
 
@@ -1252,18 +1258,17 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
     win_class = WC_STREAM;
     break;
 #else
-    g_error("cairo_open_win: Cairo was not compiled "
-            "with support for the SVG backend!");
+    *err = BOXGWIN_CAIRO_MISSES_PDF;
     return NULL;
 #endif
 
   default:
-    g_error("cairo_open_win: unknown window type!");
+    *err = BOXGERR_UNKNOWN_WIN_TYPE;
     return NULL;
   }
 
   if (!plan->have.size ) {
-    g_error("Cannot create Cairo image surface: size missing!");
+    *err = BOXGERR_WIN_SIZE_MISSING;
     return NULL;
   }
 
@@ -1284,8 +1289,8 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
 
   if (win_class == WC_IMAGE) {
     if (!plan->have.resolution) {
-      g_error("Cannot create Cairo image surface: resolution missing!");
-      return (GrpWindow *) NULL;
+      *err = BOXGERR_WIN_RES_MISSING;
+      return NULL;
     }
 
     w->resx = plan->resolution.x * (plan->size.x < 0.0 ? -1.0 : 1.0);
@@ -1300,8 +1305,8 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
     double width, height;
 
     if (! plan->have.file_name) {
-      g_error("Cannot create Cairo image surface: file name missing!");
-      return (GrpWindow *) NULL;
+      *err = BOXGERR_WIN_FILENAME_MISSING;
+      return NULL;
     }
 
     /* These quantities are used in the function My_Map_Point (macros
@@ -1334,7 +1339,7 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
     }
 
   } else {
-    g_error("cairo_open_win: shouldn't happen!");
+    *err = BOXGERR_UNEXPECTED;
     return NULL;
   }
 
@@ -1352,16 +1357,14 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
 
   status = cairo_surface_status(surface);
   if (status != CAIRO_STATUS_SUCCESS) {
-    g_error("Cannot create Cairo surface:");
-    g_error(cairo_status_to_string(status));
+    *err = BOXGERR_CAIRO_SURFACE_ERR;
     return NULL;
   }
 
   cr = cairo_create(surface);
   status = cairo_status(cr);
   if (status != CAIRO_STATUS_SUCCESS) {
-    g_error("Cannot create Cairo context:");
-    g_error(cairo_status_to_string(status));
+    *err = BOXGERR_CAIRO_CONTEXT_ERR;
     return NULL;
   }
 
@@ -1376,9 +1379,9 @@ BoxGWin *cairo_open_win(GrpWindowPlan *plan) {
 
   w->ptr = (void *) cr;
 
-  /* Ora do' le procedure per gestire la finestra */
+  /* We now set the Cairo-specific methods to handle the window */
   w->quiet = 0;
-  w->repair = wincairo_repair;
+  w->repair = My_Wincairo_Repair;
   w->repair(w);
   return w;
 }

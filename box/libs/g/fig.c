@@ -416,7 +416,7 @@ static void My_Fig_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
 
 static int My_Fig_Save_To_File(BoxGWin *w, const char *file_name) {
   char *out_type = "eps";
-  GrpWindowPlan plan;
+  BoxGWinPlan plan;
 
   enum {EXT_EPS=0, EXT_BMP, EXT_PNG, EXT_PDF, EXT_PS, EXT_SVG, EXT_NUM};
   char *ext[] = {"eps", "bmp", "png", "pdf", "ps", "svg", (char *) NULL};
@@ -434,7 +434,7 @@ static int My_Fig_Save_To_File(BoxGWin *w, const char *file_name) {
 
   plan.file_name = (char *) file_name;
   plan.have.file_name = 1;
-  plan.type = Grp_Window_Type_From_String(out_type);
+  plan.type = BoxGWin_Type_From_String(out_type);
   plan.have.type = 1;
   assert(plan.type >= 0);
   plan.have.size = 0;
@@ -478,7 +478,7 @@ static void My_Fig_Repair(BoxGWin *w) {
  *  Ad ogni layer e' associato un numero (da 1 a numlayers) e questo viene
  *  utilizzato per far riferimento ad esso.
  */
-BoxGWin *fig_open_win(int numlayers) {
+BoxGWin *BoxGWin_Create_Fig(int numlayers) {
   BoxGWin *wd;
   FigHeader *figh;
   LayerHeader *layh;
@@ -486,7 +486,7 @@ BoxGWin *fig_open_win(int numlayers) {
   int i;
 
   if (numlayers < 1) {
-    ERRORMSG("fig_open_win", "Figura senza layers");
+    ERRORMSG("BoxGWin_Create_Fig", "Figura senza layers");
     return NULL;
   }
 
@@ -496,7 +496,7 @@ BoxGWin *fig_open_win(int numlayers) {
   figh = (FigHeader *) BoxMem_Alloc(sizeof(FigHeader));
 
   if (figh == NULL) {
-    ERRORMSG("fig_open_win", "Out of memory");
+    ERRORMSG("BoxGWin_Create_Fig", "Out of memory");
     return NULL;
   }
 
@@ -525,7 +525,7 @@ BoxGWin *fig_open_win(int numlayers) {
 
   wd = (BoxGWin *) BoxMem_Alloc(sizeof(BoxGWin));
   if (wd == NULL) {
-    ERRORMSG("fig_open_win", "Memoria esaurita");
+    ERRORMSG("BoxGWin_Create_Fig", "Memoria esaurita");
     return NULL;
   }
 
@@ -936,7 +936,7 @@ void BoxGWin_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *src) {
   fig_matrix = save_matrix;
 }
 
-int BoxGWin_Fig_Save_Fig(BoxGWin *src, GrpWindowPlan *plan) {
+int BoxGWin_Fig_Save_Fig(BoxGWin *src, BoxGWinPlan *plan) {
   Point translation, center;
   Real sx, sy, rot_angle;
   BoxGWin *dest;
@@ -973,7 +973,7 @@ int BoxGWin_Fig_Save_Fig(BoxGWin *src, GrpWindowPlan *plan) {
   plan->origin.x = 0.0;
   plan->origin.y = 0.0;
   plan->have.origin = 1;
-  dest = Grp_Window_Open(plan);
+  dest = BoxGWin_Create(plan);
   if (dest != NULL) {
     Matrix m;
     Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);

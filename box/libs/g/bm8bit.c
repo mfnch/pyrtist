@@ -41,9 +41,7 @@ typedef struct {
   unsigned char xormask;  /* Puntatore alla maschera xor per il disegno di punti */
 } gr8b_wrdep;
 
-/* Procedure definite in questo file */
-BoxGWin *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
-                          Real resx, Real resy);
+
 static void gr8b_repair(BoxGWin *wd);
 
 /* Questa macro restituisce il segno di un double
@@ -72,8 +70,8 @@ static void gr8b_repair(BoxGWin *wd);
  *  per la gestione della finestra stessa.
  *  In caso di errore invece restituisce 0.
  */
-BoxGWin *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
-                          Real resx, Real resy) {
+BoxGWin *BoxGWin_Create_BM8(BoxReal ltx, BoxReal lty, BoxReal rdx, BoxReal rdy,
+                            BoxReal resx, BoxReal resy) {
    void *winptr;
    BoxGWin *wd;
   long numptx, numpty, bytesperline, windim;
@@ -81,13 +79,13 @@ BoxGWin *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
 
   wd = (BoxGWin *) malloc(sizeof(BoxGWin));
   if (wd == NULL ) {
-    ERRORMSG("gr4b_open_win", "Memoria esaurita");
+    ERRORMSG("BoxGWin_Create_BM8", "Memoria esaurita");
     return NULL;
   }
 
   wd->wrdep = (gr8b_wrdep *) malloc(sizeof(gr8b_wrdep));
   if (wd->wrdep == NULL) {
-    ERRORMSG("gr4b_open_win", "Memoria esaurita");
+    ERRORMSG("BoxGWin_Create_BM8", "Memoria esaurita");
     return NULL;
   }
 
@@ -103,8 +101,7 @@ BoxGWin *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
   numpty = fabs(ly) * resy;
 
   if ((numptx < 2) || (numpty < 2)) {
-    ERRORMSG("gr4b_open_win",
-     "Dimensioni della finestra troppo piccole");
+    ERRORMSG("BoxGWin_Create_BM8", "Dimensioni della finestra troppo piccole");
     return NULL;
   }
 
@@ -116,8 +113,7 @@ BoxGWin *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
 
   /* Creo la finestra e la svuoto */
   if ( (winptr = (void *) calloc(windim+4, 1)) == NULL ) {
-    ERRORMSG("gr8b_open_win",
-     "Memoria non sufficiente per creare una finestra di queste dimensioni");
+    ERRORMSG("BoxGWin_Create_BM8", "Out of memory.");
     return NULL;
   }
 
@@ -185,7 +181,7 @@ BoxGWin *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
 }
 
 /* DESCRIZIONE: Chiude una finestra grafica aperta in precedenza
- *  con la funzione gr8b_open_win.
+ *  con la funzione BoxGWin_Create_BM8.
  */
 static void My_Finish_Drawing(BoxGWin *w) {
   free(w->ptr);

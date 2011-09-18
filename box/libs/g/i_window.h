@@ -37,7 +37,7 @@
 typedef struct {
   size_t        num_references;
   int           initialised;
-  GrpWindowPlan plan;
+  BoxGWinPlan   plan;
   BoxGWin       *window;
   GStyle        style;
 

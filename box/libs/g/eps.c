@@ -414,7 +414,7 @@ static const char *ps_std_defs =
  * to it. The window will have size size_x and size_y (in mm) and will
  * show coordinates from (0, 0) to (size_x, size_y).
  */
-BoxGWin *eps_open_win(const char *file, Real size_x, Real size_y) {
+BoxGWin *BoxGWin_Create_EPS(const char *file, BoxReal size_x, BoxReal size_y) {
   BoxGWin *wd;
   FILE *winstream;
   Real size_x_psunit, size_y_psunit;
@@ -430,14 +430,14 @@ BoxGWin *eps_open_win(const char *file, Real size_x, Real size_y) {
   /* Creo la finestra */
   wd = (BoxGWin *) malloc(sizeof(BoxGWin));
   if (wd == NULL) {
-    ERRORMSG("eps_open_win", "Memoria esaurita");
+    ERRORMSG("BoxGWin_Create_EPS", "Memoria esaurita");
     return NULL;
   }
 
   /* Apro il file su cui verranno scritte le istruzioni postscript */
   winstream = fopen(file, "w");
   if (winstream == NULL) {
-    ERRORMSG("eps_open_win", "Cannot open the file for writing!");
+    ERRORMSG("BoxGWin_Create_EPS", "Cannot open the file for writing!");
     free(wd);
     return NULL;
   }
@@ -482,7 +482,7 @@ int eps_save_fig(const char *file_name, BoxGWin *figure) {
 
   size.x = fabs(bbox.max.x - bbox.min.x);
   size.y = fabs(bbox.max.y - bbox.min.y);
-  dest = eps_open_win(file_name, size.x, size.y);
+  dest = BoxGWin_Create_EPS(file_name, size.x, size.y);
   translation.x = -bbox.min.x;
   translation.y = -bbox.min.y;
   center.y = center.x = 0.0;
@@ -528,26 +528,25 @@ static void ps_repair(BoxGWin *w) {
   w->finish_drawing = My_PS_Close_Win;
 }
 
-/* NOME: ps_open_win
- * DESCRIZIONE: Apre una finestra grafica di tipo postscript.
+/* DESCRIZIONE: Apre una finestra grafica di tipo postscript.
  *  Tale finestra tradurra' i comandi grafici ricevuti in istruzioni postscript,
  *  che saranno scritte immediatamente su file.
  */
-BoxGWin *ps_open_win(const char *file) {
+BoxGWin *BoxGWin_Create_PS(const char *file) {
   BoxGWin *wd;
   FILE *winstream;
 
   /* Creo la finestra */
   wd = (BoxGWin *) malloc( sizeof(BoxGWin) );
   if ( wd == NULL ) {
-    ERRORMSG("ps_open_win", "Memoria esaurita");
+    ERRORMSG("BoxGWin_Create_PS", "Memoria esaurita");
     return NULL;
   }
 
   /* Apro il file su cui verranno scritte le istruzioni postscript */
   winstream = fopen(file, "w");
   if ( winstream == NULL ) {
-    ERRORMSG("ps_open_win", "Impossibile aprire il file");
+    ERRORMSG("BoxGWin_Create_PS", "Impossibile aprire il file");
     free(wd);
     return NULL;
   }
@@ -582,7 +581,7 @@ int ps_save_fig(const char *file_name, BoxGWin *figure) {
 
   BoxGBBox_Compute(& bbox, figure);
 
-  dest = ps_open_win(file_name);
+  dest = BoxGWin_Create_PS(file_name);
   translation.x = -bbox.min.x;
   translation.y = -bbox.min.y;
   center.y = center.x = 0.0;

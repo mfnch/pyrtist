@@ -29,7 +29,26 @@
 #  include "gpath.h"
 #  include "obj.h"
 
-/****** DEFINIZIONE DELLE STRUTTURE NECESSARIE PER LA GRAFICA ******/
+/** Enumeration of possible errors occuring in the graphic library */
+typedef enum {
+  BOXGERR_NO_ERR=0,
+  BOXGERR_UNEXPECTED,
+  BOXGERR_NO_MEMORY,
+  BOXGERR_MISS_WIN_TYPE,
+  BOXGERR_CAIRO_MISSES_PS,
+  BOXGERR_CAIRO_MISSES_PDF,
+  BOXGERR_CAIRO_MISSES_SVG,
+  BOXGERR_UNKNOWN_WIN_TYPE,
+  BOXGERR_WIN_SIZE_MISSING,
+  BOXGERR_WIN_RES_MISSING,
+  BOXGERR_WIN_FILENAME_MISSING,
+  BOXGERR_CAIRO_SURFACE_ERR,
+  BOXGERR_CAIRO_CONTEXT_ERR
+
+} BoxGErr;
+
+/** Return a string corresponding to the given error code. */
+const char *BoxGErr_To_Str(BoxGErr err);
 
 typedef enum {
   FILLSTYLE_VOID=0,
@@ -94,7 +113,7 @@ typedef struct {
         resolution; /** Resolution in points per mm */
   char *file_name;
   int num_layers;
-} GrpWindowPlan;
+} BoxGWinPlan;
 
 /** Font feature: slant */
 typedef enum {
@@ -164,7 +183,6 @@ typedef struct {
 
 /** Descriptor of a graphic Window */
 typedef struct _grp_window BoxGWin;
-typedef BoxGWin GrpWindow;
 
 /* BoxGWin would need some cleaning. At the moment it contains stuff which
  * is not relevant for all kinds of windows...
@@ -247,6 +265,9 @@ struct _grp_window {
 
   /** This function can be internally used to report errors. */
   void (*_report_error)(BoxGWin *w, const char *msg);
+
+  /** Pattern which is being created (during BoxGWin_Intepret_Obj). */
+  void *pattern;
 
   void *ptr;           /**< Pointer to the window data */
 
@@ -375,16 +396,27 @@ extern Real grp_tomm;
 extern Real grp_torad;
 extern Real grp_toppmm;
 
-/* Window type (in GrpWindowPlan) */
+/* Window type (in BoxGWinPlan) */
 typedef enum {WT_NONE=-1, WT_BM1=0, WT_BM4, WT_BM8, WT_FIG,
               WT_PS, WT_EPS, WT_A1, WT_A8, WT_RGB24, WT_ARGB32,
               WT_PDF, WT_SVG, WT_MAX} WT;
 
 /** Get the window ID (an integer number) from the window type (a string) */
-int Grp_Window_Type_From_String(const char *type_str);
+int BoxGWin_Type_From_String(const char *type_str);
+
+/** Create an invalid BoxGWin object. All BoxGWin object should be constructed
+ * by extending an invalid BoxGWin object (and should thus call the function
+ * below in their constructors).
+ */
+BoxGWin *BoxGWin_Create_Invalid(BoxGErr *err);
+
+/** Destroy a BoxGWin object created with BoxGWin_Destroy_Invalid. All BoxGWin
+ * destructors should be implemented by calling this function.
+ */
+void BoxGWin_Destroy_Invalid(BoxGWin *w);
 
 /** Unified function to open any kind of window */
-BoxGWin *Grp_Window_Open(GrpWindowPlan *plan);
+BoxGWin *BoxGWin_Create(BoxGWinPlan *plan);
 
 /** Initialise bounding box object */
 void Grp_BB_Init(BB *bb);
@@ -411,19 +443,19 @@ void Color_Trunc(Color *c);
 
 /* Dichiarazioni delle procedure della libreria */
 /* Funzioni grafiche di alto livello */
-BoxGWin *gr1b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
-                       Real resx, Real resy);
-BoxGWin *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
-                       Real resx, Real resy);
-BoxGWin *gr8b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
-                       Real resx, Real resy);
-BoxGWin *fig_open_win(int numlayers);
-BoxGWin *ps_open_win(const char *file);
-BoxGWin *eps_open_win(const char *file, Real x, Real y);
+BoxGWin *BoxGWin_Create_BM1(BoxReal ltx, BoxReal lty, BoxReal rdx, BoxReal rdy,
+                            BoxReal resx, BoxReal resy);
+BoxGWin *BoxGWin_Create_BM4(BoxReal ltx, BoxReal lty, BoxReal rdx, BoxReal rdy,
+                            BoxReal resx, BoxReal resy);
+BoxGWin *BoxGWin_Create_BM8(BoxReal ltx, BoxReal lty, BoxReal rdx, BoxReal rdy,
+                            BoxReal resx, BoxReal resy);
+BoxGWin *BoxGWin_Create_Fig(int numlayers);
+BoxGWin *BoxGWin_Create_PS(const char *file);
+BoxGWin *BoxGWin_Create_EPS(const char *file, BoxReal x, BoxReal y);
 int ps_save_fig(const char *file_name, BoxGWin *figure);
 int eps_save_fig(const char *file_name, BoxGWin *figure);
 
-/** Type of function called when Grp_Window_Break has been used. */
+/** Type of function called when BoxGWin_Block_With has been used. */
 typedef void (*BoxGOnError)(BoxGWin *w, const char *where);
 
 /** Block the window 'w', such that it reports errors when used. */
@@ -432,12 +464,13 @@ void BoxGWin_Block(BoxGWin *w);
 /** Similar to BoxGWin_Block, but when the window 'w' is used,
  * the function on_error is called, instead of reporting an error.
  */
-void BoxGWin_Break(BoxGWin *w, BoxGOnError on_error);
+void BoxGWin_Block_With(BoxGWin *w, BoxGOnError on_error);
 
-/** Restore the window 'w', after it has been broken with BoxGWin_Block
- * or BoxGWin_Break
+/** Restore the window 'w', after it has been blocked with BoxGWin_Block
+ * or BoxGWin_Block_With
  */
-void Grp_Window_Repair(BoxGWin *w);
+#define BoxGWin_Repair(w) \
+  (w)->repair(w)
 
 /** Create a Window which displays the given error message, when someone
  * tries to use it. The error message is fprinted to the give stream.

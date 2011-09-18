@@ -44,8 +44,6 @@ typedef struct {
 } gr4b_wrdep;
 
 /* Procedure definite in questo file */
-BoxGWin *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
-                          Real resx, Real resy);
 static void gr4b_repair(BoxGWin *wd);
 
 /* Questa macro restituisce il segno di un double
@@ -61,8 +59,7 @@ static void gr4b_repair(BoxGWin *wd);
 /***************************************************************************************/
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
 
-/* NOME: gr4b_open_win
- * DESCRIZIONE: Apre una finestra grafica di forma rettangolare
+/* DESCRIZIONE: Apre una finestra grafica di forma rettangolare
  *  associando all'angolo in alto a sinistra le coordinate (ltx, lty)
  *  e all'angolo in basso a destra le coordinate (rdx, rdy).
  *  Tutte queste coordinate sono espresse in "unita' (che indichiamo con "u"
@@ -75,8 +72,8 @@ static void gr4b_repair(BoxGWin *wd);
  *  per la gestione della finestra stessa.
  *  In caso di errore invece restituisce 0.
  */
-BoxGWin *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
-                          Real resx, Real resy) {
+BoxGWin *BoxGWin_Create_BM4(BoxReal ltx, BoxReal lty, BoxReal rdx, BoxReal rdy,
+                            BoxReal resx, BoxReal resy) {
    void *winptr;
    BoxGWin *wd;
   long numptx, numpty, bytesperline, windim;
@@ -84,13 +81,13 @@ BoxGWin *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
 
   wd = (BoxGWin *) malloc(sizeof(BoxGWin));
   if (wd == NULL ) {
-    ERRORMSG("gr4b_open_win", "Memoria esaurita");
+    ERRORMSG("BoxGWin_Create_BM4", "Memoria esaurita");
     return NULL;
   }
 
   wd->wrdep = (gr4b_wrdep *) malloc(sizeof(gr4b_wrdep));
   if (wd->wrdep == NULL ) {
-    ERRORMSG("gr4b_open_win", "Memoria esaurita");
+    ERRORMSG("BoxGWin_Create_BM4", "Memoria esaurita");
     return NULL;
   }
 
@@ -106,8 +103,7 @@ BoxGWin *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
   numpty = fabs(ly) * resy;
 
   if ((numptx < 2) || (numpty < 2)) {
-    ERRORMSG("gr4b_open_win",
-     "Dimensioni della finestra troppo piccole");
+    ERRORMSG("BoxGWin_Create_BM4", "Dimensioni della finestra troppo piccole");
     return 0;
   }
 
@@ -119,8 +115,7 @@ BoxGWin *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
 
   /* Creo la finestra e la svuoto */
   if ( (winptr = (void *) calloc(windim+4, 1)) == NULL ) {
-    ERRORMSG("gr4b_open_win",
-     "Memoria non sufficiente per creare una finestra di queste dimensioni");
+    ERRORMSG("BoxGWin_Create_BM4", "Out of memory");
     return 0;
   }
 
@@ -190,7 +185,7 @@ BoxGWin *gr4b_open_win(Real ltx, Real lty, Real rdx, Real rdy,
 }
 
 /* Chiude una finestra grafica aperta in precedenza
- * con la funzione gr4b_open_win.
+ * con la funzione BoxGWin_Create_BM4.
  */
 static void My_Finish_Drawing(BoxGWin *w) {
   free(w->ptr);

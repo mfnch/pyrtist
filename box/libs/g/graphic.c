@@ -28,6 +28,8 @@
 #include <math.h>
 #include <assert.h>
 
+#include <box/mem.h>
+
 #include "config.h"
 #include "error.h"      /* Serve per la segnalazione degli errori */
 #include "graphic.h"    /* Dichiaro alcune strutture grafiche generali */
@@ -45,6 +47,35 @@ Real grp_tomm  = 1.0;
 Real grp_torad = grp_radperdeg;
 /* - risoluzioni in punti per millimetro: */
 Real grp_toppmm = grp_ppmmperdpi;
+
+/********************************************************************
+ *                   GENERIC LIBRARY FUNCTIONS                      *
+ ********************************************************************/
+
+const char *BoxGErr_To_Str(BoxGErr err) {
+  switch (err) {
+  case BOXGERR_NO_ERR: return NULL;
+  case BOXGERR_UNEXPECTED: return "Unexpected error";
+  case BOXGERR_NO_MEMORY: return "Cannot allocate memory";
+  case BOXGERR_MISS_WIN_TYPE: return "Missing window type";
+  case BOXGERR_CAIRO_MISSES_PS:
+    return "Cairo was not compiled with support for the PostScript backend";
+  case BOXGERR_CAIRO_MISSES_PDF:
+    return "Cairo was not compiled with support for the PDF backend";
+  case BOXGERR_CAIRO_MISSES_SVG:
+    return "Cairo was not compiled with support for the SVG backend";
+  case BOXGERR_UNKNOWN_WIN_TYPE: return "Unknown window type";
+  case BOXGERR_WIN_SIZE_MISSING:
+    return "Cannot create window: window size is missing";
+  case BOXGERR_WIN_RES_MISSING:
+    return "Cannot create window: resolution is missing";
+  case BOXGERR_WIN_FILENAME_MISSING:
+    return "Cannot create window: file name is missing!";
+  case BOXGERR_CAIRO_SURFACE_ERR: return "Error in Cairo surface";
+  case BOXGERR_CAIRO_CONTEXT_ERR: return "Error in Cairo context";
+  }
+  return "Unknown error";
+}
 
 /********************************************************************/
 /*             FUNZIONI GENERALI DI CALCOLO GEOMETRICO              */
@@ -280,7 +311,7 @@ void grp_palette_destroy(palette *p) {
      pi != (palitem *) NULL; pi = nextpi ) {
 
       nextpi = pi->next;
-      free( pi );
+      free(pi);
     }
 
   }
@@ -323,9 +354,9 @@ void BoxGWin_Draw_GPath(BoxGWin *w, GPath *gp) {
   (void) gpath_iter(gp, My_Draw_GPath_Iterator, w);
 }
 
-/****************************************************************************/
-/*  DEFINITION OF A DUMMY WINDOW WHICH DOES NOTHING OR JUST REPORTS ERRORS  */
-/****************************************************************************/
+/****************************************************************************
+ *  DEFINITION OF A DUMMY WINDOW WHICH DOES NOTHING OR JUST REPORTS ERRORS  *
+ ****************************************************************************/
 
 /* Creo una finestra priva di qualsiasi funzione: essa dara' un errore
  * per qualsiasi operazione s tenti di eseguire.
@@ -449,13 +480,9 @@ void BoxGWin_Block(BoxGWin *w) {
   w->_report_error = My_Dummy_Report_Err;
 }
 
-void BoxGWin_Break(BoxGWin *w, BoxGOnError on_error) {
+void BoxGWin_Block_With(BoxGWin *w, BoxGOnError on_error) {
   BoxGWin_Block(w);
   w->_report_error = (on_error != NULL) ? on_error : My_Dummy_Report_Err;
-}
-
-void Grp_Window_Repair(BoxGWin *w) {
-  w->repair(w);
 }
 
 /*** Error window ***********************************************************/
@@ -464,15 +491,16 @@ static char *err_id_string = "err";
 typedef struct {
   FILE *out;
   char *msg;
+
 } GrpWindowErrData;
 
-static void Window_Error_Close(BoxGWin *w) {
+static void My_Window_Error_Close(BoxGWin *w) {
   assert(w->win_type_str == err_id_string);
-  free(w->ptr);
-  free(w);
+  BoxMem_Free(w->ptr);
+  BoxMem_Free(w);
 }
 
-static void Window_Error_Report(BoxGWin *w, const char *location) {
+static void My_Window_Error_Report(BoxGWin *w, const char *location) {
   assert(w->win_type_str == err_id_string);
   GrpWindowErrData *d = (GrpWindowErrData *) w->ptr;
   if (! w->quiet) {
@@ -486,20 +514,45 @@ static int My_Window_Error_Save(BoxGWin *w, const char *file_name) {
   return 0;
 }
 
+BoxGWin *BoxGWin_Create_Invalid(BoxGErr *err) {
+  BoxGWin *w = BoxMem_Alloc(sizeof(BoxGWin));
+  if (w != NULL) {
+    BoxGWin_Block(w);
+    w->win_type_str = err_id_string;
+    w->pattern = NULL;
+    w->quiet = 0;
+    w->ptr = NULL;
+    if (err != NULL)
+      *err = BOXGERR_NO_ERR;
+    return w;
+
+  } else {
+    if (err != NULL)
+      *err = BOXGERR_NO_MEMORY;
+    return NULL;
+  }
+}
+
+void BoxGWin_Destroy(BoxGWin *w) {
+  w->win_type_str = NULL;
+  assert(w->pattern == NULL);
+  BoxMem_Free(w);
+}
+
 /** Create a Window which displays the given error message, when someone
- * tries to use it. The error message is fprinted to the give stream.
+ * tries to use it. The error message is fprinted to the given stream.
  */
 BoxGWin *Grp_Window_Error(FILE *out, const char *msg) {
-  BoxGWin *w = (BoxGWin *) malloc(sizeof(BoxGWin));
-  GrpWindowErrData *d = (GrpWindowErrData *) malloc(sizeof(GrpWindowErrData));
+  BoxGWin *w = BoxMem_Alloc(sizeof(BoxGWin));
+  GrpWindowErrData *d = BoxMem_Alloc(sizeof(GrpWindowErrData));
   BoxGWin_Block(w);
   w->win_type_str = err_id_string;
   w->save_to_file = My_Window_Error_Save;
-  w->finish_drawing = Window_Error_Close;
-  w->_report_error = Window_Error_Report;
+  w->finish_drawing = My_Window_Error_Close;
+  w->_report_error = My_Window_Error_Report;
   w->quiet = 0;
 
-  d->msg = strdup(msg);
+  d->msg = BoxMem_Strdup(msg);
   d->out = out;
   w->ptr = d;
   return w;
@@ -541,7 +594,7 @@ void Grp_Window_Make_Dummy(BoxGWin *w) {
 }
 
 /****************************************************************************
- * Generic functions to open a Window using a GrpWindowPlan.                *
+ * Generic functions to open a Window using a BoxGWinPlan.                  *
  ****************************************************************************/
 
 enum {HAVE_TYPE=1, HAVE_ORIGIN=2, HAVE_SIZE=4, HAVE_CORNERS=6,
@@ -590,19 +643,19 @@ struct win_type {
   {(char *) NULL, WT_NONE}
 };
 
-int Grp_Window_Type_From_String(const char *type_str) {
-  char *colon = (char *) NULL;
+int BoxGWin_Type_From_String(const char *type_str) {
+  char *colon = NULL;
   struct win_type *this_type;
   WL preferred_lib = WL_NONE;
   int type = -1, i;
 
   colon = strchr(type_str, ':');
-  if (colon != (char *) NULL) {
-    char *lib = strdup(type_str);
-    assert(type_str != (char *) NULL);
+  if (colon != NULL) {
+    char *lib = BoxMem_Strdup(type_str);
+    assert(type_str != NULL);
     lib[colon - type_str] = '\0';
     struct win_lib *this_lib;
-    for(this_lib = win_libs; this_lib->name != (char *) NULL; this_lib++) {
+    for (this_lib = win_libs; this_lib->name != NULL; this_lib++) {
       if (strcasecmp(this_lib->name, lib) == 0) {
         preferred_lib = this_lib->win_lib;
         break;
@@ -610,16 +663,15 @@ int Grp_Window_Type_From_String(const char *type_str) {
     }
 
     type_str = colon + 1;
-    free(lib);
+    BoxMem_Free(lib);
 
     if (preferred_lib == WL_NONE)
       g_warning("Preferred window library not found!");
   }
 
-  i = 0;
-  for(this_type = win_types;
-      this_type->type_str != (char *) NULL;
-      this_type++, i++) {
+  for (this_type = win_types, i = 0;
+       this_type->type_str != NULL;
+       this_type++, i++) {
     if (strcasecmp(this_type->type_str, type_str) == 0) {
       if (preferred_lib == this_type->win_lib)
         return i;
@@ -638,7 +690,7 @@ int Grp_Window_Type_From_String(const char *type_str) {
 /** Define a function which can create new windows of all
  * the different types.
  */
-BoxGWin *Grp_Window_Open(GrpWindowPlan *plan) {
+BoxGWin *BoxGWin_Create(BoxGWinPlan *plan) {
   int must_have = 0;
   WL win_lib;
   WT win_type;
@@ -679,10 +731,15 @@ BoxGWin *Grp_Window_Open(GrpWindowPlan *plan) {
     return OPEN_FAILED(stderr, "number of layers is missing");
 
   if (win_lib != WL_G) {
-    assert(win_lib == WL_CAIRO);
 #if HAVE_LIBCAIRO
+    BoxGErr err;
+    BoxGWin *w;
+    assert(win_lib == WL_CAIRO);
     plan->type = win_type;
-    return cairo_open_win(plan);
+    w = BoxGWin_Create_Cairo(plan, & err);
+    if (err == BOXGERR_NO_ERR)
+      return w;
+    return Grp_Window_Error(stderr, BoxGErr_To_Str(err));
 #else
     return OPEN_FAILED(stderr, "window type not available, because "
                        "the graphic library was compiled without "
@@ -692,26 +749,26 @@ BoxGWin *Grp_Window_Open(GrpWindowPlan *plan) {
 
   switch(win_type) {
   case WT_BM1:
-    return gr1b_open_win(plan->origin.x, plan->origin.y,
-                         plan->origin.x + plan->size.x,
-                         plan->origin.y + plan->size.y,
-                         plan->resolution.x, plan->resolution.y);
+    return BoxGWin_Create_BM1(plan->origin.x, plan->origin.y,
+                              plan->origin.x + plan->size.x,
+                              plan->origin.y + plan->size.y,
+                              plan->resolution.x, plan->resolution.y);
   case WT_BM4:
-    return gr4b_open_win(plan->origin.x, plan->origin.y,
-                         plan->origin.x + plan->size.x,
-                         plan->origin.y + plan->size.y,
-                         plan->resolution.x, plan->resolution.y);
+    return BoxGWin_Create_BM4(plan->origin.x, plan->origin.y,
+                              plan->origin.x + plan->size.x,
+                              plan->origin.y + plan->size.y,
+                              plan->resolution.x, plan->resolution.y);
   case WT_BM8:
-    return gr8b_open_win(plan->origin.x, plan->origin.y,
-                         plan->origin.x + plan->size.x,
-                         plan->origin.y + plan->size.y,
-                         plan->resolution.x, plan->resolution.y);
+    return BoxGWin_Create_BM8(plan->origin.x, plan->origin.y,
+                              plan->origin.x + plan->size.x,
+                              plan->origin.y + plan->size.y,
+                              plan->resolution.x, plan->resolution.y);
   case WT_FIG:
-    return fig_open_win(1);
+    return BoxGWin_Create_Fig(1);
   case WT_PS:
-    return ps_open_win(plan->file_name);
+    return BoxGWin_Create_PS(plan->file_name);
   case WT_EPS:
-    return eps_open_win(plan->file_name, plan->size.x, plan->size.y);
+    return BoxGWin_Create_EPS(plan->file_name, plan->size.x, plan->size.y);
   default:
     return OPEN_FAILED(stderr, "unknown window type");
   }

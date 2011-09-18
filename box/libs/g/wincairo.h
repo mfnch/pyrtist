@@ -22,6 +22,6 @@
 
 #  include "graphic.h"
 
-GrpWindow *cairo_open_win(GrpWindowPlan *plan);
+BoxGWin *BoxGWin_Create_Cairo(BoxGWinPlan *plan, BoxGErr *err);
 
 #endif
