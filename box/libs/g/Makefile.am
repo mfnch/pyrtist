@@ -35,7 +35,7 @@ dist_boxlibg_DATA=\
   raw.bxh cmdstream.bxh points.bxh path.bxh fill.bxh stroke.bxh style.bxh \
   poly.bxh text.bxh texts.bxh circle.bxh circles.bxh line.bxh gradient.bxh \
   clip.bxh hot.bxh constraints.box put.bxh window.box bbox.box g2.bxh \
-  init.box color.box _oldstyle.bxh _gradient.bxh _line.bxh \
+  init.box color.box _oldstyle.bxh _gradient.bxh pattern.box _line.bxh \
   _circle.bxh _poly.bxh _put.bxh _pointlist.bxh _text.bxh area.bxh
 
 dist_boxpkg_DATA=\

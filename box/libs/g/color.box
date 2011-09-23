@@ -2,6 +2,9 @@
 ///Intro: Implementation of Color. Automatically included when including "g".
 // Definition of the type Color and some example of Color-s
 
+include "obj"
+include "pattern"
+
 ///Intro: Color allows to define new colors.
 ///Desc: A color object is made of four real numbers, one for each component
 //  of the color: red, green, blue and the alpha channel. These components are
@@ -16,14 +19,24 @@
 Color = ++(Real r, g, b, a)
 
 ([)@Color[$$.r = $$.g = $$.b = 0.0, $$.a = 1.0]
+
+///Intro: set from another color.
 Color@Color[$$.r = $.r, $$.g = $.g, $$.b = $.b, $$.a = $.a]
 
+///Intro: set to the given level of grey (0 for black, 1 for white).
 Real@Color[$$.r = $$.g = $$.b = $]
+
 (Real r, g, b)@Color[$$.r = $.r, $$.g = $.g, $$.b = $.b]
 (Real r, g, b, a)@Color[$$.r = $.r, $$.g = $.g, $$.b = $.b, $$.a = $.a]
 
 Color@Str["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, ", .a=", $.a, "]"]
 Color@Print[Str[$]]
+
+///Intro: create the pattern from the color.
+Color@Pattern[
+  $$.cmdstream.Empty[]
+  \ $$.cmdstream[Obj[const.raw.pattern_create_rgba, $.r, $.g, $.b, $.a]]
+]
 
 ///Intro: a color given in terms of Hue, Saturation and Value.
 HSV = ++(Real h, s, v, a)
@@ -57,6 +70,17 @@ Color.Darker = Void
 Real@Color.Darker[
   c = Color[HSV[$$$, .v *= Max[0, $]]]
   $$$.r = c.r, $$$.g = c.g, $$$.b = c.b
+]
+
+///Intro: convert a Color to an Obj.
+Color@Obj[Obj[Point[.x=$.r, .y=$.g], Point[.x=$.b, .y=$.a]]]
+
+///Intro: make a Color out of an Obj.
+Obj@Color[
+  rg_comp = Point[$.Get[0]]
+  ba_comp = Point[$.Get[1]]
+  .r = rg_comp.x, .g = rg_comp.y
+  .b = ba_comp.x, .a = ba_comp.y
 ]
 
 color = (Color black, red, green, yellow, blue, magenta, cyan, white

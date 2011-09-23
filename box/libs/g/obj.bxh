@@ -94,3 +94,8 @@ Obj.Merge = Void
 
 ///Intro: add the content of the provided object to the parent object.
 Obj@Obj.Merge "GLib_Obj_At_MergeObjs" ?
+
+///Intro: empty the object.
+Obj.Empty = Void
+
+([)@Obj.Empty[]

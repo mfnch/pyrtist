@@ -1,3 +1,4 @@
+
 /****************************************************************************
  * Copyright (C) 2008-2011 by Matteo Franchin                               *
  *                                                                          *
@@ -52,7 +53,7 @@
  * The determinant of 'in' is returned and is 0.0, if the matrix
  * couldn't be inverted.
  */
-static Real invert_cairo_matrix(cairo_matrix_t *result, cairo_matrix_t *in) {
+static BoxReal My_Invert_Cairo_Matrix(cairo_matrix_t *result, cairo_matrix_t *in) {
   Real det = in->xx*in->yy - in->xy*in->yx, inv_det;
   if (det == 0.0) return 0.0;
   inv_det = 1.0/det;
@@ -399,6 +400,31 @@ static void My_Cairo_Set_Font(BoxGWin *w, const char *font_name) {
   m.xx = 1.0; m.yy = -1.0;
   m.xy = m.yx = m.x0 = m.y0 = 0.0;
   cairo_set_font_matrix(cr, & m);
+}
+
+static cairo_pattern_t *
+My_Cairo_Pattern_Create_Radial(BoxPoint *p1, BoxPoint *xone, BoxPoint *yone,
+                               BoxPoint *p2, BoxReal rad1, BoxReal rad2) {
+  cairo_pattern_t *pattern;
+  BoxPoint xaxis, yaxis;
+  cairo_matrix_t m, m_inv;
+
+  xaxis.x = xone->x - p1->x;
+  xaxis.y = xone->y - p1->y;
+  yaxis.x = yone->x - p1->x;
+  yaxis.y = yone->y - p1->y;
+
+  m.xx = xaxis.x; m.yx = xaxis.y;
+  m.xy = yaxis.x; m.yy = yaxis.y;
+  m.x0 = p1->x; m.y0 = p1->y;
+
+  if (My_Invert_Cairo_Matrix(& m_inv, & m) == 0.0)
+    return NULL;
+
+  pattern = cairo_pattern_create_radial(0.0, 0.0, rad1,
+                                        p2->x - p1->x, p2->y - p1->y, rad2);
+  cairo_pattern_set_matrix(pattern, & m_inv);
+  return pattern;
 }
 
 void My_Extract_Arg(BoxGWin *w,
@@ -797,6 +823,127 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
     }
     break;
 
+  case BOXGCMD_PATTERN_CREATE_RGB:
+    if (My_Args_From_Obj(w, args, args_obj, 3, BOXGCMDARGKIND_REAL,
+                         BOXGCMDARGKIND_REAL, BOXGCMDARGKIND_REAL)) {
+      if (w->pattern != NULL)
+        cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
+
+      w->pattern =
+        cairo_pattern_create_rgb(*args[0].r, *args[1].r, *args[2].r);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_CREATE_RGBA:
+    if (My_Args_From_Obj(w, args, args_obj, 4, BOXGCMDARGKIND_REAL,
+                         BOXGCMDARGKIND_REAL, BOXGCMDARGKIND_REAL,
+                         BOXGCMDARGKIND_REAL)) {
+      if (w->pattern != NULL)
+        cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
+
+      w->pattern =
+        cairo_pattern_create_rgba(*args[0].r, *args[1].r, *args[2].r,
+                                  *args[3].r);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_CREATE_LINEAR:
+    if (My_Args_From_Obj(w, args, args_obj, 2,
+                         BOXGCMDARGKIND_POINT, BOXGCMDARGKIND_POINT)) {
+      if (w->pattern != NULL)
+        cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
+
+      w->pattern =
+        cairo_pattern_create_linear(args[0].p.x, args[0].p.y,
+                                    args[1].p.x, args[1].p.y);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_CREATE_RADIAL:
+    if (My_Args_From_Obj(w, args, args_obj, 6,
+                         BOXGCMDARGKIND_POINT, BOXGCMDARGKIND_POINT,
+                         BOXGCMDARGKIND_POINT, BOXGCMDARGKIND_POINT,
+                         BOXGCMDARGKIND_REAL, BOXGCMDARGKIND_REAL)) {
+      if (w->pattern != NULL)
+        cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
+
+      w->pattern =
+        My_Cairo_Pattern_Create_Radial(& args[0].p, & args[1].p, & args[2].p,
+                                       & args[3].p, *args[4].r, *args[5].r);
+      return (w->pattern != NULL) ? BOXTASK_OK : BOXTASK_FAILURE;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_ADD_COLOR_STOP_RGB:
+    if (My_Args_From_Obj(w, args, args_obj, 4,
+                         BOXGCMDARGKIND_REAL, BOXGCMDARGKIND_REAL,
+                         BOXGCMDARGKIND_REAL, BOXGCMDARGKIND_REAL)) {
+      if (w->pattern != NULL)
+        cairo_pattern_add_color_stop_rgb(w->pattern, *args[0].r, *args[1].r,
+                                         *args[2].r, *args[3].r);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_ADD_COLOR_STOP_RGBA:
+    if (My_Args_From_Obj(w, args, args_obj, 5,
+                         BOXGCMDARGKIND_REAL, BOXGCMDARGKIND_REAL,
+                         BOXGCMDARGKIND_REAL, BOXGCMDARGKIND_REAL,
+                         BOXGCMDARGKIND_REAL)) {
+      if (w->pattern != NULL)
+        cairo_pattern_add_color_stop_rgba(w->pattern, *args[0].r, *args[1].r,
+                                          *args[2].r, *args[3].r, *args[4].r);
+      return BOXTASK_OK;
+    }
+    return BOXTASK_OK;
+
+  case BOXGCMD_PATTERN_SET_EXTEND:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_INT)) {
+      cairo_extend_t v;
+      switch(*args[0].i) {
+      default:
+      case 0: v = CAIRO_EXTEND_NONE; break;
+      case 1: v = CAIRO_EXTEND_REPEAT; break;
+      case 2: v = CAIRO_EXTEND_REFLECT; break;
+      case 3: v = CAIRO_EXTEND_PAD; break;
+      }
+      cairo_pattern_set_extend((cairo_pattern_t *) w->pattern, v);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_SET_FILTER:
+    if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_INT)) {
+      cairo_filter_t v;
+      switch(*args[0].i) {
+      default:
+      case 0: v = CAIRO_FILTER_FAST; break;
+      case 1: v = CAIRO_FILTER_GOOD; break;
+      case 2: v = CAIRO_FILTER_BEST; break;
+      case 3: v = CAIRO_FILTER_NEAREST; break;
+      case 4: v = CAIRO_FILTER_BILINEAR; break;
+      case 5: v = CAIRO_FILTER_GAUSSIAN; break;
+      }
+      cairo_pattern_set_filter((cairo_pattern_t *) w->pattern, v);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_DESTROY:
+    if (w->pattern != NULL) {
+      cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
+      w->pattern = NULL;
+    }
+    return BOXTASK_OK;
+
+  case BOXGCMD_SET_SOURCE:
+    if (w->pattern != NULL)
+      cairo_set_source(cr, (cairo_pattern_t *) w->pattern);
+    return BOXTASK_OK;
+
   case BOXGCMD_EXT_JOINARC_TO:
     if (My_Args_From_Obj(w, args, args_obj, 3, BOXGCMDARGKIND_POINT,
                          BOXGCMDARGKIND_POINT, BOXGCMDARGKIND_POINT)) {
@@ -1014,7 +1161,7 @@ static void My_WinCairo_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
     m.xx = ref1.x; m.yx = ref1.y;
     m.xy = ref2.x; m.yy = ref2.y;
     m.x0 = p1.x; m.y0 = p1.y;
-    if (invert_cairo_matrix(& m_inv, & m) == 0.0) {
+    if (My_Invert_Cairo_Matrix(& m_inv, & m) == 0.0) {
       g_warning("wincairo_rgradient: gradient matrix is non invertible. "
                 "Ignoring gradient setting!");
       return;

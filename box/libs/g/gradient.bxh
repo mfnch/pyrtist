@@ -3,17 +3,23 @@
 #provide "g.gradient"
 
 include "g"
+include "pattern"
 
 ///Intro: color gradient to be used for painting.
 Grad = ++(Int type
+          (Int offset,) have
           Point point1, point2
-          Real real1, real2
-          Obj colors)
+          Real real1, real2, offset
+          Obj offsets, colors)
 
-(.[)@Grad[.type = 0]
+(.[)@Grad[.type = 0, .have.offset = 1, .offset = 0.0]
 
 ///Intro: add a new color to the gradient
-Color@Grad[\ $$.colors[Obj[$.r, $.g, $.b, $.a]]]
+Color@Grad[
+  \ $$.colors[$]
+  \ $$.offsets[Real[If[$$.have.offset], $$.offset, Else[], -1.0]]
+  .have.offset = 0
+]
 
 ///Intro: the position of the color in the gradient (number between 0 and 1).
 // For example, in
@@ -22,7 +28,7 @@ Color@Grad[\ $$.colors[Obj[$.r, $.g, $.b, $.a]]]
 // In other words it is the position in the line (``0`` corresponding to
 // ``point1``, and ``1`` to ``point2``) where the gradient becomes equal to
 // ``color1``.
-Real@Grad[\ $$.colors[Obj[$]]]
+Real@Grad[.offset = Max[0.0, Min[1.0, $]], .have.offset = 1]
 
 ///Intro: set the gradient shape to a line.
 // The line should have two points and the color will change linearly
@@ -33,26 +39,70 @@ Line@Grad[
   .type = 1
   .point1 = $.Get[0]
   .point2 = $.Get[1]
-
-  Print["Line from ", $$.point1, " to ", $$.point2;]
 ]
 
 ///Intro: set the gradient shape to a circle.
 Circles@Grad[
   n = Num[$]
   [If[n != 1 && n != 2]
-     Fail["The Circles object given to Gradient "
+     Fail["The Circles object given to Gradient " _
           "should contain one or two circles"]]
   .type = 2
   circle1 = $.Get[0]
   circle2 = Circle[If[n >= 2], $.Get[1], Else[], circle1, 0]
-
-  Print["Circle 1: center=", circle1.center, ", radius=", circle1.radius;
-        "Circle 2: center=", circle2.center, ", radius=", circle2.radius;]
+  .point1 = circle1.center
+  .point2 = circle2.center
+  .real1 = circle1.radius
+  .real2 = circle2.radius
 ]
 
-///Intro: convert the gradient into a command stream.
-Grad@CmdStream[
+///Intro: convert the gradient into a generic pattern.
+Grad@Pattern[
+  \ $$.cmdstream[
+    If[$.type == 1]
+      Obj[const.raw.pattern_create_linear, $.point1, $.point2]
+    Else[], If[$.type == 2]
+      ctr = $.point1
+      refx = Point[ctr, .x += 1.0]
+      refy = Point[ctr, .y += 1.0]
+      Obj[const.raw.pattern_create_radial
+          $.point1, refx, refy, $.point2, $.real1, $.real2]
+    Else[]
+      Fail[Str["Unknown gradient type (", $.type, ")"]]
+  ]
 
+  n = Num[$.colors]
+  i = 0
 
+  i0 = -1
+  offset0 = 0.0
+
+  [If[i < n]
+
+    // Find (in i) the index of the next color, for which the user has provided
+    // an offset.
+    [If[Real[$.offsets.Get[i]] < 0.0], i += 1, For[i < n]]
+
+    // Determine the offset of the last color to set. If i >= n, then we have
+    // reached the end of the array: we set i to point to the last color and
+    // assume the correspodning offset is 1.0.
+    offset = Real[If[i < n], $.offsets.Get[i], Else[], 1.0]
+    i = Int[If[i < n], i, Else[], n - 1]
+
+    // Set intermediate colors
+    m = i - i0
+    [
+      i0 += 1
+      ofs = offset + (i - i0)*(offset0 - offset)/m
+      col = Color[$.colors.Get[i0]]
+      \ $$.cmdstream[Obj[const.raw.pattern_add_color_stop_rgb,
+                         ofs, col.r, col.g, col.b, col.a]]
+     For[i0 < i]]
+
+    offset0 = offset
+    i += 1
+  For[1]]
 ]
+
+///Intro: set the gradient as the active color.
+Grad@Window[Pattern[$]]

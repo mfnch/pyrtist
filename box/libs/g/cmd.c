@@ -80,6 +80,16 @@ BoxGCmdSig BoxGCmdSig_Get(BoxGCmd cmd_id) {
     {BOXGCMD_TRANSLATE, BOXGCMDSIG_V},
     {BOXGCMD_SCALE, BOXGCMDSIG_V},
     {BOXGCMD_ROTATE, BOXGCMDSIG_R},
+    {BOXGCMD_PATTERN_CREATE_RGB, BOXGCMDSIG_RRR},
+    {BOXGCMD_PATTERN_CREATE_RGBA, BOXGCMDSIG_RRRR},
+    {BOXGCMD_PATTERN_CREATE_LINEAR, BOXGCMDSIG_PP},
+    {BOXGCMD_PATTERN_CREATE_RADIAL, BOXGCMDSIG_PPPPRR},
+    {BOXGCMD_PATTERN_ADD_COLOR_STOP_RGB, BOXGCMDSIG_RRRR},
+    {BOXGCMD_PATTERN_ADD_COLOR_STOP_RGBA, BOXGCMDSIG_RRRRR},
+    {BOXGCMD_PATTERN_SET_EXTEND, BOXGCMDSIG_I},
+    {BOXGCMD_PATTERN_SET_FILTER, BOXGCMDSIG_I},
+    {BOXGCMD_PATTERN_DESTROY, BOXGCMDSIG_NONE},
+    {BOXGCMD_SET_SOURCE, BOXGCMDSIG_NONE},
     {BOXGCMD_EXT_JOINARC_TO, BOXGCMDSIG_PPP},
     {BOXGCMD_EXT_ARC_TO, BOXGCMDSIG_PPPRR},
     {BOXGCMD_EXT_SET_FONT, BOXGCMDSIG_S},
@@ -102,12 +112,19 @@ int BoxGCmdSig_Get_Arg_Kinds(BoxGCmdSig sig, BoxGCmdArgKind *kinds) {
   case BOXGCMDSIG_P: kinds[0] = BOXGCMDARGKIND_POINT; return 1;
   case BOXGCMDSIG_V: kinds[0] = BOXGCMDARGKIND_VECTOR; return 1;
   case BOXGCMDSIG_S: kinds[0] = BOXGCMDARGKIND_STR; return 1;
+  case BOXGCMDSIG_PP: kinds[0] = kinds[1] = BOXGCMDARGKIND_POINT; return 2;
+  case BOXGCMDSIG_RRR:
+    kinds[0] = kinds[1] = kinds[2] = BOXGCMDARGKIND_REAL;
+    return 3;
   case BOXGCMDSIG_PPP:
     kinds[0] = kinds[1] = kinds[2] = BOXGCMDARGKIND_POINT;
     return 3;
   case BOXGCMDSIG_RRRR:
     kinds[0] = kinds[1] = kinds[2] = kinds[3] = BOXGCMDARGKIND_REAL;
     return 4;
+  case BOXGCMDSIG_RRRRR:
+    kinds[0] = kinds[1] = kinds[2] = kinds[3] = kinds[4] = BOXGCMDARGKIND_REAL;
+    return 5;
   case BOXGCMDSIG_PPPRR:
     kinds[0] = kinds[1] = kinds[2] = BOXGCMDARGKIND_POINT;
     kinds[3] = kinds[4] = BOXGCMDARGKIND_REAL;
@@ -117,6 +134,10 @@ int BoxGCmdSig_Get_Arg_Kinds(BoxGCmdSig sig, BoxGCmdArgKind *kinds) {
     kinds[3] = BOXGCMDARGKIND_REALP;
     kinds[4] = BOXGCMDARGKIND_STR;
     return 5;
+  case BOXGCMDSIG_PPPPRR:
+    kinds[0] = kinds[1] = kinds[2] = kinds[3] = BOXGCMDARGKIND_POINT;
+    kinds[4] = kinds[5] = BOXGCMDARGKIND_REAL;
+    return 6;
   }
 
   abort();
