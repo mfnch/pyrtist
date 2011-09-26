@@ -9,7 +9,8 @@ Window.Poly = PointList
 Color@Window.Poly "poly_color" ?
 
 ///Same.
-Gradient@Window.Poly "poly_gradient" ?
+OldGradient@Window.Poly "poly_gradient" ?
+Gradient@Window.Poly[OldGradient[$]]
 
 ([)@Window.Poly "poly_begin" ?
 

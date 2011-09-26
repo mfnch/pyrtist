@@ -1,6 +1,6 @@
 ############################################################################
 #    Copyright (C) 2006 by Matteo Franchin                                 #
-#    fnch@libero.it                                                        #
+#    fnch@users.sourceforge.net                                            #
 #                                                                          #
 #    This program is free software; you can redistribute it and/or modify  #
 #    it under the terms of the GNU General Public License as published by  #
@@ -33,9 +33,9 @@ boxlib_LTLIBRARIES=libg.la
 dist_boxlibg_DATA=\
   obj.bxh const.bxh gcore.bxh matrix.bxh transform.bxh \
   raw.bxh cmdstream.bxh points.bxh path.bxh fill.bxh stroke.bxh style.bxh \
-  poly.bxh text.bxh texts.bxh circle.bxh circles.bxh line.bxh gradient.bxh \
-  clip.bxh hot.bxh constraints.box put.bxh window.box bbox.box g2.bxh \
-  init.box color.box _oldstyle.bxh _gradient.bxh pattern.box _line.bxh \
+  poly.bxh text.bxh texts.bxh circle.bxh circles.bxh line.bxh gradcore.box \
+  gradient.box clip.bxh hot.bxh constraints.box put.bxh window.box bbox.box \
+  g2.bxh init.box color.box _oldstyle.bxh _gradient.bxh pattern.box _line.bxh \
   _circle.bxh _poly.bxh _put.bxh _pointlist.bxh _text.bxh area.bxh
 
 dist_boxpkg_DATA=\

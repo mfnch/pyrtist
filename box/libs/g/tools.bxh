@@ -18,9 +18,9 @@ Interval = (Int have, Real min, max)
 ([)@Interval[.have = 0]
 
 Real@Interval[
-  [If[$$.have == 0], $$.min = $]
-  [If[$$.have == 1], $$.max = $]
-  Print[If[$$.have > 1], "Error: Interval already got min and max!";]
+  [If[$$.have == 0], $$.min = $
+   Else[], If[$$.have == 1], $$.max = $
+   Else[], Fail["Error: Interval already got min and max!"]]
   $$.have += 1
 ]
 
@@ -66,15 +66,16 @@ GUIReal@@Window[
   qx = $.cursor.x - p.x
 
   qx = Min[sx, Max[0, qx]]
-  \ .Poly[p, (px+sx, py), p+s, (px, py+sy), $.color.bg]
+  Poly[p, (px+sx, py), p+s, (px, py+sy), $.color.bg]
 
-  \ .Poly[Gradient[.Line[p, (px, py+sy)]
-          $.color.fg2, color.white, $.color.fg1]
-          p, (px+qx, py), (px+qx, py+sy), (px, py+sy)]
-  \ .Poly[Style[.Fill["void"], .Border[color.black, 0.5]]
-          p, (px+sx, py), p+s, (px, py+sy), .Close[]]
+  Poly[Gradient[Line[p, (px, py+sy)]
+                $.color.fg2, color.white, $.color.fg1]
+       p, (px+qx, py), (px+qx, py+sy), (px, py+sy)]
 
-  \ .Text[$.font, p + 0.5*s, Str[$.label, $.value]]
+  Line[color.black, 0.5
+       p, (px+sx, py), p+s, (px, py+sy), Close[]]
+
+  Text[color.black, $.font, p + 0.5*s, Str[$.label, $.value]]
 ]
 
 Norm = Real
@@ -86,7 +87,7 @@ Point@Mark[.position = $]
 
 //Str@Mark[.text = $]
 
-Mark@&Window[
+Mark@Window[
   // Show the "try to move this" label
   \ $$.Text[.Font["sans", 2], "try to\nmove this!", $.position, .From[(1, -1.0)]]
   \ $$.Line[0.15, .ArrowScale[2], $.position+(-5, 2.5), arrow, $.position+(-1.5, 0)]

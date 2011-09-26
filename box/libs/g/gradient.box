@@ -4,18 +4,12 @@
 
 include "g"
 include "pattern"
+include "gradcore"
 
-///Intro: color gradient to be used for painting.
-Grad = ++(Int type
-          (Int offset,) have
-          Point point1, point2
-          Real real1, real2, offset
-          Obj offsets, colors)
-
-(.[)@Grad[.type = 0, .have.offset = 1, .offset = 0.0]
+//NOTE: Gradient is defined in "pattern.box"
 
 ///Intro: add a new color to the gradient
-Color@Grad[
+Color@Gradient[
   \ $$.colors[$]
   \ $$.offsets[Real[If[$$.have.offset], $$.offset, Else[], -1.0]]
   .have.offset = 0
@@ -23,17 +17,17 @@ Color@Grad[
 
 ///Intro: the position of the color in the gradient (number between 0 and 1).
 // For example, in
-// ``Grad[Line[point1, point2], real1, color1, real2, color2, ...]``
+// ``Gradient[Line[point1, point2], real1, color1, real2, color2, ...]``
 // ``real1`` is the offset (along the line) for ``color1``.
 // In other words it is the position in the line (``0`` corresponding to
 // ``point1``, and ``1`` to ``point2``) where the gradient becomes equal to
 // ``color1``.
-Real@Grad[.offset = Max[0.0, Min[1.0, $]], .have.offset = 1]
+Real@Gradient[.offset = Max[0.0, Min[1.0, $]], .have.offset = 1]
 
 ///Intro: set the gradient shape to a line.
 // The line should have two points and the color will change linearly
 // between these two points.
-Line@Grad[
+Line@Gradient[
   [If[Num[$] != 2]
      Fail["The line given to Gradient should have exactly 2 points"]]
   .type = 1
@@ -42,7 +36,7 @@ Line@Grad[
 ]
 
 ///Intro: set the gradient shape to a circle.
-Circles@Grad[
+Circles@Gradient[
   n = Num[$]
   [If[n != 1 && n != 2]
      Fail["The Circles object given to Gradient " _
@@ -57,7 +51,7 @@ Circles@Grad[
 ]
 
 ///Intro: convert the gradient into a generic pattern.
-Grad@Pattern[
+Gradient@Pattern[
   \ $$.cmdstream[
     If[$.type == 1]
       Obj[const.raw.pattern_create_linear, $.point1, $.point2]
@@ -105,4 +99,62 @@ Grad@Pattern[
 ]
 
 ///Intro: set the gradient as the active color.
-Grad@Window[Pattern[$]]
+Gradient@Window[Pattern[$]]
+
+//-------------PROVIDED FOR COMPATIBILITY WITH box 0.2.3------------------//
+
+Gradient.Line = Void
+
+([)@Gradient.Line[$$$.state = 0]
+
+Point@Gradient.Line[
+  num_points = $$$.state
+  [If[num_points == 0], $$$.point1 = $
+   Else[], If[num_points == 1], $$$.point2 = $
+   Else[], Fail["Gradient.Line takes exactly two points"]]
+  $$$.state += 1
+]
+
+(])@Gradient.Line[
+  [If[$$$.state != 2]
+     Fail["Gradient.Line takes exactly two points"]]
+  \$$$[Line[$$$.point1, $$$.point2]]
+]
+
+Gradient.Circle = Void
+
+([)@Gradient.Circle[$$$.state = 0]
+
+(;)@Gradient.Circle[
+  [If[$$$.state & 0x1], Fail["Gradient.Circle takes just one single `;'"]]
+  $$$.state |= 0x1
+]
+
+Point@Gradient.Circle[
+  got_semicolon = $$$.state & 0x1
+  $$$.state |= (0x2 << got_semicolon)
+  If[$$$.state & 0x1]
+    $$$.point2 = $
+  Else[]
+    $$$.point1 = $
+]
+
+Real@Gradient.Circle[
+  got_semicolon = $$$.state & 0x1
+  $$$.state |= (0x8 << got_semicolon)
+  If[$$$.state & 0x1]
+    $$$.real2 = $
+  Else[]
+    $$$.real1 = $
+]
+
+(])@Gradient.Circle[
+  [If[($$$.state & 0xa) != 0xa]
+     Fail["Gradient.Circle requires a Point (the center) " _
+          "and a Real (the radius)"]]
+
+  [If[($$$.state & 0x4) == 0], $$$.point2 = $$$.point1]
+  [If[($$$.state & 0x10) == 0], $$$.real2 = 0.0]
+
+  \ $$$[Circles[$$$.point1, $$$.real1; $$$.point2, $$$.real2]]
+]

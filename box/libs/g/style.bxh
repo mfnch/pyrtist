@@ -3,6 +3,8 @@
 
 include "raw"
 include "cmdstream"
+include "pattern"
+include "gradcore"
 
 ///Intro: the dash pattern for tracing lines.
 Dash = ++((Int semicolon,) have, Real offset, Obj dashes)
@@ -21,7 +23,7 @@ Real@Dash[If[$$ .have.semicolon], .offset = $, Else[], \ .dashes[$]]
 (;)@Dash[If[$$.have.semicolon], Fail["Dash already got a semicolon"]
          Else[], .have.semicolon = 1]
 
-///Intro: add the graphicals commands encoding a ``Dash`` object.
+///Intro: add the graphic commands encoding a ``Dash`` object.
 Dash@CmdStream[
   n = Num[$.dashes]
   If[n > 0]
@@ -33,7 +35,13 @@ Dash@CmdStream[
 ///Intro: border width and color to be used when tracing the next
 // polygon (for {type(Poly)}, {type(Circle)}, etc).
 Border = ++((Int color, width, dash) have
-            Color color, Real width, Dash dash)
+            Pattern pattern, Real width, Dash dash
+            Color color)
+
+//^^^ NOTE: The member Border.color is somewhat redundant (as pattern already
+// contains the color specification). We keep this to make it easy to convert
+// a Style object to an OldStyle object (i.e. for compatibility with the old
+// interface). At some point we will remove OldStyle and also Border.color.
 
 (.[)@Border[.have = (0, 0, 0), .width = 0.0]
 
@@ -41,12 +49,16 @@ Border = ++((Int color, width, dash) have
 Real@Border[.width = $, .have.width = 1]
 
 ///Intro: specify the border color.
-Color@Border[.color = $, .have.color = 1]
+Color@Border[.color = $, \ $$.pattern[$], .have.color = 1]
+
+///Intro: use a gradient to render the border.
+Gradient@Border[\ $$.pattern[$], .have.color = 1]
 
 ///Intro: merge the border specification.
 Border@Border[
   [If[$.have.width], $$.width = $.width, $$.have.width = 1]
-  [If[$.have.color], $$.color = $.color, $$.have.color = 1]
+  [If[$.have.color]
+     $$.pattern = $.pattern, $$.color = $.color, $$.have.color = 1]
   [If[$.have.dash], $$.dash = $.dash, $$.have.dash = 1]
 ]
 
@@ -57,8 +69,9 @@ Dash@Border[.dash = $, .have.dash = 1]
 Border@CmdStream[
   Obj[const.raw.save]
   [If[$.have.color]
-     c = $.color
-     Obj[const.raw.set_source_rgba, c.r, c.g, c.b, c.a]]
+     $.pattern
+     Obj[const.raw.set_source]
+     Obj[const.raw.pattern_destroy]]
 
   [If[$.have.width], w = $.width, If[w >= 0.0]
      Obj[const.raw.set_line_width, w]]
@@ -89,12 +102,13 @@ Str@FillStyle[
 // A {type(Style)} object determines the style for tracing the next polygon
 // (for {type(Poly)}, {type(Circle)}, etc).
 Style = ++((Int border, color) have
-           FillStyle fill_style, Border border, Color color)
+           FillStyle fill_style, Border border, Pattern pattern, Color color)
 
 (.[)@Style[.have = (0, 0)]
 
-///Intro: set the filling color.
-Color@Style[.color = $, .have.color = 1]
+///Intro: set the {type(.@)} used for filling.
+Color@Style[$$.color = $, \ $$.pattern[$], .have.color = 1]
+Gradient@Style[\ $$.pattern[$], .have.color = 1] ///Same.
 
 ///Intro: add the border settings to the {type(@.)} object.
 Border@Style[.border = $, .have.border = 1]
@@ -104,7 +118,8 @@ FillStyle@Style[.fill_style = $]
 
 ///Intro: copy the style settings from another {type(Style)} object.
 Style@Style[
-  [If[$.have.color], $$.have.color = 1, $$.color = $.color]
+  [If[$.have.color]
+     $$.have.color = 1, $$.color = $.color, $$.pattern = $.pattern]
   [If[$.have.border], $$.have.border = 1, $$.border = $.border]
 ]
 
@@ -114,7 +129,9 @@ Style@CmdStream[
 
   // Commands for filling
   [If[$.have.color]
-     c = $.color, Obj[const.raw.set_source_rgba, c.r, c.g, c.b, c.a]]
+     $.pattern
+     Obj[const.raw.set_source]
+     Obj[const.raw.pattern_destroy]]
 
   Obj[If[do_stroke], const.raw.fill_preserve
       Else[], const.raw.fill]

@@ -1,0 +1,25 @@
+///Section: g
+
+#provide "g.gradcore"
+
+//NOTE: We define Gradient here (rather than in gradient.box).
+// This way we can define Gradient@Line, Gradient@Circle.
+// This indeed would be difficult if we did it inside gradient.box, as
+// gradient.box itself defines Line@Gradient and Circles@Gradient.
+
+//NOTE: below state is needed just for .Line, .Circle (i.e. to guarantee
+// compatibility with the old Box g library interface. It should be removed
+// when we drop compatibility with the old interface (this will happen once
+// Boxer has been modified to handle well many versions of Box).
+
+///Intro: color gradient to be used for painting.
+Gradient = ++(Int type, state
+              (Int offset,) have
+              Point point1, point2
+              Real real1, real2, offset
+              Obj offsets, colors)
+
+(.[)@Gradient[.type = 0, .state = 0, .have.offset = 1, .offset = 0.0]
+
+// Declare some combinations.
+Gradient@Pattern ?

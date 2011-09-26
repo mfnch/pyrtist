@@ -1,22 +1,41 @@
 ///Section: g
 
+include "gradcore"
+
 ///Intro: color gradient.
-Gradient = ++CPtr
+OldGradient = ++CPtr
 
-(.[)@Gradient "gradient_begin" ?
-(])@Gradient "gradient_end" ?
-(].)@Gradient "gradient_destroy" ?
+(.[)@OldGradient "gradient_begin" ?
+(])@OldGradient "gradient_end" ?
+(].)@OldGradient "gradient_destroy" ?
 
-Gradient.Line = Void
-Point@Gradient.Line "gradient_line_point" ?
+OldGradient.Line = Void
+Point@OldGradient.Line "gradient_line_point" ?
 
-Gradient.Circle = Void
-Point@Gradient.Circle "gradient_circle_point" ?
-Real@Gradient.Circle "gradient_circle_real" ?
-(;)@Gradient.Circle "gradient_circle_pause" ?
+OldGradient.Circle = Void
+Point@OldGradient.Circle "gradient_circle_point" ?
+Real@OldGradient.Circle "gradient_circle_real" ?
+(;)@OldGradient.Circle "gradient_circle_pause" ?
 
-Real@Gradient "gradient_real" ?
-Color@Gradient "gradient_color" ?
-Str@Gradient "gradient_string" ?
+Real@OldGradient "gradient_real" ?
+Color@OldGradient "gradient_color" ?
+Str@OldGradient "gradient_string" ?
 
-Gradient@Print "print_gradient" ?
+OldGradient@Print "print_gradient" ?
+
+// This allow conversion from a new Gradient object to an OldGradient object.
+Gradient@OldGradient[
+  [If[$.type == 1]
+     .Line[$.point1, $.point2]
+   Else[], If[$.type == 2]
+     .Circle[$.point1, $.real1; $.point2, $.real2]
+  ]
+  num_offsets = Num[$.offsets]
+  i = 0
+  [If[i < num_offsets]
+     offset = Real[$.offsets.Get[i]]
+     [If[offset >= 0.0], offset]
+     Color[$.colors.Get[i]]
+   i += 1
+   For[1]]
+]

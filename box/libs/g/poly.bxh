@@ -64,6 +64,9 @@ Point@Poly.Get[$$ = $$$.points.Get[$]]
 ///Intro: color to use for filling the polygon.
 Color@Poly[\ .style[$]]
 
+///Intro: gradient used for filling the polygon.
+Gradient@Poly[\ .style[$]]
+
 ///Intro: style to use when drawing the polygon.
 Style@Poly[\ .style[$]]
 

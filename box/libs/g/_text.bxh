@@ -10,7 +10,8 @@ Point@Window.Text "window_text_point" ?
 (;)@Window.Text "window_text_pause" ?
 OldStyle@Window.Text "window_text_style" ?
 Color@Window.Text "window_text_color" ?
-Gradient@Window.Text "window_text_gradient" ?
+OldGradient@Window.Text "window_text_gradient" ?
+Gradient@Window.Text[OldGradient[$]]
 
 Style@Window.Text[OldStyle[$]]
 

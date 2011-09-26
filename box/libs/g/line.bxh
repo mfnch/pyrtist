@@ -26,6 +26,9 @@ StrokeStyle@Line[\ .style[$]]
 ///Intro: set the color to use when drawing the line.
 Color@Line[\ .style[$]]
 
+///Intro: gradient to use when drawing the line.
+Gradient@Line[\ .style[$]]
+
 ///Intro: set the {type(Dash)} style for drawing the line.
 Dash@Line[\ .style[$]]
 

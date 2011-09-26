@@ -19,7 +19,8 @@ Real@Window.Circle "circle_real" ?
 Color@Window.Circle "circle_color" ?
 
 ///Same.
-Gradient@Window.Circle "circle_gradient" ?
+OldGradient@Window.Circle "circle_gradient" ?
+Gradient@Window.Circle[OldGradient[$]]
 
 ///Intro: {type(.@)} used for the border of the circle and the filling mode.
 OldStyle@Window.Circle "circle_style" ?

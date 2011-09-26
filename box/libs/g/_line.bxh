@@ -17,7 +17,8 @@ Real@Window.Line "line_real" ?
 Point@Window.Line "line_point" ?
 (;)@Window.Line "line_pause" ?
 Color@Window.Line "line_color" ?
-Gradient@Window.Line "line_gradient" ?
+OldGradient@Window.Line "line_gradient" ?
+Gradient@Window.Line[OldGradient[$]]
 Window@Window.Line "line_window" ?
 LineStyle@Window.Line "line_linestyle" ?
 
