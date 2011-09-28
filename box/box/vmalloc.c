@@ -390,41 +390,8 @@ BoxTask BoxVM_Obj_Create(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id) {
   }
 }
 
+
 #if 0
-BoxTask BoxVM_Obj_Copy(BoxVM *vm, BoxVMAllocID id,
-                       BoxPtr *dest, BoxPtr *src) {
-
-#if DEBUG_VMALLOC == 1
-    printf("BoxVM_Obj_Copy: %p:%p --[id:%d]--> %p:%p"
-           src->block, src->ptr, (int) id,
-           dest->block, dest->ptr,);
-#endif
-
-  BoxVMMethodTable *mt = BoxVMMethodTable_From_Alloc_ID(vm, id);
-  if (mt == NULL) {
-    MSG_ERROR("BoxVM_Obj_Copy: invalid alloc-ID.");
-    return BOXTASK_ERROR;
-  }
-
-  if (mt->copier != BOXVMCALLNUM_NONE) {
-    /* Custom copy */
-#if DEBUG_VMALLOC == 1
-    printf("BoxVM_Obj_Copy: calling custom copier: "SInt, mt->copier);
-#endif
-    return BoxVM_Module_Execute_With_Args(vm, mt->copier, dest, src);
-
-  } else {
-    /* Generic copy */
-    (void) memcpy(dest->ptr, src->ptr, mt->size);
-    return BOXTASK_OK;
-  }
-}
-#endif
-
-
-
-
-
 
 static BoxTask My_Obj_Copy(BoxVM *vm, BoxVMObjDesc *desc,
                            BoxPtr *dest, size_t addr, void *pass) {
@@ -457,6 +424,91 @@ BoxTask BoxVM_Obj_Copy(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
     return BOXTASK_ERROR;
   }
 }
+
+#else
+
+typedef struct {
+  BoxPtr src, dest;
+  size_t gap_offs;
+  size_t container_offs;
+
+} MyCopyState;
+
+static BoxTask My_Obj_Copy(BoxVM *vm, BoxVMObjDesc *desc,
+                           BoxPtr *dest, size_t relative_offs, void *pass) {
+  BoxVMCallNum copier = desc->copier;
+  MyCopyState *state = pass;
+  size_t absolute_offs = state->container_offs + relative_offs;
+
+  assert(desc != NULL && pass != NULL);
+
+  if (copier != BOXVMCALLNUM_NONE) {
+    size_t gap_offs = state->gap_offs;
+
+    BoxPtr src;
+    src.block = state->src.block;
+    src.ptr = state->src.ptr + absolute_offs;
+    
+    /* Copy the gap, if there is one. */
+    if (absolute_offs > gap_offs) {
+      printf("Copying gap at %ld, size %ld\n", gap_offs, absolute_offs - gap_offs);
+      (void) memcpy(state->dest.ptr + gap_offs,
+                    state->src.ptr + gap_offs,
+                    absolute_offs - gap_offs);
+    }
+
+    /* Update the offset for the next gap.
+     * FIXME: note that here we may end up copying the dummy space introduced
+     *   in order to aligning the subobject in the parent object.
+     *   This is something we would like to avoid!
+     */
+    state->gap_offs = absolute_offs + desc->size;
+
+    printf("Copying object at %ld, size %ld\n", absolute_offs, desc->size);
+    return BoxVM_Module_Execute_With_Args(vm, copier, dest, & src);
+
+  } else {
+    size_t container_offs = state->container_offs;
+    state->container_offs = absolute_offs;
+    printf("Recursive...\n");
+    BoxTask t = My_Obj_Iter(vm, desc, dest, My_Obj_Copy, state);
+    state->container_offs = container_offs;
+    return t;
+  }
+}
+
+BoxTask BoxVM_Obj_Copy(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
+                       BoxVMAllocID id) {
+  MyCopyState state;
+  BoxVMObjDesc *desc = BoxVMObjDesc_From_Alloc_ID(vm, id);
+
+  state.src = *src;
+  state.dest = *dest;
+  state.gap_offs = 0;
+  state.container_offs = 0;
+
+  printf("Invoking BoxVM_Obj_Copy for id=%d\n", (int) id);
+
+  if (desc != NULL) {
+    BoxTask t = My_Obj_Copy(vm, desc, dest, 0, & state);
+
+    if (t == BOXTASK_OK && state.gap_offs < desc->size) {
+      size_t offs = state.gap_offs;
+      printf("Copying object tail at %ld, size %ld\n", offs, desc->size - offs);
+      (void) memcpy(dest->ptr + offs,
+                    src->ptr + offs,
+                    desc->size - offs);
+    }
+
+    return t;
+
+  } else {
+    MSG_ERROR("BoxVM_Obj_Copy: unknown object id (%d).", (int) id);
+    return BOXTASK_ERROR;
+  }
+}
+
+#endif
 
 BoxTask BoxVM_Obj_Relocate(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
                            BoxVMAllocID id) {
