@@ -57,7 +57,9 @@ typedef enum {
   BOXGCMDARGKIND_VECTOR, /**< Vector: transformed as a non applied
                               vector (V) */
   BOXGCMDARGKIND_REALP,  /**< Real couple: no transformation (p) */
-  BOXGCMDARGKIND_WIDTH   /**< Transformed as a width (real number) (W) */
+  BOXGCMDARGKIND_WIDTH,  /**< Transformed as a width (real number) (W) */
+  BOXGCMDARGKIND_WIDTHS  /**< Array of widhts (w) */
+
 } BoxGCmdArgKind;
 
 /** Maximum number of arguments among all the available commands. */
@@ -73,6 +75,8 @@ typedef union {
   BoxPoint *pp,
            p,
            v;
+  BoxGObj  *o;
+
 } BoxGCmdArg;
 
 /** Signature of a raw command. */
@@ -85,6 +89,7 @@ typedef enum {
   BOXGCMDSIG_V,
   BOXGCMDSIG_S,
   BOXGCMDSIG_PP,
+  BOXGCMDSIG_Ww,
   BOXGCMDSIG_RRR,
   BOXGCMDSIG_PPP,
   BOXGCMDSIG_RRRR,

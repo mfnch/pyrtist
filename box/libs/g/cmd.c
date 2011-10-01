@@ -36,6 +36,7 @@ BoxGObjKind BoxGCmdArgKind_To_Obj_Kind(BoxGCmdArgKind t) {
   case BOXGCMDARGKIND_REALP:
     return BOXGOBJKIND_POINT;
   case BOXGCMDARGKIND_WIDTH: return BOXGOBJKIND_REAL;
+  case BOXGCMDARGKIND_WIDTHS: return BOXGOBJKIND_COMPOSITE;
   default: return BOXGOBJKIND_EMPTY;
   }
 }
@@ -73,7 +74,7 @@ BoxGCmdSig BoxGCmdSig_Get(BoxGCmd cmd_id) {
     {BOXGCMD_SET_LINE_CAP, BOXGCMDSIG_I},
     {BOXGCMD_SET_LINE_JOIN, BOXGCMDSIG_I},
     {BOXGCMD_SET_MITER_LIMIT, BOXGCMDSIG_W},
-    {BOXGCMD_SET_DASH, BOXGCMDSIG_W},
+    {BOXGCMD_SET_DASH, BOXGCMDSIG_Ww},
     {BOXGCMD_SET_FILL_RULE, BOXGCMDSIG_I},
     {BOXGCMD_SET_SOURCE_RGBA, BOXGCMDSIG_RRRR},
     {BOXGCMD_TEXT_PATH, BOXGCMDSIG_S},
@@ -113,6 +114,10 @@ int BoxGCmdSig_Get_Arg_Kinds(BoxGCmdSig sig, BoxGCmdArgKind *kinds) {
   case BOXGCMDSIG_V: kinds[0] = BOXGCMDARGKIND_VECTOR; return 1;
   case BOXGCMDSIG_S: kinds[0] = BOXGCMDARGKIND_STR; return 1;
   case BOXGCMDSIG_PP: kinds[0] = kinds[1] = BOXGCMDARGKIND_POINT; return 2;
+  case BOXGCMDSIG_Ww:
+    kinds[0] = BOXGCMDARGKIND_WIDTH;
+    kinds[1] = BOXGCMDARGKIND_WIDTHS;
+    return 2;
   case BOXGCMDSIG_RRR:
     kinds[0] = kinds[1] = kinds[2] = BOXGCMDARGKIND_REAL;
     return 3;

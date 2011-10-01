@@ -52,8 +52,9 @@ Obj@Circle[
 ///Intro: style to use when drawing the circle.
 Style@Circle[\ .style[$]]
 
-///Intro: color for filling the circle.
+///Intro: {type(.@)} used for filling the circle.
 Color@Circle[\ .style[$]]
+Gradient@Circle[\ .style[$]] ///Same.
 
 ///Intro: area of the Circle.
 Circle@Area[If[$.have.radius], const.pi*$.radius**2, Else[], 0.0]

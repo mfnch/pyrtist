@@ -1,4 +1,7 @@
-Sphere = (Point center, Real radius, Color c1, c2, c3)
+///Section: clipart
+
+Sphere = ++(Point center, Real radius, Color c1, c2, c3)
+
 Point@Sphere[$$.center = $]
 Real@Sphere[$$.radius = $]
 Color@Sphere[$$.c2 = $, $$.c1.a = $$.c3.a = $$.c2.a]
@@ -12,8 +15,8 @@ Color@Sphere[$$.c2 = $, $$.c1.a = $$.c3.a = $$.c2.a]
 Sphere@Sphere[$$ = $]
 
 Sphere@Window[
-  g = Gradient[.Circle[$.center + $.radius*(-0.2, 0.2), 0; $.radius]
+  g = Gradient[Circles[$.center + $.radius*(-0.2, 0.2), 0; $.radius]
                $.c1, 0.4, $.c2, $.c3]
-  \ .Circle[$.center, $.radius, g]
+  Circle[$.center, $.radius, g]
 ]
 

@@ -79,7 +79,7 @@ msg = ("You are building a linear color gradient.\n\n"
        "line which the gradient should follow. You can click on the view "
        "to select the two points.\n\n"
        "At the end, you should have something like:\n\n"
-       "Gradient[.Line[point1, point2], ...]")
+       "Gradient[Line[point1, point2], ...]")
 gradient_line_help = \
   Mode("Gradient.Line help",
        tooltip="Get help about this command",
@@ -91,7 +91,7 @@ gradient_line = \
        tooltip="Select linear gradient",
        statusbar="Enter initial and final point",
        button=Button("Linear", "lingrad.png"),
-       enter_actions=[Paste("$LCOMMA$.Line[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+       enter_actions=[Paste("$LCOMMA$Line[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
                       push_settings, paste_on_new],
        exit_actions=pop_settings,
        submodes=[exit, gradient_line_help])
@@ -99,8 +99,8 @@ gradient_line = \
 msg = ("You are building a radial color gradient.\n\n"
        "You then need to specify center and radius of the initial and final "
        "circles. At the end, you should have something like:\n\n"
-       "Gradient[.Circle[point1, radius1; radius2], ...] or,\n"
-       "Gradient[.Circle[point1, radius1; point2, radius2], ...]\n\n"
+       "Gradient[Circles[point1, radius1; radius2], ...] or,\n"
+       "Gradient[Circles[point1, radius1; point2, radius2], ...]\n\n"
        "The first case is the most common one, and is used when the two "
        "circles share the same center. Pay attention to the semicolon ; "
        "denoting the end of first circle specification. ")
@@ -115,7 +115,7 @@ gradient_circle = \
        tooltip="Select radial gradient",
        statusbar="Expecting: circle_centre_1, radius_1; circle_centre_2, radius_2",
        button=Button("Circular", "circgrad.png"),
-       enter_actions=[Paste("$LCOMMA$.Circle[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+       enter_actions=[Paste("$LCOMMA$Circle[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
                       push_settings, paste_on_new],
        exit_actions=pop_settings,
        submodes=[exit, gradient_circle_help])
@@ -155,7 +155,7 @@ border_dash = \
   Mode("Border dash",
        tooltip="Dashed borders",
        button=Button("Dash", "borderds.png"),
-       enter_actions=[InputAct("$LCOMMA$.Dash[$INPUT$]$RCOMMA$",
+       enter_actions=[InputAct("$LCOMMA$Dash[$INPUT$]$RCOMMA$",
                                label="Lengths for dash, space, dash, ...\n"
                                      "(Example: 3, 1)")])
 
@@ -170,7 +170,7 @@ border = \
   Mode("Border",
        tooltip="Set the color, width and type of border of polygons and paths",
        button=Button("Border", "border.png"),
-       enter_actions=Paste("$LCOMMA$.Border[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+       enter_actions=Paste("$LCOMMA$Border[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
        submodes=[color, border_width, border_dash, exit])
 
 style = \
@@ -194,7 +194,7 @@ poly_close = \
   Mode("Poly.Close",
        tooltip="Close the border (only useful for non filled polygons)",
        button=Button("Close", "polyclose.png"),
-       enter_actions=[Paste("$LCOMMA$.Close[]$RCOMMA$"), update_now])
+       enter_actions=[Paste("$LCOMMA$Close[]$RCOMMA$"), update_now])
 
 poly = \
   Mode("Poly",
@@ -202,7 +202,7 @@ poly = \
        statusbar=("Select the vertices by clicking on the image view; "
                   "choose the color and filling style from the toolbox"),
        button=Button("Poly", "poly.png"),
-       enter_actions=[Paste("$LNEWLINE$\ .Poly[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
+       enter_actions=[Paste("$LNEWLINE$Poly[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
        submodes=[color, gradient, style, poly_smoothing, poly_close, exit])
@@ -218,7 +218,7 @@ circle = \
   Mode("Circle",
        tooltip="Create a new circle",
        button=Button("Circle", "circle.png"),
-       enter_actions=[Paste("$LNEWLINE$\ .Circle[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
+       enter_actions=[Paste("$LNEWLINE$Circle[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
        submodes=[color, gradient, style, circle_radius, exit])

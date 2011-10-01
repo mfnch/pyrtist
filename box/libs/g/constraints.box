@@ -3,7 +3,8 @@
 
 include "transform"
 
-///Intro: constraint used by {type(Put)} to compute transformation matrices.
+///Intro: constraint used by {type(Put)} and {type(Constraints)} to compute
+// transformation matrices.
 Near = ++((Int src, dst) have
           Str src_name, Point src
           Point dst
@@ -75,7 +76,7 @@ Obj@Near[
     Fail["Trying to set a partial Near object from an Obj object"]
 ]
 
-///Intro: provide the {type(Window)} to which the hot point name refers to.
+///Intro: provide the {type(Window)} to which the hot point name refers.
 // The window is used to resolve the Near constraint. For example, if
 // the constraint is specified as ``n = Near["name", p1]``, where ``"name"``
 // is the name of a {type(Hot)} point of the {type{Window)} ``w``, then
@@ -96,7 +97,10 @@ Window@Near[
 // best satisfies the constraints.
 Constraints = ++(Str freedom, Obj constraints, Window window)
 
-///Intro: provide the window the constraint refer to.
+///Intro: number of constraints.
+Constraints@Num[$.constraints]
+
+///Intro: provide the window to which the constraints are referring.
 // The window must be given before any reference to a Hot point is made in the
 // constraint list.
 // For example, ``Constraints[Near[p1, q1], win, Near["hot-point-1", q2]]``
@@ -105,9 +109,11 @@ Constraints = ++(Str freedom, Obj constraints, Window window)
 Window@Constraints[.window = $]
 
 ///Intro: provide the allowed transformations in form of a string.
+// Similar to {comb(Str@Put)}.
 Str@Constraints[.freedom = $]
 
-///Intro: provide a {type{Near)} constraint.
+///Intro: provide a {type(Near)} constraint to automatically place the figure.
+// Similar to {comp(Near@Put)}.
 Near@Constraints[
   [If[Valid[$$.window]], \ $[$$.window]]
   [If[! $.Completed[]]

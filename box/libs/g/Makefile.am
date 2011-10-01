@@ -31,10 +31,10 @@ AM_LDFLAGS=-no-undefined -module -avoid-version
 boxlib_LTLIBRARIES=libg.la
 
 dist_boxlibg_DATA=\
-  obj.bxh const.bxh gcore.bxh matrix.bxh transform.bxh \
+  obj.bxh const.bxh gcore.bxh matrix.box transform.box \
   raw.bxh cmdstream.bxh points.bxh path.bxh fill.bxh stroke.bxh style.bxh \
   poly.bxh text.bxh texts.bxh circle.bxh circles.bxh line.bxh gradcore.box \
-  gradient.box clip.bxh hot.bxh constraints.box put.bxh window.box bbox.box \
+  gradient.box clip.bxh hot.bxh constraints.box put.box window.box bbox.box \
   g2.bxh init.box color.box _oldstyle.bxh _gradient.bxh pattern.box _line.bxh \
   _circle.bxh _poly.bxh _put.bxh _pointlist.bxh _text.bxh area.bxh
 

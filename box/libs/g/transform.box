@@ -23,12 +23,33 @@ Angle = ++(Real angle,)
 ///Intro: angle in radians.
 Real@Angle[.angle = $]
 
+///Intro: return the angle for the given vector.
+// See {type(Norm)} for the vector norm.
+// In particular,
+// ``p = Point[a = Angle[p], Norm[p]*(Cos[a], Sin[a])]``.
+Point@Angle[Atan2[$]]
+
+///Intro: Angle to string.
+Angle@Str["Angle[", $.angle, "]"]
+
+///Intro: print the Angle.
+Angle@Print[Str[$]]
+
+///Intro: retrieve the angle as a real number.
+Angle@Real[$.angle]
+
 ///Intro: Represents an angle in degrees.
 ///Example: ``AngleDeg[180]`` is equivalent to ``Angle[const.pi]``
 AngleDeg = Angle
 
 ///Intro: angle in degrees.
 Real@AngleDeg[.angle = $*0.01745329251994329576]
+
+///Intro: AngleDeg to string.
+AngleDeg@Str["AngleDeg[", $.angle*180.0/const.pi, "]"]
+
+///Intro: print AngleDeg.
+AngleDeg@Print[Str[$]]
 
 ///Intro: represent a {type(Point)} in the center of something.
 Center = ++(Point center,)
@@ -57,7 +78,7 @@ Point@Translation[.translation = $]
 ///Intro: parametrized {type(Matrix)} object.
 // A {type(.)} object represents a transformation of the two dimensional
 // coordinate system, parametrized by: a translation vector, a rotation angle
-// and center and scaling factors along each dimension.
+// and rotation center and scaling factors along each dimension.
 Transform = ++(Point translation, rotation_center, scale_factors
                Real rotation_angle)
 
@@ -109,3 +130,18 @@ Transform.GetMatrix = Matrix
 // resulting from the multiplication of ``Matrix[2]`` and ``Matrix[t]``
 // and is equivalent to ``Matrix[2, t.GetMatrix[]]``.
 Transform@Matrix[$.GetMatrix[]]
+
+///Intro: transform a {type(.@)} into a {type(@.)} assuming (0, 0) as the 
+// rotation center.
+Matrix@Transform[
+  m11 = $.m11, m12 = $.m12, m21 = $.m21, m22 = $.m22
+  determinant = m11*m22 - m21*m12
+  [If[determinant == 0.0]
+     Fail["The matrix is singular (determinant==0.0)"]]
+  .scale_factors.x = scalex = Sqrt[m11*m11 + m21*m21]
+  .scale_factors.y = determinant/scalex
+  .rotation_angle = Atan2[Point[.x=m11, .y=m21]]
+  .rotation_center = Point[.x=.y=0.0]
+  .translation.x = $.m13
+  .translation.y = $.m23  
+]

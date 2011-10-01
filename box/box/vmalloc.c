@@ -344,8 +344,6 @@ void BoxVM_Obj_Unlink(BoxVM *vmp, BoxPtr *obj) {
   static int num_dealloc = 0;
 #endif
 
-  //printf("Unlink of object at %p: id=%d, num_ref=%d\n", head, (int) head->id, (int) head->references);
-
   if (BoxPtr_Is_Detached(obj))
     return;
 
@@ -450,12 +448,10 @@ static BoxTask My_Obj_Copy(BoxVM *vm, BoxVMObjDesc *desc,
     src.ptr = state->src.ptr + absolute_offs;
     
     /* Copy the gap, if there is one. */
-    if (absolute_offs > gap_offs) {
-      printf("Copying gap at %ld, size %ld\n", gap_offs, absolute_offs - gap_offs);
+    if (absolute_offs > gap_offs)
       (void) memcpy(state->dest.ptr + gap_offs,
                     state->src.ptr + gap_offs,
                     absolute_offs - gap_offs);
-    }
 
     /* Update the offset for the next gap.
      * FIXME: note that here we may end up copying the dummy space introduced
@@ -464,13 +460,11 @@ static BoxTask My_Obj_Copy(BoxVM *vm, BoxVMObjDesc *desc,
      */
     state->gap_offs = absolute_offs + desc->size;
 
-    printf("Copying object at %ld, size %ld\n", absolute_offs, desc->size);
     return BoxVM_Module_Execute_With_Args(vm, copier, dest, & src);
 
   } else {
     size_t container_offs = state->container_offs;
     state->container_offs = absolute_offs;
-    printf("Recursive...\n");
     BoxTask t = My_Obj_Iter(vm, desc, dest, My_Obj_Copy, state);
     state->container_offs = container_offs;
     return t;
@@ -487,14 +481,11 @@ BoxTask BoxVM_Obj_Copy(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
   state.gap_offs = 0;
   state.container_offs = 0;
 
-  printf("Invoking BoxVM_Obj_Copy for id=%d\n", (int) id);
-
   if (desc != NULL) {
     BoxTask t = My_Obj_Copy(vm, desc, dest, 0, & state);
 
     if (t == BOXTASK_OK && state.gap_offs < desc->size) {
       size_t offs = state.gap_offs;
-      printf("Copying object tail at %ld, size %ld\n", offs, desc->size - offs);
       (void) memcpy(dest->ptr + offs,
                     src->ptr + offs,
                     desc->size - offs);

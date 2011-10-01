@@ -1,0 +1,113 @@
+#provide "g.put"
+
+///Section: g
+
+include "matrix"
+include "transform"
+include "constraints"
+
+// Object providing a subset of functionality of Put.
+// In particular this object allows only to manually place figures.
+// (Undocumented as it is not expected to be used directly. Use Put, instead!)
+SimplePut = ++(Window src, Matrix matrix)
+Matrix@SimplePut[.matrix = $]
+Transform@SimplePut[.matrix = $.GetMatrix[]]
+Window@SimplePut[.src = $]
+SimplePut@Window "Box_Lib_G_SimplePut_At_Window" ?
+
+///Intro: put {type(Window)} objects inside other {type(Window)} objects.
+// The {type(Put)} object allows to transform manually (by giving translation
+// vectors or rotation angles) or automatically (by giving {type(Near)}
+// constraints) a source figure and put it inside a target figure.
+Put = ++((Int src, any) have
+         Constraints constraints
+         Transform transform
+         SimplePut simple_put
+         Window target)
+
+(.[)@Put[.have = (0, 0)]
+
+///Intro: place the figure as specified so far and start a new specification.
+// This is useful to place many figure with just one {type(Put)} instruction.
+(;)@Put[
+  [If[Num[$$.constraints] > 0]
+     \ $$.transform[$$.constraints]]
+  \ $$.simple_put[$$.transform]
+  .have.any = 0
+]
+
+///Intro: Provide the allowed transformations for the automatic placing
+// of figures. This is a string made of several letters. Each letter specifies
+// an allowed transformation.  For example: ``"rt"`` means that "r"otations
+// and "t"ranslations are allowed. The algorithm will then try to rotate
+// and translate the source figure until the {type(Near)} constraints are best
+// satisfied. The order of letters does not matter, e.g.  ``"rt"`` is
+// equivalent to ``"tr"``. The correspondence letter -> transformation is as
+// follows: ``"t"`` -> translation, ``"r"`` -> rotation, ``"s"`` -> scale,
+// ``"a"`` -> allows anisotropic scaling, ``"i"`` -> allows inversion
+// (mirroring).  It is also possible to use ``"tx"`` or ``"ty"`` to enable
+// translation only along one of the axes.
+// It is also possible to give sign ``"+"`` and ``"-"``. The sign
+// changes the behaviour of the function. ``"+"`` means that the following
+// characters should be used to enable transformations (default), while ``"-"``
+// means that they should be used to disable transformations. This is handy for
+// concatenated strings. Example: ``allowed + "-txr"`` means that we should do
+// whathever specified by ``allowed``, but we should not translate along-x nor
+// rotate.  There are then a few characters to fine tune the behaviour of the
+// function.  When ``string`` starts with a white space ``" "``, the flags are
+// or-ed over the pre-existing settings (while if the string does not start
+// with a space previous values are ignored, i.e. set to zero). Spaces in the
+// middle of the string are ignored.         
+Str@Put[\ .constraints[$], .have.any = 1]
+
+///Intro: provide a {type(Near)} constraint to place the source figure.
+// The figure will be transformed as specified by the string in {comb(Str@Put)}
+// until the {type(Near)} constraints are best satisfied.
+Near@Put[\ .constraints[$]]
+
+///Intro: provide a {type(Matrix)} for placing the figure manually.
+// This should be used only for manual placing of figures. You should provide
+// a {type(Transform)} object to provide a starting transformation to the
+// automatic placing algorithm.
+Matrix@Put[\ .transform[$]]
+
+///Intro: provide an initial transformation to the placing algorithm.
+// Note that you can often provide the transformation details directly to
+// {type(@.)}. For example, you can use ``Put[..., Center[c], p]`` rather
+// than ``Put[..., Transform[Center[c], p]]``. If you decide to go for the
+// latter, then you should remember that every {comb(Transform@Put)}
+// specification overrides entirely the previous one.
+Transform@Put[.transform = $]
+
+///Intro: provide the translation vector.
+// This is similar to {comb(.@Transform)}.
+Point@Put[\ .transform[$]]
+Translation@Put[\ .transform[$]] ///Same.
+
+///Intro: provide the scale factors.
+// This is similar to {comb(.@Transform)}.
+Scale@Put[\ .transform[$]]
+
+///Intro: provide the scale factor (for isotropic scaling).
+// This is similar to {comb(.@Transform)}.
+Real@Put[\ .transform[$]]
+
+///Intro: provide the rotation angle.
+// This is similar to {comb(.@Transform)}.
+Angle@Put[\ .transform[$]]
+
+///Intro: provide the center of rotation.
+// This is similar to {comb(.@Transform)}.
+Center@Put[\ .transform[$]]
+
+///Intro: provide the figure to be placed.
+Window@Put[
+  \ .constraints[$]
+  .simple_put.src = $, .have.src = 1, .have.any = 1
+]
+
+///Intro: output the content of {type(Put)} onto the given {type(Window)}.
+Put@Window[
+  \ $[;] 
+  $.simple_put
+]

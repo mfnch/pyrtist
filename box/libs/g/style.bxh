@@ -29,7 +29,7 @@ Dash@CmdStream[
   If[n > 0]
     Obj[const.raw.set_dash, $.offset
         i = 0
-        [If[i < n], Real[$.dashes.Get[i]], i += 1, For[1]]]
+        Obj[If[i < n], Real[$.dashes.Get[i]], i += 1, For[1]]]
 ]
 
 ///Intro: border width and color to be used when tracing the next

@@ -129,6 +129,12 @@ static Task My_Math_Atan(BoxVM *vm) {
   return Success;
 }
 
+static BoxTask My_Math_Atan2(BoxVM *vm) {
+  BoxPoint *p = BoxVM_Get_Child_Target(vm);
+  *((BoxReal *) BoxVM_Get_Parent_Target(vm)) = atan2(p->y, p->x);
+  return BOXTASK_OK;
+}
+
 static Task My_Math_Exp(BoxVM *vm) {
   BOX_VM_CURRENT(vm, Real) = exp(BOX_VM_ARG(vm, Real));
   return Success;
@@ -739,6 +745,7 @@ static void My_Register_Math(BoxCmp *c) {
    { "Asin",  BOXTYPE_REAL,  t_real, NULL,  My_Math_Asin},
    { "Acos",  BOXTYPE_REAL,  t_real, NULL,  My_Math_Acos},
    { "Atan",  BOXTYPE_REAL,  t_real, NULL,  My_Math_Atan},
+   {"Atan2",  BOXTYPE_REAL, t_point, NULL,  My_Math_Atan2},
    {  "Exp",  BOXTYPE_REAL,  t_real, NULL,   My_Math_Exp},
    {  "Log",  BOXTYPE_REAL,  t_real, NULL,   My_Math_Log},
    {"Log10",  BOXTYPE_REAL,  t_real, NULL, My_Math_Log10},

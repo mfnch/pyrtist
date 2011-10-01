@@ -22,8 +22,9 @@ Point@Circles[\ $$.last[$]]
 ///Intro: style to use when drawing the circles.
 Style@Circles[\ .style[$]]
 
-///Intro: color for filling the circles.
+///Intro: {type(.@)} used for filling the circle.
 Color@Circles[\ .style[$]]
+Gradient@Circles[\ .style[$]] ///Same.
 
 ///Intro: the number of circles in the {type(.@)} object.
 Circles@Num[$[;].circles]
