@@ -27,9 +27,10 @@ Point@Matrix[$$.m13 += $.x, $$.m23 += $.y]
 Matrix@Matrix[
   m11 = $.m11*$$.m11 + $.m12*$$.m21, m12 = $.m11*$$.m12 + $.m12*$$.m22
   m21 = $.m21*$$.m11 + $.m22*$$.m21, m22 = $.m21*$$.m12 + $.m22*$$.m22
-  $$.m13 = $.m13 + $.m11*$$.m13 + $.m12*$$.m23
-  $$.m23 = $.m23 + $.m21*$$.m13 + $.m22*$$.m23
+  m13 = $.m13 + $.m11*$$.m13 + $.m12*$$.m23
+  m23 = $.m23 + $.m21*$$.m13 + $.m22*$$.m23
   $$.m11 = m11, $$.m12 = m12, $$.m21 = m21, $$.m22 = m22
+  $$.m13 = m13, $$.m23 = m23
 ]
 
 ///Intro: in-place matrix inversion (invert the parent matrix).
@@ -70,8 +71,8 @@ Point@Matrix.Apply[
 ///Intro: get a string representation of the {type(Matrix)}.
 Matrix@Str[
   v = ", "
-  "Matrix[.m11=", $.m11, v, "m12=", $.m12, v, ".m13=", $.m13;
-  "       .m12=", $.m21, v, "m22=", $.m22, v, ".m23=", $.m23, "]"
+  "Matrix[.m11=", $.m11, v, ".m12=", $.m12, v, ".m13=", $.m13;
+  "       .m21=", $.m21, v, ".m22=", $.m22, v, ".m23=", $.m23, "]"
 ]
 
 ///Intro: print a matrix.
