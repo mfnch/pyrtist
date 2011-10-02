@@ -50,6 +50,15 @@ Circles@Gradient[
   .real2 = circle2.radius
 ]
 
+///Intro: use a radial gradient associated to the specified circle.
+// ``Gradient[Circle[center, radius], ...]`` is equivalent to
+// ``Gradient[Circles[center, 0; radius], ...]``.
+Circle@Gradient[
+  [If[!Valid[$]]
+     Fail["Circle is not valid (center or radius are missing)."]]
+  Circles[$.center, $.radius; 0.0]
+]
+
 ///Intro: convert the gradient into a generic pattern.
 Gradient@Pattern[
   \ $$.cmdstream[

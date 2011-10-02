@@ -4,20 +4,27 @@
 include "circle"
 
 ///Intro: a collection of {type(Circle)} shapes.
-Circles = ++(Obj circles, Circle last, Style style)
+Circles = ++(Obj circles, Circle last, Int changed, Style style)
+
+(.[)@Circles[.changed = 0]
 
 ///Intro: add a {type(.@)} to the circle collection.
 Circle@Circles[\ .circles[$]]
 
 ///Intro: use the parameters given so far to create a new {type(Circle)} and
 // add it to the circle collection.
-(;)@Circles[$$.last, $$.last.have.radius = 1]
+(;)@Circles[
+  If[$$.changed]
+    $$.last
+    $$.last.have.radius = 1
+    $$.changed = 0
+]
 
 ///Intro: provide the radius for the next circle to add.
-Real@Circles[\ $$.last[$]]
+Real@Circles[\ $$.last[$], .changed = 1]
 
 ///Intro: provide the center for the next circle to add.
-Point@Circles[\ $$.last[$]]
+Point@Circles[\ $$.last[$], .changed = 1]
 
 ///Intro: style to use when drawing the circles.
 Style@Circles[\ .style[$]]
@@ -48,4 +55,3 @@ Circles@Window[
     path.cmdstream
     CmdStream[$.style]
 ]
-

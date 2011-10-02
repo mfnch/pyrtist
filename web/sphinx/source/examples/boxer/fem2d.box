@@ -6,6 +6,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=21.6284987277, .y=15.0510204082]
 gui2 = Point[.x=41.5125739757, .y=27.4731353636]
@@ -43,7 +44,7 @@ mesh = Window[][
           gui4, gui5; gui1, gui9; gui1, gui10; gui1, gui11;
           gui3, gui12; gui3, gui13; gui4, gui6; gui4, gui7;
           gui4, gui8; gui2, gui16; gui2, gui14]
-  \ .Hot[gui1, gui2, gui3, "label", label1]
+  Hot[gui1; gui2; gui3; "label", label1]
 
   Texts[Font["times", 3.5], color.black,
         gui1, From[(1.5, 0.5)], "1"; 
@@ -52,7 +53,7 @@ mesh = Window[][
 ]
 
 w = Window[][
-  .Show[bbox1, bbox2, ]
+  BBox[bbox1, bbox2, ]
   m1 = .Put[mesh]
   m2 = .Put[mesh, (50, 0)]
   m3 = .Put[mesh, (100, 0)]
