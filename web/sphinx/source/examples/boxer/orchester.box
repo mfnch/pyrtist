@@ -5,6 +5,7 @@ GUI = Void
 Window@GUI[]
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=-117.457310125, .y=-45.553587782]
 gui2 = Point[.x=71.8443949495, .y=93.0393794521]
@@ -37,47 +38,47 @@ gui27 = Point[.x=-35.6381398658, .y=26.413040367]
 include "arrows"
 include "computer"
 
-master = Window[][Computer[.master = 1]]
-node = Computer[.master = 0]
-slave1  = Window[][node.num = 1, node]
-slave2  = Window[][node.num = 2, node]
-slave3  = Window[][node.num = 3, node]
+master = Window[][Computer["    Coordination\n& computing node"
+                           Font["sans", 5, color.red]]]
+slave1 = Window[][Computer["Computing node n. 1"]]
+slave2 = Window[][Computer["Computing node n. 2"]]
+slave3 = Window[][Computer["Computing node n. 3"]]
 
 w = Window[][
-  .Show[gui1, gui2]
-  \ .Put[master, mp]
-  \ .Put[slave1, sp1]
-  \ .Put[slave2, sp2]
-  \ .Put[slave3, sp3]
-  c = (Color management, data, instructions)[]
-  c.data = color.white
-  c.management = color.red
-  c.instructions = Color[.r=0.3, .g=0.8, .b=0.3]
+  BBox[gui1, gui2]
+  Put[master, mp]
+  Put[slave1, sp1]
+  Put[slave2, sp2]
+  Put[slave3, sp3]
 
-  Arrow2D[gui7, gui8, 2, 2.5, 4.5, color.red, .Both[]]
-  Arrow2D[gui9, gui10, 2, 2.5, 4.5, color.red, .Both[]]
-  Arrow2D[gui11, gui12, 2, 2.5, 4.5, color.red, .Both[]]
-  Arrow2D[gui14, gui13, 2, 2.5, 4.5, c.management]
-  Arrow2D[gui16, gui15, 2, 2.5, 4.5, c.management]
-  Arrow2D[gui18, gui17, 2, 2.5, 4.5, c.management]
-  Arrow2D[gui19, gui20, 2, 2.5, 4.5, c.instructions]
-  Arrow2D[gui21, gui22, 2, 2.5, 4.5, c.instructions]
-  Arrow2D[gui23, gui24, 2, 2.5, 4.5, c.instructions]
+  c_data = color.white
+  c_management = color.red
+  c_instructions = Color[(0.3, 0.8, 0.3)]
 
-  \ .Circle[gui26, 5, Gradient[.Circle[gui26, 0; 10]
-                                Color[color.white, .a=1]
-                                Color[color.white, .a=0.0]]]
-  \ .Circle[gui25, 5, Gradient[.Circle[gui25, 0; 10]
-                                Color[color.white, .a=1]
-                                Color[color.white, .a=0.0]]]
-  \ .Circle[gui27, 5, Gradient[.Circle[gui27, 0; 10]
-                                Color[color.white, .a=1]
-                                Color[color.white, .a=0.0]]]
+  Arrow2D[gui7, gui8, 2, 2.5, 4.5, c_data, .Both[]]
+  Arrow2D[gui9, gui10, 2, 2.5, 4.5, c_data, .Both[]]
+  Arrow2D[gui11, gui12, 2, 2.5, 4.5, c_data, .Both[]]
+  Arrow2D[gui14, gui13, 2, 2.5, 4.5, c_management]
+  Arrow2D[gui16, gui15, 2, 2.5, 4.5, c_management]
+  Arrow2D[gui18, gui17, 2, 2.5, 4.5, c_management]
+  Arrow2D[gui19, gui20, 2, 2.5, 4.5, c_instructions]
+  Arrow2D[gui21, gui22, 2, 2.5, 4.5, c_instructions]
+  Arrow2D[gui23, gui24, 2, 2.5, 4.5, c_instructions]
 
-  \ .Text[.Font["sans", 4.5], color.black
-          gui26, .From[(0.5, 0.5)], "Data";
-          gui25, .From[(0.8, 0.5)], "Management\ninstructions";
-          gui27, "Computing\ninstructions"]
+  Circle[gui26, 5, Gradient[Circles[gui26, 0; 10]
+                            Color[color.white, .a=1]
+                            Color[color.white, .a=0.0]]]
+  Circle[gui25, 5, Gradient[Circles[gui25, 0; 10]
+                            Color[color.white, .a=1]
+                            Color[color.white, .a=0.0]]]
+  Circle[gui27, 5, Gradient[Circles[gui27, 0; 10]
+                            Color[color.white, .a=1]
+                            Color[color.white, .a=0.0]]]
+
+  Texts[Font["sans", 4.5], color.black
+        gui26, From[(0.5, 0.5)], "Data";
+        gui25, From[(0.8, 0.5)], "Management\ninstructions";
+        gui27, "Computing\ninstructions"]
 ]
 
 GUI[w]

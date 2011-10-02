@@ -38,14 +38,14 @@ Point@Text[.pos = $, .have.pos = 1]
 ///Intro: how to position the text with respect to the give position point.
 From@Text[.from = $]
 
-///Intro: the font to use.
-Font@Text[.font = $]
-
 ///Intro: set the style used to draw the text.
 Style@Text[\ .style[$]]
 
 ///Intro: the color to use.
 Color@Text[\ .style[$]]
+
+///Intro: the font to use.
+Font@Text[.font = $, If[$.have.color], $.color]
 
 ///Intro: convert a Text to Obj
 Text@Obj[

@@ -5,6 +5,7 @@ GUI = Void
 Window@GUI[]
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=25.5173711187, .y=15.0382159091]
 gui2 = Point[.x=67.9417991169, .y=42.5137840909]
@@ -24,9 +25,9 @@ gui15 = Point[.x=26.1563938497, .y=40.8722670455]
 //!BOXER:REFPOINTS:END
 include "arrows"
 
-Cylinder = (Point pos, Real rx, ry, l)
+Cylinder = ++(Point pos, Real rx, ry, l)
 
-Cylinder@@Window[
+Cylinder@Window[
   p = $.pos, vx = Point[($.rx, 0)], vy = Point[(0, $.ry)]
   vl = Point[($.l, 0)]
   \ .Poly[p, (p += vl)
@@ -35,11 +36,11 @@ Cylinder@@Window[
           0, 1, (p += vx), (p -= vy), (p -= vy)]
 ]
 
-InfoBox = (Point pos, size, Real round)
+InfoBox = ++(Point pos, size, Real round, Style style)
 
-([)@InfoBox[.pos = (0, 0), .size = (10, 10), .round = 0]
+(.[)@InfoBox[.pos = (0, 0), .size = (10, 10), .round = 0]
 
-InfoBox@@Window[
+InfoBox@Window[
   p = $.pos
   vx = Point[$.size, .y = 0]
   vy = Point[$.size, .x = 0]
@@ -51,7 +52,6 @@ FiveLayers = (Int on_the_left,)
 FiveLayers@@Window[
   sx = 40, hx = 5, rx = 3, ry = 12           // Sizes
   scol = Color[(0.7, 0.7, 1.0)], hcol = Color[(0.3, 0.3, 1.0)] // Colors
-//  scol = Color[(1.0, 0.95, 0.6)], hcol = Color[(0.4, 0.6, 1.0)]
   fecol = color.white, dycol = color.white
   jcol = color.black
 
@@ -166,12 +166,12 @@ FiveLayers@@Window[
            ib1, ib2, ib3, ib4, ib5
 
            color.white, draw_without_border, color.black
-           \ .Text[.Font["helvetica", 3.5], .From[(0.5, 0.5)]
-                  ib1.pos + 0.5*ib1.size, "HARD";
-                  ib2.pos + 0.5*ib2.size, "HARD";
-                  ib3.pos + 0.5*ib3.size, "SOFT";
-                  ib4.pos + 0.5*ib4.size, "HARD";
-                  ib5.pos + 0.5*ib5.size, "SOFT";]
+           Texts[Font["helvetica", 3.5], From[(0.5, 0.5)]
+                 ib1.pos + 0.5*ib1.size, "HARD";
+                 ib2.pos + 0.5*ib2.size, "HARD";
+                 ib3.pos + 0.5*ib3.size, "SOFT";
+                 ib4.pos + 0.5*ib4.size, "HARD";
+                 ib5.pos + 0.5*ib5.size, "SOFT";]
       ]
     ]
   ]
@@ -180,15 +180,15 @@ FiveLayers@@Window[
 ]
 
 w = Window[][
-  .Show[gui8, gui9]
+  BBox[gui8, gui9]
   before = Window[][FiveLayers[.on_the_left=1]]
   after = Window[][FiveLayers[.on_the_left=0]]
 
-  \ .Put[before, Point[gui12, .x=0]]
-  \ .Put[after]
+  Put[before, Point[gui12, .x=0]]
+  Put[after]
 
-  .Text[.Font["arial", 5], color.black,
-        gui14, "(a)", .From[(0, 0)]; 
+  Texts[Font["arial", 5], color.black,
+        gui14, "(a)", From[(0, 0)]; 
         Point[gui15, .x=Point[gui14].x], "(b)"]
 ]
 

@@ -44,12 +44,9 @@ Font@Print[
 
 Font@Window.Text[$$.Font[$.name, $.size], If[$.have.color], $.color]
 
-Font@Obj[
-  Obj[$.name, $.size]
-]
+Font@Obj[Obj[$.name, $.size]]
 
 Obj@Font[
   .name = Str[$.Get[0]]
   .size = Real[$.Get[1]]
 ]
-

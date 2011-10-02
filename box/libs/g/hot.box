@@ -11,15 +11,25 @@
 // as possible to the point ``p1`` in the destination {type(Window)}.
 Hot = ++((Int name, point) have
          Str name, Point point
-         Obj names, Obj points)
+         Obj names, Points points)
 
 (.[)@Hot[.have = (0, 0)]
+
+///Intro: number of hot points in the list.
+Hot@Num[$.points]
 
 ///Intro: the name of the next hot point.
 Str@Hot[.name = $, .have.name = 1]
 
 ///Intro: the coordinates of the hot point.
-Point@Hot[.point = $, .have.point = 1]
+Point@Hot[
+  [If[$$.have.point]
+     Fail[Str["Got two coordinates for the same hot point. "
+              "Did you forget to use the ; delimiter?";
+              "Remember the usage: Hot[point1, name1; point2, name2; ...]"]]]
+  .point = $
+  .have.point = 1
+]
 
 ///Intro: end the specification of the current hot point.
 // This allows adding another hot point.
@@ -28,9 +38,9 @@ Point@Hot[.point = $, .have.point = 1]
      Fail[Str["Coordinates for point '", $$.name, "' are missing!"]]]
 
   [If[$$.have.point]
-     point_index = Num[$$.points]
      \ .points[$$.point]
      [If[$$.have.name]
+        point_index = Num[$$.points] - 1
         \ $$.names[Obj[$$.name, point_index]]]]
 
   $$.have.name = 0
@@ -58,7 +68,11 @@ Str@Hot.GetIndex[
    $$ = i_index
 ]
 
+///Intro: get the name associated with the given point index.
+Hot.GetName = Str
+
 ///Intro: get a point from the hot point list.
+// This behave similarly to {type(Points.Get)}.
 Hot.Get = Point
 
 ///Intro: get a point from the given name.
@@ -69,3 +83,40 @@ Str@Hot.Get[
    $$ = Point[$$$.points.Get[i_index]]
 ]
 
+///Intro: retrieve the point by index (see {type(Points.Get)}).
+Int@Hot.Get[$$ = $$$.points.Get[$]]
+REAL@Hot.Get[$$ = $$$.points.Get[$]]  ///Same.
+Point@Hot.Get[$$ = $$$.points.Get[$]] ///Same.
+
+///Intro: pass the list of hot points to the Window.
+// The window will retain these points, which will be accessible through the
+// Window.Get method.
+Hot@Window[
+  n_points = Num[$]
+  i_points = 0
+
+  n_names = Num[$.names]
+  i_names = 0
+
+  name_str = ""
+  name_idx = -1
+
+  [If[n_names > 0]
+     name_str = Str[$.names.Get[0].Get[0]]
+     name_idx = Int[$.names.Get[0].Get[1]]]
+
+  [If[i_points < n_points]
+     point = $.Get[i_points]
+     point_has_name = (i_points == name_idx)
+
+     \ $$.Hot[[If[point_has_name], name_str], point]
+
+     [If[point_has_name]
+        i_names += 1
+        name_idx = -1
+        [If[i_names < n_names]
+           name_str = Str[$.names.Get[i_names].Get[0]]
+           name_idx = Int[$.names.Get[i_names].Get[1]]]]
+   i_points += 1
+   For[1]]
+]

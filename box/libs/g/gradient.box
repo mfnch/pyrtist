@@ -89,7 +89,7 @@ Gradient@Pattern[
       i0 += 1
       ofs = offset + (i - i0)*(offset0 - offset)/m
       col = Color[$.colors.Get[i0]]
-      \ $$.cmdstream[Obj[const.raw.pattern_add_color_stop_rgb,
+      \ $$.cmdstream[Obj[const.raw.pattern_add_color_stop_rgba,
                          ofs, col.r, col.g, col.b, col.a]]
      For[i0 < i]]
 

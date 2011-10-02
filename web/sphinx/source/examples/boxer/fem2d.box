@@ -5,6 +5,7 @@ GUI = Void
 Window@GUI[]
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=21.6284987277, .y=15.0510204082]
 gui2 = Point[.x=41.5125739757, .y=27.4731353636]
@@ -37,17 +38,17 @@ c3 = Color[c1, .a=0.5]
 c4 = Color[c1, .Darker[0.8], .a=0.5]
 
 mesh = Window[][
-  \ .Poly[gui1, gui2, gui3, s4, .Close[]]
+  Line[gui1, gui2, gui3, b, Close[]]
   \ .Poly[s3, gui1, gui4, gui2, gui15;
           gui4, gui5; gui1, gui9; gui1, gui10; gui1, gui11;
           gui3, gui12; gui3, gui13; gui4, gui6; gui4, gui7;
           gui4, gui8; gui2, gui16; gui2, gui14]
   \ .Hot[gui1, gui2, gui3, "label", label1]
 
-  \ .Text[.Font["times", 3.5], color.black,
-          gui1, .From[(1.5, 0.5)], "1"; 
-          gui2, .From[(0.65, 1.4)], "3";
-          gui3, .From[(-0.5, 0.5)], "2"]
+  Texts[Font["times", 3.5], color.black,
+        gui1, From[(1.5, 0.5)], "1"; 
+        gui2, From[(0.65, 1.4)], "3";
+        gui3, From[(-0.5, 0.5)], "2"]
 ]
 
 w = Window[][
@@ -67,10 +68,10 @@ w = Window[][
   \ .Poly[s2, p2.Get[1], p2.Get[1] - v]
   \ .Poly[s2, p3.Get[1], p3.Get[1] - 0.5*v]
 
-  \ .Text[.Font["times-italic", 4], color.black
-          m1.Get["label"], "L_1";
-          m2.Get["label"], "L_2";
-          m3.Get["label"], "L_3";]
+  Texts[Font["times-italic", 4, color.black]
+        m1.Get["label"], "L_1";
+        m2.Get["label"], "L_2";
+        m3.Get["label"], "L_3";]
 ]
 
 w.Save["fem2d.png", Window["rgb24", .Res[Dpi[100]]]]

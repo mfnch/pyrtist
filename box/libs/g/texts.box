@@ -19,7 +19,7 @@ Text@Texts[\ .texts[$]]
 From@Texts[\ .last[$]]
 
 ///Intro: the font to use for the current text piece.
-Font@Texts[\ .last[$]]
+Font@Texts[\ .last[$], If[$.have.color], $.color]
 
 ///Intro: the position of the current text piece.
 Point@Texts[\ .last[$]]

@@ -1,8 +1,23 @@
+///Section: clipart
+
 include "g"
 
-Gear = (Point pos, Real rad, h, Int n)
+///Intro: a clipart of a gear.
+Gear = ++(Point pos, Real rad, h, Int n)
 
-Gear@&Window[
+(.[)@Gear[.pos=(0, 0), .rad = 10.0, .h = 1, .n = 20]
+
+///Intro: center of the gear.
+Point@Gear[.pos = $]
+
+///Intro: radius of the gear.
+REAL@Gear[.rad = $]
+
+///Intro: number of teeth.
+Int@Gear[.n = $]
+
+///Intro: draw the gear.
+Gear@Window[
   m := $.n
   n := 180
   s := Style[.Border[color.black, 0.4]]
@@ -16,13 +31,8 @@ Gear@&Window[
   \  $$.Circle[$.pos, $.rad*0.2, color.grey, s]
 ]
 
-([)@Gear[.pos=(0, 0), .rad = 10.0, .h = 1, .n = 20]
-
 gears = Window[][
-  gui3 := (-5.80503357401, 2.91855231481)
-  gui4 := (18.5917679487, -7.25533574661)
-  gui5 := (-22.8225615385, -17.1623063348)
-  Gear[.pos=gui3, .rad=15, .n=30]
-  Gear[.pos=gui4]
-  Gear[.pos=gui5]
+  Gear[(-5.80503357401, 2.91855231481), 15.0, 30]
+  Gear[(18.5917679487, -7.25533574661)]
+  Gear[(-22.8225615385, -17.1623063348)]
 ]
