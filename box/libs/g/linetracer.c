@@ -382,7 +382,7 @@ static int lt_put_to_begin_or_end(BoxGWin *win,
   #endif
 
   /* Calcolo la matrice di trasformazione */
-  Grp_Matrix_Set(& m, & trsl_vect, & rot_center, rot_angle, scale_x, scale_y);
+  BoxGMatrix_Set(& m, & trsl_vect, & rot_center, rot_angle, scale_x, scale_y);
 
   /* Calcolo dove vanno a finire pfi[0] = f3 e pfi[1] = f5,
    * quando trasformo la figura
@@ -521,7 +521,7 @@ static int lt_put_to_join(LineTracer *lt, Point *p1, Point *p2, Point *p3,
   }
 
   /* Calcolo la matrice di trasformazione */
-  Grp_Matrix_Set(& m, & trsl_vect, & rot_center, rot_angle, scale_x, scale_y);
+  BoxGMatrix_Set(& m, & trsl_vect, & rot_center, rot_angle, scale_x, scale_y);
 
   /* Calcolo dove vanno a finire pfi[0] = f3 e pfi[1] = f5,
    * quando trasformo la figura

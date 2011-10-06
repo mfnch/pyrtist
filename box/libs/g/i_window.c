@@ -401,14 +401,14 @@ BoxTask window_save_window(BoxVM *vmp) {
     sy = dest->plan.size.y/(bbox.max.y - bbox.min.y);
   }
 
-  Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);
+  BoxGMatrix_Set(& m, & translation, & center, rot_angle, sx, sy);
   BoxGWin_Fig_Draw_Fig_With_Matrix(dest->window, src->window, & m);
   if (dest->plan.have.file_name)
     BoxGWin_Save_To_File(dest->window, dest->plan.file_name);
     /* ^^^ Some terminals require an explicit save! */
 
   if (src->save_file_name != NULL) {
-    free(src->save_file_name);
+    BoxMem_Free(src->save_file_name);
     src->save_file_name = NULL;
     dest->plan.file_name = NULL;
   }
@@ -475,8 +475,7 @@ BoxTask window_hot_string(BoxVM *vm) {
 }
 
 static BoxTask _add_from_pointlist(Int index, char *name,
-                                   void *object, void *data)
-{
+                                   void *object, void *data) {
   PointList *dest_pl = (PointList *) data;
   Point *p = (Point *) object;
   return pointlist_add(dest_pl, p, name);

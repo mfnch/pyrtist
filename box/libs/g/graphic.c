@@ -829,12 +829,12 @@ void Grp_BB_Margin(BB *bb, Real margin) {
  *                              Matrix OBJECT                               *
  ****************************************************************************/
 
-void Grp_Matrix_Set(Matrix *m,
+void BoxGMatrix_Set(Matrix *m,
                     Point *t, Point *rcntr, Real rang, Real sx, Real sy) {
   Real c, s, m11, m12, m21, m22;
 
   c = cos(rang); s = sin(rang);
-  m11 = sx * c; m12 = - (sy * s);
+  m11 = sx * c; m12 = -(sy * s);
   m21 = sx * s; m22 = sy * c;
 
   m->m11 = m11; m->m12 = m12;
@@ -843,7 +843,7 @@ void Grp_Matrix_Set(Matrix *m,
   m->m23 = (1.0 - m22) * rcntr->y - m21 * rcntr->x + t->y;
 }
 
-void Grp_Matrix_Set_Identity(Matrix *m) {
+void BoxGMatrix_Set_Identity(Matrix *m) {
   m->m11 = m->m22 = 1.0;
   m->m12 = m->m21 = m->m13 = m->m23 = 0.0;
 }

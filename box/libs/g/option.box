@@ -1,0 +1,78 @@
+///Section: g
+
+#provide "g.option"
+
+///Intro: represents an association "string" --> value.
+Option = ++(Str name, Obj value)
+
+///Intro: provide the option name.
+Str@Option[.name = $]
+
+///Intro: provide the option value.
+Obj@Option[.value = $]
+
+///Intro: provide an integer value for the option.
+Int@Option[.value = Obj[$]]
+
+///Intro: this object acts as a dictionary mapping strings to Obj values.
+Options = ++(Obj names, values)
+
+///Intro: number of options.
+Options@Num[$.names]
+
+///Intro: print a list of the option names.
+Options@Str[
+  n = Num[$]
+  i = 0
+  sep = ""
+  [If[i < n]
+     sep
+     $.names.Get[i]
+     sep = ", "
+   i += 1
+   For[1]]
+]
+
+///Intro: add one option to the option list.
+Option@Options[
+  \ $$.names[$.name]
+  \ $$.values[$.value]
+]
+
+///Intro: retrieve an integer value.
+Options.GetIndex = Int
+
+///Intro: retrieve by name.
+Str@Options.GetIndex[
+  n = Num[$$$.names]
+  i = 0
+  found = -1
+  [If[i < n]
+     [If[Compare[($, Str[$$$.names.Get[i]])] == 0]
+        found = i]
+   i += 1
+   For[1]]
+
+   $$ = found
+]
+
+///Intro: retrieve the value of an option.
+Options.Get = Obj
+
+///Intro: retrieve by name.
+Str@Options.Get[
+  index = $$$.GetIndex[$]
+  [If[index >= 0]
+     $$ = $$$.values.Get[index]
+   Else[]
+     msg = Str["Cannot find option with name '", $, "'. "
+               "Available options are: ", $$$, '.']
+     Fail[msg]]
+]
+
+///Intro: retrieve the integer value of an option.
+// (it must be an integer, otherwise an exception is raised).
+Options.GetInt = Int
+
+///Intro: retrieve by name.     
+Str@Options.GetInt[$$ = Int[$$$.Get[$].Get[0]]]

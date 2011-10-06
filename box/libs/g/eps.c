@@ -488,7 +488,7 @@ int eps_save_fig(const char *file_name, BoxGWin *figure) {
   center.y = center.x = 0.0;
   sy = sx = 1.0;
   rot_angle = 0.0;
-  Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);
+  BoxGMatrix_Set(& m, & translation, & center, rot_angle, sx, sy);
   BoxGWin_Fig_Draw_Fig_With_Matrix(dest, figure, & m);
   BoxGWin_Finish_Drawing(dest);
   return 1;
@@ -587,7 +587,7 @@ int ps_save_fig(const char *file_name, BoxGWin *figure) {
   center.y = center.x = 0.0;
   sy = sx = 1.0;
   rot_angle = 0.0;
-  Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);
+  BoxGMatrix_Set(& m, & translation, & center, rot_angle, sx, sy);
   BoxGWin_Fig_Draw_Fig_With_Matrix(dest, figure, & m);
   BoxGWin_Finish_Drawing(dest);
   return 1;

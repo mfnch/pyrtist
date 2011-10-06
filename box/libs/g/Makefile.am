@@ -31,8 +31,8 @@ AM_LDFLAGS=-no-undefined -module -avoid-version
 boxlib_LTLIBRARIES=libg.la
 
 dist_boxlibg_DATA=\
-  obj.bxh const.bxh gcore.bxh matrix.box transform.box \
-  raw.bxh cmdstream.bxh points.bxh path.bxh fill.bxh stroke.bxh style.bxh \
+  obj.bxh const.bxh gcore.bxh matrix.box transform.box option.box \
+  raw.bxh cmdstream.bxh points.bxh path.bxh fill.bxh stroke.bxh style.box \
   poly.bxh text.box texts.box circle.box circles.box line.bxh gradcore.box \
   gradient.box clip.bxh hot.box constraints.box put.box window.box bbox.box \
   g2.bxh init.box color.box _oldstyle.bxh _gradient.bxh pattern.box _line.bxh \

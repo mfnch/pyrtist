@@ -35,14 +35,6 @@
 typedef Window *BoxGWindow;
 
 /** Note: this definition is coherent with the following Box definition
- * Matrix = ++(Real m11, m12, m13, m21, m22, m23)
- */
-typedef struct {
-  BoxReal m11, m12, m13, m21, m22, m23;
-
-} BoxGMatrix;
-
-/** Note: this definition is coherent with the following Box definition
  * SimplePut = ++(Window src, Matrix matrix)
  */
 typedef struct {

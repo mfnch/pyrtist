@@ -5,6 +5,7 @@ include "raw"
 include "cmdstream"
 include "pattern"
 include "gradcore"
+include "option"
 
 ///Intro: the dash pattern for tracing lines.
 Dash = ++((Int semicolon,) have, Real offset, Obj dashes)
@@ -32,10 +33,78 @@ Dash@CmdStream[
         Obj[If[i < n], Real[$.dashes.Get[i]], i += 1, For[1]]]
 ]
 
+join_options = Options[
+  Option["none", -1]
+  Option["miter", const.line.join.miter]
+  Option["round", const.line.join.round]
+  Option["bevel", const.line.join.bevel]
+]
+
+///Intro: join style.
+// Controls how the segments in a line are joined together.
+Join = ++(Int int,)
+
+(.[)@Join[.int = -1]
+
+///Intro: provide the join style as an integer.
+// Can be either ``const.line.join.miter``, ``const.line.join.round``,
+// ``const.line.join.bevel``.
+Int@Join[.int = $]
+
+///Intro: provide the join style as a string.
+// Can either be ``"miter"``, ``"round"`` or ``"bevel"``.
+Str@Join[join_options.GetInt[$]]
+
+///Intro: get the command for setting the join style.
+Join@CmdStream[If[$.int >= 0], Obj[const.raw.set_line_join, $.int]]
+
+cap_options = Options[
+  Option["none", -1]
+  Option["butt", const.line.cap.butt]
+  Option["round", const.line.cap.round]
+  Option["square", const.line.cap.square]
+]
+
+///Intro: cap style.
+// Controls how lines are capped (how they begin and end).
+Cap = ++(Int int,)
+
+(.[)@Cap[.int = -1]
+
+///Intro: provide the cap style as an integer.
+// Can be either ``const.line.cap.butt``, ``const.line.cap.round``,
+// ``const.line.cap.square``.
+Int@Cap[.int = $]
+
+///Intro: provide the cap style as a string.
+// Can either be ``"butt"``, ``"round"`` or ``"square"``.
+Str@Cap[cap_options.GetInt[$]]
+
+///Intro: get the command for setting the cap.
+Cap@CmdStream[If[$.int >= 0], Obj[const.raw.set_line_cap, $.int]]
+
+///Intro: miter limit.
+// If the current line join style (see {type(Join)}) is set to "miter", the
+// miter limit (a real number) is used to determine whether the lines should
+// be joined with a bevel instead of a miter. This is determined in by dividing
+// the miter by the line width. If the result is greater than the miter limit,
+// then the style is converted to a bevel.
+MiterLimit = ++(Real real,)
+
+(.[)@MiterLimit[.real = -1.0]
+
+///Intro: provide the value for the miter limit.
+// Use a negative value to unset the MiterLimit.
+Real@MiterLimit[.real = $]
+
+///Intro: get the command for setting the miter limit.
+MiterLimit@CmdStream[If[$.real >= 0.0], Obj[const.raw.set_miter_limit, $.real]]
+
 ///Intro: border width and color to be used when tracing the next
 // polygon (for {type(Poly)}, {type(Circle)}, etc).
 Border = ++((Int color, width, dash) have
-            Pattern pattern, Real width, Dash dash
+            Pattern pattern, Real width, Dash dash, Join join, Cap cap
+            MiterLimit miter_limit
             Color color)
 
 //^^^ NOTE: The member Border.color is somewhat redundant (as pattern already
@@ -51,6 +120,15 @@ Real@Border[.width = $, .have.width = 1]
 ///Intro: specify the border color.
 Color@Border[.color = $, \ $$.pattern[$], .have.color = 1]
 
+///Intro: specify the join style.
+Join@Border[.join = $]
+
+///Intro: set the miter limit.
+MiterLimit@Border[.miter_limit = $]
+
+///Intro: specify the cap style.
+Cap@Border[.cap = $]
+
 ///Intro: use a gradient to render the border.
 Gradient@Border[\ $$.pattern[$], .have.color = 1]
 
@@ -60,6 +138,9 @@ Border@Border[
   [If[$.have.color]
      $$.pattern = $.pattern, $$.color = $.color, $$.have.color = 1]
   [If[$.have.dash], $$.dash = $.dash, $$.have.dash = 1]
+  $$.cap = $.cap
+  $$.join = $.join
+  $$.miter_limit = $.miter_limit
 ]
 
 ///Intro: add the dash pattern specification to the border.
@@ -77,6 +158,8 @@ Border@CmdStream[
      Obj[const.raw.set_line_width, w]]
 
   [If[$.have.dash], $.dash]
+
+  $.join, $.cap, $.miter_limit
 
   Obj[const.raw.stroke]
   Obj[const.raw.restore]

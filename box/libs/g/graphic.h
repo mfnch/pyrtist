@@ -63,9 +63,16 @@ typedef struct {
   Real r, g, b, a;
 } Color;
 
+/** Note: this definition is coherent with the following Box definition
+ * Matrix = ++(Real m11, m12, m13, m21, m22, m23)
+ */
 typedef struct {
-  Real m11, m12, m13, m21, m22, m23;
-} Matrix;
+  BoxReal m11, m12, m13, m21, m22, m23;
+
+} BoxGMatrix;
+
+/** Obsolete. Use BoxGMatrix instead. */
+typedef BoxGMatrix Matrix;
 
 typedef struct {
   Point max, min;
@@ -505,11 +512,11 @@ Point *grp_ref(Point *o, Point *v, Point *p);
  * translation vector 't', rotation center 'rcntr', rotation angle 'rang',
  * scale factors 'sx' and 'sy'. The computed matrix is put in 'm'.
  */
-void Grp_Matrix_Set(Matrix *m,
+void BoxGMatrix_Set(BoxGMatrix *m,
                     Point *t, Point *rcntr, Real rang, Real sx, Real sy);
 
 /** Set the matrix 'm' to the identity matrix. */
-void Grp_Matrix_Set_Identity(Matrix *m);
+void BoxGMatrix_Set_Identity(BoxGMatrix *m);
 
 /** Apply the matrix 'm' to the 'num_pts' points in 'pts'. */
 void Grp_Matrix_Mul_Point(Matrix *m, Point *pts, int num_pts);

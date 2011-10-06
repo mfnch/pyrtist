@@ -707,17 +707,7 @@ void BoxGWin_Fig_Clear_Layer(BoxGWin *w, int l) {
 /* PROCEDURE PER DISEGNARE I LAYER SULLA FINESTRA ATTIVA */
 
 /* Matrice usata nella trasformazione lineare di Fig_Transform_Point */
-static Matrix fig_matrix = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0};
-
-
-void Fig_Matrix_Apply(Matrix *m) {
-/*  m11 = $.m11*$$.m11 + $.m12*$$.m21, m12 = $.m11*$$.m12 + $.m12*$$.m22
-  m21 = $.m21*$$.m11 + $.m22*$$.m21, m22 = $.m21*$$.m12 + $.m22*$$.m22
-  $$.m13 = $.m13 + $.m11*$$.m13 + $.m12*$$.m23
-  $$.m23 = $.m23 + $.m21*$$.m13 + $.m22*$$.m23
-  $$.m11 = m11, $$.m12 = m12, $$.m21 = m21, $$.m22 = m22*/
-
-}
+static BoxGMatrix fig_matrix = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0};
 
 /* Apply the transformation in matrix fig_matrix to the n points in p[] */
 static void Fig_Transform_Point(Point *p, int n) {
@@ -922,16 +912,16 @@ static void My_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *source) {
 }
 
 void BoxGWin_Fig_Draw_Fig_With_Matrix(BoxGWin *dest, BoxGWin *src,
-                                      Matrix *m) {
-  Matrix save_matrix = fig_matrix;
+                                      BoxGMatrix *m) {
+  BoxGMatrix save_matrix = fig_matrix;
   fig_matrix = *m;
   My_Fig_Draw_Fig(dest, src);
   fig_matrix = save_matrix;
 }
 
 void BoxGWin_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *src) {
-  Matrix save_matrix = fig_matrix;
-  Grp_Matrix_Set_Identity(& fig_matrix);
+  BoxGMatrix save_matrix = fig_matrix;
+  BoxGMatrix_Set_Identity(& fig_matrix);
   My_Fig_Draw_Fig(dest, src);
   fig_matrix = save_matrix;
 }
@@ -975,8 +965,8 @@ int BoxGWin_Fig_Save_Fig(BoxGWin *src, BoxGWinPlan *plan) {
   plan->have.origin = 1;
   dest = BoxGWin_Create(plan);
   if (dest != NULL) {
-    Matrix m;
-    Grp_Matrix_Set(& m, & translation, & center, rot_angle, sx, sy);
+    BoxGMatrix m;
+    BoxGMatrix_Set(& m, & translation, & center, rot_angle, sx, sy);
     BoxGWin_Fig_Draw_Fig_With_Matrix(dest, src, & m);
     BoxGWin_Save_To_File(dest, plan->file_name); /* Some terminals require an explicit save! */
     BoxGWin_Finish_Drawing(dest);

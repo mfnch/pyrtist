@@ -34,7 +34,8 @@ void BoxGWin_Fig_Clear_Layer(BoxGWin *w, int l);
 Real fig_transform_factor(Real angle);
 
 void BoxGWin_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *src);
-void BoxGWin_Fig_Draw_Fig_With_Matrix(BoxGWin *dest, BoxGWin *src, Matrix *m);
+void BoxGWin_Fig_Draw_Fig_With_Matrix(BoxGWin *dest, BoxGWin *src,
+                                      BoxGMatrix *m);
 
 int BoxGWin_Fig_Save_Fig(BoxGWin *src, BoxGWinPlan *plan);
 

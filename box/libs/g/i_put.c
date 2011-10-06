@@ -143,7 +143,7 @@ Task window_put_end(VMProgram *vmp) {
 
   if (!w->put.got.matrix) {
     /* the matrix has not been given by the user, we calculate it! */
-    Grp_Matrix_Set(& w->put.matrix,
+    BoxGMatrix_Set(& w->put.matrix,
                    & w->put.translation, & w->put.rot_center,
                    w->put.rot_angle, w->put.scale.x, w->put.scale.y);
   }

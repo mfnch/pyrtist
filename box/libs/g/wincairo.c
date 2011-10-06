@@ -1,4 +1,3 @@
-
 /****************************************************************************
  * Copyright (C) 2008-2011 by Matteo Franchin                               *
  *                                                                          *
@@ -120,7 +119,7 @@ static void My_Map_Width(BoxGWin *w, Real *out, Real *in) {
  * and needs to be better done: font drawing should depend on Points, not on
  * a given Real size!)
  */
-#define MY_REAL(w, r) ((r)*(w)->resx) \
+#define MY_REAL(w, r) ((r)*(w)->resx)
 
 /* BEGIN OF TEXT FORMATTING IMPLEMENTATION **********************************
  * Here we implement some basic text formatting features, such as           *
