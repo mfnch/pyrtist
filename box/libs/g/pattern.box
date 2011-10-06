@@ -3,6 +3,72 @@
 #provide "g.pattern"
 
 include "cmdstream"
+include "option"
+
+extend_options = Options[
+  Option["unset", -1]
+  Option["none", const.extend.none]
+  Option["repeat", const.extend.repeat]
+  Option["reflect", const.extend.reflect]
+  Option["pad", const.extend.pad]
+]
+
+///Intro: The pattern extend mode.
+// This is the mode to be used for drawing outside the area of a pattern.
+Extend = ++(Int int,)
+
+(.[)@Extend[.int = -1]
+
+///Intro: set the extend mode from an integer.
+// One of ``const.extend.none``, ``const.extend.repeat``,
+// ``const.extend.reflect`` or ``const.extend.pad``. Use a negative value
+// to unset the extend mode.
+Int@Extend[.int = $]
+
+///Intro: set the extend mode from a string.
+// Available options are ``"none"`` (pixels outside of the source pattern are
+// fully transparent), ``"repeat"`` (the pattern is tiled by repeating),
+// ``"reflect"`` (the pattern is tiled by reflecting at the edges), ``"pad"``
+// (pixels outside of the pattern copy the closest pixel from the source).
+Str@Extend[extend_options.GetInt[$]]
+
+///Intro: convert the extend mode to a command.
+Extend@CmdStream[If[$.int >= 0], Obj[const.raw.pattern_set_extend, $.int]]
+
+filter_options = Options[
+  Option["unset", -1]
+  Option["fast", const.filter.fast]
+  Option["good", const.filter.good]
+  Option["best", const.filter.best]
+  Option["nearest", const.filter.nearest]
+  Option["bilinear", const.filter.bilinear]
+  Option["gaussian", const.filter.gaussian]
+]
+
+///Intro: used to indicate what filtering should be applied when reading pixel
+// values from patterns.
+Filter = ++(Int int,)
+
+(.[)@Filter[.int = -1]
+
+///Intro: set the filter from an integer.
+// Available options are: ``const.filter.fast``, ``const.filter.good``,
+// ``const.filter.best``, ``const.filter.nearest``, ``const.filter.bilinear``,
+// ``const.filter.gaussian``.
+Int@Filter[.int = $]
+
+///Intro: Set the filter from a string (the filter name).
+// Available options are: ``"fast"`` (a high-performance filter, with quality
+// similar to ``"nearest"``), ``"good"`` (a reasonable-performance filter, with
+// quality similar to ``"bilinear"``), ``"best"`` (the highest-quality
+// available, performance may not be suitable for interactive use),
+// ``"nearest"`` (nearest-neighbor filtering), ``"bilinear"`` (linear
+// interpolation in two dimensions), ``"gaussian"`` (this filter value is
+// currently unimplemented, and should not be used in current code).
+Str@Filter[filter_options.GetInt[$]]
+
+///Intro: convert the filter to a command.
+Filter@CmdStream[If[$.int >= 0], Obj[const.raw.pattern_set_filter, $.int]]
 
 ///Intro: the "paint" to be used when filling a shape or drawing a line.
 Pattern = ++(CmdStream cmdstream,)

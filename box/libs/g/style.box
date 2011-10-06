@@ -34,7 +34,7 @@ Dash@CmdStream[
 ]
 
 join_options = Options[
-  Option["none", -1]
+  Option["unset", -1]
   Option["miter", const.line.join.miter]
   Option["round", const.line.join.round]
   Option["bevel", const.line.join.bevel]
@@ -59,7 +59,7 @@ Str@Join[join_options.GetInt[$]]
 Join@CmdStream[If[$.int >= 0], Obj[const.raw.set_line_join, $.int]]
 
 cap_options = Options[
-  Option["none", -1]
+  Option["unset", -1]
   Option["butt", const.line.cap.butt]
   Option["round", const.line.cap.round]
   Option["square", const.line.cap.square]
