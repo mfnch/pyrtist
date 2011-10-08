@@ -5,8 +5,9 @@ GUI = Void
 Window@GUI[]
 
 
+
 //!BOXER:REFPOINTS:BEGIN
-gui1 = Point[.x=1.40981012658, .y=-0.897151898734]
+gui1 = Point[.x=-0.040319118703, .y=-1.41505562544]
 //!BOXER:REFPOINTS:END
 // Simple example of parametric figure: move the point upward 
 //  ìand see what happens
@@ -19,7 +20,7 @@ f = 1 - 2*x                  // Happyness level
 i = x                        // Embarassment level
 
 // Parameters for the smiley face
-r = 10       // Face radius
+r = 10.0     // Face radius
 s = 0.25     // Width of the contour lines
 ro = 2.5     // Eye radius
 rp = 0.5*ro  // Pupil radius
@@ -36,21 +37,21 @@ gs = (-gd.x, gd.y) // Position of the right cheek
 pd = od + (0, x*ro)
 ps = os + (0, x*ro)
 
-cg = Color[.r=1.0, .g=1.0-2*i, .b=0] // Cheek color
+cg = Color[.r=1.0, .g=1.0-2*i, .b=0]    // Cheek color
 
 smiley = Window[][
-  style = Style[.Fill[";"], .Border[color.black, s]]
+  style = Style[Border[color.black, s]]
   cf1 = Color[.r=1.0, .g=1.0-2*i, .b=0] // Face colors
   cf2 = Color[.r=1.0, .g=1.0-i, .b=0]
   cf3 = Color[f: = 0.8, .r = cf2.r*f, .g = cf2.g*f]
-  gradient = Gradient[.Circle[r*(-0.05, -0.05), 0; r], cf1, 0.85, cf2, cf3]
-  \ .Circle[style, gradient, (0, 0), r]
+  gradient = Gradient[Circles[r*(-0.05, -0.05), 0; r], cf1, 0.85, cf2, cf3]
+  Circle[style, gradient, (0, 0), r]
 
   b = -4.5
-  \ .Circle[color.black, rp, rp*1.4, pd; ps]
-  \ .Poly[(-5, b+f), 0.2, 0.2, (0, b), (5, b+f), (0, b-f)]
-  \ .Circle[cg, gr, gs; gd]
-  BBox[gui1]
+  Circles[color.black, rp, rp*1.4, pd; ps]
+  Poly[0.2, (-5, b+f), (0, b), (5, b+f), (0, b-f)]
+  Circles[cg, gr, gs; gd]
+  BBox[gui1, r += 0.5, (-r, -r), (r, r)]
 ]
 
 GUI[smiley]

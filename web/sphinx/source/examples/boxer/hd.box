@@ -5,6 +5,8 @@ GUI = Void
 Window@GUI[]
 
 
+
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=91.689501833, .y=2.41289767442]
 gui2 = Point[.x=21.4671452991, .y=3.41047040359]
@@ -13,11 +15,11 @@ gui3 = Point[.x=44.6029230769, .y=20.9530860987]
 include "grains"
 
 w = Window[][
-  \ .Put[hd]
-  \ .Put[grains, (40, -15), .Scale[0.8]]
-  \ .Text[.Font[5, "sans"]
-          "a)", .From[(0, 0)], (-30, 25);
-          "b)", (38, 25)]
+  Put[hd]
+  Put[grains, (40, -15), Scale[0.8]]
+  Texts[Font[5, "sans"]
+        "a)", From[(0, 0)], (-30, 25);
+        "b)", (38, 25)]
 ]
 
 GUI[w]

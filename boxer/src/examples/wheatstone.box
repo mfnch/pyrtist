@@ -12,6 +12,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=-0.255807878788, .y=-19.5900623377]
 gui2 = Point[.x=19.7791411043, .y=-0.0303101075269]
@@ -35,15 +36,18 @@ wheatstone = Window["fig"][
   // Each component has two connections. Here we want to rotate and translate
   // ("rt") a resistor such that the first of its terminals is near to
   // the point p1 and the second one is near to p2.
-  r12 = .Put[resistor, "rt", .Near[1, p1], .Near[2, p2]]
+  r12 = Put[resistor, "rt", Near[0, p1], Near[1, p2]]
   // We proceed in a similar way for the other components:
-  r23 = .Put[diode, "rt", .Near[1, p2], .Near[2, p3]]
-  r34 = .Put[inductance, "rt", .Near[1, p3], .Near[2, p4]]
-  r41 = .Put[resistor, "rt", .Near[1, p4], .Near[2, p1]]
+  r23 = Put[diode, "rt", Near[0, p2], Near[1, p3]]
+  r34 = Put[inductance, "rt", Near[0, p3], Near[1, p4]]
+  r41 = Put[resistor, "rt", Near[0, p4], Near[1, p1]]
+
+  // Actually show the components
+  r12, r23, r34, r41
 
   // Connecting the four resistors
-  \ .Line[0.4, p1, r12.Get[1]; r12.Get[2], p2; p2, r23.Get[1]; r23.Get[2], p3;
-          p3, r34.Get[1]; r34.Get[2], p4; p4, r41.Get[1]; r41.Get[2], p1]
+  \ .Line[0.4, p1, r12.Get[0]; r12.Get[1], p2; p2, r23.Get[0]; r23.Get[1], p3;
+          p3, r34.Get[0]; r34.Get[1], p4; p4, r41.Get[0]; r41.Get[1], p1]
 
   // Drawing small circles on the nodes
   // Here you see how a single Circle instruction can be used to draw many

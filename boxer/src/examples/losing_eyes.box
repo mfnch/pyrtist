@@ -7,9 +7,10 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
-gui1 = Point[.x=0.0, .y=0.0], gui2 = Point[.x=-18.87, .y=14.535]
-gui3 = Point[.x=21.42, .y=-14.79]
+gui1 = Point[.x=0.0247099056604, .y=-0.0023251480572]
+gui2 = Point[.x=-18.87, .y=14.535], gui3 = Point[.x=21.42, .y=-14.79]
 //!BOXER:REFPOINTS:END
 // Example of parametric figure: a smiley which literaly loses
 // his eyes.
@@ -22,7 +23,7 @@ gui3 = Point[.x=21.42, .y=-14.79]
 include "tools"
 
 p = Point[gui1]
-t = Sqrt[p.x*p.x + p.y*p.y]/10.0
+t = Norm[p]/10.0
 
 rate = 5*t
 
@@ -44,10 +45,10 @@ tN = t0 * (aN - 1.0) / (a - 1.0)
 delta_t = t - tN
 h = -delta_t * (vN - 0.5*g*delta_t) + v0*v0/(2.0*g)
 
-sx = 5.0 - 0.0*(1.0-Exp[-rate])
-sy = 0.5 + 1.0*(1.0-Exp[-rate])
-q = (1.0-Exp[-rate])*3.0
-w = (1.0-Exp[-rate])*0.05
+sx = 5.0 - 0.0*(1.0 - Exp[-rate])
+sy = 0.5 + 1.0*(1.0 - Exp[-rate])
+q = (1.0 - Exp[-rate])*3.0
+w = (1.0 - Exp[-rate])*0.05
 
 //-------------------------------------------------------------------------------
 // Parameters for the face of the smiley
@@ -73,14 +74,17 @@ cf_out = Color[.r = .g = 0.8, .b = cf_in.b]
 smile = Window[]
 
 \ smile[
-  \ .Circle[Style[.Fill[";"], .Border[color.black, s]]
-            Gradient[.Circle[(0, 0), 0; r], cf_in, 0.8, cf_in, cf_out]
-            (0, 0), r;                   // face
-            p := (0, -4.5), dp = (0, -sy)
-            Gradient[.Line[p-dp, p+4*dp], color.red, color.black]
-            sx, sy, (0, -4.5);           // mouth
-            color.white, os, ro; od;     // eyes
-            color.black, rp, rp, pd; ps] // pupils
+  BBox[gui1, gui2, gui3]
+
+  style = Style[Border[color.black, s]]
+  grad = Gradient[Circles[(0, 0), 0; r], cf_in, 0.8, cf_in, cf_out]
+  Circle[grad, style, (0, 0), r]                   // face
+  Circle[p := (0, -4.5), dp = (0, -sy), style      // mouth
+         Gradient[Line[p-dp, p+4*dp]
+                  color.red, color.black]
+         sx, sy, (0, -4.5)]
+  Circles[color.white, style, os, ro; od]          // eyes
+  Circles[color.black, style, rp, rp, pd; ps]
 
   // Hairs
   n = 3
@@ -89,8 +93,8 @@ smile = Window[]
   dangle = spacing/n
   i = -n
   color.black
-  \ .Line[s, v: = Vers[angle], v*r, v*(r+q); For[angle += dangle, ++i <= n]]
-  BBox[gui1, gui2, gui3]
+  [Line[s, v: = Vers[angle], v*r, v*(r+q)]
+   For[angle += dangle, ++i <= n]]
 ]
 
 GUI[smile]

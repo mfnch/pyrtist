@@ -117,8 +117,8 @@ gui94 = Point[.x=88.1824365482, .y=44.2390862944]
     dcol2 = Color[col2, .Darker[darker]]
     dcol3 = Color[col3, .Darker[darker]]
 
-    s = Style[.Border[color.black, 0.2]]
-    s2 = Style[.Fill["void"], .Border[color.red, 0.8, .Dash[2]]]
+    s = Style[Border[color.black, 0.2]]
+    s2 = Style[.Fill["void"], Border[color.red, 0.8, Dash[2]]]
 
     p1 = Point[gui1, .y=y1], p2 = Point[gui2, .y=y1]
     p3 = Point[gui3, .y=y1], p4 = Point[gui4, .y=y1]
@@ -163,7 +163,7 @@ gui94 = Point[.x=88.1824365482, .y=44.2390862944]
     // bit cells markers
     \ .Poly[s2, 0.5, gui58, gui59, gui60, gui61, gui62, gui63, gui64, .Close[]]
     \ .Poly[s2, 0.5, gui65, gui66, gui67, gui68, gui69, gui70, gui71
-            gui72, gui73, gui74, .Close[]]
+         gui72, gui73, gui74, .Close[]]
 
     // magnetisation arrows
     m1 = Window[][\ .Line[1, (0, -3), .ArrowScale[0.8]
@@ -171,23 +171,21 @@ gui94 = Point[.x=88.1824365482, .y=44.2390862944]
     m2 = Window[][\ .Line[1, (0, 3), .ArrowScale[0.8]
                           arrow_triangle, (0, -3)]]
     Color[col2, .Darker[0.4]]
-    \ .Put[m1, gui78], \ .Put[m1, gui79], \ .Put[m1, gui80]
-    \ .Put[m1, gui81, .Scale[0.9]], \ .Put[m1, gui82, .Scale[0.7]]
-    \ .Put[m1, gui90]
+    Put[m1, gui78; m1, gui79; m1, gui80;
+        Scale[0.9], m1, gui81; Scale[0.7], m1, gui82;
+        Scale[1], m1, gui90]
     Color[col3, .Darker[0.5]]
-    \ .Put[m2, gui83], \ .Put[m2, gui84], \ .Put[m2, gui85]
-    \ .Put[m2, gui86], \ .Put[m2, gui87], \ .Put[m2, gui88, .Scale[0.8]]
-    \ .Put[m2, gui89, .Scale[0.8]]
+    Put[m2, gui83; m2, gui84; m2, gui85; m2, gui86; m2, gui87;
+        Scale[0.8], m2, gui88; m2, gui89]
 
     // labels
-    \ .Poly[Style[.Fill["void"], .Border[color.red, 0.3]]
-            gui75, gui76, gui77]
-    \ .Poly[Style[.Fill["void"], .Border[color.black, 0.3]]
-            gui91, gui94, gui93; gui94, gui92]
-    \ .Text[.Font[5, "sans"], color.red, Style[.Border[0]]
-            gui76, .From[(0.5, -0.4)], "bit cells";
-            color.black
-            .From[(0.8, -0.1)], gui94, "magnetic grains"]
+    Line[color.red, 0.3, gui75, gui76, gui77]
+    Line[color.black, gui91, gui94, gui93]
+    Line[color.black, gui94, gui92]
+    Text[Font[5, "sans"], color.red
+         gui76, From[(0.5, -0.4)], "bit cells"]
+    Text[Font[5, "sans"], color.black
+          From[(0.8, -0.1)], gui94, "magnetic grains"]
   ]
 ]
 
@@ -200,29 +198,29 @@ gui94 = Point[.x=88.1824365482, .y=44.2390862944]
 
   \ arm[
     r0 = 0.1, r1 = 0.02, c1 = (r0, 0), c2 = (1-r1, 0)
-    s = Style[.Border[color.black, 0.005]]
-    \ .Poly[color.grey, s
-            1, 0, (r0, -r0), (0, -r0), (0, 0), (0, r0), (r0, r0), 0, 0
-            (1-r1, r1), 0, 1, (1, r1), (1, 0), (1, -r1), (1-r1, -r1)]
-    \ .Circle[c1, r0*0.5, Color[0.4], s]
-    \ .Hot[c1, c2]
+    s = Style[Border[color.black, 0.005]]
+    Poly[color.grey, s
+         1, 0, (r0, -r0), (0, -r0), (0, 0), (0, r0), (r0, r0), 0, 0
+         (1-r1, r1), 0, 1, (1, r1), (1, 0), (1, -r1), (1-r1, -r1)]
+    Circle[c1, r0*0.5, Color[0.4], s]
+    Hot[c1; c2]
   ]
 
   \ hd[
-    .Show[gui7, gui8, ]
+    BBox[gui7, gui8]
 
     r = 20
-    .Circle[(0, 0), r; 3
-            Gradient[.Circle[(0, 0), 0; r*1.5]
-                    color.white, color.grey]
-            Style[.Border[color.black, 0.15]]]
+    Circles[(0, 0), r; 3
+            Gradient[Circles[(0, 0), 0; r*1.5]
+                     color.white, color.grey]
+            Style[Border[color.black, 0.15]]]
 
-    \ .Put[arm, "rts", .Near[1, gui2], .Near[2, gui1]]
-    \ .Poly[Style[.Fill["void"], .Border[color.red, 0.2]],
+    Put[arm, "rts", Near[0, gui2], Near[1, gui1]]
+    \ .Poly[Style[.Fill["void"], Border[color.red, 0.2]],
             gui4, gui3; gui6, gui5; gui1, gui9]
-    \ .Text[.Font[4.0, "sans"], color.red, .From[(0.5, 0)]
-            gui4, "arm"; gui6, "platter";
-            gui9, "read-write head"]
+    Texts[Font[4.0, "sans"], color.red, From[(0.5, 0)]
+          gui4, "arm"; gui6, "platter";
+          gui9, "read-write head"]
   ]
 ]
 

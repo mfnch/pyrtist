@@ -9,6 +9,8 @@ Window@GUI[]
 
 
 
+
+
 //!BOXER:REFPOINTS:BEGIN
 gui5 = Point[.x=130.851027047, .y=47.20078]
 bbox1 = Point[.x=107.666785067, .y=57.4159294906]
@@ -29,7 +31,7 @@ include "arrows"
 include "label"
 
 w = Window[][
-  BBox[bbox1, bbox2 ]
+  BBox[bbox1, bbox2]
 
   font0 = Font[color.black, 4]
   font1 = Font[color.black, 4]
@@ -39,36 +41,42 @@ w = Window[][
   label_type3 = Label[color.black, color.red, 0.05
                       Font[color.white]]
 
-  qsl1 = PointList[gui5, gui9]
-  size1 = Point[(35, 10)], diag1 = qsl1.Get[2] - qsl1.Get[1], bbox1 = (Abs[diag1.x], Abs[diag1.y]) + size1 + (5, 5)
+  qsl1 = Points[gui5, gui9]
+  size1 = Point[(35, 10)]
+  diag1 = qsl1.Get[1] - qsl1.Get[0]
+  bbox1 = (Abs[diag1.x], Abs[diag1.y]) + size1 + (5, 5)
   (lbl1 = Label[label_type0, qsl1.Get[1.5], bbox1])
-  \ .Text[font1, .From[(1.1, 0.5)], lbl1.Get[(1, 0.9)], "ONE"]
-  Label[label_type1, qsl1.Get[1],  size1, "One"]
-  Label[label_type1, qsl1.Get[1.33], size1, "Two"]
-  Label[label_type1, qsl1.Get[1.66], size1, "Three"]
-  Label[label_type1, qsl1.Get[2.0], size1, "Four"]
+  Text[font1, From[(1.1, 0.5)], lbl1.Get[(1, 0.9)], "ONE"]
+  Label[label_type1, qsl1.Get[0],  size1, "One"]
+  Label[label_type1, qsl1.Get[0.33], size1, "Two"]
+  Label[label_type1, qsl1.Get[0.66], size1, "Three"]
+  Label[label_type1, qsl1.Get[1.0], size1, "Four"]
 
   gui10.y = gui5.y, gui11.y = gui9.y
-  qsl2 = PointList[gui10, gui11]
-  size2 = Point[(30, 10)], diag2 = qsl2.Get[2] - qsl2.Get[1], bbox2 = (Abs[diag2.x], Abs[diag2.y]) + size2 + (5, 5)
+  qsl2 = Points[gui10, gui11]
+  size2 = Point[(30, 10)]
+  diag2 = qsl2.Get[1] - qsl2.Get[0]
+  bbox2 = (Abs[diag2.x], Abs[diag2.y]) + size2 + (5, 5)
   (lbl2 = Label[label_type0, qsl2.Get[1.5], bbox2])
-  \ .Text[font1, .From[(1.1, 0.5)], lbl2.Get[(1, 0.9)], "TWO"]
-  Label[label_type1, qsl2.Get[1], size2, "One"]
-  Label[label_type1, qsl2.Get[1.33], size2, "Two"]
-  Label[label_type1, qsl2.Get[1.66], size2, "Three"]
-  Label[label_type1, qsl2.Get[2.0], size2, "Four"]
+  Text[font1, From[(1.1, 0.5)], lbl2.Get[(1, 0.9)], "TWO"]
+  Label[label_type1, qsl2.Get[0], size2, "One"]
+  Label[label_type1, qsl2.Get[0.33], size2, "Two"]
+  Label[label_type1, qsl2.Get[0.66], size2, "Three"]
+  Label[label_type1, qsl2.Get[1.0], size2, "Four"]
 
   Label[label_type0, gui13, (35, 20), "THREE"]
 
   gui3.y = gui13.y
   Label[label_type3, gui3, (35, 20), "ZERO"]
 
-  gradient2 = Gradient[.Circle[gui3, 0; 60]
+  gradient2 = Gradient[Circles[gui3, 0; 60]
                        Color[(1, 1, 1)], Color[(0.2, 0.5, 1)]]
-  gradient3 = Gradient[.Circle[gui3, 10; 30]
+  gradient3 = Gradient[Circles[gui3, 10; 30]
                        Color[(1, 1, 1)], Color[(0.2, 0.5, 1)]]
-  \ .Line[gradient2, gui14, arrow, gui15; gui4, arrow, gui6;
-          gradient3, gui7, arrow, gui8]
+
+  Line[2, gradient2, gui14, Scale[3], arrow, gui15]
+  Line[gui4, Scale[3], arrow, gui6]
+  Line[gradient3, gui7, Scale[3], arrow, gui8]
 ]
 
 //w.Save["nsim_model.png", Window["rgb24", .Res[Dpi[100]]]]

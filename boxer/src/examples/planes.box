@@ -7,6 +7,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 bbox1 = Point[.x=-37.5826573705, .y=64.8614862385]
 bbox2 = Point[.x=146.843632129, .y=-72.3863575296]
@@ -22,7 +23,7 @@ gui5 = Point[.x=17.7961162534, .y=3.099945]
 //!BOXER:REFPOINTS:END
 include "math"
 include "tools"
-include "objects"
+include "_sphere"
 
 w = Window[][
   BBox[bbox1, bbox2]
@@ -42,8 +43,7 @@ w = Window[][
   c1.a = plane1.value,  c2.a = plane2.value
   c3.a = plane3.value, c4.a = plane4.value
 
-  s = Style[.Fill["void"], .Border[color.black, 0.5]]
-  s1 = Style[.Border[color.black, 0.2]]
+  s1 = Style[Border[color.black, 0.2]]
 
   fg2.y = fg1.y
   lx = Point[fg2 - fg1]
@@ -91,7 +91,6 @@ w = Window[][
 
   sph = Sphere[sph, 3]
   Sphere[sph, fg1], Sphere[sph, fg2], Sphere[sph, fg3], Sphere[sph, fg4]
-
 ]
 
 GUI[w]

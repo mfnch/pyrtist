@@ -40,8 +40,8 @@ Point@Line[
 
   [If[$$.have.arrow1]
      line_vertex0 = $$.points.Get[-1]
-     arrow_head = $$.arrow0.Get["head"]
-     arrow_tail = $$.arrow0.Get["tail"]
+     arrow_head = $$.arrow1.Get["head"]
+     arrow_tail = $$.arrow1.Get["tail"]
      scale = Scale[0.3/Norm[arrow_head - arrow_tail], $$.scale1]
      placed_arrow = Put[$$.arrow1, "r"
                         scale, Center[arrow_head]

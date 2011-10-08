@@ -5,6 +5,7 @@ GUI = Void
 Window@GUI[]
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=62.9776352697, .y=13.1407282123]
 gui2 = Point[.x=65.2669775934, .y=3.96126117318]
@@ -47,36 +48,36 @@ w = Window[][
   c = Color[(0.3, 0.7, 1)]
   c2 = Color[color.yellow, .a=0.8]
   c3 = Color[(0.7, 1, 1)]
-  g = Gradient[.Line[gradient_1, gradient_2], c, 0.7, c3, c]
-  s1 = Style[.Border[color.black, 0.25]]
-  s2 = Style[.Border[color.black, 0.25, .Dash[0.4]]]
-  s3 = Style[.Fill["void"], .Border[Color[color.black, .a=0.5], 0.25, .Dash[0.4]]]
+  g = Gradient[Line[gradient_1, gradient_2], c, 0.7, c3, c]
+  s1 = Style[Border[color.black, 0.25]]
+  s2 = Style[Border[color.black, 0.25, Dash[0.4]]]
+  s3 = Style[.Fill["void"], Border[Color[color.black, .a=0.5], 0.25, Dash[0.4]]]
 
-  \ .Poly[s1, gui1, gui2, gui3, gui4, 0.5, gui5, Color[c, .Darker[0.6]]]
-  \ .Poly[s1, gui1, gui2, gui6, gui7, Color[c, .Darker[0.85]]]
-  \ .Poly[s1, gui7, 0.5, gui8, 0.5, 0, gui9, 0.5, 0, gui4, gui5, gui1, 0, g]
+  Poly[s1, gui1, gui2, gui3, gui4, 0.5, gui5, Color[c, .Darker[0.6]]]
+  Poly[s1, gui1, gui2, gui6, gui7, Color[c, .Darker[0.85]]]
+  Poly[s1, gui7, 0.5, gui8, 0.5, 0, gui9, 0.5, 0, gui4, gui5, gui1, 0, g]
 
-  ps = PointList[v1, v2, v3, v4, v5, v6, v7, v8]
-  i = 1, ps2 = PointList[ps.Get[i] + (-0.7, 2), For[++i <= ps.Num[]]]
-  i = 1, ps3 = PointList[ps.Get[i] - (-0.7, 2), For[++i <= ps.Num[]]]
-  \ .Poly[s2, 1, ps3, Color[c2, .a=0.5]]
-  \ .Poly[1, ps.Get[1], ps.Get[2], ps.Get[3], 0, ps3.Get[3], 0, 1, ps3.Get[2], ps3.Get[1]]
-  \ .Poly[1, ps.Get[7], ps.Get[8], ps.Get[9], 0, ps3.Get[9], 0, 1, ps3.Get[8], ps3.Get[7]]
-  \ .Poly[s3, ps.Get[7], ps3.Get[7]; ps.Get[9], ps3.Get[9]; ps.Get[3], ps3.Get[3];]
+  ps = Points[v1, v2, v3, v4, v5, v6, v7, v8]
+  i = 0, ps2 = Points[ps.Get[i] + (-0.7, 2), For[++i < Num[ps]]]
+  i = 0, ps3 = Points[ps.Get[i] - (-0.7, 2), For[++i < Num[ps]]]
+  \ .Poly[s2, 1, i = 0, [ps3.Get[i++], For[i < Num[ps]]], Color[c2, .a=0.5]]
+  Poly[1, ps.Get[0], ps.Get[1], ps.Get[2], 0, ps3.Get[2], 0, 1, ps3.Get[1], ps3.Get[0]]
+  Poly[1, ps.Get[6], ps.Get[7], ps.Get[0], 0, ps3.Get[0], 0, 1, ps3.Get[7], ps3.Get[6]]
+  \ .Poly[s3, ps.Get[6], ps3.Get[6]; ps.Get[0], ps3.Get[0]; ps.Get[2], ps3.Get[2];]
 
-  \ .Poly[1, ps, c2]
-  \ .Poly[s1, 1, ps2]
-  \ .Poly[s1, 1, ps.Get[1], ps.Get[2], ps.Get[3], 0, ps2.Get[3], 0, 1, ps2.Get[2], ps2.Get[1]]
-  \ .Poly[s1, 1, ps.Get[7], ps.Get[8], ps.Get[9], 0, ps2.Get[9], 0, 1, ps2.Get[8], ps2.Get[7]]
+  Poly[1, i = 0, [ps.Get[i++], For[i < Num[ps]]], c2]
+  Poly[s1, 1, i = 0, [ps2.Get[i++], For[i < Num[ps]]]]
+  Poly[s1, 1, ps.Get[0], ps.Get[1], ps.Get[2], 0, ps2.Get[2], 0, 1, ps2.Get[1], ps2.Get[0]]
+  Poly[s1, 1, ps.Get[6], ps.Get[7], ps.Get[0], 0, ps2.Get[0], 0, 1, ps2.Get[7], ps2.Get[6]]
   \ .Line[0.3, color.black, normal_1, arrow, normal_2]
-  \ .Circle[normal_1, 0.5]
+  Circle[normal_1, 0.5]
 
   \ .Line[0.2, color.black
           arrow_ruler, rulery_1, arrow_ruler, rulery_2;
           arrow_ruler, rulerz_1, arrow_ruler, rulerz_2;
           arrow_ruler, rulerx_1, arrow_ruler, rulerx_2]
-  \ .Text[.Font["sans", 2.1], "dx", ruler_1; "dy", ruler_2; "dz << dx, dy", ruler_3;
-          .Font["sans", 4], "n", normal_2, .From[(1, -0.2)]]
+  Texts[Font["sans", 2.1], "dx", ruler_1; "dy", ruler_2; "dz << dx, dy", ruler_3;
+        Font["sans", 4], "n", normal_2, From[(1, -0.2)]]
 ]
 
 // Uncomment the following line to obtain a proper PNG figure

@@ -231,11 +231,12 @@ static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj) {
 
 #else
 
+static Real Fig_Transform_Factor(Real angle);
 static void Fig_Transform_Point(Point *p, int n);
 static void Fig_Transform_Vector(Point *p, int n);
 
 typedef struct {
-  BoxPoint points[BOXG_MAX_NUM_CMD_ARGS];
+  BoxGCmdArg args[BOXG_MAX_NUM_CMD_ARGS];
 
 } MyFigInterpretData;
 
@@ -246,19 +247,24 @@ BoxTask My_Transform_Commands(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
   int i;
 
   for (i = 0; i < num_args; i++) {
-    BoxPoint *p = & data->points[i];
+    BoxGCmdArg *my_arg = & data->args[i];
     void *arg = args[i];
     BoxGCmdArgKind kind = kinds[i];
     switch (kind) {
+    case BOXGCMDARGKIND_WIDTH:
+      my_arg->w = *((BoxReal *) arg);
+      my_arg->w *= Fig_Transform_Factor(0.0);
+      args[i] = & my_arg->w;
+      break;
     case BOXGCMDARGKIND_POINT:
-      *p = *((BoxPoint *) arg);
-      Fig_Transform_Point(p, 1);
-      args[i] = p;
+      my_arg->p = *((BoxPoint *) arg);
+      Fig_Transform_Point(& my_arg->p, 1);
+      args[i] = & my_arg->p;
       break;
     case BOXGCMDARGKIND_VECTOR:
-      *p = *((BoxPoint *) arg);
-      Fig_Transform_Vector(p, 1);
-      args[i] = p;
+      my_arg->p = *((BoxPoint *) arg);
+      Fig_Transform_Vector(& my_arg->p, 1);
+      args[i] = & my_arg->p;
       break;
     default:
       break;

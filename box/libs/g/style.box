@@ -148,7 +148,6 @@ Dash@Border[.dash = $, .have.dash = 1]
 
 ///Intro: add the graphicals commands encoding a ``Border`` object.
 Border@CmdStream[
-  Obj[const.raw.save]
   [If[$.have.color]
      $.pattern
      Obj[const.raw.set_source]
@@ -162,7 +161,6 @@ Border@CmdStream[
   $.join, $.cap, $.miter_limit
 
   Obj[const.raw.stroke]
-  Obj[const.raw.restore]
 ]
 
 ///Intro: fill style.
@@ -220,7 +218,10 @@ Style@CmdStream[
       Else[], const.raw.fill]
 
   // Commands for the style of the border
-  [If[$.have.border], $.border]
+  [If[$.have.border]
+     Obj[const.raw.save]
+     $.border
+     Obj[const.raw.restore]]
 ]
 
 ///Intro: send the style setting to the window.
