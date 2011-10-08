@@ -5,89 +5,92 @@ include "transform"
 
 ///Intro: constraint used by {type(Put)} and {type(Constraints)} to compute
 // transformation matrices.
-Near = ++((Int src, dst) have
-          Str src_name, Point src
-          Point dst
-          Real weight)
+///Examples: ``Near[src_point, dst_point, weight]``,
+//  ``Near["src-name", dst_point, weight]``,
+//  ``Near[src_index, dst_point, weight]``.
+Near = ++(Obj src_dst, Real weight)
 
-(.[)@Near[.have = (0, 0), .weight = 1.0]
+(.[)@Near[.weight = 1.0]
 
 ///Intro: the name of the hot point in the source figure.
 Str@Near[
-  [If[$$.have.src]
+  [If[Num[$$.src_dst] > 0]
      Fail["Near[] already received the source point."]]
-  $$.src_name = $
-  $$.have.src = 2
+  \ $$.src_dst[$]
+]
+
+///Intro: provide the weight for the {type(Near)} constraint.
+Int@Near[
+  If[Num[$$.src_dst] > 0], $$.weight = $
+  Else[], \ $$.src_dst[$]
 ]
 
 ///Intro: provide source and destination points.
 Point@Near[
-  [If[$$.have.src == 0], $$.src = $, $$.have.src = 1
-   Else[], If[$$.have.dst == 0], $$.dst = $, $$.have.dst = 1
-   Else[]
-     Fail["Near[] got both the source and the destination points."]]
+  If[Num[$$.src_dst] < 2], \ $$.src_dst[$]
+  Else[]
+    Fail["Near[] got both the source and the destination points."]
 ]
 
 ///Intro: provide the weight for the {type(Near)} constraint.
-Real@Near[.weight = $]
+REAL@Near[.weight = $]
 
 Near@Str[
   sep = ", "
   "Near["
-  [If[$.have.src != 0]
-     [If[$.have.src == 1], $.src, Else[], '"', $.src_name, '"']
-     [If[$.have.dst != 0], sep, $.dst]]
+  n = Num[$.src_dst]
+  [If[n > 0]
+     ot = $.src_dst.GetType[0]
+     src = $.src_dst.Get[0]
+     [If[ot == objtype.point], Point[src]
+      Else[], If[ot == objtype.str], '"', Str[src], '"'
+      Else[], Int[src]]
+     [If[n > 1], sep, Point[$.src_dst.Get[1]]]]
   [If[$.weight != 1.0], sep, $.weight]
   "]"
 ]
 
 ///Intro: a Near constraint is valid when it has both a source and
 // a destination point.
-Near@Valid[$.have.src && $.have.dst]
+Near@Valid[Num[$.src_dst] == 2]
 
 ///Intro: a {type(Near)} constraint is complete when it is valid and the
 // source point has been resolved to a precise point (coordinate in the plane).
 Near.Completed = Int
 
-([)@Near.Completed[$$ = $$$.have.src == 1 && $$$.have.dst == 1]
+([)@Near.Completed[
+  $$ = (Num[$$$.src_dst] == 2) && ($$$.src_dst.GetType[0] == objtype.point)
+]
 
 ///Intro: Obj-ify the constraint.
-Near@Obj[
-  If[Valid[$]]
-    Obj[
-      [If[$.have.src == 1], $.src
-       Else[], $.src_name]
-      $.dst, $.weight
-    ]
-  Else[]
-    Fail["Cannot convert Near to Obj. Near object is incomplete."]
-]
+Near@Obj[Obj[Point[$.src_dst.Get[0]], Point[$.src_dst.Get[1]], $.weight]]
 
 ///Intro: transform an Obj into a Near constraint.
 Obj@Near[
-  If[$$.have.src == 0 && $$.have.dst == 0]
-    src = $.Get[0]
-    [If[src.GetType[] == objtype.point], Point[src], Else[], Str[src]]
-                    // src ^^^
-    Point[$.Get[1]] // dst
-    Real[$.Get[2]]  // weight
-
-  Else[]
-    Fail["Trying to set a partial Near object from an Obj object"]
+  .src_dst = Obj[Point[$.Get[0]], Point[$.Get[1]]]
+  .weight = Real[$.Get[1]]
 ]
 
 ///Intro: provide the {type(Window)} to which the hot point name refers.
 // The window is used to resolve the Near constraint. For example, if
 // the constraint is specified as ``n = Near["name", p1]``, where ``"name"``
-// is the name of a {type(Hot)} point of the {type{Window)} ``w``, then
+// is the name of a {type(Hot)} point of the {type(Window)} ``w``, then
 // ``\ n[w]`` transforms ``n`` to ``Near[w.Get["name"], p1]``.
 // In other words the named hot point is substituted with the hot point
 // coordinates. The window must be provided after the reference to the hot
 // point.
 Window@Near[
-  If[$$.have.src == 2]
-    $$.src = $.Get[$$.src_name]
-    $$.have.src = 1
+  n = Num[$$.src_dst]
+  [If[n == 2]
+     ot = $$.src_dst.GetType[0]
+     [If[ot != objtype.point]
+        obj = $$.src_dst.Get[0]
+        src = $.Get[If[ot == objtype.int], Int[obj], Else[], Str[obj]]
+        dst = Point[$$.src_dst.Get[1]]
+        $$.src_dst = Obj[src, dst]]
+
+   Else[]
+     Fail["Incomplete Near constraint"]]
 ]
 
 ///Intro: Object containing instructions on how to place objects.
@@ -118,7 +121,7 @@ Near@Constraints[
   [If[Valid[$$.window]], \ $[$$.window]]
   [If[! $.Completed[]]
      msg = Str["The Near constraint ``", $, "'' refers to a hot point "
-               "by name, but a valid Window has not been provided, yet."]
+               "by name/index, but a valid Window has not been provided, yet."]
      Fail[msg]]
   \ $$.constraints[$]
 ]

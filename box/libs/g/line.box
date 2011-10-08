@@ -1,0 +1,162 @@
+#provide "g.line"
+///Section: g
+
+include "raw"
+include "style"
+include "path"
+include "points"
+
+///Intro: create a {type(Line)} geometrical shape.
+Line = ++((Int close, arrow0, arrow1) have
+          Points points
+          StrokeStyle style
+          Window arrows, arrow0, arrow1
+          Scale scale, scale0, scale1)
+
+///NOTE: the initializer leaves the windows in an invalid state
+//  (Valid[line.arrow0] == Valid[line.arrow1] == 0).
+(.[)@Line[.have = (0, 0, 0)]
+
+///Intro: number of points of the line.
+Line@Num[$.points]
+
+///Intro: next vertex in the line.
+Point@Line[
+  line_vertex = $
+
+  // Check whether we should trace the first arrow: this happens when one point
+  // has been already given, and this is the second one.  
+  [If[Num[$$] == 1 && $$.have.arrow0]
+     line_vertex0 = $$.points.Get[0]
+     arrow_head = $$.arrow0.Get["head"]
+     arrow_tail = $$.arrow0.Get["tail"]
+     scale = Scale[0.3/Norm[arrow_head - arrow_tail], $$.scale0]
+     placed_arrow = Put[$$.arrow0, "r"
+                        scale, Center[arrow_head]
+                        Translation[line_vertex0 - arrow_head]
+                        Near["tail", line_vertex]]
+     \ $$.arrows[][placed_arrow]
+     $$.points = Points[placed_arrow.Get["join"]]]
+
+  [If[$$.have.arrow1]
+     line_vertex0 = $$.points.Get[-1]
+     arrow_head = $$.arrow0.Get["head"]
+     arrow_tail = $$.arrow0.Get["tail"]
+     scale = Scale[0.3/Norm[arrow_head - arrow_tail], $$.scale1]
+     placed_arrow = Put[$$.arrow1, "r"
+                        scale, Center[arrow_head]
+                        Translation[line_vertex - arrow_head]
+                        Near["tail", line_vertex0]]
+     \ $$.arrows[][placed_arrow]
+     line_vertex = placed_arrow.Get["join"]
+     $$.have.arrow1 = 0]
+
+  \ $$.points[line_vertex]
+]
+
+///Intro: specify the width of the line.
+Real@Line[\ .style[$]]
+
+///Intro: change the stroke style for the line.
+// This allow to change the line width, the join style, etc.
+StrokeStyle@Line[\ .style[$]]
+
+///Intro: set the color to use when drawing the line.
+Color@Line[\ .style[$]]
+
+///Intro: gradient to use when drawing the line.
+Gradient@Line[\ .style[$]]
+
+///Intro: set the {type(Dash)} style for drawing the line.
+Dash@Line[\ .style[$]]
+
+///Intro: set the style for joining the line segments.
+Join@Line[\ .style[$]]
+
+///Intro: set the cap style.
+Cap@Line[\ .style[$]]
+
+///Intro: set the miter limit.
+MiterLimit@Line[\ .style[$]]
+
+///Intro: close the line.
+Close@Line[.have.close = 1]
+
+///Intro: provide the scaling factor for arrows.
+// The next arrows following in the {type(Line)} specification will use this
+// scaling factor.
+// Note that arrows are not scaled with the line width. In other words,
+// setting the line width does not have an effect on the arrow size.
+// Example: using ``Scale[2]`` will give arrows which have twice the size they
+// would have if ``Scale`` was not given.
+// Note that arrows can also be scaled anisotropically: ``Scale[(1, 0.5)]``
+// allows to stretch the arrows along the x direction.
+Scale@Line[.scale = $]
+
+///Intro: provide a {type(Window)} object to use as an arrow.
+// The arrow is placed in two different ways, depending on its positional
+// order in the list of arguments given to ``Line``.
+// CASE 1: if the arrow precedes the line vertices (example: ``Line[arrow,
+// point1, point2, ...]``), then it is placed at the beginning of the line
+// (head on the first vertex, ``point1``).
+// CASE 2: If the arrow is given in between two line vertices (example:
+// ``Line[point1, arrow, point2, ...]``), then it is placed so that the head
+// goes on top of the second point (``point2`` in the example above).
+// Below we give details on the algorithm which is used to place the arrow
+// ({type(Put)} is internally used for the purpose).
+// The {type(Window)} object should have three hot points named ``"head"``,
+// ``"tail"``, ``"join"``, which are used to place the arrow.
+// The arrow is translated so that ``"head"`` concides with the outer vertex
+// of the line. The arrow is then rotated so that ``"tail"`` is aligned inside
+// the line. The arrow is joined to the rest of the line by connecting it from
+// the ``"join"`` hot point.
+// The arrow is also scaled twice: it is scaled once to make sure the distance
+// head-tail is equal to 0.3 (this is a sort of normalization procedure, which
+// helps making arrows independent of their original coordinate system).
+// It is finally scaled accordingly to what set in {comb(Scale@Line)}.
+// NOTES: the arrows are drawn on top of the line.
+Window@Line[
+  [If[Num[$$] == 0], $$.arrow0 = $, $$.scale0 = $$.scale, $$.have.arrow0 = 1
+   Else[], $$.arrow1 = $, $$.scale1 = $$.scale, $$.have.arrow1 = 1]
+]
+
+///Intro: add the vertices of the line to the {type(@.)} object.
+Line@Points[$.points]
+
+///Intro: retrieve a point in the line.
+// ``line.Get[x]`` is equivalent to ``Points[line].Get[x]``.
+// See {type(Points.Get)}.
+Line.Get = Point
+
+///Intro: see {type(Points.Get)}.
+Int@Line.Get[$$ = $$$.points.Get[$]]
+REAL@Line.Get[$$ = $$$.points.Get[$]]  ///Same.
+Point@Line.Get[$$ = $$$.points.Get[$]] ///Same.
+
+///Intro: stroke the line.
+Line@Stroke[
+  num_points = Num[$.points]
+  [If[num_points > 0]
+     Obj[const.raw.move_to, $.points.Get[0]]
+
+     point_idx = 1
+     [If[point_idx < num_points]
+      point = $.points.Get[point_idx++]
+      Obj[const.raw.line_to, point]
+      For[1]]
+  
+     [If[$.have.close]
+        Obj[const.raw.close_path]]
+     $$.path.empty = 0]
+]
+
+///Intro: add the path of the {type(Line)}.
+Line@Path[
+  
+]
+
+///Intro: draw the line in the window.
+Line@Window[
+  Stroke[$, $.style]
+  [If[Valid[$.arrows]], $.arrows]
+]

@@ -61,7 +61,12 @@ Put = ++(Constraints constraints
 
    i += 1
    For[1]]
+
+   // The figure has been placed already.
+   $$.simple_put.src = Window[]
 ]
+
+(])@Put[;]
 
 ///Intro: Provide the allowed transformations for the automatic placing
 // of figures. This is a string made of several letters. Each letter specifies
