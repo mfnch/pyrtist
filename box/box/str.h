@@ -43,6 +43,18 @@ BOXEXPORT void BoxStr_Init(BoxStr *s);
 
 BOXEXPORT void BoxStr_Finish(BoxStr *s);
 
+/** Set 'dest' with the content of 'src', deleting whatever was in 'dest'
+ * before. 
+ * NOTE: this requires 'dest' to be a properly initialized BoxStr object.
+ */
+BOXEXPORT BoxTask BoxStr_Set(BoxStr *dest, const BoxStr *src);
+
+/** Set 'dest' with the content of 'src', deleting whatever was in 'dest'
+ * before. This is similar to BoxStr_Set, but uses a C string as source.
+ * NOTE: this requires 'dest' to be a properly initialized BoxStr object.
+ */
+BOXEXPORT BoxTask BoxStr_Set_From_C_String(BoxStr *dest, const char *src);
+
 BOXEXPORT BoxTask BoxStr_Large_Enough(BoxStr *s, BoxInt length);
 
 BOXEXPORT BoxTask BoxStr_Concat(BoxStr *dest, const BoxStr *src);

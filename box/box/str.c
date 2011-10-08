@@ -74,6 +74,18 @@ BoxTask BoxStr_Init_From(BoxStr *new_str, const BoxStr *src) {
   return BoxStr_Concat(new_str, src);
 }
 
+BoxTask BoxStr_Set(BoxStr *dest, const BoxStr *src) {
+  BoxStr_Finish(dest);
+  BoxStr_Init(dest);
+  return BoxStr_Concat(dest, src);
+}
+
+BoxTask BoxStr_Set_From_C_String(BoxStr *dest, const char *src) {
+  BoxStr_Finish(dest);
+  BoxStr_Init(dest);
+  return BoxStr_Concat_C_String(dest, src);
+}
+
 char *BoxStr_To_C_String(BoxStr *s) {
   if (s->length == 0)
     return BoxMem_Strdup((s->ptr == NULL) ?

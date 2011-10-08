@@ -85,10 +85,10 @@ Cap@CmdStream[If[$.int >= 0], Obj[const.raw.set_line_cap, $.int]]
 
 ///Intro: miter limit.
 // If the current line join style (see {type(Join)}) is set to "miter", the
-// miter limit (a real number) is used to determine whether the lines should
-// be joined with a bevel instead of a miter. This is determined in by dividing
+// miter limit (a real number) is used to decide whether the lines should
+// be joined with a bevel instead of a miter. This is determined by dividing
 // the miter by the line width. If the result is greater than the miter limit,
-// then the style is converted to a bevel.
+// then the style is converted to a ``Join["bevel"]``.
 MiterLimit = ++(Real real,)
 
 (.[)@MiterLimit[.real = -1.0]

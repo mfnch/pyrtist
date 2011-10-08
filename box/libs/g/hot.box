@@ -24,7 +24,7 @@ Str@Hot[.name = $, .have.name = 1]
 ///Intro: the coordinates of the hot point.
 Point@Hot[
   [If[$$.have.point]
-     Fail[Str["Got two coordinates for the same hot point. "
+     Fail[Str["Got two point values for the same hot point. "
               "Did you forget to use the ; delimiter?";
               "Remember the usage: Hot[point1, name1; point2, name2; ...]"]]]
   .point = $
@@ -118,5 +118,16 @@ Hot@Window[
            name_str = Str[$.names.Get[i_names].Get[0]]
            name_idx = Int[$.names.Get[i_names].Get[1]]]]
    i_points += 1
+   For[1]]
+]
+
+///Intro: get the hot points of a {type(Window)} object.
+Window@Hot[
+  n = Num[$]
+  i = 0
+  [If[i < n]
+     [If[$.HasNamedHotPoint[i]], $.GetHotPointName[i]]
+     $.Get[i];
+   i += 1
    For[1]]
 ]

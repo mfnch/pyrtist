@@ -34,6 +34,7 @@
 #  define pointlist_add(pl, p, name) (objlist_add((pl), (p), name))
 #  define pointlist_iter(pl, it, data) (objlist_iter((pl), (it), (data)))
 #  define pointlist_num(pl) (objlist_num((pl)))
+#  define pointlist_get_name objlist_get_name
 
 void pointlist_print(PointList *pl, FILE *out);
 

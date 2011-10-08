@@ -115,3 +115,15 @@ REAL@Window.Get[
 Point@Window.Get[
   Fail["Not implemented yet!"]
 ]
+
+///Intro: whether a hot point has an associated name.
+Window.HasNamedHotPoint = Int
+
+///Intro: provide the index of the hot point.
+Int@Window.HasNamedHotPoint "Box_Lib_G_Int_At_Window_HotPointHasName" ?
+
+///Intro: retrieve the name of a hot point of the window.
+Window.GetHotPointName = Str
+
+///Intro: return the name of a hot point
+Int@Window.GetHotPointName "Box_Lib_G_Int_At_Window_GetHotPointName" ?

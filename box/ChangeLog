@@ -2,15 +2,26 @@ Change log (recent comes first)
 
 DD MMM YYYY:
   * Search in the current source directory when including another source.
+  * The Box graphics library was rewritten in Box itself. The library was
+    re-engineered and is now much more clean and powerful. The old interface
+    is still supported, but is now obsolete. Note that the new interface
+    reproduces and offers to the user the features of the old interface,
+    deriving high level functionality from lower level functionality.
+    Example: Poly is expressed in terms of paths (Path) and command streams
+    (CmdStream), similar to Metapost.
+  * Added Dox, a documentation system for Box (which is now part of Boxer).
+    The core library and the Box graphics library have been documented with
+    this. Boxer has now a documentation browser to browse Dox documentation.
+  * Fixing bugs: the most important is the copy of complex objects.
 
 02 Jul 2011: Released v 0.2.3: bugfixes and internal improvements
   This release fixes bugs in the compiler and the graphics library.
   * Fixed a bug in the compiler (bug 7, ownership of register in subtypes)
-  * Encapsulating objects into Obj is now possible. 
+  * Encapsulating objects into Obj is now possible.
   * Raw access to the Cairo library can be obtained by sending commands
     encapsulated into Obj objects. A considerable part of Box which is now
     written in C can then be rewritten in Box itself (this has been started
-    but not completed). 
+    but not completed).
   * Written a prototype for a Box documentation system, Dox. Documented some
     parts of Box using Dox.
 

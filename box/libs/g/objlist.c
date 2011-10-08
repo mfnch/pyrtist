@@ -45,7 +45,7 @@ Task objlist_init(ObjList *ol, Int obj_size) {
 
 void objlist_destroy(ObjList *ol) {
   int i, n = buff_numitem(& ol->ol);
-  for(i=1; i <= n; i++) {
+  for (i = 1; i <= n; i++) {
     ObjListItem *oli = buff_itemptr(& ol->ol, ObjListItem, i);
     free(oli->name);
   }
@@ -78,38 +78,53 @@ Task objlist_dup(ObjList *dest, ObjList *src) {
 
 void *objlist_find(ObjList *ol, const char *name) {
   int i, n = buff_numitem(& ol->ol);
-  if (name == NULL) return (void *) NULL;
-  for(i=1; i <= n; i++) {
+  if (name == NULL)
+    return NULL;
+  for (i = 1; i <= n; i++) {
     ObjListItem *oli = buff_itemptr(& ol->ol, ObjListItem, i);
-    if (oli->name != (char *) NULL) {
+    if (oli->name != NULL) {
       if (strcmp(oli->name, name) == 0)
         return (void *) oli + sizeof(ObjListItem);
     }
   }
-  return (void *) NULL;
+  return NULL;
 }
 
-void *objlist_get(ObjList *ol, Int index) {
-  Int n = buff_numitem(& ol->ol);
-  ObjListItem *oli;
-  index = CIRCULAR_INDEX(n, index);
-  assert(index >= 1 && index <= n);
-  oli = buff_itemptr(& ol->ol, ObjListItem, index);
-  return (void *) oli + sizeof(ObjListItem);
+static ObjListItem *My_ObjList_Get_OLI(ObjList *ol, size_t index) {
+  size_t n = buff_numitem(& ol->ol);
+  if (n > 0) {
+    ObjListItem *oli;
+    index = CIRCULAR_INDEX(n, index);
+    assert(index >= 1 && index <= n);
+    oli = buff_itemptr(& ol->ol, ObjListItem, index);
+    return oli;
+
+  } else
+    return NULL;
+}
+
+void *objlist_get(ObjList *ol, size_t index) {
+  ObjListItem *oli = My_ObjList_Get_OLI(ol, index);
+  return (oli != NULL) ? (void *) oli + sizeof(ObjListItem) : NULL;
+}
+
+const char *objlist_get_name(ObjList *ol, size_t index) {
+  ObjListItem *oli = My_ObjList_Get_OLI(ol, index);
+  return (oli != NULL) ? oli->name : NULL;
 }
 
 Task objlist_add(ObjList *ol, void *obj, char *name) {
   ObjListItem *oli;
   void *dest_obj;
 
-  if (name != (char *) NULL) {
-    if (objlist_find(ol, name) != (void *) NULL) {
+  if (name != NULL) {
+    if (objlist_find(ol, name) != NULL) {
       g_error("Another object with the same name exists!");
       return Failed;
     }
 
     name = strdup(name);
-    if (name == (char *) NULL) {
+    if (name == NULL) {
       g_error("pointlist_add: strdup failed!");
       return Failed;
     }
@@ -142,3 +157,4 @@ Task objlist_iter(ObjList *ol, ObjListIterator it, void *data) {
 Int objlist_num(ObjList *ol) {
   return buff_numitem(& ol->ol);
 }
+
