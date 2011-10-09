@@ -27,10 +27,9 @@ Real@Dash[If[$$ .have.semicolon], .offset = $, Else[], \ .dashes[$]]
 ///Intro: add the graphic commands encoding a ``Dash`` object.
 Dash@CmdStream[
   n = Num[$.dashes]
-  If[n > 0]
-    Obj[const.raw.set_dash, $.offset
-        i = 0
-        Obj[If[i < n], Real[$.dashes.Get[i]], i += 1, For[1]]]
+  Obj[const.raw.set_dash, $.offset
+      i = 0
+      [If[i < n], Real[$.dashes.Get[i++]], For[1]]]
 ]
 
 join_options = Options[

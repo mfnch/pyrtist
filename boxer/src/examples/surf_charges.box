@@ -6,6 +6,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=62.9776352697, .y=13.1407282123]
 gui2 = Point[.x=65.2669775934, .y=3.96126117318]
@@ -60,7 +61,7 @@ w = Window[][
   ps = Points[v1, v2, v3, v4, v5, v6, v7, v8]
   i = 0, ps2 = Points[ps.Get[i] + (-0.7, 2), For[++i < Num[ps]]]
   i = 0, ps3 = Points[ps.Get[i] - (-0.7, 2), For[++i < Num[ps]]]
-  \ .Poly[s2, 1, i = 0, [ps3.Get[i++], For[i < Num[ps]]], Color[c2, .a=0.5]]
+  Poly[s2, 1, i = 0, [ps3.Get[i++], For[i < Num[ps]]], Color[c2, .a=0.5]]
   Poly[1, ps.Get[0], ps.Get[1], ps.Get[2], 0, ps3.Get[2], 0, 1, ps3.Get[1], ps3.Get[0]]
   Poly[1, ps.Get[6], ps.Get[7], ps.Get[0], 0, ps3.Get[0], 0, 1, ps3.Get[7], ps3.Get[6]]
   \ .Poly[s3, ps.Get[6], ps3.Get[6]; ps.Get[0], ps3.Get[0]; ps.Get[2], ps3.Get[2];]
@@ -69,7 +70,7 @@ w = Window[][
   Poly[s1, 1, i = 0, [ps2.Get[i++], For[i < Num[ps]]]]
   Poly[s1, 1, ps.Get[0], ps.Get[1], ps.Get[2], 0, ps2.Get[2], 0, 1, ps2.Get[1], ps2.Get[0]]
   Poly[s1, 1, ps.Get[6], ps.Get[7], ps.Get[0], 0, ps2.Get[0], 0, 1, ps2.Get[7], ps2.Get[6]]
-  \ .Line[0.3, color.black, normal_1, arrow, normal_2]
+  Line[0.3, color.black, normal_1, Scale[0.5], arrow, normal_2]
   Circle[normal_1, 0.5]
 
   \ .Line[0.2, color.black

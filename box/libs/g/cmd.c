@@ -22,8 +22,10 @@
 #include <assert.h>
 
 #include <box/types.h>
+#include <box/mem.h>
 #include <box/str.h>
 
+#include "graphic.h"
 #include "cmd.h"
 
 BoxGObjKind BoxGCmdArgKind_To_Obj_Kind(BoxGCmdArgKind t) {
@@ -36,7 +38,6 @@ BoxGObjKind BoxGCmdArgKind_To_Obj_Kind(BoxGCmdArgKind t) {
   case BOXGCMDARGKIND_REALP:
     return BOXGOBJKIND_POINT;
   case BOXGCMDARGKIND_WIDTH: return BOXGOBJKIND_REAL;
-  case BOXGCMDARGKIND_WIDTHS: return BOXGOBJKIND_COMPOSITE;
   default: return BOXGOBJKIND_EMPTY;
   }
 }
@@ -73,8 +74,8 @@ BoxGCmdSig BoxGCmdSig_Get(BoxGCmd cmd_id) {
     {BOXGCMD_SET_LINE_WIDTH, BOXGCMDSIG_W},
     {BOXGCMD_SET_LINE_CAP, BOXGCMDSIG_I},
     {BOXGCMD_SET_LINE_JOIN, BOXGCMDSIG_I},
-    {BOXGCMD_SET_MITER_LIMIT, BOXGCMDSIG_W},
-    {BOXGCMD_SET_DASH, BOXGCMDSIG_Ww},
+    {BOXGCMD_SET_MITER_LIMIT, BOXGCMDSIG_R},
+    {BOXGCMD_SET_DASH, BOXGCMDSIG_W_},
     {BOXGCMD_SET_FILL_RULE, BOXGCMDSIG_I},
     {BOXGCMD_SET_SOURCE_RGBA, BOXGCMDSIG_RRRR},
     {BOXGCMD_TEXT_PATH, BOXGCMDSIG_S},
@@ -104,6 +105,15 @@ BoxGCmdSig BoxGCmdSig_Get(BoxGCmd cmd_id) {
   return cmd_signatures[cmd_id].signature;
 }
 
+int BoxGCmdSig_Is_Variadic(BoxGCmdSig sig) {
+  switch (sig) {
+  case BOXGCMDSIG_W_:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
 int BoxGCmdSig_Get_Arg_Kinds(BoxGCmdSig sig, BoxGCmdArgKind *kinds) {
   switch (sig) {
   case BOXGCMDSIG_NONE: return 0;
@@ -114,10 +124,6 @@ int BoxGCmdSig_Get_Arg_Kinds(BoxGCmdSig sig, BoxGCmdArgKind *kinds) {
   case BOXGCMDSIG_V: kinds[0] = BOXGCMDARGKIND_VECTOR; return 1;
   case BOXGCMDSIG_S: kinds[0] = BOXGCMDARGKIND_STR; return 1;
   case BOXGCMDSIG_PP: kinds[0] = kinds[1] = BOXGCMDARGKIND_POINT; return 2;
-  case BOXGCMDSIG_Ww:
-    kinds[0] = BOXGCMDARGKIND_WIDTH;
-    kinds[1] = BOXGCMDARGKIND_WIDTHS;
-    return 2;
   case BOXGCMDSIG_RRR:
     kinds[0] = kinds[1] = kinds[2] = BOXGCMDARGKIND_REAL;
     return 3;
@@ -143,6 +149,9 @@ int BoxGCmdSig_Get_Arg_Kinds(BoxGCmdSig sig, BoxGCmdArgKind *kinds) {
     kinds[0] = kinds[1] = kinds[2] = kinds[3] = BOXGCMDARGKIND_POINT;
     kinds[4] = kinds[5] = BOXGCMDARGKIND_REAL;
     return 6;
+  case BOXGCMDSIG_W_:
+    kinds[0] = BOXGCMDARGKIND_WIDTH;
+    return 1;
   }
 
   abort();
@@ -155,70 +164,152 @@ int BoxGCmdSig_Get_Num_Args(BoxGCmdSig sig) {
   assert(n <= BOXG_MAX_NUM_CMD_ARGS);
   return n;
 }
+
+/* MyIterStuff provides a convenient way to handle variadic commands.  If a
+ * command require many arguments, then MyIterStuff_Alloc_Args automatically
+ * allocates extra spaces for them.
+ */
+typedef struct {
+  /* Stuff to pass to the user-provided iterator function */
+  BoxGCmdIter    iter;
+  void           *pass;
+
+  /* Array of arguments kinds, pointers and values. */
+  size_t         size;
+  BoxGCmdArgKind *kinds, kinds_small[BOXG_MAX_NUM_CMD_ARGS];
+  void           **ptrs, *ptrs_small[BOXG_MAX_NUM_CMD_ARGS];
+  BoxGCmdArg     *values, values_small[BOXG_MAX_NUM_CMD_ARGS];
+
+} MyIterStuff;
+
+static void MyIterStuff_Init(MyIterStuff *stuff) {
+  stuff->size = 0;
+  stuff->kinds = stuff->kinds_small;
+  stuff->ptrs = stuff->ptrs_small;
+  stuff->values = stuff->values_small;
+}
+
+static void MyIterStuff_Finish(MyIterStuff *stuff) {
+  if (stuff->size > 0) {
+    BoxMem_Free(stuff->kinds);
+    BoxMem_Free(stuff->ptrs);
+    BoxMem_Free(stuff->values);
+  }
+}
+
+static void MyIterStuff_Alloc_Args(MyIterStuff *stuff, size_t num_args) {
+  if (num_args > BOXG_MAX_NUM_CMD_ARGS) {
+    if (stuff->size < num_args) {
+      if (stuff->size > 0)
+        MyIterStuff_Finish(stuff);
+
+      stuff->kinds  = BoxMem_Alloc(num_args*sizeof(BoxGCmdArgKind));
+      stuff->ptrs   = BoxMem_Alloc(num_args*sizeof(void *));
+      stuff->values = BoxMem_Alloc(num_args*sizeof(BoxGCmdArg));
+      stuff->size = num_args;
+    }
+  }
+}
                                
-static const char *My_Iter_One_Cmd(BoxGCmdIter iter, BoxGObj *args_obj,
-                                   void *pass) {
+static BoxGErr My_Iter_One_Cmd(MyIterStuff *stuff, BoxGObj *args_obj) {
   size_t args_obj_len = BoxGObj_Get_Length(args_obj);
+  BoxGCmdIter iter = stuff->iter;
+  void *pass = stuff->pass;
+
   if (args_obj_len >= 1) {
     BoxInt *first_item =
       (BoxInt *) BoxGObj_To(BoxGObj_Get(args_obj, 0), BOXGOBJKIND_INT);
     if (first_item != NULL) {
       BoxGCmd cmd = *first_item;
       BoxGCmdSig sig = BoxGCmdSig_Get(cmd);
-      BoxGCmdArgKind kinds[BOXG_MAX_NUM_CMD_ARGS];
-      int num_args = BoxGCmdSig_Get_Arg_Kinds(sig, kinds);
-      assert(num_args <= BOXG_MAX_NUM_CMD_ARGS);
+      int num_args_wanted = BoxGCmdSig_Get_Arg_Kinds(sig, stuff->kinds),
+          num_args = args_obj_len - 1;
 
-      if (args_obj_len >= num_args + 1) {
-        void *args[BOXG_MAX_NUM_CMD_ARGS];
+      assert(num_args_wanted <= BOXG_MAX_NUM_CMD_ARGS);
+
+      if (num_args >= num_args_wanted) {
         size_t i;
-        for (i = 0; i < num_args; i++) {
-          int required_kind = kinds[i];
-          BoxGObj *arg_obj = BoxGObj_Get(args_obj, i + 1);
-          void *val;
-          assert(arg_obj != NULL);
-          val = BoxGObj_To(arg_obj, BoxGCmdArgKind_To_Obj_Kind(required_kind));
-          if (val != NULL)
-            args[i] = val;   
-          else
-            return "Error parsing command arguments (wrong type)";
+
+        /* Check for variadic commands */
+        if (num_args > num_args_wanted) {
+          if (BoxGCmdSig_Is_Variadic(sig)) {
+            assert(num_args_wanted >= 1);
+            /* ^^^ variadic commands must have at least one argument, as the
+             *     variadic arguments inherit the kind of the last non-variadic
+             *     argument.
+             */
+
+            MyIterStuff_Alloc_Args(stuff, num_args);
+            (void) BoxGCmdSig_Get_Arg_Kinds(sig, stuff->kinds);
+
+          } else
+            return BOXGERR_CMD_UNEXPECTED_ARGS;
         }
 
-        if (iter(cmd, sig, num_args, kinds, args, pass) == BOXTASK_OK)
-          return NULL;
+        int required_kind = -1;
+        for (i = 0; i < num_args; i++) {
+          BoxGObj *arg_obj = BoxGObj_Get(args_obj, i + 1);
+          assert(arg_obj != NULL);
+
+          /* Variadic arguments have the same kind of the last required arg */
+          if (i < num_args_wanted)
+            required_kind = stuff->kinds[i];
+          else
+            stuff->kinds[i] = required_kind;
+
+          void *val =
+            BoxGObj_To(arg_obj, BoxGCmdArgKind_To_Obj_Kind(required_kind));
+
+          if (val != NULL)
+            stuff->ptrs[i] = val;   
+          else
+            return BOXGERR_CMD_BAD_ARGS;
+        }
+
+        if (iter(cmd, sig, num_args, stuff->kinds,
+                 stuff->ptrs, stuff->values, pass) == BOXTASK_OK)
+          return BOXGERR_NO_ERR;
         else
-          return "Error while executing the command";
+          return BOXGERR_CMD_EXEC;
 
       } else
-        return "Not enough arguments for command";
+        return BOXGERR_CMD_MISSING_ARGS;
 
     } else
-      return "Cannot find command index (first item should be Int)";
+      return BOXGERR_CMD_BAD_INDEX;
 
   } else
-    return "Empty command object";
+    return BOXGERR_CMD_EMPTY;
 }
 
 
 BoxTask BoxGCmdIter_Iter(BoxGCmdIter iter, BoxGObj *obj, void *pass) {
   size_t i, n = BoxGObj_Get_Length(obj);
-  const char *msg = NULL;
-  for (i = 0; i < n; i++) {
+  MyIterStuff stuff;
+  BoxGErr err = BOXGERR_NO_ERR;
+
+  MyIterStuff_Init(& stuff);
+  stuff.iter = iter;
+  stuff.pass = pass;
+
+  for (i = 0; i < n && err == BOXGERR_NO_ERR; i++) {
     BoxInt sub_type = BoxGObj_Get_Type(obj, i);
     if (sub_type == BOXGOBJKIND_COMPOSITE) {
       BoxGObj *obj_sub = BoxGObj_Get(obj, i);
-      msg = My_Iter_One_Cmd(iter, obj_sub, pass);
+      err = My_Iter_One_Cmd(& stuff, obj_sub);
 
     } else
-      msg = "Expecting composite command object";
-
-    if (msg) {
-      printf("Error in command Obj: %s.\n", msg);
-      return BOXTASK_FAILURE;
-    }
+      err = BOXGERR_CMD_BAD;
   }
 
-  return BOXTASK_OK;
+  MyIterStuff_Finish(& stuff);
+
+  if (err != BOXGERR_NO_ERR) {
+    printf("Error in command Obj: %s.\n", BoxGErr_To_Str(err));
+    return BOXTASK_FAILURE;
+
+  } else
+    return BOXTASK_OK;
 }
 
 /** Type of the 'pass' argument used by BoxGCmdIter_Filter_Append. */
@@ -231,9 +322,9 @@ typedef struct {
 
 static BoxTask My_Filter_Append_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                                      BoxGCmdArgKind *kinds, void **args,
-                                     void *pass) {
+                                     BoxGCmdArg *aux, void *pass) {
   MyFilterData *data = (MyFilterData *) pass;
-  BoxTask t = data->filter(cmd, sig, num_args, kinds, args, data->pass);
+  BoxTask t = data->filter(cmd, sig, num_args, kinds, args, aux, data->pass);
 
   if (t == BOXTASK_OK) {
     BoxGObj *cmd_obj = BoxGObj_Append_Composite(data->dst, num_args + 1);

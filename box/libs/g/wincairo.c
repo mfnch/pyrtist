@@ -66,7 +66,7 @@ static BoxReal My_Invert_Cairo_Matrix(cairo_matrix_t *result, cairo_matrix_t *in
 static char *wincairo_image_id_string   = "cairo:image";
 static char *wincairo_stream_id_string  = "cairo:stream";
 
-static void My_Wincairo_Finish_Drawing(BoxGWin *w) {
+static void My_WinCairo_Finish_Drawing(BoxGWin *w) {
   cairo_t *cr = (cairo_t *) w->ptr;
   cairo_surface_t *surface = cairo_get_target(cr);
 
@@ -612,6 +612,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
 
   case BOXGCMD_MOVE_TO:
     if (My_Args_From_Obj(w, args, args_obj, 1, BOXGCMDARGKIND_POINT)) {
+      printf("move_to %g %g\n", args[0].p.x, args[0].p.y);
       cairo_move_to(cr, args[0].p.x, args[0].p.y);
       return BOXTASK_OK;
     }
@@ -753,7 +754,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
 
   case BOXGCMD_SET_DASH:
     {
-      size_t num_args = 0;
+      size_t num_args = BoxGObj_Get_Num(args_obj);
       BoxReal *rs = My_Arg_Array_From_Obj(w, args_obj, BOXGCMDARGKIND_WIDTH,
                                           1, & num_args);
       if (rs != NULL && num_args > 1) {
@@ -1015,7 +1016,7 @@ static BoxTask My_WinCairo_Interpret_One(BoxGWin *w,
   return BOXTASK_FAILURE;
 }
 
-static BoxTask My_WinCairo_Interpret(BoxGWin *w, BoxGObj *obj) {
+static BoxTask My_WinCairo_Interpret_Old(BoxGWin *w, BoxGObj *obj) {
   size_t i, n = BoxGObj_Get_Length(obj);
   const char *msg = NULL;
   for (i = 0; i < n; i++) {
@@ -1048,6 +1049,540 @@ static BoxTask My_WinCairo_Interpret(BoxGWin *w, BoxGObj *obj) {
 
   return BOXTASK_OK;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static BoxTask
+My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
+                           BoxGCmdArgKind *kinds, void **args,
+                           BoxGCmdArg *aux, void *pass) {
+  BoxGWin *w = pass;
+  cairo_t *cr = (cairo_t *) w->ptr;
+  size_t i;
+
+  /* We first transform the arguments */
+  for (i = 0; i < num_args; i++) {
+    void *arg_in = args[i];
+    BoxGCmdArg *arg_out = & aux[i];
+
+    switch (kinds[i]) {
+    case BOXGCMDARGKIND_POINT:
+      My_Map_Point(w, & arg_out->p, (BoxPoint *) arg_in);
+      args[i] = & arg_out->p;
+      break;
+
+    case BOXGCMDARGKIND_VECTOR:
+      My_Map_Vector(w, & arg_out->p, (BoxPoint *) arg_in);
+      args[i] = & arg_out->p;
+      break;
+
+    case BOXGCMDARGKIND_WIDTH:
+      My_Map_Width(w, & arg_out->w, (BoxReal *) arg_in);
+      args[i] = & arg_out->w;
+      break;
+
+    default:
+      break;
+    }
+  }
+
+  switch (cmd) {
+  case BOXGCMD_SAVE:
+    cairo_save(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_RESTORE:
+    cairo_restore(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_SET_ANTIALIAS:
+    {
+      BoxInt *arg1 = args[0];
+      cairo_antialias_t v;
+      switch(*arg1) {
+      default:
+      case 0: v = CAIRO_ANTIALIAS_DEFAULT; break;
+      case 1: v = CAIRO_ANTIALIAS_NONE; break;
+      case 2: v = CAIRO_ANTIALIAS_GRAY; break;
+      case 3: v = CAIRO_ANTIALIAS_SUBPIXEL; break;
+      }
+      cairo_set_antialias(cr, v);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_MOVE_TO:
+    {
+      BoxPoint *arg1 = args[0];
+      cairo_move_to(cr, arg1->x, arg1->y);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_LINE_TO:
+    {
+      BoxPoint *arg1 = args[0];
+      cairo_line_to(cr, arg1->x, arg1->y);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_CURVE_TO:
+    {
+      BoxPoint *arg1 = args[0], *arg2 = args[1], *arg3 = args[2];
+      cairo_curve_to(cr, arg1->x, arg1->y, arg2->x, arg2->y, arg3->x, arg3->y);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_CLOSE_PATH:
+    cairo_close_path(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_NEW_PATH:
+    cairo_new_path(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_NEW_SUB_PATH:
+    cairo_new_sub_path(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_STROKE:
+    cairo_stroke(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_STROKE_PRESERVE:
+    cairo_stroke_preserve(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_FILL:
+    cairo_fill(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_FILL_PRESERVE:
+    cairo_fill_preserve(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_CLIP:
+    cairo_clip(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_CLIP_PRESERVE:
+    cairo_clip_preserve(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_RESET_CLIP:
+    cairo_reset_clip(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_PUSH_GROUP:
+    cairo_push_group(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_POP_GROUP_TO_SOURCE:
+    cairo_pop_group_to_source(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_SET_OPERATOR:
+    {
+      BoxInt *arg1 = args[0];
+      cairo_set_operator(cr, My_Cairo_Operator_Of_Int(*arg1));
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_PAINT:
+    cairo_paint(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_PAINT_WITH_ALPHA:
+    {
+      BoxReal *arg1 = args[0];
+      cairo_paint_with_alpha(cr, *arg1);
+      return BOXTASK_OK;
+    }
+    return BOXTASK_OK;
+
+  case BOXGCMD_COPY_PAGE:
+    cairo_copy_page(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_SHOW_PAGE:
+    cairo_show_page(cr);
+    return BOXTASK_OK;
+
+  case BOXGCMD_SET_LINE_WIDTH:
+    {
+      BoxReal *arg1 = args[0];
+      cairo_set_line_width(cr, *arg1);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_SET_LINE_CAP:
+    {
+      BoxInt *arg1 = args[0];
+      cairo_line_cap_t v;
+      switch(*arg1) {
+      default:
+      case 0: v = CAIRO_LINE_CAP_BUTT; break;
+      case 1: v = CAIRO_LINE_CAP_ROUND; break;
+      case 2: v = CAIRO_LINE_CAP_SQUARE; break;
+      }
+      cairo_set_line_cap(cr, v);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_SET_LINE_JOIN:
+    {
+      BoxInt *arg1 = args[0];
+      cairo_line_join_t v;
+      switch(*arg1) {
+      default:
+      case 0: v = CAIRO_LINE_JOIN_MITER; break;
+      case 1: v = CAIRO_LINE_JOIN_ROUND; break;
+      case 2: v = CAIRO_LINE_JOIN_BEVEL; break;
+      }
+      cairo_set_line_join(cr, v);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_SET_MITER_LIMIT:
+    {
+      BoxReal *arg1 = args[0];
+      cairo_set_miter_limit(cr, *arg1);
+      return BOXTASK_OK;
+    }
+
+  case BOXGCMD_SET_DASH:
+    {
+      int num_dashes = num_args - 1;
+      double offset = *((BoxReal *) args[0]),
+             *dashes = NULL;
+
+      assert(num_args >= 1);
+
+      if (num_dashes > 0) {
+        size_t i;
+        dashes = BoxMem_Safe_Alloc(num_dashes*sizeof(double));
+        for (i = 0; i < num_dashes; i++)
+          dashes[i] = *((BoxReal *) args[1 + i]);
+
+      }
+
+      cairo_set_dash(cr, dashes, num_dashes, offset);
+      BoxMem_Free(dashes);
+      return BOXTASK_OK;
+    }
+
+  case BOXGCMD_SET_FILL_RULE:
+    {
+      BoxInt *arg1 = args[0];
+      cairo_fill_rule_t v;
+      switch(*arg1) {
+      default:
+      case 0: v = CAIRO_FILL_RULE_WINDING; break;
+      case 1: v = CAIRO_FILL_RULE_EVEN_ODD; break;
+      }
+      cairo_set_fill_rule(cr, v);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_SET_SOURCE_RGBA:
+    {
+      BoxReal *arg1 = args[0], *arg2 = args[1],
+              *arg3 = args[2], *arg4 = args[3];
+      cairo_set_source_rgba(cr, *arg1, *arg2, *arg3, *arg4);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_TEXT_PATH:
+    {
+      BoxStr *s = args[0];
+      char *text = BoxStr_To_C_String(s);
+      if (text != NULL) {
+        cairo_text_path(cr, text);
+        BoxMem_Free(text);
+        return BOXTASK_OK;
+      }
+    }
+    break;
+
+  case BOXGCMD_TRANSLATE:
+    {
+      BoxPoint *arg1 = args[1];
+      cairo_translate(cr, arg1->x, arg1->y);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_SCALE:
+    {
+      BoxPoint *arg1 = args[1];
+      cairo_scale(cr, arg1->x, arg1->y);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_ROTATE:
+    {
+      BoxReal *arg1 = args[0];
+      cairo_rotate(cr, *arg1);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_CREATE_RGB:
+    {
+      BoxReal *arg1 = args[0], *arg2 = args[1], *arg3 = args[2];
+      if (w->pattern != NULL)
+        cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
+
+      w->pattern =
+        cairo_pattern_create_rgb(*arg1, *arg2, *arg3);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_CREATE_RGBA:
+    {
+      BoxReal *arg1 = args[0], *arg2 = args[1],
+              *arg3 = args[2], *arg4 = args[3];
+      if (w->pattern != NULL)
+        cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
+
+      w->pattern =
+        cairo_pattern_create_rgba(*arg1, *arg2, *arg3, *arg4);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_CREATE_LINEAR:
+    {
+      BoxPoint *arg1 = args[0], *arg2 = args[1];
+      if (w->pattern != NULL)
+        cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
+
+      w->pattern =
+        cairo_pattern_create_linear(arg1->x, arg1->y, arg2->x, arg2->y);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_CREATE_RADIAL:
+    {
+      BoxPoint *arg1 = args[0], *arg2 = args[1],
+               *arg3 = args[2], *arg4 = args[3];
+      BoxReal *arg5 = args[4], *arg6 = args[5];
+
+      if (w->pattern != NULL)
+        cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
+
+      w->pattern =
+        My_Cairo_Pattern_Create_Radial(arg1, arg2, arg3, arg4, *arg5, *arg6);
+      return (w->pattern != NULL) ? BOXTASK_OK : BOXTASK_FAILURE;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_ADD_COLOR_STOP_RGB:
+    {
+      BoxReal *arg1 = args[0], *arg2 = args[1], *arg3 = args[2],
+              *arg4 = args[3];
+      if (w->pattern != NULL)
+        cairo_pattern_add_color_stop_rgb(w->pattern,
+                                         *arg1, *arg2, *arg3, *arg4);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_ADD_COLOR_STOP_RGBA:
+    {
+      BoxReal *arg1 = args[0], *arg2 = args[1], *arg3 = args[2],
+              *arg4 = args[3], *arg5 = args[4];
+      if (w->pattern != NULL)
+        cairo_pattern_add_color_stop_rgba(w->pattern, *arg1, *arg2,
+                                          *arg3, *arg4, *arg5);
+      return BOXTASK_OK;
+    }
+    return BOXTASK_OK;
+
+  case BOXGCMD_PATTERN_SET_EXTEND:
+    {
+      BoxInt *arg1 = args[0];
+      cairo_extend_t v;
+      switch(*arg1) {
+      default:
+      case 0: v = CAIRO_EXTEND_NONE; break;
+      case 1: v = CAIRO_EXTEND_REPEAT; break;
+      case 2: v = CAIRO_EXTEND_REFLECT; break;
+      case 3: v = CAIRO_EXTEND_PAD; break;
+      }
+      cairo_pattern_set_extend((cairo_pattern_t *) w->pattern, v);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_SET_FILTER:
+    {
+      BoxInt *arg1 = args[0];
+      cairo_filter_t v;
+      switch(*arg1) {
+      default:
+      case 0: v = CAIRO_FILTER_FAST; break;
+      case 1: v = CAIRO_FILTER_GOOD; break;
+      case 2: v = CAIRO_FILTER_BEST; break;
+      case 3: v = CAIRO_FILTER_NEAREST; break;
+      case 4: v = CAIRO_FILTER_BILINEAR; break;
+      case 5: v = CAIRO_FILTER_GAUSSIAN; break;
+      }
+      cairo_pattern_set_filter((cairo_pattern_t *) w->pattern, v);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_PATTERN_DESTROY:
+    if (w->pattern != NULL) {
+      cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
+      w->pattern = NULL;
+    }
+    return BOXTASK_OK;
+
+  case BOXGCMD_SET_SOURCE:
+    if (w->pattern != NULL)
+      cairo_set_source(cr, (cairo_pattern_t *) w->pattern);
+    return BOXTASK_OK;
+
+
+  case BOXGCMD_EXT_JOINARC_TO:
+    {
+      BoxPoint *arg1 = args[0], *arg2 = args[1], *arg3 = args[2];
+      My_Cairo_JoinArc(cr, arg1, arg2, arg3);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_EXT_ARC_TO:
+    {
+      BoxPoint *arg1 = args[0], *arg2 = args[1], *arg3 = args[2];
+      BoxReal *arg4 = args[3], *arg5 = args[4];
+      My_Cairo_Arc(cr, arg1, arg2, arg3, *arg4, *arg5);
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_EXT_SET_FONT:
+    {
+      BoxStr *arg1 = args[0];
+      char *font = BoxStr_To_C_String(arg1);
+      if (font != NULL) {
+        My_Cairo_Set_Font(w, font);
+        BoxMem_Free(font);
+        return BOXTASK_OK;
+      }
+    }
+    break;
+
+  case BOXGCMD_EXT_TEXT_PATH:
+    {
+      BoxPoint *arg1 = args[0], *arg2 = args[1],
+               *arg3 = args[2], *arg4 = args[3];
+      BoxStr *arg5 = args[4];
+      char *text = BoxStr_To_C_String(arg5);
+      if (text != NULL) {
+        My_Cairo_Text_Path(w, arg1, arg2, arg3, arg4, text);
+        BoxMem_Free(text);
+        return BOXTASK_OK;
+      }
+    }
+    break;
+
+  case BOXGCMD_EXT_TRANSFORM:
+    {
+      /*BoxPoint *arg1 = args[0], *arg2 = args[1], *arg3 = args[2];*/
+
+      /* this command should change the ref frame to the one which
+       * has origin in the first point and coordinate (1, 0) at the
+       * second point and (0, 1) at the third (not an ortogonal frame)
+       * NOT IMPLEMENTED, YET.
+       */
+      return BOXTASK_OK;
+    }
+    break;
+
+  case BOXGCMD_EXT_FILL_STROKE:
+    if (cairo_get_line_width(cr) > 0.0) {
+      cairo_fill_preserve(cr);
+      cairo_stroke(cr);
+
+    } else
+      cairo_fill(cr);
+    return BOXTASK_OK;
+
+  default:
+    return BOXTASK_FAILURE;
+  }
+
+  return BOXTASK_FAILURE;
+}
+
+
+static BoxTask My_WinCairo_Interpret(BoxGWin *w, BoxGObj *obj) {
+  return BoxGCmdIter_Iter(My_WinCairo_Interpret_Iter, obj, w);
+}
+
+
+
 
 static void My_WinCairo_Create_Path(BoxGWin *w) {
   beginning_of_path = 1;
@@ -1291,11 +1826,11 @@ static int My_WinCairo_Save_To_File(BoxGWin *w, const char *file_name) {
 }
 
 /** Set the default methods to the cairo windows */
-static void My_Wincairo_Repair(BoxGWin *w) {
+static void My_WinCairo_Repair(BoxGWin *w) {
   BoxGWin_Block(w);
   w->interpret = My_WinCairo_Interpret;
   w->save_to_file = My_WinCairo_Save_To_File;
-  w->finish_drawing = My_Wincairo_Finish_Drawing;
+  w->finish_drawing = My_WinCairo_Finish_Drawing;
   w->create_path = My_WinCairo_Create_Path;
   w->begin_drawing = My_WinCairo_Begin_Drawing;
   w->draw_path = My_WinCairo_Draw_Path;
@@ -1527,7 +2062,7 @@ BoxGWin *BoxGWin_Create_Cairo(BoxGWinPlan *plan, BoxGErr *err) {
 
   /* We now set the Cairo-specific methods to handle the window */
   w->quiet = 0;
-  w->repair = My_Wincairo_Repair;
+  w->repair = My_WinCairo_Repair;
   w->repair(w);
   return w;
 }

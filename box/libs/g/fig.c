@@ -208,46 +208,17 @@ static void My_Fig_Push_Commands(BoxGWin *w, int id, CmndArg *args) {
   ++lh->numcmnd; /* Increase counter for number of commands in the layer */
 }
 
-#if 0
-static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj) {
-  BoxGObj copy;
-  CmndArg args[] = {{sizeof(BoxGObj), & copy},
-                    {0, (void *) NULL}};
-
-  assert(obj != NULL && w != NULL);
-
-  BoxGObj_Init_From(& copy, obj);
-  /* Note that here we are assuming that we can safely relocate BoxGObj
-   * objects in memory, i.e. memcopy them and completely forget about the
-   * originals (which means we do not call BoxGObj_Finish for them).
-   * We then treat the copies as if they were effectively equivalent to the
-   * originals. Typically this can be done for objects that are not being
-   * referenced by other objects. Here we can do this as we are creating
-   * a new copy of obj.
-   */
-  My_Fig_Push_Commands(w, ID_interpret, args);
-  return BOXTASK_OK;
-}
-
-#else
-
 static Real Fig_Transform_Factor(Real angle);
 static void Fig_Transform_Point(Point *p, int n);
 static void Fig_Transform_Vector(Point *p, int n);
 
-typedef struct {
-  BoxGCmdArg args[BOXG_MAX_NUM_CMD_ARGS];
-
-} MyFigInterpretData;
-
 BoxTask My_Transform_Commands(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                               BoxGCmdArgKind *kinds, void **args,
-                              void *pass) {
-  MyFigInterpretData *data = (MyFigInterpretData *) pass;
+                              BoxGCmdArg *aux, void *pass) {
   int i;
 
   for (i = 0; i < num_args; i++) {
-    BoxGCmdArg *my_arg = & data->args[i];
+    BoxGCmdArg *my_arg = & aux[i];
     void *arg = args[i];
     BoxGCmdArgKind kind = kinds[i];
     switch (kind) {
@@ -275,14 +246,13 @@ BoxTask My_Transform_Commands(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
 }
 
 static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj) {
-  MyFigInterpretData data;
   BoxGObj copy;
 
   assert(obj != NULL && w != NULL);
 
   BoxGObj_Init(& copy);
   if (BoxGCmdIter_Filter_Append(My_Transform_Commands,
-                                & copy, obj, & data) == BOXTASK_OK) {
+                                & copy, obj, NULL) == BOXTASK_OK) {
     /* Note that here we are assuming that we can safely relocate BoxGObj
      * objects in memory, i.e. memcopy them and completely forget about the
      * originals (which means we do not call BoxGObj_Finish for them).
@@ -299,12 +269,6 @@ static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj) {
   } else
     return BOXTASK_FAILURE;
 }
-
-
-
-
-
-#endif
 
 void My_Fig_Create_Path(BoxGWin *w) {
   CmndArg args[] = {{0, (void *) NULL}};

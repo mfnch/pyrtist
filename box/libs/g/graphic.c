@@ -73,6 +73,16 @@ const char *BoxGErr_To_Str(BoxGErr err) {
     return "Cannot create window: file name is missing!";
   case BOXGERR_CAIRO_SURFACE_ERR: return "Error in Cairo surface";
   case BOXGERR_CAIRO_CONTEXT_ERR: return "Error in Cairo context";
+  case BOXGERR_CMD_BAD_ARGS:
+    return "Error parsing command arguments (wrong type)";
+  case BOXGERR_CMD_MISSING_ARGS: return "Not enough arguments for command";
+  case BOXGERR_CMD_UNEXPECTED_ARGS:
+    return "Unexpected extra arguments to non-variadic command";
+  case BOXGERR_CMD_EXEC: return "Error while executing the command";
+  case BOXGERR_CMD_BAD: return "Expecting composite command object";
+  case BOXGERR_CMD_EMPTY: return "Empty command object";
+  case BOXGERR_CMD_BAD_INDEX:
+    return "Cannot find command index (first item should be Int)";
   }
   return "Unknown error";
 }

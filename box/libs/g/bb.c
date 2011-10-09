@@ -96,7 +96,7 @@ static void My_BB_Add_Fake_Point(BoxGWin *w, Point *p) {
 
 static BoxTask My_BB_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                                     BoxGCmdArgKind *kinds, void **args,
-                                    void *pass) {
+                                    BoxGCmdArg *aux, void *pass) {
   BoxGWin *w = (BoxGWin *) pass;
   int i;
   for (i = 0; i < num_args; i++) {

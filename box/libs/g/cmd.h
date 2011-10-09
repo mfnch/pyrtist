@@ -57,8 +57,7 @@ typedef enum {
   BOXGCMDARGKIND_VECTOR, /**< Vector: transformed as a non applied
                               vector (V) */
   BOXGCMDARGKIND_REALP,  /**< Real couple: no transformation (p) */
-  BOXGCMDARGKIND_WIDTH,  /**< Transformed as a width (real number) (W) */
-  BOXGCMDARGKIND_WIDTHS  /**< Array of widhts (w) */
+  BOXGCMDARGKIND_WIDTH  /**< Transformed as a width (real number) (W) */
 
 } BoxGCmdArgKind;
 
@@ -89,21 +88,29 @@ typedef enum {
   BOXGCMDSIG_V,
   BOXGCMDSIG_S,
   BOXGCMDSIG_PP,
-  BOXGCMDSIG_Ww,
   BOXGCMDSIG_RRR,
   BOXGCMDSIG_PPP,
   BOXGCMDSIG_RRRR,
   BOXGCMDSIG_RRRRR,
   BOXGCMDSIG_PPPRR,
   BOXGCMDSIG_PPPpS,
-  BOXGCMDSIG_PPPPRR
+  BOXGCMDSIG_PPPPRR,
+  BOXGCMDSIG_W_
 
 } BoxGCmdSig;
 
-/** Function called while iterating over the commands. */
+/** Function called while iterating over the commands. 
+ * 'cmd' is the command, 'sig' is the signature, 'num_args' the number of
+ * arguments of the command, 'kinds' an array of 'num_args' BoxGCmdArgKind
+ * items with the argument kinds, 'args' an array of 'num_args' pointers to
+ * the argument values, 'aux' a pointer to an auxiliary unset region of
+ * memory which can contain up to 'num_args' BoxGCmdArg items (useful for
+ * modifying the command arguments, if necessary). Finally, 'pass' is a pointer
+ * passed to the function as given by BoxGCmdIter_Iter.
+ */
 typedef BoxTask (*BoxGCmdIter)(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                                BoxGCmdArgKind *kinds, void **args,
-                               void *pass);
+                               BoxGCmdArg *aux, void *pass);
 
 /** Return a BoxGObjKind which can contain a command argument of the given
  * type. 
