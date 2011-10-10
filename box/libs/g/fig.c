@@ -208,9 +208,9 @@ static void My_Fig_Push_Commands(BoxGWin *w, int id, CmndArg *args) {
   ++lh->numcmnd; /* Increase counter for number of commands in the layer */
 }
 
-static Real Fig_Transform_Factor(Real angle);
-static void Fig_Transform_Point(Point *p, int n);
-static void Fig_Transform_Vector(Point *p, int n);
+static BoxReal Fig_Transform_Factor(BoxReal angle);
+static void Fig_Transform_Point(BoxPoint *p, size_t n);
+static void Fig_Transform_Vector(BoxPoint *p, size_t n);
 
 BoxTask My_Transform_Commands(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                               BoxGCmdArgKind *kinds, void **args,
@@ -680,13 +680,13 @@ void BoxGWin_Fig_Clear_Layer(BoxGWin *w, int l) {
 static BoxGMatrix fig_matrix = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0};
 
 /* Apply the transformation in matrix fig_matrix to the n points in p[] */
-static void Fig_Transform_Point(Point *p, int n) {
-  Grp_Matrix_Mul_Point(& fig_matrix, p, n);
+static void Fig_Transform_Point(BoxPoint *p, size_t n) {
+  BoxGMatrix_Map_Points(& fig_matrix, p, p, n);
 }
 
 /* Apply the linear transformation in fig_matrix to the n points in v[] */
-static void Fig_Transform_Vector(Point *v, int n) {
-  Grp_Matrix_Mul_Vector(& fig_matrix, v, n);
+static void Fig_Transform_Vector(BoxPoint *v, size_t n) {
+  BoxGMatrix_Map_Vectors(& fig_matrix, v, v, n);
 }
 
 /* Find how the norm of the vector (cos(angle), sin(angle)) changes

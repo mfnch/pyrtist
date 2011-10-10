@@ -392,7 +392,7 @@ static int lt_put_to_begin_or_end(BoxGWin *win,
   else
     pfi = pnt[2];
 
-  Grp_Matrix_Mul_Point(& m, & pfi, 1);
+  BoxGMatrix_Map_Point(& m, & pfi, & pfi);
 
   /* Disegno l'oggetto */
   BoxGWin_Fig_Draw_Fig_With_Matrix(win, fw->window, & m);

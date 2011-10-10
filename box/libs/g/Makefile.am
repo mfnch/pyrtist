@@ -43,6 +43,7 @@ dist_boxpkg_DATA=\
   _rectangle.bxh label.bxh bounce.bxh electric.bxh
 
 libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h \
+  matrix.c matrix.h winmap.c winmap.h \
                 bm1bit.c bm4bit.c bm8bit.c bitmap.h \
                 bmcommon.c bmcommon.h \
                 fig.c fig.h graphic.c graphic.h cmd.c cmd.h hsv.c hsv.h \

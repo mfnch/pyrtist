@@ -121,7 +121,7 @@ static Task put_calculate(Window *w) {
 
 static Task _transform_pl(Int index, char *name, void *object, void *data) {
   Matrix *m = (Matrix *) data;
-  Grp_Matrix_Mul_Point(m, (Point *) object, 1);
+  BoxGMatrix_Map_Point(m, (BoxPoint *) object, (BoxPoint *) object);
   return Success;
 }
 

@@ -28,6 +28,7 @@
 #  include "types.h"
 #  include "gpath.h"
 #  include "obj.h"
+#  include "matrix.h"
 
 /** Enumeration of possible errors occuring in the graphic library */
 typedef enum {
@@ -69,17 +70,6 @@ typedef enum {
 typedef struct {
   Real r, g, b, a;
 } Color;
-
-/** Note: this definition is coherent with the following Box definition
- * Matrix = ++(Real m11, m12, m13, m21, m22, m23)
- */
-typedef struct {
-  BoxReal m11, m12, m13, m21, m22, m23;
-
-} BoxGMatrix;
-
-/** Obsolete. Use BoxGMatrix instead. */
-typedef BoxGMatrix Matrix;
 
 typedef struct {
   Point max, min;
@@ -514,22 +504,6 @@ void BoxGWin_Draw_GPath(BoxGWin *w, GPath *gp);
 void rst_repair(BoxGWin *gw);
 
 Point *grp_ref(Point *o, Point *v, Point *p);
-
-/** Calculate the transformation matrix corresponding to:
- * translation vector 't', rotation center 'rcntr', rotation angle 'rang',
- * scale factors 'sx' and 'sy'. The computed matrix is put in 'm'.
- */
-void BoxGMatrix_Set(BoxGMatrix *m,
-                    Point *t, Point *rcntr, Real rang, Real sx, Real sy);
-
-/** Set the matrix 'm' to the identity matrix. */
-void BoxGMatrix_Set_Identity(BoxGMatrix *m);
-
-/** Apply the matrix 'm' to the 'num_pts' points in 'pts'. */
-void Grp_Matrix_Mul_Point(Matrix *m, Point *pts, int num_pts);
-
-/** Apply the matrix 'm' to the 'num_vecs' vectors in 'vecs'. */
-void Grp_Matrix_Mul_Vector(Matrix *m, Point *vecs, int num_vecs);
 
 /* Costanti per la conversione */
 #define grp_mmperinch  25.4
