@@ -465,11 +465,21 @@ static cairo_operator_t My_Cairo_Operator_Of_Int(BoxInt v) {
   }
 }
 
+/** Structure used to pass data to the interator function
+ * My_WinCairo_Interpret_Iter (which is called by My_WinCairo_Interpret).
+ */
+typedef struct {
+  BoxGWin    *win;
+  BoxGWinMap *map;
+
+} MyInterpretData;
+
 static BoxTask
 My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                            BoxGCmdArgKind *kinds, void **args,
                            BoxGCmdArg *aux, void *pass) {
-  BoxGWin *w = pass;
+  BoxGWin *w = ((MyInterpretData *) pass)->win;
+  BoxGWinMap *map = ((MyInterpretData *) pass)->map;
   cairo_t *cr = (cairo_t *) w->ptr;
   size_t i;
 
@@ -480,17 +490,17 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
 
     switch (kinds[i]) {
     case BOXGCMDARGKIND_POINT:
-      My_Map_Point(w, & arg_out->p, (BoxPoint *) arg_in);
+      BoxGWinMap_Map_Point(map, & arg_out->p, (BoxPoint *) arg_in);
       args[i] = & arg_out->p;
       break;
 
     case BOXGCMDARGKIND_VECTOR:
-      My_Map_Vector(w, & arg_out->p, (BoxPoint *) arg_in);
+      BoxGWinMap_Map_Vector(map, & arg_out->p, (BoxPoint *) arg_in);
       args[i] = & arg_out->p;
       break;
 
     case BOXGCMDARGKIND_WIDTH:
-      My_Map_Width(w, & arg_out->w, (BoxReal *) arg_in);
+      BoxGWinMap_Map_Width(map, & arg_out->w, (BoxReal *) arg_in);
       args[i] = & arg_out->w;
       break;
 
@@ -943,8 +953,25 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
 }
 
 
-static BoxTask My_WinCairo_Interpret(BoxGWin *w, BoxGObj *obj) {
-  return BoxGCmdIter_Iter(My_WinCairo_Interpret_Iter, obj, w);
+static BoxTask My_WinCairo_Interpret(BoxGWin *w, BoxGObj *obj, BoxGWinMap *map) {
+  BoxGWinMap my_map;
+  BoxGMatrix
+    *user_mx = BoxGWinMap_Get_Matrix(map),
+    *my_mx = BoxGWinMap_Get_Matrix(& my_map);
+
+  MyInterpretData data;
+  data.win = w;
+  data.map = & my_map;
+
+  my_mx->m11 = w->resx; my_mx->m22 = w->resy;
+  my_mx->m12 = my_mx->m21 = 0.0;
+  my_mx->m13 = -w->ltx*w->resx;
+  my_mx->m23 = -w->lty*w->resy;
+
+  BoxGMatrix_Mul(my_mx, my_mx, user_mx);
+  BoxGWinMap_Compute_Width_Transform(& my_map);
+
+  return BoxGCmdIter_Iter(My_WinCairo_Interpret_Iter, obj, & data);
 }
 
 

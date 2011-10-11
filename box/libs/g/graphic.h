@@ -29,6 +29,7 @@
 #  include "gpath.h"
 #  include "obj.h"
 #  include "matrix.h"
+#  include "winmap.h"
 
 /** Enumeration of possible errors occuring in the graphic library */
 typedef enum {
@@ -243,7 +244,7 @@ struct _grp_window {
   int (*save_to_file)(BoxGWin *w, const char *file_name);
 
   /** @see BoxGWin_Interpret_Obj */
-  BoxTask (*interpret)(BoxGWin *w, BoxGObj *commands);
+  BoxTask (*interpret)(BoxGWin *w, BoxGObj *commands, BoxGWinMap *map);
 
   /** If set to 1, inhibits error messages */
   int quiet;
@@ -356,8 +357,8 @@ struct _grp_window {
   ((win)->add_fake_point)((win), (p))
 
 /** Interpret raw commands contained inside an Obj object. */
-#define BoxGWin_Interpret_Obj(win, obj) \
-  ((win)->interpret)((win), (obj))
+#define BoxGWin_Interpret_Obj(win, obj, map) \
+  ((win)->interpret)((win), (obj), (map))
 
 /** Set the current font from the font name provided in the string. */
 #define BoxGWin_Set_Font(win, name) \

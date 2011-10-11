@@ -60,4 +60,10 @@ void BoxGMatrix_Map_Vectors(BoxGMatrix *m, BoxPoint *out, BoxPoint *in,
 /** Apply the matrix 'm' to the vector 'in' and store the result in 'out'. */
 void BoxGMatrix_Map_Vector(BoxGMatrix *m, BoxPoint *out, BoxPoint *in);
 
+/** Compute the transformation 'a' times 'b'. In particular, mapping a point
+ * through 'axb' is equivalent to first mapping it through 'b' and then trough
+ * 'a'.
+ */
+void BoxGMatrix_Mul(BoxGMatrix *axb, BoxGMatrix *a, BoxGMatrix *b);
+
 #endif /* _BOX_LIBG_MATRIX_H */

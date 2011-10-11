@@ -32,6 +32,7 @@
 
 #include "config.h"
 #include "error.h"      /* Serve per la segnalazione degli errori */
+#include "winmap.h"
 #include "graphic.h"    /* Dichiaro alcune strutture grafiche generali */
 #include "gpath.h"
 #include "g.h"
@@ -443,7 +444,8 @@ static int My_Dummy_Save_To_File(BoxGWin *w, const char *file_name) {
   return 1;
 }
 
-static BoxTask My_NotImplem_Interpret(BoxGWin *w, BoxGObj *obj) {
+static BoxTask My_NotImplem_Interpret(BoxGWin *w, BoxGObj *obj,
+                                      BoxGWinMap *map) {
   BoxGWin_Fail("BoxGWin_Interpret_Obj",
                "not implemented for this window type.");
   return BOXTASK_FAILURE;

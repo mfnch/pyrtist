@@ -82,3 +82,18 @@ void BoxGMatrix_Map_Vector(BoxGMatrix *m, BoxPoint *out, BoxPoint *in) {
   out->x = m->m11 * in_x + m->m12 * in->y;
   out->y = m->m21 * in_x + m->m22 * in->y;
 }
+
+void BoxGMatrix_Mul(BoxGMatrix *axb, BoxGMatrix *a, BoxGMatrix *b) {
+  BoxReal 
+    m11 = a->m11*b->m11 + a->m12*b->m21,
+    m12 = a->m11*b->m12 + a->m12*b->m22,
+    m21 = a->m21*b->m11 + a->m22*b->m21,
+    m22 = a->m21*b->m12 + a->m22*b->m22;
+
+  BoxReal
+    m13 = a->m11*b->m13 + a->m12*b->m23 + a->m13,
+    m23 = a->m21*b->m13 + a->m22*b->m23 + a->m23;
+
+  axb->m11 = m11; axb->m12 = m12; axb->m13 = m13;
+  axb->m21 = m21; axb->m22 = m22; axb->m23 = m23;
+}

@@ -36,10 +36,30 @@ typedef struct {
 
 void BoxGWinMap_Init(BoxGWinMap *wm, BoxGMatrix *m);
 
+void BoxGWinMap_Init_Identity(BoxGWinMap *wm);
+
 #define BoxGWinMap_Finish(wm) do {} while(0)
+
+/** Retrieve the matrix of the given mapping. You can modify the matrix and
+ * this will have effect on the BoxGWinMap mapping. You should, however,
+ * call BoxGWinMap_Compute_Width_Transform to recompute the Width transform.
+ */
+#define BoxGWinMap_Get_Matrix(wm) (& (wm)->matrix)
+
+/** Compute the width transform from the current matrix. The width transform
+ * controls how the line widths (and similar quantities) are mapped. Typically,
+ * it is set by default from the transformation matrix.
+ */
+void BoxGWinMap_Compute_Width_Transform(BoxGWinMap *wm);
 
 /** Transform a point 'in' to 'out' by using the window map 'wm'. */
 void BoxGWinMap_Map_Point(BoxGWinMap *wm, BoxPoint *out, BoxPoint *in);
+
+/** Transform a point array 'in' (with 'num_points' points) to 'out' using the
+ * window map 'wm'.
+ */
+void BoxGWinMap_Map_Points(BoxGWinMap *wm, BoxPoint *out, BoxPoint *in,
+                           size_t num_points);
 
 /** Transform a vector 'in' to 'out' by using the window map 'wm'. */
 void BoxGWinMap_Map_Vector(BoxGWinMap *wm, BoxPoint *out, BoxPoint *in);

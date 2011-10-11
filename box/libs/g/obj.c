@@ -122,7 +122,7 @@ void BoxGObj_Transform_To_Composite(BoxGObj *gobj) {
   }
 }
 
-/** Expanding the given BoxGObj adding another element to the list.
+/** Expand the given BoxGObj adding another element to the list.
  * Return the pointer to the new (uninitalized) member of the Obj.
  */
 static BoxGObj *BoxGObj_Expand(BoxGObj *gobj, int merge) {
@@ -159,6 +159,7 @@ BoxGObj *BoxGObj_Append_Composite(BoxGObj *gobj, size_t num_items) {
   sub_gobj->kind = BOXGOBJKIND_COMPOSITE;
   assert(num_items > 0);
   BoxArr_Init(a_sub_gobj, sizeof(BoxGObj), num_items);
+  return sub_gobj;
 }
 
 static void BoxGObj_Init_From_Ptr(BoxGObj *gobj_dest,

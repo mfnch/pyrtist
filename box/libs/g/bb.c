@@ -93,18 +93,32 @@ static void My_BB_Add_Fake_Point(BoxGWin *w, Point *p) {
   My_Got_Point(w, p->x, p->y);
 }
 
+/** Used by My_BB_Interpret to pass data to the iterator
+ * My_BB_Interpret_Iter. 
+ */
+typedef struct {
+  BoxGWin    *win;
+  BoxGWinMap *map;
+
+} MyInterpretData;
 
 static BoxTask My_BB_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                                     BoxGCmdArgKind *kinds, void **args,
                                     BoxGCmdArg *aux, void *pass) {
-  BoxGWin *w = (BoxGWin *) pass;
+  BoxGWin *w = ((MyInterpretData *) pass)->win;
+  BoxGWinMap *map = ((MyInterpretData *) pass)->map;
+
   int i;
   for (i = 0; i < num_args; i++) {
     void *arg = args[i];
     BoxGCmdArgKind kind = kinds[i];
     switch (kind) {
     case BOXGCMDARGKIND_POINT:
-      My_Got_Point(w, ((BoxPoint *) arg)->x, ((BoxPoint *) arg)->y);
+      {
+        BoxPoint p;
+        BoxGWinMap_Map_Point(map, & p, (BoxPoint *) arg);
+        My_Got_Point(w, p.x, p.y);
+      }
       break;
     default:
       break;
@@ -114,8 +128,11 @@ static BoxTask My_BB_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
   return BOXTASK_OK;
 }
 
-static BoxTask My_BB_Interpret(BoxGWin *w, BoxGObj *obj) {
-  return BoxGCmdIter_Iter(My_BB_Interpret_Iter, obj, w);
+static BoxTask My_BB_Interpret(BoxGWin *w, BoxGObj *obj, BoxGWinMap *map) {
+  MyInterpretData data;
+  data.win = w;
+  data.map = map;
+  return BoxGCmdIter_Iter(My_BB_Interpret_Iter, obj, & data);
 }
 
 /** Set the default methods to the bb window */

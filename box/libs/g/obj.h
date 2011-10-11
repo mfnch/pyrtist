@@ -102,8 +102,8 @@ void *BoxGObj_To(BoxGObj *gobj, BoxGObjKind kind);
 void BoxGObj_Append_C_Value(BoxGObj *gobj, BoxGObjKind kind, void *content);
 
 /** Append a BoxGObj composite object to 'gobj' and return the corresponding
- * pointer. 'num_items' is the expected number of the composite object.
- * This allows to add sub-objects to a give object and populate them.
+ * pointer. 'num_items' is the expected number items of the composite object.
+ * This allows to add sub-objects to a given object and populate them.
  * NOTE: 'gobj' is guaranteed to be non-NULL.
  * For example, let's say you want to create something like Obj[1, Obj[2, 3]].
  * You can then use the following code:

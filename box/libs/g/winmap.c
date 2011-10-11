@@ -24,14 +24,31 @@
 #include "matrix.h"
 #include "winmap.h"
 
-void BoxGWinMap_Init(BoxGWinMap *wm, BoxGMatrix *m) {
-  BoxReal m11 = m->m11, m21 = m->m21;
-  wm->matrix = *m;
+void BoxGWinMap_Compute_Width_Transform(BoxGWinMap *wm) {
+  BoxReal m11 = wm->matrix.m11, m21 = wm->matrix.m21;
   wm->width_a = sqrt(m11*m11 + m21*m21);
+  wm->width_b = 0.0;
+}
+
+void BoxGWinMap_Init(BoxGWinMap *wm, BoxGMatrix *m) {
+  wm->matrix = *m;
+  BoxGWinMap_Compute_Width_Transform(wm);
+}
+
+void BoxGWinMap_Init_Identity(BoxGWinMap *wm) {
+  BoxGMatrix identity;
+  BoxGMatrix_Set_Identity(& identity);
+  BoxGWinMap_Init(wm, & identity);
+  
 }
 
 void BoxGWinMap_Map_Point(BoxGWinMap *wm, BoxPoint *out, BoxPoint *in) {
   BoxGMatrix_Map_Point(& wm->matrix, out, in);
+}
+
+void BoxGWinMap_Map_Points(BoxGWinMap *wm, BoxPoint *out, BoxPoint *in,
+                           size_t num_points) {
+  BoxGMatrix_Map_Points(& wm->matrix, out, in, num_points);
 }
 
 void BoxGWinMap_Map_Vector(BoxGWinMap *wm, BoxPoint *out, BoxPoint *in) {

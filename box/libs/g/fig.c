@@ -35,14 +35,18 @@
 /* De-commentare per includere i messaggi di debug */
 /*#define DEBUG*/
 
+#include <box/types.h>
+#include <box/mem.h>
+#include <box/array.h>
+
 #include "error.h"
+#include "matrix.h"
+#include "winmap.h"
 #include "graphic.h"  /* Dichiaro alcune strutture grafiche generali */
 #include "g.h"
 #include "fig.h"
 #include "bb.h"
 #include "autoput.h"
-#include <box/mem.h>
-#include <box/array.h>
 #include "obj.h"
 #include "cmd.h"
 
@@ -208,13 +212,10 @@ static void My_Fig_Push_Commands(BoxGWin *w, int id, CmndArg *args) {
   ++lh->numcmnd; /* Increase counter for number of commands in the layer */
 }
 
-static BoxReal Fig_Transform_Factor(BoxReal angle);
-static void Fig_Transform_Point(BoxPoint *p, size_t n);
-static void Fig_Transform_Vector(BoxPoint *p, size_t n);
-
 BoxTask My_Transform_Commands(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                               BoxGCmdArgKind *kinds, void **args,
                               BoxGCmdArg *aux, void *pass) {
+  BoxGWinMap *map = pass;
   int i;
 
   for (i = 0; i < num_args; i++) {
@@ -223,18 +224,15 @@ BoxTask My_Transform_Commands(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     BoxGCmdArgKind kind = kinds[i];
     switch (kind) {
     case BOXGCMDARGKIND_WIDTH:
-      my_arg->w = *((BoxReal *) arg);
-      my_arg->w *= Fig_Transform_Factor(0.0);
+      BoxGWinMap_Map_Width(map, & my_arg->w, (BoxReal *) arg);
       args[i] = & my_arg->w;
       break;
     case BOXGCMDARGKIND_POINT:
-      my_arg->p = *((BoxPoint *) arg);
-      Fig_Transform_Point(& my_arg->p, 1);
+      BoxGWinMap_Map_Point(map, & my_arg->p, (BoxPoint *) arg);
       args[i] = & my_arg->p;
       break;
     case BOXGCMDARGKIND_VECTOR:
-      my_arg->p = *((BoxPoint *) arg);
-      Fig_Transform_Vector(& my_arg->p, 1);
+      BoxGWinMap_Map_Vector(map, & my_arg->p, (BoxPoint *) arg);
       args[i] = & my_arg->p;
       break;
     default:
@@ -245,14 +243,14 @@ BoxTask My_Transform_Commands(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
   return BOXTASK_OK;
 }
 
-static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj) {
+static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj, BoxGWinMap *map) {
   BoxGObj copy;
 
   assert(obj != NULL && w != NULL);
 
   BoxGObj_Init(& copy);
   if (BoxGCmdIter_Filter_Append(My_Transform_Commands,
-                                & copy, obj, NULL) == BOXTASK_OK) {
+                                & copy, obj, map) == BOXTASK_OK) {
     /* Note that here we are assuming that we can safely relocate BoxGObj
      * objects in memory, i.e. memcopy them and completely forget about the
      * originals (which means we do not call BoxGObj_Finish for them).
@@ -676,42 +674,18 @@ void BoxGWin_Fig_Clear_Layer(BoxGWin *w, int l) {
 /*****************************************************************************/
 /* PROCEDURE PER DISEGNARE I LAYER SULLA FINESTRA ATTIVA */
 
-/* Matrice usata nella trasformazione lineare di Fig_Transform_Point */
-static BoxGMatrix fig_matrix = {1.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+typedef struct {
+  BoxGWin    *win;
+  BoxGWinMap *map;
 
-/* Apply the transformation in matrix fig_matrix to the n points in p[] */
-static void Fig_Transform_Point(BoxPoint *p, size_t n) {
-  BoxGMatrix_Map_Points(& fig_matrix, p, p, n);
-}
-
-/* Apply the linear transformation in fig_matrix to the n points in v[] */
-static void Fig_Transform_Vector(BoxPoint *v, size_t n) {
-  BoxGMatrix_Map_Vectors(& fig_matrix, v, v, n);
-}
-
-/* Find how the norm of the vector (cos(angle), sin(angle)) changes
- * with the trasformation in fig_matrix
- */
-static Real Fig_Transform_Factor(Real angle) {
-  Point v = {cos(angle), sin(angle)};
-  Fig_Transform_Vector(& v, 1);
-  return sqrt(v.x*v.x + v.y*v.y);
-}
-
-#if 0
-/* Commented out: it is not used! */
-static void Fig_Transform_Scalar(Real *r, int n, Real angle) {
-  Real factor = Fig_Transform_Factor(angle);
-  for (; n-- > 0; r++) *r *= factor;
-}
-#endif
-
+} MyFigDrawLayerData;
 
 static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
                                       void *cmnd_data, void *pass) {
-  BoxGWin *w = (BoxGWin *) pass;
-  Point tp[3];
-  Real tr;
+  BoxGWin *w = ((MyFigDrawLayerData *) pass)->win;
+  BoxGWinMap *map = ((MyFigDrawLayerData *) pass)->map;
+  BoxPoint tp[3];
+  BoxReal tr;
   ColorGrad cg;
 
   switch (cmnd_header->ID) {
@@ -727,7 +701,7 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
     ((DrawStyle *) cmnd_data)->bord_dashes =
       (Real *) (cmnd_data + sizeof(DrawStyle));
     tr = ((DrawStyle *) cmnd_data)->scale;
-    ((DrawStyle *) cmnd_data)->scale *= Fig_Transform_Factor(0.0);
+    BoxGWinMap_Map_Width(map, & ((DrawStyle *) cmnd_data)->scale, & tr);
     BoxGWin_Draw_Path(w, (DrawStyle *) cmnd_data);
     ((DrawStyle *) cmnd_data)->scale = tr;
     return BOXTASK_OK;
@@ -735,7 +709,7 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
   case ID_rline:
     tp[0] = *((Point *) cmnd_data);
     tp[1] = *((Point *) (cmnd_data + sizeof(Point)));
-    Fig_Transform_Point(tp, 2);
+    BoxGWinMap_Map_Points(map, tp, tp, 2);
     BoxGWin_Add_Line_Path(w, & tp[0], & tp[1]);
     return BOXTASK_OK;
 
@@ -743,7 +717,7 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
     tp[0] = *((Point *) cmnd_data);
     tp[1] = *((Point *) (cmnd_data + sizeof(Point)));
     tp[2] = *((Point *) (cmnd_data + 2*sizeof(Point)));
-    Fig_Transform_Point(tp, 3);
+    BoxGWinMap_Map_Points(map, tp, tp, 3);
     BoxGWin_Add_Join_Path(w, & tp[0], & tp[1], & tp[2]);
     return BOXTASK_OK;
 
@@ -755,7 +729,7 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
     tp[0] = *((Point *) cmnd_data);
     tp[1] = *((Point *) (cmnd_data + sizeof(Point)));
     tp[2] = *((Point *) (cmnd_data + 2*sizeof(Point)));
-    Fig_Transform_Point(tp, 3);
+    BoxGWinMap_Map_Points(map, tp, tp, 3);
     BoxGWin_Add_Circle_Path(w, & tp[0], & tp[1], & tp[2]);
     return BOXTASK_OK;
 
@@ -770,10 +744,10 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
   case ID_rgradient:
     cg = *((ColorGrad *) cmnd_data);
     cg.items = (ColorGradItem *) (cmnd_data + sizeof(ColorGrad));
-    Fig_Transform_Point(& cg.point1, 1);
-    Fig_Transform_Point(& cg.point2, 1);
-    Fig_Transform_Point(& cg.ref1, 1);
-    Fig_Transform_Point(& cg.ref2, 1);
+    BoxGWinMap_Map_Point(map, & cg.point1, & cg.point1);
+    BoxGWinMap_Map_Point(map, & cg.point2, & cg.point2);
+    BoxGWinMap_Map_Point(map, & cg.ref1, & cg.ref1);
+    BoxGWinMap_Map_Point(map, & cg.ref2, & cg.ref2);
     BoxGWin_Set_Gradient(w, & cg);
     return BOXTASK_OK;
 
@@ -784,9 +758,9 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
       if (sizeof(Arg4Text) + arg.text_size + 1 <= cmnd_header->size) {
         char *ptr = (char *) (cmnd_data + sizeof(Arg4Text) + arg.text_size);
         if (*ptr == '\0') {
-          Fig_Transform_Point(& arg.ctr, 1);
-          Fig_Transform_Point(& arg.right, 1);
-          Fig_Transform_Point(& arg.up, 1);
+          BoxGWinMap_Map_Point(map, & arg.ctr, & arg.ctr);
+          BoxGWinMap_Map_Point(map, & arg.right, & arg.right);
+          BoxGWinMap_Map_Point(map, & arg.up, & arg.up);
           BoxGWin_Add_Text_Path(w, & arg.ctr, & arg.right, & arg.up,
                                 & arg.from, str);
         } else {
@@ -817,14 +791,14 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
 
   case ID_fake_point:
     {
-      Point p = *((Point *) cmnd_data);
-      Fig_Transform_Point(& p, 1);
+      BoxPoint p = *((BoxPoint *) cmnd_data);
+      BoxGWinMap_Map_Point(map, & p, & p);
       BoxGWin_Add_Fake_Point(w, & p);
     }
     return BOXTASK_OK;
 
   case ID_interpret:
-    return BoxGWin_Interpret_Obj(w, (BoxGObj *) cmnd_data);
+    return BoxGWin_Interpret_Obj(w, (BoxGObj *) cmnd_data, map);
 
   default:
     g_warning("Fig_Draw_Layer: unrecognized command (corrupted figure?)");
@@ -841,15 +815,18 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
  *  In tal caso il Fig_Draw_Layer continuera' a leggere sui vecchi indirizzi,
  *  senza controllare questa eventualita'! (problema   R I M O S S O !))
  */
-void BoxGWin_Fig_Draw_Layer(BoxGWin *dest, BoxGWin *src, int l) {
-  (void) BoxGWin_Fig_Iterate_Over_Layer(src, l, My_Fig_Draw_Layer_Iter, dest);
+void BoxGWin_Fig_Draw_Layer(BoxGWin *dest, BoxGWin *src, BoxGWinMap *map, int l) {
+  MyFigDrawLayerData data;
+  data.win = dest;
+  data.map = map;
+  (void) BoxGWin_Fig_Iterate_Over_Layer(src, l, My_Fig_Draw_Layer_Iter, & data);
 }
 
 /* DESCRIZIONE: Disegna la figura source sulla finestra grafica attualmente
  *  in uso. I layer vengono disegnati uno dietro l'altro con Fig_Draw_Layer
  *  a partire dal "layer bottom", fino ad arrivare al "layer top".
  */
-static void My_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *source) {
+static void My_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *source, BoxGWinMap *map) {
   FigHeader *figh;
   LayerHeader *layh;
   BoxArr *laylist;
@@ -867,7 +844,7 @@ static void My_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *source) {
 
   for (nl = figh->numlayers; nl > 0; nl--) {
     /* Disegno il layer cl */
-    BoxGWin_Fig_Draw_Layer(dest, source, cl);
+    BoxGWin_Fig_Draw_Layer(dest, source, map, cl);
 
     /* Ora passo a quello successivo che lo ricopre */
     /* Trovo l'header del layer cl */
@@ -883,17 +860,17 @@ static void My_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *source) {
 
 void BoxGWin_Fig_Draw_Fig_With_Matrix(BoxGWin *dest, BoxGWin *src,
                                       BoxGMatrix *m) {
-  BoxGMatrix save_matrix = fig_matrix;
-  fig_matrix = *m;
-  My_Fig_Draw_Fig(dest, src);
-  fig_matrix = save_matrix;
+  BoxGWinMap map;
+  BoxGWinMap_Init(& map, m);
+  My_Fig_Draw_Fig(dest, src, & map);
 }
 
 void BoxGWin_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *src) {
-  BoxGMatrix save_matrix = fig_matrix;
-  BoxGMatrix_Set_Identity(& fig_matrix);
-  My_Fig_Draw_Fig(dest, src);
-  fig_matrix = save_matrix;
+  BoxGWinMap map;
+  BoxGMatrix identity;
+  BoxGMatrix_Set_Identity(& identity);
+  BoxGWinMap_Init(& map, & identity);
+  My_Fig_Draw_Fig(dest, src, & map);
 }
 
 int BoxGWin_Fig_Save_Fig(BoxGWin *src, BoxGWinPlan *plan) {

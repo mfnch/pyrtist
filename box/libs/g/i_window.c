@@ -37,6 +37,7 @@
 #include "autoput.h"
 #include "pointlist.h"
 #include "obj.h"
+#include "winmap.h"
 #include "i_pointlist.h"
 #include "i_window.h"
 #include "i_line.h"
@@ -273,7 +274,9 @@ BoxTask window_window(BoxVM *vmp) {
 BoxTask GLib_Obj_At_Window(BoxVM *vm) {
   Window *w = BOX_VM_THIS(vm, WindowPtr);
   BoxGObjPtr gobj = BOX_VM_ARG(vm, BoxGObjPtr);
-  BoxGWin_Interpret_Obj(w->window, gobj);
+  BoxGWinMap wm;
+  BoxGWinMap_Init_Identity(& wm);
+  BoxGWin_Interpret_Obj(w->window, gobj, & wm);
   return BOXTASK_OK;
 }
 
