@@ -112,10 +112,10 @@ void Box_Get_Bltin_Pkg_And_Lib_Paths(char **pkg_path, char **lib_path) {
 
 #else
 #  ifdef BUILTIN_PKG_PATH
-  *pkg_path = strdup(BUILTIN_PKG_PATH);
+  *pkg_path = BoxMem_Strdup(BUILTIN_PKG_PATH);
 #  endif
 #  ifdef BUILTIN_LIBRARY_PATH
-  *lib_path = strdup(BUILTIN_LIBRARY_PATH);
+  *lib_path = BoxMem_Strdup(BUILTIN_LIBRARY_PATH);
 #  endif
 #endif
 }

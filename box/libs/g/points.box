@@ -66,5 +66,14 @@ REAL@Points.Get[
 
 ///Intro: not implemented, yet.
 Point@Points.Get[
-  Fail["Not implemented, yet!"]
+  num = Num[$$$.points]
+  x = $.x
+  idx = Real[If[x >= 0], x, Else[], (1 - Int[x]/num)*num + x]
+  idx_before = Int[idx]
+  idx_after = idx_before + 1
+  p_before = Point[$$$.points.Get[idx_before % num]]
+  p_after = Point[$$$.points.Get[idx_after % num]]
+  delta_p = p_after - p_before
+  ort_vec = Point[.x=-delta_p.y, .y=delta_p.x]
+  $$ = p_before + (idx - idx_before)*delta_p + $.y*ort_vec
 ]

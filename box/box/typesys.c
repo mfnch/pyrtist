@@ -509,7 +509,7 @@ BoxType BoxTS_New_Array(BoxTS *ts, BoxType item, Int num_items) {
 
 /*FUNCTIONS: My_Begin_Composite **********************************************/
 
-/* Code for BoxTS_Begin_Structure, BoxTS_Begin_Species, etc. */
+/* Code for BoxTS_Begin_Struct, BoxTS_Begin_Species, etc. */
 static BoxType My_Begin_Composite(TSKind kind, TS *ts) {
   BoxType t;
   TSDesc td;
@@ -563,6 +563,7 @@ static void My_Add_Member(TSKind kind, BoxTS *ts, BoxType s, BoxType m,
   new_m_td->kind = TS_KIND_MEMBER;
   new_m_td->target = m;
   new_m_td->data.member_next = s;
+  new_m_td->alignment = m_td->alignment;
 
   /* Alignment is always the maximum of the alignments of the members
    * (and this holds for structures, species and enums).

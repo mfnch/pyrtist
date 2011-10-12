@@ -41,6 +41,7 @@
 #include "types.h"
 #include "defaults.h"
 #include "messages.h"
+#include "mem.h"
 #include "strutils.h"
 #include "array.h"
 #include "virtmach.h"
@@ -418,16 +419,20 @@ void Main_Cmnd_Line_Help(void) {
   " Some of them cancel out two by two. Example: using two times the option -t\n"
   " has the same effect of not using it at all.\n"
   );
-  exit( EXIT_SUCCESS );
+  exit(EXIT_SUCCESS);
 }
 
 static void My_Exec_Query(char *query) {
-  char *pkg_path, *lib_path;
+  char *pkg_path = NULL,
+       *lib_path = NULL;
+  int exit_status = EXIT_FAILURE;
+
   Box_Get_Bltin_Pkg_And_Lib_Paths(& pkg_path, & lib_path);
 
   struct {
     char *name;
     char *value;
+
   } *v, vars[] = {
 #ifdef PACKAGE_VERSION
     {"VERSION", PACKAGE_VERSION},
@@ -461,22 +466,27 @@ static void My_Exec_Query(char *query) {
   if (strcasecmp(query, "list") == 0) {
     for (v = & vars[0]; v->name != NULL; v++)
       printf("%s\n", v->name);
-    exit(EXIT_SUCCESS);
+    exit_status = EXIT_SUCCESS;
 
   } else if (strcasecmp(query, "all") == 0) {
     for (v = & vars[0]; v->name != NULL; v++)
       printf("%s=\"%s\"\n", v->name, v->value);
-    exit(EXIT_SUCCESS);
-  }
+    exit_status = EXIT_SUCCESS;
 
-  for (v = & vars[0]; v->name != NULL; v++) {
-    if (strcasecmp(v->name, query) == 0) {
-      printf("%s\n", v->value);
-      exit(EXIT_SUCCESS);
+  } else {
+    for (v = & vars[0]; v->name != NULL; v++) {
+      if (strcasecmp(v->name, query) == 0) {
+        printf("%s\n", v->value);
+        exit_status = EXIT_SUCCESS;
+        break;
+      }
     }
   }
 
-  exit(EXIT_FAILURE);
+  BoxMem_Free(pkg_path);
+  BoxMem_Free(lib_path);
+
+  exit(exit_status);
 }
 
 /******************************************************************************/

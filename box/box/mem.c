@@ -28,12 +28,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "types.h"
 #include "messages.h"
 #include "mem.h"
 
 size_t BoxMem_Align_Offset(size_t offset, size_t alignment) {
+  assert(alignment > 0);
   return ((offset + alignment - 1)/alignment)*alignment;
 }
 
@@ -53,9 +55,6 @@ size_t BoxMem_Size_Align(size_t offset, size_t align) {
   return ((n + align_block - 1)/align_block)*align_block;
 }
 #endif
-
-
-#include <stdio.h>
 
 /* Undefine macros in case they have been defined in mem.h:
  *   such macros are typically useful for debugging, but we don't need them
