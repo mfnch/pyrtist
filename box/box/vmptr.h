@@ -35,7 +35,4 @@ typedef BoxVMByteX4 VMByteX4;
 #    define VMByteX4_Fmt BoxVMByteX4_Fmt
 #  endif
 
-/** Provided for compatibility */
-typedef BoxVM VMProgram;
-
 #endif /* _BOX_VMPTR_H */

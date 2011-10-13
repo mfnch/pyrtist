@@ -54,7 +54,7 @@ void put_window_destroy(Window *w) {
   buff_free(& w->put.weights);
 }
 
-Task window_put_begin(VMProgram *vmp) {
+Task window_put_begin(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
 
   w->put.rot_angle = 0.0;
@@ -125,7 +125,7 @@ static Task _transform_pl(Int index, char *name, void *object, void *data) {
   return Success;
 }
 
-Task window_put_end(VMProgram *vmp) {
+Task window_put_end(BoxVM *vmp) {
   PROC_OF_WINDOW_SUBTYPE(vmp, w, out_pl, IPointList *);
   Window *figure;
   IPointList *returned_pl;
@@ -164,7 +164,7 @@ Task window_put_end(VMProgram *vmp) {
   return Success;
 }
 
-Task window_put_window(VMProgram *vmp) {
+Task window_put_window(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   WindowPtr *wp = BOX_VM_ARGPTR1(vmp, WindowPtr);
   w->put.figure = (void *) *wp;
@@ -172,7 +172,7 @@ Task window_put_window(VMProgram *vmp) {
   return Success;
 }
 
-Task window_put_point(VMProgram *vmp) {
+Task window_put_point(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *translation = BOX_VM_ARGPTR1(vmp, Point);
   w->put.translation = *translation;
@@ -182,7 +182,7 @@ Task window_put_point(VMProgram *vmp) {
   return Success;
 }
 
-Task window_put_real(VMProgram *vmp) {
+Task window_put_real(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Real *rot_angle = BOX_VM_ARGPTR1(vmp, Real);
   w->put.rot_angle = *rot_angle;
@@ -205,7 +205,7 @@ Task window_put_string(BoxVM *vm) {
   return Success;
 }
 
-Task window_put_matrix(VMProgram *vmp) {
+Task window_put_matrix(BoxVM *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   Matrix *m = BOX_VM_ARG1_PTR(vmp, Matrix);
   w->put.matrix = *m;
@@ -213,7 +213,7 @@ Task window_put_matrix(VMProgram *vmp) {
   return Success;
 }
 
-Task window_put_scale_real(VMProgram *vmp) {
+Task window_put_scale_real(BoxVM *vmp) {
   Subtype *scale_of_window_put = BOX_VM_CURRENTPTR(vmp, Subtype);
   Subtype *put_of_window = SUBTYPE_PARENT_PTR(scale_of_window_put, Subtype);
   Window *w = *((Window **) SUBTYPE_PARENT_PTR(put_of_window, WindowPtr));
@@ -225,7 +225,7 @@ Task window_put_scale_real(VMProgram *vmp) {
   return Success;
 }
 
-Task window_put_scale_point(VMProgram *vmp) {
+Task window_put_scale_point(BoxVM *vmp) {
   Subtype *scale_of_window_put = BOX_VM_CURRENTPTR(vmp, Subtype);
   Subtype *put_of_window = SUBTYPE_PARENT_PTR(scale_of_window_put, Subtype);
   Window *w = *((Window **) SUBTYPE_PARENT_PTR(put_of_window, WindowPtr));
@@ -238,7 +238,7 @@ Task window_put_scale_point(VMProgram *vmp) {
   return Success;
 }
 
-Task window_put_near_begin(VMProgram *vmp) {
+Task window_put_near_begin(BoxVM *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
   w->put.near.have.on_src = 0;
   w->put.near.have.on_dest = 0;
@@ -247,7 +247,7 @@ Task window_put_near_begin(VMProgram *vmp) {
   return Success;
 }
 
-Task window_put_near_end(VMProgram *vmp) {
+Task window_put_near_end(BoxVM *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
   if (! w->put.near.have.on_src || ! w->put.near.have.on_src) {
     g_warning("Ignoring .Near[] specification: source or destination point "
@@ -280,13 +280,13 @@ static Task _window_put_near_real(Window *w, Real weight){
   return Success;
 }
 
-Task window_put_near_real(VMProgram *vmp) {
+Task window_put_near_real(BoxVM *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
   Real weight = BOX_VM_ARG1(vmp, Real);
   return _window_put_near_real(w, weight);
 }
 
-Task window_put_near_int(VMProgram *vmp) {
+Task window_put_near_int(BoxVM *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
   Int int_num = BOX_VM_ARG1(vmp, Int);
   if (w->put.near.have.on_src)
@@ -315,7 +315,7 @@ Task window_put_near_int(VMProgram *vmp) {
   }
 }
 
-Task window_put_near_point(VMProgram *vmp) {
+Task window_put_near_point(BoxVM *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
   Point *p = BOX_VM_ARGPTR1(vmp, Point);
   if (!w->put.near.have.on_src) {

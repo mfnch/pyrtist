@@ -33,7 +33,7 @@
 #include "i_text.h"
 #include "i_gradient.h"
 
-Task window_text_begin(VMProgram *vmp) {
+Task window_text_begin(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->text.text = (char *) NULL;
   w->text.font = (char *) NULL;
@@ -50,14 +50,14 @@ Task window_text_begin(VMProgram *vmp) {
   return Success;
 }
 
-Task window_text_color(VMProgram *vmp) {
+Task window_text_color(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->text.color = BOX_VM_ARG1(vmp, Color);
   w->text.got.color = 1;
   return Success;
 }
 
-Task window_text_gradient(VMProgram *vmp) {
+Task window_text_gradient(BoxVM *vmp) {
   return x_gradient(vmp);
 }
 
@@ -110,7 +110,7 @@ static Task _sentence_end(Window *w, int *wrote_text) {
 }
 
 
-Task window_text_end(VMProgram *vmp) {
+Task window_text_end(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   int wrote_text;
 
@@ -123,7 +123,7 @@ Task window_text_end(VMProgram *vmp) {
   return Success;
 }
 
-Task window_text_pause(VMProgram *vmp) {
+Task window_text_pause(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   int wrote_text;
 
@@ -134,7 +134,7 @@ Task window_text_pause(VMProgram *vmp) {
   return Success;
 }
 
-Task window_text_point(VMProgram *vmp) {
+Task window_text_point(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->text.position = BOX_VM_ARG1(vmp, Point);
   return Success;
@@ -149,7 +149,7 @@ Task window_text_str(BoxVM *vm) {
   return Success;
 }
 
-Task window_text_style(VMProgram *vmp) {
+Task window_text_style(BoxVM *vmp) {
   IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
   SUBTYPE_OF_WINDOW(vmp, w);
   g_style_copy_selected(& w->text.style, & s->style, s->have);
@@ -165,14 +165,14 @@ Task window_text_font_str(BoxVM *vm) {
   return Success;
 }
 
-Task window_text_font_real(VMProgram *vmp) {
+Task window_text_font_real(BoxVM *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
   w->text.font_size = BOX_VM_ARG1(vmp, Real);
   w->text.got.font_size = 1;
   return Success;
 }
 
-Task window_text_from_point(VMProgram *vmp) {
+Task window_text_from_point(BoxVM *vmp) {
   Window *w = BOX_VM_SUB2_PARENT(vmp, WindowPtr);
   w->text.from = BOX_VM_ARG1(vmp, Point);
   return Success;

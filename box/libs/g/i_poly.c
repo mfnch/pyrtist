@@ -33,12 +33,12 @@
 
 #if 0
 /** See VMCall */
-typedef Task (*VMCallable)(VMProgram *vmp);
+typedef Task (*VMCallable)(BoxVM *vmp);
 
 /** This should become part of the VM library. For now we put it there. */
-Task VM_Call_C(VMProgram *vmp, VMCallable f, void *obj, void *arg);
+Task VM_Call_C(BoxVM *vmp, VMCallable f, void *obj, void *arg);
 
-Task VM_Call_C(VMProgram *vmp, VMCallable f, void *obj, void *arg) {
+Task VM_Call_C(BoxVM *vmp, VMCallable f, void *obj, void *arg) {
   void *save_obj, *save_arg;
   Task t;
   save_obj = *vmp->box_vm_current;
@@ -52,18 +52,18 @@ Task VM_Call_C(VMProgram *vmp, VMCallable f, void *obj, void *arg) {
 }
 #endif
 
-Task poly_color(VMProgram *vmp) {
+Task poly_color(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->poly.color = BOX_VM_ARG1(vmp, Color);
   w->poly.got.color = 1;
   return Success;
 }
 
-Task poly_gradient(VMProgram *vmp) {
+Task poly_gradient(BoxVM *vmp) {
   return x_gradient(vmp);
 }
 
-Task poly_begin(VMProgram *vmp) {
+Task poly_begin(BoxVM *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   IPointListPtr *ipl_ptr = BOX_VM_SUB_CHILD_PTR(vmp, IPointListPtr);
 
@@ -153,14 +153,14 @@ static Task _poly_point(Window *w, IPointList *ipl, Point *p) {
   return _poly_point_draw_only(w, p, 0);
 }
 
-Task poly_point(VMProgram *vmp) {
+Task poly_point(BoxVM *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   IPointList *ipl = BOX_VM_SUB_CHILD(vmp, IPointListPtr);
   Point *p = BOX_VM_ARGPTR1(vmp, Point);
   return _poly_point(w, ipl, p);
 }
 
-Task poly_style(VMProgram *vmp) {
+Task poly_style(BoxVM *vmp) {
   IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
   SUBTYPE_OF_WINDOW(vmp, w);
   g_style_copy_selected(& w->poly.style, & s->style, s->have);
@@ -194,14 +194,14 @@ static Task _poly_draw(Window *w, DrawWhen dw) {
   return Success;
 }
 
-Task poly_end(VMProgram *vmp) {
+Task poly_end(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   TASK(_poly_draw(w, DRAW_WHEN_END));
   g_style_clear(& w->poly.style);
   return Success;
 }
 
-Task poly_pause(VMProgram *vmp) {
+Task poly_pause(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   TASK(_poly_draw(w, DRAW_WHEN_PAUSE));
 
@@ -213,7 +213,7 @@ Task poly_pause(VMProgram *vmp) {
   return Success;
 }
 
-Task poly_real(VMProgram *vmp) {
+Task poly_real(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Real margin = BOX_VM_ARG1(vmp, Real), max_margin;
 
@@ -250,7 +250,7 @@ static Task _add_from_pl(Int index, char *name, void *object, void *data) {
   return _poly_point(params->w, params->dest_ipl, p);
 }
 
-Task poly_pointlist(VMProgram *vmp) {
+Task poly_pointlist(BoxVM *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   IPointList *my_ipl = BOX_VM_SUB_CHILD(vmp, IPointListPtr);
   IPointList *arg_ipl = BOX_VM_ARG1(vmp, IPointListPtr);
@@ -265,13 +265,13 @@ Task poly_pointlist(VMProgram *vmp) {
   return pointlist_iter(arg_pl, _add_from_pl, & params);
 }
 
-Task window_poly_close_begin(VMProgram *vmp) {
+Task window_poly_close_begin(BoxVM *vmp) {
   Window *w = BOX_VM_SUB2_PARENT(vmp, WindowPtr);
   w->poly.close = 1;
   return Success;
 }
 
-Task window_poly_close_int(VMProgram *vmp) {
+Task window_poly_close_int(BoxVM *vmp) {
   Window *w = BOX_VM_SUB2_PARENT(vmp, WindowPtr);
   w->poly.close = BOX_VM_ARG1(vmp, Int);
   return Success;

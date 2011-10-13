@@ -31,7 +31,7 @@
  * which is actually the object Style as seen within the C side.
  */
 
-Task style_begin(VMProgram *vmp) {
+Task style_begin(BoxVM *vmp) {
   IStylePtr *sp = BOX_VM_CURRENTPTR(vmp, IStylePtr), s;
   int i;
   s = *sp = (IStyle *) malloc(sizeof(IStyle));
@@ -44,7 +44,7 @@ Task style_begin(VMProgram *vmp) {
   return Success;
 }
 
-Task style_destroy(VMProgram *vmp) {
+Task style_destroy(BoxVM *vmp) {
   IStylePtr s = BOX_VM_CURRENT(vmp, IStylePtr);
   g_style_clear(& s->style);
   buff_free(& s->dashes);
@@ -91,7 +91,7 @@ Task style_fill_string(BoxVM *vm) {
   return Success;
 }
 
-Task style_border_color(VMProgram *vmp) {
+Task style_border_color(BoxVM *vmp) {
   IStylePtr s = BOX_VM_SUB_PARENT(vmp, IStylePtr);
   Color *c = BOX_VM_ARG_PTR(vmp, Color);
   g_style_set_bord_color(& s->style, c);
@@ -99,7 +99,7 @@ Task style_border_color(VMProgram *vmp) {
   return Success;
 }
 
-Task style_border_real(VMProgram *vmp) {
+Task style_border_real(BoxVM *vmp) {
   IStylePtr s = BOX_VM_SUB_PARENT(vmp, IStylePtr);
   Real *r = BOX_VM_ARG_PTR(vmp, Real);
   g_style_set_bord_width(& s->style, r);
@@ -125,20 +125,20 @@ Task style_border_join(BoxVM *vm) {
   return Success;
 }
 
-Task style_border_dash_begin(VMProgram *vmp) {
+Task style_border_dash_begin(BoxVM *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
   s->dash_offset_contest = -1;
   return buff_clear(& s->dashes) ? Success : Failed;
 }
 
-Task style_border_dash_pause(VMProgram *vmp) {
+Task style_border_dash_pause(BoxVM *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
   s->dash_offset_contest = 0;
   s->dash_offset = 0.0;
   return Success;
 }
 
-Task style_border_dash_real(VMProgram *vmp) {
+Task style_border_dash_real(BoxVM *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
   Real *r = BOX_VM_ARG_PTR(vmp, Real);
   switch(s->dash_offset_contest) {
@@ -151,7 +151,7 @@ Task style_border_dash_real(VMProgram *vmp) {
   }
 }
 
-Task style_border_dash_end(VMProgram *vmp) {
+Task style_border_dash_end(BoxVM *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
   Int n = buff_numitems(& s->dashes);
   Real *dashes = buff_firstitemptr(& s->dashes, Real);
@@ -160,7 +160,7 @@ Task style_border_dash_end(VMProgram *vmp) {
   return Success;
 }
 
-Task style_border_miter_limit(VMProgram *vmp) {
+Task style_border_miter_limit(BoxVM *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
   Real *r = BOX_VM_ARG_PTR(vmp, Real);
   g_style_set_bord_miter_limit(& s->style, r);
