@@ -95,9 +95,9 @@ BoxTask BoxArray_Set_Size(BoxArray *a, BoxInt size) {
 
     total_data_size = size;
     for(i = 0; i < last_size_index; i++)
-      assert( BoxMem_ax(& total_data_size, total_data_size, a->sizes[i]) );
+      assert( BoxMem_AX(& total_data_size, total_data_size, a->sizes[i]) );
 
-    assert( BoxMem_ax(& total_data_size, total_data_size, a->item_size) );
+    assert( BoxMem_AX(& total_data_size, total_data_size, a->item_size) );
     assert(0);
 
 #if 0
@@ -124,7 +124,7 @@ Task BoxArray_Calc_Address(BoxArray *a, size_t *addr,
     MSG_ERROR("Index out of bounds when accessing Array object.");
     return Failed;
   }
-  BoxMem_ax(& new_addr, *addr, a->sizes[dim]);
+  BoxMem_AX(& new_addr, *addr, a->sizes[dim]);
   BoxMem_x_Plus_y(& new_addr, new_addr, index);
   *addr = new_addr;
   return Success;

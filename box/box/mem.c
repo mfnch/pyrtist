@@ -161,7 +161,7 @@ void Box_Fatal_Error(const char *file, unsigned long line_no) {
 }
 
 /** Executes *r = a*x, returning 0 in case of integer overflow, 1 otherwise. */
-int BoxMem_ax(size_t *r, size_t a, size_t x) {
+int BoxMem_AX(size_t *r, size_t a, size_t x) {
  *r = a*x;
  return 1;
 }
@@ -176,7 +176,7 @@ int BoxMem_x_Plus_y(size_t *r, size_t x, size_t y) {
 /** Executes *r = a*x + b*y, returning 0 in case of integer overflow,
  *  1 otherwise.
  */
-int BoxMem_ax_Plus_by(size_t *r, size_t a, size_t x, size_t b, size_t y) {
+int BoxMem_AX_Plus_BY(size_t *r, size_t a, size_t x, size_t b, size_t y) {
  *r = a*x + b*y;
  return 1;
 }

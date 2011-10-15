@@ -75,7 +75,7 @@ BOXEXPORT void BoxMem_Exit(const char *msg);
 BOXEXPORT void Box_Fatal_Error(const char *file, unsigned long line_no);
 
 /** Executes *r = a*x, returning 0 in case of integer overflow, 1 otherwise. */
-BOXEXPORT int BoxMem_ax(size_t *r, size_t a, size_t x);
+BOXEXPORT int BoxMem_AX(size_t *r, size_t a, size_t x);
 
 /** Return a multiplied by b and abort in case of integer overflow. */
 #define BoxMem_Safe_AX(a, b) ((a)*(b))
@@ -87,7 +87,7 @@ BOXEXPORT int BoxMem_x_Plus_y(size_t *r, size_t x, size_t y);
 /** Executes *r = a*x + b*y, returning 0 in case of integer overflow,
  *  1 otherwise.
  */
-BOXEXPORT int BoxMem_ax_Plus_by(size_t *r, size_t a, size_t x, size_t b, size_t y);
+BOXEXPORT int BoxMem_AX_Plus_BY(size_t *r, size_t a, size_t x, size_t b, size_t y);
 
 /*#define BOXMEM_DEBUG_MACROS*/
 
