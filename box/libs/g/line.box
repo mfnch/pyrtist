@@ -152,11 +152,15 @@ Line@Stroke[
 
 ///Intro: add the path of the {type(Line)}.
 Line@Path[
-  
+  Fail["Not implemented, yet"]  
 ]
 
 ///Intro: draw the line in the window.
 Line@Window[
   Stroke[$, $.style]
-  [If[Valid[$.arrows]], $.arrows]
+  [If[Valid[$.arrows]]
+     CmdStream[Obj[const.raw.save]]
+     $.style
+     $.arrows
+     CmdStream[Obj[const.raw.restore]]]
 ]

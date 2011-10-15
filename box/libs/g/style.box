@@ -295,6 +295,9 @@ Style@Window[
   OldStyle[$]
 ]
 
+///Intro: set the style for lines (the default to be used with {type(Line)}).
+StrokeStyle@Window[CmdStream[Border[Preserve[0], $]]]
+
 //-------------PROVIDED FOR COMPATIBILITY WITH box 0.2.3------------------//
 
 ///Intro: fill style (for compatibility with Box 0.2.3).
