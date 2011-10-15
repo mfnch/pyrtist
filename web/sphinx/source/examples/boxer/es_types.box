@@ -7,6 +7,8 @@ Window@GUI[]
 
 
 
+
+
 //!BOXER:REFPOINTS:BEGIN
 //!BOXER:REFPOINTS:END
 include "g"
@@ -139,9 +141,9 @@ out = Window[][
   left: = .Put[clustered, (x0, 0), .Scale[l]]
   right: = .Put[layered, (x1, 0), .Scale[l]]
   b: = 5, c1 := (x2, 0.5*y), c2 := c1 + (0, 2*b)
-  \ .Poly[Style[.Border[color.black, 0.2], .Fill[";"]]
-          Square[c1, c1 - (b, b)], cs1;
-          Square[c2, c2 - (b, b)], ch1]
+  s = Style[.Border[color.black, 0.2]]
+  \ .Poly[Square[c1, c1 - (b, b)], cs1, s]
+  \ .Poly[Square[c2, c2 - (b, b)], ch1, s]
   .Text[.Font["Sans", 8], color.black
         .From[(0, 0.5)], (x0, y), "a)"; (x1, y), "b)";
         c1 + b*(0.8, -0.5), .From[(0, 0.5)], "soft";

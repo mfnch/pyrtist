@@ -130,26 +130,26 @@ gradient = \
        exit_actions=pop_settings,
        submodes=[gradient_line, gradient_circle, color, exit])
 
-fill_void = Mode("Not-filled",
-                 tooltip="Do not fill the polygon/path",
-                 button=Button("Not filled", "fillvoid.png"),
-                 enter_actions=[Paste("\"void\""), exit_action])
+#fill_void = Mode("Not-filled",
+#                 tooltip="Do not fill the polygon/path",
+#                 button=Button("Not filled", "fillvoid.png"),
+#                 enter_actions=[Paste("\"void\""), exit_action])
 
-fill_plain = Mode("Plain",
-                  tooltip="Fill the whole polygon/path",
-                  button=Button("Plain", "fillplain.png"),
-                  enter_actions=[Paste("\"plain\""), exit_action])
+#fill_plain = Mode("Plain",
+#                  tooltip="Fill the whole polygon/path",
+#                  button=Button("Plain", "fillplain.png"),
+#                  enter_actions=[Paste("\"plain\""), exit_action])
 
-fill_eo = Mode("Even-Odd",
-               tooltip="Alternate filling of the polygon/path (even-odd)",
-               button=Button("Even-Odd", "filleo.png"),
-               enter_actions=[Paste("\"eo\""), exit_action])
+#fill_eo = Mode("Even-Odd",
+#               tooltip="Alternate filling of the polygon/path (even-odd)",
+#               button=Button("Even-Odd", "filleo.png"),
+#               enter_actions=[Paste("\"eo\""), exit_action])
 
-fill = Mode("Fill mode",
-            tooltip="Select the filling mode for polygons/paths",
-            button=Button("Fill", "fill.png"),
-            enter_actions=Paste("$LCOMMA$.Fill[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
-            submodes=[fill_void, fill_plain, fill_eo, exit])
+#fill = Mode("Fill mode",
+#            tooltip="Select the filling mode for polygons/paths",
+#            button=Button("Fill", "fill.png"),
+#            enter_actions=Paste("$LCOMMA$.Fill[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+#            submodes=[fill_void, fill_plain, fill_eo, exit])
 
 border_dash = \
   Mode("Border dash",
@@ -180,7 +180,7 @@ style = \
                 "circles, etc."),
        button=Button("Style", "style.png"),
        enter_actions=Paste("$LCOMMA$Style[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
-       submodes=[fill, border, exit])
+       submodes=[color, gradient, border, exit])
 
 poly_smoothing = \
   Mode("Poly smoothing",
@@ -230,29 +230,29 @@ line_width = \
        enter_actions=[InputAct("$LCOMMA$$INPUT$$RCOMMA$",
                                label="Width of the line:")])
 
-line_sharp = \
-  Mode("Sharp",
-       tooltip="Line corners are sharp (affects only the following points)",
-       button=Button("Sharp", "linesharp.png"),
-       enter_actions=Paste("$LCOMMA$line.sharp$RCOMMA$"))
+#line_sharp = \
+#  Mode("Sharp",
+#       tooltip="Line corners are sharp (affects only the following points)",
+#       button=Button("Sharp", "linesharp.png"),
+#       enter_actions=Paste("$LCOMMA$line.sharp$RCOMMA$"))
 
-line_smooth = \
-  Mode("Smooth",
-       tooltip="Line corners are smooth (affects only the following points)",
-       button=Button("Smooth", "linesmooth.png"),
-       enter_actions=Paste("$LCOMMA$line.medium$RCOMMA$"))
+#line_smooth = \
+#  Mode("Smooth",
+#       tooltip="Line corners are smooth (affects only the following points)",
+#       button=Button("Smooth", "linesmooth.png"),
+#       enter_actions=Paste("$LCOMMA$line.medium$RCOMMA$"))
 
-line_vsmooth = \
-  Mode("Very-Smooth",
-       tooltip="Line corners are very smooth (affects only the following points)",
-       button=Button("V.Smooth", "linevsmooth.png"),
-       enter_actions=Paste("$LCOMMA$line.smooth$RCOMMA$"))
+#line_vsmooth = \
+#  Mode("Very-Smooth",
+#       tooltip="Line corners are very smooth (affects only the following points)",
+#       button=Button("V.Smooth", "linevsmooth.png"),
+#       enter_actions=Paste("$LCOMMA$line.smooth$RCOMMA$"))
 
 line_close = \
   Mode("Line.Close",
        tooltip="Close the line",
        button=Button("Close", "lineclose.png"),
-       enter_actions=[Paste("$LCOMMA$.Close[]$RCOMMA$"),
+       enter_actions=[Paste("$LCOMMA$Close[]$RCOMMA$"),
                       update_now])
 
 line_cap_arrow =  \
@@ -301,11 +301,11 @@ line = \
   Mode("Line",
        tooltip="Create a new line with fixed or variable thickness",
        button=Button("Line", "line.png"),
-       enter_actions=[Paste("$LNEWLINE$\ .Line[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
+       enter_actions=[Paste("$LNEWLINE$Line[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
-       submodes=[color, gradient, style, line_width, line_sharp, line_smooth,
-                 line_vsmooth, line_cap, line_close, exit])
+       submodes=[color, gradient, style, line_width,
+                 line_cap, line_close, exit])
 
 no_variants = []
 default_fonts = \
@@ -399,7 +399,7 @@ text_from = \
   Mode("From",
        tooltip="Choose the relative position",
        button=Button("From", "textfrom.png"),
-       enter_actions=Paste("$LCOMMA$.From[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
+       enter_actions=Paste("$LCOMMA$From[$CURSORIN$]$CURSOROUT$$RCOMMA$"),
        submodes=text_from_submodes)
 
 text = \
@@ -408,7 +408,7 @@ text = \
        statusbar=("Select the font, enter the text, the position "
                   "and relative-positioning"),
        button=Button("Text", "text.png"),
-       enter_actions=[Paste("$LNEWLINE$\ .Text[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
+       enter_actions=[Paste("$LNEWLINE$Text[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       paste_on_new],
        submodes=[color, gradient, style, font, text_content, text_from, exit])
 

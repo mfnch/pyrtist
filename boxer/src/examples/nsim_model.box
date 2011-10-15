@@ -11,6 +11,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui5 = Point[.x=130.851027047, .y=47.20078]
 bbox1 = Point[.x=107.666785067, .y=57.4159294906]
@@ -69,14 +70,12 @@ w = Window[][
   gui3.y = gui13.y
   Label[label_type3, gui3, (35, 20), "ZERO"]
 
-  gradient2 = Gradient[Circles[gui3, 0; 60]
-                       Color[(1, 1, 1)], Color[(0.2, 0.5, 1)]]
-  gradient3 = Gradient[Circles[gui3, 10; 30]
-                       Color[(1, 1, 1)], Color[(0.2, 0.5, 1)]]
+  Gradient[Circles[gui3, 0; 60], Color[(1, 1, 1)], Color[(0.2, 0.5, 1)]]
+  Line[2, gui14, Scale[3], arrow, gui15]
+  Line[2, gui4, Scale[3], arrow, gui6]
 
-  Line[2, gradient2, gui14, Scale[3], arrow, gui15]
-  Line[gui4, Scale[3], arrow, gui6]
-  Line[gradient3, gui7, Scale[3], arrow, gui8]
+  Gradient[Circles[gui3, 10; 30], Color[(1, 1, 1)], Color[(0.2, 0.5, 1)]]
+  Line[2, gui7, Scale[3], arrow, gui8]
 ]
 
 //w.Save["nsim_model.png", Window["rgb24", .Res[Dpi[100]]]]
