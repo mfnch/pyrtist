@@ -57,7 +57,7 @@ static Real eps_point_scale = 283.46457;
 
 #define EPS_REAL(r) ((r)*eps_point_scale)
 
-static void My_EPS_Finish_Drawing(BoxGWin *w) {
+static void My_EPS_Finish(BoxGWin *w) {
   FILE *f = (FILE *) w->ptr;
   assert(f != (FILE *) NULL);
   fprintf(f, "\nrestore\nshowpage\n%%%%Trailer\n%%EOF\n");
@@ -356,7 +356,7 @@ static void eps_repair(BoxGWin *w) {
   w->add_fake_point = My_EPS_Add_Fake_Point;
   w->save_to_file = My_EPS_Save_To_File;
 
-  w->finish_drawing = My_EPS_Finish_Drawing;
+  w->finish = My_EPS_Finish;
 }
 
 static const char *ps_std_defs =
@@ -490,7 +490,7 @@ int eps_save_fig(const char *file_name, BoxGWin *figure) {
   rot_angle = 0.0;
   BoxGMatrix_Set(& m, & translation, & center, rot_angle, sx, sy);
   BoxGWin_Fig_Draw_Fig_With_Matrix(dest, figure, & m);
-  BoxGWin_Finish_Drawing(dest);
+  BoxGWin_Destroy(dest);
   return 1;
 }
 
@@ -525,7 +525,7 @@ static void ps_repair(BoxGWin *w) {
   w->add_fake_point = My_EPS_Add_Fake_Point;
   w->save_to_file = My_EPS_Save_To_File;
 
-  w->finish_drawing = My_PS_Close_Win;
+  w->finish = My_PS_Close_Win;
 }
 
 /* DESCRIZIONE: Apre una finestra grafica di tipo postscript.
@@ -589,6 +589,6 @@ int ps_save_fig(const char *file_name, BoxGWin *figure) {
   rot_angle = 0.0;
   BoxGMatrix_Set(& m, & translation, & center, rot_angle, sx, sy);
   BoxGWin_Fig_Draw_Fig_With_Matrix(dest, figure, & m);
-  BoxGWin_Finish_Drawing(dest);
+  BoxGWin_Destroy(dest);
   return 1;
 }

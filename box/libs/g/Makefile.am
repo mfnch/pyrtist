@@ -32,10 +32,10 @@ boxlib_LTLIBRARIES=libg.la
 
 dist_boxlibg_DATA=\
   obj.bxh const.box gcore.bxh matrix.box transform.box option.box \
-  raw.bxh cmdstream.bxh points.box path.bxh fill.bxh stroke.bxh style.box \
-  poly.bxh text.box texts.box circle.box circles.box line.box gradcore.box \
+  raw.box cmdstream.bxh points.box path.bxh fill.bxh stroke.bxh style.box \
+  poly.box text.box texts.box circle.box circles.box line.box gradcore.box \
   gradient.box clip.bxh hot.box constraints.box put.box window.box bbox.box \
-  g2.bxh init.box color.box _oldstyle.bxh _gradient.bxh pattern.box _line.bxh \
+  g2.bxh init.box color.box oldstyle.box _gradient.bxh pattern.box _line.bxh \
   _circle.bxh _poly.bxh _put.bxh _pointlist.bxh _text.bxh area.bxh
 
 dist_boxpkg_DATA=\

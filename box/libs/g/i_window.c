@@ -155,7 +155,7 @@ static void My_Window_Unreference(Window **w_ptr) {
   if (w->num_references == 0) {
     BoxMem_Free(w->plan.file_name);
 
-    BoxGWin_Finish_Drawing(w->window);
+    BoxGWin_Destroy(w->window);
 
     My_Finish_Win_Styles(w);
     pointlist_destroy(& w->pointlist);
@@ -379,7 +379,7 @@ BoxTask window_save_window(BoxVM *vmp) {
       dest->plan.have.size = 1;
     }
 
-    BoxGWin_Finish_Drawing(dest->window);
+    BoxGWin_Destroy(dest->window);
     dest->window = BoxGWin_Create(& dest->plan);
     if (dest->window == NULL) {
       g_error("Window.Save: cannot create the window!");

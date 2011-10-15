@@ -251,8 +251,10 @@ struct _grp_window {
 
   /* Low level functions (should probably be moved out of here) */
 
-  /** @see BoxGWin_Finish_Drawing */
-  void (*finish_drawing)(BoxGWin *w);
+  /** terminates drawing operations on the window and make it unusable.
+   * @see BoxGWin_Finish, BoxGWin_Destroy
+   */
+  void (*finish)(BoxGWin *w);
 
   /** @see BoxGWin_Set_Color */
   void (*set_color)(BoxGWin *w, int col);
@@ -271,10 +273,9 @@ struct _grp_window {
   /** This function can be internally used to report errors. */
   void (*_report_error)(BoxGWin *w, const char *msg);
 
-  /** Pattern which is being created (during BoxGWin_Intepret_Obj). */
-  void *pattern;
-
   void *ptr;           /**< Pointer to the window data */
+  void *data;          /**< Pointer to extra data dependent on the window
+                            type */
 
   BoxReal
     ltx, lty,          /**< Coordinates of top left-corner (in mm)*/
@@ -294,8 +295,6 @@ struct _grp_window {
   long bitperpixel;    /**< Bit necessary to store a single pixel */
   long bytesperline;   /**< Bytes required for each row */
   long dim;            /**< Total size (in bytes) of the window */
-  void *wrdep;         /**< Pointer to extra data dependent on the window
-                            type */
 };
 
 #define BoxGWin_Fail(source, msg)
@@ -313,7 +312,7 @@ struct _grp_window {
 #define BoxGWin_Begin_Drawing(win) ((win)->begin_drawing)(win)
 
 /** Finalize the window */
-#define BoxGWin_Finish_Drawing(win) ((win)->finish_drawing)(win)
+#define BoxGWin_Finish(win) ((win)->finish)(win)
 
 /** Create a new path (rreset) */
 #define BoxGWin_Create_Path(win) ((win)->create_path)(win)
@@ -415,10 +414,10 @@ int BoxGWin_Type_From_String(const char *type_str);
  */
 BoxGWin *BoxGWin_Create_Invalid(BoxGErr *err);
 
-/** Destroy a BoxGWin object created with BoxGWin_Destroy_Invalid. All BoxGWin
+/** Destroy a BoxGWin object created with BoxGWin_Create_Invalid. All BoxGWin
  * destructors should be implemented by calling this function.
  */
-void BoxGWin_Destroy_Invalid(BoxGWin *w);
+void BoxGWin_Destroy(BoxGWin *w);
 
 /** Unified function to open any kind of window */
 BoxGWin *BoxGWin_Create(BoxGWinPlan *plan);

@@ -39,8 +39,6 @@ static void My_Got_Point(BoxGWin *w, Real x, Real y) {
   Grp_BB_Must_Contain(& bb_local, & p);
 }
 
-static void My_BB_Finish_Drawing(BoxGWin *w) {}
-
 static void My_BB_Draw_Path(BoxGWin *w, DrawStyle *style) {
   int do_border = (style->bord_width > 0.0);
   Real scale = style->scale;
@@ -145,7 +143,6 @@ static void bb_repair(BoxGWin *w) {
   w->add_text_path = My_BB_Add_Text_Path;
   w->add_fake_point = My_BB_Add_Fake_Point;
   w->interpret = My_BB_Interpret;
-  w->finish_drawing = My_BB_Finish_Drawing;
 }
 
 int BoxGBBox_Compute(BoxGBBox *bbox, BoxGWin *figure) {

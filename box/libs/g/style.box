@@ -7,6 +7,24 @@ include "pattern"
 include "gradcore"
 include "option"
 
+///Intro: whether default style settings have to be written or preserved.
+// This is mostly used internally. It allows to control the scope of validity
+// of a Style object. For example, ``Poly[..., Style[Preserve[1], ...]]``
+// traces a polygon using the provided style. The style is used only for
+// tracing this polygon and does not affect the default style.
+// Alternatively, ``Poly[..., Style[Preserve[0], ...]]`` traces the polygon
+// using the provided style, which will also become the default style.
+// Following ``Poly`` will use this style, unless another style is explicitly
+// provided.
+Preserve = ++(Int int,)
+
+(.[)@Preserve[.int = -1] // -1 means "unset"
+
+///Intro: 0 means "do not preserve, but rather overwrite the default style",
+// 1 means "use this style only for the present shape and preserve the default
+// style", -1 means use the default preserve rule.
+Int@Preserve[.int = $]
+
 ///Intro: the dash pattern for tracing lines.
 Dash = ++((Int semicolon,) have, Real offset, Obj dashes)
 
@@ -101,7 +119,7 @@ MiterLimit@CmdStream[If[$.real >= 0.0], Obj[const.raw.set_miter_limit, $.real]]
 
 ///Intro: border width and color to be used when tracing the next
 // polygon (for {type(Poly)}, {type(Circle)}, etc).
-Border = ++((Int color, width, dash) have
+Border = ++((Int color, width, dash) have, Preserve preserve
             Pattern pattern, Real width, Dash dash, Join join, Cap cap
             MiterLimit miter_limit
             Color color)
@@ -112,6 +130,10 @@ Border = ++((Int color, width, dash) have
 // interface). At some point we will remove OldStyle and also Border.color.
 
 (.[)@Border[.have = (0, 0, 0), .width = 0.0]
+
+///Intro: whether to preserve the default border style or overwrite it.
+// See {type(Preserve)} for more information on style preservation.
+Preserve@Border[.preserve = $]
 
 ///Intro: specify the border width.
 Real@Border[.width = $, .have.width = 1]
@@ -133,6 +155,7 @@ Gradient@Border[\ $$.pattern[$], .have.color = 1]
 
 ///Intro: merge the border specification.
 Border@Border[
+  [If[$.preserve.int >= 0], $$.preserve = $.preserve]
   [If[$.have.width], $$.width = $.width, $$.have.width = 1]
   [If[$.have.color]
      $$.pattern = $.pattern, $$.color = $.color, $$.have.color = 1]
@@ -147,6 +170,9 @@ Dash@Border[.dash = $, .have.dash = 1]
 
 ///Intro: add the graphicals commands encoding a ``Border`` object.
 Border@CmdStream[
+  do_preserve = $.preserve.int
+  [If[do_preserve], Obj[const.raw.save]]
+
   [If[$.have.color]
      $.pattern
      Obj[const.raw.set_source]
@@ -160,6 +186,7 @@ Border@CmdStream[
   $.join, $.cap, $.miter_limit
 
   Obj[const.raw.stroke]
+  [If[do_preserve], Obj[const.raw.restore]]
 ]
 
 ///Intro: fill style.
@@ -179,33 +206,57 @@ Str@FillStyle[
 ]
 
 ///Intro: a container of drawing style settings.
-// A {type(Style)} object determines the style for tracing the next polygon
-// (for {type(Poly)}, {type(Circle)}, etc).
-Style = ++((Int border, color) have
+// A {type(Style)} object determines the style for tracing the next shape
+// (for {type(Poly)}, {type(Circle)}, etc). Settings include: the filling
+// color, the border color, width, dash pattern, join style and cap mode.
+// There are typically two ways to use a {type(Style)} object. The style
+// object can be passed directly to the shape to be drawn. This way the style
+// settings are used just once, for the particular considered object.
+// For example, ``Poly[Style[...], p1, p2, p3]``.
+// Alternatively, the style object can be given to a {type(Window)} object.
+// This way the style will become the default style for that window and will
+// be used by all the following drawing operations which do not explicitly set
+// style attributes. For example, if ``s = Style[Border[1, color.blue]]``,
+// then ``Window[][s, Poly[Style[color.red], ...]]`` will produce a red
+// polygon with blue border. All shapes following ``s`` in the same window,
+// are drawn using this style.
+Style = ++((Int border, color) have, Preserve preserve
            FillStyle fill_style, Border border, Pattern pattern, Color color)
 
 (.[)@Style[.have = (0, 0)]
+
+///Intro: whether to preserve the default style or overwrite it.
+// See {type(Preserve)} for more information on style preservation.
+Preserve@Style[
+  .preserve = $
+  [If[$$.border.preserve.int < 0]
+     $$.border.preserve = $]
+]
 
 ///Intro: set the {type(.@)} used for filling.
 Color@Style[$$.color = $, \ $$.pattern[$], .have.color = 1]
 Gradient@Style[\ $$.pattern[$], .have.color = 1] ///Same.
 
 ///Intro: add the border settings to the {type(@.)} object.
-Border@Style[.border = $, .have.border = 1]
+Border@Style[\ $$.border[$], .have.border = 1]
 
 ///Intro: add the fill style to the {type(@.)} object.
 FillStyle@Style[.fill_style = $]
 
 ///Intro: copy the style settings from another {type(Style)} object.
 Style@Style[
+  [If[$.preserve.int >= 0], $$.preserve = $.preserve]
   [If[$.have.color]
      $$.have.color = 1, $$.color = $.color, $$.pattern = $.pattern]
-  [If[$.have.border], $$.have.border = 1, $$.border = $.border]
+  [If[$.have.border], $$.have.border = 1, $.border]
 ]
 
 ///Intro: translate the style object into raw commands.
 Style@CmdStream[
-  do_stroke = $.have.border
+  do_preserve = $.preserve.int
+  [If[do_preserve]
+     Obj[const.raw.save]
+     Obj[const.raw.ext_border_save]]
 
   // Commands for filling
   [If[$.have.color]
@@ -213,24 +264,36 @@ Style@CmdStream[
      Obj[const.raw.set_source]
      Obj[const.raw.pattern_destroy]]
 
-  Obj[If[do_stroke], const.raw.fill_preserve
-      Else[], const.raw.fill]
-
   // Commands for the style of the border
   [If[$.have.border]
-     Obj[const.raw.save]
+     Obj[const.raw.fill_preserve]
+     Obj[const.raw.ext_border_exchange]
      $.border
+     Obj[const.raw.ext_border_exchange]
+
+   Else[]
+     Obj[const.raw.ext_fill_and_stroke]]
+
+  [If[do_preserve]
+     Obj[const.raw.ext_border_restore]
      Obj[const.raw.restore]]
 ]
-
-///Intro: send the style setting to the window.
-Style@Window[CmdStream[$]]
 
 ///Intro: send the border setting to the window.
 Border@Window[CmdStream[$]]
 
 ///Intro: an alias for {type(Border)}.
 StrokeStyle = Border
+
+include "oldstyle"
+
+OldStyle@Window ?
+
+///Intro: use the drawing style as a default in the next drawing commands.
+Style@Window[
+  CmdStream[Style[Preserve[0], $]]
+  OldStyle[$]
+]
 
 //-------------PROVIDED FOR COMPATIBILITY WITH box 0.2.3------------------//
 

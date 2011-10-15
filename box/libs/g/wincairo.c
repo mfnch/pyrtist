@@ -19,8 +19,8 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #include <assert.h>
-#include <stdarg.h>
 
 #include <cairo.h>
 #ifdef CAIRO_HAS_PS_SURFACE
@@ -48,6 +48,169 @@
 
 /*#define DEBUG*/
 
+/*****************************************************************************
+ * Below we provide functionality to save and restore just the line state.
+ * This is useful to implement separate border and line settings so that the
+ * border for polygons does not affect the way lines are traced (Line command).
+ *
+ * NOTE ON SEPARATION BETWEEN BORDER LINE STYLE AND Line LINE STYLE:
+ * This makes sense, as often Line, Poly, etc are used to draw different parts
+ * of the same things, while the border setting is conceptually different.
+ */
+
+typedef struct {
+  cairo_pattern_t   *pattern;
+  double            width,
+                    miter_limit;
+  cairo_line_cap_t  cap;
+  cairo_line_join_t join;
+  int               dash_count;
+  double            *dashes,
+                    dash_offset;
+
+} MyLineState;
+
+/** Always call the Init method before using a MyLineState. */
+static void MyLineState_Init(MyLineState *ls) {
+  ls->pattern = NULL;
+  ls->width = 0.0;
+  ls->miter_limit = 10.0;
+  ls->cap = CAIRO_LINE_CAP_BUTT;
+  ls->join = CAIRO_LINE_JOIN_MITER;
+  ls->dash_count = 0;
+  ls->dashes = NULL;
+}
+
+/** Copy 'src' to 'uninit_dest' assuming 'uninit_dest' points to uninitialized
+ * memory which is big enough to hold a MyLineState object.
+ */
+static void MyLineState_Duplicate(MyLineState *uninit_dest, MyLineState *src) {
+  size_t dashes_size = BoxMem_Safe_AX(sizeof(double), src->dash_count);
+  *uninit_dest = *src;
+  cairo_pattern_reference(uninit_dest->pattern);
+  uninit_dest->dashes = BoxMem_Safe_Alloc(dashes_size);
+  (void) memcpy(uninit_dest->dashes, src->dashes, dashes_size);
+}
+
+/** Relocate the MyLineState object at location 'src' to 'uninit_dest'.
+ * 'src' will be cleared after the operation (so that you can freely call
+ * MyLineState_Finish without compromising the data in 'uninit_dest'.
+ * Note that 'uninit_dest' is assumed to be raw uninitialized memory
+ * (in other words MyLineState_Finish is not called before overwriting it
+ * with 'src').
+ */
+static void MyLineState_Relocate(MyLineState *uninit_dest, MyLineState *src) {
+  *uninit_dest = *src;
+  MyLineState_Init(src);
+}
+
+/** Always call the Finish method before using a MyLineState. */
+static void MyLineState_Finish(MyLineState *ls) {
+  cairo_pattern_destroy(ls->pattern);
+  BoxMem_Free(ls->dashes);
+  ls->pattern = NULL;
+  ls->dashes = NULL;
+}
+
+/** Save the line state from the cairo context 'cr' to 'ls'. */
+static void MyLineState_Save(MyLineState *ls, cairo_t *cr) {
+  MyLineState_Finish(ls);
+
+  ls->width = cairo_get_line_width(cr);
+  ls->cap = cairo_get_line_cap(cr);
+  ls->join = cairo_get_line_join(cr);
+  ls->miter_limit = cairo_get_miter_limit(cr);
+
+  ls->dash_count = cairo_get_dash_count(cr);
+  ls->dashes = BoxMem_Safe_Alloc_Items(sizeof(double), ls->dash_count);
+  cairo_get_dash(cr, ls->dashes, & ls->dash_offset);
+
+  ls->pattern = cairo_get_source(cr);
+  cairo_pattern_reference(ls->pattern);
+}
+
+/** Restore the line state from 'ls' back to the cairo context 'cr'. */
+static void MyLineState_Restore(MyLineState *ls, cairo_t *cr) {
+  cairo_set_line_width(cr, ls->width);
+  cairo_set_line_cap(cr, ls->cap);
+  cairo_set_line_join(cr, ls->join);
+  cairo_set_miter_limit(cr, ls->miter_limit);
+
+  if (ls->pattern != NULL)
+    cairo_set_source(cr, ls->pattern);
+
+  assert(ls->dashes != NULL || ls->dash_count == 0);
+  cairo_set_dash(cr, ls->dashes, ls->dash_count, ls->dash_offset);
+}
+
+static void MyLineState_Exchange(MyLineState *ls, cairo_t *cr) {
+  MyLineState my_ls;
+  MyLineState_Init(& my_ls);
+  MyLineState_Save(& my_ls, cr);
+  MyLineState_Restore(ls, cr);
+  MyLineState_Finish(ls);
+  *ls = my_ls;
+}
+
+/*****************************************************************************/
+
+/** Type of the BoxGWin->data pointer, containing data specific to the Cairo
+ * window type
+ */
+typedef struct {
+  cairo_pattern_t *pattern;
+  MyLineState     line_state;
+  BoxArr          saved_line_states;
+
+} MyCairoWinData;
+
+static void My_Saved_LineState_Finalizer(void *item) {
+  MyLineState_Finish((MyLineState *) item);
+}
+
+static void MyCairoWinData_Init(MyCairoWinData *wd) {
+  wd->pattern = NULL;
+  MyLineState_Init(& wd->line_state);
+  BoxArr_Init(& wd->saved_line_states, sizeof(MyLineState), 2);
+  BoxArr_Set_Finalizer(& wd->saved_line_states, My_Saved_LineState_Finalizer);
+}
+
+static void MyCairoWinData_Finish(MyCairoWinData *wd) {
+  if (wd->pattern != NULL)
+    cairo_pattern_destroy(wd->pattern);
+  MyLineState_Finish(& wd->line_state);
+  BoxArr_Finish(& wd->saved_line_states);
+}
+
+static void MyCairoWinData_LineState_Push_Any(MyCairoWinData *wd,
+                                              MyLineState *ls) {
+  MyLineState *new_ls = BoxArr_Push(& wd->saved_line_states, NULL);
+  assert(new_ls != NULL);
+  MyLineState_Duplicate(new_ls, ls);
+}
+
+static void MyCairoWinData_LineState_Pop_Any(MyCairoWinData *wd,
+                                             MyLineState *ls) {
+  MyLineState *top_ls = BoxArr_Last_Item_Ptr(& wd->saved_line_states);
+  MyLineState_Finish(ls);
+  MyLineState_Relocate(ls, top_ls);
+  BoxArr_Pop(& wd->saved_line_states, NULL);
+}
+
+static void MyCairoWinData_LineState_Push(MyCairoWinData *wd) {
+  MyCairoWinData_LineState_Push_Any(wd, & wd->line_state);
+}
+
+static void MyCairoWinData_LineState_Pop(MyCairoWinData *wd) {
+  MyCairoWinData_LineState_Pop_Any(wd, & wd->line_state);
+}
+
+
+/** Macro to access Cairo specific window data. */
+#define MY_DATA(w) ((MyCairoWinData *) (w)->data)
+
+/*****************************************************************************/
+
 /* Invert the cairo matrix 'in' and put the result in 'result'.
  * The determinant of 'in' is returned and is 0.0, if the matrix
  * couldn't be inverted.
@@ -66,13 +229,16 @@ static BoxReal My_Invert_Cairo_Matrix(cairo_matrix_t *result, cairo_matrix_t *in
 static char *wincairo_image_id_string   = "cairo:image";
 static char *wincairo_stream_id_string  = "cairo:stream";
 
-static void My_WinCairo_Finish_Drawing(BoxGWin *w) {
+static void My_WinCairo_Finish(BoxGWin *w) {
   cairo_t *cr = (cairo_t *) w->ptr;
   cairo_surface_t *surface = cairo_get_target(cr);
-
+    
   cairo_show_page(cr);
   cairo_destroy(cr);
   cairo_surface_destroy(surface);
+
+  MyCairoWinData_Finish(MY_DATA(w));
+  BoxMem_Free(MY_DATA(w));
 }
 
 /* Variabili usate dalle procedure per scrivere il file postscript */
@@ -87,17 +253,6 @@ static int same_points(Point *a, Point *b) {
 static void My_Map_Point(BoxGWin *w, Point *out, Point *in) {
   out->x = (in->x - w->ltx)*w->resx;
   out->y = (in->y - w->lty)*w->resy;
-}
-
-/** This is the function used to map applied vectors. */
-static void My_Map_Vector(BoxGWin *w, Point *out, Point *in) {
-  out->x = in->x * w->resx;
-  out->y = in->y * w->resy;
-}
-
-/** This is the function used to map widths. */
-static void My_Map_Width(BoxGWin *w, Real *out, Real *in) {
-  *out = *in * w->resx;
 }
 
 /* Macros used to scale the point coordinates */
@@ -424,6 +579,19 @@ My_Cairo_Pattern_Create_Radial(BoxPoint *p1, BoxPoint *xone, BoxPoint *yone,
                                         p2->x - p1->x, p2->y - p1->y, rad2);
   cairo_pattern_set_matrix(pattern, & m_inv);
   return pattern;
+}
+
+static void My_Cairo_Fill_And_Stroke(BoxGWin *w) {
+  cairo_t *cr = (cairo_t *) w->ptr;  
+  double line_width = MY_DATA(w)->line_state.width;
+  if (line_width > 0.0) {
+    cairo_fill_preserve(cr);
+    MyLineState_Exchange(& MY_DATA(w)->line_state, cr);
+    cairo_stroke(cr);
+    MyLineState_Exchange(& MY_DATA(w)->line_state, cr);
+
+  } else
+    cairo_fill(cr);
 }
 
 static cairo_operator_t My_Cairo_Operator_Of_Int(BoxInt v) {
@@ -762,10 +930,10 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
   case BOXGCMD_PATTERN_CREATE_RGB:
     {
       BoxReal *arg1 = args[0], *arg2 = args[1], *arg3 = args[2];
-      if (w->pattern != NULL)
-        cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
+      if (MY_DATA(w)->pattern != NULL)
+        cairo_pattern_destroy(MY_DATA(w)->pattern);
 
-      w->pattern =
+      MY_DATA(w)->pattern =
         cairo_pattern_create_rgb(*arg1, *arg2, *arg3);
       return BOXTASK_OK;
     }
@@ -775,10 +943,10 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     {
       BoxReal *arg1 = args[0], *arg2 = args[1],
               *arg3 = args[2], *arg4 = args[3];
-      if (w->pattern != NULL)
-        cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
+      if (MY_DATA(w)->pattern != NULL)
+        cairo_pattern_destroy(MY_DATA(w)->pattern);
 
-      w->pattern =
+      MY_DATA(w)->pattern =
         cairo_pattern_create_rgba(*arg1, *arg2, *arg3, *arg4);
       return BOXTASK_OK;
     }
@@ -787,10 +955,10 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
   case BOXGCMD_PATTERN_CREATE_LINEAR:
     {
       BoxPoint *arg1 = args[0], *arg2 = args[1];
-      if (w->pattern != NULL)
-        cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
+      if (MY_DATA(w)->pattern != NULL)
+        cairo_pattern_destroy(MY_DATA(w)->pattern);
 
-      w->pattern =
+      MY_DATA(w)->pattern =
         cairo_pattern_create_linear(arg1->x, arg1->y, arg2->x, arg2->y);
       return BOXTASK_OK;
     }
@@ -802,12 +970,12 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                *arg3 = args[2], *arg4 = args[3];
       BoxReal *arg5 = args[4], *arg6 = args[5];
 
-      if (w->pattern != NULL)
-        cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
+      if (MY_DATA(w)->pattern != NULL)
+        cairo_pattern_destroy(MY_DATA(w)->pattern);
 
-      w->pattern =
+      MY_DATA(w)->pattern =
         My_Cairo_Pattern_Create_Radial(arg1, arg2, arg3, arg4, *arg5, *arg6);
-      return (w->pattern != NULL) ? BOXTASK_OK : BOXTASK_FAILURE;
+      return (MY_DATA(w)->pattern != NULL) ? BOXTASK_OK : BOXTASK_FAILURE;
     }
     break;
 
@@ -815,8 +983,8 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     {
       BoxReal *arg1 = args[0], *arg2 = args[1], *arg3 = args[2],
               *arg4 = args[3];
-      if (w->pattern != NULL)
-        cairo_pattern_add_color_stop_rgb(w->pattern,
+      if (MY_DATA(w)->pattern != NULL)
+        cairo_pattern_add_color_stop_rgb(MY_DATA(w)->pattern,
                                          *arg1, *arg2, *arg3, *arg4);
       return BOXTASK_OK;
     }
@@ -826,8 +994,8 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     {
       BoxReal *arg1 = args[0], *arg2 = args[1], *arg3 = args[2],
               *arg4 = args[3], *arg5 = args[4];
-      if (w->pattern != NULL)
-        cairo_pattern_add_color_stop_rgba(w->pattern, *arg1, *arg2,
+      if (MY_DATA(w)->pattern != NULL)
+        cairo_pattern_add_color_stop_rgba(MY_DATA(w)->pattern, *arg1, *arg2,
                                           *arg3, *arg4, *arg5);
       return BOXTASK_OK;
     }
@@ -844,7 +1012,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       case 2: v = CAIRO_EXTEND_REFLECT; break;
       case 3: v = CAIRO_EXTEND_PAD; break;
       }
-      cairo_pattern_set_extend((cairo_pattern_t *) w->pattern, v);
+      cairo_pattern_set_extend(MY_DATA(w)->pattern, v);
       return BOXTASK_OK;
     }
     break;
@@ -862,21 +1030,21 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       case 4: v = CAIRO_FILTER_BILINEAR; break;
       case 5: v = CAIRO_FILTER_GAUSSIAN; break;
       }
-      cairo_pattern_set_filter((cairo_pattern_t *) w->pattern, v);
+      cairo_pattern_set_filter(MY_DATA(w)->pattern, v);
       return BOXTASK_OK;
     }
     break;
 
   case BOXGCMD_PATTERN_DESTROY:
-    if (w->pattern != NULL) {
-      cairo_pattern_destroy((cairo_pattern_t *) w->pattern);
-      w->pattern = NULL;
+    if (MY_DATA(w)->pattern != NULL) {
+      cairo_pattern_destroy(MY_DATA(w)->pattern);
+      MY_DATA(w)->pattern = NULL;
     }
     return BOXTASK_OK;
 
   case BOXGCMD_SET_SOURCE:
-    if (w->pattern != NULL)
-      cairo_set_source(cr, (cairo_pattern_t *) w->pattern);
+    if (MY_DATA(w)->pattern != NULL)
+      cairo_set_source(cr, MY_DATA(w)->pattern);
     return BOXTASK_OK;
 
 
@@ -936,13 +1104,20 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     }
     break;
 
-  case BOXGCMD_EXT_FILL_STROKE:
-    if (cairo_get_line_width(cr) > 0.0) {
-      cairo_fill_preserve(cr);
-      cairo_stroke(cr);
+  case BOXGCMD_EXT_BORDER_EXCHANGE:
+    MyLineState_Exchange(& MY_DATA(w)->line_state, cr);
+    return BOXTASK_OK;
 
-    } else
-      cairo_fill(cr);
+  case BOXGCMD_EXT_BORDER_SAVE:
+    MyCairoWinData_LineState_Push(MY_DATA(w));
+    return BOXTASK_OK;
+
+  case BOXGCMD_EXT_BORDER_RESTORE:
+    MyCairoWinData_LineState_Pop(MY_DATA(w));
+    return BOXTASK_OK;
+
+  case BOXGCMD_EXT_FILL_AND_STROKE:
+    My_Cairo_Fill_And_Stroke(w);
     return BOXTASK_OK;
 
   default:
@@ -1223,7 +1398,7 @@ static void My_WinCairo_Repair(BoxGWin *w) {
   BoxGWin_Block(w);
   w->interpret = My_WinCairo_Interpret;
   w->save_to_file = My_WinCairo_Save_To_File;
-  w->finish_drawing = My_WinCairo_Finish_Drawing;
+  w->finish = My_WinCairo_Finish;
   w->create_path = My_WinCairo_Create_Path;
   w->begin_drawing = My_WinCairo_Begin_Drawing;
   w->draw_path = My_WinCairo_Draw_Path;
@@ -1250,7 +1425,7 @@ BoxGWin *BoxGWin_Create_Cairo(BoxGWinPlan *plan, BoxGErr *err) {
   typedef cairo_surface_t *(*StreamSurfaceCreate)(const char *filename,
                                                   double width_in_points,
                                                   double height_in_points);
-  StreamSurfaceCreate stream_surface_create = (StreamSurfaceCreate) NULL;
+  StreamSurfaceCreate stream_surface_create = NULL;
 
   /* If err == NULL, err points to a dummy BoxGErr, which simplifies coding */
   if (err != NULL)
@@ -1268,11 +1443,21 @@ BoxGWin *BoxGWin_Create_Cairo(BoxGWinPlan *plan, BoxGErr *err) {
 
   wt = (WT) plan->type;
 
+  /* Allocate space for the BoxGWin object */
   w = BoxGWin_Create_Invalid(err);
   if (*err)
     return NULL;
-  else
-    assert(w != NULL);
+  assert(w != NULL);
+
+  /* Allocate WinCairo-specific data */
+  assert(MY_DATA(w) == NULL);
+  MyCairoWinData *wd = BoxMem_Alloc(sizeof(MyCairoWinData)); 
+  if (wd == NULL) {
+    BoxGWin_Destroy(w);
+    return NULL;
+  }
+  MyCairoWinData_Init(wd);
+  w->data = wd;
 
   switch(wt) {
   case WT_A1:
@@ -1457,5 +1642,8 @@ BoxGWin *BoxGWin_Create_Cairo(BoxGWinPlan *plan, BoxGErr *err) {
   w->quiet = 0;
   w->repair = My_WinCairo_Repair;
   w->repair(w);
+
+  /* We now allocate Cairo specific data in the Window */
+  
   return w;
 }

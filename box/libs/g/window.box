@@ -29,9 +29,6 @@ Color@Window "Box_Lib_G_Color_At_Window" ?
 Gradient@Window "Box_Lib_G_Gradient_At_Window" ?  ///Same.
 OldStyle@Window "Box_Lib_G_OldStyle_At_Window" ?  ///Same.
 
-///Intro: use the drawing style as a default in the next drawing commands.
-Style@Window[OldStyle[$]]
-
 ///Intro: draw the content of a {type(.@)} inside the opened {type(@.)}
 //  object.
 Window@Window "window_window" ?

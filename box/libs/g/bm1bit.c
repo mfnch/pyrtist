@@ -66,7 +66,7 @@ static unsigned char fandmask[2] = {0x00, 0xff};
 /* Questa macro viene usata per rendere pi leggibili i riferimenti
  * ai dati della finestra dipendenti dai bit per pixel
  */
-#define WRDP(s)  ((gr1b_wrdep *) s->wrdep)
+#define WRDP(s)  ((gr1b_wrdep *) s->data)
 
 /***************************************************************************************/
 /* PROCEDURE DI GESTIONE DELLA FINESTRA GRAFICA */
@@ -97,8 +97,8 @@ BoxGWin *BoxGWin_Create_BM1(BoxReal ltx, BoxReal lty, BoxReal rdx, BoxReal rdy,
     return NULL;
   }
 
-  wd->wrdep = (gr1b_wrdep *) malloc(sizeof(gr1b_wrdep));
-  if (wd->wrdep == NULL) {
+  wd->data = (gr1b_wrdep *) malloc(sizeof(gr1b_wrdep));
+  if (wd->data == NULL) {
     ERRORMSG("BoxGWin_Create_BM1", "Memoria esaurita");
     return NULL;
   }
@@ -198,11 +198,10 @@ BoxGWin *BoxGWin_Create_BM1(BoxReal ltx, BoxReal lty, BoxReal rdx, BoxReal rdy,
 /* Chiude una finestra grafica aperta in precedenza
  * con la funzione gr2b_open_win.
  */
-static void My_Finish_Drawing(BoxGWin *w) {
+static void My_Finish(BoxGWin *w) {
   free(w->ptr);
-  free(w->wrdep);
+  free(w->data);
   grp_palette_destroy(w->pal);
-  free(w);
 }
 
 /***************************************************************************************/
@@ -341,7 +340,7 @@ static void gr1b_repair(BoxGWin *wd) {
   rst_repair(wd);
   wd->save_to_file = grbm_save_to_bmp;
 
-  wd->finish_drawing = My_Finish_Drawing;
+  wd->finish = My_Finish;
   wd->set_color = My_Set_Color;
   wd->draw_point = My_Draw_Point;
   wd->draw_hor_line = My_Draw_Hor_Line;

@@ -163,7 +163,7 @@ static BoxTask My_Fig_Iterate_Over_Layer(LayerHeader *layh,
 
 BoxTask BoxGWin_Fig_Iterate_Over_Layer(BoxGWin *source, int nr_layer,
                                        FigCmndIter iter, void *pass) {
-  FigHeader *figh = (FigHeader *) source->wrdep;
+  FigHeader *figh = (FigHeader *) source->data;
   int l = CIRCULAR_INDEX(figh->numlayers, nr_layer);
   LayerHeader *lh = (LayerHeader *) BoxArr_Item_Ptr(& figh->layerlist, l);
   return My_Fig_Iterate_Over_Layer(lh, iter, pass);
@@ -358,8 +358,8 @@ static void My_Fig_Fake_Point(BoxGWin *w, Point *p) {
   My_Fig_Push_Commands(w, ID_fake_point, args);
 }
 
-static void My_Fig_Finish_Drawing(BoxGWin *w) {
-  FigHeader *fh = (FigHeader *) w->wrdep;
+static void My_Fig_Finish(BoxGWin *w) {
+  FigHeader *fh = (FigHeader *) w->data;
   LayerHeader *lh = (LayerHeader *) BoxArr_First_Item_Ptr(& fh->layerlist);
   size_t i, n = BoxArr_Num_Items(& fh->layerlist);
 
@@ -368,7 +368,6 @@ static void My_Fig_Finish_Drawing(BoxGWin *w) {
 
   BoxArr_Finish(& fh->layerlist);
   BoxMem_Free(fh);
-  BoxMem_Free(w);
 }
 
 static void My_Fig_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
@@ -431,7 +430,7 @@ static void My_Fig_Repair(BoxGWin *w) {
   w->add_fake_point = My_Fig_Fake_Point;
   w->save_to_file = My_Fig_Save_To_File;
   w->interpret = My_Fig_Interpret;
-  w->finish_drawing = My_Fig_Finish_Drawing;
+  w->finish = My_Fig_Finish;
 }
 
 /****************************************************************************/
@@ -498,7 +497,7 @@ BoxGWin *BoxGWin_Create_Fig(int numlayers) {
   }
 
   /* Window dependent data */
-  wd->wrdep = figh;
+  wd->data = figh;
 
   /* Pointer to current layer */
   wd->ptr = BoxArr_First_Item_Ptr(laylist);
@@ -514,7 +513,7 @@ BoxGWin *BoxGWin_Create_Fig(int numlayers) {
  *  l e' il numero del layer da distruggere.
  */
 int BoxGWin_Fig_Destroy_Layer(BoxGWin *w, int l) {
-  FigHeader *figh = (FigHeader *) w->wrdep;
+  FigHeader *figh = (FigHeader *) w->data;
   BoxArr *laylist = & figh->layerlist;
   LayerHeader *flayh = BoxArr_First_Item_Ptr(laylist),
               *llayh, *layh;
@@ -577,7 +576,7 @@ int BoxGWin_Fig_Destroy_Layer(BoxGWin *w, int l) {
  *  identificativo (> 0) o 0 in caso di errore.
  */
 int BoxGWin_Fig_New_Layer(BoxGWin *w) {
-  FigHeader *figh = (FigHeader *) w->wrdep;
+  FigHeader *figh = (FigHeader *) w->data;
   LayerHeader *flayh, *llayh, *layh;
   BoxArr *laylist = & figh->layerlist;
   int l;
@@ -635,7 +634,7 @@ void BoxGWin_Fig_Select_Layer(BoxGWin *w, int l) {
   LayerHeader *layh;
 
   /* Trovo l'header della figura attualmente attiva */
-  figh = (FigHeader *) w->wrdep;
+  figh = (FigHeader *) w->data;
 
   /* Setto il layer attivo a l */
   l = CIRCULAR_INDEX(figh->numlayers, l);
@@ -656,7 +655,7 @@ void BoxGWin_Fig_Clear_Layer(BoxGWin *w, int l) {
   LayerHeader *layh;
 
   /* Trovo l'header della figura attualmente attiva */
-  figh = (FigHeader *) w->wrdep;
+  figh = (FigHeader *) w->data;
 
   /* Trovo l'header del layer l */
   l = CIRCULAR_INDEX(figh->numlayers, l);
@@ -835,7 +834,7 @@ static void My_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *source, BoxGWinMap *map) {
   assert(source->win_type_str == fig_id_string);
 
   /* Trovo l'header della figura "source" */
-  figh = (FigHeader *) source->wrdep;
+  figh = (FigHeader *) source->data;
 
   laylist = & figh->layerlist;
 
@@ -916,7 +915,7 @@ int BoxGWin_Fig_Save_Fig(BoxGWin *src, BoxGWinPlan *plan) {
     BoxGMatrix_Set(& m, & translation, & center, rot_angle, sx, sy);
     BoxGWin_Fig_Draw_Fig_With_Matrix(dest, src, & m);
     BoxGWin_Save_To_File(dest, plan->file_name); /* Some terminals require an explicit save! */
-    BoxGWin_Finish_Drawing(dest);
+    BoxGWin_Destroy(dest);
     return 1;
   }
 

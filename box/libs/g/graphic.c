@@ -451,9 +451,7 @@ static BoxTask My_NotImplem_Interpret(BoxGWin *w, BoxGObj *obj,
   return BOXTASK_FAILURE;
 }
 
-void My_Dummy_Finish_Drawing(BoxGWin *w) {
-  w->_report_error(w, "close_win");
-}
+void My_Dummy_Finish(BoxGWin *w) {}
 
 void My_Dummy_Set_Color(BoxGWin *w, int col) {
   w->_report_error(w, "set_col");
@@ -484,7 +482,7 @@ void BoxGWin_Block(BoxGWin *w) {
   w->save_to_file = My_Dummy_Save_To_File;
   w->interpret = My_NotImplem_Interpret;
 
-  w->finish_drawing = My_Dummy_Finish_Drawing;
+  w->finish = My_Dummy_Finish;
   w->set_color = My_Dummy_Set_Color;
   w->draw_point = My_Dummy_Draw_Point;
   w->draw_hor_line = My_Dummy_Draw_Hor_Line;
@@ -509,7 +507,6 @@ typedef struct {
 static void My_Window_Error_Close(BoxGWin *w) {
   assert(w->win_type_str == err_id_string);
   BoxMem_Free(w->ptr);
-  BoxMem_Free(w);
 }
 
 static void My_Window_Error_Report(BoxGWin *w, const char *location) {
@@ -531,9 +528,9 @@ BoxGWin *BoxGWin_Create_Invalid(BoxGErr *err) {
   if (w != NULL) {
     BoxGWin_Block(w);
     w->win_type_str = err_id_string;
-    w->pattern = NULL;
     w->quiet = 0;
     w->ptr = NULL;
+    w->data = NULL;
     if (err != NULL)
       *err = BOXGERR_NO_ERR;
     return w;
@@ -546,8 +543,8 @@ BoxGWin *BoxGWin_Create_Invalid(BoxGErr *err) {
 }
 
 void BoxGWin_Destroy(BoxGWin *w) {
+  w->finish(w);
   w->win_type_str = NULL;
-  assert(w->pattern == NULL);
   BoxMem_Free(w);
 }
 
@@ -560,7 +557,7 @@ BoxGWin *Grp_Window_Error(FILE *out, const char *msg) {
   BoxGWin_Block(w);
   w->win_type_str = err_id_string;
   w->save_to_file = My_Window_Error_Save;
-  w->finish_drawing = My_Window_Error_Close;
+  w->finish = My_Window_Error_Close;
   w->_report_error = My_Window_Error_Report;
   w->quiet = 0;
 
@@ -594,7 +591,7 @@ BoxGWin grp_dummy_win = {
   My_Dummy_Save_To_File,
   My_NotImplem_Interpret,
   0, /* quiet */
-  My_Dummy_Finish_Drawing,
+  My_Dummy_Finish,
   My_Dummy_Set_Color,
   My_Dummy_Draw_Point,
   My_Dummy_Draw_Hor_Line,

@@ -46,6 +46,9 @@ BOXEXPORT void *BoxMem_Alloc(size_t size);
  */
 BOXEXPORT void *BoxMem_Safe_Alloc(size_t size);
 
+#define BoxMem_Safe_Alloc_Items(item_size, num_items) \
+  BoxMem_Safe_Alloc((item_size)*(num_items))
+
 BOXEXPORT void *BoxMem_Realloc(void *ptr, size_t size);
 
 BOXEXPORT void BoxMem_Free(void *ptr);
@@ -73,6 +76,9 @@ BOXEXPORT void Box_Fatal_Error(const char *file, unsigned long line_no);
 
 /** Executes *r = a*x, returning 0 in case of integer overflow, 1 otherwise. */
 BOXEXPORT int BoxMem_ax(size_t *r, size_t a, size_t x);
+
+/** Return a multiplied by b and abort in case of integer overflow. */
+#define BoxMem_Safe_AX(a, b) ((a)*(b))
 
 /** Executes *r = x + y, returning 0 in case of integer overflow, 1 otherwise.
  */
