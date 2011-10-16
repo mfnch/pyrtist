@@ -15,7 +15,12 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Box.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
+
 from tree import DoxProc, DoxType
+
+
+re_identifier = re.compile("[a-zA-Z][a-zA-Z0-9_]*")
 
 
 def find_closing_char(text, start=0, opening="{", closing="}"):
@@ -73,6 +78,9 @@ class Writer(object):
   def gen_type_link(self, t):
     return "link(%s)" % str(t)
 
+  def gen_comb_link(self, child_t, parent_t):
+    return "link(%s@%s)" % (child_t, parent_t)
+
   def gen_target_section(self, target, section="Intro"):
     if target != None:
       db = target.doxblocks
@@ -94,22 +102,43 @@ class Writer(object):
     return None
 
   def macro_interpreter(self, target, text, start=0):
-    st = text.strip()
-    if st.lower().startswith("type"):
-      arg = st[4:].lstrip()
+    identifier_does_match = re_identifier.match(text)
+
+    if identifier_does_match:
+      n = identifier_does_match.end()
+      assert n != None
+      identifier = text[:n].lower()
+      arg = text[n:]
+
       if arg[0] == "(" and arg[-1] == ")":
         arg = arg[1:-1].strip()
 
-        if arg in [".@", "@."] and isinstance(target, DoxProc):
-          t = (target.child if arg == ".@" else target.parent)
+        if identifier == "type":
+          if arg in [".@", "@."] and isinstance(target, DoxProc):
+            t = (target.child if arg == ".@" else target.parent)
+          elif arg == "." and isinstance(target, DoxType):
+            t = target
+          else:
+            t = self.tree.get_type(arg)
+          return self.gen_type_link(t)
 
-        elif arg == "." and isinstance(target, DoxType):
-          t = target
+        elif identifier == "comb":
+          child_parent_in = map(str.strip, arg.split("@", 2))
 
-        else:
-          t = self.tree.get_type(arg)
+          if len(child_parent_in) == 2:
+            child_parent_out = []
+            for i, item_in in enumerate(child_parent_in):
+              if item_in == ".":
+                if isinstance(target, DoxProc):
+                  target_child_parent = [target.child, target.parent]
+                  t = target_child_parent[i]
+                else:
+                  t = None
+              else:
+                t = self.tree.get_type(item_in)
+              child_parent_out.append(t)
 
-        return self.gen_type_link(t)
+            child, parent = child_parent_out
+            return self.gen_comb_link(child, parent)
 
-      else:
-        return None
+    return None

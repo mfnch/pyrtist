@@ -212,6 +212,9 @@ class GtkWriter(Writer):
   def gen_type_link(self, t):
     return (str(t), "link")
 
+  def gen_comb_link(self, child_t, parent_t):
+    return ("%s@%s" % (child_t, parent_t), "link")
+
   def gen_brief_intro(self, target, section="Intro"):
     brief = get_content_text(self.gen_target_section(target, section=section))
     return brief.rstrip().split(".", 1)[0]

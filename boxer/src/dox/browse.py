@@ -253,7 +253,9 @@ class DoxBrowser(object):
     if search_str != "":
       self.expand_visible_rows()
     
-  def _show_doc(self, section, type_name):
+  def _show_doc(self, section, search_str):
+    type_name = (search_str if "@" not in search_str
+                 else search_str.split("@", 2)[1])
     tree = self.dox.tree
     types = tree.types
     t = types.get(type_name)
