@@ -36,7 +36,7 @@ dist_boxlibg_DATA=\
   poly.box text.box texts.box circle.box circles.box line.box gradcore.box \
   gradient.box clip.bxh hot.box constraints.box put.box window.box bbox.box \
   g2.bxh init.box color.box oldstyle.box _gradient.bxh pattern.box _line.bxh \
-  _circle.bxh _poly.bxh _put.bxh _pointlist.bxh _text.bxh area.bxh
+  _circle.bxh _poly.bxh _put.bxh _pointlist.bxh _text.bxh area.box
 
 dist_boxpkg_DATA=\
   arrows.bxh caps.bxh _arrows.bxh math.bxh tools.bxh _sphere.bxh \

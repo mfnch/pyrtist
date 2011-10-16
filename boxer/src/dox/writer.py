@@ -101,6 +101,10 @@ class Writer(object):
 
     return None
 
+  def gen_brief_intro(self, target, section="Intro"):
+    brief = self.gen_target_section(target, section=section)
+    return brief.rstrip().split(".", 1)[0]
+
   def macro_interpreter(self, target, text, start=0):
     identifier_does_match = re_identifier.match(text)
 

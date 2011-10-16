@@ -60,6 +60,7 @@ from config import threads_init, threads_enter, threads_leave
 import document
 from exec_command import exec_command
 
+from srcview import BoxSrcView
 import boxmode
 from assistant import Assistant, insert_char, rinsert_char
 from toolbox import ToolBox
@@ -76,51 +77,6 @@ def debug():
   IPShellEmbed([])(local_ns  = calling_frame.f_locals,
                    global_ns = calling_frame.f_globals)
 
-def create_sourceview(use_gtksourceview=True):
-  """Create a new sourceview using gtksourceview2 or gtksourceview,
-  if they are available, otherwiser return a TextView.
-  This function return the tuple:
-    (gtksourceview_version, src_view, src_buffer)
-  gtksourceview_version is an integer: 1 for gtksourceview, 2 for
-  gtksourceview2 and None for a normal TextView.
-  """
-
-  if use_gtksourceview:
-    try:
-      import gtksourceview2 as gtksourceview
-      srcbuf = gtksourceview.Buffer()
-      langman = gtksourceview.LanguageManager()
-      search_paths = langman.get_search_path()
-      search_paths.append(config.get_hl_path())
-      langman.set_search_path(search_paths)
-      lang = langman.get_language("box")
-      srcbuf.set_language(lang)
-      srcbuf.set_highlight_syntax(True)
-      srcview = gtksourceview.View(srcbuf)
-      srcview.set_show_line_numbers(True)
-      return (2, srcview, srcbuf)
-
-    except:
-      pass
-
-    try:
-        import gtksourceview
-        srcbuf = gtksourceview.SourceBuffer()
-        langman = gtksourceview.SourceLanguagesManager()
-        lang = langman.get_language_from_mime_type("text/x-csrc")
-        srcbuf.set_language(lang)
-        srcbuf.set_highlight(True)
-        srcview = gtksourceview.SourceView(srcbuf)
-        srcview.set_show_line_numbers(True)
-        return (1, srcview, srcbuf)
-
-    except:
-      pass
-
-  # Create a normal textview
-  srcview = gtk.TextView()
-  srcbuf = srcview.get_buffer()
-  return (None, srcview, srcbuf)
 
 def create_filechooser(parent, title="Choose a file", action=None,
                        buttons=None, add_default_filters=True):
@@ -575,6 +531,14 @@ class Boxer(object):
       elif key == "update":
         self.update_draw_area(only_if_quick=True)
 
+  def srcview_tooltip(self, word):
+    db = self.dialog_dox_browser
+    
+    if db != None:
+      return db.get_brief_desc(word)
+    
+    return None
+
   def __init__(self, gladefile="boxer.glade", filename=None, box_exec=None):
     self.config = config.get_configuration()
     self.settings = Settings()
@@ -706,11 +670,12 @@ class Boxer(object):
     self.paned = paned = RotPaned(scroll_win, sw, rotation=view_rot)
 
     # Create the text view
-    enhanced_src, srcview, srcbuf = create_sourceview()
-    srcview.set_wrap_mode(gtk.WRAP_WORD)
-    self.has_srcview = (enhanced_src != None)
-    self.widget_srcview = srcview
-    self.widget_srcbuf = srcbuf
+    self.part_srcview = part_srcview = \
+        BoxSrcView(use_gtksourceview=True,
+                   quickdoc=self.srcview_tooltip)
+    self.has_srcview = (self.part_srcview.mode > 0)
+    self.widget_srcview = srcview = part_srcview.view
+    self.widget_srcbuf = srcbuf = part_srcview.buf
 
     # Create the statusbar
     self.statusbar = sbar = gtk.Statusbar()

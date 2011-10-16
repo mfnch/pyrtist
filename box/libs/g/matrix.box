@@ -23,7 +23,7 @@ Real@Matrix[
 ///Intro: translate the matrix by the given amount.
 Point@Matrix[$$.m13 += $.x, $$.m23 += $.y]
 
-///Intro: right multiply the parent matrix by the given onw.
+///Intro: right multiply the parent matrix by the given one.
 Matrix@Matrix[
   m11 = $.m11*$$.m11 + $.m12*$$.m21, m12 = $.m11*$$.m12 + $.m12*$$.m22
   m21 = $.m21*$$.m11 + $.m22*$$.m21, m22 = $.m21*$$.m12 + $.m22*$$.m22

@@ -219,15 +219,18 @@ class GtkWriter(Writer):
     brief = get_content_text(self.gen_target_section(target, section=section))
     return brief.rstrip().split(".", 1)[0]
     
-  def gen_target_section(self, target, section="Intro", newline="\n"):
+  def gen_target_section(self, target, title=None,
+                         section="Intro", newline="\n"):
     pieces = Writer.gen_target_section(self, target, section)
     if pieces != None and len(pieces) >= 1:
       first = pieces[0].lstrip()
       pieces[0] = (first[0].upper() + first[1:] if len(first) > 0 else first)
-      pieces[-1] = pieces[-1]
       if newline:
         pieces.append(newline)
       pieces = rstparser.parse(pieces)
+      if title:
+        pieces = [(title, "bold")] + pieces
+
     return pieces or []
 
   def gen_type_section_title(self, t, level=0):
@@ -260,6 +263,7 @@ class GtkWriter(Writer):
   def gen_type_section(self, t, section_name, level=0):
     title = self.gen_type_section_title(t)
     body = self.gen_target_section(t)
+    example = self.gen_target_section(t, section="Example", title="Example: ")
 
     # Generate the uses and used lines
     uses_line = self.gen_type_list("Uses: ", t.children)
@@ -268,6 +272,7 @@ class GtkWriter(Writer):
     table_title = [("Uses the following types:", "title2")]
     proc_table = self.gen_proc_table(t, title=table_title)
 
-    return title + body + subtypes + used_line + uses_line + proc_table
+    return (title + body + example + subtypes + used_line + uses_line
+            + proc_table)
 
   

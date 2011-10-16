@@ -9,6 +9,7 @@ import gobject
 
 from dox import Dox
 from gtktext import DoxTextView, DoxTable, GtkWriter
+from writer import Writer
 
 
 class DoxBrowser(object):
@@ -126,9 +127,11 @@ class DoxBrowser(object):
     self.window_button_cancel.connect("button-press-event",
                                       self._on_button_cancel_press)
 
-  def show(self):
+  def show(self, section=None, topic=None):
     """Show the window."""
     self.window.show_all()
+    if topic != None:
+      self._show_doc(section, topic)
 
   def hide(self):
     """Hide the window."""
@@ -144,7 +147,7 @@ class DoxBrowser(object):
     section_names.sort()
     for section_name in section_names:
       sn = (section_name if section_name else "Other stuff...")
-      piter = ts.append(None, [sn, "Section description", visible])
+      piter = ts.append(None, [sn, "(section)", visible])
 
       for type_name in type_names:
         t = types[type_name]
@@ -208,6 +211,15 @@ class DoxBrowser(object):
     visible = self_visible or children_visible
     treemodelrow[-1] = visible
     return visible
+
+  def get_brief_desc(self, search_str):
+    """Given a search item, return a brief description.
+    Return None if nothing can be associated to the search item."""
+    t = self.dox.tree.types.get(search_str, None)
+    if t:
+      return self.dox_writer.gen_brief_intro(t)
+    else:
+      return None
 
   def filter_treeview(self, flt):
     types = self.dox.tree.types

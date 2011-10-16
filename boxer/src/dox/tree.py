@@ -123,7 +123,6 @@ class DoxTree(DoxItem):
       return t
 
     else:
-      print "xxxxxxxxxxxxx Creating new type %s" % str(tn)
       self.types[tn] = t = DoxType(tn)
       return t
 

@@ -13,8 +13,8 @@ Line = ++((Int close, arrow0, arrow1) have
           Window arrows, arrow0, arrow1
           Scale scale, scale0, scale1)
 
-///NOTE: the initializer leaves the windows in an invalid state
-//  (Valid[line.arrow0] == Valid[line.arrow1] == 0).
+//NOTE: the initializer leaves the windows in an invalid state
+// (Valid[line.arrow0] == Valid[line.arrow1] == 0).
 (.[)@Line[.have = (0, 0, 0)]
 
 ///Intro: number of points of the line.

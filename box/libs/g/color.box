@@ -11,11 +11,10 @@ include "pattern"
 //  initialized by default to zero, unless specified otherwise. See the
 //  examples for possible ways of creating a Color.
 ///Where: red, green, blue, alpha are Real numbers
-///Example: red = Color[.r=1.0]
-///Example:
-// grey = Color[.r=.g=.b=0.5]    // grey color (red = green = blue = 0.5)
-// grey = Color[(0.5, 0.5, 0.5)] // does the same
-// grey = Color[0.5]             // does the same, too
+///Example: ``red = Color[.r=1.0]`` for red color.
+// ``grey = Color[.r=.g=.b=0.5]`` for setting red = green = blue = 0.5,
+// ``grey = Color[(0.5, 0.5, 0.5)]`` does the same,
+// ``grey = Color[0.5]`` does the same, too.
 Color = ++(Real r, g, b, a)
 
 ([)@Color[$$.r = $$.g = $$.b = 0.0, $$.a = 1.0]

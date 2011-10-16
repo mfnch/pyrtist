@@ -5,16 +5,15 @@ GUI = Void
 Window@GUI[]
 
 
-
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=15.0127226463, .y=40.0510204082]
 gui2 = Point[.x=166.41221374, .y=-94.6428571429]
 gui3 = Point[.x=24.1528052356, .y=-89.8544763209]
 gui4 = Point[.x=161.865685395, .y=31.4343658824]
-gui5 = Point[.x=33.2583549549, .y=-67.4256328589]
-gui6 = Point[.x=62.7115074763, .y=18.3319744939]
-gui7 = Point[.x=149.019297191, .y=-5.75568804159]
-gui8 = Point[.x=140.565069016, .y=-59.0715722911]
+gui5 = Point[.x=34.9577370304, .y=-69.1250117409]
+gui6 = Point[.x=69.5090357782, .y=18.3319744939]
+gui7 = Point[.x=151.568370304, .y=-8.8712159919]
+gui8 = Point[.x=138.865686941, .y=-57.9386530364]
 //!BOXER:REFPOINTS:END
 include "grid"
 include "icon_theme"
@@ -23,10 +22,11 @@ grid = Grid[gui3, gui4, icon_size.nx, icon_size.ny]
 cell = grid.GetCellSize[]
 
 icon = Window[][
-  BBox[grid] // the whole grid is shown, even if it is empty
+  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
 
   w = cell.x
-  Line[gui5, 2*w, gui8, gui7, gui6]
+  \ .Line[LineStyle[4]
+          gui5, 5*w, 3*w, gui8, 2*w, 3*w, gui7, 3*w, 4*w, gui6]
 ]
 
 w = Window[][grid, icon]

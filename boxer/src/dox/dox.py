@@ -283,9 +283,7 @@ class Dox(object):
 
         else:
           self.log("Unrecognized documentation block.")
-          print repr(doxblocks.target)
-          raw_input()
-
+    
 
 if __name__ == "__main__":
   import sys
