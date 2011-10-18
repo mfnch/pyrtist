@@ -1,7 +1,6 @@
 Change log (recent comes first)
 
 18 Oct 2011: Released v 0.3.0: rewrote and improved G library in Box.
-  * Search in the current source directory when including another source.
   * The Box graphics library was rewritten in Box itself. The library was
     re-engineered and is now much more clean and powerful. The old interface
     is still supported, but is now obsolete. Note that the new interface
@@ -13,6 +12,7 @@ Change log (recent comes first)
     The core library and the Box graphics library have been documented with
     this. Boxer has now a documentation browser to browse Dox documentation.
   * Fixing bugs: the most important is the copy of complex objects.
+  * Search in the current source directory when including another source.
 
 02 Jul 2011: Released v 0.2.3: bugfixes and internal improvements
   This release fixes bugs in the compiler and the graphics library.

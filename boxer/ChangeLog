@@ -1,3 +1,12 @@
+In version 0.3.2:
+  BRIEFLY: added a documentation browser for Box.
+  DETAILS:
+  - A documentation browser was integrated in Boxer. An extra window is opened
+    which collects documentation coming directly from the Box sources.
+    A tooltip with a short description is shown when the mouse pointer stops
+    over a type identifier.
+  - Boxer has been re-adapted to use the new G library implemented in Box.
+
 In version 0.3.1:
   BRIEFLY: minor feature enhancements.
   DETAILS:

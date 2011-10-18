@@ -132,6 +132,8 @@ class DoxBrowser(object):
     self.window.show_all()
     if topic != None:
       self._show_doc(section, topic)
+      self.entry.set_text(topic)
+      self.entry.grab_focus()
 
   def hide(self):
     """Hide the window."""

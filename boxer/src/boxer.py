@@ -466,16 +466,8 @@ class Boxer(object):
     ad.destroy()
 
   def menu_help_docbrowser(self, _):
-    dox_browser = self.dialog_dox_browser
-    if dox_browser == None:
-      dox_path = self.editable_area.document.box_query("BUILTIN_PKG_PATH")
-      dox = Dox()
-      dox.read_recursively(dox_path)
-      tree = dox.tree
-      tree.process()
-      self.dialog_dox_browser = dox_browser = DoxBrowser(dox)
-
-    dox_browser.window.show_all()
+    self._init_doxbrowser()
+    self.dialog_dox_browser.show()
 
   def refpoint_entry_changed(self, _):
     self.refpoint_show_update()
@@ -496,18 +488,26 @@ class Boxer(object):
     d = self.editable_area.document
     ratio = d.refpoints.get_visible_ratio(selection)
     if ratio < 0.5:
-      label, show = "show", True
+      label, show = "Show", True
     elif ratio > 0.5:
-      label, show = "hide", False
+      label, show = "Hide", False
     else:
       return
     self.widget_refpoint_show.set_label(label)
 
   def refpoint_show_clicked(self, button):
-    do_show = (button.get_label() == "show")
+    do_show = (button.get_label().lower() == "show")
     selection = self.widget_refpoint_entry.get_text()
     self.editable_area.refpoints_set_visibility(selection, do_show)
     self.refpoint_show_update()
+
+  def on_help_button_clicked(self, _):
+    topic = self.widget_help_entry.get_text().strip()
+    if len(topic) > 0:
+      self.dialog_dox_browser.show(topic=topic)
+
+  def on_help_entry_activate(self, _):
+    self.on_help_button_clicked(_)
 
   def should_paste_on_new(self):
     """Return true if the name of the reference points should be pasted
@@ -533,11 +533,25 @@ class Boxer(object):
 
   def srcview_tooltip(self, word):
     db = self.dialog_dox_browser
-    
-    if db != None:
-      return db.get_brief_desc(word)
-    
+
+    if word[0].isupper():
+      if db != None:
+        desc = db.get_brief_desc(word)
+        #if desc:
+        #  self.widget_help_entry.set_text(word)
+        return desc
+
     return None
+
+  def _init_doxbrowser(self):
+    dox_browser = self.dialog_dox_browser
+    if dox_browser == None:
+      dox_path = self.editable_area.document.box_query("BUILTIN_PKG_PATH")
+      dox = Dox()
+      dox.read_recursively(dox_path)
+      tree = dox.tree
+      tree.process()
+      self.dialog_dox_browser = dox_browser = DoxBrowser(dox)
 
   def __init__(self, gladefile="boxer.glade", filename=None, box_exec=None):
     self.config = config.get_configuration()
@@ -595,6 +609,10 @@ class Boxer(object):
     self.widget_refpoint_box = self.boxer.get_widget("refpoint_box")
     self.widget_refpoint_entry = self.boxer.get_widget("refpoint_entry")
     self.widget_refpoint_show = self.boxer.get_widget("refpoint_show")
+
+    self.widget_help_button = self.boxer.get_widget("help_button")
+    self.widget_help_entry = self.boxer.get_widget("help_entry")
+    self.widget_help_entry.connect("activate", self.on_help_entry_activate)
 
     #-------------------------------------------------------------------------
     # Below we setup the main window
@@ -713,6 +731,9 @@ class Boxer(object):
 
     mainwin.add(vb1)
 
+    # Initialize the documentation browser
+    self._init_doxbrowser()
+
     mainwin.show_all()
 
     #-------------------------------------------------------------------------
@@ -753,7 +774,8 @@ class Boxer(object):
            "on_toolbutton_zoom_out": self.menu_zoom_out,
            "on_toolbutton_zoom_norm": self.menu_zoom_norm,
            "on_refpoint_entry_changed": self.refpoint_entry_changed,
-           "on_refpoint_show_clicked": self.refpoint_show_clicked}
+           "on_refpoint_show_clicked": self.refpoint_show_clicked,
+           "on_help_button_clicked": self.on_help_button_clicked}
     self.boxer.signal_autoconnect(dic)
 
 

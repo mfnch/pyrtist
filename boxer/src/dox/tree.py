@@ -17,6 +17,8 @@
 
 import string
 
+import logger
+
 
 class DoxItem(object):
   def __init__(self):
@@ -60,6 +62,9 @@ class DoxType(DoxLeaf):
   def __str__(self):
     return self.name
 
+  def is_anonymous(self):
+    return not self.name.isalnum()
+
   def add_child(self, child):
     self.children.append(child)
 
@@ -87,11 +92,13 @@ class DoxProc(DoxLeaf):
     missing = []
     if parent == None:
       parent = DoxType(self.parent, section=self.section)
-      missing.append(parent)
+      if not parent.is_anonymous():
+        missing.append(parent)
 
     if child == None:
       child = DoxType(self.child, section=self.section)
-      missing.append(child)
+      if not child.is_anonymous():
+        missing.append(child)
 
     parent.add_child(child)
     child.add_parent(parent)
@@ -106,7 +113,7 @@ class DoxTree(DoxItem):
     self.sections = []
 
   def log(self, msg):
-    print msg
+    logger.log(msg)
 
   def add_type(self, *ts):
     for t in ts:
