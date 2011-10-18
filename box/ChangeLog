@@ -1,6 +1,6 @@
 Change log (recent comes first)
 
-DD MMM YYYY:
+18 Oct 2011: Released v 0.3.0: rewrote and improved G library in Box.
   * Search in the current source directory when including another source.
   * The Box graphics library was rewritten in Box itself. The library was
     re-engineered and is now much more clean and powerful. The old interface

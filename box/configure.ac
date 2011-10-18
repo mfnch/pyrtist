@@ -20,19 +20,19 @@
 
 # $Id$
 
-AC_INIT([box],[0.2.3],[fnch@libero.it])
+AC_INIT([box],[0.3.0],[fnch@libero.it])
 
 # Date corresponding to the release of the current version
-BOX_RELEASE_DATE="Jul 02 2011, 14:55:02"
+BOX_RELEASE_DATE="Oct 18 2011, 21:28:56"
 
 # Major part of the version number
 BOX_VER_MAJOR="0"
 
 # Minor part of the version number
-BOX_VER_MINOR="2"
+BOX_VER_MINOR="3"
 
 # Maint part of the version number
-BOX_VER_MAINT="3"
+BOX_VER_MAINT="0"
 
 AC_PREREQ(2.61)
 
