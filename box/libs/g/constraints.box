@@ -52,7 +52,7 @@ Near@Str[
 
 ///Intro: a Near constraint is valid when it has both a source and
 // a destination point.
-Near@Valid[Num[$.src_dst] == 2]
+Near@IsValid[Num[$.src_dst] == 2]
 
 ///Intro: a {type(Near)} constraint is complete when it is valid and the
 // source point has been resolved to a precise point (coordinate in the plane).
@@ -118,7 +118,7 @@ Str@Constraints[.freedom = $]
 ///Intro: provide a {type(Near)} constraint to automatically place the figure.
 // Similar to {comp(Near@Put)}.
 Near@Constraints[
-  [If[Valid[$$.window]], \ $[$$.window]]
+  [If[IsValid[$$.window]], \ $[$$.window]]
   [If[! $.Completed[]]
      msg = Str["The Near constraint ``", $, "'' refers to a hot point "
                "by name/index, but a valid Window has not been provided, yet."]

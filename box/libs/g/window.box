@@ -5,7 +5,7 @@
 (])@Window "Box_Lib_G_Close_At_Window" ?
 
 ///Intro: whether the window is valid (complete) and can be used.
-Window@Valid "Box_Lib_G_Window_At_Valid" ?
+Window@IsValid "Box_Lib_G_Window_At_Valid" ?
 
 ///Intro: specify the type of the window.
 // Available choices are: ``"fig"`` for abstract windows (windows which act

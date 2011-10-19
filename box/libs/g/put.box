@@ -14,7 +14,7 @@ Matrix@SimplePut[.matrix = $]
 Transform@SimplePut[.matrix = $.GetMatrix[]]
 Window@SimplePut[.src = $]
 SimplePut@Window "Box_Lib_G_SimplePut_At_Window" ?
-SimplePut@Valid[$.src]
+SimplePut@IsValid[$.src]
 
 // The idea above is that Put contains an intermediate window (Put.target)
 // where figures are put cumulatively on (;)@Put. Put@Window is then
@@ -39,7 +39,7 @@ Put = ++(Constraints constraints
 // This is useful to place many figures with just one {type(Put)} instruction.
 (;)@Put[
   // Check whether the source window was given.
-  [If[!Valid[$$.simple_put]]
+  [If[!IsValid[$$.simple_put]]
      Fail["You did not provide a source Window to Put"]]
 
   // First we output the window to Put.target (the intermediate window)

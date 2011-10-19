@@ -7,6 +7,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=30.6720812183, .y=34.8106598985]
 gui2 = Point[.x=20.7538071066, .y=22.0695431472]
@@ -46,34 +47,39 @@ p13 = Point[.x=42.62, .y=23.6831223629]
 gui23 = Point[.x=-40.5076225045, .y=32.8076923077]
 gui24 = Point[.x=50.5842105263, .y=10.6837104072]
 //!BOXER:REFPOINTS:END
-s1 = Style[.Fill["void"], .Border[color.red, 0.5]]
-s2 = Style[.Border[0.2, color.black]]
+s2 = Style[Border[0.2, color.black]]
 
 phase_space = Window[][
   g = Gradient[.Circle[p3, 20; 40], Color[(0.8, 0.9, 1)], color.white]
-  \ .Poly[1, 0, s2, g
-          gui21, gui17, gui7, gui8, gui22, gui9, gui10, gui11, gui18,
-          gui12, gui13, gui14, gui19, gui15, gui16, gui20]
-  \ .Text[.Font["sans", 3], color.black,
-          "space of all the possible\nmagnetisation configurations", p1]
+  Poly[1, 0, s2, g
+       gui21, gui17, gui7, gui8, gui22, gui9, gui10, gui11, gui18,
+       gui12, gui13, gui14, gui19, gui15, gui16, gui20]
+  Text[Font["sans", 3], color.black,
+       "space of all the possible\nmagnetisation configurations", p1]
 ]
 
 w = Window[][
   BBox[(-60, -6), (80, 50)]
 
-  \ .Put[phase_space]
-  \ .Put[phase_space, (-70, 0)]
+  Put[phase_space]
+  Put[phase_space, (-70, 0)]
 
-  \ .Poly[0.5, s1, gui1, gui2, gui3, gui4, gui5, gui6, .Close[]]
-  \ .Poly[s1, 0.5, p5, p6, p7, p8, p9, p10]
+  Stroke[
+    color.red, 0.5 // Stroke style
+    // Convert polygons to Path objects
+    Path[Poly[0.5, gui1, gui2, gui3, gui4, gui5, gui6, Close[]]]
+  ]
 
-  \ .Text[.Font["sans", 3], color.red
-          "constant energy trajectories", .From[(0.5, 1)], p2;
-          "M x H = 0", gui23;
-          "M x H = 0", gui24]
-  \ .Line[color.red, 0.2, p4, p2, p11]
+  \ .Poly[Style[.Fill["void"], .Border[color.red, 0.5]]
+          0.5, p5, p6, p7, p8, p9, p10]
 
-  \ .Circle[color.red, 0.7, p12; p13]
+  Texts[Font["sans", 3], color.red
+        "constant energy trajectories", From[(0.5, 1)], p2;
+        "M x H = 0", gui23;
+        "M x H = 0", gui24]
+  Line[color.red, 0.2, p4, p2, p11]
+
+  Circles[color.red, 0.7, p12; p13]
 ]
 
 //w.Save["degeneracy.png", Window["rgb24", .Res[Dpi[200]]]]

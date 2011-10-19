@@ -5,6 +5,7 @@ GUI = Void
 Window@GUI[]
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui2 = Point[.x=-18.2644413105, .y=96.3362989277]
 gui3 = Point[.x=72.9996881503, .y=-7.33061]
@@ -28,12 +29,11 @@ w = Window[][
   r2 = bar2.value
   w2 = bar3.value
 
-  Style[.Fill["void"], .Border[0.2, color.black]]
-
   t = 0.0, dt = 0.01
-  \ .Poly[origin1 +  r*Exp[-u*t]*(Cos[w1*t], Sin[w1*t]) _
-                  + r2*Exp[-u*t]*(Cos[w2*t], Sin[w2*t])
-          For[(t += dt) < 10.0]]
+  Line[origin1 +  r*Exp[-u*t]*(Cos[w1*t], Sin[w1*t]) _
+               + r2*Exp[-u*t]*(Cos[w2*t], Sin[w2*t])
+       For[(t += dt) < 10.0]
+       0.2, color.black]
 ]
 
 GUI[w]

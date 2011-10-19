@@ -54,7 +54,7 @@ Circles@Gradient[
 // ``Gradient[Circle[center, radius], ...]`` is equivalent to
 // ``Gradient[Circles[center, 0; radius], ...]``.
 Circle@Gradient[
-  [If[!Valid[$]]
+  [If[!IsValid[$]]
      Fail["Circle is not valid (center or radius are missing)."]]
   Circles[$.center, $.radius; 0.0]
 ]

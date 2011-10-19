@@ -261,13 +261,13 @@ static BoxTask My_Num_Init(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
-static BoxTask My_Valid_Init(BoxVM *vm) {
+static BoxTask My_IsValid_Init(BoxVM *vm) {
   BoxInt *valid = BoxVM_Get_Parent_Target(vm);
   *valid = 1;
   return BOXTASK_OK;
 }
 
-static BoxTask My_Int_At_Valid(BoxVM *vm) {
+static BoxTask My_Int_At_IsValid(BoxVM *vm) {
   BoxInt *valid = BoxVM_Get_Parent_Target(vm);
   BoxInt *child = BoxVM_Get_Child_Target(vm);
   *valid = (*valid && *child);
@@ -785,9 +785,9 @@ static void My_Register_Sys(BoxCmp *c) {
                         BOXTYPE_BEGIN, My_Num_Init);
 
   c->bltin.valid =
-    Bltin_Simple_Fn_Def(c, "Valid", BOXTYPE_INT,
-                        BOXTYPE_BEGIN, My_Valid_Init);
-  (void) Bltin_Proc_Def(c, c->bltin.valid, BOXTYPE_INT, My_Int_At_Valid);
+    Bltin_Simple_Fn_Def(c, "IsValid", BOXTYPE_INT,
+                        BOXTYPE_BEGIN, My_IsValid_Init);
+  (void) Bltin_Proc_Def(c, c->bltin.valid, BOXTYPE_INT, My_Int_At_IsValid);
 
   c->bltin.compare =
     Bltin_Simple_Fn_Def(c, "Compare", BOXTYPE_INT,

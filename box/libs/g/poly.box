@@ -135,3 +135,10 @@ Close = ++Void
 
 ///Intro: close the polygon.
 Close@Poly[.close = 1]
+
+///Intro: pass all the points to the polygon.
+// This is equivalent to pass the points individually.
+// For example, if ``ps = Points[p1, p2, p3]``, then ``Poly[ps]`` is equivalent
+// to ``Poly[p1, p2, p3]``.
+Points@Poly[n = Num[$], i = 0
+            [If[i < n], $.Get[i++], For[1]]]

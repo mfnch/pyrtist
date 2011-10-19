@@ -6,9 +6,11 @@ Window@GUI[]
 
 
 
+
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=69.3950792378, .y=23.544708746]
-gui7 = Point[.x=22.9272272727, .y=59.6568761905]
+gui7 = Point[.x=21.7389513293, .y=59.458830144]
 gui8 = Point[.x=71.3280105141, .y=-25.5029205149]
 gui9 = Point[.x=46.5655623853, .y=50.5217047191]
 gui3 = Point[.x=69.6732687831, .y=0.594461607143]
@@ -23,12 +25,12 @@ include "arrows"
 // Define an object which represents a rectangle in the diagram
 Rect = (Point p1, p2, center, size, Color c1, c2)
 
-([)@Rect[$$.c1 = color.white, $$.c2 = color.red] // Default values
+(.[)@Rect[.c1 = color.white, .c2 = color.red] // Default values
 
-Color@&Rect[$$.c2 = $] // To set the color one can use "Rect[the_color]"
+Color@Rect[.c2 = $] // To set the color one can use "Rect[the_color]"
 
 // To set the geometry one can use "Rect[(center, size)]"
-(Point center, size)@&Rect[
+(Point center, size)@Rect[
   $$.center = $.center
   $$.size = $.size
   $$.p1 = $.center - 0.5*$.size
@@ -36,15 +38,15 @@ Color@&Rect[$$.c2 = $] // To set the color one can use "Rect[the_color]"
 ]
 
 // Explain to the Window object how it should draw the Rect
-Rect@@Window[
+Rect@Window[
   dp = $.p2 - $.p1
   r = Max[Abs[dp.x], Abs[dp.y]]
   r1 = r*0.05
   r2 = r*1.5
   $.center = 0.5*($.p1 + $.p2)
-  g = Gradient[.Circle[$.center, r1; r2], $.c1, $.c2]
-  \ $$.Poly[0.1, $.p1, ($.p1.x, $.p2.y), $.p2, ($.p2.x, $.p1.y), g
-            Style[.Border[color.black, 0.5]]]
+  g = Gradient[Circles[$.center, r1; r2], $.c1, $.c2]
+  Poly[0.1, $.p1, ($.p1.x, $.p2.y), $.p2, ($.p2.x, $.p1.y), g
+       Style[Border[color.black, 0.5]]]
 ]
 
 // OK, NOW WE CAN USE THE NEW OBJECT ;)
@@ -66,19 +68,19 @@ w = Window[][
   r1, r2, r3, r4, r5 // Draw all the rectangles
 
   // Label all the rectangles
-  \ .Text[.Font["sans", 4.5], color.black
-          r1.center, "random\ndiagram";
-          r2.center, "random\nelement";
-          r3.center, "IN";
-          r4.center, "OUT";
-          r5.center, "both"]
+  Texts[Font["sans", 4.5], color.black
+        r1.center, "random\ndiagram";
+        r2.center, "random\nelement";
+        r3.center, "IN";
+        r4.center, "OUT";
+        r5.center, "both"]
 
   // Connect the rectangles
-  \ .Line[arrow_triangle, (x0, r1.p1.y), 0.8, arrow_triangle, (x0, r2.p2.y);
-          arrow_triangle, (r3.center.x, r2.p1.y), (r3.center.x, r3.p2.y);
-          (r4.center.x, r2.p1.y), arrow_triangle, (r4.center.x, r4.p2.y);
-          arrow_triangle, (r1.center.x, r2.p1.y), arrow_triangle,
-          (r5.center.x, r5.p2.y)]
+  Lines[Scale[1.5], arrow_triangle, (x0, r1.p1.y), 0.8, arrow_triangle, (x0, r2.p2.y);
+        arrow_triangle, (r3.center.x, r2.p1.y), (r3.center.x, r3.p2.y);
+        (r4.center.x, r2.p1.y), arrow_triangle, (r4.center.x, r4.p2.y);
+        arrow_triangle, (r1.center.x, r2.p1.y), arrow_triangle,
+        (r5.center.x, r5.p2.y)]
 ]
 
 GUI[w] // Send the picture to the GUI, if available

@@ -13,6 +13,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=-0.255807878788, .y=-19.5900623377]
 gui2 = Point[.x=19.7791411043, .y=-0.0303101075269]
@@ -46,8 +47,8 @@ wheatstone = Window["fig"][
   r12, r23, r34, r41
 
   // Connecting the four resistors
-  \ .Line[0.4, p1, r12.Get[0]; r12.Get[1], p2; p2, r23.Get[0]; r23.Get[1], p3;
-          p3, r34.Get[0]; r34.Get[1], p4; p4, r41.Get[0]; r41.Get[1], p1]
+  Lines[0.4, p1, r12.Get[0]; r12.Get[1], p2; p2, r23.Get[0]; r23.Get[1], p3;
+        p3, r34.Get[0]; r34.Get[1], p4; p4, r41.Get[0]; r41.Get[1], p1;]
 
   // Drawing small circles on the nodes
   // Here you see how a single Circle instruction can be used to draw many

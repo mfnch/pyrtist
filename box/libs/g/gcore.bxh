@@ -14,6 +14,10 @@ Window = ++CPtr
 
 Window(=)Window "Box_Lib_G_Window_Copy_Window" ?
 
+///Intro: empty each of the object given as arguments.
+// Obviously, the object must he a container of other objects.
+Empty = Void
+
 ///Intro: transform an angle from degrees to radians.
 Deg = Real
 

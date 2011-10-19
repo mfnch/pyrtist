@@ -12,7 +12,7 @@ Circle = ++((Int center, radius) have
 (.[)@Circle[.have = (0, 0)]
 
 ///Intro: whether the circle is fully specified (has both center and radius).
-Circle@Valid[$.have.center && $.have.radius]
+Circle@IsValid[$.have.center && $.have.radius]
 
 ///Intro: the center of the circle.
 Point@Circle[.center = $, .have.center = 1]

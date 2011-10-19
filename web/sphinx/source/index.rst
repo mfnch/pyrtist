@@ -14,14 +14,14 @@ Box(er) is made by two equally important components:
 - **a programming language, Box**, designed with vector graphics in mind,
 - **a graphical user interface, Boxer**, which allows you to edit the Box
   program and - at the same time - see the figure, zoom in and out,
-  interact with it.
+  interact with it, browse the documentation interactively.
 
 The aim of the project is hence to maintain the ease-of-use offered
 by mouse-driven graphical editors, adding - on top of it - the customizability
 which only a powerful dedicated programming language can provide.
-Below you find a screenshot of the latest version of Boxer.
+Below you find a screenshot of the next-to-come version of Boxer.
 
-.. image:: boxer0.2.0_screenshot.png
+.. image:: boxer0.3.2_screenshot.png
    :align: center
 
 The small squares are "reference points" for the figure.
@@ -76,4 +76,3 @@ Table of contents
    The language <language>
    doc/installation
    Download <http://sourceforge.net/projects/boxc/>
-

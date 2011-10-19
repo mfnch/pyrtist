@@ -14,7 +14,7 @@ Line = ++((Int close, arrow0, arrow1) have
           Scale scale, scale0, scale1)
 
 //NOTE: the initializer leaves the windows in an invalid state
-// (Valid[line.arrow0] == Valid[line.arrow1] == 0).
+// (IsValid[line.arrow0] == IsValid[line.arrow1] == 0).
 (.[)@Line[.have = (0, 0, 0)]
 
 ///Intro: number of points of the line.
@@ -158,9 +158,15 @@ Line@Path[
 ///Intro: draw the line in the window.
 Line@Window[
   Stroke[$, $.style]
-  [If[Valid[$.arrows]]
+  [If[IsValid[$.arrows]]
      CmdStream[Obj[const.raw.save]]
      $.style
      $.arrows
      CmdStream[Obj[const.raw.restore]]]
+]
+
+///Intro: clear the content of the {type(Line)}.
+Line@Empty[
+  $.points = Points[]
+  $.have = (0, 0, 0)
 ]
