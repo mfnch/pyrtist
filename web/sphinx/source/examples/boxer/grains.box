@@ -118,7 +118,7 @@ gui94 = Point[.x=88.1824365482, .y=44.2390862944]
     dcol3 = Color[col3, .Darker[darker]]
 
     s = Style[Border[color.black, 0.2]]
-    s2 = Style[.Fill["void"], Border[color.red, 0.8, Dash[2]]]
+    s2 = Border[color.red, 0.8, Dash[2]]
 
     p1 = Point[gui1, .y=y1], p2 = Point[gui2, .y=y1]
     p3 = Point[gui3, .y=y1], p4 = Point[gui4, .y=y1]
@@ -127,49 +127,52 @@ gui94 = Point[.x=88.1824365482, .y=44.2390862944]
     s // draw black border of polygons
 
     // side of section (background)
-    \ .Poly[dcol1, (x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+    Poly[dcol1, (x0, y0), (x1, y0), (x1, y1), (x0, y1)]
 
     // top view (background)
-    \ .Poly[col1, (x0, y1), (x1, y1), (up_x1, y2), (up_x0, y2)]
+    Poly[col1, (x0, y1), (x1, y1), (up_x1, y2), (up_x0, y2)]
 
     // side of section (magnetic grains)
-    \ .Poly[dcol2, p1, (p1.x, y0), (p2.x, y0), p2]
-    \ .Poly[dcol3, p3, (p3.x, y0), (p4.x, y0), p4]
-    \ .Poly[p5, (p5.x, y0), (p6.x, y0), p6]
+    Poly[dcol2, p1, (p1.x, y0), (p2.x, y0), p2]
+    Poly[dcol3, p3, (p3.x, y0), (p4.x, y0), p4]
+    Poly[dcol3, p5, (p5.x, y0), (p6.x, y0), p6]
 
     // top view (magnetic grains which are cut in the section)
-    \ .Poly[col2, p1, p2, 0, 0.5, gui8, 0.5, gui9, gui10]
-    \ .Poly[col3, p3, p4, 0, 0.5, gui11, 0.5, gui12, gui13]
-    \ .Poly[col3, p5, p6, 0, 0.5, gui14, 0.5, gui15, gui16]
+    Poly[col2, p1, p2, 0, 0.5, gui8, 0.5, gui9, gui10]
+    Poly[col3, p3, p4, 0, 0.5, gui11, 0.5, gui12, gui13]
+    Poly[col3, p5, p6, 0, 0.5, gui14, 0.5, gui15, gui16]
 
     // top view (magnetic grains which are not seen in the section)
-    \ .Poly[col3, 0.5, gui17, gui18, gui19, gui20]
-    \ .Poly[col2, 0.5, gui21, gui22, gui23, gui24]
-    \ .Poly[col3, 0.5, gui25, gui26, gui27, gui28]
-    \ .Poly[col2, 0.5, gui29, gui30, gui31, gui32]
-    \ .Poly[col3, 0.5, gui33, gui34, gui35, gui36, gui37]
-    \ .Poly[col2, 0.5, gui38, gui39, gui40, gui41]
-    \ .Poly[col2, 0.5, gui42, gui43, gui44, gui45]
-    \ .Poly[col3, 0.5, gui46, gui47, gui48, gui49, gui50]
-    \ .Poly[col3, 0.5, gui51, gui52, gui53, gui54]
-    \ .Poly[col2, 0.5, gui55, gui56, gui57]
+    Poly[col3, 0.5, gui17, gui18, gui19, gui20]
+    Poly[col2, 0.5, gui21, gui22, gui23, gui24]
+    Poly[col3, 0.5, gui25, gui26, gui27, gui28]
+    Poly[col2, 0.5, gui29, gui30, gui31, gui32]
+    Poly[col3, 0.5, gui33, gui34, gui35, gui36, gui37]
+    Poly[col2, 0.5, gui38, gui39, gui40, gui41]
+    Poly[col2, 0.5, gui42, gui43, gui44, gui45]
+    Poly[col3, 0.5, gui46, gui47, gui48, gui49, gui50]
+    Poly[col3, 0.5, gui51, gui52, gui53, gui54]
+    Poly[col2, 0.5, gui55, gui56, gui57]
+
+    // Remove border
+    Style[Border[0]]
 
     // A gradient just to make the figure "less flat"
-    \ .Poly[(x0, y1), (x1, y1), (up_x1, y2), (up_x0, y2)
-            Style[.Border[0]]
-            Gradient[.Line[(x0, y1), (x0, y2)]
-                    Color[color.white, .a=0.0], Color[color.black, .a=0.3]]]
+    Poly[(x0, y1), (x1, y1), (up_x1, y2), (up_x0, y2)
+         Gradient[Line[(x0, y1), (x0, y2)]
+                  Color[color.white, .a=0.0], Color[color.black, .a=0.3]]]
 
     // bit cells markers
-    \ .Poly[s2, 0.5, gui58, gui59, gui60, gui61, gui62, gui63, gui64, .Close[]]
-    \ .Poly[s2, 0.5, gui65, gui66, gui67, gui68, gui69, gui70, gui71
-         gui72, gui73, gui74, .Close[]]
+    Stroke[
+      s2
+      Path[Poly[0.5, gui58, gui59, gui60, gui61, gui62, gui63, gui64, Close[]]
+           Poly[0.5, gui65, gui66, gui67, gui68, gui69, gui70, gui71
+                gui72, gui73, gui74, Close[]]]
+    ]  
 
     // magnetisation arrows
-    m1 = Window[][\ .Line[1, (0, -3), .ArrowScale[0.8]
-                          arrow_triangle, (0, 3)]]
-    m2 = Window[][\ .Line[1, (0, 3), .ArrowScale[0.8]
-                          arrow_triangle, (0, -3)]]
+    m1 = Window[][Line[1, (0, -3), Scale[1.3], arrow_triangle, (0, 3)]]
+    m2 = Window[][Line[1, (0, 3), Scale[1.3], arrow_triangle, (0, -3)]]
     Color[col2, .Darker[0.4]]
     Put[m1, gui78; m1, gui79; m1, gui80;
         Scale[0.9], m1, gui81; Scale[0.7], m1, gui82;
@@ -216,8 +219,8 @@ gui94 = Point[.x=88.1824365482, .y=44.2390862944]
             Style[Border[color.black, 0.15]]]
 
     Put[arm, "rts", Near[0, gui2], Near[1, gui1]]
-    \ .Poly[Style[.Fill["void"], Border[color.red, 0.2]],
-            gui4, gui3; gui6, gui5; gui1, gui9]
+    Lines[StrokeStyle[color.red, 0.2],
+          gui4, gui3; gui6, gui5; gui1, gui9]
     Texts[Font[4.0, "sans"], color.red, From[(0.5, 0)]
           gui4, "arm"; gui6, "platter";
           gui9, "read-write head"]

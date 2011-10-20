@@ -5,6 +5,7 @@ GUI = Void
 Window@GUI[]
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=5.85241203518, .y=-31.8482116959]
 gui2 = Point[.x=50.1205662252, .y=41.9938810345]
@@ -29,39 +30,39 @@ d = 0.3
 
 band = Window[][
   pi = Point[gui7], pf = Point[gui10]
-  \ .Poly[Style[.Border[color.black, d]]
-          pi, 0, 1, gui8, 0.5, gui9, 1, 0, (pi.x, pf.y)]
-  \ .Hot[pi]
+  Poly[Style[Border[color.black, d]]
+       pi, 0, 1, gui8, 0.5, gui9, 1, 0, (pi.x, pf.y)]
+  Hot[pi]
 ]
 
-
 w = Window[][
-  .Show[gui4, gui5]
+  BBox[gui4, gui5]
   p1 = Point[gui1], p2 = Point[gui2], o = Point[gui3]
   ef = Point[gui6]
   o.x = 0.5*(p1.x + p2.x)
-  Gradient[.Line[gui13, gui14], Color[(1, 0.5, 0)], color.white]
-  \ .Put[band, "t", .Near[1, (o.x, Point[gui11].y)]]
-  Gradient[.Line[gui13, gui14], color.white, Color[(0, 0.5, 1)]]
-  \ .Put[band, "t", .Scale[(-1, 1)], .Near[1, (o.x, Point[gui12].y)]]
-  \ .Poly[(p1.x, ef.y), (p2.x, ef.y), p2, (p1.x, p2.y), color.white]
+  Gradient[Line[gui13, gui14], Color[(1, 0.5, 0)], color.white]
+  Put[band, "t", Near[0, (o.x, Point[gui11].y)]]
+  Gradient[Line[gui13, gui14], color.white, Color[(0, 0.5, 1)]]
+  Put[band, "t", Scale[(-1, 1)], Near[0, (o.x, Point[gui12].y)]]
+  Poly[(p1.x, ef.y), (p2.x, ef.y), p2, (p1.x, p2.y), color.white]
   Color[.a=0]
-  \ .Put[band, "t", .Near[1, (o.x, Point[gui11].y)]]
-  \ .Put[band, "t", .Scale[(-1, 1)], .Near[1, (o.x, Point[gui12].y)]]
+  Put[band, "t", Near[0, (o.x, Point[gui11].y)]]
+  Put[band, "t", Scale[(-1, 1)], Near[0, (o.x, Point[gui12].y)]]
 
-  \ .Line[d, color.black, .ArrowScale[0.5/d], (o.x, p1.y), arrow, (o.x, p2.y);
-          arrow, (p1.x, o.y), arrow, (p2.x, o.y);
-          (p1.x, ef.y), (p2.x, ef.y)]
-  \ .Circle[o, 1]
-  \ .Text[.Font["sans", 5]
-          (p2.x, o.y), .From[(-0.1, 0.5)], "N_{up}(E)";
-          (p1.x, o.y), .From[(1.1, 0.5)], "N_{down}(E)";
-          (o.x, p2.y), .From[(0.5, -0.1)], "E";
-          (p1.x, ef.y), .From[(1.1, 0.5)], "E_F"] 
+  color.black
+  Lines[d, color.black, (o.x, p1.y), Scale[0.9], arrow, (o.x, p2.y);
+        arrow, (p1.x, o.y), arrow, (p2.x, o.y);
+        (p1.x, ef.y), (p2.x, ef.y)]
+  Circle[o, 1]
+  Texts[Font["sans", 5]
+        (p2.x, o.y), From[(-0.1, 0.5)], "N_{up}(E)";
+        (p1.x, o.y), From[(1.1, 0.5)], "N_{down}(E)";
+        (o.x, p2.y), From[(0.5, -0.1)], "E";
+        (p1.x, ef.y), From[(1.1, 0.5)], "E_F"] 
   p = Point[gui15], v = (0, 5)
-  \ .Line[color.black, 0.8, p - v, arrow_triangle, p + v]
+  Line[color.black, 0.8, p - v, Scale[1.4], arrow_triangle, p + v]
   p = Point[gui16]
-  \ .Line[color.black, 0.8, p + v, arrow_triangle, p - v]
+  Line[color.black, 0.8, p + v, Scale[1.4], arrow_triangle, p - v]
   
 ]
 

@@ -6,6 +6,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=19.0839694656, .y=39.2857142857]
 gui2 = Point[.x=83.2061068702, .y=8.41836734694]
@@ -23,7 +24,7 @@ include "electric"
 
 GMRDevice = (Int parallel,)
 
-GMRDevice@@Window[
+GMRDevice@Window[
   BBox[gui4, gui5]
   corner1 = Point[gui1], corner2 = Point[gui2], p1 = Point[gui3]
   color_soft = Color[color.grey, .a=0.3]
@@ -40,21 +41,21 @@ GMRDevice@@Window[
   Poly[color_soft, style, (x1, y0), (x2, y0), (x2, y1), (x1, y1)]
 
   p = Point[(0.5*(x0 + x3), y0 + 5)], v = Point[(15, 0)]
-  \ .Line[color.black, 1, p - v, arrow_triangle, p + v]
+  Line[color.black, 1, p - v, Scale[1.2], arrow_triangle, p + v]
   Text[Font["sans", 4], p, From[(0.65, -0.5)], "electron flow"]
 
   p2 = Point[gui6]
   x = 0.5*(x0 + x1), y = 0.5*(y0 + y1)
-  \ .Line[color.red, (x, p2.y), 1.0, arrow_triangle, (x, y + (y - p2.y))]
+  Line[color.red, (x, p2.y), 1.0, Scale[1.7], arrow_triangle, (x, y + (y - p2.y))]
   x = 0.5*(x2 + x3)
 
   big = 1.0, small = 0.7*big
   size1 = small, size2 = big
   [If[$.parallel == 0]
-     \ $$.Line[color.red, (x, y + (y - p2.y)), 1.0, arrow_triangle, (x, p2.y)]
+     Line[color.red, (x, y + (y - p2.y)), 1.0, Scale[1.7], arrow_triangle, (x, p2.y)]
   ]
   [If[$.parallel == 1]
-     \ $$.Line[color.red, (x, p2.y), 1.0, arrow_triangle, (x, y + (y - p2.y))]
+     Line[color.red, (x, p2.y), 1.0, Scale[1.7], arrow_triangle, (x, y + (y - p2.y))]
      size1 = big, size2 = small
   ]
 
@@ -71,16 +72,16 @@ GMRDevice@@Window[
   r11 = $$.Put[resistor, "rt", .Scale[size2], .Near[1, p11], .Near[2, p12]]
 
   p1 = 0.5*(p00 + p10), p2 = 0.5*(p02 + p12)
-  \ .Line[0.4, r00.Get[2], r01.Get[1]; r10.Get[2], r11.Get[1];
-          r10.Get[1], p10, p00, r00.Get[1]; r11.Get[2], p12, p02, r01.Get[2];
-          p1, (x0, p1.y); p2, (x3, p2.y)]
+  Lines[0.4, r00.Get[2], r01.Get[1]; r10.Get[2], r11.Get[1];
+        r10.Get[1], p10, p00, r00.Get[1]; r11.Get[2], p12, p02, r01.Get[2];
+        p1, (x0, p1.y); p2, (x3, p2.y)]
   Circles[0.5, p1; p2]
   vs = Point[(2, 0)], p = (x0, p1.y) - vs, v = (0, 3)
-  \ .Line[color_up, p - v, arrow_triangle, p + v;
-          p00 - vs - v, arrow_triangle, p00 - vs + v]
+  Lines[color_up, p - v, Scale[0.65], arrow_triangle, p + v;
+        p00 - vs - v, arrow_triangle, p00 - vs + v]
   p -= vs,
-  \ .Line[color_down, p + v, arrow_triangle, p - v;
-          p10 - vs + v, arrow_triangle, p10 - vs - v]
+  Lines[color_down, p + v, Scale[0.65], arrow_triangle, p - v;
+        p10 - vs + v, arrow_triangle, p10 - vs - v]
   color.black
 
   p1 = Point[r00.Get[(1.5, 0.3)]],  p2 = Point[r01.Get[(1.5, 0.3)]]

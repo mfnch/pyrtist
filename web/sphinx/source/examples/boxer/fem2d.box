@@ -7,6 +7,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=21.6284987277, .y=15.0510204082]
 gui2 = Point[.x=41.5125739757, .y=27.4731353636]
@@ -29,10 +30,9 @@ bbox2 = Point[.x=157.931806323, .y=2.93529609467]
 label1 = Point[.x=34.6535353566, .y=39.451004467]
 //!BOXER:REFPOINTS:END
 b = 0.15 // border
-s1 = Style[.Border[b]]
-s2 = Style[.Fill["void"], .Border[b, .Dash[1.5]]]
-s3 = Style[.Fill["void"], .Border[b, .Dash[0.5]]]
-s4 = Style[.Fill["void"], .Border[b]]
+s1 = Style[Border[b, color.black]]
+s2 = StrokeStyle[b, Dash[1.5]]
+s3 = StrokeStyle[b, Dash[0.5]]
 c1 = Color[color.green, .a=0.5]
 c2 = Color[c1, .Darker[0.4], .a=0.5]
 c3 = Color[c1, .a=0.5]
@@ -40,10 +40,10 @@ c4 = Color[c1, .Darker[0.8], .a=0.5]
 
 mesh = Window[][
   Line[gui1, gui2, gui3, b, Close[]]
-  \ .Poly[s3, gui1, gui4, gui2, gui15;
-          gui4, gui5; gui1, gui9; gui1, gui10; gui1, gui11;
-          gui3, gui12; gui3, gui13; gui4, gui6; gui4, gui7;
-          gui4, gui8; gui2, gui16; gui2, gui14]
+  Lines[s3, gui1, gui4, gui2, gui15;
+        gui4, gui5; gui1, gui9; gui1, gui10; gui1, gui11;
+        gui3, gui12; gui3, gui13; gui4, gui6; gui4, gui7;
+        gui4, gui8; gui2, gui16; gui2, gui14]
   Hot[gui1; gui2; gui3; "label", label1]
 
   Texts[Font["times", 3.5], color.black,
@@ -54,20 +54,20 @@ mesh = Window[][
 
 w = Window[][
   BBox[bbox1, bbox2, ]
-  m1 = .Put[mesh]
-  m2 = .Put[mesh, (50, 0)]
-  m3 = .Put[mesh, (100, 0)]
+  (m1 = Put[mesh])
+  (m2 = Put[mesh, (50, 0)])
+  (m3 = Put[mesh, (100, 0)])
 
   v = (0, 25)
 
 
-  p1 = .Poly[c1, s1, m1.Get[1] + v, m1.Get[2], m1.Get[3]]
-  p2 = .Poly[c2, s1, m2.Get[3] + v, m2.Get[1], m2.Get[2]]
-  p3 = .Poly[c1, s1, m3.Get[2] + 0.5*v, m3.Get[3], m3.Get[1]]
+  (p1 = Poly[c1, s1, m1.Get[0] + v, m1.Get[1], m1.Get[2]])
+  (p2 = Poly[c2, s1, m2.Get[2] + v, m2.Get[0], m2.Get[1]])
+  (p3 = Poly[c1, s1, m3.Get[1] + 0.5*v, m3.Get[2], m3.Get[0]])
 
-  \ .Poly[s2, p1.Get[1], p1.Get[1] - v]
-  \ .Poly[s2, p2.Get[1], p2.Get[1] - v]
-  \ .Poly[s2, p3.Get[1], p3.Get[1] - 0.5*v]
+  Lines[s2, color.black, p1.Get[0], p1.Get[0] - v;
+        p2.Get[0], p2.Get[0] - v;
+        p3.Get[0], p3.Get[0] - 0.5*v]
 
   Texts[Font["times-italic", 4, color.black]
         m1.Get["label"], "L_1";
@@ -78,4 +78,3 @@ w = Window[][
 w.Save["fem2d.png", Window["rgb24", .Res[Dpi[100]]]]
 
 GUI[w]
-

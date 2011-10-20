@@ -6,6 +6,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui3 = Point[.x=31.1569969088, .y=-3.41706]
 gui4 = Point[.x=-116.076762887, .y=63.9851772881]
@@ -60,47 +61,39 @@ color_happ = Color[(0.4, 0.9, 0)]
 color_traj = color_m
 color_dmdt = Color[0.4]
 
-s1 = Style[.Fill["void"], .Border[0.2, .Dash[2]]]
-s2 = Style[.Fill["void"], .Border[0.5, .Dash[1], color_traj]]
+s1 = StrokeStyle[0.2, Dash[2]]
+s2 = StrokeStyle[0.5, Dash[1], color_traj]
 
 //---------------------------------------------------------------
 
 p1 = UndampTrajectory[t1]
 
-w = Window[]
-w.Show[gui3, gui4]
+Draw = ++(Int which,)
+Int@Draw[.which = $]
 
-Draw = Void
-Int@Draw[
-  face = $
+Draw@Window[
+  face = $.which
   t = t0
   [
-    \ w.Poly[
-      DampTrajectory[t]
-      For[Behind[(t += 0.01)] == face]
-      s2
-    ]
-
+    Line[DampTrajectory[t], For[Behind[(t += 0.01)] == face], s2]
     [For[Behind[(t += 0.01)] != face]]
     For[t < 55.0]
   ]
 
   t = t0, dt = 6.3
   [
-    \ w.Poly[
-      UndampTrajectory[t] + v
-      For[!Behind[(t += 0.01)] != face && t < t0 + dt]
-      s2
-    ]
-
+    Line[UndampTrajectory[t] + v
+         For[!Behind[(t += 0.01)] != face && t < t0 + dt], s2]
     [For[Behind[(t += 0.01)] == face]]
     For[t < t0 + dt]
   ]
 ]
 
-Draw[1]
+w = Window[][
+  BBox[gui3, gui4]
 
-\ w[
+  Draw[1] // Draw trajectory behind arrows
+
   Arrow3D[Point[(0, 0, 0)], Point[(0, 60, 0)]
           .width=1.5, color.white, color_happ, Color[color_happ, .Darker[0.7]]
           .perspective=0.2]
@@ -112,30 +105,25 @@ Draw[1]
           .perspective=0.2]
   Arrow3D[Point[(0, 0, 0)] + v, UndampTrajectory[t1] + v
           .width=1.5, color.white, color_m, Color[color_m, .Darker[0.7]]]
+
+  Line[s1, center, p1]
+  Line[s1, center + v, p1 + v]
+  Circles[color.black, center, 0.5; p1; center+v; p1+v]
+
+  Texts[Font["sans", 6], color_m, "M", gui1; gui1 + v, "M"]
+  Texts[Font["sans", 6], color_happ, "H", gui2; gui2 + v, "H"]
+  Texts[Font["sans", 3.5], color_dmdt
+        "- M x H", gui9; gui9 + v, "- M x H"; "- M x (M x H)", gui10]
+
+  Draw[0] // Draw trajectory above arrows
+
+  Texts[Font["sans", 4.5], color.black
+        "(b)", gui5 + (60, 0); "(a)", gui5 + v]
+  Lines[0.5, color_dmdt
+        p1, Scale[1.0], arrow, gui7;
+        p1 + v, arrow, gui7 + v;
+        p1, arrow, gui8]
 ]
-
-\ w[
-  \ .Poly[s1, center, p1]
-  \ .Poly[s1, center + v, p1 + v]
-  \ .Circle[color.black, center, 0.5; p1; center+v; p1+v]
-]
-
-\ w.Text[.Font["sans", 6]
-         color_m, "M", gui1; gui1 + v, "M";
-         color_happ, "H", gui2; gui2 + v, "H"]
-
-\ w.Text[.Font["sans", 3.5]
-         color_dmdt, "- M x H", gui9; gui9 + v, "- M x H";
-         "- M x (M x H)", gui10]
-
-Draw[0]
-
-\ w.Text[.Font["sans", 4.5], color.black
-         "(b)", gui5 + (60, 0); "(a)", gui5 + v]
-\ w.Line[0.5, color_dmdt
-         p1, .ArrowScale[1.5], arrow, gui7;
-         p1 + v, arrow, gui7 + v;
-         p1, arrow, gui8]
 
 w.Save["llg.png", Window["rgb24", .Res[Dpi[100]]]]
 GUI[w]

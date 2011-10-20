@@ -7,6 +7,7 @@ Window@GUI[]
 
 
 
+
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=25.5173711187, .y=15.0382159091]
 gui2 = Point[.x=67.9417991169, .y=42.5137840909]
@@ -31,10 +32,10 @@ Cylinder = ++(Point pos, Real rx, ry, l)
 Cylinder@Window[
   p = $.pos, vx = Point[($.rx, 0)], vy = Point[(0, $.ry)]
   vl = Point[($.l, 0)]
-  \ .Poly[p, (p += vl)
-          0, 1, (p += vx), (p += vy), (p += vy), (p -= vx)
-          0, 0, (p -= vl)
-          0, 1, (p += vx), (p -= vy), (p -= vy)]
+  Poly[p, (p += vl)
+       0, 1, (p += vx), (p += vy), (p += vy), (p -= vx)
+       0, 0, (p -= vl)
+       0, 1, (p += vx), (p -= vy), (p -= vy)]
 ]
 
 InfoBox = ++(Point pos, size, Real round, Style style)
@@ -45,12 +46,12 @@ InfoBox@Window[
   p = $.pos
   vx = Point[$.size, .y = 0]
   vy = Point[$.size, .x = 0]
-  \ .Poly[$.round, p, (p += vx), (p += vy), (p -= vx)]
+  Poly[$.round, p, (p += vx), (p += vy), (p -= vx)]
 ]
 
 FiveLayers = (Int on_the_left,)
 
-FiveLayers@@Window[
+FiveLayers@Window[
   sx = 40, hx = 5, rx = 3, ry = 12           // Sizes
   scol = Color[(0.7, 0.7, 1.0)], hcol = Color[(0.3, 0.3, 1.0)] // Colors
   fecol = color.white, dycol = color.white
@@ -65,25 +66,24 @@ FiveLayers@@Window[
   c3 = Cylinder[.pos=p += (c2.l, 0), .rx=-rx, .ry=ry, .l=hx]
   c4 = Cylinder[.pos=p + (c3.l, 0), .rx=-rx, .ry=ry, .l=sx]
   c5 = Cylinder[.pos=p += (c2.l, 0), .rx=-rx, .ry=ry, .l=hx]
-  
-  w = Window[][
-    draw_with_border
-    scol_g = Gradient[.Line[p, p + (0, 2*ry)], dk := Color[scol, .Darker[0.75]]
+
+  draw_with_border
+  scol_g = Gradient[Line[p, p + (0, 2*ry)], dk = Color[scol, .Darker[0.75]]
                     dk, 0.3, scol, 0.5, scol, 0.75, color.white, 0.9, scol, 0.95, scol, dk]
-    hcol_g = Gradient[.Line[p, p + (0, 2*ry)], dk := Color[hcol, .Darker[0.75]]
-                      dk, 0.3, hcol, 0.5, hcol, 0.75, color.white, 0.9, hcol, 0.95, hcol, dk]
+  hcol_g = Gradient[Line[p, p + (0, 2*ry)], dk = Color[hcol, .Darker[0.75]]
+                    dk, 0.3, hcol, 0.5, hcol, 0.75, color.white, 0.9, hcol, 0.95, hcol, dk]
 
-    hcol_g, c1, scol_g, c2, hcol_g, c3, scol_g, c4, hcol_g, c5
+  hcol_g, c1, scol_g, c2, hcol_g, c3, scol_g, c4, hcol_g, c5
 
-    hcol2 = Color[hcol, .Darker[0.7]]
-    \ .Circle[hcol2, c5.pos + (c5.l, ry), rx, ry]
-  ]
+  hcol2 = Color[hcol, .Darker[0.7]]
+  Circle[hcol2, c5.pos + (c5.l, ry), rx, ry]
 
   [If[!$.on_the_left],
-    \ w[p = gui2
-        Style[Border[0.0, color.black]]
-        Line[jcol, vx = (10, 0), 0.7, p - vx, arrow_triangle, p + 1.3*vx ]
-        Text[Font["helvetica", 4], p, From[(0.5, -0.25)], "  flow of\nelectrons"]]]
+     p = gui2
+     Style[Border[0.0, color.black]]
+     Line[jcol, vx = (10, 0), 0.7, p - vx, arrow_triangle, p + 1.3*vx ]
+     Text[Font["helvetica", 4], color.black
+          p, From[(0.5, -0.25)], "  flow of\nelectrons"]]
   
   y0 = c1.pos.y + c1.ry
   x0 = c1.pos.x, x1 = c3.pos.x, x2 = c5.pos.x + c3.l
@@ -97,7 +97,7 @@ FiveLayers@@Window[
   dy2 = Point[(x1, y0)]
   dy3 = Point[(x2, y0)]
 
-  \ w.Line[Style[Border[0]], 0.3, color.black, dy1, dy3]
+  Line[0.3, color.black, dy1, dy3]
 
   arr = Arrow2D[.width=1.0, .head_width=1.5, .head_length=3.0, .border=0.1
                 .col_inside=color.white, .col_border=color.black]
@@ -112,72 +112,58 @@ FiveLayers@@Window[
     [If[$.on_the_left], angle = Max[0, 180*(x - x1)/(x0 - x1)]]
     [If[!$.on_the_left], angle = Min[180, 180*(x - x2)/(x1 - x2)]]
     a = Deg[angle]
-    \ w[Arrow2D[arr, .p_start = p, .p_end = p  + v*(Cos[a], Sin[a])]]
+    Arrow2D[arr, .p_start = p, .p_end = p  + v*(Cos[a], Sin[a])]
     For[++i <= n]
   ]
 
   [If[!$.on_the_left]
-     \ w.Circle[gui13, 8.0, Color[color.white, .a=0.5]]
-     \ w.Circle[gui13, 8.0, Style[.Border[0.8, color.red, .Dash[2]], .Fill["void"]]]
+    Circle[gui13, 8.0, Color[color.white, .a=0.5]
+           Style[Border[0.8, color.red, Dash[2]]]]]
+
+  s = 1.2
+  hard_arr = Arrow2D[arr, .p_start=dy1, .p_end=dy1 - (v*s, 0)
+                     .col_inside=color.red
+                     .width*=s, .head_width*=s, .border*=1.5]
+  hard_arr
+  Arrow2D[hard_arr, .p_start=dy2, .p_end=dy2 + (v*s*(2*$.on_the_left-1), 0)]
+  Arrow2D[hard_arr, .p_start=dy3, .p_end=dy3 + (v*s, 0)]
+  draw_without_border
+
+   p = Point[gui3]
+   p2 = Point[gui4, .y = p.y]
+
+   Texts[Font["helvetica-bold", 5], draw_with_border
+         dy1, From[(1.7, 1.7)], "M_H";
+         dy2 + (1.5*($.on_the_left-0.5)*v+3, 0), From[(0.9, 1.6)], "M_H";
+         dy3, From[(-0.9, 1.7)], "M_H"]
+   Texts[Font["helvetica-bold", 5], draw_with_border, fecol
+         (0.5*(x0 + x1), y0), From[(0.5, 1.5)], "M_S";
+         (0.5*(x1 + x2), y0), From[(0.5, 1.5)], "M_S";]
+   //color.black, .Font["times-italic"], p2, .From[(0.5, -0.8)], "x"]]
+   //Line[color.black, p, 0.4, arrow, p2]
+   //Circle[color.black, (0.5*(x0 + x1), p.y), 0.8]
+
+  [If[$.on_the_left]
+
+     Color[color.white, .a=0.5], draw_with_border
+     ib1 = InfoBox[.pos=gui5, .round=0.1, .size=(12, 6)]
+     ib2 = InfoBox[.pos=gui6, .round=0.1, .size=(12, 6)]
+     ib3 = InfoBox[.pos=gui7, .round=0.1, .size=(12, 6)]
+     ib4 = InfoBox[.pos=gui10, .round=0.1, .size=(12, 6)]
+     ib5 = InfoBox[.pos=gui11, .round=0.1, .size=(12, 6)]
+     ib5.pos.y = ib4.pos.y = ib2.pos.y = ib3.pos.y = ib1.pos.y
+
+     ib1, ib2, ib3, ib4, ib5
+
+     color.white, draw_without_border, color.black
+     Texts[Font["helvetica", 3.5], From[(0.5, 0.5)]
+           ib1.pos + 0.5*ib1.size, "HARD";
+           ib2.pos + 0.5*ib2.size, "HARD";
+           ib3.pos + 0.5*ib3.size, "SOFT";
+           ib4.pos + 0.5*ib4.size, "HARD";
+           ib5.pos + 0.5*ib5.size, "SOFT";]
+
   ]
-
-  \ w[
-    s = 1.2
-    hard_arr = Arrow2D[arr, .p_start=dy1, .p_end=dy1 - (v*s, 0)
-                       .col_inside=color.red
-                       .width*=s, .head_width*=s, .border*=1.5]
-    hard_arr
-    Arrow2D[hard_arr, .p_start=dy2, .p_end=dy2 + (v*s*(2*$.on_the_left-1), 0)]
-    Arrow2D[hard_arr, .p_start=dy3, .p_end=dy3 + (v*s, 0)]
-    draw_without_border
-  ]
-
-  [If[$.on_the_left+1]
-    \ w[
-      p = Point[gui3]
-      p2 = Point[gui4, .y = p.y]
-    
-      \ .Text[.Font["helvetica-bold", 5]
-              dy1, .From[(1.7, 1.7)], "M_H";
-              dy2 + (1.5*($.on_the_left-0.5)*v+3, 0), .From[(0.9, 1.6)], "M_H";
-              dy3, .From[(-0.9, 1.7)], "M_H";
-              draw_with_border
-              fecol, (0.5*(x0 + x1), y0), .From[(0.5, 1.5)], "M_S";
-              fecol, (0.5*(x1 + x2), y0), .From[(0.5, 1.5)], "M_S";
-              //color.black, .Font["times-italic"], p2, .From[(0.5, -0.8)], "x"
-      ]
-    ]
-
-  ]
-
-  \ w[
-    //\ .Line[color.black, p, 0.4, arrow, p2]
-    //\ .Circle[(0.5*(x0 + x1), p.y), 0.8]
-
-    Color[color.white, .a=0.5], draw_with_border
-    ib1 = InfoBox[.pos=gui5, .round=0.1, .size=(12, 6)]
-    ib2 = InfoBox[.pos=gui6, .round=0.1, .size=(12, 6)]
-    ib3 = InfoBox[.pos=gui7, .round=0.1, .size=(12, 6)]
-    ib4 = InfoBox[.pos=gui10, .round=0.1, .size=(12, 6)]
-    ib5 = InfoBox[.pos=gui11, .round=0.1, .size=(12, 6)]
-    ib5.pos.y = ib4.pos.y = ib2.pos.y = ib3.pos.y = ib1.pos.y
-
-    [If[$.on_the_left],
-      \ w[
-           ib1, ib2, ib3, ib4, ib5
-
-           color.white, draw_without_border, color.black
-           Texts[Font["helvetica", 3.5], From[(0.5, 0.5)]
-                 ib1.pos + 0.5*ib1.size, "HARD";
-                 ib2.pos + 0.5*ib2.size, "HARD";
-                 ib3.pos + 0.5*ib3.size, "SOFT";
-                 ib4.pos + 0.5*ib4.size, "HARD";
-                 ib5.pos + 0.5*ib5.size, "SOFT";]
-      ]
-    ]
-  ]
-
-  \ $$[w]
 ]
 
 w = Window[][
