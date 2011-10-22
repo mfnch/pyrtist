@@ -467,7 +467,8 @@ class Boxer(object):
 
   def menu_help_docbrowser(self, _):
     self._init_doxbrowser()
-    self.dialog_dox_browser.show()
+    if self.dialog_dox_browser:
+      self.dialog_dox_browser.show()
 
   def refpoint_entry_changed(self, _):
     self.refpoint_show_update()
@@ -503,7 +504,7 @@ class Boxer(object):
 
   def on_help_button_clicked(self, _):
     topic = self.widget_help_entry.get_text().strip()
-    if len(topic) > 0:
+    if len(topic) > 0 and self.dialog_dox_browser != None:
       self.dialog_dox_browser.show(topic=topic)
 
   def on_help_entry_activate(self, _):
@@ -546,12 +547,17 @@ class Boxer(object):
   def _init_doxbrowser(self):
     dox_browser = self.dialog_dox_browser
     if dox_browser == None:
-      dox_path = self.editable_area.document.box_query("BUILTIN_PKG_PATH")
-      dox = Dox()
-      dox.read_recursively(dox_path)
-      tree = dox.tree
-      tree.process()
-      self.dialog_dox_browser = dox_browser = DoxBrowser(dox)
+      try:
+        dox_path = self.editable_area.document.box_query("BUILTIN_PKG_PATH")
+      except:
+        dox_path = None
+
+      if dox_path:
+        dox = Dox()
+        dox.read_recursively(dox_path)
+        tree = dox.tree
+        tree.process()
+        self.dialog_dox_browser = dox_browser = DoxBrowser(dox)
 
   def __init__(self, gladefile="boxer.glade", filename=None, box_exec=None):
     self.config = config.get_configuration()

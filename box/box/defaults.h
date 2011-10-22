@@ -18,8 +18,6 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/* $Id$ */
-
 /**
  * @file defaults.h
  * @brief The defaults settings for the Box compiler stuff.
@@ -61,11 +59,19 @@
  * BOX_LIBRARY_PATH, etc.
  */
 #ifndef PATH_SEPARATOR
-#  define PATH_SEPARATOR ':'
+#  ifdef __WINDOWS__
+#    define PATH_SEPARATOR ';'
+#  else
+#    define PATH_SEPARATOR ':'
+#  endif
 #endif
 
 #ifndef DIR_SEPARATOR
-#  define DIR_SEPARATOR '/'
+#  ifdef __WINDOWS__
+#    define DIR_SEPARATOR '\\'
+#  else
+#    define DIR_SEPARATOR '/'
+#  endif
 #endif
 
 /** The name of the environmental variable which contains the user

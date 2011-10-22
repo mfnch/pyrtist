@@ -130,8 +130,8 @@ void BoxPaths_Set_All_From_Env(BoxPaths *bp) {
     char *pkg_path, *lib_path;
     Box_Get_Bltin_Pkg_And_Lib_Paths(& pkg_path, & lib_path);
     if (pkg_path != NULL && lib_path != NULL) {
-      Path_Add_Pkg_Dir(pkg_path);
-      Path_Add_Lib_Dir(lib_path);
+      BoxPaths_Add_Pkg_Dir(bp, pkg_path);
+      BoxPaths_Add_Lib_Dir(bp, lib_path);
 
     } else {
       MSG_WARNING("Cannot add default paths for libraries and headers.");

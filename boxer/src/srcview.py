@@ -79,7 +79,7 @@ class BoxSrcView(object):
     self.buf = buf
 
     view.set_wrap_mode(gtk.WRAP_WORD)
-    view.set_has_tooltip(True)
+    view.set_property("has-tooltip", True)
     view.connect("query-tooltip", self._sighandler_query_tooltip)
 
   def _sighandler_query_tooltip(self, srcview, x, y, keyb_mode, tooltip, *etc):
