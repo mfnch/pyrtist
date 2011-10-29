@@ -4,9 +4,6 @@ include "g"
 GUI = Void
 Window@GUI[]
 
-
-
-
 //!BOXER:REFPOINTS:BEGIN
 gui1 = Point[.x=-117.457310125, .y=-45.553587782]
 gui2 = Point[.x=71.8443949495, .y=93.0393794521]

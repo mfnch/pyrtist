@@ -19,7 +19,7 @@ Box(er) is made by two equally important components:
 The aim of the project is hence to maintain the ease-of-use offered
 by mouse-driven graphical editors, adding - on top of it - the customizability
 which only a powerful dedicated programming language can provide.
-Below you find a screenshot of the next-to-come version of Boxer.
+Below you find a screenshot of latest version of Boxer.
 
 .. image:: boxer0.3.2_screenshot.png
    :align: center

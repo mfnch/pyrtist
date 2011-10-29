@@ -103,7 +103,6 @@ gui93 = Point[.x=87.1647715736, .y=20.5003458763]
 gui94 = Point[.x=88.1824365482, .y=44.2390862944]
 ////!BOXER:REFPOINTS:END
 
-
   \ grains[
     x0 = 0.0, x1 = 100.0
     y0 = 0.0, y1 = 10.0, y2 = 35.0
@@ -182,9 +181,8 @@ gui94 = Point[.x=88.1824365482, .y=44.2390862944]
         Scale[0.8], m2, gui88; m2, gui89]
 
     // labels
-    Line[color.red, 0.3, gui75, gui76, gui77]
-    Line[color.black, gui91, gui94, gui93]
-    Line[color.black, gui94, gui92]
+    Lines[color.red, 0.3, gui75, gui76, gui77;
+          color.black, gui91, gui94, gui93; gui94, gui92]
     Text[Font[5, "sans"], color.red
          gui76, From[(0.5, -0.4)], "bit cells"]
     Text[Font[5, "sans"], color.black
@@ -226,4 +224,3 @@ gui94 = Point[.x=88.1824365482, .y=44.2390862944]
           gui9, "read-write head"]
   ]
 ]
-

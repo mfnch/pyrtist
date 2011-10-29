@@ -1,3 +1,5 @@
+.. contents:: Table of Contents
+
 Introduction to the Box Language
 ================================
 
@@ -71,102 +73,240 @@ Boxes and type combinations
 It may be worth at this point to enter a little bit more into the technical
 details of the language.
 
-
-
 We have seen that an instance for a type ``MyType`` can be created like this::
 
   instance = MyType[]
 
-Sometimes, however it is necessary to create an object out of other objects.
-For example, in order to create a circle we need to know center and radius.
-We then need to combine together two objects to create a new one.
+This statement creates a new object of type ``MyType`` and assigns it to the
+variable ``instance``.  The text fragment ``MyType[]`` is what we call a *box*.
+Boxes can be empty (as in the previous example) or can contain a group of
+statements. For example::
 
+  instance = MyType[statement1, statement2, statement3]
 
+Notice that statements are separated by commas. An alternative way to separate
+statements is using newlines. For example::
 
+  instance = MyType[statement1
+                    statement2
+                    statement3]
+
+Notice that commas and newlines are just used to separate statements and
+are otherwise ignored. The following is then also valid::
+
+  instance = MyType[statement1
+
+                    statement2,,,
+                    statement3]
+
+Let's now return back to the concept of *box*.
+A box is a group of statements which have the purpose of creating a new
+object. For example, let's imagine we are creating our own graphic library
+and we are trying to implement a way to define a circle shape.
+Then we may do it as follows::
+
+  circle = Circle[(0.0, 0.0), 10.0]
+
+The box ``Circle[(0.0, 0.0), 10.0]`` has type ``Circle`` and contains two
+statements. The first statement, ``(0.0, 0.0)``, provides the center of the
+circle. The second statement, ``10.0``, provides the radius of the circle.
+
+The examples we have seen so far tell us three things:
+
+1. numbers, strings, etc. are themselves statements,
+2. statements are grouped together inside boxes and serve to construct a new
+   object (whose type is specified just before the opening square bracket),
+3. a statement can have a type and a value. This value can be used by the box
+   the statement belongs to (for example, a number ``10.0`` can be used by a
+   ``Circle`` box to set the radius of a newly created circle).
+
+Concerning the last point, we have to say that statemtents do always have
+type and value. Indeed, this type is what determines how the statement is
+used in the parent box. For example, in the statement::
+
+  s = Str[3.14]
+
+a new string object is created. The floating point number ``3.14`` is passed to
+``Str``, is converted to a string and used to create a new string in ``s``.
+The result is that ``s`` is given the value ``"3.14"``.
+Another example is given below::
+
+  s = Str["My favourite number is ", 3.14]
+
+Here ``Str`` receives two statements: one of type ``Str`` and one of type
+``Real``. The effect is to create in ``s`` the string ``"My favourite number is
+3.14"``. This shows that different objects can have different effects inside
+the same box.  For example, a ``Real`` given to a ``Circle`` may set its
+radius, while a ``Point`` may set its center.  The particular action invoked
+when a statement of type ``Child`` is given inside a box of type ``Parent`` is
+called "combination" and is denoted with ``Child@Parent``.
+Combinations can be defined using the following syntax::
+
+  Child@Parent[...]
+
+Inside the square brackets, the symbol ``$`` can be used to refer to the
+particular child instance, while the symbol ``$$`` can be used to refer to the
+parent.
+
+Returning to the example of the ``Circle`` object, we may define::
+
+  Circle = (Real radius, Point center)
+
+and define a combination as follows::
+
+  Real@Circle[$$.radius = $]
+
+The line above defines a combination which is executed whenever a ``Real`` is
+given to a ``Circle``. The line can be ideally split in two parts, one left
+part ``Real@Circle`` and one right part ``[$$.radius = $]``. The left part
+indicates when the code should be executed. The right part provides the actual
+code to execute (the implementation of the combination). The combination takes a
+Real (which is referred to by using the ``$`` character) and assigns its value
+to the ``radius`` member of the ``Circle`` object (represented by ``$$``).
+Similarly, we may define::
+
+  Point@Circle[$$.center = $]
+
+This way, the Box compiler knows what to do when ``Real`` and ``Point`` objects
+are given inside a ``Circle`` box. In particular, the line below::
+
+  circle = Circle[(0, 0), 10.0]
+
+has the same effect of the lines below::
+
+  circle = Circle[]
+  circle.center = (0, 0)
+  circle.radius = 10.0
+
+In our new graphic library, we may then specify how to draw a ``Circle`` inside
+a sheet of paper ``SheetOfPaper`` by defining another combination::
+
+  Circle@SheetOfPaper[
+    // Implementation of circle drawing...
+    // Here we draw $ (the Circle instance) inside $$ (the particular
+    // SheetOfPaper instance)
+  ]
+
+Type combination is one of the fundamental ideas behind the Box language.
+As a Box programmer you are invited to identify which types of objects you need
+in order to implement your algorithm effectively.and to how these types can be combined together to
+make something useful.
 
 Why Boxes rather than functions?
 --------------------------------
 
+Most programming languages put an extraordinary and often unjustified attention
+to the order of things. For example, if you want to draw a circle on the screen
+in C, you may have to use a function like::
 
-One concept Box put emphasis in is the one of compound statement.
-For the C programming language a compound statement is just a list
-of statements separated by ';' and enclosed in curly braces::
+  void draw_circle(screen *scr, double x, double y, double radius);
 
-  {statement1; statement2; ...; statementN}
+This order of arguments in this function prototype is largely arbitrary, but
+the programmer is forced to remember it anyway. Indeed, ``draw_circle`` may be
+alternatively defined as::
 
-This C construct may be regarded as the starting point for the Box
-language. Compound statements in Box are called just boxes
-and follow a different syntax with respect to C::
+  void draw_circle(screen *scr, double radius, double x, double y);
 
-  [statement1 SEP statement2 SEP ... SEP statementN]
+Whenever the programmer will have to use the function ``draw_circle`` he will
+also have to think to the arguments this function takes and their precise
+order. Some programming languages provide optional arguments, which may be seen
+as a possible way to address the flaw. In Python, for example, you may use the
+following code to circumvent the order constraint::
 
-or::
+  def draw_circle(screen, point=None, radius=None):
+    # check that point and radius are not None
+    ...
 
-  Type[statement1 SEP statement2 SEP ... SEP statementN]
+You can then draw the circle in one of the following ways::
 
-where SEP is a separator. Three different separators can be used:
+  draw_circle(screen, point=p, radius=r)
+  draw_circle(screen, radius=r, point=p)
 
-- a comma ``,``
-- a newline
-- a semicolon ``;``
+It is clear than this is even worse than before. While we now do not need to
+remember the order of arguments, we have to remember their name. The resulting
+function call is also unnecessarily verbose.
 
-Commas and newlines have a pure syntactical role, just as it happens for
-semicolons in C. But, in Box, semicolons, beside their syntactical
-role as separators, have also a semantical value: they signal that something
-should be done and have effect on the execution. We'll return on this later.
-The main difference between a box and a C compound statment,
-is that the former can have a type::
+So far we have seen two of the main very common flaws of modern programming
+languages:
 
-  int = Int[1.0]
+- order of things is often arbitrary, but the user is forced to remember it
+  anyway: a circle is defined just by its center and its radius; there is no
+  reason why one should specify center and radius in this precise order and not
+  the opposite!
 
-In the line above a box of type Int is used to create an integer,
-which is then assigned to the variable ``int``.
-The reader may think, at this point, that ``box`` is a funny way
-to say ``function``. This is not true. A box is really a compound statement:
-it collects the statements required to create a certain object.
-You can put loops, conditionals and any other statement inside
-the square brackets. For example, the code::
+- the user is often forced to remember a number of names: type names, function
+  names, optional argument names.
 
-  Print["You can print from here!";]
-  int = Int[1, Print["but also from here!";]]
+Box addresses these flaws by inviting the user to think about which object
+types are necessary and how these objects should be combined together.  The
+concept of function or class method is then replaced with the concept of type
+combination.  This way the number of names the user needs to remember is
+drastically reduced.
 
-is perfectly legitimate.
-And indeed, the number ``1.0`` in ``Int[1.0]`` is itself a statement
-with type Real and value 1.0.
-This example shows that - Similarly to C - statements often have
-type and value.
-However - unlike C - **values of statements are rarely ignored!**
-The value ``1.0`` is used to create the integer
-which is then assigned to the variable ``int``.
+For example, returning to our simple graphic library, we may define some shapes
+to draw ``Circle``, ``Rectangle``, ``Polygon``.  These entities have to be
+drawn somewhere, right? Then we need another type, ``SheetOfPaper``.  We may
+also want to provide a fifth object, ``Area``, to compute the area of the
+shapes. For example, if we have a ``Circle`` then the area is simply
+``pi*radius*radius``, where ``pi`` is the constant 3.141592...
+For a ``Rectangle`` it will be ``side_a*side_b``.
 
-We also notice that **type names always begin with an uppercase letter**,
-such as ``Int``, ``Real``, ``MyType``, while variable names
-always begin with a lowercase letter: ``int`` is a variable
-in the line above, but also ``iNT`` may be used as a variable name.
-Box intrinsic types are: ``Char``, ``Int``, ``Real``, ``Point`` and ``Void``.
+What Box requires, is just to define these 5 types. It is then clear how to use
+them. If we give a shape to a ``SheetOfPaper`` then the shape is drawn on the
+paper. If we give it to ``Area`` then the area is computed. We do not need
+introduce new class methods with arbitrary names that a user would need to
+remember. A fragment of Box source code using our library may then read::
 
-We should now be ready to face the hello-world example: a program
-which just prints "Hello world!" out on the screen::
+  sheet = SheetOfPaper[Circle[(0, 0), 10]
+                       Rectangle[(10, 10), (20, 20)]]
+  area = Area[Circle[(0, 0), 15]]
+
+In the code above, the user is free to forget the order of the arguments given
+to ``Circle`` or ``Rectangle``.  He is not forced to learn names of methods
+to use in order to draw a shape or to calculate its area.
+Also, all this is achieved within a statically typed language, which, in
+principle, can be converted to efficient machine code.
+
+Hello world in Box
+------------------
+
+We should now be ready to face the hello-world example: a program which just
+prints "Hello world!" out on the screen::
 
   Print["Hello world!";]
 
 Here we use the ``Print`` box to show a string.
 ``Print`` is a type which descend from the type ``Void``.
-``Void`` and its derivatives are very special types:
-``Void`` boxes do not produce any object.
+``Void`` and its derivatives are very special types: they are empty types which
+are always ignored.
 
-This example also shows how the semicolon may be used in Box programs.
-For the Print statement the semicolon means "go to the next line".
-In general the meaning of the semicolon can change from type to type,
-but is meant to signal a kind-of pause in the Box construction.
+This example also shows how the semicolon, the third statement separator
+(together with commas and newlines) may be used in Box programs.  While commas
+and newlines have a pure syntactical role (just as it happens for semicolons in
+C) and are ignored, semicolons have both a syntactical role as separators and
+an effect on execution. The Box programmer can decide which effect a semicolon
+should have inside a box of a given type. For Print, the semicolon means "go to
+the next line".
 
-As said before statements inside a box are rarely ignored.
-One exception concerns the assignment operator::
+The reader may have understood, at this point, that ``boxes`` are fundamentally
+different from ``functions``. A box is really a compound statement: it collects
+the statements required to create a certain object.  You can put loops,
+conditionals and any other statement inside the square brackets. For example,
+the code::
+
+  Print["You can print from here!";]
+  int = Int[1, Print["but also from here!";]]
+
+is perfectly legitimate.
+
+Statements inside a box are rarely ignored.
+One exception is made for the assignment operator.
+The code below::
 
   Print[a = "Hello world!"; a;]
 
-prints the string "Hello world!" only once, even if the statement
-``a = "Hello world!"`` has itself a defined type (it is an array of ``Char``)
+prints the string ``"Hello world!"`` only once, even if the statement
+``a = "Hello world!"`` has itself a defined type (it is a ``Str`` object)
 and value. The reason for this behaviour is simple: one usually does not want
 to pass the value of the assigned quantity to the underlying box.
 To really do that, one should put round brackets
@@ -174,65 +314,19 @@ around the assignment expression::
 
   Print[(a = "Hello world!"); a;]
 
-This line will print twice the string "Hello world!".
+This line will print twice the string ``"Hello world!"``.
 
 There may be cases when one wants to explicitly ignore a value.
-This is the syntax to use in such cases::
+The line above shows the syntax to use in such cases::
 
   Print[\ 1, "nothing appears before the first occurrence 'nothing'";]
 
-The ``\`` character avoids the valued expression to be passed
-to the underlying box.
+The ``\`` character discards the valued expression on its right:
+the expression is not passed to the underlying box.
 
 At this point it may be clear why boxes are so central:
 they do not simply group statements, but they provide
 the functionality of function calls.
-While in C language, to draw a circle on the screen,
-one may write something like::
-
-  double center[2] = {1.0, 2.0}, radius = 1.0;
-  Circle *my_circle = draw_circle(center, radius);
-
-in Box the same functionality is achieved by opening a box with type Circle::
-
-  my_circle = Circle[(1.0, 2.0), 1.0]
-
-or::
-
-  my_circle = Circle[1.0, (1.0, 2.0)]
-
-One important difference between the two approaches concerns the order
-of the arguments. While for C the order matters, for Box the order
-is not crucial. this is a design goal of Box.
-One should not be forced to always remember the order of arguments,
-since it is often meaningless: a circle is defined just by its center
-and its radius; there is no reason why one should specify center and radius
-in this precise order and not the opposite!
-
-At this point we can reveal what is really happening in the line
-we have just seen, which is substantially different
-from a simple function call. One may translate it into the following C-code::
-
-  Circle *my_circle = circle_new();
-  circle_begin(my_circle);
-  circle_real(my_circle, radius);
-  circle_point(my_circle, center);
-  circle_end(my_circle);
-
-Every value the ``Circle`` box gets, is used to call a method
-of the object ``Circle``. In fact the Box declaration of the object ``Circle``
-may look like this::
-
-  Circle = (Real radius, Point center)
-  Real@Circle[$$.radius = $]
-  Point@Circle[$$.center = $]
-  ([)@Circle[$$.radius = 0.0, $$.center = (0.0, 0.0)]
-  (])@Circle[ ...finalisation code... ]
-
-We will explain in details the syntax in the next sections.
-
-Types and values
-----------------
 
 more to come soon...
-
+--------------------

@@ -4,11 +4,6 @@ include "g"
 GUI = Void
 Window@GUI[]
 
-
-
-
-
-
 //!BOXER:REFPOINTS:BEGIN
 //!BOXER:REFPOINTS:END
 include "g"
