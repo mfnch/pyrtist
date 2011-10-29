@@ -62,7 +62,7 @@ BOXEXPORT char *BoxMem_Strndup(const char *s, size_t length);
  * parts.
  */
 BOXEXPORT char *BoxMem_Str_Merge_With_Len(const char *str1, size_t l1,
-                                const char *str2, size_t l2);
+                                          const char *str2, size_t l2);
 
 /** Merge two strings by callng BoxMem_Str_Merge_With_Len and using strlen to
  * get the lengths of the two strings (wh)

@@ -438,7 +438,8 @@ static void ASTNodeString_Finaliser(ASTNode *node) {
 
 ASTNode *ASTNodeString_New(const char *str, size_t str_len) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_STRING);
-  node->attr.string.str = BoxMem_Strndup(str, str_len);
+  node->attr.string.str = 
+    BoxMem_Str_Merge_With_Len(str, str_len, NULL, 0);
   node->finaliser = ASTNodeString_Finaliser;
   return node;
 }

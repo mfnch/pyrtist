@@ -130,12 +130,12 @@ char *BoxMem_Strndup(const char *s, size_t length) {
 
 char *BoxMem_Str_Merge_With_Len(const char *str1, size_t l1,
                                 const char *str2, size_t l2) {
-  size_t l;
+  size_t l, ltot;
   char *s;
   int ok1 = BoxMem_x_Plus_y(& l, l1, l2),
-      ok2 = BoxMem_x_Plus_y(& l, l, 1);
+      ok2 = BoxMem_x_Plus_y(& ltot, l, 1);
   if (ok1 && ok2) {
-    s = BoxMem_Alloc(l*sizeof(char));
+    s = BoxMem_Alloc(ltot*sizeof(char));
     if (l1 > 0) memcpy(s, str1, l1);
     if (l2 > 0) memcpy(s + l1, str2, l2);
     s[l] = '\0';
