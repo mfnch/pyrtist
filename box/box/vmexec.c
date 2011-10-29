@@ -418,7 +418,7 @@ static void VM__Exec_Reloc_OO(BoxVM *vm) {
          *src = (BoxPtr *) vmcur->arg2;
   BoxInt id = *((Int *) vmcur->local[TYPE_INT].ptr);
   BoxTask t = BoxVM_Obj_Relocate(vm, dest, src, id);
-  BoxPtr_Detach(src);
+  //BoxPtr_Detach(src);
   if (t == BOXTASK_OK)
     return;
   vm->vmcur->flags.error = 1;
@@ -490,11 +490,14 @@ static void VM__Exec_Lea(BoxVM *vmp) {
   obj->ptr = vmcur->arg1;
 }
 
-static void VM__Exec_Lea_OO(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
-  BoxPtr *obj = (BoxPtr *) vmcur->arg1;
-  obj->block = (void *) NULL;
-  obj->ptr = vmcur->arg2;
+static void VM__Exec_Lea_OO(BoxVM *vm) {
+  VMStatus *vmcur = vm->vmcur;
+  BoxPtr *arg1 = (BoxPtr *) vmcur->arg1,
+         *arg2 = (BoxPtr *) vmcur->arg2;
+  if (!BoxPtr_Is_Detached(arg1))
+    BoxVM_Unlink(vm, arg1);
+  arg1->block = (void *) NULL;
+  arg1->ptr = arg2;
 }
 
 static void VM__Exec_Push_O(BoxVM *vmp) {

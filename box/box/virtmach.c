@@ -121,7 +121,7 @@
  *****************************************************************************/
 
 /* Static functions defined in this file */
-static void Update_gr0(BoxVM *vm);
+static void My_Set_Data_Segment_Register(BoxVM *vm);
 
 /* This array lets us to obtain the size of a type by type index.
  * (Useful in what follows)
@@ -502,12 +502,21 @@ Task BoxVM_Init(BoxVM *vm) {
   return Success;
 }
 
-static void _Free_Globals(BoxVM *vmp) {
+static void My_Free_Globals(BoxVM *vmp) {
   int i;
   for(i = 0; i < NUM_TYPES; i++) {
     BoxVMRegs *gregs = & vmp->global[i];
-    if (gregs->ptr != NULL)
+
+    if (gregs->ptr != NULL) {
+      if (i == BOXTYPE_PTR) {
+        BoxPtr *ptrs = gregs->ptr;
+        BoxInt j;
+        for (j = gregs->min; j < gregs->max; j++)
+          BoxVM_Obj_Unlink(vmp, ptrs + j);
+      }
+
       BoxMem_Free(gregs->ptr + gregs->min*size_of_type[i]);
+    }
     gregs->ptr = NULL;
     gregs->min = 1;
     gregs->max = -1;
@@ -518,7 +527,7 @@ static void _Free_Globals(BoxVM *vmp) {
 void BoxVM_Finish(BoxVM *vm) {
   if (vm == (BoxVM *) NULL) return;
   if (vm->has.globals)
-    _Free_Globals(vm);
+    My_Free_Globals(vm);
 
   if (BoxArr_Num_Items(& vm->stack) != 0)
     MSG_WARNING("Run finished with non empty stack.");
@@ -577,24 +586,25 @@ Task BoxVM_Alloc_Global_Regs(BoxVM *vm, Int num_var[], Int num_reg[]) {
   assert(vm != NULL);
 
   if (vm->has.globals)
-    _Free_Globals(vm);
+    My_Free_Globals(vm);
 
   for(i = 0; i < NUM_TYPES; i++) {
     Int nv = num_var[i], nr = num_reg[i];
     BoxVMRegs *gregs = & vm->global[i];
     void *ptr;
+    size_t nr_tot = nv + nr + 1;
 
     if (nv < 0 || nr < 0) {
       MSG_ERROR("Wrong allocation numbers for global registers.");
-      _Free_Globals(vm);
+      My_Free_Globals(vm);
       return Failed;
     }
 
     if (nr < 3) nr = 3; /* gro0, gro1, gro2 are always needed! */
-    ptr = calloc(nv + nr + 1, size_of_type[i]);
+    ptr = calloc(nr_tot, size_of_type[i]);
     if (ptr == NULL) {
       MSG_ERROR("Error in the allocation of the local registers.");
-      _Free_Globals(vm);
+      My_Free_Globals(vm);
       return Failed;
     }
 
@@ -602,13 +612,20 @@ Task BoxVM_Alloc_Global_Regs(BoxVM *vm, Int num_var[], Int num_reg[]) {
     gregs->min = -nv;
     gregs->max = nr;
     vm->has.globals = 1; /* This line must stay here, not outside the loop! */
+
+    if (i == BOXTYPE_PTR) {
+      size_t j;
+      for (j = 0; j < nr_tot; j++)
+        BoxPtr_Nullify((BoxPtr *) ptr + j);
+
+    }
   }
 
   reg_obj = (Obj *) vm->global[TYPE_OBJ].ptr;
   vm->box_vm_current = reg_obj + 1;
   vm->box_vm_arg1    = reg_obj + 2;
   vm->box_vm_arg2    = reg_obj + 3;
-  Update_gr0(vm);
+  My_Set_Data_Segment_Register(vm);
   return Success;
 }
 
@@ -621,17 +638,22 @@ void BoxVM_Module_Global_Set(BoxVM *vmp, Int type, Int reg, void *value) {
   BoxVMRegs *gregs;
 
   if (type < 0 || type >= NUM_TYPES) {
-    MSG_FATAL("VM_Module_Global_Set: Unknown register type!");
+    MSG_FATAL("BoxVM_Module_Global_Set: Unknown register type!");
     assert(0);
   }
 
   gregs = & vmp->global[type];
   if (reg < gregs->min || reg > gregs->max) {
-    MSG_FATAL("VM_Module_Global_Set: Reference to unallocated register!");
+    MSG_FATAL("BoxVM_Module_Global_Set: Reference to unallocated register!");
     assert(0);
   }
 
   dest = gregs->ptr + reg*size_of_type[type];
+
+  /* Unlink the reference associated to the register, before setting it. */
+  if (type == BOXTYPE_PTR)
+    BoxVM_Obj_Unlink(vmp, (BoxPtr *) dest);
+
   memcpy(dest, value, size_of_type[type]);
 }
 
@@ -800,16 +822,16 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
     int i, n = lregs->max - lregs->min + 1;
     /* ^^^ NOTE: lregs->min is negative! */
 
-    for(i = 0; i < n; i++, ro++) {
+    for (i = 0; i < n; i++, ro++) {
       if (!BoxPtr_Is_Detached(ro))
-        BoxVM_Unlink(vmp, ro);
+        BoxVM_Obj_Unlink(vmp, ro);
     }
   }
 
   {
     /* Delete the registers allocated with the 'new*' instructions */
     register int i;
-    for(i = 0; i < NUM_TYPES; i++)
+    for (i = 0; i < NUM_TYPES; i++)
       if ((vm.alc[i] & 1) != 0) {
         BoxVMRegs *lregs = & vm.local[i];
         BoxMem_Free(lregs->ptr + lregs->min*size_of_type[i]);
@@ -1175,8 +1197,8 @@ UInt BoxVM_Data_Add(BoxVM *vm, const void *data, UInt size, Int type) {
 }
 
 /* Make sure gr0 is pointing to the data segment */
-static void Update_gr0(BoxVM *vm) {
-  Obj data_segment_ptr;
+static void My_Set_Data_Segment_Register(BoxVM *vm) {
+  BoxPtr data_segment_ptr;
   data_segment_ptr.block = NULL; /* the VM will handle deallocation! */
   data_segment_ptr.ptr = BoxArr_First_Item_Ptr(& vm->data_segment);
   BoxVM_Module_Global_Set(vm, TYPE_OBJ, (Int) 0, & data_segment_ptr);

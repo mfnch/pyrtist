@@ -20,6 +20,8 @@
 #ifndef _BOX_VMPTR_H
 #  define _BOX_VMPTR_H
 
+//#  include <stdint.h>
+
 typedef struct _BoxVM_struct BoxVM;
 
 typedef struct _BoxVMStatus_struct VMStatus;
