@@ -1513,3 +1513,26 @@ Value *Value_Expand_Subtype(Value *v) {
 
   return v;
 }
+
+Value *Value_Raise(Value *v) {
+  BoxCmp *c = v->proc->cmp;
+  TS *ts = & c->ts;
+
+  if (Value_Is_Value(v)) {
+    BoxType t_ret = BoxTS_Get_Raised(ts, v->type);
+    if (t_ret != BOXTYPE_NONE) {
+      v->type = t_ret;
+      return v;
+
+    } else {
+      Value_Unlink(v);
+      MSG_ERROR("Raising operator is applied to a non-raised type.");
+      return NULL;
+    }
+
+  } else {
+    Value_Unlink(v);
+    MSG_ERROR("Raising operator got invalid operand.");
+    return NULL;
+  }
+}

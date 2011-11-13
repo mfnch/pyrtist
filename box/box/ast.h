@@ -54,14 +54,16 @@ typedef enum {
   ASTNODETYPE_STRUC,
   ASTNODETYPE_ARRAYGET,
   ASTNODETYPE_MEMBERGET,
+  ASTNODETYPE_RAISE,
   ASTNODETYPE_SELFGET,
   ASTNODETYPE_SUBTYPEBLD,
   ASTNODETYPE_PROCDEF,
   ASTNODETYPE_TYPEDEF,
   ASTNODETYPE_STRUCTYPE,
   ASTNODETYPE_MEMBERTYPE,
-  ASTNODETYPE_SPECTYPE,
-  ASTNODETYPE_INCTYPE
+  ASTNODETYPE_RAISETYPE,
+  ASTNODETYPE_SPECTYPE
+
 } ASTNodeType;
 
 /**Separator between statements */
@@ -234,6 +236,11 @@ typedef struct {
   char     *member;
 } ASTNodeMemberGet;
 
+/** Node for the raise operation */
+typedef struct {
+  ASTNode  *expr;
+} ASTNodeRaise;
+
 /** Node for subtype building */
 typedef struct {
   ASTNode  *parent;
@@ -274,16 +281,16 @@ typedef struct {
            *next;
 } ASTNodeMemberType;
 
+/** Node for type raising */
+typedef struct {
+  ASTNode  *type;
+} ASTNodeRaiseType;
+
 /** Node for species type definition */
 typedef struct {
   ASTNode  *first_member,
            *last_member;
 } ASTNodeSpecType;
-
-/** Node for species type increment */
-typedef struct {
-  ASTNode  *type;
-} ASTNodeIncType;
 
 /** Node finaliser (used only for few nodes) */
 typedef void (*ASTNodeFinaliser)(ASTNode *node);
@@ -313,14 +320,15 @@ struct __ASTNode {
     ASTNodeStruc      struc;
     ASTNodeArrayGet   array_get;
     ASTNodeMemberGet  member_get;
+    ASTNodeRaise      raise;
     ASTNodeSubtypeBld subtype_bld;
     ASTNodeSelfGet    self_get;
     ASTNodeProcDef    proc_def;
     ASTNodeTypeDef    type_def;
     ASTNodeStrucType  struc_type;
     ASTNodeMemberType member_type;
+    ASTNodeRaiseType  raise_type;
     ASTNodeSpecType   spec_type;
-    ASTNodeIncType    inc_type;
   } attr;
 };
 
@@ -381,6 +389,7 @@ ASTNode *ASTNodeStruc_Add_Member(ASTNode *struc,
 ASTNode *ASTNodeArrayGet_New(ASTNode *array, ASTNode *index);
 ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
                               const char *member, int member_len);
+ASTNode *ASTNodeRaise_New(ASTNode *expr);
 ASTNode *ASTNodeSubtype_Build(ASTNode *parent, const char *subtype);
 ASTNode *ASTNodeSelfGet_New(BoxInt level);
 ASTNode *ASTNodeProcDef_New(ASTNode *child_type, BoxComb combine,
@@ -393,6 +402,6 @@ ASTNode *ASTNodeStrucType_Add_Member(ASTNode *struc_type,
                                      ASTTypeMemb *member);
 ASTNode *ASTNodeSpecType_New(ASTNode *first_type, ASTNode *second_type);
 ASTNode *ASTNodeSpecType_Add_Member(ASTNode *species, ASTNode *memb);
-ASTNode *ASTNodeIncType_New(ASTNode *type);
+ASTNode *ASTNodeRaiseType_New(ASTNode *type);
 
 #endif /* _AST_H */

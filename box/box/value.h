@@ -390,4 +390,7 @@ Value *Value_Subtype_Get_Parent(Value *v_subtype);
  */
 Value *Value_Expand_Subtype(Value *v);
 
+/** Raise the value 'v': if 'v = (^Int)[]', '^v' has type 'Int'. */
+Value *Value_Raise(Value *v);
+
 #endif /* _VALUE_H */

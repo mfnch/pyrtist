@@ -404,16 +404,16 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
   TS_Name_Set(ts, b->species_point, "Point");
 
   /* Define If, Else, Elif and For */
-  b->alias_if = BoxTS_New_Detached(ts, BoxTS_New_Alias(ts, BOXTYPE_INT));
+  b->alias_if = BoxTS_New_Raised(ts, BoxTS_New_Alias(ts, BOXTYPE_INT));
   TS_Name_Set(ts, b->alias_if, "If");
 
-  b->alias_else = BoxTS_New_Detached(ts, BoxTS_New_Alias(ts, BOXTYPE_VOID));
+  b->alias_else = BoxTS_New_Raised(ts, BoxTS_New_Alias(ts, BOXTYPE_VOID));
   TS_Name_Set(ts, b->alias_else, "Else");
 
-  b->alias_elif = BoxTS_New_Detached(ts, BoxTS_New_Alias(ts, BOXTYPE_INT));
+  b->alias_elif = BoxTS_New_Raised(ts, BoxTS_New_Alias(ts, BOXTYPE_INT));
   TS_Name_Set(ts, b->alias_elif, "Elif");
 
-  b->alias_for = BoxTS_New_Detached(ts, BoxTS_New_Alias(ts, BOXTYPE_INT));
+  b->alias_for = BoxTS_New_Raised(ts, BoxTS_New_Alias(ts, BOXTYPE_INT));
   TS_Name_Set(ts, b->alias_for, "For");
 
   /* Define Str */

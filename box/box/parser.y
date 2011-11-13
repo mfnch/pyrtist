@@ -112,7 +112,7 @@ static void My_Syntax_Error();
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
 %type <Node> land_expr lor_expr assign_expr expr statement statement_list
 %type <Node> type_sep sep_type struc_type species_type func_type
-%type <Node> named_type prim_type array_type type inc_type assign_type
+%type <Node> named_type prim_type array_type type raise_type assign_type
 %type <Node> at_left procedure opt_c_name procedure_decl
 %type <TypeMemb> struc_type_1st struc_type_2nd
 
@@ -264,7 +264,8 @@ opt_postfix_expr:
 unary_expr:
     postfix_expr                 {$$ = $1;}
   | un_op unary_expr             {$$ = ASTNodeUnOp_New($1, $2); SRC($$, @$);}
-  ;
+  | '^' unary_expr               {$$ = ASTNodeRaise_New($2); SRC($$, @$);}
+;
 
 pow_expr:
     unary_expr                   {$$ = $1;}
@@ -403,13 +404,14 @@ type:
     func_type                    {$$ = $1;}
   ;
 
-inc_type:
+raise_type:
     type                         {$$ = $1;}
-  | TOK_INC type                 {$$ = ASTNodeIncType_New($2); SRC($$, @$);}
+  | TOK_INC type                 {$$ = ASTNodeRaiseType_New($2); SRC($$, @$);}
+  | '^' type                     {$$ = ASTNodeRaiseType_New($2); SRC($$, @$);}
   ;
 
 assign_type:
-    named_type '=' inc_type      {$$ = ASTNodeTypeDef_New($1, $3); SRC($$, @$);}
+    named_type '=' raise_type      {$$ = ASTNodeTypeDef_New($1, $3); SRC($$, @$);}
   | named_type '=' assign_type   {$$ = ASTNodeTypeDef_New($1, $3); SRC($$, @$);}
   ;
 

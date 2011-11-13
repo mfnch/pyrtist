@@ -347,7 +347,8 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n);
 static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n);
 static void My_Compile_StrucType(BoxCmp *c, ASTNode *n);
 static void My_Compile_SpecType(BoxCmp *c, ASTNode *n);
-static void My_Compile_IncType(BoxCmp *c, ASTNode *n);
+static void My_Compile_RaiseType(BoxCmp *c, ASTNode *n);
+static void My_Compile_Raise(BoxCmp *c, ASTNode *n);
 
 void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
   if (program == NULL)
@@ -396,6 +397,8 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_Struc(c, node); break;
   case ASTNODETYPE_MEMBERGET:
     My_Compile_MemberGet(c, node); break;
+  case ASTNODETYPE_RAISE:
+    My_Compile_Raise(c, node); break;
   case ASTNODETYPE_SUBTYPEBLD:
     My_Compile_SubtypeBld(c, node); break;
   case ASTNODETYPE_SELFGET:
@@ -408,8 +411,8 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_StrucType(c, node); break;
   case ASTNODETYPE_SPECTYPE:
     My_Compile_SpecType(c, node); break;
-  case ASTNODETYPE_INCTYPE:
-    My_Compile_IncType(c, node); break;
+  case ASTNODETYPE_RAISETYPE:
+    My_Compile_RaiseType(c, node); break;
   default:
     printf("Compilation of node is not implemented, yet!\n");
     break;
@@ -1357,19 +1360,19 @@ static void My_Compile_SpecType(BoxCmp *c, ASTNode *n) {
   BoxCmp_Push_Value(c, v_spec_type);
 }
 
-static void My_Compile_IncType(BoxCmp *c, ASTNode *n) {
+static void My_Compile_RaiseType(BoxCmp *c, ASTNode *n) {
   Value *v_type, *v_inc_type = NULL;
   BoxType t_inc_type;
 
-  assert(n->type == ASTNODETYPE_INCTYPE);
+  assert(n->type == ASTNODETYPE_RAISETYPE);
 
-  My_Compile_Any(c, n->attr.inc_type.type);
+  My_Compile_Any(c, n->attr.raise_type.type);
   if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
     return;
 
   v_type = BoxCmp_Pop_Value(c);
   if (Value_Want_Has_Type(v_type)) {
-    t_inc_type = BoxTS_New_Detached(& c->ts, v_type->type);
+    t_inc_type = BoxTS_New_Raised(& c->ts, v_type->type);
     v_inc_type = Value_New(c->cur_proc);
     Value_Setup_As_Type(v_inc_type, t_inc_type);
   }
@@ -1377,3 +1380,24 @@ static void My_Compile_IncType(BoxCmp *c, ASTNode *n) {
   BoxCmp_Push_Value(c, v_inc_type);
 }
 
+static void My_Compile_Raise(BoxCmp *c, ASTNode *n) {
+  Value *v_operand = NULL;
+
+  assert(n->type == ASTNODETYPE_RAISE);
+
+  My_Compile_Any(c, n->attr.raise.expr);
+  if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push err */ 1))
+    return;
+
+  v_operand = BoxCmp_Pop_Value(c);
+  if (Value_Want_Value(v_operand)) {
+    v_operand = Value_Raise(v_operand);
+
+  } else {
+    Value_Unlink(v_operand);
+    v_operand = NULL;
+  }
+
+  BoxCmp_Push_Value(c, v_operand);
+
+}

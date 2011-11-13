@@ -176,8 +176,8 @@ BoxType TS_Resolve_Once(BoxTS *ts, BoxType t, TSKindSelect select) {
     return rt;
   case TS_KIND_ALIAS:
     resolve = ((select & TS_KS_ALIAS) != 0); break;
-  case TS_KIND_DETACHED:
-    resolve = ((select & TS_KS_DETACHED) != 0); break;
+  case TS_KIND_RAISED:
+    resolve = ((select & TS_KS_RAISED) != 0); break;
   case TS_KIND_SPECIES:
     rt = td->data.last;
     resolve = ((select & TS_KS_SPECIES) != 0);
@@ -209,12 +209,12 @@ BoxType TS_Resolve(BoxTS *ts, BoxType t, TSKindSelect select) {
 }
 
 Type TS_Get_Core_Type(TS *ts, Type t) {
-  return TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES);
+  return TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_RAISED | TS_KS_SPECIES);
 }
 
 BoxType TS_Get_Cont_Type(TS *ts, BoxType t) {
   BoxType r =
-    TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES);
+    TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_RAISED | TS_KS_SPECIES);
 
   if (TS_Is_Empty(ts, r))
     return BOXTYPE_VOID;
@@ -323,7 +323,7 @@ char *TS_Name_Get(TS *ts, Type t) {
   case TS_KIND_INTRINSIC:
     return printdup("<size=%I>", td->size);
 
-  case TS_KIND_DETACHED:
+  case TS_KIND_RAISED:
     return printdup("++%~s", TS_Name_Get(ts, td->target));
 
   case TS_KIND_ARRAY:
@@ -361,7 +361,7 @@ char *TS_Name_Get(TS *ts, Type t) {
 BoxTask BoxTS_Get_Array_Member(BoxTS *ts, BoxType *memb, BoxType array,
                                BoxInt *array_size) {
   BoxType a = TS_Resolve(ts, array, TS_KS_ALIAS | TS_KS_SPECIES
-                                    | TS_KS_DETACHED);
+                                    | TS_KS_RAISED);
   TSDesc *a_td = Type_Ptr(ts, a);
   if (a_td->kind != TS_KIND_ARRAY) {
     MSG_ERROR("Cannot extract element of the non-array type '%~s'",
@@ -386,7 +386,7 @@ static void Member_Full_Name(TS *ts, Name *n, Type s, const char *m_name) {
 Type BoxTS_Find_Struct_Member(BoxTS *ts, BoxType s, const char *m_name) {
   Name n;
   BoxHTItem *hi;
-  s = TS_Resolve(ts, s, TS_KS_ALIAS | TS_KS_SPECIES | TS_KS_DETACHED);
+  s = TS_Resolve(ts, s, TS_KS_ALIAS | TS_KS_SPECIES | TS_KS_RAISED);
   Member_Full_Name(ts, & n, s, m_name);
   if (BoxHT_Find(& ts->members, n.text, n.length, & hi))
     return *((Type *) hi->object);
@@ -474,7 +474,7 @@ BoxType BoxTS_Procedure_New(BoxTS *ts, BoxType child,
 
 /*FUNCTIONS: My_New **********************************************************/
 
-/* Common code for Ts_Alias_New, TS_Detached_New and TS_Array_New. */
+/* Common code for BoxTs_New_Alias, BoxTS_New_Raised and BoxTS_New_Array. */
 static BoxType My_New(TSKind kind, BoxTS *ts, BoxType src, BoxInt size) {
   TSDesc td;
   TSDesc *src_td = Type_Ptr(ts, src);
@@ -499,12 +499,22 @@ BoxType BoxTS_New_Alias(BoxTS *ts, BoxType origin) {
   return My_New(TS_KIND_ALIAS, ts, origin, -1);
 }
 
-BoxType BoxTS_New_Detached(BoxTS *ts, BoxType t_origin) {
-  return My_New(TS_KIND_DETACHED, ts, t_origin, -1);
+BoxType BoxTS_New_Raised(BoxTS *ts, BoxType t_origin) {
+  return My_New(TS_KIND_RAISED, ts, t_origin, -1);
 }
 
 BoxType BoxTS_New_Array(BoxTS *ts, BoxType item, Int num_items) {
   return My_New(TS_KIND_ARRAY, ts, item, num_items);
+}
+
+BoxType BoxTS_Get_Raised(BoxTS *ts, BoxType t) {
+  BoxType resolved_t = TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_SPECIES);
+  TSDesc *resolved_td = Type_Ptr(ts, resolved_t);
+  if (resolved_td->kind == TS_KIND_RAISED)
+    return resolved_td->target;
+
+  else
+    return BOXTYPE_NONE;
 }
 
 /*FUNCTIONS: My_Begin_Composite **********************************************/
@@ -811,7 +821,7 @@ BoxType BoxTS_Procedure_Search(TS *ts, BoxType *expansion_type,
     /* Resolve the parent type and retry */
     previous_parent = parent;
     parent = TS_Resolve_Once(ts, parent,
-                             TS_KS_ALIAS | TS_KS_DETACHED | TS_KS_SPECIES);
+                             TS_KS_ALIAS | TS_KS_RAISED | TS_KS_SPECIES);
   } while (parent != previous_parent && search_inherited);
 
   return proc;
@@ -921,26 +931,6 @@ BoxType TS_Subtype_Find(TS *ts, Type parent, const char *name) {
     return BOXTYPE_NONE;
 }
 
-#if 0
-void TS_Subtype_Get_Child(TS *ts, Type *child, Type subtype) {
-  TSDesc *s_td = Type_Ptr(ts, subtype);
-
-  assert(s_td->kind == TS_KIND_SUBTYPE);
-  assert(s_td->target != BOXTYPE_NONE);
-  assert(s_td->size != BOX_SIZE_UNKNOWN);
-  *child = s_td->target;
-}
-
-void TS_Subtype_Get_Parent(TS *ts, Type *parent, Type subtype) {
-  TSDesc *s_td = Type_Ptr(ts, subtype);
-
-  assert(s_td->kind == TS_KIND_SUBTYPE);
-  assert(s_td->target != BOXTYPE_NONE);
-  assert(s_td->size != BOX_SIZE_UNKNOWN);
-  *parent = s_td->data.subtype.parent;
-}
-#endif
-
 
 /****************************************************************************/
 
@@ -961,7 +951,7 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
     case TS_KIND_INTRINSIC:
       return TS_TYPES_UNMATCH;
 
-    case TS_KIND_DETACHED:
+    case TS_KIND_RAISED:
       return TS_TYPES_UNMATCH;
 
     case TS_KIND_SPECIES:

@@ -79,6 +79,9 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
   case ASTNODETYPE_MEMBERGET:
     subnodes[0] = & node->attr.member_get.struc;
     return 1;
+  case ASTNODETYPE_RAISE:
+    subnodes[0] = & node->attr.raise.expr;
+    return 1;
   case ASTNODETYPE_SUBTYPEBLD:
     subnodes[0] = & node->attr.subtype_bld.parent;
     return 1;
@@ -101,11 +104,11 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
     subnodes[0] = & node->attr.member_type.type;
     subnodes[1] = & node->attr.member_type.next;
     return 2;
+  case ASTNODETYPE_RAISETYPE:
+    subnodes[0] = & node->attr.raise_type.type;
+    return 1;
   case ASTNODETYPE_SPECTYPE:
     subnodes[0] = & node->attr.spec_type.first_member;
-    return 1;
-  case ASTNODETYPE_INCTYPE:
-    subnodes[0] = & node->attr.inc_type.type;
     return 1;
   }
   assert(0); /* Should never happen! */
@@ -504,6 +507,12 @@ ASTNode *ASTNodeMember_New(const char *name, ASTNode *expr) {
   return node;
 }
 
+ASTNode *ASTNodeRaise_New(ASTNode *expr) {
+  ASTNode *node = ASTNode_New(ASTNODETYPE_RAISE);
+  node->attr.raise.expr = expr;
+  return node;
+}
+
 ASTNode *ASTNodeStruc_New(const char *first_name, ASTNode *first_expr) {
   ASTNode *first_member = NULL, *node;
   assert(!(first_name != NULL && first_expr == NULL));
@@ -689,9 +698,9 @@ ASTNode *ASTNodeSpecType_Add_Member(ASTNode *spec_type, ASTNode *type) {
   return spec_type;
 }
 
-ASTNode *ASTNodeIncType_New(ASTNode *type) {
+ASTNode *ASTNodeRaiseType_New(ASTNode *type) {
   ASTNode *node;
-  node = ASTNode_New(ASTNODETYPE_INCTYPE);
-  node->attr.inc_type.type = type;
+  node = ASTNode_New(ASTNODETYPE_RAISETYPE);
+  node->attr.raise_type.type = type;
   return node;
 }

@@ -37,7 +37,7 @@
 typedef enum {
   TS_KIND_INTRINSIC=1,
   TS_KIND_ALIAS,
-  TS_KIND_DETACHED,
+  TS_KIND_RAISED,
   TS_KIND_SPECIES,
   TS_KIND_STRUCTURE,
   TS_KIND_ENUM,
@@ -60,7 +60,7 @@ typedef enum {
   TS_KS_ALIAS=1,
   TS_KS_SPECIES=2,
   TS_KS_SUBTYPE=4,
-  TS_KS_DETACHED=8,
+  TS_KS_RAISED=8,
   TS_KS_ANONYMOUS=16
 } TSKindSelect;
 
@@ -143,7 +143,7 @@ BoxType TS_Resolve_Once(BoxTS *ts, BoxType t, TSKindSelect select);
 BoxType TS_Resolve(BoxTS *ts, BoxType t, TSKindSelect select);
 
 /** Return the core type of the provided type 't'.
- * This means that alias, species and detached types are resolved and
+ * This means that alias, species and raised types are resolved and
  * the underlying fundamental type is returned. For example, if:
  *
  *   MyType = ++(Int a, b, c)
@@ -310,13 +310,16 @@ char *TS_Name_Get(BoxTS *ts, BoxType t);
 /** Create a new alias type from the type 'origin'. */
 BoxType BoxTS_New_Alias(BoxTS *ts, BoxType origin);
 
-/** Create a new detached type from the type t. The new type (in *d) will be
+/** Create a new raised type from the type t. The new type (in *d) will be
  * similar to t, but incompatible: TS_Compare will not match the two types.
  */
-BoxType BoxTS_New_Detached(BoxTS *ts, BoxType t_origin);
+BoxType BoxTS_New_Raised(BoxTS *ts, BoxType t_origin);
 
 /** Create a new array type, with 'item_num' items with type 'item'. */
 BoxType BoxTS_New_Array(BoxTS *ts, BoxType item, BoxInt num_items);
+
+/** Given a raised type '^Type', return the original type 'Type'. */
+BoxType BoxTS_Get_Raised(BoxTS *ts, BoxType t);
 
 /** Function called to create an empty structure. Members can be added
  * with BoxTS_Add_Struct_Member.

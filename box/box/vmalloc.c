@@ -388,43 +388,6 @@ BoxTask BoxVM_Obj_Create(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id) {
   }
 }
 
-
-#if 0
-
-static BoxTask My_Obj_Copy(BoxVM *vm, BoxVMObjDesc *desc,
-                           BoxPtr *dest, size_t addr, void *pass) {
-  BoxPtr src;
-  BoxVMCallNum copier = desc->copier;
-
-  assert(desc != NULL && pass != NULL);
-
-  src.block = ((BoxPtr *) pass)->block;
-  src.ptr = ((BoxPtr *) pass)->ptr + addr;
-
-  if (copier != BOXVMCALLNUM_NONE)
-    return BoxVM_Module_Execute_With_Args(vm, copier, dest, & src);
-  else
-    return My_Obj_Iter(vm, desc, dest, My_Obj_Copy, & src);
-}
-
-BoxTask BoxVM_Obj_Copy(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
-                       BoxVMAllocID id) {
-  BoxVMObjDesc *desc = BoxVMObjDesc_From_Alloc_ID(vm, id);
-  if (desc != NULL) {
-    /* Copy the raw data */
-    (void) memcpy(dest->ptr, src->ptr, desc->size);
-
-    /* Copy objects with special copier */
-    return My_Obj_Copy(vm, desc, dest, 0, src);
-
-  } else {
-    MSG_ERROR("BoxVM_Obj_Copy: unknown object id (%d).", (int) id);
-    return BOXTASK_ERROR;
-  }
-}
-
-#else
-
 typedef struct {
   BoxPtr src, dest;
   size_t gap_offs;
@@ -498,8 +461,6 @@ BoxTask BoxVM_Obj_Copy(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
     return BOXTASK_ERROR;
   }
 }
-
-#endif
 
 BoxTask BoxVM_Obj_Relocate(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
                            BoxVMAllocID id) {
