@@ -6,7 +6,7 @@
 // instead
 OldStyle = ++CPtr
 
-([)@OldStyle "style_begin" ?
+(.[)@OldStyle "style_begin" ?
 //(].)@OldStyle "style_destroy" ?
 
 OldStyle.Fill = Void

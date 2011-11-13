@@ -2,7 +2,7 @@
 
 PointList = ++CPtr
 (.[)@PointList "pointlist_begin" ?
-(].)@PointList "ipointlist_destroy" ?
+//(].)@PointList "ipointlist_destroy" ?
 
 Str@PointList "pointlist_str" ?
 Point@PointList "pointlist_point" ?

@@ -7,7 +7,7 @@ OldGradient = ++CPtr
 
 (.[)@OldGradient "gradient_begin" ?
 (])@OldGradient "gradient_end" ?
-(].)@OldGradient "gradient_destroy" ?
+//(].)@OldGradient "gradient_destroy" ?
 
 OldGradient.Line = Void
 Point@OldGradient.Line "gradient_line_point" ?
