@@ -249,13 +249,20 @@ static BoxTask My_Obj_Iter(BoxVM *vm, BoxVMObjDesc *desc, BoxPtr *obj,
   return BOXTASK_OK;
 }
 
+/* XXX NOTE: we have to revisit the code below. Exceptions during
+ * initialization or finalization may lead to memory leaks.
+ */
+
 static BoxTask My_Obj_Init(BoxVM *vm, BoxVMObjDesc *desc,
                            BoxPtr *obj, size_t addr, void *pass) {
   BoxVMCallNum initializer = desc->initializer;
 
   /* First all the sub-objects are initialized */
-  if (desc->num_subs > 0 && My_Obj_Iter(vm, desc, obj, My_Obj_Init, NULL))
-    return BOXTASK_FAILURE;
+  if (desc->num_subs > 0) {
+    BoxTask t = My_Obj_Iter(vm, desc, obj, My_Obj_Init, NULL);
+    if (t != BOXTASK_OK)
+      return t;
+  }
 
   /* Now the parent object is initialized */
   if (initializer == BOXVMCALLNUM_NONE)
@@ -275,14 +282,18 @@ BoxTask BoxVM_Obj_Init(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id) {
 static BoxTask My_Obj_Finish(BoxVM *vm, BoxVMObjDesc *desc,
                              BoxPtr *obj, size_t addr, void *pass) {
   BoxVMCallNum finalizer = desc->finalizer;
-  /*return BOXTASK_OK;*/
 
   /* First we finalize the parent, then all its children */
-  if (finalizer != BOXVMCALLNUM_NONE)
-    return BoxVM_Module_Execute_With_Args(vm, finalizer, obj, NULL);
+  if (finalizer != BOXVMCALLNUM_NONE) {
+    BoxTask t = BoxVM_Module_Execute_With_Args(vm, finalizer, obj, NULL);
+    if (t != BOXTASK_OK)
+      return t;
+  }
 
-  return (desc->num_subs > 0) ?
-         My_Obj_Iter(vm, desc, obj, My_Obj_Finish, NULL) : BOXTASK_OK;
+  if (desc->num_subs > 0)
+    return My_Obj_Iter(vm, desc, obj, My_Obj_Finish, NULL);
+  else
+    return BOXTASK_OK;
 }
 
 BoxTask BoxVM_Obj_Finish(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id) {

@@ -37,8 +37,8 @@
  * the maximum value, the default type TYPE_OBJ is considered.
  */
 
-#ifndef _REGISTERS_H
-#  define _REGISTERS_H
+#ifndef _BOX_REGISTERS_H
+#  define _BOX_REGISTERS_H
 
 #  include "types.h"
 #  include "array.h"
@@ -84,4 +84,5 @@ Int GReg_Num(RegAlloc *ra, Int type);
 Int GVar_Num(RegAlloc *ra, Int type);
 void Reg_Get_Local_Nums(RegAlloc *ra, Int *num_regs, Int *num_vars);
 void Reg_Get_Global_Nums(RegAlloc *ra, Int *num_regs, Int *num_vars);
-#endif
+
+#endif /* _BOX_REGISTERS_H */
