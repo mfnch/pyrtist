@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "error.h"
 #include "types.h"
@@ -32,28 +33,98 @@
 #include "cmd.h"
 #include "bb.h"
 
-static BB bb_global, bb_local;
+/****************************************************************************
+ * C-implementation of the Bounding Box object (BoxGBBox).
+ * BoxGBBox corresponds to the BBox in the Box language.
+ */
 
-static void My_Got_Point(BoxGWin *w, Real x, Real y) {
-  Point p = {x, y};
-  Grp_BB_Must_Contain(& bb_local, & p);
+void BoxGBBox_Init(BoxGBBox *bb) {
+  bb->num = 0;
+  bb->min.x = bb->min.y = bb->max.x = bb->max.y = 0.0;
+}
+
+void BoxGBBox_Extend(BoxGBBox *bb, BoxPoint *p) {
+  if (bb->num < 1) {
+    assert(bb->num == 0);
+    bb->min.x = bb->max.x = p->x;
+    bb->min.y = bb->max.y = p->y;
+
+  } else {
+    if (p->x < bb->min.x) bb->min.x = p->x;
+    if (p->y < bb->min.y) bb->min.y = p->y;
+    if (p->x > bb->max.x) bb->max.x = p->x;
+    if (p->y > bb->max.y) bb->max.y = p->y;
+  }
+  ++bb->num;
+}
+
+void BoxGBBox_Fuse(BoxGBBox *dst, BoxGBBox *src) {
+  if (src->num != 0) {
+    assert(src->num > 0);
+    BoxGBBox_Extend(dst, & src->min);
+    BoxGBBox_Extend(dst, & src->max);
+    dst->num += src->num - 2;
+  }
+}
+
+BoxReal BoxGBBox_Get_Volume(BoxGBBox *bb) {
+  return (bb->max.x - bb->min.x)*(bb->max.y - bb->min.y);
+}
+
+void BoxGBBox_Extend_Margins(BoxGBBox *bb, BoxPoint *margin_min,
+                             BoxPoint *margin_max) {
+  bb->min.x -= margin_min->x;
+  bb->min.y -= margin_min->y;
+  bb->max.x += margin_max->x;
+  bb->max.y += margin_max->y;
+}
+
+void BoxGBBox_Extend_Margin(BoxGBBox *bb, BoxReal margin) {
+  bb->min.x -= margin;
+  bb->min.y -= margin;
+  bb->max.x += margin;
+  bb->max.y += margin;
+}
+
+/***************************************************************************/
+
+/** BB specific window-data (used to store the bounding box). */
+typedef struct {
+  int      enabled;
+  BoxGBBox bb_local,
+           bb_global;
+
+} MyBBWinData;
+
+/** Macro to access BB specific window data. */
+#define MY_DATA(w) ((MyBBWinData *) (w)->data)
+
+static void My_Got_Point(BoxGWin *w, BoxReal x, BoxReal y) {
+  MyBBWinData *my_data = MY_DATA(w);
+  if (my_data->enabled) {
+    BoxPoint p = {x, y};
+    BoxGBBox_Extend(& my_data->bb_local, & p);
+  }
 }
 
 static void My_BB_Draw_Path(BoxGWin *w, DrawStyle *style) {
+  BoxGBBox *bb_local = & MY_DATA(w)->bb_local;
+  BoxGBBox *bb_global = & MY_DATA(w)->bb_global;
   int do_border = (style->bord_width > 0.0);
   Real scale = style->scale;
   if (do_border)
-    Grp_BB_Margin(& bb_local, 0.5*scale*style->bord_width);
+    BoxGBBox_Extend_Margin(bb_local, 0.5*scale*style->bord_width);
 
-  Grp_BB_Fuse(& bb_global, & bb_local);
-  Grp_BB_Init(& bb_local);
+  BoxGBBox_Fuse(bb_global, bb_local);
+  BoxGBBox_Init(bb_local);
 }
 
-static void My_BB_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
+static void My_BB_Add_Line_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b) {
 #ifdef DEBUG
   printf("line\n");
 #endif
-  My_Got_Point(w, a->x, a->y); My_Got_Point(w, b->x, b->y);
+  My_Got_Point(w, a->x, a->y);
+  My_Got_Point(w, b->x, b->y);
 }
 
 static void My_BB_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c) {
@@ -105,21 +176,39 @@ static BoxTask My_BB_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                                     BoxGCmdArg *aux, void *pass) {
   BoxGWin *w = ((MyInterpretData *) pass)->win;
   BoxGWinMap *map = ((MyInterpretData *) pass)->map;
+  int do_include_points = 0;
 
-  int i;
-  for (i = 0; i < num_args; i++) {
-    void *arg = args[i];
-    BoxGCmdArgKind kind = kinds[i];
-    switch (kind) {
-    case BOXGCMDARGKIND_POINT:
-      {
-        BoxPoint p;
-        BoxGWinMap_Map_Point(map, & p, (BoxPoint *) arg);
-        My_Got_Point(w, p.x, p.y);
+  switch (cmd) {
+  case BOXGCMD_EXT_SET_AUTO_BBOX:
+    MY_DATA(w)->enabled = (int) *((BoxInt *) args[0]);
+    break;
+
+  case BOXGCMD_EXT_UNSET_BBOX:
+    BoxGBBox_Init(& MY_DATA(w)->bb_local);
+    BoxGBBox_Init(& MY_DATA(w)->bb_global);
+    break;
+
+  default:
+    do_include_points = 1;
+    break;
+  }
+
+  if (do_include_points) {
+    int i;
+    for (i = 0; i < num_args; i++) {
+      void *arg = args[i];
+      BoxGCmdArgKind kind = kinds[i];
+      switch (kind) {
+      case BOXGCMDARGKIND_POINT:
+        {
+          BoxPoint p;
+          BoxGWinMap_Map_Point(map, & p, (BoxPoint *) arg);
+          My_Got_Point(w, p.x, p.y);
+        }
+        break;
+      default:
+        break;
       }
-      break;
-    default:
-      break;
     }
   }
 
@@ -147,16 +236,21 @@ static void bb_repair(BoxGWin *w) {
 
 int BoxGBBox_Compute(BoxGBBox *bbox, BoxGWin *figure) {
   BoxGWin bb;
-  /* Ora do' le procedure per gestire la finestra */
+  MyBBWinData bb_data;
+
+  /* Set window-specific data (where the BBox will be stored). */
+  bb_data.enabled = 1;
+  BoxGBBox_Init(& bb_data.bb_global);
+  BoxGBBox_Init(& bb_data.bb_local);
+  bb.data = & bb_data;
+
+  /* The procedure to handle the window are provided below: */
   bb.quiet = 1;
   bb.repair = bb_repair;
   bb.repair(& bb);
   bb.win_type_str = "bb";
-  Grp_BB_Init(& bb_global);
-  Grp_BB_Init(& bb_local);
   BoxGWin_Fig_Draw_Fig(& bb, figure);
-  Grp_BB_Fuse(& bb_global, & bb_local);
-  bbox->min = bb_global.min;
-  bbox->max = bb_global.max;
-  return (Grp_BB_Volume(& bb_global) > 0.0);
+  BoxGBBox_Fuse(& bb_data.bb_global, & bb_data.bb_local);
+  *bbox = bb_data.bb_global;
+  return (BoxGBBox_Get_Volume(& bb_data.bb_global) > 0.0);
 }

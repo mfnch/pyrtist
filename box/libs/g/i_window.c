@@ -546,11 +546,10 @@ BoxTask window_show_point(BoxVM *vmp) {
   return BOXTASK_OK;
 }
 
-BoxTask window_bbox(BoxVM *vm) {
+BoxTask Box_Lib_G_Window_At_BBox(BoxVM *vm) {
   BoxGBBox *b = BOX_VM_THIS_PTR(vm, BoxGBBox);
   Window *w = BOX_VM_ARG1(vm, WindowPtr);
-  int not_degenerate = BoxGBBox_Compute(b, w->window);
-  b->n = not_degenerate ? 3 : 0;
+  (void) BoxGBBox_Compute(b, w->window);
   return BOXTASK_OK;
 }
 

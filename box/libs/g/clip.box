@@ -21,6 +21,10 @@ Path@Clip[\ $$.path[$]]
 Clip@Window[
   Obj[Obj[const.raw.save]]
   [If[!$.path.empty], $.path.cmdstream, Obj[Obj[const.raw.clip]]]
+
+  save_bbox = BBox[$$]
   $.window
+  save_bbox
+
   Obj[Obj[const.raw.restore]]
 ]

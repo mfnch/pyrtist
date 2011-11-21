@@ -82,13 +82,25 @@ Window.Show = Void
 ///Intro: enlarge the bounding box so that it contains the provided point.
 Point@Window.Show "window_show_point" ?
 
-BBox@Window.Show[\ $$[If[$.n & 1], $.min], \ $$[If[$.n & 2], $.max]]
+BBox@Window.Show[
+  \ $$[
+    [If[$.n > 0], $.min]
+    [If[$.n > 1]
+       $.max
+       Point[.x=$.min.x, .y=$.max.y]
+       Point[.x=$.max.x, .y=$.min.y]]
+  ]
+]
 
-///Intro: make sure the Window is large enough to contain the bounding box.
-BBox@Window[.Show[$]]
+///Intro: set the bounding box for the given window.
+// This will override the previous bounding box.
+BBox@Window[
+  Obj[Obj[const.raw.ext_unset_bbox]]
+  .Show[$]
+]
 
 ///Intro: get the bounding box of the window.
-Window@BBox "window_bbox" ?
+Window@BBox "Box_Lib_G_Window_At_BBox" ?
 
 ///Intro: number of hot points in the window.
 Window@Num "Box_Lib_G_Window_At_Num" ?

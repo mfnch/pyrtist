@@ -25,9 +25,28 @@
 typedef struct {
   BoxPoint min,
            max;
-  BoxInt   n;
+  BoxInt   num;
 
 } BoxGBBox;
+
+/** Initialise bounding box object */
+void BoxGBBox_Init(BoxGBBox *bb);
+
+/** Enlarge bounding box object 'bb', such that it contains the point 'p'. */
+void BoxGBBox_Extend(BoxGBBox *bb, BoxPoint *p);
+
+/** Enlarge bounding box object 'dest' to contain the points of 'src'.. */
+void BoxGBBox_Fuse(BoxGBBox *dst, BoxGBBox *src);
+
+/** Return the volume (area) occupied by the bounding box. */
+BoxReal BoxGBBox_Get_Volume(BoxGBBox *bb);
+
+/** Enlarge the bounding box adding margins. */
+void BoxGBBox_Extend_Margins(BoxGBBox *bb, BoxPoint *margin_min,
+                             BoxPoint *margin_max);
+
+/** Enlarge the bounding box adding equal margins. */
+void BoxGBBox_Extend_Margin(BoxGBBox *bb, BoxReal margin);
 
 /** Compute the bounding box of the given figure. If the bounding box
  * is degenerate returns 0. Returns 1 otherwise.

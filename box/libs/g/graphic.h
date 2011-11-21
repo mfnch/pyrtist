@@ -72,11 +72,6 @@ typedef struct {
   Real r, g, b, a;
 } Color;
 
-typedef struct {
-  Point max, min;
-  Int num;
-} BB;
-
 /* Definisce la struttura adatta a contenere il colore di un punto */
 typedef struct {
   unsigned char r;  /* Componente rossa */
@@ -421,24 +416,6 @@ void BoxGWin_Destroy(BoxGWin *w);
 
 /** Unified function to open any kind of window */
 BoxGWin *BoxGWin_Create(BoxGWinPlan *plan);
-
-/** Initialise bounding box object */
-void Grp_BB_Init(BB *bb);
-
-/** Enlarge bounding box object 'bb', such that it contains the point 'p'. */
-void Grp_BB_Must_Contain(BB *bb, Point *p);
-
-/** Enlarge bounding box object 'dest' to contain the points of 'src'.. */
-void Grp_BB_Fuse(BB *dst, BB *src);
-
-/** Return the volume (area) occupied by the bounding box. */
-Real Grp_BB_Volume(BB *bb);
-
-/** Enlarge the bounding box adding margins. */
-void Grp_BB_Margins(BB *bb, Point *margin_min, Point *margin_max);
-
-/** Enlarge the bounding box adding equal margins. */
-void Grp_BB_Margin(BB *bb, Real margin);
 
 /** Make sure the components of 'c' lie inside [0, 1] and correct them,
  * if needed.

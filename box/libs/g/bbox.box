@@ -18,12 +18,13 @@ BBox@Area[If[Num[$] > 1], diag = $.max - $.min, diag.x*diag.y
 
 ///Intro: expand the bounding box to contain the specified point.
 Point@BBox[
-  If[$$.n == 0]
-    $$.max = $, $$.min = $, $$.n = 1
-  Else[], If[$$.n > 0]
-    $$.min.x = Min[$$.min.x, $.x], $$.min.y = Min[$$.min.y, $.y]
-    $$.max.x = Max[$$.max.x, $.x], $$.max.y = Max[$$.max.y, $.y]
-    $$.n = 3
+  [If[$$.n == 0]
+     $$.max = $, $$.min = $, $$.n = 1
+   Else[], If[$$.n > 0]
+     $$.min.x = Min[$$.min.x, $.x], $$.min.y = Min[$$.min.y, $.y]
+     $$.max.x = Max[$$.max.x, $.x], $$.max.y = Max[$$.max.y, $.y]]
+
+   $$.n += 1
 ]
 
 ///Intro: expand the bounding box to contain another bounding box.

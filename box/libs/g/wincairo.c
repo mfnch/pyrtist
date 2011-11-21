@@ -1047,6 +1047,9 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       cairo_set_source(cr, MY_DATA(w)->pattern);
     return BOXTASK_OK;
 
+  case BOXGCMD_EXT_SET_AUTO_BBOX:
+  case BOXGCMD_EXT_UNSET_BBOX:
+    return BOXTASK_OK;
 
   case BOXGCMD_EXT_JOINARC_TO:
     {
