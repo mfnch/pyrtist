@@ -54,12 +54,10 @@ class DoxBrowser(object):
 
     self.window.connect("delete_event", self._on_delete_event)
     
-    self.window_button_ok = gtk.Button(label="_Ok")
-    self.window_button_cancel = gtk.Button(label="_Cancel")
+    self.window_button_hide = gtk.Button(label="_Hide")
 
     self.window_butbox = butbox = gtk.HButtonBox()
-    butbox.add(self.window_button_ok)
-    butbox.add(self.window_button_cancel)
+    butbox.add(self.window_button_hide)
     butbox.set_layout(gtk.BUTTONBOX_END)
     butbox.set_spacing(spacing)
 
@@ -122,10 +120,8 @@ class DoxBrowser(object):
     self.window.add(vsplit1)
 
     tv.connect("row-activated", self._on_row_activated)
-    self.window_button_ok.connect("button-press-event",
-                                  self._on_button_ok_press)
-    self.window_button_cancel.connect("button-press-event",
-                                      self._on_button_cancel_press)
+    self.window_button_hide.connect("button-press-event",
+                                      self._on_button_hide_press)
 
   def show(self, section=None, topic=None):
     """Show the window."""
@@ -174,10 +170,7 @@ class DoxBrowser(object):
     self.quit()
     return True
 
-  def _on_button_ok_press(self, *args):
-    self.quit()
-
-  def _on_button_cancel_press(self, *args):
+  def _on_button_hide_press(self, *args):
     self.quit()
 
   def _on_row_activated(self, treeview, path, view_column):

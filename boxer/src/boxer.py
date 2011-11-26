@@ -149,7 +149,7 @@ class Boxer(object):
     """Called just after saving a file, to communicate that this has just
     happened.
     """
-    self.textbuffer.set_modified(False)
+    self.widget_srcbuf.set_modified(False)
 
   def update_title(self):
     """Update the title in the main window. Must be called when the file name
@@ -162,7 +162,7 @@ class Boxer(object):
 
   def get_main_source(self):
     """Return the content of the main textview (just a string)."""
-    tb = self.textbuffer
+    tb = self.widget_srcbuf
     return tb.get_text(tb.get_start_iter(), tb.get_end_iter())
 
   def set_main_source(self, text, not_undoable=None):
@@ -170,20 +170,20 @@ class Boxer(object):
     if not_undoable == None:
       not_undoable = self.has_srcview
     if not_undoable:
-      self.textbuffer.begin_not_undoable_action()
-    self.textbuffer.set_text(text)
+      self.widget_srcbuf.begin_not_undoable_action()
+    self.widget_srcbuf.set_text(text)
 
     # Remove the "here" marker and put the cursor there!
     here_marker = document.marker_cursor_here
-    si = self.textbuffer.get_start_iter()
+    si = self.widget_srcbuf.get_start_iter()
     found = si.forward_search(here_marker, gtk.TEXT_SEARCH_TEXT_ONLY)
     if found != None:
       mark0, mark1 = found
-      self.textbuffer.select_range(mark0, mark1)
-      self.textbuffer.delete_selection(True, True)
+      self.widget_srcbuf.select_range(mark0, mark1)
+      self.widget_srcbuf.delete_selection(True, True)
 
     if not_undoable:
-      self.textbuffer.end_not_undoable_action()
+      self.widget_srcbuf.end_not_undoable_action()
 
   def raw_file_new(self):
     """Start a new box program and set the content of the main textview."""
@@ -241,7 +241,7 @@ class Boxer(object):
     Return True if the user decided Yes or No. Return False to cancel
     the action.
     """
-    if not self.textbuffer.get_modified():
+    if not self.widget_srcbuf.get_modified():
       return True
 
     msg = "The file contains unsaved changes. Do you want to save it now?"
@@ -261,7 +261,7 @@ class Boxer(object):
 
     elif response == gtk.RESPONSE_YES:
       self.menu_file_save(None)
-      return (not self.textbuffer.get_modified())
+      return (not self.widget_srcbuf.get_modified())
 
     else:
       return True
@@ -345,8 +345,8 @@ class Boxer(object):
   def menu_edit_undo(self, image_menu_item):
     """Called on a CTRL+Z or menu->undo."""
     try:
-      if self.textbuffer.can_undo():
-        self.textbuffer.undo()
+      if self.widget_srcbuf.can_undo():
+        self.widget_srcbuf.undo()
 
     except:
       self.show_undo_redo_warning()
@@ -354,31 +354,30 @@ class Boxer(object):
   def menu_edit_redo(self, image_menu_item):
     """Called on a CTRL+SHIFT+Z or menu->redo."""
     try:
-      if self.textbuffer.can_redo():
-        self.textbuffer.redo()
+      if self.widget_srcbuf.can_redo():
+        self.widget_srcbuf.redo()
 
     except:
       self.show_undo_redo_warning()
 
   def menu_edit_cut(self, image_menu_item):
     """Called on a CTRL+X (cut) command."""
-    self.textbuffer.cut_clipboard(self.clipboard,
-                                  self.textview.get_editable())
+    self.widget_srcbuf.cut_clipboard(self.clipboard,
+                                     self.widget_srcview.get_editable())
 
   def menu_edit_copy(self, image_menu_item):
     """Called on a CTRL+C (copy) command."""
-    self.textbuffer.copy_clipboard(self.clipboard)
+    self.widget_srcbuf.copy_clipboard(self.clipboard)
 
   def menu_edit_paste(self, image_menu_item):
     """Called on a CTRL+V (paste) command."""
-    self.textbuffer.paste_clipboard(self.clipboard,
-                                    None,
-                                    self.textview.get_editable())
+    self.widget_srcbuf.paste_clipboard(self.clipboard, None,
+                                       self.widget_srcview.get_editable())
 
   def menu_edit_delete(self, image_menu_item):
     """Called menu edit->delete command."""
-    self.textbuffer.delete_selection(True,
-                                     self.textview.get_editable())
+    self.widget_srcbuf.delete_selection(True,
+                                        self.widget_srcview.get_editable())
 
   def menu_run_execute(self, image_menu_item):
     """Called by menu run->execute command."""
@@ -504,8 +503,8 @@ class Boxer(object):
 
   def on_help_button_clicked(self, _):
     topic = self.widget_help_entry.get_text().strip()
-    if len(topic) > 0 and self.dialog_dox_browser != None:
-      self.dialog_dox_browser.show(topic=topic)
+    if self.dialog_dox_browser != None:
+      self.dialog_dox_browser.show(topic=topic if len(topic) > 0 else None)
 
   def on_help_entry_activate(self, _):
     self.on_help_button_clicked(_)
@@ -585,6 +584,16 @@ class Boxer(object):
     # Get the main window
     self.mainwin = mainwin = self.boxer.get_widget("boxer")
 
+    # Setup the main HBox
+    # This is transition code. We are doing things more and more from Python
+    # rather than through the glade interface. At the end, we may have a full
+    # specification of the GUI from Python, but for now...
+    container = self.boxer.get_widget("vbox1")
+    menu, tbar, boxout = children = container.get_children()
+    for child in children:
+      container.remove(child)
+    mainwin.remove(container)
+
     # Set the last saved window size, if any
     try:
       wsx, wsy = map(int, self.config.get("GUI", "window_size").split("x", 1))
@@ -637,7 +646,7 @@ class Boxer(object):
     editable_area.set_callback("refpoint_remove", self.notify_refpoint_del)
 
     def refpoint_press_middle(_, rp):
-      tb = self.textbuffer
+      tb = self.widget_srcbuf
       tb.begin_user_action()
       insert_char(tb)
       tb.insert_at_cursor(rp.name)
@@ -680,18 +689,9 @@ class Boxer(object):
       box_exec_output("", force=True)
     editable_area.set_callback("box_document_executed", box_document_executed)
 
-    # Create the scrolled window
-    scroll_win = gtk.ScrolledWindow()
-    scroll_win.add(editable_area)
-
-    # Add the scrolled window to the alignment widget
-    vpaned = self.boxer.get_widget("vpaned")
-    for child in vpaned.get_children():
-      vpaned.remove(child)
-
-    view_rot = self.config.getint("GUI", "rotation")
-    sw = self.boxer.get_widget("srcview_scrolledwindow")
-    self.paned = paned = RotPaned(scroll_win, sw, rotation=view_rot)
+    # Create the scrolled window containing the box-draw editable area
+    scroll_win1 = gtk.ScrolledWindow()
+    scroll_win1.add(editable_area)
 
     # Create the text view
     self.part_srcview = part_srcview = \
@@ -700,6 +700,20 @@ class Boxer(object):
     self.has_srcview = (self.part_srcview.mode > 0)
     self.widget_srcview = srcview = part_srcview.view
     self.widget_srcbuf = srcbuf = part_srcview.buf
+
+    # Put source and output view inside a single widget
+    src_and_out_views = gtk.VBox()
+    src_and_out_views.pack_start(srcview)
+    src_and_out_views.pack_start(self.out_textview_expander, expand=False)
+
+    # Create the scrolled window containing the text views (source + output)
+    scroll_win2 = gtk.ScrolledWindow()
+    scroll_win2.add(src_and_out_views)
+
+    # Put them together in the RotView widget
+    view_rot = self.config.getint("GUI", "rotation")
+    self.paned = paned = RotPaned(scroll_win1, scroll_win2,
+                                  rotation=view_rot)
 
     # Create the statusbar
     self.statusbar = sbar = gtk.Statusbar()
@@ -713,33 +727,22 @@ class Boxer(object):
     astn.set_window(mainwin)
     astn.set_gui(self)
 
-    # Setup the main HBox
-    container = self.boxer.get_widget("vbox1")
-    menu, tbar, _, boxout = children = container.get_children()
-    for child in children:
-      container.remove(child)
-
-    mainwin.remove(container)
-
     # Create the layout in form of HBox-es and VBox-es and pack all widgets
     self.widget_vbox1 = vb1 = gtk.VBox()
     self.widget_hbox1 = hb1 = gtk.HBox(spacing=0)
-    self.widget_vbox2 = vb2 = gtk.VBox()
     vb1.pack_start(menu, expand=False)
     vb1.pack_start(tbar, expand=False)
     vb1.pack_start(hb1, expand=True)
     vb1.pack_start(sbar, expand=False)
     hb1.pack_start(tbox, expand=False)
     hb1.pack_start(gtk.VSeparator(), expand=False)
-    hb1.pack_start(vb2, expand=True)
-    vb2.pack_start(paned.get_container())
-    vb2.pack_start(boxout, expand=False)
-
+    hb1.pack_start(paned.get_container(), expand=True)
     mainwin.add(vb1)
 
     # Initialize the documentation browser
     self._init_doxbrowser()
 
+    scroll_win2.show_all()
     mainwin.show_all()
 
     #-------------------------------------------------------------------------
@@ -785,17 +788,11 @@ class Boxer(object):
     self.boxer.signal_autoconnect(dic)
 
 
-    sw = self.boxer.get_widget("srcview_scrolledwindow")
-    sw.add(srcview)
-    self.textview = srcview
-    self.textbuffer = srcbuf
-    sw.show_all()
-
     # try to set the default font
     try:
       from pango import FontDescription
       font = FontDescription(self.config.get("GUI", "font"))
-      self.textview.modify_font(font)
+      self.widget_srcview.modify_font(font)
 
     except:
       pass
@@ -812,7 +809,7 @@ class Boxer(object):
       self.raw_file_open(filename)
 
     # Now set the focus on the text view
-    self.textview.grab_focus()
+    self.widget_srcview.grab_focus()
 
   def _fill_example_menu(self):
     """Populate the example submenu File->Examples"""
