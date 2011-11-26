@@ -495,8 +495,7 @@
                             <property name="label" translatable="yes">Show</property>
                             <property name="response_id">0</property>
                             <signal name="clicked" handler="on_refpoint_show_clicked"/>
-                          </widget>
-                          
+                          </widget>                          
                       <packing>
                         <property name="expand">False</property>
                         <property name="fill">False</property>
@@ -509,7 +508,6 @@
                       </widget>
                       <packing>
                         <property name="expand">False</property>
-                        <property name="homogeneous">False</property>
                       </packing>
                     </child>
                     <child>

@@ -589,7 +589,7 @@ class Boxer(object):
     # rather than through the glade interface. At the end, we may have a full
     # specification of the GUI from Python, but for now...
     container = self.boxer.get_widget("vbox1")
-    menu, tbar, boxout = children = container.get_children()
+    menu, tbar, _ = children = container.get_children()
     for child in children:
       container.remove(child)
     mainwin.remove(container)
@@ -703,12 +703,14 @@ class Boxer(object):
 
     # Put source and output view inside a single widget
     src_and_out_views = gtk.VBox()
-    src_and_out_views.pack_start(srcview)
-    src_and_out_views.pack_start(self.out_textview_expander, expand=False)
+    src_and_out_views.pack_start(srcview, expand=True, fill=True)
+    src_and_out_views.pack_start(self.out_textview_expander,
+                                 expand=False, fill=True)
 
     # Create the scrolled window containing the text views (source + output)
     scroll_win2 = gtk.ScrolledWindow()
-    scroll_win2.add(src_and_out_views)
+    scroll_win2.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    scroll_win2.add_with_viewport(src_and_out_views)
 
     # Put them together in the RotView widget
     view_rot = self.config.getint("GUI", "rotation")
@@ -742,7 +744,7 @@ class Boxer(object):
     # Initialize the documentation browser
     self._init_doxbrowser()
 
-    scroll_win2.show_all()
+    #scroll_win2.show_all()
     mainwin.show_all()
 
     #-------------------------------------------------------------------------
