@@ -589,7 +589,7 @@ class Boxer(object):
     # rather than through the glade interface. At the end, we may have a full
     # specification of the GUI from Python, but for now...
     container = self.boxer.get_widget("vbox1")
-    menu, tbar, _ = children = container.get_children()
+    menu, tbar = children = container.get_children()
     for child in children:
       container.remove(child)
     mainwin.remove(container)
@@ -605,9 +605,16 @@ class Boxer(object):
     except:
       pass
 
-    self.out_textview = self.boxer.get_widget("outtextview")
-    self.out_textbuffer = self.out_textview.get_buffer()
-    self.out_textview_expander = self.boxer.get_widget("outtextview_expander")
+    self.out_textview = outtv = gtk.TextView()
+    outtv.set_editable(False)
+    outtv.set_cursor_visible(False)
+    self.out_textbuffer = outtv.get_buffer()
+    self.out_textview_expander = outexp = gtk.Expander(label="Box output:")
+    outsw = gtk.ScrolledWindow()
+    outsw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    outsw.add(outtv)
+    outexp.add(outsw)
+
     self.out_textbuffer_last_update_time = None
     self.out_textbuffer_update_time = \
       self.config.getfloat('Box', 'stdout_update_delay')
