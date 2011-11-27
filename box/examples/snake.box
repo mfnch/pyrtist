@@ -12,25 +12,26 @@ include "g"
 // Here we draw our line-terminator: this is just a common Window object
 // where some hot points have been defined.
 eye = Window[][
-  \ .Circle[Style[.Fill[";"]],
-            color.yellow, (0, 0), 1, 0.5; color.dark_green, 0.1, 0.5]
+  Circle[color.yellow, (0, 0), 1, 0.5]
+  Circle[color.dark_green, (0, 0), 0.1, 0.5]
 ]
 
-tongue = Window[]
-\ tongue.Poly[color.dark_red, (0.5, 0), (0.5, 4), 0, 1, (0.5, 5), (1, 5)
-              (0, 5), (0, 4.5), (0, 5), (-1, 5), (-0.5, 5), (-0.5, 4)
-              0, 0, (-0.5, 0)]
+tongue = Window[][
+  Poly[color.dark_red, (0.5, 0), (0.5, 4), 0, 1, (0.5, 5), (1, 5)
+       (0, 5), (0, 4.5), (0, 5), (-1, 5), (-0.5, 5), (-0.5, 4)
+       0, 0, (-0.5, 0)]
+]
 
 // Now we can use the tongue and the eye figures to draw the face of a snake
 face = Window[][
-  a = b = c = d = Point[]
-  a = (5, -5), b = (7, 0), c = (4, 8), d = (0, 9)
-  \ .Poly[color.dark_green, a, 0.5, b, c, d,
-          (-c.x, c.y), (-b.x, b.y), (-a.x, a.y)]
-  \ .Put[tongue, (0, 6)]
+  a = Point[(5, -5)], b = Point[(7, 0)]
+  c = Point[(4, 8)], d = Point[(0, 9)]
+  Poly[color.dark_green, 0.5, a, b, c, d,
+       (-c.x, c.y), (-b.x, b.y), (-a.x, a.y)]
+  Put[tongue, (0, 6)]
   color.yellow
-  \ .Put[eye, (2.6, 0), -70, .Scale[1.5]]
-  \ .Put[eye, (-2.6, 0), 70, .Scale[1.5]]
+  Put[eye, (2.6, 0), -70, Scale[1.5]]
+  Put[eye, (-2.6, 0), 70, Scale[1.5]]
   color.dark_green
 
   // These hot points are used by the Window.Line instruction to place
@@ -44,7 +45,7 @@ face = Window[][
   //    to the width of the line.
   //  - after the figure has been placed, the line is drawed by connecting
   //    the second last point to the "join" point.
-  \ .Hot["head", (0, 9), "tail", (0, 5), "join", (0, -4)]
+  Hot["head", (0, 9); "tail", (0, 5); "join", (0, -4)]
 ]
 
 // Now we can draw as many snakes as we want with just one Line instruction!
@@ -52,11 +53,4 @@ snake = Window[]
 \ snake.Line[color.dark_green, line.smooth, (10, 10), 2, 8, (40, 100), 8, 10
              (80, 10), (120, 90), (150, 25), (170, 55), face, (195, 70)]
 
-snake.Save["snake.eps"]
-
-output = Window["bm8", (210, 110)]
-\ output.Put[snake, (0, 0), .Scale[1]]
-output.Save["snake.bmp"]
-
-\ Window["ps", .File["snake.ps"]][\ .Put[snake, (0, 0), .Scale[1]]]
-
+snake.Save["snake.png", Window["rgb24", .Res[Dpi[100]]]]

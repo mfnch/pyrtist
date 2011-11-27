@@ -1,13 +1,15 @@
 // One example taken from the samples page of the Cairo graphic library
 // (http://cairographics.org/samples/), rewritten in Box.
 include "g"
-w = Window["rgb24", (256, 256), .Res[1]]
-\ w.Poly[
-  Style[.Fill["void", ";"], .Border[30.0, .Cap["butt"]]], (64, 50), (64, 200);
-  Style[.Border[.Cap["round"]]], (128, 50), (128, 200);
-  Style[.Border[.Cap["square"]]], (192, 50), (192, 200);
+
+w = Window["rgb24", (256, 256), .Res[1]][
+  Line[Border[30, Cap["butt"]], (64, 50), (64, 200)]
+  Line[Border[30, Cap["round"]], (128, 50), (128, 200)]
+  Line[Border[30, Cap["square"]], (192, 50), (192, 200)]
+
   // draw helping lines
-  Style[.Border[2.56, color.red]]
-  (64, 50), (64, 200); (128, 50), (128, 200); (192, 50), (192, 200)
+  Lines[Border[2.56, color.red]
+        (64, 50), (64, 200); (128, 50), (128, 200); (192, 50), (192, 200)]
 ]
+
 w.Save["cairo_set_line_cap.png"]

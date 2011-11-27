@@ -205,6 +205,9 @@ Str@FillStyle[
     Fail["Unknown fill style. Known styles: \"void\", \"plain\", \"eo\""]
 ]
 
+///Intro: convert a fill rule into a command stream.
+FillStyle@CmdStream[If[$.style != -2], Obj[const.raw.set_fill_rule, $.style]]
+
 ///Intro: a container of drawing style settings.
 // A {type(Style)} object determines the style for tracing the next shape
 // (for {type(Poly)}, {type(Circle)}, etc). Settings include: the filling
@@ -245,6 +248,7 @@ FillStyle@Style[.fill_style = $]
 
 ///Intro: copy the style settings from another {type(Style)} object.
 Style@Style[
+  [If[$.fill_style.style != -2], $$.fill_style = $.fill_style]
   [If[$.preserve.int >= 0], $$.preserve = $.preserve]
   [If[$.have.color]
      $$.have.color = 1, $$.color = $.color, $$.pattern = $.pattern]
@@ -263,6 +267,9 @@ Style@CmdStream[
      $.pattern
      Obj[const.raw.set_source]
      Obj[const.raw.pattern_destroy]]
+
+  // Fill rule
+  $.fill_style
 
   // Commands for the style of the border
   [If[$.have.border]

@@ -7,11 +7,12 @@ w = Window[][
   b = 0.4  // border
   r = 10.0 // radius
   rr = 2*r, rs = 0.25*r
-  \ .Circle[Style[.Border[b]], color.white, (0, 0), rr]
-  \ .Poly[color.black, 1, (0, rr), (r, rr), (r, r), (r, 0), (0, 0), (-r, 0),
-          (-r, -r), (-r, -rr), (0, -rr), (rr, -rr), (rr, 0), (rr, rr)]
-  \ .Circle[Style[.Fill[";"]], rs, (0, r); color.white, rs, (0, -r)]
-  .Save["yin-yang.png"]
-  .Save["yin-yang.eps"]
+  BBox[bb = rr + 1, (-bb, -bb), (bb, bb)]
+  Circle[Style[Border[color.black, b]], color.white, (0, 0), rr]
+  Poly[color.black, 1, (0, rr), (r, rr), (r, r), (r, 0), (0, 0), (-r, 0),
+       (-r, -r), (-r, -rr), (0, -rr), (rr, -rr), (rr, 0), (rr, rr)]
+  Circle[color.black, rs, (0, r)]
+  Circle[color.white, rs, (0, -r)]
+  .Save["yin-yang.png", Window["rgb24", .Res[Dpi[100]]]]
 ]
 

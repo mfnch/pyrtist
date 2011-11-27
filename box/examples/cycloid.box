@@ -23,8 +23,9 @@ Real@Cycloid[
 // For is a type derived from Int, which has a particular feature:
 // it induces a jump to the begin of the current box, when it is equal to 1.
 w = Window[][
-  Style[.Border[0.4, color.red]]
-  t = 0.0, \ .Poly[color.yellow, Cycloid[t], For[(t += 0.01) <= 1.0]]
-  .Save["cycloid.eps"]
+  t = 0.0
+  Poly[Cycloid[t], For[(t += 0.01) <= 1.0]
+       color.yellow, Style[FillStyle["eo"], Border[0.4, color.red]]]
 ]
 
+w.Save["cycloid.png", Window["rgb24", .Res[Dpi[200]]]]

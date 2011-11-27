@@ -4,6 +4,6 @@ crumb = "cycloid.box"
 description = "Combined use of For, Line and Poly"
 figure_caption = "the output produced by Box"
 box_source = "./cycloid.box"
-out_eps = "cycloid.eps"
+out_png = "cycloid.png"
 convert_opts = "-density 200 -antialias"
 
