@@ -606,6 +606,7 @@ class Boxer(object):
       pass
 
     self.out_textview = outtv = gtk.TextView()
+    outtv.set_size_request(10, 75)
     outtv.set_editable(False)
     outtv.set_cursor_visible(False)
     self.out_textbuffer = outtv.get_buffer()
