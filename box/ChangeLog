@@ -1,5 +1,11 @@
 Change log (recent comes first)
 
+27 Nov 2011: Released v 0.3.1: bugfixes and small improvements.
+  * BBox now sets (rather than extending) the bounding box.
+  * Bugfix: bounding box for Clip is now only determined by the clipping path.
+  * Bugfixes in the memory management of Box.
+  * Bugfix: FillStyle was ignored.
+
 18 Oct 2011: Released v 0.3.0: rewrote and improved G library in Box.
   * The Box graphics library was rewritten in Box itself. The library was
     re-engineered and is now much more clean and powerful. The old interface
