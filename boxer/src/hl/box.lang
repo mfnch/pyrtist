@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <language id="box" _name="Box" version="2.0" _section="Sources">
+  <metadata>
+    <property name="globs">*.box</property>
+    <property name="line-comment-start">//</property>
+    <property name="block-comment-start">(*</property>
+    <property name="block-comment-end">*)</property>
+  </metadata>
+
   <styles>
     <style id="comment" _name="Comment" map-to="def:comment"/>
+    <style id="dox" _name="Dox comments" map-to="def:note"/>
     <style id="floating-point" _name="Floating point number" map-to="def:floating-point"/>
     <style id="string" _name="String" map-to="def:string"/>
     <style id="escaped-character" _name="Escaped Character" map-to="def:special-char"/>
@@ -10,12 +18,40 @@
     <style id="keyword" _name="Keyword" map-to="def:keyword"/>
     <style id="type" _name="Data Type" map-to="def:type"/>
   </styles>
+
   <definitions>
     <context id="box">
       <include>
         <context id="comment" style-ref="comment">
           <start>\/\/</start>
           <end>$</end>
+        </context>
+
+       <context id="dox" style-ref="dox">
+          <start>\(\*\*</start>
+          <end>\*\)</end>
+          <include>
+            <context id="comment-in-comment" style-ref="comment">
+              <start>\(\*</start>
+              <end>\*\)</end>
+              <include>
+                <context ref="string"/>
+                <context ref="comment-in-comment"/>
+                <context ref="def:in-comment:*"/>
+              </include>
+            </context>
+            <context ref="string"/>
+            <context ref="def:in-comment:*"/>
+          </include>
+        </context>
+        <context id="comment-multiline" style-ref="comment">
+          <start>\(\*</start>
+          <end>\*\)</end>
+          <include>
+            <context ref="string"/>
+            <context ref="comment-in-comment"/>
+            <context ref="def:in-comment:*"/>
+          </include>
         </context>
 
         <context id="string" end-at-line-end="true" style-ref="string">
