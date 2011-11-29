@@ -23,6 +23,8 @@
 %option noyywrap
 %x include
  /* ^^^ Start condition used to extract the file name in include directives */
+%x comment
+ /* ^^^ Start condition used for parsing multi-line comments */
 
 %{
 
@@ -58,10 +60,17 @@ typedef struct {
   BoxSrcPos pos;
   UInt      msgcontext;
   UInt      num_errs, num_warns;
+
 } MyIncludeData;
 
 /** Function used to count lines and columns */
 static void My_Scan_Tok(yyscan_t scanner);
+
+/** Function used to notify entering a multi-line comment. */
+static void My_Comment_Up(BoxLex *bl);
+
+/** Function used to notify exiting a multi-line comment. */
+static int My_Comment_Down(BoxLex *bl);
 
 /** Shorthand macro for My_Scan_Tok. */
 #define MY_SCAN_TOK() My_Scan_Tok(yyscanner)
@@ -84,6 +93,25 @@ LNAME    [a-z][A-Za-z0-9_]*
 UNAME    [A-Z][A-Za-z0-9_]*
 
 %%
+
+[(][*]           {MY_SCAN_TOK(); My_Comment_Up(yyextra); BEGIN(comment);}
+
+<comment>[*][)]  {
+  MY_SCAN_TOK();
+  if (My_Comment_Down(yyextra))
+   BEGIN(INITIAL);
+}
+
+<comment>[(][*]  {MY_SCAN_TOK(); My_Comment_Up(yyextra);}
+
+<comment><<EOF>> {
+  MY_SCAN_TOK();
+  MSG_ERROR("File ended inside a comment.");
+  BEGIN(INITIAL);
+  yyterminate();
+}
+
+<comment>.       {MY_SCAN_TOK();}
 
 include BEGIN(include);
 
@@ -282,7 +310,8 @@ struct _struct_BoxLex {
   BoxSrcName  *fnames;           /**< File names referred by BoxSrcPos
                                       objects */
   BoxSrcPos   pos;               /**< Current position in the source file */
-  size_t      max_include_level; /**< Max number of includeable files */
+  size_t      max_include_level, /**< Max number of includeable files */
+              comment_level;     /**< Multi-comment level of inclusion */
   BoxArr      include_list;      /**< Stack of saved data for include files */
   BoxHT       provided_features; /**< Hashtb. to remember provided features */
 };
@@ -292,6 +321,7 @@ BoxLex *BoxLex_Create(BoxPaths *paths) {
   yylex_init(& bl->scanner);
   yyset_extra(bl, bl->scanner);
 
+  bl->comment_level = 0;
   bl->paths = paths;
   bl->fnames = BoxSrcName_New();
   BoxSrcPos_Init(& bl->pos, "<stdin>");
@@ -451,4 +481,15 @@ static void My_Scan_Tok(yyscan_t scanner) {
   yylloc.end.line = el;
   yylloc.end.col = ec;
   yylloc.end.file_name = box_lexer->pos.file_name;
+}
+
+static void My_Comment_Up(BoxLex *bl) {
+  ++bl->comment_level;
+  assert(bl->comment_level != 0);
+}
+
+static int My_Comment_Down(BoxLex *bl) {
+  assert(bl->comment_level > 0);
+  --bl->comment_level;
+  return (bl->comment_level == 0);
 }

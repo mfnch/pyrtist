@@ -4,7 +4,7 @@ SUBDIRS = dylib
 EXTRA_DIST = bugs.bash common.bash scope.bash structure.bash destructors.bash \
              bytecode.bash \
 	     test.py test_all.py ops.py structure.py subtypes.py procdef.py \
-             scope.py bugs.py
+             scope.py bugs.py raised.py
 
 check:
 	(cd dylib && $(MAKE) buildtestdylib)
