@@ -712,7 +712,7 @@ class Boxer(object):
     # Put the sourceview inside a scrolled window
     svsw = gtk.ScrolledWindow()
     svsw.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-    svsw.add_with_viewport(srcview)
+    svsw.add(srcview)
 
     # Put source and output view inside a single widget
     src_and_out_views = gtk.VBox()

@@ -4,6 +4,5 @@ crumb = "wheatstone.box"
 description = "A simple electric circuit"
 figure_caption = "the output produced by Box"
 box_source = "./wheatstone.box"
-out_eps = "wheatstone.eps"
+out_png = "wheatstone.png"
 convert_opts = "-density 100 -antialias -size 300"
-
