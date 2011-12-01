@@ -32,7 +32,7 @@ Software Foundation, Inc., 59 Temple Place, Suite 330,
 Boston, MA  02111-1307  USA"""
 
 name = "Boxer"
-version = (0, 3, 4)
+version = (0, 3, 5)
 version_string = "%d.%d.%d" % version
 full_name = "%s %s" % (name, version_string)
 comment = "Boxer, the Box editor!"
