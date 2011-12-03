@@ -583,7 +583,6 @@ class Boxer(object):
 
     # Get the main window
     self.mainwin = mainwin = self.boxer.get_widget("boxer")
-    
 
     # Setup the main HBox
     # This is transition code. We are doing things more and more from Python
@@ -758,9 +757,6 @@ class Boxer(object):
     # Initialize the documentation browser
     self._init_doxbrowser()
 
-    #scroll_win2.show_all()
-    mainwin.show_all()
-
     #-------------------------------------------------------------------------
 
     # Set the name for the first reference point
@@ -817,6 +813,9 @@ class Boxer(object):
 
     # Find examples and populate the menu File->Examples
     self._fill_example_menu()
+
+    # Show the window
+    mainwin.show_all()
 
     # Set a template program to start with...
     if filename == None:
