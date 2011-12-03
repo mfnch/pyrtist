@@ -583,6 +583,7 @@ class Boxer(object):
 
     # Get the main window
     self.mainwin = mainwin = self.boxer.get_widget("boxer")
+    
 
     # Setup the main HBox
     # This is transition code. We are doing things more and more from Python
