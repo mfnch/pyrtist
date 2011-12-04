@@ -1,7 +1,7 @@
 from parser import Parser
 
 
-class Subst(Parser):
+class SourceMapper(Parser):
   '''This class is built on top of the Parser class and provides a simplified
   way to filter comments and source in a Box file. In particular, this class
   takes care of recursive substitution/expansion of comments.
@@ -28,14 +28,14 @@ class Subst(Parser):
   def notify_comment_begin(self, text_slice):
     text_slice.children = []
 
-  def notify_comment_end(self, text_slice, begin="(*", end="*)"):
+  def notify_comment_end(self, text_slice):
     # First, take care of substituting the children
-    output = begin
+    output = ""
     text_pos = text_slice.begin
     for child in text_slice.children:
       output += self.text[text_pos:child.begin] + child.output
       text_pos = child.end
-    output += self.text[text_pos:text_slice.end] + end
+    output += self.text[text_pos:text_slice.end]
 
     # Now we can substitute this comment
     text_slice.output = self.subst_comment(output)
@@ -54,7 +54,7 @@ class Subst(Parser):
 
   def notify_inline_comment(self, text_slice):
     self.notify_comment_begin(text_slice)
-    self.notify_comment_end(text_slice, begin="", end="")
+    self.notify_comment_end(text_slice)
 
   def notify_source(self, start, end):
     self.output += self.text[start:end]
@@ -71,6 +71,6 @@ a third line
 (*one(*comment*)and(*one*)more*)
 a fourth line"""
 
-  mp = Subst(text)
+  mp = SourceMapper(text)
   mp.parse()
   print mp.get_output()

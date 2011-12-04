@@ -74,7 +74,7 @@ class TextSlice(object):
     self.begin = begin
     self.end = end
     self.lineno = lineno
-    self.parent = None
+    self.parent = parent
 
 
 class Parser(object):
@@ -120,7 +120,7 @@ class Parser(object):
 
         elif token == OPEN_DELIM:
           self.notify_source(source_pos, token_start)
-          text_slice = TextSlice(token_end, tok.line)
+          text_slice = TextSlice(token_start, tok.line)
           comments.append(text_slice)
           self.notify_comment_begin(text_slice)
           state = STATE_COMMENT
@@ -146,13 +146,14 @@ class Parser(object):
                            "(comment opened at line %d)" % lineno)
 
         elif token == OPEN_DELIM:
-          text_slice = TextSlice(token_end, tok.line)
+          text_slice = TextSlice(token_start, tok.line,
+                                 parent=comments[-1])
           self.notify_comment_begin(text_slice)
           comments.append(text_slice)
 
         elif token == CLOSE_DELIM:
           comment = comments.pop()
-          comment.end = token_start
+          comment.end = token_end
           self.notify_comment_end(comment)
           if len(comments) == 0:
             state = STATE_SOURCE
