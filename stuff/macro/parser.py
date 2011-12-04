@@ -25,9 +25,10 @@ class Tokenizer(object):
     self.line = line
 
   def next(self):
-    if self.start < len(self.text):      
+    if self.start < len(self.text):
+      text = self.text
       while True:
-        match_obj = token_re.search(self.text, self.start)
+        match_obj = token_re.search(text, self.start)
         if match_obj:
           self.start = end = match_obj.end()
           n = start = match_obj.start()
@@ -77,9 +78,13 @@ class TextSlice(object):
 
 
 class Parser(object):
-  """Base parser for Box sources. This parser can go over the sources and
-  distinguish properly comments from source code. This is the basic parser
-  over which the Boxer macro system is built."""
+  '''Base parser for Box sources. This parser can go over the sources and
+  distinguish comments from source code. This is the basic parser over which
+  the Boxer macro system is built. The parser calls several method to notify
+  the occurrence of several events. The user is expected to inherit from this
+  class and redefine the methods: notify_comment_begin, notify_comment_end,
+  notify_inline_comment and notify_source.
+  '''
 
   def __init__(self, text):
     self.text = text
