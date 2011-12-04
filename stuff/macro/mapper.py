@@ -57,7 +57,7 @@ class SourceMapper(Parser):
     self.notify_comment_end(text_slice)
 
   def notify_source(self, start, end):
-    self.output += self.text[start:end]
+    self.output += self.subst_source(self.text[start:end])
 
 
 if __name__ == "__main__":

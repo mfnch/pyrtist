@@ -2,7 +2,7 @@ import re
 
 from mapper import SourceMapper
 
-macro_name_re = re.compile(r'([(][*][*]|///)[a-zA-Z_]+[:.]')
+macro_name_re = re.compile(r'([(][*][*]|///)[a-zA-Z_-]+[:.]')
 
 class MacroExpander(SourceMapper):
   '''A macro expander class. Macros are special multi-line comments which are
@@ -44,9 +44,9 @@ class MacroExpander(SourceMapper):
     '''
     method_name = "macro_" + name
     method = getattr(self, method_name, None)
+
     if method != None:
-      repl = method(args)
-      return repl if repl != None else content
+      return method(args)
 
     else:
       return self.not_found(name, args)
@@ -59,9 +59,10 @@ class MacroExpander(SourceMapper):
         i0 = match_obj.start() + 3
         i2 = match_obj.end()
         i1 = i2 - 1
-        name = content[i0:i1].lower()
-        args = content[i2:]
-        return self.invoke_method(name, args)
+        name = content[i0:i1].lower().replace("-", "_")
+        args = content[i2:-2]
+        repl = self.invoke_method(name, args)
+        return repl if repl != None else content
 
     return content
 
