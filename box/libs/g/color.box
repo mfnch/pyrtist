@@ -71,6 +71,18 @@ Real@Color.Darker[
   $$$.r = c.r, $$$.g = c.g, $$$.b = c.b
 ]
 
+///Intro: darken a color.
+///Example: ``Dark[color.green, 0.5]`` returns a dark green color.
+Dark = Color
+
+///Intro: provide the color which should be made darker.
+Color@Dark[$$ = $]
+
+///Intro: darken the previously given color. The value should range between
+// 0.0 and 1.0. The value 1.0 returns the original color, while the value 0.0
+// darkens the color to a point where it becomes black.
+Real@Dark[c = Color[$$], c.Darker[$], c]
+
 ///Intro: convert a Color to an Obj.
 Color@Obj[Obj[Point[.x=$.r, .y=$.g], Point[.x=$.b, .y=$.a]]]
 
