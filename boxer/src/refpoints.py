@@ -47,11 +47,11 @@ class RefPoints(object):
     for rp in content:
       self.by_name[rp.name] = rp
     self.selection = {}
-    self._fns = callbacks if callbacks != None else {}
-    callbacks.setdefault("get_next_refpoint_name", None)
-    callbacks.setdefault("set_next_refpoint_name", None)
-    callbacks.setdefault("refpoint_append", None)
-    callbacks.setdefault("refpoint_remove", None)
+    self._fns = cbs = callbacks if callbacks != None else {}
+    cbs.setdefault("get_next_refpoint_name", None)
+    cbs.setdefault("set_next_refpoint_name", None)
+    cbs.setdefault("refpoint_append", None)
+    cbs.setdefault("refpoint_remove", None)
 
   def __iter__(self):
     return self.content.__iter__()

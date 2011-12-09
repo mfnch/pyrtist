@@ -323,7 +323,7 @@ class Document(Configurable):
 
       else:
         if len(marker) < 1:
-          raise "Internal error in Document.load_from_src"
+          raise ValueError("Internal error in Document.load_from_src")
 
         else:
           marker_name = marker[0]

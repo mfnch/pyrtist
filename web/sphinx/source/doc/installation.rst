@@ -30,13 +30,16 @@ Other useful links:
 Installation from source
 ------------------------
 
+Box
+^^^
+
 Download the tarball from `<http://sourceforge.net/projects/boxc>`__.
-This is usually a file with name such as ``box-X.Y.tar.gz``,
-where X.Y are the major and minor version numbers.
+This is usually a file with name such as ``box-X.Y.Z.tar.gz``,
+where X.Y.Z are the major, minor and patch version numbers.
 Untar and configure the package with::
 
-  tar xzvf box-0.2.tar.gz
-  cd box-0.2
+  tar xzvf box-0.3.1.tar.gz
+  cd box-0.3.1
   ./configure --prefix=/usr
 
 ``configure`` outputs a summary at the end. Be sure it looks like that::
@@ -73,7 +76,56 @@ Further help and hints with the installation can be found
 in the ``README`` and ``INSTALL`` files inside the package.
 
 The manual is online at `<http://boxc.sourceforge.net>`__.
-If you need further help, take a look at the examples.
+If you need further help, take a look at the 
+
+Boxer
+^^^^^
+
+Download the tarball from `<http://sourceforge.net/projects/boxc>`__.
+This is usually a file with name such as ``boxer-X.Y.Z.tar.gz``, where X.Y.Z
+are the major, minor and patch version numbers.
+Make sure that ``PyGTK`` and ``pygtksourceview`` are installed on your system.
+On Ubuntu 11.10 you can install them using::
+
+  apt-get install python-gtk2 python-gtksourceview2
+
+Untar and install the package with::
+
+  tar xzvf boxer-0.3.5.tar.gz
+  cd boxer-0.3.5
+  sudo python setup.py install
+
+Boxer needs Box to run properly. If you installed it into a system path, then
+it should be able to find it automatically, otherwise you may have to specify
+where it should be found. For example::
+
+  boxer --box-exec=/home/myname/local/bin/box
+
+Next time you start Boxer, you can do it simply by typing ``boxer`` as Boxer
+will remember the path to the Box executable, if it could run it.
+
+Note for installation in /usr/local
+-----------------------------------
+
+If you install to ``/usr/local`` you must make sure that libraries in
+``/usr/local/lib`` are found by the linker. On Ubuntu 11.10, installation
+on ``/usr/local`` requires this::
+
+  bash
+  export LD_LIBRARY_PATH=/usr/local/lib
+  boxer --box-exec=/usr/local/bin/box
+
+You can alternatively modify your ``/etc/ld.so.conf`` file, to add the
+directory ``/usr/local/lib`` to the list used for resolving libraries.
+
+Note that the problem does not arise when you install to non-standard
+locations. For example, if you install with ``--prefix=/home/myname/local``
+then Box will work out of the box. This is because, ``/home/myname/local``
+is recognized as a non-standard location and flags are added during the
+compilation to cope with this (``-rpath``). In contrast, ``/usr/local/lib``
+is a standard location and system is expected to look inside it (this is how
+``autoconf`` behaves by default).
+
 
 Note for installation on Mac OS
 -------------------------------
@@ -92,9 +144,9 @@ Installation on Windows
 -----------------------
 
 Download the zip file from `<http://sourceforge.net/projects/boxc>`__.
-This is usually a file with name such as ``boxer-0.2.0.zip``.
+This is usually a file with name such as ``boxer-0.3.2.zip``.
 Unzip the archive.
-You'll find the Boxer executable in ``boxer-0.2.0\boxer.exe``.
+You'll find the Boxer executable in ``boxer-0.3.2\boxer.exe``.
 Double click on the file and the Boxer windows should appear.
 
 The manual is online at `<http://boxc.sourceforge.net>`__.
