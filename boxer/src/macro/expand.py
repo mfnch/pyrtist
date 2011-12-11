@@ -1,4 +1,4 @@
-from macro import MacroExpander
+from parser import MacroExpander
 
 class BoxerMacroExpand(MacroExpander):
   def macro_define_all(self, args):

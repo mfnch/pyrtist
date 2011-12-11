@@ -1,4 +1,4 @@
-# Copyright (C) 2010 by Matteo Franchin (fnch@users.sourceforge.net)
+# Copyright (C) 2010-2011 Matteo Franchin (fnch@users.sourceforge.net)
 #
 # This file is part of Boxer.
 #
@@ -234,8 +234,12 @@ def save_to_str_v0_1(document):
        parts["userspace"])
   return s
 
+def save_to_str_v0_2_0(document):
+  pass
+
 _save_to_str_fns = {(0, 1): save_to_str_v0_1,
-                    (0, 1, 1): save_to_str_v0_1_1}
+                    (0, 1, 1): save_to_str_v0_1_1,
+                    (0, 2, 0): save_to_str_v0_2_0}
 
 def save_to_str(document, version=version):
   if version in _save_to_str_fns:
