@@ -20,7 +20,6 @@ import re
 token_re = re.compile(r'([(][*]|[*][)]|\'|"|[\\]|//|\r\n|\n\r|\n)')
 endline_re = re.compile(r'(\r\n|\n\r|\n)')
 
-macro_name_re = re.compile(r'([(][*][*]|///)[a-zA-Z_-]+[:.]')
 
 (NO_MORE_DELIMS,
  OPEN_DELIM,
@@ -242,6 +241,9 @@ class SourceMapper(Parser):
     self.output += self.subst_source(self.text[start:end])
 
 
+macro_name_re = re.compile(r'([(][*][*]|///)[a-zA-Z_-]+[:.]')
+
+
 class MacroExpander(SourceMapper):
   '''A macro expander class. Macros are special multi-line comments which are
   delimited by the three-character delimiter (** rather than the normal
@@ -303,3 +305,8 @@ class MacroExpander(SourceMapper):
         return repl if repl != None else content
 
     return content
+
+
+def split_args(args):
+  """Split the arguments of a command into strings."""
+  return args.split(",")
