@@ -57,6 +57,7 @@ import os, os.path
 
 import config
 from config import threads_init, threads_enter, threads_leave
+import docbase
 import document
 from exec_command import exec_command
 
@@ -174,7 +175,7 @@ class Boxer(object):
     self.widget_srcbuf.set_text(text)
 
     # Remove the "here" marker and put the cursor there!
-    here_marker = document.marker_cursor_here
+    here_marker = docbase.marker_cursor_here
     si = self.widget_srcbuf.get_start_iter()
     found = si.forward_search(here_marker, gtk.TEXT_SEARCH_TEXT_ONLY)
     if found != None:
@@ -226,8 +227,8 @@ class Boxer(object):
       d.set_user_code(self.get_main_source())
       d.save_to_file(filename)
 
-    except:
-      self.error("Error saving the file")
+    except Exception as exc:
+      self.error("Error saving the file: %s" % str(exc))
       return False
 
     self.filename = filename

@@ -30,9 +30,7 @@ from refpoints import RefPoint, RefPoints
 version = (0, 1, 1)
 
 max_chars_per_line = 79
-marker_begin = "//!BOXER"
 marker_cursor_here = "//!BOXER:CURSOR:HERE"
-marker_sep = ":"
 
 endline = "\n"
 
@@ -77,20 +75,6 @@ def text_writer(pieces, sep=", ", line_sep=None, max_line_width=None):
     text += this_line + lsep
   return text
 
-def marker_line_parse(line):
-  """Extract the arguments of a marker line or return None if the given
-  string is not a marker line."""
-  if not line.strip().startswith(marker_begin):
-    return None
-  else:
-    return [s.strip() for s in line.split(marker_sep)[1:]]
-
-def marker_line_assemble(attrs, newline=True):
-  """Crete a marker line from the given list of attributes."""
-  s = marker_sep.join([marker_begin] + attrs)
-  if newline:
-    s += endline
-  return s
 
 def parse_given_eq_smthg(s, fixed_part):
   """Parse the given string 's' assuming it has the form
@@ -155,9 +139,6 @@ def refpoint_to_string(rp, version=version):
     return ("%s = Point[.x=%s, .y=%s]"
             % (rp.name, rp.value[0], rp.value[1]))
 
-def default_notifier(level, msg):
-  print "%s: %s" % (level, msg)
-
 def search_first(s, things, start=0):
   found = -1
   for thing in things:
@@ -208,68 +189,45 @@ def parse_guipoint_part(src, guipoint_fn, start=0):
       if len(line) > 0:
         guipoint_fn(line)
 
-def save_to_str_v0_1_1(document):
-  parts = document.parts
-  ml_version = marker_line_assemble(["VERSION", "0", "1", "1"])
-  ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"])
-  ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"])
-  refpoints = [refpoint_to_string(rp)
-               for rp in document.refpoints]
-  refpoints_text = text_writer(refpoints)
-  s = (ml_version +
-       parts["preamble"] + endline +
-       ml_refpoints_begin + refpoints_text + ml_refpoints_end +
-       parts["userspace"])
-  return s
+# Enumerate the different possible ways of building a representation
+# for a Document:
+# - MODE_ORIG: original, as given by the user;
+# - MODE_STORE: as it should be when saving it to disk;
+# - MODE_EXEC: as it should be when executed within the GUI.
+(MODE_ORIG,
+ MODE_STORE,
+ MODE_EXEC) = range(3)
 
-def save_to_str_v0_1(document):
-  parts = document.parts
-  ml_refpoints_begin = marker_line_assemble(["REFPOINTS", "BEGIN"])
-  ml_refpoints_end = marker_line_assemble(["REFPOINTS", "END"])
-  refpoints = [refpoint_to_string(rp, version=(0, 1))
-               for rp in document.refpoints]
-  refpoints_text = text_writer(refpoints)
-  s = (parts["preamble"] + endline +
-       ml_refpoints_begin + refpoints_text + ml_refpoints_end +
-       parts["userspace"])
-  return s
 
-def save_to_str_v0_2_0(document):
-  pass
-
-_save_to_str_fns = {(0, 1): save_to_str_v0_1,
-                    (0, 1, 1): save_to_str_v0_1_1,
-                    (0, 2, 0): save_to_str_v0_2_0}
-
-def save_to_str(document, version=version):
-  if version in _save_to_str_fns:
-    fn = _save_to_str_fns[version]
-    return fn(document)
-
-  else:
-    raise ValueError("Cannot save document using version %s" % str(version))
-
-class Document(Configurable):
+class DocumentBase(Configurable):
   """Class to load, save, display and edit Boxer documents.
   A Boxer document is basically a Box program plus some metainfo contained
   in comments."""
+
+  accepted_versions = []         # Versions accepted by the Document class
 
   def __init__(self, filename=None, callbacks=None,
                config=None, from_args=None):
     """filename=None :the filename associated to the document."""
     Configurable.__init__(self, config=config, from_args=from_args)
-    self.notifier = default_notifier
-    self.attributes = {}
-    self.parts = None
-    self.filename = None
+
+    self.filename = None         # File name corresponding to this document
+    self.version = None          # Version of the file format
+    self.preamble = None         # Preamble of the document
+    self.usercode = None         # Body of the document
+
     if callbacks == None:
       callbacks = {}
     callbacks.setdefault("box_document_execute", None)
     callbacks.setdefault("box_document_executed", None)
     callbacks.setdefault("box_exec_output", None)
+
     self._fns = callbacks
     self.refpoints = RefPoints(callbacks=self._fns)
-    self.notify = lambda t, msg: sys.stdout.write("%s: %s\n" % (t, msg))
+
+  def notify(self, t, msg):
+    '''Used to notify problems during load/save.'''
+    sys.stdout.write("%s: %s\n" % (t, msg))
 
   def new(self, preamble=None, refpoints=[], code=None):
     if code == None:
@@ -277,106 +235,71 @@ class Document(Configurable):
     if preamble == None:
         preamble = default_preamble
     self.refpoints.load(refpoints)
-    self.parts = {'preamble': preamble,
-                  'refpoints_text': '',
-                  'userspace': code}
-    self.attributes = {'version': version}
+    self.preamble = preamble
+    self.usercode = code
+    self.version = version
 
   def get_refpoints(self):
-    """Get a list of the reference points in the document (list of GUIPoint)"""
+    '''Get a list of the reference points in the document (list of GUIPoint)'''
     return self.refpoints
 
-  def get_user_part(self):
-    return self.parts['userspace']
+  def get_user_code(self):
+    return self.usercode
 
-  get_user_code = get_user_part
+  def get_preamble(self):
+    return self.preamble
+
+
+
+  def get_boot_code(self, preamble=None):
+    return preamble if preamble != None else self.preamble
 
   def set_user_code(self, code):
-    self.parts['userspace'] = code
+    self.usercode = code
 
-  def _get_arg_num(self, arg, possible_args):
-    i = 0
-    for possible_arg in possible_args:
-      if possible_arg == arg:
-        return i
-      i += 1
-    self.notify("WARNING", "unrecognized marker argument '%s'" % arg)
-    return None
+
+  def get_part_version(self):
+    """Produce the version line."""
+    raise NotImplementedError("get_part_version")
+
+  def get_part_boot_code(self, boot_code):
+    """Produce the boot code (auxiliary code used to communicate the output
+    back to the GUI).
+    """
+    raise NotImplementedError("get_part_boot_code")
+
+  def get_part_def_refpoints(self):
+    """Produce the part of the file which stores information about the
+    reference points.
+    """
+    raise NotImplementedError("get_part_boot_code")
+
+  def get_part_preamble(self, mode=None, boot_code=None):
+    """Return the first part of the Box file, where metainformation such as
+    the version of the file format and the reference points are defined.
+    """
+    if mode == MODE_STORE:
+      part1 = self.get_part_version()
+      part2 = self.get_part_boot_code(boot_code)
+      part3 = self.get_part_def_refpoints()
+      return endline.join([part1, part2, part3])
+
+    else:
+      return self.get_part_boot_code(boot_code)
+
+  def get_part_user_code(self, mode=None):
+    """Get the user part of the Box source."""
+    return self.usercode
+
+  def save_to_str(self, version=version):
+    """Build the file corresponding to the document and return it as a string.
+    """
+    part1 = self.get_part_preamble(mode=MODE_STORE)
+    part2 = self.get_part_user_code(mode=MODE_STORE)
+    return endline.join((part1, part2))
 
   def load_from_str(self, boxer_src):
-    parts = {}           # different text parts of the source
-    context = "preamble" # initial context/part
-
-    # default attributes
-    self.attributes["version"] = (0, 1, 0)
-
-    # specify how many arguments each marker wants
-    marker_wants = {"CURSOR": None,
-                    "REFPOINTS": 1,
-                    "VERSION": 3}
-
-    # process the file and interpret the markers
-    lines = boxer_src.splitlines(True)
-    for line in lines:
-      marker = marker_line_parse(line)
-      if marker == None:
-        if context in parts:
-          parts[context] += line
-        else:
-          parts[context] = line
-
-      else:
-        if len(marker) < 1:
-          raise ValueError("Internal error in Document.load_from_src")
-
-        else:
-          marker_name = marker[0]
-          if not marker_name in marker_wants:
-            self.notify("WARNING", "Unknown marker '%s'" % marker_name)
-
-          else:
-            marker_nargs = marker_wants[marker_name]
-            if marker_nargs != None and len(marker) < marker_nargs + 1:
-              self.notify("WARNING",
-                          "Marker has less arguments than expected")
-
-            elif marker_name == "REFPOINTS":
-              arg_num = self._get_arg_num(marker[1], ["BEGIN", "END"])
-              if arg_num == None:
-                return False
-              else:
-                context = ["refpoints_text", "userspace"][arg_num]
-
-            elif marker_name == "VERSION":
-              try:
-                self.attributes["version"] = \
-                  (int(marker[1]), int(marker[2]), int(marker[3]))
-              except:
-                self.notify("WARNING", "Cannot determine Boxer version which "
-                            "generated the file")
-
-            else:
-              parts[context] += line
-              # ^^^  note that this requires context to already exist in the
-              #      dictionary. In other words, unrecognized markers cannot
-              #      be the first markers in the file.
-
-    refpoints = self.refpoints
-    refpoints.remove_all()
-    def guipoint_fn(p_str):
-      refpoints.append(refpoint_from_string(p_str))
-
-    if "refpoints_text" in parts:
-      parse_guipoint_part(parts["refpoints_text"], guipoint_fn)
-
-    if "userspace" not in parts:
-      # This means that the file was not produced by Boxer, but it is likely
-      # to be a plain Box file.
-      parts["userspace"] = parts.get("preamble", "")
-      parts["preamble"] = ""
-
-    self.parts = parts
-    return True
+    raise NotImplementedError("DocumentBase.load_from_str")
 
   def load_from_file(self, filename, remember_filename=True):
     f = open(filename, "r")
@@ -385,9 +308,6 @@ class Document(Configurable):
 
     if remember_filename:
       self.filename = filename
-
-  def save_to_str(self, version=version):
-    return save_to_str(self, version)
 
   def save_to_file(self, filename, version=version, remember_filename=True):
     f = open(filename, "w")
@@ -437,18 +357,9 @@ class Document(Configurable):
     src_filename = config.tmp_new_filename("source", "box", tmp_fns)
     presrc_filename = config.tmp_new_filename("pre", "box", tmp_fns)
 
-    original_preamble = self.parts["preamble"]
-    original_userspace = self.parts["userspace"]
-    try:
-      if preamble != None:
-        self.parts["preamble"] = preamble
-      self.parts["userspace"] = ""
-      presrc_content = self.save_to_str()
-    except Exception as the_exception:
-      raise the_exception
-    finally:
-      self.parts["preamble"] = original_preamble
-      self.parts["userspace"] = original_userspace
+    original_userspace = self.get_part_user_code(mode=MODE_EXEC)
+    presrc_content = self.get_part_preamble(mode=MODE_EXEC,
+                                            boot_code=preamble)
 
     f = open(src_filename, "wt")
     f.write(original_userspace)

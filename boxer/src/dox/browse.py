@@ -13,7 +13,7 @@ from writer import Writer
 
 
 class DoxBrowser(object):
-  def __init__(self, dox, size=(760, 560), spacing=6,
+  def __init__(self, dox, size=(640, 560), spacing=6,
                title="Box documentation browser",
                quit_gtk=False):
     self.dox = dox

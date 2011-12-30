@@ -32,6 +32,13 @@ endline_re = re.compile(r'(\r\n|\n\r|\n)')
  STATE_STRING) = range(3)
 
 
+def normalize_macro_name(name):
+  """Normalize a macro name, making it lowercase and substituting dashes with
+  underscores.
+  """
+  return name.lower().replace("-", "_")
+
+
 class ParseError(Exception): pass
 
 
@@ -43,8 +50,8 @@ class Tokenizer(object):
     self.line = line
 
   def next(self):
-    if self.start < len(self.text):
-      text = self.text
+    text = self.text
+    if self.start < len(text):
       while True:
         match_obj = token_re.search(text, self.start)
         if match_obj:
@@ -104,7 +111,7 @@ class Parser(object):
   notify_inline_comment and notify_source.
   '''
 
-  def __init__(self, text):
+  def __init__(self, text=""):
     self.text = text
 
   def notify_comment_begin(self, text_slice):
@@ -119,8 +126,14 @@ class Parser(object):
   def notify_source(self, start, end):
     pass
 
-  def parse(self, out_text=None, out_comment=None):
-    text = self.text
+  def parse(self, text=None):
+    if text == None:
+      text = self.text
+      assert text != None
+
+    else:
+      self.text = text
+
     tok = Tokenizer(text)
 
     state = STATE_SOURCE
@@ -191,7 +204,7 @@ class SourceMapper(Parser):
   expected to return a string to use for replacing the original content.
   '''
 
-  def __init__(self, source):
+  def __init__(self, source=None):
     Parser.__init__(self, source)
     self.output = ""
 
@@ -239,6 +252,10 @@ class SourceMapper(Parser):
 
   def notify_source(self, start, end):
     self.output += self.subst_source(self.text[start:end])
+
+  def parse(self, text=None):
+    Parser.parse(self, text=text)
+    return self.get_output()
 
 
 macro_name_re = re.compile(r'([(][*][*]|///)[a-zA-Z_-]+[:.]')
