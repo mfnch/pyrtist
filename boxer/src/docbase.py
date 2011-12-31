@@ -254,7 +254,12 @@ class DocumentBase(Configurable):
   def get_boot_code(self, preamble=None):
     return preamble if preamble != None else self.preamble
 
+  def set_boot_code(self, boot_code):
+    """Set the content of the additional Box code used by Boxer."""
+    self.preamble = boot_code
+
   def set_user_code(self, code):
+    """Set the content of the user Box code."""
     self.usercode = code
 
 
@@ -296,7 +301,7 @@ class DocumentBase(Configurable):
     """
     part1 = self.get_part_preamble(mode=MODE_STORE)
     part2 = self.get_part_user_code(mode=MODE_STORE)
-    return endline.join((part1, part2))
+    return part1 + part2
 
   def load_from_str(self, boxer_src):
     raise NotImplementedError("DocumentBase.load_from_str")

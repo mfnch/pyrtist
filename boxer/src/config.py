@@ -69,6 +69,7 @@ Window@GUI[]
 bbox1 = Point[.x=0.0, .y=50.0]
 bbox2 = Point[.x=100.0, .y=0.0]
 //!BOXER:REFPOINTS:END
+(**define-all.*)
 w = Window[][
   BBox[bbox1, bbox2]
 

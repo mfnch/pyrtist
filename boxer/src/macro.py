@@ -53,7 +53,6 @@ class BoxerMacroExpand(MacroExpander):
     return endline.join(["(**expand:define-all*)", s, "(**end:expand*)"])
 
 
-
 (STATE_NORMAL,
  STATE_EXPAND,
  STATE_CAPTURE) = range(3)
@@ -86,16 +85,6 @@ class BoxerMacroContract(MacroExpander):
       self.states = [(STATE_NORMAL, None)]
       return None
 
-  def invoke_method(self, name, args):
-    # Change invoke_method so that only the end macro can be called inside
-    # an expand macro.
-    state, context = self.states[-1]
-    if ((state == STATE_EXPAND or state == STATE_CAPTURE)
-        and name != "end"):
-      self.notify_error("Expected macro 'end', but got '%s'" % name)
-      return None
-    return MacroExpander.invoke_method(self, name, args)
-
   def subst_source(self, content):
     s, _ = self.states[-1]
     if s == STATE_NORMAL:
@@ -110,12 +99,14 @@ class BoxerMacroContract(MacroExpander):
 
   def macro_expand(self, args):
     mn = normalize_macro_name(args)
-    if mn == "boxer_preamble":
+    if mn == "boot":
       self.push_state(STATE_CAPTURE, mn)
       self.capture = ""
+      return ""
+
     else:
       self.push_state(STATE_EXPAND, mn)
-    return "(**%s.*)" % args
+      return "(**%s.*)" % args
 
   def macro_end(self, args):
     state, context = self.states[-1]
@@ -133,8 +124,8 @@ class BoxerMacroContract(MacroExpander):
                           % mn)
       self.pop_state()
 
-      if context == "boxer_preamble":
-        self.document.preamble = self.capture
+      if context == "boot":
+        self.document.set_boot_code(self.capture)
 
       return ""
 

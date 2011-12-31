@@ -79,8 +79,11 @@ class Document1(Document0):
 
   #@inherit_doc
   def get_part_boot_code(self, boot_code):
-    code = (boot_code or default_boot_code)
-    return "(**expand:boot*)%s(**end:expand*)" % code
+    return (boot_code or default_boot_code)
+
+  def get_part_preamble(self, **kwargs):
+    boot_code = DocumentBase.get_part_preamble(self, **kwargs)
+    return endline.join(["(**expand:boot*)", boot_code, "(**end:expand*)"])
 
   #@inherit_doc
   def get_part_user_code(self, mode=None):
