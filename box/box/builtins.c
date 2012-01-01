@@ -214,6 +214,14 @@ static Task My_Vec_Real(BoxVM *vmp) {
   return Success;
 }
 
+static BoxTask My_Point_At_Ort(BoxVM *vm) {
+  BoxPoint *p_out = BoxVM_Get_Parent_Target(vm);
+  BoxPoint *p_in = BoxVM_Get_Child_Target(vm);
+  p_out->x = -p_in->y;
+  p_out->y = p_in->x;
+  return BOXTASK_OK;
+}
+
 /**********************
  * Conversions        *
  **********************/
@@ -755,6 +763,7 @@ static void My_Register_Math(BoxCmp *c) {
    { "Norm",  BOXTYPE_REAL, t_point, NULL,  My_Math_Norm},
    {"Norm2",  BOXTYPE_REAL, t_point, NULL, My_Math_Norm2},
    {  "Vec", BOXTYPE_POINT,  t_real, NULL,   My_Vec_Real},
+   {  "Ort", BOXTYPE_POINT, t_point, NULL, My_Point_At_Ort},
    {  "Min",  BOXTYPE_REAL,  t_real, My_Min_Open, My_Min_Real},
    {  "Max",  BOXTYPE_REAL,  t_real, My_Max_Open, My_Max_Real},
    {   NULL,  BOXTYPE_NONE,  BOXTYPE_NONE, NULL, NULL}

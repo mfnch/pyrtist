@@ -1,0 +1,22 @@
+///Section: g
+
+///Intro: a 2D reference system. A {type(.)} object can be created with
+// ``Axes[origin, one_zero, zero_one]`` from three points: an origin, the
+// position of the point (1, 0) and the position of the point (0, 1).
+// If the third point (``zero_one``) is not given, then the point (0, 1) is
+// automatically computed as ``origin + Ort[one_zero - origin]``.
+Axes = ++(Int state, Point origin, one_zero, zero_one)
+
+(.[)@Axes[.state = 0]
+
+///Intro: give the points defining the reference system.
+Point@Axes[
+  state = $$.state
+  [If[state == 0]
+     $$.origin = $
+   Else[], If[state == 1]
+     $$.one_zero = $$.origin + Ort[$ - $$.origin]
+   Else[]
+     $$.zero_one = $]
+  $$.state += 1
+]
