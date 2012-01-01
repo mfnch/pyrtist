@@ -32,6 +32,7 @@ version = (0, 1, 1)
 max_chars_per_line = 79
 marker_cursor_here = "//!BOXER:CURSOR:HERE"
 
+#from os import linesep as endline
 endline = "\n"
 
 default_preamble = 'include "g"\nGUI = Void\nWindow@GUI[]\n\n'

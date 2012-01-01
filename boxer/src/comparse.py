@@ -258,7 +258,7 @@ class SourceMapper(Parser):
     return self.get_output()
 
 
-macro_name_re = re.compile(r'([(][*][*]|///)[a-zA-Z_-]+[:.]')
+macro_name_re = re.compile(r'([(][*][*]|///)[a-zA-Z_-]+[:.]?')
 
 
 class MacroExpander(SourceMapper):
@@ -315,8 +315,7 @@ class MacroExpander(SourceMapper):
       if match_obj:
         i0 = match_obj.start() + 3
         i2 = match_obj.end()
-        i1 = i2 - 1
-        name = content[i0:i1].lower().replace("-", "_")
+        name = content[i0:i2].lower().replace("-", "_").rstrip(":.")
         args = content[i2:-2]
         repl = self.invoke_method(name, args)
         return repl if repl != None else content

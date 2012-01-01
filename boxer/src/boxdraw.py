@@ -37,7 +37,7 @@ include "g"
 GUI = Void
 """
 
-_box_preamble_void = "Window@GUI[]\n"
+_box_preamble_void = ""
 
 _box_preamble_centered = """
 Window@GUI[

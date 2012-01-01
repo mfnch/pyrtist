@@ -44,13 +44,19 @@ class BoxerMacroExpand(MacroExpander):
     self.document = document
     MacroExpander.__init__(self)
 
-  def parse(self):
+  def parse(self, document=None):
+    if document != None:
+      self.document = document
+    
     return MacroExpander.parse(self, self.document.usercode)
 
   def macro_define_all(self, args):
     rps = map(refpoint_to_string, self.document.refpoints)
     s = text_writer(rps)
     return endline.join(["(**expand:define-all*)", s, "(**end:expand*)"])
+
+  def macro_view(self, args):
+    return "(**expand:view*)GUI[%s](**end:expand*)"
 
 
 (STATE_NORMAL,
@@ -106,7 +112,7 @@ class BoxerMacroContract(MacroExpander):
 
     else:
       self.push_state(STATE_EXPAND, mn)
-      return "(**%s.*)" % args
+      return "(**%s*)" % args
 
   def macro_end(self, args):
     state, context = self.states[-1]
