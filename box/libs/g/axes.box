@@ -1,3 +1,5 @@
+#provide "g.axes"
+
 ///Section: g
 
 ///Intro: a 2D reference system. A {type(.)} object can be created with
@@ -7,16 +9,35 @@
 // automatically computed as ``origin + Ort[one_zero - origin]``.
 Axes = ++(Int state, Point origin, one_zero, zero_one)
 
-(.[)@Axes[.state = 0]
+(.[)@Axes[
+  .state = 0
+  .origin = (0.0, 0.0)
+  .one_zero = (1.0, 0.0)
+  .zero_one = (0.0, 1.0)
+]
 
 ///Intro: give the points defining the reference system.
 Point@Axes[
   state = $$.state
   [If[state == 0]
      $$.origin = $
+     $$.one_zero = $ + (1.0, 0.0)
+     $$.zero_one = $ + (0.0, 1.0)
    Else[], If[state == 1]
-     $$.one_zero = $$.origin + Ort[$ - $$.origin]
+     $$.one_zero = $
+     $$.zero_one = $$.origin + Ort[$ - $$.origin]
    Else[]
      $$.zero_one = $]
   $$.state += 1
+]
+
+///Intro: the matrix corresponding to the Axes object.
+///Example: if ``axes = Axes[origin, one_zero, zero_one]`` and
+// ``mx = Matrix[axes]`` then ``mx.Apply[(1, 0)]`` gives ``one_zero``
+// and ``mx.Apply[(0, 1)]`` gives ``zero_one``.
+Axes@Matrix[
+  Matrix[v10 = $.one_zero - $.origin
+         v01 = $.zero_one - $.origin
+         .m11 = v10.x, .m12 = v01.x, .m13 = $.origin.x
+         .m21 = v10.y, .m22 = v01.y, .m23 = $.origin.y]
 ]

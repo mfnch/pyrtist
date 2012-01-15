@@ -75,6 +75,9 @@ REAL@Print  [...] ///This.
 Point@Print [...] ///This.
 Str@Print   [...] ///This.
 
+///Intro: compute the orthogonal vector.
+Ort = ...
+
 ///Intro: whether an object is valid and can be used.
 // If more objects are given, return whether all of them are valid.
 // By valid we mean that the object possesses all the attributes which it

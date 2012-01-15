@@ -1,81 +1,69 @@
-//!BOXER:VERSION:0:1:1
-
+(**expand:boot*)
+(**boxer-version:0,2,0*)
 include "g"
 GUI = Void
-Window@GUI[]
 
-//!BOXER:REFPOINTS:BEGIN
-//!BOXER:REFPOINTS:END
-include "g"
-
-color_soft_layers = Color[0.88] //Color[0.9]
-color_hard_layers = Color[0.75] //Color[0.6]
-
-Color.Darker = Void
-Int@Color.Darker[
-  v = 0.835**$
-  c = Color[HSV[$$$, .v *= v]]
-  $$$.r = c.r, $$$.g = c.g, $$$.b = c.b
-]
+(**boxer-refpoints:
+bbox1 1 -100.63775510204084 72.3090779117016 bbox2 1 151.91326530612238
+-4.2216603433319335
+*)
+(**end:expand*)color_soft_layers = Color[0.88]
+color_hard_layers = Color[0.75]
+cs1 = Color[color_soft_layers]
+ch1 = Color[color_hard_layers]
+ch2 = Dark[ch1, 0.6], cs2 = Dark[cs1, 0.6]
+ch3 = Dark[ch2, 0.6], cs3 = Dark[cs2, 0.6]
 
 b = 0.5
 l = 50
 
-// cs1 = Color[0.8]
-// ch1 = Color[(0.6, 0.7, 1, 1)]
-cs1 = Color[color_soft_layers]
-ch1 = Color[color_hard_layers]
-ch2 = Color[ch1, .Darker[3]], cs2 = Color[cs1, .Darker[3]]
-ch3 = Color[ch2, .Darker[3]], cs3 = Color[cs2, .Darker[3]]
-
 skew_angle = Deg[45]
 
-clustered = Window[]
-layered = Window[]
-
-[
+clustered = Window[][
   face1 = Window[][
-    Style[.Border[0.01*b]]
-    \ .Poly[ch1, (0, 0), (1, 0), (1, 1), (0, 1)]
-    \ .Circle[cs1, (0.3, 0.2), 0.1; (0.65, 0.5), 0.08; (0.3, 0.75), 0.09;
-              (0.7, 0.2), 0.11; (0.1, 0.7), 0.07; (0.9, 0.9), 0.08]
-    \ .Hot["bottom-left", (0, 0), "top-left", (0, 1), "bottom-right", (1, 0)
-           "soft", (0.95, 0.9), "hard", (0.8, 0.7)]
+    Style[Border[0.01*b]]
+    Poly[ch1, (0, 0), (1, 0), (1, 1), (0, 1)]
+    Circles[cs1, (0.3, 0.2), 0.1; (0.65, 0.5), 0.08;
+            (0.3, 0.75), 0.09; (0.7, 0.2), 0.11;
+            (0.1, 0.7), 0.07; (0.9, 0.9), 0.08]
+    Hot[(0, 0), "bottom-left"; (0, 1), "top-left";
+        (1, 0), "bottom-right"; (0.95, 0.9), "soft";
+        (0.8, 0.7), "hard"]
   ]
 
   skew_vec = 0.3*Point[.x=Cos[skew_angle], .y=Sin[skew_angle]]
 
   face2 = Window[][
-    face := Window[][
-      Style[.Border[0.008*b]]
-      \ .Poly[ch2, (0, 0), (1, 0), (1, 1), (0, 1)]
-      \ .Circle[cs2, (0.3, 0.2), 0.1; (0.65, 0.5), 0.08; (0.3, 0.75), 0.09;
-                (0.7, 0.2), 0.11; (0.1, 0.7), 0.07; (0.9, 0.9), 0.08]
+    face = Window[][
+      Style[Border[0.008*b]]
+      Poly[ch2, (0, 0), (1, 0), (1, 1), (0, 1)]
+      Circles[cs2, (0.3, 0.2), 0.1; (0.65, 0.5), 0.08;
+              (0.3, 0.75), 0.09; (0.7, 0.2), 0.11;
+              (0.1, 0.7), 0.07; (0.9, 0.9), 0.08]
     ]
-    \ .Put[face, Matrix[.m12=skew_vec.x, .m22=skew_vec.y]]
-    \ .Hot["bottom-left", (0, 0)]
+    SimplePut[face, Matrix[.m12=skew_vec.x, .m22=skew_vec.y]]
+    Hot["bottom-left", (0, 0)]
   ]
 
   face3 = Window[][
-    face := Window[][
-      Style[.Border[0.02*b]]
-      \ .Poly[ch3, (0, 0), (1, 0), (1, 1), (0, 1)]
-      \ .Circle[cs3, (0.3, 0.2), 0.1; (0.65, 0.5), 0.08; (0.3, 0.75), 0.09;
-                (0.7, 0.2), 0.11; (0.1, 0.7), 0.07; (0.9, 0.9), 0.08]
+    face = Window[][
+      Style[Border[0.02*b]]
+      Poly[ch3, (0, 0), (1, 0), (1, 1), (0, 1)]
+      Circles[cs3, (0.3, 0.2), 0.1; (0.65, 0.5), 0.08;
+              (0.3, 0.75), 0.09; (0.7, 0.2), 0.11;
+              (0.1, 0.7), 0.07; (0.9, 0.9), 0.08]
     ]
-    \ .Put[face, Matrix[.m11=skew_vec.x, .m21=skew_vec.y]]
-    \ .Hot["bottom-left", (0, 0)]
+    SimplePut[face, Matrix[.m11=skew_vec.x, .m21=skew_vec.y]]
+    Hot["bottom-left", (0, 0)]
   ]
 
-  \ clustered[
-    front = .Put[face1]
-    \ .Put[face2, "t", .Near["bottom-left", front.Get["top-left"]]]
-    \ .Put[face3, "t", .Near["bottom-left", front.Get["bottom-right"]]]
-    \ .Hot["soft", front.Get["soft"], "hard", front.Get["hard"]]
-  ]
+  (front = Put[face1])
+  Put[face2, "t", Near["bottom-left", front.Get["top-left"]]]
+  Put[face3, "t", Near["bottom-left", front.Get["bottom-right"]]]
+  Hot["soft", front.Get["soft"]; "hard", front.Get["hard"]]
 ]
 
-[
+layered = Window[][
   num_layers = 5
   layer_ratio = 2.0
 
@@ -84,68 +72,66 @@ layered = Window[]
   dw = hw + sw
 
   face1 = Window[][
-    Style[.Border[0.01*b]]
-    \ .Poly[cs1, (0, 0), (1, 0), (1, 1), (0, 1)]
-    i = 0, \ .Poly[ch1, y = dw*i, (0, y), (1,  y), (1, y+hw), (0, y+hw)
-                   For[++i < num_layers]]
-    \ .Hot["bottom-left", (0, 0), "top-left", (0, 1), "bottom-right", (1, 0)
-           "soft", (0.05, 0.85), "hard", (0.05, 0.73)]
+    Style[Border[0.01*b]]
+    Poly[cs1, (0, 0), (1, 0), (1, 1), (0, 1)]
+    i = 0
+    Poly[ch1, y = dw*i, (0, y), (1,  y), (1, y+hw), (0, y+hw)
+         For[++i < num_layers]]
+    Hot["bottom-left", (0, 0); "top-left", (0, 1);
+        "bottom-right", (1, 0); "soft", (0.05, 0.85);
+        "hard", (0.05, 0.73)]
   ]
 
   skew_vec = 0.3*Point[.x=Cos[skew_angle], .y=Sin[skew_angle]]
 
   face2 = Window[][
-    face := Window[][
-      Style[.Border[0.008*b]]
-      \ .Poly[ch2, (0, 0), (1, 0), (1, 1), (0, 1)]
+    face = Window[][
+      Style[Border[0.008*b]]
+      Poly[ch2, (0, 0), (1, 0), (1, 1), (0, 1)]
     ]
-    \ .Put[face, Matrix[.m12=skew_vec.x, .m22=skew_vec.y]]
-    \ .Hot["bottom-left", (0, 0)]
+    SimplePut[face, Matrix[.m12=skew_vec.x, .m22=skew_vec.y]]
+    Hot["bottom-left", (0, 0)]
   ]
 
   face3 = Window[][
-    face := Window[][
-      Style[.Border[0.02*b]]
-      \ .Poly[cs3, (0, 0), (1, 0), (1, 1), (0, 1)]
-      i = 0, \ .Poly[ch3, y = dw*i, (0, y), (1,  y), (1, y+hw), (0, y+hw)
-                     For[++i < num_layers]]
+    face = Window[][
+      Style[Border[0.02*b]]
+      Poly[cs3, (0, 0), (1, 0), (1, 1), (0, 1)]
+      i = 0
+      [Poly[ch3, y = dw*i, (0, y), (1,  y), (1, y+hw), (0, y+hw)]
+       For[++i < num_layers]]
     ]
-    \ .Put[face, Matrix[.m11=skew_vec.x, .m21=skew_vec.y]]
-    \ .Hot["bottom-left", (0, 0)]
+    SimplePut[face, Matrix[.m11=skew_vec.x, .m21=skew_vec.y]]
+    Hot["bottom-left", (0, 0)]
   ]
 
-  \ layered[
-    front = .Put[face1]
-    \ .Put[face2, "t", .Near["bottom-left", front.Get["top-left"]]]
-    \ .Put[face3, "t", .Near["bottom-left", front.Get["bottom-right"]]]
-    \ .Hot["soft", front.Get["soft"], "hard", front.Get["hard"]]
-  ]
-]
-
-Square = ++(Point c1, c2, Int n)
-([)@Square[$$.n = 0]
-Point@Square[[If[$$.n == 0], $$.c1 = $], [If[$$.n++ == 1], $$.c2 = $]]
-
-Square@Window.Poly[
-  c1 = $.c1, dx = $.c2.x - c1.x, dy = $.c2.y - c1.y,
-  c1, c1 + (dx, 0), $.c2, c1 + (0, dy)
+  (front = Put[face1])
+  Put[face2, "t", Near["bottom-left", front.Get["top-left"]]]
+  Put[face3, "t", Near["bottom-left", front.Get["bottom-right"]]]
+  Hot["soft", front.Get["soft"]; "hard", front.Get["hard"]]
 ]
 
 out = Window[][
-  d = 50, x0 := -d - 0.5*l, x1: = x0 + 2*d, x2 := x1 + 2*d, y: = 65
-  left: = .Put[clustered, (x0, 0), .Scale[l]]
-  right: = .Put[layered, (x1, 0), .Scale[l]]
-  b: = 5, c1 := (x2, 0.5*y), c2 := c1 + (0, 2*b)
-  s = Style[.Border[color.black, 0.2]]
-  \ .Poly[Square[c1, c1 - (b, b)], cs1, s]
-  \ .Poly[Square[c2, c2 - (b, b)], ch1, s]
-  .Text[.Font["Sans", 8], color.black
-        .From[(0, 0.5)], (x0, y), "a)"; (x1, y), "b)";
-        c1 + b*(0.8, -0.5), .From[(0, 0.5)], "soft";
-        c2 + b*(0.8, -0.5), .From[(0, 0.5)], "hard"]
-  .Show[(d, y+5), (d, y-5), c1 + b*(5, 0), (x0, 0) - b*(5, 0)]
-  .Save["es_types.png", Window["rgb24", .Res[Dpi[50]]]]
+  (**expand:define-all*)
+bbox1 = Point[.x=-100.637755102, .y=72.3090779117]
+bbox2 = Point[.x=151.913265306, .y=-4.22166034333]
+
+(**end:expand*)
+
+  d = 50, x0 = -d - 0.5*l, x1 = x0 + 2*d, x2 = x1 + 2*d, y = 65
+  (left = Put[clustered, (x0, 0), Scale[l]])
+  (right = Put[layered, (x1, 0), Scale[l]])
+  b = 5, c1 = (x2, 0.5*y), c2 = c1 + (0, 2*b)
+  s = Style[Border[color.black, 0.2]]
+  Rectangle[c1, c1 - (b, b), cs1, s]
+  Rectangle[c2, c2 - (b, b), ch1, s]
+  Texts[Font["Sans", 8], color.black
+        From[(0, 0.5)], (x0, y), "a)"; (x1, y), "b)";
+        c1 + b*(0.8, -0.5), From[(0, 0.5)], "soft";
+        c2 + b*(0.8, -0.5), From[(0, 0.5)], "hard"]
+  BBox[bbox1, bbox2]
 ]
 
-GUI[out]
+out.Save["es_types.png", Window["rgb24", .Res[Dpi[50]]]]
 
+(**expand:view:out*)(**end:expand*)

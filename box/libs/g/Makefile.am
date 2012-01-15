@@ -36,7 +36,7 @@ dist_boxlibg_DATA= obj.box const.box gcore.box matrix.box transform.box	   \
   lines.box gradcore.box gradient.box clip.box hot.box constraints.box	   \
   put.box window.box bbox.box g2.box init.box color.box oldstyle.box	   \
   _gradient.bxh pattern.box _line.bxh _circle.bxh _poly.bxh _put.bxh	   \
-  _pointlist.bxh _text.bxh area.box
+  _pointlist.bxh _text.bxh area.box axes.box
 
 dist_boxpkg_DATA= arrows.bxh caps.box _arrows.bxh math.bxh tools.bxh	\
   _sphere.bxh _rectangle.bxh label.bxh bounce.bxh electric.bxh
