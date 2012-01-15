@@ -1,4 +1,13 @@
-///Section: clipart
+(**expand:boxer-boot*)
+(**boxer-version:0,2,0*)
+include "g"
+GUI = Void
+
+(**boxer-refpoints:
+gear_pos1 1 -5.80503357401 2.91855231481 gear_pos2 1 18.5917679487
+-7.25533574661 gear_pos3 1 -22.8225615385 -17.1623063348
+*)
+(**end:expand*)///Section: clipart
 
 include "g"
 
@@ -32,7 +41,15 @@ Gear@Window[
 ]
 
 gears = Window[][
-  Gear[(-5.80503357401, 2.91855231481), 15.0, 30]
-  Gear[(18.5917679487, -7.25533574661)]
-  Gear[(-22.8225615385, -17.1623063348)]
+  (**expand:define-all*)
+gear_pos1 = Point[.x=-5.80503357401, .y=2.91855231481]
+gear_pos2 = Point[.x=18.5917679487, .y=-7.25533574661]
+gear_pos3 = Point[.x=-22.8225615385, .y=-17.1623063348]
+
+(**end:expand*)
+  Gear[gear_pos1, 15.0, 30]
+  Gear[gear_pos2]
+  Gear[gear_pos3]
 ]
+
+(**expand:view:gears*)(**end:expand*)

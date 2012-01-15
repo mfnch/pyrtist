@@ -152,7 +152,7 @@ class BoxerMacroContract(MacroExpander):
 
   def macro_expand(self, args):
     mn = normalize_macro_name(args)
-    if mn == "boot":
+    if mn == "boxer_boot":
       self.push_state(STATE_CAPTURE, mn)
       self.capture = ""
       return ""
@@ -177,7 +177,7 @@ class BoxerMacroContract(MacroExpander):
                           % mn)
       self.pop_state()
 
-      if context == "boot":
+      if context == "boxer_boot":
         self.document.set_boot_code(self.capture)
 
       return ""
@@ -233,7 +233,8 @@ class Document1(Document0):
 
   def get_part_preamble(self, **kwargs):
     boot_code = DocumentBase.get_part_preamble(self, **kwargs)
-    return endline.join(["(**expand:boot*)", boot_code, "(**end:expand*)"])
+    return endline.join(["(**expand:boxer-boot*)", boot_code,
+                         "(**end:expand*)"])
 
   @inherit_doc
   def get_part_user_code(self, mode=None):

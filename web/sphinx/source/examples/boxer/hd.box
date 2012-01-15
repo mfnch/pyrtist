@@ -1,14 +1,12 @@
-//!BOXER:VERSION:0:1:1
-
+(**expand:boxer-boot*)
+(**boxer-version:0,2,0*)
 include "g"
 GUI = Void
-Window@GUI[]
 
-//!BOXER:REFPOINTS:BEGIN
-gui1 = Point[.x=91.689501833, .y=2.41289767442]
-gui2 = Point[.x=21.4671452991, .y=3.41047040359]
-gui3 = Point[.x=44.6029230769, .y=20.9530860987]
-//!BOXER:REFPOINTS:END
+(**boxer-refpoints:
+
+*)
+(**end:expand*)include "hdsketch"
 include "grains"
 
 w = Window[][
@@ -19,7 +17,6 @@ w = Window[][
         "b)", (38, 25)]
 ]
 
-GUI[w]
-
 w.Save["hd.png", Window["rgb24", .Res[Dpi[100]]]]
 
+(**expand:view:w*)(**end:expand*)
