@@ -29,6 +29,9 @@
 
 #  include <box/types.h>
 
+/** Integer type used to count references */
+typedef size_t BoxRefCount;
+
 /** Return the lowest multiple of sizeof(uint32_t) which is greater than n */
 BOXEXPORT size_t BoxMem_Size_Align(size_t n);
 
@@ -87,7 +90,30 @@ BOXEXPORT int BoxMem_x_Plus_y(size_t *r, size_t x, size_t y);
 /** Executes *r = a*x + b*y, returning 0 in case of integer overflow,
  *  1 otherwise.
  */
-BOXEXPORT int BoxMem_AX_Plus_BY(size_t *r, size_t a, size_t x, size_t b, size_t y);
+BOXEXPORT int BoxMem_AX_Plus_BY(size_t *r, size_t a, size_t x,
+                                size_t b, size_t y);
+
+/** Provides functionality similar to 'malloc' with the difference that the
+ * allocation is reference counted. In particular, this function does allocate
+ * 's' bytes plus the space for an additional integer. The integer contains the
+ * number of references to this block, which is initially set to 1.  The number
+ * can be increase with Box_RC_Link and is decreased with Box_RC_Unlink.
+ * The block is freed when the reference count reaches zero.
+ */
+void *Box_RC_Alloc(size_t s);
+
+/** Similar to 'Box_RC_Alloc' but aborts if the memory request fails. */
+void *Box_RC_Safe_Alloc(size_t s);
+
+/** Increase the reference count associated with the block 'ptr'. */
+void Box_RC_Link(void *ptr);
+
+/** Decrease the reference count. The block is freed if the reference count
+ * reaches zero.
+ * @return 1 if the block was freed (reference count reached zero),
+ *   0 otherwise.
+ */
+int Box_RC_Unlink(void *ptr);
 
 /*#define BOXMEM_DEBUG_MACROS*/
 
