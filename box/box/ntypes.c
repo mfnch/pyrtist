@@ -36,6 +36,58 @@ typedef enum {
 
 struct BoxTypeDesc_struct {
   BoxTypeClass type_class;
-  char         *name;
-
+  size_t       size,
+               alignment;
 };
+
+typedef struct {
+  char *name;
+  size_t size,
+         alignment;
+} BoxTypeIntrinsic;
+
+typedef struct {
+  char *name;
+  size_t size,
+         alignment;
+} BoxTypeAlias;
+
+
+static void *MyType_Alloc(BoxType *t, BoxTypeClass tc) {
+  size_t additional = 0, total;
+
+  switch (tc) {
+  case BOXTYPECLASS_INTRINSIC: additional = sizeof(BoxTypeAlias); break;
+  case BOXTYPECLASS_ALIAS: additional = sizeof(BoxTypeAlias); break;
+  default:
+    MSG_FATAL("Unknown type class in MyType_Alloc");
+    abort();
+  }
+
+  if (Box_Mem_X_Plus_Y(& total, additional, sizeof(BoxTypeDesc))) {
+    BoxTypeDesc *td = Box_Mem_RC_Safe_Alloc(total);
+    *t = td;
+    return (void *) td + sizeof(BoxTypeDesc);
+  }   
+
+  MSG_FATAL("Integer overflow in MyType_Alloc");
+  abort();
+  return NULL;
+}
+
+BoxType BoxType_New_Intrinsic(size_t size, size_t alignment,
+                              const char *name) {
+  BoxType t;
+  BoxTypeIntrinsic *ti = MyType_Alloc(& t, BOXTYPECLASS_INTRINSIC);
+  ti->name = name;
+  ti->size = size;
+  ti->alignment = alignment;  
+  return t;
+}
+
+BoxType BoxType_New_Alias(BoxType source, const char *name) {
+  BoxType t;
+  BoxTypeAlias *ta = MyType_Alloc(& t, BOXTYPECLASS_ALIAS);
+  ta->name = name;
+  ta->source = source;
+}

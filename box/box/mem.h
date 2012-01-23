@@ -87,6 +87,8 @@ BOXEXPORT int BoxMem_AX(size_t *r, size_t a, size_t x);
  */
 BOXEXPORT int BoxMem_x_Plus_y(size_t *r, size_t x, size_t y);
 
+#define Box_Mem_X_Plus_Y BoxMem_x_Plus_y
+
 /** Executes *r = a*x + b*y, returning 0 in case of integer overflow,
  *  1 otherwise.
  */
@@ -100,20 +102,20 @@ BOXEXPORT int BoxMem_AX_Plus_BY(size_t *r, size_t a, size_t x,
  * can be increase with Box_RC_Link and is decreased with Box_RC_Unlink.
  * The block is freed when the reference count reaches zero.
  */
-void *Box_RC_Alloc(size_t s);
+BOXEXPORT void *Box_Mem_Alloc_RC(size_t s);
 
 /** Similar to 'Box_RC_Alloc' but aborts if the memory request fails. */
-void *Box_RC_Safe_Alloc(size_t s);
+BOXEXPORT void *Box_Mem_Safe_Alloc_RC(size_t s);
 
 /** Increase the reference count associated with the block 'ptr'. */
-void Box_RC_Link(void *ptr);
+BOXEXPORT void Box_RC_Link(void *ptr);
 
 /** Decrease the reference count. The block is freed if the reference count
  * reaches zero.
  * @return 1 if the block was freed (reference count reached zero),
  *   0 otherwise.
  */
-int Box_RC_Unlink(void *ptr);
+BOXEXPORT int Box_RC_Unlink(void *ptr);
 
 /*#define BOXMEM_DEBUG_MACROS*/
 
