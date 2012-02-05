@@ -133,6 +133,8 @@ class Settings(object):
     raise KeyError("Property not found in Settings object")
 
 
+
+
 class Boxer(object):
   def delete_event(self, widget, event, data=None):
     return not self.ensure_file_is_saved()
@@ -306,9 +308,9 @@ class Boxer(object):
     if self.filename != None:
       self.raw_file_save()
     else:
-      self.menu_file_save_with_name(image_menu_item)
+      self.menu_file_save_as(image_menu_item)
 
-  def menu_file_save_with_name(self, image_menu_item):
+  def menu_file_save_as(self, image_menu_item):
     """Ivoked to save a file. Shows the dialog to select the file name."""
 
     if self.dialog_filesave == None:
@@ -559,6 +561,73 @@ class Boxer(object):
         tree.process()
         self.dialog_dox_browser = dox_browser = DoxBrowser(dox)
 
+    # Here we decide how the Boxer main window menu should look like.
+  def _init_menubar(self):
+    from menus import MenuBar, MenuItem, MenuStock
+    mb = \
+      MenuBar(MenuItem("_File",
+                       MenuStock(gtk.STOCK_NEW).with_name("new"),
+                       MenuStock(gtk.STOCK_OPEN).with_name("open"),
+                       "_Examples", None,
+                       MenuStock(gtk.STOCK_SAVE).with_name("save"),
+                       MenuStock(gtk.STOCK_SAVE_AS).with_name("save_as"),
+                       None,
+                       MenuStock(gtk.STOCK_QUIT).with_name("quit")
+                       ).with_name("file"),
+              MenuItem("_Edit",
+                       MenuStock(gtk.STOCK_UNDO).with_name("undo"),
+                       MenuStock(gtk.STOCK_REDO).with_name("redo"),
+                       None,
+                       MenuStock(gtk.STOCK_CUT).with_name("cut"),
+                       MenuStock(gtk.STOCK_COPY).with_name("copy"),
+                       MenuStock(gtk.STOCK_PASTE).with_name("paste"),
+                       MenuStock(gtk.STOCK_DELETE).with_name("delete")
+                       ).with_name("edit"),
+              MenuItem("_Run", 
+                       MenuStock(gtk.STOCK_EXECUTE).with_name("execute"),
+                       MenuStock(gtk.STOCK_STOP).with_name("stop")
+                       ).with_name("run"),
+              MenuItem("_View",
+                       ("rotate", "_Rotate view"),
+                       ("bigrp", "_Bigger point markers"),
+                       ("smallrp", "_Smaller point markers"),
+                       ("remember", "R_emember the current window size"),
+                       ("forget", "_Forget the saved window size")
+                       ).with_name("view"),
+              MenuItem("_Help",
+                       ("docbrowser", "_Documentation browser"), 
+                       MenuStock(gtk.STOCK_ABOUT).with_name("about")
+                       ).with_name("help"))
+
+    menu = mb.instantiate()
+
+    mb.file.new.instance.connect("activate", self.menu_file_new)
+    mb.file.open.instance.connect("activate", self.menu_file_open)
+    mb.file.save.instance.connect("activate", self.menu_file_save)
+    mb.file.save_as.instance.connect("activate", self.menu_file_save_as)
+    mb.file.quit.instance.connect("activate", self.menu_file_quit)
+
+    mb.edit.undo.instance.connect("activate", self.menu_edit_undo)
+    mb.edit.redo.instance.connect("activate", self.menu_edit_redo)
+    mb.edit.cut.instance.connect("activate", self.menu_edit_cut)
+    mb.edit.copy.instance.connect("activate", self.menu_edit_copy)
+    mb.edit.paste.instance.connect("activate", self.menu_edit_paste)
+    mb.edit.delete.instance.connect("activate", self.menu_edit_delete)
+
+    mb.run.execute.instance.connect("activate", self.menu_run_execute)
+    mb.run.stop.instance.connect("activate", self.menu_run_stop)
+
+    mb.view.rotate.instance.connect("activate", self.menu_view_rotate)
+    mb.view.bigrp.instance.connect("activate", self.menu_view_inc_refpoint)
+    mb.view.smallrp.instance.connect("activate", self.menu_view_dec_refpoint)
+    mb.view.remember.instance.connect("activate",
+                                      self.menu_view_remember_win_size)
+    mb.view.forget.instance.connect("activate", self.menu_view_forget_win_size)
+
+    mb.help.about.instance.connect("activate", self.menu_help_about)
+    mb.help.docbrowser.instance.connect("activate", self.menu_help_docbrowser)
+    return menu
+
   def __init__(self, gladefile="boxer.glade", filename=None, box_exec=None):
     self.config = config.get_configuration()
     self.settings = Settings()
@@ -594,6 +663,8 @@ class Boxer(object):
     for child in children:
       container.remove(child)
     mainwin.remove(container)
+
+    menu = self._init_menubar()
 
     # Set the last saved window size, if any
     try:
@@ -767,26 +838,6 @@ class Boxer(object):
 
     dic = {"on_boxer_destroy": self.destroy,
            "on_boxer_delete_event": self.delete_event,
-           "on_file_new_activate": self.menu_file_new,
-           "on_file_open_activate": self.menu_file_open,
-           "on_file_save_activate": self.menu_file_save,
-           "on_file_save_with_name_activate": self.menu_file_save_with_name,
-           "on_file_quit_activate": self.menu_file_quit,
-           "on_edit_undo_activate": self.menu_edit_undo,
-           "on_edit_redo_activate": self.menu_edit_redo,
-           "on_edit_cut_activate": self.menu_edit_cut,
-           "on_edit_copy_activate": self.menu_edit_copy,
-           "on_edit_paste_activate": self.menu_edit_paste,
-           "on_edit_delete_activate": self.menu_edit_delete,
-           "on_run_execute_activate": self.menu_run_execute,
-           "on_run_stop_activate": self.menu_run_stop,
-           "on_view_rotate_activate": self.menu_view_rotate,
-           "on_view_inc_refpoint": self.menu_view_inc_refpoint,
-           "on_view_dec_refpoint": self.menu_view_dec_refpoint,
-           "on_view_win_size_remember": self.menu_view_remember_win_size,
-           "on_view_win_size_forget": self.menu_view_forget_win_size,
-           "on_help_about_activate": self.menu_help_about,
-           "on_help_show_docbrowser_activate": self.menu_help_docbrowser,
            "on_toolbutton_new": self.menu_file_new,
            "on_toolbutton_open": self.menu_file_open,
            "on_toolbutton_save": self.menu_file_save,
