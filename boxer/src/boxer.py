@@ -431,9 +431,9 @@ class Boxer(object):
   def _set_box_killer(self, killer):
     killer_given = (killer != None)
     self.toolbutton_stop.set_sensitive(killer_given)
-    self.menubutton_run_stop.set_sensitive(killer_given)
+    self.menubar.run.stop.instance.set_sensitive(killer_given)
     self.toolbutton_run.set_sensitive(not killer_given)
-    self.menubutton_run_execute.set_sensitive(not killer_given)
+    self.menubar.run.execute.instance.set_sensitive(not killer_given)
     self.box_killer = killer
 
   def _out_textview_refresh(self, text, force=False):
@@ -568,7 +568,8 @@ class Boxer(object):
       MenuBar(MenuItem("_File",
                        MenuStock(gtk.STOCK_NEW).with_name("new"),
                        MenuStock(gtk.STOCK_OPEN).with_name("open"),
-                       "_Examples", None,
+                       MenuItem("_Examples").with_name("examples"),
+                       None,
                        MenuStock(gtk.STOCK_SAVE).with_name("save"),
                        MenuStock(gtk.STOCK_SAVE_AS).with_name("save_as"),
                        None,
@@ -599,6 +600,7 @@ class Boxer(object):
                        MenuStock(gtk.STOCK_ABOUT).with_name("about")
                        ).with_name("help"))
 
+    self.menubar = mb
     menu = mb.instantiate()
 
     mb.file.new.instance.connect("activate", self.menu_file_new)
@@ -659,11 +661,9 @@ class Boxer(object):
     # rather than through the glade interface. At the end, we may have a full
     # specification of the GUI from Python, but for now...
     container = self.boxer.get_widget("vbox1")
-    menu, tbar = children = container.get_children()
-    for child in children:
-      container.remove(child)
+    tbar = container.get_children()[0]
+    container.remove(tbar)
     mainwin.remove(container)
-
     menu = self._init_menubar()
 
     # Set the last saved window size, if any
@@ -694,7 +694,9 @@ class Boxer(object):
     self.out_textbuffer_capacity = \
       int(1024*self.config.getfloat('Box', 'stdout_buffer_size'))
 
-    self.examplesmenu = self.boxer.get_widget("menu_file_examples")
+    self.examplesmenu = mn = gtk.Menu()
+    self.menubar.file.examples.instance.set_submenu(mn)
+
     self.widget_pastenewbutton = self.boxer.get_widget("toolbutton_pastenew")
     self.toolbutton_run = self.boxer.get_widget("toolbutton_run")
     self.toolbutton_stop = self.boxer.get_widget("toolbutton_stop")
