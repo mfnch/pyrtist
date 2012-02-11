@@ -197,7 +197,7 @@ void *Box_Mem_Alloc_RC(size_t s) {
 }
 
 void *Box_Mem_Safe_Alloc_RC(size_t s) {
-  void *ptr = Box_RC_Alloc(s);
+  void *ptr = Box_Mem_Alloc_RC(s);
   assert(ptr != NULL);
   return ptr;
 }

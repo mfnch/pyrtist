@@ -584,6 +584,8 @@ class Boxer(object):
                        MenuStock(gtk.STOCK_PASTE).with_name("paste"),
                        MenuStock(gtk.STOCK_DELETE).with_name("delete")
                        ).with_name("edit"),
+#              MenuItem("_Library",
+#                       ("libsetup", "Library setup...")),
               MenuItem("_Run", 
                        MenuStock(gtk.STOCK_EXECUTE).with_name("execute"),
                        MenuStock(gtk.STOCK_STOP).with_name("stop")
