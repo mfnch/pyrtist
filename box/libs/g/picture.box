@@ -1,0 +1,12 @@
+///Section: g
+
+#provide "g.picture"
+
+///Intro: a picture taken from a file.
+Picture = ++(Str filename, Axes axes)
+
+///Intro: an {type(.@)} object used to specify where to place the object.
+Axes@Picture[$$.axes = $]
+
+///Intro: insert the picture inside the window.
+Picture@Window[]
