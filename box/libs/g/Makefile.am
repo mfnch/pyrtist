@@ -38,8 +38,8 @@ dist_boxlibg_DATA= obj.box const.box gcore.box matrix.box transform.box	   \
   _gradient.bxh pattern.box _line.bxh _circle.bxh _poly.bxh _put.bxh	   \
   _pointlist.bxh _text.bxh area.box axes.box thickline.box picture.box
 
-dist_boxpkg_DATA= arrows.bxh caps.box _arrows.bxh math.bxh tools.bxh	\
-  _sphere.bxh _rectangle.bxh label.bxh bounce.bxh electric.bxh
+dist_boxpkg_DATA= arrows.bxh caps.box _arrows.bxh math.box tools.bxh	\
+  _sphere.bxh rectangle.box label.bxh bounce.bxh electric.bxh
 
 libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h matrix.c  \
   matrix.h winmap.c winmap.h bm1bit.c bm4bit.c bm8bit.c bitmap.h bmcommon.c   \

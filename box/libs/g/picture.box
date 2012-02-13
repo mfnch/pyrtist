@@ -5,6 +5,9 @@
 ///Intro: a picture taken from a file.
 Picture = ++(Str filename, Axes axes)
 
+///Intro: the file name of the picture.
+Str@Picture[$$.filename = $]
+
 ///Intro: an {type(.@)} object used to specify where to place the object.
 Axes@Picture[$$.axes = $]
 

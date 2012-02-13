@@ -581,6 +581,50 @@ My_Cairo_Pattern_Create_Radial(BoxPoint *p1, BoxPoint *xone, BoxPoint *yone,
   return pattern;
 }
 
+static cairo_pattern_t *
+My_Cairo_Pattern_Create_Image(cairo_t *cr,
+                              const Point *zero,
+                              const Point *xone, const Point *yone,
+                              const char *filename)
+{
+  cairo_pattern_t *pattern;
+  cairo_surface_t *image = cairo_image_surface_create_from_png(filename);
+  double lx = cairo_image_surface_get_width(image),
+         ly = cairo_image_surface_get_height(image);
+
+  cairo_matrix_t m, m_inv;
+
+  m.xx = (xone->x - zero->x)/lx; m.yx = (xone->y - zero->y)/ly;
+  m.xy = (yone->x - zero->x)/lx; m.yy = (yone->y - zero->y)/ly;
+  m.x0 = zero->x; m.y0 = zero->y;
+
+  if (My_Invert_Cairo_Matrix(& m_inv, & m) == 0.0)
+    return NULL;
+
+  pattern = cairo_pattern_create_for_surface(image);
+  cairo_pattern_set_matrix(pattern, & m_inv);
+  return pattern;
+  
+  
+#if 0
+  cairo_save(cr);
+  cairo_move_to(cr, 0.0, 0.0);
+  cairo_line_to(cr, 1.0, 0.0);
+  cairo_line_to(cr, 1.0, 1.0);
+  cairo_line_to(cr, 0.0, 1.0);
+  cairo_close_path(cr);
+
+  cairo_scale(cr, 1.0/w, 1.0/h);
+  cairo_set_source_surface(cr, image, 0, 0);
+  cairo_paint(cr);
+  cairo_restore(cr);
+  cairo_surface_destroy(image);
+
+  cairo_set_matrix(cr, & previous_m);
+#endif
+  return NULL;
+}
+
 static void My_Cairo_Fill_And_Stroke(BoxGWin *w) {
   cairo_t *cr = (cairo_t *) w->ptr;  
   double line_width = MY_DATA(w)->line_state.width;
@@ -979,6 +1023,22 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     }
     break;
 
+  case BOXGCMD_PATTERN_CREATE_IMAGE:
+    {
+      BoxPoint *arg1 = args[0], *arg2 = args[1], *arg3 = args[2];
+      BoxStr *arg4 = args[3];
+      char *filename = BoxStr_To_C_String(arg4);
+      if (filename != NULL) {
+        MY_DATA(w)->pattern =
+          My_Cairo_Pattern_Create_Image(cr, arg1, arg2, arg3, filename);
+        BoxMem_Free(filename);
+        return (MY_DATA(w)->pattern != NULL) ? BOXTASK_OK : BOXTASK_FAILURE;
+
+      } else
+        return BOXTASK_FAILURE;
+    }
+    break;
+
   case BOXGCMD_PATTERN_ADD_COLOR_STOP_RGB:
     {
       BoxReal *arg1 = args[0], *arg2 = args[1], *arg3 = args[2],
@@ -1122,6 +1182,21 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
   case BOXGCMD_EXT_FILL_AND_STROKE:
     My_Cairo_Fill_And_Stroke(w);
     return BOXTASK_OK;
+
+  case BOXGCMD_EXT_DRAW_PICTURE:
+    {
+
+      return BOXTASK_FAILURE;
+
+      BoxStr *arg1 = args[0];
+      char *filename = BoxStr_To_C_String(arg1);
+      if (filename != NULL) {
+        BoxMem_Free(filename);
+        return BOXTASK_OK;
+      }
+    }
+    break;
+
 
   default:
     return BOXTASK_FAILURE;

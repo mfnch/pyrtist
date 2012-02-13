@@ -1,4 +1,4 @@
-#provide "g._rectangle"
+#provide "g.rectangle"
 
 Rectangle = ++(Int have_color, have_style, have_gradient, num_corners
                Color color, OldStyle style, Gradient gradient
