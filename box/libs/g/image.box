@@ -1,0 +1,19 @@
+///Section: g.image
+
+#provide "g.image"
+
+///Intro: object representing an image taken from an external file.
+Image = ++(Str filename, Axes axes)
+
+///Intro: filename containing the image.
+Str@Image[.filename = $]
+
+///Intro: provide the reference system for the image.
+Axes@Image[.axes = $]
+
+///Intro: use the picture as a pattern to fill and draw shapes.
+Image@Pattern[
+  \ $$.cmdstream[Obj[const.raw.pattern_create_image,
+                     $.axes.origin, $.axes.one_zero, $.axes.zero_one
+                     $.filename]]
+]

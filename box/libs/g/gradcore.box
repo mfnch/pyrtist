@@ -25,7 +25,7 @@ Gradient = ++(Int type, state
 (.[)@Gradient[.type = 0, .state = 0, .have.offset = 1, .offset = 0.0]
 
 ///Intro: set the extend mode.
-Extend@Gradient[.extend = $]
+Extend@Gradient[\ $$.extend[$]]
 
 // Declare some combinations.
 Gradient@Pattern ?
