@@ -202,7 +202,7 @@ class BoxerMacroContract(MacroExpander):
                         "(macro boxer-refpoints)")
       return None
 
-    self.document.refpoints = rps
+    self.document.refpoints.load(rps)
     return ""
 
 

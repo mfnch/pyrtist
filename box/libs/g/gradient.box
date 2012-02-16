@@ -106,7 +106,7 @@ Gradient@Pattern[
     i += 1
   For[1]]
 
-  \ $$.cmdstream[$.extend]
+  \ $$.extend[$.extend]
 ]
 
 ///Intro: set the gradient as the active color.
