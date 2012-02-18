@@ -18,4 +18,4 @@ Path@CmdStream[$.cmdstream]
 Path@Path[If[!$.empty], \ .cmdstream[$.cmdstream], .empty = 0]
 
 ///Intro: pass the path to the window for drawing with the default style.
-Path@Window[If[!$.empty], $.cmdstream, Obj[Obj[const.raw.fill]]]
+Path@Window[If[!$.empty], $.cmdstream, CmdStream[Obj[const.raw.fill]]]

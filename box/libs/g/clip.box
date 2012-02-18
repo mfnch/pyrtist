@@ -19,12 +19,12 @@ Path@Clip[\ $$.path[$]]
 
 ///Intro: send the clipped object to the window.
 Clip@Window[
-  Obj[Obj[const.raw.save]]
-  [If[!$.path.empty], $.path.cmdstream, Obj[Obj[const.raw.clip]]]
+  CmdStream[Obj[const.raw.save]
+            [If[!$.path.empty], $.path.cmdstream, Obj[const.raw.clip]]]
 
   save_bbox = BBox[$$]
   $.window
   save_bbox
 
-  Obj[Obj[const.raw.restore]]
+  CmdStream[Obj[const.raw.restore]]
 ]

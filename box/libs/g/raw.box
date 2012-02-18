@@ -22,5 +22,4 @@ include "obj"
 
 ///Intro:
 // pass a sequence of low-level commands to the Window via an Obj object
-Obj@Window "GLib_Obj_At_Window" ?
-
+//Obj@Window "GLib_Obj_At_Window" ?

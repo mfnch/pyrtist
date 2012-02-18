@@ -95,7 +95,7 @@ BBox@Window.Show[
 ///Intro: set the bounding box for the given window.
 // This will override the previous bounding box.
 BBox@Window[
-  Obj[Obj[const.raw.ext_unset_bbox]]
+  CmdStream[Obj[const.raw.ext_unset_bbox]]
   .Show[$]
 ]
 

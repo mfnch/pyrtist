@@ -11,10 +11,12 @@ Obj@CmdStream[\ .cmds[$]]
 ///Intro: merge the command stream into the parent one.
 CmdStream@CmdStream[\ $$.cmds.Merge[$.cmds]]
 
-///Intro: give the command stream to the window for execution.
-CmdStream@Window[$.cmds]
 
 ///Intro: empty the command stream.
 CmdStream.Empty = Void
 
 ([)@CmdStream.Empty[$$$.cmds.Empty[]]
+
+///Intro: give the command stream to the window for execution.
+CmdStream@Window "GLib_Obj_At_Window" ?
+//CmdStream@Window[$.cmds]
