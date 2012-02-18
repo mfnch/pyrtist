@@ -595,9 +595,9 @@ My_Cairo_Pattern_Create_Image(cairo_t *cr,
 
   cairo_matrix_t m, m_inv;
 
-  m.xx = (xone->x - zero->x)/lx; m.yx = (xone->y - zero->y)/ly;
-  m.xy = (yone->x - zero->x)/lx; m.yy = (yone->y - zero->y)/ly;
-  m.x0 = zero->x; m.y0 = zero->y;
+  m.xx = (xone->x - zero->x)/lx; m.yx = (xone->y - zero->y)/lx;
+  m.xy = (zero->x - yone->x)/ly; m.yy = (zero->y - yone->y)/ly;
+  m.x0 = yone->x; m.y0 = yone->y;
 
   if (My_Invert_Cairo_Matrix(& m_inv, & m) == 0.0)
     return NULL;
