@@ -5,13 +5,18 @@
 ///Intro: object representing an image taken from an external file.
 Image = ++(Str filename, Axes axes, From from)
 
-(.[)@Image[.from[(0.0, 0.0)]]
+(.[)@Image[\ $$.from[(0.0, 0.0)]]
 
 ///Intro: filename containing the image.
 Str@Image[.filename = $]
 
 ///Intro: provide the reference system for the image.
 Axes@Image[.axes = $]
+
+///Intro: point where the image should be placed.
+// If ``p`` is a {type(Point)}, then ``Image[p, ...]`` is equivalent to
+// ``Image[Axes[p], ...]``
+Point@Image[Axes[$]]
 
 ///Intro: provide the point of the image to use when positioning the image.
 From@Image[.from = $]
@@ -20,5 +25,5 @@ From@Image[.from = $]
 Image@Pattern[
   \ $$.cmdstream[Obj[const.raw.pattern_create_image,
                      $.axes.origin, $.axes.one_zero, $.axes.zero_one
-                     $.filename]]
+                     $.from.point, $.filename]]
 ]

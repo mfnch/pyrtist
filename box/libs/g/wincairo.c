@@ -585,6 +585,7 @@ static cairo_pattern_t *
 My_Cairo_Pattern_Create_Image(cairo_t *cr,
                               const Point *zero,
                               const Point *xone, const Point *yone,
+                              const Point *from,
                               const char *filename)
 {
   cairo_pattern_t *pattern;
@@ -601,28 +602,12 @@ My_Cairo_Pattern_Create_Image(cairo_t *cr,
   if (My_Invert_Cairo_Matrix(& m_inv, & m) == 0.0)
     return NULL;
 
+  m_inv.x0 += from->x*lx;
+  m_inv.y0 += from->y*ly;
+
   pattern = cairo_pattern_create_for_surface(image);
   cairo_pattern_set_matrix(pattern, & m_inv);
   return pattern;
-  
-  
-#if 0
-  cairo_save(cr);
-  cairo_move_to(cr, 0.0, 0.0);
-  cairo_line_to(cr, 1.0, 0.0);
-  cairo_line_to(cr, 1.0, 1.0);
-  cairo_line_to(cr, 0.0, 1.0);
-  cairo_close_path(cr);
-
-  cairo_scale(cr, 1.0/w, 1.0/h);
-  cairo_set_source_surface(cr, image, 0, 0);
-  cairo_paint(cr);
-  cairo_restore(cr);
-  cairo_surface_destroy(image);
-
-  cairo_set_matrix(cr, & previous_m);
-#endif
-  return NULL;
 }
 
 static void My_Cairo_Fill_And_Stroke(BoxGWin *w) {
@@ -1025,12 +1010,14 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
 
   case BOXGCMD_PATTERN_CREATE_IMAGE:
     {
-      BoxPoint *arg1 = args[0], *arg2 = args[1], *arg3 = args[2];
-      BoxStr *arg4 = args[3];
-      char *filename = BoxStr_To_C_String(arg4);
+      BoxPoint *arg1 = args[0], *arg2 = args[1],
+               *arg3 = args[2], *arg4 = args[3];
+      BoxStr *arg5 = args[4];
+      char *filename = BoxStr_To_C_String(arg5);
       if (filename != NULL) {
         MY_DATA(w)->pattern =
-          My_Cairo_Pattern_Create_Image(cr, arg1, arg2, arg3, filename);
+          My_Cairo_Pattern_Create_Image(cr, arg1, arg2, arg3,
+                                        arg4, filename);
         BoxMem_Free(filename);
         return (MY_DATA(w)->pattern != NULL) ? BOXTASK_OK : BOXTASK_FAILURE;
 
@@ -1182,21 +1169,6 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
   case BOXGCMD_EXT_FILL_AND_STROKE:
     My_Cairo_Fill_And_Stroke(w);
     return BOXTASK_OK;
-
-  case BOXGCMD_EXT_DRAW_PICTURE:
-    {
-
-      return BOXTASK_FAILURE;
-
-      BoxStr *arg1 = args[0];
-      char *filename = BoxStr_To_C_String(arg1);
-      if (filename != NULL) {
-        BoxMem_Free(filename);
-        return BOXTASK_OK;
-      }
-    }
-    break;
-
 
   default:
     return BOXTASK_FAILURE;
