@@ -47,13 +47,14 @@
 # x resize reference points
 
 import time
+import os
 
 import pygtk
 pygtk.require('2.0')
 import gtk
 import gtk.glade
 import gtk.gdk
-import os, os.path
+import gobject
 
 import config
 from config import threads_init, threads_enter, threads_leave
@@ -136,6 +137,231 @@ class Settings(object):
 
 
 class Boxer(object):
+  ui_info = \
+    '''<ui>
+      <menubar name='MenuBar'>
+        <menu action='FileMenu'>
+          <menuitem action='New'/>
+          <menuitem action='Open'/>
+          <menu action='ExamplesMenu'>
+          </menu>
+          <separator/>
+          <menuitem action='Save'/>
+          <menuitem action='SaveAs'/>
+          <separator/>
+          <menuitem action='Quit'/>
+        </menu>
+        <menu action='EditMenu'>
+          <menuitem action='Undo'/>
+          <menuitem action='Redo'/>
+          <separator/>
+          <menuitem action='Cut'/>
+          <menuitem action='Copy'/>
+          <menuitem action='Paste'/>
+          <menuitem action='Delete'/>
+        </menu>
+        <menu action='RunMenu'>
+          <menuitem action='Execute'/>
+          <menuitem action='Stop'/>
+        </menu>
+        <menu action='ViewMenu'>
+          <menuitem action='RotateView'/>
+          <menuitem action='BigRP'/>
+          <menuitem action='SmallRP'/>
+          <menuitem action='Remember'/>
+          <menuitem action='Forget'/>
+        </menu>
+        <menu action='HelpMenu'>
+          <menuitem action='DocBrowser'/>
+          <menuitem action='About'/>
+        </menu>
+      </menubar>
+      <toolbar  name='ToolBar'>
+        <toolitem action='New'/>
+        <toolitem action='Open'/>
+        <toolitem action='Save'/>
+        <separator/>
+        <toolitem action='Execute'/>
+        <toolitem action='Stop'/>
+        <separator/>
+        <toolitem action='ZoomIn'/>
+        <toolitem action='ZoomOut'/>
+        <toolitem action='Zoom100'/>
+        <separator/>
+        <toolitem action='PasteRP'/>
+      </toolbar>
+    </ui>'''
+
+  def _init_menu_and_toolbar(self):
+    # The window will contain a VBox as its main object: the menu bar is the
+    # first object at the top of the VBox object
+    vbox = gtk.VBox(homogeneous=False, spacing=0)
+    mainwin = self.mainwin
+    mainwin.add(vbox)
+
+    # Use a gtk.UIManager instance to create menu and toolbar
+    merge = gtk.UIManager()
+    mainwin.set_data("ui-manager", merge)
+    merge.insert_action_group(self._init_action_group(), 0)
+    mainwin.add_accel_group(merge.get_accel_group())
+
+    try:
+      mergeid = merge.add_ui_from_string(self.ui_info)
+    except gobject.GError, msg:
+      print "building menus failed: %s" % msg
+
+    # Retrieve the menu bar and the tool bar and add them at the top of the
+    # VBox
+    menubar = merge.get_widget("/MenuBar")
+    vbox.pack_start(menubar, expand=False)    
+    toolbar = merge.get_widget("/ToolBar")
+    toolbar.set_tooltips(True)
+    toolbar.set_show_arrow(False)
+
+    self.menubutton_run_execute = merge.get_widget("/MenuBar/RunMenu/Execute")
+    self.menubutton_run_stop = merge.get_widget("/MenuBar/RunMenu/Stop")
+    self.toolbutton_run = merge.get_widget("/ToolBar/Execute")
+    self.toolbutton_stop = merge.get_widget("/ToolBar/Stop")
+    self.widget_pastenewbutton = merge.get_widget("/ToolBar/PasteRP")
+
+    self.examplesmenu = mn = gtk.Menu()
+    emn = merge.get_widget("/MenuBar/FileMenu/ExamplesMenu")
+    emn.set_submenu(mn)
+
+    # HBox containing the toolbar, the refpoint combobox, etc
+    hbox = gtk.HBox(homogeneous=False, spacing=0)
+    hbox.pack_start(toolbar, expand=False, fill=False)
+    vbox2 = gtk.VBox()
+    rhbox = self._init_toolbox_rhs()
+    vbox2.pack_start(rhbox, expand=False, fill=False)
+    hbox.pack_start(gtk.SeparatorToolItem(), expand=False)
+    hbox.pack_start(vbox2, expand=False)
+
+    # Finally add the toolbar to the VBox
+    vbox.pack_start(hbox, expand=False)
+    return vbox
+
+  def _init_toolbox_rhs(self):
+    # The right part of the toolbox
+    rhbox = gtk.HBox(homogeneous=False, spacing=0)
+
+    # The reference point combo box and show/hide button
+    self.widget_refpoint_box = combo = gtk.ComboBoxEntry()
+    self.widget_refpoint_entry = entry = combo.get_child()
+    entry.connect("changed", self.refpoint_entry_changed)
+    combo.set_tooltip_text(
+      "The name of the next or selected reference point. You can enter "
+      "text here to select reference points. You can use wildcards, such "
+      "as 'point*'. '*' selects all reference points.")
+    combo.set_size_request(100, -1)
+    liststore = gtk.ListStore(gobject.TYPE_STRING)
+    combo.set_model(liststore)
+    combo.set_text_column(0)
+    rhbox.pack_start(combo, expand=False)
+
+    self.widget_refpoint_show = button = gtk.Button("show")
+    button.connect("clicked", self.refpoint_show_clicked)
+
+
+    button.set_tooltip_text("Show or hide the selected reference point. "
+                            "Write 'point*' into the box to select "
+                            "point1, point2, etc.")
+    button.set_size_request(60, -1)
+    rhbox.pack_start(button, expand=False)
+
+    rhbox.pack_start(gtk.SeparatorToolItem(), expand=False)
+
+    # The help entry and button in the toolbar
+    self.widget_help_entry = entry = gtk.Entry()
+    entry.set_tooltip_text("Write here a type you want to know about and "
+                           "press [ENTER]")
+    entry.set_size_request(100, -1)
+    entry.connect("activate", self.on_help_entry_activate)
+    rhbox.pack_start(entry, expand=False)
+    button = gtk.Button("Help")
+    button.connect("clicked", self.on_help_button_clicked)
+    button.set_tooltip_text("Show the help browser")
+    rhbox.pack_start(button, expand=False)
+    return rhbox
+
+  def _init_action_group(self):
+    entries = (
+      ("FileMenu", None, "_File"),
+      ("New", gtk.STOCK_NEW, "_New", "<control>N",
+       "Create a new Box program", self.menu_file_new),
+      ("Open", gtk.STOCK_OPEN, "_Open", "<control>O",
+       "Open an existing Box program", self.menu_file_open),
+      ("ExamplesMenu", None, "_Examples"),
+      ("Save", gtk.STOCK_SAVE, "_Save", "<control>S",
+       "Save the current Box program", self.menu_file_save),
+      ("SaveAs", gtk.STOCK_SAVE, "Save _As...", None,
+       "Save to a file", self.menu_file_save_as),
+      ("Quit", gtk.STOCK_QUIT, "_Quit", "<control>Q",
+       "Quit Boxer", self.menu_file_quit),
+
+      ("EditMenu", None, "_Edit"),
+      ("Undo", gtk.STOCK_UNDO, "_Undo", "<control>Z",
+       "Create a new Box program", self.menu_edit_undo),
+      ("Redo", gtk.STOCK_REDO, "_Redo", "<control><shift>Z",
+       "Create a new Box program", self.menu_edit_redo),
+      ("Cut", gtk.STOCK_CUT, "Cu_t", "<control>X",
+       "Create a new Box program", self.menu_edit_cut),
+      ("Copy", gtk.STOCK_COPY, "_Copy", "<control>C",
+       "Create a new Box program", self.menu_edit_copy),
+      ("Paste", gtk.STOCK_PASTE, "_Paste", "<control>V",
+       "Create a new Box program", self.menu_edit_paste),
+      ("Delete", gtk.STOCK_DELETE, "_Delete", None,
+       "Create a new Box program", self.menu_edit_delete),
+
+      ("RunMenu", None, "_Run"),
+      ("Execute", gtk.STOCK_EXECUTE, "_Execute", "<control>Return",
+       "Execute the Box program", self.menu_run_execute),
+      ("Stop", gtk.STOCK_STOP, "_Stop", "<control>BackSpace",
+       "Stop a running Box program", self.menu_run_stop),
+
+      ("ViewMenu", None, "_View"),
+      ("RotateView", None, "_Rotate view", "<control>L",
+       "Change the position of the text view in the window",
+       self.menu_view_rotate),
+      ("BigRP", None, "_Increase point marker size", "<control>plus",
+       "Increase the size of the reference point markers",
+       self.menu_view_inc_refpoint),
+      ("SmallRP", None, "_Reduce point marker size", "<control>minus",
+       "Reduce the size of the reference point markers",
+       self.menu_view_dec_refpoint),
+      ("Remember", None, "R_emember the current window size", None,
+       ("Remember the current window size when launching Boxer "
+        "the next time"), self.menu_view_remember_win_size),
+      ("Forget", None, "_Forget the saved window size", None,
+       "Use the default window size when Boxer starts",
+       self.menu_view_forget_win_size),
+
+      ("HelpMenu", None, "_Help"),
+      ("DocBrowser", None, "_Documentation browser", "<control>H",
+       "Show the Box documentation browser", self.menu_help_docbrowser),
+      ("About", gtk.STOCK_ABOUT, "_About", None,
+       "Show information about the program", self.menu_help_about),
+
+      ("ZoomIn", gtk.STOCK_ZOOM_IN, "_Zoom In", None,
+       "Zoom in", self.menu_zoom_in),
+      ("ZoomOut", gtk.STOCK_ZOOM_OUT, "_Zoom Out", None,
+       "Zoom in", self.menu_zoom_out),
+      ("Zoom100", gtk.STOCK_ZOOM_100, "_See whole figure", None,
+       "See whole figure", self.menu_zoom_norm),
+    )
+
+    toggle_entries = (
+      ("PasteRP", gtk.STOCK_EDIT, "_Paste on click", None,
+       "Paste the name of reference points whenever they are created",
+       None),
+    )
+
+    # Create the menubar and toolbar
+    action_group = gtk.ActionGroup("AppWindowActions")
+    action_group.add_actions(entries)
+    action_group.add_toggle_actions(toggle_entries)
+    return action_group
+
   def delete_event(self, widget, event, data=None):
     return not self.ensure_file_is_saved()
 
@@ -431,9 +657,9 @@ class Boxer(object):
   def _set_box_killer(self, killer):
     killer_given = (killer != None)
     self.toolbutton_stop.set_sensitive(killer_given)
-    self.menubar.run.stop.instance.set_sensitive(killer_given)
+    self.menubutton_run_stop.set_sensitive(killer_given)
     self.toolbutton_run.set_sensitive(not killer_given)
-    self.menubar.run.execute.instance.set_sensitive(not killer_given)
+    self.menubutton_run_execute.set_sensitive(not killer_given)
     self.box_killer = killer
 
   def _out_textview_refresh(self, text, force=False):
@@ -561,79 +787,12 @@ class Boxer(object):
         tree.process()
         self.dialog_dox_browser = dox_browser = DoxBrowser(dox)
 
-    # Here we decide how the Boxer main window menu should look like.
-  def _init_menubar(self):
-    from menus import MenuBar, MenuItem, MenuStock
-    mb = \
-      MenuBar(MenuItem("_File",
-                       MenuStock(gtk.STOCK_NEW).with_name("new"),
-                       MenuStock(gtk.STOCK_OPEN).with_name("open"),
-                       MenuItem("_Examples").with_name("examples"),
-                       None,
-                       MenuStock(gtk.STOCK_SAVE).with_name("save"),
-                       MenuStock(gtk.STOCK_SAVE_AS).with_name("save_as"),
-                       None,
-                       MenuStock(gtk.STOCK_QUIT).with_name("quit")
-                       ).with_name("file"),
-              MenuItem("_Edit",
-                       MenuStock(gtk.STOCK_UNDO).with_name("undo"),
-                       MenuStock(gtk.STOCK_REDO).with_name("redo"),
-                       None,
-                       MenuStock(gtk.STOCK_CUT).with_name("cut"),
-                       MenuStock(gtk.STOCK_COPY).with_name("copy"),
-                       MenuStock(gtk.STOCK_PASTE).with_name("paste"),
-                       MenuStock(gtk.STOCK_DELETE).with_name("delete")
-                       ).with_name("edit"),
-#              MenuItem("_Library",
-#                       ("libsetup", "Library setup...")),
-              MenuItem("_Run", 
-                       MenuStock(gtk.STOCK_EXECUTE).with_name("execute"),
-                       MenuStock(gtk.STOCK_STOP).with_name("stop")
-                       ).with_name("run"),
-              MenuItem("_View",
-                       ("rotate", "_Rotate view"),
-                       ("bigrp", "_Bigger point markers"),
-                       ("smallrp", "_Smaller point markers"),
-                       ("remember", "R_emember the current window size"),
-                       ("forget", "_Forget the saved window size")
-                       ).with_name("view"),
-              MenuItem("_Help",
-                       ("docbrowser", "_Documentation browser"), 
-                       MenuStock(gtk.STOCK_ABOUT).with_name("about")
-                       ).with_name("help"))
-
-    self.menubar = mb
-    menu = mb.instantiate()
-
-    mb.file.new.instance.connect("activate", self.menu_file_new)
-    mb.file.open.instance.connect("activate", self.menu_file_open)
-    mb.file.save.instance.connect("activate", self.menu_file_save)
-    mb.file.save_as.instance.connect("activate", self.menu_file_save_as)
-    mb.file.quit.instance.connect("activate", self.menu_file_quit)
-
-    mb.edit.undo.instance.connect("activate", self.menu_edit_undo)
-    mb.edit.redo.instance.connect("activate", self.menu_edit_redo)
-    mb.edit.cut.instance.connect("activate", self.menu_edit_cut)
-    mb.edit.copy.instance.connect("activate", self.menu_edit_copy)
-    mb.edit.paste.instance.connect("activate", self.menu_edit_paste)
-    mb.edit.delete.instance.connect("activate", self.menu_edit_delete)
-
-    mb.run.execute.instance.connect("activate", self.menu_run_execute)
-    mb.run.stop.instance.connect("activate", self.menu_run_stop)
-
-    mb.view.rotate.instance.connect("activate", self.menu_view_rotate)
-    mb.view.bigrp.instance.connect("activate", self.menu_view_inc_refpoint)
-    mb.view.smallrp.instance.connect("activate", self.menu_view_dec_refpoint)
-    mb.view.remember.instance.connect("activate",
-                                      self.menu_view_remember_win_size)
-    mb.view.forget.instance.connect("activate", self.menu_view_forget_win_size)
-
-    mb.help.about.instance.connect("activate", self.menu_help_about)
-    mb.help.docbrowser.instance.connect("activate", self.menu_help_docbrowser)
-    return menu
-
-  def __init__(self, gladefile="boxer.glade", filename=None, box_exec=None):
+  def __init__(self, filename=None, box_exec=None):
+    self.filename = filename    
     self.config = config.get_configuration()
+    if box_exec != None:
+      self.config.set("Box", "exec", box_exec)
+
     self.settings = Settings()
     self.settings.set_props(update_on_paste=False)
 
@@ -642,9 +801,6 @@ class Boxer(object):
     self.dialog_filesave = None
     self.dialog_dox_browser = None
 
-    if box_exec != None:
-      self.config.set("Box", "exec", box_exec)
-
     self._undo_redo_warning_shown = False
     self.box_killer = None
 
@@ -652,32 +808,21 @@ class Boxer(object):
     self.button_center = self.config.getint("Behaviour", "button_center")
     self.button_right = self.config.getint("Behaviour", "button_right")
 
-    self.gladefile = config.glade_path(gladefile)
-    self.boxer = gtk.glade.XML(self.gladefile, "boxer")
-
-    # Get the main window
-    self.mainwin = mainwin = self.boxer.get_widget("boxer")
-
-    # Setup the main HBox
-    # This is transition code. We are doing things more and more from Python
-    # rather than through the glade interface. At the end, we may have a full
-    # specification of the GUI from Python, but for now...
-    container = self.boxer.get_widget("vbox1")
-    tbar = container.get_children()[0]
-    container.remove(tbar)
-    mainwin.remove(container)
-    menu = self._init_menubar()
+    # Create the main window
+    self.mainwin = mainwin = gtk.Window()
+    mainwin.connect("destroy", self.destroy)
+    mainwin.connect("delete_event", self.delete_event)
+    self.update_title()
 
     # Set the last saved window size, if any
     try:
       wsx, wsy = map(int, self.config.get("GUI", "window_size").split("x", 1))
-      #print "setting default size to", wsx, wsy
-      mainwin.set_default_size(wsx, wsy)
-      mainwin.resize(wsx, wsy)
-      #print "done"
-
     except:
-      pass
+      wsx, wsy = (600, 600)
+    mainwin.set_default_size(wsx, wsy)
+
+    # Create the menu and toolbar
+    vbox = self._init_menu_and_toolbar()
 
     self.out_textview = outtv = gtk.TextView()
     outtv.set_size_request(10, 75)
@@ -696,30 +841,8 @@ class Boxer(object):
     self.out_textbuffer_capacity = \
       int(1024*self.config.getfloat('Box', 'stdout_buffer_size'))
 
-    self.examplesmenu = mn = gtk.Menu()
-    self.menubar.file.examples.instance.set_submenu(mn)
-
-    self.widget_pastenewbutton = self.boxer.get_widget("toolbutton_pastenew")
-    self.toolbutton_run = self.boxer.get_widget("toolbutton_run")
-    self.toolbutton_stop = self.boxer.get_widget("toolbutton_stop")
-    self.menubutton_run_execute = self.boxer.get_widget("run_execute")
-    self.menubutton_run_stop = self.boxer.get_widget("run_stop")
-
-    self.widget_refpoint_box = self.boxer.get_widget("refpoint_box")
-    self.widget_refpoint_entry = self.boxer.get_widget("refpoint_entry")
-    self.widget_refpoint_show = self.boxer.get_widget("refpoint_show")
-
-    self.widget_help_button = self.boxer.get_widget("help_button")
-    self.widget_help_entry = self.boxer.get_widget("help_entry")
-    self.widget_help_entry.connect("activate", self.on_help_entry_activate)
-
     #-------------------------------------------------------------------------
     # Below we setup the main window
-
-    import gobject
-    liststore = gtk.ListStore(gobject.TYPE_STRING)
-    self.widget_refpoint_box.set_model(liststore)
-    self.widget_refpoint_box.set_text_column(0)
 
     # Create the editable area and do all the wiring
     cfg = {"box_executable": self.config.get("Box", "exec"),
@@ -819,16 +942,14 @@ class Boxer(object):
     astn.set_gui(self)
 
     # Create the layout in form of HBox-es and VBox-es and pack all widgets
-    self.widget_vbox1 = vb1 = gtk.VBox()
+    self.widget_vbox1 = vb1 = vbox
     self.widget_hbox1 = hb1 = gtk.HBox(spacing=0)
-    vb1.pack_start(menu, expand=False)
-    vb1.pack_start(tbar, expand=False)
+
     vb1.pack_start(hb1, expand=True)
     vb1.pack_start(sbar, expand=False)
     hb1.pack_start(tbox, expand=False)
     hb1.pack_start(gtk.VSeparator(), expand=False)
     hb1.pack_start(paned.get_container(), expand=True)
-    mainwin.add(vb1)
 
     # Initialize the documentation browser
     self._init_doxbrowser()
@@ -837,24 +958,6 @@ class Boxer(object):
 
     # Set the name for the first reference point
     set_next_refpoint_name(self.editable_area.document, "p1")
-
-    self.filename = None
-
-    dic = {"on_boxer_destroy": self.destroy,
-           "on_boxer_delete_event": self.delete_event,
-           "on_toolbutton_new": self.menu_file_new,
-           "on_toolbutton_open": self.menu_file_open,
-           "on_toolbutton_save": self.menu_file_save,
-           "on_toolbutton_run": self.menu_run_execute,
-           "on_toolbutton_stop": self.menu_run_stop,
-           "on_toolbutton_zoom_in": self.menu_zoom_in,
-           "on_toolbutton_zoom_out": self.menu_zoom_out,
-           "on_toolbutton_zoom_norm": self.menu_zoom_norm,
-           "on_refpoint_entry_changed": self.refpoint_entry_changed,
-           "on_refpoint_show_clicked": self.refpoint_show_clicked,
-           "on_help_button_clicked": self.on_help_button_clicked}
-    self.boxer.signal_autoconnect(dic)
-
 
     # try to set the default font
     try:
