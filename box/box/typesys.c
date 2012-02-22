@@ -644,6 +644,11 @@ void BoxTS_Add_Species_Member(BoxTS *ts, BoxType species, BoxType member) {
   My_Add_Member(TS_KIND_SPECIES, ts, species, member, NULL);
 }
 
+BoxType BoxTS_Get_Species_Target(BoxTS *ts, BoxType species) {
+  TSDesc *s_td = Type_Ptr(ts, species);
+  return s_td->data.last;
+}
+
 void BoxTS_Add_Enum_Member(BoxTS *ts, BoxType enumeration, BoxType member) {
   My_Add_Member(TS_KIND_ENUM, ts, enumeration, member, NULL);
 }

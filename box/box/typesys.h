@@ -331,6 +331,9 @@ BoxType BoxTS_Begin_Species(BoxTS *ts);
 /** Add a member to a species type defined with TS_Species_Begin. */
 void BoxTS_Add_Species_Member(BoxTS *ts, BoxType species, BoxType member);
 
+/** Return the target for the species type 'species'. */
+BoxType BoxTS_Get_Species_Target(BoxTS *ts, BoxType species);
+
 /** Function called to create an empty enumeration. Members can be added
  * with TS_Structure_Enum.
  */

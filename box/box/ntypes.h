@@ -144,4 +144,23 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right);
  */
 BoxType BoxType_Find_Combination(BoxType left, BoxType right);
 
+/** Type iterator. Allows to iter through the types that do have members,
+ * such as structures, species and enums.
+ * @see BoxTypeIter_Init
+ */
+typedef struct BoxTypeIter_struct BoxTypeIter;
+
+void BoxTypeIter_Init(BoxTypeIter *ti);
+
+/** The idea is to use this as:
+
+  BoxTypeIter ti;
+  BoxType t;
+  for (BoxTypeIter(& ti); BoxTypeIter_Get_Next(& ti, & t);) {
+    // ...
+  }
+
+ */
+int BoxTypeIter_Get_Next(BoxTypeIter *ti, BoxType *next);
+
 #endif /* _BOX_NTYPES_H */

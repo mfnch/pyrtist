@@ -1197,19 +1197,15 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
 
   case TS_KIND_SPECIES:
     {
-      BoxType t_species_memb = BoxTS_Get_Next_Struct_Member(ts, t_dst);
-      for(t_species_memb = BoxTS_Get_Next_Struct_Member(ts, t_dst);
-          t_species_memb != BOXTYPE_NONE;
-          t_species_memb = BoxTS_Get_Next_Struct_Member(ts, t_species_memb)) {
-        TSCmp match = TS_Compare(ts, t_species_memb, t_dst);
-        if (match != TS_TYPES_UNMATCH) {
-          if (match == TS_TYPES_EXPAND) {
-            Value *dest = Value_Expand(src, t_species_memb);
-            Value_Unlink(src);
-            src = dest;
-          }
-          return BoxCmp_Opr_Emit_Conversion(c, src, t_species_memb);
+      BoxType t_species_memb = BoxTS_Get_Species_Target(ts, t_dst);
+      TSCmp match = TS_Compare(ts, t_species_memb, t_dst);
+      if (match != TS_TYPES_UNMATCH) {
+        if (match == TS_TYPES_EXPAND) {
+          Value *dest = Value_Expand(src, t_species_memb);
+          Value_Unlink(src);
+          src = dest;
         }
+        return BoxCmp_Opr_Emit_Conversion(c, src, t_species_memb);
       }
 
       MSG_FATAL("Value_Expand: type '%~s' is not compatible with '%~s'.",
