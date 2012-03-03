@@ -41,11 +41,8 @@ From@Text[.from = $]
 ///Intro: set the style used to draw the text.
 Style@Text[\ .style[$]]
 
-///Intro: the color to use.
-Color@Text[\ .style[$]]
-
-///Intro: the gradient to use for the text.
-Gradient@Text[\ .style[$]]
+///Intro: pattern, color or gradient to be used for drawing the text.
+Pattern@Text[\ .style[$]]
 
 ///Intro: the font to use.
 Font@Text[.font = $, If[$.have.color], $.color]

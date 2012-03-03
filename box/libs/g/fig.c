@@ -212,7 +212,7 @@ static void My_Fig_Push_Commands(BoxGWin *w, int id, CmndArg *args) {
   ++lh->numcmnd; /* Increase counter for number of commands in the layer */
 }
 
-BoxTask My_Transform_Commands(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
+BoxGErr My_Transform_Commands(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                               BoxGCmdArgKind *kinds, void **args,
                               BoxGCmdArg *aux, void *pass) {
   BoxGWinMap *map = pass;
@@ -240,7 +240,7 @@ BoxTask My_Transform_Commands(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     }
   }
 
-  return BOXTASK_OK;
+  return BOXGERR_NO_ERR;
 }
 
 static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj, BoxGWinMap *map) {

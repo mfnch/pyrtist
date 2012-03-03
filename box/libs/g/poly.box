@@ -61,11 +61,8 @@ Point@Poly.Get[$$ = $$$.points.Get[$]]
 //NOTE: BUG: the following doesn't work!
 //  Int@Poly.Get[$$ = Point[$$$.args.Get[2 + 3*$]]]
 
-///Intro: color to use for filling the polygon.
-Color@Poly[\ .style[$]]
-
-///Intro: gradient used for filling the polygon.
-Gradient@Poly[\ .style[$]]
+///Intro: pattern to use for filling the polygon.
+Pattern@Poly[\ .style[$]]
 
 ///Intro: style to use when drawing the polygon.
 Style@Poly[\ .style[$]]

@@ -138,9 +138,6 @@ Preserve@Border[.preserve = $]
 ///Intro: specify the border width.
 Real@Border[.width = $, .have.width = 1]
 
-///Intro: specify the border color.
-Color@Border[.color = $, \ $$.pattern[$], .have.color = 1]
-
 ///Intro: specify the join style.
 Join@Border[.join = $]
 
@@ -151,7 +148,10 @@ MiterLimit@Border[.miter_limit = $]
 Cap@Border[.cap = $]
 
 ///Intro: use a gradient to render the border.
-Gradient@Border[\ $$.pattern[$], .have.color = 1]
+(Gradient=>PATTERN)@Border[$$.pattern = $, .have.color = 1]
+
+///Intro: specify the border color.
+Color@Border[.color = $, \ $$.pattern[$], .have.color = 1]
 
 ///Intro: merge the border specification.
 Border@Border[
@@ -236,9 +236,8 @@ Preserve@Style[
      $$.border.preserve = $]
 ]
 
-///Intro: set the {type(.@)} used for filling.
-Color@Style[$$.color = $, \ $$.pattern[$], .have.color = 1]
-Gradient@Style[\ $$.pattern[$], .have.color = 1] ///Same.
+///Intro: set the pattern used for filling.
+Pattern@Style[$$.pattern = $, .have.color = 1] ///Same.
 
 ///Intro: add the border settings to the {type(@.)} object.
 Border@Style[\ $$.border[$], .have.border = 1]

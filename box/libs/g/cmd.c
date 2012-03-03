@@ -276,11 +276,13 @@ static BoxGErr My_Iter_One_Cmd(MyIterStuff *stuff, BoxGObj *args_obj) {
             return BOXGERR_CMD_BAD_ARGS;
         }
 
-        if (iter(cmd, sig, num_args, stuff->kinds,
-                 stuff->ptrs, stuff->values, pass) == BOXTASK_OK)
+        BoxGErr g_err = iter(cmd, sig, num_args, stuff->kinds,
+                             stuff->ptrs, stuff->values, pass); 
+
+        if (g_err == BOXGERR_NO_ERR)
           return BOXGERR_NO_ERR;
         else
-          return BOXGERR_CMD_EXEC;
+          return g_err;
 
       } else
         return BOXGERR_CMD_MISSING_ARGS;
@@ -330,7 +332,7 @@ typedef struct {
 
 } MyFilterData;
 
-static BoxTask My_Filter_Append_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
+static BoxGErr My_Filter_Append_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                                      BoxGCmdArgKind *kinds, void **args,
                                      BoxGCmdArg *aux, void *pass) {
   MyFilterData *data = (MyFilterData *) pass;
@@ -348,10 +350,10 @@ static BoxTask My_Filter_Append_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       BoxGObj_Append_C_Value(cmd_obj, arg_kind, arg_data);
     }
 
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   } else
-    return BOXTASK_FAILURE;
+    return BOXGERR_CMD_EXEC;
 }
 
 BoxTask BoxGCmdIter_Filter_Append(BoxGCmdIter filter,

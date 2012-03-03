@@ -3,7 +3,6 @@
 // Definition of the type Color and some example of Color-s
 
 include "obj"
-include "pattern"
 
 ///Intro: Color allows to define new colors.
 ///Desc: A color object is made of four real numbers, one for each component
@@ -32,7 +31,7 @@ Color@Str["Color[.r=", $.r, ", .g=", $.g, ", .b=", $.b, ", .a=", $.a, "]"]
 Color@Print[Str[$]]
 
 ///Intro: create the pattern from the color.
-Color@Pattern[
+Color@PATTERN[
   $$.cmdstream.Empty[]
   \ $$.cmdstream[Obj[const.raw.pattern_create_rgba, $.r, $.g, $.b, $.a]]
 ]

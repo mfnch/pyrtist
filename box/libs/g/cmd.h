@@ -113,7 +113,7 @@ typedef enum {
  * modifying the command arguments, if necessary). Finally, 'pass' is a pointer
  * passed to the function as given by BoxGCmdIter_Iter.
  */
-typedef BoxTask (*BoxGCmdIter)(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
+typedef BoxGErr (*BoxGCmdIter)(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                                BoxGCmdArgKind *kinds, void **args,
                                BoxGCmdArg *aux, void *pass);
 

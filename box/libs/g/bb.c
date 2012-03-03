@@ -171,7 +171,7 @@ typedef struct {
 
 } MyInterpretData;
 
-static BoxTask My_BB_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
+static BoxGErr My_BB_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                                     BoxGCmdArgKind *kinds, void **args,
                                     BoxGCmdArg *aux, void *pass) {
   BoxGWin *w = ((MyInterpretData *) pass)->win;
@@ -212,7 +212,7 @@ static BoxTask My_BB_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     }
   }
 
-  return BOXTASK_OK;
+  return BOXGERR_NO_ERR;
 }
 
 static BoxTask My_BB_Interpret(BoxGWin *w, BoxGObj *obj, BoxGWinMap *map) {

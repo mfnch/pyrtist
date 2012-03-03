@@ -583,9 +583,9 @@ My_Cairo_Pattern_Create_Radial(BoxPoint *p1, BoxPoint *xone, BoxPoint *yone,
 
 static cairo_pattern_t *
 My_Cairo_Pattern_Create_Image(cairo_t *cr,
-                              const Point *zero,
-                              const Point *xone, const Point *yone,
-                              const Point *from,
+                              const BoxPoint *zero,
+                              const BoxPoint *xone, const BoxPoint *yone,
+                              const BoxPoint *from,
                               const char *filename)
 {
   cairo_pattern_t *pattern;
@@ -606,6 +606,9 @@ My_Cairo_Pattern_Create_Image(cairo_t *cr,
   m_inv.y0 += from->y*ly;
 
   pattern = cairo_pattern_create_for_surface(image);
+  if (cairo_pattern_status(pattern) != CAIRO_STATUS_SUCCESS)
+    return NULL;
+
   cairo_pattern_set_matrix(pattern, & m_inv);
   return pattern;
 }
@@ -671,7 +674,7 @@ typedef struct {
 
 } MyInterpretData;
 
-static BoxTask
+static BoxGErr
 My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                            BoxGCmdArgKind *kinds, void **args,
                            BoxGCmdArg *aux, void *pass) {
@@ -709,11 +712,11 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
   switch (cmd) {
   case BOXGCMD_SAVE:
     cairo_save(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_RESTORE:
     cairo_restore(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_SET_ANTIALIAS:
     {
@@ -727,7 +730,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       case 3: v = CAIRO_ANTIALIAS_SUBPIXEL; break;
       }
       cairo_set_antialias(cr, v);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -735,7 +738,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     {
       BoxPoint *arg1 = args[0];
       cairo_move_to(cr, arg1->x, arg1->y);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -743,7 +746,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     {
       BoxPoint *arg1 = args[0];
       cairo_line_to(cr, arg1->x, arg1->y);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -751,91 +754,91 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     {
       BoxPoint *arg1 = args[0], *arg2 = args[1], *arg3 = args[2];
       cairo_curve_to(cr, arg1->x, arg1->y, arg2->x, arg2->y, arg3->x, arg3->y);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
   case BOXGCMD_CLOSE_PATH:
     cairo_close_path(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_NEW_PATH:
     cairo_new_path(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_NEW_SUB_PATH:
     cairo_new_sub_path(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_STROKE:
     cairo_stroke(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_STROKE_PRESERVE:
     cairo_stroke_preserve(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_FILL:
     cairo_fill(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_FILL_PRESERVE:
     cairo_fill_preserve(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_CLIP:
     cairo_clip(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_CLIP_PRESERVE:
     cairo_clip_preserve(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_RESET_CLIP:
     cairo_reset_clip(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_PUSH_GROUP:
     cairo_push_group(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_POP_GROUP_TO_SOURCE:
     cairo_pop_group_to_source(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_SET_OPERATOR:
     {
       BoxInt *arg1 = args[0];
       cairo_set_operator(cr, My_Cairo_Operator_Of_Int(*arg1));
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
   case BOXGCMD_PAINT:
     cairo_paint(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_PAINT_WITH_ALPHA:
     {
       BoxReal *arg1 = args[0];
       cairo_paint_with_alpha(cr, *arg1);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_COPY_PAGE:
     cairo_copy_page(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_SHOW_PAGE:
     cairo_show_page(cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_SET_LINE_WIDTH:
     {
       BoxReal *arg1 = args[0];
       cairo_set_line_width(cr, *arg1);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -850,7 +853,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       case 2: v = CAIRO_LINE_CAP_SQUARE; break;
       }
       cairo_set_line_cap(cr, v);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -865,7 +868,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       case 2: v = CAIRO_LINE_JOIN_BEVEL; break;
       }
       cairo_set_line_join(cr, v);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -873,7 +876,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     {
       BoxReal *arg1 = args[0];
       cairo_set_miter_limit(cr, *arg1);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
 
   case BOXGCMD_SET_DASH:
@@ -894,7 +897,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
 
       cairo_set_dash(cr, dashes, num_dashes, offset);
       BoxMem_Free(dashes);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
 
   case BOXGCMD_SET_FILL_RULE:
@@ -907,7 +910,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       case 1: v = CAIRO_FILL_RULE_EVEN_ODD; break;
       }
       cairo_set_fill_rule(cr, v);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -916,7 +919,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       BoxReal *arg1 = args[0], *arg2 = args[1],
               *arg3 = args[2], *arg4 = args[3];
       cairo_set_source_rgba(cr, *arg1, *arg2, *arg3, *arg4);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -927,7 +930,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       if (text != NULL) {
         cairo_text_path(cr, text);
         BoxMem_Free(text);
-        return BOXTASK_OK;
+        return BOXGERR_NO_ERR;
       }
     }
     break;
@@ -936,7 +939,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     {
       BoxPoint *arg1 = args[1];
       cairo_translate(cr, arg1->x, arg1->y);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -944,7 +947,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     {
       BoxPoint *arg1 = args[1];
       cairo_scale(cr, arg1->x, arg1->y);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -952,7 +955,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
     {
       BoxReal *arg1 = args[0];
       cairo_rotate(cr, *arg1);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -964,7 +967,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
 
       MY_DATA(w)->pattern =
         cairo_pattern_create_rgb(*arg1, *arg2, *arg3);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -977,7 +980,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
 
       MY_DATA(w)->pattern =
         cairo_pattern_create_rgba(*arg1, *arg2, *arg3, *arg4);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -989,7 +992,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
 
       MY_DATA(w)->pattern =
         cairo_pattern_create_linear(arg1->x, arg1->y, arg2->x, arg2->y);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -1004,7 +1007,8 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
 
       MY_DATA(w)->pattern =
         My_Cairo_Pattern_Create_Radial(arg1, arg2, arg3, arg4, *arg5, *arg6);
-      return (MY_DATA(w)->pattern != NULL) ? BOXTASK_OK : BOXTASK_FAILURE;
+      return (MY_DATA(w)->pattern != NULL) ?
+        BOXGERR_NO_ERR : BOXGERR_CAIRO_PATTERN_ERR;
     }
     break;
 
@@ -1019,10 +1023,11 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
           My_Cairo_Pattern_Create_Image(cr, arg1, arg2, arg3,
                                         arg4, filename);
         BoxMem_Free(filename);
-        return (MY_DATA(w)->pattern != NULL) ? BOXTASK_OK : BOXTASK_FAILURE;
+        return (MY_DATA(w)->pattern != NULL) ?
+          BOXGERR_NO_ERR : BOXGERR_CAIRO_PATTERN_ERR;
 
       } else
-        return BOXTASK_FAILURE;
+        return BOXGERR_CMD_EXEC;
     }
     break;
 
@@ -1033,7 +1038,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       if (MY_DATA(w)->pattern != NULL)
         cairo_pattern_add_color_stop_rgb(MY_DATA(w)->pattern,
                                          *arg1, *arg2, *arg3, *arg4);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -1044,9 +1049,9 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       if (MY_DATA(w)->pattern != NULL)
         cairo_pattern_add_color_stop_rgba(MY_DATA(w)->pattern, *arg1, *arg2,
                                           *arg3, *arg4, *arg5);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
-    return BOXTASK_OK;
+    break;
 
   case BOXGCMD_PATTERN_SET_EXTEND:
     {
@@ -1060,7 +1065,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       case 3: v = CAIRO_EXTEND_PAD; break;
       }
       cairo_pattern_set_extend(MY_DATA(w)->pattern, v);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -1078,7 +1083,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       case 5: v = CAIRO_FILTER_GAUSSIAN; break;
       }
       cairo_pattern_set_filter(MY_DATA(w)->pattern, v);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -1087,22 +1092,22 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       cairo_pattern_destroy(MY_DATA(w)->pattern);
       MY_DATA(w)->pattern = NULL;
     }
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_SET_SOURCE:
     if (MY_DATA(w)->pattern != NULL)
       cairo_set_source(cr, MY_DATA(w)->pattern);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_EXT_SET_AUTO_BBOX:
   case BOXGCMD_EXT_UNSET_BBOX:
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_EXT_JOINARC_TO:
     {
       BoxPoint *arg1 = args[0], *arg2 = args[1], *arg3 = args[2];
       My_Cairo_JoinArc(cr, arg1, arg2, arg3);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -1111,7 +1116,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       BoxPoint *arg1 = args[0], *arg2 = args[1], *arg3 = args[2];
       BoxReal *arg4 = args[3], *arg5 = args[4];
       My_Cairo_Arc(cr, arg1, arg2, arg3, *arg4, *arg5);
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
@@ -1122,7 +1127,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       if (font != NULL) {
         My_Cairo_Set_Font(w, font);
         BoxMem_Free(font);
-        return BOXTASK_OK;
+        return BOXGERR_NO_ERR;
       }
     }
     break;
@@ -1136,7 +1141,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       if (text != NULL) {
         My_Cairo_Text_Path(w, arg1, arg2, arg3, arg4, text);
         BoxMem_Free(text);
-        return BOXTASK_OK;
+        return BOXGERR_NO_ERR;
       }
     }
     break;
@@ -1150,31 +1155,31 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
        * second point and (0, 1) at the third (not an ortogonal frame)
        * NOT IMPLEMENTED, YET.
        */
-      return BOXTASK_OK;
+      return BOXGERR_NO_ERR;
     }
     break;
 
   case BOXGCMD_EXT_BORDER_EXCHANGE:
     MyLineState_Exchange(& MY_DATA(w)->line_state, cr);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_EXT_BORDER_SAVE:
     MyCairoWinData_LineState_Push(MY_DATA(w));
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_EXT_BORDER_RESTORE:
     MyCairoWinData_LineState_Pop(MY_DATA(w));
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   case BOXGCMD_EXT_FILL_AND_STROKE:
     My_Cairo_Fill_And_Stroke(w);
-    return BOXTASK_OK;
+    return BOXGERR_NO_ERR;
 
   default:
-    return BOXTASK_FAILURE;
+    return BOXGERR_CMD_EXEC;
   }
 
-  return BOXTASK_FAILURE;
+  return BOXGERR_CMD_EXEC;
 }
 
 

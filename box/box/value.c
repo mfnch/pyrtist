@@ -1163,6 +1163,35 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
   return BOXTASK_OK;
 }
 
+/** Emits the conversion from the source expression 'v', to the given type 't'
+ * REFERENCES: return: new, src: -1;
+ */
+static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
+  Value *v_dest = Value_New(c->cur_proc);
+  Value_Setup_As_Temp(v_dest, dest);
+  Value_Link(src);
+  Value_Link(v_dest); /* We want to return a new reference! */
+  if (BoxCmp_Opr_Try_Emit_Conversion(c, v_dest, src) == BOXTASK_OK)
+    return v_dest;
+
+  else {
+    BoxTask t;
+    Value_Link(v_dest);
+    Value_Link(src);
+    Value_Unlink(Value_Emit_Call(v_dest, src, & t));
+    if (t == BOXTASK_OK)
+      return v_dest;
+
+    else {
+      MSG_ERROR("Don't know how to convert objects of type %~s to %~s.",
+                TS_Name_Get(& c->ts, src->type),
+                TS_Name_Get(& c->ts, dest));
+      Value_Unlink(v_dest); /* Unlink, since we are not returning it! */
+      return NULL;
+    }
+  }
+}
+
 /** Expands the value 'src' as prescribed by the species 'expansion_type'.
  * REFERENCES: return: new, src: -1;
  */
@@ -1198,6 +1227,8 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
   case TS_KIND_SPECIES:
     {
       BoxType t_species_memb = BoxTS_Get_Species_Target(ts, t_dst);
+
+      /* XXX TODO: The code below looks somewhat awkward... */
       TSCmp match = TS_Compare(ts, t_species_memb, t_dst);
       if (match != TS_TYPES_UNMATCH) {
         if (match == TS_TYPES_EXPAND) {
@@ -1205,7 +1236,7 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
           Value_Unlink(src);
           src = dest;
         }
-        return BoxCmp_Opr_Emit_Conversion(c, src, t_species_memb);
+        return My_Emit_Conversion(c, src, t_species_memb);
       }
 
       MSG_FATAL("Value_Expand: type '%~s' is not compatible with '%~s'.",

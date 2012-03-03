@@ -74,6 +74,7 @@ const char *BoxGErr_To_Str(BoxGErr err) {
     return "Cannot create window: file name is missing!";
   case BOXGERR_CAIRO_SURFACE_ERR: return "Error in Cairo surface";
   case BOXGERR_CAIRO_CONTEXT_ERR: return "Error in Cairo context";
+  case BOXGERR_CAIRO_PATTERN_ERR: return "Error while creating the pattern";
   case BOXGERR_CMD_BAD_ARGS:
     return "Error parsing command arguments (wrong type)";
   case BOXGERR_CMD_MISSING_ARGS: return "Not enough arguments for command";

@@ -28,4 +28,4 @@ Gradient = ++(Int type, state
 Extend@Gradient[\ $$.extend[$]]
 
 // Declare some combinations.
-Gradient@Pattern ?
+Gradient@PATTERN ?

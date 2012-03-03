@@ -60,7 +60,7 @@ Circle@Gradient[
 ]
 
 ///Intro: convert the gradient into a generic pattern.
-Gradient@Pattern[
+Gradient@PATTERN[
   \ $$.cmdstream[
     If[$.type == 1]
       Obj[const.raw.pattern_create_linear, $.point1, $.point2]
