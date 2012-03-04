@@ -433,20 +433,7 @@ static void My_Fig_Repair(BoxGWin *w) {
   w->finish = My_Fig_Finish;
 }
 
-/****************************************************************************/
-/* DESCRIZIONE: Apre una finestra di tipo "fig", che consiste essenzialmente
- *  in un "registratore" di comandi grafici. Infatti ogni comando che
- *  la finestra riceve viene memorizzato in diversi "contenitori": i layer.
- *  Questi sono ordinati dal piu' basso, cioe' quello che viene disegnato
- *  per primo (e quindi sara' ricoperto da tutti i successivi), al piu' alto,
- *  che viene disegnato per ultimo (e quindi ricopre tutti gli altri).
- *  numlayers specifica proprio il numero dei layer della figura.
- *  L'ordine dei layer puo' essere modificato (altre procedure di questo file).
- *  Ad ogni layer e' associato un numero (da 1 a numlayers) e questo viene
- *  utilizzato per far riferimento ad esso.
- */
-BoxGWin *BoxGWin_Create_Fig(int numlayers) {
-  BoxGWin *wd;
+BoxTask BoxGWin_Init_Fig(BoxGWin *wd, int numlayers) {
   FigHeader *figh;
   LayerHeader *layh;
   BoxArr *laylist;
@@ -454,17 +441,16 @@ BoxGWin *BoxGWin_Create_Fig(int numlayers) {
 
   if (numlayers < 1) {
     ERRORMSG("BoxGWin_Create_Fig", "Figura senza layers");
-    return NULL;
+    return BOXTASK_ERROR;
   }
 
   /* Creo gli headers della figura (con tutte le informazioni utili
    * per la gestione dei layers)
    */
   figh = (FigHeader *) BoxMem_Alloc(sizeof(FigHeader));
-
   if (figh == NULL) {
     ERRORMSG("BoxGWin_Create_Fig", "Out of memory");
-    return NULL;
+    return BOXTASK_ERROR;
   }
 
   /* Creo la lista dei layers con numlayers elementi */
@@ -490,11 +476,6 @@ BoxGWin *BoxGWin_Create_Fig(int numlayers) {
     layh->next = (i + 1) % numlayers;
   }
 
-  wd = (BoxGWin *) BoxMem_Alloc(sizeof(BoxGWin));
-  if (wd == NULL) {
-    ERRORMSG("BoxGWin_Create_Fig", "Memoria esaurita");
-    return NULL;
-  }
 
   /* Window dependent data */
   wd->data = figh;
@@ -506,7 +487,35 @@ BoxGWin *BoxGWin_Create_Fig(int numlayers) {
   wd->repair = My_Fig_Repair;
   wd->repair(wd);
   wd->win_type_str = fig_id_string;
-  return wd;
+  return BOXTASK_OK;
+}
+
+/****************************************************************************/
+/* DESCRIZIONE: Apre una finestra di tipo "fig", che consiste essenzialmente
+ *  in un "registratore" di comandi grafici. Infatti ogni comando che
+ *  la finestra riceve viene memorizzato in diversi "contenitori": i layer.
+ *  Questi sono ordinati dal piu' basso, cioe' quello che viene disegnato
+ *  per primo (e quindi sara' ricoperto da tutti i successivi), al piu' alto,
+ *  che viene disegnato per ultimo (e quindi ricopre tutti gli altri).
+ *  numlayers specifica proprio il numero dei layer della figura.
+ *  L'ordine dei layer puo' essere modificato (altre procedure di questo file).
+ *  Ad ogni layer e' associato un numero (da 1 a numlayers) e questo viene
+ *  utilizzato per far riferimento ad esso.
+ */
+BoxGWin *BoxGWin_Create_Fig(int num_layers) {
+  BoxGWin *wd = BoxMem_Alloc(sizeof(BoxGWin));
+  if (wd == NULL) {
+    ERRORMSG("BoxGWin_Create_Fig", "Memoria esaurita");
+    return NULL;
+  }
+
+  if (BoxGWin_Init_Fig(wd, num_layers) == BOXTASK_OK)
+    return wd;
+
+  else {
+    BoxMem_Free(wd);
+    return NULL;
+  }
 }
 
 /* DESCRIZIONE: Elimina un layer con tutto il suo contenuto.

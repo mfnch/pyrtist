@@ -22,8 +22,8 @@
  * vengono memorizzati(bit per pixel).
  */
 
-#ifndef _GRAPHIC_H
-#  define _GRAPHIC_H
+#ifndef _BOX_LIBG_GRAPHIC_H
+#  define _BOX_LIBG_GRAPHIC_H
 
 #  include "types.h"
 #  include "gpath.h"
@@ -182,13 +182,43 @@ typedef struct {
   ColorGradItem *items;
 } ColorGrad;
 
+/** Enumerate all the available method of a BoxGWin object. */
+typedef enum {
+  BOXGWIN_METHOD_CREATE_PATH,
+  BOXGWIN_METHOD_BEGIN_DRAWING,
+  BOXGWIN_METHOD_DRAW_PATH,
+  BOXGWIN_METHOD_LINE_PATH,
+  BOXGWIN_METHOD_ADD_LINE_PATH,
+  BOXGWIN_METHOD_ADD_JOIN_PATH,
+  BOXGWIN_METHOD_ADD_CIRCLE_PATH,
+  BOXGWIN_METHOD_ADD_TEXT_PATH,
+  BOXGWIN_METHOD_ADD_FAKE_POINT,
+  BOXGWIN_METHOD_CLOSE_PATH,
+  BOXGWIN_METHOD_SET_FG_COLOR,
+  BOXGWIN_METHOD_SET_BG_COLOR,
+  BOXGWIN_METHOD_SET_GRADIENT,
+  BOXGWIN_METHOD_SET_FONT,
+  BOXGWIN_METHOD_SAVE_TO_FILE,
+  BOXGWIN_METHOD_INTERPRET,
+  BOXGWIN_METHOD_FINISH,
+  BOXGWIN_METHOD_SET_COLOR,
+  BOXGWIN_METHOD_DRAW_POINT,
+  BOXGWIN_METHOD_DRAW_HOR_LINE,
+  BOXGWIN_METHOD_UNBLOCK,
+  BOXGWIN_METHOD_NOTIFY_NOT_IMPLEMENTED
+
+} BoxGWinMethod;
+
+/** Return a string describing the method 'm'. */
+const char *BoxGWinMethod_To_String(BoxGWinMethod m);
+
 /** Descriptor of a graphic Window */
-typedef struct _grp_window BoxGWin;
+typedef struct BoxGWin_struct BoxGWin;
 
 /* BoxGWin would need some cleaning. At the moment it contains stuff which
  * is not relevant for all kinds of windows...
  */
-struct _grp_window {
+struct BoxGWin_struct {
   /** String which identifies the type of the window */
   char *win_type_str;
 
@@ -266,8 +296,10 @@ struct _grp_window {
    */
   void (*repair)(BoxGWin *w);
 
-  /** This function can be internally used to report errors. */
-  void (*_report_error)(BoxGWin *w, const char *msg);
+  /** This function is used to notify that a given method has of the window
+   * has not been implemented.
+   */
+  BoxGWin *(*notify_not_implemented)(BoxGWin *w, BoxGWinMethod method);
 
   void *ptr;           /**< Pointer to the window data */
   void *data;          /**< Pointer to extra data dependent on the window
@@ -308,7 +340,7 @@ struct _grp_window {
 #define BoxGWin_Begin_Drawing(win) ((win)->begin_drawing)(win)
 
 /** Finalize the window */
-#define BoxGWin_Finish(win) ((win)->finish)(win)
+void BoxGWin_Finish(BoxGWin *w);
 
 /** Create a new path (rreset) */
 #define BoxGWin_Create_Path(win) ((win)->create_path)(win)
@@ -404,6 +436,11 @@ typedef enum {WT_NONE=-1, WT_BM1=0, WT_BM4, WT_BM8, WT_FIG,
 /** Get the window ID (an integer number) from the window type (a string) */
 int BoxGWin_Type_From_String(const char *type_str);
 
+/** Create a default BoxGWin object. A default BoxGWin window is converted
+ * automatically to a recording (Fig) windows when the window is first used.
+ */
+BoxGWin *BoxGWin_Create_Default(void);
+
 /** Create an invalid BoxGWin object. All BoxGWin object should be constructed
  * by extending an invalid BoxGWin object (and should thus call the function
  * below in their constructors).
@@ -423,6 +460,12 @@ BoxGWin *BoxGWin_Create(BoxGWinPlan *plan);
  */
 void Color_Trunc(Color *c);
 
+
+/** Create a Window which displays the given error message, when someone
+ * tries to use it. The error message is fprinted to the give stream.
+ */
+BoxGWin *BoxGWin_Create_Faulty(FILE *out, const char *msg);
+
 /* Dichiarazioni delle procedure della libreria */
 /* Funzioni grafiche di alto livello */
 BoxGWin *BoxGWin_Create_BM1(BoxReal ltx, BoxReal lty, BoxReal rdx, BoxReal rdy,
@@ -431,6 +474,7 @@ BoxGWin *BoxGWin_Create_BM4(BoxReal ltx, BoxReal lty, BoxReal rdx, BoxReal rdy,
                             BoxReal resx, BoxReal resy);
 BoxGWin *BoxGWin_Create_BM8(BoxReal ltx, BoxReal lty, BoxReal rdx, BoxReal rdy,
                             BoxReal resx, BoxReal resy);
+BoxTask BoxGWin_Init_Fig(BoxGWin *w, int numlayers);
 BoxGWin *BoxGWin_Create_Fig(int numlayers);
 BoxGWin *BoxGWin_Create_PS(const char *file);
 BoxGWin *BoxGWin_Create_EPS(const char *file, BoxReal x, BoxReal y);
@@ -438,7 +482,7 @@ int ps_save_fig(const char *file_name, BoxGWin *figure);
 int eps_save_fig(const char *file_name, BoxGWin *figure);
 
 /** Type of function called when BoxGWin_Block_With has been used. */
-typedef void (*BoxGOnError)(BoxGWin *w, const char *where);
+typedef BoxGWin *(*BoxGOnError)(BoxGWin *w, BoxGWinMethod method);
 
 /** Block the window 'w', such that it reports errors when used. */
 void BoxGWin_Block(BoxGWin *w);
@@ -452,20 +496,12 @@ void BoxGWin_Block_With(BoxGWin *w, BoxGOnError on_error);
  * or BoxGWin_Block_With
  */
 #define BoxGWin_Repair(w) \
-  (w)->repair(w)
+  do {(w)->repair(w)} while(0)
 
-/** Create a Window which displays the given error message, when someone
- * tries to use it. The error message is fprinted to the give stream.
- */
-BoxGWin *Grp_Window_Error(FILE *out, const char *msg);
-
-/** Returns 1 if the window has been created with Grp_Window_Error,
+/** Returns 1 if the window has been created with BoxGWin_Create_Faulty,
  * 0 otherwise.
  */
-int Grp_Window_Is_Error(BoxGWin *w);
-
-/** Make 'w' a dummy window which just reports errors when used. */
-void Grp_Window_Make_Dummy(BoxGWin *w);
+int BoxGWin_Is_Faulty(BoxGWin *w);
 
 /* Procedure per la gestione di una palette */
 void grp_color_build(Color *cb, ColorBytes *c);
@@ -481,8 +517,6 @@ void BoxGWin_Draw_GPath(BoxGWin *w, GPath *gp);
 
 void rst_repair(BoxGWin *gw);
 
-Point *grp_ref(Point *o, Point *v, Point *p);
-
 /* Costanti per la conversione */
 #define grp_mmperinch  25.4
 #define grp_radperdeg  0.01745329252
@@ -490,27 +524,5 @@ Point *grp_ref(Point *o, Point *v, Point *p);
 #define grp_ppmmperdpi  0.03937007874
 #define grp_mm_per_inch 25.4
 #define grp_inch_per_psunit (1.0/72.0)
-
-/* Conversione da coordinate relative a coordinate assolute (floating) */
-#define CV_XF_A(w, x)  (((Real) (x) - (w)->ltx)/(w)->stepx)
-#define CV_YF_A(w, y)  (((Real) (y) - (w)->lty)/(w)->stepy)
-/* Conversione di lunghezze relative in lunghezze assolute */
-#define CV_LXF_A(w, x)  (((Real) (x))/(w)->stepx)
-#define CV_LYF_A(w, y)  (((Real) (y))/(w)->stepy)
-/* Conversione da coordinate assolute a coordinate intermedie */
-#define CV_A_MED(x)  ((int) floor(x) + (int) ceil(x))
-/* Conversione da coordinate intermedie a coordinate intere */
-#define CV_MED_GT(x)  (((Int) (x) + 1) >> 1)
-#define CV_MED_LW(x)  (((Int) (x) - 1) >> 1)
-
-/* Restituisce 1 se la coordinata intermedia è un intero esatto, 0 altrimenti */
-#define IS_EXACT_INT(x)  ((Int) x & 1)
-
-/* Informazioni sulla corrente finestra grafica */
-#define GRP_MLOUT    -1
-#define GRP_MROUT    0x7fff
-
-/* Costanti matematiche */
-#define pigreco 3.14159265358979323846
 
 #endif

@@ -121,8 +121,8 @@ BoxTask Box_Lib_G_Init_At_Window(BoxVM *vm) {
 
   w->save_file_name = NULL;
 
-  w->window = Grp_Window_Error(stderr, "Cannot use a window before "
-                               "completing the initialization stage.");
+  w->window = BoxGWin_Create_Faulty(stderr, "Cannot use a window before "
+                                    "completing the initialization stage.");
 
   My_Init_Win_Styles(w);
 
@@ -343,7 +343,7 @@ BoxTask window_save_window(BoxVM *vmp) {
    *    to scale and translate 'src', such that its bounding box matches
    *    the bounding box of 'dest'.
    */
-  if (Grp_Window_Is_Error(dest->window)) {
+  if (BoxGWin_Is_Faulty(dest->window)) {
     BoxGBBox bbox;
     if (!BoxGBBox_Compute(& bbox, src->window)) {
       g_warning("Computed bounding box is degenerate: "
@@ -386,7 +386,7 @@ BoxTask window_save_window(BoxVM *vmp) {
       return BOXTASK_FAILURE;
     }
 
-    if (Grp_Window_Is_Error(dest->window)) {
+    if (BoxGWin_Is_Faulty(dest->window)) {
       g_error("Window.Save: cannot complete the given window!");
       return BOXTASK_FAILURE;
     }

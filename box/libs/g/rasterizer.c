@@ -33,6 +33,22 @@
 #include "graphic.h"
 #include "g.h"
 
+/* Conversione da coordinate relative a coordinate assolute (floating) */
+#define CV_XF_A(w, x)  (((Real) (x) - (w)->ltx)/(w)->stepx)
+#define CV_YF_A(w, y)  (((Real) (y) - (w)->lty)/(w)->stepy)
+/* Conversione di lunghezze relative in lunghezze assolute */
+#define CV_LXF_A(w, x)  (((Real) (x))/(w)->stepx)
+#define CV_LYF_A(w, y)  (((Real) (y))/(w)->stepy)
+/* Conversione da coordinate assolute a coordinate intermedie */
+#define CV_A_MED(x)  ((int) floor(x) + (int) ceil(x))
+/* Conversione da coordinate intermedie a coordinate intere */
+#define CV_MED_GT(x)  (((Int) (x) + 1) >> 1)
+#define CV_MED_LW(x)  (((Int) (x) - 1) >> 1)
+
+/* Informazioni sulla corrente finestra grafica */
+#define GRP_MLOUT    -1
+#define GRP_MROUT    0x7fff
+
 #define RSTBLOCKDIM    16384
 #define MAXROWPERBLOCK  8192
 

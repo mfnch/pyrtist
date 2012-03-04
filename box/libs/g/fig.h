@@ -25,8 +25,12 @@
 
 #  include "graphic.h"
 
-/* Procedure per gestire i layers */
+/** Create a new recording window. */
 BoxGWin *BoxGWin_Create_Fig(int numlayers);
+
+/** Initialise a new recording window. */
+BoxTask BoxGWin_Init_Fig(BoxGWin *wd, int numlayers);
+
 int BoxGWin_Fig_Destroy_Layer(BoxGWin *w, int l);
 int BoxGWin_Fig_New_Layer(BoxGWin *w);
 void BoxGWin_Fig_Select_Layer(BoxGWin *w, int l);

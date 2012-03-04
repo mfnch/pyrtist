@@ -89,44 +89,33 @@ const char *BoxGErr_To_Str(BoxGErr err) {
   return "Unknown error";
 }
 
-/********************************************************************/
-/*             FUNZIONI GENERALI DI CALCOLO GEOMETRICO              */
-/********************************************************************/
-
-/* DESCRIZIONE: Questa procedura serve a cambiare sistema di riferimento:
- *  Il nuovo sistema di riferimento e' specificato dal punto d'origine o
- *  dal vettore v che FISSA LA DIREZIONE dell'asse x (non la scala).
- *  L'ultimo argomento p e' un punto le cui coordinate sono specificate
- *  rispetto a questo nuovo sistema di riferimento.
- *  La funzione restituisce le coordinate di p nel vecchio sistema.
- * NOTA: v viene normalizzato e messo in vx, questo viene ruotato in direzione
- *  oraria (assex -> assey) di 90� per ottenere vy e infine viene restituito
- *  il valore di (p.x * vx + p.y * vy).
- * ATTENZIONE! Ad ogni chiamata la procedura mette il risultato in una
- *  variabile statica e restituisce sempre il relativo puntatore
- *  (che percio' non cambia da una chiamata all'altra!).
- *  Bisogna quindi salvare o comunque utilizzare il risultato prima
- *  di ri-chiamare grp_ref!
- */
-Point *grp_ref(Point *o, Point *v, Point *p) {
-  Real c, cx, cy;
-  static Point result;
-
-  /* Normalizzo v e trovo pertanto vx */
-  cx = v->x; cy = v->y;
-  c = sqrt(cx*cx + cy*cy);
-  if (c == 0.0) {
-    ERRORMSG("grp_ref", "Punti coincidenti: impossibile costruire "
-             "il riferimento cartesiano!");
-    return NULL;
+const char *BoxGWinMethod_To_String(BoxGWinMethod m) {
+  switch(m) {
+  case BOXGWIN_METHOD_CREATE_PATH: return "CREATE_PATH";
+  case BOXGWIN_METHOD_BEGIN_DRAWING: return "BEGIN_DRAWING";
+  case BOXGWIN_METHOD_DRAW_PATH: return "DRAW_PATH";
+  case BOXGWIN_METHOD_LINE_PATH: return "LINE_PATH";
+  case BOXGWIN_METHOD_ADD_LINE_PATH: return "ADD_LINE_PATH";
+  case BOXGWIN_METHOD_ADD_JOIN_PATH: return "ADD_JOIN_PATH";
+  case BOXGWIN_METHOD_ADD_CIRCLE_PATH: return "ADD_CIRCLE_PATH";
+  case BOXGWIN_METHOD_ADD_TEXT_PATH: return "ADD_TEXT_PATH";
+  case BOXGWIN_METHOD_ADD_FAKE_POINT: return "ADD_FAKE_POINT";
+  case BOXGWIN_METHOD_CLOSE_PATH: return "CLOSE_PATH";
+  case BOXGWIN_METHOD_SET_FG_COLOR: return "SET_FG_COLOR";
+  case BOXGWIN_METHOD_SET_BG_COLOR: return "SET_BG_COLOR";
+  case BOXGWIN_METHOD_SET_GRADIENT: return "SET_GRADIENT";
+  case BOXGWIN_METHOD_SET_FONT: return "SET_FONT";
+  case BOXGWIN_METHOD_SAVE_TO_FILE: return "SAVE_TO_FILE";
+  case BOXGWIN_METHOD_INTERPRET: return "INTERPRET";
+  case BOXGWIN_METHOD_FINISH: return "FINISH";
+  case BOXGWIN_METHOD_SET_COLOR: return "SET_COLOR";
+  case BOXGWIN_METHOD_DRAW_POINT: return "DRAW_POINT";
+  case BOXGWIN_METHOD_DRAW_HOR_LINE: return "DRAW_HOR_LINE";
+  case BOXGWIN_METHOD_UNBLOCK: return "UNBLOCK";
+  case BOXGWIN_METHOD_NOTIFY_NOT_IMPLEMENTED: return "NOTIFY_NOT_IMPLEMENTED";
   }
 
-  cx /= c; cy /= c;
-
-  result.x = o->x + p->x * cx - p->y * cy;
-  result.y = o->y + p->x * cy + p->y * cx;
-
-  return & result;
+  return "Unknown method";
 }
 
 /********************************************************************/
@@ -370,100 +359,129 @@ void BoxGWin_Draw_GPath(BoxGWin *w, GPath *gp) {
  *  DEFINITION OF A DUMMY WINDOW WHICH DOES NOTHING OR JUST REPORTS ERRORS  *
  ****************************************************************************/
 
-/* Creo una finestra priva di qualsiasi funzione: essa dara' un errore
- * per qualsiasi operazione s tenti di eseguire.
- * La finestra cosi' creata sara' la finestra iniziale, che corrisponde
- * allo stato "nessuna finestra ancora aperta" (in modo da evitare
- * accidentali "segmentation fault").
+/* Below we define a window that just calls a report error function whenever
+ * one of its methods is used. This is the base for other windows types,
+ * which should override the methods defined below.
  */
 
-static void My_Dummy_Report_Err(BoxGWin *w, const char *method) {
-  if (! w->quiet) {
-    fprintf(stderr, "%s.%s: method is not implemented.\n",
-            w->win_type_str, method);
-  }
+/* The default notification ignores calls to Finish (for obvious reasons)
+ * and to BoxGWin_Save_To_File. The latter is convenient as many stream
+ * or memory mapped windows do not allow to save the windows this way
+ * (typically they take a file name when they are constructed).
+ * One can always intercept the notification and act differently, if needed.
+ */
+static BoxGWin *My_Dummy_Notify_Not_Implemented(BoxGWin *w, BoxGWinMethod m) {
+  if (!w->quiet && m != BOXGWIN_METHOD_FINISH
+      && m != BOXGWIN_METHOD_SAVE_TO_FILE)
+    fprintf(stderr, "%s: method '%s' is not implemented.\n",
+            w->win_type_str, BoxGWinMethod_To_String(m));
+  return NULL;
 }
 
+/* This macros is used to define the bodies of the dummy window methods. */
+#define MY_DUMMY_METHOD(w, method, method_name, ...) \
+  do { \
+    if (w->notify_not_implemented) { \
+      BoxGWin *fallback = w->notify_not_implemented((w), (method)); \
+      if (fallback) \
+        BoxGWin_ ## method_name(__VA_ARGS__); \
+    } \
+  } while(0)
+
+/* Similar to MY_DUMMY_METHOD, but used in functions that return something.
+ * ret is the return value, when the function fails.
+ */
+#define MY_DUMMY_METHOD_RET(w, method, method_name, ret, ...)    \
+  do { \
+    if (w->notify_not_implemented) {                                  \
+      BoxGWin *fallback = w->notify_not_implemented((w), (method)); \
+      if (fallback) \
+        return BoxGWin_ ## method_name(__VA_ARGS__); \
+    } \
+    return (ret); \
+  } while(0)
+
 static void My_Dummy_Create_Path(BoxGWin *w) {
-  w->_report_error(w, "rreset");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_CREATE_PATH, Create_Path, w);
 }
 
 static void My_Dummy_Begin_Drawing(BoxGWin *w) {
-  w->_report_error(w, "rinit");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_BEGIN_DRAWING, Begin_Drawing, w);
 }
 
 static void My_Dummy_Draw_Path(BoxGWin *w, DrawStyle *style) {
-  w->_report_error(w, "rdraw");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_DRAW_PATH, Draw_Path, w, style);
 }
 
 static void My_Dummy_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
-  w->_report_error(w, "rline");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_ADD_LINE_PATH, Add_Line_Path, w, a, b);
 }
 
 static void My_Dummy_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c) {
-  w->_report_error(w, "rcong");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_ADD_JOIN_PATH, Add_Join_Path, w, a, b, c);
 }
 
 static void My_Dummy_Close_Path(BoxGWin *w) {
-  w->_report_error(w, "rclose");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_CLOSE_PATH, Close_Path, w);
 }
 
 static void My_Dummy_Add_Circle_Path(BoxGWin *w,
                                      Point *ctr, Point *a, Point *b) {
-  w->_report_error(w, "rcircle");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_ADD_CIRCLE_PATH,
+                  Add_Circle_Path, w, ctr, a, b);
 }
 
 static void My_Dummy_Set_Fg_Color(BoxGWin *w, Color *c) {
-  w->_report_error(w, "rfgcolor");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_SET_FG_COLOR, Set_Fg_Color, w, c);
 }
 
 static void My_Dummy_Set_Bg_Color(BoxGWin *w, Color *c) {
-  w->_report_error(w, "rbgcolor");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_SET_BG_COLOR, Set_Bg_Color, w, c);
 }
 
 static void My_Dummy_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
-  w->_report_error(w, "rgradient");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_SET_GRADIENT, Set_Gradient, w, cg);
 }
 
 static void My_Dummy_Add_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *right,
                                    BoxPoint *up, BoxPoint *from,
                                    const char *text) {
-  w->_report_error(w, "text");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_ADD_TEXT_PATH, Add_Text_Path, w, ctr,
+                  right, up, from, text);
 }
 
 static void My_Dummy_Set_Font(BoxGWin *w, const char *font) {
-  w->_report_error(w, "font");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_SET_FONT, Set_Font, w, font);
 }
 
-static void My_Dummy_Add_Fake_Point(BoxGWin *w, Point *p) {}
+static void My_Dummy_Add_Fake_Point(BoxGWin *w, Point *p) {
+  //MY_DUMMY_METHOD(w, BOXGWIN_METHOD_ADD_FAKE_POINT, Add_Fake_Point, w, p);
+}
 
 static int My_Dummy_Save_To_File(BoxGWin *w, const char *file_name) {
-  /* If this function is not provided by the specific terminal, then
-   * the window is probably a stream window. The best thing to do is then
-   * to silently ignore the command.
-   */
-  return 1;
+  MY_DUMMY_METHOD_RET(w, BOXGWIN_METHOD_SAVE_TO_FILE, Save_To_File,
+                      1, w, file_name);
 }
 
-static BoxTask My_NotImplem_Interpret(BoxGWin *w, BoxGObj *obj,
-                                      BoxGWinMap *map) {
-  BoxGWin_Fail("BoxGWin_Interpret_Obj",
-               "not implemented for this window type.");
-  return BOXTASK_FAILURE;
+static BoxTask My_Dummy_Interpret(BoxGWin *w, BoxGObj *obj, BoxGWinMap *map) {
+  MY_DUMMY_METHOD_RET(w, BOXGWIN_METHOD_INTERPRET, Interpret_Obj,
+                      BOXTASK_FAILURE, w, obj, map);
 }
 
-void My_Dummy_Finish(BoxGWin *w) {}
+void My_Dummy_Finish(BoxGWin *w) {
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_FINISH, Finish, w);
+}
 
 void My_Dummy_Set_Color(BoxGWin *w, int col) {
-  w->_report_error(w, "set_col");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_SET_COLOR, Set_Color, w, col);
 }
 
 void My_Dummy_Draw_Point(BoxGWin *w, Int ptx, Int pty) {
-  w->_report_error(w, "draw_point");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_DRAW_POINT, Draw_Point, w, ptx, pty);
 }
 
 void My_Dummy_Draw_Hor_Line(BoxGWin *w, Int y, Int x1, Int x2) {
-  w->_report_error(w, "hor_line");
+  MY_DUMMY_METHOD(w, BOXGWIN_METHOD_DRAW_HOR_LINE, Draw_Hor_Line, w, y, x1, x2);
 }
 
 void BoxGWin_Block(BoxGWin *w) {
@@ -481,19 +499,20 @@ void BoxGWin_Block(BoxGWin *w) {
   w->set_font = My_Dummy_Set_Font;
   w->add_fake_point = My_Dummy_Add_Fake_Point;
   w->save_to_file = My_Dummy_Save_To_File;
-  w->interpret = My_NotImplem_Interpret;
+  w->interpret = My_Dummy_Interpret;
 
   w->finish = My_Dummy_Finish;
   w->set_color = My_Dummy_Set_Color;
   w->draw_point = My_Dummy_Draw_Point;
   w->draw_hor_line = My_Dummy_Draw_Hor_Line;
 
-  w->_report_error = My_Dummy_Report_Err;
+  w->notify_not_implemented = My_Dummy_Notify_Not_Implemented;
 }
 
 void BoxGWin_Block_With(BoxGWin *w, BoxGOnError on_error) {
   BoxGWin_Block(w);
-  w->_report_error = (on_error != NULL) ? on_error : My_Dummy_Report_Err;
+  w->notify_not_implemented =
+    (on_error != NULL) ? on_error : My_Dummy_Notify_Not_Implemented;
 }
 
 /*** Error window ***********************************************************/
@@ -510,18 +529,29 @@ static void My_Window_Error_Close(BoxGWin *w) {
   BoxMem_Free(w->ptr);
 }
 
-static void My_Window_Error_Report(BoxGWin *w, const char *location) {
+static BoxGWin *My_Window_Error_Report(BoxGWin *w, BoxGWinMethod m) {
   assert(w->win_type_str == err_id_string);
   GrpWindowErrData *d = (GrpWindowErrData *) w->ptr;
-  if (! w->quiet) {
+  if (!w->quiet) {
     fprintf(d->out, "%s\n", d->msg);
     w->quiet = 1;
   }
+  return NULL;
 }
 
 static int My_Window_Error_Save(BoxGWin *w, const char *file_name) {
-  w->_report_error(w, "save");
+  w->notify_not_implemented(w, BOXGWIN_METHOD_SAVE_TO_FILE);
   return 0;
+}
+
+void BoxGWin_Finish(BoxGWin *w) {
+  w->finish(w);
+  w->win_type_str = NULL;
+}
+
+void BoxGWin_Destroy(BoxGWin *w) {
+  BoxGWin_Finish(w);
+  BoxMem_Free(w);
 }
 
 BoxGWin *BoxGWin_Create_Invalid(BoxGErr *err) {
@@ -543,23 +573,17 @@ BoxGWin *BoxGWin_Create_Invalid(BoxGErr *err) {
   }
 }
 
-void BoxGWin_Destroy(BoxGWin *w) {
-  w->finish(w);
-  w->win_type_str = NULL;
-  BoxMem_Free(w);
-}
-
 /** Create a Window which displays the given error message, when someone
  * tries to use it. The error message is fprinted to the given stream.
  */
-BoxGWin *Grp_Window_Error(FILE *out, const char *msg) {
-  BoxGWin *w = BoxMem_Alloc(sizeof(BoxGWin));
-  GrpWindowErrData *d = BoxMem_Alloc(sizeof(GrpWindowErrData));
+BoxGWin *BoxGWin_Create_Faulty(FILE *out, const char *msg) {
+  BoxGWin *w = BoxMem_Safe_Alloc(sizeof(BoxGWin));
+  GrpWindowErrData *d = BoxMem_Safe_Alloc(sizeof(GrpWindowErrData));
   BoxGWin_Block(w);
   w->win_type_str = err_id_string;
   w->save_to_file = My_Window_Error_Save;
   w->finish = My_Window_Error_Close;
-  w->_report_error = My_Window_Error_Report;
+  w->notify_not_implemented = My_Window_Error_Report;
   w->quiet = 0;
 
   d->msg = BoxMem_Strdup(msg);
@@ -568,49 +592,62 @@ BoxGWin *Grp_Window_Error(FILE *out, const char *msg) {
   return w;
 }
 
-int Grp_Window_Is_Error(BoxGWin *w) {
+int BoxGWin_Is_Faulty(BoxGWin *w) {
  return w->win_type_str == err_id_string;
 }
 
-/****************************************************************************/
+/* When the first method is used, convert the window to a recording window. */
+static BoxGWin *My_Default_Notify_Not_Implemented(BoxGWin *w,
+                                                  BoxGWinMethod m) {
+  if (m != BOXGWIN_METHOD_FINISH) {
+    BoxGWin_Finish(w);
+    BoxTask t = BoxGWin_Init_Fig(w, 1);
 
-BoxGWin grp_dummy_win = {
-  "blocked",
-  My_Dummy_Create_Path,
-  My_Dummy_Begin_Drawing,
-  My_Dummy_Draw_Path,
-  My_Dummy_Add_Line_Path,
-  My_Dummy_Add_Join_Path,
-  My_Dummy_Close_Path,
-  My_Dummy_Add_Circle_Path,
-  My_Dummy_Set_Fg_Color,
-  My_Dummy_Set_Bg_Color,
-  My_Dummy_Set_Gradient,
-  My_Dummy_Set_Font,
-  My_Dummy_Add_Text_Path,
-  My_Dummy_Add_Fake_Point,
-  My_Dummy_Save_To_File,
-  My_NotImplem_Interpret,
-  0, /* quiet */
-  My_Dummy_Finish,
-  My_Dummy_Set_Color,
-  My_Dummy_Draw_Point,
-  My_Dummy_Draw_Hor_Line,
-  BoxGWin_Block /* repair */
-};
+    if (t == BOXTASK_OK)
+      return w; /* so that the method gets really executed with the new window */
+  }
 
-void Grp_Window_Make_Dummy(BoxGWin *w) {
-  *w = grp_dummy_win;
+  return NULL;
+}
+
+void My_Repair_Default(BoxGWin *w) {
+  BoxGWin_Block(w);
+  w->notify_not_implemented = My_Default_Notify_Not_Implemented;
+  w->repair = My_Repair_Default;
+}
+
+BoxGWin *BoxGWin_Create_Default(void) {
+  BoxGErr err;
+  BoxGWin *w = BoxGWin_Create_Invalid(& err);
+  if (err != BOXGERR_NO_ERR)
+    return NULL;
+
+  else {
+    My_Repair_Default(w);
+    return w;
+  }
 }
 
 /****************************************************************************
  * Generic functions to open a Window using a BoxGWinPlan.                  *
  ****************************************************************************/
 
-enum {HAVE_TYPE=1, HAVE_ORIGIN=2, HAVE_SIZE=4, HAVE_CORNERS=6,
-      HAVE_RESOLUTION=8, HAVE_FILE_NAME=0x10, HAVE_NUM_LAYERS=0x20};
+enum {
+  HAVE_TYPE       = 0x01,
+  HAVE_ORIGIN     = 0x02, 
+  HAVE_SIZE       = 0x04, 
+  HAVE_CORNERS    = 0x06,
+  HAVE_RESOLUTION = 0x08,
+  HAVE_FILE_NAME  = 0x10,
+  HAVE_NUM_LAYERS = 0x20
+};
 
-typedef enum {WL_NONE=-1, WL_G=0, WL_CAIRO} WL;
+typedef enum {
+  WL_NONE  = -1,
+  WL_G     =  0,
+  WL_CAIRO =  1
+
+} WL;
 
 struct win_lib {
   char *name;
@@ -622,7 +659,7 @@ struct win_lib {
   {(char *) NULL, WL_NONE}
 };
 
-static int num_win_terminals = -1;
+#define MY_NUM_WIN_TERMINALS 14
 
 struct win_type {
   char *type_str;
@@ -630,7 +667,7 @@ struct win_type {
   WL win_lib;
   int must_have;
 
-} win_types[] = {
+} win_types[MY_NUM_WIN_TERMINALS + 1] = {
   /* NOTE: preferred terminals must come later. Example: if we have two
    * EPS terminals (WL_G and WL_CAIRO), the one which appears latter in
    * the list is the one which is chosen by default, i.e. when the prefix
@@ -692,9 +729,9 @@ int BoxGWin_Type_From_String(const char *type_str) {
 }
 
 
-#define OPEN_FAILED(out, msg) \
-  Grp_Window_Error((out), "Trying to use an uninitialized window. " \
-  "The initialization failed for the following reason: "msg".")
+#define MY_OPEN_FAILED(msg) \
+  BoxGWin_Create_Faulty(stderr, "Trying to use an uninitialized window. " \
+    "The initialization failed for the following reason: "msg".")
 
 
 /** Define a function which can create new windows of all
@@ -706,39 +743,29 @@ BoxGWin *BoxGWin_Create(BoxGWinPlan *plan) {
   WT win_type;
 
   if ((must_have & HAVE_TYPE) != 0 && !plan->have.type)
-    return OPEN_FAILED(stderr, "window type is missing");
+    return MY_OPEN_FAILED("window type is missing");
 
-  if (num_win_terminals < 1) {
-    /* Count the number of terminals if it hasn't been done before:
-     * This could be stored with a macro, but it require extra sync.
-     */
-    struct win_type *tt;
-    num_win_terminals = 0;
-    for(tt = win_types; tt->type_str != (char *) NULL; tt++)
-      ++num_win_terminals;
-  }
-
-  if (plan->type < 0 || plan->type >= num_win_terminals)
-    return OPEN_FAILED(stderr, "unknown window type");
+  if (plan->type < 0 || plan->type >= MY_NUM_WIN_TERMINALS)
+    return MY_OPEN_FAILED("unknown window type");
 
   win_type = win_types[plan->type].type_num;
   must_have = win_types[plan->type].must_have;
   win_lib = win_types[plan->type].win_lib;
 
   if ((must_have & HAVE_ORIGIN) != 0 && !plan->have.origin)
-    return OPEN_FAILED(stderr, "origin is missing");
+    return MY_OPEN_FAILED("origin is missing");
 
   if ((must_have & HAVE_SIZE) != 0 && !plan->have.size)
-    return OPEN_FAILED(stderr, "size is missing");
+    return MY_OPEN_FAILED("size is missing");
 
   if ((must_have & HAVE_RESOLUTION) != 0 && !plan->have.resolution)
-    return OPEN_FAILED(stderr, "window resolution is missing");
+    return MY_OPEN_FAILED("window resolution is missing");
 
   if ((must_have & HAVE_FILE_NAME) != 0 && !plan->have.file_name)
-    return OPEN_FAILED(stderr, "file name is missing");
+    return MY_OPEN_FAILED("file name is missing");
 
   if ((must_have & HAVE_NUM_LAYERS) != 0 && !plan->have.num_layers)
-    return OPEN_FAILED(stderr, "number of layers is missing");
+    return MY_OPEN_FAILED("number of layers is missing");
 
   if (win_lib != WL_G) {
 #if HAVE_LIBCAIRO
@@ -749,11 +776,11 @@ BoxGWin *BoxGWin_Create(BoxGWinPlan *plan) {
     w = BoxGWin_Create_Cairo(plan, & err);
     if (err == BOXGERR_NO_ERR)
       return w;
-    return Grp_Window_Error(stderr, BoxGErr_To_Str(err));
+    return BoxGWin_Create_Faulty(stderr, BoxGErr_To_Str(err));
 #else
-    return OPEN_FAILED(stderr, "window type not available, because "
-                       "the graphic library was compiled without "
-                       "Cairo support");
+    return MY_OPEN_FAILED("window type not available, because "
+                          "the graphic library was compiled without "
+                          "Cairo support");
 #endif
   }
 
@@ -780,6 +807,6 @@ BoxGWin *BoxGWin_Create(BoxGWinPlan *plan) {
   case WT_EPS:
     return BoxGWin_Create_EPS(plan->file_name, plan->size.x, plan->size.y);
   default:
-    return OPEN_FAILED(stderr, "unknown window type");
+    return MY_OPEN_FAILED("unknown window type");
   }
 }
