@@ -1171,10 +1171,11 @@ static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
   Value_Setup_As_Temp(v_dest, dest);
   Value_Link(src);
   Value_Link(v_dest); /* We want to return a new reference! */
-  if (BoxCmp_Opr_Try_Emit_Conversion(c, v_dest, src) == BOXTASK_OK)
+  if (BoxCmp_Opr_Try_Emit_Conversion(c, v_dest, src) == BOXTASK_OK) {
+    Value_Unlink(src);
     return v_dest;
 
-  else {
+  } else {
     BoxTask t;
     Value_Link(v_dest);
     Value_Link(src);
