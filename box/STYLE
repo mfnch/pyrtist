@@ -20,20 +20,27 @@ NAMING CONVENTIONS
   In_This_Way --> functions
   IN_THIS_WAY --> macros
 
-  Names for functions usually start with a prefix, so that it is simple
-  to recognize where they are defined. For example: 'Cmp_Operator_New' comes
-  from the file 'compiler.c'. Static functions use the prefix My_ to denote
-  they are defined in the same file. In principle, one should do the same for
-  static variables, but one should try to avoid using static variables unless
-  it is really necessary to use them, which means one should never use them
-  (even if, presently, this rule is not strictly followed in the code. Mainly,
-  for messages.c, msgbase.c and lex, yacc files). For locally defined
-  typedef the same applies: ``typedef xxx MyType;``.
+  Names for functions usually start with a prefix. Typically, if the function
+  is a method of the object ``TheObject``, then ``TheObject_`` should be the
+  prefix. For example, ``TheObject_Do_Something``. If the function is a
+  standalone function, then it should still have a prefix which suggests in
+  which file the function may be defined. For example: 'Cmp_Operator_New' may
+  be defined in the file 'cmp.c'. Whenever a symbol is supposed to be used from
+  outside the library, it should start with the prefix ``Box``. For example:
+  ``BoxType``, ``box_instance``, ``Box_Do_Something`` or ``BOX_DO_SOMETHING``
+  (for types, instances, functions and macros, respectively). Static functions
+  use the prefix My_ to denote they are defined in the same file. In principle,
+  one should do the same for static variables, but one should try to avoid
+  using static variables unless it is really necessary to use them, which means
+  one should never use them (even if, presently, this rule is not strictly
+  followed in the code. Mainly, for messages.c, msgbase.c and lex, yacc
+  files). For locally defined typedef the same applies: ``typedef xxx
+  MyType;``.
 
-  Here are some other rules which may help to make naming of library entities
-  more uniform and less arbitrary (having to go through the library to rename
-  things is not fun and may also require to change the library interface too
-  often):
+  Here is a summary of  rules which may help to make the naming of library
+  entities more uniform and less arbitrary (having to go through the library to
+  rename things is not fun and may also require to change the library interface
+  too often):
 
   * whatever goes into the standard library should be preceded by a ``Box``,
     ``BOX`` or ``box`` prefix, to avoid clashes with names from other
@@ -42,9 +49,9 @@ NAMING CONVENTIONS
     - for types: ``BoxOneType``, ``BoxAnotherType``, ...
 
     - for methods which get ``BoxOneType`` as first argument:
-      ``BoxOneType_Method_One``, ``BoxOneType_Method_Two``.
+      ``BoxOneType_Do_Something``, ``BoxOneType_Do_Something_Else``.
 
-    - other functions should be named as ``Box_Func_One``.
+    - other functions should be named as ``Box_Do_Something``.
 
   * In general, a function does something, right? Therefore it is advisable
     to choose a name that contains the verb describing what it does:
@@ -65,7 +72,7 @@ TYPESETTING CONVENTIONS
 
   Use indentation length of 2 (and spaces instead of tabs), example:
 
-  while(1) {
+  while (1) {
     printf("Nothing to print!\n");
     printf("Really nothing!\n");
   }
