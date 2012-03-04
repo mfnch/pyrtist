@@ -15,8 +15,7 @@ Lines = ++(Line line, Window window)
 Point@Lines[\ .line[$]]
 StrokeStyle@Lines[\ .line[$]] ///Same.
 Real@Lines[\ .line[$]]        ///Same.
-Color@Lines[\ .line[$]]       ///Same.
-Gradient@Lines[\ .line[$]]    ///Same.
+Pattern@Lines[\ .line[$]]     ///Same.
 Join@Lines[\ .line[$]]        ///Same.
 MiterLimit@Lines[\ .line[$]]  ///Same.
 Cap@Lines[\ .line[$]]         ///Same.

@@ -61,11 +61,8 @@ Real@Line[\ .style[$]]
 // This allow to change the line width, the join style, etc.
 StrokeStyle@Line[\ .style[$]]
 
-///Intro: set the color to use when drawing the line.
-Color@Line[\ .style[$]]
-
-///Intro: gradient to use when drawing the line.
-Gradient@Line[\ .style[$]]
+///Intro: set the pattern, color or gradient to use when drawing the line.
+Pattern@Line[\ .style[$]]
 
 ///Intro: set the {type(Dash)} style for drawing the line.
 Dash@Line[\ .style[$]]

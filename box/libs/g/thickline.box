@@ -26,17 +26,14 @@ Close@ThickLine[$$.close = 1]
 ///Intro: start a new line.
 (;)@ThickLine[\ $$.args[0]]
 
-///Intro: the color used to draw the line.
-Color@ThickLine[\ $$.style[$]]
+///Intro: the pattern, color or gradient used to draw the line.
+Pattern@ThickLine[\ $$.style[$]]
 
 ///Intro: the style used to draw the line.
 Style@ThickLine[\ $$.style[$]]
 
 ///Intro: set the smoothness level of the line.
 LineStyle@ThickLine[\ $$.args[Obj[$.a, $.b, $.c, $.d]]]
-
-///Intro: the gradient used to draw the line.
-Gradient@ThickLine[\ $$.style[$]]
 
 ///Intro: draw the thick line.
 ThickLine@Window[

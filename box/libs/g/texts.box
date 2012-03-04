@@ -9,8 +9,8 @@ Texts = ++(Obj texts, Text last, Style style)
 ///Intro: set the style used to draw the text pieces.
 Style@Texts[\ .style[$]]
 
-///Intro: set the text color.
-Color@Texts[\ .style[$]]
+///Intro: set the pattern, color or gradient to draw the text.
+Pattern@Texts[\ .style[$]]
 
 ///Intro: add a {type(.@)} to the circle collection.
 Text@Texts[\ .texts[$]]
