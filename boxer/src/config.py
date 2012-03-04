@@ -70,13 +70,13 @@ bbox1 = Point[.x=0.0, .y=50.0]
 bbox2 = Point[.x=100.0, .y=0.0]
 //!BOXER:REFPOINTS:END
 
-w = Window[][
+fg = Figure[
   BBox[bbox1, bbox2]
 
   //!BOXER:CURSOR:HERE
 ]
 
-(**view:w*)
+(**view:fg*)
 """
 
 def installation_path():

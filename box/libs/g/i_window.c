@@ -264,6 +264,10 @@ BoxTask Box_Lib_G_Close_At_Window(BoxVM *vm) {
   return Success;
 }
 
+BoxTask Box_Lib_G_Open_At_Figure(BoxVM *vm) {
+  return Box_Lib_G_Close_At_Window(vm);
+}
+
 BoxTask window_window(BoxVM *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   Window *src = BOX_VM_ARG1(vmp, WindowPtr);

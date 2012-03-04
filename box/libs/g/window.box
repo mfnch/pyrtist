@@ -4,6 +4,9 @@
 
 (])@Window "Box_Lib_G_Close_At_Window" ?
 
+Figure = Window
+([)@Figure "Box_Lib_G_Open_At_Figure" ?
+
 ///Intro: whether the window is valid (complete) and can be used.
 Window@IsValid "Box_Lib_G_Window_At_Valid" ?
 
