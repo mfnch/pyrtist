@@ -117,7 +117,6 @@ def refpoint_from_string_v0_1_0(s):
     return RefPoint(lhs.strip(), [float(str_x), float(str_y)])
 
   except Exception as x:
-    print "original '%s' err: %s" % (s, x)
     return None
 
 def refpoint_from_string(s):

@@ -18,9 +18,10 @@
 from base import inherit_doc
 from refpoints import RefPoint, RefPoints
 import docbase
-from docbase import DocumentBase, refpoint_to_string, text_writer
-from docbase import DocumentBase, endline
-from comparse import MacroExpander, split_args, normalize_macro_name
+from docbase import DocumentBase, refpoint_to_string, text_writer, \
+  endline
+from comparse import MacroExpander, split_args, normalize_macro_name, \
+  LEVEL_ERROR
 from document0 import Document0
 
 
@@ -124,9 +125,6 @@ class BoxerMacroContract(MacroExpander):
     self.document.usercode = code = MacroExpander.parse(self, text)
     return code
 
-  def notify_error(self, msg):
-    print msg
-
   def push_state(self, new_state, new_context):
     self.states.append((new_state, new_context))
 
@@ -165,7 +163,7 @@ class BoxerMacroContract(MacroExpander):
     state, context = self.states[-1]
 
     if len(self.states) <= 1 or state == STATE_NORMAL:
-      self.notify_error("Error: unexpected macro 'end'")
+      self.notify_message(LEVEL_ERROR, "unexpected macro 'end'")
       self.pop_state() # Pop anyway...
       return ""
 
@@ -173,8 +171,8 @@ class BoxerMacroContract(MacroExpander):
       assert state == STATE_EXPAND or state == STATE_CAPTURE
       mn = normalize_macro_name(args)
       if mn != 'expand':
-        self.notify_error("Error: end macro expected 'expand', but got '%s'."
-                          % mn)
+        self.notify_message(LEVEL_ERROR,
+                            "end macro expected 'expand', but got '%s'." % mn)
       self.pop_state()
 
       if context == "boxer_boot":
@@ -188,7 +186,9 @@ class BoxerMacroContract(MacroExpander):
       assert len(version) == 3
 
     except:
-      self.notify_error("Error in parsing version number(macro boxer-version)")
+      self.notify_message(LEVEL_ERROR,
+                          ("Error parsing the version number "
+                           "(macro boxer-version)"))
       return None
 
     self.document.version = version
@@ -198,8 +198,9 @@ class BoxerMacroContract(MacroExpander):
     try:
       rps = refpoints_from_str(args)
     except:
-      self.notify_error("Error in parsing reference points "
-                        "(macro boxer-refpoints)")
+      self.notify_message(LEVEL_ERROR,
+                          ("Error in parsing reference points "
+                           "(macro boxer-refpoints)"))
       return None
 
     self.document.refpoints.load(rps)

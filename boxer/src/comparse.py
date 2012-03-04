@@ -31,6 +31,8 @@ endline_re = re.compile(r'(\r\n|\n\r|\n)')
  STATE_SOURCE,
  STATE_STRING) = range(3)
 
+(LEVEL_WARNING,
+ LEVEL_ERROR) = range(2)
 
 def normalize_macro_name(name):
   """Normalize a macro name, making it lowercase and substituting dashes with
@@ -194,6 +196,9 @@ class Parser(object):
         if token == STRING_DELIM:
           state = STATE_SOURCE
 
+        elif token == NO_MORE_DELIMS:
+           raise ParseError("Reached end of file inside a string")
+
 
 class SourceMapper(Parser):
   '''This class is built on top of the Parser class and provides a simplified
@@ -218,6 +223,14 @@ class SourceMapper(Parser):
   def subst_comment(self, content):
     '''Method used to substitute Box comments.'''
     return content
+
+  def notify_message(self, level, message):
+    '''Used to report errors and other messages arising during parse.
+    This does just ignore the message, inheriting classes should override the
+    method, if they want to catch messages. Note that level can be either 
+    LEVEL_WARNING or LEVEL_ERROR, depending on the importance of the
+    message.'''
+    pass
 
   def notify_comment_begin(self, text_slice):
     text_slice.children = []
@@ -254,7 +267,10 @@ class SourceMapper(Parser):
     self.output += self.subst_source(self.text[start:end])
 
   def parse(self, text=None):
-    Parser.parse(self, text=text)
+    try:
+      Parser.parse(self, text=text)
+    except ParseError, msg:
+      self.notify_message(LEVEL_ERROR, msg)
     return self.get_output()
 
 
@@ -291,7 +307,7 @@ class MacroExpander(SourceMapper):
 
   def not_found(self, name, args):
     '''Called when a macro is not found (may be overridden).'''
-    print "Unknown macro '%s'" % name
+    self.notify_message(LEVEL_WARNING, "Unknown macro '%s'" % name)
     return None
 
   def invoke_method(self, name, args):
