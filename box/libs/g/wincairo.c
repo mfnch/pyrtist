@@ -562,6 +562,7 @@ My_Cairo_Pattern_Create_Radial(BoxPoint *p1, BoxPoint *xone, BoxPoint *yone,
   cairo_pattern_t *pattern;
   BoxPoint xaxis, yaxis;
   cairo_matrix_t m, m_inv;
+  double p2xt = p2->x, p2yt = p2->y;
 
   xaxis.x = xone->x - p1->x;
   xaxis.y = xone->y - p1->y;
@@ -575,8 +576,9 @@ My_Cairo_Pattern_Create_Radial(BoxPoint *p1, BoxPoint *xone, BoxPoint *yone,
   if (My_Invert_Cairo_Matrix(& m_inv, & m) == 0.0)
     return NULL;
 
+  cairo_matrix_transform_point(& m_inv, & p2xt, & p2yt);
   pattern = cairo_pattern_create_radial(0.0, 0.0, rad1,
-                                        p2->x - p1->x, p2->y - p1->y, rad2);
+                                        p2xt, p2yt, rad2);
   cairo_pattern_set_matrix(pattern, & m_inv);
   return pattern;
 }
@@ -957,6 +959,11 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       cairo_rotate(cr, *arg1);
       return BOXGERR_NO_ERR;
     }
+    break;
+
+  case BOXGCMD_MASK:
+    if (MY_DATA(w)->pattern != NULL)
+      cairo_mask(cr, MY_DATA(w)->pattern);
     break;
 
   case BOXGCMD_PATTERN_CREATE_RGB:
