@@ -4,7 +4,15 @@
 
 (])@Window "Box_Lib_G_Close_At_Window" ?
 
+///Intro: a recording {type(Window)}.
+// All the drawing commands received by this {type(Window)} object are recorded
+// so that they can be transformed and reused many times (using {type(Put)},
+// for example). {type(Figure)} is a particular type of {type(Window)}, in
+// particular ``fg = Figure[...]`` is equivalent to
+// ``fg = Window["fig"][...]`` or to the shorthand notation
+// ``fg = Window[][...]``.
 Figure = Window
+
 ([)@Figure "Box_Lib_G_Open_At_Figure" ?
 
 ///Intro: whether the window is valid (complete) and can be used.
