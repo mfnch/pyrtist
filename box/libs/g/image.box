@@ -29,4 +29,8 @@ Image@Pattern[
 ]
 
 ///Intro: draw the picture on the window.
-Image@Window[]
+Image@Window[
+  origin = $.axes.origin, xone = $.axes.one_zero, yone = $.axes.zero_one
+  xyone = xone + yone - origin
+  Poly[origin, xone, xyone, yone, Pattern[$]]
+]
