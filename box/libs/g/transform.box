@@ -72,6 +72,9 @@ Point@Scale[.scale_factors.x *= $.x, .scale_factors.y *= $.y]
 Scale@Scale[$$.scale_factors.x *= $.scale_factors.x
             $$.scale_factors.y *= $.scale_factors.y]
 
+///Intro: retrieve the scale factors in the form of a {type(Point)}.
+Scale@Point[$.scale_factors]
+
 ///Intro: Represents a translation vector.
 Translation = ++(Point translation,)
 (.[)@Translation[.translation.x = .translation.y = 0.0]

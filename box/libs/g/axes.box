@@ -16,6 +16,19 @@ Axes = ++(Int state, Point origin, one_zero, zero_one)
   .zero_one = (0.0, 1.0)
 ]
 
+///Intro: scale the reference system by the given factors.
+// Note that the scaling is cumulative.
+Scale@Axes[
+  scale = Point[$], org = $$.origin
+  $$.one_zero = org + scale.x*($$.one_zero - org)
+  $$.zero_one = org + scale.y*($$.zero_one - org)
+]
+
+///Intro: scale the reference system by the given factors.
+// Note that the scaling is cumulative. For example, ``Axes[2, 3]`` is 
+// equivalent to ``Axes[2*3]``. 
+Real@Axes[Scale[$]]
+
 ///Intro: give the points defining the reference system.
 Point@Axes[
   state = $$.state

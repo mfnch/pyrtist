@@ -15,6 +15,10 @@ From = ++(Point point,)
 
 (.[)@From[.point.x = .point.y = 0.5]
 
+///Intro: get the from object as a {type(Point)}.
+// In other words, if ``x`` is a {type(Point)}, then ``Point[From[x]] == x``.
+From@Point[$.point]
+
 ///Intro: set the reference point.
 Point@From[.point = $]
 

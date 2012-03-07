@@ -18,6 +18,9 @@ Axes@Image[.axes = $]
 // ``Image[Axes[p], ...]``
 Point@Image[\ .axes[$]]
 
+///Intro: scale the image by the given factors.
+(Real=>Scale)@Image[\ .axes[$]]
+
 ///Intro: provide the point of the image to use when positioning the image.
 From@Image[.from = $]
 
@@ -30,7 +33,10 @@ Image@Pattern[
 
 ///Intro: draw the picture on the window.
 Image@Window[
-  origin = $.axes.origin, xone = $.axes.one_zero, yone = $.axes.zero_one
-  xyone = xone + yone - origin
-  Poly[origin, xone, xyone, yone, Pattern[$]]
+  origin = $.axes.origin
+  from = Point[$.from]
+  xone = $.axes.one_zero - origin
+  yone = $.axes.zero_one - origin
+  mxmy = origin - from.x*xone - from.y*yone
+  Poly[mxmy, (mxmy += xone), (mxmy += yone), mxmy - xone, Pattern[$]]
 ]

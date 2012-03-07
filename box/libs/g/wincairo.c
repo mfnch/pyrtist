@@ -605,7 +605,7 @@ My_Cairo_Pattern_Create_Image(cairo_t *cr,
     return NULL;
 
   m_inv.x0 += from->x*lx;
-  m_inv.y0 += from->y*ly;
+  m_inv.y0 -= from->y*ly;
 
   pattern = cairo_pattern_create_for_surface(image);
   if (cairo_pattern_status(pattern) != CAIRO_STATUS_SUCCESS)

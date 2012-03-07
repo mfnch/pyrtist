@@ -6,6 +6,7 @@ include "gcore"
 
 include "area"
 include "matrix"
+include "transform"
 include "bbox"
 include "axes"
 include "pattern"
