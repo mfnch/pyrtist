@@ -24,7 +24,6 @@ w.Save["html/poly2.png"]
 w.Save["html/poly3.png"]
 
 //{one_margin
-\ w[Style[.Fill[";"]]]
 \ w.Poly[color.magenta, 0.2, pl;
          Color[color.red, .a=0.7], 0.5, pl]
 //}

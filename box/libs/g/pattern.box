@@ -102,7 +102,7 @@ Pattern@CmdStream[$.cmdstream, $.extend, $.filter]
 
 ///Intro: use the patter to set the foreground color.
 Pattern@Window[
-  $.cmdstream
-  CmdStream[Obj[const.raw.set_source]
+  CmdStream[$
+            Obj[const.raw.set_source]
             Obj[const.raw.pattern_destroy]]
 ]
