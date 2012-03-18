@@ -16,6 +16,7 @@
 #   along with Box.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import re
 import fnmatch
 
 from tree import DoxType, DoxProc, DoxTree
@@ -82,25 +83,25 @@ def extract_word(s, start=0, wanted=None):
       break
   return s[start:idx]
 
+
+_typedef_re = re.compile(r'\s*([A-Z][A-Za-z0-9_]*)\s*[=]')
+_procdef_re = re.compile(r'\s*([^@]+)\s*[@]\s*([A-Z][A-Za-z0-9_]*)')
+
 def dox_code_type(line):
+
   if line == None:
     return None
 
-  nmax = len(line) + 1
-  n1 = line.find(dox_asgn_sep) % nmax
-  n2 = line.find(dox_proc_sep) % nmax
+  matches_typedef = _typedef_re.match(line)
+  if matches_typedef:
+    return DoxType(matches_typedef.group(1))
 
-  if nmax == 1 or n1 == n2:
-    return None
-
-  elif n1 < n2:
-    left = line[:n1].strip()
-    return DoxType(left)
-
-  else:
-    left = line[:n2].strip()
-    right = extract_word(line, n2 + 1).strip()
+  matches_procdef = _procdef_re.match(line)
+  if matches_procdef:
+    left, right = matches_procdef.group(1, 2)
     return DoxProc(left, right)
+
+  return None
 
 
 class DoxBlocks(object):

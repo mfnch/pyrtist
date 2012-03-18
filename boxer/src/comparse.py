@@ -107,7 +107,7 @@ class TextSlice(object):
 class Parser(object):
   '''Base parser for Box sources. This parser can go over the sources and
   distinguish comments from source code. This is the basic parser over which
-  the Boxer macro system is built. The parser calls several method to notify
+  the Boxer macro system is built. The parser calls several methods to notify
   the occurrence of several events. The user is expected to inherit from this
   class and redefine the methods: notify_comment_begin, notify_comment_end,
   notify_inline_comment and notify_source.

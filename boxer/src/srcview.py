@@ -53,6 +53,7 @@ class BoxSrcView(object):
       srcbuf.set_highlight_syntax(True)
       srcview = gtksourceview.View(srcbuf)
       srcview.set_show_line_numbers(True)
+      srcview.set_auto_indent(True)
       return (2, srcview, srcbuf)
 
     except:

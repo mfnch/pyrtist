@@ -134,8 +134,6 @@ class Settings(object):
     raise KeyError("Property not found in Settings object")
 
 
-
-
 class Boxer(object):
   ui_info = \
     '''<ui>

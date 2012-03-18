@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 name = 'boxer'
-version = '0.3.5'
+version = '0.3.6'
 description = ('A graphical user interface for '
                'the Box vector graphics language')
 author = 'Matteo Franchin'
@@ -12,9 +12,8 @@ download_url = ('http://sourceforge.net/project/'
 license = 'GPL'
 packages = ['boxer', 'boxer.dox']
 package_dir = {'boxer': 'src'}
-package_data = {'boxer': ['glade/*', 'examples/*',
-                          'icons/*.png', 'icons/fonts/*.png',
-                          'hl/*.lang']}
+package_data = {'boxer': ['examples/*', 'icons/*.png',
+                          'icons/fonts/*.png', 'hl/*.lang']}
 script = 'scripts/boxer'
 scripts = [script]
 
