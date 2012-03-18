@@ -1,5 +1,20 @@
 Change log (recent comes first)
 
+18 Mar 2012: Released v 0.3.2: bugfixes and improvements.
+  * Introduced ``Image'' object to include external PNG files and
+    use them as patterns for filling areas (instead of colors or
+    gradients).
+  * Introduced a Figure object, so that ``Figure[...]'' can be used instead
+    of the (somewhat awkward) ``Window[][...]''.
+  * Introduced multi-line, recursive comments a la OCaml: (* ... *)
+  * Species are now fully implemented.
+  * Pattern was renamed to PATTERN and Pattern is defined as the species
+    ``(Color=>Gradient=>PATTERN)'', which allows using Color, Gradient,
+    as alternatives to Pattern.
+  * Introduced ``ThickLine'' (which partially replaces the obsolete
+    ``Window.Line''). Introduced ``Dark'' and ``Axes''.
+  * Fixed rendering of non-concentric spherical gradients.
+
 27 Nov 2011: Released v 0.3.1: bugfixes and small improvements.
   * BBox now sets (rather than extending) the bounding box.
   * Bugfix: bounding box for Clip is now only determined by the clipping path.
