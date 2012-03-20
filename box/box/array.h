@@ -62,8 +62,8 @@ typedef struct {
  *                     array, even when no elements are contained in it)
  * @see BoxArr_Finish, BoxArr_New
  */
-BOXEXPORT void BoxArr_Init(BoxArr *arr, BoxUInt element_size,
-                           BoxUInt initial_size);
+BOXEXPORT void BoxArr_Init(BoxArr *arr, size_t element_size,
+                           size_t initial_size);
 
 /** Finalize a BoxArr object, calling the finalizer for each remaining
  * element, if necessary. The function does not deallocate the region
@@ -80,7 +80,9 @@ BOXEXPORT void BoxArr_Finish(BoxArr *arr);
  * BoxArr_Finish).
  * @see BoxArr_Destroy, BoxArr_Init
  */
-BOXEXPORT BoxArr *BoxArr_New(BoxUInt element_size, BoxUInt initial_size);
+BOXEXPORT BoxArr *BoxArr_Create(size_t element_size, size_t initial_size);
+
+#define BoxArr_New BoxArr_Create
 
 /** Similar to BoxArr_Init, but frees also the region containing
  * the BoxArr object. Suitable to be used with BoxArr_New (and must NOT
@@ -90,18 +92,21 @@ BOXEXPORT BoxArr *BoxArr_New(BoxUInt element_size, BoxUInt initial_size);
 BOXEXPORT void BoxArr_Destroy(BoxArr *arr);
 
 /** Attributes corresponding to different behaviours of the BoxArr object:
- * BOXARR_ERR_STATUS correspond to the error status of the array, which is set
+ * BOXARR_ERR_STATUS corresponds to the error status of the array, which is set
  * when an allocation or similar problem occurs. BOXARR_ERR_TOLERANT decides
  * how to behave on such errors: abort the program, or tolerate the error and
  * just put the BoxArr object in the error state. BOXARR_CLEAR_ITEMS decides
- * whether a NULL pointer in BoxArr_MPush, BoxArr_Insert, etc. should lead
- * to insertion of zero filled items or to the insertion of uninitialised
- * items.
+ * whether a NULL pointer in BoxArr_MPush, BoxArr_Insert, etc. should lead to
+ * insertion of zero filled items or to the insertion of uninitialised items.
  */
 typedef enum {
-  BOXARR_ERR_STATUS=1,
-  BOXARR_ERR_TOLERANT=2,
-  BOXARR_CLEAR_ITEMS=4
+  BOXARR_ERR_STATUS   = 1, /**< When set, this bit indicates a failure */
+  BOXARR_ERR_TOLERANT = 2, /**< When set, errors (such as failure in allocation
+                                or reallocation of the array) are tolerated
+                                and signalled. When cleared, the program is
+                                aborted. */
+  BOXARR_CLEAR_ITEMS  = 4  /**< When set, new items in the array are zeroed
+                                (in BoxArr_MPush or BoxArr_Insert). */
 } BoxArrAttr;
 
 /** Set the attributes which control the behaviour of the BoxArr object.
@@ -171,10 +176,10 @@ BOXEXPORT size_t BoxArr_Find(BoxArr *arr, void *item, BoxArrCmp cmp,
  */
 BOXEXPORT void BoxArr_Clear(BoxArr *arr);
 
-/** Push new elements into the provided array. The items are appended
- * to the array. If 'items' is the NULL pointer the items are inserted
- * being set to zero or without being set at all, if BoxArr_Set_Attr
- * was used to disable the automatic clearing.
+/** Push new elements into the provided array. The items are appended to the
+ * array. If 'items' is the NULL pointer the items are inserted being set to
+ * zero or without being set at all, if BoxArr_Set_Attr was used to disable the
+ * automatic clearing.
  * @param arr the target array
  * @param items the pointer to the items to be inserted
  * @param num_items the number of items to be inserted
@@ -185,8 +190,7 @@ BOXEXPORT void BoxArr_Clear(BoxArr *arr);
  *     ItemType *item = BoxArr_MPush(a, NULL, 2);
  *     item[0] = ...; item[1] = ...;
  */
-BOXEXPORT void *BoxArr_MPush(BoxArr *arr, const void *items,
-                             BoxUInt num_items);
+BOXEXPORT void *BoxArr_MPush(BoxArr *arr, const void *items, size_t num_items);
 
 /** Similar to BoxArr_MPush, but pushes just one item into the array.
  * @see BoxArr_MPush

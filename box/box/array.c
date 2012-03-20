@@ -58,7 +58,7 @@ static void BoxArr_Reinit(BoxArr *arr) {
   arr->numel = 0;
 }
 
-void BoxArr_Init(BoxArr *arr, UInt element_size, UInt initial_size) {
+void BoxArr_Init(BoxArr *arr, size_t element_size, size_t initial_size) {
   BoxArr_Reinit(arr);
   assert(element_size > 0);
   arr->mindim = initial_size;
@@ -72,9 +72,10 @@ void BoxArr_Finish(BoxArr *arr) {
   BoxArr_Clear(arr); /* Just dealloc the array buffer */
 }
 
-BoxArr *BoxArr_New(UInt element_size, UInt initial_size) {
+BoxArr *BoxArr_Create(size_t element_size, size_t initial_size) {
   BoxArr *arr = BoxMem_Alloc(sizeof(BoxArr));
-  if (arr == NULL) return NULL;
+  if (arr == NULL)
+    return NULL;
   BoxArr_Init(arr, element_size, initial_size);
   return arr;
 }
@@ -244,11 +245,12 @@ void BoxArr_Compactify(BoxArr *arr) {
   }
 }
 
-void *BoxArr_MPush(BoxArr *arr, const void *items, UInt num_items) {
+void *BoxArr_MPush(BoxArr *arr, const void *items, size_t num_items) {
   void *ptr;
   UInt pos;
 
-  if (num_items < 1) return NULL;
+  if (num_items < 1)
+    return NULL;
 
   assert(arr != NULL);
 

@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2006 by Matteo Franchin                                 *
+ *   Copyright (C) 2006-2012 by Matteo Franchin                                 *
  *   fnch@libero.it                                                        *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -67,7 +67,7 @@ typedef struct {
 static void My_Scan_Tok(yyscan_t scanner);
 
 /** Function used to notify entering a multi-line comment. */
-static void My_Comment_Up(BoxLex *bl);
+static void My_Comment_Up(BoxLex *bl, int is_macro);
 
 /** Function used to notify exiting a multi-line comment. */
 static int My_Comment_Down(BoxLex *bl);
@@ -91,10 +91,15 @@ HEXDIGIT [0-9A-Fa-f]
 NAME     [A-Za-z][A-Za-z0-9_]*
 LNAME    [a-z][A-Za-z0-9_]*
 UNAME    [A-Z][A-Za-z0-9_]*
+STRING   ["]([^"\n]|\\\")*["]
 
 %%
 
-[(][*]           {MY_SCAN_TOK(); My_Comment_Up(yyextra); BEGIN(comment);}
+[(][*]([*][^)])? {
+  MY_SCAN_TOK();
+  My_Comment_Up(yyextra, (yyleng > 2));
+  BEGIN(comment);
+}
 
 <comment>[*][)]  {
   MY_SCAN_TOK();
@@ -102,7 +107,10 @@ UNAME    [A-Z][A-Za-z0-9_]*
    BEGIN(INITIAL);
 }
 
-<comment>[(][*]  {MY_SCAN_TOK(); My_Comment_Up(yyextra);}
+<comment>[(][*]([*][^)])? {
+  MY_SCAN_TOK();
+  My_Comment_Up(yyextra, (yyleng > 2));
+}
 
 <comment><<EOF>> {
   MY_SCAN_TOK();
@@ -115,13 +123,13 @@ UNAME    [A-Z][A-Za-z0-9_]*
 
 include BEGIN(include);
 
- /* Elimina gli spazi bianchi dopo la direttiva include */
+ /* The following line removes white spaces after the include token */
 <include>[ \t]*
- /* Cio' che segue include dopo gli eventuali spazi bianchi,
-  * e' il nome del file: non sono consentiti commenti
-  * o caratteri di continuazione riga sulla stessa riga di una include
+
+ /* The file name follows ``include'': comments or the continuation character
+  * are not allowed inside an include line.
   */
-<include>["][^"\n]*["] {
+<include>{STRING} {
   char *f = Str_Dup(yytext+1, yyleng-2);
 
   BEGIN(INITIAL);
@@ -129,7 +137,8 @@ include BEGIN(include);
   (void) BoxLex_Begin_Include(yyextra, f);
   BoxMem_Free(f);
 }
- /* Tutto il resto da' errori! */
+
+ /* Whatever else gives errors */
 <include>. {
   BEGIN(INITIAL);
   return TOK_ERR;
@@ -167,7 +176,6 @@ include BEGIN(include);
 
  /* Spaces are ignored */
 {SPACES}    {MY_SCAN_TOK();}
-
 
 "=>"  {MY_SCAN_TOK(); return TOK_TO;}
 "->"  {MY_SCAN_TOK(); return TOK_MAPTO;}
@@ -274,7 +282,7 @@ include BEGIN(include);
  }
 
  /* String */
-["]([^"\n]|\\\")*["] {
+{STRING} {
   size_t length;
   char *s = Box_Reduce_Esc_String(yytext + 1, yyleng - 2, & length);
   yylval.Node = ASTNodeString_New(s, length);
@@ -314,6 +322,8 @@ struct _struct_BoxLex {
               comment_level;     /**< Multi-comment level of inclusion */
   BoxArr      include_list;      /**< Stack of saved data for include files */
   BoxHT       provided_features; /**< Hashtb. to remember provided features */
+  int         parsing_macro;     /**< Whether we are parsing a comment macro */
+  BoxArr      macro_content;     /**< Content of currently parsed macro */
 };
 
 BoxLex *BoxLex_Create(BoxPaths *paths) {
@@ -331,6 +341,9 @@ BoxLex *BoxLex_Create(BoxPaths *paths) {
               TOK_TYPICAL_MAX_INCLUDE);
 
   BoxHT_Init_Default(& bl->provided_features, 64);
+
+  bl->parsing_macro = 0;
+  BoxArr_Init(& bl->macro_content, 1, 64);
   return bl;
 }
 
@@ -339,6 +352,7 @@ BoxSrcName *BoxLex_Destroy(BoxLex *bl) {
   yylex_destroy(bl->scanner);
   BoxHT_Finish(& bl->provided_features);
   BoxArr_Finish(& bl->include_list);
+  BoxArr_Finish(& bl->macro_content);
   BoxMem_Free(bl);
   return filenames;
 }
@@ -361,13 +375,12 @@ BoxTask BoxLex_Begin_Include_FILE(BoxLex *bl, FILE *f, const char *fn) {
 
   } else {
     YY_BUFFER_STATE buffer;
-    MyIncludeData cur;
-    cur.pos = bl->pos;
-    cur.script_dir = (char *) NULL;
-    cur.msgcontext = 0; /*Msg_Context_Num(); TODO ??? */
-    cur.num_errs = MSG_GT_ERRORS;
-    cur.num_warns = MSG_NUM_WARNINGS;
-    BoxArr_Push(& bl->include_list, & cur);
+    MyIncludeData *cur = BoxArr_Push(& bl->include_list, NULL);
+    cur->pos = bl->pos;
+    cur->script_dir = NULL;
+    cur->msgcontext = 0; /*Msg_Context_Num(); TODO ??? */
+    cur->num_errs = MSG_GT_ERRORS;
+    cur->num_warns = MSG_NUM_WARNINGS;
 
     buffer = yy_create_buffer(f, YY_BUF_SIZE, bl->scanner);
     assert(buffer != NULL);    
@@ -483,13 +496,15 @@ static void My_Scan_Tok(yyscan_t scanner) {
   yylloc.end.file_name = box_lexer->pos.file_name;
 }
 
-static void My_Comment_Up(BoxLex *bl) {
+static void My_Comment_Up(BoxLex *bl, int is_macro) {
   ++bl->comment_level;
+  bl->parsing_macro = is_macro;
   assert(bl->comment_level != 0);
 }
 
 static int My_Comment_Down(BoxLex *bl) {
   assert(bl->comment_level > 0);
   --bl->comment_level;
+  bl->parsing_macro = 0;
   return (bl->comment_level == 0);
 }
