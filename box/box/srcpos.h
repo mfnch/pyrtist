@@ -136,9 +136,21 @@ void BoxSrc_Init(BoxSrc *src);
  */
 char *BoxSrc_To_Str(BoxSrc *loc);
 
-/** Return (in *result) the smallest ASTLoc object containing both first
+/** Return (in *result) the smallest BoxSrc object containing both first
  * and second.
  */
 void BoxSrc_Merge(BoxSrc *result, BoxSrc *first, BoxSrc *second);
+
+/** Set the line number in the BoxSrcPos structure. */
+#define BoxSrcPos_Set_Line(bl, line_num) \
+  do {(bl)->line = (line_num);} while(0)
+
+/** Set the column number in the BoxSrcPos structure. */
+#define BoxSrcPos_Set_Col(bl, col_num) \
+  do {(bl)->col = (col_num);} while(0)
+
+/** Set the file name in the BoxSrcPos structure. */
+#define BoxSrcPos_Set_File_Name(bl, name_of_file) \
+  do {(bl)->file_name = (name_of_file);} while(0)
 
 #endif

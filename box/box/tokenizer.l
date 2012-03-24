@@ -50,6 +50,7 @@
 #include "hashtable.h"
 #include "srcpos.h"
 #include "paths.h"
+#include "macro.h"
 
 /* Use our message handler */
 #define YY_FATAL_ERROR(msg) MSG_FATAL("%s", msg)
@@ -67,10 +68,16 @@ typedef struct {
 static void My_Scan_Tok(yyscan_t scanner);
 
 /** Function used to notify entering a multi-line comment. */
-static void My_Comment_Up(BoxLex *bl, int is_macro);
+static void My_Comment_Enter(BoxLex *bl, int is_macro);
 
 /** Function used to notify exiting a multi-line comment. */
-static int My_Comment_Down(BoxLex *bl);
+static int My_Comment_Leave(BoxLex *bl);
+
+/** Read the char (useful only in macros). */
+static void My_Comment_Read_Char(BoxLex *bl, const char *text, size_t len);
+
+/** Process macros. */
+static void My_Process_Macro(BoxLex *bl, BoxMacro *bm);
 
 /** Shorthand macro for My_Scan_Tok. */
 #define MY_SCAN_TOK() My_Scan_Tok(yyscanner)
@@ -95,21 +102,21 @@ STRING   ["]([^"\n]|\\\")*["]
 
 %%
 
-[(][*]([*][^)])? {
+[(][*][*]? {
   MY_SCAN_TOK();
-  My_Comment_Up(yyextra, (yyleng > 2));
+  My_Comment_Enter(yyextra, (yyleng > 2));
   BEGIN(comment);
 }
 
 <comment>[*][)]  {
   MY_SCAN_TOK();
-  if (My_Comment_Down(yyextra))
+  if (My_Comment_Leave(yyextra))
    BEGIN(INITIAL);
 }
 
-<comment>[(][*]([*][^)])? {
+<comment>[(][*][*]? {
   MY_SCAN_TOK();
-  My_Comment_Up(yyextra, (yyleng > 2));
+  My_Comment_Enter(yyextra, (yyleng > 2));
 }
 
 <comment><<EOF>> {
@@ -119,7 +126,10 @@ STRING   ["]([^"\n]|\\\")*["]
   yyterminate();
 }
 
-<comment>.       {MY_SCAN_TOK();}
+<comment>.       {
+  MY_SCAN_TOK();
+  My_Comment_Read_Char(yyextra, yytext, yyleng);
+}
 
 include BEGIN(include);
 
@@ -158,8 +168,8 @@ include BEGIN(include);
  /* Il carattere di continuazione riga mangia tutto ci che segue
   * fino alla nuova riga e annulla il carattere newline
   */
-"_"{SPACES}"\n"            {MY_SCAN_TOK();}
-"_"{SPACES}"//"[^\n]*"\n"  {MY_SCAN_TOK();}
+[_\\]{SPACES}"\n"            {MY_SCAN_TOK();}
+[_\\]{SPACES}"//"[^\n]*"\n"  {MY_SCAN_TOK();}
 
  /* Discard comments. Comments start either with // or with #! */
 "//"[^\n]*  {}
@@ -496,15 +506,91 @@ static void My_Scan_Tok(yyscan_t scanner) {
   yylloc.end.file_name = box_lexer->pos.file_name;
 }
 
-static void My_Comment_Up(BoxLex *bl, int is_macro) {
+static void My_Comment_Enter(BoxLex *bl, int is_macro) {
   ++bl->comment_level;
-  bl->parsing_macro = is_macro;
   assert(bl->comment_level != 0);
+
+  bl->parsing_macro = is_macro;
+  BoxArr_Empty(& bl->macro_content);
 }
 
-static int My_Comment_Down(BoxLex *bl) {
+static int My_Comment_Leave(BoxLex *bl) {
   assert(bl->comment_level > 0);
   --bl->comment_level;
+
+  /* Parse the macro, if necessary */
+  if (bl->parsing_macro) {
+    BoxMacro bm;
+    char line_term = '\0';
+    BoxArr_Push(& bl->macro_content, & line_term);
+
+    BoxMacro_Init(& bm, (char *) BoxArr_First_Item_Ptr(& bl->macro_content));
+    BoxMacro_Parse(& bm);
+
+    My_Process_Macro(bl, & bm);
+    BoxMacro_Finish(& bm);
+  }
+
   bl->parsing_macro = 0;
   return (bl->comment_level == 0);
+}
+
+static void My_Comment_Read_Char(BoxLex *bl, const char *text, size_t len) {
+  if (bl->parsing_macro)
+    BoxArr_MPush(& bl->macro_content, text, len);
+}
+
+/** Parse an integer from the string 'text' and - if successful - put it into
+ * '*arg' and return 1. Return 0 in case of errors.
+ */
+static int My_Parse_Int_Arg(const char *text, long int *arg) {
+  errno = 0;
+  char *endptr;
+  long int retval = strtol(text, & endptr, 10);
+  if (errno == 0 && endptr != text && *endptr == '\0') {
+    if (arg != NULL)
+      *arg = retval;
+    return 1;
+
+  } else
+    return 0;
+}
+
+/** Check that 'text' is a string of the type '"content"' and - if this is the
+ * case - set '*arg' to the first character after " and substitutes the closing
+ * " with a NUL (so that '*arg' is actually the content of the string).
+ * 'text' is modified by a call to this function.
+ */
+static int My_Parse_Str_Arg(char *text, char **arg) {
+  size_t len = strlen(text);
+  if (len > 2 && text[0] == '"' && text[len - 1] == '"') {
+    text[len - 1] = '\0';
+    *arg = & text[1];
+    return 1;
+
+  } else
+    return 0;
+}
+
+/* Process macros embedded in comments like (**macro: args*) */
+static void My_Process_Macro(BoxLex *bl, BoxMacro *bm) {
+  const char *name = BoxMacro_Get_Name(bm);
+  size_t num_args = BoxMacro_Get_Num_Args(bm);
+
+  if (name && strcmp(name, "line") == 0) {
+    long int arg1;
+    if (num_args >= 1 && My_Parse_Int_Arg(BoxMacro_Get_Arg(bm, 0), & arg1)) {
+      long int arg2;
+      BoxSrcPos_Set_Line(& bl->pos, (arg1 > 0) ? arg1 : 0);
+
+      if (num_args >= 2 && My_Parse_Int_Arg(BoxMacro_Get_Arg(bm, 1), & arg2)) {
+        char *arg3;
+
+        BoxSrcPos_Set_Col(& bl->pos, (arg2 > 0) ? arg2 : 0);
+
+        if (My_Parse_Str_Arg(BoxMacro_Get_Arg(bm, 2), & arg3))
+          BoxSrcPos_Set_File_Name(& bl->pos, BoxSrcName_Add(bl->fnames, arg3));
+      }
+    }
+  }
 }

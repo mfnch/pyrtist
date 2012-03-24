@@ -241,7 +241,7 @@ prim_expr:
   ;
 
 postfix_expr:
-    prim_expr                    {$$ = $1;}
+    prim_expr                    {$$ = $1; @$ = @1;}
   | postfix_expr '(' expr ')'    {$$ = ASTNodeArrayGet_New($1, $3); SRC($$, @$);}
   | procedure_decl               {$$ = $1;}
   | postfix_expr

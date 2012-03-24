@@ -34,10 +34,39 @@ typedef enum {
 
 } BoxMacroErr;
 
+#define BOXMACRO_MAX_ARGS 3
+
+struct BoxMacro_struct {
+  char   *text;     /**< A NUL terminated string */
+  char   *name;     /**< A pointer to the macro name in 'text' */
+  char   *args[BOXMACRO_MAX_ARGS];
+                    /**< The arguments of the macro in 'text' */
+  char   *delim;    /**< First space after argument */
+  size_t num_args;  /**< Number of arguments in 'args' */
+};
+
 /** Type containing the result of a BoxMacro_Parse call. */
 typedef struct BoxMacro_struct BoxMacro;
+
+/** Prepare a 'BoxMacro' object to parse the string 'text'.
+ * 'text' is corrupted while parsing, so - if you care about the content of
+ * 'text' - you should copy it before calling 'BoxMacro_Parse'.
+ */
+void BoxMacro_Init(BoxMacro *bm, char *text);
+
+/** Finalise a BoxMacro object. */
+#define BoxMacro_Finish(bm)
 
 /** Parse the macro associated to the BoxMacro object. */
 BoxMacroErr BoxMacro_Parse(BoxMacro *bm);
 
-#endif
+/** Get the name of the macro, after a call to BoxMacro_Parse. */
+#define BoxMacro_Get_Name(bm) ((bm)->name)
+
+/** Get the number of arguments, after a call to BoxMacro_Parse */
+#define BoxMacro_Get_Num_Args(bm) ((bm)->num_args)
+
+/** Get the number of arguments, after a call to BoxMacro_Parse */
+#define BoxMacro_Get_Arg(bm, idx) ((bm)->args[(idx)])
+
+#endif /* _BOX_MACRO_H */

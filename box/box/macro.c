@@ -32,17 +32,13 @@
 #include <box/macro.h>
 
 
-#define BOXMACRO_MAX_ARGS 3
-
-struct BoxMacro_struct {
-  char   *text;     /**< A NUL terminated string */
-  char   *name;     /**< A pointer to the macro name in 'text' */
-  char   *args[BOXMACRO_MAX_ARGS];
-                    /**< The arguments of the macro in 'text' */
-  char   *delim;    /**< First space after argument */
-  size_t num_args;  /**< Number of arguments in 'args' */
-};
-
+/** Prepare a 'BoxMacro' object to parse the string 'text'.
+ * 'text' is corrupted while parsing, so - if you care about the content of
+ * 'text' - you should copy it before calling 'BoxMacro_Parse'.
+ */
+void BoxMacro_Init(BoxMacro *bm, char *text) {
+  bm->text = text;
+}
 
 /* Currently we implement this parser just as a state machine.
  * Later we may want to use a flex scanner for this.

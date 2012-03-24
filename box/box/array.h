@@ -176,6 +176,10 @@ BOXEXPORT size_t BoxArr_Find(BoxArr *arr, void *item, BoxArrCmp cmp,
  */
 BOXEXPORT void BoxArr_Clear(BoxArr *arr);
 
+/** Remove all the elements from the array. */
+#define BoxArr_Empty(arr) \
+  do {BoxArr_MPop((arr), NULL, BoxArr_Get_Num_Items((arr)));} while(0)
+
 /** Push new elements into the provided array. The items are appended to the
  * array. If 'items' is the NULL pointer the items are inserted being set to
  * zero or without being set at all, if BoxArr_Set_Attr was used to disable the
@@ -241,6 +245,9 @@ BOXEXPORT void BoxArr_Compactify(BoxArr *arr);
 
 /** Returns the number of elements currently inserted in the provided array.
  */
+#define BoxArr_Get_Num_Items(arr) ((const size_t) (arr)->numel)
+
+/** Obsolete version of BoxArr_Get_Num_Items. */
 #define BoxArr_Num_Items(arr) ((arr)->numel)
 
 /** Returns the pointer to the memory block containing the data for the array.

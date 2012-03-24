@@ -344,7 +344,7 @@ char *Box_Reduce_Esc_String(const char *s, size_t l, size_t *new_length) {
 Task Str_ToInt(char *s, UInt l, Int *i) {
   char sc[sizeof(Int)*5 + 1], *endptr;
 
-  if ( l >= (sizeof(Int)*5 + 1) ) {
+  if (l >= sizeof(Int)*5 + 1) {
     MSG_ERROR("The integer number exceeds the range of values "
               "representable by Int.");
     return BOXTASK_FAILURE;
@@ -356,7 +356,8 @@ Task Str_ToInt(char *s, UInt l, Int *i) {
 
   errno = 0;
   *i = BoxInt_Of_Str(sc, & endptr, 10);
-  if ( errno == 0 ) return BOXTASK_OK;
+  if (errno == 0)
+    return BOXTASK_OK;
 
   MSG_ERROR("The integer number exceeds the range of values "
             "representable by Int.");
