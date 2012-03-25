@@ -6,7 +6,8 @@ GUI = Void
 (**boxer-refpoints:
 bbox1 1 0.0 50.0 bbox2 1 100.0 0.0
 *)
-(**end:expand*)// TUTORIAL EXAMPLE N.1: Introduction to Boxer
+(**end:expand*)// TUTORIAL EXAMPLE N.1
+// Overview of the initial blank Box document
 
 // This is a single-line comment 
 

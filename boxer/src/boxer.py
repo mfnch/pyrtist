@@ -992,6 +992,7 @@ class Boxer(object):
       return save_file
 
     example_files = config.get_example_files()
+    example_files.sort()
     i = 0
     for example_file in example_files:
       example_file_basename = os.path.basename(example_file)

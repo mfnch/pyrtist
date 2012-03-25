@@ -1,14 +1,17 @@
-//!BOXER:VERSION:0:1:1
-
+(**expand:boxer-boot*)
+(**boxer-version:0,2,0*)
 include "g"
 GUI = Void
-Window@GUI[]
 
-
-
-
-
-//!BOXER:REFPOINTS:BEGIN
+(**boxer-refpoints:
+bbox1 1 -37.5826573705 64.8614862385 bbox2 1 146.843632129 -72.3863575296 fg1 1
+25.9196635922 -64.5110530769 fg2 1 127.536394984 -65.2736212928 bg1 1 54.63065
+-25.8746116667 bg2 1 132.618249036 -25.8746116667 gui1 1 -35.0423175368
+-17.7413972927 gui2 1 20.5904601928 -15.199775 gui3 1 18.5582100551
+-9.35403111111 gui4 1 17.7961162534 -3.50828722222 gui5 1 17.7961162534
+3.099945
+*)
+(**end:expand*)(**expand:define-all*)
 bbox1 = Point[.x=-37.5826573705, .y=64.8614862385]
 bbox2 = Point[.x=146.843632129, .y=-72.3863575296]
 fg1 = Point[.x=25.9196635922, .y=-64.5110530769]
@@ -20,12 +23,14 @@ gui2 = Point[.x=20.5904601928, .y=-15.199775]
 gui3 = Point[.x=18.5582100551, .y=-9.35403111111]
 gui4 = Point[.x=17.7961162534, .y=-3.50828722222]
 gui5 = Point[.x=17.7961162534, .y=3.099945]
-//!BOXER:REFPOINTS:END
+
+(**end:expand*)
+
 include "math"
 include "tools"
 include "_sphere"
 
-w = Window[][
+w = Figure[
   BBox[bbox1, bbox2]
 
   // Colors of the planes
@@ -93,5 +98,4 @@ w = Window[][
   Sphere[sph, fg1], Sphere[sph, fg2], Sphere[sph, fg3], Sphere[sph, fg4]
 ]
 
-GUI[w]
-  
+(**expand:view:w*)(**end:expand*)

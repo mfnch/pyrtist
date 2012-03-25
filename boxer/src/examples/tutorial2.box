@@ -10,7 +10,8 @@ p2 1 23.80952380952381 38.69044538461538 p3 1 38.775510204081634
 39.20064906354515 p6 1 88.77551020408163 16.581619297658865 p7 1
 66.156462585034 19.30270558528428
 *)
-(**end:expand*)// TUTORIAL EXAMPLE N.2: Drawing a polygon
+(**end:expand*)// TUTORIAL EXAMPLE N.2
+// Polygons, figures and transformations
 
 (**expand:define-all*)
 bbox1 = Point[.x=0.0, .y=50.0], bbox2 = Point[.x=100.0, .y=0.0]
