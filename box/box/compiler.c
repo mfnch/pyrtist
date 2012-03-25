@@ -610,11 +610,18 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
   jump_label_next = CmpProc_Jump_Label_New(c->cur_proc);
   jump_label_end = BOXVMSYMID_NONE;
 
+  /* Save previous source position */
+  BoxSrc *prev_src_of_err = Msg_Set_Src(& box->src);
+
   /* Loop over all the statements of the box */
   for(s = box->attr.box.first_statement;
       s != NULL;
       s = s->attr.statement.next_statement) {
+
     Value *stmt_val;
+
+    /* Set the source position to the current statement */
+    Msg_Set_Src(& s->src);
 
     My_Compile_Statement(c, s);
     stmt_val = BoxCmp_Pop_Value(c);
@@ -669,6 +676,9 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
 
     Value_Unlink(stmt_val);
   }
+
+  /* Restore previous source position */
+  (void) Msg_Set_Src(prev_src_of_err);
 
   /* Define the end label and release it together with the begin label */
   CmpProc_Jump_Label_Define(c->cur_proc, jump_label_next);

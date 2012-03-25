@@ -241,7 +241,7 @@ prim_expr:
   ;
 
 postfix_expr:
-    prim_expr                    {$$ = $1; @$ = @1;}
+    prim_expr                    {$$ = $1;}
   | postfix_expr '(' expr ')'    {$$ = ASTNodeArrayGet_New($1, $3); SRC($$, @$);}
   | procedure_decl               {$$ = $1;}
   | postfix_expr
@@ -460,7 +460,8 @@ statement:
 statement_list:
     statement                    {$$ = ASTNodeBox_New(NULL, $1); SRC($$, @$);}
   | statement_list sep statement {$$ = ASTNodeBox_Add_Sep($1, $2);
-                                  $$ = ASTNodeBox_Add_Statement($1, $3); SRC($$, @3);}
+                                  $$ = ASTNodeBox_Add_Statement($1, $3);
+                                  SRC($$, @$);}
   ;
 
 program:
