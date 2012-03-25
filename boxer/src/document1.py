@@ -15,6 +15,8 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
 from base import inherit_doc
 from refpoints import RefPoint, RefPoints
 import docbase
@@ -81,6 +83,7 @@ def refpoints_from_str(s):
 
 class BoxerMacroExpand(MacroExpander):
   """Expand Box sources to a format which can be parsed by Box."""
+
   def __init__(self, document=None, mode=None):
     self.document = document
     self.mode = None
@@ -95,8 +98,11 @@ class BoxerMacroExpand(MacroExpander):
 
   def macro_define_all(self, args):
     rps = map(refpoint_to_string, self.document.refpoints)
-    s = text_writer(rps)
-    return endline.join(["(**expand:define-all*)", s, "(**end:expand*)"])
+    
+    sep, joiner = ((",", ",".join) if self.mode == docbase.MODE_EXEC
+                   else (endline, text_writer))
+
+    return sep.join(["(**expand:define-all*)", joiner(rps), "(**end:expand*)"])
 
   def macro_view(self, args):
     mode = self.mode
@@ -242,9 +248,17 @@ class Document1(Document0):
     """Get the user part of the Box source."""
     if mode == docbase.MODE_ORIG:
       return self.usercode
+
     else:
       mx = BoxerMacroExpand(document=self, mode=mode)
-      return mx.parse(mode=mode)
+      output = mx.parse(mode=mode)
+      if mode == docbase.MODE_EXEC:
+        filename = (os.path.split(self.filename)[1]
+                    if self.filename else "New file")
+        return ('(**line:1,1,"%s"*)' % filename) + output
+
+      else:
+        return output
 
   @inherit_doc
   def get_part_def_refpoints(self):

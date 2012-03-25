@@ -7,6 +7,8 @@ Change log (recent comes first)
   * Introduced a Figure object, so that ``Figure[...]'' can be used instead
     of the (somewhat awkward) ``Window[][...]''.
   * Introduced multi-line, recursive comments a la OCaml: (* ... *)
+  * Introduced macros in comments (** ... *) as a mean of injecting meta
+    information into the box sources.
   * Species are now fully implemented.
   * Pattern was renamed to PATTERN and Pattern is defined as the species
     ``(Color=>Gradient=>PATTERN)'', which allows using Color, Gradient,

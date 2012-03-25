@@ -115,6 +115,7 @@ class Parser(object):
 
   def __init__(self, text=""):
     self.text = text
+    self.tokenizer = None
 
   def notify_comment_begin(self, text_slice):
     pass
@@ -136,7 +137,7 @@ class Parser(object):
     else:
       self.text = text
 
-    tok = Tokenizer(text)
+    self.tokenizer = tok = Tokenizer(text)
 
     state = STATE_SOURCE
     source_pos = 0

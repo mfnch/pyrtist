@@ -1,3 +1,21 @@
+# Copyright (C) 2012 by Matteo Franchin (fnch@users.sf.net)
+#
+# This file is part of Boxer.
+#
+#   Boxer is free software: you can redistribute it and/or modify it
+#   under the terms of the GNU General Public License as published
+#   by the Free Software Foundation, either version 3 of the License, or
+#   (at your option) any later version.
+#
+#   Boxer is distributed in the hope that it will be useful,
+#   but WITHOUT ANY WARRANTY; without even the implied warranty of
+#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#   GNU General Public License for more details.
+#
+#   You should have received a copy of the GNU General Public License
+#   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
+
+import os
 from distutils.core import setup
 
 name = 'boxer'
@@ -12,8 +30,16 @@ download_url = ('http://sourceforge.net/project/'
 license = 'GPL'
 packages = ['boxer', 'boxer.dox']
 package_dir = {'boxer': 'src'}
-package_data = {'boxer': ['examples/*', 'icons/*.png',
-                          'icons/fonts/*.png', 'hl/*.lang']}
+
+examples = \
+  ['fractal.box', 'fractree.box', 'wheatstone.box', 'planes.box',
+   'tutorial*.box']
+
+examples_fullpaths = list(os.path.join('examples', bn)
+                          for bn in examples)
+
+package_data = {'boxer': (examples_fullpaths + 
+                          ['icons/*.png', 'icons/fonts/*.png', 'hl/*.lang'])}
 script = 'scripts/boxer'
 scripts = [script]
 

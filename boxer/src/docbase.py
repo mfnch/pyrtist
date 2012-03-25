@@ -249,8 +249,6 @@ class DocumentBase(Configurable):
   def get_preamble(self):
     return self.preamble
 
-
-
   def get_boot_code(self, preamble=None):
     return preamble if preamble != None else self.preamble
 
@@ -261,7 +259,6 @@ class DocumentBase(Configurable):
   def set_user_code(self, code):
     """Set the content of the user Box code."""
     self.usercode = code
-
 
   def get_part_version(self):
     """Produce the version line."""
