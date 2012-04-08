@@ -75,7 +75,7 @@ class HelpAct(assistant.Action):
 
 class ToolBox(gtk.Table):
   def __init__(self, assistant, columns=1, homogeneous=False,
-               icon_path=None, size_request=(55, -1)):
+               icon_path=None, size_request=(-1, -1)):
     self.columns = columns
     self.assistant = assistant
     self.icon_path = icon_path
