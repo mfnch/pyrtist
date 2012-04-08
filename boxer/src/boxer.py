@@ -158,6 +158,9 @@ class Boxer(object):
           <menuitem action='Paste'/>
           <menuitem action='Delete'/>
         </menu>
+        <menu action='LibraryMenu'>
+          <menuitem action='ConfigureLibrary'/>
+        </menu>
         <menu action='RunMenu'>
           <menuitem action='Execute'/>
           <menuitem action='Stop'/>
@@ -310,6 +313,10 @@ class Boxer(object):
        "Create a new Box program", self.menu_edit_paste),
       ("Delete", gtk.STOCK_DELETE, "_Delete", None,
        "Create a new Box program", self.menu_edit_delete),
+
+      ("LibraryMenu", None, "_Library"),
+      ("ConfigureLibrary", gtk.STOCK_PREFERENCES, "_Configure library", None,
+       "Configure the Boxer library", self.menu_library_config),
 
       ("RunMenu", None, "_Run"),
       ("Execute", gtk.STOCK_EXECUTE, "_Execute", "<control>Return",
@@ -609,6 +616,10 @@ class Boxer(object):
   def menu_run_execute(self, image_menu_item):
     """Called by menu run->execute command."""
     self.update_draw_area()
+
+  def menu_library_config(self, image_menu_item):
+    """Called by menu library->configure command."""
+    pass
 
   def update_draw_area(self, only_if_quick=False):
     """Update the draw area (executing the Box program)."""
