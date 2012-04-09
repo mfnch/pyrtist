@@ -24,8 +24,6 @@ import logger
 
 dox_magic_seq = "///"
 dox_comment_seq = "//"
-dox_proc_sep = "@"
-dox_asgn_sep = "="
 
 (DOXLINETYPE_SKIP,
  DOXLINETYPE_PRE,
@@ -87,8 +85,7 @@ def extract_word(s, start=0, wanted=None):
 _typedef_re = re.compile(r'\s*([A-Z][A-Za-z0-9_]*)\s*[=]')
 _procdef_re = re.compile(r'\s*([^@]+)\s*[@]\s*([A-Z][A-Za-z0-9_]*)')
 
-def dox_code_type(line):
-
+def dox_classify_code(line):
   if line == None:
     return None
 
@@ -274,7 +271,7 @@ class Dox(object):
     if len(store) > 0:
       self.log("File %s:" % filename)
       for doxblocks in store:
-        ct = dox_code_type(doxblocks.target)
+        ct = dox_classify_code(doxblocks.target)
         if isinstance(ct, DoxType):
           ct.set_owned_blocks(doxblocks)
           self.tree.add_type(ct)

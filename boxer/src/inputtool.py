@@ -23,13 +23,19 @@ import gtk
 class InputTool(object):
   def __init__(self, parent=None, label="Input:"):
     self.window = w = gtk.Window(gtk.WINDOW_TOPLEVEL)
+    self.border_frame = border_frame = gtk.Frame()
+
     self._value = None
     if parent != None:
       w.set_transient_for(parent)
       w.set_modal(True)
 
+    border_frame.set_border_width(0)
+    border_frame.set_shadow_type(gtk.SHADOW_IN)
+
     w.set_decorated(False)
     w.set_position(gtk.WIN_POS_MOUSE)
+    w.add(border_frame)
 
     self.widget_vbox = vb = gtk.VBox()
     self.widget_label = l = gtk.Label(label)
@@ -38,12 +44,12 @@ class InputTool(object):
 
     vb.pack_start(l, expand=False)
     vb.pack_start(e, expand=False)
+    border_frame.add(vb)
 
     # Connect events
     self.window.connect("key-press-event", self.on_key_press)
 
-    vb.show_all()
-    w.add(vb)
+    w.show_all()
 
   def quit(self):
     self.window.hide()
