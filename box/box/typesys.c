@@ -105,17 +105,19 @@ static TSDesc *Type_Ptr(TS *ts, Type t) {
 
 /*static BoxType My_New_Type(BoxTS *ts, TSDesc *td)*/
 
-static TSDesc *Resolve(TS *ts, Type *rt, Type t, int ignore_names) {
+static TSDesc *Resolve(TS *ts, BoxType *rt, BoxType t, int ignore_names) {
   while(1) {
     TSDesc *td = Type_Ptr(ts, t);
     switch(td->kind) {
     case TS_KIND_ALIAS:
     case TS_KIND_MEMBER:
       t = td->target;
-      if (ignore_names) break;
-      if (td->name == NULL) break;
+      if (ignore_names || td->name == NULL)
+        break;
+
     default:
-      if (rt != NULL) *rt = t;
+      if (rt != NULL)
+        *rt = t;
       return td;
     }
   }
@@ -160,7 +162,8 @@ BoxType TS_Is_Special(BoxType t) {
   }
 }
 
-BoxType TS_Resolve_Once(BoxTS *ts, BoxType t, TSKindSelect select) {
+BoxType BoxTS_Obsolete_Resolve_Once(BoxTS *ts, BoxType t,
+                                    TSKindSelect select) {
   int resolve, resolve_only_anonimous, is_not_anonimous;
   TSDesc *td;
   Type rt;
@@ -199,11 +202,17 @@ BoxType TS_Resolve_Once(BoxTS *ts, BoxType t, TSKindSelect select) {
   return resolve ? rt : t;
 }
 
+int BoxTS_Resolve_Once(BoxTS *ts, BoxType *t, TSKindSelect ks) {
+  BoxType old_t = *t;
+  *t = BoxTS_Obsolete_Resolve_Once(ts, old_t, ks);
+  return (*t != old_t);
+}
+
 BoxType TS_Resolve(BoxTS *ts, BoxType t, TSKindSelect select) {
   BoxType rt = t;
   do {
     t = rt;
-    rt = TS_Resolve_Once(ts, t, select);
+    rt = BoxTS_Obsolete_Resolve_Once(ts, t, select);
   } while(rt != t);
   return t;
 }
@@ -810,8 +819,9 @@ BoxType BoxTS_Procedure_Search(TS *ts, BoxType *expansion_type,
 
     /* Resolve the parent type and retry */
     previous_parent = parent;
-    parent = TS_Resolve_Once(ts, parent,
-                             TS_KS_ALIAS | TS_KS_RAISED | TS_KS_SPECIES);
+    parent =
+      BoxTS_Obsolete_Resolve_Once(ts, parent,
+                                  TS_KS_ALIAS | TS_KS_RAISED | TS_KS_SPECIES);
   } while (parent != previous_parent && search_inherited);
 
   return proc;
@@ -908,19 +918,19 @@ Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type) {
   return Success;
 }
 
-BoxType TS_Subtype_Find(TS *ts, Type parent, const char *name) {
+BoxType TS_Subtype_Find(TS *ts, BoxType parent, const char *name) {
   Name full_name;
   BoxHTItem *hi;
-  /*s = TS_Resolve(ts, s, 1, 1);*/
-  Member_Full_Name(ts, & full_name, parent, name);
 
-  if (BoxHT_Find(& ts->subtypes, full_name.text, full_name.length, & hi))
-    return *((Type *) hi->object);
+  do {
+    Member_Full_Name(ts, & full_name, parent, name);
+    if (BoxHT_Find(& ts->subtypes, full_name.text, full_name.length, & hi))
+      return *((BoxType *) hi->object);
 
-  else
-    return BOXTYPE_NONE;
+  } while (BoxTS_Resolve_Once(ts, & parent, TS_KS_ALIAS | TS_KS_SPECIES));
+
+  return BOXTYPE_NONE;
 }
-
 
 /****************************************************************************/
 
@@ -1019,7 +1029,7 @@ void BoxTSStrucIt_Init(BoxTS *ts, BoxTSStrucIt *it, BoxType s) {
     it->ts = ts;
     it->position = 0;
     it->td = member_td;
-    it->member = TS_Resolve_Once(ts, member, TS_KS_NONE);
+    it->member = BoxTS_Obsolete_Resolve_Once(ts, member, TS_KS_NONE);
     it->has_more = 1;
 
   } else {
@@ -1032,7 +1042,7 @@ void BoxTSStrucIt_Advance(BoxTSStrucIt *it) {
     BoxType next_member = it->td->data.member_next;
     TSDesc *next_member_td = Type_Ptr(it->ts, next_member);
     it->position = next_member_td->size;
-    it->member = TS_Resolve_Once(it->ts, next_member, TS_KS_NONE);
+    it->member = BoxTS_Obsolete_Resolve_Once(it->ts, next_member, TS_KS_NONE);
     it->td = next_member_td;
     it->has_more = (next_member_td->kind == TS_KIND_MEMBER);
   }

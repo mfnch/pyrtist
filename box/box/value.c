@@ -988,7 +988,7 @@ Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxType *t_memb) {
   t_next = BoxTS_Get_Next_Struct_Member(ts, t_next);
   if (TS_Is_Member(ts, t_next)) {
     *t_memb = t_next;
-    t_next = TS_Resolve_Once(ts, t_next, TS_KS_NONE);
+    (void) BoxTS_Resolve_Once(ts, & t_next, TS_KS_NONE);
     return Value_Get_Subfield(v_memb, delta_offset, t_next);
 
   } else {

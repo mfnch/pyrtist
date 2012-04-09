@@ -133,11 +133,24 @@ int TS_Is_Anonymous(BoxTS *ts, BoxType t);
  */
 BoxType TS_Is_Special(BoxType t);
 
-/** Resolve types (useful for comparisons).
- * select is a combination (with operator |) of TSKindSelect
+/** Resolve types (obsolete version).
+ * ks is a combination (with operator |) of TSKindSelect
  * values which specify what exactly has to be resolved.
  */
-BoxType TS_Resolve_Once(BoxTS *ts, BoxType t, TSKindSelect select);
+BoxType BoxTS_Obsolete_Resolve_Once(BoxTS *ts, BoxType t, TSKindSelect ks);
+
+/** Resolve the type in '*t' following the instructions in 'ks'.
+ * 'ks' specifies what to resolve (see 'TSKindSelect'). The type to resolve
+ * is taken from '*t' and the resolved type is written in '*t'.
+ * 1 is returned if the type was resolved, 0 is returned otherwise.
+ * This allows using something like:
+ *
+ *   BoxType t = ...;
+ *   do {
+ *     ...
+ *   } while (BoxTS_Resolve_Once(ts, & t, ks));
+ */
+int BoxTS_Resolve_Once(BoxTS *ts, BoxType *t, TSKindSelect ks);
 
 /** TS_Resolve_Once is applied until the type is fully resolved. */
 BoxType TS_Resolve(BoxTS *ts, BoxType t, TSKindSelect select);
