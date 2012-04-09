@@ -412,29 +412,29 @@ text = \
                       paste_on_new],
        submodes=[color, gradient, style, font, text_content, text_from, exit])
 
-msg = ("This button bar gives you some guidance while writing your "
-       "scripts. Here are some hints:\n\n"
-       "When you press a button, you enter into a command mode and other "
-       "buttons appear, showing what options you have next.\n\n"
-       "To exit the current mode press the exit button at the top.\n\n"
-       "If you move the pointer over a button and wait for few seconds, "
-       "a message appears explaining what the button does.\n\n"
-       "The statusbar sometimes says what you are expected to do. "
-       "Help buttons similar to the one you just pressed may provide "
-       "further help.\n\n"
-       "If you have to enter a point you can use the keyboard "
-       "(typing \"(0, 0)\", for example) but it is often easier to "
-       "use the mouse, clicking on the output view.")
-       #"If you want to contribute to the project try: menu \"Help\" "
-       #"--> \"How to contribute...\"")
-main_help = \
-  Mode("Main help",
-       tooltip="Get general help about this button bar",
-       button=Button("Help", "help.png"),
-       enter_actions=HelpAct(msg))
+#msg = ("This button bar gives you some guidance while writing your "
+#       "scripts. Here are some hints:\n\n"
+#       "When you press a button, you enter into a command mode and other "
+#       "buttons appear, showing what options you have next.\n\n"
+#       "To exit the current mode press the exit button at the top.\n\n"
+#       "If you move the pointer over a button and wait for few seconds, "
+#       "a message appears explaining what the button does.\n\n"
+#       "The statusbar sometimes says what you are expected to do. "
+#       "Help buttons similar to the one you just pressed may provide "
+#       "further help.\n\n"
+#       "If you have to enter a point you can use the keyboard "
+#       "(typing \"(0, 0)\", for example) but it is often easier to "
+#       "use the mouse, clicking on the output view.")
+#       #"If you want to contribute to the project try: menu \"Help\" "
+#       #"--> \"How to contribute...\"")
+#main_help = \
+#  Mode("Main help",
+#       tooltip="Get general help about this button bar",
+#       button=Button("Help", "help.png"),
+#       enter_actions=HelpAct(msg))
 
 main_mode = \
-  Mode("Main", submodes=[exit, main_help, color, gradient, style, poly,
+  Mode("Main", submodes=[exit, color, gradient, style, poly,
                          circle, line, text])
 
 if __name__ == "__main__":
