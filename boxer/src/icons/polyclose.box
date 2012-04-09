@@ -1,16 +1,15 @@
-//!BOXER:VERSION:0:1:1
-
+(**expand:boxer-boot*)
+(**boxer-version:0,2,0*)
 include "g"
 GUI = Void
-Window@GUI[]
 
-
-
-
-
-
-
-//!BOXER:REFPOINTS:BEGIN
+(**boxer-refpoints:
+gui1 1 15.0127226463 40.0510204082 gui2 1 166.41221374 -94.6428571429 gui3 1
+24.1528052356 -89.8544763209 gui4 1 161.865685395 31.4343658824 gui5 1
+37.2016528752 5.01784971642 gui8 1 145.347794816 16.0431026345 gui9 1
+119.402330295 -77.7326344465 gui6 1 52.9700172479 -66.9766218441
+*)
+(**end:expand*)(**expand:define-all*)
 gui1 = Point[.x=15.0127226463, .y=40.0510204082]
 gui2 = Point[.x=166.41221374, .y=-94.6428571429]
 gui3 = Point[.x=24.1528052356, .y=-89.8544763209]
@@ -19,7 +18,8 @@ gui5 = Point[.x=37.2016528752, .y=5.01784971642]
 gui8 = Point[.x=145.347794816, .y=16.0431026345]
 gui9 = Point[.x=119.402330295, .y=-77.7326344465]
 gui6 = Point[.x=52.9700172479, .y=-66.9766218441]
-//!BOXER:REFPOINTS:END
+
+(**end:expand*)
 include "grid"
 include "icon_theme"
 
@@ -27,14 +27,17 @@ grid = Grid[gui3, gui4, icon_size.nx, icon_size.ny]
 cell = grid.GetCellSize[]
 
 icon = Window[][
-  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
 
   w = cell.x
-  \ .Poly[gui5, gui8, gui9, gui6, .Close[], Style[.Fill["void"], .Border[color.red, 2*w]], color.yellow]
-  \ .Poly[gui5, gui8, gui9, gui6, .Close[0], Style[.Fill["void"], .Border[color.black, 2*w]], color.yellow]
+  \ .Poly[gui5, gui8, gui9, gui6, .Close[]
+          Style[.Fill["void"], .Border[color.red, 2*w]], color.yellow]
+  \ .Poly[gui5, gui8, gui9, gui6, .Close[0]
+          Style[.Fill["void"], .Border[color.black, 2*w]], color.yellow]
+
+  BBox[grid] // the whole grid is shown, even if it is empty
 ]
 
-w = Window[][grid, icon]
+w = Figure[grid, icon]
 
 GUI[w]
 
