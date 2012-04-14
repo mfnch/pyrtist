@@ -1,12 +1,15 @@
-//!BOXER:VERSION:0:1:1
-
+(**expand:boxer-boot*)
+(**boxer-version:0,2,0*)
 include "g"
 GUI = Void
-Window@GUI[]
 
-
-
-//!BOXER:REFPOINTS:BEGIN
+(**boxer-refpoints:
+gui1 1 15.0127226463 40.0510204082 gui2 1 166.41221374 -94.6428571429 gui3 1
+24.1528052356 -89.8544763209 gui4 1 161.865685395 31.4343658824 gui5 1
+33.2583549549 -67.4256328589 gui6 1 62.7115074763 18.3319744939 gui7 1
+149.019297191 -5.75568804159 gui8 1 140.565069016 -59.0715722911
+*)
+(**end:expand*)(**expand:define-all*)
 gui1 = Point[.x=15.0127226463, .y=40.0510204082]
 gui2 = Point[.x=166.41221374, .y=-94.6428571429]
 gui3 = Point[.x=24.1528052356, .y=-89.8544763209]
@@ -15,23 +18,25 @@ gui5 = Point[.x=33.2583549549, .y=-67.4256328589]
 gui6 = Point[.x=62.7115074763, .y=18.3319744939]
 gui7 = Point[.x=149.019297191, .y=-5.75568804159]
 gui8 = Point[.x=140.565069016, .y=-59.0715722911]
-//!BOXER:REFPOINTS:END
+
+(**end:expand*)
+
 include "grid"
 include "icon_theme"
 
 grid = Grid[gui3, gui4, icon_size.nx, icon_size.ny]
 cell = grid.GetCellSize[]
 
-icon = Window[][
+icon = Figure[
   BBox[grid] // the whole grid is shown, even if it is empty
 
   w = cell.x
   Line[gui5, 2*w, gui8, gui7, gui6]
 ]
 
-w = Window[][grid, icon]
+w = Figure[grid, icon]
 
-GUI[w]
+(**expand:view:w*)(**end:expand*)
 
 res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
 icon.Save["line.png", Window["argb32", .Res[res]]]

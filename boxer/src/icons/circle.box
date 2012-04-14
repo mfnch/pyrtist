@@ -24,7 +24,7 @@ grid = Grid[(0, 0), (100, 100), icon_size.nx, icon_size.ny]
 cell = grid.GetCellSize[]
 lw = width*cell.x
 
-icon = Window[][
+icon = Figure[
   BBox[grid] // the whole grid is shown, even if it is empty
   s = Style[Border[color.black, lw]]
   Circle[color_inside, s, (50, 50), 40]

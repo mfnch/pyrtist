@@ -1,22 +1,15 @@
-//!BOXER:VERSION:0:1:1
-
+(**expand:boxer-boot*)
+(**boxer-version:0,2,0*)
 include "g"
 GUI = Void
-Window@GUI[]
 
-
-
-
-
-
-
-
-
-
-
-//!BOXER:REFPOINTS:BEGIN
+(**boxer-refpoints:
+gui3 1 7.32912621359 8.72275835189
+*)
+(**end:expand*)(**expand:define-all*)
 gui3 = Point[.x=7.32912621359, .y=8.72275835189]
-//!BOXER:REFPOINTS:END
+
+(**end:expand*)
 include "grid"
 include "icon_theme"
 include "arrows"
@@ -31,21 +24,20 @@ lw = width*cell.x
 (Str filename, fontname)@MyFontIcon[
   res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
   out = Window["argb32", (300, 50), .Res[res]][
-    \ .Text[color.black, .From[(0, 0)], Font[$.fontname, 40], gui3, $.fontname]
+    Text[color.black, From[(0, 0)], Font[$.fontname, 40], gui3, $.fontname]
     .Save[Str["fonts/", $.filename, ".png"]]
   ]
 ]
 
-icon = Window[][
-  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
-
-  \ .Text[color.black, .From[(0, 0)], Font["Helvetica-Bold", 40], gui3, "Helvetica-Bold"]
+icon = Figure[
+  Text[color.black, From[(0, 0)], Font["Helvetica-Bold", 40], gui3, "Helvetica-Bold"]
+  BBox[grid] // the whole grid is shown, even if it is empty
 ]
 
 
-w = Window[][grid, icon]
+w = Figure[grid, icon]
 
-GUI[w]
+(**expand:view:w*)(**end:expand*)
 
 MyFontIcon[
   ("avg_b", "AvantGarde-Book"), ("avg_bo", "AvantGarde-BookOblique"), ("avg_d", "AvantGarde-Demi"), ("avg_do", "AvantGarde-DemiOblique")

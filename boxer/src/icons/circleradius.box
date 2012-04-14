@@ -28,7 +28,7 @@ icon = Window[][
 
 w = Window[][grid, icon]
 
-GUI[w]
+(**expand:view:w*)(**end:expand*)
 
 res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
 icon.Save["circleradius.png", Window["argb32", .Res[res]]]
