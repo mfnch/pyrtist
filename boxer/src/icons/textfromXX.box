@@ -1,21 +1,18 @@
-//!BOXER:VERSION:0:1:1
-
+(**expand:boxer-boot*)
+(**boxer-version:0,2,0*)
 include "g"
 GUI = Void
-Window@GUI[]
 
-
-
-
-
-
-
-
-//!BOXER:REFPOINTS:BEGIN
+(**boxer-refpoints:
+gui3 1 47.6584067358 49.6559570753 gui5 1 13.2917948544 90.96621626655953 gui6
+1 83.35221831584609 9.03378373345047
+*)
+(**end:expand*)(**expand:define-all*)
 gui3 = Point[.x=47.6584067358, .y=49.6559570753]
-gui5 = Point[.x=13.2917948544, .y=92.3040089087]
-gui6 = Point[.x=83.6866657282, .y=7.69599109131]
-//!BOXER:REFPOINTS:END
+gui5 = Point[.x=13.2917948544, .y=90.9662162666]
+gui6 = Point[.x=83.3522183158, .y=9.03378373345]
+
+(**end:expand*)
 include "grid"
 include "icon_theme"
 include "arrows"
@@ -27,18 +24,19 @@ lw = width*cell.x
 gui2 = Point[gui5, .y=gui6.y]
 gui1 = Point[gui5, .x=gui6.x]
 
-icon = Window[][
-  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
-
-  \ .Text[color.grey, Font["Helvetica-Bold", 50], gui3, "FR\nOM"]
-  \ .Poly[gui5, gui2, gui6, gui1
-          Style[.Fill["void"], .Border[lw, color.black, .Dash[lw*3]]], .Close[]]
+icon = Figure[
+  Text[color.grey, Font["Helvetica-Bold", 50], gui3, "FR\nOM"]
+  Stroke[
+    Path[Poly[gui5, gui2, gui6, gui1, Close[]]]
+    Border[lw, color.black, Dash[lw*3]]
+  ]
+  BBox[grid] // the whole grid is shown, even if it is empty
 ]
 
 
-w = Window[][grid, icon]
+w = Figure[grid, icon]
 
-GUI[w]
+(**expand:view:w*)(**end:expand*)
 
 CreateIcon = Void
 (Int idx1, idx2)@CreateIcon[
@@ -47,7 +45,7 @@ CreateIcon = Void
   out = Window["argb32", (100, 100), .Res[res]][
     icon
     sz = gui1 - gui2
-    \ .Circle[lw*3, color.red, gui2 + 0.5*($.idx1*sz.x, $.idx2*sz.y)]
+    Circle[lw*2, color.red, gui2 + 0.5*($.idx1*sz.x, $.idx2*sz.y)]
     filename = Str["textfrom", $.idx1, $.idx2, ".png"]
     .Save[filename]
   ]

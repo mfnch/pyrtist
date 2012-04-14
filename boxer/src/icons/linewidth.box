@@ -1,31 +1,26 @@
-//!BOXER:VERSION:0:1:1
-
+(**expand:boxer-boot*)
+(**boxer-version:0,2,0*)
 include "g"
 GUI = Void
-Window@GUI[]
 
-
-
-
-
-
-
-
-
-
-
-
-
-//!BOXER:REFPOINTS:BEGIN
+(**boxer-refpoints:
+gui5 1 3.32363645653 49.9846981227 gui8 1 47.1157062063 72.6134776233 gui9 1
+41.4217432284 2.6784882417 gui6 1 14.852831674022543 3.18097718496 gui7 1
+38.2454376223 29.11150652933278 gui10 1 31.9870503166 97.0278441721 gui11 1
+33.907622602507836 71.10892551856722 gui12 1 72.1586041996 53.0993615364
+*)
+(**end:expand*)(**expand:define-all*)
 gui5 = Point[.x=3.32363645653, .y=49.9846981227]
 gui8 = Point[.x=47.1157062063, .y=72.6134776233]
 gui9 = Point[.x=41.4217432284, .y=2.6784882417]
-gui6 = Point[.x=17.1939635605, .y=3.18097718496]
-gui7 = Point[.x=38.2454376223, .y=35.4660215795]
+gui6 = Point[.x=14.852831674, .y=3.18097718496]
+gui7 = Point[.x=38.2454376223, .y=29.1115065293]
 gui10 = Point[.x=31.9870503166, .y=97.0278441721]
-gui11 = Point[.x=33.2387277778, .y=64.7544104684]
+gui11 = Point[.x=33.9076226025, .y=71.1089255186]
 gui12 = Point[.x=72.1586041996, .y=53.0993615364]
-//!BOXER:REFPOINTS:END
+
+(**end:expand*)
+
 include "grid"
 include "icon_theme"
 include "arrows"
@@ -33,20 +28,23 @@ include "arrows"
 grid = Grid[(0, 0), (100, 100), icon_size.nx, icon_size.ny]
 cell = grid.GetCellSize[]
 
-icon = Window[][
-  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
-
+icon = Figure[
   w = cell.x
-  \ .Line[line.medium, gui5, 10*w, Point[gui8, .y=gui5.y], Point[gui9, .x=gui8.x]]
+  ThickLine[line.medium, gui5, 10*w
+            Point[gui8, .y=gui5.y], Point[gui9, .x=gui8.x]]
   p1 = Point[gui7, .x=gui6.x], p2 = Point[gui11, .x=gui6.x]
-  \ .Line[3*w, color.red, gui6, arrow_ruler, .ArrowScale[0.5], p1]
-  \ .Line[3*w, color.red, Point[gui10, .x=gui6.x], arrow_ruler, .ArrowScale[0.5], p2]
-  \ .Line[2*w, p1, p2]
-  \ .Text[Font["Times-Bold", 120], "?", gui12, Style[.Border[color.red, w]], color.yellow]
+  Line[2*w, color.red, gui6, Scale[w*1.5], arrow_ruler, p1]
+  Line[2*w, color.red, Point[gui10, .x=gui6.x], Scale[w*1.5], arrow_ruler, p2]
+  Line[2*w, color.red, p1, p2]
+  
+  Text[Font["Times-Bold", 120], "?", gui12
+       Style[Border[color.red, w]], color.yellow]
+  BBox[grid] // the whole grid is shown, even if it is empty
 ]
 
-w = Window[][grid, icon]
-GUI[w]
+w = Figure[grid, icon]
+
+(**expand:view:w*)(**end:expand*)
 
 res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
 out = Window["argb32", (100, 100), .Res[res]][

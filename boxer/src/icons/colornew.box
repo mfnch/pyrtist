@@ -1,21 +1,19 @@
-//!BOXER:VERSION:0:1:1
-
+(**expand:boxer-boot*)
+(**boxer-version:0,2,0*)
 include "g"
 GUI = Void
-Window@GUI[]
 
-
-
-
-
-
-
-
-//!BOXER:REFPOINTS:BEGIN
-gui1 = Point[.x=6.25881803016, .y=93.7412184413]
-gui2 = Point[.x=93.6311234025, .y=6.25878155873]
+(**boxer-refpoints:
+gui1 1 8.416898520683972 91.63819092452148 gui2 1 91.64921203126254
+8.372821827186376 gui3 1 51.1606092593 50.6963511889
+*)
+(**end:expand*)(**expand:define-all*)
+gui1 = Point[.x=8.41689852068, .y=91.6381909245]
+gui2 = Point[.x=91.6492120313, .y=8.37282182719]
 gui3 = Point[.x=51.1606092593, .y=50.6963511889]
-//!BOXER:REFPOINTS:END
+
+(**end:expand*)
+
 include "grid"
 include "icon_theme"
 
@@ -23,32 +21,34 @@ grid = Grid[(0, 0), (100, 100), icon_size.nx, icon_size.ny]
 cell = grid.GetCellSize[]
 lw = width*cell.x
 
-icon = Window[][
-  .Show[BBox[grid]] // the whole grid is shown, even if it is empty
+icon = Figure[
   s1 = Style[.Border[color.black, lw]]
   s2 = Style[.Border[0]]
-]
 
-v = 0.0, dv = 0.2501
-d = gui2 - gui1
-[
-  u = 0.0, du = 0.2501
+  v = 0.0, dv = 0.2501
+  d = gui2 - gui1
   [
-    p1 = Point[.x = gui1.x + d.x*u, .y = gui1.y + d.y*v]
-    p2 = Point[.x = p1.x + d.x*du, .y = p1.y + d.y*dv]
-    c = Color[HSV[((u )*280, v+0.5, 1.3-v)]]
-    \ icon.Poly[p1, (p1.x, p2.y), p2, (p2.x, p1.y)
-                c, Style[.Border[c, 0.5]]]
-    For[(u += du) < 1.0]
+    u = 0.0, du = 0.2501
+    [
+      p1 = Point[.x = gui1.x + d.x*u, .y = gui1.y + d.y*v]
+      p2 = Point[.x = p1.x + d.x*du, .y = p1.y + d.y*dv]
+      c = Color[HSV[((u )*280, v+0.5, 1.3-v)]]
+      Poly[p1, (p1.x, p2.y), p2, (p2.x, p1.y)
+           c, Style[Border[c, 0.5]]]
+      For[(u += du) < 1.0]
+    ]
+    For[(v += dv) < 1.0]
   ]
-  For[(v += dv) < 1.0]
+
+  Text[Font["Times-Bold", 120], "?", gui3
+       Style[Border[color.red, lw]], color.yellow]
+
+  BBox[grid] // the whole grid is shown, even if it is empty
 ]
 
-\ icon.Text[Font["Times-Bold", 120], "?", gui3, Style[.Border[color.red, lw]], color.yellow]
+w = Figure[grid, icon]
 
-w = Window[][grid, icon]
-
-GUI[w]
+(**expand:view:w*)(**end:expand*)
 
 res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
 //icon.Save["text.png", Window["argb32", (100, 10), .Res[res]]]

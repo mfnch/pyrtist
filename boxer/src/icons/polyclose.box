@@ -20,20 +20,18 @@ gui9 = Point[.x=119.402330295, .y=-77.7326344465]
 gui6 = Point[.x=52.9700172479, .y=-66.9766218441]
 
 (**end:expand*)
+
 include "grid"
 include "icon_theme"
 
 grid = Grid[gui3, gui4, icon_size.nx, icon_size.ny]
 cell = grid.GetCellSize[]
 
-icon = Window[][
-
+icon = Figure[
   w = cell.x
-  \ .Poly[gui5, gui8, gui9, gui6, .Close[]
-          Style[.Fill["void"], .Border[color.red, 2*w]], color.yellow]
-  \ .Poly[gui5, gui8, gui9, gui6, .Close[0]
-          Style[.Fill["void"], .Border[color.black, 2*w]], color.yellow]
-
+  Line[gui5, gui6, StrokeStyle[color.red, 2*w, Cap["round"]]]
+  Poly[gui5, gui8, gui9, gui6
+       Style[color.yellow, Border[color.black, 2*w]]]
   BBox[grid] // the whole grid is shown, even if it is empty
 ]
 
@@ -41,8 +39,5 @@ w = Figure[grid, icon]
 
 (**expand:view:w*)(**end:expand*)
 
-
 res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
 icon.Save["polyclose.png", Window["argb32", .Res[res]]]
-
-

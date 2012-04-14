@@ -41,7 +41,7 @@ icon = Window[][
 
 w = Figure[grid, icon]
 
-GUI[w]
+(**view:w*)
 
 res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
 //icon.Save["text.png", Window["argb32", (100, 10), .Res[res]]]

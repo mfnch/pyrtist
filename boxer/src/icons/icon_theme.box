@@ -1,5 +1,7 @@
+include "g"
+
 IconSize = (Int nx, ny)
-icon_size = IconSize[.nx=32, .ny=32]
+icon_size = IconSize[.nx=24, .ny=24]
 color_inside = Color[(1, 1, 0.6)]
 color_inside2 = Color[(0.6, 1, 1)]
 color_inside3 = Color[(1.000, 0.647, 0.000)]

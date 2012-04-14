@@ -1,23 +1,18 @@
-//!BOXER:VERSION:0:1:1
-
+(**expand:boxer-boot*)
+(**boxer-version:0,2,0*)
 include "g"
 GUI = Void
-Window@GUI[]
 
-
-
-
-
-
-
-
-
-
-//!BOXER:REFPOINTS:BEGIN
-gui1 = Point[.x=6.25881803016, .y=93.7412184413]
-gui2 = Point[.x=93.6311234025, .y=6.25878155873]
+(**boxer-refpoints:
+gui1 1 8.377896554568018 91.62044861540757 gui2 1 91.59841892290467
+8.407113903682994 gui3 1 51.1606092593 50.6963511889
+*)
+(**end:expand*)(**expand:define-all*)
+gui1 = Point[.x=8.37789655457, .y=91.6204486154]
+gui2 = Point[.x=91.5984189229, .y=8.40711390368]
 gui3 = Point[.x=51.1606092593, .y=50.6963511889]
-//!BOXER:REFPOINTS:END
+
+(**end:expand*)
 include "grid"
 include "icon_theme"
 
