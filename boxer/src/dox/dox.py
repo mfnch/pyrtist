@@ -81,22 +81,31 @@ def extract_word(s, start=0, wanted=None):
       break
   return s[start:idx]
 
+def _normalize_subtype(st):
+  '''Normalize a subtype. Example,
+  _normalize_subtype("  X  . Y . Zeta") returns "X.Y.Zeta".
+  '''
+  components = map(str.strip, st.split("."))
+  return ".".join(components)
 
-_typedef_re = re.compile(r'\s*([A-Z][A-Za-z0-9_]*)\s*[=]')
-_procdef_re = re.compile(r'\s*([^@]+)\s*[@]\s*([A-Z][A-Za-z0-9_]*)')
-
+_typedef_re = re.compile(r'\s*([A-Za-z0-9_.\s]*)[=]')
+_procdef_re = re.compile(r'\s*([^@]+)\s*[@]\s*([A-Z][A-Za-z0-9_\s.]*)')
+  
 def dox_classify_code(line):
+  '''Parse the line and return a DoxType, a DoxProc or None depending on
+  whether the line represents a type definition, a procedure definition
+  or something that was not understood by the parser.'''
   if line == None:
     return None
 
   matches_typedef = _typedef_re.match(line)
   if matches_typedef:
-    return DoxType(matches_typedef.group(1))
+    return DoxType(_normalize_subtype(matches_typedef.group(1)))
 
   matches_procdef = _procdef_re.match(line)
   if matches_procdef:
     left, right = matches_procdef.group(1, 2)
-    return DoxProc(left, right)
+    return DoxProc(left, _normalize_subtype(right))
 
   return None
 
