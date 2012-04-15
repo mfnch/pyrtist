@@ -39,7 +39,10 @@ examples_fullpaths = list(os.path.join('examples', bn)
                           for bn in examples)
 
 package_data = {'boxer': (examples_fullpaths + 
-                          ['icons/*.png', 'icons/fonts/*.png', 'hl/*.lang'])}
+                          ['icons/24x24/*.png',
+                           'icons/32x32/*.png',
+                           'icons/fonts/*.png',
+                           'hl/*.lang'])}
 script = 'scripts/boxer'
 scripts = [script]
 

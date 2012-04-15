@@ -216,6 +216,11 @@ class Boxer(object):
     menubar = merge.get_widget("/MenuBar")
     vbox.pack_start(menubar, expand=False)    
     toolbar = merge.get_widget("/ToolBar")
+
+    toolbar.set_style(gtk.TOOLBAR_ICONS)
+    big_buttons = self.config.getboolean("GUI", "big_buttons")
+    toolbar.set_icon_size(gtk.ICON_SIZE_SMALL_TOOLBAR if big_buttons
+                          else gtk.ICON_SIZE_MENU)
     toolbar.set_tooltips(True)
     toolbar.set_show_arrow(False)
 
@@ -228,6 +233,10 @@ class Boxer(object):
     self.examplesmenu = mn = gtk.Menu()
     emn = merge.get_widget("/MenuBar/FileMenu/ExamplesMenu")
     emn.set_submenu(mn)
+
+    # For now let's hide the Library menu
+    mainmenu = merge.get_widget("/MenuBar")
+    mainmenu.remove(merge.get_widget("/MenuBar/LibraryMenu"))
 
     # HBox containing the toolbar, the refpoint combobox, etc
     hbox = gtk.HBox(homogeneous=False, spacing=0)
@@ -943,7 +952,8 @@ class Boxer(object):
 
     # Create the assistant and the ToolBox
     self.assistant = astn = Assistant(boxmode.main_mode)
-    self.widget_toolbox = tbox = ToolBox(astn, icon_path=config.icon_path)
+
+    self.widget_toolbox = tbox = ToolBox(astn, config=self.config)
     astn.set_statusbar(sbar)
     astn.set_textview(srcview)
     astn.set_textbuffer(srcbuf)

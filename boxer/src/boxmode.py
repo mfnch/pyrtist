@@ -190,11 +190,11 @@ poly_smoothing = \
                                label=("Smoothing of corners\n"
                                       "(between 0.0 and 1.0):"))])
 
-poly_close = \
-  Mode("Poly.Close",
-       tooltip="Close the border (only useful for non filled polygons)",
-       button=Button("Close", "polyclose.png"),
-       enter_actions=[Paste("$LCOMMA$Close[]$RCOMMA$"), update_now])
+#poly_close = \
+#  Mode("Poly.Close",
+#       tooltip="Close the border (only useful for non filled polygons)",
+#       button=Button("Close", "polyclose.png"),
+#       enter_actions=[Paste("$LCOMMA$Close[]$RCOMMA$"), update_now])
 
 poly = \
   Mode("Poly",
@@ -205,7 +205,7 @@ poly = \
        enter_actions=[Paste("$LNEWLINE$Poly[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
-       submodes=[color, gradient, style, poly_smoothing, poly_close, exit])
+       submodes=[color, gradient, style, poly_smoothing, exit])
 
 circle_radius = \
   Mode("Circle radius",

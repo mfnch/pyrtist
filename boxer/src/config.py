@@ -74,6 +74,8 @@ fg = Figure[
   BBox[bbox1, bbox2]
 
   //!BOXER:CURSOR:HERE
+  // Uncomment the line below to save the picture
+  //Save["output.png", Window["rgb24", Ppi[200]]]
 ]
 
 (**view:fg*)
@@ -97,8 +99,11 @@ def glade_path(filename=None):
   base = os.path.join(installation_path(), 'glade')
   return base if filename == None else os.path.join(base, filename)
 
-def icon_path(filename=None):
+def icon_path(filename=None, big_buttons=None):
   base = os.path.join(installation_path(), 'icons')
+  if big_buttons != None:
+    size_subpath = ('32x32' if big_buttons == True else '24x24')
+    base = os.path.join(base, size_subpath)
   return base if filename == None else os.path.join(base, filename)
 
 def get_hl_path(filename=None):
@@ -229,6 +234,21 @@ class FloatOption(ScalarOption):
   def __init__(self, default_val, minimum=None, maximum=None, desc=None):
     ScalarOption.__init__(self, "Real", default_val, minimum, maximum,
                           float, desc=desc)
+
+
+class BoolOption(ScalarOption):
+  def __init__(self, default_val, desc=None):
+    ConfigOption.__init__(self, "Bool", default_val, desc=desc)
+
+  def set(self, value):
+    v = str(value).lower()
+    return (v in ["true", "yes", "1", "ok"])
+
+  def get(self, value):
+    return self.set(value)
+
+  def get_range(self):
+    return "boolean (either True or False)"
 
 
 class EnumOption(ConfigOption):
@@ -366,6 +386,9 @@ def get_configuration():
                      'drawing-area')),
     ('GUI', 'window_size',
      StringOption('600x600', desc='The initial size of the window')),
+    ('GUI', 'big_buttons',
+     BoolOption(False, desc=('Whether the button size should be increased'))),
+
     ('GUIView', 'refpoint_size',
      IntOption(4, 1, 50, desc='The size of the squares used to mark '
                               'the reference points')),

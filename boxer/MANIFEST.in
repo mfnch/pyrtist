@@ -1,4 +1,3 @@
 include README INSTALL COPYING ChangeLog
-recursive-include src/icons *.png
 recursive-include src/examples fractal.box fractree.box wheatstone.box planes.box
 recursive-exclude src imgview.py win_setup.py

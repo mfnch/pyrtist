@@ -189,3 +189,11 @@ if __name__ == '__main__':
                              output_path=oddir,
                              box_exec=box_exec)
   rtr.run()
+
+  # Boxer compiler tests
+  rtr = RegressionTestRunner(test_root_path='../boxer/src/icons',
+                             source_pattern="*.box",
+                             regression_path="RegressionData/boxer",
+                             output_path=oddir,
+                             box_exec=box_exec)
+  rtr.run()

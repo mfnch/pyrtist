@@ -164,7 +164,7 @@ class ColorHistoryButton(Button):
     self.history = history
     self.index = index
 
-  def create_widget(self, tooltip=None, width=32, height=32, **other_args):
+  def create_widget(self, tooltip=None, width=24, height=24, **other_args):
     # Find the button image, if there is one
     img = None
 

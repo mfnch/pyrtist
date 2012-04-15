@@ -20,6 +20,7 @@ import types
 
 import gtk
 
+import config
 import assistant
 
 def build_icon_path(filename, icon_path=None):
@@ -75,15 +76,26 @@ class HelpAct(assistant.Action):
 
 class ToolBox(gtk.Table):
   def __init__(self, assistant, columns=1, homogeneous=False,
-               icon_path=None, size_request=(-1, -1)):
+               size_request=(-1, -1), config=None):
+    self.config = config
     self.columns = columns
     self.assistant = assistant
-    self.icon_path = icon_path
     rows = self._compute_rows_from_cols()
     gtk.Table.__init__(self, rows=rows, columns=columns,
                        homogeneous=homogeneous)
     self._update_buttons()
     self.set_size_request(*size_request)
+
+  def _get_button_size(self):
+    '''Whether to use big buttons or small buttons.'''
+    big_buttons = (self.config.getboolean("GUI", "big_buttons")
+                   if self.config else False)
+    return ((32, 32) if big_buttons else (24, 24))
+
+  def _get_icon_path(self):
+    '''Get the icon path for the particular icon size we use.'''
+    big_buttons = self.config.getboolean("GUI", "big_buttons")
+    return config.icon_path(big_buttons=big_buttons)
 
   def _compute_rows_from_cols(self):
     num_buttons = len(self.assistant.get_button_modes())
@@ -93,6 +105,8 @@ class ToolBox(gtk.Table):
     columns = self.columns
     rows = self._compute_rows_from_cols()
     button_modes = self.assistant.get_button_modes()
+    width, height = self._get_button_size()
+    icon_path = self._get_icon_path()
 
     for child in self.get_children():
       self.remove(child)
@@ -102,11 +116,15 @@ class ToolBox(gtk.Table):
       c = i % columns
       r = int(i / columns)
 
-      but = button_mode.button.create_widget(tooltip=button_mode.tooltip_text,
-                                             icon_path=self.icon_path)
-      but.connect("clicked", self.button_clicked, button_mode)
-      but.show()
-      self.attach(but, c, c+1, r, r+1, xoptions=0, yoptions=0)
+      button = button_mode.button
+      button_widget = \
+        button.create_widget(tooltip=button_mode.tooltip_text,
+                             icon_path=icon_path,
+                             width=width, height=height)
+
+      button_widget.connect("clicked", self.button_clicked, button_mode)
+      button_widget.show()
+      self.attach(button_widget, c, c+1, r, r+1, xoptions=0, yoptions=0)
 
   def button_clicked(self, _, button_mode):
     """Called when a button in the toolbox is clicked."""

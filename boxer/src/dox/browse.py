@@ -29,6 +29,7 @@ class DoxBrowser(object):
       DoxTextView(on_click_link=self._on_click_link)
     scrolledwin1 = gtk.ScrolledWindow()
     scrolledwin1.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    scrolledwin1.set_shadow_type(gtk.SHADOW_IN)
     scrolledwin1.add(dox_textview)
 
     # Create the table were the procedure of the current type are shown
@@ -36,7 +37,11 @@ class DoxBrowser(object):
       DoxTable(on_click_link=self._on_click_link)
     scrolledwin2 = gtk.ScrolledWindow()
     scrolledwin2.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-    scrolledwin2.add_with_viewport(dox_table)
+    scrolledwin2.set_shadow_type(gtk.SHADOW_IN)
+    viewport = gtk.Viewport()
+    viewport.add(dox_table)
+    viewport.set_shadow_type(gtk.SHADOW_NONE)
+    scrolledwin2.add(viewport)
 
     # Put one at the top, the other at the bottom
     vsplit3 = gtk.VBox(False, 4)
