@@ -1,0 +1,34 @@
+#provide "g.save"
+
+///Section: g
+
+///Intro: specifies how to save a {type(Window)} to file.
+// A {type(.)} object contains information on how to save a {type(Window)}
+// object to file or to another {type(Window)} object. The actual saving occurs
+// when {type(Save)} is passed to a parent window. For example, in
+// ``Figure[..., Save["filename.png"]]``, the figure
+// (which is drawn in what is replaced by ``...``) is saved to the file
+// ``"filename.png"``. This is the simplest way to save a figure and uses the
+// default resolution and pixel depth (argb, 32 bits). To provide explicitly
+// the resolution or the pixel depth, you should pass a target window.
+// For example, ``Save["filename.png", Window["rgb24", Dpi[200]]]`` specifies
+// that the parent window should be saved using 24 bits of depth (no alpha
+// channel) and resolution of 200 DPI (dips per inch).
+Save = ++(Window window, Str filename
+          Int have_filename, have_window)
+
+(.[)@Save[.have_filename = 0, .have_window = 0]
+
+///Intro: provide the name of the file.
+Str@Save[.filename = $, .have_filename = 1]
+
+///Intro: provide a window where to save the image.
+Window@Save[.window = $, .have_window = 1]
+
+///Intro: save the parent {type(Window)} object as specified in the
+// {type(Save)} object.
+// For example, ``Figure[..., Save["filename.png"]]`` saves 
+Save@Window[
+  $$.Save[[If[$.have_filename], $.filename]
+          [If[$.have_window], $.window]]
+]

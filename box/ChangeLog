@@ -1,5 +1,13 @@
 Change log (recent comes first)
 
+XX Apr 2012: Released v 0.3.3: bugfixes and improvements.
+  * Improvement: alias types do now inherit subtypes. For example, if ``X = Y``
+    than ``X`` inherits the subtypes of ``Y``.
+  * Regression tests: added new tool to perform automatically a large number
+    of regression tests.
+  * Added objects Save, Resolution and Ppi to ease the way figure are saved
+    to file.
+
 18 Mar 2012: Released v 0.3.2: bugfixes and improvements.
   * Introduced ``Image'' object to include external PNG files and
     use them as patterns for filling areas (instead of colors or
