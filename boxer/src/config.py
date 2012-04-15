@@ -387,7 +387,7 @@ def get_configuration():
     ('GUI', 'window_size',
      StringOption('600x600', desc='The initial size of the window')),
     ('GUI', 'big_buttons',
-     BoolOption(False, desc=('Whether the button size should be increased'))),
+     BoolOption("False", desc='Whether the button size should be increased')),
 
     ('GUIView', 'refpoint_size',
      IntOption(4, 1, 50, desc='The size of the squares used to mark '
