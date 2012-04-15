@@ -10,27 +10,27 @@ gui3 1 7.32912621359 8.72275835189
 gui3 = Point[.x=7.32912621359, .y=8.72275835189]
 
 (**end:expand*)
+
 include "grid"
 include "icon_theme"
 include "arrows"
-
-MyFontIcon = Void
 
 grid = Grid[(0, 0), (300, 50), 6*icon_size.nx, icon_size.ny]
 cell = grid.GetCellSize[]
 lw = width*cell.x
 
-
+MyFontIcon = Void
 (Str filename, fontname)@MyFontIcon[
   res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
-  out = Window["argb32", (300, 50), .Res[res]][
+  out = Window["argb32", (300, 50), Ppi[res]][
     Text[color.black, From[(0, 0)], Font[$.fontname, 40], gui3, $.fontname]
-    .Save[Str["fonts/", $.filename, ".png"]]
+    Save[Str["fonts/", $.filename, ".png"]]
   ]
 ]
 
 icon = Figure[
-  Text[color.black, From[(0, 0)], Font["Helvetica-Bold", 40], gui3, "Helvetica-Bold"]
+  Text[color.black, From[(0, 0)]
+       Font["Helvetica-Bold", 40], gui3, "Helvetica-Bold"]
   BBox[grid] // the whole grid is shown, even if it is empty
 ]
 
