@@ -1,3 +1,10 @@
+In version 0.3.7:
+  BRIEFLY: improvements to the look & feel of the GUI and bugfixes.
+  DETAILS:
+  - Bugfix in Dox (documentation of subtypes was not shown);
+  - Adjusting size and look of buttons in the GUI plus various other aestetics
+    improvements.
+
 In version 0.3.6:
   BRIEFLY: can include Boxer sources inside other Boxer sources.
   DETAILS:
