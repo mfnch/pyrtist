@@ -383,6 +383,9 @@ class DocumentBase(Configurable):
             "-se", presrc_basename,
             src_filename] + box_args
 
+    # Directory from which the script should be executed
+    cwd = os.path.split(src_filename)[0] or None
+
     fn = self._fns["box_document_executed"]
     def do_at_exit():
       config.tmp_remove_files(tmp_fns)
@@ -395,7 +398,7 @@ class DocumentBase(Configurable):
       out_fn = self._fns["box_exec_output"]
 
     return exec_command(box_executable, args,
-                        out_fn=out_fn, do_at_exit=do_at_exit)
+                        out_fn=out_fn, do_at_exit=do_at_exit, cwd=cwd)
 
 if __name__ == "__main__":
   import sys

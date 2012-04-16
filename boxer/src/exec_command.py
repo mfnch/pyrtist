@@ -66,7 +66,7 @@ try:
   from subprocess import Popen, PIPE, STDOUT
 
   def exec_command(cmd, args=[], out_fn=None, do_at_exit=None,
-                   buffer_size=1024):
+                   buffer_size=1024, cwd=None):
     """This function launches the command 'cmd' (an executable file) with the
     given command line arguments 'args'. The function creates a new thread
     to read the output of the program and returns while this may still be
@@ -90,7 +90,7 @@ try:
       creationflags = 0
 
     po = Popen([cmd] + args, stdin=PIPE, stdout=PIPE, stderr=STDOUT,
-               shell=shell, creationflags=creationflags)
+               shell=shell, creationflags=creationflags, cwd=cwd)
 
     # The following function will run on a separate thread
     def read_box_output(out_fn, do_at_exit):

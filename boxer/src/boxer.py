@@ -60,7 +60,6 @@ import config
 from config import threads_init, threads_enter, threads_leave
 import docbase
 import document
-from exec_command import exec_command
 
 from srcview import BoxSrcView
 import boxmode
