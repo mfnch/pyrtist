@@ -293,9 +293,13 @@ class DocumentBase(Configurable):
     """Get the user part of the Box source."""
     return self.usercode
 
+  def new(self):
+    '''Start working on a new document (un-named).'''
+    self.filename = None
+
   def save_to_str(self, version=version):
-    """Build the file corresponding to the document and return it as a string.
-    """
+    '''Build the file corresponding to the document and return it as a string.
+    '''
     part1 = self.get_part_preamble(mode=MODE_STORE)
     part2 = self.get_part_user_code(mode=MODE_STORE)
     return part1 + part2
@@ -374,17 +378,25 @@ class DocumentBase(Configurable):
     box_executable = self.get_config("box_executable", "box")
     box_args = self.get_config("box_extra_args", [])
     presrc_path, presrc_basename = os.path.split(presrc_filename)
-    extra_opts = ["-I", "."]
-    if self.filename != None:
-      p = os.path.split(self.filename)[0]
-      if len(p) > 0: extra_opts = ["-I",  p]
-    args = ["-l", "g",
-            "-I", presrc_path] + extra_opts + [
-            "-se", presrc_basename,
-            src_filename] + box_args
+
+    # Command line arguments to be passed to box
+    args = ["-l", "g"] + box_args
+
+
+    # If the Box source is saved (rather than being a temporary unsaved
+    # script) then execute it from its parent directory. Also, make sure to
+    # add the same directory among the include directories. This allows
+    # including scripts in the same directory.
+    args += ("-I", ".")
+    src_path = os.path.split(self.filename or src_filename)[0]
 
     # Directory from which the script should be executed
-    cwd = os.path.split(src_filename)[0] or None
+    cwd = None
+    if src_path:
+      cwd = src_path
+
+    # Include the helper code (which allows communication box-boxer)
+    args += ("-I", presrc_path, "-se", presrc_basename, src_filename)
 
     fn = self._fns["box_document_executed"]
     def do_at_exit():

@@ -74,7 +74,8 @@ fg = Figure[
   BBox[bbox1, bbox2]
 
   //!BOXER:CURSOR:HERE
-  // Uncomment the line below to save the picture
+
+  // Uncomment to save the picture in the script's parent directory
   //Save["output.png", Window["rgb24", Ppi[200]]]
 ]
 

@@ -431,6 +431,7 @@ class Boxer(object):
     """Start a new box program and set the content of the main textview."""
     from config import box_source_of_new
     d = self.editable_area.document
+    d.new()
     d.load_from_str(box_source_of_new)
 
     self.editable_area.reset()

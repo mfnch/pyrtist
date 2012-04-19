@@ -7,7 +7,8 @@ import config
 
 CREATE_NO_WINDOW = 0x08000000
 
-def old_exec_command(cmd, args=[], out_fn=None, do_at_exit=None):
+def old_exec_command(cmd, args=[], out_fn=None, do_at_exit=None,
+                     buffer_size=None, cwd=None):
   # This is not really how we should deal properly with this.
   # (We should avoid .read()). It is just a temporary solution.
 
