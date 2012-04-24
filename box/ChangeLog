@@ -1,6 +1,6 @@
 Change log (recent comes first)
 
-XX Apr 2012: Released v 0.3.3: bugfixes and improvements.
+24 Apr 2012: Released v 0.3.3: bugfixes and improvements.
   * Improvement: alias types do now inherit subtypes. For example, if ``X = Y``
     than ``X`` inherits the subtypes of ``Y``.
   * Regression tests: added new tool to perform automatically a large number

@@ -3,7 +3,12 @@ In version 0.3.7:
   DETAILS:
   - Bugfix in Dox (documentation of subtypes was not shown);
   - Adjusting size and look of buttons in the GUI plus various other aestetics
-    improvements.
+    improvements (with great benefit to the Windows port).
+  - Making sure the script is always executed from its parent directory.
+    This means that saved files will - where not differenlty specified -
+    be saved inside the same directory where the script lives. Similarly,
+    image files residing in the same directory can be easily included in the
+    current document by using the Image object.
 
 In version 0.3.6:
   BRIEFLY: can include Boxer sources inside other Boxer sources.
