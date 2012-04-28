@@ -126,7 +126,7 @@ STRING   ["]([^"\n]|\\\")*["]
   yyterminate();
 }
 
-<comment>.       {
+<comment>.|\n    {
   MY_SCAN_TOK();
   My_Comment_Read_Char(yyextra, yytext, yyleng);
 }
