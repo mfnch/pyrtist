@@ -1,5 +1,5 @@
 BOX_EXAMPLES="snake,cycloid,wheatstone,multivibrator,yin-yang,curved_arrow,box-logo,translucency,gradient,fractree,pythagoras,text,cairo_set_line_cap,cairo_gradient"
-BOXER_EXAMPLES="fem2d,fem,gmr_bands,gmr,es_types,constriction,fivelayers,llg,hd,orchester"
+BOXER_EXAMPLES="fem2d,fem,gmr_bands,gmr,es_types,constriction,fivelayers,llg,hd,orchester,house"
 
 .PHONY: all clean build-examples
 

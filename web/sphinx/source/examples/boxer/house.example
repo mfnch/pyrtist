@@ -1,0 +1,7 @@
+rst_out="house.rst"
+rst_skeleton="skeleton"
+crumb="house.box"
+description="An example of cartoon drawing"
+figure_caption="How Boxer's author spends some time in the evening..."
+box_source="./house.box"
+out_png="house.png"
