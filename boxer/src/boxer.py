@@ -234,8 +234,8 @@ class Boxer(object):
     emn.set_submenu(mn)
 
     # For now let's hide the Library menu
-    mainmenu = merge.get_widget("/MenuBar")
-    mainmenu.remove(merge.get_widget("/MenuBar/LibraryMenu"))
+    #mainmenu = merge.get_widget("/MenuBar")
+    #mainmenu.remove(merge.get_widget("/MenuBar/LibraryMenu"))
 
     # HBox containing the toolbar, the refpoint combobox, etc
     hbox = gtk.HBox(homogeneous=False, spacing=0)
@@ -523,7 +523,7 @@ class Boxer(object):
     self.raw_file_new()
 
   def menu_file_open(self, image_menu_item):
-    """Ivoked to open a file. Shows the dialog to select the file."""
+    """Invoked to open a file. Shows the dialog to select the file."""
     if not self.ensure_file_is_saved():
       return
 
@@ -544,14 +544,14 @@ class Boxer(object):
       self.raw_file_open(filename)
 
   def menu_file_save(self, image_menu_item):
-    """Ivoked to save a file whose name has been already assigned."""
+    """Invoked to save a file whose name has been already assigned."""
     if self.filename != None:
       self.raw_file_save()
     else:
       self.menu_file_save_as(image_menu_item)
 
   def menu_file_save_as(self, image_menu_item):
-    """Ivoked to save a file. Shows the dialog to select the file name."""
+    """Invoked to save a file. Shows the dialog to select the file name."""
 
     if self.dialog_filesave == None:
       self.dialog_filesave = \

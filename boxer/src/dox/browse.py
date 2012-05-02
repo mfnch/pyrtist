@@ -32,7 +32,7 @@ class DoxBrowser(object):
     scrolledwin1.set_shadow_type(gtk.SHADOW_IN)
     scrolledwin1.add(dox_textview)
 
-    # Create the table were the procedure of the current type are shown
+    # Create the table where the procedure of the current type are shown
     self.window_table = dox_table = \
       DoxTable(on_click_link=self._on_click_link)
     scrolledwin2 = gtk.ScrolledWindow()
