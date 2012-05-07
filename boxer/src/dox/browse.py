@@ -71,7 +71,7 @@ class DoxBrowser(object):
       gtk.TreeStore(gobject.TYPE_STRING,  # Type name
                     gobject.TYPE_STRING,  # Brief description
                     gobject.TYPE_BOOLEAN) # Visible?
-    self._populate_treestore_from_dox(tree.types)
+    self._populate_treestore_from_dox()
 
     # the treestore filter (to show and hide rows as a result of a search)
     self.treestore_flt = treestore_flt = treestore.filter_new()
@@ -140,20 +140,27 @@ class DoxBrowser(object):
     """Hide the window."""
     self.window.hide()
 
-  def _populate_treestore_from_dox(self, types, flt=None, visible=True):
+  def _populate_treestore_from_dox(self, flt=None, visible=True):
     ts = self.treestore
     tree = self.dox.tree
+    types = tree.types
+    instances = tree.instances
     section_names = tree.sections.keys()
-    type_names = types.keys()
-    type_names.sort()
+
+    # Merge the names of instances and types: we will not have duplicates, as
+    # identifiers always start with a lower case character, while types start
+    # with an upper case character.
+    identifiers = types.keys() + instances.keys()
+    identifiers.sort()
 
     section_names.sort()
     for section_name in section_names:
-      sn = (section_name if section_name else "Other stuff...")
+      sn = section_name or "Other stuff..."
       piter = ts.append(None, [sn, "(section)", visible])
 
-      for type_name in type_names:
-        t = types[type_name]
+      for identifier in identifiers:
+        t = (types[identifier] if identifier[0].isupper()
+             else instances[identifier])
         if t.get_section() == section_name:
           if t.subtype_parent == None:
             self._add_entry_to_treestore(piter, t, flt=flt, visible=visible)
@@ -193,7 +200,6 @@ class DoxBrowser(object):
     self._show_doc(None, link)
 
   def _filter_type_in_treeview(self, treemodelrow, flt):
-
     type_name = treemodelrow[0]
     brief_description = treemodelrow[1]
 

@@ -382,6 +382,8 @@ class DocumentBase(Configurable):
     # Command line arguments to be passed to box
     args = ["-l", "g"] + box_args
 
+    # Include the helper code (which allows communication box-boxer)
+    args += ("-I", presrc_path, "-se", presrc_basename, src_filename)
 
     # If the Box source is saved (rather than being a temporary unsaved
     # script) then execute it from its parent directory. Also, make sure to
@@ -395,8 +397,13 @@ class DocumentBase(Configurable):
     if src_path:
       cwd = src_path
 
-    # Include the helper code (which allows communication box-boxer)
-    args += ("-I", presrc_path, "-se", presrc_basename, src_filename)
+    # Add extra include directories
+    box_include_dirs = self.get_config("box_include_dirs", [])
+    if box_include_dirs != None:
+      if type(box_include_dirs) == str:
+        box_include_dirs = (box_include_dirs,)
+      for inc_dir in box_include_dirs:
+        args += ("-I", inc_dir)
 
     fn = self._fns["box_document_executed"]
     def do_at_exit():

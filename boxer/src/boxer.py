@@ -799,10 +799,19 @@ class Boxer(object):
         dox_path = None
 
       if dox_path:
+        # Create the Dox object
         dox = Dox()
+
+        # Read documentation from the Box compiler directories
         dox.read_recursively(dox_path)
-        tree = dox.tree
-        tree.process()
+
+        # Read additional documentation from the library
+        library_dir = self.config.get("Library", "dir")
+        if library_dir != None:
+          dox.read_recursively(library_dir)
+
+        # Process the documentation tree
+        dox.tree.process()
         self.dialog_dox_browser = dox_browser = DoxBrowser(dox)
 
   def __init__(self, filename=None, box_exec=None):
@@ -864,6 +873,7 @@ class Boxer(object):
 
     # Create the editable area and do all the wiring
     cfg = {"box_executable": self.config.get("Box", "exec"),
+           "box_include_dirs": self.config.get("Library", "dir"),
            "refpoint_size": self.config.getint("GUIView", "refpoint_size")}
     self.editable_area = editable_area = BoxEditableArea(config=cfg)
     editable_area.set_callback("zoomablearea_got_killer", self._set_box_killer)

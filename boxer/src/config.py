@@ -193,6 +193,12 @@ class FileOption(StringOption):
     self.must_exist = must_exist
 
 
+class DirOption(StringOption):
+  def __init__(self, default_val=None, must_exist=False, desc=None):
+    ConfigOption.__init__(self, "Dir", default_val, desc=desc)
+    self.must_exist = must_exist
+
+
 class ScalarOption(ConfigOption):
   def __init__(self, name, default_val,
                minimum=None, maximum=None, scalar_type=int, desc=None):
@@ -363,10 +369,8 @@ def get_configuration():
   cfg_file = "config.cfg"
 
   # Create default box executable path
-  if platform_is_win:
-    box_exec = os.path.join(installation_path(), "box", "bin", "box.exe")
-  else:
-    box_exec = "box"
+  box_exec = (os.path.join(installation_path(), "box", "bin", "box.exe")
+              if platform_is_win else "box")
 
   default_config = \
    [('Box', 'exec',
@@ -389,10 +393,11 @@ def get_configuration():
      StringOption('600x600', desc='The initial size of the window')),
     ('GUI', 'big_buttons',
      BoolOption("False", desc='Whether the button size should be increased')),
-
     ('GUIView', 'refpoint_size',
      IntOption(4, 1, 50, desc='The size of the squares used to mark '
                               'the reference points')),
+    ('Library', 'dir',
+     DirOption(desc='Path to the local copy of the Boxer library')),
     ('Behaviour', 'button_left',
      IntOption(1, 1, 5, desc='ID of the mouse left button')),
     ('Behaviour', 'button_center',

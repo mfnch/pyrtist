@@ -1,4 +1,4 @@
-# Copyright (C) 2011 by Matteo Franchin (fnch@users.sourceforge.net)
+# Copyright (C) 2011, 2012 by Matteo Franchin
 #
 # This file is part of Box.
 #
@@ -19,7 +19,7 @@ import os
 import re
 import fnmatch
 
-from tree import DoxType, DoxProc, DoxTree
+from tree import DoxType, DoxProc, DoxInstance, DoxTree
 import logger
 
 dox_magic_seq = "///"
@@ -81,14 +81,15 @@ def extract_word(s, start=0, wanted=None):
       break
   return s[start:idx]
 
-def _normalize_subtype(st):
+def _normalize_identifier(st):
   '''Normalize a subtype. Example,
-  _normalize_subtype("  X  . Y . Zeta") returns "X.Y.Zeta".
+  _normalize_identifier("  X  . Y . Zeta") returns "X.Y.Zeta".
   '''
   components = map(str.strip, st.split("."))
   return ".".join(components)
 
-_typedef_re = re.compile(r'\s*([A-Za-z0-9_.\s]*)[=]')
+_typedef_re = re.compile(r'\s*([A-Z][A-Za-z0-9_.\s]*)[=]')
+_instdef_re = re.compile(r'\s*([a-z][A-Za-z0-9_.\s]*)[=]')
 _procdef_re = re.compile(r'\s*([^@]+)\s*[@]\s*([A-Z][A-Za-z0-9_\s.]*)')
   
 def dox_classify_code(line):
@@ -100,12 +101,16 @@ def dox_classify_code(line):
 
   matches_typedef = _typedef_re.match(line)
   if matches_typedef:
-    return DoxType(_normalize_subtype(matches_typedef.group(1)))
+    return DoxType(_normalize_identifier(matches_typedef.group(1)))
 
   matches_procdef = _procdef_re.match(line)
   if matches_procdef:
     left, right = matches_procdef.group(1, 2)
-    return DoxProc(left, _normalize_subtype(right))
+    return DoxProc(left, _normalize_identifier(right))
+
+  matches_instdef = _instdef_re.match(line)
+  if matches_instdef:
+    return DoxInstance(_normalize_identifier(matches_instdef.group(1)))
 
   return None
 
@@ -288,6 +293,10 @@ class Dox(object):
         elif isinstance(ct, DoxProc):
           ct.set_owned_blocks(doxblocks)
           self.tree.add_proc(ct)
+
+        elif isinstance(ct, DoxInstance):
+          ct.set_owned_blocks(doxblocks)
+          self.tree.add_instance(ct)
 
         else:
           self.log("Unrecognized documentation block.")

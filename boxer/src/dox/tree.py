@@ -1,19 +1,19 @@
-# Copyright (C) 2011 by Matteo Franchin (fnch@users.sourceforge.net)
+# Copyright (C) 2011, 2012 by Matteo Franchin (fnch@users.sf.net)
 #
-# This file is part of Box.
+# This file is part of Boxer.
 #
-#   Box is free software: you can redistribute it and/or modify it
+#   Boxer is free software: you can redistribute it and/or modify it
 #   under the terms of the GNU General Public License as published
 #   by the Free Software Foundation, either version 3 of the License, or
 #   (at your option) any later version.
 #
-#   Box is distributed in the hope that it will be useful,
+#   Boxer is distributed in the hope that it will be useful,
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
 #
 #   You should have received a copy of the GNU General Public License
-#   along with Box.  If not, see <http://www.gnu.org/licenses/>.
+#   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
 import string
 
@@ -72,6 +72,30 @@ class DoxType(DoxLeaf):
     self.parents.append(parent)
 
 
+class DoxInstance(DoxLeaf):
+  def __init__(self, name, doxblocks=None, section=None):
+    DoxLeaf.__init__(self, doxblocks, section=section)
+
+    self.name = name
+    self.children = []
+    self.parents = []
+    self.subtype_children = []
+
+    parts = name.rsplit(".", 1)
+    subtype_parent, subtype = parts if len(parts) > 1 else (None, None)
+    self.subtype_parent = subtype_parent
+    self.subtype = subtype
+
+  def __repr__(self):
+    return 'DoxInstance("%s")' % self.name
+
+  def __str__(self):
+    return self.name
+
+  def is_anonymous(self):
+    return not self.name.isalnum()
+
+
 class DoxProc(DoxLeaf):
   def __init__(self, child, parent, doxblocks=None, section=None):
     DoxLeaf.__init__(self, doxblocks, section=section)
@@ -110,6 +134,7 @@ class DoxTree(DoxItem):
     DoxItem.__init__(self)
     self.types = {}
     self.procs = {}
+    self.instances = {}
     self.sections = []
 
   def log(self, msg):
@@ -122,6 +147,10 @@ class DoxTree(DoxItem):
   def add_proc(self, *ps):
     for p in ps:
       self.procs[str(p)] = p
+
+  def add_instance(self, *insts):
+    for inst in insts:
+      self.instances[str(inst)] = inst
 
   def get_type(self, tn, create=True):
     tn = str(tn)
@@ -168,6 +197,8 @@ class DoxTree(DoxItem):
       p.process_blocks(self)
     for t in self.types.itervalues():
       t.process_blocks(self)
+    for i in self.instances.itervalues():
+      i.process_blocks(self)
 
   def _build_section_list(self):
     self.sections = sections = {}
@@ -175,6 +206,8 @@ class DoxTree(DoxItem):
       sections.setdefault(p.get_section(), []).append(p)
     for t in self.types.itervalues():
       sections.setdefault(t.get_section(), []).append(t)
+    for i in self.instances.itervalues():
+      sections.setdefault(i.get_section(), []).append(i)
 
   def process(self):
     self._build_links()
