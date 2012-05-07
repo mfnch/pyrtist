@@ -275,4 +275,8 @@ class GtkWriter(Writer):
     return (title + body + example + subtypes + used_line + uses_line
             + proc_table)
 
-  
+  def gen_instance_section(self, instance, level=0):
+    '''Generate the help content for the given instance.'''
+    title = self.gen_type_section_title(instance)
+    body = self.gen_target_section(instance)
+    return title + body

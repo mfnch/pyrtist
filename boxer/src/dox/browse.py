@@ -272,16 +272,24 @@ class DoxBrowser(object):
       self.expand_visible_rows()
     
   def _show_doc(self, section, search_str):
-    type_name = (search_str if "@" not in search_str
-                 else search_str.split("@", 2)[1])
+    name = (search_str if "@" not in search_str
+            else search_str.split("@", 2)[1])
     tree = self.dox.tree
-    types = tree.types
-    t = types.get(type_name)
+
+    t = tree.types.get(name)
     if t != None:
       self.window_textview.get_buffer().set_text("")
       writer = self.dox_writer
       output = writer.gen_type_section(t, None)
       self.window_textview.set_content(output)
+
+    t = tree.instances.get(name)
+    if t != None:
+      self.window_textview.get_buffer().set_text("")
+      writer = self.dox_writer
+      output = writer.gen_instance_section(t)
+      self.window_textview.set_content(output)
+      
 
 
 def main():
