@@ -245,7 +245,7 @@ struct _BoxVMStatus_struct {
 
 /** @brief The full status of the virtual machine of Box.
  */
-struct _BoxVM_struct {
+struct BoxVM_struct {
   VMStatus  *vmcur;         /**< The current execution frame */
 
   struct {
@@ -336,8 +336,6 @@ void VM__D_GLPI_Imm(BoxVM *vmp, char **iarg);
 
 /** This is the type of the C functions which can be called by the VM. */
 typedef BoxTask (*BoxVMFunc)(BoxVM *);
-
-typedef BoxVMFunc VMFunc;
 
 /** Initialise a BoxVM object for which space has been already allocated
  * somehow. You'll need to use BoxVM_Finish to destroy the object.

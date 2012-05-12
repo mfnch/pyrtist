@@ -1023,7 +1023,7 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
   /* If v_struc is a subtype, then expand it (subtypes do not have members) */
   v_struc = Value_Expand_Subtype(v_struc);
 
-  if (v_struc->value.cont.type == BOXTYPE_POINT)
+  if (v_struc->value.cont.type == BOXCONTTYPE_POINT)
     return My_Point_Get_Member(v_struc, memb);
   BoxType t_memb = BoxTS_Find_Struct_Member(& cmp->ts, v_struc->type, memb);
   if (t_memb != BOXTYPE_NONE) {

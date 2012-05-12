@@ -29,7 +29,7 @@
  * A BoxVM object can be used to construct a VM executor, BoxVMX, which can
  * execute the code contained in the BoxVM object.
  */
-typedef struct _BoxVM_struct BoxVM;
+typedef struct BoxVM_struct BoxVM;
 
 typedef struct _BoxVMStatus_struct VMStatus;
 
