@@ -22,7 +22,7 @@
 #include <math.h>
 
 #include "types.h"
-#include "virtmach.h"
+#include <box/vm_private.h>
 #include "str.h"
 #include "g.h"
 #include "pointlist.h"

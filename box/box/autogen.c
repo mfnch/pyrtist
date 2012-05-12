@@ -23,7 +23,7 @@
 #include "types.h"
 #include "messages.h"
 #include "typesys.h"
-#include "virtmach.h"
+#include "vm_private.h"
 #include "cmpproc.h"
 #include "compiler.h"
 #include "value.h"

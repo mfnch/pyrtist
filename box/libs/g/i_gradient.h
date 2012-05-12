@@ -24,7 +24,7 @@
 #  include "types.h"
 #  include "buffer.h"
 #  include "graphic.h"
-#  include "virtmach.h"
+#  include <box/vm_private.h>
 
 typedef struct {
   struct {

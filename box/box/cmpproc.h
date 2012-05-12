@@ -32,7 +32,7 @@
 
 #  include "types.h"
 #  include "registers.h"
-#  include "virtmach.h"
+#  include "vm_private.h"
 #  include "vmsym.h"
 #  include "container.h"
 #  include "vmproc.h"

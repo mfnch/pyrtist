@@ -20,7 +20,7 @@
 #include <assert.h>
 
 #include "types.h"
-#include "virtmach.h"
+#include "vm_private.h"
 #include "vmalloc.h"
 #include "vmsym.h"
 #include "vmsymstuff.h"

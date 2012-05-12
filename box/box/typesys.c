@@ -29,7 +29,7 @@
 #include "array.h"
 #include "occupation.h"
 #include "hashtable.h"
-#include "virtmach.h"
+#include "vm_private.h"
 #include "typesys.h"
 
 

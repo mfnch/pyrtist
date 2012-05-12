@@ -31,7 +31,7 @@
 #include "messages.h"
 #include "array.h"
 #include "strutils.h"
-#include "virtmach.h"
+#include "vm_private.h"
 #include "vmproc.h"
 #include "vmsym.h"
 #include "vmsymstuff.h"

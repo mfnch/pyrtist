@@ -44,7 +44,7 @@
 #include "mem.h"
 #include "strutils.h"
 #include "array.h"
-#include "virtmach.h"
+#include "vm_private.h"
 #include "vmproc.h"
 #include "vmsym.h"
 #include "registers.h"

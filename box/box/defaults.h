@@ -170,7 +170,7 @@
 #define SYM_PARAMETER 31
 
 /*****************************************************************************
- *                 COSTANTI UTILIZZATE NEL FILE virtmach.c                   *
+ *                 COSTANTI UTILIZZATE NEL FILE vm.c                   *
  *****************************************************************************/
 
 /* VM_TYPICAL_NUM_MODULES e' il numero tipico di moduli installati nella VM,

@@ -23,7 +23,7 @@
 #include "types.h"
 #include "mem.h"
 #include "typesys.h"
-#include "virtmach.h"
+#include "vm_private.h"
 #include "vmalloc.h"
 #include "tsdesc.h"
 #include "vmsymstuff.h"

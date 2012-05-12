@@ -22,7 +22,7 @@
 #include <math.h>
 
 #include "types.h"
-#include "virtmach.h"
+#include <box/vm_private.h>
 #include "str.h"
 #include "i_gradient.h"
 #include "i_window.h"

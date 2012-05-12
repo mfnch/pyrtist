@@ -30,7 +30,7 @@
 #  include "srcpos.h"
 #  include "cmpptrs.h"
 #  include "array.h"
-#  include "virtmach.h"
+#  include "vm_private.h"
 #  include "ast.h"
 #  include "registers.h"
 #  include "value.h"

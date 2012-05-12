@@ -31,7 +31,7 @@
 #  include "types.h"
 #  include "occupation.h"
 #  include "hashtable.h"
-#  include "virtmach.h"
+#  include "vm_private.h"
 #  include "vmalloc.h"
 
 typedef enum {

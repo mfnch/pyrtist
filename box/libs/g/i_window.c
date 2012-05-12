@@ -27,7 +27,7 @@
 
 #include <box/types.h>
 #include <box/mem.h>
-#include <box/virtmach.h>
+#include <box/vm_private.h>
 #include <box/str.h>
 
 #include "graphic.h"

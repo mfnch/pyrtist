@@ -24,7 +24,7 @@
 #include "types.h"
 #include "mem.h"
 #include "typesys.h"
-#include "virtmach.h"
+#include "vm_private.h"
 #include "print.h"
 #include "compiler.h"
 #include "builtins.h"

@@ -369,7 +369,7 @@ BoxTask BoxGCmdIter_Filter_Append(BoxGCmdIter filter,
 
 #if 0
 
-#include <box/virtmach.h>
+#include <box/vm_private.h>
 
 BoxTask My_Dummy_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
                       BoxGCmdArgKind *kinds, void **args, void *pass) {

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008-2011 by Matteo Franchin                               *
+ * Copyright (C) 2008-2012 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -17,9 +17,15 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+/** @file vmexec.c
+ * @brief Implementation of the Box VM instructions.
+ *
+ * This file contains the implementation of the Box virtual machine
+ * instructions.
+ */
+
 /* Questo file contiene la funzioni che eseguono le istruzioni della macchina
  * virtuale (spesso denotata con VM).
- * Questo file e' incluso direttamente dal file "virtmach.c"
  */
 #include <stdlib.h>
 #include <string.h>
@@ -27,21 +33,21 @@
 #include <assert.h>
 
 #include "messages.h"
-#include "virtmach.h"
+#include "vm_private.h"
 #include "vmalloc.h"
 #include "bltinarray.h"
 #include "strutils.h"
 
-static void VM__Exec_Ret(BoxVM *vmp) {vmp->vmcur->flags.exit = 1;}
+static void My_Exec_Ret(BoxVMX *vmx) {vmx->vmcur->flags.exit = 1;}
 
-static void VM__Exec_Call_I(BoxVM *vmp) {
-  VMStatus *vm = vmp->vmcur;
-  if IS_SUCCESSFUL( BoxVM_Module_Execute(vmp, *((Int *) vm->arg1)) )
+static void My_Exec_Call_I(BoxVMX *vmx) {
+  VMStatus *vm = vmx->vmcur;
+  if IS_SUCCESSFUL( BoxVM_Module_Execute(vmx, *((Int *) vm->arg1)) )
     return;
   vm->flags.error = vm->flags.exit = 1;
 }
 
-static void *VM__Exec_X_II(BoxVM *vm, int type_id, size_t type_size,
+static void *My_Exec_X_II(BoxVMX *vm, int type_id, size_t type_size,
                            size_t *num_regs) {
   VMStatus *vmcur = vm->vmcur;
   BoxInt numvar = *((BoxInt *) vmcur->arg1),
@@ -74,49 +80,49 @@ static void *VM__Exec_X_II(BoxVM *vm, int type_id, size_t type_size,
   return NULL;
 }
 
-static void VM__Exec_NewC_II(BoxVM *vm) {
-  (void) VM__Exec_X_II(vm, BOXTYPE_CHAR, sizeof(BoxChar), NULL);
+static void My_Exec_NewC_II(BoxVMX *vm) {
+  (void) My_Exec_X_II(vm, BOXTYPE_CHAR, sizeof(BoxChar), NULL);
 }
 
-static void VM__Exec_NewI_II(BoxVM *vm) {
-  (void) VM__Exec_X_II(vm, BOXTYPE_INT, sizeof(BoxInt), NULL);
+static void My_Exec_NewI_II(BoxVMX *vm) {
+  (void) My_Exec_X_II(vm, BOXTYPE_INT, sizeof(BoxInt), NULL);
 }
 
-static void VM__Exec_NewR_II(BoxVM *vm) {
-  (void) VM__Exec_X_II(vm, BOXTYPE_REAL, sizeof(BoxReal), NULL);
+static void My_Exec_NewR_II(BoxVMX *vm) {
+  (void) My_Exec_X_II(vm, BOXTYPE_REAL, sizeof(BoxReal), NULL);
 }
 
-static void VM__Exec_NewP_II(BoxVM *vm) {
-  (void) VM__Exec_X_II(vm, BOXTYPE_POINT, sizeof(BoxPoint), NULL);
+static void My_Exec_NewP_II(BoxVMX *vm) {
+  (void) My_Exec_X_II(vm, BOXTYPE_POINT, sizeof(BoxPoint), NULL);
 }
 
-static void VM__Exec_NewO_II(BoxVM *vm) {
+static void My_Exec_NewO_II(BoxVMX *vm) {
   size_t num_regs, i;
   BoxPtr *regs =
-    (BoxPtr *) VM__Exec_X_II(vm, BOXTYPE_PTR, sizeof(BoxPtr), & num_regs);
+    (BoxPtr *) My_Exec_X_II(vm, BOXTYPE_PTR, sizeof(BoxPtr), & num_regs);
   if (regs != NULL) {
     for(i = 0; i < num_regs; i++)
       BoxPtr_Nullify(regs + i);
   }
 }
 
-static void VM__Exec_Mov_CC(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Mov_CC(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Char *) vmcur->arg1) = *((Char *) vmcur->arg2);
 }
-static void VM__Exec_Mov_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Mov_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) = *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Mov_RR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Mov_RR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Real *) vmcur->arg1) = *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Mov_PP(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Mov_PP(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Point *) vmcur->arg1) = *((Point *) vmcur->arg2);
 }
-static void VM__Exec_Mov_OO(BoxVM *vm) {
+static void My_Exec_Mov_OO(BoxVMX *vm) {
   VMStatus *vmcur = vm->vmcur;
   BoxPtr *arg1 = (BoxPtr *) vmcur->arg1,
          *arg2 = (BoxPtr *) vmcur->arg2;
@@ -134,275 +140,275 @@ static void VM__Exec_Mov_OO(BoxVM *vm) {
   }
 }
 
-static void VM__Exec_BNot_I(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_BNot_I(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) = ~ *((Int *) vmcur->arg1);
 }
-static void VM__Exec_BAnd_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_BAnd_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) &= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_BXor_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_BXor_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) ^= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_BOr_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_BOr_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) |= *((Int *) vmcur->arg2);
 }
 
-static void VM__Exec_Shl_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Shl_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) <<= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Shr_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Shr_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) >>= *((Int *) vmcur->arg2);
 }
 
-static void VM__Exec_Inc_I(BoxVM *vmp) { ++ *((Int *) vmp->vmcur->arg1); }
-static void VM__Exec_Inc_R(BoxVM *vmp) { ++ *((Real *) vmp->vmcur->arg1); }
-static void VM__Exec_Dec_I(BoxVM *vmp) { -- *((Int *) vmp->vmcur->arg1); }
-static void VM__Exec_Dec_R(BoxVM *vmp) { -- *((Real *) vmp->vmcur->arg1); }
+static void My_Exec_Inc_I(BoxVMX *vmx) { ++ *((Int *) vmx->vmcur->arg1); }
+static void My_Exec_Inc_R(BoxVMX *vmx) { ++ *((Real *) vmx->vmcur->arg1); }
+static void My_Exec_Dec_I(BoxVMX *vmx) { -- *((Int *) vmx->vmcur->arg1); }
+static void My_Exec_Dec_R(BoxVMX *vmx) { -- *((Real *) vmx->vmcur->arg1); }
 
-static void VM__Exec_Pow_II(BoxVM *vmp) { /* bad implementation!!! */
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Pow_II(BoxVMX *vmx) { /* bad implementation!!! */
+  VMStatus *vmcur = vmx->vmcur;
   Int i, r = 1, b = *((Int *) vmcur->arg1), p = *((Int *) vmcur->arg2);
   for (i = 0; i < p; i++) r *= b;
   *((Int *) vmcur->arg1) = r;
 }
-static void VM__Exec_Pow_RR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Pow_RR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Real *) vmcur->arg1) =
    pow(*((Real *) vmcur->arg1), *((Real *) vmcur->arg2));
 }
 
-static void VM__Exec_Add_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Add_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) += *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Add_RR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Add_RR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Real *) vmcur->arg1) += *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Add_PP(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Add_PP(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   ((Point *) vmcur->arg1)->x += ((Point *) vmcur->arg2)->x;
   ((Point *) vmcur->arg1)->y += ((Point *) vmcur->arg2)->y;
 }
 
-static void VM__Exec_Sub_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Sub_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) -= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Sub_RR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Sub_RR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Real *) vmcur->arg1) -= *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Sub_PP(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Sub_PP(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   ((Point *) vmcur->arg1)->x -= ((Point *) vmcur->arg2)->x;
   ((Point *) vmcur->arg1)->y -= ((Point *) vmcur->arg2)->y;
 }
 
-static void VM__Exec_Mul_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Mul_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) *= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Mul_RR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Mul_RR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Real *) vmcur->arg1) *= *((Real *) vmcur->arg2);
 }
 
-static void VM__Exec_Div_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Div_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) /= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Div_RR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Div_RR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Real *) vmcur->arg1) /= *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Rem_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Rem_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) %= *((Int *) vmcur->arg2);
 }
 
-static void VM__Exec_Neg_I(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Neg_I(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) = -*((Int *) vmcur->arg1);
 }
-static void VM__Exec_Neg_R(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Neg_R(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Real *) vmcur->arg1) = -*((Real *) vmcur->arg1);
 }
-static void VM__Exec_Neg_P(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Neg_P(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   ((Point *) vmcur->arg1)->x = -((Point *) vmcur->arg1)->x;
   ((Point *) vmcur->arg1)->y = -((Point *) vmcur->arg1)->y;
 }
 
-static void VM__Exec_PMulR_PR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_PMulR_PR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   Real r = *((Real *) vmcur->local[TYPE_REAL].ptr);
   ((Point *) vmcur->arg1)->x *= r;
   ((Point *) vmcur->arg1)->y *= r;
 }
-static void VM__Exec_PDivR_PR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_PDivR_PR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   Real r = *((Real *) vmcur->local[TYPE_REAL].ptr);
   ((Point *) vmcur->arg1)->x /= r;
   ((Point *) vmcur->arg1)->y /= r;
 }
 
-static void VM__Exec_Real_C(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Real_C(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Real *) vmcur->local[TYPE_REAL].ptr) = (Real) *((Char *) vmcur->arg1);
 }
-static void VM__Exec_Real_I(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Real_I(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Real *) vmcur->local[TYPE_REAL].ptr) = (Real) *((Int *) vmcur->arg1);
 }
-static void VM__Exec_Int_R(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Int_R(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->local[TYPE_INT].ptr) = (Int) *((Real *) vmcur->arg1);
 }
-static void VM__Exec_Int_C(BoxVM *vm) {
+static void My_Exec_Int_C(BoxVMX *vm) {
   VMStatus *vmcur = vm->vmcur;
   *((Int *) vmcur->local[TYPE_INT].ptr) = (Int) *((Char *) vmcur->arg1);
 }
-static void VM__Exec_Point_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Point_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   ((Point *) vmcur->local[TYPE_POINT].ptr)->x = (Real) *((Int *) vmcur->arg1);
   ((Point *) vmcur->local[TYPE_POINT].ptr)->y = (Real) *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Point_RR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Point_RR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   ((Point *) vmcur->local[TYPE_POINT].ptr)->x = *((Real *) vmcur->arg1);
   ((Point *) vmcur->local[TYPE_POINT].ptr)->y = *((Real *) vmcur->arg2);
 }
-static void VM__Exec_ProjX_P(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_ProjX_P(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Real *) vmcur->local[TYPE_REAL].ptr) = ((Point *) vmcur->arg1)->x;
 }
-static void VM__Exec_ProjY_P(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_ProjY_P(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Real *) vmcur->local[TYPE_REAL].ptr) = ((Point *) vmcur->arg1)->y;
 }
 
-static void VM__Exec_PPtrX_P(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_PPtrX_P(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   Obj *obj = (Obj *) vmcur->local[TYPE_OBJ].ptr;
   obj->block = (void *) NULL;
   obj->ptr = & (((Point *) vmcur->arg1)->x);
 }
 
-static void VM__Exec_PPtrY_P(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_PPtrY_P(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   Obj *obj = (Obj *) vmcur->local[TYPE_OBJ].ptr;
   obj->block = (void *) NULL;
   obj->ptr = & (((Point *) vmcur->arg1)->y);
 }
 
-static void VM__Exec_Eq_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Eq_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) == *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Eq_RR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Eq_RR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->local[TYPE_INT].ptr) =
    *((Real *) vmcur->arg1) == *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Eq_PP(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Eq_PP(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->local[TYPE_INT].ptr) =
      ( ((Point *) vmcur->arg1)->x == ((Point *) vmcur->arg2)->x )
   && ( ((Point *) vmcur->arg1)->y == ((Point *) vmcur->arg2)->y );
 }
-static void VM__Exec_Eq_OO(BoxVM *vm) {
+static void My_Exec_Eq_OO(BoxVMX *vm) {
   VMStatus *vmcur = vm->vmcur;
   *((Int *) vmcur->local[TYPE_INT].ptr) =
      (((Obj *) vmcur->arg1)->ptr == ((Obj *) vmcur->arg2)->ptr);
 }
-static void VM__Exec_Ne_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Ne_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) != *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Ne_RR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Ne_RR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->local[TYPE_INT].ptr) =
    *((Real *) vmcur->arg1) != *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Ne_PP(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Ne_PP(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->local[TYPE_INT].ptr) =
      ( ((Point *) vmcur->arg1)->x != ((Point *) vmcur->arg2)->x )
   || ( ((Point *) vmcur->arg1)->y != ((Point *) vmcur->arg2)->y );
 }
-static void VM__Exec_Ne_OO(BoxVM *vm) {
+static void My_Exec_Ne_OO(BoxVMX *vm) {
   VMStatus *vmcur = vm->vmcur;
   *((Int *) vmcur->local[TYPE_INT].ptr) =
      (((Obj *) vmcur->arg1)->ptr != ((Obj *) vmcur->arg2)->ptr);
 }
 
-static void VM__Exec_Lt_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Lt_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) < *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Lt_RR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Lt_RR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->local[TYPE_INT].ptr) =
    *((Real *) vmcur->arg1) < *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Le_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Le_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) <= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Le_RR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Le_RR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->local[TYPE_INT].ptr) =
    *((Real *) vmcur->arg1) <= *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Gt_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Gt_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) > *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Gt_RR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Gt_RR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->local[TYPE_INT].ptr) =
    *((Real *) vmcur->arg1) > *((Real *) vmcur->arg2);
 }
-static void VM__Exec_Ge_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Ge_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) >= *((Int *) vmcur->arg2);
 }
-static void VM__Exec_Ge_RR(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Ge_RR(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->local[TYPE_INT].ptr) =
    *((Real *) vmcur->arg1) >= *((Real *) vmcur->arg2);
 }
 
-static void VM__Exec_LNot_I(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_LNot_I(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) = ! *((Int *) vmcur->arg1);
 }
-static void VM__Exec_LAnd_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_LAnd_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) && *((Int *) vmcur->arg2);
 }
-static void VM__Exec_LOr_II(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_LOr_II(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   *((Int *) vmcur->arg1) =
    *((Int *) vmcur->arg1) || *((Int *) vmcur->arg2);
 }
 
-static void VM__Exec_Create_I(BoxVM *vm) {
+static void My_Exec_Create_I(BoxVMX *vm) {
   VMStatus *vmcur = vm->vmcur;
   BoxInt id = *((Int *) vmcur->arg1);
   BoxPtr *obj = (Obj *) vmcur->local[TYPE_OBJ].ptr;
@@ -412,7 +418,7 @@ static void VM__Exec_Create_I(BoxVM *vm) {
   MSG_FATAL("VM_Exec_Create_I: cannot create object with alloc-ID=%I.", id);
 }
 
-static void VM__Exec_Reloc_OO(BoxVM *vm) {
+static void My_Exec_Reloc_OO(BoxVMX *vm) {
   VMStatus *vmcur = vm->vmcur;
   BoxPtr *dest = (BoxPtr *) vmcur->arg1,
          *src = (BoxPtr *) vmcur->arg2;
@@ -425,35 +431,35 @@ static void VM__Exec_Reloc_OO(BoxVM *vm) {
   vm->vmcur->flags.exit = 1;
 }
 
-static void VM__Exec_Malloc_I(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Malloc_I(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   BoxInt size = *((Int *) vmcur->arg1);
   BoxPtr *obj = (Obj *) vmcur->local[TYPE_OBJ].ptr;
-  BoxVM_Obj_Alloc(vmp, obj, size, (BoxVMAllocID) 0);
+  BoxVM_Obj_Alloc(vmx, obj, size, (BoxVMAllocID) 0);
   if (!BoxPtr_Is_Null(obj))
     return;
   MSG_FATAL("VM_Exec_Malloc_II: memory request failed!");
 }
 
-static void VM__Exec_Mln_O(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Mln_O(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   BoxVM_Obj_Link((Obj *) vmcur->arg1);
 }
 
-static void VM__Exec_MUnln_O(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
-  BoxVM_Obj_Unlink(vmp, (BoxPtr *) vmcur->arg1);
+static void My_Exec_MUnln_O(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
+  BoxVM_Obj_Unlink(vmx, (BoxPtr *) vmcur->arg1);
   BoxPtr_Detach((BoxPtr *) vmcur->arg1);
 }
 
-static void VM__Exec_MCopy_OO(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_MCopy_OO(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   (void) memcpy(((Obj *) vmcur->arg1)->ptr,             /* destination */
                 ((Obj *) vmcur->arg2)->ptr,             /* source */
                 *((Int *) vmcur->local[TYPE_INT].ptr)); /* size */
 }
 
-static void VM__Exec_Shift_OO(BoxVM *vm) {
+static void My_Exec_Shift_OO(BoxVMX *vm) {
   VMStatus *vmcur = vm->vmcur;
   BoxPtr *arg1 = (BoxPtr *) vmcur->arg1,
          *arg2 = (BoxPtr *) vmcur->arg2;
@@ -465,7 +471,7 @@ static void VM__Exec_Shift_OO(BoxVM *vm) {
   }
 }
 
-static void VM__Exec_Ref_OO(BoxVM *vm) {
+static void My_Exec_Ref_OO(BoxVMX *vm) {
   VMStatus *vmcur = vm->vmcur;
   BoxPtr *arg1 = (BoxPtr *) vmcur->arg1,
          *arg2 = (BoxPtr *) vmcur->arg2;
@@ -479,18 +485,18 @@ static void VM__Exec_Ref_OO(BoxVM *vm) {
   }
 }
 
-static void VM__Exec_Null_O(BoxVM *vm) {
+static void My_Exec_Null_O(BoxVMX *vm) {
   BoxPtr_Nullify((BoxPtr *) vm->vmcur->arg1);
 }
 
-static void VM__Exec_Lea(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Lea(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   Obj *obj = (Obj *) vmcur->local[TYPE_OBJ].ptr;
   obj->block = (void *) NULL;
   obj->ptr = vmcur->arg1;
 }
 
-static void VM__Exec_Lea_OO(BoxVM *vm) {
+static void My_Exec_Lea_OO(BoxVMX *vm) {
   VMStatus *vmcur = vm->vmcur;
   BoxPtr *arg1 = (BoxPtr *) vmcur->arg1,
          *arg2 = (BoxPtr *) vmcur->arg2;
@@ -500,33 +506,33 @@ static void VM__Exec_Lea_OO(BoxVM *vm) {
   arg1->ptr = arg2;
 }
 
-static void VM__Exec_Push_O(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
-  BoxArr_Push(& vmp->stack, vmcur->arg1);
+static void My_Exec_Push_O(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
+  BoxArr_Push(& vmx->stack, vmcur->arg1);
 }
 
-static void VM__Exec_Pop_O(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
-  BoxArr_Pop(& vmp->stack, vmcur->arg1);
+static void My_Exec_Pop_O(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
+  BoxArr_Pop(& vmx->stack, vmcur->arg1);
 }
 
-static void VM__Exec_Jmp_I(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Jmp_I(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   vmcur->i_len = *((Int *) vmcur->arg1);
 }
 
-static void VM__Exec_Jc_I(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Jc_I(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   if (*((Int *) vmcur->local[TYPE_INT].ptr))
     vmcur->i_len = *((Int *) vmcur->arg1);
 }
 
-static void VM__Exec_Add_O(BoxVM *vmp) {
-  VMStatus *vmcur = vmp->vmcur;
+static void My_Exec_Add_O(BoxVMX *vmx) {
+  VMStatus *vmcur = vmx->vmcur;
   ((Obj *) vmcur->arg1)->ptr += *((Int *) vmcur->local[TYPE_INT].ptr);
 }
 
-static void VM__Exec_Arinit_I(BoxVM *vm) {
+static void My_Exec_Arinit_I(BoxVMX *vm) {
 #if 0
   VMStatus *vmcur = vm->vmcur;
   BoxArray *arr = (BoxArray *) ((Obj *) vmcur->local[TYPE_OBJ].ptr)->ptr;
@@ -535,7 +541,7 @@ static void VM__Exec_Arinit_I(BoxVM *vm) {
 #endif
 }
 
-static void VM__Exec_Arsize_I(BoxVM *vm) {
+static void My_Exec_Arsize_I(BoxVMX *vm) {
 #if 0
   VMStatus *vmcur = vm->vmcur;
   BoxArray *arr = (BoxArray *) ((Obj *) vmcur->local[TYPE_OBJ].ptr)->ptr;
@@ -544,7 +550,7 @@ static void VM__Exec_Arsize_I(BoxVM *vm) {
 #endif
 }
 
-static void VM__Exec_Araddr_II(BoxVM *vm) {
+static void My_Exec_Araddr_II(BoxVMX *vm) {
 #if 0
   VMStatus *vmcur = vm->vmcur;
   BoxArray *arr = (BoxArray *) ((Obj *) vmcur->local[TYPE_OBJ].ptr)->ptr;
@@ -556,7 +562,7 @@ static void VM__Exec_Araddr_II(BoxVM *vm) {
 #endif
 }
 
-static void VM__Exec_Arget_OO(BoxVM *vm) {
+static void My_Exec_Arget_OO(BoxVMX *vm) {
 #if 0
   VMStatus *vmcur = vm->vmcur;
   BoxPtr *item = (Obj *) vmcur->arg1;
@@ -566,11 +572,11 @@ static void VM__Exec_Arget_OO(BoxVM *vm) {
 #endif
 }
 
-static void VM__Exec_Arnext_OO(BoxVM *vm) {
+static void My_Exec_Arnext_OO(BoxVMX *vm) {
   /** Not implemented yet */
 }
 
-static void VM__Exec_Ardest_O(BoxVM *vm) {
+static void My_Exec_Ardest_O(BoxVMX *vm) {
 #if 0
   VMStatus *vmcur = vm->vmcur;
   BoxArray *arr = (BoxArray *) ((Obj *) vmcur->arg1)->ptr;
@@ -591,108 +597,108 @@ typedef struct {
 } BoxOpTable4Humans;
 
 static BoxOpTable4Humans op_table_for_humans[] = {
-  {  BOXGOP_CALL,   "call", 1, 'i',     "a1",  NULL, "x-", "c-", VM__Exec_Call_I   }, /* call ri       */
-  {  BOXGOP_CALL,   "call", 1, 'i',     "a1",  NULL, "i-", "c-", VM__Exec_Call_I   }, /* call ii       */
-  {  BOXGOP_NEWC,   "newc", 2, 'i',  "a1,a2",  NULL, "xx", "xx", VM__Exec_NewC_II  }, /* newc ii, ii   */
-  {  BOXGOP_NEWC,   "newi", 2, 'i',  "a1,a2",  NULL, "xx", "xx", VM__Exec_NewI_II  }, /* newi ii, ii   */
-  {  BOXGOP_NEWC,   "newr", 2, 'i',  "a1,a2",  NULL, "xx", "xx", VM__Exec_NewR_II  }, /* newr ii, ii   */
-  {  BOXGOP_NEWC,   "newp", 2, 'i',  "a1,a2",  NULL, "xx", "xx", VM__Exec_NewP_II  }, /* newp ii, ii   */
-  {  BOXGOP_NEWC,   "newo", 2, 'i',  "a1,a2",  NULL, "xx", "xx", VM__Exec_NewO_II  }, /* newo ii, ii   */
-  {   BOXGOP_MOV,    "mov", 2, 'c',     "a2",  "a1", "xi", "xi", VM__Exec_Mov_CC   }, /* mov rc, ic    */
-  {   BOXGOP_MOV,    "mov", 2, 'i',     "a2",  "a1", "xi", "xi", VM__Exec_Mov_II   }, /* mov ri, ii    */
-  {   BOXGOP_MOV,    "mov", 2, 'r',     "a2",  "a1", "xi", "xi", VM__Exec_Mov_RR   }, /* mov rr, ir    */
-  {   BOXGOP_MOV,    "mov", 2, 'p',     "a2",  "a1", "xi", "xi", VM__Exec_Mov_PP   }, /* mov rp, ip    */
-  {   BOXGOP_MOV,    "mov", 2, 'c',     "a2",  "a1", "xx", "xx", VM__Exec_Mov_CC   }, /* mov rc, rc    */
-  {   BOXGOP_MOV,    "mov", 2, 'i',     "a2",  "a1", "xx", "xx", VM__Exec_Mov_II   }, /* mov ri, ri    */
-  {   BOXGOP_MOV,    "mov", 2, 'r',     "a2",  "a1", "xx", "xx", VM__Exec_Mov_RR   }, /* mov rr, rr    */
-  {   BOXGOP_MOV,    "mov", 2, 'p',     "a2",  "a1", "xx", "xx", VM__Exec_Mov_PP   }, /* mov rp, rp    */
-  {   BOXGOP_MOV,    "mov", 2, 'o',     "a2",  "a1", "xx", "xx", VM__Exec_Mov_OO   }, /* mov ro, ro    */
-  {  BOXGOP_BNOT,   "bnot", 1, 'i',     "a1",  "a1", "x-", "xx", VM__Exec_BNot_I   }, /* bnot ri       */
-  {  BOXGOP_BAND,   "band", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_BAnd_II  }, /* band ri, ri   */
-  {  BOXGOP_BXOR,   "bxor", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_BXor_II  }, /* bxor ri, ri   */
-  {   BOXGOP_BOR,    "bor", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_BOr_II   }, /* bor ri, ri    */
-  {   BOXGOP_SHL,    "shl", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Shl_II   }, /* shl ri, ri    */
-  {   BOXGOP_SHR,    "shr", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Shr_II   }, /* shr ri, ri    */
-  {   BOXGOP_INC,    "inc", 1, 'i',     "a1",  "a1", "x-", "xx", VM__Exec_Inc_I    }, /* inc ri        */
-  {   BOXGOP_INC,    "inc", 1, 'r',     "a1",  "a1", "x-", "xx", VM__Exec_Inc_R    }, /* inc rr        */
-  {   BOXGOP_DEC,    "dec", 1, 'i',     "a1",  "a1", "x-", "xx", VM__Exec_Dec_I    }, /* dec ri        */
-  {   BOXGOP_DEC,    "dec", 1, 'r',     "a1",  "a1", "x-", "xx", VM__Exec_Dec_R    }, /* dec rr        */
-  {   BOXGOP_POW,    "pow", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Pow_II   }, /* pow ri, ri    */
-  {   BOXGOP_POW,    "pow", 2, 'r',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Pow_RR   }, /* pow rr, rr    */
-  {   BOXGOP_ADD,    "add", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Add_II   }, /* add ri, ri    */
-  {   BOXGOP_ADD,    "add", 2, 'r',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Add_RR   }, /* add rr, rr    */
-  {   BOXGOP_ADD,    "add", 2, 'p',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Add_PP   }, /* add rp, rp    */
-  {   BOXGOP_SUB,    "sub", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Sub_II   }, /* sub ri, ri    */
-  {   BOXGOP_SUB,    "sub", 2, 'r',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Sub_RR   }, /* sub rr, rr    */
-  {   BOXGOP_SUB,    "sub", 2, 'p',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Sub_PP   }, /* sub rp, rp    */
-  {   BOXGOP_MUL,    "mul", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Mul_II   }, /* mul ri, ri    */
-  {   BOXGOP_MUL,    "mul", 2, 'r',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Mul_RR   }, /* mul rr, rr    */
-  {   BOXGOP_DIV,    "div", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Div_II   }, /* div ri, ri    */
-  {   BOXGOP_DIV,    "div", 2, 'r',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Div_RR   }, /* div rr, rr    */
-  {   BOXGOP_REM,    "rem", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Rem_II   }, /* rem ri, ri    */
-  {   BOXGOP_NEG,    "neg", 1, 'i',     "a1",  "a1", "x-", "xx", VM__Exec_Neg_I    }, /* neg ri        */
-  {   BOXGOP_NEG,    "neg", 1, 'r',     "a1",  "a1", "x-", "xx", VM__Exec_Neg_R    }, /* neg rr        */
-  {   BOXGOP_NEG,    "neg", 1, 'p',     "a1",  "a1", "x-", "xx", VM__Exec_Neg_P    }, /* neg rp        */
-  { BOXGOP_PMULR,  "pmulr", 1, 'p', "a1,rr0",  "a1", "x-", "xx", VM__Exec_PMulR_PR }, /* pmulr rp      */
-  { BOXGOP_PDIVR,  "pdivr", 1, 'p', "a1,rr0",  "a1", "x-", "xx", VM__Exec_PDivR_PR }, /* pdivr rp      */
-  {    BOXGOP_EQ,    "eq?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Eq_II    }, /* eq? ri, ri    */
-  {    BOXGOP_EQ,    "eq?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Eq_RR    }, /* eq? rr, rr    */
-  {    BOXGOP_EQ,    "eq?", 2, 'p',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Eq_PP    }, /* eq? rp, rp    */
-  {    BOXGOP_EQ,    "eq?", 2, 'o',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Eq_OO    }, /* eq? ro, ro    */
-  {    BOXGOP_NE,    "ne?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Ne_II    }, /* ne? ri, ri    */
-  {    BOXGOP_NE,    "ne?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_RR    }, /* ne? rr, rr    */
-  {    BOXGOP_NE,    "ne?", 2, 'p',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_PP    }, /* ne? rp, rp    */
-  {    BOXGOP_NE,    "ne?", 2, 'o',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ne_OO    }, /* ne? rp, rp    */
-  {    BOXGOP_LT,    "lt?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Lt_II    }, /* lt? ri, ri    */
-  {    BOXGOP_LT,    "lt?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Lt_RR    }, /* lt? rr, rr    */
-  {    BOXGOP_LE,    "le?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Le_II    }, /* le? ri, ri    */
-  {    BOXGOP_LE,    "le?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Le_RR    }, /* le? rr, rr    */
-  {    BOXGOP_GT,    "gt?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Gt_II    }, /* gt? ri, ri    */
-  {    BOXGOP_GT,    "gt?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Gt_RR    }, /* gt? rr, rr    */
-  {    BOXGOP_GE,    "ge?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_Ge_II    }, /* ge? ri, ri    */
-  {    BOXGOP_GE,    "ge?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", VM__Exec_Ge_RR    }, /* ge? rr, rr    */
-  {  BOXGOP_LNOT,   "lnot", 1, 'i',     "a1",  "a1", "x-", "xx", VM__Exec_LNot_I   }, /* lnot ri       */
-  {  BOXGOP_LAND,   "land", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_LAnd_II  }, /* land ri, ri   */
-  {   BOXGOP_LOR,    "lor", 2, 'i',  "a1,a2",  "a1", "xx", "xx", VM__Exec_LOr_II   }, /* lor  ri, ri   */
-  {  BOXGOP_REAL,   "real", 1, 'c',     "a1", "rr0", "x-", "xx", VM__Exec_Real_C   }, /* real rc       */
-  {  BOXGOP_REAL,   "real", 1, 'i',     "a1", "rr0", "x-", "xx", VM__Exec_Real_I   }, /* real ri       */
-  {   BOXGOP_INT,    "int", 1, 'c',     "a1", "ri0", "x-", "xx", VM__Exec_Int_C    }, /* int rc        */
-  {   BOXGOP_INT,    "int", 1, 'r',     "a1", "ri0", "x-", "xx", VM__Exec_Int_R    }, /* int rr        */
-  { BOXGOP_POINT,  "point", 2, 'i',  "a1,a2", "rp0", "xx", "xx", VM__Exec_Point_II }, /* point ri, ri  */
-  { BOXGOP_POINT,  "point", 2, 'r',  "a1,a2", "rp0", "xx", "xx", VM__Exec_Point_RR }, /* point rr, rr  */
-  { BOXGOP_PROJX,  "projx", 1, 'p',     "a1", "rr0", "x-", "xx", VM__Exec_ProjX_P  }, /* projx rp      */
-  { BOXGOP_PROJY,  "projy", 1, 'p',     "a1", "rr0", "x-", "xx", VM__Exec_ProjY_P  }, /* projy rp      */
-  { BOXGOP_PPTRX,  "pptrx", 1, 'p',     "a1", "ro0", "x-", "xx", VM__Exec_PPtrX_P  }, /* pptrx rp      */
-  { BOXGOP_PPTRY,  "pptry", 1, 'p',     "a1", "ro0", "x-", "xx", VM__Exec_PPtrY_P  }, /* pptry rp      */
-  {   BOXGOP_RET,    "ret", 0, 'n',     NULL,  NULL, "--", "xx", VM__Exec_Ret      }, /* ret           */
-  {BOXGOP_CREATE, "create", 1, 'i',     "a1", "ro0", "x-", "xx", VM__Exec_Create_I }, /* create ri     */
-  {BOXGOP_MALLOC, "malloc", 1, 'i',     "a1", "ro0", "x-", "xx", VM__Exec_Malloc_I }, /* malloc ri     */
-  {   BOXGOP_MLN,    "mln", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_Mln_O    }, /* mln ro        */
-  { BOXGOP_MUNLN,  "munln", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_MUnln_O  }, /* munln ro      */
+  {  BOXGOP_CALL,   "call", 1, 'i',     "a1",  NULL, "x-", "c-", My_Exec_Call_I   }, /* call ri       */
+  {  BOXGOP_CALL,   "call", 1, 'i',     "a1",  NULL, "i-", "c-", My_Exec_Call_I   }, /* call ii       */
+  {  BOXGOP_NEWC,   "newc", 2, 'i',  "a1,a2",  NULL, "xx", "xx", My_Exec_NewC_II  }, /* newc ii, ii   */
+  {  BOXGOP_NEWC,   "newi", 2, 'i',  "a1,a2",  NULL, "xx", "xx", My_Exec_NewI_II  }, /* newi ii, ii   */
+  {  BOXGOP_NEWC,   "newr", 2, 'i',  "a1,a2",  NULL, "xx", "xx", My_Exec_NewR_II  }, /* newr ii, ii   */
+  {  BOXGOP_NEWC,   "newp", 2, 'i',  "a1,a2",  NULL, "xx", "xx", My_Exec_NewP_II  }, /* newp ii, ii   */
+  {  BOXGOP_NEWC,   "newo", 2, 'i',  "a1,a2",  NULL, "xx", "xx", My_Exec_NewO_II  }, /* newo ii, ii   */
+  {   BOXGOP_MOV,    "mov", 2, 'c',     "a2",  "a1", "xi", "xi", My_Exec_Mov_CC   }, /* mov rc, ic    */
+  {   BOXGOP_MOV,    "mov", 2, 'i',     "a2",  "a1", "xi", "xi", My_Exec_Mov_II   }, /* mov ri, ii    */
+  {   BOXGOP_MOV,    "mov", 2, 'r',     "a2",  "a1", "xi", "xi", My_Exec_Mov_RR   }, /* mov rr, ir    */
+  {   BOXGOP_MOV,    "mov", 2, 'p',     "a2",  "a1", "xi", "xi", My_Exec_Mov_PP   }, /* mov rp, ip    */
+  {   BOXGOP_MOV,    "mov", 2, 'c',     "a2",  "a1", "xx", "xx", My_Exec_Mov_CC   }, /* mov rc, rc    */
+  {   BOXGOP_MOV,    "mov", 2, 'i',     "a2",  "a1", "xx", "xx", My_Exec_Mov_II   }, /* mov ri, ri    */
+  {   BOXGOP_MOV,    "mov", 2, 'r',     "a2",  "a1", "xx", "xx", My_Exec_Mov_RR   }, /* mov rr, rr    */
+  {   BOXGOP_MOV,    "mov", 2, 'p',     "a2",  "a1", "xx", "xx", My_Exec_Mov_PP   }, /* mov rp, rp    */
+  {   BOXGOP_MOV,    "mov", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Mov_OO   }, /* mov ro, ro    */
+  {  BOXGOP_BNOT,   "bnot", 1, 'i',     "a1",  "a1", "x-", "xx", My_Exec_BNot_I   }, /* bnot ri       */
+  {  BOXGOP_BAND,   "band", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_BAnd_II  }, /* band ri, ri   */
+  {  BOXGOP_BXOR,   "bxor", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_BXor_II  }, /* bxor ri, ri   */
+  {   BOXGOP_BOR,    "bor", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_BOr_II   }, /* bor ri, ri    */
+  {   BOXGOP_SHL,    "shl", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Shl_II   }, /* shl ri, ri    */
+  {   BOXGOP_SHR,    "shr", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Shr_II   }, /* shr ri, ri    */
+  {   BOXGOP_INC,    "inc", 1, 'i',     "a1",  "a1", "x-", "xx", My_Exec_Inc_I    }, /* inc ri        */
+  {   BOXGOP_INC,    "inc", 1, 'r',     "a1",  "a1", "x-", "xx", My_Exec_Inc_R    }, /* inc rr        */
+  {   BOXGOP_DEC,    "dec", 1, 'i',     "a1",  "a1", "x-", "xx", My_Exec_Dec_I    }, /* dec ri        */
+  {   BOXGOP_DEC,    "dec", 1, 'r',     "a1",  "a1", "x-", "xx", My_Exec_Dec_R    }, /* dec rr        */
+  {   BOXGOP_POW,    "pow", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Pow_II   }, /* pow ri, ri    */
+  {   BOXGOP_POW,    "pow", 2, 'r',  "a1,a2",  "a1", "xx", "xx", My_Exec_Pow_RR   }, /* pow rr, rr    */
+  {   BOXGOP_ADD,    "add", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Add_II   }, /* add ri, ri    */
+  {   BOXGOP_ADD,    "add", 2, 'r',  "a1,a2",  "a1", "xx", "xx", My_Exec_Add_RR   }, /* add rr, rr    */
+  {   BOXGOP_ADD,    "add", 2, 'p',  "a1,a2",  "a1", "xx", "xx", My_Exec_Add_PP   }, /* add rp, rp    */
+  {   BOXGOP_SUB,    "sub", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Sub_II   }, /* sub ri, ri    */
+  {   BOXGOP_SUB,    "sub", 2, 'r',  "a1,a2",  "a1", "xx", "xx", My_Exec_Sub_RR   }, /* sub rr, rr    */
+  {   BOXGOP_SUB,    "sub", 2, 'p',  "a1,a2",  "a1", "xx", "xx", My_Exec_Sub_PP   }, /* sub rp, rp    */
+  {   BOXGOP_MUL,    "mul", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Mul_II   }, /* mul ri, ri    */
+  {   BOXGOP_MUL,    "mul", 2, 'r',  "a1,a2",  "a1", "xx", "xx", My_Exec_Mul_RR   }, /* mul rr, rr    */
+  {   BOXGOP_DIV,    "div", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Div_II   }, /* div ri, ri    */
+  {   BOXGOP_DIV,    "div", 2, 'r',  "a1,a2",  "a1", "xx", "xx", My_Exec_Div_RR   }, /* div rr, rr    */
+  {   BOXGOP_REM,    "rem", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Rem_II   }, /* rem ri, ri    */
+  {   BOXGOP_NEG,    "neg", 1, 'i',     "a1",  "a1", "x-", "xx", My_Exec_Neg_I    }, /* neg ri        */
+  {   BOXGOP_NEG,    "neg", 1, 'r',     "a1",  "a1", "x-", "xx", My_Exec_Neg_R    }, /* neg rr        */
+  {   BOXGOP_NEG,    "neg", 1, 'p',     "a1",  "a1", "x-", "xx", My_Exec_Neg_P    }, /* neg rp        */
+  { BOXGOP_PMULR,  "pmulr", 1, 'p', "a1,rr0",  "a1", "x-", "xx", My_Exec_PMulR_PR }, /* pmulr rp      */
+  { BOXGOP_PDIVR,  "pdivr", 1, 'p', "a1,rr0",  "a1", "x-", "xx", My_Exec_PDivR_PR }, /* pdivr rp      */
+  {    BOXGOP_EQ,    "eq?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Eq_II    }, /* eq? ri, ri    */
+  {    BOXGOP_EQ,    "eq?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", My_Exec_Eq_RR    }, /* eq? rr, rr    */
+  {    BOXGOP_EQ,    "eq?", 2, 'p',  "a1,a2", "ri0", "xx", "xx", My_Exec_Eq_PP    }, /* eq? rp, rp    */
+  {    BOXGOP_EQ,    "eq?", 2, 'o',  "a1,a2", "ri0", "xx", "xx", My_Exec_Eq_OO    }, /* eq? ro, ro    */
+  {    BOXGOP_NE,    "ne?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Ne_II    }, /* ne? ri, ri    */
+  {    BOXGOP_NE,    "ne?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", My_Exec_Ne_RR    }, /* ne? rr, rr    */
+  {    BOXGOP_NE,    "ne?", 2, 'p',  "a1,a2", "ri0", "xx", "xx", My_Exec_Ne_PP    }, /* ne? rp, rp    */
+  {    BOXGOP_NE,    "ne?", 2, 'o',  "a1,a2", "ri0", "xx", "xx", My_Exec_Ne_OO    }, /* ne? rp, rp    */
+  {    BOXGOP_LT,    "lt?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Lt_II    }, /* lt? ri, ri    */
+  {    BOXGOP_LT,    "lt?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", My_Exec_Lt_RR    }, /* lt? rr, rr    */
+  {    BOXGOP_LE,    "le?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Le_II    }, /* le? ri, ri    */
+  {    BOXGOP_LE,    "le?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", My_Exec_Le_RR    }, /* le? rr, rr    */
+  {    BOXGOP_GT,    "gt?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Gt_II    }, /* gt? ri, ri    */
+  {    BOXGOP_GT,    "gt?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", My_Exec_Gt_RR    }, /* gt? rr, rr    */
+  {    BOXGOP_GE,    "ge?", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Ge_II    }, /* ge? ri, ri    */
+  {    BOXGOP_GE,    "ge?", 2, 'r',  "a1,a2", "ri0", "xx", "xx", My_Exec_Ge_RR    }, /* ge? rr, rr    */
+  {  BOXGOP_LNOT,   "lnot", 1, 'i',     "a1",  "a1", "x-", "xx", My_Exec_LNot_I   }, /* lnot ri       */
+  {  BOXGOP_LAND,   "land", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_LAnd_II  }, /* land ri, ri   */
+  {   BOXGOP_LOR,    "lor", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_LOr_II   }, /* lor  ri, ri   */
+  {  BOXGOP_REAL,   "real", 1, 'c',     "a1", "rr0", "x-", "xx", My_Exec_Real_C   }, /* real rc       */
+  {  BOXGOP_REAL,   "real", 1, 'i',     "a1", "rr0", "x-", "xx", My_Exec_Real_I   }, /* real ri       */
+  {   BOXGOP_INT,    "int", 1, 'c',     "a1", "ri0", "x-", "xx", My_Exec_Int_C    }, /* int rc        */
+  {   BOXGOP_INT,    "int", 1, 'r',     "a1", "ri0", "x-", "xx", My_Exec_Int_R    }, /* int rr        */
+  { BOXGOP_POINT,  "point", 2, 'i',  "a1,a2", "rp0", "xx", "xx", My_Exec_Point_II }, /* point ri, ri  */
+  { BOXGOP_POINT,  "point", 2, 'r',  "a1,a2", "rp0", "xx", "xx", My_Exec_Point_RR }, /* point rr, rr  */
+  { BOXGOP_PROJX,  "projx", 1, 'p',     "a1", "rr0", "x-", "xx", My_Exec_ProjX_P  }, /* projx rp      */
+  { BOXGOP_PROJY,  "projy", 1, 'p',     "a1", "rr0", "x-", "xx", My_Exec_ProjY_P  }, /* projy rp      */
+  { BOXGOP_PPTRX,  "pptrx", 1, 'p',     "a1", "ro0", "x-", "xx", My_Exec_PPtrX_P  }, /* pptrx rp      */
+  { BOXGOP_PPTRY,  "pptry", 1, 'p',     "a1", "ro0", "x-", "xx", My_Exec_PPtrY_P  }, /* pptry rp      */
+  {   BOXGOP_RET,    "ret", 0, 'n',     NULL,  NULL, "--", "xx", My_Exec_Ret      }, /* ret           */
+  {BOXGOP_CREATE, "create", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Create_I }, /* create ri     */
+  {BOXGOP_MALLOC, "malloc", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Malloc_I }, /* malloc ri     */
+  {   BOXGOP_MLN,    "mln", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Mln_O    }, /* mln ro        */
+  { BOXGOP_MUNLN,  "munln", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_MUnln_O  }, /* munln ro      */
   { BOXGOP_MCOPY,  "mcopy", 2, 'o',
-                                 "a1,a2,ri0",  NULL, "xx", "xx", VM__Exec_MCopy_OO }, /* mcopy ro, ro  */
+                                 "a1,a2,ri0",  NULL, "xx", "xx", My_Exec_MCopy_OO }, /* mcopy ro, ro  */
   { BOXGOP_RELOC,  "reloc", 2, 'o',
-                                 "a1,a2,ri0",  NULL, "xx", "xx", VM__Exec_Reloc_OO }, /* reloc ro, ro  */
-  { BOXGOP_SHIFT,  "shift", 2, 'o',     "a2",  "a1", "xx", "xx", VM__Exec_Shift_OO }, /* shift ro, ro    */
-  {   BOXGOP_REF,    "ref", 2, 'o',     "a2",  "a1", "xx", "xx", VM__Exec_Ref_OO   }, /* ref ro, ro      */
-  {  BOXGOP_NULL,   "null", 1, 'o',     NULL,  "a1", "x-", "xx", VM__Exec_Null_O   }, /* null ro         */
-  {   BOXGOP_LEA,    "lea", 1, 'c',     "a1", "ro0", "x-", "xx", VM__Exec_Lea      }, /* lea c[ro0+...]  */
-  {   BOXGOP_LEA,    "lea", 1, 'i',     "a1", "ro0", "x-", "xx", VM__Exec_Lea      }, /* lea i[ro0+...]  */
-  {   BOXGOP_LEA,    "lea", 1, 'r',     "a1", "ro0", "x-", "xx", VM__Exec_Lea      }, /* lea r[ro0+...]  */
-  {   BOXGOP_LEA,    "lea", 1, 'p',     "a1", "ro0", "x-", "xx", VM__Exec_Lea      }, /* lea p[ro0+...]  */
-  {   BOXGOP_LEA,    "lea", 2, 'o',     "a2",  "a1", "xx", "xx", VM__Exec_Lea_OO   }, /* lea reg_o, o[ro0+...] */
-  {  BOXGOP_PUSH,   "push", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_Push_O   }, /* push ro         */
-  {   BOXGOP_POP,    "pop", 1, 'o',     NULL,  "a1", "x-", "xx", VM__Exec_Pop_O    }, /* pop ro          */
-  {   BOXGOP_JMP,    "jmp", 1, 'i',     "a1",  NULL, "x-", "j-", VM__Exec_Jmp_I    }, /* jmp ri          */
-  {    BOXGOP_JC,     "jc", 1, 'i', "a1,ri0",  NULL, "x-", "j-", VM__Exec_Jc_I     }, /* jc  ri          */
-  {   BOXGOP_ADD,    "add", 1, 'o',    "ri0",  NULL, "x-", "xx", VM__Exec_Add_O    }, /* add ro          */
-  {BOXGOP_ARINIT, "arinit", 1, 'i',     "a1", "ro0", "x-", "xx", VM__Exec_Arinit_I }, /* arinit ri       */
-  {BOXGOP_ARSIZE, "arsize", 1, 'i', "a1,ro0",  NULL, "x-", "xx", VM__Exec_Arsize_I }, /* arsize ri       */
+                                 "a1,a2,ri0",  NULL, "xx", "xx", My_Exec_Reloc_OO }, /* reloc ro, ro  */
+  { BOXGOP_SHIFT,  "shift", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Shift_OO }, /* shift ro, ro    */
+  {   BOXGOP_REF,    "ref", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Ref_OO   }, /* ref ro, ro      */
+  {  BOXGOP_NULL,   "null", 1, 'o',     NULL,  "a1", "x-", "xx", My_Exec_Null_O   }, /* null ro         */
+  {   BOXGOP_LEA,    "lea", 1, 'c',     "a1", "ro0", "x-", "xx", My_Exec_Lea      }, /* lea c[ro0+...]  */
+  {   BOXGOP_LEA,    "lea", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Lea      }, /* lea i[ro0+...]  */
+  {   BOXGOP_LEA,    "lea", 1, 'r',     "a1", "ro0", "x-", "xx", My_Exec_Lea      }, /* lea r[ro0+...]  */
+  {   BOXGOP_LEA,    "lea", 1, 'p',     "a1", "ro0", "x-", "xx", My_Exec_Lea      }, /* lea p[ro0+...]  */
+  {   BOXGOP_LEA,    "lea", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Lea_OO   }, /* lea reg_o, o[ro0+...] */
+  {  BOXGOP_PUSH,   "push", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Push_O   }, /* push ro         */
+  {   BOXGOP_POP,    "pop", 1, 'o',     NULL,  "a1", "x-", "xx", My_Exec_Pop_O    }, /* pop ro          */
+  {   BOXGOP_JMP,    "jmp", 1, 'i',     "a1",  NULL, "x-", "j-", My_Exec_Jmp_I    }, /* jmp ri          */
+  {    BOXGOP_JC,     "jc", 1, 'i', "a1,ri0",  NULL, "x-", "j-", My_Exec_Jc_I     }, /* jc  ri          */
+  {   BOXGOP_ADD,    "add", 1, 'o',    "ri0",  NULL, "x-", "xx", My_Exec_Add_O    }, /* add ro          */
+  {BOXGOP_ARINIT, "arinit", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Arinit_I }, /* arinit ri       */
+  {BOXGOP_ARSIZE, "arsize", 1, 'i', "a1,ro0",  NULL, "x-", "xx", My_Exec_Arsize_I }, /* arsize ri       */
   {BOXGOP_ARADDR, "araddr", 2, 'i',
-                             "a1,a2,ro0,ri0", "ri0", "xx", "xx", VM__Exec_Araddr_II}, /* araddr ri, ri */
-  { BOXGOP_ARGET,  "arget", 2, 'o', "a2,ri0",  "a1", "xx", "xx", VM__Exec_Arget_OO }, /* arget reg_o, reg_o  */
-  {BOXGOP_ARNEXT, "arnext", 2, 'o',     "a2",  "a1", "xx", "xx", VM__Exec_Arnext_OO}, /* arnext reg_o, reg_o */
-  {BOXGOP_ARDEST, "ardest", 1, 'o',     "a1",  NULL, "x-", "xx", VM__Exec_Ardest_O }  /* ardest reg_o        */
+                             "a1,a2,ro0,ri0", "ri0", "xx", "xx", My_Exec_Araddr_II}, /* araddr ri, ri */
+  { BOXGOP_ARGET,  "arget", 2, 'o', "a2,ri0",  "a1", "xx", "xx", My_Exec_Arget_OO }, /* arget reg_o, reg_o  */
+  {BOXGOP_ARNEXT, "arnext", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Arnext_OO}, /* arnext reg_o, reg_o */
+  {BOXGOP_ARDEST, "ardest", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Ardest_O }  /* ardest reg_o        */
 };
 
 

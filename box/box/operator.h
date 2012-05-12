@@ -30,7 +30,7 @@
 #  include "value.h"
 #  include "ast.h"
 #  include "cmpptrs.h"
-#  include "virtmach.h"
+#  include "vm_private.h"
 
 typedef enum {
   OPR_ATTR_NATIVE      = 1,  /**< Is it a native operation: does the VM

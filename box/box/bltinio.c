@@ -24,7 +24,7 @@
 #include "mem.h"
 #include "typesys.h"
 #include "messages.h"
-#include "virtmach.h"
+#include "vm_private.h"
 #include "builtins.h"
 #include "bltinstr.h"
 #include "bltinio.h"

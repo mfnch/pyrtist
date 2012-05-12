@@ -36,11 +36,17 @@
 #include "messages.h"
 #include "array.h"
 #include "occupation.h"
-#include "virtmach.h"
+#include "vm_private.h"
 #include "vmsym.h"
 #include "vmproc.h"
 #include "vmalloc.h"
 #include "container.h"
+
+/* Numero minimo di BoxVMWord che riesce a contenere tutti i tipi possibili
+ * di argomenti (Int, Real, Point, Obj)
+ */
+#  define MAX_SIZE_IN_IWORDS \
+   ((sizeof(Point) + sizeof(BoxVMWord) - 1) / sizeof(BoxVMWord))
 
 /* Read the first 4 bytes (BoxVMWord), extract the format bit and put the "rest"
  * in the i_eye (which should be defined as 'register BoxVMWord i_eye;')
@@ -457,7 +463,7 @@ void VM__D_GLPI_Imm(BoxVM *vmp, char **out) {
  * Functions for (de)inizialization                                          *
  *****************************************************************************/
 
-Task BoxVM_Init(BoxVM *vm) {
+BoxTask BoxVM_Init(BoxVM *vm) {
   int i;
 
   vm->attr.hexcode = 0;
@@ -482,15 +488,15 @@ Task BoxVM_Init(BoxVM *vm) {
   BoxArr_Init(& vm->data_segment, sizeof(char), CMP_TYPICAL_DATA_SIZE);
   BoxArr_Init(& vm->backtrace, sizeof(BoxVMTrace), 32);
 
-  vm->fail_msg = (char *) NULL;
+  vm->fail_msg = NULL;
 
   if (BoxArr_Is_Err(& vm->stack) || BoxArr_Is_Err(& vm->data_segment))
-    return Failed;
+    return BOXTASK_FAILURE;
 
   BoxVM_Proc_Init(vm);
   BoxVMSymTable_Init(& vm->sym_table);
   TASK( BoxVM_Alloc_Init(vm) );
-  return Success;
+  return BOXTASK_OK;
 }
 
 static void My_Free_Globals(BoxVM *vmp) {
@@ -540,16 +546,21 @@ void BoxVM_Finish(BoxVM *vm) {
 
 BoxVM *BoxVM_Create(void) {
   BoxVM *vm = BoxMem_Alloc(sizeof(BoxVM));
-  if (vm == NULL) return NULL;
-  if (BoxVM_Init(vm) == Failed) {
+
+  if (vm == NULL)
+    return NULL;
+
+  if (BoxVM_Init(vm) != BOXTASK_OK) {
     BoxMem_Free(vm);
     return NULL;
   }
+
   return vm;
 }
 
 void BoxVM_Destroy(BoxVM *vm) {
-  if (vm == NULL) return;
+  if (vm == NULL)
+    return;
   BoxVM_Finish(vm);
   BoxMem_Free(vm);
 }
@@ -1170,7 +1181,7 @@ typedef struct {
  * NOTE: It returns the address of the data item with respect to the beginning
  *  of the data segment.
  */
-UInt BoxVM_Data_Add(BoxVM *vm, const void *data, UInt size, Int type) {
+UInt BoxVM_Data_Add(BoxVM *vm, const void *data, size_t size, Int type) {
   Int addr;
 
   /* Now we insert the data descriptor (for debug mainly), if necessary */
