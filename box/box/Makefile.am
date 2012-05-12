@@ -53,7 +53,7 @@ boxinc_HEADERS = version.h defaults.h types.h error.h mem.h \
 libboxcore0_3_la_SOURCES = types.h error.c mem.c mem.h array.c array.h \
   occupation.c occupation.h strutils.c print.c srcpos.c msgbase.c messages.c \
   hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h \
-  container.c container.h virtmach.c vmptr.h virtmach.h vmalloc.c vmalloc.h \
+  container.c container.h virtmach.c vm.h virtmach.h vmalloc.c vmalloc.h \
   vmexec.c vmproc.c vmproc.h vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h \
   str.c str.h vmx.c vmx.h
 

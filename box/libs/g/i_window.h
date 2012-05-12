@@ -69,18 +69,18 @@ typedef Window *BoxLibGWindow;
 
 #  define SUBTYPE_OF_WINDOW(vmp, w) \
     Window *w = *( (Window **) \
-      SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), WindowPtr) );
+      SUBTYPE_PARENT_PTR(BOX_VM_THIS_PTR(vmp, Subtype), WindowPtr) );
 
 #  define SUBTYPE2_OF_WINDOW(vmp, w) \
     Window *w = *( (Window **) \
       SUBTYPE_PARENT_PTR( \
-        SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), Subtype), \
+        SUBTYPE_PARENT_PTR(BOX_VM_THIS_PTR(vmp, Subtype), Subtype), \
         WindowPtr) );
 
 #  define PROC_OF_WINDOW_SUBTYPE(vmp, w, child, child_type) \
     Window *w = *( (Window **) \
-      SUBTYPE_PARENT_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), Window *) ); \
+      SUBTYPE_PARENT_PTR(BOX_VM_THIS_PTR(vmp, Subtype), Window *) ); \
     child_type *child = ( (child_type *) \
-      SUBTYPE_CHILD_PTR(BOX_VM_CURRENTPTR(vmp, Subtype), child_type) )
+      SUBTYPE_CHILD_PTR(BOX_VM_THIS_PTR(vmp, Subtype), child_type) )
 
 #endif

@@ -156,7 +156,7 @@ static Task _poly_point(Window *w, IPointList *ipl, Point *p) {
 Task poly_point(BoxVM *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   IPointList *ipl = BOX_VM_SUB_CHILD(vmp, IPointListPtr);
-  Point *p = BOX_VM_ARGPTR1(vmp, Point);
+  Point *p = BOX_VM_ARG1_PTR(vmp, Point);
   return _poly_point(w, ipl, p);
 }
 

@@ -18,12 +18,12 @@
  ****************************************************************************/
 
 /**
- * @file virtmach.h
- * @brief The virtual machine of Box.
+ * @file vm_private.h
+ * @brief Box virtual machine private definitions.
  */
 
-#ifndef _VIRTMACH_H
-#  define _VIRTMACH_H
+#ifndef _BOX_VM_PRIVATE_H
+#  define _BOX_VM_PRIVATE_H
 
 #  include <stdio.h>
 #  include <stdarg.h>
@@ -37,7 +37,7 @@
 #  include <box/array.h>
 #  include <box/occupation.h>
 #  include <box/hashtable.h>
-#  include <box/vmptr.h>
+#  include <box/vm.h>
 #  include <box/vmalloc.h>
 
 #  define _INSIDE_VIRTMACH_H
@@ -192,15 +192,6 @@ typedef enum {
   BOXOPCAT_IMM
 } BoxOpCat;
 
-/* Associo un numero a ciascun tipo, per poterlo identificare */
-typedef enum {
-  SIZEOF_CHAR  = sizeof(BoxChar),
-  SIZEOF_INTG  = sizeof(BoxInt),
-  SIZEOF_REAL  = sizeof(BoxReal),
-  SIZEOF_POINT = sizeof(BoxPoint),
-  SIZEOF_OBJ   = sizeof(BoxPtr), SIZEOF_PTR = SIZEOF_OBJ
-} SizeOfType;
-
 /* Numero massimo degli argomenti di un'istruzione */
 #  define VM_MAX_NUMARGS 2
 
@@ -243,7 +234,7 @@ struct _BoxVMStatus_struct {
 
   BoxVMProcInstalled *p;  /**< Procedure which is currently been executed */
 
-  BoxVMByteX4 *i_pos,     /**< Pointer to the current instruction */
+  BoxVMWord *i_pos,     /**< Pointer to the current instruction */
               i_eye;      /**< Execution "eye" (last four bytes processed) */
   BoxUInt     i_type,     /**< Type of instruction */
               i_len,      /**< Size of instruction */
@@ -360,7 +351,7 @@ typedef BoxVMFunc VMFunc;
 
 /** Initialise a BoxVM object for which space has been already allocated
  * somehow. You'll need to use BoxVM_Finish to destroy the object.
- * @see BoxVM_Finish, BoxVM_New
+ * @see BoxVM_Finish, BoxVM_Create
  */
 BoxTask BoxVM_Init(BoxVM *vm);
 
@@ -368,19 +359,6 @@ BoxTask BoxVM_Init(BoxVM *vm);
  * @see BoxVM_Init
  */
 void BoxVM_Finish(BoxVM *vm);
-
-/** Allocate space for a BoxVM object and initialise it with BoxVM_Init.
- * You'll need to call BoxVM_Destroy to destroy the object.
- * @see BoxVM_Destroy, BoxVM_Init
- */
-BoxVM *BoxVM_New(void);
-
-/** Destroy a BoxVM object created with BoxVM_New
- * @see BoxVM_New
- */
-void BoxVM_Destroy(BoxVM *vm);
-
-
 
 
 /** VM Executor. */
@@ -394,7 +372,7 @@ typedef struct {
                  is_long  :1; /**< Instruction is in long format */
   } flags;                /**< Execution flags */
 
-  BoxVMByteX4 *i_pos,     /**< Pointer to the current instruction */
+  BoxVMWord *i_pos,     /**< Pointer to the current instruction */
               i_eye;      /**< Execution "eye" (last four bytes processed) */
   BoxUInt     i_type,     /**< Type of instruction */
               i_len,      /**< Size of instruction */
@@ -496,11 +474,11 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
   BoxVM_Assemble(vm, instr, __VA_ARGS__); \
   (void) BoxVM_Set_Force_Long(vm, is_long);} while(0)
 
-/* Numero minimo di BoxVMByteX4 che riesce a contenere tutti i tipi possibili
+/* Numero minimo di BoxVMWord che riesce a contenere tutti i tipi possibili
  * di argomenti (Int, Real, Point, Obj)
  */
 #  define MAX_SIZE_IN_IWORDS \
-   ((sizeof(Point) + sizeof(BoxVMByteX4) - 1) / sizeof(BoxVMByteX4))
+   ((sizeof(Point) + sizeof(BoxVMWord) - 1) / sizeof(BoxVMWord))
 
 /** Get the parent of the current combination (this is something with type
  * ``BoxPtr *``.
@@ -548,10 +526,4 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
 #  define BOX_VM_SUB2_CHILD(vmp, child_t) \
    (*BOX_VM_SUB2_CHILD_PTR(vmp, child_t))
 
-/* These are obsolete macros */
-#  define BOX_VM_CURRENT BOX_VM_THIS
-#  define BOX_VM_CURRENTPTR BOX_VM_THIS_PTR
-#  define BOX_VM_ARGPTR1 BOX_VM_ARG1_PTR
-#  define BOX_VM_ARGPTR2 BOX_VM_ARG2_PTR
-
-#endif
+#endif /* _BOX_VM_PRIVATE_H */

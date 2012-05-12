@@ -37,7 +37,7 @@
 #  include <box/array.h>
 #  include <box/occupation.h>
 #  include <box/hashtable.h>
-#  include <box/vmptr.h>
+#  include <box/vm.h>
 #  include <box/vmalloc.h>
 
 #  define _INSIDE_VIRTMACH_H
@@ -298,7 +298,7 @@ struct _BoxVMX_struct {
                  is_long  :1; /**< Instruction is in long format */
   } flags;                /**< Execution flags */
 
-  BoxVMByteX4 *i_pos,     /**< Pointer to the current instruction */
+  BoxVMWord *i_pos,     /**< Pointer to the current instruction */
               i_eye;      /**< Execution "eye" (last four bytes processed) */
   BoxUInt     i_type,     /**< Type of instruction */
               i_len,      /**< Size of instruction */
@@ -365,7 +365,7 @@ typedef BoxVMFunc VMFunc;
 
 /** Initialise a BoxVM object for which space has been already allocated
  * somehow. You'll need to use BoxVM_Finish to destroy the object.
- * @see BoxVM_Finish, BoxVM_New
+ * @see BoxVM_Finish, BoxVM_Create
  */
 BoxTask BoxVM_Init(BoxVM *vm);
 
@@ -378,10 +378,10 @@ void BoxVM_Finish(BoxVM *vm);
  * You'll need to call BoxVM_Destroy to destroy the object.
  * @see BoxVM_Destroy, BoxVM_Init
  */
-BoxVM *BoxVM_New(void);
+BoxVM *BoxVM_Create(void);
 
-/** Destroy a BoxVM object created with BoxVM_New
- * @see BoxVM_New
+/** Destroy a BoxVM object created with BoxVM_Create
+ * @see BoxVM_Create
  */
 void BoxVM_Destroy(BoxVM *vm);
 
@@ -477,11 +477,11 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
   BoxVM_Assemble(vm, instr, __VA_ARGS__); \
   (void) BoxVM_Set_Force_Long(vm, is_long);} while(0)
 
-/* Numero minimo di BoxVMByteX4 che riesce a contenere tutti i tipi possibili
+/* Numero minimo di BoxVMWord che riesce a contenere tutti i tipi possibili
  * di argomenti (Int, Real, Point, Obj)
  */
 #  define MAX_SIZE_IN_IWORDS \
-   ((sizeof(Point) + sizeof(BoxVMByteX4) - 1) / sizeof(BoxVMByteX4))
+   ((sizeof(Point) + sizeof(BoxVMWord) - 1) / sizeof(BoxVMWord))
 
 #  define BOX_VM_THIS_PTR(vmp, Type) ((Type *) (vmp)->box_vm_current->ptr)
 #  define BOX_VM_THIS(vmp, Type) (*BOX_VM_THIS_PTR(vmp, Type))
@@ -514,9 +514,9 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
    (*BOX_VM_SUB2_CHILD_PTR(vmp, child_t))
 
 /* These are obsolete macros */
-#  define BOX_VM_CURRENT BOX_VM_THIS
-#  define BOX_VM_CURRENTPTR BOX_VM_THIS_PTR
-#  define BOX_VM_ARGPTR1 BOX_VM_ARG1_PTR
-#  define BOX_VM_ARGPTR2 BOX_VM_ARG2_PTR
+#  define BOX_VM_THIS BOX_VM_THIS
+#  define BOX_VM_THIS_PTR BOX_VM_THIS_PTR
+#  define BOX_VM_ARG1_PTR BOX_VM_ARG1_PTR
+#  define BOX_VM_ARG2_PTR BOX_VM_ARG2_PTR
 
 #endif

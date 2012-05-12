@@ -149,7 +149,7 @@ Task line_real(BoxVM *vmp) {
 Task line_point(BoxVM *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   IPointList *ipl = BOX_VM_SUB_CHILD(vmp, IPointListPtr);
-  Point *p = BOX_VM_ARGPTR1(vmp, Point);
+  Point *p = BOX_VM_ARG1_PTR(vmp, Point);
   PointList *pl = IPL_POINTLIST(ipl);
 
   w->line.state = GOT_POINT;
@@ -189,7 +189,7 @@ Task line_window(BoxVM *vmp) {
 
 Task line_linestyle(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Real *ls = BOX_VM_ARGPTR1(vmp, Real);
+  Real *ls = BOX_VM_ARG1_PTR(vmp, Real);
   lt_join_style_from_array(& w->line.this_piece.style,
                            ls[0], ls[1], ls[2], ls[3]);
   return Success;

@@ -67,7 +67,7 @@ Task pointlist_str(BoxVM *vm) {
 
 Task pointlist_point(BoxVM *vmp) {
   IPointList *ipl = BOX_VM_THIS(vmp, IPointListPtr);
-  Point *p = BOX_VM_ARGPTR1(vmp, Point);
+  Point *p = BOX_VM_ARG1_PTR(vmp, Point);
   Task t = pointlist_add(& ipl->pl, p, ipl->name);
   free(ipl->name);
   ipl->name = (char *) NULL;

@@ -34,7 +34,7 @@
 #  include <box/array.h>
 #  include <box/hashtable.h>
 #  include <box/list.h>
-#  include <box/vmptr.h>
+#  include <box/vm.h>
 
 /** A symbol ID is just an integer number. The VM knows to what symbol
  * this number refers to.

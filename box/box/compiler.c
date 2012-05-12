@@ -127,7 +127,7 @@ static Value *My_Get_Void_Value(BoxCmp *c) {
 
 void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
   c->attr.own_vm = (target_vm == NULL);
-  c->vm = (target_vm != NULL) ? target_vm : BoxVM_New();
+  c->vm = (target_vm != NULL) ? target_vm : BoxVM_Create();
 
   BoxArr_Init(& c->stack, sizeof(StackItem), 32);
 

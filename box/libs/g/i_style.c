@@ -32,7 +32,7 @@
  */
 
 Task style_begin(BoxVM *vmp) {
-  IStylePtr *sp = BOX_VM_CURRENTPTR(vmp, IStylePtr), s;
+  IStylePtr *sp = BOX_VM_THIS_PTR(vmp, IStylePtr), s;
   int i;
   s = *sp = (IStyle *) malloc(sizeof(IStyle));
   if (s == (IStyle *) NULL) return Failed;
@@ -45,7 +45,7 @@ Task style_begin(BoxVM *vmp) {
 }
 
 Task style_destroy(BoxVM *vmp) {
-  IStylePtr s = BOX_VM_CURRENT(vmp, IStylePtr);
+  IStylePtr s = BOX_VM_THIS(vmp, IStylePtr);
   g_style_clear(& s->style);
   buff_free(& s->dashes);
   free(s);

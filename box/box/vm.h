@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2010 by Matteo Franchin                                    *
+ * Copyright (C) 2010-2012 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -17,10 +17,13 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#ifndef _BOX_VMPTR_H
-#  define _BOX_VMPTR_H
+/**
+ * @file vm.h
+ * @brief Box virtual machine public API.
+ */
 
-//#  include <stdint.h>
+#ifndef _BOX_VM_H
+#  define _BOX_VM_H
 
 typedef struct _BoxVM_struct BoxVM;
 
@@ -29,12 +32,18 @@ typedef struct _BoxVMStatus_struct VMStatus;
 /* Data type used to write/read binary codes for the instructions */
 typedef unsigned char BoxVMByte;
 typedef char BoxVMSByte;
-typedef unsigned long BoxVMByteX4;
-#  define BoxVMByteX4_Fmt "%8.8lx"
+typedef unsigned long BoxVMWord;
+#  define BoxVMWord_Fmt "%8.8lx"
 
-#  ifdef BOX_ABBREV
-typedef BoxVMByteX4 VMByteX4;
-#    define VMByteX4_Fmt BoxVMByteX4_Fmt
-#  endif
+/** Allocate space for a BoxVM object and initialise it with BoxVM_Init.
+ * You'll need to call BoxVM_Destroy to destroy the object.
+ * @see BoxVM_Destroy, BoxVM_Init
+ */
+BOXEXPORT BoxVM *BoxVM_Create(void);
 
-#endif /* _BOX_VMPTR_H */
+/** Destroy a BoxVM object created with BoxVM_Create
+ * @see BoxVM_Create
+ */
+BOXEXPORT void BoxVM_Destroy(BoxVM *vm);
+
+#endif /* _BOX_VM_H */

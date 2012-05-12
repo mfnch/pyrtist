@@ -13,14 +13,13 @@ Task mylib_simple(BoxVM *vm) {
 }
 
 Task mylib_print_str_a(BoxVM *vm) {
-  BoxStr *s = BOX_VM_ARGPTR1(vm, BoxStr);
+  BoxStr *s = BOX_VM_ARG1_PTR(vm, BoxStr);
   printf("A:%s", s->ptr);
   return Success;
 }
 
 Task mylib_print_str_b(BoxVM *vm) {
-  BoxStr *s = BOX_VM_ARGPTR1(vm, BoxStr);
+  BoxStr *s = BOX_VM_ARG1_PTR(vm, BoxStr);
   printf("B:%s", s->ptr);
   return Success;
 }
-

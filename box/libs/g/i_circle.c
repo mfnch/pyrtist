@@ -74,7 +74,7 @@ static Task _circle_point(Window *w, Point *center) {
 
 Task circle_point(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Point *center = BOX_VM_ARGPTR1(vmp, Point);
+  Point *center = BOX_VM_ARG1_PTR(vmp, Point);
   return _circle_point(w, center);
 }
 

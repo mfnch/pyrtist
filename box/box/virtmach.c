@@ -41,8 +41,8 @@
 #include "vmproc.h"
 #include "vmalloc.h"
 
-/* Read the first 4 bytes (VMByteX4), extract the format bit and put the "rest"
- * in the i_eye (which should be defined as 'register VMByteX4 i_eye;')
+/* Read the first 4 bytes (BoxVMWord), extract the format bit and put the "rest"
+ * in the i_eye (which should be defined as 'register BoxVMWord i_eye;')
  * is_long tells if the instruction is encoded with the packed format (4 bytes)
  * or with the long format (> 4 bytes). To read / write an instruction
  * represented with the packed format one should use the macros
@@ -388,7 +388,7 @@ void VM__D_JMP(BoxVM *vmp, char **out) {
 
     if (iat == TYPE_CHAR) m_num = (Int) ((Char) m_num);
 
-    position = (vmp->dasm_pos + m_num)*sizeof(VMByteX4);
+    position = (vmp->dasm_pos + m_num)*sizeof(BoxVMWord);
     sprintf(out[0], SInt, position);
 
   } else {
@@ -401,7 +401,7 @@ void VM__D_GLPI_Imm(BoxVM *vmp, char **out) {
   VMStatus *vmcur = vmp->vmcur;
   UInt iaf = vmcur->arg_type & 3, iat = vmcur->idesc->t_id;
   Int iai;
-  VMByteX4 *arg2;
+  BoxVMWord *arg2;
 
   assert(vmcur->idesc->numargs == 2);
   assert(iat < 4);
@@ -547,7 +547,7 @@ void BoxVM_Finish(BoxVM *vm) {
     BoxOpTable_Destroy(& vm->op_table);
 }
 
-BoxVM *BoxVM_New(void) {
+BoxVM *BoxVM_Create(void) {
   BoxVM *vm = BoxMem_Alloc(sizeof(BoxVM));
   if (vm == NULL) return NULL;
   if (BoxVM_Init(vm) == Failed) {
@@ -705,7 +705,7 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
   const BoxVMInstrDesc *exec_table = vmp->exec_table;
   VMProcTable *pt = & vmp->proc_table;
   VMProcInstalled *p;
-  register VMByteX4 *i_pos, *i_pos0;
+  register BoxVMWord *i_pos, *i_pos0;
   VMStatus vm, *vm_save;
   BoxValue reg0[NUM_TYPES]; /* Registri locali numero zero */
 
@@ -759,11 +759,11 @@ Task BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
 
   do {
     register int is_long;
-    register VMByteX4 i_eye;
+    register BoxVMWord i_eye;
 
 #if DEBUG_EXEC == 1
     fprintf(stderr, "module = "SInt", pos = "SInt" - reading instruction.\n",
-            call_num, i*sizeof(VMByteX4));
+            call_num, i*sizeof(BoxVMWord));
 #endif
 
     /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
@@ -864,11 +864,11 @@ void BoxVM_Set_Attr(BoxVM *vm, BoxVMAttr mask, BoxVMAttr value) {
 
 /* Traduce il codice binario della VM, in formato testo.
  * prog e' il puntatore all'inizio del codice, dim e' la dimensione del codice
- * da tradurre (espresso in "numero di VMByteX4").
+ * da tradurre (espresso in "numero di BoxVMWord").
  */
 Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
   const BoxVMInstrDesc *exec_table = vmp->exec_table;
-  register VMByteX4 *i_pos = (VMByteX4 *) prog;
+  register BoxVMWord *i_pos = (BoxVMWord *) prog;
   VMStatus vm;
   UInt pos, nargs;
   const char *iname;
@@ -882,7 +882,7 @@ Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
   vmp->vmcur = & vm;
   vm.flags.exit = vm.flags.error = 0;
   for (pos = 0; pos < dim;) {
-    VMByteX4 i_eye;
+    BoxVMWord i_eye;
     int is_long;
 
     vm.i_pos = i_pos;
@@ -927,17 +927,17 @@ Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
     }
 
     if (vm.flags.error) {
-      fprintf(output, SUInt "\t"BoxVMByteX4_Fmt"x\tError!",
-              (UInt) (pos * sizeof(VMByteX4)), *i_pos);
+      fprintf(output, SUInt "\t"BoxVMWord_Fmt"x\tError!",
+              (UInt) (pos * sizeof(BoxVMWord)), *i_pos);
 
     } else {
       int i;
-      VMByteX4 *i_pos2 = i_pos;
+      BoxVMWord *i_pos2 = i_pos;
 
       /* Stampo l'istruzione e i suoi argomenti */
-      fprintf(output, SUInt "\t", (UInt) (pos * sizeof(VMByteX4)));
+      fprintf(output, SUInt "\t", (UInt) (pos * sizeof(BoxVMWord)));
       if (vmp->attr.hexcode)
-        fprintf(output, BoxVMByteX4_Fmt"\t", *(i_pos2++));
+        fprintf(output, BoxVMWord_Fmt"\t", *(i_pos2++));
       fprintf(output, "%s", iname);
 
       if (nargs > 0) {
@@ -954,7 +954,7 @@ Task BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
       /* Stampo i restanti codici dell'istruzione in esadecimale */
       if (vmp->attr.hexcode) {
         for(i = 1; i < vm.i_len; i++)
-          fprintf(output, "\t"BoxVMByteX4_Fmt"\n", *(i_pos2++));
+          fprintf(output, "\t"BoxVMWord_Fmt"\n", *(i_pos2++));
       }
     }
 
@@ -1092,8 +1092,8 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
   if (vmp->attr.forcelong) is_short = 0;
   if (is_short == 1 && t <= 2) {
     /* L'istruzione va scritta in formato corto! */
-    VMByteX4 buffer[1], *i_pos = buffer;
-    register VMByteX4 i_eye;
+    BoxVMWord buffer[1], *i_pos = buffer;
+    register BoxVMWord i_eye;
     UInt atype;
     BoxArr *prog = & pt->target_proc->code;
 
@@ -1113,7 +1113,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
   } else {
     /* L'istruzione va scritta in formato lungo! */
     UInt idim, iheadpos;
-    VMByteX4 iw[MAX_SIZE_IN_IWORDS];
+    BoxVMWord iw[MAX_SIZE_IN_IWORDS];
     BoxArr *prog = & pt->target_proc->code;
 
     /* Lascio il posto per la "testa" dell'istruzione (non conoscendo ancora
@@ -1127,7 +1127,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
       UInt adim, aiwdim;
 
       adim = size_of_type[arg[i].t];
-      aiwdim = (adim + sizeof(VMByteX4) - 1) / sizeof(VMByteX4);
+      aiwdim = (adim + sizeof(BoxVMWord) - 1) / sizeof(BoxVMWord);
       iw[aiwdim - 1] = 0;
       (void) memcpy( iw, arg[i].ptr, adim );
 
@@ -1136,12 +1136,12 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
     }
 
     {
-      VMByteX4 *i_pos;
-      register VMByteX4 i_eye;
+      BoxVMWord *i_pos;
+      register BoxVMWord i_eye;
       UInt atype;
 
       /* Trovo il puntatore alla testa dell'istruzione */
-      i_pos = (VMByteX4 *) BoxArr_Item_Ptr(prog, iheadpos);
+      i_pos = (BoxVMWord *) BoxArr_Item_Ptr(prog, iheadpos);
 
       for ( ; t < 2; t++ )
         arg[t].c = 0;

@@ -205,7 +205,7 @@ BoxTask Box_Lib_G_Gradient_At_Window(BoxVM *vmp) {
 }
 
 BoxTask Box_Lib_G_Str_At_Window(BoxVM *vm) {
-  WindowPtr wp = BOX_VM_CURRENT(vm, WindowPtr);
+  WindowPtr wp = BOX_VM_THIS(vm, WindowPtr);
   Window *w = wp;
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
   const char *type_str = (char *) s->ptr;
@@ -225,7 +225,7 @@ BoxTask Box_Lib_G_Str_At_Window(BoxVM *vm) {
 }
 
 BoxTask window_size(BoxVM *vmp) {
-  WindowPtr wp = BOX_VM_CURRENT(vmp, WindowPtr);
+  WindowPtr wp = BOX_VM_THIS(vmp, WindowPtr);
   Window *w = (Window *) wp;
   Point *win_size = BOX_VM_ARG1_PTR(vmp, Point);
 

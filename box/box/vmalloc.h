@@ -51,7 +51,7 @@
 
 #  include <box/types.h>
 #  include <box/vmproc.h>
-#  include <box/vmptr.h>
+#  include <box/vm.h>
 
 /** Used for allocations of blocks of memory without "type". */
 #  define  BOXVMALLOCID_NONE ((BoxVMAllocID) 0)

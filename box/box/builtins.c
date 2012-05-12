@@ -83,7 +83,7 @@ static Task My_Print_Real(BoxVM *vm) {
 }
 
 static Task My_Print_Pnt(BoxVM *vm) {
-  Point *p = BOX_VM_ARGPTR1(vm, Point);
+  Point *p = BOX_VM_ARG1_PTR(vm, Point);
   printf(SPoint, p->x, p->y);
   return Success;
 }
@@ -100,32 +100,32 @@ static Task My_Print_Str(BoxVM *vm) {
  **********************/
 
 static Task My_Math_Sin(BoxVM *vm) {
-  BOX_VM_CURRENT(vm, Real) = sin(BOX_VM_ARG(vm, Real));
+  BOX_VM_THIS(vm, Real) = sin(BOX_VM_ARG(vm, Real));
   return Success;
 }
 
 static Task My_Math_Cos(BoxVM *vm) {
-  BOX_VM_CURRENT(vm, Real) = cos(BOX_VM_ARG(vm, Real));
+  BOX_VM_THIS(vm, Real) = cos(BOX_VM_ARG(vm, Real));
   return Success;
 }
 
 static Task My_Math_Tan(BoxVM *vm) {
-  BOX_VM_CURRENT(vm, Real) = tan(BOX_VM_ARG(vm, Real));
+  BOX_VM_THIS(vm, Real) = tan(BOX_VM_ARG(vm, Real));
   return Success;
 }
 
 static Task My_Math_Asin(BoxVM *vm) {
-  BOX_VM_CURRENT(vm, Real) = asin(BOX_VM_ARG(vm, Real));
+  BOX_VM_THIS(vm, Real) = asin(BOX_VM_ARG(vm, Real));
   return Success;
 }
 
 static Task My_Math_Acos(BoxVM *vm) {
-  BOX_VM_CURRENT(vm, Real) = acos(BOX_VM_ARG(vm, Real));
+  BOX_VM_THIS(vm, Real) = acos(BOX_VM_ARG(vm, Real));
   return Success;
 }
 
 static Task My_Math_Atan(BoxVM *vm) {
-  BOX_VM_CURRENT(vm, Real) = atan(BOX_VM_ARG(vm, Real));
+  BOX_VM_THIS(vm, Real) = atan(BOX_VM_ARG(vm, Real));
   return Success;
 }
 
@@ -136,54 +136,54 @@ static BoxTask My_Math_Atan2(BoxVM *vm) {
 }
 
 static Task My_Math_Exp(BoxVM *vm) {
-  BOX_VM_CURRENT(vm, Real) = exp(BOX_VM_ARG(vm, Real));
+  BOX_VM_THIS(vm, Real) = exp(BOX_VM_ARG(vm, Real));
   return Success;
 }
 
 static Task My_Math_Log(BoxVM *vm) {
-  BOX_VM_CURRENT(vm, Real) = log(BOX_VM_ARG(vm, Real));
+  BOX_VM_THIS(vm, Real) = log(BOX_VM_ARG(vm, Real));
   return Success;
 }
 
 static Task My_Math_Log10(BoxVM *vm) {
-  BOX_VM_CURRENT(vm, Real) = log10(BOX_VM_ARG(vm, Real));
+  BOX_VM_THIS(vm, Real) = log10(BOX_VM_ARG(vm, Real));
   return Success;
 }
 
 static Task My_Math_Sqrt(BoxVM *vm) {
-  BOX_VM_CURRENT(vm, Real) = sqrt(BOX_VM_ARG(vm, Real));
+  BOX_VM_THIS(vm, Real) = sqrt(BOX_VM_ARG(vm, Real));
   return Success;
 }
 
 static Task My_Math_Ceil(BoxVM *vm) {
-  BOX_VM_CURRENT(vm, Int) = ceil(BOX_VM_ARG(vm, Real));
+  BOX_VM_THIS(vm, Int) = ceil(BOX_VM_ARG(vm, Real));
   return Success;
 }
 
 static Task My_Math_Floor(BoxVM *vm) {
-  BOX_VM_CURRENT(vm, Int) = floor(BOX_VM_ARG(vm, Real));
+  BOX_VM_THIS(vm, Int) = floor(BOX_VM_ARG(vm, Real));
   return Success;
 }
 
 static Task My_Math_Abs(BoxVM *vm) {
-  BOX_VM_CURRENT(vm, Real) = fabs(BOX_VM_ARG(vm, Real));
+  BOX_VM_THIS(vm, Real) = fabs(BOX_VM_ARG(vm, Real));
   return Success;
 }
 
 static Task My_Math_Norm(BoxVM *vm) {
-  Point *p = BOX_VM_ARGPTR1(vm, Point);
-  BOX_VM_CURRENT(vm, Real) = sqrt(p->x*p->x + p->y*p->y);
+  Point *p = BOX_VM_ARG1_PTR(vm, Point);
+  BOX_VM_THIS(vm, Real) = sqrt(p->x*p->x + p->y*p->y);
   return Success;
 }
 
 static Task My_Math_Norm2(BoxVM *vm) {
-  Point *p = BOX_VM_ARGPTR1(vm, Point);
-  BOX_VM_CURRENT(vm, Real) = p->x*p->x + p->y*p->y;
+  Point *p = BOX_VM_ARG1_PTR(vm, Point);
+  BOX_VM_THIS(vm, Real) = p->x*p->x + p->y*p->y;
   return Success;
 }
 
 static Task My_Min_Open(BoxVM *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = BOXREAL_MAX;
+  BOX_VM_THIS(vmp, Real) = BOXREAL_MAX;
   return Success;
 }
 
@@ -195,7 +195,7 @@ static Task My_Min_Real(BoxVM *vmp) {
 }
 
 static Task My_Max_Open(BoxVM *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = BOXREAL_MIN;
+  BOX_VM_THIS(vmp, Real) = BOXREAL_MIN;
   return Success;
 }
 
@@ -293,39 +293,39 @@ static BoxTask My_Compare_Init(BoxVM *vm) {
  *****************************************************************************/
 
 static Task My_Char_Char(BoxVM *vmp) {
-  BOX_VM_CURRENT(vmp, Char) = BOX_VM_ARG1(vmp, Char); return Success;
+  BOX_VM_THIS(vmp, Char) = BOX_VM_ARG1(vmp, Char); return Success;
 }
 
 static Task My_Char_Int(BoxVM *vmp) {
-  BOX_VM_CURRENT(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Int); return Success;
+  BOX_VM_THIS(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Int); return Success;
 }
 
 static Task My_Char_Real(BoxVM *vmp) {
-  BOX_VM_CURRENT(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Real); return Success;
+  BOX_VM_THIS(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Real); return Success;
 }
 
 static Task My_Int_Int(BoxVM *vmp) {
-  BOX_VM_CURRENT(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;
+  BOX_VM_THIS(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;
 }
 
 static Task My_Int_Real(BoxVM *vmp) {
-  BOX_VM_CURRENT(vmp, Int) = (Int) BOX_VM_ARG1(vmp, Real); return Success;
+  BOX_VM_THIS(vmp, Int) = (Int) BOX_VM_ARG1(vmp, Real); return Success;
 }
 
 static Task My_Real_Real(BoxVM *vmp) {
-  BOX_VM_CURRENT(vmp, Real) = BOX_VM_ARG1(vmp, Real); return Success;
+  BOX_VM_THIS(vmp, Real) = BOX_VM_ARG1(vmp, Real); return Success;
 }
 
 static Task My_Point_RealNumCouple(BoxVM *vmp) {
-  BOX_VM_CURRENT(vmp, Point) = BOX_VM_ARG1(vmp, Point); return Success;
+  BOX_VM_THIS(vmp, Point) = BOX_VM_ARG1(vmp, Point); return Success;
 }
 
 static Task My_If_Int(BoxVM *vmp) {
-  BOX_VM_CURRENT(vmp, Int) = !BOX_VM_ARG1(vmp, Int); return Success;
+  BOX_VM_THIS(vmp, Int) = !BOX_VM_ARG1(vmp, Int); return Success;
 }
 
 static Task My_For_Int(BoxVM *vmp) {
-  BOX_VM_CURRENT(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;
+  BOX_VM_THIS(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;
 }
 
 /****************************************************************************/

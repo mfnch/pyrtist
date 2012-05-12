@@ -34,7 +34,7 @@
 #  include <stdio.h>
 
 #  include <box/occupation.h>
-#  include <box/vmptr.h>
+#  include <box/vm.h>
 #  include <box/srcpos.h>
 
 /** When a procedure is created, an ID (an integer number) is assigned to it.
@@ -214,12 +214,12 @@ BoxVMCallNum BoxVM_Proc_Install_CCode(BoxVM *vm,
                                       const char *name, const char *desc);
 
 /** Get the pointer to the bytecode of the procedure 'proc_num' and its
- * length, expressed as number of VMByteX4 elements.
+ * length, expressed as number of BoxVMWord elements.
  * The information is stored inside *ptr, and *length.
  * If one of these pointer is NULL, then the corresponding information
  * is not written.
  */
-void BoxVM_Proc_Get_Ptr_And_Length(BoxVM *vmp, VMByteX4 **ptr,
+void BoxVM_Proc_Get_Ptr_And_Length(BoxVM *vmp, BoxVMWord **ptr,
                                    BoxUInt *length, BoxVMProcID proc_id);
 
 /** Print as plain text the code contained inside the procedure 'proc_num'.

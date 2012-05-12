@@ -76,7 +76,7 @@ BoxVMProcID BoxVM_Proc_Code_New(BoxVM *vm) {
 
   procedure.status.error = 0;
   procedure.status.inhibit = 0;
-  BoxArr_Init(& procedure.code, sizeof(VMByteX4), VM_PROC_CODE_SIZE);
+  BoxArr_Init(& procedure.code, sizeof(BoxVMWord), VM_PROC_CODE_SIZE);
   BoxSrcPosTable_Init(& procedure.pos_table);
   n = BoxOcc_Occupy(& pt->uninstalled, & procedure);
   My_Target_Proc_Refresh(vm);
@@ -241,17 +241,17 @@ BoxVMProcID BoxVM_Proc_Get_ID(BoxVM *vm, BoxVMCallNum call_num) {
     return BOXVMPROCID_NONE;
 }
 
-void BoxVM_Proc_Get_Ptr_And_Length(BoxVM *vmp, VMByteX4 **ptr,
+void BoxVM_Proc_Get_Ptr_And_Length(BoxVM *vmp, BoxVMWord **ptr,
                                    UInt *length, BoxVMProcID proc_id) {
   VMProcTable *pt = & vmp->proc_table;
   BoxVMProc *procedure = (BoxVMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, proc_id);
   BoxArr *code = & procedure->code;
   if (length != NULL) *length = BoxArr_Num_Items(code);
-  if (ptr != NULL) *ptr = (VMByteX4 *) BoxArr_First_Item_Ptr(code);
+  if (ptr != NULL) *ptr = (BoxVMWord *) BoxArr_First_Item_Ptr(code);
 }
 
 Task BoxVM_Proc_Disassemble(BoxVM *vmp, FILE *out, BoxVMProcID proc_id) {
-  VMByteX4 *ptr;
+  BoxVMWord *ptr;
   UInt length;
   BoxVM_Proc_Get_Ptr_And_Length(vmp, & ptr, & length, proc_id);
   return BoxVM_Disassemble(vmp, out, ptr, length);
@@ -310,7 +310,7 @@ Task BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out) {
 void BoxVM_Proc_Associate_Source(BoxVM *vm, BoxVMProcID id, BoxSrcPos *sp) {
   VMProcTable *pt = & vm->proc_table;
   BoxVMProc *p = (BoxVMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, id);
-  BoxOutPos op = sizeof(VMByteX4)*BoxArr_Num_Items(& p->code);
+  BoxOutPos op = sizeof(BoxVMWord)*BoxArr_Num_Items(& p->code);
   BoxSrcPosTable_Associate(& p->pos_table, op, sp);
 }
 

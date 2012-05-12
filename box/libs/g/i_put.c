@@ -166,7 +166,7 @@ Task window_put_end(BoxVM *vmp) {
 
 Task window_put_window(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  WindowPtr *wp = BOX_VM_ARGPTR1(vmp, WindowPtr);
+  WindowPtr *wp = BOX_VM_ARG1_PTR(vmp, WindowPtr);
   w->put.figure = (void *) *wp;
   w->put.got.figure = 1;
   return Success;
@@ -174,7 +174,7 @@ Task window_put_window(BoxVM *vmp) {
 
 Task window_put_point(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Point *translation = BOX_VM_ARGPTR1(vmp, Point);
+  Point *translation = BOX_VM_ARG1_PTR(vmp, Point);
   w->put.translation = *translation;
   if (w->put.got.translation)
     g_warning("ignoring previously specified translation vector!");
@@ -184,7 +184,7 @@ Task window_put_point(BoxVM *vmp) {
 
 Task window_put_real(BoxVM *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Real *rot_angle = BOX_VM_ARGPTR1(vmp, Real);
+  Real *rot_angle = BOX_VM_ARG1_PTR(vmp, Real);
   w->put.rot_angle = *rot_angle;
   if (w->put.got.rot_angle)
     g_warning("ignoring previously specified rotation angle!");
@@ -214,10 +214,10 @@ Task window_put_matrix(BoxVM *vmp) {
 }
 
 Task window_put_scale_real(BoxVM *vmp) {
-  Subtype *scale_of_window_put = BOX_VM_CURRENTPTR(vmp, Subtype);
+  Subtype *scale_of_window_put = BOX_VM_THIS_PTR(vmp, Subtype);
   Subtype *put_of_window = SUBTYPE_PARENT_PTR(scale_of_window_put, Subtype);
   Window *w = *((Window **) SUBTYPE_PARENT_PTR(put_of_window, WindowPtr));
-  Real *scale = BOX_VM_ARGPTR1(vmp, Real);
+  Real *scale = BOX_VM_ARG1_PTR(vmp, Real);
   w->put.scale.y = w->put.scale.x = *scale;
   if (w->put.got.scale)
     g_warning("ignoring previously specified scale factors!");
@@ -226,10 +226,10 @@ Task window_put_scale_real(BoxVM *vmp) {
 }
 
 Task window_put_scale_point(BoxVM *vmp) {
-  Subtype *scale_of_window_put = BOX_VM_CURRENTPTR(vmp, Subtype);
+  Subtype *scale_of_window_put = BOX_VM_THIS_PTR(vmp, Subtype);
   Subtype *put_of_window = SUBTYPE_PARENT_PTR(scale_of_window_put, Subtype);
   Window *w = *((Window **) SUBTYPE_PARENT_PTR(put_of_window, WindowPtr));
-  Point *p = BOX_VM_ARGPTR1(vmp, Point);
+  Point *p = BOX_VM_ARG1_PTR(vmp, Point);
   w->put.scale.x = p->x;
   w->put.scale.y = p->y;
   if (w->put.got.scale)
@@ -317,7 +317,7 @@ Task window_put_near_int(BoxVM *vmp) {
 
 Task window_put_near_point(BoxVM *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
-  Point *p = BOX_VM_ARGPTR1(vmp, Point);
+  Point *p = BOX_VM_ARG1_PTR(vmp, Point);
   if (!w->put.near.have.on_src) {
     w->put.near.on_src = *p;
     w->put.near.have.on_src = 1;
