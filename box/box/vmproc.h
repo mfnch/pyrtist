@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 /** @file vmproc.h
  * @brief The procedure manager for the Box VM.
  *
@@ -27,8 +25,8 @@
  * and to manipulate them in many ways.
  */
 
-#ifndef _VMPROC_H_TYPES
-#  define _VMPROC_H_TYPES
+#ifndef _BOX_VMPROC_H
+#  define _BOX_VMPROC_H
 
 #  include <stdlib.h>
 #  include <stdio.h>
@@ -42,6 +40,12 @@
  */
 typedef BoxUInt BoxVMProcID;
 typedef BoxVMProcID BoxVMProcNum; /* Alias for BoxVMProcID */
+
+/** A particular kind of C function which can be registered and called directly
+ * by the Box VM.
+ * @see VM_Proc_Install_CCode
+ */
+typedef Task (*BoxVMCCode)(BoxVM *);
 
 /** Procedure state. */
 typedef enum {
@@ -111,13 +115,8 @@ typedef struct {
 #ifdef BOX_ABBREV
 typedef BoxVMProcInstalled VMProcInstalled;
 typedef BoxVMProcTable VMProcTable;
+typedef BoxVMCCode VMCCode;
 #endif
-
-#endif
-
-#ifndef _VMPROC_H
-#  ifndef _INSIDE_VIRTMACH_H
-#    define _VMPROC_H
 
 /** Initialize the procedure table.
  * @param vmp is the VM-program.
@@ -195,15 +194,6 @@ BoxVMCallNum BoxVM_Proc_Install_Undefined(BoxVM *vm);
  */
 BoxVMProcState BoxVM_Is_Installed(BoxVM *vm, BoxVMCallNum call_num);
 
-/** The prototype of a C-function to be used as a procedure.
- * @see VM_Proc_Install_CCode
- */
-typedef Task (*BoxVMCCode)(BoxVM *);
-
-#ifdef BOX_ABBREV
-typedef BoxVMCCode VMCCode;
-#endif
-
 /** Similar to VM_Proc_Install_Code, but install the given C-function
  * 'c_proc' as a new procedure. The call-number is returned in '*call_num'.
  * @see BoxVM_Proc_Install_Code
@@ -251,5 +241,4 @@ void BoxVM_Proc_Associate_Source(BoxVM *vm, BoxVMProcID id, BoxSrcPos *sp);
  */
 BoxSrcPos *BoxVM_Proc_Get_Source_Of(BoxVM *vm, BoxVMProcID id, BoxOutPos op);
 
-#  endif
-#endif
+#endif /* _BOX_VMPROC_H */

@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2010-2012 by Matteo Franchin                               *
+ * Copyright (C) 2012 by Matteo Franchin                                    *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -17,37 +17,18 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/**
- * @file vm.h
- * @brief Box virtual machine public API.
+/** @file vmproc_private.h
+ * @brief The private header for the VM procedure module.
  */
 
-#ifndef _BOX_VM_H
-#  define _BOX_VM_H
+#ifndef _BOX_VMPROC_PRIVATE_H
+#  define _BOX_VMPROC_PRIVATE_H
 
-/** A virtual machine object, containing the code to be executed.
- * A BoxVM object can be used to construct a VM executor, BoxVMX, which can
- * execute the code contained in the BoxVM object.
- */
-typedef struct _BoxVM_struct BoxVM;
+#  include <stdlib.h>
+#  include <stdio.h>
 
-typedef struct _BoxVMStatus_struct VMStatus;
+#  include <box/occupation.h>
+#  include <box/vm.h>
+#  include <box/srcpos.h>
 
-/* Data type used to write/read binary codes for the instructions */
-typedef unsigned char BoxVMByte;
-typedef char BoxVMSByte;
-typedef unsigned long BoxVMWord;
-#  define BoxVMWord_Fmt "%8.8lx"
-
-/** Allocate space for a BoxVM object and initialise it with BoxVM_Init.
- * You'll need to call BoxVM_Destroy to destroy the object.
- * @see BoxVM_Destroy, BoxVM_Init
- */
-BOXEXPORT BoxVM *BoxVM_Create(void);
-
-/** Destroy a BoxVM object created with BoxVM_Create
- * @see BoxVM_Create
- */
-BOXEXPORT void BoxVM_Destroy(BoxVM *vm);
-
-#endif /* _BOX_VM_H */
+#endif /* _BOX_VMPROC_PRIVATE_H */

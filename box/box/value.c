@@ -126,11 +126,6 @@ void Value_Link(Value *v) {
   v->num_ref += 1;
 }
 
-static Value *My_Link(Value *v) {
-  v->num_ref += 1;
-  return v;
-}
-
 /* Determine if the given value can be recycled, otherwise return Value_New()
  * REFERENCES: return: new, v: -1;
  */
@@ -400,7 +395,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
     break;
 
   case VALCONTTYPE_GREG:
-    v->value.cont.categ = CAT_GREG;
+    v->value.cont.categ = BOXCONTCATEG_GREG;
     v->value.cont.value.reg = vc->which_one;
     return;
     break;
@@ -803,7 +798,7 @@ BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child) {
 Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType new_type) {
   BoxCmp *c = v_ptr->proc->cmp;
 
-  assert(v_ptr->value.cont.type == BOXTYPE_PTR);
+  assert(v_ptr->value.cont.type == BOXCONTTYPE_PTR);
 
   if (v_ptr->num_ref == 1) {
     BoxCont *cont = & v_ptr->value.cont;
@@ -900,7 +895,7 @@ Value *Value_Cast_To_Ptr(Value *v) {
  * REFERENCES: return: new, v_obj: -1;
  */
 Value *Value_To_Straight_Ptr(Value *v_obj) {
-  assert(v_obj->value.cont.type == BOXTYPE_OBJ);
+  assert(v_obj->value.cont.type == BOXCONTTYPE_OBJ);
 
   if (v_obj->value.cont.categ == BOXCONTCATEG_PTR) {
     ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
@@ -913,7 +908,7 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     v_ret = Value_New(cur_proc);
     Value_Setup_Container(v_ret, t, & vc);
 
-    assert(v_ret->value.cont.type == BOXTYPE_OBJ);
+    assert(v_ret->value.cont.type == BOXCONTTYPE_OBJ);
     CmpProc_Assemble(v_ret->proc, BOXGOP_LEA, 2, & v_ret->value.cont, & cont);
     return v_ret;
 

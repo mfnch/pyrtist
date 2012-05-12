@@ -40,9 +40,10 @@
 #ifndef _BOX_REGISTERS_H
 #  define _BOX_REGISTERS_H
 
-#  include "types.h"
-#  include "array.h"
-#  include "occupation.h"
+#  include <box/types.h>
+#  include <box/defaults.h>
+#  include <box/array.h>
+#  include <box/occupation.h>
 
 /** Register number (an alias for integer) */
 typedef BoxInt BoxVMRegNum;

@@ -24,8 +24,8 @@
  * declaration, installation, referencing, assembly, etc.
  */
 
-#ifndef _CMPPROC_H
-#  define _CMPPROC_H
+#ifndef _BOX_CMPPROC_H
+#  define _BOX_CMPPROC_H
 
 #  include <stdlib.h>
 #  include <stdarg.h>
@@ -276,4 +276,4 @@ void CmpProc_Assemble_CJump(CmpProc *p, BoxVMSymID jl, BoxCont *cont);
  */
 void CmpProc_Associate_Source(CmpProc *p, BoxSrcPos *src_pos);
 
-#endif
+#endif /* _BOX_CMPPROC_H */

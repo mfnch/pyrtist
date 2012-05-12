@@ -27,8 +27,8 @@
  * say that this file implements the Box linker.
  */
 
-#ifndef _BOX_VMSYM_H_TYPES
-#  define _BOX_VMSYM_H_TYPES
+#ifndef _BOX_VMSYM_H
+#  define _BOX_VMSYM_H
 
 #  include <box/types.h>
 #  include <box/array.h>
@@ -44,7 +44,7 @@ typedef BoxUInt BoxVMSymID;
 /** Invalid symbol ID */
 #define BOXVMSYMID_NONE ((BoxVMSymID) 0)
 
-/** @brief The table of reference and definition for the Box VM.
+/** @brief The table of references and definitions for the Box VM.
  *
  * This structure is embedded in the main VM structure VMProgram.
  */
@@ -109,14 +109,6 @@ typedef struct {
   BoxVMSymCodeGen
           code_gen;
 } BoxVMSymCodeRef;
-
-#  undef BoxVM
-
-#endif
-
-#ifndef _BOX_VMSYM_H
-#  ifndef _INSIDE_VIRTMACH_H
-#    define _BOX_VMSYM_H
 
 /** Initialize the symbol table of the program.
  * @param vmp is the VM-program.
@@ -223,5 +215,4 @@ Task BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_num,
 #  define BoxVMSym_Code_Def BoxVMSym_Def
 #  define BoxVMSym_Resolve_All(vmp) BoxVMSym_Resolve(vmp, 0)
 
-#  endif
-#endif
+#endif /* _BOX_VMSYM_H */

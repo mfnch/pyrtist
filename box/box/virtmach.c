@@ -40,6 +40,7 @@
 #include "vmsym.h"
 #include "vmproc.h"
 #include "vmalloc.h"
+#include "container.h"
 
 /* Read the first 4 bytes (BoxVMWord), extract the format bit and put the "rest"
  * in the i_eye (which should be defined as 'register BoxVMWord i_eye;')
@@ -80,8 +81,8 @@
 { arg = (signed char) ((i_eye >>= 8) & 0xff); }
 
 #define ASM_SHORT_GET_2ARGS(i_pos, i_eye, arg1, arg2) \
-{ arg1 = (signed char) ((i_eye >>= 8) & 0xff); \
-  arg2 = (signed char) ((i_eye >>= 8) & 0xff); }
+  do {arg1 = (signed char) ((i_eye >>= 8) & 0xff); \
+      arg2 = (signed char) ((i_eye >>= 8) & 0xff);} while(0)
 
 /* LONG INSTRUCTION: we assemble the istruction header in the following way:
  *  FIRST FOUR BYTES:
@@ -158,7 +159,7 @@ static void *My_Get_Arg_Ptrs(VMStatus *vmcur, int kind, Int n) {
     static Int i = 0;
     static union {Char c; Int i; Real r;} v[2], *value;
 
-    assert(t >= TYPE_CHAR && t <= TYPE_REAL);
+    assert(t >= BOXTYPE_CHAR && t <= BOXTYPE_REAL);
 
     value = & v[i]; i ^= 1;
     switch (t) {
@@ -264,14 +265,10 @@ void VM__D_GLPI_GLPI(BoxVM *vmp, char **out) {
   switch (na) {
   case 1:
     {
-      void *arg2;
-
       if (vmcur->flags.is_long) {
         ASM_LONG_GET_1ARG(vmcur->i_pos, vmcur->i_eye, iaint[0]);
-        arg2 = vmcur->i_pos;
       } else {
         ASM_SHORT_GET_1ARG(vmcur->i_pos, vmcur->i_eye, iaint[0]);
-        arg2 = vmcur->i_pos;
       }
       break;
     }
@@ -298,13 +295,13 @@ void VM__D_GLPI_GLPI(BoxVM *vmp, char **out) {
       tc = typechars[iat];
       if (uiai < 0) {uiai = -uiai; rc = 'v';} else rc = 'r';
       switch(iaf) {
-        case CAT_GREG:
+        case BOXCONTCATEG_GREG:
           sprintf(out[n], "g%c%c" SInt, rc, tc, uiai);
           break;
-        case CAT_LREG:
+        case BOXCONTCATEG_LREG:
           sprintf(out[n], "%c%c" SInt, rc, tc, uiai);
           break;
-        case CAT_PTR:
+        case BOXCONTCATEG_PTR:
           if ( iai < 0 )
             sprintf(out[n], "%c[ro0 - " SInt "]", tc, uiai);
           else if ( iai == 0 )
@@ -312,7 +309,7 @@ void VM__D_GLPI_GLPI(BoxVM *vmp, char **out) {
           else
             sprintf(out[n], "%c[ro0 + " SInt "]", tc, uiai);
           break;
-        case CAT_IMM:
+        case BOXCONTCATEG_IMM:
           if (iat == TYPE_CHAR) iai = (Int) ((Char) iai);
           sprintf(out[n], SInt, iai);
           break;
@@ -328,17 +325,14 @@ void VM__D_CALL(BoxVM *vmp, char **out) {
 
   assert(na == 1);
 
-  if ((vmcur->arg_type & 3) == CAT_IMM) {
+  if ((vmcur->arg_type & 3) == BOXCONTCATEG_IMM) {
     UInt iat = vmcur->idesc->t_id;
     Int call_num;
-    void *arg2;
 
     if ( vmcur->flags.is_long ) {
       ASM_LONG_GET_1ARG(vmcur->i_pos, vmcur->i_eye, call_num);
-      arg2 = vmcur->i_pos;
     } else {
       ASM_SHORT_GET_1ARG(vmcur->i_pos, vmcur->i_eye, call_num);
-      arg2 = vmcur->i_pos;
     }
 
     if (iat == TYPE_CHAR) call_num = (Int) ((Char) call_num);
@@ -372,18 +366,15 @@ void VM__D_JMP(BoxVM *vmp, char **out) {
 
   assert(na == 1);
 
-  if ((vmcur->arg_type & 3) == CAT_IMM) {
+  if ((vmcur->arg_type & 3) == BOXCONTCATEG_IMM) {
     UInt iat = vmcur->idesc->t_id;
     Int m_num;
     Int position;
-    void *arg2;
 
     if (vmcur->flags.is_long) {
       ASM_LONG_GET_1ARG(vmcur->i_pos, vmcur->i_eye, m_num);
-      arg2 = vmcur->i_pos;
     } else {
       ASM_SHORT_GET_1ARG(vmcur->i_pos, vmcur->i_eye, m_num);
-      arg2 = vmcur->i_pos;
     }
 
     if (iat == TYPE_CHAR) m_num = (Int) ((Char) m_num);
@@ -424,13 +415,13 @@ void VM__D_GLPI_Imm(BoxVM *vmp, char **out) {
     tc = typechars[iat];
     if (uiai < 0) {uiai = -uiai; rc = 'v';} else rc = 'r';
     switch(iaf) {
-      case CAT_GREG:
+      case BOXCONTCATEG_GREG:
         sprintf(out[0], "g%c%c" SInt, rc, tc, uiai);
         break;
-      case CAT_LREG:
+      case BOXCONTCATEG_LREG:
         sprintf(out[0], "%c%c" SInt, rc, tc, uiai);
         break;
-      case CAT_PTR:
+      case BOXCONTCATEG_PTR:
         if (iai < 0)
           sprintf(out[0], "%c[ro0 - " SInt "]", tc, uiai);
         else if (iai == 0)
@@ -438,7 +429,7 @@ void VM__D_GLPI_Imm(BoxVM *vmp, char **out) {
         else
           sprintf(out[0], "%c[ro0 + " SInt "]", tc, uiai);
         break;
-      case CAT_IMM:
+      case BOXCONTCATEG_IMM:
         sprintf(out[0], SInt, iai);
         break;
     }
@@ -1027,51 +1018,51 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
     /* Prendo dalla lista degli argomenti della funzione la categoria
     * dell'argomento dell'istruzione.
     */
-    switch (arg[t].c = va_arg(ap, AsmArg)) {
-      case CAT_LREG:
-      case CAT_GREG:
-      case CAT_PTR:
+    switch (arg[t].c = va_arg(ap, BoxContCateg)) {
+    case BOXCONTCATEG_LREG:
+    case BOXCONTCATEG_GREG:
+    case BOXCONTCATEG_PTR:
+      arg[t].t = TYPE_INT;
+      arg[t].vi = vi = va_arg(ap, Int);
+      arg[t].ptr = (void *) (& arg[t].vi);
+      break;
+
+    case BOXCONTCATEG_IMM:
+      switch (idesc->t_id) {
+      case TYPE_CHAR:
+        arg[t].t = TYPE_CHAR;
+        arg[t].vi = va_arg(ap, Int); vi = 0;
+        arg[t].ptr = (void *) (& arg[t].vi);
+        break;
+      case TYPE_INT:
         arg[t].t = TYPE_INT;
         arg[t].vi = vi = va_arg(ap, Int);
         arg[t].ptr = (void *) (& arg[t].vi);
         break;
-
-      case CAT_IMM:
-        switch (idesc->t_id) {
-          case TYPE_CHAR:
-            arg[t].t = TYPE_CHAR;
-            arg[t].vi = va_arg(ap, Int); vi = 0;
-            arg[t].ptr = (void *) (& arg[t].vi);
-            break;
-          case TYPE_INT:
-            arg[t].t = TYPE_INT;
-            arg[t].vi = vi = va_arg(ap, Int);
-            arg[t].ptr = (void *) (& arg[t].vi);
-            break;
-          case TYPE_REAL:
-            is_short = 0;
-            arg[t].t = TYPE_REAL;
-            arg[t].vr = va_arg(ap, Real);
-            arg[t].ptr = (void *) (& arg[t].vr);
-            break;
-          case TYPE_POINT:
-            is_short = 0;
-            arg[t].t = TYPE_POINT;
-            arg[t].vp.x = va_arg(ap, Real);
-            arg[t].vp.y = va_arg(ap, Real);
-            arg[t].ptr = (void *) (& arg[t].vp);
-            break;
-          default:
-            is_short = 0;
-            break;
-        }
+      case TYPE_REAL:
+        is_short = 0;
+        arg[t].t = TYPE_REAL;
+        arg[t].vr = va_arg(ap, Real);
+        arg[t].ptr = (void *) (& arg[t].vr);
         break;
-
+      case TYPE_POINT:
+        is_short = 0;
+        arg[t].t = TYPE_POINT;
+        arg[t].vp.x = va_arg(ap, Real);
+        arg[t].vp.y = va_arg(ap, Real);
+        arg[t].ptr = (void *) (& arg[t].vp);
+        break;
       default:
-        MSG_ERROR("Categoria di argomenti sconosciuta!");
-        pt->target_proc->status.error = 1;
-        pt->target_proc->status.inhibit = 1;
+        is_short = 0;
         break;
+      }
+      break;
+        
+    default:
+      MSG_ERROR("Categoria di argomenti sconosciuta!");
+      pt->target_proc->status.error = 1;
+      pt->target_proc->status.inhibit = 1;
+      break;
     }
 
     if (is_short) {

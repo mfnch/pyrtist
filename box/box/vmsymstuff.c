@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 #include <assert.h>
 
 #include "types.h"
@@ -26,6 +24,7 @@
 #include "vmalloc.h"
 #include "vmsym.h"
 #include "vmsymstuff.h"
+#include "container.h"
 
 /*** call references ********************************************************/
 
@@ -41,7 +40,7 @@ static Task My_Assemble_Call(BoxVM *vm, UInt sym_num, UInt sym_type,
     assert(def_size == sizeof(BoxVMCallNum));
     call_num = *((BoxVMCallNum *) def);
   }
-  BoxVM_Assemble_Long(vm, BOXOP_CALL_I, CAT_IMM, call_num);
+  BoxVM_Assemble_Long(vm, BOXOP_CALL_I, BOXCONTCATEG_IMM, call_num);
   return Success;
 }
 
@@ -91,7 +90,7 @@ BoxVMCallNum BoxVMSym_Get_Call_Num(BoxVM *vm, BoxVMSymID sym_id) {
 void BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
   BoxVMCallNum call_num = *((BoxVMCallNum *) BoxVMSym_Get_Definition(vm, sym_id));
   BoxVMSym_Ref(vm, sym_id, My_Assemble_Call, NULL, 0, BOXVMSYM_AUTO);
-  BoxVM_Assemble(vm, BOXOP_CALL_I, CAT_IMM, call_num);
+  BoxVM_Assemble(vm, BOXOP_CALL_I, BOXCONTCATEG_IMM, call_num);
 }
 
 
@@ -157,7 +156,7 @@ typedef struct {
 static Task Assemble_Jmp(BoxVM *vmp, UInt sym_num, UInt sym_type,
                          int defined, void *def, UInt def_size,
                          void *ref, UInt ref_size) {
-  Int sheet_id, rel_position = 0;
+  Int rel_position = 0;
   BoxOp asm_code = BOXOP_JC_I;
   VMSymLabelRef *label_ref = ref;
 
@@ -168,14 +167,13 @@ static Task Assemble_Jmp(BoxVM *vmp, UInt sym_num, UInt sym_type,
   if (defined && def != NULL) {
     Int def_position, ref_position;
     assert(def_size == sizeof(VMSymLabel));
-    sheet_id = ((VMSymLabel *) def)->sheet_id;
     def_position = ((VMSymLabel *) def)->position;
     ref_position = label_ref->position;
     rel_position = def_position - ref_position;
   }
 
   asm_code = (label_ref->conditional) ? BOXOP_JC_I : BOXOP_JMP_I;
-  BoxVM_Assemble_Long(vmp, asm_code, CAT_IMM, rel_position);
+  BoxVM_Assemble_Long(vmp, asm_code, BOXCONTCATEG_IMM, rel_position);
   return Success;
 }
 
@@ -259,7 +257,8 @@ static Task Assemble_Proc_Head(BoxVM *vmp, UInt sym_num, UInt sym_type,
   for(i = 0; i < NUM_TYPES; i++) {
     Int nv = ph->num_var[i], nr = ph->num_reg[i];
     assert(nv >= 0 && nr >= 0);
-    BoxVM_Assemble_Long(vmp, asm_code[i], CAT_IMM, nv, CAT_IMM, nr);
+    BoxVM_Assemble_Long(vmp, asm_code[i],
+                        BOXCONTCATEG_IMM, nv, BOXCONTCATEG_IMM, nr);
     /* ^^^ should use BoxVM_Assemble_Long for more than 127 regs/vars */
   }
   return Success;

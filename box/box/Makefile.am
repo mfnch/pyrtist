@@ -67,6 +67,7 @@ dist_boxpkg_DATA=core.dox
 
 # *** box compiler ***
 noinst_HEADERS = \
+  vmproc_private.h \
   fileutils.h registers.h tokenizer.h macro.h parserh.h typesys.h  paths.h \
   cmpproc.h ast.h cmpptrs.h value.h compiler.h operator.h \
   namespace.h autogen.h tsdesc.h builtins.h bltinstr.h bltinio.h bltinarray.h

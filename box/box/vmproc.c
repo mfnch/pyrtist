@@ -27,6 +27,7 @@
 #include "virtmach.h"
 #include "vmproc.h"
 #include "srcpos.h"
+#include "vmalloc.h"
 
 static void Procedure_Destroy(void *s) {
   BoxArr_Finish(& ((BoxVMProc *) s)->code);

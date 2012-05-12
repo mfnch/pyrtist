@@ -38,12 +38,8 @@
 #  include <box/occupation.h>
 #  include <box/hashtable.h>
 #  include <box/vm.h>
-#  include <box/vmalloc.h>
-
-#  define _INSIDE_VIRTMACH_H
 #  include <box/vmproc.h>
 #  include <box/vmsym.h>
-#  undef _INSIDE_VIRTMACH_H
 
 /** To each type a number is associated. */
 typedef BoxType Type;
@@ -178,12 +174,6 @@ typedef struct {
   BoxOpReg  *regs;             /**< Buffer used by the BoxOpTable.info */
 } BoxOpTable;
 
-/* Enumerazione delle categorie di argomento, utilizzata da Asm_Assemble
- * per assemblare le istruzioni.
- * NOTA: Questa enumerazione deve essere coerente con l'ordine dell'array
- *  vm_gets[].
- */
-typedef enum {CAT_NONE = -1, CAT_GREG = 0, CAT_LREG, CAT_PTR, CAT_IMM} AsmArg;
 typedef enum {
   BOXOPCAT_NONE = -1,
   BOXOPCAT_GREG = 0,
@@ -234,7 +224,7 @@ struct _BoxVMStatus_struct {
 
   BoxVMProcInstalled *p;  /**< Procedure which is currently been executed */
 
-  BoxVMWord *i_pos,     /**< Pointer to the current instruction */
+  BoxVMWord   *i_pos,     /**< Pointer to the current instruction */
               i_eye;      /**< Execution "eye" (last four bytes processed) */
   BoxUInt     i_type,     /**< Type of instruction */
               i_len,      /**< Size of instruction */
@@ -390,13 +380,13 @@ typedef struct {
                                    (whether a 'new num_regs, num_vars'
                                    instruction has been used) */
 
-} BoxVMX;
+} BoxVMXXX;
 
 /** Initialize a new VM executor in 'vmx'. */
-void BoxVMX_Init(BoxVMX *vmx, BoxVM *vm);
+void BoxVMXXX_Init(BoxVMXXX *vmx, BoxVM *vm);
 
 /** Finalize a new VM executor in 'vmx'. */
-void BoxVMX_Finish(BoxVMX *vmx);
+void BoxVMXXX_Finish(BoxVMXXX *vmx);
 
 /** Provide a failure message for a raised exception. */
 BOXEXPORT void BoxVM_Set_Fail_Msg(BoxVM *vm, const char *msg);

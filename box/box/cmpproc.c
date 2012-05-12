@@ -414,9 +414,9 @@ void CmpProc_Assemble_Call(CmpProc *p, BoxVMSymID sym_id) {
 static void My_Prepare_Ptr_Access(CmpProc *p, const BoxCont *c) {
   Int ptr_reg = c->value.ptr.reg;
   if (c->categ == BOXCONTCATEG_PTR && (c->value.ptr.is_greg || ptr_reg != 0)) {
-    Int addr_categ = c->value.ptr.is_greg ? CAT_GREG : CAT_LREG;
+    Int categ = c->value.ptr.is_greg ? BOXCONTCATEG_GREG : BOXCONTCATEG_LREG;
     CmpProc_Raw_Assemble(p, BOXOP_MOV_OO, BOXOPCAT_LREG, (Int) 0,
-                         addr_categ, ptr_reg);
+                         categ, ptr_reg);
   }
 }
 

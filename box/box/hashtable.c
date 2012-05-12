@@ -191,9 +191,8 @@ Task BoxHT_Remove_By_HTItem(BoxHT *ht, BoxHTItem *hi) {
 }
 
 Task BoxHT_Remove(BoxHT *ht, void *key, unsigned int key_size) {
-  BoxHTItem **hi_ptr, *hi;
+  BoxHTItem *hi;
   unsigned int branch = ht->mask & ht->hash(key, key_size);
-  hi_ptr = & ht->item[branch];
   for(hi = ht->item[branch]; hi != NULL; hi = hi->next) {
     if (ht->cmp(hi->key, key, hi->key_size, key_size))
       return BoxHT_Remove_By_HTItem(ht, hi);

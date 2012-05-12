@@ -1150,7 +1150,6 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     /* we have the implementation */
     CmpProc *save_cur_proc = c->cur_proc;
     Value *v_implem;
-    BoxVMCallNum call_num;
 
     /* Set the alternative name to make the bytecode more readable */
     if (t_proc != BOXTYPE_NONE) {
@@ -1194,7 +1193,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     c->cur_proc = save_cur_proc;
 
     {
-      call_num = CmpProc_Install(& proc_implem);
+      (void) /*BoxVMCallNum*/ CmpProc_Install(& proc_implem);
       BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
       BoxVMSym_Def_Call(c->vm, sym_id);
     }
