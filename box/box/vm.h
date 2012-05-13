@@ -39,9 +39,8 @@ typedef struct BoxVM_struct BoxVM;
 /** A virtual machine executor. An object which can be used to execute
  * code from a virtual machine.
  */
-typedef BoxVM BoxVMX;
-
-typedef struct _BoxVMStatus_struct VMStatus;
+typedef struct BoxVMX_struct BoxVMX;
+typedef BoxVMX VMStatus;
 
 /* Data type used to write/read binary codes for the instructions */
 typedef unsigned char BoxVMByte;

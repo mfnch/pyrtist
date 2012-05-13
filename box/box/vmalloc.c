@@ -268,7 +268,7 @@ static BoxTask My_Obj_Init(BoxVM *vm, BoxVMObjDesc *desc,
   if (initializer == BOXVMCALLNUM_NONE)
     return BOXTASK_OK;
   else
-    return BoxVM_Module_Execute_With_Args(vm, initializer, obj, NULL);
+    return BoxVM_Module_Execute_With_Args(vm->vmcur, initializer, obj, NULL);
 }
 
 BoxTask BoxVM_Obj_Init(BoxVM *vm, BoxPtr *obj, BoxVMAllocID id) {
@@ -285,7 +285,7 @@ static BoxTask My_Obj_Finish(BoxVM *vm, BoxVMObjDesc *desc,
 
   /* First we finalize the parent, then all its children */
   if (finalizer != BOXVMCALLNUM_NONE) {
-    BoxTask t = BoxVM_Module_Execute_With_Args(vm, finalizer, obj, NULL);
+    BoxTask t = BoxVM_Module_Execute_With_Args(vm->vmcur, finalizer, obj, NULL);
     if (t != BOXTASK_OK)
       return t;
   }
@@ -434,7 +434,7 @@ static BoxTask My_Obj_Copy(BoxVM *vm, BoxVMObjDesc *desc,
      */
     state->gap_offs = absolute_offs + desc->size;
 
-    return BoxVM_Module_Execute_With_Args(vm, copier, dest, & src);
+    return BoxVM_Module_Execute_With_Args(vm->vmcur, copier, dest, & src);
 
   } else {
     size_t container_offs = state->container_offs;

@@ -90,11 +90,20 @@ typedef enum {
   BOXOPDASM_CALL
 } BoxOpDAsm;
 
+/** Prototype of function which implements a VM instruction. */
+typedef void (*BoxVMOpExecutor)(BoxVMX *vmx);
+
+/** Prototype of function which disassembles a VM instruction. */
+typedef void (*BoxVMOpDisasm)(BoxVM *vm, char **out);
+
+/** Prototype of function to retrieve the arguments of a VM instruction. */
+typedef void (*BoxVMOpArgsGetter)(BoxVMX *vmx);
+
 /** Typedef of struc __BoxOpInfo */
-typedef struct __BoxOpInfo BoxOpInfo;
+typedef struct BoxOpInfo_struct BoxOpInfo;
 
 /** Structure containing detailed information about one VM operation */
-struct __BoxOpInfo {
+struct BoxOpInfo_struct {
   BoxOp      opcode;       /**< Opcode for the operation */
   BoxGOp     g_opcode;     /**< Generic opcode */
   BoxOpInfo  *next;        /**< Next operation with the same generic opcode */
@@ -109,8 +118,9 @@ struct __BoxOpInfo {
              num_regs;     /**< Num. of distinct registers involved by the
                                 operation (this is not just in + out) */
   BoxOpReg   *regs;        /**< Pointer to the list of input/output regs */
-  void       *executor;    /**< Pointer to the function which implements
-                                the operation */
+  BoxVMOpExecutor
+             executor;    /**< Pointer to the function which implements
+                               the operation */
 };
 
 /** Table containing info about all the VM operations */
@@ -143,13 +153,14 @@ typedef struct {
  * and describes all the instruction of the VM.
  */
 typedef struct {
-  const char *name;                 /**< Nome dell'istruzione */
-  BoxUInt numargs;                  /**< Numero di argomenti dell'istruzione */
-  TypeID t_id;                      /**< Numero che identifica il tipo
+  const char         *name;         /**< Nome dell'istruzione */
+  BoxUInt            numargs;       /**< Numero di argomenti dell'istruzione */
+  TypeID             t_id;          /**< Numero che identifica il tipo
                                          degli argomenti (interi, reali, ...) */
-  void (*get_args)(VMStatus *);     /**< Per trattare gli argomenti */
-  void (*execute)(BoxVM *);         /**< Per eseguire l'istruzione */
-  void (*disasm)(BoxVM *, char **); /**< Per disassemblare gli argomenti */
+  BoxVMOpArgsGetter  get_args;      /**< Per trattare gli argomenti */
+  BoxVMOpExecutor    execute;       /**< Per eseguire l'istruzione */
+  BoxVMOpDisasm      disasm;        /**< Per disassemblare gli argomenti */
+
 } BoxVMInstrDesc;
 
 typedef struct {
@@ -161,11 +172,14 @@ typedef struct {
 /** This structure contains all the data which define the status for the VM.
  * Status is allocated by 'VM_Module_Execute' inside its stack.
  */
-struct _BoxVMStatus_struct {
+struct BoxVMX_struct {
+  BoxVM       *vm;        /**< VM to execute. */
+
   struct {
-    unsigned int error    :1, /**< Error detected */
-                 exit     :1, /**< Exit current execution frame */
-                 is_long  :1; /**< Instruction is in long format */
+    unsigned int
+              error   :1, /**< Error detected */
+              exit    :1, /**< Exit current execution frame */
+              is_long :1; /**< Instruction is in long format */
   } flags;
 
   BoxVMProcInstalled *p;  /**< Procedure which is currently been executed */
@@ -189,28 +203,28 @@ struct _BoxVMStatus_struct {
                                    instruction has been used) */
 };
 
-/** @brief The full status of the virtual machine of Box.
- */
+/** @brief The full status of the virtual machine of Box. */
 struct BoxVM_struct {
-  VMStatus  *vmcur;         /**< The current execution frame */
+  BoxVMX  *vmcur;          /**< The current execution frame */
 
   struct {
     unsigned int
-              forcelong :1,   /**< Force long form assembly. */
-              hexcode   :1,   /**< Show Hex values in disassembled code */
-              identdata :1;   /**< Add also identity info for data inserted
+          forcelong :1,    /**< Force long form assembly. */
+          hexcode   :1,    /**< Show Hex values in disassembled code */
+          identdata :1;    /**< Add also identity info for data inserted
                                   into the data segment */
-  }         attr;           /** Flags controlling the behaviour of the VM */
+  }       attr;            /** Flags controlling the behaviour of the VM */
 
   struct {
     unsigned int
-              globals   :1,   /**< Global regs have been allocated */
-              op_table  :1;   /**< The operation table has been built */
-  }         has;            /**< State of the VM */
+          globals   :1,    /**< Global regs have been allocated */
+          op_table  :1;    /**< The operation table has been built */
 
-  BoxArr    stack,          /**< The stack for the VM object */
-            data_segment;   /**< The segment of data (strings, etc.) which is
-                                 accessible through the register gro0 */
+  }       has;             /**< State of the VM */
+
+  BoxArr  stack,           /**< The stack for the VM object */
+          data_segment;    /**< The segment of data (strings, etc.) which is
+                                accessible through the register gro0 */
 
   BoxVMRegs global[NUM_TYPES];  /**< The values of the global registers */
 
@@ -219,8 +233,8 @@ struct BoxVM_struct {
             *box_vm_arg2;
 
   const BoxVMInstrDesc
-            *exec_table;   /**< Table collecting info about the instructions
-                                which are useful for execution. */
+            *exec_table;    /**< Table collecting info about the instructions
+                                 which are useful for execution. */
 
   BoxVMProcTable
             proc_table;     /**< Table of installed and uninstalled procs */
@@ -271,10 +285,10 @@ void BoxOpInfo_Print(FILE *out, BoxOpInfo *oi);
 const BoxVMInstrDesc *BoxVM_Get_Exec_Table(void);
 
 /* These functions are intended to be used only inside 'vmexec.h' */
-void VM__GLP_GLPI(VMStatus *vmcur);
-void VM__GLP_Imm(VMStatus *vmcur);
-void VM__GLPI(VMStatus *vmcur);
-void VM__Imm(VMStatus *vmcur);
+void VM__GLP_GLPI(BoxVMX *vmx);
+void VM__GLP_Imm(BoxVMX *vmx);
+void VM__GLPI(BoxVMX *vmx);
+void VM__Imm(BoxVMX *vmx);
 void VM__D_GLPI_GLPI(BoxVM *vmp, char **iarg);
 void VM__D_CALL(BoxVM *vmp, char **iarg);
 void VM__D_JMP(BoxVM *vmp, char **iarg);
