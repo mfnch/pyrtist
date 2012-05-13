@@ -397,13 +397,12 @@ void VM__D_GLPI_Imm(BoxVM *vmp, char **out) {
   assert(iat < 4);
 
   /* Recupero il numero (intero) di registro/puntatore/etc. */
-  if (vmcur->flags.is_long) {
+  if (vmcur->flags.is_long)
     MY_READ_LONGOP_1ARG(vmcur->i_pos, vmcur->i_eye, iai);
-    arg2 = vmcur->i_pos;
-  } else {
+  else
     MY_READ_SHORTOP_1ARG(vmcur->i_pos, vmcur->i_eye, iai);
-    arg2 = vmcur->i_pos;
-  }
+
+  arg2 = vmcur->i_pos;
 
   /* Primo argomento */
   {
@@ -470,6 +469,9 @@ BoxTask BoxVM_Init(BoxVM *vm) {
   vm->exec_table = BoxVM_Get_Exec_Table();
 
   vm->vmcur = BoxMem_Alloc(sizeof(BoxVMX));
+  if (vm->vmcur == NULL)
+    return BOXTASK_FAILURE;
+
   vm->vmcur->vm = vm;
 
   /* Reset the global register boundaries and pointers */
@@ -538,6 +540,9 @@ void BoxVM_Finish(BoxVM *vm) {
 
   if (vm->has.op_table)
     BoxOpTable_Destroy(& vm->op_table);
+
+  if (vm->vmcur != NULL)
+    BoxMem_Free(vm->vmcur);
 }
 
 BoxVM *BoxVM_Create(void) {
@@ -715,8 +720,8 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
 
   /* Controlliamo che il modulo sia installato! */
   if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
-    vmp->vmcur->flags.error = 1;
-    vmp->vmcur->flags.exit = 1;
+    vmx->flags.error = 1;
+    vmx->flags.exit = 1;
     MSG_ERROR("Call to the undefined procedure %d.", call_num);
     return BOXTASK_FAILURE;
   }
@@ -768,24 +773,22 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
 
     /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
     MY_ASM_GET_FORMAT(this_vmx.i_pos, i_eye, is_long);
-    this_vmx.flags.is_long = is_long;
-    if (is_long) {
+
+    if (is_long)
       MY_READ_LONGOP_HEADER(this_vmx.i_pos, i_eye, this_vmx.i_type,
                             this_vmx.i_len, this_vmx.arg_type);
-      this_vmx.i_eye = i_eye;
-      this_vmx.flags.is_long = 1;
 
-    } else {
+    else
       MY_READ_SHORTOP_HEADER(this_vmx.i_pos, i_eye, this_vmx.i_type,
                              this_vmx.i_len, this_vmx.arg_type);
-      this_vmx.i_eye = i_eye;
-      this_vmx.flags.is_long = 0;
-    }
+
+    this_vmx.i_eye = i_eye;
+    this_vmx.flags.is_long = is_long;
 
     if (this_vmx.i_type >= BOX_NUM_OPS) {
       MSG_ERROR("Unknown VM instruction!");
       vmp->vmcur = vmx;
-      return Failed;
+      return BOXTASK_FAILURE;
     }
 
     /* Trovo il descrittore di istruzione */
@@ -799,7 +802,7 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
     if (!this_vmx.flags.error)
       this_vmx.idesc->execute(& this_vmx);
 
-    /* Passo alla prossima istruzione.
+    /* Advance to the next instruction...
      * vm.i_len can be modified by 'vm.idesc->execute(vmp)' when executing
      * instructions such as 'jmp' or 'jc'
      */

@@ -41,7 +41,7 @@
 static void My_Exec_Ret(BoxVMX *vmx) {vmx->flags.exit = 1;}
 
 static void My_Exec_Call_I(BoxVMX *vmx) {
-  if IS_SUCCESSFUL( BoxVM_Module_Execute(vmx, *((Int *) vmx->arg1)) )
+  if (BoxVM_Module_Execute(vmx, *((Int *) vmx->arg1)) == BOXTASK_OK)
     return;
   vmx->flags.error = vmx->flags.exit = 1;
 }
