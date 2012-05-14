@@ -25,7 +25,7 @@
 #include "strutils.h"
 #include "container.h"
 #include "vm_private.h"
-#include "vmdasm.h"
+#include "vmdasm_private.h"
 
 /*****************************************************************************
  * Functions used to disassemble the instructions (see BoxVM_Disassemble)    *
@@ -36,34 +36,35 @@
  * iarg e' una tabella di puntatori alle stringhe che corrisponderanno
  * agli argomenti disassemblati.
  */
-static void My_D_GLPI_GLPI(BoxVM *vmp, char **out) {
-  BoxVMX *vmcur = vmp->vmcur;
-  UInt n, na = vmcur->idesc->numargs;
-  UInt iaform[2] = {vmcur->arg_type & 3, (vmcur->arg_type >> 2) & 3};
+static void My_D_GLPI_GLPI(BoxVMDasm *dasm, char **out) {
+  UInt n, na = dasm->op_desc->numargs;
+  UInt iaform[2] = {dasm->op_arg_type & 3, (dasm->op_arg_type >> 2) & 3};
   Int iaint[2];
-
-  assert(na <= 2);
+  BoxVMWord op_word = *dasm->op_ptr;
 
   /* Recupero i numeri (interi) di registro/puntatore/etc. */
   switch (na) {
   case 1:
-    if (vmcur->flags.is_long)
-      BOXVM_READ_LONGOP_1ARG(vmcur->i_pos, vmcur->i_eye, iaint[0]);
+    if (dasm->flags.op_is_long)
+      BOXVM_READ_LONGOP_1ARG(dasm->op_ptr, op_word, iaint[0]);
     else
-      BOXVM_READ_SHORTOP_1ARG(vmcur->i_pos, vmcur->i_eye, iaint[0]);
+      BOXVM_READ_SHORTOP_1ARG(dasm->op_ptr, op_word, iaint[0]);
     break;
 
   case 2:
-    if (vmcur->flags.is_long)
-      BOXVM_READ_LONGOP_2ARGS(vmcur->i_pos, vmcur->i_eye, iaint[0], iaint[1]);
+    if (dasm->flags.op_is_long)
+      BOXVM_READ_LONGOP_2ARGS(dasm->op_ptr, op_word, iaint[0], iaint[1]);
     else
-      BOXVM_READ_SHORTOP_2ARGS(vmcur->i_pos, vmcur->i_eye, iaint[0], iaint[1]);
+      BOXVM_READ_SHORTOP_2ARGS(dasm->op_ptr, op_word, iaint[0], iaint[1]);
     break;
+
+  default:
+    assert(0);
   }
 
   for (n = 0; n < na; n++) {
     UInt iaf = iaform[n];
-    UInt iat = vmcur->idesc->t_id;
+    UInt iat = dasm->op_desc->t_id;
 
     assert(iaf < 4);
 
@@ -73,50 +74,59 @@ static void My_D_GLPI_GLPI(BoxVM *vmp, char **out) {
       const char typechars[NUM_TYPES] = "cirpo";
 
       tc = typechars[iat];
-      if (uiai < 0) {uiai = -uiai; rc = 'v';} else rc = 'r';
+
+      if (uiai < 0) {
+        uiai = -uiai;
+        rc = 'v';
+
+      } else
+        rc = 'r';
+
       switch(iaf) {
-        case BOXCONTCATEG_GREG:
-          sprintf(out[n], "g%c%c" SInt, rc, tc, uiai);
-          break;
-        case BOXCONTCATEG_LREG:
-          sprintf(out[n], "%c%c" SInt, rc, tc, uiai);
-          break;
-        case BOXCONTCATEG_PTR:
-          if ( iai < 0 )
-            sprintf(out[n], "%c[ro0 - " SInt "]", tc, uiai);
-          else if ( iai == 0 )
-            sprintf(out[n], "%c[ro0]", tc);
-          else
-            sprintf(out[n], "%c[ro0 + " SInt "]", tc, uiai);
-          break;
-        case BOXCONTCATEG_IMM:
-          if (iat == TYPE_CHAR) iai = (Int) ((Char) iai);
-          sprintf(out[n], SInt, iai);
-          break;
+      case BOXCONTCATEG_GREG:
+        sprintf(out[n], "g%c%c" SInt, rc, tc, uiai);
+        break;
+      case BOXCONTCATEG_LREG:
+        sprintf(out[n], "%c%c" SInt, rc, tc, uiai);
+        break;
+      case BOXCONTCATEG_PTR:
+        if (iai < 0)
+          sprintf(out[n], "%c[ro0 - " SInt "]", tc, uiai);
+        else if (iai == 0)
+          sprintf(out[n], "%c[ro0]", tc);
+        else
+          sprintf(out[n], "%c[ro0 + " SInt "]", tc, uiai);
+        break;
+      case BOXCONTCATEG_IMM:
+        if (iat == TYPE_CHAR) iai = (Int) ((Char) iai);
+        sprintf(out[n], SInt, iai);
+        break;
       }
     }
   }
 }
 
 /* Analoga alla precedente, ma per istruzioni CALL. */
-void My_D_CALL(BoxVM *vmp, char **out) {
-  BoxVMX *vmcur = vmp->vmcur;
-  UInt na = vmcur->idesc->numargs;
+void My_D_CALL(BoxVMDasm *dasm, char **out) {
+  UInt na = dasm->op_desc->numargs;
+  BoxVMWord op_word = *dasm->op_ptr;
 
   assert(na == 1);
 
-  if ((vmcur->arg_type & 3) == BOXCONTCATEG_IMM) {
-    UInt iat = vmcur->idesc->t_id;
+  if ((dasm->op_arg_type & 3) == BOXCONTCATEG_IMM) {
+    UInt iat = dasm->op_desc->t_id;
     Int call_num;
 
-    if ( vmcur->flags.is_long )
-      BOXVM_READ_LONGOP_1ARG(vmcur->i_pos, vmcur->i_eye, call_num);
+    if (dasm->flags.op_is_long)
+      BOXVM_READ_LONGOP_1ARG(dasm->op_ptr, op_word, call_num);
     else
-      BOXVM_READ_SHORTOP_1ARG(vmcur->i_pos, vmcur->i_eye, call_num);
+      BOXVM_READ_SHORTOP_1ARG(dasm->op_ptr, op_word, call_num);
 
-    if (iat == TYPE_CHAR) call_num = (Int) ((Char) call_num);
+    if (iat == TYPE_CHAR)
+      call_num = (Int) ((Char) call_num);
+
     {
-      BoxVMProcTable *pt = & vmp->proc_table;
+      BoxVMProcTable *pt = & dasm->vm->proc_table;
       if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
         sprintf(out[0], SInt, call_num);
         return;
@@ -133,55 +143,54 @@ void My_D_CALL(BoxVM *vmp, char **out) {
     }
 
   } else {
-    My_D_GLPI_GLPI(vmp, out);
+    My_D_GLPI_GLPI(dasm, out);
   }
 }
 
 /* Analoga alla precedente, ma per istruzioni di salto (jmp, jc). */
-void My_D_JMP(BoxVM *vmp, char **out) {
-  BoxVMX *vmcur = vmp->vmcur;
-  UInt na = vmcur->idesc->numargs;
+void My_D_JMP(BoxVMDasm *dasm, char **out) {
+  UInt na = dasm->op_desc->numargs;
 
   assert(na == 1);
 
-  if ((vmcur->arg_type & 3) == BOXCONTCATEG_IMM) {
-
-    UInt iat = vmcur->idesc->t_id;
+  if ((dasm->op_arg_type & 3) == BOXCONTCATEG_IMM) {
+    UInt iat = dasm->op_desc->t_id;
     Int m_num;
     Int position;
+    BoxVMByte op_word;
 
-    if (vmcur->flags.is_long)
-      BOXVM_READ_LONGOP_1ARG(vmcur->i_pos, vmcur->i_eye, m_num);
+    if (dasm->flags.op_is_long)
+      BOXVM_READ_LONGOP_1ARG(dasm->op_ptr, op_word, m_num);
     else
-      BOXVM_READ_SHORTOP_1ARG(vmcur->i_pos, vmcur->i_eye, m_num);
+      BOXVM_READ_SHORTOP_1ARG(dasm->op_ptr, op_word, m_num);
 
-    if (iat == TYPE_CHAR) m_num = (Int) ((Char) m_num);
+    if (iat == TYPE_CHAR)
+      m_num = (Int) ((Char) m_num);
 
-    position = (vmp->dasm_pos + m_num)*sizeof(BoxVMWord);
+    position = (dasm->op_pos + m_num)*sizeof(BoxVMWord);
     sprintf(out[0], SInt, position);
 
-  } else {
-    My_D_GLPI_GLPI(vmp, out);
-  }
+  } else
+    My_D_GLPI_GLPI(dasm, out);
 }
 
 /* Analoga alla precedente, ma per istruzioni del tipo GLPI-Imm. */
-void My_D_GLPI_Imm(BoxVM *vmp, char **out) {
-  BoxVMX *vmcur = vmp->vmcur;
-  UInt iaf = vmcur->arg_type & 3, iat = vmcur->idesc->t_id;
+void My_D_GLPI_Imm(BoxVMDasm *dasm, char **out) {
+  UInt iaf = dasm->op_arg_type & 3, iat = dasm->op_desc->t_id;
   Int iai;
   BoxVMWord *arg2;
+  BoxVMWord op_word = *dasm->op_ptr;
 
-  assert(vmcur->idesc->numargs == 2);
+  assert(dasm->op_desc->numargs == 2);
   assert(iat < 4);
 
   /* Recupero il numero (intero) di registro/puntatore/etc. */
-  if (vmcur->flags.is_long)
-    BOXVM_READ_LONGOP_1ARG(vmcur->i_pos, vmcur->i_eye, iai);
+  if (dasm->flags.op_is_long)
+    BOXVM_READ_LONGOP_1ARG(dasm->op_ptr, op_word, iai);
   else
-    BOXVM_READ_SHORTOP_1ARG(vmcur->i_pos, vmcur->i_eye, iai);
+    BOXVM_READ_SHORTOP_1ARG(dasm->op_ptr, op_word, iai);
 
-  arg2 = vmcur->i_pos;
+  arg2 = dasm->op_ptr;
 
   /* Primo argomento */
   {
@@ -192,41 +201,41 @@ void My_D_GLPI_Imm(BoxVM *vmp, char **out) {
     tc = typechars[iat];
     if (uiai < 0) {uiai = -uiai; rc = 'v';} else rc = 'r';
     switch(iaf) {
-      case BOXCONTCATEG_GREG:
-        sprintf(out[0], "g%c%c" SInt, rc, tc, uiai);
-        break;
-      case BOXCONTCATEG_LREG:
-        sprintf(out[0], "%c%c" SInt, rc, tc, uiai);
-        break;
-      case BOXCONTCATEG_PTR:
-        if (iai < 0)
-          sprintf(out[0], "%c[ro0 - " SInt "]", tc, uiai);
-        else if (iai == 0)
-          sprintf(out[0], "%c[ro0]", tc);
-        else
-          sprintf(out[0], "%c[ro0 + " SInt "]", tc, uiai);
-        break;
-      case BOXCONTCATEG_IMM:
-        sprintf(out[0], SInt, iai);
-        break;
+    case BOXCONTCATEG_GREG:
+      sprintf(out[0], "g%c%c" SInt, rc, tc, uiai);
+      break;
+    case BOXCONTCATEG_LREG:
+      sprintf(out[0], "%c%c" SInt, rc, tc, uiai);
+      break;
+    case BOXCONTCATEG_PTR:
+      if (iai < 0)
+        sprintf(out[0], "%c[ro0 - " SInt "]", tc, uiai);
+      else if (iai == 0)
+        sprintf(out[0], "%c[ro0]", tc);
+      else
+        sprintf(out[0], "%c[ro0 + " SInt "]", tc, uiai);
+      break;
+    case BOXCONTCATEG_IMM:
+      sprintf(out[0], SInt, iai);
+      break;
     }
   }
 
   /* Secondo argomento */
   switch (iat) {
-    case TYPE_CHAR:
-      sprintf(out[1], SChar, *((Char *) arg2));
-      break;
-    case TYPE_INT:
-      sprintf(out[1], SInt, *((Int *) arg2));
-      break;
-    case TYPE_REAL:
-      sprintf(out[1], SReal, *((Real *) arg2));
-      break;
-    case TYPE_POINT:
-      sprintf(out[1], SPoint,
-               ((Point *) arg2)->x, ((Point *) arg2)->y);
-      break;
+  case BOXTYPE_CHAR:
+    sprintf(out[1], SChar, *((BoxChar *) arg2));
+    break;
+  case BOXTYPE_INT:
+    sprintf(out[1], SInt, *((BoxInt *) arg2));
+    break;
+  case BOXTYPE_REAL:
+    sprintf(out[1], SReal, *((BoxReal *) arg2));
+    break;
+  case BOXTYPE_POINT:
+    sprintf(out[1], SPoint,
+            ((BoxPoint *) arg2)->x, ((BoxPoint *) arg2)->y);
+    break;
   }
 }
 
@@ -250,40 +259,35 @@ BoxVMOpDisasm BoxVM_Get_ArgDAsm_From_Str(const char *s) {
  * prog e' il puntatore all'inizio del codice, dim e' la dimensione del codice
  * da tradurre (espresso in "numero di BoxVMWord").
  */
-BoxTask BoxVM_Disassemble(BoxVM *vmp, FILE *output,
+BoxTask BoxVM_Disassemble(BoxVM *vm, FILE *output,
                           const void *prog, size_t dim)
 {
-  const BoxVMInstrDesc *exec_table = vmp->exec_table;
-  BoxVMWord *i_pos = (BoxVMWord *) prog;
-  BoxVMX vm;
+  const BoxVMInstrDesc *exec_table = vm->exec_table;
   UInt pos, nargs;
   const char *iname;
   char iarg_buffers[VM_MAX_NUMARGS][64], /* max 64 characters per argument */
        *iarg[VM_MAX_NUMARGS];
   size_t i;
 
+  BoxVMDasm dasm;
+
   for (i = 0; i < VM_MAX_NUMARGS; i++)
     iarg[i] = iarg_buffers[i];
 
-  vmp->vmcur = & vm;
-  vm.flags.exit = vm.flags.error = 0;
-  for (pos = 0; pos < dim;) {
-    BoxVMWord i_eye;
-    int is_long;
+  dasm.vm = vm;
+  dasm.flags.exit_now = 0;
+  dasm.flags.report_error = 0;
+  dasm.op_ptr = (BoxVMWord *) prog;
 
-    vm.i_pos = i_pos;
-    vmp->dasm_pos = pos;
+  for (dasm.op_pos = 0; dasm.op_pos < dim;) {
+    BoxUInt op_type, op_arg_type, op_size;
 
     /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
-    BOXVM_READ_OP_FORMAT(vm.i_pos, i_eye, is_long);
-    vm.flags.is_long = is_long;
-    if (is_long)
-      BOXVM_READ_LONGOP_HEADER(vm.i_pos, i_eye, vm.i_type, vm.i_len,
-                               vm.arg_type);
-    else
-      BOXVM_READ_SHORTOP_HEADER(vm.i_pos, i_eye, vm.i_type, vm.i_len,
-                                vm.arg_type);
-    vm.i_eye = i_eye;
+    BOXVM_READ_OP_HEADER(dasm.op_ptr, op_type, op_size,
+                         op_arg_type, dasm.flags.op_is_long);
+
+    dasm.op_size = op_size;
+    dasm.op_arg_type = op_arg_type;
 
 #ifdef DEBUG_VM_D_EVERY_ONE
     printf("Instruction at position "SUInt": "
@@ -292,35 +296,37 @@ BoxTask BoxVM_Disassemble(BoxVM *vmp, FILE *output,
            pos, vm.flags.is_long, vm.i_len, vm.i_type, vm.arg_type);
 #endif
 
-    if (vm.i_type < 0 || vm.i_type >= BOX_NUM_OPS) {
-      iname = "???";
-      vm.i_len = 1;
-      nargs = 0;
-
-    } else {
-      /* Trovo il descrittore di istruzione */
-      vm.idesc = & exec_table[vm.i_type];
-      iname = vm.idesc->name;
+    if (op_type < 0 || op_type >= BOX_NUM_OPS) {
+      /* Find the instruction descriptor */
+      dasm.op_desc = & exec_table[op_type];
+      iname = dasm.op_desc->name;
 
       /* Localizza in memoria gli argomenti */
-      nargs = vm.idesc->numargs;
+      nargs = dasm.op_desc->numargs;
 
-      vm.idesc->disasm(vmp, iarg);
-      if (vm.flags.exit)
+      /* Call the disassembly function to read the bytecode and interpret it */
+      dasm.op_desc->disasm(& dasm, iarg);
+
+      /* Exit if required by the disassembly function. */
+      if (dasm.flags.exit_now)
         return BOXTASK_FAILURE;
-    }
-
-    if (vm.flags.error) {
-      fprintf(output, SUInt "\t"BoxVMWord_Fmt"x\tError!",
-              (UInt) (pos * sizeof(BoxVMWord)), *i_pos);
 
     } else {
-      int i;
-      BoxVMWord *i_pos2 = i_pos;
+      iname = "???";
+      dasm.op_size = 1;
+      nargs = 0;
+    }
+
+    if (dasm.flags.report_error) {
+      fprintf(output, SUInt "\t"BoxVMWord_Fmt"x\tError!",
+              (UInt) (pos * sizeof(BoxVMWord)), *dasm.op_ptr);
+
+    } else {
+      BoxVMWord *i_pos2 = dasm.op_ptr;
 
       /* Stampo l'istruzione e i suoi argomenti */
       fprintf(output, SUInt "\t", (UInt) (pos * sizeof(BoxVMWord)));
-      if (vmp->attr.hexcode)
+      if (vm->attr.hexcode)
         fprintf(output, BoxVMWord_Fmt"\t", *(i_pos2++));
       fprintf(output, "%s", iname);
 
@@ -336,18 +342,20 @@ BoxTask BoxVM_Disassemble(BoxVM *vmp, FILE *output,
       fprintf(output, "\n");
 
       /* Stampo i restanti codici dell'istruzione in esadecimale */
-      if (vmp->attr.hexcode) {
-        for (i = 1; i < vm.i_len; i++)
+      if (vm->attr.hexcode) {
+        size_t i;
+        for (i = 1; i < dasm.op_size; i++)
           fprintf(output, "\t"BoxVMWord_Fmt"\n", *(i_pos2++));
       }
     }
 
-    /* Passo alla prossima istruzione */
-    if (vm.i_len < 1)
+    /* Move to the next instruction */
+    if (dasm.op_size < 1)
       return BOXTASK_FAILURE;
 
-    vm.i_pos = (i_pos += vm.i_len);
-    pos += vm.i_len;
+    dasm.op_ptr += dasm.op_size;
+    dasm.op_pos += dasm.op_size;
   }
+
   return BOXTASK_OK;
 }

@@ -40,6 +40,7 @@
 #  include <box/vm.h>
 #  include <box/vmproc.h>
 #  include <box/vmsym.h>
+#  include <box/vmdasm.h>
 
 /** To each type a number is associated. */
 typedef BoxType Type;
@@ -92,9 +93,6 @@ typedef enum {
 
 /** Prototype of function which implements a VM instruction. */
 typedef void (*BoxVMOpExecutor)(BoxVMX *vmx);
-
-/** Prototype of function which disassembles a VM instruction. */
-typedef void (*BoxVMOpDisasm)(BoxVM *vm, char **out);
 
 /** Prototype of function to retrieve the arguments of a VM instruction. */
 typedef void (*BoxVMOpArgsGetter)(BoxVMX *vmx);
@@ -351,11 +349,12 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
  */
 #define BOXVM_WRITE_SHORTOP_HEADER(i_pos, i_eye, i_type, is_long, i_len, \
                                    arg_type) \
-  do {i_eye = (((i_type) & 0xff)<<3 | ((i_len) & 0x7))<<4 | ((arg_type) & 0xf); \
-    i_eye = i_eye<<1 | ((is_long) & 0x1);} while(0)
+  do {i_eye = (((i_type) & 0xff) << 3 | ((i_len)  & 0x7)) << 4 \
+              | ((arg_type) & 0xf);                            \
+      i_eye = i_eye << 1 | ((is_long) & 0x1);} while(0)
 
 #define BOXVM_WRITE_SHORTOP_1ARG(i_pos, i_eye, arg) \
-  do {*(i_pos++) = ((arg) & 0xff) << 16 | i_eye;} while(0)
+  do {*((i_pos)++) = ((arg) & 0xff) << 16 | (i_eye);} while(0)
 
 #define BOXVM_WRITE_SHORTOP_2ARGS(i_pos, i_eye, arg1, arg2) \
   do {*(i_pos++) = i_eye = \
@@ -382,9 +381,10 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
  *  (THIRD FOUR BYTES: argument 1)
  *  (FOURTH FOUR BYTES: argument 2)
  */
-#define BOXVM_WRITE_LONGOP_HEADER(i_pos, i_eye, i_type, is_long, i_len, arg_type) \
-  do {i_eye = ((i_len) & 0x07ff)<<4 | ((arg_type) & 0xf); \
-      i_eye = i_eye<<1 | ((is_long) & 0x1); \
+#define BOXVM_WRITE_LONGOP_HEADER(i_pos, i_eye, i_type, is_long, i_len, \
+                                  arg_type)                             \
+  do {i_eye = ((i_len) & 0x07ff)<<4 | ((arg_type) & 0xf);               \
+      i_eye = i_eye<<1 | ((is_long) & 0x1);                             \
       *(i_pos++) = i_eye; *(i_pos++) = i_type;} while(0)
 
 #define BOXVM_READ_LONGOP_HEADER(i_pos, i_eye, i_type, i_len, arg_type) \
@@ -397,6 +397,18 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
 #define BOXVM_READ_LONGOP_2ARGS(i_pos, i_eye, arg1, arg2) \
   do {arg1 = *(i_pos++); arg2 = i_eye = *(i_pos++);} while(0)
 
+#define BOXVM_READ_OP_HEADER(op_ptr, op_type, op_size,                  \
+                             op_arg_type, op_is_long)                   \
+  do {                                                                  \
+    BoxVMWord op_word;                                                  \
+    BOXVM_READ_OP_FORMAT((op_ptr), op_word, (op_is_long));              \
+    if ((op_is_long))                                                   \
+      BOXVM_READ_LONGOP_HEADER((op_ptr), op_word, (op_type),            \
+                               (op_size), (op_arg_type));               \
+    else                                                                \
+      BOXVM_READ_SHORTOP_HEADER((op_ptr), op_word, (op_type),           \
+                                (op_size), (op_arg_type));              \
+  } while(0)
 
 
 /** Get the parent of the current combination (this is something with type

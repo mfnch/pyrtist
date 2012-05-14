@@ -18,24 +18,36 @@
  ****************************************************************************/
 
 /**
- * @file vmdasm.h
+ * @file vmdasm_private.h
  * @brief Code dealing with reading (disassembling) of VM code.
  */
 
-#ifndef _BOX_VMDASM_H
-#  define _BOX_VMDASM_H
+#ifndef _BOX_VMDASM_PRIVATE_H
+#  define _BOX_VMDASM_PRIVATE_H
 
 #  include <stdlib.h>
 
 #  include <box/types.h>
 #  include <box/vm.h>
+#  include <box/vmdasm.h>
 
 /** Object used to control the disassembling of VM code. */
-typedef struct BoxVMDasm_struct BoxVMDasm;
+struct BoxVMDasm_struct {
+  struct {
+    unsigned int exit_now     :1, /**< Exit from the disassembly loop. */
+                 report_error :1, /**< Trigger the error condition. */
+                 op_is_long   :1; /**< Whether the instruction is long. */
 
-/** Prototype of function which disassembles a VM instruction. */
-typedef void (*BoxVMOpDisasm)(BoxVMDasm *dasm, char **out);
+  }              flags;
 
-BoxVMOpDisasm BoxVM_Get_ArgDAsm_From_Str(const char *s);
+  BoxVM          *vm;             /**< VM which is being processed. */
 
-#endif /* _BOX_VMDASM_H */
+  BoxVMWord      *op_ptr;         /**< Pointer to the current word. */
+  size_t         op_pos;          /**< Position in the buffer. */
+  size_t         op_size;         /**< Size of the instruction. */
+  const BoxVMInstrDesc
+                 *op_desc;        /**< Descriptor for current instruction. */
+  BoxUInt        op_arg_type;
+};
+
+#endif /* _BOX_VMDASM_PRIVATE_H */
