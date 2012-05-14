@@ -48,73 +48,6 @@
 #  define MAX_SIZE_IN_IWORDS \
    ((sizeof(BoxPoint) + sizeof(BoxVMWord) - 1) / sizeof(BoxVMWord))
 
-/* Read the first 4 bytes (BoxVMWord), extract the format bit and put the "rest"
- * in the i_eye (which should be defined as 'register BoxVMWord i_eye;')
- * is_long tells if the instruction is encoded with the packed format (4 bytes)
- * or with the long format (> 4 bytes). To read / write an instruction
- * represented with the packed format one should use the macros
- * ASM_SHORT_GET_* / ASM_SHORT_PUT_*. To read / write an instruction written
- * with the long format one should use instead the macros MY_ASM_LONG_GET_* /
- * MY_ASM_LONG_PUT_*
- */
-#define MY_ASM_GET_FORMAT(i_pos, i_eye, is_long) \
-  do {i_eye = *(i_pos++); is_long = (i_eye & 0x1); i_eye >>= 1;} while(0)
-
-/* SHORT INSTRUCTION: we assemble the istruction header in the following way:
- * (note: 1 is represented with bit 0 = 1 and all other bits = 0)
- *  bit 0: true if the instruction is long
- *  bit 1-4: type of arguments
- *  bit 5-7: length of instruction
- *  bit 8-15: type of instruction
- *  (bit 16-23: left empty for argument 1)
- *  (bit 24-31: left empty for argument 2)
- */
-#define MY_WRITE_SHORTOP_HEADER(i_pos, i_eye, i_type, is_long, i_len, arg_type) \
-  do {i_eye = (((i_type) & 0xff)<<3 | ((i_len) & 0x7))<<4 | ((arg_type) & 0xf); \
-    i_eye = i_eye<<1 | ((is_long) & 0x1);} while(0)
-
-#define MY_WRITE_SHORTOP_1ARG(i_pos, i_eye, arg) \
-  do {*(i_pos++) = ((arg) & 0xff) << 16 | i_eye;} while(0)
-
-#define MY_WRITE_SHORTOP_2ARGS(i_pos, i_eye, arg1, arg2) \
-  do {*(i_pos++) = i_eye = \
-        (((arg2) & 0xff)<<8 | ((arg1) & 0xff))<<16 | i_eye;} while(0)
-
-#define MY_READ_SHORTOP_HEADER(i_pos, i_eye, i_type, i_len, arg_type) \
-  do {arg_type = i_eye & 0xf; i_len = (i_eye >>= 4) & 0x7; \
-      i_type = (i_eye >>= 3) & 0xff; } while(0)
-
-#define MY_READ_SHORTOP_1ARG(i_pos, i_eye, arg) \
-  do {arg = (signed char) ((i_eye >>= 8) & 0xff);} while(0)
-
-#define MY_READ_SHORTOP_2ARGS(i_pos, i_eye, arg1, arg2) \
-  do {arg1 = (signed char) ((i_eye >>= 8) & 0xff); \
-      arg2 = (signed char) ((i_eye >>= 8) & 0xff);} while(0)
-
-/* LONG INSTRUCTION: we assemble the istruction header in the following way:
- *  FIRST FOUR BYTES:
- *    bit 0: true if the instruction is long
- *    bit 1-4: type of arguments
- *    bit 5-31: length of instruction
- *  SECOND FOUR BYTES:
- *    bit 0-31: type of instruction
- *  (THIRD FOUR BYTES: argument 1)
- *  (FOURTH FOUR BYTES: argument 2)
- */
-#define MY_WRITE_LONGOP_HEADER(i_pos, i_eye, i_type, is_long, i_len, arg_type) \
-  do {i_eye = ((i_len) & 0x07ff)<<4 | ((arg_type) & 0xf); \
-      i_eye = i_eye<<1 | ((is_long) & 0x1); \
-      *(i_pos++) = i_eye; *(i_pos++) = i_type;} while(0)
-
-#define MY_READ_LONGOP_HEADER(i_pos, i_eye, i_type, i_len, arg_type) \
-  do {arg_type = i_eye & 0xf; i_len = (i_eye >>= 4); \
-      i_type = *(i_pos++);} while(0)
-
-#define MY_READ_LONGOP_1ARG(i_pos, i_eye, arg) \
-  do {arg = i_eye = *(i_pos++);} while(0)
-
-#define MY_READ_LONGOP_2ARGS(i_pos, i_eye, arg1, arg2) \
-  do {arg1 = *(i_pos++); arg2 = i_eye = *(i_pos++);} while(0)
 
 /*****************************************************************************
  *  Le seguenti funzioni servono a ricavare gli indirizzi in memoria dei     *
@@ -199,9 +132,9 @@ void VM__GLP_GLPI(BoxVMX *vmx) {
   UInt atype = vmx->arg_type;
 
   if (vmx->flags.is_long)
-    MY_READ_LONGOP_2ARGS(vmx->i_pos, vmx->i_eye, narg1, narg2);
+    BOXVM_READ_LONGOP_2ARGS(vmx->i_pos, vmx->i_eye, narg1, narg2);
   else
-    MY_READ_SHORTOP_2ARGS(vmx->i_pos, vmx->i_eye, narg1, narg2);
+    BOXVM_READ_SHORTOP_2ARGS(vmx->i_pos, vmx->i_eye, narg1, narg2);
 
   vmx->arg1 = My_Get_Arg_Ptrs(vmx, atype & 0x3, narg1);
   vmx->arg2 = My_Get_Arg_Ptrs(vmx, (atype >> 2) & 0x3, narg2);
@@ -219,9 +152,9 @@ void VM__GLP_Imm(BoxVMX *vmx) {
   UInt atype = vmx->arg_type;
 
   if (vmx->flags.is_long)
-    MY_READ_LONGOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
+    BOXVM_READ_LONGOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
   else
-    MY_READ_SHORTOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
+    BOXVM_READ_SHORTOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
 
   vmx->arg1 = My_Get_Arg_Ptrs(vmx, atype & 0x3, narg1);
   vmx->arg2 = vmx->i_pos;
@@ -236,9 +169,9 @@ void VM__GLPI(BoxVMX *vmx) {
   UInt atype = vmx->arg_type;
 
   if (vmx->flags.is_long)
-    MY_READ_LONGOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
+    BOXVM_READ_LONGOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
   else
-    MY_READ_SHORTOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
+    BOXVM_READ_SHORTOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
 
   vmx->arg1 = My_Get_Arg_Ptrs(vmx, atype & 0x3, narg1);
 }
@@ -249,207 +182,6 @@ void VM__GLPI(BoxVMX *vmx) {
  */
 void VM__Imm(BoxVMX *vmx) {vmx->arg1 = (void *) vmx->i_pos;}
 
-/*****************************************************************************
- * Functions used to disassemble the instructions (see BoxVM_Disassemble)    *
- *****************************************************************************/
-
-/* Questa funzione serve a disassemblare gli argomenti di
- * un'istruzione di tipo GLPI-GLPI.
- * iarg e' una tabella di puntatori alle stringhe che corrisponderanno
- * agli argomenti disassemblati.
- */
-void VM__D_GLPI_GLPI(BoxVM *vmp, char **out) {
-  BoxVMX *vmcur = vmp->vmcur;
-  UInt n, na = vmcur->idesc->numargs;
-  UInt iaform[2] = {vmcur->arg_type & 3, (vmcur->arg_type >> 2) & 3};
-  Int iaint[2];
-
-  assert(na <= 2);
-
-  /* Recupero i numeri (interi) di registro/puntatore/etc. */
-  switch (na) {
-  case 1:
-    if (vmcur->flags.is_long)
-      MY_READ_LONGOP_1ARG(vmcur->i_pos, vmcur->i_eye, iaint[0]);
-    else
-      MY_READ_SHORTOP_1ARG(vmcur->i_pos, vmcur->i_eye, iaint[0]);
-    break;
-
-  case 2:
-    if (vmcur->flags.is_long)
-      MY_READ_LONGOP_2ARGS(vmcur->i_pos, vmcur->i_eye, iaint[0], iaint[1]);
-    else
-      MY_READ_SHORTOP_2ARGS(vmcur->i_pos, vmcur->i_eye, iaint[0], iaint[1]);
-    break;
-  }
-
-  for (n = 0; n < na; n++) {
-    UInt iaf = iaform[n];
-    UInt iat = vmcur->idesc->t_id;
-
-    assert(iaf < 4);
-
-    {
-      Int iai = iaint[n], uiai = iai;
-      char rc, tc;
-      const char typechars[NUM_TYPES] = "cirpo";
-
-      tc = typechars[iat];
-      if (uiai < 0) {uiai = -uiai; rc = 'v';} else rc = 'r';
-      switch(iaf) {
-        case BOXCONTCATEG_GREG:
-          sprintf(out[n], "g%c%c" SInt, rc, tc, uiai);
-          break;
-        case BOXCONTCATEG_LREG:
-          sprintf(out[n], "%c%c" SInt, rc, tc, uiai);
-          break;
-        case BOXCONTCATEG_PTR:
-          if ( iai < 0 )
-            sprintf(out[n], "%c[ro0 - " SInt "]", tc, uiai);
-          else if ( iai == 0 )
-            sprintf(out[n], "%c[ro0]", tc);
-          else
-            sprintf(out[n], "%c[ro0 + " SInt "]", tc, uiai);
-          break;
-        case BOXCONTCATEG_IMM:
-          if (iat == TYPE_CHAR) iai = (Int) ((Char) iai);
-          sprintf(out[n], SInt, iai);
-          break;
-      }
-    }
-  }
-}
-
-/* Analoga alla precedente, ma per istruzioni CALL. */
-void VM__D_CALL(BoxVM *vmp, char **out) {
-  BoxVMX *vmcur = vmp->vmcur;
-  UInt na = vmcur->idesc->numargs;
-
-  assert(na == 1);
-
-  if ((vmcur->arg_type & 3) == BOXCONTCATEG_IMM) {
-    UInt iat = vmcur->idesc->t_id;
-    Int call_num;
-
-    if ( vmcur->flags.is_long )
-      MY_READ_LONGOP_1ARG(vmcur->i_pos, vmcur->i_eye, call_num);
-    else
-      MY_READ_SHORTOP_1ARG(vmcur->i_pos, vmcur->i_eye, call_num);
-
-    if (iat == TYPE_CHAR) call_num = (Int) ((Char) call_num);
-    {
-      VMProcTable *pt = & vmp->proc_table;
-      if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
-        sprintf(out[0], SInt, call_num);
-        return;
-
-      } else {
-        char *call_name;
-        VMProcInstalled *p;
-        p = (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
-        call_name = Str_Cut(p->desc, 40, 85);
-        sprintf(out[0], SInt"('%.40s')", call_num, call_name);
-        BoxMem_Free(call_name);
-        return;
-      }
-    }
-
-  } else {
-    VM__D_GLPI_GLPI(vmp, out);
-  }
-}
-
-/* Analoga alla precedente, ma per istruzioni di salto (jmp, jc). */
-void VM__D_JMP(BoxVM *vmp, char **out) {
-  BoxVMX *vmcur = vmp->vmcur;
-  UInt na = vmcur->idesc->numargs;
-
-  assert(na == 1);
-
-  if ((vmcur->arg_type & 3) == BOXCONTCATEG_IMM) {
-    UInt iat = vmcur->idesc->t_id;
-    Int m_num;
-    Int position;
-
-    if (vmcur->flags.is_long)
-      MY_READ_LONGOP_1ARG(vmcur->i_pos, vmcur->i_eye, m_num);
-    else
-      MY_READ_SHORTOP_1ARG(vmcur->i_pos, vmcur->i_eye, m_num);
-
-    if (iat == TYPE_CHAR) m_num = (Int) ((Char) m_num);
-
-    position = (vmp->dasm_pos + m_num)*sizeof(BoxVMWord);
-    sprintf(out[0], SInt, position);
-
-  } else {
-    VM__D_GLPI_GLPI(vmp, out);
-  }
-}
-
-/* Analoga alla precedente, ma per istruzioni del tipo GLPI-Imm. */
-void VM__D_GLPI_Imm(BoxVM *vmp, char **out) {
-  BoxVMX *vmcur = vmp->vmcur;
-  UInt iaf = vmcur->arg_type & 3, iat = vmcur->idesc->t_id;
-  Int iai;
-  BoxVMWord *arg2;
-
-  assert(vmcur->idesc->numargs == 2);
-  assert(iat < 4);
-
-  /* Recupero il numero (intero) di registro/puntatore/etc. */
-  if (vmcur->flags.is_long)
-    MY_READ_LONGOP_1ARG(vmcur->i_pos, vmcur->i_eye, iai);
-  else
-    MY_READ_SHORTOP_1ARG(vmcur->i_pos, vmcur->i_eye, iai);
-
-  arg2 = vmcur->i_pos;
-
-  /* Primo argomento */
-  {
-    Int uiai = iai;
-    char rc, tc;
-    const char typechars[NUM_TYPES] = "cirpo";
-
-    tc = typechars[iat];
-    if (uiai < 0) {uiai = -uiai; rc = 'v';} else rc = 'r';
-    switch(iaf) {
-      case BOXCONTCATEG_GREG:
-        sprintf(out[0], "g%c%c" SInt, rc, tc, uiai);
-        break;
-      case BOXCONTCATEG_LREG:
-        sprintf(out[0], "%c%c" SInt, rc, tc, uiai);
-        break;
-      case BOXCONTCATEG_PTR:
-        if (iai < 0)
-          sprintf(out[0], "%c[ro0 - " SInt "]", tc, uiai);
-        else if (iai == 0)
-          sprintf(out[0], "%c[ro0]", tc);
-        else
-          sprintf(out[0], "%c[ro0 + " SInt "]", tc, uiai);
-        break;
-      case BOXCONTCATEG_IMM:
-        sprintf(out[0], SInt, iai);
-        break;
-    }
-  }
-
-  /* Secondo argomento */
-  switch (iat) {
-    case TYPE_CHAR:
-      sprintf(out[1], SChar, *((Char *) arg2));
-      break;
-    case TYPE_INT:
-      sprintf(out[1], SInt, *((Int *) arg2));
-      break;
-    case TYPE_REAL:
-      sprintf(out[1], SReal, *((Real *) arg2));
-      break;
-    case TYPE_POINT:
-      sprintf(out[1], SPoint,
-               ((Point *) arg2)->x, ((Point *) arg2)->y);
-      break;
-  }
-}
 
 /*****************************************************************************
  * Functions for (de)inizialization                                          *
@@ -709,8 +441,8 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
   BoxVMX this_vmx;
 
   const BoxVMInstrDesc *exec_table = vmp->exec_table;
-  VMProcTable *pt = & vmp->proc_table;
-  VMProcInstalled *p;
+  BoxVMProcTable *pt = & vmp->proc_table;
+  BoxVMProcInstalled *p;
   BoxVMWord *i_pos, *i_pos0;
   BoxValue reg0[NUM_TYPES]; /* Registri locali numero zero */
 
@@ -732,7 +464,7 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
           BOX_VM_ARG_PTR(vmp, void));
 #endif
 
-  p = (VMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
+  p = (BoxVMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
   switch (p->type) {
   case BOXVMPROC_IS_C_CODE:
     return p->code.c(vmp);
@@ -772,15 +504,15 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
 #endif
 
     /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
-    MY_ASM_GET_FORMAT(this_vmx.i_pos, i_eye, is_long);
+    BOXVM_READ_OP_FORMAT(this_vmx.i_pos, i_eye, is_long);
 
     if (is_long)
-      MY_READ_LONGOP_HEADER(this_vmx.i_pos, i_eye, this_vmx.i_type,
-                            this_vmx.i_len, this_vmx.arg_type);
+      BOXVM_READ_LONGOP_HEADER(this_vmx.i_pos, i_eye, this_vmx.i_type,
+                               this_vmx.i_len, this_vmx.arg_type);
 
     else
-      MY_READ_SHORTOP_HEADER(this_vmx.i_pos, i_eye, this_vmx.i_type,
-                             this_vmx.i_len, this_vmx.arg_type);
+      BOXVM_READ_SHORTOP_HEADER(this_vmx.i_pos, i_eye, this_vmx.i_type,
+                                this_vmx.i_len, this_vmx.arg_type);
 
     this_vmx.i_eye = i_eye;
     this_vmx.flags.is_long = is_long;
@@ -867,111 +599,6 @@ void BoxVM_Set_Attr(BoxVM *vm, BoxVMAttr mask, BoxVMAttr value) {
     vm->attr.identdata = ((value & BOXVM_ATTR_ADD_DATA_IDENT) != 0);
 }
 
-/* Traduce il codice binario della VM, in formato testo.
- * prog e' il puntatore all'inizio del codice, dim e' la dimensione del codice
- * da tradurre (espresso in "numero di BoxVMWord").
- */
-BoxTask BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
-  const BoxVMInstrDesc *exec_table = vmp->exec_table;
-  BoxVMWord *i_pos = (BoxVMWord *) prog;
-  BoxVMX vm;
-  UInt pos, nargs;
-  const char *iname;
-  char iarg_buffers[VM_MAX_NUMARGS][64], /* max 64 characters per argument */
-       *iarg[VM_MAX_NUMARGS];
-  int i;
-
-  for (i = 0; i < VM_MAX_NUMARGS; i++)
-    iarg[i] = iarg_buffers[i];
-
-  vmp->vmcur = & vm;
-  vm.flags.exit = vm.flags.error = 0;
-  for (pos = 0; pos < dim;) {
-    BoxVMWord i_eye;
-    int is_long;
-
-    vm.i_pos = i_pos;
-    vmp->dasm_pos = pos;
-
-    /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
-    MY_ASM_GET_FORMAT(vm.i_pos, i_eye, is_long);
-    vm.flags.is_long = is_long;
-    if (is_long) {
-      MY_READ_LONGOP_HEADER(vm.i_pos, i_eye, vm.i_type, vm.i_len, vm.arg_type);
-      vm.i_eye = i_eye;
-      vm.flags.is_long = 1;
-
-    } else {
-      MY_READ_SHORTOP_HEADER(vm.i_pos, i_eye, vm.i_type, vm.i_len, vm.arg_type);
-      vm.i_eye = i_eye;
-      vm.flags.is_long = 0;
-    }
-#ifdef DEBUG_VM_D_EVERY_ONE
-    printf("Instruction at position "SUInt": "
-           "{is_long = %d, length = "SUInt", type = "SUInt
-           ", arg_type = "SUInt")\n",
-           pos, vm.flags.is_long, vm.i_len, vm.i_type, vm.arg_type);
-#endif
-
-    if (vm.i_type < 0 || vm.i_type >= BOX_NUM_OPS) {
-      iname = "???";
-      vm.i_len = 1;
-      nargs = 0;
-
-    } else {
-      /* Trovo il descrittore di istruzione */
-      vm.idesc = & exec_table[vm.i_type];
-      iname = vm.idesc->name;
-
-      /* Localizza in memoria gli argomenti */
-      nargs = vm.idesc->numargs;
-
-      vm.idesc->disasm(vmp, iarg);
-      if (vm.flags.exit)
-        return Failed;
-    }
-
-    if (vm.flags.error) {
-      fprintf(output, SUInt "\t"BoxVMWord_Fmt"x\tError!",
-              (UInt) (pos * sizeof(BoxVMWord)), *i_pos);
-
-    } else {
-      int i;
-      BoxVMWord *i_pos2 = i_pos;
-
-      /* Stampo l'istruzione e i suoi argomenti */
-      fprintf(output, SUInt "\t", (UInt) (pos * sizeof(BoxVMWord)));
-      if (vmp->attr.hexcode)
-        fprintf(output, BoxVMWord_Fmt"\t", *(i_pos2++));
-      fprintf(output, "%s", iname);
-
-      if (nargs > 0) {
-        UInt n;
-
-        assert(nargs <= VM_MAX_NUMARGS);
-
-        fprintf(output, " %s", iarg[0]);
-        for (n = 1; n < nargs; n++)
-          fprintf(output, ", %s", iarg[n]);
-      }
-      fprintf(output, "\n");
-
-      /* Stampo i restanti codici dell'istruzione in esadecimale */
-      if (vmp->attr.hexcode) {
-        for (i = 1; i < vm.i_len; i++)
-          fprintf(output, "\t"BoxVMWord_Fmt"\n", *(i_pos2++));
-      }
-    }
-
-    /* Passo alla prossima istruzione */
-    if (vm.i_len < 1) return Failed;
-
-    vm.i_pos = (i_pos += vm.i_len);
-    pos += vm.i_len;
-  }
-  return Success;
-}
-
 /*****************************************************************************
  * Functions to assemble code                                                *
  *****************************************************************************/
@@ -987,7 +614,7 @@ BoxTask BoxVM_Disassemble(BoxVM *vmp, FILE *output, void *prog, UInt dim) {
  *  in scrittura.
  */
 void BoxVM_ASettings(BoxVM *vmp, int forcelong, int error, int inhibit) {
-  VMProcTable *pt = & vmp->proc_table;
+  BoxVMProcTable *pt = & vmp->proc_table;
   vmp->attr.forcelong = forcelong;
   pt->target_proc->status.error = error;
   pt->target_proc->status.inhibit = inhibit;
@@ -998,7 +625,7 @@ void BoxVM_ASettings(BoxVM *vmp, int forcelong, int error, int inhibit) {
  */
 void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
   const BoxVMInstrDesc *exec_table = vmp->exec_table, *idesc;
-  VMProcTable *pt = & vmp->proc_table;
+  BoxVMProcTable *pt = & vmp->proc_table;
   int i, t;
   int is_short;
   struct {
@@ -1108,9 +735,9 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
     }
 
     atype = (arg[1].c << 2) | arg[0].c;
-    MY_WRITE_SHORTOP_HEADER(i_pos, i_eye, instr, /* is_long = */ 0,
-                         /* i_len = */ 1, atype);
-    MY_WRITE_SHORTOP_2ARGS(i_pos, i_eye, arg[0].vi, arg[1].vi);
+    BOXVM_WRITE_SHORTOP_HEADER(i_pos, i_eye, instr, /* is_long = */ 0,
+                               /* i_len = */ 1, atype);
+    BOXVM_WRITE_SHORTOP_2ARGS(i_pos, i_eye, arg[0].vi, arg[1].vi);
 
     BoxArr_Push(prog, buffer);
     return;
@@ -1153,8 +780,8 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
 
       /* Scrivo la "testa" dell'istruzione */
       atype = (arg[1].c << 2) | arg[0].c;
-      MY_WRITE_LONGOP_HEADER(i_pos, i_eye, instr, /* is_long = */ 1,
-                             /* i_len = */ idim, atype);
+      BOXVM_WRITE_LONGOP_HEADER(i_pos, i_eye, instr, /* is_long = */ 1,
+                                /* i_len = */ idim, atype);
     }
   }
 }

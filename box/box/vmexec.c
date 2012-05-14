@@ -37,6 +37,7 @@
 #include "vmalloc.h"
 #include "bltinarray.h"
 #include "strutils.h"
+#include "vmdasm.h"
 
 static void My_Exec_Ret(BoxVMX *vmx) {vmx->flags.exit = 1;}
 
@@ -668,19 +669,6 @@ static BoxVMOpArgsGetter My_ArgsGetter_From_Str(const char *s) {
   }
 }
 
-static BoxVMOpDisasm My_Disassembler_From_Str(const char *s) {
-  switch (MY_COMBINE_CHARS(s[0], s[1], s[2])) {
-  case MY_COMBINE_CHARS('c', '-', '\0'): return VM__D_CALL;
-  case MY_COMBINE_CHARS('x', 'i', '\0'): return VM__D_GLPI_Imm;
-  case MY_COMBINE_CHARS('x', 'x', '\0'): return VM__D_GLPI_GLPI;
-  case MY_COMBINE_CHARS('j', '-', '\0'): return VM__D_JMP;
-  default:
-    MSG_FATAL("My_Disassembler_From_Str: unknown string '%s'", s);
-    assert(0);
-    return NULL;
-  }
-}
-
 const BoxVMInstrDesc *BoxVM_Get_Exec_Table(void) {
   static BoxVMInstrDesc the_optable[BOX_NUM_OPS],
                         *the_optable_ptr = NULL;
@@ -700,7 +688,7 @@ const BoxVMInstrDesc *BoxVM_Get_Exec_Table(void) {
       dest->t_id = My_Type_From_Char(src->arg_type);
       dest->execute = src->executor;
       dest->get_args = My_ArgsGetter_From_Str(src->assembler);
-      dest->disasm = My_Disassembler_From_Str(src->disassembler);
+      dest->disasm = BoxVM_Get_ArgDAsm_From_Str(src->disassembler);
     }
 
     the_optable_ptr = the_optable;

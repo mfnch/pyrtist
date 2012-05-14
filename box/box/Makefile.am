@@ -49,13 +49,14 @@ lib_LTLIBRARIES = libboxcore0.3.la
 boxinc_HEADERS = version.h defaults.h types.h error.h mem.h \
   array.h occupation.h srcpos.h msgbase.h messages.h strutils.h print.h \
   hashfunc.h hashtable.h list.h vm_private.h vmalloc.h vmproc.h vmsym.h \
-  vmsymstuff.h
+  vmsymstuff.h vmdasm.h
 libboxcore0_3_la_SOURCES = types.h error.c mem.c mem.h array.c array.h \
   occupation.c occupation.h strutils.c print.c srcpos.c msgbase.c messages.c \
   hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h \
-  container.c container.h vm.c vm.h vm_private.h vmalloc.c vmalloc.h \
+  container.c container.h vm.c vm.h vm_private.h vmdasm.c vmdasm.h \
+  vmalloc.c vmalloc.h \
   vmexec.c vmproc.c vmproc.h vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h \
-  str.c str.h vmx.c vmx.h
+  str.c str.h
 
 libboxcore0_3_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32

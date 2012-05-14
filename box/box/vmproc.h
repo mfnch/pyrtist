@@ -93,7 +93,7 @@ typedef struct {
   char *desc;             /**< Description of the procedure */
   union {
     BoxTask (*c)(void *); /**< Pointer to the C function (can't use
-                               VMCCode!) */
+                               BoxVMCCode!) */
     BoxVMCallNum proc_id; /**< Number of the procedure which contains
                                the code */
   } code;
@@ -111,12 +111,6 @@ typedef struct {
   BoxArr installed;        /**< Array of the installed procedures */
   BoxOcc uninstalled;      /**< Array of the uninstalled procedures */
 } BoxVMProcTable;
-
-#ifdef BOX_ABBREV
-typedef BoxVMProcInstalled VMProcInstalled;
-typedef BoxVMProcTable VMProcTable;
-typedef BoxVMCCode VMCCode;
-#endif
 
 /** Initialize the procedure table.
  * @param vmp is the VM-program.

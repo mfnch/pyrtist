@@ -172,8 +172,8 @@ BOXEXPORT void BoxVM_Assemble(BoxVM *vmp, BoxOp instr, ...);
     BoxVM_Assemble((vm), (instr), __VA_ARGS__);                 \
     (void) BoxVM_Set_Force_Long((vm), is_long);} while(0)
 
-BOXEXPORT BoxTask BoxVM_Disassemble(BoxVM *vm, FILE *output, void *prog,
-                                    BoxUInt dim);
+BOXEXPORT BoxTask BoxVM_Disassemble(BoxVM *vm, FILE *output,
+                                    const void *prog, size_t dim);
 
 /** Specifies the number of global registers and variables used by the BoxVM.
  */

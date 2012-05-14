@@ -439,7 +439,7 @@ static Task code_generator(BoxVM *vmp, UInt sym_num, UInt sym_type,
   BoxVMSymCodeRef *ref_head = (BoxVMSymCodeRef *) ref;
   void *ref_tail = ref + sizeof(BoxVMSymCodeRef);
   UInt ref_tail_size = ref_size - sizeof(BoxVMSymCodeRef);
-  VMProcTable *pt = & vmp->proc_table;
+  BoxVMProcTable *pt = & vmp->proc_table;
   BoxVMProc *tmp_proc;
   UInt saved_proc_num;
 
@@ -474,7 +474,7 @@ Task BoxVMSym_Code_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymCodeGen code_gen,
   BoxVMSymTable *st = & vmp->sym_table;
   BoxVMSym *s;
   void *def;
-  VMProcTable *pt = & vmp->proc_table;
+  BoxVMProcTable *pt = & vmp->proc_table;
 
   UInt ref_all_size;
   BoxVMSymCodeRef *ref_head;
