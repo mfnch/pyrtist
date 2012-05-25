@@ -388,27 +388,40 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
       *(i_pos++) = i_eye; *(i_pos++) = i_type;} while(0)
 
 #define BOXVM_READ_LONGOP_HEADER(i_pos, i_eye, i_type, i_len, arg_type) \
-  do {arg_type = i_eye & 0xf; i_len = (i_eye >>= 4); \
-      i_type = *(i_pos++);} while(0)
+  do {(arg_type) = (i_eye) & 0xf; i_len = ((i_eye) >>= 4);              \
+      (i_type) = *((i_pos)++);} while(0)
 
 #define BOXVM_READ_LONGOP_1ARG(i_pos, i_eye, arg) \
-  do {arg = i_eye = *(i_pos++);} while(0)
+  do {arg = i_eye = *((i_pos)++);} while(0)
 
 #define BOXVM_READ_LONGOP_2ARGS(i_pos, i_eye, arg1, arg2) \
   do {arg1 = *(i_pos++); arg2 = i_eye = *(i_pos++);} while(0)
 
-#define BOXVM_READ_OP_HEADER(op_ptr, op_type, op_size,                  \
+#define BOXVM_READ_OP_HEADER(op_ptr, op_word, op_type, op_size,         \
                              op_arg_type, op_is_long)                   \
   do {                                                                  \
-    BoxVMWord op_word;                                                  \
-    BOXVM_READ_OP_FORMAT((op_ptr), op_word, (op_is_long));              \
+    BOXVM_READ_OP_FORMAT((op_ptr), (op_word), (op_is_long));            \
     if ((op_is_long))                                                   \
-      BOXVM_READ_LONGOP_HEADER((op_ptr), op_word, (op_type),            \
+      BOXVM_READ_LONGOP_HEADER((op_ptr), (op_word), (op_type),          \
                                (op_size), (op_arg_type));               \
     else                                                                \
-      BOXVM_READ_SHORTOP_HEADER((op_ptr), op_word, (op_type),           \
+      BOXVM_READ_SHORTOP_HEADER((op_ptr), (op_word), (op_type),         \
                                 (op_size), (op_arg_type));              \
   } while(0)
+
+
+
+#if 0
+#define BOXVM_READ_SHORTOP_HEADER(i_pos, i_eye, i_type, i_len, arg_type) \
+  do {arg_type = i_eye & 0xf; i_len = (i_eye >>= 4) & 0x7; \
+      i_type = (i_eye >>= 3) & 0xff; } while(0)
+#endif
+
+
+
+
+
+
 
 
 /** Get the parent of the current combination (this is something with type

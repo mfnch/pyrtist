@@ -27,6 +27,8 @@
 #include "vm_private.h"
 #include "vmdasm_private.h"
 
+/*#define DEBUG_VM_D_EVERY_ONE*/
+
 /*****************************************************************************
  * Functions used to disassemble the instructions (see BoxVM_Disassemble)    *
  *****************************************************************************/
@@ -40,7 +42,7 @@ static void My_D_GLPI_GLPI(BoxVMDasm *dasm, char **out) {
   UInt n, na = dasm->op_desc->numargs;
   UInt iaform[2] = {dasm->op_arg_type & 3, (dasm->op_arg_type >> 2) & 3};
   Int iaint[2];
-  BoxVMWord op_word = *dasm->op_ptr;
+  BoxVMWord op_word = dasm->op_word;
 
   /* Recupero i numeri (interi) di registro/puntatore/etc. */
   switch (na) {
@@ -109,7 +111,7 @@ static void My_D_GLPI_GLPI(BoxVMDasm *dasm, char **out) {
 /* Analoga alla precedente, ma per istruzioni CALL. */
 void My_D_CALL(BoxVMDasm *dasm, char **out) {
   UInt na = dasm->op_desc->numargs;
-  BoxVMWord op_word = *dasm->op_ptr;
+  BoxVMWord op_word = dasm->op_word;
 
   assert(na == 1);
 
@@ -157,7 +159,7 @@ void My_D_JMP(BoxVMDasm *dasm, char **out) {
     UInt iat = dasm->op_desc->t_id;
     Int m_num;
     Int position;
-    BoxVMByte op_word;
+    BoxVMByte op_word = dasm->op_word;
 
     if (dasm->flags.op_is_long)
       BOXVM_READ_LONGOP_1ARG(dasm->op_ptr, op_word, m_num);
@@ -179,7 +181,7 @@ void My_D_GLPI_Imm(BoxVMDasm *dasm, char **out) {
   UInt iaf = dasm->op_arg_type & 3, iat = dasm->op_desc->t_id;
   Int iai;
   BoxVMWord *arg2;
-  BoxVMWord op_word = *dasm->op_ptr;
+  BoxVMWord op_word = dasm->op_word;
 
   assert(dasm->op_desc->numargs == 2);
   assert(iat < 4);
@@ -263,7 +265,7 @@ BoxTask BoxVM_Disassemble(BoxVM *vm, FILE *output,
                           const void *prog, size_t dim)
 {
   const BoxVMInstrDesc *exec_table = vm->exec_table;
-  UInt pos, nargs;
+  UInt nargs;
   const char *iname;
   char iarg_buffers[VM_MAX_NUMARGS][64], /* max 64 characters per argument */
        *iarg[VM_MAX_NUMARGS];
@@ -277,26 +279,29 @@ BoxTask BoxVM_Disassemble(BoxVM *vm, FILE *output,
   dasm.vm = vm;
   dasm.flags.exit_now = 0;
   dasm.flags.report_error = 0;
-  dasm.op_ptr = (BoxVMWord *) prog;
+
 
   for (dasm.op_pos = 0; dasm.op_pos < dim;) {
     BoxUInt op_type, op_arg_type, op_size;
 
+    dasm.op_ptr = & ((BoxVMWord *) prog)[dasm.op_pos];
+
     /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
-    BOXVM_READ_OP_HEADER(dasm.op_ptr, op_type, op_size,
+    BOXVM_READ_OP_HEADER(dasm.op_ptr, dasm.op_word, op_type, op_size,
                          op_arg_type, dasm.flags.op_is_long);
 
     dasm.op_size = op_size;
     dasm.op_arg_type = op_arg_type;
 
 #ifdef DEBUG_VM_D_EVERY_ONE
-    printf("Instruction at position "SUInt": "
+    printf("Instruction at position "SUInt" (%p): "
            "{is_long = %d, length = "SUInt", type = "SUInt
            ", arg_type = "SUInt")\n",
-           pos, vm.flags.is_long, vm.i_len, vm.i_type, vm.arg_type);
+           dasm.op_pos, dasm.op_ptr, dasm.flags.op_is_long,
+           op_size, op_arg_type, op_arg_type);
 #endif
 
-    if (op_type < 0 || op_type >= BOX_NUM_OPS) {
+    if (op_type >= 0 || op_type < BOX_NUM_OPS) {
       /* Find the instruction descriptor */
       dasm.op_desc = & exec_table[op_type];
       iname = dasm.op_desc->name;
@@ -305,7 +310,8 @@ BoxTask BoxVM_Disassemble(BoxVM *vm, FILE *output,
       nargs = dasm.op_desc->numargs;
 
       /* Call the disassembly function to read the bytecode and interpret it */
-      dasm.op_desc->disasm(& dasm, iarg);
+      if (nargs)
+        dasm.op_desc->disasm(& dasm, iarg);
 
       /* Exit if required by the disassembly function. */
       if (dasm.flags.exit_now)
@@ -319,13 +325,13 @@ BoxTask BoxVM_Disassemble(BoxVM *vm, FILE *output,
 
     if (dasm.flags.report_error) {
       fprintf(output, SUInt "\t"BoxVMWord_Fmt"x\tError!",
-              (UInt) (pos * sizeof(BoxVMWord)), *dasm.op_ptr);
+              (UInt) (dasm.op_pos * sizeof(BoxVMWord)), *dasm.op_ptr);
 
     } else {
       BoxVMWord *i_pos2 = dasm.op_ptr;
 
       /* Stampo l'istruzione e i suoi argomenti */
-      fprintf(output, SUInt "\t", (UInt) (pos * sizeof(BoxVMWord)));
+      fprintf(output, SUInt "\t", (BoxUInt) (dasm.op_pos * sizeof(BoxVMWord)));
       if (vm->attr.hexcode)
         fprintf(output, BoxVMWord_Fmt"\t", *(i_pos2++));
       fprintf(output, "%s", iname);
@@ -353,7 +359,6 @@ BoxTask BoxVM_Disassemble(BoxVM *vm, FILE *output,
     if (dasm.op_size < 1)
       return BOXTASK_FAILURE;
 
-    dasm.op_ptr += dasm.op_size;
     dasm.op_pos += dasm.op_size;
   }
 
