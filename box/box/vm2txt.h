@@ -17,40 +17,12 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/**
- * @file vmdasm_private.h
- * @brief Code dealing with reading (disassembling) of VM code.
- */
-
-#ifndef _BOX_VMDASM_PRIVATE_H
-#  define _BOX_VMDASM_PRIVATE_H
-
-#  include <stdlib.h>
-
-#  include <box/types.h>
-#  include <box/vm.h>
-#  include <box/vmdasm.h>
+#ifndef _BOX_VM2TXT_H
+#  define _BOX_VM2TXT_H
 
 /**
- * Object used to control the disassembling of VM code.
+ * @file vm2txt.h
+ * @brief Plain text disassembly of Box VMs content.
  */
-struct BoxVMDasm_struct {
-  struct {
-    unsigned int exit_now     :1, /**< Exit from the disassembly loop. */
-                 report_error :1, /**< Trigger the error condition. */
-                 op_is_long   :1; /**< Whether the instruction is long. */
 
-  }              flags;
-
-  BoxVM          *vm;             /**< VM which is being processed. */
-
-  BoxVMWord      *op_ptr;         /**< Pointer to the current word. */
-  BoxVMWord      op_word;         /**< The current word. */
-  size_t         op_pos;          /**< Position in the buffer. */
-  size_t         op_size;         /**< Size of the instruction. */
-  const BoxVMInstrDesc
-                 *op_desc;        /**< Descriptor for current instruction. */
-  BoxUInt        op_arg_type;
-};
-
-#endif /* _BOX_VMDASM_PRIVATE_H */
+#endif /* _BOX_VM2TXT_H */

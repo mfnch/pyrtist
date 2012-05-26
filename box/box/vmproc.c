@@ -118,10 +118,9 @@ BoxVMProcID BoxVM_Proc_Target_Set(BoxVM *vm, BoxVMProcID proc_id) {
   BoxVMProcTable *pt = & vm->proc_table;
   BoxVMProcID previous_target = pt->target_proc_num;
   pt->target_proc_num = proc_id;
-  if (proc_id > 0)
-    pt->target_proc = (BoxVMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, proc_id);
-  else
-    pt->target_proc = (BoxVMProc *) NULL;
+  pt->target_proc =
+    (BoxVMProc *) ((proc_id > 0) ?
+                   BoxOcc_Item_Ptr(& pt->uninstalled, proc_id) : NULL);
   return previous_target;
 }
 
@@ -245,7 +244,8 @@ BoxVMProcID BoxVM_Proc_Get_ID(BoxVM *vm, BoxVMCallNum call_num) {
 void BoxVM_Proc_Get_Ptr_And_Length(BoxVM *vmp, BoxVMWord **ptr,
                                    UInt *length, BoxVMProcID proc_id) {
   BoxVMProcTable *pt = & vmp->proc_table;
-  BoxVMProc *procedure = (BoxVMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, proc_id);
+  BoxVMProc *procedure =
+    (BoxVMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, proc_id);
   BoxArr *code = & procedure->code;
   if (length != NULL) *length = BoxArr_Num_Items(code);
   if (ptr != NULL) *ptr = (BoxVMWord *) BoxArr_First_Item_Ptr(code);

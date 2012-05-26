@@ -19,7 +19,7 @@
 
 /**
  * @file vmdasm.h
- * @brief Code dealing with reading (disassembling) of VM code.
+ * @brief Code dealing with reading (disassembling) VM code.
  */
 
 #ifndef _BOX_VMDASM_H
@@ -30,10 +30,40 @@
 #  include <box/types.h>
 #  include <box/vm.h>
 
-/** Object used to control the disassembling of VM code. */
+/**
+ * Object used to control the disassembling of VM code.
+ */
 typedef struct BoxVMDasm_struct BoxVMDasm;
 
-/** Prototype of function which disassembles a VM instruction. */
+/**
+ * Iterator called on every instruction by BoxVM_Disassemble_Block.
+ * @param dasm the BoxVMDasm structure.
+ * @param pass the argument passed to BoxVM_Disassemble_Block.
+ * @return a success value to be processed by BoxVM_Disassemble_Block.
+ */
+typedef BoxTask (*BoxVMDasmIter)(BoxVMDasm *dasm, void *pass);
+
+/**
+ * Disassemble a block of memory and call the given iterator for every
+ * instruction.
+ * @param vm the VM to which the block of code belongs.
+ * @param prog the pointer to the block of code.
+ * @param dim the size of the block of code in BoxVMWord.
+ * @param iter the iterator to call on every disassembled op.
+ * @param pass a pointer to pass to the iterator.
+ * @return the first value returned by "iter" which is different from
+ *   BOXTASK_OK. If "iter" returned all BOXTASK_OK values, or if "iter" was
+ *   never called, BOXTASK_OK is returned.
+ */
+BOXEXPORT BoxTask
+  BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
+                          BoxVMDasmIter iter, void *pass);
+
+/* What follows should disappear after refactoring... */
+
+/**
+ * Prototype of function which disassembles a VM instruction.
+ */
 typedef void (*BoxVMOpDisasm)(BoxVMDasm *dasm, char **out);
 
 BoxVMOpDisasm BoxVM_Get_ArgDAsm_From_Str(const char *s);

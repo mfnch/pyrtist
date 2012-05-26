@@ -18,39 +18,41 @@
  ****************************************************************************/
 
 /**
- * @file vmdasm_private.h
- * @brief Code dealing with reading (disassembling) of VM code.
+ * @file vmserial.h
+ * @brief Serialization/deserialization of Box VM.
  */
 
-#ifndef _BOX_VMDASM_PRIVATE_H
-#  define _BOX_VMDASM_PRIVATE_H
-
-#  include <stdlib.h>
+#ifndef _BOX_VMSERIAL_H
+#  define _BOX_VMSERIAL_H
 
 #  include <box/types.h>
 #  include <box/vm.h>
-#  include <box/vmdasm.h>
 
 /**
- * Object used to control the disassembling of VM code.
+ * Pre-compute the size of the serialized VM.
+ * @param vm the VM for which the computation should be made.
+ * @param the size that the serialized VM would have.
  */
-struct BoxVMDasm_struct {
-  struct {
-    unsigned int exit_now     :1, /**< Exit from the disassembly loop. */
-                 report_error :1, /**< Trigger the error condition. */
-                 op_is_long   :1; /**< Whether the instruction is long. */
+BOXEXPORT size_t BoxVM_Get_Serialization_Size(BoxVM *vm);
 
-  }              flags;
+/**
+ * Serialize the given VM.
+ * @param vm the VM which should be serialized.
+ * @param dest the address where to put the serialized VM.
+ * @param dest_size the maximum number of bytes allowed for the serialization.
+ * @return BOXTASK_OK for success, BOXTASK_FAILURE if dest_size was not big
+ *   enough.
+ */
+BOXEXPORT BoxTask BoxVM_Serialize(BoxVM *vm, void *dest, size_t dest_size);
 
-  BoxVM          *vm;             /**< VM which is being processed. */
+/**
+ * Deserialize a VM from a block of memory.
+ * @param vm initialized (but empty) VM which will be the destination of the
+ *   deserialization.
+ * @param src the address from which the serialized VM should be read.
+ * @param src_size the number of bytes to read from src.
+ * @return a new VM, or NULL if the deserialization failed.
+ */
+BOXEXPORT BoxVM *BoxVM_Deserialize(const void *src, size_t src_size);
 
-  BoxVMWord      *op_ptr;         /**< Pointer to the current word. */
-  BoxVMWord      op_word;         /**< The current word. */
-  size_t         op_pos;          /**< Position in the buffer. */
-  size_t         op_size;         /**< Size of the instruction. */
-  const BoxVMInstrDesc
-                 *op_desc;        /**< Descriptor for current instruction. */
-  BoxUInt        op_arg_type;
-};
-
-#endif /* _BOX_VMDASM_PRIVATE_H */
+#endif /* _BOX_VMSERIAL_H */

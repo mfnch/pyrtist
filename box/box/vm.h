@@ -40,7 +40,6 @@ typedef struct BoxVM_struct BoxVM;
  * code from a virtual machine.
  */
 typedef struct BoxVMX_struct BoxVMX;
-typedef BoxVMX VMStatus;
 
 /* Data type used to write/read binary codes for the instructions */
 typedef unsigned char BoxVMByte;
@@ -118,6 +117,21 @@ typedef enum {
   BOXVM_ATTR_ADD_DATA_IDENT=4 /**< Add identity info (debug) to data blocks */
 
 } BoxVMAttr;
+
+/**
+ * Prototype of function which implements a VM instruction.
+ */
+typedef void (*BoxVMOpExecutor)(BoxVMX *vmx);
+
+/**
+ * Prototype of function to retrieve the arguments of a VM instruction.
+ */
+typedef void (*BoxVMOpArgsGetter)(BoxVMX *vmx);
+
+/**
+ * Object describing a Box VM instruction characteristics.
+ */
+typedef struct BoxVMInstrDesc_struct BoxVMInstrDesc;
 
 /** Allocate space for a BoxVM object and initialise it with BoxVM_Init.
  * You'll need to call BoxVM_Destroy to destroy the object.

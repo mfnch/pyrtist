@@ -18,39 +18,31 @@
  ****************************************************************************/
 
 /**
- * @file vmdasm_private.h
- * @brief Code dealing with reading (disassembling) of VM code.
+ * @file vmstore.h
+ * @brief Module which allows saving/loading VMs.
  */
 
-#ifndef _BOX_VMDASM_PRIVATE_H
-#  define _BOX_VMDASM_PRIVATE_H
-
-#  include <stdlib.h>
+#ifndef _BOX_VMSTORE_H
+#  define _BOX_VMSTORE_H
 
 #  include <box/types.h>
 #  include <box/vm.h>
-#  include <box/vmdasm.h>
+#  include <box/stream.h>
 
 /**
- * Object used to control the disassembling of VM code.
+ * Save the VM to file.
+ * @param vm the VM to save.
+ * @param stream the destination stream.
+ * @return whether the operation succedeed.
  */
-struct BoxVMDasm_struct {
-  struct {
-    unsigned int exit_now     :1, /**< Exit from the disassembly loop. */
-                 report_error :1, /**< Trigger the error condition. */
-                 op_is_long   :1; /**< Whether the instruction is long. */
+BOXEXPORT BoxTask BoxVM_Save_To_Stream(BoxVM *vm, BoxStream *stream);
 
-  }              flags;
+/**
+ * Load a VM from a stream.
+ * @param vm an initialized, but empty VM.
+ * @param stream the stream from which the VM should be read.
+ * @return whether the operation succedeed.
+ */
+BOXEXPORT BoxTask BoxVM_Load_From_Stream(BoxVM *vm, BoxStream *stream);
 
-  BoxVM          *vm;             /**< VM which is being processed. */
-
-  BoxVMWord      *op_ptr;         /**< Pointer to the current word. */
-  BoxVMWord      op_word;         /**< The current word. */
-  size_t         op_pos;          /**< Position in the buffer. */
-  size_t         op_size;         /**< Size of the instruction. */
-  const BoxVMInstrDesc
-                 *op_desc;        /**< Descriptor for current instruction. */
-  BoxUInt        op_arg_type;
-};
-
-#endif /* _BOX_VMDASM_PRIVATE_H */
+#endif /* _BOX_VMSTORE_H */

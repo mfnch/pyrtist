@@ -91,12 +91,6 @@ typedef enum {
   BOXOPDASM_CALL
 } BoxOpDAsm;
 
-/** Prototype of function which implements a VM instruction. */
-typedef void (*BoxVMOpExecutor)(BoxVMX *vmx);
-
-/** Prototype of function to retrieve the arguments of a VM instruction. */
-typedef void (*BoxVMOpArgsGetter)(BoxVMX *vmx);
-
 /** Typedef of struc __BoxOpInfo */
 typedef struct BoxOpInfo_struct BoxOpInfo;
 
@@ -119,6 +113,19 @@ struct BoxOpInfo_struct {
   BoxVMOpExecutor
              executor;    /**< Pointer to the function which implements
                                the operation */
+};
+
+/**
+ * Content of a BoxVMInstrDesc object.
+ */
+struct BoxVMInstrDesc_struct {
+  const char         *name;         /**< Instruction name */
+  BoxUInt            numargs;       /**< Number of arguments */
+  BoxType            t_id;          /**< Type of the arguments (all have the
+                                         same type) */
+  BoxVMOpArgsGetter  get_args;      /**< Per trattare gli argomenti */
+  BoxVMOpExecutor    execute;       /**< Per eseguire l'istruzione */
+  BoxVMOpDisasm      disasm;        /**< Per disassemblare gli argomenti */
 };
 
 /** Table containing info about all the VM operations */
@@ -147,19 +154,6 @@ typedef struct {
   size_t       vm_pos;   /**< Position in the VM code */
 } BoxVMTrace;
 
-/* This type is used in the table 'vm_instr_desc_table', which collects
- * and describes all the instruction of the VM.
- */
-typedef struct {
-  const char         *name;         /**< Nome dell'istruzione */
-  BoxUInt            numargs;       /**< Numero di argomenti dell'istruzione */
-  TypeID             t_id;          /**< Numero che identifica il tipo
-                                         degli argomenti (interi, reali, ...) */
-  BoxVMOpArgsGetter  get_args;      /**< Per trattare gli argomenti */
-  BoxVMOpExecutor    execute;       /**< Per eseguire l'istruzione */
-  BoxVMOpDisasm      disasm;        /**< Per disassemblare gli argomenti */
-
-} BoxVMInstrDesc;
 
 typedef struct {
   void   *ptr; /**< Pointer to the region allocated for the registers */
@@ -188,9 +182,9 @@ struct BoxVMX_struct {
   BoxUInt     i_type,     /**< Type of instruction */
               i_len,      /**< Size of instruction */
               arg_type;   /**< Type of arguments of instruction */
-
   const BoxVMInstrDesc
               *idesc;     /**< Descriptor for current instruction */
+
   void        *arg1,
               *arg2;      /**< Pointer to instruction arguments */
 
@@ -247,9 +241,6 @@ struct BoxVM_struct {
 
   BoxArr    backtrace;      /**< Information about error location */
   char      *fail_msg;      /**< Failure message */
-
-  BoxUInt   dasm_pos;       /**< Position in num. of read bytes for the
-                                 disassembler */
 
   BoxHT     id_from_desc;   /**< Hashtable containing object descriptors */
   BoxArr    desc_from_id;   /**< Table of descriptors from allocation IDs */
