@@ -48,6 +48,9 @@
 #    define BOX_ABBREV
 #  endif
 
+/** Fundamental boolean type used in the Box compiler API. */
+typedef int BoxBool;
+
 /** Enumeration of fundamental Box types. 
  * The constants defined below can be used to retrieve information about
  * fundamental Box types (size, alignment, etc).

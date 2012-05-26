@@ -29,6 +29,12 @@
 #  include <box/vm.h>
 
 /**
+ * Stream object. Abstraction which provides a single interface to read/write/
+ * seek into a file/string/portion of memory.
+ */
+typedef struct BoxStream_struct BoxStream;
+
+/**
  * Mode of operation of a BoxStream object.
  */
 typedef enum {
@@ -74,6 +80,7 @@ BOXEXPORT BoxStreamMode BoxStream_Get_Mode(BoxStream *bs);
  *
  */
 typedef enum {
+  BOXSTREAMERR_NONE
 
 } BoxStreamErr;
 
