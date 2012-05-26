@@ -80,7 +80,8 @@ BOXEXPORT BoxStreamMode BoxStream_Get_Mode(BoxStream *bs);
  *
  */
 typedef enum {
-  BOXSTREAMERR_NONE
+  BOXSTREAMERR_NONE,
+  BOXSTREAMERR_CLOSE
 
 } BoxStreamErr;
 

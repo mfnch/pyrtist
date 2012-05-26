@@ -20,10 +20,51 @@
 #include <stdio.h>
 
 #include <box/types.h>
+#include <box/mem.h>
 #include <box/stream_private.h>
 
+typedef struct {
+  FILE            *file;
+  BoxStreamFinish saved_fn_finish;
+
+} MyFileStream;
+
+
+BoxStreamErr MyFileStream_Close(BoxStream *stream) {
+  if (stream) {
+    MyFileStream *fs = stream->data;
+
+    if (fs->file) {
+      /* TODO: do it properly: check errno... */
+      if (!fclose(fs->file))
+        return BOXSTREAMERR_NONE;
+    }
+  }
+
+  return BOXSTREAMERR_CLOSE;
+}
+
+void MyFileStream_Finish(BoxStream *stream) {
+  if (stream) {
+    MyFileStream *fs = stream->data;
+    (void) MyFileStream_Close(stream);
+    stream->fn_finish = fs->saved_fn_finish;
+    stream->fn_finish(stream);
+  }
+}
+
 /* Wrap a FILE object inside a BoxStream object. */
-BoxStream *BoxStream_Create_From_File(FILE *file)
-{
-  return NULL;
+BoxTask BoxStream_Init_From_File(BoxStream *stream, FILE *file) {
+  MyFileStream *data =
+    BoxStream_Init_Generic(stream, sizeof(MyFileStream));
+
+  if (!data)
+    return BOXTASK_FAILURE;
+
+#if 0
+  data->saved_fn_finish = stream->fn_finish;
+  stream->fn_finish = MyFileStream_Finish;
+#endif
+
+  return BOXTASK_OK;
 }
