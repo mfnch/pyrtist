@@ -18,18 +18,20 @@
  ****************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <box/types.h>
 #include <box/mem.h>
 #include <box/stream_private.h>
 
+/** Data specific to the File stream implementation. */
 typedef struct {
   FILE            *file;
-  BoxStreamFinish saved_fn_finish;
 
 } MyFileStream;
 
 
+/* Implementation of BoxStream.fn_close */
 BoxStreamErr MyFileStream_Close(BoxStream *stream) {
   if (stream) {
     MyFileStream *fs = stream->data;
@@ -44,27 +46,42 @@ BoxStreamErr MyFileStream_Close(BoxStream *stream) {
   return BOXSTREAMERR_CLOSE;
 }
 
-void MyFileStream_Finish(BoxStream *stream) {
-  if (stream) {
-    MyFileStream *fs = stream->data;
-    (void) MyFileStream_Close(stream);
-    stream->fn_finish = fs->saved_fn_finish;
-    stream->fn_finish(stream);
-  }
+/* Implementation of BoxStream.fn_write */
+size_t MyFileStream_Write(BoxStream *bs, const void *src, size_t src_size) {
+  MyFileStream *fs = bs->data;
+  return fwrite(src, 1, src_size, fs->file);
+}
+
+/* Implementation of BoxStream.fn_read */
+size_t MyFileStream_Read(BoxStream *bs, void *src, size_t src_size) {
+  MyFileStream *fs = bs->data;
+  return fread(src, 1, src_size, fs->file);
 }
 
 /* Wrap a FILE object inside a BoxStream object. */
-BoxTask BoxStream_Init_From_File(BoxStream *stream, FILE *file) {
+BoxTask BoxStream_Init_From_File(BoxStream *bs, FILE *file) {
   MyFileStream *data =
-    BoxStream_Init_Generic(stream, sizeof(MyFileStream));
+    BoxStream_Init_Generic(bs, sizeof(MyFileStream));
 
   if (!data)
     return BOXTASK_FAILURE;
 
-#if 0
-  data->saved_fn_finish = stream->fn_finish;
-  stream->fn_finish = MyFileStream_Finish;
-#endif
-
+  bs->fn_close = MyFileStream_Close;
+  bs->fn_write = MyFileStream_Write;
+  
   return BOXTASK_OK;
+}
+
+/* Wrap a FILE object inside a BoxStream object. */
+BoxStream *BoxStream_Create_From_File(FILE *file) {
+  BoxStream *bs = BoxMem_Alloc(sizeof(BoxStream));
+
+  if (!bs)
+    return NULL;
+
+  if (BoxStream_Init_From_File(bs, file) == BOXTASK_OK)
+    return bs;
+
+  BoxMem_Free(bs);
+  return NULL;
 }

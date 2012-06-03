@@ -38,9 +38,12 @@ typedef struct BoxStream_struct BoxStream;
  * Mode of operation of a BoxStream object.
  */
 typedef enum {
-  BOXSTREAMMODE_RO, /**< Read-only */
-  BOXSTREAMMODE_WO, /**< Write-only */
-  BOXSTREAMMODE_RW  /**< Read-Write */
+  BOXSTREAMMODE_RO=0x1,     /**< Read-only */
+  BOXSTREAMMODE_WO=0x2,     /**< Write-only */
+  BOXSTREAMMODE_RW=0x3,     /**< Read-Write */
+  BOXSTREAMMODE_BE=0x4,     /**< Big-endian */
+  BOXSTREAMMODE_LE=0x0,     /**< Little-endian */
+  BOXSTREAMMODE_DEFAULT=0x3 /**< Default mode */
 
 } BoxStreamMode;
 
@@ -50,7 +53,7 @@ typedef enum {
  * @return a new BoxStream object.
  */
 BOXEXPORT BoxStream *
-  BoxStream_Create_From_File(FILE *file);
+BoxStream_Create_From_File(FILE *file);
 
 /**
  * Wrap a portion of memory inside a BoxStream object.
@@ -59,7 +62,7 @@ BOXEXPORT BoxStream *
  * @return a new BoxStream object.
  */
 BOXEXPORT BoxStream *
-  BoxStream_Create_From_Memory(void *src, size_t src_size);
+BoxStream_Create_From_Memory(void *src, size_t src_size);
 
 /**
  * Set the operation mode for the given stream.
@@ -80,8 +83,13 @@ BOXEXPORT BoxStreamMode BoxStream_Get_Mode(BoxStream *bs);
  *
  */
 typedef enum {
-  BOXSTREAMERR_NONE,
-  BOXSTREAMERR_CLOSE
+  BOXSTREAMERR_NONE=0,
+  BOXSTREAMERR_CLOSE,
+  BOXSTREAMERR_NOT_AVAILABLE,
+  BOXSTREAMERR_READ,
+  BOXSTREAMERR_READ_DENIED,
+  BOXSTREAMERR_WRITE,
+  BOXSTREAMERR_WRITE_DENIED,
 
 } BoxStreamErr;
 
@@ -139,9 +147,17 @@ BOXEXPORT void BoxStream_Seek(BoxStream *bs, BoxStreamOrigin orig,
                               ssize_t displacement);
 
 /**
- *
- * @param 
- * @return
+ * Close the given stream, releasing the associated resources.
+ * @param bs The stream to close.
+ */
+BOXEXPORT void BoxStream_Close(BoxStream *bs);
+
+/**
+ * Read a block of memory with the given size and writes it to the stream.
+ * @param dst the output stream.
+ * @param src the pointer to the memory block acting as input.
+ * @param src_size the size (num bytes) of the memory block pointed by src.
+ * @return the number of bytes effectively written.
  */
 BOXEXPORT size_t
 BoxStream_Write_From_Mem(BoxStream *dst, const char *src, size_t src_size);
@@ -165,7 +181,7 @@ BoxStream_Write_From_Stream(BoxStream *dst,
  * @return number of bytes written to the destination block.
  */
 BOXEXPORT size_t
-BoxStream_Read_To_Mem(BoxStream *src, void *dst, size_t *dst_size);
+BoxStream_Read_To_Mem(BoxStream *src, void *dst, size_t dst_size);
 
 /**
  * Destroy the given stream.

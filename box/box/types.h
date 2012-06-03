@@ -51,6 +51,12 @@
 /** Fundamental boolean type used in the Box compiler API. */
 typedef int BoxBool;
 
+enum {
+  BOXBOOL_FALSE=0,
+  BOXBOOL_TRUE=1
+};
+
+
 /** Enumeration of fundamental Box types. 
  * The constants defined below can be used to retrieve information about
  * fundamental Box types (size, alignment, etc).

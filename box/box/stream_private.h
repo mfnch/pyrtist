@@ -31,15 +31,18 @@
 #  include <box/stream.h>
 
 
-/**
- * Finalization function.
- */
+/* Finalization function. */
 typedef void (*BoxStreamFinish)(BoxStream *);
 
-/**
- * Close the stream (e.g. using fclose).
- */
+/* Raw writer function. */
+typedef size_t (*BoxStreamWrite)(BoxStream *, const void *, size_t);
+
+/* Raw reader function. */
+typedef size_t (*BoxStreamRead)(BoxStream *, void *, size_t);
+
+/* Close the stream (e.g. using fclose). */
 typedef BoxStreamErr (*BoxStreamClose)(BoxStream *);
+
 
 /**
  * Content of a BoxStream object.
@@ -47,14 +50,22 @@ typedef BoxStreamErr (*BoxStreamClose)(BoxStream *);
 struct BoxStream_struct {
   void            *data;
   BoxStreamErr    error;
+  BoxStreamMode   mode;
   BoxStreamFinish fn_finish;
   BoxStreamClose  fn_close;
+  BoxStreamWrite  fn_write;
+  BoxStreamRead   fn_read;
 };
 
 /**
  * Function used by the specialized BoxStream classes for generic
  * initialization of the BoxStream object.
  */
-void *BoxStream_Init_Generic(BoxStream *stream, size_t data_size);
+void *BoxStream_Init_Generic(BoxStream *bs, size_t data_size);
+
+/**
+ * Function used to finalize a BoxStream object.
+ */
+void BoxStream_Finish(BoxStream *bs);
 
 #endif /* _BOX_STREAM_PRIVATE_H */
