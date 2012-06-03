@@ -76,8 +76,9 @@ class HelpAct(assistant.Action):
 
 class ToolBox(gtk.Table):
   def __init__(self, assistant, columns=1, homogeneous=False,
-               size_request=(-1, -1), config=None):
+               size_request=(-1, -1), config=None, icon_path=None):
     self.config = config
+    self.icon_path = icon_path
     self.columns = columns
     self.assistant = assistant
     rows = self._compute_rows_from_cols()
@@ -94,8 +95,12 @@ class ToolBox(gtk.Table):
 
   def _get_icon_path(self):
     '''Get the icon path for the particular icon size we use.'''
-    big_buttons = self.config.getboolean("GUI", "big_buttons")
-    return config.icon_path(big_buttons=big_buttons)
+    if self.config:
+      big_buttons = self.config.getboolean("GUI", "big_buttons")
+      return config.icon_path(big_buttons=big_buttons)
+
+    else:
+      return self.icon_path
 
   def _compute_rows_from_cols(self):
     num_buttons = len(self.assistant.get_button_modes())

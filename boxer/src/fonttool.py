@@ -95,7 +95,7 @@ class FontTool(object):
 
     self.assistant = a = Assistant(main_mode)
     self.toolbox = tb = ToolBox(a, columns=2, size_request=(-1, -1),
-                                icon_path=config.icon_path)
+                                icon_path=config.icon_path())
     tb.show_all()
     w.add(tb)
     w.show()

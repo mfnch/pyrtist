@@ -359,7 +359,13 @@ class BoxerConfigParser(cfgp.SafeConfigParser):
       f.close()
 
 
+_configuration = None
+
 def get_configuration():
+  global _configuration
+  if _configuration:
+    return _configuration
+
   # Create Boxer configuration directory
   home_path = os.path.expanduser("~")
   if platform_is_win:
@@ -410,6 +416,8 @@ def get_configuration():
   c = BoxerConfigParser(default_config=default_config,
                         user_cfg_file=user_cfg_file)
   successful_reads = c.read([user_cfg_file])
+
+  _configuration = c
   return c
 
 
