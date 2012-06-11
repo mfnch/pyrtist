@@ -17,6 +17,6 @@
 
 logger = None
 
-def log(msg):
+def log_msg(msg):
   if logger:
     logger.write(msg + "\n")
