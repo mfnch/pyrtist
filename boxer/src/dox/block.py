@@ -16,7 +16,7 @@
 #   along with Boxer. If not, see <http://www.gnu.org/licenses/>.
 
 from extractor import SLICE_COMMENT, SLICE_BLOCK, SLICE_SOURCE
-from tree import DoxSectionNode
+from newtree import DoxSectionNode
 
 class DoxBlock(object):
   def __init__(self, classified_slice, paragraph):

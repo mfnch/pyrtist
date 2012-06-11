@@ -103,7 +103,7 @@ def create_classified_slices_from_text(text):
 
 
 if __name__ == '__main__':
-  from tree import DoxTree 
+  from newtree import DoxTree 
   with open(sys.argv[1], "r") as f:
     text = f.read()
 

@@ -16,6 +16,9 @@
 #   along with Boxer. If not, see <http://www.gnu.org/licenses/>.
 
 
+import sys
+sys.path.append("..")
+
 from textslice import TextSlice
 from comparse import Parser
 
