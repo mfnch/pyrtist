@@ -17,7 +17,7 @@
 
 import string
 
-import logger
+from logger import log_msg
 
 
 class DoxItem(object):
@@ -138,7 +138,7 @@ class DoxTree(DoxItem):
     self.sections = []
 
   def log(self, msg):
-    logger.log(msg)
+    log_msg(msg)
 
   def add_type(self, *ts):
     for t in ts:

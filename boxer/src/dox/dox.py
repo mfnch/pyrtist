@@ -20,7 +20,7 @@ import re
 import fnmatch
 
 from tree import DoxType, DoxProc, DoxInstance, DoxTree
-import logger
+from logger import log_msg
 
 dox_magic_seq = "///"
 dox_comment_seq = "//"
@@ -150,7 +150,7 @@ class DoxBlocks(object):
     # Init from previous, if requested
     if "Same" in self.content:
       if self.prev == None:
-        logger.log("Warning: when using `Same' previous was not found.")
+        log_msg("Warning: when using `Same' previous was not found.")
 
       else:
         for prev_name, prev_block in self.prev.content.iteritems():
@@ -265,7 +265,7 @@ class Dox(object):
       if self.file.nr_line != None:
         hdr += "(%d)" % (self.file.nr_line)
       hdr += ": "
-    logger.log(hdr + msg)
+    log_msg(hdr + msg)
 
   def read_recursively(self, rootpath,
                        extensions = ["*.dox", "*.bxh", "*.box"]):
