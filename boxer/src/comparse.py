@@ -17,6 +17,9 @@
 
 import re
 
+from textslice import TextSlice
+
+
 token_re = re.compile(r'([(][*]|[*][)]|\'|"|[\\]|//|\r\n|\n\r|\n)')
 endline_re = re.compile(r'(\r\n|\n\r|\n)')
 
@@ -34,11 +37,19 @@ endline_re = re.compile(r'(\r\n|\n\r|\n)')
 (LEVEL_WARNING,
  LEVEL_ERROR) = range(2)
 
+
 def normalize_macro_name(name):
   """Normalize a macro name, making it lowercase and substituting dashes with
   underscores.
   """
   return name.lower().replace("-", "_")
+
+def re_count(re_expr, string, *args):
+  '''Return the number of matches of the compiled re object (SRE_pattern)
+  ``core_expr'' in the string ``string''.
+  '''
+  matches = re_expr.findall(string, *args)
+  return (len(matches) if matches else 0)
 
 
 class ParseError(Exception): pass
@@ -96,14 +107,6 @@ class Tokenizer(object):
     return self.start
 
 
-class TextSlice(object):
-  def __init__(self, begin, lineno, end=None, parent=None):
-    self.begin = begin
-    self.end = end
-    self.lineno = lineno
-    self.parent = parent
-
-
 class Parser(object):
   '''Base parser for Box sources. This parser can go over the sources and
   distinguish comments from source code. This is the basic parser over which
@@ -154,14 +157,14 @@ class Parser(object):
 
         elif token == OPEN_DELIM:
           self.notify_source(source_pos, token_start)
-          text_slice = TextSlice(token_start, tok.line)
+          text_slice = TextSlice(token_start, tok.line, text=text)
           comments.append(text_slice)
           self.notify_comment_begin(text_slice)
           state = STATE_COMMENT
 
         elif token == LINECOMMENT:
           self.notify_source(source_pos, token_start)
-          text_slice = TextSlice(token_start, tok.line)
+          text_slice = TextSlice(token_start, tok.line, text=text)
           text_slice.end = source_pos = tok.skip_nl()
           self.notify_inline_comment(text_slice)
 
@@ -181,7 +184,7 @@ class Parser(object):
 
         elif token == OPEN_DELIM:
           text_slice = TextSlice(token_start, tok.line,
-                                 parent=comments[-1])
+                                 parent=comments[-1], text=text)
           self.notify_comment_begin(text_slice)
           comments.append(text_slice)
 
@@ -270,7 +273,7 @@ class SourceMapper(Parser):
   def parse(self, text=None):
     try:
       Parser.parse(self, text=text)
-    except ParseError, msg:
+    except ParseError as msg:
       self.notify_message(LEVEL_ERROR, msg)
     return self.get_output()
 

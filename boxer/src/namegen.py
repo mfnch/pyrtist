@@ -1,4 +1,3 @@
-
 def strip_nonalpha(s, default=""):
   """Strip non alphabetic characters at the beginning of the string
   and return the result."""
@@ -69,7 +68,9 @@ def generate_next_name(old_name, increment=1):
     return n[:start] + new_num + n[end:]
 
 if __name__ == "__main__":
+  import sys
+
   while True:
     n = adjust_name(raw_input())
-    print n, generate_next_name(n)
+    sys.stdout.write("%s %s\n" % (n, generate_next_name(n)))
 

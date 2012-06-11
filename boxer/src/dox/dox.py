@@ -93,9 +93,9 @@ _instdef_re = re.compile(r'\s*([a-z][A-Za-z0-9_.\s]*)[=]')
 _procdef_re = re.compile(r'\s*([^@]+)\s*[@]\s*([A-Z][A-Za-z0-9_\s.]*)')
   
 def dox_classify_code(line):
-  '''Parse the line and return a DoxType, a DoxProc or None depending on
-  whether the line represents a type definition, a procedure definition
-  or something that was not understood by the parser.'''
+  '''Parse the line and return a DoxType, a DoxInstance , a DoxProc or None
+  depending on whether the line represents a type definition, a procedure
+  definition or something that was not understood by the parser.'''
   if line == None:
     return None
 
@@ -251,6 +251,7 @@ class DoxFileParser(DoxFileContentParser):
   def read(self):
     self.parse()
     return self.store
+
 
 class Dox(object):
   def __init__(self):

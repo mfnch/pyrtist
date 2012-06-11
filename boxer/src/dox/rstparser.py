@@ -35,4 +35,4 @@ def parse(content):
 
 if __name__ == "__main__":
   s = "here is some code ``code`` and here is **some bold text** and *some italic*. That's it!"
-  print parse_code(s)
+  print(parse_code(s))

@@ -46,6 +46,7 @@
 #   There are four combinations [Text|Figure], [Figure|Text], etc.
 # x resize reference points
 
+import sys
 import time
 import os
 
@@ -72,7 +73,6 @@ from dox.dox import Dox
 from dox.browse import DoxBrowser
 
 def debug():
-  import sys
   from IPython.Shell import IPShellEmbed
   calling_frame = sys._getframe(1)
   IPShellEmbed([])(local_ns  = calling_frame.f_locals,
@@ -208,7 +208,7 @@ class Boxer(object):
     try:
       mergeid = merge.add_ui_from_string(self.ui_info)
     except gobject.GError, msg:
-      print "building menus failed: %s" % msg
+      sys.stdout.write("building menus failed: %s\n" % msg)
 
     # Retrieve the menu bar and the tool bar and add them at the top of the
     # VBox

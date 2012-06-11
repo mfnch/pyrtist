@@ -438,13 +438,15 @@ main_mode = \
                          circle, line, text])
 
 if __name__ == "__main__":
+  import sys
+
   from assistant import Assistant
   assistant = Assistant(main_mode)
   assistant.start()
 
   while True:
-    print assistant.get_available_mode_names()
-    print "Select mode (or write esc):",
+    sys.stdout.write(assistant.get_available_mode_names() + '\n')
+    sys.stdout.write("Select mode (or write esc):")
     new_mode = raw_input()
     if new_mode.strip().lower() == "esc":
       assistant.exit_mode()

@@ -17,7 +17,7 @@
 
 import os
 
-from tree import DoxItem, DoxType, DoxProc, DoxTree
+from tree import DoxType, DoxProc, DoxTree
 from writer import Writer
 
 def table_to_string(tab):

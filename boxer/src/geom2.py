@@ -176,7 +176,6 @@ class Rectangle(object):
       c2x, c2y = self.corner2
       v = ((c1x < obj.x < c2x if c1x <= c2x else c2x < obj.x < c1x) and
            (c1y < obj.y < c2y if c1y <= c2y else c2y < obj.y < c1y))
-      #print obj, ("is inside" if v else "is outside"), self
       return v
 
     elif isinstance(obj, Rectangle):

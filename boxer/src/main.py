@@ -16,9 +16,11 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import optparse
 
-import info, config
+import info
+import config
 
 option_parser = None
 
@@ -50,8 +52,8 @@ def main(args):
 
   if len(arguments) > 2:
     other_files = ", ".join(arguments[2:])
-    print ("WARNING: Boxer takes just one file from the command line. "
-           "Ignoring the files %s." % other_files)
+    sys.stdout.write("WARNING: Boxer takes just one file from the command "
+                     "line. Ignoring the files %s." % other_files)
 
   import boxer
   boxer.run(file_to_edit, box_exec=options.box_exec)

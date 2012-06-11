@@ -90,7 +90,7 @@ def installation_path():
       root = os.path.realpath(root)
     return os.path.dirname(os.path.abspath(root))
   except:
-    print "Problem determining data installation path."
+    sys.stdout.write("Problem determining data installation path.\n")
     sys.exit()
 
 # Whether we should try to use threads

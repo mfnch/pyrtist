@@ -423,14 +423,14 @@ if __name__ == "__main__":
   import sys
   d = Document()
   d.load_from_file(sys.argv[1])
-  print "Executing..."
+  sys.stdout.write("Executing...\n")
   raw_input()
 
   def out_fn(s):
-    print s,
+    sys.stdout.write(s)
 
   d.execute(out_fn=out_fn)
-  print "Done"
+  sys.stdout.write("Done\n")
   import time
   time.sleep(0.1)
 
