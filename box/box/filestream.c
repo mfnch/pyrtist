@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 
 #include <box/types.h>
 #include <box/mem.h>
@@ -27,6 +28,7 @@
 /** Data specific to the File stream implementation. */
 typedef struct {
   FILE            *file;
+  int             last_errno;
 
 } MyFileStream;
 
@@ -38,7 +40,9 @@ BoxStreamErr MyFileStream_Close(BoxStream *stream) {
 
     if (fs->file) {
       /* TODO: do it properly: check errno... */
-      if (!fclose(fs->file))
+      int ret = fclose(fs->file);
+      fs->last_errno = errno;
+      if (!ret)
         return BOXSTREAMERR_NONE;
     }
   }
@@ -49,13 +53,17 @@ BoxStreamErr MyFileStream_Close(BoxStream *stream) {
 /* Implementation of BoxStream.fn_write */
 size_t MyFileStream_Write(BoxStream *bs, const void *src, size_t src_size) {
   MyFileStream *fs = bs->data;
-  return fwrite(src, 1, src_size, fs->file);
+  size_t ret = fwrite(src, 1, src_size, fs->file);
+  fs->last_errno = errno;
+  return ret;
 }
 
 /* Implementation of BoxStream.fn_read */
 size_t MyFileStream_Read(BoxStream *bs, void *src, size_t src_size) {
   MyFileStream *fs = bs->data;
-  return fread(src, 1, src_size, fs->file);
+  size_t ret = fread(src, 1, src_size, fs->file);
+  fs->last_errno = errno;
+  return ret;
 }
 
 /* Wrap a FILE object inside a BoxStream object. */

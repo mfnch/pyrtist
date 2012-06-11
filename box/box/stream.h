@@ -25,6 +25,8 @@
 #ifndef _BOX_STREAM_H
 #  define _BOX_STREAM_H
 
+#  include <stdint.h>
+
 #  include <box/types.h>
 #  include <box/vm.h>
 
@@ -41,8 +43,8 @@ typedef enum {
   BOXSTREAMMODE_RO=0x1,     /**< Read-only */
   BOXSTREAMMODE_WO=0x2,     /**< Write-only */
   BOXSTREAMMODE_RW=0x3,     /**< Read-Write */
-  BOXSTREAMMODE_BE=0x4,     /**< Big-endian */
   BOXSTREAMMODE_LE=0x0,     /**< Little-endian */
+  BOXSTREAMMODE_BE=0x4,     /**< Big-endian */
   BOXSTREAMMODE_DEFAULT=0x3 /**< Default mode */
 
 } BoxStreamMode;
@@ -160,7 +162,7 @@ BOXEXPORT void BoxStream_Close(BoxStream *bs);
  * @return the number of bytes effectively written.
  */
 BOXEXPORT size_t
-BoxStream_Write_From_Mem(BoxStream *dst, const char *src, size_t src_size);
+BoxStream_Write_Mem(BoxStream *dst, const void *src, size_t src_size);
 
 /**
  * Read data from an input stream src and writes it to an output stream dst.
@@ -170,8 +172,67 @@ BoxStream_Write_From_Mem(BoxStream *dst, const char *src, size_t src_size);
  * @return Number of bytes effectively copied.
  */
 BOXEXPORT size_t
-BoxStream_Write_From_Stream(BoxStream *dst,
-                            BoxStream *src, size_t src_amount);
+BoxStream_Write_Stream(BoxStream *dst, BoxStream *src, size_t src_amount);
+
+/**
+ * Writes the given uint8_t value to the given output stream.
+ * @param dst Output stream.
+ * @param val uint8_t value to write.
+ * @return return true if the value was correctly written, false otherwise.
+ */
+#define BoxStream_Write_UInt8(dst, val) \
+  (BoxStream_Write_Mem((dst), & (val), sizeof(uint8_t)))
+
+/**
+ * Writes the given number of uint16_t values to the given output stream.
+ *
+ * If all goes well the function returns "num_vals". In case of failures, the
+ * number, "n", of values successfully written is returned. Note that the
+ * number of bytes written to the stream may be different from
+ * n*sizeof(uint16_t). In other words, the failure may cause a value to be
+ * partially written. Dealing with this error condition is left completely
+ * to the caller.
+ *
+ * @param dst Output stream. 
+ * @param vals Pointer to the array of unit16_t values.
+ * @param num_vals Number of uint16_t to write.
+ * @return Number of values effectively written to the output stream.
+ */
+BOXEXPORT size_t
+BoxStream_Write_UInt16s(BoxStream *dst, uint16_t *vals, size_t num_vals);
+
+/**
+ * Writes the given uint16_t value to the given stream.
+ * @param dst Output stream.
+ * @param val uint16_t value to write.
+ * @return return true if the value was correctly written, false otherwise.
+ */
+#define BoxStream_Write_UInt16(dst, val) \
+  (BoxStream_Write_UInt32s((dst), & (val), (size_t) 1) == (size_t) 1)
+
+/**
+ * Similar to BoxStream_Write_UInt16s, but uses uint32_t rather than uint16_t.
+ */
+BOXEXPORT size_t
+BoxStream_Write_UInt32s(BoxStream *dst, uint32_t *vals, size_t num_vals);
+
+/**
+ * Similar to BoxStream_Write_UInt16, but uses uint32_t rather than uint16_t.
+ */
+#define BoxStream_Write_UInt32(dst, val) \
+  (BoxStream_Write_UInt32s((dst), & (val), (size_t) 1) == (size_t) 1)
+
+/**
+ * Similar to BoxStream_Write_UInt16s, but uses uint64_t rather than uint16_t.
+ */
+BOXEXPORT size_t
+BoxStream_Write_UInt64s(BoxStream *dst, uint64_t *vals, size_t num_vals);
+
+/**
+ * Similar to BoxStream_Write_UInt16, but uses uint64_t rather than uint16_t.
+ */
+#define BoxStream_Write_UInt64(dst, val) \
+  (BoxStream_Write_UInt64s((dst), & (val), (size_t) 1) == (size_t) 1)
 
 /**
  * Read data from a stream and write it to a block of memory.
@@ -181,7 +242,36 @@ BoxStream_Write_From_Stream(BoxStream *dst,
  * @return number of bytes written to the destination block.
  */
 BOXEXPORT size_t
-BoxStream_Read_To_Mem(BoxStream *src, void *dst, size_t dst_size);
+BoxStream_Read_Mem(BoxStream *src, void *dst, size_t dst_size);
+
+/**
+ * Read a uint8_t value from the given input stream.
+ * @param src Input stream.
+ * @param val Pointer to a location of memory where to store the uint8_t value.
+ * @return return true if the value was correctly read, false otherwise.
+ */
+#define BoxStream_Read_UInt8(src, val) \
+  BoxStream_Write_Stream((src), & (val), sizeof(uint8_t));
+
+/**
+ * Reads the given number of uint16_t values to the given block of memory.
+ * @param src Input stream.
+ * @param vals Pointer to a block of memory which can contain the read values.
+ * @param num_vals Number of values to read.
+ * @return return the number of values which were read from the stream.
+ */
+size_t BoxStream_Read_UInt16s(BoxStream *src, uint16_t *vals,
+                              size_t num_vals);
+
+/**
+ * Similar to BoxStream_Read_UInt16s, but uses uint32_t rather than uint16_t.
+ */
+size_t BoxStream_Read_UInt32s(BoxStream *src, uint32_t *vals, size_t num_vals);
+
+/**
+ * Similar to BoxStream_Read_UInt16s, but uses uint64_t rather than uint16_t.
+ */
+size_t BoxStream_Read_UInt64s(BoxStream *src, uint64_t *vals, size_t num_vals);
 
 /**
  * Destroy the given stream.

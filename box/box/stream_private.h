@@ -51,6 +51,7 @@ struct BoxStream_struct {
   void            *data;
   BoxStreamErr    error;
   BoxStreamMode   mode;
+  BoxBool         native_order;
   BoxStreamFinish fn_finish;
   BoxStreamClose  fn_close;
   BoxStreamWrite  fn_write;
