@@ -142,9 +142,10 @@ class Parser(object):
 
     self.tokenizer = tok = Tokenizer(text)
 
-    state = STATE_SOURCE
-    source_pos = 0
-    comments = []
+    state = STATE_SOURCE      # State of the state machine
+    string_delim = None   # Last seen string delimiter
+    source_pos = 0            # Used to track pieces of source between comments
+    comments = []             # Store recursive comments descriptors
 
     while True:
       token = tok.next()
@@ -169,6 +170,7 @@ class Parser(object):
           self.notify_inline_comment(text_slice)
 
         elif token == STRING_DELIM:
+          string_delim = text[token_start:token_end]
           state = STATE_STRING
 
         else:
@@ -197,7 +199,11 @@ class Parser(object):
             source_pos = token_end
 
       elif state == STATE_STRING:
-        if token == STRING_DELIM:
+          
+
+        if (token == STRING_DELIM
+            and text[token_start:token_end] == string_delim):
+          string_delim = None
           state = STATE_SOURCE
 
         elif token == NO_MORE_DELIMS:
