@@ -17,7 +17,7 @@
 
 import re
 
-from tree import DoxProc, DoxType
+from newtree import DoxProc, DoxType
 
 
 re_identifier = re.compile("[a-zA-Z][a-zA-Z0-9_]*")

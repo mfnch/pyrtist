@@ -19,7 +19,7 @@ import os
 import re
 import fnmatch
 
-from tree import DoxType, DoxProc, DoxInstance, DoxTree
+from newtree import DoxType, DoxProc, DoxInstance, DoxTree
 from logger import log_msg
 
 dox_magic_seq = "///"

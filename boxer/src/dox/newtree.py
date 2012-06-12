@@ -93,12 +93,6 @@ class DoxTreeNode(object):
     '''
     return self.blocks.get(block_name.lower(), None)
 
-  def process_blocks(self, tree):
-    if not hasattr(DoxTreeNode, 'process_blocks_silent'):
-      import sys
-      sys.stdout.write('DoxTreeNode.process_block is deprecated\n')
-      DoxTreeNode.process_blocks_silent = True
-
 
 class DoxSectionNode(DoxTreeNode):
   '''Section node (corresponding to a section block).'''
@@ -268,14 +262,6 @@ class DoxTree(DoxTreeNode):
     #for t_name in found_subtypes:
     #  self.types.pop(t_name)
 
-  def _process_blocks(self):
-    for p in self.procs.itervalues():
-      p.process_blocks(self)
-    for t in self.types.itervalues():
-      t.process_blocks(self)
-    for i in self.instances.itervalues():
-      i.process_blocks(self)
-
   def _build_section_list(self):
     self.sections = sections = {}
     for p in self.procs.itervalues():
@@ -288,5 +274,4 @@ class DoxTree(DoxTreeNode):
   def process(self):
     self._build_links()
     self._link_subtypes()
-    self._process_blocks()
     self._build_section_list()
