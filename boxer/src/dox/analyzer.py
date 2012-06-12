@@ -103,6 +103,7 @@ def create_classified_slices_from_text(text):
 
 
 if __name__ == '__main__':
+  import rst
   from newtree import DoxTree 
   with open(sys.argv[1], "r") as f:
     text = f.read()
@@ -113,6 +114,9 @@ if __name__ == '__main__':
   add_blocks_to_tree(tree, blocks)
 
   tree.process()
-  print blocks
+
+  writer = rst.RSTWriter(tree)
+  writer.save()
+
 
 

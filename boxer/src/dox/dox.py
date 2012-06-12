@@ -254,9 +254,14 @@ class DoxFileParser(DoxFileContentParser):
 
 
 class Dox(object):
-  def __init__(self):
+  def __init__(self, old_parser=True):
     self.file = None
-    self.tree = DoxTree()
+    self.old_parser = old_parser
+    if old_parser:
+      self.tree = DoxTree()
+    else:
+      import newtree
+      self.tree = newtree.DoxTree()
 
   def log(self, msg, show_hdr=False):
     hdr = ""
@@ -277,9 +282,16 @@ class Dox(object):
       if doxfiles:
         doxfiles = list(set(doxfiles)) # Remove duplicates
         for filename in doxfiles:
+          print filename
           self.read_file(os.path.join(dirpath, filename))
 
   def read_file(self, filename):
+    if self.old_parser:
+      self.read_file_old(filename)
+    else:
+      self.read_file_new(filename)
+
+  def read_file_old(self, filename):
     """Read documentation content from the given file."""
     self.file = DoxFileParser(filename)
     store = self.file.read()
@@ -301,11 +313,23 @@ class Dox(object):
 
         else:
           self.log("Unrecognized documentation block.")
+
+  def read_file_new(self, filename):
+    import analyzer
+    with open(filename, "r") as f:
+      text = f.read()
+
+    slices = analyzer.create_classified_slices_from_text(text)
+    blocks = analyzer.create_blocks_from_classified_slices(slices)
+    analyzer.add_blocks_to_tree(self.tree, blocks)
+
+
+
     
 
 if __name__ == "__main__":
   import sys
-  dox = Dox()
+  dox = Dox(old_parser=True)
   dox.read_recursively(sys.argv[1])
   tree = dox.tree
   tree.process()
