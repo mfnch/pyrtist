@@ -21,7 +21,7 @@ import gtk
 import pango
 
 import rstparser
-from newtree import DoxProc
+from tree import DoxProc
 from writer import Writer
 
 

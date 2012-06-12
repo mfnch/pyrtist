@@ -16,7 +16,7 @@
 #   along with Boxer. If not, see <http://www.gnu.org/licenses/>.
 
 from extractor import SLICE_COMMENT, SLICE_BLOCK, SLICE_SOURCE
-from newtree import DoxSectionNode
+from tree import DoxSectionNode
 
 class DoxBlock(object):
   block_name = None

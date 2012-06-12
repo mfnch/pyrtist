@@ -19,8 +19,9 @@ import os
 import re
 import fnmatch
 
-from newtree import DoxType, DoxProc, DoxInstance, DoxTree
 from logger import log_msg
+from tree import DoxType, DoxProc, DoxInstance, DoxTree
+import analyzer
 
 dox_magic_seq = "///"
 dox_comment_seq = "//"
@@ -254,14 +255,9 @@ class DoxFileParser(DoxFileContentParser):
 
 
 class Dox(object):
-  def __init__(self, old_parser=False):
+  def __init__(self):
     self.file = None
-    self.old_parser = old_parser
-    if old_parser:
-      self.tree = DoxTree()
-    else:
-      import newtree
-      self.tree = newtree.DoxTree()
+    self.tree = DoxTree()
 
   def log(self, msg, show_hdr=False):
     hdr = ""
@@ -285,36 +281,8 @@ class Dox(object):
           self.read_file(os.path.join(dirpath, filename))
 
   def read_file(self, filename):
-    if self.old_parser:
-      self.read_file_old(filename)
-    else:
-      self.read_file_new(filename)
-
-  def read_file_old(self, filename):
     """Read documentation content from the given file."""
-    self.file = DoxFileParser(filename)
-    store = self.file.read()
-    if len(store) > 0:
-      self.log("File %s:" % filename)
-      for doxblocks in store:
-        ct = dox_classify_code(doxblocks.target)
-        if isinstance(ct, DoxType):
-          ct.set_owned_blocks(doxblocks)
-          self.tree.add_type(ct)
 
-        elif isinstance(ct, DoxProc):
-          ct.set_owned_blocks(doxblocks)
-          self.tree.add_proc(ct)
-
-        elif isinstance(ct, DoxInstance):
-          ct.set_owned_blocks(doxblocks)
-          self.tree.add_instance(ct)
-
-        else:
-          self.log("Unrecognized documentation block.")
-
-  def read_file_new(self, filename):
-    import analyzer
     with open(filename, "r") as f:
       text = f.read()
 
@@ -323,12 +291,9 @@ class Dox(object):
     analyzer.add_blocks_to_tree(self.tree, blocks)
 
 
-
-    
-
 if __name__ == "__main__":
   import sys
-  dox = Dox(old_parser=False)
+  dox = Dox()
   dox.read_recursively(sys.argv[1])
   tree = dox.tree
   tree.process()
