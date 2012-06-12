@@ -82,24 +82,31 @@ class Writer(object):
     return "link(%s@%s)" % (child_t, parent_t)
 
   def gen_target_section(self, target, section="Intro"):
-    if target != None:
-      db = target.doxblocks
-      if db != None and section in db.content:
-        text = " ".join(db.content[section])
-        pieces = macro_splitter(text)
+    if target == None:
+      return None
 
-        expanded_pieces = []
-        for nr_piece, piece in enumerate(pieces):
-          is_macro = nr_piece % 2
-          resulting_piece = piece
-          if is_macro:
-            interpreted = self.macro_interpreter(target, piece)
-            if interpreted != None:
-              resulting_piece = interpreted
-          expanded_pieces.append(resulting_piece)
-        return expanded_pieces
+    # TODO: rename section to blockname
+    block = target.get_block(section)
+    if not block:
+      return None
 
-    return None
+    content = block.get_content()
+    if not content:
+      return None
+
+    pieces = macro_splitter(content)
+
+    expanded_pieces = []
+    for nr_piece, piece in enumerate(pieces):
+      is_macro = nr_piece % 2
+      resulting_piece = piece
+      if is_macro:
+        interpreted = self.macro_interpreter(target, piece)
+        if interpreted != None:
+          resulting_piece = interpreted
+      expanded_pieces.append(resulting_piece)
+
+    return expanded_pieces
 
   def gen_brief_intro(self, target, section="Intro"):
     brief = self.gen_target_section(target, section=section)

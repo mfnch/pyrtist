@@ -58,35 +58,60 @@ def dox_classify_code(line):
 
 
 class DoxTreeNode(object):
+  '''Every tree node type is derived from this type.'''
   node_name = None
+
+  def __init__(self, section=None):
+    self.section = section
+    self.blocks = {}
+
+  def get_section(self):
+    '''Get the section this node belongs to.'''
+    return self.section
+
+  def add_block(self, block):
+    '''Add a documentation block to this node.
+    For example, if a source file contains the lines:
+
+      (**Intro: some brief description of MyType. *)
+      MyType = (Int a, b)
+
+    Then this function will be called to add the ``Intro'' block to the
+    ``MyType'' node.
+    '''
+    block_name = block.block_name.lower()
+    if block.multiple_allowed:
+      self.blocks.setdefault(block_name, []).append(block)
+    else:
+      self.blocks[block_name] = block
+
+  def get_block(self, block_name):
+    ''''Retrieve the blocks associated to the node with the given name.
+    If the block type admit multiple association, then return a list,
+    otherwise - if the block can be associated only to one tree node at a time
+    - return the object.
+    '''
+    return self.blocks.get(block_name.lower(), None)
+
+  def process_blocks(self, tree):
+    if not hasattr(DoxTreeNode, 'process_blocks_silent'):
+      import sys
+      sys.stdout.write('DoxTreeNode.process_block is deprecated\n')
+      DoxTreeNode.process_blocks_silent = True
 
 
 class DoxSectionNode(DoxTreeNode):
-  node_name = None
-
-  
-class DoxLeaf(DoxTreeNode):
-  def __init__(self, doxblocks=None, section=None):
-    DoxTreeNode.__init__(self)
-    self.doxblocks = doxblocks
-    self.section = section
-
-  def set_owned_blocks(self, doxblocks):
-    self.doxblocks = doxblocks
-
-  def process_blocks(self, tree):
-    if self.doxblocks != None:
-      self.doxblocks.process(tree, self)
-
-  def get_section(self):
-    return self.doxblocks.section if self.doxblocks != None else None
+  '''Section node (corresponding to a section block).'''
+  node_name = 'section'
 
 
-class DoxType(DoxLeaf):
+class DoxType(DoxTreeNode):
+  '''Node corresponding to a type definition.'''
+
   node_name = 'type'
 
-  def __init__(self, name, doxblocks=None, section=None):
-    DoxLeaf.__init__(self, doxblocks, section=section)
+  def __init__(self, name, *args, **kwargs):
+    DoxTreeNode.__init__(self, *args, **kwargs)
 
     self.name = name
     self.children = []
@@ -114,11 +139,11 @@ class DoxType(DoxLeaf):
     self.parents.append(parent)
 
 
-class DoxInstance(DoxLeaf):
+class DoxInstance(DoxTreeNode):
   node_name = 'instance'
 
-  def __init__(self, name, doxblocks=None, section=None):
-    DoxLeaf.__init__(self, doxblocks, section=section)
+  def __init__(self, name, *args, **kwargs):
+    DoxTreeNode.__init__(self, *args, **kwargs)
 
     self.name = name
     self.children = []
@@ -140,11 +165,11 @@ class DoxInstance(DoxLeaf):
     return not self.name.isalnum()
 
 
-class DoxProc(DoxLeaf):
+class DoxProc(DoxTreeNode):
   node_name = 'proc'
 
-  def __init__(self, child, parent, doxblocks=None, section=None):
-    DoxLeaf.__init__(self, doxblocks, section=section)
+  def __init__(self, child, parent, *args, **kwargs):
+    DoxTreeNode.__init__(self, *args, **kwargs)
     self.child = child
     self.parent = parent
 

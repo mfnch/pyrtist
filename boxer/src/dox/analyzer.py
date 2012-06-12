@@ -22,7 +22,7 @@ from block import DoxIntroBlock, DoxExampleBlock, DoxSameBlock, DoxSectionBlock
 from logger import log_msg
 
 
-def get_block_type(doxblock_content):
+def split_block(doxblock_content):
   '''Each documentation block starts with a block marker. For example,
 
   ///Intro: a brief introduction.
@@ -32,7 +32,12 @@ def get_block_type(doxblock_content):
   idx = min(item for item in map(doxblock_content.find, (":", "."))
             if item >= 0)
 
-  return (doxblock_content[:idx] if idx != None else None)
+  if idx != None:
+    block_type = doxblock_content[:idx].strip()
+    block_content = doxblock_content[idx + 1:].strip()
+    return (block_type, block_content) 
+  else:
+    return (None, None)
 
 
 def get_block_lines(text):
@@ -72,11 +77,12 @@ def create_blocks_from_classified_slices(classified_slices):
     if cs.type == SLICE_BLOCK:
       lines = get_block_lines(str(cs.text_slice))
       paragraph = " ".join(lines).strip()
-      block_type = get_block_type(paragraph).lower()
+      block_type, content = split_block(paragraph)
+      block_type = block_type.lower()
       constructor = known_block_types.get(block_type)
       if constructor != None:
         # Call the constructor for the block
-        doxblock = constructor(cs, paragraph)
+        doxblock = constructor(cs, content)
         doxblocks.append(doxblock)
 
       else:
@@ -89,8 +95,7 @@ def add_blocks_to_tree(tree, blocks):
   for block in blocks:
     node = block.add_node(tree)
     if node != None:
-      print node
-      #node.add_block(doxblock)
+      node.add_block(block)
       block.set_target(node)
 
           

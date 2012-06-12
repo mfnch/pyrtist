@@ -19,10 +19,17 @@ from extractor import SLICE_COMMENT, SLICE_BLOCK, SLICE_SOURCE
 from newtree import DoxSectionNode
 
 class DoxBlock(object):
-  def __init__(self, classified_slice, paragraph):
+  block_name = None
+  multiple_allowed = False
+
+  def __init__(self, classified_slice, content):
     self.classified_slice = classified_slice
-    self.paragraph = paragraph
+    self.content = content
     self.target = None
+
+  def get_content(self):
+    '''Get the text associated with the block.'''
+    return self.content
 
   def add_node(self, tree):
     '''If required, create a Dox tree node corresponding to this block and add
@@ -75,16 +82,18 @@ class DoxPostBlock(DoxSourceBlock):
 
 
 class DoxSectionBlock(DoxBlock):
-  pass
+  block_name = 'section'
 
 
 class DoxIntroBlock(DoxPreBlock):
-  pass
+  block_name = 'intro'
 
 
 class DoxExampleBlock(DoxPreBlock):
-  pass
+  block_name = 'example'
+  multiple_allowed = True
+  multiple_allowed = False # This is not yet supported...
 
 
 class DoxSameBlock(DoxPostBlock):
-  pass
+  block_name = 'same'

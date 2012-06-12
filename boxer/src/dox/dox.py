@@ -254,7 +254,7 @@ class DoxFileParser(DoxFileContentParser):
 
 
 class Dox(object):
-  def __init__(self, old_parser=True):
+  def __init__(self, old_parser=False):
     self.file = None
     self.old_parser = old_parser
     if old_parser:
@@ -282,7 +282,6 @@ class Dox(object):
       if doxfiles:
         doxfiles = list(set(doxfiles)) # Remove duplicates
         for filename in doxfiles:
-          print filename
           self.read_file(os.path.join(dirpath, filename))
 
   def read_file(self, filename):
@@ -329,7 +328,7 @@ class Dox(object):
 
 if __name__ == "__main__":
   import sys
-  dox = Dox(old_parser=True)
+  dox = Dox(old_parser=False)
   dox.read_recursively(sys.argv[1])
   tree = dox.tree
   tree.process()
