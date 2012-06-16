@@ -70,11 +70,14 @@ class DoxSourceBlock(DoxBlock):
     '''See DoxBlock.add_node'''
     node = tree.create_node_from_source(self.get_source())
 
-    # We here associate the node with its parent section
+    # We here associate the node with its parent section.
+    # We also add the node to it.
     if node:
       sectionblock = self.context.get('section', None)
       if sectionblock:
-        node.set_section(sectionblock.get_target())
+        sectionnode = sectionblock.get_target()
+        node.set_section(sectionnode)
+        sectionnode.add_node(node)
 
     return node
 
@@ -107,8 +110,10 @@ class DoxSectionBlock(DoxBlock):
   block_name = 'section'
 
   def add_node(self, tree):
+    '''See DoxBlock.add_node'''
     section_path = self.content
-    return tree.add_section(section_path, create=True)
+    root_section = tree.get_root_section()
+    return root_section.get_subsection(section_path, create=True)
 
   def use_context(self, context):
     context = context.create_context(section=self)

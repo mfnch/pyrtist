@@ -142,24 +142,34 @@ class DoxParentNode(DoxTreeNode):
     else:
       return node
 
+  def get_nodes(self, nodetype):
+    '''Get all the nodes of the specified type.
+
+    Example: DoxParentNode.get_nodes(DoxType) to get all the type nodes.'''
+    return self.all_nodes.get(nodetype.node_name).values()
+
   def get_type(self, name, *args, **kwargs):
     '''DoxParentNode.get_type(name, **kwargs) is equivalent to
     DoxParentNode.get_node(DoxType, name, **kwargs).'''
     return self.get_node(DoxType, name, *args, **kwargs)
 
 
-class DoxSectionNode(DoxTreeNode):
+class DoxSectionNode(DoxParentNode):
   '''Section node (corresponding to a section block).'''
   node_name = 'section'
 
   def __init__(self, name, *args, **kwargs):
-    DoxTreeNode.__init__(self, *args, **kwargs)
+    DoxParentNode.__init__(self, *args, **kwargs)
     self.name = name
     self.subsections = {}
     self.nodes = {}
 
   def __str__(self):
     return self.name
+
+  def get_subsections(self):
+    '''Get all the subsections of this section.'''
+    return self.subsections.values()
 
   def get_subsection(self, section_path, create=False):
     '''Get a subsection corresponding to the given path.'''
@@ -286,9 +296,10 @@ class DoxTree(DoxParentNode):
     self.sections = []
     self.root_section = DoxSectionNode('root')
 
-  def add_section(self, section_path, create=False):
-    '''Create a new section from the given section path.'''
-    return self.root_section.get_subsection(section_path, create=create)
+  def get_root_section(self):
+    '''Get the root section in the tree. The root section is a DoxSectionNode
+    object which is used to organise the content of the tree.'''
+    return self.root_section
 
   def create_node_from_source(self, source):
     '''Given a statement of Box source code, generate a corresponding node

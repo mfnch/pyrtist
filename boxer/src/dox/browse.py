@@ -8,6 +8,7 @@ import gtk
 import gobject
 
 from dox import Dox
+from tree import DoxTree, DoxType, DoxInstance, DoxSectionNode
 from gtktext import DoxTextView, DoxTable, GtkWriter
 from writer import Writer
 
@@ -140,30 +141,44 @@ class DoxBrowser(object):
     """Hide the window."""
     self.window.hide()
 
-  def _populate_treestore_from_dox(self, flt=None, visible=True):
-    ts = self.treestore
-    tree = self.dox.tree
-    types = tree.types
-    instances = tree.instances
-    section_names = tree.sections.keys()
+  def _populate_treestore_from_dox(self, **kwargs):
+    root_section = self.dox.tree.get_root_section()
+    self._populate_section_node(None, root_section, **kwargs)
 
-    # Merge the names of instances and types: we will not have duplicates, as
-    # identifiers always start with a lower case character, while types start
-    # with an upper case character.
-    identifiers = types.keys() + instances.keys()
-    identifiers.sort()
+  def _populate_section_node(self, parent, section, **kwargs):
+    # Get the subsections of this section
+    sections = section.get_subsections()
+    types = section.get_nodes(DoxType)
+    instances = section.get_nodes(DoxInstance)
 
-    section_names.sort()
-    for section_name in section_names:
-      sn = section_name or "Other stuff..."
-      piter = ts.append(None, [sn, "(section)", visible])
+    # Used to sort the items
+    cmpstr = lambda x, y: cmp(str(x), str(y))
 
-      for identifier in identifiers:
-        t = (types[identifier] if identifier[0].isupper()
-             else instances[identifier])
-        if t.get_section() == section_name:
-          if t.subtype_parent == None:
-            self._add_entry_to_treestore(piter, t, flt=flt, visible=visible)
+    for items in (sections, types, instances):
+      items.sort(cmpstr)
+      for item in items:
+        print "Adding", item, "in", section 
+        self._add_any_node(parent, item, **kwargs)
+
+  def _populate_type_node(self, parent, type_node, **kwargs):
+    # Add subtypes of the given type to the type node
+    for subtype_node in type_node.subtype_children:
+      self._add_entry_to_treestore(parent, subtype_node, **kwargs)
+
+  def _add_any_node(self, parent, node, **kwargs):
+    # Add a node to the treestore object
+    visible = kwargs.get('visible', True)
+    flt = kwargs.get('flt')
+    description = self.dox_writer.gen_brief_intro(node)
+    if flt == None or flt(node, description):
+      child = self.treestore.append(parent, [str(node), description, visible])
+
+      if isinstance(node, DoxType):
+        self._populate_type_node(child, node, **kwargs)
+
+      elif isinstance(node, DoxSectionNode):
+        print "Populating section", node
+        self._populate_section_node(child, node, **kwargs)
 
   def _add_entry_to_treestore(self, piter, t, flt=None, visible=True):
     ts = self.treestore
