@@ -15,6 +15,62 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer. If not, see <http://www.gnu.org/licenses/>.
 
+
+# Introduction to the Box documentation system and how it works
+# =============================================================
+#
+# During the Dox parse process, the documentation in a selected set of Box
+# source files is read and the documentation tree is generated.  The
+# documentation tree (DoxTree in file dox/tree.py) is a representation of the
+# documentation and can be used to generate the final output. The entire
+# documentation process in Dox can thus be subdivided in two phases:
+#
+# 1) a set of files is read and parsed and a documentation tree is generated,
+#
+# 2) the documentation tree is translated into one of the available output
+#    formats.
+#
+# We now enter the details of the parsing process (phase 1 above).
+#
+# PHASE 1: Parsing of documentation and generation of the parse tree
+# ------------------------------------------------------------------
+#
+# The parsing itself is subdivided into different stages.
+#
+# 1) An empty DoxTree object is created,
+#
+# 2) Each file in the set of input source files is opened in sequence,
+#
+# 3) The file is subdivided in text slices of different types: source slices,
+#    comment slices, documentation blocks (comments starting with (** or ///),
+#
+# 4) The slices are concatenated in an ordered list. Each text slice is made
+#    aware of what text slices are preceding and following it and what source
+#    slices are preceding and following it. The latter is useful as it allows
+#    each documentation block to know what part of the Box source it may be
+#    referring to,
+#
+# 5) Slices are interpreted. Documentation slices are mapped to DoxBlock
+#    objects. Each block is linked to its originating text slice,
+#
+# 6) DoxBlock objects are given an opportunity to generate a node of the tree.
+#    Basically, the method DoxBlock.add_node is called and the tree is passed
+#    as an argument. The block can thus manipulate the tree.
+#    Nodes are linked to their blocks and blocks are linked to their nodes.
+#
+# 7) The blocks are iterated again. This time they are given an opportunity to
+#    modify the context. The concept of context is mainly used to organize
+#    nodes and put them into sections.
+#
+# 8) After doing all this for each source file, the DoxTree.process method is
+#    called. This method does global processing of the tree (while what we have
+#    seen so far was per-file processing). Missing types are detected, subtypes
+#    are associated to their parent types, etc.
+#
+# The tree is now complete. It contains all the information we need to write an
+# HTML file with the documentation or to populate the controls of the Dox
+# browser.
+
 import sys
 
 from extractor import DoxBlockExtractor, SLICE_BLOCK
@@ -98,12 +154,15 @@ def add_blocks_to_tree(tree, blocks):
       node.add_block(block)
       block.set_target(node)
 
-          
-    
-
 def create_classified_slices_from_text(text):
   dbe = DoxBlockExtractor(text)
   return dbe.extract()
+
+def associate_contexts_to_blocks(blocks, initial_context):
+  context = initial_context
+  for block in blocks:
+    context = block.use_context(context)
+  return context
 
 
 

@@ -26,6 +26,14 @@ class DoxBlock(object):
     self.classified_slice = classified_slice
     self.content = content
     self.target = None
+    self.context = None
+
+  def use_context(self, context):
+    '''Called with the current 'Context'. This method is expected to change the
+    current context, if required, and associate the block to the current
+    context. The changed context is returned.'''
+    self.context = context
+    return context
 
   def get_content(self):
     '''Get the text associated with the block.'''
@@ -38,7 +46,12 @@ class DoxBlock(object):
     return None
 
   def set_target(self, target):
+    '''Set the target tree node associated to this block.'''
     self.target = target
+
+  def get_target(self):
+    '''Get the target tree node associated to this block (None if missing).'''
+    return self.target
 
 
 class DoxSourceBlock(DoxBlock):
@@ -54,7 +67,16 @@ class DoxSourceBlock(DoxBlock):
     return self.source
 
   def add_node(self, tree):
-    return tree.create_node_from_source(self.get_source())
+    '''See DoxBlock.add_node'''
+    node = tree.create_node_from_source(self.get_source())
+
+    # We here associate the node with its parent section
+    if node:
+      sectionblock = self.context.get('section', None)
+      if sectionblock:
+        node.set_section(sectionblock.get_target())
+
+    return node
 
   
 class DoxPreBlock(DoxSourceBlock):
@@ -83,6 +105,14 @@ class DoxPostBlock(DoxSourceBlock):
 
 class DoxSectionBlock(DoxBlock):
   block_name = 'section'
+
+  def add_node(self, tree):
+    section_path = self.content
+    return tree.add_section(section_path, create=True)
+
+  def use_context(self, context):
+    context = context.create_context(section=self)
+    return DoxBlock.use_context(self, context)
 
 
 class DoxIntroBlock(DoxPreBlock):

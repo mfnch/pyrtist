@@ -69,6 +69,13 @@ class DoxTreeNode(object):
     '''Get the section this node belongs to.'''
     return self.section
 
+  def set_section(self, section):
+    '''Set the section this node belongs to.'''
+    if self.section != None and section != self.section:
+      log_msg("Contraddictory section assignment for node '%s': "
+              "got '%s', was '%s'" % (self, section, self.section))
+    self.section = section
+
   def add_block(self, block):
     '''Add a documentation block to this node.
     For example, if a source file contains the lines:
@@ -94,9 +101,88 @@ class DoxTreeNode(object):
     return self.blocks.get(block_name.lower(), None)
 
 
+class DoxParentNode(DoxTreeNode):
+  '''A node that can contain other nodes.'''
+
+  def __init__(self, *args, **kwargs):
+    DoxTreeNode.__init__(self, *args, **kwargs)
+    self.types = {}
+    self.procs = {}
+    self.instances = {}
+    self.all_nodes = {'type': self.types,
+                      'proc': self.procs,
+                      'instance': self.instances}
+
+  def add_node(self, *nodes):
+    '''Add a node to the tree.'''
+    for node in nodes:
+      node_id = str(node)
+      selected_nodes = self.all_nodes[node.node_name]
+      if node_id in selected_nodes:
+        log_msg("Overwriting node '%s' in '%s'" % (node_id, node.node_name))
+      selected_nodes[node_id] = node
+
+  def get_node(self, nodetype, nodename, create=True):
+    '''Return the node of type ``nodetype'' and name ``nodename''. If the node
+    is not present then: None is returned if ``create'' is false, or the node
+    is created and returned if ``create'' is true. Default for ``create'' is
+    True.
+
+    Example: parentnode.get_node(DoxType, 'mybeautifulnode', create=False)
+    '''
+    group = self.all_nodes.get(nodetype.node_name)
+    node = group.get(nodename, None)
+    if create:
+      if node != None:
+        return node
+      else:
+        group[nodename] = newnode = nodetype(nodename)
+        return newnode
+
+    else:
+      return node
+
+  def get_type(self, name, *args, **kwargs):
+    '''DoxParentNode.get_type(name, **kwargs) is equivalent to
+    DoxParentNode.get_node(DoxType, name, **kwargs).'''
+    return self.get_node(DoxType, name, *args, **kwargs)
+
+
 class DoxSectionNode(DoxTreeNode):
   '''Section node (corresponding to a section block).'''
   node_name = 'section'
+
+  def __init__(self, name, *args, **kwargs):
+    DoxTreeNode.__init__(self, *args, **kwargs)
+    self.name = name
+    self.subsections = {}
+    self.nodes = {}
+
+  def __str__(self):
+    return self.name
+
+  def get_subsection(self, section_path, create=False):
+    '''Get a subsection corresponding to the given path.'''
+    sections = section_path.split('.', 1)
+    if len(sections) == 1:
+      section_name = sections[0]
+      assert len(section_name) > 0, 'Empty section name'
+      subsection = self.subsections.get(section_name)
+      if subsection != None:
+        return subsection
+
+      elif create:
+        return self.subsections.setdefault(section_name,
+                                           DoxSectionNode(section_name))
+
+      else:
+        raise ValueError("Subsection '%s' of '%s' was not found"
+                         % (section_name, self.name))
+
+    else:
+      section_name, children = sections
+      subsection = self.get_subsection(section_name, create=create)
+      return subsection.get_subsection(children, create=create)
 
 
 class DoxType(DoxTreeNode):
@@ -194,35 +280,15 @@ class DoxProc(DoxTreeNode):
     return missing
 
 
-class DoxTree(DoxTreeNode):
+class DoxTree(DoxParentNode):
   def __init__(self):
-    DoxTreeNode.__init__(self)
-    self.types = {}
-    self.procs = {}
-    self.instances = {}
-    self.all_nodes = {'type': self.types,
-                      'proc': self.procs,
-                      'instance': self.instances}
+    DoxParentNode.__init__(self)
     self.sections = []
+    self.root_section = DoxSectionNode('root')
 
-  def add_node(self, *nodes):
-    '''Add a node to the tree.'''
-    for node in nodes:
-      node_id = str(node)
-      selected_nodes = self.all_nodes[node.node_name]
-      if node_id in selected_nodes:
-        log_msg("Overwriting node '%s' in '%s'" % (node_id, node.node_name))
-      selected_nodes[node_id] = node
-
-  def get_type(self, tn, create=True):
-    tn = str(tn)
-    t = self.types.get(tn, None)
-    if t != None:
-      return t
-
-    else:
-      self.types[tn] = t = DoxType(tn)
-      return t
+  def add_section(self, section_path, create=False):
+    '''Create a new section from the given section path.'''
+    return self.root_section.get_subsection(section_path, create=create)
 
   def create_node_from_source(self, source):
     '''Given a statement of Box source code, generate a corresponding node
