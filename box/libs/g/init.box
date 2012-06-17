@@ -1,4 +1,6 @@
-// Header file for the g library
+///Intro: The main Box 2D graphics library.
+///Section: g
+
 #provide "g"
 
 include "const"

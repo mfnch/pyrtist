@@ -62,6 +62,7 @@ class Dox(object):
     blocks = analyzer.create_blocks_from_classified_slices(slices)
     context = self.context.create_context(sourcefile=filename,
                                           section=None)
+    analyzer.associate_targets_to_blocks(slices)
     self.context = analyzer.associate_contexts_to_blocks(blocks, context)
     analyzer.add_blocks_to_tree(self.tree, blocks)
 

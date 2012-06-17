@@ -157,7 +157,6 @@ class DoxBrowser(object):
     for items in (sections, types, instances):
       items.sort(cmpstr)
       for item in items:
-        print "Adding", item, "in", section 
         self._add_any_node(parent, item, **kwargs)
 
   def _populate_type_node(self, parent, type_node, **kwargs):
@@ -177,7 +176,6 @@ class DoxBrowser(object):
         self._populate_type_node(child, node, **kwargs)
 
       elif isinstance(node, DoxSectionNode):
-        print "Populating section", node
         self._populate_section_node(child, node, **kwargs)
 
   def _add_entry_to_treestore(self, piter, t, flt=None, visible=True):
@@ -297,6 +295,7 @@ class DoxBrowser(object):
       writer = self.dox_writer
       output = writer.gen_type_section(t, None)
       self.window_textview.set_content(output)
+      return
 
     t = tree.instances.get(name)
     if t != None:
@@ -304,7 +303,7 @@ class DoxBrowser(object):
       writer = self.dox_writer
       output = writer.gen_instance_section(t)
       self.window_textview.set_content(output)
-      
+      return      
 
 
 def main():

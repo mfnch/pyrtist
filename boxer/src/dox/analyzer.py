@@ -53,14 +53,14 @@
 # 5) Slices are interpreted. Documentation slices are mapped to DoxBlock
 #    objects. Each block is linked to its originating text slice,
 #
-# 6) DoxBlock objects are given an opportunity to generate a node of the tree.
+# 6) Each block is given an opportunity to inspect the current context and
+#    modify it, if necessary. The concept of context is mainly used to
+#    organize nodes and put them into sections.
+#
+# 7) DoxBlock objects are given an opportunity to generate a node of the tree.
 #    Basically, the method DoxBlock.add_node is called and the tree is passed
 #    as an argument. The block can thus manipulate the tree.
 #    Nodes are linked to their blocks and blocks are linked to their nodes.
-#
-# 7) The blocks are iterated again. This time they are given an opportunity to
-#    modify the context. The concept of context is mainly used to organize
-#    nodes and put them into sections.
 #
 # 8) After doing all this for each source file, the DoxTree.process method is
 #    called. This method does global processing of the tree (while what we have
@@ -73,7 +73,7 @@
 
 import sys
 
-from extractor import DoxBlockExtractor, SLICE_BLOCK
+from extractor import DoxBlockExtractor, SLICE_BLOCK, SLICE_SOURCE
 from block import DoxIntroBlock, DoxExampleBlock, DoxSameBlock, DoxSectionBlock
 from logger import log_msg
 
@@ -115,9 +115,9 @@ known_block_types = \
    "same": DoxSameBlock}
 
 def create_blocks_from_classified_slices(classified_slices):
-  '''This function creates documentation block objects from the classified text
-  slices.
-  '''
+  '''Create documentation block objects from the classified text slices.
+  In this phase, text slices are parsed and mapped to DoxBlock objects of
+  different kinds (``Intro'' blocks are mapped to ``DoxIntro'' blocks, etc).'''
 
   # Get the text from the slices
   if len(classified_slices) > 0:
@@ -139,6 +139,7 @@ def create_blocks_from_classified_slices(classified_slices):
       if constructor != None:
         # Call the constructor for the block
         doxblock = constructor(cs, content)
+        cs.set_block(doxblock)
         doxblocks.append(doxblock)
 
       else:
@@ -147,23 +148,72 @@ def create_blocks_from_classified_slices(classified_slices):
   return doxblocks
 
 def add_blocks_to_tree(tree, blocks):
-  # Now create the node tree: section, types, procs, instances, ...
-  for block in blocks:
-    node = block.add_node(tree)
-    if node != None:
-      node.add_block(block)
-      block.set_target(node)
+  '''Add the nodes associated to the given blocks to the given tree.
+  This is the last phase of the documentation parsing process, in which the
+  various nodes of the tree are built and added to the tree.'''
+
+  # Now create the nodes for the various blocks: first deal with target blocks,
+  # then do the others.
+  for do_targets in (True, False):
+    for block in blocks:
+      if block.is_target == do_targets:
+        node = block.add_node(tree)
+        if node != None:
+          node.add_block(block)
+          block.set_target(node)
 
 def create_classified_slices_from_text(text):
+  '''Split the text into an ordered and linked list of classified text slices
+  (i.e. ClassifiedSlice objects). This is the first step of the documentation
+  parsing process.'''
   dbe = DoxBlockExtractor(text)
   return dbe.extract()
 
+def associate_targets_to_blocks(classified_slices):
+  '''Carry out association of blocks to their targets.
+  This step is necessary in order to ensure that, for example, an ``Intro''
+  block preceding a procedure or type definition is associated with it.'''
+
+  # For each block, identify (and communicate to it) what the closest following
+  # target is.
+  next_target = None
+  for cs in reversed(classified_slices):
+    if cs.type == SLICE_SOURCE:
+      next_target = cs
+
+    elif cs.type == SLICE_BLOCK:
+      block = cs.block
+      if block:
+        if block.is_target:
+          next_target = block
+
+        else:
+          block.classified_slice.set_next_target(next_target)
+
+  # For each block, identify (and communicate to it) what the closest preceding
+  # target is.
+  prev_target = None
+  for cs in classified_slices:
+    if cs.type == SLICE_SOURCE:
+      prev_target = cs
+
+    elif cs.type == SLICE_BLOCK:
+      block = cs.block
+      if block:
+        if block.is_target:
+          prev_target = block
+
+        else:
+          block.classified_slice.set_prev_target(prev_target)
+
 def associate_contexts_to_blocks(blocks, initial_context):
+  '''This steps associates each block to the corresponding context.
+  This step is necessary in order to place types, instances, ... into the
+  appropriate section, for example.'''
   context = initial_context
   for block in blocks:
     context = block.use_context(context)
   return context
-
 
 
 if __name__ == '__main__':
@@ -181,6 +231,3 @@ if __name__ == '__main__':
 
   writer = rst.RSTWriter(tree)
   writer.save()
-
-
-

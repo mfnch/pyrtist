@@ -1,4 +1,7 @@
-///Section: core
+///Intro: The Box core library.
+// This section contains the fundamental types of the Box language and its
+// core library.
+///Section: Core
 
 ///Intro: Box character type. Used to encode a single character in a string.
 Char = ...

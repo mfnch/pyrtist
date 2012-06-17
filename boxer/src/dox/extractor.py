@@ -43,6 +43,9 @@ class ClassifiedSlice(object):
     self.next_slice = next_slice
     self.prev_source = prev_source
     self.next_source = next_source
+    self.prev_target = None
+    self.next_target = None
+    self.block = None
 
   def set_type(self, slice_type):
     '''Set the slice type.'''
@@ -63,6 +66,20 @@ class ClassifiedSlice(object):
   def set_next_source(self, next_source_slice):
     '''Add a link to the source slices which follows this block.'''
     self.next_source = next_source_slice
+
+  def set_prev_target(self, prev_target):
+    '''Add a link to the target (either a ClassifiedSlice or a DoxBlock) which
+    precedes this block.'''
+    self.prev_target = prev_target
+
+  def set_next_target(self, next_target):
+    '''Add a link to the target (either a ClassifiedSlice or a DoxBlock) which
+    follows this block.'''
+    self.next_target = next_target
+
+  def set_block(self, block):
+    '''Set the block (the owner of this slice).'''
+    self.block = block
 
 
 class DoxBlockExtractor(Parser):
@@ -109,8 +126,6 @@ class DoxBlockExtractor(Parser):
       csi1 = css[i + 1]
       csi0.set_next(csi1)
       csi1.set_prev(csi0)
-
-    # Link objects to preceding and following source slices
 
     # First, deal with preceeding-case...
     prev_source = None
