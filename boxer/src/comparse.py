@@ -143,7 +143,7 @@ class Parser(object):
     self.tokenizer = tok = Tokenizer(text)
 
     state = STATE_SOURCE      # State of the state machine
-    string_delim = None   # Last seen string delimiter
+    string_delim = None       # Last seen string delimiter
     source_pos = 0            # Used to track pieces of source between comments
     comments = []             # Store recursive comments descriptors
 

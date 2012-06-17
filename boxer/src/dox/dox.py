@@ -22,7 +22,7 @@ import fnmatch
 from logger import log_msg
 from tree import DoxType, DoxProc, DoxInstance, DoxTree
 from context import Context
-import analyzer
+import builder
 
 
 class Dox(object):
@@ -58,13 +58,13 @@ class Dox(object):
     with open(filename, "r") as f:
       text = f.read()
 
-    slices = analyzer.create_classified_slices_from_text(text)
-    blocks = analyzer.create_blocks_from_classified_slices(slices)
+    slices = builder.create_classified_slices_from_text(text)
+    blocks = builder.create_blocks_from_classified_slices(slices)
+    builder.associate_targets_to_blocks(slices)
     context = self.context.create_context(sourcefile=filename,
                                           section=None)
-    analyzer.associate_targets_to_blocks(slices)
-    self.context = analyzer.associate_contexts_to_blocks(blocks, context)
-    analyzer.add_blocks_to_tree(self.tree, blocks)
+    self.context = builder.associate_contexts_to_blocks(blocks, context)
+    builder.add_blocks_to_tree(self.tree, blocks)
 
 
 if __name__ == "__main__":

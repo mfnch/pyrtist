@@ -45,24 +45,25 @@
 #    comment slices, documentation blocks (comments starting with (** or ///),
 #
 # 4) The slices are concatenated in an ordered list. Each text slice is made
-#    aware of what text slices are preceding and following it and what source
-#    slices are preceding and following it. The latter is useful as it allows
-#    each documentation block to know what part of the Box source it may be
-#    referring to,
+#    aware of what text slices are preceding and following it.
 #
 # 5) Slices are interpreted. Documentation slices are mapped to DoxBlock
 #    objects. Each block is linked to its originating text slice,
 #
-# 6) Each block is given an opportunity to inspect the current context and
+# 6) Each documentation block is associated to a target (i.e. whatever the
+#    block is documenting). Blocks may be themselves documentation targets
+#    for other blocks.
+#
+# 7) Each block is given an opportunity to inspect the current context and
 #    modify it, if necessary. The concept of context is mainly used to
 #    organize nodes and put them into sections.
 #
-# 7) DoxBlock objects are given an opportunity to generate a node of the tree.
+# 8) DoxBlock objects are given an opportunity to generate a node of the tree.
 #    Basically, the method DoxBlock.add_node is called and the tree is passed
 #    as an argument. The block can thus manipulate the tree.
 #    Nodes are linked to their blocks and blocks are linked to their nodes.
 #
-# 8) After doing all this for each source file, the DoxTree.process method is
+# 9) After doing all this for each source file, the DoxTree.process method is
 #    called. This method does global processing of the tree (while what we have
 #    seen so far was per-file processing). Missing types are detected, subtypes
 #    are associated to their parent types, etc.

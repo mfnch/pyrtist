@@ -35,14 +35,11 @@ class ClassifiedSlice(object):
   slice in the file and slice type.'''
 
   def __init__(self, text_slice, slice_type=None,
-               prev_slice=None, next_slice=None,
-               prev_source=None, next_source=None):
+               prev_slice=None, next_slice=None):
     self.text_slice = text_slice
     self.type = slice_type
     self.prev_slice = prev_slice
     self.next_slice = next_slice
-    self.prev_source = prev_source
-    self.next_source = next_source
     self.prev_target = None
     self.next_target = None
     self.block = None
@@ -58,14 +55,6 @@ class ClassifiedSlice(object):
   def set_next(self, next_slice):
     '''Add a link to the text slice which follows this one.'''
     self.next_slice = next_slice
-
-  def set_prev_source(self, prev_source_slice):
-    '''Add a link to the source slices which precedes this block.'''
-    self.prev_source = prev_source_slice
-
-  def set_next_source(self, next_source_slice):
-    '''Add a link to the source slices which follows this block.'''
-    self.next_source = next_source_slice
 
   def set_prev_target(self, prev_target):
     '''Add a link to the target (either a ClassifiedSlice or a DoxBlock) which
@@ -113,6 +102,7 @@ class DoxBlockExtractor(Parser):
     '''Parse the file and return a list of ClassifiedSlice objects,
     linked together.'''
     self.parse()
+    self._new_block()
 
     # Create the ClassifiedSlice objects
     css = []
@@ -126,20 +116,6 @@ class DoxBlockExtractor(Parser):
       csi1 = css[i + 1]
       csi0.set_next(csi1)
       csi1.set_prev(csi0)
-
-    # First, deal with preceeding-case...
-    prev_source = None
-    for cs in css:
-      cs.set_prev_source(prev_source)
-      if cs.type == SLICE_SOURCE:
-        prev_source = cs
-
-    # Then with the following-case...
-    next_source = None
-    for cs in reversed(css):
-      cs.set_next_source(next_source)
-      if cs.type == SLICE_SOURCE:
-        next_source = cs
 
     return css
 
