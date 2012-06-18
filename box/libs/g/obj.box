@@ -22,21 +22,21 @@ Obj(=)Obj "GLib_Obj_Copy_Obj" ?
 ///Intro: add one {type(.@)} object.
 ///Example: {var(@.)} = {type(@.)}[{value(.@)}]
 Char@Obj "GLib_Char_At_Obj" ?
-INT@Obj "GLib_Int_At_Obj" ?      ///Same.
-REAL@Obj "GLib_Real_At_Obj" ?    ///Same.
-Point@Obj "GLib_Point_At_Obj" ?  ///Same.
-Str@Obj "GLib_Str_At_Obj" ?      ///Same.
-Obj@Obj "GLib_Obj_At_Obj" ?      ///Same.
+INT@Obj "GLib_Int_At_Obj" ?      ///<Same.
+REAL@Obj "GLib_Real_At_Obj" ?    ///<Same.
+Point@Obj "GLib_Point_At_Obj" ?  ///<Same.
+Str@Obj "GLib_Str_At_Obj" ?      ///<Same.
+Obj@Obj "GLib_Obj_At_Obj" ?      ///<Same.
 
 ///Intro: extract (unboxing) a {type(@.)} object from an {type(.@)} object
 ///Note: The object must just contain one single object of type {.@},
 //  otherwise and exception is raised.
 ///Example: {var(@.)} = {type(@.)}[{value(.@)}]
 Obj@Char "GLib_Obj_At_Char" ?
-Obj@Int "GLib_Obj_At_Int" ?      ///Same.
-Obj@Real "GLib_Obj_At_Real" ?    ///Same.
-Obj@Point "GLib_Obj_At_Point" ?  ///Same.
-Obj@Str "GLib_Obj_At_Str" ?      ///Same.
+Obj@Int "GLib_Obj_At_Int" ?      ///<Same.
+Obj@Real "GLib_Obj_At_Real" ?    ///<Same.
+Obj@Point "GLib_Obj_At_Point" ?  ///<Same.
+Obj@Str "GLib_Obj_At_Str" ?      ///<Same.
 
 ///Intro: extract a subobject from a {type(Obj)} object. The new object is
 // again an {type(Obj)} object. For example, ``Obj[1, 2].Get[1]`` returns

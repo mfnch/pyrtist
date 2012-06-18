@@ -237,7 +237,7 @@ Preserve@Style[
 ]
 
 ///Intro: set the pattern used for filling.
-Pattern@Style[$$.pattern = $, .have.color = 1] ///Same.
+Pattern@Style[$$.pattern = $, .have.color = 1] ///<Same.
 
 ///Intro: add the border settings to the {type(@.)} object.
 Border@Style[\ $$.border[$], .have.border = 1]
@@ -316,7 +316,7 @@ Style.Border = Void
 ///Intro: provided for compatibility with Box 0.2.3.
 // See {type(Border)} instead.
 Real@Style.Border[\ $$$.border[$], $$$.have.border = 1]
-Color@Style.Border[\ $$$.border[$], $$$.have.border = 1] ///Same.
+Color@Style.Border[\ $$$.border[$], $$$.have.border = 1] ///<Same.
 
 Style.Border.Dash = Void
 Real@Style.Border.Dash[

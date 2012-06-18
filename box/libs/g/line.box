@@ -127,8 +127,8 @@ Line.Get = Point
 
 ///Intro: see {type(Points.Get)}.
 Int@Line.Get[$$ = $$$.points.Get[$]]
-REAL@Line.Get[$$ = $$$.points.Get[$]]  ///Same.
-Point@Line.Get[$$ = $$$.points.Get[$]] ///Same.
+REAL@Line.Get[$$ = $$$.points.Get[$]]  ///<Same.
+Point@Line.Get[$$ = $$$.points.Get[$]] ///<Same.
 
 ///Intro: stroke the line.
 Line@Stroke[

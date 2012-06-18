@@ -114,7 +114,7 @@ Transform@Put[.transform = $]
 ///Intro: provide the translation vector.
 // This is similar to {comb(.@Transform)}.
 Point@Put[\ .transform[$]]
-Translation@Put[\ .transform[$]] ///Same.
+Translation@Put[\ .transform[$]] ///<Same.
 
 ///Intro: provide the scale factors.
 // This is similar to {comb(.@Transform)}.
@@ -143,6 +143,6 @@ Put.Get = Point
 
 ///Intro: provide the index, similarly to {comb(Window@Get)}.
 Int@Put.Get[$$ = $$$.target.Get[$]]
-REAL@Put.Get[$$ = $$$.target.Get[$]]  ///Same.
-Point@Put.Get[$$ = $$$.target.Get[$]] ///Same.
-Str@Put.Get[$$ = $$$.target.Get[$]]   ///Same.
+REAL@Put.Get[$$ = $$$.target.Get[$]]  ///<Same.
+Point@Put.Get[$$ = $$$.target.Get[$]] ///<Same.
+Str@Put.Get[$$ = $$$.target.Get[$]]   ///<Same.

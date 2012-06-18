@@ -13,16 +13,16 @@ Lines = ++(Line line, Window window)
 
 ///Intro: pass the {type(.@)} to the current line.
 Point@Lines[\ .line[$]]
-StrokeStyle@Lines[\ .line[$]] ///Same.
-Real@Lines[\ .line[$]]        ///Same.
-Pattern@Lines[\ .line[$]]     ///Same.
-Join@Lines[\ .line[$]]        ///Same.
-MiterLimit@Lines[\ .line[$]]  ///Same.
-Cap@Lines[\ .line[$]]         ///Same.
-Dash@Lines[\ .line[$]]        ///Same.
-Scale@Lines[\ .line[$]]       ///Same.
-Window@Lines[\ .line[$]]      ///Same.
-Close@Lines[\ .line[Close[]]] ///Same.
+StrokeStyle@Lines[\ .line[$]] ///<Same.
+Real@Lines[\ .line[$]]        ///<Same.
+Pattern@Lines[\ .line[$]]     ///<Same.
+Join@Lines[\ .line[$]]        ///<Same.
+MiterLimit@Lines[\ .line[$]]  ///<Same.
+Cap@Lines[\ .line[$]]         ///<Same.
+Dash@Lines[\ .line[$]]        ///<Same.
+Scale@Lines[\ .line[$]]       ///<Same.
+Window@Lines[\ .line[$]]      ///<Same.
+Close@Lines[\ .line[Close[]]] ///<Same.
 
 ///Intro: finish defining the current line and start a new line.
 (;)@Lines[

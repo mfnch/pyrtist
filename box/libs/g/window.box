@@ -37,8 +37,8 @@ Point@Window "window_size" ?
 ///Intro: specifies a {type(.@)} to be used in the drawing commands which
 //  will follow in the Window.
 Color@Window "Box_Lib_G_Color_At_Window" ?
-Gradient@Window "Box_Lib_G_Gradient_At_Window" ?  ///Same.
-OldStyle@Window "Box_Lib_G_OldStyle_At_Window" ?  ///Same.
+Gradient@Window "Box_Lib_G_Gradient_At_Window" ?  ///<Same.
+OldStyle@Window "Box_Lib_G_OldStyle_At_Window" ?  ///<Same.
 
 ///Intro: draw the content of a {type(.@)} inside the opened {type(@.)}
 //  object.
