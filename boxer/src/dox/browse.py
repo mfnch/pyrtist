@@ -157,12 +157,17 @@ class DoxBrowser(object):
     for items in (sections, types, instances):
       items.sort(cmpstr)
       for item in items:
-        self._add_any_node(parent, item, **kwargs)
+        if not isinstance(item, DoxType) or item.subtype_parent == None:
+          self._add_any_node(parent, item, **kwargs)
 
   def _populate_type_node(self, parent, type_node, **kwargs):
     # Add subtypes of the given type to the type node
     for subtype_node in type_node.subtype_children:
-      self._add_entry_to_treestore(parent, subtype_node, **kwargs)
+      #self._add_entry_to_treestore(parent, subtype_node, **kwargs)
+      self._add_any_node(parent, subtype_node, **kwargs)
+
+      #for st in .subtype_children:
+      #  self._add_entry_to_treestore(new_piter, st, flt)
 
   def _add_any_node(self, parent, node, **kwargs):
     # Add a node to the treestore object
@@ -183,8 +188,6 @@ class DoxBrowser(object):
     description = self.dox_writer.gen_brief_intro(t)
     if flt == None or flt(t, description):
       new_piter = ts.append(piter, [t.name, description, visible])
-      for st in t.subtype_children:
-        self._add_entry_to_treestore(new_piter, st, flt)
 
   def quit(self):
     self.window.hide()

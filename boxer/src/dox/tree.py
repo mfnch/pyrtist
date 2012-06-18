@@ -93,12 +93,16 @@ class DoxTreeNode(object):
       self.blocks[block_name] = block
 
   def get_block(self, block_name):
-    ''''Retrieve the blocks associated to the node with the given name.
+    '''Retrieve the blocks associated to the node with the given name.
     If the block type admit multiple association, then return a list,
     otherwise - if the block can be associated only to one tree node at a time
     - return the object.
     '''
     return self.blocks.get(block_name.lower(), None)
+
+  def get_blocks(self):
+    '''Get all the documentation blocks associated to this node.'''
+    return self.blocks.values()
 
 
 class DoxParentNode(DoxTreeNode):
@@ -306,7 +310,13 @@ class DoxTree(DoxParentNode):
     of the tree. The node is added to the tree and returned.'''
     node = dox_classify_code(source)
     if node != None:
-      self.add_node(node)
+      existing_node = self.get_node(node, str(node), create=False)
+      if existing_node:
+        return existing_node
+
+      else:
+        self.add_node(node)
+
     return node
 
   def _build_links(self):

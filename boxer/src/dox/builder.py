@@ -136,10 +136,15 @@ def create_blocks_from_classified_slices(classified_slices):
       paragraph = " ".join(lines).strip()
       block_type, content = split_block(paragraph)
       block_type = block_type.lower()
+
+      target_on_left = block_type.startswith('<')
+      if target_on_left:
+        block_type = block_type[1:]
+        
       constructor = known_block_types.get(block_type)
       if constructor != None:
         # Call the constructor for the block
-        doxblock = constructor(cs, content)
+        doxblock = constructor(cs, content, target_on_left=target_on_left)
         cs.set_block(doxblock)
         doxblocks.append(doxblock)
 
