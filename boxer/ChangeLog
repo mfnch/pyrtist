@@ -1,3 +1,10 @@
+In version 0.3.8:
+  BRIEFLY: the documentation system was rewritten plus bugfixes.
+  DETAILS:
+  - The documentation system was rewritten to support sections. Instances
+    can be documented.
+  - Bugfix: font dialog was not shown.
+
 In version 0.3.7:
   BRIEFLY: improvements to the look & feel of the GUI and bugfixes.
   DETAILS:

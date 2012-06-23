@@ -19,7 +19,7 @@ import os
 import re
 import fnmatch
 
-from logger import log_msg
+from logger import log_msg, set_log_context
 from tree import DoxType, DoxProc, DoxInstance, DoxTree
 from context import Context
 import builder
@@ -54,6 +54,8 @@ class Dox(object):
 
   def read_file(self, filename):
     """Read documentation content from the given file."""
+
+    set_log_context("File '%s'" % filename)
 
     with open(filename, "r") as f:
       text = f.read()

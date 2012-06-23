@@ -7,6 +7,9 @@ pygtk.require('2.0')
 import gtk
 import gobject
 
+import config
+import editable
+
 from dox import Dox
 from tree import DoxTree, DoxType, DoxInstance, DoxSectionNode
 from gtktext import DoxTextView, DoxTable, GtkWriter
@@ -25,38 +28,22 @@ class DoxBrowser(object):
     self.option_changed_vals = {}
     self.quit_gtk = quit_gtk
 
-    # Create the TextView where the documentation will be shown
-    self.window_textview = dox_textview = \
-      DoxTextView(on_click_link=self._on_click_link)
-    scrolledwin1 = gtk.ScrolledWindow()
-    scrolledwin1.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-    scrolledwin1.set_shadow_type(gtk.SHADOW_IN)
-    scrolledwin1.add(dox_textview)
-
-    # Create the table where the procedure of the current type are shown
-    self.window_table = dox_table = \
-      DoxTable(on_click_link=self._on_click_link)
-    scrolledwin2 = gtk.ScrolledWindow()
-    scrolledwin2.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-    scrolledwin2.set_shadow_type(gtk.SHADOW_IN)
-    viewport = gtk.Viewport()
-    viewport.add(dox_table)
-    viewport.set_shadow_type(gtk.SHADOW_NONE)
-    scrolledwin2.add(viewport)
-
-    # Put one at the top, the other at the bottom
-    vsplit3 = gtk.VBox(False, 4)
-    vsplit3.pack_start(scrolledwin1, expand=True, fill=True, padding=4)
-    vsplit3.pack_start(scrolledwin2, expand=True, fill=True, padding=4)
-
-    dox_textbuffer = dox_textview.get_buffer()
-    self.dox_writer = GtkWriter(tree, dox_textbuffer, dox_table)
-
-    # Create a new window
+    # Create the window
     self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
     self.window.set_border_width(spacing)
     self.window.set_title(title)
     self.window.set_size_request(*size)
+
+    # Put one at the top, the other at the bottom
+    vsplit3 = gtk.VBox(False, 4)
+    scrolledwin1 = self._build_widget_description()
+    scrolledwin2 = self._build_widget_combinations()
+    vsplit3.pack_start(scrolledwin1, expand=True, fill=True, padding=4)
+    vsplit3.pack_start(scrolledwin2, expand=True, fill=True, padding=4)
+
+    dox_textbuffer = self.window_textview.get_buffer()
+    self.dox_writer = GtkWriter(tree, dox_textbuffer, self.window_table)
+
 
     self.window.connect("delete_event", self._on_delete_event)
     
@@ -67,36 +54,11 @@ class DoxBrowser(object):
     butbox.set_layout(gtk.BUTTONBOX_END)
     butbox.set_spacing(spacing)
 
-    # create and populate the treestore
-    self.treestore = treestore = \
-      gtk.TreeStore(gobject.TYPE_STRING,  # Type name
-                    gobject.TYPE_STRING,  # Brief description
-                    gobject.TYPE_BOOLEAN) # Visible?
-    self._populate_treestore_from_dox()
-
-    # the treestore filter (to show and hide rows as a result of a search)
-    self.treestore_flt = treestore_flt = treestore.filter_new()
-    treestore_flt.set_visible_column(2)
-
-    # create the TreeView using the treestore
-    self.treeview = tv = gtk.TreeView(treestore_flt)
-    tvcols = []
-    for nr_col, tvcol_name in enumerate(("Type", "Description")):
-      tvcol = gtk.TreeViewColumn(tvcol_name)
-      tvcol.set_resizable(True)
-      tvcols.append(tvcol)
-      tv.append_column(tvcol)
-      cell = gtk.CellRendererText()
-      tvcol.pack_start(cell, True)
-      tvcol.add_attribute(cell, 'text', nr_col)
-
-    tvcols[0].set_sort_column_id(0)
-    tv.set_search_column(0)
-
     # Insert objects one inside the other
     scrolledwin = gtk.ScrolledWindow()
     scrolledwin.set_size_request(int(size[0]/2), -1)
     scrolledwin.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    tv = self._build_widget_selector()
     scrolledwin.add(tv)
 
     label = gtk.Label("Search:")
@@ -115,7 +77,15 @@ class DoxBrowser(object):
     # - on the left we have the zone where we can select the setting to change
     # - on the right we can actually manipulate the setting
     horsplit = gtk.HPaned()
-    horsplit.pack1(vsplit2)
+
+    xxx = gtk.VBox()
+
+    previewer = self._build_widget_preview()
+
+    xxx.pack_start(vsplit2, expand=True, fill=True, padding=0)
+    xxx.pack_start(previewer, expand=False, fill=False, padding=0)
+
+    horsplit.pack1(xxx)
     horsplit.pack2(vsplit3)
 
     # The window has one top main region and a bottom region where the
@@ -128,6 +98,105 @@ class DoxBrowser(object):
     tv.connect("row-activated", self._on_row_activated)
     self.window_button_hide.connect("button-press-event",
                                       self._on_button_hide_press)
+
+  def _build_widget_description(self):
+    '''Internal: called during initialization to build the widget which shows
+    the documentation text for the currently selected item.'''
+    # Create the TextView where the documentation will be shown
+    self.window_textview = dox_textview = \
+      DoxTextView(on_click_link=self._on_click_link)
+    scrolledwin1 = gtk.ScrolledWindow()
+    scrolledwin1.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    scrolledwin1.set_shadow_type(gtk.SHADOW_IN)
+    scrolledwin1.add(dox_textview)
+    return scrolledwin1
+
+  def _build_widget_combinations(self):
+    '''Internal: called during initialization to build the widget containing
+    the list of type combinations.'''
+
+    # Create the table where the procedure of the current type are shown
+    self.window_table = dox_table = \
+      DoxTable(on_click_link=self._on_click_link)
+    scrolledwin = gtk.ScrolledWindow()
+    scrolledwin.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+    scrolledwin.set_shadow_type(gtk.SHADOW_IN)
+    viewport = gtk.Viewport()
+    viewport.add(dox_table)
+    viewport.set_shadow_type(gtk.SHADOW_NONE)
+    scrolledwin.add(viewport)
+    return scrolledwin
+
+  def _build_widget_selector(self):
+    '''Internal: called during initialization to build the treeview which
+    allow to find and browse the documentation.'''
+
+    # create and populate the treestore
+    self.treestore = treestore = \
+      gtk.TreeStore(gobject.TYPE_STRING,  # Type name
+                    gobject.TYPE_STRING,  # Brief description
+                    gobject.TYPE_BOOLEAN) # Visible?
+    self._populate_treestore_from_dox()
+
+    # the treestore filter (to show and hide rows as a result of a search)
+    self.treestore_flt = treestore_flt = treestore.filter_new()
+    treestore_flt.set_visible_column(2)
+
+    # create the TreeView using the treestore
+    tv = gtk.TreeView(treestore_flt)
+    tvcols = []
+    for nr_col, tvcol_name in enumerate(("Type", "Description")):
+      tvcol = gtk.TreeViewColumn(tvcol_name)
+      tvcol.set_resizable(True)
+      tvcols.append(tvcol)
+      tv.append_column(tvcol)
+      cell = gtk.CellRendererText()
+      tvcol.pack_start(cell, True)
+      tvcol.add_attribute(cell, 'text', nr_col)
+
+    tvcols[0].set_sort_column_id(0)
+    tv.set_search_column(0)
+    self.treeview = tv
+    return tv
+
+  def _build_widget_preview(self):
+    '''Internal: called during initialization to build the preview window.'''
+    cfg = config.get_configuration()
+    cfg_dict = {"box_executable": cfg.get("Box", "exec"),
+                "box_include_dirs": cfg.get("Library", "dir"),
+                "refpoint_size": cfg.getint("GUIView", "refpoint_size")}
+    self.viewarea = viewarea = editable.BoxViewArea(config=cfg_dict)
+
+    # Display a "Missing preview" message in the preview window
+    self.set_preview_code(None, refresh=False)
+
+    scroll_win = gtk.ScrolledWindow()
+    scroll_win.add(viewarea)
+    scroll_win.set_size_request(200, 200)
+    expander = gtk.Expander(label="Preview")
+    expander.add(scroll_win)
+    return expander
+
+  def set_preview_code(self, src, refresh=True):
+    '''Set the Box source which is used to render the preview window.'''
+
+    code = ('(**expand:boxer-boot*)\n(**boxer-version:0,2,0*)\n'
+            '(**end:expand*)\n')
+    if src:
+      code += src
+
+    else:
+      code += ('fg = Figure[BBox[v = (15, 10), v, -v], '
+               'Text[Font["helvetica-bold", 5, Color[0.6]], (0, 0), '
+               '"  PREVIEW\\n      NOT\\nAVAILABLE"]], (**view:fg*)')
+
+    document = self.viewarea.get_document()
+    document.new()
+    document.load_from_str(code)
+
+    if refresh:
+      self.viewarea.reset()
+      self.viewarea.refresh()
 
   def show(self, section=None, topic=None):
     """Show the window."""
@@ -288,25 +357,31 @@ class DoxBrowser(object):
       self.expand_visible_rows()
     
   def _show_doc(self, section, search_str):
+    tree = self.dox.tree
     name = (search_str if "@" not in search_str
             else search_str.split("@", 2)[1])
-    tree = self.dox.tree
 
+    output = None
     t = tree.types.get(name)
     if t != None:
-      self.window_textview.get_buffer().set_text("")
-      writer = self.dox_writer
-      output = writer.gen_type_section(t, None)
-      self.window_textview.set_content(output)
-      return
+      output = self.dox_writer.gen_type_section(t, None)
 
-    t = tree.instances.get(name)
-    if t != None:
-      self.window_textview.get_buffer().set_text("")
-      writer = self.dox_writer
-      output = writer.gen_instance_section(t)
+    else:
+      t = tree.instances.get(name)
+      if t != None:
+        output = self.dox_writer.gen_instance_section(t)
+
+    if output:
+      self.window_textview.get_buffer().set_text('')
       self.window_textview.set_content(output)
-      return      
+
+      # Set the preview code for the preview window
+      preview_code = None
+      preview_block = t.get_block('Preview')
+      if preview_block:
+        preview_code = preview_block.get_code()
+
+      self.set_preview_code(preview_code)
 
 
 def main():

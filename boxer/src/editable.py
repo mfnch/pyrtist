@@ -66,11 +66,10 @@ def draw_ref_point(drawable, coords, size, gc):
     drawable.draw_rectangle(gc, True, x1, y1, dx1, dy1)
 
 class BoxViewArea(ZoomableArea):
-  def __init__(self, filename=None, out_fn=None, callbacks=None,
-               **extra_args):
+  def __init__(self, filename=None, out_fn=None, callbacks=None, **kwargs):
     # Create the Document
     self.document = d = \
-      document.Document(callbacks=callbacks, from_args=extra_args)
+      document.Document(callbacks=callbacks, from_args=kwargs)
     if filename != None:
       d.load_from_file(filename)
     else:
@@ -81,7 +80,11 @@ class BoxViewArea(ZoomableArea):
     drawer.out_fn = out_fn
 
     # Create the ZoomableArea
-    ZoomableArea.__init__(self, drawer, callbacks=callbacks, **extra_args)
+    ZoomableArea.__init__(self, drawer, callbacks=callbacks, **kwargs)
+
+  def get_document(self):
+    '''Get the Document object associated to this window.'''
+    return self.document
 
 
 class DraggedPoints(object):
@@ -93,7 +96,7 @@ class DraggedPoints(object):
 
 
 class BoxEditableArea(BoxViewArea, Configurable):
-  def __init__(self, *args, **extra_args):
+  def __init__(self, *args, **kwargs):
 
     self._dragged_refpoints = None     # RefPoint which is being dragged
     self._fns = {"refpoint_new": None, # External handler functions
@@ -102,8 +105,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
                  "refpoint_press": None,
                  "refpoint_press_middle": None}
 
-    Configurable.__init__(self, from_args=extra_args)
-    BoxViewArea.__init__(self, *args, callbacks=self._fns, **extra_args)
+    Configurable.__init__(self, from_args=kwargs)
+    BoxViewArea.__init__(self, *args, callbacks=self._fns, **kwargs)
 
     # Set default configuration
     self.set_config_default(button_left=1, button_center=2, button_right=3,

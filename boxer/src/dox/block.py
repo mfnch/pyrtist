@@ -23,6 +23,46 @@ from tree import DoxSectionNode
 from logger import log_msg
 
 
+def get_block_lines(text):
+  '''Return the lines in a doxblock independenlty of the actual format of the
+  documentation block. This involves stripping the comment delimiters and
+  removing the newline characters. A list of lines is returned, if the
+  operation succeeds, None is returned if the operation fails.'''
+
+  if len(text) >= 5 and text.startswith("(**") and text.endswith("*)"):
+    return text[3:-2].splitlines()
+
+  elif text.startswith("///"):
+    return [line[2:] for line in text[1:].splitlines()]
+
+  return None
+
+def split_block(doxblock_content):
+  '''Takes the content of a documentation block and split the block
+  identification keyword and the content returning. Below is an example.
+  Each documentation block starts with a block identifier. For example,
+
+  ///Intro: a brief
+  // introduction.
+
+  This function takes the string 'Intro: a brief introduction.' and returns
+  a tuple ('Intro', 'a brief introduction.') or (None, None) if the split
+  was not possible.'''
+
+  args = tuple(item for item in map(doxblock_content.find, (":", "."))
+               if item >= 0)
+  if not args:
+    return (None, None)
+
+  idx = min(args)
+  if idx == None:
+    return (None, None)
+
+  block_type = doxblock_content[:idx].strip()
+  block_content = doxblock_content[idx + 1:].strip()
+  return (block_type, block_content) 
+
+
 class DoxBlock(object):
   # Name of the block (intro, section, etc.).
   block_name = None
@@ -168,3 +208,57 @@ class DoxSameBlock(DoxSourceBlock):
       node.add_block(copy.copy(block))
 
     return node
+
+
+class DoxPreviewBlock(DoxSourceBlock):
+  '''Block used to include a piece of Box source code. The block allows the
+  user to control the format (placing of the newlines) independently of the
+  actual format of the comment. Example:
+
+  (**xxxx: |// Line 1 of source |  // Line 2
+           |some_expr = some_other_expr *)
+
+  Which gives:
+
+  // Line 1 of source 
+    // Line 2
+  some_expr = some_other_expr *)
+  '''
+
+  block_name = 'preview'
+
+  def __init__(self, *args, **kwargs):
+    DoxSourceBlock.__init__(self, *args, **kwargs)
+    self.code = self._reformat_code()
+
+  def _reformat_code(self):
+    text_slice = self.classified_slice.text_slice
+    assert text_slice
+
+    # We get the lines, we then try to determine the line separator
+    lines = get_block_lines(str(text_slice).strip())
+    if not lines:
+      return None
+
+    first_line = split_block(lines[0])[1].lstrip()
+    if first_line:
+      # If the first line is not empty, then it starts with the delimiter
+      # (trailing spaces are ignored).
+      # Example: '(**Preview: |  Line1|    Line2 | Line3  *)' will expand to
+      # 'Line1\n   Line2 \n Line3  '
+      sep = first_line[0]
+
+      # Join all the lines and split them with the specified delimiter
+      content = (first_line[1:].lstrip() +
+                 ''.join(map(str.lstrip, lines)[1:]))
+      return content.replace(sep, '\n')
+
+    else:
+      # If the first line is empty (nothing other than spaces follow the
+      # identifier), then the text is returned as given, with end of lines
+      # appearing exactly where they appear on the comment
+      return '\n'.join(lines[1:])
+
+  def get_code(self):
+    '''Return the reformatted code contained in this block.'''
+    return self.code

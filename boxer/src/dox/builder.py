@@ -75,45 +75,17 @@
 import sys
 
 from extractor import DoxBlockExtractor, SLICE_BLOCK, SLICE_SOURCE
-from block import DoxIntroBlock, DoxExampleBlock, DoxSameBlock, DoxSectionBlock
+from block import get_block_lines, split_block, DoxIntroBlock, \
+  DoxExampleBlock, DoxSameBlock, DoxSectionBlock, DoxPreviewBlock
 from logger import log_msg
 
 
-def split_block(doxblock_content):
-  '''Each documentation block starts with a block marker. For example,
-
-  ///Intro: a brief introduction.
-
-  This function returns such a block marker (just the string 'Intro' in
-  the example above).'''
-  idx = min(item for item in map(doxblock_content.find, (":", "."))
-            if item >= 0)
-
-  if idx != None:
-    block_type = doxblock_content[:idx].strip()
-    block_content = doxblock_content[idx + 1:].strip()
-    return (block_type, block_content) 
-  else:
-    return (None, None)
-
-
-def get_block_lines(text):
-  '''Return the lines in a doxblock independenlty of the actual format of the
-  documentation block.
-  '''
-  if len(text) >= 5 and text.startswith("(**") and text.endswith("*)"):
-    return text[3:-2].splitlines()
-
-  elif text.startswith("///"):
-    return [line[2:] for line in text[1:].splitlines()]
-
-  return None
-
 known_block_types = \
-  {"section": DoxSectionBlock,
-   "intro": DoxIntroBlock,
-   "example": DoxExampleBlock,
-   "same": DoxSameBlock}
+  {'section': DoxSectionBlock,
+   'intro': DoxIntroBlock,
+   'example': DoxExampleBlock,
+   'same': DoxSameBlock,
+   'preview': DoxPreviewBlock}
 
 def create_blocks_from_classified_slices(classified_slices):
   '''Create documentation block objects from the classified text slices.
@@ -133,8 +105,16 @@ def create_blocks_from_classified_slices(classified_slices):
   for cs in classified_slices:
     if cs.type == SLICE_BLOCK:
       lines = get_block_lines(str(cs.text_slice))
+      if not lines:
+        log_msg('Invalid documentation block')
+        continue
+
       paragraph = " ".join(lines).strip()
       block_type, content = split_block(paragraph)
+      if not (block_type and content):
+        log_msg('Missing documentation identifier')
+        continue
+
       block_type = block_type.lower()
 
       target_on_left = block_type.startswith('<')
@@ -149,7 +129,7 @@ def create_blocks_from_classified_slices(classified_slices):
         doxblocks.append(doxblock)
 
       else:
-        log_msg("Unrecognized: %s\n" % block_type)
+        log_msg("Unrecognized block '%s'" % block_type)
 
   return doxblocks
 

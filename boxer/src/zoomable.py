@@ -203,6 +203,8 @@ class View(Rectangle):
 
 
 class ZoomableArea(gtk.DrawingArea):
+  set_scroll_adjustment_signal_id = None
+
   def __init__(self, drawer,
                hadjustment=None, vadjustment=None,
                zoom_factor=1.5, zoom_margin=0.25, buf_margin=0.25,
@@ -248,10 +250,12 @@ class ZoomableArea(gtk.DrawingArea):
 
     gtk.DrawingArea.__init__(self)
 
-    gobject.signal_new("set-scroll-adjustment", self.__class__,
-                       gobject.SIGNAL_RUN_LAST,
-                       gobject.TYPE_NONE,
-                       (gtk.Adjustment, gtk.Adjustment))
+    if not ZoomableArea.set_scroll_adjustment_signal_id:
+      ZoomableArea.set_scroll_adjustment_signal_id = \
+        gobject.signal_new("set-scroll-adjustment", self.__class__,
+                           gobject.SIGNAL_RUN_LAST,
+                           gobject.TYPE_NONE,
+                           (gtk.Adjustment, gtk.Adjustment))
 
     self.set_set_scroll_adjustments_signal("set-scroll-adjustment")
 

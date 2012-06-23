@@ -15,8 +15,48 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Box.  If not, see <http://www.gnu.org/licenses/>.
 
-logger = None
 
-def log_msg(msg):
+class SimpleStream(object):
+  '''Simple stream which stores the messages it receives.'''
+
+  def __init__(self):
+    self.msgs = []
+  
+  def write(self, msg):
+    self.msgs.append(msg)
+
+  def get_msgs(self):
+    return self.msgs
+
+
+class SimpleLogger(object):
+  def __init__(self, stream=None):
+    self.context = None
+    self.stream = stream
+
+  def set_context(self, context):
+    self.context = context
+
+  def write(self, msg):
+    if not self.stream:
+      return
+
+    if self.context:
+      self.stream.write("%s: %s\n" % (self.context, msg))
+    else:
+      self.stream.write("%s\n" % msg)
+
+
+import sys
+logger = SimpleLogger(stream=None)
+
+def set_log_context(context):
+  '''Set the context (e.g. file being processed) to which the log messages
+  (provided via 'log_msg') refer.'''
   if logger:
-    logger.write(msg + "\n")
+    logger.set_context(context)
+  
+def log_msg(msg):
+  '''Log a message.'''
+  if logger:
+    logger.write(msg)
