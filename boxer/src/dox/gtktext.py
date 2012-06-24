@@ -283,8 +283,9 @@ class GtkWriter(Writer):
     '''Generate the help content for the given instance.'''
     title = self.gen_type_section_title(instance)
     body = self.gen_target_section(instance)
+    example = self.gen_target_section(instance, section="Example", title="Example: ")
     self.table.empty()
-    return title + body
+    return title + body + example
 
   def gen_section_section(self, section, level=0):
     '''Generate the help content for the given section.'''

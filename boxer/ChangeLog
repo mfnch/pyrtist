@@ -1,8 +1,9 @@
 In version 0.3.8:
   BRIEFLY: the documentation system was rewritten plus bugfixes.
   DETAILS:
-  - The documentation system was rewritten to support sections. Instances
-    can be documented.
+  - The documentation system was completely rewritten. It now supports
+    sub-sections, it supports commenting instances and allows providing
+    previews of documented objects.
   - Bugfix: font dialog was not shown.
 
 In version 0.3.7:

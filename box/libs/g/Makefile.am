@@ -40,7 +40,7 @@ dist_boxlibg_DATA= obj.box const.box gcore.box matrix.box transform.box       \
   image.box
 
 dist_boxpkg_DATA= arrows.bxh caps.box _arrows.bxh math.box tools.bxh	   \
-  _sphere.bxh rectangle.box label.bxh bounce.bxh electric.bxh guitools.box
+  _sphere.bxh rectangle.box label.bxh bounce.bxh electric.box guitools.box
 
 libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h matrix.c  \
   matrix.h winmap.c winmap.h bm1bit.c bm4bit.c bm8bit.c bitmap.h bmcommon.c   \

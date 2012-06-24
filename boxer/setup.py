@@ -19,7 +19,7 @@ import os
 from distutils.core import setup
 
 name = 'boxer'
-version = '0.3.7'
+version = '0.3.8'
 description = ('A graphical user interface for '
                'the Box vector graphics language')
 author = 'Matteo Franchin'
