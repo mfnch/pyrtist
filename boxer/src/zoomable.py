@@ -311,9 +311,9 @@ class ZoomableArea(gtk.DrawingArea):
   def zoom_here(self, scale_factor=None):
     """Fixes the magnification of the picture, exiting the picture view mode,
     i.e. the mode in which the picture fits exactly in the current screen
-    view. The function apparently doesn't do anything, but it actually does,
-    After the function has been called, the picture is no more resized to fit
-    in the current view!"""
+    view. The user may think that ``ZoomableArea.scale_factor()'' does not have
+    any effect, but this is not true: after the function has been called, the
+    picture is no more resized to fit in the current view!"""
     lm = self.magnification
     if lm == None:
       lm = self.last_magnification

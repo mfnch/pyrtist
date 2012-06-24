@@ -161,6 +161,13 @@ class DoxTable(gtk.Table):
     self.dox_cur_cell += 1
     return doxtextview
 
+  def empty(self):
+    '''Empty the table.'''
+    nr_cells_inserted = self.dox_cur_cell
+    for nr_cell in range(nr_cells_inserted):
+      self.remove(self.dox_cells[nr_cell])
+    self.dox_cur_cell = 0
+
   def populate(self, rows, title=None,
                xoptions=gtk.EXPAND|gtk.FILL,
                yoptions=gtk.FILL,
@@ -169,10 +176,7 @@ class DoxTable(gtk.Table):
     nr_cols = (len(rows[0]) if nr_rows > 0 else 1)
 
     # First, we remove the cells previously inserted
-    nr_cells_inserted = self.dox_cur_cell
-    for nr_cell in range(nr_cells_inserted):
-      self.remove(self.dox_cells[nr_cell])
-    self.dox_cur_cell = 0
+    self.empty()
 
     # Now we add the title, if necessary
     if nr_rows > 0:
@@ -279,6 +283,7 @@ class GtkWriter(Writer):
     '''Generate the help content for the given instance.'''
     title = self.gen_type_section_title(instance)
     body = self.gen_target_section(instance)
+    self.table.empty()
     return title + body
 
   def gen_section_section(self, section, level=0):

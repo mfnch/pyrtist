@@ -20,6 +20,7 @@ class DoxBrowser(object):
   def __init__(self, dox, size=(640, 560), spacing=6,
                title="Box documentation browser",
                quit_gtk=False):
+    self.size = size
     self.dox = dox
     tree = dox.tree
     self.option_section = None
@@ -33,69 +34,77 @@ class DoxBrowser(object):
     self.window.set_border_width(spacing)
     self.window.set_title(title)
     self.window.set_size_request(*size)
+    self.window.connect("delete_event", self._on_delete_event)
 
-    # Put one at the top, the other at the bottom
-    vsplit3 = gtk.VBox(False, 4)
-    scrolledwin1 = self._build_widget_description()
-    scrolledwin2 = self._build_widget_combinations()
-    vsplit3.pack_start(scrolledwin1, expand=True, fill=True, padding=4)
-    vsplit3.pack_start(scrolledwin2, expand=True, fill=True, padding=4)
+    # RIGHT/TOP PART OF THE WINDOW
+    #
+    # This is composed by a descriptor window at the top (showing the text
+    # describing the selected object), plus a list of properties of the object
+    # at the bottom
+    right_top = gtk.VBox(False, 4)
+    description_text = self._build_widget_description()
+    properties_list = self._build_widget_combinations()
+    right_top.pack_start(description_text, expand=True, fill=True, padding=4)
+    right_top.pack_start(properties_list, expand=True, fill=True, padding=4)
 
+    # Create a GtkWriter which is the target of our documentation system.
+    # The extracted documentation will be formatted and redirected to the
+    # two views we defined above
     dox_textbuffer = self.window_textview.get_buffer()
     self.dox_writer = GtkWriter(tree, dox_textbuffer, self.window_table)
 
+    # LEFT/TOP PART OF THE WINDOW
+    #
+    # The left part of the window is shared between the treeview and the
+    # preview area (they are the two children of a VPaned). The preview area is
+    # initially hidden and the treeview occupies the whole left part of the
+    # window. The idea is that initially the treeview represents the most
+    # important area for the user, as he/she is probably trying to find/locate
+    # the documentation for a given object.  Once the object has been found the
+    # user can select it. If the objecy has a preview section, then the
+    # corresponding preview image should be shown. Whent the preview image is
+    # shown, the space allocated to the treeview is drastically reduced. This
+    # should be fine, as - at this stage - the treeview is less important (the
+    # user did find the object and is now interested in reading the
+    # corresponding documentation).
 
-    self.window.connect("delete_event", self._on_delete_event)
-    
-    self.window_button_hide = gtk.Button(label="_Hide")
+    # The documentation finder/selector (a scrollable treeview)
+    selector = self._build_widget_selector()
 
-    self.window_butbox = butbox = gtk.HButtonBox()
-    butbox.add(self.window_button_hide)
-    butbox.set_layout(gtk.BUTTONBOX_END)
-    butbox.set_spacing(spacing)
+    self.previewer = previewer = self._build_widget_preview()
+    self.set_preview_code(None, refresh=False)
+    left_top = gtk.VPaned()
+    left_top.pack1(selector, resize=True, shrink=True)
+    left_top.pack2(previewer, resize=False, shrink=True)
 
-    # Insert objects one inside the other
-    scrolledwin = gtk.ScrolledWindow()
-    scrolledwin.set_size_request(int(size[0]/2), -1)
-    scrolledwin.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
-    tv = self._build_widget_selector()
-    scrolledwin.add(tv)
-
-    label = gtk.Label("Search:")
-    self.entry = entry = gtk.Entry()
-    hsplit1 = gtk.HBox(False, 4)
-    hsplit1.pack_start(label, expand=False, fill=True, padding=4)
-    hsplit1.pack_start(entry, expand=True, fill=True, padding=4)
-
-    entry.connect("activate", self._on_entry_search_activated)
-
-    vsplit2 = gtk.VBox(False, 4)
-    vsplit2.pack_start(hsplit1, expand=False, fill=True, padding=4)
-    vsplit2.pack_start(scrolledwin, expand=True, fill=True, padding=4)
-
+    # TOP PART OF THE WINDOW: LEFT/TOP + RIGHT/TOP
+    #
     # The window is split horizontally into two parts:
-    # - on the left we have the zone where we can select the setting to change
-    # - on the right we can actually manipulate the setting
-    horsplit = gtk.HPaned()
+    # - on the left we have the zone where we can browse the available
+    #   documentation (in a treeview object) and we can (eventually) see a
+    #   preview of the selected object.
+    # - on the right we can read the documentation of the selected object
+    #   and inspect its various properties.
+    top_part = gtk.HPaned()
+    top_part.pack1(left_top)
+    top_part.pack2(right_top)
 
-    xxx = gtk.VBox()
-
-    previewer = self._build_widget_preview()
-
-    xxx.pack_start(vsplit2, expand=True, fill=True, padding=0)
-    xxx.pack_start(previewer, expand=False, fill=False, padding=0)
-
-    horsplit.pack1(xxx)
-    horsplit.pack2(vsplit3)
+    # BOTTOM PART OF THE WINDOW
+    #
+    # Create the buttons which will be positioned at the bottom of the window
+    self.window_button_hide = gtk.Button(label="_Hide")
+    self.window_butbox = bottom_part = gtk.HButtonBox()
+    bottom_part.add(self.window_button_hide)
+    bottom_part.set_layout(gtk.BUTTONBOX_END)
+    bottom_part.set_spacing(spacing)
 
     # The window has one top main region and a bottom region where the
     # ok/cancel buttons are
-    vsplit1 = gtk.VBox()
-    vsplit1.pack_start(horsplit, expand=True, fill=True, padding=0)
-    vsplit1.pack_start(butbox, expand=False, fill=False, padding=0)
-    self.window.add(vsplit1)
+    window_content = gtk.VBox()
+    window_content.pack_start(top_part, expand=True, fill=True, padding=0)
+    window_content.pack_start(bottom_part, expand=False, fill=False, padding=0)
+    self.window.add(window_content)
 
-    tv.connect("row-activated", self._on_row_activated)
     self.window_button_hide.connect("button-press-event",
                                       self._on_button_hide_press)
 
@@ -157,7 +166,36 @@ class DoxBrowser(object):
     tvcols[0].set_sort_column_id(0)
     tv.set_search_column(0)
     self.treeview = tv
-    return tv
+
+    # Put the treeview inside a scrolled window
+    scrolledwin = gtk.ScrolledWindow()
+    scrolledwin.set_size_request(int(self.size[0]/2), -1)
+    scrolledwin.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
+    scrolledwin.add(tv)
+
+    # We put a text entry and a button at the top of the treeview. This can
+    # be used to search/filter items in the treeview
+    label = gtk.Label("Search:")
+    self.entry = entry = gtk.Entry()
+    hsplit = gtk.HBox(False, 4)
+    hsplit.pack_start(label, expand=False, fill=True, padding=4)
+    hsplit.pack_start(entry, expand=True, fill=True, padding=4)
+
+    vsplit = gtk.VBox(False, 4)
+    vsplit.pack_start(hsplit, expand=False, fill=True, padding=4)
+    vsplit.pack_start(scrolledwin, expand=True, fill=True, padding=4)
+
+    # Connect events:
+    # ---
+    # Connect the row-activate event, so that we can show the documentation
+    # when an item is selected in the treeview
+    tv.connect("row-activated", self._on_row_activated)
+
+    # Make sure that we can filter the entries of the treeview, by typing some
+    # keywords on the entry and pressing [RETURN]
+    entry.connect("activate", self._on_entry_search_activated)
+
+    return vsplit
 
   def _build_widget_preview(self):
     '''Internal: called during initialization to build the preview window.'''
@@ -167,17 +205,13 @@ class DoxBrowser(object):
                 "refpoint_size": cfg.getint("GUIView", "refpoint_size")}
     self.viewarea = viewarea = editable.BoxViewArea(config=cfg_dict)
 
-    # Display a "Missing preview" message in the preview window
-    self.set_preview_code(None, refresh=False)
-
     scroll_win = gtk.ScrolledWindow()
+    scroll_win.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)
     scroll_win.add(viewarea)
     scroll_win.set_size_request(200, 200)
-    expander = gtk.Expander(label="Preview")
-    expander.add(scroll_win)
-    return expander
+    return scroll_win
 
-  def set_preview_code(self, src, refresh=True):
+  def set_preview_code(self, src, refresh=True, update_visibility=True):
     '''Set the Box source which is used to render the preview window.'''
 
     code = ('(**expand:boxer-boot*)\n(**boxer-version:0,2,0*)\n'
@@ -190,17 +224,27 @@ class DoxBrowser(object):
                'Text[Font["helvetica-bold", 5, Color[0.6]], (0, 0), '
                '"  PREVIEW\\n      NOT\\nAVAILABLE"]], (**view:fg*)')
 
-    document = self.viewarea.get_document()
-    document.new()
-    document.load_from_str(code)
+    if src != None:
+      document = self.viewarea.get_document()
+      document.new()
+      document.load_from_str(code)
 
     if refresh:
-      self.viewarea.reset()
-      self.viewarea.refresh()
+      #self.viewarea.reset()
+      self.viewarea.zoom_off()
+      #self.viewarea.refresh()
+
+    if update_visibility:
+      if src == None:
+        self.previewer.hide()
+      else:
+        self.previewer.show()
 
   def show(self, section=None, topic=None):
     """Show the window."""
     self.window.show_all()
+    self.set_preview_code(None)
+
     if topic != None:
       self._show_doc(section, topic)
       self.entry.set_text(topic)
@@ -232,11 +276,7 @@ class DoxBrowser(object):
   def _populate_type_node(self, parent, type_node, **kwargs):
     # Add subtypes of the given type to the type node
     for subtype_node in type_node.subtype_children:
-      #self._add_entry_to_treestore(parent, subtype_node, **kwargs)
       self._add_any_node(parent, subtype_node, **kwargs)
-
-      #for st in .subtype_children:
-      #  self._add_entry_to_treestore(new_piter, st, flt)
 
   def _add_any_node(self, parent, node, **kwargs):
     # Add a node to the treestore object
@@ -382,7 +422,7 @@ class DoxBrowser(object):
         preview_code = preview_block.get_code()
 
       self.set_preview_code(preview_code)
-
+      
 
 def main():
   gtk.main()
