@@ -12,6 +12,9 @@ BBox = ++(Point min, Point max, Int n)
 // area).
 BBox@Num[$.n]
 
+///Intro: return the center of a bounding box.
+BBox@Center[0.5*($.max + $.min)]
+
 ///Intro: return the area of the bounding box.
 BBox@Area[If[Num[$] > 1], diag = $.max - $.min, diag.x*diag.y
           Else[], 0.0]

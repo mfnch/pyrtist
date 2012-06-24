@@ -58,6 +58,9 @@ Center = ++(Point center,)
 ///Intro: the value for the center.
 Point@Center[.center = $]
 
+///Intro: convert a {type(.@)} object to a {type(@.)}.
+Center@Point[$.center]
+
 ///Intro: Represents the factors for a scale transformation.
 Scale = ++(Point scale_factors,)
 (.[)@Scale[.scale_factors.x = .scale_factors.y = 1.0]

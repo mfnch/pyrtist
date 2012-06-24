@@ -9,6 +9,9 @@
 // using a {type(Near)} object. For example, ``Near["hot_point", p1]`` means
 // that the user wants the hot point with name ``hot_point`` to get as close
 // as possible to the point ``p1`` in the destination {type(Window)}.
+///Example: ``Figure[..., Hot["first", (0, 0); "second", (1, 1); (2, 2)]]``.
+// Note that when the name is not given, the point ends up not having a name.
+// Unnamed points can be referred only by index.
 Hot = ++((Int name, point) have
          Str name, Point point
          Obj names, Points points)

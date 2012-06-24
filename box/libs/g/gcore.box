@@ -60,3 +60,13 @@ Dpi = Real
 
 ///Intro: the resolution in DPI as a Real number.
 Real@Dpi[$$ = $/25.4]
+
+///Intro: the sign of a number.
+// The sign is returned in form of an {type(Int)} number.
+Sign = Int
+
+///Intro: int number whose sign is desired.
+Int@Sign[$$ = ($ > 0) - ($ < 0)]
+
+///Intro: real number whose sign is desired.
+REAL@Sign[$$ = ($ > 0) - ($ < 0)]
