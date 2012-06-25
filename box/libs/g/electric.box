@@ -1,3 +1,6 @@
+///Intro: official extension libraries.
+///Section: Main
+
 ///Intro: Some symbols used in electronics
 ///Section: Main.Electrical symbols
 
@@ -61,8 +64,8 @@ inductance = Figure[
   v3 = (-a, -b) + (v, 0)
   v4 = (-a, b) + (v, 0)
   p0 = p = Point[.x=.y=0.0]
-  Line[
-    0.4, p, (p+=(d1, 0))
+  \ .Line[
+    line.smooth, 0.4, p, 0.4, (p+=(d1, 0))
     (p+=v1), (p+=v2), (p+=v3), (p+=v4), (p+=v1), (p+=v2), (p+=v3), (p+=v4)
     (p+=v1), (p+=v2), (p+=v3), (p+=v4), (p+=v1), (p+=v2), (p+=v3), (p+=v4)
     (p+=v1), (p+=v2), (p+=v3), (p+=v4), (p+=v1), (p+=v2), (p+=v3), (p+=v4)

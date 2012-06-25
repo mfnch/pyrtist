@@ -1,5 +1,3 @@
-///Section: Main.Cliparts
-
 Sphere = ++(Point center, Real radius, Color c1, c2, c3)
 
 Point@Sphere[$$.center = $]
