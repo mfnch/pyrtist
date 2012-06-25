@@ -811,7 +811,7 @@ typedef struct {
  * NOTE: It returns the address of the data item with respect to the beginning
  *  of the data segment.
  */
-UInt BoxVM_Data_Add(BoxVM *vm, const void *data, size_t size, Int type) {
+size_t BoxVM_Data_Add(BoxVM *vm, const void *data, size_t size, Int type) {
   Int addr;
 
   /* Now we insert the data descriptor (for debug mainly), if necessary */

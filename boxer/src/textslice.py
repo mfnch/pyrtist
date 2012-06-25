@@ -70,5 +70,5 @@ class TextSlice(object):
               + re_count(endline_re, self.text, self.begin, begin))
     return TextSlice(begin, lineno, end, text=self.text)
 
-  def startswith(self, prefix, start=None, end=None):
-    return str(self).startswith(prefix, start, end)
+  def startswith(self, *args):
+    return str(self).startswith(*args)
