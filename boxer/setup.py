@@ -28,7 +28,7 @@ url = 'http://boxc.sourceforge.net/',
 download_url = ('http://sourceforge.net/project/'
                 'platformdownload.php?group_id=218051')
 license = 'GPL'
-packages = ['boxer', 'boxer.dox']
+packages = ['boxer', 'boxer.dox', 'boxer.comparse']
 package_dir = {'boxer': 'src'}
 
 examples = \

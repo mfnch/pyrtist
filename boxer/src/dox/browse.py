@@ -7,8 +7,8 @@ pygtk.require('2.0')
 import gtk
 import gobject
 
-import config
-import editable
+from ..config import get_configuration
+from ..editable import BoxViewArea
 
 from dox import Dox
 from tree import DoxTree, DoxType, DoxInstance, DoxSectionNode
@@ -199,11 +199,11 @@ class DoxBrowser(object):
 
   def _build_widget_preview(self):
     '''Internal: called during initialization to build the preview window.'''
-    cfg = config.get_configuration()
+    cfg = get_configuration()
     cfg_dict = {"box_executable": cfg.get("Box", "exec"),
                 "box_include_dirs": cfg.get("Library", "dir"),
                 "refpoint_size": cfg.getint("GUIView", "refpoint_size")}
-    self.viewarea = viewarea = editable.BoxViewArea(config=cfg_dict)
+    self.viewarea = viewarea = BoxViewArea(config=cfg_dict)
 
     scroll_win = gtk.ScrolledWindow()
     scroll_win.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC)

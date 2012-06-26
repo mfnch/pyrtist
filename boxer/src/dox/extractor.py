@@ -17,10 +17,8 @@
 
 
 import sys
-sys.path.append("..")
 
-from textslice import TextSlice
-from comparse import Parser
+from ..comparse import TextSlice, Parser
 
 
 # Slice types

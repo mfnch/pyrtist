@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Matteo Franchin (fnch@users.sourceforge.net)
+# Copyright (C) 2012 Matteo Franchin (fnch@users.sourceforge.net)
 #
 # This file is part of Boxer.
 #
@@ -19,6 +19,10 @@ import re
 
 from textslice import TextSlice
 
+
+__all__ = ['normalize_macro_name', 're_count',
+           'Tokenizer', 'Parser', 'SourceMapper', 'MacroExpander',
+           'split_args', 'LEVEL_WARNING', 'LEVEL_ERROR']
 
 token_re = re.compile(r'([(][*]|[*][)]|\'|"|[\\]|//|\r\n|\n\r|\n)')
 endline_re = re.compile(r'(\r\n|\n\r|\n)')
