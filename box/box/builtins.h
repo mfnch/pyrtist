@@ -65,7 +65,7 @@ void Bltin_Finish(BoxCmp *c);
  *  generated code.
  */
 BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
-                          Task (*c_fn)(BoxVM *));
+                          BoxTask (*c_fn)(BoxVMX *));
 
 /** Add and register a new C procedure 'c_fn' (of type BoxVMFunc) for the
  * combination 'comb' between the types 'left' and 'right'. After this
@@ -73,13 +73,13 @@ BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
  * and use it!
  */
 BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxType child, BoxComb comb,
-                          BoxType parent, Task (*c_fn)(BoxVM *));
+                          BoxType parent, BoxTask (*c_fn)(BoxVMX *));
 
 /** Similar to 'Bltin_Comb_Def' but assumes 'comb == BOXCOMB_CHILDOF'.
  * @see Bltin_Comb_Def
  */
 BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
-                          Task (*c_fn)(BoxVM *));
+                          BoxTask (*c_fn)(BoxVMX *));
 
 /** Define a new intrinsic type with the given name and size. */
 BoxType Bltin_New_Type(BoxCmp *c, const char *type_name,

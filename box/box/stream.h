@@ -274,6 +274,15 @@ size_t BoxStream_Read_UInt32s(BoxStream *src, uint32_t *vals, size_t num_vals);
 size_t BoxStream_Read_UInt64s(BoxStream *src, uint64_t *vals, size_t num_vals);
 
 /**
+ * Write a formatted string to an output stream (similarly to ``fprintf``).
+ * @param dst the destination stream.
+ * @param fmt the format string.
+ * @param ... the remaining arguments.
+ * @return the number of written characters.
+ */
+BOXEXPORT size_t BoxStream_Write_Fmt(BoxStream *dst, const char *fmt, ...);
+
+/**
  * Destroy the given stream.
  * @param stream the stream to destroy.
  */

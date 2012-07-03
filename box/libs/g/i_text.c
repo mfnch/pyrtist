@@ -33,7 +33,7 @@
 #include "i_text.h"
 #include "i_gradient.h"
 
-Task window_text_begin(BoxVM *vmp) {
+Task window_text_begin(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->text.text = (char *) NULL;
   w->text.font = (char *) NULL;
@@ -50,14 +50,14 @@ Task window_text_begin(BoxVM *vmp) {
   return Success;
 }
 
-Task window_text_color(BoxVM *vmp) {
+Task window_text_color(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->text.color = BOX_VM_ARG1(vmp, Color);
   w->text.got.color = 1;
   return Success;
 }
 
-Task window_text_gradient(BoxVM *vmp) {
+Task window_text_gradient(BoxVMX *vmp) {
   return x_gradient(vmp);
 }
 
@@ -110,7 +110,7 @@ static Task _sentence_end(Window *w, int *wrote_text) {
 }
 
 
-Task window_text_end(BoxVM *vmp) {
+Task window_text_end(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   int wrote_text;
 
@@ -123,7 +123,7 @@ Task window_text_end(BoxVM *vmp) {
   return Success;
 }
 
-Task window_text_pause(BoxVM *vmp) {
+Task window_text_pause(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   int wrote_text;
 
@@ -134,13 +134,13 @@ Task window_text_pause(BoxVM *vmp) {
   return Success;
 }
 
-Task window_text_point(BoxVM *vmp) {
+Task window_text_point(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->text.position = BOX_VM_ARG1(vmp, Point);
   return Success;
 }
 
-Task window_text_str(BoxVM *vm) {
+Task window_text_str(BoxVMX *vm) {
   SUBTYPE_OF_WINDOW(vm, w);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
   free(w->text.text);
@@ -149,14 +149,14 @@ Task window_text_str(BoxVM *vm) {
   return Success;
 }
 
-Task window_text_style(BoxVM *vmp) {
+Task window_text_style(BoxVMX *vmp) {
   IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
   SUBTYPE_OF_WINDOW(vmp, w);
   g_style_copy_selected(& w->text.style, & s->style, s->have);
   return Success;
 }
 
-Task window_text_font_str(BoxVM *vm) {
+Task window_text_font_str(BoxVMX *vm) {
   SUBTYPE2_OF_WINDOW(vm, w);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
   free(w->text.font);
@@ -165,14 +165,14 @@ Task window_text_font_str(BoxVM *vm) {
   return Success;
 }
 
-Task window_text_font_real(BoxVM *vmp) {
+Task window_text_font_real(BoxVMX *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
   w->text.font_size = BOX_VM_ARG1(vmp, Real);
   w->text.got.font_size = 1;
   return Success;
 }
 
-Task window_text_from_point(BoxVM *vmp) {
+Task window_text_from_point(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB2_PARENT(vmp, WindowPtr);
   w->text.from = BOX_VM_ARG1(vmp, Point);
   return Success;

@@ -35,12 +35,12 @@ Task ipl_create(IPointListPtr *ipl_ptr) {
   return pointlist_init(& ipl->pl);
 }
 
-Task pointlist_begin(BoxVM *vmp) {
+Task pointlist_begin(BoxVMX *vmp) {
   IPointListPtr *ipl_ptr = BOX_VM_THIS_PTR(vmp, IPointListPtr);
   return ipl_create(ipl_ptr);
 }
 
-Task pointlist_end(BoxVM *vmp) {
+Task pointlist_end(BoxVMX *vmp) {
   IPointList *ipl = BOX_VM_THIS(vmp, IPointListPtr);
   if (ipl->name != (char *) NULL) {
     g_warning("You gave a name, but not the corresponding point.");
@@ -50,7 +50,7 @@ Task pointlist_end(BoxVM *vmp) {
   return Success;
 }
 
-Task ipointlist_destroy(BoxVM *vmp) {
+Task ipointlist_destroy(BoxVMX *vmp) {
   IPointList *ipl = BOX_VM_THIS(vmp, IPointListPtr);
   pointlist_destroy(& ipl->pl);
   free(ipl->name);
@@ -58,14 +58,14 @@ Task ipointlist_destroy(BoxVM *vmp) {
   return Success;
 }
 
-Task pointlist_str(BoxVM *vm) {
+Task pointlist_str(BoxVMX *vm) {
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
   IPointList *ipl = BOX_VM_THIS(vm, IPointListPtr);
   ipl->name = strdup((char *) s->ptr);
   return Success;
 }
 
-Task pointlist_point(BoxVM *vmp) {
+Task pointlist_point(BoxVMX *vmp) {
   IPointList *ipl = BOX_VM_THIS(vmp, IPointListPtr);
   Point *p = BOX_VM_ARG1_PTR(vmp, Point);
   Task t = pointlist_add(& ipl->pl, p, ipl->name);
@@ -82,13 +82,13 @@ static Task _add_from_pointlist(Int index, char *name,
   return pointlist_add(dest_pl, p, name);
 }
 
-Task pointlist_pointlist(BoxVM *vmp) {
+Task pointlist_pointlist(BoxVMX *vmp) {
   IPointList *ipl = BOX_VM_THIS(vmp, IPointListPtr);
   IPointList *ipl_to_add = BOX_VM_ARG1(vmp, IPointList *);
   return pointlist_iter(& ipl_to_add->pl, _add_from_pointlist, & ipl->pl);
 }
 
-Task pointlist_get_str(BoxVM *vm) {
+Task pointlist_get_str(BoxVMX *vm) {
   IPointList *ipl = BOX_VM_SUB_PARENT(vm, IPointListPtr);
   Point *out_p = BOX_VM_SUB_CHILD_PTR(vm, Point);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
@@ -101,7 +101,7 @@ Task pointlist_get_str(BoxVM *vm) {
   return Success;
 }
 
-Task pointlist_get_int(BoxVM *vmp) {
+Task pointlist_get_int(BoxVMX *vmp) {
   IPointList *ipl = BOX_VM_SUB_PARENT(vmp, IPointListPtr);
   Point *out_p = BOX_VM_SUB_CHILD_PTR(vmp, Point);
   Point *p = pointlist_get(& ipl->pl, BOX_VM_ARG1(vmp, Int));
@@ -133,28 +133,28 @@ static Task _get_from_point(Point *out_p, PointList *pl,
 
 }
 
-Task pointlist_get_real(BoxVM *vmp) {
+Task pointlist_get_real(BoxVMX *vmp) {
   IPointList *ipl = BOX_VM_SUB_PARENT(vmp, IPointListPtr);
   Point *out_p = BOX_VM_SUB_CHILD_PTR(vmp, Point);
   Real real_index = BOX_VM_ARG1(vmp, Real);
   return _get_from_point(out_p, & ipl->pl, real_index, 0.0);
 }
 
-Task pointlist_get_point(BoxVM *vmp) {
+Task pointlist_get_point(BoxVMX *vmp) {
   IPointList *ipl = BOX_VM_SUB_PARENT(vmp, IPointListPtr);
   Point *out_p = BOX_VM_SUB_CHILD_PTR(vmp, Point);
   Point *point_index = BOX_VM_ARG1_PTR(vmp, Point);
   return _get_from_point(out_p, & ipl->pl, point_index->x, point_index->y);
 }
 
-Task pointlist_num_begin(BoxVM *vmp) {
+Task pointlist_num_begin(BoxVMX *vmp) {
   IPointList *ipl = BOX_VM_SUB_PARENT(vmp, IPointListPtr);
   Int *out_num = BOX_VM_SUB_CHILD_PTR(vmp, Int);
   *out_num = pointlist_num(& ipl->pl);
   return Success;
 }
 
-Task print_pointlist(BoxVM *vmp) {
+Task print_pointlist(BoxVMX *vmp) {
   IPointList *ipl_to_print = BOX_VM_ARG1(vmp, IPointListPtr);
   pointlist_print(IPL_POINTLIST(ipl_to_print), stdout);
   return Success;

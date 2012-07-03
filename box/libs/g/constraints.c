@@ -65,16 +65,16 @@ static BoxTask My_Parse_Freedom_String(BoxStr *s, BoxGAllow *allow) {
     return BOXTASK_FAILURE;
 }
 
-BoxTask Box_Lib_G_Constraints_At_Transform(BoxVM *vm) {
-  BoxLibGTransform *tr = BoxVM_Get_Parent_Target(vm);
-  BoxLibGConstraints *cs = BoxVM_Get_Child_Target(vm);
+BoxTask Box_Lib_G_Constraints_At_Transform(BoxVMX *vm) {
+  BoxLibGTransform *tr = BoxVMX_Get_Parent_Target(vm);
+  BoxLibGConstraints *cs = BoxVMX_Get_Child_Target(vm);
   size_t num_constraints = BoxGObj_Get_Num(cs->constraints), i;
   BoxPoint *srcs, *dsts;
   BoxReal *weights;
   BoxGAllow allowed;
 
   if (My_Parse_Freedom_String(& cs->freedom, & allowed) != BOXTASK_OK) {
-    BoxVM_Set_Fail_Msg(vm, "Error parsing string of allowed transformations");
+    BoxVMX_Set_Fail_Msg(vm, "Error parsing string of allowed transformations");
     return BOXTASK_FAILURE;
   }
     
@@ -100,7 +100,7 @@ BoxTask Box_Lib_G_Constraints_At_Transform(BoxVM *vm) {
     } 
 
     if (got_error) {
-      BoxVM_Set_Fail_Msg(vm, "Error in obj-ified constraints");
+      BoxVMX_Set_Fail_Msg(vm, "Error in obj-ified constraints");
       return BOXTASK_FAILURE;
     }
   }
@@ -118,7 +118,7 @@ BoxTask Box_Lib_G_Constraints_At_Transform(BoxVM *vm) {
 
     if (err_number) {
       const char *err_msg = BoxGAutoTransformErr_To_String(err_number);
-      BoxVM_Set_Fail_Msg(vm, err_msg);
+      BoxVMX_Set_Fail_Msg(vm, err_msg);
       return BOXTASK_FAILURE;
     }
 

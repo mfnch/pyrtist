@@ -44,6 +44,6 @@ typedef struct {
 
 typedef Gradient *GradientPtr;
 
-Task x_gradient(BoxVM *vmp);
+Task x_gradient(BoxVMX *vmp);
 #endif
 

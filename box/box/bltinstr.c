@@ -37,29 +37,29 @@
 /****************************************************************************
  * Here we interface Str and register it for the compiler.                  *
  ****************************************************************************/
-static Task My_Str_Create(BoxVM *vm) {
+static Task My_Str_Create(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   BoxStr_Init(s);
   return Success;
 }
 
-static Task My_Str_Destroy(BoxVM *vm) {
+static Task My_Str_Destroy(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   BoxStr_Finish(s);
   return Success;
 }
 
-static Task My_Str_Pause(BoxVM *vm) {
+static Task My_Str_Pause(BoxVMX *vm) {
   return BoxStr_Concat_C_String(BOX_VM_THIS_PTR(vm, Str), "\n");
 }
 
-static Task My_Str_Char(BoxVM *vm) {
+static Task My_Str_Char(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   char ca[2] = {BOX_VM_ARG(vm, char), '\0'};
   return BoxStr_Concat_C_String(s, ca);
 }
 
-static Task My_Str_Int(BoxVM *vm) {
+static Task My_Str_Int(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   Int i = BOX_VM_ARG(vm, Int);
   char *tmp = Box_SPrintF("%I", i);
@@ -70,7 +70,7 @@ static Task My_Str_Int(BoxVM *vm) {
   return Success;
 }
 
-static Task My_Str_Real(BoxVM *vm) {
+static Task My_Str_Real(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   Real r = BOX_VM_ARG1(vm, Real);
   char *tmp = Box_SPrintF("%R", r);
@@ -81,7 +81,7 @@ static Task My_Str_Real(BoxVM *vm) {
   return Success;
 }
 
-static Task My_Str_Point(BoxVM *vm) {
+static Task My_Str_Point(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   Point *p = BOX_VM_ARG_PTR(vm, Point);
   char *tmp = Box_SPrintF("(%R, %R)", p->x, p->y);
@@ -92,7 +92,7 @@ static Task My_Str_Point(BoxVM *vm) {
   return Success;
 }
 
-static Task My_Str_Ptr(BoxVM *vm) {
+static Task My_Str_Ptr(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   BoxPtr *p = BOX_VM_ARG_PTR(vm, Ptr);
   char *tmp = printdup("Ptr[block:%p, data:%p]", p->block, p->ptr);
@@ -103,7 +103,7 @@ static Task My_Str_Ptr(BoxVM *vm) {
   return Success;
 }
 
-static Task My_Str_CPtr(BoxVM *vm) {
+static Task My_Str_CPtr(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   BoxCPtr p = BOX_VM_ARG(vm, BoxCPtr);
   char *tmp = printdup("CPtr[%p]", p);
@@ -114,7 +114,7 @@ static Task My_Str_CPtr(BoxVM *vm) {
   return Success;
 }
 
-static Task My_Str_Str(BoxVM *vm) {
+static Task My_Str_Str(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   BoxStr *s2 = BOX_VM_ARG_PTR(vm, BoxStr);
   if (s2->length > 0)
@@ -122,14 +122,14 @@ static Task My_Str_Str(BoxVM *vm) {
   return Success;
 }
 
-static Task My_Str_CString(BoxVM *vm) {
+static Task My_Str_CString(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   char *c_s = BOX_VM_ARG_PTR(vm, char);
   assert(s != NULL);
   return BoxStr_Concat_C_String(s, c_s);
 }
 
-static Task My_Str_Copy(BoxVM *vm) {
+static Task My_Str_Copy(BoxVMX *vm) {
   BoxStr *dest = BOX_VM_THIS_PTR(vm, BoxStr),
          *src = BOX_VM_ARG_PTR(vm, BoxStr);
   char *src_text = (char *) src->ptr; /* Need this (for case: src == dest) */
@@ -139,14 +139,14 @@ static Task My_Str_Copy(BoxVM *vm) {
   return Success;
 }
 
-static Task My_Length_Str(BoxVM *vm) {
+static Task My_Length_Str(BoxVMX *vm) {
   BoxInt *len = BOX_VM_THIS_PTR(vm, BoxInt);
   BoxStr *src = BOX_VM_ARG_PTR(vm, BoxStr);
   *len += src->length;
   return Success;
 }
 
-static BoxTask My_Compare_Str(BoxVM *vm) {
+static BoxTask My_Compare_Str(BoxVMX *vm) {
   BoxInt *compare = BOX_VM_THIS_PTR(vm, BoxInt);
   struct struc_str_couple {BoxStr left, right;} *str_couple;
   str_couple = BOX_VM_ARG_PTR(vm, struct struc_str_couple);

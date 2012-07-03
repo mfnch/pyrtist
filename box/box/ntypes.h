@@ -24,7 +24,9 @@
 
 typedef struct BoxTypeDesc_struct BoxTypeDesc;
 
-/** A type in the Box type system. */
+/** A type in the Box type system. This is currently implemented as a
+ * pointer to an opaque structure.
+ */
 typedef BoxTypeDesc *BoxType;
 
 /** Value which determines the relationship between two types left and right.

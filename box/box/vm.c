@@ -298,7 +298,8 @@ void BoxVM_Destroy(BoxVM *vm) {
   BoxMem_Free(vm);
 }
 
-void BoxVM_Set_Fail_Msg(BoxVM *vm, const char *msg) {
+void BoxVMX_Set_Fail_Msg(BoxVMX *vmx, const char *msg) {
+  BoxVM *vm = vmx->vm;
   if (vm->fail_msg != NULL)
     BoxMem_Free(vm->fail_msg);
   vm->fail_msg = (msg != NULL) ? BoxMem_Strdup(msg) : NULL;
@@ -467,7 +468,7 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
   p = (BoxVMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
   switch (p->type) {
   case BOXVMPROC_IS_C_CODE:
-    return p->code.c(vmp);
+    return p->code.c(vmx);
   case BOXVMPROC_IS_VM_CODE:
     break;
   default:

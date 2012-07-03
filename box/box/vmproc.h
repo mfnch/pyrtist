@@ -45,7 +45,7 @@ typedef BoxVMProcID BoxVMProcNum; /* Alias for BoxVMProcID */
  * by the Box VM.
  * @see VM_Proc_Install_CCode
  */
-typedef Task (*BoxVMCCode)(BoxVM *);
+typedef BoxTask (*BoxVMCCode)(BoxVMX *);
 
 /** Procedure state. */
 typedef enum {

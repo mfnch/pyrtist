@@ -362,20 +362,20 @@ BoxTask BoxGObj_Iter(BoxGObj *gobj, size_t start_idx, size_t *num_args,
  * WRAPPING FUNCTIONS FOR BOX                                               *
  ****************************************************************************/
 
-BoxTask GLib_Init_At_Obj(BoxVM *vm) {
+BoxTask GLib_Init_At_Obj(BoxVMX *vm) {
   BoxGObjPtr *gobjptr = BOX_VM_THIS_PTR(vm, BoxGObjPtr);
   *gobjptr = BoxGObj_New();
   return BOXTASK_OK;
 }
 
-BoxTask GLib_Finish_At_Obj(BoxVM *vm) {
+BoxTask GLib_Finish_At_Obj(BoxVMX *vm) {
   BoxGObjPtr *gobjptr = BOX_VM_THIS_PTR(vm, BoxGObjPtr);
   BoxGObj_Destroy(*gobjptr);
   *gobjptr = (BoxGObj *) NULL;
   return BOXTASK_OK;
 }
 
-BoxTask GLib_Obj_Copy_Obj(BoxVM *vm) {
+BoxTask GLib_Obj_Copy_Obj(BoxVMX *vm) {
   BoxGObjPtr *dest = BOX_VM_THIS_PTR(vm, BoxGObjPtr),
              gobj_src = BOX_VM_ARG(vm, BoxGObjPtr);
   *dest = BoxGObj_New();
@@ -383,41 +383,41 @@ BoxTask GLib_Obj_Copy_Obj(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
-BoxTask GLib_X_At_Obj(BoxVM *vm, BoxGObjKind kind) {
+BoxTask GLib_X_At_Obj(BoxVMX *vm, BoxGObjKind kind) {
   BoxGObjPtr gobj = BOX_VM_THIS(vm, BoxGObjPtr);
   BoxGObj_Append_C_Value(gobj, kind, BOX_VM_ARG_PTR(vm, void));
   return BOXTASK_OK;
 }
 
-BoxTask GLib_Char_At_Obj(BoxVM *vm) {
+BoxTask GLib_Char_At_Obj(BoxVMX *vm) {
   return GLib_X_At_Obj(vm, BOXGOBJKIND_CHAR);
 }
 
-BoxTask GLib_Int_At_Obj(BoxVM *vm) {
+BoxTask GLib_Int_At_Obj(BoxVMX *vm) {
   return GLib_X_At_Obj(vm, BOXGOBJKIND_INT);
 }
 
-BoxTask GLib_Real_At_Obj(BoxVM *vm) {
+BoxTask GLib_Real_At_Obj(BoxVMX *vm) {
   return GLib_X_At_Obj(vm, BOXGOBJKIND_REAL);
 }
 
-BoxTask GLib_Point_At_Obj(BoxVM *vm) {
+BoxTask GLib_Point_At_Obj(BoxVMX *vm) {
   return GLib_X_At_Obj(vm, BOXGOBJKIND_POINT);
 }
 
-BoxTask GLib_Str_At_Obj(BoxVM *vm) {
+BoxTask GLib_Str_At_Obj(BoxVMX *vm) {
   BoxGObj_Append_Str(BOX_VM_THIS(vm, BoxGObjPtr), BOX_VM_ARG_PTR(vm, BoxStr));
   return BOXTASK_OK;
 }
 
-BoxTask GLib_Obj_At_Obj(BoxVM *vm) {
+BoxTask GLib_Obj_At_Obj(BoxVMX *vm) {
   BoxGObj *gobj_src = BOX_VM_ARG(vm, BoxGObjPtr),
           *gobj_dest = BOX_VM_THIS(vm, BoxGObjPtr);
   BoxGObj_Append_Obj(gobj_dest, gobj_src);
   return BOXTASK_OK;
 }
 
-static BoxTask GLib_Obj_At_X(BoxVM *vm, BoxGObjKind kind) {
+static BoxTask GLib_Obj_At_X(BoxVMX *vm, BoxGObjKind kind) {
   void *obj_data = BOX_VM_THIS_PTR(vm, void);
   BoxGObjPtr gobj = BOX_VM_ARG(vm, BoxGObjPtr);
   if (gobj->kind == kind) {
@@ -428,33 +428,33 @@ static BoxTask GLib_Obj_At_X(BoxVM *vm, BoxGObjKind kind) {
     char *msg = Box_SPrintF("Cannot convert Obj to %s. Obj has type %s.",
                             BoxGObjKind_Name(kind),
                             BoxGObjKind_Name(gobj->kind));
-    BoxVM_Set_Fail_Msg(vm, msg);
+    BoxVMX_Set_Fail_Msg(vm, msg);
     BoxMem_Free(msg);
     return BOXTASK_FAILURE;
   }
 }
 
-BoxTask GLib_Obj_At_Char(BoxVM *vm) {
+BoxTask GLib_Obj_At_Char(BoxVMX *vm) {
   return GLib_Obj_At_X(vm, BOXGOBJKIND_CHAR);
 }
 
-BoxTask GLib_Obj_At_Int(BoxVM *vm) {
+BoxTask GLib_Obj_At_Int(BoxVMX *vm) {
   return GLib_Obj_At_X(vm, BOXGOBJKIND_INT);
 }
 
-BoxTask GLib_Obj_At_Real(BoxVM *vm) {
+BoxTask GLib_Obj_At_Real(BoxVMX *vm) {
   return GLib_Obj_At_X(vm, BOXGOBJKIND_REAL);
 }
 
-BoxTask GLib_Obj_At_Point(BoxVM *vm) {
+BoxTask GLib_Obj_At_Point(BoxVMX *vm) {
   return GLib_Obj_At_X(vm, BOXGOBJKIND_POINT);
 }
 
-BoxTask GLib_Obj_At_Str(BoxVM *vm) {
+BoxTask GLib_Obj_At_Str(BoxVMX *vm) {
   return GLib_Obj_At_X(vm, BOXGOBJKIND_STR);
 }
 
-BoxTask GLib_Int_At_Obj_Get(BoxVM *vm) {
+BoxTask GLib_Int_At_Obj_Get(BoxVMX *vm) {
   BoxSubtype *obj_get = BOX_VM_THIS_PTR(vm, BoxSubtype);
   BoxGObjPtr gobj_parent = *((BoxGObjPtr *) BOXSUBTYPE_PARENT_PTR(obj_get));
   BoxGObjPtr gobj_child = *((BoxGObjPtr *) BOXSUBTYPE_CHILD_PTR(obj_get));
@@ -467,20 +467,20 @@ BoxTask GLib_Int_At_Obj_Get(BoxVM *vm) {
   } else {
     char *msg =
       Box_SPrintF("Obj does not have a sub-object at index %d.", idx);
-    BoxVM_Set_Fail_Msg(vm, msg);
+    BoxVMX_Set_Fail_Msg(vm, msg);
     BoxMem_Free(msg);
     return BOXTASK_FAILURE;
   }
 }
 
-BoxTask GLib_Obj_At_Length(BoxVM *vm) {
+BoxTask GLib_Obj_At_Length(BoxVMX *vm) {
   BoxInt *length = BOX_VM_THIS_PTR(vm, BoxInt);
   BoxGObjPtr gobj = BOX_VM_ARG(vm, BoxGObjPtr);
   *length += (BoxInt) BoxGObj_Get_Length(gobj);
   return BOXTASK_OK;
 }
 
-BoxTask GLib_Int_At_Obj_GetType(BoxVM *vm) {
+BoxTask GLib_Int_At_Obj_GetType(BoxVMX *vm) {
   BoxSubtype *obj_get = BOX_VM_THIS_PTR(vm, BoxSubtype);
   BoxGObjPtr gobj_parent = *((BoxGObjPtr *) BOXSUBTYPE_PARENT_PTR(obj_get));
   BoxInt *gobj_type = (BoxInt *) BOXSUBTYPE_CHILD_PTR(obj_get);
@@ -491,12 +491,12 @@ BoxTask GLib_Int_At_Obj_GetType(BoxVM *vm) {
     return BOXTASK_OK;
 
   } else {
-    BoxVM_Set_Fail_Msg(vm, "Cannot get item type. Index out of bounds.");
+    BoxVMX_Set_Fail_Msg(vm, "Cannot get item type. Index out of bounds.");
     return BOXTASK_FAILURE;
   }
 }
 
-BoxTask GLib_StrStr_Compare(BoxVM *vm) {
+BoxTask GLib_StrStr_Compare(BoxVMX *vm) {
   BoxInt *result = BOX_VM_THIS_PTR(vm, BoxInt);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
   *result = strcmp((s[0].length > 0) ? s[0].ptr : "",
@@ -504,7 +504,7 @@ BoxTask GLib_StrStr_Compare(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
-BoxTask GLib_Obj_At_MergeObjs(BoxVM *vm) {
+BoxTask GLib_Obj_At_MergeObjs(BoxVMX *vm) {
   BoxSubtype *obj_merge = BOX_VM_THIS_PTR(vm, BoxSubtype);
   BoxGObjPtr gobj_dest = *((BoxGObjPtr *) BOXSUBTYPE_PARENT_PTR(obj_merge));
   BoxGObjPtr gobj_src = BOX_VM_ARG(vm, BoxGObjPtr);

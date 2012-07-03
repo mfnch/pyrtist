@@ -43,14 +43,14 @@
 
 #include "bridge.h"
 
-static BoxTask My_Error(BoxVM *vm, char *object, BoxTask t) {
+static BoxTask My_Error(BoxVMX *vm, char *object, BoxTask t) {
   if (t != BOXTASK_FAILURE)
     return t;
 
   else {
     char *msg = Box_SPrintF("Found inconsistency between C and Box "
                             "definitions of of the object '%s'.", object);
-    BoxVM_Set_Fail_Msg(vm, msg);
+    BoxVMX_Set_Fail_Msg(vm, msg);
     BoxMem_Free(msg);
     return BOXTASK_FAILURE;
   }
@@ -70,26 +70,26 @@ static BoxTask My_Is_Expected_Matrix(BoxGMatrix *mx) {
           BOXTASK_OK : BOXTASK_FAILURE);
 }
 
-BoxTask Box_G_Lib_Bridge_Test_Matrix(BoxVM *vm) {
-  BoxGMatrix *mx = BoxVM_Get_Child_Target(vm);
+BoxTask Box_G_Lib_Bridge_Test_Matrix(BoxVMX *vm) {
+  BoxGMatrix *mx = BoxVMX_Get_Child_Target(vm);
   return My_Error(vm, "Matrix", My_Is_Expected_Matrix(mx));
 }
 
-BoxTask Box_G_Lib_Bridge_Test_SimplePut(BoxVM *vm) {
-  BoxGSimplePut *sp = BoxVM_Get_Child_Target(vm);
+BoxTask Box_G_Lib_Bridge_Test_SimplePut(BoxVMX *vm) {
+  BoxGSimplePut *sp = BoxVMX_Get_Child_Target(vm);
   return My_Error(vm, "SimplePut", My_Is_Expected_Matrix(& sp->matrix));
 }
 
-BoxTask Box_G_Lib_Bridge_Window_At_TestWindow(BoxVM *vm) {
-  BoxCPtr *cptr = BoxVM_Get_Parent_Target(vm);
-  BoxGWindow *w = BoxVM_Get_Child_Target(vm);
+BoxTask Box_G_Lib_Bridge_Window_At_TestWindow(BoxVMX *vm) {
+  BoxCPtr *cptr = BoxVMX_Get_Parent_Target(vm);
+  BoxGWindow *w = BoxVMX_Get_Child_Target(vm);
   *cptr = *w;
   return BOXTASK_OK;
 }
 
-BoxTask Box_G_Lib_Bridge_SimplePut_At_TestWindow(BoxVM *vm) {
-  BoxCPtr *cptr = BoxVM_Get_Parent_Target(vm);
-  BoxGSimplePut *sp = BoxVM_Get_Child_Target(vm);
+BoxTask Box_G_Lib_Bridge_SimplePut_At_TestWindow(BoxVMX *vm) {
+  BoxCPtr *cptr = BoxVMX_Get_Parent_Target(vm);
+  BoxGSimplePut *sp = BoxVMX_Get_Child_Target(vm);
   return My_Error(vm, "SimplePut[.src]",
                   (*cptr == sp->src) ? BOXTASK_OK : BOXTASK_FAILURE);
 }

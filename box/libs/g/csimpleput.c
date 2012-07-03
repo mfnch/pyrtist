@@ -24,9 +24,9 @@
 #include "i_window.h"
 #include "fig.h"
 
-BoxTask Box_Lib_G_SimplePut_At_Window(BoxVM *vm) {
-  BoxGWindow *w = BoxVM_Get_Parent_Target(vm);
-  BoxGSimplePut *sp = BoxVM_Get_Child_Target(vm);
+BoxTask Box_Lib_G_SimplePut_At_Window(BoxVMX *vm) {
+  BoxGWindow *w = BoxVMX_Get_Parent_Target(vm);
+  BoxGSimplePut *sp = BoxVMX_Get_Child_Target(vm);
 
   BoxGWin_Fig_Draw_Fig_With_Matrix((*w)->window, sp->src->window,
                                    & sp->matrix);

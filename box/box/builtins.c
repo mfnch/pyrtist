@@ -44,179 +44,137 @@
 
 /*******************************BOX-PROCEDURES********************************/
 
-static Task My_Subtype_Init(BoxVM *vm) {
-  BoxSubtype *s = BOX_VM_THIS_PTR(vm, BoxSubtype);
+static BoxTask My_Subtype_Init(BoxVMX *vmx) {
+  BoxSubtype *s = BoxVMX_Get_Parent_Target(vmx);
   BoxPtr_Nullify(& s->parent);
   BoxPtr_Nullify(& s->child);
-  return Success;
+  return BOXTASK_OK;
 }
 
-static Task My_Subtype_Finish(BoxVM *vm) {
-  BoxSubtype *s = BOX_VM_THIS_PTR(vm, BoxSubtype);
-  BoxVM_Obj_Unlink(vm, & s->parent);
-  BoxVM_Obj_Unlink(vm, & s->child);
-  return Success;
+static BoxTask My_Subtype_Finish(BoxVMX *vmx) {
+  BoxSubtype *s = BoxVMX_Get_Parent_Target(vmx);
+  BoxVM_Obj_Unlink(vmx->vm, & s->parent);
+  BoxVM_Obj_Unlink(vmx->vm, & s->child);
+  return BOXTASK_OK;
 }
 
 /**********************
  * IO                 *
  **********************/
 
-static Task My_Print_Pause(BoxVM *vm) {
+static BoxTask My_Print_Pause(BoxVMX *vmx) {
   printf("\n");
-  return Success;
+  return BOXTASK_OK;
 }
 
-static Task My_Print_Char(BoxVM *vm) {
-  printf(SChar, BOX_VM_ARG(vm, Char));
-  return Success;
+static BoxTask My_Print_Char(BoxVMX *vmx) {
+  printf(SChar, *((BoxChar *) BoxVMX_Get_Child_Target(vmx)));
+  return BOXTASK_OK;
 }
 
-static Task My_Print_Int(BoxVM *vm) {
-  printf(SInt, BOX_VM_ARG(vm, Int));
-  return Success;
+static BoxTask My_Print_Int(BoxVMX *vmx) {
+  printf(SInt, *((BoxInt *) BoxVMX_Get_Child_Target(vmx)));
+  return BOXTASK_OK;
 }
 
-static Task My_Print_Real(BoxVM *vm) {
-  printf(SReal, BOX_VM_ARG(vm, Real));
-  return Success;
+static BoxTask My_Print_Real(BoxVMX *vmx) {
+  printf(SReal, *((BoxReal *) BoxVMX_Get_Child_Target(vmx)));
+  return BOXTASK_OK;
 }
 
-static Task My_Print_Pnt(BoxVM *vm) {
-  Point *p = BOX_VM_ARG1_PTR(vm, Point);
+static BoxTask My_Print_Pnt(BoxVMX *vmx) {
+  Point *p = BoxVMX_Get_Child_Target(vmx);
   printf(SPoint, p->x, p->y);
-  return Success;
+  return BOXTASK_OK;
 }
 
-static Task My_Print_Str(BoxVM *vm) {
-  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
+static BoxTask My_Print_Str(BoxVMX *vmx) {
+  BoxStr *s = BoxVMX_Get_Child_Target(vmx);
   if (s->ptr != NULL)
     printf("%s", s->ptr);
-  return Success;
+  return BOXTASK_OK;
 }
 
 /**********************
  * Math               *
  **********************/
 
-static Task My_Math_Sin(BoxVM *vm) {
-  BOX_VM_THIS(vm, Real) = sin(BOX_VM_ARG(vm, Real));
-  return Success;
-}
+#define MY_DEFINE_FN_REAL_AT_REAL(dst_fn, src_fn)               \
+  static BoxTask dst_fn(BoxVMX *vmx) {                          \
+    *((BoxReal *) BoxVMX_Get_Parent_Target(vmx)) =              \
+      src_fn(*((BoxReal *) BoxVMX_Get_Child_Target(vmx)));      \
+    return BOXTASK_OK;                                          \
+  }                                                             \
 
-static Task My_Math_Cos(BoxVM *vm) {
-  BOX_VM_THIS(vm, Real) = cos(BOX_VM_ARG(vm, Real));
-  return Success;
-}
+MY_DEFINE_FN_REAL_AT_REAL(My_Math_Cos, cos)
+MY_DEFINE_FN_REAL_AT_REAL(My_Math_Sin, sin)
+MY_DEFINE_FN_REAL_AT_REAL(My_Math_Tan, tan)
+MY_DEFINE_FN_REAL_AT_REAL(My_Math_Asin, asin)
+MY_DEFINE_FN_REAL_AT_REAL(My_Math_Acos, acos)
+MY_DEFINE_FN_REAL_AT_REAL(My_Math_Atan, atan)
 
-static Task My_Math_Tan(BoxVM *vm) {
-  BOX_VM_THIS(vm, Real) = tan(BOX_VM_ARG(vm, Real));
-  return Success;
-}
 
-static Task My_Math_Asin(BoxVM *vm) {
-  BOX_VM_THIS(vm, Real) = asin(BOX_VM_ARG(vm, Real));
-  return Success;
-}
-
-static Task My_Math_Acos(BoxVM *vm) {
-  BOX_VM_THIS(vm, Real) = acos(BOX_VM_ARG(vm, Real));
-  return Success;
-}
-
-static Task My_Math_Atan(BoxVM *vm) {
-  BOX_VM_THIS(vm, Real) = atan(BOX_VM_ARG(vm, Real));
-  return Success;
-}
-
-static BoxTask My_Math_Atan2(BoxVM *vm) {
-  BoxPoint *p = BoxVM_Get_Child_Target(vm);
-  *((BoxReal *) BoxVM_Get_Parent_Target(vm)) = atan2(p->y, p->x);
+static BoxTask My_Math_Atan2(BoxVMX *vmx) {
+  BoxPoint *p = BoxVMX_Get_Child_Target(vmx);
+  *((BoxReal *) BoxVMX_Get_Parent_Target(vmx)) = atan2(p->y, p->x);
   return BOXTASK_OK;
 }
 
-static Task My_Math_Exp(BoxVM *vm) {
-  BOX_VM_THIS(vm, Real) = exp(BOX_VM_ARG(vm, Real));
-  return Success;
+MY_DEFINE_FN_REAL_AT_REAL(My_Math_Exp, exp)
+MY_DEFINE_FN_REAL_AT_REAL(My_Math_Log, log)
+MY_DEFINE_FN_REAL_AT_REAL(My_Math_Log10, log10)
+MY_DEFINE_FN_REAL_AT_REAL(My_Math_Sqrt, sqrt)
+MY_DEFINE_FN_REAL_AT_REAL(My_Math_Ceil, ceil)
+MY_DEFINE_FN_REAL_AT_REAL(My_Math_Floor, floor)
+MY_DEFINE_FN_REAL_AT_REAL(My_Math_Abs, fabs)
+
+static BoxTask My_Math_Norm(BoxVMX *vmx) {
+  BoxPoint *p = BoxVMX_Get_Child_Target(vmx);
+  *((BoxReal *) BoxVMX_Get_Parent_Target(vmx)) = sqrt(p->x*p->x + p->y*p->y);
+  return BOXTASK_OK;
 }
 
-static Task My_Math_Log(BoxVM *vm) {
-  BOX_VM_THIS(vm, Real) = log(BOX_VM_ARG(vm, Real));
-  return Success;
+static BoxTask My_Math_Norm2(BoxVMX *vmx) {
+  BoxPoint *p = BoxVMX_Get_Child_Target(vmx);
+  *((BoxReal *) BoxVMX_Get_Parent_Target(vmx)) = p->x*p->x + p->y*p->y;
+  return BOXTASK_OK;
 }
 
-static Task My_Math_Log10(BoxVM *vm) {
-  BOX_VM_THIS(vm, Real) = log10(BOX_VM_ARG(vm, Real));
-  return Success;
+static BoxTask My_Min_Open(BoxVMX *vmx) {
+  *((BoxReal *) BoxVMX_Get_Parent_Target(vmx)) = BOXREAL_MAX;
+  return BOXTASK_OK;
 }
 
-static Task My_Math_Sqrt(BoxVM *vm) {
-  BOX_VM_THIS(vm, Real) = sqrt(BOX_VM_ARG(vm, Real));
-  return Success;
-}
-
-static Task My_Math_Ceil(BoxVM *vm) {
-  BOX_VM_THIS(vm, Int) = ceil(BOX_VM_ARG(vm, Real));
-  return Success;
-}
-
-static Task My_Math_Floor(BoxVM *vm) {
-  BOX_VM_THIS(vm, Int) = floor(BOX_VM_ARG(vm, Real));
-  return Success;
-}
-
-static Task My_Math_Abs(BoxVM *vm) {
-  BOX_VM_THIS(vm, Real) = fabs(BOX_VM_ARG(vm, Real));
-  return Success;
-}
-
-static Task My_Math_Norm(BoxVM *vm) {
-  Point *p = BOX_VM_ARG1_PTR(vm, Point);
-  BOX_VM_THIS(vm, Real) = sqrt(p->x*p->x + p->y*p->y);
-  return Success;
-}
-
-static Task My_Math_Norm2(BoxVM *vm) {
-  Point *p = BOX_VM_ARG1_PTR(vm, Point);
-  BOX_VM_THIS(vm, Real) = p->x*p->x + p->y*p->y;
-  return Success;
-}
-
-static Task My_Min_Open(BoxVM *vmp) {
-  BOX_VM_THIS(vmp, Real) = BOXREAL_MAX;
-  return Success;
-}
-
-static Task My_Min_Real(BoxVM *vmp) {
-  Real *cp = BOX_VM_THIS_PTR(vmp, Real), c = *cp,
-       x = BOX_VM_ARG1(vmp, Real);
+static BoxTask My_Min_Real(BoxVMX *vmx) {
+  BoxReal *cp = BoxVMX_Get_Parent_Target(vmx), c = *cp,
+          x = *((BoxReal *) BoxVMX_Get_Child_Target(vmx));
   *cp = (x < c) ? x : c;
-  return Success;
+  return BOXTASK_OK;
 }
 
-static Task My_Max_Open(BoxVM *vmp) {
-  BOX_VM_THIS(vmp, Real) = BOXREAL_MIN;
-  return Success;
+static BoxTask My_Max_Open(BoxVMX *vmx) {
+  *((BoxReal *) BoxVMX_Get_Parent_Target(vmx)) = BOXREAL_MIN;
+  return BOXTASK_OK;
 }
 
-static Task My_Max_Real(BoxVM *vmp) {
-  Real *cp = BOX_VM_THIS_PTR(vmp, Real), c = *cp,
-       x = BOX_VM_ARG1(vmp, Real);
+static BoxTask My_Max_Real(BoxVMX *vmx) {
+  BoxReal *cp = BoxVMX_Get_Parent_Target(vmx), c = *cp,
+          x = *((BoxReal *) BoxVMX_Get_Child_Target(vmx));
   *cp = (x > c) ? x : c;
-  return Success;
+  return BOXTASK_OK;
 }
 
-static Task My_Vec_Real(BoxVM *vmp) {
-  Real angle = BOX_VM_ARG1(vmp, Real);
-  Point *p = BOX_VM_THIS_PTR(vmp, Point);
-  p->x = cos(angle);
-  p->y = sin(angle);
-  return Success;
+static BoxTask My_Vec_Real(BoxVMX *vmx) {
+  BoxReal *angle = BoxVMX_Get_Child_Target(vmx);
+  BoxPoint *p = BoxVMX_Get_Parent_Target(vmx);
+  p->x = cos(*angle);
+  p->y = sin(*angle);
+  return BOXTASK_OK;
 }
 
-static BoxTask My_Point_At_Ort(BoxVM *vm) {
-  BoxPoint *p_out = BoxVM_Get_Parent_Target(vm);
-  BoxPoint *p_in = BoxVM_Get_Child_Target(vm);
+static BoxTask My_Point_At_Ort(BoxVMX *vm) {
+  BoxPoint *p_out = BoxVMX_Get_Parent_Target(vm);
+  BoxPoint *p_in = BoxVMX_Get_Child_Target(vm);
   p_out->x = -p_in->y;
   p_out->y = p_in->x;
   return BOXTASK_OK;
@@ -226,9 +184,10 @@ static BoxTask My_Point_At_Ort(BoxVM *vm) {
  * Conversions        *
  **********************/
 
-static Task My_2R_To_P(BoxVM *vm) {
-  BOX_VM_THIS(vm, Point) = *(BOX_VM_ARG_PTR(vm, Point));
-  return Success;
+static BoxTask My_2R_To_P(BoxVMX *vmx) {
+  *((BoxPoint *) BoxVMX_Get_Parent_Target(vmx))
+    = *((BoxPoint *) BoxVMX_Get_Child_Target(vmx));
+  return BOXTASK_OK;
 }
 
 /**********************
@@ -236,54 +195,54 @@ static Task My_2R_To_P(BoxVM *vm) {
  **********************/
 
 /* This function is not politically correct!!! */
-static Task My_Exit_Int(BoxVM *vm) {
-  exit(BOX_VM_ARG(vm, Int));
+static BoxTask My_Exit_Int(BoxVMX *vmx) {
+  exit(*((BoxInt *) BoxVMX_Get_Child_Target(vmx)));
 }
 
-static Task My_Fail_Clear_Msg(BoxVM *vm) {
-  BoxVM_Set_Fail_Msg(vm, (char *) NULL);
+static BoxTask My_Fail_Clear_Msg(BoxVMX *vmx) {
+  BoxVMX_Set_Fail_Msg(vmx, NULL);
   return BOXTASK_OK;
 }
 
-static Task My_Fail(BoxVM *vm) {
+static BoxTask My_Fail(BoxVMX *vmx) {
   return BOXTASK_FAILURE;
 }
 
-static Task My_Fail_Msg(BoxVM *vm) {
-  BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
+static BoxTask My_Fail_Msg(BoxVMX *vmx) {
+  BoxStr *s = BoxVMX_Get_Child_Target(vmx);
   char *msg = BoxStr_To_C_String(s);
-  BoxVM_Set_Fail_Msg(vm, msg);
+  BoxVMX_Set_Fail_Msg(vmx, msg);
   BoxMem_Free(msg);
   return BOXTASK_OK;
 }
 
-static Task My_Length_Init(BoxVM *vm) {
-  BoxInt *length = BOX_VM_THIS_PTR(vm, BoxInt);
+static BoxTask My_Length_Init(BoxVMX *vm) {
+  BoxInt *length = BoxVMX_Get_Parent_Target(vm);
   *length = 0;
   return BOXTASK_OK;
 }
 
-static BoxTask My_Num_Init(BoxVM *vm) {
-  BoxInt *length = BOX_VM_THIS_PTR(vm, BoxInt);
+static BoxTask My_Num_Init(BoxVMX *vm) {
+  BoxInt *length = BoxVMX_Get_Parent_Target(vm);
   *length = 0;
   return BOXTASK_OK;
 }
 
-static BoxTask My_IsValid_Init(BoxVM *vm) {
-  BoxInt *valid = BoxVM_Get_Parent_Target(vm);
+static BoxTask My_IsValid_Init(BoxVMX *vm) {
+  BoxInt *valid = BoxVMX_Get_Parent_Target(vm);
   *valid = 1;
   return BOXTASK_OK;
 }
 
-static BoxTask My_Int_At_IsValid(BoxVM *vm) {
-  BoxInt *valid = BoxVM_Get_Parent_Target(vm);
-  BoxInt *child = BoxVM_Get_Child_Target(vm);
+static BoxTask My_Int_At_IsValid(BoxVMX *vm) {
+  BoxInt *valid = BoxVMX_Get_Parent_Target(vm);
+  BoxInt *child = BoxVMX_Get_Child_Target(vm);
   *valid = (*valid && *child);
   return BOXTASK_OK;
 }
 
-static BoxTask My_Compare_Init(BoxVM *vm) {
-  BoxInt *compare = BOX_VM_THIS_PTR(vm, BoxInt);
+static BoxTask My_Compare_Init(BoxVMX *vm) {
+  BoxInt *compare = BoxVMX_Get_Parent_Target(vm);
   *compare = 0;
   return BOXTASK_OK;
 }
@@ -292,40 +251,58 @@ static BoxTask My_Compare_Init(BoxVM *vm) {
  *                       FUNCTIONS FOR CONVERSION                            *
  *****************************************************************************/
 
-static Task My_Char_Char(BoxVM *vmp) {
-  BOX_VM_THIS(vmp, Char) = BOX_VM_ARG1(vmp, Char); return Success;
+static BoxTask My_Char_Char(BoxVMX *vmx) {
+  *((BoxChar *) BoxVMX_Get_Parent_Target(vmx))
+    = *((BoxChar *) BoxVMX_Get_Child_Target(vmx));
+  return BOXTASK_OK;
 }
 
-static Task My_Char_Int(BoxVM *vmp) {
-  BOX_VM_THIS(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Int); return Success;
+static BoxTask My_Char_Int(BoxVMX *vmx) {
+  *((BoxChar *) BoxVMX_Get_Parent_Target(vmx))
+    = (BoxChar) *((BoxInt *) BoxVMX_Get_Child_Target(vmx));
+  return BOXTASK_OK;
 }
 
-static Task My_Char_Real(BoxVM *vmp) {
-  BOX_VM_THIS(vmp, Char) = (Char) BOX_VM_ARG1(vmp, Real); return Success;
+static BoxTask My_Char_Real(BoxVMX *vmx) {
+  *((BoxChar *) BoxVMX_Get_Parent_Target(vmx))
+    = (BoxChar) *((BoxReal *) BoxVMX_Get_Child_Target(vmx));
+  return BOXTASK_OK;
 }
 
-static Task My_Int_Int(BoxVM *vmp) {
-  BOX_VM_THIS(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;
+static BoxTask My_Int_Int(BoxVMX *vmx) {
+  *((BoxInt *) BoxVMX_Get_Parent_Target(vmx))
+    = *((BoxInt *) BoxVMX_Get_Child_Target(vmx));
+  return BOXTASK_OK;
 }
 
-static Task My_Int_Real(BoxVM *vmp) {
-  BOX_VM_THIS(vmp, Int) = (Int) BOX_VM_ARG1(vmp, Real); return Success;
+static BoxTask My_Int_Real(BoxVMX *vmx) {
+  *((BoxInt *) BoxVMX_Get_Parent_Target(vmx))
+    = (BoxInt) *((BoxReal *) BoxVMX_Get_Child_Target(vmx));
+  return BOXTASK_OK;
 }
 
-static Task My_Real_Real(BoxVM *vmp) {
-  BOX_VM_THIS(vmp, Real) = BOX_VM_ARG1(vmp, Real); return Success;
+static BoxTask My_Real_Real(BoxVMX *vmx) {
+  *((BoxReal *) BoxVMX_Get_Parent_Target(vmx))
+    = *((BoxReal *) BoxVMX_Get_Child_Target(vmx));
+  return BOXTASK_OK;
 }
 
-static Task My_Point_RealNumCouple(BoxVM *vmp) {
-  BOX_VM_THIS(vmp, Point) = BOX_VM_ARG1(vmp, Point); return Success;
+static BoxTask My_Point_RealNumCouple(BoxVMX *vmx) {
+  *((BoxPoint *) BoxVMX_Get_Parent_Target(vmx))
+    = *((BoxPoint *) BoxVMX_Get_Child_Target(vmx));
+  return BOXTASK_OK;
 }
 
-static Task My_If_Int(BoxVM *vmp) {
-  BOX_VM_THIS(vmp, Int) = !BOX_VM_ARG1(vmp, Int); return Success;
+static BoxTask My_If_Int(BoxVMX *vmx) {
+  *((BoxInt *) BoxVMX_Get_Parent_Target(vmx))
+    = !*((BoxInt *) BoxVMX_Get_Child_Target(vmx));
+  return BOXTASK_OK;
 }
 
-static Task My_For_Int(BoxVM *vmp) {
-  BOX_VM_THIS(vmp, Int) = BOX_VM_ARG1(vmp, Int); return Success;
+static BoxTask My_For_Int(BoxVMX *vmx) {
+  *((BoxInt *) BoxVMX_Get_Parent_Target(vmx))
+    = *((BoxInt *) BoxVMX_Get_Child_Target(vmx));
+  return BOXTASK_OK;
 }
 
 /****************************************************************************/
@@ -338,7 +315,7 @@ static Task My_For_Int(BoxVM *vmp) {
 #include "compiler.h"
 
 BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
-                          Task (*c_fn)(BoxVM *)) {
+                          BoxTask (*c_fn)(BoxVMX *)) {
   BoxVMSymID sym_num;
   BoxVMCallNum call_num;
 
@@ -353,7 +330,7 @@ BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
 }
 
 BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxType child, BoxComb comb,
-                          BoxType parent, Task (*c_fn)(BoxVM *)) {
+                          BoxType parent, BoxTask (*c_fn)(BoxVMX *)) {
   BoxVMSymID sym_num;
   BoxVMCallNum call_num;
   BoxType new_proc;
@@ -379,7 +356,7 @@ BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxType child, BoxComb comb,
 }
 
 BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
-                          Task (*c_fn)(BoxVM *)) {
+                          BoxTask (*c_fn)(BoxVMX *)) {
   return Bltin_Comb_Def(c, child, BOXCOMB_CHILDOF, parent, c_fn);
 }
 
@@ -441,7 +418,7 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
 static void My_Register_Core_Types(BoxCmp *c) {
   struct {
     const char *name;
-    Type       type;
+    BoxType    type;
 
   } *type_to_register, types_to_register[] = {
     {"Char",        BOXTYPE_CHAR},

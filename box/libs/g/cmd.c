@@ -378,7 +378,7 @@ BoxTask My_Dummy_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
   return BOXTASK_OK;
 }
 
-BoxTask GLib_Obj_At_CmdIter(BoxVM *vm) {
+BoxTask GLib_Obj_At_CmdIter(BoxVMX *vm) {
   //void *obj_data = BOX_VM_THIS_PTR(vm, void);
   BoxGObjPtr gobj = BOX_VM_ARG(vm, BoxGObjPtr);
 

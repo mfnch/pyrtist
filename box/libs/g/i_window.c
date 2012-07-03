@@ -77,8 +77,8 @@ static void My_Finish_Win_Styles(Window *w) {
   g_style_clear(& w->style);
 }
 
-BoxTask Box_Lib_G_Init_At_Window(BoxVM *vm) {
-  WindowPtr *wp = (WindowPtr *) BoxVM_Get_Parent_Target(vm);
+BoxTask Box_Lib_G_Init_At_Window(BoxVMX *vm) {
+  WindowPtr *wp = (WindowPtr *) BoxVMX_Get_Parent_Target(vm);
   Window *w;
 
   w = *wp = (WindowPtr) BoxMem_Alloc(sizeof(Window));
@@ -166,29 +166,29 @@ static void My_Window_Unreference(Window **w_ptr) {
   }
 }
 
-BoxTask Box_Lib_G_Finish_At_Window(BoxVM *vm) {
-  WindowPtr *wp = BoxVM_Get_Parent_Target(vm);
+BoxTask Box_Lib_G_Finish_At_Window(BoxVMX *vm) {
+  WindowPtr *wp = BoxVMX_Get_Parent_Target(vm);
   My_Window_Unreference(wp);
   return BOXTASK_OK;
 }
 
-BoxTask Box_Lib_G_Window_Copy_Window(BoxVM *vm) {
-  WindowPtr *wp_dst = BoxVM_Get_Parent_Target(vm),
-            w_src = *((WindowPtr *) BoxVM_Get_Child_Target(vm));
+BoxTask Box_Lib_G_Window_Copy_Window(BoxVMX *vm) {
+  WindowPtr *wp_dst = BoxVMX_Get_Parent_Target(vm),
+            w_src = *((WindowPtr *) BoxVMX_Get_Child_Target(vm));
   My_Window_Reference(w_src);
   My_Window_Unreference(wp_dst);
   *wp_dst = w_src;
   return BOXTASK_OK;
 }
 
-BoxTask Box_Lib_G_Window_At_Valid(BoxVM *vm) {
-  BoxInt *valid = BoxVM_Get_Parent_Target(vm);
-  Window *w = *((WindowPtr *) BoxVM_Get_Child_Target(vm));
+BoxTask Box_Lib_G_Window_At_Valid(BoxVMX *vm) {
+  BoxInt *valid = BoxVMX_Get_Parent_Target(vm);
+  Window *w = *((WindowPtr *) BoxVMX_Get_Child_Target(vm));
   *valid = (*valid && w->initialised);
   return BOXTASK_OK;
 }
 
-BoxTask Box_Lib_G_Color_At_Window(BoxVM *vmp) {
+BoxTask Box_Lib_G_Color_At_Window(BoxVMX *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   Color *c = BOX_VM_ARG1_PTR(vmp, Color);
   if (w->window != NULL)
@@ -196,7 +196,7 @@ BoxTask Box_Lib_G_Color_At_Window(BoxVM *vmp) {
   return Success;
 }
 
-BoxTask Box_Lib_G_Gradient_At_Window(BoxVM *vmp) {
+BoxTask Box_Lib_G_Gradient_At_Window(BoxVMX *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   Gradient *g = BOX_VM_ARG1(vmp, GradientPtr);
   if (w->window != NULL)
@@ -204,7 +204,7 @@ BoxTask Box_Lib_G_Gradient_At_Window(BoxVM *vmp) {
   return Success;
 }
 
-BoxTask Box_Lib_G_Str_At_Window(BoxVM *vm) {
+BoxTask Box_Lib_G_Str_At_Window(BoxVMX *vm) {
   WindowPtr wp = BOX_VM_THIS(vm, WindowPtr);
   Window *w = wp;
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
@@ -224,7 +224,7 @@ BoxTask Box_Lib_G_Str_At_Window(BoxVM *vm) {
   return Success;
 }
 
-BoxTask window_size(BoxVM *vmp) {
+BoxTask window_size(BoxVMX *vmp) {
   WindowPtr wp = BOX_VM_THIS(vmp, WindowPtr);
   Window *w = (Window *) wp;
   Point *win_size = BOX_VM_ARG1_PTR(vmp, Point);
@@ -239,15 +239,15 @@ BoxTask window_size(BoxVM *vmp) {
   return Success;
 }
 
-BoxTask Box_Lib_G_OldStyle_At_Window(BoxVM *vmp) {
+BoxTask Box_Lib_G_OldStyle_At_Window(BoxVMX *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
   g_style_copy_selected(& w->style, & s->style, s->have);
   return Success;
 }
 
-BoxTask Box_Lib_G_Close_At_Window(BoxVM *vm) {
-  WindowPtr w = *((WindowPtr *) BoxVM_Get_Parent_Target(vm));
+BoxTask Box_Lib_G_Close_At_Window(BoxVMX *vm) {
+  WindowPtr w = *((WindowPtr *) BoxVMX_Get_Parent_Target(vm));
 
   if (!w->initialised) {
     w->plan.have.resolution = 1;
@@ -264,18 +264,18 @@ BoxTask Box_Lib_G_Close_At_Window(BoxVM *vm) {
   return Success;
 }
 
-BoxTask Box_Lib_G_Open_At_Figure(BoxVM *vm) {
+BoxTask Box_Lib_G_Open_At_Figure(BoxVMX *vm) {
   return Box_Lib_G_Close_At_Window(vm);
 }
 
-BoxTask window_window(BoxVM *vmp) {
+BoxTask window_window(BoxVMX *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   Window *src = BOX_VM_ARG1(vmp, WindowPtr);
   BoxGWin_Fig_Draw_Fig(w->window, src->window);
   return Success;
 }
 
-BoxTask GLib_Obj_At_Window(BoxVM *vm) {
+BoxTask GLib_Obj_At_Window(BoxVMX *vm) {
   Window *w = BOX_VM_THIS(vm, WindowPtr);
   BoxGObjPtr gobj = BOX_VM_ARG(vm, BoxGObjPtr);
   BoxGWinMap wm;
@@ -284,7 +284,7 @@ BoxTask GLib_Obj_At_Window(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
-BoxTask window_origin_point(BoxVM *vmp) {
+BoxTask window_origin_point(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *origin = BOX_VM_ARG1_PTR(vmp, Point);
 
@@ -298,14 +298,14 @@ BoxTask window_origin_point(BoxVM *vmp) {
   return BOXTASK_OK;
 }
 
-BoxTask window_save_begin(BoxVM *vmp) {
+BoxTask window_save_begin(BoxVMX *vmp) {
   Window *w  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   w->save_file_name = NULL;
   w->saved = 0;
   return BOXTASK_OK;
 }
 
-BoxTask window_save_str(BoxVM *vm) {
+BoxTask window_save_str(BoxVMX *vm) {
   Window *w  = BOX_VM_SUB_PARENT(vm, WindowPtr);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
 
@@ -319,7 +319,7 @@ BoxTask window_save_str(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
-BoxTask window_save_window(BoxVM *vmp) {
+BoxTask window_save_window(BoxVMX *vmp) {
   Window *src  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   Window *dest = BOX_VM_ARG1(vmp, WindowPtr);
   Point translation = {0.0, 0.0}, center = {0.0, 0.0};
@@ -423,7 +423,7 @@ BoxTask window_save_window(BoxVM *vmp) {
   return BOXTASK_OK;
 }
 
-BoxTask window_save_end(BoxVM *vmp) {
+BoxTask window_save_end(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
 
   if (w->saved) {
@@ -450,7 +450,7 @@ BoxTask window_save_end(BoxVM *vmp) {
   }
 }
 
-BoxTask window_hot_begin(BoxVM *vmp) {
+BoxTask window_hot_begin(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->hot.got.name = 0;
   w->hot.got.point = 0;
@@ -458,7 +458,7 @@ BoxTask window_hot_begin(BoxVM *vmp) {
   return BOXTASK_OK;
 }
 
-BoxTask window_hot_point(BoxVM *vmp) {
+BoxTask window_hot_point(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *point = BOX_VM_ARG1_PTR(vmp, Point);
   char *name = (w->hot.got.name) ? w->hot.name : (char *) NULL;
@@ -472,7 +472,7 @@ BoxTask window_hot_point(BoxVM *vmp) {
   return t;
 }
 
-BoxTask window_hot_string(BoxVM *vm) {
+BoxTask window_hot_string(BoxVMX *vm) {
   SUBTYPE_OF_WINDOW(vm, w);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
   const char *name = (char *) s->ptr;
@@ -488,13 +488,13 @@ static BoxTask _add_from_pointlist(Int index, char *name,
   return pointlist_add(dest_pl, p, name);
 }
 
-BoxTask window_hot_pointlist(BoxVM *vmp) {
+BoxTask window_hot_pointlist(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   IPointList *ipl_to_add = BOX_VM_ARG1(vmp, IPointList *);
   return pointlist_iter(& ipl_to_add->pl, _add_from_pointlist, & w->pointlist);
 }
 
-BoxTask window_hot_end(BoxVM *vmp) {
+BoxTask window_hot_end(BoxVMX *vmp) {
   Window *w  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   Point *p = BOX_VM_SUB_CHILD_PTR(vmp, Point);
 
@@ -507,7 +507,7 @@ BoxTask window_hot_end(BoxVM *vmp) {
   return BOXTASK_OK;
 }
 
-BoxTask window_file_string(BoxVM *vm) {
+BoxTask window_file_string(BoxVMX *vm) {
   SUBTYPE_OF_WINDOW(vm, w);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
 
@@ -520,7 +520,7 @@ BoxTask window_file_string(BoxVM *vm) {
   return BOXTASK_OK;
 }
 
-BoxTask window_res_point(BoxVM *vmp) {
+BoxTask window_res_point(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *res = BOX_VM_ARG1_PTR(vmp, Point);
   if (w->plan.have.resolution) {
@@ -532,7 +532,7 @@ BoxTask window_res_point(BoxVM *vmp) {
   return BOXTASK_OK;
 }
 
-BoxTask window_res_real(BoxVM *vmp) {
+BoxTask window_res_real(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   Real *res = BOX_VM_ARG1_PTR(vmp, Real);
   if (w->plan.have.resolution) {
@@ -543,32 +543,32 @@ BoxTask window_res_real(BoxVM *vmp) {
   return BOXTASK_OK;
 }
 
-BoxTask window_show_point(BoxVM *vmp) {
+BoxTask window_show_point(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Point *p = BOX_VM_ARG1_PTR(vmp, Point);
   BoxGWin_Add_Fake_Point(w->window, p);
   return BOXTASK_OK;
 }
 
-BoxTask Box_Lib_G_Window_At_BBox(BoxVM *vm) {
+BoxTask Box_Lib_G_Window_At_BBox(BoxVMX *vm) {
   BoxGBBox *b = BOX_VM_THIS_PTR(vm, BoxGBBox);
   Window *w = BOX_VM_ARG1(vm, WindowPtr);
   (void) BoxGBBox_Compute(b, w->window);
   return BOXTASK_OK;
 }
 
-BoxTask Box_Lib_G_Window_At_Num(BoxVM *vm) {
-  BoxInt *num = BoxVM_Get_Parent_Target(vm);
-  Window *w = *((WindowPtr *) BoxVM_Get_Child_Target(vm));
+BoxTask Box_Lib_G_Window_At_Num(BoxVMX *vm) {
+  BoxInt *num = BoxVMX_Get_Parent_Target(vm);
+  Window *w = *((WindowPtr *) BoxVMX_Get_Child_Target(vm));
   *num += pointlist_num(& w->pointlist);
   return BOXTASK_OK;
 }
 
-BoxTask Box_Lib_G_Str_At_Window_Get(BoxVM *vm) {
-  BoxSubtype *window_get = BoxVM_Get_Parent_Target(vm);
+BoxTask Box_Lib_G_Str_At_Window_Get(BoxVMX *vm) {
+  BoxSubtype *window_get = BoxVMX_Get_Parent_Target(vm);
   BoxPoint *point = BoxSubtype_Get_Child_Target(window_get);
   Window *w = *((WindowPtr *) BoxSubtype_Get_Parent_Target(window_get));
-  BoxStr *name = BoxVM_Get_Child_Target(vm);
+  BoxStr *name = BoxVMX_Get_Child_Target(vm);
   char *c_name = BoxStr_To_C_String(name);
   BoxPoint *found = pointlist_find(& w->pointlist, c_name);
   if (found) {
@@ -576,49 +576,49 @@ BoxTask Box_Lib_G_Str_At_Window_Get(BoxVM *vm) {
     return BOXTASK_OK;
 
   } else {
-    BoxVM_Set_Fail_Msg(vm, "Cannot find hot point with the given name "
+    BoxVMX_Set_Fail_Msg(vm, "Cannot find hot point with the given name "
                            "in the Window");
     return BOXTASK_FAILURE;
   }
 }
 
-BoxTask Box_Lib_G_Int_At_Window_Get(BoxVM *vm) {
-  BoxSubtype *window_get = BoxVM_Get_Parent_Target(vm);
+BoxTask Box_Lib_G_Int_At_Window_Get(BoxVMX *vm) {
+  BoxSubtype *window_get = BoxVMX_Get_Parent_Target(vm);
   BoxPoint *point = BoxSubtype_Get_Child_Target(window_get);
   Window *w = *((WindowPtr *) BoxSubtype_Get_Parent_Target(window_get));
-  BoxInt idx = *((BoxInt *) BoxVM_Get_Child_Target(vm)) + 1;
+  BoxInt idx = *((BoxInt *) BoxVMX_Get_Child_Target(vm)) + 1;
   BoxPoint *found = pointlist_get(& w->pointlist, idx);
   if (found != NULL) {
     *point = *found;
     return BOXTASK_OK;
 
   } else {
-    BoxVM_Set_Fail_Msg(vm, "The Window does not have any hot points");
+    BoxVMX_Set_Fail_Msg(vm, "The Window does not have any hot points");
     return BOXTASK_FAILURE;
   }
 }
 
-BoxTask Box_Lib_G_Int_At_Window_HotPointHasName(BoxVM *vm) {
-  BoxSubtype *window_get = BoxVM_Get_Parent_Target(vm);
+BoxTask Box_Lib_G_Int_At_Window_HotPointHasName(BoxVMX *vm) {
+  BoxSubtype *window_get = BoxVMX_Get_Parent_Target(vm);
   BoxInt *hotpoint_has_name = BoxSubtype_Get_Child_Target(window_get);
   Window *w = *((WindowPtr *) BoxSubtype_Get_Parent_Target(window_get));
-  BoxInt idx = *((BoxInt *) BoxVM_Get_Child_Target(vm)) + 1;
+  BoxInt idx = *((BoxInt *) BoxVMX_Get_Child_Target(vm)) + 1;
   *hotpoint_has_name = (pointlist_get_name(& w->pointlist, idx) != NULL);
   return BOXTASK_OK;
 }
 
-BoxTask Box_Lib_G_Int_At_Window_GetHotPointName(BoxVM *vm) {
-  BoxSubtype *window_get = BoxVM_Get_Parent_Target(vm);
+BoxTask Box_Lib_G_Int_At_Window_GetHotPointName(BoxVMX *vm) {
+  BoxSubtype *window_get = BoxVMX_Get_Parent_Target(vm);
   BoxStr *hotpoint_name = BoxSubtype_Get_Child_Target(window_get);
   Window *w = *((WindowPtr *) BoxSubtype_Get_Parent_Target(window_get));
-  BoxInt idx = *((BoxInt *) BoxVM_Get_Child_Target(vm)) + 1;
+  BoxInt idx = *((BoxInt *) BoxVMX_Get_Child_Target(vm)) + 1;
   const char *name = pointlist_get_name(& w->pointlist, idx);
   if (name != NULL) {
     BoxStr_Set_From_C_String(hotpoint_name, name);
     return BOXTASK_OK;
 
   } else {
-    BoxVM_Set_Fail_Msg(vm, "The Window Hot point does not have a name");
+    BoxVMX_Set_Fail_Msg(vm, "The Window Hot point does not have a name");
     return BOXTASK_FAILURE;
   }
 }

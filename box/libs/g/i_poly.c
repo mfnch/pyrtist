@@ -31,39 +31,18 @@
 
 /*#define DEBUG*/
 
-#if 0
-/** See VMCall */
-typedef Task (*VMCallable)(BoxVM *vmp);
-
-/** This should become part of the VM library. For now we put it there. */
-Task VM_Call_C(BoxVM *vmp, VMCallable f, void *obj, void *arg);
-
-Task VM_Call_C(BoxVM *vmp, VMCallable f, void *obj, void *arg) {
-  void *save_obj, *save_arg;
-  Task t;
-  save_obj = *vmp->box_vm_current;
-  save_arg = *vmp->box_vm_arg1;
-  *vmp->box_vm_current = obj;
-  *vmp->box_vm_arg1 = arg;
-  t = f(vmp);
-  *vmp->box_vm_current = save_obj;
-  *vmp->box_vm_arg1 = save_arg;
-  return t;
-}
-#endif
-
-Task poly_color(BoxVM *vmp) {
+BoxTask poly_color(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->poly.color = BOX_VM_ARG1(vmp, Color);
   w->poly.got.color = 1;
   return Success;
 }
 
-Task poly_gradient(BoxVM *vmp) {
+BoxTask poly_gradient(BoxVMX *vmp) {
   return x_gradient(vmp);
 }
 
-Task poly_begin(BoxVM *vmp) {
+BoxTask poly_begin(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   IPointListPtr *ipl_ptr = BOX_VM_SUB_CHILD_PTR(vmp, IPointListPtr);
 
@@ -84,7 +63,7 @@ Task poly_begin(BoxVM *vmp) {
   return Success;
 }
 
-static Task _poly_point_draw_only(Window *w, Point *p, int omit_line) {
+static BoxTask _poly_point_draw_only(Window *w, Point *p, int omit_line) {
   WindowPoly *wp = & w->poly;
   Real m1 = wp->margin[0], m2 = wp->margin[1];
 
@@ -147,27 +126,27 @@ static Task _poly_point_draw_only(Window *w, Point *p, int omit_line) {
   return Success;
 }
 
-static Task _poly_point(Window *w, IPointList *ipl, Point *p) {
+static BoxTask _poly_point(Window *w, IPointList *ipl, Point *p) {
   PointList *pl = IPL_POINTLIST(ipl);
   TASK( pointlist_add(pl, p, (char *) NULL) );
   return _poly_point_draw_only(w, p, 0);
 }
 
-Task poly_point(BoxVM *vmp) {
+BoxTask poly_point(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   IPointList *ipl = BOX_VM_SUB_CHILD(vmp, IPointListPtr);
   Point *p = BOX_VM_ARG1_PTR(vmp, Point);
   return _poly_point(w, ipl, p);
 }
 
-Task poly_style(BoxVM *vmp) {
+BoxTask poly_style(BoxVMX *vmp) {
   IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
   SUBTYPE_OF_WINDOW(vmp, w);
   g_style_copy_selected(& w->poly.style, & s->style, s->have);
   return Success;
 }
 
-static Task _poly_draw(Window *w, DrawWhen dw) {
+static BoxTask _poly_draw(Window *w, DrawWhen dw) {
   WindowPoly *wp = & w->poly;
   FillStyle *fs;
   int close = wp->close;
@@ -194,14 +173,14 @@ static Task _poly_draw(Window *w, DrawWhen dw) {
   return Success;
 }
 
-Task poly_end(BoxVM *vmp) {
+BoxTask poly_end(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   TASK(_poly_draw(w, DRAW_WHEN_END));
   g_style_clear(& w->poly.style);
   return Success;
 }
 
-Task poly_pause(BoxVM *vmp) {
+BoxTask poly_pause(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   TASK(_poly_draw(w, DRAW_WHEN_PAUSE));
 
@@ -213,7 +192,7 @@ Task poly_pause(BoxVM *vmp) {
   return Success;
 }
 
-Task poly_real(BoxVM *vmp) {
+BoxTask poly_real(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   Real margin = BOX_VM_ARG1(vmp, Real), max_margin;
 
@@ -244,13 +223,13 @@ struct add_from_pl_params {
   IPointList *dest_ipl;
 };
 
-static Task _add_from_pl(Int index, char *name, void *object, void *data) {
+static BoxTask _add_from_pl(Int index, char *name, void *object, void *data) {
   struct add_from_pl_params *params = (struct add_from_pl_params *) data;
   Point *p = (Point *) object;
   return _poly_point(params->w, params->dest_ipl, p);
 }
 
-Task poly_pointlist(BoxVM *vmp) {
+BoxTask poly_pointlist(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   IPointList *my_ipl = BOX_VM_SUB_CHILD(vmp, IPointListPtr);
   IPointList *arg_ipl = BOX_VM_ARG1(vmp, IPointListPtr);
@@ -265,13 +244,13 @@ Task poly_pointlist(BoxVM *vmp) {
   return pointlist_iter(arg_pl, _add_from_pl, & params);
 }
 
-Task window_poly_close_begin(BoxVM *vmp) {
+BoxTask window_poly_close_begin(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB2_PARENT(vmp, WindowPtr);
   w->poly.close = 1;
   return Success;
 }
 
-Task window_poly_close_int(BoxVM *vmp) {
+BoxTask window_poly_close_int(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB2_PARENT(vmp, WindowPtr);
   w->poly.close = BOX_VM_ARG1(vmp, Int);
   return Success;

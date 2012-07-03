@@ -205,7 +205,7 @@ struct BoxVM_struct {
           forcelong :1,    /**< Force long form assembly. */
           hexcode   :1,    /**< Show Hex values in disassembled code */
           identdata :1;    /**< Add also identity info for data inserted
-                                  into the data segment */
+                                into the data segment */
   }       attr;            /** Flags controlling the behaviour of the VM */
 
   struct {
@@ -281,7 +281,7 @@ void VM__GLPI(BoxVMX *vmx);
 void VM__Imm(BoxVMX *vmx);
 
 /** This is the type of the C functions which can be called by the VM. */
-typedef BoxTask (*BoxVMFunc)(BoxVM *);
+typedef BoxTask (*BoxVMFunc)(BoxVMX *);
 
 /** Initialise a BoxVM object for which space has been already allocated
  * somehow. You'll need to use BoxVM_Finish to destroy the object.
@@ -295,7 +295,7 @@ BoxTask BoxVM_Init(BoxVM *vm);
 void BoxVM_Finish(BoxVM *vm);
 
 /** Provide a failure message for a raised exception. */
-BOXEXPORT void BoxVM_Set_Fail_Msg(BoxVM *vm, const char *msg);
+BOXEXPORT void BoxVMX_Set_Fail_Msg(BoxVMX *vm, const char *msg);
 
 BOXEXPORT BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num);
 
@@ -418,32 +418,29 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
 /** Get the parent of the current combination (this is something with type
  * ``BoxPtr *``.
  */
-#  define BoxVM_Get_Parent(vm) ((vm)->box_vm_current)
+#  define BoxVMX_Get_Parent(vmx) ((vmx)->vm->box_vm_current)
 
 /** Get the child of the current combination (this is something with type
  * ``BoxPtr *`` 
  */
-#  define BoxVM_Get_Child(vm) ((vm)->box_vm_arg1)
+#  define BoxVMX_Get_Child(vmx) ((vmx)->vm->box_vm_arg1)
 
 /** Shorthand for BoxPtr_Get_Target(BoxVM_Get_Parent(vm)). */
-#  define BoxVM_Get_Parent_Target(vm) (BoxPtr_Get_Target(BoxVM_Get_Parent(vm)))
+#  define BoxVMX_Get_Parent_Target(vmx) \
+  (BoxPtr_Get_Target(BoxVMX_Get_Parent(vmx)))
 
 /** Shorthand for BoxPtr_Get_Target(BoxVM_Get_Child(vm)). */
-#  define BoxVM_Get_Child_Target(vm) (BoxPtr_Get_Target(BoxVM_Get_Child(vm)))
+#  define BoxVMX_Get_Child_Target(vmx) \
+  (BoxPtr_Get_Target(BoxVMX_Get_Child(vmx)))
 
-#  define BOX_VM_THIS_PTR(vmp, Type) ((Type *) (vmp)->box_vm_current->ptr)
-#  define BOX_VM_THIS(vmp, Type) (*BOX_VM_THIS_PTR(vmp, Type))
-#  define BOX_VM_ARG1_PTR(vmp, Type) ((Type *) (vmp)->box_vm_arg1->ptr)
-#  define BOX_VM_ARG1(vmp, Type) (*BOX_VM_ARG1_PTR(vmp, Type))
+
+/* XXX TODO: the ones below are obsolete macros, which should be removed. */
+#  define BOX_VM_THIS_PTR(vmx, Type) ((Type *) (vmx)->vm->box_vm_current->ptr)
+#  define BOX_VM_THIS(vmx, Type) (*BOX_VM_THIS_PTR(vmx, Type))
+#  define BOX_VM_ARG1_PTR(vmx, Type) ((Type *) (vmx)->vm->box_vm_arg1->ptr)
+#  define BOX_VM_ARG1(vmx, Type) (*BOX_VM_ARG1_PTR(vmx, Type))
 #  define BOX_VM_ARG_PTR BOX_VM_ARG1_PTR
 #  define BOX_VM_ARG BOX_VM_ARG1
-#  define BOX_VM_ARG2_PTR(vmp, Type) ((Type *) *(vmp)->box_vm_arg2)
-#  define BOX_VM_ARG2(vmp, Type) (*BOX_VM_ARG2_PTR(vmp, Type))
-
-#  define BOX_VM_THIS_OBJ(vmp) ((vmp)->box_vm_current)
-#  define BOX_VM_ARG1_OBJ(vmp) ((vmp)->box_vm_arg1)
-
-/* Subtype-related macros */
 #  define BOX_VM_SUB_PARENT_PTR(vmp, parent_t) \
    SUBTYPE_PARENT_PTR(BOX_VM_THIS_PTR(vmp, Subtype), parent_t)
 #  define BOX_VM_SUB_PARENT(vmp, parent_t) \
@@ -452,13 +449,7 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
    SUBTYPE_CHILD_PTR(BOX_VM_THIS_PTR(vmp, Subtype), child_t)
 #  define BOX_VM_SUB_CHILD(vmp, child_t) \
    (*BOX_VM_SUB_CHILD_PTR(vmp, child_t))
-#  define BOX_VM_SUB2_PARENT_PTR(vmp, parent_t) \
-   SUBTYPE_PARENT_PTR(BOX_VM_SUB_PARENT_PTR(vmp, Subtype), parent_t)
 #  define BOX_VM_SUB2_PARENT(vmp, parent_t) \
-   (*BOX_VM_SUB2_PARENT_PTR(vmp, parent_t))
-#  define BOX_VM_SUB2_CHILD_PTR(vmp, child_t) \
-   SUBTYPE_CHILD_PTR(BOX_VM_SUB_PARENT_PTR(vmp, Subtype), child_t)
-#  define BOX_VM_SUB2_CHILD(vmp, child_t) \
-   (*BOX_VM_SUB2_CHILD_PTR(vmp, child_t))
+  (*SUBTYPE_PARENT_PTR(BOX_VM_SUB_PARENT_PTR(vmp, Subtype), parent_t))
 
 #endif /* _BOX_VM_PRIVATE_H */

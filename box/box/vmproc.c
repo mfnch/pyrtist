@@ -143,8 +143,8 @@ size_t BoxVM_Proc_Get_Size(BoxVM *vm, BoxVMProcID id) {
 
 
 static BoxVMProcInstalled *My_Get_Inst_Proc_Desc(BoxVMProcTable *pt,
-                                              BoxVMCallNum *cn_out,
-                                              BoxVMCallNum cn_in) {
+                                                 BoxVMCallNum *cn_out,
+                                                 BoxVMCallNum cn_in) {
   if (cn_in > 0) {
     BoxVMProcInstalled *procedure_inst =
       (BoxVMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, cn_in);
