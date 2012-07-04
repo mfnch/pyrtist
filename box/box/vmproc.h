@@ -55,6 +55,40 @@ typedef enum {
   BOXVMPROC_IS_RESERVED   /**< Procedure reserved, but not defined. */
 } BoxVMProcState;
 
+#if 0
+/** Procedure calling conventions. */
+
+/**
+ * Enumeration of possible call conventions for Box VM procedures.
+ */
+typedef enum {
+  BOXCALLCONV_UNSPECIFIED, /**< Not yet specified. */
+  BOXCALLCONV_C_SIMPLE,    /**< Simple C calling convention. */
+  BOXCALLCONV_C_STD,       /**< Standard C calling convention. */
+  BOXCALLCONV_STD          /**< Standard calling convention. */
+} BoxCallConv;
+
+typedef void *BoxExcept;
+
+/**
+ * Standard calling convention for procedures written in C.
+ * This type defines the prototype for functions written in C which are called
+ * by the Box VM. All available information is passed: the VM executor, the
+ * extended pointer to the parent and to the child. NULL is returned on
+ * success. An exception object is returned, otherwise.
+ */
+typedef BoxExcept *(*BoxCStdCall)(BoxVMX *vmx, BoxPtr *parent, BoxPtr *child);
+
+/**
+ * Simplified calling convention for procedures written in C.
+ * The pointers to the parent and child data are passed as arguments and the
+ * function returns either NULL (success) or an exception object.
+ */
+typedef BoxExcept *(*BoxCSimpleCall)(void *parent, void *child);
+
+
+#endif
+
 /** Value for BoxVMProcID which indicates missing VM procedure
  * (it can be returned by BoxVM_Proc_Get_ID, for example).
  */
@@ -76,7 +110,7 @@ typedef struct {
   struct {
     unsigned int   error   :1;
     unsigned int   inhibit :1;
-  }              status;    /**< Structure with the settings to control the assembler */
+  }              status;    /**< Settings controlling the assembler */
   BoxSrcPosTable pos_table; /**< Info about the corresponding source files */
   BoxArr         code;      /**< Array which contains effectively the code */
 } BoxVMProc;
@@ -174,6 +208,15 @@ BoxVMCallNum BoxVM_Proc_Install_Code(BoxVM *vm,
                                      BoxVMProcID id,
                                      const char *name, const char *desc);
 
+/** Similar to VM_Proc_Install_Code, but install the given C-function
+ * 'c_proc' as a new procedure. The call-number is returned in '*call_num'.
+ * @see BoxVM_Proc_Install_Code
+ */
+BoxVMCallNum BoxVM_Proc_Install_CCode(BoxVM *vm,
+                                      BoxVMCallNum required_call_num,
+                                      BoxVMCCode c_proc,
+                                      const char *name, const char *desc);
+
 /** Install a fake procedure and return its call number. The procedure can be
  * defined later. This is useful to get (or "allocate") a call number when
  * the exact definition of the procedure is not yet know
@@ -187,15 +230,6 @@ BoxVMCallNum BoxVM_Proc_Install_Undefined(BoxVM *vm);
  * Example: return BOXVMPROC_IS_C_CODE if BoxVM_Proc_Install_CCode was used.
  */
 BoxVMProcState BoxVM_Is_Installed(BoxVM *vm, BoxVMCallNum call_num);
-
-/** Similar to VM_Proc_Install_Code, but install the given C-function
- * 'c_proc' as a new procedure. The call-number is returned in '*call_num'.
- * @see BoxVM_Proc_Install_Code
- */
-BoxVMCallNum BoxVM_Proc_Install_CCode(BoxVM *vm,
-                                      BoxVMCallNum required_call_num,
-                                      BoxVMCCode c_proc,
-                                      const char *name, const char *desc);
 
 /** Get the pointer to the bytecode of the procedure 'proc_num' and its
  * length, expressed as number of BoxVMWord elements.

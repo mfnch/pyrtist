@@ -222,8 +222,7 @@ struct BoxVM_struct {
   BoxVMRegs global[NUM_TYPES];  /**< The values of the global registers */
 
   BoxPtr    *box_vm_current,
-            *box_vm_arg1,
-            *box_vm_arg2;
+            *box_vm_arg1;
 
   const BoxVMInstrDesc
             *exec_table;    /**< Table collecting info about the instructions
@@ -308,11 +307,13 @@ BOXEXPORT BoxTask
   BoxVM_Module_Execute_With_Args(BoxVMX *vmx, BoxVMCallNum cn,
                                  BoxPtr *parent, BoxPtr *child);
 
-
-/** Clear the backtrace of the program. */
+/**
+ * Clear the backtrace of the program.
+ */
 void BoxVM_Backtrace_Clear(BoxVM *vm);
 
-/** Print on 'stream' a human redable representation of the backtrace
+/**
+ * Print on 'stream' a human redable representation of the backtrace
  * of the program.
  */
 void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);

@@ -204,7 +204,7 @@ typedef BoxInt Int;
 typedef BoxUInt UInt;
 typedef BoxReal Real;
 typedef BoxPoint Point;
-typedef BoxPtr Obj;
+//typedef BoxPtr Obj;
 typedef BoxPtr Ptr;
 typedef BoxSubtype Subtype;
 

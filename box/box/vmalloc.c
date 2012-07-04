@@ -337,7 +337,7 @@ void BoxVM_Obj_Alloc(BoxVM *vm, BoxPtr *obj, size_t size, BoxVMAllocID id) {
 }
 
 /** Increase the reference counter for the given object. */
-void BoxVM_Obj_Link(Obj *obj) {
+void BoxVM_Obj_Link(BoxPtr *obj) {
   VMAllocHead *head = BoxPtr_Get_Head(obj);
   if (BoxPtr_Is_Detached(obj))
     return;

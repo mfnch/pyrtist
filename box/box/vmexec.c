@@ -258,13 +258,13 @@ static void My_Exec_ProjY_P(BoxVMX *vmx) {
 }
 
 static void My_Exec_PPtrX_P(BoxVMX *vmx) {
-  Obj *obj = (Obj *) vmx->local[TYPE_OBJ].ptr;
+  BoxPtr *obj = (BoxPtr *) vmx->local[TYPE_OBJ].ptr;
   obj->block = (void *) NULL;
   obj->ptr = & (((Point *) vmx->arg1)->x);
 }
 
 static void My_Exec_PPtrY_P(BoxVMX *vmx) {
-  Obj *obj = (Obj *) vmx->local[TYPE_OBJ].ptr;
+  BoxPtr *obj = (BoxPtr *) vmx->local[TYPE_OBJ].ptr;
   obj->block = (void *) NULL;
   obj->ptr = & (((Point *) vmx->arg1)->y);
 }
@@ -284,7 +284,7 @@ static void My_Exec_Eq_PP(BoxVMX *vmx) {
 }
 static void My_Exec_Eq_OO(BoxVMX *vmx) {
   *((Int *) vmx->local[TYPE_INT].ptr) =
-     (((Obj *) vmx->arg1)->ptr == ((Obj *) vmx->arg2)->ptr);
+     (((BoxPtr *) vmx->arg1)->ptr == ((BoxPtr *) vmx->arg2)->ptr);
 }
 static void My_Exec_Ne_II(BoxVMX *vmx) {
   *((Int *) vmx->arg1) =
@@ -301,7 +301,7 @@ static void My_Exec_Ne_PP(BoxVMX *vmx) {
 }
 static void My_Exec_Ne_OO(BoxVMX *vmx) {
   *((Int *) vmx->local[TYPE_INT].ptr) =
-     (((Obj *) vmx->arg1)->ptr != ((Obj *) vmx->arg2)->ptr);
+     (((BoxPtr *) vmx->arg1)->ptr != ((BoxPtr *) vmx->arg2)->ptr);
 }
 
 static void My_Exec_Lt_II(BoxVMX *vmx) {
@@ -351,7 +351,7 @@ static void My_Exec_LOr_II(BoxVMX *vmx) {
 
 static void My_Exec_Create_I(BoxVMX *vmx) {
   BoxInt id = *((Int *) vmx->arg1);
-  BoxPtr *obj = (Obj *) vmx->local[TYPE_OBJ].ptr;
+  BoxPtr *obj = (BoxPtr *) vmx->local[TYPE_OBJ].ptr;
   BoxVM_Obj_Create(vmx->vm, obj, id);
   if (!BoxPtr_Is_Null(obj))
     return;
@@ -372,7 +372,7 @@ static void My_Exec_Reloc_OO(BoxVMX *vmx) {
 
 static void My_Exec_Malloc_I(BoxVMX *vmx) {
   BoxInt size = *((Int *) vmx->arg1);
-  BoxPtr *obj = (Obj *) vmx->local[TYPE_OBJ].ptr;
+  BoxPtr *obj = (BoxPtr *) vmx->local[TYPE_OBJ].ptr;
   BoxVM_Obj_Alloc(vmx->vm, obj, size, (BoxVMAllocID) 0);
   if (!BoxPtr_Is_Null(obj))
     return;
@@ -380,7 +380,7 @@ static void My_Exec_Malloc_I(BoxVMX *vmx) {
 }
 
 static void My_Exec_Mln_O(BoxVMX *vmx) {
-  BoxVM_Obj_Link((Obj *) vmx->arg1);
+  BoxVM_Obj_Link((BoxPtr *) vmx->arg1);
 }
 
 static void My_Exec_MUnln_O(BoxVMX *vmx) {
@@ -389,8 +389,8 @@ static void My_Exec_MUnln_O(BoxVMX *vmx) {
 }
 
 static void My_Exec_MCopy_OO(BoxVMX *vmx) {
-  (void) memcpy(((Obj *) vmx->arg1)->ptr,             /* destination */
-                ((Obj *) vmx->arg2)->ptr,             /* source */
+  (void) memcpy(((BoxPtr *) vmx->arg1)->ptr,             /* destination */
+                ((BoxPtr *) vmx->arg2)->ptr,             /* source */
                 *((Int *) vmx->local[TYPE_INT].ptr)); /* size */
 }
 
@@ -423,7 +423,7 @@ static void My_Exec_Null_O(BoxVMX *vmx) {
 }
 
 static void My_Exec_Lea(BoxVMX *vmx) {
-  Obj *obj = (Obj *) vmx->local[TYPE_OBJ].ptr;
+  BoxPtr *obj = (BoxPtr *) vmx->local[TYPE_OBJ].ptr;
   obj->block = (void *) NULL;
   obj->ptr = vmx->arg1;
 }
@@ -455,12 +455,12 @@ static void My_Exec_Jc_I(BoxVMX *vmx) {
 }
 
 static void My_Exec_Add_O(BoxVMX *vmx) {
-  ((Obj *) vmx->arg1)->ptr += *((Int *) vmx->local[TYPE_INT].ptr);
+  ((BoxPtr *) vmx->arg1)->ptr += *((Int *) vmx->local[TYPE_INT].ptr);
 }
 
 static void My_Exec_Arinit_I(BoxVMX *vm) {
 #if 0
-  BoxArray *arr = (BoxArray *) ((Obj *) vmx->local[TYPE_OBJ].ptr)->ptr;
+  BoxArray *arr = (BoxArray *) ((BoxPtr *) vmx->local[TYPE_OBJ].ptr)->ptr;
   BoxInt num_dim = *((Int *) vmx->arg1);
   ASSERT_TASK( BoxArray_Init(arr, num_dim) );
 #endif
@@ -468,7 +468,7 @@ static void My_Exec_Arinit_I(BoxVMX *vm) {
 
 static void My_Exec_Arsize_I(BoxVMX *vm) {
 #if 0
-  BoxArray *arr = (BoxArray *) ((Obj *) vmx->local[TYPE_OBJ].ptr)->ptr;
+  BoxArray *arr = (BoxArray *) ((BoxPtr *) vmx->local[TYPE_OBJ].ptr)->ptr;
   BoxInt size = *((Int *) vmx->arg1);
   ASSERT_TASK( BoxArray_Set_Size(arr, size) );
 #endif
@@ -476,7 +476,7 @@ static void My_Exec_Arsize_I(BoxVMX *vm) {
 
 static void My_Exec_Araddr_II(BoxVMX *vm) {
 #if 0
-  BoxArray *arr = (BoxArray *) ((Obj *) vmx->local[TYPE_OBJ].ptr)->ptr;
+  BoxArray *arr = (BoxArray *) ((BoxPtr *) vmx->local[TYPE_OBJ].ptr)->ptr;
   size_t addr =  *((Int *) vmx->local[TYPE_INT].ptr);
   BoxInt index = *((Int *) vmx->arg1),
          dim = *((Int *) vmx->arg2);
@@ -487,8 +487,8 @@ static void My_Exec_Araddr_II(BoxVMX *vm) {
 
 static void My_Exec_Arget_OO(BoxVMX *vm) {
 #if 0
-  BoxPtr *item = (Obj *) vmx->arg1;
-  BoxArray *arr = (BoxArray *) ((Obj *) vmx->arg2)->ptr;
+  BoxPtr *item = (BoxPtr *) vmx->arg1;
+  BoxArray *arr = (BoxArray *) ((BoxPtr *) vmx->arg2)->ptr;
   size_t addr =  *((Int *) vmx->local[TYPE_INT].ptr);
   BoxArray_Access(arr, item, addr);
 #endif
@@ -500,7 +500,7 @@ static void My_Exec_Arnext_OO(BoxVMX *vm) {
 
 static void My_Exec_Ardest_O(BoxVMX *vm) {
 #if 0
-  BoxArray *arr = (BoxArray *) ((Obj *) vmx->arg1)->ptr;
+  BoxArray *arr = (BoxArray *) ((BoxPtr *) vmx->arg1)->ptr;
   BoxArray_Finish(vm, arr);
 #endif
 }

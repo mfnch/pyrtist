@@ -37,6 +37,7 @@
 #include "array.h"
 #include "occupation.h"
 #include "vm_private.h"
+#include "vmx.h"
 #include "vmsym.h"
 #include "vmproc.h"
 #include "vmalloc.h"
@@ -252,7 +253,9 @@ static void My_Free_Globals(BoxVM *vmp) {
 }
 
 void BoxVM_Finish(BoxVM *vm) {
-  if (vm == (BoxVM *) NULL) return;
+  if (vm == NULL)
+    return;
+
   if (vm->has.globals)
     My_Free_Globals(vm);
 
@@ -296,13 +299,6 @@ void BoxVM_Destroy(BoxVM *vm) {
     return;
   BoxVM_Finish(vm);
   BoxMem_Free(vm);
-}
-
-void BoxVMX_Set_Fail_Msg(BoxVMX *vmx, const char *msg) {
-  BoxVM *vm = vmx->vm;
-  if (vm->fail_msg != NULL)
-    BoxMem_Free(vm->fail_msg);
-  vm->fail_msg = (msg != NULL) ? BoxMem_Strdup(msg) : NULL;
 }
 
 BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op) {
@@ -356,10 +352,9 @@ Task BoxVM_Alloc_Global_Regs(BoxVM *vm, Int num_var[], Int num_reg[]) {
     }
   }
 
-  reg_obj = (Obj *) vm->global[TYPE_OBJ].ptr;
+  reg_obj = (BoxPtr *) vm->global[TYPE_OBJ].ptr;
   vm->box_vm_current = reg_obj + 1;
   vm->box_vm_arg1    = reg_obj + 2;
-  vm->box_vm_arg2    = reg_obj + 3;
   My_Set_Data_Segment_Register(vm);
   return BOXTASK_OK;
 }
@@ -877,13 +872,18 @@ void BoxVM_Data_Display(BoxVM *vm, FILE *stream) {
   fprintf(stream, "*** END OF THE DATA-SEGMENT ***\n");
 }
 
+/* Clear the backtrace of the program. */
 void BoxVM_Backtrace_Clear(BoxVM *vm) {
   BoxArr_Clear(& vm->backtrace);
 }
 
+/* Print on 'stream' a human redable representation of the backtrace
+ * of the program.
+ */
 void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream) {
   BoxVMTrace *traces = BoxArr_First_Item_Ptr(& vm->backtrace);
   size_t n = BoxArr_Num_Items(& vm->backtrace);
+  char *fail_msg;
 
   if (n == 0)
     fprintf(stream, "Empty traceback.\n");
@@ -919,6 +919,7 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream) {
     }
   }
 
-  if (vm->fail_msg != NULL)
-    fprintf(stream, "Failure: %s\n", vm->fail_msg);
+  fail_msg = BoxVMX_Get_Fail_Msg(vm->vmcur, BOXBOOL_FALSE);
+  if (fail_msg)
+    fprintf(stream, "Failure: %s\n", fail_msg);
 }
