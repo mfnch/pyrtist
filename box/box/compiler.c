@@ -333,6 +333,7 @@ static void My_Compile_TypeTag(BoxCmp *c, ASTNode *node);
 static void My_Compile_Subtype(BoxCmp *c, ASTNode *node);
 static void My_Compile_Box(BoxCmp *c, ASTNode *box,
                            BoxType child_t, BoxType parent_t);
+static void My_Compile_Instance(BoxCmp *c, ASTNode *instance);
 static void My_Compile_String(BoxCmp *c, ASTNode *node);
 static void My_Compile_Const(BoxCmp *c, ASTNode *n);
 static void My_Compile_Var(BoxCmp *c, ASTNode *n);
@@ -379,6 +380,8 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
     My_Compile_TypeTag(c, node); break;
   case ASTNODETYPE_SUBTYPE:
     My_Compile_Subtype(c, node); break;
+  case ASTNODETYPE_INSTANCE:
+    My_Compile_Instance(c, node); break;
   case ASTNODETYPE_BOX:
     My_Compile_Box(c, node, BOXTYPE_NONE, BOXTYPE_NONE); break;
   case ASTNODETYPE_STRING:
@@ -524,6 +527,19 @@ static void My_Compile_Statement(BoxCmp *c, ASTNode *s) {
   }
 }
 
+static void My_Compile_Instance(BoxCmp *c, ASTNode *instance) {
+  assert(instance->type == ASTNODETYPE_INSTANCE);
+
+  My_Compile_Any(c, instance->attr.instance.type);
+  if (BoxCmp_Pop_Errors(c, /* pop */ 1, /* push */ 1))
+    return;
+
+  else {
+    Value *instance = Value_To_Temp_Or_Target(BoxCmp_Pop_Value(c));
+    BoxCmp_Push_Value(c, instance);
+  }
+}
+
 static void My_Compile_Box(BoxCmp *c, ASTNode *box,
                            BoxType t_child, BoxType t_parent) {
   TS *ts = & c->ts;
@@ -636,7 +652,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
 
           assert(status == BOXTASK_FAILURE);
 
-          /* Treat the case where stmt_val is an If[] or For[] value */
+          /* Handle the case where stmt_val is an If[] or For[] value */
           if (TS_Compare(ts, stmt_type, c->bltin.alias_if))
             Value_Emit_CJump(stmt_val, jump_label_next);
 

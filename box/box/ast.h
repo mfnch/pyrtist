@@ -42,6 +42,7 @@ typedef enum {
   ASTNODETYPE_TYPENAME,
   ASTNODETYPE_TYPETAG,
   ASTNODETYPE_SUBTYPE,
+  ASTNODETYPE_INSTANCE,
   ASTNODETYPE_BOX,
   ASTNODETYPE_STATEMENT,
   ASTNODETYPE_CONST,
@@ -159,6 +160,14 @@ typedef struct {
   char    *name;
   ASTNode *parent;
 } ASTNodeSubtype;
+
+/** Node for instantiation. E.g. in ``x = Type'' this node captures has
+ * ``Type'' as a child and indicates that a new instance of that type should
+ * be created.
+ */
+typedef struct {
+  ASTNode    *type;
+} ASTNodeInstance;
 
 /** Node for a Box: which is a list of statements */
 typedef struct {
@@ -308,6 +317,7 @@ struct __ASTNode {
     ASTNodeTypeName   typenm;
     ASTNodeTypeTag    typetag;
     ASTNodeSubtype    subtype;
+    ASTNodeInstance   instance;
     ASTNodeBox        box;
     ASTNodeStatement  statement;
     ASTNodeConst      constant;
@@ -371,6 +381,7 @@ ASTNode *ASTNodeTypeTag_New(BoxType value);
 ASTNode *ASTNodeSubtype_New(ASTNode *parent_type, const char *name);
 ASTNode *ASTNodeStatement_New(ASTNode *target);
 ASTNode *ASTNodeSep_New(ASTSep sep);
+ASTNode *ASTNodeInstance_New(ASTNode *type);
 ASTNode *ASTNodeBox_New(ASTNode *type, ASTNode *first_statement);
 ASTNode *ASTNodeBox_Add_Statement(ASTNode *box, ASTNode *statement);
 ASTNode *ASTNodeBox_Add_Sep(ASTNode *box, ASTSep sep);

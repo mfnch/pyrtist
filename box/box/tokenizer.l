@@ -1,6 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2006-2012 by Matteo Franchin                                 *
- *   fnch@libero.it                                                        *
+ *   Copyright (C) 2006-2012 by Matteo Franchin                            *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -159,15 +158,13 @@ include BEGIN(include);
   */
 <<EOF>> {if (BoxLex_End_Include(yyextra)) yyterminate();}
 
- /* Un istruzione deve stare tutta su una riga.
-  * Se questo diventa problematico e' possibile usare il carattere
-  * di continuazione riga _
+ /* One statement must typically fit one single line.
+  * Alternatively, the line continuation character ``_'' or ``\'' can used
+  * at the end of the line to continue the statement in the next line.
   */
 "\n"    {MY_SCAN_TOK(); return TOK_NEWLINE;}
 
- /* Il carattere di continuazione riga mangia tutto ci che segue
-  * fino alla nuova riga e annulla il carattere newline
-  */
+ /* Here are the rules to implement the line continuation. */
 [_\\]{SPACES}"\n"            {MY_SCAN_TOK();}
 [_\\]{SPACES}"//"[^\n]*"\n"  {MY_SCAN_TOK();}
 
@@ -300,6 +297,12 @@ include BEGIN(include);
   MY_SCAN_TOK();
   return TOK_STRING;
  }
+
+Else {
+  yylval.String = BoxMem_Strndup(yytext, yyleng);
+  MY_SCAN_TOK();
+  return TOK_KEYWORD;
+}
 
  /* Variable name */
 {LNAME} {

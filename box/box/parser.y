@@ -98,7 +98,7 @@ static void My_Syntax_Error();
 %token TOK_ERR
 
 /* List of tokens with semantical value */
-%token <String> TOK_IDENTIFIER TOK_TYPE_IDENT
+%token <String> TOK_IDENTIFIER TOK_TYPE_IDENT TOK_KEYWORD
 %token <Node> TOK_CONSTANT TOK_STRING
 
 /* List of nodes with semantical value */
@@ -232,6 +232,9 @@ string_concat:
 
 prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
+  | TOK_KEYWORD                  {$$ = ASTNodeInstance_New(
+                                         ASTNodeTypeName_New($1, 0));
+                                  BoxMem_Free($1); SRC($$, @$);}
   | string_concat                {$$ = $1;}
   | TOK_IDENTIFIER opt_scope     {$$ = ASTNodeVar_New($1, 0);
                                   BoxMem_Free($1); SRC($$, @$);}

@@ -40,6 +40,9 @@ int ASTNode_Get_Subnodes(ASTNode *node, ASTNode **subnodes[AST_MAX_NUM_SUBNODES]
   case ASTNODETYPE_SUBTYPE:
     subnodes[0] = & node->attr.subtype.parent;
     return 1;
+  case ASTNODETYPE_INSTANCE:
+    subnodes[0] = & node->attr.instance.type;
+    return 1;
   case ASTNODETYPE_BOX:
     subnodes[0] = & node->attr.box.parent;
     subnodes[1] = & node->attr.box.first_statement;
@@ -121,6 +124,7 @@ const char *ASTNodeType_To_Str(ASTNodeType t) {
   case ASTNODETYPE_TYPENAME:   return "TypeName";
   case ASTNODETYPE_TYPETAG:    return "TypeTag";
   case ASTNODETYPE_SUBTYPE:    return "SubType";
+  case ASTNODETYPE_INSTANCE:   return "Instance";
   case ASTNODETYPE_BOX:        return "Box";
   case ASTNODETYPE_STATEMENT:  return "Statement";
   case ASTNODETYPE_CONST:      return "Const";
@@ -369,6 +373,12 @@ ASTNode *ASTNodeStatement_New(ASTNode *target) {
 ASTNode *ASTNodeSep_New(ASTSep sep) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_STATEMENT);
   node->attr.statement.sep = sep;
+  return node;
+}
+
+ASTNode *ASTNodeInstance_New(ASTNode *type) {
+  ASTNode *node = ASTNode_New(ASTNODETYPE_INSTANCE);
+  node->attr.instance.type = type;
   return node;
 }
 
