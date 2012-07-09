@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2007, 2008 by Matteo Franchin                              *
+ * Copyright (C) 2007-2012 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -165,6 +165,23 @@ void Box_Split_Path(char **dir, char **file, const char *full_path) {
       (*dir)[i] = '\0';
     }
   }
+}
+
+/* This functions transforms the input Unix path in a way that it can be
+ * understood in the current platform.
+ */
+char *Box_Normalize_Path(char *unix_path) {
+#ifdef __WINDOWS__
+  char *c;
+  for (c = unix_path; *c != '\0'; c++) {
+    if (c == '/')
+      *c = '\\';
+  }
+  return unix_path;
+
+#else
+  return unix_path;
+#endif
 }
 
 #if 0

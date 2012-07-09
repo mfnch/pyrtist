@@ -46,14 +46,16 @@ BOXEXPORT void Box_Find_Files_In_Dirs(BoxList **found_files,
 BOXEXPORT void Box_Find_File_In_Dirs(char **found_file, const char *file_name,
                                      BoxList *prefixes, BoxList *suffixes);
 
-/** Similar to Box_Find_File_In_Dirs, but search only inside one directory.
+/**
+ * Similar to Box_Find_File_In_Dirs, but search only inside one directory.
  * This is why this function only takes a string (prefix) rather than a
  * BoxList (prefixes).
  */
 BOXEXPORT void Box_Find_File_In_Dir(char **found_file, const char *file_name,
                                     const char *prefix, BoxList *suffixes);
 
-/** Split the given path in 'full_path' into its directory component,
+/**
+ * Split the given path in 'full_path' into its directory component,
  * which is a string allocated in '*dir', and its file component,
  * a string allocated in '*file'. If there is no directory component
  * returns NULL. If 'dir' or 'file' are null, the corresponding string
@@ -68,5 +70,20 @@ BOXEXPORT void Box_Find_File_In_Dir(char **found_file, const char *file_name,
  *  Box_Split_Path(dir, file, "") --> *dir = NULL; *file = BoxMem_Strdup("");
  */
 BOXEXPORT void Box_Split_Path(char **dir, char **file, const char *full_path);
+
+/**
+ * This functions transforms the input Unix path in a way that it can be
+ * understood in the current platform. In particular, when running on Windows
+ * this function transforms slashes to backslashes.
+ * @param srcpath A string allocated with BoxMem_Alloc containing the source
+ *   path in Unix style.
+ * @return This function tries to do a in-place transformation of the source
+ *   string. When possible, it just returns srcpath. If this is not possible,
+ *   then a new string is allocated and returned, while the original srcpath
+ *   is freed with BoxMem_Free. In other words, the user passes allocation
+ *   responsibility for the source string and receives allocation
+ *   responsibility for the returned string.
+ */
+BOXEXPORT char *Box_Normalize_Path(char *unix_path);
 
 #endif

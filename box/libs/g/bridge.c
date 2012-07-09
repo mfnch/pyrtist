@@ -29,7 +29,7 @@
  * It is a task of the Box compiler implementation to behave this way.  The
  * problem now is that we may end up definining the same object two times: once
  * in Box code and once in C code. What happens when one changes only one of
- * the two definitions (and forgets about the other). Easy: a segfault! It is
+ * the two definitions (and forgets about the other)? Easy: a segfault! It is
  * then important to provide a way to check consistency between the interface
  * and this is what we do here. In particular, we organize things like this:
  * bridge.h contains all the C definitions of the Box objects defined in the G

@@ -139,7 +139,7 @@ include BEGIN(include);
   * are not allowed inside an include line.
   */
 <include>{STRING} {
-  char *f = Str_Dup(yytext+1, yyleng-2);
+  char *f = Box_Normalize_Path(Str_Dup(yytext+1, yyleng-2));
 
   BEGIN(INITIAL);
 
@@ -153,8 +153,8 @@ include BEGIN(include);
   return TOK_ERR;
 }
 
- /* Se sto leggendo un file di include, quando arrivo alla sua fine
-  * torno a leggere il precedente.
+ /* At the end of file, if we are reading an included file, we return back to
+  * the file which contained the include directive.
   */
 <<EOF>> {if (BoxLex_End_Include(yyextra)) yyterminate();}
 
