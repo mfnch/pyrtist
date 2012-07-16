@@ -115,10 +115,14 @@ BoxType_Add_Member_To_Structure(BoxType structure, BoxType member,
  * Create an empty species. Members can be added with
  * BoxType_Add_Member_To_Species.
  */
-BoxType BoxType_New_Species(void);
+BOXEXPORT BoxType
+BoxType_Create_Species(void);
 
-/** Add a member to a species type defined with TS_Species_Begin. */
-void BoxType_Add_Species_Member(BoxType species, BoxType member);
+/**
+ * Add a member to a species type defined with BoxType_Create_Species.
+ */
+BOXEXPORT void
+BoxType_Add_Member_To_Species(BoxType species, BoxType member);
 
 /** Create a species of type '(*=>Dest)' (everything is converted to 'Dest').
  */
@@ -198,7 +202,8 @@ void BoxType_Define_Combination(BoxType child, BoxType parent,
 /**
  * Get the size of the type 't'.
  */
-size_t BoxType_Get_Size(BoxType t);
+BOXEXPORT size_t
+BoxType_Get_Size(BoxType t);
 
 /**
  * Get the size and the aligment of a given input type.
@@ -207,7 +212,8 @@ size_t BoxType_Get_Size(BoxType t);
  * @param algn Where to store the alignment of the type.
  * @return BOXTYPE_TRUE if size/alignment were retrieved successfully.
  */
-BoxBool BoxType_Get_Size_And_Alignment(BoxType t, size_t *size, size_t *algn);
+BOXEXPORT BoxBool
+BoxType_Get_Size_And_Alignment(BoxType t, size_t *size, size_t *algn);
 
 /**
  * Create the string representation of the Type 't'. The returned string

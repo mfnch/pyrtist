@@ -115,6 +115,22 @@ typedef struct {
 } BoxTypeStructureNode;
 
 /**
+ * Species type.
+ */
+typedef struct {
+  BoxTypeNode node;
+  size_t      num_items;
+} BoxTypeSpecies;
+
+/**
+ * Species node.
+ */
+typedef struct {
+  BoxTypeNode node;
+  BoxType     type;
+} BoxTypeSpeciesNode;
+
+/**
  * A function type: a type for something which can be called with an input
  * and returns an output.
  */
@@ -141,6 +157,8 @@ static void *MyType_Alloc(BoxType *t, BoxTypeClass tc) {
   switch (tc) {
   case BOXTYPECLASS_STRUCTURE_NODE:
     additional = sizeof(BoxTypeStructureNode); break;
+  case BOXTYPECLASS_SPECIES_NODE:
+    additional = sizeof(BoxTypeSpeciesNode); break;
   case BOXTYPECLASS_INTRINSIC: additional = sizeof(BoxTypeIntrinsic); break;
   case BOXTYPECLASS_ALIAS: additional = sizeof(BoxTypeIdent); break;
   case BOXTYPECLASS_RAISED: additional = sizeof(BoxTypeRaised); break;
@@ -178,9 +196,12 @@ void *MyType_Get_Data(BoxType t) {
 BoxTypeNode *MyType_Get_Node(BoxType t) {
   void *td = MyType_Get_Data(t);
   switch (t->type_class) {
-  case BOXTYPECLASS_STRUCTURE: return & ((BoxTypeStructure *) td)->node;
+  case BOXTYPECLASS_SPECIES_NODE:
+    return & ((BoxTypeSpeciesNode *) td)->node;
   case BOXTYPECLASS_STRUCTURE_NODE:
     return & ((BoxTypeStructureNode *) td)->node;
+  case BOXTYPECLASS_STRUCTURE: return & ((BoxTypeStructure *) td)->node;
+  case BOXTYPECLASS_SPECIES: return & ((BoxTypeSpecies *) td)->node;
   default: return NULL;
   }
 }
@@ -206,6 +227,11 @@ static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
     mems[0] = ((BoxTypeStructureNode *) tdata)->name;
     *num_mems = 1;
     return;
+  case BOXTYPECLASS_SPECIES_NODE:
+    refs[0] = ((BoxTypeSpeciesNode *) tdata)->node.next;
+    refs[1] = ((BoxTypeSpeciesNode *) tdata)->type;
+    *num_refs = 2;
+    return;
   case BOXTYPECLASS_INTRINSIC:
     return;
   case BOXTYPECLASS_ALIAS:
@@ -221,7 +247,12 @@ static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
   case BOXTYPECLASS_STRUCTURE:
     refs[0] = ((BoxTypeStructure *) tdata)->node.next;
     *num_refs = 1;
-    /* NOTE: we do not own the reference to `last'. */
+    /* NOTE: we do not own the reference to `previous'. */
+    return;
+  case BOXTYPECLASS_SPECIES:
+    refs[0] = ((BoxTypeSpecies *) tdata)->node.next;
+    *num_refs = 1;
+    /* NOTE: we do not own the reference to `previous'. */
     return;
   case BOXTYPECLASS_FUNCTION:
     refs[0] = ((BoxTypeFunction *) tdata)->child;
@@ -313,7 +344,7 @@ BoxType BoxType_Create_Raised(BoxType source) {
   return t;
 }
 
-/* Create a new raised type. */
+/* Create a new structure type. */
 BoxType BoxType_Create_Structure(void) {
   BoxType t;
   BoxTypeStructure *td = MyType_Alloc(& t, BOXTYPECLASS_STRUCTURE);
@@ -335,7 +366,7 @@ void BoxType_Add_Member_To_Structure(BoxType structure, BoxType member,
 
   /* Let's get the size and alignment of the member type. */
   if (!BoxType_Get_Size_And_Alignment(t, & msize, & malgn))
-    MSG_FATAL("Cannot get size and alignment of type");
+    MSG_FATAL("Cannot get size and alignment of structure member type");
 
   /* Need to do this small computation to retrieve the structure size without
    * padding (as std->size is the actual structure size, with padding).
@@ -362,6 +393,38 @@ void BoxType_Add_Member_To_Structure(BoxType structure, BoxType member,
 
   std->size = BoxMem_Get_Multiple_Size(td->offset + msize, std->alignment);
   MyType_Append_Node(structure, t);
+}
+
+/* Create a new species type. */
+BoxType BoxType_Create_Species(void) {
+  BoxType t;
+  BoxTypeSpecies *td = MyType_Alloc(& t, BOXTYPECLASS_SPECIES);
+  td->num_items = 0;
+  td->node.next = BOXTYPE_NONE;
+  td->node.previous = BOXTYPE_NONE;
+  return t;
+}
+
+/* Add a member to a species type defined with BoxType_Create_Species. */
+BOXEXPORT void
+BoxType_Add_Member_To_Species(BoxType species, BoxType member) {
+  BoxType t;
+  size_t msize, malgn;
+  BoxTypeSpecies *std = MyType_Get_Data(species);
+  BoxTypeSpeciesNode *td;
+
+  /* Let's get the size and alignment of the member type. */
+  if (!BoxType_Get_Size_And_Alignment(t, & msize, & malgn))
+    MSG_FATAL("Cannot get size and alignment of species member type");
+
+  /* Now create the member. */
+  td = MyType_Alloc(& t, BOXTYPECLASS_SPECIES_NODE);
+  td->type = member;
+
+  /* Add the member to the structure. */
+  std->num_items++;
+
+  MyType_Append_Node(species, t);
 }
 
 /* Create a new function type. */
@@ -438,8 +501,11 @@ BoxBool BoxType_Get_Size_And_Alignment(BoxType t, size_t *size, size_t *algn) {
       *algn = ((BoxTypeStructure *) td)->alignment;
       return BOXBOOL_TRUE;
 
-#if 0
     case BOXTYPECLASS_SPECIES:
+      t = ((BoxTypeSpecies *) td)->node.previous;
+      break; /* resolve and retry... */
+
+#if 0
     case BOXTYPECLASS_ENUM:
 #endif
 
