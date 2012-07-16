@@ -25,24 +25,22 @@
 #include <box/messages.h>
 #include <box/mem.h>
 
+#define BOXTYPE_NONE ((BoxType) NULL)
+
 typedef enum {
   BOXTYPECLASS_NONE,
-#if 0
-  BOXTYPECLASS_PARAMETER,
-  BOXTYPECLASS_BASIC,
-#endif
+  BOXTYPECLASS_STRUCTURE_NODE,
+  BOXTYPECLASS_SPECIES_NODE,
+  BOXTYPECLASS_ENUM_NODE,
   BOXTYPECLASS_INTRINSIC,
   BOXTYPECLASS_ALIAS,
   BOXTYPECLASS_RAISED,
   BOXTYPECLASS_STRUCTURE,
-#if 0
   BOXTYPECLASS_SPECIES,
   BOXTYPECLASS_ENUM,
-#endif
   BOXTYPECLASS_FUNCTION,
   BOXTYPECLASS_POINTER,
   BOXTYPECLASS_ANY,
-  BOXTYPECLASS_LIST_NODE
 } BoxTypeClass;
 
 struct BoxTypeDesc_struct {
@@ -88,16 +86,33 @@ typedef struct {
 } BoxTypeRaised;
 
 /**
+ * List node (used in structures, enums, etc.)
+ */
+typedef struct {
+  BoxType next, previous;
+} BoxTypeNode;
+
+/**
  * Structure type: objects of this type contain a fixed number of objects of
  * other types, which can be referred by name.
  */
 typedef struct {
-  size_t  size,
-          alignment,
-          num_items;
-  BoxType first,
-          last;
+  BoxTypeNode node;
+  size_t      size,
+              alignment,
+              num_items;
 } BoxTypeStructure;
+
+/**
+ * Structure node: basically, a structure member.
+ */
+typedef struct {
+  BoxTypeNode node;
+  char        *name;
+  size_t      offset,
+              size;
+  BoxType     type;
+} BoxTypeStructureNode;
 
 /**
  * A function type: a type for something which can be called with an input
@@ -116,13 +131,6 @@ typedef struct {
 } BoxTypePointer;
 
 /**
- * List node (used internally by structures, enums, etc.)
- */
-typedef struct {
-  BoxType next, previous;
-} BoxTypeListNode;
-
-/**
  * Generic allocation function for BoxType objects. This function allocates a
  * type header plus a the type data, whose size and composition depend on the
  * particular type class.
@@ -131,6 +139,8 @@ static void *MyType_Alloc(BoxType *t, BoxTypeClass tc) {
   size_t additional = 0, total;
 
   switch (tc) {
+  case BOXTYPECLASS_STRUCTURE_NODE:
+    additional = sizeof(BoxTypeStructureNode); break;
   case BOXTYPECLASS_INTRINSIC: additional = sizeof(BoxTypeIntrinsic); break;
   case BOXTYPECLASS_ALIAS: additional = sizeof(BoxTypeIdent); break;
   case BOXTYPECLASS_RAISED: additional = sizeof(BoxTypeRaised); break;
@@ -138,7 +148,6 @@ static void *MyType_Alloc(BoxType *t, BoxTypeClass tc) {
   case BOXTYPECLASS_FUNCTION: additional = sizeof(BoxTypeFunction); break;
   case BOXTYPECLASS_POINTER: additional = sizeof(BoxTypePointer); break;
   case BOXTYPECLASS_ANY: additional = 0; break;
-  case BOXTYPECLASS_LIST_NODE: additional = sizeof(BoxTypeListNode); break;
   default:
     MSG_FATAL("Unknown type class in MyType_Alloc");
     return NULL;
@@ -163,6 +172,20 @@ void *MyType_Get_Data(BoxType t) {
 }
 
 /**
+ * Return the BoxTypeNode object associated to a node type or NULL, if the
+ * given type is not a node type.
+ */
+BoxTypeNode *MyType_Get_Node(BoxType t) {
+  void *td = MyType_Get_Data(t);
+  switch (t->type_class) {
+  case BOXTYPECLASS_STRUCTURE: return & ((BoxTypeStructure *) td)->node;
+  case BOXTYPECLASS_STRUCTURE_NODE:
+    return & ((BoxTypeStructureNode *) td)->node;
+  default: return NULL;
+  }
+}
+
+/**
  * Get the allocated objects a given type refers to.
  */
 static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
@@ -175,6 +198,14 @@ static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
   switch (t->type_class) {
   case BOXTYPECLASS_NONE:
     break;
+  case BOXTYPECLASS_STRUCTURE_NODE:
+    refs[0] = ((BoxTypeStructureNode *) tdata)->node.next;
+    refs[1] = ((BoxTypeStructureNode *) tdata)->type;
+    *num_refs = 2;
+    /* NOTE: we do not own the reference to `previous'. */
+    mems[0] = ((BoxTypeStructureNode *) tdata)->name;
+    *num_mems = 1;
+    return;
   case BOXTYPECLASS_INTRINSIC:
     return;
   case BOXTYPECLASS_ALIAS:
@@ -188,7 +219,7 @@ static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
     *num_refs = 1;
     return;
   case BOXTYPECLASS_STRUCTURE:
-    refs[0] = ((BoxTypeStructure *) tdata)->first;
+    refs[0] = ((BoxTypeStructure *) tdata)->node.next;
     *num_refs = 1;
     /* NOTE: we do not own the reference to `last'. */
     return;
@@ -203,11 +234,6 @@ static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
     return;
   case BOXTYPECLASS_ANY:
     *num_refs = 0;
-    return;
-  case BOXTYPECLASS_LIST_NODE:
-    refs[0] = ((BoxTypeListNode *) tdata)->next;
-    *num_refs = 1;
-    /* NOTE: we do not own the reference to `previous'. */
     return;
   }
 }
@@ -236,13 +262,29 @@ BoxType BoxType_Link(BoxType t) {
   return t;
 }
 
-/* Create a new intrinsic type with the given size and alignment. */
-BoxType BoxType_Create_List_Node(BoxType source, BoxTypeListNode **list_node) {
-  BoxType t;
-  BoxTypeListNode *td = MyType_Alloc(& t, BOXTYPECLASS_LIST_NODE);
-  td->source = source;
-  *list_node = td;
-  return t;
+/* Append one BoxTypeNode item to a top BoxTypeNode item. This is used in
+ * structures, enums, etc. to add members.
+ */
+static void MyType_Append_Node(BoxType top, BoxType item) {
+  BoxTypeNode *top_node = MyType_Get_Node(top);
+  BoxTypeNode *item_node = MyType_Get_Node(item);
+  assert(top_node && item_node);
+
+  /* Adjust the links. */
+  item_node->previous = top_node->previous;
+  item_node->next = BOXTYPE_NONE;
+
+  /* Adjust the tail. */
+  if (top_node->previous != BOXTYPE_NONE) {
+    BoxTypeNode *previous_node = MyType_Get_Node(top_node->previous);
+    assert(previous_node);
+    previous_node->next = item;
+  }
+
+  /* Adjust the top node. */
+  if (top_node->next == BOXTYPE_NONE)
+    top_node->next = item;
+  top_node->previous = item;
 }
 
 /* Create a new intrinsic type with the given size and alignment. */
@@ -278,9 +320,48 @@ BoxType BoxType_Create_Structure(void) {
   td->size = 0;
   td->alignment = 0;
   td->num_items = 0;
-  td->first = NULL;
-  td->last = NULL;
+  td->node.next = BOXTYPE_NONE;
+  td->node.previous = BOXTYPE_NONE;
   return t;
+}
+
+/* Add a member to a structure type defined with BoxType_Create_Structure. */
+void BoxType_Add_Member_To_Structure(BoxType structure, BoxType member,
+                                     const char *member_name) {
+  BoxType t;
+  size_t msize, malgn, ssize;
+  BoxTypeStructure *std = MyType_Get_Data(structure);
+  BoxTypeStructureNode *td;
+
+  /* Let's get the size and alignment of the member type. */
+  if (!BoxType_Get_Size_And_Alignment(t, & msize, & malgn))
+    MSG_FATAL("Cannot get size and alignment of type");
+
+  /* Need to do this small computation to retrieve the structure size without
+   * padding (as std->size is the actual structure size, with padding).
+   */
+  ssize = 0;
+  if (std->node.previous != BOXTYPE_NONE) {
+    BoxTypeStructureNode *ptd = MyType_Get_Data(std->node.previous);
+    ssize = ptd->offset + ptd->size;
+  }
+
+  /* Now create the member. */
+  td = MyType_Alloc(& t, BOXTYPECLASS_STRUCTURE_NODE);
+  td->name = (member_name ? BoxMem_Strdup(member_name) : NULL);
+  td->size = msize;
+  td->offset = BoxMem_Align_Offset(ssize, malgn);
+  td->type = member;
+
+  /* Add the member to the structure. */
+  std->num_items++;
+
+  /* Alignment is the maximum of the alignments of the members. */
+  if (malgn > std->alignment)
+    std->alignment = malgn;
+
+  std->size = BoxMem_Get_Multiple_Size(td->offset + msize, std->alignment);
+  MyType_Append_Node(structure, t);
 }
 
 /* Create a new function type. */
@@ -307,6 +388,81 @@ BoxType BoxType_Create_Any(void) {
   return t;
 }
 
+/* Get the size of the type 't'. */
+size_t BoxType_Get_Size(BoxType t) {
+  size_t size;
+  if (BoxType_Get_Size_And_Alignment(t, & size, NULL))
+    return size;
+  else
+    return 0;
+}
+
+/* Get the size and the aligment of a given type. */
+BoxBool BoxType_Get_Size_And_Alignment(BoxType t, size_t *size, size_t *algn) {
+  size_t dummy;
+
+  if (!size)
+    size = & dummy;
+
+  if (!algn)
+    algn = & dummy;
+
+  /* We do a while loop rather than opting for recursive calls.
+   * The loop is uglier, but more efficient...
+   */
+  while (1) {
+    void *td = MyType_Get_Data(t);
+
+    switch (t->type_class) {
+    case BOXTYPECLASS_NONE:
+    case BOXTYPECLASS_STRUCTURE_NODE:
+    case BOXTYPECLASS_SPECIES_NODE:
+    case BOXTYPECLASS_ENUM_NODE:
+      return BOXBOOL_FALSE;
+
+    case BOXTYPECLASS_INTRINSIC:
+      *size = ((BoxTypeIntrinsic *) td)->size;
+      *algn = ((BoxTypeIntrinsic *) td)->alignment;
+      return BOXBOOL_TRUE;
+
+    case BOXTYPECLASS_ALIAS:
+      t = ((BoxTypeIdent *) td)->source;
+      break; /* resolve and retry... */
+
+    case BOXTYPECLASS_RAISED:
+      t = ((BoxTypeRaised *) td)->source;
+      break; /* resolve and retry... */
+
+    case BOXTYPECLASS_STRUCTURE:
+      *size = ((BoxTypeStructure *) td)->size;
+      *algn = ((BoxTypeStructure *) td)->alignment;
+      return BOXBOOL_TRUE;
+
+#if 0
+    case BOXTYPECLASS_SPECIES:
+    case BOXTYPECLASS_ENUM:
+#endif
+
+    case BOXTYPECLASS_FUNCTION:
+      *size = sizeof(BoxFunc);
+      *algn = __alignof__(BoxFunc);
+      return BOXBOOL_TRUE;
+
+    case BOXTYPECLASS_POINTER:
+      *size = sizeof(BoxPtr);
+      *algn = __alignof__(BoxPtr);
+      return BOXBOOL_TRUE;
+
+    case BOXTYPECLASS_ANY:
+      *size = sizeof(BoxAny);
+      *algn = __alignof__(BoxAny);
+      return BOXBOOL_TRUE;
+
+    default:
+      return BOXBOOL_FALSE;
+    }
+  }
+}
 
 
 

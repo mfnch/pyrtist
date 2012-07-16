@@ -31,6 +31,20 @@ typedef struct BoxTypeDesc_struct BoxTypeDesc;
 typedef BoxTypeDesc *BoxType;
 
 /**
+ * A pointer to a target object decorated with the type of the target.
+ * This is using for boxing/unboxing objects.
+ */
+typedef struct {
+  BoxType type;
+  BoxPtr  ptr;
+} BoxAny;
+
+/**
+ * A Box function (can be called from Box).
+ */
+typedef int BoxFunc;
+
+/**
  * Value which determines the relationship between two types left and right.
  * This is what is returned by BoxType_Compare.
  */
@@ -181,10 +195,22 @@ void BoxType_Define_Combination(BoxType child, BoxType parent,
  * TYPE ENQUIRY ROUTINES                                                     *
  *****************************************************************************/
 
-/** Get the size of the type 't'. */
+/**
+ * Get the size of the type 't'.
+ */
 size_t BoxType_Get_Size(BoxType t);
 
-/** Create the string representation of the Type 't'. The returned string
+/**
+ * Get the size and the aligment of a given input type.
+ * @param t The input type.
+ * @param size Where to store the size of the type.
+ * @param algn Where to store the alignment of the type.
+ * @return BOXTYPE_TRUE if size/alignment were retrieved successfully.
+ */
+BoxBool BoxType_Get_Size_And_Alignment(BoxType t, size_t *size, size_t *algn);
+
+/**
+ * Create the string representation of the Type 't'. The returned string
  * has to be freed with BoxMem_Free.
  */
 char *BoxType_Get_Repr(BoxType t);
