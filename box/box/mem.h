@@ -95,27 +95,34 @@ BOXEXPORT int BoxMem_x_Plus_y(size_t *r, size_t x, size_t y);
 BOXEXPORT int BoxMem_AX_Plus_BY(size_t *r, size_t a, size_t x,
                                 size_t b, size_t y);
 
-/** Provides functionality similar to 'malloc' with the difference that the
+/**
+ * Provides functionality similar to 'malloc' with the difference that the
  * allocation is reference counted. In particular, this function does allocate
  * 's' bytes plus the space for an additional integer. The integer contains the
  * number of references to this block, which is initially set to 1.  The number
- * can be increase with Box_RC_Link and is decreased with Box_RC_Unlink.
- * The block is freed when the reference count reaches zero.
+ * can be increase with Box_Mem_RC_Link and is decreased with
+ * Box_Mem_RC_Unlink.  The block is freed when the reference count reaches
+ * zero.
  */
-BOXEXPORT void *Box_Mem_Alloc_RC(size_t s);
+BOXEXPORT void *Box_Mem_RC_Alloc(size_t s);
 
-/** Similar to 'Box_RC_Alloc' but aborts if the memory request fails. */
-BOXEXPORT void *Box_Mem_Safe_Alloc_RC(size_t s);
+/**
+ * Similar to 'Box_Mem_RC_Alloc' but aborts if the memory request fails.
+ */
+BOXEXPORT void *Box_Mem_RC_Safe_Alloc(size_t s);
 
-/** Increase the reference count associated with the block 'ptr'. */
-BOXEXPORT void Box_RC_Link(void *ptr);
+/**
+ * Increase the reference count associated with the block 'ptr'.
+ */
+BOXEXPORT void Box_Mem_RC_Link(void *ptr);
 
-/** Decrease the reference count. The block is freed if the reference count
+/**
+ * Decrease the reference count. The block is freed if the reference count
  * reaches zero.
  * @return 1 if the block was freed (reference count reached zero),
  *   0 otherwise.
  */
-BOXEXPORT int Box_RC_Unlink(void *ptr);
+BOXEXPORT int Box_Mem_RC_Unlink(void *ptr);
 
 /*#define BOXMEM_DEBUG_MACROS*/
 

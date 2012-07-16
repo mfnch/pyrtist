@@ -181,7 +181,7 @@ int BoxMem_AX_Plus_BY(size_t *r, size_t a, size_t x, size_t b, size_t y) {
  return 1;
 }
 
-void *Box_Mem_Alloc_RC(size_t s) {
+void *Box_Mem_RC_Alloc(size_t s) {
   size_t total;
   if (BoxMem_x_Plus_y(& total, sizeof(BoxRefCount), s)) {
     void *whole = BoxMem_Alloc(total);
@@ -196,19 +196,19 @@ void *Box_Mem_Alloc_RC(size_t s) {
   return NULL;
 }
 
-void *Box_Mem_Safe_Alloc_RC(size_t s) {
-  void *ptr = Box_Mem_Alloc_RC(s);
+void *Box_Mem_RC_Safe_Alloc(size_t s) {
+  void *ptr = Box_Mem_RC_Alloc(s);
   assert(ptr != NULL);
   return ptr;
 }
 
-void Box_RC_Link(void *ptr) {
+void Box_Mem_RC_Link(void *ptr) {
   void *whole = ptr - sizeof(BoxRefCount);
   BoxRefCount *rc = whole;
   ++*rc;
 }
 
-int Box_RC_Unlink(void *ptr) {
+int Box_Mem_RC_Unlink(void *ptr) {
   void *whole = ptr - sizeof(BoxRefCount);
   BoxRefCount *prc = whole, rc = *prc;
   if (rc == 1) {

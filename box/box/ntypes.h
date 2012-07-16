@@ -24,12 +24,14 @@
 
 typedef struct BoxTypeDesc_struct BoxTypeDesc;
 
-/** A type in the Box type system. This is currently implemented as a
+/**
+ * A type in the Box type system. This is currently implemented as a
  * pointer to an opaque structure.
  */
 typedef BoxTypeDesc *BoxType;
 
-/** Value which determines the relationship between two types left and right.
+/**
+ * Value which determines the relationship between two types left and right.
  * This is what is returned by BoxType_Compare.
  */
 typedef enum {
@@ -44,35 +46,59 @@ typedef enum {
  * TYPE CREATION ROUTINES                                                    *
  *****************************************************************************/
 
-/** Create a new parameter type to be used in the definition of parametric
- * types.
+/**
+ * Create a new intrinsic type with the given name, size and alignment.
+ * An intrinsic type can be imagined as a descriptor for an atomic
+ * (i.e. indivisible) portion of memory.
+ * @param size The size of the type (in bytes).
+ * @param alignment The alignment for the type.
+ * @return A new intrinsic type (or BOXTYPE_NONE if errors occurred).
  */
-BoxType BoxType_New_Parameter(void);
+BOXEXPORT BoxType
+BoxType_Create_Intrinsic(size_t size, size_t alignment);
 
-BoxType BoxType_New_Parametric(void);
+/**
+ * Create a new type identifier from the type 'source'. A type identifier
+ * is a type which can be referred using a name. It can be put inside the
+ * namespace of a parent type and has itself a namespace which can contain
+ * children types. An identifier type can also have combinations and
+ * subtypes. It is thus a central concept for organising the type hierarchy
+ * in the Box language.
+ * @param source The target type to which this identifier refers to.
+ * @param name The name to use for identifying the type.
+ * @return A new type identifier (or BOXTYPE_NONE in case of errors).
+ */
+BOXEXPORT BoxType
+BoxType_Create_Ident(BoxType source, const char *name);
 
-/** Create a new intrinsic type with the given size and alignment. */
-BoxType BoxType_New_Intrinsic(size_t size, size_t alignment, const char *name);
-
-/** Create a new alias type from the type 'source'. */
-BoxType BoxType_New_Alias(BoxType source, const char *name);
-
-/** Create a new raised type from the type 'source'. The new type will be
+/**
+ * Create a new raised type from the type 'source'. The new type will be
  * similar to t, but incompatible: BoxType_Compare will not match the two
- * types.
+ * types. As a consequence, the new raised type will not share the combinations
+ * of its source type. Notice, however, that an object whose type is raised
+ * can be unraised to obtain an object having the source type.
+ * @param source The source type.
+ * @return A new raised type.
  */
-BoxType BoxType_New_Raised(BoxType source);
+BOXEXPORT BoxType
+BoxType_Create_Raised(BoxType source);
 
-/** Create an empty structure. Members can be added with
+/**
+ * Create an empty structure. Members can be added with
  * BoxType_Add_Member_To_Structure.
  */
-BoxType BoxType_New_Structure(void);
+BOXEXPORT BoxType
+BoxType_Create_Structure(void);
 
-/** Add a member to a structure type defined with BoxType_New_Structure. */
-void BoxType_Add_Member_To_Structure(BoxType structure, BoxType member,
-                                     const char *member_name);
+/**
+ * Add a member to a structure type defined with BoxType_Create_Structure.
+ */
+BOXEXPORT void
+BoxType_Add_Member_To_Structure(BoxType structure, BoxType member,
+                                const char *member_name);
 
-/** Create an empty species. Members can be added with
+/**
+ * Create an empty species. Members can be added with
  * BoxType_Add_Member_To_Species.
  */
 BoxType BoxType_New_Species(void);
@@ -90,23 +116,52 @@ void BoxType_New_Enum(void);
 /** Add a member to an enum type cerated with BoxType_New_Enum. */
 void BoxType_Add_Member_To_Enum(BoxType member, const char *member_name);
 
-/** Create a new function type taking 'child' as an argument and working
+/**
+ * Create a new function type taking 'child' as an argument and working
  * on 'parent'.
+ * @param child The type of the argument of the function.
+ * @param parent The type of the value returned by the function.
+ * @return A new type corresponding to the specified function.
  */
-BoxType BoxType_New_Function(BoxType child, BoxType parent);
+BOXEXPORT BoxType
+BoxType_Create_Function(BoxType child, BoxType parent);
 
-/** Create a new pointer type to 'source'. */
-BoxType BoxType_New_Pointer(BoxType source);
+/**
+ * Create a new pointer type to 'source'.
+ * @param target The type of the pointer target.
+ * @return A new pointer type.
+ */
+BOXEXPORT BoxType
+BoxType_Create_Pointer(BoxType target);
 
-/** Create a new Any type. */
-BoxType BoxType_New_Any(void);
+/**
+ * Create a new Any type.
+ */
+BOXEXPORT BoxType
+BoxType_Create_Any(void);
 
 /*****************************************************************************
  * TYPE FINE-TUNING ROUTINES                                                 *
  *****************************************************************************/
 
-/** Set the namespace for a type 'source'. */
-void BoxType_Set_Namespace(BoxType source, BoxType namespace);
+/**
+ * Add a child type to the namespace of a parent type.
+ * Note that both the child and the parent must be identifier types.
+ * @param parent The parent type.
+ * @param child The child type.
+ */
+BOXEXPORT void
+BoxType_Add_Type(BoxType parent, BoxType child);
+
+/**
+ * Add a subtype type for a given type.
+ * Note that the parent must be an identifier type.
+ * @param parent The parent type.
+ * @param name The name of the subtype.
+ * @param subtype The type of the subtype.
+ */
+BOXEXPORT void
+BoxType_Create_Subtype(BoxType parent, const char *name, BoxType subtype);
 
 /** Identifier used to determine the state of a Box. */
 typedef unsigned int BoxBoxState;
