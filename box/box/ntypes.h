@@ -49,11 +49,10 @@ typedef int BoxFunc;
  * This is what is returned by BoxType_Compare.
  */
 typedef enum {
-  BOXTYPECMP_SAME,     /**< right and left are the same type. */
-  BOXTYPECMP_EQUAL,    /**< right and left are equal. */
-  BOXTYPECMP_MATCHING, /**< right can be expended to left. */
-  BOXTYPECMP_DIFFERENT /**< the two types are different. */
-
+  BOXTYPECMP_DIFFERENT = 0x0, /**< the two types are different. */
+  BOXTYPECMP_MATCHING  = 0x1, /**< right can be expended to left. */
+  BOXTYPECMP_EQUAL     = 0x3, /**< right and left are equal. */
+  BOXTYPECMP_SAME      = 0x7  /**< right and left are the same type. */
 } BoxTypeCmp;
 
 /*****************************************************************************
@@ -239,17 +238,67 @@ BoxType BoxType_Find_Combination(BoxType left, BoxType right);
  */
 typedef struct BoxTypeIter_struct BoxTypeIter;
 
-void BoxTypeIter_Init(BoxTypeIter *ti);
-
-/** The idea is to use this as:
-
-  BoxTypeIter ti;
-  BoxType t;
-  for (BoxTypeIter(& ti); BoxTypeIter_Get_Next(& ti, & t);) {
-    // ...
-  }
-
+/**
+ * Initialize an iterator for iteration over the members of the given type.
+ * @param ti Pointer to location of memory to initialize.
+ * @param t Iteration is done over the members of this type.
  */
-int BoxTypeIter_Get_Next(BoxTypeIter *ti, BoxType *next);
+BOXEXPORT void
+BoxTypeIter_Init(BoxTypeIter *ti, BoxType t);
+
+/**
+ * Iterate over the next member of the provided iterator.
+ * @param ti Pointer to an initialized iterator.
+ * @param next This is a pointer where to put the next item in the iteration.
+ * @return BOXBOOL_TRUE if a new item was retrieved and written in ``*next``,
+ *   BOXBOOL_FALSE otherwise.
+ *
+ * EXAMPLE: The idea is to use this as:
+ *
+ *  BoxTypeIter ti;
+ *  BoxType t;
+ *  for (BoxTypeIter_Init(& ti, parent); BoxTypeIter_Get_Next(& ti, & t);) {
+ *    BoxType_Get_Struct_Member(& t, ...);
+ *    ...
+ *  }
+ *
+ */
+BOXEXPORT BoxBool
+BoxTypeIter_Get_Next(BoxTypeIter *ti, BoxType *next);
+
+/**
+ * Whether an iterator has more items to read with BoxTypeIter_Get_Next.
+ * @param ti Pointer to an initialized, possibly "used" iterator.
+ * @return BOXBOOL_TRUE if the iterator has some items (in other words, if the
+ *   next call to BoxTypeIter_Get_Next is going to return BOXBOOL_TRUE),
+ *   BOXBOOL_FALSE otherwise.
+ */
+BOXEXPORT BoxBool
+BoxTypeIter_Has_Items(BoxTypeIter *ti);
+
+/**
+ * Get information on a structure member as obtained from BoxTypeIter_Get_Next.
+ */
+BOXEXPORT BoxBool
+BoxType_Get_Struct_Member(BoxType node, char **name, size_t *offset,
+                          size_t *size, BoxType *type);
+
+/**
+ * Get the type of a structure member obtained from BoxTypeIter_Get_Next.
+ * This is a convenience function to be used as a replacement of
+ * BoxType_Get_Struct_Member in the case where only the member type is needed.
+ * @param node The type node as obtained from BoxTypeIter_Get_Next.
+ * @return The type of the member.
+ */
+BOXEXPORT BoxType
+BoxType_Get_Struct_Member_Type(BoxType node);
+
+/**
+ * Get the type of a species member as obtained from BoxTypeIter_Get_Next.
+ * @param node The type node as obtained from BoxTypeIter_Get_Next.
+ * @return The type of the member.
+ */
+BOXEXPORT BoxType
+BoxType_Get_Species_Member_Type(BoxType node);
 
 #endif /* _BOX_NTYPES_H */

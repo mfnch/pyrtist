@@ -530,16 +530,204 @@ BoxBool BoxType_Get_Size_And_Alignment(BoxType t, size_t *size, size_t *algn) {
   }
 }
 
+/**
+ * Type iterator: allows to iterate over the members of structures, enums, etc.
+ */
+struct BoxTypeIter_struct {
+  BoxType current_node;
+};
 
+/* Initialize an iterator for iteration over the members of the given type. */
+void BoxTypeIter_Init(BoxTypeIter *ti, BoxType t) {
+  if (t) {
+    BoxTypeNode *node = MyType_Get_Node(t);
+    if (node) {
+      ti->current_node = node->next;
+      return;
+    }
+  }
+
+  ti->current_node = NULL;
+}
+
+/* Iterate over the next member of the provided iterator. If the iterator has
+ * a next member, then ``*next`` is set to it and BOXBOOL_TRUE is returned.
+ * BOXBOOL_FALSE is returned otherwise.
+ */
+BoxBool BoxTypeIter_Get_Next(BoxTypeIter *ti, BoxType *next) {
+  if (ti && ti->current_node) {
+    BoxTypeNode *node = MyType_Get_Node(ti->current_node);
+    *next = ti->current_node;
+    ti->current_node = node->next;
+    return BOXBOOL_TRUE;
+
+  } else {
+    *next = NULL;
+    return BOXBOOL_FALSE;
+  }
+}
+
+/* Whether the iterator has more items. */
+BoxBool BoxTypeIter_Has_Items(BoxTypeIter *ti) {
+  return (ti && ti->current_node);
+}
+
+
+/* Get information on a structure member as obtained from
+ * BoxTypeIter_Get_Next.
+ */
+BoxBool BoxType_Get_Struct_Member(BoxType node, char **name, size_t *offset,
+                                  size_t *size, BoxType *type) {
+  if (node->type_class == BOXTYPECLASS_STRUCTURE_NODE) {
+    BoxTypeStructureNode *sn = MyType_Get_Data(node);
+
+    if (name)
+      *name = sn->name;
+    if (offset)
+      *offset = sn->offset;
+    if (size)
+      *size = sn->size;
+    if (type)
+      *type = sn->type;
+
+    return BOXBOOL_TRUE;
+    
+  } else
+    return BOXBOOL_FALSE;
+}
+
+/* Get the type of a structure member obtained from BoxTypeIter_Get_Next. */
+BoxType BoxType_Get_Struct_Member_Type(BoxType node) {
+  BoxType t;
+
+  if (BoxType_Get_Struct_Member(node, NULL, NULL, NULL, & t))
+    return t;
+
+  return NULL;
+}
+
+/* Get information on a species member as obtained from BoxTypeIter_Get_Next.
+ */
+BoxType BoxType_Get_Species_Member_Type(BoxType node) {
+  if (node->type_class == BOXTYPECLASS_SPECIES_NODE) {
+    BoxTypeStructureNode *sn = MyType_Get_Data(node);
+    return sn->type;
+  }
+
+  return NULL;
+}
+
+#if 1
+
+BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
+  if (left == right)
+    return BOXTYPECMP_SAME;
+
+  switch (left->type_class) {
+  case BOXTYPECLASS_STRUCTURE_NODE:
+  case BOXTYPECLASS_SPECIES_NODE:
+  case BOXTYPECLASS_ENUM_NODE:
+    MSG_FATAL("BoxType_Compare: Invalid type objects.");
+    return BOXTYPECMP_DIFFERENT;
+
+  case BOXTYPECLASS_INTRINSIC:
+    /* If we got here, we have left != right, which is enough to say the two
+     * types are not the same (two intrinsic types are different iff they are
+     * not the same type).
+     */
+    return BOXTYPECMP_DIFFERENT;
+
+  case BOXTYPECLASS_ALIAS:
+    assert(0);
+
+  case BOXTYPECLASS_RAISED:
+    /* Same as BOXTYPECLASS_INTRINSIC. */
+    return BOXTYPECMP_DIFFERENT;
+
+  case BOXTYPECLASS_SPECIES:
+  {
+    BoxTypeIter iter;
+    BoxType node;
+    for (BoxTypeIter_Init(& iter, left);
+         BoxTypeIter_Get_Next(& iter, & node);) {
+      BoxType memb = BoxType_Get_Species_Member_Type(node);
+      
+      if (BoxType_Compare(memb, right) != BOXTYPECMP_DIFFERENT) {
+        if (BoxTypeIter_Has_Items(& iter))
+          /* Match with one of the species' sources: need to expand! */
+          return BOXTYPECMP_MATCHING;
+        else
+          /* Match with species' target: no need to expand! */
+          return BOXTYPECMP_EQUAL;
+      }
+    }
+
+    return BOXTYPECMP_DIFFERENT;
+  }
+
+  case BOXTYPECLASS_STRUCTURE:
+    /* Note that two structures do match when the types of their members do
+     * match, even if the names of the members are different. For example,
+     *
+     *   (Real x, y) == (Real z, hgj)
+     *
+     * A particular tuple can be raised to make sure it does not match a tuple
+     * having the same types of members.
+     */
+    if (left->type_class == right->type_class) {
+      BoxTypeIter liter, riter;
+      BoxType lnode, rnode;
+      
+      BoxTypeIter_Init(& liter, left);
+      BoxTypeIter_Init(& riter, right);
+
+      if (BoxTypeIter_Get_Num(& liter) == BoxTypeIter_Get_Num(& riter)) {
+        BoxTypeCmp ret = BOXTYPECMP_EQUAL;
+
+        for (; (BoxTypeIter_Get_Next(& liter, & lnode)
+                && BoxTypeIter_Get_Next(& riter, & rnode)); ) {
+          BoxType lmemb = BoxType_Get_Struct_Member_Type(lnode),
+                  rmemb = BoxType_Get_Struct_Member_Type(rnode);
+
+          ret &= BoxType_Compare(lmemb, rmemb);
+          if (ret == BOXTYPECMP_DIFFERENT)
+            return BOXTYPECMP_DIFFERENT;
+        }
+
+        return ret;
+      }
+    }
+
+    return BOXTYPECMP_DIFFERENT;
+
+  case BOXTYPECLASS_ENUM:
+    assert(0);
 
 #if 0
+  case TS_KIND_PROC:
+    if (td1->data.proc.combine != td2->data.proc.combine)
+      return TS_TYPES_UNMATCH;
+      
+    if (TS_Compare(ts, td1->data.proc.parent, td2->data.proc.parent)
+        != TS_TYPES_EQUAL)
+      return TS_TYPES_UNMATCH;
+    return TS_Compare(ts, td1->target, td2->target);
 
-BoxBool BoxType_Compare(BoxType left, BoxType right, BoxTypeCmp *cmp);
+  case BOXTYPE_POINTER:
+#endif
+      
+  default:
+    MSG_ERROR("TS_Compare: not fully implemented!");
+    return BOXTYPECMP_DIFFERENT;
+  }
+}
 
+#if 0
 BoxType_Get_Combination(BoxType child, BoxType parent) {
 
 
 }
+#endif
 
 
 
