@@ -617,8 +617,7 @@ BoxType BoxType_Get_Species_Member_Type(BoxType node) {
   return NULL;
 }
 
-#if 1
-
+/* Type comparison function. */
 BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
   if (left == right)
     return BOXTYPECMP_SAME;
@@ -727,10 +726,4 @@ BoxType_Get_Combination(BoxType child, BoxType parent) {
 
 
 }
-#endif
-
-
-
-
-
 #endif
