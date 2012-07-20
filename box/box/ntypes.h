@@ -122,6 +122,37 @@ BoxType_Add_Member_To_Structure(BoxType structure, BoxType member,
                                 const char *member_name);
 
 /**
+ * Get information on a structure member as obtained from BoxTypeIter_Get_Next.
+ */
+BOXEXPORT BoxBool
+BoxType_Get_Struct_Member(BoxType node, char **name, size_t *offset,
+                          size_t *size, BoxType *type);
+
+/**
+ * Get the type of a structure member obtained from BoxTypeIter_Get_Next.
+ * This is a convenience function to be used as a replacement of
+ * BoxType_Get_Struct_Member in the case where only the member type is needed.
+ * @param node The type node as obtained from BoxTypeIter_Get_Next.
+ * @return The type of the member.
+ */
+BOXEXPORT BoxType
+BoxType_Get_Struct_Member_Type(BoxType node);
+
+/**
+ * Get the number of members of the structure.
+ */
+BOXEXPORT size_t
+BoxType_Get_Struct_Num_Members(BoxType t);
+
+/**
+ * Get the type of a species member as obtained from BoxTypeIter_Get_Next.
+ * @param node The type node as obtained from BoxTypeIter_Get_Next.
+ * @return The type of the member.
+ */
+BOXEXPORT BoxType
+BoxType_Get_Species_Member_Type(BoxType node);
+
+/**
  * Create an empty species. Members can be added with
  * BoxType_Add_Member_To_Species.
  */
@@ -167,6 +198,20 @@ BoxType_Create_Pointer(BoxType target);
  */
 BOXEXPORT BoxType
 BoxType_Create_Any(void);
+
+/**
+ * Resolve the given type. Resolution is an operation on types which allow
+ * obtaining the original type one type refers to. For example, resolving a
+ * species allows obtaining the target type of the species and resolving an
+ * identifier type allows obtaining the underlying type.
+ * @param type Type to resolve.
+ * @param resolve What type class should be resolved. This is a sum of one
+ *   or more BoxTypeResolve masks, one for each class that should be resolved.
+ * @param num Number of resolutions (0 means as many as necessary).
+ * @return The resolved type.
+ */
+BOXEXPORT BoxType
+BoxType_Resolve(BoxType type, BoxTypeResolve resolve, int num);
 
 /*****************************************************************************
  * TYPE FINE-TUNING ROUTINES                                                 *
@@ -286,36 +331,5 @@ BoxTypeIter_Get_Next(BoxTypeIter *ti, BoxType *next);
  */
 BOXEXPORT BoxBool
 BoxTypeIter_Has_Items(BoxTypeIter *ti);
-
-/**
- * Get information on a structure member as obtained from BoxTypeIter_Get_Next.
- */
-BOXEXPORT BoxBool
-BoxType_Get_Struct_Member(BoxType node, char **name, size_t *offset,
-                          size_t *size, BoxType *type);
-
-/**
- * Get the type of a structure member obtained from BoxTypeIter_Get_Next.
- * This is a convenience function to be used as a replacement of
- * BoxType_Get_Struct_Member in the case where only the member type is needed.
- * @param node The type node as obtained from BoxTypeIter_Get_Next.
- * @return The type of the member.
- */
-BOXEXPORT BoxType
-BoxType_Get_Struct_Member_Type(BoxType node);
-
-/**
- * Get the number of members of the structure.
- */
-BOXEXPORT size_t
-BoxType_Get_Struct_Num_Members(BoxType t);
-
-/**
- * Get the type of a species member as obtained from BoxTypeIter_Get_Next.
- * @param node The type node as obtained from BoxTypeIter_Get_Next.
- * @return The type of the member.
- */
-BOXEXPORT BoxType
-BoxType_Get_Species_Member_Type(BoxType node);
 
 #endif /* _BOX_NTYPES_H */

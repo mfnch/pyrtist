@@ -80,7 +80,7 @@ typedef enum {
   BOXTYPE_PAUSE,
   BOXTYPE_CPTR
 
-} BoxType;
+} BoxOldType;
 
 /** The BoxChar type, the smallest integer in terms of size. */
 typedef unsigned char BoxChar;
