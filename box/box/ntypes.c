@@ -395,6 +395,61 @@ void BoxType_Add_Member_To_Structure(BoxType structure, BoxType member,
   MyType_Append_Node(structure, t);
 }
 
+
+/* Get information on a structure member as obtained from
+ * BoxTypeIter_Get_Next.
+ */
+BoxBool BoxType_Get_Struct_Member(BoxType node, char **name, size_t *offset,
+                                  size_t *size, BoxType *type) {
+  if (node->type_class == BOXTYPECLASS_STRUCTURE_NODE) {
+    BoxTypeStructureNode *sn = MyType_Get_Data(node);
+
+    if (name)
+      *name = sn->name;
+    if (offset)
+      *offset = sn->offset;
+    if (size)
+      *size = sn->size;
+    if (type)
+      *type = sn->type;
+
+    return BOXBOOL_TRUE;
+    
+  } else
+    return BOXBOOL_FALSE;
+}
+
+/* Get the type of a structure member obtained from BoxTypeIter_Get_Next. */
+BoxType BoxType_Get_Struct_Member_Type(BoxType node) {
+  BoxType t;
+
+  if (BoxType_Get_Struct_Member(node, NULL, NULL, NULL, & t))
+    return t;
+
+  return NULL;
+}
+
+/* Get the number of members of a structure. */
+size_t BoxType_Get_Struct_Num_Members(BoxType t) {
+  if (t->type_class == BOXTYPECLASS_STRUCTURE_NODE) {
+    BoxTypeStructure *s = MyType_Get_Data(t);
+    return s->num_items;
+
+  } else
+    return 0;
+}
+
+/* Get information on a species member as obtained from BoxTypeIter_Get_Next.
+ */
+BoxType BoxType_Get_Species_Member_Type(BoxType node) {
+  if (node->type_class == BOXTYPECLASS_SPECIES_NODE) {
+    BoxTypeStructureNode *sn = MyType_Get_Data(node);
+    return sn->type;
+  }
+
+  return NULL;
+}
+
 /* Create a new species type. */
 BoxType BoxType_Create_Species(void) {
   BoxType t;
@@ -530,6 +585,64 @@ BoxBool BoxType_Get_Size_And_Alignment(BoxType t, size_t *size, size_t *algn) {
   }
 }
 
+/* Resolve the given type. */
+BoxType BoxType_Resolve(BoxType t, BoxTypeResolve resolve, int num) {
+  if (!t)
+    return t;
+
+  do { /* forever */
+    switch (t->type_class) {
+    case BOXTYPECLASS_NONE:
+    case BOXTYPECLASS_STRUCTURE_NODE:
+    case BOXTYPECLASS_SPECIES_NODE:
+    case BOXTYPECLASS_ENUM_NODE:
+      return NULL;
+
+    case BOXTYPECLASS_ALIAS:
+      if ((resolve & BOXTYPERESOLVE_ALIAS) == 0)
+        return t;
+      else
+        t = ((BoxTypeIdent *) MyType_Get_Data(t))->source;
+      break;
+
+    case BOXTYPECLASS_RAISED:
+      if ((resolve & BOXTYPERESOLVE_RAISED) == 0)
+        return t;
+      else
+        t = ((BoxTypeRaised *) MyType_Get_Data(t))->source;
+      break;
+
+    case BOXTYPECLASS_SPECIES:
+      if ((resolve & BOXTYPERESOLVE_SPECIES) == 0)
+        return t;
+      else
+        t = ((BoxTypeSpecies *) MyType_Get_Data(t))->node.previous;
+      break;
+
+    case BOXTYPECLASS_INTRINSIC:
+    case BOXTYPECLASS_STRUCTURE:      
+    case BOXTYPECLASS_ENUM:
+    case BOXTYPECLASS_FUNCTION:
+    case BOXTYPECLASS_ANY:
+      return t;
+
+    case BOXTYPECLASS_POINTER:
+      if ((resolve & BOXTYPERESOLVE_POINTER) == 0)
+        return t;
+      else
+        t = ((BoxTypePointer *) MyType_Get_Data(t))->source;
+      break;
+    }
+
+    if (num == 1)
+      return t;
+
+    else if (num > 1)
+      num--;
+    
+  } while (1);
+}
+
 /**
  * Type iterator: allows to iterate over the members of structures, enums, etc.
  */
@@ -572,55 +685,14 @@ BoxBool BoxTypeIter_Has_Items(BoxTypeIter *ti) {
   return (ti && ti->current_node);
 }
 
-
-/* Get information on a structure member as obtained from
- * BoxTypeIter_Get_Next.
- */
-BoxBool BoxType_Get_Struct_Member(BoxType node, char **name, size_t *offset,
-                                  size_t *size, BoxType *type) {
-  if (node->type_class == BOXTYPECLASS_STRUCTURE_NODE) {
-    BoxTypeStructureNode *sn = MyType_Get_Data(node);
-
-    if (name)
-      *name = sn->name;
-    if (offset)
-      *offset = sn->offset;
-    if (size)
-      *size = sn->size;
-    if (type)
-      *type = sn->type;
-
-    return BOXBOOL_TRUE;
-    
-  } else
-    return BOXBOOL_FALSE;
-}
-
-/* Get the type of a structure member obtained from BoxTypeIter_Get_Next. */
-BoxType BoxType_Get_Struct_Member_Type(BoxType node) {
-  BoxType t;
-
-  if (BoxType_Get_Struct_Member(node, NULL, NULL, NULL, & t))
-    return t;
-
-  return NULL;
-}
-
-/* Get information on a species member as obtained from BoxTypeIter_Get_Next.
- */
-BoxType BoxType_Get_Species_Member_Type(BoxType node) {
-  if (node->type_class == BOXTYPECLASS_SPECIES_NODE) {
-    BoxTypeStructureNode *sn = MyType_Get_Data(node);
-    return sn->type;
-  }
-
-  return NULL;
-}
-
 /* Type comparison function. */
 BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
   if (left == right)
     return BOXTYPECMP_SAME;
+
+  left = BoxType_Resolve(left, BOXTYPERESOLVE_ALIAS, 1);
+  right =
+    BoxType_Resolve(left, BOXTYPERESOLVE_ALIAS | BOXTYPERESOLVE_SPECIES, 1);
 
   switch (left->type_class) {
   case BOXTYPECLASS_STRUCTURE_NODE:
@@ -680,7 +752,8 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
       BoxTypeIter_Init(& liter, left);
       BoxTypeIter_Init(& riter, right);
 
-      if (BoxTypeIter_Get_Num(& liter) == BoxTypeIter_Get_Num(& riter)) {
+      if (BoxType_Get_Struct_Num_Members(left)
+          == BoxType_Get_Struct_Num_Members(right)) {
         BoxTypeCmp ret = BOXTYPECMP_EQUAL;
 
         for (; (BoxTypeIter_Get_Next(& liter, & lnode)

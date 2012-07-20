@@ -55,6 +55,17 @@ typedef enum {
   BOXTYPECMP_SAME      = 0x7  /**< right and left are the same type. */
 } BoxTypeCmp;
 
+/**
+ * Type used to specify which type classes should be resolved in
+ * BoxType_Resolve.
+ */
+typedef enum {
+  BOXTYPERESOLVE_ALIAS   = 0x1,
+  BOXTYPERESOLVE_SPECIES = 0x2,
+  BOXTYPERESOLVE_RAISED  = 0x4,
+  BOXTYPERESOLVE_POINTER = 0x8
+} BoxTypeResolve;
+
 /*****************************************************************************
  * TYPE CREATION ROUTINES                                                    *
  *****************************************************************************/
@@ -292,6 +303,12 @@ BoxType_Get_Struct_Member(BoxType node, char **name, size_t *offset,
  */
 BOXEXPORT BoxType
 BoxType_Get_Struct_Member_Type(BoxType node);
+
+/**
+ * Get the number of members of the structure.
+ */
+BOXEXPORT size_t
+BoxType_Get_Struct_Num_Members(BoxType t);
 
 /**
  * Get the type of a species member as obtained from BoxTypeIter_Get_Next.
