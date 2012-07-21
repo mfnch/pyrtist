@@ -25,6 +25,19 @@
 #include <box/messages.h>
 #include <box/mem.h>
 
+/**
+ * Maximum number of types linked to a type.
+ * This is a constant value useful when using the function MyType_Get_Refs.
+ */
+#define BOX_MAX_NUM_TYPES_IN_TYPE 3
+
+/**
+ * Maximum number of allocations for a type.
+ * This is a constant value useful when using the function MyType_Get_Refs.
+ */
+#define BOX_MAX_NUM_MEMS_IN_TYPE 3
+
+
 typedef enum {
   BOXTYPECLASS_NONE,
   BOXTYPECLASS_STRUCTURE_NODE,
@@ -207,6 +220,33 @@ BoxTypeNode *MyType_Get_Node(BoxType t) {
 
 /**
  * Get the allocated objects a given type refers to.
+ * This function returns the number of types (in *num_refs) and the number of
+ * allocations (in *num_mems) associated to the given type. The function does
+ * also write the actual references and pointers to the allocated regions
+ * in the two provided arrays. This function is internal and allows to
+ * traverse the type tree easily. It is used, for example, to deallocate all
+ * the resources associated to a given type in BoxType_Unlink.
+ * @param t The type 
+ * @param num_refs Pointer where the number of references made by the provided
+ *   type makes be written (the number of references never exceeds the constant
+ *   BOX_MAX_NUM_TYPES_IN_TYPE.
+ * @param refs Location where to write the references. This is an array of
+ *   BoxType which should be able to contain at least BOX_MAX_NUM_TYPES_IN_TYPE
+ *   elements.
+ * @param num_mems Pointer where the number of allocations made by the provided
+ *   type should be written (the number of references never exceeds
+ *   the constant BOX_MAX_NUM_MEMS_IN_TYPE.
+ * @param mems Location where to write the pointers to the allocated blocks.
+ *   This is an array of pointers which should be able to contain at least
+ *   BOX_MAX_NUM_MEMS_IN_TYPE elements.
+ *
+ * Example:
+ * @code
+ * void *mems[BOX_MAX_NUM_MEMS_IN_TYPE];
+ * BoxType refs[BOX_MAX_NUM_TYPES_IN_TYPE];
+ * int num_refs, num_mems;
+ * MyType_Get_Refs(type, & num_refs, refs, & num_mems, mems);
+ * @endcode
  */
 static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
                             int *num_mems, void **mems) {
@@ -276,8 +316,8 @@ void BoxType_Unlink(BoxType t) {
     if (Box_Mem_RC_Get_Num_Refs(t) == 1) {
       /* The object is gonna die (just one ref count).  */
 
-      void *mems[3];
-      BoxType refs[3];
+      void *mems[BOX_MAX_NUM_MEMS_IN_TYPE];
+      BoxType refs[BOX_MAX_NUM_TYPES_IN_TYPE];
       int num_refs, num_mems, i;
 
       MyType_Get_Refs(t, & num_refs, refs, & num_mems, mems);
