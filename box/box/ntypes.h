@@ -71,6 +71,18 @@ typedef enum {
  *****************************************************************************/
 
 /**
+ * Remove a reference to the given type.
+ */
+BOXEXPORT void
+BoxType_Unlink(BoxType t);
+
+/**
+ * Add a reference to the given type.
+ */
+BOXEXPORT BoxType
+BoxType_Link(BoxType t);
+
+/**
  * Create a new intrinsic type with the given name, size and alignment.
  * An intrinsic type can be imagined as a descriptor for an atomic
  * (i.e. indivisible) portion of memory.
@@ -125,8 +137,8 @@ BoxType_Add_Member_To_Structure(BoxType structure, BoxType member,
  * Get information on a structure member as obtained from BoxTypeIter_Get_Next.
  */
 BOXEXPORT BoxBool
-BoxType_Get_Struct_Member(BoxType node, char **name, size_t *offset,
-                          size_t *size, BoxType *type);
+BoxType_Get_Structure_Member(BoxType node, char **name, size_t *offset,
+                             size_t *size, BoxType *type);
 
 /**
  * Get the type of a structure member obtained from BoxTypeIter_Get_Next.
@@ -136,13 +148,13 @@ BoxType_Get_Struct_Member(BoxType node, char **name, size_t *offset,
  * @return The type of the member.
  */
 BOXEXPORT BoxType
-BoxType_Get_Struct_Member_Type(BoxType node);
+BoxType_Get_Structure_Member_Type(BoxType node);
 
 /**
  * Get the number of members of the structure.
  */
 BOXEXPORT size_t
-BoxType_Get_Struct_Num_Members(BoxType t);
+BoxType_Get_Structure_Num_Members(BoxType t);
 
 /**
  * Get the type of a species member as obtained from BoxTypeIter_Get_Next.
@@ -279,7 +291,8 @@ char *BoxType_Get_Repr(BoxType t);
 /** Compare right to left and return a BoxTypeCmp value */
 BoxTypeCmp BoxType_Compare(BoxType left, BoxType right);
 
-/** Find the procedure 'left'@'right' and return:
+/**
+ * Find the procedure 'left'@'right' and return:
  * - 'left' if the procedure was found and the type 'left' is equal to the
  *   procedure left type;
  * - the expansion type, if the procedure was found but 'left' must be
@@ -288,11 +301,14 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right);
  */
 BoxType BoxType_Find_Combination(BoxType left, BoxType right);
 
-/** Type iterator. Allows to iter through the types that do have members,
+/**
+ * Type iterator. Allows to iter through the types that do have members,
  * such as structures, species and enums.
  * @see BoxTypeIter_Init
  */
-typedef struct BoxTypeIter_struct BoxTypeIter;
+typedef struct BoxTypeIter_struct {
+  BoxType current_node;
+} BoxTypeIter;
 
 /**
  * Initialize an iterator for iteration over the members of the given type.
@@ -314,7 +330,7 @@ BoxTypeIter_Init(BoxTypeIter *ti, BoxType t);
  *  BoxTypeIter ti;
  *  BoxType t;
  *  for (BoxTypeIter_Init(& ti, parent); BoxTypeIter_Get_Next(& ti, & t);) {
- *    BoxType_Get_Struct_Member(& t, ...);
+ *    BoxType_Get_Structure_Member(& t, ...);
  *    ...
  *  }
  *

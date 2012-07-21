@@ -173,6 +173,7 @@ static void *MyType_Alloc(BoxType *t, BoxTypeClass tc) {
 
   if (Box_Mem_X_Plus_Y(& total, additional, sizeof(BoxTypeDesc))) {
     BoxTypeDesc *td = Box_Mem_RC_Safe_Alloc(total);
+    td->type_class = tc;
     *t = td;
     return (void *) td + sizeof(BoxTypeDesc);
   }   
@@ -273,19 +274,21 @@ static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
  * released if there are no references left to it.
  */
 void BoxType_Unlink(BoxType t) {
-  void *mems[3];
-  BoxType refs[3];
-  int num_refs, num_mems, i;
+  if (t) {
+    void *mems[3];
+    BoxType refs[3];
+    int num_refs, num_mems, i;
 
-  MyType_Get_Refs(t, & num_refs, refs, & num_mems, mems);
+    MyType_Get_Refs(t, & num_refs, refs, & num_mems, mems);
 
-  for (i = 0; i < num_mems; i++)
-    BoxMem_Free(mems[i]);
+    for (i = 0; i < num_mems; i++)
+      BoxMem_Free(mems[i]);
 
-  for (i = 0; i < num_refs; i++)
-    BoxType_Unlink(refs[i]);
+    for (i = 0; i < num_refs; i++)
+      BoxType_Unlink(refs[i]);
 
-  Box_Mem_RC_Unlink(t);
+    Box_Mem_RC_Unlink(t);
+  }
 }
 
 BoxType BoxType_Link(BoxType t) {
@@ -365,7 +368,7 @@ void BoxType_Add_Member_To_Structure(BoxType structure, BoxType member,
   BoxTypeStructureNode *td;
 
   /* Let's get the size and alignment of the member type. */
-  if (!BoxType_Get_Size_And_Alignment(t, & msize, & malgn))
+  if (!BoxType_Get_Size_And_Alignment(member, & msize, & malgn))
     MSG_FATAL("Cannot get size and alignment of structure member type");
 
   /* Need to do this small computation to retrieve the structure size without
@@ -399,8 +402,9 @@ void BoxType_Add_Member_To_Structure(BoxType structure, BoxType member,
 /* Get information on a structure member as obtained from
  * BoxTypeIter_Get_Next.
  */
-BoxBool BoxType_Get_Struct_Member(BoxType node, char **name, size_t *offset,
-                                  size_t *size, BoxType *type) {
+BoxBool
+BoxType_Get_Structure_Member(BoxType node, char **name, size_t *offset,
+                             size_t *size, BoxType *type) {
   if (node->type_class == BOXTYPECLASS_STRUCTURE_NODE) {
     BoxTypeStructureNode *sn = MyType_Get_Data(node);
 
@@ -420,17 +424,17 @@ BoxBool BoxType_Get_Struct_Member(BoxType node, char **name, size_t *offset,
 }
 
 /* Get the type of a structure member obtained from BoxTypeIter_Get_Next. */
-BoxType BoxType_Get_Struct_Member_Type(BoxType node) {
+BoxType BoxType_Get_Structure_Member_Type(BoxType node) {
   BoxType t;
 
-  if (BoxType_Get_Struct_Member(node, NULL, NULL, NULL, & t))
+  if (BoxType_Get_Structure_Member(node, NULL, NULL, NULL, & t))
     return t;
 
   return NULL;
 }
 
 /* Get the number of members of a structure. */
-size_t BoxType_Get_Struct_Num_Members(BoxType t) {
+size_t BoxType_Get_Structure_Num_Members(BoxType t) {
   if (t->type_class == BOXTYPECLASS_STRUCTURE_NODE) {
     BoxTypeStructure *s = MyType_Get_Data(t);
     return s->num_items;
@@ -528,7 +532,7 @@ BoxBool BoxType_Get_Size_And_Alignment(BoxType t, size_t *size, size_t *algn) {
   /* We do a while loop rather than opting for recursive calls.
    * The loop is uglier, but more efficient...
    */
-  while (1) {
+  while (t) {
     void *td = MyType_Get_Data(t);
 
     switch (t->type_class) {
@@ -583,6 +587,8 @@ BoxBool BoxType_Get_Size_And_Alignment(BoxType t, size_t *size, size_t *algn) {
       return BOXBOOL_FALSE;
     }
   }
+
+  return BOXBOOL_FALSE;
 }
 
 /* Resolve the given type. */
@@ -642,13 +648,6 @@ BoxType BoxType_Resolve(BoxType t, BoxTypeResolve resolve, int num) {
     
   } while (1);
 }
-
-/**
- * Type iterator: allows to iterate over the members of structures, enums, etc.
- */
-struct BoxTypeIter_struct {
-  BoxType current_node;
-};
 
 /* Initialize an iterator for iteration over the members of the given type. */
 void BoxTypeIter_Init(BoxTypeIter *ti, BoxType t) {
@@ -752,14 +751,14 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
       BoxTypeIter_Init(& liter, left);
       BoxTypeIter_Init(& riter, right);
 
-      if (BoxType_Get_Struct_Num_Members(left)
-          == BoxType_Get_Struct_Num_Members(right)) {
+      if (BoxType_Get_Structure_Num_Members(left)
+          == BoxType_Get_Structure_Num_Members(right)) {
         BoxTypeCmp ret = BOXTYPECMP_EQUAL;
 
         for (; (BoxTypeIter_Get_Next(& liter, & lnode)
                 && BoxTypeIter_Get_Next(& riter, & rnode)); ) {
-          BoxType lmemb = BoxType_Get_Struct_Member_Type(lnode),
-                  rmemb = BoxType_Get_Struct_Member_Type(rnode);
+          BoxType lmemb = BoxType_Get_Structure_Member_Type(lnode),
+                  rmemb = BoxType_Get_Structure_Member_Type(rnode);
 
           ret &= BoxType_Compare(lmemb, rmemb);
           if (ret == BOXTYPECMP_DIFFERENT)
