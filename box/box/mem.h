@@ -117,6 +117,13 @@ BOXEXPORT void *Box_Mem_RC_Safe_Alloc(size_t s);
 BOXEXPORT void Box_Mem_RC_Link(void *ptr);
 
 /**
+ * Get the number of references to this object.
+ * @param ptr Object allocated with Box_Mem_RC_Alloc or Box_Mem_RC_Safe_Alloc.
+ * @return Number of references to this object.
+ */
+BOXEXPORT BoxRefCount Box_Mem_RC_Get_Num_Refs(void *ptr);
+
+/**
  * Decrease the reference count. The block is freed if the reference count
  * reaches zero.
  * @return 1 if the block was freed (reference count reached zero),

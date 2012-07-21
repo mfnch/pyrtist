@@ -60,7 +60,7 @@ typedef enum {
  * BoxType_Resolve.
  */
 typedef enum {
-  BOXTYPERESOLVE_ALIAS   = 0x1,
+  BOXTYPERESOLVE_IDENT   = 0x1,
   BOXTYPERESOLVE_SPECIES = 0x2,
   BOXTYPERESOLVE_RAISED  = 0x4,
   BOXTYPERESOLVE_POINTER = 0x8

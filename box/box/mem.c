@@ -208,6 +208,13 @@ void Box_Mem_RC_Link(void *ptr) {
   ++*rc;
 }
 
+/* Get the number of references to this object. */
+BoxRefCount Box_Mem_RC_Get_Num_Refs(void *ptr) {
+  void *whole = ptr - sizeof(BoxRefCount);
+  BoxRefCount *prc = whole;
+  return *prc;
+}
+
 int Box_Mem_RC_Unlink(void *ptr) {
   void *whole = ptr - sizeof(BoxRefCount);
   BoxRefCount *prc = whole, rc = *prc;

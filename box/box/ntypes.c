@@ -25,15 +25,13 @@
 #include <box/messages.h>
 #include <box/mem.h>
 
-#define BOXTYPE_NONE ((BoxType) NULL)
-
 typedef enum {
   BOXTYPECLASS_NONE,
   BOXTYPECLASS_STRUCTURE_NODE,
   BOXTYPECLASS_SPECIES_NODE,
   BOXTYPECLASS_ENUM_NODE,
   BOXTYPECLASS_INTRINSIC,
-  BOXTYPECLASS_ALIAS,
+  BOXTYPECLASS_IDENT,
   BOXTYPECLASS_RAISED,
   BOXTYPECLASS_STRUCTURE,
   BOXTYPECLASS_SPECIES,
@@ -160,7 +158,7 @@ static void *MyType_Alloc(BoxType *t, BoxTypeClass tc) {
   case BOXTYPECLASS_SPECIES_NODE:
     additional = sizeof(BoxTypeSpeciesNode); break;
   case BOXTYPECLASS_INTRINSIC: additional = sizeof(BoxTypeIntrinsic); break;
-  case BOXTYPECLASS_ALIAS: additional = sizeof(BoxTypeIdent); break;
+  case BOXTYPECLASS_IDENT: additional = sizeof(BoxTypeIdent); break;
   case BOXTYPECLASS_RAISED: additional = sizeof(BoxTypeRaised); break;
   case BOXTYPECLASS_STRUCTURE: additional = sizeof(BoxTypeStructure); break;
   case BOXTYPECLASS_FUNCTION: additional = sizeof(BoxTypeFunction); break;
@@ -235,7 +233,7 @@ static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
     return;
   case BOXTYPECLASS_INTRINSIC:
     return;
-  case BOXTYPECLASS_ALIAS:
+  case BOXTYPECLASS_IDENT:
     refs[0] = ((BoxTypeIdent *) tdata)->source;
     *num_refs = 1;
     mems[0] = ((BoxTypeIdent *) tdata)->name;
@@ -275,17 +273,21 @@ static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
  */
 void BoxType_Unlink(BoxType t) {
   if (t) {
-    void *mems[3];
-    BoxType refs[3];
-    int num_refs, num_mems, i;
+    if (Box_Mem_RC_Get_Num_Refs(t) == 1) {
+      /* The object is gonna die (just one ref count).  */
 
-    MyType_Get_Refs(t, & num_refs, refs, & num_mems, mems);
+      void *mems[3];
+      BoxType refs[3];
+      int num_refs, num_mems, i;
 
-    for (i = 0; i < num_mems; i++)
-      BoxMem_Free(mems[i]);
+      MyType_Get_Refs(t, & num_refs, refs, & num_mems, mems);
 
-    for (i = 0; i < num_refs; i++)
-      BoxType_Unlink(refs[i]);
+      for (i = 0; i < num_mems; i++)
+        BoxMem_Free(mems[i]);
+
+      for (i = 0; i < num_refs; i++)
+        BoxType_Unlink(refs[i]);
+    }
 
     Box_Mem_RC_Unlink(t);
   }
@@ -306,17 +308,17 @@ static void MyType_Append_Node(BoxType top, BoxType item) {
 
   /* Adjust the links. */
   item_node->previous = top_node->previous;
-  item_node->next = BOXTYPE_NONE;
+  item_node->next = NULL;
 
   /* Adjust the tail. */
-  if (top_node->previous != BOXTYPE_NONE) {
+  if (top_node->previous != NULL) {
     BoxTypeNode *previous_node = MyType_Get_Node(top_node->previous);
     assert(previous_node);
     previous_node->next = item;
   }
 
   /* Adjust the top node. */
-  if (top_node->next == BOXTYPE_NONE)
+  if (top_node->next == NULL)
     top_node->next = item;
   top_node->previous = item;
 }
@@ -333,7 +335,7 @@ BoxType BoxType_Create_Intrinsic(size_t size, size_t alignment) {
 /* Create a new identifier type. */
 BoxType BoxType_Create_Ident(BoxType source, const char *name) {
   BoxType t;
-  BoxTypeIdent *ta = MyType_Alloc(& t, BOXTYPECLASS_ALIAS);
+  BoxTypeIdent *ta = MyType_Alloc(& t, BOXTYPECLASS_IDENT);
   ta->name = BoxMem_Strdup(name);
   ta->source = source;
   return t;
@@ -354,8 +356,8 @@ BoxType BoxType_Create_Structure(void) {
   td->size = 0;
   td->alignment = 0;
   td->num_items = 0;
-  td->node.next = BOXTYPE_NONE;
-  td->node.previous = BOXTYPE_NONE;
+  td->node.next = NULL;
+  td->node.previous = NULL;
   return t;
 }
 
@@ -375,7 +377,7 @@ void BoxType_Add_Member_To_Structure(BoxType structure, BoxType member,
    * padding (as std->size is the actual structure size, with padding).
    */
   ssize = 0;
-  if (std->node.previous != BOXTYPE_NONE) {
+  if (std->node.previous != NULL) {
     BoxTypeStructureNode *ptd = MyType_Get_Data(std->node.previous);
     ssize = ptd->offset + ptd->size;
   }
@@ -459,8 +461,8 @@ BoxType BoxType_Create_Species(void) {
   BoxType t;
   BoxTypeSpecies *td = MyType_Alloc(& t, BOXTYPECLASS_SPECIES);
   td->num_items = 0;
-  td->node.next = BOXTYPE_NONE;
-  td->node.previous = BOXTYPE_NONE;
+  td->node.next = NULL;
+  td->node.previous = NULL;
   return t;
 }
 
@@ -547,7 +549,7 @@ BoxBool BoxType_Get_Size_And_Alignment(BoxType t, size_t *size, size_t *algn) {
       *algn = ((BoxTypeIntrinsic *) td)->alignment;
       return BOXBOOL_TRUE;
 
-    case BOXTYPECLASS_ALIAS:
+    case BOXTYPECLASS_IDENT:
       t = ((BoxTypeIdent *) td)->source;
       break; /* resolve and retry... */
 
@@ -604,8 +606,8 @@ BoxType BoxType_Resolve(BoxType t, BoxTypeResolve resolve, int num) {
     case BOXTYPECLASS_ENUM_NODE:
       return NULL;
 
-    case BOXTYPECLASS_ALIAS:
-      if ((resolve & BOXTYPERESOLVE_ALIAS) == 0)
+    case BOXTYPECLASS_IDENT:
+      if ((resolve & BOXTYPERESOLVE_IDENT) == 0)
         return t;
       else
         t = ((BoxTypeIdent *) MyType_Get_Data(t))->source;
@@ -689,14 +691,15 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
   if (left == right)
     return BOXTYPECMP_SAME;
 
-  left = BoxType_Resolve(left, BOXTYPERESOLVE_ALIAS, 1);
-  right =
-    BoxType_Resolve(left, BOXTYPERESOLVE_ALIAS | BOXTYPERESOLVE_SPECIES, 1);
+  left = BoxType_Resolve(left, BOXTYPERESOLVE_IDENT, 1);
+  right = BoxType_Resolve(right, 
+                          BOXTYPERESOLVE_IDENT | BOXTYPERESOLVE_SPECIES, 1);
 
   switch (left->type_class) {
   case BOXTYPECLASS_STRUCTURE_NODE:
   case BOXTYPECLASS_SPECIES_NODE:
   case BOXTYPECLASS_ENUM_NODE:
+  case BOXTYPECLASS_IDENT:
     MSG_FATAL("BoxType_Compare: Invalid type objects.");
     return BOXTYPECMP_DIFFERENT;
 
@@ -706,9 +709,6 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
      * not the same type).
      */
     return BOXTYPECMP_DIFFERENT;
-
-  case BOXTYPECLASS_ALIAS:
-    assert(0);
 
   case BOXTYPECLASS_RAISED:
     /* Same as BOXTYPECLASS_INTRINSIC. */
