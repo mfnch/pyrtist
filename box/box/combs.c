@@ -17,10 +17,23 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+#include <assert.h>
+
 #include <box/types.h>
 #include <box/types_priv.h>
 #include <box/messages.h>
 
+
+/* Get the iterator over the combinations of the given identifier type. */
+BoxBool BoxType_Get_Combinations(BoxType ident, BoxTypeIter *iter) {
+  if (ident->type_class == BOXTYPECLASS_IDENT) {
+    BoxTypeIdent *td = BoxType_Get_Data(ident);
+    iter->current_node = td->combs.node.next;
+    return BOXBOOL_TRUE;
+  }
+
+  return BOXBOOL_FALSE;
+}
 
 /* Define a combination 'child'@'parent' and associate an action to it. */
 BoxBool
@@ -33,7 +46,7 @@ BoxType_Define_Combination(BoxType parent, BoxCombType type, BoxType child,
     BoxType comb_node;
     BoxTypeCombNode *cn = BoxType_Alloc(& comb_node, BOXTYPECLASS_COMB_NODE);
     cn->comb_type = type;
-    cn->child = child;
+    cn->child = BoxType_Link(child);
 
     BoxTypeNode_Append_Node(& pd->combs.node, comb_node);
     return BOXBOOL_TRUE;
@@ -46,8 +59,25 @@ BoxType_Define_Combination(BoxType parent, BoxCombType type, BoxType child,
 
 /* Find the procedure 'left'@'right' */
 BoxType
-BoxType_Find_Combination(BoxType parent, BoxCombType type, BoxType child) {
-  
+BoxType_Find_Combination(BoxType parent, BoxCombType type, BoxType child,
+                         BoxTypeCmp *expand) {
+  BoxTypeIter ti;
+  if (BoxType_Get_Combinations(parent, & ti)) {
+    BoxType t;
+    for (; BoxTypeIter_Get_Next(& ti, & t);) {
+      BoxTypeCombNode *node = BoxType_Get_Data(t);
+      assert(t->type_class == BOXTYPECLASS_COMB_NODE);
+      if (node->comb_type == type) {
+        BoxTypeCmp cmp = BoxType_Compare(node->child, child);
+        if (cmp != BOXTYPECMP_DIFFERENT) {
+          if (expand)
+            *expand = cmp;
+          return node->child;
+        }
+      }
+    }
+  }
+
   return NULL;
 }
 

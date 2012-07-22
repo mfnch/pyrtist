@@ -365,7 +365,8 @@ BoxType_Compare(BoxType left, BoxType right);
  * - BOXTYPE_NONE if the procedure was not found.
  */
 BOXEXPORT BoxType
-BoxType_Find_Combination(BoxType parent, BoxType child);
+BoxType_Find_Combination(BoxType parent, BoxCombType type, BoxType child,
+                         BoxTypeCmp *expand);
 
 /**
  * Type iterator. Allows to iter through the types that do have members,

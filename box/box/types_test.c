@@ -5,7 +5,7 @@
 #include <box/types.h>
 #include <box/ntypes.h>
 
-static BoxType t_char, t_int, t_real;
+static BoxType t_char, t_int, t_real, t_point;
 
 #define MY_CREATE_INTRINSIC(t, Type, name)                              \
   do {                                                                  \
@@ -18,7 +18,8 @@ static void My_Init(void) {
   MY_CREATE_INTRINSIC(t_char, BoxChar, "Char");
   MY_CREATE_INTRINSIC(t_int, BoxInt, "Int");
   MY_CREATE_INTRINSIC(t_real, BoxReal, "Real");
-  assert(t_char && t_int && t_real);
+  MY_CREATE_INTRINSIC(t_point, BoxPoint, "Point");
+  assert(t_char && t_int && t_real && t_point);
 }
 
 static void My_Finish(void) {
@@ -78,8 +79,34 @@ My_Test_Compare_Structure(void) {
   return result;
 }
 
-static BoxBool My_Test_Combinations(void) {
-  return BOXBOOL_FALSE;
+static BoxBool My_Test_Create_Combinations(void) {
+  BoxBool
+    r1 = BoxType_Define_Combination(t_int, BOXCOMBTYPE_AT, t_real, NULL),
+    r2 = BoxType_Define_Combination(t_int, BOXCOMBTYPE_AT, t_char, NULL);
+  return r1 && r2;
+}
+
+static BoxBool My_Test_Find_Combinations(void) {
+  BoxTypeCmp e1, e2, e3, e4, e5;
+  BoxType t1, t2, t3, t4, t5;
+
+  if (!BoxType_Define_Combination(t_int, BOXCOMBTYPE_AT, t_real, NULL)
+      || !BoxType_Define_Combination(t_int, BOXCOMBTYPE_AT, t_char, NULL))
+    return BOXBOOL_FALSE;
+
+  t1 = BoxType_Find_Combination(t_int, BOXCOMBTYPE_AT, t_real, & e1);
+  t2 = BoxType_Find_Combination(t_int, BOXCOMBTYPE_COPY, t_real, & e2);
+  t3 = BoxType_Find_Combination(t_int, BOXCOMBTYPE_AT, t_char, & e3);
+  t4 = BoxType_Find_Combination(t_int, BOXCOMBTYPE_AT, t_int, & e4);
+  t5 = BoxType_Find_Combination(t_char, BOXCOMBTYPE_AT, t_int, & e5);
+
+  if (!(t1 && !t2 && t3 && !t4 && !t5))
+    return BOXBOOL_FALSE;
+
+  if (e1 != BOXTYPECMP_SAME || e3 != BOXTYPECMP_SAME)
+    return BOXBOOL_FALSE;
+
+  return BOXBOOL_TRUE;
 }
 
 #if 0
@@ -111,7 +138,8 @@ int main(void) {
     {"empty structure", My_Test_Struct_Empty},
     {"compare 2 member structure", My_Test_Compare_Structure},
     {"anonymous 2 member structure", My_Test_2Memb_Anonymous_Structure},
-    {"creating combinations", My_Test_Combinations},
+    {"creating combinations", My_Test_Create_Combinations},
+    {"finding combinations", My_Test_Find_Combinations},
     {NULL, NULL}
   };
 
