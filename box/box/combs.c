@@ -18,4 +18,63 @@
  ****************************************************************************/
 
 #include <box/types.h>
-#include <box/combs.h>
+#include <box/types_priv.h>
+#include <box/messages.h>
+
+
+/* Define a combination 'child'@'parent' and associate an action to it. */
+BoxBool
+BoxType_Define_Combination(BoxType parent, BoxCombType type, BoxType child,
+                           BoxAction *action) {
+  if (parent->type_class == BOXTYPECLASS_IDENT) {
+    BoxTypeIdent *pd = BoxType_Get_Data(parent);
+
+    /* Create the node. */
+    BoxType comb_node;
+    BoxTypeCombNode *cn = BoxType_Alloc(& comb_node, BOXTYPECLASS_COMB_NODE);
+    cn->comb_type = type;
+    cn->child = child;
+
+    BoxTypeNode_Append_Node(& pd->combs.node, comb_node);
+    return BOXBOOL_TRUE;
+
+  } else {
+    MSG_FATAL("Parent is not an identifier type.");
+    return BOXBOOL_FALSE;
+  }
+}
+
+/* Find the procedure 'left'@'right' */
+BoxType
+BoxType_Find_Combination(BoxType parent, BoxCombType type, BoxType child) {
+  
+  return NULL;
+}
+
+#if 0
+static BoxType My_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
+                                   BoxType child, BoxComb comb,
+                                   BoxType parent) {
+  TSDesc *p_td, *parent_td;
+  Type p, dummy;
+  if (expansion_type == NULL)
+    expansion_type = & dummy;
+  *expansion_type = BOXTYPE_NONE;
+  parent_td = Type_Ptr(ts, parent);
+
+  for (p = parent_td->first_proc; p != BOXTYPE_NONE; p = p_td->first_proc) {
+    TSCmp comparison;
+    p_td = Type_Ptr(ts, p);
+    if (p_td->data.proc.combine == comb) {
+      comparison = TS_Compare(ts, p_td->target, child);
+      if (comparison != TS_TYPES_UNMATCH) {
+        if (comparison == TS_TYPES_EXPAND)
+          *expansion_type = p_td->target;
+        return p;
+      }
+    }
+  }
+  
+  return BOXTYPE_NONE;
+}
+#endif

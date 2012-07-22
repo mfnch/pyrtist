@@ -63,6 +63,14 @@ typedef enum {
 } BoxTypeId;
 
 /**
+ * Combination type.
+ */
+typedef enum {
+  BOXCOMBTYPE_AT,
+  BOXCOMBTYPE_COPY
+} BoxCombType;
+
+/**
  * A pointer to a target object decorated with the type of the target.
  * This is using for boxing/unboxing objects.
  */
@@ -101,6 +109,13 @@ typedef enum {
 /*****************************************************************************
  * TYPE CREATION ROUTINES                                                    *
  *****************************************************************************/
+
+/**
+ * Get the data part of a type. The size and composition of the data type of
+ * a given type changes depending on the type class.
+ */
+BOXEXPORT void *
+BoxType_Get_Data(BoxType t);
 
 /**
  * Remove a reference to the given type.
@@ -302,11 +317,12 @@ BoxBoxState BoxType_Get_State(BoxType t, const char *source);
 
 typedef int BoxAction;
 
-/** Define a combination 'child'@'parent' and associate an action with 
- * the procedure.
+/**
+ * Define a combination 'child'@'parent' and associate an action to it.
  */
-void BoxType_Define_Combination(BoxType child, BoxType parent,
-                                BoxAction *action);
+BOXEXPORT BoxBool
+BoxType_Define_Combination(BoxType parent, BoxCombType type, BoxType child,
+                           BoxAction *action);
 
 /*****************************************************************************
  * TYPE ENQUIRY ROUTINES                                                     *
@@ -348,7 +364,8 @@ BoxType_Compare(BoxType left, BoxType right);
  *   expanded;
  * - BOXTYPE_NONE if the procedure was not found.
  */
-BoxType BoxType_Find_Combination(BoxType left, BoxType right);
+BOXEXPORT BoxType
+BoxType_Find_Combination(BoxType parent, BoxType child);
 
 /**
  * Type iterator. Allows to iter through the types that do have members,

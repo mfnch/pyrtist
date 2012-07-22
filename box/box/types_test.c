@@ -78,6 +78,10 @@ My_Test_Compare_Structure(void) {
   return result;
 }
 
+static BoxBool My_Test_Combinations(void) {
+  return BOXBOOL_FALSE;
+}
+
 #if 0
 static void My_Print_Struct(BoxType s) {
   BoxTypeIter ti;
@@ -107,6 +111,7 @@ int main(void) {
     {"empty structure", My_Test_Struct_Empty},
     {"compare 2 member structure", My_Test_Compare_Structure},
     {"anonymous 2 member structure", My_Test_2Memb_Anonymous_Structure},
+    {"creating combinations", My_Test_Combinations},
     {NULL, NULL}
   };
 

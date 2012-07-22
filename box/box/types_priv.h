@@ -25,6 +25,11 @@
  * system and the functionality around the BoxType object.
  */
 
+#ifndef _BOX_TYPES_PRIV_H
+#  define _BOX_TYPES_PRIV_H
+
+#  include <box/ntypes.h>
+
 /**
  * Maximum number of types linked to a type.
  * This is a constant value useful when using the function MyType_Get_Refs.
@@ -45,6 +50,7 @@ typedef enum {
   BOXTYPECLASS_STRUCTURE_NODE,
   BOXTYPECLASS_SPECIES_NODE,
   BOXTYPECLASS_ENUM_NODE,
+  BOXTYPECLASS_COMB_NODE,
   BOXTYPECLASS_INTRINSIC,
   BOXTYPECLASS_IDENT,
   BOXTYPECLASS_RAISED,
@@ -67,6 +73,13 @@ struct BoxTypeDesc_struct {
 };
 
 /**
+ * List node (used in structures, enums, etc.)
+ */
+typedef struct {
+  BoxType next, previous;
+} BoxTypeNode;
+
+/**
  * Intrinsic Box type: basically a piece of memory handled opaquely by C
  * initializers, finalizers, etc. (e.g. Int, Real, Str, ...)
  */
@@ -76,17 +89,23 @@ typedef struct {
 } BoxTypeIntrinsic;
 
 /**
+ * Collection of combinations allowing combination searches.
+ * This object is used internally by the type system.
+ */
+typedef struct BoxCombs_struct {
+  BoxTypeNode node;
+} BoxCombs;
+
+/**
  * A type identifier: basically a node in the type tree which allows the type
  * to be visible and used in the Box language.
  */
 typedef struct {
   char         *name;
   BoxType      source;
-#if 0
-  BoxNamespace namespace;
+  /*BoxNamespace namespace;*/
   BoxCombs     combs;
-  BoxSubtypes  subtypes;
-#endif
+  /*BoxSubtypes  subtypes;*/
 } BoxTypeIdent;
 
 /**
@@ -97,13 +116,6 @@ typedef struct {
 typedef struct {
   BoxType source;
 } BoxTypeRaised;
-
-/**
- * List node (used in structures, enums, etc.)
- */
-typedef struct {
-  BoxType next, previous;
-} BoxTypeNode;
 
 /**
  * Structure type: objects of this type contain a fixed number of objects of
@@ -144,6 +156,15 @@ typedef struct {
 } BoxTypeSpeciesNode;
 
 /**
+ * Combination node.
+ */
+typedef struct {
+  BoxTypeNode node;
+  BoxType     child;
+  BoxCombType comb_type;
+} BoxTypeCombNode;
+
+/**
  * A function type: a type for something which can be called with an input
  * and returns an output.
  */
@@ -158,3 +179,20 @@ typedef struct {
 typedef struct {
   BoxType source;
 } BoxTypePointer;
+
+/**
+ * Generic allocation function for BoxType objects. This function allocates a
+ * type header plus a the type data, whose size and composition depend on the
+ * particular type class.
+ * This is an internal function of the type system.
+ */
+void *BoxType_Alloc(BoxType *t, BoxTypeClass tc);
+
+/**
+ * Append one BoxTypeNode item to a top BoxTypeNode item. This is used
+ * internally in the implementation of structures, enums, etc. to add members.
+ * This is an internal function of the type system.
+ */
+void BoxTypeNode_Append_Node(BoxTypeNode *node, BoxType item);
+
+#endif /* _BOX_TYPES_PRIV_H */

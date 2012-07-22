@@ -814,9 +814,6 @@ BoxType BoxTS_Procedure_Search(TS *ts, BoxType *expansion_type,
     if (proc != BOXTYPE_NONE)
       break;
 
-    if ((mode & TSSEARCHMODE_BLACKLIST) != 0)
-      TS_Procedure_Blacklist(ts, child, parent);
-
     /* Resolve the parent type and retry */
     previous_parent = parent;
     parent =
@@ -825,21 +822,6 @@ BoxType BoxTS_Procedure_Search(TS *ts, BoxType *expansion_type,
   } while (parent != previous_parent && search_inherited);
 
   return proc;
-}
-
-void TS_Procedure_Blacklist(TS *ts, BoxType child, BoxType parent) {
-#if 0
-  MSG_ADVICE("TS_Procedure_Blacklist: blacklisting %~s@%~s.",
-             TS_Name_Get(ts, child), TS_Name_Get(ts, parent));
-#endif
-}
-
-void TS_Procedure_Blacklist_Undo(TS *ts, BoxType child, BoxType parent) {
-  MSG_WARNING("TS_Procedure_Blacklist_Undo: not implemented.");
-}
-
-int TS_Procedure_Is_Blacklisted(TS *ts, BoxType child, BoxType parent) {
-  return 0;
 }
 
 /****************************************************************************/

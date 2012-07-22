@@ -17,13 +17,10 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#ifndef _BOX_COMBS_H
-#  define _BOX_COMBS_H
+#ifndef _BOX_COMBS_PRIV_H
+#  define _BOX_COMBS_PRIV_H
 
-/**
- * Collection of combinations allowing combination searches.
- * This object is used internally by the type system.
- */
-typedef struct BoxCombs_struct BoxCombs;
+#  include <box/types_priv.h>
 
-#endif /* _BOX_COMBS_H */
+
+#endif /* _BOX_COMBS_PRIV_H */

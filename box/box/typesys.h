@@ -247,22 +247,6 @@ BoxType BoxTS_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
                                BoxType child, BoxComb comb, BoxType parent,
                                TSSearchMode mode);
 
-/** Put the procedure in the blacklist. Blacklisted procedure are cannot be
- * registered. The feature is important to ensure that a procedure that
- * was assumed not to be registered when emitting the bytecode is not
- * registered later.
- * @see TS_Procedure_Blacklist_Undo
- */
-void TS_Procedure_Blacklist(BoxTS *ts, BoxType child, BoxType type);
-
-/** Undo a blacklist operation.
- * @see TS_Procedure_Blacklist
- */
-void TS_Procedure_Blacklist_Undo(BoxTS *ts, BoxType child, BoxType parent);
-
-/** Return 1 if the procedure is blacklisted, 0 otherwise. */
-int TS_Procedure_Is_Blacklisted(BoxTS *ts, BoxType child, BoxType parent);
-
 /** Return whether a procedure is registered (does just check if one
  * of the registered procedures of the parent of 'p' has type ID matching
  * with 'p')
