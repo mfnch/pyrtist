@@ -195,4 +195,11 @@ void *BoxType_Alloc(BoxType *t, BoxTypeClass tc);
  */
 void BoxTypeNode_Append_Node(BoxTypeNode *node, BoxType item);
 
+/**
+ * Prepend one BoxTypeNode item to a top BoxTypeNode item. This is similar
+ * to BoxTypeNode_Append_Node, but the item is inserted at the other end of
+ * the linked list.
+ */
+void BoxTypeNode_Prepend_Node(BoxTypeNode *node, BoxType item);
+
 #endif /* _BOX_TYPES_PRIV_H */

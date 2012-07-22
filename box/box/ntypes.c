@@ -241,6 +241,31 @@ void BoxTypeNode_Append_Node(BoxTypeNode *top_node, BoxType item) {
   top_node->previous = item;
 }
 
+/* Prepend one BoxTypeNode item to a top BoxTypeNode item. This is similar
+ * to BoxTypeNode_Append_Node, but the item is inserted at the other end of
+ * the linked list.
+ */
+void BoxTypeNode_Prepend_Node(BoxTypeNode *top_node, BoxType item) {
+  BoxTypeNode *item_node = MyType_Get_Node(item);
+  assert(top_node && item_node);
+
+  /* Adjust the links. */
+  item_node->previous = NULL;
+  item_node->next = top_node->next;
+
+  /* Adjust the head. */
+  if (top_node->next != NULL) {
+    BoxTypeNode *next_node = MyType_Get_Node(top_node->next);
+    assert(next_node);
+    next_node->previous = item;
+  }
+
+  /* Adjust the top node. */
+  if (top_node->previous == NULL)
+    top_node->previous = item;
+  top_node->next = item;
+}
+
 /* Create a new intrinsic type with the given size and alignment. */
 BoxType BoxType_Create_Intrinsic(size_t size, size_t alignment) {
   BoxType t;

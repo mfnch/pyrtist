@@ -26,6 +26,7 @@ static void My_Finish(void) {
   BoxType_Unlink(t_char);
   BoxType_Unlink(t_int);
   BoxType_Unlink(t_real);
+  BoxType_Unlink(t_point);
 }
 
 static BoxType

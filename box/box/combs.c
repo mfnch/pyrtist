@@ -48,7 +48,7 @@ BoxType_Define_Combination(BoxType parent, BoxCombType type, BoxType child,
     cn->comb_type = type;
     cn->child = BoxType_Link(child);
 
-    BoxTypeNode_Append_Node(& pd->combs.node, comb_node);
+    BoxTypeNode_Prepend_Node(& pd->combs.node, comb_node);
     return BOXBOOL_TRUE;
 
   } else {
