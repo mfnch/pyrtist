@@ -19,143 +19,14 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <box/types.h>
 #include <box/ntypes.h>
+#include <box/types_priv.h>
 #include <box/messages.h>
 #include <box/mem.h>
 
-/**
- * Maximum number of types linked to a type.
- * This is a constant value useful when using the function MyType_Get_Refs.
- */
-#define BOX_MAX_NUM_TYPES_IN_TYPE 3
-
-/**
- * Maximum number of allocations for a type.
- * This is a constant value useful when using the function MyType_Get_Refs.
- */
-#define BOX_MAX_NUM_MEMS_IN_TYPE 3
-
-
-typedef enum {
-  BOXTYPECLASS_NONE,
-  BOXTYPECLASS_STRUCTURE_NODE,
-  BOXTYPECLASS_SPECIES_NODE,
-  BOXTYPECLASS_ENUM_NODE,
-  BOXTYPECLASS_INTRINSIC,
-  BOXTYPECLASS_IDENT,
-  BOXTYPECLASS_RAISED,
-  BOXTYPECLASS_STRUCTURE,
-  BOXTYPECLASS_SPECIES,
-  BOXTYPECLASS_ENUM,
-  BOXTYPECLASS_FUNCTION,
-  BOXTYPECLASS_POINTER,
-  BOXTYPECLASS_ANY,
-} BoxTypeClass;
-
-struct BoxTypeDesc_struct {
-  BoxTypeClass   type_class;
-
-  struct {
-    unsigned int is_namespace :1,
-                 has_subtypes :1,
-                 has_combs :1;
-  }              attr;
-};
-
-/**
- * Intrinsic Box type: basically a piece of memory handled opaquely by C
- * initializers, finalizers, etc. (e.g. Int, Real, Str, ...)
- */
-typedef struct {
-  size_t  size,
-          alignment;
-} BoxTypeIntrinsic;
-
-/**
- * A type identifier: basically a node in the type tree which allows the type
- * to be visible and used in the Box language.
- */
-typedef struct {
-  char         *name;
-  BoxType      source;
-#if 0
-  BoxNamespace namespace;
-  BoxCombs     combs;
-  BoxSubtypes  subtypes;
-#endif
-} BoxTypeIdent;
-
-/**
- * A raised type: a type which is identical to the source type it refers to,
- * but is treated as different when matching combinations. Object whose type
- * is raised can be un-raised, e.g. transformed to object of the original type.
- */
-typedef struct {
-  BoxType source;
-} BoxTypeRaised;
-
-/**
- * List node (used in structures, enums, etc.)
- */
-typedef struct {
-  BoxType next, previous;
-} BoxTypeNode;
-
-/**
- * Structure type: objects of this type contain a fixed number of objects of
- * other types, which can be referred by name.
- */
-typedef struct {
-  BoxTypeNode node;
-  size_t      size,
-              alignment,
-              num_items;
-} BoxTypeStructure;
-
-/**
- * Structure node: basically, a structure member.
- */
-typedef struct {
-  BoxTypeNode node;
-  char        *name;
-  size_t      offset,
-              size;
-  BoxType     type;
-} BoxTypeStructureNode;
-
-/**
- * Species type.
- */
-typedef struct {
-  BoxTypeNode node;
-  size_t      num_items;
-} BoxTypeSpecies;
-
-/**
- * Species node.
- */
-typedef struct {
-  BoxTypeNode node;
-  BoxType     type;
-} BoxTypeSpeciesNode;
-
-/**
- * A function type: a type for something which can be called with an input
- * and returns an output.
- */
-typedef struct {
-  BoxType child,
-          parent;
-} BoxTypeFunction;
-
-/**
- * Pointer type.
- */
-typedef struct {
-  BoxType source;
-} BoxTypePointer;
 
 /**
  * Generic allocation function for BoxType objects. This function allocates a
@@ -382,6 +253,12 @@ BoxType BoxType_Create_Ident(BoxType source, const char *name) {
   return t;
 }
 
+/* Add a child type to the namespace of a parent type. */
+void BoxType_Add_Type(BoxType parent, BoxType child) {
+  
+}
+
+
 /* Create a new raised type. */
 BoxType BoxType_Create_Raised(BoxType source) {
   BoxType t;
@@ -473,6 +350,24 @@ BoxType BoxType_Get_Structure_Member_Type(BoxType node) {
   if (BoxType_Get_Structure_Member(node, NULL, NULL, NULL, & t))
     return t;
 
+  return NULL;
+}
+
+/* Get the type of a species member as obtained from BoxTypeIter_Get_Next. */
+BoxType BoxType_Find_Structure_Member(BoxType s, const char *name) {
+  BoxTypeIter ti;
+  BoxType t;
+  char *member_name;
+
+  for (BoxTypeIter_Init(& ti, s); BoxTypeIter_Get_Next(& ti, & t);) {
+    BoxType_Get_Structure_Member(t, & member_name, NULL, NULL, NULL);
+    if (strcmp(name, member_name) == 0) {
+      BoxTypeIter_Finish(& ti);
+      return t;
+    }
+  }
+
+  BoxTypeIter_Finish(& ti);
   return NULL;
 }
 

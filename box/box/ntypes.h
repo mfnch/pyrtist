@@ -17,6 +17,15 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+/**
+ * @file types.h
+ * @brief Declaration of BoxType and the associated functionality.
+ *
+ * This header defines the BoxType object and most of the functions needed
+ * to create BoxType objects, manipulate them and retrieve informations from
+ * them.
+ */
+
 #ifndef _BOX_NTYPES_H
 #  define _BOX_NTYPES_H
 
@@ -29,6 +38,29 @@ typedef struct BoxTypeDesc_struct BoxTypeDesc;
  * pointer to an opaque structure.
  */
 typedef BoxTypeDesc *BoxType;
+
+/**
+ * Integers associated to the fundamental types. These constant values are
+ * used internally for caching combinations and - in general - for speeding
+ * up the type system (or at least speeding up usage of fundamental types).
+ */
+typedef enum {
+  BOXTYPEID_NONE  =-1,
+  BOXTYPEID_CHAR  = 0,
+  BOXTYPEID_INT   = 1,
+  BOXTYPEID_REAL  = 2,
+  BOXTYPEID_POINT = 3,
+  BOXTYPEID_PTR   = 4,
+  BOXTYPEID_OBJ,
+  BOXTYPEID_VOID,
+  BOXTYPEID_CREATE,
+  BOXTYPEID_DESTROY,
+  BOXTYPEID_COPY,
+  BOXTYPEID_BEGIN,
+  BOXTYPEID_END,
+  BOXTYPEID_PAUSE,
+  BOXTYPEID_CPTR
+} BoxTypeId;
 
 /**
  * A pointer to a target object decorated with the type of the target.
@@ -151,6 +183,16 @@ BOXEXPORT BoxType
 BoxType_Get_Structure_Member_Type(BoxType node);
 
 /**
+ * Find the member of a structure with the given name.
+ * @param structure The input structure.
+ * @param name The name of the structure member.
+ * @return If the member is found, return the type node of the member (which
+ *   can be used with BoxType_Get_Structure_Member), otherwise return NULL.
+ */
+BOXEXPORT BoxType
+BoxType_Find_Structure_Member(BoxType structure, const char *name);
+
+/**
  * Get the number of members of the structure.
  */
 BOXEXPORT size_t
@@ -237,6 +279,7 @@ BoxType_Resolve(BoxType type, BoxTypeResolve resolve, int num);
  * Note that both the child and the parent must be identifier types.
  * @param parent The parent type.
  * @param child The child type.
+ * @see BoxType_Create_Ident
  */
 BOXEXPORT void
 BoxType_Add_Type(BoxType parent, BoxType child);
@@ -343,6 +386,12 @@ BoxTypeIter_Init(BoxTypeIter *ti, BoxType t);
  */
 BOXEXPORT BoxBool
 BoxTypeIter_Get_Next(BoxTypeIter *ti, BoxType *next);
+
+/**
+ * Finalize an iterator initialized with BoxTypeIter_Init.
+ */
+#define BoxTypeIter_Finish(iter) \
+  do {(void) (iter);} while(0)
 
 /**
  * Whether an iterator has more items to read with BoxTypeIter_Get_Next.
