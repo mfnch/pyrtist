@@ -179,13 +179,16 @@ BoxType_Add_Member_To_Species(BoxType species, BoxType member);
 
 /** Create a species of type '(*=>Dest)' (everything is converted to 'Dest').
  */
-BoxType BoxType_New_Star_Species(BoxType dest);
+BOXEXPORT BoxType
+BoxType_Create_Star_Species(BoxType dest);
 
 /** Create an empty enum type. */
-void BoxType_New_Enum(void);
+BOXEXPORT BoxType
+BoxType_Create_Enum(void);
 
 /** Add a member to an enum type cerated with BoxType_New_Enum. */
-void BoxType_Add_Member_To_Enum(BoxType member, const char *member_name);
+BOXEXPORT void
+BoxType_Add_Member_To_Enum(BoxType member, const char *member_name);
 
 /**
  * Create a new function type taking 'child' as an argument and working
@@ -288,8 +291,11 @@ BoxType_Get_Size_And_Alignment(BoxType t, size_t *size, size_t *algn);
  */
 char *BoxType_Get_Repr(BoxType t);
 
-/** Compare right to left and return a BoxTypeCmp value */
-BoxTypeCmp BoxType_Compare(BoxType left, BoxType right);
+/**
+ * Compare right to left and return a BoxTypeCmp value
+ */
+BOXEXPORT BoxTypeCmp
+BoxType_Compare(BoxType left, BoxType right);
 
 /**
  * Find the procedure 'left'@'right' and return:

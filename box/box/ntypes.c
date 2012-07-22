@@ -333,6 +333,7 @@ void BoxType_Unlink(BoxType t) {
   }
 }
 
+/* Add a reference to the given type. */
 BoxType BoxType_Link(BoxType t) {
   Box_Mem_RC_Link(t);
   return t;
