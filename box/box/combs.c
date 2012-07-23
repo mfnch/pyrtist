@@ -72,13 +72,27 @@ BoxType_Find_Combination(BoxType parent, BoxCombType type, BoxType child,
         if (cmp != BOXTYPECMP_DIFFERENT) {
           if (expand)
             *expand = cmp;
-          return node->child;
+          return t;
         }
       }
     }
   }
 
   return NULL;
+}
+
+/* Get details about a combination found with BoxType_Find_Combination. */
+BoxBool
+BoxType_Get_Combination(BoxType comb, BoxType *child, BoxAction **action) {
+  if (comb->type_class == BOXTYPECLASS_COMB_NODE) {
+    BoxTypeCombNode *td = BoxType_Get_Data(comb);
+    if (child)
+      *child = td->child;
+    if (action)
+      *action = td->action;
+    return BOXBOOL_TRUE;
+  }
+  return BOXBOOL_FALSE;
 }
 
 #if 0

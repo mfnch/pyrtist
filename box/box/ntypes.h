@@ -130,6 +130,17 @@ BOXEXPORT BoxType
 BoxType_Link(BoxType t);
 
 /**
+ * Create an instance of a primary type with the given id, size and alignment.
+ * An primary type is one of the builtin core types.
+ * @param id The ID associated to the primary type.
+ * @param size The size of the type (in bytes).
+ * @param alignment The alignment for the type.
+ * @return A new primary type (or BOXTYPE_NONE if errors occurred).
+ */
+BOXEXPORT BoxType
+BoxType_Create_Primary(BoxTypeId id, size_t size, size_t alignment);
+
+/**
  * Create a new intrinsic type with the given name, size and alignment.
  * An intrinsic type can be imagined as a descriptor for an atomic
  * (i.e. indivisible) portion of memory.
@@ -367,6 +378,16 @@ BoxType_Compare(BoxType left, BoxType right);
 BOXEXPORT BoxType
 BoxType_Find_Combination(BoxType parent, BoxCombType type, BoxType child,
                          BoxTypeCmp *expand);
+
+/**
+ * Get details about a combination found with BoxType_Find_Combination.
+ * @param comb The combination, as returned by BoxType_Find_Combination.
+ * @param type Where to put the child type.
+ * @param action Where to put the combination action.
+ * @return BOXBOOL_TRUE if comb is a combination node, BOXBOOL_FALSE otherwise.
+ */
+BOXEXPORT BoxBool
+BoxType_Get_Combination(BoxType comb, BoxType *child, BoxAction **action);
 
 /**
  * Type iterator. Allows to iter through the types that do have members,

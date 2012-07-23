@@ -42,6 +42,7 @@ void *BoxType_Alloc(BoxType *t, BoxTypeClass tc) {
   case BOXTYPECLASS_SPECIES_NODE:
     additional = sizeof(BoxTypeSpeciesNode); break;
   case BOXTYPECLASS_COMB_NODE: additional = sizeof(BoxTypeCombNode); break;
+  case BOXTYPECLASS_PRIMARY: additional = sizeof(BoxTypePrimary); break;
   case BOXTYPECLASS_INTRINSIC: additional = sizeof(BoxTypeIntrinsic); break;
   case BOXTYPECLASS_IDENT: additional = sizeof(BoxTypeIdent); break;
   case BOXTYPECLASS_RAISED: additional = sizeof(BoxTypeRaised); break;
@@ -148,6 +149,7 @@ static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
     refs[1] = ((BoxTypeCombNode *) tdata)->child;
     *num_refs = 2;
     return;
+  case BOXTYPECLASS_PRIMARY:
   case BOXTYPECLASS_INTRINSIC:
     return;
   case BOXTYPECLASS_IDENT:
@@ -264,6 +266,16 @@ void BoxTypeNode_Prepend_Node(BoxTypeNode *top_node, BoxType item) {
   if (top_node->previous == NULL)
     top_node->previous = item;
   top_node->next = item;
+}
+
+/* Create a new primary type with the given id, size and alignment. */
+BoxType BoxType_Create_Primary(BoxTypeId id, size_t size, size_t alignment) {
+  BoxType t;
+  BoxTypePrimary *td = BoxType_Alloc(& t, BOXTYPECLASS_PRIMARY);
+  td->id = id;
+  td->size = size;
+  td->alignment = alignment;  
+  return t;
 }
 
 /* Create a new intrinsic type with the given size and alignment. */
@@ -514,6 +526,11 @@ BoxBool BoxType_Get_Size_And_Alignment(BoxType t, size_t *size, size_t *algn) {
     case BOXTYPECLASS_COMB_NODE:
       return BOXBOOL_FALSE;
 
+    case BOXTYPECLASS_PRIMARY:
+      *size = ((BoxTypePrimary *) td)->size;
+      *algn = ((BoxTypePrimary *) td)->alignment;
+      return BOXBOOL_TRUE;
+
     case BOXTYPECLASS_INTRINSIC:
       *size = ((BoxTypeIntrinsic *) td)->size;
       *algn = ((BoxTypeIntrinsic *) td)->alignment;
@@ -598,6 +615,7 @@ BoxType BoxType_Resolve(BoxType t, BoxTypeResolve resolve, int num) {
         t = ((BoxTypeSpecies *) BoxType_Get_Data(t))->node.previous;
       break;
 
+    case BOXTYPECLASS_PRIMARY:
     case BOXTYPECLASS_INTRINSIC:
     case BOXTYPECLASS_STRUCTURE:      
     case BOXTYPECLASS_ENUM:
@@ -665,6 +683,8 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
   left = BoxType_Resolve(left, BOXTYPERESOLVE_IDENT, 1);
   right = BoxType_Resolve(right, 
                           BOXTYPERESOLVE_IDENT | BOXTYPERESOLVE_SPECIES, 1);
+  if (left == right)
+    return BOXTYPECMP_EQUAL;
 
   switch (left->type_class) {
   case BOXTYPECLASS_STRUCTURE_NODE:
@@ -673,6 +693,15 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
   case BOXTYPECLASS_COMB_NODE:
   case BOXTYPECLASS_IDENT:
     MSG_FATAL("BoxType_Compare: Invalid type objects.");
+    return BOXTYPECMP_DIFFERENT;
+
+  case BOXTYPECLASS_PRIMARY:
+    if (right->type_class == BOXTYPECLASS_PRIMARY) {
+      BoxTypePrimary *ltd = BoxType_Get_Data(left),
+                     *rtd = BoxType_Get_Data(right);      
+      return (ltd->id == rtd->id) ? BOXTYPECMP_EQUAL : BOXTYPECMP_DIFFERENT;
+    }
+
     return BOXTYPECMP_DIFFERENT;
 
   case BOXTYPECLASS_INTRINSIC:

@@ -51,6 +51,7 @@ typedef enum {
   BOXTYPECLASS_SPECIES_NODE,
   BOXTYPECLASS_ENUM_NODE,
   BOXTYPECLASS_COMB_NODE,
+  BOXTYPECLASS_PRIMARY,
   BOXTYPECLASS_INTRINSIC,
   BOXTYPECLASS_IDENT,
   BOXTYPECLASS_RAISED,
@@ -78,6 +79,16 @@ struct BoxTypeDesc_struct {
 typedef struct {
   BoxType next, previous;
 } BoxTypeNode;
+
+/**
+ * Intrinsic Box type: basically a piece of memory handled opaquely by C
+ * initializers, finalizers, etc. (e.g. Int, Real, Str, ...)
+ */
+typedef struct {
+  BoxTypeId id;
+  size_t    size,
+            alignment;
+} BoxTypePrimary;
 
 /**
  * Intrinsic Box type: basically a piece of memory handled opaquely by C
@@ -162,6 +173,7 @@ typedef struct {
   BoxTypeNode node;
   BoxType     child;
   BoxCombType comb_type;
+  BoxAction   *action;
 } BoxTypeCombNode;
 
 /**
