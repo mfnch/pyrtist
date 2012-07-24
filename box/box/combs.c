@@ -81,6 +81,23 @@ BoxType_Find_Combination(BoxType parent, BoxCombType type, BoxType child,
   return NULL;
 }
 
+BoxType
+BoxType_Find_Combination_With_ID(BoxType parent, BoxCombType type,
+                                 BoxTypeId child_id, BoxTypeCmp *expand) {
+  /* Quick hack: we should do this better!
+   * This code relies on BoxType_Find_Combination not trying to link or
+   * unlink the child type.
+   */
+  struct {
+    BoxTypeDesc    desc;
+    BoxTypePrimary data;
+  } child_desc;
+
+  child_desc.desc.type_class = BOXTYPECLASS_PRIMARY;
+  child_desc.data.id = child_id;
+  return BoxType_Find_Combination(parent, type, & child_desc.desc, expand);
+}
+
 /* Get details about a combination found with BoxType_Find_Combination. */
 BoxBool
 BoxType_Get_Combination(BoxType comb, BoxType *child, BoxAction **action) {

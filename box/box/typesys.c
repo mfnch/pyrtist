@@ -139,16 +139,6 @@ static TSDesc *Fully_Resolve(TS *ts, Type *rt, Type t) {
   }
 }
 
-int TS_Is_Anonymous(BoxTS *ts, BoxType t) {
-  TSDesc *td;
-
-  if (t == BOXTYPE_NONE)
-    return 1;
-
-  td = Type_Ptr(ts, t);
-  return (td->name == (char *) NULL);
-}
-
 BoxType TS_Is_Special(BoxType t) {
   switch(t) {
   case BOXTYPE_CREATE:

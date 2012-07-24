@@ -123,11 +123,6 @@ void TS_Init_Builtin_Types(BoxTS *ts);
 
 BoxInt TS_Get_Size(BoxTS *ts, BoxType t);
 
-/** True if 't' is an anonymous type: anonymous types are types without
- * a name. A type can be named using 'TS_Name_Set'.
- */
-int TS_Is_Anonymous(BoxTS *ts, BoxType t);
-
 /** If 't' is a special type (BOXTYPE_CREATE, BOXTYPE_DESTROY, etc.)
  * return 't', otherwise return BOXTYPE_NONE.
  */
