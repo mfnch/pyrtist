@@ -17,6 +17,44 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#include <box/callable.h>
+#include <box/types.h>
+#include <box/core.h>
 
-BoxCallable_(BoxType child, BoxType parent, 
+/* Initialize the core types of Box. */
+BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
+  BoxBool success = BOXBOOL_TRUE;
+
+  struct {
+    BoxType *dest;
+    const char *name;
+    BoxTypeId id;
+    size_t size;
+    size_t alignment;
+  } *row, table[] = {
+    {& core_types->char_type, "Char", BOXTYPEID_CHAR,
+     sizeof(BoxChar), __alignof__(BoxChar)},
+    {& core_types->int_type, "Int", BOXTYPEID_INT,
+     sizeof(BoxInt), __alignof__(BoxInt)},
+    {NULL, (const char *) NULL, BOXTYPEID_NONE,
+     (size_t) 0, (size_t) 0}
+  };
+
+  for (row = & table[0]; row->dest; row++) {
+    BoxType t = BoxType_Create_Primary(row->id, row->size, row->alignment);
+
+    if (t) {
+      BoxType id = BoxType_Create_Ident(t, row->name);
+      if (id)
+        *row->dest = id;
+
+      else
+        BoxType_Unlink(t);
+    
+    } else {
+      success = BOXBOOL_FALSE;
+      *row->dest = NULL;
+    }
+  }
+
+  return success;
+}

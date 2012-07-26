@@ -17,6 +17,31 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#include <box/callable.h>
+/**
+ * @file core.h
+ * @brief Definition of core types and objects.
+ *
+ * This module defines Box core types and objects.
+ */
 
-BoxCallable_(BoxType child, BoxType parent, 
+#ifndef _BOX_CORE_H
+#  define _BOX_CORE_H
+
+#include <box/ntypes.h>
+
+/** Box core types. */
+typedef struct BoxCoreTypes_struct {
+  BoxType char_type,
+          int_type,
+          real_type,
+          point_type,
+          pointer_type;
+} BoxCoreTypes;
+
+/** Object containing all the core types of Box. */
+extern BoxCoreTypes box_core_types;
+
+/* Initialize the core types of Box. */
+BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types);
+
+#endif /* _BOX_CORE_H */

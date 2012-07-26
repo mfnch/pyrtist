@@ -31,4 +31,7 @@
 #ifndef _BOX_CALLABLE_H
 #  define _BOX_CALLABLE_H
 
+BoxCallable *BoxCallable_Create(void);
+
+BoxCallable
 #endif /* _BOX_CALLABLE_H */
