@@ -17,52 +17,23 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#include <box/types.h>
-#include <box/core.h>
+/**
+ * @file obj.h
+ * @brief Definition of object allocation and managig functions.
+ *
+ * This module defines basic functions to allocate Box objects and manage
+ * them.
+ */
 
-/* Initialize the core types of Box. */
-BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
-  BoxBool success = BOXBOOL_TRUE;
+#ifndef _BOX_OBJ_H
+#  define _BOX_OBJ_H
 
-  struct {
-    BoxType *dest;
-    const char *name;
-    BoxTypeId id;
-    size_t size;
-    size_t alignment;
-  } *row, table[] = {
-    {& core_types->type_type, "Type", BOXTYPEID_TYPE,
-     sizeof(BoxType), __alignof__(BoxType)},
-    {& core_types->char_type, "Char", BOXTYPEID_CHAR,
-     sizeof(BoxChar), __alignof__(BoxChar)},
-    {& core_types->int_type, "Int", BOXTYPEID_INT,
-     sizeof(BoxInt), __alignof__(BoxInt)},
-    {& core_types->real_type, "Real", BOXTYPEID_REAL,
-     sizeof(BoxReal), __alignof__(BoxReal)},
-    {& core_types->point_type, "Point", BOXTYPEID_POINT,
-     sizeof(BoxPoint), __alignof__(BoxPoint)},
-    {& core_types->pointer_type, "Ptr", BOXTYPEID_PTR,
-     sizeof(BoxPtr), __alignof__(BoxPtr)},
-    {NULL, (const char *) NULL, BOXTYPEID_NONE,
-     (size_t) 0, (size_t) 0}
-  };
+#include <box/ntypes.h>
 
-  for (row = & table[0]; row->dest; row++) {
-    BoxType t = BoxType_Create_Primary(row->id, row->size, row->alignment);
+/**
+ * Single Pointer to a Box object.
+ */
+typedef void *BoxSPtr;
 
-    if (t) {
-      BoxType id = BoxType_Create_Ident(t, row->name);
-      if (id)
-        *row->dest = id;
 
-      else
-        BoxType_Unlink(t);
-    
-    } else {
-      success = BOXBOOL_FALSE;
-      *row->dest = NULL;
-    }
-  }
-
-  return success;
-}
+#endif /* _BOX_OBJ_H */

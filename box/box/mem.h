@@ -42,7 +42,9 @@ BOXEXPORT size_t BoxMem_Align_Offset(size_t offset, size_t alignment);
 #define BoxMem_Get_Multiple_Size(size, alignment) \
   BoxMem_Align_Offset((size), (alignment))
 
-BOXEXPORT void *BoxMem_Alloc(size_t size);
+BOXEXPORT void *Box_Mem_Alloc(size_t size);
+
+#define BoxMem_Alloc Box_Mem_Alloc
 
 /** Similar to BoxMem_Alloc, but never returns NULL (display an error message
  * and abort, instead!).
@@ -85,9 +87,11 @@ BOXEXPORT int BoxMem_AX(size_t *r, size_t a, size_t x);
 
 /** Executes *r = x + y, returning 0 in case of integer overflow, 1 otherwise.
  */
-BOXEXPORT int BoxMem_x_Plus_y(size_t *r, size_t x, size_t y);
+BOXEXPORT int Box_Mem_Sum(size_t *r, size_t x, size_t y);
 
-#define Box_Mem_X_Plus_Y BoxMem_x_Plus_y
+#define BoxMem_x_Plus_y Box_Mem_Sum
+
+#define Box_Mem_X_Plus_Y Box_Mem_Sum
 
 /** Executes *r = a*x + b*y, returning 0 in case of integer overflow,
  *  1 otherwise.
