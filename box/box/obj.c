@@ -32,6 +32,7 @@ typedef struct BoxObjHeader_struct {
   BoxType type;
 } BoxObjHeader;
 
+
 BoxBool BoxSPtr_Init(BoxSPtr src) {
   return BOXBOOL_TRUE;
 }
@@ -48,6 +49,28 @@ BoxSPtr BoxSPtr_Link(BoxSPtr src) {
   return src;
 }
 
+/* This function allows unlinking an object and performing some extra
+ * operations before object destruction.
+ */
+BoxBool BoxSPtr_Unlink_Begin(BoxSPtr src) {
+  BoxObjHeader *head = src - sizeof(BoxObjHeader);
+  BoxSPtr ret;
+
+  if (head->num_refs == 1)
+    return BOXBOOL_TRUE;
+
+  assert(head->num_refs > 1);
+  ret = BoxSPtr_Unlink(src);
+  assert(ret);
+  return BOXBOOL_FALSE;
+}
+
+/* Function to be used in conjunction with BoxSPtr_Unlink_Begin. */
+void BoxSPtr_Unlink_End(BoxSPtr src) {
+  BoxSPtr ret = BoxSPtr_Unlink(src);
+  assert(!ret);
+} 
+
 /* Remove a reference to an object, destroying it, if unreferenced. */
 BoxSPtr BoxSPtr_Unlink(BoxSPtr src) {
   BoxObjHeader *head = src - sizeof(BoxObjHeader);
@@ -58,7 +81,8 @@ BoxSPtr BoxSPtr_Unlink(BoxSPtr src) {
     return src;
 
   } else {
-    (void) BoxSPtr_Unlink(head->type);
+    if (head->type)
+      (void) BoxSPtr_Unlink(head->type);
     BoxMem_Free(head);
     return NULL;
   }
@@ -66,14 +90,20 @@ BoxSPtr BoxSPtr_Unlink(BoxSPtr src) {
 
 /* Allocate space for an object of the given type. */
 BoxSPtr BoxSPtr_Alloc(BoxType t) {
-  size_t total_size, obj_size = BoxType_Get_Size(t);
+  size_t obj_size = BoxType_Get_Size(t);
+  return BoxSPtr_Raw_Alloc(t, obj_size);
+}
+
+/* Raw allocation function. */
+BoxSPtr BoxSPtr_Raw_Alloc(BoxType t, size_t obj_size) {
+  size_t total_size;
   if (Box_Mem_Sum(& total_size, sizeof(BoxObjHeader), obj_size)) {
     void *whole = Box_Mem_Alloc(total_size);
     if (whole) {
       BoxObjHeader *head = whole;
       void *ptr = (char *) whole + sizeof(BoxObjHeader);
       head->num_refs = 1;
-      head->type = BoxSPtr_Link(t);
+      head->type = (t) ? BoxSPtr_Link(t) : NULL;
       return ptr;
     }
   }

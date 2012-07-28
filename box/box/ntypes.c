@@ -27,6 +27,8 @@
 
 #include <box/messages.h>
 #include <box/mem.h>
+#include <box/obj.h>
+#include <box/core.h>
 
 
 /* Generic allocation function for BoxType objects. This function allocates a
@@ -55,8 +57,8 @@ void *BoxType_Alloc(BoxType *t, BoxTypeClass tc) {
     return NULL;
   }
 
-  if (Box_Mem_X_Plus_Y(& total, additional, sizeof(BoxTypeDesc))) {
-    BoxTypeDesc *td = Box_Mem_RC_Safe_Alloc(total);
+  if (Box_Mem_Sum(& total, additional, sizeof(BoxTypeDesc))) {
+    BoxTypeDesc *td = BoxSPtr_Raw_Alloc(box_core_types.type_type, total);
     td->type_class = tc;
     *t = td;
     return (void *) td + sizeof(BoxTypeDesc);
@@ -193,7 +195,7 @@ static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
  */
 void BoxType_Unlink(BoxType t) {
   if (t) {
-    if (Box_Mem_RC_Get_Num_Refs(t) == 1) {
+    if (BoxSPtr_Unlink_Begin(t)) {
       /* The object is gonna die (just one ref count).  */
 
       void *mems[BOX_MAX_NUM_MEMS_IN_TYPE];
@@ -207,16 +209,15 @@ void BoxType_Unlink(BoxType t) {
 
       for (i = 0; i < num_refs; i++)
         BoxType_Unlink(refs[i]);
-    }
 
-    Box_Mem_RC_Unlink(t);
+      BoxSPtr_Unlink_End(t);
+    }
   }
 }
 
 /* Add a reference to the given type. */
 BoxType BoxType_Link(BoxType t) {
-  Box_Mem_RC_Link(t);
-  return t;
+  return BoxSPtr_Link(t);
 }
 
 /* Append one BoxTypeNode item to a top BoxTypeNode item. This is used in

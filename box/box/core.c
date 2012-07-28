@@ -20,6 +20,12 @@
 #include <box/types.h>
 #include <box/core.h>
 
+/**
+ * Structure collection all Box core types.
+ */
+BoxCoreTypes box_core_types;
+
+
 /* Initialize the core types of Box. */
 BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
   BoxBool success = BOXBOOL_TRUE;

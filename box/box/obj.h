@@ -35,5 +35,60 @@
  */
 typedef void *BoxSPtr;
 
+/**
+ * Allocate space for an object of the given type.
+ * This is an internal function which is not meant to be used externally.
+ */
+BoxSPtr BoxSPtr_Alloc(BoxType t);
+
+/**
+ * Raw allocation function.
+ * This is an internal function which is not meant to be used externally.
+ */
+BoxSPtr BoxSPtr_Raw_Alloc(BoxType t, size_t obj_size);
+
+/**
+ * Add a reference to an object and return it.
+ * @param src The object to reference.
+ * @return Return its argument, src.
+ */
+BoxSPtr BoxSPtr_Link(BoxSPtr src);
+
+/**
+ * This function, which should be used in conjunction with BoxSPtr_Unlink_End,
+ * allows unlinking an object and performing some extra operations before
+ * object destruction. It should be used in the following way:
+ * @code
+ * if (BoxSPtr_Unlink_Begin(src)) {
+ *   // do something
+ *   BoxSPtr_Unlink_End(src);
+ * }
+ * @endcode
+ * The function BoxSPtr_Unlink_Begin checks the reference counts of src. If
+ * this is greater than one, then the reference count is decreased and
+ * BOXBOOL_FALSE is returned. If the reference count is one, then the function
+ * does not change the reference count, but rather returns BOXBOOL_TRUE.
+ * The function BoxSPtr_Unlink_End does finally increase the reference count
+ * and destroy the object.
+ * @param src Object to unlink.
+ * @return BOXBOOL_TRUE if the object has just one reference, otherwise return
+ *   BOXBOOL_FALSE.
+ * @see BoxSPtr_Unlink
+ */
+BoxBool BoxSPtr_Unlink_Begin(BoxSPtr src);
+
+/**
+ * Function to be used in conjunction with BoxSPtr_Unlink_Begin.
+ * @see BoxSPtr_Unlink_Begin
+ */
+void BoxSPtr_Unlink_End(BoxSPtr src);
+
+/**
+ * Remove a reference to an object, destroying it, if unreferenced.
+ * @param src Object to unreference.
+ * @return src if the object was unreferenced but not destroyed, NULL if the
+ *   object was unreferenced and destroyed.
+ */
+BoxSPtr BoxSPtr_Unlink(BoxSPtr src);
 
 #endif /* _BOX_OBJ_H */
