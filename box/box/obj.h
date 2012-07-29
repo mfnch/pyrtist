@@ -30,6 +30,17 @@
 
 #include <box/ntypes.h>
 
+
+/**
+ * Object header. Every object allocation includes some extra space to contain
+ * This structure, which contains the type of the object and the number of
+ * references that other objects make to it.
+ */
+typedef struct BoxObjHeader_struct {
+  size_t  num_refs;
+  BoxType type;
+} BoxObjHeader;
+
 /**
  * Single Pointer to a Box object.
  */

@@ -31,7 +31,56 @@
 #ifndef _BOX_CALLABLE_H
 #  define _BOX_CALLABLE_H
 
-BoxCallable *BoxCallable_Create(void);
+typedef void *BoxException;
 
-BoxCallable
+typedef BoxException *(*BoxCCall1)(BoxPtr *parent);
+
+typedef BoxException *(*BoxCCall2)(BoxPtr *parent, BoxPtr *child);
+
+typedef BoxException *(*BoxCCall3)(BoxPtr *callable, BoxPtr *parent,
+                                   BoxPtr *child);
+
+typedef struct BoxCallable_struct BoxCallable;
+
+typedef enum {
+  BOXCALLABLEKIND_C_2, /**< BoxCCall2 */
+  BOXCALLABLEKIND_C_3  /**< BoxCCall3 */
+} BoxCallableKind;
+
+
+/**
+ * Create a callable object from a BoxCCall1 C function.
+ * @param call The C function.
+ * @return BOXBOOL_TRUE on success, BOXBOOL_FALSE on failure.
+ */
+BOXEXPORT BoxBool
+BoxCallable_Init_From_CCall1(BoxCallable *cb, BoxCCall1 call);
+
+/**
+ * Initialize a callable object from a BoxCCall2 C function.
+ * @param call The C function.
+ */
+BOXEXPORT void
+BoxCallable_Init_From_CCall2(BoxCallable *cb, BoxCCall2 call);
+
+/**
+ * Create a callable object from a BoxCCall3 C function.
+ * @param call The C function.
+ * @return BOXBOOL_TRUE on success, BOXBOOL_FALSE on failure.
+ */
+BOXEXPORT BoxBool
+BoxCallable_Create_From_CCall3(BoxCallable *cb, BoxCCall3 call);
+
+/**
+ *
+ */
+BOXEXPORT BoxException *
+BoxCallable_Call1(BoxCallable *cb, BoxPtr parent);
+
+/**
+ *
+ */
+BOXEXPORT BoxException *
+BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child);
+
 #endif /* _BOX_CALLABLE_H */

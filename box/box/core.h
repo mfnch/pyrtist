@@ -32,6 +32,7 @@
 /** Box core types. */
 typedef struct BoxCoreTypes_struct {
   BoxType type_type,
+          callable_type,
           char_type,
           int_type,
           real_type,

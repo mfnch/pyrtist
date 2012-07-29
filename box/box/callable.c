@@ -17,6 +17,55 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+#include <box/types.h>
+#include <box/ntypes.h>
+#include <box/core.h>
+#include <box/obj.h>
 #include <box/callable.h>
 
-BoxCallable_(BoxType child, BoxType parent, 
+
+struct BoxCallable_struct {
+  BoxCallableKind kind;
+  union {
+    BoxCCall2 c_call_2;
+    BoxCCall3 c_call_3;
+  }               implem;
+};
+
+
+/* Initialize a callable object from a BoxCCall2 C function. */
+void BoxCallable_Init_From_CCall2(BoxCallable *cb, BoxCCall2 call) {
+  cb->kind = BOXCALLABLEKIND_C_2;
+  cb->implem.c_call_2 = call;
+  return BOXBOOL_TRUE;
+}
+
+/* Create a callable object from a BoxCCall2 C function. */
+BoxCallable *BoxCallable_Create_From_CCall2(BoxCCall2 call) {
+  BoxCallable *cb = BoxSPtr_Raw_Alloc(box_core_types.callable_type,
+                                      sizeof(BoxCallable));
+  BoxCallable_Init_From_CCall2(cb, call);
+  return cb;
+}
+
+#define BoxException_Create() NULL
+
+#define BoxPtr_Init_From_SPtr(callable, sptr) \
+  do {(callable)->block = (char *) (sptr) - sizeof(BoxObjHeader); \
+      (callable)->ptr = (sptr);} while(0)
+
+/* Create a callable object from a BoxCCall2 C function. */
+BoxException *
+BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
+  switch (cb->kind) {
+  case BOXCALLABLEKIND_C_2:
+    return cb->implem.c_call_2(parent, child);
+  case BOXCALLABLEKIND_C_3:
+    {
+      BoxPtr callable;
+      BoxPtr_Init_From_SPtr(& callable, cb);
+      return cb->implem.c_call_3(& callable, parent, child);
+    }
+  }
+  return BoxException_Create();
+}

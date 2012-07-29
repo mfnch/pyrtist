@@ -18,6 +18,7 @@
  ****************************************************************************/
 
 #include <box/types.h>
+#include <box/callable.h>
 #include <box/core.h>
 
 /**
