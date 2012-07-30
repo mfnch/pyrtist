@@ -38,7 +38,7 @@ BoxBool BoxType_Get_Combinations(BoxType ident, BoxTypeIter *iter) {
 /* Define a combination 'child'@'parent' and associate an action to it. */
 BoxBool
 BoxType_Define_Combination(BoxType parent, BoxCombType type, BoxType child,
-                           BoxAction *action) {
+                           BoxCallable *callable) {
   if (parent->type_class == BOXTYPECLASS_IDENT) {
     BoxTypeIdent *pd = BoxType_Get_Data(parent);
 
@@ -47,6 +47,7 @@ BoxType_Define_Combination(BoxType parent, BoxCombType type, BoxType child,
     BoxTypeCombNode *cn = BoxType_Alloc(& comb_node, BOXTYPECLASS_COMB_NODE);
     cn->comb_type = type;
     cn->child = BoxType_Link(child);
+    cn->callable = callable;
 
     BoxTypeNode_Prepend_Node(& pd->combs.node, comb_node);
     return BOXBOOL_TRUE;
@@ -100,13 +101,13 @@ BoxType_Find_Combination_With_ID(BoxType parent, BoxCombType type,
 
 /* Get details about a combination found with BoxType_Find_Combination. */
 BoxBool
-BoxType_Get_Combination(BoxType comb, BoxType *child, BoxAction **action) {
+BoxType_Get_Combination(BoxType comb, BoxType *child, BoxCallable **callable) {
   if (comb->type_class == BOXTYPECLASS_COMB_NODE) {
     BoxTypeCombNode *td = BoxType_Get_Data(comb);
     if (child)
       *child = td->child;
-    if (action)
-      *action = td->action;
+    if (callable)
+      *callable = td->callable;
     return BOXBOOL_TRUE;
   }
   return BOXBOOL_FALSE;

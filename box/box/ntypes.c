@@ -28,6 +28,7 @@
 #include <box/messages.h>
 #include <box/mem.h>
 #include <box/obj.h>
+#include <box/callable.h>
 #include <box/core.h>
 
 
@@ -190,8 +191,41 @@ static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
   }
 }
 
+/* Finalization function for type objects. */
+static BoxException *My_Type_Finish(BoxPtr *parent) {
+  void *mems[BOX_MAX_NUM_MEMS_IN_TYPE];
+  BoxType refs[BOX_MAX_NUM_TYPES_IN_TYPE];
+  int num_refs, num_mems, i;
+
+  BoxType t = BoxPtr_Get_Target(parent);
+  MyType_Get_Refs(t, & num_refs, refs, & num_mems, mems);
+
+  for (i = 0; i < num_mems; i++)
+    BoxMem_Free(mems[i]);
+
+  for (i = 0; i < num_refs; i++)
+    BoxSPtr_Unlink(refs[i]);
+
+  return NULL;
+}
+
+/* Register initialization and finalization for types. */
+BoxBool Box_Register_Type_Combs(BoxCoreTypes *core_types) {
+  BoxCallable *callable = BoxCallable_Create_From_CCall1(My_Type_Finish);
+  if (!callable)
+    return BOXBOOL_FALSE;
+
+  if (BoxType_Define_Combination(core_types->type_type, BOXCOMBTYPE_AT,
+                                 core_types->finish_type, callable))
+    return BOXBOOL_TRUE;
+
+  BoxSPtr_Unlink(callable);
+  return BOXBOOL_FALSE;
+}
+
 /* Unlink (remove a reference to) the given type. The memory for the type is
  * released if there are no references left to it.
+ * XXX TODO: this is going to be obsolete. Remove it!
  */
 void BoxType_Unlink(BoxType t) {
   if (t) {
@@ -794,10 +828,3 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
     return BOXTYPECMP_DIFFERENT;
   }
 }
-
-#if 0
-BoxType_Get_Combination(BoxType child, BoxType parent) {
-
-
-}
-#endif

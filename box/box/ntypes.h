@@ -31,6 +31,8 @@
 
 #  include <stdlib.h>
 
+#  include <box/callable.h>
+
 typedef struct BoxTypeDesc_struct BoxTypeDesc;
 
 /**
@@ -53,8 +55,8 @@ typedef enum {
   BOXTYPEID_PTR   = 4,
   BOXTYPEID_OBJ,
   BOXTYPEID_VOID,
-  BOXTYPEID_CREATE,
-  BOXTYPEID_DESTROY,
+  BOXTYPEID_INIT,
+  BOXTYPEID_FINISH,
   BOXTYPEID_COPY,
   BOXTYPEID_BEGIN,
   BOXTYPEID_END,
@@ -327,14 +329,12 @@ typedef unsigned int BoxBoxState;
 /** Return a Box state identifier from its string representation. */
 BoxBoxState BoxType_Get_State(BoxType t, const char *source);
 
-typedef int BoxAction;
-
 /**
  * Define a combination 'child'@'parent' and associate an action to it.
  */
 BOXEXPORT BoxBool
 BoxType_Define_Combination(BoxType parent, BoxCombType type, BoxType child,
-                           BoxAction *action);
+                           BoxCallable *callable);
 
 /*****************************************************************************
  * TYPE ENQUIRY ROUTINES                                                     *
@@ -388,7 +388,7 @@ BoxType_Find_Combination(BoxType parent, BoxCombType type, BoxType child,
  * @return BOXBOOL_TRUE if comb is a combination node, BOXBOOL_FALSE otherwise.
  */
 BOXEXPORT BoxBool
-BoxType_Get_Combination(BoxType comb, BoxType *child, BoxAction **action);
+BoxType_Get_Combination(BoxType comb, BoxType *child, BoxCallable **cb);
 
 /**
  * Type iterator. Allows to iter through the types that do have members,

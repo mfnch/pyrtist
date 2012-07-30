@@ -29,6 +29,7 @@
 #  define _BOX_TYPES_PRIV_H
 
 #  include <box/ntypes.h>
+#  include <box/core.h>
 
 /**
  * Maximum number of types linked to a type.
@@ -173,7 +174,7 @@ typedef struct {
   BoxTypeNode node;
   BoxType     child;
   BoxCombType comb_type;
-  BoxAction   *action;
+  BoxCallable *callable;
 } BoxTypeCombNode;
 
 /**
@@ -191,6 +192,11 @@ typedef struct {
 typedef struct {
   BoxType source;
 } BoxTypePointer;
+
+/**
+ * Internal function. Not meant to be called by ordinary users.
+ */
+BoxBool Box_Register_Type_Combs(BoxCoreTypes *core_types);
 
 /**
  * Generic allocation function for BoxType objects. This function allocates a

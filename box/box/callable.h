@@ -43,6 +43,7 @@ typedef BoxException *(*BoxCCall3)(BoxPtr *callable, BoxPtr *parent,
 typedef struct BoxCallable_struct BoxCallable;
 
 typedef enum {
+  BOXCALLABLEKIND_C_1, /**< BoxCCall1 */
   BOXCALLABLEKIND_C_2, /**< BoxCCall2 */
   BOXCALLABLEKIND_C_3  /**< BoxCCall3 */
 } BoxCallableKind;
@@ -53,7 +54,7 @@ typedef enum {
  * @param call The C function.
  * @return BOXBOOL_TRUE on success, BOXBOOL_FALSE on failure.
  */
-BOXEXPORT BoxBool
+BOXEXPORT void
 BoxCallable_Init_From_CCall1(BoxCallable *cb, BoxCCall1 call);
 
 /**
@@ -64,12 +65,20 @@ BOXEXPORT void
 BoxCallable_Init_From_CCall2(BoxCallable *cb, BoxCCall2 call);
 
 /**
- * Create a callable object from a BoxCCall3 C function.
+ * Create a callable object from a BoxCCall1 C function.
  * @param call The C function.
- * @return BOXBOOL_TRUE on success, BOXBOOL_FALSE on failure.
+ * @return The callable object.
  */
-BOXEXPORT BoxBool
-BoxCallable_Create_From_CCall3(BoxCallable *cb, BoxCCall3 call);
+BOXEXPORT BoxCallable *
+BoxCallable_Create_From_CCall1(BoxCCall1 call);
+
+/**
+ * Create a callable object from a BoxCCall2 C function.
+ * @param call The C function.
+ * @return The callable object.
+ */
+BOXEXPORT BoxCallable *
+BoxCallable_Create_From_CCall2(BoxCCall2 call);
 
 /**
  *

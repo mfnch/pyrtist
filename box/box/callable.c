@@ -27,17 +27,30 @@
 struct BoxCallable_struct {
   BoxCallableKind kind;
   union {
+    BoxCCall1 c_call_1;
     BoxCCall2 c_call_2;
     BoxCCall3 c_call_3;
   }               implem;
 };
 
+/* Initialize a callable object from a BoxCCall1 C function. */
+void BoxCallable_Init_From_CCall1(BoxCallable *cb, BoxCCall1 call) {
+  cb->kind = BOXCALLABLEKIND_C_1;
+  cb->implem.c_call_1 = call;
+}
 
 /* Initialize a callable object from a BoxCCall2 C function. */
 void BoxCallable_Init_From_CCall2(BoxCallable *cb, BoxCCall2 call) {
   cb->kind = BOXCALLABLEKIND_C_2;
   cb->implem.c_call_2 = call;
-  return BOXBOOL_TRUE;
+}
+
+/* Create a callable object from a BoxCCall1 C function. */
+BoxCallable *BoxCallable_Create_From_CCall1(BoxCCall1 call) {
+  BoxCallable *cb = BoxSPtr_Raw_Alloc(box_core_types.callable_type,
+                                      sizeof(BoxCallable));
+  BoxCallable_Init_From_CCall1(cb, call);
+  return cb;
 }
 
 /* Create a callable object from a BoxCCall2 C function. */
@@ -58,6 +71,8 @@ BoxCallable *BoxCallable_Create_From_CCall2(BoxCCall2 call) {
 BoxException *
 BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
   switch (cb->kind) {
+  case BOXCALLABLEKIND_C_1:
+    return cb->implem.c_call_1(parent);
   case BOXCALLABLEKIND_C_2:
     return cb->implem.c_call_2(parent, child);
   case BOXCALLABLEKIND_C_3:

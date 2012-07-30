@@ -18,7 +18,9 @@
  ****************************************************************************/
 
 #include <box/types.h>
+#include <box/types_priv.h>
 #include <box/callable.h>
+#include <box/obj.h>
 #include <box/core.h>
 
 /**
@@ -38,6 +40,10 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
     size_t size;
     size_t alignment;
   } *row, table[] = {
+    {& core_types->init_type, ".[", BOXTYPEID_INIT,
+     (size_t) 0, (size_t) 0},
+    {& core_types->finish_type, "].", BOXTYPEID_FINISH,
+     (size_t) 0, (size_t) 0},
     {& core_types->type_type, "Type", BOXTYPEID_TYPE,
      sizeof(BoxType), __alignof__(BoxType)},
     {& core_types->char_type, "Char", BOXTYPEID_CHAR,
@@ -71,5 +77,33 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
     }
   }
 
+  /* Register combinations for core_types->type_type. */
+  if (!Box_Register_Type_Combs(core_types))
+    success = BOXBOOL_FALSE;
+
   return success;
+}
+
+#if 0
+
+
+#endif
+
+void BoxCoreTypes_Finish(BoxCoreTypes *core_types) {
+  BoxType types[] =
+   {core_types->root_type,
+    core_types->init_type,
+    core_types->finish_type,
+    core_types->type_type,
+    core_types->char_type,
+    core_types->int_type,
+    core_types->real_type,
+    core_types->point_type,
+    core_types->pointer_type,
+    NULL};
+
+  BoxType *type;
+
+  for (type = & types[0]; *type; type++)
+    BoxSPtr_Unlink(*type);
 }
