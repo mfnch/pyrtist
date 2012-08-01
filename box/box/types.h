@@ -204,7 +204,6 @@ typedef BoxInt Int;
 typedef BoxUInt UInt;
 typedef BoxReal Real;
 typedef BoxPoint Point;
-//typedef BoxPtr Obj;
 typedef BoxPtr Ptr;
 typedef BoxSubtype Subtype;
 
@@ -263,8 +262,10 @@ typedef BoxName Data;
 #  endif /* BOX_ABBREV */
 
 /** Reset an extended BoxPtr pointer to NULL (point to nothing) */
-#  define BoxPtr_Nullify(p) \
+#  define BoxPtr_Init(p) \
   do {(p)->block = (p)->ptr = NULL;} while(0)
+
+#  define BoxPtr_Nullify BoxPtr_Init
 
 /** Detach a pointer so that it does not reference its source */
 #  define BoxPtr_Detach(p) \

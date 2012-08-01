@@ -23,7 +23,6 @@
 #include <box/obj.h>
 #include <box/callable.h>
 
-
 struct BoxCallable_struct {
   BoxCallableKind kind;
   union {
@@ -61,11 +60,32 @@ BoxCallable *BoxCallable_Create_From_CCall2(BoxCCall2 call) {
   return cb;
 }
 
-#define BoxException_Create() NULL
-
 #define BoxPtr_Init_From_SPtr(callable, sptr) \
   do {(callable)->block = (char *) (sptr) - sizeof(BoxObjHeader); \
       (callable)->ptr = (sptr);} while(0)
+
+/* Create a callable object from a BoxCCall2 C function. */
+BoxException *
+BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent) {
+  switch (cb->kind) {
+  case BOXCALLABLEKIND_C_1:
+    return cb->implem.c_call_1(parent);
+  case BOXCALLABLEKIND_C_2:
+    {
+      BoxPtr null;
+      BoxPtr_Init(& null);
+      return cb->implem.c_call_2(parent, & null);
+    }
+  case BOXCALLABLEKIND_C_3:
+    {
+      BoxPtr callable, null;
+      BoxPtr_Init(& null);
+      BoxPtr_Init_From_SPtr(& callable, cb);
+      return cb->implem.c_call_3(& callable, parent, & null);
+    }
+  }
+  return BoxException_Create();
+}
 
 /* Create a callable object from a BoxCCall2 C function. */
 BoxException *

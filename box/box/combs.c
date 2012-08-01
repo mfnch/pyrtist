@@ -83,7 +83,7 @@ BoxType_Find_Combination(BoxType parent, BoxCombType type, BoxType child,
 }
 
 BoxType
-BoxType_Find_Combination_With_ID(BoxType parent, BoxCombType type,
+BoxType_Find_Combination_With_Id(BoxType parent, BoxCombType type,
                                  BoxTypeId child_id, BoxTypeCmp *expand) {
   /* Quick hack: we should do this better!
    * This code relies on BoxType_Find_Combination not trying to link or
@@ -112,31 +112,3 @@ BoxType_Get_Combination(BoxType comb, BoxType *child, BoxCallable **callable) {
   }
   return BOXBOOL_FALSE;
 }
-
-#if 0
-static BoxType My_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
-                                   BoxType child, BoxComb comb,
-                                   BoxType parent) {
-  TSDesc *p_td, *parent_td;
-  Type p, dummy;
-  if (expansion_type == NULL)
-    expansion_type = & dummy;
-  *expansion_type = BOXTYPE_NONE;
-  parent_td = Type_Ptr(ts, parent);
-
-  for (p = parent_td->first_proc; p != BOXTYPE_NONE; p = p_td->first_proc) {
-    TSCmp comparison;
-    p_td = Type_Ptr(ts, p);
-    if (p_td->data.proc.combine == comb) {
-      comparison = TS_Compare(ts, p_td->target, child);
-      if (comparison != TS_TYPES_UNMATCH) {
-        if (comparison == TS_TYPES_EXPAND)
-          *expansion_type = p_td->target;
-        return p;
-      }
-    }
-  }
-  
-  return BOXTYPE_NONE;
-}
-#endif

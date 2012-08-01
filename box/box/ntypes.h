@@ -82,6 +82,9 @@ typedef struct {
   BoxPtr  ptr;
 } BoxAny;
 
+#  define BoxAny_Init(obj) \
+  do {(obj)->type = NULL; BoxPtr_Init(& (obj)->ptr);} while(0)
+
 /**
  * A Box function (can be called from Box).
  */
@@ -379,7 +382,13 @@ BoxType_Compare(BoxType left, BoxType right);
 BOXEXPORT BoxType
 BoxType_Find_Combination(BoxType parent, BoxCombType type, BoxType child,
                          BoxTypeCmp *expand);
-
+/**
+ * Similar to BoxType_Find_Combination, but uses the type ID (BoxTypeId)
+ * instead of a BoxType for the child.
+ */
+BOXEXPORT BoxType
+BoxType_Find_Combination_With_Id(BoxType parent, BoxCombType type,
+                                 BoxTypeId child_id, BoxTypeCmp *expand);
 /**
  * Get details about a combination found with BoxType_Find_Combination.
  * @param comb The combination, as returned by BoxType_Find_Combination.

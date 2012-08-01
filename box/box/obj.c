@@ -21,14 +21,120 @@
 
 #include <box/mem.h>
 #include <box/obj.h>
+#include <box/core.h>
+#include <box/types_priv.h>
 
+/* Forward references */
+static BoxBool My_Init_Obj(void *src, BoxType t);
+static void My_Finish_Obj(void *src, BoxType t);
 
-BoxBool BoxSPtr_Init(BoxSPtr src) {
+/* Initialize a block of memory addressed by src and with type t. */
+static BoxBool My_Init_Obj(void *src, BoxType t) {
+  while(1) {
+    switch (t->type_class) {
+    case BOXTYPECLASS_PRIMARY:
+    case BOXTYPECLASS_INTRINSIC:
+      return BOXBOOL_TRUE;
+
+    case BOXTYPECLASS_IDENT:
+      {
+        BoxCallable *callable;
+        BoxType node =
+          BoxType_Find_Combination_With_Id(t, BOXCOMBTYPE_AT,
+                                           BOXTYPEID_INIT, NULL);
+        if (!node)
+          return BOXBOOL_FALSE;
+
+        if (BoxType_Get_Combination(node, NULL, & callable))
+        {
+          BoxPtr parent;
+          BoxException *excp = BoxCallable_Call1(callable, & parent);
+          if (!excp)
+            return BOXBOOL_TRUE;
+
+          BoxException_Destroy(excp);
+        }
+      }
+      return BOXBOOL_FALSE;
+
+    case BOXTYPECLASS_RAISED:
+      t = BoxType_Resolve(t, BOXTYPERESOLVE_RAISED, 0);
+      break;
+
+    case BOXTYPECLASS_STRUCTURE:
+      {
+        BoxTypeIter ti;
+        BoxType node;
+        size_t idx, failure_idx;
+
+        /* If things go wrong, the integer above will be set with the index of
+         * the member at which a failure occurred. This will be used to
+         * finalized all the previous members of the structure (in order to
+         * avoid ending up with a partially initialized structure).
+         */
+        failure_idx = 0;
+
+        for (BoxTypeIter_Init(& ti, t), idx = 0;
+             BoxTypeIter_Get_Next(& ti, & node);
+             idx++) {
+          size_t offset;
+          BoxType type;
+
+          BoxType_Get_Structure_Member(node, NULL, & offset, NULL, & type);
+          if (!My_Init_Obj(src + offset, type))
+          {
+            failure_idx = idx;
+            break;
+          }
+        }
+
+        BoxTypeIter_Finish(& ti);
+
+        /* No failure, exit successfully! */
+        if (!failure_idx)
+          return BOXBOOL_TRUE;
+
+        /* Failure: finalize whatever was initialized and exit with failure. */
+        for (BoxTypeIter_Init(& ti, t), idx = 0;
+             BoxTypeIter_Get_Next(& ti, & node) && idx < failure_idx;
+             idx++) {
+          size_t offset;
+          BoxType type;
+
+          BoxType_Get_Structure_Member(node, NULL, & offset, NULL, & type);
+          My_Finish_Obj(src + offset, type);
+        }
+      }
+
+      return BOXBOOL_FALSE;
+
+    case BOXTYPECLASS_SPECIES:
+      t = BoxType_Resolve(t, BOXTYPERESOLVE_SPECIES, 0);
+      break;
+
+    case BOXTYPECLASS_ENUM:
+      /* TO BE IMPLEMENTED */
+    case BOXTYPECLASS_FUNCTION:
+      /* TO BE IMPLEMENTED */
+      return BOXBOOL_FALSE;
+
+    case BOXTYPECLASS_POINTER:
+      BoxPtr_Init((BoxPtr *) src);
+      return BOXBOOL_TRUE;
+
+    case BOXTYPECLASS_ANY:
+      BoxAny_Init((BoxAny *) src);
+      return BOXBOOL_TRUE;
+
+    default:
+      return BOXBOOL_FALSE;
+    }
+  };
+
   return BOXBOOL_TRUE;
 }
 
-void BoxSPtr_Finish(BoxSPtr src) {
-
+static void My_Finish_Obj(void *src, BoxType t) {
 }
 
 /* Add a reference to an object and return it. */
@@ -105,7 +211,7 @@ BoxSPtr BoxSPtr_Raw_Alloc(BoxType t, size_t obj_size) {
 BoxSPtr BoxSPtr_Create(BoxType t) {
   BoxSPtr obj = BoxSPtr_Alloc(t);
   if (obj) {
-    if (BoxSPtr_Init(obj))
+    if (My_Init_Obj(obj, t))
       return obj;
 
     (void) BoxSPtr_Unlink(obj);

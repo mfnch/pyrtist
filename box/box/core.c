@@ -84,11 +84,7 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
   return success;
 }
 
-#if 0
-
-
-#endif
-
+/* Finalize the core type of Box. */
 void BoxCoreTypes_Finish(BoxCoreTypes *core_types) {
   BoxType types[] =
    {core_types->root_type,

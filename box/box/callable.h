@@ -31,7 +31,7 @@
 #ifndef _BOX_CALLABLE_H
 #  define _BOX_CALLABLE_H
 
-typedef void *BoxException;
+#  include <box/exception.h>
 
 typedef BoxException *(*BoxCCall1)(BoxPtr *parent);
 
@@ -84,7 +84,7 @@ BoxCallable_Create_From_CCall2(BoxCCall2 call);
  *
  */
 BOXEXPORT BoxException *
-BoxCallable_Call1(BoxCallable *cb, BoxPtr parent);
+BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent);
 
 /**
  *
