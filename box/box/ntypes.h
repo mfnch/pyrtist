@@ -74,6 +74,20 @@ typedef enum {
 } BoxCombType;
 
 /**
+ * Initialize a BoxPtr pointer from a single pointer (BoxSPtr).
+ */
+#define BoxPtr_Init_From_SPtr(callable, sptr) \
+  do {(callable)->block = (char *) (sptr) - sizeof(BoxObjHeader); \
+      (callable)->ptr = (sptr);} while(0)
+
+/**
+ * Initialize a BoxPtr pointer from a single pointer (BoxSPtr).
+ */
+#define BoxPtr_Add_Offset(dst, src, offset)                       \
+  do {(dst)->block = (src)->block;                                \
+      (dst)->ptr = (src)->ptr + (offset);} while(0)
+
+/**
  * A pointer to a target object decorated with the type of the target.
  * This is using for boxing/unboxing objects.
  */

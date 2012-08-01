@@ -60,10 +60,6 @@ BoxCallable *BoxCallable_Create_From_CCall2(BoxCCall2 call) {
   return cb;
 }
 
-#define BoxPtr_Init_From_SPtr(callable, sptr) \
-  do {(callable)->block = (char *) (sptr) - sizeof(BoxObjHeader); \
-      (callable)->ptr = (sptr);} while(0)
-
 /* Create a callable object from a BoxCCall2 C function. */
 BoxException *
 BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent) {

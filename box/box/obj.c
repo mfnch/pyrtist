@@ -25,11 +25,11 @@
 #include <box/types_priv.h>
 
 /* Forward references */
-static BoxBool My_Init_Obj(void *src, BoxType t);
-static void My_Finish_Obj(void *src, BoxType t);
+static BoxBool My_Init_Obj(BoxPtr *src, BoxType t);
+static void My_Finish_Obj(BoxPtr *src, BoxType t);
 
 /* Initialize a block of memory addressed by src and with type t. */
-static BoxBool My_Init_Obj(void *src, BoxType t) {
+static BoxBool My_Init_Obj(BoxPtr *src, BoxType t) {
   while(1) {
     switch (t->type_class) {
     case BOXTYPECLASS_PRIMARY:
@@ -42,20 +42,26 @@ static BoxBool My_Init_Obj(void *src, BoxType t) {
         BoxType node =
           BoxType_Find_Combination_With_Id(t, BOXCOMBTYPE_AT,
                                            BOXTYPEID_INIT, NULL);
-        if (!node)
-          return BOXBOOL_FALSE;
+        /* Resolve type... */
+        t = BoxType_Resolve(t, BOXTYPERESOLVE_IDENT, 1);
 
-        if (BoxType_Get_Combination(node, NULL, & callable))
+        if (node && BoxType_Get_Combination(node, NULL, & callable))
         {
-          BoxPtr parent;
-          BoxException *excp = BoxCallable_Call1(callable, & parent);
+          BoxException *excp;
+
+          /* Initialise first from the type we are deriving from. */
+          if (!My_Init_Obj(src, t))
+            return BOXBOOL_FALSE;
+
+          /* Now do our own initialization... */
+          excp = BoxCallable_Call1(callable, src);
           if (!excp)
             return BOXBOOL_TRUE;
 
           BoxException_Destroy(excp);
+          return BOXBOOL_FALSE;
         }
       }
-      return BOXBOOL_FALSE;
 
     case BOXTYPECLASS_RAISED:
       t = BoxType_Resolve(t, BOXTYPERESOLVE_RAISED, 0);
@@ -79,9 +85,11 @@ static BoxBool My_Init_Obj(void *src, BoxType t) {
              idx++) {
           size_t offset;
           BoxType type;
+          BoxPtr member_ptr;
 
           BoxType_Get_Structure_Member(node, NULL, & offset, NULL, & type);
-          if (!My_Init_Obj(src + offset, type))
+          BoxPtr_Add_Offset(& member_ptr, src, offset);
+          if (!My_Init_Obj(& member_ptr, type))
           {
             failure_idx = idx;
             break;
@@ -100,9 +108,11 @@ static BoxBool My_Init_Obj(void *src, BoxType t) {
              idx++) {
           size_t offset;
           BoxType type;
+          BoxPtr member_ptr;
 
           BoxType_Get_Structure_Member(node, NULL, & offset, NULL, & type);
-          My_Finish_Obj(src + offset, type);
+          BoxPtr_Add_Offset(& member_ptr, src, offset);
+          My_Finish_Obj(& member_ptr, type);
         }
       }
 
@@ -119,11 +129,11 @@ static BoxBool My_Init_Obj(void *src, BoxType t) {
       return BOXBOOL_FALSE;
 
     case BOXTYPECLASS_POINTER:
-      BoxPtr_Init((BoxPtr *) src);
+      BoxPtr_Init((BoxPtr *) BoxPtr_Get_Target(src));
       return BOXBOOL_TRUE;
 
     case BOXTYPECLASS_ANY:
-      BoxAny_Init((BoxAny *) src);
+      BoxAny_Init((BoxAny *) BoxPtr_Get_Target(src));
       return BOXBOOL_TRUE;
 
     default:
@@ -134,7 +144,7 @@ static BoxBool My_Init_Obj(void *src, BoxType t) {
   return BOXBOOL_TRUE;
 }
 
-static void My_Finish_Obj(void *src, BoxType t) {
+static void My_Finish_Obj(BoxPtr *src, BoxType t) {
 }
 
 /* Add a reference to an object and return it. */
@@ -210,8 +220,12 @@ BoxSPtr BoxSPtr_Raw_Alloc(BoxType t, size_t obj_size) {
 /* Allocate and initialize an object of the given type; return its pointer. */
 BoxSPtr BoxSPtr_Create(BoxType t) {
   BoxSPtr obj = BoxSPtr_Alloc(t);
+
+  BoxPtr obj_ptr;
+  BoxPtr_Init_From_SPtr(& obj_ptr, obj);
+
   if (obj) {
-    if (My_Init_Obj(obj, t))
+    if (My_Init_Obj(& obj_ptr, t))
       return obj;
 
     (void) BoxSPtr_Unlink(obj);
