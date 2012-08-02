@@ -24,13 +24,23 @@
 #include <box/core.h>
 #include <box/types_priv.h>
 
+
 /* Forward references */
 static BoxBool My_Init_Obj(BoxPtr *src, BoxType t);
 static void My_Finish_Obj(BoxPtr *src, BoxType t);
 
+/* Finalize an Any object. */
+void BoxAny_Finish(BoxAny *any)
+{
+  (void) BoxPtr_Unlink(& any->ptr);
+  BoxPtr_Init(& any->ptr);
+  //TODO: unlink type as well!
+  any->type = NULL;
+}
+
 /* Initialize a block of memory addressed by src and with type t. */
 static BoxBool My_Init_Obj(BoxPtr *src, BoxType t) {
-  while(1) {
+  while (1) {
     switch (t->type_class) {
     case BOXTYPECLASS_PRIMARY:
     case BOXTYPECLASS_INTRINSIC:
@@ -42,23 +52,21 @@ static BoxBool My_Init_Obj(BoxPtr *src, BoxType t) {
         BoxType node =
           BoxType_Find_Combination_With_Id(t, BOXCOMBTYPE_AT,
                                            BOXTYPEID_INIT, NULL);
-        /* Resolve type... */
+        
+        /* Initialise first from the type we are deriving from. */
         t = BoxType_Resolve(t, BOXTYPERESOLVE_IDENT, 1);
+        if (!My_Init_Obj(src, t))
+          return BOXBOOL_FALSE;
 
         if (node && BoxType_Get_Combination(node, NULL, & callable))
         {
-          BoxException *excp;
-
-          /* Initialise first from the type we are deriving from. */
-          if (!My_Init_Obj(src, t))
-            return BOXBOOL_FALSE;
-
           /* Now do our own initialization... */
-          excp = BoxCallable_Call1(callable, src);
+          BoxException *excp = BoxCallable_Call1(callable, src);
           if (!excp)
             return BOXBOOL_TRUE;
 
           BoxException_Destroy(excp);
+          My_Finish_Obj(src, t);
           return BOXBOOL_FALSE;
         }
       }
@@ -139,12 +147,87 @@ static BoxBool My_Init_Obj(BoxPtr *src, BoxType t) {
     default:
       return BOXBOOL_FALSE;
     }
-  };
+  }
 
   return BOXBOOL_TRUE;
 }
 
+/* Generic finalization function for objects. */
 static void My_Finish_Obj(BoxPtr *src, BoxType t) {
+  while (1) {
+    switch (t->type_class) {
+    case BOXTYPECLASS_PRIMARY:
+    case BOXTYPECLASS_INTRINSIC:
+      return;
+
+    case BOXTYPECLASS_IDENT:
+      {
+        BoxCallable *callable;
+        BoxType node =
+          BoxType_Find_Combination_With_Id(t, BOXCOMBTYPE_AT,
+                                           BOXTYPEID_FINISH, NULL);
+
+        if (node && BoxType_Get_Combination(node, NULL, & callable))
+        {
+          /* Finalize the object. Ignore exceptions! */
+          BoxException *excp = BoxCallable_Call1(callable, src);
+          if (excp)
+            BoxException_Destroy(excp);
+        }
+
+        t = BoxType_Resolve(t, BOXTYPERESOLVE_IDENT, 1);
+      }
+      break;
+
+    case BOXTYPECLASS_RAISED:
+      t = BoxType_Resolve(t, BOXTYPERESOLVE_RAISED, 0);
+      break;
+
+    case BOXTYPECLASS_STRUCTURE:
+      {
+        BoxTypeIter ti;
+        BoxType node;
+        size_t idx;
+
+        for (BoxTypeIter_Init(& ti, t), idx = 0;
+             BoxTypeIter_Get_Next(& ti, & node);
+             idx++) {
+          size_t offset;
+          BoxType type;
+          BoxPtr member_ptr;
+
+          BoxType_Get_Structure_Member(node, NULL, & offset, NULL, & type);
+          BoxPtr_Add_Offset(& member_ptr, src, offset);
+          My_Finish_Obj(& member_ptr, type);
+        }
+
+        BoxTypeIter_Finish(& ti);
+        return;
+      }
+
+    case BOXTYPECLASS_SPECIES:
+      t = BoxType_Resolve(t, BOXTYPERESOLVE_SPECIES, 0);
+      break;
+
+    case BOXTYPECLASS_ENUM:
+      /* TO BE IMPLEMENTED */
+    case BOXTYPECLASS_FUNCTION:
+      /* TO BE IMPLEMENTED */
+      return;
+
+    case BOXTYPECLASS_POINTER:
+      (void) BoxPtr_Unlink((BoxPtr *) BoxPtr_Get_Target(src));
+      BoxPtr_Init((BoxPtr *) BoxPtr_Get_Target(src));
+      return;
+
+    case BOXTYPECLASS_ANY:
+      BoxAny_Finish((BoxAny *) BoxPtr_Get_Target(src));
+      return;
+
+    default:
+      return;
+    }
+  }
 }
 
 /* Add a reference to an object and return it. */
@@ -178,20 +261,42 @@ void BoxSPtr_Unlink_End(BoxSPtr src) {
 } 
 
 /* Remove a reference to an object, destroying it, if unreferenced. */
-BoxSPtr BoxSPtr_Unlink(BoxSPtr src) {
-  BoxObjHeader *head = src - sizeof(BoxObjHeader);
-  assert(head->num_refs > 0);
+BoxBool BoxPtr_Unlink(BoxPtr *src) {
+  BoxObjHeader *head = BoxPtr_Get_Block(src);
+  size_t num_refs = head->num_refs;
 
-  if (head->num_refs > 1) {
+  if (num_refs > 1) {
     head->num_refs--;
-    return src;
+    return BOXBOOL_TRUE;
 
   } else {
+    BoxPtr src_container;
+
+    assert(num_refs == 1);
+
+    /* Destroy the containing object. */
+    src_container.block = src->block;
+    src_container.ptr = src->block + sizeof(BoxObjHeader);
+    My_Finish_Obj(& src_container, head->type);
+
     if (head->type)
       (void) BoxSPtr_Unlink(head->type);
     BoxMem_Free(head);
-    return NULL;
+    return BOXBOOL_FALSE;
   }
+}
+
+/* Remove a reference to an object, destroying it, if unreferenced. */
+BoxSPtr BoxSPtr_Unlink(BoxSPtr src) {
+  if (src) {
+    BoxPtr src_ptr;
+    BoxPtr_Init_From_SPtr(& src_ptr, src);
+
+    if (BoxPtr_Unlink(& src_ptr))
+      return src;
+  }
+
+  return NULL;
 }
 
 /* Allocate space for an object of the given type. */

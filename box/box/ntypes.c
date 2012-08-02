@@ -437,7 +437,7 @@ BoxType BoxType_Get_Structure_Member_Type(BoxType node) {
 BoxType BoxType_Find_Structure_Member(BoxType s, const char *name) {
   BoxTypeIter ti;
   BoxType t;
-  char *member_name;
+  char *member_name = NULL;
 
   for (BoxTypeIter_Init(& ti, s); BoxTypeIter_Get_Next(& ti, & t);) {
     BoxType_Get_Structure_Member(t, & member_name, NULL, NULL, NULL);

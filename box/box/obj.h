@@ -32,6 +32,24 @@
 
 
 /**
+ * A pointer to a target object decorated with the type of the target.
+ * This is using for boxing/unboxing objects.
+ */
+typedef struct {
+  BoxType type;
+  BoxPtr  ptr;
+} BoxAny;
+
+#  define BoxAny_Init(obj) \
+  do {(obj)->type = NULL; BoxPtr_Init(& (obj)->ptr);} while(0)
+
+/**
+ * Finalize an Any object.
+ */
+BOXEXPORT void
+BoxAny_Finish(BoxAny *any);
+
+/**
  * Object header. Every object allocation includes some extra space to contain
  * This structure, which contains the type of the object and the number of
  * references that other objects make to it.
@@ -63,7 +81,8 @@ BoxSPtr BoxSPtr_Raw_Alloc(BoxType t, size_t obj_size);
  * @param src The object to reference.
  * @return Return its argument, src.
  */
-BoxSPtr BoxSPtr_Link(BoxSPtr src);
+BOXEXPORT BoxSPtr
+BoxSPtr_Link(BoxSPtr src);
 
 /**
  * This function, which should be used in conjunction with BoxSPtr_Unlink_End,
@@ -86,13 +105,15 @@ BoxSPtr BoxSPtr_Link(BoxSPtr src);
  *   BOXBOOL_FALSE.
  * @see BoxSPtr_Unlink
  */
-BoxBool BoxSPtr_Unlink_Begin(BoxSPtr src);
+BOXEXPORT BoxBool
+BoxSPtr_Unlink_Begin(BoxSPtr src);
 
 /**
  * Function to be used in conjunction with BoxSPtr_Unlink_Begin.
  * @see BoxSPtr_Unlink_Begin
  */
-void BoxSPtr_Unlink_End(BoxSPtr src);
+BOXEXPORT void
+BoxSPtr_Unlink_End(BoxSPtr src);
 
 /**
  * Remove a reference to an object, destroying it, if unreferenced.
@@ -100,6 +121,16 @@ void BoxSPtr_Unlink_End(BoxSPtr src);
  * @return src if the object was unreferenced but not destroyed, NULL if the
  *   object was unreferenced and destroyed.
  */
-BoxSPtr BoxSPtr_Unlink(BoxSPtr src);
+BOXEXPORT BoxSPtr
+BoxSPtr_Unlink(BoxSPtr src);
+
+/**
+ * Remove a reference to an object, destroying it, if unreferenced.
+ * @param src Object to unreference.
+ * @return BOXBOOL_TRUE if the object was unreferenced and destroyed, BOXBOOL_FALSE if the
+ *   object was unreferenced and destroyed.
+ */
+BOXEXPORT BoxBool
+BoxPtr_Unlink(BoxPtr *src);
 
 #endif /* _BOX_OBJ_H */

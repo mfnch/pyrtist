@@ -88,18 +88,6 @@ typedef enum {
       (dst)->ptr = (src)->ptr + (offset);} while(0)
 
 /**
- * A pointer to a target object decorated with the type of the target.
- * This is using for boxing/unboxing objects.
- */
-typedef struct {
-  BoxType type;
-  BoxPtr  ptr;
-} BoxAny;
-
-#  define BoxAny_Init(obj) \
-  do {(obj)->type = NULL; BoxPtr_Init(& (obj)->ptr);} while(0)
-
-/**
  * A Box function (can be called from Box).
  */
 typedef int BoxFunc;
