@@ -47,14 +47,14 @@ Task window_text_begin(BoxVMX *vmp) {
   w->text.got.color = 0;
 
   g_style_new(& w->text.style, & w->style);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_text_color(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->text.color = BOX_VM_ARG1(vmp, Color);
   w->text.got.color = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_text_gradient(BoxVMX *vmp) {
@@ -106,7 +106,7 @@ static Task _sentence_end(Window *w, int *wrote_text) {
   free(w->text.font); w->text.font = (char *) NULL;
   w->text.got.font = 0;
   w->text.got.text = 0;
-  return Success;
+  return BOXTASK_OK;
 }
 
 
@@ -120,7 +120,7 @@ Task window_text_end(BoxVMX *vmp) {
                                    & w->text.default_style, DRAW_WHEN_END);
 
   g_style_clear(& w->text.style);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_text_pause(BoxVMX *vmp) {
@@ -131,13 +131,13 @@ Task window_text_pause(BoxVMX *vmp) {
   if (wrote_text)
     (void) BoxGWin_Draw_With_Style(w->window, & w->text.style,
                                    & w->text.default_style, DRAW_WHEN_PAUSE);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_text_point(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->text.position = BOX_VM_ARG1(vmp, Point);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_text_str(BoxVMX *vm) {
@@ -146,14 +146,14 @@ Task window_text_str(BoxVMX *vm) {
   free(w->text.text);
   w->text.text = BoxStr_To_C_String(s);
   w->text.got.text = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_text_style(BoxVMX *vmp) {
   IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
   SUBTYPE_OF_WINDOW(vmp, w);
   g_style_copy_selected(& w->text.style, & s->style, s->have);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_text_font_str(BoxVMX *vm) {
@@ -162,18 +162,18 @@ Task window_text_font_str(BoxVMX *vm) {
   free(w->text.font);
   w->text.font = strdup(s->ptr);
   w->text.got.font = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_text_font_real(BoxVMX *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
   w->text.font_size = BOX_VM_ARG1(vmp, Real);
   w->text.got.font_size = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_text_from_point(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB2_PARENT(vmp, WindowPtr);
   w->text.from = BOX_VM_ARG1(vmp, Point);
-  return Success;
+  return BOXTASK_OK;
 }

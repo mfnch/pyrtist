@@ -49,7 +49,7 @@ Task line_window_init(Window *w) {
   w->line.lt = lt_new();
   if (w->line.lt == (LineTracer *) NULL) {
     g_error("Cannot create the LineTracer object\n");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
 
   /* We want these settings to be global:
@@ -64,14 +64,14 @@ Task line_window_init(Window *w) {
   w->line.this_piece.width1 = w->line.this_piece.width2 = 1.0;
   w->line.this_piece.arrow = (void *) NULL;
   w->line.this_piece.arrow_scale = 1.0;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task line_color(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->line.color = BOX_VM_ARG1(vmp, Color);
   w->line.got.color = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task line_gradient(BoxVMX *vmp) {
@@ -97,7 +97,7 @@ Task line_begin(BoxVMX *vmp) {
   w->line.this_piece.arrow_scale = 1.0;
 
   g_style_new(& w->line.style, & w->style);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task line_end(BoxVMX *vmp) {
@@ -112,7 +112,7 @@ Task line_end(BoxVMX *vmp) {
   }
 
   g_style_clear(& w->line.style);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task line_real(BoxVMX *vmp) {
@@ -137,13 +137,13 @@ Task line_real(BoxVMX *vmp) {
 
   case GOT_2ND_FLOAT:
     g_error("Too many width specificators.");
-    return Failed;
+    return BOXTASK_FAILURE;
 
   default:
     g_error("line_real: unknown line state.");
     break;
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task line_point(BoxVMX *vmp) {
@@ -176,7 +176,7 @@ Task line_pause(BoxVMX *vmp) {
   w->line.num_points = 0;
   w->line.close = 0;
   lt_clear(w->line.lt);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task line_window(BoxVMX *vmp) {
@@ -184,7 +184,7 @@ Task line_window(BoxVMX *vmp) {
   WindowPtr *wp = BOX_VM_ARG1_PTR(vmp, WindowPtr);
 
   w->line.this_piece.arrow = (void *) *wp;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task line_linestyle(BoxVMX *vmp) {
@@ -192,7 +192,7 @@ Task line_linestyle(BoxVMX *vmp) {
   Real *ls = BOX_VM_ARG1_PTR(vmp, Real);
   lt_join_style_from_array(& w->line.this_piece.style,
                            ls[0], ls[1], ls[2], ls[3]);
-  return Success;
+  return BOXTASK_OK;
 }
 
 
@@ -200,23 +200,23 @@ Task line_style(BoxVMX *vmp) {
   IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
   SUBTYPE_OF_WINDOW(vmp, w);
   g_style_copy_selected(& w->line.style, & s->style, s->have);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_line_close_begin(BoxVMX *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
   w->line.close = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_line_close_int(BoxVMX *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
   w->line.close = BOX_VM_ARG1(vmp, Int);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_line_arrowscale(BoxVMX *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
   w->line.this_piece.arrow_scale = BOX_VM_ARG1(vmp, Real);
-  return Success;
+  return BOXTASK_OK;
 }

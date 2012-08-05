@@ -39,9 +39,9 @@ void Print_Finalize(void) {
  *   specifier to write substrings. Usage is as follows:
  *       const char *msg = print("string = '%s', number = '%d'\n", "Hi!", 12);
  *       (* No need to call the free(...) function. The user mustn't do it! *)
- * - has %N to handle the Name data type.
+ * - has %N to handle the BoxName data type.
  *   ES:
- *       Name my_name = {15, "Matteo Franchin"};
+ *       BoxName my_name = {15, "Matteo Franchin"};
  *       msg = print("My name is %N, nice to meet you!", & my_name);
  * - has %~s, %~N to print a string and deallocate it with free(...).
  *   ES:
@@ -187,10 +187,10 @@ const char *Box_Print(const char *fmt, ...) {
         }
       case 'N':
         {
-          Name *nm = va_arg(ap, Name *);
+          BoxName *nm = va_arg(ap, BoxName *);
           do_read = 0;
           substring = "(null)";
-          if (nm != (Name *) NULL) {
+          if (nm != (BoxName *) NULL) {
             if (nm->text != (char *) NULL) {
               substring = nm->text;
               substring_size = nm->length;
@@ -260,7 +260,7 @@ print_error:
 
 #if 0
 int main(void) {
-  Name my_name = {15, "Matteo Franchin"};
+  BoxName my_name = {15, "Matteo Franchin"};
   const char *msg;
   msg = print("Don't worry! I can include '%s' even if "
    "I don't know its length a priori!\nI can also print my name: %N!\n"

@@ -264,7 +264,7 @@ Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out,
   char *p_name, *p_desc, *p_type;
 
   if (p == NULL)
-    return Failed;
+    return BOXTASK_FAILURE;
 
   p_name = (p->name != NULL) ? p->name : "(undef)";
   p_desc = (p->desc != NULL) ? p->desc : "(undef)";
@@ -283,7 +283,7 @@ Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out,
     fprintf(out, "----------------------------------------\n");
     return t;
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out) {
@@ -305,7 +305,7 @@ Task BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out) {
   for(n = 1; n <= proc_id; n++) {
     TASK( BoxVM_Proc_Disassemble_One(vmp, out, n) );
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 void BoxVM_Proc_Associate_Source(BoxVM *vm, BoxVMProcID id, BoxSrcPos *sp) {

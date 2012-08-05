@@ -39,8 +39,8 @@ Task objlist_init(ObjList *ol, Int obj_size) {
   Int tot_obj_size = sizeof(ObjListItem) + obj_size;
   assert(obj_size >= 0);
   if (buff_create(& ol->ol, tot_obj_size, 8))
-    return Success;
-  return Failed;
+    return BOXTASK_OK;
+  return BOXTASK_FAILURE;
 }
 
 void objlist_destroy(ObjList *ol) {
@@ -58,13 +58,13 @@ Task objlist_clear(ObjList *ol) {
     ObjListItem *oli = buff_itemptr(& ol->ol, ObjListItem, i);
     free(oli->name);
   }
-  if (buff_clear(& ol->ol)) return Success;
-  return Failed;
+  if (buff_clear(& ol->ol)) return BOXTASK_OK;
+  return BOXTASK_FAILURE;
 }
 
 Task objlist_dup(ObjList *dest, ObjList *src) {
   int i, n;
-  if (!buff_dup(& dest->ol, & src->ol)) return Success;
+  if (!buff_dup(& dest->ol, & src->ol)) return BOXTASK_OK;
   /* We need to copy all the string names: they cannot be shared! */
   n = buff_numitem(& dest->ol);
   for(i=1; i <= n; i++) {
@@ -73,7 +73,7 @@ Task objlist_dup(ObjList *dest, ObjList *src) {
     if (dest_oli->name != (char *) NULL)
       dest_oli->name = strdup(dest_oli->name);
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 void *objlist_find(ObjList *ol, const char *name) {
@@ -120,19 +120,19 @@ Task objlist_add(ObjList *ol, void *obj, char *name) {
   if (name != NULL) {
     if (objlist_find(ol, name) != NULL) {
       g_error("Another object with the same name exists!");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
 
     name = strdup(name);
     if (name == NULL) {
       g_error("pointlist_add: strdup failed!");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
   }
 
   if (!buff_bigenough(& ol->ol, ol->ol.numel+1)) {
     free(name);
-    return Failed;
+    return BOXTASK_FAILURE;
   }
 
   ++ol->ol.numel;
@@ -140,7 +140,7 @@ Task objlist_add(ObjList *ol, void *obj, char *name) {
   dest_obj = (void *) oli + sizeof(ObjListItem);
   (void) memcpy(dest_obj, obj, ol->ol.elsize - sizeof(ObjListItem));
   oli->name = name;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task objlist_iter(ObjList *ol, ObjListIterator it, void *data) {
@@ -148,10 +148,10 @@ Task objlist_iter(ObjList *ol, ObjListIterator it, void *data) {
   for(i=1; i <= n; i++) {
     ObjListItem *oli = buff_itemptr(& ol->ol, ObjListItem, i);
     void *obj = (void *) oli + sizeof(ObjListItem);
-    if IS_FAILED( it(i, oli->name, obj, data) )
-      return Failed;
+    if (it(i, oli->name, obj, data) != BOXTASK_OK)
+      return BOXTASK_FAILURE;
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 Int objlist_num(ObjList *ol) {

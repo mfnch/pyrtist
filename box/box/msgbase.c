@@ -41,7 +41,7 @@ Task Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level) {
   MsgStack *ms;
   UInt i;
   *ms_ptr = ms = (MsgStack *) malloc(sizeof(MsgStack));
-  if (ms == (MsgStack *) NULL) return Failed;
+  if (ms == (MsgStack *) NULL) return BOXTASK_FAILURE;
   ms->show_level = show_level;
   ms->last_shown = 0;
   ms->filter = ms->default_filter = (MsgFilter) NULL;
@@ -51,10 +51,10 @@ Task Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level) {
 
   num_levels = num_levels > 0 ? num_levels : 1;
   ms->level = (UInt *) malloc(num_levels*sizeof(UInt));
-  if (ms->level == (UInt *) NULL) return Failed;
+  if (ms->level == (UInt *) NULL) return BOXTASK_FAILURE;
   ms->num_levels = num_levels;
   for(i=0; i<num_levels; i++) ms->level[i] = 0;
-  return Success;
+  return BOXTASK_OK;
 }
 
 #define EXIT_IF_NOT_INIT(ms) if (ms == (MsgStack *) NULL) return;

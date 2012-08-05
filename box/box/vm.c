@@ -329,7 +329,7 @@ Task BoxVM_Alloc_Global_Regs(BoxVM *vm, Int num_var[], Int num_reg[]) {
     if (nv < 0 || nr < 0) {
       MSG_ERROR("Wrong allocation numbers for global registers.");
       My_Free_Globals(vm);
-      return Failed;
+      return BOXTASK_FAILURE;
     }
 
     if (nr < 3) nr = 3; /* gro0, gro1, gro2 are always needed! */
@@ -337,7 +337,7 @@ Task BoxVM_Alloc_Global_Regs(BoxVM *vm, Int num_var[], Int num_reg[]) {
     if (ptr == NULL) {
       MSG_ERROR("Error in the allocation of the local registers.");
       My_Free_Globals(vm);
-      return Failed;
+      return BOXTASK_FAILURE;
     }
 
     gregs->ptr = ptr + nv*size_of_type[i];

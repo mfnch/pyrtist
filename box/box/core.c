@@ -40,12 +40,12 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
     size_t size;
     size_t alignment;
   } *row, table[] = {
+    {& core_types->type_type, "Type", BOXTYPEID_TYPE,
+     sizeof(BoxType), __alignof__(BoxType)},
     {& core_types->init_type, ".[", BOXTYPEID_INIT,
      (size_t) 0, (size_t) 0},
     {& core_types->finish_type, "].", BOXTYPEID_FINISH,
      (size_t) 0, (size_t) 0},
-    {& core_types->type_type, "Type", BOXTYPEID_TYPE,
-     sizeof(BoxType), __alignof__(BoxType)},
     {& core_types->char_type, "Char", BOXTYPEID_CHAR,
      sizeof(BoxChar), __alignof__(BoxChar)},
     {& core_types->int_type, "Int", BOXTYPEID_INT,
@@ -56,12 +56,27 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
      sizeof(BoxPoint), __alignof__(BoxPoint)},
     {& core_types->pointer_type, "Ptr", BOXTYPEID_PTR,
      sizeof(BoxPtr), __alignof__(BoxPtr)},
+    {& core_types->root_type, "/", BOXTYPEID_NONE,
+     (size_t) 0, (size_t) 0},
+
+
+
+    {& core_types->callable_type, "Callable", BOXTYPEID_NONE,
+     0, 0},
     {NULL, (const char *) NULL, BOXTYPEID_NONE,
      (size_t) 0, (size_t) 0}
   };
 
+  core_types->type_type = (BoxType) NULL;
+
   for (row = & table[0]; row->dest; row++) {
-    BoxType t = BoxType_Create_Primary(row->id, row->size, row->alignment);
+    BoxType t;
+
+    if (row->id != BOXTYPEID_NONE)
+      t = BoxType_Create_Primary(row->id, row->size, row->alignment);
+    else
+      t = BoxType_Create_Intrinsic(row->size, row->alignment);
+      
 
     if (t) {
       BoxType id = BoxType_Create_Ident(t, row->name);
@@ -69,7 +84,7 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
         *row->dest = id;
 
       else
-        BoxType_Unlink(t);
+        BoxSPtr_Unlink(t);
     
     } else {
       success = BOXBOOL_FALSE;
@@ -96,10 +111,21 @@ void BoxCoreTypes_Finish(BoxCoreTypes *core_types) {
     core_types->real_type,
     core_types->point_type,
     core_types->pointer_type,
+    core_types->callable_type,
     NULL};
 
   BoxType *type;
 
   for (type = & types[0]; *type; type++)
     BoxSPtr_Unlink(*type);
+}
+
+/* Initialize the type system. */
+BoxBool Box_Initialize_Type_System(void) {
+  return BoxCoreTypes_Init(& box_core_types);
+}
+
+/* Finalize the type system. */
+void Box_Finalize_Type_System(void) {
+  BoxCoreTypes_Finish(& box_core_types);
 }

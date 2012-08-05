@@ -117,19 +117,19 @@ static struct opt {
 int main(int argc, char** argv);
 void Main_Error_Exit(char *msg);
 void Main_Cmnd_Line_Help(void);
-Task Main_Prepare(void);
-Task Main_Execute(UInt main_module);
+BoxTask Main_Prepare(void);
+BoxTask Main_Execute(UInt main_module);
 
 /******************************************************************************/
 
-static Task Stage_Init(void) {
+static BoxTask My_Stage_Init(void) {
   BoxPaths_Init(& box_paths);
   /* Initialisation of the message module */
   Msg_Main_Init(MSG_LEVEL_WARNING);
-  return Success;
+  return BOXTASK_OK;
 }
 
-static void Stage_Finalize(void) {
+static void My_Stage_Finalize(void) {
   if (target_vm != NULL)
     BoxVM_Destroy(target_vm);
 
@@ -138,7 +138,8 @@ static void Stage_Finalize(void) {
   Msg_Main_Destroy();
 }
 
-static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
+static BoxTask My_Stage_Parse_Command_Line(UInt *flags, int argc,
+                                           char** argv) {
   int i;
   UInt j;
 
@@ -212,10 +213,10 @@ static Task Stage_Parse_Command_Line(UInt *flags, int argc, char** argv) {
   } /* Fine del ciclo for */
 
   MSG_CONTEXT_END();
-  return Success;
+  return BOXTASK_OK;
 }
 
-static Task Stage_Interpret_Command_Line(UInt *f) {
+static BoxTask My_Stage_Interpret_Command_Line(UInt *f) {
   UInt flags = *f;
 
   /* Controllo se e' stata specificata l'opzione di help */
@@ -256,16 +257,16 @@ static Task Stage_Interpret_Command_Line(UInt *f) {
   } else
     file_setup = (char *) NULL;
 
-  return Success;
+  return BOXTASK_OK;
 }
 
-static Task Stage_Add_Default_Paths(void) {
+static BoxTask My_Stage_Add_Default_Paths(void) {
   BoxPaths_Set_All_From_Env(& box_paths);
   BoxPaths_Add_Script_Path_To_Inc_Dir(& box_paths, file_input);
-  return Success;
+  return BOXTASK_OK;
 }
 
-static Task Stage_Compilation(char *file, BoxVMCallNum *main_module) {
+static BoxTask My_Stage_Compilation(char *file, BoxVMCallNum *main_module) {
   Msg_Main_Counter_Clear_All();
   MSG_CONTEXT_BEGIN("Compilation");
 
@@ -279,43 +280,50 @@ static Task Stage_Compilation(char *file, BoxVMCallNum *main_module) {
              MSG_GT_ERRORS, MSG_NUM_WARNINGS);
 
   MSG_CONTEXT_END();
-  return Success;
+  return BOXTASK_OK;
 }
 
 /* Enter symbol resolution stage */
-static Task Stage_Symbol_Resolution(UInt *flags) {
+static BoxTask My_Stage_Symbol_Resolution(UInt *flags) {
   int all_resolved;
-  Task status = Success;
+  BoxTask status = BOXTASK_OK;
 
   MSG_CONTEXT_BEGIN("Symbol resolution");
 
-  TASK( BoxVMSym_Resolve_CLibs(target_vm,
-                               BoxPaths_Get_Lib_Dir(& box_paths),
-                               BoxPaths_Get_Libs(& box_paths)) );
-  TASK( BoxVMSym_Resolve_All(target_vm) );
+  status = BoxVMSym_Resolve_CLibs(target_vm,
+                                  BoxPaths_Get_Lib_Dir(& box_paths),
+                                  BoxPaths_Get_Libs(& box_paths));
+  if (status != BOXTASK_OK)
+    return status;
+
+  status = BoxVMSym_Resolve_All(target_vm);
+  if (status != BOXTASK_OK)
+    return status;
+
   BoxVMSym_Ref_Check(target_vm, & all_resolved);
   if (! all_resolved) {
     BoxVMSym_Ref_Report(target_vm);
     MSG_ERROR("Unresolved references: program cannot be executed.");
     *flags &= ~FLAG_EXECUTE;
-    status = Failed;
+    status = BOXTASK_ERROR;
   }
 
   MSG_CONTEXT_END();
   return status;
 }
 
-static Task Stage_Execution(UInt *flags, UInt main_module) {
-  Task status ;
+static BoxTask My_Stage_Execution(UInt *flags, UInt main_module) {
+  BoxTask status ;
   /* Controllo se e' possibile procedere all'esecuzione del file compilato! */
-  if ((*flags & FLAG_EXECUTE) == 0) return Success;
+  if ((*flags & FLAG_EXECUTE) == 0)
+    return BOXTASK_OK;
 
   if (MSG_GT_WARNINGS > 0) {
     if (*flags & FLAG_FORCE_EXEC) {
       if ( MSG_GT_ERRORS > 0 ) {
         *flags &= ~FLAG_EXECUTE;
         MSG_ADVICE("Errors found: Execution will not be started!");
-        return Failed;
+        return BOXTASK_ERROR;
       } else {
         MSG_ADVICE("Warnings found: Execution will be started anyway!");
       }
@@ -323,7 +331,7 @@ static Task Stage_Execution(UInt *flags, UInt main_module) {
     } else {
       *flags &= ~FLAG_EXECUTE;
       MSG_ADVICE("Warnings/errors found: Execution will not be started!" );
-      return Failed;
+      return BOXTASK_ERROR;
     }
   }
 
@@ -336,7 +344,7 @@ static Task Stage_Execution(UInt *flags, UInt main_module) {
   return status;
 }
 
-static Task Stage_Write_Asm(UInt flags) {
+static BoxTask My_Stage_Write_Asm(UInt flags) {
   /* Fase di output */
   if (flags & FLAG_OUTPUT) {
     FILE *out = stdout;
@@ -351,7 +359,7 @@ static Task Stage_Write_Asm(UInt flags) {
       if (out == (FILE *) NULL) {
         MSG_ERROR("Cannot open '%s' for writing: %s",
          file_output, strerror(errno));
-        return Failed;
+        return BOXTASK_ERROR;
       }
       close_file = 1;
     }
@@ -362,16 +370,17 @@ static Task Stage_Write_Asm(UInt flags) {
                      BOXVM_ATTR_DASM_WITH_HEX);
     }
 
-    TASK( BoxVM_Proc_Disassemble_All(target_vm, out) );
+    if (BoxVM_Proc_Disassemble_All(target_vm, out) != BOXTASK_OK)
+      return BOXTASK_FAILURE;
 
     if (close_file)
       (void) fclose(out);
   }
 
-  return Success;
+  return BOXTASK_OK;
 }
 
-Task Main_Execute(UInt main_module) {
+BoxTask Main_Execute(UInt main_module) {
   BoxTask t;
   t = BoxVM_Module_Execute(target_vm->vmcur, main_module);
   if (t == BOXTASK_FAILURE && (flags & FLAG_SILENT) == 0)
@@ -495,32 +504,32 @@ static void My_Exec_Query(char *query) {
 int main(int argc, char** argv) {
   UInt main_module;
   int exit_status = EXIT_SUCCESS;
-  Task status;
+  BoxTask status;
 
-  if IS_FAILED( Stage_Init() )
+  if (My_Stage_Init() != BOXTASK_OK)
     Main_Error_Exit("Initialization failed!");
 
-  status = Stage_Parse_Command_Line(& flags, argc, argv);
-  if (status == Failed) exit_status = EXIT_FAILURE;
+  status = My_Stage_Parse_Command_Line(& flags, argc, argv);
+  if (status != BOXTASK_OK) exit_status = EXIT_FAILURE;
 
-  status = Stage_Interpret_Command_Line(& flags);
-  if (status == Failed) exit_status = EXIT_FAILURE;
+  status = My_Stage_Interpret_Command_Line(& flags);
+  if (status != BOXTASK_OK) exit_status = EXIT_FAILURE;
 
-  status = Stage_Add_Default_Paths();
-  if (status == Failed) exit_status = EXIT_FAILURE;
+  status = My_Stage_Add_Default_Paths();
+  if (status != BOXTASK_OK) exit_status = EXIT_FAILURE;
 
-  status = Stage_Compilation(file_setup, & main_module);
-  if (status == Failed) exit_status = EXIT_FAILURE;
+  status = My_Stage_Compilation(file_setup, & main_module);
+  if (status != BOXTASK_OK) exit_status = EXIT_FAILURE;
 
-  status = Stage_Symbol_Resolution(& flags);
-  if (status == Failed) exit_status = EXIT_FAILURE;
+  status = My_Stage_Symbol_Resolution(& flags);
+  if (status != BOXTASK_OK) exit_status = EXIT_FAILURE;
 
-  status = Stage_Write_Asm(flags);
-  if (status == Failed) exit_status = EXIT_FAILURE;
+  status = My_Stage_Write_Asm(flags);
+  if (status != BOXTASK_OK) exit_status = EXIT_FAILURE;
 
-  status = Stage_Execution(& flags, main_module);
-  if (status == Failed) exit_status = EXIT_FAILURE;
+  status = My_Stage_Execution(& flags, main_module);
+  if (status != BOXTASK_OK) exit_status = EXIT_FAILURE;
 
-  Stage_Finalize();
+  My_Stage_Finalize();
   exit(exit_status);
 }

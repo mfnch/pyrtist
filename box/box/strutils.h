@@ -67,13 +67,13 @@ BoxTask Box_Reduce_Esc_Char(const char *s, size_t l, char *c);
  */
 char *Box_Reduce_Esc_String(const char *s, size_t l, size_t *new_length);
 
-Name *Name_Empty(void);
-const char *Name_Str(Name *n);
-char *Name_To_Str(Name *n);
-void Name_From_Str(Name *dest, char *src);
-void Name_Free(Name *n);
-Name *Name_Dup(Name *n);
-Task Name_Cat(Name *nm, Name *nm1, Name *nm2, int free_args);
+BoxName *BoxName_Empty(void);
+const char *BoxName_Str(BoxName *n);
+char *BoxName_To_Str(BoxName *n);
+void BoxName_From_Str(BoxName *dest, char *src);
+void BoxName_Free(BoxName *n);
+BoxName *BoxName_Dup(BoxName *n);
+Task BoxName_Cat(BoxName *nm, BoxName *nm1, BoxName *nm2, int free_args);
 void *BoxMem_Dup(const void *src, unsigned int length);
 
 /** Similar to BoxMem_Dup, but allocate extra space in the destination */
@@ -84,7 +84,8 @@ void *BoxMem_Dup_Larger(const void *src, Int src_size, Int dest_size);
  */
 int Box_CStr_Ends_With(const char *src, const char *end);
 
-#define Name_Cat_And_Free(nm, nm1, nm2) Name_Cat(nm, nm1, nm2, 1)
+#define BoxName_Cat_And_Free(nm, nm1, nm2) \
+  BoxName_Cat(nm, nm1, nm2, 1)
 
 #endif
 

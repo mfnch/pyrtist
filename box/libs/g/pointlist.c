@@ -39,7 +39,7 @@ static Task _pointlist_print(Int index, char *name,
   else
     fprintf(params->out, "("SReal", "SReal")", p->x, p->y);
   if (index < params->num_points) fprintf(params->out, ", ");
-  return Success;
+  return BOXTASK_OK;
 }
 
 void pointlist_print(PointList *pl, FILE *out) {

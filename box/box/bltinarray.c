@@ -63,10 +63,10 @@ BoxTask BoxArray_Init(BoxArray *a, BoxInt num_dim) {
   a->num_dim = num_dim;
   BoxPtr_Nullify(& a->data);
   a->sizes = BoxMem_Alloc(sizeof(BoxInt)*num_dim);
-  if (a->sizes == NULL) return Failed;
+  if (a->sizes == NULL) return BOXTASK_FAILURE;
   a->sizes[num_dim - 1] = 0; /* Used by BoxArray_Set_Size to detect the
                                 state of initialisation of the object */
-  return Success;
+  return BOXTASK_OK;
 }
 
 void BoxArray_Finish(BoxVM *vm, BoxArray *a) {
@@ -86,7 +86,7 @@ BoxTask BoxArray_Set_Size(BoxArray *a, BoxInt size) {
   if (num_given_sizes < last_size_index) {
     a->sizes[num_given_sizes] = size;
     a->sizes[last_size_index] = num_given_sizes + 1;
-    return Success;
+    return BOXTASK_OK;
 
   } else {
     int i;
@@ -104,8 +104,8 @@ BoxTask BoxArray_Set_Size(BoxArray *a, BoxInt size) {
     /* Temporarily disabled */
     BoxVM_Alloc(& a->data, total_data_size, 0 /* ??? */);
 #endif
-    if (BoxPtr_Is_Null(& a->data)) return Failed;
-    return Success;
+    if (BoxPtr_Is_Null(& a->data)) return BOXTASK_FAILURE;
+    return BOXTASK_OK;
   }
 }
 
@@ -122,11 +122,11 @@ Task BoxArray_Calc_Address(BoxArray *a, size_t *addr,
   assert(dim >= 0 && dim < a->num_dim - 1);
   if (index < 0 || index >= a->sizes[dim + 1]) {
     MSG_ERROR("Index out of bounds when accessing Array object.");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   BoxMem_AX(& new_addr, *addr, a->sizes[dim]);
   BoxMem_x_Plus_y(& new_addr, new_addr, index);
   *addr = new_addr;
-  return Success;
+  return BOXTASK_OK;
 }
 

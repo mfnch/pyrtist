@@ -38,15 +38,15 @@ Task g_optcolor_set(OptColor *oc, Color *c) {
   if (c->r < -0.5) {
     if (oc->alternative == (OptColor *) NULL) {
       g_error("Cannot unset the color.");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
     oc->selected = oc->alternative;
-    return Success;
+    return BOXTASK_OK;
 
   } else {
     oc->selected = oc;
     oc->local = *c;
-    return Success;
+    return BOXTASK_OK;
   }
 }
 

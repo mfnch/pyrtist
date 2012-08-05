@@ -139,7 +139,7 @@ Task BoxVMSym_Define(BoxVM *vm, BoxVMSymID sym_num, void *def) {
   if (s->defined) {
     const char *sym_name = BoxVMSym_Get_Name(vm, sym_num);
     MSG_ERROR("Double definition of the symbol '%s'.", sym_name);
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   if (def != NULL) {
     void *def_data_ptr;
@@ -147,7 +147,7 @@ Task BoxVMSym_Define(BoxVM *vm, BoxVMSymID sym_num, void *def) {
     (void) memcpy(def_data_ptr, def, s->def_size);
   }
   s->defined = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 void *BoxVMSym_Get_Definition(BoxVM *vm, BoxVMSymID sym_id) {
@@ -230,7 +230,7 @@ Task BoxVMSym_Resolver_Set(BoxVM *vmp, UInt sym_num, BoxVMSymResolver r) {
 
   s = (BoxVMSym *) BoxArr_ItemPtr(& st->defs, sym_num);
   s->resolver = r;
-  return Success;
+  return BOXTASK_OK;
 }
 #endif
 
@@ -246,11 +246,11 @@ Task BoxVMSym_Resolve(BoxVM *vmp, UInt sym_num) {
     for(i=1; i<=num_defs; i++) {
       TASK( BoxVMSym_Resolve(vmp, i) );
     }
-    return Success;
+    return BOXTASK_OK;
   }
 
   s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
-  if (! s->defined) return Success;
+  if (! s->defined) return BOXTASK_OK;
   next = s->first_ref;
   def = BoxArr_Item_Ptr(& st->data, s->def_addr);
   def_size = s->def_size;
@@ -259,14 +259,14 @@ Task BoxVMSym_Resolve(BoxVM *vmp, UInt sym_num) {
     BoxVMSymRef *sr = (BoxVMSymRef *) BoxArr_Item_Ptr(& st->refs, next);
     if (sr->sym_num != sym_num) {
       MSG_FATAL("BoxVMSym_Resolve: bad reference in the chain!");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
 
     if (!sr->resolved) {
       if (sr->resolver == NULL) {
         MSG_ERROR("BoxVMSym_Resolve: cannot resolve the symbol: "
                   "the resolver is not present!");
-        return Failed;
+        return BOXTASK_FAILURE;
       }
 
       ref_size = sr->ref_size;
@@ -279,7 +279,7 @@ Task BoxVMSym_Resolve(BoxVM *vmp, UInt sym_num) {
 
     next = sr->next;
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 void BoxVMSym_Table_Print(BoxVM *vmp, FILE *out, UInt sym_num) {
@@ -330,7 +330,7 @@ Task BoxVMSym_Check_Type(BoxVM *vmp, UInt sym_num, UInt sym_type) {
   BoxVMSymTable *st = & vmp->sym_table;
   BoxVMSym *s;
   s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
-  return (s->sym_type == sym_type) ? Success : Failed;
+  return (s->sym_type == sym_type) ? BOXTASK_OK : BOXTASK_FAILURE;
 }
 
 struct clib_ref_data {
@@ -380,14 +380,14 @@ Task BoxVMSym_Resolve_CLib(BoxVM *vmp, char *lib_file) {
   clrd.vmp = vmp;
   clrd.lib_file = lib_file;
   clrd.dylib = lt_dlopenext(lib_file);
-  if (clrd.dylib == NULL) return Failed;
+  if (clrd.dylib == NULL) return BOXTASK_FAILURE;
   BoxArr_Push(& st->dylibs, & clrd.dylib);
   (void) BoxArr_Iter(& st->defs, Resolve_Ref_With_CLib, & clrd);
-  return Success;
+  return BOXTASK_OK;
 #else
   MSG_WARNING("Cannot load '%s': the virtual machine was compiled "
               "without support for dynamic loading of libraries.", lib_file);
-  return Failed;
+  return BOXTASK_FAILURE;
 #endif
 }
 
@@ -406,22 +406,22 @@ Task Iter_Over_Paths(void *string, void *pass_data) {
   lib_file = BoxMem_Strdup(Box_Print("%s/lib%s", cld->path, cld->lib));
   status = BoxVMSym_Resolve_CLib(cld->vmp, lib_file);
   BoxMem_Free(lib_file);
-  if (status == Success) return Failed; /* Stop here, if we have found it! */
-  return Success;
+  if (status == BOXTASK_OK) return BOXTASK_FAILURE; /* Stop here, if we have found it! */
+  return BOXTASK_OK;
 }
 
 Task Iter_Over_Libs(void *string, void *pass_data) {
   struct clibs_data *cld = (struct clibs_data *) pass_data;
   cld->lib = (char *) string;
-  /* IS_SUCCESS is misleading: here we use Success, just to continue
-   * the iteration. Therefore if we get Success, it means that the library
+  /* IS_SUCCESS is misleading: here we use BOXTASK_OK, just to continue
+   * the iteration. Therefore if we get BOXTASK_OK, it means that the library
    * has not been found
    */
-  if (BoxList_Iter(cld->lib_paths, Iter_Over_Paths, cld) == Success) {
+  if (BoxList_Iter(cld->lib_paths, Iter_Over_Paths, cld) == BOXTASK_OK) {
     MSG_WARNING("'%s' <-- library has not been found or cannot be loaded!",
                 cld->lib);
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task BoxVMSym_Resolve_CLibs(BoxVM *vmp, BoxList *lib_paths, BoxList *libs) {
@@ -461,12 +461,12 @@ static Task code_generator(BoxVM *vmp, UInt sym_num, UInt sym_type,
       MSG_ERROR("vmsym.c, code_generator: The code for the resolved "
                 "reference does not match the space which was reserved "
                 "for it!");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
     BoxArr_Overwrite(dest, dest_pos, src, src_size);
   }
   BoxVM_Proc_Target_Set(vmp, saved_proc_num);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task BoxVMSym_Code_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymCodeGen code_gen,
@@ -506,7 +506,7 @@ Task BoxVMSym_Code_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymCodeGen code_gen,
   ref_head->size = BoxArr_Num_Items(& pt->target_proc->code) - ref_head->pos;
   BoxVMSym_Ref(vmp, sym_num, code_generator, ref_all, ref_all_size, -1);
   BoxMem_Free(ref_all);
-  return Success;
+  return BOXTASK_OK;
 }
 
 #if 0
@@ -525,7 +525,7 @@ Task Assemble_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
     call_num = *((UInt *) def);
   }
   BoxVM_Assemble(vmp, ASM_CALL_I, CAT_IMM, call_num);
-  return Success;
+  return BOXTASK_OK;
 }
 
 int main(void) {

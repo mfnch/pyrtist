@@ -47,7 +47,7 @@ Task pointlist_end(BoxVMX *vmp) {
     free(ipl->name);
     ipl->name = (char *) NULL;
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task ipointlist_destroy(BoxVMX *vmp) {
@@ -55,14 +55,14 @@ Task ipointlist_destroy(BoxVMX *vmp) {
   pointlist_destroy(& ipl->pl);
   free(ipl->name);
   ipl->name = (char *) NULL;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task pointlist_str(BoxVMX *vm) {
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
   IPointList *ipl = BOX_VM_THIS(vm, IPointListPtr);
   ipl->name = strdup((char *) s->ptr);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task pointlist_point(BoxVMX *vmp) {
@@ -95,10 +95,10 @@ Task pointlist_get_str(BoxVMX *vm) {
   Point *p = pointlist_find(& ipl->pl, (char *) s->ptr);
   if (p == NULL) {
     g_error("The name you gave is not a name of a point in the PointList.");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   *out_p = *p;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task pointlist_get_int(BoxVMX *vmp) {
@@ -107,10 +107,10 @@ Task pointlist_get_int(BoxVMX *vmp) {
   Point *p = pointlist_get(& ipl->pl, BOX_VM_ARG1(vmp, Int));
   if (p == (Point *) NULL) {
     g_error("Wrong index in PointList.Get");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   *out_p = *p;
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task _get_from_point(Point *out_p, PointList *pl,
@@ -123,13 +123,13 @@ static Task _get_from_point(Point *out_p, PointList *pl,
   p_b = pointlist_get(pl, index_b);
   if (p_a == (Point *) NULL || p_b == (Point *) NULL) {
     g_error("Wrong index in PointList.Get, shouldn't happen!");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   d_p.x = p_b->x - p_a->x;
   d_p.y = p_b->y - p_a->y;
   out_p->x = p_a->x + d_p.x*d_a - d_p.y*index_y;
   out_p->y = p_a->y + d_p.y*d_a + d_p.x*index_y;
-  return Success;
+  return BOXTASK_OK;
 
 }
 
@@ -151,11 +151,11 @@ Task pointlist_num_begin(BoxVMX *vmp) {
   IPointList *ipl = BOX_VM_SUB_PARENT(vmp, IPointListPtr);
   Int *out_num = BOX_VM_SUB_CHILD_PTR(vmp, Int);
   *out_num = pointlist_num(& ipl->pl);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task print_pointlist(BoxVMX *vmp) {
   IPointList *ipl_to_print = BOX_VM_ARG1(vmp, IPointListPtr);
   pointlist_print(IPL_POINTLIST(ipl_to_print), stdout);
-  return Success;
+  return BOXTASK_OK;
 }

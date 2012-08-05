@@ -193,7 +193,7 @@ BoxTask Box_Lib_G_Color_At_Window(BoxVMX *vmp) {
   Color *c = BOX_VM_ARG1_PTR(vmp, Color);
   if (w->window != NULL)
     BoxGWin_Set_Fg_Color(w->window, c);
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxTask Box_Lib_G_Gradient_At_Window(BoxVMX *vmp) {
@@ -201,7 +201,7 @@ BoxTask Box_Lib_G_Gradient_At_Window(BoxVMX *vmp) {
   Gradient *g = BOX_VM_ARG1(vmp, GradientPtr);
   if (w->window != NULL)
     BoxGWin_Set_Gradient(w->window, & g->gradient);
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxTask Box_Lib_G_Str_At_Window(BoxVMX *vm) {
@@ -221,7 +221,7 @@ BoxTask Box_Lib_G_Str_At_Window(BoxVMX *vm) {
     return BOXTASK_FAILURE;
   }
   w->plan.have.type = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxTask window_size(BoxVMX *vmp) {
@@ -236,14 +236,14 @@ BoxTask window_size(BoxVMX *vmp) {
 
   w->plan.have.size = 1;
   w->plan.size = *win_size;
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxTask Box_Lib_G_OldStyle_At_Window(BoxVMX *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
   g_style_copy_selected(& w->style, & s->style, s->have);
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxTask Box_Lib_G_Close_At_Window(BoxVMX *vm) {
@@ -261,7 +261,7 @@ BoxTask Box_Lib_G_Close_At_Window(BoxVMX *vm) {
     w->initialised = 1;
   }
 
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxTask Box_Lib_G_Open_At_Figure(BoxVMX *vm) {
@@ -272,7 +272,7 @@ BoxTask window_window(BoxVMX *vmp) {
   Window *w = BOX_VM_THIS(vmp, WindowPtr);
   Window *src = BOX_VM_ARG1(vmp, WindowPtr);
   BoxGWin_Fig_Draw_Fig(w->window, src->window);
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxTask GLib_Obj_At_Window(BoxVMX *vm) {

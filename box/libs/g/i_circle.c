@@ -34,7 +34,7 @@ Task circle_color(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->circle.color = BOX_VM_ARG1(vmp, Color);
   w->circle.got.color = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task circle_gradient(BoxVMX *vmp) {
@@ -49,7 +49,7 @@ Task circle_begin(BoxVMX *vmp) {
   w->circle.got.color = 0;
 
   g_style_new(& w->circle.style, & w->style);
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task _circle_point(Window *w, Point *center) {
@@ -60,16 +60,16 @@ static Task _circle_point(Window *w, Point *center) {
       Real radius = sqrt(dx*dx + dy*dy);
       w->circle.radius_b = w->circle.radius_a = radius;
       w->circle.got.radius_a = GOT_NOW;
-      return Success;
+      return BOXTASK_OK;
 
     } else {
       g_error("You already specified a center for the circle.");
-      return Success;
+      return BOXTASK_OK;
     }
   }
   w->circle.center = *center;
   w->circle.got.center = GOT_NOW;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task circle_point(BoxVMX *vmp) {
@@ -83,7 +83,7 @@ Task circle_real(BoxVMX *vmp) {
   Real radius = BOX_VM_ARG1(vmp, Real);
   if (w->circle.got.radius_b == GOT_NOW) {
     g_warning("You already specified radius_a and radius_b for the circle!");
-    return Success;
+    return BOXTASK_OK;
 
   } else if (w->circle.got.radius_a == GOT_NOW) {
     w->circle.radius_b = radius;
@@ -93,21 +93,21 @@ Task circle_real(BoxVMX *vmp) {
     w->circle.radius_b = w->circle.radius_a = radius;
     w->circle.got.radius_a = GOT_NOW;
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task circle_style(BoxVMX *vmp) {
   IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
   SUBTYPE_OF_WINDOW(vmp, w);
   g_style_copy_selected(& w->circle.style, & s->style, s->have);
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task _circle_draw(Window *w, DrawWhen when) {
   if (w->circle.got.center == GOT_NOT || w->circle.got.radius_a == GOT_NOT) {
     /*g_warning("To draw a circle you have to specify at least "
                 "the center (a point) the radius (a real)");*/
-    return Success;
+    return BOXTASK_OK;
 
   } else {
     Point c, a, b;
@@ -131,7 +131,7 @@ static Task _circle_draw(Window *w, DrawWhen when) {
                              ? GOT_NOT : GOT_BEFORE;
     w->circle.got.radius_b = (w->circle.got.radius_b == GOT_NOT)
                              ? GOT_NOT : GOT_BEFORE;
-    return Success;
+    return BOXTASK_OK;
   }
 }
 
@@ -156,7 +156,7 @@ static Task _add_from_pl(Int index, char *name, void *object, void *data) {
   struct params_for_add_from_pl *params = (struct params_for_add_from_pl *) data;
   Point *center = (Point *) object;
   TASK( _circle_point(params->w, center) );
-  if (index == params->num_points) return Success;
+  if (index == params->num_points) return BOXTASK_OK;
   return _circle_draw(params->w, DRAW_WHEN_PAUSE);
 }
 

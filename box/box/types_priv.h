@@ -35,7 +35,7 @@
  * Maximum number of types linked to a type.
  * This is a constant value useful when using the function MyType_Get_Refs.
  */
-#define BOX_MAX_NUM_TYPES_IN_TYPE 3
+#define BOX_MAX_NUM_REFS_IN_TYPE 3
 
 /**
  * Maximum number of allocations for a type.

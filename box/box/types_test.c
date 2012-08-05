@@ -4,6 +4,9 @@
 
 #include <box/types.h>
 #include <box/ntypes.h>
+#include <box/obj.h>
+#include <box/core.h>
+
 
 static BoxType t_char, t_int, t_real, t_point;
 
@@ -14,19 +17,25 @@ static BoxType t_char, t_int, t_real, t_point;
   (t) = BoxType_Create_Ident(it, (name));                               \
   } while(0)
 
-static void My_Init(void) {
-  MY_CREATE_INTRINSIC(t_char, BoxChar, "Char");
-  MY_CREATE_INTRINSIC(t_int, BoxInt, "Int");
-  MY_CREATE_INTRINSIC(t_real, BoxReal, "Real");
-  MY_CREATE_INTRINSIC(t_point, BoxPoint, "Point");
-  assert(t_char && t_int && t_real && t_point);
+static BoxBool My_Init(void) {
+  if (!Box_Initialize_Type_System())
+    return BOXBOOL_FALSE;
+
+  MY_CREATE_INTRINSIC(t_char, BoxChar, "XChar");
+  MY_CREATE_INTRINSIC(t_int, BoxInt, "XInt");
+  MY_CREATE_INTRINSIC(t_real, BoxReal, "XReal");
+  MY_CREATE_INTRINSIC(t_point, BoxPoint, "XPoint");
+
+  return (t_char && t_int && t_real && t_point);
 }
 
 static void My_Finish(void) {
-  BoxType_Unlink(t_char);
-  BoxType_Unlink(t_int);
-  BoxType_Unlink(t_real);
-  BoxType_Unlink(t_point);
+  BoxSPtr_Unlink(t_char);
+  BoxSPtr_Unlink(t_int);
+  BoxSPtr_Unlink(t_real);
+  BoxSPtr_Unlink(t_point);
+
+  Box_Finalize_Type_System();
 }
 
 static BoxType
@@ -52,7 +61,7 @@ static BoxBool My_Test_Struct_Empty(void) {
   if (BoxTypeIter_Get_Next(& ti, & t))
     result = BOXBOOL_FALSE;
 
-  BoxType_Unlink(s);
+  BoxSPtr_Unlink(s);
   return result;
 }
 
@@ -62,7 +71,7 @@ My_Test_2Memb_Anonymous_Structure(void) {
   BoxType as = My_Create_Tuple_Structure(NULL, BoxType_Link(t_char),
                                          NULL, BoxType_Link(t_real));
 
-  BoxType_Unlink(as);
+  BoxSPtr_Unlink(as);
   return BOXBOOL_TRUE;
 }
 
@@ -75,8 +84,8 @@ My_Test_Compare_Structure(void) {
   BoxBool result = (s1
                     && (BoxType_Compare(s1, s2) == BOXTYPECMP_EQUAL)
                     && (BoxType_Compare(s1, t_char) == BOXTYPECMP_DIFFERENT));
-  BoxType_Unlink(s1);
-  BoxType_Unlink(s2);
+  BoxSPtr_Unlink(s1);
+  BoxSPtr_Unlink(s2);
   return result;
 }
 
@@ -144,7 +153,8 @@ int main(void) {
     {NULL, NULL}
   };
 
-  My_Init();
+  if (!My_Init())
+    exit(EXIT_FAILURE);
 
   for (row = & table[0]; row->test_exec; row++) {
     BoxBool result = row->test_exec();

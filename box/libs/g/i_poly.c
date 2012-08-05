@@ -35,7 +35,7 @@ BoxTask poly_color(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->poly.color = BOX_VM_ARG1(vmp, Color);
   w->poly.got.color = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxTask poly_gradient(BoxVMX *vmp) {
@@ -60,7 +60,7 @@ BoxTask poly_begin(BoxVMX *vmp) {
   w->poly.got.color = 0;
 
   g_style_new(& w->poly.style, & w->style);
-  return Success;
+  return BOXTASK_OK;
 }
 
 static BoxTask _poly_point_draw_only(Window *w, Point *p, int omit_line) {
@@ -123,7 +123,7 @@ static BoxTask _poly_point_draw_only(Window *w, Point *p, int omit_line) {
   w->poly.num_margins = 0;
   wp->margin[0] = m2;
   wp->margin[1] = m1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 static BoxTask _poly_point(Window *w, IPointList *ipl, Point *p) {
@@ -143,7 +143,7 @@ BoxTask poly_style(BoxVMX *vmp) {
   IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
   SUBTYPE_OF_WINDOW(vmp, w);
   g_style_copy_selected(& w->poly.style, & s->style, s->have);
-  return Success;
+  return BOXTASK_OK;
 }
 
 static BoxTask _poly_draw(Window *w, DrawWhen dw) {
@@ -170,14 +170,14 @@ static BoxTask _poly_draw(Window *w, DrawWhen dw) {
 
   (void) BoxGWin_Draw_With_Style(w->window, & w->poly.style,
                                  & w->poly.default_style, dw);
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxTask poly_end(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   TASK(_poly_draw(w, DRAW_WHEN_END));
   g_style_clear(& w->poly.style);
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxTask poly_pause(BoxVMX *vmp) {
@@ -189,7 +189,7 @@ BoxTask poly_pause(BoxVMX *vmp) {
   w->poly.num_points = 0;
   w->poly.num_margins = 0;
   w->poly.got.color = 0;
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxTask poly_real(BoxVMX *vmp) {
@@ -213,9 +213,9 @@ BoxTask poly_real(BoxVMX *vmp) {
 
   default:
     g_warning("Enough margins: ignoring Real value.");
-    return Success;
+    return BOXTASK_OK;
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 struct add_from_pl_params {
@@ -237,7 +237,7 @@ BoxTask poly_pointlist(BoxVMX *vmp) {
   struct add_from_pl_params params;
   if (my_ipl == arg_ipl) {
     g_error("can't add a PointList object to itself.");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   params.w = w;
   params.dest_ipl = my_ipl;
@@ -247,11 +247,11 @@ BoxTask poly_pointlist(BoxVMX *vmp) {
 BoxTask window_poly_close_begin(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB2_PARENT(vmp, WindowPtr);
   w->poly.close = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxTask window_poly_close_int(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB2_PARENT(vmp, WindowPtr);
   w->poly.close = BOX_VM_ARG1(vmp, Int);
-  return Success;
+  return BOXTASK_OK;
 }

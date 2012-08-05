@@ -42,7 +42,7 @@ static Task My_File_Create(BoxVMX *vm) {
   f->opened = 0;
   f->name = (char *) NULL;
   f->mode = (char *) NULL;
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task My_File_Destroy(BoxVMX *vm) {
@@ -55,7 +55,7 @@ static Task My_File_Destroy(BoxVMX *vm) {
   BoxMem_Free(f->mode);
   f->name = (char *) NULL;
   f->mode = (char *) NULL;
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task My_File_Close(BoxVMX *vm) {

@@ -253,10 +253,10 @@ Task TS_Name_Set(TS *ts, Type t, const char *name) {
     MSG_ERROR("TS_Name_Set: trying to set the name '%s' for type %I: "
               "this type has already been given the name '%s'!",
               name, t, td->name);
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   td->name = BoxMem_Strdup(name);
-  return Success;
+  return BOXTASK_OK;
 }
 
 static char *TS_Name_Get_Case(TSKind kind, TS *ts, TSDesc *td, Type t,
@@ -359,7 +359,7 @@ BoxTask BoxTS_Get_Array_Member(BoxTS *ts, BoxType *memb, BoxType array,
 }
 
 /* The full name to use in the hashtable of members */
-static void Member_Full_Name(TS *ts, Name *n, Type s, const char *m_name) {
+static void Member_Full_Name(TS *ts, BoxName *n, Type s, const char *m_name) {
   BoxArr_Clear(& ts->name_buffer);
   BoxArr_MPush(& ts->name_buffer, & s, sizeof(Type));
   BoxArr_MPush(& ts->name_buffer, m_name, strlen(m_name));
@@ -368,7 +368,7 @@ static void Member_Full_Name(TS *ts, Name *n, Type s, const char *m_name) {
 }
 
 Type BoxTS_Find_Struct_Member(BoxTS *ts, BoxType s, const char *m_name) {
-  Name n;
+  BoxName n;
   BoxHTItem *hi;
   s = TS_Resolve(ts, s, TS_KS_ALIAS | TS_KS_SPECIES | TS_KS_RAISED);
   Member_Full_Name(ts, & n, s, m_name);
@@ -609,7 +609,7 @@ static void My_Add_Member(TSKind kind, BoxTS *ts, BoxType s, BoxType m,
                                           s_td->alignment);
     /* We also add the member to the hashtable for fast search */
     if (m_name != NULL) {
-      Name n;
+      BoxName n;
       Member_Full_Name(ts, & n, s, m_name);
       BoxHT_Insert_Obj(& ts->members, n.text, n.length,
                        & new_m, sizeof(Type));
@@ -858,12 +858,12 @@ BoxType TS_Subtype_Get_Child(TS *ts, Type st) {
 Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type) {
   TSDesc *s_td = Type_Ptr(ts, subtype);
   Type parent, found_subtype;
-  Name full_name;
+  BoxName full_name;
   char *child_str;
 
   if (s_td->target != BOXTYPE_NONE) {
     MSG_ERROR("Cannot redefine subtype '%~s'", TS_Name_Get(ts, subtype));
-    return Failed;
+    return BOXTASK_FAILURE;
   }
 
   child_str = s_td->data.subtype.child_name;
@@ -875,9 +875,9 @@ Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type) {
     TSCmp comparison = TS_Compare(ts, found_subtype_type, subtype_type);
     if ((comparison & TS_TYPES_MATCH) == 0) {
       MSG_ERROR("Cannot redefine subtype '%~s'", TS_Name_Get(ts, subtype));
-      return Failed;
+      return BOXTASK_FAILURE;
     }
-    return Success;
+    return BOXTASK_OK;
   }
 
   /* CHECK: MAYBE WE SHOULD RESOVE THE TYPE HERE */
@@ -887,11 +887,11 @@ Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type) {
   BoxHT_Insert_Obj(& ts->subtypes,
                    full_name.text, full_name.length,
                    & subtype, sizeof(Type));
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxType TS_Subtype_Find(TS *ts, BoxType parent, const char *name) {
-  Name full_name;
+  BoxName full_name;
   BoxHTItem *hi;
 
   do {
@@ -906,8 +906,8 @@ BoxType TS_Subtype_Find(TS *ts, BoxType parent, const char *name) {
 
 /****************************************************************************/
 
-Task TS_Default_Value(TS *ts, Type *dv_t, Type t, Data *dv) {
-  MSG_ERROR("Still not implemented!"); return Failed;
+Task TS_Default_Value(TS *ts, Type *dv_t, Type t, BoxData *dv) {
+  MSG_ERROR("Still not implemented!"); return BOXTASK_FAILURE;
 }
 
 TSCmp TS_Compare(TS *ts, Type t1, Type t2) {

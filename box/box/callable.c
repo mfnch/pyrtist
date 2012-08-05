@@ -17,6 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+#include <assert.h>
+
 #include <box/types.h>
 #include <box/ntypes.h>
 #include <box/core.h>
@@ -46,6 +48,7 @@ void BoxCallable_Init_From_CCall2(BoxCallable *cb, BoxCCall2 call) {
 
 /* Create a callable object from a BoxCCall1 C function. */
 BoxCallable *BoxCallable_Create_From_CCall1(BoxCCall1 call) {
+  assert(box_core_types.callable_type);
   BoxCallable *cb = BoxSPtr_Raw_Alloc(box_core_types.callable_type,
                                       sizeof(BoxCallable));
   BoxCallable_Init_From_CCall1(cb, call);
@@ -54,6 +57,7 @@ BoxCallable *BoxCallable_Create_From_CCall1(BoxCCall1 call) {
 
 /* Create a callable object from a BoxCCall2 C function. */
 BoxCallable *BoxCallable_Create_From_CCall2(BoxCCall2 call) {
+  assert(box_core_types.callable_type);
   BoxCallable *cb = BoxSPtr_Raw_Alloc(box_core_types.callable_type,
                                       sizeof(BoxCallable));
   BoxCallable_Init_From_CCall2(cb, call);

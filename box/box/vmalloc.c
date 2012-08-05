@@ -100,7 +100,7 @@ BoxTask BoxVM_Alloc_Init(BoxVM *vm) {
 
   BoxArr_Init(& vm->desc_from_id, sizeof(MyDescEntry), BOXVM_DESC_HT_SIZE);
   BoxArr_Set_Finalizer(& vm->desc_from_id, My_DescEntry_Finalizer);
-  return Success;
+  return BOXTASK_OK;
 }
 
 /** Finalises the table of object descriptors */

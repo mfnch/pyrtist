@@ -40,13 +40,13 @@
 static Task My_Str_Create(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   BoxStr_Init(s);
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task My_Str_Destroy(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
   BoxStr_Finish(s);
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task My_Str_Pause(BoxVMX *vm) {
@@ -64,10 +64,11 @@ static Task My_Str_Int(BoxVMX *vm) {
   Int i = BOX_VM_ARG(vm, Int);
   char *tmp = Box_SPrintF("%I", i);
   if (tmp != (char *) NULL) {
-    TASK( BoxStr_Concat_C_String(s, tmp) );
+    if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
+      return BOXTASK_FAILURE;
     BoxMem_Free(tmp);
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task My_Str_Real(BoxVMX *vm) {
@@ -75,10 +76,11 @@ static Task My_Str_Real(BoxVMX *vm) {
   Real r = BOX_VM_ARG1(vm, Real);
   char *tmp = Box_SPrintF("%R", r);
   if (tmp != (char *) NULL) {
-    TASK( BoxStr_Concat_C_String(s, tmp) );
+    if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
+      return BOXTASK_FAILURE;
     BoxMem_Free(tmp);
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task My_Str_Point(BoxVMX *vm) {
@@ -86,10 +88,11 @@ static Task My_Str_Point(BoxVMX *vm) {
   Point *p = BOX_VM_ARG_PTR(vm, Point);
   char *tmp = Box_SPrintF("(%R, %R)", p->x, p->y);
   if (tmp != (char *) NULL) {
-    TASK( BoxStr_Concat_C_String(s, tmp) );
+    if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
+      return BOXTASK_FAILURE;
     BoxMem_Free(tmp);
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task My_Str_Ptr(BoxVMX *vm) {
@@ -97,10 +100,11 @@ static Task My_Str_Ptr(BoxVMX *vm) {
   BoxPtr *p = BOX_VM_ARG_PTR(vm, Ptr);
   char *tmp = printdup("Ptr[block:%p, data:%p]", p->block, p->ptr);
   if (tmp != (char *) NULL) {
-    TASK( BoxStr_Concat_C_String(s, tmp) );
+    if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
+      return BOXTASK_FAILURE;
     BoxMem_Free(tmp);
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task My_Str_CPtr(BoxVMX *vm) {
@@ -108,10 +112,11 @@ static Task My_Str_CPtr(BoxVMX *vm) {
   BoxCPtr p = BOX_VM_ARG(vm, BoxCPtr);
   char *tmp = printdup("CPtr[%p]", p);
   if (tmp != (char *) NULL) {
-    TASK( BoxStr_Concat_C_String(s, tmp) );
+    if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
+      return BOXTASK_FAILURE;
     BoxMem_Free(tmp);
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task My_Str_Str(BoxVMX *vm) {
@@ -119,7 +124,7 @@ static Task My_Str_Str(BoxVMX *vm) {
   BoxStr *s2 = BOX_VM_ARG_PTR(vm, BoxStr);
   if (s2->length > 0)
     return BoxStr_Concat_C_String(s, s2->ptr);
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task My_Str_CString(BoxVMX *vm) {
@@ -136,14 +141,14 @@ static Task My_Str_Copy(BoxVMX *vm) {
   BoxStr_Init(dest);
   if (src->length > 0)
     return BoxStr_Concat_C_String(dest, src_text);
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task My_Length_Str(BoxVMX *vm) {
   BoxInt *len = BOX_VM_THIS_PTR(vm, BoxInt);
   BoxStr *src = BOX_VM_ARG_PTR(vm, BoxStr);
   *len += src->length;
-  return Success;
+  return BOXTASK_OK;
 }
 
 static BoxTask My_Compare_Str(BoxVMX *vm) {

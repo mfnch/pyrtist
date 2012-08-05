@@ -334,7 +334,7 @@ BoxType BoxTS_Begin_Enum(BoxTS *ts);
 /** Add a member to an enumeration type defined with TS_Enum_Begin. */
 void BoxTS_Add_Enum_Member(BoxTS *ts, BoxType enumeration, BoxType member);
 
-BoxTask TS_Default_Value(BoxTS *ts, BoxType *dv_t, BoxType t, Data *dv);
+BoxTask TS_Default_Value(BoxTS *ts, BoxType *dv_t, BoxType t, BoxData *dv);
 
 /** Given an array type (N)X returns X in *memb and the size N
  * of the array in *array_size.

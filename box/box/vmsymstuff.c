@@ -41,7 +41,7 @@ static Task My_Assemble_Call(BoxVM *vm, UInt sym_num, UInt sym_type,
     call_num = *((BoxVMCallNum *) def);
   }
   BoxVM_Assemble_Long(vm, BOXOP_CALL_I, BOXCONTCATEG_IMM, call_num);
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxVMSymID BoxVMSym_New_Call(BoxVM *vm) {
@@ -133,7 +133,7 @@ static Task Register_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
     return BoxVM_Alloc_Method_Set(vmp, m->type, m->method, call_num);
 #endif
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 void VM_Sym_Alloc_Method_Register(BoxVM *vmp, UInt sym_num,
@@ -174,7 +174,7 @@ static Task Assemble_Jmp(BoxVM *vmp, UInt sym_num, UInt sym_type,
 
   asm_code = (label_ref->conditional) ? BOXOP_JC_I : BOXOP_JMP_I;
   BoxVM_Assemble_Long(vmp, asm_code, BOXCONTCATEG_IMM, rel_position);
-  return Success;
+  return BOXTASK_OK;
 }
 
 BoxVMSymID BoxVMSym_New_Label(BoxVM *vmp) {
@@ -225,7 +225,7 @@ Task BoxVMSym_Jmp(BoxVM *vmp, BoxVMSymID sym_id) {
 }
 
 Task BoxVMSym_Release_Label(BoxVM *vmp, BoxVMSymID sym_id) {
-  return Success;
+  return BOXTASK_OK;
 }
 
 /*** procedure headers ******************************************************/
@@ -261,7 +261,7 @@ static Task Assemble_Proc_Head(BoxVM *vmp, UInt sym_num, UInt sym_type,
                         BOXCONTCATEG_IMM, nv, BOXCONTCATEG_IMM, nr);
     /* ^^^ should use BoxVM_Assemble_Long for more than 127 regs/vars */
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task BoxVMSym_Assemble_Proc_Head(BoxVM *vm, BoxVMSymID *sym_num) {

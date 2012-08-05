@@ -33,9 +33,9 @@ Task gradient_begin(BoxVMX *vmp) {
   GradientPtr *g_ptr = BOX_VM_THIS_PTR(vmp, GradientPtr);
   Gradient *g;
   g = *g_ptr = (Gradient *) malloc(sizeof(Gradient));
-  if (g == (Gradient *) NULL) return Failed;
+  if (g == (Gradient *) NULL) return BOXTASK_FAILURE;
   if (!buff_create(& g->items, sizeof(ColorGradItem), 8))
-    return Failed;
+    return BOXTASK_FAILURE;
   g->got.type = 0;
   g->got.point1 = 0;
   g->got.point2 = 0;
@@ -45,24 +45,24 @@ Task gradient_begin(BoxVMX *vmp) {
   g->got.pos = 0;
   g->this_item.position = -1.0;
   g->gradient.extend = COLOR_GRAD_EXT_PAD;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task gradient_destroy(BoxVMX *vmp) {
   Gradient *g = BOX_VM_THIS(vmp, GradientPtr);
   buff_free(& g->items);
   free(g);
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task set_gradient_type(Gradient *g, ColorGradType t) {
   if (g->got.type && g->gradient.type != t) {
     g_error("Cannot change the gradient type!");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   g->got.type = 1;
   g->gradient.type = t;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task gradient_string(BoxVMX *vm) {
@@ -81,10 +81,10 @@ Task gradient_string(BoxVMX *vm) {
     printf("Invalid extend style for color gradient. Available styles are: ");
     g_string_list_print(stdout, ext_styles, ", ");
     printf(".\n");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   g->gradient.extend = es[index];
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task gradient_line_point(BoxVMX *vmp) {
@@ -94,17 +94,17 @@ Task gradient_line_point(BoxVMX *vmp) {
   if (!g->got.point1) {
     g->gradient.point1 = *p;
     g->got.point1 = 1;
-    return Success;
+    return BOXTASK_OK;
 
   } else if (!g->got.point2) {
     g->gradient.point2 = *p;
     g->got.point2 = 1;
-    return Success;
+    return BOXTASK_OK;
 
   } else {
     g_warning("Gradient.Line takes just two points: ignoring other "
               "given points!");
-    return Success;
+    return BOXTASK_OK;
   }
 }
 
@@ -116,7 +116,7 @@ Task gradient_circle_point(BoxVMX *vmp) {
     if (g->got.point1) {
       g_warning("Already got the center for the first circle: "
                 "ignoring this other value!");
-      return Success;
+      return BOXTASK_OK;
     }
     g->gradient.point2 = g->gradient.point1 = *p;
     g->got.point1 = 1;
@@ -125,12 +125,12 @@ Task gradient_circle_point(BoxVMX *vmp) {
     if (g->got.point2) {
       g_warning("Already got the center for the second circle: "
                 "ignoring this other value!");
-      return Success;
+      return BOXTASK_OK;
     }
     g->gradient.point2 = *p;
     g->got.point2 = 1;
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task gradient_circle_real(BoxVMX *vmp) {
@@ -142,7 +142,7 @@ Task gradient_circle_real(BoxVMX *vmp) {
     if (g->got.radius1) {
       g_warning("Already got the radius of the first circle: "
                 "ignoring this other value!");
-      return Success;
+      return BOXTASK_OK;
     }
     g->gradient.radius2 = g->gradient.radius1 = r;
     g->got.radius1 = 1;
@@ -151,12 +151,12 @@ Task gradient_circle_real(BoxVMX *vmp) {
     if (g->got.radius2) {
       g_warning("Already got the radius of the second circle: "
                 "ignoring this other value!");
-      return Success;
+      return BOXTASK_OK;
     }
     g->gradient.radius2 = r;
     g->got.radius2 = 1;
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task gradient_circle_pause(BoxVMX *vmp) {
@@ -164,20 +164,20 @@ Task gradient_circle_pause(BoxVMX *vmp) {
   if (!(g->got.point1 && g->got.radius1)) {
     g_error("Gradient.Circle[] should get the center and radius "
             "of the first circle, before getting ';'.");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   g->got.pause = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task gradient_color(BoxVMX *vmp) {
   Gradient *g = BOX_VM_THIS(vmp, GradientPtr);
   Color *c = BOX_VM_ARG1_PTR(vmp, Color);
   g->this_item.color = *c;
-  if (!buff_push(& g->items, & g->this_item)) return Failed;
+  if (!buff_push(& g->items, & g->this_item)) return BOXTASK_FAILURE;
   g->got.pos = 0;
   g->this_item.position = -1.0;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task gradient_real(BoxVMX *vmp) {
@@ -186,16 +186,16 @@ Task gradient_real(BoxVMX *vmp) {
   if (g->got.pos) {
     g_warning("Real@Gradient: You already specified a position "
               "for this Color: ignoring this other value!");
-    return Success;
+    return BOXTASK_OK;
   }
   if (r < 0.0 || r > 1.0) {
     g_error("Real@Gradient: The color position should be a "
             "real number between 0.0 and 1.0!");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   g->got.pos = 1;
   g->this_item.position = r;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task gradient_end(BoxVMX *vmp) {
@@ -206,13 +206,13 @@ Task gradient_end(BoxVMX *vmp) {
   if (n < 2) {
     g_error("(])@Gradient: Incomplete gradient specification: "
             "Gradient should get at least two colors!");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
 
   if (!g->got.type) {
     g_error("(])@Gradient: Incomplete gradient specification: "
             "You should use Gradient.Line or Gradient.Circle!");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
 
   /* Reference points for the gradient (useful to transform correctly
@@ -246,7 +246,7 @@ Task gradient_end(BoxVMX *vmp) {
   }
   g->gradient.num_items = n;
   g->gradient.items = buff_firstitemptr(& g->items, ColorGradItem);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task print_gradient(BoxVMX *vmp) {
@@ -287,12 +287,12 @@ Task print_gradient(BoxVMX *vmp) {
             cgi[i].color.b, cgi[i].color.a);
   }
   fprintf(out, "]");
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task x_gradient(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   Gradient *g = BOX_VM_ARG1(vmp, GradientPtr);
   BoxGWin_Set_Gradient(w->window, & g->gradient);
-  return Success;
+  return BOXTASK_OK;
 }

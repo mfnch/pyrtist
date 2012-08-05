@@ -95,8 +95,8 @@ void BoxHT_Init(BoxHT *ht, unsigned int num_entries,
   ht->cmp = (cmp == NULL) ? BoxHT_Default_Cmp : cmp;
 }
 
-static Task Destroy_Item(BoxHTItem *item, void *destructor) {
-  return ((Task (*)(BoxHTItem *)) destructor)(item);
+static BoxTask Destroy_Item(BoxHTItem *item, void *destructor) {
+  return ((BoxTask (*)(BoxHTItem *)) destructor)(item);
 }
 
 void BoxHT_Destroy(BoxHT *ht) {
@@ -124,7 +124,7 @@ void BoxHT_Finish(BoxHT *ht) {
   BoxMem_Free(ht->item);
 }
 
-void BoxHT_Destructor(BoxHT *ht, Task (*destroy)(BoxHTItem *)) {
+void BoxHT_Destructor(BoxHT *ht, BoxTask (*destroy)(BoxHTItem *)) {
   ht->destroy = destroy;
 }
 
@@ -173,10 +173,10 @@ BoxHTItem *BoxHT_Add(BoxHT *ht, unsigned int branch,
   return hi;
 }
 
-Task BoxHT_Remove_By_HTItem(BoxHT *ht, BoxHTItem *hi) {
+BoxTask BoxHT_Remove_By_HTItem(BoxHT *ht, BoxHTItem *hi) {
   if (ht->destroy != NULL)
-    if (ht->destroy(hi) != Success)
-      return Failed;
+    if (ht->destroy(hi) != BOXTASK_OK)
+      return BOXTASK_FAILURE;
 
   /* Unchain the item */
   *hi->link_to_this = hi->next;
@@ -187,33 +187,35 @@ Task BoxHT_Remove_By_HTItem(BoxHT *ht, BoxHTItem *hi) {
   if (hi->allocated.key) BoxMem_Free(hi->key);
   if (hi->allocated.obj) BoxMem_Free(hi->object);
   BoxMem_Free(hi);
-  return Success;
+  return BOXTASK_OK;
 }
 
-Task BoxHT_Remove(BoxHT *ht, void *key, unsigned int key_size) {
+BoxTask BoxHT_Remove(BoxHT *ht, void *key, unsigned int key_size) {
   BoxHTItem *hi;
   unsigned int branch = ht->mask & ht->hash(key, key_size);
   for(hi = ht->item[branch]; hi != NULL; hi = hi->next) {
     if (ht->cmp(hi->key, key, hi->key_size, key_size))
       return BoxHT_Remove_By_HTItem(ht, hi);
   }
-  return Failed;
+  return BOXTASK_FAILURE;
 }
 
-Task BoxHT_Rename(BoxHT *ht, void *key, unsigned int key_size,
-                  void *new_key, unsigned int new_key_size) {
+BoxTask BoxHT_Rename(BoxHT *ht, void *key, unsigned int key_size,
+                     void *new_key, unsigned int new_key_size) {
   BoxHTItem *item;
   void *object;
   unsigned int object_size, allocated_obj;
-  TASK( BoxHT_Find(ht, key, key_size, & item) );
+  if (BoxHT_Find(ht, key, key_size, & item) != BOXTASK_OK)
+    return BOXTASK_FAILURE;
   object = item->object;
   object_size = item->object_size;
   allocated_obj = item->allocated.obj;
   item->allocated.obj = 0;
-  TASK( BoxHT_Remove_By_HTItem(ht, item) );
+  if (BoxHT_Remove_By_HTItem(ht, item) != BOXTASK_OK)
+    return BOXTASK_FAILURE;
   item = BoxHT_Insert_Obj(ht, new_key, new_key_size, object, object_size);
   item->allocated.obj = allocated_obj;
-  return Success;
+  return BOXTASK_OK;
 }
 
 void BoxHT_Set_Attr(BoxHT *ht, int attr_mask, int attr_set) {
@@ -258,31 +260,33 @@ int BoxHT_Iter(BoxHT *ht, int branch,
  * if 'branch < 0' iterate over all the branches, otherwise iterate over
  * the branch number 'branch'.
  * For every element encountered, the function 'action' will be called.
- * If this function returns 'Success' the iteration will continue,
- * if it returns 'Failed', then the iteration will end.
+ * If this function returns 'BOXTASK_OK' the iteration will continue,
+ * if it returns 'BOXTASK_FAILURE', then the iteration will end.
  * RETURN VALUE: this function returns 1 if the item has been succesfully found
  *  ('action' returned with 1), 0 otherwise.
  */
-Task BoxHT_Iter2(BoxHT *ht, int branch, BoxHTIterator2 it2, void *pass_data) {
+BoxTask BoxHT_Iter2(BoxHT *ht, int branch, BoxHTIterator2 it2, void *pass_data) {
   if (branch < 0) {
     int i;
     for(i = 0; i < ht->num_entries; i++) {
-      TASK( BoxHT_Iter2(ht, i, it2, pass_data) );
+      if (BoxHT_Iter2(ht, i, it2, pass_data) != BOXTASK_OK)
+        return BOXTASK_FAILURE;
     }
-    return Success;
+    return BOXTASK_OK;
 
   } else {
     BoxHTItem *hi;
     for(hi = ht->item[branch]; hi != NULL; hi = hi->next) {
-      TASK( it2(hi, pass_data) );
+      if (it2(hi, pass_data) != BOXTASK_OK)
+        return BOXTASK_FAILURE;
     }
-    return Success;
+    return BOXTASK_OK;
   }
 }
 
-static Task My_Count_Action(BoxHTItem *hi, void *branch_size) {
+static BoxTask My_Count_Action(BoxHTItem *hi, void *branch_size) {
   ++*((int *) branch_size);
-  return Success;
+  return BOXTASK_OK;
 }
 
 void BoxHT_Statistics(BoxHT *ht, FILE *out) {

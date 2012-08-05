@@ -1242,7 +1242,7 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
 
 #if 0
   case TS_KIND_POINTER:
-    MSG_ERROR("Not implemented yet!"); return Failed;
+    MSG_ERROR("Not implemented yet!"); return BOXTASK_FAILURE;
     /*if (td2->tot == TOT_PTR_TO) break;
     return 0;*/
 
@@ -1250,18 +1250,18 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
     switch(TS_Compare(cmp->ts, type1, type2)) {
     case TS_TYPES_EQUAL:
     case TS_TYPES_MATCH:
-      return Success;
+      return BOXTASK_OK;
     case TS_TYPES_EXPAND:
       MSG_ERROR("Expansion of array of species is not implemented yet!");
-      return Failed;
+      return BOXTASK_FAILURE;
     default:
       MSG_ERROR("Value_Expand: Expansion to array involves "
                 "an incompatible type.");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
 
   case TS_KIND_PROC:
-    MSG_ERROR("Not implemented yet!"); return Failed;
+    MSG_ERROR("Not implemented yet!"); return BOXTASK_FAILURE;
     /*if (td2->tot != TOT_PROCEDURE) return 0;
     return (
           Tym_Compare_Types(td1->parent, td2->parent)

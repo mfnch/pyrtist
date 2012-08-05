@@ -35,17 +35,17 @@
 Task put_window_init(Window *w) {
   if ( ! buff_create(& w->put.fig_points, sizeof(Point), 8) ) {
     g_error("put_window_init: buff_create failed (fig_points)!");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   if ( ! buff_create(& w->put.back_points, sizeof(Point), 8) ) {
     g_error("put_window_init: buff_create failed (back_points)!");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   if ( ! buff_create(& w->put.weights, sizeof(Real), 8) ) {
     g_error("put_window_init: buff_create failed (weights)!");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
 void put_window_destroy(Window *w) {
@@ -74,10 +74,10 @@ Task window_put_begin(BoxVMX *vmp) {
           && buff_clear(& w->put.back_points)
           && buff_clear(& w->put.weights)) ) {
     g_error("window_put_begin: buff_clear failed!");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
 
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task put_calculate(Window *w) {
@@ -101,7 +101,7 @@ static Task put_calculate(Window *w) {
 
   /* Calcolo i parametri della trasformazione in base ai vincoli introdotti */
   if (!aput_autoput(F_ptr, B_ptr, weight_ptr, F_num, w->put.auto_transforms))
-    return Failed;
+    return BOXTASK_FAILURE;
 
   /* Preleva i risultati dei calcoli */
   aput_get(& w->put.rot_center, & w->put.translation,
@@ -116,13 +116,13 @@ static Task put_calculate(Window *w) {
   printf("Scala x: %g\n", put_scale_x);
   printf("Scala y: %g\n", put_scale_y);
 #endif
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task _transform_pl(Int index, char *name, void *object, void *data) {
   Matrix *m = (Matrix *) data;
   BoxGMatrix_Map_Point(m, (BoxPoint *) object, (BoxPoint *) object);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_put_end(BoxVMX *vmp) {
@@ -138,7 +138,7 @@ Task window_put_end(BoxVMX *vmp) {
 
   if ( !w->put.got.figure ) {
     g_warning("You did not provide any figure to Put[].");
-    return Success;
+    return BOXTASK_OK;
   }
 
   if (!w->put.got.matrix) {
@@ -155,13 +155,13 @@ Task window_put_end(BoxVMX *vmp) {
   returned_pl = (IPointList *) malloc(sizeof(IPointList));
   if (returned_pl == (IPointList *) NULL) {
     g_error("window_put_end: malloc failed!");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   returned_pl->name = (char *) NULL;
   pointlist_dup(& returned_pl->pl, & figure->pointlist);
   (void) pointlist_iter(& returned_pl->pl, _transform_pl, & w->put.matrix);
   *out_pl = returned_pl;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_put_window(BoxVMX *vmp) {
@@ -169,7 +169,7 @@ Task window_put_window(BoxVMX *vmp) {
   WindowPtr *wp = BOX_VM_ARG1_PTR(vmp, WindowPtr);
   w->put.figure = (void *) *wp;
   w->put.got.figure = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_put_point(BoxVMX *vmp) {
@@ -179,7 +179,7 @@ Task window_put_point(BoxVMX *vmp) {
   if (w->put.got.translation)
     g_warning("ignoring previously specified translation vector!");
   w->put.got.translation = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_put_real(BoxVMX *vmp) {
@@ -189,7 +189,7 @@ Task window_put_real(BoxVMX *vmp) {
   if (w->put.got.rot_angle)
     g_warning("ignoring previously specified rotation angle!");
   w->put.got.rot_angle = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_put_string(BoxVMX *vm) {
@@ -199,10 +199,10 @@ Task window_put_string(BoxVMX *vm) {
 
   if (!aput_allow(auto_transformations_str, & w->put.auto_transforms)) {
     g_warning("aput_allow failed!");
-    return Success;
+    return BOXTASK_OK;
   }
 
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_put_matrix(BoxVMX *vmp) {
@@ -210,7 +210,7 @@ Task window_put_matrix(BoxVMX *vmp) {
   Matrix *m = BOX_VM_ARG1_PTR(vmp, Matrix);
   w->put.matrix = *m;
   w->put.got.matrix = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_put_scale_real(BoxVMX *vmp) {
@@ -222,7 +222,7 @@ Task window_put_scale_real(BoxVMX *vmp) {
   if (w->put.got.scale)
     g_warning("ignoring previously specified scale factors!");
   w->put.got.scale = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_put_scale_point(BoxVMX *vmp) {
@@ -235,7 +235,7 @@ Task window_put_scale_point(BoxVMX *vmp) {
   if (w->put.got.scale)
     g_warning("ignoring previously specified scale factors!");
   w->put.got.scale = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_put_near_begin(BoxVMX *vmp) {
@@ -244,7 +244,7 @@ Task window_put_near_begin(BoxVMX *vmp) {
   w->put.near.have.on_dest = 0;
   w->put.near.have.weight = 0;
   w->put.near.weight = 1.0;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_put_near_end(BoxVMX *vmp) {
@@ -252,32 +252,32 @@ Task window_put_near_end(BoxVMX *vmp) {
   if (! w->put.near.have.on_src || ! w->put.near.have.on_src) {
     g_warning("Ignoring .Near[] specification: source or destination point "
               "is missing");
-    return Success;
+    return BOXTASK_OK;
   }
 
   if (   ! buff_push(& w->put.fig_points, & w->put.near.on_src)
       || ! buff_push(& w->put.back_points, & w->put.near.on_dest)
       || ! buff_push(& w->put.weights, & w->put.near.weight)) {
     g_error("window_put_near_end: buff_push() failed!");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
 
   w->put.got.constraints = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 static Task _window_put_near_real(Window *w, Real weight){
   if (! w->put.near.have.weight) {
     g_warning("Window.Put.Near got already the weight for this constrain.");
-    return Success;
+    return BOXTASK_OK;
   }
   if (weight < 0.0) {
     g_warning("The weight has to be a positive Real number!");
-    return Success;
+    return BOXTASK_OK;
   }
   w->put.near.weight = weight;
   w->put.near.have.weight = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task window_put_near_real(BoxVMX *vmp) {
@@ -298,7 +298,7 @@ Task window_put_near_int(BoxVMX *vmp) {
     if (!w->put.got.figure) {
       g_error("Figure has not been specified. Cannot refer to its hot points "
               "from Window.Put.Near!");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
     figure = (Window *) w->put.figure;
 
@@ -306,12 +306,12 @@ Task window_put_near_int(BoxVMX *vmp) {
     if (on_src == (Point *) NULL) {
       g_error("The point index you gave to Window.Put.Near "
               "goes out of bounds.");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
 
     w->put.near.on_src = *on_src;
     w->put.near.have.on_src = 1;
-    return Success;
+    return BOXTASK_OK;
   }
 }
 
@@ -321,17 +321,17 @@ Task window_put_near_point(BoxVMX *vmp) {
   if (!w->put.near.have.on_src) {
     w->put.near.on_src = *p;
     w->put.near.have.on_src = 1;
-    return Success;
+    return BOXTASK_OK;
 
   } else if (!w->put.near.have.on_dest) {
     w->put.near.on_dest = *p;
     w->put.near.have.on_dest = 1;
-    return Success;
+    return BOXTASK_OK;
 
   } else {
     g_warning("Window.Put.Near already got the source and destination point: "
               "this point will be ignored!");
-    return Success;
+    return BOXTASK_OK;
   }
 }
 
@@ -345,24 +345,24 @@ Task window_put_near_string(BoxVMX *vm) {
     if (!w->put.got.figure) {
       g_error("Figure has not been specified. Cannot refer to its hot points "
               "from Window.Put.Near!");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
     figure = (Window *) w->put.figure;
     on_src = pointlist_find(& figure->pointlist, name);
     if (on_src == NULL) {
       g_error("The name you provided to Window.Put.Near does not correspond "
               "to any of the hot points of the figure.");
-      return Failed;
+      return BOXTASK_FAILURE;
     }
 
     w->put.near.on_src = *on_src;
     w->put.near.have.on_src = 1;
-    return Success;
+    return BOXTASK_OK;
 
   } else {
     g_warning("Window.Put.Near already got the source point. "
               "String will be ignored!");
-    return Success;
+    return BOXTASK_OK;
   }
 }
 

@@ -28,7 +28,7 @@ Task hsv_color(BoxVMX *vmp) {
   HSV *hsv = BOX_VM_THIS_PTR(vmp, HSV);
   Color_Trunc(& c);
   HSV_From_Color(hsv, & c);
-  return Success;
+  return BOXTASK_OK;
 }
 
 /* HSV@Color */
@@ -37,5 +37,5 @@ Task color_hsv(BoxVMX *vmp) {
   Color *c = BOX_VM_THIS_PTR(vmp, Color);
   HSV_Trunc(& hsv);
   HSV_To_Color(c, & hsv);
-  return Success;
+  return BOXTASK_OK;
 }

@@ -29,7 +29,9 @@
 
 #include <box/ntypes.h>
 
-/** Box core types. */
+/**
+ * Box core types.
+ */
 typedef struct BoxCoreTypes_struct {
   BoxType root_type,
           init_type,
@@ -40,13 +42,42 @@ typedef struct BoxCoreTypes_struct {
           int_type,
           real_type,
           point_type,
-          pointer_type;
+          pointer_type,
+          str_type,
+          repr_type,
+          stream_type,
+          hash_type,
+          serialize_type,
+          deserialize_type;
 } BoxCoreTypes;
 
-/** Object containing all the core types of Box. */
+/**
+ * Object containing all the core types of Box.
+ */
 extern BoxCoreTypes box_core_types;
 
-/* Initialize the core types of Box. */
-BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types);
+/**
+ * Initialize the core types of Box.
+ */
+BOXEXPORT BoxBool
+BoxCoreTypes_Init(BoxCoreTypes *core_types);
+
+/**
+ * Finalize the core type of Box.
+ */
+BOXEXPORT void
+BoxCoreTypes_Finish(BoxCoreTypes *core_types);
+
+/**
+ * Initialize the type system.
+ */
+BOXEXPORT BoxBool
+Box_Initialize_Type_System(void);
+
+/**
+ * Initialize the type system.
+ */
+BOXEXPORT void
+Box_Finalize_Type_System(void);
 
 #endif /* _BOX_CORE_H */

@@ -105,10 +105,10 @@ BoxTypeNode *MyType_Get_Node(BoxType t) {
  * @param t The type 
  * @param num_refs Pointer where the number of references made by the provided
  *   type makes be written (the number of references never exceeds the constant
- *   BOX_MAX_NUM_TYPES_IN_TYPE.
+ *   BOX_MAX_NUM_REFS_IN_TYPE.
  * @param refs Location where to write the references. This is an array of
- *   BoxType which should be able to contain at least BOX_MAX_NUM_TYPES_IN_TYPE
- *   elements.
+ *   BoxSPtr objects which should be able to contain at least
+ *   BOX_MAX_NUM_REFS_IN_TYPE elements.
  * @param num_mems Pointer where the number of allocations made by the provided
  *   type should be written (the number of references never exceeds
  *   the constant BOX_MAX_NUM_MEMS_IN_TYPE.
@@ -119,12 +119,12 @@ BoxTypeNode *MyType_Get_Node(BoxType t) {
  * Example:
  * @code
  * void *mems[BOX_MAX_NUM_MEMS_IN_TYPE];
- * BoxType refs[BOX_MAX_NUM_TYPES_IN_TYPE];
+ * BoxType refs[BOX_MAX_NUM_REFS_IN_TYPE];
  * int num_refs, num_mems;
  * MyType_Get_Refs(type, & num_refs, refs, & num_mems, mems);
  * @endcode
  */
-static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
+static void MyType_Get_Refs(BoxType t, int *num_refs, BoxSPtr *refs,
                             int *num_mems, void **mems) {
   void *tdata = BoxType_Get_Data(t);
 
@@ -150,7 +150,8 @@ static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
   case BOXTYPECLASS_COMB_NODE:
     refs[0] = ((BoxTypeCombNode *) tdata)->node.next;
     refs[1] = ((BoxTypeCombNode *) tdata)->child;
-    *num_refs = 2;
+    refs[2] = ((BoxTypeCombNode *) tdata)->callable;
+    *num_refs = 3;
     return;
   case BOXTYPECLASS_PRIMARY:
   case BOXTYPECLASS_INTRINSIC:
@@ -194,11 +195,16 @@ static void MyType_Get_Refs(BoxType t, int *num_refs, BoxType *refs,
 /* Finalization function for type objects. */
 static BoxException *My_Type_Finish(BoxPtr *parent) {
   void *mems[BOX_MAX_NUM_MEMS_IN_TYPE];
-  BoxType refs[BOX_MAX_NUM_TYPES_IN_TYPE];
+  BoxSPtr refs[BOX_MAX_NUM_REFS_IN_TYPE];
   int num_refs, num_mems, i;
 
   BoxType t = BoxPtr_Get_Target(parent);
   MyType_Get_Refs(t, & num_refs, refs, & num_mems, mems);
+
+  if (t->type_class == BOXTYPECLASS_IDENT) {
+    BoxTypeIdent *td = BoxType_Get_Data(t);
+    printf("Finalizing %s\n", td->name);
+  }
 
   for (i = 0; i < num_mems; i++)
     BoxMem_Free(mems[i]);
@@ -223,6 +229,7 @@ BoxBool Box_Register_Type_Combs(BoxCoreTypes *core_types) {
   return BOXBOOL_FALSE;
 }
 
+#if 0
 /* Unlink (remove a reference to) the given type. The memory for the type is
  * released if there are no references left to it.
  * XXX TODO: this is going to be obsolete. Remove it!
@@ -233,7 +240,7 @@ void BoxType_Unlink(BoxType t) {
       /* The object is gonna die (just one ref count).  */
 
       void *mems[BOX_MAX_NUM_MEMS_IN_TYPE];
-      BoxType refs[BOX_MAX_NUM_TYPES_IN_TYPE];
+      BoxSPtr refs[BOX_MAX_NUM_REFS_IN_TYPE];
       int num_refs, num_mems, i;
 
       MyType_Get_Refs(t, & num_refs, refs, & num_mems, mems);
@@ -248,6 +255,7 @@ void BoxType_Unlink(BoxType t) {
     }
   }
 }
+#endif
 
 /* Add a reference to the given type. */
 BoxType BoxType_Link(BoxType t) {

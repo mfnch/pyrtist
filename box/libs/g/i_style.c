@@ -35,13 +35,13 @@ Task style_begin(BoxVMX *vmp) {
   IStylePtr *sp = BOX_VM_THIS_PTR(vmp, IStylePtr), s;
   int i;
   s = *sp = (IStyle *) malloc(sizeof(IStyle));
-  if (s == (IStyle *) NULL) return Failed;
+  if (s == (IStyle *) NULL) return BOXTASK_FAILURE;
   g_style_new(& s->style, G_STYLE_NONE);
   for(i = 0; i < G_STYLE_ATTR_NUM; i++) s->have[i] = 0;
-  if (!buff_create(& s->dashes, sizeof(Real), 8)) return Failed;
+  if (!buff_create(& s->dashes, sizeof(Real), 8)) return BOXTASK_FAILURE;
   s->dash_offset_contest = -1;
   s->dash_offset = 0.0;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task style_destroy(BoxVMX *vmp) {
@@ -49,7 +49,7 @@ Task style_destroy(BoxVMX *vmp) {
   g_style_clear(& s->style);
   buff_free(& s->dashes);
   free(s);
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task style_fill_string(BoxVMX *vm) {
@@ -69,26 +69,26 @@ Task style_fill_string(BoxVMX *vm) {
   if (g_string_find_in_list(unset_strs, string) >= 0) {
     g_style_unset_draw_when(& s->style);
     g_style_unset_fill_style(& s->style);
-    return Success;
+    return BOXTASK_OK;
   }
 
   index = g_string_find_in_list(style_strs, string);
   if (index >= 0) {
     g_style_set_fill_style(& s->style, styles[index]);
     s->have[G_STYLE_ATTR_FILL_STYLE] = 1;
-    return Success;
+    return BOXTASK_OK;
   }
 
   index = g_string_find_in_list(when_strs, string);
   if (index >= 0) {
     g_style_set_draw_when(& s->style, whens[index]);
     s->have[G_STYLE_ATTR_DRAW_WHEN] = 1;
-    return Success;
+    return BOXTASK_OK;
   }
 
   /* Unrecognized string! */
   g_warning("Unknown fill style string in Style.Fill: doing nothing!");
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task style_border_color(BoxVMX *vmp) {
@@ -96,7 +96,7 @@ Task style_border_color(BoxVMX *vmp) {
   Color *c = BOX_VM_ARG_PTR(vmp, Color);
   g_style_set_bord_color(& s->style, c);
   s->have[G_STYLE_ATTR_BORD_COLOR] = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task style_border_real(BoxVMX *vmp) {
@@ -104,7 +104,7 @@ Task style_border_real(BoxVMX *vmp) {
   Real *r = BOX_VM_ARG_PTR(vmp, Real);
   g_style_set_bord_width(& s->style, r);
   s->have[G_STYLE_ATTR_BORD_WIDTH] = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task style_border_join(BoxVMX *vm) {
@@ -118,36 +118,36 @@ Task style_border_join(BoxVMX *vm) {
     printf("Invalid join style. Available styles are: ");
     g_string_list_print(stdout, join_styles, ", ");
     printf(".\n");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   g_style_set_bord_join_style(& s->style, js + index);
   s->have[G_STYLE_ATTR_BORD_JOIN_STYLE] = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task style_border_dash_begin(BoxVMX *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
   s->dash_offset_contest = -1;
-  return buff_clear(& s->dashes) ? Success : Failed;
+  return buff_clear(& s->dashes) ? BOXTASK_OK : BOXTASK_FAILURE;
 }
 
 Task style_border_dash_pause(BoxVMX *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
   s->dash_offset_contest = 0;
   s->dash_offset = 0.0;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task style_border_dash_real(BoxVMX *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
   Real *r = BOX_VM_ARG_PTR(vmp, Real);
   switch(s->dash_offset_contest) {
-  case -1: return buff_push(& s->dashes, r) ? Success : Failed;
-  case  0: s->dash_offset = *r; ++s->dash_offset_contest; return Success;
+  case -1: return buff_push(& s->dashes, r) ? BOXTASK_OK : BOXTASK_FAILURE;
+  case  0: s->dash_offset = *r; ++s->dash_offset_contest; return BOXTASK_OK;
   default:
     g_warning("Style.Border.Dash: Dash offset already specified: "
               "ignoring the second value!");
-    return Success;
+    return BOXTASK_OK;
   }
 }
 
@@ -157,7 +157,7 @@ Task style_border_dash_end(BoxVMX *vmp) {
   Real *dashes = buff_firstitemptr(& s->dashes, Real);
   g_style_set_bord_dashes(& s->style, n, dashes, s->dash_offset);
   s->have[G_STYLE_ATTR_BORD_DASHES] = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task style_border_miter_limit(BoxVMX *vmp) {
@@ -165,7 +165,7 @@ Task style_border_miter_limit(BoxVMX *vmp) {
   Real *r = BOX_VM_ARG_PTR(vmp, Real);
   g_style_set_bord_miter_limit(& s->style, r);
   s->have[G_STYLE_ATTR_BORD_MITER_LIMIT] = 1;
-  return Success;
+  return BOXTASK_OK;
 }
 
 Task style_border_cap_string(BoxVMX *vm) {
@@ -180,9 +180,9 @@ Task style_border_cap_string(BoxVMX *vm) {
     printf("Invalid cap style. Available styles are: ");
     g_string_list_print(stdout, cap_styles, ", ");
     printf(".\n");
-    return Failed;
+    return BOXTASK_FAILURE;
   }
   g_style_set_bord_cap(& s->style, cs + index);
   s->have[G_STYLE_ATTR_BORD_CAP] = 1;
-  return Success;
+  return BOXTASK_OK;
 }

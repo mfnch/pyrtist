@@ -107,30 +107,31 @@ void BoxList_Insert_With_Size(BoxList *l, void *item_where,
   ++l->length;
 }
 
-Task BoxList_Iter(BoxList *l, BoxListIterator i, void *pass_data) {
+BoxTask BoxList_Iter(BoxList *l, BoxListIterator i, void *pass_data) {
   BoxListItemHead *lih;
   for(lih=l->head_tail.next; lih != NULL; lih=lih->next) {
     void *item = (void *) lih + sizeof(BoxListItemHead);
-    if IS_FAILED( i(item, pass_data) ) return Failed;
+    if (i(item, pass_data) != BOXTASK_OK)
+      return BOXTASK_FAILURE;
   }
-  return Success;
+  return BOXTASK_OK;
 }
 
-Task BoxList_Item_Get(BoxList *l, void **item, UInt index) {
+BoxTask BoxList_Item_Get(BoxList *l, void **item, UInt index) {
   if (index >= 1 && index <= l->length) {
     BoxListItemHead *lih;
     for(lih=l->head_tail.next; lih != NULL; lih=lih->next) {
       if (--index == 0) {
         *item = (void *) lih + sizeof(BoxListItemHead);
-        return Success;
+        return BOXTASK_OK;
       }
     }
     MSG_ERROR("BoxList seems to have more elements than what I thought!");
-    return Failed;
+    return BOXTASK_FAILURE;
   } else {
     MSG_ERROR("Trying to get item with index %U of a list with %U elements",
      index, l->length);
-    return Failed;
+    return BOXTASK_FAILURE;
   }
 }
 
@@ -167,18 +168,18 @@ typedef struct {
   void **tuple;
 } ListProductData;
 
-static Task Product_Iter(ListProductData *state);
-static Task Product_Iter(ListProductData *state);
+static BoxTask Product_Iter(ListProductData *state);
+static BoxTask Product_Iter(ListProductData *state);
 
 /* Used internally (by Product_Iter) */
-static Task Product_Sublist_Iter(void *item, void *pass) {
+static BoxTask Product_Sublist_Iter(void *item, void *pass) {
   ListProductData *my_state = (ListProductData *) pass;
   my_state->tuple[my_state->sublist_idx-1] = item;
   return Product_Iter(my_state);
 }
 
 /* Used internally (by BoxList_Product_Iter) */
-static Task Product_Iter(ListProductData *state) {
+static BoxTask Product_Iter(ListProductData *state) {
   if (state->sublist_idx >= state->num_sublists)
     /* The tuple has been fully filled: we can proceed
      * and invoke the function 'product'
@@ -209,10 +210,10 @@ static Task Product_Iter(ListProductData *state) {
  * NOTE: the function iterates over the product of an aribtrary
  *  number of two (despite the examples, where we use only two lists).
  */
-Task BoxList_Product_Iter(BoxList *l, BoxListProduct product, void *pass) {
+BoxTask BoxList_Product_Iter(BoxList *l, BoxListProduct product, void *pass) {
   UInt n = BoxList_Length(l);
   if (n > 0) {
-    Task status;
+    BoxTask status;
     ListProductData state;
     state.product = product;
     state.pass = pass;
@@ -226,23 +227,23 @@ Task BoxList_Product_Iter(BoxList *l, BoxListProduct product, void *pass) {
     return status;
 
   } else
-    return Success;
+    return BOXTASK_OK;
 }
 
 #if 0
 
-Task Print_List_Items(void *item, void *pass) {
+BoxTask Print_List_Items(void *item, void *pass) {
   printf("Item: '%s'\n", (char *) item);
-  return Success;
+  return BOXTASK_OK;
 }
 
-Task Test_Product_Iter(void **tuple, void *pass) {
+BoxTask Test_Product_Iter(void **tuple, void *pass) {
   char *format_string = (char *) pass;
   char *string1 = (char *) tuple[0],
        *string2 = (char *) tuple[1],
        *string3 = (char *) tuple[2];
   printf(format_string, string1, string2, string3);
-  return Success;
+  return BOXTASK_OK;
 }
 
 int main(void) {
@@ -260,7 +261,10 @@ int main(void) {
   for(i=0; i<20; i++) {
     int index = 3;
     void *item;
-    if IS_FAILED( BoxList_Item_Get(l, & item, index) ) break;
+
+    if (BoxList_Item_Get(l, & item, index) != BOXTASK_OK)
+      break;
+
     printf("Removing item '%s' at position %d\n", (char *) item, index);
     BoxList_Remove(l, item);
     printf("The followings items are still in the list:\n");

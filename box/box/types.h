@@ -79,8 +79,11 @@ typedef enum {
   BOXTYPE_END,
   BOXTYPE_PAUSE,
   BOXTYPE_CPTR
-
+#ifdef NTYPES
 } BoxOldType;
+#else
+} BoxType;
+#endif
 
 /** The BoxChar type, the smallest integer in terms of size. */
 typedef unsigned char BoxChar;
@@ -177,11 +180,6 @@ typedef enum {
   BOXTASK_ERROR   = 2  /**< Function failed: error already reported */
 } BoxTask;
 
-/* Macro per testare il successo o il fallimento di una funzione.
- */
-#  define BOXTASK_IS_SUCCESS(x) (!x)
-#  define BOXTASK_IS_FAILURE(x) (x)
-
 /** Macro to call a function returning Task from a function returning Task.
  */
 #  define BOXTASK(x) if ( (x) ) return BOXTASK_FAILURE
@@ -207,12 +205,9 @@ typedef BoxPoint Point;
 typedef BoxPtr Ptr;
 typedef BoxSubtype Subtype;
 
-typedef BoxName Name;
-typedef BoxName Data;
+typedef BoxName BoxData;
 
 #    define Task BoxTask
-#    define Success BOXTASK_OK
-#    define Failed BOXTASK_FAILURE
 
 #    define SUInt BoxUInt_Fmt
 #    define SChar BoxChar_Fmt
@@ -233,8 +228,6 @@ typedef BoxName Data;
        ((subtype_ptr)->child.ptr)
 
 #    define NAME BOXNAME
-#    define IS_SUCCESSFUL BOXTASK_IS_SUCCESS
-#    define IS_FAILED BOXTASK_IS_FAILURE
 #    define TASK BOXTASK
 
 #    define CIRCULAR_INDEX BOX_CIRCULAR_INDEX

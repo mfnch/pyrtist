@@ -179,7 +179,7 @@ unsigned char hex_digit(unsigned char c, int *status) {
  * NOTE: This function is used by Str_ToChar and by Str_ToString.
  */
 static Task My_Reduce_Esc_Char(const char *s, size_t l, size_t *f, char *c) {
-  Name nm = {l, (char *) s};
+  BoxName nm = {l, (char *) s};
 
   if (l < 1)
     goto err_empty;
@@ -307,7 +307,7 @@ Task Box_Reduce_Esc_Char(const char *s, size_t l, char *c) {
     return BOXTASK_OK;
 
   else {
-    Name nm = {l, (char *) s};
+    BoxName nm = {l, (char *) s};
     MSG_ERROR("'%N' <- Too many characters.", & nm);
     return BOXTASK_FAILURE;
   }
@@ -476,20 +476,20 @@ Task Str_ToReal(char *s, UInt l, Real *r) {
 
 /* DESCRIZIONE: Restituisce un nome nullo (lunghezza pari a 0)
  */
-Name *Name_Empty(void) {
-  static Name nm = {(UInt) 0, (char *) NULL}; return & nm;
+BoxName *BoxName_Empty(void) {
+  static BoxName nm = {(UInt) 0, (char *) NULL}; return & nm;
 }
 
 /* This function converts the string corresponding to the structure of type
- * Name into a normal C-string (NUL-terminated).
+ * BoxName into a normal C-string (NUL-terminated).
  * The string is allocated by this function, but should not be freed directly
- * by the user. For this purpose call: (void) Name_Str((Name) {0, NULL}).
- * After the user calls 'Name_Str' he must use the string, before the next
+ * by the user. For this purpose call: (void) BoxName_Str((Name) {0, NULL}).
+ * After the user calls 'BoxName_Str' he must use the string, before the next
  * call to this same function is made. For this reason the statement:
- *   printf("Two Name-s: '%s' and '%s'\n", Name_Str(nm1), Name_Str(nm2));
+ *   printf("Two BoxName-s: '%s' and '%s'\n", BoxName_Str(nm1), BoxName_Str(nm2));
  * I S   W R O N G!!!
  */
-const char *Name_Str(Name *n) {
+const char *BoxName_Str(BoxName *n) {
   static char *asciiz = NULL;
   BoxMem_Free(asciiz);
   if (n->length == 0) return "";
@@ -499,9 +499,9 @@ const char *Name_Str(Name *n) {
 }
 
 /* This function converts the string corresponding to the structure of type
- * Name into a normal C-string (NUL-terminated).
+ * BoxName into a normal C-string (NUL-terminated).
  */
-char *Name_To_Str(Name *n) {
+char *BoxName_To_Str(BoxName *n) {
   char *asciiz = NULL;
   if (n->length == 0) return BoxMem_Strdup("");
   asciiz = (char *) BoxMem_Alloc(n->length + 1);
@@ -509,19 +509,23 @@ char *Name_To_Str(Name *n) {
   return strncpy(asciiz, n->text, n->length);
 }
 
-void Name_From_Str(Name *dest, char *src) {
+void BoxName_From_Str(BoxName *dest, char *src) {
   dest->text = src;
   dest->length = strlen(src);
 }
 
 /* DESCRIZIONE: Rimuove la stringa associata a *n (pone n --> "")
  */
-void Name_Free(Name *n) {BoxMem_Free(n->text); n->text = NULL; n->length = 0;}
+void BoxName_Free(BoxName *n) {
+  BoxMem_Free(n->text);
+  n->text = NULL;
+  n->length = 0;
+}
 
 /* DESCRIZIONE: Duplica la stringa *n.
  */
-Name *Name_Dup(Name *n) {
-  static Name rs;
+BoxName *BoxName_Dup(BoxName *n) {
+  static BoxName rs;
 
   if ( n > 0 ) {
     rs.length = n->length;
@@ -534,7 +538,7 @@ Name *Name_Dup(Name *n) {
   return & rs;
 }
 
-Task Name_Cat(Name *nm, Name *nm1, Name *nm2, int free_args) {
+Task BoxName_Cat(BoxName *nm, BoxName *nm1, BoxName *nm2, int free_args) {
   register int l1 = nm1->length, l2 = nm2->length, l;
   register char *dest;
 
@@ -547,11 +551,11 @@ Task Name_Cat(Name *nm, Name *nm1, Name *nm2, int free_args) {
   if ( l1 > 0 ) strncpy(dest, nm1->text, l1);
   if ( l2 > 0 ) strncpy(dest + l1, nm2->text, l2);
   *(dest + l) = '\0';
-  if ( free_args ) {Name_Free(nm1); Name_Free(nm2);}
+  if ( free_args ) {BoxName_Free(nm1); BoxName_Free(nm2);}
   return BOXTASK_OK;
 
 strange_cases: {
-    Name *tmp = nm1;
+    BoxName *tmp = nm1;
     if ( l1 < 1 ) {tmp = nm2;}
     if ( free_args ) {
       *nm = *tmp;
@@ -559,7 +563,7 @@ strange_cases: {
       tmp->length = 0;
       return BOXTASK_OK;
     } else {
-      *nm = *Name_Dup(tmp);
+      *nm = *BoxName_Dup(tmp);
       if ( nm->length > 0 ) return BOXTASK_OK;
       return BOXTASK_FAILURE;
     }
