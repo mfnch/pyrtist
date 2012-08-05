@@ -303,7 +303,7 @@ Task BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out) {
 
   proc_id = BoxArr_Num_Items(& pt->installed);
   for(n = 1; n <= proc_id; n++) {
-    TASK( BoxVM_Proc_Disassemble_One(vmp, out, n) );
+    BOXTASK( BoxVM_Proc_Disassemble_One(vmp, out, n) );
   }
   return BOXTASK_OK;
 }

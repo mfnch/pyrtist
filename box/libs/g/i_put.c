@@ -134,7 +134,7 @@ Task window_put_end(BoxVMX *vmp) {
    * sono ancora stati utilizzati (cioe' .Compute non e' stata invocata), allora
    * li uso adesso e mi calcolo la trasformazione che meglio li soddisfa!
    */
-  if ( w->put.got.constraints ) { TASK( put_calculate(w) ); }
+  if ( w->put.got.constraints ) { BOXTASK( put_calculate(w) ); }
 
   if ( !w->put.got.figure ) {
     g_warning("You did not provide any figure to Put[].");

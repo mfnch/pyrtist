@@ -46,7 +46,7 @@ BoxTask poly_begin(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   IPointListPtr *ipl_ptr = BOX_VM_SUB_CHILD_PTR(vmp, IPointListPtr);
 
-  TASK( ipl_create(ipl_ptr) );
+  BOXTASK( ipl_create(ipl_ptr) );
 
   BoxGWin_Create_Path(w->window);
 
@@ -128,7 +128,7 @@ static BoxTask _poly_point_draw_only(Window *w, Point *p, int omit_line) {
 
 static BoxTask _poly_point(Window *w, IPointList *ipl, Point *p) {
   PointList *pl = IPL_POINTLIST(ipl);
-  TASK( pointlist_add(pl, p, (char *) NULL) );
+  BOXTASK( pointlist_add(pl, p, (char *) NULL) );
   return _poly_point_draw_only(w, p, 0);
 }
 
@@ -156,10 +156,10 @@ static BoxTask _poly_draw(Window *w, DrawWhen dw) {
     if (*fs != FILLSTYLE_VOID) close = 1;
 
   if (close) {
-    TASK( _poly_point_draw_only(w, & w->poly.first_points[0], 0) );
+    BOXTASK( _poly_point_draw_only(w, & w->poly.first_points[0], 0) );
     wp->margin[0] = wp->first_margins[0];
     wp->margin[1] = wp->first_margins[1];
-    TASK( _poly_point_draw_only(w, & w->poly.first_points[1], 1) );
+    BOXTASK( _poly_point_draw_only(w, & w->poly.first_points[1], 1) );
     BoxGWin_Close_Path(w->window);
   }
 
@@ -175,14 +175,14 @@ static BoxTask _poly_draw(Window *w, DrawWhen dw) {
 
 BoxTask poly_end(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  TASK(_poly_draw(w, DRAW_WHEN_END));
+  BOXTASK(_poly_draw(w, DRAW_WHEN_END));
   g_style_clear(& w->poly.style);
   return BOXTASK_OK;
 }
 
 BoxTask poly_pause(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  TASK(_poly_draw(w, DRAW_WHEN_PAUSE));
+  BOXTASK(_poly_draw(w, DRAW_WHEN_PAUSE));
 
   /* Restore the status to the initial status */
   w->poly.state = POLY_GOT_NOTHING;

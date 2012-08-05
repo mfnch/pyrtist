@@ -114,7 +114,7 @@ Task window_text_end(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   int wrote_text;
 
-  TASK( _sentence_end(w, & wrote_text) );
+  BOXTASK( _sentence_end(w, & wrote_text) );
   if (wrote_text)
     (void) BoxGWin_Draw_With_Style(w->window, & w->text.style,
                                    & w->text.default_style, DRAW_WHEN_END);
@@ -127,7 +127,7 @@ Task window_text_pause(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   int wrote_text;
 
-  TASK( _sentence_end(w, & wrote_text) );
+  BOXTASK( _sentence_end(w, & wrote_text) );
   if (wrote_text)
     (void) BoxGWin_Draw_With_Style(w->window, & w->text.style,
                                    & w->text.default_style, DRAW_WHEN_PAUSE);

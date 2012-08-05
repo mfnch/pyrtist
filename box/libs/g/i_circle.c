@@ -155,7 +155,7 @@ struct params_for_add_from_pl {
 static Task _add_from_pl(Int index, char *name, void *object, void *data) {
   struct params_for_add_from_pl *params = (struct params_for_add_from_pl *) data;
   Point *center = (Point *) object;
-  TASK( _circle_point(params->w, center) );
+  BOXTASK( _circle_point(params->w, center) );
   if (index == params->num_points) return BOXTASK_OK;
   return _circle_draw(params->w, DRAW_WHEN_PAUSE);
 }

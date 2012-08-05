@@ -27,7 +27,51 @@
 #ifndef _BOX_CORE_H
 #  define _BOX_CORE_H
 
-#include <box/ntypes.h>
+
+#ifndef NTYPES
+/* ^^^ temporary stuff. */
+
+#  include <float.h>
+#  include <stdlib.h>
+
+/* Detect whether we are being compiled on MS Windows platforms */
+#  ifndef __WINDOWS__
+#    if defined(WIN32) || defined(_WIN32)
+#      define __WINDOWS__
+#    endif
+#  endif
+
+#  ifdef __WINDOWS__
+/**
+ * Macro to use as a prefix when declaring functions in a shared library that
+ * are meant to be used from outside callers.
+ */
+#    define BOXEXPORT extern __declspec(dllexport)
+#  else
+#    define BOXEXPORT extern
+#  endif
+
+/** The BoxChar type, the smallest integer in terms of size. */
+typedef unsigned char BoxChar;
+
+/** The integer type of Box numbers and the integer type we will try
+ * to use whenever possible: this corresponds to the C long int.
+ */
+typedef long BoxInt;
+
+/** The unsigned integer type that we will try to use whenever possible.
+ * Same size of Int.
+ */
+typedef unsigned long BoxUInt;
+
+/** Here is the definition of the floating point type used by Box.
+ */
+typedef double BoxReal;
+
+#endif
+/* ^^^ temporary stuff. */
+
+#  include <box/ntypes.h>
 
 /**
  * Box core types.

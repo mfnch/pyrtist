@@ -244,7 +244,7 @@ Task BoxVMSym_Resolve(BoxVM *vmp, UInt sym_num) {
   if (sym_num < 1) {
     UInt i, num_defs = BoxArr_Num_Items(& st->defs);
     for(i=1; i<=num_defs; i++) {
-      TASK( BoxVMSym_Resolve(vmp, i) );
+      BOXTASK( BoxVMSym_Resolve(vmp, i) );
     }
     return BOXTASK_OK;
   }
@@ -272,7 +272,7 @@ Task BoxVMSym_Resolve(BoxVM *vmp, UInt sym_num) {
       ref_size = sr->ref_size;
       ref = (ref_size > 0) ? BoxArr_Item_Ptr(& st->data, sr->ref_addr) : 0;
 
-      TASK( sr->resolver(vmp, sym_num, sym_type, 1, def, def_size,
+      BOXTASK( sr->resolver(vmp, sym_num, sym_type, 1, def, def_size,
                          ref, ref_size) );
       sr->resolved = 1;
     }
@@ -448,7 +448,7 @@ static Task code_generator(BoxVM *vmp, UInt sym_num, UInt sym_type,
   BoxVM_Proc_Target_Set(vmp, pt->tmp_proc);
   tmp_proc = pt->target_proc;
   /* Call the procedure here! */
-  TASK( ref_head->code_gen(vmp, sym_num, sym_type, defined,
+  BOXTASK( ref_head->code_gen(vmp, sym_num, sym_type, defined,
                            def, def_size, ref_tail, ref_tail_size) );
   BoxVM_Proc_Target_Set(vmp, ref_head->proc_num);
   /* Replace the referencing code with the generated code */
@@ -497,7 +497,7 @@ Task BoxVMSym_Code_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymCodeGen code_gen,
   if (ref != NULL && ref_size > 0)
     (void) memcpy(ref_tail, ref, ref_size);
 
-  TASK( code_gen(vmp, sym_num, s->sym_type, s->defined, def, s->def_size,
+  BOXTASK( code_gen(vmp, sym_num, s->sym_type, s->defined, def, s->def_size,
                  ref, ref_size) );
   if (pt->target_proc_num != ref_head->proc_num) {
     MSG_ERROR("BoxVMSym_Code_Ref: the function 'code_gen' must not change "

@@ -17,7 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file types.h
+/** 
+ * @file types.h
  * @brief Basic definition of frequently used types.
  *
  * Some basic definitions which are used throughout all the Box compiler
@@ -89,8 +90,7 @@ typedef enum {
 typedef unsigned char BoxChar;
 
 /** The integer type of Box numbers and the integer type we will try
- * to use whenever possible: 64 bit on 64 bit architectures,
- * 32 bit elsewhere.
+ * to use whenever possible: this corresponds to the C long int.
  */
 typedef long BoxInt;
 
@@ -190,10 +190,9 @@ typedef enum {
  * num_items+2 al secondo, ...
  * Inoltre l'indice 0 si riferisce all'ultimo elemento, -1 al pen'ultimo, ...
  */
-#define BOX_CIRCULAR_INDEX(num_items, index) \
-  ( (index > 0) ? \
-    ( (index - 1) % num_items ) \
-    : num_items - 1 - ((-index) % num_items) )
+#define BOX_CIRCULAR_INDEX(num_items, index)            \
+  ((index) > 0 ? ((index) - 1) % (num_items)            \
+   : (num_items) - 1 - ((-(index)) % (num_items)))
 
 /** Use shorthands (without the Box prefix) */
 #ifdef BOX_ABBREV
@@ -226,9 +225,6 @@ typedef BoxName BoxData;
 
 #    define BoxSubtype_Get_Child_Target(subtype_ptr) \
        ((subtype_ptr)->child.ptr)
-
-#    define NAME BOXNAME
-#    define TASK BOXTASK
 
 #    define CIRCULAR_INDEX BOX_CIRCULAR_INDEX
 

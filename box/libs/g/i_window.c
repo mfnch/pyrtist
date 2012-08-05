@@ -126,10 +126,10 @@ BoxTask Box_Lib_G_Init_At_Window(BoxVMX *vm) {
 
   My_Init_Win_Styles(w);
 
-  TASK( pointlist_init(& w->pointlist) );
+  BOXTASK( pointlist_init(& w->pointlist) );
 
-  TASK( line_window_init(w) );
-  TASK( put_window_init(w) );
+  BOXTASK( line_window_init(w) );
+  BOXTASK( put_window_init(w) );
   return BOXTASK_OK;
 }
 

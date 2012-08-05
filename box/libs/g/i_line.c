@@ -86,7 +86,7 @@ Task line_begin(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   IPointListPtr *ipl_ptr = BOX_VM_SUB_CHILD_PTR(vmp, IPointListPtr);
 
-  TASK( ipl_create(ipl_ptr) );
+  BOXTASK( ipl_create(ipl_ptr) );
 
   w->line.state = GOT_NOTHING;
 

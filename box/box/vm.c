@@ -226,7 +226,7 @@ BoxTask BoxVM_Init(BoxVM *vm) {
 
   BoxVM_Proc_Init(vm);
   BoxVMSymTable_Init(& vm->sym_table);
-  TASK( BoxVM_Alloc_Init(vm) );
+  BOXTASK( BoxVM_Alloc_Init(vm) );
   return BOXTASK_OK;
 }
 
