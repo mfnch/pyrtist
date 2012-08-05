@@ -58,7 +58,7 @@ static BoxBool My_Init_Obj(BoxPtr *src, BoxType t) {
         if (!My_Init_Obj(src, t))
           return BOXBOOL_FALSE;
 
-        if (node && BoxType_Get_Combination(node, NULL, & callable))
+        if (node && BoxType_Get_Combination_Info(node, NULL, & callable))
         {
           /* Now do our own initialization... */
           BoxException *excp = BoxCallable_Call1(callable, src);
@@ -167,7 +167,7 @@ static void My_Finish_Obj(BoxPtr *src, BoxType t) {
           BoxType_Find_Combination_With_Id(t, BOXCOMBTYPE_AT,
                                            BOXTYPEID_FINISH, NULL);
 
-        if (node && BoxType_Get_Combination(node, NULL, & callable))
+        if (node && BoxType_Get_Combination_Info(node, NULL, & callable))
         {
           /* Finalize the object. Ignore exceptions! */
           BoxException *excp = BoxCallable_Call1(callable, src);

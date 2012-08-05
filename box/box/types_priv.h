@@ -114,6 +114,7 @@ typedef struct {
   BoxTypeNode node;
   char        *name;
   BoxType     type;
+  BoxSubtypes subtypes;
 } BoxTypeSubtypeNode;
 
 /**

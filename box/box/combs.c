@@ -97,7 +97,8 @@ BoxType_Find_Combination_With_Id(BoxType parent, BoxCombType type,
 
 /* Get details about a combination found with BoxType_Find_Combination. */
 BoxBool
-BoxType_Get_Combination(BoxType comb, BoxType *child, BoxCallable **callable) {
+BoxType_Get_Combination_Info(BoxType comb, BoxType *child,
+                             BoxCallable **callable) {
   if (comb->type_class == BOXTYPECLASS_COMB_NODE) {
     BoxTypeCombNode *td = BoxType_Get_Data(comb);
     if (child)

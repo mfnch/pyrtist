@@ -332,9 +332,29 @@ BOXEXPORT BoxType
 BoxType_Create_Subtype(BoxType parent, const char *name, BoxType type);
 
 /**
+ * Find a subtype of the given type.
+ * @param parent The type whose subtype we are trying to find.
+ * @param name The name of the subtype.
+ * @return A new subtype node or NULL, if the subtype could not be found.
  */
-BOXEXPORT void
+BOXEXPORT BoxType
+BoxType_Find_Subtype(BoxType parent, const char *name);
+
+/**
+ * Get details about a subtype found with BoxType_Find_Combination.
+ */
+BoxBool BoxType_Get_Subtype_Info(BoxType subtype, char **name, BoxType *type);
+
+/**
+ * Register the type for a given subtype, if not given during creation.
+ * @param subtype A subtype created with BoxType_Create_Subtype, giving
+ *   NULL for the type.
+ * @param type The type to associate to the subtype.
+ * @return Whether the operation was successful.
+ */
+BOXEXPORT BoxBool
 BoxType_Register_Subtype(BoxType subtype, BoxType type);
+
 
 /** Identifier used to determine the state of a Box. */
 typedef unsigned int BoxBoxState;
@@ -399,6 +419,7 @@ BoxType_Find_Combination(BoxType parent, BoxCombType type, BoxType child,
 BOXEXPORT BoxType
 BoxType_Find_Combination_With_Id(BoxType parent, BoxCombType type,
                                  BoxTypeId child_id, BoxTypeCmp *expand);
+
 /**
  * Get details about a combination found with BoxType_Find_Combination.
  * @param comb The combination, as returned by BoxType_Find_Combination.
@@ -407,7 +428,7 @@ BoxType_Find_Combination_With_Id(BoxType parent, BoxCombType type,
  * @return BOXBOOL_TRUE if comb is a combination node, BOXBOOL_FALSE otherwise.
  */
 BOXEXPORT BoxBool
-BoxType_Get_Combination(BoxType comb, BoxType *child, BoxCallable **cb);
+BoxType_Get_Combination_Info(BoxType comb, BoxType *child, BoxCallable **cb);
 
 /**
  * Type iterator. Allows to iter through the types that do have members,

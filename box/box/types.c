@@ -515,6 +515,85 @@ BoxType BoxType_Create_Any(void) {
   return t;
 }
 
+/**
+ * Get the iterator over the subtypes of the given identifier type.
+ * @param type An identifier type or a subtype node.
+ * @param iter A pointer where to store the iterator.
+ * @return BOXBOOL_TRUE for success, BOXTYPE_FALSE for failure.
+ */
+BoxBool BoxType_Get_Subtypes(BoxType type, BoxTypeIter *iter) {
+  if (type->type_class == BOXTYPECLASS_IDENT) {
+    BoxTypeIdent *td = BoxType_Get_Data(type);
+    iter->current_node = td->subtypes.node.next;
+    return BOXBOOL_TRUE;
+
+  } else if (type->type_class == BOXTYPECLASS_SUBTYPE_NODE) {
+    BoxTypeSubtypeNode *td = BoxType_Get_Data(type);
+    iter->current_node = td->subtypes.node.next;
+    return BOXBOOL_TRUE;
+
+  } else
+    return BOXBOOL_FALSE;
+}
+
+/* Add a subtype type for a given type. */
+BoxType BoxType_Create_Subtype(BoxType parent, const char *name,
+                               BoxType type) {
+  if (parent->type_class == BOXTYPECLASS_IDENT) {
+    BoxTypeIdent *id = BoxType_Get_Data(parent);
+    BoxType sn;
+    BoxTypeSubtypeNode *sd = BoxType_Alloc(& sn, BOXTYPECLASS_SUBTYPE_NODE);
+ 
+    sd->name = BoxMem_Strdup(name);
+    sd->type = type;
+    BoxTypeNode_Append_Node(& id->subtypes.node, sn);
+    return sn;
+  }
+
+  return NULL;
+}
+
+/* Find a subtype of the given type. */
+BoxType BoxType_Find_Subtype(BoxType parent, const char *name) {
+  BoxTypeIter ti;
+  if (BoxType_Get_Subtypes(parent, & ti)) {
+    BoxType t;
+    for (; BoxTypeIter_Get_Next(& ti, & t);) {
+      BoxTypeSubtypeNode *node = BoxType_Get_Data(t);
+      assert(t->type_class == BOXTYPECLASS_SUBTYPE_NODE);
+      if (strcmp(name, node->name) == 0)
+        return t;
+    }
+  }
+
+  return NULL;
+}
+
+/* Get details about a combination found with BoxType_Find_Combination. */
+BoxBool BoxType_Get_Subtype_Info(BoxType subtype, char **name, BoxType *type) {
+  if (subtype->type_class == BOXTYPECLASS_SUBTYPE_NODE) {
+    BoxTypeSubtypeNode *td = BoxType_Get_Data(subtype);
+    if (name)
+      *name = td->name;
+    if (type)
+      *type = td->type;
+    return BOXBOOL_TRUE;
+  }
+  return BOXBOOL_FALSE;
+}
+
+/* Register the type for a given subtype, if not given during creation. */
+BoxBool BoxType_Register_Subtype(BoxType subtype, BoxType type) {
+  if (subtype->type_class == BOXTYPECLASS_SUBTYPE_NODE) {
+    BoxTypeSubtypeNode *td = BoxType_Get_Data(subtype);
+    if (td->type != NULL)
+      return BOXBOOL_FALSE;
+    td->type = type;
+    return BOXBOOL_TRUE;
+  }
+  return BOXBOOL_FALSE; 
+}
+
 /* Get the size of the type 't'. */
 size_t BoxType_Get_Size(BoxType t) {
   size_t size;

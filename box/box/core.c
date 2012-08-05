@@ -60,7 +60,6 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
      (size_t) 0, (size_t) 0},
 
 
-
     {& core_types->callable_type, "Callable", BOXTYPEID_NONE,
      0, 0},
     {NULL, (const char *) NULL, BOXTYPEID_NONE,
@@ -94,6 +93,10 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
     }
   }
 
+  core_types->any_type = BoxType_Create_Any();
+  if (!core_types->any_type)
+    success = BOXBOOL_FALSE;
+
   /* Register combinations for core_types->type_type. */
   if (!Box_Register_Type_Combs(core_types))
     success = BOXBOOL_FALSE;
@@ -113,6 +116,7 @@ void BoxCoreTypes_Finish(BoxCoreTypes *core_types) {
     core_types->real_type,
     core_types->point_type,
     core_types->pointer_type,
+    core_types->any_type,
     core_types->callable_type,
     NULL};
 
