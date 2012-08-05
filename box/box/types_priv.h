@@ -52,6 +52,7 @@ typedef enum {
   BOXTYPECLASS_SPECIES_NODE,
   BOXTYPECLASS_ENUM_NODE,
   BOXTYPECLASS_COMB_NODE,
+  BOXTYPECLASS_SUBTYPE_NODE,
   BOXTYPECLASS_PRIMARY,
   BOXTYPECLASS_INTRINSIC,
   BOXTYPECLASS_IDENT,
@@ -63,16 +64,6 @@ typedef enum {
   BOXTYPECLASS_POINTER,
   BOXTYPECLASS_ANY,
 } BoxTypeClass;
-
-struct BoxTypeDesc_struct {
-  BoxTypeClass   type_class;
-
-  struct {
-    unsigned int is_namespace :1,
-                 has_subtypes :1,
-                 has_combs :1;
-  }              attr;
-};
 
 /**
  * List node (used in structures, enums, etc.)
@@ -109,6 +100,23 @@ typedef struct BoxCombs_struct {
 } BoxCombs;
 
 /**
+ * Collection of subtypes which allow fast search (hash table).
+ * This object is used internally by the type system.
+ */
+typedef struct BoxSubtypes_struct {
+  BoxTypeNode node;
+} BoxSubtypes;
+
+/**
+ * Subtype node.
+ */
+typedef struct {
+  BoxTypeNode node;
+  char        *name;
+  BoxType     type;
+} BoxTypeSubtypeNode;
+
+/**
  * A type identifier: basically a node in the type tree which allows the type
  * to be visible and used in the Box language.
  */
@@ -117,7 +125,7 @@ typedef struct {
   BoxType      source;
   /*BoxNamespace namespace;*/
   BoxCombs     combs;
-  /*BoxSubtypes  subtypes;*/
+  BoxSubtypes  subtypes;
 } BoxTypeIdent;
 
 /**
@@ -192,6 +200,39 @@ typedef struct {
 typedef struct {
   BoxType source;
 } BoxTypePointer;
+
+struct BoxTypeDesc_struct {
+  BoxTypeClass           type_class;
+
+#if 0
+  struct {
+    unsigned int is_namespace :1,
+                 has_subtypes :1,
+                 has_combs :1;
+  }              attr;
+#endif
+};
+
+typedef struct BoxTypeBundle_struct {
+  /* The header. */
+  BoxTypeDesc            header;
+
+  /* The data part. */
+  union {
+    BoxTypeStructureNode structure_node;
+    BoxTypeSpeciesNode   species_node;
+    BoxTypeCombNode      comb_node;
+    BoxTypeSubtypeNode   subtype_node;
+    BoxTypePrimary       primary;
+    BoxTypeIntrinsic     intrinsic;
+    BoxTypeIdent         ident;
+    BoxTypeRaised        raised;
+    BoxTypeStructure     structure;
+    BoxTypeSpecies       species;
+    BoxTypeFunction      function;
+    BoxTypePointer       pointer;
+  }                      data;
+} BoxTypeBundle;
 
 /**
  * Internal function. Not meant to be called by ordinary users.

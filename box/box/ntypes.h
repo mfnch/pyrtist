@@ -323,10 +323,18 @@ BoxType_Add_Type(BoxType parent, BoxType child);
  * Note that the parent must be an identifier type.
  * @param parent The parent type.
  * @param name The name of the subtype.
- * @param subtype The type of the subtype.
+ * @param subtype The type of the subtype or NULL to leave the subtype
+ *   untyped. BoxType_Register_Subtype can be used to provide the type
+ *   later.
+ * @return Return the subtype.
+ */
+BOXEXPORT BoxType
+BoxType_Create_Subtype(BoxType parent, const char *name, BoxType type);
+
+/**
  */
 BOXEXPORT void
-BoxType_Create_Subtype(BoxType parent, const char *name, BoxType subtype);
+BoxType_Register_Subtype(BoxType subtype, BoxType type);
 
 /** Identifier used to determine the state of a Box. */
 typedef unsigned int BoxBoxState;

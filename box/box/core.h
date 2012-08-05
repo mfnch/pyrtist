@@ -86,13 +86,15 @@ typedef struct BoxCoreTypes_struct {
           int_type,
           real_type,
           point_type,
-          pointer_type,
+    pointer_type;
+#if 0
           str_type,
           repr_type,
           stream_type,
           hash_type,
           serialize_type,
           deserialize_type;
+#endif
 } BoxCoreTypes;
 
 /**

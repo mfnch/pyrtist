@@ -41,7 +41,7 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
     size_t alignment;
   } *row, table[] = {
     {& core_types->type_type, "Type", BOXTYPEID_TYPE,
-     sizeof(BoxType), __alignof__(BoxType)},
+     sizeof(BoxTypeBundle), __alignof__(BoxTypeBundle)},
     {& core_types->init_type, ".[", BOXTYPEID_INIT,
      (size_t) 0, (size_t) 0},
     {& core_types->finish_type, "].", BOXTYPEID_FINISH,
@@ -83,8 +83,10 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
       if (id)
         *row->dest = id;
 
-      else
+      else {
+        success = BOXBOOL_FALSE;
         BoxSPtr_Unlink(t);
+      }
     
     } else {
       success = BOXBOOL_FALSE;

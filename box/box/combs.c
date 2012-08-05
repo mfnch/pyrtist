@@ -89,14 +89,10 @@ BoxType_Find_Combination_With_Id(BoxType parent, BoxCombType type,
    * This code relies on BoxType_Find_Combination not trying to link or
    * unlink the child type.
    */
-  struct {
-    BoxTypeDesc    desc;
-    BoxTypePrimary data;
-  } child_desc;
-
-  child_desc.desc.type_class = BOXTYPECLASS_PRIMARY;
-  child_desc.data.id = child_id;
-  return BoxType_Find_Combination(parent, type, & child_desc.desc, expand);
+  BoxTypeBundle child;
+  child.header.type_class = BOXTYPECLASS_PRIMARY;
+  child.data.primary.id = child_id;
+  return BoxType_Find_Combination(parent, type, (BoxType) & child, expand);
 }
 
 /* Get details about a combination found with BoxType_Find_Combination. */

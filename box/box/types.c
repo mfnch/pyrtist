@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
 #include <box/types.h>
 #include <box/ntypes.h>
@@ -38,6 +39,7 @@
  */
 void *BoxType_Alloc(BoxType *t, BoxTypeClass tc) {
   size_t additional = 0, total;
+  size_t data_offset = offsetof(BoxTypeBundle, data);
 
   switch (tc) {
   case BOXTYPECLASS_STRUCTURE_NODE:
@@ -58,11 +60,11 @@ void *BoxType_Alloc(BoxType *t, BoxTypeClass tc) {
     return NULL;
   }
 
-  if (Box_Mem_Sum(& total, additional, sizeof(BoxTypeDesc))) {
+  if (Box_Mem_Sum(& total, data_offset, additional)) {
     BoxTypeDesc *td = BoxSPtr_Raw_Alloc(box_core_types.type_type, total);
     td->type_class = tc;
     *t = td;
-    return (void *) td + sizeof(BoxTypeDesc);
+    return & ((BoxTypeBundle *) td)->data;
   }   
 
   MSG_FATAL("Integer overflow in BoxType_Alloc");
@@ -73,7 +75,7 @@ void *BoxType_Alloc(BoxType *t, BoxTypeClass tc) {
  * a given type changes depending on the type class.
  */
 void *BoxType_Get_Data(BoxType t) {
-  return (void *) t + sizeof(BoxTypeDesc);
+  return & ((BoxTypeBundle *) t)->data;
 }
 
 /**
@@ -88,6 +90,7 @@ BoxTypeNode *MyType_Get_Node(BoxType t) {
   case BOXTYPECLASS_STRUCTURE_NODE:
     return & ((BoxTypeStructureNode *) td)->node;
   case BOXTYPECLASS_COMB_NODE: return & ((BoxTypeCombNode *) td)->node;
+  case BOXTYPECLASS_SUBTYPE_NODE: return & ((BoxTypeSubtypeNode *) td)->node;
   case BOXTYPECLASS_STRUCTURE: return & ((BoxTypeStructure *) td)->node;
   case BOXTYPECLASS_SPECIES: return & ((BoxTypeSpecies *) td)->node;
   default: return NULL;
@@ -153,6 +156,13 @@ static void MyType_Get_Refs(BoxType t, int *num_refs, BoxSPtr *refs,
     refs[2] = ((BoxTypeCombNode *) tdata)->callable;
     *num_refs = 3;
     return;
+  case BOXTYPECLASS_SUBTYPE_NODE:
+    refs[0] = ((BoxTypeSubtypeNode *) tdata)->node.next;
+    refs[1] = ((BoxTypeSubtypeNode *) tdata)->type;
+    *num_refs = 2;
+    mems[0] = ((BoxTypeSubtypeNode *) tdata)->name;
+    *num_mems = 1;
+    return;
   case BOXTYPECLASS_PRIMARY:
   case BOXTYPECLASS_INTRINSIC:
     return;
@@ -201,11 +211,6 @@ static BoxException *My_Type_Finish(BoxPtr *parent) {
   BoxType t = BoxPtr_Get_Target(parent);
   MyType_Get_Refs(t, & num_refs, refs, & num_mems, mems);
 
-  if (t->type_class == BOXTYPECLASS_IDENT) {
-    BoxTypeIdent *td = BoxType_Get_Data(t);
-    printf("Finalizing %s\n", td->name);
-  }
-
   for (i = 0; i < num_mems; i++)
     BoxMem_Free(mems[i]);
 
@@ -228,34 +233,6 @@ BoxBool Box_Register_Type_Combs(BoxCoreTypes *core_types) {
   BoxSPtr_Unlink(callable);
   return BOXBOOL_FALSE;
 }
-
-#if 0
-/* Unlink (remove a reference to) the given type. The memory for the type is
- * released if there are no references left to it.
- * XXX TODO: this is going to be obsolete. Remove it!
- */
-void BoxType_Unlink(BoxType t) {
-  if (t) {
-    if (BoxSPtr_Unlink_Begin(t)) {
-      /* The object is gonna die (just one ref count).  */
-
-      void *mems[BOX_MAX_NUM_MEMS_IN_TYPE];
-      BoxSPtr refs[BOX_MAX_NUM_REFS_IN_TYPE];
-      int num_refs, num_mems, i;
-
-      MyType_Get_Refs(t, & num_refs, refs, & num_mems, mems);
-
-      for (i = 0; i < num_mems; i++)
-        BoxMem_Free(mems[i]);
-
-      for (i = 0; i < num_refs; i++)
-        BoxType_Unlink(refs[i]);
-
-      BoxSPtr_Unlink_End(t);
-    }
-  }
-}
-#endif
 
 /* Add a reference to the given type. */
 BoxType BoxType_Link(BoxType t) {
@@ -338,6 +315,8 @@ BoxType BoxType_Create_Ident(BoxType source, const char *name) {
   ta->source = source;
   ta->combs.node.next = NULL;
   ta->combs.node.previous = NULL;
+  ta->subtypes.node.next = NULL;
+  ta->subtypes.node.previous = NULL;
   return t;
 }
 
@@ -741,7 +720,7 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
   case BOXTYPECLASS_PRIMARY:
     if (right->type_class == BOXTYPECLASS_PRIMARY) {
       BoxTypePrimary *ltd = BoxType_Get_Data(left),
-                     *rtd = BoxType_Get_Data(right);      
+                     *rtd = BoxType_Get_Data(right);
       return (ltd->id == rtd->id) ? BOXTYPECMP_EQUAL : BOXTYPECMP_DIFFERENT;
     }
 
