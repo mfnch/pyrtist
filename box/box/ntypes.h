@@ -32,6 +32,29 @@
 #  include <stdlib.h>
 
 #  include <box/callable.h>
+#  include <box/container.h>
+
+/**
+ * Type class (whether a type is a structure, a species, etc).
+ */
+typedef enum {
+  BOXTYPECLASS_NONE,
+  BOXTYPECLASS_STRUCTURE_NODE,
+  BOXTYPECLASS_SPECIES_NODE,
+  BOXTYPECLASS_ENUM_NODE,
+  BOXTYPECLASS_COMB_NODE,
+  BOXTYPECLASS_SUBTYPE_NODE,
+  BOXTYPECLASS_PRIMARY,
+  BOXTYPECLASS_INTRINSIC,
+  BOXTYPECLASS_IDENT,
+  BOXTYPECLASS_RAISED,
+  BOXTYPECLASS_STRUCTURE,
+  BOXTYPECLASS_SPECIES,
+  BOXTYPECLASS_ENUM,
+  BOXTYPECLASS_FUNCTION,
+  BOXTYPECLASS_POINTER,
+  BOXTYPECLASS_ANY,
+} BoxTypeClass;
 
 typedef struct BoxTypeDesc_struct BoxTypeDesc;
 
@@ -53,7 +76,7 @@ typedef enum {
   BOXTYPEID_REAL  = 2,
   BOXTYPEID_POINT = 3,
   BOXTYPEID_PTR   = 4,
-  BOXTYPEID_OBJ,
+  BOXTYPEID_OBJ   = 5,
   BOXTYPEID_VOID,
   BOXTYPEID_INIT,
   BOXTYPEID_FINISH,
@@ -117,6 +140,14 @@ typedef enum {
 /*****************************************************************************
  * TYPE CREATION ROUTINES                                                    *
  *****************************************************************************/
+
+/**
+ * Get the type class of a given type. The type class is effectively the
+ * type of type (the answer to whether the type is a struct, a species, etc.)
+ * @param t The input type.
+ * @return The type class of t.
+ */
+BoxTypeClass BoxType_Get_Class(BoxType t);
 
 /**
  * Get the data part of a type. The size and composition of the data type of
@@ -184,6 +215,15 @@ BoxType_Create_Ident(BoxType source, const char *name);
  */
 BOXEXPORT BoxType
 BoxType_Create_Raised(BoxType source);
+
+/**
+ * Uraise a raised type. For example, if r is the raised type of t, then
+ * BoxType_Unraise(r) returns t.
+ * @param raised A raised type.
+ * @return The unraised type.
+ */
+BOXEXPORT BoxType
+BoxType_Unraise(BoxType raised);
 
 /**
  * Create an empty structure. Members can be added with
@@ -482,5 +522,28 @@ BoxTypeIter_Get_Next(BoxTypeIter *ti, BoxType *next);
  */
 BOXEXPORT BoxBool
 BoxTypeIter_Has_Items(BoxTypeIter *ti);
+
+/**
+ * Get the stem type of a type.
+ * The stem type for a type t is the most basic type which can describe what is
+ * contained inside t. It is used by the compiler to determine how to handle
+ * the object (which type of register to use, for example).
+ * In practice, the stem type is obtained by resolving species, identifiers and
+ * raised types (with BoxType_Resolve).
+ * @param type The input type.
+ * @return The stem type of type (or NULL in case of failure).
+ */
+BOXEXPORT BoxType
+BoxType_Get_Stem(BoxType type);
+
+/**
+ * Get the container type associated with a given type.
+ * The container type is strictly related to the way the compiler handles types
+ * (e.g. register types).
+ * @param t The input type.
+ * @return The container of t.
+ */
+BOXEXPORT BoxContType
+BoxType_Get_Cont_Type(BoxType t);
 
 #endif /* _BOX_NTYPES_H */

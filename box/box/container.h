@@ -17,7 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file container.h
+/**
+ * @file container.h
  * @brief Generate the assembly code for expression manipulation.
  *
  * Some words.
@@ -37,7 +38,6 @@ typedef enum {
   BOXCONTCATEG_LREG = 1, /**< Local register (local to a procedure). */
   BOXCONTCATEG_PTR  = 2, /**< Pointer to region of memory. */
   BOXCONTCATEG_IMM  = 3  /**< Immediate value (integer, real, etc.) */
-
 } BoxContCateg;
 
 /** Enumeration of the possible types of operands. */
@@ -49,7 +49,6 @@ typedef enum {
   BOXCONTTYPE_PTR   = BOXTYPE_PTR,
   BOXCONTTYPE_OBJ   = BOXTYPE_OBJ,
   BOXCONTTYPE_VOID  = BOXTYPE_VOID
-
 } BoxContType;
 
 typedef struct {
@@ -69,12 +68,14 @@ typedef struct {
 } BoxCont;
 
 /** Convert a container type character to a proper BoxType */
-BoxContType BoxContType_From_Char(char type_char);
+BOXEXPORT BoxContType
+BoxContType_From_Char(char type_char);
 
 /** Convert a BoxType to a container type character (inverse of function
  * BoxContType_From_Char)
  */
-char BoxContType_To_Char(BoxType t);
+BOXEXPORT char
+BoxContType_To_Char(BoxContType t);
 
 /** Function to rapidly set the content of a container.
  * The cathegory and type of the container are specified through the string
@@ -94,9 +95,11 @@ char BoxContType_To_Char(BoxType t);
  * Note that for pointers, a third character can be used to specify that the
  * base pointer is a global (and not a local register).
  */
-void BoxCont_Set(BoxCont *c, const char *cont_type, ...);
+BOXEXPORT void
+BoxCont_Set(BoxCont *c, const char *cont_type, ...);
 
 /** Return the string representation of the given container */
-char *BoxCont_To_String(const BoxCont *c);
+BOXEXPORT char *
+BoxCont_To_String(const BoxCont *c);
 
 #endif /* _BOX_CONTAINER_H */
