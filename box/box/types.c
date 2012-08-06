@@ -71,6 +71,13 @@ void *BoxType_Alloc(BoxType *t, BoxTypeClass tc) {
   return NULL;
 }
 
+/* Get the type class of a given type. The type class is effectively the
+ * type of type (the answer to whether the type is a struct, a species, etc.)
+ */
+BoxTypeClass BoxType_Get_Class(BoxType type) {
+  return type->type_class;
+}
+
 /* Get the data part of a type. The size and composition of the data type of
  * a given type changes depending on the type class.
  */
@@ -322,9 +329,7 @@ BoxType BoxType_Create_Ident(BoxType source, const char *name) {
 
 /* Add a child type to the namespace of a parent type. */
 void BoxType_Add_Type(BoxType parent, BoxType child) {
-  
 }
-
 
 /* Create a new raised type. */
 BoxType BoxType_Create_Raised(BoxType source) {
@@ -332,6 +337,15 @@ BoxType BoxType_Create_Raised(BoxType source) {
   BoxTypeRaised *td = BoxType_Alloc(& t, BOXTYPECLASS_RAISED);
   td->source = source;
   return t;
+}
+
+/* Get the target type of a raised type. */
+BoxType BoxType_Unraise(BoxType raised) {
+  if (raised->type_class == BOXTYPECLASS_RAISED) {
+    BoxTypeRaised *td = BoxType_Get_Data(raised);
+    return td->source;
+  }
+  return NULL;
 }
 
 /* Create a new structure type. */
@@ -893,4 +907,34 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
     MSG_ERROR("TS_Compare: not fully implemented!");
     return BOXTYPECMP_DIFFERENT;
   }
+}
+
+/* Get the stem type of a type. */
+BoxType BoxType_Get_Stem(BoxType type) {
+  return BoxType_Resolve(type, BOXTYPERESOLVE_IDENT
+                               | BOXTYPERESOLVE_SPECIES
+                               | BOXTYPERESOLVE_RAISED, 0);
+}
+
+/* Get the container type associated with a given type.
+ * The container type is strictly related to the way the compiler handles types
+ * (e.g. register types).
+ */
+BoxContType BoxType_Get_Cont_Type(BoxType t) {
+  BoxType stem = BoxType_Get_Stem(t);
+
+  /* Char, Int, ... are V.I.P. objects which have their own container types. */
+  if (stem->type_class == BOXTYPECLASS_PRIMARY) {
+    BoxTypePrimary *td = BoxType_Get_Data(t);
+    BoxTypeId id = td->id;
+
+    /* Here we assume BoxTypeCont and BoxTypeId are defined consistently. */
+    if (id >= BOXTYPEID_CHAR && id <= BOXTYPEID_PTR)
+      return (BoxContType) id;
+    else
+      return (td->size != 0) ? BOXCONTTYPE_OBJ : BOXCONTTYPE_VOID;
+
+  } else
+    /* Whatever else is treated in the standard way. */
+    return BOXCONTTYPE_OBJ;
 }
