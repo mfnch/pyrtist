@@ -19,14 +19,13 @@
 import sys
 import optparse
 
-import info
-import config
+from lib.info import full_name
 
 option_parser = None
 
 def generate_option_parser():
   usage = ("boxer [options] [filename.box]") 
-  version = ("%s -- The Box Graphical User Interface\n" % info.full_name +
+  version = ("%s -- The Box Graphical User Interface\n" % full_name +
              "Copyright (C) 2010 Matteo Franchin\n")
 
   op = optparse.OptionParser(usage=usage, version=version)
@@ -55,8 +54,8 @@ def main(args):
     sys.stdout.write("WARNING: Boxer takes just one file from the command "
                      "line. Ignoring the files %s." % other_files)
 
-  import boxer
-  boxer.run(file_to_edit, box_exec=options.box_exec)
+  from lib.boxer import run
+  run(file_to_edit, box_exec=options.box_exec)
 
 if __name__ == "__main__":
   import sys
