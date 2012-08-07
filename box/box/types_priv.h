@@ -91,6 +91,7 @@ typedef struct BoxSubtypes_struct {
 typedef struct {
   BoxTypeNode node;
   char        *name;
+  BoxType     parent;
   BoxType     type;
   BoxSubtypes subtypes;
 } BoxTypeSubtypeNode;

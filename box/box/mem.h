@@ -36,11 +36,15 @@ typedef size_t BoxRefCount;
 BOXEXPORT size_t BoxMem_Size_Align(size_t n);
 
 /** Align the given offset to the next multiple of 'alignment'. */
-BOXEXPORT size_t BoxMem_Align_Offset(size_t offset, size_t alignment);
+BOXEXPORT size_t Box_Mem_Align_Offset(size_t offset, size_t alignment);
+
+#define BoxMem_Align_Offset Box_Mem_Align_Offset
 
 /** Increase the given 'size' so that it is multiple of 'alignment'. */
-#define BoxMem_Get_Multiple_Size(size, alignment) \
+#define Box_Mem_Get_Multiple_Size(size, alignment) \
   BoxMem_Align_Offset((size), (alignment))
+
+#define BoxMem_Get_Multiple_Size Box_Mem_Get_Multiple_Size
 
 BOXEXPORT void *Box_Mem_Alloc(size_t size);
 
@@ -56,9 +60,13 @@ BOXEXPORT void *BoxMem_Safe_Alloc(size_t size);
 
 BOXEXPORT void *BoxMem_Realloc(void *ptr, size_t size);
 
-BOXEXPORT void BoxMem_Free(void *ptr);
+BOXEXPORT void Box_Mem_Free(void *ptr);
 
-BOXEXPORT char *BoxMem_Strdup(const char *s);
+#define BoxMem_Free Box_Mem_Free
+
+BOXEXPORT char *Box_Mem_Strdup(const char *s);
+
+#define BoxMem_Strdup Box_Mem_Strdup
 
 BOXEXPORT char *BoxMem_Strndup(const char *s, size_t length);
 

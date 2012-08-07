@@ -32,9 +32,9 @@ void BoxStr_Init(BoxStr *s) {
 }
 
 void BoxStr_Finish(BoxStr *s) {
-  if (s->ptr != (char *) NULL) {
+  if (s->ptr != NULL) {
     BoxMem_Free(s->ptr);
-    s->ptr = (char *) NULL;
+    s->ptr = NULL;
     s->length = 0;
     s->buffer_size = 0;
   }

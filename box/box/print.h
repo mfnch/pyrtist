@@ -1,3 +1,4 @@
+
 /****************************************************************************
  * Copyright (C) 2008 by Matteo Franchin                                    *
  *                                                                          *
@@ -38,7 +39,8 @@
 /** To be called when exiting, to release the buffer allocated by print. */
 void Print_Finalize(void);
 
-/** A simplified version of sprintf, with a number of desirable features:
+/**
+ * A simplified version of sprintf, with a number of desirable features:
  * - handles memory in a nice way: the user does not need to allocate/free
  *   the memory or to worry about buffer overflow when using the %s
  *   specifier to write substrings. Usage is as follows:
@@ -46,14 +48,14 @@ void Print_Finalize(void);
  *       (No need to call the free(...) function. The user mustn't do it!)
  * - has %N to handle the Name data type.
  *   ES:
- *       Name my_name = {15, "Matteo Franchin"};
+ *       Name my_name = {15, "Hello world"};
  *       msg = print("My name is %N, nice to meet you!", & my_name);
  * - supports all the data types defined inside the header "types.h"
  *   the spefifiers are: %U for UInt, %I for Int, %R for Real,
  *   %P for (pointer to) Point
  * - has %~s to print a string and deallocate it with free(...).
  *   ES:
- *       msg = print("%~s", BoxMem_Strdup("allocated string"));
+ *       msg = Box_Print("%~s", BoxMem_Strdup("allocated string"));
  */
 BOXEXPORT const char *Box_Print(const char *fmt, ...);
 

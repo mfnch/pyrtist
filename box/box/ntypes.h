@@ -383,7 +383,9 @@ BoxType_Find_Subtype(BoxType parent, const char *name);
 /**
  * Get details about a subtype found with BoxType_Find_Combination.
  */
-BoxBool BoxType_Get_Subtype_Info(BoxType subtype, char **name, BoxType *type);
+BOXEXPORT BoxBool
+BoxType_Get_Subtype_Info(BoxType subtype, char **name,
+                         BoxType *parent, BoxType *type);
 
 /**
  * Register the type for a given subtype, if not given during creation.
@@ -545,5 +547,21 @@ BoxType_Get_Stem(BoxType type);
  */
 BOXEXPORT BoxContType
 BoxType_Get_Cont_Type(BoxType t);
+
+/**
+ * Return whether the type is a void type (contains nothing).
+ * @param t The input type.
+ * @return Whether t is an empty type.
+ */
+BOXEXPORT BoxBool BoxType_Is_Empty(BoxType t);
+
+/**
+ * Get a string representation of the given type.
+ * @param t The input type.
+ * @return A freshly allocated string containing the representation of t.
+ *   The string must be freed by the user with Box_Mem_Free.
+ */
+BOXEXPORT char *
+BoxType_Get_Repr(BoxType t);
 
 #endif /* _BOX_NTYPES_H */

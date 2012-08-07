@@ -45,7 +45,7 @@ BoxContType BoxContType_From_Char(char type_char) {
 /** Convert a BoxType to a container type character (inverse of function
  * BoxContType_From_Char)
  */
-char BoxContType_To_Char(BoxType t) {
+char BoxContType_To_Char(BoxContType t) {
   switch(t) {
   case BOXCONTTYPE_CHAR: return 'c';
   case BOXCONTTYPE_INT: return 'i';

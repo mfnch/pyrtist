@@ -4,6 +4,7 @@
 
 #include <box/types.h>
 #include <box/ntypes.h>
+#include <box/mem.h>
 #include <box/obj.h>
 #include <box/core.h>
 
@@ -81,6 +82,11 @@ My_Test_Compare_Structure(void) {
                                          "s12", BoxType_Link(t_real));
   BoxType s2 = My_Create_Tuple_Structure("s21", BoxType_Link(t_char),
                                          "s22", BoxType_Link(t_real));
+
+  char *xxx = BoxType_Get_Repr(s1);
+  printf("Type '%s'\n", xxx);
+  BoxMem_Free(xxx);
+
   BoxBool result = (s1
                     && (BoxType_Compare(s1, s2) == BOXTYPECMP_EQUAL)
                     && (BoxType_Compare(s1, t_char) == BOXTYPECMP_DIFFERENT));
