@@ -88,7 +88,7 @@ def installation_path():
     root = sys.argv[0] if platform_is_win_py2exe else __file__
     if os.path.islink(root):
       root = os.path.realpath(root)
-    return os.path.dirname(os.path.abspath(root))
+    return os.path.dirname(os.path.abspath(os.path.join(root, '..')))
   except:
     sys.stdout.write("Problem determining data installation path.\n")
     sys.exit()
