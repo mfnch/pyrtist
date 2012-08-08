@@ -47,7 +47,7 @@
  * List node (used in structures, enums, etc.)
  */
 typedef struct {
-  BoxType next, previous;
+  BoxXXXX *next, *previous;
 } BoxTypeNode;
 
 /**
@@ -91,8 +91,8 @@ typedef struct BoxSubtypes_struct {
 typedef struct {
   BoxTypeNode node;
   char        *name;
-  BoxType     parent;
-  BoxType     type;
+  BoxXXXX     *parent;
+  BoxXXXX     *type;
   BoxSubtypes subtypes;
 } BoxTypeSubtypeNode;
 
@@ -102,7 +102,7 @@ typedef struct {
  */
 typedef struct {
   char         *name;
-  BoxType      source;
+  BoxXXXX      *source;
   /*BoxNamespace namespace;*/
   BoxCombs     combs;
   BoxSubtypes  subtypes;
@@ -114,7 +114,7 @@ typedef struct {
  * is raised can be un-raised, e.g. transformed to object of the original type.
  */
 typedef struct {
-  BoxType source;
+  BoxXXXX *source;
 } BoxTypeRaised;
 
 /**
@@ -136,7 +136,7 @@ typedef struct {
   char        *name;
   size_t      offset,
               size;
-  BoxType     type;
+  BoxXXXX     *type;
 } BoxTypeStructureNode;
 
 /**
@@ -152,7 +152,7 @@ typedef struct {
  */
 typedef struct {
   BoxTypeNode node;
-  BoxType     type;
+  BoxXXXX     *type;
 } BoxTypeSpeciesNode;
 
 /**
@@ -160,7 +160,7 @@ typedef struct {
  */
 typedef struct {
   BoxTypeNode node;
-  BoxType     child;
+  BoxXXXX     *child;
   BoxCombType comb_type;
   BoxCallable *callable;
 } BoxTypeCombNode;
@@ -170,15 +170,15 @@ typedef struct {
  * and returns an output.
  */
 typedef struct {
-  BoxType child,
-          parent;
+  BoxXXXX *child,
+          *parent;
 } BoxTypeFunction;
 
 /**
  * Pointer type.
  */
 typedef struct {
-  BoxType source;
+  BoxXXXX *source;
 } BoxTypePointer;
 
 struct BoxTypeDesc_struct {
@@ -225,20 +225,20 @@ BoxBool Box_Register_Type_Combs(BoxCoreTypes *core_types);
  * particular type class.
  * This is an internal function of the type system.
  */
-void *BoxType_Alloc(BoxType *t, BoxTypeClass tc);
+void *BoxType_Alloc(BoxXXXX **t, BoxTypeClass tc);
 
 /**
  * Append one BoxTypeNode item to a top BoxTypeNode item. This is used
  * internally in the implementation of structures, enums, etc. to add members.
  * This is an internal function of the type system.
  */
-void BoxTypeNode_Append_Node(BoxTypeNode *node, BoxType item);
+void BoxTypeNode_Append_Node(BoxTypeNode *node, BoxXXXX *item);
 
 /**
  * Prepend one BoxTypeNode item to a top BoxTypeNode item. This is similar
  * to BoxTypeNode_Append_Node, but the item is inserted at the other end of
  * the linked list.
  */
-void BoxTypeNode_Prepend_Node(BoxTypeNode *node, BoxType item);
+void BoxTypeNode_Prepend_Node(BoxTypeNode *node, BoxXXXX *item);
 
 #endif /* _BOX_TYPES_PRIV_H */

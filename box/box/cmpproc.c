@@ -434,9 +434,9 @@ static BoxInt My_Int_Val_From_Cont(const BoxCont *c) {
 
   else {
     if (c->type == BOXCONTTYPE_CHAR)
-      return (Int) c->value.imm.boxchar;
+      return (Int) c->value.imm.box_char;
     else if (c->type == BOXCONTTYPE_INT)
-      return c->value.imm.boxint;
+      return c->value.imm.box_int;
     assert(0);
   }
 }
@@ -471,16 +471,16 @@ static void My_Unsafe_Assemble(CmpProc *p, BoxOp op,
     } else {
       switch(c1->type) {
       case BOXCONTTYPE_CHAR:
-        CmpProc_Raw_Assemble(p, op, c1->categ, c1->value.imm.boxchar);
+        CmpProc_Raw_Assemble(p, op, c1->categ, c1->value.imm.box_char);
         return;
       case BOXCONTTYPE_INT:
-        CmpProc_Raw_Assemble(p, op, c1->categ, c1->value.imm.boxint);
+        CmpProc_Raw_Assemble(p, op, c1->categ, c1->value.imm.box_int);
         return;
       case BOXCONTTYPE_REAL:
-        CmpProc_Raw_Assemble(p, op, c1->categ, c1->value.imm.boxreal);
+        CmpProc_Raw_Assemble(p, op, c1->categ, c1->value.imm.box_real);
         return;
       case BOXCONTTYPE_POINT:
-        CmpProc_Raw_Assemble(p, op, c1->categ, c1->value.imm.boxpoint);
+        CmpProc_Raw_Assemble(p, op, c1->categ, c1->value.imm.box_point);
         return;
       default:
         MSG_FATAL("My_Unsafe_Assemble: invalid type for immediate.");
@@ -508,19 +508,19 @@ static void My_Unsafe_Assemble(CmpProc *p, BoxOp op,
       switch(c1->type) {
       case BOXCONTTYPE_CHAR:
         CmpProc_Raw_Assemble(p, op, c1->categ, c1_int_val,
-                             c2->categ, c2->value.imm.boxchar);
+                             c2->categ, c2->value.imm.box_char);
         return;
       case BOXCONTTYPE_INT:
         CmpProc_Raw_Assemble(p, op, c1->categ, c1_int_val,
-                             c2->categ, c2->value.imm.boxint);
+                             c2->categ, c2->value.imm.box_int);
         return;
       case BOXCONTTYPE_REAL:
         CmpProc_Raw_Assemble(p, op, c1->categ, c1_int_val,
-                             c2->categ, c2->value.imm.boxreal);
+                             c2->categ, c2->value.imm.box_real);
         return;
       case BOXCONTTYPE_POINT:
         CmpProc_Raw_Assemble(p, op, c1->categ, c1_int_val,
-                             c2->categ, c2->value.imm.boxpoint);
+                             c2->categ, c2->value.imm.box_point);
         return;
       default:
         MSG_FATAL("My_Unsafe_Assemble: invalid type for immediate.");

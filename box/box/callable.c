@@ -19,9 +19,8 @@
 
 #include <assert.h>
 
-#include <box/types.h>
 #include <box/ntypes.h>
-#include <box/core.h>
+#include <box/core_priv.h>
 #include <box/obj.h>
 #include <box/callable.h>
 

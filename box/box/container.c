@@ -105,13 +105,13 @@ void BoxCont_Set(BoxCont *c, const char *cont_type, ...) {
   /* We should not return without calling va_end! */
   switch(action) {
   case READ_CHAR:
-    c->value.imm.boxchar = (Char) va_arg(ap, Int); break;
+    c->value.imm.box_char = (Char) va_arg(ap, Int); break;
   case READ_INT:
-    c->value.imm.boxint = va_arg(ap, Int); break;
+    c->value.imm.box_int = va_arg(ap, Int); break;
   case READ_REAL:
-    c->value.imm.boxreal = va_arg(ap, Real); break;
+    c->value.imm.box_real = va_arg(ap, Real); break;
   case READ_POINT:
-    c->value.imm.boxpoint = va_arg(ap, Point); break;
+    c->value.imm.box_point = va_arg(ap, Point); break;
   case READ_REG:
     c->value.reg = va_arg(ap, Int); break;
   case READ_PTR:

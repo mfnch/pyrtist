@@ -19,13 +19,12 @@
 
 #include <assert.h>
 
-#include <box/types.h>
 #include <box/types_priv.h>
 #include <box/messages.h>
 
 
 /* Get the iterator over the combinations of the given identifier type. */
-BoxBool BoxType_Get_Combinations(BoxType ident, BoxTypeIter *iter) {
+BoxBool BoxType_Get_Combinations(BoxXXXX *ident, BoxTypeIter *iter) {
   if (ident->type_class == BOXTYPECLASS_IDENT) {
     BoxTypeIdent *td = BoxType_Get_Data(ident);
     iter->current_node = td->combs.node.next;
@@ -37,13 +36,13 @@ BoxBool BoxType_Get_Combinations(BoxType ident, BoxTypeIter *iter) {
 
 /* Define a combination 'child'@'parent' and associate an action to it. */
 BoxBool
-BoxType_Define_Combination(BoxType parent, BoxCombType type, BoxType child,
+BoxType_Define_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
                            BoxCallable *callable) {
   if (parent->type_class == BOXTYPECLASS_IDENT) {
     BoxTypeIdent *pd = BoxType_Get_Data(parent);
 
     /* Create the node. */
-    BoxType comb_node;
+    BoxXXXX *comb_node;
     BoxTypeCombNode *cn = BoxType_Alloc(& comb_node, BOXTYPECLASS_COMB_NODE);
     cn->comb_type = type;
     cn->child = BoxType_Link(child);
@@ -59,12 +58,12 @@ BoxType_Define_Combination(BoxType parent, BoxCombType type, BoxType child,
 }
 
 /* Find the procedure 'left'@'right' */
-BoxType
-BoxType_Find_Combination(BoxType parent, BoxCombType type, BoxType child,
+BoxXXXX *
+BoxType_Find_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
                          BoxTypeCmp *expand) {
   BoxTypeIter ti;
   if (BoxType_Get_Combinations(parent, & ti)) {
-    BoxType t;
+    BoxXXXX *t;
     for (; BoxTypeIter_Get_Next(& ti, & t);) {
       BoxTypeCombNode *node = BoxType_Get_Data(t);
       assert(t->type_class == BOXTYPECLASS_COMB_NODE);
@@ -82,8 +81,8 @@ BoxType_Find_Combination(BoxType parent, BoxCombType type, BoxType child,
   return NULL;
 }
 
-BoxType
-BoxType_Find_Combination_With_Id(BoxType parent, BoxCombType type,
+BoxXXXX *
+BoxType_Find_Combination_With_Id(BoxXXXX *parent, BoxCombType type,
                                  BoxTypeId child_id, BoxTypeCmp *expand) {
   /* Quick hack: we should do this better!
    * This code relies on BoxType_Find_Combination not trying to link or
@@ -92,12 +91,12 @@ BoxType_Find_Combination_With_Id(BoxType parent, BoxCombType type,
   BoxTypeBundle child;
   child.header.type_class = BOXTYPECLASS_PRIMARY;
   child.data.primary.id = child_id;
-  return BoxType_Find_Combination(parent, type, (BoxType) & child, expand);
+  return BoxType_Find_Combination(parent, type, (BoxXXXX *) & child, expand);
 }
 
 /* Get details about a combination found with BoxType_Find_Combination. */
 BoxBool
-BoxType_Get_Combination_Info(BoxType comb, BoxType *child,
+BoxType_Get_Combination_Info(BoxXXXX *comb, BoxXXXX **child,
                              BoxCallable **callable) {
   if (comb->type_class == BOXTYPECLASS_COMB_NODE) {
     BoxTypeCombNode *td = BoxType_Get_Data(comb);

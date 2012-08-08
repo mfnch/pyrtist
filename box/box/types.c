@@ -22,7 +22,6 @@
 #include <string.h>
 #include <stddef.h>
 
-#include <box/types.h>
 #include <box/ntypes.h>
 #include <box/types_priv.h>
 
@@ -30,14 +29,13 @@
 #include <box/mem.h>
 #include <box/obj.h>
 #include <box/callable.h>
-#include <box/core.h>
-
+#include <box/core_priv.h>
 
 /* Generic allocation function for BoxType objects. This function allocates a
  * type header plus a the type data, whose size and composition depend on the
  * particular type class.
  */
-void *BoxType_Alloc(BoxType *t, BoxTypeClass tc) {
+void *BoxType_Alloc(BoxXXXX **t, BoxTypeClass tc) {
   size_t additional = 0, total;
   size_t data_offset = offsetof(BoxTypeBundle, data);
 
@@ -74,14 +72,14 @@ void *BoxType_Alloc(BoxType *t, BoxTypeClass tc) {
 /* Get the type class of a given type. The type class is effectively the
  * type of type (the answer to whether the type is a struct, a species, etc.)
  */
-BoxTypeClass BoxType_Get_Class(BoxType type) {
+BoxTypeClass BoxType_Get_Class(BoxXXXX *type) {
   return type->type_class;
 }
 
 /* Get the data part of a type. The size and composition of the data type of
  * a given type changes depending on the type class.
  */
-void *BoxType_Get_Data(BoxType t) {
+void *BoxType_Get_Data(BoxXXXX *t) {
   return & ((BoxTypeBundle *) t)->data;
 }
 
@@ -89,7 +87,7 @@ void *BoxType_Get_Data(BoxType t) {
  * Return the BoxTypeNode object associated to a node type or NULL, if the
  * given type is not a node type.
  */
-BoxTypeNode *MyType_Get_Node(BoxType t) {
+BoxTypeNode *MyType_Get_Node(BoxXXXX *t) {
   void *td = BoxType_Get_Data(t);
   switch (t->type_class) {
   case BOXTYPECLASS_SPECIES_NODE:
@@ -129,12 +127,12 @@ BoxTypeNode *MyType_Get_Node(BoxType t) {
  * Example:
  * @code
  * void *mems[BOX_MAX_NUM_MEMS_IN_TYPE];
- * BoxType refs[BOX_MAX_NUM_REFS_IN_TYPE];
+ * BoxXXXX *refs[BOX_MAX_NUM_REFS_IN_TYPE];
  * int num_refs, num_mems;
  * MyType_Get_Refs(type, & num_refs, refs, & num_mems, mems);
  * @endcode
  */
-static void MyType_Get_Refs(BoxType t, int *num_refs, BoxSPtr *refs,
+static void MyType_Get_Refs(BoxXXXX *t, int *num_refs, BoxSPtr *refs,
                             int *num_mems, void **mems) {
   void *tdata = BoxType_Get_Data(t);
 
@@ -215,7 +213,7 @@ static BoxException *My_Type_Finish(BoxPtr *parent) {
   BoxSPtr refs[BOX_MAX_NUM_REFS_IN_TYPE];
   int num_refs, num_mems, i;
 
-  BoxType t = BoxPtr_Get_Target(parent);
+  BoxXXXX *t = BoxPtr_Get_Target(parent);
   MyType_Get_Refs(t, & num_refs, refs, & num_mems, mems);
 
   for (i = 0; i < num_mems; i++)
@@ -242,14 +240,14 @@ BoxBool Box_Register_Type_Combs(BoxCoreTypes *core_types) {
 }
 
 /* Add a reference to the given type. */
-BoxType BoxType_Link(BoxType t) {
+BoxXXXX *BoxType_Link(BoxXXXX *t) {
   return BoxSPtr_Link(t);
 }
 
 /* Append one BoxTypeNode item to a top BoxTypeNode item. This is used in
  * structures, enums, etc. to add members.
  */
-void BoxTypeNode_Append_Node(BoxTypeNode *top_node, BoxType item) {
+void BoxTypeNode_Append_Node(BoxTypeNode *top_node, BoxXXXX *item) {
   BoxTypeNode *item_node = MyType_Get_Node(item);
   assert(top_node && item_node);
 
@@ -274,7 +272,7 @@ void BoxTypeNode_Append_Node(BoxTypeNode *top_node, BoxType item) {
  * to BoxTypeNode_Append_Node, but the item is inserted at the other end of
  * the linked list.
  */
-void BoxTypeNode_Prepend_Node(BoxTypeNode *top_node, BoxType item) {
+void BoxTypeNode_Prepend_Node(BoxTypeNode *top_node, BoxXXXX *item) {
   BoxTypeNode *item_node = MyType_Get_Node(item);
   assert(top_node && item_node);
 
@@ -296,8 +294,8 @@ void BoxTypeNode_Prepend_Node(BoxTypeNode *top_node, BoxType item) {
 }
 
 /* Create a new primary type with the given id, size and alignment. */
-BoxType BoxType_Create_Primary(BoxTypeId id, size_t size, size_t alignment) {
-  BoxType t;
+BoxXXXX *BoxType_Create_Primary(BoxTypeId id, size_t size, size_t alignment) {
+  BoxXXXX *t;
   BoxTypePrimary *td = BoxType_Alloc(& t, BOXTYPECLASS_PRIMARY);
   td->id = id;
   td->size = size;
@@ -306,8 +304,8 @@ BoxType BoxType_Create_Primary(BoxTypeId id, size_t size, size_t alignment) {
 }
 
 /* Create a new intrinsic type with the given size and alignment. */
-BoxType BoxType_Create_Intrinsic(size_t size, size_t alignment) {
-  BoxType t;
+BoxXXXX *BoxType_Create_Intrinsic(size_t size, size_t alignment) {
+  BoxXXXX *t;
   BoxTypeIntrinsic *ti = BoxType_Alloc(& t, BOXTYPECLASS_INTRINSIC);
   ti->size = size;
   ti->alignment = alignment;  
@@ -315,8 +313,8 @@ BoxType BoxType_Create_Intrinsic(size_t size, size_t alignment) {
 }
 
 /* Create a new identifier type. */
-BoxType BoxType_Create_Ident(BoxType source, const char *name) {
-  BoxType t;
+BoxXXXX *BoxType_Create_Ident(BoxXXXX *source, const char *name) {
+  BoxXXXX *t;
   BoxTypeIdent *ta = BoxType_Alloc(& t, BOXTYPECLASS_IDENT);
   ta->name = Box_Mem_Strdup(name);
   ta->source = source;
@@ -328,19 +326,19 @@ BoxType BoxType_Create_Ident(BoxType source, const char *name) {
 }
 
 /* Add a child type to the namespace of a parent type. */
-void BoxType_Add_Type(BoxType parent, BoxType child) {
+void BoxType_Add_Type(BoxXXXX *parent, BoxXXXX *child) {
 }
 
 /* Create a new raised type. */
-BoxType BoxType_Create_Raised(BoxType source) {
-  BoxType t;
+BoxXXXX *BoxType_Create_Raised(BoxXXXX *source) {
+  BoxXXXX *t;
   BoxTypeRaised *td = BoxType_Alloc(& t, BOXTYPECLASS_RAISED);
   td->source = source;
   return t;
 }
 
 /* Get the target type of a raised type. */
-BoxType BoxType_Unraise(BoxType raised) {
+BoxXXXX *BoxType_Unraise(BoxXXXX *raised) {
   if (raised->type_class == BOXTYPECLASS_RAISED) {
     BoxTypeRaised *td = BoxType_Get_Data(raised);
     return td->source;
@@ -349,8 +347,8 @@ BoxType BoxType_Unraise(BoxType raised) {
 }
 
 /* Create a new structure type. */
-BoxType BoxType_Create_Structure(void) {
-  BoxType t;
+BoxXXXX *BoxType_Create_Structure(void) {
+  BoxXXXX *t;
   BoxTypeStructure *td = BoxType_Alloc(& t, BOXTYPECLASS_STRUCTURE);
   td->size = 0;
   td->alignment = 0;
@@ -361,9 +359,9 @@ BoxType BoxType_Create_Structure(void) {
 }
 
 /* Add a member to a structure type defined with BoxType_Create_Structure. */
-void BoxType_Add_Member_To_Structure(BoxType structure, BoxType member,
+void BoxType_Add_Member_To_Structure(BoxXXXX *structure, BoxXXXX *member,
                                      const char *member_name) {
-  BoxType t;
+  BoxXXXX *t;
   size_t msize, malgn, ssize;
   BoxTypeStructure *std = BoxType_Get_Data(structure);
   BoxTypeStructureNode *td;
@@ -404,8 +402,8 @@ void BoxType_Add_Member_To_Structure(BoxType structure, BoxType member,
  * BoxTypeIter_Get_Next.
  */
 BoxBool
-BoxType_Get_Structure_Member(BoxType node, char **name, size_t *offset,
-                             size_t *size, BoxType *type) {
+BoxType_Get_Structure_Member(BoxXXXX *node, char **name, size_t *offset,
+                             size_t *size, BoxXXXX **type) {
   if (node->type_class == BOXTYPECLASS_STRUCTURE_NODE) {
     BoxTypeStructureNode *sn = BoxType_Get_Data(node);
 
@@ -425,8 +423,8 @@ BoxType_Get_Structure_Member(BoxType node, char **name, size_t *offset,
 }
 
 /* Get the type of a structure member obtained from BoxTypeIter_Get_Next. */
-BoxType BoxType_Get_Structure_Member_Type(BoxType node) {
-  BoxType t;
+BoxXXXX *BoxType_Get_Structure_Member_Type(BoxXXXX *node) {
+  BoxXXXX *t;
 
   if (BoxType_Get_Structure_Member(node, NULL, NULL, NULL, & t))
     return t;
@@ -435,9 +433,9 @@ BoxType BoxType_Get_Structure_Member_Type(BoxType node) {
 }
 
 /* Get the type of a species member as obtained from BoxTypeIter_Get_Next. */
-BoxType BoxType_Find_Structure_Member(BoxType s, const char *name) {
+BoxXXXX *BoxType_Find_Structure_Member(BoxXXXX *s, const char *name) {
   BoxTypeIter ti;
-  BoxType t;
+  BoxXXXX *t;
   char *member_name = NULL;
 
   for (BoxTypeIter_Init(& ti, s); BoxTypeIter_Get_Next(& ti, & t);) {
@@ -453,7 +451,7 @@ BoxType BoxType_Find_Structure_Member(BoxType s, const char *name) {
 }
 
 /* Get the number of members of a structure. */
-size_t BoxType_Get_Structure_Num_Members(BoxType t) {
+size_t BoxType_Get_Structure_Num_Members(BoxXXXX *t) {
   if (t->type_class == BOXTYPECLASS_STRUCTURE_NODE) {
     BoxTypeStructure *s = BoxType_Get_Data(t);
     return s->num_items;
@@ -464,7 +462,7 @@ size_t BoxType_Get_Structure_Num_Members(BoxType t) {
 
 /* Get information on a species member as obtained from BoxTypeIter_Get_Next.
  */
-BoxType BoxType_Get_Species_Member_Type(BoxType node) {
+BoxXXXX *BoxType_Get_Species_Member_Type(BoxXXXX *node) {
   if (node->type_class == BOXTYPECLASS_SPECIES_NODE) {
     BoxTypeStructureNode *sn = BoxType_Get_Data(node);
     return sn->type;
@@ -474,8 +472,8 @@ BoxType BoxType_Get_Species_Member_Type(BoxType node) {
 }
 
 /* Create a new species type. */
-BoxType BoxType_Create_Species(void) {
-  BoxType t;
+BoxXXXX *BoxType_Create_Species(void) {
+  BoxXXXX *t;
   BoxTypeSpecies *td = BoxType_Alloc(& t, BOXTYPECLASS_SPECIES);
   td->num_items = 0;
   td->node.next = NULL;
@@ -484,8 +482,8 @@ BoxType BoxType_Create_Species(void) {
 }
 
 /* Add a member to a species type defined with BoxType_Create_Species. */
-void BoxType_Add_Member_To_Species(BoxType species, BoxType member) {
-  BoxType t;
+void BoxType_Add_Member_To_Species(BoxXXXX *species, BoxXXXX *member) {
+  BoxXXXX *t;
   size_t msize, malgn;
   BoxTypeSpecies *std = BoxType_Get_Data(species);
   BoxTypeSpeciesNode *td;
@@ -505,8 +503,8 @@ void BoxType_Add_Member_To_Species(BoxType species, BoxType member) {
 }
 
 /* Create a new function type. */
-BoxType BoxType_Create_Function(BoxType child, BoxType parent) {
-  BoxType t;
+BoxXXXX *BoxType_Create_Function(BoxXXXX *child, BoxXXXX *parent) {
+  BoxXXXX *t;
   BoxTypeFunction *td = BoxType_Alloc(& t, BOXTYPECLASS_FUNCTION);
   td->child = child;
   td->parent = parent;
@@ -514,16 +512,16 @@ BoxType BoxType_Create_Function(BoxType child, BoxType parent) {
 }
 
 /* Create a new pointer type. */
-BoxType BoxType_Create_Pointer(BoxType source) {
-  BoxType t;
+BoxXXXX *BoxType_Create_Pointer(BoxXXXX *source) {
+  BoxXXXX *t;
   BoxTypePointer *td = BoxType_Alloc(& t, BOXTYPECLASS_POINTER);
   td->source = source;
   return t;
 }
 
 /* Create a new pointer type. */
-BoxType BoxType_Create_Any(void) {
-  BoxType t;
+BoxXXXX *BoxType_Create_Any(void) {
+  BoxXXXX *t;
   (void) BoxType_Alloc(& t, BOXTYPECLASS_ANY);
   return t;
 }
@@ -534,7 +532,7 @@ BoxType BoxType_Create_Any(void) {
  * @param iter A pointer where to store the iterator.
  * @return BOXBOOL_TRUE for success, BOXTYPE_FALSE for failure.
  */
-BoxBool BoxType_Get_Subtypes(BoxType type, BoxTypeIter *iter) {
+BoxBool BoxType_Get_Subtypes(BoxXXXX *type, BoxTypeIter *iter) {
   if (type->type_class == BOXTYPECLASS_IDENT) {
     BoxTypeIdent *td = BoxType_Get_Data(type);
     iter->current_node = td->subtypes.node.next;
@@ -550,11 +548,11 @@ BoxBool BoxType_Get_Subtypes(BoxType type, BoxTypeIter *iter) {
 }
 
 /* Add a subtype type for a given type. */
-BoxType BoxType_Create_Subtype(BoxType parent, const char *name,
-                               BoxType type) {
+BoxXXXX *BoxType_Create_Subtype(BoxXXXX *parent, const char *name,
+                                BoxXXXX *type) {
   if (parent->type_class == BOXTYPECLASS_IDENT) {
     BoxTypeIdent *id = BoxType_Get_Data(parent);
-    BoxType sn;
+    BoxXXXX *sn;
     BoxTypeSubtypeNode *sd = BoxType_Alloc(& sn, BOXTYPECLASS_SUBTYPE_NODE);
  
     sd->name = Box_Mem_Strdup(name);
@@ -568,10 +566,10 @@ BoxType BoxType_Create_Subtype(BoxType parent, const char *name,
 }
 
 /* Find a subtype of the given type. */
-BoxType BoxType_Find_Subtype(BoxType parent, const char *name) {
+BoxXXXX *BoxType_Find_Subtype(BoxXXXX *parent, const char *name) {
   BoxTypeIter ti;
   if (BoxType_Get_Subtypes(parent, & ti)) {
-    BoxType t;
+    BoxXXXX *t;
     for (; BoxTypeIter_Get_Next(& ti, & t);) {
       BoxTypeSubtypeNode *node = BoxType_Get_Data(t);
       assert(t->type_class == BOXTYPECLASS_SUBTYPE_NODE);
@@ -584,8 +582,8 @@ BoxType BoxType_Find_Subtype(BoxType parent, const char *name) {
 }
 
 /* Get details about a combination found with BoxType_Find_Combination. */
-BoxBool BoxType_Get_Subtype_Info(BoxType subtype, char **name,
-                                 BoxType *parent, BoxType *type) {
+BoxBool BoxType_Get_Subtype_Info(BoxXXXX *subtype, char **name,
+                                 BoxXXXX **parent, BoxXXXX **type) {
   if (subtype->type_class == BOXTYPECLASS_SUBTYPE_NODE) {
     BoxTypeSubtypeNode *td = BoxType_Get_Data(subtype);
     if (name)
@@ -600,7 +598,7 @@ BoxBool BoxType_Get_Subtype_Info(BoxType subtype, char **name,
 }
 
 /* Register the type for a given subtype, if not given during creation. */
-BoxBool BoxType_Register_Subtype(BoxType subtype, BoxType type) {
+BoxBool BoxType_Register_Subtype(BoxXXXX *subtype, BoxXXXX *type) {
   if (subtype->type_class == BOXTYPECLASS_SUBTYPE_NODE) {
     BoxTypeSubtypeNode *td = BoxType_Get_Data(subtype);
     if (td->type != NULL)
@@ -612,7 +610,7 @@ BoxBool BoxType_Register_Subtype(BoxType subtype, BoxType type) {
 }
 
 /* Get the size of the type 't'. */
-size_t BoxType_Get_Size(BoxType t) {
+size_t BoxType_Get_Size(BoxXXXX *t) {
   size_t size;
   if (BoxType_Get_Size_And_Alignment(t, & size, NULL))
     return size;
@@ -621,7 +619,8 @@ size_t BoxType_Get_Size(BoxType t) {
 }
 
 /* Get the size and the aligment of a given type. */
-BoxBool BoxType_Get_Size_And_Alignment(BoxType t, size_t *size, size_t *algn) {
+BoxBool
+BoxType_Get_Size_And_Alignment(BoxXXXX *t, size_t *size, size_t *algn) {
   size_t dummy;
 
   if (!size)
@@ -699,7 +698,7 @@ BoxBool BoxType_Get_Size_And_Alignment(BoxType t, size_t *size, size_t *algn) {
 }
 
 /* Resolve the given type. */
-BoxType BoxType_Resolve(BoxType t, BoxTypeResolve resolve, int num) {
+BoxXXXX *BoxType_Resolve(BoxXXXX *t, BoxTypeResolve resolve, int num) {
   if (!t)
     return t;
 
@@ -759,7 +758,7 @@ BoxType BoxType_Resolve(BoxType t, BoxTypeResolve resolve, int num) {
 }
 
 /* Initialize an iterator for iteration over the members of the given type. */
-void BoxTypeIter_Init(BoxTypeIter *ti, BoxType t) {
+void BoxTypeIter_Init(BoxTypeIter *ti, BoxXXXX *t) {
   if (t) {
     BoxTypeNode *node = MyType_Get_Node(t);
     if (node) {
@@ -775,7 +774,7 @@ void BoxTypeIter_Init(BoxTypeIter *ti, BoxType t) {
  * a next member, then ``*next`` is set to it and BOXBOOL_TRUE is returned.
  * BOXBOOL_FALSE is returned otherwise.
  */
-BoxBool BoxTypeIter_Get_Next(BoxTypeIter *ti, BoxType *next) {
+BoxBool BoxTypeIter_Get_Next(BoxTypeIter *ti, BoxXXXX **next) {
   if (ti && ti->current_node) {
     BoxTypeNode *node = MyType_Get_Node(ti->current_node);
     *next = ti->current_node;
@@ -794,7 +793,7 @@ BoxBool BoxTypeIter_Has_Items(BoxTypeIter *ti) {
 }
 
 /* Type comparison function. */
-BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
+BoxTypeCmp BoxType_Compare(BoxXXXX *left, BoxXXXX *right) {
   if (left == right)
     return BOXTYPECMP_SAME;
 
@@ -836,10 +835,10 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
   case BOXTYPECLASS_SPECIES:
   {
     BoxTypeIter iter;
-    BoxType node;
+    BoxXXXX *node;
     for (BoxTypeIter_Init(& iter, left);
          BoxTypeIter_Get_Next(& iter, & node);) {
-      BoxType memb = BoxType_Get_Species_Member_Type(node);
+      BoxXXXX *memb = BoxType_Get_Species_Member_Type(node);
       
       if (BoxType_Compare(memb, right) != BOXTYPECMP_DIFFERENT) {
         if (BoxTypeIter_Has_Items(& iter))
@@ -865,7 +864,7 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
      */
     if (left->type_class == right->type_class) {
       BoxTypeIter liter, riter;
-      BoxType lnode, rnode;
+      BoxXXXX *lnode, *rnode;
       
       BoxTypeIter_Init(& liter, left);
       BoxTypeIter_Init(& riter, right);
@@ -876,8 +875,8 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
 
         for (; (BoxTypeIter_Get_Next(& liter, & lnode)
                 && BoxTypeIter_Get_Next(& riter, & rnode)); ) {
-          BoxType lmemb = BoxType_Get_Structure_Member_Type(lnode),
-                  rmemb = BoxType_Get_Structure_Member_Type(rnode);
+          BoxXXXX *lmemb = BoxType_Get_Structure_Member_Type(lnode),
+                  *rmemb = BoxType_Get_Structure_Member_Type(rnode);
 
           ret &= BoxType_Compare(lmemb, rmemb);
           if (ret == BOXTYPECMP_DIFFERENT)
@@ -913,7 +912,7 @@ BoxTypeCmp BoxType_Compare(BoxType left, BoxType right) {
 }
 
 /* Get the stem type of a type. */
-BoxType BoxType_Get_Stem(BoxType type) {
+BoxXXXX *BoxType_Get_Stem(BoxXXXX *type) {
   return BoxType_Resolve(type, BOXTYPERESOLVE_IDENT
                                | BOXTYPERESOLVE_SPECIES
                                | BOXTYPERESOLVE_RAISED, 0);
@@ -923,8 +922,8 @@ BoxType BoxType_Get_Stem(BoxType type) {
  * The container type is strictly related to the way the compiler handles types
  * (e.g. register types).
  */
-BoxContType BoxType_Get_Cont_Type(BoxType t) {
-  BoxType stem = BoxType_Get_Stem(t);
+BoxContType BoxType_Get_Cont_Type(BoxXXXX *t) {
+  BoxXXXX *stem = BoxType_Get_Stem(t);
 
   /* Char, Int, ... are V.I.P. objects which have their own container types. */
   if (stem->type_class == BOXTYPECLASS_PRIMARY) {
@@ -943,12 +942,12 @@ BoxContType BoxType_Get_Cont_Type(BoxType t) {
 }
 
 /* Whether the type is a void type (contains nothing). */
-BoxBool BoxType_Is_Empty(BoxType t) {
+BoxBool BoxType_Is_Empty(BoxXXXX *t) {
   return (BoxType_Get_Size(t) == 0);
 }
 
 /* Get a string representation of the given type. */
-char *BoxType_Get_Repr(BoxType t) {
+char *BoxType_Get_Repr(BoxXXXX *t) {
   switch (t->type_class) {
   case BOXTYPECLASS_STRUCTURE_NODE:
   case BOXTYPECLASS_SPECIES_NODE:
@@ -986,11 +985,11 @@ char *BoxType_Get_Repr(BoxType t) {
     {
       char *str = NULL;
       BoxTypeIter iter;
-      BoxType node;
+      BoxXXXX *node;
 
       for (BoxTypeIter_Init(& iter, t);
            BoxTypeIter_Get_Next(& iter, & node);) {
-        BoxType memb_type = BoxType_Get_Species_Member_Type(node);
+        BoxXXXX *memb_type = BoxType_Get_Species_Member_Type(node);
         char *memb_repr;
 
         memb_repr = (memb_type
@@ -1007,13 +1006,13 @@ char *BoxType_Get_Repr(BoxType t) {
     {
       char *str = NULL;
       BoxTypeIter iter;
-      BoxType node, prev_type;
+      BoxXXXX *node, *prev_type;
       BoxBool has_prev_type = BOXBOOL_FALSE;
 
       for (BoxTypeIter_Init(& iter, t);
            BoxTypeIter_Get_Next(& iter, & node);) {
         char *memb_name;
-        BoxType memb_type;
+        BoxXXXX *memb_type;
         char *memb_repr;
 
         if (BoxType_Get_Structure_Member(node, & memb_name, NULL,

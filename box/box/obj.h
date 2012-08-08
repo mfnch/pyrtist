@@ -36,7 +36,7 @@
  * This is using for boxing/unboxing objects.
  */
 typedef struct {
-  BoxType type;
+  BoxXXXX *type;
   BoxPtr  ptr;
 } BoxAny;
 
@@ -56,7 +56,7 @@ BoxAny_Finish(BoxAny *any);
  */
 typedef struct BoxObjHeader_struct {
   size_t  num_refs;
-  BoxType type;
+  BoxXXXX *type;
 } BoxObjHeader;
 
 /**
@@ -68,13 +68,13 @@ typedef void *BoxSPtr;
  * Allocate space for an object of the given type.
  * This is an internal function which is not meant to be used externally.
  */
-BoxSPtr BoxSPtr_Alloc(BoxType t);
+BoxSPtr BoxSPtr_Alloc(BoxXXXX *t);
 
 /**
  * Raw allocation function.
  * This is an internal function which is not meant to be used externally.
  */
-BoxSPtr BoxSPtr_Raw_Alloc(BoxType t, size_t obj_size);
+BoxSPtr BoxSPtr_Raw_Alloc(BoxXXXX *t, size_t obj_size);
 
 /**
  * Add a reference to an object and return it.

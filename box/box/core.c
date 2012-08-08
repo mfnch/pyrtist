@@ -17,11 +17,10 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-#include <box/types.h>
 #include <box/types_priv.h>
 #include <box/callable.h>
 #include <box/obj.h>
-#include <box/core.h>
+#include <box/core_priv.h>
 
 /**
  * Structure collection all Box core types.
@@ -34,7 +33,7 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
   BoxBool success = BOXBOOL_TRUE;
 
   struct {
-    BoxType *dest;
+    BoxXXXX **dest;
     const char *name;
     BoxTypeId id;
     size_t size;
@@ -66,10 +65,10 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
      (size_t) 0, (size_t) 0}
   };
 
-  core_types->type_type = (BoxType) NULL;
+  core_types->type_type = (BoxXXXX *) NULL;
 
   for (row = & table[0]; row->dest; row++) {
-    BoxType t;
+    BoxXXXX *t;
 
     if (row->id != BOXTYPEID_NONE)
       t = BoxType_Create_Primary(row->id, row->size, row->alignment);
@@ -78,7 +77,7 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
       
 
     if (t) {
-      BoxType id = BoxType_Create_Ident(t, row->name);
+      BoxXXXX *id = BoxType_Create_Ident(t, row->name);
       if (id)
         *row->dest = id;
 
@@ -106,7 +105,7 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
 
 /* Finalize the core type of Box. */
 void BoxCoreTypes_Finish(BoxCoreTypes *core_types) {
-  BoxType types[] =
+  BoxXXXX *types[] =
    {core_types->root_type,
     core_types->init_type,
     core_types->finish_type,
@@ -120,7 +119,7 @@ void BoxCoreTypes_Finish(BoxCoreTypes *core_types) {
     core_types->callable_type,
     NULL};
 
-  BoxType *type;
+  BoxXXXX **type;
 
   for (type = & types[0]; *type; type++)
     BoxSPtr_Unlink(*type);

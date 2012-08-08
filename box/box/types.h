@@ -28,35 +28,12 @@
 #ifndef _BOX_TYPES_H
 #  define _BOX_TYPES_H
 
-#  include <float.h>
-#  include <stdlib.h>
-
-/* Detect whether we are being compiled on MS Windows platforms */
-#  ifndef __WINDOWS__
-#    if defined(WIN32) || defined(_WIN32)
-#      define __WINDOWS__
-#    endif
-#  endif
-
-#  ifdef __WINDOWS__
-#    define BOXEXPORT extern __declspec(dllexport)
-#  else
-#    define BOXEXPORT extern
-#  endif
+#  include <box/core.h>
 
 /* For now we always define the abbreviations */
 #  ifndef BOX_ABBREV
 #    define BOX_ABBREV
 #  endif
-
-/** Fundamental boolean type used in the Box compiler API. */
-typedef int BoxBool;
-
-enum {
-  BOXBOOL_FALSE=0,
-  BOXBOOL_TRUE=1
-};
-
 
 /** Enumeration of fundamental Box types. 
  * The constants defined below can be used to retrieve information about
@@ -80,37 +57,7 @@ typedef enum {
   BOXTYPE_END,
   BOXTYPE_PAUSE,
   BOXTYPE_CPTR
-#ifdef NTYPES
-} BoxOldType;
-#else
 } BoxType;
-#endif
-
-/** The BoxChar type, the smallest integer in terms of size. */
-typedef unsigned char BoxChar;
-
-/** The integer type of Box numbers and the integer type we will try
- * to use whenever possible: this corresponds to the C long int.
- */
-typedef long BoxInt;
-
-/** The unsigned integer type that we will try to use whenever possible.
- * Same size of Int.
- */
-typedef unsigned long BoxUInt;
-
-/** Here is the definition of the floating point type used by Box.
- */
-typedef double BoxReal;
-
-/** Conversion string --> Int */
-#  define BoxInt_Of_Str strtol
-
-/** Conversion string --> Real  */
-#  define BoxReal_Of_Str strtod
-
-#  define BOXREAL_MAX DBL_MAX
-#  define BOXREAL_MIN (-DBL_MAX)
 
 /** Type of combination */
 typedef enum {
@@ -118,43 +65,6 @@ typedef enum {
   BOXCOMB_COPYTO,  /**< Left copied to Right */
   BOXCOMB_MOVETO   /**< Left relocated in memory into Right */
 } BoxComb;
-
-/** The 2D point type */
-typedef struct {
-  BoxReal x, y;
-} BoxPoint;
-
-/** We need more than just a pointer when referring to Box objects */
-typedef struct {
-  void *ptr,   /**< Pointer to the data inside this block */
-       *block; /**< Pointer to the allocated memory block */
-} BoxPtr;
-
-/** Union of all the intrinsic Box types */
-typedef union {
-  BoxChar  boxchar;
-  BoxInt   boxint;
-  BoxReal  boxreal;
-  BoxPoint boxpoint;
-  BoxPtr   boxobj;
-} BoxValue;
-
-/** Type representing C pointers from Box */
-typedef void *BoxCPtr;
-
-/** Strings containing the printf formats for the various types */
-#  define BoxChar_Fmt "%c"
-#  define BoxUInt_Fmt "%lu"
-#  define BoxInt_Fmt "%ld"
-#  define BoxReal_Fmt "%g"
-#  define BoxPoint_Fmt "(%g, %g)"
-
-/** A subtype is simply a structure containing two pointers: one points
- * to the parent, one to the child.
- */
-typedef struct {
-  BoxPtr child, parent;
-} BoxSubtype;
 
 #    define BOXSUBTYPE_PARENT_PTR(subtype_ptr) \
        ((void *) ((*(subtype_ptr)).parent.ptr))
