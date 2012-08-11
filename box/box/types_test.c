@@ -7,6 +7,8 @@
 #include <box/obj.h>
 #include <box/core.h>
 
+#include <box/messages.h>
+
 
 static BoxXXXX *t_char, *t_int, *t_real, *t_point;
 
@@ -18,6 +20,8 @@ static BoxXXXX *t_char, *t_int, *t_real, *t_point;
   } while(0)
 
 static BoxBool My_Init(void) {
+  Msg_Main_Init(0);
+
   if (!Box_Initialize_Type_System())
     return BOXBOOL_FALSE;
 

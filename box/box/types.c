@@ -50,6 +50,7 @@ void *BoxType_Alloc(BoxXXXX **t, BoxTypeClass tc) {
   case BOXTYPECLASS_IDENT: additional = sizeof(BoxTypeIdent); break;
   case BOXTYPECLASS_RAISED: additional = sizeof(BoxTypeRaised); break;
   case BOXTYPECLASS_STRUCTURE: additional = sizeof(BoxTypeStructure); break;
+  case BOXTYPECLASS_SPECIES: additional = sizeof(BoxTypeSpecies); break;
   case BOXTYPECLASS_FUNCTION: additional = sizeof(BoxTypeFunction); break;
   case BOXTYPECLASS_POINTER: additional = sizeof(BoxTypePointer); break;
   case BOXTYPECLASS_ANY: additional = 0; break;
@@ -60,6 +61,10 @@ void *BoxType_Alloc(BoxXXXX **t, BoxTypeClass tc) {
 
   if (Box_Mem_Sum(& total, data_offset, additional)) {
     BoxTypeDesc *td = BoxSPtr_Raw_Alloc(box_core_types.type_type, total);
+
+    if (!td)
+      MSG_FATAL("Cannot allocate memory for type object.");
+
     td->type_class = tc;
     *t = td;
     return & ((BoxTypeBundle *) td)->data;
@@ -363,8 +368,13 @@ void BoxType_Add_Member_To_Structure(BoxXXXX *structure, BoxXXXX *member,
                                      const char *member_name) {
   BoxXXXX *t;
   size_t msize, malgn, ssize;
-  BoxTypeStructure *std = BoxType_Get_Data(structure);
   BoxTypeStructureNode *td;
+  BoxTypeStructure *std = BoxType_Get_Data(structure);
+  char *dup_member_name = (member_name ? Box_Mem_Strdup(member_name) : NULL);
+
+  /* Box_Mem_Strdup failed. */
+  if (member_name && !dup_member_name)
+    MSG_FATAL("Cannot allocate memory for structure member type object.");
 
   /* Let's get the size and alignment of the member type. */
   if (!BoxType_Get_Size_And_Alignment(member, & msize, & malgn))
@@ -381,7 +391,7 @@ void BoxType_Add_Member_To_Structure(BoxXXXX *structure, BoxXXXX *member,
 
   /* Now create the member. */
   td = BoxType_Alloc(& t, BOXTYPECLASS_STRUCTURE_NODE);
-  td->name = (member_name ? Box_Mem_Strdup(member_name) : NULL);
+  td->name = dup_member_name;
   td->size = msize;
   td->offset = Box_Mem_Align_Offset(ssize, malgn);
   td->type = member;
@@ -396,7 +406,6 @@ void BoxType_Add_Member_To_Structure(BoxXXXX *structure, BoxXXXX *member,
   std->size = Box_Mem_Get_Multiple_Size(td->offset + msize, std->alignment);
   BoxTypeNode_Append_Node(& std->node, t);
 }
-
 
 /* Get information on a structure member as obtained from
  * BoxTypeIter_Get_Next.
@@ -484,13 +493,8 @@ BoxXXXX *BoxType_Create_Species(void) {
 /* Add a member to a species type defined with BoxType_Create_Species. */
 void BoxType_Add_Member_To_Species(BoxXXXX *species, BoxXXXX *member) {
   BoxXXXX *t;
-  size_t msize, malgn;
   BoxTypeSpecies *std = BoxType_Get_Data(species);
   BoxTypeSpeciesNode *td;
-
-  /* Let's get the size and alignment of the member type. */
-  if (!BoxType_Get_Size_And_Alignment(t, & msize, & malgn))
-    MSG_FATAL("Cannot get size and alignment of species member type");
 
   /* Now create the member. */
   td = BoxType_Alloc(& t, BOXTYPECLASS_SPECIES_NODE);
@@ -667,7 +671,11 @@ BoxType_Get_Size_And_Alignment(BoxXXXX *t, size_t *size, size_t *algn) {
       return BOXBOOL_TRUE;
 
     case BOXTYPECLASS_SPECIES:
+      /* Get species' node for the target. */
       t = ((BoxTypeSpecies *) td)->node.previous;
+
+      /* Get the node's type. */
+      t = ((BoxTypeSpeciesNode *) BoxType_Get_Data(t))->type;
       break; /* resolve and retry... */
 
 #if 0
@@ -728,8 +736,10 @@ BoxXXXX *BoxType_Resolve(BoxXXXX *t, BoxTypeResolve resolve, int num) {
     case BOXTYPECLASS_SPECIES:
       if ((resolve & BOXTYPERESOLVE_SPECIES) == 0)
         return t;
-      else
-        t = ((BoxTypeSpecies *) BoxType_Get_Data(t))->node.previous;
+      else {
+        BoxXXXX *tg = ((BoxTypeSpecies *) BoxType_Get_Data(t))->node.previous;
+        return ((BoxTypeSpeciesNode *) BoxType_Get_Data(tg))->type;
+      }
       break;
 
     case BOXTYPECLASS_PRIMARY:

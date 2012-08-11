@@ -27,17 +27,15 @@
  */
 BoxCoreTypes box_core_types;
 
-
-/* Initialize the core types of Box. */
-BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
-  BoxBool success = BOXBOOL_TRUE;
-
+/* Create primary and intrinsic types. */
+static void My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
   struct {
     BoxXXXX **dest;
     const char *name;
     BoxTypeId id;
     size_t size;
     size_t alignment;
+
   } *row, table[] = {
     {& core_types->type_type, "Type", BOXTYPEID_TYPE,
      sizeof(BoxTypeBundle), __alignof__(BoxTypeBundle)},
@@ -45,20 +43,20 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
      (size_t) 0, (size_t) 0},
     {& core_types->finish_type, "].", BOXTYPEID_FINISH,
      (size_t) 0, (size_t) 0},
-    {& core_types->char_type, "Char", BOXTYPEID_CHAR,
+    {& core_types->CHAR_type, "CHAR", BOXTYPEID_CHAR,
      sizeof(BoxChar), __alignof__(BoxChar)},
-    {& core_types->int_type, "Int", BOXTYPEID_INT,
+    {& core_types->Char_type, "Char", BOXTYPEID_CHAR,
+     sizeof(BoxChar), __alignof__(BoxChar)},
+    {& core_types->INT_type, "INT", BOXTYPEID_INT,
      sizeof(BoxInt), __alignof__(BoxInt)},
-    {& core_types->real_type, "Real", BOXTYPEID_REAL,
+    {& core_types->REAL_type, "REAL", BOXTYPEID_REAL,
      sizeof(BoxReal), __alignof__(BoxReal)},
-    {& core_types->point_type, "Point", BOXTYPEID_POINT,
+    {& core_types->POINT_type, "POINT", BOXTYPEID_POINT,
      sizeof(BoxPoint), __alignof__(BoxPoint)},
-    {& core_types->pointer_type, "Ptr", BOXTYPEID_PTR,
+    {& core_types->PTR_type, "PTR", BOXTYPEID_PTR,
      sizeof(BoxPtr), __alignof__(BoxPtr)},
     {& core_types->root_type, "/", BOXTYPEID_NONE,
      (size_t) 0, (size_t) 0},
-
-
     {& core_types->callable_type, "Callable", BOXTYPEID_NONE,
      0, 0},
     {NULL, (const char *) NULL, BOXTYPEID_NONE,
@@ -74,7 +72,6 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
       t = BoxType_Create_Primary(row->id, row->size, row->alignment);
     else
       t = BoxType_Create_Intrinsic(row->size, row->alignment);
-      
 
     if (t) {
       BoxXXXX *id = BoxType_Create_Ident(t, row->name);
@@ -82,24 +79,66 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
         *row->dest = id;
 
       else {
-        success = BOXBOOL_FALSE;
+        *success = BOXBOOL_FALSE;
         BoxSPtr_Unlink(t);
       }
     
     } else {
-      success = BOXBOOL_FALSE;
+      *success = BOXBOOL_FALSE;
       *row->dest = NULL;
     }
   }
 
   core_types->any_type = BoxType_Create_Any();
   if (!core_types->any_type)
-    success = BOXBOOL_FALSE;
+    *success = BOXBOOL_FALSE;
 
   /* Register combinations for core_types->type_type. */
   if (!Box_Register_Type_Combs(core_types))
-    success = BOXBOOL_FALSE;
+    *success = BOXBOOL_FALSE;
+}
 
+/* Create species. */
+static void My_Init_Species(BoxCoreTypes *ct, BoxBool *success) {
+  ct->Int_type = BoxType_Create_Species();
+  if (ct->Int_type) {
+    BoxType_Add_Member_To_Species(ct->Int_type, ct->CHAR_type);
+    BoxType_Add_Member_To_Species(ct->Int_type, ct->INT_type);
+
+  } else
+    *success = BOXBOOL_FALSE;
+
+  ct->Real_type = BoxType_Create_Species();
+  if (ct->Real_type) {
+    BoxType_Add_Member_To_Species(ct->Real_type, ct->CHAR_type);
+    BoxType_Add_Member_To_Species(ct->Real_type, ct->INT_type);
+    BoxType_Add_Member_To_Species(ct->Real_type, ct->REAL_type);
+
+  } else
+    *success = BOXBOOL_FALSE;
+
+  ct->Point_type = BoxType_Create_Species();
+  if (ct->Real_type) {
+    BoxXXXX *point_struct = BoxType_Create_Structure();
+    if (point_struct) {
+      BoxType_Add_Member_To_Structure(point_struct, ct->Real_type, "x");
+      BoxType_Add_Member_To_Structure(point_struct, ct->Real_type, "y");
+      BoxType_Add_Member_To_Species(ct->Point_type, point_struct);
+      BoxType_Add_Member_To_Species(ct->Point_type, ct->POINT_type);
+
+    } else
+      *success = BOXBOOL_FALSE;
+
+  } else
+    *success = BOXBOOL_FALSE;
+}
+
+/* Initialize the core types of Box. */
+BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
+  BoxBool success = BOXBOOL_TRUE;
+
+  My_Init_Basic_Types(core_types, & success);
+  My_Init_Species(core_types, & success);
   return success;
 }
 
@@ -110,11 +149,15 @@ void BoxCoreTypes_Finish(BoxCoreTypes *core_types) {
     core_types->init_type,
     core_types->finish_type,
     core_types->type_type,
-    core_types->char_type,
-    core_types->int_type,
-    core_types->real_type,
-    core_types->point_type,
-    core_types->pointer_type,
+    core_types->CHAR_type,
+    core_types->INT_type,
+    core_types->REAL_type,
+    core_types->POINT_type,
+    core_types->Char_type,
+    core_types->Int_type,
+    core_types->Real_type,
+    core_types->Point_type,
+    /*core_types->pointer_type,*/
     core_types->any_type,
     core_types->callable_type,
     NULL};

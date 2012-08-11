@@ -68,6 +68,26 @@ typedef BoxTypeDesc *BoxType;
 typedef BoxTypeDesc BoxXXXX;
 #endif
 
+/**
+ * BoxTypeRef is identical to BoxType, but is used in function declarations
+ * (prototypes) to specify that a reference to a given argument is swallowed by
+ * the function or that a returned type is passed together with a reference to
+ * it. Let's consider two examples:
+ *
+ * @code
+ * BoxType My_Fn1(BoxType x, BoxType y);
+ * BoxTypeRef My_Fn2(BoxType x, BoxTypeRef y);
+ * @endcode
+ *
+ * For example, the function My_Fn1 does not alter the reference counts of its
+ * arguments x and y and returns a type (which existed already) without
+ * touching its reference count.
+ * On the other hand, the function My_Fn2 does steal a reference count to y
+ * (meaning that the caller must use BoxType_Link in order to keep its right
+ * to use y after the call has been made). My_Fn2 also returns a fresh
+ * reference to a type (which may have been created in the function).
+ */
+typedef BoxXXXX BoxTypeRef;
 
 /**
  * Integers associated to the fundamental types. These constant values are
@@ -234,11 +254,15 @@ BoxType_Unraise(BoxXXXX *raised);
  * Create an empty structure. Members can be added with
  * BoxType_Add_Member_To_Structure.
  */
-BOXEXPORT BoxXXXX *
+BOXEXPORT BoxTypeRef *
 BoxType_Create_Structure(void);
 
 /**
  * Add a member to a structure type defined with BoxType_Create_Structure.
+ * Note that this function does not check for members with duplicate name.
+ * @param structure A type created with BoxType_Create_Structure.
+ * @param member The type of the member.
+ * @param member_name The member name.
  */
 BOXEXPORT void
 BoxType_Add_Member_To_Structure(BoxXXXX *structure, BoxXXXX *member,
@@ -289,7 +313,7 @@ BoxType_Get_Species_Member_Type(BoxXXXX *node);
  * Create an empty species. Members can be added with
  * BoxType_Add_Member_To_Species.
  */
-BOXEXPORT BoxXXXX *
+BOXEXPORT BoxTypeRef *
 BoxType_Create_Species(void);
 
 /**
@@ -298,7 +322,8 @@ BoxType_Create_Species(void);
 BOXEXPORT void
 BoxType_Add_Member_To_Species(BoxXXXX *species, BoxXXXX *member);
 
-/** Create a species of type '(*=>Dest)' (everything is converted to 'Dest').
+/**
+ * Create a species of type '(*=>Dest)' (everything is converted to 'Dest').
  */
 BOXEXPORT BoxXXXX *
 BoxType_Create_Star_Species(BoxXXXX *dest);

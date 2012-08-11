@@ -142,32 +142,7 @@ typedef union {
 #endif
 /* ^^^ temporary stuff. */
 
-#if 0
-/**
- * Box core types.
- */
-typedef struct BoxCoreTypes_struct {
-  BoxXXXX *root_type,
-          *init_type,
-          *finish_type,
-          *type_type,
-          *callable_type,
-          *char_type,
-          *int_type,
-          *real_type,
-          *point_type,
-          *pointer_type,
-          *any_type,
-          *str_type,
-          *repr_type,
-          *stream_type,
-          *hash_type,
-          *serialize_type,
-          *deserialize_type;
-} BoxCoreTypes;
-#else
 typedef struct BoxCoreTypes_struct BoxCoreTypes;
-#endif
 
 /**
  * Object containing all the core types of Box.

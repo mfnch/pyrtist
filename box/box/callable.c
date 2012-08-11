@@ -26,10 +26,11 @@
 
 struct BoxCallable_struct {
   BoxCallableKind kind;
+
   union {
-    BoxCCall1 c_call_1;
-    BoxCCall2 c_call_2;
-    BoxCCall3 c_call_3;
+    BoxCCall1     c_call_1;
+    BoxCCall2     c_call_2;
+    BoxCCall3     c_call_3;
   }               implem;
 };
 
