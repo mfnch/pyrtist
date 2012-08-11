@@ -306,7 +306,7 @@ BoxSPtr BoxSPtr_Alloc(BoxXXXX *t) {
 }
 
 /* Raw allocation function. */
-BoxSPtr BoxSPtr_Raw_Alloc(BoxXXXX *t, size_t obj_size) {
+BOX_OUT BoxSPtr BoxSPtr_Raw_Alloc(BoxXXXX *t, size_t obj_size) {
   size_t total_size;
   if (Box_Mem_Sum(& total_size, sizeof(BoxObjHeader), obj_size)) {
     void *whole = Box_Mem_Alloc(total_size);

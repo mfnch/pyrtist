@@ -29,7 +29,9 @@
 #  define _BOX_TYPES_PRIV_H
 
 #  include <box/ntypes.h>
+#  include <box/combs.h>
 #  include <box/core.h>
+
 
 /**
  * Maximum number of types linked to a type.

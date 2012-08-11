@@ -394,7 +394,7 @@ void BoxType_Add_Member_To_Structure(BoxXXXX *structure, BoxXXXX *member,
   td->name = dup_member_name;
   td->size = msize;
   td->offset = Box_Mem_Align_Offset(ssize, malgn);
-  td->type = member;
+  td->type = BoxType_Link(member);
 
   /* Add the member to the structure. */
   std->num_items++;
@@ -469,19 +469,8 @@ size_t BoxType_Get_Structure_Num_Members(BoxXXXX *t) {
     return 0;
 }
 
-/* Get information on a species member as obtained from BoxTypeIter_Get_Next.
- */
-BoxXXXX *BoxType_Get_Species_Member_Type(BoxXXXX *node) {
-  if (node->type_class == BOXTYPECLASS_SPECIES_NODE) {
-    BoxTypeStructureNode *sn = BoxType_Get_Data(node);
-    return sn->type;
-  }
-
-  return NULL;
-}
-
 /* Create a new species type. */
-BoxXXXX *BoxType_Create_Species(void) {
+BoxTypeRef *BoxType_Create_Species(void) {
   BoxXXXX *t;
   BoxTypeSpecies *td = BoxType_Alloc(& t, BOXTYPECLASS_SPECIES);
   td->num_items = 0;
@@ -498,12 +487,23 @@ void BoxType_Add_Member_To_Species(BoxXXXX *species, BoxXXXX *member) {
 
   /* Now create the member. */
   td = BoxType_Alloc(& t, BOXTYPECLASS_SPECIES_NODE);
-  td->type = member;
+  td->type = BoxType_Link(member);
 
   /* Add the member to the structure. */
   std->num_items++;
 
   BoxTypeNode_Append_Node(MyType_Get_Node(species), t);
+}
+
+/* Get information on a species member as obtained from BoxTypeIter_Get_Next.
+ */
+BoxXXXX *BoxType_Get_Species_Member_Type(BoxXXXX *node) {
+  if (node->type_class == BOXTYPECLASS_SPECIES_NODE) {
+    BoxTypeStructureNode *sn = BoxType_Get_Data(node);
+    return sn->type;
+  }
+
+  return NULL;
 }
 
 /* Create a new function type. */

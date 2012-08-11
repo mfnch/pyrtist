@@ -31,7 +31,6 @@
 
 #  include <stdlib.h>
 
-#  include <box/callable.h>
 #  include <box/container.h>
 
 /**
@@ -124,9 +123,9 @@ typedef enum {
 /**
  * Initialize a BoxPtr pointer from a single pointer (BoxSPtr).
  */
-#define BoxPtr_Init_From_SPtr(callable, sptr) \
-  do {(callable)->block = (char *) (sptr) - sizeof(BoxObjHeader); \
-      (callable)->ptr = (sptr);} while(0)
+#define BoxPtr_Init_From_SPtr(obj, sptr) \
+  do {(obj)->block = (char *) (sptr) - sizeof(BoxObjHeader); \
+      (obj)->ptr = (sptr);} while(0)
 
 /**
  * Initialize a BoxPtr pointer from a single pointer (BoxSPtr).
@@ -226,8 +225,8 @@ BoxType_Create_Intrinsic(size_t size, size_t alignment);
  * @param name The name to use for identifying the type.
  * @return A new type identifier (or BOXTYPE_NONE in case of errors).
  */
-BOXEXPORT BoxXXXX *
-BoxType_Create_Ident(BoxXXXX *source, const char *name);
+BOXEXPORT BoxTypeRef *
+BoxType_Create_Ident(BoxTypeRef *source, const char *name);
 
 /**
  * Create a new raised type from the type 'source'. The new type will be
@@ -434,13 +433,6 @@ typedef unsigned int BoxBoxState;
 /** Return a Box state identifier from its string representation. */
 BoxBoxState BoxType_Get_State(BoxXXXX *t, const char *source);
 
-/**
- * Define a combination 'child'@'parent' and associate an action to it.
- */
-BOXEXPORT BoxBool
-BoxType_Define_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
-                           BoxCallable *callable);
-
 /*****************************************************************************
  * TYPE ENQUIRY ROUTINES                                                     *
  *****************************************************************************/
@@ -472,35 +464,6 @@ char *BoxType_Get_Repr(BoxXXXX *t);
  */
 BOXEXPORT BoxTypeCmp
 BoxType_Compare(BoxXXXX *left, BoxXXXX *right);
-
-/**
- * Find the procedure 'left'@'right' and return:
- * - 'left' if the procedure was found and the type 'left' is equal to the
- *   procedure left type;
- * - the expansion type, if the procedure was found but 'left' must be
- *   expanded;
- * - BOXTYPE_NONE if the procedure was not found.
- */
-BOXEXPORT BoxXXXX *
-BoxType_Find_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
-                         BoxTypeCmp *expand);
-/**
- * Similar to BoxType_Find_Combination, but uses the type ID (BoxTypeId)
- * instead of a BoxXXXX * for the child.
- */
-BOXEXPORT BoxXXXX *
-BoxType_Find_Combination_With_Id(BoxXXXX *parent, BoxCombType type,
-                                 BoxTypeId child_id, BoxTypeCmp *expand);
-
-/**
- * Get details about a combination found with BoxType_Find_Combination.
- * @param comb The combination, as returned by BoxType_Find_Combination.
- * @param type Where to put the child type.
- * @param action Where to put the combination action.
- * @return BOXBOOL_TRUE if comb is a combination node, BOXBOOL_FALSE otherwise.
- */
-BOXEXPORT BoxBool
-BoxType_Get_Combination_Info(BoxXXXX *comb, BoxXXXX **child, BoxCallable **cb);
 
 /**
  * Type iterator. Allows to iter through the types that do have members,

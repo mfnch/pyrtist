@@ -110,6 +110,20 @@ typedef struct BoxPtr_struct {
        *block; /**< Pointer to the allocated memory block */
 } BoxPtr;
 
+/**
+ * This macro expands to nothing. It is used in function prototypes to indicate
+ * that the declared function steals a reference to the passed object. This
+ * macro has hence a purely aesthetical/declarative purpose.
+ */
+#define BOX_IN
+
+/**
+ * This macro expands to nothing. It is used in function prototypes to indicate
+ * that the declared function provides a newly created or existing object. This
+ * macro has hence a purely aesthetical/declarative purpose.
+ */
+#define BOX_OUT
+
 /** Type representing C pointers from Box */
 typedef void *BoxCPtr;
 

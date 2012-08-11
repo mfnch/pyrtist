@@ -72,8 +72,7 @@ static BoxBool My_Test_Struct_Empty(void) {
 static BoxBool
 My_Test_2Memb_Anonymous_Structure(void) {
 
-  BoxXXXX *as = My_Create_Tuple_Structure(NULL, BoxType_Link(t_char),
-                                          NULL, BoxType_Link(t_real));
+  BoxXXXX *as = My_Create_Tuple_Structure(NULL, t_char, NULL, t_real);
 
   BoxSPtr_Unlink(as);
   return BOXBOOL_TRUE;
@@ -81,10 +80,8 @@ My_Test_2Memb_Anonymous_Structure(void) {
 
 static BoxBool
 My_Test_Compare_Structure(void) {
-  BoxXXXX *s1 = My_Create_Tuple_Structure("s11", BoxType_Link(t_char),
-                                          "s12", BoxType_Link(t_real));
-  BoxXXXX *s2 = My_Create_Tuple_Structure("s21", BoxType_Link(t_char),
-                                          "s22", BoxType_Link(t_real));
+  BoxXXXX *s1 = My_Create_Tuple_Structure("s11", t_char, "s12", t_real );
+  BoxXXXX *s2 = My_Create_Tuple_Structure("s21", t_char, "s22", t_real);
 
   char *xxx = BoxType_Get_Repr(s1);
   printf("Type '%s'\n", xxx);

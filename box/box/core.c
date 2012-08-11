@@ -100,31 +100,45 @@ static void My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
 
 /* Create species. */
 static void My_Init_Species(BoxCoreTypes *ct, BoxBool *success) {
-  ct->Int_type = BoxType_Create_Species();
-  if (ct->Int_type) {
-    BoxType_Add_Member_To_Species(ct->Int_type, ct->CHAR_type);
-    BoxType_Add_Member_To_Species(ct->Int_type, ct->INT_type);
+  BoxXXXX *t;
 
-  } else
+  /* Int = (CHAR => INT) */
+  t = BoxType_Create_Species();
+  if (t) {
+    BoxType_Add_Member_To_Species(t, ct->CHAR_type);
+    BoxType_Add_Member_To_Species(t, ct->INT_type);
+    ct->Int_type = BoxType_Create_Ident(t, "Int");
+
+  } else {
+    ct->Int_type = NULL;
     *success = BOXBOOL_FALSE;
+  }
 
-  ct->Real_type = BoxType_Create_Species();
-  if (ct->Real_type) {
-    BoxType_Add_Member_To_Species(ct->Real_type, ct->CHAR_type);
-    BoxType_Add_Member_To_Species(ct->Real_type, ct->INT_type);
-    BoxType_Add_Member_To_Species(ct->Real_type, ct->REAL_type);
+  /* Real = (CHAR => INT => REAL) */
+  t = BoxType_Create_Species();
+  if (t) {
+    BoxType_Add_Member_To_Species(t, ct->CHAR_type);
+    BoxType_Add_Member_To_Species(t, ct->INT_type);
+    BoxType_Add_Member_To_Species(t, ct->REAL_type);
+    ct->Real_type = BoxType_Create_Ident(t, "Real");
 
-  } else
+  } else {
+    ct->Real_type = NULL;
     *success = BOXBOOL_FALSE;
+  }
 
-  ct->Point_type = BoxType_Create_Species();
-  if (ct->Real_type) {
+  /* Point = ((Real x, y) => POINT) */
+  ct->Point_type = NULL;
+  t = BoxType_Create_Species();
+  if (t) {
     BoxXXXX *point_struct = BoxType_Create_Structure();
     if (point_struct) {
       BoxType_Add_Member_To_Structure(point_struct, ct->Real_type, "x");
       BoxType_Add_Member_To_Structure(point_struct, ct->Real_type, "y");
-      BoxType_Add_Member_To_Species(ct->Point_type, point_struct);
-      BoxType_Add_Member_To_Species(ct->Point_type, ct->POINT_type);
+      BoxType_Add_Member_To_Species(t, point_struct);
+      BoxType_Add_Member_To_Species(t, ct->POINT_type);
+      BoxSPtr_Unlink(point_struct);
+      ct->Point_type = BoxType_Create_Ident(t, "Point");
 
     } else
       *success = BOXBOOL_FALSE;
@@ -157,7 +171,7 @@ void BoxCoreTypes_Finish(BoxCoreTypes *core_types) {
     core_types->Int_type,
     core_types->Real_type,
     core_types->Point_type,
-    /*core_types->pointer_type,*/
+    core_types->PTR_type,
     core_types->any_type,
     core_types->callable_type,
     NULL};

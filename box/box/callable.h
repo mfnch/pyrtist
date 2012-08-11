@@ -32,6 +32,8 @@
 #  define _BOX_CALLABLE_H
 
 #  include <box/exception.h>
+#  include <box/ntypes.h>
+
 
 typedef BoxException *(*BoxCCall1)(BoxPtr *parent);
 
@@ -79,6 +81,19 @@ BoxCallable_Create_From_CCall1(BoxCCall1 call);
  */
 BOXEXPORT BoxCallable *
 BoxCallable_Create_From_CCall2(BoxCCall2 call);
+
+/**
+ * Create a callable object from a BoxCCall3 C function.
+ * @param t_in The type of the input argument.
+ * @param t_out The type of the returned value.
+ * @param context Data to be associated with the callback. This allows
+ *   implementing closures.
+ * @param call The C function implementing the callback.
+ * @return A new callback object or NULL if the operation failed.
+ */
+BOX_OUT BoxCallable *
+BoxCallable_Create_From_CCall3(BoxXXXX *t_in, BoxXXXX *t_out,
+                               BOX_IN BoxPtr *context, BoxCCall3 call);
 
 /**
  *
