@@ -231,13 +231,15 @@ static BoxException *My_Type_Finish(BoxPtr *parent) {
 }
 
 /* Register initialization and finalization for types. */
-BoxBool Box_Register_Type_Combs(BoxCoreTypes *core_types) {
-  BoxCallable *callable = BoxCallable_Create_From_CCall1(My_Type_Finish);
+BoxBool Box_Register_Type_Combs(BoxCoreTypes *ct) {
+  BoxCallable *callable =
+    BoxCallable_Create_From_CCall1(ct->type_type, ct->finish_type,
+                                   My_Type_Finish);
   if (!callable)
     return BOXBOOL_FALSE;
 
-  if (BoxType_Define_Combination(core_types->type_type, BOXCOMBTYPE_AT,
-                                 core_types->finish_type, callable))
+  if (BoxType_Define_Combination(ct->type_type, BOXCOMBTYPE_AT,
+                                 ct->finish_type, callable))
     return BOXBOOL_TRUE;
 
   BoxSPtr_Unlink(callable);
@@ -318,7 +320,8 @@ BoxXXXX *BoxType_Create_Intrinsic(size_t size, size_t alignment) {
 }
 
 /* Create a new identifier type. */
-BoxXXXX *BoxType_Create_Ident(BoxXXXX *source, const char *name) {
+BOXOUT BoxXXXX *
+BoxType_Create_Ident(BOXIN BoxXXXX *source, const char *name) {
   BoxXXXX *t;
   BoxTypeIdent *ta = BoxType_Alloc(& t, BOXTYPECLASS_IDENT);
   ta->name = Box_Mem_Strdup(name);
@@ -470,7 +473,7 @@ size_t BoxType_Get_Structure_Num_Members(BoxXXXX *t) {
 }
 
 /* Create a new species type. */
-BoxTypeRef *BoxType_Create_Species(void) {
+BOXOUT BoxXXXX *BoxType_Create_Species(void) {
   BoxXXXX *t;
   BoxTypeSpecies *td = BoxType_Alloc(& t, BOXTYPECLASS_SPECIES);
   td->num_items = 0;
@@ -507,11 +510,20 @@ BoxXXXX *BoxType_Get_Species_Member_Type(BoxXXXX *node) {
 }
 
 /* Create a new function type. */
-BoxXXXX *BoxType_Create_Function(BoxXXXX *child, BoxXXXX *parent) {
+BOXOUT BoxXXXX *
+BoxType_Create_Function(BoxXXXX *parent, BoxXXXX *child) {
   BoxXXXX *t;
   BoxTypeFunction *td = BoxType_Alloc(& t, BOXTYPECLASS_FUNCTION);
-  td->child = child;
-  td->parent = parent;
+  /* A function ``Fn = In -> Out'' does only weak-reference ``In'' and ``Out''.
+   * This is fine as - in order to use the function - one object of type ``In''
+   * and one object of type ``Out'' must exist already. The only case where
+   * we may have problems is the case where the user extracts the types from
+   * ``Fn''. We then do not provide any function to allow the user to do this.
+   * Later, when a proper GC will have been implemented, we can change this is
+   * necessary.
+   */
+  td->child = BoxType_Link(child);
+  td->parent = BoxType_Link(parent);
   return t;
 }
 

@@ -20,6 +20,9 @@
 #include <box/types_priv.h>
 #include <box/callable.h>
 #include <box/obj.h>
+#include <box/core.h>
+#include <box/coremath.h>
+
 #include <box/core_priv.h>
 
 /**
@@ -59,6 +62,9 @@ static void My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
      (size_t) 0, (size_t) 0},
     {& core_types->callable_type, "Callable", BOXTYPEID_NONE,
      0, 0},
+    {& core_types->REFERENCES_type, "REFERENCES", BOXTYPEID_NONE,
+     0, 0},
+
     {NULL, (const char *) NULL, BOXTYPEID_NONE,
      (size_t) 0, (size_t) 0}
   };
@@ -153,6 +159,11 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
 
   My_Init_Basic_Types(core_types, & success);
   My_Init_Species(core_types, & success);
+
+  /* Register math core functions. */
+  if (success)
+    success = BoxCoreTypes_Init_Math(& box_core_types);
+
   return success;
 }
 
@@ -174,6 +185,7 @@ void BoxCoreTypes_Finish(BoxCoreTypes *core_types) {
     core_types->PTR_type,
     core_types->any_type,
     core_types->callable_type,
+    core_types->REFERENCES_type,
     NULL};
 
   BoxXXXX **type;

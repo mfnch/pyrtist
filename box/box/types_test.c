@@ -3,6 +3,7 @@
 #include <stdio.h>
 
 #include <box/ntypes.h>
+#include <box/combs.h>
 #include <box/mem.h>
 #include <box/obj.h>
 #include <box/core.h>

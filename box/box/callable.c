@@ -50,7 +50,7 @@ void BoxCallable_Init_From_CCall2(BoxCallable *cb, BoxCCall2 call) {
 
 /* Initialize a callable object from a BoxCCall3 C function. */
 void BoxCallable_Init_From_CCall3(BoxCallable *cb, BoxCCall3 call,
-                                  BOX_IN BoxPtr *context) {
+                                  BOXIN BoxPtr *context) {
   cb->kind = BOXCALLABLEKIND_C_2;
 
   if (context)
@@ -62,31 +62,33 @@ void BoxCallable_Init_From_CCall3(BoxCallable *cb, BoxCCall3 call,
 }
 
 /* Create a callable object from a BoxCCall1 C function. */
-BoxCallable *BoxCallable_Create_From_CCall1(BoxCCall1 call) {
-  assert(box_core_types.callable_type);
-  BoxCallable *cb = BoxSPtr_Raw_Alloc(box_core_types.callable_type,
-                                      sizeof(BoxCallable));
+BOXOUT BoxCallable *
+BoxCallable_Create_From_CCall1(BoxXXXX *t_out, BoxXXXX *t_in, BoxCCall1 call) {
+  BoxXXXX *t_cb = BoxType_Create_Function(t_in, t_out);
+  BoxCallable *cb = BoxSPtr_Raw_Alloc(t_cb, sizeof(BoxCallable));
   BoxCallable_Init_From_CCall1(cb, call);
+  BoxSPtr_Unlink(t_cb);
   return cb;
 }
 
 /* Create a callable object from a BoxCCall2 C function. */
-BoxCallable *BoxCallable_Create_From_CCall2(BoxCCall2 call) {
-  assert(box_core_types.callable_type);
-  BoxCallable *cb = BoxSPtr_Raw_Alloc(box_core_types.callable_type,
-                                      sizeof(BoxCallable));
+BOXOUT BoxCallable *
+BoxCallable_Create_From_CCall2(BoxXXXX *t_out, BoxXXXX *t_in, BoxCCall2 call) {
+  BoxXXXX *t_cb = BoxType_Create_Function(t_in, t_out);
+  BoxCallable *cb = BoxSPtr_Raw_Alloc(t_cb, sizeof(BoxCallable));
   BoxCallable_Init_From_CCall2(cb, call);
+  BoxSPtr_Unlink(t_cb);
   return cb;
 }
 
 /* Create a callable object from a BoxCCall3 C function. */
-BOX_OUT BoxCallable *
-BoxCallable_Create_From_CCall3(BoxXXXX *t_in, BoxXXXX *t_out,
-                               BOX_IN BoxPtr *context, BoxCCall3 call) {
+BOXOUT BoxCallable *
+BoxCallable_Create_From_CCall3(BoxXXXX *t_out, BoxXXXX *t_in,
+                               BOXIN BoxPtr *context, BoxCCall3 call) {
   BoxXXXX *t_cb = BoxType_Create_Function(t_in, t_out);
   BoxCallable *cb = BoxSPtr_Raw_Alloc(t_cb, sizeof(BoxCallable));
   BoxCallable_Init_From_CCall3(cb, call, context);
-  BoxType_Unlink(t_cb);
+  BoxSPtr_Unlink(t_cb);
   return cb;
 }
 

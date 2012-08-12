@@ -71,29 +71,29 @@ BoxCallable_Init_From_CCall2(BoxCallable *cb, BoxCCall2 call);
  * @param call The C function.
  * @return The callable object.
  */
-BOXEXPORT BoxCallable *
-BoxCallable_Create_From_CCall1(BoxCCall1 call);
+BOXEXPORT BOXOUT BoxCallable *
+BoxCallable_Create_From_CCall1(BoxXXXX *t_out, BoxXXXX *t_in, BoxCCall1 call);
 
 /**
  * Create a callable object from a BoxCCall2 C function.
  * @param call The C function.
  * @return The callable object.
  */
-BOXEXPORT BoxCallable *
-BoxCallable_Create_From_CCall2(BoxCCall2 call);
+BOXEXPORT BOXOUT BoxCallable *
+BoxCallable_Create_From_CCall2(BoxXXXX *t_out, BoxXXXX *t_in, BoxCCall2 call);
 
 /**
  * Create a callable object from a BoxCCall3 C function.
- * @param t_in The type of the input argument.
  * @param t_out The type of the returned value.
+ * @param t_in The type of the input argument.
  * @param context Data to be associated with the callback. This allows
  *   implementing closures.
  * @param call The C function implementing the callback.
  * @return A new callback object or NULL if the operation failed.
  */
-BOX_OUT BoxCallable *
-BoxCallable_Create_From_CCall3(BoxXXXX *t_in, BoxXXXX *t_out,
-                               BOX_IN BoxPtr *context, BoxCCall3 call);
+BOXEXPORT BOXOUT BoxCallable *
+BoxCallable_Create_From_CCall3(BoxXXXX *t_out, BoxXXXX *t_int,
+                               BOXIN BoxPtr *context, BoxCCall3 call);
 
 /**
  *

@@ -115,14 +115,14 @@ typedef struct BoxPtr_struct {
  * that the declared function steals a reference to the passed object. This
  * macro has hence a purely aesthetical/declarative purpose.
  */
-#define BOX_IN
+#define BOXIN
 
 /**
  * This macro expands to nothing. It is used in function prototypes to indicate
  * that the declared function provides a newly created or existing object. This
  * macro has hence a purely aesthetical/declarative purpose.
  */
-#define BOX_OUT
+#define BOXOUT
 
 /** Type representing C pointers from Box */
 typedef void *BoxCPtr;

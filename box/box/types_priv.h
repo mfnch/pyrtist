@@ -184,13 +184,15 @@ typedef struct {
 } BoxTypePointer;
 
 struct BoxTypeDesc_struct {
-  BoxTypeClass           type_class;
+  BoxTypeClass   type_class;
 
 #if 0
   struct {
-    unsigned int is_namespace :1,
-                 has_subtypes :1,
-                 has_combs :1;
+    unsigned int can_self_ref : 1, /**< Can reference itself (directly or
+                                      indirectly). For garbage collection. */
+                 is_global    : 1; /**< Whether the type is global. Global 
+                                      types do not need to be referenced by
+                                      their instances. */
   }              attr;
 #endif
 };

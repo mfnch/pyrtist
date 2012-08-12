@@ -21,6 +21,7 @@
 
 #include <box/types_priv.h>
 #include <box/messages.h>
+#include <box/obj.h>
 
 
 /* Get the iterator over the combinations of the given identifier type. */
@@ -37,7 +38,7 @@ BoxBool BoxType_Get_Combinations(BoxXXXX *ident, BoxTypeIter *iter) {
 /* Define a combination 'child'@'parent' and associate an action to it. */
 BoxBool
 BoxType_Define_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
-                           BoxCallable *callable) {
+                           BOXIN BoxCallable *callable) {
   if (parent->type_class == BOXTYPECLASS_IDENT) {
     BoxTypeIdent *pd = BoxType_Get_Data(parent);
 
@@ -52,6 +53,7 @@ BoxType_Define_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
     return BOXBOOL_TRUE;
 
   } else {
+    BoxSPtr_Unlink(callable);
     MSG_FATAL("Parent is not an identifier type.");
     return BOXBOOL_FALSE;
   }

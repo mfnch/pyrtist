@@ -18,48 +18,10 @@
  ****************************************************************************/
 
 /**
- * @file core_priv.h
- * @brief Private header for the Box core types module.
+ * @file gc.c
+ * @brief The garbage collector, used to collect circular references.
  *
- * This module provides private definitions for using the Box core types.
+ * Implementation of the garbage collector of Box.
  */
 
-#ifndef _BOX_CORE_PRIV_H
-#  define _BOX_CORE_PRIV_H
-
-#  include <box/core.h>
-
-/**
- * Box core types.
- */
-struct BoxCoreTypes_struct {
-  BoxXXXX *root_type,
-          *init_type,
-          *finish_type,
-          *type_type,
-          *callable_type,
-          *Char_type,
-          *Int_type,
-          *Real_type,
-          *Point_type,
-          *CHAR_type,
-          *INT_type,
-          *REAL_type,
-          *POINT_type,
-          *PTR_type,
-          *any_type,
-          *str_type,
-          *repr_type,
-          *stream_type,
-          *hash_type,
-          *serialize_type,
-          *deserialize_type,
-          *REFERENCES_type;
-};
-
-/**
- * Object containing all the core types of Box.
- */
-extern BoxCoreTypes box_core_types;
-
-#endif /* _BOX_CORE_PRIV_H */
+#include <box/gc.h>

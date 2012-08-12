@@ -68,27 +68,6 @@ typedef BoxTypeDesc BoxXXXX;
 #endif
 
 /**
- * BoxTypeRef is identical to BoxType, but is used in function declarations
- * (prototypes) to specify that a reference to a given argument is swallowed by
- * the function or that a returned type is passed together with a reference to
- * it. Let's consider two examples:
- *
- * @code
- * BoxType My_Fn1(BoxType x, BoxType y);
- * BoxTypeRef My_Fn2(BoxType x, BoxTypeRef y);
- * @endcode
- *
- * For example, the function My_Fn1 does not alter the reference counts of its
- * arguments x and y and returns a type (which existed already) without
- * touching its reference count.
- * On the other hand, the function My_Fn2 does steal a reference count to y
- * (meaning that the caller must use BoxType_Link in order to keep its right
- * to use y after the call has been made). My_Fn2 also returns a fresh
- * reference to a type (which may have been created in the function).
- */
-typedef BoxXXXX BoxTypeRef;
-
-/**
  * Integers associated to the fundamental types. These constant values are
  * used internally for caching combinations and - in general - for speeding
  * up the type system (or at least speeding up usage of fundamental types).
@@ -225,8 +204,8 @@ BoxType_Create_Intrinsic(size_t size, size_t alignment);
  * @param name The name to use for identifying the type.
  * @return A new type identifier (or BOXTYPE_NONE in case of errors).
  */
-BOXEXPORT BoxTypeRef *
-BoxType_Create_Ident(BoxTypeRef *source, const char *name);
+BOXEXPORT BOXOUT BoxXXXX *
+BoxType_Create_Ident(BOXIN BoxXXXX *source, const char *name);
 
 /**
  * Create a new raised type from the type 'source'. The new type will be
@@ -253,7 +232,7 @@ BoxType_Unraise(BoxXXXX *raised);
  * Create an empty structure. Members can be added with
  * BoxType_Add_Member_To_Structure.
  */
-BOXEXPORT BoxTypeRef *
+BOXEXPORT BOXOUT BoxXXXX *
 BoxType_Create_Structure(void);
 
 /**
@@ -301,18 +280,10 @@ BOXEXPORT size_t
 BoxType_Get_Structure_Num_Members(BoxXXXX *t);
 
 /**
- * Get the type of a species member as obtained from BoxTypeIter_Get_Next.
- * @param node The type node as obtained from BoxTypeIter_Get_Next.
- * @return The type of the member.
- */
-BOXEXPORT BoxXXXX *
-BoxType_Get_Species_Member_Type(BoxXXXX *node);
-
-/**
  * Create an empty species. Members can be added with
  * BoxType_Add_Member_To_Species.
  */
-BOXEXPORT BoxTypeRef *
+BOXEXPORT BOXOUT BoxXXXX *
 BoxType_Create_Species(void);
 
 /**
@@ -320,6 +291,14 @@ BoxType_Create_Species(void);
  */
 BOXEXPORT void
 BoxType_Add_Member_To_Species(BoxXXXX *species, BoxXXXX *member);
+
+/**
+ * Get the type of a species member as obtained from BoxTypeIter_Get_Next.
+ * @param node The type node as obtained from BoxTypeIter_Get_Next.
+ * @return The type of the member.
+ */
+BOXEXPORT BoxXXXX *
+BoxType_Get_Species_Member_Type(BoxXXXX *node);
 
 /**
  * Create a species of type '(*=>Dest)' (everything is converted to 'Dest').
@@ -338,12 +317,12 @@ BoxType_Add_Member_To_Enum(BoxXXXX *member, const char *member_name);
 /**
  * Create a new function type taking 'child' as an argument and working
  * on 'parent'.
- * @param child The type of the argument of the function.
  * @param parent The type of the value returned by the function.
+ * @param child The type of the argument of the function.
  * @return A new type corresponding to the specified function.
  */
 BOXEXPORT BoxXXXX *
-BoxType_Create_Function(BoxXXXX *child, BoxXXXX *parent);
+BoxType_Create_Function(BoxXXXX *parent, BoxXXXX *child);
 
 /**
  * Create a new pointer type to 'source'.
@@ -385,7 +364,7 @@ BoxType_Resolve(BoxXXXX *type, BoxTypeResolve resolve, int num);
  * @see BoxType_Create_Ident
  */
 BOXEXPORT void
-BoxType_Add_Type(BoxXXXX *parent, BoxXXXX *child);
+BoxType_Add_Type(BoxXXXX *parent, BOXIN BoxXXXX *child);
 
 /**
  * Add a subtype type for a given type.
