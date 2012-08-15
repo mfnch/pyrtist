@@ -120,13 +120,18 @@ static TSDesc *Type_Ptr(TS *ts, Type t) {
 }
 
 void TS_Set_New_Style_Type(BoxTS *ts, BoxType old_type, BoxXXXX *new_type) {
-  TSDesc *old_type_td = Type_Ptr(ts, old_type);
-  old_type_td->new_type = new_type;
+  if (old_type != BOXTYPE_NONE) {
+    TSDesc *old_type_td = Type_Ptr(ts, old_type);
+    old_type_td->new_type = new_type;
+  }
 }
 
 BoxXXXX *TS_Get_New_Style_Type(BoxTS *ts, BoxType old_type) {
-  TSDesc *old_type_td = Type_Ptr(ts, old_type);
-  return old_type_td->new_type;
+  if (old_type != BOXTYPE_NONE) {
+    TSDesc *old_type_td = Type_Ptr(ts, old_type);
+    return old_type_td->new_type;
+  }
+  return NULL;
 }
 
 /*static BoxType My_New_Type(BoxTS *ts, TSDesc *td)*/
@@ -505,37 +510,29 @@ static BoxType My_New(TSKind kind, BoxTS *ts, BoxType src, BoxInt size) {
   return t_ret;
 }
 
-BoxType BoxTS_New_Alias_With_Name(BoxTS *ts, BoxType origin,
+BoxType BoxTS_New_Alias_With_Name(BoxTS *ts, BoxType origin_old,
                                   const char *name) {
-  BoxXXXX *origin_new;
+  BoxType out_old = My_New(TS_KIND_ALIAS, ts, origin_old, -1);
+  TS_Name_Set(ts, out_old, name);
 
-  BoxType old_type = My_New(TS_KIND_ALIAS, ts, origin, -1);
-  TS_Name_Set(ts, old_type, name);
-
-  origin_new = TS_Get_New_Style_Type(ts, origin);
-  if (origin_new) {
-    BoxXXXX *new_type = BoxType_Create_Ident(BoxType_Link(origin_new),
-                                             name);
-    TS_Set_New_Style_Type(ts, old_type, new_type);
-  }
-
-  return old_type;
+  BoxXXXX *origin_new = TS_Get_New_Style_Type(ts, origin_old);
+  if (origin_new)
+    TS_Set_New_Style_Type(ts, out_old,
+                          BoxType_Create_Ident(BoxType_Link(origin_new), name));
+  return out_old;
 }
 
-BoxType BoxTS_New_Alias(BoxTS *ts, BoxType origin) {
-  BoxType old_type = My_New(TS_KIND_ALIAS, ts, origin, -1);
-  BoxXXXX *origin_new = TS_Get_New_Style_Type(ts, origin);
-  if (origin_new) {
-    BoxXXXX *new_type = BoxType_Create_Ident(BoxType_Link(origin_new),
-                                             "?");
-    TS_Set_New_Style_Type(ts, old_type, new_type);
-  }
-
-  return old_type;
+BoxType BoxTS_New_Alias(BoxTS *ts, BoxType origin_old) {
+  return My_New(TS_KIND_ALIAS, ts, origin_old, -1);
 }
 
-BoxType BoxTS_New_Raised(BoxTS *ts, BoxType t_origin) {
-  return My_New(TS_KIND_RAISED, ts, t_origin, -1);
+BoxType BoxTS_New_Raised(BoxTS *ts, BoxType origin_old) {
+  BoxType out_old = My_New(TS_KIND_RAISED, ts, origin_old, -1);
+  BoxXXXX *origin_new = TS_Get_New_Style_Type(ts, origin_old);
+  if (origin_new)
+    TS_Set_New_Style_Type(ts, out_old,
+                          BoxType_Create_Raised(BoxType_Link(origin_new)));
+  return out_old;
 }
 
 BoxType BoxTS_New_Array(BoxTS *ts, BoxType item, Int num_items) {
