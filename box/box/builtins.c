@@ -405,11 +405,8 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
   b->string = BOXTS_NEW_INTRINSIC(ts, BoxStr);
   TS_Name_Set(ts, b->string, "Str");
 
-  b->print = BoxTS_New_Alias(ts, BOXTYPE_VOID);
-  TS_Name_Set(ts, b->print, "Print");
-
-  b->repr = BoxTS_New_Alias(ts, b->string);
-  TS_Name_Set(ts, b->repr, "Repr");
+  b->print = BoxTS_New_Alias_With_Name(ts, BOXTYPE_VOID, "Print");
+  b->repr = BoxTS_New_Alias_With_Name(ts, b->string, "Repr");
 }
 
 /* Register the core types in the current namespace, so that Box programs
@@ -669,8 +666,8 @@ BoxType Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
   BoxType new_type;
   Value *v;
 
-  new_type = BoxTS_New_Alias(& c->ts, ret);
-  TS_Name_Set(& c->ts, new_type, name);
+  new_type = BoxTS_New_Alias_With_Name(& c->ts, ret, name);
+
   (void) Bltin_Proc_Def(c, new_type, arg, fn);
   v = Value_New(c->cur_proc);
   Value_Setup_As_Type(v, new_type);

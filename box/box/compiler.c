@@ -1246,8 +1246,7 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
       BoxType new_type;
 
       /* First create the alias type */
-      new_type = BoxTS_New_Alias(ts, v_type->type);
-      TS_Name_Set(ts, new_type, v_name->name);
+      new_type = BoxTS_New_Alias_With_Name(ts, v_type->type, v_name->name);
 
       /* Register the type in the proper namespace */
       v = Value_New(c->cur_proc);

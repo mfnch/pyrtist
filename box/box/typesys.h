@@ -34,6 +34,8 @@
 #  include "vm_private.h"
 #  include "vmalloc.h"
 
+#  include <box/ntypes.h>
+
 typedef enum {
   TS_KIND_INTRINSIC=1,
   TS_KIND_ALIAS,
@@ -65,6 +67,7 @@ typedef enum {
 } TSKindSelect;
 
 typedef struct {
+  BoxXXXX *new_type;
   TSKind  kind;
   BoxInt  size,
           alignment;
@@ -91,6 +94,7 @@ typedef struct {
 /* Used to initialise the structure TSDesc */
 #define TS_TSDESC_INIT(tsdesc)           \
   do {                                   \
+    (tsdesc)->new_type = NULL;           \
     (tsdesc)->val = NULL;                \
     (tsdesc)->name = NULL;               \
     (tsdesc)->first_proc = BOXTYPE_NONE; \
@@ -117,6 +121,16 @@ typedef enum {
 void TS_Init(BoxTS *ts);
 
 void TS_Finish(BoxTS *ts);
+
+/* Transition function to allow setting the new style type correspoding
+ * to an old style type.
+ */
+void TS_Set_New_Style_Type(BoxTS *ts, BoxType old_type, BoxXXXX *new_type);
+
+/* Transition function to get the new style type associated to an old style
+ * type.
+ */
+BoxXXXX *TS_Get_New_Style_Type(BoxTS *ts, BoxType old_type);
 
 /** Should disappear soon */
 void TS_Init_Builtin_Types(BoxTS *ts);
@@ -294,6 +308,10 @@ char *TS_Name_Get(BoxTS *ts, BoxType t);
 
 /** Create a new alias type from the type 'origin'. */
 BoxType BoxTS_New_Alias(BoxTS *ts, BoxType origin);
+
+/* Transition function: alternative to BoxTS_New_Alias. */
+BoxType BoxTS_New_Alias_With_Name(BoxTS *ts, BoxType origin,
+                                  const char *name);
 
 /** Create a new raised type from the type t. The new type (in *d) will be
  * similar to t, but incompatible: TS_Compare will not match the two types.

@@ -25,6 +25,7 @@
 #include <box/callable.h>
 
 struct BoxCallable_struct {
+  char            *uid;     /**< Unique identifier for the function. */
   BoxCallableKind kind;     /**< How the callable is internally implemented. */
   BoxPtr          context;  /**< Pointer to callable private data. */
   union {
@@ -36,6 +37,7 @@ struct BoxCallable_struct {
 
 /* Initialize a callable object from a BoxCCall1 C function. */
 void BoxCallable_Init_From_CCall1(BoxCallable *cb, BoxCCall1 call) {
+  cb->uid = NULL;
   cb->kind = BOXCALLABLEKIND_C_1;
   cb->implem.c_call_1 = call;
   BoxPtr_Init(& cb->context);
@@ -43,6 +45,7 @@ void BoxCallable_Init_From_CCall1(BoxCallable *cb, BoxCCall1 call) {
 
 /* Initialize a callable object from a BoxCCall2 C function. */
 void BoxCallable_Init_From_CCall2(BoxCallable *cb, BoxCCall2 call) {
+  cb->uid = NULL;
   cb->kind = BOXCALLABLEKIND_C_2;
   cb->implem.c_call_2 = call;
   BoxPtr_Init(& cb->context);
@@ -51,6 +54,7 @@ void BoxCallable_Init_From_CCall2(BoxCallable *cb, BoxCCall2 call) {
 /* Initialize a callable object from a BoxCCall3 C function. */
 void BoxCallable_Init_From_CCall3(BoxCallable *cb, BoxCCall3 call,
                                   BOXIN BoxPtr *context) {
+  cb->uid = NULL;
   cb->kind = BOXCALLABLEKIND_C_2;
 
   if (context)
@@ -60,6 +64,25 @@ void BoxCallable_Init_From_CCall3(BoxCallable *cb, BoxCCall3 call,
 
   cb->implem.c_call_3 = call;
 }
+
+#if 0
+
+/* Initialize a callable object from a BoxCCall3 C function. */
+void BoxCallable_Init_From_CCall3(BoxCallable *cb, BoxCCall3 call,
+                                  BOXIN BoxPtr *context) {
+  cb->uid = NULL;
+  cb->kind = BOXCALLABLEKIND_C_2;
+
+  if (context)
+    cb->context = *context;
+  else
+    BoxPtr_Init(& cb->context);
+
+  cb->implem.vm_call.vm = (BoxVM *) thing;
+  cb->implem.vm_call.call_num = (BoxVMCallNum) thing;
+}
+
+#endif
 
 /* Create a callable object from a BoxCCall1 C function. */
 BOXOUT BoxCallable *

@@ -32,8 +32,12 @@
 #include "vm_private.h"
 #include "typesys.h"
 
+#include <box/core.h>
+#include <box/obj.h>
+
 
 static void Destroy_TSDesc(void *td) {
+  BoxSPtr_Unlink(((TSDesc *) td)->new_type);
   BoxMem_Free(((TSDesc *) td)->name);
   ((TSDesc *) td)->name = 0;
 }
@@ -68,14 +72,24 @@ void TS_Init_Builtin_Types(TS *ts) {
 
   } else {
     for(bt = & builtin_types[0]; bt->name != NULL; bt++) {
+      BoxXXXX *new_type = NULL,
+        *new_prim = BoxType_Create_Primary((BoxTypeId) bt->expected,
+                                           bt->size, bt->alignment);
+      if (new_prim)
+        new_type = BoxType_Create_Ident(new_type, bt->name);
+
       BoxType type = BoxTS_New_Intrinsic(ts, bt->size, bt->alignment);
       TS_Name_Set(ts, type, bt->name);
+      TS_Set_New_Style_Type(ts, type, new_type);
       assert(type == bt->expected);
     }
   }
 }
 
 void TS_Init(TS *ts) {
+  /* Initialize the new type system. */
+  Box_Initialize_Type_System();
+
   BoxOcc_Init(& ts->type_descs, sizeof(TSDesc), TS_TSDESC_CLC_SIZE);
   BoxOcc_Set_Finalizer(& ts->type_descs, Destroy_TSDesc);
   BoxHT_Init_Default(& ts->members,  TS_MEMB_HT_SIZE);
@@ -88,6 +102,8 @@ void TS_Finish(TS *ts) {
   BoxHT_Finish(& ts->members);
   BoxHT_Finish(& ts->subtypes);
   BoxArr_Finish(& ts->name_buffer);
+
+  Box_Finalize_Type_System();
 }
 
 static void Type_New(TS *ts, Type *new_type, TSDesc *td) {
@@ -101,6 +117,16 @@ static TSDesc *Type_Ptr(TS *ts, Type t) {
   TSDesc *td = (TSDesc *) BoxOcc_Item_Ptr(& ts->type_descs, t + 1);
   assert(td != NULL);
   return td;
+}
+
+void TS_Set_New_Style_Type(BoxTS *ts, BoxType old_type, BoxXXXX *new_type) {
+  TSDesc *old_type_td = Type_Ptr(ts, old_type);
+  old_type_td->new_type = new_type;
+}
+
+BoxXXXX *TS_Get_New_Style_Type(BoxTS *ts, BoxType old_type) {
+  TSDesc *old_type_td = Type_Ptr(ts, old_type);
+  return old_type_td->new_type;
 }
 
 /*static BoxType My_New_Type(BoxTS *ts, TSDesc *td)*/
@@ -479,8 +505,33 @@ static BoxType My_New(TSKind kind, BoxTS *ts, BoxType src, BoxInt size) {
   return t_ret;
 }
 
+BoxType BoxTS_New_Alias_With_Name(BoxTS *ts, BoxType origin,
+                                  const char *name) {
+  BoxXXXX *origin_new;
+
+  BoxType old_type = My_New(TS_KIND_ALIAS, ts, origin, -1);
+  TS_Name_Set(ts, old_type, name);
+
+  origin_new = TS_Get_New_Style_Type(ts, origin);
+  if (origin_new) {
+    BoxXXXX *new_type = BoxType_Create_Ident(BoxType_Link(origin_new),
+                                             name);
+    TS_Set_New_Style_Type(ts, old_type, new_type);
+  }
+
+  return old_type;
+}
+
 BoxType BoxTS_New_Alias(BoxTS *ts, BoxType origin) {
-  return My_New(TS_KIND_ALIAS, ts, origin, -1);
+  BoxType old_type = My_New(TS_KIND_ALIAS, ts, origin, -1);
+  BoxXXXX *origin_new = TS_Get_New_Style_Type(ts, origin);
+  if (origin_new) {
+    BoxXXXX *new_type = BoxType_Create_Ident(BoxType_Link(origin_new),
+                                             "?");
+    TS_Set_New_Style_Type(ts, old_type, new_type);
+  }
+
+  return old_type;
 }
 
 BoxType BoxTS_New_Raised(BoxTS *ts, BoxType t_origin) {
