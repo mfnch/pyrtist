@@ -200,6 +200,9 @@ BoxInt TS_Align(BoxTS *ts, BoxInt address);
 
 BoxType BoxTS_New_Intrinsic(BoxTS *ts, size_t size, size_t alignment);
 
+BoxType BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
+                                      size_t alignment, const char *name);
+
 /** Convenient function to define an intrinsic Box type out of a C type. */
 #define BOXTS_NEW_INTRINSIC(ts, type) \
   BoxTS_New_Intrinsic((ts), sizeof(type), __alignof__(type))

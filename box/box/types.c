@@ -686,6 +686,9 @@ BoxType_Get_Size_And_Alignment(BoxXXXX *t, size_t *size, size_t *algn) {
       /* Get species' node for the target. */
       t = ((BoxTypeSpecies *) td)->node.previous;
 
+      if (!t)
+        return BOXBOOL_FALSE;
+
       /* Get the node's type. */
       t = ((BoxTypeSpeciesNode *) BoxType_Get_Data(t))->type;
       break; /* resolve and retry... */

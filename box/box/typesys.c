@@ -72,15 +72,8 @@ void TS_Init_Builtin_Types(TS *ts) {
 
   } else {
     for(bt = & builtin_types[0]; bt->name != NULL; bt++) {
-      BoxXXXX *new_type = NULL,
-        *new_prim = BoxType_Create_Primary((BoxTypeId) bt->expected,
-                                           bt->size, bt->alignment);
-      if (new_prim)
-        new_type = BoxType_Create_Ident(new_type, bt->name);
-
-      BoxType type = BoxTS_New_Intrinsic(ts, bt->size, bt->alignment);
-      TS_Name_Set(ts, type, bt->name);
-      TS_Set_New_Style_Type(ts, type, new_type);
+      BoxType type =
+        BoxTS_New_Intrinsic_With_Name(ts, bt->size, bt->alignment, bt->name);
       assert(type == bt->expected);
     }
   }
@@ -472,6 +465,20 @@ BoxType BoxTS_New_Intrinsic(BoxTS *ts, size_t size, size_t alignment) {
   return new_type;
 }
 
+BoxType BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
+                                      size_t alignment, const char *name) {
+  BoxType out_old = BoxTS_New_Intrinsic(ts, size, alignment);
+  TS_Name_Set(ts, out_old, name);
+
+  BoxXXXX *prim_new =
+    BoxType_Create_Primary((BoxTypeId) out_old, size, alignment);
+
+  if (prim_new)
+    TS_Set_New_Style_Type(ts, out_old, BoxType_Create_Ident(prim_new, name));
+
+  return out_old;
+}
+
 BoxType BoxTS_Procedure_New(BoxTS *ts, BoxType child,
                             BoxComb comb, BoxType parent) {
   TSDesc td;
@@ -566,11 +573,15 @@ static BoxType My_Begin_Composite(TSKind kind, TS *ts) {
 }
 
 BoxType BoxTS_Begin_Struct(BoxTS *ts) {
-  return My_Begin_Composite(TS_KIND_STRUCTURE, ts);
+  BoxType out_old = My_Begin_Composite(TS_KIND_STRUCTURE, ts);
+  TS_Set_New_Style_Type(ts, out_old, BoxType_Create_Structure());
+  return out_old;
 }
 
 BoxType BoxTS_Begin_Species(BoxTS *ts) {
-  return My_Begin_Composite(TS_KIND_SPECIES, ts);
+  BoxType out_old = My_Begin_Composite(TS_KIND_SPECIES, ts);
+  TS_Set_New_Style_Type(ts, out_old, BoxType_Create_Species());
+  return out_old;
 }
 
 BoxType BoxTS_Begin_Enum(BoxTS *ts) {
@@ -685,10 +696,24 @@ static void My_Add_Member(TSKind kind, BoxTS *ts, BoxType s, BoxType m,
 void BoxTS_Add_Struct_Member(BoxTS *ts, BoxType structure, BoxType member_type,
                              const char *member_name) {
   My_Add_Member(TS_KIND_STRUCTURE, ts, structure, member_type, member_name);
+
+  BoxXXXX *structure_new = TS_Get_New_Style_Type(ts, structure);
+  if (structure_new) {
+    BoxXXXX *member_new = TS_Get_New_Style_Type(ts, member_type);
+    if (member_new)
+      BoxType_Add_Member_To_Structure(structure_new, member_new, member_name);
+  }
 }
 
 void BoxTS_Add_Species_Member(BoxTS *ts, BoxType species, BoxType member) {
   My_Add_Member(TS_KIND_SPECIES, ts, species, member, NULL);
+
+  BoxXXXX *species_new = TS_Get_New_Style_Type(ts, species);
+  if (species_new) {
+    BoxXXXX *member_new = TS_Get_New_Style_Type(ts, member);
+    if (member_new)
+      BoxType_Add_Member_To_Species(species_new, member_new);
+  }
 }
 
 BoxType BoxTS_Get_Species_Target(BoxTS *ts, BoxType species) {
