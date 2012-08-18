@@ -35,6 +35,10 @@
 #include <box/callable.h>
 #include <box/core_priv.h>
 
+
+int num_type_nodes = 0;
+size_t total_size_of_types = 0;
+
 /* Generic allocation function for BoxType objects. This function allocates a
  * type header plus a the type data, whose size and composition depend on the
  * particular type class.
@@ -68,6 +72,9 @@ void *BoxType_Alloc(BoxXXXX **t, BoxTypeClass tc) {
 
   if (Box_Mem_Sum(& total, data_offset, additional)) {
     BoxTypeDesc *td = BoxSPtr_Raw_Alloc(box_core_types.type_type, total);
+
+    num_type_nodes++;
+    total_size_of_types += total;
 
     if (!td)
       MSG_FATAL("Cannot allocate memory for type object.");
@@ -586,15 +593,15 @@ BoxXXXX *BoxType_Create_Subtype(BoxXXXX *parent, const char *name,
     BoxTypeSubtypeNode *td = BoxType_Get_Data(parent);
     subtypes = & td->subtypes;
 
-  } else {
-    printf("Type class is %d\n", parent->type_class);
+  } else
     return NULL;
-  }
   
   sd = BoxType_Alloc(& sn, BOXTYPECLASS_SUBTYPE_NODE);
   sd->name = Box_Mem_Strdup(name);
   sd->type = type ? BoxType_Link(type) : NULL;
   sd->parent = parent;
+  sd->combs.node.next = NULL;
+  sd->combs.node.previous = NULL;
   sd->subtypes.node.next = NULL;
   sd->subtypes.node.previous = NULL;
   BoxTypeNode_Append_Node(& subtypes->node, sn);
@@ -639,7 +646,7 @@ BoxBool BoxType_Register_Subtype(BoxXXXX *subtype, BoxXXXX *type) {
     BoxTypeSubtypeNode *td = BoxType_Get_Data(subtype);
     if (td->type != NULL)
       return BOXBOOL_FALSE;
-    td->type = type;
+    td->type = type ? BoxType_Link(type) : NULL;
     return BOXBOOL_TRUE;
   }
   return BOXBOOL_FALSE; 

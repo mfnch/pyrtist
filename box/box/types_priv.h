@@ -95,6 +95,7 @@ typedef struct {
   char        *name;
   BoxXXXX     *parent;
   BoxXXXX     *type;
+  BoxCombs    combs;
   BoxSubtypes subtypes;
 } BoxTypeSubtypeNode;
 

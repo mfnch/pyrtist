@@ -341,8 +341,7 @@ BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxType child, BoxComb comb,
   sym_num = BoxVMSym_New_Call(c->vm, call_num);
 
   /* We tell to the compiler that some procedures are associated to sym_num */
-  new_proc = BoxTS_Procedure_New(& c->ts, child, comb, parent);
-  BoxTS_Procedure_Register(& c->ts, new_proc, sym_num);
+  new_proc = BoxTS_Procedure_Define(& c->ts, child, comb, parent, sym_num);
   proc_name = TS_Name_Get(& c->ts, new_proc);
 
   /* We finally install the code (a C function) for the procedure */
@@ -368,14 +367,14 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
   b->species_int = BoxTS_Begin_Species(ts);
   BoxTS_Add_Species_Member(ts, b->species_int, BOXTYPE_CHAR);
   BoxTS_Add_Species_Member(ts, b->species_int, BOXTYPE_INT);
-  TS_Name_Set(ts, b->species_int, "Int");
+  b->species_int = BoxTS_New_Alias_With_Name(ts, b->species_int, "Int");
 
   /* Define Real */
   b->species_real = BoxTS_Begin_Species(ts);
   BoxTS_Add_Species_Member(ts, b->species_real, BOXTYPE_CHAR);
   BoxTS_Add_Species_Member(ts, b->species_real, BOXTYPE_INT);
   BoxTS_Add_Species_Member(ts, b->species_real, BOXTYPE_REAL);
-  TS_Name_Set(ts, b->species_real, "Real");
+  b->species_real = BoxTS_New_Alias_With_Name(ts, b->species_real, "Real");
 
   /* Define (Real, Real) */
   b->struc_real_real = BoxTS_Begin_Struct(ts);
@@ -386,7 +385,7 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
   b->species_point = BoxTS_Begin_Species(ts);
   BoxTS_Add_Species_Member(ts, b->species_point, b->struc_real_real);
   BoxTS_Add_Species_Member(ts, b->species_point, BOXTYPE_POINT);
-  TS_Name_Set(ts, b->species_point, "Point");
+  b->species_point = BoxTS_New_Alias_With_Name(ts, b->species_point, "Point");
 
   /* Define If, Else, Elif and For */
   b->alias_if =

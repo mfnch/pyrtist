@@ -321,7 +321,7 @@ BoxType_Add_Member_To_Enum(BoxXXXX *member, const char *member_name);
  * @param child The type of the argument of the function.
  * @return A new type corresponding to the specified function.
  */
-BOXEXPORT BoxXXXX *
+BOXEXPORT BOXOUT BoxXXXX *
 BoxType_Create_Function(BoxXXXX *parent, BoxXXXX *child);
 
 /**

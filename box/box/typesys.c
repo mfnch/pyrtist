@@ -34,6 +34,8 @@
 
 #include <box/core.h>
 #include <box/obj.h>
+#include <box/callable.h>
+#include <box/combs.h>
 
 
 static void Destroy_TSDesc(void *td) {
@@ -79,6 +81,24 @@ void TS_Init_Builtin_Types(TS *ts) {
   }
 }
 
+static BoxException *My_Raise_Not_Implemented(BoxPtr *parent) {
+  return BoxException_Create();
+}
+
+static BoxCallable *My_Create_Not_Implemented_Callable(void) {
+  static BoxCallable *cb = NULL;
+
+  if (!cb) {
+    BoxXXXX *void_type = BoxType_Create_Ident(BoxType_Create_Intrinsic(0, 0),
+                                              "Void");
+    cb = BoxCallable_Create_From_CCall1(void_type, void_type,
+                                        My_Raise_Not_Implemented);
+    BoxSPtr_Unlink(void_type);
+  }
+
+  return BoxSPtr_Link(cb);
+}
+
 void TS_Init(TS *ts) {
   /* Initialize the new type system. */
   Box_Initialize_Type_System();
@@ -90,6 +110,9 @@ void TS_Init(TS *ts) {
   BoxArr_Init(& ts->name_buffer, sizeof(char), TS_NAME_BUFFER_SIZE);
 }
 
+extern int num_type_nodes;
+extern size_t total_size_of_types;
+
 void TS_Finish(TS *ts) {
   BoxOcc_Finish(& ts->type_descs);
   BoxHT_Finish(& ts->members);
@@ -97,6 +120,8 @@ void TS_Finish(TS *ts) {
   BoxArr_Finish(& ts->name_buffer);
 
   Box_Finalize_Type_System();
+  printf("Number of type nodes allocated: %d\n", num_type_nodes);
+  printf("Total size of alloaction for types: %d\n", (int) total_size_of_types);
 }
 
 static void Type_New(TS *ts, Type *new_type, TSDesc *td) {
@@ -277,7 +302,7 @@ Int TS_Align(TS *ts, Int address) {
   return address;
 }
 
-Task TS_Name_Set(TS *ts, Type t, const char *name) {
+static Task TS_Name_Set(TS *ts, Type t, const char *name) {
   TSDesc *td = Type_Ptr(ts, t);
   if (td->name != (char *) NULL) {
     MSG_ERROR("TS_Name_Set: trying to set the name '%s' for type %I: "
@@ -485,8 +510,8 @@ BoxType BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
   return out_old;
 }
 
-BoxType BoxTS_Procedure_New(BoxTS *ts, BoxType child,
-                            BoxComb comb, BoxType parent) {
+static BoxType BoxTS_Procedure_New(BoxTS *ts, BoxType child,
+                                   BoxComb comb, BoxType parent) {
   TSDesc td;
   BoxType p;
   TS_TSDESC_INIT(& td);
@@ -739,7 +764,8 @@ void BoxTS_Add_Enum_Member(BoxTS *ts, BoxType enumeration, BoxType member) {
  * this could and should be improved, but we stick to the simple solution
  * for now!
  */
-void BoxTS_Procedure_Register(BoxTS *ts, BoxType p, BoxVMSymID sym_num) {
+static void BoxTS_Procedure_Register(BoxTS *ts, BoxType p,
+                                     BoxVMSymID sym_num) {
   TSDesc *proc_td, *parent_td;
   BoxType parent;
   proc_td = Type_Ptr(ts, p);
@@ -930,15 +956,30 @@ int TS_Subtype_Is_Registered(TS *ts, Type st) {
   return (st_td->target != BOXTYPE_NONE);
 }
 
-BoxType TS_Subtype_Get_Parent(TS *ts, Type st) {
-  TSDesc *st_td = Type_Ptr(ts, st);
+BoxType TS_Subtype_Get_Parent(TS *ts, Type st_old) {
+  TSDesc *st_td = Type_Ptr(ts, st_old);
+  BoxXXXX *st_new = TS_Get_New_Style_Type(ts, st_old);
+  BoxXXXX *parent_new;
+
+  assert(st_new);
   assert(st_td->kind == TS_KIND_SUBTYPE);
+
+  BoxType_Get_Subtype_Info(st_new, NULL, & parent_new, NULL);
+  assert(parent_new == TS_Get_New_Style_Type(ts, st_td->data.subtype.parent));
+
   return st_td->data.subtype.parent;
 }
 
-BoxType TS_Subtype_Get_Child(TS *ts, Type st) {
-  TSDesc *st_td = Type_Ptr(ts, st);
+BoxType TS_Subtype_Get_Child(TS *ts, Type st_old) {
+  TSDesc *st_td = Type_Ptr(ts, st_old);
+  BoxXXXX *st_new = TS_Get_New_Style_Type(ts, st_old);
+  BoxXXXX *child_new;
+
+  assert(st_new);
   assert(st_td->kind == TS_KIND_SUBTYPE);
+
+  BoxType_Get_Subtype_Info(st_new, NULL, NULL, & child_new);
+  assert(child_new == TS_Get_New_Style_Type(ts, st_td->target));
   return st_td->target;
 }
 
@@ -948,6 +989,10 @@ Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type) {
   Type parent, found_subtype;
   BoxName full_name;
   char *child_str;
+
+  BoxXXXX *subtype_new = TS_Get_New_Style_Type(ts, subtype);
+  BoxXXXX *subtype_type_new = TS_Get_New_Style_Type(ts, subtype_type);
+  BoxBool result_new;
 
   if (s_td->target != BOXTYPE_NONE) {
     MSG_ERROR("Cannot redefine subtype '%~s'", TS_Name_Get(ts, subtype));
@@ -968,13 +1013,18 @@ Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type) {
     return BOXTASK_OK;
   }
 
-  /* CHECK: MAYBE WE SHOULD RESOVE THE TYPE HERE */
+  /* CHECK: MAYBE WE SHOULD RESOLVE THE TYPE HERE */
   s_td->target = subtype_type;
   s_td->size = sizeof(Subtype);
   Member_Full_Name(ts, & full_name, parent, child_str);
   BoxHT_Insert_Obj(& ts->subtypes,
                    full_name.text, full_name.length,
                    & subtype, sizeof(Type));
+
+  assert(subtype_new && subtype_type_new);
+  result_new = BoxType_Register_Subtype(subtype_new, subtype_type_new);
+  assert(result_new);
+
   return BOXTASK_OK;
 }
 
@@ -1106,4 +1156,31 @@ void BoxTSStrucIt_Advance(BoxTSStrucIt *it) {
     it->td = next_member_td;
     it->has_more = (next_member_td->kind == TS_KIND_MEMBER);
   }
+}
+
+BoxType BoxTS_Procedure_Define(BoxTS *ts, BoxType child_old, BoxComb comb,
+                               BoxType parent_old, BoxVMSymID sym_id) {
+  BoxXXXX *child_new = TS_Get_New_Style_Type(ts, child_old);
+  BoxXXXX *parent_new = TS_Get_New_Style_Type(ts, parent_old);
+  BoxCallable *callable;
+  BoxCombType comb_type_new;
+
+  switch (comb) {
+  case BOXCOMB_CHILDOF: comb_type_new = BOXCOMBTYPE_AT; break;
+  case BOXCOMB_COPYTO: comb_type_new = BOXCOMBTYPE_COPY; break;
+  case BOXCOMB_MOVETO:
+  default:
+    assert(0);
+  }
+
+  BoxType p = BoxTS_Procedure_New(ts, child_old, comb, parent_old);
+  BoxTS_Procedure_Register(ts, p, sym_id);
+
+  assert(child_new && parent_new);
+  callable = My_Create_Not_Implemented_Callable();
+  BoxBool result = BoxType_Define_Combination(parent_new, comb_type_new,
+                                              child_new, callable);
+  assert(result);
+
+  return p;
 }

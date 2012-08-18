@@ -205,11 +205,17 @@ BoxType BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
 #define BOXTS_NEW_INTRINSIC(ts, type) \
   BoxTS_New_Intrinsic((ts), sizeof(type), __alignof__(type))
 
+#if 0
 /** Create a new procedure type in p. init tells if the procedure
  * is an initialisation procedure or not.
  */
 BoxType BoxTS_Procedure_New(BoxTS *ts, BoxType child,
                             BoxComb comb, BoxType parent);
+#endif
+
+/* Transition function. */
+BoxType BoxTS_Procedure_Define(BoxTS *ts, BoxType child, BoxComb comb,
+                               BoxType parent, BoxVMSymID sym_id);
 
 /** Get information about the procedure p. This information is stored
  * in the destination specified by the given pointers, but this happens
@@ -223,12 +229,14 @@ BoxType BoxTS_Procedure_New(BoxTS *ts, BoxType child,
 void BoxTS_Procedure_Info(BoxTS *ts, BoxType *parent, BoxType *child,
                           BoxComb *comb, BoxVMSymID *sym_num, BoxType p);
 
+#if 0
 /** Register the procedure p. After this function has been called
  * the procedure p will belong to the list of procedures of its parent.
  * sym_num is the symbol associated with the procedure.
  */
 void BoxTS_Procedure_Register(BoxTS *ts, BoxType p,
                               BoxVMSymID sym_num);
+#endif
 
 /** Unregister a procedure which was previously registered with
  * BoxTS_Procedure_Register
@@ -298,9 +306,6 @@ BoxTask TS_Subtype_Register(BoxTS *ts, BoxType subtype, BoxType subtype_type);
  * then BOXTYPE_NONE is returned inside *subtype.
  */
 BoxType TS_Subtype_Find(BoxTS *ts, BoxType parent, const char *name);
-
-/** Associate the name 'name' to the anonymous type 't'. */
-BoxTask TS_Name_Set(BoxTS *ts, BoxType t, const char *name);
 
 /** Create the string representation of the Type 't'. The returned string
  * has to be freed by the user.

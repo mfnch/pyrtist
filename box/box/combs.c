@@ -39,24 +39,31 @@ BoxBool BoxType_Get_Combinations(BoxXXXX *ident, BoxTypeIter *iter) {
 BoxBool
 BoxType_Define_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
                            BOXIN BoxCallable *callable) {
+  BoxXXXX *comb_node;
+  BoxTypeCombNode *cn;
+  BoxTypeNode *node;
+
   if (parent->type_class == BOXTYPECLASS_IDENT) {
-    BoxTypeIdent *pd = BoxType_Get_Data(parent);
+    BoxTypeIdent *td = BoxType_Get_Data(parent);
+    node = & td->combs.node;
 
-    /* Create the node. */
-    BoxXXXX *comb_node;
-    BoxTypeCombNode *cn = BoxType_Alloc(& comb_node, BOXTYPECLASS_COMB_NODE);
-    cn->comb_type = type;
-    cn->child = BoxType_Link(child);
-    cn->callable = callable;
-
-    BoxTypeNode_Prepend_Node(& pd->combs.node, comb_node);
-    return BOXBOOL_TRUE;
+  } else if (parent->type_class == BOXTYPECLASS_SUBTYPE_NODE) {
+    BoxTypeSubtypeNode *td = BoxType_Get_Data(parent);
+    node = & td->combs.node;
 
   } else {
     BoxSPtr_Unlink(callable);
-    MSG_FATAL("Parent is not an identifier type.");
+    MSG_FATAL("Parent is not an identifier type (%d).", parent->type_class);
     return BOXBOOL_FALSE;
   }
+
+  /* Create the node. */
+  cn = BoxType_Alloc(& comb_node, BOXTYPECLASS_COMB_NODE);
+  cn->comb_type = type;
+  cn->child = BoxType_Link(child);
+  cn->callable = callable;
+  BoxTypeNode_Prepend_Node(node, comb_node);
+  return BOXBOOL_TRUE;
 }
 
 /* Find the procedure 'left'@'right' */
