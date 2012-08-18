@@ -583,15 +583,15 @@ BoxXXXX *BoxType_Create_Subtype(BoxXXXX *parent, const char *name,
                                 BoxXXXX *type) {
   BoxXXXX *sn;
   BoxTypeSubtypeNode *sd;
-  BoxSubtypes *subtypes;
+  BoxTypeNode *node;
 
   if (parent->type_class == BOXTYPECLASS_IDENT) {
     BoxTypeIdent *td = BoxType_Get_Data(parent);
-    subtypes = & td->subtypes;
+    node = & td->subtypes.node;
 
   } else if (parent->type_class == BOXTYPECLASS_SUBTYPE_NODE) {
     BoxTypeSubtypeNode *td = BoxType_Get_Data(parent);
-    subtypes = & td->subtypes;
+    node = & td->subtypes.node;
 
   } else
     return NULL;
@@ -604,7 +604,7 @@ BoxXXXX *BoxType_Create_Subtype(BoxXXXX *parent, const char *name,
   sd->combs.node.previous = NULL;
   sd->subtypes.node.next = NULL;
   sd->subtypes.node.previous = NULL;
-  BoxTypeNode_Append_Node(& subtypes->node, sn);
+  BoxTypeNode_Append_Node(node, sn);
   return sn;
 }
 
@@ -685,6 +685,11 @@ BoxType_Get_Size_And_Alignment(BoxXXXX *t, size_t *size, size_t *algn) {
     case BOXTYPECLASS_ENUM_NODE:
     case BOXTYPECLASS_COMB_NODE:
       return BOXBOOL_FALSE;
+
+    case BOXTYPECLASS_SUBTYPE_NODE:
+      *size = sizeof(BoxSubtype);
+      *algn = __alignof__(BoxSubtype);
+      return BOXBOOL_TRUE;
 
     case BOXTYPECLASS_PRIMARY:
       *size = ((BoxTypePrimary *) td)->size;

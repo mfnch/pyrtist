@@ -280,9 +280,13 @@ Int TS_Get_Size(TS *ts, Type t) {
   TSDesc *td = Type_Ptr(ts, t);
   BoxXXXX *t_new = TS_Get_New_Style_Type(ts, t);
 
+#if 0
   if (!t_new)
     MSG_ERROR("New style type missing for %s", TS_Name_Get(ts, t));
-  //assert(BoxType_Get_Size(t_new) == td->size);
+  else if (BoxType_Get_Size(t_new) != td->size)
+    MSG_ERROR("Type size mismatch for %s (%d, %d)",
+              TS_Name_Get(ts, t), td->size, BoxType_Get_Size(t_new));
+#endif
 
   return td->size;
 }
@@ -712,6 +716,10 @@ static void My_Add_Member(TSKind kind, BoxTS *ts, BoxType s, BoxType m,
         s_td->size = m_size;
       break;
     }
+
+  case TS_KIND_SPECIES:
+    s_td->size = m_td->size;
+    break;
 
   default:
     if (m_td->size > s_td->size)
