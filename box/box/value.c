@@ -509,6 +509,7 @@ void Value_Emit_Allocate(Value *v) {
 
       if (alloc_id == BOXVMALLOCID_NONE) {
         Value v_size;
+
         Value_Init(& v_size, proc);
         Value_Setup_As_Imm_Int(& v_size, TS_Get_Size(& c->ts, v->type));
         CmpProc_Assemble(proc, BOXGOP_MALLOC,

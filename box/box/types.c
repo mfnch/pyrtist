@@ -22,6 +22,10 @@
 #include <string.h>
 #include <stddef.h>
 
+// TODO: remove this
+#include <stdio.h>
+
+
 #include <box/ntypes.h>
 #include <box/types_priv.h>
 
@@ -44,7 +48,10 @@ void *BoxType_Alloc(BoxXXXX **t, BoxTypeClass tc) {
     additional = sizeof(BoxTypeStructureNode); break;
   case BOXTYPECLASS_SPECIES_NODE:
     additional = sizeof(BoxTypeSpeciesNode); break;
-  case BOXTYPECLASS_COMB_NODE: additional = sizeof(BoxTypeCombNode); break;
+  case BOXTYPECLASS_COMB_NODE:
+    additional = sizeof(BoxTypeCombNode); break;
+  case BOXTYPECLASS_SUBTYPE_NODE:
+    additional = sizeof(BoxTypeSubtypeNode); break;
   case BOXTYPECLASS_PRIMARY: additional = sizeof(BoxTypePrimary); break;
   case BOXTYPECLASS_INTRINSIC: additional = sizeof(BoxTypeIntrinsic); break;
   case BOXTYPECLASS_IDENT: additional = sizeof(BoxTypeIdent); break;
@@ -179,7 +186,8 @@ static void MyType_Get_Refs(BoxXXXX *t, int *num_refs, BoxSPtr *refs,
   case BOXTYPECLASS_IDENT:
     refs[0] = ((BoxTypeIdent *) tdata)->source;
     refs[1] = ((BoxTypeIdent *) tdata)->combs.node.next;
-    *num_refs = 2;
+    refs[2] = ((BoxTypeIdent *) tdata)->subtypes.node.next;
+    *num_refs = 3;
     mems[0] = ((BoxTypeIdent *) tdata)->name;
     *num_mems = 1;
     return;
@@ -566,19 +574,31 @@ BoxBool BoxType_Get_Subtypes(BoxXXXX *type, BoxTypeIter *iter) {
 /* Add a subtype type for a given type. */
 BoxXXXX *BoxType_Create_Subtype(BoxXXXX *parent, const char *name,
                                 BoxXXXX *type) {
-  if (parent->type_class == BOXTYPECLASS_IDENT) {
-    BoxTypeIdent *id = BoxType_Get_Data(parent);
-    BoxXXXX *sn;
-    BoxTypeSubtypeNode *sd = BoxType_Alloc(& sn, BOXTYPECLASS_SUBTYPE_NODE);
- 
-    sd->name = Box_Mem_Strdup(name);
-    sd->type = type;
-    sd->type = parent;
-    BoxTypeNode_Append_Node(& id->subtypes.node, sn);
-    return sn;
-  }
+  BoxXXXX *sn;
+  BoxTypeSubtypeNode *sd;
+  BoxSubtypes *subtypes;
 
-  return NULL;
+  if (parent->type_class == BOXTYPECLASS_IDENT) {
+    BoxTypeIdent *td = BoxType_Get_Data(parent);
+    subtypes = & td->subtypes;
+
+  } else if (parent->type_class == BOXTYPECLASS_SUBTYPE_NODE) {
+    BoxTypeSubtypeNode *td = BoxType_Get_Data(parent);
+    subtypes = & td->subtypes;
+
+  } else {
+    printf("Type class is %d\n", parent->type_class);
+    return NULL;
+  }
+  
+  sd = BoxType_Alloc(& sn, BOXTYPECLASS_SUBTYPE_NODE);
+  sd->name = Box_Mem_Strdup(name);
+  sd->type = type ? BoxType_Link(type) : NULL;
+  sd->parent = parent;
+  sd->subtypes.node.next = NULL;
+  sd->subtypes.node.previous = NULL;
+  BoxTypeNode_Append_Node(& subtypes->node, sn);
+  return sn;
 }
 
 /* Find a subtype of the given type. */
@@ -686,8 +706,10 @@ BoxType_Get_Size_And_Alignment(BoxXXXX *t, size_t *size, size_t *algn) {
       /* Get species' node for the target. */
       t = ((BoxTypeSpecies *) td)->node.previous;
 
-      if (!t)
+      if (!t) {
+        printf("Empty species!\n");
         return BOXBOOL_FALSE;
+      }
 
       /* Get the node's type. */
       t = ((BoxTypeSpeciesNode *) BoxType_Get_Data(t))->type;

@@ -389,21 +389,18 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
   TS_Name_Set(ts, b->species_point, "Point");
 
   /* Define If, Else, Elif and For */
-  b->alias_if = BoxTS_New_Raised(ts, BoxTS_New_Alias(ts, BOXTYPE_INT));
-  TS_Name_Set(ts, b->alias_if, "If");
-
-  b->alias_else = BoxTS_New_Raised(ts, BoxTS_New_Alias(ts, BOXTYPE_VOID));
-  TS_Name_Set(ts, b->alias_else, "Else");
-
-  b->alias_elif = BoxTS_New_Raised(ts, BoxTS_New_Alias(ts, BOXTYPE_INT));
-  TS_Name_Set(ts, b->alias_elif, "Elif");
-
-  b->alias_for = BoxTS_New_Raised(ts, BoxTS_New_Alias(ts, BOXTYPE_INT));
-  TS_Name_Set(ts, b->alias_for, "For");
+  b->alias_if =
+    BoxTS_New_Alias_With_Name(ts, BoxTS_New_Raised(ts, BOXTYPE_INT), "If");
+  b->alias_else =
+    BoxTS_New_Alias_With_Name(ts, BoxTS_New_Raised(ts, BOXTYPE_VOID), "Else");
+  b->alias_elif =
+    BoxTS_New_Alias_With_Name(ts, BoxTS_New_Raised(ts, BOXTYPE_INT), "Elif");
+  b->alias_for =
+    BoxTS_New_Alias_With_Name(ts, BoxTS_New_Raised(ts, BOXTYPE_INT), "For");
 
   /* Define Str */
-  b->string = BOXTS_NEW_INTRINSIC(ts, BoxStr);
-  TS_Name_Set(ts, b->string, "Str");
+  b->string = BoxTS_New_Intrinsic_With_Name(ts, sizeof(BoxStr),
+                                            __alignof__(BoxStr), "Str");
 
   b->print = BoxTS_New_Alias_With_Name(ts, BOXTYPE_VOID, "Print");
   b->repr = BoxTS_New_Alias_With_Name(ts, b->string, "Repr");
@@ -806,8 +803,8 @@ BoxType Bltin_New_Type(BoxCmp *c, const char *type_name,
                        size_t type_size, size_t alignment) {
   TS *ts = & c->ts;
   Value *v = Value_New(c->cur_proc);
-  BoxType t = BoxTS_New_Intrinsic(ts, type_size, alignment);
-  TS_Name_Set(ts, t, type_name);
+  BoxType t =
+    BoxTS_New_Intrinsic_With_Name(ts, type_size, alignment, type_name);
   Value_Setup_As_Type(v, t);
   Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, type_name, v);
   Value_Unlink(v);

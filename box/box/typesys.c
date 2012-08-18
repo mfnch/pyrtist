@@ -253,6 +253,12 @@ int TS_Is_Fast(TS *ts, Type t) {
 
 Int TS_Get_Size(TS *ts, Type t) {
   TSDesc *td = Type_Ptr(ts, t);
+  BoxXXXX *t_new = TS_Get_New_Style_Type(ts, t);
+
+  if (!t_new)
+    MSG_ERROR("New style type missing for %s", TS_Name_Get(ts, t));
+  //assert(BoxType_Get_Size(t_new) == td->size);
+
   return td->size;
 }
 
@@ -452,7 +458,7 @@ size_t BoxTS_Count_Struct_Members(BoxTS *ts, BoxType s) {
  ****************************************************************************/
 
 /*FUNCTIONS: TS_X_New *******************************************************/
-BoxType BoxTS_New_Intrinsic(BoxTS *ts, size_t size, size_t alignment) {
+static BoxType BoxTS_New_Intrinsic(BoxTS *ts, size_t size, size_t alignment) {
   TSDesc td;
   BoxType new_type;
   assert(size >= 0);
@@ -527,10 +533,6 @@ BoxType BoxTS_New_Alias_With_Name(BoxTS *ts, BoxType origin_old,
     TS_Set_New_Style_Type(ts, out_old,
                           BoxType_Create_Ident(BoxType_Link(origin_new), name));
   return out_old;
-}
-
-BoxType BoxTS_New_Alias(BoxTS *ts, BoxType origin_old) {
-  return My_New(TS_KIND_ALIAS, ts, origin_old, -1);
 }
 
 BoxType BoxTS_New_Raised(BoxTS *ts, BoxType origin_old) {
@@ -711,14 +713,18 @@ void BoxTS_Add_Species_Member(BoxTS *ts, BoxType species, BoxType member) {
   BoxXXXX *species_new = TS_Get_New_Style_Type(ts, species);
   if (species_new) {
     BoxXXXX *member_new = TS_Get_New_Style_Type(ts, member);
-    if (member_new)
+    if (member_new) {
       BoxType_Add_Member_To_Species(species_new, member_new);
+      return;
+    }
   }
+
+  MSG_ERROR("Could not create species properly!");
 }
 
 BoxType BoxTS_Get_Species_Target(BoxTS *ts, BoxType species) {
   TSDesc *s_td = Type_Ptr(ts, species);
-  return s_td->data.last;
+  return BoxTS_Obsolete_Resolve_Once(ts, s_td->data.last, 0);
 }
 
 void BoxTS_Add_Enum_Member(BoxTS *ts, BoxType enumeration, BoxType member) {
@@ -896,17 +902,26 @@ BoxType BoxTS_Procedure_Search(TS *ts, BoxType *expansion_type,
  * the parent type becomes aware of it. In order for the registration to be
  * completed the full type of the subtype must be specified.
  */
-BoxType TS_Subtype_New(TS *ts, Type parent_type, const char *child_name) {
+BoxType TS_Subtype_New(TS *ts, Type parent_old, const char *child_name) {
   TSDesc td;
-  BoxType new_subtype;
+  BoxType subtype_old;
+  BoxXXXX *parent_new;
+  BoxXXXX *subtype_new;
+
   TS_TSDESC_INIT(& td);
   td.kind = TS_KIND_SUBTYPE;
   td.size = BOX_SIZE_UNKNOWN;
   td.target = BOXTYPE_NONE;
-  td.data.subtype.parent = parent_type;
+  td.data.subtype.parent = parent_old;
   td.data.subtype.child_name = strdup(child_name);
-  Type_New(ts, & new_subtype, & td);
-  return new_subtype;
+  Type_New(ts, & subtype_old, & td);
+
+  parent_new = TS_Get_New_Style_Type(ts, parent_old);
+  assert(parent_new);
+  subtype_new = BoxType_Create_Subtype(parent_new, child_name, NULL);
+  assert(subtype_new);
+  TS_Set_New_Style_Type(ts, subtype_old, BoxType_Link(subtype_new));
+  return subtype_old;
 }
 
 int TS_Subtype_Is_Registered(TS *ts, Type st) {

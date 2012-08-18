@@ -198,8 +198,6 @@ int TS_Is_Fast(BoxTS *ts, BoxType t);
 
 BoxInt TS_Align(BoxTS *ts, BoxInt address);
 
-BoxType BoxTS_New_Intrinsic(BoxTS *ts, size_t size, size_t alignment);
-
 BoxType BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
                                       size_t alignment, const char *name);
 
@@ -308,9 +306,6 @@ BoxTask TS_Name_Set(BoxTS *ts, BoxType t, const char *name);
  * has to be freed by the user.
  */
 char *TS_Name_Get(BoxTS *ts, BoxType t);
-
-/** Create a new alias type from the type 'origin'. */
-BoxType BoxTS_New_Alias(BoxTS *ts, BoxType origin);
 
 /* Transition function: alternative to BoxTS_New_Alias. */
 BoxType BoxTS_New_Alias_With_Name(BoxTS *ts, BoxType origin,

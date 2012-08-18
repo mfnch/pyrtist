@@ -374,7 +374,9 @@ BoxType_Add_Type(BoxXXXX *parent, BOXIN BoxXXXX *child);
  * @param subtype The type of the subtype or NULL to leave the subtype
  *   untyped. BoxType_Register_Subtype can be used to provide the type
  *   later.
- * @return Return the subtype.
+ * @return Return the subtype node. Note that the caller is not give a
+ *   reference to the node. In other words, the caller may need to use
+ *   BoxType_Link to claim a reference to the subtype.
  */
 BOXEXPORT BoxXXXX *
 BoxType_Create_Subtype(BoxXXXX *parent, const char *name, BoxXXXX *type);
