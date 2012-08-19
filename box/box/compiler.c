@@ -1326,11 +1326,13 @@ static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
 
     if (previous_type != BOXTYPE_NONE && !err) {
       /* Check for duplicate structure members */
-      if (member_name != NULL)
-        if (BoxTS_Find_Struct_Member(& c->ts, struc_type, member_name)
-            != BOXTYPE_NONE)
+      if (member_name != NULL) {
+        BoxXXXX *s = BoxType_From_Id(& c->ts, struc_type);
+        if (BoxType_Find_Structure_Member(s, member_name))
           MSG_ERROR("Duplicate member '%s' in structure type definition.",
                     member_name);
+      }
+
       BoxTS_Add_Struct_Member(& c->ts, struc_type, previous_type, member_name);
     }
   }

@@ -356,9 +356,6 @@ BoxType BoxTS_Find_Struct_Member(BoxTS *ts, BoxType s, const char *m_name);
  */
 BoxType BoxTS_Get_Struct_Member(BoxTS *ts, BoxType m, size_t *address);
 
-/** Obtain the name of a member from its type descriptor. */
-const char *BoxTS_Get_Struct_Member_Name(BoxTS *ts, BoxType member);
-
 /** If m is a structure/species/enum returns its first member.
  * If m is a member, return the next member.
  * It m is the last member, return the parent structure.

@@ -155,7 +155,7 @@ BoxXXXX *TS_Get_New_Style_Type(BoxTS *ts, BoxType old_type) {
 }
 
 BoxXXXX *BoxType_From_Id(BoxTS *ts, BoxTypeId id) {
-  if (id != BOXTYPE_NONE) {
+  if ((BoxType) id != BOXTYPE_NONE) {
     TSDesc *old_type_td = Type_Ptr(ts, id);
     return old_type_td->new_type;
   }
@@ -442,21 +442,6 @@ BoxType BoxTS_Find_Struct_Member(BoxTS *ts, BoxType s, const char *m_name) {
   }
 
   return result_old;
-}
-
-
-BoxType BoxTS_Get_Struct_Member(BoxTS *ts, BoxType m, size_t *address) {
-  TSDesc *m_td = Type_Ptr(ts, m);
-  assert(m_td->kind == TS_KIND_MEMBER);
-  if (address != NULL)
-    *address = m_td->size;
-  return m_td->target;
-}
-
-const char *BoxTS_Get_Struct_Member_Name(BoxTS *ts, BoxType member) {
-  TSDesc *m_td = Type_Ptr(ts, member);
-  assert(m_td->kind == TS_KIND_MEMBER);
-  return m_td->name;
 }
 
 BoxType BoxTS_Get_Next_Struct_Member(BoxTS *ts, BoxType m) {

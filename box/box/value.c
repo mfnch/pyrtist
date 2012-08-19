@@ -1026,16 +1026,28 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
 
   if (v_struc->value.cont.type == BOXCONTTYPE_POINT)
     return My_Point_Get_Member(v_struc, memb);
-  BoxType t_memb = BoxTS_Find_Struct_Member(& cmp->ts, v_struc->type, memb);
-  if (t_memb != BOXTYPE_NONE) {
+
+  BoxXXXX *struct_type =
+    BoxType_Get_Stem(BoxType_From_Id(& cmp->ts, v_struc->type));
+  BoxXXXX *node_type = BoxType_Find_Structure_Member(struct_type, memb);
+
+  if (node_type) {
     size_t offset;
-    t_memb = BoxTS_Get_Struct_Member(& cmp->ts, t_memb, & offset);
-    return Value_Get_Subfield(v_struc, offset, t_memb);
+    BoxXXXX *member_type;
+    BoxBool result = BoxType_Get_Structure_Member(node_type, NULL,
+                                                  & offset, 0, & member_type);
+    if (result) {
+      BoxType t_memb = BoxTS_Find_Struct_Member(& cmp->ts, v_struc->type, memb);
+      t_memb = BoxTS_Obsolete_Resolve_Once(& cmp->ts, t_memb, 0);
+      return Value_Get_Subfield(v_struc, offset, t_memb);
+    }
 
   } else {
-    Value_Unlink(v_struc);
-    return NULL;
+    assert(BoxTS_Find_Struct_Member(& cmp->ts, v_struc->type, memb) == BOXTYPE_NONE);
   }
+
+  Value_Unlink(v_struc);
+  return NULL;
 }
 
 void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, CmpProc *proc) {
