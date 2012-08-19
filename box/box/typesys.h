@@ -126,6 +126,7 @@ void TS_Finish(BoxTS *ts);
  * to an old style type.
  */
 void TS_Set_New_Style_Type(BoxTS *ts, BoxType old_type, BoxXXXX *new_type);
+BoxXXXX *BoxType_From_Id(BoxTS *ts, BoxTypeId id);
 
 /* Transition function to get the new style type associated to an old style
  * type.
@@ -195,8 +196,6 @@ int TS_Is_Fast(BoxTS *ts, BoxType t);
 #define TS_Is_Subtype(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_SUBTYPE)
 #define TS_Is_Structure(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_STRUCTURE)
 #define TS_Is_Empty(ts, t) (TS_Get_Size((ts), (t)) == 0)
-
-BoxInt TS_Align(BoxTS *ts, BoxInt address);
 
 BoxType BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
                                       size_t alignment, const char *name);
@@ -321,9 +320,6 @@ BoxType BoxTS_New_Alias_With_Name(BoxTS *ts, BoxType origin,
  */
 BoxType BoxTS_New_Raised(BoxTS *ts, BoxType t_origin);
 
-/** Create a new array type, with 'item_num' items with type 'item'. */
-BoxType BoxTS_New_Array(BoxTS *ts, BoxType item, BoxInt num_items);
-
 /** Given a raised type '^Type', return the original type 'Type'. */
 BoxType BoxTS_Get_Raised(BoxTS *ts, BoxType t);
 
@@ -347,22 +343,7 @@ void BoxTS_Add_Species_Member(BoxTS *ts, BoxType species, BoxType member);
 /** Return the target for the species type 'species'. */
 BoxType BoxTS_Get_Species_Target(BoxTS *ts, BoxType species);
 
-/** Function called to create an empty enumeration. Members can be added
- * with TS_Structure_Enum.
- */
-BoxType BoxTS_Begin_Enum(BoxTS *ts);
-
-/** Add a member to an enumeration type defined with TS_Enum_Begin. */
-void BoxTS_Add_Enum_Member(BoxTS *ts, BoxType enumeration, BoxType member);
-
 BoxTask TS_Default_Value(BoxTS *ts, BoxType *dv_t, BoxType t, BoxData *dv);
-
-/** Given an array type (N)X returns X in *memb and the size N
- * of the array in *array_size.
- * An error is generated if array is not an array type.
- */
-BoxTask BoxTS_Get_Array_Member(BoxTS *ts, BoxType *memb, BoxType array,
-                               BoxInt *array_size);
 
 /** Search the member 'm_name' from the members of the structure s.
  * If the member is found then return its type number, otherwise return
@@ -383,9 +364,6 @@ const char *BoxTS_Get_Struct_Member_Name(BoxTS *ts, BoxType member);
  * It m is the last member, return the parent structure.
  */
 BoxType BoxTS_Get_Next_Struct_Member(BoxTS *ts, BoxType m);
-
-/** Counts the member of a structure/species/enum (using TS_Member_Next) */
-size_t BoxTS_Count_Struct_Members(BoxTS *ts, BoxType s);
 
 /** This function tells if a type t2 is contained into a type t1.
  * The return value is the following:

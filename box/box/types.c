@@ -787,7 +787,9 @@ BoxXXXX *BoxType_Resolve(BoxXXXX *t, BoxTypeResolve resolve, int num) {
         return t;
       else {
         BoxXXXX *tg = ((BoxTypeSpecies *) BoxType_Get_Data(t))->node.previous;
-        return ((BoxTypeSpeciesNode *) BoxType_Get_Data(tg))->type;
+        if (!tg)
+          return t;
+        t = ((BoxTypeSpeciesNode *) BoxType_Get_Data(tg))->type;
       }
       break;
 

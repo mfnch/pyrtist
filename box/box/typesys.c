@@ -120,8 +120,10 @@ void TS_Finish(TS *ts) {
   BoxArr_Finish(& ts->name_buffer);
 
   Box_Finalize_Type_System();
+#if 0
   printf("Number of type nodes allocated: %d\n", num_type_nodes);
   printf("Total size of alloaction for types: %d\n", (int) total_size_of_types);
+#endif
 }
 
 static void Type_New(TS *ts, Type *new_type, TSDesc *td) {
@@ -147,6 +149,14 @@ void TS_Set_New_Style_Type(BoxTS *ts, BoxType old_type, BoxXXXX *new_type) {
 BoxXXXX *TS_Get_New_Style_Type(BoxTS *ts, BoxType old_type) {
   if (old_type != BOXTYPE_NONE) {
     TSDesc *old_type_td = Type_Ptr(ts, old_type);
+    return old_type_td->new_type;
+  }
+  return NULL;
+}
+
+BoxXXXX *BoxType_From_Id(BoxTS *ts, BoxTypeId id) {
+  if (id != BOXTYPE_NONE) {
+    TSDesc *old_type_td = Type_Ptr(ts, id);
     return old_type_td->new_type;
   }
   return NULL;
@@ -277,10 +287,9 @@ int TS_Is_Fast(TS *ts, Type t) {
 }
 
 Int TS_Get_Size(TS *ts, Type t) {
-  TSDesc *td = Type_Ptr(ts, t);
-  BoxXXXX *t_new = TS_Get_New_Style_Type(ts, t);
-
 #if 0
+  TSDesc *td = Type_Ptr(ts, t);
+
   if (!t_new)
     MSG_ERROR("New style type missing for %s", TS_Name_Get(ts, t));
   else if (BoxType_Get_Size(t_new) != td->size)
@@ -288,22 +297,13 @@ Int TS_Get_Size(TS *ts, Type t) {
               TS_Name_Get(ts, t), td->size, BoxType_Get_Size(t_new));
 #endif
 
-  return td->size;
+  BoxXXXX *t_new = TS_Get_New_Style_Type(ts, t);
+  return BoxType_Get_Size(t_new);
 }
-
-size_t TS_Get_Alignment(BoxTS *ts, BoxType t) {
-  TSDesc *td = Type_Ptr(ts, t);
-  return td->alignment;
-}
-
 
 TSKind TS_Get_Kind(TS *ts, Type t) {
   TSDesc *td = Type_Ptr(ts, t);
   return td->kind;
-}
-
-Int TS_Align(TS *ts, Int address) {
-  return address;
 }
 
 static Task TS_Name_Set(TS *ts, Type t, const char *name) {
@@ -401,22 +401,6 @@ char *TS_Name_Get(TS *ts, Type t) {
   }
 }
 
-BoxTask BoxTS_Get_Array_Member(BoxTS *ts, BoxType *memb, BoxType array,
-                               BoxInt *array_size) {
-  BoxType a = TS_Resolve(ts, array, TS_KS_ALIAS | TS_KS_SPECIES
-                                    | TS_KS_RAISED);
-  TSDesc *a_td = Type_Ptr(ts, a);
-  if (a_td->kind != TS_KIND_ARRAY) {
-    MSG_ERROR("Cannot extract element of the non-array type '%~s'",
-              TS_Name_Get(ts, array));
-    return BOXTASK_ERROR;
-  }
-  *memb = a_td->target;
-  if (array_size != NULL)
-    *array_size = a_td->data.array_size;
-  return BOXTASK_OK;
-}
-
 /* The full name to use in the hashtable of members */
 static void Member_Full_Name(TS *ts, BoxName *n, Type s, const char *m_name) {
   BoxArr_Clear(& ts->name_buffer);
@@ -426,7 +410,7 @@ static void Member_Full_Name(TS *ts, BoxName *n, Type s, const char *m_name) {
   n->length = BoxArr_Num_Items(& ts->name_buffer);
 }
 
-Type BoxTS_Find_Struct_Member(BoxTS *ts, BoxType s, const char *m_name) {
+Type My_Find_Struct_Member(BoxTS *ts, BoxType s, const char *m_name) {
   BoxName n;
   BoxHTItem *hi;
   s = TS_Resolve(ts, s, TS_KS_ALIAS | TS_KS_SPECIES | TS_KS_RAISED);
@@ -436,6 +420,30 @@ Type BoxTS_Find_Struct_Member(BoxTS *ts, BoxType s, const char *m_name) {
   else
     return BOXTYPE_NONE;
 }
+
+BoxType BoxTS_Find_Struct_Member(BoxTS *ts, BoxType s, const char *m_name) {
+  BoxType result_old = My_Find_Struct_Member(ts, s, m_name);
+  BoxXXXX *s_new = TS_Get_New_Style_Type(ts, s);
+  assert(s_new);
+  BoxXXXX *result_new =
+    BoxType_Find_Structure_Member(BoxType_Get_Stem(s_new), m_name);
+
+  if ((!result_new) != (result_old == BOXTYPE_NONE)) {
+    MSG_ERROR("Structure find mismatch for '%s' in '%s'",
+              m_name, TS_Name_Get(ts, s));
+
+  } else if (result_new) {
+    BoxXXXX *rr_new;
+    BoxBool x =
+      BoxType_Get_Structure_Member(result_new, NULL, NULL, NULL, & rr_new);
+    assert(x);
+    BoxType rr_old = BoxTS_Obsolete_Resolve_Once(ts, result_old, 0);
+    assert(TS_Get_New_Style_Type(ts, rr_old) == rr_new);
+  }
+
+  return result_old;
+}
+
 
 BoxType BoxTS_Get_Struct_Member(BoxTS *ts, BoxType m, size_t *address) {
   TSDesc *m_td = Type_Ptr(ts, m);
@@ -454,30 +462,6 @@ const char *BoxTS_Get_Struct_Member_Name(BoxTS *ts, BoxType member) {
 BoxType BoxTS_Get_Next_Struct_Member(BoxTS *ts, BoxType m) {
   TSDesc *td = Type_Ptr(ts, m);
   return td->kind == TS_KIND_MEMBER ? td->data.member_next : td->target;
-}
-
-size_t BoxTS_Count_Struct_Members(BoxTS *ts, BoxType s) {
-  size_t count=0;
-  BoxType next=s;
-  TSDesc *td = Type_Ptr(ts, s);
-
-  switch(td->kind) {
-  case TS_KIND_SPECIES:
-  case TS_KIND_STRUCTURE:
-  case TS_KIND_ENUM:
-    while (1) {
-      next = BoxTS_Get_Next_Struct_Member(ts, next);
-      if (!TS_Is_Member(ts, next))
-        break;
-      ++count;
-    };
-    break;
-  default:
-    MSG_FATAL("Trying to count members of the non-membered type '%~s'",
-              TS_Name_Get(ts, s));
-  }
-
-  return count;
 }
 
 /****************************************************************************
@@ -573,10 +557,6 @@ BoxType BoxTS_New_Raised(BoxTS *ts, BoxType origin_old) {
   return out_old;
 }
 
-BoxType BoxTS_New_Array(BoxTS *ts, BoxType item, Int num_items) {
-  return My_New(TS_KIND_ARRAY, ts, item, num_items);
-}
-
 BoxType BoxTS_Get_Raised(BoxTS *ts, BoxType t) {
   BoxType resolved_t = TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_SPECIES);
   TSDesc *resolved_td = Type_Ptr(ts, resolved_t);
@@ -613,10 +593,6 @@ BoxType BoxTS_Begin_Species(BoxTS *ts) {
   BoxType out_old = My_Begin_Composite(TS_KIND_SPECIES, ts);
   TS_Set_New_Style_Type(ts, out_old, BoxType_Create_Species());
   return out_old;
-}
-
-BoxType BoxTS_Begin_Enum(BoxTS *ts) {
-  return My_Begin_Composite(TS_KIND_ENUM, ts);
 }
 
 /*FUNCTIONS: My_Add_Member ***************************************************/
@@ -758,10 +734,6 @@ void BoxTS_Add_Species_Member(BoxTS *ts, BoxType species, BoxType member) {
 BoxType BoxTS_Get_Species_Target(BoxTS *ts, BoxType species) {
   TSDesc *s_td = Type_Ptr(ts, species);
   return BoxTS_Obsolete_Resolve_Once(ts, s_td->data.last, 0);
-}
-
-void BoxTS_Add_Enum_Member(BoxTS *ts, BoxType enumeration, BoxType member) {
-  My_Add_Member(TS_KIND_ENUM, ts, enumeration, member, NULL);
 }
 
 /****************************************************************************/
