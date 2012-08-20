@@ -343,8 +343,6 @@ void BoxTS_Add_Species_Member(BoxTS *ts, BoxType species, BoxType member);
 /** Return the target for the species type 'species'. */
 BoxType BoxTS_Get_Species_Target(BoxTS *ts, BoxType species);
 
-BoxTask TS_Default_Value(BoxTS *ts, BoxType *dv_t, BoxType t, BoxData *dv);
-
 /** Search the member 'm_name' from the members of the structure s.
  * If the member is found then return its type number, otherwise return
  * BOXTYPE_NONE

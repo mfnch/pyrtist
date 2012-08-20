@@ -134,10 +134,11 @@ typedef enum {
  * BoxType_Resolve.
  */
 typedef enum {
-  BOXTYPERESOLVE_IDENT   = 0x1,
-  BOXTYPERESOLVE_SPECIES = 0x2,
-  BOXTYPERESOLVE_RAISED  = 0x4,
-  BOXTYPERESOLVE_POINTER = 0x8
+  BOXTYPERESOLVE_IDENT   = 0x01,
+  BOXTYPERESOLVE_SPECIES = 0x02,
+  BOXTYPERESOLVE_RAISED  = 0x04,
+  BOXTYPERESOLVE_POINTER = 0x08,
+  BOXTYPERESOLVE_SUBTYPE = 0x10
 } BoxTypeResolve;
 
 /*****************************************************************************

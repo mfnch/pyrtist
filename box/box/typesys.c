@@ -37,6 +37,7 @@
 #include <box/callable.h>
 #include <box/combs.h>
 
+static TSCmp My_Compare(TS *ts, Type t1, Type t2);
 
 static void Destroy_TSDesc(void *td) {
   BoxSPtr_Unlink(((TSDesc *) td)->new_type);
@@ -301,21 +302,10 @@ Int TS_Get_Size(TS *ts, Type t) {
   return BoxType_Get_Size(t_new);
 }
 
+
 TSKind TS_Get_Kind(TS *ts, Type t) {
   TSDesc *td = Type_Ptr(ts, t);
   return td->kind;
-}
-
-static Task TS_Name_Set(TS *ts, Type t, const char *name) {
-  TSDesc *td = Type_Ptr(ts, t);
-  if (td->name != (char *) NULL) {
-    MSG_ERROR("TS_Name_Set: trying to set the name '%s' for type %I: "
-              "this type has already been given the name '%s'!",
-              name, t, td->name);
-    return BOXTASK_FAILURE;
-  }
-  td->name = BoxMem_Strdup(name);
-  return BOXTASK_OK;
 }
 
 static char *TS_Name_Get_Case(TSKind kind, TS *ts, TSDesc *td, Type t,
@@ -469,10 +459,22 @@ static BoxType BoxTS_New_Intrinsic(BoxTS *ts, size_t size, size_t alignment) {
   return new_type;
 }
 
+static Task My_Name_Set(TS *ts, Type t, const char *name) {
+  TSDesc *td = Type_Ptr(ts, t);
+  if (td->name != (char *) NULL) {
+    MSG_ERROR("My_Name_Set: trying to set the name '%s' for type %I: "
+              "this type has already been given the name '%s'!",
+              name, t, td->name);
+    return BOXTASK_FAILURE;
+  }
+  td->name = BoxMem_Strdup(name);
+  return BOXTASK_OK;
+}
+
 BoxType BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
                                       size_t alignment, const char *name) {
   BoxType out_old = BoxTS_New_Intrinsic(ts, size, alignment);
-  TS_Name_Set(ts, out_old, name);
+  My_Name_Set(ts, out_old, name);
 
   BoxXXXX *prim_new =
     BoxType_Create_Primary((BoxTypeId) out_old, size, alignment);
@@ -524,7 +526,7 @@ static BoxType My_New(TSKind kind, BoxTS *ts, BoxType src, BoxInt size) {
 BoxType BoxTS_New_Alias_With_Name(BoxTS *ts, BoxType origin_old,
                                   const char *name) {
   BoxType out_old = My_New(TS_KIND_ALIAS, ts, origin_old, -1);
-  TS_Name_Set(ts, out_old, name);
+  My_Name_Set(ts, out_old, name);
 
   BoxXXXX *origin_new = TS_Get_New_Style_Type(ts, origin_old);
   if (origin_new)
@@ -850,7 +852,7 @@ static BoxType My_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
                Tym_Type_Names(parent),
                Tym_Type_Names(p_td->target), Tym_Type_Names(child));*/
     if (p_td->data.proc.combine == comb) {
-      comparison = TS_Compare(ts, p_td->target, child);
+      comparison = My_Compare(ts, p_td->target, child);
       if (comparison != TS_TYPES_UNMATCH) {
         if (comparison == TS_TYPES_EXPAND)
           *expansion_type = p_td->target;
@@ -970,7 +972,7 @@ Task TS_Subtype_Register(TS *ts, Type subtype, Type subtype_type) {
   if (found_subtype != BOXTYPE_NONE) {
     TSDesc *found_subtype_td = Type_Ptr(ts, found_subtype);
     Type found_subtype_type = found_subtype_td->target;
-    TSCmp comparison = TS_Compare(ts, found_subtype_type, subtype_type);
+    TSCmp comparison = My_Compare(ts, found_subtype_type, subtype_type);
     if ((comparison & TS_TYPES_MATCH) == 0) {
       MSG_ERROR("Cannot redefine subtype '%~s'", TS_Name_Get(ts, subtype));
       return BOXTASK_FAILURE;
@@ -1009,11 +1011,7 @@ BoxType TS_Subtype_Find(TS *ts, BoxType parent, const char *name) {
 
 /****************************************************************************/
 
-Task TS_Default_Value(TS *ts, Type *dv_t, Type t, BoxData *dv) {
-  MSG_ERROR("Still not implemented!"); return BOXTASK_FAILURE;
-}
-
-TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
+static TSCmp My_Compare(TS *ts, Type t1, Type t2) {
   TSDesc *td1, *td2;
   TSCmp cmp = TS_TYPES_EQUAL;
   if (t1 == t2) return TS_TYPES_EQUAL;
@@ -1035,7 +1033,7 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
         while (1) {
           m = BoxTS_Get_Next_Struct_Member(ts, m);
           if (m == t1) return TS_TYPES_UNMATCH;
-          if (TS_Compare(ts, m, t2) != TS_TYPES_UNMATCH) {
+          if (My_Compare(ts, m, t2) != TS_TYPES_UNMATCH) {
             if (BoxTS_Get_Next_Struct_Member(ts, m) == t1) return cmp;
             return cmp & TS_TYPES_EXPAND;
           }
@@ -1059,7 +1057,7 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
           m1 = BoxTS_Get_Next_Struct_Member(ts, m1);
           m2 = BoxTS_Get_Next_Struct_Member(ts, m2);
           if (m1 == t1 || m2 == t2) break;
-          cmp &= TS_Compare(ts, m1, m2);
+          cmp &= My_Compare(ts, m1, m2);
           if (cmp == TS_TYPES_UNMATCH) return TS_TYPES_UNMATCH;
         }
         if (m1 != t1 || m2 != t2) return TS_TYPES_UNMATCH;
@@ -1078,20 +1076,47 @@ TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
       if (td1->data.proc.combine != td2->data.proc.combine)
         return TS_TYPES_UNMATCH;
       
-      if (TS_Compare(ts, td1->data.proc.parent, td2->data.proc.parent)
+      if (My_Compare(ts, td1->data.proc.parent, td2->data.proc.parent)
           != TS_TYPES_EQUAL)
         return TS_TYPES_UNMATCH;
-      return TS_Compare(ts, td1->target, td2->target);
+      return My_Compare(ts, td1->target, td2->target);
 
     case TS_KIND_POINTER:
     default:
-      MSG_ERROR("TS_Compare: not fully implemented!");
+      MSG_ERROR("My_Compare: not fully implemented!");
       return TS_TYPES_UNMATCH;
     }
 
     t1 = td1->target;
     t2 = td2->target;
   }
+}
+
+TSCmp TS_Compare(TS *ts, Type t1, Type t2) {
+  BoxXXXX *t1_new = BoxType_From_Id(ts, t1);
+  BoxXXXX *t2_new = BoxType_From_Id(ts, t2);
+  TSCmp cmp_old = My_Compare(ts, t1, t2);
+
+  if (t1_new && t2_new) {
+    switch (BoxType_Compare(t1_new, t2_new)) {
+    case BOXTYPECMP_SAME:
+    case BOXTYPECMP_EQUAL:
+      assert(cmp_old == TS_TYPES_EQUAL || cmp_old == TS_TYPES_MATCH);
+      break;
+    case BOXTYPECMP_MATCHING:
+      assert(cmp_old == TS_TYPES_EXPAND);
+      break;
+    case BOXTYPECMP_DIFFERENT:
+      assert(cmp_old == TS_TYPES_UNMATCH);
+      break;
+    }
+
+  } else
+    MSG_FATAL("Missing new style type for %~s or %~s",
+              TS_Name_Get(ts, t1),
+              TS_Name_Get(ts, t2));
+
+  return cmp_old;
 }
 
 void BoxTSStrucIt_Init(BoxTS *ts, BoxTSStrucIt *it, BoxType s) {

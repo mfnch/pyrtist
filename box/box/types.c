@@ -517,7 +517,7 @@ void BoxType_Add_Member_To_Species(BoxXXXX *species, BoxXXXX *member) {
  */
 BoxXXXX *BoxType_Get_Species_Member_Type(BoxXXXX *node) {
   if (node->type_class == BOXTYPECLASS_SPECIES_NODE) {
-    BoxTypeStructureNode *sn = BoxType_Get_Data(node);
+    BoxTypeSpeciesNode *sn = BoxType_Get_Data(node);
     return sn->type;
   }
 
@@ -768,6 +768,13 @@ BoxXXXX *BoxType_Resolve(BoxXXXX *t, BoxTypeResolve resolve, int num) {
     case BOXTYPECLASS_COMB_NODE:
       return NULL;
 
+    case BOXTYPECLASS_SUBTYPE_NODE:
+      if ((resolve & BOXTYPERESOLVE_SUBTYPE) == 0)
+        return t;
+      else
+        t = ((BoxTypeSubtypeNode *) BoxType_Get_Data(t))->type;
+      return NULL;
+
     case BOXTYPECLASS_IDENT:
       if ((resolve & BOXTYPERESOLVE_IDENT) == 0)
         return t;
@@ -807,6 +814,10 @@ BoxXXXX *BoxType_Resolve(BoxXXXX *t, BoxTypeResolve resolve, int num) {
       else
         t = ((BoxTypePointer *) BoxType_Get_Data(t))->source;
       break;
+
+    default:
+      MSG_FATAL("BoxType_Resolve: unknown type class %d",
+                t->type_class);
     }
 
     if (num == 1)
@@ -858,9 +869,9 @@ BoxTypeCmp BoxType_Compare(BoxXXXX *left, BoxXXXX *right) {
   if (left == right)
     return BOXTYPECMP_SAME;
 
-  left = BoxType_Resolve(left, BOXTYPERESOLVE_IDENT, 1);
+  left = BoxType_Resolve(left, BOXTYPERESOLVE_IDENT, 0);
   right = BoxType_Resolve(right, 
-                          BOXTYPERESOLVE_IDENT | BOXTYPERESOLVE_SPECIES, 1);
+                          BOXTYPERESOLVE_IDENT | BOXTYPERESOLVE_SPECIES, 0);
   if (left == right)
     return BOXTYPECMP_EQUAL;
 
