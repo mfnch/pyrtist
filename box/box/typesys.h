@@ -35,6 +35,7 @@
 #  include "vmalloc.h"
 
 #  include <box/ntypes.h>
+#  include <box/callable.h>
 
 typedef enum {
   TS_KIND_INTRINSIC=1,
@@ -204,38 +205,10 @@ BoxType BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
 #define BOXTS_NEW_INTRINSIC(ts, type) \
   BoxTS_New_Intrinsic((ts), sizeof(type), __alignof__(type))
 
-#if 0
-/** Create a new procedure type in p. init tells if the procedure
- * is an initialisation procedure or not.
- */
-BoxType BoxTS_Procedure_New(BoxTS *ts, BoxType child,
-                            BoxComb comb, BoxType parent);
-#endif
-
-/* Transition function. */
-BoxType BoxTS_Procedure_Define(BoxTS *ts, BoxType child, BoxComb comb,
-                               BoxType parent, BoxVMSymID sym_id);
-
-/** Get information about the procedure p. This information is stored
- * in the destination specified by the given pointers, but this happens
- * only if the pointer is != NULL.
- * @param ts the type-system data structure
- * @param parent the parent of the procedure
- * @param child the children of the procedure
- * @param kind the kind of the procedure
- * @param sym_num the symbol identification (for registered procedures)
- */
-void BoxTS_Procedure_Info(BoxTS *ts, BoxType *parent, BoxType *child,
-                          BoxComb *comb, BoxVMSymID *sym_num, BoxType p);
-
-#if 0
-/** Register the procedure p. After this function has been called
- * the procedure p will belong to the list of procedures of its parent.
- * sym_num is the symbol associated with the procedure.
- */
-void BoxTS_Procedure_Register(BoxTS *ts, BoxType p,
-                              BoxVMSymID sym_num);
-#endif
+/* Transition functions. */
+BoxType BoxTS_Procedure_Define(BoxTS *ts, BoxType child_old, BoxComb comb,
+                                BoxType parent_old, BoxVMSymID sym_id,
+                                BOXIN BoxCallable *cb);
 
 /** Unregister a procedure which was previously registered with
  * BoxTS_Procedure_Register
@@ -269,12 +242,6 @@ BoxType BoxTS_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
  * with 'p')
  */
 int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxComb comb, BoxType p);
-
-/** Create and register a procedure by calling firt TS_Procedure_New
- * and then TS_Procedure_Register. sym_num is the associated symbol
- * identifier.
- */
-BoxInt TS_Procedure_Def(BoxInt proc, BoxInt of_type, BoxInt sym_num);
 
 /** Create a new unregistered subtype: a subtype is unregistered when
  * the parent is not aware of its existance. An unregistered type is defined

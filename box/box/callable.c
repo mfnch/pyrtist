@@ -20,20 +20,20 @@
 #include <assert.h>
 
 #include <box/ntypes.h>
-#include <box/core_priv.h>
 #include <box/obj.h>
 #include <box/callable.h>
+#include <box/vm.h>
 
-struct BoxCallable_struct {
-  char            *uid;     /**< Unique identifier for the function. */
-  BoxCallableKind kind;     /**< How the callable is internally implemented. */
-  BoxPtr          context;  /**< Pointer to callable private data. */
-  union {
-    BoxCCall1     c_call_1;
-    BoxCCall2     c_call_2;
-    BoxCCall3     c_call_3;
-  }               implem;   /**< Implementation data. */
-};
+#include <box/core_priv.h>
+#include <box/callable_priv.h>
+
+
+/* Initialize a callable object as an undefined callable. */
+void BoxCallable_Init_As_Undefined(BoxCallable *cb) {
+  cb->uid = NULL;
+  cb->kind = BOXCALLABLEKIND_UNDEFINED;
+  BoxPtr_Init(& cb->context);
+}
 
 /* Initialize a callable object from a BoxCCall1 C function. */
 void BoxCallable_Init_From_CCall1(BoxCallable *cb, BoxCCall1 call) {
@@ -51,6 +51,14 @@ void BoxCallable_Init_From_CCall2(BoxCallable *cb, BoxCCall2 call) {
   BoxPtr_Init(& cb->context);
 }
 
+/* Initialize a callable object from a BoxCCallOld C function. */
+void BoxCallable_Init_From_CCallOld(BoxCallable *cb, BoxCCallOld c_old) {
+  cb->uid = NULL;
+  cb->kind = BOXCALLABLEKIND_C_OLD;
+  cb->implem.c_old = c_old;
+  BoxPtr_Init(& cb->context);
+}
+
 /* Initialize a callable object from a BoxCCall3 C function. */
 void BoxCallable_Init_From_CCall3(BoxCallable *cb, BoxCCall3 call,
                                   BOXIN BoxPtr *context) {
@@ -65,24 +73,24 @@ void BoxCallable_Init_From_CCall3(BoxCallable *cb, BoxCCall3 call,
   cb->implem.c_call_3 = call;
 }
 
-#if 0
+#define BoxVM_Link(x) (x)
 
-/* Initialize a callable object from a BoxCCall3 C function. */
-void BoxCallable_Init_From_CCall3(BoxCallable *cb, BoxCCall3 call,
-                                  BOXIN BoxPtr *context) {
+/* Initialize a callable object from a BoxVM procedure. */
+BoxCallable *BoxCallable_Init_From_VM(BoxCallable *cb,
+                                      BOXIN BoxPtr *context,
+                                      BoxVM *vm, BoxVMCallNum num) {
   cb->uid = NULL;
-  cb->kind = BOXCALLABLEKIND_C_2;
+  cb->kind = BOXCALLABLEKIND_VM;
 
   if (context)
     cb->context = *context;
   else
     BoxPtr_Init(& cb->context);
 
-  cb->implem.vm_call.vm = (BoxVM *) thing;
-  cb->implem.vm_call.call_num = (BoxVMCallNum) thing;
+  cb->implem.vm_call.vm = BoxVM_Link(vm);
+  cb->implem.vm_call.call_num = num;
+  return NULL;
 }
-
-#endif
 
 /* Create a callable object from a BoxCCall1 C function. */
 BOXOUT BoxCallable *
@@ -99,8 +107,10 @@ BOXOUT BoxCallable *
 BoxCallable_Create_From_CCall2(BoxXXXX *t_out, BoxXXXX *t_in, BoxCCall2 call) {
   BoxXXXX *t_cb = BoxType_Create_Function(t_in, t_out);
   BoxCallable *cb = BoxSPtr_Raw_Alloc(t_cb, sizeof(BoxCallable));
-  BoxCallable_Init_From_CCall2(cb, call);
-  BoxSPtr_Unlink(t_cb);
+  if (cb) {
+    BoxCallable_Init_From_CCall2(cb, call);
+    BoxSPtr_Unlink(t_cb);
+  }
   return cb;
 }
 
@@ -110,24 +120,46 @@ BoxCallable_Create_From_CCall3(BoxXXXX *t_out, BoxXXXX *t_in,
                                BOXIN BoxPtr *context, BoxCCall3 call) {
   BoxXXXX *t_cb = BoxType_Create_Function(t_in, t_out);
   BoxCallable *cb = BoxSPtr_Raw_Alloc(t_cb, sizeof(BoxCallable));
-  BoxCallable_Init_From_CCall3(cb, call, context);
-  BoxSPtr_Unlink(t_cb);
+  if (cb) {
+    BoxCallable_Init_From_CCall3(cb, call, context);
+    BoxSPtr_Unlink(t_cb);
+  }
   return cb;
 }
 
+/* Create a callable object from a BoxCCall3 C function. */
+BOXOUT BoxCallable *
+BoxCallable_Create_From_CCallOld(BoxXXXX *t_out, BoxXXXX *t_in,
+                                 BoxCCallOld c_old) {
+  BoxXXXX *t_cb = BoxType_Create_Function(t_in, t_out);
+  BoxCallable *cb = BoxSPtr_Raw_Alloc(t_cb, sizeof(BoxCallable));
+  if (cb) {
+    BoxCallable_Init_From_CCallOld(cb, c_old);
+    BoxSPtr_Unlink(t_cb);
+  }
+  return cb;
+}
 
-
-
-
-
-
-
-
+/* Initialize a callable object from a BoxVM procedure. */
+BOXOUT BoxCallable *
+BoxCallable_Create_From_VM(BoxXXXX *t_out, BoxXXXX *t_in,
+                           BOXIN BoxPtr *context,
+                           BoxVM *vm, BoxVMCallNum num) {
+  BoxXXXX *t_cb = BoxType_Create_Function(t_in, t_out);
+  BoxCallable *cb = BoxSPtr_Raw_Alloc(t_cb, sizeof(BoxCallable));
+  if (cb) {
+    BoxCallable_Init_From_VM(cb, context, vm, num);
+    BoxSPtr_Unlink(t_cb);
+  }
+  return cb;
+}
 
 /* Create a callable object from a BoxCCall2 C function. */
-BoxException *
+BOXOUT BoxException *
 BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent) {
   switch (cb->kind) {
+  case BOXCALLABLEKIND_UNDEFINED:
+    return BoxException_Create();
   case BOXCALLABLEKIND_C_1:
     return cb->implem.c_call_1(parent);
   case BOXCALLABLEKIND_C_2:
@@ -143,14 +175,20 @@ BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent) {
       BoxPtr_Init_From_SPtr(& callable, cb);
       return cb->implem.c_call_3(& callable, parent, & null);
     }
+  case BOXCALLABLEKIND_VM:
+    assert(0);
+    return NULL;
+
   }
   return BoxException_Create();
 }
 
 /* Create a callable object from a BoxCCall2 C function. */
-BoxException *
+BOXOUT BoxException *
 BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
   switch (cb->kind) {
+  case BOXCALLABLEKIND_UNDEFINED:
+    return BoxException_Create();
   case BOXCALLABLEKIND_C_1:
     return cb->implem.c_call_1(parent);
   case BOXCALLABLEKIND_C_2:
@@ -161,6 +199,10 @@ BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
       BoxPtr_Init_From_SPtr(& callable, cb);
       return cb->implem.c_call_3(& callable, parent, child);
     }
+  case BOXCALLABLEKIND_VM:
+    /*BoxVM_Module_Execute_With_Args(vmx, cb->call_num, parent, child);*/
+    assert(0);
+    return NULL;
   }
   return BoxException_Create();
 }

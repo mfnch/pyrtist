@@ -1155,8 +1155,14 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   /* Register the procedure, covering old ones */
   if (do_register) {
     BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
-    t_proc = BoxTS_Procedure_Define(& c->ts, t_child, comb_type, t_parent,
-                                    sym_id);
+    BoxVMCallNum call_num = CmpProc_Get_Call_Num(& proc_implem);
+    BoxXXXX *t_child_new = BoxType_From_Id(& c->ts, t_child),
+            *t_parent_new = BoxType_From_Id(& c->ts, t_parent);
+    BoxCallable *callable =
+      BoxCallable_Create_From_VM(t_parent_new, t_child_new, NULL,
+                                 c->vm, call_num);
+    t_proc = BoxTS_Procedure_Define(& c->ts, t_child, comb_type,
+                                     t_parent, sym_id, callable);
     Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT,
                             & c->ts, comb_type, t_proc);
   }

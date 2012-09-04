@@ -221,7 +221,7 @@ BOXEXPORT BoxXXXX *
 BoxType_Create_Raised(BoxXXXX *source);
 
 /**
- * Uraise a raised type. For example, if r is the raised type of t, then
+ * Un-raise a raised type. For example, if r is the raised type of t, then
  * BoxType_Unraise(r) returns t.
  * @param raised A raised type.
  * @return The unraised type.

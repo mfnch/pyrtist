@@ -61,8 +61,8 @@ BoxType_Find_Combination_With_Id(BoxXXXX *parent, BoxCombType type,
 /**
  * Get details about a combination found with BoxType_Find_Combination.
  * @param comb The combination, as returned by BoxType_Find_Combination.
- * @param type Where to put the child type.
- * @param action Where to put the combination action.
+ * @param type Where to put the child type (if not NULL).
+ * @param action Where to put the combination action (if not NULL).
  * @return BOXBOOL_TRUE if comb is a combination node, BOXBOOL_FALSE otherwise.
  */
 BOXEXPORT BoxBool
