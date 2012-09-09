@@ -59,13 +59,6 @@ typedef enum {
   BOXTYPE_CPTR
 } BoxType;
 
-/** Type of combination */
-typedef enum {
-  BOXCOMB_CHILDOF, /**< Left@Right combination */
-  BOXCOMB_COPYTO,  /**< Left copied to Right */
-  BOXCOMB_MOVETO   /**< Left relocated in memory into Right */
-} BoxComb;
-
 #    define BOXSUBTYPE_PARENT_PTR(subtype_ptr) \
        ((void *) ((*(subtype_ptr)).parent.ptr))
 

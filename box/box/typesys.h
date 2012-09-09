@@ -81,9 +81,9 @@ typedef struct {
     BoxType last,
             member_next;
     struct {
-      BoxComb combine;
-      BoxType parent;
-      BoxUInt sym_num;
+      BoxCombType combine;
+      BoxType     parent;
+      BoxUInt     sym_num;
     } proc;
     struct {
       BoxType parent;
@@ -206,14 +206,14 @@ BoxType BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
   BoxTS_New_Intrinsic((ts), sizeof(type), __alignof__(type))
 
 /* Transition functions. */
-BoxType BoxTS_Procedure_Define(BoxTS *ts, BoxType child_old, BoxComb comb,
-                                BoxType parent_old, BoxVMSymID sym_id,
-                                BOXIN BoxCallable *cb);
+BoxType BoxTS_Procedure_Define(BoxTS *ts, BoxType child_old, BoxCombType comb,
+                               BoxType parent_old, BoxVMSymID sym_id,
+                               BOXIN BoxCallable *cb);
 
 /** Unregister a procedure which was previously registered with
  * BoxTS_Procedure_Register
  */
-void BoxTS_Procedure_Unregister(BoxTS *ts, BoxComb comb, BoxType p);
+void BoxTS_Procedure_Unregister(BoxTS *ts, BoxCombType comb, BoxType p);
 
 /** Obtain the symbol identification number of a registered procedure.
  */
@@ -234,14 +234,14 @@ typedef enum {
  * is not needed then *expansion_type = BOXTYPE_NONE.
  */
 BoxType BoxTS_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
-                               BoxType child, BoxComb comb, BoxType parent,
+                               BoxType child, BoxCombType comb, BoxType parent,
                                TSSearchMode mode);
 
 /** Return whether a procedure is registered (does just check if one
  * of the registered procedures of the parent of 'p' has type ID matching
  * with 'p')
  */
-int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxComb comb, BoxType p);
+int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxCombType comb, BoxType p);
 
 /** Create a new unregistered subtype: a subtype is unregistered when
  * the parent is not aware of its existance. An unregistered type is defined

@@ -30,6 +30,7 @@
 #  include <stdlib.h>
 
 #  include "types.h"
+#  include <box/ntypes.h>
 #  include "srcpos.h"
 
 #  define AST_MAX_NUM_SUBNODES 4
@@ -264,11 +265,11 @@ typedef struct {
 
 /** Node for procedure definition/declaration */
 typedef struct {
-  ASTNode  *child_type,
-           *parent_type,
-           *c_name,
-           *implem;
-  BoxComb  combine;
+  ASTNode     *child_type,
+              *parent_type,
+              *c_name,
+              *implem;
+  BoxCombType combine;
 } ASTNodeProcDef;
 
 /** Node for type definition */
@@ -403,7 +404,7 @@ ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
 ASTNode *ASTNodeRaise_New(ASTNode *expr);
 ASTNode *ASTNodeSubtype_Build(ASTNode *parent, const char *subtype);
 ASTNode *ASTNodeSelfGet_New(BoxInt level);
-ASTNode *ASTNodeProcDef_New(ASTNode *child_type, BoxComb combine,
+ASTNode *ASTNodeProcDef_New(ASTNode *child_type, BoxCombType combine,
                             ASTNode *parent_type);
 ASTNode *ASTNodeProcDef_Set(ASTNode *proc_def, ASTNode *c_name,
                             ASTNode *implem);

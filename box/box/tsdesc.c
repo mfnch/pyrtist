@@ -21,6 +21,7 @@
 #include <stdlib.h>
 
 #include "types.h"
+#include "combs.h"
 #include "mem.h"
 #include "typesys.h"
 #include "vm_private.h"
@@ -28,6 +29,7 @@
 #include "tsdesc.h"
 #include "vmsymstuff.h"
 #include "operator.h"
+#include "messages.h"
 
 typedef struct {
   BoxVMObjDesc desc;
@@ -53,19 +55,38 @@ static void My_Build_Struc_Desc(BoxCmp *c,
 }
 
 static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxType child,
-                                 BoxComb comb, BoxType parent) {
+                                 BoxCombType comb, BoxType parent) {
   BoxVM *vm = c->vm;
   BoxTS *ts = & c->ts;
-  BoxType p =
+
+  BoxType p_old =
     BoxTS_Procedure_Search(ts, (BoxType *) NULL,
                            child, comb, parent,
                            TSSEARCHMODE_INHERITED);
-  if (p == BOXTYPE_NONE)
+
+  BoxXXXX *child_new = BoxType_From_Id(ts, child);
+  BoxXXXX *parent_new = BoxType_From_Id(ts, parent);
+  BoxTypeCmp expand_info;
+  BoxCallable *cb;
+  BoxVMCallNum old_callnum, new_callnum = 0;
+  BoxXXXX *p = BoxType_Find_Combination(parent_new, comb, child_new,
+                                        & expand_info);
+  if (p && BoxType_Get_Combination_Info(p, NULL, & cb)) {
+    assert(expand_info >= BOXTYPECMP_EQUAL);
+    if (!BoxCallable_Get_VM_CallNum(cb, vm, & new_callnum))
+      MSG_ERROR("Callable '%~s' is not registered",
+                TS_Name_Get(ts, p_old));
+  } else if (p_old != BOXTYPE_NONE)
+    MSG_ERROR("Callable '%~s' not found", TS_Name_Get(ts, p_old));
+
+  if (p_old == BOXTYPE_NONE)
     return BOXVMCALLNUM_NONE;
 
   else {
-    BoxVMSymID sym_id = TS_Procedure_Get_Sym(ts, p);
-    return BoxVMSym_Get_Call_Num(vm, sym_id);
+    BoxVMSymID sym_id = TS_Procedure_Get_Sym(ts, p_old);
+    old_callnum = BoxVMSym_Get_Call_Num(vm, sym_id);
+    assert(new_callnum == 0 || new_callnum == old_callnum);
+    return old_callnum;
   }
 }
 
@@ -99,11 +120,11 @@ static void My_Build_Obj_Desc(BoxCmp *c, MyObjDescBuilder *bldr, BoxType t) {
 
   } else {
     bldr->desc.initializer =
-      My_Find_Proc(c, BOXTYPE_CREATE, BOXCOMB_CHILDOF, t);
+      My_Find_Proc(c, BOXTYPE_CREATE, BOXCOMBTYPE_AT, t);
     bldr->desc.finalizer =
-      My_Find_Proc(c, BOXTYPE_DESTROY, BOXCOMB_CHILDOF, t);
-    bldr->desc.copier = My_Find_Proc(c, t, BOXCOMB_COPYTO, t);
-    bldr->desc.mover = My_Find_Proc(c, t, BOXCOMB_MOVETO, t);
+      My_Find_Proc(c, BOXTYPE_DESTROY, BOXCOMBTYPE_AT, t);
+    bldr->desc.copier = My_Find_Proc(c, t, BOXCOMBTYPE_COPY, t);
+    bldr->desc.mover = My_Find_Proc(c, t, BOXCOMBTYPE_MOVE, t);
   }
 
   switch(tk) {

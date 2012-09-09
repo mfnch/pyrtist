@@ -183,7 +183,7 @@ void Bltin_Str_Register_Procs(BoxCmp *c) {
   Bltin_Proc_Def(c,    c->bltin.num, c->bltin.string, My_Length_Str);
 
   /* Copy Str to Str */
-  Bltin_Comb_Def(c, c->bltin.string, BOXCOMB_COPYTO, c->bltin.string,
+  Bltin_Comb_Def(c, c->bltin.string, BOXCOMBTYPE_COPY, c->bltin.string,
                  My_Str_Copy);
 
   /* String comparison */

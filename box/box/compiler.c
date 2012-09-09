@@ -1073,7 +1073,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   Value *v_child, *v_parent, *v_ret = NULL;
   BoxType t_child, t_parent,
           t_proc = BOXTYPE_NONE;
-  BoxComb comb_type;
+  BoxCombType comb_type;
   ASTNode *n_c_name = n->attr.proc_def.c_name,
           *n_implem = n->attr.proc_def.implem;
   char *c_name = NULL;
@@ -1162,7 +1162,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
       BoxCallable_Create_From_VM(t_parent_new, t_child_new, NULL,
                                  c->vm, call_num);
     t_proc = BoxTS_Procedure_Define(& c->ts, t_child, comb_type,
-                                     t_parent, sym_id, callable);
+                                    t_parent, sym_id, callable);
     Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT,
                             & c->ts, comb_type, t_proc);
   }

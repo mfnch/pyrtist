@@ -66,10 +66,10 @@ BoxType_Define_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
   return BOXBOOL_TRUE;
 }
 
-/* Find the procedure 'left'@'right' */
+/* Find the non-inherited procedure 'left'@'right'. */
 BoxXXXX *
-BoxType_Find_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
-                         BoxTypeCmp *expand) {
+BoxType_Find_Own_Combination(BoxXXXX *parent, BoxCombType type,
+                             BoxXXXX *child, BoxTypeCmp *expand) {
   BoxTypeIter ti;
   if (BoxType_Get_Combinations(parent, & ti)) {
     BoxXXXX *t;
@@ -86,6 +86,34 @@ BoxType_Find_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
       }
     }
   }
+
+  return NULL;
+}
+
+/* Find a (possibly inherited procedure) child@parent of parent. */
+BoxXXXX *
+BoxType_Find_Combination(BoxXXXX *parent, BoxCombType comb_type,
+                         BoxXXXX *child, BoxTypeCmp *expand) {
+  BoxXXXX *found_comb, *former_parent;
+
+  do {
+    /* Find a combination for the parent type, if found return. */
+    found_comb =
+      BoxType_Find_Own_Combination(parent, comb_type, child, expand);
+
+    if (found_comb)
+      return found_comb;
+
+    /* Remember the parent. */
+    former_parent = parent;
+
+    /* If not found, resolve the parent and try again. */
+    parent = BoxType_Resolve(parent,
+                             (BOXTYPERESOLVE_IDENT | BOXTYPERESOLVE_SPECIES
+                              | BOXTYPERESOLVE_RAISED),
+                             1);
+
+  } while (parent != former_parent);
 
   return NULL;
 }

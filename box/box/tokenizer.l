@@ -222,11 +222,11 @@ include BEGIN(include);
 [$]+  { yylval.SelfLevel = yyleng; MY_SCAN_TOK(); return TOK_SELF;}
 
  /* Combination symbols */
-"@"   {yylval.Combine = BOXCOMB_CHILDOF; MY_SCAN_TOK(); return TOK_COMBINE;}
-"(=)" {yylval.Combine = BOXCOMB_COPYTO; MY_SCAN_TOK(); return TOK_COMBINE;}
+"@"   {yylval.Combine = BOXCOMBTYPE_AT; MY_SCAN_TOK(); return TOK_COMBINE;}
+"(=)" {yylval.Combine = BOXCOMBTYPE_COPY; MY_SCAN_TOK(); return TOK_COMBINE;}
  /* for compatibility with v 0.1 */
-"@@"  {yylval.Combine = BOXCOMB_CHILDOF; MY_SCAN_TOK(); return TOK_COMBINE;}
-"@&"  {yylval.Combine = BOXCOMB_CHILDOF; MY_SCAN_TOK(); return TOK_COMBINE;}
+"@@"  {yylval.Combine = BOXCOMBTYPE_AT; MY_SCAN_TOK(); return TOK_COMBINE;}
+"@&"  {yylval.Combine = BOXCOMBTYPE_AT; MY_SCAN_TOK(); return TOK_COMBINE;}
 
  /* Special tokens */
 "(.[)" {yylval.TTag = BOXTYPE_CREATE;  MY_SCAN_TOK(); return TOK_TTAG;}

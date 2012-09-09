@@ -46,15 +46,17 @@
 #define BOX_MAX_NUM_MEMS_IN_TYPE 3
 
 /**
- * List node (used in structures, enums, etc.)
+ * @brief List node (used in structures, enums, etc.)
  */
 typedef struct {
   BoxXXXX *next, *previous;
 } BoxTypeNode;
 
 /**
- * Intrinsic Box type: basically a piece of memory handled opaquely by C
- * initializers, finalizers, etc. (e.g. Int, Real, Str, ...)
+ * @brief Intrinsic Box type.
+ *
+ * This is basically a piece of memory handled opaquely by C initializers,
+ * finalizers, etc. (e.g. Int, Real, Str, ...)
  */
 typedef struct {
   BoxTypeId id;
@@ -63,8 +65,10 @@ typedef struct {
 } BoxTypePrimary;
 
 /**
- * Intrinsic Box type: basically a piece of memory handled opaquely by C
- * initializers, finalizers, etc. (e.g. Int, Real, Str, ...)
+ * @brief Intrinsic Box type.
+ *
+ * This is basically a piece of memory handled opaquely by C initializers,
+ * finalizers, etc. (e.g. Int, Real, Str, ...)
  */
 typedef struct {
   size_t  size,
@@ -72,7 +76,8 @@ typedef struct {
 } BoxTypeIntrinsic;
 
 /**
- * Collection of combinations allowing combination searches.
+ * @brief Collection of combinations allowing combination searches.
+ *
  * This object is used internally by the type system.
  */
 typedef struct BoxCombs_struct {
@@ -80,7 +85,8 @@ typedef struct BoxCombs_struct {
 } BoxCombs;
 
 /**
- * Collection of subtypes which allow fast search (hash table).
+ * @brief Collection of subtypes which allow fast search (hash table).
+ *
  * This object is used internally by the type system.
  */
 typedef struct BoxSubtypes_struct {
@@ -88,7 +94,7 @@ typedef struct BoxSubtypes_struct {
 } BoxSubtypes;
 
 /**
- * Subtype node.
+ * @brief Subtype node.
  */
 typedef struct {
   BoxTypeNode node;
@@ -100,8 +106,10 @@ typedef struct {
 } BoxTypeSubtypeNode;
 
 /**
- * A type identifier: basically a node in the type tree which allows the type
- * to be visible and used in the Box language.
+ * @brief A type identifier.
+ *
+ * This is basically a node in the type tree which allows the type to be
+ * visible and used in the Box language.
  */
 typedef struct {
   char         *name;
@@ -112,17 +120,21 @@ typedef struct {
 } BoxTypeIdent;
 
 /**
- * A raised type: a type which is identical to the source type it refers to,
- * but is treated as different when matching combinations. Object whose type
- * is raised can be un-raised, e.g. transformed to object of the original type.
+ * @brief A raised type.
+ *
+ * A raised type is a type which is identical to the source type it refers to,
+ * but is treated as different when matching combinations. Object whose type is
+ * raised can be un-raised, e.g. transformed to object of the original type.
  */
 typedef struct {
   BoxXXXX *source;
 } BoxTypeRaised;
 
 /**
- * Structure type: objects of this type contain a fixed number of objects of
- * other types, which can be referred by name.
+ * @brief Structure type.
+ *
+ * Objects of this type contain a fixed number of objects of other types, which
+ * can be referred by name.
  */
 typedef struct {
   BoxTypeNode node;
@@ -132,7 +144,7 @@ typedef struct {
 } BoxTypeStructure;
 
 /**
- * Structure node: basically, a structure member.
+ * @brief Structure node: basically, a structure member.
  */
 typedef struct {
   BoxTypeNode node;
@@ -143,7 +155,7 @@ typedef struct {
 } BoxTypeStructureNode;
 
 /**
- * Species type.
+ * @brief Species type.
  */
 typedef struct {
   BoxTypeNode node;
@@ -151,7 +163,7 @@ typedef struct {
 } BoxTypeSpecies;
 
 /**
- * Species node.
+ * @brief Species node.
  */
 typedef struct {
   BoxTypeNode node;
@@ -159,7 +171,7 @@ typedef struct {
 } BoxTypeSpeciesNode;
 
 /**
- * Combination node.
+ * @brief Combination node.
  */
 typedef struct {
   BoxTypeNode node;
@@ -169,8 +181,8 @@ typedef struct {
 } BoxTypeCombNode;
 
 /**
- * A function type: a type for something which can be called with an input
- * and returns an output.
+ * @brief A function type: a type for something which can be called with an
+ * input and returns an output.
  */
 typedef struct {
   BoxXXXX *child,
@@ -178,7 +190,7 @@ typedef struct {
 } BoxTypeFunction;
 
 /**
- * Pointer type.
+ * @brief Pointer type.
  */
 typedef struct {
   BoxXXXX *source;

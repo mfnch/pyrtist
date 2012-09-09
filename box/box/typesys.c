@@ -486,7 +486,7 @@ BoxType BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
 }
 
 static BoxType My_Procedure_New(BoxTS *ts, BoxType child,
-                                BoxComb comb, BoxType parent) {
+                                BoxCombType comb, BoxType parent) {
   TSDesc td;
   BoxType p;
   TS_TSDESC_INIT(& td);
@@ -744,7 +744,7 @@ static void My_Procedure_Register(BoxTS *ts, BoxType p, BoxVMSymID sym_num) {
   proc_td->data.proc.sym_num = sym_num;
 }
 
-int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxComb comb, BoxType p) {
+int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxCombType comb, BoxType p) {
   TSDesc *proc_td, *parent_td;
   BoxType parent, child;
 
@@ -771,7 +771,7 @@ int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxComb comb, BoxType p) {
   return 0;
 }
 
-void BoxTS_Procedure_Unregister(BoxTS *ts, BoxComb comb, BoxType p) {
+void BoxTS_Procedure_Unregister(BoxTS *ts, BoxCombType comb, BoxType p) {
   TSDesc *proc_td, *parent_td;
   BoxType parent, child,
           *prev_child_ptr;
@@ -818,7 +818,7 @@ BoxVMSymID TS_Procedure_Get_Sym(TS *ts, Type p) {
 }
 
 static BoxType My_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
-                                   BoxType child, BoxComb comb,
+                                   BoxType child, BoxCombType comb,
                                    BoxType parent) {
   TSDesc *p_td, *parent_td;
   Type p, dummy;
@@ -849,7 +849,7 @@ static BoxType My_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
 }
 
 BoxType BoxTS_Procedure_Search(TS *ts, BoxType *expansion_type,
-                               BoxType child, BoxComb comb, BoxType parent,
+                               BoxType child, BoxCombType comb, BoxType parent,
                                TSSearchMode mode) {
   BoxType previous_parent;
   int search_inherited = (mode & TSSEARCHMODE_INHERITED) != 0;
@@ -1132,28 +1132,18 @@ void BoxTSStrucIt_Advance(BoxTSStrucIt *it) {
   }
 }
 
-BoxType BoxTS_Procedure_Define(BoxTS *ts, BoxType child_old, BoxComb comb,
+BoxType BoxTS_Procedure_Define(BoxTS *ts, BoxType child_old, BoxCombType ct,
                                 BoxType parent_old, BoxVMSymID sym_id,
                                 BOXIN BoxCallable *cb) {
   BoxXXXX *child_new = TS_Get_New_Style_Type(ts, child_old);
   BoxXXXX *parent_new = TS_Get_New_Style_Type(ts, parent_old);
-  BoxCombType comb_type_new;
 
-  switch (comb) {
-  case BOXCOMB_CHILDOF: comb_type_new = BOXCOMBTYPE_AT; break;
-  case BOXCOMB_COPYTO: comb_type_new = BOXCOMBTYPE_COPY; break;
-  case BOXCOMB_MOVETO:
-  default:
-    assert(0);
-  }
-
-  BoxType p = My_Procedure_New(ts, child_old, comb, parent_old);
+  BoxType p = My_Procedure_New(ts, child_old, ct, parent_old);
   My_Procedure_Register(ts, p, sym_id);
 
   assert(child_new && parent_new);
 
-  BoxBool result = BoxType_Define_Combination(parent_new, comb_type_new,
-                                              child_new, cb);
+  BoxBool result = BoxType_Define_Combination(parent_new, ct, child_new, cb);
   assert(result);
 
   return p;

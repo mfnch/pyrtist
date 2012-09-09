@@ -101,7 +101,7 @@ BoxType Auto_Generate_Procedure(BoxCmp *c, BoxType t_child,
       BoxCallable *callable =
         BoxCallable_Create_From_VM(t_parent_new, t_child_new, NULL,
                                    c->vm, call_num);
-      t_proc = BoxTS_Procedure_Define(ts, t_child, BOXCOMB_CHILDOF, t_parent,
+      t_proc = BoxTS_Procedure_Define(ts, t_child, BOXCOMBTYPE_AT, t_parent,
                                        sym_id, callable);
       char *proc_name = TS_Name_Get(& c->ts, t_proc);
       CmpProc_Set_Alter_Name(c->cur_proc, proc_name);

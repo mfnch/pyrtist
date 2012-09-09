@@ -76,8 +76,25 @@ typedef BoxException *(*BoxCCall3)(BoxPtr *callable, BoxPtr *parent,
  */
 typedef BoxTask (*BoxCCallOld)(BoxVMX *vm);
 
+/**
+ * @brief Abstraction of function in the Box language implementation.
+ *
+ * A @c BoxCallable object is an object which can be called by passing one
+ * parent and one child objects. The parent object is often the result of
+ * the call, while the child is typically the input argument.
+ * A @a BoxCallable object can be implemented as a C function or as a
+ * @c BoxVM procedure.
+ *
+ * @see BoxVM
+ */
 typedef struct BoxCallable_struct BoxCallable;
 
+/**
+ * @brief Enumeration of the possible implementation for a @c BoxCallable
+ * object. 
+ *
+ * @see BoxCallable
+ */
 typedef enum {
   BOXCALLABLEKIND_UNDEFINED, /**< Undefined callable. */
   BOXCALLABLEKIND_C_1,       /**< BoxCCall1. */
@@ -153,6 +170,18 @@ BOXEXPORT BOXOUT BoxCallable *
 BoxCallable_Create_From_VM(BoxXXXX *t_out, BoxXXXX *t_in,
                            BOXIN BoxPtr *context,
                            BoxVM *vm, BoxVMCallNum num);
+
+/**
+ * Return the call number for a VM callable.
+ * @param cb The input callable.
+ * @param vm The VM to which the call number refers to.
+ * @param cn Where to store the call number.
+ * @return If @p cb is a callable for a procedure defined in @p vm, then its
+ * call number is returned in <tt>*cn</tt> and @c BOXBOOL_TRUE is returned.
+ * In all the other cases, @c BOXBOOL_FALSE is returned.
+ */
+BOXEXPORT BoxBool
+BoxCallable_Get_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *cn);
 
 /**
  *

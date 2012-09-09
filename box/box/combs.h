@@ -40,16 +40,45 @@ BoxType_Define_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
                            BoxCallable *callable);
 
 /**
- * Find the procedure 'left'@'right' and return:
- * - 'left' if the procedure was found and the type 'left' is equal to the
- *   procedure left type;
- * - the expansion type, if the procedure was found but 'left' must be
+ * @brief Find a (possibly inherited) combination <tt>child@@parent</tt>
+ * of @c parent.
+ *
+ * The function returns:
+ * - @p child if the combination was found and the type @p child is equal to
+ *   the combination's child type;
+ * - the expansion type, if the combination was found but @p child must be
  *   expanded;
- * - BOXTYPE_NONE if the procedure was not found.
+ * - @c NULL if the procedure was not found.
+ *
+ * @param parent The parent type.
+ * @param comb_type The combination type, see #BoxCombType.
+ * @param child The child type.
+ * @param expand How @p child compares with the found combination's child type.
+ * @return The type of the found combination's child type (@c NULL if the
+ *   combination was not found).
+ * @see BoxCombType
+ * @see BoxType_Find_Own_Combination
  */
 BOXEXPORT BoxXXXX *
-BoxType_Find_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
-                         BoxTypeCmp *expand);
+BoxType_Find_Combination(BoxXXXX *parent, BoxCombType comb_type,
+                         BoxXXXX *child, BoxTypeCmp *expand);
+
+/**
+ * Similar to #BoxType_Find_Combination, but restrict the search to the
+ * @p parent type, excluding the inherited combinations.
+ * @param parent The parent type.
+ * @param comb_type The combination type, see #BoxCombType.
+ * @param child The child type.
+ * @param expand How @p child compares with the found combination's child type.
+ * @return The type of the found combination's child type (@c NULL if the
+ *   combination was not found).
+ * @see BoxCombType
+ * @see BoxType_Find_Combination
+ */
+BOXEXPORT BoxXXXX *
+BoxType_Find_Own_Combination(BoxXXXX *parent, BoxCombType comb_type,
+                             BoxXXXX *child, BoxTypeCmp *expand);
+
 /**
  * Similar to BoxType_Find_Combination, but uses the type ID (BoxTypeId)
  * instead of a BoxXXXX * for the child.
@@ -62,7 +91,7 @@ BoxType_Find_Combination_With_Id(BoxXXXX *parent, BoxCombType type,
  * Get details about a combination found with BoxType_Find_Combination.
  * @param comb The combination, as returned by BoxType_Find_Combination.
  * @param type Where to put the child type (if not NULL).
- * @param action Where to put the combination action (if not NULL).
+ * @param cb Where to put the callable (if not NULL).
  * @return BOXBOOL_TRUE if comb is a combination node, BOXBOOL_FALSE otherwise.
  */
 BOXEXPORT BoxBool

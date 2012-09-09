@@ -24,6 +24,7 @@
 #include <assert.h>
 
 #include "types.h"
+#include "ntypes.h"
 #include "defaults.h"
 #include "mem.h"
 #include "messages.h"
@@ -53,7 +54,7 @@ static void My_Syntax_Error();
 %union {
   char *        String;
   BoxType       TTag;
-  BoxComb       Combine;
+  BoxCombType   Combine;
   ASTScope      Scope;
   ASTUnOp       UnaryOperator;
   ASTBinOp      BinaryOperator;

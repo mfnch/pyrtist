@@ -18,7 +18,7 @@
  ****************************************************************************/
 
 /**
- * @file types.h
+ * @file ntypes.h
  * @brief Declaration of BoxType and the associated functionality.
  *
  * This header defines the BoxType object and most of the functions needed
@@ -96,7 +96,8 @@ typedef enum {
  */
 typedef enum {
   BOXCOMBTYPE_AT,
-  BOXCOMBTYPE_COPY
+  BOXCOMBTYPE_COPY,
+  BOXCOMBTYPE_MOVE
 } BoxCombType;
 
 /**
@@ -124,7 +125,7 @@ typedef int BoxFunc;
  */
 typedef enum {
   BOXTYPECMP_DIFFERENT = 0x0, /**< the two types are different. */
-  BOXTYPECMP_MATCHING  = 0x1, /**< right can be expended to left. */
+  BOXTYPECMP_MATCHING  = 0x1, /**< right can be expanded to left. */
   BOXTYPECMP_EQUAL     = 0x3, /**< right and left are equal. */
   BOXTYPECMP_SAME      = 0x7  /**< right and left are the same type. */
 } BoxTypeCmp;

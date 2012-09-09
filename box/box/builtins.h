@@ -28,6 +28,7 @@
 #  define _BUILTINS_H
 
 #  include "types.h"
+#  include "ntypes.h"
 #  include "cmpptrs.h"
 
 /** Builtin types */
@@ -72,10 +73,10 @@ BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
  * function has returned, Box programs will be able to find the combination
  * and use it!
  */
-BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxType child, BoxComb comb,
+BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxType child, BoxCombType comb,
                           BoxType parent, BoxTask (*c_fn)(BoxVMX *));
 
-/** Similar to 'Bltin_Comb_Def' but assumes 'comb == BOXCOMB_CHILDOF'.
+/** Similar to 'Bltin_Comb_Def' but assumes 'comb == BOXCOMBTYPE_AT'.
  * @see Bltin_Comb_Def
  */
 BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
