@@ -25,9 +25,14 @@
 
 
 /* Get the iterator over the combinations of the given identifier type. */
-BoxBool BoxType_Get_Combinations(BoxXXXX *ident, BoxTypeIter *iter) {
-  if (ident->type_class == BOXTYPECLASS_IDENT) {
-    BoxTypeIdent *td = BoxType_Get_Data(ident);
+BoxBool BoxType_Get_Combinations(BoxXXXX *t, BoxTypeIter *iter) {
+  if (t->type_class == BOXTYPECLASS_IDENT) {
+    BoxTypeIdent *td = BoxType_Get_Data(t);
+    iter->current_node = td->combs.node.next;
+    return BOXBOOL_TRUE;
+
+  } else if (t->type_class == BOXTYPECLASS_SUBTYPE_NODE) {
+    BoxTypeSubtypeNode *td = BoxType_Get_Data(t);
     iter->current_node = td->combs.node.next;
     return BOXBOOL_TRUE;
   }
@@ -37,8 +42,8 @@ BoxBool BoxType_Get_Combinations(BoxXXXX *ident, BoxTypeIter *iter) {
 
 /* Define a combination 'child'@'parent' and associate an action to it. */
 BoxBool
-BoxType_Define_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
-                           BOXIN BoxCallable *callable) {
+BoxType_Define_Combination(BoxXXXX *parent, BoxCombType comb_type,
+                           BoxXXXX *child, BOXIN BoxCallable *callable) {
   BoxXXXX *comb_node;
   BoxTypeCombNode *cn;
   BoxTypeNode *node;
@@ -59,7 +64,7 @@ BoxType_Define_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
 
   /* Create the node. */
   cn = BoxType_Alloc(& comb_node, BOXTYPECLASS_COMB_NODE);
-  cn->comb_type = type;
+  cn->comb_type = comb_type;
   cn->child = BoxType_Link(child);
   cn->callable = callable;
   BoxTypeNode_Prepend_Node(node, comb_node);

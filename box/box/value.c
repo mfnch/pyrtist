@@ -30,6 +30,7 @@
 #include "autogen.h"
 #include "vmsymstuff.h"
 #include "tsdesc.h"
+#include "combs.h"
 
 /* FIXME: there is a flaw in the design of the Value datastructure.
  *  We keep track of references to Value objects, but we shouldn't do this.
@@ -714,8 +715,7 @@ void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
 }
 
 /* REFERENCES: return: new, parent: 0, child: -1; */
-static Value *My_Emit_Call(Value *parent, Value *child, TSSearchMode mode,
-                           BoxTask *success) {
+static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
   BoxCmp *c = parent->proc->cmp;
   TS *ts = & c->ts;
   BoxType found_procedure, expansion_for_child;
@@ -744,17 +744,25 @@ static Value *My_Emit_Call(Value *parent, Value *child, TSSearchMode mode,
   if (TS_Compare(ts, child->type, BOXTYPE_VOID)) {
     Value_Unlink(child);
     *success = BOXTASK_OK;
-    return (Value *) NULL;
+    return NULL;
   }
 
   /* Now we search for the procedure associated with *child */
-  mode |= TSSEARCHMODE_INHERITED;
+  BoxXXXX *child_new = BoxType_From_Id(ts, child->type);
+  BoxXXXX *parent_new = BoxType_From_Id(ts, parent->type);
+  BoxTypeCmp expand;
+  BoxXXXX *found_combination = 
+    BoxType_Find_Combination(parent_new, BOXCOMBTYPE_AT, child_new, & expand);
+
   found_procedure =
     BoxTS_Procedure_Search(ts, & expansion_for_child,
-                           child->type, BOXCOMBTYPE_AT, parent->type, mode);
+                           child->type, BOXCOMBTYPE_AT, parent->type,
+                           TSSEARCHMODE_INHERITED);
+
+  assert((found_procedure != BOXTYPE_NONE) == (found_combination != NULL));
 
   /* If the procedure is not there we try to auto-generate it */
-  if (found_procedure == BOXTYPE_NONE) {
+  if (!found_combination) {
     /* Note that we never generate X@Y where X requires expansion.
      * Therefore, it is safe to set expansion_for_child to BOXTYPE_NONE.
      */
@@ -775,6 +783,15 @@ static Value *My_Emit_Call(Value *parent, Value *child, TSSearchMode mode,
     }
   }
 
+#if 0
+  BoxCallable cb;
+  if (BoxType_Get_Combination_Info(found_combination, NULL, & cb)) {
+    if (BoxCallable_Get_VM_CallNum(cb, BoxVM *vm, BoxVMCallNum *cn)) {
+
+    }
+  }
+#endif
+
   sym_id = TS_Procedure_Get_Sym(ts, found_procedure);
   Value_Emit_Call_From_SymID(sym_id, parent, child);
 
@@ -784,12 +801,12 @@ static Value *My_Emit_Call(Value *parent, Value *child, TSSearchMode mode,
 }
 
 Value *Value_Emit_Call(Value *parent, Value *child, BoxTask *success) {
-  return My_Emit_Call(parent, child, 0, success);
+  return My_Emit_Call(parent, child, success);
 }
 
 BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child) {
   BoxTask t;
-  Value_Unlink(My_Emit_Call(parent, child, TSSEARCHMODE_BLACKLIST, & t));
+  Value_Unlink(My_Emit_Call(parent, child, & t));
   return t;
 }
 
@@ -1204,52 +1221,59 @@ static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
 /** Expands the value 'src' as prescribed by the species 'expansion_type'.
  * REFERENCES: return: new, src: -1;
  */
-Value *Value_Expand(Value *src, BoxType expansion_type) {
+static Value *
+Value_Expand_New(Value *src, BoxType t_dst, BoxXXXX *t_dst_new) {
   BoxCmp *c = src->proc->cmp;
   TS *ts = & c->ts;
-  BoxInt t_src, t_dst;
+  BoxInt t_src = src->type;
+  BoxXXXX *t_src_new = BoxType_From_Id(ts, t_src);
 
-//   assert(e->is.typed && e->is.value);
+  assert((t_src == t_dst) == (t_src_new == t_dst_new));
 
-  t_dst = expansion_type;
-  t_src = src->type;
-
-#ifdef DEBUG_SPECIES_EXPANSION
-  printf("Expand: '%s' --> '%s'\n",
-         Tym_Type_Names(e->type), Tym_Type_Names(species));
-#endif
-
-  if (t_src == t_dst)
+  if (t_src_new == t_dst_new)
     return src;
+
+  t_src_new =
+    BoxType_Resolve(t_src_new,
+                    BOXTYPERESOLVE_IDENT | BOXTYPERESOLVE_SPECIES, 0);
+  t_dst_new = BoxType_Resolve(t_dst_new, BOXTYPERESOLVE_IDENT, 0);
 
   t_src = TS_Resolve(ts, t_src, TS_KS_ALIAS | TS_KS_SPECIES);
   t_dst = TS_Resolve(ts, t_dst, TS_KS_ALIAS);
 
-  if (t_src == t_dst)
+  assert((t_src == t_dst) == (t_src_new == t_dst_new));
+
+  if (t_src_new == t_dst_new)
     return src;
 
-  switch(TS_Get_Kind(ts, t_dst)) {
-  case TS_KIND_INTRINSIC: /* t_src != t_dst */
+  switch (BoxType_Get_Class(t_dst_new)) {
+  case BOXTYPECLASS_INTRINSIC: /* t_src != t_dst */
     MSG_FATAL("Value_Expand: type forbidden in species conversions.");
     assert(0);
 
-  case TS_KIND_SPECIES:
+  case BOXTYPECLASS_SPECIES:
     {
-      BoxType t_species_memb = BoxTS_Get_Species_Target(ts, t_dst);
+      BoxXXXX *t_species_memb = BoxType_Get_Species_Target(t_dst_new);
 
-      /* XXX TODO: The code below looks somewhat awkward... */
-      TSCmp match = TS_Compare(ts, t_species_memb, t_dst);
-      if (match != TS_TYPES_UNMATCH) {
-        if (match == TS_TYPES_EXPAND) {
-          Value *dest = Value_Expand(src, t_species_memb);
-          Value_Unlink(src);
-          src = dest;
+      if (t_species_memb) {
+        BoxTypeCmp match = BoxType_Compare(t_species_memb, t_dst_new);
+
+        if (match != BOXTYPECMP_DIFFERENT) {
+          BoxType t_species_memb_old = BoxTS_Get_Species_Target(ts, t_dst);
+
+          if (match == BOXTYPECMP_MATCHING) {
+            Value *dest =
+              Value_Expand_New(src, t_species_memb_old, t_species_memb);
+            Value_Unlink(src);
+            src = dest;
+          }
+
+          return My_Emit_Conversion(c, src, t_species_memb_old);
         }
-        return My_Emit_Conversion(c, src, t_species_memb);
       }
 
       MSG_FATAL("Value_Expand: type '%~s' is not compatible with '%~s'.",
-                TS_Name_Get(ts, t_src), TS_Name_Get(ts, t_dst));
+                BoxType_Get_Repr(t_src_new), BoxType_Get_Repr(t_dst_new));
       assert(0);
     }
 
@@ -1259,20 +1283,6 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
     /*if (td2->tot == TOT_PTR_TO) break;
     return 0;*/
 
-  case TS_KIND_ARRAY:
-    switch(TS_Compare(cmp->ts, type1, type2)) {
-    case TS_TYPES_EQUAL:
-    case TS_TYPES_MATCH:
-      return BOXTASK_OK;
-    case TS_TYPES_EXPAND:
-      MSG_ERROR("Expansion of array of species is not implemented yet!");
-      return BOXTASK_FAILURE;
-    default:
-      MSG_ERROR("Value_Expand: Expansion to array involves "
-                "an incompatible type.");
-      return BOXTASK_FAILURE;
-    }
-
   case TS_KIND_PROC:
     MSG_ERROR("Not implemented yet!"); return BOXTASK_FAILURE;
     /*if (td2->tot != TOT_PROCEDURE) return 0;
@@ -1281,12 +1291,12 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
       && Tym_Compare_Types(td1->target, td2->target) );*/
 #endif
 
-  case TS_KIND_STRUCTURE:
+  case BOXTYPECLASS_STRUCTURE:
     {
-      TSCmp comparison = TS_Compare(ts, t_dst, t_src);
+      BoxTypeCmp comparison = BoxType_Compare(t_dst_new, t_src_new);
 
       /* We check that the comparison can actually be done */
-      if (comparison == TS_TYPES_UNMATCH) {
+      if (comparison == BOXTYPECMP_DIFFERENT) {
         MSG_FATAL("Value_Expand: Expansion involves incompatible types!");
         assert(0);
       }
@@ -1294,7 +1304,7 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
       /* We have to expand the structure: we have to create a new structure
        * which can contain the expanded one.
        */
-      if (comparison == TS_TYPES_EXPAND) { /* need expansion */
+      if (comparison == BOXTYPECMP_MATCHING) { /* need expansion */
         BoxType t_dst_memb, t_src_memb;
         CmpProc *cur_proc = src->proc->cmp->cur_proc;
         Value *v_dst = Value_New(cur_proc),
@@ -1337,6 +1347,13 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
   }
 
   return NULL;
+}
+
+Value *Value_Expand(Value *src, BoxType expansion_type) {
+  BoxCmp *c = src->proc->cmp;
+  TS *ts = & c->ts;
+  BoxXXXX *expansion_type_new = BoxType_From_Id(ts, expansion_type);
+  return Value_Expand_New(src, expansion_type, expansion_type_new);
 }
 
 #if 0

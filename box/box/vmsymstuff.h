@@ -61,7 +61,7 @@ BoxVMCallNum BoxVMSym_Get_Call_Num(BoxVM *vm, BoxVMSymID sym_id);
 void BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id);
 
 void VM_Sym_Alloc_Method_Register(BoxVM *vmp, UInt sym_num,
-                                  Type type, Type method);
+                                  BoxType type, BoxType method);
 
 /** This function creates an undefined label. A label is a number which
  * refers to a position in the assembled code.

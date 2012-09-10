@@ -33,7 +33,9 @@
 #include <box/mem.h>
 #include <box/obj.h>
 #include <box/callable.h>
+
 #include <box/core_priv.h>
+#include <box/callable_priv.h>
 
 
 int num_type_nodes = 0;
@@ -87,6 +89,16 @@ void *BoxType_Alloc(BoxXXXX **t, BoxTypeClass tc) {
   MSG_FATAL("Integer overflow in BoxType_Alloc");
   return NULL;
 }
+
+/* Transition function needed to make the old and new type interchangable. */
+BoxTypeId BoxType_Get_Id(BoxXXXX *t) {
+  return t->type_id;
+}
+
+void BoxType_Set_Id(BoxXXXX *t, BoxTypeId id) {
+  t->type_id = id;
+}
+
 
 /* Get the type class of a given type. The type class is effectively the
  * type of type (the answer to whether the type is a struct, a species, etc.)
@@ -524,6 +536,11 @@ BoxXXXX *BoxType_Get_Species_Member_Type(BoxXXXX *node) {
   return NULL;
 }
 
+/* Get the target type of a species. */
+BoxXXXX *BoxType_Get_Species_Target(BoxXXXX *species) {
+  return BoxType_Resolve(species, BOXTYPERESOLVE_SPECIES, 1);
+}
+
 /* Create a new function type. */
 BOXOUT BoxXXXX *
 BoxType_Create_Function(BoxXXXX *parent, BoxXXXX *child) {
@@ -732,8 +749,8 @@ BoxType_Get_Size_And_Alignment(BoxXXXX *t, size_t *size, size_t *algn) {
 #endif
 
     case BOXTYPECLASS_FUNCTION:
-      *size = sizeof(BoxFunc);
-      *algn = __alignof__(BoxFunc);
+      *size = sizeof(BoxCallable);
+      *algn = __alignof__(BoxCallable);
       return BOXBOOL_TRUE;
 
     case BOXTYPECLASS_POINTER:

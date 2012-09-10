@@ -198,6 +198,7 @@ typedef struct {
 
 struct BoxTypeDesc_struct {
   BoxTypeClass   type_class;
+  BoxTypeId      type_id;
 
 #if 0
   struct {

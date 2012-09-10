@@ -137,7 +137,7 @@ static Task Register_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
 }
 
 void VM_Sym_Alloc_Method_Register(BoxVM *vmp, UInt sym_num,
-                                  Type type, Type method) {
+                                  BoxType type, BoxType method) {
   VMSymMethod m;
   m.type = type;
   m.method = method;

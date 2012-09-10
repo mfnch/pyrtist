@@ -89,12 +89,30 @@ BoxType_Find_Combination_With_Id(BoxXXXX *parent, BoxCombType type,
 
 /**
  * Get details about a combination found with BoxType_Find_Combination.
- * @param comb The combination, as returned by BoxType_Find_Combination.
+ * @param comb The combination, as returned by #BoxType_Find_Combination.
  * @param type Where to put the child type (if not NULL).
  * @param cb Where to put the callable (if not NULL).
  * @return BOXBOOL_TRUE if comb is a combination node, BOXBOOL_FALSE otherwise.
  */
 BOXEXPORT BoxBool
 BoxType_Get_Combination_Info(BoxXXXX *comb, BoxXXXX **child, BoxCallable **cb);
+
+#if 0
+/**
+ * Generate a call number for calling the combination @p comb from the virtual
+ * machine @p vm. If the operation succeed, the function returns
+ * @c BOXBOOL_TRUE and the call number is stored in <tt>*call_num</tt>.
+ * @param comb The combination, as returned by #BoxType_Find_Combination.
+ * @param vm The virtual machine for which a call number is generated.
+ * @param call_num Where to store the call number (ignored if @c NULL).
+ * @return A boolean which is true iff the operation succeeded.
+ * @remarks Note that - if necessary - the current callable for the combination
+ *   is replaced with a corresponding VM callable for @p vm.
+ */
+BOXEXPORT BoxBool
+BoxType_Generate_Combination_CallNum(BoxXXXX *comb, BoxVM *vm,
+                                     BoxVMCallNum *call_num);
+
+#endif
 
 #endif /* _BOX_COMBS_H */

@@ -42,9 +42,6 @@
 #  include <box/vmsym.h>
 #  include <box/vmdasm.h>
 
-/** To each type a number is associated. */
-typedef BoxType Type;
-
 /** Here is a list of builtin types. */
 typedef enum {
   TYPE_NONE           = -1,

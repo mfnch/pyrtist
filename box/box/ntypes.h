@@ -114,10 +114,6 @@ typedef enum {
   do {(dst)->block = (src)->block;                                \
       (dst)->ptr = (src)->ptr + (offset);} while(0)
 
-/**
- * A Box function (can be called from Box).
- */
-typedef int BoxFunc;
 
 /**
  * Value which determines the relationship between two types left and right.
@@ -146,13 +142,21 @@ typedef enum {
  * TYPE CREATION ROUTINES                                                    *
  *****************************************************************************/
 
+/* Transition functions. */
+BOXEXPORT BoxTypeId
+BoxType_Get_Id(BoxXXXX *t);
+
+BOXEXPORT void
+BoxType_Set_Id(BoxXXXX *t, BoxTypeId id);
+
 /**
  * Get the type class of a given type. The type class is effectively the
  * type of type (the answer to whether the type is a struct, a species, etc.)
  * @param t The input type.
  * @return The type class of t.
  */
-BoxTypeClass BoxType_Get_Class(BoxXXXX *t);
+BOXEXPORT BoxTypeClass
+BoxType_Get_Class(BoxXXXX *t);
 
 /**
  * Get the data part of a type. The size and composition of the data type of
@@ -247,6 +251,11 @@ BoxType_Create_Structure(void);
 BOXEXPORT void
 BoxType_Add_Member_To_Structure(BoxXXXX *structure, BoxXXXX *member,
                                 const char *member_name);
+
+/**
+ */
+BOXEXPORT BoxXXXX *
+BoxType_Get_Species_Target(BoxXXXX *node);
 
 /**
  * Get information on a structure member as obtained from BoxTypeIter_Get_Next.

@@ -33,6 +33,7 @@
 #include "compiler.h"
 #include "parserh.h"
 #include "autogen.h"
+#include "combs.h"
 
 #include "vmsymstuff.h"
 
@@ -1122,8 +1123,15 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   proc_style = (n_implem != NULL) ? CMPPROCSTYLE_SUB : CMPPROCSTYLE_EXTERN;
   CmpProc_Init(& proc_implem, c, proc_style);
 
+  BoxXXXX *t_child_new = BoxType_From_Id(& c->ts, t_child);
+  BoxXXXX *t_parent_new = BoxType_From_Id(& c->ts, t_parent);
+  BoxTypeCmp expand;
+  BoxXXXX *t_comb =
+    BoxType_Find_Own_Combination(t_parent_new, comb_type, t_child_new, NULL);
+
   t_proc = BoxTS_Procedure_Search(& c->ts, /*expansion_type*/ NULL,
                                   t_child, comb_type, t_parent, 0);
+
 
   if (t_proc != BOXTYPE_NONE) {
     /* A procedure of this kind is already registered: we need to know if

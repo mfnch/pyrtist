@@ -59,11 +59,6 @@ static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxType child,
   BoxVM *vm = c->vm;
   BoxTS *ts = & c->ts;
 
-  BoxType p_old =
-    BoxTS_Procedure_Search(ts, (BoxType *) NULL,
-                           child, comb, parent,
-                           TSSEARCHMODE_INHERITED);
-
   BoxXXXX *child_new = BoxType_From_Id(ts, child);
   BoxXXXX *parent_new = BoxType_From_Id(ts, parent);
   BoxTypeCmp expand_info;
@@ -73,21 +68,13 @@ static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxType child,
                                         & expand_info);
   if (p && BoxType_Get_Combination_Info(p, NULL, & cb)) {
     assert(expand_info >= BOXTYPECMP_EQUAL);
-    if (!BoxCallable_Get_VM_CallNum(cb, vm, & new_callnum))
-      MSG_ERROR("Callable '%~s' is not registered",
-                TS_Name_Get(ts, p_old));
-  } else if (p_old != BOXTYPE_NONE)
-    MSG_ERROR("Callable '%~s' not found", TS_Name_Get(ts, p_old));
+    if (BoxCallable_Get_VM_CallNum(cb, vm, & new_callnum))
+      return new_callnum;
 
-  if (p_old == BOXTYPE_NONE)
-    return BOXVMCALLNUM_NONE;
-
-  else {
-    BoxVMSymID sym_id = TS_Procedure_Get_Sym(ts, p_old);
-    old_callnum = BoxVMSym_Get_Call_Num(vm, sym_id);
-    assert(new_callnum == 0 || new_callnum == old_callnum);
-    return old_callnum;
+    MSG_ERROR("Callable is not registered");
   }
+
+  return BOXVMCALLNUM_NONE;
 }
 
 #if 0
