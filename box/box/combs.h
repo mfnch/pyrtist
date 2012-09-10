@@ -29,7 +29,7 @@
 #ifndef _BOX_COMBS_H
 #  define _BOX_COMBS_H
 
-#  include <box/ntypes.h>
+#  include <box/types.h>
 #  include <box/callable.h>
 
 /**

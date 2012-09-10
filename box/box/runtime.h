@@ -24,7 +24,6 @@
 #  include <stdlib.h>
 
 #  include <box/types.h>
-#  include <box/ntypes.h>
 
 /**
  * Create the root type.

@@ -28,7 +28,7 @@
 #ifndef _BOX_TYPES_PRIV_H
 #  define _BOX_TYPES_PRIV_H
 
-#  include <box/ntypes.h>
+#  include <box/types.h>
 #  include <box/combs.h>
 #  include <box/core.h>
 

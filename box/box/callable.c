@@ -19,7 +19,7 @@
 
 #include <assert.h>
 
-#include <box/ntypes.h>
+#include <box/types.h>
 #include <box/obj.h>
 #include <box/callable.h>
 #include <box/vm.h>

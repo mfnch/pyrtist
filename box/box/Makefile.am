@@ -46,13 +46,13 @@ bin_PROGRAMS = box
 
 # *** libboxcore ***
 lib_LTLIBRARIES = libboxcore0.3.la
-boxinc_HEADERS = version.h defaults.h types.h ntypes.h obj.h exception.h	\
-  callable.h core.h error.h mem.h stream.h array.h occupation.h srcpos.h	\
-  msgbase.h messages.h strutils.h print.h hashfunc.h hashtable.h list.h		\
-  vm_private.h vmx.h vmalloc.h vmproc.h vmsym.h vmsymstuff.h vmdasm.h vm2txt.h	\
+boxinc_HEADERS = version.h defaults.h types.h oldtypes.h obj.h exception.h     \
+  callable.h core.h error.h mem.h stream.h array.h occupation.h srcpos.h       \
+  msgbase.h messages.h strutils.h print.h hashfunc.h hashtable.h list.h	       \
+  vm_private.h vmx.h vmalloc.h vmproc.h vmsym.h vmsymstuff.h vmdasm.h vm2txt.h \
   vmserial.h vmstore.h
 
-libboxcore0_3_la_SOURCES = types.c types.h ntypes.h types_priv.h combs.c	\
+libboxcore0_3_la_SOURCES = types.c types.h oldtypes.h types_priv.h combs.c	\
   combs.h obj.c obj.h exception.c exception.h callable.c callable.h core.c	\
   core.h coremath.c coremath.h core_priv.h error.c mem.c mem.h array.c array.h	\
   stream.c stream.h stream_private.h filestream.c occupation.c occupation.h	\

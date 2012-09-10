@@ -28,14 +28,13 @@
 
 #  include <stdlib.h>
 
-#  include "types.h"
+#  include <box/types.h>
+#  include <box/callable.h>
+
 #  include "occupation.h"
 #  include "hashtable.h"
 #  include "vm_private.h"
 #  include "vmalloc.h"
-
-#  include <box/ntypes.h>
-#  include <box/callable.h>
 
 typedef enum {
   TS_KIND_INTRINSIC=1,

@@ -29,9 +29,8 @@
 #  include <stdio.h>
 #  include <stdlib.h>
 
-#  include "types.h"
-#  include <box/ntypes.h>
-#  include "srcpos.h"
+#  include <box/types.h>
+#  include <box/srcpos.h>
 
 #  define AST_MAX_NUM_SUBNODES 4
 

@@ -32,7 +32,7 @@
 #  define _BOX_CALLABLE_H
 
 #  include <box/exception.h>
-#  include <box/ntypes.h>
+#  include <box/types.h>
 #  include <box/vmproc.h>
 
 /**

@@ -27,9 +27,8 @@
 #ifndef _BUILTINS_H
 #  define _BUILTINS_H
 
-#  include "types.h"
-#  include "ntypes.h"
-#  include "cmpptrs.h"
+#  include <box/types.h>
+#  include <box/cmpptrs.h>
 
 /** Builtin types */
 typedef struct {

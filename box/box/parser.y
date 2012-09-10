@@ -24,7 +24,6 @@
 #include <assert.h>
 
 #include "types.h"
-#include "ntypes.h"
 #include "defaults.h"
 #include "mem.h"
 #include "messages.h"

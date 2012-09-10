@@ -28,7 +28,7 @@
 #ifndef _BOX_OBJ_H
 #  define _BOX_OBJ_H
 
-#include <box/ntypes.h>
+#include <box/types.h>
 
 
 /**

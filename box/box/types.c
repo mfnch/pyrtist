@@ -26,7 +26,7 @@
 #include <stdio.h>
 
 
-#include <box/ntypes.h>
+#include <box/types.h>
 #include <box/types_priv.h>
 
 #include <box/messages.h>
