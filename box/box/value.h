@@ -51,7 +51,7 @@ typedef struct {
   int       num_ref;          /**< Number of references to this Value */
   CmpProc   *proc;            /**< The compiler to which this value refers */
   ValueKind kind;             /**< Kind of Value */
-  BoxType   type;             /**< Type of the Value */
+  BoxXXXX   *type;            /**< Type of the Value */
   struct {
     BoxCont   cont;             /**< Container */
   }         value;            /**< Value of the container */

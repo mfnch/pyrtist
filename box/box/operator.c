@@ -356,7 +356,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     return result;
 
   case OPASMSCHEME_RL_R_BIN:
-    if (TS_Compare(& c->ts, opn->type_result, v_right->type)
+    if (TS_Compare(& c->ts, opn->type_result, BoxType_Get_Id(v_right->type))
         != TS_TYPES_UNMATCH) {
       Value *v_tmp = v_left;
       v_left = v_right;
@@ -402,7 +402,8 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
 
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, opr, & match,
-                                 v->type, BOXTYPE_NONE, BOXTYPE_NONE);
+                                 BoxType_Get_Id(v->type),
+                                 BOXTYPE_NONE, BOXTYPE_NONE);
   if (opn != NULL) {
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND)
@@ -413,12 +414,12 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
   } else {
     if ((opr->attr & OPR_ATTR_UN_RIGHT) != 0) {
       MSG_ERROR("%~s%s <-- Operation has not been defined!",
-                TS_Name_Get(& c->ts, v->type), opr->name);
+                BoxType_Get_Repr(v->type), opr->name);
       return NULL;
 
     } else {
       MSG_ERROR("%s%~s <-- Operation has not been defined!",
-                opr->name, TS_Name_Get(& c->ts, v->type));
+                opr->name, BoxType_Get_Id(v->type));
     }
   }
 
@@ -445,7 +446,9 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
 
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, opr, & match,
-                                 v_left->type, v_right->type, BOXTYPE_NONE);
+                                 BoxType_Get_Id(v_left->type),
+                                 BoxType_Get_Id(v_right->type),
+                                 BOXTYPE_NONE);
   if (opn != NULL) {
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND)
@@ -459,8 +462,8 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
 
   } else {
     MSG_ERROR("%~s %s %~s <-- Operation has not been defined!",
-              TS_Name_Get(& c->ts, v_left->type), opr->name,
-              TS_Name_Get(& c->ts, v_right->type));
+              BoxType_Get_Repr(v_left->type), opr->name,
+              BoxType_Get_Repr(v_right->type));
   }
 
   Value_Unlink(v_left);
@@ -484,7 +487,8 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
 
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match,
-                                 src->type, BOXTYPE_NONE, dest->type);
+                                 BoxType_Get_Id(src->type),
+                                 BOXTYPE_NONE, BoxType_Get_Id(dest->type));
 
   if (opn != NULL) {
 #if 0
@@ -535,7 +539,7 @@ Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
 
   else {
     MSG_ERROR("Don't know how to convert objects of type %~s to %~s.",
-              TS_Name_Get(& c->ts, src->type),
+              BoxType_Get_Repr(src->type),
               TS_Name_Get(& c->ts, dest));
     Value_Unlink(v_dest); /* Unlink, since we are not returning it! */
     return NULL;

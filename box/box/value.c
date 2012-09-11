@@ -52,7 +52,7 @@
 void Value_Init(Value *v, CmpProc *proc) {
   v->proc = proc;
   v->kind = VALUEKIND_ERR;
-  v->type = BOXTYPE_NONE;
+  v->type = NULL;
   v->name = NULL;
   v->attr.new_or_init = 0;
   v->attr.own_register = 0;
@@ -231,7 +231,7 @@ static int My_Value_Can_Reuse_Reg(Value *v) {
 void Value_Setup_As_Weak_Copy(Value *v_copy, Value *v) {
   v_copy->proc = v->proc;
   v_copy->kind = v->kind;
-  v_copy->type = v->type;
+  v_copy->type = BoxType_Link(v->type);
   v_copy->value.cont = v->value.cont;
   v_copy->name = (v->name == NULL) ? NULL : BoxMem_Strdup(v->name);
   v_copy->attr.own_register = 0;
@@ -250,31 +250,33 @@ void Value_Setup_As_Type_Name(Value *v, const char *name) {
 
 void Value_Setup_As_Type(Value *v, BoxType t) {
   v->kind = VALUEKIND_TYPE;
-  v->type = t;
+  v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts, t));
   v->value.cont.type = TS_Get_Cont_Type(& v->proc->cmp->ts, t);
 }
 
 void Value_Setup_As_Imm_Char(Value *v, Char c) {
   v->kind = VALUEKIND_IMM;
-  v->type = BOXTYPE_CHAR;
+  v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts,BOXTYPE_CHAR));
   BoxCont_Set(& v->value.cont, "ic", c);
 }
 
 void Value_Setup_As_Imm_Int(Value *v, Int i) {
   v->kind = VALUEKIND_IMM;
-  v->type = v->proc->cmp->bltin.species_int;
+  v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts,
+                                         v->proc->cmp->bltin.species_int));
   BoxCont_Set(& v->value.cont, "ii", i);
 }
 
 void Value_Setup_As_Imm_Real(Value *v, Real r) {
   v->kind = VALUEKIND_IMM;
-  v->type = v->proc->cmp->bltin.species_real;
+  v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts,
+                                         v->proc->cmp->bltin.species_real));
   BoxCont_Set(& v->value.cont, "ir", r);
 }
 
 void Value_Setup_As_Void(Value *v) {
   v->kind = VALUEKIND_IMM;
-  v->type = BOXTYPE_VOID;
+  v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts, BOXTYPE_VOID));
   v->value.cont.type = BOXCONTTYPE_VOID;
 }
 
@@ -332,7 +334,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
   RegAlloc *ra = & v->proc->reg_alloc;
   int use_greg;
 
-  v->type = type;
+  v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts, type));
   v->value.cont.type = TS_Get_Cont_Type(& v->proc->cmp->ts, type);
 
   switch(vc->type_of_container) {
@@ -506,13 +508,14 @@ void Value_Emit_Allocate(Value *v) {
       assert(v->proc == proc);
 
       /* Get the alloc ID for the type */
-      alloc_id = TS_Get_AllocID(c, v->type);
+      alloc_id = TS_Get_AllocID(c, BoxType_Get_Id(v->type));
 
       if (alloc_id == BOXVMALLOCID_NONE) {
         Value v_size;
 
         Value_Init(& v_size, proc);
-        Value_Setup_As_Imm_Int(& v_size, TS_Get_Size(& c->ts, v->type));
+        Value_Setup_As_Imm_Int(& v_size,
+                               TS_Get_Size(& c->ts, BoxType_Get_Id(v->type)));
         CmpProc_Assemble(proc, BOXGOP_MALLOC,
                          2, & v->value.cont, & v_size.value.cont);
 
@@ -588,7 +591,7 @@ Value *Value_To_Temp(Value *v) {
 
   case VALUEKIND_TYPE:
     {
-      BoxType t = v->type;
+      BoxType t = BoxType_Get_Id(v->type);
       v = Value_Recycle(v);
       Value_Setup_Container(v, t, & vc);
       Value_Emit_Allocate(v);
@@ -600,7 +603,7 @@ Value *Value_To_Temp(Value *v) {
     {
       Value old_v = *v;
       v = Value_Recycle(v);
-      Value_Setup_Container(v, old_v.type, & vc);
+      Value_Setup_Container(v, BoxType_Get_Id(old_v.type), & vc);
       CmpProc_Assemble(c->cur_proc, BOXGOP_MOV,
                        2, & v->value.cont, & old_v.value.cont);
       return v;
@@ -667,7 +670,8 @@ int Value_Is_Ignorable(Value *v) {
     return 1;
 
   else if (Value_Is_Value(v))
-    return (TS_Compare(& v->proc->cmp->ts, BOXTYPE_VOID, v->type)
+    return (TS_Compare(& v->proc->cmp->ts,
+                       BOXTYPE_VOID, BoxType_Get_Id(v->type))
             != TS_TYPES_UNMATCH);
 
   else
@@ -741,22 +745,23 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
   child = Value_Expand_Subtype(child);
 
   /* Types derived from Void are always ignored */
-  if (TS_Compare(ts, child->type, BOXTYPE_VOID)) {
+  if (TS_Compare(ts, BoxType_Get_Id(child->type), BOXTYPE_VOID)) {
     Value_Unlink(child);
     *success = BOXTASK_OK;
     return NULL;
   }
 
   /* Now we search for the procedure associated with *child */
-  BoxXXXX *child_new = BoxType_From_Id(ts, child->type);
-  BoxXXXX *parent_new = BoxType_From_Id(ts, parent->type);
+  BoxXXXX *child_new = child->type;
+  BoxXXXX *parent_new = parent->type;
   BoxTypeCmp expand;
   BoxXXXX *found_combination = 
     BoxType_Find_Combination(parent_new, BOXCOMBTYPE_AT, child_new, & expand);
 
   found_procedure =
     BoxTS_Procedure_Search(ts, & expansion_for_child,
-                           child->type, BOXCOMBTYPE_AT, parent->type,
+                           BoxType_Get_Id(child->type), BOXCOMBTYPE_AT,
+                           BoxType_Get_Id(parent->type),
                            TSSEARCHMODE_INHERITED);
 
   assert((found_procedure != BOXTYPE_NONE) == (found_combination != NULL));
@@ -768,7 +773,9 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
      */
     expansion_for_child = BOXTYPE_NONE;
 
-    found_procedure = Auto_Generate_Procedure(c, child->type, parent->type);
+    found_procedure =
+      Auto_Generate_Procedure(c, BoxType_Get_Id(child->type),
+                              BoxType_Get_Id(parent->type));
     if (found_procedure == BOXTYPE_NONE) {
       *success = BOXTASK_FAILURE;
       return child; /* return child as it may be processed further */
@@ -825,7 +832,7 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType new_type) {
     switch(cont->categ) {
     case BOXCONTCATEG_GREG:
     case BOXCONTCATEG_LREG:
-      v_ptr->type = new_type;
+      v_ptr->type = BoxType_Link(BoxType_From_Id(& c->ts, new_type));
       cont->type = new_cont_type;
       if (new_cont_type == BOXTYPE_OBJ || new_cont_type == BOXTYPE_PTR)
         return v_ptr;
@@ -893,7 +900,7 @@ Value *Value_Cast_To_Ptr(Value *v) {
       /* We own the sole reference to v, which is a temporary quantity:
        * in other words we can do whathever we want with it!
        */
-      v->type = BOXTYPE_PTR;
+      v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts, BOXTYPE_PTR));
       v->value.cont.type = BOXCONTTYPE_PTR;
       return v;
     }
@@ -919,7 +926,7 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
     Value *v_ret;
     BoxCont cont = v_obj->value.cont;
-    BoxType t = v_obj->type;
+    BoxType t = BoxType_Get_Id(v_obj->type);
     CmpProc *cur_proc = v_obj->proc->cmp->cur_proc;
 
     Value_Unlink(v_obj);
@@ -964,14 +971,16 @@ Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
       cont->value.ptr.reg = reg;
       cont->value.ptr.is_greg = is_greg;
       cont->type = TS_Get_Cont_Type(& v_obj->proc->cmp->ts, subf_type);
-      v_obj->type = subf_type;
+      v_obj->type =
+        BoxType_Link(BoxType_From_Id(& v_obj->proc->cmp->ts, subf_type));
       return v_obj;
     }
 
   case BOXCONTCATEG_PTR:
     cont->value.ptr.offset += offset;
     cont->type = TS_Get_Cont_Type(& v_obj->proc->cmp->ts, subf_type);
-    v_obj->type = subf_type;
+    v_obj->type =
+      BoxType_Link(BoxType_From_Id(& v_obj->proc->cmp->ts, subf_type));
     return v_obj;
 
   case BOXCONTCATEG_IMM:
@@ -993,10 +1002,10 @@ Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxType *t_memb) {
   size_t delta_offset = 0;
 
   if (t_next == BOXTYPE_NONE)
-    t_next = TS_Get_Core_Type(ts, v_memb->type);
+    t_next = TS_Get_Core_Type(ts, BoxType_Get_Id(v_memb->type));
 
   else
-    delta_offset = TS_Get_Size(ts, v_memb->type);
+    delta_offset = TS_Get_Size(ts, BoxType_Get_Id(v_memb->type));
 
   t_next = BoxTS_Get_Next_Struct_Member(ts, t_next);
   if (TS_Is_Member(ts, t_next)) {
@@ -1044,8 +1053,7 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
   if (v_struc->value.cont.type == BOXCONTTYPE_POINT)
     return My_Point_Get_Member(v_struc, memb);
 
-  BoxXXXX *struct_type =
-    BoxType_Get_Stem(BoxType_From_Id(& cmp->ts, v_struc->type));
+  BoxXXXX *struct_type = BoxType_Get_Stem(v_struc->type);
   BoxXXXX *node_type = BoxType_Find_Structure_Member(struct_type, memb);
 
   if (node_type) {
@@ -1054,13 +1062,17 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
     BoxBool result = BoxType_Get_Structure_Member(node_type, NULL,
                                                   & offset, 0, & member_type);
     if (result) {
-      BoxType t_memb = BoxTS_Find_Struct_Member(& cmp->ts, v_struc->type, memb);
+      BoxType t_memb =
+        BoxTS_Find_Struct_Member(& cmp->ts, BoxType_Get_Id(v_struc->type),
+                                 memb);
       t_memb = BoxTS_Obsolete_Resolve_Once(& cmp->ts, t_memb, 0);
       return Value_Get_Subfield(v_struc, offset, t_memb);
     }
 
   } else {
-    assert(BoxTS_Find_Struct_Member(& cmp->ts, v_struc->type, memb) == BOXTYPE_NONE);
+    assert(BoxTS_Find_Struct_Member(& cmp->ts, BoxType_Get_Id(v_struc->type),
+                                    memb)
+           == BOXTYPE_NONE);
   }
 
   Value_Unlink(v_struc);
@@ -1109,16 +1121,15 @@ void ValueStrucIter_Destroy(ValueStrucIter *vsi) {
  */
 BoxTask Value_Move_Content(Value *dest, Value *src) {
   BoxCmp *c = src->proc->cmp;
-  TS *ts = & c->ts;
-  TSCmp match = TS_Compare(ts, dest->type, src->type);
-  if (match == TS_TYPES_UNMATCH) {
+  BoxTypeCmp match = BoxType_Compare(dest->type, src->type);
+  if (match == BOXTYPECMP_DIFFERENT) {
     MSG_ERROR("Cannot move objects of type '%~s' into objects of type '%~s'",
-              TS_Name_Get(ts, src->type), TS_Name_Get(ts, dest->type));
+              BoxType_Get_Repr(src->type), BoxType_Get_Repr(dest->type));
     return BOXTASK_ERROR;
   }
 
-  if (match == TS_TYPES_EXPAND)
-    src = Value_Expand(src, dest->type);
+  if (match == BOXTYPECMP_MATCHING)
+    src = Value_Expand(src, BoxType_Get_Id(dest->type));
 
   if (dest->value.cont.type == BOXCONTTYPE_OBJ) {
     /* Object types must be copied and destoyed */
@@ -1143,7 +1154,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
 
     } else {
       /* Get the alloc ID for the source value */
-      BoxVMAllocID id = TS_Get_AllocID(c, src->type);
+      BoxVMAllocID id = TS_Get_AllocID(c, BoxType_Get_Id(src->type));
 
       if (id != BOXVMALLOCID_NONE) {
         /* We leave the copy operation to the Box memory management system */
@@ -1162,7 +1173,10 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
         /* Now we move src to dest, copying it byte by byte */
         Value v_size;
         Value_Init(& v_size, c->cur_proc);
-        Value_Setup_As_Imm_Int(& v_size, TS_Get_Size(& c->ts, dest->type));
+        Value_Setup_As_Imm_Int(& v_size,
+                               TS_Get_Size(& c->ts,
+                                           BoxType_Get_Id(dest->type)));
+
         CmpProc_Assemble(c->cur_proc, BOXGOP_MCOPY,
                          3, & dest->value.cont, & src->value.cont,
                          & v_size.value.cont);
@@ -1210,7 +1224,7 @@ static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
 
     else {
       MSG_ERROR("Don't know how to convert objects of type %~s to %~s.",
-                TS_Name_Get(& c->ts, src->type),
+                BoxType_Get_Repr(src->type),
                 TS_Name_Get(& c->ts, dest));
       Value_Unlink(v_dest); /* Unlink, since we are not returning it! */
       return NULL;
@@ -1222,13 +1236,9 @@ static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
  * REFERENCES: return: new, src: -1;
  */
 static Value *
-Value_Expand_New(Value *src, BoxType t_dst, BoxXXXX *t_dst_new) {
+Value_Expand_New(Value *src, BoxXXXX *t_dst_new) {
   BoxCmp *c = src->proc->cmp;
-  TS *ts = & c->ts;
-  BoxInt t_src = src->type;
-  BoxXXXX *t_src_new = BoxType_From_Id(ts, t_src);
-
-  assert((t_src == t_dst) == (t_src_new == t_dst_new));
+  BoxXXXX *t_src_new = src->type;
 
   if (t_src_new == t_dst_new)
     return src;
@@ -1237,11 +1247,6 @@ Value_Expand_New(Value *src, BoxType t_dst, BoxXXXX *t_dst_new) {
     BoxType_Resolve(t_src_new,
                     BOXTYPERESOLVE_IDENT | BOXTYPERESOLVE_SPECIES, 0);
   t_dst_new = BoxType_Resolve(t_dst_new, BOXTYPERESOLVE_IDENT, 0);
-
-  t_src = TS_Resolve(ts, t_src, TS_KS_ALIAS | TS_KS_SPECIES);
-  t_dst = TS_Resolve(ts, t_dst, TS_KS_ALIAS);
-
-  assert((t_src == t_dst) == (t_src_new == t_dst_new));
 
   if (t_src_new == t_dst_new)
     return src;
@@ -1259,11 +1264,11 @@ Value_Expand_New(Value *src, BoxType t_dst, BoxXXXX *t_dst_new) {
         BoxTypeCmp match = BoxType_Compare(t_species_memb, t_dst_new);
 
         if (match != BOXTYPECMP_DIFFERENT) {
-          BoxType t_species_memb_old = BoxTS_Get_Species_Target(ts, t_dst);
+          BoxTypeId t_species_memb_old = BoxType_Get_Id(t_species_memb);
 
           if (match == BOXTYPECMP_MATCHING) {
             Value *dest =
-              Value_Expand_New(src, t_species_memb_old, t_species_memb);
+              Value_Expand_New(src, t_species_memb);
             Value_Unlink(src);
             src = dest;
           }
@@ -1310,6 +1315,7 @@ Value_Expand_New(Value *src, BoxType t_dst, BoxXXXX *t_dst_new) {
         Value *v_dst = Value_New(cur_proc),
               *v_dst_memb = Value_New(cur_proc),
               *v_src_memb = Value_New(src->proc);
+        BoxTypeId t_dst = BoxType_Get_Id(t_dst_new);
         Value_Setup_As_Temp(v_dst, t_dst);
         Value_Setup_As_Weak_Copy(v_dst_memb, v_dst);
         Value_Setup_As_Weak_Copy(v_src_memb, src);
@@ -1353,7 +1359,7 @@ Value *Value_Expand(Value *src, BoxType expansion_type) {
   BoxCmp *c = src->proc->cmp;
   TS *ts = & c->ts;
   BoxXXXX *expansion_type_new = BoxType_From_Id(ts, expansion_type);
-  return Value_Expand_New(src, expansion_type, expansion_type_new);
+  return Value_Expand_New(src, expansion_type_new);
 }
 
 #if 0
@@ -1444,18 +1450,19 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
    *                       of GetPoint)
    */
   while (1) {
-    found_subtype = TS_Subtype_Find(ts, v_parent->type, subtype_name);
+    found_subtype = TS_Subtype_Find(ts, BoxType_Get_Id(v_parent->type),
+                                    subtype_name);
     if (found_subtype != BOXTYPE_NONE)
       break;
 
-    if (TS_Is_Subtype(ts, v_parent->type)) {
+    if (TS_Is_Subtype(ts, BoxType_Get_Id(v_parent->type))) {
       v_parent = Value_Expand_Subtype(v_parent);
       if (v_parent == NULL)
         return NULL;
 
     } else {
       MSG_ERROR("Type '%~s' has not a subtype of name '%s'",
-                TS_Name_Get(ts, v_parent->type), subtype_name);
+                BoxType_Get_Repr(v_parent->type), subtype_name);
       Value_Unlink(v_parent);
       return NULL;
     }
@@ -1484,7 +1491,7 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
   }
 
   /* We now create the value for the parent Pointer in the subtype */
-  if (!TS_Is_Empty(ts, v_parent->type)) {
+  if (!TS_Is_Empty(ts, BoxType_Get_Id(v_parent->type))) {
     Value *v_subtype_parent = Value_New(c->cur_proc),
           *v_ptr = Value_New(c->cur_proc);
     Value_Setup_As_Weak_Copy(v_ptr, v_subtype);
@@ -1510,7 +1517,7 @@ static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
   Value *v_ret = NULL;
 
   if (Value_Want_Value(v_subtype)) {
-    BoxType t_subtype = v_subtype->type;
+    BoxType t_subtype = BoxType_Get_Id(v_subtype->type);
     if (TS_Is_Subtype(ts, t_subtype)) {
       BoxType t_ret = get_child ? TS_Subtype_Get_Child(ts, t_subtype)
                                 : TS_Subtype_Get_Parent(ts, t_subtype);
@@ -1555,7 +1562,7 @@ Value *Value_Subtype_Get_Parent(Value *v_subtype) {
 Value *Value_Expand_Subtype(Value *v) {
   if (Value_Is_Value(v)) {
     BoxCmp *c = v->proc->cmp;
-    if (TS_Is_Subtype(& c->ts, v->type)) {
+    if (TS_Is_Subtype(& c->ts, BoxType_Get_Id(v->type))) {
       int subtype_was_target = (v->kind == VALUEKIND_TARGET);
       v = Value_Subtype_Get_Child(v);
       if (subtype_was_target)
@@ -1572,9 +1579,9 @@ Value *Value_Raise(Value *v) {
   TS *ts = & c->ts;
 
   if (Value_Is_Value(v)) {
-    BoxType t_ret = BoxTS_Get_Raised(ts, v->type);
+    BoxType t_ret = BoxTS_Get_Raised(ts, BoxType_Get_Id(v->type));
     if (t_ret != BOXTYPE_NONE) {
-      v->type = t_ret;
+      v->type = BoxType_From_Id(ts, t_ret);
       return v;
 
     } else {

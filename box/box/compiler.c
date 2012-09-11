@@ -481,7 +481,7 @@ static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
 
   parent_type = BoxCmp_Pop_Value(c);
   if (Value_Want_Has_Type(parent_type)) {
-    BoxType pt = parent_type->type;
+    BoxType pt = BoxType_Get_Id(parent_type->type);
     if (TS_Is_Subtype(ts, pt)) {
       /* Our parent is already a subtype (example X.Y) and we want X.Y.Z:
        * we then require X.Y to be a registered subtype
@@ -649,7 +649,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
         stmt_val = Value_Emit_Call(parent, stmt_val, & status);
 
         if (stmt_val != NULL) {
-          BoxType stmt_type = stmt_val->type;
+          BoxType stmt_type = BoxType_Get_Id(stmt_val->type);
 
           assert(status == BOXTASK_FAILURE);
 
@@ -682,7 +682,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
             MSG_WARNING("Don't know how to use '%~s' expressions inside "
                         "a '%~s' box.",
                         TS_Name_Get(& c->ts, stmt_type),
-                        TS_Name_Get(& c->ts, parent->type));
+                        BoxType_Get_Repr(parent->type));
             Value_Unlink(stmt_val);
           }
 
@@ -832,7 +832,7 @@ static Value *My_Compile_Assignment(BoxCmp *c, Value *left, Value *right) {
      * then we transform it to a proper target.
      */
     if (Value_Is_Var_Name(left))
-      Value_Setup_As_Var(left, right->type);
+      Value_Setup_As_Var(left, BoxType_Get_Id(right->type));
 
     if (Value_Is_Target(left)) {
       Value_Move_Content(left, right);
@@ -931,7 +931,7 @@ static void My_Compile_Struc(BoxCmp *c, ASTNode *n) {
       member != NULL;
       member = member->attr.member.next) {
     Value *v_member = BoxCmp_Get_Value(c, --i);
-    BoxTS_Add_Struct_Member(& c->ts, t_struc, v_member->type,
+    BoxTS_Add_Struct_Member(& c->ts, t_struc, BoxType_Get_Id(v_member->type),
                             member->attr.member.name);
   }
 
@@ -976,7 +976,7 @@ static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
   }
 
   if (Value_Want_Value(v_struc)) {
-    BoxType t_struc = v_struc->type;
+    BoxType t_struc = BoxType_Get_Id(v_struc->type);
     v_memb = Value_Struc_Get_Member(v_struc, n->attr.member_get.member);
     /* No need to unlink v_struc here */
     if (v_memb == NULL)
@@ -1092,8 +1092,8 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   comb_type = n->attr.proc_def.combine;
 
   no_err = Value_Want_Has_Type(v_child) & Value_Want_Has_Type(v_parent);
-  t_child = v_child->type;
-  t_parent = v_parent->type;
+  t_child = BoxType_Get_Id(v_child->type);
+  t_parent = BoxType_Get_Id(v_parent->type);
   Value_Unlink(v_child);
   Value_Unlink(v_parent);
 
@@ -1260,7 +1260,8 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
       BoxType new_type;
 
       /* First create the alias type */
-      new_type = BoxTS_New_Alias_With_Name(ts, v_type->type, v_name->name);
+      new_type = BoxTS_New_Alias_With_Name(ts, BoxType_Get_Id(v_type->type),
+                                           v_name->name);
 
       /* Register the type in the proper namespace */
       v = Value_New(c->cur_proc);
@@ -1273,24 +1274,26 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
       Value_Unlink(v);
 
     } else if (Value_Has_Type(v_name)) {
-      BoxType t = v_name->type;
+      BoxType t = BoxType_Get_Id(v_name->type);
 
       if (TS_Is_Subtype(ts, t)) {
         if (TS_Subtype_Is_Registered(ts, t)) {
           BoxType ot = TS_Subtype_Get_Child(ts, t);
-          if (TS_Compare(ts, ot, v_type->type) == TS_TYPES_UNMATCH)
+          if (TS_Compare(ts, ot, BoxType_Get_Id(v_type->type))
+              == TS_TYPES_UNMATCH)
             MSG_ERROR("Inconsistent redefinition of type '%~s': was '%~s' "
-                      "and is now '%~s'", TS_Name_Get(ts, v_name->type),
-                      TS_Name_Get(ts, ot), TS_Name_Get(ts, v_type->type));
+                      "and is now '%~s'", BoxType_Get_Repr(v_name->type),
+                      TS_Name_Get(ts, ot), BoxType_Get_Repr(v_type->type));
 
         } else {
-          (void) TS_Subtype_Register(ts, t, v_type->type);
+          (void) TS_Subtype_Register(ts, t, BoxType_Get_Id(v_type->type));
           /* ^^^ ignore state of success of operation */
         }
 
-      } else if (TS_Compare(ts, t, v_type->type) == TS_TYPES_UNMATCH) {
+      } else if (BoxType_Compare(v_name->type, v_type->type)
+                 == BOXTYPECMP_DIFFERENT) {
         MSG_ERROR("Inconsistent redefinition of type '%~s.''",
-                  TS_Name_Get(ts, v_name->type));
+                  BoxType_Get_Repr(v_name->type));
       }
 
       v_named_type = v_type;
@@ -1329,7 +1332,7 @@ static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
       My_Compile_Any(c, member->attr.member_type.type);
       v_type = BoxCmp_Pop_Value(c);
       if (Value_Want_Has_Type(v_type))
-        previous_type = v_type->type;
+        previous_type = BoxType_Get_Id(v_type->type);
       else
         err = 1;
       Value_Unlink(v_type);
@@ -1386,7 +1389,7 @@ static void My_Compile_SpecType(BoxCmp *c, ASTNode *n) {
     v_type = BoxCmp_Pop_Value(c);
 
     if (Value_Want_Has_Type(v_type)) {
-      BoxType memb_type = v_type->type;
+      BoxType memb_type = BoxType_Get_Id(v_type->type);
       /* NOTE: should check for duplicate types in species */
       BoxTS_Add_Species_Member(& c->ts, spec_type, memb_type);
     }
@@ -1412,7 +1415,7 @@ static void My_Compile_RaiseType(BoxCmp *c, ASTNode *n) {
 
   v_type = BoxCmp_Pop_Value(c);
   if (Value_Want_Has_Type(v_type)) {
-    t_inc_type = BoxTS_New_Raised(& c->ts, v_type->type);
+    t_inc_type = BoxTS_New_Raised(& c->ts, BoxType_Get_Id(v_type->type));
     v_inc_type = Value_New(c->cur_proc);
     Value_Setup_As_Type(v_inc_type, t_inc_type);
   }

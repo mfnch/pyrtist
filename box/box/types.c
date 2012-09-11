@@ -92,7 +92,7 @@ void *BoxType_Alloc(BoxXXXX **t, BoxTypeClass tc) {
 
 /* Transition function needed to make the old and new type interchangable. */
 BoxTypeId BoxType_Get_Id(BoxXXXX *t) {
-  return t->type_id;
+  return (t ? t->type_id : BOXTYPEID_NONE);
 }
 
 void BoxType_Set_Id(BoxXXXX *t, BoxTypeId id) {
@@ -981,21 +981,8 @@ BoxTypeCmp BoxType_Compare(BoxXXXX *left, BoxXXXX *right) {
   case BOXTYPECLASS_ENUM:
     assert(0);
 
-#if 0
-  case TS_KIND_PROC:
-    if (td1->data.proc.combine != td2->data.proc.combine)
-      return TS_TYPES_UNMATCH;
-      
-    if (TS_Compare(ts, td1->data.proc.parent, td2->data.proc.parent)
-        != TS_TYPES_EQUAL)
-      return TS_TYPES_UNMATCH;
-    return TS_Compare(ts, td1->target, td2->target);
-
-  case BOXTYPE_POINTER:
-#endif
-      
   default:
-    MSG_ERROR("TS_Compare: not fully implemented!");
+    MSG_ERROR("BoxType_Compare: not fully implemented!");
     return BOXTYPECMP_DIFFERENT;
   }
 }
