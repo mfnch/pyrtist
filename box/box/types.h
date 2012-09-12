@@ -103,7 +103,6 @@ typedef enum {
 } BoxTypeClass;
 
 typedef struct BoxTypeDesc_struct BoxTypeDesc;
-
 #if 0
 /**
  * A type in the Box type system. This is currently implemented as a
@@ -191,7 +190,7 @@ BoxType_Get_Data(BoxXXXX *t);
 /**
  * Remove a reference to the given type.
  */
-BOXEXPORT void
+BOXEXPORT BoxXXXX *
 BoxType_Unlink(BoxXXXX *t);
 
 /**

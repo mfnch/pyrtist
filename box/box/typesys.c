@@ -401,40 +401,6 @@ static void Member_Full_Name(TS *ts, BoxName *n, BoxType s, const char *m_name) 
   n->length = BoxArr_Num_Items(& ts->name_buffer);
 }
 
-BoxType My_Find_Struct_Member(BoxTS *ts, BoxType s, const char *m_name) {
-  BoxName n;
-  BoxHTItem *hi;
-  s = TS_Resolve(ts, s, TS_KS_ALIAS | TS_KS_SPECIES | TS_KS_RAISED);
-  Member_Full_Name(ts, & n, s, m_name);
-  if (BoxHT_Find(& ts->members, n.text, n.length, & hi))
-    return *((BoxType *) hi->object);
-  else
-    return BOXTYPE_NONE;
-}
-
-BoxType BoxTS_Find_Struct_Member(BoxTS *ts, BoxType s, const char *m_name) {
-  BoxType result_old = My_Find_Struct_Member(ts, s, m_name);
-  BoxXXXX *s_new = TS_Get_New_Style_Type(ts, s);
-  assert(s_new);
-  BoxXXXX *result_new =
-    BoxType_Find_Structure_Member(BoxType_Get_Stem(s_new), m_name);
-
-  if ((!result_new) != (result_old == BOXTYPE_NONE)) {
-    MSG_ERROR("Structure find mismatch for '%s' in '%s'",
-              m_name, TS_Name_Get(ts, s));
-
-  } else if (result_new) {
-    BoxXXXX *rr_new;
-    BoxBool x =
-      BoxType_Get_Structure_Member(result_new, NULL, NULL, NULL, & rr_new);
-    assert(x);
-    BoxType rr_old = BoxTS_Obsolete_Resolve_Once(ts, result_old, 0);
-    assert(TS_Get_New_Style_Type(ts, rr_old) == rr_new);
-  }
-
-  return result_old;
-}
-
 BoxType BoxTS_Get_Next_Struct_Member(BoxTS *ts, BoxType m) {
   TSDesc *td = Type_Ptr(ts, m);
   return td->kind == TS_KIND_MEMBER ? td->data.member_next : td->target;
@@ -543,16 +509,6 @@ BoxType BoxTS_New_Raised(BoxTS *ts, BoxType origin_old) {
     TS_Set_New_Style_Type(ts, out_old,
                           BoxType_Create_Raised(BoxType_Link(origin_new)));
   return out_old;
-}
-
-BoxType BoxTS_Get_Raised(BoxTS *ts, BoxType t) {
-  BoxType resolved_t = TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_SPECIES);
-  TSDesc *resolved_td = Type_Ptr(ts, resolved_t);
-  if (resolved_td->kind == TS_KIND_RAISED)
-    return resolved_td->target;
-
-  else
-    return BOXTYPE_NONE;
 }
 
 /*FUNCTIONS: My_Begin_Composite **********************************************/
@@ -717,11 +673,6 @@ void BoxTS_Add_Species_Member(BoxTS *ts, BoxType species, BoxType member) {
   }
 
   MSG_ERROR("Could not create species properly!");
-}
-
-BoxType BoxTS_Get_Species_Target(BoxTS *ts, BoxType species) {
-  TSDesc *s_td = Type_Ptr(ts, species);
-  return BoxTS_Obsolete_Resolve_Once(ts, s_td->data.last, 0);
 }
 
 /****************************************************************************/
@@ -908,20 +859,6 @@ int TS_Subtype_Is_Registered(TS *ts, BoxType st) {
   return (st_td->target != BOXTYPE_NONE);
 }
 
-BoxType TS_Subtype_Get_Parent(TS *ts, BoxType st_old) {
-  TSDesc *st_td = Type_Ptr(ts, st_old);
-  BoxXXXX *st_new = TS_Get_New_Style_Type(ts, st_old);
-  BoxXXXX *parent_new;
-
-  assert(st_new);
-  assert(st_td->kind == TS_KIND_SUBTYPE);
-
-  BoxType_Get_Subtype_Info(st_new, NULL, & parent_new, NULL);
-  assert(parent_new == TS_Get_New_Style_Type(ts, st_td->data.subtype.parent));
-
-  return st_td->data.subtype.parent;
-}
-
 BoxType TS_Subtype_Get_Child(TS *ts, BoxType st_old) {
   TSDesc *st_td = Type_Ptr(ts, st_old);
   BoxXXXX *st_new = TS_Get_New_Style_Type(ts, st_old);
@@ -1075,33 +1012,6 @@ static TSCmp My_Compare(TS *ts, BoxType t1, BoxType t2) {
     t1 = td1->target;
     t2 = td2->target;
   }
-}
-
-TSCmp TS_Compare(TS *ts, BoxType t1, BoxType t2) {
-  BoxXXXX *t1_new = BoxType_From_Id(ts, t1);
-  BoxXXXX *t2_new = BoxType_From_Id(ts, t2);
-  TSCmp cmp_old = My_Compare(ts, t1, t2);
-
-  if (t1_new && t2_new) {
-    switch (BoxType_Compare(t1_new, t2_new)) {
-    case BOXTYPECMP_SAME:
-    case BOXTYPECMP_EQUAL:
-      assert(cmp_old == TS_TYPES_EQUAL || cmp_old == TS_TYPES_MATCH);
-      break;
-    case BOXTYPECMP_MATCHING:
-      assert(cmp_old == TS_TYPES_EXPAND);
-      break;
-    case BOXTYPECMP_DIFFERENT:
-      assert(cmp_old == TS_TYPES_UNMATCH);
-      break;
-    }
-
-  } else
-    MSG_FATAL("Missing new style type for %~s or %~s",
-              TS_Name_Get(ts, t1),
-              TS_Name_Get(ts, t2));
-
-  return cmp_old;
 }
 
 void BoxTSStrucIt_Init(BoxTS *ts, BoxTSStrucIt *it, BoxType s) {

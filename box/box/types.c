@@ -274,6 +274,11 @@ BoxBool Box_Register_Type_Combs(BoxCoreTypes *ct) {
 }
 
 /* Add a reference to the given type. */
+BoxXXXX *BoxType_Unlink(BoxXXXX *t) {
+  return (BoxXXXX *) BoxSPtr_Unlink(t);
+}
+
+/* Add a reference to the given type. */
 BoxXXXX *BoxType_Link(BoxXXXX *t) {
   return BoxSPtr_Link(t);
 }
@@ -1003,18 +1008,21 @@ BoxContType BoxType_Get_Cont_Type(BoxXXXX *t) {
 
   /* Char, Int, ... are V.I.P. objects which have their own container types. */
   if (stem->type_class == BOXTYPECLASS_PRIMARY) {
-    BoxTypePrimary *td = BoxType_Get_Data(t);
+    BoxTypePrimary *td = BoxType_Get_Data(stem);
     BoxTypeId id = td->id;
 
     /* Here we assume BoxTypeCont and BoxTypeId are defined consistently. */
     if (id >= BOXTYPEID_CHAR && id <= BOXTYPEID_PTR)
       return (BoxContType) id;
     else
-      return (td->size != 0) ? BOXCONTTYPE_OBJ : BOXCONTTYPE_VOID;
+      return (td->size == 0) ? BOXCONTTYPE_VOID : BOXCONTTYPE_OBJ;
+
+  } else if (stem->type_class == BOXTYPECLASS_INTRINSIC) {
+    BoxTypeIntrinsic *td = BoxType_Get_Data(stem);
+    return (td->size == 0) ? BOXCONTTYPE_VOID : BOXCONTTYPE_OBJ;
 
   } else
-    /* Whatever else is treated in the standard way. */
-    return BOXCONTTYPE_OBJ;
+    return (BoxType_Get_Size(stem) == 0) ? BOXCONTTYPE_VOID : BOXCONTTYPE_OBJ;
 }
 
 /* Whether the type is a void type (contains nothing). */

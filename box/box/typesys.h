@@ -251,9 +251,6 @@ int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxCombType comb, BoxType p);
 BoxType TS_Subtype_New(BoxTS *ts, BoxType parent_type,
                        const char *child_name);
 
-/** Get the parent type of the given subtype */
-BoxType TS_Subtype_Get_Parent(BoxTS *ts, BoxType st);
-
 /** Get the child type of the given subtype (return BOXTYPE_NONE, if the
  * subtype has not been yet registered)
  */
@@ -286,9 +283,6 @@ BoxType BoxTS_New_Alias_With_Name(BoxTS *ts, BoxType origin,
  */
 BoxType BoxTS_New_Raised(BoxTS *ts, BoxType t_origin);
 
-/** Given a raised type '^Type', return the original type 'Type'. */
-BoxType BoxTS_Get_Raised(BoxTS *ts, BoxType t);
-
 /** Function called to create an empty structure. Members can be added
  * with BoxTS_Add_Struct_Member.
  */
@@ -305,15 +299,6 @@ BoxType BoxTS_Begin_Species(BoxTS *ts);
 
 /** Add a member to a species type defined with TS_Species_Begin. */
 void BoxTS_Add_Species_Member(BoxTS *ts, BoxType species, BoxType member);
-
-/** Return the target for the species type 'species'. */
-BoxType BoxTS_Get_Species_Target(BoxTS *ts, BoxType species);
-
-/** Search the member 'm_name' from the members of the structure s.
- * If the member is found then return its type number, otherwise return
- * BOXTYPE_NONE
- */
-BoxType BoxTS_Find_Struct_Member(BoxTS *ts, BoxType s, const char *m_name);
 
 /** Obtain details about a member of a structure (to be used in conjunction
  * with BoxTS_Find_Struct_Member)

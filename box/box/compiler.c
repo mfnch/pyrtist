@@ -493,7 +493,7 @@ static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
 
       } else {
         MSG_ERROR("Cannot build subtype '%s' of undefined subtype '%~s'.",
-                  name, TS_Name_Get(ts, pt));
+                  name, BoxType_Get_Repr(parent_type->type));
       }
 
     } else {
@@ -649,15 +649,15 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
         stmt_val = Value_Emit_Call(parent, stmt_val, & status);
 
         if (stmt_val != NULL) {
-          BoxType stmt_type = BoxType_Get_Id(stmt_val->type);
-
           assert(status == BOXTASK_FAILURE);
 
           /* Handle the case where stmt_val is an If[] or For[] value */
-          if (TS_Compare(ts, stmt_type, c->bltin.alias_if))
+          if (BoxType_Compare(stmt_val->type,
+                              BoxType_From_Id(ts, c->bltin.alias_if)))
             Value_Emit_CJump(stmt_val, jump_label_next);
 
-          else if (TS_Compare(ts, stmt_type, c->bltin.alias_elif)) {
+          else if (BoxType_Compare(stmt_val->type,
+                                   BoxType_From_Id(ts, c->bltin.alias_elif))) {
             if (jump_label_end == BOXVMSYMID_NONE)
               jump_label_end = CmpProc_Jump_Label_New(c->cur_proc);
             CmpProc_Assemble_Jump(c->cur_proc, jump_label_end);
@@ -666,7 +666,8 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
             jump_label_next = CmpProc_Jump_Label_New(c->cur_proc);
             Value_Emit_CJump(stmt_val, jump_label_next);
 
-          } else if (TS_Compare(ts, stmt_type, c->bltin.alias_else)) {
+          } else if (BoxType_Compare(stmt_val->type,
+                                     BoxType_From_Id(ts, c->bltin.alias_else))) {
             if (jump_label_end == BOXVMSYMID_NONE)
               jump_label_end = CmpProc_Jump_Label_New(c->cur_proc);
             CmpProc_Assemble_Jump(c->cur_proc, jump_label_end);
@@ -675,13 +676,14 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
             jump_label_next = CmpProc_Jump_Label_New(c->cur_proc);
             Value_Unlink(stmt_val);
 
-          } else if (TS_Compare(ts, stmt_type, c->bltin.alias_for))
+          } else if (BoxType_Compare(stmt_val->type,
+                                     BoxType_From_Id(ts, c->bltin.alias_for)))
             Value_Emit_CJump(stmt_val, jump_label_begin);
 
           else {
             MSG_WARNING("Don't know how to use '%~s' expressions inside "
                         "a '%~s' box.",
-                        TS_Name_Get(& c->ts, stmt_type),
+                        BoxType_Get_Repr(stmt_val->type),
                         BoxType_Get_Repr(parent->type));
             Value_Unlink(stmt_val);
           }
@@ -976,12 +978,11 @@ static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
   }
 
   if (Value_Want_Value(v_struc)) {
-    BoxType t_struc = BoxType_Get_Id(v_struc->type);
     v_memb = Value_Struc_Get_Member(v_struc, n->attr.member_get.member);
     /* No need to unlink v_struc here */
     if (v_memb == NULL)
       MSG_ERROR("Cannot find the member '%s' of an object with type '%~s'.",
-                n->attr.member_get.member, TS_Name_Get(& c->ts, t_struc));
+                n->attr.member_get.member, BoxType_Get_Repr(v_struc->type));
 
   } else
     Value_Unlink(v_struc);
@@ -1279,8 +1280,8 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
       if (TS_Is_Subtype(ts, t)) {
         if (TS_Subtype_Is_Registered(ts, t)) {
           BoxType ot = TS_Subtype_Get_Child(ts, t);
-          if (TS_Compare(ts, ot, BoxType_Get_Id(v_type->type))
-              == TS_TYPES_UNMATCH)
+          if (BoxType_Compare(BoxType_From_Id(ts, ot), v_type->type)
+              == BOXTYPECMP_DIFFERENT)
             MSG_ERROR("Inconsistent redefinition of type '%~s': was '%~s' "
                       "and is now '%~s'", BoxType_Get_Repr(v_name->type),
                       TS_Name_Get(ts, ot), BoxType_Get_Repr(v_type->type));
@@ -1292,7 +1293,7 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
 
       } else if (BoxType_Compare(v_name->type, v_type->type)
                  == BOXTYPECMP_DIFFERENT) {
-        MSG_ERROR("Inconsistent redefinition of type '%~s.''",
+        MSG_ERROR("Inconsistent redefinition of type '%~s.'",
                   BoxType_Get_Repr(v_name->type));
       }
 

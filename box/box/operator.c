@@ -218,17 +218,20 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
       do_match_res = ((opr->attr & OPR_ATTR_MATCH_RESULT) != 0);
   Operation *opn;
   for(opn = opr->first_operation; opn != NULL; opn = opn->next) {
-    TSCmp match_left;
+    BoxTypeCmp match_left;
 
     /* Check for matching result, if required */
     if (do_match_res) {
-      TSCmp match_result = TS_Compare(& c->ts, opn->type_result, type_result);
-      if (match_result == TS_TYPES_UNMATCH)
+      BoxTypeCmp match_result =
+        BoxType_Compare(BoxType_From_Id(& c->ts, opn->type_result),
+                        BoxType_From_Id(& c->ts, type_result));
+      if (match_result == BOXTYPECMP_DIFFERENT)
         continue;
     }
 
-    match_left = TS_Compare(& c->ts, opn->type_left, type_left);
-    if (match_left != TS_TYPES_UNMATCH) {
+    match_left = BoxType_Compare(BoxType_From_Id(& c->ts, opn->type_left),
+                                 BoxType_From_Id(& c->ts, type_left));
+    if (match_left != BOXTYPECMP_DIFFERENT) {
       if (opr_is_unary) {
           match->opr = opr;
           match->attr = opn->attr;
@@ -239,8 +242,10 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
           return opn;
 
       } else {
-        TSCmp match_right = TS_Compare(& c->ts, opn->type_right, type_right);
-        if (match_right != TS_TYPES_UNMATCH) {
+        BoxTypeCmp match_right =
+          BoxType_Compare(BoxType_From_Id(& c->ts, opn->type_right),
+                          BoxType_From_Id(& c->ts, type_right));
+        if (match_right != BOXTYPECMP_DIFFERENT) {
           match->opr = opr;
           match->attr = opn->attr;
           match->match_left = match_left;
@@ -356,8 +361,9 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     return result;
 
   case OPASMSCHEME_RL_R_BIN:
-    if (TS_Compare(& c->ts, opn->type_result, BoxType_Get_Id(v_right->type))
-        != TS_TYPES_UNMATCH) {
+    if (BoxType_Compare(BoxType_From_Id(& c->ts, opn->type_result),
+                        v_right->type)
+        != BOXTYPECMP_DIFFERENT) {
       Value *v_tmp = v_left;
       v_left = v_right;
       v_right = v_tmp;

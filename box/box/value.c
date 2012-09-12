@@ -251,7 +251,7 @@ void Value_Setup_As_Type_Name(Value *v, const char *name) {
 void Value_Setup_As_Type(Value *v, BoxType t) {
   v->kind = VALUEKIND_TYPE;
   v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts, t));
-  v->value.cont.type = TS_Get_Cont_Type(& v->proc->cmp->ts, t);
+  v->value.cont.type = BoxType_Get_Cont_Type(v->type);
 }
 
 void Value_Setup_As_Imm_Char(Value *v, Char c) {
@@ -335,7 +335,7 @@ void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc) {
   int use_greg;
 
   v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts, type));
-  v->value.cont.type = TS_Get_Cont_Type(& v->proc->cmp->ts, type);
+  v->value.cont.type = BoxType_Get_Cont_Type(v->type);
 
   switch(vc->type_of_container) {
   case VALCONTTYPE_IMM:
@@ -514,8 +514,7 @@ void Value_Emit_Allocate(Value *v) {
         Value v_size;
 
         Value_Init(& v_size, proc);
-        Value_Setup_As_Imm_Int(& v_size,
-                               TS_Get_Size(& c->ts, BoxType_Get_Id(v->type)));
+        Value_Setup_As_Imm_Int(& v_size, BoxType_Get_Size(v->type));
         CmpProc_Assemble(proc, BOXGOP_MALLOC,
                          2, & v->value.cont, & v_size.value.cont);
 
@@ -670,9 +669,9 @@ int Value_Is_Ignorable(Value *v) {
     return 1;
 
   else if (Value_Is_Value(v))
-    return (TS_Compare(& v->proc->cmp->ts,
-                       BOXTYPE_VOID, BoxType_Get_Id(v->type))
-            != TS_TYPES_UNMATCH);
+    return (BoxType_Compare(BoxType_From_Id(& v->proc->cmp->ts, BOXTYPE_VOID),
+                            v->type)
+            != BOXTYPECMP_DIFFERENT);
 
   else
     return 0;
@@ -745,7 +744,7 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
   child = Value_Expand_Subtype(child);
 
   /* Types derived from Void are always ignored */
-  if (TS_Compare(ts, BoxType_Get_Id(child->type), BOXTYPE_VOID)) {
+  if (BoxType_Compare(child->type, BoxType_From_Id(ts, BOXTYPE_VOID))) {
     Value_Unlink(child);
     *success = BOXTASK_OK;
     return NULL;
@@ -946,7 +945,7 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
  * 'subf_type' is the type of the sub-field.
  * REFERENCES: return: new, v_obj: -1;
  */
-Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
+Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxXXXX *subf_type) {
   BoxCont *cont;
 
   if (v_obj->num_ref > 1) {
@@ -970,17 +969,15 @@ Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType subf_type) {
       cont->value.ptr.offset = offset;
       cont->value.ptr.reg = reg;
       cont->value.ptr.is_greg = is_greg;
-      cont->type = TS_Get_Cont_Type(& v_obj->proc->cmp->ts, subf_type);
-      v_obj->type =
-        BoxType_Link(BoxType_From_Id(& v_obj->proc->cmp->ts, subf_type));
+      cont->type = BoxType_Get_Cont_Type(subf_type);
+      v_obj->type = BoxType_Link(subf_type);
       return v_obj;
     }
 
   case BOXCONTCATEG_PTR:
     cont->value.ptr.offset += offset;
-    cont->type = TS_Get_Cont_Type(& v_obj->proc->cmp->ts, subf_type);
-    v_obj->type =
-      BoxType_Link(BoxType_From_Id(& v_obj->proc->cmp->ts, subf_type));
+    cont->type = BoxType_Get_Cont_Type(subf_type);
+    v_obj->type = BoxType_Link(subf_type);
     return v_obj;
 
   case BOXCONTCATEG_IMM:
@@ -1005,13 +1002,14 @@ Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxType *t_memb) {
     t_next = TS_Get_Core_Type(ts, BoxType_Get_Id(v_memb->type));
 
   else
-    delta_offset = TS_Get_Size(ts, BoxType_Get_Id(v_memb->type));
+    delta_offset = BoxType_Get_Size(v_memb->type);
 
   t_next = BoxTS_Get_Next_Struct_Member(ts, t_next);
   if (TS_Is_Member(ts, t_next)) {
     *t_memb = t_next;
     (void) BoxTS_Resolve_Once(ts, & t_next, TS_KS_NONE);
-    return Value_Get_Subfield(v_memb, delta_offset, t_next);
+    return Value_Get_Subfield(v_memb, delta_offset,
+                              BoxType_From_Id(ts, t_next));
 
   } else {
     *t_memb = BOXTYPE_NONE;
@@ -1036,7 +1034,9 @@ static Value *My_Point_Get_Member(Value *v_point, const char *memb) {
                          & v_memb->value.cont, & v_point->value.cont);
         Value_Unlink(v_point);
         v_memb->kind = VALUEKIND_TARGET;
-        return Value_Get_Subfield(v_memb, (size_t) 0, c->bltin.species_real);
+        return
+          Value_Get_Subfield(v_memb, (size_t) 0,
+                             BoxType_From_Id(& c->ts, c->bltin.species_real));
       }
     }
   }
@@ -1045,8 +1045,6 @@ static Value *My_Point_Get_Member(Value *v_point, const char *memb) {
 }
 
 Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
-  BoxCmp *cmp = v_struc->proc->cmp;
-
   /* If v_struc is a subtype, then expand it (subtypes do not have members) */
   v_struc = Value_Expand_Subtype(v_struc);
 
@@ -1061,18 +1059,9 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
     BoxXXXX *member_type;
     BoxBool result = BoxType_Get_Structure_Member(node_type, NULL,
                                                   & offset, 0, & member_type);
-    if (result) {
-      BoxType t_memb =
-        BoxTS_Find_Struct_Member(& cmp->ts, BoxType_Get_Id(v_struc->type),
-                                 memb);
-      t_memb = BoxTS_Obsolete_Resolve_Once(& cmp->ts, t_memb, 0);
-      return Value_Get_Subfield(v_struc, offset, t_memb);
-    }
+    if (result)
+      return Value_Get_Subfield(v_struc, offset, member_type);
 
-  } else {
-    assert(BoxTS_Find_Struct_Member(& cmp->ts, BoxType_Get_Id(v_struc->type),
-                                    memb)
-           == BOXTYPE_NONE);
   }
 
   Value_Unlink(v_struc);
@@ -1173,9 +1162,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
         /* Now we move src to dest, copying it byte by byte */
         Value v_size;
         Value_Init(& v_size, c->cur_proc);
-        Value_Setup_As_Imm_Int(& v_size,
-                               TS_Get_Size(& c->ts,
-                                           BoxType_Get_Id(dest->type)));
+        Value_Setup_As_Imm_Int(& v_size, BoxType_Get_Size(dest->type));
 
         CmpProc_Assemble(c->cur_proc, BOXGOP_MCOPY,
                          3, & dest->value.cont, & src->value.cont,
@@ -1225,7 +1212,7 @@ static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
     else {
       MSG_ERROR("Don't know how to convert objects of type %~s to %~s.",
                 BoxType_Get_Repr(src->type),
-                TS_Name_Get(& c->ts, dest));
+                BoxType_Get_Repr(BoxType_From_Id(& c->ts, dest)));
       Value_Unlink(v_dest); /* Unlink, since we are not returning it! */
       return NULL;
     }
@@ -1485,17 +1472,19 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
      * and transfer the child pointer to the subtype.
      */
     Value_Setup_As_Weak_Copy(v_ptr, v_subtype);
-    v_ptr = Value_Get_Subfield(v_ptr, /* offset */ 0, BOXTYPE_PTR);
+    v_ptr = Value_Get_Subfield(v_ptr, /* offset */ 0,
+                               BoxType_From_Id(ts, BOXTYPE_PTR));
     (void) Value_Move_Content(v_ptr, v_subtype_child);
     Value_Unlink(v_ptr);
   }
 
   /* We now create the value for the parent Pointer in the subtype */
-  if (!TS_Is_Empty(ts, BoxType_Get_Id(v_parent->type))) {
+  if (!BoxType_Is_Empty(v_parent->type)) {
     Value *v_subtype_parent = Value_New(c->cur_proc),
           *v_ptr = Value_New(c->cur_proc);
     Value_Setup_As_Weak_Copy(v_ptr, v_subtype);
-    v_ptr = Value_Get_Subfield(v_ptr, /*offset*/ sizeof(BoxPtr), BOXTYPE_PTR);
+    v_ptr = Value_Get_Subfield(v_ptr, /*offset*/ sizeof(BoxPtr),
+                               BoxType_From_Id(ts, BOXTYPE_PTR));
     Value_Setup_As_Weak_Copy(v_subtype_parent, v_parent);
     v_subtype_parent = Value_Cast_To_Ptr(v_subtype_parent);
     (void) Value_Move_Content(v_ptr, v_subtype_parent);
@@ -1519,19 +1508,21 @@ static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
   if (Value_Want_Value(v_subtype)) {
     BoxType t_subtype = BoxType_Get_Id(v_subtype->type);
     if (TS_Is_Subtype(ts, t_subtype)) {
-      BoxType t_ret = get_child ? TS_Subtype_Get_Child(ts, t_subtype)
-                                : TS_Subtype_Get_Parent(ts, t_subtype);
-      if (TS_Is_Empty(ts, t_ret)) {
+      BoxXXXX *t_parent, *t_child;
+      BoxType_Get_Subtype_Info(v_subtype->type, NULL, & t_parent, & t_child);
+      BoxXXXX *t_ret = get_child ? t_child : t_parent;
+      if (BoxType_Is_Empty(t_ret)) {
         v_ret = Value_New(c->cur_proc);
-        Value_Setup_As_Temp(v_ret, t_ret);
+        Value_Setup_As_Temp(v_ret, BoxType_Get_Id(t_ret));
 
       } else {
         size_t offset = get_child ? 0 : sizeof(BoxPtr);
         v_ret = Value_New(c->cur_proc);
         /* FIXME: see Value_Init */
         Value_Setup_As_Weak_Copy(v_ret, v_subtype);          
-        v_ret = Value_Get_Subfield(v_ret, offset, BOXTYPE_PTR);
-        v_ret = Value_Cast_From_Ptr(v_ret, t_ret);
+        v_ret = Value_Get_Subfield(v_ret, offset,
+                                   BoxType_From_Id(ts, BOXTYPE_PTR));
+        v_ret = Value_Cast_From_Ptr(v_ret, BoxType_Get_Id(t_ret));
 
         /* Temporary fix: transfer ownership of register, if needed */
         if (v_subtype->num_ref == 1) {
@@ -1576,12 +1567,12 @@ Value *Value_Expand_Subtype(Value *v) {
 
 Value *Value_Raise(Value *v) {
   BoxCmp *c = v->proc->cmp;
-  TS *ts = & c->ts;
 
   if (Value_Is_Value(v)) {
-    BoxType t_ret = BoxTS_Get_Raised(ts, BoxType_Get_Id(v->type));
-    if (t_ret != BOXTYPE_NONE) {
-      v->type = BoxType_From_Id(ts, t_ret);
+    BoxXXXX *unraised_type = BoxType_Unraise(v->type);
+    if (unraised_type) {
+      BoxType_Unlink(v->type);
+      v->type = unraised_type;
       return v;
 
     } else {
