@@ -99,8 +99,8 @@ BoxType Auto_Generate_Procedure(BoxCmp *c, BoxType t_child,
       BoxXXXX *t_child_new = BoxType_From_Id(& c->ts, t_child),
               *t_parent_new = BoxType_From_Id(& c->ts, t_parent);
       BoxCallable *callable =
-        BoxCallable_Create_From_VM(t_parent_new, t_child_new, NULL,
-                                   c->vm, call_num);
+        BoxCallable_Create_Undefined(t_parent_new, t_child_new);
+      callable = BoxCallable_Define_From_VM(callable, NULL, c->vm, call_num);
       t_proc = BoxTS_Procedure_Define(ts, t_child, BOXCOMBTYPE_AT, t_parent,
                                       sym_id, callable);
       char *proc_name = TS_Name_Get(& c->ts, t_proc);

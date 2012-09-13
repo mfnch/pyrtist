@@ -39,19 +39,25 @@ typedef struct {
 static void My_Build_Struc_Desc(BoxCmp *c,
                                 MyObjDescBuilder *bldr, BoxType t) {
   BoxTS *ts = & c->ts;
-  BoxTSStrucIt it;
-  /*int i = 0;*/
-  for (BoxTSStrucIt_Init(ts, & it, t); it.has_more;
-       BoxTSStrucIt_Advance(& it)) {
-    BoxVMAllocID alloc_id = TS_Get_AllocID(c, it.member);
-    /*printf("num=%d, pos=%d, id=%d\n", i++, (int) it.position, (int) alloc_id);*/
+  BoxTypeIter ti;
+  BoxXXXX *tt;
+
+  BoxXXXX *t_struct = BoxType_Get_Stem(BoxType_From_Id(ts, t));
+  for (BoxTypeIter_Init(& ti, t_struct); BoxTypeIter_Get_Next(& ti, & tt);) {
+    BoxXXXX *t_member;
+    size_t offset;
+    BoxType_Get_Structure_Member(tt, NULL, & offset, NULL, & t_member);
+
+    BoxVMAllocID alloc_id = TS_Get_AllocID(c, BoxType_Get_Id(t_member));
+
     if (alloc_id != BOXVMALLOCID_NONE) {
       BoxVMSubObj *sub = (BoxVMSubObj *) BoxArr_Push(& bldr->subs, NULL);
       sub->alloc_id = alloc_id;
-      sub->position = it.position;
+      sub->position = offset;
     }
   }
-  BoxTSStrucIt_Finish(& si);
+
+  BoxTypeIter_Finish(& ti);
 }
 
 static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxType child,

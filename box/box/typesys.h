@@ -311,49 +311,4 @@ BoxType BoxTS_Get_Struct_Member(BoxTS *ts, BoxType m, size_t *address);
  */
 BoxType BoxTS_Get_Next_Struct_Member(BoxTS *ts, BoxType m);
 
-/** This function tells if a type t2 is contained into a type t1.
- * The return value is the following:
- * - TS_TYPES_EQUAL: the two types are equal;
- * - TS_TYPES_MATCH: the two types are equal;
- * - TS_TYPES_EXPAND: the two types are compatible, but type t2 should
- *    be expanded to type t1;
- * - TS_TYPES_UNMATCH: the two types are not compatible;
- */
-TSCmp TS_Compare(BoxTS *ts, BoxType t1, BoxType t2);
-
-/** Object used to iterate over the members of a structure.
- * It should be used like this:
- *
- *   BoxTSStrucIt it;
- *   for (BoxTSStrucIt_Init(ts, & it, s); it.has_more;
-          BoxTSStrucIt_Advance(& it)) {
- *     // Member is accessible as ``it.member''
- *     // Member position inside structure as ``it.position''
- *   }
- *   BoxTSStrucIt_Finish(& it);
- *
- */
-typedef struct {
-  TS      *ts;
-  int     has_more;
-  BoxType member;
-  TSDesc  *td;
-  size_t  position;
-} BoxTSStrucIt;
-
-/** Initialise the iterator object.
- * @see BoxTSStrucIt
- */
-void BoxTSStrucIt_Init(BoxTS *ts, BoxTSStrucIt *it, BoxType s);
-
-/** ``Increment'' the iterator.
- * @see BoxTSStrucIt
- */
-void BoxTSStrucIt_Advance(BoxTSStrucIt *it);
-
-/** Finalise the iterator object.
- * @see BoxTSStrucIt
- */
-#define BoxTSStrucIt_Finish(i)
-
 #endif

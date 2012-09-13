@@ -343,8 +343,8 @@ BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxType child, BoxCombType comb,
   /* We tell to the compiler that some procedures are associated to sym_num */
   BoxXXXX *child_new = BoxType_From_Id(& c->ts, child),
           *parent_new = BoxType_From_Id(& c->ts, parent);
-  BoxCallable *callable =
-    BoxCallable_Create_From_VM(parent_new, child_new, NULL, c->vm, call_num);
+  BoxCallable *callable = BoxCallable_Create_Undefined(parent_new, child_new);
+  callable = BoxCallable_Define_From_VM(callable, NULL, c->vm, call_num);
   new_proc = BoxTS_Procedure_Define(& c->ts, child, comb, parent, sym_num,
                                     callable);
   proc_name = TS_Name_Get(& c->ts, new_proc);

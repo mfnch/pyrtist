@@ -260,8 +260,8 @@ static BoxException *My_Type_Finish(BoxPtr *parent) {
 /* Register initialization and finalization for types. */
 BoxBool Box_Register_Type_Combs(BoxCoreTypes *ct) {
   BoxCallable *callable =
-    BoxCallable_Create_From_CCall1(ct->type_type, ct->finish_type,
-                                   My_Type_Finish);
+    BoxCallable_Create_Undefined(ct->type_type, ct->finish_type);
+  callable = BoxCallable_Define_From_CCall1(callable, My_Type_Finish);
   if (!callable)
     return BOXBOOL_FALSE;
 

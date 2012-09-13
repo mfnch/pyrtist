@@ -104,53 +104,34 @@ typedef enum {
   BOXCALLABLEKIND_VM         /**< VM call. */
 } BoxCallableKind;
 
+/**
+ * Create an undefined callable mapping an object of type @p t_in to an
+ * object of type @p t_out. The object can be later defined using
+ * BoxCallable_Define_From_CCall1() and friends.
+ * @param t_out Type of the output object.
+ * @param t_in Type of the input object.
+ * @return A new #BoxCallable object.
+ */
+BOXEXPORT BOXOUT BoxCallable *
+BoxCallable_Create_Undefined(BoxXXXX *t_out, BoxXXXX *t_in);
 
 /**
- * Create a callable object from a BoxCCall1 C function.
+ * Define a callable object from a BoxCCall1 C function.
  * @param call The C function.
  * @return BOXBOOL_TRUE on success, BOXBOOL_FALSE on failure.
  */
-BOXEXPORT void
-BoxCallable_Init_From_CCall1(BoxCallable *cb, BoxCCall1 call);
+BOXEXPORT BOXOUT BoxCallable *
+BoxCallable_Define_From_CCall1(BOXIN BoxCallable *cb, BoxCCall1 call);
 
 /**
- * Initialize a callable object from a BoxCCall2 C function.
+ * Define a callable object from a BoxCCall2 C function.
  * @param call The C function.
  */
-BOXEXPORT void
-BoxCallable_Init_From_CCall2(BoxCallable *cb, BoxCCall2 call);
-
-/**
- * Create a callable object from a BoxCCall1 C function.
- * @param call The C function.
- * @return The callable object.
- */
 BOXEXPORT BOXOUT BoxCallable *
-BoxCallable_Create_From_CCall1(BoxXXXX *t_out, BoxXXXX *t_in, BoxCCall1 call);
+BoxCallable_Define_From_CCall2(BOXIN BoxCallable *cb, BoxCCall2 call);
 
 /**
- * Create a callable object from a BoxCCall2 C function.
- * @param call The C function.
- * @return The callable object.
- */
-BOXEXPORT BOXOUT BoxCallable *
-BoxCallable_Create_From_CCall2(BoxXXXX *t_out, BoxXXXX *t_in, BoxCCall2 call);
-
-/**
- * Create a callable object from a BoxCCall3 C function.
- * @param t_out The type of the returned value.
- * @param t_in The type of the input argument.
- * @param context Data to be associated with the callback. This allows
- *   implementing closures.
- * @param call The C function implementing the callback.
- * @return A new callback object or NULL if the operation failed.
- */
-BOXEXPORT BOXOUT BoxCallable *
-BoxCallable_Create_From_CCall3(BoxXXXX *t_out, BoxXXXX *t_int,
-                               BOXIN BoxPtr *context, BoxCCall3 call);
-
-/**
- * Create a callable object from old-style C function (BoxCCallOld).
+ * Define a callable object from old-style C function (BoxCCallOld).
  */
 BOXEXPORT BOXOUT BoxCallable *
 BoxCallable_Create_From_CCallOld(BoxXXXX *t_out, BoxXXXX *t_in,

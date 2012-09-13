@@ -90,10 +90,10 @@ static BoxCallable *My_Create_Not_Implemented_Callable(void) {
   static BoxCallable *cb = NULL;
 
   if (!cb) {
-    BoxXXXX *void_type = BoxType_Create_Ident(BoxType_Create_Intrinsic(0, 0),
-                                              "Void");
-    cb = BoxCallable_Create_From_CCall1(void_type, void_type,
-                                        My_Raise_Not_Implemented);
+    BoxXXXX *void_type =
+      BoxType_Create_Ident(BoxType_Create_Intrinsic(0, 0), "Void");
+    cb = BoxCallable_Create_Undefined(void_type, void_type);
+    cb = BoxCallable_Define_From_CCall1(cb, My_Raise_Not_Implemented);
     BoxSPtr_Unlink(void_type);
   }
 
@@ -1011,35 +1011,6 @@ static TSCmp My_Compare(TS *ts, BoxType t1, BoxType t2) {
 
     t1 = td1->target;
     t2 = td2->target;
-  }
-}
-
-void BoxTSStrucIt_Init(BoxTS *ts, BoxTSStrucIt *it, BoxType s) {
-  BoxType s_core = TS_Get_Core_Type(ts, s);
-  TSDesc *s_core_td = Type_Ptr(ts, s_core);
-  BoxType member = s_core_td->target;
-  TSDesc *member_td = Type_Ptr(ts, member);
-
-  if (member_td->kind == TS_KIND_MEMBER) {
-    it->ts = ts;
-    it->position = 0;
-    it->td = member_td;
-    it->member = BoxTS_Obsolete_Resolve_Once(ts, member, TS_KS_NONE);
-    it->has_more = 1;
-
-  } else {
-    it->has_more = 0;
-  }
-}
-
-void BoxTSStrucIt_Advance(BoxTSStrucIt *it) {
-  if (it->td->kind == TS_KIND_MEMBER && it->has_more) {
-    BoxType next_member = it->td->data.member_next;
-    TSDesc *next_member_td = Type_Ptr(it->ts, next_member);
-    it->position = next_member_td->size;
-    it->member = BoxTS_Obsolete_Resolve_Once(it->ts, next_member, TS_KS_NONE);
-    it->td = next_member_td;
-    it->has_more = (next_member_td->kind == TS_KIND_MEMBER);
   }
 }
 
