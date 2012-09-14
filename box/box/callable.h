@@ -148,7 +148,7 @@ BoxCallable_Create_From_CCallOld(BoxXXXX *t_out, BoxXXXX *t_in,
  *   machine `vm'.
  */
 BOXEXPORT BOXOUT BoxCallable *
-BoxCallable_Create_From_VM(BoxXXXX *t_out, BoxXXXX *t_in,
+BoxCallable_Define_From_VM(BOXIN BoxCallable *cb,
                            BOXIN BoxPtr *context,
                            BoxVM *vm, BoxVMCallNum num);
 

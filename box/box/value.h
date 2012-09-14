@@ -159,7 +159,8 @@ void Value_Setup_As_Imm_Int(Value *v, Int i);
 void Value_Setup_As_Imm_Real(Value *v, Real r);
 
 /** Set the value to represent a temporary value of the given type */
-void Value_Setup_As_Temp(Value *v, BoxType t);
+void Value_Setup_As_Temp(Value *v, BoxXXXX *t);
+void Value_Setup_As_Temp_Old(Value *v, BoxType t);
 
 /** Set the value to represent a new variable of the given type */
 void Value_Setup_As_Var(Value *v, BoxType t);
@@ -360,12 +361,12 @@ Value *Value_Expand(Value *v, BoxType expansion_type);
 /**
  * REFERENCES: v: 0;
  */
-void Value_Setup_As_Parent(Value *v, BoxType parent_t);
+void Value_Setup_As_Parent(Value *v, BoxXXXX *parent_t);
 
 /**
  * REFERENCES: v: 0;
  */
-void Value_Setup_As_Child(Value *v, BoxType child_t);
+void Value_Setup_As_Child(Value *v, BoxXXXX *child_t);
 
 /** Build the subtype 'subtype_name' of 'v_parent'.
  * If the subtype is not found and 'v_parent' is itself a subtype, then

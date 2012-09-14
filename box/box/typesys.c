@@ -859,19 +859,6 @@ int TS_Subtype_Is_Registered(TS *ts, BoxType st) {
   return (st_td->target != BOXTYPE_NONE);
 }
 
-BoxType TS_Subtype_Get_Child(TS *ts, BoxType st_old) {
-  TSDesc *st_td = Type_Ptr(ts, st_old);
-  BoxXXXX *st_new = TS_Get_New_Style_Type(ts, st_old);
-  BoxXXXX *child_new;
-
-  assert(st_new);
-  assert(st_td->kind == TS_KIND_SUBTYPE);
-
-  BoxType_Get_Subtype_Info(st_new, NULL, NULL, & child_new);
-  assert(child_new == TS_Get_New_Style_Type(ts, st_td->target));
-  return st_td->target;
-}
-
 /* Register a previously created (and still unregistered) subtype. */
 Task TS_Subtype_Register(TS *ts, BoxType subtype, BoxType subtype_type) {
   TSDesc *s_td = Type_Ptr(ts, subtype);

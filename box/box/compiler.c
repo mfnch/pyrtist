@@ -89,7 +89,7 @@ void My_Init_Const_Values(BoxCmp *c) {
   Value_Init(& c->value.end, & c->main_proc);
   Value_Setup_As_Type(& c->value.end, BOXTYPE_END);
   Value_Init(& c->value.pause, & c->main_proc);
-  Value_Setup_As_Temp(& c->value.pause, BOXTYPE_PAUSE);
+  Value_Setup_As_Temp_Old(& c->value.pause, BOXTYPE_PAUSE);
 }
 
 void My_Finish_Const_Values(BoxCmp *c) {
@@ -333,7 +333,7 @@ static void My_Compile_TypeName(BoxCmp *c, ASTNode *node);
 static void My_Compile_TypeTag(BoxCmp *c, ASTNode *node);
 static void My_Compile_Subtype(BoxCmp *c, ASTNode *node);
 static void My_Compile_Box(BoxCmp *c, ASTNode *box,
-                           BoxType child_t, BoxType parent_t);
+                           BoxXXXX *child_t, BoxXXXX *parent_t);
 static void My_Compile_Instance(BoxCmp *c, ASTNode *instance);
 static void My_Compile_String(BoxCmp *c, ASTNode *node);
 static void My_Compile_Const(BoxCmp *c, ASTNode *n);
@@ -384,7 +384,7 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
   case ASTNODETYPE_INSTANCE:
     My_Compile_Instance(c, node); break;
   case ASTNODETYPE_BOX:
-    My_Compile_Box(c, node, BOXTYPE_NONE, BOXTYPE_NONE); break;
+    My_Compile_Box(c, node, NULL, NULL); break;
   case ASTNODETYPE_STRING:
     My_Compile_String(c, node); break;
   case ASTNODETYPE_CONST:
@@ -542,7 +542,7 @@ static void My_Compile_Instance(BoxCmp *c, ASTNode *instance) {
 }
 
 static void My_Compile_Box(BoxCmp *c, ASTNode *box,
-                           BoxType t_child, BoxType t_parent) {
+                           BoxXXXX *t_child, BoxXXXX *t_parent) {
   TS *ts = & c->ts;
   ASTNode *s;
   Value *parent = NULL, *outer_parent = NULL;
@@ -575,7 +575,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
                                   destroyed when it gets closed! */
 
   /* Add $ (the child) to namespace */
-  if (t_child != BOXTYPE_NONE) {
+  if (t_child) {
     Value *v_child = Value_New(c->cur_proc);
     Value_Setup_As_Child(v_child, t_child);
     Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, "$", v_child);
@@ -583,7 +583,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
   }
 
   /* Add $$ (the parent) to namespace */
-  if (t_parent != BOXTYPE_NONE) {
+  if (t_parent) {
     Value *v_parent = Value_New(c->cur_proc);
     Value_Setup_As_Parent(v_parent, t_parent);
     Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, "$$", v_parent);
@@ -939,7 +939,7 @@ static void My_Compile_Struc(BoxCmp *c, ASTNode *n) {
 
   /* create and populate the structure */
   v_struc = Value_New(c->cur_proc);
-  Value_Setup_As_Temp(v_struc, t_struc);
+  Value_Setup_As_Temp(v_struc, BoxType_From_Id(& c->ts, t_struc));
   v_struc_memb = Value_New(c->cur_proc);
   Value_Setup_As_Weak_Copy(v_struc_memb, v_struc);
   t_struc_memb = BOXTYPE_NONE;
@@ -1095,6 +1095,9 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   no_err = Value_Want_Has_Type(v_child) & Value_Want_Has_Type(v_parent);
   t_child = BoxType_Get_Id(v_child->type);
   t_parent = BoxType_Get_Id(v_parent->type);
+  BoxXXXX *t_child_new = v_child->type;
+  BoxXXXX *t_parent_new = v_parent->type;
+
   Value_Unlink(v_child);
   Value_Unlink(v_parent);
 
@@ -1124,15 +1127,8 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   proc_style = (n_implem != NULL) ? CMPPROCSTYLE_SUB : CMPPROCSTYLE_EXTERN;
   CmpProc_Init(& proc_implem, c, proc_style);
 
-  BoxXXXX *t_child_new = BoxType_From_Id(& c->ts, t_child);
-  BoxXXXX *t_parent_new = BoxType_From_Id(& c->ts, t_parent);
-  BoxTypeCmp expand;
-  BoxXXXX *t_comb =
-    BoxType_Find_Own_Combination(t_parent_new, comb_type, t_child_new, NULL);
-
   t_proc = BoxTS_Procedure_Search(& c->ts, /*expansion_type*/ NULL,
                                   t_child, comb_type, t_parent, 0);
-
 
   if (t_proc != BOXTYPE_NONE) {
     /* A procedure of this kind is already registered: we need to know if
@@ -1194,8 +1190,8 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
 
     /* Specify the prototype for the procedure */
     CmpProc_Set_Prototype(& proc_implem,
-                          !TS_Is_Empty(& c->ts, t_child),
-                          !TS_Is_Empty(& c->ts, t_parent));
+                          !BoxType_Is_Empty(t_child_new),
+                          !BoxType_Is_Empty(t_parent_new));
 
     /* If this is a creator then we should automatically insert some code at
      * the beginning to initialise the stuff the user is not responsible of.
@@ -1209,7 +1205,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
       (void) Auto_Generate_Code(c, t_child, t_parent);
     }
 
-    My_Compile_Box(c, n_implem, t_child, t_parent);
+    My_Compile_Box(c, n_implem, t_child_new, t_parent_new);
     v_implem = BoxCmp_Pop_Value(c);
     /* NOTE: we should double check that this is void! */
     Value_Unlink(v_implem);
@@ -1279,12 +1275,15 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
 
       if (TS_Is_Subtype(ts, t)) {
         if (TS_Subtype_Is_Registered(ts, t)) {
-          BoxType ot = TS_Subtype_Get_Child(ts, t);
-          if (BoxType_Compare(BoxType_From_Id(ts, ot), v_type->type)
-              == BOXTYPECMP_DIFFERENT)
+          BoxXXXX *t_child;
+          BoxBool success = BoxType_Get_Subtype_Info(v_name->type, NULL,
+                                                     NULL, & t_child);
+          assert(success);
+          if (BoxType_Compare(t_child, v_type->type) == BOXTYPECMP_DIFFERENT)
             MSG_ERROR("Inconsistent redefinition of type '%~s': was '%~s' "
                       "and is now '%~s'", BoxType_Get_Repr(v_name->type),
-                      TS_Name_Get(ts, ot), BoxType_Get_Repr(v_type->type));
+                      BoxType_Get_Repr(t_child),
+                      BoxType_Get_Repr(v_type->type));
 
         } else {
           (void) TS_Subtype_Register(ts, t, BoxType_Get_Id(v_type->type));

@@ -1039,6 +1039,12 @@ char *BoxType_Get_Repr(BoxXXXX *t) {
   case BOXTYPECLASS_COMB_NODE:
     return Box_Mem_Strdup("<invalid>");
 
+  case BOXTYPECLASS_SUBTYPE_NODE:
+    {
+      BoxTypeSubtypeNode *td = BoxType_Get_Data(t);
+      return Box_SPrintF("%~s.%s", BoxType_Get_Repr(td->parent), td->name);
+    }
+
   case BOXTYPECLASS_IDENT:
     {
       BoxTypeIdent *td = BoxType_Get_Data(t);

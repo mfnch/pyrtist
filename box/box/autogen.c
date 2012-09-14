@@ -37,7 +37,7 @@ static int My_Autogen_Struc_Proc(BoxCmp *c, BoxType t_child, BoxType t_parent) {
   Value v_struc;
 
   Value_Init(& v_struc, c->cur_proc);
-  Value_Setup_As_Parent(& v_struc, t_parent);
+  Value_Setup_As_Parent(& v_struc, BoxType_From_Id(& c->ts, t_parent));
   initial_proc_size = CmpProc_Get_Code_Size(c->cur_proc);
   for(ValueStrucIter_Init(& vsi, & v_struc, c->cur_proc);
       vsi.has_next; ValueStrucIter_Do_Next(& vsi)) {

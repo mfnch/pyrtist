@@ -350,7 +350,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     assert((opn->attr & OPR_ATTR_NATIVE) && (opn->attr & OPR_ATTR_BINARY));
 
     result = Value_New(c->cur_proc);
-    Value_Setup_As_Temp(result, opn->type_result);
+    Value_Setup_As_Temp_Old(result, opn->type_result);
     v_left = Value_To_Temp_Or_Target(v_left);
     v_right = Value_To_Temp_Or_Target(v_right);
     CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
@@ -372,7 +372,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     v_left = Value_To_Temp(v_left);
 
     result = Value_New(c->cur_proc);
-    Value_Setup_As_Temp(result, opn->type_result);
+    Value_Setup_As_Temp_Old(result, opn->type_result);
 
     CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
                      2, & v_left->value.cont, & v_right->value.cont);
@@ -538,7 +538,7 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
  */
 Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
   Value *v_dest = Value_New(c->cur_proc);
-  Value_Setup_As_Temp(v_dest, dest);
+  Value_Setup_As_Temp_Old(v_dest, dest);
   Value_Link(v_dest); /* We want to return a new reference! */
   if (BoxCmp_Opr_Try_Emit_Conversion(c, v_dest, src) == BOXTASK_OK)
     return v_dest;
