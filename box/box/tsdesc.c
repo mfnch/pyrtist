@@ -37,7 +37,7 @@ typedef struct {
 } MyObjDescBuilder;
 
 static void My_Build_Struc_Desc(BoxCmp *c,
-                                MyObjDescBuilder *bldr, BoxType t) {
+                                MyObjDescBuilder *bldr, BoxTypeId t) {
   BoxTS *ts = & c->ts;
   BoxTypeIter ti;
   BoxXXXX *tt;
@@ -48,7 +48,7 @@ static void My_Build_Struc_Desc(BoxCmp *c,
     size_t offset;
     BoxType_Get_Structure_Member(tt, NULL, & offset, NULL, & t_member);
 
-    BoxVMAllocID alloc_id = TS_Get_AllocID(c, BoxType_Get_Id(t_member));
+    BoxVMAllocID alloc_id = TS_Get_AllocID(c, t_member);
 
     if (alloc_id != BOXVMALLOCID_NONE) {
       BoxVMSubObj *sub = (BoxVMSubObj *) BoxArr_Push(& bldr->subs, NULL);
@@ -60,8 +60,8 @@ static void My_Build_Struc_Desc(BoxCmp *c,
   BoxTypeIter_Finish(& ti);
 }
 
-static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxType child,
-                                 BoxCombType comb, BoxType parent) {
+static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxTypeId child,
+                                 BoxCombType comb, BoxTypeId parent) {
   BoxVM *vm = c->vm;
   BoxTS *ts = & c->ts;
 
@@ -84,7 +84,7 @@ static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxType child,
 }
 
 #if 0
-static BoxVMCallNum My_Find_Copier(BoxCmp *c, BoxType parent) {
+static BoxVMCallNum My_Find_Copier(BoxCmp *c, BoxTypeId parent) {
   OprMatch match;
   Operation *opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match,
                                             parent, BOXTYPE_NONE, parent);
@@ -99,8 +99,8 @@ static BoxVMCallNum My_Find_Copier(BoxCmp *c, BoxType parent) {
 }
 #endif
 
-static void My_Build_Obj_Desc(BoxCmp *c, MyObjDescBuilder *bldr, BoxType t) {
-  BoxType ct = TS_Get_Core_Type(& c->ts, t);
+static void My_Build_Obj_Desc(BoxCmp *c, MyObjDescBuilder *bldr, BoxTypeId t) {
+  BoxTypeId ct = TS_Get_Core_Type(& c->ts, t);
   TSKind tk = TS_Get_Kind(& c->ts, ct);
 
   /* Here we populate the procedures for the object */
@@ -130,7 +130,7 @@ static void My_Build_Obj_Desc(BoxCmp *c, MyObjDescBuilder *bldr, BoxType t) {
   }
 }
 
-BoxVMObjDesc *TS_Get_ObjDesc(BoxCmp *c, BoxType t) {
+BoxVMObjDesc *TS_Get_ObjDesc(BoxCmp *c, BoxTypeId t) {
   BoxTS *ts = & c->ts;
   if (TS_Is_Empty(ts, t) || TS_Is_Fast(ts, t))
     /* An empty (size == 0) or fast (Int, Real, ...) object does not need
@@ -179,15 +179,15 @@ BoxVMObjDesc *TS_Get_ObjDesc(BoxCmp *c, BoxType t) {
   }
 }
 
-BoxVMAllocID TS_Get_AllocID(BoxCmp *c, BoxType t) {
-  BoxVMObjDesc *od = TS_Get_ObjDesc(c, t);
+BoxVMAllocID TS_Get_AllocID(BoxCmp *c, BoxXXXX *t) {
+  BoxVMObjDesc *od = TS_Get_ObjDesc(c, BoxType_Get_Id(t));
   if (od == NULL)
     return BOXVMALLOCID_NONE;
 
   else {
     BoxVMAllocID id = BoxVMAllocID_From_ObjDesc(c->vm, & od);
     if (od == NULL)
-      BoxVM_Set_Obj_Name(c->vm, id, TS_Name_Get(& c->ts, t));
+      BoxVM_Set_Obj_Name(c->vm, id, BoxType_Get_Repr(t));
     else
       BoxMem_Free(od); // Deallocate object
     return id;

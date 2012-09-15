@@ -48,6 +48,6 @@ BoxVMObjDesc *TS_Get_ObjDesc(BoxCmp *c, BoxType t);
  * This function internally creates the object descriptor and finds whether
  * it has been already created (to avoid duplication of IDs).
  */
-BoxVMAllocID TS_Get_AllocID(BoxCmp *c, BoxType t);
+BoxVMAllocID TS_Get_AllocID(BoxCmp *c, BoxXXXX *t);
 
 #endif /* _BOX_TSDESC_H */

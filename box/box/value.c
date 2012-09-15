@@ -455,7 +455,7 @@ void Value_Emit_Allocate(Value *v) {
       assert(v->proc == proc);
 
       /* Get the alloc ID for the type */
-      alloc_id = TS_Get_AllocID(c, BoxType_Get_Id(v->type));
+      alloc_id = TS_Get_AllocID(c, v->type);
 
       if (alloc_id == BOXVMALLOCID_NONE) {
         Value v_size;
@@ -1090,7 +1090,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
 
     } else {
       /* Get the alloc ID for the source value */
-      BoxVMAllocID id = TS_Get_AllocID(c, BoxType_Get_Id(src->type));
+      BoxVMAllocID id = TS_Get_AllocID(c, src->type);
 
       if (id != BOXVMALLOCID_NONE) {
         /* We leave the copy operation to the Box memory management system */
