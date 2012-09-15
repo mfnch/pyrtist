@@ -834,7 +834,7 @@ static Value *My_Compile_Assignment(BoxCmp *c, Value *left, Value *right) {
      * then we transform it to a proper target.
      */
     if (Value_Is_Var_Name(left))
-      Value_Setup_As_Var(left, BoxType_Get_Id(right->type));
+      Value_Setup_As_Var(left, right->type);
 
     if (Value_Is_Target(left)) {
       Value_Move_Content(left, right);

@@ -163,12 +163,12 @@ void Value_Setup_As_Temp(Value *v, BoxXXXX *t);
 void Value_Setup_As_Temp_Old(Value *v, BoxType t);
 
 /** Set the value to represent a new variable of the given type */
-void Value_Setup_As_Var(Value *v, BoxType t);
+void Value_Setup_As_Var(Value *v, BoxXXXX *t);
 
 /** Set the value to represent the given string 'str'. */
 void Value_Setup_As_String(Value *v_str, const char *str);
 
-void Value_Setup_Container(Value *v, BoxType type, ValContainer *vc);
+void Value_Setup_Container(Value *v, BoxXXXX *type, ValContainer *vc);
 
 /** Emit the VM code to generate the object 'v' is pointing to. */
 void Value_Emit_Allocate(Value *v);

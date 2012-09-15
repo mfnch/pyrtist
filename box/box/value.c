@@ -282,17 +282,17 @@ void Value_Setup_As_Void(Value *v) {
 
 void Value_Setup_As_Temp(Value *v, BoxXXXX *t) {
   ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
-  Value_Setup_Container(v, BoxType_Get_Id(t), & vc);
+  Value_Setup_Container(v, t, & vc);
   Value_Emit_Allocate(v);
 }
 
 void Value_Setup_As_Temp_Old(Value *v, BoxTypeId t) {
   ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
-  Value_Setup_Container(v, t, & vc);
+  Value_Setup_Container_Old(v, t, & vc);
   Value_Emit_Allocate(v);
 }
 
-void Value_Setup_As_Var(Value *v, BoxTypeId t) {
+void Value_Setup_As_Var(Value *v, BoxXXXX *t) {
   BoxCmp *c = v->proc->cmp;
   CmpProc *p = c->cur_proc;
   if (CmpProc_Get_Style(p) == CMPPROCSTYLE_MAIN) {
@@ -324,7 +324,7 @@ void Value_Setup_As_String(Value *v_str, const char *str) {
 
   vc.addr = addr;
   Value_Init(& v_str_data, v_str->proc);
-  Value_Setup_Container(& v_str_data, BOXTYPE_OBJ, & vc);
+  Value_Setup_Container_Old(& v_str_data, BOXTYPE_OBJ, & vc);
 
   Value_Setup_As_Temp_Old(v_str, c->bltin.string);
 
@@ -336,7 +336,7 @@ void Value_Setup_As_String(Value *v_str, const char *str) {
 }
 
 /* Create a new empty container. */
-void Value_Setup_Container(Value *v, BoxTypeId type, ValContainer *vc) {
+void Value_Setup_Container_Old(Value *v, BoxTypeId type, ValContainer *vc) {
   RegAlloc *ra = & v->proc->reg_alloc;
   int use_greg;
 
@@ -441,6 +441,10 @@ void Value_Setup_Container(Value *v, BoxTypeId type, ValContainer *vc) {
   }
 }
 
+void Value_Setup_Container(Value *v, BoxXXXX *t, ValContainer *vc) {
+  Value_Setup_Container_Old(v, BoxType_Get_Id(t), vc);
+}
+
 void Value_Emit_Allocate(Value *v) {
   switch(v->kind) {
   case VALUEKIND_ERR:
@@ -537,9 +541,10 @@ Value *Value_To_Temp(Value *v) {
 
   case VALUEKIND_TYPE:
     {
-      BoxTypeId t = BoxType_Get_Id(v->type);
+      BoxXXXX *t = BoxType_Link(v->type);
       v = Value_Recycle(v);
       Value_Setup_Container(v, t, & vc);
+      (void) BoxType_Unlink(t);
       Value_Emit_Allocate(v);
       return v;
     }
@@ -547,11 +552,13 @@ Value *Value_To_Temp(Value *v) {
   case VALUEKIND_IMM:
   case VALUEKIND_TARGET:
     {
-      Value old_v = *v;
+      BoxXXXX *t = BoxType_Link(v->type);
+      BoxCont cont = v->value.cont;
       v = Value_Recycle(v);
-      Value_Setup_Container(v, BoxType_Get_Id(old_v.type), & vc);
+      Value_Setup_Container(v, t, & vc);
+      BoxType_Unlink(t);
       CmpProc_Assemble(c->cur_proc, BOXGOP_MOV,
-                       2, & v->value.cont, & old_v.value.cont);
+                       2, & v->value.cont, & cont);
       return v;
     }
   }
@@ -872,12 +879,13 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
     Value *v_ret;
     BoxCont cont = v_obj->value.cont;
-    BoxTypeId t = BoxType_Get_Id(v_obj->type);
+    BoxXXXX *t = BoxType_Link(v_obj->type);
     CmpProc *cur_proc = v_obj->proc->cmp->cur_proc;
 
     Value_Unlink(v_obj);
     v_ret = Value_New(cur_proc);
     Value_Setup_Container(v_ret, t, & vc);
+    BoxType_Unlink(t);
 
     assert(v_ret->value.cont.type == BOXCONTTYPE_OBJ);
     CmpProc_Assemble(v_ret->proc, BOXGOP_LEA, 2, & v_ret->value.cont, & cont);
@@ -1299,7 +1307,7 @@ void My_Setup_From_Gro(Value *v, BoxTypeId t, BoxInt gro_num) {
     Value v_ptr;
     ValContainer vc = {VALCONTTYPE_GREG, gro_num, 0};
     Value_Init(& v_ptr, c->cur_proc);
-    Value_Setup_Container(& v_ptr, BOXTYPE_PTR, & vc);
+    Value_Setup_Container_Old(& v_ptr, BOXTYPE_PTR, & vc);
 
     Value_Setup_As_Temp_Old(v, BOXTYPE_PTR);
     CmpProc_Assemble(c->cur_proc, BOXGOP_MOV,
@@ -1325,7 +1333,7 @@ void My_Family_Setup(Value *v, BoxXXXX *t, int is_parent) {
     BoxVMRegNum ro_num =
       is_parent ? CmpProc_Get_Parent_Reg(p) : CmpProc_Get_Child_Reg(p);
     ValContainer vc = {VALCONTTYPE_LREG, ro_num, 0};
-    Value_Setup_Container(v, BOXTYPE_PTR, & vc);
+    Value_Setup_Container_Old(v, BOXTYPE_PTR, & vc);
     v = Value_Cast_From_Ptr(v, BoxType_Get_Id(t));
     v->kind = VALUEKIND_TARGET;
 
