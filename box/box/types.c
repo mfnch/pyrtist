@@ -92,7 +92,9 @@ void *BoxType_Alloc(BoxXXXX **t, BoxTypeClass tc) {
 
 /* Transition function needed to make the old and new type interchangable. */
 BoxTypeId BoxType_Get_Id(BoxXXXX *t) {
-  return (t ? t->type_id : BOXTYPEID_NONE);
+  BoxTypeId id = (t ? t->type_id : BOXTYPEID_NONE);
+  assert((id == BOXTYPEID_NONE) == (t == NULL));
+  return id;
 }
 
 void BoxType_Set_Id(BoxXXXX *t, BoxTypeId id) {
@@ -280,7 +282,7 @@ BoxXXXX *BoxType_Unlink(BoxXXXX *t) {
 
 /* Add a reference to the given type. */
 BoxXXXX *BoxType_Link(BoxXXXX *t) {
-  return BoxSPtr_Link(t);
+  return (t) ? BoxSPtr_Link(t) : NULL;
 }
 
 /* Append one BoxTypeNode item to a top BoxTypeNode item. This is used in
@@ -1004,7 +1006,12 @@ BoxXXXX *BoxType_Get_Stem(BoxXXXX *type) {
  * (e.g. register types).
  */
 BoxContType BoxType_Get_Cont_Type(BoxXXXX *t) {
-  BoxXXXX *stem = BoxType_Get_Stem(t);
+  BoxXXXX *stem;
+
+  if (!t)
+    return BOXCONTTYPE_VOID;
+
+  stem = BoxType_Get_Stem(t);
 
   /* Char, Int, ... are V.I.P. objects which have their own container types. */
   if (stem->type_class == BOXTYPECLASS_PRIMARY) {

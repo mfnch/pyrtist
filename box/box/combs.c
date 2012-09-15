@@ -76,7 +76,8 @@ BoxXXXX *
 BoxType_Find_Own_Combination(BoxXXXX *parent, BoxCombType type,
                              BoxXXXX *child, BoxTypeCmp *expand) {
   BoxTypeIter ti;
-  if (BoxType_Get_Combinations(parent, & ti)) {
+  
+  if (parent && child && BoxType_Get_Combinations(parent, & ti)) {
     BoxXXXX *t;
     for (; BoxTypeIter_Get_Next(& ti, & t);) {
       BoxTypeCombNode *node = BoxType_Get_Data(t);
@@ -100,6 +101,9 @@ BoxXXXX *
 BoxType_Find_Combination(BoxXXXX *parent, BoxCombType comb_type,
                          BoxXXXX *child, BoxTypeCmp *expand) {
   BoxXXXX *found_comb, *former_parent;
+
+  if (!(parent && child))
+    return NULL;
 
   do {
     /* Find a combination for the parent type, if found return. */
