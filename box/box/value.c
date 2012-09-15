@@ -288,7 +288,7 @@ void Value_Setup_As_Temp(Value *v, BoxXXXX *t) {
 
 void Value_Setup_As_Temp_Old(Value *v, BoxTypeId t) {
   ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
-  Value_Setup_Container_Old(v, t, & vc);
+  Value_Setup_Container(v, BoxType_From_Id(& v->proc->cmp->ts, t), & vc);
   Value_Emit_Allocate(v);
 }
 
@@ -324,7 +324,7 @@ void Value_Setup_As_String(Value *v_str, const char *str) {
 
   vc.addr = addr;
   Value_Init(& v_str_data, v_str->proc);
-  Value_Setup_Container_Old(& v_str_data, BOXTYPE_OBJ, & vc);
+  Value_Setup_Container(& v_str_data, BoxType_From_Id(& c->ts, BOXTYPE_OBJ), & vc);
 
   Value_Setup_As_Temp_Old(v_str, c->bltin.string);
 
@@ -336,11 +336,11 @@ void Value_Setup_As_String(Value *v_str, const char *str) {
 }
 
 /* Create a new empty container. */
-void Value_Setup_Container_Old(Value *v, BoxTypeId type, ValContainer *vc) {
+void Value_Setup_Container(Value *v, BoxXXXX *type, ValContainer *vc) {
   RegAlloc *ra = & v->proc->reg_alloc;
   int use_greg;
 
-  v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts, type));
+  v->type = BoxType_Link(type);
   v->value.cont.type = BoxType_Get_Cont_Type(v->type);
 
   switch(vc->type_of_container) {
@@ -439,10 +439,6 @@ void Value_Setup_Container_Old(Value *v, BoxTypeId type, ValContainer *vc) {
     MSG_FATAL("Value_Setup_Container: wrong type of container!");
     assert(0);
   }
-}
-
-void Value_Setup_Container(Value *v, BoxXXXX *t, ValContainer *vc) {
-  Value_Setup_Container_Old(v, BoxType_Get_Id(t), vc);
 }
 
 void Value_Emit_Allocate(Value *v) {
@@ -1307,7 +1303,7 @@ void My_Setup_From_Gro(Value *v, BoxTypeId t, BoxInt gro_num) {
     Value v_ptr;
     ValContainer vc = {VALCONTTYPE_GREG, gro_num, 0};
     Value_Init(& v_ptr, c->cur_proc);
-    Value_Setup_Container_Old(& v_ptr, BOXTYPE_PTR, & vc);
+    Value_Setup_Container(& v_ptr, BoxType_From_Id(ts, BOXTYPE_PTR), & vc);
 
     Value_Setup_As_Temp_Old(v, BOXTYPE_PTR);
     CmpProc_Assemble(c->cur_proc, BOXGOP_MOV,
@@ -1333,7 +1329,7 @@ void My_Family_Setup(Value *v, BoxXXXX *t, int is_parent) {
     BoxVMRegNum ro_num =
       is_parent ? CmpProc_Get_Parent_Reg(p) : CmpProc_Get_Child_Reg(p);
     ValContainer vc = {VALCONTTYPE_LREG, ro_num, 0};
-    Value_Setup_Container_Old(v, BOXTYPE_PTR, & vc);
+    Value_Setup_Container(v, BoxType_From_Id(& c->ts, BOXTYPE_PTR), & vc);
     v = Value_Cast_From_Ptr(v, BoxType_Get_Id(t));
     v->kind = VALUEKIND_TARGET;
 
