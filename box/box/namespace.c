@@ -80,7 +80,7 @@ void Namespace_Floor_Up(Namespace *ns) {
 typedef struct {
   BoxTS       *ts;    /**< Typesystem in which the procedure is registered */
   BoxCombType comb;   /**< Combination type */
-  BoxType     t_proc; /**< Type ID of the procedure */
+  BoxTypeId     t_proc; /**< Type ID of the procedure */
 } MyProcedureNmspItem;
 
 typedef struct {
@@ -196,7 +196,7 @@ Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
 }
 
 void Namespace_Add_Procedure(Namespace *ns, NmspFloor floor,
-                             BoxTS *ts, BoxCombType comb, BoxType t_proc) {
+                             BoxTS *ts, BoxCombType comb, BoxTypeId t_proc) {
   NmspItem *new_item = Namespace_Add_Item(ns, floor, (char *) NULL);
   MyProcedureNmspItem *p =
    (MyProcedureNmspItem *) BoxMem_Safe_Alloc(sizeof(MyProcedureNmspItem));

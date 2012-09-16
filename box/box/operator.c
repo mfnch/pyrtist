@@ -63,7 +63,7 @@ static void My_Guess_AsmScheme(Operation *opn) {
   if (opn->attr & OPR_ATTR_NATIVE) {
     if (opn->attr & OPR_ATTR_BINARY) {
       TS *ts = & opn->opr->cmp->ts;
-      BoxType t_result = TS_Get_Core_Type(ts, opn->type_result),
+      BoxTypeId t_result = TS_Get_Core_Type(ts, opn->type_result),
               t_left = TS_Get_Core_Type(ts, opn->type_left),
               t_right = TS_Get_Core_Type(ts, opn->type_right);
       int res_eq_l = (t_result == t_left),
@@ -116,8 +116,8 @@ void Operation_Set_User_Implem(Operation *opn, BoxVMSymID sym_id) {
  * all'operatore *opr. Se type1 o type2 sono uguali a TYPE_NONE si tratta
  * di un'operazione unaria (sinistra o destra rispettivamente).
  */
-Operation *Operator_Add_Opn(Operator *opr, BoxType type_left,
-                            BoxType type_right, BoxType type_result) {
+Operation *Operator_Add_Opn(Operator *opr, BoxTypeId type_left,
+                            BoxTypeId type_right, BoxTypeId type_result) {
   Operation *opn;
 
   opn = (Operation *) BoxMem_Safe_Alloc(sizeof(Operation));
@@ -212,8 +212,8 @@ void BoxCmp_Finish__Operators(BoxCmp *c) {
  * NOTE: it should not happen that type1 = type2 = TYPE_NONE.
  */
 Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
-                                    BoxType type_left, BoxType type_right,
-                                    BoxType type_result) {
+                                    BoxTypeId type_left, BoxTypeId type_right,
+                                    BoxTypeId type_result) {
   int opr_is_unary = ((opr->attr & OPR_ATTR_BINARY) == 0),
       do_match_res = ((opr->attr & OPR_ATTR_MATCH_RESULT) != 0);
   Operation *opn;
@@ -536,7 +536,7 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
 /** Emits the conversion from the source expression 'v', to the given type 't'
  * REFERENCES: return: new, src: -1;
  */
-Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest) {
+Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxTypeId dest) {
   Value *v_dest = Value_New(c->cur_proc);
   Value_Setup_As_Temp_Old(v_dest, dest);
   Value_Link(v_dest); /* We want to return a new reference! */

@@ -52,7 +52,7 @@ static void My_Syntax_Error();
 /* Possible types for the nodes of the tree */
 %union {
   char *        String;
-  BoxType       TTag;
+  BoxTypeId     TTag;
   BoxCombType   Combine;
   ASTScope      Scope;
   ASTUnOp       UnaryOperator;

@@ -73,19 +73,19 @@ typedef struct {
           alignment;
   char    *name;
   void    *val;
-  BoxType target,
+  BoxTypeId target,
           first_proc;
   union {
     BoxInt  array_size;
-    BoxType last,
+    BoxTypeId last,
             member_next;
     struct {
       BoxCombType combine;
-      BoxType     parent;
+      BoxTypeId     parent;
       BoxUInt     sym_num;
     } proc;
     struct {
-      BoxType parent;
+      BoxTypeId parent;
       char    *child_name;
     } subtype;
   } data;
@@ -125,29 +125,29 @@ void TS_Finish(BoxTS *ts);
 /* Transition function to allow setting the new style type correspoding
  * to an old style type.
  */
-void TS_Set_New_Style_Type(BoxTS *ts, BoxType old_type, BoxXXXX *new_type);
+void TS_Set_New_Style_Type(BoxTS *ts, BoxTypeId old_type, BoxXXXX *new_type);
 BoxXXXX *BoxType_From_Id(BoxTS *ts, BoxTypeId id);
 
 /* Transition function to get the new style type associated to an old style
  * type.
  */
-BoxXXXX *TS_Get_New_Style_Type(BoxTS *ts, BoxType old_type);
+BoxXXXX *TS_Get_New_Style_Type(BoxTS *ts, BoxTypeId old_type);
 
 /** Should disappear soon */
 void TS_Init_Builtin_Types(BoxTS *ts);
 
-BoxInt TS_Get_Size(BoxTS *ts, BoxType t);
+BoxInt TS_Get_Size(BoxTS *ts, BoxTypeId t);
 
 /** If 't' is a special type (BOXTYPE_CREATE, BOXTYPE_DESTROY, etc.)
  * return 't', otherwise return BOXTYPE_NONE.
  */
-BoxType TS_Is_Special(BoxType t);
+BoxTypeId TS_Is_Special(BoxTypeId t);
 
 /** Resolve types (obsolete version).
  * ks is a combination (with operator |) of TSKindSelect
  * values which specify what exactly has to be resolved.
  */
-BoxType BoxTS_Obsolete_Resolve_Once(BoxTS *ts, BoxType t, TSKindSelect ks);
+BoxTypeId BoxTS_Obsolete_Resolve_Once(BoxTS *ts, BoxTypeId t, TSKindSelect ks);
 
 /** Resolve the type in '*t' following the instructions in 'ks'.
  * 'ks' specifies what to resolve (see 'TSKindSelect'). The type to resolve
@@ -155,15 +155,15 @@ BoxType BoxTS_Obsolete_Resolve_Once(BoxTS *ts, BoxType t, TSKindSelect ks);
  * 1 is returned if the type was resolved, 0 is returned otherwise.
  * This allows using something like:
  *
- *   BoxType t = ...;
+ *   BoxTypeId t = ...;
  *   do {
  *     ...
  *   } while (BoxTS_Resolve_Once(ts, & t, ks));
  */
-int BoxTS_Resolve_Once(BoxTS *ts, BoxType *t, TSKindSelect ks);
+int BoxTS_Resolve_Once(BoxTS *ts, BoxTypeId *t, TSKindSelect ks);
 
 /** TS_Resolve_Once is applied until the type is fully resolved. */
-BoxType TS_Resolve(BoxTS *ts, BoxType t, TSKindSelect select);
+BoxTypeId TS_Resolve(BoxTS *ts, BoxTypeId t, TSKindSelect select);
 
 /** Return the core type of the provided type 't'.
  * This means that alias, species and raised types are resolved and
@@ -175,29 +175,29 @@ BoxType TS_Resolve(BoxTS *ts, BoxType t, TSKindSelect select);
  * is. This function is used to perform operations where the structure
  * of the type is needed, such as constructing the destructor of MyType.
  */
-BoxType TS_Get_Core_Type(BoxTS *ts, BoxType t);
+BoxTypeId TS_Get_Core_Type(BoxTS *ts, BoxTypeId t);
 
 /** Get the fundamental type (Char, Int, ..., Ptr) used to store objects of
  * the given type. Returns BOXTYPE_INT for integers, BOXTYPE_REAL for reals,
  * etc. BOXTYPE_OBJ is returned for objects which are not Char, Int, Real,
  * Point, Ptr.
  */
-BoxType TS_Get_Cont_Type(BoxTS *ts, BoxType t);
+BoxTypeId TS_Get_Cont_Type(BoxTS *ts, BoxTypeId t);
 
-TSKind TS_Get_Kind(BoxTS *ts, BoxType t);
+TSKind TS_Get_Kind(BoxTS *ts, BoxTypeId t);
 
 /** Box types can be subtivided into two cathegories: fast types and
  * slow types. A type is fast if the Box VM has a corresponding register
  * type, otherwise it is slow.
  */
-int TS_Is_Fast(BoxTS *ts, BoxType t);
+int TS_Is_Fast(BoxTS *ts, BoxTypeId t);
 
 #define TS_Is_Member(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_MEMBER)
 #define TS_Is_Subtype(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_SUBTYPE)
 #define TS_Is_Structure(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_STRUCTURE)
 #define TS_Is_Empty(ts, t) (TS_Get_Size((ts), (t)) == 0)
 
-BoxType BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
+BoxTypeId BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
                                       size_t alignment, const char *name);
 
 /** Convenient function to define an intrinsic Box type out of a C type. */
@@ -205,18 +205,19 @@ BoxType BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
   BoxTS_New_Intrinsic((ts), sizeof(type), __alignof__(type))
 
 /* Transition functions. */
-BoxType BoxTS_Procedure_Define(BoxTS *ts, BoxType child_old, BoxCombType comb,
-                               BoxType parent_old, BoxVMSymID sym_id,
-                               BOXIN BoxCallable *cb);
+BoxTypeId
+BoxTS_Procedure_Define(BoxTS *ts, BoxTypeId child_old, BoxCombType comb,
+                       BoxTypeId parent_old, BoxVMSymID sym_id,
+                       BOXIN BoxCallable *cb);
 
 /** Unregister a procedure which was previously registered with
  * BoxTS_Procedure_Register
  */
-void BoxTS_Procedure_Unregister(BoxTS *ts, BoxCombType comb, BoxType p);
+void BoxTS_Procedure_Unregister(BoxTS *ts, BoxCombType comb, BoxTypeId p);
 
 /** Obtain the symbol identification number of a registered procedure.
  */
-BoxUInt TS_Procedure_Get_Sym(BoxTS *ts, BoxType p);
+BoxUInt TS_Procedure_Get_Sym(BoxTS *ts, BoxTypeId p);
 
 /** Options to be used when searching for procedure */
 typedef enum {
@@ -232,15 +233,15 @@ typedef enum {
  * *expansion_type is the target type for that expansion. If expansion
  * is not needed then *expansion_type = BOXTYPE_NONE.
  */
-BoxType BoxTS_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
-                               BoxType child, BoxCombType comb, BoxType parent,
-                               TSSearchMode mode);
+BoxTypeId
+BoxTS_Procedure_Search(BoxTS *ts, BoxTypeId *expansion_type, BoxTypeId child,
+                       BoxCombType comb, BoxTypeId parent, TSSearchMode mode);
 
 /** Return whether a procedure is registered (does just check if one
  * of the registered procedures of the parent of 'p' has type ID matching
  * with 'p')
  */
-int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxCombType comb, BoxType p);
+int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxCombType comb, BoxTypeId p);
 
 /** Create a new unregistered subtype: a subtype is unregistered when
  * the parent is not aware of its existance. An unregistered type is defined
@@ -248,67 +249,68 @@ int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxCombType comb, BoxType p);
  * the parent type becomes aware of it. In order for the registration to be
  * completed the full type of the subtype must be specified.
  */
-BoxType TS_Subtype_New(BoxTS *ts, BoxType parent_type,
+BoxTypeId TS_Subtype_New(BoxTS *ts, BoxTypeId parent_type,
                        const char *child_name);
 
 /** Get the child type of the given subtype (return BOXTYPE_NONE, if the
  * subtype has not been yet registered)
  */
-BoxType TS_Subtype_Get_Child(BoxTS *ts, BoxType st);
+BoxTypeId TS_Subtype_Get_Child(BoxTS *ts, BoxTypeId st);
 
 /**< Return whether the subtype is already registered */
-int TS_Subtype_Is_Registered(BoxTS *ts, BoxType st);
+int TS_Subtype_Is_Registered(BoxTS *ts, BoxTypeId st);
 
 /** Register a previously created (and still unregistered) subtype.
  */
-BoxTask TS_Subtype_Register(BoxTS *ts, BoxType subtype, BoxType subtype_type);
+BoxTask
+TS_Subtype_Register(BoxTS *ts, BoxTypeId subtype, BoxTypeId subtype_type);
 
 /** Find the registered subtype with name child among the subtypes of type
  * parent. The found subtype is put inside *subtype. If no subtype is found
  * then BOXTYPE_NONE is returned inside *subtype.
  */
-BoxType TS_Subtype_Find(BoxTS *ts, BoxType parent, const char *name);
+BoxTypeId TS_Subtype_Find(BoxTS *ts, BoxTypeId parent, const char *name);
 
 /** Create the string representation of the Type 't'. The returned string
  * has to be freed by the user.
  */
-char *TS_Name_Get(BoxTS *ts, BoxType t);
+char *TS_Name_Get(BoxTS *ts, BoxTypeId t);
 
 /* Transition function: alternative to BoxTS_New_Alias. */
-BoxType BoxTS_New_Alias_With_Name(BoxTS *ts, BoxType origin,
+BoxTypeId BoxTS_New_Alias_With_Name(BoxTS *ts, BoxTypeId origin,
                                   const char *name);
 
 /** Create a new raised type from the type t. The new type (in *d) will be
  * similar to t, but incompatible: TS_Compare will not match the two types.
  */
-BoxType BoxTS_New_Raised(BoxTS *ts, BoxType t_origin);
+BoxTypeId BoxTS_New_Raised(BoxTS *ts, BoxTypeId t_origin);
 
 /** Function called to create an empty structure. Members can be added
  * with BoxTS_Add_Struct_Member.
  */
-BoxType BoxTS_Begin_Struct(BoxTS *ts);
+BoxTypeId BoxTS_Begin_Struct(BoxTS *ts);
 
 /** Add a member to a structure type defined with TS_Structure_Begin. */
-void BoxTS_Add_Struct_Member(BoxTS *ts, BoxType structure, BoxType member_type,
-                             const char *member_name);
+void BoxTS_Add_Struct_Member(BoxTS *ts, BoxTypeId structure,
+                             BoxTypeId member_type, const char *member_name);
 
 /** Function called to create an empty species. Members can be added
  * with TS_Species_Add.
  */
-BoxType BoxTS_Begin_Species(BoxTS *ts);
+BoxTypeId BoxTS_Begin_Species(BoxTS *ts);
 
 /** Add a member to a species type defined with TS_Species_Begin. */
-void BoxTS_Add_Species_Member(BoxTS *ts, BoxType species, BoxType member);
+void BoxTS_Add_Species_Member(BoxTS *ts, BoxTypeId species, BoxTypeId member);
 
 /** Obtain details about a member of a structure (to be used in conjunction
  * with BoxTS_Find_Struct_Member)
  */
-BoxType BoxTS_Get_Struct_Member(BoxTS *ts, BoxType m, size_t *address);
+BoxTypeId BoxTS_Get_Struct_Member(BoxTS *ts, BoxTypeId m, size_t *address);
 
 /** If m is a structure/species/enum returns its first member.
  * If m is a member, return the next member.
  * It m is the last member, return the parent structure.
  */
-BoxType BoxTS_Get_Next_Struct_Member(BoxTS *ts, BoxType m);
+BoxTypeId BoxTS_Get_Next_Struct_Member(BoxTS *ts, BoxTypeId m);
 
 #endif

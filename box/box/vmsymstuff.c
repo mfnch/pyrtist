@@ -25,16 +25,17 @@
 #include "vmsym.h"
 #include "vmsymstuff.h"
 #include "container.h"
+#include "callable.h"
 
 /*** call references ********************************************************/
 
 #if 0
 /* This is the function which assembles the code for the function call */
-static Task My_Assemble_Call(BoxVM *vm, UInt sym_num, UInt sym_type,
-                             int defined, void *def, UInt def_size,
-                             void *ref, UInt ref_size) {
+static BoxTask My_Assemble_Call(BoxVM *vm, UInt sym_num, UInt sym_type,
+                             int defined, void *def, size_t def_size,
+                             void *ref, size_t ref_size) {
   BoxVMCallNum call_num = 0;
-  assert(sym_type == VM_SYM_CALL);
+  assert(sym_type == BOXVMSYMTYPE_CALL);
 
   if (defined && def != NULL) {
     assert(def_size == sizeof(BoxVMCallNum));
@@ -45,14 +46,14 @@ static Task My_Assemble_Call(BoxVM *vm, UInt sym_num, UInt sym_type,
 }
 
 BoxVMSymID BoxVMSym_New_Call(BoxVM *vm) {
-  return BoxVMSym_New(vm, VM_SYM_CALL, sizeof(BoxVMCallNum));
+  return BoxVMSym_New(vm, BOXVMSYMTYPE_CALL, sizeof(BoxVMCallNum));
 }
 
-Task BoxVMSym_Def_Call(BoxVM *vm, BoxVMSymID sym_id, BoxVMCallNum call_num) {
+BoxTask BoxVMSym_Def_Call(BoxVM *vm, BoxVMSymID sym_id, BoxVMCallNum call_num) {
   return BoxVMSym_Define(vm, sym_id, & call_num);
 }
 
-Task BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
+BoxTask BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
   return BoxVMSym_Code_Ref(vm, sym_id, My_Assemble_Call, NULL, 0);
 }
 
@@ -63,14 +64,14 @@ Task BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
 
 BoxTask My_Assemble_Call(BoxVM *vm, BoxVMSymID sym_num,
                          BoxUInt sym_type, int defined,
-                         void *def, BoxUInt def_size,
-                         void *ref, BoxUInt ref_size) {
+                         void *def, size_t def_size,
+                         void *ref, size_t ref_size) {
 
   return BOXTASK_OK;
 }
 
 BoxVMSymID BoxVMSym_New_Call(BoxVM *vm, BoxVMCallNum call_num) {
-  BoxVMSymID sym_id = BoxVMSym_New(vm, VM_SYM_CALL, sizeof(BoxVMCallNum));
+  BoxVMSymID sym_id = BoxVMSym_New(vm, BOXVMSYMTYPE_CALL, sizeof(BoxVMCallNum));
   BoxVMCallNum *cn = (BoxVMCallNum *) BoxVMSym_Get_Definition(vm, sym_id);
   if (call_num != BOXVMCALLNUM_NONE)
     *cn = call_num;
@@ -93,18 +94,6 @@ void BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
   BoxVM_Assemble(vm, BOXOP_CALL_I, BOXCONTCATEG_IMM, call_num);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 /*** basic method registration **********************************************/
 /* Some methods are special and need to be registered separately using
  * the vm allocator. These methods (constructors, destructors, ... of types)
@@ -115,15 +104,15 @@ void BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
  */
 
 typedef struct {
-  BoxType type,
+  BoxTypeId type,
           method;
 } VMSymMethod;
 
 /* This is the function that registers the method, if it is known. */
-static Task Register_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
-                          int defined, void *def, UInt def_size,
-                          void *ref, UInt ref_size) {
-  assert(sym_type == VM_SYM_CALL);
+static BoxTask Register_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
+                             int defined, void *def, size_t def_size,
+                             void *ref, size_t ref_size) {
+  assert(sym_type == BOXVMSYMTYPE_CALL);
   if (defined && def != NULL) {
     assert(def_size == sizeof(UInt) && ref_size == sizeof(VMSymMethod));
 #if 0
@@ -137,7 +126,7 @@ static Task Register_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
 }
 
 void VM_Sym_Alloc_Method_Register(BoxVM *vmp, UInt sym_num,
-                                  BoxType type, BoxType method) {
+                                  BoxTypeId type, BoxTypeId method) {
   VMSymMethod m;
   m.type = type;
   m.method = method;
@@ -153,14 +142,14 @@ typedef struct {
   Int position;
 } VMSymLabelRef;
 
-static Task Assemble_Jmp(BoxVM *vmp, UInt sym_num, UInt sym_type,
-                         int defined, void *def, UInt def_size,
-                         void *ref, UInt ref_size) {
+static BoxTask Assemble_Jmp(BoxVM *vmp, UInt sym_num, UInt sym_type,
+                            int defined, void *def, size_t def_size,
+                            void *ref, size_t ref_size) {
   Int rel_position = 0;
   BoxOp asm_code = BOXOP_JC_I;
   VMSymLabelRef *label_ref = ref;
 
-  assert(sym_type == VM_SYM_COND_JMP);
+  assert(sym_type == BOXVMSYMTYPE_COND_JMP);
   assert(ref_size == sizeof(VMSymLabelRef));
   assert(ref != NULL);
 
@@ -178,10 +167,10 @@ static Task Assemble_Jmp(BoxVM *vmp, UInt sym_num, UInt sym_type,
 }
 
 BoxVMSymID BoxVMSym_New_Label(BoxVM *vmp) {
-  return BoxVMSym_New(vmp, VM_SYM_COND_JMP, sizeof(VMSymLabel));
+  return BoxVMSym_New(vmp, BOXVMSYMTYPE_COND_JMP, sizeof(VMSymLabel));
 }
 
-Task BoxVMSym_Def_Label(BoxVM *vmp, UInt sym_num,
+BoxTask BoxVMSym_Def_Label(BoxVM *vmp, UInt sym_num,
                       Int sheet_id, Int position) {
   VMSymLabel label;
   label.sheet_id = sheet_id;
@@ -192,7 +181,7 @@ Task BoxVMSym_Def_Label(BoxVM *vmp, UInt sym_num,
 /* Same as VM_Label_Define, but sheet_id is the current active sheet and
  * position is the current position in that sheet.
  */
-Task BoxVMSym_Def_Label_Here(BoxVM *vmp, UInt label_sym_num) {
+BoxTask BoxVMSym_Def_Label_Here(BoxVM *vmp, UInt label_sym_num) {
   Int sheet_id, position;
   sheet_id = vmp->proc_table.target_proc_num;
   position = BoxArr_Num_Items(& vmp->proc_table.target_proc->code);
@@ -202,12 +191,12 @@ Task BoxVMSym_Def_Label_Here(BoxVM *vmp, UInt label_sym_num) {
 /* Same as VM_Label_New, but sheet_id is the current active sheet and
  * position is the current position in that sheet.
  */
-Task BoxVMSym_New_Label_Here(BoxVM *vmp, UInt *label_sym_num) {
+BoxTask BoxVMSym_New_Label_Here(BoxVM *vmp, UInt *label_sym_num) {
   *label_sym_num = BoxVMSym_New_Label(vmp);
   return BoxVMSym_Def_Label_Here(vmp, *label_sym_num);
 }
 
-Task VM_Sym_Jmp_Generic(BoxVM *vmp, BoxVMSymID sym_id, int conditional) {
+BoxTask VM_Sym_Jmp_Generic(BoxVM *vmp, BoxVMSymID sym_id, int conditional) {
   VMSymLabelRef label_ref;
   label_ref.conditional = conditional;
   label_ref.sheet_id = vmp->proc_table.target_proc_num;
@@ -216,15 +205,15 @@ Task VM_Sym_Jmp_Generic(BoxVM *vmp, BoxVMSymID sym_id, int conditional) {
                            & label_ref, sizeof(VMSymLabelRef));
 }
 
-Task BoxVMSym_Jc(BoxVM *vmp, BoxVMSymID sym_id) {
+BoxTask BoxVMSym_Jc(BoxVM *vmp, BoxVMSymID sym_id) {
   return VM_Sym_Jmp_Generic(vmp, sym_id, 1);
 }
 
-Task BoxVMSym_Jmp(BoxVM *vmp, BoxVMSymID sym_id) {
+BoxTask BoxVMSym_Jmp(BoxVM *vmp, BoxVMSymID sym_id) {
   return VM_Sym_Jmp_Generic(vmp, sym_id, 0);
 }
 
-Task BoxVMSym_Release_Label(BoxVM *vmp, BoxVMSymID sym_id) {
+BoxTask BoxVMSym_Release_Label(BoxVM *vmp, BoxVMSymID sym_id) {
   return BOXTASK_OK;
 }
 
@@ -241,16 +230,16 @@ typedef struct {
  * and variables is unknown, we use the symbol manager to adjust
  * automatically the header of procedures when the data is known.
  */
-static Task Assemble_Proc_Head(BoxVM *vmp, UInt sym_num, UInt sym_type,
-                               int defined, void *def, UInt def_size,
-                               void *ref, UInt ref_size) {
+static BoxTask Assemble_Proc_Head(BoxVM *vmp, UInt sym_num, UInt sym_type,
+                                  int defined, void *def, size_t def_size,
+                                  void *ref, size_t ref_size) {
   ProcHead *ph = (ProcHead *) def;
   static Int asm_code[NUM_TYPES] = {BOXOP_NEWC_II, BOXOP_NEWI_II,
                                     BOXOP_NEWR_II, BOXOP_NEWP_II,
                                     BOXOP_NEWO_II};
   int i;
 
-  assert(sym_type == VM_SYM_PROC_HEAD);
+  assert(sym_type == BOXVMSYMTYPE_PROC_HEAD);
   assert(def_size == sizeof(ProcHead));
   assert(def != NULL);
 
@@ -264,12 +253,12 @@ static Task Assemble_Proc_Head(BoxVM *vmp, UInt sym_num, UInt sym_type,
   return BOXTASK_OK;
 }
 
-Task BoxVMSym_Assemble_Proc_Head(BoxVM *vm, BoxVMSymID *sym_num) {
-  *sym_num = BoxVMSym_New(vm, VM_SYM_PROC_HEAD, sizeof(ProcHead));
+BoxTask BoxVMSym_Assemble_Proc_Head(BoxVM *vm, BoxVMSymID *sym_num) {
+  *sym_num = BoxVMSym_New(vm, BOXVMSYMTYPE_PROC_HEAD, sizeof(ProcHead));
   return BoxVMSym_Code_Ref(vm, *sym_num, Assemble_Proc_Head, NULL, 0);
 }
 
-Task BoxVMSym_Def_Proc_Head(BoxVM *vmp, BoxVMSymID sym_num,
+BoxTask BoxVMSym_Def_Proc_Head(BoxVM *vmp, BoxVMSymID sym_num,
                             Int *num_var, Int *num_reg) {
   ProcHead ph;
   int i;
@@ -278,4 +267,45 @@ Task BoxVMSym_Def_Proc_Head(BoxVM *vmp, BoxVMSymID sym_num,
     ph.num_reg[i] = num_reg[i];
   }
   return BoxVMSym_Define(vmp, sym_num, & ph);
+}
+
+/*** callables **************************************************************/
+
+typedef struct {
+  BoxCallable *callable;
+} MyCallableData;
+
+static BoxTask
+My_Define_Callable(BoxVM *vm, UInt sym_num, UInt sym_type, int defined,
+                   void *def, size_t def_size, void *ref, size_t ref_size) {
+  MyCallableData *cb_data = ref;
+
+  assert(sym_type == BOXVMSYMTYPE_CALLABLE);
+  return BOXTASK_FAILURE;
+}
+
+BoxBool
+BoxVM_Register_Callable(BoxVM *vm, BoxCallable *cb, BoxVMSymID *sym_id) {
+  BoxVMSymID my_sym_id;
+  MyCallableData cb_data;
+  BoxBool success;
+
+  cb_data.callable = BoxCallable_Link(cb);
+
+  my_sym_id = BoxVMSym_New(vm, BOXVMSYMTYPE_CALLABLE, sizeof(MyCallableData));
+
+  success = (BoxVMSym_Code_Ref(vm, my_sym_id, My_Define_Callable,
+                               & cb_data, sizeof(MyCallableData))
+             == BOXTASK_OK);
+
+  if (sym_id)
+    *sym_id = my_sym_id;
+
+  return success;
+}
+
+void BoxVM_Define_Callable(BoxVM *vm, BoxVMSymID sym_id, BoxCallable *cb) {
+  MyCallableData cb_data;
+  cb_data.callable = cb;
+  (void) BoxVMSym_Define(vm, sym_id, & cb_data);
 }

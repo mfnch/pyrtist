@@ -161,7 +161,7 @@ static BoxTask My_Compare_Str(BoxVMX *vm) {
 
 static void My_Register_Compare_Str(BoxCmp *c) {
   BoxTS *ts = & c->ts;
-  BoxType str_couple = BoxTS_Begin_Struct(ts);
+  BoxTypeId str_couple = BoxTS_Begin_Struct(ts);
   BoxTS_Add_Struct_Member(ts, str_couple, c->bltin.string, NULL);
   BoxTS_Add_Struct_Member(ts, str_couple, c->bltin.string, NULL);
   Bltin_Proc_Def(c, c->bltin.compare, str_couple, My_Compare_Str);

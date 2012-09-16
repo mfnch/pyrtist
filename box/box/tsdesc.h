@@ -42,7 +42,7 @@
  *   Return NULL if the object does have a simple structure and does not need
  *   an object descriptor.
  */
-BoxVMObjDesc *TS_Get_ObjDesc(BoxCmp *c, BoxType t);
+BoxVMObjDesc *TS_Get_ObjDesc(BoxCmp *c, BoxTypeId t);
 
 /** Return the alloc ID of the given object 't'.
  * This function internally creates the object descriptor and finds whether

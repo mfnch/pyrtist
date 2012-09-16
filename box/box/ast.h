@@ -152,7 +152,7 @@ typedef struct {
 
 /** Node for a special type */
 typedef struct {
-  BoxType  type;
+  BoxTypeId  type;
 } ASTNodeTypeTag;
 
 /** Node for a subtype */
@@ -377,7 +377,7 @@ void ASTNode_Print(FILE *out, ASTNode *node);
 
 ASTNode *ASTNodeError_New(void);
 ASTNode *ASTNodeTypeName_New(const char *name, size_t name_len);
-ASTNode *ASTNodeTypeTag_New(BoxType value);
+ASTNode *ASTNodeTypeTag_New(BoxTypeId value);
 ASTNode *ASTNodeSubtype_New(ASTNode *parent_type, const char *name);
 ASTNode *ASTNodeStatement_New(ASTNode *target);
 ASTNode *ASTNodeSep_New(ASTSep sep);

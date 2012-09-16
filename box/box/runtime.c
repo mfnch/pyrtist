@@ -19,14 +19,14 @@
 
 #include <box/runtime.h>
 
-static BoxType My_Create_Intrinsic(size_t size, size_t algn, char *name) {
-  BoxType it = BoxType_Create_Intrinsic(size, algn);
+static BoxTypeId My_Create_Intrinsic(size_t size, size_t algn, char *name) {
+  BoxTypeId it = BoxType_Create_Intrinsic(size, algn);
   return BoxType_Create_Ident(it, name);
 }
 
 /* Create the root type. */
-BoxType Box_Create_Root_Type(void) {
-  BoxType t_root, t_char, t_int, t_real, t_point, t_ptr;
+BoxTypeId Box_Create_Root_Type(void) {
+  BoxTypeId t_root, t_char, t_int, t_real, t_point, t_ptr;
 
   t_root = BoxType_Create_Ident(NULL, "Root");
 

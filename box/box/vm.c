@@ -79,7 +79,7 @@ const size_t size_of_type[NUM_TYPES] = {
 
 static void *My_Get_Arg_Ptrs(BoxVMX *vmx, int kind, Int n) {
   if (kind < 2) {                 /* kind == 0, 1 (local, global registers) */
-    BoxType t = vmx->idesc->t_id;
+    BoxTypeId t = vmx->idesc->t_id;
     BoxVMRegs *regs = & ((kind == 0) ? vmx->global : vmx->local)[t];
     size_t s = size_of_type[t];
 
@@ -97,7 +97,7 @@ static void *My_Get_Arg_Ptrs(BoxVMX *vmx, int kind, Int n) {
     return *((void **) vmx->local[TYPE_OBJ].ptr) + n;
 
   } else {                                        /* kind == 3 (immediates) */
-    BoxType t = vmx->idesc->t_id;
+    BoxTypeId t = vmx->idesc->t_id;
     static Int i = 0;
     static union {Char c; Int i; Real r;} v[2], *value;
 

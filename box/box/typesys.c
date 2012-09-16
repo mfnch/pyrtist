@@ -37,7 +37,7 @@
 #include <box/callable.h>
 #include <box/combs.h>
 
-static TSCmp My_Compare(TS *ts, BoxType t1, BoxType t2);
+static TSCmp My_Compare(TS *ts, BoxTypeId t1, BoxTypeId t2);
 
 static void Destroy_TSDesc(void *td) {
   BoxSPtr_Unlink(((TSDesc *) td)->new_type);
@@ -48,7 +48,7 @@ static void Destroy_TSDesc(void *td) {
 void TS_Init_Builtin_Types(TS *ts) {
   static struct {
     const char *name;
-    BoxType    expected;
+    BoxTypeId    expected;
     size_t     size,
                alignment;
 
@@ -75,7 +75,7 @@ void TS_Init_Builtin_Types(TS *ts) {
 
   } else {
     for(bt = & builtin_types[0]; bt->name != NULL; bt++) {
-      BoxType type =
+      BoxTypeId type =
         BoxTS_New_Intrinsic_With_Name(ts, bt->size, bt->alignment, bt->name);
       assert(type == bt->expected);
     }
@@ -127,20 +127,20 @@ void TS_Finish(TS *ts) {
 #endif
 }
 
-static void Type_New(TS *ts, BoxType *new_type, TSDesc *td) {
+static void Type_New(TS *ts, BoxTypeId *new_type, TSDesc *td) {
   TSDesc my_dummy_td,
          *my_td = (td != NULL) ? td : & my_dummy_td;
   UInt nt = BoxOcc_Occupy(& ts->type_descs, my_td);
   *new_type = nt - 1;
 }
 
-static TSDesc *Type_Ptr(TS *ts, BoxType t) {
+static TSDesc *Type_Ptr(TS *ts, BoxTypeId t) {
   TSDesc *td = (TSDesc *) BoxOcc_Item_Ptr(& ts->type_descs, t + 1);
   assert(td != NULL);
   return td;
 }
 
-void TS_Set_New_Style_Type(BoxTS *ts, BoxType old_type, BoxXXXX *new_type) {
+void TS_Set_New_Style_Type(BoxTS *ts, BoxTypeId old_type, BoxXXXX *new_type) {
   if (old_type != BOXTYPE_NONE) {
     TSDesc *old_type_td = Type_Ptr(ts, old_type);
     old_type_td->new_type = new_type;
@@ -148,7 +148,7 @@ void TS_Set_New_Style_Type(BoxTS *ts, BoxType old_type, BoxXXXX *new_type) {
   }
 }
 
-BoxXXXX *TS_Get_New_Style_Type(BoxTS *ts, BoxType old_type) {
+BoxXXXX *TS_Get_New_Style_Type(BoxTS *ts, BoxTypeId old_type) {
   if (old_type != BOXTYPE_NONE) {
     TSDesc *old_type_td = Type_Ptr(ts, old_type);
     return old_type_td->new_type;
@@ -157,16 +157,16 @@ BoxXXXX *TS_Get_New_Style_Type(BoxTS *ts, BoxType old_type) {
 }
 
 BoxXXXX *BoxType_From_Id(BoxTS *ts, BoxTypeId id) {
-  if ((BoxType) id != BOXTYPE_NONE) {
+  if ((BoxTypeId) id != BOXTYPE_NONE) {
     TSDesc *old_type_td = Type_Ptr(ts, id);
     return old_type_td->new_type;
   }
   return NULL;
 }
 
-/*static BoxType My_New_Type(BoxTS *ts, TSDesc *td)*/
+/*static BoxTypeId My_New_Type(BoxTS *ts, TSDesc *td)*/
 
-static TSDesc *Resolve(TS *ts, BoxType *rt, BoxType t, int ignore_names) {
+static TSDesc *Resolve(TS *ts, BoxTypeId *rt, BoxTypeId t, int ignore_names) {
   while(1) {
     TSDesc *td = Type_Ptr(ts, t);
     switch(td->kind) {
@@ -184,7 +184,7 @@ static TSDesc *Resolve(TS *ts, BoxType *rt, BoxType t, int ignore_names) {
   }
 }
 
-static TSDesc *Fully_Resolve(TS *ts, BoxType *rt, BoxType t) {
+static TSDesc *Fully_Resolve(TS *ts, BoxTypeId *rt, BoxTypeId t) {
   while(1) {
     TSDesc *td = Type_Ptr(ts, t);
     switch(td->kind) {
@@ -194,13 +194,13 @@ static TSDesc *Fully_Resolve(TS *ts, BoxType *rt, BoxType t) {
     case TS_KIND_SPECIES:
       t = td->data.last; break;
     default:
-      if (rt != (BoxType *) NULL) *rt = t;
+      if (rt != (BoxTypeId *) NULL) *rt = t;
       return td;
     }
   }
 }
 
-BoxType TS_Is_Special(BoxType t) {
+BoxTypeId TS_Is_Special(BoxTypeId t) {
   switch(t) {
   case BOXTYPE_CREATE:
   case BOXTYPE_DESTROY:
@@ -213,11 +213,11 @@ BoxType TS_Is_Special(BoxType t) {
   }
 }
 
-BoxType BoxTS_Obsolete_Resolve_Once(BoxTS *ts, BoxType t,
+BoxTypeId BoxTS_Obsolete_Resolve_Once(BoxTS *ts, BoxTypeId t,
                                     TSKindSelect select) {
   int resolve, resolve_only_anonimous, is_not_anonimous;
   TSDesc *td;
-  BoxType rt;
+  BoxTypeId rt;
 
   if (t == BOXTYPE_NONE)
     return BOXTYPE_NONE;
@@ -253,14 +253,14 @@ BoxType BoxTS_Obsolete_Resolve_Once(BoxTS *ts, BoxType t,
   return resolve ? rt : t;
 }
 
-int BoxTS_Resolve_Once(BoxTS *ts, BoxType *t, TSKindSelect ks) {
-  BoxType old_t = *t;
+int BoxTS_Resolve_Once(BoxTS *ts, BoxTypeId *t, TSKindSelect ks) {
+  BoxTypeId old_t = *t;
   *t = BoxTS_Obsolete_Resolve_Once(ts, old_t, ks);
   return (*t != old_t);
 }
 
-BoxType TS_Resolve(BoxTS *ts, BoxType t, TSKindSelect select) {
-  BoxType rt = t;
+BoxTypeId TS_Resolve(BoxTS *ts, BoxTypeId t, TSKindSelect select) {
+  BoxTypeId rt = t;
   do {
     t = rt;
     rt = BoxTS_Obsolete_Resolve_Once(ts, t, select);
@@ -268,12 +268,12 @@ BoxType TS_Resolve(BoxTS *ts, BoxType t, TSKindSelect select) {
   return t;
 }
 
-BoxType TS_Get_Core_Type(TS *ts, BoxType t) {
+BoxTypeId TS_Get_Core_Type(TS *ts, BoxTypeId t) {
   return TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_RAISED | TS_KS_SPECIES);
 }
 
-BoxType TS_Get_Cont_Type(TS *ts, BoxType t) {
-  BoxType r =
+BoxTypeId TS_Get_Cont_Type(TS *ts, BoxTypeId t) {
+  BoxTypeId r =
     TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_RAISED | TS_KS_SPECIES);
 
   if (TS_Is_Empty(ts, r))
@@ -283,12 +283,12 @@ BoxType TS_Get_Cont_Type(TS *ts, BoxType t) {
     return (r > BOXTYPE_PTR) ? BOXTYPE_OBJ : r;
 }
 
-int TS_Is_Fast(TS *ts, BoxType t) {
-  BoxType ct = TS_Get_Core_Type(ts, t);
+int TS_Is_Fast(TS *ts, BoxTypeId t) {
+  BoxTypeId ct = TS_Get_Core_Type(ts, t);
   return (ct >= BOXTYPE_FAST_LOWER && ct <= BOXTYPE_FAST_UPPER);
 }
 
-Int TS_Get_Size(TS *ts, BoxType t) {
+Int TS_Get_Size(TS *ts, BoxTypeId t) {
 #if 0
   TSDesc *td = Type_Ptr(ts, t);
 
@@ -304,16 +304,16 @@ Int TS_Get_Size(TS *ts, BoxType t) {
 }
 
 
-TSKind TS_Get_Kind(TS *ts, BoxType t) {
+TSKind TS_Get_Kind(TS *ts, BoxTypeId t) {
   TSDesc *td = Type_Ptr(ts, t);
   return td->kind;
 }
 
-static char *TS_Name_Get_Case(TSKind kind, TS *ts, TSDesc *td, BoxType t,
+static char *TS_Name_Get_Case(TSKind kind, TS *ts, TSDesc *td, BoxTypeId t,
                               char *empty, char *one, char *two, char *many) {
   char *name = (char *) NULL;
-  BoxType m = td->target;
-  BoxType previous_type = BOXTYPE_NONE;
+  BoxTypeId m = td->target;
+  BoxTypeId previous_type = BOXTYPE_NONE;
 
   if (td->size < 1)
     return BoxMem_Strdup(empty);
@@ -348,7 +348,7 @@ static char *TS_Name_Get_Case(TSKind kind, TS *ts, TSDesc *td, BoxType t,
   }
 }
 
-char *TS_Name_Get(TS *ts, BoxType t) {
+char *TS_Name_Get(TS *ts, BoxTypeId t) {
   TSDesc *td = Type_Ptr(ts, t);
   td = Resolve(ts, & t, t, 0);
   if (td->name != (char *) NULL) return BoxMem_Strdup(td->name);
@@ -393,15 +393,16 @@ char *TS_Name_Get(TS *ts, BoxType t) {
 }
 
 /* The full name to use in the hashtable of members */
-static void Member_Full_Name(TS *ts, BoxName *n, BoxType s, const char *m_name) {
+static void
+Member_Full_Name(TS *ts, BoxName *n, BoxTypeId s, const char *m_name) {
   BoxArr_Clear(& ts->name_buffer);
-  BoxArr_MPush(& ts->name_buffer, & s, sizeof(BoxType));
+  BoxArr_MPush(& ts->name_buffer, & s, sizeof(BoxTypeId));
   BoxArr_MPush(& ts->name_buffer, m_name, strlen(m_name));
   n->text = (char *) BoxArr_First_Item_Ptr(& ts->name_buffer);
   n->length = BoxArr_Num_Items(& ts->name_buffer);
 }
 
-BoxType BoxTS_Get_Next_Struct_Member(BoxTS *ts, BoxType m) {
+BoxTypeId BoxTS_Get_Next_Struct_Member(BoxTS *ts, BoxTypeId m) {
   TSDesc *td = Type_Ptr(ts, m);
   return td->kind == TS_KIND_MEMBER ? td->data.member_next : td->target;
 }
@@ -413,9 +414,9 @@ BoxType BoxTS_Get_Next_Struct_Member(BoxTS *ts, BoxType m) {
  ****************************************************************************/
 
 /*FUNCTIONS: TS_X_New *******************************************************/
-static BoxType BoxTS_New_Intrinsic(BoxTS *ts, size_t size, size_t alignment) {
+static BoxTypeId BoxTS_New_Intrinsic(BoxTS *ts, size_t size, size_t alignment) {
   TSDesc td;
-  BoxType new_type;
+  BoxTypeId new_type;
   assert(size >= 0);
   TS_TSDESC_INIT(& td);
   td.kind = TS_KIND_INTRINSIC;
@@ -426,7 +427,7 @@ static BoxType BoxTS_New_Intrinsic(BoxTS *ts, size_t size, size_t alignment) {
   return new_type;
 }
 
-static Task My_Name_Set(TS *ts, BoxType t, const char *name) {
+static Task My_Name_Set(TS *ts, BoxTypeId t, const char *name) {
   TSDesc *td = Type_Ptr(ts, t);
   if (td->name != (char *) NULL) {
     MSG_ERROR("My_Name_Set: trying to set the name '%s' for type %I: "
@@ -438,9 +439,9 @@ static Task My_Name_Set(TS *ts, BoxType t, const char *name) {
   return BOXTASK_OK;
 }
 
-BoxType BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
-                                      size_t alignment, const char *name) {
-  BoxType out_old = BoxTS_New_Intrinsic(ts, size, alignment);
+BoxTypeId BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
+                                        size_t alignment, const char *name) {
+  BoxTypeId out_old = BoxTS_New_Intrinsic(ts, size, alignment);
   My_Name_Set(ts, out_old, name);
 
   BoxXXXX *prim_new =
@@ -452,10 +453,10 @@ BoxType BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
   return out_old;
 }
 
-static BoxType My_Procedure_New(BoxTS *ts, BoxType child,
-                                BoxCombType comb, BoxType parent) {
+static BoxTypeId My_Procedure_New(BoxTS *ts, BoxTypeId child,
+                                  BoxCombType comb, BoxTypeId parent) {
   TSDesc td;
-  BoxType p;
+  BoxTypeId p;
   TS_TSDESC_INIT(& td);
   td.kind = TS_KIND_PROC;
   td.size = BOX_SIZE_UNKNOWN;
@@ -470,10 +471,10 @@ static BoxType My_Procedure_New(BoxTS *ts, BoxType child,
 /*FUNCTIONS: My_New **********************************************************/
 
 /* Common code for BoxTs_New_Alias, BoxTS_New_Raised and BoxTS_New_Array. */
-static BoxType My_New(TSKind kind, BoxTS *ts, BoxType src, BoxInt size) {
+static BoxTypeId My_New(TSKind kind, BoxTS *ts, BoxTypeId src, BoxInt size) {
   TSDesc td;
   TSDesc *src_td = Type_Ptr(ts, src);
-  BoxType t_ret;
+  BoxTypeId t_ret;
 
   TS_TSDESC_INIT(& td);
   td.kind = kind;
@@ -490,9 +491,9 @@ static BoxType My_New(TSKind kind, BoxTS *ts, BoxType src, BoxInt size) {
   return t_ret;
 }
 
-BoxType BoxTS_New_Alias_With_Name(BoxTS *ts, BoxType origin_old,
-                                  const char *name) {
-  BoxType out_old = My_New(TS_KIND_ALIAS, ts, origin_old, -1);
+BoxTypeId BoxTS_New_Alias_With_Name(BoxTS *ts, BoxTypeId origin_old,
+                                    const char *name) {
+  BoxTypeId out_old = My_New(TS_KIND_ALIAS, ts, origin_old, -1);
   My_Name_Set(ts, out_old, name);
 
   BoxXXXX *origin_new = TS_Get_New_Style_Type(ts, origin_old);
@@ -502,8 +503,8 @@ BoxType BoxTS_New_Alias_With_Name(BoxTS *ts, BoxType origin_old,
   return out_old;
 }
 
-BoxType BoxTS_New_Raised(BoxTS *ts, BoxType origin_old) {
-  BoxType out_old = My_New(TS_KIND_RAISED, ts, origin_old, -1);
+BoxTypeId BoxTS_New_Raised(BoxTS *ts, BoxTypeId origin_old) {
+  BoxTypeId out_old = My_New(TS_KIND_RAISED, ts, origin_old, -1);
   BoxXXXX *origin_new = TS_Get_New_Style_Type(ts, origin_old);
   if (origin_new)
     TS_Set_New_Style_Type(ts, out_old,
@@ -514,8 +515,8 @@ BoxType BoxTS_New_Raised(BoxTS *ts, BoxType origin_old) {
 /*FUNCTIONS: My_Begin_Composite **********************************************/
 
 /* Code for BoxTS_Begin_Struct, BoxTS_Begin_Species, etc. */
-static BoxType My_Begin_Composite(TSKind kind, TS *ts) {
-  BoxType t;
+static BoxTypeId My_Begin_Composite(TSKind kind, TS *ts) {
+  BoxTypeId t;
   TSDesc td;
   TS_TSDESC_INIT(& td);
   td.kind = kind;
@@ -527,14 +528,14 @@ static BoxType My_Begin_Composite(TSKind kind, TS *ts) {
   return t;
 }
 
-BoxType BoxTS_Begin_Struct(BoxTS *ts) {
-  BoxType out_old = My_Begin_Composite(TS_KIND_STRUCTURE, ts);
+BoxTypeId BoxTS_Begin_Struct(BoxTS *ts) {
+  BoxTypeId out_old = My_Begin_Composite(TS_KIND_STRUCTURE, ts);
   TS_Set_New_Style_Type(ts, out_old, BoxType_Create_Structure());
   return out_old;
 }
 
-BoxType BoxTS_Begin_Species(BoxTS *ts) {
-  BoxType out_old = My_Begin_Composite(TS_KIND_SPECIES, ts);
+BoxTypeId BoxTS_Begin_Species(BoxTS *ts) {
+  BoxTypeId out_old = My_Begin_Composite(TS_KIND_SPECIES, ts);
   TS_Set_New_Style_Type(ts, out_old, BoxType_Create_Species());
   return out_old;
 }
@@ -542,10 +543,10 @@ BoxType BoxTS_Begin_Species(BoxTS *ts) {
 /*FUNCTIONS: My_Add_Member ***************************************************/
 
 /* Code for BoxTS_Add_Struct_Member, BoxTS_Add_Species_Member, etc. */
-static void My_Add_Member(TSKind kind, BoxTS *ts, BoxType s, BoxType m,
+static void My_Add_Member(TSKind kind, BoxTS *ts, BoxTypeId s, BoxTypeId m,
                           const char *m_name) {
 
-  BoxType new_m;
+  BoxTypeId new_m;
   TSDesc *m_td, *s_td, *new_m_td;
 
   /* First we add the new descriptor, then we populate it
@@ -622,7 +623,7 @@ static void My_Add_Member(TSKind kind, BoxTS *ts, BoxType s, BoxType m,
       BoxName n;
       Member_Full_Name(ts, & n, s, m_name);
       BoxHT_Insert_Obj(& ts->members, n.text, n.length,
-                       & new_m, sizeof(BoxType));
+                       & new_m, sizeof(BoxTypeId));
     }
     break;
 
@@ -648,8 +649,9 @@ static void My_Add_Member(TSKind kind, BoxTS *ts, BoxType s, BoxType m,
   }
 }
 
-void BoxTS_Add_Struct_Member(BoxTS *ts, BoxType structure, BoxType member_type,
-                             const char *member_name) {
+void
+BoxTS_Add_Struct_Member(BoxTS *ts, BoxTypeId structure, BoxTypeId member_type,
+                        const char *member_name) {
   My_Add_Member(TS_KIND_STRUCTURE, ts, structure, member_type, member_name);
 
   BoxXXXX *structure_new = TS_Get_New_Style_Type(ts, structure);
@@ -660,7 +662,8 @@ void BoxTS_Add_Struct_Member(BoxTS *ts, BoxType structure, BoxType member_type,
   }
 }
 
-void BoxTS_Add_Species_Member(BoxTS *ts, BoxType species, BoxType member) {
+void
+BoxTS_Add_Species_Member(BoxTS *ts, BoxTypeId species, BoxTypeId member) {
   My_Add_Member(TS_KIND_SPECIES, ts, species, member, NULL);
 
   BoxXXXX *species_new = TS_Get_New_Style_Type(ts, species);
@@ -683,9 +686,10 @@ void BoxTS_Add_Species_Member(BoxTS *ts, BoxType species, BoxType member) {
  * this could and should be improved, but we stick to the simple solution
  * for now!
  */
-static void My_Procedure_Register(BoxTS *ts, BoxType p, BoxVMSymID sym_num) {
+static void
+My_Procedure_Register(BoxTS *ts, BoxTypeId p, BoxVMSymID sym_num) {
   TSDesc *proc_td, *parent_td;
-  BoxType parent;
+  BoxTypeId parent;
   proc_td = Type_Ptr(ts, p);
   assert(proc_td->kind == TS_KIND_PROC);
   parent = proc_td->data.proc.parent;
@@ -696,9 +700,9 @@ static void My_Procedure_Register(BoxTS *ts, BoxType p, BoxVMSymID sym_num) {
   proc_td->data.proc.sym_num = sym_num;
 }
 
-int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxCombType comb, BoxType p) {
+int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxCombType comb, BoxTypeId p) {
   TSDesc *proc_td, *parent_td;
-  BoxType parent, child;
+  BoxTypeId parent, child;
 
   proc_td = Type_Ptr(ts, p);
   assert(proc_td->kind == TS_KIND_PROC);
@@ -723,9 +727,9 @@ int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxCombType comb, BoxType p) {
   return 0;
 }
 
-void BoxTS_Procedure_Unregister(BoxTS *ts, BoxCombType comb, BoxType p) {
+void BoxTS_Procedure_Unregister(BoxTS *ts, BoxCombType comb, BoxTypeId p) {
   TSDesc *proc_td, *parent_td;
-  BoxType parent, child,
+  BoxTypeId parent, child,
           *prev_child_ptr;
 
   /* The following check has to stay there until we know that we don't
@@ -762,18 +766,18 @@ void BoxTS_Procedure_Unregister(BoxTS *ts, BoxCombType comb, BoxType p) {
   assert(0);
 }
 
-BoxVMSymID TS_Procedure_Get_Sym(TS *ts, BoxType p) {
+BoxVMSymID TS_Procedure_Get_Sym(TS *ts, BoxTypeId p) {
   TSDesc *proc_td;
   proc_td = Type_Ptr(ts, p);
   assert(proc_td->kind == TS_KIND_PROC);
   return proc_td->data.proc.sym_num;
 }
 
-static BoxType My_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
-                                   BoxType child, BoxCombType comb,
-                                   BoxType parent) {
+static BoxTypeId
+My_Procedure_Search(BoxTS *ts, BoxTypeId *expansion_type, BoxTypeId child,
+                    BoxCombType comb, BoxTypeId parent) {
   TSDesc *p_td, *parent_td;
-  BoxType p, dummy;
+  BoxTypeId p, dummy;
   if (expansion_type == NULL)
     expansion_type = & dummy;
   *expansion_type = BOXTYPE_NONE;
@@ -800,12 +804,13 @@ static BoxType My_Procedure_Search(BoxTS *ts, BoxType *expansion_type,
   return BOXTYPE_NONE;
 }
 
-BoxType BoxTS_Procedure_Search(TS *ts, BoxType *expansion_type,
-                               BoxType child, BoxCombType comb, BoxType parent,
-                               TSSearchMode mode) {
-  BoxType previous_parent;
+BoxTypeId
+BoxTS_Procedure_Search(TS *ts, BoxTypeId *expansion_type,
+                       BoxTypeId child, BoxCombType comb, BoxTypeId parent,
+                       TSSearchMode mode) {
+  BoxTypeId previous_parent;
   int search_inherited = (mode & TSSEARCHMODE_INHERITED) != 0;
-  BoxType proc;
+  BoxTypeId proc;
 
   do {
     proc = My_Procedure_Search(ts, expansion_type, child, comb, parent);
@@ -831,9 +836,10 @@ BoxType BoxTS_Procedure_Search(TS *ts, BoxType *expansion_type,
  * the parent type becomes aware of it. In order for the registration to be
  * completed the full type of the subtype must be specified.
  */
-BoxType TS_Subtype_New(TS *ts, BoxType parent_old, const char *child_name) {
+BoxTypeId
+TS_Subtype_New(TS *ts, BoxTypeId parent_old, const char *child_name) {
   TSDesc td;
-  BoxType subtype_old;
+  BoxTypeId subtype_old;
   BoxXXXX *parent_new;
   BoxXXXX *subtype_new;
 
@@ -853,16 +859,16 @@ BoxType TS_Subtype_New(TS *ts, BoxType parent_old, const char *child_name) {
   return subtype_old;
 }
 
-int TS_Subtype_Is_Registered(TS *ts, BoxType st) {
+int TS_Subtype_Is_Registered(TS *ts, BoxTypeId st) {
   TSDesc *st_td = Type_Ptr(ts, st);
   assert(st_td->kind == TS_KIND_SUBTYPE);
   return (st_td->target != BOXTYPE_NONE);
 }
 
 /* Register a previously created (and still unregistered) subtype. */
-Task TS_Subtype_Register(TS *ts, BoxType subtype, BoxType subtype_type) {
+Task TS_Subtype_Register(TS *ts, BoxTypeId subtype, BoxTypeId subtype_type) {
   TSDesc *s_td = Type_Ptr(ts, subtype);
-  BoxType parent, found_subtype;
+  BoxTypeId parent, found_subtype;
   BoxName full_name;
   char *child_str;
 
@@ -880,7 +886,7 @@ Task TS_Subtype_Register(TS *ts, BoxType subtype, BoxType subtype_type) {
   found_subtype = TS_Subtype_Find(ts, parent, child_str);
   if (found_subtype != BOXTYPE_NONE) {
     TSDesc *found_subtype_td = Type_Ptr(ts, found_subtype);
-    BoxType found_subtype_type = found_subtype_td->target;
+    BoxTypeId found_subtype_type = found_subtype_td->target;
     TSCmp comparison = My_Compare(ts, found_subtype_type, subtype_type);
     if ((comparison & TS_TYPES_MATCH) == 0) {
       MSG_ERROR("Cannot redefine subtype '%~s'", TS_Name_Get(ts, subtype));
@@ -895,7 +901,7 @@ Task TS_Subtype_Register(TS *ts, BoxType subtype, BoxType subtype_type) {
   Member_Full_Name(ts, & full_name, parent, child_str);
   BoxHT_Insert_Obj(& ts->subtypes,
                    full_name.text, full_name.length,
-                   & subtype, sizeof(BoxType));
+                   & subtype, sizeof(BoxTypeId));
 
   assert(subtype_new && subtype_type_new);
   result_new = BoxType_Register_Subtype(subtype_new, subtype_type_new);
@@ -904,14 +910,14 @@ Task TS_Subtype_Register(TS *ts, BoxType subtype, BoxType subtype_type) {
   return BOXTASK_OK;
 }
 
-BoxType TS_Subtype_Find(TS *ts, BoxType parent, const char *name) {
+BoxTypeId TS_Subtype_Find(TS *ts, BoxTypeId parent, const char *name) {
   BoxName full_name;
   BoxHTItem *hi;
 
   do {
     Member_Full_Name(ts, & full_name, parent, name);
     if (BoxHT_Find(& ts->subtypes, full_name.text, full_name.length, & hi))
-      return *((BoxType *) hi->object);
+      return *((BoxTypeId *) hi->object);
 
   } while (BoxTS_Resolve_Once(ts, & parent, TS_KS_ALIAS | TS_KS_SPECIES));
 
@@ -920,7 +926,7 @@ BoxType TS_Subtype_Find(TS *ts, BoxType parent, const char *name) {
 
 /****************************************************************************/
 
-static TSCmp My_Compare(TS *ts, BoxType t1, BoxType t2) {
+static TSCmp My_Compare(TS *ts, BoxTypeId t1, BoxTypeId t2) {
   TSDesc *td1, *td2;
   TSCmp cmp = TS_TYPES_EQUAL;
   if (t1 == t2) return TS_TYPES_EQUAL;
@@ -938,7 +944,7 @@ static TSCmp My_Compare(TS *ts, BoxType t1, BoxType t2) {
 
     case TS_KIND_SPECIES:
       {
-        BoxType m = t1;
+        BoxTypeId m = t1;
         while (1) {
           m = BoxTS_Get_Next_Struct_Member(ts, m);
           if (m == t1) return TS_TYPES_UNMATCH;
@@ -961,7 +967,7 @@ static TSCmp My_Compare(TS *ts, BoxType t1, BoxType t2) {
       if (td2->kind != td1->kind)
         return TS_TYPES_UNMATCH;
       else {
-        BoxType m1=t1, m2=t2;
+        BoxTypeId m1=t1, m2=t2;
         while (1) {
           m1 = BoxTS_Get_Next_Struct_Member(ts, m1);
           m2 = BoxTS_Get_Next_Struct_Member(ts, m2);
@@ -1001,13 +1007,14 @@ static TSCmp My_Compare(TS *ts, BoxType t1, BoxType t2) {
   }
 }
 
-BoxType BoxTS_Procedure_Define(BoxTS *ts, BoxType child_old, BoxCombType ct,
-                                BoxType parent_old, BoxVMSymID sym_id,
-                                BOXIN BoxCallable *cb) {
+BoxTypeId
+BoxTS_Procedure_Define(BoxTS *ts, BoxTypeId child_old, BoxCombType ct,
+                       BoxTypeId parent_old, BoxVMSymID sym_id,
+                       BOXIN BoxCallable *cb) {
   BoxXXXX *child_new = TS_Get_New_Style_Type(ts, child_old);
   BoxXXXX *parent_new = TS_Get_New_Style_Type(ts, parent_old);
 
-  BoxType p = My_Procedure_New(ts, child_old, ct, parent_old);
+  BoxTypeId p = My_Procedure_New(ts, child_old, ct, parent_old);
   My_Procedure_Register(ts, p, sym_id);
 
   assert(child_new && parent_new);

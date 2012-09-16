@@ -472,7 +472,7 @@ static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
   TS *ts = & c->ts;
   Value *parent_type;
   const char *name = p->attr.subtype.name;
-  BoxType new_subtype = BOXTYPE_NONE;
+  BoxTypeId new_subtype = BOXTYPE_NONE;
 
   assert(p->type == ASTNODETYPE_SUBTYPE);
   assert(p->attr.subtype.parent != NULL);
@@ -483,7 +483,7 @@ static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
 
   parent_type = BoxCmp_Pop_Value(c);
   if (Value_Want_Has_Type(parent_type)) {
-    BoxType pt = BoxType_Get_Id(parent_type->type);
+    BoxTypeId pt = BoxType_Get_Id(parent_type->type);
     if (TS_Is_Subtype(ts, pt)) {
       /* Our parent is already a subtype (example X.Y) and we want X.Y.Z:
        * we then require X.Y to be a registered subtype
@@ -896,9 +896,9 @@ static void My_Compile_BinOp(BoxCmp *c, ASTNode *n) {
 static void My_Compile_Struc(BoxCmp *c, ASTNode *n) {
   int i, num_members;
   ASTNode *member;
-  BoxType t_struc;
+  BoxTypeId t_struc;
   Value *v_struc, *v_struc_memb;
-  BoxType t_struc_memb;
+  BoxTypeId t_struc_memb;
   int no_err;
 
   assert(n->type == ASTNODETYPE_STRUC);
@@ -1075,7 +1075,7 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
 
 static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   Value *v_child, *v_parent, *v_ret = NULL;
-  BoxType t_child, t_parent,
+  BoxTypeId t_child, t_parent,
           t_proc = BOXTYPE_NONE;
   BoxCombType comb_type;
   ASTNode *n_c_name = n->attr.proc_def.c_name,
@@ -1237,7 +1237,7 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
   if (Value_Want_Has_Type(v_type)) {
     if (Value_Is_Type_Name(v_name)) {
       Value *v = Value_New(c->cur_proc);
-      BoxType new_type;
+      BoxTypeId new_type;
 
       /* First create the alias type */
       new_type = BoxTS_New_Alias_With_Name(ts, BoxType_Get_Id(v_type->type),
@@ -1254,7 +1254,7 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
       Value_Unlink(v);
 
     } else if (Value_Has_Type(v_name)) {
-      BoxType t = BoxType_Get_Id(v_name->type);
+      BoxTypeId t = BoxType_Get_Id(v_name->type);
 
       if (TS_Is_Subtype(ts, t)) {
         if (TS_Subtype_Is_Registered(ts, t)) {
@@ -1293,7 +1293,7 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
 static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
   int err;
   ASTNode *member;
-  BoxType previous_type = BOXTYPE_NONE, struc_type;
+  BoxTypeId previous_type = BOXTYPE_NONE, struc_type;
   Value *v_struc_type;
 
   assert(n->type == ASTNODETYPE_STRUCTYPE);
@@ -1350,7 +1350,7 @@ static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
 }
 
 static void My_Compile_SpecType(BoxCmp *c, ASTNode *n) {
-  BoxType spec_type;
+  BoxTypeId spec_type;
   Value *v_spec_type;
   ASTNode *member;
 
@@ -1372,7 +1372,7 @@ static void My_Compile_SpecType(BoxCmp *c, ASTNode *n) {
     v_type = BoxCmp_Pop_Value(c);
 
     if (Value_Want_Has_Type(v_type)) {
-      BoxType memb_type = BoxType_Get_Id(v_type->type);
+      BoxTypeId memb_type = BoxType_Get_Id(v_type->type);
       /* NOTE: should check for duplicate types in species */
       BoxTS_Add_Species_Member(& c->ts, spec_type, memb_type);
     }
@@ -1388,7 +1388,7 @@ static void My_Compile_SpecType(BoxCmp *c, ASTNode *n) {
 
 static void My_Compile_RaiseType(BoxCmp *c, ASTNode *n) {
   Value *v_type, *v_inc_type = NULL;
-  BoxType t_inc_type;
+  BoxTypeId t_inc_type;
 
   assert(n->type == ASTNODETYPE_RAISETYPE);
 

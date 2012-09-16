@@ -27,7 +27,7 @@
 #include "container.h"
 
 
-/** Convert a container type character to a proper BoxType */
+/** Convert a container type character to a proper BoxTypeId */
 BoxContType BoxContType_From_Char(char type_char) {
   switch(type_char) {
   case 'c': return BOXCONTTYPE_CHAR;
@@ -42,7 +42,7 @@ BoxContType BoxContType_From_Char(char type_char) {
   }
 }
 
-/** Convert a BoxType to a container type character (inverse of function
+/** Convert a BoxTypeId to a container type character (inverse of function
  * BoxContType_From_Char)
  */
 char BoxContType_To_Char(BoxContType t) {

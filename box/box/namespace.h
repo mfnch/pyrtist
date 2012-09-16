@@ -129,7 +129,7 @@ Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
  * when the floor is cleared with Namespace_Floor_Down.
  */
 void Namespace_Add_Procedure(Namespace *ns, NmspFloor floor,
-                             BoxTS *ts, BoxCombType comb, BoxType t_proc);
+                             BoxTS *ts, BoxCombType comb, BoxTypeId t_proc);
 
 /** Use 'Namespace_Add_Item' to add a callback to be called when the floor
  * gets cleared.

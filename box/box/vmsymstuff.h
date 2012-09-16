@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
 /** @file vmsymstuff.h
  * @brief Wrappings of 'vmsym.c' for defining and referencing symbols.
  *
@@ -28,10 +26,13 @@
 #ifndef _VMSYMSTUFF_H
 #  define _VMSYMSTUFF_H
 
-#  define VM_SYM_CALL 1
-#  define VM_SYM_COND_JMP 2
-#  define VM_SYM_PROC_HEAD 123
-#  define VM_SYM_LABEL 3
+typedef enum {
+  BOXVMSYMTYPE_CALL=1,
+  BOXVMSYMTYPE_COND_JMP=2,
+  BOXVMSYMTYPE_PROC_HEAD=123,
+  BOXVMSYMTYPE_LABEL=3,
+  BOXVMSYMTYPE_CALLABLE=4
+} BoxVMSymType;
 
 typedef struct {
   Int sheet_id, position;
@@ -61,7 +62,7 @@ BoxVMCallNum BoxVMSym_Get_Call_Num(BoxVM *vm, BoxVMSymID sym_id);
 void BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id);
 
 void VM_Sym_Alloc_Method_Register(BoxVM *vmp, UInt sym_num,
-                                  BoxType type, BoxType method);
+                                  BoxTypeId type, BoxTypeId method);
 
 /** This function creates an undefined label. A label is a number which
  * refers to a position in the assembled code.

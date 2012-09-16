@@ -557,7 +557,7 @@ static void My_Scatter_Implicit_Input_Regs(CmpProc *p,
     BoxOpReg *reg = & regs[i];
     if (reg->kind == 'r') {
       if (reg->io == 'o' || reg->io == 'b') {
-        BoxType t = BoxContType_From_Char(reg->type);
+        BoxTypeId t = BoxContType_From_Char(reg->type);
         BoxGOp gop = (t == BOXTYPE_PTR) ? BOXGOP_SHIFT : BOXGOP_MOV;
         BoxCont src;
         src.type = t;

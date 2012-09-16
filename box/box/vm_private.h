@@ -118,7 +118,7 @@ struct BoxOpInfo_struct {
 struct BoxVMInstrDesc_struct {
   const char         *name;         /**< Instruction name */
   BoxUInt            numargs;       /**< Number of arguments */
-  BoxType            t_id;          /**< Type of the arguments (all have the
+  BoxTypeId          t_id;          /**< Type of the arguments (all have the
                                          same type) */
   BoxVMOpArgsGetter  get_args;      /**< Per trattare gli argomenti */
   BoxVMOpExecutor    execute;       /**< Per eseguire l'istruzione */

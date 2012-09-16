@@ -28,6 +28,6 @@
 /**
  * Create the root type.
  */
-BoxType Box_Create_Root_Type(void);
+BoxTypeId Box_Create_Root_Type(void);
 
 #endif /* _BOX_RUNTIME_H */

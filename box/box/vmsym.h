@@ -89,7 +89,7 @@ typedef struct {
   BoxVMSymID
           sym_num,  /**< ID-number of the referenced symbol */
           next;     /**< ID-number of the next reference to the same symbol */
-  BoxUInt ref_size, /**< Size of the data containing the symbol reference */
+  size_t  ref_size, /**< Size of the data containing the symbol reference */
           ref_addr; /**< Address of the data in the array 'data' */
   int     resolved; /**< Has the reference been resolved? */
   BoxVMSymResolver
@@ -99,8 +99,8 @@ typedef struct {
 /* Data types used by the BoxVMSym_Code_* functions */
 typedef BoxTask (*BoxVMSymCodeGen)(BoxVM *vm, BoxVMSymID sym_num,
                                    BoxUInt sym_type, int defined,
-                                   void *def, BoxUInt def_size,
-                                   void *ref, BoxUInt ref_size);
+                                   void *def, size_t def_size,
+                                   void *ref, size_t ref_size);
 
 typedef struct {
   BoxUInt proc_num,

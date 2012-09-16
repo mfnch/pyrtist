@@ -329,11 +329,11 @@ BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
   return sym_num;
 }
 
-BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxType child, BoxCombType comb,
-                          BoxType parent, BoxTask (*c_fn)(BoxVMX *)) {
+BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb,
+                          BoxTypeId parent, BoxTask (*c_fn)(BoxVMX *)) {
   BoxVMSymID sym_num;
   BoxVMCallNum call_num;
-  BoxType new_proc;
+  BoxTypeId new_proc;
   char *proc_name = NULL;
 
   /* We reserve the call number and associate a symbol to it */
@@ -359,7 +359,7 @@ BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxType child, BoxCombType comb,
   return sym_num;
 }
 
-BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
+BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
                           BoxTask (*c_fn)(BoxVMX *)) {
   return Bltin_Comb_Def(c, child, BOXCOMBTYPE_AT, parent, c_fn);
 }
@@ -416,7 +416,7 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
 static void My_Register_Core_Types(BoxCmp *c) {
   struct {
     const char *name;
-    BoxType    type;
+    BoxTypeId    type;
 
   } *type_to_register, types_to_register[] = {
     {"Char",        BOXTYPE_CHAR},
@@ -455,7 +455,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
  * value. Example: My_Type_Of_Char(c, 'I') returns BOXTYPE_INT,
  * My_Type_Of_Char(c, 'R') returns BOXTYPE_REAL, etc.
  */
-static BoxType My_Type_Of_Char(BoxCmp *c, char t) {
+static BoxTypeId My_Type_Of_Char(BoxCmp *c, char t) {
   switch(t) {
   case ' ': return BOXTYPE_NONE;
   case 'C': return BOXTYPE_CHAR;
@@ -527,7 +527,7 @@ static void My_Register_UnOps(BoxCmp *c) {
 
   for(unop = & unops[0]; unop->types != NULL; ++unop) {
     Operator *opr = BoxCmp_UnOp_Get(c, unop->op);
-    BoxType result = My_Type_Of_Char(c, unop->types[0]),
+    BoxTypeId result = My_Type_Of_Char(c, unop->types[0]),
             operand = My_Type_Of_Char(c, unop->types[1]);
     OprAttr mask = My_OprAttr_Of_Str(unop->mask),
             attr = My_OprAttr_Of_Str(unop->attr);
@@ -612,7 +612,7 @@ static void My_Register_BinOps(BoxCmp *c) {
 
   for(binop = & binops[0]; binop->types != NULL; ++binop) {
     Operator *opr = BoxCmp_BinOp_Get(c, binop->op);
-    BoxType result = My_Type_Of_Char(c, binop->types[0]),
+    BoxTypeId result = My_Type_Of_Char(c, binop->types[0]),
             left = My_Type_Of_Char(c, binop->types[1]),
             right = My_Type_Of_Char(c, binop->types[2]);
     OprAttr mask = My_OprAttr_Of_Str(binop->mask),
@@ -646,7 +646,7 @@ static void My_Register_Conversions(BoxCmp *c) {
   };
 
   for(conv = & convs[0]; conv->types != NULL; ++conv) {
-    BoxType src = My_Type_Of_Char(c, conv->types[0]),
+    BoxTypeId src = My_Type_Of_Char(c, conv->types[0]),
             dst = My_Type_Of_Char(c, conv->types[1]);
     OprAttr mask = My_OprAttr_Of_Str(conv->mask),
             attr = My_OprAttr_Of_Str(conv->attr);
@@ -662,9 +662,9 @@ static void My_Register_Conversions(BoxCmp *c) {
   Operation_Set_User_Implem(opn, struc_to_point_sym_id);
 }
 
-BoxType Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
-                            BoxType ret, BoxType arg, BoxVMFunc fn) {
-  BoxType new_type;
+BoxTypeId Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
+                              BoxTypeId ret, BoxTypeId arg, BoxVMFunc fn) {
+  BoxTypeId new_type;
   Value *v;
 
   new_type = BoxTS_New_Alias_With_Name(& c->ts, ret, name);
@@ -678,7 +678,7 @@ BoxType Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
 }
 
 static void My_Register_Std_IO(BoxCmp *c) {
-  BoxType t_print = c->bltin.print;
+  BoxTypeId t_print = c->bltin.print;
   (void) Bltin_Proc_Def(c, t_print, BOXTYPE_PAUSE, My_Print_Pause);
   (void) Bltin_Proc_Def(c, t_print,  BOXTYPE_CHAR, My_Print_Char);
   (void) Bltin_Proc_Def(c, t_print,   BOXTYPE_INT, My_Print_Int);
@@ -688,7 +688,7 @@ static void My_Register_Std_IO(BoxCmp *c) {
 }
 
 static void My_Register_Std_Procs(BoxCmp *c) {
-  BoxType t_int   = c->bltin.species_int,
+  BoxTypeId t_int   = c->bltin.species_int,
           t_real  = c->bltin.species_real,
           t_point = c->bltin.species_point,
           t_if    = c->bltin.alias_if,
@@ -712,11 +712,11 @@ static void My_Register_Std_Procs(BoxCmp *c) {
 }
 
 static void My_Register_Math(BoxCmp *c) {
-  BoxType t_real = c->bltin.species_real,
+  BoxTypeId t_real = c->bltin.species_real,
           t_point = c->bltin.species_point;
   struct {
     const char *name;
-    BoxType    parent,
+    BoxTypeId    parent,
                child;
     BoxVMFunc  func_begin,
                func;
@@ -745,7 +745,7 @@ static void My_Register_Math(BoxCmp *c) {
   };
 
   for(fn = fns; fn->func != NULL; fn++) {
-    BoxType func_type =
+    BoxTypeId func_type =
       Bltin_Simple_Fn_Def(c, fn->name, fn->parent, fn->child, fn->func);
     if (fn->func_begin != NULL)
       (void) Bltin_Proc_Def(c, func_type, BOXTYPE_BEGIN, fn->func_begin);
@@ -753,7 +753,7 @@ static void My_Register_Math(BoxCmp *c) {
 }
 
 static void My_Register_Sys(BoxCmp *c) {
-  BoxType fail_t = Bltin_Simple_Fn_Def(c, "Fail", BOXTYPE_VOID,
+  BoxTypeId fail_t = Bltin_Simple_Fn_Def(c, "Fail", BOXTYPE_VOID,
                                        c->bltin.string, My_Fail_Msg);
 
   (void) Bltin_Proc_Def(c, fail_t, BOXTYPE_BEGIN, My_Fail_Clear_Msg);
@@ -803,15 +803,14 @@ void Bltin_Finish(BoxCmp *c) {
  * Generic procedures for builtin stuff defined inside other files.
  */
 
-BoxType Bltin_New_Type(BoxCmp *c, const char *type_name,
-                       size_t type_size, size_t alignment) {
+BoxTypeId Bltin_New_Type(BoxCmp *c, const char *type_name,
+                         size_t type_size, size_t alignment) {
   TS *ts = & c->ts;
   Value *v = Value_New(c->cur_proc);
-  BoxType t =
+  BoxTypeId t =
     BoxTS_New_Intrinsic_With_Name(ts, type_size, alignment, type_name);
   Value_Setup_As_Type(v, t);
   Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, type_name, v);
   Value_Unlink(v);
   return t;
 }
-

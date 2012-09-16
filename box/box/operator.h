@@ -65,7 +65,7 @@ struct _operation_struc {
 
   OprAttr attr;            /**< Attributes overridden from operation */
 
-  BoxType type_left,       /**< Type of the left operand */
+  BoxTypeId type_left,       /**< Type of the left operand */
           type_right,      /**< Type of the right operand */
           type_result;     /**< Type of the result */
 
@@ -99,7 +99,7 @@ typedef struct {
   OprAttr  attr;              /**< Attributes of the matched operation */
   TSCmp    match_left,        /**< How the left operand was matched. */
            match_right;       /**< How the right operand was matched. */
-  BoxType  expand_type_left,  /**< Type to which the left operand should be
+  BoxTypeId  expand_type_left,  /**< Type to which the left operand should be
                                    expanded */
            expand_type_right; /**< Type to which the right operand should be
                                    expanded */
@@ -133,8 +133,8 @@ void Operation_Attr_Set(Operation *opn, OprAttr mask, OprAttr attr);
  * to the operator 'opr'.
  * NOTE: for a unary operator type_right is ignore (BOXTYPE_NONE can be used).
  */
-Operation *Operator_Add_Opn(Operator *opr, BoxType type_left,
-                            BoxType type_right, BoxType type_result);
+Operation *Operator_Add_Opn(Operator *opr, BoxTypeId type_left,
+                            BoxTypeId type_right, BoxTypeId type_result);
 
 /** Get the Operator object corresponding to the given ASTBinOp constant. */
 Operator *BoxCmp_BinOp_Get(BoxCmp *c, ASTBinOp bin_op);
@@ -165,10 +165,10 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src);
 
 /** Emits the conversion from the source expression 'v', to the given type 't'
  */
-Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType dest);
+Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxTypeId dest);
 
 Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
-                                    BoxType type_left, BoxType type_right,
-                                    BoxType type_result);
+                                    BoxTypeId type_left, BoxTypeId type_right,
+                                    BoxTypeId type_result);
 
 #endif /* _OPERATOR_H_FNS */

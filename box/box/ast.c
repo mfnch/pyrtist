@@ -344,7 +344,7 @@ ASTNode *ASTNodeTypeName_New(const char *name, size_t name_len) {
   return node;
 }
 
-ASTNode *ASTNodeTypeTag_New(BoxType value) {
+ASTNode *ASTNodeTypeTag_New(BoxTypeId value) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_TYPETAG);
   node->attr.typetag.type = value;
   return node;

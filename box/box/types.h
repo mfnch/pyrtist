@@ -76,7 +76,7 @@ typedef enum {
   BOXTYPE_CPTR
 } BoxTypeId;
 
-typedef BoxTypeId BoxType;
+/*typedef BoxTypeId BoxType;*/
 
 #  include <box/container.h>
 

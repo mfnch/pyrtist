@@ -32,7 +32,7 @@
 
 /** Builtin types */
 typedef struct {
-  BoxType string,
+  BoxTypeId string,
           length,
           num,
           valid,
@@ -72,18 +72,18 @@ BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
  * function has returned, Box programs will be able to find the combination
  * and use it!
  */
-BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxType child, BoxCombType comb,
-                          BoxType parent, BoxTask (*c_fn)(BoxVMX *));
+BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb,
+                          BoxTypeId parent, BoxTask (*c_fn)(BoxVMX *));
 
 /** Similar to 'Bltin_Comb_Def' but assumes 'comb == BOXCOMBTYPE_AT'.
  * @see Bltin_Comb_Def
  */
-BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxType parent, BoxType child,
+BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
                           BoxTask (*c_fn)(BoxVMX *));
 
 /** Define a new intrinsic type with the given name and size. */
-BoxType Bltin_New_Type(BoxCmp *c, const char *type_name,
-                       size_t type_size, size_t alignment);
+BoxTypeId Bltin_New_Type(BoxCmp *c, const char *type_name,
+                         size_t type_size, size_t alignment);
 
 /** Convenient function to define a new intrinsic type from a given C type. */
 #define BLTIN_NEW_TYPE(c, type_name, type) \

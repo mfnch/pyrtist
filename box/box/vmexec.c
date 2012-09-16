@@ -640,7 +640,7 @@ static BoxOpSignature My_BoxOpSignature_From_Str(const char *s) {
   }
 }
 
-BoxType My_Type_From_Char(char c) {
+BoxTypeId My_Type_From_Char(char c) {
   switch(c) {
   case 'n': return BOXTYPE_NONE; break;
   case 'c': return BOXTYPE_CHAR; break;
