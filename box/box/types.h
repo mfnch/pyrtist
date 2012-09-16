@@ -422,6 +422,14 @@ BOXEXPORT BoxType *
 BoxType_Find_Subtype(BoxType *parent, const char *name);
 
 /**
+ * This function is similar to #BoxType_Find_Subtype, but does not try to
+ * find subtypes inherited by types from which @p parent derives.
+ * @see BoxType_Find_Subtype
+ */
+BOXEXPORT BoxType *
+BoxType_Find_Own_Subtype(BoxType *parent, const char *name);
+
+/**
  * Get details about a subtype found with BoxType_Find_Combination.
  */
 BOXEXPORT BoxBool

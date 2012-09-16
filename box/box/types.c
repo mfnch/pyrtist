@@ -623,7 +623,7 @@ BoxType *BoxType_Create_Subtype(BoxType *parent, const char *name,
 }
 
 /* Find a subtype of the given type. */
-BoxType *BoxType_Find_Subtype(BoxType *parent, const char *name) {
+BoxType *BoxType_Find_Own_Subtype(BoxType *parent, const char *name) {
   BoxTypeIter ti;
   if (BoxType_Get_Subtypes(parent, & ti)) {
     BoxType *t;
@@ -634,6 +634,30 @@ BoxType *BoxType_Find_Subtype(BoxType *parent, const char *name) {
         return t;
     }
   }
+
+  return NULL;
+}
+
+BoxType *BoxType_Find_Subtype(BoxType *parent, const char *name) {
+  BoxType *found_subtype, *former_parent;
+
+  do {
+    /* Find a combination for the parent type, if found return. */
+    found_subtype = BoxType_Find_Own_Subtype(parent, name);
+
+    if (found_subtype)
+      return found_subtype;
+
+    /* Remember the parent. */
+    former_parent = parent;
+
+    /* If not found, resolve the parent and try again. */
+    parent = BoxType_Resolve(parent,
+                             (BOXTYPERESOLVE_IDENT | BOXTYPERESOLVE_SPECIES
+                              | BOXTYPERESOLVE_RAISED),
+                             1);
+
+  } while (parent != former_parent);
 
   return NULL;
 }
