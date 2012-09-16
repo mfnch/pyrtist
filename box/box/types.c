@@ -399,6 +399,9 @@ void BoxType_Add_Member_To_Structure(BoxType *structure, BoxType *member,
   BoxTypeStructure *std = BoxType_Get_Data(structure);
   char *dup_member_name = (member_name ? Box_Mem_Strdup(member_name) : NULL);
 
+  if (structure->type_class != BOXTYPECLASS_STRUCTURE)
+    MSG_FATAL("Attempted to add a member to a non structure");
+
   /* Box_Mem_Strdup failed. */
   if (member_name && !dup_member_name)
     MSG_FATAL("Cannot allocate memory for structure member type object.");
@@ -488,7 +491,7 @@ BoxType *BoxType_Find_Structure_Member(BoxType *s, const char *name) {
 
 /* Get the number of members of a structure. */
 size_t BoxType_Get_Structure_Num_Members(BoxType *t) {
-  if (t->type_class == BOXTYPECLASS_STRUCTURE_NODE) {
+  if (t->type_class == BOXTYPECLASS_STRUCTURE) {
     BoxTypeStructure *s = BoxType_Get_Data(t);
     return s->num_items;
 
@@ -979,6 +982,7 @@ BoxTypeCmp BoxType_Compare(BoxType *left, BoxType *right) {
       BoxTypeIter_Init(& liter, left);
       BoxTypeIter_Init(& riter, right);
 
+      /* Check we do have the same number of nodes. */
       if (BoxType_Get_Structure_Num_Members(left)
           == BoxType_Get_Structure_Num_Members(right)) {
         BoxTypeCmp ret = BOXTYPECMP_EQUAL;

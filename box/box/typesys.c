@@ -784,7 +784,6 @@ My_Procedure_Search(BoxTS *ts, BoxTypeId *expansion_type, BoxTypeId child,
   parent_td = Type_Ptr(ts, parent);
   /*MSG_ADVICE("BoxTS_Procedure_Search: searching procedure");*/
   for (p = parent_td->first_proc; p != BOXTYPE_NONE; p = p_td->first_proc) {
-    TSCmp comparison;
     p_td = Type_Ptr(ts, p);
     /*MSG_ADVICE("BoxTS_Procedure_Search: considering %~s",
                  TS_Name_Get(ts, p));*/
@@ -792,9 +791,11 @@ My_Procedure_Search(BoxTS *ts, BoxTypeId *expansion_type, BoxTypeId child,
                Tym_Type_Names(parent),
                Tym_Type_Names(p_td->target), Tym_Type_Names(child));*/
     if (p_td->data.proc.combine == comb) {
-      comparison = My_Compare(ts, p_td->target, child);
-      if (comparison != TS_TYPES_UNMATCH) {
-        if (comparison == TS_TYPES_EXPAND)
+      BoxType *t1 = BoxType_From_Id(ts, p_td->target);
+      BoxType *t2 = BoxType_From_Id(ts, child);
+      BoxTypeCmp comparison = BoxType_Compare(t1, t2);
+      if (comparison != BOXTYPECMP_DIFFERENT) {
+        if (comparison == BOXTYPECMP_MATCHING)
           *expansion_type = p_td->target;
         return p;
       }
@@ -887,8 +888,11 @@ Task TS_Subtype_Register(TS *ts, BoxTypeId subtype, BoxTypeId subtype_type) {
   if (found_subtype != BOXTYPE_NONE) {
     TSDesc *found_subtype_td = Type_Ptr(ts, found_subtype);
     BoxTypeId found_subtype_type = found_subtype_td->target;
-    TSCmp comparison = My_Compare(ts, found_subtype_type, subtype_type);
-    if ((comparison & TS_TYPES_MATCH) == 0) {
+    BoxType *t1 = BoxType_From_Id(ts, found_subtype_type);
+    BoxType *t2 = BoxType_From_Id(ts, subtype_type);
+    assert(t1 && t2);
+    BoxTypeCmp comparison = BoxType_Compare(t1, t2);
+    if ((comparison & BOXTYPECMP_EQUAL) != BOXTYPECMP_EQUAL) {
       MSG_ERROR("Cannot redefine subtype '%~s'", TS_Name_Get(ts, subtype));
       return BOXTASK_FAILURE;
     }
@@ -925,87 +929,6 @@ BoxTypeId TS_Subtype_Find(TS *ts, BoxTypeId parent, const char *name) {
 }
 
 /****************************************************************************/
-
-static TSCmp My_Compare(TS *ts, BoxTypeId t1, BoxTypeId t2) {
-  TSDesc *td1, *td2;
-  TSCmp cmp = TS_TYPES_EQUAL;
-  if (t1 == t2) return TS_TYPES_EQUAL;
-  while(1) {
-    td1 = Resolve(ts, & t1, t1, 1);
-    td2 = Fully_Resolve(ts, & t2, t2);
-    if (t1 == t2) return cmp;
-
-    switch(td1->kind) {
-    case TS_KIND_INTRINSIC:
-      return TS_TYPES_UNMATCH;
-
-    case TS_KIND_RAISED:
-      return TS_TYPES_UNMATCH;
-
-    case TS_KIND_SPECIES:
-      {
-        BoxTypeId m = t1;
-        while (1) {
-          m = BoxTS_Get_Next_Struct_Member(ts, m);
-          if (m == t1) return TS_TYPES_UNMATCH;
-          if (My_Compare(ts, m, t2) != TS_TYPES_UNMATCH) {
-            if (BoxTS_Get_Next_Struct_Member(ts, m) == t1) return cmp;
-            return cmp & TS_TYPES_EXPAND;
-          }
-        }
-      }
-
-    case TS_KIND_STRUCTURE:
-    case TS_KIND_ENUM:
-      /* Member names are not matched, i.e. we tolerate:
-       *   (Real x, y) == (Real z, hgj)
-       * If one wants incompatible types, he should use type detachment
-       * and define: Point = ++(Real x, y)
-       * This way Point will be different to all the other types, including
-       * (Real a, b) and (Real, Real).
-       */
-      if (td2->kind != td1->kind)
-        return TS_TYPES_UNMATCH;
-      else {
-        BoxTypeId m1=t1, m2=t2;
-        while (1) {
-          m1 = BoxTS_Get_Next_Struct_Member(ts, m1);
-          m2 = BoxTS_Get_Next_Struct_Member(ts, m2);
-          if (m1 == t1 || m2 == t2) break;
-          cmp &= My_Compare(ts, m1, m2);
-          if (cmp == TS_TYPES_UNMATCH) return TS_TYPES_UNMATCH;
-        }
-        if (m1 != t1 || m2 != t2) return TS_TYPES_UNMATCH;
-        return cmp;
-      }
-
-    case TS_KIND_ARRAY:
-      if (td2->kind != TS_KIND_ARRAY) return TS_TYPES_UNMATCH;
-      if (td1->data.array_size == td2->data.array_size) break;
-      if (td1->data.array_size != BOX_SIZE_UNKNOWN)
-        return TS_TYPES_UNMATCH;
-      cmp &= TS_TYPES_MATCH;
-      break;
-
-    case TS_KIND_PROC:
-      if (td1->data.proc.combine != td2->data.proc.combine)
-        return TS_TYPES_UNMATCH;
-      
-      if (My_Compare(ts, td1->data.proc.parent, td2->data.proc.parent)
-          != TS_TYPES_EQUAL)
-        return TS_TYPES_UNMATCH;
-      return My_Compare(ts, td1->target, td2->target);
-
-    case TS_KIND_POINTER:
-    default:
-      MSG_ERROR("My_Compare: not fully implemented!");
-      return TS_TYPES_UNMATCH;
-    }
-
-    t1 = td1->target;
-    t2 = td2->target;
-  }
-}
 
 BoxTypeId
 BoxTS_Procedure_Define(BoxTS *ts, BoxTypeId child_old, BoxCombType ct,
