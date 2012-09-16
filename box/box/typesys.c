@@ -402,11 +402,6 @@ Member_Full_Name(TS *ts, BoxName *n, BoxTypeId s, const char *m_name) {
   n->length = BoxArr_Num_Items(& ts->name_buffer);
 }
 
-BoxTypeId BoxTS_Get_Next_Struct_Member(BoxTS *ts, BoxTypeId m) {
-  TSDesc *td = Type_Ptr(ts, m);
-  return td->kind == TS_KIND_MEMBER ? td->data.member_next : td->target;
-}
-
 /****************************************************************************
  * Here we define functions which have almost common bodies.                *
  * This is done in a tricky way (look at the documentation inside           *

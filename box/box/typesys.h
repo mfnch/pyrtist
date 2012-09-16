@@ -302,15 +302,4 @@ BoxTypeId BoxTS_Begin_Species(BoxTS *ts);
 /** Add a member to a species type defined with TS_Species_Begin. */
 void BoxTS_Add_Species_Member(BoxTS *ts, BoxTypeId species, BoxTypeId member);
 
-/** Obtain details about a member of a structure (to be used in conjunction
- * with BoxTS_Find_Struct_Member)
- */
-BoxTypeId BoxTS_Get_Struct_Member(BoxTS *ts, BoxTypeId m, size_t *address);
-
-/** If m is a structure/species/enum returns its first member.
- * If m is a member, return the next member.
- * It m is the last member, return the parent structure.
- */
-BoxTypeId BoxTS_Get_Next_Struct_Member(BoxTS *ts, BoxTypeId m);
-
 #endif
