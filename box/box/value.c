@@ -928,36 +928,6 @@ Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType *subf_type) {
   return NULL;
 }
 
-/** Get the next member of a structure. If the given object 'v_memb' is a
- * structure, then returns its first member. If it is a member of a structure,
- * then returns the next member of the same structure.
- * REFERENCES: return: new, v_memb: -1;
- */
-Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxTypeId *t_memb) {
-  BoxCmp *cmp = v_memb->proc->cmp;
-  TS *ts = & cmp->ts;
-  BoxTypeId t_next = *t_memb;
-  size_t delta_offset = 0;
-
-  if (t_next == BOXTYPE_NONE)
-    t_next = BoxType_Get_Id(BoxType_Get_Stem(v_memb->type));
-
-  else
-    delta_offset = BoxType_Get_Size(v_memb->type);
-
-  t_next = BoxTS_Get_Next_Struct_Member(ts, t_next);
-  if (TS_Is_Member(ts, t_next)) {
-    *t_memb = t_next;
-    (void) BoxTS_Resolve_Once(ts, & t_next, TS_KS_NONE);
-    return Value_Get_Subfield(v_memb, delta_offset,
-                              BoxType_From_Id(ts, t_next));
-
-  } else {
-    *t_memb = BOXTYPE_NONE;
-    return v_memb;
-  }
-}
-
 static Value *My_Point_Get_Member(Value *v_point, const char *memb) {
   int first = memb[0];
   if (first != '\0') {
@@ -1002,38 +972,11 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
                                                   & offset, 0, & member_type);
     if (result)
       return Value_Get_Subfield(v_struc, offset, member_type);
-
   }
 
   Value_Unlink(v_struc);
   return NULL;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, CmpProc *proc) {
   BoxType *node;
@@ -1283,36 +1226,26 @@ Value_Expand(Value *src, BoxType *t_dst) {
        * which can contain the expanded one.
        */
       if (comparison == BOXTYPECMP_MATCHING) { /* need expansion */
-        BoxTypeId t_dst_memb, t_src_memb;
+        ValueStrucIter dst_iter, src_iter;
         CmpProc *cur_proc = src->proc->cmp->cur_proc;
-        Value *v_dst = Value_New(cur_proc),
-              *v_dst_memb = Value_New(cur_proc),
-              *v_src_memb = Value_New(src->proc);
+        Value *v_dst = Value_New(cur_proc);
         Value_Setup_As_Temp(v_dst, t_dst);
-        Value_Setup_As_Weak_Copy(v_dst_memb, v_dst);
-        Value_Setup_As_Weak_Copy(v_src_memb, src);
 
-        t_dst_memb = BOXTYPE_NONE;
-        t_src_memb = BOXTYPE_NONE;
-        do {
-          v_dst_memb = Value_Struc_Get_Next_Member(v_dst_memb, & t_dst_memb);
-          v_src_memb = Value_Struc_Get_Next_Member(v_src_memb, & t_src_memb);
-          if (t_dst_memb != BOXTYPE_NONE) {
-            assert(t_src_memb != BOXTYPE_NONE);
-            Value_Link(v_src_memb);
-            Value_Move_Content(v_dst_memb, v_src_memb);
-            continue;
+        ValueStrucIter_Init(& dst_iter, v_dst, cur_proc);
+        ValueStrucIter_Init(& src_iter, src, cur_proc);
 
-          } else
-            break;
+        for (; dst_iter.has_next && src_iter.has_next;
+             ValueStrucIter_Do_Next(& dst_iter),
+               ValueStrucIter_Do_Next(& src_iter)) {
+          Value_Link(& src_iter.v_member);
+          Value_Move_Content(& dst_iter.v_member, & src_iter.v_member);
+        } 
 
-        } while(1);
-
-        assert(t_src_memb == BOXTYPE_NONE);
+        assert(dst_iter.has_next == src_iter.has_next);
 
         Value_Unlink(src);
-        Value_Unlink(v_dst_memb);
-        Value_Unlink(v_src_memb);
+        ValueStrucIter_Finish(& dst_iter);
+        ValueStrucIter_Finish(& src_iter);
         return v_dst;
       }
 

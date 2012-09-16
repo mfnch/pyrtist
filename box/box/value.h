@@ -276,72 +276,55 @@ BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child);
 Value *Value_Cast_From_Ptr(Value *v_ptr, BoxTypeId new_type);
 
 /**
- * Get the next member of a structure. If the given type <tt>*t_memb</tt> is a
- * structure, then return in @c v_memb its first member. If <tt>*t_memb</tt> is
- * a member (which is the case after one call to this function), then return
- * the next member of the same structure, re-using @c v_memb.  Here is an
- * example which shows how to use the function:
- *
- * @code
- *  BoxTypeId t_memb = BOXTYPE_NONE;
- *  Value *v_memb = Value_New(...);
- *  Value_Set_As_Weak_Copy(v_memb, v_struc);
- *  do {
- *    v_memb = Value_Struc_Get_Next_Member(v_memb, & t_memb);
- *    if (t_memb == BOXTYPE_NONE)
- *      break;
- *    else {
- *      ... use the member ...
- *    }
- *  }
- *  Value_Unlink(v_memb);
- * @endcode
- *
- * REFERENCES: return: new, v_memb: -1;
+ * @brief Object used to iterate over the member of a structure.
  */
-Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxTypeId *t_memb);
-
 typedef struct {
-  BoxBool has_next;
-  int     index;
-  Value   v_member;
-  BoxType *t_member;
-
+  BoxBool     has_next;
+  int         index;
+  Value       v_member;
+  BoxType     *t_member;
   BoxTypeIter type_iter;
 } ValueStrucIter;
 
-/** Convenience function to facilitate iteration of the member of a structure
+/**
+ * Convenience function to facilitate iteration of the member of a structure
  * value. Here is and example of how it is supposed to be used:
- *
+ * @code
  *   ValueStrucIter vsi;
  *   for(ValueStrucIter_Init(& vsi, v_struc, cmpproc);
  *       vsi.has_next; ValueStrucIter_Do_Next(& vsi)) {
  *     // access to 'vsi.member'
  *   }
  *   ValueStrucIter_Finish(& vsi);
- *
- * @see ValueStrucIter_Finish, ValueStrucIter_Do_Next
+ * @endcode
+ * @see ValueStrucIter_Finish
+ * @see ValueStrucIter_Do_Next
  */
 void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, CmpProc *proc);
 
-/** Convenience function to facilitate iteration of the member of a structure
+/**
+ * Convenience function to facilitate iteration of the member of a structure
  * value.
  * @see ValueStrucIter_Init
  */
 void ValueStrucIter_Do_Next(ValueStrucIter *vsi);
 
-/** Convenience function to facilitate iteration of the member of a structure
+/**
+ * Convenience function to facilitate iteration of the member of a structure
  * value.
  * @see ValueStrucIter_Init
  */
 void ValueStrucIter_Finish(ValueStrucIter *vsi);
 
-/** Creator corresponding to ValueStrucIter_Init.
- * @see ValueStrucIter_Init, ValueStrucIter_Destroy
+/**
+ * Creator corresponding to #ValueStrucIter_Init.
+ * @see ValueStrucIter_Init
+ * @see ValueStrucIter_Destroy
  */
 ValueStrucIter *ValueStrucIter_New(Value *v_struc, CmpProc *proc);
 
-/** Destructor fro ValueStrucIter_New.
+/**
+ * Destructor for #ValueStrucIter_New.
  * @see ValueStrucIter_New
  */
 void ValueStrucIter_Destroy(ValueStrucIter *vsi);
