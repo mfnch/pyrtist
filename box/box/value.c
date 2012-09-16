@@ -940,7 +940,7 @@ Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxTypeId *t_memb) {
   size_t delta_offset = 0;
 
   if (t_next == BOXTYPE_NONE)
-    t_next = TS_Get_Core_Type(ts, BoxType_Get_Id(v_memb->type));
+    t_next = BoxType_Get_Id(BoxType_Get_Stem(v_memb->type));
 
   else
     delta_offset = BoxType_Get_Size(v_memb->type);
@@ -1009,26 +1009,76 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
   return NULL;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, CmpProc *proc) {
-  Value *v_member = & vsi->v_member;
+  BoxType *node;
 
-  Value_Init(v_member, proc);
-  Value_Setup_As_Weak_Copy(v_member, v_struc);
-
-  vsi->t_member = BOXTYPE_NONE;
-  v_member = Value_Struc_Get_Next_Member(v_member, & vsi->t_member);
-  assert(& vsi->v_member == v_member);
-  vsi->has_next = (vsi->t_member != BOXTYPE_NONE);
+  BoxTypeIter_Init(& vsi->type_iter, v_struc->type);
+  vsi->has_next = BoxTypeIter_Get_Next(& vsi->type_iter, & node);
   vsi->index = 0;
+
+  if (vsi->has_next) {
+    BoxBool success;
+    Value *v_member;
+    size_t offset;
+
+    Value_Init(& vsi->v_member, proc);
+    Value_Setup_As_Weak_Copy(& vsi->v_member, v_struc);
+
+    success = BoxType_Get_Structure_Member(node, NULL, & offset,
+                                           NULL, & vsi->t_member);
+    assert(success);
+
+    v_member = Value_Get_Subfield(& vsi->v_member, 0, vsi->t_member);
+    assert(v_member == & vsi->v_member);
+  }
 }
 
 void ValueStrucIter_Do_Next(ValueStrucIter *vsi) {
-  Value *v_member = & vsi->v_member;
-  assert(vsi->has_next);
-  v_member = Value_Struc_Get_Next_Member(v_member, & vsi->t_member);
-  assert(& vsi->v_member == v_member);
-  vsi->has_next = (vsi->t_member != BOXTYPE_NONE);
+  BoxType *prev_member_type = vsi->t_member;
+  BoxType *node;
+
+  vsi->has_next = BoxTypeIter_Get_Next(& vsi->type_iter, & node);
   ++vsi->index;
+
+  if (vsi->has_next) {
+    size_t offset;
+    size_t delta_offset = BoxType_Get_Size(prev_member_type);
+    Value *v_member;
+
+    BoxBool success = BoxType_Get_Structure_Member(node, NULL, & offset,
+                                                   NULL, & vsi->t_member);
+    assert(success);
+
+    v_member =
+      Value_Get_Subfield(& vsi->v_member, delta_offset, vsi->t_member);
+    assert(v_member == & vsi->v_member);
+  }
 }
 
 void ValueStrucIter_Finish(ValueStrucIter *vsi) {
@@ -1163,32 +1213,31 @@ static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxType *dest) {
  * REFERENCES: return: new, src: -1;
  */
 Value *
-Value_Expand(Value *src, BoxType *t_dst_new) {
+Value_Expand(Value *src, BoxType *t_dst) {
   BoxCmp *c = src->proc->cmp;
-  BoxType *t_src_new = src->type;
+  BoxType *t_src = src->type;
 
-  if (t_src_new == t_dst_new)
+  if (t_src == t_dst)
     return src;
 
-  t_src_new =
-    BoxType_Resolve(t_src_new,
-                    BOXTYPERESOLVE_IDENT | BOXTYPERESOLVE_SPECIES, 0);
-  t_dst_new = BoxType_Resolve(t_dst_new, BOXTYPERESOLVE_IDENT, 0);
+  t_src = BoxType_Resolve(t_src,
+                          BOXTYPERESOLVE_IDENT | BOXTYPERESOLVE_SPECIES, 0);
+  t_dst = BoxType_Resolve(t_dst, BOXTYPERESOLVE_IDENT, 0);
 
-  if (t_src_new == t_dst_new)
+  if (t_src == t_dst)
     return src;
 
-  switch (BoxType_Get_Class(t_dst_new)) {
+  switch (BoxType_Get_Class(t_dst)) {
   case BOXTYPECLASS_INTRINSIC: /* t_src != t_dst */
     MSG_FATAL("Value_Expand: type forbidden in species conversions.");
     assert(0);
 
   case BOXTYPECLASS_SPECIES:
     {
-      BoxType *t_species_memb = BoxType_Get_Species_Target(t_dst_new);
+      BoxType *t_species_memb = BoxType_Get_Species_Target(t_dst);
 
       if (t_species_memb) {
-        BoxTypeCmp match = BoxType_Compare(t_species_memb, t_dst_new);
+        BoxTypeCmp match = BoxType_Compare(t_species_memb, t_dst);
 
         if (match != BOXTYPECMP_DIFFERENT) {
           if (match == BOXTYPECMP_MATCHING) {
@@ -1202,7 +1251,7 @@ Value_Expand(Value *src, BoxType *t_dst_new) {
       }
 
       MSG_FATAL("Value_Expand: type '%~s' is not compatible with '%~s'.",
-                BoxType_Get_Repr(t_src_new), BoxType_Get_Repr(t_dst_new));
+                BoxType_Get_Repr(t_src), BoxType_Get_Repr(t_dst));
       assert(0);
     }
 
@@ -1222,7 +1271,7 @@ Value_Expand(Value *src, BoxType *t_dst_new) {
 
   case BOXTYPECLASS_STRUCTURE:
     {
-      BoxTypeCmp comparison = BoxType_Compare(t_dst_new, t_src_new);
+      BoxTypeCmp comparison = BoxType_Compare(t_dst, t_src);
 
       /* We check that the comparison can actually be done */
       if (comparison == BOXTYPECMP_DIFFERENT) {
@@ -1239,7 +1288,7 @@ Value_Expand(Value *src, BoxType *t_dst_new) {
         Value *v_dst = Value_New(cur_proc),
               *v_dst_memb = Value_New(cur_proc),
               *v_src_memb = Value_New(src->proc);
-        Value_Setup_As_Temp(v_dst, t_dst_new);
+        Value_Setup_As_Temp(v_dst, t_dst);
         Value_Setup_As_Weak_Copy(v_dst_memb, v_dst);
         Value_Setup_As_Weak_Copy(v_src_memb, src);
 

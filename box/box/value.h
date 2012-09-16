@@ -302,10 +302,12 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxTypeId new_type);
 Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxTypeId *t_memb);
 
 typedef struct {
-  int     has_next;
+  BoxBool has_next;
   int     index;
   Value   v_member;
-  BoxTypeId t_member;
+  BoxType *t_member;
+
+  BoxTypeIter type_iter;
 } ValueStrucIter;
 
 /** Convenience function to facilitate iteration of the member of a structure

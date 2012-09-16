@@ -278,7 +278,8 @@ BOXEXPORT BoxType *
 BoxType_Get_Species_Target(BoxType *node);
 
 /**
- * Get information on a structure member as obtained from BoxTypeIter_Get_Next.
+ * Get information on a structure member as obtained from
+ * #BoxTypeIter_Get_Next.
  */
 BOXEXPORT BoxBool
 BoxType_Get_Structure_Member(BoxType *node, char **name, size_t *offset,
