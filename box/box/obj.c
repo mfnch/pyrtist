@@ -232,10 +232,13 @@ static void My_Finish_Obj(BoxPtr *src, BoxXXXX *t) {
 
 /* Add a reference to an object and return it. */
 BoxSPtr BoxSPtr_Link(BoxSPtr src) {
-  BoxObjHeader *head = src - sizeof(BoxObjHeader);
-  assert(head->num_refs > 0);
-  head->num_refs++;
-  return src;
+  if (src) {
+    BoxObjHeader *head = src - sizeof(BoxObjHeader);
+    assert(head->num_refs > 0);
+    head->num_refs++;
+    return src;
+  } else
+    return NULL;
 }
 
 /* This function allows unlinking an object and performing some extra

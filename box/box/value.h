@@ -147,7 +147,7 @@ void Value_Setup_As_Var_Name(Value *v, const char *name);
 void Value_Setup_As_Type_Name(Value *v, const char *name);
 
 /** Set the value to represent the given type */
-void Value_Setup_As_Type(Value *v, BoxType t);
+void Value_Setup_As_Type(Value *v, BoxTypeId t);
 
 /** Set the value to represent the given immediate char 'c' */
 void Value_Setup_As_Imm_Char(Value *v, Char c);
@@ -160,7 +160,7 @@ void Value_Setup_As_Imm_Real(Value *v, Real r);
 
 /** Set the value to represent a temporary value of the given type */
 void Value_Setup_As_Temp(Value *v, BoxXXXX *t);
-void Value_Setup_As_Temp_Old(Value *v, BoxType t);
+void Value_Setup_As_Temp_Old(Value *v, BoxTypeId t);
 
 /** Set the value to represent a new variable of the given type */
 void Value_Setup_As_Var(Value *v, BoxXXXX *t);
@@ -273,7 +273,7 @@ BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child);
 /** Cast a generic pointer (type BOXTYPE_PTR) to the given type.
  * REFERENCES: return: new, v_ptr: -1;
  */
-Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType new_type);
+Value *Value_Cast_From_Ptr(Value *v_ptr, BoxTypeId new_type);
 
 /** Get the next member of a structure. If the given type '*t_memb' is a
  * structure, then return in 'v_memb' its first member. If '*t_memb' is a
@@ -281,7 +281,7 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType new_type);
  * return the next member of the same structure, re-using 'v_memb'.
  * Here is an example which shows how to use the function:
  *
- *  BoxType t_memb = BOXTYPE_NONE;
+ *  BoxTypeId t_memb = BOXTYPE_NONE;
  *  Value *v_memb = Value_New(...);
  *  Value_Set_As_Weak_Copy(v_memb, v_struc);
  *  do {
@@ -296,13 +296,13 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType new_type);
  *
  * REFERENCES: return: new, v_memb: -1;
  */
-Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxType *t_memb);
+Value *Value_Struc_Get_Next_Member(Value *v_memb, BoxTypeId *t_memb);
 
 typedef struct {
   int     has_next;
   int     index;
   Value   v_member;
-  BoxType t_member;
+  BoxTypeId t_member;
 } ValueStrucIter;
 
 /** Convenience function to facilitate iteration of the member of a structure
@@ -356,7 +356,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src);
 /** Expand the value 'v' in agreement with the provided expansion type.
  * REFERENCES: return: new, src: -1;
  */
-Value *Value_Expand(Value *v, BoxType expansion_type);
+Value *Value_Expand(Value *v, BoxXXXX *expansion_type);
 
 /**
  * REFERENCES: v: 0;

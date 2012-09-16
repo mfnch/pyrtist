@@ -27,10 +27,11 @@
 #include "container.h"
 #include "compiler.h"
 #include "value.h"
-#include "autogen.h"
 #include "vmsymstuff.h"
 #include "tsdesc.h"
 #include "combs.h"
+
+Value *Value_Expand_Old(Value *src, BoxTypeId expansion_type);
 
 /* FIXME: there is a flaw in the design of the Value datastructure.
  *  We keep track of references to Value objects, but we shouldn't do this.
@@ -552,7 +553,7 @@ Value *Value_To_Temp(Value *v) {
       BoxCont cont = v->value.cont;
       v = Value_Recycle(v);
       Value_Setup_Container(v, t, & vc);
-      BoxType_Unlink(t);
+      (void) BoxType_Unlink(t);
       CmpProc_Assemble(c->cur_proc, BOXGOP_MOV,
                        2, & v->value.cont, & cont);
       return v;
@@ -715,24 +716,13 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
 
   assert((found_procedure != BOXTYPE_NONE) == (found_combination != NULL));
 
-  /* If the procedure is not there we try to auto-generate it */
   if (!found_combination) {
-    /* Note that we never generate X@Y where X requires expansion.
-     * Therefore, it is safe to set expansion_for_child to BOXTYPE_NONE.
-     */
-    expansion_for_child = BOXTYPE_NONE;
-
-    found_procedure =
-      Auto_Generate_Procedure(c, BoxType_Get_Id(child->type),
-                              BoxType_Get_Id(parent->type));
-    if (found_procedure == BOXTYPE_NONE) {
-      *success = BOXTASK_FAILURE;
-      return child; /* return child as it may be processed further */
-    }
+    *success = BOXTASK_FAILURE;
+    return child; /* return child as it may be processed further */
   }
 
   if (expansion_for_child != BOXTYPE_NONE) {
-    child = Value_Expand(child, expansion_for_child);
+    child = Value_Expand(child, BoxType_From_Id(ts, expansion_for_child));
     if (child == NULL) {
       *success = BOXTASK_ERROR;
       return (Value *) NULL; /* ERROR: Value_Expand does unlink child */
@@ -881,7 +871,7 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     Value_Unlink(v_obj);
     v_ret = Value_New(cur_proc);
     Value_Setup_Container(v_ret, t, & vc);
-    BoxType_Unlink(t);
+    (void) BoxType_Unlink(t);
 
     assert(v_ret->value.cont.type == BOXCONTTYPE_OBJ);
     CmpProc_Assemble(v_ret->proc, BOXGOP_LEA, 2, & v_ret->value.cont, & cont);
@@ -1069,7 +1059,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
   }
 
   if (match == BOXTYPECMP_MATCHING)
-    src = Value_Expand(src, BoxType_Get_Id(dest->type));
+    src = Value_Expand(src, dest->type);
 
   if (dest->value.cont.type == BOXCONTTYPE_OBJ) {
     /* Object types must be copied and destoyed */
@@ -1172,8 +1162,8 @@ static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxXXXX *dest) {
 /** Expands the value 'src' as prescribed by the species 'expansion_type'.
  * REFERENCES: return: new, src: -1;
  */
-static Value *
-Value_Expand_New(Value *src, BoxXXXX *t_dst_new) {
+Value *
+Value_Expand(Value *src, BoxXXXX *t_dst_new) {
   BoxCmp *c = src->proc->cmp;
   BoxXXXX *t_src_new = src->type;
 
@@ -1202,7 +1192,7 @@ Value_Expand_New(Value *src, BoxXXXX *t_dst_new) {
 
         if (match != BOXTYPECMP_DIFFERENT) {
           if (match == BOXTYPECMP_MATCHING) {
-            Value *dest = Value_Expand_New(src, t_species_memb);
+            Value *dest = Value_Expand(src, t_species_memb);
             Value_Unlink(src);
             src = dest;
           }
@@ -1286,13 +1276,6 @@ Value_Expand_New(Value *src, BoxXXXX *t_dst_new) {
   }
 
   return NULL;
-}
-
-Value *Value_Expand(Value *src, BoxTypeId expansion_type) {
-  BoxCmp *c = src->proc->cmp;
-  TS *ts = & c->ts;
-  BoxXXXX *expansion_type_new = BoxType_From_Id(ts, expansion_type);
-  return Value_Expand_New(src, expansion_type_new);
 }
 
 #if 0
@@ -1516,7 +1499,7 @@ Value *Value_Raise(Value *v) {
   if (Value_Is_Value(v)) {
     BoxXXXX *unraised_type = BoxType_Unraise(v->type);
     if (unraised_type) {
-      BoxType_Unlink(v->type);
+      (void) BoxType_Unlink(v->type);
       v->type = unraised_type;
       return v;
 

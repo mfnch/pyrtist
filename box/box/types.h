@@ -190,14 +190,12 @@ BoxType_Get_Data(BoxXXXX *t);
 /**
  * Remove a reference to the given type.
  */
-BOXEXPORT BoxXXXX *
-BoxType_Unlink(BoxXXXX *t);
+#define BoxType_Unlink(t) ((BoxXXXX *) BoxSPtr_Unlink(t))
 
 /**
  * Add a reference to the given type.
  */
-BOXEXPORT BoxXXXX *
-BoxType_Link(BoxXXXX *t);
+#define BoxType_Link(t) ((BoxXXXX *) BoxSPtr_Link(t))
 
 /**
  * Create an instance of a primary type with the given id, size and alignment.

@@ -413,7 +413,7 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
   if (opn != NULL) {
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND)
-      v = Value_Expand(v, match.expand_type_left);
+      v = Value_Expand(v, BoxType_From_Id(& c->ts, match.expand_type_left));
 
     v_result = My_Opn_Emit(c, opn, v, v); /* XXX */
 
@@ -458,10 +458,10 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
   if (opn != NULL) {
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND)
-      v_left = Value_Expand(v_left, match.expand_type_left);
+      v_left = Value_Expand(v_left, BoxType_From_Id(& c->ts, match.expand_type_left));
 
     if (match.match_right == TS_TYPES_EXPAND)
-      v_right = Value_Expand(v_right, match.expand_type_right);
+      v_right = Value_Expand(v_right, BoxType_From_Id(& c->ts, match.expand_type_right));
 
     /* XXX */
     v_result = My_Opn_Emit(c, opn, v_left, v_right);
@@ -506,7 +506,7 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
 
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND)
-      src = Value_Expand(src, match.expand_type_left);
+      src = Value_Expand(src, BoxType_From_Id(& c->ts, match.expand_type_left));
 
     if (opn->asm_scheme == OPASMSCHEME_STD_UN) {
       CmpProc_Assemble(c->cur_proc, opn->implem.opcode,

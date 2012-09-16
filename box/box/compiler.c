@@ -32,7 +32,6 @@
 #include "messages.h"
 #include "compiler.h"
 #include "parserh.h"
-#include "autogen.h"
 #include "combs.h"
 
 #include "vmsymstuff.h"
@@ -131,6 +130,9 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
   c->vm = (target_vm != NULL) ? target_vm : BoxVM_Create();
 
   BoxArr_Init(& c->stack, sizeof(StackItem), 32);
+
+  BoxBool success = Box_Initialize_Type_System();
+  assert(success);
 
   TS_Init(& c->ts);
   TS_Init_Builtin_Types(& c->ts);
@@ -1193,29 +1195,10 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
                           !BoxType_Is_Empty(t_child_new),
                           !BoxType_Is_Empty(t_parent_new));
 
-    /* If this is a creator then we should automatically insert some code at
-     * the beginning to initialise the stuff the user is not responsible of.
-     * For example, if X = (Int a, Str b, Real c) then (.[)@X should start
-     * with creating X.b, since X.b is a Str object and has a creator.
-     * We must do this in order to avoid segfaults. Box should never give
-     * the chance to get to segfaults, at least for programs written
-     * entirely in the Box language.
-     */
-    if (TS_Is_Special(t_child) == BOXTYPE_CREATE) {
-      (void) Auto_Generate_Code(c, t_child, t_parent);
-    }
-
     My_Compile_Box(c, n_implem, t_child_new, t_parent_new);
     v_implem = BoxCmp_Pop_Value(c);
     /* NOTE: we should double check that this is void! */
     Value_Unlink(v_implem);
-
-    /* Similarly for creators, we need to automatically generate code to
-     * destroy composite objects.
-     */
-    if (TS_Is_Special(t_child) == BOXTYPE_DESTROY) {
-      (void) Auto_Generate_Code(c, t_child, t_parent);
-    }
 
     c->cur_proc = save_cur_proc;
 

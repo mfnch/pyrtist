@@ -33,6 +33,7 @@
 
 #  include <box/exception.h>
 #  include <box/types.h>
+#  include <box/obj.h>
 #  include <box/vmproc.h>
 
 /**
@@ -103,6 +104,18 @@ typedef enum {
   BOXCALLABLEKIND_C_OLD,     /**< BoxCCallOld. */
   BOXCALLABLEKIND_VM         /**< VM call. */
 } BoxCallableKind;
+
+/**
+ * Equivalent to #BoxSPtr_Link, but does type casting for #BoxCallable.
+ * @see BoxSPtr_Link
+ */
+#define BoxCallable_Link(t) ((BoxCallable *) BoxSPtr_Link(t))
+
+/**
+ * Equivalent to #BoxSPtr_Unlink, but does type casting for #BoxCallable.
+ * @see BoxSPtr_Unlink
+ */
+#define BoxCallable_Unlink(t) ((BoxCallable *) BoxSPtr_Unlink(t))
 
 /**
  * Create an undefined callable mapping an object of type @p t_in to an

@@ -275,16 +275,6 @@ BoxBool Box_Register_Type_Combs(BoxCoreTypes *ct) {
   return BOXBOOL_FALSE;
 }
 
-/* Add a reference to the given type. */
-BoxXXXX *BoxType_Unlink(BoxXXXX *t) {
-  return (BoxXXXX *) BoxSPtr_Unlink(t);
-}
-
-/* Add a reference to the given type. */
-BoxXXXX *BoxType_Link(BoxXXXX *t) {
-  return (t) ? BoxSPtr_Link(t) : NULL;
-}
-
 /* Append one BoxTypeNode item to a top BoxTypeNode item. This is used in
  * structures, enums, etc. to add members.
  */
