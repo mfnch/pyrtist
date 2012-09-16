@@ -110,7 +110,7 @@ typedef struct BoxTypeDesc_struct BoxTypeDesc;
  */
 typedef BoxTypeDesc *BoxType;
 #else
-typedef BoxTypeDesc BoxXXXX;
+typedef BoxTypeDesc BoxType;
 #endif
 
 /**
@@ -166,10 +166,10 @@ typedef enum {
 
 /* Transition functions. */
 BOXEXPORT BoxTypeId
-BoxType_Get_Id(BoxXXXX *t);
+BoxType_Get_Id(BoxType *t);
 
 BOXEXPORT void
-BoxType_Set_Id(BoxXXXX *t, BoxTypeId id);
+BoxType_Set_Id(BoxType *t, BoxTypeId id);
 
 /**
  * Get the type class of a given type. The type class is effectively the
@@ -178,24 +178,24 @@ BoxType_Set_Id(BoxXXXX *t, BoxTypeId id);
  * @return The type class of t.
  */
 BOXEXPORT BoxTypeClass
-BoxType_Get_Class(BoxXXXX *t);
+BoxType_Get_Class(BoxType *t);
 
 /**
  * Get the data part of a type. The size and composition of the data type of
  * a given type changes depending on the type class.
  */
 BOXEXPORT void *
-BoxType_Get_Data(BoxXXXX *t);
+BoxType_Get_Data(BoxType *t);
 
 /**
  * Remove a reference to the given type.
  */
-#define BoxType_Unlink(t) ((BoxXXXX *) BoxSPtr_Unlink(t))
+#define BoxType_Unlink(t) ((BoxType *) BoxSPtr_Unlink(t))
 
 /**
  * Add a reference to the given type.
  */
-#define BoxType_Link(t) ((BoxXXXX *) BoxSPtr_Link(t))
+#define BoxType_Link(t) ((BoxType *) BoxSPtr_Link(t))
 
 /**
  * Create an instance of a primary type with the given id, size and alignment.
@@ -205,7 +205,7 @@ BoxType_Get_Data(BoxXXXX *t);
  * @param alignment The alignment for the type.
  * @return A new primary type (or BOXTYPE_NONE if errors occurred).
  */
-BOXEXPORT BoxXXXX *
+BOXEXPORT BoxType *
 BoxType_Create_Primary(BoxTypeId id, size_t size, size_t alignment);
 
 /**
@@ -216,7 +216,7 @@ BoxType_Create_Primary(BoxTypeId id, size_t size, size_t alignment);
  * @param alignment The alignment for the type.
  * @return A new intrinsic type (or BOXTYPE_NONE if errors occurred).
  */
-BOXEXPORT BoxXXXX *
+BOXEXPORT BoxType *
 BoxType_Create_Intrinsic(size_t size, size_t alignment);
 
 /**
@@ -230,8 +230,8 @@ BoxType_Create_Intrinsic(size_t size, size_t alignment);
  * @param name The name to use for identifying the type.
  * @return A new type identifier (or BOXTYPE_NONE in case of errors).
  */
-BOXEXPORT BOXOUT BoxXXXX *
-BoxType_Create_Ident(BOXIN BoxXXXX *source, const char *name);
+BOXEXPORT BOXOUT BoxType *
+BoxType_Create_Ident(BOXIN BoxType *source, const char *name);
 
 /**
  * Create a new raised type from the type 'source'. The new type will be
@@ -242,8 +242,8 @@ BoxType_Create_Ident(BOXIN BoxXXXX *source, const char *name);
  * @param source The source type.
  * @return A new raised type.
  */
-BOXEXPORT BoxXXXX *
-BoxType_Create_Raised(BoxXXXX *source);
+BOXEXPORT BoxType *
+BoxType_Create_Raised(BoxType *source);
 
 /**
  * Un-raise a raised type. For example, if r is the raised type of t, then
@@ -251,14 +251,14 @@ BoxType_Create_Raised(BoxXXXX *source);
  * @param raised A raised type.
  * @return The unraised type.
  */
-BOXEXPORT BoxXXXX *
-BoxType_Unraise(BoxXXXX *raised);
+BOXEXPORT BoxType *
+BoxType_Unraise(BoxType *raised);
 
 /**
  * Create an empty structure. Members can be added with
  * BoxType_Add_Member_To_Structure.
  */
-BOXEXPORT BOXOUT BoxXXXX *
+BOXEXPORT BOXOUT BoxType *
 BoxType_Create_Structure(void);
 
 /**
@@ -269,20 +269,20 @@ BoxType_Create_Structure(void);
  * @param member_name The member name.
  */
 BOXEXPORT void
-BoxType_Add_Member_To_Structure(BoxXXXX *structure, BoxXXXX *member,
+BoxType_Add_Member_To_Structure(BoxType *structure, BoxType *member,
                                 const char *member_name);
 
 /**
  */
-BOXEXPORT BoxXXXX *
-BoxType_Get_Species_Target(BoxXXXX *node);
+BOXEXPORT BoxType *
+BoxType_Get_Species_Target(BoxType *node);
 
 /**
  * Get information on a structure member as obtained from BoxTypeIter_Get_Next.
  */
 BOXEXPORT BoxBool
-BoxType_Get_Structure_Member(BoxXXXX *node, char **name, size_t *offset,
-                             size_t *size, BoxXXXX **type);
+BoxType_Get_Structure_Member(BoxType *node, char **name, size_t *offset,
+                             size_t *size, BoxType **type);
 
 /**
  * Get the type of a structure member obtained from BoxTypeIter_Get_Next.
@@ -291,8 +291,8 @@ BoxType_Get_Structure_Member(BoxXXXX *node, char **name, size_t *offset,
  * @param node The type node as obtained from BoxTypeIter_Get_Next.
  * @return The type of the member.
  */
-BOXEXPORT BoxXXXX *
-BoxType_Get_Structure_Member_Type(BoxXXXX *node);
+BOXEXPORT BoxType *
+BoxType_Get_Structure_Member_Type(BoxType *node);
 
 /**
  * Find the member of a structure with the given name.
@@ -301,49 +301,49 @@ BoxType_Get_Structure_Member_Type(BoxXXXX *node);
  * @return If the member is found, return the type node of the member (which
  *   can be used with BoxType_Get_Structure_Member), otherwise return NULL.
  */
-BOXEXPORT BoxXXXX *
-BoxType_Find_Structure_Member(BoxXXXX *structure, const char *name);
+BOXEXPORT BoxType *
+BoxType_Find_Structure_Member(BoxType *structure, const char *name);
 
 /**
  * Get the number of members of the structure.
  */
 BOXEXPORT size_t
-BoxType_Get_Structure_Num_Members(BoxXXXX *t);
+BoxType_Get_Structure_Num_Members(BoxType *t);
 
 /**
  * Create an empty species. Members can be added with
  * BoxType_Add_Member_To_Species.
  */
-BOXEXPORT BOXOUT BoxXXXX *
+BOXEXPORT BOXOUT BoxType *
 BoxType_Create_Species(void);
 
 /**
  * Add a member to a species type defined with BoxType_Create_Species.
  */
 BOXEXPORT void
-BoxType_Add_Member_To_Species(BoxXXXX *species, BoxXXXX *member);
+BoxType_Add_Member_To_Species(BoxType *species, BoxType *member);
 
 /**
  * Get the type of a species member as obtained from BoxTypeIter_Get_Next.
  * @param node The type node as obtained from BoxTypeIter_Get_Next.
  * @return The type of the member.
  */
-BOXEXPORT BoxXXXX *
-BoxType_Get_Species_Member_Type(BoxXXXX *node);
+BOXEXPORT BoxType *
+BoxType_Get_Species_Member_Type(BoxType *node);
 
 /**
  * Create a species of type '(*=>Dest)' (everything is converted to 'Dest').
  */
-BOXEXPORT BoxXXXX *
-BoxType_Create_Star_Species(BoxXXXX *dest);
+BOXEXPORT BoxType *
+BoxType_Create_Star_Species(BoxType *dest);
 
 /** Create an empty enum type. */
-BOXEXPORT BoxXXXX *
+BOXEXPORT BoxType *
 BoxType_Create_Enum(void);
 
 /** Add a member to an enum type cerated with BoxType_New_Enum. */
 BOXEXPORT void
-BoxType_Add_Member_To_Enum(BoxXXXX *member, const char *member_name);
+BoxType_Add_Member_To_Enum(BoxType *member, const char *member_name);
 
 /**
  * Create a new function type taking 'child' as an argument and working
@@ -352,21 +352,21 @@ BoxType_Add_Member_To_Enum(BoxXXXX *member, const char *member_name);
  * @param child The type of the argument of the function.
  * @return A new type corresponding to the specified function.
  */
-BOXEXPORT BOXOUT BoxXXXX *
-BoxType_Create_Function(BoxXXXX *parent, BoxXXXX *child);
+BOXEXPORT BOXOUT BoxType *
+BoxType_Create_Function(BoxType *parent, BoxType *child);
 
 /**
  * Create a new pointer type to 'source'.
  * @param target The type of the pointer target.
  * @return A new pointer type.
  */
-BOXEXPORT BoxXXXX *
-BoxType_Create_Pointer(BoxXXXX *target);
+BOXEXPORT BoxType *
+BoxType_Create_Pointer(BoxType *target);
 
 /**
  * Create a new Any type.
  */
-BOXEXPORT BoxXXXX *
+BOXEXPORT BoxType *
 BoxType_Create_Any(void);
 
 /**
@@ -380,8 +380,8 @@ BoxType_Create_Any(void);
  * @param num Number of resolutions (0 means as many as necessary).
  * @return The resolved type.
  */
-BOXEXPORT BoxXXXX *
-BoxType_Resolve(BoxXXXX *type, BoxTypeResolve resolve, int num);
+BOXEXPORT BoxType *
+BoxType_Resolve(BoxType *type, BoxTypeResolve resolve, int num);
 
 /*****************************************************************************
  * TYPE FINE-TUNING ROUTINES                                                 *
@@ -395,7 +395,7 @@ BoxType_Resolve(BoxXXXX *type, BoxTypeResolve resolve, int num);
  * @see BoxType_Create_Ident
  */
 BOXEXPORT void
-BoxType_Add_Type(BoxXXXX *parent, BOXIN BoxXXXX *child);
+BoxType_Add_Type(BoxType *parent, BOXIN BoxType *child);
 
 /**
  * Add a subtype type for a given type.
@@ -409,8 +409,8 @@ BoxType_Add_Type(BoxXXXX *parent, BOXIN BoxXXXX *child);
  *   reference to the node. In other words, the caller may need to use
  *   BoxType_Link to claim a reference to the subtype.
  */
-BOXEXPORT BoxXXXX *
-BoxType_Create_Subtype(BoxXXXX *parent, const char *name, BoxXXXX *type);
+BOXEXPORT BoxType *
+BoxType_Create_Subtype(BoxType *parent, const char *name, BoxType *type);
 
 /**
  * Find a subtype of the given type.
@@ -418,15 +418,15 @@ BoxType_Create_Subtype(BoxXXXX *parent, const char *name, BoxXXXX *type);
  * @param name The name of the subtype.
  * @return A new subtype node or NULL, if the subtype could not be found.
  */
-BOXEXPORT BoxXXXX *
-BoxType_Find_Subtype(BoxXXXX *parent, const char *name);
+BOXEXPORT BoxType *
+BoxType_Find_Subtype(BoxType *parent, const char *name);
 
 /**
  * Get details about a subtype found with BoxType_Find_Combination.
  */
 BOXEXPORT BoxBool
-BoxType_Get_Subtype_Info(BoxXXXX *subtype, char **name,
-                         BoxXXXX **parent, BoxXXXX **type);
+BoxType_Get_Subtype_Info(BoxType *subtype, char **name,
+                         BoxType **parent, BoxType **type);
 
 /**
  * Register the type for a given subtype, if not given during creation.
@@ -436,14 +436,14 @@ BoxType_Get_Subtype_Info(BoxXXXX *subtype, char **name,
  * @return Whether the operation was successful.
  */
 BOXEXPORT BoxBool
-BoxType_Register_Subtype(BoxXXXX *subtype, BoxXXXX *type);
+BoxType_Register_Subtype(BoxType *subtype, BoxType *type);
 
 
 /** Identifier used to determine the state of a Box. */
 typedef unsigned int BoxBoxState;
 
 /** Return a Box state identifier from its string representation. */
-BoxBoxState BoxType_Get_State(BoxXXXX *t, const char *source);
+BoxBoxState BoxType_Get_State(BoxType *t, const char *source);
 
 /*****************************************************************************
  * TYPE ENQUIRY ROUTINES                                                     *
@@ -453,7 +453,7 @@ BoxBoxState BoxType_Get_State(BoxXXXX *t, const char *source);
  * Get the size of the type 't'.
  */
 BOXEXPORT size_t
-BoxType_Get_Size(BoxXXXX *t);
+BoxType_Get_Size(BoxType *t);
 
 /**
  * Get the size and the aligment of a given input type.
@@ -463,19 +463,19 @@ BoxType_Get_Size(BoxXXXX *t);
  * @return BOXTYPE_TRUE if size/alignment were retrieved successfully.
  */
 BOXEXPORT BoxBool
-BoxType_Get_Size_And_Alignment(BoxXXXX *t, size_t *size, size_t *algn);
+BoxType_Get_Size_And_Alignment(BoxType *t, size_t *size, size_t *algn);
 
 /**
  * Create the string representation of the Type 't'. The returned string
  * has to be freed with BoxMem_Free.
  */
-char *BoxType_Get_Repr(BoxXXXX *t);
+char *BoxType_Get_Repr(BoxType *t);
 
 /**
  * Compare right to left and return a BoxTypeCmp value
  */
 BOXEXPORT BoxTypeCmp
-BoxType_Compare(BoxXXXX *left, BoxXXXX *right);
+BoxType_Compare(BoxType *left, BoxType *right);
 
 /**
  * Type iterator. Allows to iter through the types that do have members,
@@ -483,7 +483,7 @@ BoxType_Compare(BoxXXXX *left, BoxXXXX *right);
  * @see BoxTypeIter_Init
  */
 typedef struct BoxTypeIter_struct {
-  BoxXXXX *current_node;
+  BoxType *current_node;
 } BoxTypeIter;
 
 /**
@@ -492,7 +492,7 @@ typedef struct BoxTypeIter_struct {
  * @param t Iteration is done over the members of this type.
  */
 BOXEXPORT void
-BoxTypeIter_Init(BoxTypeIter *ti, BoxXXXX *t);
+BoxTypeIter_Init(BoxTypeIter *ti, BoxType *t);
 
 /**
  * Iterate over the next member of the provided iterator.
@@ -504,7 +504,7 @@ BoxTypeIter_Init(BoxTypeIter *ti, BoxXXXX *t);
  * EXAMPLE: The idea is to use this as:
  *
  *  BoxTypeIter ti;
- *  BoxXXXX *t;
+ *  BoxType *t;
  *  for (BoxTypeIter_Init(& ti, parent); BoxTypeIter_Get_Next(& ti, & t);) {
  *    BoxType_Get_Structure_Member(& t, ...);
  *    ...
@@ -512,7 +512,7 @@ BoxTypeIter_Init(BoxTypeIter *ti, BoxXXXX *t);
  *
  */
 BOXEXPORT BoxBool
-BoxTypeIter_Get_Next(BoxTypeIter *ti, BoxXXXX **next);
+BoxTypeIter_Get_Next(BoxTypeIter *ti, BoxType **next);
 
 /**
  * Finalize an iterator initialized with BoxTypeIter_Init.
@@ -540,8 +540,8 @@ BoxTypeIter_Has_Items(BoxTypeIter *ti);
  * @param type The input type.
  * @return The stem type of type (or NULL in case of failure).
  */
-BOXEXPORT BoxXXXX *
-BoxType_Get_Stem(BoxXXXX *type);
+BOXEXPORT BoxType *
+BoxType_Get_Stem(BoxType *type);
 
 /**
  * Get the container type associated with a given type.
@@ -551,14 +551,14 @@ BoxType_Get_Stem(BoxXXXX *type);
  * @return The container of t.
  */
 BOXEXPORT BoxContType
-BoxType_Get_Cont_Type(BoxXXXX *t);
+BoxType_Get_Cont_Type(BoxType *t);
 
 /**
  * Return whether the type is a void type (contains nothing).
  * @param t The input type.
  * @return Whether t is an empty type.
  */
-BOXEXPORT BoxBool BoxType_Is_Empty(BoxXXXX *t);
+BOXEXPORT BoxBool BoxType_Is_Empty(BoxType *t);
 
 /**
  * Get a string representation of the given type.
@@ -567,6 +567,6 @@ BOXEXPORT BoxBool BoxType_Is_Empty(BoxXXXX *t);
  *   The string must be freed by the user with Box_Mem_Free.
  */
 BOXEXPORT char *
-BoxType_Get_Repr(BoxXXXX *t);
+BoxType_Get_Repr(BoxType *t);
 
 #endif /* _BOX_NTYPES_H */

@@ -90,7 +90,7 @@ static BoxCallable *My_Create_Not_Implemented_Callable(void) {
   static BoxCallable *cb = NULL;
 
   if (!cb) {
-    BoxXXXX *void_type =
+    BoxType *void_type =
       BoxType_Create_Ident(BoxType_Create_Intrinsic(0, 0), "Void");
     cb = BoxCallable_Create_Undefined(void_type, void_type);
     cb = BoxCallable_Define_From_CCall1(cb, My_Raise_Not_Implemented);
@@ -140,7 +140,7 @@ static TSDesc *Type_Ptr(TS *ts, BoxTypeId t) {
   return td;
 }
 
-void TS_Set_New_Style_Type(BoxTS *ts, BoxTypeId old_type, BoxXXXX *new_type) {
+void TS_Set_New_Style_Type(BoxTS *ts, BoxTypeId old_type, BoxType *new_type) {
   if (old_type != BOXTYPE_NONE) {
     TSDesc *old_type_td = Type_Ptr(ts, old_type);
     old_type_td->new_type = new_type;
@@ -148,7 +148,7 @@ void TS_Set_New_Style_Type(BoxTS *ts, BoxTypeId old_type, BoxXXXX *new_type) {
   }
 }
 
-BoxXXXX *TS_Get_New_Style_Type(BoxTS *ts, BoxTypeId old_type) {
+BoxType *TS_Get_New_Style_Type(BoxTS *ts, BoxTypeId old_type) {
   if (old_type != BOXTYPE_NONE) {
     TSDesc *old_type_td = Type_Ptr(ts, old_type);
     return old_type_td->new_type;
@@ -156,7 +156,7 @@ BoxXXXX *TS_Get_New_Style_Type(BoxTS *ts, BoxTypeId old_type) {
   return NULL;
 }
 
-BoxXXXX *BoxType_From_Id(BoxTS *ts, BoxTypeId id) {
+BoxType *BoxType_From_Id(BoxTS *ts, BoxTypeId id) {
   if ((BoxTypeId) id != BOXTYPE_NONE) {
     TSDesc *old_type_td = Type_Ptr(ts, id);
     return old_type_td->new_type;
@@ -299,7 +299,7 @@ Int TS_Get_Size(TS *ts, BoxTypeId t) {
               TS_Name_Get(ts, t), td->size, BoxType_Get_Size(t_new));
 #endif
 
-  BoxXXXX *t_new = TS_Get_New_Style_Type(ts, t);
+  BoxType *t_new = TS_Get_New_Style_Type(ts, t);
   return BoxType_Get_Size(t_new);
 }
 
@@ -444,7 +444,7 @@ BoxTypeId BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
   BoxTypeId out_old = BoxTS_New_Intrinsic(ts, size, alignment);
   My_Name_Set(ts, out_old, name);
 
-  BoxXXXX *prim_new =
+  BoxType *prim_new =
     BoxType_Create_Primary((BoxTypeId) out_old, size, alignment);
 
   if (prim_new)
@@ -496,7 +496,7 @@ BoxTypeId BoxTS_New_Alias_With_Name(BoxTS *ts, BoxTypeId origin_old,
   BoxTypeId out_old = My_New(TS_KIND_ALIAS, ts, origin_old, -1);
   My_Name_Set(ts, out_old, name);
 
-  BoxXXXX *origin_new = TS_Get_New_Style_Type(ts, origin_old);
+  BoxType *origin_new = TS_Get_New_Style_Type(ts, origin_old);
   if (origin_new)
     TS_Set_New_Style_Type(ts, out_old,
                           BoxType_Create_Ident(BoxType_Link(origin_new), name));
@@ -505,7 +505,7 @@ BoxTypeId BoxTS_New_Alias_With_Name(BoxTS *ts, BoxTypeId origin_old,
 
 BoxTypeId BoxTS_New_Raised(BoxTS *ts, BoxTypeId origin_old) {
   BoxTypeId out_old = My_New(TS_KIND_RAISED, ts, origin_old, -1);
-  BoxXXXX *origin_new = TS_Get_New_Style_Type(ts, origin_old);
+  BoxType *origin_new = TS_Get_New_Style_Type(ts, origin_old);
   if (origin_new)
     TS_Set_New_Style_Type(ts, out_old,
                           BoxType_Create_Raised(BoxType_Link(origin_new)));
@@ -654,9 +654,9 @@ BoxTS_Add_Struct_Member(BoxTS *ts, BoxTypeId structure, BoxTypeId member_type,
                         const char *member_name) {
   My_Add_Member(TS_KIND_STRUCTURE, ts, structure, member_type, member_name);
 
-  BoxXXXX *structure_new = TS_Get_New_Style_Type(ts, structure);
+  BoxType *structure_new = TS_Get_New_Style_Type(ts, structure);
   if (structure_new) {
-    BoxXXXX *member_new = TS_Get_New_Style_Type(ts, member_type);
+    BoxType *member_new = TS_Get_New_Style_Type(ts, member_type);
     if (member_new)
       BoxType_Add_Member_To_Structure(structure_new, member_new, member_name);
   }
@@ -666,9 +666,9 @@ void
 BoxTS_Add_Species_Member(BoxTS *ts, BoxTypeId species, BoxTypeId member) {
   My_Add_Member(TS_KIND_SPECIES, ts, species, member, NULL);
 
-  BoxXXXX *species_new = TS_Get_New_Style_Type(ts, species);
+  BoxType *species_new = TS_Get_New_Style_Type(ts, species);
   if (species_new) {
-    BoxXXXX *member_new = TS_Get_New_Style_Type(ts, member);
+    BoxType *member_new = TS_Get_New_Style_Type(ts, member);
     if (member_new) {
       BoxType_Add_Member_To_Species(species_new, member_new);
       return;
@@ -840,8 +840,8 @@ BoxTypeId
 TS_Subtype_New(TS *ts, BoxTypeId parent_old, const char *child_name) {
   TSDesc td;
   BoxTypeId subtype_old;
-  BoxXXXX *parent_new;
-  BoxXXXX *subtype_new;
+  BoxType *parent_new;
+  BoxType *subtype_new;
 
   TS_TSDESC_INIT(& td);
   td.kind = TS_KIND_SUBTYPE;
@@ -872,8 +872,8 @@ Task TS_Subtype_Register(TS *ts, BoxTypeId subtype, BoxTypeId subtype_type) {
   BoxName full_name;
   char *child_str;
 
-  BoxXXXX *subtype_new = TS_Get_New_Style_Type(ts, subtype);
-  BoxXXXX *subtype_type_new = TS_Get_New_Style_Type(ts, subtype_type);
+  BoxType *subtype_new = TS_Get_New_Style_Type(ts, subtype);
+  BoxType *subtype_type_new = TS_Get_New_Style_Type(ts, subtype_type);
   BoxBool result_new;
 
   if (s_td->target != BOXTYPE_NONE) {
@@ -1011,8 +1011,8 @@ BoxTypeId
 BoxTS_Procedure_Define(BoxTS *ts, BoxTypeId child_old, BoxCombType ct,
                        BoxTypeId parent_old, BoxVMSymID sym_id,
                        BOXIN BoxCallable *cb) {
-  BoxXXXX *child_new = TS_Get_New_Style_Type(ts, child_old);
-  BoxXXXX *parent_new = TS_Get_New_Style_Type(ts, parent_old);
+  BoxType *child_new = TS_Get_New_Style_Type(ts, child_old);
+  BoxType *parent_new = TS_Get_New_Style_Type(ts, parent_old);
 
   BoxTypeId p = My_Procedure_New(ts, child_old, ct, parent_old);
   My_Procedure_Register(ts, p, sym_id);

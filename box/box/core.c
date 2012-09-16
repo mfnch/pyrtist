@@ -33,7 +33,7 @@ BoxCoreTypes box_core_types;
 /* Create primary and intrinsic types. */
 static void My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
   struct {
-    BoxXXXX **dest;
+    BoxType **dest;
     const char *name;
     BoxTypeId id;
     size_t size;
@@ -69,10 +69,10 @@ static void My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
      (size_t) 0, (size_t) 0}
   };
 
-  core_types->type_type = (BoxXXXX *) NULL;
+  core_types->type_type = (BoxType *) NULL;
 
   for (row = & table[0]; row->dest; row++) {
-    BoxXXXX *t;
+    BoxType *t;
 
     if (row->id != BOXTYPEID_NONE)
       t = BoxType_Create_Primary(row->id, row->size, row->alignment);
@@ -80,7 +80,7 @@ static void My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
       t = BoxType_Create_Intrinsic(row->size, row->alignment);
 
     if (t) {
-      BoxXXXX *id = BoxType_Create_Ident(t, row->name);
+      BoxType *id = BoxType_Create_Ident(t, row->name);
       if (id)
         *row->dest = id;
 
@@ -106,7 +106,7 @@ static void My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
 
 /* Create species. */
 static void My_Init_Species(BoxCoreTypes *ct, BoxBool *success) {
-  BoxXXXX *t;
+  BoxType *t;
 
   /* Int = (CHAR => INT) */
   t = BoxType_Create_Species();
@@ -137,7 +137,7 @@ static void My_Init_Species(BoxCoreTypes *ct, BoxBool *success) {
   ct->Point_type = NULL;
   t = BoxType_Create_Species();
   if (t) {
-    BoxXXXX *point_struct = BoxType_Create_Structure();
+    BoxType *point_struct = BoxType_Create_Structure();
     if (point_struct) {
       BoxType_Add_Member_To_Structure(point_struct, ct->Real_type, "x");
       BoxType_Add_Member_To_Structure(point_struct, ct->Real_type, "y");
@@ -169,7 +169,7 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
 
 /* Finalize the core type of Box. */
 void BoxCoreTypes_Finish(BoxCoreTypes *core_types) {
-  BoxXXXX *types[] =
+  BoxType *types[] =
    {core_types->root_type,
     core_types->init_type,
     core_types->finish_type,
@@ -188,7 +188,7 @@ void BoxCoreTypes_Finish(BoxCoreTypes *core_types) {
     core_types->REFERENCES_type,
     NULL};
 
-  BoxXXXX **type;
+  BoxType **type;
 
   for (type = & types[0]; *type; type++)
     BoxSPtr_Unlink(*type);

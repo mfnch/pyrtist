@@ -281,7 +281,7 @@ void Value_Setup_As_Void(Value *v) {
   v->value.cont.type = BOXCONTTYPE_VOID;
 }
 
-void Value_Setup_As_Temp(Value *v, BoxXXXX *t) {
+void Value_Setup_As_Temp(Value *v, BoxType *t) {
   ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
   Value_Setup_Container(v, t, & vc);
   Value_Emit_Allocate(v);
@@ -293,7 +293,7 @@ void Value_Setup_As_Temp_Old(Value *v, BoxTypeId t) {
   Value_Emit_Allocate(v);
 }
 
-void Value_Setup_As_Var(Value *v, BoxXXXX *t) {
+void Value_Setup_As_Var(Value *v, BoxType *t) {
   BoxCmp *c = v->proc->cmp;
   CmpProc *p = c->cur_proc;
   if (CmpProc_Get_Style(p) == CMPPROCSTYLE_MAIN) {
@@ -337,7 +337,7 @@ void Value_Setup_As_String(Value *v_str, const char *str) {
 }
 
 /* Create a new empty container. */
-void Value_Setup_Container(Value *v, BoxXXXX *type, ValContainer *vc) {
+void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc) {
   RegAlloc *ra = & v->proc->reg_alloc;
   int use_greg;
 
@@ -538,7 +538,7 @@ Value *Value_To_Temp(Value *v) {
 
   case VALUEKIND_TYPE:
     {
-      BoxXXXX *t = BoxType_Link(v->type);
+      BoxType *t = BoxType_Link(v->type);
       v = Value_Recycle(v);
       Value_Setup_Container(v, t, & vc);
       (void) BoxType_Unlink(t);
@@ -549,7 +549,7 @@ Value *Value_To_Temp(Value *v) {
   case VALUEKIND_IMM:
   case VALUEKIND_TARGET:
     {
-      BoxXXXX *t = BoxType_Link(v->type);
+      BoxType *t = BoxType_Link(v->type);
       BoxCont cont = v->value.cont;
       v = Value_Recycle(v);
       Value_Setup_Container(v, t, & vc);
@@ -702,10 +702,10 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
   }
 
   /* Now we search for the procedure associated with *child */
-  BoxXXXX *child_new = child->type;
-  BoxXXXX *parent_new = parent->type;
+  BoxType *child_new = child->type;
+  BoxType *parent_new = parent->type;
   BoxTypeCmp expand;
-  BoxXXXX *found_combination = 
+  BoxType *found_combination = 
     BoxType_Find_Combination(parent_new, BOXCOMBTYPE_AT, child_new, & expand);
 
   found_procedure =
@@ -865,7 +865,7 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
     Value *v_ret;
     BoxCont cont = v_obj->value.cont;
-    BoxXXXX *t = BoxType_Link(v_obj->type);
+    BoxType *t = BoxType_Link(v_obj->type);
     CmpProc *cur_proc = v_obj->proc->cmp->cur_proc;
 
     Value_Unlink(v_obj);
@@ -886,7 +886,7 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
  * 'subf_type' is the type of the sub-field.
  * REFERENCES: return: new, v_obj: -1;
  */
-Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxXXXX *subf_type) {
+Value *Value_Get_Subfield(Value *v_obj, size_t offset, BoxType *subf_type) {
   BoxCont *cont;
 
   if (v_obj->num_ref > 1) {
@@ -992,12 +992,12 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
   if (v_struc->value.cont.type == BOXCONTTYPE_POINT)
     return My_Point_Get_Member(v_struc, memb);
 
-  BoxXXXX *struct_type = BoxType_Get_Stem(v_struc->type);
-  BoxXXXX *node_type = BoxType_Find_Structure_Member(struct_type, memb);
+  BoxType *struct_type = BoxType_Get_Stem(v_struc->type);
+  BoxType *node_type = BoxType_Find_Structure_Member(struct_type, memb);
 
   if (node_type) {
     size_t offset;
-    BoxXXXX *member_type;
+    BoxType *member_type;
     BoxBool result = BoxType_Get_Structure_Member(node_type, NULL,
                                                   & offset, 0, & member_type);
     if (result)
@@ -1133,7 +1133,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
 /** Emits the conversion from the source expression 'v', to the given type 't'
  * REFERENCES: return: new, src: -1;
  */
-static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxXXXX *dest) {
+static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxType *dest) {
   Value *v_dest = Value_New(c->cur_proc);
   Value_Setup_As_Temp(v_dest, dest);
   Value_Link(src);
@@ -1163,9 +1163,9 @@ static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxXXXX *dest) {
  * REFERENCES: return: new, src: -1;
  */
 Value *
-Value_Expand(Value *src, BoxXXXX *t_dst_new) {
+Value_Expand(Value *src, BoxType *t_dst_new) {
   BoxCmp *c = src->proc->cmp;
-  BoxXXXX *t_src_new = src->type;
+  BoxType *t_src_new = src->type;
 
   if (t_src_new == t_dst_new)
     return src;
@@ -1185,7 +1185,7 @@ Value_Expand(Value *src, BoxXXXX *t_dst_new) {
 
   case BOXTYPECLASS_SPECIES:
     {
-      BoxXXXX *t_species_memb = BoxType_Get_Species_Target(t_dst_new);
+      BoxType *t_species_memb = BoxType_Get_Species_Target(t_dst_new);
 
       if (t_species_memb) {
         BoxTypeCmp match = BoxType_Compare(t_species_memb, t_dst_new);
@@ -1302,7 +1302,7 @@ void My_Setup_From_Gro(Value *v, BoxTypeId t, BoxInt gro_num) {
 }
 #endif
 
-void My_Family_Setup(Value *v, BoxXXXX *t, int is_parent) {
+void My_Family_Setup(Value *v, BoxType *t, int is_parent) {
   BoxCmp *c = v->proc->cmp;
 
   assert(v->proc == c->cur_proc);
@@ -1322,15 +1322,15 @@ void My_Family_Setup(Value *v, BoxXXXX *t, int is_parent) {
   }
 }
 
-void Value_Setup_As_Parent(Value *v, BoxXXXX *parent_t) {
+void Value_Setup_As_Parent(Value *v, BoxType *parent_t) {
   return My_Family_Setup(v, parent_t, /* is_parent */ 1);
 }
 
-void Value_Setup_As_Child(Value *v, BoxXXXX *child_t) {
+void Value_Setup_As_Child(Value *v, BoxType *child_t) {
   return My_Family_Setup(v, child_t, /* is_parent */ 0);
 }
 
-static Value *My_Get_Ptr_To_New_Value(CmpProc *proc, BoxXXXX *t) {
+static Value *My_Get_Ptr_To_New_Value(CmpProc *proc, BoxType *t) {
   TS *ts = & proc->cmp->ts;
   BoxTypeId t_old = BoxType_Get_Id(t);
   if (TS_Is_Fast(ts, t_old)) {
@@ -1355,7 +1355,7 @@ static Value *My_Get_Ptr_To_New_Value(CmpProc *proc, BoxXXXX *t) {
 Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
   BoxCmp *c = v_parent->proc->cmp;
   TS *ts = & c->ts;
-  BoxXXXX *found_subtype;
+  BoxType *found_subtype;
   Value *v_subtype = NULL;
 
   /* If the method cannot be found, it could be a method of the child
@@ -1388,7 +1388,7 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
   v_subtype = Value_New(c->cur_proc);
   Value_Setup_As_Temp(v_subtype, found_subtype);
 
-  BoxXXXX *t_child;
+  BoxType *t_child;
   BoxType_Get_Subtype_Info(found_subtype, NULL, NULL, & t_child);
   if (!BoxType_Is_Empty(t_child)) {
     /* Next, we create the child and get a pointer to it */
@@ -1436,11 +1436,11 @@ static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
   if (Value_Want_Value(v_subtype)) {
     BoxTypeId t_subtype = BoxType_Get_Id(v_subtype->type);
     if (TS_Is_Subtype(ts, t_subtype)) {
-      BoxXXXX *t_parent, *t_child;
+      BoxType *t_parent, *t_child;
       BoxBool success = BoxType_Get_Subtype_Info(v_subtype->type, NULL,
                                                  & t_parent, & t_child);
       assert(success);
-      BoxXXXX *t_ret = get_child ? t_child : t_parent;
+      BoxType *t_ret = get_child ? t_child : t_parent;
       if (BoxType_Is_Empty(t_ret)) {
         v_ret = Value_New(c->cur_proc);
         Value_Setup_As_Temp(v_ret, t_ret);
@@ -1497,7 +1497,7 @@ Value *Value_Expand_Subtype(Value *v) {
 
 Value *Value_Raise(Value *v) {
   if (Value_Is_Value(v)) {
-    BoxXXXX *unraised_type = BoxType_Unraise(v->type);
+    BoxType *unraised_type = BoxType_Unraise(v->type);
     if (unraised_type) {
       (void) BoxType_Unlink(v->type);
       v->type = unraised_type;

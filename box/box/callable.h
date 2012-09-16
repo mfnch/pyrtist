@@ -126,7 +126,7 @@ typedef enum {
  * @return A new #BoxCallable object.
  */
 BOXEXPORT BOXOUT BoxCallable *
-BoxCallable_Create_Undefined(BoxXXXX *t_out, BoxXXXX *t_in);
+BoxCallable_Create_Undefined(BoxType *t_out, BoxType *t_in);
 
 /**
  * Define a callable object from a BoxCCall1 C function.
@@ -147,7 +147,7 @@ BoxCallable_Define_From_CCall2(BOXIN BoxCallable *cb, BoxCCall2 call);
  * Define a callable object from old-style C function (BoxCCallOld).
  */
 BOXEXPORT BOXOUT BoxCallable *
-BoxCallable_Create_From_CCallOld(BoxXXXX *t_out, BoxXXXX *t_in,
+BoxCallable_Create_From_CCallOld(BoxType *t_out, BoxType *t_in,
                                  BoxCCallOld call);
 
 /**

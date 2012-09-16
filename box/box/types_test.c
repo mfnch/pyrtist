@@ -11,11 +11,11 @@
 #include <box/messages.h>
 
 
-static BoxXXXX *t_char, *t_int, *t_real, *t_point;
+static BoxType *t_char, *t_int, *t_real, *t_point;
 
 #define MY_CREATE_INTRINSIC(t, Type, name)                              \
   do {                                                                  \
-    BoxXXXX *it =                                                       \
+    BoxType *it =                                                       \
       BoxType_Create_Intrinsic(sizeof(Type), __alignof__(Type));        \
     (t) = BoxType_Create_Ident(it, (name));                             \
   } while(0)
@@ -43,10 +43,10 @@ static void My_Finish(void) {
   Box_Finalize_Type_System();
 }
 
-static BoxXXXX *
-My_Create_Tuple_Structure(char *name1, BoxXXXX *memb1,
-                          char *name2, BoxXXXX *memb2) {
-  BoxXXXX *s = BoxType_Create_Structure();
+static BoxType *
+My_Create_Tuple_Structure(char *name1, BoxType *memb1,
+                          char *name2, BoxType *memb2) {
+  BoxType *s = BoxType_Create_Structure();
   BoxType_Add_Member_To_Structure(s, memb1, name1);
   BoxType_Add_Member_To_Structure(s, memb2, name2);
   return s;
@@ -56,9 +56,9 @@ My_Create_Tuple_Structure(char *name1, BoxXXXX *memb1,
 static BoxBool My_Test_Struct_Empty(void) {
   BoxBool result = BOXBOOL_TRUE;
   BoxTypeIter ti;
-  BoxXXXX *t;
+  BoxType *t;
 
-  BoxXXXX *s = BoxType_Create_Structure();
+  BoxType *s = BoxType_Create_Structure();
   if (BoxType_Get_Structure_Num_Members(s) != 0)
     return BOXBOOL_FALSE;
 
@@ -73,7 +73,7 @@ static BoxBool My_Test_Struct_Empty(void) {
 static BoxBool
 My_Test_2Memb_Anonymous_Structure(void) {
 
-  BoxXXXX *as = My_Create_Tuple_Structure(NULL, t_char, NULL, t_real);
+  BoxType *as = My_Create_Tuple_Structure(NULL, t_char, NULL, t_real);
 
   BoxSPtr_Unlink(as);
   return BOXBOOL_TRUE;
@@ -81,8 +81,8 @@ My_Test_2Memb_Anonymous_Structure(void) {
 
 static BoxBool
 My_Test_Compare_Structure(void) {
-  BoxXXXX *s1 = My_Create_Tuple_Structure("s11", t_char, "s12", t_real );
-  BoxXXXX *s2 = My_Create_Tuple_Structure("s21", t_char, "s22", t_real);
+  BoxType *s1 = My_Create_Tuple_Structure("s11", t_char, "s12", t_real );
+  BoxType *s2 = My_Create_Tuple_Structure("s21", t_char, "s22", t_real);
 
   char *xxx = BoxType_Get_Repr(s1);
   printf("Type '%s'\n", xxx);
@@ -105,7 +105,7 @@ static BoxBool My_Test_Create_Combinations(void) {
 
 static BoxBool My_Test_Find_Combinations(void) {
   BoxTypeCmp e1, e2, e3, e4, e5;
-  BoxXXXX *t1, *t2, *t3, *t4, *t5;
+  BoxType *t1, *t2, *t3, *t4, *t5;
 
   if (!BoxType_Define_Combination(t_int, BOXCOMBTYPE_AT, t_real, NULL)
       || !BoxType_Define_Combination(t_int, BOXCOMBTYPE_AT, t_char, NULL))
@@ -127,16 +127,16 @@ static BoxBool My_Test_Find_Combinations(void) {
 }
 
 #if 0
-static void My_Print_Struct(BoxXXXX *s) {
+static void My_Print_Struct(BoxType *s) {
   BoxTypeIter ti;
-  BoxXXXX *t;
+  BoxType *t;
   size_t num_items = BoxType_Get_Structure_Num_Members(s);
 
   printf("Type %p: class=structure, num_items=%d\n", s, (int) num_items);
   for (BoxTypeIter_Init(& ti, s); BoxTypeIter_Get_Next(& ti, & t);) {
     char *member_name;
     size_t offset, size;
-    BoxXXXX *type;
+    BoxType *type;
 
     BoxType_Get_Structure_Member(t, & member_name, & offset, & size, & type);
     printf("'%s': offset=%d, size=%d, type=%p\n",

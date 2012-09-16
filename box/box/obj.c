@@ -26,8 +26,8 @@
 
 
 /* Forward references */
-static BoxBool My_Init_Obj(BoxPtr *src, BoxXXXX *t);
-static void My_Finish_Obj(BoxPtr *src, BoxXXXX *t);
+static BoxBool My_Init_Obj(BoxPtr *src, BoxType *t);
+static void My_Finish_Obj(BoxPtr *src, BoxType *t);
 
 /* Finalize an Any object. */
 void BoxAny_Finish(BoxAny *any)
@@ -39,7 +39,7 @@ void BoxAny_Finish(BoxAny *any)
 }
 
 /* Initialize a block of memory addressed by src and with type t. */
-static BoxBool My_Init_Obj(BoxPtr *src, BoxXXXX *t) {
+static BoxBool My_Init_Obj(BoxPtr *src, BoxType *t) {
   while (1) {
     switch (t->type_class) {
     case BOXTYPECLASS_PRIMARY:
@@ -49,7 +49,7 @@ static BoxBool My_Init_Obj(BoxPtr *src, BoxXXXX *t) {
     case BOXTYPECLASS_IDENT:
       {
         BoxCallable *callable;
-        BoxXXXX *node =
+        BoxType *node =
           BoxType_Find_Combination_With_Id(t, BOXCOMBTYPE_AT,
                                            BOXTYPEID_INIT, NULL);
         
@@ -78,7 +78,7 @@ static BoxBool My_Init_Obj(BoxPtr *src, BoxXXXX *t) {
     case BOXTYPECLASS_STRUCTURE:
       {
         BoxTypeIter ti;
-        BoxXXXX *node;
+        BoxType *node;
         size_t idx, failure_idx;
 
         /* If things go wrong, the integer above will be set with the index of
@@ -92,7 +92,7 @@ static BoxBool My_Init_Obj(BoxPtr *src, BoxXXXX *t) {
              BoxTypeIter_Get_Next(& ti, & node);
              idx++) {
           size_t offset;
-          BoxXXXX *type;
+          BoxType *type;
           BoxPtr member_ptr;
 
           BoxType_Get_Structure_Member(node, NULL, & offset, NULL, & type);
@@ -115,7 +115,7 @@ static BoxBool My_Init_Obj(BoxPtr *src, BoxXXXX *t) {
              BoxTypeIter_Get_Next(& ti, & node) && idx < failure_idx;
              idx++) {
           size_t offset;
-          BoxXXXX *type;
+          BoxType *type;
           BoxPtr member_ptr;
 
           BoxType_Get_Structure_Member(node, NULL, & offset, NULL, & type);
@@ -153,7 +153,7 @@ static BoxBool My_Init_Obj(BoxPtr *src, BoxXXXX *t) {
 }
 
 /* Generic finalization function for objects. */
-static void My_Finish_Obj(BoxPtr *src, BoxXXXX *t) {
+static void My_Finish_Obj(BoxPtr *src, BoxType *t) {
   while (1) {
     switch (t->type_class) {
     case BOXTYPECLASS_PRIMARY:
@@ -163,7 +163,7 @@ static void My_Finish_Obj(BoxPtr *src, BoxXXXX *t) {
     case BOXTYPECLASS_IDENT:
       {
         BoxCallable *callable;
-        BoxXXXX *node =
+        BoxType *node =
           BoxType_Find_Combination_With_Id(t, BOXCOMBTYPE_AT,
                                            BOXTYPEID_FINISH, NULL);
 
@@ -186,14 +186,14 @@ static void My_Finish_Obj(BoxPtr *src, BoxXXXX *t) {
     case BOXTYPECLASS_STRUCTURE:
       {
         BoxTypeIter ti;
-        BoxXXXX *node;
+        BoxType *node;
         size_t idx;
 
         for (BoxTypeIter_Init(& ti, t), idx = 0;
              BoxTypeIter_Get_Next(& ti, & node);
              idx++) {
           size_t offset;
-          BoxXXXX *type;
+          BoxType *type;
           BoxPtr member_ptr;
 
           BoxType_Get_Structure_Member(node, NULL, & offset, NULL, & type);
@@ -303,13 +303,13 @@ BoxSPtr BoxSPtr_Unlink(BoxSPtr src) {
 }
 
 /* Allocate space for an object of the given type. */
-BoxSPtr BoxSPtr_Alloc(BoxXXXX *t) {
+BoxSPtr BoxSPtr_Alloc(BoxType *t) {
   size_t obj_size = BoxType_Get_Size(t);
   return BoxSPtr_Raw_Alloc(t, obj_size);
 }
 
 /* Raw allocation function. */
-BOXOUT BoxSPtr BoxSPtr_Raw_Alloc(BoxXXXX *t, size_t obj_size) {
+BOXOUT BoxSPtr BoxSPtr_Raw_Alloc(BoxType *t, size_t obj_size) {
   size_t total_size;
   if (Box_Mem_Sum(& total_size, sizeof(BoxObjHeader), obj_size)) {
     void *whole = Box_Mem_Alloc(total_size);
@@ -326,7 +326,7 @@ BOXOUT BoxSPtr BoxSPtr_Raw_Alloc(BoxXXXX *t, size_t obj_size) {
 }
 
 /* Allocate and initialize an object of the given type; return its pointer. */
-BoxSPtr BoxSPtr_Create(BoxXXXX *t) {
+BoxSPtr BoxSPtr_Create(BoxType *t) {
   BoxSPtr obj = BoxSPtr_Alloc(t);
 
   BoxPtr obj_ptr;

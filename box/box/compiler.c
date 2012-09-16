@@ -335,7 +335,7 @@ static void My_Compile_TypeName(BoxCmp *c, ASTNode *node);
 static void My_Compile_TypeTag(BoxCmp *c, ASTNode *node);
 static void My_Compile_Subtype(BoxCmp *c, ASTNode *node);
 static void My_Compile_Box(BoxCmp *c, ASTNode *box,
-                           BoxXXXX *child_t, BoxXXXX *parent_t);
+                           BoxType *child_t, BoxType *parent_t);
 static void My_Compile_Instance(BoxCmp *c, ASTNode *instance);
 static void My_Compile_String(BoxCmp *c, ASTNode *node);
 static void My_Compile_Const(BoxCmp *c, ASTNode *n);
@@ -544,7 +544,7 @@ static void My_Compile_Instance(BoxCmp *c, ASTNode *instance) {
 }
 
 static void My_Compile_Box(BoxCmp *c, ASTNode *box,
-                           BoxXXXX *t_child, BoxXXXX *t_parent) {
+                           BoxType *t_child, BoxType *t_parent) {
   TS *ts = & c->ts;
   ASTNode *s;
   Value *parent = NULL, *outer_parent = NULL;
@@ -1097,8 +1097,8 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   no_err = Value_Want_Has_Type(v_child) & Value_Want_Has_Type(v_parent);
   t_child = BoxType_Get_Id(v_child->type);
   t_parent = BoxType_Get_Id(v_parent->type);
-  BoxXXXX *t_child_new = v_child->type;
-  BoxXXXX *t_parent_new = v_parent->type;
+  BoxType *t_child_new = v_child->type;
+  BoxType *t_parent_new = v_parent->type;
 
   Value_Unlink(v_child);
   Value_Unlink(v_parent);
@@ -1163,7 +1163,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   if (do_register) {
     BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
     BoxVMCallNum call_num = CmpProc_Get_Call_Num(& proc_implem);
-    BoxXXXX *t_child_new = BoxType_From_Id(& c->ts, t_child),
+    BoxType *t_child_new = BoxType_From_Id(& c->ts, t_child),
             *t_parent_new = BoxType_From_Id(& c->ts, t_parent);
     BoxCallable *callable =
       BoxCallable_Create_Undefined(t_parent_new, t_child_new);
@@ -1258,7 +1258,7 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
 
       if (TS_Is_Subtype(ts, t)) {
         if (TS_Subtype_Is_Registered(ts, t)) {
-          BoxXXXX *t_child;
+          BoxType *t_child;
           BoxBool success = BoxType_Get_Subtype_Info(v_name->type, NULL,
                                                      NULL, & t_child);
           assert(success);
@@ -1327,7 +1327,7 @@ static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
     if (previous_type != BOXTYPE_NONE && !err) {
       /* Check for duplicate structure members */
       if (member_name != NULL) {
-        BoxXXXX *s = BoxType_From_Id(& c->ts, struc_type);
+        BoxType *s = BoxType_From_Id(& c->ts, struc_type);
         if (BoxType_Find_Structure_Member(s, member_name))
           MSG_ERROR("Duplicate member '%s' in structure type definition.",
                     member_name);

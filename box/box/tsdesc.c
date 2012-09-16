@@ -40,11 +40,11 @@ static void My_Build_Struc_Desc(BoxCmp *c,
                                 MyObjDescBuilder *bldr, BoxTypeId t) {
   BoxTS *ts = & c->ts;
   BoxTypeIter ti;
-  BoxXXXX *tt;
+  BoxType *tt;
 
-  BoxXXXX *t_struct = BoxType_Get_Stem(BoxType_From_Id(ts, t));
+  BoxType *t_struct = BoxType_Get_Stem(BoxType_From_Id(ts, t));
   for (BoxTypeIter_Init(& ti, t_struct); BoxTypeIter_Get_Next(& ti, & tt);) {
-    BoxXXXX *t_member;
+    BoxType *t_member;
     size_t offset;
     BoxType_Get_Structure_Member(tt, NULL, & offset, NULL, & t_member);
 
@@ -65,12 +65,12 @@ static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxTypeId child,
   BoxVM *vm = c->vm;
   BoxTS *ts = & c->ts;
 
-  BoxXXXX *child_new = BoxType_From_Id(ts, child);
-  BoxXXXX *parent_new = BoxType_From_Id(ts, parent);
+  BoxType *child_new = BoxType_From_Id(ts, child);
+  BoxType *parent_new = BoxType_From_Id(ts, parent);
   BoxTypeCmp expand_info;
   BoxCallable *cb;
   BoxVMCallNum old_callnum, new_callnum = 0;
-  BoxXXXX *p = BoxType_Find_Combination(parent_new, comb, child_new,
+  BoxType *p = BoxType_Find_Combination(parent_new, comb, child_new,
                                         & expand_info);
   if (p && BoxType_Get_Combination_Info(p, NULL, & cb)) {
     assert(expand_info >= BOXTYPECMP_EQUAL);
@@ -179,7 +179,7 @@ BoxVMObjDesc *TS_Get_ObjDesc(BoxCmp *c, BoxTypeId t) {
   }
 }
 
-BoxVMAllocID TS_Get_AllocID(BoxCmp *c, BoxXXXX *t) {
+BoxVMAllocID TS_Get_AllocID(BoxCmp *c, BoxType *t) {
   BoxVMObjDesc *od = TS_Get_ObjDesc(c, BoxType_Get_Id(t));
   if (od == NULL)
     return BOXVMALLOCID_NONE;

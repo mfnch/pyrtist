@@ -33,7 +33,7 @@
  * Box core types.
  */
 struct BoxCoreTypes_struct {
-  BoxXXXX *root_type,
+  BoxType *root_type,
           *init_type,
           *finish_type,
           *type_type,

@@ -36,7 +36,7 @@
  * Define a combination 'child'@'parent' and associate an action to it.
  */
 BOXEXPORT BoxBool
-BoxType_Define_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
+BoxType_Define_Combination(BoxType *parent, BoxCombType type, BoxType *child,
                            BoxCallable *callable);
 
 /**
@@ -59,9 +59,9 @@ BoxType_Define_Combination(BoxXXXX *parent, BoxCombType type, BoxXXXX *child,
  * @see BoxCombType
  * @see BoxType_Find_Own_Combination
  */
-BOXEXPORT BoxXXXX *
-BoxType_Find_Combination(BoxXXXX *parent, BoxCombType comb_type,
-                         BoxXXXX *child, BoxTypeCmp *expand);
+BOXEXPORT BoxType *
+BoxType_Find_Combination(BoxType *parent, BoxCombType comb_type,
+                         BoxType *child, BoxTypeCmp *expand);
 
 /**
  * Similar to #BoxType_Find_Combination, but restrict the search to the
@@ -75,16 +75,16 @@ BoxType_Find_Combination(BoxXXXX *parent, BoxCombType comb_type,
  * @see BoxCombType
  * @see BoxType_Find_Combination
  */
-BOXEXPORT BoxXXXX *
-BoxType_Find_Own_Combination(BoxXXXX *parent, BoxCombType comb_type,
-                             BoxXXXX *child, BoxTypeCmp *expand);
+BOXEXPORT BoxType *
+BoxType_Find_Own_Combination(BoxType *parent, BoxCombType comb_type,
+                             BoxType *child, BoxTypeCmp *expand);
 
 /**
  * Similar to BoxType_Find_Combination, but uses the type ID (BoxTypeId)
- * instead of a BoxXXXX * for the child.
+ * instead of a BoxType * for the child.
  */
-BOXEXPORT BoxXXXX *
-BoxType_Find_Combination_With_Id(BoxXXXX *parent, BoxCombType type,
+BOXEXPORT BoxType *
+BoxType_Find_Combination_With_Id(BoxType *parent, BoxCombType type,
                                  BoxTypeId child_id, BoxTypeCmp *expand);
 
 /**
@@ -95,7 +95,7 @@ BoxType_Find_Combination_With_Id(BoxXXXX *parent, BoxCombType type,
  * @return BOXBOOL_TRUE if comb is a combination node, BOXBOOL_FALSE otherwise.
  */
 BOXEXPORT BoxBool
-BoxType_Get_Combination_Info(BoxXXXX *comb, BoxXXXX **child, BoxCallable **cb);
+BoxType_Get_Combination_Info(BoxType *comb, BoxType **child, BoxCallable **cb);
 
 #if 0
 /**
@@ -110,7 +110,7 @@ BoxType_Get_Combination_Info(BoxXXXX *comb, BoxXXXX **child, BoxCallable **cb);
  *   is replaced with a corresponding VM callable for @p vm.
  */
 BOXEXPORT BoxBool
-BoxType_Generate_Combination_CallNum(BoxXXXX *comb, BoxVM *vm,
+BoxType_Generate_Combination_CallNum(BoxType *comb, BoxVM *vm,
                                      BoxVMCallNum *call_num);
 
 #endif

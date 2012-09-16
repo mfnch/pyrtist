@@ -341,7 +341,7 @@ BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb,
   sym_num = BoxVMSym_New_Call(c->vm, call_num);
 
   /* We tell to the compiler that some procedures are associated to sym_num */
-  BoxXXXX *child_new = BoxType_From_Id(& c->ts, child),
+  BoxType *child_new = BoxType_From_Id(& c->ts, child),
           *parent_new = BoxType_From_Id(& c->ts, parent);
   BoxCallable *callable = BoxCallable_Create_Undefined(parent_new, child_new);
   callable = BoxCallable_Define_From_VM(callable, NULL, c->vm, call_num);

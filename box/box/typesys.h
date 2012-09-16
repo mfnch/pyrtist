@@ -67,7 +67,7 @@ typedef enum {
 } TSKindSelect;
 
 typedef struct {
-  BoxXXXX *new_type;
+  BoxType *new_type;
   TSKind  kind;
   BoxInt  size,
           alignment;
@@ -125,13 +125,13 @@ void TS_Finish(BoxTS *ts);
 /* Transition function to allow setting the new style type correspoding
  * to an old style type.
  */
-void TS_Set_New_Style_Type(BoxTS *ts, BoxTypeId old_type, BoxXXXX *new_type);
-BoxXXXX *BoxType_From_Id(BoxTS *ts, BoxTypeId id);
+void TS_Set_New_Style_Type(BoxTS *ts, BoxTypeId old_type, BoxType *new_type);
+BoxType *BoxType_From_Id(BoxTS *ts, BoxTypeId id);
 
 /* Transition function to get the new style type associated to an old style
  * type.
  */
-BoxXXXX *TS_Get_New_Style_Type(BoxTS *ts, BoxTypeId old_type);
+BoxType *TS_Get_New_Style_Type(BoxTS *ts, BoxTypeId old_type);
 
 /** Should disappear soon */
 void TS_Init_Builtin_Types(BoxTS *ts);

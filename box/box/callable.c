@@ -29,8 +29,8 @@
 
 
 BOXOUT BoxCallable *
-BoxCallable_Create_Undefined(BoxXXXX *t_out, BoxXXXX *t_in) {
-  BoxXXXX *t_cb = BoxType_Create_Function(t_in, t_out);
+BoxCallable_Create_Undefined(BoxType *t_out, BoxType *t_in) {
+  BoxType *t_cb = BoxType_Create_Function(t_in, t_out);
   BoxCallable *cb = NULL;
   if (t_cb) {
     cb = BoxSPtr_Raw_Alloc(t_cb, sizeof(BoxCallable));
@@ -223,7 +223,7 @@ BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
 
 
 #if 0
-BOXOUT BoxCallable *BoxCallable_Create_Undefined(BoxXXXX *t_out, BoxXXXX *t_in);
+BOXOUT BoxCallable *BoxCallable_Create_Undefined(BoxType *t_out, BoxType *t_in);
 
 BoxBool BoxCallable_Set_Uuid(BoxCallable *cb, BoxUuid *uuid);
 
