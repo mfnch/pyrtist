@@ -275,12 +275,14 @@ BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child);
  */
 Value *Value_Cast_From_Ptr(Value *v_ptr, BoxTypeId new_type);
 
-/** Get the next member of a structure. If the given type '*t_memb' is a
- * structure, then return in 'v_memb' its first member. If '*t_memb' is a
- * member (which is the case after one call to this function), then
- * return the next member of the same structure, re-using 'v_memb'.
- * Here is an example which shows how to use the function:
+/**
+ * Get the next member of a structure. If the given type <tt>*t_memb</tt> is a
+ * structure, then return in @c v_memb its first member. If <tt>*t_memb</tt> is
+ * a member (which is the case after one call to this function), then return
+ * the next member of the same structure, re-using @c v_memb.  Here is an
+ * example which shows how to use the function:
  *
+ * @code
  *  BoxTypeId t_memb = BOXTYPE_NONE;
  *  Value *v_memb = Value_New(...);
  *  Value_Set_As_Weak_Copy(v_memb, v_struc);
@@ -293,6 +295,7 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxTypeId new_type);
  *    }
  *  }
  *  Value_Unlink(v_memb);
+ * @endcode
  *
  * REFERENCES: return: new, v_memb: -1;
  */

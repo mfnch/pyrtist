@@ -897,8 +897,8 @@ static void My_Compile_Struc(BoxCmp *c, ASTNode *n) {
   int i, num_members;
   ASTNode *member;
   BoxTypeId t_struc;
-  Value *v_struc, *v_struc_memb;
-  BoxTypeId t_struc_memb;
+  Value *v_struc;
+  ValueStrucIter vsi;
   int no_err;
 
   assert(n->type == ASTNODETYPE_STRUC);
@@ -942,18 +942,16 @@ static void My_Compile_Struc(BoxCmp *c, ASTNode *n) {
   /* create and populate the structure */
   v_struc = Value_New(c->cur_proc);
   Value_Setup_As_Temp(v_struc, BoxType_From_Id(& c->ts, t_struc));
-  v_struc_memb = Value_New(c->cur_proc);
-  Value_Setup_As_Weak_Copy(v_struc_memb, v_struc);
-  t_struc_memb = BOXTYPE_NONE;
-  for(i = 1; i <= num_members; i++) {
-    Value *v_member = BoxCmp_Get_Value(c, num_members - i);
-    v_struc_memb = Value_Struc_Get_Next_Member(v_struc_memb, & t_struc_memb);
-    assert(t_struc_memb != BOXTYPE_NONE);
+
+  for(ValueStrucIter_Init(& vsi, v_struc, c->cur_proc);
+      vsi.has_next; ValueStrucIter_Do_Next(& vsi)) {
+    Value *v_member = BoxCmp_Get_Value(c, num_members - vsi.index - 1);
     Value_Link(v_member);
-    Value_Move_Content(v_struc_memb, v_member);
+    Value_Move_Content(& vsi.v_member, v_member);
   }
 
-  Value_Unlink(v_struc_memb);
+  ValueStrucIter_Finish(& vsi);
+
   BoxCmp_Remove_Any(c, num_members);
   BoxCmp_Push_Value(c, v_struc);
 }
