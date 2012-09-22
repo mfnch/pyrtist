@@ -670,19 +670,19 @@ void Value_Emit_Call_From_CallNum(BoxVMCallNum call_num,
 static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
   BoxCmp *c = parent->proc->cmp;
   TS *ts = & c->ts;
-  BoxTypeId found_procedure, expansion_for_child;
-  BoxVMSymID sym_id;
+  BoxCallable *cb;
   BoxTask dummy;
+  BoxType *expand_type;
 
   assert(parent != NULL && child != NULL);
 
-  success = (success != NULL) ? success : & dummy;
+  success = (success) ? success : & dummy;
 
   if (Value_Is_Err(parent) || Value_Is_Err(child)) {
     /* In case of error silently exits. */
     Value_Unlink(child);
     *success = BOXTASK_OK;
-    return (Value *) NULL;
+    return NULL;
   }
 
   assert(c == child->proc->cmp);
@@ -705,39 +705,31 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
     BoxType_Find_Combination(parent->type, BOXCOMBTYPE_AT,
                              child->type, & expand);
 
-  found_procedure =
-    BoxTS_Procedure_Search(ts, & expansion_for_child,
-                           BoxType_Get_Id(child->type), BOXCOMBTYPE_AT,
-                           BoxType_Get_Id(parent->type),
-                           TSSEARCHMODE_INHERITED);
-
   if (!found_combination) {
     *success = BOXTASK_FAILURE;
     return child; /* return child as it may be processed further */
   }
 
+  if (!BoxType_Get_Combination_Info(found_combination, & expand_type, & cb))
+    MSG_FATAL("Failed getting combination info");
+
   if (expand == BOXTYPECMP_MATCHING) {
-    child = Value_Expand(child, BoxType_From_Id(ts, expansion_for_child));
+    child = Value_Expand(child, expand_type);
     if (!child) {
       *success = BOXTASK_ERROR;
       return NULL; /* ERROR: Value_Expand does unlink child */
     }
   }
 
-#if 0
-  BoxCallable cb;
-  if (BoxType_Get_Combination_Info(found_combination, NULL, & cb)) {
-    if (BoxCallable_Get_VM_CallNum(cb, BoxVM *vm, BoxVMCallNum *cn)) {
-
-    }
+  BoxVMCallNum cn;
+  if (BoxCallable_Get_VM_CallNum(cb, c->vm, & cn)) {
+    Value_Emit_Call_From_CallNum(cn, parent, child);
+    *success = BOXTASK_OK;
+    Value_Unlink(child);
+    return NULL;
   }
-#endif
 
-  sym_id = TS_Procedure_Get_Sym(ts, found_procedure);
-  BoxVMCallNum *call_num = BoxVMSym_Get_Definition(c->vm, sym_id);
-  Value_Emit_Call_From_CallNum(*call_num, parent, child);
-
-  *success = BOXTASK_OK;
+  *success = BOXTASK_ERROR;
   Value_Unlink(child);
   return (Value *) NULL;
 }
