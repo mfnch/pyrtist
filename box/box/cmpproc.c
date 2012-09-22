@@ -395,13 +395,13 @@ void CmpProc_Raw_Assemble(CmpProc *p, BoxOpcode op, ...) {
   va_end(ap);
 }
 
-void CmpProc_Assemble_Call(CmpProc *p, BoxVMSymID sym_id) {
+void BoxVMCode_Assemble_Call(BoxVMCode *code, BoxVMCallNum call_num) {
   BoxVMProcID proc_id, previous_target;
-  CmpProc_Begin(p); /* Begin the procedure, if not done explicitly */
-  proc_id = CmpProc_Get_ProcID(p);
-  previous_target = BoxVM_Proc_Target_Set(p->cmp->vm, proc_id);
-  BoxVMSym_Assemble_Call(p->cmp->vm, sym_id);
-  (void) BoxVM_Proc_Target_Set(p->cmp->vm, previous_target);
+  CmpProc_Begin(code); /* Begin the procedure, if not done explicitly */
+  proc_id = CmpProc_Get_ProcID(code);
+  previous_target = BoxVM_Proc_Target_Set(code->cmp->vm, proc_id);
+  BoxVM_Assemble(code->cmp->vm, BOXOP_CALL_I, BOXCONTCATEG_IMM, call_num);
+  (void) BoxVM_Proc_Target_Set(code->cmp->vm, previous_target);
 }
 
 /** Internal function used by My_Unsafe_Assemble to assemble operation

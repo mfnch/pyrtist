@@ -69,7 +69,7 @@ static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxTypeId child,
   BoxType *parent_new = BoxType_From_Id(ts, parent);
   BoxTypeCmp expand_info;
   BoxCallable *cb;
-  BoxVMCallNum old_callnum, new_callnum = 0;
+  BoxVMCallNum new_callnum = 0;
   BoxType *p = BoxType_Find_Combination(parent_new, comb, child_new,
                                         & expand_info);
   if (p && BoxType_Get_Combination_Info(p, NULL, & cb)) {

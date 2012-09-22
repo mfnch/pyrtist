@@ -40,7 +40,8 @@
 #  include "srcpos.h"
 
 /** The CmpProc object. */
-typedef struct _cmp_proc CmpProc;
+typedef struct BoxVMCode_struct BoxVMCode;
+typedef BoxVMCode CmpProc;
 
 /** Procedure style: determines if a procedure preamble and conclusion should
  * be inserted and if global (or local) variables should be used by default.
@@ -76,7 +77,7 @@ typedef void (*CmpProcEnd)(CmpProc *p);
 
 /** @brief The CmpProc object.
  */
-struct _cmp_proc {
+struct BoxVMCode_struct {
   struct {
     unsigned int
                parent     :1,  /**< The procedure has a parent */
@@ -232,10 +233,11 @@ void CmpProc_Raw_Assemble(CmpProc *p, BoxOpcode instr, ...);
  */
 void CmpProc_Raw_VA_Assemble(CmpProc *p, BoxOpcode instr, va_list ap);
 
-/** Assemble a 'call' instruction to call the procedure whose symbol ID is
- * 'sym_id' (using BoxVMSym_Assemble_Call).
+/**
+ * @brief Assemble a @c call instruction to call the procedure with the given
+ *   call number.
  */
-void CmpProc_Assemble_Call(CmpProc *p, BoxVMSymID sym_id);
+void BoxVMCode_Assemble_Call(BoxVMCode *code, BoxVMCallNum call_num);
 
 /** High level routine to assemble bytecode for the Box virtual machine (VM).
  */

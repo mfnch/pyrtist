@@ -238,8 +238,8 @@ int Value_Has_Type(Value *v);
 /** Emit the code corresponding to a call to the procedure having symbol
  * 'sym_id'.
  */
-void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
-                                Value *parent, Value *child);
+void Value_Emit_Call_From_CallNum(BoxVMCallNum call_num,
+                                  Value *parent, Value *child);
 
 /** Emits the code corresponding to a call to child@parent. If the procedure
  * cannot be found, then sets *success to BOXTASK_FAILURE and exits without

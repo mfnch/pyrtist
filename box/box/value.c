@@ -31,8 +31,6 @@
 #include "tsdesc.h"
 #include "combs.h"
 
-Value *Value_Expand_Old(Value *src, BoxTypeId expansion_type);
-
 /* FIXME: there is a flaw in the design of the Value datastructure.
  *  We keep track of references to Value objects, but we shouldn't do this.
  *  We should rather keep track of resources used by Value objects.
@@ -640,8 +638,8 @@ int Value_Has_Type(Value *v) {
 }
 
 /* REFERENCES: parent: 0, child: 0; */
-void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
-                                Value *parent, Value *child) {
+void Value_Emit_Call_From_CallNum(BoxVMCallNum call_num,
+                                  Value *parent, Value *child) {
   BoxCmp *c = parent->proc->cmp;
 
   assert(parent != NULL && child != NULL);
@@ -665,7 +663,7 @@ void Value_Emit_Call_From_SymID(BoxVMSymID sym_id,
     Value_Unlink(v_to_pass);
   }
 
-  CmpProc_Assemble_Call(c->cur_proc, sym_id);
+  BoxVMCode_Assemble_Call(c->cur_proc, call_num);
 }
 
 /* REFERENCES: return: new, parent: 0, child: -1; */
@@ -702,11 +700,10 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
   }
 
   /* Now we search for the procedure associated with *child */
-  BoxType *child_new = child->type;
-  BoxType *parent_new = parent->type;
   BoxTypeCmp expand;
   BoxType *found_combination = 
-    BoxType_Find_Combination(parent_new, BOXCOMBTYPE_AT, child_new, & expand);
+    BoxType_Find_Combination(parent->type, BOXCOMBTYPE_AT,
+                             child->type, & expand);
 
   found_procedure =
     BoxTS_Procedure_Search(ts, & expansion_for_child,
@@ -714,18 +711,16 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
                            BoxType_Get_Id(parent->type),
                            TSSEARCHMODE_INHERITED);
 
-  assert((found_procedure != BOXTYPE_NONE) == (found_combination != NULL));
-
   if (!found_combination) {
     *success = BOXTASK_FAILURE;
     return child; /* return child as it may be processed further */
   }
 
-  if (expansion_for_child != BOXTYPE_NONE) {
+  if (expand == BOXTYPECMP_MATCHING) {
     child = Value_Expand(child, BoxType_From_Id(ts, expansion_for_child));
-    if (child == NULL) {
+    if (!child) {
       *success = BOXTASK_ERROR;
-      return (Value *) NULL; /* ERROR: Value_Expand does unlink child */
+      return NULL; /* ERROR: Value_Expand does unlink child */
     }
   }
 
@@ -739,7 +734,8 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
 #endif
 
   sym_id = TS_Procedure_Get_Sym(ts, found_procedure);
-  Value_Emit_Call_From_SymID(sym_id, parent, child);
+  BoxVMCallNum *call_num = BoxVMSym_Get_Definition(c->vm, sym_id);
+  Value_Emit_Call_From_CallNum(*call_num, parent, child);
 
   *success = BOXTASK_OK;
   Value_Unlink(child);
@@ -1251,6 +1247,9 @@ Value_Expand(Value *src, BoxType *t_dst) {
 
       return src;
     }
+
+  case BOXTYPECLASS_ANY:
+    
 
   default:
     MSG_FATAL("Value_Expand: not fully implemented!");
