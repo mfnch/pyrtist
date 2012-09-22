@@ -223,6 +223,121 @@ BoxVMCallNum BoxVM_Proc_Install_CCode(BoxVM *vm,
  */
 BoxVMCallNum BoxVM_Proc_Install_Undefined(BoxVM *vm);
 
+
+
+
+
+
+
+
+
+#if 0
+/**
+ * @brief Allocate a new call number.
+ *
+ * Allocate a new call number in the given VM. This call number can be used to
+ * generate VM code which calls a VM procedure without having to provide an
+ * implementation, first. Obviously, the VM code which is generated in this way
+ * cannot be used (executed) until the call number is implemented (using
+ * BoxVM_Define_Call_From_Code() or BoxVM_Define_Call_From_Callable()).
+ *
+ * @param vm The virtual machine.
+ * @return A new call number for @p vm.
+ */
+BOXEXPORT BoxVMCallNum
+BoxVM_Allocate_Call(BoxVM *vm);
+
+/**
+ * @brief Whether a given call number is allocated for the specified VM.
+ *
+ * @param vm The virtual machines the call number refers to.
+ * @param cn The call number.
+ * @return Whether @p cb is allocated.
+ */
+BOXEXPORT BoxBool 
+BoxVM_Call_Is_Allocated(BoxVM *vm, BoxVMCallNum cn);
+
+/**
+ * @brief Define the signature for a call number.
+ *
+ * Provide the procedure signature (input and output types) for a call number
+ * @p cn of the given VM @p vm.
+ *
+ * @param vm The virtual machines the call number refers to.
+ * @param cn The call number to define.
+ * @param cb A callable containing the signature of the call number.
+ * @return Whether the operation was successful.
+ * @note The callable @p cb may be undefined. The actual implementation of
+ *   @p cb is ignored. Use BoxVM_Implement_Call_From_Code() or
+ *   BoxVM_Implement_Call_From_Callable() to provide the implementation.
+ */
+BOXEXPORT BoxBool
+BoxVM_Define_Call(BoxVM *vm, BoxVMCallNum cn, BoxCallable *cb);
+
+/**
+ * @brief Whether a given call number has been defined in the specified VM.
+ *
+ * @param vm The virtual machines the call number refers to.
+ * @param cn The call number.
+ * @return Whether @p cb has been defined with BoxVM_Define_Call().
+ */
+BOXEXPORT BoxBool 
+BoxVM_Call_Is_Defined(BoxVM *vm, BoxVMCallNum cn);
+
+/**
+ * @brief Provide a VM code implementation for a call number.
+ *
+ * @param vm The virtual machine the call number @p cn refers to.
+ * @param cn The call number to be implemented.
+ * @param code The #BoxVMCode object containing the implementation.
+ * @return Whether the operation was completed successfully.
+ */
+BOXEXPORT BoxBool
+BoxVM_Implement_Call_From_Code(BoxVM *vm, BoxVMCallNum cn, BoxVMCode *code);
+
+/**
+ * @brief Provide a generic #BoxCallable implementation for a call number.
+ *
+ * @param vm The virtual machine the call number @p cn refers to.
+ * @param cn The call number to be implemented.
+ * @param cb The callable containing the implementation.
+ * @return Whether the operation was completed successfully.
+ */
+BOXEXPORT BoxBool
+BoxVM_Implement_Call_From_Callable(BoxVM *vm, BoxVMCallNum cn,
+                                   BoxCallable *cb);
+
+/**
+ */
+BOXEXPORT BoxBool
+BoxVM_Get_Code_Implem(BoxVM *vm, BoxVMCallNum cn, BoxCode **code);
+
+/**
+ */
+BOXEXPORT BoxBool 
+BoxVM_Get_Callable_Implem(BoxVM *vm, BoxVMCallNum cn, BoxCallable **code);
+
+/**
+ * @brief Get the callable corresponding to a given call number.
+ *
+ * @param vm VM the call number @p cb refers to.
+ * @param cn The call number.
+ * @return The callable corresponding to the given call number @p cb.
+ */
+BOXEXPORT BoxCallable *
+BoxVM_Get_Callable(BoxVM *vm, BoxVMCallNum cn);
+#endif
+
+
+
+
+
+
+
+
+
+
+
 /** Return the state of the procedure with the given call number.
  * BOXVMPROC_IS_UNDEFINED is returned when no procedure with such call number
  * has been ever installed. When the procedure has been installed, return its

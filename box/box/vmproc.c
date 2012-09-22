@@ -198,7 +198,7 @@ BoxVMCallNum BoxVM_Proc_Install_CCode(BoxVM *vm,
   BoxVMProcInstalled *procedure_inst =
     My_Get_Inst_Proc_Desc(pt, & cn, required_call_num);
 
-  assert(procedure_inst != NULL);
+  assert(procedure_inst);
   procedure_inst->type = BOXVMPROC_IS_C_CODE;
   procedure_inst->name = (name != NULL) ? BoxMem_Strdup(name) : NULL;
   procedure_inst->desc = (desc != NULL) ? BoxMem_Strdup(desc) : NULL;
@@ -211,8 +211,8 @@ BoxVMCallNum BoxVM_Proc_Install_Undefined(BoxVM *vm) {
   BoxVMProcInstalled procedure_inst;
 
   procedure_inst.type = BOXVMPROC_IS_RESERVED;
-  procedure_inst.name = (char *) NULL;
-  procedure_inst.desc = (char *) NULL;
+  procedure_inst.name = NULL;
+  procedure_inst.desc = NULL;
   BoxArr_Push(& pt->installed, & procedure_inst);
   return BoxArr_Num_Items(& pt->installed);
 }
@@ -266,8 +266,8 @@ Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out,
   if (p == NULL)
     return BOXTASK_FAILURE;
 
-  p_name = (p->name != NULL) ? p->name : "(undef)";
-  p_desc = (p->desc != NULL) ? p->desc : "(undef)";
+  p_name = (p->name) ? p->name : "(undef)";
+  p_desc = (p->desc) ? p->desc : "(undef)";
   switch (p->type) {
   case BOXVMPROC_IS_VM_CODE: p_type = "VM"; break;
   case BOXVMPROC_IS_C_CODE:  p_type = "C"; break;
