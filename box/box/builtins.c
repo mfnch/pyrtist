@@ -368,6 +368,8 @@ BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
  * Int as (Char->Int) and Real as (Char->Int->Real)).
  */
 static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
+  b->any = BoxTS_New_Any(ts);
+
   /* Define Int */
   b->species_int = BoxTS_Begin_Species(ts);
   BoxTS_Add_Species_Member(ts, b->species_int, BOXTYPE_CHAR);
@@ -436,6 +438,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {"For",         c->bltin.alias_for},
     {"Print",       c->bltin.print},
     {"Repr",        c->bltin.repr},
+    {"ANY",         c->bltin.any},
     {(char *) NULL, BOXTYPE_NONE}
   };
 
@@ -777,8 +780,6 @@ static void My_Register_Sys(BoxCmp *c) {
     Bltin_Simple_Fn_Def(c, "Compare", BOXTYPE_INT,
                         BOXTYPE_BEGIN, My_Compare_Init);
 }
-
-
 
 /* Register bultin types, operation and functions */
 void Bltin_Init(BoxCmp *c) {

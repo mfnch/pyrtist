@@ -48,7 +48,8 @@ typedef struct {
           alias_for,
           print,
           exit,
-          file;
+          file,
+          any;
   BoxVMSymID
           subtype_init,
           subtype_finish;

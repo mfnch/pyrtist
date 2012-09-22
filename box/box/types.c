@@ -1003,8 +1003,19 @@ BoxTypeCmp BoxType_Compare(BoxType *left, BoxType *right) {
 
     return BOXTYPECMP_DIFFERENT;
 
-  case BOXTYPECLASS_ENUM:
-    assert(0);
+  case BOXTYPECLASS_ANY:
+    if (right->type_class == BOXTYPECLASS_PRIMARY) {
+      BoxTypePrimary *rtd = BoxType_Get_Data(right);
+      switch (rtd->id) {
+      case BOXTYPEID_INIT:
+      case BOXTYPEID_FINISH:
+        return BOXTYPECMP_DIFFERENT;
+      default:
+        break;
+      }
+    }
+
+    return BOXTYPECMP_MATCHING;
 
   default:
     MSG_ERROR("BoxType_Compare: not fully implemented!");
@@ -1156,7 +1167,9 @@ char *BoxType_Get_Repr(BoxType *t) {
       return Box_SPrintF("(%~s)", str);
     }
 
-  case BOXTYPECLASS_ENUM:
+  case BOXTYPECLASS_ANY:
+    return Box_Mem_Strdup("ANY");
+
   default:
     return NULL;
   }

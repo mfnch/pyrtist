@@ -37,8 +37,6 @@
 #include <box/callable.h>
 #include <box/combs.h>
 
-static TSCmp My_Compare(TS *ts, BoxTypeId t1, BoxTypeId t2);
-
 static void Destroy_TSDesc(void *td) {
   BoxSPtr_Unlink(((TSDesc *) td)->new_type);
   BoxMem_Free(((TSDesc *) td)->name);
@@ -179,22 +177,6 @@ static TSDesc *Resolve(TS *ts, BoxTypeId *rt, BoxTypeId t, int ignore_names) {
     default:
       if (rt != NULL)
         *rt = t;
-      return td;
-    }
-  }
-}
-
-static TSDesc *Fully_Resolve(TS *ts, BoxTypeId *rt, BoxTypeId t) {
-  while(1) {
-    TSDesc *td = Type_Ptr(ts, t);
-    switch(td->kind) {
-    case TS_KIND_ALIAS:
-    case TS_KIND_MEMBER:
-      t = td->target; break;
-    case TS_KIND_SPECIES:
-      t = td->data.last; break;
-    default:
-      if (rt != (BoxTypeId *) NULL) *rt = t;
       return td;
     }
   }
@@ -941,4 +923,16 @@ BoxTS_Procedure_Define(BoxTS *ts, BoxTypeId child_old, BoxCombType ct,
   assert(result);
 
   return p;
+}
+
+BoxTypeId BoxTS_New_Any(BoxTS *ts) {
+  BoxTypeId dummy_typeid =
+    BoxTS_New_Intrinsic(ts, sizeof(BoxAny), __alignof__(BoxAny));
+  My_Name_Set(ts, dummy_typeid, "ANY");
+
+  BoxType *t_any = BoxType_Create_Any();
+
+  if (t_any)
+    TS_Set_New_Style_Type(ts, dummy_typeid, t_any);
+  return dummy_typeid;
 }

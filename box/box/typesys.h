@@ -302,4 +302,6 @@ BoxTypeId BoxTS_Begin_Species(BoxTS *ts);
 /** Add a member to a species type defined with TS_Species_Begin. */
 void BoxTS_Add_Species_Member(BoxTS *ts, BoxTypeId species, BoxTypeId member);
 
+BoxTypeId BoxTS_New_Any(BoxTS *ts);
+
 #endif
