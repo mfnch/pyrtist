@@ -143,7 +143,7 @@ void BoxVMCode_Finish(BoxVMCode *p) {
     Reg_Finish(& p->reg_alloc);
 }
 
-BoxVMCode *BoxVMCode_New(BoxCmp *c, BoxVMCodeStyle style) {
+BoxVMCode *BoxVMCode_Create(BoxCmp *c, BoxVMCodeStyle style) {
   BoxVMCode *p = BoxMem_Alloc(sizeof(BoxVMCode));
   if (p == NULL) return NULL;
   BoxVMCode_Init(p, c, style);
