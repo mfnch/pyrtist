@@ -1073,7 +1073,7 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
 
 static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   Value *v_child, *v_parent, *v_ret = NULL;
-  BoxTypeId t_child, t_parent,
+  BoxTypeId t_child_old, t_parent_old,
           t_proc = BOXTYPE_NONE;
   BoxCombType comb_type;
   ASTNode *n_c_name = n->attr.proc_def.c_name,
@@ -1093,10 +1093,10 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   comb_type = n->attr.proc_def.combine;
 
   no_err = Value_Want_Has_Type(v_child) & Value_Want_Has_Type(v_parent);
-  t_child = BoxType_Get_Id(v_child->type);
-  t_parent = BoxType_Get_Id(v_parent->type);
-  BoxType *t_child_new = v_child->type;
-  BoxType *t_parent_new = v_parent->type;
+  t_child_old = BoxType_Get_Id(v_child->type);
+  t_parent_old = BoxType_Get_Id(v_parent->type);
+  BoxType *t_child = v_child->type;
+  BoxType *t_parent = v_parent->type;
 
   Value_Unlink(v_child);
   Value_Unlink(v_parent);
@@ -1127,8 +1127,38 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   proc_style = (n_implem != NULL) ? BOXVMCODESTYLE_SUB : BOXVMCODESTYLE_EXTERN;
   BoxVMCode_Init(& proc_implem, c, proc_style);
 
+#ifdef NEW_WAY
+  BoxTypeCmp expand;
+  BoxType comb_node = BoxType_Find_Combination(v_parent->type, comb_type,
+                                               v_child->type, & expand);
+  if (comb_node) {
+    /* A procedure of this kind is already registered: we need to know if
+     * it is defined or not
+     */
+    BoxType *child_expansion;
+    BoxCallable *cb;
+    BoxBool success, not_defined, has_name;
+
+    success = BoxType_Get_Combination_Info(comb_node, & child_expansion, & cb);
+    assert(success);
+
+    not_defined = BoxCallable_Can_Call(cb),
+    has_name = BoxCallable_Get_Uid(cb);
+
+    /* If the procedure is not defined and has no name then we re-use
+     * the previous registered one, without covering the old definition.
+     */
+    if (not_defined && !has_name) {
+      BoxVMCode_Set_Sym(& proc_implem, sym_id);
+
+      BoxVMCode_Set_CallNum(...);
+      do_register = 0;
+    }
+
+#else
+
   t_proc = BoxTS_Procedure_Search(& c->ts, /*expansion_type*/ NULL,
-                                  t_child, comb_type, t_parent, 0);
+                                  t_child_old, comb_type, t_parent_old, 0);
 
   if (t_proc != BOXTYPE_NONE) {
     /* A procedure of this kind is already registered: we need to know if
@@ -1145,6 +1175,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
       BoxVMCode_Set_Sym(& proc_implem, sym_id);
       do_register = 0;
     }
+#endif
 
     /* The following means that X@Y ? has no effect if X@Y is already
      * registered (no matter if defined or undefined)
@@ -1161,13 +1192,11 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   if (do_register) {
     BoxVMSymID sym_id = BoxVMCode_Get_Sym(& proc_implem);
     BoxVMCallNum call_num = BoxVMCode_Get_Call_Num(& proc_implem);
-    BoxType *t_child_new = BoxType_From_Id(& c->ts, t_child),
-            *t_parent_new = BoxType_From_Id(& c->ts, t_parent);
     BoxCallable *callable =
-      BoxCallable_Create_Undefined(t_parent_new, t_child_new);
+      BoxCallable_Create_Undefined(t_parent, t_child);
     callable = BoxCallable_Define_From_VM(callable, NULL, c->vm, call_num);
-    t_proc = BoxTS_Procedure_Define(& c->ts, t_child, comb_type,
-                                    t_parent, sym_id, callable);
+    t_proc = BoxTS_Procedure_Define(& c->ts, t_child_old, comb_type,
+                                    t_parent_old, sym_id, callable);
     Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT,
                             & c->ts, comb_type, t_proc);
   }
@@ -1190,10 +1219,10 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
 
     /* Specify the prototype for the procedure */
     BoxVMCode_Set_Prototype(& proc_implem,
-                          !BoxType_Is_Empty(t_child_new),
-                          !BoxType_Is_Empty(t_parent_new));
+                            !BoxType_Is_Empty(t_child),
+                            !BoxType_Is_Empty(t_parent));
 
-    My_Compile_Box(c, n_implem, t_child_new, t_parent_new);
+    My_Compile_Box(c, n_implem, t_child, t_parent);
     v_implem = BoxCmp_Pop_Value(c);
     /* NOTE: we should double check that this is void! */
     Value_Unlink(v_implem);
