@@ -27,7 +27,7 @@
 #include "messages.h"
 #include "compiler.h"
 #include "vm_private.h"
-#include "cmpproc.h"
+#include "vmcode.h"
 #include "operator.h"
 
 /* We have two concepts in this module. One is the concept of Operator
@@ -286,7 +286,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     } else
       v_left = Value_To_Temp(v_left);
 
-    CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+    BoxVMCode_Assemble(c->cur_proc, opn->implem.opcode,
                      1, & v_left->value.cont);
     result = v_left;
     break;
@@ -299,7 +299,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
       Value_Link(v_left); /* Make sure v_left is not destroyed
                              by Value_To_Temp */
       v_temp = Value_To_Temp(v_left);
-      CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+      BoxVMCode_Assemble(c->cur_proc, opn->implem.opcode,
                        1, & v_left->value.cont);
       Value_Unlink(v_left); /* We don't need v_left anymore! */
       result = v_temp;
@@ -341,7 +341,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
       v_left = Value_To_Temp(v_left);
     }
 
-    CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+    BoxVMCode_Assemble(c->cur_proc, opn->implem.opcode,
                      2, & v_left->value.cont, & v_right->value.cont);
     result = v_left;
     break;
@@ -353,7 +353,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     Value_Setup_As_Temp_Old(result, opn->type_result);
     v_left = Value_To_Temp_Or_Target(v_left);
     v_right = Value_To_Temp_Or_Target(v_right);
-    CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+    BoxVMCode_Assemble(c->cur_proc, opn->implem.opcode,
                      3, & result->value.cont,
                      & v_left->value.cont, & v_right->value.cont);
     Value_Unlink(v_left);
@@ -374,7 +374,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     result = Value_New(c->cur_proc);
     Value_Setup_As_Temp_Old(result, opn->type_result);
 
-    CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+    BoxVMCode_Assemble(c->cur_proc, opn->implem.opcode,
                      2, & v_left->value.cont, & v_right->value.cont);
 
     result = v_left;
@@ -509,7 +509,7 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
       src = Value_Expand(src, BoxType_From_Id(& c->ts, match.expand_type_left));
 
     if (opn->asm_scheme == OPASMSCHEME_STD_UN) {
-      CmpProc_Assemble(c->cur_proc, opn->implem.opcode,
+      BoxVMCode_Assemble(c->cur_proc, opn->implem.opcode,
                        2, & dest->value.cont, & src->value.cont);
       Value_Unlink(src);
       Value_Unlink(dest);

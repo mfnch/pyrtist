@@ -34,7 +34,7 @@
 
 #  include "types.h"
 #  include "container.h"
-#  include "cmpproc.h"
+#  include "vmcode.h"
 
 typedef enum {
   VALUEKIND_ERR,              /**< An error */
@@ -49,7 +49,7 @@ typedef enum {
 /* This datastructure has a major design flaw. See: value.c (Value_Init). */
 typedef struct {
   int       num_ref;          /**< Number of references to this Value */
-  CmpProc   *proc;            /**< The compiler to which this value refers */
+  BoxVMCode *proc;            /**< The compiler to which this value refers */
   ValueKind kind;             /**< Kind of Value */
   BoxType   *type;            /**< Type of the Value */
   struct {
@@ -68,7 +68,7 @@ typedef struct {
 /** Initialise a Value 'v' assuming 'v' points to an already allocated memory
  * region able to contain a Value object.
  */
-void Value_Init(Value *v, CmpProc *proc);
+void Value_Init(Value *v, BoxVMCode *proc);
 
 /** Allocate a Value object and initialise it by calling Value_Init.
  * Notice that the object is aware of its allocation mode (whether it was
@@ -76,7 +76,7 @@ void Value_Init(Value *v, CmpProc *proc);
  * call a free() in case Value_New was used. free() won't be called if the
  * object was created with Value_Init.
  */
-Value *Value_New(CmpProc *proc);
+Value *Value_New(BoxVMCode *proc);
 
 /** Remove one reference to the Value object 'v', destroying it if there are
  * no more reference to the Value. The object is destroyed coherently to how
@@ -291,7 +291,7 @@ typedef struct {
  * value. Here is and example of how it is supposed to be used:
  * @code
  *   ValueStrucIter vsi;
- *   for(ValueStrucIter_Init(& vsi, v_struc, cmpproc);
+ *   for(ValueStrucIter_Init(& vsi, v_struc, vmcode);
  *       vsi.has_next; ValueStrucIter_Do_Next(& vsi)) {
  *     // access to 'vsi.member'
  *   }
@@ -300,7 +300,7 @@ typedef struct {
  * @see ValueStrucIter_Finish
  * @see ValueStrucIter_Do_Next
  */
-void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, CmpProc *proc);
+void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, BoxVMCode *proc);
 
 /**
  * Convenience function to facilitate iteration of the member of a structure
@@ -321,7 +321,7 @@ void ValueStrucIter_Finish(ValueStrucIter *vsi);
  * @see ValueStrucIter_Init
  * @see ValueStrucIter_Destroy
  */
-ValueStrucIter *ValueStrucIter_New(Value *v_struc, CmpProc *proc);
+ValueStrucIter *ValueStrucIter_New(Value *v_struc, BoxVMCode *proc);
 
 /**
  * Destructor for #ValueStrucIter_New.

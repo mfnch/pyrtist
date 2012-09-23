@@ -26,7 +26,7 @@
 #include "array.h"
 #include "ast.h"
 #include "value.h"
-#include "cmpproc.h"
+#include "vmcode.h"
 #include "operator.h"
 #include "namespace.h"
 #include "messages.h"
@@ -139,8 +139,8 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
 
   BoxCmp_Init__Operators(c);
 
-  CmpProc_Init(& c->main_proc, c, CMPPROCSTYLE_MAIN);
-  CmpProc_Set_Alter_Name(& c->main_proc, "main");
+  BoxVMCode_Init(& c->main_proc, c, BOXVMCODESTYLE_MAIN);
+  BoxVMCode_Set_Alter_Name(& c->main_proc, "main");
   c->cur_proc = & c->main_proc;
 
   My_Init_Const_Values(c);
@@ -154,7 +154,7 @@ void BoxCmp_Finish(BoxCmp *c) {
   Bltin_Finish(c);
   Namespace_Finish(& c->ns);
   My_Finish_Const_Values(c);
-  CmpProc_Finish(& c->main_proc);
+  BoxVMCode_Finish(& c->main_proc);
 
   if (BoxArr_Num_Items(& c->stack) != 0)
     MSG_WARNING("BoxCmp_Finish: stack is not empty at compiler destruction.");
@@ -205,7 +205,7 @@ BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
   program_node = Parser_Parse(file, file_name, setup_file_name, paths);
   BoxCmp_Compile(compiler, program_node);
   ASTNode_Destroy(program_node);
-  *main = CmpProc_Install(& compiler->main_proc);
+  *main = BoxVMCode_Install(& compiler->main_proc);
   vm = BoxCmp_Steal_VM(compiler);
   BoxCmp_Destroy(compiler);
   return vm;
@@ -370,7 +370,7 @@ static void My_Compile_Any(BoxCmp *c, ASTNode *node) {
   if (/*c->src_pos.file_name != NULL && */ new_src_pos->line != 0 &&
       (new_src_pos->file_name != c->src_pos.file_name
        || new_src_pos->line != c->src_pos.line)) {
-    CmpProc_Associate_Source(c->cur_proc, new_src_pos);
+    BoxVMCode_Associate_Source(c->cur_proc, new_src_pos);
     c->src_pos = *new_src_pos;
   }
 
@@ -625,8 +625,8 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
   }
 
   /* Create jump-labels for If and For */
-  jump_label_begin = CmpProc_Jump_Label_Here(c->cur_proc);
-  jump_label_next = CmpProc_Jump_Label_New(c->cur_proc);
+  jump_label_begin = BoxVMCode_Jump_Label_Here(c->cur_proc);
+  jump_label_next = BoxVMCode_Jump_Label_New(c->cur_proc);
   jump_label_end = BOXVMSYMID_NONE;
 
   /* Save previous source position */
@@ -661,21 +661,21 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
           else if (BoxType_Compare(stmt_val->type,
                                    BoxType_From_Id(ts, c->bltin.alias_elif))) {
             if (jump_label_end == BOXVMSYMID_NONE)
-              jump_label_end = CmpProc_Jump_Label_New(c->cur_proc);
-            CmpProc_Assemble_Jump(c->cur_proc, jump_label_end);
-            CmpProc_Jump_Label_Define(c->cur_proc, jump_label_next);
-            CmpProc_Jump_Label_Release(c->cur_proc, jump_label_next);
-            jump_label_next = CmpProc_Jump_Label_New(c->cur_proc);
+              jump_label_end = BoxVMCode_Jump_Label_New(c->cur_proc);
+            BoxVMCode_Assemble_Jump(c->cur_proc, jump_label_end);
+            BoxVMCode_Jump_Label_Define(c->cur_proc, jump_label_next);
+            BoxVMCode_Jump_Label_Release(c->cur_proc, jump_label_next);
+            jump_label_next = BoxVMCode_Jump_Label_New(c->cur_proc);
             Value_Emit_CJump(stmt_val, jump_label_next);
 
           } else if (BoxType_Compare(stmt_val->type,
                                      BoxType_From_Id(ts, c->bltin.alias_else))) {
             if (jump_label_end == BOXVMSYMID_NONE)
-              jump_label_end = CmpProc_Jump_Label_New(c->cur_proc);
-            CmpProc_Assemble_Jump(c->cur_proc, jump_label_end);
-            CmpProc_Jump_Label_Define(c->cur_proc, jump_label_next);
-            CmpProc_Jump_Label_Release(c->cur_proc, jump_label_next);
-            jump_label_next = CmpProc_Jump_Label_New(c->cur_proc);
+              jump_label_end = BoxVMCode_Jump_Label_New(c->cur_proc);
+            BoxVMCode_Assemble_Jump(c->cur_proc, jump_label_end);
+            BoxVMCode_Jump_Label_Define(c->cur_proc, jump_label_next);
+            BoxVMCode_Jump_Label_Release(c->cur_proc, jump_label_next);
+            jump_label_next = BoxVMCode_Jump_Label_New(c->cur_proc);
             Value_Unlink(stmt_val);
 
           } else if (BoxType_Compare(stmt_val->type,
@@ -702,14 +702,14 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
   (void) Msg_Set_Src(prev_src_of_err);
 
   /* Define the end label and release it together with the begin label */
-  CmpProc_Jump_Label_Define(c->cur_proc, jump_label_next);
-  CmpProc_Jump_Label_Release(c->cur_proc, jump_label_begin);
-  CmpProc_Jump_Label_Release(c->cur_proc, jump_label_next);
+  BoxVMCode_Jump_Label_Define(c->cur_proc, jump_label_next);
+  BoxVMCode_Jump_Label_Release(c->cur_proc, jump_label_begin);
+  BoxVMCode_Jump_Label_Release(c->cur_proc, jump_label_next);
 
   /* Define the end label, if used at all! */
   if (jump_label_end != BOXVMSYMID_NONE) {
-    CmpProc_Jump_Label_Define(c->cur_proc, jump_label_end);
-    CmpProc_Jump_Label_Release(c->cur_proc, jump_label_end);
+    BoxVMCode_Jump_Label_Define(c->cur_proc, jump_label_end);
+    BoxVMCode_Jump_Label_Release(c->cur_proc, jump_label_end);
   }
 
   /* Invoke the closing procedure */
@@ -1079,8 +1079,8 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   ASTNode *n_c_name = n->attr.proc_def.c_name,
           *n_implem = n->attr.proc_def.implem;
   char *c_name = NULL;
-  CmpProc proc_implem;
-  CmpProcStyle proc_style;
+  BoxVMCode proc_implem;
+  BoxVMCodeStyle proc_style;
   int no_err, do_register = 1;
 
   assert(n->type == ASTNODETYPE_PROCDEF);
@@ -1121,11 +1121,11 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     return;
   }
 
-  /* A CmpProc object is used to get the procedure symbol and to register and
+  /* A BoxVMCode object is used to get the procedure symbol and to register and
    * assemble it.
    */
-  proc_style = (n_implem != NULL) ? CMPPROCSTYLE_SUB : CMPPROCSTYLE_EXTERN;
-  CmpProc_Init(& proc_implem, c, proc_style);
+  proc_style = (n_implem != NULL) ? BOXVMCODESTYLE_SUB : BOXVMCODESTYLE_EXTERN;
+  BoxVMCode_Init(& proc_implem, c, proc_style);
 
   t_proc = BoxTS_Procedure_Search(& c->ts, /*expansion_type*/ NULL,
                                   t_child, comb_type, t_parent, 0);
@@ -1142,7 +1142,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
      * the previous registered one, without covering the old definition.
      */
     if (not_defined && has_no_name) {
-      CmpProc_Set_Sym(& proc_implem, sym_id);
+      BoxVMCode_Set_Sym(& proc_implem, sym_id);
       do_register = 0;
     }
 
@@ -1155,12 +1155,12 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
 
   /* Set the C-name of the procedure, if given */
   if (c_name != NULL)
-    CmpProc_Set_Name(& proc_implem, c_name);
+    BoxVMCode_Set_Name(& proc_implem, c_name);
 
   /* Register the procedure, covering old ones */
   if (do_register) {
-    BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
-    BoxVMCallNum call_num = CmpProc_Get_Call_Num(& proc_implem);
+    BoxVMSymID sym_id = BoxVMCode_Get_Sym(& proc_implem);
+    BoxVMCallNum call_num = BoxVMCode_Get_Call_Num(& proc_implem);
     BoxType *t_child_new = BoxType_From_Id(& c->ts, t_child),
             *t_parent_new = BoxType_From_Id(& c->ts, t_parent);
     BoxCallable *callable =
@@ -1175,13 +1175,13 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   /* If an implementation is also provided, then we define the procedure */
   if (n_implem != NULL) {
     /* we have the implementation */
-    CmpProc *save_cur_proc = c->cur_proc;
+    BoxVMCode *save_cur_proc = c->cur_proc;
     Value *v_implem;
 
     /* Set the alternative name to make the bytecode more readable */
     if (t_proc != BOXTYPE_NONE) {
       char *alter_name = TS_Name_Get(& c->ts, t_proc);
-      CmpProc_Set_Alter_Name(& proc_implem, alter_name);
+      BoxVMCode_Set_Alter_Name(& proc_implem, alter_name);
       BoxMem_Free(alter_name);
     }
 
@@ -1189,7 +1189,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     c->cur_proc = & proc_implem;
 
     /* Specify the prototype for the procedure */
-    CmpProc_Set_Prototype(& proc_implem,
+    BoxVMCode_Set_Prototype(& proc_implem,
                           !BoxType_Is_Empty(t_child_new),
                           !BoxType_Is_Empty(t_parent_new));
 
@@ -1201,13 +1201,13 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     c->cur_proc = save_cur_proc;
 
     {
-      (void) /*BoxVMCallNum*/ CmpProc_Install(& proc_implem);
-      BoxVMSymID sym_id = CmpProc_Get_Sym(& proc_implem);
+      (void) /*BoxVMCallNum*/ BoxVMCode_Install(& proc_implem);
+      BoxVMSymID sym_id = BoxVMCode_Get_Sym(& proc_implem);
       BoxVMSym_Def_Call(c->vm, sym_id);
     }
   }
 
-  CmpProc_Finish(& proc_implem);
+  BoxVMCode_Finish(& proc_implem);
 
   /* NOTE: for now we return Void[]. In future extensions we'll return
    * a function object

@@ -17,16 +17,17 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file cmpptrs.h
+/**
+ * @file cmpptrs.h
  * @brief Helper header included by the sources of the core Box compiler.
  *
- * This header solve one problem: some objects such as CmpProc store a pointer
- * to the corresponding compiler. This allows the user not to specify always
- * the couple (BoxCmp, CmpProc). On the other side also the BoxCmp structure
- * needs to store a pointer to CmpProc. Since we want to declare the two
- * things in different headers we then have a problem: BoxCmp references
- * CmpProc, which in turn references BoxCmp. So what object do we need to
- * define first? The solution is to typedef BoxCmp as a pointer to an
+ * This header solves one problem: some objects such as BoxVMCode store a
+ * pointer to the corresponding compiler. This allows the user not to specify
+ * always the couple (BoxCmp, BoxVMCode). On the other side also the BoxCmp
+ * structure needs to store a pointer to BoxVMCode. Since we want to declare
+ * the two things in different headers we then have a problem: BoxCmp
+ * references BoxVMCode, which in turn references BoxCmp. So what object do we
+ * need to define first? The solution is to typedef BoxCmp as a pointer to an
  * anonymous structure. This is what BoxCmp needs and this is what we do here.
  */
 

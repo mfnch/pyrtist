@@ -48,7 +48,7 @@
  *  continuously BoxArr objects for every couple of [ ] the compiler
  *  encounters.
  */
-void Value_Init(Value *v, CmpProc *proc) {
+void Value_Init(Value *v, BoxVMCode *proc) {
   v->proc = proc;
   v->kind = VALUEKIND_ERR;
   v->type = NULL;
@@ -59,7 +59,7 @@ void Value_Init(Value *v, CmpProc *proc) {
   v->num_ref = 1;
 }
 
-Value *Value_New(CmpProc *proc) {
+Value *Value_New(BoxVMCode *proc) {
   Value *v = BoxMem_Safe_Alloc(sizeof(Value));
   Value_Init(v, proc);
   v->attr.new_or_init = 1;
@@ -130,7 +130,7 @@ void Value_Link(Value *v) {
  * REFERENCES: return: new, v: -1;
  */
 Value *Value_Recycle(Value *v) {
-  CmpProc *proc = v->proc->cmp->cur_proc; /* Be careful! We want to operate on
+  BoxVMCode *proc = v->proc->cmp->cur_proc; /* Be careful! We want to operate on
                                              the cur_proc, not the proc of the
                                              old value!!! */
   if (v->num_ref == 1) {
@@ -293,8 +293,8 @@ void Value_Setup_As_Temp_Old(Value *v, BoxTypeId t) {
 
 void Value_Setup_As_Var(Value *v, BoxType *t) {
   BoxCmp *c = v->proc->cmp;
-  CmpProc *p = c->cur_proc;
-  if (CmpProc_Get_Style(p) == CMPPROCSTYLE_MAIN) {
+  BoxVMCode *p = c->cur_proc;
+  if (BoxVMCode_Get_Style(p) == BOXVMCODESTYLE_MAIN) {
     /* We are creating the main procedure so variables should get into global
      * registers
      */
@@ -448,7 +448,7 @@ void Value_Emit_Allocate(Value *v) {
   case VALUEKIND_TARGET:
     if (v->value.cont.type == BOXCONTTYPE_OBJ) {
       BoxCmp *c = v->proc->cmp;
-      CmpProc *proc = c->cur_proc;
+      BoxVMCode *proc = c->cur_proc;
       BoxVMAllocID alloc_id;
 
       assert(v->proc == proc);
@@ -461,7 +461,7 @@ void Value_Emit_Allocate(Value *v) {
 
         Value_Init(& v_size, proc);
         Value_Setup_As_Imm_Int(& v_size, BoxType_Get_Size(v->type));
-        CmpProc_Assemble(proc, BOXGOP_MALLOC,
+        BoxVMCode_Assemble(proc, BOXGOP_MALLOC,
                          2, & v->value.cont, & v_size.value.cont);
 
       } else {
@@ -471,7 +471,7 @@ void Value_Emit_Allocate(Value *v) {
         Value v_alloc_id;
         Value_Init(& v_alloc_id, proc);
         Value_Setup_As_Imm_Int(& v_alloc_id, alloc_id);
-        CmpProc_Assemble(proc, BOXGOP_CREATE,
+        BoxVMCode_Assemble(proc, BOXGOP_CREATE,
                          2, & v->value.cont, & v_alloc_id.value.cont);
       }
     }
@@ -491,7 +491,7 @@ void Value_Emit_Link(Value *v) {
     assert(v->value.cont.categ == BOXCONTCATEG_LREG
            || v->value.cont.categ == BOXCONTCATEG_GREG);
     /* ^^^ for now we don't support the general case... */
-    CmpProc_Assemble(v->proc, BOXGOP_MLN, 1, & v->value.cont);
+    BoxVMCode_Assemble(v->proc, BOXGOP_MLN, 1, & v->value.cont);
   }
 }
 
@@ -504,14 +504,14 @@ void Value_Emit_Unlink(Value *v) {
     assert(v->value.cont.categ == BOXCONTCATEG_LREG
            || v->value.cont.categ == BOXCONTCATEG_GREG);
     /* ^^^ for now we don't support the general case... */
-    CmpProc_Assemble(v->proc, BOXGOP_MUNLN, 1, & v->value.cont);
+    BoxVMCode_Assemble(v->proc, BOXGOP_MUNLN, 1, & v->value.cont);
   }
 }
 
 /* REFERENCES: v: -1 */
 void Value_Emit_CJump(Value *v, BoxVMSymID jump_label) {
   BoxCmp *c = v->proc->cmp;
-  CmpProc_Assemble_CJump(c->cur_proc, jump_label, & v->value.cont);
+  BoxVMCode_Assemble_CJump(c->cur_proc, jump_label, & v->value.cont);
   Value_Unlink(v);
 }
 
@@ -552,7 +552,7 @@ Value *Value_To_Temp(Value *v) {
       v = Value_Recycle(v);
       Value_Setup_Container(v, t, & vc);
       (void) BoxType_Unlink(t);
-      CmpProc_Assemble(c->cur_proc, BOXGOP_MOV,
+      BoxVMCode_Assemble(c->cur_proc, BOXGOP_MOV,
                        2, & v->value.cont, & cont);
       return v;
     }
@@ -649,7 +649,7 @@ void Value_Emit_Call_From_CallNum(BoxVMCallNum call_num,
     BoxGOp op = (parent->value.cont.type == BOXCONTTYPE_OBJ
                  && parent->value.cont.categ != BOXCONTCATEG_PTR) ?
                 BOXGOP_MOV : BOXGOP_LEA;
-    CmpProc_Assemble(c->cur_proc, op,
+    BoxVMCode_Assemble(c->cur_proc, op,
                      2, & c->cont.pass_parent, & parent->value.cont);
   }
 
@@ -658,7 +658,7 @@ void Value_Emit_Call_From_CallNum(BoxVMCallNum call_num,
     BoxGOp op = (child->value.cont.type == BOXCONTTYPE_OBJ
                  && child->value.cont.categ != BOXCONTCATEG_PTR) ?
                 BOXGOP_REF : BOXGOP_LEA;
-    CmpProc_Assemble(c->cur_proc, op,
+    BoxVMCode_Assemble(c->cur_proc, op,
                      2, & c->cont.pass_child, & v_to_pass->value.cont);
     Value_Unlink(v_to_pass);
   }
@@ -784,7 +784,7 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxTypeId new_type) {
         Value_Unlink(v_ptr);
         v_ptr = Value_New(c->cur_proc);
         Value_Setup_As_Temp_Old(v_ptr, BOXTYPE_PTR);
-        CmpProc_Assemble(c->cur_proc, BOXGOP_REF, 2,
+        BoxVMCode_Assemble(c->cur_proc, BOXGOP_REF, 2,
                          & v_ptr->value.cont, & v_ptr_cont);
         assert(v_ptr->value.cont.categ == BOXCONTCATEG_LREG);
         return Value_Cast_From_Ptr(v_ptr, new_type);
@@ -838,7 +838,7 @@ Value *Value_Cast_To_Ptr(Value *v) {
     Value_Unlink(v);
     v = Value_New(c->cur_proc);
     Value_Setup_As_Temp_Old(v, BOXTYPE_PTR);
-    CmpProc_Assemble(c->cur_proc, BOXGOP_LEA, 2, & v->value.cont, & v_cont);
+    BoxVMCode_Assemble(c->cur_proc, BOXGOP_LEA, 2, & v->value.cont, & v_cont);
     return v;
   }
 }
@@ -854,7 +854,7 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     Value *v_ret;
     BoxCont cont = v_obj->value.cont;
     BoxType *t = BoxType_Link(v_obj->type);
-    CmpProc *cur_proc = v_obj->proc->cmp->cur_proc;
+    BoxVMCode *cur_proc = v_obj->proc->cmp->cur_proc;
 
     Value_Unlink(v_obj);
     v_ret = Value_New(cur_proc);
@@ -862,7 +862,7 @@ Value *Value_To_Straight_Ptr(Value *v_obj) {
     (void) BoxType_Unlink(t);
 
     assert(v_ret->value.cont.type == BOXCONTTYPE_OBJ);
-    CmpProc_Assemble(v_ret->proc, BOXGOP_LEA, 2, & v_ret->value.cont, & cont);
+    BoxVMCode_Assemble(v_ret->proc, BOXGOP_LEA, 2, & v_ret->value.cont, & cont);
     return v_ret;
 
   } else
@@ -929,7 +929,7 @@ static Value *My_Point_Get_Member(Value *v_point, const char *memb) {
         BoxCmp *c = v_point->proc->cmp;
         Value *v_memb = Value_New(c->cur_proc);
         Value_Setup_As_Temp_Old(v_memb, BOXTYPE_PTR);
-        CmpProc_Assemble(v_memb->proc, g_op, 2,
+        BoxVMCode_Assemble(v_memb->proc, g_op, 2,
                          & v_memb->value.cont, & v_point->value.cont);
         Value_Unlink(v_point);
         v_memb->kind = VALUEKIND_TARGET;
@@ -966,7 +966,7 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
   return NULL;
 }
 
-void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, CmpProc *proc) {
+void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, BoxVMCode *proc) {
   BoxType *node;
 
   BoxTypeIter_Init(& vsi->type_iter, v_struc->type);
@@ -1016,7 +1016,7 @@ void ValueStrucIter_Finish(ValueStrucIter *vsi) {
   Value_Unlink(& vsi->v_member);
 }
 
-ValueStrucIter *ValueStrucIter_New(Value *v_struc, CmpProc *proc) {
+ValueStrucIter *ValueStrucIter_New(Value *v_struc, BoxVMCode *proc) {
   ValueStrucIter *vsi = BoxMem_Safe_Alloc(sizeof(ValueStrucIter));
   ValueStrucIter_Init(vsi, v_struc, proc);
   return vsi;
@@ -1072,7 +1072,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
         Value v_id;
         Value_Init(& v_id, c->cur_proc);
         Value_Setup_As_Imm_Int(& v_id, id);
-        CmpProc_Assemble(c->cur_proc, BOXGOP_RELOC,
+        BoxVMCode_Assemble(c->cur_proc, BOXGOP_RELOC,
                          3, & dest->value.cont, & src->value.cont,
                          & v_id.value.cont);
         Value_Unlink(& v_id);
@@ -1086,7 +1086,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
         Value_Init(& v_size, c->cur_proc);
         Value_Setup_As_Imm_Int(& v_size, BoxType_Get_Size(dest->type));
 
-        CmpProc_Assemble(c->cur_proc, BOXGOP_MCOPY,
+        BoxVMCode_Assemble(c->cur_proc, BOXGOP_MCOPY,
                          3, & dest->value.cont, & src->value.cont,
                          & v_size.value.cont);
         Value_Unlink(& v_size);
@@ -1098,12 +1098,12 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
 
   } else if (dest->value.cont.type == BOXCONTTYPE_PTR) {
     /* For pointers we need to pay special care: reference counts! */
-    CmpProc_Assemble(dest->proc, BOXGOP_REF,
+    BoxVMCode_Assemble(dest->proc, BOXGOP_REF,
                      2, & dest->value.cont, & src->value.cont);
 
   } else {
     /* All the other types can be moved "quickly" with a mov operation */
-    CmpProc_Assemble(dest->proc, BOXGOP_MOV,
+    BoxVMCode_Assemble(dest->proc, BOXGOP_MOV,
                      2, & dest->value.cont, & src->value.cont);
   }
 
@@ -1215,7 +1215,7 @@ Value_Expand(Value *src, BoxType *t_dst) {
        */
       if (comparison == BOXTYPECMP_MATCHING) { /* need expansion */
         ValueStrucIter dst_iter, src_iter;
-        CmpProc *cur_proc = src->proc->cmp->cur_proc;
+        BoxVMCode *cur_proc = src->proc->cmp->cur_proc;
         Value *v_dst = Value_New(cur_proc);
         Value_Setup_As_Temp(v_dst, t_dst);
 
@@ -1262,7 +1262,7 @@ void My_Setup_From_Gro(Value *v, BoxTypeId t, BoxInt gro_num) {
     Value_Setup_Container(& v_ptr, BoxType_From_Id(ts, BOXTYPE_PTR), & vc);
 
     Value_Setup_As_Temp_Old(v, BOXTYPE_PTR);
-    CmpProc_Assemble(c->cur_proc, BOXGOP_MOV,
+    BoxVMCode_Assemble(c->cur_proc, BOXGOP_MOV,
                      2, & v->value.cont, & v_ptr.value.cont);
     Value_Unlink(& v_ptr);
     v = Value_Cast_From_Ptr(v, t);
@@ -1281,9 +1281,9 @@ void My_Family_Setup(Value *v, BoxType *t, int is_parent) {
   assert(v->proc == c->cur_proc);
 
   if (!BoxType_Is_Empty(t)) {
-    CmpProc *p = v->proc->cmp->cur_proc;
+    BoxVMCode *p = v->proc->cmp->cur_proc;
     BoxVMRegNum ro_num =
-      is_parent ? CmpProc_Get_Parent_Reg(p) : CmpProc_Get_Child_Reg(p);
+      is_parent ? BoxVMCode_Get_Parent_Reg(p) : BoxVMCode_Get_Child_Reg(p);
     ValContainer vc = {VALCONTTYPE_LREG, ro_num, 0};
     Value_Setup_Container(v, BoxType_From_Id(& c->ts, BOXTYPE_PTR), & vc);
     v = Value_Cast_From_Ptr(v, BoxType_Get_Id(t));
@@ -1303,7 +1303,7 @@ void Value_Setup_As_Child(Value *v, BoxType *child_t) {
   return My_Family_Setup(v, child_t, /* is_parent */ 0);
 }
 
-static Value *My_Get_Ptr_To_New_Value(CmpProc *proc, BoxType *t) {
+static Value *My_Get_Ptr_To_New_Value(BoxVMCode *proc, BoxType *t) {
   TS *ts = & proc->cmp->ts;
   BoxTypeId t_old = BoxType_Get_Id(t);
   if (TS_Is_Fast(ts, t_old)) {

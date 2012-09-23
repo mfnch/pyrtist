@@ -36,7 +36,7 @@
 #  include "value.h"
 #  include "namespace.h"
 #  include "operator.h"
-#  include "cmpproc.h"
+#  include "vmcode.h"
 #  include "builtins.h"
 #  include "paths.h"
 
@@ -52,7 +52,7 @@ struct _box_cmp {
   BoxTS      ts;        /**< The type system */
   BltinStuff bltin;     /**< Builtin types, etc. */
   Namespace  ns;        /**< The namespace */
-  CmpProc    main_proc, /**< Main procedure in the module */
+  BoxVMCode  main_proc, /**< Main procedure in the module */
              *cur_proc; /**< Procedure on which we are working now */
   Operator   convert,   /**< Conversion operator */
              bin_ops[ASTBINOP__NUM_OPS], /**< Table of binary operators */
