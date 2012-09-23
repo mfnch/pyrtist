@@ -345,7 +345,7 @@ BoxVMCallNum BoxVMCode_Get_Call_Num(BoxVMCode *p) {
     return p->call_num;
 
   else {
-    p->call_num = BoxVM_Proc_Install_Undefined(p->cmp->vm);
+    p->call_num = BoxVM_Allocate_CallNum(p->cmp->vm);
     p->have.call_num = 1;
     return p->call_num;
   }

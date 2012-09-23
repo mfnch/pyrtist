@@ -29,39 +29,7 @@
 
 /*** call references ********************************************************/
 
-#if 0
 /* This is the function which assembles the code for the function call */
-static BoxTask My_Assemble_Call(BoxVM *vm, UInt sym_num, UInt sym_type,
-                             int defined, void *def, size_t def_size,
-                             void *ref, size_t ref_size) {
-  BoxVMCallNum call_num = 0;
-  assert(sym_type == BOXVMSYMTYPE_CALL);
-
-  if (defined && def != NULL) {
-    assert(def_size == sizeof(BoxVMCallNum));
-    call_num = *((BoxVMCallNum *) def);
-  }
-  BoxVM_Assemble_Long(vm, BOXOP_CALL_I, BOXCONTCATEG_IMM, call_num);
-  return BOXTASK_OK;
-}
-
-BoxVMSymID BoxVMSym_New_Call(BoxVM *vm) {
-  return BoxVMSym_New(vm, BOXVMSYMTYPE_CALL, sizeof(BoxVMCallNum));
-}
-
-BoxTask BoxVMSym_Def_Call(BoxVM *vm, BoxVMSymID sym_id, BoxVMCallNum call_num) {
-  return BoxVMSym_Define(vm, sym_id, & call_num);
-}
-
-BoxTask BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
-  return BoxVMSym_Code_Ref(vm, sym_id, My_Assemble_Call, NULL, 0);
-}
-
-#endif
-
-/*** call references (revised) **********************************************/
-/* This is the function which assembles the code for the function call */
-
 BoxTask My_Assemble_Call(BoxVM *vm, BoxVMSymID sym_num,
                          BoxUInt sym_type, int defined,
                          void *def, size_t def_size,
@@ -76,7 +44,7 @@ BoxVMSymID BoxVMSym_New_Call(BoxVM *vm, BoxVMCallNum call_num) {
   if (call_num != BOXVMCALLNUM_NONE)
     *cn = call_num;
   else
-    *cn = BoxVM_Proc_Install_Undefined(vm);
+    *cn = BoxVM_Allocate_CallNum(vm);
   return sym_id;
 }
 
@@ -89,9 +57,9 @@ BoxVMCallNum BoxVMSym_Get_Call_Num(BoxVM *vm, BoxVMSymID sym_id) {
 }
 
 void BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
-  BoxVMCallNum call_num = *((BoxVMCallNum *) BoxVMSym_Get_Definition(vm, sym_id));
+  BoxVMCallNum *call_num = BoxVMSym_Get_Definition(vm, sym_id);
   BoxVMSym_Ref(vm, sym_id, My_Assemble_Call, NULL, 0, BOXVMSYM_AUTO);
-  BoxVM_Assemble(vm, BOXOP_CALL_I, BOXCONTCATEG_IMM, call_num);
+  BoxVM_Assemble(vm, BOXOP_CALL_I, BOXCONTCATEG_IMM, *call_num);
 }
 
 /*** basic method registration **********************************************/
@@ -105,7 +73,7 @@ void BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id) {
 
 typedef struct {
   BoxTypeId type,
-          method;
+            method;
 } VMSymMethod;
 
 /* This is the function that registers the method, if it is known. */

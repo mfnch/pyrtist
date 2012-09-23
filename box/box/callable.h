@@ -37,6 +37,13 @@
 #  include <box/vmproc.h>
 
 /**
+ * @brief Unique identifier.
+ *
+ * This is typically a string used to identify procedures.
+ */
+typedef char BoxUid;
+
+/**
  * First (and simplest) C implementation of a BoxCallable object: takes just a
  * pointer to the parent.
  * @param parent The pointer to the parent (object over which the callable
@@ -129,6 +136,27 @@ BOXEXPORT BOXOUT BoxCallable *
 BoxCallable_Create_Undefined(BoxType *t_out, BoxType *t_in);
 
 /**
+ * @brief Set the unique identifier for the callable.
+ *
+ * @param cb The callable.
+ * @brief uid A unique identifier for @p cb.
+ * @return Whether the operation succeeded. @c BOXBOOL_FALSE is returned if
+ *   the uid has been already set.
+ */
+BOXEXPORT BoxBool
+BoxCallable_Set_Uid(BoxCallable *cb, BoxUid *uid);
+
+/**
+ * @brief Return the unique identifier associated to the given callable.
+ *
+ * @param cb The callable.
+ * @return Return the unique identifier (a #BoxUid object) for @p cb or @c NULL
+ *   if @c cb does not have a unique identifier.
+ */
+BOXEXPORT BoxUid *
+BoxCallable_Get_Uid(BoxCallable *cb);
+
+/**
  * Define a callable object from a BoxCCall1 C function.
  * @param call The C function.
  * @return BOXBOOL_TRUE on success, BOXBOOL_FALSE on failure.
@@ -164,6 +192,16 @@ BOXEXPORT BOXOUT BoxCallable *
 BoxCallable_Define_From_VM(BOXIN BoxCallable *cb,
                            BOXIN BoxPtr *context,
                            BoxVM *vm, BoxVMCallNum num);
+
+/**
+ * @brief Return whether the callable is implemented.
+ *
+ * @param cb The callable.
+ * @return Whether the callable is implemented.
+ * @note A callable is implemented when it is 
+ */
+BOXEXPORT BoxBool
+BoxCallable_Is_Implemented(BoxCallable *cb);
 
 /**
  * Return the call number for a VM callable.

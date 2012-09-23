@@ -17,12 +17,13 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file vmproc.h
+/**
+ * @file vmproc.h
  * @brief The procedure manager for the Box VM.
  *
- * Here we define the procedure manager for the Box virtual machine.
- * These functions allow to define new procedures, to install them
- * and to manipulate them in many ways.
+ * Here we define the procedure manager for the Box virtual machine. These
+ * functions allow to define new procedures, to install them and to manipulate
+ * them in many ways.
  */
 
 #ifndef _BOX_VMPROC_H
@@ -35,11 +36,17 @@
 #  include <box/vm.h>
 #  include <box/srcpos.h>
 
-/** When a procedure is created, an ID (an integer number) is assigned to it.
+/**
+ * When a procedure is created, an ID (an integer number) is assigned to it.
  * BoxVMProcID is the type of such a thing (an alias for UInt).
  */
-typedef BoxUInt BoxVMProcID;
-typedef BoxVMProcID BoxVMProcNum; /* Alias for BoxVMProcID */
+typedef unsigned int BoxVMProcID;
+
+/**
+ * Value for BoxVMProcID which indicates missing VM procedure (it can be
+ * returned by BoxVM_Proc_Get_ID(), for example).
+ */
+#define BOXVMPROCID_NONE (0)
 
 /** A particular kind of C function which can be registered and called directly
  * by the Box VM.
@@ -47,52 +54,19 @@ typedef BoxVMProcID BoxVMProcNum; /* Alias for BoxVMProcID */
  */
 typedef BoxTask (*BoxVMCCode)(BoxVMX *);
 
-/** Procedure state. */
+/**
+ * @brief Procedure implementation kind.
+ */
 typedef enum {
-  BOXVMPROC_IS_UNDEFINED, /**< Procedure not defined (nor reserved). */
-  BOXVMPROC_IS_VM_CODE,   /**< Procedure defined as VM code. */
-  BOXVMPROC_IS_C_CODE,    /**< Procedure defined as C code. */
-  BOXVMPROC_IS_RESERVED   /**< Procedure reserved, but not defined. */
+  BOXVMPROCKIND_UNDEFINED, /**< Procedure not defined (nor reserved). */
+  BOXVMPROCKIND_RESERVED,  /**< Procedure reserved, but not defined. */
+  BOXVMPROCKIND_VM_CODE,   /**< Procedure defined as VM code. */
+  BOXVMPROCKIND_FOREIGN    /**< Procedure defined as a foreign callable. */
+
+
+  ,BOXVMPROCKIND_C_CODE    /**< Procedure defined as a foreign callable. */
 } BoxVMProcState;
 
-#if 0
-/** Procedure calling conventions. */
-
-/**
- * Enumeration of possible call conventions for Box VM procedures.
- */
-typedef enum {
-  BOXCALLCONV_UNSPECIFIED, /**< Not yet specified. */
-  BOXCALLCONV_C_SIMPLE,    /**< Simple C calling convention. */
-  BOXCALLCONV_C_STD,       /**< Standard C calling convention. */
-  BOXCALLCONV_STD          /**< Standard calling convention. */
-} BoxCallConv;
-
-typedef void *BoxExcept;
-
-/**
- * Standard calling convention for procedures written in C.
- * This type defines the prototype for functions written in C which are called
- * by the Box VM. All available information is passed: the VM executor, the
- * extended pointer to the parent and to the child. NULL is returned on
- * success. An exception object is returned, otherwise.
- */
-typedef BoxExcept *(*BoxCStdCall)(BoxVMX *vmx, BoxPtr *parent, BoxPtr *child);
-
-/**
- * Simplified calling convention for procedures written in C.
- * The pointers to the parent and child data are passed as arguments and the
- * function returns either NULL (success) or an exception object.
- */
-typedef BoxExcept *(*BoxCSimpleCall)(void *parent, void *child);
-
-
-#endif
-
-/** Value for BoxVMProcID which indicates missing VM procedure
- * (it can be returned by BoxVM_Proc_Get_ID, for example).
- */
-#define BOXVMPROCID_NONE (0)
 
 /** When a procedure is installed a "call number" X is associated to it,
  * so that it can be called with "call X". BoxVMCallNum is the type for such
@@ -126,8 +100,12 @@ typedef struct {
   char *name;             /**< Symbol-name of the procedure */
   char *desc;             /**< Description of the procedure */
   union {
+#if 0
+    BoxCallable *foreign; /**< Foreign callable. */
+#else
     BoxTask (*c)(void *); /**< Pointer to the C function (can't use
                                BoxVMCCode!) */
+#endif
     BoxVMCallNum proc_id; /**< Number of the procedure which contains
                                the code */
   } code;
@@ -217,21 +195,6 @@ BoxVMCallNum BoxVM_Proc_Install_CCode(BoxVM *vm,
                                       BoxVMCCode c_proc,
                                       const char *name, const char *desc);
 
-/** Install a fake procedure and return its call number. The procedure can be
- * defined later. This is useful to get (or "allocate") a call number when
- * the exact definition of the procedure is not yet know
- */
-BoxVMCallNum BoxVM_Proc_Install_Undefined(BoxVM *vm);
-
-
-
-
-
-
-
-
-
-#if 0
 /**
  * @brief Allocate a new call number.
  *
@@ -245,7 +208,7 @@ BoxVMCallNum BoxVM_Proc_Install_Undefined(BoxVM *vm);
  * @return A new call number for @p vm.
  */
 BOXEXPORT BoxVMCallNum
-BoxVM_Allocate_Call(BoxVM *vm);
+BoxVM_Allocate_CallNum(BoxVM *vm);
 
 /**
  * @brief Whether a given call number is allocated for the specified VM.
@@ -257,6 +220,13 @@ BoxVM_Allocate_Call(BoxVM *vm);
 BOXEXPORT BoxBool 
 BoxVM_Call_Is_Allocated(BoxVM *vm, BoxVMCallNum cn);
 
+
+
+
+
+
+
+#if 0
 /**
  * @brief Define the signature for a call number.
  *
@@ -339,10 +309,10 @@ BoxVM_Get_Callable(BoxVM *vm, BoxVMCallNum cn);
 
 
 /** Return the state of the procedure with the given call number.
- * BOXVMPROC_IS_UNDEFINED is returned when no procedure with such call number
+ * BOXVMPROCKIND_UNDEFINED is returned when no procedure with such call number
  * has been ever installed. When the procedure has been installed, return its
  * state, which depends on the routine used to do the installation.
- * Example: return BOXVMPROC_IS_C_CODE if BoxVM_Proc_Install_CCode was used.
+ * Example: return BOXVMPROCKIND_C_CODE if BoxVM_Proc_Install_CCode was used.
  */
 BoxVMProcState BoxVM_Is_Installed(BoxVM *vm, BoxVMCallNum call_num);
 
@@ -358,7 +328,7 @@ void BoxVM_Proc_Get_Ptr_And_Length(BoxVM *vmp, BoxVMWord **ptr,
 /** Print as plain text the code contained inside the procedure 'proc_num'.
  * The stream out is the destination for the produced output.
  */
-Task BoxVM_Proc_Disassemble(BoxVM *vmp, FILE *out, BoxUInt proc_num);
+Task BoxVM_Proc_Disassemble(BoxVM *vmp, FILE *out, BoxVMProcID proc_num);
 
 /** This function prints information and assembly source code
  * of the procedure, whose number is 'call_num'.

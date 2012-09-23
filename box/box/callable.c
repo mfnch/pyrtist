@@ -46,15 +46,20 @@ BoxCallable_Create_Undefined(BoxType *t_out, BoxType *t_in) {
   return cb;
 }
 
-typedef void BoxUid;
-
+/* Set the unique identifier for the callable. */
 BoxBool
-BoxCallable_Set_Uuid(BoxCallable *cb, BoxUid *uid) {
+BoxCallable_Set_Uid(BoxCallable *cb, BoxUid *uid) {
   if (!(cb && !cb->uid))
     return BOXBOOL_FALSE;
 
   cb->uid = uid;
   return BOXBOOL_TRUE;
+}
+
+/* Return the unique identifier associated to the given callable. */
+BoxUid *
+BoxCallable_Get_Uid(BoxCallable *cb) {
+  return (cb) ? cb->uid : NULL;
 }
 
 /* Initialize a callable object as an undefined callable. */
@@ -161,11 +166,44 @@ BoxVMCallNum BoxVM_Get_Call_Num(BoxVM *vm, BoxCallable *cb) {
    */
   if (cb->kind == BOXCALLABLEKIND_VM && vm == cb->implem.vm_call.vm)
     return cb->implem.vm_call.call_num;
- 
 
-
-  return 0;
+  return BOXVMCALLNUM_NONE;
 }
+
+#if 0
+/* Whether the callable is implemented. */
+BoxBool
+BoxCallable_Is_Implemented(BoxCallable *cb) {
+  /* The loop below may never return, if the BoxCallable is badly formed. */
+  while (1) {
+    switch (cb->kind) {
+    case BOXCALLABLEKIND_UNDEFINED:
+      return BOXBOOL_FALSE;
+    case BOXCALLABLEKIND_C_1:
+    case BOXCALLABLEKIND_C_2:
+    case BOXCALLABLEKIND_C_3:
+    case BOXCALLABLEKIND_C_OLD:
+      return BOXBOOL_TRUE;
+    case BOXCALLABLEKIND_VM:
+      {
+        BoxVM *vm = cb->implem.vm_call.vm;
+        BoxVMCallNum call_num = cb->implem.vm_call.call_num;
+        if (BoxVM_Get_Code_Implem(vm, call_num, NULL))
+          return BOXBOOL_TRUE;
+        if (!BoxVM_Get_Callable_Implem(vm, call_num, & cb))
+          return BOXBOOL_FALSE;
+        break;
+      }
+    default:
+      return BOXBOOL_FALSE;
+    }
+  }
+
+  /* Does not return. */
+  abort();
+  return BOXBOOL_FALSE;
+}
+#endif
 
 /* Create a callable object from a BoxCCall2 C function. */
 BOXOUT BoxException *
@@ -223,13 +261,6 @@ BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
 
 
 #if 0
-BOXOUT BoxCallable *BoxCallable_Create_Undefined(BoxType *t_out, BoxType *t_in);
-
-BoxBool BoxCallable_Set_Uuid(BoxCallable *cb, BoxUuid *uuid);
-
-BoxBool BoxCallable_Define_From_CCall3(BOXIN BoxPtr *context, BoxCCall3 call);
-
-BoxBool BoxCallable_Define_From_VM(BOXIN BoxPtr *context, BoxVM *vm, BoxVMCallNum num);
 
 BoxBool BoxCallable_Register_With_VM(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num, BOXOUT BoxCallable **cb);
 

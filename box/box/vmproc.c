@@ -149,7 +149,7 @@ static BoxVMProcInstalled *My_Get_Inst_Proc_Desc(BoxVMProcTable *pt,
     BoxVMProcInstalled *procedure_inst =
       (BoxVMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, cn_in);
 
-    if (procedure_inst->type == BOXVMPROC_IS_RESERVED) {
+    if (procedure_inst->type == BOXVMPROCKIND_RESERVED) {
       *cn_out = cn_in;
       return procedure_inst;
 
@@ -182,7 +182,7 @@ BoxVMCallNum BoxVM_Proc_Install_Code(BoxVM *vm,
   BoxSrcPosTable_Compactify(& p->pos_table);
   BoxArr_Compactify(& p->code);
 
-  procedure_inst->type = BOXVMPROC_IS_VM_CODE;
+  procedure_inst->type = BOXVMPROCKIND_VM_CODE;
   procedure_inst->name = (name != NULL) ? BoxMem_Strdup(name) : NULL;
   procedure_inst->desc = (desc != NULL) ? BoxMem_Strdup(desc) : NULL;
   procedure_inst->code.proc_id = id;
@@ -199,18 +199,20 @@ BoxVMCallNum BoxVM_Proc_Install_CCode(BoxVM *vm,
     My_Get_Inst_Proc_Desc(pt, & cn, required_call_num);
 
   assert(procedure_inst);
-  procedure_inst->type = BOXVMPROC_IS_C_CODE;
+  procedure_inst->type = BOXVMPROCKIND_C_CODE;
   procedure_inst->name = (name != NULL) ? BoxMem_Strdup(name) : NULL;
   procedure_inst->desc = (desc != NULL) ? BoxMem_Strdup(desc) : NULL;
   procedure_inst->code.c = (Task (*)(void *)) c_proc;
   return cn;
 }
 
-BoxVMCallNum BoxVM_Proc_Install_Undefined(BoxVM *vm) {
+/* Allocate a new call number. */
+BoxVMCallNum
+BoxVM_Allocate_CallNum(BoxVM *vm) {
   BoxVMProcTable *pt = & vm->proc_table;
   BoxVMProcInstalled procedure_inst;
 
-  procedure_inst.type = BOXVMPROC_IS_RESERVED;
+  procedure_inst.type = BOXVMPROCKIND_RESERVED;
   procedure_inst.name = NULL;
   procedure_inst.desc = NULL;
   BoxArr_Push(& pt->installed, & procedure_inst);
@@ -225,7 +227,7 @@ BoxVMProcState BoxVM_Is_Installed(BoxVM *vm, BoxVMCallNum call_num) {
     return procedure_inst->type;
 
   } else
-    return BOXVMPROC_IS_UNDEFINED;
+    return BOXVMPROCKIND_UNDEFINED;
 }
 
 BoxVMCallNum BoxVM_Proc_Next_Call_Num(BoxVM *vm) {
@@ -234,7 +236,7 @@ BoxVMCallNum BoxVM_Proc_Next_Call_Num(BoxVM *vm) {
 
 BoxVMProcID BoxVM_Proc_Get_ID(BoxVM *vm, BoxVMCallNum call_num) {
   BoxVMProcInstalled *p = My_Get_Proc_From_Num(vm, call_num);
-  if (p->type == BOXVMPROC_IS_VM_CODE)
+  if (p->type == BOXVMPROCKIND_VM_CODE)
     return p->code.proc_id;
 
   else
@@ -269,15 +271,15 @@ Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out,
   p_name = (p->name) ? p->name : "(undef)";
   p_desc = (p->desc) ? p->desc : "(undef)";
   switch (p->type) {
-  case BOXVMPROC_IS_VM_CODE: p_type = "VM"; break;
-  case BOXVMPROC_IS_C_CODE:  p_type = "C"; break;
+  case BOXVMPROCKIND_VM_CODE: p_type = "VM"; break;
+  case BOXVMPROCKIND_C_CODE:  p_type = "C"; break;
   default: p_type = "(broken?)"; break;
   }
 
   fprintf(out, "%s procedure "SUInt"; name=%s; desc=%s\n",
           p_type, (UInt) call_num, p_name, p_desc);
 
-  if (p->type == BOXVMPROC_IS_VM_CODE) {
+  if (p->type == BOXVMPROCKIND_VM_CODE) {
     fprintf(out, "\n");
     Task t = BoxVM_Proc_Disassemble(vmp, out, p->code.proc_id);
     fprintf(out, "----------------------------------------\n");

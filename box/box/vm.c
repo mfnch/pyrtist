@@ -462,9 +462,9 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
 
   p = (BoxVMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
   switch (p->type) {
-  case BOXVMPROC_IS_C_CODE:
+  case BOXVMPROCKIND_C_CODE:
     return p->code.c(vmx);
-  case BOXVMPROC_IS_VM_CODE:
+  case BOXVMPROCKIND_VM_CODE:
     break;
   default:
     MSG_ERROR("Call into the broken procedure %d.", call_num);

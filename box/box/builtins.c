@@ -337,7 +337,7 @@ BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb,
   char *proc_name = NULL;
 
   /* We reserve the call number and associate a symbol to it */
-  call_num = BoxVM_Proc_Install_Undefined(c->vm);
+  call_num = BoxVM_Allocate_CallNum(c->vm);
   sym_num = BoxVMSym_New_Call(c->vm, call_num);
 
   /* We tell to the compiler that some procedures are associated to sym_num */
