@@ -34,7 +34,7 @@
 #  include <box/exception.h>
 #  include <box/types.h>
 #  include <box/obj.h>
-#  include <box/vmproc.h>
+#  include <box/vm.h>
 
 /**
  * @brief Unique identifier.
@@ -125,9 +125,11 @@ typedef enum {
 #define BoxCallable_Unlink(t) ((BoxCallable *) BoxSPtr_Unlink(t))
 
 /**
- * Create an undefined callable mapping an object of type @p t_in to an
- * object of type @p t_out. The object can be later defined using
- * BoxCallable_Define_From_CCall1() and friends.
+ * @brief Create an undefined callable.
+ *
+ * The callable maps an object of type @p t_in to an object of type @p t_out.
+ * The object can be later defined using BoxCallable_Define_From_CCall1() and
+ * friends.
  * @param t_out Type of the output object.
  * @param t_in Type of the input object.
  * @return A new #BoxCallable object.
@@ -189,9 +191,7 @@ BoxCallable_Create_From_CCallOld(BoxType *t_out, BoxType *t_in,
  *   machine `vm'.
  */
 BOXEXPORT BOXOUT BoxCallable *
-BoxCallable_Define_From_VM(BOXIN BoxCallable *cb,
-                           BOXIN BoxPtr *context,
-                           BoxVM *vm, BoxVMCallNum num);
+BoxCallable_Define_From_VM(BOXIN BoxCallable *cb, BoxVM *vm, BoxVMCallNum num);
 
 /**
  * @brief Return whether the callable is implemented.
@@ -214,6 +214,26 @@ BoxCallable_Is_Implemented(BoxCallable *cb);
  */
 BOXEXPORT BoxBool
 BoxCallable_Get_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *cn);
+
+/**
+ * @brief Request a call number for a given callable.
+ * Request a call number (relative to the given virtual machine @p vm) for
+ * the given callable @p cb. A new callable is returned in <tt>*cb_out</tt>
+ * which references the new call number. Note that the call number is not
+ * allocated, if a valid call number is found in @p cb. For this reason,
+ * it is important to use the value returned in @p cb_out for subsequent calls
+ * to the function (as doing so will not generate new spurious call numbers).
+ * @param cb The callable for which a call number is requested.
+ * @param vm The virtual machine the call number should refer to.
+ * @param num Pointer to the location where the call number must be returned.
+ * @param cb_out Pointer to the location where a callable referencing the
+ *   new call number should be stored.
+ * @return @c BOXBOOL_TRUE, if the function succeeded and @p num and @cb_out
+ *   were written with values, else @c BOXBOOL_FALSE.
+ */
+BOXEXPORT BoxBool
+BoxCallable_Request_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
+                               BOXOUT BoxCallable **cb_out);
 
 /**
  *

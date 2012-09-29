@@ -134,7 +134,7 @@ typedef enum {
  */
 #define BoxPtr_Add_Offset(dst, src, offset)                       \
   do {(dst)->block = (src)->block;                                \
-      (dst)->ptr = (src)->ptr + (offset);} while(0)
+      (dst)->ptr = (char *) (src)->ptr + (offset);} while(0)
 
 
 /**

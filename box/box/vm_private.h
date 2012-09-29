@@ -29,18 +29,15 @@
 #  include <stdarg.h>
 #  include <stdlib.h>
 
-/*#  include <stdint.h>
-#  include <inttypes.h>*/
-
 #  include <box/types.h>
 #  include <box/defaults.h>
 #  include <box/array.h>
 #  include <box/occupation.h>
 #  include <box/hashtable.h>
 #  include <box/vm.h>
-#  include <box/vmproc.h>
 #  include <box/vmsym.h>
 #  include <box/vmdasm.h>
+#  include <box/vmproc_priv.h>
 
 /** Here is a list of builtin types. */
 typedef enum {

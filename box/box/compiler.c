@@ -42,7 +42,8 @@
  */
 #define DONT_CACHE_CONST_VALUES 1
 
-/** Type of items which may be inserted inside the compiler stack.
+/**
+ * @brief Type of items which may be inserted inside the compiler stack.
  * @see StackItem
  */
 typedef enum {
@@ -50,12 +51,14 @@ typedef enum {
   STACKITEM_VALUE
 } StackItemType;
 
-/** Called when removing the item from the stack.
+/**
+ * @brief Called when removing the item from the stack.
  * @see StackItem
  */
 typedef void (*StackItemDestructor)(void *item);
 
-/** The compiler has a stack of values which are currently being
+/**
+ * The compiler has a stack of values which are currently being
  * processed. This structure describes one of such values.
  * We actually store a pointer to the item and an integer number, which
  * identifies the type of such item. The type introduces some redundancy
@@ -67,12 +70,13 @@ typedef struct {
   StackItemDestructor destructor;
 } StackItem;
 
-/** Here we define, once for all, a number of useful Value instances which
+/**
+ * Here we define, once for all, a number of useful Value instances which
  * are used massively in the compiler. We could just allocate and create
  * them whenever needed, but we do it here and just return new references
  * to them whenever it is needed, with the hope to improve performance.
  */
-void My_Init_Const_Values(BoxCmp *c) {
+static void My_Init_Const_Values(BoxCmp *c) {
   Value_Init(& c->value.error, & c->main_proc);
   Value_Init(& c->value.void_val, & c->main_proc);
   Value_Setup_As_Void(& c->value.void_val);
@@ -1128,30 +1132,27 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   BoxVMCode_Init(& proc_implem, c, proc_style);
 
 #ifdef NEW_WAY
-  BoxTypeCmp expand;
-  BoxType comb_node = BoxType_Find_Combination(v_parent->type, comb_type,
-                                               v_child->type, & expand);
+  BoxType *comb_node =
+    BoxType_Find_Combination(t_parent, comb_type, t_child, NULL);
+
   if (comb_node) {
     /* A procedure of this kind is already registered: we need to know if
      * it is defined or not
      */
-    BoxType *child_expansion;
     BoxCallable *cb;
-    BoxBool success, not_defined, has_name;
+    BoxBool success, is_already_implemented, has_name;
 
-    success = BoxType_Get_Combination_Info(comb_node, & child_expansion, & cb);
+    success = BoxType_Get_Combination_Info(comb_node, NULL, & cb);
     assert(success);
 
-    not_defined = BoxCallable_Can_Call(cb),
+    is_already_implemented = BoxCallable_Is_Implemented(cb),
     has_name = BoxCallable_Get_Uid(cb);
 
     /* If the procedure is not defined and has no name then we re-use
      * the previous registered one, without covering the old definition.
      */
-    if (not_defined && !has_name) {
-      BoxVMCode_Set_Sym(& proc_implem, sym_id);
-
-      BoxVMCode_Set_CallNum(...);
+    if (!is_already_implemented && !has_name) {
+      BoxVMCode_Set_Callable(& proc_implem, cb);
       do_register = 0;
     }
 
@@ -1194,7 +1195,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     BoxVMCallNum call_num = BoxVMCode_Get_Call_Num(& proc_implem);
     BoxCallable *callable =
       BoxCallable_Create_Undefined(t_parent, t_child);
-    callable = BoxCallable_Define_From_VM(callable, NULL, c->vm, call_num);
+    callable = BoxCallable_Define_From_VM(callable, c->vm, call_num);
     t_proc = BoxTS_Procedure_Define(& c->ts, t_child_old, comb_type,
                                     t_parent_old, sym_id, callable);
     Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT,
@@ -1210,6 +1211,8 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     /* Set the alternative name to make the bytecode more readable */
     if (t_proc != BOXTYPE_NONE) {
       char *alter_name = TS_Name_Get(& c->ts, t_proc);
+      assert(alter_name != NULL);
+
       BoxVMCode_Set_Alter_Name(& proc_implem, alter_name);
       BoxMem_Free(alter_name);
     }

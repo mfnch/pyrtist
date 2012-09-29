@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008-2012 by Matteo Franchin                               *
+ * Copyright (C) 2012 by Matteo Franchin                                    *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -18,51 +18,35 @@
  ****************************************************************************/
 
 /**
- * @file vmx.h
- * @brief The Virtual Machine eXecutor.
+ * @file callable_priv.h
+ * @brief Private declarations for the callable object.
  */
 
-#ifndef _BOX_VMX_H
-#  define _BOX_VMX_H
-
-#  include <stdio.h>
+#ifndef _BOX_CALLABLE_PRIV_H
+#  define _BOX_CALLABLE_PRIV_H
 
 #  include <box/types.h>
-
-/**
- * @brief A virtual machine executor.
- *
- * This is an object which can be used to execute code from a virtual machine.
- */
-typedef struct BoxVMX_struct BoxVMX;
+#  include <box/callable.h>
 
 
 /**
- * Initialize a new VM executor in the given portion of memory.
+ * @brief Implementation of @c BoxCallable.
  */
-BOXEXPORT void BoxVMX_Init(BoxVMX *vmx);
+struct BoxCallable_struct {
+  char             *uid;     /**< Unique identifier for the function. */
+  BoxCallableKind  kind;     /**< Callable internal implementation. */
+  BoxPtr           context;  /**< Pointer to callable private data. */
+  union {
+    BoxCCall1      c_call_1; /**< BoxCCall1 implementation of the callable. */
+    BoxCCall2      c_call_2; /**< BoxCCall2 implementation of the callable. */
+    BoxCCall3      c_call_3; /**< BoxCCall3 implementation of the callable. */
+    BoxCCallOld    c_old;    /**< BoxCCallOld implementation of the
+                                callable. */
+    struct {
+      BoxVM        *vm;      /**< Virtual Machine. */
+      BoxVMCallNum call_num; /**< Call number. */
+    }              vm_call;  /**< VM implementation of the callable. */
+  }                implem;   /**< Implementation data. */
+};
 
-/**
- * Finalize the given VM executor.
- */
-BOXEXPORT void BoxVMX_Finish(BoxVMX *vmx);
-
-/**
- * Get the last failure message.
- * @param vmx the VM executor.
- * @param steal if set to BOXBOOL_TRUE, steal the string (and allocation
- *   responsibility) and remove the failure message from the executor state.
- * @return A string which must be deallocated by the user iff
- *   steal == BOXBOOL_TRUE.
- */
-BOXEXPORT char *BoxVMX_Get_Fail_Msg(BoxVMX *vmx, BoxBool steal);
-
-/**
- * Set a failure message.
- * @param vmx the VM executor.
- * @param msg a string representing an error condition. If this is NULL, then
- *   the error condition for the VM executor is reset.
- */
-BOXEXPORT void BoxVMX_Set_Fail_Msg(BoxVMX *vmx, const char *msg);
-
-#endif /* _BOX_VMX_H */
+#endif /* _BOX_CALLABLE_PRIV_H */

@@ -53,14 +53,15 @@ boxinc_HEADERS = version.h defaults.h types.h oldtypes.h obj.h exception.h     \
   vmserial.h vmstore.h
 
 libboxcore0_3_la_SOURCES = types.c types.h oldtypes.h types_priv.h combs.c	\
-  combs.h obj.c obj.h exception.c exception.h callable.c callable.h core.c	\
-  core.h coremath.c coremath.h core_priv.h error.c mem.c mem.h array.c array.h	\
-  stream.c stream.h stream_private.h filestream.c occupation.c occupation.h	\
-  strutils.c print.c srcpos.c msgbase.c messages.c hashfunc.c hashfunc.h	\
-  hashtable.c hashtable.h list.c list.h container.c container.h vm.c vm.h	\
-  vmx.c vmx.h vm_private.h vmdasm.c vmdasm.h vm2txt.c vm2txt.h vmalloc.c	\
-  vmalloc.h vmserial.c vmserial.h vmstore.c vmstore.h vmexec.c vmproc.c		\
-  vmproc.h vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h str.c str.h
+  combs.h obj.c obj.h exception.c exception.h callable.c callable.h		\
+  callable_priv.h core.c core.h coremath.c coremath.h core_priv.h error.c	\
+  mem.c mem.h array.c array.h stream.c stream.h stream_private.h filestream.c	\
+  occupation.c occupation.h strutils.c print.c srcpos.c msgbase.c messages.c	\
+  hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h container.c	\
+  container.h vm.c vm.h vmx.c vmx.h vm_private.h vmdasm.c vmdasm.h vm2txt.c	\
+  vm2txt.h vmalloc.c vmalloc.h vmserial.c vmserial.h vmstore.c vmstore.h	\
+  vmexec.c vmproc.c vmproc.h vmproc_priv.h vmsym.c vmsym.h vmsymstuff.c		\
+  vmsymstuff.h str.c str.h
 
 libboxcore0_3_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32
@@ -71,10 +72,9 @@ libboxcore0_3_la_LIBADD = $(LIBLTDL)
 dist_boxpkg_DATA=core.dox
 
 # *** box compiler ***
-noinst_HEADERS = vmproc_private.h vmdasm_private.h fileutils.h registers.h  \
-  tokenizer.h macro.h parserh.h typesys.h paths.h vmcode.h ast.h cmpptrs.h \
-  value.h compiler.h operator.h namespace.h tsdesc.h builtins.h bltinstr.h  \
-  bltinio.h bltinarray.h
+noinst_HEADERS = vmdasm_private.h fileutils.h registers.h tokenizer.h macro.h	\
+  parserh.h typesys.h paths.h vmcode.h ast.h cmpptrs.h value.h compiler.h	\
+  operator.h namespace.h tsdesc.h builtins.h bltinstr.h bltinio.h bltinarray.h
 
 box_SOURCES = fileutils.c tokenizer.l macro.c parser.y registers.c typesys.c \
   paths.c main.c vmcode.c ast.c value.c compiler.c operator.c namespace.c   \

@@ -39,6 +39,7 @@
 #  include <box/vmproc.h>
 #  include <box/cmpptrs.h>
 #  include <box/srcpos.h>
+#  include <box/callable.h>
 
 /**
  * @brief The BoxVMCode object.
@@ -97,7 +98,8 @@ struct BoxVMCode_struct {
                wrote_beg  :1,  /**< BoxVMCode->beginning has been called */
                wrote_end  :1,  /**< BoxVMCode->ending has been called */
                installed  :1,  /**< The procedure was installed */
-               head       :1;  /**< Head new-instructions have been emitted */
+               head       :1,  /**< Head new-instructions have been emitted */
+               callable   :1;
   } have;
   struct {
     unsigned int
@@ -122,6 +124,9 @@ struct BoxVMCode_struct {
   BoxVMCallNum  call_num;    /**< Call number (needed to call it from ASM) */
   BoxVMRegNum   reg_parent,  /**< Register number for the parent */
                 reg_child;   /**< Register number for the child */
+
+
+  BoxCallable   *callable;
 };
 
 /**

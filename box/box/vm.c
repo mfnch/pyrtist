@@ -39,7 +39,7 @@
 #include "vm_private.h"
 #include "vmx.h"
 #include "vmsym.h"
-#include "vmproc.h"
+#include "vmproc_priv.h"
 #include "vmalloc.h"
 #include "container.h"
 
@@ -462,6 +462,8 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
 
   p = (BoxVMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
   switch (p->type) {
+  case BOXVMPROCKIND_FOREIGN:
+    
   case BOXVMPROCKIND_C_CODE:
     return p->code.c(vmx);
   case BOXVMPROCKIND_VM_CODE:

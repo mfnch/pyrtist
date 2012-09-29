@@ -17,7 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file vmexec.c
+/**
+ * @file vmexec.c
  * @brief Implementation of the Box VM instructions.
  *
  * This file contains the implementation of the Box virtual machine
@@ -123,11 +124,11 @@ static void My_Exec_Mov_OO(BoxVMX *vmx) {
   if (arg1 != arg2) {
     assert(arg1 != NULL);
     if (!BoxPtr_Is_Detached(arg1))
-      BoxVM_Unlink(vmx->vm, arg1);
+      BoxVM_Obj_Unlink(vmx->vm, arg1);
     *arg1 = *arg2;
 #if 0
     if (!BoxPtr_Is_Detached(arg2))
-      BoxVM_Link(arg2);
+      BoxVM_Obj_Link(arg2);
 #else
     BoxPtr_Detach(arg1);
 #endif
@@ -411,10 +412,10 @@ static void My_Exec_Ref_OO(BoxVMX *vmx) {
   if (arg1 != arg2) {
     assert(arg1 != NULL);
     if (!BoxPtr_Is_Detached(arg1))
-      BoxVM_Unlink(vmx->vm, arg1);
+      BoxVM_Obj_Unlink(vmx->vm, arg1);
     *arg1 = *arg2;
     if (!BoxPtr_Is_Detached(arg2))
-      BoxVM_Link(arg2);
+      BoxVM_Obj_Link(arg2);
   }
 }
 
@@ -432,7 +433,7 @@ static void My_Exec_Lea_OO(BoxVMX *vmx) {
   BoxPtr *arg1 = (BoxPtr *) vmx->arg1,
          *arg2 = (BoxPtr *) vmx->arg2;
   if (!BoxPtr_Is_Detached(arg1))
-    BoxVM_Unlink(vmx->vm, arg1);
+    BoxVM_Obj_Unlink(vmx->vm, arg1);
   arg1->block = (void *) NULL;
   arg1->ptr = arg2;
 }

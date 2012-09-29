@@ -17,13 +17,14 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file array.h
+/**
+ * @file array.h
  * @brief Array object, contiguous resizable collection of objects.
  *
- * This file implements the Array object: a collection of blocks of equal
- * specified size which are stored contiguously in memory and which
- * can be resized easily. Useful to accumulate objects whose number
- * is not known a priori and which have to be referred by index.
+ * This file implements the #BoxArr object: a resizable collection of blocks of
+ * equal size which are stored contiguously in memory and which. Useful to
+ * accumulate objects whose number is not known a priori and which have to be
+ * referred by index.
  */
 
 #ifndef _BOX_ARRAY_H
@@ -34,7 +35,9 @@
 
 typedef void (*BoxArrFinalizer)(void *);
 
-/** @brief The new array object */
+/**
+ * @brief The new array object.
+ */
 typedef struct {
   BoxErr err;          /**< Error status */
   struct {
@@ -256,8 +259,11 @@ BOXEXPORT void BoxArr_Compactify(BoxArr *arr);
 
 /** Returns the pointer to the last item stored in the array.
  */
-#define BoxArr_Last_Item_Ptr(arr) \
+#define BoxArr_Get_Last_Item_Ptr(arr) \
   ((arr)->ptr + ((arr)->numel - 1)*((UInt) (arr)->elsize))
+
+#define BoxArr_Last_Item_Ptr BoxArr_Get_Last_Item_Ptr
+
 
 /*#define BOXARR_DEBUG_MACROS*/
 

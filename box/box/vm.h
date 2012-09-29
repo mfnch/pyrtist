@@ -30,17 +30,82 @@
 #  include <stdarg.h>
 
 #  include <box/types.h>
+#  include <box/srcpos.h>
+#  include <box/vmx.h>
+
+/**
+ * When a procedure is created, an ID (an integer number) is assigned to it.
+ * #BoxVMProcID is the type of such a thing.
+ */
+typedef unsigned int BoxVMProcID;
+
+/**
+ * Value for #BoxVMProcID which indicates missing VM procedure (it can be
+ * returned by BoxVM_Proc_Get_ID(), for example).
+ */
+#define BOXVMPROCID_NONE (0)
+
+/** A particular kind of C function which can be registered and called directly
+ * by the Box VM.
+ * @see VM_Proc_Install_CCode
+ */
+typedef BoxTask (*BoxVMCCode)(BoxVMX *);
+
+/**
+ * @brief Procedure implementation kind.
+ */
+typedef enum {
+  BOXVMPROCKIND_UNDEFINED, /**< Procedure not defined (nor reserved). */
+  BOXVMPROCKIND_RESERVED,  /**< Procedure reserved, but not defined. */
+  BOXVMPROCKIND_VM_CODE,   /**< Procedure defined as VM code. */
+  BOXVMPROCKIND_FOREIGN    /**< Procedure defined as a foreign callable. */
+
+
+  ,BOXVMPROCKIND_C_CODE    /**< Procedure defined as a foreign callable. */
+} BoxVMProcKind;
+
+
+/** When a procedure is installed a "call number" X is associated to it,
+ * so that it can be called with "call X". BoxVMCallNum is the type for such
+ * a number.
+ */
+typedef BoxUInt BoxVMCallNum;
+
+/** Macro denoting invalid BoxVMCallNum. */
+#define BOXVMCALLNUM_NONE ((BoxVMCallNum) 0)
+
+/** This is the structure used to store the bytecode representation
+ * of a procedure
+ */
+typedef struct {
+  struct {
+    unsigned int   error   :1;
+    unsigned int   inhibit :1;
+  }              status;    /**< Settings controlling the assembler */
+  BoxSrcPosTable pos_table; /**< Info about the corresponding source files */
+  BoxArr         code;      /**< Array which contains effectively the code */
+} BoxVMProc;
+
+/**
+ * This structure describes an installed procedure
+ * (a procedure, whose call-number has been defined.
+ * The call number is the one used to call the procedure
+ * in the call instruction).
+ */
+typedef struct BoxVMProcInstalled_struct BoxVMProcInstalled;
+
+/**
+ * @brief The table of installed and uninstalled procedures.
+ *
+ * This structure is embedded in the main VM structure BoxVM.
+ */
+typedef struct BoxVMProcTable_struct BoxVMProcTable;
 
 /** A virtual machine object, containing the code to be executed.
  * A BoxVM object can be used to construct a VM executor, BoxVMX, which can
  * execute the code contained in the BoxVM object.
  */
 typedef struct BoxVM_struct BoxVM;
-
-/** A virtual machine executor. An object which can be used to execute
- * code from a virtual machine.
- */
-typedef struct BoxVMX_struct BoxVMX;
 
 /* Data type used to write/read binary codes for the instructions */
 typedef unsigned char BoxVMByte;
@@ -134,16 +199,23 @@ typedef void (*BoxVMOpArgsGetter)(BoxVMX *vmx);
  */
 typedef struct BoxVMInstrDesc_struct BoxVMInstrDesc;
 
-/** Allocate space for a BoxVM object and initialise it with BoxVM_Init.
- * You'll need to call BoxVM_Destroy to destroy the object.
- * @see BoxVM_Destroy, BoxVM_Init
+/**
+ * @brief Allocate space for a #BoxVM object and initialise it with
+ *   BoxVM_Init().
+ *
+ * You'll need to call BoxVM_Destroy() to destroy the object.
  */
 BOXEXPORT BoxVM *BoxVM_Create(void);
 
-/** Destroy a BoxVM object created with BoxVM_Create
- * @see BoxVM_Create
+/**
+ * @brief Destroy a #BoxVM object created with BoxVM_Create().
  */
 BOXEXPORT void BoxVM_Destroy(BoxVM *vm);
+
+/**
+ * @brief Reference a #BoxVM object, using BoxSPtr_Link().
+ */
+#define BoxVM_Link(x) (x)
 
 /** Set or unset the attributes which control the behaviour of the Box
  * virtual machine.

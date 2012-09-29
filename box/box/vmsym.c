@@ -364,8 +364,12 @@ static int Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
         return 1;
       }
       call_num = BoxVMSym_Get_Call_Num(vmp, sym_num);
-      (void) BoxVM_Proc_Install_CCode(vmp, call_num, (BoxVMCCode) sym,
-                                      sym_name, sym_name);
+      if (!BoxVM_Install_Proc_CCode(vmp, call_num, (BoxVMCCode) sym)) {
+        MSG_ERROR("Cannot install procedure for symbol '%s'", sym_name);
+        return 1;
+      }
+
+      (void) BoxVM_Set_Proc_Names(vmp, call_num, sym_name, sym_name);
       BoxVMSym_Def_Call(vmp, sym_num);
     }
   }

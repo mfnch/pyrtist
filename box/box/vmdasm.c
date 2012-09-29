@@ -25,6 +25,7 @@
 #include "container.h"
 #include "vm_private.h"
 #include "vmdasm_private.h"
+#include "vmproc_priv.h"
 
 #define DEBUG_VM_D_EVERY_ONE 0
 

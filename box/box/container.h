@@ -28,11 +28,11 @@
 #  define _BOX_CONTAINER_H
 
 #  include <box/types.h>
-#  include <box/vm.h>
-#  include <box/vmproc.h>
-#  include <box/vmsym.h>
 
-/** Enumeration of possible kinds of operands for the Box VM instructions. */
+
+/**
+ * @brief Enumeration of possible kinds of operands for Box VM instructions.
+ */
 typedef enum {
   BOXCONTCATEG_GREG = 0, /**< Global register (shared by all procedures). */
   BOXCONTCATEG_LREG = 1, /**< Local register (local to a procedure). */
@@ -40,7 +40,9 @@ typedef enum {
   BOXCONTCATEG_IMM  = 3  /**< Immediate value (integer, real, etc.) */
 } BoxContCateg;
 
-/** Enumeration of the possible types of operands. */
+/**
+ * @brief Enumeration of the possible types of operands.
+ */
 typedef enum {
   BOXCONTTYPE_CHAR  = BOXTYPE_CHAR,
   BOXCONTTYPE_INT   = BOXTYPE_INT,
@@ -51,7 +53,9 @@ typedef enum {
   BOXCONTTYPE_VOID  = BOXTYPE_VOID
 } BoxContType;
 
-typedef struct {
+typedef struct BoxCont_struct BoxCont;
+
+struct BoxCont_struct {
   BoxContCateg
               categ;          /**< Category (immediate, register, ptr, etc ) */
   BoxContType type;           /**< Type (CHAR, INT, REAL, ...) */
@@ -65,40 +69,46 @@ typedef struct {
                 is_greg :1; /**< Whether ptr_reg is a global/local register */
     }         ptr;          /**< Data necessary to identify a pointer Value */
   }          value;         /**< Union of all possible vals for a Container */
-} BoxCont;
+};
 
-/** Convert a container type character to a proper BoxType */
+/**
+ * Convert a container type character to a proper #BoxType.
+ */
 BOXEXPORT BoxContType
 BoxContType_From_Char(char type_char);
 
-/** Convert a BoxType to a container type character (inverse of function
- * BoxContType_From_Char)
+/**
+ * Convert a BoxType to a container type character (inverse of function
+ * BoxContType_From_Char())
  */
 BOXEXPORT char
 BoxContType_To_Char(BoxContType t);
 
-/** Function to rapidly set the content of a container.
+/**
+ * Function to rapidly set the content of a container.
  * The cathegory and type of the container are specified through the string
  * that the user provides, the following arguments are used to set the value
  * of the container. For example:
- *
+ * @code
  *  Cont c;
- *  Cont_Set(& c, "ic", (Char) 'a');  --> immediate character with value 'a'
- *  Cont_Set(& c, "ii", (Int) 123);   --> immediate integer with value 123
- *  Cont_Set(& c, "ir", (Real) 1.23); --> immediate real with value 1.23
- *  Cont_Set(& c, "ri", 2); --> second local integer register (ri2)
- *  Cont_Set(& c, "rr", 3); --> third local real register (rr3)
- *  Cont_Set(& c, "go", 1); --> first global object register (gro1)
- *  Cont_Set(& c, "pc", 3, 8);  --> character pointed by ro3 + 8 (c[ro3 + 8])
- *  Cont_Set(& c, "pig", 1, 8); --> integer pointed by gro3 + 8 (i[gro1 + 8])
- *
+ *  Cont_Set(& c, "ic", (Char) 'a');  //--> immediate character with value 'a'
+ *  Cont_Set(& c, "ii", (Int) 123);   //--> immediate integer with value 123
+ *  Cont_Set(& c, "ir", (Real) 1.23); //--> immediate real with value 1.23
+ *  Cont_Set(& c, "ri", 2); //--> second local integer register (ri2)
+ *  Cont_Set(& c, "rr", 3); //--> third local real register (rr3)
+ *  Cont_Set(& c, "go", 1); //--> first global object register (gro1)
+ *  Cont_Set(& c, "pc", 3, 8);  //--> character pointed by ro3 + 8 (c[ro3 + 8])
+ *  Cont_Set(& c, "pig", 1, 8); //--> integer pointed by gro3 + 8 (i[gro1 + 8])
+ * @endcode
  * Note that for pointers, a third character can be used to specify that the
  * base pointer is a global (and not a local register).
  */
 BOXEXPORT void
 BoxCont_Set(BoxCont *c, const char *cont_type, ...);
 
-/** Return the string representation of the given container */
+/**
+ * Return the string representation of the given container.
+ */
 BOXEXPORT char *
 BoxCont_To_String(const BoxCont *c);
 

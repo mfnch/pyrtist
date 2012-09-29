@@ -23,27 +23,48 @@
 #include <box/obj.h>
 #include <box/callable.h>
 #include <box/vm.h>
+#include <box/vmproc.h>
 
 #include <box/core_priv.h>
 #include <box/callable_priv.h>
 
 
+/* Initialize a callable object as an undefined callable. */
+void
+BoxCallable_Init_As_Undefined(BoxCallable *cb) {
+  cb->uid = NULL;
+  cb->kind = BOXCALLABLEKIND_UNDEFINED;
+  BoxPtr_Init(& cb->context);
+}
+
+/* Create an undefined callable */
 BOXOUT BoxCallable *
 BoxCallable_Create_Undefined(BoxType *t_out, BoxType *t_in) {
   BoxType *t_cb = BoxType_Create_Function(t_in, t_out);
   BoxCallable *cb = NULL;
   if (t_cb) {
     cb = BoxSPtr_Raw_Alloc(t_cb, sizeof(BoxCallable));
-    if (cb) {
-      cb->uid = NULL;
-      cb->kind = BOXCALLABLEKIND_UNDEFINED;
-      BoxPtr_Init(& cb->context);      
-    }
+    if (cb)
+      BoxCallable_Init_As_Undefined(cb);
 
     BoxSPtr_Unlink(t_cb);
   }
 
   return cb;
+}
+
+/* Create an undefined callable copying the type from an exising callable. */
+BOXOUT BoxCallable *
+BoxCallable_Create_Similar(BoxCallable *cb) {
+  BoxCallable *new_cb = NULL;
+  BoxType *t_cb = BoxSPtr_Get_Type(cb);
+  if (t_cb) {
+    new_cb = BoxSPtr_Raw_Alloc(t_cb, sizeof(BoxCallable));
+    if (new_cb)
+      BoxCallable_Init_As_Undefined(new_cb);
+  }
+
+  return new_cb;
 }
 
 /* Set the unique identifier for the callable. */
@@ -62,11 +83,14 @@ BoxCallable_Get_Uid(BoxCallable *cb) {
   return (cb) ? cb->uid : NULL;
 }
 
-/* Initialize a callable object as an undefined callable. */
-void BoxCallable_Init_As_Undefined(BoxCallable *cb) {
-  cb->uid = NULL;
-  cb->kind = BOXCALLABLEKIND_UNDEFINED;
-  BoxPtr_Init(& cb->context);
+/* Set the callable context (useful for creating closures). */
+void
+BoxCallable_Set_Context(BoxCallable *cb, BOXIN BoxPtr *context) {
+  (void) BoxPtr_Unlink(& cb->context);
+  if (context)
+    cb->context = *context;
+  else
+    BoxPtr_Init(& cb->context);
 }
 
 /* Initialize a callable object from a BoxCCall1 C function. */
@@ -78,7 +102,6 @@ BoxCallable_Define_From_CCall1(BOXIN BoxCallable *cb, BoxCCall1 call) {
   assert(cb->kind == BOXCALLABLEKIND_UNDEFINED);
   cb->kind = BOXCALLABLEKIND_C_1;
   cb->implem.c_call_1 = call;
-  BoxPtr_Init(& cb->context);
   return cb;
 }
 
@@ -91,7 +114,6 @@ BoxCallable_Define_From_CCall2(BOXIN BoxCallable *cb, BoxCCall2 call) {
   assert(cb->kind == BOXCALLABLEKIND_UNDEFINED);
   cb->kind = BOXCALLABLEKIND_C_2;
   cb->implem.c_call_2 = call;
-  BoxPtr_Init(& cb->context);
   return cb;
 }
 
@@ -104,30 +126,20 @@ BoxCallable_Define_From_CCallOld(BOXIN BoxCallable *cb, BoxCCallOld c_old) {
   assert(cb->kind == BOXCALLABLEKIND_UNDEFINED);
   cb->kind = BOXCALLABLEKIND_C_OLD;
   cb->implem.c_old = c_old;
-  BoxPtr_Init(& cb->context);
   return cb;
 }
 
 /* Initialize a callable object from a BoxCCall3 C function. */
-void BoxCallable_Define_From_CCall3(BoxCallable *cb, BoxCCall3 call,
-                                    BOXIN BoxPtr *context) {
+void BoxCallable_Define_From_CCall3(BoxCallable *cb, BoxCCall3 call) {
   assert(cb->kind == BOXCALLABLEKIND_UNDEFINED);
   cb->kind = BOXCALLABLEKIND_C_2;
-
-  if (context)
-    cb->context = *context;
-  else
-    BoxPtr_Init(& cb->context);
-
   cb->implem.c_call_3 = call;
 }
 
-#define BoxVM_Link(x) (x)
-
 /* Define a callable object from a BoxVM procedure. */
 BOXOUT BoxCallable *
-BoxCallable_Define_From_VM(BOXIN BoxCallable *cb, BOXIN BoxPtr *context,
-                           BoxVM *vm, BoxVMCallNum num) {
+BoxCallable_Define_From_VM(BOXIN BoxCallable *cb, BoxVM *vm,
+                           BoxVMCallNum num) {
   if (!cb)
     return NULL;
 
@@ -137,18 +149,12 @@ BoxCallable_Define_From_VM(BOXIN BoxCallable *cb, BOXIN BoxPtr *context,
   }
 
   cb->kind = BOXCALLABLEKIND_VM;
-
-  if (context)
-    cb->context = *context;
-  else
-    BoxPtr_Init(& cb->context);
-
   cb->implem.vm_call.vm = BoxVM_Link(vm);
   cb->implem.vm_call.call_num = num;
   return cb;
 }
 
-
+/* Return the call number for a VM callable. */
 BoxBool
 BoxCallable_Get_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *cn) {
   if (cb->kind == BOXCALLABLEKIND_VM && vm == cb->implem.vm_call.vm) {
@@ -160,14 +166,97 @@ BoxCallable_Get_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *cn) {
   return BOXBOOL_FALSE;
 }
 
-BoxVMCallNum BoxVM_Get_Call_Num(BoxVM *vm, BoxCallable *cb) {
-  /* If the callable represent a procedure of `vm', we just return the
-   * corresponding call number.
-   */
-  if (cb->kind == BOXCALLABLEKIND_VM && vm == cb->implem.vm_call.vm)
-    return cb->implem.vm_call.call_num;
+/* Request a call number for a given callable. */
+BoxBool
+BoxCallable_Request_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
+                               BOXOUT BoxCallable **cb_out) {
+  BoxVMCallNum new_num = BOXVMCALLNUM_NONE;
+  BoxCallable *new_cb = NULL;
 
-  return BOXVMCALLNUM_NONE;
+  switch (cb->kind) {
+  case BOXCALLABLEKIND_UNDEFINED:
+    {
+      /* Here we allocate a new VM call number and we leave it undefined.
+       * We define the undefined callable in cb and return it in cb_out.
+       */
+      new_num = BoxVM_Allocate_CallNum(vm);
+      if (new_num == BOXVMCALLNUM_NONE)
+        break;
+
+      new_cb = BoxCallable_Define_From_VM(BoxCallable_Link(cb), vm, new_num);
+      if (!new_cb)
+        break;
+
+      *num = new_num;
+      *cb_out = new_cb;
+      return BOXBOOL_TRUE;
+    }
+
+  case BOXCALLABLEKIND_C_1:
+  case BOXCALLABLEKIND_C_2:
+  case BOXCALLABLEKIND_C_3:
+  case BOXCALLABLEKIND_C_OLD:
+    {
+      /* Here we just allocate a new call number, register it so that it points
+       * to the C implementation in cb and create a new BoxCallable for the
+       * VM call. This is finally what is returned in cb_out.
+       */
+
+      /* Allocate a new call number. */
+      new_num = BoxVM_Allocate_CallNum(vm);
+      if (new_num == BOXVMCALLNUM_NONE)
+        break;
+
+      /* Create a new VM callable and define it. */
+      new_cb = BoxCallable_Create_Similar(cb);
+      if (!new_cb)
+        break;
+
+      new_cb = BoxCallable_Define_From_VM(new_cb, vm, new_num);
+      if (!new_cb)
+        break;
+
+#define BoxVM_Install_Callable(a, b, c) 0
+
+      /* Register the callable with the VM. */
+      if (!BoxVM_Install_Callable(vm, new_num, new_cb))
+        break;
+      
+      *num = new_num;
+      *cb_out = new_cb;
+      return BOXBOOL_TRUE;
+    }
+
+  case BOXCALLABLEKIND_VM:
+    {
+      /* Check whether we do already have a call number for this VM. */
+      if (vm == cb->implem.vm_call.vm) {
+        /* We do: we can return it. */
+        *num = cb->implem.vm_call.call_num;
+        *cb_out = NULL;
+        return BOXBOOL_TRUE;
+
+      } else {
+        /* We don't have a call number for the required VM. */
+
+        /* This is the case where we have more than one VM and one of them
+         * may be calling a procedure defined in the other.
+         * While we want to support this in the future, for now we just abort.
+         */
+        abort();
+      }
+    }
+    break;
+  }
+
+  /* Failure: release resources and exit. */
+  if (new_num != BOXVMCALLNUM_NONE)
+    (void) BoxVM_Deallocate_CallNum(vm, new_num);
+
+  if (!new_cb)
+    (void) BoxCallable_Unlink(new_cb);
+
+  return BOXBOOL_FALSE;
 }
 
 #if 0
@@ -258,10 +347,3 @@ BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
   return BoxException_Create();
 }
 
-
-
-#if 0
-
-BoxBool BoxCallable_Register_With_VM(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num, BOXOUT BoxCallable **cb);
-
-#endif

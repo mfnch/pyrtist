@@ -496,7 +496,7 @@ BoxTask BoxVM_Obj_Relocate(BoxVM *vm, BoxPtr *dest, BoxPtr *src,
 
       /* Deallocate the source object */
       src_head->id = 0;
-      BoxVM_Unlink(vm, src);
+      BoxVM_Obj_Unlink(vm, src);
       return BOXTASK_OK;
 
     } else {

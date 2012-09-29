@@ -125,6 +125,15 @@ BOXEXPORT BoxSPtr
 BoxSPtr_Unlink(BoxSPtr src);
 
 /**
+ * @brief Get the type of the allocated object.
+ *
+ * @param obj An object allocated with BoxSPtr_Alloc() or BoxSPtr_Raw_Alloc().
+ * @return The type of @p obj.
+ */
+BOXEXPORT BoxType *
+BoxSPtr_Get_Type(BoxSPtr obj);
+
+/**
  * Remove a reference to an object, destroying it, if unreferenced.
  * @param src Object to unreference.
  * @return BOXBOOL_TRUE if the object was unreferenced and destroyed, BOXBOOL_FALSE if the

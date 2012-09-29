@@ -25,6 +25,21 @@
 #include <box/types_priv.h>
 
 
+/**
+ * @brief Get the header from a pointer as returned by BoxObj_Alloc().
+ */
+#define MY_GET_HEADER_FROM_OBJ(obj) \
+  ((BoxObjHeader *) ((char *) (obj) - sizeof(BoxObjHeader)))
+
+/**
+ * @brief Get the object (as returned by BoxObj_Alloc()) from the header.
+ *
+ * This is the inverse of #MY_GET_HEADER_FROM_OBJ.
+ */
+#define MY_GET_OBJ_FROM_HEADER(hdr) \
+  ((void *) ((char *) (hdr) + sizeof(BoxObjHeader)))
+
+
 /* Forward references */
 static BoxBool My_Init_Obj(BoxPtr *src, BoxType *t);
 static void My_Finish_Obj(BoxPtr *src, BoxType *t);
@@ -34,7 +49,7 @@ void BoxAny_Finish(BoxAny *any)
 {
   (void) BoxPtr_Unlink(& any->ptr);
   BoxPtr_Init(& any->ptr);
-  //TODO: unlink type as well!
+  /*TODO: unlink type as well!*/
   any->type = NULL;
 }
 
@@ -233,7 +248,7 @@ static void My_Finish_Obj(BoxPtr *src, BoxType *t) {
 /* Add a reference to an object and return it. */
 BoxSPtr BoxSPtr_Link(BoxSPtr src) {
   if (src) {
-    BoxObjHeader *head = src - sizeof(BoxObjHeader);
+    BoxObjHeader *head = MY_GET_HEADER_FROM_OBJ(src);
     assert(head->num_refs > 0);
     head->num_refs++;
     return src;
@@ -245,7 +260,7 @@ BoxSPtr BoxSPtr_Link(BoxSPtr src) {
  * operations before object destruction.
  */
 BoxBool BoxSPtr_Unlink_Begin(BoxSPtr src) {
-  BoxObjHeader *head = src - sizeof(BoxObjHeader);
+  BoxObjHeader *head = MY_GET_HEADER_FROM_OBJ(src);
   BoxSPtr ret;
 
   if (head->num_refs == 1)
@@ -279,7 +294,7 @@ BoxBool BoxPtr_Unlink(BoxPtr *src) {
 
     /* Destroy the containing object. */
     src_container.block = src->block;
-    src_container.ptr = src->block + sizeof(BoxObjHeader);
+    src_container.ptr = MY_GET_OBJ_FROM_HEADER(src);
     My_Finish_Obj(& src_container, head->type);
 
     if (head->type)
@@ -287,6 +302,14 @@ BoxBool BoxPtr_Unlink(BoxPtr *src) {
     BoxMem_Free(head);
     return BOXBOOL_FALSE;
   }
+}
+
+/* Get the type of the allocated object. */
+BoxType *
+BoxSPtr_Get_Type(BoxSPtr obj) {
+  BoxObjHeader *head = MY_GET_HEADER_FROM_OBJ(obj);
+  assert(head->num_refs >= 1);
+  return head->type;
 }
 
 /* Remove a reference to an object, destroying it, if unreferenced. */
@@ -315,7 +338,7 @@ BOXOUT BoxSPtr BoxSPtr_Raw_Alloc(BoxType *t, size_t obj_size) {
     void *whole = Box_Mem_Alloc(total_size);
     if (whole) {
       BoxObjHeader *head = whole;
-      void *ptr = (char *) whole + sizeof(BoxObjHeader);
+      void *ptr = MY_GET_OBJ_FROM_HEADER(whole);
       head->num_refs = 1;
       head->type = (t) ? BoxSPtr_Link(t) : NULL;
       return ptr;

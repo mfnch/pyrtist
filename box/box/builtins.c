@@ -320,8 +320,16 @@ BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
   BoxVMCallNum call_num;
 
   /* We finally install the code (a C function) for the procedure */
-  call_num = BoxVM_Proc_Install_CCode(c->vm, BOXVMPROCID_NONE, c_fn,
-                                      (char *) NULL, proc_name);
+  call_num = BoxVM_Allocate_CallNum(c->vm);
+  if (call_num == BOXVMCALLNUM_NONE)
+    return BOXVMSYMID_NONE;
+
+  if (!BoxVM_Install_Proc_CCode(c->vm, call_num, c_fn)) {
+    (void) BoxVM_Deallocate_CallNum(c->vm, call_num);
+    return BOXVMSYMID_NONE;
+  }
+
+  (void) BoxVM_Set_Proc_Names(c->vm, call_num, NULL, proc_name);
 
   /* We create the symbol associated with this name and define it */
   sym_num = BoxVMSym_New_Call(c->vm, call_num);
@@ -344,14 +352,16 @@ BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb,
   BoxType *child_new = BoxType_From_Id(& c->ts, child),
           *parent_new = BoxType_From_Id(& c->ts, parent);
   BoxCallable *callable = BoxCallable_Create_Undefined(parent_new, child_new);
-  callable = BoxCallable_Define_From_VM(callable, NULL, c->vm, call_num);
+  callable = BoxCallable_Define_From_VM(callable, c->vm, call_num);
   new_proc = BoxTS_Procedure_Define(& c->ts, child, comb, parent, sym_num,
                                     callable);
   proc_name = TS_Name_Get(& c->ts, new_proc);
 
   /* We finally install the code (a C function) for the procedure */
-  (void) BoxVM_Proc_Install_CCode(c->vm, call_num, c_fn,
-                                  (char *) NULL, proc_name);
+  if (!BoxVM_Install_Proc_CCode(c->vm, call_num, c_fn))
+    MSG_FATAL("Cannot install C code in VM");
+
+  (void) BoxVM_Set_Proc_Names(c->vm, call_num, NULL, proc_name);
   BoxMem_Free(proc_name);
 
   /* Mark the symbol as defined */
