@@ -153,7 +153,6 @@ My_Get_Inst_Proc_Desc(BoxVMProcTable *pt, BoxVMCallNum cn,
       return BOXBOOL_FALSE;
         
     *inst_proc = (BoxVMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, cn);
-
     return ((*inst_proc)->type == BOXVMPROCKIND_RESERVED);
 
   } else
@@ -192,6 +191,22 @@ BoxVM_Install_Proc_CCode(BoxVM *vm, BoxVMCallNum call_num, BoxVMCCode c_proc) {
   procedure_inst->name = NULL;
   procedure_inst->desc = NULL;
   procedure_inst->code.c = (Task (*)(void *)) c_proc;
+  return BOXBOOL_TRUE;
+}
+
+/* Installs the given callable as a new procedure. */
+BoxBool
+BoxVM_Install_Proc_Callable(BoxVM *vm, BoxVMCallNum cn, BoxCallable *cb) {
+  BoxVMProcTable *pt = & vm->proc_table;
+  BoxVMProcInstalled *procedure_inst;
+
+  if (!My_Get_Inst_Proc_Desc(pt, cn, & procedure_inst))
+    return BOXBOOL_FALSE;
+
+  procedure_inst->type = BOXVMPROCKIND_FOREIGN;
+  procedure_inst->name = NULL;
+  procedure_inst->desc = NULL;
+  procedure_inst->code.foreign = BoxCallable_Link(cb);
   return BOXBOOL_TRUE;
 }
 

@@ -919,7 +919,7 @@ BoxTS_Procedure_Define(BoxTS *ts, BoxTypeId child_old, BoxCombType ct,
 
   assert(child_new && parent_new);
 
-  BoxBool result = BoxType_Define_Combination(parent_new, ct, child_new, cb);
+  BoxType *result = BoxType_Define_Combination(parent_new, ct, child_new, cb);
   assert(result);
 
   return p;

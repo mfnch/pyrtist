@@ -216,10 +216,8 @@ BoxCallable_Request_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
       if (!new_cb)
         break;
 
-#define BoxVM_Install_Callable(a, b, c) 0
-
       /* Register the callable with the VM. */
-      if (!BoxVM_Install_Callable(vm, new_num, new_cb))
+      if (!BoxVM_Install_Proc_Callable(vm, new_num, new_cb))
         break;
       
       *num = new_num;

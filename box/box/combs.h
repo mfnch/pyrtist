@@ -33,9 +33,18 @@
 #  include <box/callable.h>
 
 /**
- * Define a combination 'child'@'parent' and associate an action to it.
+ * @brief Define a combination and associate a callable to it.
+ *
+ * Define the combination of the given type between the child @p child and the
+ * parent @parent. The given callable is associated to the combination and the
+ * combination node is returned.
+ * @param parent The parent type.
+ * @param type The type of combination.
+ * @param child The child type.
+ * @param callable The callable to be associated to the combination.
+ * @return The combination node, if the operation succeed else MNUL
  */
-BOXEXPORT BoxBool
+BOXEXPORT BoxType *
 BoxType_Define_Combination(BoxType *parent, BoxCombType type, BoxType *child,
                            BoxCallable *callable);
 
@@ -97,8 +106,9 @@ BoxType_Find_Combination_With_Id(BoxType *parent, BoxCombType type,
 BOXEXPORT BoxBool
 BoxType_Get_Combination_Info(BoxType *comb, BoxType **child, BoxCallable **cb);
 
-#if 0
 /**
+ * @brief Generate a call number for calling a combination from bytecode.
+ *
  * Generate a call number for calling the combination @p comb from the virtual
  * machine @p vm. If the operation succeed, the function returns
  * @c BOXBOOL_TRUE and the call number is stored in <tt>*call_num</tt>.
@@ -112,7 +122,5 @@ BoxType_Get_Combination_Info(BoxType *comb, BoxType **child, BoxCallable **cb);
 BOXEXPORT BoxBool
 BoxType_Generate_Combination_CallNum(BoxType *comb, BoxVM *vm,
                                      BoxVMCallNum *call_num);
-
-#endif
 
 #endif /* _BOX_COMBS_H */

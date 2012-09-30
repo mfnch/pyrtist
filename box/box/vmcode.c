@@ -366,7 +366,8 @@ BoxVMCallNum BoxVMCode_Get_Call_Num(BoxVMCode *p) {
 
 BoxVMCallNum BoxVMCode_Install(BoxVMCode *p) {
   if (p->style == BOXVMCODESTYLE_EXTERN) {
-    MSG_FATAL("BoxVMCode_Install: Case BOXVMCODESTYLE_EXTERN not implemented!");
+    MSG_FATAL("BoxVMCode_Install: Case BOXVMCODESTYLE_EXTERN "
+              "not implemented!");
     return BOXVMCALLNUM_NONE;
 
   } else if (!p->have.installed) {

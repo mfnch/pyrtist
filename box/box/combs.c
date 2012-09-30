@@ -40,8 +40,8 @@ BoxBool BoxType_Get_Combinations(BoxType *t, BoxTypeIter *iter) {
   return BOXBOOL_FALSE;
 }
 
-/* Define a combination 'child'@'parent' and associate an action to it. */
-BoxBool
+/* Define a combination 'child'@'parent' and associate a callable to it. */
+BoxType *
 BoxType_Define_Combination(BoxType *parent, BoxCombType comb_type,
                            BoxType *child, BOXIN BoxCallable *callable) {
   BoxType *comb_node;
@@ -59,7 +59,7 @@ BoxType_Define_Combination(BoxType *parent, BoxCombType comb_type,
   } else {
     BoxSPtr_Unlink(callable);
     MSG_FATAL("Parent is not an identifier type (%d).", parent->type_class);
-    return BOXBOOL_FALSE;
+    return NULL;
   }
 
   /* Create the node. */
@@ -68,7 +68,7 @@ BoxType_Define_Combination(BoxType *parent, BoxCombType comb_type,
   cn->child = BoxType_Link(child);
   cn->callable = callable;
   BoxTypeNode_Prepend_Node(node, comb_node);
-  return BOXBOOL_TRUE;
+  return comb_node;
 }
 
 /* Find the non-inherited procedure 'left'@'right'. */
@@ -152,5 +152,29 @@ BoxType_Get_Combination_Info(BoxType *comb, BoxType **child,
       *callable = td->callable;
     return BOXBOOL_TRUE;
   }
+
+  return BOXBOOL_FALSE;
+}
+
+/* Generate a call number for calling a combination from bytecode. */
+BoxBool
+BoxType_Generate_Combination_CallNum(BoxType *comb, BoxVM *vm,
+                                     BoxVMCallNum *cn) {
+  if (comb->type_class == BOXTYPECLASS_COMB_NODE) {
+    BoxTypeCombNode *td = BoxType_Get_Data(comb);
+    BoxVMCallNum cn;
+    BoxCallable *new_cb;
+
+    if (!BoxCallable_Request_VM_CallNum(td->callable, vm, cn, & new_cb)) {
+      /* Substitute the callable, if necessary. */
+      if (new_cb) {
+        BoxCallable_Unlink(td->callable);
+        td->callable = new_cb;
+      }
+
+      return BOXBOOL_TRUE;
+    }
+  }
+
   return BOXBOOL_FALSE;
 }

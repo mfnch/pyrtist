@@ -123,6 +123,8 @@ BOXEXPORT BoxBool
 BoxVM_Install_Proc_Code(BoxVM *vm, BoxVMCallNum call_num, BoxVMProcID id);
 
 /**
+ * @brief Installs the given C function as a new procedure.
+ *
  * Similar to BoxVM_Install_Proc_Code(), but installs the given C-function
  * @p c_proc as a new procedure. The call-number is returned in
  *   <tt>*call_num</tt>.
@@ -136,13 +138,14 @@ BOXEXPORT BoxBool
 BoxVM_Install_Proc_CCode(BoxVM *vm, BoxVMCallNum cn, BoxVMCCode c_proc);
 
 /**
- * Similar to BoxVM_Install_Proc_Code(), but installs the given C-function
- * @p c_proc as a new procedure. The call-number is returned in
- *   <tt>*call_num</tt>.
+ * @brief Installs the given callable as a new procedure.
+ *
+ * Similar to BoxVM_Install_Proc_Code(), but installs the given callable
+ * @p cb as a new procedure. The call-number is returned in <tt>*call_num</tt>.
  * @param vm The virtual machine.
  * @param cn The call number used for installing the code. This is the number
  *   which can be used to call the procedure from bytecode.
- * @param c_proc The implementation of the procedure in C.
+ * @param cb A callable object.
  * @return Whether the operation was successful.
  */
 BOXEXPORT BoxBool

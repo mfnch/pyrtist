@@ -204,7 +204,8 @@ BOXEXPORT BoxBool
 BoxCallable_Is_Implemented(BoxCallable *cb);
 
 /**
- * Return the call number for a VM callable.
+ * @brief Return the call number for a VM callable.
+ *
  * @param cb The input callable.
  * @param vm The VM to which the call number refers to.
  * @param cn Where to store the call number.
@@ -217,6 +218,7 @@ BoxCallable_Get_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *cn);
 
 /**
  * @brief Request a call number for a given callable.
+ *
  * Request a call number (relative to the given virtual machine @p vm) for
  * the given callable @p cb. A new callable is returned in <tt>*cb_out</tt>
  * which references the new call number. Note that the call number is not
@@ -228,7 +230,7 @@ BoxCallable_Get_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *cn);
  * @param num Pointer to the location where the call number must be returned.
  * @param cb_out Pointer to the location where a callable referencing the
  *   new call number should be stored.
- * @return @c BOXBOOL_TRUE, if the function succeeded and @p num and @cb_out
+ * @return @c BOXBOOL_TRUE, if the function succeeded and @p num and @p cb_out
  *   were written with values, else @c BOXBOOL_FALSE.
  */
 BOXEXPORT BoxBool
