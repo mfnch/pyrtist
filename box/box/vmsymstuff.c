@@ -119,7 +119,7 @@ static BoxTask Assemble_Jmp(BoxVM *vmp, UInt sym_num, UInt sym_type,
 
   assert(sym_type == BOXVMSYMTYPE_COND_JMP);
   assert(ref_size == sizeof(VMSymLabelRef));
-  assert(ref != NULL);
+  assert(ref);
 
   if (defined && def != NULL) {
     Int def_position, ref_position;

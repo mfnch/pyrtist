@@ -40,35 +40,64 @@ BoxBool BoxType_Get_Combinations(BoxType *t, BoxTypeIter *iter) {
   return BOXBOOL_FALSE;
 }
 
+/**
+ * @brief Utility function to retrieve the combinations for a type.
+ *
+ * @param parent The parent type whose combinations are to be obtained.
+ * @return A #BoxTypeNode object representing the linked list of combinations
+ *   for the parent type @p parent.
+ */
+static BoxTypeNode *
+My_Get_Combs(BoxType *parent) {
+  if (parent->type_class == BOXTYPECLASS_IDENT) {
+    BoxTypeIdent *td = BoxType_Get_Data(parent);
+    return & td->combs.node;
+
+  } else if (parent->type_class == BOXTYPECLASS_SUBTYPE_NODE) {
+    BoxTypeSubtypeNode *td = BoxType_Get_Data(parent);
+    return & td->combs.node;
+
+  } else
+    return NULL;
+}
+
 /* Define a combination 'child'@'parent' and associate a callable to it. */
 BoxType *
 BoxType_Define_Combination(BoxType *parent, BoxCombType comb_type,
                            BoxType *child, BOXIN BoxCallable *callable) {
-  BoxType *comb_node;
+  BoxType *comb;
   BoxTypeCombNode *cn;
-  BoxTypeNode *node;
+  BoxTypeNode *combs_of_parent = My_Get_Combs(parent);
 
-  if (parent->type_class == BOXTYPECLASS_IDENT) {
-    BoxTypeIdent *td = BoxType_Get_Data(parent);
-    node = & td->combs.node;
-
-  } else if (parent->type_class == BOXTYPECLASS_SUBTYPE_NODE) {
-    BoxTypeSubtypeNode *td = BoxType_Get_Data(parent);
-    node = & td->combs.node;
-
-  } else {
+  if (!combs_of_parent) {
     BoxSPtr_Unlink(callable);
     MSG_FATAL("Parent is not an identifier type (%d).", parent->type_class);
     return NULL;
   }
 
   /* Create the node. */
-  cn = BoxType_Alloc(& comb_node, BOXTYPECLASS_COMB_NODE);
+  cn = BoxType_Alloc(& comb, BOXTYPECLASS_COMB_NODE);
   cn->comb_type = comb_type;
   cn->child = BoxType_Link(child);
   cn->callable = callable;
-  BoxTypeNode_Prepend_Node(node, comb_node);
-  return comb_node;
+  BoxTypeNode_Prepend_Node(combs_of_parent, comb);
+  return comb;
+}
+
+/* Undefine the given combination. */
+void
+BoxType_Undefine_Combination(BoxType *parent, BoxType *comb) {
+  BoxTypeNode *combs_of_parent = My_Get_Combs(parent);
+
+  if (!combs_of_parent) {
+    MSG_FATAL("Object does not have combinations (type=%d).",
+              (int) parent->type_class);
+    return;
+  }
+
+  /* Create the node. */
+  (void) BoxTypeNode_Remove_Node(combs_of_parent, comb);
+  (void) BoxType_Unlink(comb);
 }
 
 /* Find the non-inherited procedure 'left'@'right'. */
@@ -162,13 +191,12 @@ BoxType_Generate_Combination_CallNum(BoxType *comb, BoxVM *vm,
                                      BoxVMCallNum *cn) {
   if (comb->type_class == BOXTYPECLASS_COMB_NODE) {
     BoxTypeCombNode *td = BoxType_Get_Data(comb);
-    BoxVMCallNum cn;
     BoxCallable *new_cb;
 
     if (!BoxCallable_Request_VM_CallNum(td->callable, vm, cn, & new_cb)) {
       /* Substitute the callable, if necessary. */
       if (new_cb) {
-        BoxCallable_Unlink(td->callable);
+        (void) BoxCallable_Unlink(td->callable);
         td->callable = new_cb;
       }
 

@@ -324,6 +324,42 @@ void BoxTypeNode_Prepend_Node(BoxTypeNode *top_node, BoxType *item) {
   top_node->next = item;
 }
 
+/* Remove a BoxTypeNode from a top BoxTypeNode item. This is kind-of the
+ * inverse of BoxTypeNode_Prepend_Node().
+ */
+BoxTypeNode *
+BoxTypeNode_Remove_Node(BoxTypeNode *top_node, BoxType *this) {
+  BoxTypeNode *this_node = MyType_Get_Node(this);
+  assert(top_node && this_node);
+
+  if (this_node->next) {
+    /* This node is not the last: it has a next node. */
+    BoxTypeNode *next_node = MyType_Get_Node(this_node->next);
+    assert(next_node);
+    next_node->previous = this_node->previous;
+
+  } else {
+    /* This node is the last of the chain: update the top node. */
+    assert(top_node->previous == this);
+    top_node->previous = this_node->previous;
+  }
+
+  if (this_node->previous) {
+    /* This node is not the first: it has a previous node. */
+    BoxTypeNode *previous_node = MyType_Get_Node(this_node->previous);
+    assert(previous_node);
+    previous_node->next = this_node->next;
+
+  } else {
+    /* This node is the first in the chain: update the top node. */
+    assert(top_node->next == this);
+    top_node->next = this_node->next;
+  }
+  
+  this_node->previous = this_node->next = NULL;
+  return this_node;
+}
+
 /* Create a new primary type with the given id, size and alignment. */
 BoxType *BoxType_Create_Primary(BoxTypeId id, size_t size, size_t alignment) {
   BoxType *t;

@@ -257,6 +257,19 @@ void BoxTypeNode_Append_Node(BoxTypeNode *node, BoxType *item);
  * to BoxTypeNode_Append_Node, but the item is inserted at the other end of
  * the linked list.
  */
-void BoxTypeNode_Prepend_Node(BoxTypeNode *node, BoxType *item);
+void
+BoxTypeNode_Prepend_Node(BoxTypeNode *node, BoxType *item);
+
+/**
+ * @brief Remove a #BoxTypeNode from a top #BoxTypeNode item.
+ *
+ * @param top_node The top node, identifying the linked list to which @p this
+ *   belongs to.
+ * @param this The item to remove from the linked list.
+ * @return The removed node. This may be destroyed or inserted into another
+ *   linked list.
+ */
+BoxTypeNode *
+BoxTypeNode_Remove_Node(BoxTypeNode *top_node, BoxType *this);
 
 #endif /* _BOX_TYPES_PRIV_H */
