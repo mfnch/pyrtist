@@ -193,7 +193,7 @@ BoxType_Generate_Combination_CallNum(BoxType *comb, BoxVM *vm,
     BoxTypeCombNode *td = BoxType_Get_Data(comb);
     BoxCallable *new_cb;
 
-    if (!BoxCallable_Request_VM_CallNum(td->callable, vm, cn, & new_cb)) {
+    if (BoxCallable_Request_VM_CallNum(td->callable, vm, cn, & new_cb)) {
       /* Substitute the callable, if necessary. */
       if (new_cb) {
         (void) BoxCallable_Unlink(td->callable);

@@ -354,7 +354,27 @@ BoxType_Add_Member_To_Enum(BoxType *member, const char *member_name);
  * @return A new type corresponding to the specified function.
  */
 BOXEXPORT BOXOUT BoxType *
-BoxType_Create_Function(BoxType *parent, BoxType *child);
+BoxType_Create_Callable(BoxType *parent, BoxType *child);
+
+/**
+ * @brief Get the parent of a callable type.
+ *
+ * @param callable The callable type.
+ * @return Return the callable parent type.
+ * @note If @p callable is @c NULL, then @c NULL is returned.
+ */
+BOXEXPORT BoxType *
+BoxType_Get_Callable_Parent(BoxType *callable);
+
+/**
+ * @brief Get the child of a callable type.
+ *
+ * @param callable The callable type.
+ * @return Return the callable child type.
+ * @note If @p callable is @c NULL, then @c NULL is returned.
+ */
+BOXEXPORT BoxType *
+BoxType_Get_Callable_Child(BoxType *callable);
 
 /**
  * Create a new pointer type to 'source'.

@@ -152,28 +152,47 @@ BOXEXPORT BoxBool
 BoxVM_Install_Proc_Callable(BoxVM *vm, BoxVMCallNum cn, BoxCallable *cb);
 
 /**
+ * @brief Set the names for an installed procedure.
+ *
+ * @param vm The virtual machine.
+ * @param cn The call number @p name and @p desc refer to.
+ * @param name The name of the procedure.
+ * @param desc The description of the procedure.
+ * @return Whether the operation was successful.
  */
 BOXEXPORT BoxBool
 BoxVM_Set_Proc_Names(BoxVM *vm, BoxVMCallNum cn,
                      const char *name, const char *desc);
 
 /**
- * @brief Whether a given call number is allocated for the specified VM.
+ * @brief Return the procedure kind for the given call number.
  *
- * @param vm The virtual machines the call number refers to.
- * @param cn The call number.
- * @return Whether @p cb is allocated.
+ * @param vm The virtual machine to which @p cn refers to.
+ * @param cn The call number for the queried procedure.
+ * @return If the procedure is installed (with BoxVM_Install_Proc_CCode()
+ *   or friends) then return a #BoxVMProcKind corresponding to the procedure
+ *   kind, otherwise return @c BOXVMPROCKIND_UNDEFINED.
+ */
+BOXEXPORT BoxVMProcKind
+BoxVM_Get_Proc_Kind(BoxVM *vm, BoxVMCallNum cn);
+
+/**
+ * @brief Get the callable associated to a foreign procedure.
  */
 BOXEXPORT BoxBool 
-BoxVM_Call_Is_Allocated(BoxVM *vm, BoxVMCallNum cn);
-
-
-
+BoxVM_Get_Callable_Implem(BoxVM *vm, BoxVMCallNum cn, BoxCallable **code);
 
 
 
 
 #if 0
+/**
+ * @brief Get 
+ */
+BOXEXPORT BoxBool
+BoxVM_Get_Code_Implem(BoxVM *vm, BoxVMCallNum cn, BoxCode **code);
+
+
 /**
  * @brief Define the signature for a call number.
  *
@@ -225,16 +244,6 @@ BoxVM_Implement_Call_From_Callable(BoxVM *vm, BoxVMCallNum cn,
                                    BoxCallable *cb);
 
 /**
- */
-BOXEXPORT BoxBool
-BoxVM_Get_Code_Implem(BoxVM *vm, BoxVMCallNum cn, BoxCode **code);
-
-/**
- */
-BOXEXPORT BoxBool 
-BoxVM_Get_Callable_Implem(BoxVM *vm, BoxVMCallNum cn, BoxCallable **code);
-
-/**
  * @brief Get the callable corresponding to a given call number.
  *
  * @param vm VM the call number @p cb refers to.
@@ -255,13 +264,9 @@ BoxVM_Get_Callable(BoxVM *vm, BoxVMCallNum cn);
 
 
 
-/** Return the state of the procedure with the given call number.
- * BOXVMPROCKIND_UNDEFINED is returned when no procedure with such call number
- * has been ever installed. When the procedure has been installed, return its
- * state, which depends on the routine used to do the installation.
- * Example: return BOXVMPROCKIND_C_CODE if BoxVM_Proc_Install_CCode was used.
- */
-BoxVMProcKind BoxVM_Is_Installed(BoxVM *vm, BoxVMCallNum call_num);
+
+
+
 
 /** Get the pointer to the bytecode of the procedure 'proc_num' and its
  * length, expressed as number of BoxVMWord elements.

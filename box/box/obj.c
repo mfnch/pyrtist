@@ -307,9 +307,12 @@ BoxBool BoxPtr_Unlink(BoxPtr *src) {
 /* Get the type of the allocated object. */
 BoxType *
 BoxSPtr_Get_Type(BoxSPtr obj) {
-  BoxObjHeader *head = MY_GET_HEADER_FROM_OBJ(obj);
-  assert(head->num_refs >= 1);
-  return head->type;
+  if (obj) {
+    BoxObjHeader *head = MY_GET_HEADER_FROM_OBJ(obj);
+    assert(head->num_refs >= 1);
+    return head->type;
+  } else
+    return NULL;
 }
 
 /* Remove a reference to an object, destroying it, if unreferenced. */

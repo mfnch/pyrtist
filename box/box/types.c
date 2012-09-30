@@ -579,7 +579,7 @@ BoxType *BoxType_Get_Species_Target(BoxType *species) {
 
 /* Create a new function type. */
 BOXOUT BoxType *
-BoxType_Create_Function(BoxType *parent, BoxType *child) {
+BoxType_Create_Callable(BoxType *parent, BoxType *child) {
   BoxType *t;
   BoxTypeFunction *td = BoxType_Alloc(& t, BOXTYPECLASS_FUNCTION);
   /* A function ``Fn = In -> Out'' does only weak-reference ``In'' and ``Out''.
@@ -593,6 +593,26 @@ BoxType_Create_Function(BoxType *parent, BoxType *child) {
   td->child = BoxType_Link(child);
   td->parent = BoxType_Link(parent);
   return t;
+}
+
+/* Get the parent of a callable type. */
+BoxType *
+BoxType_Get_Callable_Parent(BoxType *callable) {
+  if (callable && callable->type_class == BOXTYPECLASS_FUNCTION) {
+    BoxTypeFunction *td = BoxType_Get_Data(callable);
+    return td->parent;
+  }
+  return NULL;
+}
+
+/* Get the child of a callable type. */
+BoxType *
+BoxType_Get_Callable_Child(BoxType *callable) {
+  if (callable && callable->type_class == BOXTYPECLASS_FUNCTION) {
+    BoxTypeFunction *td = BoxType_Get_Data(callable);
+    return td->child;
+  }
+  return NULL;
 }
 
 /* Create a new pointer type. */
@@ -1108,8 +1128,29 @@ char *BoxType_Get_Repr(BoxType *t) {
   case BOXTYPECLASS_STRUCTURE_NODE:
   case BOXTYPECLASS_SPECIES_NODE:
   case BOXTYPECLASS_ENUM_NODE:
-  case BOXTYPECLASS_COMB_NODE:
     return Box_Mem_Strdup("<invalid>");
+
+  case BOXTYPECLASS_COMB_NODE:
+    {
+      BoxType *parent;
+      BoxTypeCombNode *td = BoxType_Get_Data(t);
+      const char *callable_type_repr = NULL;
+
+      switch (td->comb_type) {
+      case BOXCOMBTYPE_AT:
+        callable_type_repr = "@";
+        break;
+      case BOXCOMBTYPE_COPY:
+        callable_type_repr = "(=)";
+        break;
+      default:
+        return Box_Mem_Strdup("<invalid-combination>");
+      }
+
+      parent = BoxType_Get_Callable_Parent(BoxSPtr_Get_Type(td->callable));
+      return Box_SPrintF("%~s%s%~s", BoxType_Get_Repr(td->child),
+                         callable_type_repr, BoxType_Get_Repr(parent));
+    }
 
   case BOXTYPECLASS_SUBTYPE_NODE:
     {

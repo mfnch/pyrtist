@@ -1075,6 +1075,190 @@ static void My_Compile_SelfGet(BoxCmp *c, ASTNode *n) {
   BoxCmp_Push_Value(c, v_self);
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if 1
+
+
+static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
+  Value *v_child, *v_parent, *v_ret = NULL;
+  BoxCombType comb_type;
+  ASTNode *n_c_name = n->attr.proc_def.c_name,
+          *n_implem = n->attr.proc_def.implem;
+  char *c_name = NULL;
+  int no_err;
+
+  assert(n->type == ASTNODETYPE_PROCDEF);
+
+  /* first, get the type of child and parent */
+  My_Compile_Any(c, n->attr.proc_def.child_type);
+  v_child = BoxCmp_Pop_Value(c);
+  My_Compile_Any(c, n->attr.proc_def.parent_type);
+  v_parent = BoxCmp_Pop_Value(c);
+  comb_type = n->attr.proc_def.combine;
+
+  no_err = Value_Want_Has_Type(v_child) & Value_Want_Has_Type(v_parent);
+  BoxType *t_child = v_child->type;
+  BoxType *t_parent = v_parent->type;
+
+  Value_Unlink(v_child);
+  Value_Unlink(v_parent);
+
+  /* now get the C-name, if present */
+  if (n_c_name != NULL) {
+    assert(n_c_name->type == ASTNODETYPE_STRING);
+    c_name = n_c_name->attr.string.str;
+    if (strlen(c_name) < 1) {
+      /* NOTE: Should we test any other kind of "badness"? */
+      MSG_ERROR("Empty string in C-name for procedure declaration.");
+      no_err = 0;
+    }
+  }
+
+  /* Now let's find whether a procedure of this kind is already registered */
+  if (!no_err) {
+    /* For now we cowardly refuse to examine the body of the procedure
+     * and immediately exit pushing an error.
+     */
+    BoxCmp_Push_Value(c, v_ret);
+    return;
+  }
+
+  /* Try to find the combination, if already defined. */
+  BoxType *comb;
+  BoxCallable *comb_callable = NULL;
+
+  comb = BoxType_Find_Combination(t_parent, comb_type, t_child, NULL);
+  if (comb) {
+    /* A combination of this kind is already defined: we need to know if
+     * it is implemented or not.
+     */
+    BoxCallable *cb;
+    BoxBool success, is_already_implemented, has_name;
+
+    success = BoxType_Get_Combination_Info(comb, NULL, & cb);
+    assert(success);
+
+    is_already_implemented = BoxCallable_Is_Implemented(cb);
+    has_name = (BoxCallable_Get_Uid(cb) != NULL);
+
+    /* If the procedure is not implemented and has no name then we re-use
+     * the previous one, without covering the old definition.
+     */
+    if (!is_already_implemented && !has_name)
+      comb_callable = cb;
+
+    /* The following means that X@Y ? has no effect if X@Y is already
+     * registered (no matter if defined or undefined)
+     */
+    if (c_name == NULL && n_implem == NULL)
+      comb_callable = cb;
+  }
+
+  /* Define the combination, if necessary. */
+  if (!comb_callable) {
+    comb_callable = BoxCallable_Create_Undefined(t_parent, t_child);
+    comb = BoxType_Define_Combination(t_parent, comb_type, t_child,
+                                      comb_callable);
+    // Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT,
+    //                         & c->ts, comb_type, t_proc);
+  }
+
+  /* Set the C-name of the procedure, if given. */
+  if (c_name)
+    BoxCallable_Set_Uid(comb_callable, c_name);
+
+  /* If an implementation is also provided, then we define the procedure */
+  if (n_implem != NULL) {
+    /* we have the implementation */
+    BoxVMCode *save_cur_proc = c->cur_proc;
+    Value *v_implem;
+    BoxVMCode proc_implem;
+    BoxVMCallNum cn;
+
+    /* A BoxVMCode object is used to get the procedure symbol and to register and
+     * assemble it.
+     */
+    BoxVMCode_Init(& proc_implem, c, BOXVMCODESTYLE_SUB);
+
+    /* Set the call number. */
+    if (!BoxType_Generate_Combination_CallNum(comb, c->vm, & cn))
+      MSG_FATAL("Cannot generate call number for combination.");
+    proc_implem.have.call_num = 1;
+    proc_implem.call_num = cn;
+
+    /* Set the alternative name to make the bytecode more readable */
+    {
+      char *alter_name = BoxType_Get_Repr(comb);
+      assert(alter_name != NULL);
+
+      BoxVMCode_Set_Alter_Name(& proc_implem, alter_name);
+      BoxMem_Free(alter_name);
+    }
+
+    /* We change target of the compilation to the new procedure */
+    c->cur_proc = & proc_implem;
+
+    /* Specify the prototype for the procedure */
+    BoxVMCode_Set_Prototype(& proc_implem,
+                            !BoxType_Is_Empty(t_child),
+                            !BoxType_Is_Empty(t_parent));
+
+    My_Compile_Box(c, n_implem, t_child, t_parent);
+    v_implem = BoxCmp_Pop_Value(c);
+    /* NOTE: we should double check that this is void! */
+    Value_Unlink(v_implem);
+
+    c->cur_proc = save_cur_proc;
+
+    {
+      (void) /*BoxVMCallNum*/ BoxVMCode_Install(& proc_implem);
+      BoxVMSymID sym_id = BoxVMCode_Get_Sym(& proc_implem);
+      BoxVMSym_Def_Call(c->vm, sym_id);
+    }
+
+    BoxVMCode_Finish(& proc_implem);
+  }
+
+
+  /* NOTE: for now we return Void[]. In future extensions we'll return
+   * a function object
+   */
+  v_ret = My_Get_Void_Value(c);
+
+  /* for now we return v_ret = NULL. We'll return a function, when Box will
+   * support functions.
+   */
+  BoxCmp_Push_Value(c, v_ret);
+}
+
+
+
+
+
+
+
+
+
+
+
+#else
+
+
+
+
+
 static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   Value *v_child, *v_parent, *v_ret = NULL;
   BoxTypeId t_child_old, t_parent_old,
@@ -1131,33 +1315,6 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   proc_style = (n_implem != NULL) ? BOXVMCODESTYLE_SUB : BOXVMCODESTYLE_EXTERN;
   BoxVMCode_Init(& proc_implem, c, proc_style);
 
-#ifdef NEW_WAY
-  BoxType *comb_node =
-    BoxType_Find_Combination(t_parent, comb_type, t_child, NULL);
-
-  if (comb_node) {
-    /* A procedure of this kind is already registered: we need to know if
-     * it is defined or not
-     */
-    BoxCallable *cb;
-    BoxBool success, is_already_implemented, has_name;
-
-    success = BoxType_Get_Combination_Info(comb_node, NULL, & cb);
-    assert(success);
-
-    is_already_implemented = BoxCallable_Is_Implemented(cb),
-    has_name = BoxCallable_Get_Uid(cb);
-
-    /* If the procedure is not defined and has no name then we re-use
-     * the previous registered one, without covering the old definition.
-     */
-    if (!is_already_implemented && !has_name) {
-      BoxVMCode_Set_Callable(& proc_implem, cb);
-      do_register = 0;
-    }
-
-#else
-
   t_proc = BoxTS_Procedure_Search(& c->ts, /*expansion_type*/ NULL,
                                   t_child_old, comb_type, t_parent_old, 0);
 
@@ -1176,7 +1333,6 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
       BoxVMCode_Set_Sym(& proc_implem, sym_id);
       do_register = 0;
     }
-#endif
 
     /* The following means that X@Y ? has no effect if X@Y is already
      * registered (no matter if defined or undefined)
@@ -1186,8 +1342,9 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   }
 
   /* Set the C-name of the procedure, if given */
-  if (c_name != NULL)
+  if (c_name) {
     BoxVMCode_Set_Name(& proc_implem, c_name);
+  }
 
   /* Register the procedure, covering old ones */
   if (do_register) {
@@ -1251,6 +1408,26 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
    */
   BoxCmp_Push_Value(c, v_ret);
 }
+
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
   Value *v_name, *v_type, *v_named_type = NULL;

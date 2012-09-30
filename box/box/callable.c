@@ -40,7 +40,7 @@ BoxCallable_Init_As_Undefined(BoxCallable *cb) {
 /* Create an undefined callable */
 BOXOUT BoxCallable *
 BoxCallable_Create_Undefined(BoxType *t_out, BoxType *t_in) {
-  BoxType *t_cb = BoxType_Create_Function(t_in, t_out);
+  BoxType *t_cb = BoxType_Create_Callable(t_in, t_out);
   BoxCallable *cb = NULL;
   if (t_cb) {
     cb = BoxSPtr_Raw_Alloc(t_cb, sizeof(BoxCallable));
@@ -257,7 +257,6 @@ BoxCallable_Request_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
   return BOXBOOL_FALSE;
 }
 
-#if 0
 /* Whether the callable is implemented. */
 BoxBool
 BoxCallable_Is_Implemented(BoxCallable *cb) {
@@ -275,10 +274,17 @@ BoxCallable_Is_Implemented(BoxCallable *cb) {
       {
         BoxVM *vm = cb->implem.vm_call.vm;
         BoxVMCallNum call_num = cb->implem.vm_call.call_num;
-        if (BoxVM_Get_Code_Implem(vm, call_num, NULL))
-          return BOXBOOL_TRUE;
-        if (!BoxVM_Get_Callable_Implem(vm, call_num, & cb))
+        switch (BoxVM_Get_Proc_Kind(vm, call_num)) {
+        case BOXVMPROCKIND_UNDEFINED:
+        case BOXVMPROCKIND_RESERVED:
           return BOXBOOL_FALSE;
+        case BOXVMPROCKIND_FOREIGN:
+          if (!BoxVM_Get_Callable_Implem(vm, call_num, & cb))
+            return BOXBOOL_FALSE;
+          break;
+        default:
+          return BOXBOOL_TRUE;
+        }
         break;
       }
     default:
@@ -290,7 +296,6 @@ BoxCallable_Is_Implemented(BoxCallable *cb) {
   abort();
   return BOXBOOL_FALSE;
 }
-#endif
 
 /* Create a callable object from a BoxCCall2 C function. */
 BOXOUT BoxException *
