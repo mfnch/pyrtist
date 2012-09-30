@@ -163,11 +163,12 @@ My_Get_Inst_Proc_Desc(BoxVMProcTable *pt, BoxVMCallNum cn,
         
     *inst_proc = (BoxVMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, cn);
     return (*inst_proc)->type;
+  }
 
-  } else
-    return BOXVMPROCKIND_UNDEFINED;
+  return BOXVMPROCKIND_UNDEFINED;
 }
 
+/* Install a procedure from VM code. */
 BoxBool
 BoxVM_Install_Proc_Code(BoxVM *vm, BoxVMCallNum cn, BoxVMProcID id) {
   BoxVMProcTable *pt = & vm->proc_table;
@@ -188,6 +189,7 @@ BoxVM_Install_Proc_Code(BoxVM *vm, BoxVMCallNum cn, BoxVMProcID id) {
   return BOXBOOL_TRUE;
 }
 
+/* Installs the given C function as a new procedure. */
 BoxBool
 BoxVM_Install_Proc_CCode(BoxVM *vm, BoxVMCallNum cn, BoxVMCCode c_proc) {
   BoxVMProcTable *pt = & vm->proc_table;
@@ -219,6 +221,7 @@ BoxVM_Install_Proc_Callable(BoxVM *vm, BoxVMCallNum cn, BoxCallable *cb) {
   return BOXBOOL_TRUE;
 }
 
+/* Set the names for an installed procedure. */
 BoxBool
 BoxVM_Set_Proc_Names(BoxVM *vm, BoxVMCallNum cn,
                      const char *name, const char *desc) {
@@ -296,17 +299,17 @@ BoxVM_Get_Callable_Implem(BoxVM *vm, BoxVMCallNum cn, BoxCallable **code) {
   return BOXBOOL_FALSE;
 }
 
-BoxVMCallNum BoxVM_Proc_Next_Call_Num(BoxVM *vm) {
-  return BoxArr_Num_Items(& vm->proc_table.installed) + 1;
+/* Take note that a given call number is used and needs to be resolved. */
+void
+BoxVM_Reference_Proc(BoxVM *vm, BoxVMCallNum cn) {
+  
 }
 
 BoxVMProcID BoxVM_Proc_Get_ID(BoxVM *vm, BoxVMCallNum call_num) {
   BoxVMProcInstalled *p = My_Get_Proc_From_Num(vm, call_num);
   if (p->type == BOXVMPROCKIND_VM_CODE)
     return p->code.proc_id;
-
-  else
-    return BOXVMPROCID_NONE;
+  return BOXVMPROCID_NONE;
 }
 
 void BoxVM_Proc_Get_Ptr_And_Length(BoxVM *vmp, BoxVMWord **ptr,
@@ -337,7 +340,9 @@ Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out,
   p_name = (p->name) ? p->name : "(undef)";
   p_desc = (p->desc) ? p->desc : "(undef)";
   switch (p->type) {
+  case BOXVMPROCKIND_RESERVED: p_type = "unresolved"; break;
   case BOXVMPROCKIND_VM_CODE: p_type = "VM"; break;
+  case BOXVMPROCKIND_FOREIGN:  p_type = "foreign"; break;
   case BOXVMPROCKIND_C_CODE:  p_type = "C"; break;
   default: p_type = "(broken?)"; break;
   }

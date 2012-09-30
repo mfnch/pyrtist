@@ -84,7 +84,7 @@ BoxVMSymID BoxVMSym_New(BoxVM *vmp, UInt sym_type, UInt def_size) {
   printf("BoxVMSym_New: new symbol '%s'\n", Name_Str(n));
 #endif
   ss.name.length = 0;
-  ss.name.text = (char *) NULL;
+  ss.name.text = NULL;
   ss.sym_type = sym_type;
   ss.defined = 0;
   ss.def_size = def_size;
@@ -346,7 +346,7 @@ static int Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
     struct clib_ref_data *clrd = (struct clib_ref_data *) pass_data;
     BoxVM *vmp = clrd->vmp;
     const char *sym_name = s->name.text;
-    if (sym_name != NULL && s->sym_type == BOXVMSYMTYPE_CALL) {
+    if (sym_name && s->sym_type == BOXVMSYMTYPE_CALL) {
       const char *err_msg;
       void *sym;
       BoxVMCallNum call_num;

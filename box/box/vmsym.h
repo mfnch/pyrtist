@@ -17,7 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file vmsym.h
+/**
+ * @file vmsym.h
  * @brief The implementation of the reference/definition list for the box VM.
  *
  * This file implements the mechanism to define and reference procedures,
@@ -44,7 +45,8 @@ typedef BoxUInt BoxVMSymID;
 /** Invalid symbol ID */
 #define BOXVMSYMID_NONE ((BoxVMSymID) 0)
 
-/** @brief The table of references and definitions for the Box VM.
+/**
+ * @brief The table of references and definitions for the Box VM.
  *
  * This structure is embedded in the main VM structure VMProgram.
  */
@@ -83,7 +85,8 @@ typedef struct {
           first_ref; /**< Number of the first reference to the symbol */
 } BoxVMSym;
 
-/** @brief A reference...
+/**
+ * @brief A reference...
  */
 typedef struct {
   BoxVMSymID
@@ -133,6 +136,11 @@ void BoxVMSym_Set_Name(BoxVM *vm, BoxVMSymID sym_id, const char *name);
  * a name)
  */
 const char *BoxVMSym_Get_Name(BoxVM *vm, BoxVMSymID sym_id);
+
+/**
+ * @brief Find a symbol with the given name.
+ */
+BoxVMSymID BoxVM_Find_Sym(BoxVM *vm, const char *name);
 
 /** Define a symbol which was previously created with BoxVMSym_New */
 Task BoxVMSym_Define(BoxVM *vm, BoxVMSymID sym_num, void *def);

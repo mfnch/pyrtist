@@ -722,7 +722,7 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
   }
 
   BoxVMCallNum cn;
-  if (BoxCallable_Get_VM_CallNum(cb, c->vm, & cn)) {
+  if (BoxType_Generate_Combination_CallNum(found_combination, c->vm, & cn)) {
     Value_Emit_Call_From_CallNum(cn, parent, child);
     *success = BOXTASK_OK;
     Value_Unlink(child);

@@ -78,11 +78,6 @@ void BoxVM_Proc_Empty(BoxVM *vm, BoxVMProcID proc_id);
 /** Returns the call-number which will be assigned to the next installed
  * procedure.
  */
-BoxVMCallNum BoxVM_Proc_Next_Call_Num(BoxVM *vmp);
-
-/** Returns the call-number which will be assigned to the next installed
- * procedure.
- */
 BoxVMProcID BoxVM_Proc_Get_ID(BoxVM *vm, BoxVMCallNum call_num);
 
 size_t BoxVM_Proc_Get_Size(BoxVM *vm, BoxVMProcID id);
@@ -181,6 +176,15 @@ BoxVM_Get_Proc_Kind(BoxVM *vm, BoxVMCallNum cn);
  */
 BOXEXPORT BoxBool 
 BoxVM_Get_Callable_Implem(BoxVM *vm, BoxVMCallNum cn, BoxCallable **code);
+
+/**
+ * @brief Take note that a given call number is used and needs to be resolved.
+ *
+ * @param vm The virtual machine.
+ * @param cn The call number which is being used and needs to be resolved.
+ */
+BOXEXPORT void
+BoxVM_Reference_Proc(BoxVM *vm, BoxVMCallNum cn);
 
 
 

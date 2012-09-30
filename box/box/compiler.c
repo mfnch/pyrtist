@@ -1162,7 +1162,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     /* The following means that X@Y ? has no effect if X@Y is already
      * registered (no matter if defined or undefined)
      */
-    if (c_name == NULL && n_implem == NULL)
+    if (!c_name && !n_implem)
       comb_callable = cb;
   }
 
@@ -1171,8 +1171,10 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     comb_callable = BoxCallable_Create_Undefined(t_parent, t_child);
     comb = BoxType_Define_Combination(t_parent, comb_type, t_child,
                                       comb_callable);
-    // Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT,
-    //                         & c->ts, comb_type, t_proc);
+#if 0
+    Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT,
+                            & c->ts, comb_type, t_proc);
+#endif
   }
 
   /* Set the C-name of the procedure, if given. */
@@ -1180,15 +1182,15 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     BoxCallable_Set_Uid(comb_callable, c_name);
 
   /* If an implementation is also provided, then we define the procedure */
-  if (n_implem != NULL) {
+  if (n_implem) {
     /* we have the implementation */
     BoxVMCode *save_cur_proc = c->cur_proc;
     Value *v_implem;
     BoxVMCode proc_implem;
     BoxVMCallNum cn;
 
-    /* A BoxVMCode object is used to get the procedure symbol and to register and
-     * assemble it.
+    /* A BoxVMCode object is used to get the procedure symbol and to register
+     * and assemble it.
      */
     BoxVMCode_Init(& proc_implem, c, BOXVMCODESTYLE_SUB);
 
@@ -1230,7 +1232,6 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
 
     BoxVMCode_Finish(& proc_implem);
   }
-
 
   /* NOTE: for now we return Void[]. In future extensions we'll return
    * a function object

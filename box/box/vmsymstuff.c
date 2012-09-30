@@ -227,7 +227,7 @@ BoxTask BoxVMSym_Assemble_Proc_Head(BoxVM *vm, BoxVMSymID *sym_num) {
 }
 
 BoxTask BoxVMSym_Def_Proc_Head(BoxVM *vmp, BoxVMSymID sym_num,
-                            Int *num_var, Int *num_reg) {
+                               BoxInt *num_var, BoxInt *num_reg) {
   ProcHead ph;
   int i;
   for(i = 0; i < NUM_TYPES; i++) {
@@ -240,13 +240,17 @@ BoxTask BoxVMSym_Def_Proc_Head(BoxVM *vmp, BoxVMSymID sym_num,
 /*** callables **************************************************************/
 
 typedef struct {
-  BoxCallable *callable;
-} MyCallableData;
+  BoxVMCallNum call_num;
+} MyCallableRef;
+
+typedef struct {
+  BoxCCallOld call_ptr;
+} MyCallableDef;
 
 static BoxTask
 My_Define_Callable(BoxVM *vm, UInt sym_num, UInt sym_type, int defined,
                    void *def, size_t def_size, void *ref, size_t ref_size) {
-  MyCallableData *cb_data = ref;
+  MyCallableRef *cb_data = ref;
 
   assert(sym_type == BOXVMSYMTYPE_CALLABLE);
   return BOXTASK_FAILURE;
@@ -255,15 +259,15 @@ My_Define_Callable(BoxVM *vm, UInt sym_num, UInt sym_type, int defined,
 BoxBool
 BoxVM_Register_Callable(BoxVM *vm, BoxCallable *cb, BoxVMSymID *sym_id) {
   BoxVMSymID my_sym_id;
-  MyCallableData cb_data;
+  MyCallableRef cb_data;
   BoxBool success;
 
-  cb_data.callable = BoxCallable_Link(cb);
+  //cb_data.callable = BoxCallable_Link(cb);
 
-  my_sym_id = BoxVMSym_New(vm, BOXVMSYMTYPE_CALLABLE, sizeof(MyCallableData));
+  my_sym_id = BoxVMSym_New(vm, BOXVMSYMTYPE_CALLABLE, sizeof(MyCallableRef));
 
   success = (BoxVMSym_Code_Ref(vm, my_sym_id, My_Define_Callable,
-                               & cb_data, sizeof(MyCallableData))
+                               & cb_data, sizeof(MyCallableRef))
              == BOXTASK_OK);
 
   if (sym_id)
@@ -273,7 +277,7 @@ BoxVM_Register_Callable(BoxVM *vm, BoxCallable *cb, BoxVMSymID *sym_id) {
 }
 
 void BoxVM_Define_Callable(BoxVM *vm, BoxVMSymID sym_id, BoxCallable *cb) {
-  MyCallableData cb_data;
-  cb_data.callable = cb;
+  MyCallableRef cb_data;
+  //cb_data.callable = cb;
   (void) BoxVMSym_Define(vm, sym_id, & cb_data);
 }

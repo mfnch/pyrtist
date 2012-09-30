@@ -83,22 +83,6 @@ static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxTypeId child,
   return BOXVMCALLNUM_NONE;
 }
 
-#if 0
-static BoxVMCallNum My_Find_Copier(BoxCmp *c, BoxTypeId parent) {
-  OprMatch match;
-  Operation *opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match,
-                                            parent, BOXTYPE_NONE, parent);
-  if (opn == NULL)
-    return BOXVMCALLNUM_NONE;
-
-  else {
-    assert(opn->asm_scheme == OPASMSCHEME_USR_UN);
-    BoxVMSymID sym_id = opn->implem.sym_id;
-    return BoxVMSym_Get_Call_Num(c->vm, sym_id);
-  }
-}
-#endif
-
 static void My_Build_Obj_Desc(BoxCmp *c, MyObjDescBuilder *bldr, BoxTypeId t) {
   BoxTypeId ct = TS_Get_Core_Type(& c->ts, t);
   TSKind tk = TS_Get_Kind(& c->ts, ct);
