@@ -204,12 +204,6 @@ BoxTypeId BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
 #define BOXTS_NEW_INTRINSIC(ts, type) \
   BoxTS_New_Intrinsic((ts), sizeof(type), __alignof__(type))
 
-/* Transition functions. */
-BoxTypeId
-BoxTS_Procedure_Define(BoxTS *ts, BoxTypeId child_old, BoxCombType comb,
-                       BoxTypeId parent_old, BoxVMSymID sym_id,
-                       BOXIN BoxCallable *cb);
-
 /** Create a new unregistered subtype: a subtype is unregistered when
  * the parent is not aware of its existance. An unregistered type is defined
  * only giving its name and its parent type. When the subtype is registered

@@ -762,24 +762,6 @@ BoxTypeId TS_Subtype_Find(TS *ts, BoxTypeId parent, const char *name) {
 
 /****************************************************************************/
 
-BoxTypeId
-BoxTS_Procedure_Define(BoxTS *ts, BoxTypeId child_old, BoxCombType ct,
-                       BoxTypeId parent_old, BoxVMSymID sym_id,
-                       BOXIN BoxCallable *cb) {
-  BoxType *child_new = TS_Get_New_Style_Type(ts, child_old);
-  BoxType *parent_new = TS_Get_New_Style_Type(ts, parent_old);
-
-  BoxTypeId p = My_Procedure_New(ts, child_old, ct, parent_old);
-  My_Procedure_Register(ts, p, sym_id);
-
-  assert(child_new && parent_new);
-
-  BoxType *result = BoxType_Define_Combination(parent_new, ct, child_new, cb);
-  assert(result);
-
-  return p;
-}
-
 BoxTypeId BoxTS_New_Any(BoxTS *ts) {
   BoxTypeId dummy_typeid =
     BoxTS_New_Intrinsic(ts, sizeof(BoxAny), __alignof__(BoxAny));

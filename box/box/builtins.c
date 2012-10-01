@@ -27,6 +27,7 @@
 #include <math.h>
 
 #include "types.h"
+#include "combs.h"
 #include "defaults.h"
 #include "messages.h"
 #include "array.h"
@@ -337,12 +338,12 @@ BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
   return sym_num;
 }
 
-BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb,
+BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb_type,
                           BoxTypeId parent, BoxTask (*c_fn)(BoxVMX *)) {
   BoxVMSymID sym_num;
   BoxVMCallNum call_num;
-  BoxTypeId new_proc;
-  char *proc_name = NULL;
+  BoxType *comb;
+  char *comb_name = NULL;
 
   /* We reserve the call number and associate a symbol to it */
   call_num = BoxVM_Allocate_CallNum(c->vm);
@@ -353,16 +354,15 @@ BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb,
           *parent_new = BoxType_From_Id(& c->ts, parent);
   BoxCallable *callable = BoxCallable_Create_Undefined(parent_new, child_new);
   callable = BoxCallable_Define_From_VM(callable, c->vm, call_num);
-  new_proc = BoxTS_Procedure_Define(& c->ts, child, comb, parent, sym_num,
-                                    callable);
-  proc_name = TS_Name_Get(& c->ts, new_proc);
+  comb = BoxType_Define_Combination(parent_new, comb_type, child_new, callable);
+  comb_name = BoxType_Get_Repr(comb);
 
   /* We finally install the code (a C function) for the procedure */
   if (!BoxVM_Install_Proc_CCode(c->vm, call_num, c_fn))
     MSG_FATAL("Cannot install C code in VM");
 
-  (void) BoxVM_Set_Proc_Names(c->vm, call_num, NULL, proc_name);
-  BoxMem_Free(proc_name);
+  (void) BoxVM_Set_Proc_Names(c->vm, call_num, NULL, comb_name);
+  BoxMem_Free(comb_name);
 
   /* Mark the symbol as defined */
   BoxVMSym_Def_Call(c->vm, sym_num);
