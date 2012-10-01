@@ -105,7 +105,7 @@ static void My_NmspItem_Finish(Namespace *ns, NmspItem *item) {
   case NMSPITEMTYPE_PROCEDURE:
     {
       MyProcedureNmspItem *p = (MyProcedureNmspItem *) item->data;
-      BoxTS_Procedure_Unregister(p->ts, p->comb, p->t_proc);
+      //BoxTS_Procedure_Unregister(p->ts, p->comb, p->t_proc);
       BoxMem_Free(p);
       return;
     }

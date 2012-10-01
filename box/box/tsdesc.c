@@ -68,11 +68,11 @@ static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxTypeId child,
   BoxType *child_new = BoxType_From_Id(ts, child);
   BoxType *parent_new = BoxType_From_Id(ts, parent);
   BoxTypeCmp expand_info;
-  BoxCallable *cb;
-  BoxVMCallNum new_callnum = 0;
   BoxType *p = BoxType_Find_Combination(parent_new, comb, child_new,
                                         & expand_info);
   if (p) {
+    BoxVMCallNum new_callnum;
+
     assert(expand_info >= BOXTYPECMP_EQUAL);
 
     if (BoxType_Generate_Combination_CallNum(p, vm, & new_callnum))

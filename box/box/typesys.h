@@ -210,39 +210,6 @@ BoxTS_Procedure_Define(BoxTS *ts, BoxTypeId child_old, BoxCombType comb,
                        BoxTypeId parent_old, BoxVMSymID sym_id,
                        BOXIN BoxCallable *cb);
 
-/** Unregister a procedure which was previously registered with
- * BoxTS_Procedure_Register
- */
-void BoxTS_Procedure_Unregister(BoxTS *ts, BoxCombType comb, BoxTypeId p);
-
-/** Obtain the symbol identification number of a registered procedure.
- */
-BoxUInt TS_Procedure_Get_Sym(BoxTS *ts, BoxTypeId p);
-
-/** Options to be used when searching for procedure */
-typedef enum {
-  TSSEARCHMODE_INHERITED=1, /**< Search procedures inherited from extended
-                                 types */
-  TSSEARCHMODE_BLACKLIST=2  /**< If the procedure is not found,
-                                 blacklist it! */
-} TSSearchMode;
-
-/** Search the given procedure in the list of registered procedures.
- * Return the procedure in *proc, or BOXTYPE_NONE if the procedure
- * has not been found. If the argument of the procedure needs to be expanded
- * *expansion_type is the target type for that expansion. If expansion
- * is not needed then *expansion_type = BOXTYPE_NONE.
- */
-BoxTypeId
-BoxTS_Procedure_Search(BoxTS *ts, BoxTypeId *expansion_type, BoxTypeId child,
-                       BoxCombType comb, BoxTypeId parent, TSSearchMode mode);
-
-/** Return whether a procedure is registered (does just check if one
- * of the registered procedures of the parent of 'p' has type ID matching
- * with 'p')
- */
-int BoxTS_Procedure_Is_Registered(BoxTS *ts, BoxCombType comb, BoxTypeId p);
-
 /** Create a new unregistered subtype: a subtype is unregistered when
  * the parent is not aware of its existance. An unregistered type is defined
  * only giving its name and its parent type. When the subtype is registered
