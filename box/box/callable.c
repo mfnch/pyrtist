@@ -28,6 +28,8 @@
 #include <box/core_priv.h>
 #include <box/callable_priv.h>
 
+#include <box/vmsym.h>
+#include <box/vmsymstuff.h>
 
 /* Initialize a callable object as an undefined callable. */
 void
@@ -190,7 +192,7 @@ BoxCallable_Request_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
       /* Alert the virtual machine that this call number is being used and
        * needs therefore to be resolved.
        */
-      BoxVM_Reference_Proc(vm, new_num);
+      BoxVMSym_Reference_Proc(vm, new_num, BoxCallable_Get_Uid(cb));
 
       *num = new_num;
       *cb_out = new_cb;

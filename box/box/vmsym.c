@@ -74,15 +74,18 @@ void BoxVMSymTable_Finish(BoxVMSymTable *st) {
   }
 }
 
+BoxVMSymID BoxVMSym_New(BoxVM *vm, UInt sym_type, UInt def_size) {
+  return BoxVMSym_Create(vm, sym_type, NULL, def_size);
+}
 
-BoxVMSymID BoxVMSym_New(BoxVM *vmp, UInt sym_type, UInt def_size) {
-  BoxVMSymTable *st = & vmp->sym_table;
+/* Create a new symbol. */
+BoxVMSymID
+BoxVMSym_Create(BoxVM *vm, UInt sym_type,
+                const char *def, size_t def_size) {
+  BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym ss;
   BoxVMSymID sym_num;
 
-#ifdef DEBUG
-  printf("BoxVMSym_New: new symbol '%s'\n", Name_Str(n));
-#endif
   ss.name.length = 0;
   ss.name.text = NULL;
   ss.sym_type = sym_type;
@@ -91,8 +94,9 @@ BoxVMSymID BoxVMSym_New(BoxVM *vmp, UInt sym_type, UInt def_size) {
   ss.def_addr = 1 + BoxArr_Num_Items(& st->data);
   ss.first_ref = 0;
   BoxArr_Push(& st->defs, & ss);
+
   sym_num = BoxArr_Num_Items(& st->defs);
-  BoxArr_MPush(& st->data, NULL, def_size);
+  BoxArr_MPush(& st->data, def, def_size);
   return sym_num;
 }
 
@@ -346,31 +350,25 @@ static int Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
     struct clib_ref_data *clrd = (struct clib_ref_data *) pass_data;
     BoxVM *vmp = clrd->vmp;
     const char *sym_name = s->name.text;
-    if (sym_name && s->sym_type == BOXVMSYMTYPE_CALL) {
+    if (sym_name && s->sym_type == BOXVMSYMTYPE_PROC) {
       const char *err_msg;
       void *sym;
-      BoxVMCallNum call_num;
 
       err_msg = lt_dlerror();
       sym = lt_dlsym(clrd->dylib, sym_name);
       err_msg = lt_dlerror();
 
-      if (err_msg != NULL)
+      if (err_msg)
         return 1;
 
-      if (sym == NULL) {
+      if (!sym) {
         MSG_ERROR("Symbol '%s' from library '%s' is NULL",
                   sym_name, clrd->lib_file);
         return 1;
       }
-      call_num = BoxVMSym_Get_Call_Num(vmp, sym_num);
-      if (!BoxVM_Install_Proc_CCode(vmp, call_num, (BoxVMCCode) sym)) {
-        MSG_ERROR("Cannot install procedure for symbol '%s'", sym_name);
-        return 1;
-      }
 
-      (void) BoxVM_Set_Proc_Names(vmp, call_num, sym_name, sym_name);
-      BoxVMSym_Def_Call(vmp, sym_num);
+      if (!BoxVMSym_Define_Proc(vmp, sym_num, (BoxVMCCode) sym))
+        return 1;
     }
   }
   return 1;

@@ -31,7 +31,8 @@ typedef enum {
   BOXVMSYMTYPE_COND_JMP=2,
   BOXVMSYMTYPE_PROC_HEAD=123,
   BOXVMSYMTYPE_LABEL=3,
-  BOXVMSYMTYPE_CALLABLE=4
+  BOXVMSYMTYPE_CALLABLE=4,
+  BOXVMSYMTYPE_PROC=5
 } BoxVMSymType;
 
 typedef struct {
@@ -94,6 +95,15 @@ Task BoxVMSym_Assemble_Proc_Head(BoxVM *vm, BoxVMSymID *sym_id);
 
 Task BoxVMSym_Def_Proc_Head(BoxVM *vmp, BoxVMSymID sym_id,
                             Int *num_var, Int *num_reg);
+
+
+/* Temporary, very ugly stuff... */
+
+BoxBool
+BoxVMSym_Define_Proc(BoxVM *vm, BoxVMSymID sym_id, BoxCCallOld fn_ptr);
+
+BoxBool
+BoxVMSym_Reference_Proc(BoxVM *vm, BoxVMCallNum cn, const char *name);
 
 #endif
 

@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include "types.h"
+#include "mem.h"
 #include "vm_private.h"
 #include "vmalloc.h"
 #include "vmsym.h"
@@ -239,45 +240,69 @@ BoxTask BoxVMSym_Def_Proc_Head(BoxVM *vmp, BoxVMSymID sym_num,
 
 /*** callables **************************************************************/
 
+/* Temporary, very ugly stuff... */
+
+/**
+ * @brief Reference to a procedure.
+ */
 typedef struct {
   BoxVMCallNum call_num;
-} MyCallableRef;
+} MyProcRef;
 
+/**
+ * @brief Data necessary to define a procedure.
+ */
 typedef struct {
-  BoxCCallOld call_ptr;
-} MyCallableDef;
+  //const char  *name;
+  BoxCCallOld fn_ptr;
+} MyProcDef;
+
+BoxBool
+BoxVMSym_Define_Proc(BoxVM *vm, BoxVMSymID sym_id, BoxCCallOld fn_ptr) {
+  MyProcDef proc_def;
+  proc_def.fn_ptr = fn_ptr;
+
+  if (BoxVMSym_Define(vm, sym_id, & proc_def) != BOXTASK_OK)
+    return BOXBOOL_FALSE;
+  return BOXBOOL_TRUE;
+}
 
 static BoxTask
-My_Define_Callable(BoxVM *vm, UInt sym_num, UInt sym_type, int defined,
-                   void *def, size_t def_size, void *ref, size_t ref_size) {
-  MyCallableRef *cb_data = ref;
+My_Resolve_Proc_Ref(BoxVM *vm, BoxVMSymID sym_id, UInt sym_type, int defined,
+                    void *def, size_t def_size, void *ref, size_t ref_size) {
+  MyProcRef *proc_ref = ref;
+  MyProcDef *proc_def = def;
 
-  assert(sym_type == BOXVMSYMTYPE_CALLABLE);
+  assert(sym_type == BOXVMSYMTYPE_PROC && proc_ref && proc_def && defined);
+
+  
+  if (BoxVM_Install_Proc_CCode(vm, proc_ref->call_num, proc_def->fn_ptr))
+    return BOXTASK_OK;
+
   return BOXTASK_FAILURE;
 }
 
+/*
+ */
 BoxBool
-BoxVM_Register_Callable(BoxVM *vm, BoxCallable *cb, BoxVMSymID *sym_id) {
-  BoxVMSymID my_sym_id;
-  MyCallableRef cb_data;
-  BoxBool success;
+BoxVMSym_Reference_Proc(BoxVM *vm, BoxVMCallNum cn, const char *name) {
+  MyProcRef proc_ref;
 
-  //cb_data.callable = BoxCallable_Link(cb);
+  assert(vm);
 
-  my_sym_id = BoxVMSym_New(vm, BOXVMSYMTYPE_CALLABLE, sizeof(MyCallableRef));
+  if (!name)
+    return BOXBOOL_TRUE;
 
-  success = (BoxVMSym_Code_Ref(vm, my_sym_id, My_Define_Callable,
-                               & cb_data, sizeof(MyCallableRef))
-             == BOXTASK_OK);
+  /* Create a new PROC symbol. */
+  BoxVMSymID sym_id = BoxVMSym_Create(vm, BOXVMSYMTYPE_PROC,
+                                      NULL, sizeof(MyProcDef));
+  assert(sym_id != BOXVMSYMID_NONE);
+  BoxVMSym_Set_Name(vm, sym_id, name);
 
-  if (sym_id)
-    *sym_id = my_sym_id;
-
-  return success;
+  /* Create a new reference to the symbol. */
+  proc_ref.call_num = cn;
+  BoxVMSym_Ref(vm, sym_id, My_Resolve_Proc_Ref, & proc_ref,
+               sizeof(MyProcRef), BOXVMSYM_AUTO);
+  return BOXBOOL_TRUE;
 }
 
-void BoxVM_Define_Callable(BoxVM *vm, BoxVMSymID sym_id, BoxCallable *cb) {
-  MyCallableRef cb_data;
-  //cb_data.callable = cb;
-  (void) BoxVMSym_Define(vm, sym_id, & cb_data);
-}

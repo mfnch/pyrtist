@@ -128,6 +128,19 @@ void BoxVMSymTable_Finish(BoxVMSymTable *t);
  */
 BoxVMSymID BoxVMSym_New(BoxVM *vmp, BoxUInt sym_type, BoxUInt def_size);
 
+/**
+ * @brief Create a new symbol.
+ *
+ * @param vm The virtual machine associated to the symbol.
+ * @param sym_type The type of the symbol.
+ * @param def Pointer to the symbol data.
+ * @param def_size Size of the symbol data.
+ * @return A new symbol identifier (an integer).
+ */
+BOXEXPORT BoxVMSymID
+BoxVMSym_Create(BoxVM *vm, UInt sym_type,
+                const char *def, size_t def_size);
+
 /** Associate a name to the symbol sym_num.
  */
 void BoxVMSym_Set_Name(BoxVM *vm, BoxVMSymID sym_id, const char *name);
