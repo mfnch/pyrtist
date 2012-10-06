@@ -29,40 +29,6 @@
 #include "callable.h"
 
 
-/*** basic method registration **********************************************/
-/* Some methods are special and need to be registered separately using
- * the vm allocator. These methods (constructors, destructors, ... of types)
- * are called automatically by the allocator during construction/destruction
- * of objects, rather than being called with an "BOXOP_CALL_I" instruction.
- * Here we are not generating VM code, we are just calling
- * VM_Alloc_Method_Set.
- */
-
-typedef struct {
-  BoxTypeId type,
-            method;
-} VMSymMethod;
-
-/* This is the function that registers the method, if it is known. */
-static BoxTask Register_Call(BoxVM *vmp, BoxVMSymID sym_id, UInt sym_type,
-                             int defined, void *def, size_t def_size,
-                             void *ref, size_t ref_size) {
-  assert(sym_type == BOXVMSYMTYPE_CALL);
-  if (defined && def) {
-    assert(def_size == sizeof(UInt) && ref_size == sizeof(VMSymMethod));
-  }
-  return BOXTASK_OK;
-}
-
-void VM_Sym_Alloc_Method_Register(BoxVM *vmp, BoxVMSymID sym_id,
-                                  BoxTypeId type, BoxTypeId method) {
-  VMSymMethod m;
-  m.type = type;
-  m.method = method;
-  BoxVMSym_Ref(vmp, sym_id, Register_Call,
-               & m, sizeof(VMSymMethod), BOXVMSYM_UNRESOLVED);
-}
-
 /*** jumps ******************************************************************/
 
 typedef struct {
