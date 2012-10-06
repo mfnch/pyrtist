@@ -40,9 +40,6 @@ typedef struct {
 } VMSymLabel;
 
 
-void VM_Sym_Alloc_Method_Register(BoxVM *vmp, UInt sym_num,
-                                  BoxTypeId type, BoxTypeId method);
-
 /** This function creates an undefined label. A label is a number which
  * refers to a position in the assembled code.
  */
@@ -77,8 +74,9 @@ Task BoxVMSym_Def_Proc_Head(BoxVM *vmp, BoxVMSymID sym_id,
 
 /* Temporary, very ugly stuff... */
 
-const char *
-BoxVMSym_Get_Proc_Name(BoxVM *vm, BoxVMSymID sym_id);
+BoxBool
+BoxVMSym_Proc_Is_Implemented(BoxVM *vm, BoxVMSymID sym_id,
+                             const char **c_name);
 
 BoxBool
 BoxVMSym_Define_Proc(BoxVM *vm, BoxVMSymID sym_id, BoxCCallOld fn_ptr);

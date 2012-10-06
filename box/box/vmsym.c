@@ -357,8 +357,12 @@ My_Resolve_Ref_With_CLib(BoxVMSymID sym_id, void *item, void *pass_data) {
     MyCLibRefData *clrd = pass_data;
     BoxVM *vm = clrd->vm;
     const char *sym_name = s->name.text;
-    if (sym_name && s->sym_type == BOXVMSYMTYPE_PROC) {
-      const char *proc_name = BoxVMSym_Get_Proc_Name(vm, sym_id);
+    if (s->sym_type == BOXVMSYMTYPE_PROC) {
+      const char *proc_name;
+      if (BoxVMSym_Proc_Is_Implemented(vm, sym_id, & proc_name)) {
+        (void) BoxVMSym_Define_Proc(vm, sym_id, NULL);
+
+      } else {
         const char *err_msg;
         void *sym;
 
@@ -377,6 +381,7 @@ My_Resolve_Ref_With_CLib(BoxVMSymID sym_id, void *item, void *pass_data) {
 
         if (!BoxVMSym_Define_Proc(vm, sym_id, (BoxVMCCode) sym))
           return 1;
+      }
     }
   }
   return 1;
