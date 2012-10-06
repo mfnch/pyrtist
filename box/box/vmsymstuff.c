@@ -28,32 +28,6 @@
 #include "container.h"
 #include "callable.h"
 
-/*** call references ********************************************************/
-
-/* This is the function which assembles the code for the function call */
-BoxTask My_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id,
-                         BoxUInt sym_type, int defined,
-                         void *def, size_t def_size,
-                         void *ref, size_t ref_size) {
-
-  return BOXTASK_OK;
-}
-
-BoxVMSymID BoxVMSym_New_Call(BoxVM *vm, BoxVMCallNum cn) {
-  BoxVMSymID sym_id = BoxVMSym_New(vm, BOXVMSYMTYPE_CALL,
-                                   sizeof(BoxVMCallNum));
-  BoxVMCallNum *def = (BoxVMCallNum *) BoxVMSym_Get_Definition(vm, sym_id);
-  *def = (cn != BOXVMCALLNUM_NONE) ? cn : BoxVM_Allocate_Call_Num(vm);
-  return sym_id;
-}
-
-void BoxVMSym_Def_Call(BoxVM *vm, BoxVMSymID sym_id) {
-  ASSERT_TASK( BoxVMSym_Define(vm, sym_id, NULL) );
-}
-
-BoxVMCallNum BoxVMSym_Get_Call_Num(BoxVM *vm, BoxVMSymID sym_id) {
-  return *((BoxVMCallNum *) BoxVMSym_Get_Definition(vm, sym_id));
-}
 
 /*** basic method registration **********************************************/
 /* Some methods are special and need to be registered separately using

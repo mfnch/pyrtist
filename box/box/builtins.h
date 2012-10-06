@@ -50,7 +50,7 @@ typedef struct {
           exit,
           file,
           any;
-  BoxVMSymID
+  BoxVMCallNum
           subtype_init,
           subtype_finish;
 } BltinStuff;
@@ -65,22 +65,22 @@ void Bltin_Finish(BoxCmp *c);
  *  "see" the new function. The function can only be called by the compiler
  *  generated code.
  */
-BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
-                          BoxTask (*c_fn)(BoxVMX *));
+BoxVMCallNum Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
+                            BoxTask (*c_fn)(BoxVMX *));
 
 /** Add and register a new C procedure 'c_fn' (of type BoxVMFunc) for the
  * combination 'comb' between the types 'left' and 'right'. After this
  * function has returned, Box programs will be able to find the combination
  * and use it!
  */
-BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb,
-                          BoxTypeId parent, BoxTask (*c_fn)(BoxVMX *));
+BoxVMCallNum Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb,
+                            BoxTypeId parent, BoxTask (*c_fn)(BoxVMX *));
 
 /** Similar to 'Bltin_Comb_Def' but assumes 'comb == BOXCOMBTYPE_AT'.
  * @see Bltin_Comb_Def
  */
-BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
-                          BoxTask (*c_fn)(BoxVMX *));
+BoxVMCallNum Bltin_Proc_Def(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
+                            BoxTask (*c_fn)(BoxVMX *));
 
 /** Define a new intrinsic type with the given name and size. */
 BoxTypeId Bltin_New_Type(BoxCmp *c, const char *type_name,

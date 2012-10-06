@@ -41,20 +41,6 @@ typedef struct {
   int conditional;
 } VMSymLabel;
 
-/** Return the symbol associated with a new procedure for the given VM.
- * This symbol will be used to emit all the calls to that procedure.
- */
-BoxVMSymID BoxVMSym_New_Call(BoxVM *vm, BoxVMCallNum call_num);
-
-/** Define the call number relative to the procedure whose symbol id is
- * 'sym_id'. You do not need to define the call number before calling
- * a procedure: the bytecode will be adjusted properly when the call number
- * will be known.
- */
-void BoxVMSym_Def_Call(BoxVM *vm, BoxVMSymID sym_id);
-
-/** Get the call number associated to the given symbold id. */
-BoxVMCallNum BoxVMSym_Get_Call_Num(BoxVM *vm, BoxVMSymID sym_id);
 
 void VM_Sym_Alloc_Method_Register(BoxVM *vmp, UInt sym_num,
                                   BoxTypeId type, BoxTypeId method);

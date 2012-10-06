@@ -74,9 +74,9 @@ struct _operation_struc {
 
   union {
     BoxGOp  opcode;        /**< Bytecode instrucion associated with the op. */
-    BoxVMSymID
-            sym_id;        /**< Symbol ID of the user defined procedure
-                                containing the implementation of the op. */
+    BoxVMCallNum
+            call_num;      /**< Call number for the procedure which implements
+                                the operation. */
   } implem;                /**< The implementation of the operation */
 
   struct _operation_struc
@@ -122,7 +122,7 @@ void BoxCmp_Finish__Operators(BoxCmp *c);
 void Operator_Attr_Set(Operator *opr, OprAttr mask, OprAttr attr);
 
 /** Provide the symbol for the procedure implementing the operation 'opn'. */
-void Operation_Set_User_Implem(Operation *opn, BoxVMSymID sym_id);
+void Operation_Set_User_Implem(Operation *opn, BoxVMCallNum call_num);
 
 /** Change attributes for operation. 'mask' tells what attributes to change,
  * 'value' tells how to change them.

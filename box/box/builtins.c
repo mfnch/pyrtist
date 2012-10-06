@@ -315,9 +315,8 @@ static BoxTask My_For_Int(BoxVMX *vmx) {
 #include "namespace.h"
 #include "compiler.h"
 
-BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
+BoxVMCallNum Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
                           BoxTask (*c_fn)(BoxVMX *)) {
-  BoxVMSymID sym_num;
   BoxVMCallNum call_num;
 
   /* We finally install the code (a C function) for the procedure */
@@ -331,25 +330,19 @@ BoxVMSymID Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
   }
 
   (void) BoxVM_Set_Proc_Names(c->vm, call_num, NULL, proc_name);
-
-  /* We create the symbol associated with this name and define it */
-  sym_num = BoxVMSym_New_Call(c->vm, call_num);
-  BoxVMSym_Def_Call(c->vm, sym_num);
-  return sym_num;
+  return call_num;
 }
 
-BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb_type,
-                          BoxTypeId parent, BoxTask (*c_fn)(BoxVMX *)) {
-  BoxVMSymID sym_num;
+BoxVMCallNum Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb_type,
+                            BoxTypeId parent, BoxTask (*c_fn)(BoxVMX *)) {
   BoxVMCallNum call_num;
   BoxType *comb;
   char *comb_name = NULL;
 
   /* We reserve the call number and associate a symbol to it */
   call_num = BoxVM_Allocate_Call_Num(c->vm);
-  sym_num = BoxVMSym_New_Call(c->vm, call_num);
 
-  /* We tell to the compiler that some procedures are associated to sym_num */
+  /* We tell to the compiler that some procedures are associated to call_num */
   BoxType *child_new = BoxType_From_Id(& c->ts, child),
           *parent_new = BoxType_From_Id(& c->ts, parent);
   BoxCallable *callable = BoxCallable_Create_Undefined(parent_new, child_new);
@@ -365,12 +358,11 @@ BoxVMSymID Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb_type,
   BoxMem_Free(comb_name);
 
   /* Mark the symbol as defined */
-  BoxVMSym_Def_Call(c->vm, sym_num);
-  return sym_num;
+  return call_num;
 }
 
-BoxVMSymID Bltin_Proc_Def(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
-                          BoxTask (*c_fn)(BoxVMX *)) {
+BoxVMCallNum Bltin_Proc_Def(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
+                            BoxTask (*c_fn)(BoxVMX *)) {
   return Bltin_Comb_Def(c, child, BOXCOMBTYPE_AT, parent, c_fn);
 }
 
@@ -639,7 +631,7 @@ static void My_Register_BinOps(BoxCmp *c) {
 /* Register all the conversion operations for the Box compiler. */
 static void My_Register_Conversions(BoxCmp *c) {
   Operator *convert = & c->convert;
-  BoxVMSymID struc_to_point_sym_id;
+  BoxVMCallNum struc_to_point_call_num;
 
   struct {
     const char *types; /* Two characters describing the types of the source
@@ -671,8 +663,8 @@ static void My_Register_Conversions(BoxCmp *c) {
   /* Conversion (Real, Real) -> Point */
   Operation *opn = Operator_Add_Opn(convert, c->bltin.struc_real_real,
                                     BOXTYPE_NONE, BOXTYPE_POINT);
-  struc_to_point_sym_id = Bltin_Proc_Add(c, "conv_2r_to_point", My_2R_To_P);
-  Operation_Set_User_Implem(opn, struc_to_point_sym_id);
+  struc_to_point_call_num = Bltin_Proc_Add(c, "conv_2r_to_point", My_2R_To_P);
+  Operation_Set_User_Implem(opn, struc_to_point_call_num);
 }
 
 BoxTypeId Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,

@@ -17,7 +17,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/** @file tsdesc.h
+/**
+ * @file tsdesc.h
  * @brief Generator of object descriptors (required for memory management).
  *
  * The functions defined in this sub-unit allow to generator type descriptors
