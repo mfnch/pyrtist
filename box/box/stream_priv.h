@@ -18,7 +18,7 @@
  ****************************************************************************/
 
 /**
- * @file stream_private.h
+ * @file stream_priv.h
  * @brief Private header for the stream module.
  */
 

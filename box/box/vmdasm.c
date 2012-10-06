@@ -24,7 +24,7 @@
 #include "strutils.h"
 #include "container.h"
 #include "vm_priv.h"
-#include "vmdasm_private.h"
+#include "vmdasm_priv.h"
 #include "vmproc_priv.h"
 
 #define DEBUG_VM_D_EVERY_ONE 0

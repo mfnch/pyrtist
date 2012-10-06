@@ -24,7 +24,7 @@
 #include <box/mem.h>
 #include <box/messages.h>
 #include <box/vm.h>
-#include <box/stream_private.h>
+#include <box/stream_priv.h>
 
 static void MyStream_Finish(BoxStream *bs) {
   BoxMem_Free(bs->data);

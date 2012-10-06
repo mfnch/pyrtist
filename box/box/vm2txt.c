@@ -22,7 +22,7 @@
 
 #include "types.h"
 #include "vm_priv.h"
-#include "vmdasm_private.h"
+#include "vmdasm_priv.h"
 
 
 /**

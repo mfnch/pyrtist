@@ -18,7 +18,7 @@
  ****************************************************************************/
 
 /**
- * @file vmdasm_private.h
+ * @file vmdasm_priv.h
  * @brief Code dealing with reading (disassembling) of VM code.
  */
 

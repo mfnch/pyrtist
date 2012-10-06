@@ -23,7 +23,7 @@
 
 #include <box/types.h>
 #include <box/mem.h>
-#include <box/stream_private.h>
+#include <box/stream_priv.h>
 
 /** Data specific to the File stream implementation. */
 typedef struct {

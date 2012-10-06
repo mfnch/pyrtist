@@ -55,7 +55,7 @@ boxinc_HEADERS = version.h defaults.h types.h oldtypes.h obj.h exception.h     \
 libboxcore0_3_la_SOURCES = types.c types.h oldtypes.h types_priv.h combs.c	\
   combs.h obj.c obj.h exception.c exception.h callable.c callable.h		\
   callable_priv.h core.c core.h coremath.c coremath.h core_priv.h error.c	\
-  mem.c mem.h array.c array.h stream.c stream.h stream_private.h filestream.c	\
+  mem.c mem.h array.c array.h stream.c stream.h stream_priv.h filestream.c	\
   occupation.c occupation.h strutils.c print.c srcpos.c msgbase.c messages.c	\
   hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h container.c	\
   container.h vm.c vm.h vmx.c vmx.h vm_priv.h vmdasm.c vmdasm.h vm2txt.c	\
@@ -72,7 +72,7 @@ libboxcore0_3_la_LIBADD = $(LIBLTDL)
 dist_boxpkg_DATA=core.dox
 
 # *** box compiler ***
-noinst_HEADERS = vmdasm_private.h fileutils.h registers.h tokenizer.h macro.h	\
+noinst_HEADERS = vmdasm_priv.h fileutils.h registers.h tokenizer.h macro.h	\
   parserh.h typesys.h paths.h vmcode.h ast.h cmpptrs.h value.h compiler.h	\
   operator.h namespace.h tsdesc.h builtins.h bltinstr.h bltinio.h bltinarray.h
 
