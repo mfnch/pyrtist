@@ -23,7 +23,7 @@
 #include "types.h"
 #include "mem.h"
 #include "messages.h"
-#include "vm_private.h"
+#include "vm_priv.h"
 #include "vmsym.h"
 #include "vmproc.h"
 #include "vmsymstuff.h"

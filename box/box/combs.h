@@ -49,6 +49,16 @@ BoxType_Define_Combination(BoxType *parent, BoxCombType type, BoxType *child,
                            BoxCallable *callable);
 
 /**
+ * @brief Undefine a combination defined with BoxType_Define_Combination().
+ *
+ * @param parent The parent in the combination to be removed. 
+ * @param comb The combination node, as returned by BoxType_Find_Combination()
+ *  or BoxType_Define_Combination().
+ */
+BOXEXPORT void
+BoxType_Undefine_Combination(BoxType *parent, BoxType *comb);
+
+/**
  * @brief Find a (possibly inherited) combination <tt>child@@parent</tt>
  * of @c parent.
  *

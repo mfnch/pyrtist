@@ -36,7 +36,7 @@
 #include "messages.h"
 #include "array.h"
 #include "occupation.h"
-#include "vm_private.h"
+#include "vm_priv.h"
 #include "vmx.h"
 #include "vmsym.h"
 #include "vmproc_priv.h"

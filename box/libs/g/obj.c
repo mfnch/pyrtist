@@ -25,7 +25,7 @@
 #include <box/mem.h>
 #include <box/print.h>
 #include <box/array.h>
-#include <box/vm_private.h>
+#include <box/vm_priv.h>
 
 #include "obj.h"
 

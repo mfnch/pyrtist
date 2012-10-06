@@ -24,7 +24,7 @@
 #  include "types.h"
 #  include "buffer.h"
 #  include "graphic.h"
-#  include <box/vm_private.h>
+#  include <box/vm_priv.h>
 
 typedef struct {
   struct {

@@ -33,7 +33,7 @@
 
 #  include <box/types.h>
 #  include <box/registers.h>
-#  include <box/vm_private.h>
+#  include <box/vm_priv.h>
 #  include <box/vmsym.h>
 #  include <box/container.h>
 #  include <box/vmproc.h>

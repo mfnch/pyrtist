@@ -26,7 +26,7 @@
 #include "value.h"
 #include "messages.h"
 #include "compiler.h"
-#include "vm_private.h"
+#include "vm_priv.h"
 #include "vmcode.h"
 #include "operator.h"
 

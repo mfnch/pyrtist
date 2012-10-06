@@ -18,7 +18,7 @@
  ****************************************************************************/
 
 /**
- * @file vm_private.h
+ * @file vm_priv.h
  * @brief Box virtual machine private definitions.
  */
 

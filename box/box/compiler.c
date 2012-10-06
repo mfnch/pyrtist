@@ -1081,6 +1081,8 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   ASTNode *n_c_name = n->attr.proc_def.c_name,
           *n_implem = n->attr.proc_def.implem;
   char *c_name = NULL;
+  BoxType *t_child, *t_parent, *comb;
+  BoxCallable *comb_callable;
   int no_err;
 
   assert(n->type == ASTNODETYPE_PROCDEF);
@@ -1093,14 +1095,15 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   comb_type = n->attr.proc_def.combine;
 
   no_err = Value_Want_Has_Type(v_child) & Value_Want_Has_Type(v_parent);
-  BoxType *t_child = v_child->type;
-  BoxType *t_parent = v_parent->type;
 
+  /* Get the types from the values, and destroy the latters. */
+  t_child = BoxType_Link(v_child->type);
+  t_parent = BoxType_Link(v_parent->type);
   Value_Unlink(v_child);
   Value_Unlink(v_parent);
 
   /* now get the C-name, if present */
-  if (n_c_name != NULL) {
+  if (n_c_name) {
     assert(n_c_name->type == ASTNODETYPE_STRING);
     c_name = n_c_name->attr.string.str;
     if (strlen(c_name) < 1) {
@@ -1116,14 +1119,15 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
      * and immediately exit pushing an error.
      */
     BoxCmp_Push_Value(c, v_ret);
+    (void) BoxType_Unlink(t_child);
+    (void) BoxType_Unlink(t_parent);
     return;
   }
 
   /* Try to find the combination, if already defined. */
-  BoxType *comb;
-  BoxCallable *comb_callable = NULL;
-
+  comb_callable = NULL;
   comb = BoxType_Find_Combination(t_parent, comb_type, t_child, NULL);
+
   if (comb) {
     /* A combination of this kind is already defined: we need to know if
      * it is implemented or not.
@@ -1155,10 +1159,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     comb_callable = BoxCallable_Create_Undefined(t_parent, t_child);
     comb = BoxType_Define_Combination(t_parent, comb_type, t_child,
                                       comb_callable);
-#if 0
-    Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT,
-                            & c->ts, comb_type, t_proc);
-#endif
+    Namespace_Add_Procedure(& c->ns, NMSPFLOOR_DEFAULT, t_parent, comb);
   }
 
   /* Set the C-name of the procedure, if given. */
@@ -1216,6 +1217,9 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
 
     BoxVMCode_Finish(& proc_implem);
   }
+
+  (void) BoxType_Unlink(t_child);
+  (void) BoxType_Unlink(t_parent);
 
   /* NOTE: for now we return Void[]. In future extensions we'll return
    * a function object

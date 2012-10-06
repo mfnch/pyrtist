@@ -19,7 +19,7 @@
 
 #include "types.h"
 #include "mem.h"
-#include "vm_private.h"
+#include "vm_priv.h"
 #include "vmx.h"
 
 #if 0

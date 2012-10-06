@@ -34,7 +34,7 @@
 #include <assert.h>
 
 #include "messages.h"
-#include "vm_private.h"
+#include "vm_priv.h"
 #include "vmalloc.h"
 #include "bltinarray.h"
 #include "strutils.h"

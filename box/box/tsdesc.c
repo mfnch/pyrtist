@@ -24,7 +24,7 @@
 #include "combs.h"
 #include "mem.h"
 #include "typesys.h"
-#include "vm_private.h"
+#include "vm_priv.h"
 #include "vmalloc.h"
 #include "tsdesc.h"
 #include "vmsymstuff.h"

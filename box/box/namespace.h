@@ -17,14 +17,15 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file namespace.h
+/**
+ * @file namespace.h
  * @brief Handling of names and namespaces in the Box compiler.
  *
  * A nice description...
  */
 
-#ifndef _NAMESPACE_H
-#  define _NAMESPACE_H
+#ifndef _BOX_NAMESPACE_H
+#  define _BOX_NAMESPACE_H
 
 #  include "types.h"
 #  include "array.h"
@@ -129,7 +130,7 @@ Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
  * when the floor is cleared with Namespace_Floor_Down.
  */
 void Namespace_Add_Procedure(Namespace *ns, NmspFloor floor,
-                             BoxTS *ts, BoxCombType comb, BoxTypeId t_proc);
+                             BoxType *parent, BoxType *comb_type);
 
 /** Use 'Namespace_Add_Item' to add a callback to be called when the floor
  * gets cleared.

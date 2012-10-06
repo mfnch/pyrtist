@@ -32,7 +32,7 @@
 #include "messages.h"
 #include "array.h"
 #include "strutils.h"
-#include "vm_private.h"
+#include "vm_priv.h"
 #include "vmproc.h"
 #include "vmsym.h"
 #include "vmsymstuff.h"

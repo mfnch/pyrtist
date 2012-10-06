@@ -35,7 +35,7 @@
 #include "messages.h"
 #include "array.h"
 #include "registers.h"
-#include "vm_private.h"
+#include "vm_priv.h"
 
 #define END_OF_CHAIN -1
 #define OCCUPIED 0

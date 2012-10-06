@@ -22,7 +22,7 @@
 #include <assert.h>
 
 #include "types.h"
-#include <box/vm_private.h>
+#include <box/vm_priv.h>
 #include "str.h"
 #include "graphic.h"
 #include "g.h"

@@ -21,7 +21,7 @@
 #include <assert.h>
 
 #include "types.h"
-#include <box/vm_private.h>
+#include <box/vm_priv.h>
 #include "graphic.h"
 #include "g.h"
 #include "i_window.h"

@@ -22,7 +22,7 @@
 #include <strings.h>
 
 #include "types.h"
-#include <box/vm_private.h>
+#include <box/vm_priv.h>
 #include "g.h"
 
 void g_error(const char *msg) {

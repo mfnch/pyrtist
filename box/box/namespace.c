@@ -28,10 +28,12 @@
 #include "namespace.h"
 #include "value.h"
 #include "typesys.h"
+#include "combs.h"
 
 typedef struct {
   NmspItem *first_item;
 } NmspFloorData;
+
 
 void Namespace_Init(Namespace *ns) {
   BoxHT_Init_Default(& ns->ht, 1024);
@@ -78,9 +80,8 @@ void Namespace_Floor_Up(Namespace *ns) {
 }
 
 typedef struct {
-  BoxTS       *ts;    /**< Typesystem in which the procedure is registered */
-  BoxCombType comb;   /**< Combination type */
-  BoxTypeId     t_proc; /**< Type ID of the procedure */
+  BoxType     *parent;    /**< Type of the parent. */
+  BoxType     *comb_node; /**< Node associated to the combination. */
 } MyProcedureNmspItem;
 
 typedef struct {
@@ -105,7 +106,7 @@ static void My_NmspItem_Finish(Namespace *ns, NmspItem *item) {
   case NMSPITEMTYPE_PROCEDURE:
     {
       MyProcedureNmspItem *p = (MyProcedureNmspItem *) item->data;
-      //BoxTS_Procedure_Unregister(p->ts, p->comb, p->t_proc);
+      BoxType_Undefine_Combination(p->parent, p->comb_node);
       BoxMem_Free(p);
       return;
     }
@@ -196,16 +197,14 @@ Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
 }
 
 void Namespace_Add_Procedure(Namespace *ns, NmspFloor floor,
-                             BoxTS *ts, BoxCombType comb, BoxTypeId t_proc) {
-  NmspItem *new_item = Namespace_Add_Item(ns, floor, (char *) NULL);
-  MyProcedureNmspItem *p =
-   (MyProcedureNmspItem *) BoxMem_Safe_Alloc(sizeof(MyProcedureNmspItem));
-  assert(new_item != NULL);
+                             BoxType *parent, BoxType *comb_node) {
+  NmspItem *new_item = Namespace_Add_Item(ns, floor, NULL);
+  MyProcedureNmspItem *p = BoxMem_Safe_Alloc(sizeof(MyProcedureNmspItem));
+  assert(new_item);
   new_item->type = NMSPITEMTYPE_PROCEDURE;
   new_item->data = p;
-  p->ts = ts;
-  p->comb = comb;
-  p->t_proc = t_proc;
+  p->parent = parent;
+  p->comb_node = comb_node;
 }
 
 void Namespace_Add_Callback(Namespace *ns, NmspFloor floor,

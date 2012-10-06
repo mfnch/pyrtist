@@ -23,7 +23,7 @@
 #include "messages.h"
 #include "strutils.h"
 #include "container.h"
-#include "vm_private.h"
+#include "vm_priv.h"
 #include "vmdasm_private.h"
 #include "vmproc_priv.h"
 

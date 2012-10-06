@@ -9,7 +9,7 @@
 #include "messages.h"
 #include "array.h"
 #include "str.h"
-#include "vm_private.h"
+#include "vm_priv.h"
 #include "registers.h"
 #include "compiler.h"
 

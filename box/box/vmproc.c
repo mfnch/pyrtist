@@ -24,7 +24,7 @@
 #include "types.h"
 #include "messages.h"
 #include "mem.h"
-#include "vm_private.h"
+#include "vm_priv.h"
 #include "vmproc.h"
 #include "srcpos.h"
 #include "vmalloc.h"

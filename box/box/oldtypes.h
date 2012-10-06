@@ -25,8 +25,8 @@
  * and libraries.
  */
 
-#ifndef _BOX_TYPES_H
-#  define _BOX_TYPES_H
+#ifndef _BOX_OLDTYPES_H
+#  define _BOX_OLDTYPES_H
 
 #  include <box/core.h>
 
@@ -151,4 +151,4 @@ typedef BoxName BoxData;
 /** Get the block of the given BoxPtr extended pointer. */
 #  define BoxPtr_Get_Block(p) ((p)->block)
 
-#endif /* _BOX_TYPES_H */
+#endif /* _BOX_OLDTYPES_H */

@@ -18,7 +18,7 @@
  ****************************************************************************/
 
 #include <box/types.h>
-#include <box/vm_private.h>
+#include <box/vm_priv.h>
 
 #include "bridge.h"
 #include "i_window.h"

@@ -33,7 +33,7 @@
 
 #  include "occupation.h"
 #  include "hashtable.h"
-#  include "vm_private.h"
+#  include "vm_priv.h"
 #  include "vmalloc.h"
 
 typedef enum {
@@ -192,9 +192,7 @@ TSKind TS_Get_Kind(BoxTS *ts, BoxTypeId t);
  */
 int TS_Is_Fast(BoxTS *ts, BoxTypeId t);
 
-#define TS_Is_Member(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_MEMBER)
 #define TS_Is_Subtype(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_SUBTYPE)
-#define TS_Is_Structure(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_STRUCTURE)
 #define TS_Is_Empty(ts, t) (TS_Get_Size((ts), (t)) == 0)
 
 BoxTypeId BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,

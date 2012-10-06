@@ -26,8 +26,8 @@
  * them.
  */
 
-#ifndef _BOX_NTYPES_H
-#  define _BOX_NTYPES_H
+#ifndef _BOX_TYPES_H
+#  define _BOX_TYPES_H
 
 #  include <stdlib.h>
 
@@ -587,7 +587,8 @@ BoxType_Get_Cont_Type(BoxType *t);
  * @param t The input type.
  * @return Whether t is an empty type.
  */
-BOXEXPORT BoxBool BoxType_Is_Empty(BoxType *t);
+BOXEXPORT BoxBool
+BoxType_Is_Empty(BoxType *t);
 
 /**
  * Get a string representation of the given type.
@@ -598,4 +599,4 @@ BOXEXPORT BoxBool BoxType_Is_Empty(BoxType *t);
 BOXEXPORT char *
 BoxType_Get_Repr(BoxType *t);
 
-#endif /* _BOX_NTYPES_H */
+#endif /* _BOX_TYPES_H */

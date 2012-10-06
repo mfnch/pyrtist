@@ -24,7 +24,7 @@
 #include "defaults.h"
 #include "mem.h"
 #include "messages.h"
-#include "vm_private.h"
+#include "vm_priv.h"
 #include "vmalloc.h"
 
 #define DEBUG_VMALLOC 0

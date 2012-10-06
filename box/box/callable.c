@@ -42,7 +42,7 @@ BoxCallable_Init_As_Undefined(BoxCallable *cb) {
 /* Create an undefined callable */
 BOXOUT BoxCallable *
 BoxCallable_Create_Undefined(BoxType *t_out, BoxType *t_in) {
-  BoxType *t_cb = BoxType_Create_Callable(t_in, t_out);
+  BoxType *t_cb = BoxType_Create_Callable(t_out, t_in);
   BoxCallable *cb = NULL;
   if (t_cb) {
     cb = BoxSPtr_Raw_Alloc(t_cb, sizeof(BoxCallable));

@@ -24,7 +24,7 @@
 #include <box/types.h>
 #include <box/mem.h>
 #include <box/str.h>
-#include <box/vm_private.h>
+#include <box/vm_priv.h>
 
 #include "obj.h"
 #include "transform.h"

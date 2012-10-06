@@ -29,7 +29,7 @@
 #include "array.h"
 #include "occupation.h"
 #include "hashtable.h"
-#include "vm_private.h"
+#include "vm_priv.h"
 #include "typesys.h"
 
 #include <box/core.h>
@@ -412,21 +412,6 @@ BoxTypeId BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
   return out_old;
 }
 
-static BoxTypeId My_Procedure_New(BoxTS *ts, BoxTypeId child,
-                                  BoxCombType comb, BoxTypeId parent) {
-  TSDesc td;
-  BoxTypeId p;
-  TS_TSDESC_INIT(& td);
-  td.kind = TS_KIND_PROC;
-  td.size = BOX_SIZE_UNKNOWN;
-  td.target = child;
-  td.data.proc.parent = parent;
-  td.data.proc.combine = comb;
-  td.data.proc.sym_num = 0;
-  Type_New(ts, & p, & td);
-  return p;
-}
-
 /*FUNCTIONS: My_New **********************************************************/
 
 /* Common code for BoxTs_New_Alias, BoxTS_New_Raised and BoxTS_New_Array. */
@@ -638,31 +623,6 @@ BoxTS_Add_Species_Member(BoxTS *ts, BoxTypeId species, BoxTypeId member) {
 }
 
 /****************************************************************************/
-/* Procedure registration and search */
-
-/* Register the procedure.
- * The way we handle registration and search is very inefficient.
- * this could and should be improved, but we stick to the simple solution
- * for now!
- */
-static void
-My_Procedure_Register(BoxTS *ts, BoxTypeId p, BoxVMSymID sym_num) {
-  TSDesc *proc_td, *parent_td;
-  BoxTypeId parent;
-  proc_td = Type_Ptr(ts, p);
-  assert(proc_td->kind == TS_KIND_PROC);
-  parent = proc_td->data.proc.parent;
-  parent_td = Type_Ptr(ts, parent);
-  assert(proc_td->first_proc == BOXTYPE_NONE); /* Must not be registered! */
-  proc_td->first_proc = parent_td->first_proc;
-  parent_td->first_proc = p;
-  proc_td->data.proc.sym_num = sym_num;
-}
-
-
-/****************************************************************************/
-
-
 /* Create a new unregistered subtype: a subtype is unregistered when
  * the parent is not aware of its existance. An unregistered type is defined
  * only giving its name and its parent type. When the subtype is registered
