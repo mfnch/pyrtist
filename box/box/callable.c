@@ -20,6 +20,7 @@
 #include <assert.h>
 
 #include <box/types.h>
+#include <box/mem.h>
 #include <box/obj.h>
 #include <box/callable.h>
 #include <box/vm.h>
@@ -37,6 +38,13 @@ BoxCallable_Init_As_Undefined(BoxCallable *cb) {
   cb->uid = NULL;
   cb->kind = BOXCALLABLEKIND_UNDEFINED;
   BoxPtr_Init(& cb->context);
+}
+
+/* Finalize a callable object. */
+void BoxCallable_Finish(BoxCallable *cb) {
+  if (cb->uid)
+    BoxMem_Free(cb->uid);
+  BoxPtr_Unlink(& cb->context);
 }
 
 /* Create an undefined callable */
@@ -75,7 +83,7 @@ BoxCallable_Set_Uid(BoxCallable *cb, BoxUid *uid) {
   if (!(cb && !cb->uid))
     return BOXBOOL_FALSE;
 
-  cb->uid = uid;
+  cb->uid = BoxMem_Strdup(uid);
   return BOXBOOL_TRUE;
 }
 
@@ -192,7 +200,7 @@ BoxCallable_Request_VM_Call_Num(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
       /* Alert the virtual machine that this call number is being used and
        * needs therefore to be resolved.
        */
-      BoxVMSym_Reference_Proc(vm, new_num, BoxCallable_Get_Uid(cb));
+      BoxVMSym_Reference_Proc(vm, new_num, new_cb);
 
       *num = new_num;
       *cb_out = new_cb;

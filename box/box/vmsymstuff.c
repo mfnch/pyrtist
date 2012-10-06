@@ -179,17 +179,27 @@ typedef struct {
  * @brief Data necessary to define a procedure.
  */
 typedef struct {
-  const char  *name;
+  BoxCallable *callable;
   BoxCCallOld fn_ptr;
 } MyProcDef;
 
+
+const char *
+BoxVMSym_Get_Proc_Name(BoxVM *vm, BoxVMSymID sym_id) {
+  MyProcDef *proc_def = BoxVMSym_Get_Definition(vm, sym_id);
+  assert(proc_def && proc_def->callable);
+  return BoxCallable_Get_Uid(proc_def->callable);
+}
+
 BoxBool
 BoxVMSym_Define_Proc(BoxVM *vm, BoxVMSymID sym_id, BoxCCallOld fn_ptr) {
-  MyProcDef proc_def;
-  proc_def.name = NULL;
-  proc_def.fn_ptr = fn_ptr;
+  MyProcDef *proc_def = BoxVMSym_Get_Definition(vm, sym_id);
+  assert(proc_def);
 
-  if (BoxVMSym_Define(vm, sym_id, & proc_def) != BOXTASK_OK)
+  if (fn_ptr)
+    proc_def->fn_ptr = fn_ptr;
+
+  if (BoxVMSym_Define(vm, sym_id, NULL) != BOXTASK_OK)
     return BOXBOOL_FALSE;
   return BOXBOOL_TRUE;
 }
@@ -201,7 +211,6 @@ My_Resolve_Proc_Ref(BoxVM *vm, BoxVMSymID sym_id, UInt sym_type, int defined,
   MyProcDef *proc_def = def;
 
   assert(sym_type == BOXVMSYMTYPE_PROC && proc_ref && proc_def && defined);
-
   
   if (BoxVM_Install_Proc_CCode(vm, proc_ref->call_num, proc_def->fn_ptr))
     return BOXTASK_OK;
@@ -212,17 +221,21 @@ My_Resolve_Proc_Ref(BoxVM *vm, BoxVMSymID sym_id, UInt sym_type, int defined,
 /*
  */
 BoxBool
-BoxVMSym_Reference_Proc(BoxVM *vm, BoxVMCallNum cn, const char *name) {
+BoxVMSym_Reference_Proc(BoxVM *vm, BoxVMCallNum cn, BoxCallable *cb) {
   MyProcRef proc_ref;
+  MyProcDef proc_def;
+  const char *name = BoxCallable_Get_Uid(cb);
 
   assert(vm);
 
   if (!name)
     return BOXBOOL_TRUE;
 
+  proc_def.callable = BoxCallable_Link(cb);
+
   /* Create a new PROC symbol. */
   BoxVMSymID sym_id = BoxVMSym_Create(vm, BOXVMSYMTYPE_PROC,
-                                      NULL, sizeof(MyProcDef));
+                                      & proc_def, sizeof(MyProcDef));
   assert(sym_id != BOXVMSYMID_NONE);
   BoxVMSym_Set_Name(vm, sym_id, name);
 

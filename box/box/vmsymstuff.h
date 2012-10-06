@@ -28,12 +28,10 @@
 #  define _VMSYMSTUFF_H
 
 typedef enum {
-  BOXVMSYMTYPE_CALL=1,
-  BOXVMSYMTYPE_COND_JMP=2,
-  BOXVMSYMTYPE_PROC_HEAD=123,
+  BOXVMSYMTYPE_COND_JMP=1,
+  BOXVMSYMTYPE_PROC_HEAD=2,
   BOXVMSYMTYPE_LABEL=3,
-  BOXVMSYMTYPE_CALLABLE=4,
-  BOXVMSYMTYPE_PROC=5
+  BOXVMSYMTYPE_PROC=4
 } BoxVMSymType;
 
 typedef struct {
@@ -79,11 +77,14 @@ Task BoxVMSym_Def_Proc_Head(BoxVM *vmp, BoxVMSymID sym_id,
 
 /* Temporary, very ugly stuff... */
 
+const char *
+BoxVMSym_Get_Proc_Name(BoxVM *vm, BoxVMSymID sym_id);
+
 BoxBool
 BoxVMSym_Define_Proc(BoxVM *vm, BoxVMSymID sym_id, BoxCCallOld fn_ptr);
 
 BoxBool
-BoxVMSym_Reference_Proc(BoxVM *vm, BoxVMCallNum cn, const char *name);
+BoxVMSym_Reference_Proc(BoxVM *vm, BoxVMCallNum cn, BoxCallable *cb);
 
 #endif
 

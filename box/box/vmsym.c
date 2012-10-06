@@ -221,7 +221,7 @@ static int
 My_Report_Ref(UInt item_num, void *item, void *pass_data) {
   BoxVM *vm = (BoxVM *) pass_data;
   BoxVMSymRef *sr = (BoxVMSymRef *) item;
-  if (! sr->resolved) {
+  if (!sr->resolved) {
     MSG_ERROR("Unresolved reference to the symbol (ID=%d, name='%s')",
               sr->sym_id, BoxVMSym_Get_Name(vm, sr->sym_id));
   }
@@ -265,7 +265,7 @@ Task BoxVMSym_Resolve(BoxVM *vm, BoxVMSymID sym_id) {
   def = BoxArr_Item_Ptr(& st->data, s->def_addr);
   def_size = s->def_size;
   sym_type = s->sym_type;
-  while(next > 0) {
+  while (next > 0) {
     BoxVMSymRef *sr = (BoxVMSymRef *) BoxArr_Item_Ptr(& st->refs, next);
     if (sr->sym_id != sym_id) {
       MSG_FATAL("BoxVMSym_Resolve: bad reference in the chain!");
@@ -358,24 +358,25 @@ My_Resolve_Ref_With_CLib(BoxVMSymID sym_id, void *item, void *pass_data) {
     BoxVM *vm = clrd->vm;
     const char *sym_name = s->name.text;
     if (sym_name && s->sym_type == BOXVMSYMTYPE_PROC) {
-      const char *err_msg;
-      void *sym;
+      const char *proc_name = BoxVMSym_Get_Proc_Name(vm, sym_id);
+        const char *err_msg;
+        void *sym;
 
-      err_msg = lt_dlerror();
-      sym = lt_dlsym(clrd->dylib, sym_name);
-      err_msg = lt_dlerror();
+        err_msg = lt_dlerror();
+        sym = lt_dlsym(clrd->dylib, proc_name);
+        err_msg = lt_dlerror();
 
-      if (err_msg)
-        return 1;
+        if (err_msg)
+          return 1;
 
-      if (!sym) {
-        MSG_ERROR("Symbol '%s' from library '%s' is NULL",
-                  sym_name, clrd->lib_file);
-        return 1;
-      }
+        if (!sym) {
+          MSG_ERROR("Symbol '%s' from library '%s' is NULL",
+                    proc_name, clrd->lib_file);
+          return 1;
+        }
 
-      if (!BoxVMSym_Define_Proc(vm, sym_id, (BoxVMCCode) sym))
-        return 1;
+        if (!BoxVMSym_Define_Proc(vm, sym_id, (BoxVMCCode) sym))
+          return 1;
     }
   }
   return 1;
