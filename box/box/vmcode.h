@@ -90,7 +90,6 @@ struct BoxVMCode_struct {
                parent     :1,  /**< The procedure has a parent */
                child      :1,  /**< The procedure has a child */
                reg_alloc  :1,  /**< it has automatic register allocation */
-               sym        :1,  /**< the procedure has an associated symbol */
                proc_id    :1,  /**< the procedure has a procedure number */
                proc_name  :1,  /**< it has a name */
                alter_name :1,  /**< has an alternative name */
@@ -188,14 +187,6 @@ BoxVMRegNum BoxVMCode_Get_Parent_Reg(BoxVMCode *p);
 BoxVMRegNum BoxVMCode_Get_Child_Reg(BoxVMCode *p);
 
 /**
- * @brief Provides a name for the procedure (necessary for
- *   #BOXVMCODESTYLE_EXTERN).
- *
- * This is usually the C name of the procedure.
- */
-void BoxVMCode_Set_Name(BoxVMCode *p, const char *proc_name);
-
-/**
  * @brief Provides an alternative name for the procedure.
  *
  * This is usually the Box name of the procedure (such as <tt>Int@@Print</tt>)
@@ -219,13 +210,6 @@ BoxVMCode_Get_Style(BoxVMCode *p);
 
 /** Get the register allocator for the procedure */
 RegAlloc *BoxVMCode_Get_RegAlloc(BoxVMCode *p);
-
-/** Sets the symbol associated to the procedure. */
-void BoxVMCode_Set_Sym(BoxVMCode *p, BoxVMSymID sym_id);
-
-/** Returns the symbol associated to the procedure (creating it, if necessary)
- */
-BoxVMSymID BoxVMCode_Get_Sym(BoxVMCode *p);
 
 /** Get the procedure ID, which is an integer number which the VM
  * allocates when it creates a BoxVMProc (which is just a bytecode container,

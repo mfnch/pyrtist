@@ -17,7 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file vmsymstuff.h
+/**
+ * @file vmsymstuff.h
  * @brief Wrappings of 'vmsym.c' for defining and referencing symbols.
  *
  * Some words.
@@ -54,13 +55,6 @@ void BoxVMSym_Def_Call(BoxVM *vm, BoxVMSymID sym_id);
 
 /** Get the call number associated to the given symbold id. */
 BoxVMCallNum BoxVMSym_Get_Call_Num(BoxVM *vm, BoxVMSymID sym_id);
-
-/** Emit a new call to the procedure corresponding to the symbol 'sym_id'.
- * If the call number is not know by the time this function is called, a
- * "call 0" will be emitted. This instruction will then be adjusted when
- * the call number will be defined using 'BoxVMSym_Def_Call'.
- */
-void BoxVMSym_Assemble_Call(BoxVM *vm, BoxVMSymID sym_id);
 
 void VM_Sym_Alloc_Method_Register(BoxVM *vmp, UInt sym_num,
                                   BoxTypeId type, BoxTypeId method);

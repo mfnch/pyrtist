@@ -132,7 +132,9 @@ BOXEXPORT void BoxArr_Set_Finalizer(BoxArr *arr, BoxArrFinalizer fin);
  * to the error policy set with BoxArr_Set_Err_Policy
  * @see BoxArr_Set_Err_Policy
  */
-BOXEXPORT void *BoxArr_Item_Ptr(BoxArr *arr, BoxUInt item_index);
+BOXEXPORT void *BoxArr_Get_Item_Ptr(BoxArr *arr, BoxUInt item_index);
+
+#define BoxArr_Item_Ptr BoxArr_Get_Item_Ptr
 
 /** Prototype of function used by BoxArr_Iter to iterate over the elements
  * of the provided array.

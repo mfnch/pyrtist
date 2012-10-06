@@ -170,7 +170,7 @@ void BoxArr_Clear(BoxArr *arr) {
   BoxArr_Reinit(arr); /* Re-init */
 }
 
-void *BoxArr_Item_Ptr(BoxArr *arr, UInt item_index) {
+void *BoxArr_Get_Item_Ptr(BoxArr *arr, UInt item_index) {
   if (item_index < 1 || item_index > arr->numel) {
     BoxErr_Report(& arr->err, BOXERR_OUT_OF_BOUNDS);
     return NULL;

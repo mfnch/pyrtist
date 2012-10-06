@@ -1209,11 +1209,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
 
     c->cur_proc = save_cur_proc;
 
-    {
-      (void) /*BoxVMCallNum*/ BoxVMCode_Install(& proc_implem);
-      BoxVMSymID sym_id = BoxVMCode_Get_Sym(& proc_implem);
-      BoxVMSym_Def_Call(c->vm, sym_id);
-    }
+    (void) BoxVMCode_Install(& proc_implem);
 
     BoxVMCode_Finish(& proc_implem);
   }

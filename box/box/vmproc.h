@@ -95,12 +95,12 @@ size_t BoxVM_Proc_Get_Size(BoxVM *vm, BoxVMProcID id);
  * @return A new call number for @p vm.
  */
 BOXEXPORT BoxVMCallNum
-BoxVM_Allocate_CallNum(BoxVM *vm);
+BoxVM_Allocate_Call_Num(BoxVM *vm);
 
 /**
  * @brief Deallocate the most recently allocated call number.
  *
- * Deallocate the last call number allocated with BoxVM_Allocate_CallNum().
+ * Deallocate the last call number allocated with BoxVM_Allocate_Call_Num().
  * The call number must be unused. @p num is required just for consistency
  * check.
  * @param vm The virtual machine.
@@ -109,7 +109,7 @@ BoxVM_Allocate_CallNum(BoxVM *vm);
  * @return Whether the operation was successful.
  */
 BOXEXPORT BoxBool
-BoxVM_Deallocate_CallNum(BoxVM *vm, BoxVMCallNum num);
+BoxVM_Deallocate_Call_Num(BoxVM *vm, BoxVMCallNum num);
 
 /**
  * @brief Install a procedure from VM code.

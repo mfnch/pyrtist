@@ -102,7 +102,6 @@ void BoxVMCode_Init(BoxVMCode *p, BoxCmp *c, BoxVMCodeStyle style) {
   p->have.parent = 0;
   p->have.child = 0;
   p->have.reg_alloc = 0;
-  p->have.sym = 0;
   p->have.proc_id = 0;
   p->have.proc_name = 0;
   p->have.alter_name = 0;
@@ -220,22 +219,6 @@ BoxVMRegNum BoxVMCode_Get_Child_Reg(BoxVMCode *p) {
   return 0;
 }
 
-void BoxVMCode_Set_Name(BoxVMCode *p, const char *proc_name) {
-  if (p->have.proc_name)
-    BoxMem_Free(p->proc_name);
-  p->proc_name = BoxMem_Strdup(proc_name);
-  p->have.proc_name = 1;
-
-  if (p->have.sym) {
-    if (BoxVMSym_Get_Name(p->cmp->vm, p->sym) != NULL) {
-      MSG_FATAL("Cannot set the name: procedure symbol has already been "
-                "given a name!");
-      assert(0);
-    }
-    BoxVMSym_Set_Name(p->cmp->vm, p->sym, p->proc_name);
-  }
-}
-
 BoxVMCodeStyle BoxVMCode_Get_Style(BoxVMCode *p) {
   return p->style;
 }
@@ -248,55 +231,6 @@ RegAlloc *BoxVMCode_Get_RegAlloc(BoxVMCode *p) {
     Reg_Init(& p->reg_alloc);
     p->have.reg_alloc = 1;
     return & p->reg_alloc;
-  }
-}
-
-void BoxVMCode_Set_Sym(BoxVMCode *p, BoxVMSymID sym_id) {
-  if (p->have.sym) {
-    MSG_FATAL("BoxVMCode_Set_Sym: cannot set symbol ID. The procedure has "
-              "already a symbol ID!");
-    assert(0);
-
-  } else {
-    /* Set the symbol */
-    p->sym = sym_id;
-    p->have.sym = 1;
-
-    /* Get the "old" call number from the symbol */
-    if (!p->have.call_num) {
-      p->call_num = BoxVMSym_Get_Call_Num(p->cmp->vm, sym_id);
-      p->have.call_num = 1;
-
-    } else {
-      MSG_FATAL("BoxVMCode_Set_Sym: cannot set call number. The procedure "
-                "has already got one!");
-      assert(0);
-    }
-
-    if (BoxVMSym_Is_Defined(p->cmp->vm, sym_id)) {
-      /* Get the name from the symbol, if it has one */
-      const char *sym_name = BoxVMSym_Get_Name(p->cmp->vm, sym_id);
-
-      /* inherit symbol name and call number from the given symbol */
-      if (sym_name != NULL)
-        BoxVMCode_Set_Name(p, sym_name);
-    }
-  }
-}
-
-BoxVMSymID BoxVMCode_Get_Sym(BoxVMCode *p) {
-  if (p->have.sym)
-    return p->sym;
-
-  else {
-    BoxVMSymID sym_id;
-    BoxVMCallNum call_num = BoxVMCode_Get_Call_Num(p);
-
-    p->have.sym = 1;
-    p->sym = sym_id = BoxVMSym_New_Call(p->cmp->vm, call_num);
-    if (p->have.proc_name)
-      BoxVMSym_Set_Name(p->cmp->vm, sym_id, p->proc_name);
-    return sym_id;
   }
 }
 
@@ -358,7 +292,7 @@ BoxVMCallNum BoxVMCode_Get_Call_Num(BoxVMCode *p) {
     return p->call_num;
 
   else {
-    p->call_num = BoxVM_Allocate_CallNum(p->cmp->vm);
+    p->call_num = BoxVM_Allocate_Call_Num(p->cmp->vm);
     p->have.call_num = 1;
     return p->call_num;
   }
@@ -377,7 +311,7 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p) {
     BoxVMCode_End(p); /* End the procedure, if not done explicitly */
 
     if (!p->have.call_num) {
-      p->call_num = BoxVM_Allocate_CallNum(p->cmp->vm);
+      p->call_num = BoxVM_Allocate_Call_Num(p->cmp->vm);
       p->have.call_num = 1;
     }
 
@@ -385,7 +319,7 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p) {
       return BOXVMCALLNUM_NONE;
 
     if (!BoxVM_Install_Proc_Code(p->cmp->vm, p->call_num, pn)) {
-      (void) BoxVM_Deallocate_CallNum(p->cmp->vm, p->call_num);
+      (void) BoxVM_Deallocate_Call_Num(p->cmp->vm, p->call_num);
       return BOXVMCALLNUM_NONE;
     }
 

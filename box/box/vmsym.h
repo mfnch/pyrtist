@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008, 2009, 2010 by Matteo Franchin                        *
+ * Copyright (C) 2008-2012 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -37,8 +37,8 @@
 #  include <box/list.h>
 #  include <box/vm.h>
 
-/** A symbol ID is just an integer number. The VM knows to what symbol
- * this number refers to.
+/**
+ * @brief An integer number used to identify a symbol.
  */
 typedef BoxUInt BoxVMSymID;
 
@@ -67,22 +67,22 @@ typedef struct {
  * and the size of the definition data (which are allocated when the symbol
  * is created with BoxVMSym_New).
  */
-typedef BoxTask (*BoxVMSymResolver)(BoxVM *vm, BoxVMSymID sym_num,
+typedef BoxTask (*BoxVMSymResolver)(BoxVM *vm, BoxVMSymID sym_id,
                                     BoxUInt sym_type, int defined,
-                                    void *def, BoxUInt def_size,
-                                    void *ref, BoxUInt ref_size);
+                                    void *def, size_t def_size,
+                                    void *ref, size_t ref_size);
 
-/** @brief The details about a symbol.
+/**
+ * @brief The details about a symbol.
  */
 typedef struct {
-  BoxVMSymID
-          sym_num;   /**< The symbol ID number */
-  BoxName name;      /**< The name of the symbol */
-  int     defined;   /**< Has a definition been given for the symbol? */
-  BoxUInt def_size,  /**< Size of the data containing the symbol definition */
-          def_addr,  /**< Address of the data in the array 'data' */
-          sym_type,  /**< Type of the symbol */
-          first_ref; /**< Number of the first reference to the symbol */
+  BoxVMSymID sym_id;    /**< The symbol ID number */
+  BoxName    name;      /**< The name of the symbol */
+  int        defined;   /**< Has a definition been given for the symbol? */
+  size_t     def_size,  /**< Size of the symbol definition data. */
+             def_addr;  /**< Address of the data in the array 'data' */
+  BoxUInt    sym_type,  /**< Type of the symbol */
+             first_ref; /**< Number of the first reference to the symbol */
 } BoxVMSym;
 
 /**
@@ -90,7 +90,7 @@ typedef struct {
  */
 typedef struct {
   BoxVMSymID
-          sym_num,  /**< ID-number of the referenced symbol */
+          sym_id,  /**< ID-number of the referenced symbol */
           next;     /**< ID-number of the next reference to the same symbol */
   size_t  ref_size, /**< Size of the data containing the symbol reference */
           ref_addr; /**< Address of the data in the array 'data' */
@@ -100,7 +100,7 @@ typedef struct {
 } BoxVMSymRef;
 
 /* Data types used by the BoxVMSym_Code_* functions */
-typedef BoxTask (*BoxVMSymCodeGen)(BoxVM *vm, BoxVMSymID sym_num,
+typedef BoxTask (*BoxVMSymCodeGen)(BoxVM *vm, BoxVMSymID sym_id,
                                    BoxUInt sym_type, int defined,
                                    void *def, size_t def_size,
                                    void *ref, size_t ref_size);
@@ -116,17 +116,20 @@ typedef struct {
 /** Initialize the symbol table of the program.
  * @param vmp is the VM-program.
  */
-void BoxVMSymTable_Init(BoxVMSymTable *t);
+BOXEXPORT void
+BoxVMSymTable_Init(BoxVMSymTable *t);
 
 /** Destroy the symbol table of the program.
  * @param vmp is the VM-program.
  */
-void BoxVMSymTable_Finish(BoxVMSymTable *t);
+BOXEXPORT void
+BoxVMSymTable_Finish(BoxVMSymTable *t);
 
 /** Create a new symbol with name 'n' and type 'sym_type'.
- * '*sym_num' is set with the allocated symbol number.
+ * '*sym_id' is set with the allocated symbol number.
  */
-BoxVMSymID BoxVMSym_New(BoxVM *vmp, BoxUInt sym_type, BoxUInt def_size);
+BOXEXPORT BoxVMSymID
+BoxVMSym_New(BoxVM *vmp, BoxUInt sym_type, BoxUInt def_size);
 
 /**
  * @brief Create a new symbol.
@@ -141,9 +144,10 @@ BOXEXPORT BoxVMSymID
 BoxVMSym_Create(BoxVM *vm, UInt sym_type,
                 const char *def, size_t def_size);
 
-/** Associate a name to the symbol sym_num.
+/** Associate a name to the symbol sym_id.
  */
-void BoxVMSym_Set_Name(BoxVM *vm, BoxVMSymID sym_id, const char *name);
+BOXEXPORT void
+BoxVMSym_Set_Name(BoxVM *vm, BoxVMSymID sym_id, const char *name);
 
 /** Get the name of the given symbol sym_id (NULL if the symbol has not
  * a name)
@@ -153,21 +157,41 @@ const char *BoxVMSym_Get_Name(BoxVM *vm, BoxVMSymID sym_id);
 /**
  * @brief Find a symbol with the given name.
  */
-BoxVMSymID BoxVM_Find_Sym(BoxVM *vm, const char *name);
+BOXEXPORT BoxVMSymID
+BoxVM_Find_Sym(BoxVM *vm, const char *name);
 
-/** Define a symbol which was previously created with BoxVMSym_New */
-Task BoxVMSym_Define(BoxVM *vm, BoxVMSymID sym_num, void *def);
-
-/** Return the pointer to the definition data.
- * The pointer is returned even if the symbol is not defined (the area
- * containing the definition is allocated when BoxVMSym_New is called).
- * NOTE: Use BoxVMSym_Is_Defined to check whether the symbol is defined or
- *   not.
+/**
+ * @brief Get the definition data for a symbol.
+ *
+ * @param vm The virtual machine the symbol refers to.
+ * @param sym_id The symbol identifier.
+ * @return The pointer to the definion data. The caller can write the
+ *   definition data before defining the symbol. If this is what the caller
+ *   decides to do, then it should also define the symbol by passing @c NULL
+ *   as a last argument for BoxVMSym_Define() to avoid overwriting the symbol
+ *   data.
+ * @note The pointer returned by this function must be used immediately,
+ *   before adding new symbols (as data may be relocated when doing so).
  */
-void *BoxVMSym_Get_Definition(BoxVM *vm, BoxVMSymID sym_id);
+BOXEXPORT void *
+BoxVMSym_Get_Definition(BoxVM *vm, BoxVMSymID sym_id);
+
+/**
+ * @brief Define a symbol which was previously created with BoxVMSym_Create().
+ *
+ * @param vm The virtual machine the symbol refers to.
+ * @param sym_id The symbol identifier.
+ * @param def The symbol data. Use @c NULL to leave the symbol data as it
+ *   currently is (as set using BoxVMSym_Get_Definition()).
+ * @return @c BOXTASK_OK if the symbol was defined, else @c BOXTASK_FAILURE
+ *   (which typically means that a symbol was defined twice).
+ */
+BOXEXPORT BoxTask
+BoxVMSym_Define(BoxVM *vm, BoxVMSymID sym_id, void *def);
 
 /** Return whether the symbol 'sym_id' has been defined or not */
-int BoxVMSym_Is_Defined(BoxVM *vm, BoxVMSymID sym_id);
+BOXEXPORT int
+BoxVMSym_Is_Defined(BoxVM *vm, BoxVMSymID sym_id);
 
 typedef enum {
   BOXVMSYM_AUTO,
@@ -182,55 +206,82 @@ typedef enum {
  * as unresolved. If 'resolved' == BOXVMSYM_AUTO, then it is marked as resolved
  * only if the symbol is defined.
  */
-void BoxVMSym_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymResolver r,
-                  void *ref, BoxUInt ref_size, BoxVMSymStatus resolved);
+BOXEXPORT void
+BoxVMSym_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymResolver r,
+             void *ref, size_t ref_size, BoxVMSymStatus resolved);
 
 #if 0
 /** Set the symbol resolver */
-Task BoxVMSym_Resolver_Set(BoxVM *vm, UInt sym_num, VMSymResolver r);
+BOXEXPORT BoxTask
+BoxVMSym_Resolver_Set(BoxVM *vm, BoxVMSymID sym_id, VMSymResolver r);
 #endif
 
 /** Set *all_resolved = 1 only if there are no unresolved references */
 void BoxVMSym_Ref_Check(BoxVM *vm, int *all_resolved);
 
 /** Print an error message for every unresolved reference */
-void BoxVMSym_Ref_Report(BoxVM *vm);
+BOXEXPORT void
+BoxVMSym_Ref_Report(BoxVM *vm);
 
-/** Resolve the symbol 'sym_num'.
- * If sym_num=0, then try to resolve all the symbols.
- * If the symbol is not defined, it silently ignore it!
+/**
+ * @brief Resolve the symbol.
+ *
+ * A symbol can be resolved once it has been defined with BoxVMSym_Define().
+ * The resolution consist in iterating over all the reference to the symbol
+ * and calling the resolutor (a callback).
+ * @param vm The virtual machine the symbol refers to.
+ * @param sym_id The symbol identifier.
+ * @return Whether the operation succeeded.
+ * @note If <pp>sym_id=0</pp>, then try to resolve all the defined symbols
+ *   (undefined symbols are ignored).
  */
-Task BoxVMSym_Resolve(BoxVM *vm, BoxVMSymID sym_num);
+BOXEXPORT BoxTask
+BoxVMSym_Resolve(BoxVM *vm, BoxVMSymID sym_id);
 
-/** Print the symbol table for the given symbol. The symbol table is a list
- * of all the references made to the symbol. If sym_num is zero the references
- * to all the symbols will be printed. out is the destination.
+/**
+ * @brief Print the symbol table for the given symbol.
+ *
+ * The symbol table is a list of all the references made to the symbol. If @p
+ * sym_id is zero the references to all symbols will be printed.
+ * @param vm The virtual machine.
+ * @param out The output stream.
+ * @param sym_id The symbol identifier.
  */
-void BoxVMSym_Table_Print(BoxVM *vm, FILE *out, BoxVMSymID sym_num);
+BOXEXPORT void
+BoxVMSym_Table_Print(BoxVM *vm, FILE *out, BoxVMSymID sym_id);
 
-/** Check that the type of the symbol 'sym_num' is 'sym_type'. */
-Task BoxVMSym_Check_Type(BoxVM *vm, BoxVMSymID sym_num, UInt sym_type);
-
-/** Open the given dynamic library to resolve symbols. If the file is not
- * found then this function appends an appropriate extension (.so for linux,
- *.dll for windows, etc.) and tries again.
+/**
+ * @brief Check that the type of the symbol @p sym_id is @p sym_type.
  */
-Task BoxVMSym_Resolve_CLib(BoxVM *vm, char *lib_file);
+BOXEXPORT BoxTask
+BoxVMSym_Check_Type(BoxVM *vm, BoxVMSymID sym_id, UInt sym_type);
 
-/** Resolution of functions defined in external dynamically loaded
- * C libraries.
+/**
+ * @brief Open the given dynamic library to resolve symbols.
+ *
+ * If the file is not found then this function appends an appropriate extension
+ * (.so for linux, .dll for windows, etc.) and tries again.
  */
-Task BoxVMSym_Resolve_CLibs(BoxVM *vm, BoxList *lib_paths, BoxList *libs);
+BOXEXPORT BoxTask
+BoxVMSym_Resolve_CLib(BoxVM *vm, const char *lib_file);
 
-/** This function calls the function given as argument 'BoxVMSym_Code_Ref'
+/**
+ * @brief Resolution of functions defined in external dynamically loaded
+ *   C libraries.
+ */
+BOXEXPORT BoxTask
+BoxVMSym_Resolve_CLibs(BoxVM *vm, BoxList *lib_paths, BoxList *libs);
+
+/**
+ * This function calls the function given as argument BoxVMSym_Code_Ref()
  * to assemble a piece of VM-code which makes reference to the symbol
- * 'sym_num'. The reference will be resolved calling again 'code_gen'
+ * @p sym_id. The reference will be resolved calling again @p code_gen
  * once the symbol has been defined.
- * The function 'code_gen' assembles parametrically a piece of VM byte-code.
+ * The function @p code_gen assembles parametrically a piece of VM byte-code.
  */
-Task BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_num,
-                       BoxVMSymCodeGen code_gen,
-                       void *ref, BoxUInt ref_size);
+BOXEXPORT BoxTask
+BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymCodeGen code_gen,
+                  void *ref, size_t ref_size);
 
 #  define BoxVMSym_Code_New BoxVMSym_New
 #  define BoxVMSym_Code_Def BoxVMSym_Def

@@ -38,10 +38,10 @@
 #include "list.h"
 
 #ifdef DYLIB
-static void Close_DyLib(void *item) {
+static void My_Close_DyLib(void *item) {
   void *dylib = *((void **) item);
   if (lt_dlclose(dylib)) {
-    MSG_WARNING("BoxVMSym_Destroy: Close_DyLib: lt_dlclose failure");
+    MSG_WARNING("BoxVMSym_Destroy: My_Close_DyLib: lt_dlclose failure");
   }
 }
 #endif
@@ -53,7 +53,7 @@ void BoxVMSymTable_Init(BoxVMSymTable *st) {
   BoxArr_Init(& st->refs, sizeof(BoxVMSymRef), VMSYM_REF_ARR_SIZE);
 #ifdef DYLIB
   BoxArr_Init(& st->dylibs, sizeof(void *), VMSYM_DYLIB_ARR_SIZE);
-  BoxArr_Set_Finalizer(& st->dylibs, Close_DyLib);
+  BoxArr_Set_Finalizer(& st->dylibs, My_Close_DyLib);
 #endif
 
   if (lt_dlinit() != 0) {
@@ -80,34 +80,34 @@ BoxVMSymID BoxVMSym_New(BoxVM *vm, UInt sym_type, UInt def_size) {
 
 /* Create a new symbol. */
 BoxVMSymID
-BoxVMSym_Create(BoxVM *vm, UInt sym_type,
-                const char *def, size_t def_size) {
+BoxVMSym_Create(BoxVM *vm, UInt sym_type, const char *def, size_t def_size) {
   BoxVMSymTable *st = & vm->sym_table;
-  BoxVMSym ss;
-  BoxVMSymID sym_num;
+  BoxVMSymID sym_id;
+  BoxVMSym *ss = BoxArr_Push(& st->defs, & ss);
 
-  ss.name.length = 0;
-  ss.name.text = NULL;
-  ss.sym_type = sym_type;
-  ss.defined = 0;
-  ss.def_size = def_size;
-  ss.def_addr = 1 + BoxArr_Num_Items(& st->data);
-  ss.first_ref = 0;
-  BoxArr_Push(& st->defs, & ss);
+  assert(ss);
+  ss->name.length = 0;
+  ss->name.text = NULL;
+  ss->sym_type = sym_type;
+  ss->defined = 0;
+  ss->def_size = def_size;
+  ss->def_addr = 1 + BoxArr_Num_Items(& st->data);
+  ss->first_ref = 0;
 
-  sym_num = BoxArr_Num_Items(& st->defs);
+  sym_id = BoxArr_Num_Items(& st->defs);
   BoxArr_MPush(& st->data, def, def_size);
-  return sym_num;
+  return sym_id;
 }
 
-void BoxVMSym_Set_Name(BoxVM *vmp, UInt sym_num, const char *name) {
-  BoxVMSymTable *st = & vmp->sym_table;
+/** Associate a name to the symbol sym_id. */
+void BoxVMSym_Set_Name(BoxVM *vm, BoxVMSymID sym_id, const char *name) {
+  BoxVMSymTable *st = & vm->sym_table;
   BoxHTItem *hi;
   BoxVMSym *s;
   /*char *n_str;*/
-  UInt name_len;
+  size_t name_len;
 
-  s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
+  s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_id);
   if (s->name.length != 0) {
     MSG_FATAL("This symbol has already been given a name!");
     assert(0);
@@ -120,7 +120,7 @@ void BoxVMSym_Set_Name(BoxVM *vmp, UInt sym_num, const char *name) {
   }
 
   (void) BoxHT_Insert_Obj(& st->syms, name, name_len,
-                          & sym_num, sizeof(UInt));
+                          & sym_id, sizeof(UInt));
   if (!BoxHT_Find(& st->syms, name, name_len, & hi) ) {
     MSG_FATAL("Hashtable seems not to work (from BoxVMSym_Add)");
     assert(0);
@@ -130,35 +130,39 @@ void BoxVMSym_Set_Name(BoxVM *vmp, UInt sym_num, const char *name) {
   s->name.length = hi->key_size - 1; /* Without the final '\0' */
 }
 
-const char *BoxVMSym_Get_Name(BoxVM *vmp, UInt sym_num) {
-  BoxVMSymTable *st = & vmp->sym_table;
-  BoxVMSym *s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
+const char *BoxVMSym_Get_Name(BoxVM *vm, BoxVMSymID sym_id) {
+  BoxVMSymTable *st = & vm->sym_table;
+  BoxVMSym *s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_id);
   return s->name.text;
 }
 
-Task BoxVMSym_Define(BoxVM *vm, BoxVMSymID sym_num, void *def) {
-  BoxVMSymTable *st = & vm->sym_table;
-  BoxVMSym *s;
-  s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
-  if (s->defined) {
-    const char *sym_name = BoxVMSym_Get_Name(vm, sym_num);
-    MSG_ERROR("Double definition of the symbol '%s'.", sym_name);
-    return BOXTASK_FAILURE;
-  }
-  if (def != NULL) {
-    void *def_data_ptr;
-    def_data_ptr = BoxArr_Item_Ptr(& st->data, s->def_addr);
-    (void) memcpy(def_data_ptr, def, s->def_size);
-  }
-  s->defined = 1;
-  return BOXTASK_OK;
-}
-
+/* Get the definition data for a symbol. */
 void *BoxVMSym_Get_Definition(BoxVM *vm, BoxVMSymID sym_id) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_id);
   void *def_data_ptr = BoxArr_Item_Ptr(& st->data, s->def_addr);
   return def_data_ptr;
+}
+
+/* Define a symbol which was previously created with BoxVMSym_Create(). */
+BoxTask
+BoxVMSym_Define(BoxVM *vm, BoxVMSymID sym_id, void *def) {
+  BoxVMSymTable *st = & vm->sym_table;
+  BoxVMSym *s = BoxArr_Get_Item_Ptr(& st->defs, sym_id);
+
+  if (s->defined) {
+    const char *sym_name = BoxVMSym_Get_Name(vm, sym_id);
+    MSG_ERROR("Double definition of the symbol '%s'.", sym_name);
+    return BOXTASK_FAILURE;
+  }
+
+  if (def) {
+    void *def_data_ptr = BoxArr_Item_Ptr(& st->data, s->def_addr);
+    (void) memcpy(def_data_ptr, def, s->def_size);
+  }
+
+  s->defined = 1;
+  return BOXTASK_OK;
 }
 
 int BoxVMSym_Is_Defined(BoxVM *vm, BoxVMSymID sym_id) {
@@ -167,16 +171,16 @@ int BoxVMSym_Is_Defined(BoxVM *vm, BoxVMSymID sym_id) {
   return s->defined;
 }
 
-void BoxVMSym_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymResolver r,
-                  void *ref, UInt ref_size, BoxVMSymStatus resolved) {
-  BoxVMSymTable *st = & vmp->sym_table;
+void BoxVMSym_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymResolver r,
+                  void *ref, size_t ref_size, BoxVMSymStatus resolved) {
+  BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
   BoxVMSymRef sr;
   void *ref_data_ptr;
 
   assert(ref_size > 0 || ref == NULL);
-  s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
-  sr.sym_num = sym_num;
+  s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_id);
+  sr.sym_id = sym_id;
   sr.next = s->first_ref;
   sr.ref_size = ref_size;
   sr.ref_addr = 1 + BoxArr_Num_Items(& st->data);
@@ -200,60 +204,62 @@ void BoxVMSym_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymResolver r,
   s->first_ref = BoxArr_Num_Items(& st->refs);
 }
 
-static int Check_Ref(UInt item_num, void *item, void *all_resolved) {
+static int
+My_Check_Ref(UInt item_num, void *item, void *all_resolved) {
   BoxVMSymRef *sr = (BoxVMSymRef *) item;
   *((int *) all_resolved) &= sr->resolved;
   return 1;
 }
 
-void BoxVMSym_Ref_Check(BoxVM *vmp, int *all_resolved) {
-  BoxVMSymTable *st = & vmp->sym_table;
+void BoxVMSym_Ref_Check(BoxVM *vm, int *all_resolved) {
+  BoxVMSymTable *st = & vm->sym_table;
   *all_resolved = 1;
-  (void) BoxArr_Iter(& st->refs, Check_Ref, all_resolved);
+  (void) BoxArr_Iter(& st->refs, My_Check_Ref, all_resolved);
 }
 
-static int Report_Ref(UInt item_num, void *item, void *pass_data) {
-  BoxVM *vmp = (BoxVM *) pass_data;
+static int
+My_Report_Ref(UInt item_num, void *item, void *pass_data) {
+  BoxVM *vm = (BoxVM *) pass_data;
   BoxVMSymRef *sr = (BoxVMSymRef *) item;
   if (! sr->resolved) {
     MSG_ERROR("Unresolved reference to the symbol (ID=%d, name='%s')",
-              sr->sym_num, BoxVMSym_Get_Name(vmp, sr->sym_num));
+              sr->sym_id, BoxVMSym_Get_Name(vm, sr->sym_id));
   }
   return 1;
 }
 
-void BoxVMSym_Ref_Report(BoxVM *vmp) {
-  BoxVMSymTable *st = & vmp->sym_table;
-  (void) BoxArr_Iter(& st->refs, Report_Ref, vmp);
+void BoxVMSym_Ref_Report(BoxVM *vm) {
+  BoxVMSymTable *st = & vm->sym_table;
+  (void) BoxArr_Iter(& st->refs, My_Report_Ref, vm);
 }
 
 #if 0
-Task BoxVMSym_Resolver_Set(BoxVM *vmp, UInt sym_num, BoxVMSymResolver r) {
-  BoxVMSymTable *st = & vmp->sym_table;
+Task BoxVMSym_Resolver_Set(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymResolver r) {
+  BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
 
-  s = (BoxVMSym *) BoxArr_ItemPtr(& st->defs, sym_num);
+  s = (BoxVMSym *) BoxArr_ItemPtr(& st->defs, sym_id);
   s->resolver = r;
   return BOXTASK_OK;
 }
 #endif
 
-Task BoxVMSym_Resolve(BoxVM *vmp, UInt sym_num) {
-  BoxVMSymTable *st = & vmp->sym_table;
+Task BoxVMSym_Resolve(BoxVM *vm, BoxVMSymID sym_id) {
+  BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
   UInt next;
   UInt sym_type, def_size, ref_size;
   void *def, *ref;
 
-  if (sym_num < 1) {
+  if (sym_id < 1) {
     UInt i, num_defs = BoxArr_Num_Items(& st->defs);
     for(i=1; i<=num_defs; i++) {
-      BOXTASK( BoxVMSym_Resolve(vmp, i) );
+      BOXTASK( BoxVMSym_Resolve(vm, i) );
     }
     return BOXTASK_OK;
   }
 
-  s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
+  s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_id);
   if (! s->defined) return BOXTASK_OK;
   next = s->first_ref;
   def = BoxArr_Item_Ptr(& st->data, s->def_addr);
@@ -261,7 +267,7 @@ Task BoxVMSym_Resolve(BoxVM *vmp, UInt sym_num) {
   sym_type = s->sym_type;
   while(next > 0) {
     BoxVMSymRef *sr = (BoxVMSymRef *) BoxArr_Item_Ptr(& st->refs, next);
-    if (sr->sym_num != sym_num) {
+    if (sr->sym_id != sym_id) {
       MSG_FATAL("BoxVMSym_Resolve: bad reference in the chain!");
       return BOXTASK_FAILURE;
     }
@@ -276,7 +282,7 @@ Task BoxVMSym_Resolve(BoxVM *vmp, UInt sym_num) {
       ref_size = sr->ref_size;
       ref = (ref_size > 0) ? BoxArr_Item_Ptr(& st->data, sr->ref_addr) : 0;
 
-      BOXTASK( sr->resolver(vmp, sym_num, sym_type, 1, def, def_size,
+      BOXTASK( sr->resolver(vm, sym_id, sym_type, 1, def, def_size,
                          ref, ref_size) );
       sr->resolved = 1;
     }
@@ -286,22 +292,22 @@ Task BoxVMSym_Resolve(BoxVM *vmp, UInt sym_num) {
   return BOXTASK_OK;
 }
 
-void BoxVMSym_Table_Print(BoxVM *vmp, FILE *out, UInt sym_num) {
-  BoxVMSymTable *st = & vmp->sym_table;
+void BoxVMSym_Table_Print(BoxVM *vm, FILE *out, BoxVMSymID sym_id) {
+  BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
   UInt next, ref_num;
   char *sym_name;
 
-  if (sym_num < 1) {
+  if (sym_id < 1) {
     UInt i, num_defs = BoxArr_Num_Items(& st->defs);
     fprintf(out, "The table contains "SUInt" symbols\n", num_defs);
     for(i=1; i<=num_defs; i++) {
-      BoxVMSym_Table_Print(vmp, out, i);
+      BoxVMSym_Table_Print(vm, out, i);
     }
     return;
   }
 
-  s = (BoxVMSym  *) BoxArr_Item_Ptr(& st->defs, sym_num);
+  s = (BoxVMSym  *) BoxArr_Item_Ptr(& st->defs, sym_id);
   next = s->first_ref;
   sym_name = (s->name.length > 0) ? s->name.text : "";
   ref_num = 1;
@@ -309,12 +315,12 @@ void BoxVMSym_Table_Print(BoxVM *vmp, FILE *out, UInt sym_num) {
   fprintf(out,
    "Symbol ID = "SUInt"; name = '%s'; type = "SUInt"; "
    "defined = %d, def_addr = "SUInt", def_size = "SUInt"\n",
-   sym_num, sym_name, s->sym_type,
+   sym_id, sym_name, s->sym_type,
    s->defined, s->def_addr, s->def_size);
 
   while(next > 0) {
     BoxVMSymRef *sr = (BoxVMSymRef *) BoxArr_Item_Ptr(& st->refs, next);
-    if (sr->sym_num != sym_num) {
+    if (sr->sym_id != sym_id) {
       fprintf(out, "Bad reference in the chain!");
       return;
     }
@@ -330,25 +336,26 @@ void BoxVMSym_Table_Print(BoxVM *vmp, FILE *out, UInt sym_num) {
   }
 }
 
-Task BoxVMSym_Check_Type(BoxVM *vmp, UInt sym_num, UInt sym_type) {
-  BoxVMSymTable *st = & vmp->sym_table;
+Task BoxVMSym_Check_Type(BoxVM *vm, BoxVMSymID sym_id, UInt sym_type) {
+  BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
-  s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
+  s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_id);
   return (s->sym_type == sym_type) ? BOXTASK_OK : BOXTASK_FAILURE;
 }
 
-struct clib_ref_data {
-  BoxVM *vmp;
-  void *dylib;
-  char *lib_file;
-};
+typedef struct {
+  BoxVM      *vm;
+  void       *dylib;
+  const char *lib_file;
+} MyCLibRefData;
 
 #ifdef DYLIB
-static int Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
+static int
+My_Resolve_Ref_With_CLib(BoxVMSymID sym_id, void *item, void *pass_data) {
   BoxVMSym *s = (BoxVMSym *) item;
   if (!s->defined) {
-    struct clib_ref_data *clrd = (struct clib_ref_data *) pass_data;
-    BoxVM *vmp = clrd->vmp;
+    MyCLibRefData *clrd = pass_data;
+    BoxVM *vm = clrd->vm;
     const char *sym_name = s->name.text;
     if (sym_name && s->sym_type == BOXVMSYMTYPE_PROC) {
       const char *err_msg;
@@ -367,7 +374,7 @@ static int Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
         return 1;
       }
 
-      if (!BoxVMSym_Define_Proc(vmp, sym_num, (BoxVMCCode) sym))
+      if (!BoxVMSym_Define_Proc(vm, sym_id, (BoxVMCCode) sym))
         return 1;
     }
   }
@@ -375,16 +382,17 @@ static int Resolve_Ref_With_CLib(UInt sym_num, void *item, void *pass_data) {
 }
 #endif
 
-Task BoxVMSym_Resolve_CLib(BoxVM *vmp, char *lib_file) {
+BoxTask BoxVMSym_Resolve_CLib(BoxVM *vm, const char *lib_file) {
 #ifdef DYLIB
-  BoxVMSymTable *st = & vmp->sym_table;
-  struct clib_ref_data clrd;
-  clrd.vmp = vmp;
+  BoxVMSymTable *st = & vm->sym_table;
+  MyCLibRefData clrd;
+  clrd.vm = vm;
   clrd.lib_file = lib_file;
   clrd.dylib = lt_dlopenext(lib_file);
-  if (clrd.dylib == NULL) return BOXTASK_FAILURE;
+  if (clrd.dylib == NULL)
+    return BOXTASK_FAILURE;
   BoxArr_Push(& st->dylibs, & clrd.dylib);
-  (void) BoxArr_Iter(& st->defs, Resolve_Ref_With_CLib, & clrd);
+  (void) BoxArr_Iter(& st->defs, My_Resolve_Ref_With_CLib, & clrd);
   return BOXTASK_OK;
 #else
   MSG_WARNING("Cannot load '%s': the virtual machine was compiled "
@@ -394,7 +402,7 @@ Task BoxVMSym_Resolve_CLib(BoxVM *vmp, char *lib_file) {
 }
 
 struct clibs_data {
-  BoxVM *vmp;
+  BoxVM *vm;
   BoxList *lib_paths;
   char *path;
   char *lib;
@@ -406,7 +414,7 @@ Task Iter_Over_Paths(void *string, void *pass_data) {
   Task status;
   cld->path = (char *) string;
   lib_file = BoxMem_Strdup(Box_Print("%s/lib%s", cld->path, cld->lib));
-  status = BoxVMSym_Resolve_CLib(cld->vmp, lib_file);
+  status = BoxVMSym_Resolve_CLib(cld->vm, lib_file);
   BoxMem_Free(lib_file);
   if (status == BOXTASK_OK) return BOXTASK_FAILURE; /* Stop here, if we have found it! */
   return BOXTASK_OK;
@@ -426,33 +434,34 @@ Task Iter_Over_Libs(void *string, void *pass_data) {
   return BOXTASK_OK;
 }
 
-Task BoxVMSym_Resolve_CLibs(BoxVM *vmp, BoxList *lib_paths, BoxList *libs) {
+Task BoxVMSym_Resolve_CLibs(BoxVM *vm, BoxList *lib_paths, BoxList *libs) {
   struct clibs_data cld;
-  cld.vmp = vmp;
+  cld.vm = vm;
   cld.lib_paths = lib_paths;
   return BoxList_Iter(libs, Iter_Over_Libs, & cld);
 }
 
 /****************************************************************************/
 
-static Task code_generator(BoxVM *vmp, UInt sym_num, UInt sym_type,
-                           int defined, void *def, UInt def_size,
-                           void *ref, UInt ref_size) {
+static BoxTask
+My_Code_Generator(BoxVM *vm, BoxVMSymID sym_id, UInt sym_type,
+                  int defined, void *def, UInt def_size,
+                  void *ref, UInt ref_size) {
   BoxVMSymCodeRef *ref_head = (BoxVMSymCodeRef *) ref;
   void *ref_tail = ref + sizeof(BoxVMSymCodeRef);
   UInt ref_tail_size = ref_size - sizeof(BoxVMSymCodeRef);
-  BoxVMProcTable *pt = & vmp->proc_table;
+  BoxVMProcTable *pt = & vm->proc_table;
   BoxVMProc *tmp_proc;
   UInt saved_proc_num;
 
-  saved_proc_num = BoxVM_Proc_Target_Get(vmp);
-  BoxVM_Proc_Empty(vmp, pt->tmp_proc);
-  BoxVM_Proc_Target_Set(vmp, pt->tmp_proc);
+  saved_proc_num = BoxVM_Proc_Target_Get(vm);
+  BoxVM_Proc_Empty(vm, pt->tmp_proc);
+  BoxVM_Proc_Target_Set(vm, pt->tmp_proc);
   tmp_proc = pt->target_proc;
   /* Call the procedure here! */
-  BOXTASK( ref_head->code_gen(vmp, sym_num, sym_type, defined,
+  BOXTASK( ref_head->code_gen(vm, sym_id, sym_type, defined,
                            def, def_size, ref_tail, ref_tail_size) );
-  BoxVM_Proc_Target_Set(vmp, ref_head->proc_num);
+  BoxVM_Proc_Target_Set(vm, ref_head->proc_num);
   /* Replace the referencing code with the generated code */
   {
     void *src = BoxArr_First_Item_Ptr(& tmp_proc->code);
@@ -460,29 +469,28 @@ static Task code_generator(BoxVM *vmp, UInt sym_num, UInt sym_type,
     BoxArr *dest =  & pt->target_proc->code; /* Destination sheet */
     int dest_pos = ref_head->pos + 1; /* NEED TO ADD 1 */
     if (src_size != ref_head->size) {
-      MSG_ERROR("vmsym.c, code_generator: The code for the resolved "
-                "reference does not match the space which was reserved "
-                "for it!");
+      MSG_ERROR("My_Code_Generator: The code for the resolved reference does "
+                "not match the space which was reserved for it!");
       return BOXTASK_FAILURE;
     }
     BoxArr_Overwrite(dest, dest_pos, src, src_size);
   }
-  BoxVM_Proc_Target_Set(vmp, saved_proc_num);
+  BoxVM_Proc_Target_Set(vm, saved_proc_num);
   return BOXTASK_OK;
 }
 
-Task BoxVMSym_Code_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymCodeGen code_gen,
+Task BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymCodeGen code_gen,
                        void *ref, UInt ref_size) {
-  BoxVMSymTable *st = & vmp->sym_table;
+  BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
   void *def;
-  BoxVMProcTable *pt = & vmp->proc_table;
+  BoxVMProcTable *pt = & vm->proc_table;
 
   UInt ref_all_size;
   BoxVMSymCodeRef *ref_head;
   void *ref_all, *ref_tail;
 
-  s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_num);
+  s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_id);
   def = BoxArr_Item_Ptr(& st->data, s->def_addr);
 
   ref_all_size = sizeof(BoxVMSymCodeRef) + ref_size;
@@ -499,14 +507,14 @@ Task BoxVMSym_Code_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymCodeGen code_gen,
   if (ref != NULL && ref_size > 0)
     (void) memcpy(ref_tail, ref, ref_size);
 
-  BOXTASK( code_gen(vmp, sym_num, s->sym_type, s->defined, def, s->def_size,
+  BOXTASK( code_gen(vm, sym_id, s->sym_type, s->defined, def, s->def_size,
                  ref, ref_size) );
   if (pt->target_proc_num != ref_head->proc_num) {
     MSG_ERROR("BoxVMSym_Code_Ref: the function 'code_gen' must not change "
               "the current target for compilation!");
   }
   ref_head->size = BoxArr_Num_Items(& pt->target_proc->code) - ref_head->pos;
-  BoxVMSym_Ref(vmp, sym_num, code_generator, ref_all, ref_all_size, -1);
+  BoxVMSym_Ref(vm, sym_id, My_Code_Generator, ref_all, ref_all_size, -1);
   BoxMem_Free(ref_all);
   return BOXTASK_OK;
 }
@@ -517,7 +525,7 @@ Task BoxVMSym_Code_Ref(BoxVM *vmp, UInt sym_num, BoxVMSymCodeGen code_gen,
 #  define CALL_TYPE 1
 
 /* This is the function which assembles the code for the function call */
-Task Assemble_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
+Task Assemble_Call(BoxVM *vm, BoxVMSymID sym_id, UInt sym_type,
                    int defined, void *def, UInt def_size,
                    void *ref, UInt ref_size) {
   UInt call_num = 0;
@@ -526,36 +534,36 @@ Task Assemble_Call(BoxVM *vmp, UInt sym_num, UInt sym_type,
     assert(def_size=sizeof(UInt));
     call_num = *((UInt *) def);
   }
-  BoxVM_Assemble(vmp, ASM_CALL_I, CAT_IMM, call_num);
+  BoxVM_Assemble(vm, ASM_CALL_I, CAT_IMM, call_num);
   return BOXTASK_OK;
 }
 
 int main(void) {
-  UInt sym_num;
-  BoxVM *vmp;
+  BoxVMSymID sym_id;
+  BoxVM *vm;
   /* Initialization of the VM goes here
    ...
    ...
    */
 
   /* Here we define that a new symbol with type CALL_TYPE=1 exists */
-  (void) BoxVMSym_New(vmp, & sym_num, CALL_TYPE, sizeof(UInt));
+  (void) BoxVMSym_New(vm, & sym_id, CALL_TYPE, sizeof(UInt));
   /* Here we make a reference to it: at this point the assembled code for
    * "call 0" will be added to the current target procedure.
    * 0 is wrong, but we don't know what is the right number, because
    * the symbol is still not defined.
    */
-  (void) BoxVMSym_Code_Ref(vmp, sym_num, Assemble_Call);
+  (void) BoxVMSym_Code_Ref(vm, sym_id, Assemble_Call);
   /* Here we define the symbol "my_proc" to be (UInt) 123.
    * Now we know that all the "call" instructions referencing
    * the symbol "my_proc" should be assembled with "call 123"
    */
-  (void) BoxVMSym_Def(vmp, sym_num, & ((UInt) 123));
+  (void) BoxVMSym_Def(vm, sym_id, & ((UInt) 123));
   /* We can now resolve all the past references which were made when
    * we were not aware of the real value of "my_proc".
    * The code "call 0" will be replaced with "call 123"
    */
-  (void) BoxVMSym_Resolve_All(vmp);
+  (void) BoxVMSym_Resolve_All(vm);
   return 0;
 }
 #endif

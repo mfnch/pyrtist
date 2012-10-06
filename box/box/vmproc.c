@@ -242,7 +242,7 @@ BoxVM_Set_Proc_Names(BoxVM *vm, BoxVMCallNum cn,
 
 /* Allocate a new call number. */
 BoxVMCallNum
-BoxVM_Allocate_CallNum(BoxVM *vm) {
+BoxVM_Allocate_Call_Num(BoxVM *vm) {
   BoxArr *inst_procs = & vm->proc_table.installed;
   BoxVMProcInstalled *inst_proc = BoxArr_Push(inst_procs, NULL);
 
@@ -257,7 +257,7 @@ BoxVM_Allocate_CallNum(BoxVM *vm) {
 
 /* Deallocate the most recently allocated call number. */
 BoxBool
-BoxVM_Deallocate_CallNum(BoxVM *vm, BoxVMCallNum num) {
+BoxVM_Deallocate_Call_Num(BoxVM *vm, BoxVMCallNum num) {
   BoxArr *inst_procs = & vm->proc_table.installed;
 
   if (num == BOXVMCALLNUM_NONE)

@@ -181,7 +181,7 @@ BoxCallable_Request_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
       /* Here we allocate a new VM call number and we leave it undefined.
        * We define the undefined callable in cb and return it in cb_out.
        */
-      new_num = BoxVM_Allocate_CallNum(vm);
+      new_num = BoxVM_Allocate_Call_Num(vm);
       if (new_num == BOXVMCALLNUM_NONE)
         break;
 
@@ -210,7 +210,7 @@ BoxCallable_Request_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
        */
 
       /* Allocate a new call number. */
-      new_num = BoxVM_Allocate_CallNum(vm);
+      new_num = BoxVM_Allocate_Call_Num(vm);
       if (new_num == BOXVMCALLNUM_NONE)
         break;
 
@@ -256,7 +256,7 @@ BoxCallable_Request_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
 
   /* Failure: release resources and exit. */
   if (new_num != BOXVMCALLNUM_NONE)
-    (void) BoxVM_Deallocate_CallNum(vm, new_num);
+    (void) BoxVM_Deallocate_Call_Num(vm, new_num);
 
   if (!new_cb)
     (void) BoxCallable_Unlink(new_cb);
