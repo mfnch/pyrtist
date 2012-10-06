@@ -130,7 +130,7 @@ BoxType_Get_Combination_Info(BoxType *comb, BoxType **child, BoxCallable **cb);
  *   is replaced with a corresponding VM callable for @p vm.
  */
 BOXEXPORT BoxBool
-BoxType_Generate_Combination_CallNum(BoxType *comb, BoxVM *vm,
+BoxType_Generate_Combination_Call_Num(BoxType *comb, BoxVM *vm,
                                      BoxVMCallNum *call_num);
 
 #endif /* _BOX_COMBS_H */

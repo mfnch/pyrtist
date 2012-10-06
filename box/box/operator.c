@@ -518,7 +518,7 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
     } else if (opn->asm_scheme == OPASMSCHEME_USR_UN) {
       BoxVMCallNum *call_num =
         BoxVMSym_Get_Definition(c->vm, opn->implem.sym_id);
-      Value_Emit_Call_From_CallNum(*call_num, dest, src);
+      Value_Emit_Call_From_Call_Num(*call_num, dest, src);
       Value_Unlink(src);
       Value_Unlink(dest);
       return BOXTASK_OK;

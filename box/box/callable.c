@@ -158,7 +158,7 @@ BoxCallable_Define_From_VM(BOXIN BoxCallable *cb, BoxVM *vm,
 
 /* Return the call number for a VM callable. */
 BoxBool
-BoxCallable_Get_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *cn) {
+BoxCallable_Get_VM_Call_Num(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *cn) {
   if (cb->kind == BOXCALLABLEKIND_VM && vm == cb->implem.vm_call.vm) {
     if (cn)
       *cn = cb->implem.vm_call.call_num;
@@ -170,7 +170,7 @@ BoxCallable_Get_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *cn) {
 
 /* Request a call number for a given callable. */
 BoxBool
-BoxCallable_Request_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
+BoxCallable_Request_VM_Call_Num(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
                                BOXOUT BoxCallable **cb_out) {
   BoxVMCallNum new_num = BOXVMCALLNUM_NONE;
   BoxCallable *new_cb = NULL;

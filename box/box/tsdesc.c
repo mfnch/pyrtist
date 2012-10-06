@@ -75,7 +75,7 @@ static BoxVMCallNum My_Find_Proc(BoxCmp *c, BoxTypeId child,
 
     assert(expand_info >= BOXTYPECMP_EQUAL);
 
-    if (BoxType_Generate_Combination_CallNum(p, vm, & new_callnum))
+    if (BoxType_Generate_Combination_Call_Num(p, vm, & new_callnum))
       return new_callnum;
 
     MSG_ERROR("Callable is not registered");

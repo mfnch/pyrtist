@@ -1180,7 +1180,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     BoxVMCode_Init(& proc_implem, c, BOXVMCODESTYLE_SUB);
 
     /* Set the call number. */
-    if (!BoxType_Generate_Combination_CallNum(comb, c->vm, & cn))
+    if (!BoxType_Generate_Combination_Call_Num(comb, c->vm, & cn))
       MSG_FATAL("Cannot generate call number for combination.");
     proc_implem.have.call_num = 1;
     proc_implem.call_num = cn;

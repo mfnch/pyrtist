@@ -214,7 +214,7 @@ BoxCallable_Is_Implemented(BoxCallable *cb);
  * In all the other cases, @c BOXBOOL_FALSE is returned.
  */
 BOXEXPORT BoxBool
-BoxCallable_Get_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *cn);
+BoxCallable_Get_VM_Call_Num(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *cn);
 
 /**
  * @brief Request a call number for a given callable.
@@ -234,7 +234,7 @@ BoxCallable_Get_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *cn);
  *   were written with values, else @c BOXBOOL_FALSE.
  */
 BOXEXPORT BoxBool
-BoxCallable_Request_VM_CallNum(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
+BoxCallable_Request_VM_Call_Num(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
                                BOXOUT BoxCallable **cb_out);
 
 /**

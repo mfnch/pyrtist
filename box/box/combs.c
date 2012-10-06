@@ -187,13 +187,13 @@ BoxType_Get_Combination_Info(BoxType *comb, BoxType **child,
 
 /* Generate a call number for calling a combination from bytecode. */
 BoxBool
-BoxType_Generate_Combination_CallNum(BoxType *comb, BoxVM *vm,
+BoxType_Generate_Combination_Call_Num(BoxType *comb, BoxVM *vm,
                                      BoxVMCallNum *cn) {
   if (comb->type_class == BOXTYPECLASS_COMB_NODE) {
     BoxTypeCombNode *td = BoxType_Get_Data(comb);
     BoxCallable *new_cb;
 
-    if (BoxCallable_Request_VM_CallNum(td->callable, vm, cn, & new_cb)) {
+    if (BoxCallable_Request_VM_Call_Num(td->callable, vm, cn, & new_cb)) {
       /* Substitute the callable, if necessary. */
       if (new_cb) {
         (void) BoxCallable_Unlink(td->callable);

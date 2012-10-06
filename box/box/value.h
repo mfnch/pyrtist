@@ -238,7 +238,7 @@ int Value_Has_Type(Value *v);
 /** Emit the code corresponding to a call to the procedure having symbol
  * 'sym_id'.
  */
-void Value_Emit_Call_From_CallNum(BoxVMCallNum call_num,
+void Value_Emit_Call_From_Call_Num(BoxVMCallNum call_num,
                                   Value *parent, Value *child);
 
 /** Emits the code corresponding to a call to child@parent. If the procedure
