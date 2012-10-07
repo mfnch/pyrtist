@@ -230,11 +230,6 @@ TS_Subtype_Register(BoxTS *ts, BoxTypeId subtype, BoxTypeId subtype_type);
  */
 BoxTypeId TS_Subtype_Find(BoxTS *ts, BoxTypeId parent, const char *name);
 
-/** Create the string representation of the Type 't'. The returned string
- * has to be freed by the user.
- */
-char *TS_Name_Get(BoxTS *ts, BoxTypeId t);
-
 /* Transition function: alternative to BoxTS_New_Alias. */
 BoxTypeId BoxTS_New_Alias_With_Name(BoxTS *ts, BoxTypeId origin,
                                   const char *name);

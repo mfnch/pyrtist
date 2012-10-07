@@ -497,13 +497,6 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
                                  BOXTYPE_NONE, BoxType_Get_Id(dest->type));
 
   if (opn != NULL) {
-#if 0
-    MSG_WARNING("found conversion %~s -> %~s (%d)",
-                TS_Name_Get(& c->ts, src->type),
-                TS_Name_Get(& c->ts, dest->type),
-                opn->attr);
-#endif
-
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND)
       src = Value_Expand(src, BoxType_From_Id(& c->ts, match.expand_type_left));
@@ -536,17 +529,16 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
 /** Emits the conversion from the source expression 'v', to the given type 't'
  * REFERENCES: return: new, src: -1;
  */
-Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxTypeId dest) {
+Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType *t_dest) {
   Value *v_dest = Value_New(c->cur_proc);
-  Value_Setup_As_Temp_Old(v_dest, dest);
+  Value_Setup_As_Temp(v_dest, t_dest);
   Value_Link(v_dest); /* We want to return a new reference! */
   if (BoxCmp_Opr_Try_Emit_Conversion(c, v_dest, src) == BOXTASK_OK)
     return v_dest;
 
   else {
     MSG_ERROR("Don't know how to convert objects of type %~s to %~s.",
-              BoxType_Get_Repr(src->type),
-              TS_Name_Get(& c->ts, dest));
+              BoxType_Get_Repr(src->type), BoxType_Get_Repr(t_dest));
     Value_Unlink(v_dest); /* Unlink, since we are not returning it! */
     return NULL;
   }

@@ -144,26 +144,6 @@ BoxType *BoxType_From_Id(BoxTS *ts, BoxTypeId id) {
   return NULL;
 }
 
-/*static BoxTypeId My_New_Type(BoxTS *ts, TSDesc *td)*/
-
-static TSDesc *Resolve(TS *ts, BoxTypeId *rt, BoxTypeId t, int ignore_names) {
-  while(1) {
-    TSDesc *td = Type_Ptr(ts, t);
-    switch(td->kind) {
-    case TS_KIND_ALIAS:
-    case TS_KIND_MEMBER:
-      t = td->target;
-      if (ignore_names || td->name == NULL)
-        break;
-
-    default:
-      if (rt != NULL)
-        *rt = t;
-      return td;
-    }
-  }
-}
-
 BoxTypeId TS_Is_Special(BoxTypeId t) {
   switch(t) {
   case BOXTYPE_CREATE:
@@ -253,16 +233,6 @@ int TS_Is_Fast(TS *ts, BoxTypeId t) {
 }
 
 BoxInt TS_Get_Size(TS *ts, BoxTypeId t) {
-#if 0
-  TSDesc *td = Type_Ptr(ts, t);
-
-  if (!t_new)
-    MSG_ERROR("New style type missing for %s", TS_Name_Get(ts, t));
-  else if (BoxType_Get_Size(t_new) != td->size)
-    MSG_ERROR("Type size mismatch for %s (%d, %d)",
-              TS_Name_Get(ts, t), td->size, BoxType_Get_Size(t_new));
-#endif
-
   BoxType *t_new = TS_Get_New_Style_Type(ts, t);
   return BoxType_Get_Size(t_new);
 }
@@ -271,89 +241,6 @@ BoxInt TS_Get_Size(TS *ts, BoxTypeId t) {
 TSKind TS_Get_Kind(TS *ts, BoxTypeId t) {
   TSDesc *td = Type_Ptr(ts, t);
   return td->kind;
-}
-
-static char *TS_Name_Get_Case(TSKind kind, TS *ts, TSDesc *td, BoxTypeId t,
-                              char *empty, char *one, char *two, char *many) {
-  char *name = (char *) NULL;
-  BoxTypeId m = td->target;
-  BoxTypeId previous_type = BOXTYPE_NONE;
-
-  if (td->size < 1)
-    return BoxMem_Strdup(empty);
-
-  while (1) {
-    TSDesc *m_td = Type_Ptr(ts, m);
-    char *m_name = TS_Name_Get(ts, m_td->target);
-    if (kind == TS_KIND_STRUCTURE) {
-      if (m_td->name != (char *) NULL) {
-        if (m_td->target != previous_type)
-          m_name = printdup("%~s %s", m_name, m_td->name);
-        else {
-          BoxMem_Free(m_name);
-          m_name = BoxMem_Strdup(m_td->name);
-        }
-      }
-      previous_type = m_td->target;
-    }
-
-    m = m_td->data.member_next;
-    if (m == t) {
-      if (name == (char *) NULL)
-        return printdup(one, m_name);
-      else
-        return printdup(two, name, m_name);
-    } else {
-      if (name == (char *) NULL)
-        name = m_name; /* no need to free! */
-      else
-        name = printdup(many, name, m_name);
-    }
-  }
-}
-
-char *TS_Name_Get(TS *ts, BoxTypeId t) {
-  TSDesc *td = Type_Ptr(ts, t);
-  td = Resolve(ts, & t, t, 0);
-  if (td->name != (char *) NULL) return BoxMem_Strdup(td->name);
-
-  switch(td->kind) {
-  case TS_KIND_INTRINSIC:
-    return printdup("<size=%I>", td->size);
-
-  case TS_KIND_RAISED:
-    return printdup("++%~s", TS_Name_Get(ts, td->target));
-
-  case TS_KIND_ARRAY:
-    if (td->size > 0) {
-      BoxInt as = td->data.array_size;
-      return printdup("(%I)%~s", as, TS_Name_Get(ts, td->target));
-    } else
-      return printdup("()%~s", TS_Name_Get(ts, td->target));
-
-  case TS_KIND_STRUCTURE:
-    return TS_Name_Get_Case(TS_KIND_STRUCTURE, ts, td, t,
-                            "(,)", "(%~s,)", "(%~s, %~s)", "%~s, %~s");
-
-  case TS_KIND_SPECIES:
-    return TS_Name_Get_Case(TS_KIND_SPECIES, ts, td, t,
-                            "(->)", "(%~s->)", "(%~s->%~s)", "%~s->%~s");
-
-  case TS_KIND_ENUM:
-    return TS_Name_Get_Case(TS_KIND_ENUM, ts, td, t,
-                            "(|)", "(%~s|)", "(%~s|%~s)", "%~s|%~s");
-
-  case TS_KIND_PROC:
-    return printdup("%~s@%~s", TS_Name_Get(ts, td->target),
-                    TS_Name_Get(ts, td->data.proc.parent));
-
-  case TS_KIND_SUBTYPE:
-    return printdup("%~s.%s",
-                    TS_Name_Get(ts, td->data.subtype.parent),
-                    td->data.subtype.child_name);
-  default:
-    return BoxMem_Strdup("<unknown type>");
-  }
 }
 
 /* The full name to use in the hashtable of members */
@@ -671,7 +558,7 @@ TS_Subtype_Register(TS *ts, BoxTypeId subtype, BoxTypeId subtype_type) {
   BoxBool result_new;
 
   if (s_td->target != BOXTYPE_NONE) {
-    MSG_ERROR("Cannot redefine subtype '%~s'", TS_Name_Get(ts, subtype));
+    MSG_ERROR("Cannot redefine subtype '%~s'", BoxType_Get_Repr(subtype_new));
     return BOXTASK_FAILURE;
   }
 
@@ -686,7 +573,8 @@ TS_Subtype_Register(TS *ts, BoxTypeId subtype, BoxTypeId subtype_type) {
     assert(t1 && t2);
     BoxTypeCmp comparison = BoxType_Compare(t1, t2);
     if ((comparison & BOXTYPECMP_EQUAL) != BOXTYPECMP_EQUAL) {
-      MSG_ERROR("Cannot redefine subtype '%~s'", TS_Name_Get(ts, subtype));
+      MSG_ERROR("Cannot redefine subtype '%~s'",
+                BoxType_Get_Repr(subtype_new));
       return BOXTASK_FAILURE;
     }
     return BOXTASK_OK;

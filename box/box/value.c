@@ -210,10 +210,10 @@ int Value_Want_Has_Type(Value *v) {
 
   } else {
     if (v->name != NULL) {
-      MSG_ERROR("'%s' is undefined: an expression with definite type is "
+      MSG_ERROR("'%s' is undefined: an expression with defined type is "
                 "expected here.", v->name);
     } else {
-      MSG_ERROR("Got '%s', but an expression with definite type is "
+      MSG_ERROR("Got '%s', but an expression with defined type is "
                 "expected here.", ValueKind_To_Str(v->kind));
     }
     return 0;
@@ -1437,7 +1437,7 @@ static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
     } else {
       const char *what = get_child ? "child" : "parent";
       MSG_ERROR("Cannot get the %s of '%~s': this is not a subtype!",
-                what, TS_Name_Get(ts, t_subtype));
+                what, BoxType_Get_Repr(v_subtype->type));
     }
   }
 

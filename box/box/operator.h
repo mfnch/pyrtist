@@ -165,7 +165,7 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src);
 
 /** Emits the conversion from the source expression 'v', to the given type 't'
  */
-Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxTypeId dest);
+Value *BoxCmp_Opr_Emit_Conversion(BoxCmp *c, Value *src, BoxType *dest);
 
 Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
                                     BoxTypeId type_left, BoxTypeId type_right,
