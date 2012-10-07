@@ -313,7 +313,7 @@ BoxVMProcID BoxVM_Proc_Get_ID(BoxVM *vm, BoxVMCallNum call_num) {
 }
 
 void BoxVM_Proc_Get_Ptr_And_Length(BoxVM *vmp, BoxVMWord **ptr,
-                                   UInt *length, BoxVMProcID proc_id) {
+                                   BoxUInt *length, BoxVMProcID proc_id) {
   BoxVMProcTable *pt = & vmp->proc_table;
   BoxVMProc *procedure =
     (BoxVMProc *) BoxOcc_Item_Ptr(& pt->uninstalled, proc_id);
@@ -324,7 +324,7 @@ void BoxVM_Proc_Get_Ptr_And_Length(BoxVM *vmp, BoxVMWord **ptr,
 
 Task BoxVM_Proc_Disassemble(BoxVM *vmp, FILE *out, BoxVMProcID proc_id) {
   BoxVMWord *ptr;
-  UInt length;
+  BoxUInt length;
   BoxVM_Proc_Get_Ptr_And_Length(vmp, & ptr, & length, proc_id);
   return BoxVM_Disassemble(vmp, out, ptr, length);
 }
@@ -348,7 +348,7 @@ Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out,
   }
 
   fprintf(out, "%s procedure "SUInt"; name=%s; desc=%s\n",
-          p_type, (UInt) call_num, p_name, p_desc);
+          p_type, (BoxUInt) call_num, p_name, p_desc);
 
   if (p->type == BOXVMPROCKIND_VM_CODE) {
     fprintf(out, "\n");
@@ -361,7 +361,7 @@ Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out,
 
 Task BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out) {
   BoxVMProcTable *pt = & vmp->proc_table;
-  UInt n, proc_id;
+  BoxUInt n, proc_id;
   char *s;
 
   BoxVM_Data_Display(vmp, out);

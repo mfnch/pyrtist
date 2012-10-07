@@ -50,7 +50,7 @@ Task g_optcolor_set(OptColor *oc, Color *c) {
   }
 }
 
-Task g_optcolor_set_rgb(OptColor *oc, Real r, Real g, Real b) {
+Task g_optcolor_set_rgb(OptColor *oc, BoxReal r, BoxReal g, BoxReal b) {
   Color c;
   c.r = r; c.g = g; c.b = b;
   return g_optcolor_set(oc, & c);
@@ -156,31 +156,31 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data) {
   gs->attr[a] = attr_data;
 }
 
-Int g_style_get_bord_num_dashes(GStyle *gs, GStyle *default_style) {
+BoxInt g_style_get_bord_num_dashes(GStyle *gs, GStyle *default_style) {
   void *d = g_style_attr_get(gs, default_style, G_STYLE_ATTR_BORD_DASHES);
   if (d == NULL) return 0;
   return ((GDashes *) d)->num;
 }
 
-Real *g_style_get_bord_dashes(GStyle *gs, GStyle *default_style) {
+BoxReal *g_style_get_bord_dashes(GStyle *gs, GStyle *default_style) {
   void *d = g_style_attr_get(gs, default_style, G_STYLE_ATTR_BORD_DASHES);
   if (d == NULL) return 0;
   return ((GDashes *) d)->dashes;
 }
 
-Real g_style_get_bord_dash_offset(GStyle *gs, GStyle *default_style) {
+BoxReal g_style_get_bord_dash_offset(GStyle *gs, GStyle *default_style) {
   void *d = g_style_attr_get(gs, default_style, G_STYLE_ATTR_BORD_DASHES);
   if (d == NULL) return 0.0;
   return ((GDashes *) d)->offset;
 }
 
-void g_style_set_bord_dashes(GStyle *gs, Int num_dashes, Real *dashes,
-                             Real offset) {
+void g_style_set_bord_dashes(GStyle *gs, BoxInt num_dashes, BoxReal *dashes,
+                             BoxReal offset) {
   g_style_unset_bord_dashes(gs);
   if (num_dashes >= 0) {
-    Int dashes_size = sizeof(Real)*num_dashes;
-    Real *dashes_cpy = (Real *) malloc(dashes_size);
-    if (dashes_cpy == (Real *) NULL) {
+    BoxInt dashes_size = sizeof(BoxReal)*num_dashes;
+    BoxReal *dashes_cpy = (BoxReal *) malloc(dashes_size);
+    if (dashes_cpy == (BoxReal *) NULL) {
       g_error("g_style_set_bord_dashes: malloc failed!");
       return;
     }
@@ -251,9 +251,9 @@ void g_style_copy_selected(GStyle *dest, GStyle *src,
   if (sel[G_STYLE_ATTR_BORD_DASHES]) {
     g_style_unset_bord_dashes(dest);
     if (src->attr[G_STYLE_ATTR_BORD_DASHES] != NULL) {
-      Int num_dashes = g_style_get_bord_num_dashes(src, (GStyle *) NULL);
-      Real *dashes = g_style_get_bord_dashes(src, (GStyle *) NULL);
-      Real dash_offset = g_style_get_bord_dash_offset(src, (GStyle *) NULL);
+      BoxInt num_dashes = g_style_get_bord_num_dashes(src, (GStyle *) NULL);
+      BoxReal *dashes = g_style_get_bord_dashes(src, (GStyle *) NULL);
+      BoxReal dash_offset = g_style_get_bord_dash_offset(src, (GStyle *) NULL);
       g_style_set_bord_dashes(dest, num_dashes, dashes, dash_offset);
     }
   }
@@ -267,17 +267,17 @@ int BoxGWin_Draw_With_Style(BoxGWin *w, GStyle *gs, GStyle *default_style,
             predef_fill_style = FILLSTYLE_EO;
   Color *bord_color = g_style_get_bord_color(gs, default_style),
         predef_bord_color = (Color) {0.0, 0.0, 0.0, 1.0};
-  Real *bord_width = g_style_get_bord_width(gs, default_style),
+  BoxReal *bord_width = g_style_get_bord_width(gs, default_style),
        predef_bord_width = 0.0;
   JoinStyle *bord_join_style = g_style_get_bord_join_style(gs, default_style),
        predef_bord_join_style = JOIN_STYLE_ROUND;
-  Real *bord_miter_limit = g_style_get_bord_miter_limit(gs, default_style),
+  BoxReal *bord_miter_limit = g_style_get_bord_miter_limit(gs, default_style),
        predef_bord_miter_limit = 10.0;
   CapStyle *bord_cap = g_style_get_bord_cap(gs, default_style),
            predef_bord_cap = CAP_STYLE_BUTT;
-  Int bord_num_dashes = g_style_get_bord_num_dashes(gs, default_style);
-  Real *bord_dashes = g_style_get_bord_dashes(gs, default_style);
-  Real bord_dash_offset = g_style_get_bord_dash_offset(gs, default_style);
+  BoxInt bord_num_dashes = g_style_get_bord_num_dashes(gs, default_style);
+  BoxReal *bord_dashes = g_style_get_bord_dashes(gs, default_style);
+  BoxReal bord_dash_offset = g_style_get_bord_dash_offset(gs, default_style);
   DrawStyle style;
 
   if (when == (DrawWhen *) NULL) when = & predef_when;
@@ -285,8 +285,8 @@ int BoxGWin_Draw_With_Style(BoxGWin *w, GStyle *gs, GStyle *default_style,
   if (bord_color == (Color *) NULL) bord_color = & predef_bord_color;
   if (bord_join_style == (JoinStyle *) NULL)
     bord_join_style = & predef_bord_join_style;
-  if (bord_width == (Real *) NULL) bord_width = & predef_bord_width;
-  if (bord_miter_limit == (Real *) NULL)
+  if (bord_width == (BoxReal *) NULL) bord_width = & predef_bord_width;
+  if (bord_miter_limit == (BoxReal *) NULL)
     bord_miter_limit = & predef_bord_miter_limit;
   if (bord_cap == (CapStyle *) NULL) bord_cap = & predef_bord_cap;
 

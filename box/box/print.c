@@ -55,7 +55,7 @@ const char *Box_Print(const char *fmt, ...) {
   const char *i;
   char *o;
   enum {STATE_NORMAL, STATE_CMND, STATE_SUBSTRING, STATE_END} state;
-  UInt size;
+  BoxUInt size;
   int substring_size;
   char aux_buf[128], *substring = "?";
   va_list ap;
@@ -160,25 +160,25 @@ const char *Box_Print(const char *fmt, ...) {
         break;
       case 'I':
         do_read = 0;
-        sprintf(aux_buf, SInt, va_arg(ap, Int));
+        sprintf(aux_buf, SInt, va_arg(ap, BoxInt));
         substring = aux_buf;
         state = STATE_SUBSTRING;
         break;
       case 'U':
         do_read = 0;
-        sprintf(aux_buf, SUInt, va_arg(ap, UInt));
+        sprintf(aux_buf, SUInt, va_arg(ap, BoxUInt));
         substring = aux_buf;
         state = STATE_SUBSTRING;
         break;
       case 'R':
         do_read = 0;
-        sprintf(aux_buf, SReal, va_arg(ap, Real));
+        sprintf(aux_buf, SReal, va_arg(ap, BoxReal));
         substring = aux_buf;
         state = STATE_SUBSTRING;
         break;
       case 'P':
         {
-          Point *p = va_arg(ap, Point *);
+          BoxPoint *p = va_arg(ap, BoxPoint *);
           do_read = 0;
           sprintf(aux_buf, "(" SReal ", " SReal ")", p->x, p->y);
           substring = aux_buf;

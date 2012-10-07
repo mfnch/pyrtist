@@ -54,7 +54,7 @@
 
  */
 typedef struct {
-  Int level, /**< scope level of the variable */
+  BoxInt level, /**< scope level of the variable */
       chain; /**< 0 means occupied, otherwise contain a link to the next
                   register in the chain of non occupied registers. */
 } VarItem;
@@ -75,10 +75,10 @@ static void VarFrame_Finish(VarFrame *vf) {
 }
 
 /* See Var_Occupy */
-static Int VarFrame_Occupy(VarFrame *vf, UInt level) {
+static BoxInt VarFrame_Occupy(VarFrame *vf, BoxUInt level) {
   BoxArr *regs = & vf->regs;
   VarItem *vi, *last_vi;
-  Int idx;
+  BoxInt idx;
 
   /* Scorro la catena delle variabili libere finche'
    * non ne trovo una di livello non inferiore a level
@@ -117,7 +117,7 @@ static Int VarFrame_Occupy(VarFrame *vf, UInt level) {
 }
 
 /* See Var_Release */
-static void VarFrame_Release(VarFrame *vf, Int idx) {
+static void VarFrame_Release(VarFrame *vf, BoxInt idx) {
   BoxArr *regs = & vf->regs;
   VarItem *vi = (VarItem *) BoxArr_Item_Ptr(regs, idx);
   vi->chain = vf->chain;
@@ -179,7 +179,7 @@ void Reg_Frame_Pop(RegAlloc *ra) {
   BoxArr_Pop(& ra->reg_frame, NULL);
 }
 
-Int Reg_Frame_Get(RegAlloc *ra) {
+BoxInt Reg_Frame_Get(RegAlloc *ra) {
   return BoxArr_Num_Items(& ra->reg_frame);
 }
 
@@ -192,23 +192,23 @@ Int Reg_Frame_Get(RegAlloc *ra) {
  * NOTA: Il numero di registro restituito e' sempre maggiore di 1,
  *  viene restituito 0 solo in caso di errori.
  */
-Int Reg_Occupy(RegAlloc *ra, BoxTypeId t) {
+BoxInt Reg_Occupy(RegAlloc *ra, BoxTypeId t) {
   RegFrame *rf = (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
   if (t == BOXTYPE_VOID)
     return 0;
   else
-    return (Int) BoxOcc_Occupy(& rf->reg_occ[Reg_Type(t)], NULL);
+    return (BoxInt) BoxOcc_Occupy(& rf->reg_occ[Reg_Type(t)], NULL);
 }
 
 /* Vedi Reg_Occupy.
  */
-void Reg_Release(RegAlloc *ra, Int t, UInt reg_num) {
+void Reg_Release(RegAlloc *ra, BoxInt t, BoxUInt reg_num) {
   RegFrame *rf = (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
   BoxOcc_Release(& rf->reg_occ[Reg_Type(t)], reg_num);
 }
 
 /* Restituisce il numero di registro massimo fin'ora utilizzato. */
-Int Reg_Num(RegAlloc *ra, Int t) {
+BoxInt Reg_Num(RegAlloc *ra, BoxInt t) {
   RegFrame *rf = (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
   return BoxOcc_Max_Index(& rf->reg_occ[Reg_Type(t)]);
 }
@@ -228,7 +228,7 @@ static RegFrame *Cur_RegFrame(RegAlloc *ra) {
  * NOTA: Il numero di registro restituito e' sempre maggiore di 1,
  *  viene restituito 0 solo in caso di errori.
  */
-Int Var_Occupy(RegAlloc *ra, BoxTypeId type, Int level) {
+BoxInt Var_Occupy(RegAlloc *ra, BoxTypeId type, BoxInt level) {
   if (type == BOXTYPE_VOID)
     return 0;
 
@@ -239,18 +239,18 @@ Int Var_Occupy(RegAlloc *ra, BoxTypeId type, Int level) {
 }
 
 /* Vedi Var_Occupy. */
-void Var_Release(RegAlloc *ra, Int type, UInt varnum) {
-  Int t = Reg_Type(type);
+void Var_Release(RegAlloc *ra, BoxInt type, BoxUInt varnum) {
+  BoxInt t = Reg_Type(type);
   VarFrame_Release(& Cur_RegFrame(ra)->lvar[t], varnum);
 }
 
 /* Restituisce il numero di variabile massimo fin'ora utilizzato.
  */
-Int Var_Num(RegAlloc *ra, Int type) {
+BoxInt Var_Num(RegAlloc *ra, BoxInt type) {
   return Cur_RegFrame(ra)->lvar[Reg_Type(type)].max;
 }
 
-Int GVar_Occupy(RegAlloc *ra, BoxTypeId type) {
+BoxInt GVar_Occupy(RegAlloc *ra, BoxTypeId type) {
   if (type == BOXTYPE_VOID)
     return 0;
   else
@@ -258,11 +258,11 @@ Int GVar_Occupy(RegAlloc *ra, BoxTypeId type) {
 }
 
 /* Vedi Var_Occupy. */
-void GVar_Release(RegAlloc *ra, Int type, UInt varnum) {
+void GVar_Release(RegAlloc *ra, BoxInt type, BoxUInt varnum) {
   VarFrame_Release(& ra->gvar[Reg_Type(type)], varnum);
 }
 
-Int GReg_Num(RegAlloc *ra, Int type) {
+BoxInt GReg_Num(RegAlloc *ra, BoxInt type) {
   switch(type) {
   case BOXTYPE_PTR:
     return 2;
@@ -274,15 +274,15 @@ Int GReg_Num(RegAlloc *ra, Int type) {
 
 /* Restituisce il numero di variabile massimo fin'ora utilizzato.
  */
-Int GVar_Num(RegAlloc *ra, Int type) {
+BoxInt GVar_Num(RegAlloc *ra, BoxInt type) {
   return ra->gvar[Reg_Type(type)].max;
 }
 
 /* This function writes (starting at the address num_var)
- * an array of Int with the number of used variables, and (address num_reg)
- * an array of Int with the number of used registers.
+ * an array of BoxInt with the number of used variables, and (address num_reg)
+ * an array of BoxInt with the number of used registers.
  */
-void Reg_Get_Local_Nums(RegAlloc *ra, Int *num_regs, Int *num_vars) {
+void Reg_Get_Local_Nums(RegAlloc *ra, BoxInt *num_regs, BoxInt *num_vars) {
   int i;
   if (num_regs != NULL)
     for (i = 0; i < NUM_TYPES; i++)
@@ -293,7 +293,7 @@ void Reg_Get_Local_Nums(RegAlloc *ra, Int *num_regs, Int *num_vars) {
       *(num_vars++) = Var_Num(ra, i);
 }
 
-void Reg_Get_Global_Nums(RegAlloc *ra, Int *num_regs, Int *num_vars) {
+void Reg_Get_Global_Nums(RegAlloc *ra, BoxInt *num_regs, BoxInt *num_vars) {
   int i;
   if (num_regs != NULL)
     for (i = 0; i < NUM_TYPES; i++)

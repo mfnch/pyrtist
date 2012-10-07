@@ -48,7 +48,7 @@ static void My_Close_DyLib(void *item) {
 
 void BoxVMSymTable_Init(BoxVMSymTable *st) {
   BoxHT_Init_Default(& st->syms, VMSYM_SYM_HT_SIZE);
-  BoxArr_Init(& st->data, sizeof(Char), VMSYM_DATA_ARR_SIZE);
+  BoxArr_Init(& st->data, sizeof(BoxChar), VMSYM_DATA_ARR_SIZE);
   BoxArr_Init(& st->defs, sizeof(BoxVMSym), VMSYM_DEF_ARR_SIZE);
   BoxArr_Init(& st->refs, sizeof(BoxVMSymRef), VMSYM_REF_ARR_SIZE);
 #ifdef DYLIB
@@ -74,13 +74,13 @@ void BoxVMSymTable_Finish(BoxVMSymTable *st) {
   }
 }
 
-BoxVMSymID BoxVMSym_New(BoxVM *vm, UInt sym_type, UInt def_size) {
+BoxVMSymID BoxVMSym_New(BoxVM *vm, BoxUInt sym_type, BoxUInt def_size) {
   return BoxVMSym_Create(vm, sym_type, NULL, def_size);
 }
 
 /* Create a new symbol. */
 BoxVMSymID
-BoxVMSym_Create(BoxVM *vm, UInt sym_type, const char *def, size_t def_size) {
+BoxVMSym_Create(BoxVM *vm, BoxUInt sym_type, const char *def, size_t def_size) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSymID sym_id;
   BoxVMSym *ss = BoxArr_Push(& st->defs, & ss);
@@ -120,7 +120,7 @@ void BoxVMSym_Set_Name(BoxVM *vm, BoxVMSymID sym_id, const char *name) {
   }
 
   (void) BoxHT_Insert_Obj(& st->syms, name, name_len,
-                          & sym_id, sizeof(UInt));
+                          & sym_id, sizeof(BoxUInt));
   if (!BoxHT_Find(& st->syms, name, name_len, & hi) ) {
     MSG_FATAL("Hashtable seems not to work (from BoxVMSym_Add)");
     assert(0);
@@ -205,7 +205,7 @@ void BoxVMSym_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymResolver r,
 }
 
 static int
-My_Check_Ref(UInt item_num, void *item, void *all_resolved) {
+My_Check_Ref(BoxUInt item_num, void *item, void *all_resolved) {
   BoxVMSymRef *sr = (BoxVMSymRef *) item;
   *((int *) all_resolved) &= sr->resolved;
   return 1;
@@ -218,7 +218,7 @@ void BoxVMSym_Ref_Check(BoxVM *vm, int *all_resolved) {
 }
 
 static int
-My_Report_Ref(UInt item_num, void *item, void *pass_data) {
+My_Report_Ref(BoxUInt item_num, void *item, void *pass_data) {
   BoxVM *vm = (BoxVM *) pass_data;
   BoxVMSymRef *sr = (BoxVMSymRef *) item;
   if (!sr->resolved) {
@@ -247,12 +247,12 @@ Task BoxVMSym_Resolver_Set(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymResolver r) {
 Task BoxVMSym_Resolve(BoxVM *vm, BoxVMSymID sym_id) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
-  UInt next;
-  UInt sym_type, def_size, ref_size;
+  BoxUInt next;
+  BoxUInt sym_type, def_size, ref_size;
   void *def, *ref;
 
   if (sym_id < 1) {
-    UInt i, num_defs = BoxArr_Num_Items(& st->defs);
+    BoxUInt i, num_defs = BoxArr_Num_Items(& st->defs);
     for(i=1; i<=num_defs; i++) {
       BOXTASK( BoxVMSym_Resolve(vm, i) );
     }
@@ -295,11 +295,11 @@ Task BoxVMSym_Resolve(BoxVM *vm, BoxVMSymID sym_id) {
 void BoxVMSym_Table_Print(BoxVM *vm, FILE *out, BoxVMSymID sym_id) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
-  UInt next, ref_num;
+  BoxUInt next, ref_num;
   char *sym_name;
 
   if (sym_id < 1) {
-    UInt i, num_defs = BoxArr_Num_Items(& st->defs);
+    BoxUInt i, num_defs = BoxArr_Num_Items(& st->defs);
     fprintf(out, "The table contains "SUInt" symbols\n", num_defs);
     for(i=1; i<=num_defs; i++) {
       BoxVMSym_Table_Print(vm, out, i);
@@ -336,7 +336,7 @@ void BoxVMSym_Table_Print(BoxVM *vm, FILE *out, BoxVMSymID sym_id) {
   }
 }
 
-Task BoxVMSym_Check_Type(BoxVM *vm, BoxVMSymID sym_id, UInt sym_type) {
+Task BoxVMSym_Check_Type(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
   s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_id);
@@ -450,15 +450,15 @@ Task BoxVMSym_Resolve_CLibs(BoxVM *vm, BoxList *lib_paths, BoxList *libs) {
 /****************************************************************************/
 
 static BoxTask
-My_Code_Generator(BoxVM *vm, BoxVMSymID sym_id, UInt sym_type,
-                  int defined, void *def, UInt def_size,
-                  void *ref, UInt ref_size) {
+My_Code_Generator(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type,
+                  int defined, void *def, BoxUInt def_size,
+                  void *ref, BoxUInt ref_size) {
   BoxVMSymCodeRef *ref_head = (BoxVMSymCodeRef *) ref;
   void *ref_tail = ref + sizeof(BoxVMSymCodeRef);
-  UInt ref_tail_size = ref_size - sizeof(BoxVMSymCodeRef);
+  BoxUInt ref_tail_size = ref_size - sizeof(BoxVMSymCodeRef);
   BoxVMProcTable *pt = & vm->proc_table;
   BoxVMProc *tmp_proc;
-  UInt saved_proc_num;
+  BoxUInt saved_proc_num;
 
   saved_proc_num = BoxVM_Proc_Target_Get(vm);
   BoxVM_Proc_Empty(vm, pt->tmp_proc);
@@ -486,13 +486,13 @@ My_Code_Generator(BoxVM *vm, BoxVMSymID sym_id, UInt sym_type,
 }
 
 Task BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymCodeGen code_gen,
-                       void *ref, UInt ref_size) {
+                       void *ref, BoxUInt ref_size) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
   void *def;
   BoxVMProcTable *pt = & vm->proc_table;
 
-  UInt ref_all_size;
+  BoxUInt ref_all_size;
   BoxVMSymCodeRef *ref_head;
   void *ref_all, *ref_tail;
 
@@ -531,14 +531,14 @@ Task BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymCodeGen code_gen,
 #  define CALL_TYPE 1
 
 /* This is the function which assembles the code for the function call */
-Task Assemble_Call(BoxVM *vm, BoxVMSymID sym_id, UInt sym_type,
-                   int defined, void *def, UInt def_size,
-                   void *ref, UInt ref_size) {
-  UInt call_num = 0;
+Task Assemble_Call(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type,
+                   int defined, void *def, BoxUInt def_size,
+                   void *ref, BoxUInt ref_size) {
+  BoxUInt call_num = 0;
   assert(sym_type == CALL_TYPE);
   if (defined && def != NULL) {
-    assert(def_size=sizeof(UInt));
-    call_num = *((UInt *) def);
+    assert(def_size=sizeof(BoxUInt));
+    call_num = *((BoxUInt *) def);
   }
   BoxVM_Assemble(vm, ASM_CALL_I, CAT_IMM, call_num);
   return BOXTASK_OK;
@@ -553,18 +553,18 @@ int main(void) {
    */
 
   /* Here we define that a new symbol with type CALL_TYPE=1 exists */
-  (void) BoxVMSym_New(vm, & sym_id, CALL_TYPE, sizeof(UInt));
+  (void) BoxVMSym_New(vm, & sym_id, CALL_TYPE, sizeof(BoxUInt));
   /* Here we make a reference to it: at this point the assembled code for
    * "call 0" will be added to the current target procedure.
    * 0 is wrong, but we don't know what is the right number, because
    * the symbol is still not defined.
    */
   (void) BoxVMSym_Code_Ref(vm, sym_id, Assemble_Call);
-  /* Here we define the symbol "my_proc" to be (UInt) 123.
+  /* Here we define the symbol "my_proc" to be (BoxUInt) 123.
    * Now we know that all the "call" instructions referencing
    * the symbol "my_proc" should be assembled with "call 123"
    */
-  (void) BoxVMSym_Def(vm, sym_id, & ((UInt) 123));
+  (void) BoxVMSym_Def(vm, sym_id, & ((BoxUInt) 123));
   /* We can now resolve all the past references which were made when
    * we were not aware of the real value of "my_proc".
    * The code "call 0" will be replaced with "call 123"

@@ -48,9 +48,9 @@ typedef struct {
 /* Used with the function BoxList_Product_Iter */
 typedef BoxTask (*BoxListProduct)(void **tuple, void *pass);
 
-BOXEXPORT void BoxList_Init(BoxList *l, UInt item_size);
+BOXEXPORT void BoxList_Init(BoxList *l, BoxUInt item_size);
 BOXEXPORT void BoxList_Finish(BoxList *l);
-BOXEXPORT BoxList *BoxList_New(UInt item_size);
+BOXEXPORT BoxList *BoxList_New(BoxUInt item_size);
 BOXEXPORT void BoxList_Destroy(BoxList *l);
 BOXEXPORT BoxUInt BoxList_Length(BoxList *l);
 BOXEXPORT void BoxList_Remove(BoxList *l, void *item);

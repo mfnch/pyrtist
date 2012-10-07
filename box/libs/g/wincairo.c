@@ -216,7 +216,7 @@ static void MyCairoWinData_LineState_Pop(MyCairoWinData *wd) {
  * couldn't be inverted.
  */
 static BoxReal My_Invert_Cairo_Matrix(cairo_matrix_t *result, cairo_matrix_t *in) {
-  Real det = in->xx*in->yy - in->xy*in->yx, inv_det;
+  BoxReal det = in->xx*in->yy - in->xy*in->yx, inv_det;
   if (det == 0.0) return 0.0;
   inv_det = 1.0/det;
   result->xx =  inv_det*in->yy; result->xy = -inv_det*in->xy;
@@ -243,29 +243,29 @@ static void My_WinCairo_Finish(BoxGWin *w) {
 
 /* Variabili usate dalle procedure per scrivere il file postscript */
 static int beginning_of_path = 1;
-static Point previous;
+static BoxPoint previous;
 
-static int same_points(Point *a, Point *b) {
+static int same_points(BoxPoint *a, BoxPoint *b) {
   return (fabs(a->x - b->x) < 1e-10 && fabs(a->y - b->y) < 1e-10);
 }
 
 /** This is the function used to map points. */
-static void My_Map_Point(BoxGWin *w, Point *out, Point *in) {
+static void My_Map_Point(BoxGWin *w, BoxPoint *out, BoxPoint *in) {
   out->x = (in->x - w->ltx)*w->resx;
   out->y = (in->y - w->lty)*w->resy;
 }
 
 /* Macros used to scale the point coordinates */
 #define MY_POINT(w, a) \
-  Point my_a; My_Map_Point((w), & my_a, (a)); (a) = & my_a
+  BoxPoint my_a; My_Map_Point((w), & my_a, (a)); (a) = & my_a
 
 #define MY_2POINTS(w, a, b) \
-  Point my_a, my_b; \
+  BoxPoint my_a, my_b; \
   My_Map_Point((w), & my_a, (a)); My_Map_Point((w), & my_b, (b)); \
   (a) = & my_a; (b) = & my_b
 
 #define MY_3POINTS(w, a, b, c) \
-  Point my_a, my_b, my_c; \
+  BoxPoint my_a, my_b, my_c; \
   My_Map_Point((w), & my_a, (a)); My_Map_Point((w), & my_b, (b)); \
   My_Map_Point((w), & my_c, (c)); \
   (a) = & my_a; (b) = & my_b; (c) = & my_c
@@ -285,14 +285,14 @@ static void My_Map_Point(BoxGWin *w, Point *out, Point *in) {
 typedef struct {
   cairo_t *cr;
   BoxArr  saved_states;
-  Point   sub_vec,
+  BoxPoint   sub_vec,
           sup_vec;
-  Real    sub_scale,
+  BoxReal    sub_scale,
           sup_scale;
 } MyTextPrivate;
 
 typedef struct {
-  Point          cur_pos;
+  BoxPoint          cur_pos;
   cairo_matrix_t m;
 } MyTextState;
 
@@ -324,7 +324,7 @@ static void My_Text_Fmt_Restore(BoxGFmtStack *stack) {
   BoxArr_Pop(& private->saved_states, NULL);
 }
 
-static void My_Text_Fmt_Change(cairo_t *cr, Point *vec, Real scale) {
+static void My_Text_Fmt_Change(cairo_t *cr, BoxPoint *vec, BoxReal scale) {
   cairo_matrix_t m;
   cairo_get_current_point(cr, & m.x0, & m.y0);
   m.x0 += vec->x;
@@ -364,8 +364,8 @@ static void My_Text_Fmt_Init(BoxGFmt *fmt) {
   fmt->restore = My_Text_Fmt_Restore;
 }
 
-static void My_Cairo_Text_Path(BoxGWin *w, Point *ctr, Point *right,
-                               Point *up, Point *from, const char *text) {
+static void My_Cairo_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *right,
+                               BoxPoint *up, BoxPoint *from, const char *text) {
   cairo_t *cr = (cairo_t *) w->ptr;
 
   /* Here we need to first generate the path, calculate its extent
@@ -464,7 +464,7 @@ static void My_Cairo_Text_Path(BoxGWin *w, Point *ctr, Point *right,
 /* END OF TEXT FORMATTING IMPLEMENTATION ************************************/
 
 static void My_Cairo_JoinArc(cairo_t *cr,
-                             const Point *a, const Point *b, const Point *c) {
+                             const BoxPoint *a, const BoxPoint *b, const BoxPoint *c) {
   cairo_matrix_t previous_m, m;
 
   cairo_get_matrix(cr, & previous_m);
@@ -482,8 +482,8 @@ static void My_Cairo_JoinArc(cairo_t *cr,
 }
 
 static void My_Cairo_Arc(cairo_t *cr,
-                         const Point *ctr, const Point *a, const Point *b,
-                         Real angle_begin, Real angle_end) {
+                         const BoxPoint *ctr, const BoxPoint *a, const BoxPoint *b,
+                         BoxReal angle_begin, BoxReal angle_end) {
   cairo_matrix_t previous_m, m;
 
   cairo_get_matrix(cr, & previous_m);
@@ -1225,7 +1225,7 @@ static void My_WinCairo_Draw_Path(BoxGWin *w, DrawStyle *style) {
   int do_fill, do_clip, do_even_odd, do_border = (style->bord_width > 0.0);
 
   if ( ! beginning_of_path ) {
-    Real scale = style->scale;
+    BoxReal scale = style->scale;
 
     switch(style->fill_style) {
     case FILLSTYLE_VOID:   do_fill = do_clip = do_even_odd = 0; break;
@@ -1243,7 +1243,7 @@ static void My_WinCairo_Draw_Path(BoxGWin *w, DrawStyle *style) {
                                         : CAIRO_FILL_RULE_WINDING);
     if (do_border) {
       Color *c = & style->bord_color;
-      Real border = MY_REAL(w, scale*style->bord_width);
+      BoxReal border = MY_REAL(w, scale*style->bord_width);
       cairo_line_join_t lj;
       cairo_line_cap_t lc;
 
@@ -1269,16 +1269,16 @@ static void My_WinCairo_Draw_Path(BoxGWin *w, DrawStyle *style) {
       cairo_set_line_join(cr, lj);
       cairo_set_line_cap(cr, lc);
       if (lj == CAIRO_LINE_JOIN_MITER) {
-        Real miter_limit = MY_REAL(w, scale*style->bord_miter_limit);
+        BoxReal miter_limit = MY_REAL(w, scale*style->bord_miter_limit);
         cairo_set_miter_limit(cr, miter_limit);
       }
       if (style->bord_num_dashes > 0) {
-        Int num_dashes = style->bord_num_dashes,
-            size_dashes = num_dashes*sizeof(Real);
-        Real *dashes = (Real *) malloc(size_dashes);
-        if (dashes != (Real *) NULL) {
-          Int i;
-          Real dash_offset = MY_REAL(w, scale*style->bord_dash_offset);
+        BoxInt num_dashes = style->bord_num_dashes,
+            size_dashes = num_dashes*sizeof(BoxReal);
+        BoxReal *dashes = (BoxReal *) malloc(size_dashes);
+        if (dashes != (BoxReal *) NULL) {
+          BoxInt i;
+          BoxReal dash_offset = MY_REAL(w, scale*style->bord_dash_offset);
           for(i=0; i<num_dashes; i++)
             dashes[i] = MY_REAL(w, scale*style->bord_dashes[i]);
           cairo_set_dash(cr, dashes, num_dashes, dash_offset);
@@ -1304,8 +1304,8 @@ static void My_WinCairo_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
   cairo_t *cr = (cairo_t *) w->ptr;
   cairo_pattern_t *p;
   cairo_matrix_t m, m_inv;
-  Point p1, p2, ref1, ref2;
-  Int i;
+  BoxPoint p1, p2, ref1, ref2;
+  BoxInt i;
 
   switch(cg->type) {
   case COLOR_GRAD_TYPE_LINEAR:
@@ -1352,7 +1352,7 @@ static void My_WinCairo_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
   cairo_pattern_destroy(p);
 }
 
-static void My_WinCairo_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
+static void My_WinCairo_Add_Line_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b) {
   cairo_t *cr = (cairo_t *) w->ptr;
   MY_2POINTS(w, a, b);
 
@@ -1374,9 +1374,9 @@ static void My_WinCairo_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
 }
 
 static void My_WinCairo_Add_Join_Path(BoxGWin *w,
-                                      Point *a, Point *b, Point *c) {
+                                      BoxPoint *a, BoxPoint *b, BoxPoint *c) {
   cairo_t *cr = (cairo_t *) w->ptr;
-  Point *first = a, *last = c;
+  BoxPoint *first = a, *last = c;
   MY_3POINTS(w, a, b, c);
 
   if (same_points(a, c))
@@ -1404,7 +1404,7 @@ static void My_WinCairo_Close_Path(BoxGWin *w) {
 }
 
 static void My_WinCairo_Add_Circle_Path(BoxGWin *w,
-                                        Point *ctr, Point *a, Point *b) {
+                                        BoxPoint *ctr, BoxPoint *a, BoxPoint *b) {
   cairo_t *cr = (cairo_t *) w->ptr;
   MY_3POINTS(w, ctr, a, b);
 

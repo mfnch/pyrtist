@@ -30,7 +30,7 @@ typedef struct {
   int dash_offset_contest; /**< -1: before ';' (offset not accepted)
                                  0: just after ';' (waiting for offset)
                                  1: got offset (offset not accepted) */
-  Real dash_offset;
+  BoxReal dash_offset;
 } IStyle;
 
 typedef IStyle *IStylePtr;

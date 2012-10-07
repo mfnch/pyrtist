@@ -44,7 +44,7 @@
 #include "container.h"
 
 /* Numero minimo di BoxVMWord che riesce a contenere tutti i tipi possibili
- * di argomenti (Int, Real, Point, Obj)
+ * di argomenti (BoxInt, BoxReal, BoxPoint, BoxObj)
  */
 #  define MAX_SIZE_IN_IWORDS \
    ((sizeof(BoxPoint) + sizeof(BoxVMWord) - 1) / sizeof(BoxVMWord))
@@ -77,7 +77,7 @@ const size_t size_of_type[NUM_TYPES] = {
   sizeof(BoxPtr)
 };
 
-static void *My_Get_Arg_Ptrs(BoxVMX *vmx, int kind, Int n) {
+static void *My_Get_Arg_Ptrs(BoxVMX *vmx, int kind, BoxInt n) {
   if (kind < 2) {                 /* kind == 0, 1 (local, global registers) */
     BoxTypeId t = vmx->idesc->t_id;
     BoxVMRegs *regs = & ((kind == 0) ? vmx->global : vmx->local)[t];
@@ -98,19 +98,19 @@ static void *My_Get_Arg_Ptrs(BoxVMX *vmx, int kind, Int n) {
 
   } else {                                        /* kind == 3 (immediates) */
     BoxTypeId t = vmx->idesc->t_id;
-    static Int i = 0;
-    static union {Char c; Int i; Real r;} v[2], *value;
+    static BoxInt i = 0;
+    static union {BoxChar c; BoxInt i; BoxReal r;} v[2], *value;
 
     assert(t >= BOXTYPE_CHAR && t <= BOXTYPE_REAL);
 
     value = & v[i]; i ^= 1;
     switch (t) {
     case TYPE_CHAR:
-      value->c = (Char) n; return (void *) (& value->c);
+      value->c = (BoxChar) n; return (void *) (& value->c);
     case TYPE_INT:
-      value->i =  (Int) n; return (void *) (& value->i);
+      value->i =  (BoxInt) n; return (void *) (& value->i);
     case TYPE_REAL:
-      value->r = (Real) n; return (void *) (& value->r);
+      value->r = (BoxReal) n; return (void *) (& value->r);
     default: /* This shouldn't happen! */
       return (void *) (& value->i); break;
     }
@@ -130,7 +130,7 @@ static void *My_Get_Arg_Ptrs(BoxVMX *vmx, int kind, Int n) {
  */
 void VM__GLP_GLPI(BoxVMX *vmx) {
   signed long narg1, narg2;
-  UInt atype = vmx->arg_type;
+  BoxUInt atype = vmx->arg_type;
 
   if (vmx->flags.is_long)
     BOXVM_READ_LONGOP_2ARGS(vmx->i_pos, vmx->i_eye, narg1, narg2);
@@ -150,7 +150,7 @@ void VM__GLP_GLPI(BoxVMX *vmx) {
  */
 void VM__GLP_Imm(BoxVMX *vmx) {
   signed long narg1;
-  UInt atype = vmx->arg_type;
+  BoxUInt atype = vmx->arg_type;
 
   if (vmx->flags.is_long)
     BOXVM_READ_LONGOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
@@ -167,7 +167,7 @@ void VM__GLP_Imm(BoxVMX *vmx) {
  */
 void VM__GLPI(BoxVMX *vmx) {
   signed long narg1;
-  UInt atype = vmx->arg_type;
+  BoxUInt atype = vmx->arg_type;
 
   if (vmx->flags.is_long)
     BOXVM_READ_LONGOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
@@ -311,7 +311,7 @@ BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op) {
 }
 
 /* Sets the number of global registers and variables for each type. */
-Task BoxVM_Alloc_Global_Regs(BoxVM *vm, Int num_var[], Int num_reg[]) {
+Task BoxVM_Alloc_Global_Regs(BoxVM *vm, BoxInt num_var[], BoxInt num_reg[]) {
   int i;
   BoxPtr *reg_obj;
 
@@ -321,7 +321,7 @@ Task BoxVM_Alloc_Global_Regs(BoxVM *vm, Int num_var[], Int num_reg[]) {
     My_Free_Globals(vm);
 
   for(i = 0; i < NUM_TYPES; i++) {
-    Int nv = num_var[i], nr = num_reg[i];
+    BoxInt nv = num_var[i], nr = num_reg[i];
     BoxVMRegs *gregs = & vm->global[i];
     void *ptr;
     size_t nr_tot = nv + nr + 1;
@@ -363,7 +363,7 @@ Task BoxVM_Alloc_Global_Regs(BoxVM *vm, Int num_var[], Int num_reg[]) {
  * of type type, whose number is reg. *value is the value assigned
  * to the register (variable).
  */
-void BoxVM_Module_Global_Set(BoxVM *vmp, Int type, Int reg, void *value) {
+void BoxVM_Module_Global_Set(BoxVM *vmp, BoxInt type, BoxInt reg, void *value) {
   void *dest;
   BoxVMRegs *gregs;
 
@@ -443,7 +443,7 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
   BoxValue reg0[NUM_TYPES]; /* Registri locali numero zero */
 
 #if DEBUG_EXEC == 1
-  Int i = 0;
+  BoxInt i = 0;
 #endif
 
   /* Controlliamo che il modulo sia installato! */
@@ -630,9 +630,9 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
     TypeID t;  /* Tipi degli argomenti */
     BoxOp c;   /* Categorie degli argomenti */
     void *ptr; /* Puntatori ai valori degli argomenti */
-    Int   vi;  /* Destinazione dei valori...   */
-    Real  vr;  /* ...immediati degli argomenti */
-    Point vp;
+    BoxInt   vi;  /* Destinazione dei valori...   */
+    BoxReal  vr;  /* ...immediati degli argomenti */
+    BoxPoint vp;
   } arg[VM_MAX_NUMARGS];
 
   /* Esco subito se e' settato il flag di inibizione! */
@@ -652,7 +652,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
   t = 0; /* Indice di argomento */
   is_short = 1;
   for (i = 0; i < idesc->numargs; i++) {
-    Int vi = 0;
+    BoxInt vi = 0;
 
     /* Prendo dalla lista degli argomenti della funzione la categoria
     * dell'argomento dell'istruzione.
@@ -662,7 +662,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
     case BOXCONTCATEG_GREG:
     case BOXCONTCATEG_PTR:
       arg[t].t = TYPE_INT;
-      arg[t].vi = vi = va_arg(ap, Int);
+      arg[t].vi = vi = va_arg(ap, BoxInt);
       arg[t].ptr = (void *) (& arg[t].vi);
       break;
 
@@ -670,25 +670,25 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
       switch (idesc->t_id) {
       case TYPE_CHAR:
         arg[t].t = TYPE_CHAR;
-        arg[t].vi = va_arg(ap, Int); vi = 0;
+        arg[t].vi = va_arg(ap, BoxInt); vi = 0;
         arg[t].ptr = (void *) (& arg[t].vi);
         break;
       case TYPE_INT:
         arg[t].t = TYPE_INT;
-        arg[t].vi = vi = va_arg(ap, Int);
+        arg[t].vi = vi = va_arg(ap, BoxInt);
         arg[t].ptr = (void *) (& arg[t].vi);
         break;
       case TYPE_REAL:
         is_short = 0;
         arg[t].t = TYPE_REAL;
-        arg[t].vr = va_arg(ap, Real);
+        arg[t].vr = va_arg(ap, BoxReal);
         arg[t].ptr = (void *) (& arg[t].vr);
         break;
       case TYPE_POINT:
         is_short = 0;
         arg[t].t = TYPE_POINT;
-        arg[t].vp.x = va_arg(ap, Real);
-        arg[t].vp.y = va_arg(ap, Real);
+        arg[t].vp.x = va_arg(ap, BoxReal);
+        arg[t].vp.y = va_arg(ap, BoxReal);
         arg[t].ptr = (void *) (& arg[t].vp);
         break;
       default:
@@ -724,7 +724,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
     /* L'istruzione va scritta in formato corto! */
     BoxVMWord buffer[1], *i_pos = buffer;
     BoxVMWord i_eye;
-    UInt atype;
+    BoxUInt atype;
     BoxArr *prog = & pt->target_proc->code;
 
     for (; t < 2; t++) {
@@ -742,7 +742,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
 
   } else {
     /* L'istruzione va scritta in formato lungo! */
-    UInt idim, iheadpos;
+    BoxUInt idim, iheadpos;
     BoxVMWord iw[MAX_SIZE_IN_IWORDS];
     BoxArr *prog = & pt->target_proc->code;
 
@@ -754,7 +754,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
     BoxArr_MPush(prog, NULL, idim = 2);
 
     for (i = 0; i < t; i++) {
-      UInt adim, aiwdim;
+      BoxUInt adim, aiwdim;
 
       adim = size_of_type[arg[i].t];
       aiwdim = (adim + sizeof(BoxVMWord) - 1) / sizeof(BoxVMWord);
@@ -768,7 +768,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
     {
       BoxVMWord *i_pos;
       BoxVMWord i_eye;
-      UInt atype;
+      BoxUInt atype;
 
       /* Trovo il puntatore alla testa dell'istruzione */
       i_pos = (BoxVMWord *) BoxArr_Item_Ptr(prog, iheadpos);
@@ -801,16 +801,16 @@ void BoxVM_Assemble(BoxVM *vm, BoxOp instr, ...) {
  ****************************************************************************/
 
 typedef struct {
-  Int type;
-  Int size;
+  BoxInt type;
+  BoxInt size;
 } DataItem;
 
 /* This function adds a new piece of data to the data segment.
  * NOTE: It returns the address of the data item with respect to the beginning
  *  of the data segment.
  */
-size_t BoxVM_Data_Add(BoxVM *vm, const void *data, size_t size, Int type) {
-  Int addr;
+size_t BoxVM_Data_Add(BoxVM *vm, const void *data, size_t size, BoxInt type) {
+  BoxInt addr;
 
   /* Now we insert the data descriptor (for debug mainly), if necessary */
   if (vm->attr.identdata) {
@@ -831,12 +831,12 @@ static void My_Set_Data_Segment_Register(BoxVM *vm) {
   BoxPtr data_segment_ptr;
   data_segment_ptr.block = NULL; /* the VM will handle deallocation! */
   data_segment_ptr.ptr = BoxArr_First_Item_Ptr(& vm->data_segment);
-  BoxVM_Module_Global_Set(vm, TYPE_OBJ, (Int) 0, & data_segment_ptr);
+  BoxVM_Module_Global_Set(vm, TYPE_OBJ, (BoxInt) 0, & data_segment_ptr);
 }
 
 void BoxVM_Data_Display(BoxVM *vm, FILE *stream) {
   char *data;
-  Int size, pos, ds;
+  BoxInt size, pos, ds;
   DataItem *di;
 
   size = BoxArr_Num_Items(& vm->data_segment);

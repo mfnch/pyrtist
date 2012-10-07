@@ -32,15 +32,15 @@ typedef enum {
 
 typedef struct {
   int kind;
-  Point p[3];
+  BoxPoint p[3];
 } GPathPiece;
 
 typedef struct {
   struct {
     int position : 1;
   } have;
-  Real tolerance;
-  Point position;
+  BoxReal tolerance;
+  BoxPoint position;
   buff pieces;
 } GPath;
 
@@ -51,7 +51,7 @@ enum {
 };
 
 /** Used in conjunction with gpath_iter() */
-typedef int GPathIterator(Int piece_index, GPathPiece *piece, void *data);
+typedef int GPathIterator(BoxInt piece_index, GPathPiece *piece, void *data);
 
 /* For now a GPath is not thought to be modified:
  * we don't provide functions to change the pieces which have already
@@ -71,15 +71,15 @@ void gpath_clear(GPath *gp);
 void gpath_break(GPath *gp);
 
 /** Return the last point in the piece */
-Point *gpathpiece_last(GPathPiece *piece);
+BoxPoint *gpathpiece_last(GPathPiece *piece);
 
-void gpath_append(GPath *gp, Point *point, int join);
+void gpath_append(GPath *gp, BoxPoint *point, int join);
 
-void gpath_move_to(GPath *gp, Point *point);
+void gpath_move_to(GPath *gp, BoxPoint *point);
 
-void gpath_line_to(GPath *gp, Point *point);
+void gpath_line_to(GPath *gp, BoxPoint *point);
 
-void gpath_arc_to(GPath *gp, Point *p1, Point *p2);
+void gpath_arc_to(GPath *gp, BoxPoint *p1, BoxPoint *p2);
 
 /** Calls the function iter() for each piece of the GPath,
  * passing the piece index, a pointer to the piece data structure
@@ -98,17 +98,17 @@ void gpath_print(GPath *gp, FILE *out);
 void gpath_print_points(GPath *gp, FILE *out);
 
 /** This function returns the length of the path. */
-Real gpath_length(GPath *gp);
+BoxReal gpath_length(GPath *gp);
 
 /** This function returns the number of pieces in the path. */
-Int gpath_num_pieces(GPath *gp);
+BoxInt gpath_num_pieces(GPath *gp);
 
 /** This function returns a point in the path, such that the sub-path
  * which connects it to the starting point has the provided 'length'.
  */
-void gpath_get_first_point_at_length(GPath *p, Real length);
+void gpath_get_first_point_at_length(GPath *p, BoxReal length);
 
-void gpath_get_last_point_at_length(GPath *p, Real length);
+void gpath_get_last_point_at_length(GPath *p, BoxReal length);
 
 /** This function returns the first point of the provided 'piece'.
  * If 'piece' is not an integer, then a proper interpolation is made.
@@ -120,7 +120,7 @@ void gpath_get_last_point_at_length(GPath *p, Real length);
  * NOTE: this function returns the same output returned by the function
  *  gpath_get_last_point_of_piece if the path is not broken (=closed).
  */
-void gpath_get_first_point_of_piece(GPath *p, Real piece);
+void gpath_get_first_point_of_piece(GPath *p, BoxReal piece);
 
 /** This function returns the last point of the provided 'piece'.
  * If 'piece' is not an integer, then a proper interpolation is made.
@@ -132,13 +132,14 @@ void gpath_get_first_point_of_piece(GPath *p, Real piece);
  * NOTE: this function returns the same output returned by the function
  *  gpath_get_first_point_of_piece if the path is not broken (=closed).
  */
-void gpath_get_last_point_of_piece(GPath *p, Real piece);
+void gpath_get_last_point_of_piece(GPath *p, BoxReal piece);
 
-void gpath_get_piece_from_length(GPath *p, Real length);
+void gpath_get_piece_from_length(GPath *p, BoxReal length);
 
-void gpath_get_length_from_piece(GPath *p, Real piece);
+void gpath_get_length_from_piece(GPath *p, BoxReal piece);
 
-void gpath_subgpath(GPath *p, GPath *subpath, Real first_piece, Real last_piece);
+void gpath_subgpath(GPath *p, GPath *subpath, BoxReal first_piece,
+                    BoxReal last_piece);
 
 void gpath_append_gpath(GPath *dest, GPath *src, int options);
 

@@ -18,7 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/** @file registers.h
+/**
+ * @file registers.h
  * @brief The register allocation system.
  *
  * This file provides the functions needed to associate registers
@@ -49,8 +50,8 @@
 typedef BoxInt BoxVMRegNum;
 
 typedef struct {
-  Int    chain; /**< Chain of released registers */
-  Int    max;   /**< Total number of registers to allocate for variables */
+  BoxInt    chain; /**< Chain of released registers */
+  BoxInt    max;   /**< Total number of registers to allocate for variables */
   BoxArr regs;  /**< Registers corresponding to variables */
 } VarFrame;
 
@@ -72,18 +73,18 @@ void Reg_Init(RegAlloc *ra);
 void Reg_Finish(RegAlloc *ra);
 void Reg_Frame_Push(RegAlloc *ra);
 void Reg_Frame_Pop(RegAlloc *ra);
-Int Reg_Frame_Get(RegAlloc *ra);
-Int Reg_Occupy(RegAlloc *ra, BoxTypeId t);
-void Reg_Release(RegAlloc *ra, Int t, UInt regnum);
-Int Reg_Num(RegAlloc *ra, Int t);
-Int Var_Occupy(RegAlloc *ra, BoxTypeId type, Int level);
-void Var_Release(RegAlloc *ra, Int type, UInt varnum);
-Int Var_Num(RegAlloc *ra, Int type);
-Int GVar_Occupy(RegAlloc *ra, BoxTypeId type);
-void GVar_Release(RegAlloc *ra, Int type, UInt varnum);
-Int GReg_Num(RegAlloc *ra, Int type);
-Int GVar_Num(RegAlloc *ra, Int type);
-void Reg_Get_Local_Nums(RegAlloc *ra, Int *num_regs, Int *num_vars);
-void Reg_Get_Global_Nums(RegAlloc *ra, Int *num_regs, Int *num_vars);
+BoxInt Reg_Frame_Get(RegAlloc *ra);
+BoxInt Reg_Occupy(RegAlloc *ra, BoxTypeId t);
+void Reg_Release(RegAlloc *ra, BoxInt t, BoxUInt regnum);
+BoxInt Reg_Num(RegAlloc *ra, BoxInt t);
+BoxInt Var_Occupy(RegAlloc *ra, BoxTypeId type, BoxInt level);
+void Var_Release(RegAlloc *ra, BoxInt type, BoxUInt varnum);
+BoxInt Var_Num(RegAlloc *ra, BoxInt type);
+BoxInt GVar_Occupy(RegAlloc *ra, BoxTypeId type);
+void GVar_Release(RegAlloc *ra, BoxInt type, BoxUInt varnum);
+BoxInt GReg_Num(RegAlloc *ra, BoxInt type);
+BoxInt GVar_Num(RegAlloc *ra, BoxInt type);
+void Reg_Get_Local_Nums(RegAlloc *ra, BoxInt *num_regs, BoxInt *num_vars);
+void Reg_Get_Global_Nums(RegAlloc *ra, BoxInt *num_regs, BoxInt *num_vars);
 
 #endif /* _BOX_REGISTERS_H */

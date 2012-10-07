@@ -17,7 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file value.h
+/**
+ * @file value.h
  * @brief Declaration Value, the central object in the Box compiler.
  *
  * A value object is used by the Box compiler to represent values.
@@ -150,13 +151,13 @@ void Value_Setup_As_Type_Name(Value *v, const char *name);
 void Value_Setup_As_Type(Value *v, BoxTypeId t);
 
 /** Set the value to represent the given immediate char 'c' */
-void Value_Setup_As_Imm_Char(Value *v, Char c);
+void Value_Setup_As_Imm_Char(Value *v, BoxChar c);
 
 /** Set the value to represent the given immediate int 'i' */
-void Value_Setup_As_Imm_Int(Value *v, Int i);
+void Value_Setup_As_Imm_Int(Value *v, BoxInt i);
 
 /** Set the value to represent the given immediate real 'r' */
-void Value_Setup_As_Imm_Real(Value *v, Real r);
+void Value_Setup_As_Imm_Real(Value *v, BoxReal r);
 
 /** Set the value to represent a temporary value of the given type */
 void Value_Setup_As_Temp(Value *v, BoxType *t);

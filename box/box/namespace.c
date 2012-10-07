@@ -44,7 +44,7 @@ void Namespace_Init(Namespace *ns) {
 }
 
 void Namespace_Finish(Namespace *ns) {
-  Int num_floors_left = BoxArr_Num_Items(& ns->floors);
+  BoxInt num_floors_left = BoxArr_Num_Items(& ns->floors);
   if (num_floors_left != 1)
     MSG_WARNING("num floors = %I at Namespace destruction!", num_floors_left);
 

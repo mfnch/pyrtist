@@ -111,7 +111,7 @@ static void My_BB_Draw_Path(BoxGWin *w, DrawStyle *style) {
   BoxGBBox *bb_local = & MY_DATA(w)->bb_local;
   BoxGBBox *bb_global = & MY_DATA(w)->bb_global;
   int do_border = (style->bord_width > 0.0);
-  Real scale = style->scale;
+  BoxReal scale = style->scale;
   if (do_border)
     BoxGBBox_Extend_Margin(bb_local, 0.5*scale*style->bord_width);
 
@@ -127,7 +127,7 @@ static void My_BB_Add_Line_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b) {
   My_Got_Point(w, b->x, b->y);
 }
 
-static void My_BB_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c) {
+static void My_BB_Add_Join_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b, BoxPoint *c) {
 #ifdef DEBUG
   printf("cong\n");
 #endif
@@ -135,8 +135,8 @@ static void My_BB_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c) {
   My_Got_Point(w, c->x, c->y); My_Got_Point(w, a->x + c->x - b->x, a->y + c->y - b->y);
 }
 
-static void My_BB_Add_Circle_Path(BoxGWin *w, Point *ctr, Point *a, Point *b) {
-  Point va, vb;
+static void My_BB_Add_Circle_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *a, BoxPoint *b) {
+  BoxPoint va, vb;
 #ifdef DEBUG
   printf("circle\n");
 #endif
@@ -158,7 +158,7 @@ static void My_BB_Add_Text_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *left,
   My_Got_Point(w, up->x, up->y);
 }
 
-static void My_BB_Add_Fake_Point(BoxGWin *w, Point *p) {
+static void My_BB_Add_Fake_Point(BoxGWin *w, BoxPoint *p) {
   My_Got_Point(w, p->x, p->y);
 }
 

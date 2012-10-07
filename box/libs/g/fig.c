@@ -283,23 +283,23 @@ void My_Fig_Draw_Path(BoxGWin *w, DrawStyle *style) {
                     {0, (void *) NULL},
                     {0, (void *) NULL}};
   if (style->bord_num_dashes > 0) {
-    args[1].arg_data_size = sizeof(Real)*style->bord_num_dashes;
+    args[1].arg_data_size = sizeof(BoxReal)*style->bord_num_dashes;
     args[1].arg_data = style->bord_dashes;
   }
   My_Fig_Push_Commands(w, ID_rdraw, args);
 }
 
-void My_Fig_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
-  CmndArg args[] = {{sizeof(Point), a},
-                    {sizeof(Point), b},
+void My_Fig_Add_Line_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b) {
+  CmndArg args[] = {{sizeof(BoxPoint), a},
+                    {sizeof(BoxPoint), b},
                     {0, (void *) NULL}};
   My_Fig_Push_Commands(w, ID_rline, args);
 }
 
-void My_Fig_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c) {
-  CmndArg args[] = {{sizeof(Point), a},
-                    {sizeof(Point), b},
-                    {sizeof(Point), c},
+void My_Fig_Add_Join_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b, BoxPoint *c) {
+  CmndArg args[] = {{sizeof(BoxPoint), a},
+                    {sizeof(BoxPoint), b},
+                    {sizeof(BoxPoint), c},
                     {0, (void *) NULL}};
   My_Fig_Push_Commands(w, ID_rcong, args);
 }
@@ -309,10 +309,10 @@ void My_Fig_Close_Path(BoxGWin *w) {
   My_Fig_Push_Commands(w, ID_rclose, args);
 }
 
-void My_Fig_Circle_Path(BoxGWin *w, Point *ctr, Point *a, Point *b) {
-  CmndArg args[] = {{sizeof(Point), ctr},
-                    {sizeof(Point), a},
-                    {sizeof(Point), b},
+void My_Fig_Circle_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *a, BoxPoint *b) {
+  CmndArg args[] = {{sizeof(BoxPoint), ctr},
+                    {sizeof(BoxPoint), a},
+                    {sizeof(BoxPoint), b},
                     {0, (void *) NULL}};
   My_Fig_Push_Commands(w, ID_rcircle, args);
 }
@@ -328,14 +328,14 @@ void My_Fig_Set_Bg_Color(BoxGWin *w, Color *c) {
 }
 
 typedef struct {
-  Point ctr, right, up, from;
-  Int text_size;
+  BoxPoint ctr, right, up, from;
+  BoxInt text_size;
 } Arg4Text;
 
 static void My_Fig_Add_Text_Path(BoxGWin *w,
-                                 Point *ctr, Point *right, Point *up,
-                                 Point *from, const char *text) {
-  Int text_size = strlen(text);
+                                 BoxPoint *ctr, BoxPoint *right, BoxPoint *up,
+                                 BoxPoint *from, const char *text) {
+  BoxInt text_size = strlen(text);
   Arg4Text arg;
   CmndArg args[] = {{sizeof(Arg4Text), & arg},
                     {text_size+1, (void *) text},
@@ -346,15 +346,15 @@ static void My_Fig_Add_Text_Path(BoxGWin *w,
 }
 
 static void My_Fig_Set_Font(BoxGWin *w, const char *font) {
-  Int font_size = strlen(font);
-  CmndArg args[] = {{sizeof(Int), & font_size},
+  BoxInt font_size = strlen(font);
+  CmndArg args[] = {{sizeof(BoxInt), & font_size},
                     {font_size+1, (void *) font},
                     {0, (void *) NULL}};
   My_Fig_Push_Commands(w, ID_font, args);
 }
 
-static void My_Fig_Fake_Point(BoxGWin *w, Point *p) {
-  CmndArg args[] = {{sizeof(Point), p}, {0, (void *) NULL}};
+static void My_Fig_Fake_Point(BoxGWin *w, BoxPoint *p) {
+  CmndArg args[] = {{sizeof(BoxPoint), p}, {0, (void *) NULL}};
   My_Fig_Push_Commands(w, ID_fake_point, args);
 }
 
@@ -707,7 +707,7 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
 
   case ID_rdraw:
     ((DrawStyle *) cmnd_data)->bord_dashes =
-      (Real *) (cmnd_data + sizeof(DrawStyle));
+      (BoxReal *) (cmnd_data + sizeof(DrawStyle));
     tr = ((DrawStyle *) cmnd_data)->scale;
     BoxGWinMap_Map_Width(map, & ((DrawStyle *) cmnd_data)->scale, & tr);
     BoxGWin_Draw_Path(w, (DrawStyle *) cmnd_data);
@@ -715,16 +715,16 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
     return BOXTASK_OK;
 
   case ID_rline:
-    tp[0] = *((Point *) cmnd_data);
-    tp[1] = *((Point *) (cmnd_data + sizeof(Point)));
+    tp[0] = *((BoxPoint *) cmnd_data);
+    tp[1] = *((BoxPoint *) (cmnd_data + sizeof(BoxPoint)));
     BoxGWinMap_Map_Points(map, tp, tp, 2);
     BoxGWin_Add_Line_Path(w, & tp[0], & tp[1]);
     return BOXTASK_OK;
 
   case ID_rcong:
-    tp[0] = *((Point *) cmnd_data);
-    tp[1] = *((Point *) (cmnd_data + sizeof(Point)));
-    tp[2] = *((Point *) (cmnd_data + 2*sizeof(Point)));
+    tp[0] = *((BoxPoint *) cmnd_data);
+    tp[1] = *((BoxPoint *) (cmnd_data + sizeof(BoxPoint)));
+    tp[2] = *((BoxPoint *) (cmnd_data + 2*sizeof(BoxPoint)));
     BoxGWinMap_Map_Points(map, tp, tp, 3);
     BoxGWin_Add_Join_Path(w, & tp[0], & tp[1], & tp[2]);
     return BOXTASK_OK;
@@ -734,9 +734,9 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
     return BOXTASK_OK;
 
   case ID_rcircle:
-    tp[0] = *((Point *) cmnd_data);
-    tp[1] = *((Point *) (cmnd_data + sizeof(Point)));
-    tp[2] = *((Point *) (cmnd_data + 2*sizeof(Point)));
+    tp[0] = *((BoxPoint *) cmnd_data);
+    tp[1] = *((BoxPoint *) (cmnd_data + sizeof(BoxPoint)));
+    tp[2] = *((BoxPoint *) (cmnd_data + 2*sizeof(BoxPoint)));
     BoxGWinMap_Map_Points(map, tp, tp, 3);
     BoxGWin_Add_Circle_Path(w, & tp[0], & tp[1], & tp[2]);
     return BOXTASK_OK;
@@ -783,9 +783,9 @@ static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
   case ID_font:
     {
       void *ptr = cmnd_data;
-      Int str_size = *((Int *) ptr); ptr += sizeof(Int);
+      BoxInt str_size = *((BoxInt *) ptr); ptr += sizeof(BoxInt);
       char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
-      if (str_size + sizeof(Int) <= cmnd_header->size) {
+      if (str_size + sizeof(BoxInt) <= cmnd_header->size) {
         if (*((char *) ptr) == '\0') {
           BoxGWin_Set_Font(w, str);
         } else {
@@ -882,8 +882,8 @@ void BoxGWin_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *src) {
 }
 
 int BoxGWin_Fig_Save_Fig(BoxGWin *src, BoxGWinPlan *plan) {
-  Point translation, center;
-  Real sx, sy, rot_angle;
+  BoxPoint translation, center;
+  BoxReal sx, sy, rot_angle;
   BoxGWin *dest;
 
   if (!plan->have.file_name || plan->file_name == NULL) {

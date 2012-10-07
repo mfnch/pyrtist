@@ -28,11 +28,11 @@ typedef struct {
   struct {
     int color : 1;
   } got;
-  Int num_points;
+  BoxInt num_points;
 
   Color color;
   int close;
-  Real arrowscale;
+  BoxReal arrowscale;
   LineTracer *lt;
   LinePiece this_piece;
 

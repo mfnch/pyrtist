@@ -84,7 +84,7 @@ static BoxTask My_Print_Real(BoxVMX *vmx) {
 }
 
 static BoxTask My_Print_Pnt(BoxVMX *vmx) {
-  Point *p = BoxVMX_Get_Child_Target(vmx);
+  BoxPoint *p = BoxVMX_Get_Child_Target(vmx);
   printf(SPoint, p->x, p->y);
   return BOXTASK_OK;
 }

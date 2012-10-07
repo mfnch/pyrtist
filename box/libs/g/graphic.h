@@ -70,7 +70,7 @@ typedef enum {
 
 /* The color type */
 typedef struct {
-  Real r, g, b, a;
+  BoxReal r, g, b, a;
 } Color;
 
 /* Definisce la struttura adatta a contenere il colore di un punto */
@@ -110,8 +110,8 @@ typedef struct {
         resolution : 1, file_name : 1, num_layers: 1;
   } have;
   int type;
-  Point origin, size,
-        resolution; /** Resolution in points per mm */
+  BoxPoint origin, size,
+           resolution; /** Resolution in points per mm */
   char *file_name;
   int num_layers;
 } BoxGWinPlan;
@@ -137,12 +137,12 @@ typedef enum {CAP_STYLE_BUTT=0, CAP_STYLE_ROUND, CAP_STYLE_SQUARE} CapStyle;
 /** All what is needed by the rdraw method */
 typedef struct {
   FillStyle fill_style;
-  Real scale, bord_width, bord_miter_limit;
+  BoxReal scale, bord_width, bord_miter_limit;
   JoinStyle bord_join_style;
   Color bord_color;
   CapStyle bord_cap;
-  Int bord_num_dashes;
-  Real *bord_dashes, bord_dash_offset;
+  BoxInt bord_num_dashes;
+  BoxReal *bord_dashes, bord_dash_offset;
 } DrawStyle;
 
 /** Enumeration of possible color gradient types */
@@ -154,7 +154,7 @@ typedef enum {
 /** Structure used to specify a color in the gradient vector (see ColorGrad)
  */
 typedef struct {
-  Real position;
+  BoxReal position;
   Color color;
 } ColorGradItem;
 
@@ -176,9 +176,9 @@ typedef enum {
 typedef struct {
   ColorGradType type;
   ColorGradExt extend;
-  Point point1, point2, ref1, ref2;
-  Real radius1, radius2;
-  Int num_items;
+  BoxPoint point1, point2, ref1, ref2;
+  BoxReal radius1, radius2;
+  BoxInt num_items;
   ColorGradItem *items;
 } ColorGrad;
 
@@ -286,10 +286,10 @@ struct BoxGWin_struct {
   void (*set_color)(BoxGWin *w, int col);
 
   /** @see BoxGWin_Draw_Point */
-  void (*draw_point)(BoxGWin *w, Int ptx, Int pty);
+  void (*draw_point)(BoxGWin *w, BoxInt ptx, BoxInt pty);
 
   /** @see BoxGWin_Draw_Hor_Line */
-  void (*draw_hor_line)(BoxGWin *w, Int y, Int x1, Int x2);
+  void (*draw_hor_line)(BoxGWin *w, BoxInt y, BoxInt x1, BoxInt x2);
 
   /** Restore the window methods, which may have been changed after an error
    * has occurred.
@@ -316,7 +316,7 @@ struct BoxGWin_struct {
                             and on the bottom */
     resx, resy;        /**< x and y resolution (points per mm) */
 
-  Int numptx, numpty;  /**< Number of points in each direction */
+  BoxInt numptx, numpty;  /**< Number of points in each direction */
   palitem *bgcol;      /**< Background color */
   palitem *fgcol;      /**< Current foreground color */
   palette *pal;        /**< Color palette */
@@ -424,9 +424,9 @@ void BoxGWin_Finish(BoxGWin *w);
 /****************************************************************************/
 
 /* Per convertire in millimetri, radianti, punti per millimetro */
-extern Real grp_tomm;
-extern Real grp_torad;
-extern Real grp_toppmm;
+extern BoxReal grp_tomm;
+extern BoxReal grp_torad;
+extern BoxReal grp_toppmm;
 
 /* Window type (in BoxGWinPlan) */
 typedef enum {WT_NONE=-1, WT_BM1=0, WT_BM4, WT_BM8, WT_FIG,

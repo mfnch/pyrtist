@@ -26,11 +26,11 @@
 
 #  define PointList ObjList
 
-#  define pointlist_init(pl) (objlist_init((pl), sizeof(Point)))
+#  define pointlist_init(pl) (objlist_init((pl), sizeof(BoxPoint)))
 #  define pointlist_destroy(pl) (objlist_destroy((pl)))
 #  define pointlist_dup(dest, src) (objlist_dup((dest), (src)))
-#  define pointlist_find(pl, name) ((Point *) objlist_find((pl), (name)))
-#  define pointlist_get(pl, index) ((Point *) objlist_get((pl), (index)))
+#  define pointlist_find(pl, name) ((BoxPoint *) objlist_find((pl), (name)))
+#  define pointlist_get(pl, index) ((BoxPoint *) objlist_get((pl), (index)))
 #  define pointlist_add(pl, p, name) (objlist_add((pl), (p), name))
 #  define pointlist_iter(pl, it, data) (objlist_iter((pl), (it), (data)))
 #  define pointlist_num(pl) (objlist_num((pl)))

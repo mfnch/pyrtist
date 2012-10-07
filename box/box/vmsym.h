@@ -141,7 +141,7 @@ BoxVMSym_New(BoxVM *vmp, BoxUInt sym_type, BoxUInt def_size);
  * @return A new symbol identifier (an integer).
  */
 BOXEXPORT BoxVMSymID
-BoxVMSym_Create(BoxVM *vm, UInt sym_type,
+BoxVMSym_Create(BoxVM *vm, BoxUInt sym_type,
                 const char *def, size_t def_size);
 
 /** Associate a name to the symbol sym_id.
@@ -254,7 +254,7 @@ BoxVMSym_Table_Print(BoxVM *vm, FILE *out, BoxVMSymID sym_id);
  * @brief Check that the type of the symbol @p sym_id is @p sym_type.
  */
 BOXEXPORT BoxTask
-BoxVMSym_Check_Type(BoxVM *vm, BoxVMSymID sym_id, UInt sym_type);
+BoxVMSym_Check_Type(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type);
 
 /**
  * @brief Open the given dynamic library to resolve symbols.

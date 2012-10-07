@@ -17,9 +17,7 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$
- *
- * Questo file contiene le procedure che sono usate per posizionare
+/* Questo file contiene le procedure che sono usate per posizionare
  * automaticamente le figure (servono per calcolare angoli di rotazione,
  * vettori di traslazione, etc. in maniera automatica).
  */
@@ -37,8 +35,8 @@
 #include "autoput.h"
 
 /* Quantita' che definiscono la trasformazione */
-static Real Qx, Qy, Tx, Ty;
-static Real theta, cos_theta, sin_theta, s, cos_tau, sin_tau/*,tau*/;
+static BoxReal Qx, Qy, Tx, Ty;
+static BoxReal theta, cos_theta, sin_theta, s, cos_tau, sin_tau/*,tau*/;
 
 #define AUTO_TRANSLATION(n) ( ((n) & 0x3) != 0 )
 #define AUTO_TRANSLATION_X(n) ( ((n) & 0x1) != 0 )
@@ -85,12 +83,12 @@ static Real theta, cos_theta, sin_theta, s, cos_tau, sin_tau/*,tau*/;
  *   BIT 4 di needed  -->  L'oggetto sara' "sproporzionato" (automaticamente)
  *   BIT 5 di needed  -->  L'oggetto sara' riflesso (automaticamente)
  */
-int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed)
+int aput_autoput(BoxPoint *F, BoxPoint *R, BoxReal *weight, int n, int needed)
 {
   register int i;
-  register Real wsum, *wptr;
-  register Real ix, iy, jx, jy, g2x, g2y, sg2x, sg2y;
-  Point *Fptr, *Rptr;
+  register BoxReal wsum, *wptr;
+  register BoxReal ix, iy, jx, jy, g2x, g2y, sg2x, sg2y;
+  BoxPoint *Fptr, *Rptr;
 
   /* n > 0 */
   if (n < 1) {
@@ -112,7 +110,7 @@ int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed)
      */
     if ( ! AUTO_TRANSLATION_X(needed) ) {
       /* x manuale, y automatico */
-      register Real MFx, MFy, MRy, w;
+      register BoxReal MFx, MFy, MRy, w;
 
       /* Calcoliamo le medie pesate di F.y e R.y */
       wsum = *(wptr = weight);
@@ -143,7 +141,7 @@ int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed)
 
     } else {
       /* x e y entrambi automatici */
-      register Real MFx, MFy, MRx, MRy, w;
+      register BoxReal MFx, MFy, MRx, MRy, w;
 
       /* Calcoliamo le medie pesate di F e R */
       wsum = *(wptr = weight);
@@ -183,7 +181,7 @@ int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed)
    * per eseguire la minimizzazione
    */
   {
-    register Real
+    register BoxReal
      w, gx, gy, wgx, wgy, sx, sy, Ux, Uy;
 
     Ux = Tx + Qx;
@@ -234,14 +232,14 @@ int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed)
   if ( FIXED_PROPORTION(needed) ) {
     /* CASO 1: Proporzioni fissate manualmente */
 
-    Real A = ix * cos_tau + iy * sin_tau;
-    Real B = jx * cos_tau + jy * sin_tau;
+    BoxReal A = ix * cos_tau + iy * sin_tau;
+    BoxReal B = jx * cos_tau + jy * sin_tau;
 
     if ( AUTO_ROTATION(needed) ) {
       /* Determino l'angolo di rotazione, se e' selezionata
        * la rotazione automatica!
        */
-      Real modAB = sqrt(A*A + B*B);
+      BoxReal modAB = sqrt(A*A + B*B);
       cos_theta = A/modAB;
       sin_theta = B/modAB;
       theta = atan2(sin_theta, cos_theta);
@@ -254,7 +252,7 @@ int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed)
 
     /* Ora non resta che calcolare il fattore di ingrandimento! */
     if ( AUTO_SCALE(needed) ) {
-      Real C = cos_tau * cos_tau * g2x + sin_tau * sin_tau * g2y;
+      BoxReal C = cos_tau * cos_tau * g2x + sin_tau * sin_tau * g2y;
       s = ( A * cos_theta + B * sin_theta ) / C;
     }
 
@@ -272,9 +270,9 @@ int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed)
 /* DESCRIZIONE: Setta i parametri della trasformazione prima di avviare
  *  il calcolo automatico con aput_autoput.
  */
-void aput_set(Point *rot_center, Point *trsl_vect,
-              Real *rot_angle, Real *scale_x, Real *scale_y ) {
-  register Real sx, sy;
+void aput_set(BoxPoint *rot_center, BoxPoint *trsl_vect,
+              BoxReal *rot_angle, BoxReal *scale_x, BoxReal *scale_y ) {
+  register BoxReal sx, sy;
 
   Qx = rot_center->x;
   Qy = rot_center->y;
@@ -292,8 +290,8 @@ void aput_set(Point *rot_center, Point *trsl_vect,
 
 /* DESCRIZIONE: Preleva i parametri calcolati in modo automatico da aput_autoput
  */
-void aput_get(Point *rot_center, Point *trsl_vect,
-              Real *rot_angle, Real *scale_x, Real *scale_y ) {
+void aput_get(BoxPoint *rot_center, BoxPoint *trsl_vect,
+              BoxReal *rot_angle, BoxReal *scale_x, BoxReal *scale_y ) {
   rot_center->x = Qx;
   rot_center->y = Qy;
   trsl_vect->x = Tx;

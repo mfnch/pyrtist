@@ -67,7 +67,7 @@ static BoxVM *target_vm = NULL;
 static BoxPaths box_paths;
 
 /* Variabili interne */
-static UInt flags = FLAG_EXECUTE; /* Stato di partenza dei flags */
+static BoxUInt flags = FLAG_EXECUTE; /* Stato di partenza dei flags */
 static char *prog_name;
 static char *file_input = NULL;
 static char *file_output;
@@ -86,13 +86,13 @@ static void My_Exec_Query(char *query);
 /* Tabella contenente i nomi delle opzioni e i dati relativi */
 static struct opt {
   char     *name;  /* Nome dell'opzione */
-  UInt     cflag,  /* Se part = PAR_NONE, esegue *((UInt *) arg) &= ~cflag */
-           sflag,  /* Se part = PAR_NONE, esegue *((UInt *) arg) |= sflag */
-           xflag,  /* Se part = PAR_NONE, esegue *((UInt *) arg) ^= xflag */
+  BoxUInt  cflag,  /* Se part = PAR_NONE, esegue *((BoxUInt *) arg) &= ~cflag */
+           sflag,  /* Se part = PAR_NONE, esegue *((BoxUInt *) arg) |= sflag */
+           xflag,  /* Se part = PAR_NONE, esegue *((BoxUInt *) arg) ^= xflag */
            repeat, /* Numero di volte che l'opzione puo' essere invocata */
            *flags; /* Puntatore all'insieme dei flags */
   void     (*use_argument)(BoxPaths *bp, char *arg);
-
+  
 } opt_tab[] = {
   {"help",    0, FLAG_HELP, 0, -1, & flags, NO_ARG},
   {"?",       0, FLAG_HELP, 0, -1, & flags, NO_ARG},
@@ -118,7 +118,7 @@ int main(int argc, char** argv);
 void Main_Error_Exit(char *msg);
 void Main_Cmnd_Line_Help(void);
 BoxTask Main_Prepare(void);
-BoxTask Main_Execute(UInt main_module);
+BoxTask Main_Execute(BoxUInt main_module);
 
 /******************************************************************************/
 
@@ -138,10 +138,10 @@ static void My_Stage_Finalize(void) {
   Msg_Main_Destroy();
 }
 
-static BoxTask My_Stage_Parse_Command_Line(UInt *flags, int argc,
+static BoxTask My_Stage_Parse_Command_Line(BoxUInt *flags, int argc,
                                            char** argv) {
   int i;
-  UInt j;
+  BoxUInt j;
 
   MSG_CONTEXT_BEGIN("Reading the command line options");
 
@@ -159,7 +159,7 @@ static BoxTask My_Stage_Parse_Command_Line(UInt *flags, int argc,
     if (*option == OPTION_CHAR) {
       static char single_opt_char[2] = {OPTION_CHAR, '\0'};
       static char double_opt_char[3] = {OPTION_CHAR, OPTION_CHAR, '\0'};
-      UInt oplen = strlen(++option), opnum = -1;
+      BoxUInt oplen = strlen(++option), opnum = -1;
 
       opt_prefix = single_opt_char;
       if (oplen > 0)
@@ -216,8 +216,8 @@ static BoxTask My_Stage_Parse_Command_Line(UInt *flags, int argc,
   return BOXTASK_OK;
 }
 
-static BoxTask My_Stage_Interpret_Command_Line(UInt *f) {
-  UInt flags = *f;
+static BoxTask My_Stage_Interpret_Command_Line(BoxUInt *f) {
+  BoxUInt flags = *f;
 
   /* Controllo se e' stata specificata l'opzione di help */
   if (flags & FLAG_HELP) Main_Cmnd_Line_Help();
@@ -284,7 +284,7 @@ static BoxTask My_Stage_Compilation(char *file, BoxVMCallNum *main_module) {
 }
 
 /* Enter symbol resolution stage */
-static BoxTask My_Stage_Symbol_Resolution(UInt *flags) {
+static BoxTask My_Stage_Symbol_Resolution(BoxUInt *flags) {
   int all_resolved;
   BoxTask status = BOXTASK_OK;
 
@@ -312,7 +312,7 @@ static BoxTask My_Stage_Symbol_Resolution(UInt *flags) {
   return status;
 }
 
-static BoxTask My_Stage_Execution(UInt *flags, UInt main_module) {
+static BoxTask My_Stage_Execution(BoxUInt *flags, BoxUInt main_module) {
   BoxTask status ;
   /* Controllo se e' possibile procedere all'esecuzione del file compilato! */
   if ((*flags & FLAG_EXECUTE) == 0)
@@ -344,7 +344,7 @@ static BoxTask My_Stage_Execution(UInt *flags, UInt main_module) {
   return status;
 }
 
-static BoxTask My_Stage_Write_Asm(UInt flags) {
+static BoxTask My_Stage_Write_Asm(BoxUInt flags) {
   /* Fase di output */
   if (flags & FLAG_OUTPUT) {
     FILE *out = stdout;
@@ -380,7 +380,7 @@ static BoxTask My_Stage_Write_Asm(UInt flags) {
   return BOXTASK_OK;
 }
 
-BoxTask Main_Execute(UInt main_module) {
+BoxTask Main_Execute(BoxUInt main_module) {
   BoxTask t;
   t = BoxVM_Module_Execute(target_vm->vmcur, main_module);
   if (t == BOXTASK_FAILURE && (flags & FLAG_SILENT) == 0)
@@ -502,7 +502,7 @@ static void My_Exec_Query(char *query) {
 
 /* main function of the program. */
 int main(int argc, char** argv) {
-  UInt main_module;
+  BoxUInt main_module;
   int exit_status = EXIT_SUCCESS;
   BoxTask status;
 

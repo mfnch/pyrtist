@@ -54,7 +54,8 @@ void BoxAny_Finish(BoxAny *any)
 }
 
 /* Initialize a block of memory addressed by src and with type t. */
-static BoxBool My_Init_Obj(BoxPtr *src, BoxType *t) {
+static BoxBool
+My_Init_Obj(BoxPtr *src, BoxType *t) {
   while (1) {
     switch (t->type_class) {
     case BOXTYPECLASS_PRIMARY:
@@ -147,6 +148,8 @@ static BoxBool My_Init_Obj(BoxPtr *src, BoxType *t) {
 
     case BOXTYPECLASS_ENUM:
       /* TO BE IMPLEMENTED */
+      return BOXBOOL_FALSE;
+
     case BOXTYPECLASS_FUNCTION:
       /* TO BE IMPLEMENTED */
       return BOXBOOL_FALSE;
@@ -168,7 +171,8 @@ static BoxBool My_Init_Obj(BoxPtr *src, BoxType *t) {
 }
 
 /* Generic finalization function for objects. */
-static void My_Finish_Obj(BoxPtr *src, BoxType *t) {
+static void
+My_Finish_Obj(BoxPtr *src, BoxType *t) {
   while (1) {
     switch (t->type_class) {
     case BOXTYPECLASS_PRIMARY:
@@ -244,6 +248,12 @@ static void My_Finish_Obj(BoxPtr *src, BoxType *t) {
     }
   }
 }
+
+static BoxBool
+My_Copy_Obj(BoxType t, void *dest, void *src) {
+  return BOXBOOL_FALSE;
+}
+
 
 /* Add a reference to an object and return it. */
 BoxSPtr BoxSPtr_Link(BoxSPtr src) {

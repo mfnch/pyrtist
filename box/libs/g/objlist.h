@@ -34,19 +34,19 @@ typedef struct {
   buff ol;
 } ObjList;
 
-typedef Task (*ObjListIterator)(Int obj_idx, char *name,
+typedef BoxTask (*ObjListIterator)(BoxInt obj_idx, char *name,
                                 void *obj, void *data);
 
-Task objlist_init(ObjList *ol, Int obj_size);
+BoxTask objlist_init(ObjList *ol, BoxInt obj_size);
 void objlist_destroy(ObjList *pl);
-Task objlist_clear(ObjList *ol);
-Task objlist_dup(ObjList *dest, ObjList *src);
+BoxTask objlist_clear(ObjList *ol);
+BoxTask objlist_dup(ObjList *dest, ObjList *src);
 void *objlist_find(ObjList *ol, const char *name);
 void *objlist_get(ObjList *ol, size_t index);
 const char *objlist_get_name(ObjList *ol, size_t index);
-Task objlist_add(ObjList *ol, void *obj, char *name);
-Task objlist_iter(ObjList *ol, ObjListIterator it, void *data);
-Int objlist_num(ObjList *ol);
+BoxTask objlist_add(ObjList *ol, void *obj, char *name);
+BoxTask objlist_iter(ObjList *ol, ObjListIterator it, void *data);
+BoxInt objlist_num(ObjList *ol);
 
 #endif
 

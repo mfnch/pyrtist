@@ -110,7 +110,7 @@ void TS_Finish(TS *ts) {
 static void Type_New(TS *ts, BoxTypeId *new_type, TSDesc *td) {
   TSDesc my_dummy_td,
          *my_td = (td != NULL) ? td : & my_dummy_td;
-  UInt nt = BoxOcc_Occupy(& ts->type_descs, my_td);
+  BoxUInt nt = BoxOcc_Occupy(& ts->type_descs, my_td);
   *new_type = nt - 1;
 }
 
@@ -252,7 +252,7 @@ int TS_Is_Fast(TS *ts, BoxTypeId t) {
   return (ct >= BOXTYPE_FAST_LOWER && ct <= BOXTYPE_FAST_UPPER);
 }
 
-Int TS_Get_Size(TS *ts, BoxTypeId t) {
+BoxInt TS_Get_Size(TS *ts, BoxTypeId t) {
 #if 0
   TSDesc *td = Type_Ptr(ts, t);
 
@@ -326,7 +326,7 @@ char *TS_Name_Get(TS *ts, BoxTypeId t) {
 
   case TS_KIND_ARRAY:
     if (td->size > 0) {
-      Int as = td->data.array_size;
+      BoxInt as = td->data.array_size;
       return printdup("(%I)%~s", as, TS_Name_Get(ts, td->target));
     } else
       return printdup("()%~s", TS_Name_Get(ts, td->target));
@@ -576,7 +576,7 @@ static void My_Add_Member(TSKind kind, BoxTS *ts, BoxTypeId s, BoxTypeId m,
       /* We need to do soemthing about alignment, here (but first, we should
        * implement enums ;-)
        */
-      size_t m_size = m_td->size + sizeof(Int);
+      size_t m_size = m_td->size + sizeof(BoxInt);
       if (m_size > s_td->size)
         s_td->size = m_size;
       break;

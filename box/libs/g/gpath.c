@@ -50,17 +50,17 @@ void gpath_break(GPath *gp) {
   gp->have.position = 0;
 }
 
-Point *gpathpiece_last_point(GPathPiece *piece) {
+BoxPoint *gpathpiece_last_point(GPathPiece *piece) {
   switch(piece->kind) {
   case GPATHKIND_LINE: return & (piece->p[1]);
   case GPATHKIND_ARC: return & (piece->p[2]);
   default: g_error("gpathpiece_last_point: shouldn't happen: damaged path?");
   }
-  return (Point *) NULL;
+  return (BoxPoint *) NULL;
 }
 
 void gpathpiece_mirror(GPathPiece *piece) {
-  Point p = piece->p[0];
+  BoxPoint p = piece->p[0];
   switch(piece->kind) {
   case GPATHKIND_LINE:
     piece->p[0] = piece->p[1]; piece->p[1] = p; break;
@@ -80,7 +80,7 @@ void gpath_close(GPath *gp) {
   }
 }
 
-void gpath_append(GPath *gp, Point *point, int join) {
+void gpath_append(GPath *gp, BoxPoint *point, int join) {
   if (join && gp->have.position) {
     GPathPiece piece;
     piece.kind = GPATHKIND_LINE;
@@ -95,15 +95,15 @@ void gpath_append(GPath *gp, Point *point, int join) {
   }
 }
 
-void gpath_move_to(GPath *gp, Point *point) {
+void gpath_move_to(GPath *gp, BoxPoint *point) {
   return gpath_append(gp, point, 0);
 }
 
-void gpath_line_to(GPath *gp, Point *point) {
+void gpath_line_to(GPath *gp, BoxPoint *point) {
   return gpath_append(gp, point, 1);
 }
 
-void gpath_arc_to(GPath *gp, Point *p1, Point *p2) {
+void gpath_arc_to(GPath *gp, BoxPoint *p1, BoxPoint *p2) {
   GPathPiece piece;
   if (!gp->have.position) {
     gpath_move_to(gp, p1);
@@ -120,7 +120,7 @@ void gpath_arc_to(GPath *gp, Point *p1, Point *p2) {
 }
 
 int gpath_iter(GPath *gp, GPathIterator iter, void *data) {
-  Int i, n = buff_numitems(& gp->pieces);
+  BoxInt i, n = buff_numitems(& gp->pieces);
   GPathPiece *piece = buff_firstitemptr(& gp->pieces, GPathPiece);
   for(i=1; i<=n; i++) {
     int retval = iter(i, piece, data);
@@ -130,7 +130,7 @@ int gpath_iter(GPath *gp, GPathIterator iter, void *data) {
   return 0;
 }
 
-static int gpath_print_iterator(Int i, GPathPiece *p, void *data) {
+static int gpath_print_iterator(BoxInt i, GPathPiece *p, void *data) {
   FILE *out = (FILE *) data;
   switch(p->kind) {
   case GPATHKIND_LINE:
@@ -155,9 +155,9 @@ void gpath_print(GPath *gp, FILE *out) {
   (void) gpath_iter(gp, gpath_print_iterator, out);
 }
 
-static int gpath_print_points_iterator(Int i, GPathPiece *p, void *data) {
+static int gpath_print_points_iterator(BoxInt i, GPathPiece *p, void *data) {
   FILE *out = (FILE *) data;
-  Int j, n = 0;
+  BoxInt j, n = 0;
   switch(p->kind) {
   case GPATHKIND_LINE: n = 2; break;
   case GPATHKIND_ARC: n = 3; break;
@@ -175,28 +175,28 @@ void gpath_print_points(GPath *gp, FILE *out) {
   (void) gpath_iter(gp, gpath_print_points_iterator, out);
 }
 
-Real gpath_length(GPath *gp) {return 0.0;}
+BoxReal gpath_length(GPath *gp) {return 0.0;}
 
-Int gpath_num_pieces(GPath *gp) {
+BoxInt gpath_num_pieces(GPath *gp) {
   return buff_numitems(& gp->pieces);
 }
 
-void gpath_get_first_point_at_length(GPath *p, Real length) {}
+void gpath_get_first_point_at_length(GPath *p, BoxReal length) {}
 
-void gpath_get_last_point_at_length(GPath *p, Real length) {}
+void gpath_get_last_point_at_length(GPath *p, BoxReal length) {}
 
-void gpath_get_first_point_of_piece(GPath *p, Real piece) {}
+void gpath_get_first_point_of_piece(GPath *p, BoxReal piece) {}
 
-void gpath_get_last_point_of_piece(GPath *p, Real piece) {}
+void gpath_get_last_point_of_piece(GPath *p, BoxReal piece) {}
 
-void gpath_get_piece_from_length(GPath *p, Real length) {}
+void gpath_get_piece_from_length(GPath *p, BoxReal length) {}
 
-void gpath_get_length_from_piece(GPath *p, Real piece) {}
+void gpath_get_length_from_piece(GPath *p, BoxReal piece) {}
 
-void gpath_subgpath(GPath *p, GPath *subpath, Real first_piece, Real last_piece) {}
+void gpath_subgpath(GPath *p, GPath *subpath, BoxReal first_piece, BoxReal last_piece) {}
 
 void gpath_append_gpath(GPath *dest, GPath *src, int options) {
-  Int n = buff_numitems(& src->pieces);
+  BoxInt n = buff_numitems(& src->pieces);
   if (n > 0) {
     if ((options & GPATH_INVERT) == 0) {
       GPathPiece *piece = buff_firstitemptr(& src->pieces, GPathPiece);
@@ -209,7 +209,7 @@ void gpath_append_gpath(GPath *dest, GPath *src, int options) {
 
     } else {
       GPathPiece *piece = buff_lastitemptr(& src->pieces, GPathPiece);
-      Int i;
+      BoxInt i;
       if ((options & GPATH_JOIN) != 0)
         gpath_line_to(dest, gpathpiece_last_point(piece));
 

@@ -17,7 +17,7 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** 
+/**
  * @file types.h
  * @brief Basic definition of frequently used types.
  *
@@ -75,12 +75,6 @@ typedef enum {
 
 /** Use shorthands (without the Box prefix) */
 #ifdef BOX_ABBREV
-typedef BoxChar Char;
-typedef BoxInt Int;
-typedef BoxUInt UInt;
-typedef BoxReal Real;
-typedef BoxPoint Point;
-typedef BoxPtr Ptr;
 typedef BoxSubtype Subtype;
 
 typedef BoxName BoxData;

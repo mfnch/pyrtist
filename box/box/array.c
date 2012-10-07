@@ -152,7 +152,7 @@ size_t BoxArr_Find(BoxArr *arr, void *item, BoxArrCmp cmp, void *pass_data) {
   return d.idx;
 }
 
-static int Finalise_Item(UInt item_num, void *item, void *fin) {
+static int Finalise_Item(BoxUInt item_num, void *item, void *fin) {
   assert(fin != NULL);
   ((void (*)(void *)) fin)(item);
   return 1;
@@ -170,7 +170,7 @@ void BoxArr_Clear(BoxArr *arr) {
   BoxArr_Reinit(arr); /* Re-init */
 }
 
-void *BoxArr_Get_Item_Ptr(BoxArr *arr, UInt item_index) {
+void *BoxArr_Get_Item_Ptr(BoxArr *arr, BoxUInt item_index) {
   if (item_index < 1 || item_index > arr->numel) {
     BoxErr_Report(& arr->err, BOXERR_OUT_OF_BOUNDS);
     return NULL;
@@ -181,9 +181,9 @@ void *BoxArr_Get_Item_Ptr(BoxArr *arr, UInt item_index) {
 /* This function is used to expand (resize) the Array 'arr' such that it can
  * contain at least 'num_items' elements.
  */
-static void BoxArr_Expand(BoxArr *arr, UInt num_items) {
+static void BoxArr_Expand(BoxArr *arr, BoxUInt num_items) {
   if (num_items > arr->dim) {
-    UInt new_dim = arr->dim, new_size;
+    BoxUInt new_dim = arr->dim, new_size;
     void *new_ptr;
     if (new_dim == 0) {
       for(new_dim = arr->mindim; new_dim < num_items; new_dim *= 2);
@@ -209,9 +209,9 @@ static void BoxArr_Expand(BoxArr *arr, UInt num_items) {
  * The contraction makes sure that the array is - at least - half filled
  * 'num_items' is the number of elements in the array.
  */
-static void BoxArr_Shrink(BoxArr *arr, UInt num_items) {
+static void BoxArr_Shrink(BoxArr *arr, BoxUInt num_items) {
   if (arr->dim > arr->mindim) { /* May not be allocated, yet */
-    UInt n4 = 4*num_items, new_dim, new_size;
+    BoxUInt n4 = 4*num_items, new_dim, new_size;
     void *new_ptr;
     for(new_dim = arr->dim; n4 < new_dim; new_dim /= 2);
     if (new_dim < arr->mindim)
@@ -247,7 +247,7 @@ void BoxArr_Compactify(BoxArr *arr) {
 
 void *BoxArr_MPush(BoxArr *arr, const void *items, size_t num_items) {
   void *ptr;
-  UInt pos;
+  BoxUInt pos;
 
   if (num_items < 1)
     return NULL;
@@ -266,8 +266,8 @@ void *BoxArr_MPush(BoxArr *arr, const void *items, size_t num_items) {
   return Mem_Copy_or_Clear(ptr, items, num_items*arr->elsize, arr->attr.zero);
 }
 
-void BoxArr_MPop(BoxArr *arr, void *items, UInt num_items) {
-  UInt item_index, numel;
+void BoxArr_MPop(BoxArr *arr, void *items, BoxUInt num_items) {
+  BoxUInt item_index, numel;
   void *item_ptr;
 
   if (num_items < 1) return;
@@ -285,7 +285,7 @@ void BoxArr_MPop(BoxArr *arr, void *items, UInt num_items) {
   /* First destroy all the items that are being removed from the array */
   if (arr->fin != NULL) {
     void *my_item_ptr = item_ptr;
-    UInt i;
+    BoxUInt i;
     for(i = 0; i < num_items; i++) {
       arr->fin(my_item_ptr);
       my_item_ptr += arr->elsize;
@@ -293,7 +293,7 @@ void BoxArr_MPop(BoxArr *arr, void *items, UInt num_items) {
   }
 
   if (items != NULL) {
-    UInt tot_size = num_items*arr->elsize;
+    BoxUInt tot_size = num_items*arr->elsize;
     memcpy(items, item_ptr, tot_size);
   }
 
@@ -303,9 +303,9 @@ void BoxArr_MPop(BoxArr *arr, void *items, UInt num_items) {
 /* This function inserts how_many items (items is the pointer to these items)
  * into the array a at position where.
  */
-void *BoxArr_Insert(BoxArr *arr, UInt insert_index,
-                    const void *items, UInt num_items) {
-  UInt new_dim, elsize, num_items_to_move, insert_size;
+void *BoxArr_Insert(BoxArr *arr, BoxUInt insert_index,
+                    const void *items, BoxUInt num_items) {
+  BoxUInt new_dim, elsize, num_items_to_move, insert_size;
   void *insert_ptr;
 
   assert(arr != NULL);
@@ -345,10 +345,10 @@ void *BoxArr_Insert(BoxArr *arr, UInt insert_index,
  * first item) and copy them inside the array 'a', overwriting its elements.
  * The first overwritten element will be 'dest'.
  */
-void *BoxArr_Overwrite(BoxArr *arr, UInt ow_index,
-                       const void *items, UInt num_items) {
+void *BoxArr_Overwrite(BoxArr *arr, BoxUInt ow_index,
+                       const void *items, BoxUInt num_items) {
   void *ow_ptr;
-  UInt required_dim;
+  BoxUInt required_dim;
 
   assert(arr != NULL);
 

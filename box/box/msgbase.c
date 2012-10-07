@@ -37,9 +37,9 @@
 #include "print.h"
 
 /** Initialization of the message module */
-Task Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level) {
+Task Msg_Init(MsgStack **ms_ptr, BoxUInt num_levels, BoxUInt show_level) {
   MsgStack *ms;
-  UInt i;
+  BoxUInt i;
   *ms_ptr = ms = (MsgStack *) malloc(sizeof(MsgStack));
   if (ms == (MsgStack *) NULL) return BOXTASK_FAILURE;
   ms->show_level = show_level;
@@ -50,8 +50,8 @@ Task Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level) {
   BoxArr_Init(& ms->msgs, sizeof(Msg), MSG_TYPICAL_NUM_MSGS);
 
   num_levels = num_levels > 0 ? num_levels : 1;
-  ms->level = (UInt *) malloc(num_levels*sizeof(UInt));
-  if (ms->level == (UInt *) NULL) return BOXTASK_FAILURE;
+  ms->level = (BoxUInt *) malloc(num_levels*sizeof(BoxUInt));
+  if (ms->level == (BoxUInt *) NULL) return BOXTASK_FAILURE;
   ms->num_levels = num_levels;
   for(i=0; i<num_levels; i++) ms->level[i] = 0;
   return BOXTASK_OK;
@@ -61,7 +61,7 @@ Task Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level) {
 
 /** Finalization of the message module */
 void Msg_Destroy(MsgStack *ms) {
-  UInt i, n;
+  BoxUInt i, n;
   EXIT_IF_NOT_INIT(ms);
   n = BoxArr_Num_Items(& ms->msgs);
   for(i=1; i<=n; i++) {
@@ -79,13 +79,13 @@ void Msg_Default_Filter_Set(MsgStack *ms, MsgFilter mf) {
   ms->filter = ms->default_filter = mf;
 }
 
-void Msg_Show_Level_Set(MsgStack *ms, UInt show_level) {
+void Msg_Show_Level_Set(MsgStack *ms, BoxUInt show_level) {
   EXIT_IF_NOT_INIT(ms);
   ms->show_level = show_level;
 }
 
 /** Get the value of the specified message counter */
-UInt Msg_Counter_Get(MsgStack *ms, UInt level) {
+BoxUInt Msg_Counter_Get(MsgStack *ms, BoxUInt level) {
   if (ms == (MsgStack *) NULL) return 0;
   if (level >= 1 && level <= ms->num_levels) return ms->level[level-1];
   return 0;
@@ -94,8 +94,8 @@ UInt Msg_Counter_Get(MsgStack *ms, UInt level) {
 /** Get the number of messages whose level is greater or equal than
  * the spefified one.
  */
-UInt Msg_Counter_Sum_Get(MsgStack *ms, UInt level) {
-  UInt i, sum=0;
+BoxUInt Msg_Counter_Sum_Get(MsgStack *ms, BoxUInt level) {
+  BoxUInt i, sum=0;
   if (ms == (MsgStack *) NULL) return 0;
   if (level > ms->num_levels) return 0;
   for(i = level < 1 ? 0 : level-1; i<ms->num_levels; i++)
@@ -104,20 +104,20 @@ UInt Msg_Counter_Sum_Get(MsgStack *ms, UInt level) {
 }
 
 /** Clear one message counter */
-void Msg_Counter_Clear(MsgStack *ms, UInt level) {
+void Msg_Counter_Clear(MsgStack *ms, BoxUInt level) {
   EXIT_IF_NOT_INIT(ms);
   if (level >= 1 && level <= ms->num_levels) ms->level[level] = 0;
 }
 
 /** Clear all message counters */
 void Msg_Counter_Clear_All(MsgStack *ms) {
-  UInt i;
+  BoxUInt i;
   EXIT_IF_NOT_INIT(ms);
   for(i=0; i<ms->num_levels; i++) ms->level[i] = 0;
 }
 
 static void Msg_Clean(MsgStack *ms) {
-  UInt i, num_msgs;
+  BoxUInt i, num_msgs;
   EXIT_IF_NOT_INIT(ms);
   num_msgs = BoxArr_Num_Items(& ms->msgs);
   for(i=num_msgs; i>0; i--) {
@@ -132,7 +132,7 @@ static void Msg_Clean(MsgStack *ms) {
 
 /** Show the messages which have still not been shown */
 void Msg_Show(MsgStack *ms) {
-  UInt i, num_msgs;
+  BoxUInt i, num_msgs;
   EXIT_IF_NOT_INIT(ms);
   num_msgs = BoxArr_Num_Items(& ms->msgs);
   for(i=ms->last_shown+1; i<=num_msgs; i++) {
@@ -156,8 +156,8 @@ void Msg_Context_Begin(MsgStack *ms, const char *msg, MsgFilter mf) {
   BoxArr_Push(& ms->msgs, & m);
 }
 
-void Msg_Context_End(MsgStack *ms, UInt repeat) {
-  UInt i;
+void Msg_Context_End(MsgStack *ms, BoxUInt repeat) {
+  BoxUInt i;
   Msg *m;
   EXIT_IF_NOT_INIT(ms);
   for(i=0; i<repeat;) {
@@ -177,7 +177,7 @@ void Msg_Context_End(MsgStack *ms, UInt repeat) {
   }
 }
 
-void Msg_Add(MsgStack *ms, UInt level, const char *msg) {
+void Msg_Add(MsgStack *ms, BoxUInt level, const char *msg) {
   Msg m;
   EXIT_IF_NOT_INIT(ms);
   if (level < 1 || level > ms->num_levels) return;
@@ -194,7 +194,7 @@ void Msg_Add(MsgStack *ms, UInt level, const char *msg) {
 #if 0
 #include "print.h"
 
-char *my_filter(UInt level, char *original_msg) {
+char *my_filter(BoxUInt level, char *original_msg) {
   char *prefix="Fatal", *final_msg;
   if (level == 0) {
     final_msg = BoxMem_Strdup(print("%s:\n", original_msg));

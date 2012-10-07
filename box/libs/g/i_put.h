@@ -20,8 +20,8 @@
 #ifdef _DEF_WINDOW_SUBOBJECTS
 
 typedef struct {
-  Point on_src, on_dest;
-  Real weight;
+  BoxPoint on_src, on_dest;
+  BoxReal weight;
   struct {
     int on_src : 1;
     int on_dest : 1;
@@ -35,8 +35,8 @@ typedef struct {
 
   int auto_transforms;
   buff fig_points, back_points, weights;
-  Real rot_angle;
-  Point rot_center, translation, scale;
+  BoxReal rot_angle;
+  BoxPoint rot_center, translation, scale;
   Matrix matrix;
 
   void *figure;

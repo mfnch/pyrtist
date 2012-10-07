@@ -46,7 +46,7 @@ static int My_EPS_Save_To_File(BoxGWin *w, const char *unused);
 static int beginning_of_path = 1;
 static long previous_px, previous_py;
 
-static Real eps_point_scale = 283.46457;
+static BoxReal eps_point_scale = 283.46457;
 /* Le coordinate dei punti passati alle funzioni grafiche in questo file,
  * sono espresse in millimetri: le converto nelle unita' postscript:
  *  1 unita' = 1/72 inch = 0.35277777... millimetri
@@ -72,7 +72,7 @@ static void My_EPS_Begin_Drawing(BoxGWin *w) {}
 
 static void My_EPS_Draw_Path(BoxGWin *w, DrawStyle *style) {
   if (! beginning_of_path) {
-    Real scale = style->scale;
+    BoxReal scale = style->scale;
     int do_border = (style->bord_width > 0.0);
     FILE *out = (FILE *) w->ptr;
     char *fill;
@@ -97,7 +97,7 @@ static void My_EPS_Draw_Path(BoxGWin *w, DrawStyle *style) {
 
     if (do_border) {
       Color *c = & style->bord_color;
-      Real bw = EPS_REAL(scale*style->bord_width);
+      BoxReal bw = EPS_REAL(scale*style->bord_width);
       int lj, lc;
 
       switch(style->bord_join_style) {
@@ -119,8 +119,8 @@ static void My_EPS_Draw_Path(BoxGWin *w, DrawStyle *style) {
                    c->r, c->g, c->b, bw, lj, lc);
 
       if (style->bord_num_dashes > 0) {
-        Int num_dashes = style->bord_num_dashes, i;
-        Real dash_offset = EPS_REAL(scale*style->bord_dash_offset);
+        BoxInt num_dashes = style->bord_num_dashes, i;
+        BoxReal dash_offset = EPS_REAL(scale*style->bord_dash_offset);
         char *sep = " [";
         for(i=0; i<num_dashes; i++) {
           fprintf(out, "%s"SReal, sep, EPS_REAL(scale*style->bord_dashes[i]));
@@ -130,7 +130,7 @@ static void My_EPS_Draw_Path(BoxGWin *w, DrawStyle *style) {
       }
 
       if (lj == 0) {
-        Real ml = EPS_REAL(scale*style->bord_miter_limit);
+        BoxReal ml = EPS_REAL(scale*style->bord_miter_limit);
         fprintf(out, " %g setmiterlimit stroke grestore\n", ml);
       } else
         fprintf(out, " stroke grestore\n");
@@ -141,7 +141,7 @@ static void My_EPS_Draw_Path(BoxGWin *w, DrawStyle *style) {
   }
 }
 
-static void My_EPS_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
+static void My_EPS_Add_Line_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b) {
   EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by);
   int continuing = (ax == previous_px) && (ay == previous_py),
       length_zero = (ax == bx && ay == by);
@@ -161,7 +161,7 @@ static void My_EPS_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
   previous_px = bx; previous_py = by;
 }
 
-static void My_EPS_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c) {
+static void My_EPS_Add_Join_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b, BoxPoint *c) {
   EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by); EPS_POINT(c, cx, cy);
 
   if (ax == cx && ay == cy) return;
@@ -182,7 +182,7 @@ static void My_EPS_Close_Path(BoxGWin *w) {
 }
 
 static void My_EPS_Add_Circle_Path(BoxGWin *w,
-                                   Point *ctr, Point *a, Point *b) {
+                                   BoxPoint *ctr, BoxPoint *a, BoxPoint *b) {
   EPS_POINT(ctr, cx, cy); EPS_POINT(a, ax, ay); EPS_POINT(b, bx, by);
 
   if (beginning_of_path)
@@ -225,8 +225,8 @@ static char *Escape_Text(const char *src) {
 
 typedef struct {
   FILE *out;
-  Point sub_vec, sup_vec;
-  Real sub_scale, sup_scale;
+  BoxPoint sub_vec, sup_vec;
+  BoxReal sub_scale, sup_scale;
 } TextPrivate;
 
 static void _Text_Fmt_Draw(BoxGFmtStack *stack) {
@@ -417,7 +417,7 @@ static const char *ps_std_defs =
 BoxGWin *BoxGWin_Create_EPS(const char *file, BoxReal size_x, BoxReal size_y) {
   BoxGWin *wd;
   FILE *winstream;
-  Real size_x_psunit, size_y_psunit;
+  BoxReal size_x_psunit, size_y_psunit;
   int x_max, y_max;
 
   /* Should express the size of the window in postscript units 1/72 of inch */
@@ -473,8 +473,8 @@ static int My_EPS_Save_To_File(BoxGWin *w, const char *unused) {
 
 int eps_save_fig(const char *file_name, BoxGWin *figure) {
   BoxGBBox bbox;
-  Point translation, center, size;
-  Real sx, sy, rot_angle;
+  BoxPoint translation, center, size;
+  BoxReal sx, sy, rot_angle;
   BoxGWin *dest;
   Matrix m;
 
@@ -574,8 +574,8 @@ BoxGWin *BoxGWin_Create_PS(const char *file) {
 
 int ps_save_fig(const char *file_name, BoxGWin *figure) {
   BoxGBBox bbox;
-  Point translation, center;
-  Real sx, sy, rot_angle;
+  BoxPoint translation, center;
+  BoxReal sx, sy, rot_angle;
   BoxGWin *dest;
   Matrix m;
 

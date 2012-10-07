@@ -45,7 +45,7 @@
 
 /*#define DEBUG*/
 
-Task line_window_init(Window *w) {
+BoxTask line_window_init(Window *w) {
   w->line.lt = lt_new();
   if (w->line.lt == (LineTracer *) NULL) {
     g_error("Cannot create the LineTracer object\n");
@@ -67,14 +67,14 @@ Task line_window_init(Window *w) {
   return BOXTASK_OK;
 }
 
-Task line_color(BoxVMX *vmp) {
+BoxTask line_color(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   w->line.color = BOX_VM_ARG1(vmp, Color);
   w->line.got.color = 1;
   return BOXTASK_OK;
 }
 
-Task line_gradient(BoxVMX *vmp) {
+BoxTask line_gradient(BoxVMX *vmp) {
   return x_gradient(vmp);
 }
 
@@ -82,7 +82,7 @@ void line_window_destroy(Window *w) {
   lt_destroy(w->line.lt);
 }
 
-Task line_begin(BoxVMX *vmp) {
+BoxTask line_begin(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   IPointListPtr *ipl_ptr = BOX_VM_SUB_CHILD_PTR(vmp, IPointListPtr);
 
@@ -100,7 +100,7 @@ Task line_begin(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task line_end(BoxVMX *vmp) {
+BoxTask line_end(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   if (lt_num_pieces(w->line.lt) >= 1) {
     if (w->line.got.color)
@@ -115,9 +115,9 @@ Task line_end(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task line_real(BoxVMX *vmp) {
+BoxTask line_real(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Real width = 0.5*BOX_VM_ARG1(vmp, Real);
+  BoxReal width = 0.5*BOX_VM_ARG1(vmp, BoxReal);
 
   switch(w->line.state) {
   case GOT_NOTHING:
@@ -146,10 +146,10 @@ Task line_real(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task line_point(BoxVMX *vmp) {
+BoxTask line_point(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   IPointList *ipl = BOX_VM_SUB_CHILD(vmp, IPointListPtr);
-  Point *p = BOX_VM_ARG1_PTR(vmp, Point);
+  BoxPoint *p = BOX_VM_ARG1_PTR(vmp, BoxPoint);
   PointList *pl = IPL_POINTLIST(ipl);
 
   w->line.state = GOT_POINT;
@@ -162,7 +162,7 @@ Task line_point(BoxVMX *vmp) {
   return pointlist_add(pl, p, (char *) NULL);
 }
 
-Task line_pause(BoxVMX *vmp) {
+BoxTask line_pause(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   if (w->line.got.color) {
     BoxGWin_Set_Fg_Color(w->window, & w->line.color);
@@ -179,7 +179,7 @@ Task line_pause(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task line_window(BoxVMX *vmp) {
+BoxTask line_window(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
   WindowPtr *wp = BOX_VM_ARG1_PTR(vmp, WindowPtr);
 
@@ -187,36 +187,36 @@ Task line_window(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task line_linestyle(BoxVMX *vmp) {
+BoxTask line_linestyle(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Real *ls = BOX_VM_ARG1_PTR(vmp, Real);
+  BoxReal *ls = BOX_VM_ARG1_PTR(vmp, BoxReal);
   lt_join_style_from_array(& w->line.this_piece.style,
                            ls[0], ls[1], ls[2], ls[3]);
   return BOXTASK_OK;
 }
 
 
-Task line_style(BoxVMX *vmp) {
+BoxTask line_style(BoxVMX *vmp) {
   IStyle *s = BOX_VM_ARG(vmp, IStylePtr);
   SUBTYPE_OF_WINDOW(vmp, w);
   g_style_copy_selected(& w->line.style, & s->style, s->have);
   return BOXTASK_OK;
 }
 
-Task window_line_close_begin(BoxVMX *vmp) {
+BoxTask window_line_close_begin(BoxVMX *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
   w->line.close = 1;
   return BOXTASK_OK;
 }
 
-Task window_line_close_int(BoxVMX *vmp) {
+BoxTask window_line_close_int(BoxVMX *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
-  w->line.close = BOX_VM_ARG1(vmp, Int);
+  w->line.close = BOX_VM_ARG1(vmp, BoxInt);
   return BOXTASK_OK;
 }
 
-Task window_line_arrowscale(BoxVMX *vmp) {
+BoxTask window_line_arrowscale(BoxVMX *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
-  w->line.this_piece.arrow_scale = BOX_VM_ARG1(vmp, Real);
+  w->line.this_piece.arrow_scale = BOX_VM_ARG1(vmp, BoxReal);
   return BOXTASK_OK;
 }

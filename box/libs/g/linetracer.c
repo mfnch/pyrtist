@@ -39,27 +39,27 @@
 
 static int lt_closed_selected = 0;
 static long lt_entered_numpnts = 0;
-static Point lt_entered_first_pnt;
-static Real lt_entered_s;
+static BoxPoint lt_entered_first_pnt;
+static BoxReal lt_entered_s;
 
 /* Procedure contenente gli algoritmi usati per tracciare le linee */
 static int lt_draw_opened(BoxGWin *w, LineTracer *lt);
 static int lt_draw_closed(LineTracer *lt);
 static int lt_put_to_begin_or_end(BoxGWin *win,
-                                  LineTracer *lt, Point *p1, Point *p2,
-                                  Real w, Real fw, void *f, int final);
-static int lt_put_to_join(LineTracer *lt, Point *p1, Point *p2, Point *p3,
-                          Real w1, Real w2, Real fw, void *f, int first);
-static void lt_first_point(LineTracer *lt, Point *p, Real s);
-static void lt_next_point(LineTracer *lt, Point *p, Real si, Real so);
-static void lt_final_point(LineTracer *lt, Point *p, Real s);
-static void lt_closed_begin(LineTracer *lt, Point *p0, Point *p1,
-                            Real s0o, Real s1i, Real s1o);
-static void lt_closed_finish(LineTracer *lt, Point *p, Real si);
+                                  LineTracer *lt, BoxPoint *p1, BoxPoint *p2,
+                                  BoxReal w, BoxReal fw, void *f, int final);
+static int lt_put_to_join(LineTracer *lt, BoxPoint *p1, BoxPoint *p2, BoxPoint *p3,
+                          BoxReal w1, BoxReal w2, BoxReal fw, void *f, int first);
+static void lt_first_point(LineTracer *lt, BoxPoint *p, BoxReal s);
+static void lt_next_point(LineTracer *lt, BoxPoint *p, BoxReal si, BoxReal so);
+static void lt_final_point(LineTracer *lt, BoxPoint *p, BoxReal s);
+static void lt_closed_begin(LineTracer *lt, BoxPoint *p0, BoxPoint *p1,
+                            BoxReal s0o, BoxReal s1i, BoxReal s1o);
+static void lt_closed_finish(LineTracer *lt, BoxPoint *p, BoxReal si);
 void lt_next_line(LineTracer *lt, double x, double y,
                   double sp1, double sp2, int style);
-void lt_first_line(LineTracer *lt, Real x1, Real y1, Real sp1,
-                   Real x2, Real y2, Real sp2, Real startlenght,
+void lt_first_line(LineTracer *lt, BoxReal x1, BoxReal y1, BoxReal sp1,
+                   BoxReal x2, BoxReal y2, BoxReal sp2, BoxReal startlenght,
                    int is_closed);
 void lt_last_line(LineTracer *lt, double lastlenght, int is_closed);
 
@@ -98,7 +98,7 @@ void lt_clear(LineTracer *lt) {
   buff_clear(& lt->pieces);
 }
 
-Int lt_num_pieces(LineTracer *lt) {
+BoxInt lt_num_pieces(LineTracer *lt) {
   return buff_numitems(& lt->pieces);
 }
 
@@ -176,7 +176,7 @@ static int lt_draw_opened(BoxGWin *w, LineTracer *lt) {
 static int lt_draw_closed(LineTracer *lt) {
   long numpnt, m;
   LinePiece *ip, *i, *in; /* p --> previous, n --> next */
-  Point tp;
+  BoxPoint tp;
 
   /* Una linea e' descritta da almeno 2 punti */
   numpnt = buff_numitem(& lt->pieces);
@@ -293,13 +293,13 @@ int lt_draw(BoxGWin *w, LineTracer *lt, int closed) {
  *  Se i punti sono solo 2, verra' assunto f3=(0, 0).
  */
 static int lt_put_to_begin_or_end(BoxGWin *win,
-                                  LineTracer *lt, Point *p1, Point *p2,
-                                  Real w, Real fig_w, void *f, int final) {
+                                  LineTracer *lt, BoxPoint *p1, BoxPoint *p2,
+                                  BoxReal w, BoxReal fig_w, void *f, int final) {
   long num_hp;
-  Real rot_angle = 0.0, scale_x = 1.0, scale_y = 1.0;
-  Point rot_center, trsl_vect;
+  BoxReal rot_angle = 0.0, scale_x = 1.0, scale_y = 1.0;
+  BoxPoint rot_center, trsl_vect;
   /* Punto finale e iniziale a cui vanno congiunti i segmenti della spezzata */
-  Point pfi, pnt[3];
+  BoxPoint pfi, pnt[3];
   Matrix m;
   Window *fw = (Window *) f;
 
@@ -307,9 +307,9 @@ static int lt_put_to_begin_or_end(BoxGWin *win,
     return 1;
 
   else {
-    Point *p;
+    BoxPoint *p;
     p = pointlist_find(& fw->pointlist, "head");
-    if (p == (Point *) NULL) {
+    if (p == (BoxPoint *) NULL) {
       g_error("The figure needs to have at least one hot point with name "
               "\"head\" to be used as an arrow!");
       return 0;
@@ -318,10 +318,10 @@ static int lt_put_to_begin_or_end(BoxGWin *win,
     num_hp = 1;
 
     p = pointlist_find(& fw->pointlist, "tail");
-    if (p != (Point *) NULL) pnt[num_hp++] = *p;
+    if (p != (BoxPoint *) NULL) pnt[num_hp++] = *p;
 
     p = pointlist_find(& fw->pointlist, "join");
-    if (p != (Point *) NULL) pnt[num_hp++] = *p;
+    if (p != (BoxPoint *) NULL) pnt[num_hp++] = *p;
   }
 
   if (num_hp < 1) {
@@ -337,7 +337,7 @@ static int lt_put_to_begin_or_end(BoxGWin *win,
    * Se ne ho piu' di 1, devo calcolare rotazione e scala!
    */
   if ( num_hp > 1 ) {
-    register Real d, dx, dy;
+    register BoxReal d, dx, dy;
 
     /* Calcolo la distanza di riferimento per eseguire la scala */
     dx = pnt[1].x - pnt[0].x;
@@ -351,8 +351,8 @@ static int lt_put_to_begin_or_end(BoxGWin *win,
     /* Resta soltanto da eseguire la rotazione */
     {
       int needed = 0;
-      Real weight = 1.0;
-      Point near_fig, near_back;
+      BoxReal weight = 1.0;
+      BoxPoint near_fig, near_back;
 
       if ( ! aput_allow("r", & needed ) ) return 0;
 
@@ -388,7 +388,7 @@ static int lt_put_to_begin_or_end(BoxGWin *win,
    * quando trasformo la figura
    */
   if (num_hp < 3)
-    pfi = (Point) {0.0, 0.0};
+    pfi = (BoxPoint) {0.0, 0.0};
   else
     pfi = pnt[2];
 
@@ -415,14 +415,14 @@ static int lt_put_to_begin_or_end(BoxGWin *win,
  *  Se first == 1, non viene usata lt_final_point e il primo punto
  *  della figura (f3) viene salvato in *p1 (per uso futuro).
  */
-static int lt_put_to_join(LineTracer *lt, Point *p1, Point *p2, Point *p3,
-                          Real w1, Real w2, Real fw, void *f, int first) {
+static int lt_put_to_join(LineTracer *lt, BoxPoint *p1, BoxPoint *p2, BoxPoint *p3,
+                          BoxReal w1, BoxReal w2, BoxReal fw, void *f, int first) {
   int num_hp;
-  Real w = 0.5*(w1 + w2);
-  Real rot_angle = 0.0, scale_x = 1.0, scale_y = 1.0;
-  Point rot_center, trsl_vect, *pnt;
+  BoxReal w = 0.5*(w1 + w2);
+  BoxReal rot_angle = 0.0, scale_x = 1.0, scale_y = 1.0;
+  BoxPoint rot_center, trsl_vect, *pnt;
   /* Punto finale e iniziale a cui vanno congiunti i segmenti della spezzata */
-  Point pfi[2] = {{0.0, 0.0}, {0.0, 0.0}};
+  BoxPoint pfi[2] = {{0.0, 0.0}, {0.0, 0.0}};
   Matrix m;
 
   if ( ((obj_header *) f)->child == NULL ) {
@@ -451,7 +451,7 @@ static int lt_put_to_join(LineTracer *lt, Point *p1, Point *p2, Point *p3,
    * Se ne ho piu' di 1, devo calcolare rotazione e scala!
    */
   if ( num_hp > 1 ) {
-    register Real d;
+    register BoxReal d;
 
     if ( num_hp >= 3 ) {
       pfi[0] = pnt[2];
@@ -462,14 +462,14 @@ static int lt_put_to_join(LineTracer *lt, Point *p1, Point *p2, Point *p3,
 
     /* Calcolo la distanza di riferimento per eseguire la scala */
     if ( num_hp < 4 ) {
-      register Real dx, dy;
+      register BoxReal dx, dy;
 
       dx = pnt[1].x - pnt->x;
       dy = pnt[1].y - pnt->y;
       d = sqrt( dx*dx + dy*dy );
 
     } else {
-      register Real dx, dy;
+      register BoxReal dx, dy;
 
       dx = pnt[1].x - pnt->x;
       dy = pnt[1].y - pnt->y;
@@ -485,8 +485,8 @@ static int lt_put_to_join(LineTracer *lt, Point *p1, Point *p2, Point *p3,
     /* Resta soltanto da eseguire la rotazione */
     {
       int needed = 0;
-      Real weight[2] = {1.0, 1.0};
-      Point near_fig[2], near_back[2];
+      BoxReal weight[2] = {1.0, 1.0};
+      BoxPoint near_fig[2], near_back[2];
 
       if ( ! aput_allow("r", & needed ) ) {
         g_error("aput_allow fallita!");
@@ -547,7 +547,7 @@ static int lt_put_to_join(LineTracer *lt, Point *p1, Point *p2, Point *p3,
 /* DESCRIZIONE: Specifica il primo punto di una spezzata, col relativo
  *  spessore iniziale.
  */
-static void lt_first_point(LineTracer *lt, Point *p, Real s) {
+static void lt_first_point(LineTracer *lt, BoxPoint *p, BoxReal s) {
   if ( lt_entered_numpnts > 0 ) {
     g_warning("Inizio nuova linea, senza aver terminato la linea precedente");
     return;
@@ -563,7 +563,7 @@ static void lt_first_point(LineTracer *lt, Point *p, Real s) {
 /* DESCRIZIONE: Specifica il prossimo punto di una spezzata, col relativo
  *  spessore entrante (si) ed uscente (so).
  */
-static void lt_next_point(LineTracer *lt, Point *p, Real si, Real so) {
+static void lt_next_point(LineTracer *lt, BoxPoint *p, BoxReal si, BoxReal so) {
   if ( lt_entered_numpnts > 1 ) {
     lt_next_line(lt, p->x, p->y, lt_entered_s, si, 1);
     lt_entered_s = so;
@@ -588,7 +588,7 @@ static void lt_next_point(LineTracer *lt, Point *p, Real si, Real so) {
 /* DESCRIZIONE: Specifica l'ultimo punto di una spezzata, col relativo
  *  spessore finale.
  */
-static void lt_final_point(LineTracer *lt, Point *p, Real s) {
+static void lt_final_point(LineTracer *lt, BoxPoint *p, BoxReal s) {
   if ( lt_entered_numpnts > 1 ) {
     lt_next_line(lt, p->x, p->y, lt_entered_s, s, 1);
     lt_last_line(lt, 0.0, 0);
@@ -614,8 +614,8 @@ static void lt_final_point(LineTracer *lt, Point *p, Real s) {
  *  p0 e' l'ultimo punto (serve per dare la giusta forma alla congiuntura
  *  sull'angolo)
  */
-static void lt_closed_begin(LineTracer *lt, Point *p0, Point *p1,
-                            Real s0o, Real s1i, Real s1o) {
+static void lt_closed_begin(LineTracer *lt, BoxPoint *p0, BoxPoint *p1,
+                            BoxReal s0o, BoxReal s1i, BoxReal s1o) {
   if (lt_entered_numpnts > 0 || lt_closed_selected) {
     g_warning("Inizio nuova linea, senza aver terminato la linea precedente");
     return;
@@ -631,7 +631,7 @@ static void lt_closed_begin(LineTracer *lt, Point *p0, Point *p1,
 /* DESCRIZIONE: Completa una linea chiusa. p e' il primo punto, cioe' il p1
  *  della funzione lt_closed_begin.
  */
-static void lt_closed_finish(LineTracer *lt, Point *p, Real si) {
+static void lt_closed_finish(LineTracer *lt, BoxPoint *p, BoxReal si) {
   if ( ! lt_closed_selected ) {
     g_warning("Tentativo di chiudere una linea aperta");
     return;
@@ -683,9 +683,9 @@ static void lt_closed_finish(LineTracer *lt, Point *p, Real si) {
  *  La procedura restituisce alpha1, che mi permette di ottenere il punto
  *  d'intersezione nel modo seguente: intersez = p1 + alpha1 * d1
  */
-int lt_intersection(Point *p1, Point *d1, Point *p2, Point *d2,
+int lt_intersection(BoxPoint *p1, BoxPoint *d1, BoxPoint *p2, BoxPoint *d2,
                     double *alpha1) {
-  Point p2mp1;
+  BoxPoint p2mp1;
   double d1vectd2;
 
   p2mp1.x = p2->x - p1->x;
@@ -711,9 +711,9 @@ int lt_intersection(Point *p1, Point *d1, Point *p2, Point *d2,
  *  e alpha2 che permette di ottenere lo stesso punto come:
  *  intersez = p2 + alpha2 * d2
  */
-int lt_intersection2(Point *p1, Point *d1, Point *p2, Point *d2,
+int lt_intersection2(BoxPoint *p1, BoxPoint *d1, BoxPoint *p2, BoxPoint *d2,
                      double *alpha1, double *alpha2) {
-  Point p2mp1;
+  BoxPoint p2mp1;
   double d1vectd2;
 
   p2mp1.x = p2->x - p1->x;
@@ -735,7 +735,7 @@ int lt_intersection2(Point *p1, Point *d1, Point *p2, Point *d2,
  *  per collegare le linee fra loro.
  */
 void lt_join_style_from_array(LineJoinStyle *ljs,
-                              Real ti, Real te, Real ni, Real ne) {
+                              BoxReal ti, BoxReal te, BoxReal ni, BoxReal ne) {
   ljs->ti = ti;
   ljs->te = te;
   ljs->ni = ni;
@@ -754,7 +754,7 @@ void lt_join_style_set(LineTracer *lt, LineJoinStyle *ljs) {
  *  piu' grande di 1.
  * NOTA: Se non c'e' una sporgenza rilevante il taglio non sara' praticato.
  */
-void lt_cutting(LineTracer *lt, Real c) {
+void lt_cutting(LineTracer *lt, BoxReal c) {
   if (c > 0.0) lt->cutting = c;
 }
 
@@ -767,10 +767,10 @@ void lt_cutting(LineTracer *lt, Real c) {
  *  sp1 e sp2 sono gli spessori della linea in corrispondenza ai due punti
  *  (x1, y1) e (x2, y2).
  */
-void lt_first_line(LineTracer *lt, Real x1, Real y1, Real sp1,
-                   Real x2, Real y2, Real sp2, Real startlenght,
+void lt_first_line(LineTracer *lt, BoxReal x1, BoxReal y1, BoxReal sp1,
+                   BoxReal x2, BoxReal y2, BoxReal sp2, BoxReal startlenght,
                    int is_closed) {
-  Real sl;
+  BoxReal sl;
   LineDesc *thsl, *nxtl;
 
   /* Setto i puntatori alle strutture che contengono i dati sulle linee */
@@ -1087,7 +1087,7 @@ void lt_next_line(LineTracer *lt, double x, double y,
       /* ANGOLO ACUTO: CURVA A GOMITO: USO UNA CONGIUNTURA SMORZATA */
 
       double cgwidth, cgrefwidth, alpha;
-      Point cgvertex[5];
+      BoxPoint cgvertex[5];
 
       /* La congiuntura ha 4 lati, 2 sono linee, 2 sono curve.
        * Il lato interno e' una curva semplice, mentre quello esterno
@@ -1097,7 +1097,7 @@ void lt_next_line(LineTracer *lt, double x, double y,
 
       /* Trovo la larghezza di riferimento per la congiuntura */
       {
-        Real s1, s2, x1, y1, x2, y2, r;
+        BoxReal s1, s2, x1, y1, x2, y2, r;
 
         s1 = thsl->sp2;
         s2 = nxtl->sp1;
@@ -1114,7 +1114,7 @@ void lt_next_line(LineTracer *lt, double x, double y,
 
       /* Trovo la "larghezza" della congiuntura */
       {
-        Real r1, r2;
+        BoxReal r1, r2;
 
         cgvertex[2].x = r1 = nxtl->cong[ext].x;
         cgvertex[2].y = r2 = nxtl->cong[ext].y;
@@ -1128,8 +1128,8 @@ void lt_next_line(LineTracer *lt, double x, double y,
 
       if (alpha > 0 && alpha < 1) {
         /* In questo caso ho cutting! */
-        Real beta1, beta2;
-        Point cutdir;
+        BoxReal beta1, beta2;
+        BoxPoint cutdir;
 
         /* Continuo il calcolo che stavo facendo. */
         cgvertex[2].x += alpha * cgvertex[3].x;
@@ -1192,7 +1192,7 @@ void lt_next_line(LineTracer *lt, double x, double y,
 
     {
       /* ANGOLO OTTUSO: CURVA DOLCE: USO UNA CONGIUNTURA SEMPLICE! */
-      Point cgvertex[3];
+      BoxPoint cgvertex[3];
 
       /* La congiuntura ha 4 lati, 2 sono linee, 2 sono curve.
        * Traccio solo le curve, una in seguito all'altra.

@@ -27,12 +27,12 @@
 
 #  include "graphic.h"
 
-void aput_identity_matrix(Real *matrix);
-void aput_get(Point *rot_center, Point *trsl_vect,
-              Real *rot_angle, Real *scale_x, Real *scale_y );
-void aput_set(Point *rot_center, Point *trsl_vect,
-              Real *rot_angle, Real *scale_x, Real *scale_y );
-int aput_autoput(Point *F, Point *R, Real *weight, int n, int needed);
+void aput_identity_matrix(BoxReal *matrix);
+void aput_get(BoxPoint *rot_center, BoxPoint *trsl_vect,
+              BoxReal *rot_angle, BoxReal *scale_x, BoxReal *scale_y );
+void aput_set(BoxPoint *rot_center, BoxPoint *trsl_vect,
+              BoxReal *rot_angle, BoxReal *scale_x, BoxReal *scale_y );
+int aput_autoput(BoxPoint *F, BoxPoint *R, BoxReal *weight, int n, int needed);
 int aput_allow(const char *permissions, int *needed);
 
 #endif

@@ -74,9 +74,9 @@ typedef enum {
 } DrawWhen;
 
 typedef struct {
-  Int num;
-  Real *dashes;
-  Real offset;
+  BoxInt num;
+  BoxReal *dashes;
+  BoxReal offset;
 } GDashes;
 
 /** The graphic style contains information about the fill style,
@@ -88,7 +88,7 @@ typedef struct _g_style {
   FillStyle fill_style;
   DrawWhen draw_when;
   Color bord_color;
-  Real bord_width, bord_miter_limit;
+  BoxReal bord_width, bord_miter_limit;
   JoinStyle bord_join_style;
   CapStyle bord_cap;
   GDashes bord_dashes;
@@ -164,7 +164,7 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
 
 /* bord_width */
 
-/** void g_style_set_bord_width(GStyle *gs, Real *width) */
+/** void g_style_set_bord_width(GStyle *gs, BoxReal *width) */
 #define g_style_set_bord_width(gs, width) \
   do {(gs)->bord_width = *(width); \
       g_style_attr_set((gs), G_STYLE_ATTR_BORD_WIDTH, \
@@ -174,9 +174,9 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
 #define g_style_unset_bord_width(gs) \
   g_style_attr_set((gs), G_STYLE_ATTR_BORD_WIDTH, NULL)
 
-/** Real *g_style_get_bord_width(GStyle *gs, GStyle *default_style) */
+/** BoxReal *g_style_get_bord_width(GStyle *gs, GStyle *default_style) */
 #define g_style_get_bord_width(gs, default_style) \
-  ((Real *) g_style_attr_get((gs), default_style, G_STYLE_ATTR_BORD_WIDTH))
+  ((BoxReal *) g_style_attr_get((gs), default_style, G_STYLE_ATTR_BORD_WIDTH))
 
 /* bord_join_style */
 
@@ -198,7 +198,7 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
 
 /* bord_miter_limit */
 
-/** void g_style_set_bord_miter_limit(GStyle *gs, Real *ml) */
+/** void g_style_set_bord_miter_limit(GStyle *gs, BoxReal *ml) */
 #define g_style_set_bord_miter_limit(gs, ml) \
   do {(gs)->bord_miter_limit = *(ml); \
       g_style_attr_set((gs), G_STYLE_ATTR_BORD_MITER_LIMIT, \
@@ -211,7 +211,7 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
 /** JoinStyle *g_style_get_bord_miter_limit(GStyle *gs, GStyle *default_style)
  */
 #define g_style_get_bord_miter_limit(gs, default_style) \
-  ((Real *) g_style_attr_get((gs), default_style, \
+  ((BoxReal *) g_style_attr_get((gs), default_style, \
                              G_STYLE_ATTR_BORD_MITER_LIMIT))
 
 /* bord_cap */
@@ -232,24 +232,24 @@ void g_style_attr_set(GStyle *gs, GStyleAttr a, void *attr_data);
 
 /* bord_dashes */
 
-void g_style_set_bord_dashes(GStyle *gs, Int num_dashes, Real *dashes,
-                             Real offset);
+void g_style_set_bord_dashes(GStyle *gs, BoxInt num_dashes, BoxReal *dashes,
+                             BoxReal offset);
 void g_style_unset_bord_dashes(GStyle *gs);
 
 /** Get the number of real numbers which constitute the dash pattern.
  * If the dashes pattern is not set returns 0.
  */
-Int g_style_get_bord_num_dashes(GStyle *gs, GStyle *default_style);
+BoxInt g_style_get_bord_num_dashes(GStyle *gs, GStyle *default_style);
 
 /** Get the dash pattern for the border. If the dashes pattern is not set
- * returns (Real *) NULL.
+ * returns (BoxReal *) NULL.
  */
-Real *g_style_get_bord_dashes(GStyle *gs, GStyle *default_style);
+BoxReal *g_style_get_bord_dashes(GStyle *gs, GStyle *default_style);
 
 /** Get the offset of the dash pattern for the border.
  * If the dashes pattern is not set return 0.0.
  */
-Real g_style_get_bord_dash_offset(GStyle *gs, GStyle *default_style);
+BoxReal g_style_get_bord_dash_offset(GStyle *gs, GStyle *default_style);
 
 /** Draw following the style 'gs' and only if 'now' is allowed
  * by the DrawWhen value set in 'gs'.

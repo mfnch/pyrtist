@@ -43,11 +43,11 @@
 
 /* Costanti moltiplicative usate per convertire: */
 /*  - lunghezze in millimetri: */
-Real grp_tomm  = 1.0;
+BoxReal grp_tomm  = 1.0;
 /* - angoli in radianti: */
-Real grp_torad = grp_radperdeg;
+BoxReal grp_torad = grp_radperdeg;
 /* - risoluzioni in punti per millimetro: */
-Real grp_toppmm = grp_ppmmperdpi;
+BoxReal grp_toppmm = grp_ppmmperdpi;
 
 /********************************************************************
  *                   GENERIC LIBRARY FUNCTIONS                      *
@@ -334,9 +334,9 @@ static unsigned long color_hash(palette *p, color *c) {
 
 /* NEW CODE */
 
-static int My_Draw_GPath_Iterator(Int index, GPathPiece *piece, void *data) {
+static int My_Draw_GPath_Iterator(BoxInt index, GPathPiece *piece, void *data) {
   BoxGWin *w = (BoxGWin *) data;
-  Point *p = & (piece->p[0]);
+  BoxPoint *p = & (piece->p[0]);
   switch(piece->kind) {
   case GPATHKIND_LINE:
     BoxGWin_Add_Line_Path(w, & p[0], & p[1]);
@@ -413,11 +413,11 @@ static void My_Dummy_Draw_Path(BoxGWin *w, DrawStyle *style) {
   MY_DUMMY_METHOD(w, BOXGWIN_METHOD_DRAW_PATH, Draw_Path, w, style);
 }
 
-static void My_Dummy_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
+static void My_Dummy_Add_Line_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b) {
   MY_DUMMY_METHOD(w, BOXGWIN_METHOD_ADD_LINE_PATH, Add_Line_Path, w, a, b);
 }
 
-static void My_Dummy_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c) {
+static void My_Dummy_Add_Join_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b, BoxPoint *c) {
   MY_DUMMY_METHOD(w, BOXGWIN_METHOD_ADD_JOIN_PATH, Add_Join_Path, w, a, b, c);
 }
 
@@ -426,7 +426,7 @@ static void My_Dummy_Close_Path(BoxGWin *w) {
 }
 
 static void My_Dummy_Add_Circle_Path(BoxGWin *w,
-                                     Point *ctr, Point *a, Point *b) {
+                                     BoxPoint *ctr, BoxPoint *a, BoxPoint *b) {
   MY_DUMMY_METHOD(w, BOXGWIN_METHOD_ADD_CIRCLE_PATH,
                   Add_Circle_Path, w, ctr, a, b);
 }
@@ -454,7 +454,7 @@ static void My_Dummy_Set_Font(BoxGWin *w, const char *font) {
   MY_DUMMY_METHOD(w, BOXGWIN_METHOD_SET_FONT, Set_Font, w, font);
 }
 
-static void My_Dummy_Add_Fake_Point(BoxGWin *w, Point *p) {
+static void My_Dummy_Add_Fake_Point(BoxGWin *w, BoxPoint *p) {
   //MY_DUMMY_METHOD(w, BOXGWIN_METHOD_ADD_FAKE_POINT, Add_Fake_Point, w, p);
 }
 
@@ -476,11 +476,11 @@ void My_Dummy_Set_Color(BoxGWin *w, int col) {
   MY_DUMMY_METHOD(w, BOXGWIN_METHOD_SET_COLOR, Set_Color, w, col);
 }
 
-void My_Dummy_Draw_Point(BoxGWin *w, Int ptx, Int pty) {
+void My_Dummy_Draw_Point(BoxGWin *w, BoxInt ptx, BoxInt pty) {
   MY_DUMMY_METHOD(w, BOXGWIN_METHOD_DRAW_POINT, Draw_Point, w, ptx, pty);
 }
 
-void My_Dummy_Draw_Hor_Line(BoxGWin *w, Int y, Int x1, Int x2) {
+void My_Dummy_Draw_Hor_Line(BoxGWin *w, BoxInt y, BoxInt x1, BoxInt x2) {
   MY_DUMMY_METHOD(w, BOXGWIN_METHOD_DRAW_HOR_LINE, Draw_Hor_Line, w, y, x1, x2);
 }
 

@@ -35,7 +35,7 @@ typedef enum {
 } BoxVMSymType;
 
 typedef struct {
-  Int sheet_id, position;
+  BoxInt sheet_id, position;
   int conditional;
 } VMSymLabel;
 
@@ -51,8 +51,8 @@ BoxVMSymID BoxVMSym_New_Label(BoxVM *vmp);
 Task BoxVMSym_New_Label_Here(BoxVM *vmp, BoxVMSymID *label_sym_num);
 
 /** Specify the position of a undefined label. */
-Task BoxVMSym_Def_Label(BoxVM *vmp, UInt label_sym_num,
-                        Int sheet_id, Int position);
+Task BoxVMSym_Def_Label(BoxVM *vmp, BoxUInt label_sym_num,
+                        BoxInt sheet_id, BoxInt position);
 
 /** Same as VM_Sym_Def_Label, but sheet_id is the current active sheet and
  * position is the current position in that sheet.
@@ -64,12 +64,12 @@ Task BoxVMSym_Jc(BoxVM *vm, BoxVMSymID sym_id);
 Task BoxVMSym_Jmp(BoxVM *vm, BoxVMSymID sym_id);
 
 /** Called to signal that a label is not needed anymore. */
-Task BoxVMSym_Release_Label(BoxVM *vmp, UInt sym_num);
+Task BoxVMSym_Release_Label(BoxVM *vmp, BoxUInt sym_num);
 
 Task BoxVMSym_Assemble_Proc_Head(BoxVM *vm, BoxVMSymID *sym_id);
 
 Task BoxVMSym_Def_Proc_Head(BoxVM *vmp, BoxVMSymID sym_id,
-                            Int *num_var, Int *num_reg);
+                            BoxInt *num_var, BoxInt *num_reg);
 
 
 /* Temporary, very ugly stuff... */

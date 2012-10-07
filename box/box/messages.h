@@ -17,7 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file messages.h
+/**
+ * @file messages.h
  * @brief The message handler for the box copiler (wraps up msgbase)
  *
  * This file uses the msgbase module to provide a message handler
@@ -36,7 +37,7 @@
 extern MsgStack *msg_main_stack;
 
 /** Initialize the main message handler */
-Task Msg_Main_Init(UInt show_level);
+Task Msg_Main_Init(BoxUInt show_level);
 
 #  define MSG_LEVEL_ADVICE 1
 #  define MSG_LEVEL_WARNING 2

@@ -44,7 +44,7 @@ typedef struct _fmt_stack {
              eye;
   const char *text;
   char       short_text[3];
-  Point      pos;
+  BoxPoint   pos;
   BoxGFmt    *fmt;
 } BoxGFmtStack;
 

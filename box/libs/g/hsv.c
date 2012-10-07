@@ -44,8 +44,8 @@ void HSV_Trunc(HSV *hsv) {
 }
 
 void HSV_From_Color(HSV *hsv, Color *c) {
-  Real r = c->r, g = c->g, b = c->b;
-  Real h, var;
+  BoxReal r = c->r, g = c->g, b = c->b;
+  BoxReal h, var;
 
   hsv->a = c->a;
   switch((r >= g) | (g >= b) << 1 | (b >= r) << 2) {
@@ -86,11 +86,11 @@ void HSV_From_Color(HSV *hsv, Color *c) {
 }
 
 void HSV_To_Color(Color *c, HSV *hsv) {
-  Real h = hsv->h/60.0, s = hsv->s, v = hsv->v;
-  Int hi;
+  BoxReal h = hsv->h/60.0, s = hsv->s, v = hsv->v;
+  BoxInt hi;
 
   c->a = hsv->a;
-  hi = (Int) TRUNCATE(h);
+  hi = (BoxInt) TRUNCATE(h);
   h -= hi;
 #define CALC_P() (v*(1.0 - s))
 #define CALC_Q() (v*(1.0 - h*s))

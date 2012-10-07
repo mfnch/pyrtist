@@ -34,16 +34,16 @@
 #include "g.h"
 
 /* Conversione da coordinate relative a coordinate assolute (floating) */
-#define CV_XF_A(w, x)  (((Real) (x) - (w)->ltx)/(w)->stepx)
-#define CV_YF_A(w, y)  (((Real) (y) - (w)->lty)/(w)->stepy)
+#define CV_XF_A(w, x)  (((BoxReal) (x) - (w)->ltx)/(w)->stepx)
+#define CV_YF_A(w, y)  (((BoxReal) (y) - (w)->lty)/(w)->stepy)
 /* Conversione di lunghezze relative in lunghezze assolute */
-#define CV_LXF_A(w, x)  (((Real) (x))/(w)->stepx)
-#define CV_LYF_A(w, y)  (((Real) (y))/(w)->stepy)
+#define CV_LXF_A(w, x)  (((BoxReal) (x))/(w)->stepx)
+#define CV_LYF_A(w, y)  (((BoxReal) (y))/(w)->stepy)
 /* Conversione da coordinate assolute a coordinate intermedie */
 #define CV_A_MED(x)  ((int) floor(x) + (int) ceil(x))
 /* Conversione da coordinate intermedie a coordinate intere */
-#define CV_MED_GT(x)  (((Int) (x) + 1) >> 1)
-#define CV_MED_LW(x)  (((Int) (x) - 1) >> 1)
+#define CV_MED_GT(x)  (((BoxInt) (x) + 1) >> 1)
+#define CV_MED_LW(x)  (((BoxInt) (x) - 1) >> 1)
 
 /* Informazioni sulla corrente finestra grafica */
 #define GRP_MLOUT    -1
@@ -113,10 +113,10 @@ extern void err_print(FILE *stream);
 void rst__block_reset(block_desc *rstblock);
 block_desc *rst__trytomark(BoxGWin *w, SWORD y, SWORD x);
 void rst__mark(BoxGWin *w, SWORD y, SWORD x);
-void rst__line(BoxGWin *w, Point *pa, Point *pb);
-void rst__cong(BoxGWin *w, Point *pa, Point *pb, Point *pc);
-void rst__curve(BoxGWin *w, Point *pa, Point *pb, Point *pc, Real c);
-void rst__poly(BoxGWin *w, Point *p, int n);
+void rst__line(BoxGWin *w, BoxPoint *pa, BoxPoint *pb);
+void rst__cong(BoxGWin *w, BoxPoint *pa, BoxPoint *pb, BoxPoint *pc);
+void rst__curve(BoxGWin *w, BoxPoint *pa, BoxPoint *pb, BoxPoint *pc, BoxReal c);
+void rst__poly(BoxGWin *w, BoxPoint *p, int n);
 
 /* Le procedure "di libreria" definite per essere chiamate dall'esterno
  * iniziano con rst_
@@ -124,15 +124,15 @@ void rst__poly(BoxGWin *w, Point *p, int n);
 static void My_Add_Create_Path(BoxGWin *w);
 static void My_Begin_Drawing(BoxGWin *w);
 static void My_Draw_Path(BoxGWin *w, DrawStyle *style);
-static void My_Add_Line_Path(BoxGWin *w, Point *a, Point *b);
-static void My_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c);
+static void My_Add_Line_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b);
+static void My_Add_Join_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b, BoxPoint *c);
 static void My_Close_Path(BoxGWin *w);
-void rst_curve(BoxGWin *w, Point *a, Point *b, Point *c, Real cut);
-static void My_Add_Circle_Path(BoxGWin *w, Point *ctr, Point *a, Point *b);
-void rst_poly(BoxGWin *w, Point *p, int n);
+void rst_curve(BoxGWin *w, BoxPoint *a, BoxPoint *b, BoxPoint *c, BoxReal cut);
+static void My_Add_Circle_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *a, BoxPoint *b);
+void rst_poly(BoxGWin *w, BoxPoint *p, int n);
 static void My_Fg_Color(BoxGWin *w, Color *c);
 static void My_Bg_Color(BoxGWin *w, Color *c);
-static void My_Add_Fake_Point(BoxGWin *w, Point *p);
+static void My_Add_Fake_Point(BoxGWin *w, BoxPoint *p);
 
 void rst_repair(BoxGWin *w) {
   w->create_path = My_Add_Create_Path;
@@ -436,8 +436,8 @@ static void My_Draw_Path(BoxGWin *w, DrawStyle *style) {
  * DESCRIZIONE: Rasterizza la linea congiungente i due punti a e b.
  * NOTA: Le coordinate dei punti sono coordinate relative.
  */
-static void My_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
-  Point ia, ib;
+static void My_Add_Line_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b) {
+  BoxPoint ia, ib;
   ia.x = CV_XF_A(w, a->x); ia.y = CV_YF_A(w, a->y);
   ib.x = CV_XF_A(w, b->x); ib.y = CV_YF_A(w, b->y);
 
@@ -448,15 +448,15 @@ static void My_Add_Line_Path(BoxGWin *w, Point *a, Point *b) {
  * DESCRIZIONE: Rasterizza la linea congiungente i due punti *pa e *pb.
  * NOTA: Le coordinate dei punti sono coordinate assolute.
  */
-void rst__line(BoxGWin *w, Point *pa, Point *pb) {
-  Real ly;
+void rst__line(BoxGWin *w, BoxPoint *pa, BoxPoint *pb) {
+  BoxReal ly;
 
-  if (pa->y > pb->y) { register Point *tmp; tmp = pa; pa = pb; pb = tmp; }
+  if (pa->y > pb->y) { register BoxPoint *tmp; tmp = pa; pa = pb; pb = tmp; }
 
   ly = pb->y - pa->y;
   if (ly < 0.95) {
     /* In tal caso ho solo un valore di y, oppure nessuno */
-    Int y1, y2;
+    BoxInt y1, y2;
 
     if (pb->y < GRP_AYMIN(w) || pa->y > GRP_AYMAX(w)) return;
 
@@ -465,17 +465,17 @@ void rst__line(BoxGWin *w, Point *pa, Point *pb) {
 
     if (y1 == y2) {
       /* Solo in questo caso la retta "si vede" */
-      Real x;
+      BoxReal x;
 
-      x = pa->x + ((((Real) y1) - pa->y)/ly)*(pb->x - pa->x);
+      x = pa->x + ((((BoxReal) y1) - pa->y)/ly)*(pb->x - pa->x);
 
       MARK(w, y1, x);
     }
 
   } else {
     /* In tal caso la retta ha una inclinazione rilevante */
-    Int y1, y2, y;
-    Real a, b, x;
+    BoxInt y1, y2, y;
+    BoxReal a, b, x;
 
     /* Esco in caso di linea non visibile (sopra o sotto) */
     if (pb->y < GRP_AYMIN(w) || pa->y > GRP_AYMAX(w)) return;
@@ -493,7 +493,7 @@ void rst__line(BoxGWin *w, Point *pa, Point *pb) {
     else
       y2 = CV_MED_LW(CV_A_MED(pb->y));
 
-    x = b + a*((Real) y1);
+    x = b + a*((BoxReal) y1);
     for(y = y1; y <= y2; y++) {
 
       MARK(w, y, x);
@@ -512,8 +512,8 @@ void rst__line(BoxGWin *w, Point *pa, Point *pb) {
  *  e curva finendo in c.
  * NOTA: Le coordinate dei punti sono coordinate relative.
  */
-static void My_Add_Join_Path(BoxGWin *w, Point *a, Point *b, Point *c) {
-  Point ia, ib, ic;
+static void My_Add_Join_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b, BoxPoint *c) {
+  BoxPoint ia, ib, ic;
   ia.x = CV_XF_A(w, a->x);
   ia.y = CV_YF_A(w, a->y);
   ib.x = CV_XF_A(w, b->x);
@@ -529,10 +529,10 @@ static void My_Close_Path(BoxGWin *w) {}
 /* NOME: rst__cong
  * DESCRIZIONE: Come My_Add_Join_Path, ma utilizza coordinate assolute.
  */
-void rst__cong(BoxGWin *w, Point *pa, Point *pb, Point *pc) {
-  Int iymin, iymax, iy;
-  Real ymin, ymax;
-  Real v01x, v01y, v21x, v21y, v02x, v02y, h;
+void rst__cong(BoxGWin *w, BoxPoint *pa, BoxPoint *pb, BoxPoint *pc) {
+  BoxInt iymin, iymax, iy;
+  BoxReal ymin, ymax;
+  BoxReal v01x, v01y, v21x, v21y, v02x, v02y, h;
 
   /* Comincio col trovare la massima proiezione della curva
    * sull'asse y, cioe' l'intervallo di ordinate in cui stanno sicuramente
@@ -600,8 +600,8 @@ void rst__cong(BoxGWin *w, Point *pa, Point *pb, Point *pc) {
    * del sistema di riferimento (non ortonormale!!!) con origine in 3
    * e versori v01 e v21
    */
-  Real a, b, c, c2, cstep, s1mc2;
-  Real i1x, i1y, i2x, i2y, rx, ry, x1, x2;
+  BoxReal a, b, c, c2, cstep, s1mc2;
+  BoxReal i1x, i1y, i2x, i2y, rx, ry, x1, x2;
 
   /* cstep e' il valore da sommare a c per passare alla retta orizzontale
    * tipo Y = k alla retta orizzontale Y = k+1
@@ -612,7 +612,7 @@ void rst__cong(BoxGWin *w, Point *pa, Point *pb, Point *pc) {
   b = -v21y * cstep;
 
   /* Parto dalla retta orizzontale Y = iymin */
-  c = (v21y - pa->y + ((Real) iymin))*cstep;
+  c = (v21y - pa->y + ((BoxReal) iymin))*cstep;
 
   for (iy = iymin; iy <= iymax; iy++) {
     c2 = c*c;
@@ -663,8 +663,8 @@ void rst__cong(BoxGWin *w, Point *pa, Point *pb, Point *pc) {
  *  i punti a, b e c.
  * NOTA: Le coordinate dei punti sono coordinate relative.
  */
-void rst_curve(BoxGWin *w, Point *a, Point *b, Point *c, Real cut) {
-  Point ia, ib, ic;
+void rst_curve(BoxGWin *w, BoxPoint *a, BoxPoint *b, BoxPoint *c, BoxReal cut) {
+  BoxPoint ia, ib, ic;
   ia.x = CV_XF_A(w, a->x);
   ia.y = CV_YF_A(w, a->y);
   ib.x = CV_XF_A(w, b->x);
@@ -678,9 +678,9 @@ void rst_curve(BoxGWin *w, Point *a, Point *b, Point *c, Real cut) {
 /* NOME: rst__curve
  * DESCRIZIONE: Come rst_curve ma utilizza coordinate assolute.
  */
-void rst__curve(BoxGWin *w, Point *pa, Point *pb, Point *pc, Real c) {
-  Real v10x, v10y, v12x, v12y;
-  Point q[5], *pq;
+void rst__curve(BoxGWin *w, BoxPoint *pa, BoxPoint *pb, BoxPoint *pc, BoxReal c) {
+  BoxReal v10x, v10y, v12x, v12y;
+  BoxPoint q[5], *pq;
 
   if (c < -1.0) c = -1.0;
   if (c > 1.0) c = 1.0;
@@ -724,11 +724,11 @@ void rst__curve(BoxGWin *w, Point *pa, Point *pb, Point *pc, Real c) {
  *  a My_Add_Circle_Path.
  */
 static void My_Add_Circle_Path(BoxGWin *w,
-                               Point *pctr, Point *pa, Point *pb) {
-  Point ctr, a, b;
-  Int iy, y1, y2;
-  Real xmin, xmax, ymin, ymax;
-  Real C, C2, D, k1, k2, x, dx, y;
+                               BoxPoint *pctr, BoxPoint *pa, BoxPoint *pb) {
+  BoxPoint ctr, a, b;
+  BoxInt iy, y1, y2;
+  BoxReal xmin, xmax, ymin, ymax;
+  BoxReal C, C2, D, k1, k2, x, dx, y;
 
   a.x = CV_XF_A(w, pa->x - pctr->x);
   a.y = CV_YF_A(w, pa->y - pctr->y);
@@ -765,7 +765,7 @@ static void My_Add_Circle_Path(BoxGWin *w,
   else
     y2 = CV_MED_LW(CV_A_MED(ymax));
 
-  y = ((Real) y1) - ctr.y;
+  y = ((BoxReal) y1) - ctr.y;
   x = ctr.x + y*k1;
 
   for(iy = y1; iy <= y2; iy++) {
@@ -783,9 +783,9 @@ static void My_Add_Circle_Path(BoxGWin *w,
  * DESCRIZIONE: Rasterizza un poligono chiuso di n vertici:
  * p[0], p[1], ..., p[n-1] (punti espressi in coordinate assolute).
  */
-void rst__poly(BoxGWin *w, Point *p, int n) {
+void rst__poly(BoxGWin *w, BoxPoint *p, int n) {
   int i;
-  Point q;
+  BoxPoint q;
 
   if (n<2) {
     WARNINGMSG("rst__poly", "Poligono con meno di 2 vertici");
@@ -796,7 +796,7 @@ void rst__poly(BoxGWin *w, Point *p, int n) {
   q.y = p->y;
 
   for(i=1; i<n; i++) {
-    Point *previous_p = p++;
+    BoxPoint *previous_p = p++;
     rst__line(w, previous_p, p);
   }
 
@@ -807,9 +807,9 @@ void rst__poly(BoxGWin *w, Point *p, int n) {
  * DESCRIZIONE: Rasterizza un poligono chiuso di n vertici:
  * p[0], p[1], ..., p[n-1]
  */
-void rst_poly(BoxGWin *w, Point *p, int n) {
+void rst_poly(BoxGWin *w, BoxPoint *p, int n) {
   int i, j = 1;
-  Point r, q[2];
+  BoxPoint r, q[2];
 
   if (n<2) {
     WARNINGMSG("rst_poly", "Poligono con meno di 2 vertici");
@@ -850,4 +850,4 @@ static void My_Bg_Color(BoxGWin *w, Color *c) {
   (w->bgcol)->c = cb;
 }
 
-static void My_Add_Fake_Point(BoxGWin *w, Point *p) {}
+static void My_Add_Fake_Point(BoxGWin *w, BoxPoint *p) {}

@@ -57,7 +57,7 @@ static void My_Update_Context(BoxSrc *current) {
   }
 }
 
-static char *My_Show_Msg(UInt level, char *original_msg) {
+static char *My_Show_Msg(BoxUInt level, char *original_msg) {
   if (level == 0) {
     char *final_msg;
     final_msg = printdup("NOTE: %s:\n", original_msg);
@@ -85,7 +85,7 @@ static char *My_Show_Msg(UInt level, char *original_msg) {
   }
 }
 
-Task Msg_Main_Init(UInt show_level) {
+Task Msg_Main_Init(BoxUInt show_level) {
   Task t = Msg_Init(& msg_main_stack, 4, show_level);
   Msg_Default_Filter_Set(msg_main_stack, My_Show_Msg);
   return t;

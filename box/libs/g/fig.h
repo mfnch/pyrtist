@@ -35,7 +35,7 @@ int BoxGWin_Fig_Destroy_Layer(BoxGWin *w, int l);
 int BoxGWin_Fig_New_Layer(BoxGWin *w);
 void BoxGWin_Fig_Select_Layer(BoxGWin *w, int l);
 void BoxGWin_Fig_Clear_Layer(BoxGWin *w, int l);
-Real fig_transform_factor(Real angle);
+BoxReal fig_transform_factor(BoxReal angle);
 
 void BoxGWin_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *src);
 void BoxGWin_Fig_Draw_Fig_With_Matrix(BoxGWin *dest, BoxGWin *src,

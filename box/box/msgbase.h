@@ -17,7 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file msgbase.h
+/**
+ * @file msgbase.h
  * @brief Centralized generic message handler.
  *
  * This file provides the declarations of all the procedures which
@@ -48,29 +49,29 @@
 /** Receives a string together with its deallocation responsibility,
  * returns a string together with its deallocation responsibility.
  * Therefore the following examples are perfectly right:
- *   const char *my_filter(UInt, const char *original_msg) {
+ *   const char *my_filter(BoxUInt, const char *original_msg) {
  *     return original_msg;
  *   }
- *   const char *my_filter(UInt, const char *original_msg) {
+ *   const char *my_filter(BoxUInt, const char *original_msg) {
  *     free(original_msg);
  *     return strdup("I hide the message! Ha ha!\n");
  *   }
  * NOTE: level is 0 for contexts, is between 1 and num_levels
  *  for messages.
  */
-typedef char *(*MsgFilter)(UInt level, char *original_msg);
+typedef char *(*MsgFilter)(BoxUInt level, char *original_msg);
 
 typedef struct {
-  UInt level;
+  BoxUInt level;
   MsgFilter filter;
   char *msg;
 } Msg;
 
 typedef struct {
-  UInt num_levels;
-  UInt show_level;
-  UInt last_shown;
-  UInt *level;
+  BoxUInt num_levels;
+  BoxUInt show_level;
+  BoxUInt last_shown;
+  BoxUInt *level;
   MsgFilter filter;
   MsgFilter default_filter;
   BoxArr msgs;
@@ -79,7 +80,7 @@ typedef struct {
 } MsgStack;
 
 /** Initialization of the message module */
-Task Msg_Init(MsgStack **ms_ptr, UInt num_levels, UInt show_level);
+Task Msg_Init(MsgStack **ms_ptr, BoxUInt num_levels, BoxUInt show_level);
 
 /** Finalization of the message module */
 void Msg_Destroy(MsgStack *ms);
@@ -88,18 +89,18 @@ void Msg_Destroy(MsgStack *ms);
 void Msg_Default_Filter_Set(MsgStack *ms, MsgFilter mf);
 
 /** Set the minimum level a message should have to be considered */
-void Msg_Show_Level_Set(MsgStack *ms, UInt show_level);
+void Msg_Show_Level_Set(MsgStack *ms, BoxUInt show_level);
 
 /** Get the value of the specified message counter */
-UInt Msg_Counter_Get(MsgStack *ms, UInt level);
+BoxUInt Msg_Counter_Get(MsgStack *ms, BoxUInt level);
 
 /** Get the number of messages whose level is greater or equal than
  * the spefified one.
  */
-UInt Msg_Counter_Sum_Get(MsgStack *ms, UInt level);
+BoxUInt Msg_Counter_Sum_Get(MsgStack *ms, BoxUInt level);
 
 /** Clear one message counter */
-void Msg_Counter_Clear(MsgStack *ms, UInt level);
+void Msg_Counter_Clear(MsgStack *ms, BoxUInt level);
 
 /** Clear all message counters */
 void Msg_Counter_Clear_All(MsgStack *ms);
@@ -109,8 +110,8 @@ void Msg_Show(MsgStack *ms);
 
 void Msg_Context_Begin(MsgStack *ms, const char *msg, MsgFilter mf);
 
-void Msg_Context_End(MsgStack *ms, UInt repeat);
+void Msg_Context_End(MsgStack *ms, BoxUInt repeat);
 
-void Msg_Add(MsgStack *ms, UInt level, const char *msg);
+void Msg_Add(MsgStack *ms, BoxUInt level, const char *msg);
 
 #endif

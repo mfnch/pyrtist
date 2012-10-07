@@ -17,7 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file ast.h
+/**
+ * @file ast.h
  * @brief Abstract syntax tree related functionality.
  *
  * A nice description...
@@ -82,9 +83,9 @@ typedef enum {
 
 /** Union large enough to contain a value of any constant type */
 typedef union {
-  Char c;
-  Int  i;
-  Real r;
+  BoxChar c;
+  BoxInt  i;
+  BoxReal r;
 } ASTConst;
 
 /** Unary operators */

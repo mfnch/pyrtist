@@ -63,9 +63,9 @@ BoxTask poly_begin(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-static BoxTask _poly_point_draw_only(Window *w, Point *p, int omit_line) {
+static BoxTask _poly_point_draw_only(Window *w, BoxPoint *p, int omit_line) {
   WindowPoly *wp = & w->poly;
-  Real m1 = wp->margin[0], m2 = wp->margin[1];
+  BoxReal m1 = wp->margin[0], m2 = wp->margin[1];
 
   if (wp->num_points < 2) {
     wp->first_points[wp->num_points] = *p;
@@ -76,8 +76,8 @@ static BoxTask _poly_point_draw_only(Window *w, Point *p, int omit_line) {
   }
 
   if (wp->num_points > 0) {
-    Point *last = & wp->last_point, lastb, pb;
-    Real dx = p->x - last->x, dy = p->y - last->y, d = sqrt(dx*dx + dy*dy), m;
+    BoxPoint *last = & wp->last_point, lastb, pb;
+    BoxReal dx = p->x - last->x, dy = p->y - last->y, d = sqrt(dx*dx + dy*dy), m;
 
     if (d > 0.0) {
       if (m1 < 0.0) m1 = -m1/d;
@@ -126,7 +126,7 @@ static BoxTask _poly_point_draw_only(Window *w, Point *p, int omit_line) {
   return BOXTASK_OK;
 }
 
-static BoxTask _poly_point(Window *w, IPointList *ipl, Point *p) {
+static BoxTask _poly_point(Window *w, IPointList *ipl, BoxPoint *p) {
   PointList *pl = IPL_POINTLIST(ipl);
   BOXTASK( pointlist_add(pl, p, (char *) NULL) );
   return _poly_point_draw_only(w, p, 0);
@@ -135,7 +135,7 @@ static BoxTask _poly_point(Window *w, IPointList *ipl, Point *p) {
 BoxTask poly_point(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   IPointList *ipl = BOX_VM_SUB_CHILD(vmp, IPointListPtr);
-  Point *p = BOX_VM_ARG1_PTR(vmp, Point);
+  BoxPoint *p = BOX_VM_ARG1_PTR(vmp, BoxPoint);
   return _poly_point(w, ipl, p);
 }
 
@@ -194,7 +194,7 @@ BoxTask poly_pause(BoxVMX *vmp) {
 
 BoxTask poly_real(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Real margin = BOX_VM_ARG1(vmp, Real), max_margin;
+  BoxReal margin = BOX_VM_ARG1(vmp, BoxReal), max_margin;
 
   switch(w->poly.num_margins++) {
   case 0:
@@ -223,9 +223,9 @@ struct add_from_pl_params {
   IPointList *dest_ipl;
 };
 
-static BoxTask _add_from_pl(Int index, char *name, void *object, void *data) {
+static BoxTask _add_from_pl(BoxInt index, char *name, void *object, void *data) {
   struct add_from_pl_params *params = (struct add_from_pl_params *) data;
-  Point *p = (Point *) object;
+  BoxPoint *p = (BoxPoint *) object;
   return _poly_point(params->w, params->dest_ipl, p);
 }
 
@@ -252,6 +252,6 @@ BoxTask window_poly_close_begin(BoxVMX *vmp) {
 
 BoxTask window_poly_close_int(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB2_PARENT(vmp, WindowPtr);
-  w->poly.close = BOX_VM_ARG1(vmp, Int);
+  w->poly.close = BOX_VM_ARG1(vmp, BoxInt);
   return BOXTASK_OK;
 }

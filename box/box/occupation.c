@@ -17,7 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
 
 /*#define DEBUG*/
 
@@ -46,12 +45,12 @@ typedef struct {
        occupied : 1;     /**< NULL if not occupied, otherwise contains the
                               finalizer function to be called */
   } is;
-  UInt chain;            /**< If not the end of chain, then this is the next
+  BoxUInt chain;            /**< If not the end of chain, then this is the next
                               item in the chain. Must be END_OF_CHAIN if
                               there isn't one */
 } ItemHeader;
 
-void BoxOcc_Init(BoxOcc *occ, UInt element_size, UInt initial_size) {
+void BoxOcc_Init(BoxOcc *occ, BoxUInt element_size, BoxUInt initial_size) {
   BoxArr_Init(& occ->array, element_size + sizeof(ItemHeader), initial_size);
   BoxErr_Set_Tolerance(& occ->array.err, 1); /* So that we can catch errors */
   occ->elsize = element_size;
@@ -61,7 +60,7 @@ void BoxOcc_Init(BoxOcc *occ, UInt element_size, UInt initial_size) {
   BoxErr_Init(& occ->err);
 }
 
-static int Internal_Finalizer(UInt idx, void *my_item, void *occ_ptr) {
+static int Internal_Finalizer(BoxUInt idx, void *my_item, void *occ_ptr) {
   ItemHeader *head = (ItemHeader *) my_item;
   my_item += sizeof(ItemHeader);
   BoxOcc *occ = (BoxOcc *) occ_ptr;
@@ -80,7 +79,7 @@ void BoxOcc_Finish(BoxOcc *occ) {
   BoxArr_Finish(& occ->array);
 }
 
-BoxOcc *BoxOcc_New(UInt element_size, UInt initial_size) {
+BoxOcc *BoxOcc_New(BoxUInt element_size, BoxUInt initial_size) {
   BoxOcc *occ = BoxMem_Alloc(sizeof(BoxOcc));
   if (occ == NULL) return NULL;
   BoxOcc_Init(occ, element_size, initial_size);
@@ -96,14 +95,14 @@ void BoxOcc_Set_Finalizer(BoxOcc *occ, BoxOccFinalizer fin) {
   occ->fin = fin;
 }
 
-UInt BoxOcc_Occupy(BoxOcc *occ, void *item) {
+BoxUInt BoxOcc_Occupy(BoxOcc *occ, void *item) {
   BoxArr *arr = & occ->array;
   ItemHeader *head;
   void *my_item;
 
   if (occ->chain == END_OF_CHAIN) {
     /* empty chain: add a new item to the tail */
-    UInt idx;
+    BoxUInt idx;
 
     my_item = BoxArr_Push(arr, NULL);
     if (BoxErr_Propagate(& occ->err, & arr->err)) return 0;
@@ -122,7 +121,7 @@ UInt BoxOcc_Occupy(BoxOcc *occ, void *item) {
 
   } else {
     /* non empty chain: recycle an item from the chain */
-    UInt idx = occ->chain;
+    BoxUInt idx = occ->chain;
     my_item = BoxArr_Item_Ptr(arr, idx);
     BoxErr_Assert(& arr->err);
     head = (ItemHeader *) my_item;
@@ -136,7 +135,7 @@ UInt BoxOcc_Occupy(BoxOcc *occ, void *item) {
   }
 }
 
-void BoxOcc_Release(BoxOcc *occ, UInt item_index) {
+void BoxOcc_Release(BoxOcc *occ, BoxUInt item_index) {
   BoxArr *arr = & occ->array;
   ItemHeader *head;
   void *my_item;
@@ -156,11 +155,11 @@ void BoxOcc_Release(BoxOcc *occ, UInt item_index) {
   occ->chain = item_index;
 }
 
-void *BoxOcc_Item_Ptr(BoxOcc *occ, UInt item_index) {
+void *BoxOcc_Item_Ptr(BoxOcc *occ, BoxUInt item_index) {
   BoxArr *arr = & occ->array;
   void *my_item = (void *) BoxArr_Item_Ptr(arr, item_index);
   if (BoxErr_Propagate(& occ->err, & arr->err)) return NULL;
   return (occ->elsize > 0) ? my_item + sizeof(ItemHeader) : NULL;
 }
 
-UInt BoxOcc_Max_Index(BoxOcc *occ) {return occ->max_idx;}
+BoxUInt BoxOcc_Max_Index(BoxOcc *occ) {return occ->max_idx;}

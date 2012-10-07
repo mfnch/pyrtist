@@ -26,8 +26,8 @@ typedef struct {
     int color : 1;
   } got;
   Color color;
-  Point center;
-  Real radius_a, radius_b;
+  BoxPoint center;
+  BoxReal radius_a, radius_b;
 
   GStyle default_style, style;
 } WindowCircle;

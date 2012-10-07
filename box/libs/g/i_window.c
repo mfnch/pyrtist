@@ -227,7 +227,7 @@ BoxTask Box_Lib_G_Str_At_Window(BoxVMX *vm) {
 BoxTask window_size(BoxVMX *vmp) {
   WindowPtr wp = BOX_VM_THIS(vmp, WindowPtr);
   Window *w = (Window *) wp;
-  Point *win_size = BOX_VM_ARG1_PTR(vmp, Point);
+  BoxPoint *win_size = BOX_VM_ARG1_PTR(vmp, BoxPoint);
 
   if (w->plan.have.size) {
     g_error("You have already specified the window size!");
@@ -286,7 +286,7 @@ BoxTask GLib_Obj_At_Window(BoxVMX *vm) {
 
 BoxTask window_origin_point(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Point *origin = BOX_VM_ARG1_PTR(vmp, Point);
+  BoxPoint *origin = BOX_VM_ARG1_PTR(vmp, BoxPoint);
 
   if (w->plan.have.origin) {
     g_error("You have already specified the origin of the window!");
@@ -322,8 +322,8 @@ BoxTask window_save_str(BoxVMX *vm) {
 BoxTask window_save_window(BoxVMX *vmp) {
   Window *src  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   Window *dest = BOX_VM_ARG1(vmp, WindowPtr);
-  Point translation = {0.0, 0.0}, center = {0.0, 0.0};
-  Real sx = 1.0, sy = 1.0, rot_angle = 0.0;
+  BoxPoint translation = {0.0, 0.0}, center = {0.0, 0.0};
+  BoxReal sx = 1.0, sy = 1.0, rot_angle = 0.0;
   Matrix m;
 
   int type_fig = BoxGWin_Type_From_String("fig");
@@ -460,7 +460,7 @@ BoxTask window_hot_begin(BoxVMX *vmp) {
 
 BoxTask window_hot_point(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Point *point = BOX_VM_ARG1_PTR(vmp, Point);
+  BoxPoint *point = BOX_VM_ARG1_PTR(vmp, BoxPoint);
   char *name = (w->hot.got.name) ? w->hot.name : (char *) NULL;
   BoxTask t = pointlist_add(& w->pointlist, point, name);
   if (w->hot.got.name) {
@@ -481,10 +481,10 @@ BoxTask window_hot_string(BoxVMX *vm) {
   return BOXTASK_OK;
 }
 
-static BoxTask _add_from_pointlist(Int index, char *name,
+static BoxTask _add_from_pointlist(BoxInt index, char *name,
                                    void *object, void *data) {
   PointList *dest_pl = (PointList *) data;
-  Point *p = (Point *) object;
+  BoxPoint *p = (BoxPoint *) object;
   return pointlist_add(dest_pl, p, name);
 }
 
@@ -496,7 +496,7 @@ BoxTask window_hot_pointlist(BoxVMX *vmp) {
 
 BoxTask window_hot_end(BoxVMX *vmp) {
   Window *w  = BOX_VM_SUB_PARENT(vmp, WindowPtr);
-  Point *p = BOX_VM_SUB_CHILD_PTR(vmp, Point);
+  BoxPoint *p = BOX_VM_SUB_CHILD_PTR(vmp, BoxPoint);
 
   if (! w->hot.got.point)
     g_warning("Hot[] did not get a point!");
@@ -522,7 +522,7 @@ BoxTask window_file_string(BoxVMX *vm) {
 
 BoxTask window_res_point(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Point *res = BOX_VM_ARG1_PTR(vmp, Point);
+  BoxPoint *res = BOX_VM_ARG1_PTR(vmp, BoxPoint);
   if (w->plan.have.resolution) {
     g_warning("You have already provided the window resolution.");
   }
@@ -534,7 +534,7 @@ BoxTask window_res_point(BoxVMX *vmp) {
 
 BoxTask window_res_real(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
-  Real *res = BOX_VM_ARG1_PTR(vmp, Real);
+  BoxReal *res = BOX_VM_ARG1_PTR(vmp, BoxReal);
   if (w->plan.have.resolution) {
     g_warning("You have already provided the window resolution.");
   }
@@ -545,7 +545,7 @@ BoxTask window_res_real(BoxVMX *vmp) {
 
 BoxTask window_show_point(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Point *p = BOX_VM_ARG1_PTR(vmp, Point);
+  BoxPoint *p = BOX_VM_ARG1_PTR(vmp, BoxPoint);
   BoxGWin_Add_Fake_Point(w->window, p);
   return BOXTASK_OK;
 }

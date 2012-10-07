@@ -39,9 +39,9 @@
  * agli argomenti disassemblati.
  */
 static void My_D_GLPI_GLPI(BoxVMDasm *dasm, char **out) {
-  UInt n, na = dasm->op_desc->numargs;
-  UInt iaform[2] = {dasm->op_arg_type & 3, (dasm->op_arg_type >> 2) & 3};
-  Int iaint[2];
+  BoxUInt n, na = dasm->op_desc->numargs;
+  BoxUInt iaform[2] = {dasm->op_arg_type & 3, (dasm->op_arg_type >> 2) & 3};
+  BoxInt iaint[2];
   BoxVMWord op_word = dasm->op_word;
 
   /* Recupero i numeri (interi) di registro/puntatore/etc. */
@@ -65,13 +65,13 @@ static void My_D_GLPI_GLPI(BoxVMDasm *dasm, char **out) {
   }
 
   for (n = 0; n < na; n++) {
-    UInt iaf = iaform[n];
-    UInt iat = dasm->op_desc->t_id;
+    BoxUInt iaf = iaform[n];
+    BoxUInt iat = dasm->op_desc->t_id;
 
     assert(iaf < 4);
 
     {
-      Int iai = iaint[n], uiai = iai;
+      BoxInt iai = iaint[n], uiai = iai;
       char rc, tc;
       const char typechars[NUM_TYPES] = "cirpo";
 
@@ -100,7 +100,7 @@ static void My_D_GLPI_GLPI(BoxVMDasm *dasm, char **out) {
           sprintf(out[n], "%c[ro0 + " SInt "]", tc, uiai);
         break;
       case BOXCONTCATEG_IMM:
-        if (iat == TYPE_CHAR) iai = (Int) ((Char) iai);
+        if (iat == TYPE_CHAR) iai = (BoxInt) ((BoxChar) iai);
         sprintf(out[n], SInt, iai);
         break;
       }
@@ -110,14 +110,14 @@ static void My_D_GLPI_GLPI(BoxVMDasm *dasm, char **out) {
 
 /* Analoga alla precedente, ma per istruzioni CALL. */
 void My_D_CALL(BoxVMDasm *dasm, char **out) {
-  UInt na = dasm->op_desc->numargs;
+  BoxUInt na = dasm->op_desc->numargs;
   BoxVMWord op_word = dasm->op_word;
 
   assert(na == 1);
 
   if ((dasm->op_arg_type & 3) == BOXCONTCATEG_IMM) {
-    UInt iat = dasm->op_desc->t_id;
-    Int call_num;
+    BoxUInt iat = dasm->op_desc->t_id;
+    BoxInt call_num;
 
     if (dasm->flags.op_is_long)
       BOXVM_READ_LONGOP_1ARG(dasm->op_ptr, op_word, call_num);
@@ -125,7 +125,7 @@ void My_D_CALL(BoxVMDasm *dasm, char **out) {
       BOXVM_READ_SHORTOP_1ARG(dasm->op_ptr, op_word, call_num);
 
     if (iat == TYPE_CHAR)
-      call_num = (Int) ((Char) call_num);
+      call_num = (BoxInt) ((BoxChar) call_num);
 
     {
       BoxVMProcTable *pt = & dasm->vm->proc_table;
@@ -152,14 +152,14 @@ void My_D_CALL(BoxVMDasm *dasm, char **out) {
 
 /* Analoga alla precedente, ma per istruzioni di salto (jmp, jc). */
 void My_D_JMP(BoxVMDasm *dasm, char **out) {
-  UInt na = dasm->op_desc->numargs;
+  BoxUInt na = dasm->op_desc->numargs;
 
   assert(na == 1);
 
   if ((dasm->op_arg_type & 3) == BOXCONTCATEG_IMM) {
-    UInt iat = dasm->op_desc->t_id;
-    Int m_num;
-    Int position;
+    BoxUInt iat = dasm->op_desc->t_id;
+    BoxInt m_num;
+    BoxInt position;
     BoxVMByte op_word = dasm->op_word;
 
     if (dasm->flags.op_is_long)
@@ -168,7 +168,7 @@ void My_D_JMP(BoxVMDasm *dasm, char **out) {
       BOXVM_READ_SHORTOP_1ARG(dasm->op_ptr, op_word, m_num);
 
     if (iat == TYPE_CHAR)
-      m_num = (Int) ((Char) m_num);
+      m_num = (BoxInt) ((BoxChar) m_num);
 
     position = (dasm->op_pos + m_num)*sizeof(BoxVMWord);
     sprintf(out[0], SInt, position);
@@ -179,8 +179,8 @@ void My_D_JMP(BoxVMDasm *dasm, char **out) {
 
 /* Analoga alla precedente, ma per istruzioni del tipo GLPI-Imm. */
 void My_D_GLPI_Imm(BoxVMDasm *dasm, char **out) {
-  UInt iaf = dasm->op_arg_type & 3, iat = dasm->op_desc->t_id;
-  Int iai;
+  BoxUInt iaf = dasm->op_arg_type & 3, iat = dasm->op_desc->t_id;
+  BoxInt iai;
   BoxVMWord *arg2;
   BoxVMWord op_word = dasm->op_word;
 
@@ -197,7 +197,7 @@ void My_D_GLPI_Imm(BoxVMDasm *dasm, char **out) {
 
   /* Primo argomento */
   {
-    Int uiai = iai;
+    BoxInt uiai = iai;
     char rc, tc;
     const char typechars[NUM_TYPES] = "cirpo";
 

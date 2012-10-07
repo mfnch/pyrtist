@@ -26,7 +26,7 @@
 #include "strutils.h"
 #include "list.h"
 
-void BoxList_Init(BoxList *l, UInt item_size) {
+void BoxList_Init(BoxList *l, BoxUInt item_size) {
   l->item_size = item_size;
   l->length = 0;
   l->destructor = NULL;
@@ -47,7 +47,7 @@ void BoxList_Finish(BoxList *l) {
   }
 }
 
-BoxList *BoxList_New(UInt item_size) {
+BoxList *BoxList_New(BoxUInt item_size) {
   BoxList *l = BoxMem_Alloc(sizeof(BoxList));
   if (l == NULL) return NULL;
   BoxList_Init(l, item_size);
@@ -59,7 +59,7 @@ void BoxList_Destroy(BoxList *l) {
   BoxMem_Free(l);
 }
 
-UInt BoxList_Length(BoxList *l) {
+BoxUInt BoxList_Length(BoxList *l) {
   return l->length;
 }
 
@@ -79,7 +79,7 @@ void BoxList_Remove(BoxList *l, void *item) {
 }
 
 void BoxList_Insert_With_Size(BoxList *l, void *item_where,
-                           const void *item_what, UInt size) {
+                           const void *item_what, BoxUInt size) {
   BoxListItemHead **prev_lih, **next_lih;
 
   void *new_item = BoxMem_Alloc(sizeof(BoxListItemHead) + size);
@@ -117,7 +117,7 @@ BoxTask BoxList_Iter(BoxList *l, BoxListIterator i, void *pass_data) {
   return BOXTASK_OK;
 }
 
-BoxTask BoxList_Item_Get(BoxList *l, void **item, UInt index) {
+BoxTask BoxList_Item_Get(BoxList *l, void **item, BoxUInt index) {
   if (index >= 1 && index <= l->length) {
     BoxListItemHead *lih;
     for(lih=l->head_tail.next; lih != NULL; lih=lih->next) {
@@ -137,7 +137,7 @@ BoxTask BoxList_Item_Get(BoxList *l, void **item, UInt index) {
 
 void BoxList_Append_Strings(BoxList *l, const char *strings, char separator) {
   const char *s = strings, *string = s;
-  UInt length = 0;
+  BoxUInt length = 0;
   while(1) {
     register char c = *s;
     if (c == '\0') {
@@ -162,9 +162,9 @@ typedef struct {
   BoxListProduct product;
   void *pass;
   BoxList *sublist;
-  Int num_sublists;
+  BoxInt num_sublists;
   BoxListItemHead *item;
-  Int sublist_idx;
+  BoxInt sublist_idx;
   void **tuple;
 } ListProductData;
 
@@ -211,7 +211,7 @@ static BoxTask Product_Iter(ListProductData *state) {
  *  number of two (despite the examples, where we use only two lists).
  */
 BoxTask BoxList_Product_Iter(BoxList *l, BoxListProduct product, void *pass) {
-  UInt n = BoxList_Length(l);
+  BoxUInt n = BoxList_Length(l);
   if (n > 0) {
     BoxTask status;
     ListProductData state;

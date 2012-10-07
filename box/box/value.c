@@ -253,20 +253,20 @@ void Value_Setup_As_Type(Value *v, BoxTypeId t) {
   v->value.cont.type = BoxType_Get_Cont_Type(v->type);
 }
 
-void Value_Setup_As_Imm_Char(Value *v, Char c) {
+void Value_Setup_As_Imm_Char(Value *v, BoxChar c) {
   v->kind = VALUEKIND_IMM;
   v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts,BOXTYPE_CHAR));
   BoxCont_Set(& v->value.cont, "ic", c);
 }
 
-void Value_Setup_As_Imm_Int(Value *v, Int i) {
+void Value_Setup_As_Imm_Int(Value *v, BoxInt i) {
   v->kind = VALUEKIND_IMM;
   v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts,
                                          v->proc->cmp->bltin.species_int));
   BoxCont_Set(& v->value.cont, "ii", i);
 }
 
-void Value_Setup_As_Imm_Real(Value *v, Real r) {
+void Value_Setup_As_Imm_Real(Value *v, BoxReal r) {
   v->kind = VALUEKIND_IMM;
   v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts,
                                          v->proc->cmp->bltin.species_real));
@@ -355,7 +355,7 @@ void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc) {
       /* Automatically chooses the local register.
          NOTE: if cont.type == BOXTYPE_VOID this function returns 0, meaning
            that for this type there is no need for registers. */
-      Int reg = Reg_Occupy(ra, v->value.cont.type);
+      BoxInt reg = Reg_Occupy(ra, v->value.cont.type);
       assert(reg >= 0);
       v->value.cont.value.reg = reg;
       v->attr.own_register = (reg > 0);
@@ -372,7 +372,7 @@ void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc) {
     v->kind = VALUEKIND_TARGET;
     v->value.cont.categ = BOXCONTCATEG_GREG;
     if (vc->which_one < 0) {
-      Int reg = -GVar_Occupy(ra, v->value.cont.type);
+      BoxInt reg = -GVar_Occupy(ra, v->value.cont.type);
       /* Automatically choses the local variables */
       assert(reg <= 0);
       v->value.cont.value.reg = reg;
@@ -390,7 +390,7 @@ void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc) {
     v->value.cont.categ = BOXCONTCATEG_LREG;
     if (vc->which_one < 0) {
       /* Automatically choses the local variables */
-      Int reg = -Var_Occupy(ra, v->value.cont.type, 0);
+      BoxInt reg = -Var_Occupy(ra, v->value.cont.type, 0);
       assert(reg <= 0);
       v->value.cont.value.reg = reg;
       return;
@@ -420,13 +420,13 @@ void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc) {
     if (use_greg || vc->addr >= 0) return;
 
     if (vc->type_of_container == VALCONTTYPE_LRPTR) {
-      Int reg = Reg_Occupy(ra, BOXTYPE_OBJ);
+      BoxInt reg = Reg_Occupy(ra, BOXTYPE_OBJ);
       v->value.cont.value.ptr.reg = reg;
       assert(reg >= 1);
       return;
 
     } else {
-      Int reg = -Var_Occupy(ra, BOXTYPE_OBJ, 0);
+      BoxInt reg = -Var_Occupy(ra, BOXTYPE_OBJ, 0);
       v->value.cont.value.ptr.reg = reg;
       assert(reg < 0);
     }

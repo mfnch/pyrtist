@@ -75,7 +75,7 @@ static void My_Proc_End(BoxVMCode *p) {
 
   if (p->have.head) {
     RegAlloc *ra = BoxVMCode_Get_RegAlloc(p);
-    Int num_reg[NUM_TYPES], num_var[NUM_TYPES];
+    BoxInt num_reg[NUM_TYPES], num_var[NUM_TYPES];
 
     /* Global registers are allocated only for main */
     if (p->style == BOXVMCODESTYLE_MAIN) {
@@ -370,10 +370,10 @@ void BoxVMCode_Assemble_Call(BoxVMCode *code, BoxVMCallNum call_num) {
  *   mov i[ro0+8], 45
  */
 static void My_Prepare_Ptr_Access(BoxVMCode *p, const BoxCont *c) {
-  Int ptr_reg = c->value.ptr.reg;
+  BoxInt ptr_reg = c->value.ptr.reg;
   if (c->categ == BOXCONTCATEG_PTR && (c->value.ptr.is_greg || ptr_reg != 0)) {
-    Int categ = c->value.ptr.is_greg ? BOXCONTCATEG_GREG : BOXCONTCATEG_LREG;
-    BoxVMCode_Raw_Assemble(p, BOXOP_MOV_OO, BOXOPCAT_LREG, (Int) 0,
+    BoxInt categ = c->value.ptr.is_greg ? BOXCONTCATEG_GREG : BOXCONTCATEG_LREG;
+    BoxVMCode_Raw_Assemble(p, BOXOP_MOV_OO, BOXOPCAT_LREG, (BoxInt) 0,
                          categ, ptr_reg);
   }
 }
@@ -392,7 +392,7 @@ static BoxInt My_Int_Val_From_Cont(const BoxCont *c) {
 
   else {
     if (c->type == BOXCONTTYPE_CHAR)
-      return (Int) c->value.imm.box_char;
+      return (BoxInt) c->value.imm.box_char;
     else if (c->type == BOXCONTTYPE_INT)
       return c->value.imm.box_int;
     assert(0);
@@ -422,7 +422,7 @@ static void My_Unsafe_Assemble(BoxVMCode *p, BoxOp op,
     const BoxCont *c1 = cs[0];
     My_Prepare_Ptr_Access(p, c1);
     if (c1->categ != BOXCONTCATEG_IMM) {
-      Int c1_int_val = My_Int_Val_From_Cont(c1);
+      BoxInt c1_int_val = My_Int_Val_From_Cont(c1);
       BoxVMCode_Raw_Assemble(p, op, c1->categ, c1_int_val);
       return;
 
@@ -453,16 +453,16 @@ static void My_Unsafe_Assemble(BoxVMCode *p, BoxOp op,
     My_Prepare_Ptr_Access(p, c2);
 
     if (c2->categ != BOXCONTCATEG_IMM) {
-      Int c1_int_val = My_Int_Val_From_Cont(c1),
-          c2_int_val = My_Int_Val_From_Cont(c2);
+      BoxInt c1_int_val = My_Int_Val_From_Cont(c1),
+             c2_int_val = My_Int_Val_From_Cont(c2);
 
       BoxVMCode_Raw_Assemble(p, op, c1->categ, c1_int_val,
                            c2->categ, c2_int_val);
       return;
 
     } else {
-      Int c1_int_val = (c1->categ == BOXCONTCATEG_PTR) ?
-                       c1->value.ptr.offset : c1->value.reg;
+      BoxInt c1_int_val = (c1->categ == BOXCONTCATEG_PTR) ?
+                          c1->value.ptr.offset : c1->value.reg;
       switch(c1->type) {
       case BOXCONTTYPE_CHAR:
         BoxVMCode_Raw_Assemble(p, op, c1->categ, c1_int_val,

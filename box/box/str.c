@@ -40,7 +40,7 @@ void BoxStr_Finish(BoxStr *s) {
   }
 }
 
-BoxTask BoxStr_Large_Enough(BoxStr *s, Int length) {
+BoxTask BoxStr_Large_Enough(BoxStr *s, BoxInt length) {
   size_t len;
   assert(s->length >= 0 && length >= 0);
 
@@ -53,7 +53,7 @@ BoxTask BoxStr_Large_Enough(BoxStr *s, Int length) {
 }
 
 BoxTask BoxStr_Concat_C_String(BoxStr *s, const char *ca) {
-  Int len = strlen(ca);
+  BoxInt len = strlen(ca);
   if (len < 1) return BOXTASK_OK;
   if (s->buffer_size - s->length - 1 < len)
     BoxStr_Large_Enough(s, len);

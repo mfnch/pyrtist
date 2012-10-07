@@ -58,9 +58,8 @@
 typedef struct {
   char      *script_dir;
   BoxSrcPos pos;
-  UInt      msgcontext;
-  UInt      num_errs, num_warns;
-
+  BoxUInt   msgcontext;
+  BoxUInt   num_errs, num_warns;
 } MyIncludeData;
 
 /** Function used to count lines and columns */

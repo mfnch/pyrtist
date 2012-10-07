@@ -52,7 +52,7 @@ Task Str_Eq(char *a, char *b) {
  *  a meno di differenze maiuscolo/minuscolo. Se le due stringhe coincidono
  *  restituisce BOXTASK_OK, altrimenti restituisce BOXTASK_FAILURE.
  */
-Task Str_CaseEq2(char *s1, UInt l1, char *s2, UInt l2) {
+Task Str_CaseEq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2) {
   if (l1 != l2) return BOXTASK_FAILURE;
 
   for (; l1 > 0; l1--)
@@ -65,7 +65,7 @@ Task Str_CaseEq2(char *s1, UInt l1, char *s2, UInt l2) {
  *  coincide con la seconda (s2 di lunghezza l2).
  * NOTA: Distingue maiuscole da minuscole.
  */
-Task Str_Eq2(char *s1, UInt l1, char *s2, UInt l2) {
+Task Str_Eq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2) {
   if (l1 != l2) return BOXTASK_FAILURE;
   for (; l1 > 0; l1--)
     if ( *(s1++) != *(s2++) ) return BOXTASK_FAILURE;
@@ -77,7 +77,7 @@ Task Str_Eq2(char *s1, UInt l1, char *s2, UInt l2) {
  * NOTA: Restituisce NULL se non c'e' abbastanza memoria per creare
  *  la nuova stringa.
  */
-char *Str_DupLow(char *s, UInt leng)
+char *Str_DupLow(char *s, BoxUInt leng)
 {
   char *ns, *nc;
   ns = (char *) BoxMem_Alloc(leng);
@@ -90,7 +90,7 @@ char *Str_DupLow(char *s, UInt leng)
  * NOTA: Restituisce NULL se non c'e' abbastanza memoria per creare
  *  la nuova stringa.
  */
-char *Str_Dup(const char *s, UInt leng) {
+char *Str_Dup(const char *s, BoxUInt leng) {
   char *ns, *nc;
 
   if (s == NULL || leng < 1)
@@ -111,14 +111,14 @@ char *Str_Dup(const char *s, UInt leng) {
  * NOTA: In ogni caso la stringa restituita viene allocata da Str_Cut
  *  e sara' quindi necessario eventualmente usare free(...) per eliminarla.
  */
-char *Str_Cut(const char *s, UInt maxleng, Int start) {
+char *Str_Cut(const char *s, BoxUInt maxleng, BoxInt start) {
   return Str__Cut(s, strlen(s), maxleng, start);
 }
 
 /* DESCRIZIONE: Come Str_Cut, ma la lunghezza della stringa viene specificata
  *  direttamente attraverso il parametro leng.
  */
-char *Str__Cut(const char *s, UInt leng, UInt maxleng, Int start) {
+char *Str__Cut(const char *s, BoxUInt leng, BoxUInt maxleng, BoxInt start) {
   if ( leng <= maxleng )
     return BoxMem_Strdup(s);
 
@@ -341,12 +341,12 @@ char *Box_Reduce_Esc_String(const char *s, size_t l, size_t *new_length) {
  *  s e' il puntatore alla stringa, l la lunghezza. Il numero convertito verra'
  *  memorizzato in *i.
  */
-Task Str_ToInt(char *s, UInt l, Int *i) {
-  char sc[sizeof(Int)*5 + 1], *endptr;
+Task Str_ToInt(char *s, BoxUInt l, BoxInt *i) {
+  char sc[sizeof(BoxInt)*5 + 1], *endptr;
 
-  if (l >= sizeof(Int)*5 + 1) {
+  if (l >= sizeof(BoxInt)*5 + 1) {
     MSG_ERROR("The integer number exceeds the range of values "
-              "representable by Int.");
+              "representable by BoxInt.");
     return BOXTASK_FAILURE;
   }
 
@@ -360,7 +360,7 @@ Task Str_ToInt(char *s, UInt l, Int *i) {
     return BOXTASK_OK;
 
   MSG_ERROR("The integer number exceeds the range of values "
-            "representable by Int.");
+            "representable by BoxInt.");
   return BOXTASK_FAILURE;
 }
 
@@ -418,12 +418,12 @@ char Box_Hex_Digit_From_Int(int v) {
   }
 }
 
-Task Str_Hex_To_Int(char *s, UInt l, Int *out) {
+Task Str_Hex_To_Int(char *s, BoxUInt l, BoxInt *out) {
   char *c = s;
-  UInt i, n = 0;
+  BoxUInt i, n = 0;
 
   for (i = 0; i < l; i++) {
-    UInt digit = Box_Hex_Digit_To_Int(*(c++)),
+    BoxUInt digit = Box_Hex_Digit_To_Int(*(c++)),
          m = n << 4;
     if (m < n) {
       MSG_WARNING("Hexadecimal number is out of bounds!");
@@ -435,7 +435,7 @@ Task Str_Hex_To_Int(char *s, UInt l, Int *out) {
     }
     n = m | digit;
   }
-  *out = (Int) n;
+  *out = (BoxInt) n;
   return BOXTASK_OK;
 }
 
@@ -443,7 +443,7 @@ Task Str_Hex_To_Int(char *s, UInt l, Int *out) {
  *  s e' il puntatore alla stringa, l la lunghezza. Il numero convertito verra'
  *  memorizzato in *r.
  */
-Task Str_ToReal(char *s, UInt l, Real *r) {
+Task Str_ToReal(char *s, BoxUInt l, BoxReal *r) {
   if ( l < 64 ) {
     char sc[64];
 
@@ -477,7 +477,7 @@ Task Str_ToReal(char *s, UInt l, Real *r) {
 /* DESCRIZIONE: Restituisce un nome nullo (lunghezza pari a 0)
  */
 BoxName *BoxName_Empty(void) {
-  static BoxName nm = {(UInt) 0, (char *) NULL}; return & nm;
+  static BoxName nm = {(BoxUInt) 0, (char *) NULL}; return & nm;
 }
 
 /* This function converts the string corresponding to the structure of type
@@ -579,7 +579,7 @@ void *BoxMem_Dup(const void *src, unsigned int length) {
 }
 
 /** Similar to BoxMem_Dup, but allocate extra space */
-void *BoxMem_Dup_Larger(const void *src, Int src_size, Int dest_size) {
+void *BoxMem_Dup_Larger(const void *src, BoxInt src_size, BoxInt dest_size) {
   void *copy;
   assert(dest_size >= src_size && src_size >= 0);
   if (dest_size < 1) return NULL;

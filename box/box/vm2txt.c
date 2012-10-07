@@ -62,7 +62,7 @@ static BoxTask My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
 
   if (dasm->flags.report_error) {
     fprintf(output, SUInt "\t"BoxVMWord_Fmt"x\tError!",
-            (UInt) (dasm->op_pos * sizeof(BoxVMWord)), *dasm->op_ptr);
+            (BoxUInt) (dasm->op_pos * sizeof(BoxVMWord)), *dasm->op_ptr);
     
   } else {
     BoxVMWord *i_pos2 = dasm->op_ptr;
@@ -74,7 +74,7 @@ static BoxTask My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
     fprintf(output, "%s", op_name);
     
     if (nargs > 0) {
-      UInt n;
+      BoxUInt n;
 
       assert(nargs <= VM_MAX_NUMARGS);
 

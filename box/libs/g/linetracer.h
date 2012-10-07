@@ -56,7 +56,7 @@ typedef struct {
   LineJoinStyle join_style;
   LineDesc firstline, line1, line2, *thsl, *nxtl;
   int is_closed, segment;
-  Real cutting;
+  BoxReal cutting;
   GPath *border[2];
   buff pieces;
 } LineTracer;
@@ -71,14 +71,14 @@ void lt_destroy(LineTracer *lt);
 
 void lt_add_piece(LineTracer *lt, LinePiece *lp);
 
-Int lt_num_pieces(LineTracer *lt);
+BoxInt lt_num_pieces(LineTracer *lt);
 
 void lt_clear(LineTracer *lt);
 
 int lt_draw(BoxGWin *w, LineTracer *lt, int closed);
 
 void lt_join_style_from_array(LineJoinStyle *ljs,
-                              Real ti, Real te, Real ni, Real ne);
+                              BoxReal ti, BoxReal te, BoxReal ni, BoxReal ne);
 
 void lt_join_style_set(LineTracer *lt, LineJoinStyle *ljs);
 

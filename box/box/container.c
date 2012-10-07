@@ -71,7 +71,7 @@ void BoxCont_Set(BoxCont *c, const char *cont_type, ...) {
 
   switch(cont_type[1]) {
   case 'c': type = BOXCONTTYPE_CHAR;  action = READ_CHAR;  break; /* Char */
-  case 'i': type = BOXCONTTYPE_INT;   action = READ_INT;   break; /* Int */
+  case 'i': type = BOXCONTTYPE_INT;   action = READ_INT;   break; /* BoxInt */
   case 'r': type = BOXCONTTYPE_REAL;  action = READ_REAL;  break; /* Real */
   case 'p': type = BOXCONTTYPE_POINT; action = READ_POINT; break; /* Point */
   case 'o': type = BOXCONTTYPE_PTR;   action = ERROR;      break; /* Ptr */
@@ -105,18 +105,18 @@ void BoxCont_Set(BoxCont *c, const char *cont_type, ...) {
   /* We should not return without calling va_end! */
   switch(action) {
   case READ_CHAR:
-    c->value.imm.box_char = (Char) va_arg(ap, Int); break;
+    c->value.imm.box_char = (BoxChar) va_arg(ap, BoxInt); break;
   case READ_INT:
-    c->value.imm.box_int = va_arg(ap, Int); break;
+    c->value.imm.box_int = va_arg(ap, BoxInt); break;
   case READ_REAL:
-    c->value.imm.box_real = va_arg(ap, Real); break;
+    c->value.imm.box_real = va_arg(ap, BoxReal); break;
   case READ_POINT:
-    c->value.imm.box_point = va_arg(ap, Point); break;
+    c->value.imm.box_point = va_arg(ap, BoxPoint); break;
   case READ_REG:
-    c->value.reg = va_arg(ap, Int); break;
+    c->value.reg = va_arg(ap, BoxInt); break;
   case READ_PTR:
-    c->value.ptr.reg = va_arg(ap, Int);
-    c->value.ptr.offset = va_arg(ap, Int);
+    c->value.ptr.reg = va_arg(ap, BoxInt);
+    c->value.ptr.offset = va_arg(ap, BoxInt);
     c->value.ptr.is_greg = (cont_type[2] == 'g');
     /* ^^^ if strlen(cont_type) == 2, then cont_type[2] will be '\0'.
            that's fine. We'll assume local register in that case. */

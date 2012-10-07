@@ -89,7 +89,7 @@ Task gradient_string(BoxVMX *vm) {
 
 Task gradient_line_point(BoxVMX *vmp) {
   Gradient *g = BOX_VM_SUB_PARENT(vmp, GradientPtr);
-  Point *p = BOX_VM_ARG1_PTR(vmp, Point);
+  BoxPoint *p = BOX_VM_ARG1_PTR(vmp, BoxPoint);
   set_gradient_type(g, COLOR_GRAD_TYPE_LINEAR);
   if (!g->got.point1) {
     g->gradient.point1 = *p;
@@ -110,7 +110,7 @@ Task gradient_line_point(BoxVMX *vmp) {
 
 Task gradient_circle_point(BoxVMX *vmp) {
   Gradient *g = BOX_VM_SUB_PARENT(vmp, GradientPtr);
-  Point *p = BOX_VM_ARG1_PTR(vmp, Point);
+  BoxPoint *p = BOX_VM_ARG1_PTR(vmp, BoxPoint);
   set_gradient_type(g, COLOR_GRAD_TYPE_RADIAL);
   if (!g->got.pause) {
     if (g->got.point1) {
@@ -135,7 +135,7 @@ Task gradient_circle_point(BoxVMX *vmp) {
 
 Task gradient_circle_real(BoxVMX *vmp) {
   Gradient *g = BOX_VM_SUB_PARENT(vmp, GradientPtr);
-  Real r = fabs(BOX_VM_ARG1(vmp, Real));
+  BoxReal r = fabs(BOX_VM_ARG1(vmp, BoxReal));
 
   set_gradient_type(g, COLOR_GRAD_TYPE_RADIAL);
   if (!g->got.pause) {
@@ -182,7 +182,7 @@ Task gradient_color(BoxVMX *vmp) {
 
 Task gradient_real(BoxVMX *vmp) {
   Gradient *g = BOX_VM_THIS(vmp, GradientPtr);
-  Real r = BOX_VM_ARG1(vmp, Real);
+  BoxReal r = BOX_VM_ARG1(vmp, BoxReal);
   if (g->got.pos) {
     g_warning("Real@Gradient: You already specified a position "
               "for this Color: ignoring this other value!");
@@ -201,7 +201,7 @@ Task gradient_real(BoxVMX *vmp) {
 Task gradient_end(BoxVMX *vmp) {
   Gradient *g = BOX_VM_THIS(vmp, GradientPtr);
   ColorGradItem *cgi;
-  Int n = buff_numitems(& g->items);
+  BoxInt n = buff_numitems(& g->items);
 
   if (n < 2) {
     g_error("(])@Gradient: Incomplete gradient specification: "
@@ -227,14 +227,14 @@ Task gradient_end(BoxVMX *vmp) {
     cgi->position = 0.5;
 
   } else {
-    Int i;
+    BoxInt i;
     cgi = buff_lastitemptr(& g->items, ColorGradItem);
     if (cgi->position < 0.0) cgi->position = 1.0;
     cgi = buff_firstitemptr(& g->items, ColorGradItem);
     if (cgi->position < 0.0) cgi->position = 0.0;
     for(i = 1; i < n;) {
-      Int a;
-      Real pos_a, delta_pos;
+      BoxInt a;
+      BoxReal pos_a, delta_pos;
       for(; i < n; i++) if (cgi[i].position < 0.0) break;
       a = i;
       for(; i < n; i++) if (cgi[i].position >= 0.0) break;
@@ -252,7 +252,7 @@ Task gradient_end(BoxVMX *vmp) {
 Task print_gradient(BoxVMX *vmp) {
   Gradient *g = BOX_VM_ARG1(vmp, GradientPtr);
   ColorGradItem *cgi = g->gradient.items;
-  Int n = g->gradient.num_items, i;
+  BoxInt n = g->gradient.num_items, i;
   FILE *out = stdout;
 
   fprintf(out, "Gradient[");

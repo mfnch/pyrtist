@@ -33,14 +33,14 @@
 
 typedef struct {
   int conditional;
-  Int sheet_id;
-  Int position;
+  BoxInt sheet_id;
+  BoxInt position;
 } VMSymLabelRef;
 
-static BoxTask Assemble_Jmp(BoxVM *vmp, BoxVMSymID sym_id, UInt sym_type,
+static BoxTask Assemble_Jmp(BoxVM *vmp, BoxVMSymID sym_id, BoxUInt sym_type,
                             int defined, void *def, size_t def_size,
                             void *ref, size_t ref_size) {
-  Int rel_position = 0;
+  BoxInt rel_position = 0;
   BoxOp asm_code = BOXOP_JC_I;
   VMSymLabelRef *label_ref = ref;
 
@@ -49,7 +49,7 @@ static BoxTask Assemble_Jmp(BoxVM *vmp, BoxVMSymID sym_id, UInt sym_type,
   assert(ref);
 
   if (defined && def != NULL) {
-    Int def_position, ref_position;
+    BoxInt def_position, ref_position;
     assert(def_size == sizeof(VMSymLabel));
     def_position = ((VMSymLabel *) def)->position;
     ref_position = label_ref->position;
@@ -66,7 +66,7 @@ BoxVMSymID BoxVMSym_New_Label(BoxVM *vmp) {
 }
 
 BoxTask BoxVMSym_Def_Label(BoxVM *vmp, BoxVMSymID sym_id,
-                      Int sheet_id, Int position) {
+                      BoxInt sheet_id, BoxInt position) {
   VMSymLabel label;
   label.sheet_id = sheet_id;
   label.position = position;
@@ -77,7 +77,7 @@ BoxTask BoxVMSym_Def_Label(BoxVM *vmp, BoxVMSymID sym_id,
  * position is the current position in that sheet.
  */
 BoxTask BoxVMSym_Def_Label_Here(BoxVM *vmp, BoxVMSymID label_sym_id) {
-  Int sheet_id, position;
+  BoxInt sheet_id, position;
   sheet_id = vmp->proc_table.target_proc_num;
   position = BoxArr_Num_Items(& vmp->proc_table.target_proc->code);
   return BoxVMSym_Def_Label(vmp, label_sym_id, sheet_id, position);
@@ -115,8 +115,8 @@ BoxTask BoxVMSym_Release_Label(BoxVM *vmp, BoxVMSymID sym_id) {
 /*** procedure headers ******************************************************/
 
 typedef struct {
-  Int num_var[NUM_TYPES];
-  Int num_reg[NUM_TYPES];
+  BoxInt num_var[NUM_TYPES];
+  BoxInt num_reg[NUM_TYPES];
 } ProcHead;
 
 /* This is the function which assembles the first code in procedures
@@ -125,11 +125,11 @@ typedef struct {
  * and variables is unknown, we use the symbol manager to adjust
  * automatically the header of procedures when the data is known.
  */
-static BoxTask Assemble_Proc_Head(BoxVM *vmp, BoxVMSymID sym_id, UInt sym_type,
+static BoxTask Assemble_Proc_Head(BoxVM *vmp, BoxVMSymID sym_id, BoxUInt sym_type,
                                   int defined, void *def, size_t def_size,
                                   void *ref, size_t ref_size) {
   ProcHead *ph = (ProcHead *) def;
-  static Int asm_code[NUM_TYPES] = {BOXOP_NEWC_II, BOXOP_NEWI_II,
+  static BoxInt asm_code[NUM_TYPES] = {BOXOP_NEWC_II, BOXOP_NEWI_II,
                                     BOXOP_NEWR_II, BOXOP_NEWP_II,
                                     BOXOP_NEWO_II};
   int i;
@@ -139,7 +139,7 @@ static BoxTask Assemble_Proc_Head(BoxVM *vmp, BoxVMSymID sym_id, UInt sym_type,
   assert(def != NULL);
 
   for(i = 0; i < NUM_TYPES; i++) {
-    Int nv = ph->num_var[i], nr = ph->num_reg[i];
+    BoxInt nv = ph->num_var[i], nr = ph->num_reg[i];
     assert(nv >= 0 && nr >= 0);
     BoxVM_Assemble_Long(vmp, asm_code[i],
                         BOXCONTCATEG_IMM, nv, BOXCONTCATEG_IMM, nr);
@@ -206,8 +206,9 @@ BoxVMSym_Define_Proc(BoxVM *vm, BoxVMSymID sym_id, BoxCCallOld fn_ptr) {
 }
 
 static BoxTask
-My_Resolve_Proc_Ref(BoxVM *vm, BoxVMSymID sym_id, UInt sym_type, int defined,
-                    void *def, size_t def_size, void *ref, size_t ref_size) {
+My_Resolve_Proc_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type,
+                    int defined, void *def, size_t def_size,
+                    void *ref, size_t ref_size) {
   MyProcRef *proc_ref = ref;
   MyProcDef *proc_def = def;
 

@@ -23,7 +23,7 @@
 #  include "types.h"
 
 typedef struct {
-  Real h, s, v, a;
+  BoxReal h, s, v, a;
 } HSV;
 
 /** Make sure the components of 'hsv' lie to the right intervals

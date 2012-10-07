@@ -77,7 +77,7 @@ BoxGWin *BoxGWin_Create_BM4(BoxReal ltx, BoxReal lty, BoxReal rdx, BoxReal rdy,
    void *winptr;
    BoxGWin *wd;
   long numptx, numpty, bytesperline, windim;
-  Real lx, ly, versox, versoy;
+  BoxReal lx, ly, versox, versoy;
 
   wd = (BoxGWin *) malloc(sizeof(BoxGWin));
   if (wd == NULL ) {
@@ -200,7 +200,7 @@ static void My_Finish(BoxGWin *w) {
 /* Disegna un punto in posizione (ptx, pty)
  * (espressa in coordinate fisiche, cioe' numero riga, numero colonna)
  */
-static void My_Draw_Point(BoxGWin *w, Int ptx, Int pty) {
+static void My_Draw_Point(BoxGWin *w, BoxInt ptx, BoxInt pty) {
   long q, r;
   char *ptr;
 
@@ -253,7 +253,7 @@ static void My_Set_Color(BoxGWin *w, int col) {
 /* Scrive una linea sulla riga y, da colonna x1 a x2
  * (queste sono tutte coordinate intere).
  */
-static void My_Draw_Hor_Line(BoxGWin *w, Int y, Int x1, Int x2) {
+static void My_Draw_Hor_Line(BoxGWin *w, BoxInt y, BoxInt x1, BoxInt x2) {
   long length, nbyte, xbyte, xpix, i;
   char *ptr;
 

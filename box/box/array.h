@@ -262,7 +262,7 @@ BOXEXPORT void BoxArr_Compactify(BoxArr *arr);
 /** Returns the pointer to the last item stored in the array.
  */
 #define BoxArr_Get_Last_Item_Ptr(arr) \
-  ((arr)->ptr + ((arr)->numel - 1)*((UInt) (arr)->elsize))
+  ((arr)->ptr + ((arr)->numel - 1)*((BoxUInt) (arr)->elsize))
 
 #define BoxArr_Last_Item_Ptr BoxArr_Get_Last_Item_Ptr
 

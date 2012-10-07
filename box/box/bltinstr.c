@@ -61,7 +61,7 @@ static Task My_Str_Char(BoxVMX *vm) {
 
 static Task My_Str_Int(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
-  Int i = BOX_VM_ARG(vm, Int);
+  BoxInt i = BOX_VM_ARG(vm, BoxInt);
   char *tmp = Box_SPrintF("%I", i);
   if (tmp != (char *) NULL) {
     if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
@@ -73,7 +73,7 @@ static Task My_Str_Int(BoxVMX *vm) {
 
 static Task My_Str_Real(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
-  Real r = BOX_VM_ARG1(vm, Real);
+  BoxReal r = BOX_VM_ARG1(vm, BoxReal);
   char *tmp = Box_SPrintF("%R", r);
   if (tmp != (char *) NULL) {
     if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
@@ -85,7 +85,7 @@ static Task My_Str_Real(BoxVMX *vm) {
 
 static Task My_Str_Point(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
-  Point *p = BOX_VM_ARG_PTR(vm, Point);
+  BoxPoint *p = BOX_VM_ARG_PTR(vm, BoxPoint);
   char *tmp = Box_SPrintF("(%R, %R)", p->x, p->y);
   if (tmp != (char *) NULL) {
     if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
@@ -97,7 +97,7 @@ static Task My_Str_Point(BoxVMX *vm) {
 
 static Task My_Str_Ptr(BoxVMX *vm) {
   BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
-  BoxPtr *p = BOX_VM_ARG_PTR(vm, Ptr);
+  BoxPtr *p = BOX_VM_ARG_PTR(vm, BoxPtr);
   char *tmp = printdup("Ptr[block:%p, data:%p]", p->block, p->ptr);
   if (tmp != (char *) NULL) {
     if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)

@@ -22,8 +22,8 @@
 /* This is part of the Window object */
 typedef struct {
   char *text, *font;
-  Real font_size;
-  Point position, direction, from;
+  BoxReal font_size;
+  BoxPoint position, direction, from;
   Color color;
 
   struct {

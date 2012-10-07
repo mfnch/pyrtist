@@ -24,16 +24,16 @@
 #include "pointlist.h"
 
 struct params_for_pointlist_print {
-  Int num_points;
+  BoxInt num_points;
   FILE *out;
 };
 
-static Task _pointlist_print(Int index, char *name,
-                             void *object, void *data)
+static BoxTask _pointlist_print(BoxInt index, char *name,
+                                void *object, void *data)
 {
   struct params_for_pointlist_print *params =
    (struct params_for_pointlist_print *) data;
-  Point *p = (Point *) object;
+  BoxPoint *p = (BoxPoint *) object;
   if (name != (char *) NULL)
     fprintf(params->out, "\"%s\", ("SReal", "SReal")", name, p->x, p->y);
   else

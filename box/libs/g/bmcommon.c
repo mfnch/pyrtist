@@ -64,7 +64,7 @@ void write_leuint32(LEUInt32 *dest, unsigned long src) {
 }
 
 /* Disegna un punto in posizione (x, y) (espressa in millimetri) */
-void grbm_draw_point(BoxGWin *w, Real x, Real y) {
+void grbm_draw_point(BoxGWin *w, BoxReal x, BoxReal y) {
   long ptx, pty;
 
   ptx = rint((x - w->ltx)/w->stepx);

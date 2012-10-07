@@ -31,9 +31,9 @@ typedef struct {
   } got;
 
   int num_points, num_margins, last_idx, close;
-  Point first_points[2], last_point, lastb;
-  Real first_margins[2];
-  Real margin[2];
+  BoxPoint first_points[2], last_point, lastb;
+  BoxReal first_margins[2];
+  BoxReal margin[2];
 
   Color color;
 

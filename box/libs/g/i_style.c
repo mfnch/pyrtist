@@ -31,20 +31,20 @@
  * which is actually the object Style as seen within the C side.
  */
 
-Task style_begin(BoxVMX *vmp) {
+BoxTask style_begin(BoxVMX *vmp) {
   IStylePtr *sp = BOX_VM_THIS_PTR(vmp, IStylePtr), s;
   int i;
   s = *sp = (IStyle *) malloc(sizeof(IStyle));
   if (s == (IStyle *) NULL) return BOXTASK_FAILURE;
   g_style_new(& s->style, G_STYLE_NONE);
   for(i = 0; i < G_STYLE_ATTR_NUM; i++) s->have[i] = 0;
-  if (!buff_create(& s->dashes, sizeof(Real), 8)) return BOXTASK_FAILURE;
+  if (!buff_create(& s->dashes, sizeof(BoxReal), 8)) return BOXTASK_FAILURE;
   s->dash_offset_contest = -1;
   s->dash_offset = 0.0;
   return BOXTASK_OK;
 }
 
-Task style_destroy(BoxVMX *vmp) {
+BoxTask style_destroy(BoxVMX *vmp) {
   IStylePtr s = BOX_VM_THIS(vmp, IStylePtr);
   g_style_clear(& s->style);
   buff_free(& s->dashes);
@@ -52,7 +52,7 @@ Task style_destroy(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task style_fill_string(BoxVMX *vm) {
+BoxTask style_fill_string(BoxVMX *vm) {
   IStylePtr s = BOX_VM_SUB_PARENT(vm, IStylePtr);
   BoxStr *box_string = BOX_VM_ARG_PTR(vm, BoxStr);
 
@@ -91,7 +91,7 @@ Task style_fill_string(BoxVMX *vm) {
   return BOXTASK_OK;
 }
 
-Task style_border_color(BoxVMX *vmp) {
+BoxTask style_border_color(BoxVMX *vmp) {
   IStylePtr s = BOX_VM_SUB_PARENT(vmp, IStylePtr);
   Color *c = BOX_VM_ARG_PTR(vmp, Color);
   g_style_set_bord_color(& s->style, c);
@@ -99,15 +99,15 @@ Task style_border_color(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task style_border_real(BoxVMX *vmp) {
+BoxTask style_border_real(BoxVMX *vmp) {
   IStylePtr s = BOX_VM_SUB_PARENT(vmp, IStylePtr);
-  Real *r = BOX_VM_ARG_PTR(vmp, Real);
+  BoxReal *r = BOX_VM_ARG_PTR(vmp, BoxReal);
   g_style_set_bord_width(& s->style, r);
   s->have[G_STYLE_ATTR_BORD_WIDTH] = 1;
   return BOXTASK_OK;
 }
 
-Task style_border_join(BoxVMX *vm) {
+BoxTask style_border_join(BoxVMX *vm) {
   IStylePtr s = BOX_VM_SUB_PARENT(vm, IStylePtr);
   BoxStr *box_string = BOX_VM_ARG_PTR(vm, BoxStr);
   const char *join_style = (char *) box_string->ptr;
@@ -125,22 +125,22 @@ Task style_border_join(BoxVMX *vm) {
   return BOXTASK_OK;
 }
 
-Task style_border_dash_begin(BoxVMX *vmp) {
+BoxTask style_border_dash_begin(BoxVMX *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
   s->dash_offset_contest = -1;
   return buff_clear(& s->dashes) ? BOXTASK_OK : BOXTASK_FAILURE;
 }
 
-Task style_border_dash_pause(BoxVMX *vmp) {
+BoxTask style_border_dash_pause(BoxVMX *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
   s->dash_offset_contest = 0;
   s->dash_offset = 0.0;
   return BOXTASK_OK;
 }
 
-Task style_border_dash_real(BoxVMX *vmp) {
+BoxTask style_border_dash_real(BoxVMX *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
-  Real *r = BOX_VM_ARG_PTR(vmp, Real);
+  BoxReal *r = BOX_VM_ARG_PTR(vmp, BoxReal);
   switch(s->dash_offset_contest) {
   case -1: return buff_push(& s->dashes, r) ? BOXTASK_OK : BOXTASK_FAILURE;
   case  0: s->dash_offset = *r; ++s->dash_offset_contest; return BOXTASK_OK;
@@ -151,24 +151,24 @@ Task style_border_dash_real(BoxVMX *vmp) {
   }
 }
 
-Task style_border_dash_end(BoxVMX *vmp) {
+BoxTask style_border_dash_end(BoxVMX *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
-  Int n = buff_numitems(& s->dashes);
-  Real *dashes = buff_firstitemptr(& s->dashes, Real);
+  BoxInt n = buff_numitems(& s->dashes);
+  BoxReal *dashes = buff_firstitemptr(& s->dashes, BoxReal);
   g_style_set_bord_dashes(& s->style, n, dashes, s->dash_offset);
   s->have[G_STYLE_ATTR_BORD_DASHES] = 1;
   return BOXTASK_OK;
 }
 
-Task style_border_miter_limit(BoxVMX *vmp) {
+BoxTask style_border_miter_limit(BoxVMX *vmp) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vmp, IStylePtr);
-  Real *r = BOX_VM_ARG_PTR(vmp, Real);
+  BoxReal *r = BOX_VM_ARG_PTR(vmp, BoxReal);
   g_style_set_bord_miter_limit(& s->style, r);
   s->have[G_STYLE_ATTR_BORD_MITER_LIMIT] = 1;
   return BOXTASK_OK;
 }
 
-Task style_border_cap_string(BoxVMX *vm) {
+BoxTask style_border_cap_string(BoxVMX *vm) {
   IStylePtr s = BOX_VM_SUB2_PARENT(vm, IStylePtr);
   BoxStr *box_string = BOX_VM_ARG_PTR(vm, BoxStr);
   const char *cap_str = (char *) box_string->ptr;

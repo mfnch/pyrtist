@@ -35,8 +35,8 @@
   ( (index > 0) ? ( (index - 1) % num_items ) + 1 : \
                   num_items - ( (-index) % num_items ) )
 
-Task objlist_init(ObjList *ol, Int obj_size) {
-  Int tot_obj_size = sizeof(ObjListItem) + obj_size;
+BoxTask objlist_init(ObjList *ol, BoxInt obj_size) {
+  BoxInt tot_obj_size = sizeof(ObjListItem) + obj_size;
   assert(obj_size >= 0);
   if (buff_create(& ol->ol, tot_obj_size, 8))
     return BOXTASK_OK;
@@ -52,7 +52,7 @@ void objlist_destroy(ObjList *ol) {
   buff_free(& ol->ol);
 }
 
-Task objlist_clear(ObjList *ol) {
+BoxTask objlist_clear(ObjList *ol) {
   int i, n = buff_numitem(& ol->ol);
   for(i=1; i <= n; i++) {
     ObjListItem *oli = buff_itemptr(& ol->ol, ObjListItem, i);
@@ -62,7 +62,7 @@ Task objlist_clear(ObjList *ol) {
   return BOXTASK_FAILURE;
 }
 
-Task objlist_dup(ObjList *dest, ObjList *src) {
+BoxTask objlist_dup(ObjList *dest, ObjList *src) {
   int i, n;
   if (!buff_dup(& dest->ol, & src->ol)) return BOXTASK_OK;
   /* We need to copy all the string names: they cannot be shared! */
@@ -113,7 +113,7 @@ const char *objlist_get_name(ObjList *ol, size_t index) {
   return (oli != NULL) ? oli->name : NULL;
 }
 
-Task objlist_add(ObjList *ol, void *obj, char *name) {
+BoxTask objlist_add(ObjList *ol, void *obj, char *name) {
   ObjListItem *oli;
   void *dest_obj;
 
@@ -143,7 +143,7 @@ Task objlist_add(ObjList *ol, void *obj, char *name) {
   return BOXTASK_OK;
 }
 
-Task objlist_iter(ObjList *ol, ObjListIterator it, void *data) {
+BoxTask objlist_iter(ObjList *ol, ObjListIterator it, void *data) {
   int i, n = buff_numitem(& ol->ol);
   for(i=1; i <= n; i++) {
     ObjListItem *oli = buff_itemptr(& ol->ol, ObjListItem, i);
@@ -154,7 +154,7 @@ Task objlist_iter(ObjList *ol, ObjListIterator it, void *data) {
   return BOXTASK_OK;
 }
 
-Int objlist_num(ObjList *ol) {
+BoxInt objlist_num(ObjList *ol) {
   return buff_numitem(& ol->ol);
 }
 

@@ -33,15 +33,15 @@
 #include "i_pointlist.h"
 
 Task put_window_init(Window *w) {
-  if ( ! buff_create(& w->put.fig_points, sizeof(Point), 8) ) {
+  if ( ! buff_create(& w->put.fig_points, sizeof(BoxPoint), 8) ) {
     g_error("put_window_init: buff_create failed (fig_points)!");
     return BOXTASK_FAILURE;
   }
-  if ( ! buff_create(& w->put.back_points, sizeof(Point), 8) ) {
+  if ( ! buff_create(& w->put.back_points, sizeof(BoxPoint), 8) ) {
     g_error("put_window_init: buff_create failed (back_points)!");
     return BOXTASK_FAILURE;
   }
-  if ( ! buff_create(& w->put.weights, sizeof(Real), 8) ) {
+  if ( ! buff_create(& w->put.weights, sizeof(BoxReal), 8) ) {
     g_error("put_window_init: buff_create failed (weights)!");
     return BOXTASK_FAILURE;
   }
@@ -82,13 +82,13 @@ Task window_put_begin(BoxVMX *vmp) {
 
 static Task put_calculate(Window *w) {
   long F_num, B_num, weight_num;
-  Point *F_ptr, *B_ptr;
-  Real *weight_ptr;
+  BoxPoint *F_ptr, *B_ptr;
+  BoxReal *weight_ptr;
 
   /* Accedo alle liste */
-  F_ptr = buff_firstitemptr(& w->put.fig_points, Point);
-  B_ptr = buff_firstitemptr(& w->put.back_points, Point);
-  weight_ptr = buff_firstitemptr(& w->put.weights, Real);
+  F_ptr = buff_firstitemptr(& w->put.fig_points, BoxPoint);
+  B_ptr = buff_firstitemptr(& w->put.back_points, BoxPoint);
+  weight_ptr = buff_firstitemptr(& w->put.weights, BoxReal);
 
   F_num = buff_numitem(& w->put.fig_points);
   B_num = buff_numitem(& w->put.back_points);
@@ -119,7 +119,7 @@ static Task put_calculate(Window *w) {
   return BOXTASK_OK;
 }
 
-static Task _transform_pl(Int index, char *name, void *object, void *data) {
+static Task _transform_pl(BoxInt index, char *name, void *object, void *data) {
   Matrix *m = (Matrix *) data;
   BoxGMatrix_Map_Point(m, (BoxPoint *) object, (BoxPoint *) object);
   return BOXTASK_OK;
@@ -174,7 +174,7 @@ Task window_put_window(BoxVMX *vmp) {
 
 Task window_put_point(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Point *translation = BOX_VM_ARG1_PTR(vmp, Point);
+  BoxPoint *translation = BOX_VM_ARG1_PTR(vmp, BoxPoint);
   w->put.translation = *translation;
   if (w->put.got.translation)
     g_warning("ignoring previously specified translation vector!");
@@ -184,7 +184,7 @@ Task window_put_point(BoxVMX *vmp) {
 
 Task window_put_real(BoxVMX *vmp) {
   SUBTYPE_OF_WINDOW(vmp, w);
-  Real *rot_angle = BOX_VM_ARG1_PTR(vmp, Real);
+  BoxReal *rot_angle = BOX_VM_ARG1_PTR(vmp, BoxReal);
   w->put.rot_angle = *rot_angle;
   if (w->put.got.rot_angle)
     g_warning("ignoring previously specified rotation angle!");
@@ -217,7 +217,7 @@ Task window_put_scale_real(BoxVMX *vmp) {
   Subtype *scale_of_window_put = BOX_VM_THIS_PTR(vmp, Subtype);
   Subtype *put_of_window = SUBTYPE_PARENT_PTR(scale_of_window_put, Subtype);
   Window *w = *((Window **) SUBTYPE_PARENT_PTR(put_of_window, WindowPtr));
-  Real *scale = BOX_VM_ARG1_PTR(vmp, Real);
+  BoxReal *scale = BOX_VM_ARG1_PTR(vmp, BoxReal);
   w->put.scale.y = w->put.scale.x = *scale;
   if (w->put.got.scale)
     g_warning("ignoring previously specified scale factors!");
@@ -229,7 +229,7 @@ Task window_put_scale_point(BoxVMX *vmp) {
   Subtype *scale_of_window_put = BOX_VM_THIS_PTR(vmp, Subtype);
   Subtype *put_of_window = SUBTYPE_PARENT_PTR(scale_of_window_put, Subtype);
   Window *w = *((Window **) SUBTYPE_PARENT_PTR(put_of_window, WindowPtr));
-  Point *p = BOX_VM_ARG1_PTR(vmp, Point);
+  BoxPoint *p = BOX_VM_ARG1_PTR(vmp, BoxPoint);
   w->put.scale.x = p->x;
   w->put.scale.y = p->y;
   if (w->put.got.scale)
@@ -266,7 +266,7 @@ Task window_put_near_end(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-static Task _window_put_near_real(Window *w, Real weight){
+static Task _window_put_near_real(Window *w, BoxReal weight){
   if (! w->put.near.have.weight) {
     g_warning("Window.Put.Near got already the weight for this constrain.");
     return BOXTASK_OK;
@@ -282,19 +282,19 @@ static Task _window_put_near_real(Window *w, Real weight){
 
 Task window_put_near_real(BoxVMX *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
-  Real weight = BOX_VM_ARG1(vmp, Real);
+  BoxReal weight = BOX_VM_ARG1(vmp, BoxReal);
   return _window_put_near_real(w, weight);
 }
 
 Task window_put_near_int(BoxVMX *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
-  Int int_num = BOX_VM_ARG1(vmp, Int);
+  BoxInt int_num = BOX_VM_ARG1(vmp, BoxInt);
   if (w->put.near.have.on_src)
-    return _window_put_near_real(w, (Real) int_num);
+    return _window_put_near_real(w, (BoxReal) int_num);
 
   else {
     Window *figure;
-    Point *on_src;
+    BoxPoint *on_src;
     if (!w->put.got.figure) {
       g_error("Figure has not been specified. Cannot refer to its hot points "
               "from Window.Put.Near!");
@@ -303,7 +303,7 @@ Task window_put_near_int(BoxVMX *vmp) {
     figure = (Window *) w->put.figure;
 
     on_src = pointlist_get(& figure->pointlist, int_num);
-    if (on_src == (Point *) NULL) {
+    if (on_src == (BoxPoint *) NULL) {
       g_error("The point index you gave to Window.Put.Near "
               "goes out of bounds.");
       return BOXTASK_FAILURE;
@@ -317,7 +317,7 @@ Task window_put_near_int(BoxVMX *vmp) {
 
 Task window_put_near_point(BoxVMX *vmp) {
   SUBTYPE2_OF_WINDOW(vmp, w);
-  Point *p = BOX_VM_ARG1_PTR(vmp, Point);
+  BoxPoint *p = BOX_VM_ARG1_PTR(vmp, BoxPoint);
   if (!w->put.near.have.on_src) {
     w->put.near.on_src = *p;
     w->put.near.have.on_src = 1;
@@ -341,7 +341,7 @@ Task window_put_near_string(BoxVMX *vm) {
   const char *name = (char *) s->ptr;
   if (!w->put.near.have.on_src) {
     Window *figure;
-    Point *on_src;
+    BoxPoint *on_src;
     if (!w->put.got.figure) {
       g_error("Figure has not been specified. Cannot refer to its hot points "
               "from Window.Put.Near!");
