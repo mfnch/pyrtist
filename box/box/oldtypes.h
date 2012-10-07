@@ -79,8 +79,6 @@ typedef BoxSubtype Subtype;
 
 typedef BoxName BoxData;
 
-#    define Task BoxTask
-
 #    define SUInt BoxUInt_Fmt
 #    define SChar BoxChar_Fmt
 #    define SInt BoxInt_Fmt
@@ -113,7 +111,8 @@ typedef BoxName BoxData;
  */
 
 /** When we do not tolerate a failure then we use the ASSERT_TASK macro. */
-#    define ASSERT_TASK(x) do{Task t = (x); assert(t == BOXTASK_OK);} while(0)
+#    define ASSERT_TASK(x) \
+  do {BoxTask t = (x); assert(t == BOXTASK_OK);} while(0)
 
 #    define Box_Fatal_Error_If(cond) \
        do {if (cond) Box_Fatal_Error(__FILE__, __LINE__);} while (0)

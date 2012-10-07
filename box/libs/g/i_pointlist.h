@@ -33,7 +33,7 @@ typedef struct {
 
 typedef IPointList *IPointListPtr;
 
-Task ipl_create(IPointListPtr *ipl_ptr);
+BoxTask ipl_create(IPointListPtr *ipl_ptr);
 
 #define IPL_POINTLIST(ipl) (& (ipl)->pl)
 

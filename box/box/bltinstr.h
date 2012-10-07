@@ -34,7 +34,7 @@
 
 void Bltin_Str_Register_Procs(BoxCmp *c);
 
-Task Bltin_Str_Init(void);
+BoxTask Bltin_Str_Init(void);
 
 void Bltin_Str_Destroy(void);
 

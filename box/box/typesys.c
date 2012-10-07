@@ -386,7 +386,7 @@ static BoxTypeId BoxTS_New_Intrinsic(BoxTS *ts, size_t size, size_t alignment) {
   return new_type;
 }
 
-static Task My_Name_Set(TS *ts, BoxTypeId t, const char *name) {
+static BoxTask My_Name_Set(TS *ts, BoxTypeId t, const char *name) {
   TSDesc *td = Type_Ptr(ts, t);
   if (td->name != (char *) NULL) {
     MSG_ERROR("My_Name_Set: trying to set the name '%s' for type %I: "
@@ -659,7 +659,8 @@ int TS_Subtype_Is_Registered(TS *ts, BoxTypeId st) {
 }
 
 /* Register a previously created (and still unregistered) subtype. */
-Task TS_Subtype_Register(TS *ts, BoxTypeId subtype, BoxTypeId subtype_type) {
+BoxTask
+TS_Subtype_Register(TS *ts, BoxTypeId subtype, BoxTypeId subtype_type) {
   TSDesc *s_td = Type_Ptr(ts, subtype);
   BoxTypeId parent, found_subtype;
   BoxName full_name;

@@ -32,9 +32,9 @@
 
 #  include <box/types.h>
 
-Task Str_Eq(char *a, char *b);
-Task Str_Eq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2);
-Task Str_CaseEq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2);
+BoxTask Str_Eq(char *a, char *b);
+BoxTask Str_Eq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2);
+BoxTask Str_CaseEq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2);
 char *Str_DupLow(char *s, BoxUInt leng);
 char *Str_Dup(const char *s, BoxUInt leng);
 char *Str_Cut(const char *s, BoxUInt maxleng, BoxInt start);
@@ -42,7 +42,7 @@ char *Str__Cut(const char *s, BoxUInt leng, BoxUInt maxleng, BoxInt start);
 unsigned char oct_digit(unsigned char c, int *status);
 unsigned char hex_digit(unsigned char c, int *status);
 
-Task Str_ToInt(char *s, BoxUInt l, BoxInt *i);
+BoxTask Str_ToInt(char *s, BoxUInt l, BoxInt *i);
 
 /** Return the int (0 to 15) corresponding to the given hex digit (a char). */
 int Box_Hex_Digit_To_Int(char digit);
@@ -50,8 +50,8 @@ int Box_Hex_Digit_To_Int(char digit);
 /** Return the hex digit (a char) corresponding to the given int value. */
 char Box_Hex_Digit_From_Int(int v);
 
-Task Str_Hex_To_Int(char *s, BoxUInt l, BoxInt *out);
-Task Str_ToReal(char *s, BoxUInt l, BoxReal *r);
+BoxTask Str_Hex_To_Int(char *s, BoxUInt l, BoxInt *out);
+BoxTask Str_ToReal(char *s, BoxUInt l, BoxReal *r);
 
 /** Reads the escaped sequence in 's' whose length is 'l' and return
  * the corresponding char value in '*c'.
@@ -72,7 +72,7 @@ char *BoxName_To_Str(BoxName *n);
 void BoxName_From_Str(BoxName *dest, char *src);
 void BoxName_Free(BoxName *n);
 BoxName *BoxName_Dup(BoxName *n);
-Task BoxName_Cat(BoxName *nm, BoxName *nm1, BoxName *nm2, int free_args);
+BoxTask BoxName_Cat(BoxName *nm, BoxName *nm1, BoxName *nm2, int free_args);
 void *BoxMem_Dup(const void *src, unsigned int length);
 
 /** Similar to BoxMem_Dup, but allocate extra space in the destination */

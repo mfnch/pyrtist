@@ -37,7 +37,7 @@ typedef struct {
   FILE *file;
 } File;
 
-static Task My_File_Create(BoxVMX *vm) {
+static BoxTask My_File_Create(BoxVMX *vm) {
   File *f = BOX_VM_THIS_PTR(vm, File);
   f->opened = 0;
   f->name = (char *) NULL;
@@ -45,7 +45,7 @@ static Task My_File_Create(BoxVMX *vm) {
   return BOXTASK_OK;
 }
 
-static Task My_File_Destroy(BoxVMX *vm) {
+static BoxTask My_File_Destroy(BoxVMX *vm) {
   File *f = BOX_VM_THIS_PTR(vm, File);
   if (f->opened) {
     fclose(f->file);
@@ -58,7 +58,7 @@ static Task My_File_Destroy(BoxVMX *vm) {
   return BOXTASK_OK;
 }
 
-static Task My_File_Close(BoxVMX *vm) {
+static BoxTask My_File_Close(BoxVMX *vm) {
   File *f = BOX_VM_THIS_PTR(vm, File);
   if (!f->opened && f->name != NULL) {
     const char *open_mode = (f->mode == NULL) ? "rt" : f->mode;
@@ -78,7 +78,7 @@ static Task My_File_Close(BoxVMX *vm) {
     return BOXTASK_OK;
 }
 
-static Task My_File_Str(BoxVMX *vm) {
+static BoxTask My_File_Str(BoxVMX *vm) {
   File *f = BOX_VM_THIS_PTR(vm, File);
   BoxStr *s = BOX_VM_ARG_PTR(vm, BoxStr);
 

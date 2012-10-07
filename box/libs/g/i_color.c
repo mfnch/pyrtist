@@ -23,7 +23,7 @@
 #include "hsv.h"
 
 /* Color@HSV */
-Task hsv_color(BoxVMX *vmp) {
+BoxTask hsv_color(BoxVMX *vmp) {
   Color c = BOX_VM_ARG1(vmp, Color);
   HSV *hsv = BOX_VM_THIS_PTR(vmp, HSV);
   Color_Trunc(& c);
@@ -32,7 +32,7 @@ Task hsv_color(BoxVMX *vmp) {
 }
 
 /* HSV@Color */
-Task color_hsv(BoxVMX *vmp) {
+BoxTask color_hsv(BoxVMX *vmp) {
   HSV hsv = BOX_VM_ARG1(vmp, HSV);
   Color *c = BOX_VM_THIS_PTR(vmp, Color);
   HSV_Trunc(& hsv);

@@ -56,7 +56,7 @@ typedef struct {
 #  ifndef _I_PUT_H
 #    define _I_PUT_H
 
-Task put_window_init(Window *w);
+BoxTask put_window_init(Window *w);
 void put_window_destroy(Window *w);
 
 #  endif

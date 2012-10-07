@@ -80,7 +80,7 @@ BoxVMSymID BoxVMSym_New(BoxVM *vm, BoxUInt sym_type, BoxUInt def_size) {
 
 /* Create a new symbol. */
 BoxVMSymID
-BoxVMSym_Create(BoxVM *vm, BoxUInt sym_type, const char *def, size_t def_size) {
+BoxVMSym_Create(BoxVM *vm, BoxUInt sym_type, const void *def, size_t def_size) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSymID sym_id;
   BoxVMSym *ss = BoxArr_Push(& st->defs, & ss);
@@ -234,7 +234,7 @@ void BoxVMSym_Ref_Report(BoxVM *vm) {
 }
 
 #if 0
-Task BoxVMSym_Resolver_Set(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymResolver r) {
+BoxTask BoxVMSym_Resolver_Set(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymResolver r) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
 
@@ -244,7 +244,7 @@ Task BoxVMSym_Resolver_Set(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymResolver r) {
 }
 #endif
 
-Task BoxVMSym_Resolve(BoxVM *vm, BoxVMSymID sym_id) {
+BoxTask BoxVMSym_Resolve(BoxVM *vm, BoxVMSymID sym_id) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
   BoxUInt next;
@@ -336,7 +336,7 @@ void BoxVMSym_Table_Print(BoxVM *vm, FILE *out, BoxVMSymID sym_id) {
   }
 }
 
-Task BoxVMSym_Check_Type(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type) {
+BoxTask BoxVMSym_Check_Type(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
   s = (BoxVMSym *) BoxArr_Item_Ptr(& st->defs, sym_id);
@@ -356,7 +356,6 @@ My_Resolve_Ref_With_CLib(BoxVMSymID sym_id, void *item, void *pass_data) {
   if (!s->defined) {
     MyCLibRefData *clrd = pass_data;
     BoxVM *vm = clrd->vm;
-    const char *sym_name = s->name.text;
     if (s->sym_type == BOXVMSYMTYPE_PROC) {
       const char *proc_name;
       if (BoxVMSym_Proc_Is_Implemented(vm, sym_id, & proc_name)) {
@@ -414,10 +413,10 @@ struct clibs_data {
   char *lib;
 };
 
-Task Iter_Over_Paths(void *string, void *pass_data) {
+BoxTask Iter_Over_Paths(void *string, void *pass_data) {
   struct clibs_data *cld = (struct clibs_data *) pass_data;
   char *lib_file;
-  Task status;
+  BoxTask status;
   cld->path = (char *) string;
   lib_file = BoxMem_Strdup(Box_Print("%s/lib%s", cld->path, cld->lib));
   status = BoxVMSym_Resolve_CLib(cld->vm, lib_file);
@@ -426,7 +425,7 @@ Task Iter_Over_Paths(void *string, void *pass_data) {
   return BOXTASK_OK;
 }
 
-Task Iter_Over_Libs(void *string, void *pass_data) {
+BoxTask Iter_Over_Libs(void *string, void *pass_data) {
   struct clibs_data *cld = (struct clibs_data *) pass_data;
   cld->lib = (char *) string;
   /* IS_SUCCESS is misleading: here we use BOXTASK_OK, just to continue
@@ -440,7 +439,7 @@ Task Iter_Over_Libs(void *string, void *pass_data) {
   return BOXTASK_OK;
 }
 
-Task BoxVMSym_Resolve_CLibs(BoxVM *vm, BoxList *lib_paths, BoxList *libs) {
+BoxTask BoxVMSym_Resolve_CLibs(BoxVM *vm, BoxList *lib_paths, BoxList *libs) {
   struct clibs_data cld;
   cld.vm = vm;
   cld.lib_paths = lib_paths;
@@ -485,8 +484,9 @@ My_Code_Generator(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type,
   return BOXTASK_OK;
 }
 
-Task BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymCodeGen code_gen,
-                       void *ref, BoxUInt ref_size) {
+BoxTask
+BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymCodeGen code_gen,
+                  void *ref, BoxUInt ref_size) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
   void *def;
@@ -531,9 +531,9 @@ Task BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymCodeGen code_gen,
 #  define CALL_TYPE 1
 
 /* This is the function which assembles the code for the function call */
-Task Assemble_Call(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type,
-                   int defined, void *def, BoxUInt def_size,
-                   void *ref, BoxUInt ref_size) {
+BoxTask Assemble_Call(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type,
+                      int defined, void *def, BoxUInt def_size,
+                      void *ref, BoxUInt ref_size) {
   BoxUInt call_num = 0;
   assert(sym_type == CALL_TYPE);
   if (defined && def != NULL) {

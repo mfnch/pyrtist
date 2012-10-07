@@ -85,8 +85,8 @@ static char *My_Show_Msg(BoxUInt level, char *original_msg) {
   }
 }
 
-Task Msg_Main_Init(BoxUInt show_level) {
-  Task t = Msg_Init(& msg_main_stack, 4, show_level);
+BoxTask Msg_Main_Init(BoxUInt show_level) {
+  BoxTask t = Msg_Init(& msg_main_stack, 4, show_level);
   Msg_Default_Filter_Set(msg_main_stack, My_Show_Msg);
   return t;
 }

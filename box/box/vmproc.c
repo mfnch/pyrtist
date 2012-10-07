@@ -201,7 +201,7 @@ BoxVM_Install_Proc_CCode(BoxVM *vm, BoxVMCallNum cn, BoxVMCCode c_proc) {
   inst_proc->type = BOXVMPROCKIND_C_CODE;
   inst_proc->name = NULL;
   inst_proc->desc = NULL;
-  inst_proc->code.c = (Task (*)(void *)) c_proc;
+  inst_proc->code.c = (BoxTask (*)(void *)) c_proc;
   return BOXBOOL_TRUE;
 }
 
@@ -322,15 +322,16 @@ void BoxVM_Proc_Get_Ptr_And_Length(BoxVM *vmp, BoxVMWord **ptr,
   if (ptr != NULL) *ptr = (BoxVMWord *) BoxArr_First_Item_Ptr(code);
 }
 
-Task BoxVM_Proc_Disassemble(BoxVM *vmp, FILE *out, BoxVMProcID proc_id) {
+BoxTask BoxVM_Proc_Disassemble(BoxVM *vmp, FILE *out, BoxVMProcID proc_id) {
   BoxVMWord *ptr;
   BoxUInt length;
   BoxVM_Proc_Get_Ptr_And_Length(vmp, & ptr, & length, proc_id);
   return BoxVM_Disassemble(vmp, out, ptr, length);
 }
 
-Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out,
-                                BoxVMCallNum call_num) {
+BoxTask
+BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out,
+                           BoxVMCallNum call_num) {
   BoxVMProcInstalled *p = My_Get_Proc_From_Num(vmp, call_num);
   char *p_name, *p_desc, *p_type;
 
@@ -352,14 +353,14 @@ Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out,
 
   if (p->type == BOXVMPROCKIND_VM_CODE) {
     fprintf(out, "\n");
-    Task t = BoxVM_Proc_Disassemble(vmp, out, p->code.proc_id);
+    BoxTask t = BoxVM_Proc_Disassemble(vmp, out, p->code.proc_id);
     fprintf(out, "----------------------------------------\n");
     return t;
   }
   return BOXTASK_OK;
 }
 
-Task BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out) {
+BoxTask BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out) {
   BoxVMProcTable *pt = & vmp->proc_table;
   BoxUInt n, proc_id;
   char *s;

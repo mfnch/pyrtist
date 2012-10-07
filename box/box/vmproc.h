@@ -284,19 +284,22 @@ void BoxVM_Proc_Get_Ptr_And_Length(BoxVM *vmp, BoxVMWord **ptr,
 /** Print as plain text the code contained inside the procedure 'proc_num'.
  * The stream out is the destination for the produced output.
  */
-Task BoxVM_Proc_Disassemble(BoxVM *vmp, FILE *out, BoxVMProcID proc_num);
+BoxTask
+BoxVM_Proc_Disassemble(BoxVM *vmp, FILE *out, BoxVMProcID proc_num);
 
 /** This function prints information and assembly source code
  * of the procedure, whose number is 'call_num'.
  * It is similar to VM_Proc_Disassemble, but gives some more details.
  * @see VM_Proc_Disassemble
  */
-Task BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out, BoxVMCallNum call_num);
+BoxTask
+BoxVM_Proc_Disassemble_One(BoxVM *vmp, FILE *out, BoxVMCallNum call_num);
 
 /** This function prints the assembly source code
  * of all the installed modules.
  */
-Task BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out);
+BoxTask
+BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out);
 
 /** Associate the given position in the source file 'sp' with the current
  * position in the procedure so that it can be later retrieved with

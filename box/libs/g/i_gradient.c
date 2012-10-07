@@ -29,7 +29,7 @@
 #include "graphic.h"
 #include "g.h"
 
-Task gradient_begin(BoxVMX *vmp) {
+BoxTask gradient_begin(BoxVMX *vmp) {
   GradientPtr *g_ptr = BOX_VM_THIS_PTR(vmp, GradientPtr);
   Gradient *g;
   g = *g_ptr = (Gradient *) malloc(sizeof(Gradient));
@@ -48,14 +48,14 @@ Task gradient_begin(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task gradient_destroy(BoxVMX *vmp) {
+BoxTask gradient_destroy(BoxVMX *vmp) {
   Gradient *g = BOX_VM_THIS(vmp, GradientPtr);
   buff_free(& g->items);
   free(g);
   return BOXTASK_OK;
 }
 
-static Task set_gradient_type(Gradient *g, ColorGradType t) {
+static BoxTask set_gradient_type(Gradient *g, ColorGradType t) {
   if (g->got.type && g->gradient.type != t) {
     g_error("Cannot change the gradient type!");
     return BOXTASK_FAILURE;
@@ -65,7 +65,7 @@ static Task set_gradient_type(Gradient *g, ColorGradType t) {
   return BOXTASK_OK;
 }
 
-Task gradient_string(BoxVMX *vm) {
+BoxTask gradient_string(BoxVMX *vm) {
   Gradient *g = BOX_VM_THIS(vm, GradientPtr);
   BoxStr *box_string = BOX_VM_ARG_PTR(vm, BoxStr);
   const char *ext_str = (char *) box_string->ptr;
@@ -87,7 +87,7 @@ Task gradient_string(BoxVMX *vm) {
   return BOXTASK_OK;
 }
 
-Task gradient_line_point(BoxVMX *vmp) {
+BoxTask gradient_line_point(BoxVMX *vmp) {
   Gradient *g = BOX_VM_SUB_PARENT(vmp, GradientPtr);
   BoxPoint *p = BOX_VM_ARG1_PTR(vmp, BoxPoint);
   set_gradient_type(g, COLOR_GRAD_TYPE_LINEAR);
@@ -108,7 +108,7 @@ Task gradient_line_point(BoxVMX *vmp) {
   }
 }
 
-Task gradient_circle_point(BoxVMX *vmp) {
+BoxTask gradient_circle_point(BoxVMX *vmp) {
   Gradient *g = BOX_VM_SUB_PARENT(vmp, GradientPtr);
   BoxPoint *p = BOX_VM_ARG1_PTR(vmp, BoxPoint);
   set_gradient_type(g, COLOR_GRAD_TYPE_RADIAL);
@@ -133,7 +133,7 @@ Task gradient_circle_point(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task gradient_circle_real(BoxVMX *vmp) {
+BoxTask gradient_circle_real(BoxVMX *vmp) {
   Gradient *g = BOX_VM_SUB_PARENT(vmp, GradientPtr);
   BoxReal r = fabs(BOX_VM_ARG1(vmp, BoxReal));
 
@@ -159,7 +159,7 @@ Task gradient_circle_real(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task gradient_circle_pause(BoxVMX *vmp) {
+BoxTask gradient_circle_pause(BoxVMX *vmp) {
   Gradient *g = BOX_VM_SUB_PARENT(vmp, GradientPtr);
   if (!(g->got.point1 && g->got.radius1)) {
     g_error("Gradient.Circle[] should get the center and radius "
@@ -170,7 +170,7 @@ Task gradient_circle_pause(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task gradient_color(BoxVMX *vmp) {
+BoxTask gradient_color(BoxVMX *vmp) {
   Gradient *g = BOX_VM_THIS(vmp, GradientPtr);
   Color *c = BOX_VM_ARG1_PTR(vmp, Color);
   g->this_item.color = *c;
@@ -180,7 +180,7 @@ Task gradient_color(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task gradient_real(BoxVMX *vmp) {
+BoxTask gradient_real(BoxVMX *vmp) {
   Gradient *g = BOX_VM_THIS(vmp, GradientPtr);
   BoxReal r = BOX_VM_ARG1(vmp, BoxReal);
   if (g->got.pos) {
@@ -198,7 +198,7 @@ Task gradient_real(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task gradient_end(BoxVMX *vmp) {
+BoxTask gradient_end(BoxVMX *vmp) {
   Gradient *g = BOX_VM_THIS(vmp, GradientPtr);
   ColorGradItem *cgi;
   BoxInt n = buff_numitems(& g->items);
@@ -249,7 +249,7 @@ Task gradient_end(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task print_gradient(BoxVMX *vmp) {
+BoxTask print_gradient(BoxVMX *vmp) {
   Gradient *g = BOX_VM_ARG1(vmp, GradientPtr);
   ColorGradItem *cgi = g->gradient.items;
   BoxInt n = g->gradient.num_items, i;
@@ -290,7 +290,7 @@ Task print_gradient(BoxVMX *vmp) {
   return BOXTASK_OK;
 }
 
-Task x_gradient(BoxVMX *vmp) {
+BoxTask x_gradient(BoxVMX *vmp) {
   Window *w = BOX_VM_SUB_PARENT(vmp, WindowPtr);
   Gradient *g = BOX_VM_ARG1(vmp, GradientPtr);
   BoxGWin_Set_Gradient(w->window, & g->gradient);

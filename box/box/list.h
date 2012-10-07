@@ -30,7 +30,7 @@
 
 #  include <box/types.h>
 
-typedef Task (*BoxListIterator)(void *item, void *pass_data);
+typedef BoxTask (*BoxListIterator)(void *item, void *pass_data);
 typedef void (*BoxListDestruct)(void *item);
 
 typedef struct __BoxListItemHead {

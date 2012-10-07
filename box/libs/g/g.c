@@ -34,7 +34,7 @@ void g_warning(const char *msg) {
 }
 
 #if 0
-Task g_optcolor_set(OptColor *oc, Color *c) {
+BoxTask g_optcolor_set(OptColor *oc, Color *c) {
   if (c->r < -0.5) {
     if (oc->alternative == (OptColor *) NULL) {
       g_error("Cannot unset the color.");
@@ -50,7 +50,7 @@ Task g_optcolor_set(OptColor *oc, Color *c) {
   }
 }
 
-Task g_optcolor_set_rgb(OptColor *oc, BoxReal r, BoxReal g, BoxReal b) {
+BoxTask g_optcolor_set_rgb(OptColor *oc, BoxReal r, BoxReal g, BoxReal b) {
   Color c;
   c.r = r; c.g = g; c.b = b;
   return g_optcolor_set(oc, & c);

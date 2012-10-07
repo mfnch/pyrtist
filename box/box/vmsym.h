@@ -142,7 +142,7 @@ BoxVMSym_New(BoxVM *vmp, BoxUInt sym_type, BoxUInt def_size);
  */
 BOXEXPORT BoxVMSymID
 BoxVMSym_Create(BoxVM *vm, BoxUInt sym_type,
-                const char *def, size_t def_size);
+                const void *def, size_t def_size);
 
 /** Associate a name to the symbol sym_id.
  */

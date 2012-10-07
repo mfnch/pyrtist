@@ -311,7 +311,8 @@ BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op) {
 }
 
 /* Sets the number of global registers and variables for each type. */
-Task BoxVM_Alloc_Global_Regs(BoxVM *vm, BoxInt num_var[], BoxInt num_reg[]) {
+BoxTask
+BoxVM_Alloc_Global_Regs(BoxVM *vm, BoxInt num_var[], BoxInt num_reg[]) {
   int i;
   BoxPtr *reg_obj;
 

@@ -115,8 +115,9 @@ void BoxArray_Access(BoxArray *a, BoxPtr *item, size_t addr) {
   BoxPtr_Add_To_Ptr(item, addr);
 }
 
-Task BoxArray_Calc_Address(BoxArray *a, size_t *addr,
-                           BoxInt dim, BoxInt index) {
+BoxTask
+BoxArray_Calc_Address(BoxArray *a, size_t *addr,
+                      BoxInt dim, BoxInt index) {
   size_t new_addr;
   assert(!BoxPtr_Is_Null(& a->data) && a->sizes != NULL);
   assert(dim >= 0 && dim < a->num_dim - 1);

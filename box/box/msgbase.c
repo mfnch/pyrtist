@@ -37,7 +37,7 @@
 #include "print.h"
 
 /** Initialization of the message module */
-Task Msg_Init(MsgStack **ms_ptr, BoxUInt num_levels, BoxUInt show_level) {
+BoxTask Msg_Init(MsgStack **ms_ptr, BoxUInt num_levels, BoxUInt show_level) {
   MsgStack *ms;
   BoxUInt i;
   *ms_ptr = ms = (MsgStack *) malloc(sizeof(MsgStack));

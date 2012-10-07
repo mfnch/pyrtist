@@ -57,7 +57,7 @@ typedef struct {
        copy_objs: 1;    /**< Should we copy the key (using malloc)? */
   } settings;           /**< Hash table settings */
 
-  Task (*destroy)(BoxHTItem *);
+  BoxTask (*destroy)(BoxHTItem *);
                         /**< Used to finalize elements before destruction */
   BoxHTFunc
        hash;            /**< function to get the hash from the key */
@@ -68,7 +68,7 @@ typedef struct {
 } BoxHT;
 
 typedef int (*BoxHTIterator)(BoxHTItem *item, void *pass_data);
-typedef Task (*BoxHTIterator2)(BoxHTItem *item, void *pass_data);
+typedef BoxTask (*BoxHTIterator2)(BoxHTItem *item, void *pass_data);
 
 BOXEXPORT unsigned int BoxHT_Default_Hash(const void *key, size_t key_size);
 BOXEXPORT int BoxHT_Default_Cmp(const void *key1, const void *key2,
@@ -105,7 +105,7 @@ BOXEXPORT void BoxHT_Finish(BoxHT *ht);
 BOXEXPORT void BoxHT_Destroy(BoxHT *ht);
 
 /** Gives a function used to destroy objects when 'BoxHT_Destroy' is called */
-BOXEXPORT void BoxHT_Destructor(BoxHT *ht, Task (*destroy)(BoxHTItem *));
+BOXEXPORT void BoxHT_Destructor(BoxHT *ht, BoxTask (*destroy)(BoxHTItem *));
 
 /** Most general function to add a new element to the hashtable.
  * key and object will be duplicated or not, depending on the settings

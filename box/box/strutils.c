@@ -35,7 +35,7 @@
  *  tra maiuscole e minuscole e restituisce Succesfull se le stringhe
  *  sono uguali, BOXTASK_FAILURE se sono differenti
  */
-Task Str_Eq(char *a, char *b) {
+BoxTask Str_Eq(char *a, char *b) {
   while (*a != '\0') {
     if ( tolower(*(a++)) != tolower(*(b++)) )
       return BOXTASK_FAILURE;
@@ -52,7 +52,7 @@ Task Str_Eq(char *a, char *b) {
  *  a meno di differenze maiuscolo/minuscolo. Se le due stringhe coincidono
  *  restituisce BOXTASK_OK, altrimenti restituisce BOXTASK_FAILURE.
  */
-Task Str_CaseEq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2) {
+BoxTask Str_CaseEq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2) {
   if (l1 != l2) return BOXTASK_FAILURE;
 
   for (; l1 > 0; l1--)
@@ -65,7 +65,7 @@ Task Str_CaseEq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2) {
  *  coincide con la seconda (s2 di lunghezza l2).
  * NOTA: Distingue maiuscole da minuscole.
  */
-Task Str_Eq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2) {
+BoxTask Str_Eq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2) {
   if (l1 != l2) return BOXTASK_FAILURE;
   for (; l1 > 0; l1--)
     if ( *(s1++) != *(s2++) ) return BOXTASK_FAILURE;
@@ -178,7 +178,8 @@ unsigned char hex_digit(unsigned char c, int *status) {
  *  (whose value is suitably translated into one single byte).
  * NOTE: This function is used by Str_ToChar and by Str_ToString.
  */
-static Task My_Reduce_Esc_Char(const char *s, size_t l, size_t *f, char *c) {
+static BoxTask
+My_Reduce_Esc_Char(const char *s, size_t l, size_t *f, char *c) {
   BoxName nm = {l, (char *) s};
 
   if (l < 1)
@@ -297,7 +298,7 @@ err_overflow:
 /* DESCRIPTION: This function scans the string s (whose length is l)
  *  and converts it into a Char.
  */
-Task Box_Reduce_Esc_Char(const char *s, size_t l, char *c) {
+BoxTask Box_Reduce_Esc_Char(const char *s, size_t l, char *c) {
   size_t f;
 
   if (My_Reduce_Esc_Char(s, l, & f, c) == BOXTASK_FAILURE)
@@ -341,7 +342,7 @@ char *Box_Reduce_Esc_String(const char *s, size_t l, size_t *new_length) {
  *  s e' il puntatore alla stringa, l la lunghezza. Il numero convertito verra'
  *  memorizzato in *i.
  */
-Task Str_ToInt(char *s, BoxUInt l, BoxInt *i) {
+BoxTask Str_ToInt(char *s, BoxUInt l, BoxInt *i) {
   char sc[sizeof(BoxInt)*5 + 1], *endptr;
 
   if (l >= sizeof(BoxInt)*5 + 1) {
@@ -418,7 +419,7 @@ char Box_Hex_Digit_From_Int(int v) {
   }
 }
 
-Task Str_Hex_To_Int(char *s, BoxUInt l, BoxInt *out) {
+BoxTask Str_Hex_To_Int(char *s, BoxUInt l, BoxInt *out) {
   char *c = s;
   BoxUInt i, n = 0;
 
@@ -443,7 +444,7 @@ Task Str_Hex_To_Int(char *s, BoxUInt l, BoxInt *out) {
  *  s e' il puntatore alla stringa, l la lunghezza. Il numero convertito verra'
  *  memorizzato in *r.
  */
-Task Str_ToReal(char *s, BoxUInt l, BoxReal *r) {
+BoxTask Str_ToReal(char *s, BoxUInt l, BoxReal *r) {
   if ( l < 64 ) {
     char sc[64];
 
@@ -538,7 +539,7 @@ BoxName *BoxName_Dup(BoxName *n) {
   return & rs;
 }
 
-Task BoxName_Cat(BoxName *nm, BoxName *nm1, BoxName *nm2, int free_args) {
+BoxTask BoxName_Cat(BoxName *nm, BoxName *nm1, BoxName *nm2, int free_args) {
   register int l1 = nm1->length, l2 = nm2->length, l;
   register char *dest;
 

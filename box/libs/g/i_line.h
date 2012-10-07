@@ -43,7 +43,7 @@ typedef struct {
 
 #  ifndef _I_LINE_H
 #    define _I_LINE_H
-Task line_window_init(Window *w);
+BoxTask line_window_init(Window *w);
 void line_window_destroy(Window *w);
 #  endif
 

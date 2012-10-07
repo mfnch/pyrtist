@@ -37,7 +37,7 @@
 extern MsgStack *msg_main_stack;
 
 /** Initialize the main message handler */
-Task Msg_Main_Init(BoxUInt show_level);
+BoxTask Msg_Main_Init(BoxUInt show_level);
 
 #  define MSG_LEVEL_ADVICE 1
 #  define MSG_LEVEL_WARNING 2

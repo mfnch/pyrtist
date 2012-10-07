@@ -80,7 +80,7 @@ typedef struct {
 } MsgStack;
 
 /** Initialization of the message module */
-Task Msg_Init(MsgStack **ms_ptr, BoxUInt num_levels, BoxUInt show_level);
+BoxTask Msg_Init(MsgStack **ms_ptr, BoxUInt num_levels, BoxUInt show_level);
 
 /** Finalization of the message module */
 void Msg_Destroy(MsgStack *ms);
