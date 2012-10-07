@@ -79,7 +79,9 @@ void *BoxMem_Safe_Alloc(size_t size) {
   void *ptr = malloc(size);
 #endif
 
-  Box_Fatal_Error_If(ptr == NULL);
+  if (!ptr)
+    BOX_FATAL_ERROR();
+
 #ifdef DEBUG_MEM
   printf("BoxMem_Safe_Alloc: returning %p\n", ptr);
 #endif

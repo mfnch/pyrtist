@@ -114,12 +114,6 @@ typedef BoxName BoxData;
 #    define ASSERT_TASK(x) \
   do {BoxTask t = (x); assert(t == BOXTASK_OK);} while(0)
 
-#    define Box_Fatal_Error_If(cond) \
-       do {if (cond) Box_Fatal_Error(__FILE__, __LINE__);} while (0)
-
-#    define Box_Fatal_Error_If_Not(cond) \
-       do {if (!cond) Box_Fatal_Error(__FILE__, __LINE__);} while (0)
-
 #  endif /* BOX_ABBREV */
 
 

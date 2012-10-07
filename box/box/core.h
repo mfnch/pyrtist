@@ -209,4 +209,6 @@ Box_Initialize_Type_System(void);
 BOXEXPORT void
 Box_Finalize_Type_System(void);
 
+#    define BOX_FATAL_ERROR() Box_Fatal_Error(__FILE__, __LINE__)
+
 #endif /* _BOX_CORE_H */

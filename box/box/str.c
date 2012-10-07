@@ -98,7 +98,6 @@ char *BoxStr_To_C_String(BoxStr *s) {
     else {
       size_t l = strlen(s->ptr), lp1 = l + 1;
       char *cs;
-      Box_Fatal_Error_If_Not(lp1 > l); /* buffer overflow */
       cs = BoxMem_Safe_Alloc(lp1);
       strncpy(cs, s->ptr, l);
       cs[l] = '\0';
