@@ -234,7 +234,10 @@ BoxCallable_Request_VM_Call_Num(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
       /* Register the callable with the VM. */
       if (!BoxVM_Install_Proc_Callable(vm, new_num, cb))
         break;
-      
+
+      /* Set the procedure names, to make disassembly easier to read. */
+      (void) BoxVM_Set_Proc_Names(vm, new_num, BoxCallable_Get_Uid(cb), NULL);
+
       *num = new_num;
       *cb_out = new_cb;
       return BOXBOOL_TRUE;

@@ -134,13 +134,14 @@ void My_D_CALL(BoxVMDasm *dasm, char **out) {
         return;
 
       } else {
-        char *call_name;
-        BoxVMProcInstalled *p;
-        p = (BoxVMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
-        call_name = (p->desc) ? Str_Cut(p->desc, 40, 85) : NULL;
+        char *call_name, *trunc_name;
+        BoxVMProcInstalled *p = BoxArr_Item_Ptr(& pt->installed, call_num);
+
+        call_name = (p->desc) ? p->desc : p->name;
+        trunc_name = (call_name) ? Str_Cut(call_name, 40, 85) : NULL;
         sprintf(out[0], SInt"('%.40s')",
-                call_num, (call_name) ? call_name : "?");
-        BoxMem_Free(call_name);
+                call_num, (trunc_name) ? trunc_name : "?");
+        BoxMem_Free(trunc_name);
         return;
       }
     }
