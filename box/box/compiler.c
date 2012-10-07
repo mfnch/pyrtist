@@ -1126,7 +1126,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
 
   /* Try to find the combination, if already defined. */
   comb_callable = NULL;
-  comb = BoxType_Find_Combination(t_parent, comb_type, t_child, NULL);
+  comb = BoxType_Find_Own_Combination(t_parent, comb_type, t_child, NULL);
 
   if (comb) {
     /* A combination of this kind is already defined: we need to know if

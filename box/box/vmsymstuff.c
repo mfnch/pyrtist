@@ -217,10 +217,14 @@ My_Resolve_Proc_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type,
   if (BoxCallable_Is_Implemented(proc_def->callable))
     return BOXTASK_OK;
 
-  if (BoxVM_Install_Proc_CCode(vm, proc_ref->call_num, proc_def->fn_ptr))
-    return BOXTASK_OK;
+  if (!BoxVM_Install_Proc_CCode(vm, proc_ref->call_num, proc_def->fn_ptr))
+    return BOXTASK_FAILURE;
 
-  return BOXTASK_FAILURE;
+  if (!BoxVM_Set_Proc_Names(vm, proc_ref->call_num, NULL,
+                            BoxCallable_Get_Uid(proc_def->callable)))
+    return BOXTASK_FAILURE;
+
+  return BOXTASK_OK;
 }
 
 /*

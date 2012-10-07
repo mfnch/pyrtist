@@ -333,37 +333,28 @@ BoxVMCallNum Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
   return call_num;
 }
 
-BoxVMCallNum Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb_type,
-                            BoxTypeId parent, BoxTask (*c_fn)(BoxVMX *)) {
-  BoxVMCallNum call_num;
-  BoxType *comb;
-  char *comb_name = NULL;
-
-  /* We reserve the call number and associate a symbol to it */
-  call_num = BoxVM_Allocate_Call_Num(c->vm);
-
+void Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb_type,
+                    BoxTypeId parent, BoxTask (*c_fn)(BoxVMX *)) {
   /* We tell to the compiler that some procedures are associated to call_num */
   BoxType *child_new = BoxType_From_Id(& c->ts, child),
           *parent_new = BoxType_From_Id(& c->ts, parent);
-  BoxCallable *callable = BoxCallable_Create_Undefined(parent_new, child_new);
-  callable = BoxCallable_Define_From_VM(callable, c->vm, call_num);
+  BoxCallable *callable;
+  BoxType *comb;
+  char *uid;
+
+  callable = BoxCallable_Create_Undefined(parent_new, child_new);
+  callable = BoxCallable_Define_From_CCallOld(callable, c_fn);
   comb = BoxType_Define_Combination(parent_new, comb_type, child_new, callable);
-  comb_name = BoxType_Get_Repr(comb);
+  assert(comb);
 
-  /* We finally install the code (a C function) for the procedure */
-  if (!BoxVM_Install_Proc_CCode(c->vm, call_num, c_fn))
-    MSG_FATAL("Cannot install C code in VM");
-
-  (void) BoxVM_Set_Proc_Names(c->vm, call_num, NULL, comb_name);
-  BoxMem_Free(comb_name);
-
-  /* Mark the symbol as defined */
-  return call_num;
+  uid = BoxType_Get_Repr(comb);
+  BoxCallable_Set_Uid(callable, uid);
+  BoxMem_Free(uid);
 }
 
-BoxVMCallNum Bltin_Proc_Def(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
-                            BoxTask (*c_fn)(BoxVMX *)) {
-  return Bltin_Comb_Def(c, child, BOXCOMBTYPE_AT, parent, c_fn);
+void Bltin_Proc_Def(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
+                    BoxTask (*c_fn)(BoxVMX *)) {
+  Bltin_Comb_Def(c, child, BOXCOMBTYPE_AT, parent, c_fn);
 }
 
 /* Define some core types such as Int, Real and Point (for example, define

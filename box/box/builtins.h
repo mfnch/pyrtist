@@ -73,14 +73,14 @@ BoxVMCallNum Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
  * function has returned, Box programs will be able to find the combination
  * and use it!
  */
-BoxVMCallNum Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb,
-                            BoxTypeId parent, BoxTask (*c_fn)(BoxVMX *));
+void Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb,
+                    BoxTypeId parent, BoxTask (*c_fn)(BoxVMX *));
 
 /** Similar to 'Bltin_Comb_Def' but assumes 'comb == BOXCOMBTYPE_AT'.
  * @see Bltin_Comb_Def
  */
-BoxVMCallNum Bltin_Proc_Def(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
-                            BoxTask (*c_fn)(BoxVMX *));
+void Bltin_Proc_Def(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
+                    BoxTask (*c_fn)(BoxVMX *));
 
 /** Define a new intrinsic type with the given name and size. */
 BoxTypeId Bltin_New_Type(BoxCmp *c, const char *type_name,

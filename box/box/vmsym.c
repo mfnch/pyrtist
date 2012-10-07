@@ -283,7 +283,7 @@ BoxTask BoxVMSym_Resolve(BoxVM *vm, BoxVMSymID sym_id) {
       ref = (ref_size > 0) ? BoxArr_Item_Ptr(& st->data, sr->ref_addr) : 0;
 
       BOXTASK( sr->resolver(vm, sym_id, sym_type, 1, def, def_size,
-                         ref, ref_size) );
+                            ref, ref_size) );
       sr->resolved = 1;
     }
 

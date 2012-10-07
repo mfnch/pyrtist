@@ -179,7 +179,7 @@ BoxCallable_Get_VM_Call_Num(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *cn) {
 /* Request a call number for a given callable. */
 BoxBool
 BoxCallable_Request_VM_Call_Num(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
-                               BOXOUT BoxCallable **cb_out) {
+                                BOXOUT BoxCallable **cb_out) {
   BoxVMCallNum new_num = BOXVMCALLNUM_NONE;
   BoxCallable *new_cb = NULL;
 
@@ -232,7 +232,7 @@ BoxCallable_Request_VM_Call_Num(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
         break;
 
       /* Register the callable with the VM. */
-      if (!BoxVM_Install_Proc_Callable(vm, new_num, new_cb))
+      if (!BoxVM_Install_Proc_Callable(vm, new_num, cb))
         break;
       
       *num = new_num;
@@ -365,3 +365,12 @@ BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
   return BoxException_Create();
 }
 
+#include "messages.h"
+
+BoxTask
+BoxCallable_CallOld(BoxCallable *cb, BoxVMX *vmx) {
+  if (cb->kind == BOXCALLABLEKIND_C_OLD)
+    return cb->implem.c_old(vmx);
+  MSG_FATAL("Call to new-style procedure is not supported, yet.");
+  return BOXTASK_FAILURE;
+}

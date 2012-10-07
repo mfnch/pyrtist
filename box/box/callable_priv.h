@@ -41,7 +41,7 @@ struct BoxCallable_struct {
     BoxCCall2      c_call_2; /**< BoxCCall2 implementation of the callable. */
     BoxCCall3      c_call_3; /**< BoxCCall3 implementation of the callable. */
     BoxCCallOld    c_old;    /**< BoxCCallOld implementation of the
-                                callable. */
+                                  callable. */
     struct {
       BoxVM        *vm;      /**< Virtual Machine. */
       BoxVMCallNum call_num; /**< Call number. */

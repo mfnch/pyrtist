@@ -177,8 +177,7 @@ BoxCallable_Define_From_CCall2(BOXIN BoxCallable *cb, BoxCCall2 call);
  * Define a callable object from old-style C function (BoxCCallOld).
  */
 BOXEXPORT BOXOUT BoxCallable *
-BoxCallable_Create_From_CCallOld(BoxType *t_out, BoxType *t_in,
-                                 BoxCCallOld call);
+BoxCallable_Define_From_CCallOld(BOXIN BoxCallable *cb, BoxCCallOld call);
 
 /**
  * Create a callable object from a BoxVM procedure.
@@ -235,7 +234,7 @@ BoxCallable_Get_VM_Call_Num(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *cn);
  */
 BOXEXPORT BoxBool
 BoxCallable_Request_VM_Call_Num(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
-                               BOXOUT BoxCallable **cb_out);
+                                BOXOUT BoxCallable **cb_out);
 
 /**
  *
@@ -248,5 +247,8 @@ BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent);
  */
 BOXEXPORT BoxException *
 BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child);
+
+BOXEXPORT BoxTask
+BoxCallable_CallOld(BoxCallable *cb, BoxVMX *vmx);
 
 #endif /* _BOX_CALLABLE_H */

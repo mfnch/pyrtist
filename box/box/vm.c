@@ -464,7 +464,10 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
   p = (BoxVMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
   switch (p->type) {
   case BOXVMPROCKIND_FOREIGN:
-    
+    {
+      BoxTask t = BoxCallable_CallOld(p->code.foreign, vmx);
+      return t;
+    }
   case BOXVMPROCKIND_C_CODE:
     return p->code.c(vmx);
   case BOXVMPROCKIND_VM_CODE:
