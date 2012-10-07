@@ -110,6 +110,28 @@ typedef struct BoxPtr_struct {
        *block; /**< Pointer to the allocated memory block */
 } BoxPtr;
 
+/** Reset an extended BoxPtr pointer to NULL (point to nothing) */
+#  define BoxPtr_Init(p) \
+  do {(p)->block = (p)->ptr = NULL;} while(0)
+
+#  define BoxPtr_Nullify BoxPtr_Init
+
+/** Detach a pointer so that it does not reference its source */
+#  define BoxPtr_Detach(p) \
+  do {(p)->block = NULL;} while(0)
+
+/** Whether a BoxPtr pointer is NULL */
+#  define BoxPtr_Is_Null(p) ((p)->ptr == NULL)
+
+/** Whether a BoxPtr pointer is detached (not bound to a memory block) */
+#  define BoxPtr_Is_Detached(p) ((p)->block == NULL)
+
+/** Get the target pointer associated to the given BoxPtr extended pointer. */
+#  define BoxPtr_Get_Target(p) ((p)->ptr)
+
+/** Get the block of the given BoxPtr extended pointer. */
+#  define BoxPtr_Get_Block(p) ((p)->block)
+
 /**
  * This macro expands to nothing. It is used in function prototypes to indicate
  * that the declared function steals a reference to the passed object. This
