@@ -285,6 +285,8 @@ BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymCodeGen code_gen,
 
 #  define BoxVMSym_Code_New BoxVMSym_New
 #  define BoxVMSym_Code_Def BoxVMSym_Def
-#  define BoxVMSym_Resolve_All(vmp) BoxVMSym_Resolve(vmp, 0)
+
+#  define BoxVMSym_Resolve_All(vm) \
+  BoxVMSym_Resolve((vm), 0)
 
 #endif /* _BOX_VMSYM_H */

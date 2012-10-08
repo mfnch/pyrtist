@@ -378,8 +378,7 @@ My_Resolve_Ref_With_CLib(BoxVMSymID sym_id, void *item, void *pass_data) {
           return 1;
         }
 
-        if (!BoxVMSym_Define_Proc(vm, sym_id, (BoxVMCCode) sym))
-          return 1;
+        (void) BoxVMSym_Define_Proc(vm, sym_id, (BoxVMCCode) sym);
       }
     }
   }
@@ -413,7 +412,8 @@ struct clibs_data {
   char *lib;
 };
 
-BoxTask Iter_Over_Paths(void *string, void *pass_data) {
+static BoxTask
+My_Iter_Over_Paths(void *string, void *pass_data) {
   struct clibs_data *cld = (struct clibs_data *) pass_data;
   char *lib_file;
   BoxTask status;
@@ -425,25 +425,68 @@ BoxTask Iter_Over_Paths(void *string, void *pass_data) {
   return BOXTASK_OK;
 }
 
-BoxTask Iter_Over_Libs(void *string, void *pass_data) {
+static BoxTask
+My_Iter_Over_Libs(void *string, void *pass_data) {
   struct clibs_data *cld = (struct clibs_data *) pass_data;
   cld->lib = (char *) string;
   /* IS_SUCCESS is misleading: here we use BOXTASK_OK, just to continue
    * the iteration. Therefore if we get BOXTASK_OK, it means that the library
    * has not been found
    */
-  if (BoxList_Iter(cld->lib_paths, Iter_Over_Paths, cld) == BOXTASK_OK) {
+  if (BoxList_Iter(cld->lib_paths, My_Iter_Over_Paths, cld) == BOXTASK_OK) {
     MSG_WARNING("'%s' <-- library has not been found or cannot be loaded!",
                 cld->lib);
   }
   return BOXTASK_OK;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+static int
+My_Resolve_Own_Symbol(BoxVMSymID sym_id, void *item, void *pass) {
+  BoxVM *vm = pass;
+  BoxVMSym *s = (BoxVMSym *) item;
+  if (!s->defined) {
+    if (s->sym_type == BOXVMSYMTYPE_PROC) {
+      const char *proc_name;
+      if (BoxVMSym_Proc_Is_Implemented(vm, sym_id, & proc_name))
+        (void) BoxVMSym_Define_Proc(vm, sym_id, NULL);
+
+      else {
+      }
+    }
+  }
+  return 1;
+}
+
+BoxTask My_Resolve_Own_Symbols(BoxVM *vm) {
+  BoxVMSymTable *st = & vm->sym_table;
+  (void) BoxArr_Iter(& st->defs, My_Resolve_Own_Symbol, vm);
+  return BOXTASK_OK;
+}
+
+
+
+
+
+
+
+
 BoxTask BoxVMSym_Resolve_CLibs(BoxVM *vm, BoxList *lib_paths, BoxList *libs) {
   struct clibs_data cld;
+  (void) My_Resolve_Own_Symbols(vm);
   cld.vm = vm;
   cld.lib_paths = lib_paths;
-  return BoxList_Iter(libs, Iter_Over_Libs, & cld);
+  return BoxList_Iter(libs, My_Iter_Over_Libs, & cld);
 }
 
 /****************************************************************************/

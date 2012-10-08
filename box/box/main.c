@@ -301,7 +301,7 @@ static BoxTask My_Stage_Symbol_Resolution(BoxUInt *flags) {
     return status;
 
   BoxVMSym_Ref_Check(target_vm, & all_resolved);
-  if (! all_resolved) {
+  if (!all_resolved) {
     BoxVMSym_Ref_Report(target_vm);
     MSG_ERROR("Unresolved references: program cannot be executed.");
     *flags &= ~FLAG_EXECUTE;

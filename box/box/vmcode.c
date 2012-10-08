@@ -306,7 +306,7 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p) {
 
   } else if (!p->have.installed) {
     BoxVMProcID pn = BoxVMCode_Get_ProcID(p);
-    char *alter_name = BoxVMCode_Get_Alter_Name(p),
+    char *alter_name,
          *proc_name  = (p->have.proc_name) ? p->proc_name : NULL;
     BoxVMCode_End(p); /* End the procedure, if not done explicitly */
 
@@ -323,9 +323,9 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p) {
       return BOXVMCALLNUM_NONE;
     }
 
+    alter_name = BoxVMCode_Get_Alter_Name(p);
     (void) BoxVM_Set_Proc_Names(p->cmp->vm, p->call_num,
                                 proc_name, alter_name);
-
     BoxMem_Free(alter_name);
 
     p->have.installed = 1;
@@ -830,10 +830,3 @@ void BoxVMCode_Assemble_CJump(BoxVMCode *p, BoxVMSymID jl, BoxCont *cont) {
 void BoxVMCode_Associate_Source(BoxVMCode *p, BoxSrcPos *src_pos) {
   BoxVM_Proc_Associate_Source(p->cmp->vm, BoxVMCode_Get_ProcID(p), src_pos);
 }
-
-#if 0
-BoxVMCode_Install_2(BoxVMCode *p) {
-
-
-}
-#endif

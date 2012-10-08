@@ -1470,7 +1470,8 @@ Value *Value_Expand_Subtype(Value *v) {
 
 Value *Value_Raise(Value *v) {
   if (Value_Is_Value(v)) {
-    BoxType *unraised_type = BoxType_Unraise(v->type);
+    BoxType *t = BoxType_Resolve(v->type, BOXTYPERESOLVE_IDENT, 0);
+    BoxType *unraised_type = BoxType_Unraise(t);
     if (unraised_type) {
       (void) BoxType_Unlink(v->type);
       v->type = unraised_type;
