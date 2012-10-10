@@ -18,10 +18,12 @@
  ****************************************************************************/
 
 #include <assert.h>
+#include <string.h>
 
 #include <box/mem.h>
 #include <box/obj.h>
 #include <box/core.h>
+#include <box/messages.h>
 #include <box/types_priv.h>
 
 
@@ -93,17 +95,18 @@ My_Init_Obj(BoxPtr *src, BoxType *t) {
 
     case BOXTYPECLASS_STRUCTURE:
       {
+        BoxBool success;
         BoxTypeIter ti;
         BoxType *node;
         size_t idx, failure_idx;
 
-        /* If things go wrong, the integer above will be set with the index of
+        /* If things go wrong, failure_idx will be set to the index of
          * the member at which a failure occurred. This will be used to
-         * finalized all the previous members of the structure (in order to
+         * finalize all the previous members of the structure (in order to
          * avoid ending up with a partially initialized structure).
          */
-        failure_idx = 0;
-
+        success = BOXBOOL_TRUE;
+ 
         for (BoxTypeIter_Init(& ti, t), idx = 0;
              BoxTypeIter_Get_Next(& ti, & node);
              idx++) {
@@ -115,6 +118,7 @@ My_Init_Obj(BoxPtr *src, BoxType *t) {
           BoxPtr_Add_Offset(& member_ptr, src, offset);
           if (!My_Init_Obj(& member_ptr, type))
           {
+            success = BOXBOOL_FALSE;
             failure_idx = idx;
             break;
           }
@@ -123,7 +127,7 @@ My_Init_Obj(BoxPtr *src, BoxType *t) {
         BoxTypeIter_Finish(& ti);
 
         /* No failure, exit successfully! */
-        if (!failure_idx)
+        if (success)
           return BOXBOOL_TRUE;
 
         /* Failure: finalize whatever was initialized and exit with failure. */
@@ -138,6 +142,8 @@ My_Init_Obj(BoxPtr *src, BoxType *t) {
           BoxPtr_Add_Offset(& member_ptr, src, offset);
           My_Finish_Obj(& member_ptr, type);
         }
+
+        BoxTypeIter_Finish(& ti);
       }
 
       return BOXBOOL_FALSE;
@@ -206,11 +212,9 @@ My_Finish_Obj(BoxPtr *src, BoxType *t) {
       {
         BoxTypeIter ti;
         BoxType *node;
-        size_t idx;
 
-        for (BoxTypeIter_Init(& ti, t), idx = 0;
-             BoxTypeIter_Get_Next(& ti, & node);
-             idx++) {
+        for (BoxTypeIter_Init(& ti, t);
+             BoxTypeIter_Get_Next(& ti, & node);) {
           size_t offset;
           BoxType *type;
           BoxPtr member_ptr;
@@ -249,11 +253,113 @@ My_Finish_Obj(BoxPtr *src, BoxType *t) {
   }
 }
 
+/* Generic function to copy objects. */
 static BoxBool
-My_Copy_Obj(BoxType t, void *dest, void *src) {
+My_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t) {
+  /* Check we are not copying the object over itself. */
+  if (dst->ptr == src->ptr)
+    return BOXBOOL_TRUE;
+
+  /* We do a loop to avoid nested calls when a type needs to be resolved: we
+   * rather resolve and try again.
+   */
+  while (1) {
+    switch (t->type_class) {
+    case BOXTYPECLASS_PRIMARY:
+    case BOXTYPECLASS_INTRINSIC:
+      (void) memcpy(dst->ptr, src->ptr, BoxType_Get_Size(t));
+      return BOXBOOL_TRUE;
+
+    case BOXTYPECLASS_IDENT:
+      /* TO BE IMPLEMENTED */
+      return BOXBOOL_FALSE;
+
+    case BOXTYPECLASS_RAISED:
+      t = BoxType_Resolve(t, BOXTYPERESOLVE_RAISED, 0);
+      assert(t->type_class != BOXTYPECLASS_RAISED);
+      break;
+
+    case BOXTYPECLASS_STRUCTURE:
+      {
+        BoxBool success;
+        BoxTypeIter ti;
+        BoxType *node;
+        size_t idx, failure_idx;
+
+        /* If something goes wrong, idx contains the index for which copy
+         * failed, so that we can finalise all the partially copied members.
+         */
+        success = BOXBOOL_TRUE;
+
+        for (BoxTypeIter_Init(& ti, t), idx = 0;
+             BoxTypeIter_Get_Next(& ti, & node);
+             idx++) {
+          size_t offset;
+          BoxType *memb_type;
+          BoxPtr dst_memb_ptr, src_memb_ptr;
+
+          BoxType_Get_Structure_Member(node, NULL, & offset, NULL,
+                                       & memb_type);
+          BoxPtr_Add_Offset(& dst_memb_ptr, dst, offset);
+          BoxPtr_Add_Offset(& src_memb_ptr, src, offset);
+          if (!My_Copy_Obj(& dst_memb_ptr, & src_memb_ptr, memb_type)) {
+            success = BOXBOOL_FALSE;
+            failure_idx = idx;
+            break;
+          }
+        }
+
+        BoxTypeIter_Finish(& ti);
+
+        /* No failure, exit successfully! */
+        if (success)
+          return BOXBOOL_TRUE;
+
+        /* Failure: finalize whatever was copied and exit with failure. */
+        for (BoxTypeIter_Init(& ti, t), idx = 0;
+             BoxTypeIter_Get_Next(& ti, & node) && idx < failure_idx;
+             idx++) {
+          size_t offset;
+          BoxType *memb_type;
+          BoxPtr dst_memb_ptr;
+
+          BoxType_Get_Structure_Member(node, NULL, & offset, NULL,
+                                       & memb_type);
+          BoxPtr_Add_Offset(& dst_memb_ptr, dst, offset);
+          My_Finish_Obj(& dst_memb_ptr, memb_type);
+        }
+
+        BoxTypeIter_Finish(& ti);
+
+        return BOXBOOL_FALSE;
+      }
+
+    case BOXTYPECLASS_SPECIES:
+      t = BoxType_Resolve(t, BOXTYPERESOLVE_SPECIES, 0);
+      assert(t->type_class != BOXTYPECLASS_SPECIES);
+      break;
+
+    case BOXTYPECLASS_ENUM:
+    case BOXTYPECLASS_FUNCTION:
+    case BOXTYPECLASS_POINTER:
+      return BOXBOOL_FALSE;
+      break;
+
+    case BOXTYPECLASS_ANY:
+      /* TO BE IMPLEMENTED */
+      return BOXBOOL_FALSE;
+      break;
+
+    default:
+      MSG_FATAL("Unexpected type class (%d) in My_Copy_Obj", t->type_class);
+      return BOXBOOL_FALSE;
+      break;
+    }
+  }
+ 
+  /* Should never get here... */
   return BOXBOOL_FALSE;
 }
-
 
 /* Add a reference to an object and return it. */
 BoxSPtr BoxSPtr_Link(BoxSPtr src) {
