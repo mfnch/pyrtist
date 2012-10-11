@@ -134,10 +134,18 @@ BOXEXPORT BoxType *
 BoxSPtr_Get_Type(BoxSPtr obj);
 
 /**
+ * Reference the given object.
+ * @param src Object to reference.
+ * @return @p src is returned.
+ */
+BOXEXPORT BoxPtr *
+BoxPtr_Link(BoxPtr *src);
+
+/**
  * Remove a reference to an object, destroying it, if unreferenced.
  * @param src Object to unreference.
- * @return BOXBOOL_TRUE if the object was unreferenced and destroyed, BOXBOOL_FALSE if the
- *   object was unreferenced and destroyed.
+ * @return @c BOXBOOL_TRUE if the object was unreferenced but not destroyed,
+ *   @c BOXBOOL_FALSE if the object was unreferenced and also destroyed.
  */
 BOXEXPORT BoxBool
 BoxPtr_Unlink(BoxPtr *src);

@@ -55,6 +55,13 @@ void BoxAny_Finish(BoxAny *any)
   any->type = NULL;
 }
 
+/* Copy an Any object. */
+void BoxAny_Copy(BoxAny *dst, BoxAny *src) {
+  *dst = *src;
+  (void) BoxPtr_Link(& src->ptr);
+  /* Note that the type is implicitely referenced by the object. */
+}
+
 /* Initialize a block of memory addressed by src and with type t. */
 static BoxBool
 My_Init_Obj(BoxPtr *src, BoxType *t) {
@@ -67,15 +74,16 @@ My_Init_Obj(BoxPtr *src, BoxType *t) {
     case BOXTYPECLASS_IDENT:
       {
         BoxCallable *callable;
-        BoxType *node =
-          BoxType_Find_Combination_With_Id(t, BOXCOMBTYPE_AT,
-                                           BOXTYPEID_INIT, NULL);
+        BoxType *node;
+        BoxType *rt;
         
         /* Initialise first from the type we are deriving from. */
-        t = BoxType_Resolve(t, BOXTYPERESOLVE_IDENT, 1);
-        if (!My_Init_Obj(src, t))
+        rt = BoxType_Resolve(t, BOXTYPERESOLVE_IDENT, 1);
+        if (!My_Init_Obj(src, rt))
           return BOXBOOL_FALSE;
 
+        node = BoxType_Find_Combination_With_Id(t, BOXCOMBTYPE_AT,
+                                                BOXTYPEID_INIT, NULL);
         if (node && BoxType_Get_Combination_Info(node, NULL, & callable))
         {
           /* Now do our own initialization... */
@@ -84,7 +92,7 @@ My_Init_Obj(BoxPtr *src, BoxType *t) {
             return BOXBOOL_TRUE;
 
           BoxException_Destroy(excp);
-          My_Finish_Obj(src, t);
+          My_Finish_Obj(src, rt);
           return BOXBOOL_FALSE;
         }
       }
@@ -271,7 +279,30 @@ My_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t) {
       return BOXBOOL_TRUE;
 
     case BOXTYPECLASS_IDENT:
-      /* TO BE IMPLEMENTED */
+      {
+        BoxCallable *callable;
+        BoxType *node;
+        BoxType *rt;
+
+        /* First, copy the derived type. */
+        rt = BoxType_Resolve(t, BOXTYPERESOLVE_IDENT, 1);
+        if (!My_Copy_Obj(dst, src, rt))
+          return BOXBOOL_FALSE;
+
+        node = BoxType_Find_Combination(t, BOXCOMBTYPE_COPY, t, NULL);
+        if (node && BoxType_Get_Combination_Info(node, NULL, & callable))
+        {
+          /* Now do our own initialization... */
+          BoxException *excp = BoxCallable_Call2(callable, dst, src);
+          if (!excp)
+            return BOXBOOL_TRUE;
+
+          BoxException_Destroy(excp);
+          My_Finish_Obj(dst, rt);
+          return BOXBOOL_FALSE;
+        }
+      }
+
       return BOXBOOL_FALSE;
 
     case BOXTYPECLASS_RAISED:
@@ -343,17 +374,15 @@ My_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t) {
     case BOXTYPECLASS_FUNCTION:
     case BOXTYPECLASS_POINTER:
       return BOXBOOL_FALSE;
-      break;
 
     case BOXTYPECLASS_ANY:
-      /* TO BE IMPLEMENTED */
-      return BOXBOOL_FALSE;
-      break;
+      BoxAny_Copy((BoxAny *) BoxPtr_Get_Target(dst),
+                  (BoxAny *) BoxPtr_Get_Target(src));
+      return BOXBOOL_TRUE;
 
     default:
       MSG_FATAL("Unexpected type class (%d) in My_Copy_Obj", t->type_class);
       return BOXBOOL_FALSE;
-      break;
     }
   }
  
@@ -394,6 +423,14 @@ void BoxSPtr_Unlink_End(BoxSPtr src) {
   assert(!ret);
 } 
 
+/* Reference the given object. */
+BoxPtr *BoxPtr_Link(BoxPtr *src) {
+  BoxObjHeader *head = BoxPtr_Get_Block(src);
+  assert(head->num_refs >= 1);
+  head->num_refs++;
+  return src;
+}
+
 /* Remove a reference to an object, destroying it, if unreferenced. */
 BoxBool BoxPtr_Unlink(BoxPtr *src) {
   BoxObjHeader *head = BoxPtr_Get_Block(src);
@@ -410,11 +447,11 @@ BoxBool BoxPtr_Unlink(BoxPtr *src) {
 
     /* Destroy the containing object. */
     src_container.block = src->block;
-    src_container.ptr = MY_GET_OBJ_FROM_HEADER(src);
+    src_container.ptr = MY_GET_OBJ_FROM_HEADER(head);
     My_Finish_Obj(& src_container, head->type);
 
     if (head->type)
-      (void) BoxSPtr_Unlink(head->type);
+      (void) BoxType_Unlink(head->type);
     BoxMem_Free(head);
     return BOXBOOL_FALSE;
   }
