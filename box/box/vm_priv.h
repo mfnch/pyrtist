@@ -193,6 +193,7 @@ struct BoxVMX_struct {
 /** @brief The full status of the virtual machine of Box. */
 struct BoxVM_struct {
   BoxVMX  *vmcur;          /**< The current execution frame */
+  BoxArr  types;           /**< Type bound to this VM. */
 
   struct {
     unsigned int

@@ -188,6 +188,16 @@ void VM__Imm(BoxVMX *vmx) {vmx->arg1 = (void *) vmx->i_pos;}
  * Functions for (de)inizialization                                          *
  *****************************************************************************/
 
+/**
+ * @brief Finalize an installed type.
+ *
+ * This function is called when destroying the table of installed types.
+ * @param type The type to destroy.
+ */
+static void My_Finalize_Installed_Type(void *type) {
+  (void) BoxType_Unlink(*((BoxType **) type));
+}
+
 BoxTask BoxVM_Init(BoxVM *vm) {
   int i;
 
@@ -214,6 +224,9 @@ BoxTask BoxVM_Init(BoxVM *vm) {
     gregs->min = 1;
     gregs->max = -1;
   }
+
+  BoxArr_Init(& vm->types, sizeof(BoxType *), 128);
+  BoxArr_Set_Finalizer(& vm->types, My_Finalize_Installed_Type);
 
   BoxArr_Init(& vm->stack, sizeof(BoxPtr), 10);
   BoxArr_Init(& vm->data_segment, sizeof(char), CMP_TYPICAL_DATA_SIZE);
@@ -259,6 +272,8 @@ void BoxVM_Finish(BoxVM *vm) {
   if (vm->has.globals)
     My_Free_Globals(vm);
 
+  BoxArr_Finish(& vm->types);
+
   if (BoxArr_Num_Items(& vm->stack) != 0)
     MSG_WARNING("Run finished with non empty stack.");
   BoxArr_Finish(& vm->stack);
@@ -299,6 +314,19 @@ void BoxVM_Destroy(BoxVM *vm) {
     return;
   BoxVM_Finish(vm);
   BoxMem_Free(vm);
+}
+
+/* Install a new type and return its type identifier for this VM. */
+BoxTypeId BoxVM_Install_Type(BoxVM *vm, BoxType *t) {
+  (void) BoxType_Link(t);
+  (void) BoxArr_Push(& vm->types, & t);
+  return BoxArr_Get_Num_Items(& vm->types);
+}
+
+/* Retrieve the type corresponding to the given type identifier. */
+BoxType *
+BoxVM_Get_Installed_Type(BoxVM *vm, BoxTypeId id) {
+  return *((BoxType **) BoxArr_Get_Item_Ptr(vm, id));
 }
 
 BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op) {

@@ -205,12 +205,35 @@ typedef struct BoxVMInstrDesc_struct BoxVMInstrDesc;
  *
  * You'll need to call BoxVM_Destroy() to destroy the object.
  */
-BOXEXPORT BoxVM *BoxVM_Create(void);
+BOXEXPORT BoxVM *
+BoxVM_Create(void);
 
 /**
  * @brief Destroy a #BoxVM object created with BoxVM_Create().
  */
-BOXEXPORT void BoxVM_Destroy(BoxVM *vm);
+BOXEXPORT void
+BoxVM_Destroy(BoxVM *vm);
+
+/**
+ * @brief Install a new type and return its type identifier for this VM.
+ *
+ * @param vm The virtual machine where the type is to be installed.
+ * @param t The type to install.
+ * @return The type identifier. This is an integer which identifies the type
+ *   in this VM instance.
+ */
+BOXEXPORT BoxTypeId
+BoxVM_Install_Type(BoxVM *vm, BoxType *t);
+
+/**
+ * @brief Retrieve the type corresponding to the given type identifier.
+ *
+ * @param vm The virtual machine the identifier @p id refers to.
+ * @param id The type identifier.
+ * @return The installed type corresponding to the identifier @p id.
+ */
+BOXEXPORT BoxType *
+BoxVM_Get_Installed_Type(BoxVM *vm, BoxTypeId id);
 
 /**
  * @brief Reference a #BoxVM object, using BoxSPtr_Link().
