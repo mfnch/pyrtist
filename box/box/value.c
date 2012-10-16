@@ -447,6 +447,21 @@ void Value_Emit_Allocate(Value *v) {
   case VALUEKIND_TEMP:
   case VALUEKIND_TARGET:
     if (v->value.cont.type == BOXCONTTYPE_OBJ) {
+#if BOX_USE_NEW_OBJ != 0
+      BoxCmp *c = v->proc->cmp;
+      BoxVMCode *proc = c->cur_proc;
+      BoxTypeId type_id = BoxVM_Install_Type(c->vm, v->type);
+
+      /* The 'create' instruction automatically invokes the creator
+       * when necessary
+       */
+      Value v_type_id;
+      Value_Init(& v_type_id, proc);
+      Value_Setup_As_Imm_Int(& v_type_id, (BoxInt) type_id);
+      BoxVMCode_Assemble(proc, BOXGOP_CREATE,
+                         2, & v->value.cont, & v_type_id.value.cont);
+
+#else
       BoxCmp *c = v->proc->cmp;
       BoxVMCode *proc = c->cur_proc;
       BoxVMAllocID alloc_id;
@@ -462,7 +477,7 @@ void Value_Emit_Allocate(Value *v) {
         Value_Init(& v_size, proc);
         Value_Setup_As_Imm_Int(& v_size, BoxType_Get_Size(v->type));
         BoxVMCode_Assemble(proc, BOXGOP_MALLOC,
-                         2, & v->value.cont, & v_size.value.cont);
+                           2, & v->value.cont, & v_size.value.cont);
 
       } else {
         /* The 'create' instruction automatically invokes the creator
@@ -472,8 +487,9 @@ void Value_Emit_Allocate(Value *v) {
         Value_Init(& v_alloc_id, proc);
         Value_Setup_As_Imm_Int(& v_alloc_id, alloc_id);
         BoxVMCode_Assemble(proc, BOXGOP_CREATE,
-                         2, & v->value.cont, & v_alloc_id.value.cont);
+                           2, & v->value.cont, & v_alloc_id.value.cont);
       }
+#endif
     }
     return;
 
@@ -1064,6 +1080,22 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
       return BOXTASK_OK;
 
     } else {
+#if BOX_USE_NEW_OBJ != 0
+      /* We leave the copy operation to the Box memory management system */
+      BoxTypeId type_id = BoxVM_Install_Type(c->vm, src->type);
+
+      Value v_type_id;
+      Value_Init(& v_type_id, c->cur_proc);
+      Value_Setup_As_Imm_Int(& v_type_id, type_id);
+      BoxVMCode_Assemble(c->cur_proc, BOXGOP_RELOC,
+                         3, & dest->value.cont, & src->value.cont,
+                         & v_type_id.value.cont);
+      Value_Unlink(& v_type_id);
+      Value_Unlink(src);
+      Value_Unlink(dest);
+      return BOXTASK_OK;
+
+#else
       /* Get the alloc ID for the source value */
       BoxVMAllocID id = TS_Get_AllocID(c, src->type);
 
@@ -1073,8 +1105,8 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
         Value_Init(& v_id, c->cur_proc);
         Value_Setup_As_Imm_Int(& v_id, id);
         BoxVMCode_Assemble(c->cur_proc, BOXGOP_RELOC,
-                         3, & dest->value.cont, & src->value.cont,
-                         & v_id.value.cont);
+                           3, & dest->value.cont, & src->value.cont,
+                           & v_id.value.cont);
         Value_Unlink(& v_id);
         Value_Unlink(src);
         Value_Unlink(dest);
@@ -1094,6 +1126,8 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
         Value_Unlink(dest);
         return BOXTASK_OK;
       }
+#endif
+
     }
 
   } else if (dest->value.cont.type == BOXCONTTYPE_PTR) {

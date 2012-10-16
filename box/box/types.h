@@ -31,6 +31,8 @@
 
 #  include <stdlib.h>
 
+#  define BOX_USE_NEW_OBJ 1
+
 #  include <box/oldtypes.h>
 
 /**

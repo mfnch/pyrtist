@@ -40,6 +40,7 @@
 #include "strutils.h"
 #include "vmdasm.h"
 
+
 static void My_Exec_Ret(BoxVMX *vmx) {vmx->flags.exit = 1;}
 
 static void My_Exec_Call_I(BoxVMX *vmx) {
@@ -353,20 +354,34 @@ static void My_Exec_LOr_II(BoxVMX *vmx) {
 static void My_Exec_Create_I(BoxVMX *vmx) {
   BoxInt id = *((BoxInt *) vmx->arg1);
   BoxPtr *obj = (BoxPtr *) vmx->local[TYPE_OBJ].ptr;
+#if BOX_USE_NEW_OBJ != 0
+  if (!BoxPtr_Create_Obj(obj, BoxVM_Get_Installed_Type(vmx->vm, id)))
+    MSG_FATAL("My_Exec_Create_I: cannot create object with alloc-ID=%I.", id);
+#else
   BoxVM_Obj_Create(vmx->vm, obj, id);
   if (!BoxPtr_Is_Null(obj))
     return;
-  MSG_FATAL("VM_Exec_Create_I: cannot create object with alloc-ID=%I.", id);
+  MSG_FATAL("My_Exec_Create_I: cannot create object with alloc-ID=%I.", id);
+#endif
 }
 
 static void My_Exec_Reloc_OO(BoxVMX *vmx) {
   BoxPtr *dest = (BoxPtr *) vmx->arg1,
          *src = (BoxPtr *) vmx->arg2;
   BoxInt id = *((BoxInt *) vmx->local[TYPE_INT].ptr);
+#if BOX_USE_NEW_OBJ != 0
+  BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, (BoxTypeId) id);
+  if (!BoxPtr_Copy_Obj(dest, src, t))
+    MSG_FATAL("My_Exec_Reloc_OO: failure copying object with alloc-ID=%I.",
+              id);
+
+#else
   BoxTask t = BoxVM_Obj_Relocate(vmx->vm, dest, src, id);
   //BoxPtr_Detach(src);
   if (t == BOXTASK_OK)
     return;
+#endif
+
   vmx->flags.error = 1;
   vmx->flags.exit = 1;
 }

@@ -95,6 +95,8 @@ My_Init_Obj(BoxPtr *src, BoxType *t) {
           My_Finish_Obj(src, rt);
           return BOXBOOL_FALSE;
         }
+
+        return BOXBOOL_TRUE;
       }
 
     case BOXTYPECLASS_RAISED:
@@ -303,7 +305,7 @@ My_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t) {
         }
       }
 
-      return BOXBOOL_FALSE;
+      return BOXBOOL_TRUE;
 
     case BOXTYPECLASS_RAISED:
       t = BoxType_Resolve(t, BOXTYPERESOLVE_RAISED, 0);
@@ -519,4 +521,18 @@ BoxSPtr BoxSPtr_Create(BoxType *t) {
   }
 
   return NULL;
+}
+
+/* Create a new object of the given type and return a pointer to it. */
+BoxBool
+BoxPtr_Create_Obj(BOXOUT BoxPtr *ptr, BoxType *t) {
+  BoxSPtr obj = BoxSPtr_Create(t);
+  BoxPtr_Init_From_SPtr(ptr, obj);
+  return (t != NULL);
+}
+
+/* Copy an object of the given type. */
+BoxBool
+BoxPtr_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t) {
+  return My_Copy_Obj(dst, src, t);
 }

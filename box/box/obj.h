@@ -65,19 +65,24 @@ typedef struct BoxObjHeader_struct {
 typedef void *BoxSPtr;
 
 /**
- * Allocate space for an object of the given type.
+ * @brief Allocate space for an object of the given type.
+ *
  * This is an internal function which is not meant to be used externally.
  */
-BoxSPtr BoxSPtr_Alloc(BoxType *t);
+BOXEXPORT BoxSPtr
+BoxSPtr_Alloc(BoxType *t);
 
 /**
- * Raw allocation function.
+ * @brief Raw allocation function.
+ *
  * This is an internal function which is not meant to be used externally.
  */
-BoxSPtr BoxSPtr_Raw_Alloc(BoxType *t, size_t obj_size);
+BOXEXPORT BoxSPtr
+BoxSPtr_Raw_Alloc(BoxType *t, size_t obj_size);
 
 /**
- * Add a reference to an object and return it.
+ * @brief Add a reference to an object and return it.
+ *
  * @param src The object to reference.
  * @return Return its argument, src.
  */
@@ -109,14 +114,16 @@ BOXEXPORT BoxBool
 BoxSPtr_Unlink_Begin(BoxSPtr src);
 
 /**
- * Function to be used in conjunction with BoxSPtr_Unlink_Begin.
+ * @brief Function to be used in conjunction with BoxSPtr_Unlink_Begin.
+ *
  * @see BoxSPtr_Unlink_Begin
  */
 BOXEXPORT void
 BoxSPtr_Unlink_End(BoxSPtr src);
 
 /**
- * Remove a reference to an object, destroying it, if unreferenced.
+ * @brief Remove a reference to an object, destroying it, if unreferenced.
+ *
  * @param src Object to unreference.
  * @return src if the object was unreferenced but not destroyed, NULL if the
  *   object was unreferenced and destroyed.
@@ -134,7 +141,8 @@ BOXEXPORT BoxType *
 BoxSPtr_Get_Type(BoxSPtr obj);
 
 /**
- * Reference the given object.
+ * @brief Reference the given object.
+ *
  * @param src Object to reference.
  * @return @p src is returned.
  */
@@ -142,12 +150,34 @@ BOXEXPORT BoxPtr *
 BoxPtr_Link(BoxPtr *src);
 
 /**
- * Remove a reference to an object, destroying it, if unreferenced.
+ * @brief Remove a reference to an object, destroying it, if unreferenced.
+ *
  * @param src Object to unreference.
  * @return @c BOXBOOL_TRUE if the object was unreferenced but not destroyed,
  *   @c BOXBOOL_FALSE if the object was unreferenced and also destroyed.
  */
 BOXEXPORT BoxBool
 BoxPtr_Unlink(BoxPtr *src);
+
+/**
+ * @brief Create a new object of the given type and return a pointer to it.
+ *
+ * @param ptr Location where to put the pointer to the object.
+ * @param t The type descriptor.
+ * @return Whether the operation was successful.
+ */
+BOXEXPORT BoxBool
+BoxPtr_Create_Obj(BOXOUT BoxPtr *ptr, BoxType *t);
+
+/**
+ * @brief Copy an object of the given type.
+ *
+ * @param dst Pointer to the destination.
+ * @param src Pointer to the source.
+ * @param t The type descriptor.
+ * @return Whether the operation was successful.
+ */
+BOXEXPORT BoxBool
+BoxPtr_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t);
 
 #endif /* _BOX_OBJ_H */

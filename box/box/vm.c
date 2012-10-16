@@ -326,7 +326,7 @@ BoxTypeId BoxVM_Install_Type(BoxVM *vm, BoxType *t) {
 /* Retrieve the type corresponding to the given type identifier. */
 BoxType *
 BoxVM_Get_Installed_Type(BoxVM *vm, BoxTypeId id) {
-  return *((BoxType **) BoxArr_Get_Item_Ptr(vm, id));
+  return *((BoxType **) BoxArr_Get_Item_Ptr(& vm->types, id));
 }
 
 BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op) {
