@@ -265,11 +265,11 @@ BoxTypeNode_Prepend_Node(BoxTypeNode *node, BoxType *item);
  *
  * @param top_node The top node, identifying the linked list to which @p this
  *   belongs to.
- * @param this The item to remove from the linked list.
+ * @param item The item to remove from the linked list.
  * @return The removed node. This may be destroyed or inserted into another
  *   linked list.
  */
 BoxTypeNode *
-BoxTypeNode_Remove_Node(BoxTypeNode *top_node, BoxType *this);
+BoxTypeNode_Remove_Node(BoxTypeNode *top_node, BoxType *item);
 
 #endif /* _BOX_TYPES_PRIV_H */

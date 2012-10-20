@@ -446,7 +446,6 @@ BoxTask BoxVM_Module_Execute_With_Args(BoxVMX *vmx, BoxVMCallNum cn,
 #else
     BoxVM_Obj_Link(vm->box_vm_current);
 #endif
-
   } else
     BoxPtr_Nullify(vm->box_vm_current);
 

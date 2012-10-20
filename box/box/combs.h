@@ -103,8 +103,8 @@ BoxType_Find_Own_Combination(BoxType *parent, BoxCombType comb_type,
  * instead of a BoxType * for the child.
  */
 BOXEXPORT BoxType *
-BoxType_Find_Combination_With_Id(BoxType *parent, BoxCombType type,
-                                 BoxTypeId child_id, BoxTypeCmp *expand);
+BoxType_Find_Own_Combination_With_Id(BoxType *parent, BoxCombType type,
+                                     BoxTypeId child_id, BoxTypeCmp *expand);
 
 /**
  * Get details about a combination found with BoxType_Find_Combination.

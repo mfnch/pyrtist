@@ -34,9 +34,6 @@
 #include <box/vmsymstuff.h>
 
 
-
-#include <stdio.h>
-
 /* Initialize a callable object as an undefined callable. */
 void
 BoxCallable_Init_As_Undefined(BoxCallable *cb) {
@@ -320,6 +317,27 @@ BoxCallable_Is_Implemented(BoxCallable *cb) {
   return BOXBOOL_FALSE;
 }
 
+/* Call an old-style C function. */
+static BoxException *
+My_Call_CallOld(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
+  BoxPtr dummy;
+  BoxVM vm;
+  BoxVMX vmx;
+
+  /* Dummy null pointer. */
+  BoxPtr_Init(& dummy);
+
+  /* Setup a fake VM. */
+  vmx.vm = & vm;
+  vm.vmcur = & vmx;
+  vm.box_vm_current = (parent) ? parent : & dummy;
+  vm.box_vm_arg1 = (child) ? child : & dummy;
+
+  if (cb->implem.c_old(& vmx) == BOXTASK_OK)
+    return NULL;
+  return BoxException_Create();
+}
+
 /* Create a callable object from a BoxCCall2 C function. */
 BOXOUT BoxException *
 BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent) {
@@ -342,9 +360,11 @@ BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent) {
       return cb->implem.c_call_3(& callable, parent, & null);
     }
   case BOXCALLABLEKIND_C_OLD:
-    printf("calling method for parent %s\n", BoxType_Get_Repr(parent));
-    assert(0);
-    break;
+    {
+      BoxPtr null;
+      BoxPtr_Init(& null);
+      return My_Call_CallOld(cb, parent, & null);
+    }
   case BOXCALLABLEKIND_VM:
     {
       BoxVMCallNum call_num = cb->implem.vm_call.call_num;
@@ -375,10 +395,17 @@ BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
       BoxPtr_Init_From_SPtr(& callable, cb);
       return cb->implem.c_call_3(& callable, parent, child);
     }
+  case BOXCALLABLEKIND_C_OLD:
+    return My_Call_CallOld(cb, parent, child);
   case BOXCALLABLEKIND_VM:
-    /*BoxVM_Module_Execute_With_Args(vmx, cb->call_num, parent, child);*/
-    assert(0);
-    return NULL;
+    {
+      BoxVMCallNum call_num = cb->implem.vm_call.call_num;
+      BoxVM *vm = cb->implem.vm_call.vm;
+      if (BoxVM_Module_Execute_With_Args(vm->vmcur, call_num, parent, child)
+          == BOXTASK_OK)
+        return NULL;
+      break;
+    }
   }
   return BoxException_Create();
 }

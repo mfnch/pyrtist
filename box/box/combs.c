@@ -157,8 +157,8 @@ BoxType_Find_Combination(BoxType *parent, BoxCombType comb_type,
 }
 
 BoxType *
-BoxType_Find_Combination_With_Id(BoxType *parent, BoxCombType type,
-                                 BoxTypeId child_id, BoxTypeCmp *expand) {
+BoxType_Find_Own_Combination_With_Id(BoxType *parent, BoxCombType type,
+                                     BoxTypeId child_id, BoxTypeCmp *expand) {
   /* Quick hack: we should do this better!
    * This code relies on BoxType_Find_Combination not trying to link or
    * unlink the child type.
@@ -166,7 +166,8 @@ BoxType_Find_Combination_With_Id(BoxType *parent, BoxCombType type,
   BoxTypeBundle child;
   child.header.type_class = BOXTYPECLASS_PRIMARY;
   child.data.primary.id = child_id;
-  return BoxType_Find_Combination(parent, type, (BoxType *) & child, expand);
+  return BoxType_Find_Own_Combination(parent, type, (BoxType *) & child,
+                                      expand);
 }
 
 /* Get details about a combination found with BoxType_Find_Combination. */

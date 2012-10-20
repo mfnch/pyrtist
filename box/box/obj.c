@@ -83,8 +83,8 @@ My_Init_Obj(BoxPtr *src, BoxType *t) {
         if (!My_Init_Obj(src, rt))
           return BOXBOOL_FALSE;
 
-        node = BoxType_Find_Combination_With_Id(t, BOXCOMBTYPE_AT,
-                                                BOXTYPEID_INIT, NULL);
+        node = BoxType_Find_Own_Combination_With_Id(t, BOXCOMBTYPE_AT,
+                                                    BOXTYPEID_INIT, NULL);
         if (node && BoxType_Get_Combination_Info(node, NULL, & callable))
         {
           /* Now do our own initialization... */
@@ -200,8 +200,8 @@ My_Finish_Obj(BoxPtr *src, BoxType *t) {
       {
         BoxCallable *callable;
         BoxType *node =
-          BoxType_Find_Combination_With_Id(t, BOXCOMBTYPE_AT,
-                                           BOXTYPEID_FINISH, NULL);
+          BoxType_Find_Own_Combination_With_Id(t, BOXCOMBTYPE_AT,
+                                               BOXTYPEID_FINISH, NULL);
 
         if (node && BoxType_Get_Combination_Info(node, NULL, & callable))
         {
@@ -292,7 +292,7 @@ My_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t) {
         if (!My_Copy_Obj(dst, src, rt))
           return BOXBOOL_FALSE;
 
-        node = BoxType_Find_Combination(t, BOXCOMBTYPE_COPY, t, NULL);
+        node = BoxType_Find_Own_Combination(t, BOXCOMBTYPE_COPY, t, NULL);
         if (node && BoxType_Get_Combination_Info(node, NULL, & callable))
         {
           /* Now do our own initialization... */
