@@ -28,9 +28,14 @@
 
 #include <box/core_priv.h>
 #include <box/callable_priv.h>
+#include <box/vm_priv.h>
 
 #include <box/vmsym.h>
 #include <box/vmsymstuff.h>
+
+
+
+#include <stdio.h>
 
 /* Initialize a callable object as an undefined callable. */
 void
@@ -336,11 +341,21 @@ BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent) {
       BoxPtr_Init_From_SPtr(& callable, cb);
       return cb->implem.c_call_3(& callable, parent, & null);
     }
-  case BOXCALLABLEKIND_VM:
+  case BOXCALLABLEKIND_C_OLD:
+    printf("calling method for parent %s\n", BoxType_Get_Repr(parent));
     assert(0);
-    return NULL;
-
+    break;
+  case BOXCALLABLEKIND_VM:
+    {
+      BoxVMCallNum call_num = cb->implem.vm_call.call_num;
+      BoxVM *vm = cb->implem.vm_call.vm;
+      if (BoxVM_Module_Execute_With_Args(vm->vmcur, call_num, parent, NULL)
+          == BOXTASK_OK)
+        return NULL;
+      break;
+    }
   }
+
   return BoxException_Create();
 }
 

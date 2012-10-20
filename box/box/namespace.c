@@ -106,7 +106,9 @@ static void My_NmspItem_Finish(Namespace *ns, NmspItem *item) {
   case NMSPITEMTYPE_PROCEDURE:
     {
       MyProcedureNmspItem *p = (MyProcedureNmspItem *) item->data;
+#if BOX_USE_NEW_OBJ == 0
       BoxType_Undefine_Combination(p->parent, p->comb_node);
+#endif
       BoxMem_Free(p);
       return;
     }

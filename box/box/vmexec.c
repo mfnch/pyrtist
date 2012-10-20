@@ -125,14 +125,13 @@ static void My_Exec_Mov_OO(BoxVMX *vmx) {
   if (arg1 != arg2) {
     assert(arg1 != NULL);
     if (!BoxPtr_Is_Detached(arg1))
-      BoxVM_Obj_Unlink(vmx->vm, arg1);
-    *arg1 = *arg2;
-#if 0
-    if (!BoxPtr_Is_Detached(arg2))
-      BoxVM_Obj_Link(arg2);
+#if BOX_USE_NEW_OBJ != 0
+      (void) BoxPtr_Unlink(arg1);
 #else
-    BoxPtr_Detach(arg1);
+      BoxVM_Obj_Unlink(vmx->vm, arg1);
 #endif
+    *arg1 = *arg2;
+    BoxPtr_Detach(arg1);
   }
 }
 
@@ -369,12 +368,13 @@ static void My_Exec_Reloc_OO(BoxVMX *vmx) {
   BoxPtr *dest = (BoxPtr *) vmx->arg1,
          *src = (BoxPtr *) vmx->arg2;
   BoxInt id = *((BoxInt *) vmx->local[TYPE_INT].ptr);
+
 #if BOX_USE_NEW_OBJ != 0
   BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, (BoxTypeId) id);
-  if (!BoxPtr_Copy_Obj(dest, src, t))
-    MSG_FATAL("My_Exec_Reloc_OO: failure copying object with alloc-ID=%I.",
-              id);
+  if (BoxPtr_Copy_Obj(dest, src, t))
+	return;
 
+  MSG_FATAL("My_Exec_Reloc_OO: failure copying object with alloc-ID=%I.", id);
 #else
   BoxTask t = BoxVM_Obj_Relocate(vmx->vm, dest, src, id);
   //BoxPtr_Detach(src);
@@ -396,11 +396,19 @@ static void My_Exec_Malloc_I(BoxVMX *vmx) {
 }
 
 static void My_Exec_Mln_O(BoxVMX *vmx) {
+#if BOX_USE_NEW_OBJ != 0
+  (void) BoxPtr_Link((BoxPtr *) vmx->arg1);
+#else
   BoxVM_Obj_Link((BoxPtr *) vmx->arg1);
+#endif
 }
 
 static void My_Exec_MUnln_O(BoxVMX *vmx) {
+#if BOX_USE_NEW_OBJ != 0
+  (void) BoxPtr_Unlink((BoxPtr *) vmx->arg1);
+#else
   BoxVM_Obj_Unlink(vmx->vm, (BoxPtr *) vmx->arg1);
+#endif
   BoxPtr_Detach((BoxPtr *) vmx->arg1);
 }
 
@@ -415,7 +423,11 @@ static void My_Exec_Shift_OO(BoxVMX *vmx) {
          *arg2 = (BoxPtr *) vmx->arg2;
   if (arg1 != arg2) {
     if (!BoxPtr_Is_Detached(arg1))
+#if BOX_USE_NEW_OBJ != 0
+      (void) BoxPtr_Unlink(arg1);
+#else
       BoxVM_Obj_Unlink(vmx->vm, arg1);
+#endif
     *arg1 = *arg2;
     BoxPtr_Detach(arg2);
   }
@@ -427,10 +439,18 @@ static void My_Exec_Ref_OO(BoxVMX *vmx) {
   if (arg1 != arg2) {
     assert(arg1 != NULL);
     if (!BoxPtr_Is_Detached(arg1))
+#if BOX_USE_NEW_OBJ != 0
+      (void) BoxPtr_Unlink(arg1);
+#else
       BoxVM_Obj_Unlink(vmx->vm, arg1);
+#endif
     *arg1 = *arg2;
     if (!BoxPtr_Is_Detached(arg2))
+#if BOX_USE_NEW_OBJ != 0
+      (void) BoxPtr_Link(arg2);
+#else
       BoxVM_Obj_Link(arg2);
+#endif
   }
 }
 
@@ -448,7 +468,11 @@ static void My_Exec_Lea_OO(BoxVMX *vmx) {
   BoxPtr *arg1 = (BoxPtr *) vmx->arg1,
          *arg2 = (BoxPtr *) vmx->arg2;
   if (!BoxPtr_Is_Detached(arg1))
+#if BOX_USE_NEW_OBJ != 0
+  (void) BoxPtr_Unlink(arg1);
+#else
     BoxVM_Obj_Unlink(vmx->vm, arg1);
+#endif
   arg1->block = (void *) NULL;
   arg1->ptr = arg2;
 }
@@ -541,15 +565,15 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {  BOXGOP_NEWC,   "newr", 2, 'i',  "a1,a2",  NULL, "xx", "xx", My_Exec_NewR_II  }, /* newr ii, ii   */
   {  BOXGOP_NEWC,   "newp", 2, 'i',  "a1,a2",  NULL, "xx", "xx", My_Exec_NewP_II  }, /* newp ii, ii   */
   {  BOXGOP_NEWC,   "newo", 2, 'i',  "a1,a2",  NULL, "xx", "xx", My_Exec_NewO_II  }, /* newo ii, ii   */
-  {   BOXGOP_MOV,    "mov", 2, 'c',     "a2",  "a1", "xi", "xi", My_Exec_Mov_CC   }, /* mov rc, ic    */
-  {   BOXGOP_MOV,    "mov", 2, 'i',     "a2",  "a1", "xi", "xi", My_Exec_Mov_II   }, /* mov ri, ii    */
-  {   BOXGOP_MOV,    "mov", 2, 'r',     "a2",  "a1", "xi", "xi", My_Exec_Mov_RR   }, /* mov rr, ir    */
-  {   BOXGOP_MOV,    "mov", 2, 'p',     "a2",  "a1", "xi", "xi", My_Exec_Mov_PP   }, /* mov rp, ip    */
-  {   BOXGOP_MOV,    "mov", 2, 'c',     "a2",  "a1", "xx", "xx", My_Exec_Mov_CC   }, /* mov rc, rc    */
-  {   BOXGOP_MOV,    "mov", 2, 'i',     "a2",  "a1", "xx", "xx", My_Exec_Mov_II   }, /* mov ri, ri    */
-  {   BOXGOP_MOV,    "mov", 2, 'r',     "a2",  "a1", "xx", "xx", My_Exec_Mov_RR   }, /* mov rr, rr    */
-  {   BOXGOP_MOV,    "mov", 2, 'p',     "a2",  "a1", "xx", "xx", My_Exec_Mov_PP   }, /* mov rp, rp    */
-  {   BOXGOP_MOV,    "mov", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Mov_OO   }, /* mov ro, ro    */
+  {   BOXGOP_MOV,   "move", 2, 'c',     "a2",  "a1", "xi", "xi", My_Exec_Mov_CC   }, /* mov rc, ic    */
+  {   BOXGOP_MOV,   "move", 2, 'i',     "a2",  "a1", "xi", "xi", My_Exec_Mov_II   }, /* mov ri, ii    */
+  {   BOXGOP_MOV,   "move", 2, 'r',     "a2",  "a1", "xi", "xi", My_Exec_Mov_RR   }, /* mov rr, ir    */
+  {   BOXGOP_MOV,   "move", 2, 'p',     "a2",  "a1", "xi", "xi", My_Exec_Mov_PP   }, /* mov rp, ip    */
+  {   BOXGOP_MOV,   "move", 2, 'c',     "a2",  "a1", "xx", "xx", My_Exec_Mov_CC   }, /* mov rc, rc    */
+  {   BOXGOP_MOV,   "move", 2, 'i',     "a2",  "a1", "xx", "xx", My_Exec_Mov_II   }, /* mov ri, ri    */
+  {   BOXGOP_MOV,   "move", 2, 'r',     "a2",  "a1", "xx", "xx", My_Exec_Mov_RR   }, /* mov rr, rr    */
+  {   BOXGOP_MOV,   "move", 2, 'p',     "a2",  "a1", "xx", "xx", My_Exec_Mov_PP   }, /* mov rp, rp    */
+  {   BOXGOP_MOV,   "move", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Mov_OO   }, /* mov ro, ro    */
   {  BOXGOP_BNOT,   "bnot", 1, 'i',     "a1",  "a1", "x-", "xx", My_Exec_BNot_I   }, /* bnot ri       */
   {  BOXGOP_BAND,   "band", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_BAnd_II  }, /* band ri, ri   */
   {  BOXGOP_BXOR,   "bxor", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_BXor_II  }, /* bxor ri, ri   */
@@ -607,7 +631,7 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   { BOXGOP_PROJY,  "projy", 1, 'p',     "a1", "rr0", "x-", "xx", My_Exec_ProjY_P  }, /* projy rp      */
   { BOXGOP_PPTRX,  "pptrx", 1, 'p',     "a1", "ro0", "x-", "xx", My_Exec_PPtrX_P  }, /* pptrx rp      */
   { BOXGOP_PPTRY,  "pptry", 1, 'p',     "a1", "ro0", "x-", "xx", My_Exec_PPtrY_P  }, /* pptry rp      */
-  {   BOXGOP_RET,    "ret", 0, 'n',     NULL,  NULL, "--", "xx", My_Exec_Ret      }, /* ret           */
+  {   BOXGOP_RET, "return", 0, 'n',     NULL,  NULL, "--", "xx", My_Exec_Ret      }, /* ret           */
   {BOXGOP_CREATE, "create", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Create_I }, /* create ri     */
   {BOXGOP_MALLOC, "malloc", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Malloc_I }, /* malloc ri     */
   {   BOXGOP_MLN,    "mln", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Mln_O    }, /* mln ro        */

@@ -253,7 +253,11 @@ static void My_Free_Globals(BoxVM *vmp) {
         BoxPtr *ptrs = gregs->ptr;
         BoxInt j;
         for (j = gregs->min; j < gregs->max; j++)
+#if BOX_USE_NEW_OBJ != 0
+          (void) BoxPtr_Unlink(ptrs + j);
+#else
           BoxVM_Obj_Unlink(vmp, ptrs + j);
+#endif
       }
 
       BoxMem_Free(gregs->ptr + gregs->min*size_of_type[i]);
@@ -411,7 +415,11 @@ void BoxVM_Module_Global_Set(BoxVM *vmp, BoxInt type, BoxInt reg, void *value) {
 
   /* Unlink the reference associated to the register, before setting it. */
   if (type == BOXTYPE_PTR)
+#if BOX_USE_NEW_OBJ != 0
+    (void) BoxPtr_Unlink((BoxPtr *) dest);
+#else
     BoxVM_Obj_Unlink(vmp, (BoxPtr *) dest);
+#endif
 
   memcpy(dest, value, size_of_type[type]);
 }
@@ -431,27 +439,42 @@ BoxTask BoxVM_Module_Execute_With_Args(BoxVMX *vmx, BoxVMCallNum cn,
   BoxPtr save_parent = *vm->box_vm_current,
          save_child = *vm->box_vm_arg1;
 
-  if (parent != NULL) {
+  if (parent) {
     *vm->box_vm_current = *parent;
+#if BOX_USE_NEW_OBJ != 0
+    (void) BoxPtr_Link(vm->box_vm_current);
+#else
     BoxVM_Obj_Link(vm->box_vm_current);
+#endif
 
   } else
     BoxPtr_Nullify(vm->box_vm_current);
 
-  if (child != NULL) {
+  if (child) {
     *vm->box_vm_arg1 = *child;
+#if BOX_USE_NEW_OBJ != 0
+    (void) BoxPtr_Link(vm->box_vm_arg1);
+#else
     BoxVM_Obj_Link(vm->box_vm_arg1);
-
+#endif
   } else
     BoxPtr_Nullify(vm->box_vm_arg1);
 
   t = BoxVM_Module_Execute(vmx, cn);
 
   if (!BoxPtr_Is_Detached(vm->box_vm_current))
+#if BOX_USE_NEW_OBJ != 0
+    (void) BoxPtr_Unlink(vm->box_vm_current);
+#else
     BoxVM_Obj_Unlink(vm, vm->box_vm_current);
+#endif
 
   if (!BoxPtr_Is_Detached(vm->box_vm_arg1))
+#if BOX_USE_NEW_OBJ != 0
+    (void) BoxPtr_Unlink(vm->box_vm_arg1);
+#else
     BoxVM_Obj_Unlink(vm, vm->box_vm_arg1);
+#endif
 
   *vm->box_vm_current = save_parent;
   *vm->box_vm_arg1 = save_child;
@@ -591,7 +614,11 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
 
     for (i = 0; i < n; i++, ro++) {
       if (!BoxPtr_Is_Detached(ro))
+#if BOX_USE_NEW_OBJ != 0
+        (void) BoxPtr_Unlink(ro);
+#else
         BoxVM_Obj_Unlink(vmp, ro);
+#endif
     }
   }
 

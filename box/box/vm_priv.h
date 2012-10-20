@@ -283,7 +283,8 @@ typedef BoxTask (*BoxVMFunc)(BoxVMX *);
  */
 BoxTask BoxVM_Init(BoxVM *vm);
 
-/** Destroy a BoxVM object initialised with BoxVM_Init
+/**
+ * @brief Destroy a BoxVM object initialised with BoxVM_Init().
  * @see BoxVM_Init
  */
 void BoxVM_Finish(BoxVM *vm);
@@ -293,14 +294,15 @@ BOXEXPORT void BoxVMX_Set_Fail_Msg(BoxVMX *vm, const char *msg);
 
 BOXEXPORT BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num);
 
-/** Similar to BoxVM_Module_Execute, but takes also pointers to child
+/**
+ * Similar to BoxVM_Module_Execute(), but takes also pointers to child
  * and parent. The register gro1 and gro2 are modified after this call: in
  * particular, '*parent' is stored in gro1 and '*child' in gro2.
  * This guarantee that the reference counting protocol is respected.
  */
 BOXEXPORT BoxTask
-  BoxVM_Module_Execute_With_Args(BoxVMX *vmx, BoxVMCallNum cn,
-                                 BoxPtr *parent, BoxPtr *child);
+BoxVM_Module_Execute_With_Args(BoxVMX *vmx, BoxVMCallNum cn,
+                               BoxPtr *parent, BoxPtr *child);
 
 /**
  * Clear the backtrace of the program.

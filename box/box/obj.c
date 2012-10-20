@@ -45,6 +45,7 @@
 /* Forward references */
 static BoxBool My_Init_Obj(BoxPtr *src, BoxType *t);
 static void My_Finish_Obj(BoxPtr *src, BoxType *t);
+static BoxBool My_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t);
 
 /* Finalize an Any object. */
 void BoxAny_Finish(BoxAny *any)
@@ -436,7 +437,12 @@ BoxPtr *BoxPtr_Link(BoxPtr *src) {
 /* Remove a reference to an object, destroying it, if unreferenced. */
 BoxBool BoxPtr_Unlink(BoxPtr *src) {
   BoxObjHeader *head = BoxPtr_Get_Block(src);
-  size_t num_refs = head->num_refs;
+  size_t num_refs;
+
+  if (!head)
+    return BOXBOOL_TRUE;
+
+  num_refs = head->num_refs;
 
   if (num_refs > 1) {
     head->num_refs--;
