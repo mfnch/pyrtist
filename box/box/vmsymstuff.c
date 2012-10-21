@@ -169,13 +169,6 @@ BoxTask BoxVMSym_Def_Proc_Head(BoxVM *vmp, BoxVMSymID sym_id,
 /* Temporary, very ugly stuff... */
 
 /**
- * @brief Reference to a procedure.
- */
-typedef struct {
-  BoxVMCallNum call_num;
-} MyProcRef;
-
-/**
  * @brief Data necessary to define a procedure.
  */
 typedef struct {
@@ -209,29 +202,24 @@ static BoxTask
 My_Resolve_Proc_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type,
                     int defined, void *def, size_t def_size,
                     void *ref, size_t ref_size) {
-  MyProcRef *proc_ref = ref;
   MyProcDef *proc_def = def;
+  BoxCallable *cb;
 
-  assert(sym_type == BOXVMSYMTYPE_PROC && proc_ref && proc_def && defined);
+  assert(sym_type == BOXVMSYMTYPE_PROC && proc_def && defined);
   
   if (BoxCallable_Is_Implemented(proc_def->callable))
     return BOXTASK_OK;
 
-  if (!BoxVM_Install_Proc_CCode(vm, proc_ref->call_num, proc_def->fn_ptr))
-    return BOXTASK_FAILURE;
-
-  if (!BoxVM_Set_Proc_Names(vm, proc_ref->call_num, NULL,
-                            BoxCallable_Get_Uid(proc_def->callable)))
-    return BOXTASK_FAILURE;
-
+  cb = BoxCallable_Link(proc_def->callable);
+  cb = BoxCallable_Define_From_CCallOld(cb, proc_def->fn_ptr);
+  (void) BoxCallable_Unlink(cb);
   return BOXTASK_OK;
 }
 
 /*
  */
 BoxBool
-BoxVMSym_Reference_Proc(BoxVM *vm, BoxVMCallNum cn, BoxCallable *cb) {
-  MyProcRef proc_ref;
+BoxVMSym_Reference_Proc(BoxVM *vm, BoxCallable *cb) {
   MyProcDef proc_def;
   const char *name = BoxCallable_Get_Uid(cb);
 
@@ -251,9 +239,7 @@ BoxVMSym_Reference_Proc(BoxVM *vm, BoxVMCallNum cn, BoxCallable *cb) {
     BoxVMSym_Set_Name(vm, sym_id, name);
 
   /* Create a new reference to the symbol. */
-  proc_ref.call_num = cn;
-  BoxVMSym_Ref(vm, sym_id, My_Resolve_Proc_Ref, & proc_ref,
-               sizeof(MyProcRef), BOXVMSYM_AUTO);
+  BoxVMSym_Ref(vm, sym_id, My_Resolve_Proc_Ref, NULL, 0, BOXVMSYM_AUTO);
   return BOXBOOL_TRUE;
 }
 

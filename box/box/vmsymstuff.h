@@ -82,7 +82,7 @@ BoxBool
 BoxVMSym_Define_Proc(BoxVM *vm, BoxVMSymID sym_id, BoxCCallOld fn_ptr);
 
 BoxBool
-BoxVMSym_Reference_Proc(BoxVM *vm, BoxVMCallNum cn, BoxCallable *cb);
+BoxVMSym_Reference_Proc(BoxVM *vm, BoxCallable *cb);
 
 #endif
 

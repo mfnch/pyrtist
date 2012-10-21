@@ -135,10 +135,41 @@ BoxCallable_Define_From_CCallOld(BOXIN BoxCallable *cb, BoxCCallOld c_old) {
   if (!cb)
     return NULL;
 
-  assert(cb->kind == BOXCALLABLEKIND_UNDEFINED);
-  cb->kind = BOXCALLABLEKIND_C_OLD;
-  cb->implem.c_old = c_old;
-  return cb;
+  switch (cb->kind) {
+  case BOXCALLABLEKIND_UNDEFINED:
+    cb->kind = BOXCALLABLEKIND_C_OLD;
+    cb->implem.c_old = c_old;
+    return cb;
+
+  case BOXCALLABLEKIND_VM:
+    {
+      BoxVM *vm = cb->implem.vm_call.vm;
+      BoxVMCallNum call_num = cb->implem.vm_call.call_num;
+      switch (BoxVM_Get_Proc_Kind(vm, call_num)) {
+      case BOXVMPROCKIND_RESERVED:
+        if (BoxVM_Install_Proc_CCode(vm, call_num, c_old))
+          return cb;
+        break;
+
+      case BOXVMPROCKIND_FOREIGN:
+#if 0
+        if (!BoxVM_Get_Callable_Implem(vm, call_num, & cb))
+          return BOXBOOL_FALSE;
+        break;
+#endif
+
+      default:
+        break;
+      }
+      break;
+    }
+
+  default:
+    break;
+  }
+
+  (void) BoxCallable_Unlink(cb);
+  return NULL;
 }
 
 /* Initialize a callable object from a BoxCCall3 C function. */
@@ -202,7 +233,7 @@ BoxCallable_Request_VM_Call_Num(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
       /* Alert the virtual machine that this call number is being used and
        * needs therefore to be resolved.
        */
-      BoxVMSym_Reference_Proc(vm, new_num, new_cb);
+      BoxVMSym_Reference_Proc(vm, new_cb);
 
       *num = new_num;
       *cb_out = new_cb;
@@ -285,11 +316,13 @@ BoxCallable_Is_Implemented(BoxCallable *cb) {
     switch (cb->kind) {
     case BOXCALLABLEKIND_UNDEFINED:
       return BOXBOOL_FALSE;
+
     case BOXCALLABLEKIND_C_1:
     case BOXCALLABLEKIND_C_2:
     case BOXCALLABLEKIND_C_3:
     case BOXCALLABLEKIND_C_OLD:
       return BOXBOOL_TRUE;
+
     case BOXCALLABLEKIND_VM:
       {
         BoxVM *vm = cb->implem.vm_call.vm;
@@ -307,6 +340,7 @@ BoxCallable_Is_Implemented(BoxCallable *cb) {
         }
         break;
       }
+
     default:
       return BOXBOOL_FALSE;
     }
@@ -345,14 +379,17 @@ BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent) {
   switch (cb->kind) {
   case BOXCALLABLEKIND_UNDEFINED:
     return BoxException_Create("Callable %s is undefined", cb->uid);
+
   case BOXCALLABLEKIND_C_1:
     return cb->implem.c_call_1(parent);
+
   case BOXCALLABLEKIND_C_2:
     {
       BoxPtr null;
       BoxPtr_Init(& null);
       return cb->implem.c_call_2(parent, & null);
     }
+
   case BOXCALLABLEKIND_C_3:
     {
       BoxPtr callable, null;
@@ -360,8 +397,10 @@ BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent) {
       BoxPtr_Init_From_SPtr(& callable, cb);
       return cb->implem.c_call_3(& callable, parent, & null);
     }
+
   case BOXCALLABLEKIND_C_OLD:
     return My_Call_CallOld(cb, parent, NULL);
+
   case BOXCALLABLEKIND_VM:
     {
       BoxVMCallNum call_num = cb->implem.vm_call.call_num;
@@ -382,18 +421,23 @@ BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
   switch (cb->kind) {
   case BOXCALLABLEKIND_UNDEFINED:
     return BoxException_Create("Callable %s is undefined", cb->uid);
+
   case BOXCALLABLEKIND_C_1:
     return cb->implem.c_call_1(parent);
+
   case BOXCALLABLEKIND_C_2:
     return cb->implem.c_call_2(parent, child);
+
   case BOXCALLABLEKIND_C_3:
     {
       BoxPtr callable;
       BoxPtr_Init_From_SPtr(& callable, cb);
       return cb->implem.c_call_3(& callable, parent, child);
     }
+
   case BOXCALLABLEKIND_C_OLD:
     return My_Call_CallOld(cb, parent, child);
+
   case BOXCALLABLEKIND_VM:
     {
       BoxVMCallNum call_num = cb->implem.vm_call.call_num;
