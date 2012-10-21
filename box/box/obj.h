@@ -32,6 +32,23 @@
 
 
 /**
+ * @brief Initialize a subtype.
+ *
+ * @param st Pointer to a region of memory ready to contain a #BoxSubtype
+ *   object.
+ */
+BOXEXPORT void
+BoxSubtype_Init(BoxSubtype *st);
+
+/**
+ * @brief Finalize a subtype.
+ *
+ * @param Pointer to the subtype.
+ */
+BOXEXPORT void
+BoxSubtype_Finish(BoxSubtype *st);
+
+/**
  * A pointer to a target object decorated with the type of the target.
  * This is using for boxing/unboxing objects.
  */

@@ -47,6 +47,26 @@ static BoxBool My_Init_Obj(BoxPtr *src, BoxType *t);
 static void My_Finish_Obj(BoxPtr *src, BoxType *t);
 static BoxBool My_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t);
 
+/* Initialize a subtype. */
+void
+BoxSubtype_Init(BoxSubtype *st) {
+  BoxPtr_Nullify(& st->parent);
+  BoxPtr_Nullify(& st->child);
+}
+
+/* Finalize a subtype. */
+void
+BoxSubtype_Finish(BoxSubtype *st) {
+  (void) BoxPtr_Unlink(& st->parent);
+  (void) BoxPtr_Unlink(& st->child);
+}
+
+/* Finalize a subtype. */
+void
+BoxSubtype_Copy(BoxSubtype *dst, BoxSubtype *src) {
+  *dst = *src;
+}
+
 /* Finalize an Any object. */
 void BoxAny_Finish(BoxAny *any)
 {
@@ -68,6 +88,10 @@ static BoxBool
 My_Init_Obj(BoxPtr *src, BoxType *t) {
   while (1) {
     switch (t->type_class) {
+    case BOXTYPECLASS_SUBTYPE_NODE:
+      BoxSubtype_Init((BoxSubtype *) BoxPtr_Get_Target(src));
+      return BOXBOOL_TRUE;
+
     case BOXTYPECLASS_PRIMARY:
     case BOXTYPECLASS_INTRINSIC:
       return BOXBOOL_TRUE;
@@ -192,6 +216,10 @@ static void
 My_Finish_Obj(BoxPtr *src, BoxType *t) {
   while (1) {
     switch (t->type_class) {
+    case BOXTYPECLASS_SUBTYPE_NODE:
+      BoxSubtype_Finish((BoxSubtype *) BoxPtr_Get_Target(src));
+      return;
+
     case BOXTYPECLASS_PRIMARY:
     case BOXTYPECLASS_INTRINSIC:
       return;

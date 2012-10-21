@@ -372,7 +372,7 @@ static void My_Exec_Reloc_OO(BoxVMX *vmx) {
 #if BOX_USE_NEW_OBJ != 0
   BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, (BoxTypeId) id);
   if (BoxPtr_Copy_Obj(dest, src, t))
-	return;
+    return;
 
   MSG_FATAL("My_Exec_Reloc_OO: failure copying object with alloc-ID=%I.", id);
 #else
@@ -438,6 +438,7 @@ static void My_Exec_Ref_OO(BoxVMX *vmx) {
          *arg2 = (BoxPtr *) vmx->arg2;
   if (arg1 != arg2) {
     assert(arg1 != NULL);
+
     if (!BoxPtr_Is_Detached(arg1))
 #if BOX_USE_NEW_OBJ != 0
       (void) BoxPtr_Unlink(arg1);
