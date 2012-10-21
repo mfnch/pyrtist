@@ -1113,7 +1113,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     }
   }
 
-  /* Now let's find whether a procedure of this kind is already registered */
+  /* Now let's find whether a procedure of this kind is already registered. */
   if (!no_err) {
     /* For now we cowardly refuse to examine the body of the procedure
      * and immediately exit pushing an error.
@@ -1188,7 +1188,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
     /* Set the alternative name to make the bytecode more readable */
     {
       char *alter_name = BoxType_Get_Repr(comb);
-      assert(alter_name != NULL);
+      assert(alter_name);
 
       BoxVMCode_Set_Alter_Name(& proc_implem, alter_name);
       BoxMem_Free(alter_name);

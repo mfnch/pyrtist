@@ -60,8 +60,6 @@ static void My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
      sizeof(BoxPtr), __alignof__(BoxPtr)},
     {& core_types->root_type, "/", BOXTYPEID_NONE,
      (size_t) 0, (size_t) 0},
-    {& core_types->callable_type, "Callable", BOXTYPEID_NONE,
-     0, 0},
     {& core_types->REFERENCES_type, "REFERENCES", BOXTYPEID_NONE,
      0, 0},
 
@@ -184,7 +182,6 @@ void BoxCoreTypes_Finish(BoxCoreTypes *core_types) {
     core_types->Point_type,
     core_types->PTR_type,
     core_types->any_type,
-    core_types->callable_type,
     core_types->REFERENCES_type,
     NULL};
 

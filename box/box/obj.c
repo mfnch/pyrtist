@@ -26,6 +26,8 @@
 #include <box/messages.h>
 #include <box/types_priv.h>
 
+#define DEBUG_OBJ_C 0
+
 
 /**
  * @brief Get the header from a pointer as returned by BoxObj_Alloc().
@@ -86,6 +88,14 @@ void BoxAny_Copy(BoxAny *dst, BoxAny *src) {
 /* Initialize a block of memory addressed by src and with type t. */
 static BoxBool
 My_Init_Obj(BoxPtr *src, BoxType *t) {
+  char *t_repr = BoxType_Get_Repr(t);
+#if DEBUG_OBJ_C != 0
+  printf("Initialising %s\n", t_repr);
+  if (strcmp(t_repr, "Obj") == 0) {
+    printf("Dealing with initialization of Obj\n");
+  }
+#endif
+    
   while (1) {
     switch (t->type_class) {
     case BOXTYPECLASS_SUBTYPE_NODE:
@@ -214,6 +224,9 @@ My_Init_Obj(BoxPtr *src, BoxType *t) {
 /* Generic finalization function for objects. */
 static void
 My_Finish_Obj(BoxPtr *src, BoxType *t) {
+#if DEBUG_OBJ_C != 0
+  printf("Finalising %s\n", BoxType_Get_Repr(t));
+#endif
   while (1) {
     switch (t->type_class) {
     case BOXTYPECLASS_SUBTYPE_NODE:
@@ -295,6 +308,10 @@ My_Finish_Obj(BoxPtr *src, BoxType *t) {
 /* Generic function to copy objects. */
 static BoxBool
 My_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t) {
+#if DEBUG_OBJ_C != 0
+  printf("Copying %s\n", BoxType_Get_Repr(t));
+#endif
+
   /* Check we are not copying the object over itself. */
   if (dst->ptr == src->ptr)
     return BOXBOOL_TRUE;

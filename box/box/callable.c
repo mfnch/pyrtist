@@ -335,7 +335,8 @@ My_Call_CallOld(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
 
   if (cb->implem.c_old(& vmx) == BOXTASK_OK)
     return NULL;
-  return BoxException_Create();
+
+  return BoxException_Create("Callable %s raised an exception", cb->uid);
 }
 
 /* Create a callable object from a BoxCCall2 C function. */
@@ -343,7 +344,7 @@ BOXOUT BoxException *
 BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent) {
   switch (cb->kind) {
   case BOXCALLABLEKIND_UNDEFINED:
-    return BoxException_Create();
+    return BoxException_Create("Callable %s is undefined", cb->uid);
   case BOXCALLABLEKIND_C_1:
     return cb->implem.c_call_1(parent);
   case BOXCALLABLEKIND_C_2:
@@ -360,11 +361,7 @@ BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent) {
       return cb->implem.c_call_3(& callable, parent, & null);
     }
   case BOXCALLABLEKIND_C_OLD:
-    {
-      BoxPtr null;
-      BoxPtr_Init(& null);
-      return My_Call_CallOld(cb, parent, & null);
-    }
+    return My_Call_CallOld(cb, parent, NULL);
   case BOXCALLABLEKIND_VM:
     {
       BoxVMCallNum call_num = cb->implem.vm_call.call_num;
@@ -376,7 +373,7 @@ BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent) {
     }
   }
 
-  return BoxException_Create();
+  return BoxException_Create("Callable %s raised an exception", cb->uid);
 }
 
 /* Create a callable object from a BoxCCall2 C function. */
@@ -384,7 +381,7 @@ BOXOUT BoxException *
 BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
   switch (cb->kind) {
   case BOXCALLABLEKIND_UNDEFINED:
-    return BoxException_Create();
+    return BoxException_Create("Callable %s is undefined", cb->uid);
   case BOXCALLABLEKIND_C_1:
     return cb->implem.c_call_1(parent);
   case BOXCALLABLEKIND_C_2:
@@ -407,7 +404,8 @@ BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
       break;
     }
   }
-  return BoxException_Create();
+
+  return BoxException_Create("Callable %s raised an exception", cb->uid);
 }
 
 #include "messages.h"

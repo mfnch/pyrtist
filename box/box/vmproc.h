@@ -177,17 +177,6 @@ BoxVM_Get_Proc_Kind(BoxVM *vm, BoxVMCallNum cn);
 BOXEXPORT BoxBool 
 BoxVM_Get_Callable_Implem(BoxVM *vm, BoxVMCallNum cn, BoxCallable **code);
 
-/**
- * @brief Take note that a given call number is used and needs to be resolved.
- *
- * @param vm The virtual machine.
- * @param cn The call number which is being used and needs to be resolved.
- */
-BOXEXPORT void
-BoxVM_Reference_Proc(BoxVM *vm, BoxVMCallNum cn);
-
-
-
 
 #if 0
 /**

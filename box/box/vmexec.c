@@ -354,14 +354,15 @@ static void My_Exec_Create_I(BoxVMX *vmx) {
   BoxInt id = *((BoxInt *) vmx->arg1);
   BoxPtr *obj = (BoxPtr *) vmx->local[TYPE_OBJ].ptr;
 #if BOX_USE_NEW_OBJ != 0
-  if (!BoxPtr_Create_Obj(obj, BoxVM_Get_Installed_Type(vmx->vm, id)))
-    MSG_FATAL("My_Exec_Create_I: cannot create object with alloc-ID=%I.", id);
+  BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, id);
+  if (BoxPtr_Create_Obj(obj, t))
+    return;
 #else
   BoxVM_Obj_Create(vmx->vm, obj, id);
   if (!BoxPtr_Is_Null(obj))
     return;
-  MSG_FATAL("My_Exec_Create_I: cannot create object with alloc-ID=%I.", id);
 #endif
+  MSG_FATAL("My_Exec_Create_I: cannot create object with alloc-ID=%I.", id);
 }
 
 static void My_Exec_Reloc_OO(BoxVMX *vmx) {

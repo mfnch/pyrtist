@@ -17,13 +17,35 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+#include <stdio.h>
+
+#include <box/mem.h>
 #include <box/exception.h>
 
+
+struct BoxException_struct {
+  char *msg;
+};
+
 /* Create an exception object. */
-BoxException *BoxException_Create(void) {
-  return NULL;
+BoxException *BoxException_Create_Raw(char *msg) {
+  BoxException *excp = BoxMem_Safe_Alloc(sizeof(BoxException));
+  excp->msg = msg;
+  return excp;
 }
 
 /* Destroy an exception object. */
 void BoxException_Destroy(BoxException *excp) {
+  BoxMem_Free(excp);
+}
+
+/* Print the given exception to screen. */
+BoxBool BoxException_Check(BoxException *excp) {
+  if (excp) {
+    fprintf(stderr, "Exception: %s.\n", excp->msg);
+    BoxException_Destroy(excp);
+    return BOXBOOL_TRUE;
+
+  } else
+    return BOXBOOL_FALSE;
 }

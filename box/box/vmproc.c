@@ -299,12 +299,6 @@ BoxVM_Get_Callable_Implem(BoxVM *vm, BoxVMCallNum cn, BoxCallable **code) {
   return BOXBOOL_FALSE;
 }
 
-/* Take note that a given call number is used and needs to be resolved. */
-void
-BoxVM_Reference_Proc(BoxVM *vm, BoxVMCallNum cn) {
-  
-}
-
 BoxVMProcID BoxVM_Proc_Get_ID(BoxVM *vm, BoxVMCallNum call_num) {
   BoxVMProcInstalled *p = My_Get_Proc_From_Num(vm, call_num);
   if (p->type == BOXVMPROCKIND_VM_CODE)

@@ -29,6 +29,7 @@
 #  define _BOX_EXCEPTION_H
 
 #  include <box/types.h>
+#  include <box/print.h>
 
 /**
  * Exception object.
@@ -39,12 +40,35 @@ typedef struct BoxException_struct BoxException;
  * Create a new exception object.
  */
 BOXEXPORT BoxException *
-BoxException_Create(void);
+BoxException_Create_Raw(char *msg);
+
+#define BoxException_Create(msg, ...)                   \
+  BoxException_Create_Raw(Box_SPrintF(msg, __VA_ARGS__))
 
 /**
  * Destroy an exception object.
  */
 BOXEXPORT void
 BoxException_Destroy(BoxException *excp);
+
+/**
+ * @brief Show the exception to the console and destroy it.
+ *
+ * @param excp The exception.
+ * @return Whether @p excp was not NULL.
+ *
+ * If the provided exception is not NULL, then print the exception to the
+ * screen (stderr) and destroy the exception.
+ * @note This function can be used to check for an error condition and abort.
+ * See the example below.
+ *
+ * @code
+ * BoxException *exception = My_Function_Returning_Exception();
+ * if (BoxException_Check(exception))
+ *   abort();
+ * @endcode
+ */
+BOXEXPORT BoxBool
+BoxException_Check(BoxException *excp) ;
 
 #endif /* _BOX_EXCEPTION_H */

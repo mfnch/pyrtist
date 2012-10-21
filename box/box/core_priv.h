@@ -37,7 +37,6 @@ struct BoxCoreTypes_struct {
           *init_type,
           *finish_type,
           *type_type,
-          *callable_type,
           *Char_type,
           *Int_type,
           *Real_type,
@@ -54,7 +53,8 @@ struct BoxCoreTypes_struct {
           *hash_type,
           *serialize_type,
           *deserialize_type,
-          *REFERENCES_type;
+          *REFERENCES_type,
+          *Exception_type;
 };
 
 /**
