@@ -227,6 +227,7 @@ BoxTask BoxVM_Init(BoxVM *vm) {
 
   BoxArr_Init(& vm->types, sizeof(BoxType *), 128);
   BoxArr_Set_Finalizer(& vm->types, My_Finalize_Installed_Type);
+  BoxHT_Init_Default(& vm->types_dict, 128);
 
   BoxArr_Init(& vm->stack, sizeof(BoxPtr), 10);
   BoxArr_Init(& vm->data_segment, sizeof(char), CMP_TYPICAL_DATA_SIZE);
@@ -277,6 +278,7 @@ void BoxVM_Finish(BoxVM *vm) {
     My_Free_Globals(vm);
 
   BoxArr_Finish(& vm->types);
+  BoxHT_Finish(& vm->types_dict);
 
   if (BoxArr_Num_Items(& vm->stack) != 0)
     MSG_WARNING("Run finished with non empty stack.");
@@ -322,15 +324,50 @@ void BoxVM_Destroy(BoxVM *vm) {
 
 /* Install a new type and return its type identifier for this VM. */
 BoxTypeId BoxVM_Install_Type(BoxVM *vm, BoxType *t) {
-  (void) BoxType_Link(t);
-  (void) BoxArr_Push(& vm->types, & t);
-  return BoxArr_Get_Num_Items(& vm->types);
+  BoxHTItem *item;
+
+  /* First, try to see whether we have already associated an ID to the type. */
+  if (BoxHT_Find(& vm->types_dict, & t, sizeof(t), & item)) {
+    /* Yes. We then return that ID. */
+    return *((BoxTypeId *) item->object);
+
+  } else {
+    /* No. We have to generate a new ID. */
+    BoxTypeId id;
+
+    (void) BoxType_Link(t);
+    (void) BoxArr_Push(& vm->types, & t);
+    id = BoxArr_Get_Num_Items(& vm->types);
+
+    /* Add the ID to the dictionary of types->ID, to avoid generating many
+     * IDs for the same identical type.
+     */
+    (void) BoxHT_Insert_Obj(& vm->types_dict, & t, sizeof(t),
+                            & id, sizeof(id));
+    return id;
+  }
 }
 
 /* Retrieve the type corresponding to the given type identifier. */
 BoxType *
 BoxVM_Get_Installed_Type(BoxVM *vm, BoxTypeId id) {
   return *((BoxType **) BoxArr_Get_Item_Ptr(& vm->types, id));
+}
+
+/* Generate a human-readable description of the table of installed types. */
+char *BoxVM_Get_Installed_Types_Desc(BoxVM *vm) {
+  char *s = NULL;
+  size_t id, n = BoxArr_Get_Num_Items(& vm->types);
+
+  for (id = 1; id <= n; id++) {
+    BoxType *t = *((BoxType **) BoxArr_Get_Item_Ptr(& vm->types, id));
+    if (s)
+      s = Box_SPrintF("%~s\n%d: %~s", s, id, BoxType_Get_Repr(t));
+    else
+      s = Box_SPrintF("%d: %~s", id, BoxType_Get_Repr(t));
+  }
+
+  return (s) ? s : Box_SPrintF("");
 }
 
 BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op) {

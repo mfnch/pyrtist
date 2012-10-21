@@ -257,7 +257,9 @@ BOXEXPORT void BoxArr_Compactify(BoxArr *arr);
 
 /** Returns the pointer to the memory block containing the data for the array.
  */
-#define BoxArr_First_Item_Ptr(arr) ((arr)->ptr)
+#define BoxArr_Get_First_Item(arr) ((arr)->ptr)
+
+#define BoxArr_First_Item_Ptr BoxArr_Get_First_Item
 
 /** Returns the pointer to the last item stored in the array.
  */

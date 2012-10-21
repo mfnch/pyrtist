@@ -1211,9 +1211,10 @@ char *BoxType_Get_Repr(BoxType *t) {
       BoxTypeIter iter;
       BoxType *node, *prev_type;
       BoxBool has_prev_type = BOXBOOL_FALSE;
+      size_t num_membs = 0;
 
       for (BoxTypeIter_Init(& iter, t);
-           BoxTypeIter_Get_Next(& iter, & node);) {
+           BoxTypeIter_Get_Next(& iter, & node); num_membs++) {
         char *memb_name;
         BoxType *memb_type;
         char *memb_repr;
@@ -1241,7 +1242,8 @@ char *BoxType_Get_Repr(BoxType *t) {
         str = (str ? Box_SPrintF("%~s, %~s", str, memb_repr) : memb_repr);
       }
 
-      return Box_SPrintF("(%~s)", str);
+      return ((num_membs > 1) ?
+              Box_SPrintF("(%~s)", str) : Box_SPrintF("(%~s,)", str));
     }
 
   case BOXTYPECLASS_ANY:

@@ -155,8 +155,9 @@ typedef struct {
          max;  /**< Max register number */
 } BoxVMRegs;
 
-/** This structure contains all the data which define the status for the VM.
- * Status is allocated by 'VM_Module_Execute' inside its stack.
+/**
+ * This structure contains all the data which define the status for the VM.
+ * Status is allocated by VM_Module_Execute() inside its stack.
  */
 struct BoxVMX_struct {
   BoxVM       *vm;        /**< VM to execute. */
@@ -194,7 +195,8 @@ struct BoxVMX_struct {
 struct BoxVM_struct {
   BoxVMX  *vmcur;          /**< The current execution frame */
   BoxArr  types;           /**< Type bound to this VM. */
-
+  BoxHT   types_dict;      /**< Dictionaries to find type IDs the corresponding
+                              types.*/
   struct {
     unsigned int
           forcelong :1,    /**< Force long form assembly. */

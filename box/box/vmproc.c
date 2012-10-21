@@ -369,9 +369,16 @@ BoxTask BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out) {
   fprintf(out, "\n");
 
   fprintf(out, "*** OBJECT DESCRIPTOR TABLE ***\n");
+#if BOX_USE_NEW_OBJ != 0
+  s = BoxVM_Get_Installed_Types_Desc(vmp);
+  fprintf(out, "%s\n", s);
+  BoxMem_Free(s);
+#else
   s = BoxVM_ObjDesc_Table_To_Str(vmp);
   fprintf(out, "%s", s);
   BoxMem_Free(s);
+#endif
+
   fprintf(out, "*** END OF OBJECT DESCRIPTOR TABLE ***\n\n");
 
 

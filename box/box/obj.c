@@ -534,7 +534,7 @@ BoxBool
 BoxPtr_Create_Obj(BOXOUT BoxPtr *ptr, BoxType *t) {
   BoxSPtr obj = BoxSPtr_Create(t);
   BoxPtr_Init_From_SPtr(ptr, obj);
-  return (t != NULL);
+  return (obj != NULL);
 }
 
 /* Copy an object of the given type. */

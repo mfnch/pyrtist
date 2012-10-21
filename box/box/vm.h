@@ -236,6 +236,18 @@ BOXEXPORT BoxType *
 BoxVM_Get_Installed_Type(BoxVM *vm, BoxTypeId id);
 
 /**
+ * @brief Generate a human-readable description of the table of installed
+ *   types.
+ *
+ * @param vm The virtual machine to which the table refers to.
+ * @return A freshly allocated string (to be freed by BoxMem_Free() by the
+ *   caller) containing a human-readable representation of the mapping
+ *   type id -> type.
+ */
+BOXEXPORT char *
+BoxVM_Get_Installed_Types_Desc(BoxVM *vm);
+
+/**
  * @brief Reference a #BoxVM object, using BoxSPtr_Link().
  */
 #define BoxVM_Link(x) (x)
