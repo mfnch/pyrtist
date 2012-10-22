@@ -1163,8 +1163,11 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
   }
 
   /* Set the C-name of the procedure, if given. */
-  if (c_name)
+  if (c_name) {
     BoxCallable_Set_Uid(comb_callable, c_name);
+    if (!n_implem)
+      BoxVMSym_Reference_Proc(c->vm, comb_callable);
+  }
 
   /* If an implementation is also provided, then we define the procedure */
   if (n_implem) {

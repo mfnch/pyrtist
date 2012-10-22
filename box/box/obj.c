@@ -334,8 +334,10 @@ My_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t) {
 
         /* First, copy the derived type. */
         rt = BoxType_Resolve(t, BOXTYPERESOLVE_IDENT, 1);
+#if 0
         if (!My_Copy_Obj(dst, src, rt))
           return BOXBOOL_FALSE;
+#endif
 
         node = BoxType_Find_Own_Combination(t, BOXCOMBTYPE_COPY, t, NULL);
         if (node && BoxType_Get_Combination_Info(node, NULL, & callable))

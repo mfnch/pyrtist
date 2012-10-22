@@ -230,11 +230,6 @@ BoxCallable_Request_VM_Call_Num(BoxCallable *cb, BoxVM *vm, BoxVMCallNum *num,
       if (!new_cb)
         break;
 
-      /* Alert the virtual machine that this call number is being used and
-       * needs therefore to be resolved.
-       */
-      BoxVMSym_Reference_Proc(vm, new_cb);
-
       *num = new_num;
       *cb_out = new_cb;
       return BOXBOOL_TRUE;

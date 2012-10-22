@@ -204,6 +204,7 @@ My_Resolve_Proc_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type,
                     void *ref, size_t ref_size) {
   MyProcDef *proc_def = def;
   BoxCallable *cb;
+  BoxTask success;
 
   assert(sym_type == BOXVMSYMTYPE_PROC && proc_def && defined);
   
@@ -212,8 +213,9 @@ My_Resolve_Proc_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type,
 
   cb = BoxCallable_Link(proc_def->callable);
   cb = BoxCallable_Define_From_CCallOld(cb, proc_def->fn_ptr);
+  success = (cb) ? BOXTASK_OK : BOXTASK_FAILURE;
   (void) BoxCallable_Unlink(cb);
-  return BOXTASK_OK;
+  return success;
 }
 
 /*
