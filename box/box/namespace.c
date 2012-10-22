@@ -89,7 +89,8 @@ typedef struct {
   NmspCallback callback; /**< Callback function */
 } MyCallbackNmspItem;
 
-static void My_NmspItem_Finish(Namespace *ns, NmspItem *item) {
+static void
+My_NmspItem_Finish(Namespace *ns, size_t floor_idx, NmspItem *item) {
   switch(item->type) {
   case NMSPITEMTYPE_VALUE:
     if (((Value *) item->data)->num_ref != 1) {
@@ -106,7 +107,10 @@ static void My_NmspItem_Finish(Namespace *ns, NmspItem *item) {
   case NMSPITEMTYPE_PROCEDURE:
     {
       MyProcedureNmspItem *p = (MyProcedureNmspItem *) item->data;
-#if BOX_USE_NEW_OBJ == 0
+#if BOX_USE_NEW_OBJ != 0
+      if (floor_idx > 1)
+        BoxType_Undefine_Combination(p->parent, p->comb_node);
+#else
       BoxType_Undefine_Combination(p->parent, p->comb_node);
 #endif
       BoxMem_Free(p);
@@ -129,13 +133,15 @@ static void My_NmspItem_Finish(Namespace *ns, NmspItem *item) {
 void Namespace_Floor_Down(Namespace *ns) {
   NmspFloorData floor_data;
   NmspItem *item;
+  size_t floor_idx;
 
   BoxArr_Pop(& ns->floors, & floor_data);
+  floor_idx = BoxArr_Get_Num_Items(& ns->floors);
 
   for(item = floor_data.first_item; item != NULL;) {
     NmspItem *item_to_del = item;
     item = item->next;
-    My_NmspItem_Finish(ns, item_to_del);
+    My_NmspItem_Finish(ns, floor_idx, item_to_del);
     if (item_to_del->ht_item != NULL)
       BoxHT_Remove_By_HTItem(& ns->ht, item_to_del->ht_item);
 

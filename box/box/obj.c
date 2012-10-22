@@ -227,6 +227,7 @@ My_Finish_Obj(BoxPtr *src, BoxType *t) {
 #if DEBUG_OBJ_C != 0
   printf("Finalising %s\n", BoxType_Get_Repr(t));
 #endif
+  return;
   while (1) {
     switch (t->type_class) {
     case BOXTYPECLASS_SUBTYPE_NODE:
@@ -334,12 +335,12 @@ My_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t) {
 
         /* First, copy the derived type. */
         rt = BoxType_Resolve(t, BOXTYPERESOLVE_IDENT, 1);
-#if 0
-        if (!My_Copy_Obj(dst, src, rt))
-          return BOXBOOL_FALSE;
-#endif
 
         node = BoxType_Find_Own_Combination(t, BOXCOMBTYPE_COPY, t, NULL);
+
+        if (!node)
+          return My_Copy_Obj(dst, src, rt);
+
         if (node && BoxType_Get_Combination_Info(node, NULL, & callable))
         {
           /* Now do our own initialization... */
