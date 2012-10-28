@@ -227,7 +227,6 @@ My_Finish_Obj(BoxPtr *src, BoxType *t) {
 #if DEBUG_OBJ_C != 0
   printf("Finalising %s\n", BoxType_Get_Repr(t));
 #endif
-  return;
   while (1) {
     switch (t->type_class) {
     case BOXTYPECLASS_SUBTYPE_NODE:
