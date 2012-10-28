@@ -191,7 +191,7 @@ BoxVM_Install_Proc_Code(BoxVM *vm, BoxVMCallNum cn, BoxVMProcID id) {
 
 /* Installs the given C function as a new procedure. */
 BoxBool
-BoxVM_Install_Proc_CCode(BoxVM *vm, BoxVMCallNum cn, BoxVMCCode c_proc) {
+BoxVM_Install_Proc_CCode(BoxVM *vm, BoxVMCallNum cn, BoxCCallOld c_proc) {
   BoxVMProcTable *pt = & vm->proc_table;
   BoxVMProcInstalled *inst_proc;
 

@@ -45,12 +45,6 @@ typedef unsigned int BoxVMProcID;
  */
 #define BOXVMPROCID_NONE (0)
 
-/** A particular kind of C function which can be registered and called directly
- * by the Box VM.
- * @see VM_Proc_Install_CCode
- */
-typedef BoxTask (*BoxVMCCode)(BoxVMX *);
-
 /**
  * @brief Procedure implementation kind.
  */
@@ -58,10 +52,8 @@ typedef enum {
   BOXVMPROCKIND_UNDEFINED, /**< Procedure not defined (nor reserved). */
   BOXVMPROCKIND_RESERVED,  /**< Procedure reserved, but not defined. */
   BOXVMPROCKIND_VM_CODE,   /**< Procedure defined as VM code. */
-  BOXVMPROCKIND_FOREIGN    /**< Procedure defined as a foreign callable. */
-
-
-  ,BOXVMPROCKIND_C_CODE    /**< Procedure defined as a foreign callable. */
+  BOXVMPROCKIND_FOREIGN,   /**< Procedure defined as a foreign callable. */
+  BOXVMPROCKIND_C_CODE     /**< Procedure defined as a foreign callable. */
 } BoxVMProcKind;
 
 

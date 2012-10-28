@@ -130,7 +130,7 @@ BoxVM_Install_Proc_Code(BoxVM *vm, BoxVMCallNum call_num, BoxVMProcID id);
  * @return Whether the operation was successful.
  */
 BOXEXPORT BoxBool
-BoxVM_Install_Proc_CCode(BoxVM *vm, BoxVMCallNum cn, BoxVMCCode c_proc);
+BoxVM_Install_Proc_CCode(BoxVM *vm, BoxVMCallNum cn, BoxCCallOld c_proc);
 
 /**
  * @brief Installs the given callable as a new procedure.

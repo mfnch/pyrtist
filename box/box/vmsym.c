@@ -378,7 +378,7 @@ My_Resolve_Ref_With_CLib(BoxVMSymID sym_id, void *item, void *pass_data) {
           return 1;
         }
 
-        (void) BoxVMSym_Define_Proc(vm, sym_id, (BoxVMCCode) sym);
+        (void) BoxVMSym_Define_Proc(vm, sym_id, (BoxCCallOld) sym);
       }
     }
   }

@@ -55,8 +55,8 @@ struct BoxVMProcInstalled_struct {
   char          *desc;    /**< Description of the procedure */
   union {
     BoxCallable *foreign; /**< Foreign callable. */
-    BoxTask (*c)(void *); /**< Pointer to the C function (can't use
-                               BoxVMCCode!) */
+    BoxCCallOld c;        /**< Pointer to the C function (can't use
+                               BoxCCallOld!) */
     BoxVMCallNum proc_id; /**< Number of the procedure which contains
                                the code */
   } code;
