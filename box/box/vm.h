@@ -28,6 +28,7 @@
 #  include <stdio.h>
 #  include <stdlib.h>
 #  include <stdarg.h>
+#  include <stdint.h>
 
 #  include <box/types.h>
 #  include <box/srcpos.h>
@@ -104,7 +105,7 @@ typedef unsigned char BoxVMByte;
 
 typedef char BoxVMSByte;
 
-typedef unsigned long BoxVMWord;
+typedef uint32_t BoxVMWord;
 
 #  define BoxVMWord_Fmt "%8.8lx"
 

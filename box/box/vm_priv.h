@@ -49,7 +49,8 @@ typedef enum {
   TYPE_OBJ            =  4,
 } TypeID;
 
-/** Structure used in BoxOpInfo to list the input and output registers
+/**
+ * Structure used in BoxOpInfo to list the input and output registers
  * for each VM operation.
  */
 typedef struct {
@@ -62,7 +63,7 @@ typedef struct {
 /**
  * @brief Enumeration of all the possible types of signatures for the Box VM
  *   instructions.
-
+ *
  * Different signatures mean different number and/or type of arguments.
  */
 typedef enum {
@@ -87,9 +88,11 @@ typedef enum {
 /** Typedef of struc __BoxOpInfo */
 typedef struct BoxOpInfo_struct BoxOpInfo;
 
-/** Structure containing detailed information about one VM operation */
+/**
+ * @brief Structure containing detailed information about one VM operation.
+ */
 struct BoxOpInfo_struct {
-  BoxOp  opcode;       /**< Opcode for the operation */
+  BoxOp      opcode;       /**< Opcode for the operation */
   BoxGOp     g_opcode;     /**< Generic opcode */
   BoxOpInfo  *next;        /**< Next operation with the same generic opcode */
   const char *name;        /**< Literal name of the opcode (a string) */
@@ -278,17 +281,20 @@ void VM__Imm(BoxVMX *vmx);
 /** This is the type of the C functions which can be called by the VM. */
 typedef BoxTask (*BoxVMFunc)(BoxVMX *);
 
-/** Initialise a BoxVM object for which space has been already allocated
+/**
+ * Initialise a BoxVM object for which space has been already allocated
  * somehow. You'll need to use BoxVM_Finish to destroy the object.
  * @see BoxVM_Finish, BoxVM_Create
  */
-BoxTask BoxVM_Init(BoxVM *vm);
+BOXEXPORT BoxTask
+BoxVM_Init(BoxVM *vm);
 
 /**
  * @brief Destroy a BoxVM object initialised with BoxVM_Init().
  * @see BoxVM_Init
  */
-void BoxVM_Finish(BoxVM *vm);
+BOXEXPORT void
+BoxVM_Finish(BoxVM *vm);
 
 /** Provide a failure message for a raised exception. */
 BOXEXPORT void BoxVMX_Set_Fail_Msg(BoxVMX *vm, const char *msg);

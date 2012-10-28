@@ -130,8 +130,8 @@ static BoxTask Assemble_Proc_Head(BoxVM *vmp, BoxVMSymID sym_id, BoxUInt sym_typ
                                   void *ref, size_t ref_size) {
   ProcHead *ph = (ProcHead *) def;
   static BoxInt asm_code[NUM_TYPES] = {BOXOP_NEWC_II, BOXOP_NEWI_II,
-                                    BOXOP_NEWR_II, BOXOP_NEWP_II,
-                                    BOXOP_NEWO_II};
+                                       BOXOP_NEWR_II, BOXOP_NEWP_II,
+                                       BOXOP_NEWO_II};
   int i;
 
   assert(sym_type == BOXVMSYMTYPE_PROC_HEAD);

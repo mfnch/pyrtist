@@ -21,7 +21,7 @@
  * of Box: defines functions to assemble, disassemble, execute basic
  * instructions.
  */
-#define DEBUG_EXEC 0
+#define DEBUG_EXEC 1
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -544,8 +544,8 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
 
 #if DEBUG_EXEC == 1
   fprintf(stderr, "call module = "SInt": %p@%p\n",
-          call_num, BOX_VM_THIS_PTR(vmp, void),
-          BOX_VM_ARG_PTR(vmp, void));
+          call_num, BOX_VM_THIS_PTR(vmx, void),
+          BOX_VM_ARG_PTR(vmx, void));
 #endif
 
   p = (BoxVMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
