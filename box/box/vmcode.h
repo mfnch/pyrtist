@@ -256,7 +256,7 @@ BoxVMCode_Install(BoxVMCode *p);
  * @see BoxVMCode_Assemble
  */
 BOXEXPORT void
-BoxVMCode_Raw_Assemble(BoxVMCode *p, BoxOpcode instr, ...);
+BoxVMCode_Raw_Assemble(BoxVMCode *p, BoxOp instr, ...);
 
 /**
  * @brief Non-variadic version of the function BoxVMCode_Raw_Assemble().
@@ -266,7 +266,7 @@ BoxVMCode_Raw_Assemble(BoxVMCode *p, BoxOpcode instr, ...);
  * @see BoxVMCode_Raw_Assemble
  */
 BOXEXPORT void
-BoxVMCode_Raw_VA_Assemble(BoxVMCode *p, BoxOpcode instr, va_list ap);
+BoxVMCode_Raw_VA_Assemble(BoxVMCode *p, BoxOp instr, va_list ap);
 
 /**
  * @brief Assemble a @c call instruction to call the procedure with the given

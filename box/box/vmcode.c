@@ -337,7 +337,7 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p) {
   }
 }
 
-void BoxVMCode_Raw_VA_Assemble(BoxVMCode *p, BoxOpcode op, va_list ap) {
+void BoxVMCode_Raw_VA_Assemble(BoxVMCode *p, BoxOp op, va_list ap) {
   BoxVMProcID proc_id, previous_target;
   BoxVMCode_Begin(p); /* Begin the procedure, if not done explicitly */
   proc_id = BoxVMCode_Get_ProcID(p);
@@ -346,7 +346,7 @@ void BoxVMCode_Raw_VA_Assemble(BoxVMCode *p, BoxOpcode op, va_list ap) {
   (void) BoxVM_Proc_Target_Set(p->cmp->vm, previous_target);
 }
 
-void BoxVMCode_Raw_Assemble(BoxVMCode *p, BoxOpcode op, ...) {
+void BoxVMCode_Raw_Assemble(BoxVMCode *p, BoxOp op, ...) {
   va_list ap;
   va_start(ap, op);
   BoxVMCode_Raw_VA_Assemble(p, op, ap);

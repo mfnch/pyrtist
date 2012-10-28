@@ -49,9 +49,6 @@ typedef enum {
   TYPE_OBJ            =  4,
 } TypeID;
 
-
-typedef BoxOp BoxOpcode;
-
 /** Structure used in BoxOpInfo to list the input and output registers
  * for each VM operation.
  */
@@ -62,9 +59,11 @@ typedef struct {
        io;   /**< 'o' for output, 'i' for input, 'b' for input/output */
 } BoxOpReg;
 
-/** Enumeration of all the possible types of signatures for the ops
- * (instructions of the Box VM). Different signatures mean different
- * number and/or type of arguments.
+/**
+ * @brief Enumeration of all the possible types of signatures for the Box VM
+ *   instructions.
+
+ * Different signatures mean different number and/or type of arguments.
  */
 typedef enum {
   BOXOPSIGNATURE_NONE,
@@ -90,7 +89,7 @@ typedef struct BoxOpInfo_struct BoxOpInfo;
 
 /** Structure containing detailed information about one VM operation */
 struct BoxOpInfo_struct {
-  BoxOp      opcode;       /**< Opcode for the operation */
+  BoxOp  opcode;       /**< Opcode for the operation */
   BoxGOp     g_opcode;     /**< Generic opcode */
   BoxOpInfo  *next;        /**< Next operation with the same generic opcode */
   const char *name;        /**< Literal name of the opcode (a string) */

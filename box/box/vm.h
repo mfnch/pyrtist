@@ -144,7 +144,6 @@ typedef enum {
   BOXOP_ARINIT_I, BOXOP_ARSIZE_I, BOXOP_ARADDR_II, BOXOP_ARGET_OO,
   BOXOP_ARNEXT_OO, BOXOP_ARDEST_O,
   BOX_NUM_OPS
-
 } BoxOp;
 
 /** Generic opcodes (type independent) */
@@ -173,7 +172,6 @@ typedef enum {
   BOXVM_ATTR_ASM_LONG_FMT=1,  /**< Use long format when assembling code */
   BOXVM_ATTR_DASM_WITH_HEX=2, /**< Show also hex values when disassembling */
   BOXVM_ATTR_ADD_DATA_IDENT=4 /**< Add identity info (debug) to data blocks */
-
 } BoxVMAttr;
 
 /**
@@ -253,16 +251,19 @@ BoxVM_Get_Installed_Types_Desc(BoxVM *vm);
  */
 void BoxVM_Set_Attr(BoxVM *vm, BoxVMAttr mask, BoxVMAttr value);
 
-/** This function adds a new piece of data to the data segment.
- * NOTE: It returns the address of the data item with respect to the beginning
+/**
+ * @brief This function adds a new piece of data to the data segment.
+ *
+ * @note It returns the address of the data item with respect to the beginning
  *  of the data segment.
+ *
  * @param vm the VM object.
  * @param data the pointer to the data to add.
  * @param size the size of the data pointed by data.
  * @param type an integer identifying the type of data.
  */
-BOXEXPORT size_t BoxVM_Data_Add(BoxVM *vm, const void *data, size_t size,
-                                BoxInt type);
+BOXEXPORT size_t
+BoxVM_Data_Add(BoxVM *vm, const void *data, size_t size, BoxInt type);
 
 /** Produce a human readable representation of the data segment of 'vm'
  * and send it to the output stream 'stream'.

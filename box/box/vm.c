@@ -722,12 +722,12 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
   int i, t;
   int is_short;
   struct {
-    TypeID t;  /* Tipi degli argomenti */
-    BoxOp c;   /* Categorie degli argomenti */
-    void *ptr; /* Puntatori ai valori degli argomenti */
-    BoxInt   vi;  /* Destinazione dei valori...   */
-    BoxReal  vr;  /* ...immediati degli argomenti */
-    BoxPoint vp;
+    TypeID    t;    /* Tipi degli argomenti */
+    BoxOp c;    /* Categorie degli argomenti */
+    void      *ptr; /* Puntatori ai valori degli argomenti */
+    BoxInt    vi;   /* Destinazione dei valori...   */
+    BoxReal   vr;   /* ...immediati degli argomenti */
+    BoxPoint  vp;
   } arg[VM_MAX_NUMARGS];
 
   /* Esco subito se e' settato il flag di inibizione! */
