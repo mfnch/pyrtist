@@ -26,8 +26,6 @@
 #include <box/messages.h>
 #include <box/types_priv.h>
 
-#define DEBUG_OBJ_C 0
-
 
 /**
  * @brief Get the header from a pointer as returned by BoxObj_Alloc().
@@ -85,16 +83,20 @@ void BoxAny_Copy(BoxAny *dst, BoxAny *src) {
   /* Note that the type is implicitely referenced by the object. */
 }
 
+/* Change the boxed object stored inside the given any object. */
+BoxBool BoxAny_Box(BoxPtr *any, BoxPtr *obj, BoxType *t) {
+  return BOXBOOL_FALSE;
+}
+
+/* Retrieve the boxed object stored inside the given any object. */
+BoxBool BoxAny_Unbox(BOXOUT BoxPtr *obj, BoxPtr *any, BoxType *t) {
+  return BOXBOOL_FALSE;
+}
+
 /* Initialize a block of memory addressed by src and with type t. */
 static BoxBool
 My_Init_Obj(BoxPtr *src, BoxType *t) {
   char *t_repr = BoxType_Get_Repr(t);
-#if DEBUG_OBJ_C != 0
-  printf("Initialising %s\n", t_repr);
-  if (strcmp(t_repr, "Obj") == 0) {
-    printf("Dealing with initialization of Obj\n");
-  }
-#endif
     
   while (1) {
     switch (t->type_class) {
@@ -224,9 +226,6 @@ My_Init_Obj(BoxPtr *src, BoxType *t) {
 /* Generic finalization function for objects. */
 static void
 My_Finish_Obj(BoxPtr *src, BoxType *t) {
-#if DEBUG_OBJ_C != 0
-  printf("Finalising %s\n", BoxType_Get_Repr(t));
-#endif
   while (1) {
     switch (t->type_class) {
     case BOXTYPECLASS_SUBTYPE_NODE:
@@ -308,10 +307,6 @@ My_Finish_Obj(BoxPtr *src, BoxType *t) {
 /* Generic function to copy objects. */
 static BoxBool
 My_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t) {
-#if DEBUG_OBJ_C != 0
-  printf("Copying %s\n", BoxType_Get_Repr(t));
-#endif
-
   /* Check we are not copying the object over itself. */
   if (dst->ptr == src->ptr)
     return BOXBOOL_TRUE;
@@ -475,9 +470,12 @@ void BoxSPtr_Unlink_End(BoxSPtr src) {
 
 /* Reference the given object. */
 BoxPtr *BoxPtr_Link(BoxPtr *src) {
-  BoxObjHeader *head = BoxPtr_Get_Block(src);
-  assert(head->num_refs >= 1);
-  head->num_refs++;
+  if (!BoxPtr_Is_Detached(src)) {
+    BoxObjHeader *head = BoxPtr_Get_Block(src);
+    assert(head->num_refs >= 1);
+    head->num_refs++;
+  }
+
   return src;
 }
 
@@ -588,4 +586,16 @@ BoxPtr_Create_Obj(BOXOUT BoxPtr *ptr, BoxType *t) {
 BoxBool
 BoxPtr_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t) {
   return My_Copy_Obj(dst, src, t);
+}
+
+/* Try to convert a BoxPtr object to a simple single pointer. */
+void *
+BoxPtr_Get_SPtr(const BoxPtr *src) {
+  if (src) {
+    void *sptr = (char *) src->block + sizeof(BoxObjHeader);
+    if (sptr == src->ptr)
+      return sptr;
+  }
+
+  return NULL;
 }

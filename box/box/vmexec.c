@@ -64,7 +64,7 @@ static void *My_Exec_X_II(BoxVMX *vmx, int type_id, size_t type_size,
         regs->max = numreg;
         regs->ptr = ptr + type_size*numvar;
         vmx->alc[type_id] |= 1;
-        if (num_regs != (size_t *) NULL)
+        if (num_regs)
           *num_regs = numtot;
         return ptr;
 
@@ -101,7 +101,7 @@ static void My_Exec_NewO_II(BoxVMX *vmx) {
   size_t num_regs, i;
   BoxPtr *regs =
     (BoxPtr *) My_Exec_X_II(vmx, BOXTYPE_PTR, sizeof(BoxPtr), & num_regs);
-  if (regs != NULL) {
+  if (regs) {
     for(i = 0; i < num_regs; i++)
       BoxPtr_Nullify(regs + i);
   }
@@ -547,6 +547,73 @@ static void My_Exec_Ardest_O(BoxVMX *vm) {
 #endif
 }
 
+static void My_Exec_Regs_I(BoxVMX *vm) {
+
+}
+
+/**
+ * @brief Instruction <tt>typeof int</tt>.
+ *
+ * The @c typeof VM instruciton retrieves in @c ro0 the type corresponding
+ * to the type identifier given as its integer argument. The type identifier
+ * is the same that would be used in the @c create VM instruction.
+ */
+static void
+My_Exec_Typeof_O(BoxVMX *vmx) {
+  BoxInt id = *((BoxInt *) vmx->arg1);
+  BoxPtr *obj = (BoxPtr *) vmx->local[TYPE_OBJ].ptr;
+  BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, id);
+  BoxPtr_Init_From_SPtr(obj, t);
+  (void) BoxPtr_Link(obj);
+ }
+
+/**
+ * @brief Instruction <tt>box dstptr, srcptr</tt>.
+ *
+ * The @c box VM instruciton converts the source object @c srcptr into a
+ * destination @c ANY object in @c dstptr using the type in @c ro0.
+ * Note that @c dstptr must be a pointer to an initialized @c ANY object.
+ */
+static void
+My_Exec_Box_OO(BoxVMX *vmx) {
+  BoxPtr *t_ptr = (BoxPtr *) vmx->local[TYPE_OBJ].ptr;
+  BoxPtr *dst = (BoxPtr *) vmx->arg1,
+         *src = (BoxPtr *) vmx->arg2;
+  BoxType *t = BoxPtr_Get_SPtr(t_ptr);
+  if (t) {
+    if (BoxAny_Box(dst, src, t))
+      return;
+    BoxVMX_Set_Fail_Msg(vmx, "Boxing operation failed");
+  } else
+    BoxVMX_Set_Fail_Msg(vmx, "Anomalous type in boxing operation");
+
+  vmx->flags.error = vmx->flags.exit = 1;
+}
+
+/**
+ * @brief Instruction <tt>unbox dstptr, srcptr</tt>.
+ *
+ * The @c unbox VM instruciton converts the source @c ANY object @c srcptr into
+ * a destination object in @c dstptr of type @c ro0.
+ * Note that the unboxing operation fails (raising an exception) if the type
+ * of the boxed object is not consistent with what given in @c ro0.
+ */
+static void My_Exec_Unbox_OO(BoxVMX *vmx) {
+  BoxPtr *t_ptr = (BoxPtr *) vmx->local[TYPE_OBJ].ptr;
+  BoxPtr *dst = (BoxPtr *) vmx->arg1,
+         *src = (BoxPtr *) vmx->arg2;
+  BoxType *t = BoxPtr_Get_SPtr(t_ptr);
+  if (t) {
+    if (BoxAny_Unbox(dst, src, t))
+      return;
+    BoxVMX_Set_Fail_Msg(vmx, "Unboxing operation failed");
+  } else
+    BoxVMX_Set_Fail_Msg(vmx, "Anomalous type in unboxing operation");
+
+  vmx->flags.error = vmx->flags.exit = 1;  
+}
+
+
 typedef struct {
   BoxGOp         g_opcode;        /**< Generic Opcode */
   const char     *name;           /**< Name of the operation */
@@ -658,10 +725,14 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {BOXGOP_ARINIT, "arinit", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Arinit_I }, /* arinit ri       */
   {BOXGOP_ARSIZE, "arsize", 1, 'i', "a1,ro0",  NULL, "x-", "xx", My_Exec_Arsize_I }, /* arsize ri       */
   {BOXGOP_ARADDR, "araddr", 2, 'i',
-                             "a1,a2,ro0,ri0", "ri0", "xx", "xx", My_Exec_Araddr_II}, /* araddr ri, ri */
+                             "a1,a2,ro0,ri0", "ri0", "xx", "xx", My_Exec_Araddr_II}, /* araddr ri, ri       */
   { BOXGOP_ARGET,  "arget", 2, 'o', "a2,ri0",  "a1", "xx", "xx", My_Exec_Arget_OO }, /* arget reg_o, reg_o  */
   {BOXGOP_ARNEXT, "arnext", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Arnext_OO}, /* arnext reg_o, reg_o */
-  {BOXGOP_ARDEST, "ardest", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Ardest_O }  /* ardest reg_o        */
+  {BOXGOP_ARDEST, "ardest", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Ardest_O }, /* ardest reg_o        */
+  {  BOXGOP_REGS,   "regs", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Regs_I   }, /* regs reg_i          */
+  {BOXGOP_TYPEOF, "typeof", 1, 'o',     "a1", "ro0", "x-", "xx", My_Exec_Typeof_O }, /* typeof reg_o        */
+  {   BOXGOP_BOX,    "box", 1, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Box_OO   }, /* box reg_o, reg_o    */
+  { BOXGOP_UNBOX,  "unbox", 1, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Unbox_OO }  /* unbox reg_o, reg_o  */
 };
 
 

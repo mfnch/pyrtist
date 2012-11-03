@@ -67,6 +67,30 @@ BOXEXPORT void
 BoxAny_Finish(BoxAny *any);
 
 /**
+ * @brief Change the boxed object stored inside the given any object.
+ *
+ * @param any The ANY object which should be changed to reference @p obj.
+ * @param obj The object which should be put inside @p any.
+ * @param t The type of @p obj.
+ * @return Whether the boxing operation was successful.
+ */
+BOXEXPORT BoxBool
+BoxAny_Box(BoxPtr *any, BoxPtr *obj, BoxType *t);
+
+/**
+ * @brief Retrieve the boxed object stored inside the given any object.
+ *
+ * @param obj An unitialised pointer which will be set with a fresh reference
+ *   to the object contained inside @p any.
+ * @param any The @c ANY object containing the boxed object.
+ * @param t The type of the boxed object.
+ * @return Whether the unboxing operation was successful. Unboxing @p any can
+ *   be done only if the contained object has a type which matches @p t.
+ */
+BOXEXPORT BoxBool
+BoxAny_Unbox(BOXOUT BoxPtr *obj, BoxPtr *any, BoxType *t);
+
+/**
  * Object header. Every object allocation includes some extra space to contain
  * This structure, which contains the type of the object and the number of
  * references that other objects make to it.
@@ -196,5 +220,18 @@ BoxPtr_Create_Obj(BOXOUT BoxPtr *ptr, BoxType *t);
  */
 BOXEXPORT BoxBool
 BoxPtr_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t);
+
+/**
+ * @brief Try to convert a BoxPtr object to a simple single pointer.
+ *
+ * This function returns the a pointer @c sptr, if a pointer @c src exists such
+ * that @p src can be obtained from <tt>BoxPtr_Init_From_SPtr(src, sptr)</tt>.
+ *
+ * @param src The input double pointer.
+ * @return The single pointer corresponding to @p src, or @c NULL if such
+ *   @c src cannot be expressed by using a single pointer.
+ */
+BOXEXPORT void *
+BoxPtr_Get_SPtr(const BoxPtr *src);
 
 #endif /* _BOX_OBJ_H */

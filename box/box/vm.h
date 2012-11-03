@@ -105,7 +105,7 @@ typedef unsigned char BoxVMByte;
 
 typedef char BoxVMSByte;
 
-typedef uint32_t BoxVMWord;
+typedef uint64_t BoxVMWord;
 
 #  define BoxVMWord_Fmt "%8.8lx"
 
@@ -144,6 +144,7 @@ typedef enum {
   BOXOP_ADD_O,
   BOXOP_ARINIT_I, BOXOP_ARSIZE_I, BOXOP_ARADDR_II, BOXOP_ARGET_OO,
   BOXOP_ARNEXT_OO, BOXOP_ARDEST_O,
+  BOXOP_REGS_I, BOXOP_TYPEOF_I, BOXOP_BOX_O, BOXOP_UNBOX_O,
   BOX_NUM_OPS
 } BoxOp;
 
@@ -161,8 +162,8 @@ typedef enum {
   BOXGOP_MCOPY, BOXGOP_RELOC, BOXGOP_SHIFT, BOXGOP_REF, BOXGOP_NULL,
   BOXGOP_LEA, BOXGOP_PUSH, BOXGOP_POP, BOXGOP_JMP, BOXGOP_JC,
   BOXGOP_ARINIT, BOXGOP_ARSIZE, BOXGOP_ARADDR, BOXGOP_ARGET, BOXGOP_ARNEXT,
-  BOXGOP_ARDEST, BOX_NUM_GOPS
-
+  BOXGOP_ARDEST, BOXGOP_REGS, BOXGOP_TYPEOF, BOXGOP_BOX, BOXGOP_UNBOX,
+  BOX_NUM_GOPS
 } BoxGOp;
 
 /** The attributes corresponding to different behaviours of the Box virtual
