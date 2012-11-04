@@ -456,8 +456,10 @@ BoxTask GLib_Obj_At_Str(BoxVMX *vm) {
 
 BoxTask GLib_Int_At_Obj_Get(BoxVMX *vm) {
   BoxSubtype *obj_get = BOX_VM_THIS_PTR(vm, BoxSubtype);
-  BoxGObjPtr gobj_parent = *((BoxGObjPtr *) BOXSUBTYPE_PARENT_PTR(obj_get));
-  BoxGObjPtr gobj_child = *((BoxGObjPtr *) BOXSUBTYPE_CHILD_PTR(obj_get));
+  BoxGObjPtr
+    gobj_parent = *((BoxGObjPtr *) BoxSubtype_Get_Parent_Target(obj_get)),
+    gobj_child = *((BoxGObjPtr *) BoxSubtype_Get_Child_Target(obj_get));
+
   BoxInt idx = BOX_VM_ARG(vm, BoxInt);
   BoxGObj *gobj_indexed = BoxGObj_Get(gobj_parent, idx);
   if (gobj_indexed != NULL) {
@@ -482,8 +484,9 @@ BoxTask GLib_Obj_At_Length(BoxVMX *vm) {
 
 BoxTask GLib_Int_At_Obj_GetType(BoxVMX *vm) {
   BoxSubtype *obj_get = BOX_VM_THIS_PTR(vm, BoxSubtype);
-  BoxGObjPtr gobj_parent = *((BoxGObjPtr *) BOXSUBTYPE_PARENT_PTR(obj_get));
-  BoxInt *gobj_type = (BoxInt *) BOXSUBTYPE_CHILD_PTR(obj_get);
+  BoxGObjPtr
+    gobj_parent = *((BoxGObjPtr *) BoxSubtype_Get_Parent_Target(obj_get));
+  BoxInt *gobj_type = (BoxInt *) BoxSubtype_Get_Child_Target(obj_get);
   BoxInt idx = BOX_VM_ARG(vm, BoxInt);
   BoxInt t = BoxGObj_Get_Type(gobj_parent, idx);
   if (t >= 0) {
@@ -506,7 +509,8 @@ BoxTask GLib_StrStr_Compare(BoxVMX *vm) {
 
 BoxTask GLib_Obj_At_MergeObjs(BoxVMX *vm) {
   BoxSubtype *obj_merge = BOX_VM_THIS_PTR(vm, BoxSubtype);
-  BoxGObjPtr gobj_dest = *((BoxGObjPtr *) BOXSUBTYPE_PARENT_PTR(obj_merge));
+  BoxGObjPtr
+    gobj_dest = *((BoxGObjPtr *) BoxSubtype_Get_Parent_Target(obj_merge));
   BoxGObjPtr gobj_src = BOX_VM_ARG(vm, BoxGObjPtr);
   BoxGObj_Merge(gobj_dest, gobj_src);
   return BOXTASK_OK;

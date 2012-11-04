@@ -27,9 +27,6 @@
 #ifndef _BOX_CORE_H
 #  define _BOX_CORE_H
 
-#ifndef NTYPES
-/* ^^^ temporary stuff. */
-
 #  include <float.h>
 #  include <stdlib.h>
 
@@ -137,14 +134,14 @@ typedef struct BoxPtr_struct {
  * that the declared function steals a reference to the passed object. This
  * macro has hence a purely aesthetical/declarative purpose.
  */
-#define BOXIN
+#  define BOXIN
 
 /**
  * This macro expands to nothing. It is used in function prototypes to indicate
  * that the declared function provides a newly created or existing object. This
  * macro has hence a purely aesthetical/declarative purpose.
  */
-#define BOXOUT
+#  define BOXOUT
 
 /** Type representing C pointers from Box */
 typedef void *BoxCPtr;
@@ -156,6 +153,19 @@ typedef void *BoxCPtr;
 typedef struct {
   BoxPtr child, parent;
 } BoxSubtype;
+
+#  define BoxSubtype_Get_Parent_Target(subtype_ptr) \
+  ((subtype_ptr)->parent.ptr)
+
+#  define BoxSubtype_Get_Child_Target(subtype_ptr) \
+  ((subtype_ptr)->child.ptr)
+
+#  define SUBTYPE_PARENT_PTR(subtype_ptr, parent_type) \
+  ((parent_type *) (subtype_ptr)->parent.ptr)
+
+#  define SUBTYPE_CHILD_PTR(subtype_ptr, child_type) \
+  (( child_type *) (subtype_ptr)->child.ptr)
+
 
 /**
  * Union of all the intrinsic Box types.
@@ -175,8 +185,65 @@ typedef union {
 #  define BoxReal_Fmt "%g"
 #  define BoxPoint_Fmt "(%g, %g)"
 
-#endif
-/* ^^^ temporary stuff. */
+/**
+ * @brief Type used from functions to communicate whether an operation
+ *   succeeded or failed.
+ */
+typedef enum {
+  BOXTASK_OK      = 0, /**< Function succeeded */
+  BOXTASK_FAILURE = 1, /**< Function failed: caller needs to report error */
+  BOXTASK_ERROR   = 2  /**< Function failed: error already reported */
+} BoxTask;
+
+/*****************************************************************************/
+/* Obsolete stuff below. */
+
+typedef struct {
+  BoxInt length;
+  char *text;
+} BoxName;
+
+#  define BOXNAME(str) ((BoxName) {sizeof(str)-1, str})
+
+typedef BoxName BoxData;
+
+/* Questa macro permette di usare una indicizzazione "circolare", secondo cui,
+ * data una lista di num_items elementi, l'indice 1 si riferisce al primo
+ * elemento, 2 al secondo, ..., num_items all'ultimo, num_items+1 al primo,
+ * num_items+2 al secondo, ...  Inoltre l'indice 0 si riferisce all'ultimo
+ * elemento, -1 al pen'ultimo, ...
+ */
+#define BOX_CIRCULAR_INDEX(num_items, index)            \
+  ((index) > 0 ? ((index) - 1) % (num_items)            \
+   : (num_items) - 1 - ((-(index)) % (num_items)))
+
+typedef BoxName BoxData;
+
+/* Shorthands. */
+#    define SUInt BoxUInt_Fmt
+#    define SChar BoxChar_Fmt
+#    define SInt BoxInt_Fmt
+#    define SReal BoxReal_Fmt
+#    define SPoint BoxPoint_Fmt
+#    define CIRCULAR_INDEX BOX_CIRCULAR_INDEX
+
+/*****************************************************************************/
+
+/**
+ * @brief Macro to call a function returning #BoxTask from a function returning
+ *   #BoxTask.
+ */
+#  define BOXTASK(x) \
+  do {if (x) return BOXTASK_FAILURE;} while(0)
+
+/**
+ * @brief This macro should be used to check - via an assert - that a function
+ *   returning #BoxTask succeeded.
+ *
+ * @note This should be used with functions that are expected to succeed.
+ */
+#  define ASSERT_TASK(x) \
+  do {BoxTask t = (x); assert(t == BOXTASK_OK);} while(0)
 
 typedef struct BoxCoreTypes_struct BoxCoreTypes;
 
@@ -209,6 +276,6 @@ Box_Initialize_Type_System(void);
 BOXEXPORT void
 Box_Finalize_Type_System(void);
 
-#    define BOX_FATAL_ERROR() Box_Fatal_Error(__FILE__, __LINE__)
+#  define BOX_FATAL_ERROR() Box_Fatal_Error(__FILE__, __LINE__)
 
 #endif /* _BOX_CORE_H */

@@ -582,7 +582,7 @@ TS_Subtype_Register(TS *ts, BoxTypeId subtype, BoxTypeId subtype_type) {
 
   /* CHECK: MAYBE WE SHOULD RESOLVE THE TYPE HERE */
   s_td->target = subtype_type;
-  s_td->size = sizeof(Subtype);
+  s_td->size = sizeof(BoxSubtype);
   Member_Full_Name(ts, & full_name, parent, child_str);
   BoxHT_Insert_Obj(& ts->subtypes,
                    full_name.text, full_name.length,

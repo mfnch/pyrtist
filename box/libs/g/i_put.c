@@ -214,8 +214,9 @@ BoxTask window_put_matrix(BoxVMX *vmp) {
 }
 
 BoxTask window_put_scale_real(BoxVMX *vmp) {
-  Subtype *scale_of_window_put = BOX_VM_THIS_PTR(vmp, Subtype);
-  Subtype *put_of_window = SUBTYPE_PARENT_PTR(scale_of_window_put, Subtype);
+  BoxSubtype *scale_of_window_put = BOX_VM_THIS_PTR(vmp, BoxSubtype);
+  BoxSubtype *put_of_window =
+    SUBTYPE_PARENT_PTR(scale_of_window_put, BoxSubtype);
   Window *w = *((Window **) SUBTYPE_PARENT_PTR(put_of_window, WindowPtr));
   BoxReal *scale = BOX_VM_ARG1_PTR(vmp, BoxReal);
   w->put.scale.y = w->put.scale.x = *scale;
@@ -226,9 +227,11 @@ BoxTask window_put_scale_real(BoxVMX *vmp) {
 }
 
 BoxTask window_put_scale_point(BoxVMX *vmp) {
-  Subtype *scale_of_window_put = BOX_VM_THIS_PTR(vmp, Subtype);
-  Subtype *put_of_window = SUBTYPE_PARENT_PTR(scale_of_window_put, Subtype);
-  Window *w = *((Window **) SUBTYPE_PARENT_PTR(put_of_window, WindowPtr));
+  BoxSubtype *scale_of_window_put = BOX_VM_THIS_PTR(vmp, BoxSubtype);
+  BoxSubtype *put_of_window =
+    SUBTYPE_PARENT_PTR(scale_of_window_put, BoxSubtype);
+  Window *w =
+    *((Window **) SUBTYPE_PARENT_PTR(put_of_window, WindowPtr));
   BoxPoint *p = BOX_VM_ARG1_PTR(vmp, BoxPoint);
   w->put.scale.x = p->x;
   w->put.scale.y = p->y;

@@ -447,14 +447,14 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
 #  define BOX_VM_ARG_PTR BOX_VM_ARG1_PTR
 #  define BOX_VM_ARG BOX_VM_ARG1
 #  define BOX_VM_SUB_PARENT_PTR(vmp, parent_t) \
-   SUBTYPE_PARENT_PTR(BOX_VM_THIS_PTR(vmp, Subtype), parent_t)
+   SUBTYPE_PARENT_PTR(BOX_VM_THIS_PTR(vmp, BoxSubtype), parent_t)
 #  define BOX_VM_SUB_PARENT(vmp, parent_t) \
    (*BOX_VM_SUB_PARENT_PTR(vmp, parent_t))
 #  define BOX_VM_SUB_CHILD_PTR(vmp, child_t) \
-   SUBTYPE_CHILD_PTR(BOX_VM_THIS_PTR(vmp, Subtype), child_t)
+   SUBTYPE_CHILD_PTR(BOX_VM_THIS_PTR(vmp, BoxSubtype), child_t)
 #  define BOX_VM_SUB_CHILD(vmp, child_t) \
    (*BOX_VM_SUB_CHILD_PTR(vmp, child_t))
 #  define BOX_VM_SUB2_PARENT(vmp, parent_t) \
-  (*SUBTYPE_PARENT_PTR(BOX_VM_SUB_PARENT_PTR(vmp, Subtype), parent_t))
+  (*SUBTYPE_PARENT_PTR(BOX_VM_SUB_PARENT_PTR(vmp, BoxSubtype), parent_t))
 
 #endif /* _BOX_VM_PRIVATE_H */

@@ -33,7 +33,7 @@
 
 #  define BOX_USE_NEW_OBJ 1
 
-#  include <box/oldtypes.h>
+#  include <box/core.h>
 
 /**
  * Integers associated to the fundamental types. These constant values are

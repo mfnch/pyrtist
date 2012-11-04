@@ -46,22 +46,22 @@ bin_PROGRAMS = box
 
 # *** libboxcore ***
 lib_LTLIBRARIES = libboxcore0.3.la
-boxinc_HEADERS = version.h defaults.h types.h oldtypes.h integers.h obj.h	\
-  exception.h callable.h core.h error.h mem.h stream.h array.h occupation.h	\
-  srcpos.h msgbase.h messages.h strutils.h print.h hashfunc.h hashtable.h	\
-  list.h vm_priv.h vmx.h vmalloc.h vmproc.h vmsym.h vmsymstuff.h vmdasm.h	\
-  vm2txt.h vmserial.h vmstore.h
+boxinc_HEADERS = version.h defaults.h types.h integers.h obj.h exception.h	\
+  callable.h core.h error.h mem.h stream.h array.h occupation.h srcpos.h	\
+  msgbase.h messages.h strutils.h print.h hashfunc.h hashtable.h list.h		\
+  vm_priv.h vmx.h vmalloc.h vmproc.h vmsym.h vmsymstuff.h vmdasm.h vm2txt.h	\
+  vmserial.h vmstore.h
 
-libboxcore0_3_la_SOURCES = types.c types.h oldtypes.h types_priv.h combs.c	\
-  combs.h obj.c obj.h exception.c exception.h callable.c callable.h		\
-  callable_priv.h core.c core.h coremath.c coremath.h core_priv.h error.c	\
-  mem.c mem.h array.c array.h stream.c stream.h stream_priv.h filestream.c	\
-  occupation.c occupation.h strutils.c print.c srcpos.c msgbase.c messages.c	\
-  hashfunc.c hashfunc.h hashtable.c hashtable.h list.c list.h container.c	\
-  container.h vm.c vm.h vmx.c vmx.h vm_priv.h vmdasm.c vmdasm.h vm2txt.c	\
-  vm2txt.h vmalloc.c vmalloc.h vmserial.c vmserial.h vmstore.c vmstore.h	\
-  vmexec.c vmproc.c vmproc.h vmproc_priv.h vmsym.c vmsym.h vmsymstuff.c		\
-  vmsymstuff.h vmopregs.c vmopregs_priv.h str.c str.h
+libboxcore0_3_la_SOURCES = types.c types.h types_priv.h combs.c combs.h obj.c	\
+  obj.h exception.c exception.h callable.c callable.h callable_priv.h core.c	\
+  core.h coremath.c coremath.h core_priv.h error.c mem.c mem.h array.c array.h	\
+  stream.c stream.h stream_priv.h filestream.c occupation.c occupation.h	\
+  strutils.c print.c srcpos.c msgbase.c messages.c hashfunc.c hashfunc.h	\
+  hashtable.c hashtable.h list.c list.h container.c container.h vm.c vm.h	\
+  vmx.c vmx.h vm_priv.h vmdasm.c vmdasm.h vm2txt.c vm2txt.h vmalloc.c		\
+  vmalloc.h vmserial.c vmserial.h vmstore.c vmstore.h vmexec.c vmproc.c		\
+  vmproc.h vmproc_priv.h vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h vmopregs.c	\
+  vmopregs_priv.h str.c str.h
 
 libboxcore0_3_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32
