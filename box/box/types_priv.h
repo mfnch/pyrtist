@@ -196,7 +196,7 @@ typedef struct {
   BoxType *source;
 } BoxTypePointer;
 
-struct BoxTypeDesc_struct {
+struct BoxType_struct {
   BoxTypeClass   type_class;
   BoxTypeId      type_id;
 
@@ -213,7 +213,7 @@ struct BoxTypeDesc_struct {
 
 typedef struct BoxTypeBundle_struct {
   /* The header. */
-  BoxTypeDesc            header;
+  BoxType                header;
 
   /* The data part. */
   union {

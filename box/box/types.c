@@ -73,7 +73,7 @@ void *BoxType_Alloc(BoxType **t, BoxTypeClass tc) {
   }
 
   if (Box_Mem_Sum(& total, data_offset, additional)) {
-    BoxTypeDesc *td = BoxSPtr_Raw_Alloc(box_core_types.type_type, total);
+    BoxType *td = BoxSPtr_Raw_Alloc(box_core_types.type_type, total);
 
     num_type_nodes++;
     total_size_of_types += total;

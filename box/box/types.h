@@ -62,7 +62,6 @@ typedef enum {
   BOXTYPEID_MAX_VAL,
 } BoxTypeId;
 
-/*typedef BoxTypeId BoxType;*/
 
 #  include <box/container.h>
 
@@ -88,16 +87,11 @@ typedef enum {
   BOXTYPECLASS_ANY,
 } BoxTypeClass;
 
-typedef struct BoxTypeDesc_struct BoxTypeDesc;
-#if 0
 /**
  * A type in the Box type system. This is currently implemented as a
  * pointer to an opaque structure.
  */
-typedef BoxTypeDesc *BoxType;
-#else
-typedef BoxTypeDesc BoxType;
-#endif
+typedef struct BoxType_struct BoxType;
 
 /**
  * Combination type.
