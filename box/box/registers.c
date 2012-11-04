@@ -194,7 +194,7 @@ BoxInt Reg_Frame_Get(RegAlloc *ra) {
  */
 BoxInt Reg_Occupy(RegAlloc *ra, BoxTypeId t) {
   RegFrame *rf = (RegFrame *) BoxArr_Last_Item_Ptr(& ra->reg_frame);
-  if (t == BOXTYPE_VOID)
+  if (t == BOXTYPEID_VOID)
     return 0;
   else
     return (BoxInt) BoxOcc_Occupy(& rf->reg_occ[Reg_Type(t)], NULL);
@@ -229,7 +229,7 @@ static RegFrame *Cur_RegFrame(RegAlloc *ra) {
  *  viene restituito 0 solo in caso di errori.
  */
 BoxInt Var_Occupy(RegAlloc *ra, BoxTypeId type, BoxInt level) {
-  if (type == BOXTYPE_VOID)
+  if (type == BOXTYPEID_VOID)
     return 0;
 
   else {
@@ -251,7 +251,7 @@ BoxInt Var_Num(RegAlloc *ra, BoxInt type) {
 }
 
 BoxInt GVar_Occupy(RegAlloc *ra, BoxTypeId type) {
-  if (type == BOXTYPE_VOID)
+  if (type == BOXTYPEID_VOID)
     return 0;
   else
     return VarFrame_Occupy(& ra->gvar[Reg_Type(type)], 0);
@@ -264,7 +264,7 @@ void GVar_Release(RegAlloc *ra, BoxInt type, BoxUInt varnum) {
 
 BoxInt GReg_Num(RegAlloc *ra, BoxInt type) {
   switch(type) {
-  case BOXTYPE_PTR:
+  case BOXTYPEID_PTR:
     return 2;
   default:
     return 0;

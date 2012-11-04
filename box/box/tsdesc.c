@@ -98,9 +98,9 @@ static void My_Build_Obj_Desc(BoxCmp *c, MyObjDescBuilder *bldr, BoxTypeId t) {
 
   } else {
     bldr->desc.initializer =
-      My_Find_Proc(c, BOXTYPE_CREATE, BOXCOMBTYPE_AT, t);
+      My_Find_Proc(c, BOXTYPEID_INIT, BOXCOMBTYPE_AT, t);
     bldr->desc.finalizer =
-      My_Find_Proc(c, BOXTYPE_DESTROY, BOXCOMBTYPE_AT, t);
+      My_Find_Proc(c, BOXTYPEID_FINISH, BOXCOMBTYPE_AT, t);
     bldr->desc.copier = My_Find_Proc(c, t, BOXCOMBTYPE_COPY, t);
     bldr->desc.mover = My_Find_Proc(c, t, BOXCOMBTYPE_MOVE, t);
   }

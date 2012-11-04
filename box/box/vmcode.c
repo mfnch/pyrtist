@@ -49,14 +49,14 @@ static void My_Proc_Begin(BoxVMCode *p) {
      * be utilised later.
      */
     if (p->have.parent) {
-      p->reg_parent = Reg_Occupy(& p->reg_alloc, BOXTYPE_PTR);
+      p->reg_parent = Reg_Occupy(& p->reg_alloc, BOXTYPEID_PTR);
       BoxVM_Assemble(p->cmp->vm, BOXOP_SHIFT_OO,
                      BOXOPCAT_LREG, p->reg_parent,
                      BOXOPCAT_GREG, (BoxInt) 1);
     }
 
     if (p->have.child) {
-      p->reg_child = Reg_Occupy(& p->reg_alloc, BOXTYPE_PTR);
+      p->reg_child = Reg_Occupy(& p->reg_alloc, BOXTYPEID_PTR);
       BoxVM_Assemble(p->cmp->vm, BOXOP_SHIFT_OO,
                      BOXOPCAT_LREG, p->reg_child,
                      BOXOPCAT_GREG, (BoxInt) 2);
@@ -516,7 +516,7 @@ static void My_Scatter_Implicit_Input_Regs(BoxVMCode *p,
     if (reg->kind == 'r') {
       if (reg->io == 'o' || reg->io == 'b') {
         BoxTypeId t = BoxContType_From_Char(reg->type);
-        BoxGOp gop = (t == BOXTYPE_PTR) ? BOXGOP_SHIFT : BOXGOP_MOV;
+        BoxGOp gop = (t == BOXTYPEID_PTR) ? BOXGOP_SHIFT : BOXGOP_MOV;
         BoxCont src;
         src.type = t;
         src.categ = BOXCONTCATEG_LREG;

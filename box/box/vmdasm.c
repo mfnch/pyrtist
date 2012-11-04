@@ -227,16 +227,16 @@ void My_D_GLPI_Imm(BoxVMDasm *dasm, char **out) {
 
   /* Secondo argomento */
   switch (iat) {
-  case BOXTYPE_CHAR:
+  case BOXTYPEID_CHAR:
     sprintf(out[1], SChar, *((BoxChar *) arg2));
     break;
-  case BOXTYPE_INT:
+  case BOXTYPEID_INT:
     sprintf(out[1], SInt, *((BoxInt *) arg2));
     break;
-  case BOXTYPE_REAL:
+  case BOXTYPEID_REAL:
     sprintf(out[1], SReal, *((BoxReal *) arg2));
     break;
-  case BOXTYPE_POINT:
+  case BOXTYPEID_POINT:
     sprintf(out[1], SPoint,
             ((BoxPoint *) arg2)->x, ((BoxPoint *) arg2)->y);
     break;

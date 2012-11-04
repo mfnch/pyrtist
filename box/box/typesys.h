@@ -97,7 +97,7 @@ typedef struct {
     (tsdesc)->new_type = NULL;           \
     (tsdesc)->val = NULL;                \
     (tsdesc)->name = NULL;               \
-    (tsdesc)->first_proc = BOXTYPE_NONE; \
+    (tsdesc)->first_proc = BOXTYPEID_NONE; \
   } while(0)
 
 typedef struct {
@@ -138,8 +138,8 @@ void TS_Init_Builtin_Types(BoxTS *ts);
 
 BoxInt TS_Get_Size(BoxTS *ts, BoxTypeId t);
 
-/** If 't' is a special type (BOXTYPE_CREATE, BOXTYPE_DESTROY, etc.)
- * return 't', otherwise return BOXTYPE_NONE.
+/** If 't' is a special type (BOXTYPEID_INIT, BOXTYPEID_FINISH, etc.)
+ * return 't', otherwise return BOXTYPEID_NONE.
  */
 BoxTypeId TS_Is_Special(BoxTypeId t);
 
@@ -178,8 +178,8 @@ BoxTypeId TS_Resolve(BoxTS *ts, BoxTypeId t, TSKindSelect select);
 BoxTypeId TS_Get_Core_Type(BoxTS *ts, BoxTypeId t);
 
 /** Get the fundamental type (Char, Int, ..., Ptr) used to store objects of
- * the given type. Returns BOXTYPE_INT for integers, BOXTYPE_REAL for reals,
- * etc. BOXTYPE_OBJ is returned for objects which are not Char, Int, Real,
+ * the given type. Returns BOXTYPEID_INT for integers, BOXTYPEID_REAL for reals,
+ * etc. BOXTYPEID_OBJ is returned for objects which are not Char, Int, Real,
  * Point, Ptr.
  */
 BoxTypeId TS_Get_Cont_Type(BoxTS *ts, BoxTypeId t);
@@ -211,7 +211,7 @@ BoxTypeId BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
 BoxTypeId TS_Subtype_New(BoxTS *ts, BoxTypeId parent_type,
                        const char *child_name);
 
-/** Get the child type of the given subtype (return BOXTYPE_NONE, if the
+/** Get the child type of the given subtype (return BOXTYPEID_NONE, if the
  * subtype has not been yet registered)
  */
 BoxTypeId TS_Subtype_Get_Child(BoxTS *ts, BoxTypeId st);
@@ -226,7 +226,7 @@ TS_Subtype_Register(BoxTS *ts, BoxTypeId subtype, BoxTypeId subtype_type);
 
 /** Find the registered subtype with name child among the subtypes of type
  * parent. The found subtype is put inside *subtype. If no subtype is found
- * then BOXTYPE_NONE is returned inside *subtype.
+ * then BOXTYPEID_NONE is returned inside *subtype.
  */
 BoxTypeId TS_Subtype_Find(BoxTS *ts, BoxTypeId parent, const char *name);
 

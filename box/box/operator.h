@@ -129,9 +129,9 @@ void Operation_Set_User_Implem(Operation *opn, BoxVMCallNum call_num);
  */
 void Operation_Attr_Set(Operation *opn, OprAttr mask, OprAttr attr);
 
-/** Add a new operation with the given type of operands and results
- * to the operator 'opr'.
- * NOTE: for a unary operator type_right is ignore (BOXTYPE_NONE can be used).
+/** Add a new operation with the given type of operands and results to the
+ * operator 'opr'.  NOTE: for a unary operator type_right is ignore
+ * (BOXTYPEID_NONE can be used).
  */
 Operation *Operator_Add_Opn(Operator *opr, BoxTypeId type_left,
                             BoxTypeId type_right, BoxTypeId type_result);

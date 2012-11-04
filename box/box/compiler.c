@@ -84,15 +84,15 @@ static void My_Init_Const_Values(BoxCmp *c) {
   BoxCont_Set(& c->cont.pass_parent, "go", 1);
 
   Value_Init(& c->value.create, & c->main_proc);
-  Value_Setup_As_Type(& c->value.create, BOXTYPE_CREATE);
+  Value_Setup_As_Type(& c->value.create, BOXTYPEID_INIT);
   Value_Init(& c->value.destroy, & c->main_proc);
-  Value_Setup_As_Type(& c->value.destroy, BOXTYPE_DESTROY);
+  Value_Setup_As_Type(& c->value.destroy, BOXTYPEID_FINISH);
   Value_Init(& c->value.begin, & c->main_proc);
-  Value_Setup_As_Type(& c->value.begin, BOXTYPE_BEGIN);
+  Value_Setup_As_Type(& c->value.begin, BOXTYPEID_BEGIN);
   Value_Init(& c->value.end, & c->main_proc);
-  Value_Setup_As_Type(& c->value.end, BOXTYPE_END);
+  Value_Setup_As_Type(& c->value.end, BOXTYPEID_END);
   Value_Init(& c->value.pause, & c->main_proc);
-  Value_Setup_As_Temp_Old(& c->value.pause, BOXTYPE_PAUSE);
+  Value_Setup_As_Temp_Old(& c->value.pause, BOXTYPEID_PAUSE);
 }
 
 void My_Finish_Const_Values(BoxCmp *c) {
@@ -463,7 +463,7 @@ static void My_Compile_TypeTag(BoxCmp *c, ASTNode *n) {
   Value *v;
 
   assert(n->type == ASTNODETYPE_TYPETAG);
-  assert(TS_Is_Special(n->attr.typetag.type) != BOXTYPE_NONE);
+  assert(TS_Is_Special(n->attr.typetag.type) != BOXTYPEID_NONE);
 
   /* Should we use c->value.create, etc. ? */
   v = Value_New(c->cur_proc);
@@ -476,7 +476,7 @@ static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
   TS *ts = & c->ts;
   Value *parent_type;
   const char *name = p->attr.subtype.name;
-  BoxTypeId new_subtype = BOXTYPE_NONE;
+  BoxTypeId new_subtype = BOXTYPEID_NONE;
 
   assert(p->type == ASTNODETYPE_SUBTYPE);
   assert(p->attr.subtype.parent != NULL);
@@ -494,7 +494,7 @@ static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
        */
       if (TS_Subtype_Is_Registered(ts, pt)) {
         new_subtype = TS_Subtype_Find(ts, pt, name);
-        if (new_subtype == BOXTYPE_NONE)
+        if (new_subtype == BOXTYPEID_NONE)
           new_subtype = TS_Subtype_New(ts, pt, name);
 
       } else {
@@ -504,14 +504,14 @@ static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
 
     } else {
       new_subtype = TS_Subtype_Find(ts, pt, name);
-      if (new_subtype == BOXTYPE_NONE)
+      if (new_subtype == BOXTYPEID_NONE)
         new_subtype = TS_Subtype_New(ts, pt, name);
     }
   }
 
   Value_Unlink(parent_type);
 
-  if (new_subtype != BOXTYPE_NONE) {
+  if (new_subtype != BOXTYPEID_NONE) {
     Value *v = Value_New(c->cur_proc);
     Value_Setup_As_Type(v, new_subtype);
     BoxCmp_Push_Value(c, v);
@@ -1302,7 +1302,7 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
 static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
   int err;
   ASTNode *member;
-  BoxTypeId previous_type = BOXTYPE_NONE, struc_type;
+  BoxTypeId previous_type = BOXTYPEID_NONE, struc_type;
   Value *v_struc_type;
 
   assert(n->type == ASTNODETYPE_STRUCTYPE);
@@ -1333,7 +1333,7 @@ static void My_Compile_StrucType(BoxCmp *c, ASTNode *n) {
       assert(member != NULL);
     }
 
-    if (previous_type != BOXTYPE_NONE && !err) {
+    if (previous_type != BOXTYPEID_NONE && !err) {
       /* Check for duplicate structure members */
       if (member_name != NULL) {
         BoxType *s = BoxType_From_Id(& c->ts, struc_type);

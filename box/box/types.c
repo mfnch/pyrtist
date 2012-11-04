@@ -634,7 +634,7 @@ BoxType *BoxType_Create_Any(void) {
  * Get the iterator over the subtypes of the given identifier type.
  * @param type An identifier type or a subtype node.
  * @param iter A pointer where to store the iterator.
- * @return BOXBOOL_TRUE for success, BOXTYPE_FALSE for failure.
+ * @return BOXBOOL_TRUE for success, BOXBOOL_FALSE for failure.
  */
 BoxBool BoxType_Get_Subtypes(BoxType *type, BoxTypeIter *iter) {
   if (type->type_class == BOXTYPECLASS_IDENT) {

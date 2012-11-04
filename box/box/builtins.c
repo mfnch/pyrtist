@@ -370,15 +370,15 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
 
   /* Define Int */
   b->species_int = BoxTS_Begin_Species(ts);
-  BoxTS_Add_Species_Member(ts, b->species_int, BOXTYPE_CHAR);
-  BoxTS_Add_Species_Member(ts, b->species_int, BOXTYPE_INT);
+  BoxTS_Add_Species_Member(ts, b->species_int, BOXTYPEID_CHAR);
+  BoxTS_Add_Species_Member(ts, b->species_int, BOXTYPEID_INT);
   b->species_int = BoxTS_New_Alias_With_Name(ts, b->species_int, "Int");
 
   /* Define Real */
   b->species_real = BoxTS_Begin_Species(ts);
-  BoxTS_Add_Species_Member(ts, b->species_real, BOXTYPE_CHAR);
-  BoxTS_Add_Species_Member(ts, b->species_real, BOXTYPE_INT);
-  BoxTS_Add_Species_Member(ts, b->species_real, BOXTYPE_REAL);
+  BoxTS_Add_Species_Member(ts, b->species_real, BOXTYPEID_CHAR);
+  BoxTS_Add_Species_Member(ts, b->species_real, BOXTYPEID_INT);
+  BoxTS_Add_Species_Member(ts, b->species_real, BOXTYPEID_REAL);
   b->species_real = BoxTS_New_Alias_With_Name(ts, b->species_real, "Real");
 
   /* Define (Real, Real) */
@@ -389,24 +389,24 @@ static void My_Define_Core_Types(BltinStuff *b, TS *ts) {
   /* Define Point as ((Real, Real) -> POINT) */
   b->species_point = BoxTS_Begin_Species(ts);
   BoxTS_Add_Species_Member(ts, b->species_point, b->struc_real_real);
-  BoxTS_Add_Species_Member(ts, b->species_point, BOXTYPE_POINT);
+  BoxTS_Add_Species_Member(ts, b->species_point, BOXTYPEID_POINT);
   b->species_point = BoxTS_New_Alias_With_Name(ts, b->species_point, "Point");
 
   /* Define If, Else, Elif and For */
   b->alias_if =
-    BoxTS_New_Alias_With_Name(ts, BoxTS_New_Raised(ts, BOXTYPE_INT), "If");
+    BoxTS_New_Alias_With_Name(ts, BoxTS_New_Raised(ts, BOXTYPEID_INT), "If");
   b->alias_else =
-    BoxTS_New_Alias_With_Name(ts, BoxTS_New_Raised(ts, BOXTYPE_VOID), "Else");
+    BoxTS_New_Alias_With_Name(ts, BoxTS_New_Raised(ts, BOXTYPEID_VOID), "Else");
   b->alias_elif =
-    BoxTS_New_Alias_With_Name(ts, BoxTS_New_Raised(ts, BOXTYPE_INT), "Elif");
+    BoxTS_New_Alias_With_Name(ts, BoxTS_New_Raised(ts, BOXTYPEID_INT), "Elif");
   b->alias_for =
-    BoxTS_New_Alias_With_Name(ts, BoxTS_New_Raised(ts, BOXTYPE_INT), "For");
+    BoxTS_New_Alias_With_Name(ts, BoxTS_New_Raised(ts, BOXTYPEID_INT), "For");
 
   /* Define Str */
   b->string = BoxTS_New_Intrinsic_With_Name(ts, sizeof(BoxStr),
                                             __alignof__(BoxStr), "Str");
 
-  b->print = BoxTS_New_Alias_With_Name(ts, BOXTYPE_VOID, "Print");
+  b->print = BoxTS_New_Alias_With_Name(ts, BOXTYPEID_VOID, "Print");
   b->repr = BoxTS_New_Alias_With_Name(ts, b->string, "Repr");
 }
 
@@ -419,17 +419,17 @@ static void My_Register_Core_Types(BoxCmp *c) {
     BoxTypeId    type;
 
   } *type_to_register, types_to_register[] = {
-    {"Char",        BOXTYPE_CHAR},
-    {"INT",         BOXTYPE_INT},
-    {"REAL",        BOXTYPE_REAL},
-    {"POINT",       BOXTYPE_POINT},
+    {"Char",        BOXTYPEID_CHAR},
+    {"INT",         BOXTYPEID_INT},
+    {"REAL",        BOXTYPEID_REAL},
+    {"POINT",       BOXTYPEID_POINT},
     {"Int",         c->bltin.species_int},
     {"Real",        c->bltin.species_real},
     {"Point",       c->bltin.species_point},
     {"Str",         c->bltin.string},
-    {"Void",        BOXTYPE_VOID},
-    {"Ptr",         BOXTYPE_PTR},
-    {"CPtr",        BOXTYPE_CPTR},
+    {"Void",        BOXTYPEID_VOID},
+    {"Ptr",         BOXTYPEID_PTR},
+    {"CPtr",        BOXTYPEID_CPTR},
     {"If",          c->bltin.alias_if},
     {"Else",        c->bltin.alias_else},
     {"Elif",        c->bltin.alias_elif},
@@ -437,7 +437,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {"Print",       c->bltin.print},
     {"Repr",        c->bltin.repr},
     {"ANY",         c->bltin.any},
-    {(char *) NULL, BOXTYPE_NONE}
+    {(char *) NULL, BOXTYPEID_NONE}
   };
 
   for(type_to_register = & types_to_register[0];
@@ -453,23 +453,23 @@ static void My_Register_Core_Types(BoxCmp *c) {
 
 /* Used to make the table of operations more compact in
  * My_Register_BinOps. This function maps a character to a BoxType
- * value. Example: My_Type_Of_Char(c, 'I') returns BOXTYPE_INT,
- * My_Type_Of_Char(c, 'R') returns BOXTYPE_REAL, etc.
+ * value. Example: My_Type_Of_Char(c, 'I') returns BOXTYPEID_INT,
+ * My_Type_Of_Char(c, 'R') returns BOXTYPEID_REAL, etc.
  */
 static BoxTypeId My_Type_Of_Char(BoxCmp *c, char t) {
   switch(t) {
-  case ' ': return BOXTYPE_NONE;
-  case 'C': return BOXTYPE_CHAR;
-  case 'I': return BOXTYPE_INT;
-  case 'R': return BOXTYPE_REAL;
-  case 'P': return BOXTYPE_POINT;
+  case ' ': return BOXTYPEID_NONE;
+  case 'C': return BOXTYPEID_CHAR;
+  case 'I': return BOXTYPEID_INT;
+  case 'R': return BOXTYPEID_REAL;
+  case 'P': return BOXTYPEID_POINT;
   case 'i': return c->bltin.species_int;
   case 'r': return c->bltin.species_real;
   case 'p': return c->bltin.species_point;
   default:
     MSG_FATAL("My_Type_Of_Char: unexpected character.");
     assert(0);
-    return BOXTYPE_NONE;
+    return BOXTYPEID_NONE;
   }
 }
 
@@ -488,7 +488,7 @@ static OprAttr My_OprAttr_Of_Str(const char *s) {
       default:
         MSG_FATAL("My_OprAttr_Of_Str: error parsing string.");
         assert(0);
-        return BOXTYPE_NONE;
+        return BOXTYPEID_NONE;
       }
     }
     return a;
@@ -532,7 +532,7 @@ static void My_Register_UnOps(BoxCmp *c) {
             operand = My_Type_Of_Char(c, unop->types[1]);
     OprAttr mask = My_OprAttr_Of_Str(unop->mask),
             attr = My_OprAttr_Of_Str(unop->attr);
-    Operation *opn = Operator_Add_Opn(opr, operand, BOXTYPE_NONE, result);
+    Operation *opn = Operator_Add_Opn(opr, operand, BOXTYPEID_NONE, result);
     Operation_Attr_Set(opn, mask, attr);
     opn->implem.opcode = unop->g_op;
   }
@@ -651,14 +651,14 @@ static void My_Register_Conversions(BoxCmp *c) {
             dst = My_Type_Of_Char(c, conv->types[1]);
     OprAttr mask = My_OprAttr_Of_Str(conv->mask),
             attr = My_OprAttr_Of_Str(conv->attr);
-    Operation *opn = Operator_Add_Opn(convert, src, BOXTYPE_NONE, dst);
+    Operation *opn = Operator_Add_Opn(convert, src, BOXTYPEID_NONE, dst);
     Operation_Attr_Set(opn, mask, attr);
     opn->implem.opcode = conv->g_op;
   }
 
   /* Conversion (Real, Real) -> Point */
   Operation *opn = Operator_Add_Opn(convert, c->bltin.struc_real_real,
-                                    BOXTYPE_NONE, BOXTYPE_POINT);
+                                    BOXTYPEID_NONE, BOXTYPEID_POINT);
   struc_to_point_call_num = Bltin_Proc_Add(c, "conv_2r_to_point", My_2R_To_P);
   Operation_Set_User_Implem(opn, struc_to_point_call_num);
 }
@@ -680,10 +680,10 @@ BoxTypeId Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
 
 static void My_Register_Std_IO(BoxCmp *c) {
   BoxTypeId t_print = c->bltin.print;
-  (void) Bltin_Proc_Def(c, t_print, BOXTYPE_PAUSE, My_Print_Pause);
-  (void) Bltin_Proc_Def(c, t_print,  BOXTYPE_CHAR, My_Print_Char);
-  (void) Bltin_Proc_Def(c, t_print,   BOXTYPE_INT, My_Print_Int);
-  (void) Bltin_Proc_Def(c, t_print,  BOXTYPE_REAL, My_Print_Real);
+  (void) Bltin_Proc_Def(c, t_print, BOXTYPEID_PAUSE, My_Print_Pause);
+  (void) Bltin_Proc_Def(c, t_print,  BOXTYPEID_CHAR, My_Print_Char);
+  (void) Bltin_Proc_Def(c, t_print,   BOXTYPEID_INT, My_Print_Int);
+  (void) Bltin_Proc_Def(c, t_print,  BOXTYPEID_REAL, My_Print_Real);
   (void) Bltin_Proc_Def(c, t_print, c->bltin.species_point, My_Print_Pnt);
   (void) Bltin_Proc_Def(c, t_print, c->bltin.string, My_Print_Str);
 }
@@ -695,13 +695,13 @@ static void My_Register_Std_Procs(BoxCmp *c) {
           t_if    = c->bltin.alias_if,
           t_elif  = c->bltin.alias_elif,
           t_for   = c->bltin.alias_for;
-  (void) Bltin_Proc_Def(c,  BOXTYPE_CHAR, BOXTYPE_CHAR, My_Char_Char);
-  (void) Bltin_Proc_Def(c,  BOXTYPE_CHAR,  BOXTYPE_INT, My_Char_Int);
-  (void) Bltin_Proc_Def(c,  BOXTYPE_CHAR, BOXTYPE_REAL, My_Char_Real);
-  (void) Bltin_Proc_Def(c,   BOXTYPE_INT,        t_int, My_Int_Int);
-  (void) Bltin_Proc_Def(c,   BOXTYPE_INT, BOXTYPE_REAL, My_Int_Real);
-  (void) Bltin_Proc_Def(c,  BOXTYPE_REAL,       t_real, My_Real_Real);
-  (void) Bltin_Proc_Def(c, BOXTYPE_POINT,      t_point,
+  (void) Bltin_Proc_Def(c,  BOXTYPEID_CHAR, BOXTYPEID_CHAR, My_Char_Char);
+  (void) Bltin_Proc_Def(c,  BOXTYPEID_CHAR,  BOXTYPEID_INT, My_Char_Int);
+  (void) Bltin_Proc_Def(c,  BOXTYPEID_CHAR, BOXTYPEID_REAL, My_Char_Real);
+  (void) Bltin_Proc_Def(c,   BOXTYPEID_INT,        t_int, My_Int_Int);
+  (void) Bltin_Proc_Def(c,   BOXTYPEID_INT, BOXTYPEID_REAL, My_Int_Real);
+  (void) Bltin_Proc_Def(c,  BOXTYPEID_REAL,       t_real, My_Real_Real);
+  (void) Bltin_Proc_Def(c, BOXTYPEID_POINT,      t_point,
                         My_Point_RealNumCouple);
   (void) Bltin_Proc_Def(c,          t_if,        t_int, My_If_Int);
   (void) Bltin_Proc_Def(c,        t_elif,        t_int, My_If_Int);
@@ -722,61 +722,61 @@ static void My_Register_Math(BoxCmp *c) {
     BoxVMFunc  func_begin,
                func;
   } *fn, fns[] = {
-   { "Sqrt",  BOXTYPE_REAL,  t_real, NULL,  My_Math_Sqrt},
-   {  "Sin",  BOXTYPE_REAL,  t_real, NULL,   My_Math_Sin},
-   {  "Cos",  BOXTYPE_REAL,  t_real, NULL,   My_Math_Cos},
-   {  "Tan",  BOXTYPE_REAL,  t_real, NULL,   My_Math_Tan},
-   { "Asin",  BOXTYPE_REAL,  t_real, NULL,  My_Math_Asin},
-   { "Acos",  BOXTYPE_REAL,  t_real, NULL,  My_Math_Acos},
-   { "Atan",  BOXTYPE_REAL,  t_real, NULL,  My_Math_Atan},
-   {"Atan2",  BOXTYPE_REAL, t_point, NULL,  My_Math_Atan2},
-   {  "Exp",  BOXTYPE_REAL,  t_real, NULL,   My_Math_Exp},
-   {  "Log",  BOXTYPE_REAL,  t_real, NULL,   My_Math_Log},
-   {"Log10",  BOXTYPE_REAL,  t_real, NULL, My_Math_Log10},
-   { "Ceil",   BOXTYPE_INT,  t_real, NULL,  My_Math_Ceil},
-   {"Floor",   BOXTYPE_INT,  t_real, NULL, My_Math_Floor},
-   {  "Abs",  BOXTYPE_REAL,  t_real, NULL,   My_Math_Abs},
-   { "Norm",  BOXTYPE_REAL, t_point, NULL,  My_Math_Norm},
-   {"Norm2",  BOXTYPE_REAL, t_point, NULL, My_Math_Norm2},
-   {  "Vec", BOXTYPE_POINT,  t_real, NULL,   My_Vec_Real},
-   {  "Ort", BOXTYPE_POINT, t_point, NULL, My_Point_At_Ort},
-   {  "Min",  BOXTYPE_REAL,  t_real, My_Min_Open, My_Min_Real},
-   {  "Max",  BOXTYPE_REAL,  t_real, My_Max_Open, My_Max_Real},
-   {   NULL,  BOXTYPE_NONE,  BOXTYPE_NONE, NULL, NULL}
+   { "Sqrt",  BOXTYPEID_REAL,  t_real, NULL,  My_Math_Sqrt},
+   {  "Sin",  BOXTYPEID_REAL,  t_real, NULL,   My_Math_Sin},
+   {  "Cos",  BOXTYPEID_REAL,  t_real, NULL,   My_Math_Cos},
+   {  "Tan",  BOXTYPEID_REAL,  t_real, NULL,   My_Math_Tan},
+   { "Asin",  BOXTYPEID_REAL,  t_real, NULL,  My_Math_Asin},
+   { "Acos",  BOXTYPEID_REAL,  t_real, NULL,  My_Math_Acos},
+   { "Atan",  BOXTYPEID_REAL,  t_real, NULL,  My_Math_Atan},
+   {"Atan2",  BOXTYPEID_REAL, t_point, NULL,  My_Math_Atan2},
+   {  "Exp",  BOXTYPEID_REAL,  t_real, NULL,   My_Math_Exp},
+   {  "Log",  BOXTYPEID_REAL,  t_real, NULL,   My_Math_Log},
+   {"Log10",  BOXTYPEID_REAL,  t_real, NULL, My_Math_Log10},
+   { "Ceil",   BOXTYPEID_INT,  t_real, NULL,  My_Math_Ceil},
+   {"Floor",   BOXTYPEID_INT,  t_real, NULL, My_Math_Floor},
+   {  "Abs",  BOXTYPEID_REAL,  t_real, NULL,   My_Math_Abs},
+   { "Norm",  BOXTYPEID_REAL, t_point, NULL,  My_Math_Norm},
+   {"Norm2",  BOXTYPEID_REAL, t_point, NULL, My_Math_Norm2},
+   {  "Vec", BOXTYPEID_POINT,  t_real, NULL,   My_Vec_Real},
+   {  "Ort", BOXTYPEID_POINT, t_point, NULL, My_Point_At_Ort},
+   {  "Min",  BOXTYPEID_REAL,  t_real, My_Min_Open, My_Min_Real},
+   {  "Max",  BOXTYPEID_REAL,  t_real, My_Max_Open, My_Max_Real},
+   {   NULL,  BOXTYPEID_NONE,  BOXTYPEID_NONE, NULL, NULL}
   };
 
   for(fn = fns; fn->func != NULL; fn++) {
     BoxTypeId func_type =
       Bltin_Simple_Fn_Def(c, fn->name, fn->parent, fn->child, fn->func);
     if (fn->func_begin != NULL)
-      (void) Bltin_Proc_Def(c, func_type, BOXTYPE_BEGIN, fn->func_begin);
+      (void) Bltin_Proc_Def(c, func_type, BOXTYPEID_BEGIN, fn->func_begin);
   }
 }
 
 static void My_Register_Sys(BoxCmp *c) {
-  BoxTypeId fail_t = Bltin_Simple_Fn_Def(c, "Fail", BOXTYPE_VOID,
+  BoxTypeId fail_t = Bltin_Simple_Fn_Def(c, "Fail", BOXTYPEID_VOID,
                                        c->bltin.string, My_Fail_Msg);
 
-  (void) Bltin_Proc_Def(c, fail_t, BOXTYPE_BEGIN, My_Fail_Clear_Msg);
-  (void) Bltin_Proc_Def(c, fail_t, BOXTYPE_END, My_Fail);
-  (void) Bltin_Simple_Fn_Def(c, "Exit", BOXTYPE_VOID, c->bltin.species_int,
+  (void) Bltin_Proc_Def(c, fail_t, BOXTYPEID_BEGIN, My_Fail_Clear_Msg);
+  (void) Bltin_Proc_Def(c, fail_t, BOXTYPEID_END, My_Fail);
+  (void) Bltin_Simple_Fn_Def(c, "Exit", BOXTYPEID_VOID, c->bltin.species_int,
                              My_Exit_Int);
   c->bltin.length =
-    Bltin_Simple_Fn_Def(c, "Length", BOXTYPE_INT,
-                        BOXTYPE_BEGIN, My_Length_Init);
+    Bltin_Simple_Fn_Def(c, "Length", BOXTYPEID_INT,
+                        BOXTYPEID_BEGIN, My_Length_Init);
 
   c->bltin.num =
-    Bltin_Simple_Fn_Def(c, "Num", BOXTYPE_INT,
-                        BOXTYPE_BEGIN, My_Num_Init);
+    Bltin_Simple_Fn_Def(c, "Num", BOXTYPEID_INT,
+                        BOXTYPEID_BEGIN, My_Num_Init);
 
   c->bltin.valid =
-    Bltin_Simple_Fn_Def(c, "IsValid", BOXTYPE_INT,
-                        BOXTYPE_BEGIN, My_IsValid_Init);
-  (void) Bltin_Proc_Def(c, c->bltin.valid, BOXTYPE_INT, My_Int_At_IsValid);
+    Bltin_Simple_Fn_Def(c, "IsValid", BOXTYPEID_INT,
+                        BOXTYPEID_BEGIN, My_IsValid_Init);
+  (void) Bltin_Proc_Def(c, c->bltin.valid, BOXTYPEID_INT, My_Int_At_IsValid);
 
   c->bltin.compare =
-    Bltin_Simple_Fn_Def(c, "Compare", BOXTYPE_INT,
-                        BOXTYPE_BEGIN, My_Compare_Init);
+    Bltin_Simple_Fn_Def(c, "Compare", BOXTYPEID_INT,
+                        BOXTYPEID_BEGIN, My_Compare_Init);
 }
 
 /* Register bultin types, operation and functions */

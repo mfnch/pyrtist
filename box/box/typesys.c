@@ -51,20 +51,20 @@ void TS_Init_Builtin_Types(TS *ts) {
                alignment;
 
   } *bt, builtin_types[] = {
-    { "CHAR",    BOXTYPE_CHAR, sizeof(BoxChar),  __alignof__(BoxChar)},
-    {  "INT",     BOXTYPE_INT, sizeof(BoxInt),   __alignof__(BoxInt)},
-    { "REAL",    BOXTYPE_REAL, sizeof(BoxReal),  __alignof__(BoxReal)},
-    {"POINT",   BOXTYPE_POINT, sizeof(BoxPoint), __alignof__(BoxPoint)},
-    {  "PTR",     BOXTYPE_PTR, sizeof(BoxPtr),   __alignof__(BoxPtr)},
-    {  "OBJ",     BOXTYPE_OBJ, sizeof(BoxPtr),   __alignof__(BoxPtr)},
-    { "VOID",    BOXTYPE_VOID, 0, 0},
-    { "(.[)",  BOXTYPE_CREATE, 0, 0},
-    { "(].)", BOXTYPE_DESTROY, 0, 0},
-    {  "(=)",    BOXTYPE_COPY, 0, 0},
-    {  "([)",   BOXTYPE_BEGIN, 0, 0},
-    {  "(])",     BOXTYPE_END, 0, 0},
-    {  "(;)",   BOXTYPE_PAUSE, 0, 0},
-    { "CPTR",    BOXTYPE_CPTR, sizeof(BoxCPtr), __alignof__(BoxCPtr)},
+    { "CHAR",    BOXTYPEID_CHAR, sizeof(BoxChar),  __alignof__(BoxChar)},
+    {  "INT",     BOXTYPEID_INT, sizeof(BoxInt),   __alignof__(BoxInt)},
+    { "REAL",    BOXTYPEID_REAL, sizeof(BoxReal),  __alignof__(BoxReal)},
+    {"POINT",   BOXTYPEID_POINT, sizeof(BoxPoint), __alignof__(BoxPoint)},
+    {  "PTR",     BOXTYPEID_PTR, sizeof(BoxPtr),   __alignof__(BoxPtr)},
+    {  "OBJ",     BOXTYPEID_OBJ, sizeof(BoxPtr),   __alignof__(BoxPtr)},
+    { "VOID",    BOXTYPEID_VOID, 0, 0},
+    { "(.[)",    BOXTYPEID_INIT, 0, 0},
+    { "(].)",  BOXTYPEID_FINISH, 0, 0},
+    {  "(=)",    BOXTYPEID_COPY, 0, 0},
+    {  "([)",   BOXTYPEID_BEGIN, 0, 0},
+    {  "(])",     BOXTYPEID_END, 0, 0},
+    {  "(;)",   BOXTYPEID_PAUSE, 0, 0},
+    { "CPTR",    BOXTYPEID_CPTR, sizeof(BoxCPtr), __alignof__(BoxCPtr)},
     {NULL, 0, 0, 0}
   };
 
@@ -121,7 +121,7 @@ static TSDesc *Type_Ptr(TS *ts, BoxTypeId t) {
 }
 
 void TS_Set_New_Style_Type(BoxTS *ts, BoxTypeId old_type, BoxType *new_type) {
-  if (old_type != BOXTYPE_NONE) {
+  if (old_type != BOXTYPEID_NONE) {
     TSDesc *old_type_td = Type_Ptr(ts, old_type);
     old_type_td->new_type = new_type;
     BoxType_Set_Id(new_type, old_type);
@@ -129,7 +129,7 @@ void TS_Set_New_Style_Type(BoxTS *ts, BoxTypeId old_type, BoxType *new_type) {
 }
 
 BoxType *TS_Get_New_Style_Type(BoxTS *ts, BoxTypeId old_type) {
-  if (old_type != BOXTYPE_NONE) {
+  if (old_type != BOXTYPEID_NONE) {
     TSDesc *old_type_td = Type_Ptr(ts, old_type);
     return old_type_td->new_type;
   }
@@ -137,7 +137,7 @@ BoxType *TS_Get_New_Style_Type(BoxTS *ts, BoxTypeId old_type) {
 }
 
 BoxType *BoxType_From_Id(BoxTS *ts, BoxTypeId id) {
-  if ((BoxTypeId) id != BOXTYPE_NONE) {
+  if ((BoxTypeId) id != BOXTYPEID_NONE) {
     TSDesc *old_type_td = Type_Ptr(ts, id);
     return old_type_td->new_type;
   }
@@ -146,14 +146,14 @@ BoxType *BoxType_From_Id(BoxTS *ts, BoxTypeId id) {
 
 BoxTypeId TS_Is_Special(BoxTypeId t) {
   switch(t) {
-  case BOXTYPE_CREATE:
-  case BOXTYPE_DESTROY:
-  case BOXTYPE_BEGIN:
-  case BOXTYPE_END:
-  case BOXTYPE_PAUSE:
+  case BOXTYPEID_INIT:
+  case BOXTYPEID_FINISH:
+  case BOXTYPEID_BEGIN:
+  case BOXTYPEID_END:
+  case BOXTYPEID_PAUSE:
     return t;
   default:
-    return BOXTYPE_NONE;
+    return BOXTYPEID_NONE;
   }
 }
 
@@ -163,8 +163,8 @@ BoxTypeId BoxTS_Obsolete_Resolve_Once(BoxTS *ts, BoxTypeId t,
   TSDesc *td;
   BoxTypeId rt;
 
-  if (t == BOXTYPE_NONE)
-    return BOXTYPE_NONE;
+  if (t == BOXTYPEID_NONE)
+    return BOXTYPEID_NONE;
 
   td = Type_Ptr(ts, t);
 
@@ -221,15 +221,15 @@ BoxTypeId TS_Get_Cont_Type(TS *ts, BoxTypeId t) {
     TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_RAISED | TS_KS_SPECIES);
 
   if (TS_Is_Empty(ts, r))
-    return BOXTYPE_VOID;
+    return BOXTYPEID_VOID;
 
   else
-    return (r > BOXTYPE_PTR) ? BOXTYPE_OBJ : r;
+    return (r > BOXTYPEID_PTR) ? BOXTYPEID_OBJ : r;
 }
 
 int TS_Is_Fast(TS *ts, BoxTypeId t) {
   BoxTypeId ct = TS_Get_Core_Type(ts, t);
-  return (ct >= BOXTYPE_FAST_LOWER && ct <= BOXTYPE_FAST_UPPER);
+  return (ct >= BOXTYPEID_FAST_LOWER && ct <= BOXTYPEID_FAST_UPPER);
 }
 
 BoxInt TS_Get_Size(TS *ts, BoxTypeId t) {
@@ -268,7 +268,7 @@ static BoxTypeId BoxTS_New_Intrinsic(BoxTS *ts, size_t size, size_t alignment) {
   td.kind = TS_KIND_INTRINSIC;
   td.size = size;
   td.alignment = alignment;
-  td.target = BOXTYPE_NONE;
+  td.target = BOXTYPEID_NONE;
   Type_New(ts, & new_type, & td);
   return new_type;
 }
@@ -351,8 +351,8 @@ static BoxTypeId My_Begin_Composite(TSKind kind, TS *ts) {
   TSDesc td;
   TS_TSDESC_INIT(& td);
   td.kind = kind;
-  td.target = BOXTYPE_NONE;
-  td.data.last = BOXTYPE_NONE;
+  td.target = BOXTYPEID_NONE;
+  td.data.last = BOXTYPEID_NONE;
   td.size = 0;
   td.alignment = 0;
   Type_New(ts, & t, & td);
@@ -412,7 +412,7 @@ static void My_Add_Member(TSKind kind, BoxTS *ts, BoxTypeId s, BoxTypeId m,
      * padding (as s_td->size is the actual structure size, with padding).
      */
     size_t s_size = 0;
-    if (s_td->data.last != BOXTYPE_NONE) {
+    if (s_td->data.last != BOXTYPEID_NONE) {
       TSDesc *prev_m_td = Type_Ptr(ts, s_td->data.last);
       assert(prev_m_td->kind == TS_KIND_MEMBER);
       s_size += prev_m_td->size + TS_Get_Size(ts, prev_m_td->target);
@@ -433,7 +433,7 @@ static void My_Add_Member(TSKind kind, BoxTS *ts, BoxTypeId s, BoxTypeId m,
   /* Link the last member descriptor of the structure/enum/species to the one
    * we just created.
    */
-  if (s_td->data.last != BOXTYPE_NONE) {
+  if (s_td->data.last != BOXTYPEID_NONE) {
     TSDesc *prev_m_td = Type_Ptr(ts, s_td->data.last);
     assert(prev_m_td->kind == TS_KIND_MEMBER);
     prev_m_td->data.member_next = new_m;
@@ -441,7 +441,7 @@ static void My_Add_Member(TSKind kind, BoxTS *ts, BoxTypeId s, BoxTypeId m,
 
   /* Update the structure/... to take account of the inserted member. */
   s_td->data.last = new_m;
-  if (s_td->target == BOXTYPE_NONE)
+  if (s_td->target == BOXTYPEID_NONE)
     s_td->target = new_m;
 
   /* Compute the new structure/... size. */
@@ -526,7 +526,7 @@ TS_Subtype_New(TS *ts, BoxTypeId parent_old, const char *child_name) {
   TS_TSDESC_INIT(& td);
   td.kind = TS_KIND_SUBTYPE;
   td.size = BOX_SIZE_UNKNOWN;
-  td.target = BOXTYPE_NONE;
+  td.target = BOXTYPEID_NONE;
   td.data.subtype.parent = parent_old;
   td.data.subtype.child_name = strdup(child_name);
   Type_New(ts, & subtype_old, & td);
@@ -542,7 +542,7 @@ TS_Subtype_New(TS *ts, BoxTypeId parent_old, const char *child_name) {
 int TS_Subtype_Is_Registered(TS *ts, BoxTypeId st) {
   TSDesc *st_td = Type_Ptr(ts, st);
   assert(st_td->kind == TS_KIND_SUBTYPE);
-  return (st_td->target != BOXTYPE_NONE);
+  return (st_td->target != BOXTYPEID_NONE);
 }
 
 /* Register a previously created (and still unregistered) subtype. */
@@ -557,7 +557,7 @@ TS_Subtype_Register(TS *ts, BoxTypeId subtype, BoxTypeId subtype_type) {
   BoxType *subtype_type_new = TS_Get_New_Style_Type(ts, subtype_type);
   BoxBool result_new;
 
-  if (s_td->target != BOXTYPE_NONE) {
+  if (s_td->target != BOXTYPEID_NONE) {
     MSG_ERROR("Cannot redefine subtype '%~s'", BoxType_Get_Repr(subtype_new));
     return BOXTASK_FAILURE;
   }
@@ -565,7 +565,7 @@ TS_Subtype_Register(TS *ts, BoxTypeId subtype, BoxTypeId subtype_type) {
   child_str = s_td->data.subtype.child_name;
   parent = s_td->data.subtype.parent;
   found_subtype = TS_Subtype_Find(ts, parent, child_str);
-  if (found_subtype != BOXTYPE_NONE) {
+  if (found_subtype != BOXTYPEID_NONE) {
     TSDesc *found_subtype_td = Type_Ptr(ts, found_subtype);
     BoxTypeId found_subtype_type = found_subtype_td->target;
     BoxType *t1 = BoxType_From_Id(ts, found_subtype_type);
@@ -606,7 +606,7 @@ BoxTypeId TS_Subtype_Find(TS *ts, BoxTypeId parent, const char *name) {
 
   } while (BoxTS_Resolve_Once(ts, & parent, TS_KS_ALIAS | TS_KS_SPECIES));
 
-  return BOXTYPE_NONE;
+  return BOXTYPEID_NONE;
 }
 
 /****************************************************************************/

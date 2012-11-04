@@ -82,25 +82,25 @@ static void *My_Exec_X_II(BoxVMX *vmx, int type_id, size_t type_size,
 }
 
 static void My_Exec_NewC_II(BoxVMX *vmx) {
-  (void) My_Exec_X_II(vmx, BOXTYPE_CHAR, sizeof(BoxChar), NULL);
+  (void) My_Exec_X_II(vmx, BOXTYPEID_CHAR, sizeof(BoxChar), NULL);
 }
 
 static void My_Exec_NewI_II(BoxVMX *vmx) {
-  (void) My_Exec_X_II(vmx, BOXTYPE_INT, sizeof(BoxInt), NULL);
+  (void) My_Exec_X_II(vmx, BOXTYPEID_INT, sizeof(BoxInt), NULL);
 }
 
 static void My_Exec_NewR_II(BoxVMX *vmx) {
-  (void) My_Exec_X_II(vmx, BOXTYPE_REAL, sizeof(BoxReal), NULL);
+  (void) My_Exec_X_II(vmx, BOXTYPEID_REAL, sizeof(BoxReal), NULL);
 }
 
 static void My_Exec_NewP_II(BoxVMX *vmx) {
-  (void) My_Exec_X_II(vmx, BOXTYPE_POINT, sizeof(BoxPoint), NULL);
+  (void) My_Exec_X_II(vmx, BOXTYPEID_POINT, sizeof(BoxPoint), NULL);
 }
 
 static void My_Exec_NewO_II(BoxVMX *vmx) {
   size_t num_regs, i;
   BoxPtr *regs =
-    (BoxPtr *) My_Exec_X_II(vmx, BOXTYPE_PTR, sizeof(BoxPtr), & num_regs);
+    (BoxPtr *) My_Exec_X_II(vmx, BOXTYPEID_PTR, sizeof(BoxPtr), & num_regs);
   if (regs) {
     for(i = 0; i < num_regs; i++)
       BoxPtr_Nullify(regs + i);
@@ -755,16 +755,16 @@ static BoxOpSignature My_BoxOpSignature_From_Str(const char *s) {
 
 BoxTypeId My_Type_From_Char(char c) {
   switch(c) {
-  case 'n': return BOXTYPE_NONE; break;
-  case 'c': return BOXTYPE_CHAR; break;
-  case 'i': return BOXTYPE_INT; break;
-  case 'r': return BOXTYPE_REAL; break;
-  case 'p': return BOXTYPE_POINT; break;
-  case 'o': return BOXTYPE_PTR; break;
+  case 'n': return BOXTYPEID_NONE; break;
+  case 'c': return BOXTYPEID_CHAR; break;
+  case 'i': return BOXTYPEID_INT; break;
+  case 'r': return BOXTYPEID_REAL; break;
+  case 'p': return BOXTYPEID_POINT; break;
+  case 'o': return BOXTYPEID_PTR; break;
   default:
     MSG_FATAL("My_Type_From_Char: unknown type char '%c'", c);
     assert(0);
-    return BOXTYPE_NONE;
+    return BOXTYPEID_NONE;
   }
 }
 

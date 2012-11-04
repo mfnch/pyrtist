@@ -111,9 +111,9 @@ static BoxTask My_File_Str(BoxVMX *vm) {
 void Bltin_IO_Register(BoxCmp *c) {
   /* Register the new type File */
   BoxTypeId t_file = BLTIN_NEW_TYPE(c, "File", File);
-  Bltin_Proc_Def(c, t_file,  BOXTYPE_CREATE, My_File_Create);
-  Bltin_Proc_Def(c, t_file,  BOXTYPE_DESTROY, My_File_Destroy);
-  Bltin_Proc_Def(c, t_file,  BOXTYPE_END, My_File_Close);
+  Bltin_Proc_Def(c, t_file,  BOXTYPEID_INIT, My_File_Create);
+  Bltin_Proc_Def(c, t_file,  BOXTYPEID_FINISH, My_File_Destroy);
+  Bltin_Proc_Def(c, t_file,  BOXTYPEID_END, My_File_Close);
   Bltin_Proc_Def(c, t_file, c->bltin.string, My_File_Str);
 }
 

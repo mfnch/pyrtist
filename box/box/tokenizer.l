@@ -228,11 +228,11 @@ include BEGIN(include);
 "@&"  {yylval.Combine = BOXCOMBTYPE_AT; MY_SCAN_TOK(); return TOK_COMBINE;}
 
  /* Special tokens */
-"(.[)" {yylval.TTag = BOXTYPE_CREATE;  MY_SCAN_TOK(); return TOK_TTAG;}
-"(].)" {yylval.TTag = BOXTYPE_DESTROY; MY_SCAN_TOK(); return TOK_TTAG;}
-"([)"  {yylval.TTag = BOXTYPE_BEGIN; MY_SCAN_TOK(); return TOK_TTAG;}
-"(])"  {yylval.TTag = BOXTYPE_END; MY_SCAN_TOK(); return TOK_TTAG;}
-"(;)"  {yylval.TTag = BOXTYPE_PAUSE; MY_SCAN_TOK(); return TOK_TTAG;}
+"(.[)" {yylval.TTag = BOXTYPEID_INIT;  MY_SCAN_TOK(); return TOK_TTAG;}
+"(].)" {yylval.TTag = BOXTYPEID_FINISH; MY_SCAN_TOK(); return TOK_TTAG;}
+"([)"  {yylval.TTag = BOXTYPEID_BEGIN; MY_SCAN_TOK(); return TOK_TTAG;}
+"(])"  {yylval.TTag = BOXTYPEID_END; MY_SCAN_TOK(); return TOK_TTAG;}
+"(;)"  {yylval.TTag = BOXTYPEID_PAUSE; MY_SCAN_TOK(); return TOK_TTAG;}
 
  /* Number of type Char */
 [']([^'\n]|\\')+['] {

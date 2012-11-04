@@ -101,7 +101,7 @@ static void *My_Get_Arg_Ptrs(BoxVMX *vmx, int kind, BoxInt n) {
     static BoxInt i = 0;
     static union {BoxChar c; BoxInt i; BoxReal r;} v[2], *value;
 
-    assert(t >= BOXTYPE_CHAR && t <= BOXTYPE_REAL);
+    assert(t >= BOXTYPEID_CHAR && t <= BOXTYPEID_REAL);
 
     value = & v[i]; i ^= 1;
     switch (t) {
@@ -250,7 +250,7 @@ static void My_Free_Globals(BoxVM *vmp) {
     BoxVMRegs *gregs = & vmp->global[i];
 
     if (gregs->ptr != NULL) {
-      if (i == BOXTYPE_PTR) {
+      if (i == BOXTYPEID_PTR) {
         BoxPtr *ptrs = gregs->ptr;
         BoxInt j;
         for (j = gregs->min; j < gregs->max; j++)
@@ -415,7 +415,7 @@ BoxVM_Alloc_Global_Regs(BoxVM *vm, BoxInt num_var[], BoxInt num_reg[]) {
     gregs->max = nr;
     vm->has.globals = 1; /* This line must stay here, not outside the loop! */
 
-    if (i == BOXTYPE_PTR) {
+    if (i == BOXTYPEID_PTR) {
       size_t j;
       for (j = 0; j < nr_tot; j++)
         BoxPtr_Nullify((BoxPtr *) ptr + j);
@@ -451,7 +451,7 @@ void BoxVM_Module_Global_Set(BoxVM *vmp, BoxInt type, BoxInt reg, void *value) {
   dest = gregs->ptr + reg*size_of_type[type];
 
   /* Unlink the reference associated to the register, before setting it. */
-  if (type == BOXTYPE_PTR)
+  if (type == BOXTYPEID_PTR)
 #if BOX_USE_NEW_OBJ != 0
     (void) BoxPtr_Unlink((BoxPtr *) dest);
 #else
@@ -642,8 +642,8 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
   }
 
   /* Destroy the objects remaining in the roX registers */
-  if (this_vmx.alc[BOXTYPE_PTR] & 1) {
-    BoxVMRegs *lregs = & this_vmx.local[BOXTYPE_PTR];
+  if (this_vmx.alc[BOXTYPEID_PTR] & 1) {
+    BoxVMRegs *lregs = & this_vmx.local[BOXTYPEID_PTR];
     BoxPtr *ro = (BoxPtr *) lregs->ptr + lregs->min;
     int i, n = lregs->max - lregs->min + 1;
     /* ^^^ NOTE: lregs->min is negative! */

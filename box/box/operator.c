@@ -200,7 +200,7 @@ void BoxCmp_Finish__Operators(BoxCmp *c) {
 
 
 /** Finds the unary or binary operation associated with the operator *opr.
- *  If type1 and type2 are both different from BOXTYPE_NONE, then the function
+ *  If type1 and type2 are both different from BOXTYPEID_NONE, then the function
  *  will search for a binary operation of the following kind:
  *                               type1 opr type2
  *  If type1 = TYPE_NONE, then a left-unary operation will be searched:
@@ -238,7 +238,7 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
           match->match_left = match_left;
           match->match_right = 0;
           match->expand_type_left = opn->type_left;
-          match->expand_type_right = BOXTYPE_NONE;
+          match->expand_type_right = BOXTYPEID_NONE;
           return opn;
 
       } else {
@@ -409,7 +409,7 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, opr, & match,
                                  BoxType_Get_Id(v->type),
-                                 BOXTYPE_NONE, BOXTYPE_NONE);
+                                 BOXTYPEID_NONE, BOXTYPEID_NONE);
   if (opn != NULL) {
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND)
@@ -454,7 +454,7 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
   opn = BoxCmp_Operator_Find_Opn(c, opr, & match,
                                  BoxType_Get_Id(v_left->type),
                                  BoxType_Get_Id(v_right->type),
-                                 BOXTYPE_NONE);
+                                 BOXTYPEID_NONE);
   if (opn != NULL) {
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND)
@@ -494,7 +494,7 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match,
                                  BoxType_Get_Id(src->type),
-                                 BOXTYPE_NONE, BoxType_Get_Id(dest->type));
+                                 BOXTYPEID_NONE, BoxType_Get_Id(dest->type));
 
   if (opn != NULL) {
     /* Now we expand the types, if necessary */

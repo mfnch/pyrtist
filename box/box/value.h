@@ -271,7 +271,7 @@ Value *Value_Emit_Call(Value *parent, Value *child, BoxTask *success);
  */
 BoxTask Value_Emit_Call_Or_Blacklist(Value *parent, Value *child);
 
-/** Cast a generic pointer (type BOXTYPE_PTR) to the given type.
+/** Cast a generic pointer (type BOXTYPEID_PTR) to the given type.
  * REFERENCES: return: new, v_ptr: -1;
  */
 Value *Value_Cast_From_Ptr(Value *v_ptr, BoxTypeId new_type);
