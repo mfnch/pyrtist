@@ -48,6 +48,42 @@
 #  endif
 
 /**
+ * @brief Integers associated to the fundamental types. These constant values
+ *   are used internally for caching combinations and - in general - for
+ *   speeding up the type system (or at least speeding up usage of fundamental
+ *   types).
+ */
+typedef enum {
+  BOXTYPEID_NONE  =-1,
+  BOXTYPEID_MIN_VAL=0,
+  BOXTYPEID_FAST_LOWER = 0,
+  BOXTYPEID_CHAR  = 0,
+  BOXTYPEID_INT   = 1,
+  BOXTYPEID_REAL  = 2,
+  BOXTYPEID_POINT = 3,
+  BOXTYPEID_PTR   = 4,
+  BOXTYPEID_FAST_UPPER = 4,
+  BOXTYPEID_OBJ   = 5,
+  BOXTYPEID_VOID,
+  BOXTYPEID_INIT,
+  BOXTYPEID_FINISH,
+  BOXTYPEID_COPY,
+  BOXTYPEID_BEGIN,
+  BOXTYPEID_END,
+  BOXTYPEID_PAUSE,
+  BOXTYPEID_CPTR,
+  BOXTYPEID_TYPE,
+  BOXTYPEID_ANY,
+  BOXTYPEID_MAX_VAL,
+} BoxTypeId;
+
+/**
+ * @brief A type in the Box type system. This is currently implemented as a
+ *   pointer to an opaque structure.
+ */
+typedef struct BoxType_struct BoxType;
+
+/**
  * The BoxChar type, the smallest integer in terms of size.
  */
 typedef unsigned char BoxChar;
@@ -248,33 +284,51 @@ typedef BoxName BoxData;
 typedef struct BoxCoreTypes_struct BoxCoreTypes;
 
 /**
- * Object containing all the core types of Box.
- */
-extern BoxCoreTypes box_core_types;
-
-/**
- * Initialize the core types of Box.
+ * @brief Initialize the core types of Box.
  */
 BOXEXPORT BoxBool
 BoxCoreTypes_Init(BoxCoreTypes *core_types);
 
 /**
- * Finalize the core type of Box.
+ * @brief Finalize the core type of Box.
  */
 BOXEXPORT void
 BoxCoreTypes_Finish(BoxCoreTypes *core_types);
 
 /**
- * Initialize the type system.
+ * @brief Initialize the type system.
  */
 BOXEXPORT BoxBool
 Box_Initialize_Type_System(void);
 
 /**
- * Initialize the type system.
+ * @brief Initialize the type system.
  */
 BOXEXPORT void
 Box_Finalize_Type_System(void);
+
+/**
+ * @brief Get the core type corresponding to the given type identifier.
+ *
+ * @param ct The set of core types from which the type is to be extracted.
+ * @param id The type identifier for the type to extract.
+ * @return The type corresponding to @p id, extracted from @p ct, or @c NULL
+ *   if the operation failed.
+ * @note @p ct is initialized if it is not. In other words @p ct can be a
+ *   pointer to a zeroed region of memory which can contain
+ *   <tt>sizeof(BoxCoreTypes)</tt> bytes.
+ */
+BOXEXPORT BoxType *
+BoxCoreTypes_Get_Type(BoxCoreTypes *ct, BoxTypeId id);
+
+/**
+ * @brief Similar to BoxCoreTypes_Get_Type() but uses the global core type
+ *   set.
+ *
+ * @see BoxCoreTypes_Get_Type().
+ */
+BOXEXPORT BoxType *
+Box_Get_Core_Type(BoxTypeId id);
 
 #  define BOX_FATAL_ERROR() Box_Fatal_Error(__FILE__, __LINE__)
 

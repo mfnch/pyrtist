@@ -17,6 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+#include <assert.h>
+
 #include <box/types_priv.h>
 #include <box/callable.h>
 #include <box/obj.h>
@@ -28,24 +30,38 @@
 /**
  * Structure collection all Box core types.
  */
-BoxCoreTypes box_core_types;
+static BoxCoreTypes box_core_types;
+
+
+static BoxType *
+My_Set_Type(BoxCoreTypes *ct, BoxTypeId t_id, BoxType *t, BoxBool *success) {
+  assert(t_id >= BOXTYPEID_MIN_VAL && t_id < BOXTYPEID_MAX_VAL);
+  ct->types[t_id] = t;
+  if (!t) {
+    *success = BOXBOOL_FALSE;
+    BoxSPtr_Unlink(t);
+  }
+}
+
 
 /* Create primary and intrinsic types. */
-static void My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
+static void
+My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
+  int idx;
+
   struct {
-    BoxType **dest;
     const char *name;
     BoxTypeId id;
     size_t size;
     size_t alignment;
 
   } *row, table[] = {
-    {& core_types->type_type, "Type", BOXTYPEID_TYPE,
-     sizeof(BoxTypeBundle), __alignof__(BoxTypeBundle)},
-    {& core_types->init_type, ".[", BOXTYPEID_INIT,
-     (size_t) 0, (size_t) 0},
-    {& core_types->finish_type, "].", BOXTYPEID_FINISH,
-     (size_t) 0, (size_t) 0},
+    {"Type", BOXTYPEID_TYPE, sizeof(BoxTypeBundle), __alignof__(BoxTypeBundle)},
+    {".[", BOXTYPEID_INIT, (size_t) 0, (size_t) 0},
+    {"].", BOXTYPEID_FINISH, (size_t) 0, (size_t) 0},
+    {(const char *) NULL, BOXTYPEID_NONE, (size_t) 0, (size_t) 0}
+
+#if 0
     {& core_types->CHAR_type, "CHAR", BOXTYPEID_CHAR,
      sizeof(BoxChar), __alignof__(BoxChar)},
     {& core_types->Char_type, "Char", BOXTYPEID_CHAR,
@@ -62,14 +78,15 @@ static void My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
      (size_t) 0, (size_t) 0},
     {& core_types->REFERENCES_type, "REFERENCES", BOXTYPEID_NONE,
      0, 0},
-
-    {NULL, (const char *) NULL, BOXTYPEID_NONE,
-     (size_t) 0, (size_t) 0}
+#endif
   };
 
-  core_types->type_type = (BoxType *) NULL;
+  /* Set all the entries in the table to NULL. */
+  for (idx = BOXTYPEID_MIN_VAL; idx < BOXTYPEID_MAX_VAL; idx++)
+    core_types->types[idx] = NULL;
 
-  for (row = & table[0]; row->dest; row++) {
+  /* Populate the table. */
+  for (row = & table[0]; row->name; row++) {
     BoxType *t;
 
     if (row->id != BOXTYPEID_NONE)
@@ -78,24 +95,14 @@ static void My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
       t = BoxType_Create_Intrinsic(row->size, row->alignment);
 
     if (t) {
-      BoxType *id = BoxType_Create_Ident(t, row->name);
-      if (id)
-        *row->dest = id;
+      My_Set_Type(core_types, row->id, BoxType_Create_Ident(t, row->name),
+                  success);
 
-      else {
-        *success = BOXBOOL_FALSE;
-        BoxSPtr_Unlink(t);
-      }
-    
-    } else {
+    } else
       *success = BOXBOOL_FALSE;
-      *row->dest = NULL;
-    }
   }
 
-  core_types->any_type = BoxType_Create_Any();
-  if (!core_types->any_type)
-    *success = BOXBOOL_FALSE;
+  My_Set_Type(core_types, BOXTYPEID_ANY, BoxType_Create_Any(), success);
 
   /* Register combinations for core_types->type_type. */
   if (!Box_Register_Type_Combs(core_types))
@@ -104,6 +111,7 @@ static void My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
 
 /* Create species. */
 static void My_Init_Species(BoxCoreTypes *ct, BoxBool *success) {
+#if 0
   BoxType *t;
 
   /* Int = (CHAR => INT) */
@@ -149,46 +157,35 @@ static void My_Init_Species(BoxCoreTypes *ct, BoxBool *success) {
 
   } else
     *success = BOXBOOL_FALSE;
+#endif
 }
 
 /* Initialize the core types of Box. */
 BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
   BoxBool success = BOXBOOL_TRUE;
 
+  core_types->initialized = BOXBOOL_TRUE;
   My_Init_Basic_Types(core_types, & success);
   My_Init_Species(core_types, & success);
 
+#if 0
   /* Register math core functions. */
   if (success)
-    success = BoxCoreTypes_Init_Math(& box_core_types);
+    success = BoxCoreTypes_Init_Math(core_types);
+#endif
 
   return success;
 }
 
 /* Finalize the core type of Box. */
 void BoxCoreTypes_Finish(BoxCoreTypes *core_types) {
-  BoxType *types[] =
-   {core_types->root_type,
-    core_types->init_type,
-    core_types->finish_type,
-    core_types->type_type,
-    core_types->CHAR_type,
-    core_types->INT_type,
-    core_types->REAL_type,
-    core_types->POINT_type,
-    core_types->Char_type,
-    core_types->Int_type,
-    core_types->Real_type,
-    core_types->Point_type,
-    core_types->PTR_type,
-    core_types->any_type,
-    core_types->REFERENCES_type,
-    NULL};
+  int idx;
 
-  BoxType **type;
+  /* Set all the entries in the table to NULL. */
+  for (idx = BOXTYPEID_MIN_VAL; idx < BOXTYPEID_MAX_VAL; idx++)
+    BoxSPtr_Unlink(core_types->types[idx]);
 
-  for (type = & types[0]; *type; type++)
-    BoxSPtr_Unlink(*type);
+  core_types->initialized = BOXBOOL_FALSE;
 }
 
 /* Initialize the type system. */
@@ -199,4 +196,25 @@ BoxBool Box_Initialize_Type_System(void) {
 /* Finalize the type system. */
 void Box_Finalize_Type_System(void) {
   BoxCoreTypes_Finish(& box_core_types);
+}
+
+/* Get the core type corresponding to the given type identifier. */
+BoxType *
+BoxCoreTypes_Get_Type(BoxCoreTypes *ct, BoxTypeId id) {
+  unsigned int idx = (unsigned int) id; 
+
+  if (idx >= BOXTYPEID_MIN_VAL && idx < BOXTYPEID_MAX_VAL) {
+    if (ct->initialized)
+      return ct->types[idx];
+    else if (BoxCoreTypes_Init(ct))
+      return ct->types[idx];
+  }
+
+  return NULL;
+}
+
+/* Similar to BoxCoreTypes_Get_Type() but uses the global core type set. */
+BoxType *
+Box_Get_Core_Type(BoxTypeId id) {
+  return BoxCoreTypes_Get_Type(& box_core_types, id);
 }

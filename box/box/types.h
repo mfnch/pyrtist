@@ -18,12 +18,15 @@
  ****************************************************************************/
 
 /**
- * @file ntypes.h
+ * @file types.h
  * @brief Declaration of BoxType and the associated functionality.
  *
- * This header defines the BoxType object and most of the functions needed
- * to create BoxType objects, manipulate them and retrieve informations from
- * them.
+ * This header defines the BoxType object and most of the functions needed to
+ * create BoxType objects, manipulate them and retrieve informations from them.
+ * @b Note that #BoxType and #BoxTypeId are defined inside the header core.h.
+ * These two types are indeed fundamental parts of the Box infrastructure. In
+ * this header we rather expose the functionality to create and inspect types
+ * (#BoxType).
  */
 
 #ifndef _BOX_TYPES_H
@@ -34,36 +37,9 @@
 #  define BOX_USE_NEW_OBJ 1
 
 #  include <box/core.h>
-
-/**
- * Integers associated to the fundamental types. These constant values are
- * used internally for caching combinations and - in general - for speeding
- * up the type system (or at least speeding up usage of fundamental types).
- */
-typedef enum {
-  BOXTYPEID_NONE  =-1,
-  BOXTYPEID_FAST_LOWER = 0,
-  BOXTYPEID_CHAR  = 0,
-  BOXTYPEID_INT   = 1,
-  BOXTYPEID_REAL  = 2,
-  BOXTYPEID_POINT = 3,
-  BOXTYPEID_PTR   = 4,
-  BOXTYPEID_FAST_UPPER = 4,
-  BOXTYPEID_OBJ   = 5,
-  BOXTYPEID_VOID,
-  BOXTYPEID_INIT,
-  BOXTYPEID_FINISH,
-  BOXTYPEID_COPY,
-  BOXTYPEID_BEGIN,
-  BOXTYPEID_END,
-  BOXTYPEID_PAUSE,
-  BOXTYPEID_CPTR,
-  BOXTYPEID_TYPE,
-  BOXTYPEID_MAX_VAL,
-} BoxTypeId;
-
-
 #  include <box/container.h>
+
+/* NOTE: BoxType and BoxTypeId are defined in core.h (see comment above). */
 
 /**
  * Type class (whether a type is a structure, a species, etc).
@@ -86,12 +62,6 @@ typedef enum {
   BOXTYPECLASS_POINTER,
   BOXTYPECLASS_ANY,
 } BoxTypeClass;
-
-/**
- * A type in the Box type system. This is currently implemented as a
- * pointer to an opaque structure.
- */
-typedef struct BoxType_struct BoxType;
 
 /**
  * Combination type.

@@ -33,33 +33,11 @@
  * Box core types.
  */
 struct BoxCoreTypes_struct {
-  BoxType *root_type,
-          *init_type,
-          *finish_type,
-          *type_type,
-          *Char_type,
-          *Int_type,
-          *Real_type,
-          *Point_type,
-          *CHAR_type,
-          *INT_type,
-          *REAL_type,
-          *POINT_type,
-          *PTR_type,
-          *any_type,
-          *str_type,
-          *repr_type,
-          *stream_type,
-          *hash_type,
-          *serialize_type,
-          *deserialize_type,
-          *REFERENCES_type,
-          *Exception_type;
+  BoxBool initialized; /**< Whether the core types have been initialized. */
+  BoxType *types[BOXTYPEID_MAX_VAL - BOXTYPEID_MIN_VAL];
+                       /**< Array containing the core types. The order in
+                            this array is consistent with the BoxTypeId
+                            enumeration (which can be used to index it). */
 };
-
-/**
- * Object containing all the core types of Box.
- */
-extern BoxCoreTypes box_core_types;
 
 #endif /* _BOX_CORE_PRIV_H */

@@ -73,7 +73,8 @@ void *BoxType_Alloc(BoxType **t, BoxTypeClass tc) {
   }
 
   if (Box_Mem_Sum(& total, data_offset, additional)) {
-    BoxType *td = BoxSPtr_Raw_Alloc(box_core_types.type_type, total);
+    BoxType *tt = Box_Get_Core_Type(BOXTYPEID_TYPE);
+    BoxType *td = BoxSPtr_Raw_Alloc(tt, total);
 
     num_type_nodes++;
     total_size_of_types += total;
@@ -261,14 +262,19 @@ static BoxException *My_Type_Finish(BoxPtr *parent) {
 
 /* Register initialization and finalization for types. */
 BoxBool Box_Register_Type_Combs(BoxCoreTypes *ct) {
+  BoxType
+    *type_type = BoxCoreTypes_Get_Type(ct, BOXTYPEID_TYPE),
+    *init_type = BoxCoreTypes_Get_Type(ct, BOXTYPEID_INIT),
+    *finish_type = BoxCoreTypes_Get_Type(ct, BOXTYPEID_FINISH);
+
   BoxCallable *callable =
-    BoxCallable_Create_Undefined(ct->type_type, ct->finish_type);
+    BoxCallable_Create_Undefined(type_type, finish_type);
   callable = BoxCallable_Define_From_CCall1(callable, My_Type_Finish);
   if (!callable)
     return BOXBOOL_FALSE;
 
-  if (BoxType_Define_Combination(ct->type_type, BOXCOMBTYPE_AT,
-                                 ct->finish_type, callable))
+  if (BoxType_Define_Combination(type_type, BOXCOMBTYPE_AT,
+                                 finish_type, callable))
     return BOXBOOL_TRUE;
 
   BoxSPtr_Unlink(callable);

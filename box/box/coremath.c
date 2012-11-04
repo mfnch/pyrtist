@@ -17,6 +17,7 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
+#if 0
 /**
  * @file coremath.c
  * @brief Declaration of core mathematical functions for Box.
@@ -169,3 +170,4 @@ BoxBool BoxCoreTypes_Init_Math(BoxCoreTypes *ct) {
 
   return BOXBOOL_TRUE;
 }
+#endif
