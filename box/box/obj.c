@@ -85,7 +85,11 @@ void BoxAny_Copy(BoxAny *dst, BoxAny *src) {
 
 /* Change the boxed object stored inside the given any object. */
 BoxBool BoxAny_Box(BoxPtr *any, BoxPtr *obj, BoxType *t) {
-  return BOXBOOL_FALSE;
+  BoxAny *any_sptr = BoxPtr_Get_Target(any);
+  BoxPtr_Unlink(& any_sptr->ptr);
+  any_sptr->ptr = *BoxPtr_Link(obj);
+  any_sptr->type = t;
+  return BOXBOOL_TRUE;
 }
 
 /* Retrieve the boxed object stored inside the given any object. */

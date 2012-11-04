@@ -71,13 +71,18 @@ typedef struct {
  */
 void Value_Init(Value *v, BoxVMCode *proc);
 
-/** Allocate a Value object and initialise it by calling Value_Init.
+/**
+ * @brief Allocate a Value object and initialise it by calling Value_Init().
+ *
  * Notice that the object is aware of its allocation mode (whether it was
- * created with Value_Init or Value_New) and Value_Unlink will correctly
- * call a free() in case Value_New was used. free() won't be called if the
- * object was created with Value_Init.
+ * created with Value_Init() or Value_Create()) and Value_Unlink() will
+ * do the right things (e.g. it does not call free() if the object was created
+ * with Value_Init()).
  */
-Value *Value_New(BoxVMCode *proc);
+BOXEXPORT Value *
+Value_Create(BoxVMCode *proc);
+
+#define Value_New Value_Create
 
 /** Remove one reference to the Value object 'v', destroying it if there are
  * no more reference to the Value. The object is destroyed coherently to how

@@ -616,7 +616,7 @@ BoxTypeId BoxTS_New_Any(BoxTS *ts) {
     BoxTS_New_Intrinsic(ts, sizeof(BoxAny), __alignof__(BoxAny));
   My_Name_Set(ts, dummy_typeid, "ANY");
 
-  BoxType *t_any = BoxType_Create_Any();
+  BoxType *t_any = Box_Get_Core_Type(BOXTYPEID_ANY);
 
   if (t_any)
     TS_Set_New_Style_Type(ts, dummy_typeid, t_any);

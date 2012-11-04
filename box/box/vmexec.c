@@ -730,9 +730,9 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {BOXGOP_ARNEXT, "arnext", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Arnext_OO}, /* arnext reg_o, reg_o */
   {BOXGOP_ARDEST, "ardest", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Ardest_O }, /* ardest reg_o        */
   {  BOXGOP_REGS,   "regs", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Regs_I   }, /* regs reg_i          */
-  {BOXGOP_TYPEOF, "typeof", 1, 'o',     "a1", "ro0", "x-", "xx", My_Exec_Typeof_O }, /* typeof reg_o        */
-  {   BOXGOP_BOX,    "box", 1, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Box_OO   }, /* box reg_o, reg_o    */
-  { BOXGOP_UNBOX,  "unbox", 1, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Unbox_OO }  /* unbox reg_o, reg_o  */
+  {BOXGOP_TYPEOF, "typeof", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Typeof_O }, /* typeof reg_o        */
+  {   BOXGOP_BOX,    "box", 2, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Box_OO   }, /* box reg_o, reg_o    */
+  { BOXGOP_UNBOX,  "unbox", 2, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Unbox_OO }  /* unbox reg_o, reg_o  */
 };
 
 

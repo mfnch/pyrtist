@@ -59,7 +59,7 @@ void Value_Init(Value *v, BoxVMCode *proc) {
   v->num_ref = 1;
 }
 
-Value *Value_New(BoxVMCode *proc) {
+Value *Value_Create(BoxVMCode *proc) {
   Value *v = BoxMem_Safe_Alloc(sizeof(Value));
   Value_Init(v, proc);
   v->attr.new_or_init = 1;
@@ -666,7 +666,7 @@ void Value_Emit_Call_From_Call_Num(BoxVMCallNum call_num,
                  && parent->value.cont.categ != BOXCONTCATEG_PTR) ?
                 BOXGOP_MOV : BOXGOP_LEA;
     BoxVMCode_Assemble(c->cur_proc, op,
-                     2, & c->cont.pass_parent, & parent->value.cont);
+                       2, & c->cont.pass_parent, & parent->value.cont);
   }
 
   if (child->value.cont.type != BOXCONTTYPE_VOID) {
@@ -675,7 +675,7 @@ void Value_Emit_Call_From_Call_Num(BoxVMCallNum call_num,
                  && child->value.cont.categ != BOXCONTCATEG_PTR) ?
                 BOXGOP_REF : BOXGOP_LEA;
     BoxVMCode_Assemble(c->cur_proc, op,
-                     2, & c->cont.pass_child, & v_to_pass->value.cont);
+                       2, & c->cont.pass_child, & v_to_pass->value.cont);
     Value_Unlink(v_to_pass);
   }
 
@@ -801,7 +801,7 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxTypeId new_type) {
         v_ptr = Value_New(c->cur_proc);
         Value_Setup_As_Temp_Old(v_ptr, BOXTYPEID_PTR);
         BoxVMCode_Assemble(c->cur_proc, BOXGOP_REF, 2,
-                         & v_ptr->value.cont, & v_ptr_cont);
+                           & v_ptr->value.cont, & v_ptr_cont);
         assert(v_ptr->value.cont.categ == BOXCONTCATEG_LREG);
         return Value_Cast_From_Ptr(v_ptr, new_type);
       }
@@ -946,7 +946,7 @@ static Value *My_Point_Get_Member(Value *v_point, const char *memb) {
         Value *v_memb = Value_New(c->cur_proc);
         Value_Setup_As_Temp_Old(v_memb, BOXTYPEID_PTR);
         BoxVMCode_Assemble(v_memb->proc, g_op, 2,
-                         & v_memb->value.cont, & v_point->value.cont);
+                           & v_memb->value.cont, & v_point->value.cont);
         Value_Unlink(v_point);
         v_memb->kind = VALUEKIND_TARGET;
         return
@@ -1119,8 +1119,8 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
         Value_Setup_As_Imm_Int(& v_size, BoxType_Get_Size(dest->type));
 
         BoxVMCode_Assemble(c->cur_proc, BOXGOP_MCOPY,
-                         3, & dest->value.cont, & src->value.cont,
-                         & v_size.value.cont);
+                           3, & dest->value.cont, & src->value.cont,
+                           & v_size.value.cont);
         Value_Unlink(& v_size);
         Value_Unlink(src);
         Value_Unlink(dest);
@@ -1133,12 +1133,12 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
   } else if (dest->value.cont.type == BOXCONTTYPE_PTR) {
     /* For pointers we need to pay special care: reference counts! */
     BoxVMCode_Assemble(dest->proc, BOXGOP_REF,
-                     2, & dest->value.cont, & src->value.cont);
+                       2, & dest->value.cont, & src->value.cont);
 
   } else {
     /* All the other types can be moved "quickly" with a mov operation */
     BoxVMCode_Assemble(dest->proc, BOXGOP_MOV,
-                     2, & dest->value.cont, & src->value.cont);
+                       2, & dest->value.cont, & src->value.cont);
   }
 
   Value_Unlink(src);
@@ -1275,8 +1275,36 @@ Value_Expand(Value *src, BoxType *t_dst) {
     }
 
   case BOXTYPECLASS_ANY:
-    return src;
-    
+    {
+      BoxCont ro0, src_type_id_cont;
+      BoxCmp *cmp = src->proc->cmp;
+      BoxVMCode *cur_proc = cmp->cur_proc;
+      BoxTypeId src_type_id = BoxVM_Install_Type(cmp->vm, src->type);
+      Value *v_dst = Value_Create(cur_proc);
+      Value *v_src_ptr = Value_Create(cur_proc);
+
+      /* Set up a container representing the register ro0. */
+      BoxCont_Set(& ro0, "ro", 0);
+
+      /* Create a new ANY type. */
+      Value_Setup_As_Temp(v_dst, Box_Get_Core_Type(BOXTYPEID_ANY));
+
+      /* Obtain the pointer to the source object. */
+      Value_Setup_As_Weak_Copy(v_src_ptr, src);
+      v_src_ptr = Value_Cast_To_Ptr(v_src_ptr);
+
+      /* Generate the boxing instructions. */
+      BoxCont_Set(& src_type_id_cont, "ii", (BoxInt) src_type_id);
+      BoxVMCode_Assemble(cur_proc, BOXGOP_TYPEOF,
+                         2, & ro0, & src_type_id_cont);
+      BoxVMCode_Assemble(cur_proc, BOXGOP_BOX,
+                         3, & v_dst->value.cont, & v_src_ptr->value.cont,
+                         & ro0);
+
+      Value_Unlink(v_src_ptr);
+      Value_Unlink(src);
+      return v_dst;
+    }
 
   default:
     MSG_FATAL("Value_Expand: not fully implemented!");
@@ -1298,7 +1326,7 @@ void My_Setup_From_Gro(Value *v, BoxTypeId t, BoxInt gro_num) {
 
     Value_Setup_As_Temp_Old(v, BOXTYPEID_PTR);
     BoxVMCode_Assemble(c->cur_proc, BOXGOP_MOV,
-                     2, & v->value.cont, & v_ptr.value.cont);
+                       2, & v->value.cont, & v_ptr.value.cont);
     Value_Unlink(& v_ptr);
     v = Value_Cast_From_Ptr(v, t);
     v->kind = VALUEKIND_TARGET;
