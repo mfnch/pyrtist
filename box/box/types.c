@@ -22,27 +22,23 @@
 #include <string.h>
 #include <stddef.h>
 
-// TODO: remove this
-#include <stdio.h>
-
-
 #include <box/types.h>
-#include <box/types_priv.h>
-
 #include <box/messages.h>
 #include <box/mem.h>
 #include <box/obj.h>
 #include <box/callable.h>
 
+#include <box/types_priv.h>
 #include <box/core_priv.h>
 #include <box/callable_priv.h>
 
 
+/* Temporary stuff (debugging). */
 int num_type_nodes = 0;
 size_t total_size_of_types = 0;
 
 /* Generic allocation function for BoxType objects. This function allocates a
- * type header plus a the type data, whose size and composition depend on the
+ * type header plus the type data, whose size and composition depend on the
  * particular type class.
  */
 void *BoxType_Alloc(BoxType **t, BoxTypeClass tc) {
@@ -144,7 +140,7 @@ BoxTypeNode *MyType_Get_Node(BoxType *t) {
  * in the two provided arrays. This function is internal and allows to
  * traverse the type tree easily. It is used, for example, to deallocate all
  * the resources associated to a given type in BoxType_Unlink.
- * @param t The type 
+ * @param t The type. 
  * @param num_refs Pointer where the number of references made by the provided
  *   type makes be written (the number of references never exceeds the constant
  *   BOX_MAX_NUM_REFS_IN_TYPE.
@@ -264,7 +260,6 @@ static BoxException *My_Type_Finish(BoxPtr *parent) {
 BoxBool Box_Register_Type_Combs(BoxCoreTypes *ct) {
   BoxType
     *type_type = BoxCoreTypes_Get_Type(ct, BOXTYPEID_TYPE),
-    *init_type = BoxCoreTypes_Get_Type(ct, BOXTYPEID_INIT),
     *finish_type = BoxCoreTypes_Get_Type(ct, BOXTYPEID_FINISH);
 
   BoxCallable *callable =
@@ -821,10 +816,8 @@ BoxType_Get_Size_And_Alignment(BoxType *t, size_t *size, size_t *algn) {
       /* Get species' node for the target. */
       t = ((BoxTypeSpecies *) td)->node.previous;
 
-      if (!t) {
-        printf("Empty species!\n");
+      if (!t)
         return BOXBOOL_FALSE;
-      }
 
       /* Get the node's type. */
       t = ((BoxTypeSpeciesNode *) BoxType_Get_Data(t))->type;
@@ -977,6 +970,11 @@ BoxTypeCmp BoxType_Compare(BoxType *left, BoxType *right) {
                           BOXTYPERESOLVE_IDENT | BOXTYPERESOLVE_SPECIES, 0);
   if (left == right)
     return BOXTYPECMP_EQUAL;
+
+#if 0
+  if (right->type_class == BOXTYPECLASS_ANY)
+    return BOXTYPECMP_MATCHING;
+#endif
 
   switch (left->type_class) {
   case BOXTYPECLASS_STRUCTURE_NODE:
