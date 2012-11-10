@@ -19,10 +19,10 @@
 
 /**
  * @file types.h
- * @brief Declaration of BoxType and the associated functionality.
+ * @brief Declaration of functionality related to the #BoxType object type.
  *
- * This header defines the BoxType object and most of the functions needed to
- * create BoxType objects, manipulate them and retrieve informations from them.
+ * This header defines most of the functions needed to create #BoxType objects,
+ * manipulate them and retrieve informations from them. 
  * @b Note that #BoxType and #BoxTypeId are defined inside the header core.h.
  * These two types are indeed fundamental parts of the Box infrastructure. In
  * this header we rather expose the functionality to create and inspect types
@@ -88,8 +88,8 @@ typedef enum {
 
 
 /**
- * Value which determines the relationship between two types left and right.
- * This is what is returned by BoxType_Compare.
+ * @brief Value which determines the relationship between two types left and
+ *   right. This is what is returned by BoxType_Compare().
  */
 typedef enum {
   BOXTYPECMP_DIFFERENT = 0x0, /**< the two types are different. */
@@ -99,8 +99,8 @@ typedef enum {
 } BoxTypeCmp;
 
 /**
- * Type used to specify which type classes should be resolved in
- * BoxType_Resolve.
+ * @brief Type used to specify which type classes should be resolved in
+ *   BoxType_Resolve().
  */
 typedef enum {
   BOXTYPERESOLVE_IDENT   = 0x01,
@@ -122,8 +122,9 @@ BOXEXPORT void
 BoxType_Set_Id(BoxType *t, BoxTypeId id);
 
 /**
- * Get the type class of a given type. The type class is effectively the
- * type of type (the answer to whether the type is a struct, a species, etc.)
+ * @brief Get the type class of a given type. The type class is effectively the
+ *   type of type (the answer to whether the type is a struct, a species, etc.)
+ *
  * @param t The input type.
  * @return The type class of t.
  */
@@ -131,24 +132,26 @@ BOXEXPORT BoxTypeClass
 BoxType_Get_Class(BoxType *t);
 
 /**
- * Get the data part of a type. The size and composition of the data type of
- * a given type changes depending on the type class.
+ * @brief Get the data part of a type. The size and composition of the data
+ *   type of a given type changes depending on the type class.
  */
 BOXEXPORT void *
 BoxType_Get_Data(BoxType *t);
 
 /**
- * Remove a reference to the given type.
+ * @brief Remove a reference to the given type.
  */
 #define BoxType_Unlink(t) ((BoxType *) BoxSPtr_Unlink(t))
 
 /**
- * Add a reference to the given type.
+ * @brief Add a reference to the given type.
  */
 #define BoxType_Link(t) ((BoxType *) BoxSPtr_Link(t))
 
 /**
- * Create an instance of a primary type with the given id, size and alignment.
+ * @brief Create an instance of a primary type with the given id, size and
+ *   alignment.
+ *
  * An primary type is one of the builtin core types.
  * @param id The ID associated to the primary type.
  * @param size The size of the type (in bytes).
@@ -159,7 +162,8 @@ BOXEXPORT BoxType *
 BoxType_Create_Primary(BoxTypeId id, size_t size, size_t alignment);
 
 /**
- * Create a new intrinsic type with the given name, size and alignment.
+ * @brief Create a new intrinsic type with the given name, size and alignment.
+ *
  * An intrinsic type can be imagined as a descriptor for an atomic
  * (i.e. indivisible) portion of memory.
  * @param size The size of the type (in bytes).
@@ -170,25 +174,29 @@ BOXEXPORT BoxType *
 BoxType_Create_Intrinsic(size_t size, size_t alignment);
 
 /**
- * Create a new type identifier from the type 'source'. A type identifier
- * is a type which can be referred using a name. It can be put inside the
- * namespace of a parent type and has itself a namespace which can contain
- * children types. An identifier type can also have combinations and
- * subtypes. It is thus a central concept for organising the type hierarchy
+ * @brief Create a new type identifier from the type 'source'.
+ *
+ * A type identifier is a type which can be referred using a name. It can be
+ * put inside the namespace of a parent type and has itself a namespace which
+ * can contain children types. An identifier type can also have combinations
+ * and subtypes. It is thus a central concept for organising the type hierarchy
  * in the Box language.
  * @param source The target type to which this identifier refers to.
  * @param name The name to use for identifying the type.
- * @return A new type identifier (or BOXTYPE_NONE in case of errors).
+ * @return A new type identifier (or @c NULL in case of errors).
  */
 BOXEXPORT BOXOUT BoxType *
 BoxType_Create_Ident(BOXIN BoxType *source, const char *name);
 
 /**
- * Create a new raised type from the type 'source'. The new type will be
- * similar to t, but incompatible: BoxType_Compare will not match the two
- * types. As a consequence, the new raised type will not share the combinations
- * of its source type. Notice, however, that an object whose type is raised
- * can be unraised to obtain an object having the source type.
+ * @brief Create a new raised type from the type 'source'. 
+ *
+ * The new type will be similar to t, but incompatible: BoxType_Compare() will
+ * not match the two types. As a consequence, the new raised type will not be
+ * matched as a child of types expecting the source type as a child. The raised
+ * type does, however, inherit the combinations of the source type.  Notice
+ * also that an object whose type is raised can be unraised to obtain an object
+ * having the source type.#
  * @param source The source type.
  * @return A new raised type.
  */
@@ -196,8 +204,10 @@ BOXEXPORT BoxType *
 BoxType_Create_Raised(BoxType *source);
 
 /**
- * Un-raise a raised type. For example, if r is the raised type of t, then
- * BoxType_Unraise(r) returns t.
+ * @brief Un-raise a raised type.
+ *
+ * For example, if @c r is the raised type of @c t, then
+ * <tt>BoxType_Unraise(r)</tt> returns  t.
  * @param raised A raised type.
  * @return The unraised type.
  */
@@ -212,9 +222,10 @@ BOXEXPORT BOXOUT BoxType *
 BoxType_Create_Structure(void);
 
 /**
- * Add a member to a structure type defined with BoxType_Create_Structure.
+ * @brief Add a member to a structure defined with BoxType_Create_Structure().
+ *
  * Note that this function does not check for members with duplicate name.
- * @param structure A type created with BoxType_Create_Structure.
+ * @param structure A type created with BoxType_Create_Structure().
  * @param member The type of the member.
  * @param member_name The member name.
  */
@@ -228,17 +239,20 @@ BOXEXPORT BoxType *
 BoxType_Get_Species_Target(BoxType *node);
 
 /**
- * Get information on a structure member as obtained from
- * #BoxTypeIter_Get_Next.
+ * @brief Get information on a structure member as obtained from
+ *   BoxTypeIter_Get_Next().
  */
 BOXEXPORT BoxBool
 BoxType_Get_Structure_Member(BoxType *node, char **name, size_t *offset,
                              size_t *size, BoxType **type);
 
 /**
- * Get the type of a structure member obtained from BoxTypeIter_Get_Next.
+ * @brief Get the type of a structure member obtained from
+ *   BoxTypeIter_Get_Next().
+ *
  * This is a convenience function to be used as a replacement of
- * BoxType_Get_Struct_Member in the case where only the member type is needed.
+ * BoxType_Get_Struct_Member() in the case where only the member type is
+ * needed.
  * @param node The type node as obtained from BoxTypeIter_Get_Next.
  * @return The type of the member.
  */
@@ -246,7 +260,8 @@ BOXEXPORT BoxType *
 BoxType_Get_Structure_Member_Type(BoxType *node);
 
 /**
- * Find the member of a structure with the given name.
+ * @brief Find the member of a structure with the given name.
+ *
  * @param structure The input structure.
  * @param name The name of the structure member.
  * @return If the member is found, return the type node of the member (which
@@ -256,34 +271,38 @@ BOXEXPORT BoxType *
 BoxType_Find_Structure_Member(BoxType *structure, const char *name);
 
 /**
- * Get the number of members of the structure.
+ * @brief Get the number of members of the structure.
  */
 BOXEXPORT size_t
 BoxType_Get_Structure_Num_Members(BoxType *t);
 
 /**
- * Create an empty species. Members can be added with
- * BoxType_Add_Member_To_Species.
+ * @brief Create an empty species.
+ *
+ * Members can be added with BoxType_Add_Member_To_Species().
  */
 BOXEXPORT BOXOUT BoxType *
 BoxType_Create_Species(void);
 
 /**
- * Add a member to a species type defined with BoxType_Create_Species.
+ * @brief Add a member to a species type defined with BoxType_Create_Species().
  */
 BOXEXPORT void
 BoxType_Add_Member_To_Species(BoxType *species, BoxType *member);
 
 /**
- * Get the type of a species member as obtained from BoxTypeIter_Get_Next.
- * @param node The type node as obtained from BoxTypeIter_Get_Next.
+ * @brief Get the type of a species member as obtained from
+ *   BoxTypeIter_Get_Next().
+ *
+ * @param node The type node as obtained from BoxTypeIter_Get_Next().
  * @return The type of the member.
  */
 BOXEXPORT BoxType *
 BoxType_Get_Species_Member_Type(BoxType *node);
 
 /**
- * Create a species of type '(*=>Dest)' (everything is converted to 'Dest').
+ * @brief Create a species of type '(*=>Dest)' (everything is converted to
+ *   'Dest').
  */
 BOXEXPORT BoxType *
 BoxType_Create_Star_Species(BoxType *dest);
@@ -297,8 +316,9 @@ BOXEXPORT void
 BoxType_Add_Member_To_Enum(BoxType *member, const char *member_name);
 
 /**
- * Create a new function type taking 'child' as an argument and working
- * on 'parent'.
+ * @brief Create a new function type taking @p child as an argument and working
+ *   on @p parent.
+ *
  * @param parent The type of the value returned by the function.
  * @param child The type of the argument of the function.
  * @return A new type corresponding to the specified function.
@@ -327,7 +347,8 @@ BOXEXPORT BoxType *
 BoxType_Get_Callable_Child(BoxType *callable);
 
 /**
- * Create a new pointer type to 'source'.
+ * @brief Create a new pointer type to @p source.
+ *
  * @param target The type of the pointer target.
  * @return A new pointer type.
  */
@@ -335,19 +356,21 @@ BOXEXPORT BoxType *
 BoxType_Create_Pointer(BoxType *target);
 
 /**
- * Create a new Any type.
+ * @brief Create a new Any type.
  */
 BOXEXPORT BoxType *
 BoxType_Create_Any(void);
 
 /**
- * Resolve the given type. Resolution is an operation on types which allow
- * obtaining the original type one type refers to. For example, resolving a
- * species allows obtaining the target type of the species and resolving an
- * identifier type allows obtaining the underlying type.
+ * @brief Resolve the given type.
+ * 
+ * Resolution is an operation on types which allow obtaining the original type
+ * one type refers to. For example, resolving a species allows obtaining the
+ * target type of the species and resolving an identifier type allows obtaining
+ * the underlying type.
  * @param type Type to resolve.
  * @param resolve What type class should be resolved. This is a sum of one
- *   or more BoxTypeResolve masks, one for each class that should be resolved.
+ *   or more #BoxTypeResolve masks, one for each class that should be resolved.
  * @param num Number of resolutions (0 means as many as necessary).
  * @return The resolved type.
  */
@@ -359,7 +382,8 @@ BoxType_Resolve(BoxType *type, BoxTypeResolve resolve, int num);
  *****************************************************************************/
 
 /**
- * Add a child type to the namespace of a parent type.
+ * @brief Add a child type to the namespace of a parent type.
+ *
  * Note that both the child and the parent must be identifier types.
  * @param parent The parent type.
  * @param child The child type.
@@ -369,31 +393,35 @@ BOXEXPORT void
 BoxType_Add_Type(BoxType *parent, BOXIN BoxType *child);
 
 /**
- * Add a subtype type for a given type.
+ * @brief Add a subtype type for a given type.
+ *
  * Note that the parent must be an identifier type.
  * @param parent The parent type.
  * @param name The name of the subtype.
  * @param subtype The type of the subtype or NULL to leave the subtype
- *   untyped. BoxType_Register_Subtype can be used to provide the type
+ *   untyped. BoxType_Register_Subtype() can be used to provide the type
  *   later.
  * @return Return the subtype node. Note that the caller is not give a
  *   reference to the node. In other words, the caller may need to use
- *   BoxType_Link to claim a reference to the subtype.
+ *   BoxType_Link() to claim a reference to the subtype.
  */
 BOXEXPORT BoxType *
 BoxType_Create_Subtype(BoxType *parent, const char *name, BoxType *type);
 
 /**
- * Find a subtype of the given type.
+ * @brief Find a subtype of the given type.
+ *
  * @param parent The type whose subtype we are trying to find.
  * @param name The name of the subtype.
- * @return A new subtype node or NULL, if the subtype could not be found.
+ * @return A new subtype node or @c NULL, if the subtype could not be found.
  */
 BOXEXPORT BoxType *
 BoxType_Find_Subtype(BoxType *parent, const char *name);
 
 /**
- * This function is similar to #BoxType_Find_Subtype, but does not try to
+ * @brief Find the non-inherited subtypes of the given type.
+ *
+ * This function is similar to BoxType_Find_Subtype(), but does not try to
  * find subtypes inherited by types from which @p parent derives.
  * @see BoxType_Find_Subtype
  */
@@ -401,14 +429,15 @@ BOXEXPORT BoxType *
 BoxType_Find_Own_Subtype(BoxType *parent, const char *name);
 
 /**
- * Get details about a subtype found with BoxType_Find_Combination.
+ * @brief Get details about a subtype found with BoxType_Find_Combination().
  */
 BOXEXPORT BoxBool
 BoxType_Get_Subtype_Info(BoxType *subtype, char **name,
                          BoxType **parent, BoxType **type);
 
 /**
- * Register the type for a given subtype, if not given during creation.
+ * @brief Register the type for a given subtype, if not given during creation.
+ *
  * @param subtype A subtype created with BoxType_Create_Subtype, giving
  *   NULL for the type.
  * @param type The type to associate to the subtype.
@@ -418,7 +447,9 @@ BOXEXPORT BoxBool
 BoxType_Register_Subtype(BoxType *subtype, BoxType *type);
 
 
-/** Identifier used to determine the state of a Box. */
+/**
+ * @brief Identifier used to determine the state of a Box.
+ */
 typedef unsigned int BoxBoxState;
 
 /** Return a Box state identifier from its string representation. */
@@ -429,36 +460,39 @@ BoxBoxState BoxType_Get_State(BoxType *t, const char *source);
  *****************************************************************************/
 
 /**
- * Get the size of the type 't'.
+ * @brief Get the size of an allocated object of the given type.
  */
 BOXEXPORT size_t
 BoxType_Get_Size(BoxType *t);
 
 /**
- * Get the size and the aligment of a given input type.
+ * @brief Get the size and the aligment of a given input type.
+ *
  * @param t The input type.
  * @param size Where to store the size of the type.
  * @param algn Where to store the alignment of the type.
- * @return BOXTYPE_TRUE if size/alignment were retrieved successfully.
+ * @return @c BOXTYPE_TRUE if size/alignment were retrieved successfully.
  */
 BOXEXPORT BoxBool
 BoxType_Get_Size_And_Alignment(BoxType *t, size_t *size, size_t *algn);
 
 /**
- * Create the string representation of the Type 't'. The returned string
- * has to be freed with BoxMem_Free.
+ * @brief Create the string representation of the provided type.
+ *
+ * @note The returned string has to be freed with BoxMem_Free().
  */
 char *BoxType_Get_Repr(BoxType *t);
 
 /**
- * Compare right to left and return a BoxTypeCmp value
+ * @brief Compare right to left and return a #BoxTypeCmp value.
  */
 BOXEXPORT BoxTypeCmp
 BoxType_Compare(BoxType *left, BoxType *right);
 
 /**
- * Type iterator. Allows to iter through the types that do have members,
- * such as structures, species and enums.
+ * @brief Type iterator. Allows to iter through the types that do have members,
+ *   such as structures, species and enums.
+ *
  * @see BoxTypeIter_Init
  */
 typedef struct BoxTypeIter_struct {
@@ -466,7 +500,8 @@ typedef struct BoxTypeIter_struct {
 } BoxTypeIter;
 
 /**
- * Initialize an iterator for iteration over the members of the given type.
+ * @brief Initialize an iterator for iteration over the members of the given type.
+ *
  * @param ti Pointer to location of memory to initialize.
  * @param t Iteration is done over the members of this type.
  */
@@ -474,48 +509,51 @@ BOXEXPORT void
 BoxTypeIter_Init(BoxTypeIter *ti, BoxType *t);
 
 /**
- * Iterate over the next member of the provided iterator.
+ * @brief Iterate over the next member of the provided iterator.
+ *
  * @param ti Pointer to an initialized iterator.
  * @param next This is a pointer where to put the next item in the iteration.
- * @return BOXBOOL_TRUE if a new item was retrieved and written in ``*next``,
- *   BOXBOOL_FALSE otherwise.
+ * @return @c BOXBOOL_TRUE if a new item was retrieved and written in ``*next``,
+ *   @c BOXBOOL_FALSE otherwise.
  *
- * EXAMPLE: The idea is to use this as:
- *
+ * @note The idea is to use this as:
+ * @code
  *  BoxTypeIter ti;
  *  BoxType *t;
  *  for (BoxTypeIter_Init(& ti, parent); BoxTypeIter_Get_Next(& ti, & t);) {
  *    BoxType_Get_Structure_Member(& t, ...);
  *    ...
  *  }
- *
+ * @endcode
  */
 BOXEXPORT BoxBool
 BoxTypeIter_Get_Next(BoxTypeIter *ti, BoxType **next);
 
 /**
- * Finalize an iterator initialized with BoxTypeIter_Init.
+ * @brief Finalize an iterator initialized with BoxTypeIter_Init.
  */
 #define BoxTypeIter_Finish(iter) \
   do {(void) (iter);} while(0)
 
 /**
- * Whether an iterator has more items to read with BoxTypeIter_Get_Next.
+ * @brief Whether an iterator has more items to read with BoxTypeIter_Get_Next().
+ *
  * @param ti Pointer to an initialized, possibly "used" iterator.
- * @return BOXBOOL_TRUE if the iterator has some items (in other words, if the
+ * @return @c BOXBOOL_TRUE if the iterator has some items (in other words, if the
  *   next call to BoxTypeIter_Get_Next is going to return BOXBOOL_TRUE),
- *   BOXBOOL_FALSE otherwise.
+ *   @c BOXBOOL_FALSE otherwise.
  */
 BOXEXPORT BoxBool
 BoxTypeIter_Has_Items(BoxTypeIter *ti);
 
 /**
- * Get the stem type of a type.
+ * @brief Get the stem type of a type.
+ *
  * The stem type for a type t is the most basic type which can describe what is
  * contained inside t. It is used by the compiler to determine how to handle
  * the object (which type of register to use, for example).
  * In practice, the stem type is obtained by resolving species, identifiers and
- * raised types (with BoxType_Resolve).
+ * raised types (with BoxType_Resolve()).
  * @param type The input type.
  * @return The stem type of type (or NULL in case of failure).
  */
@@ -523,28 +561,31 @@ BOXEXPORT BoxType *
 BoxType_Get_Stem(BoxType *type);
 
 /**
- * Get the container type associated with a given type.
+ * @brief Get the container type associated with a given type.
+ *
  * The container type is strictly related to the way the compiler handles types
  * (e.g. register types).
  * @param t The input type.
- * @return The container of t.
+ * @return The container of @p t.
  */
 BOXEXPORT BoxContType
 BoxType_Get_Cont_Type(BoxType *t);
 
 /**
- * Return whether the type is a void type (contains nothing).
+ * @brief Return whether the type is a void type (contains nothing).
+ *
  * @param t The input type.
- * @return Whether t is an empty type.
+ * @return Whether @p t is an empty type.
  */
 BOXEXPORT BoxBool
 BoxType_Is_Empty(BoxType *t);
 
 /**
- * Get a string representation of the given type.
+ * @brief Get a string representation of the given type.
+ *
  * @param t The input type.
- * @return A freshly allocated string containing the representation of t.
- *   The string must be freed by the user with Box_Mem_Free.
+ * @return A freshly allocated string containing the representation of @p t.
+ *   The string must be freed by the user with Box_Mem_Free().
  */
 BOXEXPORT char *
 BoxType_Get_Repr(BoxType *t);
