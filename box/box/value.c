@@ -342,7 +342,6 @@ void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc) {
 
   v->type = BoxType_Link(type);
   v->value.cont.type = BoxType_Get_Cont_Type(v->type);
-  printf("Container for %s is %s\n", BoxType_Get_Repr(v->type), v->value.cont.type);
 
   switch(vc->type_of_container) {
   case VALCONTTYPE_IMM:
@@ -636,7 +635,8 @@ int Value_Is_Ignorable(Value *v) {
     return 1;
 
   else if (Value_Is_Value(v))
-    return (BoxType_Compare(BoxType_From_Id(& v->proc->cmp->ts, BOXTYPEID_VOID),
+    return (BoxType_Compare(BoxType_From_Id(& v->proc->cmp->ts,
+                                            BOXTYPEID_VOID),
                             v->type)
             != BOXTYPECMP_DIFFERENT);
 
@@ -691,7 +691,7 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
   BoxTask dummy;
   BoxType *expand_type;
 
-  assert(parent != NULL && child != NULL);
+  assert(parent && child);
 
   success = (success) ? success : & dummy;
 
@@ -1193,40 +1193,6 @@ Value_Expand(Value *src, BoxType *t_dst) {
   if (t_src == t_dst)
     return src;
 
-#if 0
-  if (BoxType_Get_Class(t_src) == BOXTYPECLASS_ANY) {
-    /* The code below implements unboxing of data. */
-    BoxCont ro0, src_type_id_cont;
-    BoxCmp *cmp = src->proc->cmp;
-    BoxVMCode *cur_proc = cmp->cur_proc;
-    BoxTypeId src_type_id = BoxVM_Install_Type(cmp->vm, src->type);
-    Value *v_dst = Value_Create(cur_proc);
-    Value *v_src_ptr = Value_Create(cur_proc);
-
-    /* Set up a container representing the register ro0. */
-    BoxCont_Set(& ro0, "ro", 0);
-
-    /* Create a new ANY type. */
-    Value_Setup_As_Temp(v_dst, Box_Get_Core_Type(BOXTYPEID_ANY));
-
-    /* Obtain the pointer to the source object. */
-    Value_Setup_As_Weak_Copy(v_src_ptr, src);
-    v_src_ptr = Value_Cast_To_Ptr(v_src_ptr);
-
-    /* Generate the boxing instructions. */
-    BoxCont_Set(& src_type_id_cont, "ii", (BoxInt) src_type_id);
-    BoxVMCode_Assemble(cur_proc, BOXGOP_TYPEOF,
-                       2, & ro0, & src_type_id_cont);
-    BoxVMCode_Assemble(cur_proc, BOXGOP_BOX,
-                       3, & v_dst->value.cont, & v_src_ptr->value.cont,
-                       & ro0);
-
-    Value_Unlink(v_src_ptr);
-    Value_Unlink(src);
-    return v_dst;
-  }
-#endif
-
   switch (BoxType_Get_Class(t_dst)) {
   case BOXTYPECLASS_INTRINSIC: /* t_src != t_dst */
     MSG_FATAL("Value_Expand: type forbidden in species conversions.");
@@ -1254,20 +1220,6 @@ Value_Expand(Value *src, BoxType *t_dst) {
                 BoxType_Get_Repr(t_src), BoxType_Get_Repr(t_dst));
       assert(0);
     }
-
-#if 0
-  case TS_KIND_POINTER:
-    MSG_ERROR("Not implemented yet!"); return BOXTASK_FAILURE;
-    /*if (td2->tot == TOT_PTR_TO) break;
-    return 0;*/
-
-  case TS_KIND_PROC:
-    MSG_ERROR("Not implemented yet!"); return BOXTASK_FAILURE;
-    /*if (td2->tot != TOT_PROCEDURE) return 0;
-    return (
-          Tym_Compare_Types(td1->parent, td2->parent)
-      && Tym_Compare_Types(td1->target, td2->target) );*/
-#endif
 
   case BOXTYPECLASS_STRUCTURE:
     {
@@ -1411,14 +1363,14 @@ static Value *My_Get_Ptr_To_New_Value(BoxVMCode *proc, BoxType *t) {
      * NOTE: this can be improved. We should not keep generating new
      *  structures each time the function is called, but rather cache them!
      */
-    Value *v = Value_New(proc);
+    Value *v = Value_Create(proc);
     BoxTypeId t_struc = BoxTS_Begin_Struct(ts);
     BoxTS_Add_Struct_Member(ts, t_struc, t_old, NULL);
     Value_Setup_As_Temp_Old(v, t_struc);
     return Value_Cast_To_Ptr(v);
 
   } else {
-    Value *v = Value_New(proc);
+    Value *v = Value_Create(proc);
     Value_Setup_As_Temp(v, t);
     return Value_Cast_To_Ptr(v);
   }

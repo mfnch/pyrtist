@@ -1069,6 +1069,8 @@ BoxTypeCmp BoxType_Compare(BoxType *left, BoxType *right) {
       switch (rtd->id) {
       case BOXTYPEID_INIT:
       case BOXTYPEID_FINISH:
+      case BOXTYPEID_BEGIN:
+      case BOXTYPEID_END:
         return BOXTYPECMP_DIFFERENT;
       default:
         break;
