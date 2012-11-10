@@ -497,11 +497,15 @@ static void My_Gather_Implicit_Input_Regs(BoxVMCode *p,
     BoxOpReg *reg = & regs[i];
     if (reg->kind == 'r') {
       if (reg->io == 'i' || reg->io == 'b') {
-        BoxCont dest;
-        dest.type = BoxContType_From_Char(reg->type);
-        dest.categ = BOXCONTCATEG_LREG;
-        dest.value.reg = reg->num;
-        BoxVMCode_Assemble(p, BOXGOP_MOV, 2, & dest, args[i]);
+        const BoxCont *src = args[i];
+        BoxCont dst;
+
+        dst.type = BoxContType_From_Char(reg->type);
+        dst.categ = BOXCONTCATEG_LREG;
+        dst.value.reg = reg->num;
+
+        if (!(dst.categ == src->categ && dst.value.reg == src->value.reg))
+          BoxVMCode_Assemble(p, BOXGOP_MOV, 2, & dst, src);
       }
     }
   }
@@ -517,11 +521,15 @@ static void My_Scatter_Implicit_Input_Regs(BoxVMCode *p,
       if (reg->io == 'o' || reg->io == 'b') {
         BoxTypeId t = BoxContType_From_Char(reg->type);
         BoxGOp gop = (t == BOXTYPEID_PTR) ? BOXGOP_SHIFT : BOXGOP_MOV;
+        const BoxCont *dst = args[i];
         BoxCont src;
+
         src.type = t;
         src.categ = BOXCONTCATEG_LREG;
         src.value.reg = reg->num;
-        BoxVMCode_Assemble(p, gop, 2, args[i], & src);
+
+        if (!(dst->categ == src.categ && dst->value.reg == src.value.reg))
+          BoxVMCode_Assemble(p, gop, 2, dst, & src);
       }
     }
   }
