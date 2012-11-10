@@ -216,17 +216,6 @@ BoxTypeId TS_Get_Core_Type(TS *ts, BoxTypeId t) {
   return TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_RAISED | TS_KS_SPECIES);
 }
 
-BoxTypeId TS_Get_Cont_Type(TS *ts, BoxTypeId t) {
-  BoxTypeId r =
-    TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_RAISED | TS_KS_SPECIES);
-
-  if (TS_Is_Empty(ts, r))
-    return BOXTYPEID_VOID;
-
-  else
-    return (r > BOXTYPEID_PTR) ? BOXTYPEID_OBJ : r;
-}
-
 int TS_Is_Fast(TS *ts, BoxTypeId t) {
   BoxTypeId ct = TS_Get_Core_Type(ts, t);
   return (ct >= BOXTYPEID_FAST_LOWER && ct <= BOXTYPEID_FAST_UPPER);

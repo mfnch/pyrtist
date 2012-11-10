@@ -177,13 +177,6 @@ BoxTypeId TS_Resolve(BoxTS *ts, BoxTypeId t, TSKindSelect select);
  */
 BoxTypeId TS_Get_Core_Type(BoxTS *ts, BoxTypeId t);
 
-/** Get the fundamental type (Char, Int, ..., Ptr) used to store objects of
- * the given type. Returns BOXTYPEID_INT for integers, BOXTYPEID_REAL for reals,
- * etc. BOXTYPEID_OBJ is returned for objects which are not Char, Int, Real,
- * Point, Ptr.
- */
-BoxTypeId TS_Get_Cont_Type(BoxTS *ts, BoxTypeId t);
-
 TSKind TS_Get_Kind(BoxTS *ts, BoxTypeId t);
 
 /** Box types can be subtivided into two cathegories: fast types and
