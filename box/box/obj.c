@@ -24,6 +24,8 @@
 #include <box/obj.h>
 #include <box/core.h>
 #include <box/messages.h>
+#include <box/exception.h>
+
 #include <box/types_priv.h>
 
 
@@ -100,8 +102,6 @@ BoxBool BoxAny_Unbox(BOXOUT BoxPtr *obj, BoxPtr *any, BoxType *t) {
 /* Initialize a block of memory addressed by src and with type t. */
 static BoxBool
 My_Init_Obj(BoxPtr *src, BoxType *t) {
-  char *t_repr = BoxType_Get_Repr(t);
-    
   while (1) {
     switch (t->type_class) {
     case BOXTYPECLASS_SUBTYPE_NODE:
@@ -602,4 +602,40 @@ BoxPtr_Get_SPtr(const BoxPtr *src) {
   }
 
   return NULL;
+}
+
+/* Combine two objects from their types and pointers. */
+BoxBool
+Box_Combine(BoxType *t_parent, BoxPtr *parent,
+            BoxType *t_child, BoxPtr *child, BoxException **exception) {
+  BoxType *comb_node, *expand_type;
+  BoxTypeCmp expand;
+  BoxCallable *cb;
+
+  if (!(t_parent && t_child))
+    return BOXBOOL_FALSE;
+
+  comb_node = BoxType_Find_Combination(t_parent, BOXCOMBTYPE_AT, t_child,
+                                       & expand);
+  if (!comb_node)
+    return BOXBOOL_FALSE;
+
+  if (!BoxType_Get_Combination_Info(comb_node, & expand_type, & cb))
+    MSG_FATAL("Failed getting combination info in dynamic call.");
+
+  if (expand == BOXTYPECMP_MATCHING) {
+    *exception = BoxException_Create_Raw("Dynamic expansion of type is not yet implemented");
+    return BOXBOOL_TRUE;
+
+  }
+
+  *exception = BoxCallable_Call2(cb, parent, child);
+  return BOXBOOL_TRUE;
+}
+
+/* Combine two objects boxed as BoxAny objects. */
+BoxBool
+Box_Combine_Any(BoxAny *parent, BoxAny *child, BoxException **except) {
+  return Box_Combine(BoxAny_Get_Type(parent), BoxAny_Get_Obj(parent),
+                     BoxAny_Get_Type(child), BoxAny_Get_Obj(child), except);
 }

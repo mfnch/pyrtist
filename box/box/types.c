@@ -971,11 +971,6 @@ BoxTypeCmp BoxType_Compare(BoxType *left, BoxType *right) {
   if (left == right)
     return BOXTYPECMP_EQUAL;
 
-#if 0
-  if (right->type_class == BOXTYPECLASS_ANY)
-    return BOXTYPECMP_MATCHING;
-#endif
-
   switch (left->type_class) {
   case BOXTYPECLASS_STRUCTURE_NODE:
   case BOXTYPECLASS_SPECIES_NODE:
@@ -1067,6 +1062,7 @@ BoxTypeCmp BoxType_Compare(BoxType *left, BoxType *right) {
     if (right->type_class == BOXTYPECLASS_PRIMARY) {
       BoxTypePrimary *rtd = BoxType_Get_Data(right);
       switch (rtd->id) {
+      case BOXTYPEID_VOID:
       case BOXTYPEID_INIT:
       case BOXTYPEID_FINISH:
       case BOXTYPEID_BEGIN:
@@ -1126,6 +1122,12 @@ BoxContType BoxType_Get_Cont_Type(BoxType *t) {
 /* Whether the type is a void type (contains nothing). */
 BoxBool BoxType_Is_Empty(BoxType *t) {
   return (BoxType_Get_Size(t) == 0);
+}
+
+/* Whether the given type is an Any type. */
+BoxBool BoxType_Is_Any(BoxType *t) {
+  BoxType *stem = BoxType_Get_Stem(t);
+  return stem && stem->type_class == BOXTYPECLASS_ANY;
 }
 
 /* Get a string representation of the given type. */

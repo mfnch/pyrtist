@@ -69,6 +69,9 @@ BoxException_Destroy(BoxException *excp);
  * @endcode
  */
 BOXEXPORT BoxBool
-BoxException_Check(BoxException *excp) ;
+BoxException_Check(BoxException *excp);
+
+BOXEXPORT char *
+BoxException_Get_Str(BoxException *excp);
 
 #endif /* _BOX_EXCEPTION_H */

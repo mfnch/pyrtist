@@ -581,6 +581,15 @@ BOXEXPORT BoxBool
 BoxType_Is_Empty(BoxType *t);
 
 /**
+ * @brief Return whether the type is an Any type.
+ *
+ * @param t The input type.
+ * @return Whether @p t is an Any type.
+ */
+BOXEXPORT BoxBool
+BoxType_Is_Any(BoxType *t);
+
+/**
  * @brief Get a string representation of the given type.
  *
  * @param t The input type.

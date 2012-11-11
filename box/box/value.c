@@ -684,6 +684,19 @@ void Value_Emit_Call_From_Call_Num(BoxVMCallNum call_num,
 }
 
 /* REFERENCES: return: new, parent: 0, child: -1; */
+BoxBool
+Value_Emit_Dynamic_Call(Value *v_parent, Value *v_child) {
+  BoxCmp *c = v_parent->proc->cmp;
+
+  assert(BoxType_Is_Any(v_parent->type) && BoxType_Is_Any(v_child->type));
+
+  BoxVMCode_Assemble(c->cur_proc, BOXGOP_DYCALL,
+                     2, & v_parent->value.cont, & v_child->value.cont);
+  Value_Unlink(v_child);
+  return BOXBOOL_TRUE;
+}
+
+/* REFERENCES: return: new, parent: 0, child: -1; */
 static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
   BoxCmp *c = parent->proc->cmp;
   TS *ts = & c->ts;
@@ -723,8 +736,19 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
                              child->type, & expand);
 
   if (!found_combination) {
-    *success = BOXTASK_FAILURE;
-    return child; /* return child as it may be processed further */
+    if (!BoxType_Is_Any(child->type)) {
+      *success = BOXTASK_FAILURE;
+      return child; /* return child as it may be processed further */
+
+    } else {
+      /* Dynamic call. */
+      Value_Link(parent);
+      parent = Value_Expand(parent, Box_Get_Core_Type(BOXTYPEID_ANY));
+      *success = ((parent && Value_Emit_Dynamic_Call(parent, child)) ?
+                  BOXTASK_OK : BOXTASK_FAILURE);
+      Value_Unlink(parent);
+      return NULL;
+    }
   }
 
   if (!BoxType_Get_Combination_Info(found_combination, & expand_type, & cb))
@@ -734,7 +758,7 @@ static Value *My_Emit_Call(Value *parent, Value *child, BoxTask *success) {
     child = Value_Expand(child, expand_type);
     if (!child) {
       *success = BOXTASK_ERROR;
-      return NULL; /* ERROR: Value_Expand does unlink child */
+      return NULL; /* Value_Expand did unlink child for us already... */
     }
   }
 
@@ -1406,7 +1430,7 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
     }
   }
 
-  assert(found_subtype != NULL);
+  assert(found_subtype);
 
   /* First, we create the subtype object (a pair of pointers) */
   v_subtype = Value_New(c->cur_proc);
@@ -1441,10 +1465,6 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
     v_subtype_parent = Value_Cast_To_Ptr(v_subtype_parent);
     (void) Value_Move_Content(v_ptr, v_subtype_parent);
     Value_Unlink(v_ptr);
-#if 0
-    Value_Emit_Link(v_parent); /* The subtype gets a reference
-                                  to its parent */
-#endif
   }
 
   Value_Unlink(v_parent);

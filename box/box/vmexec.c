@@ -39,7 +39,7 @@
 #include "bltinarray.h"
 #include "strutils.h"
 #include "vmdasm.h"
-
+#include "exception.h"
 
 static void My_Exec_Ret(BoxVMX *vmx) {vmx->flags.exit = 1;}
 
@@ -593,7 +593,7 @@ My_Exec_Box_OO(BoxVMX *vmx) {
 /**
  * @brief Instruction <tt>unbox dstptr, srcptr</tt>.
  *
- * The @c unbox VM instruciton converts the source @c ANY object @c srcptr into
+ * The @c unbox VM instruction converts the source @c ANY object @c srcptr into
  * a destination object in @c dstptr of type @c ro0.
  * Note that the unboxing operation fails (raising an exception) if the type
  * of the boxed object is not consistent with what given in @c ro0.
@@ -609,6 +609,41 @@ static void My_Exec_Unbox_OO(BoxVMX *vmx) {
     BoxVMX_Set_Fail_Msg(vmx, "Unboxing operation failed");
   } else
     BoxVMX_Set_Fail_Msg(vmx, "Anomalous type in unboxing operation");
+
+  vmx->flags.error = vmx->flags.exit = 1;  
+}
+
+/**
+ * @brief Instruction <tt>dycall parentany, childany</tt>.
+ *
+ * The @c dycall VM instruction allows calling a combination from two any
+ * objects, thus effectively performing a dynamic call. The function uses the
+ * type system to find an appropriate combination and calls it, raising an
+ * exception if the combination is not found or if an exception was raised by
+ * the called combination.
+ */
+static void My_Exec_Dycall_OO(BoxVMX *vmx) {
+  BoxAny *parent = BoxPtr_Get_Target((BoxPtr *) vmx->arg1),
+         *child = BoxPtr_Get_Target((BoxPtr *) vmx->arg2);
+  BoxException *exception;
+  if (Box_Combine_Any(parent, child, & exception)) {
+    if (!exception)
+      return;
+
+    else {
+      char *msg = BoxException_Get_Str(exception);
+      BoxVMX_Set_Fail_Msg(vmx, msg);
+      Box_Mem_Free(msg);
+      BoxException_Destroy(exception);
+    }
+
+  } else {
+    char *msg = Box_SPrintF("Cannot find combination %~s@%~s",
+                            BoxType_Get_Repr(BoxAny_Get_Type(parent)),
+                            BoxType_Get_Repr(BoxAny_Get_Type(child)));
+    BoxVMX_Set_Fail_Msg(vmx, msg);
+    Box_Mem_Free(msg);
+  }
 
   vmx->flags.error = vmx->flags.exit = 1;  
 }
@@ -732,7 +767,8 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {  BOXGOP_REGS,   "regs", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Regs_I   }, /* regs reg_i          */
   {BOXGOP_TYPEOF, "typeof", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Typeof_O }, /* typeof reg_o        */
   {   BOXGOP_BOX,    "box", 2, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Box_OO   }, /* box reg_o, reg_o    */
-  { BOXGOP_UNBOX,  "unbox", 2, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Unbox_OO }  /* unbox reg_o, reg_o  */
+  { BOXGOP_UNBOX,  "unbox", 2, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Unbox_OO }, /* unbox reg_o, reg_o  */
+  {BOXGOP_DYCALL, "dycall", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Dycall_OO}  /* dycall reg_o, reg_o  */
 };
 
 

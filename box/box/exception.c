@@ -49,3 +49,8 @@ BoxBool BoxException_Check(BoxException *excp) {
   } else
     return BOXBOOL_FALSE;
 }
+
+char *
+BoxException_Get_Str(BoxException *excp) {
+  return (excp) ? Box_Mem_Strdup(excp->msg) : NULL;
+}

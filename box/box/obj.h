@@ -29,7 +29,7 @@
 #  define _BOX_OBJ_H
 
 #include <box/types.h>
-
+#include <box/exception.h>
 
 /**
  * @brief Initialize a subtype.
@@ -59,6 +59,18 @@ typedef struct {
 
 #  define BoxAny_Init(obj) \
   do {(obj)->type = NULL; BoxPtr_Init(& (obj)->ptr);} while(0)
+
+/**
+ * @brief Get the type of the object stored inside the #BoxAny object.
+ */
+#  define BoxAny_Get_Type(obj) \
+  ((obj)->type)
+
+/**
+ * @brief Get the pointer to the object stored inside the #BoxAny object.
+ */
+#  define BoxAny_Get_Obj(obj) \
+  (& (obj)->ptr)
 
 /**
  * Finalize an Any object.
@@ -233,5 +245,29 @@ BoxPtr_Copy_Obj(BoxPtr *dst, BoxPtr *src, BoxType *t);
  */
 BOXEXPORT void *
 BoxPtr_Get_SPtr(const BoxPtr *src);
+
+/**
+ * @brief Combine two objects from their types and pointers.
+ *
+ * @see Box_Combine_Any
+ */
+BOXEXPORT BoxBool
+Box_Combine(BoxType *t_parent, BoxPtr *parent,
+            BoxType *t_child, BoxPtr *child, BoxException **except);
+
+/**
+ * @brief Combine two objects boxed as #BoxAny objects.
+ *
+ * @param parent A #BoxAny object containing the parent.
+ * @param child A #BoxAny object containing the child.
+ * @param except Pointer where to store a #BoxException, in case the
+ *   combination is found and returns with failure.
+ * @return @c BOXBOOL_TRUE if the combination was found, else @c BOXBOOL_FALSE
+ *
+ * @note <tt>*except</tt> is set only when the function returns @c BOXBOOL_TRUE.
+ * @see Box_Combine
+ */
+BOXEXPORT BoxBool
+Box_Combine_Any(BoxAny *parent, BoxAny *child, BoxException **except);
 
 #endif /* _BOX_OBJ_H */
