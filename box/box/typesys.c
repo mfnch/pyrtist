@@ -603,7 +603,7 @@ BoxTypeId TS_Subtype_Find(TS *ts, BoxTypeId parent, const char *name) {
 BoxTypeId BoxTS_New_Any(BoxTS *ts) {
   BoxTypeId dummy_typeid =
     BoxTS_New_Intrinsic(ts, sizeof(BoxAny), __alignof__(BoxAny));
-  My_Name_Set(ts, dummy_typeid, "ANY");
+  My_Name_Set(ts, dummy_typeid, "Any");
 
   BoxType *t_any = Box_Get_Core_Type(BOXTYPEID_ANY);
 

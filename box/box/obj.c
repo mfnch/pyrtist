@@ -624,7 +624,8 @@ Box_Combine(BoxType *t_parent, BoxPtr *parent,
     MSG_FATAL("Failed getting combination info in dynamic call.");
 
   if (expand == BOXTYPECMP_MATCHING) {
-    *exception = BoxException_Create_Raw("Dynamic expansion of type is not yet implemented");
+    *exception = BoxException_Create_Raw("Dynamic expansion of type is not "
+                                         "yet implemented");
     return BOXBOOL_TRUE;
 
   }

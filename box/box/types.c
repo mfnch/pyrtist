@@ -133,7 +133,8 @@ BoxTypeNode *MyType_Get_Node(BoxType *t) {
 }
 
 /**
- * Get the allocated objects a given type refers to.
+ * @brief Get the allocated objects a given type refers to.
+ *
  * This function returns the number of types (in *num_refs) and the number of
  * allocations (in *num_mems) associated to the given type. The function does
  * also write the actual references and pointers to the allocated regions
@@ -1255,7 +1256,7 @@ char *BoxType_Get_Repr(BoxType *t) {
     }
 
   case BOXTYPECLASS_ANY:
-    return Box_Mem_Strdup("ANY");
+    return Box_Mem_Strdup("Any");
 
   default:
     return NULL;

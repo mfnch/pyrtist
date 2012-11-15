@@ -639,8 +639,8 @@ static void My_Exec_Dycall_OO(BoxVMX *vmx) {
 
   } else {
     char *msg = Box_SPrintF("Cannot find combination %~s@%~s",
-                            BoxType_Get_Repr(BoxAny_Get_Type(parent)),
-                            BoxType_Get_Repr(BoxAny_Get_Type(child)));
+                            BoxType_Get_Repr(BoxAny_Get_Type(child)),
+                            BoxType_Get_Repr(BoxAny_Get_Type(parent)));
     BoxVMX_Set_Fail_Msg(vmx, msg);
     Box_Mem_Free(msg);
   }
