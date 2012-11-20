@@ -575,6 +575,30 @@ My_Exec_Typeof_O(BoxVMX *vmx) {
  * Note that @c dstptr must be a pointer to an initialized @c ANY object.
  */
 static void
+My_Exec_Box_O(BoxVMX *vmx) {
+  BoxPtr *t_ptr = (BoxPtr *) vmx->local[TYPE_OBJ].ptr;
+  BoxPtr src;
+  BoxPtr *dst = (BoxPtr *) vmx->arg1;
+  BoxType *t = BoxPtr_Get_SPtr(t_ptr);
+  if (t) {
+    BoxPtr_Nullify(& src);
+    if (BoxAny_Box(dst, & src, t))
+      return;
+    BoxVMX_Set_Fail_Msg(vmx, "Boxing operation failed");
+  } else
+    BoxVMX_Set_Fail_Msg(vmx, "Anomalous type in boxing operation");
+
+  vmx->flags.error = vmx->flags.exit = 1;
+}
+
+/**
+ * @brief Instruction <tt>box dstptr, srcptr</tt>.
+ *
+ * The @c box VM instruciton converts the source object @c srcptr into a
+ * destination @c ANY object in @c dstptr using the type in @c ro0.
+ * Note that @c dstptr must be a pointer to an initialized @c ANY object.
+ */
+static void
 My_Exec_Box_OO(BoxVMX *vmx) {
   BoxPtr *t_ptr = (BoxPtr *) vmx->local[TYPE_OBJ].ptr;
   BoxPtr *dst = (BoxPtr *) vmx->arg1,
@@ -638,9 +662,14 @@ static void My_Exec_Dycall_OO(BoxVMX *vmx) {
     }
 
   } else {
+    BoxType *t_parent = (parent) ? BoxAny_Get_Type(parent) : NULL;
+    BoxType *t_child = (child) ? BoxAny_Get_Type(child) : NULL;
+    char *s_parent = ((t_parent) ?
+                      BoxType_Get_Repr(t_parent) : Box_Mem_Strdup("null"));
+    char *s_child = ((t_child) ?
+                      BoxType_Get_Repr(t_child) : Box_Mem_Strdup("null"));
     char *msg = Box_SPrintF("Cannot find combination %~s@%~s",
-                            BoxType_Get_Repr(BoxAny_Get_Type(child)),
-                            BoxType_Get_Repr(BoxAny_Get_Type(parent)));
+                            s_child, s_parent);
     BoxVMX_Set_Fail_Msg(vmx, msg);
     Box_Mem_Free(msg);
   }
@@ -766,9 +795,10 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {BOXGOP_ARDEST, "ardest", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Ardest_O }, /* ardest reg_o        */
   {  BOXGOP_REGS,   "regs", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Regs_I   }, /* regs reg_i          */
   {BOXGOP_TYPEOF, "typeof", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Typeof_O }, /* typeof reg_o        */
+  {   BOXGOP_BOX,    "box", 1, 'o',    "ro0",  "a1", "x-", "xx", My_Exec_Box_O    }, /* box reg_o           */
   {   BOXGOP_BOX,    "box", 2, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Box_OO   }, /* box reg_o, reg_o    */
   { BOXGOP_UNBOX,  "unbox", 2, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Unbox_OO }, /* unbox reg_o, reg_o  */
-  {BOXGOP_DYCALL, "dycall", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Dycall_OO}  /* dycall reg_o, reg_o  */
+  {BOXGOP_DYCALL, "dycall", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Dycall_OO}  /* dycall reg_o, reg_o */
 };
 
 

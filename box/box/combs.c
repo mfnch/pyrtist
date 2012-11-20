@@ -23,21 +23,11 @@
 #include <box/messages.h>
 #include <box/obj.h>
 
-
-/* Get the iterator over the combinations of the given identifier type. */
-BoxBool BoxType_Get_Combinations(BoxType *t, BoxTypeIter *iter) {
-  if (t->type_class == BOXTYPECLASS_IDENT) {
-    BoxTypeIdent *td = BoxType_Get_Data(t);
-    iter->current_node = td->combs.node.next;
-    return BOXBOOL_TRUE;
-
-  } else if (t->type_class == BOXTYPECLASS_SUBTYPE_NODE) {
-    BoxTypeSubtypeNode *td = BoxType_Get_Data(t);
-    iter->current_node = td->combs.node.next;
-    return BOXBOOL_TRUE;
-  }
-
-  return BOXBOOL_FALSE;
+/* Initialise a #BoxCombs structure (list of combinations). */
+void
+BoxCombs_Init(BoxCombs *combs) {
+  combs->node.next = NULL;
+  combs->node.previous = NULL;
 }
 
 /**
@@ -57,8 +47,23 @@ My_Get_Combs(BoxType *parent) {
     BoxTypeSubtypeNode *td = BoxType_Get_Data(parent);
     return & td->combs.node;
 
+  } else if (parent->type_class == BOXTYPECLASS_ANY) {
+    BoxTypeAny *td = BoxType_Get_Data(parent);
+    return & td->combs.node;
+
   } else
     return NULL;
+}
+
+/* Get the iterator over the combinations of the given identifier type. */
+BoxBool BoxType_Get_Combinations(BoxType *t, BoxTypeIter *iter) {
+  BoxTypeNode *node = My_Get_Combs(t);
+  if (node) {
+    iter->current_node = node->next;
+    return BOXBOOL_TRUE;
+  }
+
+  return BOXBOOL_FALSE;
 }
 
 /* Define a combination 'child'@'parent' and associate a callable to it. */
@@ -105,7 +110,7 @@ BoxType *
 BoxType_Find_Own_Combination(BoxType *parent, BoxCombType type,
                              BoxType *child, BoxTypeCmp *expand) {
   BoxTypeIter ti;
-  
+
   if (parent && child && BoxType_Get_Combinations(parent, & ti)) {
     BoxType *t;
     for (; BoxTypeIter_Get_Next(& ti, & t);) {

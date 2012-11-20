@@ -338,11 +338,11 @@ BoxVMCallNum Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
   return call_num;
 }
 
-void Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb_type,
+void Bltin_Comb_Def(TS *ts, BoxTypeId child, BoxCombType comb_type,
                     BoxTypeId parent, BoxTask (*c_fn)(BoxVMX *)) {
   /* We tell to the compiler that some procedures are associated to call_num */
-  BoxType *child_new = BoxType_From_Id(& c->ts, child),
-          *parent_new = BoxType_From_Id(& c->ts, parent);
+  BoxType *child_new = BoxType_From_Id(ts, child),
+          *parent_new = BoxType_From_Id(ts, parent);
   BoxCallable *callable;
   BoxType *comb;
   char *uid;
@@ -359,7 +359,7 @@ void Bltin_Comb_Def(BoxCmp *c, BoxTypeId child, BoxCombType comb_type,
 
 void Bltin_Proc_Def(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
                     BoxTask (*c_fn)(BoxVMX *)) {
-  Bltin_Comb_Def(c, child, BOXCOMBTYPE_AT, parent, c_fn);
+  Bltin_Comb_Def(& c->ts, child, BOXCOMBTYPE_AT, parent, c_fn);
 }
 
 /* Define some core types such as Int, Real and Point (for example, define

@@ -196,6 +196,13 @@ typedef struct {
   BoxType *source;
 } BoxTypePointer;
 
+/**
+ * @brief Any type.
+ */
+typedef struct {
+  BoxCombs     combs;
+} BoxTypeAny;
+
 struct BoxType_struct {
   BoxTypeClass   type_class;
   BoxTypeId      type_id;
@@ -271,5 +278,11 @@ BoxTypeNode_Prepend_Node(BoxTypeNode *node, BoxType *item);
  */
 BoxTypeNode *
 BoxTypeNode_Remove_Node(BoxTypeNode *top_node, BoxType *item);
+
+/**
+ * @brief Initialise a #BoxCombs structure (list of combinations). 
+ */
+void
+BoxCombs_Init(BoxCombs *combs);
 
 #endif /* _BOX_TYPES_PRIV_H */

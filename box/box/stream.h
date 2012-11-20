@@ -46,7 +46,6 @@ typedef enum {
   BOXSTREAMMODE_LE=0x0,     /**< Little-endian */
   BOXSTREAMMODE_BE=0x4,     /**< Big-endian */
   BOXSTREAMMODE_DEFAULT=0x3 /**< Default mode */
-
 } BoxStreamMode;
 
 /**
@@ -92,7 +91,6 @@ typedef enum {
   BOXSTREAMERR_READ_DENIED,
   BOXSTREAMERR_WRITE,
   BOXSTREAMERR_WRITE_DENIED,
-
 } BoxStreamErr;
 
 /**
@@ -102,7 +100,6 @@ typedef enum {
   BOXSTREAMORIGIN_START,   /**< */
   BOXSTREAMORIGIN_CURRENT, /**< */
   BOXSTREAMORIGIN_END      /**< */
-
 } BoxStreamOrigin;
 
 /**

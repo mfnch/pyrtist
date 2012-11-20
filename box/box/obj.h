@@ -79,6 +79,16 @@ BOXEXPORT void
 BoxAny_Finish(BoxAny *any);
 
 /**
+ * @brief Copy an #Any object.
+ *
+ * @param dst An uninitialized region of memory which can contain a #BoxAny
+ *   object.
+ * @param src The initialized #BoxAny object to copy. 
+ */
+BOXEXPORT void
+BoxAny_Copy(BoxAny *dst, BoxAny *src);
+
+/**
  * @brief Change the boxed object stored inside the given any object.
  *
  * @param any The ANY object which should be changed to reference @p obj.
@@ -262,7 +272,7 @@ Box_Combine(BoxType *t_parent, BoxPtr *parent,
  * @param child A #BoxAny object containing the child.
  * @param except Pointer where to store a #BoxException, in case the
  *   combination is found and returns with failure.
- * @return @c BOXBOOL_TRUE if the combination was found, else @c BOXBOOL_FALSE
+ * @return @c BOXBOOL_TRUE if the combination was found, else @c BOXBOOL_FALSE.
  *
  * @note <tt>*except</tt> is set only when the function returns @c BOXBOOL_TRUE.
  * @see Box_Combine

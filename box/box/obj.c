@@ -82,7 +82,7 @@ void BoxAny_Finish(BoxAny *any)
 void BoxAny_Copy(BoxAny *dst, BoxAny *src) {
   *dst = *src;
   (void) BoxPtr_Link(& src->ptr);
-  /* Note that the type is implicitely referenced by the object. */
+  /* Note that the type is implicitly referenced by the object. */
 }
 
 /* Change the boxed object stored inside the given any object. */
@@ -627,7 +627,21 @@ Box_Combine(BoxType *t_parent, BoxPtr *parent,
     *exception = BoxException_Create_Raw("Dynamic expansion of type is not "
                                          "yet implemented");
     return BOXBOOL_TRUE;
+  }
 
+  /* Make sure we are not passing NULL objects... */
+  if (!(parent && child)) {
+    if (!parent && !BoxType_Is_Empty(t_parent)) {
+      *exception = BoxException_Create_Raw("Empty parent in dynamic "
+                                           "combination");
+      return BOXBOOL_TRUE;
+    }
+
+    if (!child && !BoxType_Is_Empty(t_child)) {
+      *exception = BoxException_Create_Raw("Empty child in dynamic "
+                                           "combination");
+      return BOXBOOL_TRUE;
+    }
   }
 
   *exception = BoxCallable_Call2(cb, parent, child);

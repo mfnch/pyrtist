@@ -62,7 +62,7 @@ void *BoxType_Alloc(BoxType **t, BoxTypeClass tc) {
   case BOXTYPECLASS_SPECIES: additional = sizeof(BoxTypeSpecies); break;
   case BOXTYPECLASS_FUNCTION: additional = sizeof(BoxTypeFunction); break;
   case BOXTYPECLASS_POINTER: additional = sizeof(BoxTypePointer); break;
-  case BOXTYPECLASS_ANY: additional = 0; break;
+  case BOXTYPECLASS_ANY: additional = sizeof(BoxTypeAny); break;
   default:
     MSG_FATAL("Unknown type class in BoxType_Alloc");
     return NULL;
@@ -388,10 +388,9 @@ BoxType_Create_Ident(BOXIN BoxType *source, const char *name) {
   BoxTypeIdent *ta = BoxType_Alloc(& t, BOXTYPECLASS_IDENT);
   ta->name = Box_Mem_Strdup(name);
   ta->source = source;
-  ta->combs.node.next = NULL;
-  ta->combs.node.previous = NULL;
   ta->subtypes.node.next = NULL;
   ta->subtypes.node.previous = NULL;
+  BoxCombs_Init(& ta->combs);
   return t;
 }
 
@@ -625,10 +624,37 @@ BoxType *BoxType_Create_Pointer(BoxType *source) {
   return t;
 }
 
+/* For now we use a CCallOld. We will soon remove the code below (and the
+ * #include) and replace it with a CCall2 version...
+ */
+#include "vm_priv.h"
+
+/**
+ * @brief Implementation of <tt>Any@Any</tt>.
+ */
+static BoxTask My_Any_At_Any(BoxVMX *vmx) {
+  BoxAny *dst = BoxVMX_Get_Parent_Target(vmx),
+         *src = BoxVMX_Get_Child_Target(vmx);
+  BoxAny_Finish(dst);
+  BoxAny_Copy(dst, src);
+  return BOXTASK_OK;
+}
+
 /* Create a new pointer type. */
 BoxType *BoxType_Create_Any(void) {
+  BoxCallable *callable;
+  BoxType *comb;
   BoxType *t;
-  (void) BoxType_Alloc(& t, BOXTYPECLASS_ANY);
+  BoxTypeAny *td = BoxType_Alloc(& t, BOXTYPECLASS_ANY);
+  BoxCombs_Init(& td->combs);
+
+  /* Define Any@Any. */
+  callable = BoxCallable_Create_Undefined(t, t);
+  callable = BoxCallable_Define_From_CCallOld(callable, My_Any_At_Any);
+  BoxCallable_Set_Uid(callable, "Any@Any");
+  comb = BoxType_Define_Combination(t, BOXCOMBTYPE_AT, t, callable);
+  assert(comb);
+
   return t;
 }
 
@@ -675,10 +701,9 @@ BoxType *BoxType_Create_Subtype(BoxType *parent, const char *name,
   sd->name = Box_Mem_Strdup(name);
   sd->type = type ? BoxType_Link(type) : NULL;
   sd->parent = parent;
-  sd->combs.node.next = NULL;
-  sd->combs.node.previous = NULL;
   sd->subtypes.node.next = NULL;
   sd->subtypes.node.previous = NULL;
+  BoxCombs_Init(& sd->combs);
   BoxTypeNode_Append_Node(node, sn);
   return sn;
 }

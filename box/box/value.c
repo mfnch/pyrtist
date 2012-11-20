@@ -1293,27 +1293,37 @@ Value_Expand(Value *src, BoxType *t_dst) {
       BoxVMCode *cur_proc = cmp->cur_proc;
       BoxTypeId src_type_id = BoxVM_Install_Type(cmp->vm, src->type);
       Value *v_dst = Value_Create(cur_proc);
-      Value *v_src_ptr = Value_Create(cur_proc);
 
-      /* Set up a container representing the register ro0. */
+      /* Set up a container representing the register ro0 and one representing
+       * the type integer.
+       */
       BoxCont_Set(& ro0, "ro", 0);
+      BoxCont_Set(& src_type_id_cont, "ii", (BoxInt) src_type_id);
 
       /* Create a new ANY type. */
       Value_Setup_As_Temp(v_dst, Box_Get_Core_Type(BOXTYPEID_ANY));
 
-      /* Obtain the pointer to the source object. */
-      Value_Setup_As_Weak_Copy(v_src_ptr, src);
-      v_src_ptr = Value_Cast_To_Ptr(v_src_ptr);
-
       /* Generate the boxing instructions. */
-      BoxCont_Set(& src_type_id_cont, "ii", (BoxInt) src_type_id);
-      BoxVMCode_Assemble(cur_proc, BOXGOP_TYPEOF,
-                         2, & ro0, & src_type_id_cont);
-      BoxVMCode_Assemble(cur_proc, BOXGOP_BOX,
-                         3, & v_dst->value.cont, & v_src_ptr->value.cont,
-                         & ro0);
+      if (!BoxType_Is_Empty(src->type)) {
+        /* The object has associated data: get data pointer in v_src_ptr. */
+        Value *v_src_ptr = Value_Create(cur_proc);
+        Value_Setup_As_Weak_Copy(v_src_ptr, src);
+        v_src_ptr = Value_Cast_To_Ptr(v_src_ptr);
 
-      Value_Unlink(v_src_ptr);
+        BoxVMCode_Assemble(cur_proc, BOXGOP_TYPEOF,
+                           2, & ro0, & src_type_id_cont);
+        BoxVMCode_Assemble(cur_proc, BOXGOP_BOX,
+                           3, & v_dst->value.cont, & v_src_ptr->value.cont,
+                           & ro0);
+        Value_Unlink(v_src_ptr);
+
+      } else {
+        BoxVMCode_Assemble(cur_proc, BOXGOP_TYPEOF,
+                           2, & ro0, & src_type_id_cont);
+        BoxVMCode_Assemble(cur_proc, BOXGOP_BOX,
+                           2, & v_dst->value.cont, & ro0);
+      }
+
       Value_Unlink(src);
       return v_dst;
     }
