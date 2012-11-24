@@ -450,57 +450,6 @@ static void My_Exec_Add_O(BoxVMX *vmx) {
   ((BoxPtr *) vmx->arg1)->ptr += *((BoxInt *) vmx->local[TYPE_INT].ptr);
 }
 
-static void My_Exec_Arinit_I(BoxVMX *vm) {
-#if 0
-  BoxArray *arr = (BoxArray *) ((BoxPtr *) vmx->local[TYPE_OBJ].ptr)->ptr;
-  BoxInt num_dim = *((BoxInt *) vmx->arg1);
-  ASSERT_TASK( BoxArray_Init(arr, num_dim) );
-#endif
-}
-
-static void My_Exec_Arsize_I(BoxVMX *vm) {
-#if 0
-  BoxArray *arr = (BoxArray *) ((BoxPtr *) vmx->local[TYPE_OBJ].ptr)->ptr;
-  BoxInt size = *((BoxInt *) vmx->arg1);
-  ASSERT_TASK( BoxArray_Set_Size(arr, size) );
-#endif
-}
-
-static void My_Exec_Araddr_II(BoxVMX *vm) {
-#if 0
-  BoxArray *arr = (BoxArray *) ((BoxPtr *) vmx->local[TYPE_OBJ].ptr)->ptr;
-  size_t addr =  *((BoxInt *) vmx->local[TYPE_INT].ptr);
-  BoxInt index = *((BoxInt *) vmx->arg1),
-         dim = *((BoxInt *) vmx->arg2);
-  ASSERT_TASK( BoxArray_Calc_Address(arr, & addr, dim, index) );
-  *((BoxInt *) vmx->local[TYPE_INT].ptr) = (BoxInt) addr;
-#endif
-}
-
-static void My_Exec_Arget_OO(BoxVMX *vm) {
-#if 0
-  BoxPtr *item = (BoxPtr *) vmx->arg1;
-  BoxArray *arr = (BoxArray *) ((BoxPtr *) vmx->arg2)->ptr;
-  size_t addr =  *((BoxInt *) vmx->local[TYPE_INT].ptr);
-  BoxArray_Access(arr, item, addr);
-#endif
-}
-
-static void My_Exec_Arnext_OO(BoxVMX *vm) {
-  /** Not implemented yet */
-}
-
-static void My_Exec_Ardest_O(BoxVMX *vm) {
-#if 0
-  BoxArray *arr = (BoxArray *) ((BoxPtr *) vmx->arg1)->ptr;
-  BoxArray_Finish(vm, arr);
-#endif
-}
-
-static void My_Exec_Regs_I(BoxVMX *vm) {
-
-}
-
 /**
  * @brief Instruction <tt>typeof int</tt>.
  *
@@ -735,14 +684,6 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {   BOXGOP_JMP,    "jmp", 1, 'i',     "a1",  NULL, "x-", "j-", My_Exec_Jmp_I    }, /* jmp ri          */
   {    BOXGOP_JC,     "jc", 1, 'i', "a1,ri0",  NULL, "x-", "j-", My_Exec_Jc_I     }, /* jc  ri          */
   {   BOXGOP_ADD,    "add", 1, 'o',    "ri0",  NULL, "x-", "xx", My_Exec_Add_O    }, /* add ro          */
-  {BOXGOP_ARINIT, "arinit", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Arinit_I }, /* arinit ri       */
-  {BOXGOP_ARSIZE, "arsize", 1, 'i', "a1,ro0",  NULL, "x-", "xx", My_Exec_Arsize_I }, /* arsize ri       */
-  {BOXGOP_ARADDR, "araddr", 2, 'i',
-                             "a1,a2,ro0,ri0", "ri0", "xx", "xx", My_Exec_Araddr_II}, /* araddr ri, ri       */
-  { BOXGOP_ARGET,  "arget", 2, 'o', "a2,ri0",  "a1", "xx", "xx", My_Exec_Arget_OO }, /* arget reg_o, reg_o  */
-  {BOXGOP_ARNEXT, "arnext", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Arnext_OO}, /* arnext reg_o, reg_o */
-  {BOXGOP_ARDEST, "ardest", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Ardest_O }, /* ardest reg_o        */
-  {  BOXGOP_REGS,   "regs", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Regs_I   }, /* regs reg_i          */
   {BOXGOP_TYPEOF, "typeof", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Typeof_O }, /* typeof reg_o        */
   {   BOXGOP_BOX,    "box", 1, 'o',    "ro0",  "a1", "x-", "xx", My_Exec_Box_O    }, /* box reg_o           */
   {   BOXGOP_BOX,    "box", 2, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Box_OO   }, /* box reg_o, reg_o    */
