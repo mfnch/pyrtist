@@ -71,11 +71,7 @@ BoxTask BoxArray_Init(BoxArray *a, BoxInt num_dim) {
 
 void BoxArray_Finish(BoxVM *vm, BoxArray *a) {
   BoxMem_Free(a->sizes);
-#if BOX_USE_NEW_OBJ != 0
   (void) BoxPtr_Unlink(& a->data);
-#else
-  BoxVM_Obj_Unlink(vm, & a->data);
-#endif
   a->sizes = NULL;               /* Just to easily detect errors... */
   BoxPtr_Nullify(& a->data);
   a->num_dim = 0;

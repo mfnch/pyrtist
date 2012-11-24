@@ -54,13 +54,8 @@ static BoxTask My_Subtype_Init(BoxVMX *vmx) {
 
 static BoxTask My_Subtype_Finish(BoxVMX *vmx) {
   BoxSubtype *s = BoxVMX_Get_Parent_Target(vmx);
-#if BOX_USE_NEW_OBJ != 0
   (void) BoxPtr_Unlink(& s->parent);
   (void) BoxPtr_Unlink(& s->child);
-#else
-  BoxVM_Obj_Unlink(vmx->vm, & s->parent);
-  BoxVM_Obj_Unlink(vmx->vm, & s->child);
-#endif
   return BOXTASK_OK;
 }
 

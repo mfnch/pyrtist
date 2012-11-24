@@ -125,11 +125,7 @@ static void My_Exec_Mov_OO(BoxVMX *vmx) {
   if (arg1 != arg2) {
     assert(arg1 != NULL);
     if (!BoxPtr_Is_Detached(arg1))
-#if BOX_USE_NEW_OBJ != 0
       (void) BoxPtr_Unlink(arg1);
-#else
-      BoxVM_Obj_Unlink(vmx->vm, arg1);
-#endif
     *arg1 = *arg2;
     BoxPtr_Detach(arg1);
   }
@@ -353,15 +349,9 @@ static void My_Exec_LOr_II(BoxVMX *vmx) {
 static void My_Exec_Create_I(BoxVMX *vmx) {
   BoxInt id = *((BoxInt *) vmx->arg1);
   BoxPtr *obj = (BoxPtr *) vmx->local[TYPE_OBJ].ptr;
-#if BOX_USE_NEW_OBJ != 0
   BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, id);
   if (BoxPtr_Create_Obj(obj, t))
     return;
-#else
-  BoxVM_Obj_Create(vmx->vm, obj, id);
-  if (!BoxPtr_Is_Null(obj))
-    return;
-#endif
   MSG_FATAL("My_Exec_Create_I: cannot create object with alloc-ID=%I.", id);
 }
 
@@ -370,18 +360,11 @@ static void My_Exec_Reloc_OO(BoxVMX *vmx) {
          *src = (BoxPtr *) vmx->arg2;
   BoxInt id = *((BoxInt *) vmx->local[TYPE_INT].ptr);
 
-#if BOX_USE_NEW_OBJ != 0
   BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, (BoxTypeId) id);
   if (BoxPtr_Copy_Obj(dest, src, t))
     return;
 
   MSG_FATAL("My_Exec_Reloc_OO: failure copying object with alloc-ID=%I.", id);
-#else
-  BoxTask t = BoxVM_Obj_Relocate(vmx->vm, dest, src, id);
-  //BoxPtr_Detach(src);
-  if (t == BOXTASK_OK)
-    return;
-#endif
 
   vmx->flags.error = 1;
   vmx->flags.exit = 1;
@@ -397,19 +380,11 @@ static void My_Exec_Malloc_I(BoxVMX *vmx) {
 }
 
 static void My_Exec_Mln_O(BoxVMX *vmx) {
-#if BOX_USE_NEW_OBJ != 0
   (void) BoxPtr_Link((BoxPtr *) vmx->arg1);
-#else
-  BoxVM_Obj_Link((BoxPtr *) vmx->arg1);
-#endif
 }
 
 static void My_Exec_MUnln_O(BoxVMX *vmx) {
-#if BOX_USE_NEW_OBJ != 0
   (void) BoxPtr_Unlink((BoxPtr *) vmx->arg1);
-#else
-  BoxVM_Obj_Unlink(vmx->vm, (BoxPtr *) vmx->arg1);
-#endif
   BoxPtr_Detach((BoxPtr *) vmx->arg1);
 }
 
@@ -424,11 +399,7 @@ static void My_Exec_Shift_OO(BoxVMX *vmx) {
          *arg2 = (BoxPtr *) vmx->arg2;
   if (arg1 != arg2) {
     if (!BoxPtr_Is_Detached(arg1))
-#if BOX_USE_NEW_OBJ != 0
       (void) BoxPtr_Unlink(arg1);
-#else
-      BoxVM_Obj_Unlink(vmx->vm, arg1);
-#endif
     *arg1 = *arg2;
     BoxPtr_Detach(arg2);
   }
@@ -441,18 +412,11 @@ static void My_Exec_Ref_OO(BoxVMX *vmx) {
     assert(arg1 != NULL);
 
     if (!BoxPtr_Is_Detached(arg1))
-#if BOX_USE_NEW_OBJ != 0
       (void) BoxPtr_Unlink(arg1);
-#else
-      BoxVM_Obj_Unlink(vmx->vm, arg1);
-#endif
+
     *arg1 = *arg2;
     if (!BoxPtr_Is_Detached(arg2))
-#if BOX_USE_NEW_OBJ != 0
       (void) BoxPtr_Link(arg2);
-#else
-      BoxVM_Obj_Link(arg2);
-#endif
   }
 }
 
@@ -470,11 +434,8 @@ static void My_Exec_Lea_OO(BoxVMX *vmx) {
   BoxPtr *arg1 = (BoxPtr *) vmx->arg1,
          *arg2 = (BoxPtr *) vmx->arg2;
   if (!BoxPtr_Is_Detached(arg1))
-#if BOX_USE_NEW_OBJ != 0
-  (void) BoxPtr_Unlink(arg1);
-#else
-    BoxVM_Obj_Unlink(vmx->vm, arg1);
-#endif
+    (void) BoxPtr_Unlink(arg1);
+
   arg1->block = (void *) NULL;
   arg1->ptr = arg2;
 }

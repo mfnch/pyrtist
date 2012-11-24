@@ -33,10 +33,6 @@
 #include <box/callable_priv.h>
 
 
-/* Temporary stuff (debugging). */
-int num_type_nodes = 0;
-size_t total_size_of_types = 0;
-
 /* Generic allocation function for BoxType objects. This function allocates a
  * type header plus the type data, whose size and composition depend on the
  * particular type class.
@@ -44,6 +40,7 @@ size_t total_size_of_types = 0;
 void *BoxType_Alloc(BoxType **t, BoxTypeClass tc) {
   size_t additional = 0, total;
   size_t data_offset = offsetof(BoxTypeBundle, data);
+  BoxType *tt, *td;
 
   switch (tc) {
   case BOXTYPECLASS_STRUCTURE_NODE:
@@ -68,28 +65,20 @@ void *BoxType_Alloc(BoxType **t, BoxTypeClass tc) {
     return NULL;
   }
 
-  if (Box_Mem_Sum(& total, data_offset, additional)) {
-    BoxType *tt = Box_Get_Core_Type(BOXTYPEID_TYPE);
-    BoxType *td = BoxSPtr_Raw_Alloc(tt, total);
+  total = data_offset + additional;
+  tt = Box_Get_Core_Type(BOXTYPEID_TYPE);
+  td = BoxSPtr_Raw_Alloc(tt, total);
+  if (!td)
+    MSG_FATAL("Cannot allocate memory for type object.");
 
-    num_type_nodes++;
-    total_size_of_types += total;
-
-    if (!td)
-      MSG_FATAL("Cannot allocate memory for type object.");
-
-    td->type_class = tc;
-    *t = td;
-    return & ((BoxTypeBundle *) td)->data;
-  }   
-
-  MSG_FATAL("Integer overflow in BoxType_Alloc");
-  return NULL;
+  td->type_class = tc;
+  *t = td;
+  return & ((BoxTypeBundle *) td)->data;
 }
 
 /* Transition function needed to make the old and new type interchangable. */
 BoxTypeId BoxType_Get_Id(BoxType *t) {
-  BoxTypeId id = (t ? t->type_id : BOXTYPEID_NONE);
+  BoxTypeId id = (t) ? t->type_id : BOXTYPEID_NONE;
   assert((id == BOXTYPEID_NONE) == (t == NULL));
   return id;
 }
@@ -117,7 +106,7 @@ void *BoxType_Get_Data(BoxType *t) {
  * Return the BoxTypeNode object associated to a node type or NULL, if the
  * given type is not a node type.
  */
-BoxTypeNode *MyType_Get_Node(BoxType *t) {
+BoxTypeNode *My_Type_Get_Node(BoxType *t) {
   void *td = BoxType_Get_Data(t);
   switch (t->type_class) {
   case BOXTYPECLASS_SPECIES_NODE:
@@ -160,11 +149,11 @@ BoxTypeNode *MyType_Get_Node(BoxType *t) {
  * void *mems[BOX_MAX_NUM_MEMS_IN_TYPE];
  * BoxType *refs[BOX_MAX_NUM_REFS_IN_TYPE];
  * int num_refs, num_mems;
- * MyType_Get_Refs(type, & num_refs, refs, & num_mems, mems);
+ * My_Type_Get_Refs(type, & num_refs, refs, & num_mems, mems);
  * @endcode
  */
-static void MyType_Get_Refs(BoxType *t, int *num_refs, BoxSPtr *refs,
-                            int *num_mems, void **mems) {
+static void My_Type_Get_Refs(BoxType *t, int *num_refs, BoxSPtr *refs,
+                             int *num_mems, void **mems) {
   void *tdata = BoxType_Get_Data(t);
 
   *num_refs = 0;
@@ -246,7 +235,7 @@ static BoxException *My_Type_Finish(BoxPtr *parent) {
   int num_refs, num_mems, i;
 
   BoxType *t = BoxPtr_Get_Target(parent);
-  MyType_Get_Refs(t, & num_refs, refs, & num_mems, mems);
+  My_Type_Get_Refs(t, & num_refs, refs, & num_mems, mems);
 
   for (i = 0; i < num_mems; i++)
     Box_Mem_Free(mems[i]);
@@ -281,7 +270,7 @@ BoxBool Box_Register_Type_Combs(BoxCoreTypes *ct) {
  * structures, enums, etc. to add members.
  */
 void BoxTypeNode_Append_Node(BoxTypeNode *top_node, BoxType *item) {
-  BoxTypeNode *item_node = MyType_Get_Node(item);
+  BoxTypeNode *item_node = My_Type_Get_Node(item);
   assert(top_node && item_node);
 
   /* Adjust the links. */
@@ -290,7 +279,7 @@ void BoxTypeNode_Append_Node(BoxTypeNode *top_node, BoxType *item) {
 
   /* Adjust the tail. */
   if (top_node->previous != NULL) {
-    BoxTypeNode *previous_node = MyType_Get_Node(top_node->previous);
+    BoxTypeNode *previous_node = My_Type_Get_Node(top_node->previous);
     assert(previous_node);
     previous_node->next = item;
   }
@@ -306,7 +295,7 @@ void BoxTypeNode_Append_Node(BoxTypeNode *top_node, BoxType *item) {
  * the linked list.
  */
 void BoxTypeNode_Prepend_Node(BoxTypeNode *top_node, BoxType *item) {
-  BoxTypeNode *item_node = MyType_Get_Node(item);
+  BoxTypeNode *item_node = My_Type_Get_Node(item);
   assert(top_node && item_node);
 
   /* Adjust the links. */
@@ -315,7 +304,7 @@ void BoxTypeNode_Prepend_Node(BoxTypeNode *top_node, BoxType *item) {
 
   /* Adjust the head. */
   if (top_node->next != NULL) {
-    BoxTypeNode *next_node = MyType_Get_Node(top_node->next);
+    BoxTypeNode *next_node = My_Type_Get_Node(top_node->next);
     assert(next_node);
     next_node->previous = item;
   }
@@ -331,12 +320,12 @@ void BoxTypeNode_Prepend_Node(BoxTypeNode *top_node, BoxType *item) {
  */
 BoxTypeNode *
 BoxTypeNode_Remove_Node(BoxTypeNode *top_node, BoxType *this) {
-  BoxTypeNode *this_node = MyType_Get_Node(this);
+  BoxTypeNode *this_node = My_Type_Get_Node(this);
   assert(top_node && this_node);
 
   if (this_node->next) {
     /* This node is not the last: it has a next node. */
-    BoxTypeNode *next_node = MyType_Get_Node(this_node->next);
+    BoxTypeNode *next_node = My_Type_Get_Node(this_node->next);
     assert(next_node);
     next_node->previous = this_node->previous;
 
@@ -348,7 +337,7 @@ BoxTypeNode_Remove_Node(BoxTypeNode *top_node, BoxType *this) {
 
   if (this_node->previous) {
     /* This node is not the first: it has a previous node. */
-    BoxTypeNode *previous_node = MyType_Get_Node(this_node->previous);
+    BoxTypeNode *previous_node = My_Type_Get_Node(this_node->previous);
     assert(previous_node);
     previous_node->next = this_node->next;
 
@@ -559,7 +548,7 @@ void BoxType_Add_Member_To_Species(BoxType *species, BoxType *member) {
   /* Add the member to the structure. */
   std->num_items++;
 
-  BoxTypeNode_Append_Node(MyType_Get_Node(species), t);
+  BoxTypeNode_Append_Node(My_Type_Get_Node(species), t);
 }
 
 /* Get information on a species member as obtained from BoxTypeIter_Get_Next.
@@ -954,7 +943,7 @@ BoxType *BoxType_Resolve(BoxType *t, BoxTypeResolve resolve, int num) {
 /* Initialize an iterator for iteration over the members of the given type. */
 void BoxTypeIter_Init(BoxTypeIter *ti, BoxType *t) {
   if (t) {
-    BoxTypeNode *node = MyType_Get_Node(t);
+    BoxTypeNode *node = My_Type_Get_Node(t);
     if (node) {
       ti->current_node = node->next;
       return;
@@ -970,7 +959,7 @@ void BoxTypeIter_Init(BoxTypeIter *ti, BoxType *t) {
  */
 BoxBool BoxTypeIter_Get_Next(BoxTypeIter *ti, BoxType **next) {
   if (ti && ti->current_node) {
-    BoxTypeNode *node = MyType_Get_Node(ti->current_node);
+    BoxTypeNode *node = My_Type_Get_Node(ti->current_node);
     *next = ti->current_node;
     ti->current_node = node->next;
     return BOXBOOL_TRUE;

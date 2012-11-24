@@ -75,4 +75,5 @@ Table of contents
    doc/manual
    The language <language>
    doc/installation
+   Development blog <http://fnch.users.sourceforge.net/boxdevblog.html>
    Download <http://sourceforge.net/projects/boxc/>

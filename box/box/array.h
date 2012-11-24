@@ -162,16 +162,19 @@ BOXEXPORT int BoxArr_Iter(BoxArr *arr, BoxArrIterator iter, void *pass_data);
  */
 typedef int (*BoxArrCmp)(void *left, void *right, void *pass_data);
 
-/** Goes through the elements of the given array 'arr' and returns the
- * index of the first item 'itm' for which 'cmp(itm, item, pass_data)'
+/**
+ * @brief Find an item in the array.
+ *
+ * Goes through the elements of the given array 'arr' and returns the
+ * index of the first item 'x' for which 'cmp(x, item, pass_data)'
  * returned 0 ('item', 'cmp', and 'pass_data' are the second, third and fourth
  * arguments given to the function).
  * If the user specifies 'cmp == NULL', then return the index of the first
  * element of the array which matches (via memcmp) with the one pointed by
  * 'item'.
  */
-BOXEXPORT size_t BoxArr_Find(BoxArr *arr, void *item, BoxArrCmp cmp,
-                             void *pass_data);
+BOXEXPORT size_t
+BoxArr_Find(BoxArr *arr, void *item, BoxArrCmp cmp, void *pass_data);
 
 /** Remove all the elements of the 'arr' invoking the destructor for each
  * removed item, if necessary. After the call to this function, the BoxArr
@@ -185,10 +188,12 @@ BOXEXPORT void BoxArr_Clear(BoxArr *arr);
 #define BoxArr_Empty(arr) \
   do {BoxArr_MPop((arr), NULL, BoxArr_Get_Num_Items((arr)));} while(0)
 
-/** Push new elements into the provided array. The items are appended to the
+/**
+ * Push new elements into the provided array. The items are appended to the
  * array. If 'items' is the NULL pointer the items are inserted being set to
  * zero or without being set at all, if BoxArr_Set_Attr was used to disable the
  * automatic clearing.
+ *
  * @param arr the target array
  * @param items the pointer to the items to be inserted
  * @param num_items the number of items to be inserted
