@@ -22,7 +22,6 @@
 #include "types.h"
 #include "mem.h"
 #include "vm_priv.h"
-#include "vmalloc.h"
 #include "vmsym.h"
 #include "vmsymstuff.h"
 #include "container.h"

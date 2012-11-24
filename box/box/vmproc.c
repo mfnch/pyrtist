@@ -27,7 +27,6 @@
 #include "vm_priv.h"
 #include "vmproc.h"
 #include "srcpos.h"
-#include "vmalloc.h"
 #include "vmproc_priv.h"
 
 static void Procedure_Destroy(void *s) {

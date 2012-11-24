@@ -25,8 +25,8 @@
 #  define _BLTINARRAY_H
 
 #  include <box/types.h>
-#  include <box/vmalloc.h>
-
+#  include <box/vm.h>
+#  include <box/obj.h>
 
 typedef struct {
   BoxInt num_dim;   /**< Number of dimensions of the array */

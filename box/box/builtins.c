@@ -36,7 +36,6 @@
 #include "vmproc.h"
 #include "vmsym.h"
 #include "vmsymstuff.h"
-#include "vmalloc.h"
 #include "registers.h"
 #include "builtins.h"
 #include "bltinstr.h"

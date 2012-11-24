@@ -34,7 +34,6 @@
 #  include "occupation.h"
 #  include "hashtable.h"
 #  include "vm_priv.h"
-#  include "vmalloc.h"
 
 typedef enum {
   TS_KIND_INTRINSIC=1,

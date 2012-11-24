@@ -40,7 +40,6 @@
 #include "vmx.h"
 #include "vmsym.h"
 #include "vmproc_priv.h"
-#include "vmalloc.h"
 #include "container.h"
 
 /* Numero minimo di BoxVMWord che riesce a contenere tutti i tipi possibili
@@ -240,7 +239,6 @@ BoxTask BoxVM_Init(BoxVM *vm) {
 
   BoxVM_Proc_Init(vm);
   BoxVMSymTable_Init(& vm->sym_table);
-  BOXTASK( BoxVM_Alloc_Init(vm) );
   return BOXTASK_OK;
 }
 
@@ -286,7 +284,6 @@ void BoxVM_Finish(BoxVM *vm) {
   if (vm->fail_msg != NULL)
     BoxMem_Free(vm->fail_msg);
 
-  BoxVM_Alloc_Destroy(vm);
   BoxVMSymTable_Finish(& vm->sym_table);
   BoxVM_Proc_Finish(vm);
 

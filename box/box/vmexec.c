@@ -35,8 +35,6 @@
 
 #include "messages.h"
 #include "vm_priv.h"
-#include "vmalloc.h"
-#include "bltinarray.h"
 #include "strutils.h"
 #include "vmdasm.h"
 #include "exception.h"
@@ -368,15 +366,6 @@ static void My_Exec_Reloc_OO(BoxVMX *vmx) {
 
   vmx->flags.error = 1;
   vmx->flags.exit = 1;
-}
-
-static void My_Exec_Malloc_I(BoxVMX *vmx) {
-  BoxInt size = *((BoxInt *) vmx->arg1);
-  BoxPtr *obj = (BoxPtr *) vmx->local[TYPE_OBJ].ptr;
-  BoxVM_Obj_Alloc(vmx->vm, obj, size, (BoxVMAllocID) 0);
-  if (!BoxPtr_Is_Null(obj))
-    return;
-  MSG_FATAL("VM_Exec_Malloc_II: memory request failed!");
 }
 
 static void My_Exec_Mln_O(BoxVMX *vmx) {
@@ -727,7 +716,6 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   { BOXGOP_PPTRY,  "pptry", 1, 'p',     "a1", "ro0", "x-", "xx", My_Exec_PPtrY_P  }, /* pptry rp      */
   {   BOXGOP_RET, "return", 0, 'n',     NULL,  NULL, "--", "xx", My_Exec_Ret      }, /* ret           */
   {BOXGOP_CREATE, "create", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Create_I }, /* create ri     */
-  {BOXGOP_MALLOC, "malloc", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Malloc_I }, /* malloc ri     */
   {   BOXGOP_MLN,    "mln", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_Mln_O    }, /* mln ro        */
   { BOXGOP_MUNLN,  "munln", 1, 'o',     "a1",  NULL, "x-", "xx", My_Exec_MUnln_O  }, /* munln ro      */
   { BOXGOP_MCOPY,  "mcopy", 2, 'o',

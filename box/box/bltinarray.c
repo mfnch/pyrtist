@@ -23,7 +23,7 @@
 
 #include "types.h"
 #include "mem.h"
-#include "vmalloc.h"
+#include "obj.h"
 #include "messages.h"
 
 #include "bltinarray.h"

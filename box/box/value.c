@@ -28,7 +28,6 @@
 #include "compiler.h"
 #include "value.h"
 #include "vmsymstuff.h"
-#include "tsdesc.h"
 #include "combs.h"
 
 /* FIXME: there is a flaw in the design of the Value datastructure.
