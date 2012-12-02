@@ -200,7 +200,7 @@ BoxVM_Install_Proc_CCode(BoxVM *vm, BoxVMCallNum cn, BoxCCallOld c_proc) {
   inst_proc->type = BOXVMPROCKIND_C_CODE;
   inst_proc->name = NULL;
   inst_proc->desc = NULL;
-  inst_proc->code.c = (BoxTask (*)(void *)) c_proc;
+  inst_proc->code.c = c_proc;
   return BOXBOOL_TRUE;
 }
 

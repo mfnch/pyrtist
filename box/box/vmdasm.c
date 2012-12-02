@@ -18,6 +18,7 @@
  ****************************************************************************/
 
 #include <assert.h>
+#include <stdlib.h>
 
 #include "types.h"
 #include "messages.h"
@@ -39,71 +40,57 @@
  * agli argomenti disassemblati.
  */
 static void My_D_GLPI_GLPI(BoxVMDasm *dasm, char **out) {
-  BoxUInt n, na = dasm->op_desc->numargs;
-  BoxUInt iaform[2] = {dasm->op_arg_type & 3, (dasm->op_arg_type >> 2) & 3};
-  BoxInt iaint[2];
+  int n, na = dasm->op_desc->numargs;
+  int arg_formats[2] = {dasm->op_arg_type & 3, (dasm->op_arg_type >> 2) & 3};
+  BoxInt arg_values[2];
   BoxVMWord op_word = dasm->op_word;
 
   /* Recupero i numeri (interi) di registro/puntatore/etc. */
-  switch (na) {
-  case 1:
+  if (na == 1) {
     if (dasm->flags.op_is_long)
-      BOXVM_READ_LONGOP_1ARG(dasm->op_ptr, op_word, iaint[0]);
+      BOXVM_READ_LONGOP_1ARG(dasm->op_ptr, op_word, arg_values[0]);
     else
-      BOXVM_READ_SHORTOP_1ARG(dasm->op_ptr, op_word, iaint[0]);
-    break;
+      BOXVM_READ_SHORTOP_1ARG(dasm->op_ptr, op_word, arg_values[0]);
 
-  case 2:
+  } else {
+    assert(na == 2);
     if (dasm->flags.op_is_long)
-      BOXVM_READ_LONGOP_2ARGS(dasm->op_ptr, op_word, iaint[0], iaint[1]);
+      BOXVM_READ_LONGOP_2ARGS(dasm->op_ptr, op_word,
+                              arg_values[0], arg_values[1]);
     else
-      BOXVM_READ_SHORTOP_2ARGS(dasm->op_ptr, op_word, iaint[0], iaint[1]);
-    break;
-
-  default:
-    assert(0);
+      BOXVM_READ_SHORTOP_2ARGS(dasm->op_ptr, op_word,
+                               arg_values[0], arg_values[1]);
   }
 
   for (n = 0; n < na; n++) {
-    BoxUInt iaf = iaform[n];
-    BoxUInt iat = dasm->op_desc->t_id;
+    int arg_format = arg_formats[n],
+        arg_type = dasm->op_desc->t_id;
+    BoxInt arg_value = arg_values[n], arg_abs_value = abs(arg_value);
+    char reg_char = "vr"[arg_value >= 0],
+         type_char = "cirpo"[arg_type];
 
-    assert(iaf < 4);
-
-    {
-      BoxInt iai = iaint[n], uiai = iai;
-      char rc, tc;
-      const char typechars[NUM_TYPES] = "cirpo";
-
-      tc = typechars[iat];
-
-      if (uiai < 0) {
-        uiai = -uiai;
-        rc = 'v';
-
-      } else
-        rc = 'r';
-
-      switch(iaf) {
-      case BOXCONTCATEG_GREG:
-        sprintf(out[n], "g%c%c" SInt, rc, tc, uiai);
-        break;
-      case BOXCONTCATEG_LREG:
-        sprintf(out[n], "%c%c" SInt, rc, tc, uiai);
-        break;
-      case BOXCONTCATEG_PTR:
-        if (iai < 0)
-          sprintf(out[n], "%c[ro0 - " SInt "]", tc, uiai);
-        else if (iai == 0)
-          sprintf(out[n], "%c[ro0]", tc);
-        else
-          sprintf(out[n], "%c[ro0 + " SInt "]", tc, uiai);
-        break;
-      case BOXCONTCATEG_IMM:
-        if (iat == TYPE_CHAR) iai = (BoxInt) ((BoxChar) iai);
-        sprintf(out[n], SInt, iai);
-        break;
-      }
+    switch(arg_format) {
+    case BOXCONTCATEG_GREG:
+      sprintf(out[n], "g%c%c" SInt, reg_char, type_char, arg_abs_value);
+      break;
+    case BOXCONTCATEG_LREG:
+      sprintf(out[n], "%c%c" SInt, reg_char, type_char, arg_abs_value);
+      break;
+    case BOXCONTCATEG_PTR:
+      if (arg_value < 0)
+        sprintf(out[n], "%c[ro0 - " SInt "]", type_char, arg_abs_value);
+      else if (arg_value == 0)
+        sprintf(out[n], "%c[ro0]", type_char);
+      else
+        sprintf(out[n], "%c[ro0 + " SInt "]", type_char, arg_abs_value);
+      break;
+    case BOXCONTCATEG_IMM:
+      if (arg_type == BOXTYPEID_CHAR)
+        arg_value = (BoxInt) ((BoxChar) arg_value);
+      sprintf(out[n], SInt, arg_value);
+      break;
+    default:
+      abort();
     }
   }
 }
@@ -116,7 +103,7 @@ void My_D_CALL(BoxVMDasm *dasm, char **out) {
   assert(na == 1);
 
   if ((dasm->op_arg_type & 3) == BOXCONTCATEG_IMM) {
-    BoxUInt iat = dasm->op_desc->t_id;
+    int iat = dasm->op_desc->t_id;
     BoxInt call_num;
 
     if (dasm->flags.op_is_long)
@@ -158,7 +145,7 @@ void My_D_JMP(BoxVMDasm *dasm, char **out) {
   assert(na == 1);
 
   if ((dasm->op_arg_type & 3) == BOXCONTCATEG_IMM) {
-    BoxUInt iat = dasm->op_desc->t_id;
+    int iat = dasm->op_desc->t_id;
     BoxInt m_num;
     BoxInt position;
     BoxVMByte op_word = dasm->op_word;
@@ -295,9 +282,8 @@ BoxTask BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
            op_size, op_type, op_arg_type);
 #endif
 
-    dasm.op_desc =
-      (op_type >= 0 || op_type < BOX_NUM_OPS) ?
-      & exec_table[op_type] : NULL;
+    dasm.op_desc = ((op_type >= 0 || op_type < BOX_NUM_OPS) ?
+                    & exec_table[op_type] : NULL);
  
     outcome = iter(& dasm, pass);
     if (outcome != BOXTASK_OK)

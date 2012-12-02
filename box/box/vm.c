@@ -48,139 +48,8 @@
 #  define MAX_SIZE_IN_IWORDS \
    ((sizeof(BoxPoint) + sizeof(BoxVMWord) - 1) / sizeof(BoxVMWord))
 
-
-/*****************************************************************************
- *  Le seguenti funzioni servono a ricavare gli indirizzi in memoria dei     *
- *  registri globali (indicati con 'G'), dei registri locali ('L'),          *
- *  dei puntatori ('P') o degli immediati interi ('I') che compaiono come    *
- *  argomenti delle istruzioni. Ad esempio: l'istruzione "mov ri2, i[ro0+4]" *
- *  dice alla macchina virtuale di mettere nel registro intero locale num. 2 *
- *  (ri2) il valore intero presente alla locazione (ro0 + 4). A tale scopo   *
- *  la VM calcola gli indirizzi in memoria dei 2 argomenti (usando VM__Get_L *
- *  per il primo argomento, ri2, e usando VM_Get_P per il secondo, i[ro0+4]).*
- *  Una volta calcolati gli indirizzi la VM chiamera' VM__Exec_Mov_II per    *
- *  eseguire materialmente l'operazione.                                     *
- *****************************************************************************/
-
 /* Static functions defined in this file */
 static void My_Set_Data_Segment_Register(BoxVM *vm);
-
-/* This array lets us to obtain the size of a type by type index.
- * (Useful in what follows)
- */
-const size_t size_of_type[NUM_TYPES] = {
-  sizeof(BoxChar),
-  sizeof(BoxInt),
-  sizeof(BoxReal),
-  sizeof(BoxPoint),
-  sizeof(BoxPtr)
-};
-
-static void *My_Get_Arg_Ptrs(BoxVMX *vmx, int kind, BoxInt n) {
-  if (kind < 2) {                 /* kind == 0, 1 (local, global registers) */
-    BoxTypeId t = vmx->idesc->t_id;
-    BoxVMRegs *regs = & ((kind == 0) ? vmx->global : vmx->local)[t];
-    size_t s = size_of_type[t];
-
-#ifdef VM_SAFE_EXEC1
-    if (n < regs->min || n > regs->max) {
-      MSG_ERROR("Trying to access unallocated %s register(t:%I, n:%I)!",
-                (kind == 0) ? "global" : "local", t, n);
-      vmx->flags.error = vmx->flags.exit = 1;
-      return NULL;
-    }
-#endif
-    return regs->ptr + n*s;
-
-  } else if (kind == 2) {                         /* kind == 2 (pointers) */
-    return *((void **) vmx->local[TYPE_OBJ].ptr) + n;
-
-  } else {                                        /* kind == 3 (immediates) */
-    BoxTypeId t = vmx->idesc->t_id;
-    static BoxInt i = 0;
-    static union {BoxChar c; BoxInt i; BoxReal r;} v[2], *value;
-
-    assert(t >= BOXTYPEID_CHAR && t <= BOXTYPEID_REAL);
-
-    value = & v[i]; i ^= 1;
-    switch (t) {
-    case TYPE_CHAR:
-      value->c = (BoxChar) n; return (void *) (& value->c);
-    case TYPE_INT:
-      value->i =  (BoxInt) n; return (void *) (& value->i);
-    case TYPE_REAL:
-      value->r = (BoxReal) n; return (void *) (& value->r);
-    default: /* This shouldn't happen! */
-      return (void *) (& value->i); break;
-    }
-  }
-}
-
-/*****************************************************************************
- * Functions used to execute the instructions                                *
- *****************************************************************************/
-
-/* Questa funzione trova e imposta gli indirizzi corrispondenti
- *  ai 2 argomenti dell'istruzione. In modo da poter procedere all'esecuzione.
- * NOTA: Questa funzione gestisce solo le istruzioni di tipo GLP-GLPI,
- *  cioe' le istruzioni in cui: il primo argomento e' 'G'lobale, 'L'ocale,
- *  'P'untatore, mentre il secondo puo' essere dei tipi appena enumerati oppure
- *  puo' essere un 'I'mmediato intero.
- */
-void VM__GLP_GLPI(BoxVMX *vmx) {
-  signed long narg1, narg2;
-  BoxUInt atype = vmx->arg_type;
-
-  if (vmx->flags.is_long)
-    BOXVM_READ_LONGOP_2ARGS(vmx->i_pos, vmx->i_eye, narg1, narg2);
-  else
-    BOXVM_READ_SHORTOP_2ARGS(vmx->i_pos, vmx->i_eye, narg1, narg2);
-
-  vmx->arg1 = My_Get_Arg_Ptrs(vmx, atype & 0x3, narg1);
-  vmx->arg2 = My_Get_Arg_Ptrs(vmx, (atype >> 2) & 0x3, narg2);
-#if DEBUG_EXEC == 1
-  printf("Categories: arg1 = %lu - arg2 = %lu\n",
-         atype & 0x3, (atype >> 2) & 0x3);
-#endif
-}
-
-/* Questa funzione e' analoga alla precedente, ma gestisce
- *  istruzioni come: "mov ri1, 123456", "mov rf2, 3.14", "mov rp5, (1, 2)", etc.
- */
-void VM__GLP_Imm(BoxVMX *vmx) {
-  signed long narg1;
-  BoxUInt atype = vmx->arg_type;
-
-  if (vmx->flags.is_long)
-    BOXVM_READ_LONGOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
-  else
-    BOXVM_READ_SHORTOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
-
-  vmx->arg1 = My_Get_Arg_Ptrs(vmx, atype & 0x3, narg1);
-  vmx->arg2 = vmx->i_pos;
-}
-
-/* Questa funzione e' analoga alle precedenti, ma gestisce
- *  istruzioni con un solo argomento di tipo GLPI (Globale oppure Locale
- *  o Puntatore o Immediato intero).
- */
-void VM__GLPI(BoxVMX *vmx) {
-  signed long narg1;
-  BoxUInt atype = vmx->arg_type;
-
-  if (vmx->flags.is_long)
-    BOXVM_READ_LONGOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
-  else
-    BOXVM_READ_SHORTOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
-
-  vmx->arg1 = My_Get_Arg_Ptrs(vmx, atype & 0x3, narg1);
-}
-
-/* Questa funzione e' analoga alle precedenti, ma gestisce
- *  istruzioni con un solo argomento di tipo immediato (memorizzato subito
- *  di seguito all'istruzione).
- */
-void VM__Imm(BoxVMX *vmx) {vmx->arg1 = (void *) vmx->i_pos;}
 
 
 /*****************************************************************************
@@ -502,6 +371,7 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
   BoxVMProcInstalled *p;
   BoxVMWord *i_pos, *i_pos0;
   BoxValue reg0[NUM_TYPES]; /* Registri locali numero zero */
+  BoxOpExecutor executor;
 
 #if DEBUG_EXEC == 1
   BoxInt i = 0;
@@ -556,6 +426,8 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
   i_pos0 = i_pos = this_vmx.i_pos;
   this_vmx.flags.exit = this_vmx.flags.error = 0;
 
+  executor.vmx = & this_vmx;
+
   do {
     int is_long;
     BoxVMWord i_eye;
@@ -590,7 +462,7 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
 
     /* Localizza in memoria gli argomenti */
     if (this_vmx.idesc->numargs > 0)
-      this_vmx.idesc->get_args(& this_vmx);
+      this_vmx.idesc->get_args(& executor);
 
     /* Esegue l'istruzione */
     if (!this_vmx.flags.error)

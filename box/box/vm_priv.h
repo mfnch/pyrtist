@@ -39,6 +39,8 @@
 #  include <box/vmdasm.h>
 #  include <box/vmproc_priv.h>
 
+#  include <box/vmexec_priv.h>
+
 /** Here is a list of builtin types. */
 typedef enum {
   TYPE_NONE           = -1,
@@ -115,13 +117,13 @@ struct BoxOpInfo_struct {
  * Content of a BoxVMInstrDesc object.
  */
 struct BoxVMInstrDesc_struct {
-  const char         *name;         /**< Instruction name */
-  BoxUInt            numargs;       /**< Number of arguments */
-  BoxTypeId          t_id;          /**< Type of the arguments (all have the
-                                         same type) */
-  BoxVMOpArgsGetter  get_args;      /**< Per trattare gli argomenti */
-  BoxVMOpExecutor    execute;       /**< Per eseguire l'istruzione */
-  BoxVMOpDisasm      disasm;        /**< Per disassemblare gli argomenti */
+  const char         *name;    /**< Instruction name */
+  BoxUInt            numargs;  /**< Number of arguments */
+  BoxTypeId          t_id;     /**< Type of the arguments (all have the
+                                    same type) */
+  BoxVMOpArgsGetter  get_args; /**< Per trattare gli argomenti */
+  BoxVMOpExecutor    execute;  /**< Per eseguire l'istruzione */
+  BoxVMOpDisasm      disasm;   /**< Per disassemblare gli argomenti */
 };
 
 /** Table containing info about all the VM operations */
@@ -271,12 +273,6 @@ void BoxOpInfo_Print(FILE *out, BoxOpInfo *oi);
 
 /** (Internal) Get the execution table for the Box VM instructions. */
 const BoxVMInstrDesc *BoxVM_Get_Exec_Table(void);
-
-/* These functions are intended to be used only inside 'vmexec.h' */
-void VM__GLP_GLPI(BoxVMX *vmx);
-void VM__GLP_Imm(BoxVMX *vmx);
-void VM__GLPI(BoxVMX *vmx);
-void VM__Imm(BoxVMX *vmx);
 
 /** This is the type of the C functions which can be called by the VM. */
 typedef BoxTask (*BoxVMFunc)(BoxVMX *);

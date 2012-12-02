@@ -39,6 +39,167 @@
 #include "vmdasm.h"
 #include "exception.h"
 
+/* This array lets us to obtain the size of a type by type index.
+ * (Useful in what follows)
+ */
+const size_t size_of_type[NUM_TYPES] = {
+  sizeof(BoxChar),
+  sizeof(BoxInt),
+  sizeof(BoxReal),
+  sizeof(BoxPoint),
+  sizeof(BoxPtr)
+};
+
+/**
+ * @brief Get the pointer to the value corresponding to an instruction
+ *    argument.
+ *
+ * @param vmx The virtual machine executor.
+ * @param gt The argument getter object.
+ * @return The pointer to the argument value.
+ */
+static void *BoxOpArgGetter_Get(BoxOpArgGetter *gt, BoxVMX *vmx) {
+  BoxTypeId t = vmx->idesc->t_id;
+  switch (gt->in_kind) {
+  case BOXOPCAT_GREG:
+    return vmx->global[t].ptr + gt->in_value*size_of_type[t];
+  case BOXOPCAT_LREG:
+    return vmx->local[t].ptr + gt->in_value*size_of_type[t];
+  case BOXOPCAT_PTR:
+    {
+      BoxPtr *ptr = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
+      gt->arg_data.val_ptr.block = ptr->block;
+      gt->arg_data.val_ptr.ptr = (char *) ptr->ptr + gt->in_value;
+      return gt->arg_data.val_ptr.ptr;
+    }
+  case BOXOPCAT_IMM:
+    switch ((int) t) {
+    case BOXTYPEID_CHAR:
+      gt->arg_data.val_char = (BoxChar) gt->in_value;
+      return & gt->arg_data.val_char;
+    case BOXTYPEID_INT:
+      gt->arg_data.val_int = (BoxInt) gt->in_value;
+      return & gt->arg_data.val_int;
+    case BOXTYPEID_REAL:
+      gt->arg_data.val_real = (BoxReal) gt->in_value;
+      return & gt->arg_data.val_real;
+    }
+  }
+
+  abort();
+  return NULL;
+}
+
+/* Questa funzione trova e imposta gli indirizzi corrispondenti
+ *  ai 2 argomenti dell'istruzione. In modo da poter procedere all'esecuzione.
+ * NOTA: Questa funzione gestisce solo le istruzioni di tipo GLP-GLPI,
+ *  cioe' le istruzioni in cui: il primo argomento e' 'G'lobale, 'L'ocale,
+ *  'P'untatore, mentre il secondo puo' essere dei tipi appena enumerati oppure
+ *  puo' essere un 'I'mmediato intero.
+ */
+static void My_Get_GLP_GLPI(BoxOpExecutor *executor) {
+  BoxVMX *vmx = executor->vmx;
+  signed long narg1, narg2;
+  BoxUInt atype = vmx->arg_type;
+
+  if (vmx->flags.is_long)
+    BOXVM_READ_LONGOP_2ARGS(vmx->i_pos, vmx->i_eye, narg1, narg2);
+  else
+    BOXVM_READ_SHORTOP_2ARGS(vmx->i_pos, vmx->i_eye, narg1, narg2);
+
+  executor->arg[0].in_kind = atype & 0x3;
+  executor->arg[0].in_value = narg1;
+  executor->arg[1].in_kind = (atype >> 2) & 0x3;
+  executor->arg[1].in_value = narg2;
+
+  vmx->arg1 = BoxOpArgGetter_Get(& executor->arg[0], vmx);
+  vmx->arg2 = BoxOpArgGetter_Get(& executor->arg[1], vmx);
+}
+
+/* Questa funzione e' analoga alla precedente, ma gestisce
+ *  istruzioni come: "mov ri1, 123456", "mov rf2, 3.14", "mov rp5, (1, 2)", etc.
+ */
+static void My_Get_GLP_Imm(BoxOpExecutor *executor) {
+  BoxVMX *vmx = executor->vmx;
+  signed long narg1;
+  BoxUInt atype = vmx->arg_type;
+
+  if (vmx->flags.is_long)
+    BOXVM_READ_LONGOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
+  else
+    BOXVM_READ_SHORTOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
+
+  executor->arg[0].in_kind = atype & 0x3;
+  executor->arg[0].in_value = narg1;
+
+  vmx->arg1 = BoxOpArgGetter_Get(& executor->arg[0], vmx);
+  vmx->arg2 = vmx->i_pos;
+}
+
+/* Questa funzione e' analoga alle precedenti, ma gestisce
+ *  istruzioni con un solo argomento di tipo GLPI (Globale oppure Locale
+ *  o Puntatore o Immediato intero).
+ */
+static void My_Get_GLPI(BoxOpExecutor *executor) {
+  BoxVMX *vmx = executor->vmx;
+  signed long narg1;
+  BoxUInt atype = vmx->arg_type;
+
+  if (vmx->flags.is_long)
+    BOXVM_READ_LONGOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
+  else
+    BOXVM_READ_SHORTOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
+
+  executor->arg[0].in_kind = atype & 0x3;
+  executor->arg[0].in_value = narg1;
+
+  vmx->arg1 = BoxOpArgGetter_Get(& executor->arg[0], vmx);
+}
+
+/* Questa funzione e' analoga alle precedenti, ma gestisce
+ *  istruzioni con un solo argomento di tipo immediato (memorizzato subito
+ *  di seguito all'istruzione).
+ */
+static void My_Get_Imm(BoxOpExecutor *executor) {
+  executor->vmx->arg1 = (void *) executor->vmx->i_pos;
+}
+
+#define MY_COMBINE_CHARS(c1, c2, c3) \
+  (((int) (c3)) | (((int) (c2)) << 8) | (((int) (c1)) << 16))
+
+/** Return a BoxOpSignature from the corresponding string representation. */
+static BoxOpSignature My_BoxOpSignature_From_Str(const char *s) {
+  switch (MY_COMBINE_CHARS(s[0], s[1], s[2])) {
+  case MY_COMBINE_CHARS('-', '-', '\0'): return BOXOPSIGNATURE_NONE;
+  case MY_COMBINE_CHARS('i', '-', '\0'): return BOXOPSIGNATURE_IMM;
+  case MY_COMBINE_CHARS('x', '-', '\0'): return BOXOPSIGNATURE_ANY;
+  case MY_COMBINE_CHARS('x', 'i', '\0'): return BOXOPSIGNATURE_ANY_IMM;
+  case MY_COMBINE_CHARS('x', 'x', '\0'): return BOXOPSIGNATURE_ANY_ANY;
+  default:
+    printf("cannot classify '%s'!\n", s);
+    assert(0);
+  }
+}
+
+static BoxVMOpArgsGetter My_ArgsGetter_From_Str(const char *s) {
+  switch(My_BoxOpSignature_From_Str(s)) {
+  case BOXOPSIGNATURE_NONE: return NULL;
+  case BOXOPSIGNATURE_IMM: return My_Get_Imm;
+  case BOXOPSIGNATURE_ANY: return My_Get_GLPI;
+  case BOXOPSIGNATURE_ANY_IMM: return My_Get_GLP_Imm;
+  case BOXOPSIGNATURE_ANY_ANY: return My_Get_GLP_GLPI;
+  default:
+    MSG_FATAL("My_Executor_From_Str: unknown string '%s'", s);
+    assert(0);
+    return NULL;
+  }
+}
+
+
+/*****************************************************************************
+ * IMPLEMENTATION OF VM INSTRUCTIONS                                         *
+ *****************************************************************************/
+
 static void My_Exec_Ret(BoxVMX *vmx) {vmx->flags.exit = 1;}
 
 static void My_Exec_Call_I(BoxVMX *vmx) {
@@ -692,23 +853,6 @@ static BoxOpTable4Humans op_table_for_humans[] = {
 };
 
 
-#define MY_COMBINE_CHARS(c1, c2, c3) \
-  (((int) (c3)) | (((int) (c2)) << 8) | (((int) (c1)) << 16))
-
-/** Return a BoxOpSignature from the corresponding string representation. */
-static BoxOpSignature My_BoxOpSignature_From_Str(const char *s) {
-  switch (MY_COMBINE_CHARS(s[0], s[1], s[2])) {
-  case MY_COMBINE_CHARS('-', '-', '\0'): return BOXOPSIGNATURE_NONE;
-  case MY_COMBINE_CHARS('i', '-', '\0'): return BOXOPSIGNATURE_IMM;
-  case MY_COMBINE_CHARS('x', '-', '\0'): return BOXOPSIGNATURE_ANY;
-  case MY_COMBINE_CHARS('x', 'i', '\0'): return BOXOPSIGNATURE_ANY_IMM;
-  case MY_COMBINE_CHARS('x', 'x', '\0'): return BOXOPSIGNATURE_ANY_ANY;
-  default:
-    printf("cannot classify '%s'!\n", s);
-    assert(0);
-  }
-}
-
 BoxTypeId My_Type_From_Char(char c) {
   switch(c) {
   case 'n': return BOXTYPEID_NONE; break;
@@ -721,20 +865,6 @@ BoxTypeId My_Type_From_Char(char c) {
     MSG_FATAL("My_Type_From_Char: unknown type char '%c'", c);
     assert(0);
     return BOXTYPEID_NONE;
-  }
-}
-
-static BoxVMOpArgsGetter My_ArgsGetter_From_Str(const char *s) {
-  switch(My_BoxOpSignature_From_Str(s)) {
-  case BOXOPSIGNATURE_NONE: return NULL;
-  case BOXOPSIGNATURE_IMM: return VM__Imm;
-  case BOXOPSIGNATURE_ANY: return VM__GLPI;
-  case BOXOPSIGNATURE_ANY_IMM: return VM__GLP_Imm;
-  case BOXOPSIGNATURE_ANY_ANY: return VM__GLP_GLPI;
-  default:
-    MSG_FATAL("My_Executor_From_Str: unknown string '%s'", s);
-    assert(0);
-    return NULL;
   }
 }
 

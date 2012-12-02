@@ -174,16 +174,6 @@ typedef enum {
 } BoxVMAttr;
 
 /**
- * Prototype of function which implements a VM instruction.
- */
-typedef void (*BoxVMOpExecutor)(BoxVMX *vmx);
-
-/**
- * Prototype of function to retrieve the arguments of a VM instruction.
- */
-typedef void (*BoxVMOpArgsGetter)(BoxVMX *vmx);
-
-/**
  * Object describing a Box VM instruction characteristics.
  */
 typedef struct BoxVMInstrDesc_struct BoxVMInstrDesc;

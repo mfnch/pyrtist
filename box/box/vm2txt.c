@@ -29,8 +29,9 @@
  * Structure used to pass arguments to My_Op_Dasm.
  */
 typedef struct {
-  FILE *output;
-  char *arg[VM_MAX_NUMARGS];
+  BoxVMWord *bytecode;
+  FILE      *output;
+  char      *arg[VM_MAX_NUMARGS];
 
 } MyDasmData;
 
@@ -65,22 +66,20 @@ static BoxTask My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
             (BoxUInt) (dasm->op_pos * sizeof(BoxVMWord)), *dasm->op_ptr);
     
   } else {
-    BoxVMWord *i_pos2 = dasm->op_ptr;
-    
     /* Stampo l'istruzione e i suoi argomenti */
     fprintf(output, SUInt "\t", (BoxUInt) (dasm->op_pos * sizeof(BoxVMWord)));
     if (dasm->vm->attr.hexcode)
-      fprintf(output, BoxVMWord_Fmt"\t", *(i_pos2++));
+      fprintf(output, BoxVMWord_Fmt"\t", data->bytecode[dasm->op_pos]);
     fprintf(output, "%s", op_name);
     
     if (nargs > 0) {
       BoxUInt n;
+      char *sep = " ";
 
       assert(nargs <= VM_MAX_NUMARGS);
 
-      fprintf(output, " %s", arg[0]);
-      for (n = 1; n < nargs; n++)
-        fprintf(output, ", %s", arg[n]);
+      for (n = 0; n < nargs; n++, sep = ", ")
+        fprintf(output, "%s%s", sep, arg[n]);
     }
     fprintf(output, "\n");
 
@@ -88,7 +87,8 @@ static BoxTask My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
     if (dasm->vm->attr.hexcode) {
       size_t i;
       for (i = 1; i < dasm->op_size; i++)
-        fprintf(output, "\t"BoxVMWord_Fmt"\n", *(i_pos2++));
+        fprintf(output, "\t"BoxVMWord_Fmt"\n",
+                data->bytecode[dasm->op_pos + i]);
     }
   }
 
@@ -108,6 +108,7 @@ BoxTask BoxVM_Disassemble(BoxVM *vm, FILE *output,
   size_t i;
 
   data.output = output;
+  data.bytecode = (void *) prog;
   for (i = 0; i < VM_MAX_NUMARGS; i++)
     data.arg[i] = iarg_buffers[i];
 

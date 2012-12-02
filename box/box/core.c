@@ -33,7 +33,7 @@
 static BoxCoreTypes box_core_types;
 
 
-static BoxType *
+static void
 My_Set_Type(BoxCoreTypes *ct, BoxTypeId t_id, BoxType *t, BoxBool *success) {
   assert(t_id >= BOXTYPEID_MIN_VAL && t_id < BOXTYPEID_MAX_VAL);
   ct->types[t_id] = t;
