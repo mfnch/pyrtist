@@ -107,6 +107,16 @@ typedef char BoxVMSByte;
 
 typedef uint64_t BoxVMWord;
 
+typedef struct {
+  BoxVMWord args_type, /**< Type of arguments of instruction. */
+            type;      /**< Type of instruction. */
+  int       has_data;
+  BoxVMWord *tail;
+  BoxInt    size;      /**< Advance offset. */
+  int       num_args;  /**< Number of arguments. */
+  BoxInt    args[2];   /**< Raw argument values. */
+} BoxOpDesc;
+
 #  define BoxVMWord_Fmt "%8.8lx"
 
 /** The opcodes for the operations (instructions) understandable by the Box

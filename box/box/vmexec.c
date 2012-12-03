@@ -38,6 +38,7 @@
 #include "strutils.h"
 #include "vmdasm.h"
 #include "exception.h"
+#include "vmop_priv.h"
 
 /* This array lets us to obtain the size of a type by type index.
  * (Useful in what follows)
@@ -100,7 +101,7 @@ static void *BoxOpArgGetter_Get(BoxOpArgGetter *gt, BoxVMX *vmx) {
 static void My_Get_GLP_GLPI(BoxOpExecutor *executor) {
   BoxVMX *vmx = executor->vmx;
   signed long narg1, narg2;
-  BoxUInt atype = vmx->arg_type;
+  BoxUInt atype = vmx->op.args_type;
 
   if (vmx->flags.is_long)
     BOXVM_READ_LONGOP_2ARGS(vmx->i_pos, vmx->i_eye, narg1, narg2);
@@ -122,7 +123,7 @@ static void My_Get_GLP_GLPI(BoxOpExecutor *executor) {
 static void My_Get_GLP_Imm(BoxOpExecutor *executor) {
   BoxVMX *vmx = executor->vmx;
   signed long narg1;
-  BoxUInt atype = vmx->arg_type;
+  BoxUInt atype = vmx->op.args_type;
 
   if (vmx->flags.is_long)
     BOXVM_READ_LONGOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
@@ -143,7 +144,7 @@ static void My_Get_GLP_Imm(BoxOpExecutor *executor) {
 static void My_Get_GLPI(BoxOpExecutor *executor) {
   BoxVMX *vmx = executor->vmx;
   signed long narg1;
-  BoxUInt atype = vmx->arg_type;
+  BoxUInt atype = vmx->op.args_type;
 
   if (vmx->flags.is_long)
     BOXVM_READ_LONGOP_1ARG(vmx->i_pos, vmx->i_eye, narg1);
@@ -181,16 +182,15 @@ static BoxOpSignature My_BoxOpSignature_From_Str(const char *s) {
   }
 }
 
-static BoxVMOpArgsGetter My_ArgsGetter_From_Str(const char *s) {
-  switch(My_BoxOpSignature_From_Str(s)) {
+static BoxVMOpArgsGetter My_ArgsGetter_From_Str(BoxOpSignature sig) {
+  switch(sig) {
   case BOXOPSIGNATURE_NONE: return NULL;
   case BOXOPSIGNATURE_IMM: return My_Get_Imm;
   case BOXOPSIGNATURE_ANY: return My_Get_GLPI;
   case BOXOPSIGNATURE_ANY_IMM: return My_Get_GLP_Imm;
   case BOXOPSIGNATURE_ANY_ANY: return My_Get_GLP_GLPI;
   default:
-    MSG_FATAL("My_Executor_From_Str: unknown string '%s'", s);
-    assert(0);
+    MSG_FATAL("My_Executor_From_Str: unknown signature");
     return NULL;
   }
 }
@@ -599,12 +599,12 @@ static void My_Exec_Pop_O(BoxVMX *vmx) {
 }
 
 static void My_Exec_Jmp_I(BoxVMX *vmx) {
-  vmx->i_len = *((BoxInt *) vmx->arg1);
+  vmx->op.size = *((BoxInt *) vmx->arg1);
 }
 
 static void My_Exec_Jc_I(BoxVMX *vmx) {
   if (*((BoxInt *) vmx->local[TYPE_INT].ptr))
-    vmx->i_len = *((BoxInt *) vmx->arg1);
+    vmx->op.size = *((BoxInt *) vmx->arg1);
 }
 
 static void My_Exec_Add_O(BoxVMX *vmx) {
@@ -878,16 +878,27 @@ const BoxVMInstrDesc *BoxVM_Get_Exec_Table(void) {
   else {
     int i;
 
-    for(i = 0; i < BOX_NUM_OPS; i++) {
+    for(i = 0; i < BOX_NUM_OPS; i++) { 
       BoxVMInstrDesc *dest = & the_optable[i];
       BoxOpTable4Humans *src = & op_table_for_humans[i];
+      BoxOpSignature sig = My_BoxOpSignature_From_Str(src->assembler);
 
       dest->name = src->name;
       dest->numargs = src->num_args;
       dest->t_id = My_Type_From_Char(src->arg_type);
       dest->execute = src->executor;
-      dest->get_args = My_ArgsGetter_From_Str(src->assembler);
+      dest->get_args = My_ArgsGetter_From_Str(sig);
       dest->disasm = BoxVM_Get_ArgDAsm_From_Str(src->disassembler);
+
+      switch(sig) {
+      case BOXOPSIGNATURE_NONE: dest->num_args = 0; dest->has_data = 0; break;
+      case BOXOPSIGNATURE_IMM:  dest->num_args = 0; dest->has_data = 1; break;
+      case BOXOPSIGNATURE_ANY:  dest->num_args = 1; dest->has_data = 0; break;
+      case BOXOPSIGNATURE_ANY_IMM: dest->num_args = 1; dest->has_data = 1; break;
+      case BOXOPSIGNATURE_ANY_ANY: dest->num_args = 2; dest->has_data = 0; break;
+      default:
+        abort();
+      }
     }
 
     the_optable_ptr = the_optable;

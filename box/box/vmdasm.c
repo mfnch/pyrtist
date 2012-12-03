@@ -27,6 +27,7 @@
 #include "vm_priv.h"
 #include "vmdasm_priv.h"
 #include "vmproc_priv.h"
+#include "vmop_priv.h"
 
 #define DEBUG_VM_D_EVERY_ONE 0
 

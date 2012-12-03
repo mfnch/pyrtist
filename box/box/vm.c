@@ -40,6 +40,7 @@
 #include "vmx.h"
 #include "vmsym.h"
 #include "vmproc_priv.h"
+#include "vmop_priv.h"
 #include "container.h"
 
 /* Numero minimo di BoxVMWord che riesce a contenere tutti i tipi possibili
@@ -359,6 +360,160 @@ BoxTask BoxVM_Module_Execute_With_Args(BoxVMX *vmx, BoxVMCallNum cn,
   return t;
 }
 
+
+
+
+
+
+/**
+ * @brief Portable cast from uint8_t to int8_t.
+ *
+ * The C standard (C99, ISO/IEC 9899:1999) says that conversion from unsigned
+ * to signed integer has an implementation-defined result (when the unsigned
+ * value cannot be represented in the signed type). This function implements a
+ * cast from uint16_t to int16_t with implementation-independent result.
+ * Compilers should be able to easily translate this to efficient code.
+ */
+inline int8_t BoxInt8_From_UInt8(uint8_t x) {
+  return (x & (uint8_t) 0x80) ? -((int8_t) -x) : (int8_t) x;
+}
+
+/**
+ * @brief Portable cast from uint16_t to int16_t.
+ *
+ * Similar to BoxInt8_From_UInt8(), but works on 16 bit integers.
+ */
+inline int16_t BoxInt16_From_UInt16(uint16_t x) {
+  return (x & (uint16_t) 0x8000) ? -((int16_t) -x) : (int16_t) x;
+}
+
+/**
+ * @brief Portable cast from uint32_t to int32_t.
+ *
+ * Similar to BoxInt8_From_UInt8(), but works on 16 bit integers.
+ */
+inline int32_t BoxInt32_From_UInt32(uint32_t x) {
+  return (x & (uint32_t) 0x80000000) ? -((int32_t) -x) : (int32_t) x;
+}
+
+/**
+ * @brief Get the pointer to the value corresponding to an instruction
+ *    argument.
+ *
+ * @param vmx The virtual machine executor.
+ * @param gt The argument getter object.
+ * @return The pointer to the argument value.
+ */
+static void *BoxOpArgGetter_Get(BoxOpArgGetter *gt, BoxVMX *vmx) {
+  BoxTypeId t = vmx->idesc->t_id;
+  switch (gt->in_kind) {
+  case BOXOPCAT_GREG:
+    return vmx->global[t].ptr + gt->in_value*size_of_type[t];
+  case BOXOPCAT_LREG:
+    return vmx->local[t].ptr + gt->in_value*size_of_type[t];
+  case BOXOPCAT_PTR:
+    {
+      BoxPtr *ptr = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
+      gt->arg_data.val_ptr.block = ptr->block;
+      gt->arg_data.val_ptr.ptr = (char *) ptr->ptr + gt->in_value;
+      return gt->arg_data.val_ptr.ptr;
+    }
+  case BOXOPCAT_IMM:
+    switch ((int) t) {
+    case BOXTYPEID_CHAR:
+      gt->arg_data.val_char = (BoxChar) gt->in_value;
+      return & gt->arg_data.val_char;
+    case BOXTYPEID_INT:
+      gt->arg_data.val_int = (BoxInt) gt->in_value;
+      return & gt->arg_data.val_int;
+    case BOXTYPEID_REAL:
+      gt->arg_data.val_real = (BoxReal) gt->in_value;
+      return & gt->arg_data.val_real;
+    }
+  }
+
+  abort();
+  return NULL;
+}
+
+BoxBool BoxOpTranslator_Read(BoxOpExecutor *executor,
+                             BoxVMWord *bytecode, BoxOpDesc *op) {
+  BoxVMWord word1 = bytecode[0];
+  const BoxVMInstrDesc *exec_table = executor->vmx->vm->exec_table;
+
+  if (word1 & 0x1) {
+    /* Long format. */
+    op->args_type = (word1 >> 1) & 0xf;
+    op->size = word1 >> 5;
+    op->type = bytecode[1];
+    if (op->type < BOX_NUM_OPS) {
+      const BoxVMInstrDesc *idesc = & exec_table[op->type];
+      executor->vmx->idesc = idesc;
+      executor->vmx->flags.is_long = 1;
+      executor->vmx->i_eye = word1;
+      executor->vmx->i_pos = bytecode + 2;
+      op->has_data = idesc->has_data;
+      op->num_args = idesc->num_args;
+      if (idesc->num_args == 2) {
+        op->args[0] = (BoxInt) BoxInt32_From_UInt32(bytecode[2]);
+        op->args[1] = (BoxInt) BoxInt32_From_UInt32(bytecode[3]);
+        op->tail = & bytecode[4];
+      } else if (idesc->num_args == 1) {
+        op->args[0] = (BoxInt) BoxInt32_From_UInt32(bytecode[2]);
+        op->tail = & bytecode[3];
+      } else
+        op->tail = & bytecode[2];
+      return BOXBOOL_TRUE;
+    }
+
+  } else {
+    /* Short format. */
+    op->args_type = (word1 >> 1) & 0xf;
+    op->size = (word1 >> 5) & 0x7;
+    op->type = (word1 >> 8) & 0xff;
+    if (op->type < BOX_NUM_OPS) {
+      const BoxVMInstrDesc *idesc = & exec_table[op->type];
+      executor->vmx->idesc = idesc;
+      executor->vmx->flags.is_long = 0;
+      executor->vmx->i_eye = word1 >> 8;
+      executor->vmx->i_pos = bytecode + 1;
+      op->tail = & bytecode[1];
+      op->has_data = idesc->has_data;
+      op->num_args = idesc->num_args;
+      if (idesc->num_args == 2) {
+        op->args[0] = (BoxInt) BoxInt8_From_UInt8(word1 >> 16);
+        op->args[1] = (BoxInt) BoxInt8_From_UInt8(word1 >> 24);
+      } else if (idesc->num_args == 1)
+        op->args[0] = (BoxInt) BoxInt8_From_UInt8(word1 >> 16);
+      return BOXBOOL_TRUE;
+    }
+  }
+
+  return BOXBOOL_FALSE;
+}
+
+void BoxOpTranslator_Exec(BoxOpExecutor *executor, BoxOpDesc *op) {
+  BoxVMX *vmx = executor->vmx;
+  if (op->num_args == 2) {
+      executor->arg[0].in_kind = op->args_type & 0x3;
+      executor->arg[0].in_value = op->args[0];
+      executor->arg[1].in_kind = (op->args_type >> 2) & 0x3;
+      executor->arg[1].in_value = op->args[1];
+      vmx->arg1 = BoxOpArgGetter_Get(& executor->arg[0], vmx);
+      vmx->arg2 = BoxOpArgGetter_Get(& executor->arg[1], vmx);
+  } else if (op->num_args == 1) {
+      executor->arg[0].in_kind = op->args_type & 0x3;
+      executor->arg[0].in_value = op->args[0];
+      vmx->arg1 = BoxOpArgGetter_Get(& executor->arg[0], vmx);
+      if (op->has_data)
+        vmx->arg2 = op->tail;
+  } else {
+    if (op->has_data)
+      vmx->arg1 = op->tail;
+  }
+}
+
+
 /* Execute the module number m of program vmp.
  * If initial != NULL, *initial is the initial status of the virtual machine.
  */
@@ -366,7 +521,6 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
   BoxVM *vmp = vmx->vm;
   BoxVMX this_vmx;
 
-  const BoxVMInstrDesc *exec_table = vmp->exec_table;
   BoxVMProcTable *pt = & vmp->proc_table;
   BoxVMProcInstalled *p;
   BoxVMWord *i_pos, *i_pos0;
@@ -429,52 +583,30 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
   executor.vmx = & this_vmx;
 
   do {
-    int is_long;
-    BoxVMWord i_eye;
-
 #if DEBUG_EXEC == 1
     fprintf(stderr, "module = "SInt", pos = "SInt" - reading instruction.\n",
             call_num, i*sizeof(BoxVMWord));
 #endif
 
-    /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
-    BOXVM_READ_OP_FORMAT(this_vmx.i_pos, i_eye, is_long);
-
-    if (is_long)
-      BOXVM_READ_LONGOP_HEADER(this_vmx.i_pos, i_eye, this_vmx.i_type,
-                               this_vmx.i_len, this_vmx.arg_type);
-
-    else
-      BOXVM_READ_SHORTOP_HEADER(this_vmx.i_pos, i_eye, this_vmx.i_type,
-                                this_vmx.i_len, this_vmx.arg_type);
-
-    this_vmx.i_eye = i_eye;
-    this_vmx.flags.is_long = is_long;
-
-    if (this_vmx.i_type >= BOX_NUM_OPS) {
+    if (!BoxOpTranslator_Read(& executor, this_vmx.i_pos, & this_vmx.op)) {
       MSG_ERROR("Unknown VM instruction!");
       vmp->vmcur = vmx;
       return BOXTASK_FAILURE;
     }
 
-    /* Trovo il descrittore di istruzione */
-    this_vmx.idesc = & exec_table[this_vmx.i_type];
-
-    /* Localizza in memoria gli argomenti */
-    if (this_vmx.idesc->numargs > 0)
-      this_vmx.idesc->get_args(& executor);
+    BoxOpTranslator_Exec(& executor, & this_vmx.op);
 
     /* Esegue l'istruzione */
     if (!this_vmx.flags.error)
       this_vmx.idesc->execute(& this_vmx);
 
     /* Advance to the next instruction...
-     * vm.i_len can be modified by 'vm.idesc->execute(vmp)' when executing
+     * op.size can be modified by 'vm.idesc->execute(vmp)' when executing
      * instructions such as 'jmp' or 'jc'
      */
-    this_vmx.i_pos = (i_pos += this_vmx.i_len);
+    this_vmx.i_pos = (i_pos += this_vmx.op.size);
 #if DEBUG_EXEC == 1
-    i += this_vmx.i_len;
+    i += this_vmx.op.size;
 #endif
 
   } while (!this_vmx.flags.exit);

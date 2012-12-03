@@ -119,6 +119,10 @@ struct BoxOpInfo_struct {
 struct BoxVMInstrDesc_struct {
   const char         *name;    /**< Instruction name */
   BoxUInt            numargs;  /**< Number of arguments */
+
+  int                num_args; /**< Number of proper arguments. */
+  int                has_data; /**< Whether this instruction has attached
+                                    data. */
   BoxTypeId          t_id;     /**< Type of the arguments (all have the
                                     same type) */
   BoxVMOpArgsGetter  get_args; /**< Per trattare gli argomenti */
@@ -178,9 +182,9 @@ struct BoxVMX_struct {
 
   BoxVMWord   *i_pos,     /**< Pointer to the current instruction */
               i_eye;      /**< Execution "eye" (last four bytes processed) */
-  BoxUInt     i_type,     /**< Type of instruction */
-              i_len,      /**< Size of instruction */
-              arg_type;   /**< Type of arguments of instruction */
+
+  BoxOpDesc   op;
+
   const BoxVMInstrDesc
               *idesc;     /**< Descriptor for current instruction */
 
@@ -317,104 +321,6 @@ void BoxVM_Backtrace_Clear(BoxVM *vm);
  * of the program.
  */
 void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream);
-
-/* Read the first 4 bytes (BoxVMWord), extract the format bit and put the "rest"
- * in the i_eye (which should be defined as 'register BoxVMWord i_eye;')
- * is_long tells if the instruction is encoded with the packed format (4 bytes)
- * or with the long format (> 4 bytes). To read / write an instruction
- * represented with the packed format one should use the macros
- * ASM_SHORT_GET_* / ASM_SHORT_PUT_*. To read / write an instruction written
- * with the long format one should use instead the macros MY_ASM_LONG_GET_* /
- * MY_ASM_LONG_PUT_*
- */
-#define BOXVM_READ_OP_FORMAT(i_pos, i_eye, is_long) \
-  do {i_eye = *(i_pos++); is_long = (i_eye & 0x1); i_eye >>= 1;} while(0)
-
-/* SHORT INSTRUCTION: we assemble the istruction header in the following way:
- * (note: 1 is represented with bit 0 = 1 and all other bits = 0)
- *  bit 0: true if the instruction is long
- *  bit 1-4: type of arguments
- *  bit 5-7: length of instruction
- *  bit 8-15: type of instruction
- *  (bit 16-23: left empty for argument 1)
- *  (bit 24-31: left empty for argument 2)
- */
-#define BOXVM_WRITE_SHORTOP_HEADER(i_pos, i_eye, i_type, is_long, i_len, \
-                                   arg_type) \
-  do {i_eye = (((i_type) & 0xff) << 3 | ((i_len)  & 0x7)) << 4 \
-              | ((arg_type) & 0xf);                            \
-      i_eye = i_eye << 1 | ((is_long) & 0x1);} while(0)
-
-#define BOXVM_WRITE_SHORTOP_1ARG(i_pos, i_eye, arg) \
-  do {*((i_pos)++) = ((arg) & 0xff) << 16 | (i_eye);} while(0)
-
-#define BOXVM_WRITE_SHORTOP_2ARGS(i_pos, i_eye, arg1, arg2) \
-  do {*(i_pos++) = i_eye = \
-      (((arg2) & 0xff)<<8 | ((arg1) & 0xff))<<16 | i_eye;} while(0)
-
-#define BOXVM_READ_SHORTOP_HEADER(i_pos, i_eye, i_type, i_len, arg_type) \
-  do {arg_type = i_eye & 0xf; i_len = (i_eye >>= 4) & 0x7; \
-      i_type = (i_eye >>= 3) & 0xff; } while(0)
-
-#define BOXVM_READ_SHORTOP_1ARG(i_pos, i_eye, arg) \
-  do {arg = (signed char) ((i_eye >>= 8) & 0xff);} while(0)
-
-#define BOXVM_READ_SHORTOP_2ARGS(i_pos, i_eye, arg1, arg2) \
-  do {arg1 = (signed char) ((i_eye >>= 8) & 0xff); \
-      arg2 = (signed char) ((i_eye >>= 8) & 0xff);} while(0)
-
-/* LONG INSTRUCTION: we assemble the istruction header in the following way:
- *  FIRST FOUR BYTES:
- *    bit 0: true if the instruction is long
- *    bit 1-4: type of arguments
- *    bit 5-31: length of instruction
- *  SECOND FOUR BYTES:
- *    bit 0-31: type of instruction
- *  (THIRD FOUR BYTES: argument 1)
- *  (FOURTH FOUR BYTES: argument 2)
- */
-#define BOXVM_WRITE_LONGOP_HEADER(i_pos, i_eye, i_type, is_long, i_len, \
-                                  arg_type)                             \
-  do {i_eye = ((i_len) & 0x07ff)<<4 | ((arg_type) & 0xf);               \
-      i_eye = i_eye<<1 | ((is_long) & 0x1);                             \
-      *(i_pos++) = i_eye; *(i_pos++) = i_type;} while(0)
-
-#define BOXVM_READ_LONGOP_HEADER(i_pos, i_eye, i_type, i_len, arg_type) \
-  do {(arg_type) = (i_eye) & 0xf; i_len = ((i_eye) >>= 4);              \
-      (i_type) = *((i_pos)++);} while(0)
-
-#define BOXVM_READ_LONGOP_1ARG(i_pos, i_eye, arg) \
-  do {arg = i_eye = *((i_pos)++);} while(0)
-
-#define BOXVM_READ_LONGOP_2ARGS(i_pos, i_eye, arg1, arg2) \
-  do {arg1 = *(i_pos++); arg2 = i_eye = *(i_pos++);} while(0)
-
-#define BOXVM_READ_OP_HEADER(op_ptr, op_word, op_type, op_size,         \
-                             op_arg_type, op_is_long)                   \
-  do {                                                                  \
-    BOXVM_READ_OP_FORMAT((op_ptr), (op_word), (op_is_long));            \
-    if ((op_is_long))                                                   \
-      BOXVM_READ_LONGOP_HEADER((op_ptr), (op_word), (op_type),          \
-                               (op_size), (op_arg_type));               \
-    else                                                                \
-      BOXVM_READ_SHORTOP_HEADER((op_ptr), (op_word), (op_type),         \
-                                (op_size), (op_arg_type));              \
-  } while(0)
-
-
-
-#if 0
-#define BOXVM_READ_SHORTOP_HEADER(i_pos, i_eye, i_type, i_len, arg_type) \
-  do {arg_type = i_eye & 0xf; i_len = (i_eye >>= 4) & 0x7; \
-      i_type = (i_eye >>= 3) & 0xff; } while(0)
-#endif
-
-
-
-
-
-
-
 
 /** Get the parent of the current combination (this is something with type
  * ``BoxPtr *``.
