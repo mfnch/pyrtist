@@ -174,19 +174,13 @@ struct BoxVMX_struct {
   struct {
     unsigned int
               error   :1, /**< Error detected */
-              exit    :1, /**< Exit current execution frame */
-              is_long :1; /**< Instruction is in long format */
-
+              exit    :1; /**< Exit current execution frame */
   } flags;                /**< Execution flags */
-
-  BoxVMWord   *i_pos,     /**< Pointer to the current instruction */
-              i_eye;      /**< Execution "eye" (last four bytes processed) */
-
-  BoxOpDesc   op;
 
   const BoxVMInstrDesc
               *idesc;     /**< Descriptor for current instruction */
 
+  BoxInt      op_size;
   void        *arg1,
               *arg2;      /**< Pointer to instruction arguments */
 

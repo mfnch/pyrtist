@@ -471,12 +471,12 @@ static void My_Exec_Pop_O(BoxVMX *vmx) {
 }
 
 static void My_Exec_Jmp_I(BoxVMX *vmx) {
-  vmx->op.size = *((BoxInt *) vmx->arg1);
+  vmx->op_size = *((BoxInt *) vmx->arg1);
 }
 
 static void My_Exec_Jc_I(BoxVMX *vmx) {
   if (*((BoxInt *) vmx->local[TYPE_INT].ptr))
-    vmx->op.size = *((BoxInt *) vmx->arg1);
+    vmx->op_size = *((BoxInt *) vmx->arg1);
 }
 
 static void My_Exec_Add_O(BoxVMX *vmx) {

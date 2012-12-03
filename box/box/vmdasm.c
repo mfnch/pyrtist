@@ -252,49 +252,54 @@ BoxVMOpDisasm BoxVM_Get_ArgDAsm_From_Str(const char *s) {
  * instruction.
  */
 BoxTask BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
-                                BoxVMDasmIter iter, void *pass)
-{
+                                BoxVMDasmIter iter, void *pass) {
   BoxVMDasm dasm;
   const BoxVMInstrDesc *exec_table = vm->exec_table;
+  BoxOpExecutor executor;
+  BoxOpDesc op;
 
   dasm.vm = vm;
   dasm.flags.exit_now = 0;
   dasm.flags.report_error = 0;
 
-  for (dasm.op_pos = 0; dasm.op_pos < dim;)
-  {
-    BoxUInt op_type, op_arg_type, op_size;
+  for (dasm.op_pos = 0; dasm.op_pos < dim;) {
     BoxTask outcome;
 
     dasm.op_ptr = & ((BoxVMWord *) prog)[dasm.op_pos];
 
-    /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
-    BOXVM_READ_OP_HEADER(dasm.op_ptr, dasm.op_word, op_type, op_size,
-                         op_arg_type, dasm.flags.op_is_long);
+#if 1
+    if (!BoxOpTranslator_Read(& executor, dasm.op_ptr, & op))
+      return BOXTASK_FAILURE;
 
-    dasm.op_size = op_size;
-    dasm.op_arg_type = op_arg_type;
+#else
+    /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
+    BOXVM_READ_OP_HEADER(dasm.op_ptr, dasm.op_word, op.type, op.size,
+                         op.args_type, dasm.flags.op_is_long);
+#endif
+
+    dasm.op_size = op.size;
+    dasm.op_arg_type = op.args_type;
 
 #if DEBUG_VM_D_EVERY_ONE
     printf("Instruction at position "SUInt" (%p): "
            "{is_long = %d, length = "SUInt", type = "SUInt
            ", arg_type = "SUInt")\n",
            dasm.op_pos, dasm.op_ptr, dasm.flags.op_is_long,
-           op_size, op_type, op_arg_type);
+           op.size, op.type, op.arg_type);
 #endif
 
-    dasm.op_desc = ((op_type >= 0 || op_type < BOX_NUM_OPS) ?
-                    & exec_table[op_type] : NULL);
+    dasm.op_desc = ((op.type >= 0 || op.type < BOX_NUM_OPS) ?
+                    & exec_table[op.type] : NULL);
  
     outcome = iter(& dasm, pass);
     if (outcome != BOXTASK_OK)
       return outcome;
 
     /* Move to the next instruction */
-    if (dasm.op_size < 1)
+    if (op.size < 1)
       return BOXTASK_FAILURE;
 
-    dasm.op_pos += dasm.op_size;
+    dasm.op_pos += op.size;
   }
 
   return BOXTASK_OK;
