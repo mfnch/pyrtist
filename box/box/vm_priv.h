@@ -125,7 +125,6 @@ struct BoxVMInstrDesc_struct {
                                     data. */
   BoxTypeId          t_id;     /**< Type of the arguments (all have the
                                     same type) */
-  BoxVMOpArgsGetter  get_args; /**< Per trattare gli argomenti */
   BoxVMOpExecutor    execute;  /**< Per eseguire l'istruzione */
   BoxVMOpDisasm      disasm;   /**< Per disassemblare gli argomenti */
 };

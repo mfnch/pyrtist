@@ -54,9 +54,4 @@ typedef struct {
  */
 typedef void (*BoxVMOpExecutor)(BoxVMX *vmx);
 
-/**
- * Prototype of function to retrieve the arguments of a VM instruction.
- */
-typedef void (*BoxVMOpArgsGetter)(BoxOpExecutor *vmx);
-
 #endif /* _BOX_VMEXEC_PRIV_H */
