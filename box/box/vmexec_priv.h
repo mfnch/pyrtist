@@ -28,28 +28,6 @@
 #  include <box/core.h>
 
 /**
- * @brief Datastructure used to parse one single instruction argument.
- */
-typedef struct {
-  int       in_kind;  /**< Input argument kind. */
-  BoxInt    in_value; /**< Input argument value. */
-  union {
-    BoxChar val_char; /**< Value for Char registers. */
-    BoxInt  val_int;  /**< Value for Int registers. */
-    BoxReal val_real; /**< Value for Real registers. */
-    BoxPtr  val_ptr;  /**< Value for Ptr registers. */
-  }         arg_data; /**< Data associated to the argument. */
-} BoxOpArgGetter;
-
-/**
- * @brief Datastructure used to execute one VM instruction.
- */
-typedef struct {
-  BoxVMX         *vmx;
-  BoxOpArgGetter arg[2];
-} BoxOpExecutor;
-
-/**
  * Prototype of function which implements a VM instruction.
  */
 typedef void (*BoxVMOpExecutor)(BoxVMX *vmx);

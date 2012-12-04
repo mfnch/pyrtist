@@ -163,6 +163,19 @@ typedef struct {
 } BoxVMRegs;
 
 /**
+ * @brief Datastructure used to parse one single instruction argument.
+ */
+typedef struct {
+  void      *ptr;     /**< Pointer to argument value. */
+  union {
+    BoxChar val_char; /**< Value for Char registers. */
+    BoxInt  val_int;  /**< Value for Int registers. */
+    BoxReal val_real; /**< Value for Real registers. */
+    BoxPtr  val_ptr;  /**< Value for Ptr registers. */
+  }         data;     /**< Data associated to the argument. */
+} BoxOpArg;
+
+/**
  * This structure contains all the data which define the status for the VM.
  * Status is allocated by VM_Module_Execute() inside its stack.
  */
@@ -181,8 +194,8 @@ struct BoxVMX_struct {
               *idesc;     /**< Descriptor for current instruction */
 
   BoxInt      op_size;
-  void        *arg1,
-              *arg2;      /**< Pointer to instruction arguments */
+
+  BoxOpArg    arg1, arg2; /**< Instruction arguments. */
 
   BoxVMRegs   local[NUM_TYPES], /**< Local register allocation status */
               *global;          /**< Global register allocation status */
@@ -290,9 +303,11 @@ BOXEXPORT void
 BoxVM_Finish(BoxVM *vm);
 
 /** Provide a failure message for a raised exception. */
-BOXEXPORT void BoxVMX_Set_Fail_Msg(BoxVMX *vm, const char *msg);
+BOXEXPORT void
+BoxVMX_Set_Fail_Msg(BoxVMX *vm, const char *msg);
 
-BOXEXPORT BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num);
+BOXEXPORT BoxTask
+BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num);
 
 /**
  * Similar to BoxVM_Module_Execute(), but takes also pointers to child

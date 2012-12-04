@@ -376,56 +376,54 @@ BoxTask BoxVM_Module_Execute_With_Args(BoxVMX *vmx, BoxVMCallNum cn,
  * @param gt The argument getter object.
  * @return The pointer to the argument value.
  */
-static void *BoxOpArgGetter_Get(BoxOpArgGetter *gt, BoxVMX *vmx) {
+static void BoxOpArg_Get(BoxOpArg *arg, BoxVMX *vmx, int form, BoxInt value) {
   BoxTypeId t = vmx->idesc->t_id;
-  switch (gt->in_kind) {
+  switch (form) {
   case BOXOPCAT_GREG:
-    return vmx->global[t].ptr + gt->in_value*size_of_type[t];
+    arg->ptr = vmx->global[t].ptr + value*size_of_type[t];
+    return;
   case BOXOPCAT_LREG:
-    return vmx->local[t].ptr + gt->in_value*size_of_type[t];
+    arg->ptr = vmx->local[t].ptr + value*size_of_type[t];
+    return;
   case BOXOPCAT_PTR:
     {
       BoxPtr *ptr = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
-      gt->arg_data.val_ptr.block = ptr->block;
-      gt->arg_data.val_ptr.ptr = (char *) ptr->ptr + gt->in_value;
-      return gt->arg_data.val_ptr.ptr;
+      arg->data.val_ptr.block = ptr->block;
+      arg->data.val_ptr.ptr = (char *) ptr->ptr + value;
+      arg->ptr = arg->data.val_ptr.ptr;
+      return;
     }
   case BOXOPCAT_IMM:
     switch ((int) t) {
     case BOXTYPEID_CHAR:
-      gt->arg_data.val_char = (BoxChar) gt->in_value;
-      return & gt->arg_data.val_char;
+      arg->data.val_char = (BoxChar) value;
+      arg->ptr = & arg->data.val_char;
+      return;
     case BOXTYPEID_INT:
-      gt->arg_data.val_int = (BoxInt) gt->in_value;
-      return & gt->arg_data.val_int;
+      arg->data.val_int = (BoxInt) value;
+      arg->ptr = & arg->data.val_int;
+      return;
     case BOXTYPEID_REAL:
-      gt->arg_data.val_real = (BoxReal) gt->in_value;
-      return & gt->arg_data.val_real;
+      arg->data.val_real = (BoxReal) value;
+      arg->ptr = & arg->data.val_real;
+      return;
     }
   }
 
   abort();
-  return NULL;
 }
 
-void BoxOpTranslator_Exec(BoxOpExecutor *executor, BoxOpDesc *op) {
-  BoxVMX *vmx = executor->vmx;
+void BoxOp_Get_Args(BoxOpDesc *op, BoxVMX *vmx) {
   if (op->num_args == 2) {
-      executor->arg[0].in_kind = op->args_type & 0x3;
-      executor->arg[0].in_value = op->args[0];
-      executor->arg[1].in_kind = (op->args_type >> 2) & 0x3;
-      executor->arg[1].in_value = op->args[1];
-      vmx->arg1 = BoxOpArgGetter_Get(& executor->arg[0], vmx);
-      vmx->arg2 = BoxOpArgGetter_Get(& executor->arg[1], vmx);
+    BoxOpArg_Get(& vmx->arg1, vmx, op->args_type & 0x3, op->args[0]);
+    BoxOpArg_Get(& vmx->arg2, vmx, (op->args_type >> 2) & 0x3, op->args[1]);
   } else if (op->num_args == 1) {
-      executor->arg[0].in_kind = op->args_type & 0x3;
-      executor->arg[0].in_value = op->args[0];
-      vmx->arg1 = BoxOpArgGetter_Get(& executor->arg[0], vmx);
-      if (op->has_data)
-        vmx->arg2 = op->tail;
+    BoxOpArg_Get(& vmx->arg1, vmx, op->args_type & 0x3, op->args[0]);
+    if (op->has_data)
+      vmx->arg2.ptr = op->tail;
   } else {
     if (op->has_data)
-      vmx->arg1 = op->tail;
+      vmx->arg1.ptr = op->tail;
   }
 }
 
@@ -441,7 +439,6 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
   BoxVMProcInstalled *p;
   BoxVMWord *i_pos, *i_pos0;
   BoxValue reg0[NUM_TYPES]; /* Registri locali numero zero */
-  BoxOpExecutor executor;
 
 #if DEBUG_EXEC == 1
   BoxInt i = 0;
@@ -496,8 +493,6 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
   i_pos0 = i_pos;
   this_vmx.flags.exit = this_vmx.flags.error = 0;
 
-  executor.vmx = & this_vmx;
-
   do {
     BoxOpDesc op;
 
@@ -506,13 +501,13 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
             call_num, i*sizeof(BoxVMWord));
 #endif
 
-    if (!BoxOpTranslator_Read(& executor, i_pos, & op)) {
+    if (!BoxOpTranslator_Read(& this_vmx, i_pos, & op)) {
       MSG_ERROR("Unknown VM instruction!");
       vmp->vmcur = vmx;
       return BOXTASK_FAILURE;
     }
 
-    BoxOpTranslator_Exec(& executor, & op);
+    BoxOp_Get_Args(& op, & this_vmx);
 
     /* Esegue l'istruzione */
     this_vmx.op_size = op.size;

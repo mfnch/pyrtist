@@ -255,7 +255,6 @@ BoxTask BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
                                 BoxVMDasmIter iter, void *pass) {
   BoxVMDasm dasm;
   const BoxVMInstrDesc *exec_table = vm->exec_table;
-  BoxOpExecutor executor;
   BoxOpDesc op;
 
   dasm.vm = vm;
@@ -268,7 +267,7 @@ BoxTask BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
     dasm.op_ptr = & ((BoxVMWord *) prog)[dasm.op_pos];
 
 #if 1
-    if (!BoxOpTranslator_Read(& executor, dasm.op_ptr, & op))
+    if (!BoxOpTranslator_Read(vm->vmcur, dasm.op_ptr, & op))
       return BOXTASK_FAILURE;
 
 #else

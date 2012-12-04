@@ -130,10 +130,10 @@ BoxInt32_From_UInt32(uint32_t x) {
  * structure containing all the information about the instruction.
  */
 static inline BoxBool
-BoxOpTranslator_Read(BoxOpExecutor *executor,
+BoxOpTranslator_Read(BoxVMX *vmx,
                      BoxVMWord *bytecode, BoxOpDesc *op) {
   BoxVMWord word1 = bytecode[0];
-  const BoxVMInstrDesc *exec_table = executor->vmx->vm->exec_table;
+  const BoxVMInstrDesc *exec_table = vmx->vm->exec_table;
 
   if (word1 & 0x1) {
     /* Long format. */
@@ -142,7 +142,7 @@ BoxOpTranslator_Read(BoxOpExecutor *executor,
     op->type = bytecode[1];
     if (op->type < BOX_NUM_OPS) {
       const BoxVMInstrDesc *idesc = & exec_table[op->type];
-      executor->vmx->idesc = idesc;
+      vmx->idesc = idesc;
       op->has_data = idesc->has_data;
       op->num_args = idesc->num_args;
       if (idesc->num_args == 2) {
@@ -164,7 +164,7 @@ BoxOpTranslator_Read(BoxOpExecutor *executor,
     op->type = (word1 >> 8) & 0xff;
     if (op->type < BOX_NUM_OPS) {
       const BoxVMInstrDesc *idesc = & exec_table[op->type];
-      executor->vmx->idesc = idesc;
+      vmx->idesc = idesc;
       op->tail = & bytecode[1];
       op->has_data = idesc->has_data;
       op->num_args = idesc->num_args;
