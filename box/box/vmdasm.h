@@ -66,6 +66,4 @@ BOXEXPORT BoxTask
  */
 typedef void (*BoxVMOpDisasm)(BoxVMDasm *dasm, char **out);
 
-BoxVMOpDisasm BoxVM_Get_ArgDAsm_From_Str(const char *s);
-
 #endif /* _BOX_VMDASM_H */

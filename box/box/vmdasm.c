@@ -35,49 +35,7 @@
  * Functions used to disassemble the instructions (see BoxVM_Disassemble)    *
  *****************************************************************************/
 
-/* Questa funzione serve a disassemblare gli argomenti di
- * un'istruzione di tipo GLPI-GLPI.
- * iarg e' una tabella di puntatori alle stringhe che corrisponderanno
- * agli argomenti disassemblati.
- */
-static void My_D_GLPI_GLPI(BoxVMDasm *dasm, char **out) {
-  int n, na = dasm->op_desc->numargs;
-  int arg_formats[2] = {dasm->op.args_type & 3, (dasm->op.args_type >> 2) & 3};
-  BoxInt arg_values[2];
-
-  for (n = 0; n < na; n++) {
-    int arg_format = arg_formats[n],
-        arg_type = dasm->op_desc->t_id;
-    BoxInt arg_value = arg_values[n], arg_abs_value = abs(arg_value);
-    char reg_char = "vr"[arg_value >= 0],
-         type_char = "cirpo"[arg_type];
-
-    switch(arg_format) {
-    case BOXCONTCATEG_GREG:
-      sprintf(out[n], "g%c%c" SInt, reg_char, type_char, arg_abs_value);
-      break;
-    case BOXCONTCATEG_LREG:
-      sprintf(out[n], "%c%c" SInt, reg_char, type_char, arg_abs_value);
-      break;
-    case BOXCONTCATEG_PTR:
-      if (arg_value < 0)
-        sprintf(out[n], "%c[ro0 - " SInt "]", type_char, arg_abs_value);
-      else if (arg_value == 0)
-        sprintf(out[n], "%c[ro0]", type_char);
-      else
-        sprintf(out[n], "%c[ro0 + " SInt "]", type_char, arg_abs_value);
-      break;
-    case BOXCONTCATEG_IMM:
-      if (arg_type == BOXTYPEID_CHAR)
-        arg_value = (BoxInt) ((BoxChar) arg_value);
-      sprintf(out[n], SInt, arg_value);
-      break;
-    default:
-      abort();
-    }
-  }
-}
-
+#if 0
 /* Analoga alla precedente, ma per istruzioni CALL. */
 void My_D_CALL(BoxVMDasm *dasm, char **out) {
   BoxUInt na = dasm->op_desc->numargs;
@@ -136,64 +94,6 @@ void My_D_JMP(BoxVMDasm *dasm, char **out) {
     My_D_GLPI_GLPI(dasm, out);
 }
 
-/* Analoga alla precedente, ma per istruzioni del tipo GLPI-Imm. */
-void My_D_GLPI_Imm(BoxVMDasm *dasm, char **out) {
-  BoxUInt iaf = dasm->op.args_type & 3, iat = dasm->op_desc->t_id;
-  BoxInt iai;
-  BoxVMWord *arg2;
-
-  assert(dasm->op_desc->numargs == 2);
-  assert(iat < 4);
-
-  arg2 = dasm->op_ptr;
-
-  /* Primo argomento */
-  {
-    BoxInt uiai = iai;
-    char rc, tc;
-    const char typechars[NUM_TYPES] = "cirpo";
-
-    tc = typechars[iat];
-    if (uiai < 0) {uiai = -uiai; rc = 'v';} else rc = 'r';
-    switch(iaf) {
-    case BOXCONTCATEG_GREG:
-      sprintf(out[0], "g%c%c" SInt, rc, tc, uiai);
-      break;
-    case BOXCONTCATEG_LREG:
-      sprintf(out[0], "%c%c" SInt, rc, tc, uiai);
-      break;
-    case BOXCONTCATEG_PTR:
-      if (iai < 0)
-        sprintf(out[0], "%c[ro0 - " SInt "]", tc, uiai);
-      else if (iai == 0)
-        sprintf(out[0], "%c[ro0]", tc);
-      else
-        sprintf(out[0], "%c[ro0 + " SInt "]", tc, uiai);
-      break;
-    case BOXCONTCATEG_IMM:
-      sprintf(out[0], SInt, iai);
-      break;
-    }
-  }
-
-  /* Secondo argomento */
-  switch (iat) {
-  case BOXTYPEID_CHAR:
-    sprintf(out[1], SChar, *((BoxChar *) arg2));
-    break;
-  case BOXTYPEID_INT:
-    sprintf(out[1], SInt, *((BoxInt *) arg2));
-    break;
-  case BOXTYPEID_REAL:
-    sprintf(out[1], SReal, *((BoxReal *) arg2));
-    break;
-  case BOXTYPEID_POINT:
-    sprintf(out[1], SPoint,
-            ((BoxPoint *) arg2)->x, ((BoxPoint *) arg2)->y);
-    break;
-  }
-}
-
 #define MY_COMBINE_CHARS(c1, c2, c3) \
   (((int) (c3)) | (((int) (c2)) << 8) | (((int) (c1)) << 16))
 
@@ -209,6 +109,9 @@ BoxVMOpDisasm BoxVM_Get_ArgDAsm_From_Str(const char *s) {
     return NULL;
   }
 }
+
+#endif
+
 
 /**
  * Disassemble a block of memory and call the given iterator for every

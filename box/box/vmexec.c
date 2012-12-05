@@ -759,7 +759,6 @@ const BoxVMInstrDesc *BoxVM_Get_Exec_Table(void) {
       dest->numargs = src->num_args;
       dest->t_id = My_Type_From_Char(src->arg_type);
       dest->execute = src->executor;
-      dest->disasm = BoxVM_Get_ArgDAsm_From_Str(src->disassembler);
 
       switch(sig) {
       case BOXOPSIGNATURE_NONE: dest->num_args = 0; dest->has_data = 0; break;
