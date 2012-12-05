@@ -42,26 +42,8 @@
  */
 static void My_D_GLPI_GLPI(BoxVMDasm *dasm, char **out) {
   int n, na = dasm->op_desc->numargs;
-  int arg_formats[2] = {dasm->op_arg_type & 3, (dasm->op_arg_type >> 2) & 3};
+  int arg_formats[2] = {dasm->op.args_type & 3, (dasm->op.args_type >> 2) & 3};
   BoxInt arg_values[2];
-  BoxVMWord op_word = dasm->op_word;
-
-  /* Recupero i numeri (interi) di registro/puntatore/etc. */
-  if (na == 1) {
-    if (dasm->flags.op_is_long)
-      BOXVM_READ_LONGOP_1ARG(dasm->op_ptr, op_word, arg_values[0]);
-    else
-      BOXVM_READ_SHORTOP_1ARG(dasm->op_ptr, op_word, arg_values[0]);
-
-  } else {
-    assert(na == 2);
-    if (dasm->flags.op_is_long)
-      BOXVM_READ_LONGOP_2ARGS(dasm->op_ptr, op_word,
-                              arg_values[0], arg_values[1]);
-    else
-      BOXVM_READ_SHORTOP_2ARGS(dasm->op_ptr, op_word,
-                               arg_values[0], arg_values[1]);
-  }
 
   for (n = 0; n < na; n++) {
     int arg_format = arg_formats[n],
@@ -99,18 +81,12 @@ static void My_D_GLPI_GLPI(BoxVMDasm *dasm, char **out) {
 /* Analoga alla precedente, ma per istruzioni CALL. */
 void My_D_CALL(BoxVMDasm *dasm, char **out) {
   BoxUInt na = dasm->op_desc->numargs;
-  BoxVMWord op_word = dasm->op_word;
 
   assert(na == 1);
 
-  if ((dasm->op_arg_type & 3) == BOXCONTCATEG_IMM) {
+  if ((dasm->op.args_type & 3) == BOXCONTCATEG_IMM) {
     int iat = dasm->op_desc->t_id;
     BoxInt call_num;
-
-    if (dasm->flags.op_is_long)
-      BOXVM_READ_LONGOP_1ARG(dasm->op_ptr, op_word, call_num);
-    else
-      BOXVM_READ_SHORTOP_1ARG(dasm->op_ptr, op_word, call_num);
 
     if (iat == TYPE_CHAR)
       call_num = (BoxInt) ((BoxChar) call_num);
@@ -145,16 +121,10 @@ void My_D_JMP(BoxVMDasm *dasm, char **out) {
 
   assert(na == 1);
 
-  if ((dasm->op_arg_type & 3) == BOXCONTCATEG_IMM) {
+  if ((dasm->op.args_type & 3) == BOXCONTCATEG_IMM) {
     int iat = dasm->op_desc->t_id;
     BoxInt m_num;
     BoxInt position;
-    BoxVMByte op_word = dasm->op_word;
-
-    if (dasm->flags.op_is_long)
-      BOXVM_READ_LONGOP_1ARG(dasm->op_ptr, op_word, m_num);
-    else
-      BOXVM_READ_SHORTOP_1ARG(dasm->op_ptr, op_word, m_num);
 
     if (iat == TYPE_CHAR)
       m_num = (BoxInt) ((BoxChar) m_num);
@@ -168,19 +138,12 @@ void My_D_JMP(BoxVMDasm *dasm, char **out) {
 
 /* Analoga alla precedente, ma per istruzioni del tipo GLPI-Imm. */
 void My_D_GLPI_Imm(BoxVMDasm *dasm, char **out) {
-  BoxUInt iaf = dasm->op_arg_type & 3, iat = dasm->op_desc->t_id;
+  BoxUInt iaf = dasm->op.args_type & 3, iat = dasm->op_desc->t_id;
   BoxInt iai;
   BoxVMWord *arg2;
-  BoxVMWord op_word = dasm->op_word;
 
   assert(dasm->op_desc->numargs == 2);
   assert(iat < 4);
-
-  /* Recupero il numero (intero) di registro/puntatore/etc. */
-  if (dasm->flags.op_is_long)
-    BOXVM_READ_LONGOP_1ARG(dasm->op_ptr, op_word, iai);
-  else
-    BOXVM_READ_SHORTOP_1ARG(dasm->op_ptr, op_word, iai);
 
   arg2 = dasm->op_ptr;
 
@@ -255,29 +218,18 @@ BoxTask BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
                                 BoxVMDasmIter iter, void *pass) {
   BoxVMDasm dasm;
   const BoxVMInstrDesc *exec_table = vm->exec_table;
-  BoxOpDesc op;
+  size_t op_pos;
 
   dasm.vm = vm;
   dasm.flags.exit_now = 0;
   dasm.flags.report_error = 0;
 
-  for (dasm.op_pos = 0; dasm.op_pos < dim;) {
+  for (op_pos = 0; op_pos < dim;) {
+    BoxVMWord *op_addr = & ((BoxVMWord *) prog)[op_pos];
     BoxTask outcome;
 
-    dasm.op_ptr = & ((BoxVMWord *) prog)[dasm.op_pos];
-
-#if 1
-    if (!BoxOpTranslator_Read(vm->vmcur, dasm.op_ptr, & op))
+    if (!BoxOpTranslator_Read(vm->vmcur, op_addr, & dasm.op))
       return BOXTASK_FAILURE;
-
-#else
-    /* Leggo i dati fondamentali dell'istruzione: tipo e lunghezza. */
-    BOXVM_READ_OP_HEADER(dasm.op_ptr, dasm.op_word, op.type, op.size,
-                         op.args_type, dasm.flags.op_is_long);
-#endif
-
-    dasm.op_size = op.size;
-    dasm.op_arg_type = op.args_type;
 
 #if DEBUG_VM_D_EVERY_ONE
     printf("Instruction at position "SUInt" (%p): "
@@ -287,18 +239,19 @@ BoxTask BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
            op.size, op.type, op.arg_type);
 #endif
 
-    dasm.op_desc = ((op.type >= 0 || op.type < BOX_NUM_OPS) ?
-                    & exec_table[op.type] : NULL);
+    dasm.op_pos = op_pos;
+    dasm.op_desc = ((dasm.op.type >= 0 || dasm.op.type < BOX_NUM_OPS) ?
+                    & exec_table[dasm.op.type] : NULL);
  
     outcome = iter(& dasm, pass);
     if (outcome != BOXTASK_OK)
       return outcome;
 
     /* Move to the next instruction */
-    if (op.size < 1)
+    if (dasm.op.size < 1)
       return BOXTASK_FAILURE;
 
-    dasm.op_pos += op.size;
+    op_pos += dasm.op.size;
   }
 
   return BOXTASK_OK;

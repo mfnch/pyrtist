@@ -30,6 +30,7 @@
 #  include <box/types.h>
 #  include <box/vm.h>
 #  include <box/vmdasm.h>
+#  include <box/vmop_priv.h>
 
 /**
  * Object used to control the disassembling of VM code.
@@ -45,12 +46,12 @@ struct BoxVMDasm_struct {
   BoxVM          *vm;             /**< VM which is being processed. */
 
   BoxVMWord      *op_ptr;         /**< Pointer to the current word. */
-  BoxVMWord      op_word;         /**< The current word. */
   size_t         op_pos;          /**< Position in the buffer. */
-  size_t         op_size;         /**< Size of the instruction. */
+
+  BoxOpDesc      op;
+
   const BoxVMInstrDesc
                  *op_desc;        /**< Descriptor for current instruction. */
-  BoxUInt        op_arg_type;
 };
 
 #endif /* _BOX_VMDASM_PRIVATE_H */
