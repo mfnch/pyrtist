@@ -31,7 +31,6 @@
 typedef struct {
   BoxVMWord *bytecode;
   FILE      *output;
-  char      *arg[VM_MAX_NUMARGS];
 } MyDasmData;
 
 
@@ -150,17 +149,9 @@ static BoxTask My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
  * da tradurre (espresso in "numero di BoxVMWord").
  */
 BoxTask BoxVM_Disassemble(BoxVM *vm, FILE *output,
-                          const void *prog, size_t dim)
-{
+                          const void *prog, size_t dim) {
   MyDasmData data;
-  char iarg_buffers[VM_MAX_NUMARGS][64]; /* max 64 characters per argument */
-
-  size_t i;
-
   data.output = output;
   data.bytecode = (void *) prog;
-  for (i = 0; i < VM_MAX_NUMARGS; i++)
-    data.arg[i] = iarg_buffers[i];
-
   return BoxVM_Disassemble_Block(vm, prog, dim, My_Op_Dasm, & data);
 }
