@@ -40,7 +40,7 @@ static BoxTask Assemble_Jmp(BoxVM *vmp, BoxVMSymID sym_id, BoxUInt sym_type,
                             int defined, void *def, size_t def_size,
                             void *ref, size_t ref_size) {
   BoxInt rel_position = 0;
-  BoxOp asm_code = BOXOP_JC_I;
+  BoxOpId asm_code = BOXOP_JC_I;
   VMSymLabelRef *label_ref = ref;
 
   assert(sym_type == BOXVMSYMTYPE_COND_JMP);

@@ -107,15 +107,6 @@ typedef char BoxVMSByte;
 
 typedef uint64_t BoxVMWord;
 
-typedef struct {
-  BoxVMWord args_type, /**< Type of arguments of instruction. */
-            type;      /**< Type of instruction. */
-  int       has_data;
-  BoxVMWord *tail;
-  BoxInt    size;      /**< Advance offset. */
-  int       num_args;  /**< Number of arguments. */
-  BoxInt    args[2];   /**< Raw argument values. */
-} BoxOpDesc;
 
 #  define BoxVMWord_Fmt "%8.8lx"
 
@@ -154,7 +145,7 @@ typedef enum {
   BOXOP_ADD_O, BOXOP_TYPEOF_I, BOXOP_BOX_O, BOXOP_BOX_OO, BOXOP_UNBOX_O,
   BOXOP_DYCALL_OO,
   BOX_NUM_OPS
-} BoxOp;
+} BoxOpId;
 
 /** Generic opcodes (type independent) */
 typedef enum {
@@ -184,9 +175,14 @@ typedef enum {
 } BoxVMAttr;
 
 /**
+ * @brief Datastructure representing one instruction to be read/written.
+ */
+typedef struct BoxOp_struct BoxOp;
+
+/**
  * Object describing a Box VM instruction characteristics.
  */
-typedef struct BoxVMInstrDesc_struct BoxVMInstrDesc;
+typedef struct BoxOpDesc_struct BoxOpDesc;
 
 /**
  * @brief Allocate space for a #BoxVM object and initialise it with
@@ -275,9 +271,9 @@ BOXEXPORT int BoxVM_Set_Force_Long(BoxVM *vm, int force_long);
 BOXEXPORT void BoxVM_ASettings(BoxVM *vmp, int forcelong, int error,
                                int inhibit);
 
-BOXEXPORT void BoxVM_VA_Assemble(BoxVM *vm, BoxOp instr, va_list ap);
+BOXEXPORT void BoxVM_VA_Assemble(BoxVM *vm, BoxOpId instr, va_list ap);
 
-BOXEXPORT void BoxVM_Assemble(BoxVM *vmp, BoxOp instr, ...);
+BOXEXPORT void BoxVM_Assemble(BoxVM *vmp, BoxOpId instr, ...);
 
 /** Similar to VM_Assemble, but use the long bytecode format. */
 #define BoxVM_Assemble_Long(vm, instr, ...)                     \

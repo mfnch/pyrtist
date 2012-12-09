@@ -337,7 +337,7 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p) {
   }
 }
 
-void BoxVMCode_Raw_VA_Assemble(BoxVMCode *p, BoxOp op, va_list ap) {
+void BoxVMCode_Raw_VA_Assemble(BoxVMCode *p, BoxOpId op, va_list ap) {
   BoxVMProcID proc_id, previous_target;
   BoxVMCode_Begin(p); /* Begin the procedure, if not done explicitly */
   proc_id = BoxVMCode_Get_ProcID(p);
@@ -346,7 +346,7 @@ void BoxVMCode_Raw_VA_Assemble(BoxVMCode *p, BoxOp op, va_list ap) {
   (void) BoxVM_Proc_Target_Set(p->cmp->vm, previous_target);
 }
 
-void BoxVMCode_Raw_Assemble(BoxVMCode *p, BoxOp op, ...) {
+void BoxVMCode_Raw_Assemble(BoxVMCode *p, BoxOpId op, ...) {
   va_list ap;
   va_start(ap, op);
   BoxVMCode_Raw_VA_Assemble(p, op, ap);
@@ -411,7 +411,7 @@ static BoxInt My_Int_Val_From_Cont(const BoxCont *c) {
  *  - there are no immediates in the operands (such as cs[1] -> 1.2345).
  * Moreover this function does not deal with implicit input/output registers.
  */
-static void My_Unsafe_Assemble(BoxVMCode *p, BoxOp op,
+static void My_Unsafe_Assemble(BoxVMCode *p, BoxOpId op,
                                int num_args, const BoxCont **cs) {
   assert(num_args >= 0 && num_args <= 2);
   if (num_args == 0) {

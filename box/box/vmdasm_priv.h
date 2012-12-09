@@ -37,21 +37,17 @@
  */
 struct BoxVMDasm_struct {
   struct {
-    unsigned int exit_now     :1, /**< Exit from the disassembly loop. */
-                 report_error :1, /**< Trigger the error condition. */
-                 op_is_long   :1; /**< Whether the instruction is long. */
+    unsigned int  exit_now     :1, /**< Exit from the disassembly loop. */
+                  report_error :1, /**< Trigger the error condition. */
+                  op_is_long   :1; /**< Whether the instruction is long. */
 
-  }              flags;
+  }               flags;
 
-  BoxVM          *vm;             /**< VM which is being processed. */
-
-  BoxVMWord      *op_ptr;         /**< Pointer to the current word. */
-  size_t         op_pos;          /**< Position in the buffer. */
-
-  BoxOpDesc      op;
-
-  const BoxVMInstrDesc
-                 *op_desc;        /**< Descriptor for current instruction. */
+  BoxVM           *vm;             /**< VM which is being processed. */
+  BoxVMWord       *op_ptr;         /**< Pointer to the current word. */
+  size_t          op_pos;          /**< Position in the buffer. */
+  BoxOp           op;              /**< Current instruction. */
+  const BoxOpDesc *op_desc;        /**< Descriptor for current instruction. */
 };
 
 #endif /* _BOX_VMDASM_PRIVATE_H */

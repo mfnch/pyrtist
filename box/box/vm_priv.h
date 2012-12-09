@@ -41,15 +41,6 @@
 
 #  include <box/vmexec_priv.h>
 
-/** Here is a list of builtin types. */
-typedef enum {
-  TYPE_NONE           = -1,
-  TYPE_CHAR           =  0,
-  TYPE_INT            =  1,
-  TYPE_REAL           =  2,
-  TYPE_POINT          =  3,
-  TYPE_OBJ            =  4,
-} TypeID;
 
 /**
  * Structure used in BoxOpInfo to list the input and output registers
@@ -94,7 +85,7 @@ typedef struct BoxOpInfo_struct BoxOpInfo;
  * @brief Structure containing detailed information about one VM operation.
  */
 struct BoxOpInfo_struct {
-  BoxOp      opcode;       /**< Opcode for the operation */
+  BoxOpId    opcode;       /**< Opcode for the operation */
   BoxGOp     g_opcode;     /**< Generic opcode */
   BoxOpInfo  *next;        /**< Next operation with the same generic opcode */
   const char *name;        /**< Literal name of the opcode (a string) */
@@ -114,9 +105,9 @@ struct BoxOpInfo_struct {
 };
 
 /**
- * Content of a BoxVMInstrDesc object.
+ * Content of a BoxOpDesc object.
  */
-struct BoxVMInstrDesc_struct {
+struct BoxOpDesc_struct {
   const char         *name;    /**< Instruction name */
   BoxUInt            numargs;  /**< Number of arguments */
 
@@ -142,9 +133,6 @@ typedef enum {
   BOXOPCAT_PTR,
   BOXOPCAT_IMM
 } BoxOpCat;
-
-/* Numero massimo degli argomenti di un'istruzione */
-#  define VM_MAX_NUMARGS 2
 
 /** Item used in a backtrace to identify where the exception caused the
  * particular function to exit.
@@ -189,7 +177,7 @@ struct BoxVMX_struct {
               exit    :1; /**< Exit current execution frame */
   } flags;                /**< Execution flags */
 
-  const BoxVMInstrDesc
+  const BoxOpDesc
               *idesc;     /**< Descriptor for current instruction */
 
   BoxInt      op_size;
@@ -234,7 +222,7 @@ struct BoxVM_struct {
   BoxPtr    *box_vm_current,
             *box_vm_arg1;
 
-  const BoxVMInstrDesc
+  const BoxOpDesc
             *exec_table;    /**< Table collecting info about the instructions
                                  which are useful for execution. */
 
@@ -281,7 +269,7 @@ BoxOpInfo *BoxVM_Get_Op_Info(BoxVM *vm, BoxGOp g_op);
 void BoxOpInfo_Print(FILE *out, BoxOpInfo *oi);
 
 /** (Internal) Get the execution table for the Box VM instructions. */
-const BoxVMInstrDesc *BoxVM_Get_Exec_Table(void);
+const BoxOpDesc *BoxVM_Get_Exec_Table(void);
 
 /** This is the type of the C functions which can be called by the VM. */
 typedef BoxTask (*BoxVMFunc)(BoxVMX *);

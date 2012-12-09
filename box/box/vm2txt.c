@@ -34,7 +34,6 @@ typedef struct {
 } MyDasmData;
 
 
-
 static void 
 My_Arg_To_Str(char *out, size_t out_size,
               int arg_format, BoxTypeId args_type, BoxInt arg_value) {
@@ -91,12 +90,12 @@ static void My_Data_To_Str(char *out, size_t out_size,
 static BoxTask My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
   MyDasmData *data = pass;
   FILE *output = data->output;
-  BoxOpDesc *op = & dasm->op;
+  BoxOp *op = & dasm->op;
   const char *op_name;
   int num_args;
 
   if (dasm->op_desc) {
-    op_name = dasm->op_desc->name;   /* op name */
+    op_name  = dasm->op_desc->name;      /* op name */
     num_args = dasm->op_desc->num_args;  /* num. of args */
 
    } else {
@@ -117,16 +116,16 @@ static BoxTask My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
     int i;
     char *sep = " ";
 
-    assert(num_args <= VM_MAX_NUMARGS);
+    assert(num_args <= BOX_OP_MAX_NUM_ARGS);
     
     for (i = 0; i < num_args; i++, sep = ", ") {
       My_Arg_To_Str(arg_buffer, arg_buffer_size,
-                    (op->args_type >> (2*i)) & 0x3, t, op->args[i]);
+                    (op->args_forms >> (2*i)) & 0x3, t, op->args[i]);
       fprintf(output, "%s%s", sep, arg_buffer);
     }
 
     if (op->has_data) {
-      My_Data_To_Str(arg_buffer, arg_buffer_size, t, op->tail);
+      My_Data_To_Str(arg_buffer, arg_buffer_size, t, op->data);
       fprintf(output, "%s%s", sep, arg_buffer);
     }
   }
@@ -136,7 +135,7 @@ static BoxTask My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
   /* Print the remaining instruction words in hex. */
   if (dasm->vm->attr.hexcode) {
     size_t i;
-    for (i = 1; i < dasm->op.size; i++)
+    for (i = 1; i < dasm->op.next; i++)
       fprintf(output, "\t"BoxVMWord_Fmt"\n",
               data->bytecode[dasm->op_pos + i]);
   }

@@ -286,7 +286,7 @@ BoxVM_Alloc_Global_Regs(BoxVM *vm, BoxInt num_var[], BoxInt num_reg[]) {
     }
   }
 
-  reg_obj = (BoxPtr *) vm->global[TYPE_OBJ].ptr;
+  reg_obj = (BoxPtr *) vm->global[BOXTYPEID_PTR].ptr;
   vm->box_vm_current = reg_obj + 1;
   vm->box_vm_arg1    = reg_obj + 2;
   My_Set_Data_Segment_Register(vm);
@@ -413,17 +413,17 @@ static void BoxOpArg_Get(BoxOpArg *arg, BoxVMX *vmx, int form, BoxInt value) {
   abort();
 }
 
-void BoxOp_Get_Args(BoxOpDesc *op, BoxVMX *vmx) {
+void BoxOp_Get_Args(BoxOp *op, BoxVMX *vmx) {
   if (op->num_args == 2) {
-    BoxOpArg_Get(& vmx->arg1, vmx, op->args_type & 0x3, op->args[0]);
-    BoxOpArg_Get(& vmx->arg2, vmx, (op->args_type >> 2) & 0x3, op->args[1]);
+    BoxOpArg_Get(& vmx->arg1, vmx, op->args_forms & 0x3, op->args[0]);
+    BoxOpArg_Get(& vmx->arg2, vmx, (op->args_forms >> 2) & 0x3, op->args[1]);
   } else if (op->num_args == 1) {
-    BoxOpArg_Get(& vmx->arg1, vmx, op->args_type & 0x3, op->args[0]);
+    BoxOpArg_Get(& vmx->arg1, vmx, op->args_forms & 0x3, op->args[0]);
     if (op->has_data)
-      vmx->arg2.ptr = op->tail;
+      vmx->arg2.ptr = op->data;
   } else {
     if (op->has_data)
-      vmx->arg1.ptr = op->tail;
+      vmx->arg1.ptr = op->data;
   }
 }
 
@@ -494,14 +494,14 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
   this_vmx.flags.exit = this_vmx.flags.error = 0;
 
   do {
-    BoxOpDesc op;
+    BoxOp op;
 
 #if DEBUG_EXEC == 1
     fprintf(stderr, "module = "SInt", pos = "SInt" - reading instruction.\n",
             call_num, i*sizeof(BoxVMWord));
 #endif
 
-    if (!BoxOpTranslator_Read(& this_vmx, i_pos, & op)) {
+    if (!BoxOp_Read(& op, & this_vmx, i_pos)) {
       MSG_ERROR("Unknown VM instruction!");
       vmp->vmcur = vmx;
       return BOXTASK_FAILURE;
@@ -510,7 +510,7 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
     BoxOp_Get_Args(& op, & this_vmx);
 
     /* Esegue l'istruzione */
-    this_vmx.op_size = op.size;
+    this_vmx.op_size = op.next;
     if (!this_vmx.flags.error)
       this_vmx.idesc->execute(& this_vmx);
 
@@ -603,72 +603,75 @@ void BoxVM_ASettings(BoxVM *vmp, int forcelong, int error, int inhibit) {
 /** Similar to BoxVM_Assemble, but takes a va_list argument as a replacement
  * for the extra arguments.
  */
-void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
-  const BoxVMInstrDesc *exec_table = vmp->exec_table, *idesc;
+void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
+  const BoxOpDesc *exec_table = vmp->exec_table, *idesc;
   BoxVMProcTable *pt = & vmp->proc_table;
   int i, t;
   int is_short;
   struct {
-    TypeID    t;    /* Tipi degli argomenti */
-    BoxOp c;    /* Categorie degli argomenti */
+    BoxTypeId t;    /* Tipi degli argomenti */
+    BoxOpId   c;    /* Categorie degli argomenti */
     void      *ptr; /* Puntatori ai valori degli argomenti */
     BoxInt    vi;   /* Destinazione dei valori...   */
     BoxReal   vr;   /* ...immediati degli argomenti */
     BoxPoint  vp;
-  } arg[VM_MAX_NUMARGS];
+  } arg[BOX_OP_MAX_NUM_ARGS];
+
+  BoxOp op;
+
 
   /* Esco subito se e' settato il flag di inibizione! */
   if (pt->target_proc->status.inhibit) return;
 
-  if (instr < 0 || instr >= BOX_NUM_OPS) {
+  if (op_id < 0 || op_id >= BOX_NUM_OPS) {
     MSG_ERROR("Unrecognised VM instruction while assembling (%s).",
-              (instr < 0) ? "op < 0" : "op > BOX_NUM_OPS");
+              (op_id < 0) ? "op < 0" : "op > BOX_NUM_OPS");
     return;
   }
 
-  idesc = & exec_table[instr];
+  op.desc = & exec_table[op_id];
 
-  assert(idesc->numargs <= VM_MAX_NUMARGS);
+  assert(op.desc->numargs <= BOX_OP_MAX_NUM_ARGS);
 
   /* Prendo argomento per argomento */
   t = 0; /* Indice di argomento */
   is_short = 1;
-  for (i = 0; i < idesc->numargs; i++) {
+  for (i = 0; i < op.desc->numargs; i++) {
     BoxInt vi = 0;
 
     /* Prendo dalla lista degli argomenti della funzione la categoria
-    * dell'argomento dell'istruzione.
-    */
+     * dell'argomento dell'istruzione.
+     */
     switch (arg[t].c = va_arg(ap, BoxContCateg)) {
     case BOXCONTCATEG_LREG:
     case BOXCONTCATEG_GREG:
     case BOXCONTCATEG_PTR:
-      arg[t].t = TYPE_INT;
+      arg[t].t = BOXTYPEID_INT;
       arg[t].vi = vi = va_arg(ap, BoxInt);
       arg[t].ptr = (void *) (& arg[t].vi);
       break;
 
     case BOXCONTCATEG_IMM:
-      switch (idesc->t_id) {
-      case TYPE_CHAR:
-        arg[t].t = TYPE_CHAR;
+      switch (op.desc->t_id) {
+      case BOXTYPEID_CHAR:
+        arg[t].t = op.desc->t_id;
         arg[t].vi = va_arg(ap, BoxInt); vi = 0;
         arg[t].ptr = (void *) (& arg[t].vi);
         break;
-      case TYPE_INT:
-        arg[t].t = TYPE_INT;
+      case BOXTYPEID_INT:
+        arg[t].t = op.desc->t_id;
         arg[t].vi = vi = va_arg(ap, BoxInt);
         arg[t].ptr = (void *) (& arg[t].vi);
         break;
-      case TYPE_REAL:
+      case BOXTYPEID_REAL:
         is_short = 0;
-        arg[t].t = TYPE_REAL;
+        arg[t].t = op.desc->t_id;
         arg[t].vr = va_arg(ap, BoxReal);
         arg[t].ptr = (void *) (& arg[t].vr);
         break;
-      case TYPE_POINT:
+      case BOXTYPEID_POINT:
         is_short = 0;
-        arg[t].t = TYPE_POINT;
+        arg[t].t = op.desc->t_id;
         arg[t].vp.x = va_arg(ap, BoxReal);
         arg[t].vp.y = va_arg(ap, BoxReal);
         arg[t].ptr = (void *) (& arg[t].vp);
@@ -698,10 +701,11 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
     ++t;
   }
 
-  assert(t == idesc->numargs);
+  assert(t == op.desc->numargs);
 
   /* Cerco di capire se e' possibile scrivere l'istruzione in formato corto */
   if (vmp->attr.forcelong) is_short = 0;
+
   if (is_short == 1 && t <= 2) {
     /* L'istruzione va scritta in formato corto! */
     BoxVMWord buffer[1], *i_pos = buffer;
@@ -715,7 +719,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
     }
 
     atype = (arg[1].c << 2) | arg[0].c;
-    BOXVM_WRITE_SHORTOP_HEADER(i_pos, i_eye, instr, /* is_long = */ 0,
+    BOXVM_WRITE_SHORTOP_HEADER(i_pos, i_eye, op_id, /* is_long = */ 0,
                                /* i_len = */ 1, atype);
     BOXVM_WRITE_SHORTOP_2ARGS(i_pos, i_eye, arg[0].vi, arg[1].vi);
 
@@ -760,7 +764,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
 
       /* Scrivo la "testa" dell'istruzione */
       atype = (arg[1].c << 2) | arg[0].c;
-      BOXVM_WRITE_LONGOP_HEADER(i_pos, i_eye, instr, /* is_long = */ 1,
+      BOXVM_WRITE_LONGOP_HEADER(i_pos, i_eye, op_id, /* is_long = */ 1,
                                 /* i_len = */ idim, atype);
     }
   }
@@ -770,7 +774,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOp instr, va_list ap) {
  * binario ad essa corrispondente nella destinazione specificata
  * dalla funzione VM_Asm_Out_Set().
  */
-void BoxVM_Assemble(BoxVM *vm, BoxOp instr, ...) {
+void BoxVM_Assemble(BoxVM *vm, BoxOpId instr, ...) {
   va_list ap;
   va_start(ap, instr);
   BoxVM_VA_Assemble(vm, instr, ap);
@@ -813,7 +817,7 @@ static void My_Set_Data_Segment_Register(BoxVM *vm) {
   BoxPtr data_segment_ptr;
   data_segment_ptr.block = NULL; /* the VM will handle deallocation! */
   data_segment_ptr.ptr = BoxArr_First_Item_Ptr(& vm->data_segment);
-  BoxVM_Module_Global_Set(vm, TYPE_OBJ, (BoxInt) 0, & data_segment_ptr);
+  BoxVM_Module_Global_Set(vm, BOXTYPEID_PTR, (BoxInt) 0, & data_segment_ptr);
 }
 
 void BoxVM_Data_Display(BoxVM *vm, FILE *stream) {

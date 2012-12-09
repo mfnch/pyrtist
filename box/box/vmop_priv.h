@@ -20,6 +20,26 @@
 #ifndef _BOX_VMOP_PRIV_H
 #  define _BOX_VMOP_PRIV_H
 
+
+/**
+ * @brief Maximum number of arguments for a VM instruction.
+ */
+#  define BOX_OP_MAX_NUM_ARGS (2)
+
+/**
+ * @brief Implementation of #BoxOp.
+ */
+struct BoxOp_struct {
+  BoxOpId   id;         /**< Instruction identifiers (an integer). */
+  BoxOpDesc *desc;      /**< Instruction description (used internally). */
+  BoxInt    next;       /**< Advance offset. */
+  int       args_forms; /**< Type of arguments of instruction. */
+  int       num_args;   /**< Number of arguments (excluding data). */
+  BoxInt    args[2];    /**< Raw argument values. */
+  BoxBool   has_data;   /**< Whether the instruction has associated data. */
+  BoxVMWord *data;      /**< Pointer to the instruction data. */
+};
+
 /* SHORT INSTRUCTION: we assemble the istruction header in the following way:
  * (note: 1 is represented with bit 0 = 1 and all other bits = 0)
  *  bit 0: true if the instruction is long
@@ -66,7 +86,7 @@
  * The C standard (C99, ISO/IEC 9899:1999) says that conversion from unsigned
  * to signed integer has an implementation-defined result (when the unsigned
  * value cannot be represented in the signed type). This function implements a
- * cast from uint16_t to int16_t with implementation-independent result.
+ * cast from uint8_t to int8_t with implementation-independent result.
  * Compilers should be able to easily translate this to efficient code.
  */
 static inline int8_t
@@ -97,46 +117,45 @@ BoxInt32_From_UInt32(uint32_t x) {
 /**
  * @brief VM instruction reader.
  *
- * This function translates a serialized instruction into a #BoxOpDesc
+ * This function translates a serialized instruction into a #BoxOp
  * structure containing all the information about the instruction.
  */
 static inline BoxBool
-BoxOpTranslator_Read(BoxVMX *vmx,
-                     BoxVMWord *bytecode, BoxOpDesc *op) {
+BoxOp_Read(BoxOp *op, BoxVMX *vmx, BoxVMWord *bytecode) {
   BoxVMWord word1 = bytecode[0];
-  const BoxVMInstrDesc *exec_table = vmx->vm->exec_table;
+  const BoxOpDesc *exec_table = vmx->vm->exec_table;
 
   if (word1 & 0x1) {
     /* Long format. */
-    op->args_type = (word1 >> 1) & 0xf;
-    op->size = word1 >> 5;
-    op->type = bytecode[1];
-    if (op->type < BOX_NUM_OPS) {
-      const BoxVMInstrDesc *idesc = & exec_table[op->type];
+    op->args_forms = (word1 >> 1) & 0xf;
+    op->next = word1 >> 5;
+    op->id = bytecode[1];
+    if (op->id < BOX_NUM_OPS) {
+      const BoxOpDesc *idesc = & exec_table[op->id];
       vmx->idesc = idesc;
       op->has_data = idesc->has_data;
       op->num_args = idesc->num_args;
       if (idesc->num_args == 2) {
         op->args[0] = (BoxInt) BoxInt32_From_UInt32(bytecode[2]);
         op->args[1] = (BoxInt) BoxInt32_From_UInt32(bytecode[3]);
-        op->tail = & bytecode[4];
+        op->data = & bytecode[4];
       } else if (idesc->num_args == 1) {
         op->args[0] = (BoxInt) BoxInt32_From_UInt32(bytecode[2]);
-        op->tail = & bytecode[3];
+        op->data = & bytecode[3];
       } else
-        op->tail = & bytecode[2];
+        op->data = & bytecode[2];
       return BOXBOOL_TRUE;
     }
 
   } else {
     /* Short format. */
-    op->args_type = (word1 >> 1) & 0xf;
-    op->size = (word1 >> 5) & 0x7;
-    op->type = (word1 >> 8) & 0xff;
-    if (op->type < BOX_NUM_OPS) {
-      const BoxVMInstrDesc *idesc = & exec_table[op->type];
+    op->args_forms = (word1 >> 1) & 0xf;
+    op->next = (word1 >> 5) & 0x7;
+    op->id = (word1 >> 8) & 0xff;
+    if (op->id < BOX_NUM_OPS) {
+      const BoxOpDesc *idesc = & exec_table[op->id];
       vmx->idesc = idesc;
-      op->tail = & bytecode[1];
+      op->data = & bytecode[1];
       op->has_data = idesc->has_data;
       op->num_args = idesc->num_args;
       if (idesc->num_args == 2) {

@@ -61,7 +61,7 @@ typedef struct {
 
 static BoxTypeId Reg_Type(BoxTypeId type) {
   assert(type >= 0);
-  return (type >= NUM_TYPES) ? TYPE_OBJ : type;
+  return (type >= NUM_TYPES) ? BOXTYPEID_PTR : type;
 }
 
 static void VarFrame_Init(VarFrame *vf) {

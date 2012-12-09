@@ -46,7 +46,7 @@ void My_D_CALL(BoxVMDasm *dasm, char **out) {
     int iat = dasm->op_desc->t_id;
     BoxInt call_num;
 
-    if (iat == TYPE_CHAR)
+    if (iat == BOXTYPEID_CHAR)
       call_num = (BoxInt) ((BoxChar) call_num);
 
     {
@@ -84,7 +84,7 @@ void My_D_JMP(BoxVMDasm *dasm, char **out) {
     BoxInt m_num;
     BoxInt position;
 
-    if (iat == TYPE_CHAR)
+    if (iat == BOXTYPEID_CHAR)
       m_num = (BoxInt) ((BoxChar) m_num);
 
     position = (dasm->op_pos + m_num)*sizeof(BoxVMWord);
@@ -120,7 +120,7 @@ BoxVMOpDisasm BoxVM_Get_ArgDAsm_From_Str(const char *s) {
 BoxTask BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
                                 BoxVMDasmIter iter, void *pass) {
   BoxVMDasm dasm;
-  const BoxVMInstrDesc *exec_table = vm->exec_table;
+  const BoxOpDesc *exec_table = vm->exec_table;
   size_t op_pos;
 
   dasm.vm = vm;
@@ -131,7 +131,7 @@ BoxTask BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
     BoxVMWord *op_addr = & ((BoxVMWord *) prog)[op_pos];
     BoxTask outcome;
 
-    if (!BoxOpTranslator_Read(vm->vmcur, op_addr, & dasm.op))
+    if (!BoxOp_Read(& dasm.op, vm->vmcur, op_addr))
       return BOXTASK_FAILURE;
 
 #if DEBUG_VM_D_EVERY_ONE
@@ -143,18 +143,18 @@ BoxTask BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
 #endif
 
     dasm.op_pos = op_pos;
-    dasm.op_desc = ((dasm.op.type >= 0 || dasm.op.type < BOX_NUM_OPS) ?
-                    & exec_table[dasm.op.type] : NULL);
+    dasm.op_desc = ((dasm.op.id >= 0 || dasm.op.id < BOX_NUM_OPS) ?
+                    & exec_table[dasm.op.id] : NULL);
  
     outcome = iter(& dasm, pass);
     if (outcome != BOXTASK_OK)
       return outcome;
 
     /* Move to the next instruction */
-    if (dasm.op.size < 1)
+    if (dasm.op.next < 1)
       return BOXTASK_FAILURE;
 
-    op_pos += dasm.op.size;
+    op_pos += dasm.op.next;
   }
 
   return BOXTASK_OK;
