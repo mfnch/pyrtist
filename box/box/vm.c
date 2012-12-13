@@ -361,13 +361,6 @@ BoxTask BoxVM_Module_Execute_With_Args(BoxVMX *vmx, BoxVMCallNum cn,
   return t;
 }
 
-
-
-
-
-
-
-
 /**
  * @brief Get the pointer to the value corresponding to an instruction
  *    argument.
@@ -426,7 +419,6 @@ void BoxOp_Get_Args(BoxOp *op, BoxVMX *vmx) {
       vmx->arg1.ptr = op->data;
   }
 }
-
 
 /* Execute the module number m of program vmp.
  * If initial != NULL, *initial is the initial status of the virtual machine.
@@ -604,7 +596,7 @@ void BoxVM_ASettings(BoxVM *vmp, int forcelong, int error, int inhibit) {
  * for the extra arguments.
  */
 void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
-  const BoxOpDesc *exec_table = vmp->exec_table, *idesc;
+  const BoxOpDesc *exec_table = vmp->exec_table;
   BoxVMProcTable *pt = & vmp->proc_table;
   int i, t;
   int is_short;
@@ -629,6 +621,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
     return;
   }
 
+  op.id = op_id;
   op.desc = & exec_table[op_id];
 
   assert(op.desc->numargs <= BOX_OP_MAX_NUM_ARGS);
@@ -704,69 +697,67 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
   assert(t == op.desc->numargs);
 
   /* Cerco di capire se e' possibile scrivere l'istruzione in formato corto */
-  if (vmp->attr.forcelong) is_short = 0;
+  if (vmp->attr.forcelong)
+    is_short = 0;
 
-  if (is_short == 1 && t <= 2) {
-    /* L'istruzione va scritta in formato corto! */
-    BoxVMWord buffer[1], *i_pos = buffer;
-    BoxVMWord i_eye;
-    BoxUInt atype;
-    BoxArr *prog = & pt->target_proc->code;
+  op.format = (is_short == 1 && t <= 2) ? BOXOPFMT_SHORT: BOXOPFMT_LONG;
+  if (op.format == BOXOPFMT_SHORT) {
+    /* SHORT INSTRUCTION: we assemble the istruction header in the following way:
+     * (note: 1 is represented with bit 0 = 1 and all other bits = 0)
+     *  bit 0: true if the instruction is long
+     *  bit 1-4: type of arguments
+     *  bit 5-7: length of instruction
+     *  bit 8-15: type of instruction
+     *  (bit 16-23: left empty for argument 1)
+     *  (bit 24-31: left empty for argument 2)
+     */ 
+    BoxVMWord *buffer = BoxArr_Push(& pt->target_proc->code, NULL);
+    unsigned int arg_type;
 
     for (; t < 2; t++) {
       arg[t].c = 0;
       arg[t].vi = 0;
     }
 
-    atype = (arg[1].c << 2) | arg[0].c;
-    BOXVM_WRITE_SHORTOP_HEADER(i_pos, i_eye, op_id, /* is_long = */ 0,
-                               /* i_len = */ 1, atype);
-    BOXVM_WRITE_SHORTOP_2ARGS(i_pos, i_eye, arg[0].vi, arg[1].vi);
-
-    BoxArr_Push(prog, buffer);
+    arg_type = (arg[1].c << 2) | arg[0].c;
+    *buffer = (((arg[1].vi & 0xff) << 8 | (arg[0].vi & 0xff)) << 16
+               | (((op.id & 0xff) << 3 | 1) << 4 | (arg_type & 0xf)) << 1);
     return;
 
   } else {
-    /* L'istruzione va scritta in formato lungo! */
-    BoxUInt idim, iheadpos;
-    BoxVMWord iw[MAX_SIZE_IN_IWORDS];
-    BoxArr *prog = & pt->target_proc->code;
-
-    /* Lascio il posto per la "testa" dell'istruzione (non conoscendo ancora
-     * la dimensione dell'istruzione, non posso scrivere adesso la testa.
-     * Potro' farlo solo alla fine, dopo aver scritto tutti gli argomenti!)
+    /* LONG INSTRUCTION: we assemble the istruction header in the following
+     * way:
+     *  FIRST FOUR BYTES:
+     *    bit 0: true if the instruction is long
+     *    bit 1-4: type of arguments
+     *    bit 5-31: length of instruction
+     *  SECOND FOUR BYTES:
+     *    bit 0-31: type of instruction
+     *  (THIRD FOUR BYTES: argument 1)
+     *  (FOURTH FOUR BYTES: argument 2)
      */
-    iheadpos = BoxArr_Num_Items(prog) + 1;
-    BoxArr_MPush(prog, NULL, idim = 2);
+    BoxArr *prog = & pt->target_proc->code;
+    unsigned int arg_type, op_size = 2;
+    size_t header_idx = BoxArr_Num_Items(prog) + 1;
+    BoxVMWord *header;
+    (void) BoxArr_MPush(prog, NULL, op_size);
 
     for (i = 0; i < t; i++) {
-      BoxUInt adim, aiwdim;
-
-      adim = size_of_type[arg[i].t];
-      aiwdim = (adim + sizeof(BoxVMWord) - 1) / sizeof(BoxVMWord);
-      iw[aiwdim - 1] = 0;
-      (void) memcpy( iw, arg[i].ptr, adim );
-
-      BoxArr_MPush(prog, iw, aiwdim);
-      idim += aiwdim;
+      int arg_size = size_of_type[arg[i].t],
+        arg_size_words = (arg_size + sizeof(BoxVMWord) - 1)/sizeof(BoxVMWord);
+      BoxVMWord *word = BoxArr_MPush(prog, NULL, arg_size_words);
+      word[arg_size_words - 1] = 0;
+      (void) memcpy(& word[0], arg[i].ptr, arg_size);
+      op_size += arg_size_words;
     }
 
-    {
-      BoxVMWord *i_pos;
-      BoxVMWord i_eye;
-      BoxUInt atype;
+    for (; t < 2; t++)
+      arg[t].c = 0;
 
-      /* Trovo il puntatore alla testa dell'istruzione */
-      i_pos = (BoxVMWord *) BoxArr_Item_Ptr(prog, iheadpos);
-
-      for (; t < 2; t++)
-        arg[t].c = 0;
-
-      /* Scrivo la "testa" dell'istruzione */
-      atype = (arg[1].c << 2) | arg[0].c;
-      BOXVM_WRITE_LONGOP_HEADER(i_pos, i_eye, op_id, /* is_long = */ 1,
-                                /* i_len = */ idim, atype);
-    }
+    arg_type = (arg[1].c << 2) | arg[0].c;
+    header = (BoxVMWord *) BoxArr_Item_Ptr(prog, header_idx);
+    header[0] = ((op_size & 0x07ff) << 4 | (arg_type & 0xf)) << 1 | 0x1;
+    header[1] = op.id;
   }
 }
 

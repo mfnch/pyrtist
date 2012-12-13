@@ -20,65 +20,35 @@
 #ifndef _BOX_VMOP_PRIV_H
 #  define _BOX_VMOP_PRIV_H
 
-
 /**
  * @brief Maximum number of arguments for a VM instruction.
  */
 #  define BOX_OP_MAX_NUM_ARGS (2)
 
 /**
+ * @brief Instruction format.
+ */
+typedef enum {
+  BOXOPFMT_SHORT,  /**< Short form of instruction. */
+  BOXOPFMT_LONG,   /**< Long form of instruction. */
+  BOXOPFMT_UNKNOWN /**< Unknown form of instruction. */
+} BoxOpFmt;
+
+/**
  * @brief Implementation of #BoxOp.
  */
 struct BoxOp_struct {
   BoxOpId   id;         /**< Instruction identifiers (an integer). */
-  BoxOpDesc *desc;      /**< Instruction description (used internally). */
+  const BoxOpDesc
+            *desc;      /**< Instruction description (used internally). */
   BoxInt    next;       /**< Advance offset. */
+  BoxOpFmt  format;     /**< Instruction format. */
   int       args_forms; /**< Type of arguments of instruction. */
   int       num_args;   /**< Number of arguments (excluding data). */
   BoxInt    args[2];    /**< Raw argument values. */
   BoxBool   has_data;   /**< Whether the instruction has associated data. */
   BoxVMWord *data;      /**< Pointer to the instruction data. */
 };
-
-/* SHORT INSTRUCTION: we assemble the istruction header in the following way:
- * (note: 1 is represented with bit 0 = 1 and all other bits = 0)
- *  bit 0: true if the instruction is long
- *  bit 1-4: type of arguments
- *  bit 5-7: length of instruction
- *  bit 8-15: type of instruction
- *  (bit 16-23: left empty for argument 1)
- *  (bit 24-31: left empty for argument 2)
- */
-#define BOXVM_WRITE_SHORTOP_HEADER(i_pos, i_eye, i_type, is_long, i_len, \
-                                   arg_type) \
-  do {i_eye = (((i_type) & 0xff) << 3 | ((i_len)  & 0x7)) << 4 \
-              | ((arg_type) & 0xf);                            \
-      i_eye = i_eye << 1 | ((is_long) & 0x1);} while(0)
-
-#define BOXVM_WRITE_SHORTOP_1ARG(i_pos, i_eye, arg) \
-  do {*((i_pos)++) = ((arg) & 0xff) << 16 | (i_eye);} while(0)
-
-#define BOXVM_WRITE_SHORTOP_2ARGS(i_pos, i_eye, arg1, arg2) \
-  do {*(i_pos++) = i_eye = \
-      (((arg2) & 0xff)<<8 | ((arg1) & 0xff))<<16 | i_eye;} while(0)
-
-
-/* LONG INSTRUCTION: we assemble the istruction header in the following way:
- *  FIRST FOUR BYTES:
- *    bit 0: true if the instruction is long
- *    bit 1-4: type of arguments
- *    bit 5-31: length of instruction
- *  SECOND FOUR BYTES:
- *    bit 0-31: type of instruction
- *  (THIRD FOUR BYTES: argument 1)
- *  (FOURTH FOUR BYTES: argument 2)
- */
-#define BOXVM_WRITE_LONGOP_HEADER(i_pos, i_eye, i_type, is_long, i_len, \
-                                  arg_type)                             \
-  do {i_eye = ((i_len) & 0x07ff)<<4 | ((arg_type) & 0xf);               \
-      i_eye = i_eye<<1 | ((is_long) & 0x1);                             \
-      *(i_pos++) = i_eye; *(i_pos++) = i_type;} while(0)
-
 
 /**
  * @brief Portable cast from uint8_t to int8_t.
@@ -169,5 +139,37 @@ BoxOp_Read(BoxOp *op, BoxVMX *vmx, BoxVMWord *bytecode) {
 
   return BOXBOOL_FALSE;
 }
+
+#if 0
+/**
+ * @brief VM instruction writer.
+ *
+ * This function translates a #BoxOp structure containing all the information
+ * about one instruction into a serialized instruction in @p bytecode.
+ */
+static inline BoxBool
+BoxOp_Write(BoxOp *op, BoxVMX *vmx, BoxVMWord *bytecode) {
+  if (op->num_args == 2) {
+    if (op->format == BOXOPFMT_UNKNOWN) {
+      const BoxInt u8_sign = ~((BoxInt) 0x7f);
+      BoxInt a0_sign = op->args[0] & u8_sign;
+      BoxBool a0_is_u8 = (a0_sign == 0 || a0_sign == u8_sign);
+      BoxInt a1_sign = op->args[1] & u8_sign;
+      BoxBool a1_is_u8 = (a1_sign == 0 || a1_sign == u8_sign);
+      op->format = (a0_is_u8 && a1_is_u8) ? BOXOPFMT_SHORT : BOXOPFMT_LONG;
+    }
+
+  } else if (op->num_args == 1) {
+    if (op->format == BOXOPFMT_UNKNOWN) {
+      const BoxInt u16_sign = ~((BoxInt) 0x7fff);
+      BoxInt a0_sign = op->args[0] & u16_sign;
+      BoxBool a0_is_u16 = (a0_sign == 0 || a0_sign == u16_sign);
+      op->format = (a0_is_u16) ? BOXOPFMT_SHORT : BOXOPFMT_LONG;
+    }
+  }
+
+  return BOXBOOL_FALSE;
+}
+#endif
 
 #endif /* _BOX_VMOP_PRIV_H */
