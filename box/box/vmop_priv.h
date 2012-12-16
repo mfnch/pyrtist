@@ -142,7 +142,7 @@ BoxOp_Read(BoxOp *op, BoxVMX *vmx, BoxVMWord *bytecode) {
         op->args[0] = (BoxInt) BoxInt8_From_UInt8(word1 >> 16);
         op->args[1] = (BoxInt) BoxInt8_From_UInt8(word1 >> 24);
       } else if (idesc->num_args == 1)
-        op->args[0] = (BoxInt) BoxInt8_From_UInt8(word1 >> 16);
+        op->args[0] = (BoxInt) BoxInt16_From_UInt16(word1 >> 16);
       return BOXBOOL_TRUE;
     }
   }

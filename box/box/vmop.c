@@ -60,7 +60,7 @@ BoxOp_Get_Length(BoxOp *op) {
            || (op->args_forms & 0x3) != BOXOPARGFORM_IMM);
 
     if (op->format == BOXOPFMT_UNDECIDED) {
-      const BoxInt u16_sign = ~((BoxInt) 0x7f);
+      const BoxInt u16_sign = ~((BoxInt) 0x7fff);
       BoxInt a0_sign = op->args[0] & u16_sign;
       BoxBool a0_is_u16 = (a0_sign == 0 || a0_sign == u16_sign);
       op->format = (a0_is_u16) ? BOXOPFMT_SHORT : BOXOPFMT_LONG;
@@ -100,7 +100,7 @@ BoxOp_Write(BoxOp *op, BoxVMWord *bytecode) {
                      | (op->length & 0x7) << 5
                      | (op->args_forms & 0xf) << 1);
     else if (op->num_args == 1)
-      bytecode[0] = ((op->args[0] & 0xff) << 16
+      bytecode[0] = ((op->args[0] & 0xffff) << 16
                      | (op->id & 0xff) << 8
                      | (op->length & 0x7) << 5
                      | (op->args_forms & 0xf) << 1);
