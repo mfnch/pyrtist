@@ -699,9 +699,6 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
 
   /* Compute the size of the instruction and assemble it. */
   op_length = BoxOp_Get_Length(& op);
-
-  //printf("has_data=%d length=%d\n", op.has_data, op_length);
-
   bytecode = (BoxVMWord *) BoxArr_MPush(& proc->code, NULL, op_length);
   if (!BoxOp_Write(& op, bytecode))
     MSG_FATAL("Error assembling the instruction");

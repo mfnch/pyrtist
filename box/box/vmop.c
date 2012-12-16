@@ -60,7 +60,7 @@ BoxOp_Get_Length(BoxOp *op) {
            || (op->args_forms & 0x3) != BOXOPARGFORM_IMM);
 
     if (op->format == BOXOPFMT_UNDECIDED) {
-      const BoxInt u16_sign = ~((BoxInt) 0x7fff);
+      const BoxInt u16_sign = ~((BoxInt) 0x7f);
       BoxInt a0_sign = op->args[0] & u16_sign;
       BoxBool a0_is_u16 = (a0_sign == 0 || a0_sign == u16_sign);
       op->format = (a0_is_u16) ? BOXOPFMT_SHORT : BOXOPFMT_LONG;
