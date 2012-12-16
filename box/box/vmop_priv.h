@@ -107,8 +107,8 @@ BoxOp_Read(BoxOp *op, BoxVMX *vmx, BoxVMWord *bytecode) {
   if (word1 & 0x1) {
     /* Long format. */
     op->args_forms = (word1 >> 1) & 0xf;
-    op->next = word1 >> 5;
-    op->id = bytecode[1];
+    op->next = (word1 >> 5) & 0x7ff;
+    op->id = word1 >> 16;
     if (op->id < BOX_NUM_OPS) {
       const BoxOpDesc *idesc = & exec_table[op->id];
       vmx->idesc = idesc;
@@ -116,14 +116,14 @@ BoxOp_Read(BoxOp *op, BoxVMX *vmx, BoxVMWord *bytecode) {
       op->num_args = idesc->num_args;
       /* NOTE: num_args >= 2 means 2 arguments. */
       if (idesc->num_args >= 2) {
-        op->args[0] = (BoxInt) BoxInt32_From_UInt32(bytecode[2]);
-        op->args[1] = (BoxInt) BoxInt32_From_UInt32(bytecode[3]);
-        op->data = & bytecode[4];
-      } else if (idesc->num_args == 1) {
-        op->args[0] = (BoxInt) BoxInt32_From_UInt32(bytecode[2]);
+        op->args[0] = (BoxInt) BoxInt32_From_UInt32(bytecode[1]);
+        op->args[1] = (BoxInt) BoxInt32_From_UInt32(bytecode[2]);
         op->data = & bytecode[3];
-      } else
+      } else if (idesc->num_args == 1) {
+        op->args[0] = (BoxInt) BoxInt32_From_UInt32(bytecode[1]);
         op->data = & bytecode[2];
+      } else
+        op->data = & bytecode[1];
       return BOXBOOL_TRUE;
     }
 

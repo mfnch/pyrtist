@@ -51,7 +51,7 @@ BoxOp_Get_Length(BoxOp *op) {
       op->format = (a0_is_u8 && a1_is_u8) ? BOXOPFMT_SHORT : BOXOPFMT_LONG;
     }
 
-    op->length = (op->format == BOXOPFMT_SHORT) ? 1 + sz : 4 + sz;
+    op->length = (op->format == BOXOPFMT_SHORT) ? 1 + sz : 3 + sz;
     return op->length;
 
   } else if (op->num_args == 1) {
@@ -66,7 +66,7 @@ BoxOp_Get_Length(BoxOp *op) {
       op->format = (a0_is_u16) ? BOXOPFMT_SHORT : BOXOPFMT_LONG;
     }
 
-    op->length = (op->format == BOXOPFMT_SHORT) ? 1 + sz : 3 + sz;
+    op->length = (op->format == BOXOPFMT_SHORT) ? 1 + sz : 2 + sz;
     return op->length;
 
   } else {
@@ -114,26 +114,27 @@ BoxOp_Write(BoxOp *op, BoxVMWord *bytecode) {
      *  FIRST FOUR BYTES:
      *    bit 0: true if the instruction is long
      *    bit 1-4: type of arguments
-     *    bit 5-31: length of instruction
+     *    bit 5-15: length of instruction
+     *    bit 16-31: type of instruction
      *  SECOND FOUR BYTES:
      *    bit 0-31: type of instruction
      *  (THIRD FOUR BYTES: argument 1)
      *  (FOURTH FOUR BYTES: argument 2)
      */
-    bytecode[0] = ((op->length & 0x07ff) << 5
+    bytecode[0] = ((op->id & 0xffff) << 16
+                   | (op->length & 0x07ff) << 5
                    | (op->args_forms & 0xf) << 1
                    | 0x1);
-    bytecode[1] = op->id;
 
     if (op->num_args >= 2) {
-      bytecode[2] = op->args[0];
-      bytecode[3] = op->args[1];
-      data = & bytecode[4];
-    } else if (op->num_args == 1) {
-      bytecode[2] = op->args[0];
+      bytecode[1] = op->args[0];
+      bytecode[2] = op->args[1];
       data = & bytecode[3];
-    } else
+    } else if (op->num_args == 1) {
+      bytecode[1] = op->args[0];
       data = & bytecode[2];
+    } else
+      data = & bytecode[1];
   }
 
   if (op->has_data) {
