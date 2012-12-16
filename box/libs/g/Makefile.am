@@ -53,7 +53,7 @@ libg_la_SOURCES=g.c g.h objlist.c objlist.h pointlist.c pointlist.h matrix.c  \
   obj.c obj.h bridge.c bridge.h csimpleput.c constraints.c constraints.h      \
   transform.c transform.h
 
-libg_la_LIBADD=@CAIRO_LIBS@ ../../box/libboxcore0.3.la
+libg_la_LIBADD=@CAIRO_LIBS@ ../../box/libboxcore0.4.la
 
 if BUILD_WINCAIRO
 libg_la_SOURCES+=wincairo.c wincairo.h

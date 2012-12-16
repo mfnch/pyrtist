@@ -45,14 +45,14 @@ AM_CPPFLAGS = $(INCLTDL) \
 bin_PROGRAMS = box
 
 # *** libboxcore ***
-lib_LTLIBRARIES = libboxcore0.3.la
+lib_LTLIBRARIES = libboxcore0.4.la
 boxinc_HEADERS = version.h defaults.h types.h integers.h obj.h exception.h	\
   callable.h core.h error.h mem.h stream.h array.h occupation.h srcpos.h	\
   msgbase.h messages.h strutils.h print.h hashfunc.h hashtable.h list.h		\
   vm_priv.h vmx.h vmproc.h vmsym.h vmsymstuff.h vmdasm.h vm2txt.h vmserial.h	\
   vmstore.h
 
-libboxcore0_3_la_SOURCES = types.c types.h types_priv.h combs.c combs.h obj.c	\
+libboxcore0_4_la_SOURCES = types.c types.h types_priv.h combs.c combs.h obj.c	\
   obj.h exception.c exception.h callable.c callable.h callable_priv.h core.c	\
   core.h coremath.c coremath.h core_priv.h error.c mem.c mem.h array.c array.h	\
   stream.c stream.h stream_priv.h filestream.c occupation.c occupation.h	\
@@ -63,11 +63,11 @@ libboxcore0_3_la_SOURCES = types.c types.h types_priv.h combs.c combs.h obj.c	\
   vmproc_priv.h vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h vmopregs.c		\
   vmopregs_priv.h vmop.c vmop_priv.h str.c str.h
 
-libboxcore0_3_la_LDFLAGS = -no-undefined -version-info 0:0:0
+libboxcore0_4_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32
 # see http://article.gmane.org/gmane.comp.gnu.mingw.user/18727
 
-libboxcore0_3_la_LIBADD = $(LIBLTDL)
+libboxcore0_4_la_LIBADD = $(LIBLTDL)
 
 dist_boxpkg_DATA=core.dox
 
@@ -80,7 +80,7 @@ box_SOURCES = fileutils.c tokenizer.l macro.c parser.y registers.c typesys.c	\
   paths.c main.c vmcode.c ast.c value.c compiler.c operator.c namespace.c	\
   builtins.c bltinstr.c bltinio.c
 
-box_LDADD = libboxcore0.3.la
+box_LDADD = libboxcore0.4.la
 box_LDFLAGS = -static
 box_DEPENDENCIES=$(LTDLDEPS)
 
