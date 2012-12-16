@@ -105,7 +105,7 @@ typedef unsigned char BoxVMByte;
 
 typedef char BoxVMSByte;
 
-typedef uint64_t BoxVMWord;
+typedef uint32_t BoxVMWord;
 
 
 #  define BoxVMWord_Fmt "%8.8lx"
