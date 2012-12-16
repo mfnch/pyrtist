@@ -126,13 +126,18 @@ typedef struct {
   BoxOpReg  *regs;             /**< Buffer used by the BoxOpTable.info */
 } BoxOpTable;
 
+/**
+ * @brief Identifies the form of a VM instruction argument.
+ *
+ * Possible forms are local register (e.g. ri1), global register (e.g. gri1),
+ * pointer (e.g. i[ro0 + 8]) and immediate (e.g. 1.234).
+ */
 typedef enum {
-  BOXOPCAT_NONE = -1,
-  BOXOPCAT_GREG = 0,
-  BOXOPCAT_LREG,
-  BOXOPCAT_PTR,
-  BOXOPCAT_IMM
-} BoxOpCat;
+  BOXOPARGFORM_GREG = 0, /**< Global register. */
+  BOXOPARGFORM_LREG,     /**< Local register. */
+  BOXOPARGFORM_PTR,      /**< Pointer. */
+  BOXOPARGFORM_IMM       /**< Immediate. */
+} BoxOpArgForm;
 
 /** Item used in a backtrace to identify where the exception caused the
  * particular function to exit.

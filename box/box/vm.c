@@ -372,13 +372,13 @@ BoxTask BoxVM_Module_Execute_With_Args(BoxVMX *vmx, BoxVMCallNum cn,
 static void BoxOpArg_Get(BoxOpArg *arg, BoxVMX *vmx, int form, BoxInt value) {
   BoxTypeId t = vmx->idesc->t_id;
   switch (form) {
-  case BOXOPCAT_GREG:
+  case BOXOPARGFORM_GREG:
     arg->ptr = vmx->global[t].ptr + value*size_of_type[t];
     return;
-  case BOXOPCAT_LREG:
+  case BOXOPARGFORM_LREG:
     arg->ptr = vmx->local[t].ptr + value*size_of_type[t];
     return;
-  case BOXOPCAT_PTR:
+  case BOXOPARGFORM_PTR:
     {
       BoxPtr *ptr = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
       arg->data.val_ptr.block = ptr->block;
@@ -386,7 +386,7 @@ static void BoxOpArg_Get(BoxOpArg *arg, BoxVMX *vmx, int form, BoxInt value) {
       arg->ptr = arg->data.val_ptr.ptr;
       return;
     }
-  case BOXOPCAT_IMM:
+  case BOXOPARGFORM_IMM:
     switch ((int) t) {
     case BOXTYPEID_CHAR:
       arg->data.val_char = (BoxChar) value;
@@ -407,7 +407,7 @@ static void BoxOpArg_Get(BoxOpArg *arg, BoxVMX *vmx, int form, BoxInt value) {
 }
 
 void BoxOp_Get_Args(BoxOp *op, BoxVMX *vmx) {
-  if (op->num_args == 2) {
+  if (op->num_args >= 2) {
     BoxOpArg_Get(& vmx->arg1, vmx, op->args_forms & 0x3, op->args[0]);
     BoxOpArg_Get(& vmx->arg2, vmx, (op->args_forms >> 2) & 0x3, op->args[1]);
   } else if (op->num_args == 1) {
@@ -611,7 +611,6 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
 
   BoxOp op;
 
-
   /* Esco subito se e' settato il flag di inibizione! */
   if (pt->target_proc->status.inhibit) return;
 
@@ -701,6 +700,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
     is_short = 0;
 
   op.format = (is_short == 1 && t <= 2) ? BOXOPFMT_SHORT: BOXOPFMT_LONG;
+
   if (op.format == BOXOPFMT_SHORT) {
     /* SHORT INSTRUCTION: we assemble the istruction header in the following way:
      * (note: 1 is represented with bit 0 = 1 and all other bits = 0)
@@ -712,16 +712,15 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
      *  (bit 24-31: left empty for argument 2)
      */ 
     BoxVMWord *buffer = BoxArr_Push(& pt->target_proc->code, NULL);
-    unsigned int arg_type;
 
     for (; t < 2; t++) {
       arg[t].c = 0;
       arg[t].vi = 0;
     }
 
-    arg_type = (arg[1].c << 2) | arg[0].c;
-    *buffer = (((arg[1].vi & 0xff) << 8 | (arg[0].vi & 0xff)) << 16
-               | (((op.id & 0xff) << 3 | 1) << 4 | (arg_type & 0xf)) << 1);
+    op.args_forms = (arg[1].c << 2) | arg[0].c;
+    *buffer = (((arg[1].vi & 0xff) << 8 | (arg[0].vi & 0xff)) << 16 |
+               (((op.id & 0xff) << 3 | 1) << 4 | (op.args_forms & 0xf)) << 1);
     return;
 
   } else {
@@ -737,7 +736,7 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
      *  (FOURTH FOUR BYTES: argument 2)
      */
     BoxArr *prog = & pt->target_proc->code;
-    unsigned int arg_type, op_size = 2;
+    unsigned int op_size = 2;
     size_t header_idx = BoxArr_Num_Items(prog) + 1;
     BoxVMWord *header;
     (void) BoxArr_MPush(prog, NULL, op_size);
@@ -754,14 +753,15 @@ void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
     for (; t < 2; t++)
       arg[t].c = 0;
 
-    arg_type = (arg[1].c << 2) | arg[0].c;
+    op.args_forms = (arg[1].c << 2) | arg[0].c;
     header = (BoxVMWord *) BoxArr_Item_Ptr(prog, header_idx);
-    header[0] = ((op_size & 0x07ff) << 4 | (arg_type & 0xf)) << 1 | 0x1;
+    header[0] = ((op_size & 0x07ff) << 4 | (op.args_forms & 0xf)) << 1 | 0x1;
     header[1] = op.id;
   }
 }
 
-/** Assembla l'istruzione specificata da instr, scrivendo il codice
+/**
+ * Assembla l'istruzione specificata da instr, scrivendo il codice
  * binario ad essa corrispondente nella destinazione specificata
  * dalla funzione VM_Asm_Out_Set().
  */

@@ -20,6 +20,12 @@
 #ifndef _BOX_VMOP_PRIV_H
 #  define _BOX_VMOP_PRIV_H
 
+#  include <stdint.h>
+
+#  include <box/core.h>
+#  include <box/vm_priv.h>
+
+
 /**
  * @brief Maximum number of arguments for a VM instruction.
  */
@@ -29,9 +35,9 @@
  * @brief Instruction format.
  */
 typedef enum {
-  BOXOPFMT_SHORT,  /**< Short form of instruction. */
-  BOXOPFMT_LONG,   /**< Long form of instruction. */
-  BOXOPFMT_UNKNOWN /**< Unknown form of instruction. */
+  BOXOPFMT_SHORT,    /**< Short form of instruction. */
+  BOXOPFMT_LONG,     /**< Long form of instruction. */
+  BOXOPFMT_UNDECIDED /**< Unknown form of instruction. */
 } BoxOpFmt;
 
 /**
@@ -43,8 +49,10 @@ struct BoxOp_struct {
             *desc;      /**< Instruction description (used internally). */
   BoxInt    next;       /**< Advance offset. */
   BoxOpFmt  format;     /**< Instruction format. */
-  int       args_forms; /**< Type of arguments of instruction. */
-  int       num_args;   /**< Number of arguments (excluding data). */
+  unsigned int
+            length,     /**< Instruction length (in words). */
+            args_forms, /**< Type of arguments of instruction.  */
+            num_args;   /**< Number of arguments (excluding data). */
   BoxInt    args[2];    /**< Raw argument values. */
   BoxBool   has_data;   /**< Whether the instruction has associated data. */
   BoxVMWord *data;      /**< Pointer to the instruction data. */
@@ -105,7 +113,8 @@ BoxOp_Read(BoxOp *op, BoxVMX *vmx, BoxVMWord *bytecode) {
       vmx->idesc = idesc;
       op->has_data = idesc->has_data;
       op->num_args = idesc->num_args;
-      if (idesc->num_args == 2) {
+      /* NOTE: num_args >= 2 means 2 arguments. */
+      if (idesc->num_args >= 2) {
         op->args[0] = (BoxInt) BoxInt32_From_UInt32(bytecode[2]);
         op->args[1] = (BoxInt) BoxInt32_From_UInt32(bytecode[3]);
         op->data = & bytecode[4];
@@ -128,7 +137,7 @@ BoxOp_Read(BoxOp *op, BoxVMX *vmx, BoxVMWord *bytecode) {
       op->data = & bytecode[1];
       op->has_data = idesc->has_data;
       op->num_args = idesc->num_args;
-      if (idesc->num_args == 2) {
+      if (idesc->num_args >= 2) {
         op->args[0] = (BoxInt) BoxInt8_From_UInt8(word1 >> 16);
         op->args[1] = (BoxInt) BoxInt8_From_UInt8(word1 >> 24);
       } else if (idesc->num_args == 1)
@@ -140,36 +149,23 @@ BoxOp_Read(BoxOp *op, BoxVMX *vmx, BoxVMWord *bytecode) {
   return BOXBOOL_FALSE;
 }
 
-#if 0
+/**
+ * @brief Get the length of a VM instruction in words.
+ *
+ * @param op Structure describing the instruction.
+ * @return Size of the instruction in words.
+ */
+BOXEXPORT unsigned int
+BoxOp_Get_Length(BoxOp *op);
+
+
 /**
  * @brief VM instruction writer.
  *
  * This function translates a #BoxOp structure containing all the information
  * about one instruction into a serialized instruction in @p bytecode.
  */
-static inline BoxBool
-BoxOp_Write(BoxOp *op, BoxVMX *vmx, BoxVMWord *bytecode) {
-  if (op->num_args == 2) {
-    if (op->format == BOXOPFMT_UNKNOWN) {
-      const BoxInt u8_sign = ~((BoxInt) 0x7f);
-      BoxInt a0_sign = op->args[0] & u8_sign;
-      BoxBool a0_is_u8 = (a0_sign == 0 || a0_sign == u8_sign);
-      BoxInt a1_sign = op->args[1] & u8_sign;
-      BoxBool a1_is_u8 = (a1_sign == 0 || a1_sign == u8_sign);
-      op->format = (a0_is_u8 && a1_is_u8) ? BOXOPFMT_SHORT : BOXOPFMT_LONG;
-    }
-
-  } else if (op->num_args == 1) {
-    if (op->format == BOXOPFMT_UNKNOWN) {
-      const BoxInt u16_sign = ~((BoxInt) 0x7fff);
-      BoxInt a0_sign = op->args[0] & u16_sign;
-      BoxBool a0_is_u16 = (a0_sign == 0 || a0_sign == u16_sign);
-      op->format = (a0_is_u16) ? BOXOPFMT_SHORT : BOXOPFMT_LONG;
-    }
-  }
-
-  return BOXBOOL_FALSE;
-}
-#endif
+BOXEXPORT BoxBool
+BoxOp_Write(BoxOp *op, BoxVMWord *bytecode);
 
 #endif /* _BOX_VMOP_PRIV_H */

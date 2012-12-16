@@ -51,15 +51,15 @@ static void My_Proc_Begin(BoxVMCode *p) {
     if (p->have.parent) {
       p->reg_parent = Reg_Occupy(& p->reg_alloc, BOXTYPEID_PTR);
       BoxVM_Assemble(p->cmp->vm, BOXOP_SHIFT_OO,
-                     BOXOPCAT_LREG, p->reg_parent,
-                     BOXOPCAT_GREG, (BoxInt) 1);
+                     BOXOPARGFORM_LREG, p->reg_parent,
+                     BOXOPARGFORM_GREG, (BoxInt) 1);
     }
 
     if (p->have.child) {
       p->reg_child = Reg_Occupy(& p->reg_alloc, BOXTYPEID_PTR);
       BoxVM_Assemble(p->cmp->vm, BOXOP_SHIFT_OO,
-                     BOXOPCAT_LREG, p->reg_child,
-                     BOXOPCAT_GREG, (BoxInt) 2);
+                     BOXOPARGFORM_LREG, p->reg_child,
+                     BOXOPARGFORM_GREG, (BoxInt) 2);
     }
   }
 
@@ -373,7 +373,7 @@ static void My_Prepare_Ptr_Access(BoxVMCode *p, const BoxCont *c) {
   BoxInt ptr_reg = c->value.ptr.reg;
   if (c->categ == BOXCONTCATEG_PTR && (c->value.ptr.is_greg || ptr_reg != 0)) {
     BoxInt categ = c->value.ptr.is_greg ? BOXCONTCATEG_GREG : BOXCONTCATEG_LREG;
-    BoxVMCode_Raw_Assemble(p, BOXOP_MOV_OO, BOXOPCAT_LREG, (BoxInt) 0,
+    BoxVMCode_Raw_Assemble(p, BOXOP_MOV_OO, BOXOPARGFORM_LREG, (BoxInt) 0,
                          categ, ptr_reg);
   }
 }

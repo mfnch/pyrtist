@@ -61,7 +61,7 @@ libboxcore0_3_la_SOURCES = types.c types.h types_priv.h combs.c combs.h obj.c	\
   vmx.c vmx.h vm_priv.h vmdasm.c vmdasm.h vm2txt.c vm2txt.h vmserial.c		\
   vmserial.h vmstore.c vmstore.h vmexec.c vmexec_priv.h vmproc.c vmproc.h	\
   vmproc_priv.h vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h vmopregs.c		\
-  vmopregs_priv.h str.c str.h
+  vmopregs_priv.h vmop.c vmop_priv.h str.c str.h
 
 libboxcore0_3_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32
