@@ -53,7 +53,8 @@ struct BoxOp_struct {
             length,     /**< Instruction length (in words). */
             args_forms, /**< Type of arguments of instruction.  */
             num_args;   /**< Number of arguments (excluding data). */
-  BoxInt    args[2];    /**< Raw argument values. */
+  BoxInt    args[BOX_OP_MAX_NUM_ARGS];
+                        /**< Raw argument values. */
   BoxBool   has_data;   /**< Whether the instruction has associated data. */
   BoxVMWord *data;      /**< Pointer to the instruction data. */
 };

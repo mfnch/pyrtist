@@ -21,6 +21,7 @@
 
 #include "vmop_priv.h"
 
+
 /**
  * @brief Compute the size of a data type in #BoxVMWord.
  */
@@ -31,13 +32,10 @@
 unsigned int
 BoxOp_Get_Length(BoxOp *op) {
   BoxTypeId type_id = op->desc->t_id;
-  int sz = ((op->has_data) ? MY_SIZE_IN_WORDS(size_of_type[type_id]) : 0;
+  int sz = (op->has_data) ? MY_SIZE_IN_WORDS(size_of_type[type_id]) : 0;
 
   if (op->num_args >= 2) {
     /* 2 arguments. */
-    assert(type_id == BOXTYPEID_INT
-           || ((op->args_forms & 0x3) != BOXOPARGFORM_IMM
-               && ((op->args_forms >> 2) & 0x3) != BOXOPARGFORM_IMM));
 
     /* For now we do not have instructions with 2 arguments and attached
      * data...
@@ -53,7 +51,8 @@ BoxOp_Get_Length(BoxOp *op) {
       op->format = (a0_is_u8 && a1_is_u8) ? BOXOPFMT_SHORT : BOXOPFMT_LONG;
     }
 
-    return (op->format == BOXOPFMT_SHORT) ? 1 + sz : 3 + sz;
+    op->length = (op->format == BOXOPFMT_SHORT) ? 1 + sz : 4 + sz;
+    return op->length;
 
   } else if (op->num_args == 1) {
     /* 1 argument. */
@@ -67,13 +66,14 @@ BoxOp_Get_Length(BoxOp *op) {
       op->format = (a0_is_u16) ? BOXOPFMT_SHORT : BOXOPFMT_LONG;
     }
 
-    return (op->format == BOXOPFMT_SHORT) ? 1 + sz : 3 + sz;
+    op->length = (op->format == BOXOPFMT_SHORT) ? 1 + sz : 3 + sz;
+    return op->length;
 
   } else {
     /* 0 arguments. */
-    assert(op->format != BOXOPFMT_LONG);
     op->format = BOXOPFMT_SHORT;
-    return 1 + sz;
+    op->length = 1 + sz;
+    return op->length;
   }
 }
 
@@ -97,16 +97,16 @@ BoxOp_Write(BoxOp *op, BoxVMWord *bytecode) {
       bytecode[0] = ((op->args[1] & 0xff) << 24
                      | (op->args[0] & 0xff) << 16
                      | (op->id & 0xff) << 8
-                     | 1 << 5
+                     | (op->length & 0x7) << 5
                      | (op->args_forms & 0xf) << 1);
     else if (op->num_args == 1)
       bytecode[0] = ((op->args[0] & 0xff) << 16
                      | (op->id & 0xff) << 8
-                     | 1 << 5
+                     | (op->length & 0x7) << 5
                      | (op->args_forms & 0xf) << 1);
     else
       bytecode[0] = ((op->id & 0xff) << 8
-                     | 1 << 5
+                     | (op->length & 0x7) << 5
                      | (op->args_forms & 0xf) << 1);
   } else {
     /* LONG INSTRUCTION: we assemble the istruction header in the following

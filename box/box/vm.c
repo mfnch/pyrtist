@@ -596,168 +596,115 @@ void BoxVM_ASettings(BoxVM *vmp, int forcelong, int error, int inhibit) {
  * for the extra arguments.
  */
 void BoxVM_VA_Assemble(BoxVM *vmp, BoxOpId op_id, va_list ap) {
-  const BoxOpDesc *exec_table = vmp->exec_table;
-  BoxVMProcTable *pt = & vmp->proc_table;
-  int i, t;
-  int is_short;
-  struct {
-    BoxTypeId t;    /* Tipi degli argomenti */
-    BoxOpId   c;    /* Categorie degli argomenti */
-    void      *ptr; /* Puntatori ai valori degli argomenti */
-    BoxInt    vi;   /* Destinazione dei valori...   */
-    BoxReal   vr;   /* ...immediati degli argomenti */
-    BoxPoint  vp;
-  } arg[BOX_OP_MAX_NUM_ARGS];
-
+  BoxVMProc *proc = vmp->proc_table.target_proc;
+  union {
+    BoxChar   val_char;
+    BoxInt    val_int;
+    BoxReal   val_real;
+    BoxPoint  val_point;
+  } data;
   BoxOp op;
+  unsigned int op_length;
+  BoxVMWord *bytecode;
+  BoxTypeId type_id;
+  int i;
 
-  /* Esco subito se e' settato il flag di inibizione! */
-  if (pt->target_proc->status.inhibit) return;
+  /* Code is not generated when the inhibit flag is set. */
+  if (proc->status.inhibit)
+    return;
 
   if (op_id < 0 || op_id >= BOX_NUM_OPS) {
-    MSG_ERROR("Unrecognised VM instruction while assembling (%s).",
-              (op_id < 0) ? "op < 0" : "op > BOX_NUM_OPS");
+    MSG_ERROR("Unrecognised VM instruction while assembling");
     return;
   }
 
+  /* Prepare the instruction in op. */
   op.id = op_id;
-  op.desc = & exec_table[op_id];
+  op.desc = & vmp->exec_table[op_id];
+  op.next = 0;
+  op.format = (vmp->attr.forcelong) ? BOXOPFMT_LONG : BOXOPFMT_UNDECIDED;
+  op.length = 0;
+  op.args_forms = 0;
+  op.num_args = op.desc->num_args;
+  op.has_data = (op.desc->numargs > op.desc->num_args);
+  op.data = NULL;
 
-  assert(op.desc->numargs <= BOX_OP_MAX_NUM_ARGS);
+  /* Get the instruction arguments type. */
+  type_id = op.desc->t_id;
 
-  /* Prendo argomento per argomento */
-  t = 0; /* Indice di argomento */
-  is_short = 1;
-  for (i = 0; i < op.desc->numargs; i++) {
-    BoxInt vi = 0;
+  assert(op.num_args <= BOX_OP_MAX_NUM_ARGS);
+  assert(op.desc->numargs == op.num_args
+         || op.desc->numargs == op.num_args + 1);
 
-    /* Prendo dalla lista degli argomenti della funzione la categoria
-     * dell'argomento dell'istruzione.
+  /* Collect all the arguments of the instruction by reading the (variadic)
+   * arguments of the function.
+   */
+  for (i = 0; i < op.desc->num_args; i++) {
+    /* Get the argument form first. Then get the argument value of the expected
+     * type.
      */
-    switch (arg[t].c = va_arg(ap, BoxContCateg)) {
-    case BOXCONTCATEG_LREG:
-    case BOXCONTCATEG_GREG:
-    case BOXCONTCATEG_PTR:
-      arg[t].t = BOXTYPEID_INT;
-      arg[t].vi = vi = va_arg(ap, BoxInt);
-      arg[t].ptr = (void *) (& arg[t].vi);
-      break;
+    unsigned int arg_form = (unsigned int) va_arg(ap, BoxContCateg);
 
-    case BOXCONTCATEG_IMM:
-      switch (op.desc->t_id) {
-      case BOXTYPEID_CHAR:
-        arg[t].t = op.desc->t_id;
-        arg[t].vi = va_arg(ap, BoxInt); vi = 0;
-        arg[t].ptr = (void *) (& arg[t].vi);
-        break;
-      case BOXTYPEID_INT:
-        arg[t].t = op.desc->t_id;
-        arg[t].vi = vi = va_arg(ap, BoxInt);
-        arg[t].ptr = (void *) (& arg[t].vi);
-        break;
-      case BOXTYPEID_REAL:
-        is_short = 0;
-        arg[t].t = op.desc->t_id;
-        arg[t].vr = va_arg(ap, BoxReal);
-        arg[t].ptr = (void *) (& arg[t].vr);
-        break;
-      case BOXTYPEID_POINT:
-        is_short = 0;
-        arg[t].t = op.desc->t_id;
-        arg[t].vp.x = va_arg(ap, BoxReal);
-        arg[t].vp.y = va_arg(ap, BoxReal);
-        arg[t].ptr = (void *) (& arg[t].vp);
-        break;
-      default:
-        is_short = 0;
-        break;
-      }
+    /* Check that the argument for can fit in 2 bits. */
+    if (arg_form & ~0x3) {
+      MSG_ERROR("Unrecognised argument form.");
+      proc->status.error = 1;
+      proc->status.inhibit = 1;
+      return;
+    }
+
+    /* Get the argument value (an integer). */
+    op.args[i] = va_arg(ap, BoxInt);
+
+    /* Update the argument form. */
+    op.args_forms |= (arg_form & 0x3) << (2*i);
+
+    if (arg_form == BOXOPARGFORM_IMM &&
+        type_id != BOXTYPEID_CHAR && type_id != BOXTYPEID_INT) {
+      MSG_ERROR("Unexpected non-integer immediate.");
+      return;
+    }
+  }
+
+  /* Get an extra immediate argument, if required (to go into op.data). */
+  if (op.has_data) {
+    if ((unsigned int) va_arg(ap, BoxContCateg) != BOXCONTCATEG_IMM) {
+      MSG_ERROR("Invalid form for last argument (immediate expected).");
+      return;
+    }
+
+    switch (type_id) {
+    case BOXTYPEID_CHAR:
+      data.val_char = va_arg(ap, int);
+      op.data = (BoxVMWord *) & data.val_char;
       break;
-        
+    case BOXTYPEID_INT:
+      data.val_int = va_arg(ap, BoxInt);
+      op.data = (BoxVMWord *) & data.val_int;
+      break;
+    case BOXTYPEID_REAL:
+      data.val_real = va_arg(ap, BoxReal);
+      op.data = (BoxVMWord *) & data.val_real;
+      break;
+    case BOXTYPEID_POINT:
+      data.val_point.x = va_arg(ap, BoxReal);
+      data.val_point.y = va_arg(ap, BoxReal);
+      op.data = (BoxVMWord *) & data.val_point;
+      break;
     default:
-      MSG_ERROR("Categoria di argomenti sconosciuta!");
-      pt->target_proc->status.error = 1;
-      pt->target_proc->status.inhibit = 1;
-      break;
+      MSG_ERROR("Unexpected type for immediate.");
+      return;
     }
-
-    if (is_short) {
-      /* Controllo che l'argomento possa essere "contenuto"
-       * nel formato corto.
-       */
-      vi &= ~0x7fL;
-      if (vi != 0 && vi != ~0x7fL)
-        is_short = 0;
-    }
-
-    ++t;
   }
 
-  assert(t == op.desc->numargs);
+  /* Compute the size of the instruction and assemble it. */
+  op_length = BoxOp_Get_Length(& op);
 
-  /* Cerco di capire se e' possibile scrivere l'istruzione in formato corto */
-  if (vmp->attr.forcelong)
-    is_short = 0;
+  //printf("has_data=%d length=%d\n", op.has_data, op_length);
 
-  op.format = (is_short == 1 && t <= 2) ? BOXOPFMT_SHORT: BOXOPFMT_LONG;
-
-  if (op.format == BOXOPFMT_SHORT) {
-    /* SHORT INSTRUCTION: we assemble the istruction header in the following way:
-     * (note: 1 is represented with bit 0 = 1 and all other bits = 0)
-     *  bit 0: true if the instruction is long
-     *  bit 1-4: type of arguments
-     *  bit 5-7: length of instruction
-     *  bit 8-15: type of instruction
-     *  (bit 16-23: left empty for argument 1)
-     *  (bit 24-31: left empty for argument 2)
-     */ 
-    BoxVMWord *buffer = BoxArr_Push(& pt->target_proc->code, NULL);
-
-    for (; t < 2; t++) {
-      arg[t].c = 0;
-      arg[t].vi = 0;
-    }
-
-    op.args_forms = (arg[1].c << 2) | arg[0].c;
-    *buffer = (((arg[1].vi & 0xff) << 8 | (arg[0].vi & 0xff)) << 16 |
-               (((op.id & 0xff) << 3 | 1) << 4 | (op.args_forms & 0xf)) << 1);
-    return;
-
-  } else {
-    /* LONG INSTRUCTION: we assemble the istruction header in the following
-     * way:
-     *  FIRST FOUR BYTES:
-     *    bit 0: true if the instruction is long
-     *    bit 1-4: type of arguments
-     *    bit 5-31: length of instruction
-     *  SECOND FOUR BYTES:
-     *    bit 0-31: type of instruction
-     *  (THIRD FOUR BYTES: argument 1)
-     *  (FOURTH FOUR BYTES: argument 2)
-     */
-    BoxArr *prog = & pt->target_proc->code;
-    unsigned int op_size = 2;
-    size_t header_idx = BoxArr_Num_Items(prog) + 1;
-    BoxVMWord *header;
-    (void) BoxArr_MPush(prog, NULL, op_size);
-
-    for (i = 0; i < t; i++) {
-      int arg_size = size_of_type[arg[i].t],
-        arg_size_words = (arg_size + sizeof(BoxVMWord) - 1)/sizeof(BoxVMWord);
-      BoxVMWord *word = BoxArr_MPush(prog, NULL, arg_size_words);
-      word[arg_size_words - 1] = 0;
-      (void) memcpy(& word[0], arg[i].ptr, arg_size);
-      op_size += arg_size_words;
-    }
-
-    for (; t < 2; t++)
-      arg[t].c = 0;
-
-    op.args_forms = (arg[1].c << 2) | arg[0].c;
-    header = (BoxVMWord *) BoxArr_Item_Ptr(prog, header_idx);
-    header[0] = ((op_size & 0x07ff) << 4 | (op.args_forms & 0xf)) << 1 | 0x1;
-    header[1] = op.id;
-  }
+  bytecode = (BoxVMWord *) BoxArr_MPush(& proc->code, NULL, op_length);
+  if (!BoxOp_Write(& op, bytecode))
+    MSG_FATAL("Error assembling the instruction");
 }
 
 /**
