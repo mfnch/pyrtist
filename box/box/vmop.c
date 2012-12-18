@@ -116,10 +116,8 @@ BoxOp_Write(BoxOp *op, BoxVMWord *bytecode) {
      *    bit 1-4: type of arguments
      *    bit 5-15: length of instruction
      *    bit 16-31: type of instruction
-     *  SECOND FOUR BYTES:
-     *    bit 0-31: type of instruction
-     *  (THIRD FOUR BYTES: argument 1)
-     *  (FOURTH FOUR BYTES: argument 2)
+     *  (SECOND FOUR BYTES: argument 1)
+     *  (THIRD FOUR BYTES: argument 2)
      */
     bytecode[0] = ((op->id & 0xffff) << 16
                    | (op->length & 0x07ff) << 5

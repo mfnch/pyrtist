@@ -72,7 +72,9 @@ static BoxOpSignature My_BoxOpSignature_From_Str(const char *s) {
  * IMPLEMENTATION OF VM INSTRUCTIONS                                         *
  *****************************************************************************/
 
-static void My_Exec_Ret(BoxVMX *vmx) {vmx->flags.exit = 1;}
+static void My_Exec_Ret(BoxVMX *vmx) {
+  vmx->flags.exit = 1;
+}
 
 static void My_Exec_Call_I(BoxVMX *vmx) {
   if (BoxVM_Module_Execute(vmx, *((BoxInt *) vmx->arg1.ptr)) == BOXTASK_OK)

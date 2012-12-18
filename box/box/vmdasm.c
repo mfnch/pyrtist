@@ -36,43 +36,6 @@
  *****************************************************************************/
 
 #if 0
-/* Analoga alla precedente, ma per istruzioni CALL. */
-void My_D_CALL(BoxVMDasm *dasm, char **out) {
-  BoxUInt na = dasm->op_desc->numargs;
-
-  assert(na == 1);
-
-  if ((dasm->op.args_type & 3) == BOXCONTCATEG_IMM) {
-    int iat = dasm->op_desc->t_id;
-    BoxInt call_num;
-
-    if (iat == BOXTYPEID_CHAR)
-      call_num = (BoxInt) ((BoxChar) call_num);
-
-    {
-      BoxVMProcTable *pt = & dasm->vm->proc_table;
-      if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
-        sprintf(out[0], SInt, call_num);
-        return;
-
-      } else {
-        char *call_name, *trunc_name;
-        BoxVMProcInstalled *p = BoxArr_Item_Ptr(& pt->installed, call_num);
-
-        call_name = (p->desc) ? p->desc : p->name;
-        trunc_name = (call_name) ? Str_Cut(call_name, 40, 85) : NULL;
-        sprintf(out[0], SInt"('%.40s')",
-                call_num, (trunc_name) ? trunc_name : "?");
-        BoxMem_Free(trunc_name);
-        return;
-      }
-    }
-
-  } else {
-    My_D_GLPI_GLPI(dasm, out);
-  }
-}
-
 /* Analoga alla precedente, ma per istruzioni di salto (jmp, jc). */
 void My_D_JMP(BoxVMDasm *dasm, char **out) {
   BoxUInt na = dasm->op_desc->numargs;
