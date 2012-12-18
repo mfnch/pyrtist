@@ -253,8 +253,6 @@ typedef BoxName BoxData;
   ((index) > 0 ? ((index) - 1) % (num_items)            \
    : (num_items) - 1 - ((-(index)) % (num_items)))
 
-typedef BoxName BoxData;
-
 /* Shorthands. */
 #    define SUInt BoxUInt_Fmt
 #    define SChar BoxChar_Fmt

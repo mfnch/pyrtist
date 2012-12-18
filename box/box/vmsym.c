@@ -80,7 +80,8 @@ BoxVMSymID BoxVMSym_New(BoxVM *vm, BoxUInt sym_type, BoxUInt def_size) {
 
 /* Create a new symbol. */
 BoxVMSymID
-BoxVMSym_Create(BoxVM *vm, BoxUInt sym_type, const void *def, size_t def_size) {
+BoxVMSym_Create(BoxVM *vm, BoxUInt sym_type,
+                const void *def, size_t def_size) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSymID sym_id;
   BoxVMSym *ss = BoxArr_Push(& st->defs, & ss);
@@ -529,7 +530,7 @@ My_Code_Generator(BoxVM *vm, BoxVMSymID sym_id, BoxUInt sym_type,
 
 BoxTask
 BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymCodeGen code_gen,
-                  void *ref, BoxUInt ref_size) {
+                  void *ref, size_t ref_size) {
   BoxVMSymTable *st = & vm->sym_table;
   BoxVMSym *s;
   void *def;
