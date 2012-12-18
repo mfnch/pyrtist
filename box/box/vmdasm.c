@@ -29,53 +29,6 @@
 #include "vmproc_priv.h"
 #include "vmop_priv.h"
 
-#define DEBUG_VM_D_EVERY_ONE 0
-
-/*****************************************************************************
- * Functions used to disassemble the instructions (see BoxVM_Disassemble)    *
- *****************************************************************************/
-
-#if 0
-/* Analoga alla precedente, ma per istruzioni di salto (jmp, jc). */
-void My_D_JMP(BoxVMDasm *dasm, char **out) {
-  BoxUInt na = dasm->op_desc->numargs;
-
-  assert(na == 1);
-
-  if ((dasm->op.args_type & 3) == BOXCONTCATEG_IMM) {
-    int iat = dasm->op_desc->t_id;
-    BoxInt m_num;
-    BoxInt position;
-
-    if (iat == BOXTYPEID_CHAR)
-      m_num = (BoxInt) ((BoxChar) m_num);
-
-    position = (dasm->op_pos + m_num)*sizeof(BoxVMWord);
-    sprintf(out[0], SInt, position);
-
-  } else
-    My_D_GLPI_GLPI(dasm, out);
-}
-
-#define MY_COMBINE_CHARS(c1, c2, c3) \
-  (((int) (c3)) | (((int) (c2)) << 8) | (((int) (c1)) << 16))
-
-BoxVMOpDisasm BoxVM_Get_ArgDAsm_From_Str(const char *s) {
-  switch (MY_COMBINE_CHARS(s[0], s[1], s[2])) {
-  case MY_COMBINE_CHARS('c', '-', '\0'): return My_D_CALL;
-  case MY_COMBINE_CHARS('x', 'i', '\0'): return My_D_GLPI_Imm;
-  case MY_COMBINE_CHARS('x', 'x', '\0'): return My_D_GLPI_GLPI;
-  case MY_COMBINE_CHARS('j', '-', '\0'): return My_D_JMP;
-  default:
-    MSG_FATAL("My_Disassembler_From_Str: unknown string '%s'", s);
-    assert(0);
-    return NULL;
-  }
-}
-
-#endif
-
-
 /**
  * Disassemble a block of memory and call the given iterator for every
  * instruction.
@@ -96,14 +49,6 @@ BoxTask BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
 
     if (!BoxOp_Read(& dasm.op, vm->vmcur, op_addr))
       return BOXTASK_FAILURE;
-
-#if DEBUG_VM_D_EVERY_ONE
-    printf("Instruction at position "SUInt" (%p): "
-           "{is_long = %d, length = "SUInt", type = "SUInt
-           ", arg_type = "SUInt")\n",
-           dasm.op_pos, dasm.op_ptr, dasm.flags.op_is_long,
-           op.size, op.type, op.arg_type);
-#endif
 
     dasm.op_pos = op_pos;
     dasm.op_desc = ((dasm.op.id >= 0 || dasm.op.id < BOX_NUM_OPS) ?
