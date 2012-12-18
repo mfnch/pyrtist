@@ -171,6 +171,29 @@ static BoxTask My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
       }
     }
     break;
+
+  case BOXOP_CREATE_I:
+  case BOXOP_TYPEOF_I:
+    {
+      BoxTypeId type_id = op->args[0];
+      BoxType *type = BoxVM_Get_Installed_Type(dasm->vm, type_id);
+      if (type) {
+        char *type_repr = BoxType_Get_Repr(type);
+        if (type_repr) {
+          char *trunc_type_repr = Str_Cut(type_repr, 40, 85);
+
+          if (trunc_type_repr) {
+            BoxMem_Free(type_repr);
+            type_repr = trunc_type_repr;
+          }
+
+          fprintf(output, " ('%.40s')", type_repr);
+          BoxMem_Free(type_repr);
+        }
+      }
+    }
+    break;
+
   default:
     break;
   }
