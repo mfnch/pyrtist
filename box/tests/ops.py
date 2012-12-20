@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+3
 from test import TestSession
 
 #----------------------------------------------------------------------------#
@@ -30,3 +30,13 @@ c = d = 1.234, Print["answer=", c == d;]
 """
 test.expect(exit_status=0, num_errors=0, num_warnings=0, answer=['1', '1'])
 
+#----------------------------------------------------------------------------#
+test = tests.new_test(title="char functions")
+test.body = """
+Lower = Char
+Char@Lower[$$ = Char[If[$ >= 'A' && $ <= 'Z'], $ + 'a' - 'A', Else, $]]
+
+Print["answer=", Lower['B'] == 'b', Lower['?'] == '?'
+                 Lower['z'] == 'z', Lower['Z'] == 'z';]
+"""
+test.expect(exit_status=0, num_errors=0, num_warnings=0, answer='1111')

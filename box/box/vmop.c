@@ -56,7 +56,7 @@ BoxOp_Get_Length(BoxOp *op) {
 
   } else if (op->num_args == 1) {
     /* 1 argument. */
-    assert(type_id == BOXTYPEID_INT
+    assert(type_id == BOXTYPEID_INT || type_id == BOXTYPEID_CHAR
            || (op->args_forms & 0x3) != BOXOPARGFORM_IMM);
 
     if (op->format == BOXOPFMT_UNDECIDED) {
