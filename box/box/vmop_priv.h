@@ -100,10 +100,8 @@ BoxInt32_From_UInt32(uint32_t x) {
  * structure containing all the information about the instruction.
  */
 static inline BoxBool
-BoxOp_Read(BoxOp *op, BoxVMX *vmx, BoxVMWord *bytecode) {
+BoxOp_Read(BoxOp *op, const BoxOpDesc *exec_table, BoxVMWord *bytecode) {
   BoxVMWord word1 = bytecode[0];
-  const BoxOpDesc *exec_table = vmx->vm->exec_table;
-
   if (word1 & 0x1) {
     /* Long format. */
     op->args_forms = (word1 >> 1) & 0xf;

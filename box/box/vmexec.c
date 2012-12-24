@@ -77,7 +77,7 @@ static void My_Exec_Ret(BoxVMX *vmx, void *arg1, void *arg2) {
 }
 
 static void My_Exec_Call_I(BoxVMX *vmx, void *arg1, void *arg2) {
-  if (BoxVM_Module_Execute(vmx, *((BoxInt *) arg1)) == BOXTASK_OK)
+  if (BoxVM_Module_Execute(vmx->vm, *((BoxInt *) arg1)) == BOXTASK_OK)
     return;
   vmx->flags.error = vmx->flags.exit = 1;
 }
@@ -563,9 +563,9 @@ My_Exec_Box_O(BoxVMX *vmx, void *arg1, void *arg2) {
     BoxPtr_Nullify(& src);
     if (BoxAny_Box(dst, & src, t))
       return;
-    BoxVMX_Set_Fail_Msg(vmx, "Boxing operation failed");
+    BoxVM_Set_Fail_Msg(vmx->vm, "Boxing operation failed");
   } else
-    BoxVMX_Set_Fail_Msg(vmx, "Anomalous type in boxing operation");
+    BoxVM_Set_Fail_Msg(vmx->vm, "Anomalous type in boxing operation");
 
   vmx->flags.error = vmx->flags.exit = 1;
 }
@@ -586,9 +586,9 @@ My_Exec_Box_OO(BoxVMX *vmx, void *arg1, void *arg2) {
   if (t) {
     if (BoxAny_Box(dst, src, t))
       return;
-    BoxVMX_Set_Fail_Msg(vmx, "Boxing operation failed");
+    BoxVM_Set_Fail_Msg(vmx->vm, "Boxing operation failed");
   } else
-    BoxVMX_Set_Fail_Msg(vmx, "Anomalous type in boxing operation");
+    BoxVM_Set_Fail_Msg(vmx->vm, "Anomalous type in boxing operation");
 
   vmx->flags.error = vmx->flags.exit = 1;
 }
@@ -609,9 +609,9 @@ static void My_Exec_Unbox_OO(BoxVMX *vmx, void *arg1, void *arg2) {
   if (t) {
     if (BoxAny_Unbox(dst, src, t))
       return;
-    BoxVMX_Set_Fail_Msg(vmx, "Unboxing operation failed");
+    BoxVM_Set_Fail_Msg(vmx->vm, "Unboxing operation failed");
   } else
-    BoxVMX_Set_Fail_Msg(vmx, "Anomalous type in unboxing operation");
+    BoxVM_Set_Fail_Msg(vmx->vm, "Anomalous type in unboxing operation");
 
   vmx->flags.error = vmx->flags.exit = 1;  
 }
@@ -635,7 +635,7 @@ static void My_Exec_Dycall_OO(BoxVMX *vmx, void *arg1, void *arg2) {
 
     else {
       char *msg = BoxException_Get_Str(exception);
-      BoxVMX_Set_Fail_Msg(vmx, msg);
+      BoxVM_Set_Fail_Msg(vmx->vm, msg);
       Box_Mem_Free(msg);
       BoxException_Destroy(exception);
     }
@@ -649,7 +649,7 @@ static void My_Exec_Dycall_OO(BoxVMX *vmx, void *arg1, void *arg2) {
                       BoxType_Get_Repr(t_child) : Box_Mem_Strdup("null"));
     char *msg = Box_SPrintF("Cannot find combination %~s@%~s",
                             s_child, s_parent);
-    BoxVMX_Set_Fail_Msg(vmx, msg);
+    BoxVM_Set_Fail_Msg(vmx->vm, msg);
     Box_Mem_Free(msg);
   }
 

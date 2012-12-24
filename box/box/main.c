@@ -382,7 +382,7 @@ static BoxTask My_Stage_Write_Asm(BoxUInt flags) {
 
 BoxTask Main_Execute(BoxUInt main_module) {
   BoxTask t;
-  t = BoxVM_Module_Execute(target_vm->vmcur, main_module);
+  t = BoxVM_Module_Execute(target_vm, main_module);
   if (t == BOXTASK_FAILURE && (flags & FLAG_SILENT) == 0)
     BoxVM_Backtrace_Print(target_vm, stderr);
   return t;

@@ -50,7 +50,7 @@ static BoxTask My_Error(BoxVMX *vm, char *object, BoxTask t) {
   else {
     char *msg = Box_SPrintF("Found inconsistency between C and Box "
                             "definitions of of the object '%s'.", object);
-    BoxVMX_Set_Fail_Msg(vm, msg);
+    BoxVM_Set_Fail_Msg(vm->vm, msg);
     BoxMem_Free(msg);
     return BOXTASK_FAILURE;
   }

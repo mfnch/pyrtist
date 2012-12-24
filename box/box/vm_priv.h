@@ -193,7 +193,6 @@ struct BoxVMX_struct {
 
 /** @brief The full status of the virtual machine of Box. */
 struct BoxVM_struct {
-  BoxVMX  *vmcur;          /**< The current execution frame */
   BoxArr  types;           /**< Type bound to this VM. */
   BoxHT   types_dict;      /**< Dictionaries to find type IDs the corresponding
                               types.*/
@@ -288,12 +287,8 @@ BoxVM_Init(BoxVM *vm);
 BOXEXPORT void
 BoxVM_Finish(BoxVM *vm);
 
-/** Provide a failure message for a raised exception. */
-BOXEXPORT void
-BoxVMX_Set_Fail_Msg(BoxVMX *vm, const char *msg);
-
 BOXEXPORT BoxTask
-BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num);
+BoxVM_Module_Execute(BoxVM *vm, BoxVMCallNum call_num);
 
 /**
  * Similar to BoxVM_Module_Execute(), but takes also pointers to child
@@ -302,7 +297,7 @@ BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num);
  * This guarantee that the reference counting protocol is respected.
  */
 BOXEXPORT BoxTask
-BoxVM_Module_Execute_With_Args(BoxVMX *vmx, BoxVMCallNum cn,
+BoxVM_Module_Execute_With_Args(BoxVM *vm, BoxVMCallNum cn,
                                BoxPtr *parent, BoxPtr *child);
 
 /**

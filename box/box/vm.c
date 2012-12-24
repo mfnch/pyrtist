@@ -37,7 +37,6 @@
 #include "array.h"
 #include "occupation.h"
 #include "vm_priv.h"
-#include "vmx.h"
 #include "vmsym.h"
 #include "vmproc_priv.h"
 #include "container.h"
@@ -80,12 +79,6 @@ BoxTask BoxVM_Init(BoxVM *vm) {
 
   /* Table of actions for each VM instruction */
   vm->exec_table = BoxVM_Get_Exec_Table();
-
-  vm->vmcur = BoxMem_Alloc(sizeof(BoxVMX));
-  if (vm->vmcur == NULL)
-    return BOXTASK_FAILURE;
-
-  vm->vmcur->vm = vm;
 
   /* Reset the global register boundaries and pointers */
   for(i = 0; i < NUM_TYPES; i++) {
@@ -160,9 +153,6 @@ void BoxVM_Finish(BoxVM *vm) {
 
   if (vm->has.op_table)
     BoxOpTable_Destroy(& vm->op_table);
-
-  if (vm->vmcur != NULL)
-    BoxMem_Free(vm->vmcur);
 }
 
 BoxVM *BoxVM_Create(void) {
@@ -329,9 +319,8 @@ void BoxVM_Module_Global_Set(BoxVM *vmp, BoxInt type, BoxInt reg, void *value) {
  *   indirectly called by the instruction create, which is not supposed to do
  *   so.
  */
-BoxTask BoxVM_Module_Execute_With_Args(BoxVMX *vmx, BoxVMCallNum cn,
+BoxTask BoxVM_Module_Execute_With_Args(BoxVM *vm, BoxVMCallNum cn,
                                        BoxPtr *parent, BoxPtr *child) {
-  BoxVM *vm = vmx->vm;
   BoxTask t;
   BoxPtr save_parent = *vm->box_vm_current,
          save_child = *vm->box_vm_arg1;
@@ -348,7 +337,7 @@ BoxTask BoxVM_Module_Execute_With_Args(BoxVMX *vmx, BoxVMCallNum cn,
   } else
     BoxPtr_Nullify(vm->box_vm_arg1);
 
-  t = BoxVM_Module_Execute(vmx, cn);
+  t = BoxVM_Module_Execute(vm, cn);
 
   if (!BoxPtr_Is_Detached(vm->box_vm_current))
     (void) BoxPtr_Unlink(vm->box_vm_current);
@@ -404,8 +393,8 @@ static void *BoxOpArg_Get(BoxTypeId t, BoxOpArg *arg,
 /* Execute the module number m of program vmp.
  * If initial != NULL, *initial is the initial status of the virtual machine.
  */
-BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
-  BoxVM *vmp = vmx->vm;
+BoxTask BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
+  const BoxOpDesc *exec_table = vmp->exec_table;
   BoxVMX this_vmx;
 
   BoxVMProcTable *pt = & vmp->proc_table;
@@ -419,8 +408,6 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
 
   /* Controlliamo che il modulo sia installato! */
   if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
-    vmx->flags.error = 1;
-    vmx->flags.exit = 1;
     MSG_ERROR("Call to the undefined procedure %d.", call_num);
     return BOXTASK_FAILURE;
   }
@@ -431,24 +418,23 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
           BOX_VM_ARG_PTR(vmx, void));
 #endif
 
+  /* NOTE: passing BoxVMX objects to the C call is obsolete.
+   *  We will clean this up at some point...
+   */
+  this_vmx.vm = vmp;
+
   p = (BoxVMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
   switch (p->type) {
   case BOXVMPROCKIND_FOREIGN:
-    {
-      BoxTask t = BoxCallable_CallOld(p->code.foreign, vmx);
-      return t;
-    }
+    return BoxCallable_CallOld(p->code.foreign, & this_vmx);
   case BOXVMPROCKIND_C_CODE:
-    return p->code.c(vmx);
+    return p->code.c(& this_vmx);
   case BOXVMPROCKIND_VM_CODE:
     break;
   default:
     MSG_ERROR("Call into the broken procedure %d.", call_num);
     return BOXTASK_FAILURE;
   }
-
-  this_vmx.vm = vmp;
-  vmp->vmcur = & this_vmx;
 
   {
     int i;
@@ -477,9 +463,8 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
 #endif
 
     /* Read the instruction. */
-    if (!BoxOp_Read(& op, & this_vmx, i_pos)) {
+    if (!BoxOp_Read(& op, exec_table, i_pos)) {
       MSG_ERROR("Unknown VM instruction!");
-      vmp->vmcur = vmx;
       return BOXTASK_FAILURE;
     }
 
@@ -545,7 +530,6 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
       }
   }
 
-  vmp->vmcur = vmx;
   return this_vmx.flags.error ? BOXTASK_FAILURE : BOXTASK_OK;
 }
 
@@ -793,6 +777,28 @@ void BoxVM_Data_Display(BoxVM *vm, FILE *stream) {
   fprintf(stream, "*** END OF THE DATA-SEGMENT ***\n");
 }
 
+/* Set a failure message. */
+void BoxVM_Set_Fail_Msg(BoxVM *vm, const char *msg) {
+  if (vm->fail_msg)
+    BoxMem_Free(vm->fail_msg);
+  vm->fail_msg = msg ? BoxMem_Strdup(msg) : NULL;
+}
+
+/* Get the last failure message. */
+char *BoxVM_Get_Fail_Msg(BoxVM *vm, BoxBool steal) {
+  if (vm->fail_msg) {
+    if (steal) {
+      char *msg = vm->fail_msg;
+      vm->fail_msg = NULL;
+      return msg;
+
+    } else
+      return vm->fail_msg;
+
+  } else
+    return NULL;
+}
+
 /* Clear the backtrace of the program. */
 void BoxVM_Backtrace_Clear(BoxVM *vm) {
   BoxArr_Clear(& vm->backtrace);
@@ -840,7 +846,7 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream) {
     }
   }
 
-  fail_msg = BoxVMX_Get_Fail_Msg(vm->vmcur, BOXBOOL_FALSE);
+  fail_msg = BoxVM_Get_Fail_Msg(vm, BOXBOOL_FALSE);
   if (fail_msg)
     fprintf(stream, "Failure: %s\n", fail_msg);
 }

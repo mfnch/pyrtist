@@ -47,7 +47,7 @@ BoxTask BoxVM_Disassemble_Block(BoxVM *vm, const void *prog, size_t dim,
     BoxVMWord *op_addr = & ((BoxVMWord *) prog)[op_pos];
     BoxTask outcome;
 
-    if (!BoxOp_Read(& dasm.op, vm->vmcur, op_addr))
+    if (!BoxOp_Read(& dasm.op, exec_table, op_addr))
       return BOXTASK_FAILURE;
 
     dasm.op_pos = op_pos;

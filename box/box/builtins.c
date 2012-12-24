@@ -200,7 +200,7 @@ static BoxTask My_Exit_Int(BoxVMX *vmx) {
 }
 
 static BoxTask My_Fail_Clear_Msg(BoxVMX *vmx) {
-  BoxVMX_Set_Fail_Msg(vmx, NULL);
+  BoxVM_Set_Fail_Msg(vmx->vm, NULL);
   return BOXTASK_OK;
 }
 
@@ -211,7 +211,7 @@ static BoxTask My_Fail(BoxVMX *vmx) {
 static BoxTask My_Fail_Msg(BoxVMX *vmx) {
   BoxStr *s = BoxVMX_Get_Child_Target(vmx);
   char *msg = BoxStr_To_C_String(s);
-  BoxVMX_Set_Fail_Msg(vmx, msg);
+  BoxVM_Set_Fail_Msg(vmx->vm, msg);
   BoxMem_Free(msg);
   return BOXTASK_OK;
 }

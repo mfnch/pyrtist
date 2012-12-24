@@ -428,7 +428,7 @@ static BoxTask GLib_Obj_At_X(BoxVMX *vm, BoxGObjKind kind) {
     char *msg = Box_SPrintF("Cannot convert Obj to %s. Obj has type %s.",
                             BoxGObjKind_Name(kind),
                             BoxGObjKind_Name(gobj->kind));
-    BoxVMX_Set_Fail_Msg(vm, msg);
+    BoxVM_Set_Fail_Msg(vm->vm, msg);
     BoxMem_Free(msg);
     return BOXTASK_FAILURE;
   }
@@ -469,7 +469,7 @@ BoxTask GLib_Int_At_Obj_Get(BoxVMX *vm) {
   } else {
     char *msg =
       Box_SPrintF("Obj does not have a sub-object at index %d.", idx);
-    BoxVMX_Set_Fail_Msg(vm, msg);
+    BoxVM_Set_Fail_Msg(vm->vm, msg);
     BoxMem_Free(msg);
     return BOXTASK_FAILURE;
   }
@@ -494,7 +494,7 @@ BoxTask GLib_Int_At_Obj_GetType(BoxVMX *vm) {
     return BOXTASK_OK;
 
   } else {
-    BoxVMX_Set_Fail_Msg(vm, "Cannot get item type. Index out of bounds.");
+    BoxVM_Set_Fail_Msg(vm->vm, "Cannot get item type. Index out of bounds.");
     return BOXTASK_FAILURE;
   }
 }

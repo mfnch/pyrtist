@@ -358,7 +358,6 @@ My_Call_CallOld(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
 
   /* Setup a fake VM. */
   vmx.vm = & vm;
-  vm.vmcur = & vmx;
   vm.box_vm_current = (parent) ? parent : & dummy;
   vm.box_vm_arg1 = (child) ? child : & dummy;
 
@@ -400,7 +399,7 @@ BoxCallable_Call1(BoxCallable *cb, BoxPtr *parent) {
     {
       BoxVMCallNum call_num = cb->implem.vm_call.call_num;
       BoxVM *vm = cb->implem.vm_call.vm;
-      if (BoxVM_Module_Execute_With_Args(vm->vmcur, call_num, parent, NULL)
+      if (BoxVM_Module_Execute_With_Args(vm, call_num, parent, NULL)
           == BOXTASK_OK)
         return NULL;
       break;
@@ -437,7 +436,7 @@ BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
     {
       BoxVMCallNum call_num = cb->implem.vm_call.call_num;
       BoxVM *vm = cb->implem.vm_call.vm;
-      if (BoxVM_Module_Execute_With_Args(vm->vmcur, call_num, parent, child)
+      if (BoxVM_Module_Execute_With_Args(vm, call_num, parent, child)
           == BOXTASK_OK)
         return NULL;
       break;

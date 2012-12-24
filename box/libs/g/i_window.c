@@ -576,8 +576,8 @@ BoxTask Box_Lib_G_Str_At_Window_Get(BoxVMX *vm) {
     return BOXTASK_OK;
 
   } else {
-    BoxVMX_Set_Fail_Msg(vm, "Cannot find hot point with the given name "
-                           "in the Window");
+    BoxVM_Set_Fail_Msg(vm->vm, ("Cannot find hot point with the given name "
+                                "in the Window"));
     return BOXTASK_FAILURE;
   }
 }
@@ -593,7 +593,7 @@ BoxTask Box_Lib_G_Int_At_Window_Get(BoxVMX *vm) {
     return BOXTASK_OK;
 
   } else {
-    BoxVMX_Set_Fail_Msg(vm, "The Window does not have any hot points");
+    BoxVM_Set_Fail_Msg(vm->vm, "The Window does not have any hot points");
     return BOXTASK_FAILURE;
   }
 }
@@ -618,7 +618,7 @@ BoxTask Box_Lib_G_Int_At_Window_GetHotPointName(BoxVMX *vm) {
     return BOXTASK_OK;
 
   } else {
-    BoxVMX_Set_Fail_Msg(vm, "The Window Hot point does not have a name");
+    BoxVM_Set_Fail_Msg(vm->vm, "The Window Hot point does not have a name");
     return BOXTASK_FAILURE;
   }
 }

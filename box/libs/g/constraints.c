@@ -74,7 +74,8 @@ BoxTask Box_Lib_G_Constraints_At_Transform(BoxVMX *vm) {
   BoxGAllow allowed;
 
   if (My_Parse_Freedom_String(& cs->freedom, & allowed) != BOXTASK_OK) {
-    BoxVMX_Set_Fail_Msg(vm, "Error parsing string of allowed transformations");
+    BoxVM_Set_Fail_Msg(vm->vm,
+                       "Error parsing string of allowed transformations");
     return BOXTASK_FAILURE;
   }
     
@@ -100,7 +101,7 @@ BoxTask Box_Lib_G_Constraints_At_Transform(BoxVMX *vm) {
     } 
 
     if (got_error) {
-      BoxVMX_Set_Fail_Msg(vm, "Error in obj-ified constraints");
+      BoxVM_Set_Fail_Msg(vm->vm, "Error in obj-ified constraints");
       return BOXTASK_FAILURE;
     }
   }
@@ -118,7 +119,7 @@ BoxTask Box_Lib_G_Constraints_At_Transform(BoxVMX *vm) {
 
     if (err_number) {
       const char *err_msg = BoxGAutoTransformErr_To_String(err_number);
-      BoxVMX_Set_Fail_Msg(vm, err_msg);
+      BoxVM_Set_Fail_Msg(vm->vm, err_msg);
       return BOXTASK_FAILURE;
     }
 

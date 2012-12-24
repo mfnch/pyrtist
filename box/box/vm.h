@@ -32,7 +32,13 @@
 
 #  include <box/types.h>
 #  include <box/srcpos.h>
-#  include <box/vmx.h>
+
+/**
+ * @brief A virtual machine executor.
+ *
+ * This is an object which can be used to execute code from a virtual machine.
+ */
+typedef struct BoxVMX_struct BoxVMX;
 
 /**
  * When a procedure is created, an ID (an integer number) is assigned to it.
@@ -292,5 +298,23 @@ BOXEXPORT BoxTask BoxVM_Alloc_Global_Regs(BoxVM *vm, BoxInt num_var[],
 
 BOXEXPORT void BoxVM_Module_Global_Set(BoxVM *vmp, BoxInt type, BoxInt reg,
                                        void *value);
+
+/**
+ * Get the last failure message.
+ * @param vm the VM.
+ * @param steal if set to BOXBOOL_TRUE, steal the string (and allocation
+ *   responsibility) and remove the failure message from the executor state.
+ * @return A string which must be deallocated by the user iff
+ *   steal == BOXBOOL_TRUE.
+ */
+BOXEXPORT char *BoxVM_Get_Fail_Msg(BoxVM *vm, BoxBool steal);
+
+/**
+ * Set a failure message.
+ * @param vmx the VM executor.
+ * @param msg a string representing an error condition. If this is NULL, then
+ *   the error condition for the VM executor is reset.
+ */
+BOXEXPORT void BoxVM_Set_Fail_Msg(BoxVM *vm, const char *msg);
 
 #endif /* _BOX_VM_H */
