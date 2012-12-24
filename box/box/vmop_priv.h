@@ -111,7 +111,7 @@ BoxOp_Read(BoxOp *op, BoxVMX *vmx, BoxVMWord *bytecode) {
     op->id = word1 >> 16;
     if (op->id < BOX_NUM_OPS) {
       const BoxOpDesc *idesc = & exec_table[op->id];
-      vmx->idesc = idesc;
+      op->desc = idesc;
       op->has_data = idesc->has_data;
       op->num_args = idesc->num_args;
       /* NOTE: num_args >= 2 means 2 arguments. */
@@ -134,7 +134,7 @@ BoxOp_Read(BoxOp *op, BoxVMX *vmx, BoxVMWord *bytecode) {
     op->id = (word1 >> 8) & 0xff;
     if (op->id < BOX_NUM_OPS) {
       const BoxOpDesc *idesc = & exec_table[op->id];
-      vmx->idesc = idesc;
+      op->desc = idesc;
       op->data = & bytecode[1];
       op->has_data = idesc->has_data;
       op->num_args = idesc->num_args;

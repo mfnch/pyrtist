@@ -158,7 +158,6 @@ typedef struct {
  * @brief Datastructure used to parse one single instruction argument.
  */
 typedef struct {
-  void      *ptr;     /**< Pointer to argument value. */
   union {
     BoxChar val_char; /**< Value for Char registers. */
     BoxInt  val_int;  /**< Value for Int registers. */
@@ -182,12 +181,7 @@ struct BoxVMX_struct {
               exit    :1; /**< Exit current execution frame */
   } flags;                /**< Execution flags */
 
-  const BoxOpDesc
-              *idesc;     /**< Descriptor for current instruction */
-
   BoxInt      op_size;
-
-  BoxOpArg    arg1, arg2; /**< Instruction arguments. */
 
   BoxVMRegs   local[NUM_TYPES], /**< Local register allocation status */
               *global;          /**< Global register allocation status */

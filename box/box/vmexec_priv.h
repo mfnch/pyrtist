@@ -30,6 +30,6 @@
 /**
  * Prototype of function which implements a VM instruction.
  */
-typedef void (*BoxVMOpExecutor)(BoxVMX *vmx);
+typedef void (*BoxVMOpExecutor)(BoxVMX *vmx, void *arg1, void *arg2);
 
 #endif /* _BOX_VMEXEC_PRIV_H */

@@ -369,55 +369,36 @@ BoxTask BoxVM_Module_Execute_With_Args(BoxVMX *vmx, BoxVMCallNum cn,
  * @param gt The argument getter object.
  * @return The pointer to the argument value.
  */
-static void BoxOpArg_Get(BoxOpArg *arg, BoxVMX *vmx, int form, BoxInt value) {
-  BoxTypeId t = vmx->idesc->t_id;
+static void *BoxOpArg_Get(BoxTypeId t, BoxOpArg *arg,
+                          BoxVMX *vmx, int form, BoxInt value) {
   switch (form) {
   case BOXOPARGFORM_GREG:
-    arg->ptr = vmx->global[t].ptr + value*size_of_type[t];
-    return;
+    return vmx->global[t].ptr + value*size_of_type[t];
   case BOXOPARGFORM_LREG:
-    arg->ptr = vmx->local[t].ptr + value*size_of_type[t];
-    return;
+    return vmx->local[t].ptr + value*size_of_type[t];
   case BOXOPARGFORM_PTR:
     {
       BoxPtr *ptr = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
       arg->data.val_ptr.block = ptr->block;
       arg->data.val_ptr.ptr = (char *) ptr->ptr + value;
-      arg->ptr = arg->data.val_ptr.ptr;
-      return;
+      return arg->data.val_ptr.ptr;
     }
   case BOXOPARGFORM_IMM:
     switch ((int) t) {
     case BOXTYPEID_CHAR:
       arg->data.val_char = (BoxChar) value;
-      arg->ptr = & arg->data.val_char;
-      return;
+      return & arg->data.val_char;
     case BOXTYPEID_INT:
       arg->data.val_int = (BoxInt) value;
-      arg->ptr = & arg->data.val_int;
-      return;
+      return & arg->data.val_int;
     case BOXTYPEID_REAL:
       arg->data.val_real = (BoxReal) value;
-      arg->ptr = & arg->data.val_real;
-      return;
+      return & arg->data.val_real;
     }
   }
 
   abort();
-}
-
-void BoxOp_Get_Args(BoxOp *op, BoxVMX *vmx) {
-  if (op->num_args >= 2) {
-    BoxOpArg_Get(& vmx->arg1, vmx, op->args_forms & 0x3, op->args[0]);
-    BoxOpArg_Get(& vmx->arg2, vmx, (op->args_forms >> 2) & 0x3, op->args[1]);
-  } else if (op->num_args == 1) {
-    BoxOpArg_Get(& vmx->arg1, vmx, op->args_forms & 0x3, op->args[0]);
-    if (op->has_data)
-      vmx->arg2.ptr = op->data;
-  } else {
-    if (op->has_data)
-      vmx->arg1.ptr = op->data;
-  }
+  return NULL;
 }
 
 /* Execute the module number m of program vmp.
@@ -487,24 +468,41 @@ BoxTask BoxVM_Module_Execute(BoxVMX *vmx, BoxVMCallNum call_num) {
 
   do {
     BoxOp op;
+    BoxOpArg data1, data2;
+    void *arg1, *arg2;
 
 #if DEBUG_EXEC == 1
     fprintf(stderr, "module = "SInt", pos = "SInt" - reading instruction.\n",
             call_num, i*sizeof(BoxVMWord));
 #endif
 
+    /* Read the instruction. */
     if (!BoxOp_Read(& op, & this_vmx, i_pos)) {
       MSG_ERROR("Unknown VM instruction!");
       vmp->vmcur = vmx;
       return BOXTASK_FAILURE;
     }
 
-    BoxOp_Get_Args(& op, & this_vmx);
+    /* Get the arguments. */
+    if (op.num_args >= 2) {
+      arg1 = BoxOpArg_Get(op.desc->t_id, & data1, & this_vmx,
+                          op.args_forms & 0x3, op.args[0]);
+      arg2 = BoxOpArg_Get(op.desc->t_id, & data2, & this_vmx,
+                          (op.args_forms >> 2) & 0x3, op.args[1]);
+    } else if (op.num_args == 1) {
+      arg1 = BoxOpArg_Get(op.desc->t_id, & data1, & this_vmx,
+                          op.args_forms & 0x3, op.args[0]);
+      if (op.has_data)
+        arg2 = op.data;
+    } else {
+      if (op.has_data)
+        arg1 = op.data;
+    }
 
     /* Esegue l'istruzione */
     this_vmx.op_size = op.next;
     if (!this_vmx.flags.error)
-      this_vmx.idesc->execute(& this_vmx);
+      op.desc->execute(& this_vmx, arg1, arg2);
 
     /* Advance to the next instruction...
      * op.size can be modified by 'vm.idesc->execute(vmp)' when executing

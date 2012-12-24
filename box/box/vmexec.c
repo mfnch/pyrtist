@@ -72,21 +72,19 @@ static BoxOpSignature My_BoxOpSignature_From_Str(const char *s) {
  * IMPLEMENTATION OF VM INSTRUCTIONS                                         *
  *****************************************************************************/
 
-static void My_Exec_Ret(BoxVMX *vmx) {
+static void My_Exec_Ret(BoxVMX *vmx, void *arg1, void *arg2) {
   vmx->flags.exit = 1;
 }
 
-static void My_Exec_Call_I(BoxVMX *vmx) {
-  if (BoxVM_Module_Execute(vmx, *((BoxInt *) vmx->arg1.ptr)) == BOXTASK_OK)
+static void My_Exec_Call_I(BoxVMX *vmx, void *arg1, void *arg2) {
+  if (BoxVM_Module_Execute(vmx, *((BoxInt *) arg1)) == BOXTASK_OK)
     return;
   vmx->flags.error = vmx->flags.exit = 1;
 }
 
 static void *My_Exec_X_II(BoxVMX *vmx, int type_id, size_t type_size,
-                          size_t *num_regs) {
-  BoxInt numvar = *((BoxInt *) vmx->arg1.ptr),
-         numreg = *((BoxInt *) vmx->arg2.ptr),
-         numtot = numvar + numreg + 1;
+                          size_t *num_regs, BoxInt numvar, BoxInt numreg) {
+  BoxInt numtot = numvar + numreg + 1;
 
   if ((vmx->alc[type_id] & 1) == 0) {
     if(numvar >= 0 && numtot > numvar) {
@@ -114,297 +112,322 @@ static void *My_Exec_X_II(BoxVMX *vmx, int type_id, size_t type_size,
   return NULL;
 }
 
-static void My_Exec_NewC_II(BoxVMX *vmx) {
-  (void) My_Exec_X_II(vmx, BOXTYPEID_CHAR, sizeof(BoxChar), NULL);
+static void My_Exec_NewC_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  (void) My_Exec_X_II(vmx, BOXTYPEID_CHAR, sizeof(BoxChar), NULL,
+                      *((BoxInt *) arg1), *((BoxInt *) arg2));
 }
 
-static void My_Exec_NewI_II(BoxVMX *vmx) {
-  (void) My_Exec_X_II(vmx, BOXTYPEID_INT, sizeof(BoxInt), NULL);
+static void My_Exec_NewI_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  (void) My_Exec_X_II(vmx, BOXTYPEID_INT, sizeof(BoxInt), NULL,
+                      *((BoxInt *) arg1), *((BoxInt *) arg2));
 }
 
-static void My_Exec_NewR_II(BoxVMX *vmx) {
-  (void) My_Exec_X_II(vmx, BOXTYPEID_REAL, sizeof(BoxReal), NULL);
+static void My_Exec_NewR_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  (void) My_Exec_X_II(vmx, BOXTYPEID_REAL, sizeof(BoxReal), NULL,
+                      *((BoxInt *) arg1), *((BoxInt *) arg2));
 }
 
-static void My_Exec_NewP_II(BoxVMX *vmx) {
-  (void) My_Exec_X_II(vmx, BOXTYPEID_POINT, sizeof(BoxPoint), NULL);
+static void My_Exec_NewP_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  (void) My_Exec_X_II(vmx, BOXTYPEID_POINT, sizeof(BoxPoint), NULL,
+                      *((BoxInt *) arg1), *((BoxInt *) arg2));
 }
 
-static void My_Exec_NewO_II(BoxVMX *vmx) {
+static void My_Exec_NewO_II(BoxVMX *vmx, void *arg1, void *arg2) {
   size_t num_regs, i;
   BoxPtr *regs =
-    (BoxPtr *) My_Exec_X_II(vmx, BOXTYPEID_PTR, sizeof(BoxPtr), & num_regs);
+    (BoxPtr *) My_Exec_X_II(vmx, BOXTYPEID_PTR, sizeof(BoxPtr), & num_regs,
+                            *((BoxInt *) arg1), *((BoxInt *) arg2));
   if (regs) {
     for(i = 0; i < num_regs; i++)
       BoxPtr_Nullify(regs + i);
   }
 }
 
-static void My_Exec_Mov_CC(BoxVMX *vmx) {
-  *((BoxChar *) vmx->arg1.ptr) = *((BoxChar *) vmx->arg2.ptr);
+static void My_Exec_Mov_CC(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxChar *) arg1) = *((BoxChar *) arg2);
 }
-static void My_Exec_Mov_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) = *((BoxInt *) vmx->arg2.ptr);
+
+static void My_Exec_Mov_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) = *((BoxInt *) arg2);
 }
-static void My_Exec_Mov_RR(BoxVMX *vmx) {
-  *((BoxReal *) vmx->arg1.ptr) = *((BoxReal *) vmx->arg2.ptr);
+
+static void My_Exec_Mov_RR(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxReal *) arg1) = *((BoxReal *) arg2);
 }
-static void My_Exec_Mov_PP(BoxVMX *vmx) {
-  *((BoxPoint *) vmx->arg1.ptr) = *((BoxPoint *) vmx->arg2.ptr);
+
+static void My_Exec_Mov_PP(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxPoint *) arg1) = *((BoxPoint *) arg2);
 }
-static void My_Exec_Mov_OO(BoxVMX *vmx) {
-  BoxPtr *arg1 = (BoxPtr *) vmx->arg1.ptr,
-         *arg2 = (BoxPtr *) vmx->arg2.ptr;
-  if (arg1 != arg2) {
-    assert(arg1 != NULL);
-    if (!BoxPtr_Is_Detached(arg1))
-      (void) BoxPtr_Unlink(arg1);
-    *arg1 = *arg2;
-    BoxPtr_Detach(arg1);
+
+static void My_Exec_Mov_OO(BoxVMX *vmx, void *arg1, void *arg2) {
+  BoxPtr *ptr1 = (BoxPtr *) arg1,
+         *ptr2 = (BoxPtr *) arg2;
+  if (ptr1 != ptr2) {
+    assert(ptr1);
+    if (!BoxPtr_Is_Detached(ptr1))
+      (void) BoxPtr_Unlink(ptr1);
+    *ptr1 = *ptr2;
+    BoxPtr_Detach(ptr1);
   }
 }
 
-static void My_Exec_BNot_I(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) = ~ *((BoxInt *) vmx->arg1.ptr);
-}
-static void My_Exec_BAnd_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) &= *((BoxInt *) vmx->arg2.ptr);
-}
-static void My_Exec_BXor_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) ^= *((BoxInt *) vmx->arg2.ptr);
-}
-static void My_Exec_BOr_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) |= *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_BNot_I(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) = ~ *((BoxInt *) arg1);
 }
 
-static void My_Exec_Shl_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) <<= *((BoxInt *) vmx->arg2.ptr);
-}
-static void My_Exec_Shr_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) >>= *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_BAnd_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) &= *((BoxInt *) arg2);
 }
 
-static void My_Exec_Inc_I(BoxVMX *vmx) { ++ *((BoxInt *) vmx->arg1.ptr); }
-static void My_Exec_Inc_R(BoxVMX *vmx) { ++ *((BoxReal *) vmx->arg1.ptr); }
-static void My_Exec_Dec_I(BoxVMX *vmx) { -- *((BoxInt *) vmx->arg1.ptr); }
-static void My_Exec_Dec_R(BoxVMX *vmx) { -- *((BoxReal *) vmx->arg1.ptr); }
+static void My_Exec_BXor_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) ^= *((BoxInt *) arg2);
+}
 
-static void My_Exec_Pow_II(BoxVMX *vmx) { /* bad implementation!!! */
-  BoxInt i, r = 1, b = *((BoxInt *) vmx->arg1.ptr),
-         p = *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_BOr_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) |= *((BoxInt *) arg2);
+}
+
+static void My_Exec_Shl_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) <<= *((BoxInt *) arg2);
+}
+
+static void My_Exec_Shr_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) >>= *((BoxInt *) arg2);
+}
+
+static void My_Exec_Inc_I(BoxVMX *vmx, void *arg1, void *arg2) {
+  ++*((BoxInt *) arg1); 
+}
+
+static void My_Exec_Inc_R(BoxVMX *vmx, void *arg1, void *arg2) {
+  ++*((BoxReal *) arg1);
+}
+
+static void My_Exec_Dec_I(BoxVMX *vmx, void *arg1, void *arg2) {
+  --*((BoxInt *) arg1);
+}
+
+static void My_Exec_Dec_R(BoxVMX *vmx, void *arg1, void *arg2) {
+  --*((BoxReal *) arg1);
+}
+
+static void My_Exec_Pow_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  BoxInt i, r = 1, b = *((BoxInt *) arg1),
+         p = *((BoxInt *) arg2);
   for (i = 0; i < p; i++) r *= b;
-  *((BoxInt *) vmx->arg1.ptr) = r;
+  *((BoxInt *) arg1) = r;
 }
 
-static void My_Exec_Pow_RR(BoxVMX *vmx) {
-  *((BoxReal *) vmx->arg1.ptr) =
-   pow(*((BoxReal *) vmx->arg1.ptr), *((BoxReal *) vmx->arg2.ptr));
+static void My_Exec_Pow_RR(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxReal *) arg1) = pow(*((BoxReal *) arg1), *((BoxReal *) arg2));
 }
 
-static void My_Exec_Add_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) += *((BoxInt *) vmx->arg2.ptr);
-}
-static void My_Exec_Add_RR(BoxVMX *vmx) {
-  *((BoxReal *) vmx->arg1.ptr) += *((BoxReal *) vmx->arg2.ptr);
-}
-static void My_Exec_Add_PP(BoxVMX *vmx) {
-  ((BoxPoint *) vmx->arg1.ptr)->x += ((BoxPoint *) vmx->arg2.ptr)->x;
-  ((BoxPoint *) vmx->arg1.ptr)->y += ((BoxPoint *) vmx->arg2.ptr)->y;
+static void My_Exec_Add_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) += *((BoxInt *) arg2);
 }
 
-static void My_Exec_Sub_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) -= *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_Add_RR(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxReal *) arg1) += *((BoxReal *) arg2);
 }
 
-static void My_Exec_Sub_RR(BoxVMX *vmx) {
-  *((BoxReal *) vmx->arg1.ptr) -= *((BoxReal *) vmx->arg2.ptr);
+static void My_Exec_Add_PP(BoxVMX *vmx, void *arg1, void *arg2) {
+  ((BoxPoint *) arg1)->x += ((BoxPoint *) arg2)->x;
+  ((BoxPoint *) arg1)->y += ((BoxPoint *) arg2)->y;
 }
 
-static void My_Exec_Sub_PP(BoxVMX *vmx) {
-  ((BoxPoint *) vmx->arg1.ptr)->x -= ((BoxPoint *) vmx->arg2.ptr)->x;
-  ((BoxPoint *) vmx->arg1.ptr)->y -= ((BoxPoint *) vmx->arg2.ptr)->y;
+static void My_Exec_Sub_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) -= *((BoxInt *) arg2);
 }
 
-static void My_Exec_Mul_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) *= *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_Sub_RR(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxReal *) arg1) -= *((BoxReal *) arg2);
 }
 
-static void My_Exec_Mul_RR(BoxVMX *vmx) {
-  *((BoxReal *) vmx->arg1.ptr) *= *((BoxReal *) vmx->arg2.ptr);
+static void My_Exec_Sub_PP(BoxVMX *vmx, void *arg1, void *arg2) {
+  ((BoxPoint *) arg1)->x -= ((BoxPoint *) arg2)->x;
+  ((BoxPoint *) arg1)->y -= ((BoxPoint *) arg2)->y;
 }
 
-static void My_Exec_Div_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) /= *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_Mul_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) *= *((BoxInt *) arg2);
 }
 
-static void My_Exec_Div_RR(BoxVMX *vmx) {
-  *((BoxReal *) vmx->arg1.ptr) /= *((BoxReal *) vmx->arg2.ptr);
+static void My_Exec_Mul_RR(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxReal *) arg1) *= *((BoxReal *) arg2);
 }
 
-static void My_Exec_Rem_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) %= *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_Div_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) /= *((BoxInt *) arg2);
 }
 
-static void My_Exec_Neg_I(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) = -*((BoxInt *) vmx->arg1.ptr);
+static void My_Exec_Div_RR(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxReal *) arg1) /= *((BoxReal *) arg2);
 }
 
-static void My_Exec_Neg_R(BoxVMX *vmx) {
-  *((BoxReal *) vmx->arg1.ptr) = -*((BoxReal *) vmx->arg1.ptr);
+static void My_Exec_Rem_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) %= *((BoxInt *) arg2);
 }
 
-static void My_Exec_Neg_P(BoxVMX *vmx) {
-  ((BoxPoint *) vmx->arg1.ptr)->x = -((BoxPoint *) vmx->arg1.ptr)->x;
-  ((BoxPoint *) vmx->arg1.ptr)->y = -((BoxPoint *) vmx->arg1.ptr)->y;
+static void My_Exec_Neg_I(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) = -*((BoxInt *) arg1);
 }
 
-static void My_Exec_PMulR_PR(BoxVMX *vmx) {
+static void My_Exec_Neg_R(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxReal *) arg1) = -*((BoxReal *) arg1);
+}
+
+static void My_Exec_Neg_P(BoxVMX *vmx, void *arg1, void *arg2) {
+  ((BoxPoint *) arg1)->x = -((BoxPoint *) arg1)->x;
+  ((BoxPoint *) arg1)->y = -((BoxPoint *) arg1)->y;
+}
+
+static void My_Exec_PMulR_PR(BoxVMX *vmx, void *arg1, void *arg2) {
   BoxReal r = *((BoxReal *) vmx->local[BOXTYPEID_REAL].ptr);
-  ((BoxPoint *) vmx->arg1.ptr)->x *= r;
-  ((BoxPoint *) vmx->arg1.ptr)->y *= r;
+  ((BoxPoint *) arg1)->x *= r;
+  ((BoxPoint *) arg1)->y *= r;
 }
-static void My_Exec_PDivR_PR(BoxVMX *vmx) {
+static void My_Exec_PDivR_PR(BoxVMX *vmx, void *arg1, void *arg2) {
   BoxReal r = *((BoxReal *) vmx->local[BOXTYPEID_REAL].ptr);
-  ((BoxPoint *) vmx->arg1.ptr)->x /= r;
-  ((BoxPoint *) vmx->arg1.ptr)->y /= r;
+  ((BoxPoint *) arg1)->x /= r;
+  ((BoxPoint *) arg1)->y /= r;
 }
 
-static void My_Exec_Real_C(BoxVMX *vmx) {
+static void My_Exec_Real_C(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxReal *) vmx->local[BOXTYPEID_REAL].ptr) =
-    (BoxReal) *((BoxChar *) vmx->arg1.ptr);
+    (BoxReal) *((BoxChar *) arg1);
 }
 
-static void My_Exec_Real_I(BoxVMX *vmx) {
+static void My_Exec_Real_I(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxReal *) vmx->local[BOXTYPEID_REAL].ptr) =
-    (BoxReal) *((BoxInt *) vmx->arg1.ptr);
+    (BoxReal) *((BoxInt *) arg1);
 }
 
-static void My_Exec_Int_R(BoxVMX *vmx) {
+static void My_Exec_Int_R(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr) =
-    (BoxInt) *((BoxReal *) vmx->arg1.ptr);
+    (BoxInt) *((BoxReal *) arg1);
 }
 
-static void My_Exec_Int_C(BoxVMX *vmx) {
+static void My_Exec_Int_C(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr) =
-    (BoxInt) *((BoxChar *) vmx->arg1.ptr);
+    (BoxInt) *((BoxChar *) arg1);
 }
 
-static void My_Exec_Point_II(BoxVMX *vmx) {
+static void My_Exec_Point_II(BoxVMX *vmx, void *arg1, void *arg2) {
   BoxPoint *p = (BoxPoint *) vmx->local[BOXTYPEID_POINT].ptr;
-  p->x = (BoxReal) *((BoxInt *) vmx->arg1.ptr);
-  p->y = (BoxReal) *((BoxInt *) vmx->arg2.ptr);
+  p->x = (BoxReal) *((BoxInt *) arg1);
+  p->y = (BoxReal) *((BoxInt *) arg2);
 }
 
-static void My_Exec_Point_RR(BoxVMX *vmx) {
+static void My_Exec_Point_RR(BoxVMX *vmx, void *arg1, void *arg2) {
   BoxPoint *p = (BoxPoint *) vmx->local[BOXTYPEID_POINT].ptr;
-  p->x = *((BoxReal *) vmx->arg1.ptr);
-  p->y = *((BoxReal *) vmx->arg2.ptr);
+  p->x = *((BoxReal *) arg1);
+  p->y = *((BoxReal *) arg2);
 }
 
-static void My_Exec_ProjX_P(BoxVMX *vmx) {
+static void My_Exec_ProjX_P(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxReal *) vmx->local[BOXTYPEID_REAL].ptr) =
-    ((BoxPoint *) vmx->arg1.ptr)->x;
+    ((BoxPoint *) arg1)->x;
 }
 
-static void My_Exec_ProjY_P(BoxVMX *vmx) {
+static void My_Exec_ProjY_P(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxReal *) vmx->local[BOXTYPEID_REAL].ptr) =
-    ((BoxPoint *) vmx->arg1.ptr)->y;
+    ((BoxPoint *) arg1)->y;
 }
 
-static void My_Exec_PPtrX_P(BoxVMX *vmx) {
+static void My_Exec_PPtrX_P(BoxVMX *vmx, void *arg1, void *arg2) {
   BoxPtr *obj = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
   obj->block = (void *) NULL;
-  obj->ptr = & (((BoxPoint *) vmx->arg1.ptr)->x);
+  obj->ptr = & (((BoxPoint *) arg1)->x);
 }
 
-static void My_Exec_PPtrY_P(BoxVMX *vmx) {
+static void My_Exec_PPtrY_P(BoxVMX *vmx, void *arg1, void *arg2) {
   BoxPtr *obj = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
   obj->block = (void *) NULL;
-  obj->ptr = & (((BoxPoint *) vmx->arg1.ptr)->y);
+  obj->ptr = & (((BoxPoint *) arg1)->y);
 }
 
-static void My_Exec_Eq_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) =
-   *((BoxInt *) vmx->arg1.ptr) == *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_Eq_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) =
+   *((BoxInt *) arg1) == *((BoxInt *) arg2);
 }
-static void My_Exec_Eq_RR(BoxVMX *vmx) {
+static void My_Exec_Eq_RR(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr) =
-   *((BoxReal *) vmx->arg1.ptr) == *((BoxReal *) vmx->arg2.ptr);
+   *((BoxReal *) arg1) == *((BoxReal *) arg2);
 }
-static void My_Exec_Eq_PP(BoxVMX *vmx) {
+static void My_Exec_Eq_PP(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr) =
-     ( ((BoxPoint *) vmx->arg1.ptr)->x == ((BoxPoint *) vmx->arg2.ptr)->x )
-  && ( ((BoxPoint *) vmx->arg1.ptr)->y == ((BoxPoint *) vmx->arg2.ptr)->y );
+     ( ((BoxPoint *) arg1)->x == ((BoxPoint *) arg2)->x )
+  && ( ((BoxPoint *) arg1)->y == ((BoxPoint *) arg2)->y );
 }
-static void My_Exec_Eq_OO(BoxVMX *vmx) {
+static void My_Exec_Eq_OO(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr) =
-     (((BoxPtr *) vmx->arg1.ptr)->ptr == ((BoxPtr *) vmx->arg2.ptr)->ptr);
+     (((BoxPtr *) arg1)->ptr == ((BoxPtr *) arg2)->ptr);
 }
-static void My_Exec_Ne_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) =
-   *((BoxInt *) vmx->arg1.ptr) != *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_Ne_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) =
+   *((BoxInt *) arg1) != *((BoxInt *) arg2);
 }
-static void My_Exec_Ne_RR(BoxVMX *vmx) {
+static void My_Exec_Ne_RR(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr) =
-   *((BoxReal *) vmx->arg1.ptr) != *((BoxReal *) vmx->arg2.ptr);
+   *((BoxReal *) arg1) != *((BoxReal *) arg2);
 }
-static void My_Exec_Ne_PP(BoxVMX *vmx) {
+static void My_Exec_Ne_PP(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr) =
-     ( ((BoxPoint *) vmx->arg1.ptr)->x != ((BoxPoint *) vmx->arg2.ptr)->x )
-  || ( ((BoxPoint *) vmx->arg1.ptr)->y != ((BoxPoint *) vmx->arg2.ptr)->y );
+     ( ((BoxPoint *) arg1)->x != ((BoxPoint *) arg2)->x )
+  || ( ((BoxPoint *) arg1)->y != ((BoxPoint *) arg2)->y );
 }
-static void My_Exec_Ne_OO(BoxVMX *vmx) {
+static void My_Exec_Ne_OO(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr) =
-     (((BoxPtr *) vmx->arg1.ptr)->ptr != ((BoxPtr *) vmx->arg2.ptr)->ptr);
+     (((BoxPtr *) arg1)->ptr != ((BoxPtr *) arg2)->ptr);
 }
 
-static void My_Exec_Lt_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) =
-   *((BoxInt *) vmx->arg1.ptr) < *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_Lt_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) =
+   *((BoxInt *) arg1) < *((BoxInt *) arg2);
 }
-static void My_Exec_Lt_RR(BoxVMX *vmx) {
+static void My_Exec_Lt_RR(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr) =
-   *((BoxReal *) vmx->arg1.ptr) < *((BoxReal *) vmx->arg2.ptr);
+   *((BoxReal *) arg1) < *((BoxReal *) arg2);
 }
-static void My_Exec_Le_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) =
-   *((BoxInt *) vmx->arg1.ptr) <= *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_Le_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) =
+   *((BoxInt *) arg1) <= *((BoxInt *) arg2);
 }
-static void My_Exec_Le_RR(BoxVMX *vmx) {
+static void My_Exec_Le_RR(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr) =
-   *((BoxReal *) vmx->arg1.ptr) <= *((BoxReal *) vmx->arg2.ptr);
+   *((BoxReal *) arg1) <= *((BoxReal *) arg2);
 }
-static void My_Exec_Gt_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) =
-   *((BoxInt *) vmx->arg1.ptr) > *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_Gt_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) =
+   *((BoxInt *) arg1) > *((BoxInt *) arg2);
 }
-static void My_Exec_Gt_RR(BoxVMX *vmx) {
+static void My_Exec_Gt_RR(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr) =
-   *((BoxReal *) vmx->arg1.ptr) > *((BoxReal *) vmx->arg2.ptr);
+   *((BoxReal *) arg1) > *((BoxReal *) arg2);
 }
-static void My_Exec_Ge_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) =
-   *((BoxInt *) vmx->arg1.ptr) >= *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_Ge_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) =
+   *((BoxInt *) arg1) >= *((BoxInt *) arg2);
 }
-static void My_Exec_Ge_RR(BoxVMX *vmx) {
+static void My_Exec_Ge_RR(BoxVMX *vmx, void *arg1, void *arg2) {
   *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr) =
-   *((BoxReal *) vmx->arg1.ptr) >= *((BoxReal *) vmx->arg2.ptr);
+   *((BoxReal *) arg1) >= *((BoxReal *) arg2);
 }
 
-static void My_Exec_LNot_I(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) = ! *((BoxInt *) vmx->arg1.ptr);
+static void My_Exec_LNot_I(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) = ! *((BoxInt *) arg1);
 }
-static void My_Exec_LAnd_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) =
-   *((BoxInt *) vmx->arg1.ptr) && *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_LAnd_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) =
+   *((BoxInt *) arg1) && *((BoxInt *) arg2);
 }
-static void My_Exec_LOr_II(BoxVMX *vmx) {
-  *((BoxInt *) vmx->arg1.ptr) =
-   *((BoxInt *) vmx->arg1.ptr) || *((BoxInt *) vmx->arg2.ptr);
+static void My_Exec_LOr_II(BoxVMX *vmx, void *arg1, void *arg2) {
+  *((BoxInt *) arg1) =
+   *((BoxInt *) arg1) || *((BoxInt *) arg2);
 }
 
-static void My_Exec_Create_I(BoxVMX *vmx) {
-  BoxInt id = *((BoxInt *) vmx->arg1.ptr);
+static void My_Exec_Create_I(BoxVMX *vmx, void *arg1, void *arg2) {
+  BoxInt id = *((BoxInt *) arg1);
   BoxPtr *obj = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
   BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, id);
   if (BoxPtr_Create_Obj(obj, t))
@@ -412,9 +435,9 @@ static void My_Exec_Create_I(BoxVMX *vmx) {
   MSG_FATAL("My_Exec_Create_I: cannot create object with alloc-ID=%I.", id);
 }
 
-static void My_Exec_Reloc_OO(BoxVMX *vmx) {
-  BoxPtr *dest = (BoxPtr *) vmx->arg1.ptr,
-         *src = (BoxPtr *) vmx->arg2.ptr;
+static void My_Exec_Reloc_OO(BoxVMX *vmx, void *arg1, void *arg2) {
+  BoxPtr *dest = (BoxPtr *) arg1,
+         *src = (BoxPtr *) arg2;
   BoxInt id = *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr);
 
   BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, (BoxTypeId) id);
@@ -427,86 +450,83 @@ static void My_Exec_Reloc_OO(BoxVMX *vmx) {
   vmx->flags.exit = 1;
 }
 
-static void My_Exec_Mln_O(BoxVMX *vmx) {
-  (void) BoxPtr_Link((BoxPtr *) vmx->arg1.ptr);
+static void My_Exec_Mln_O(BoxVMX *vmx, void *arg1, void *arg2) {
+  (void) BoxPtr_Link((BoxPtr *) arg1);
 }
 
-static void My_Exec_MUnln_O(BoxVMX *vmx) {
-  (void) BoxPtr_Unlink((BoxPtr *) vmx->arg1.ptr);
-  BoxPtr_Detach((BoxPtr *) vmx->arg1.ptr);
+static void My_Exec_MUnln_O(BoxVMX *vmx, void *arg1, void *arg2) {
+  (void) BoxPtr_Unlink((BoxPtr *) arg1);
+  BoxPtr_Detach((BoxPtr *) arg1);
 }
 
-static void My_Exec_MCopy_OO(BoxVMX *vmx) {
-  (void) memcpy(((BoxPtr *) vmx->arg1.ptr)->ptr,             /* destination */
-                ((BoxPtr *) vmx->arg2.ptr)->ptr,             /* source */
+static void My_Exec_MCopy_OO(BoxVMX *vmx, void *arg1, void *arg2) {
+  (void) memcpy(((BoxPtr *) arg1)->ptr,             /* destination */
+                ((BoxPtr *) arg2)->ptr,             /* source */
                 *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr)); /* size */
 }
 
-static void My_Exec_Shift_OO(BoxVMX *vmx) {
-  BoxPtr *arg1 = (BoxPtr *) vmx->arg1.ptr,
-         *arg2 = (BoxPtr *) vmx->arg2.ptr;
+static void My_Exec_Shift_OO(BoxVMX *vmx, void *arg1, void *arg2) {
   if (arg1 != arg2) {
-    if (!BoxPtr_Is_Detached(arg1))
-      (void) BoxPtr_Unlink(arg1);
-    *arg1 = *arg2;
-    BoxPtr_Detach(arg2);
+    if (!BoxPtr_Is_Detached((BoxPtr *) arg1))
+      (void) BoxPtr_Unlink((BoxPtr *) arg1);
+    *((BoxPtr *) arg1) = *((BoxPtr *) arg2);
+    BoxPtr_Detach((BoxPtr *) arg2);
   }
 }
 
-static void My_Exec_Ref_OO(BoxVMX *vmx) {
-  BoxPtr *arg1 = (BoxPtr *) vmx->arg1.ptr,
-         *arg2 = (BoxPtr *) vmx->arg2.ptr;
-  if (arg1 != arg2) {
-    assert(arg1 != NULL);
+static void My_Exec_Ref_OO(BoxVMX *vmx, void *arg1, void *arg2) {
+  BoxPtr *ptr1 = (BoxPtr *) arg1,
+         *ptr2 = (BoxPtr *) arg2;
+  if (ptr1 != ptr2) {
+    assert(ptr1);
 
-    if (!BoxPtr_Is_Detached(arg1))
-      (void) BoxPtr_Unlink(arg1);
+    if (!BoxPtr_Is_Detached(ptr1))
+      (void) BoxPtr_Unlink(ptr1);
 
-    *arg1 = *arg2;
-    if (!BoxPtr_Is_Detached(arg2))
-      (void) BoxPtr_Link(arg2);
+    *ptr1 = *ptr2;
+    if (!BoxPtr_Is_Detached(ptr2))
+      (void) BoxPtr_Link(ptr2);
   }
 }
 
-static void My_Exec_Null_O(BoxVMX *vmx) {
-  BoxPtr_Nullify((BoxPtr *) vmx->arg1.ptr);
+static void My_Exec_Null_O(BoxVMX *vmx, void *arg1, void *arg2) {
+  BoxPtr_Nullify((BoxPtr *) arg1);
 }
 
-static void My_Exec_Lea(BoxVMX *vmx) {
+static void My_Exec_Lea(BoxVMX *vmx, void *arg1, void *arg2) {
   BoxPtr *obj = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
   obj->block = (void *) NULL;
-  obj->ptr = vmx->arg1.ptr;
+  obj->ptr = arg1;
 }
 
-static void My_Exec_Lea_OO(BoxVMX *vmx) {
-  BoxPtr *arg1 = (BoxPtr *) vmx->arg1.ptr,
-         *arg2 = (BoxPtr *) vmx->arg2.ptr;
-  if (!BoxPtr_Is_Detached(arg1))
-    (void) BoxPtr_Unlink(arg1);
+static void My_Exec_Lea_OO(BoxVMX *vmx, void *arg1, void *arg2) {
+  BoxPtr *ptr1 = (BoxPtr *) arg1;
+  if (!BoxPtr_Is_Detached(ptr1))
+    (void) BoxPtr_Unlink(ptr1);
 
-  arg1->block = (void *) NULL;
-  arg1->ptr = arg2;
+  ptr1->block = (void *) NULL;
+  ptr1->ptr = arg2;
 }
 
-static void My_Exec_Push_O(BoxVMX *vmx) {
-  BoxArr_Push(& vmx->vm->stack, vmx->arg1.ptr);
+static void My_Exec_Push_O(BoxVMX *vmx, void *arg1, void *arg2) {
+  BoxArr_Push(& vmx->vm->stack, arg1);
 }
 
-static void My_Exec_Pop_O(BoxVMX *vmx) {
-  BoxArr_Pop(& vmx->vm->stack, vmx->arg1.ptr);
+static void My_Exec_Pop_O(BoxVMX *vmx, void *arg1, void *arg2) {
+  BoxArr_Pop(& vmx->vm->stack, arg1);
 }
 
-static void My_Exec_Jmp_I(BoxVMX *vmx) {
-  vmx->op_size = *((BoxInt *) vmx->arg1.ptr);
+static void My_Exec_Jmp_I(BoxVMX *vmx, void *arg1, void *arg2) {
+  vmx->op_size = *((BoxInt *) arg1);
 }
 
-static void My_Exec_Jc_I(BoxVMX *vmx) {
+static void My_Exec_Jc_I(BoxVMX *vmx, void *arg1, void *arg2) {
   if (*((BoxInt *) vmx->local[BOXTYPEID_INT].ptr))
-    vmx->op_size = *((BoxInt *) vmx->arg1.ptr);
+    vmx->op_size = *((BoxInt *) arg1);
 }
 
-static void My_Exec_Add_O(BoxVMX *vmx) {
-  ((BoxPtr *) vmx->arg1.ptr)->ptr +=
+static void My_Exec_Add_O(BoxVMX *vmx, void *arg1, void *arg2) {
+  ((BoxPtr *) arg1)->ptr +=
     *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr);
 }
 
@@ -518,8 +538,8 @@ static void My_Exec_Add_O(BoxVMX *vmx) {
  * is the same that would be used in the @c create VM instruction.
  */
 static void
-My_Exec_Typeof_O(BoxVMX *vmx) {
-  BoxInt id = *((BoxInt *) vmx->arg1.ptr);
+My_Exec_Typeof_O(BoxVMX *vmx, void *arg1, void *arg2) {
+  BoxInt id = *((BoxInt *) arg1);
   BoxPtr *obj = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
   BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, id);
   BoxPtr_Init_From_SPtr(obj, t);
@@ -534,10 +554,10 @@ My_Exec_Typeof_O(BoxVMX *vmx) {
  * Note that @c dstptr must be a pointer to an initialized @c ANY object.
  */
 static void
-My_Exec_Box_O(BoxVMX *vmx) {
+My_Exec_Box_O(BoxVMX *vmx, void *arg1, void *arg2) {
   BoxPtr *t_ptr = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
   BoxPtr src;
-  BoxPtr *dst = (BoxPtr *) vmx->arg1.ptr;
+  BoxPtr *dst = (BoxPtr *) arg1;
   BoxType *t = BoxPtr_Get_SPtr(t_ptr);
   if (t) {
     BoxPtr_Nullify(& src);
@@ -558,10 +578,10 @@ My_Exec_Box_O(BoxVMX *vmx) {
  * Note that @c dstptr must be a pointer to an initialized @c ANY object.
  */
 static void
-My_Exec_Box_OO(BoxVMX *vmx) {
+My_Exec_Box_OO(BoxVMX *vmx, void *arg1, void *arg2) {
   BoxPtr *t_ptr = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
-  BoxPtr *dst = (BoxPtr *) vmx->arg1.ptr,
-         *src = (BoxPtr *) vmx->arg2.ptr;
+  BoxPtr *dst = (BoxPtr *) arg1,
+         *src = (BoxPtr *) arg2;
   BoxType *t = BoxPtr_Get_SPtr(t_ptr);
   if (t) {
     if (BoxAny_Box(dst, src, t))
@@ -581,10 +601,10 @@ My_Exec_Box_OO(BoxVMX *vmx) {
  * Note that the unboxing operation fails (raising an exception) if the type
  * of the boxed object is not consistent with what given in @c ro0.
  */
-static void My_Exec_Unbox_OO(BoxVMX *vmx) {
+static void My_Exec_Unbox_OO(BoxVMX *vmx, void *arg1, void *arg2) {
   BoxPtr *t_ptr = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
-  BoxPtr *dst = (BoxPtr *) vmx->arg1.ptr,
-         *src = (BoxPtr *) vmx->arg2.ptr;
+  BoxPtr *dst = (BoxPtr *) arg1,
+         *src = (BoxPtr *) arg2;
   BoxType *t = BoxPtr_Get_SPtr(t_ptr);
   if (t) {
     if (BoxAny_Unbox(dst, src, t))
@@ -605,9 +625,9 @@ static void My_Exec_Unbox_OO(BoxVMX *vmx) {
  * exception if the combination is not found or if an exception was raised by
  * the called combination.
  */
-static void My_Exec_Dycall_OO(BoxVMX *vmx) {
-  BoxAny *parent = BoxPtr_Get_Target((BoxPtr *) vmx->arg1.ptr),
-         *child = BoxPtr_Get_Target((BoxPtr *) vmx->arg2.ptr);
+static void My_Exec_Dycall_OO(BoxVMX *vmx, void *arg1, void *arg2) {
+  BoxAny *parent = BoxPtr_Get_Target((BoxPtr *) arg1),
+         *child = BoxPtr_Get_Target((BoxPtr *) arg2);
   BoxException *exception;
   if (Box_Combine_Any(parent, child, & exception)) {
     if (!exception)
@@ -730,7 +750,7 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   { BOXGOP_MCOPY,  "mcopy", 2, 'o',
                                  "a1,a2,ri0",  NULL, "xx", "xx", My_Exec_MCopy_OO }, /* mcopy ro, ro  */
   { BOXGOP_RELOC,  "reloc", 2, 'o',
-                                 "a1,a2,ri0",  NULL, "xx", "xx", My_Exec_Reloc_OO }, /* reloc ro, ro  */
+                                 "a1,a2,ri0",  NULL, "xx", "xx", My_Exec_Reloc_OO }, /* reloc ro, ro    */
   { BOXGOP_SHIFT,  "shift", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Shift_OO }, /* shift ro, ro    */
   {   BOXGOP_REF,    "ref", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Ref_OO   }, /* ref ro, ro      */
   {  BOXGOP_NULL,   "null", 1, 'o',     NULL,  "a1", "x-", "xx", My_Exec_Null_O   }, /* null ro         */
