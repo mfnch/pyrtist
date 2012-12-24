@@ -21,7 +21,6 @@
  * of Box: defines functions to assemble, disassemble, execute basic
  * instructions.
  */
-#define DEBUG_EXEC 0
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -393,18 +392,14 @@ static void *BoxOpArg_Get(BoxTypeId t, BoxOpArg *arg,
 /* Execute the module number m of program vmp.
  * If initial != NULL, *initial is the initial status of the virtual machine.
  */
-BoxTask BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
-  const BoxOpDesc *exec_table = vmp->exec_table;
-  BoxVMX this_vmx;
+BoxTask BoxVM_Module_Execute(BoxVM *vm, BoxVMCallNum call_num) {
+  const BoxOpDesc *exec_table = vm->exec_table;
+  BoxVMX vmx;
 
-  BoxVMProcTable *pt = & vmp->proc_table;
+  BoxVMProcTable *pt = & vm->proc_table;
   BoxVMProcInstalled *p;
   BoxVMWord *i_pos, *i_pos0;
   BoxValue reg0[NUM_TYPES]; /* Registri locali numero zero */
-
-#if DEBUG_EXEC == 1
-  BoxInt i = 0;
-#endif
 
   /* Controlliamo che il modulo sia installato! */
   if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
@@ -412,23 +407,17 @@ BoxTask BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
     return BOXTASK_FAILURE;
   }
 
-#if DEBUG_EXEC == 1
-  fprintf(stderr, "call module = "SInt": %p@%p\n",
-          call_num, BOX_VM_THIS_PTR(vmx, void),
-          BOX_VM_ARG_PTR(vmx, void));
-#endif
-
   /* NOTE: passing BoxVMX objects to the C call is obsolete.
    *  We will clean this up at some point...
    */
-  this_vmx.vm = vmp;
+  vmx.vm = vm;
 
   p = (BoxVMProcInstalled *) BoxArr_Item_Ptr(& pt->installed, call_num);
   switch (p->type) {
   case BOXVMPROCKIND_FOREIGN:
-    return BoxCallable_CallOld(p->code.foreign, & this_vmx);
+    return BoxCallable_CallOld(p->code.foreign, & vmx);
   case BOXVMPROCKIND_C_CODE:
-    return p->code.c(& this_vmx);
+    return p->code.c(& vmx);
   case BOXVMPROCKIND_VM_CODE:
     break;
   default:
@@ -438,29 +427,24 @@ BoxTask BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
 
   {
     int i;
-    this_vmx.global = vmp->global;
+    vmx.global = vm->global;
     for (i = 0; i < NUM_TYPES; i++) {
-      BoxVMRegs *lnew = & this_vmx.local[i];
+      BoxVMRegs *lnew = & vmx.local[i];
       lnew->min = lnew->max = 0;
       lnew->ptr = & reg0[i];
-      this_vmx.alc[i] = 0;
+      vmx.alc[i] = 0;
     }
   }
 
-  this_vmx.p = p;
-  BoxVM_Proc_Get_Ptr_And_Length(vmp, & i_pos, NULL, p->code.proc_id);
+  vmx.p = p;
+  BoxVM_Proc_Get_Ptr_And_Length(vm, & i_pos, NULL, p->code.proc_id);
   i_pos0 = i_pos;
-  this_vmx.flags.exit = this_vmx.flags.error = 0;
+  vmx.flags.exit = vmx.flags.error = 0;
 
   do {
     BoxOp op;
     BoxOpArg data1, data2;
     void *arg1, *arg2;
-
-#if DEBUG_EXEC == 1
-    fprintf(stderr, "module = "SInt", pos = "SInt" - reading instruction.\n",
-            call_num, i*sizeof(BoxVMWord));
-#endif
 
     /* Read the instruction. */
     if (!BoxOp_Read(& op, exec_table, i_pos)) {
@@ -470,12 +454,12 @@ BoxTask BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
 
     /* Get the arguments. */
     if (op.num_args >= 2) {
-      arg1 = BoxOpArg_Get(op.desc->t_id, & data1, & this_vmx,
+      arg1 = BoxOpArg_Get(op.desc->t_id, & data1, & vmx,
                           op.args_forms & 0x3, op.args[0]);
-      arg2 = BoxOpArg_Get(op.desc->t_id, & data2, & this_vmx,
+      arg2 = BoxOpArg_Get(op.desc->t_id, & data2, & vmx,
                           (op.args_forms >> 2) & 0x3, op.args[1]);
     } else if (op.num_args == 1) {
-      arg1 = BoxOpArg_Get(op.desc->t_id, & data1, & this_vmx,
+      arg1 = BoxOpArg_Get(op.desc->t_id, & data1, & vmx,
                           op.args_forms & 0x3, op.args[0]);
       if (op.has_data)
         arg2 = op.data;
@@ -485,31 +469,28 @@ BoxTask BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
     }
 
     /* Esegue l'istruzione */
-    this_vmx.op_size = op.next;
-    if (!this_vmx.flags.error)
-      op.desc->execute(& this_vmx, arg1, arg2);
+    vmx.op_size = op.next;
+    if (!vmx.flags.error)
+      op.desc->execute(& vmx, arg1, arg2);
 
     /* Advance to the next instruction...
-     * op.size can be modified by 'vm.idesc->execute(vmp)' when executing
+     * op.size can be modified by 'vm.idesc->execute(vm)' when executing
      * instructions such as 'jmp' or 'jc'
      */
-    i_pos += this_vmx.op_size;
-#if DEBUG_EXEC == 1
-    i += op.size;
-#endif
+    i_pos += vmx.op_size;
 
-  } while (!this_vmx.flags.exit);
+  } while (!vmx.flags.exit);
 
   /* Fill the backtrace */
-  if (this_vmx.flags.error) {
-    BoxVMTrace *trace = BoxArr_Push(& vmp->backtrace, NULL);
+  if (vmx.flags.error) {
+    BoxVMTrace *trace = BoxArr_Push(& vm->backtrace, NULL);
     trace->call_num = call_num;
     trace->vm_pos = (void *) i_pos - (void *) i_pos0;
   }
 
   /* Destroy the objects remaining in the roX registers */
-  if (this_vmx.alc[BOXTYPEID_PTR] & 1) {
-    BoxVMRegs *lregs = & this_vmx.local[BOXTYPEID_PTR];
+  if (vmx.alc[BOXTYPEID_PTR] & 1) {
+    BoxVMRegs *lregs = & vmx.local[BOXTYPEID_PTR];
     BoxPtr *ro = (BoxPtr *) lregs->ptr + lregs->min;
     int i, n = lregs->max - lregs->min + 1;
     /* ^^^ NOTE: lregs->min is negative! */
@@ -524,13 +505,13 @@ BoxTask BoxVM_Module_Execute(BoxVM *vmp, BoxVMCallNum call_num) {
     /* Delete the registers allocated with the 'new*' instructions */
     int i;
     for (i = 0; i < NUM_TYPES; i++)
-      if ((this_vmx.alc[i] & 1) != 0) {
-        BoxVMRegs *lregs = & this_vmx.local[i];
+      if ((vmx.alc[i] & 1) != 0) {
+        BoxVMRegs *lregs = & vmx.local[i];
         BoxMem_Free(lregs->ptr + lregs->min*size_of_type[i]);
       }
   }
 
-  return this_vmx.flags.error ? BOXTASK_FAILURE : BOXTASK_OK;
+  return vmx.flags.error ? BOXTASK_FAILURE : BOXTASK_OK;
 }
 
 /*****************************************************************************
