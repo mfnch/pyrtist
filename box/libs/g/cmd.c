@@ -202,9 +202,9 @@ static void MyIterStuff_Init(MyIterStuff *stuff) {
 
 static void MyIterStuff_Finish(MyIterStuff *stuff) {
   if (stuff->size > 0) {
-    BoxMem_Free(stuff->kinds);
-    BoxMem_Free(stuff->ptrs);
-    BoxMem_Free(stuff->values);
+    Box_Mem_Free(stuff->kinds);
+    Box_Mem_Free(stuff->ptrs);
+    Box_Mem_Free(stuff->values);
   }
 }
 
@@ -214,9 +214,9 @@ static void MyIterStuff_Alloc_Args(MyIterStuff *stuff, size_t num_args) {
       if (stuff->size > 0)
         MyIterStuff_Finish(stuff);
 
-      stuff->kinds  = BoxMem_Alloc(num_args*sizeof(BoxGCmdArgKind));
-      stuff->ptrs   = BoxMem_Alloc(num_args*sizeof(void *));
-      stuff->values = BoxMem_Alloc(num_args*sizeof(BoxGCmdArg));
+      stuff->kinds  = Box_Mem_Alloc(num_args*sizeof(BoxGCmdArgKind));
+      stuff->ptrs   = Box_Mem_Alloc(num_args*sizeof(void *));
+      stuff->values = Box_Mem_Alloc(num_args*sizeof(BoxGCmdArg));
       stuff->size = num_args;
     }
   }

@@ -81,7 +81,7 @@ BoxTask Box_Lib_G_Init_At_Window(BoxVMX *vm) {
   WindowPtr *wp = (WindowPtr *) BoxVMX_Get_Parent_Target(vm);
   Window *w;
 
-  w = *wp = (WindowPtr) BoxMem_Alloc(sizeof(Window));
+  w = *wp = (WindowPtr) Box_Mem_Alloc(sizeof(Window));
   if (w == NULL)
     return BOXTASK_FAILURE;
 
@@ -153,7 +153,7 @@ static void My_Window_Unreference(Window **w_ptr) {
 #endif
 
   if (w->num_references == 0) {
-    BoxMem_Free(w->plan.file_name);
+    Box_Mem_Free(w->plan.file_name);
 
     BoxGWin_Destroy(w->window);
 
@@ -161,7 +161,7 @@ static void My_Window_Unreference(Window **w_ptr) {
     pointlist_destroy(& w->pointlist);
     put_window_destroy(w);
     line_window_destroy(w);
-    BoxMem_Free(w);
+    Box_Mem_Free(w);
     *w_ptr = (Window *) NULL;
   }
 }
@@ -312,10 +312,10 @@ BoxTask window_save_str(BoxVMX *vm) {
   if (w->save_file_name != NULL) {
     printf("Window.Save: changing save target from '%s' to '%s'\n",
            w->save_file_name, s->ptr);
-    BoxMem_Free(w->save_file_name);
+    Box_Mem_Free(w->save_file_name);
   }
 
-  w->save_file_name = BoxMem_Strdup(s->ptr);
+  w->save_file_name = Box_Mem_Strdup(s->ptr);
   return BOXTASK_OK;
 }
 
@@ -357,7 +357,7 @@ BoxTask window_save_window(BoxVMX *vmp) {
 
     if (src->save_file_name != NULL) {
       dest->plan.have.file_name = 1;
-      dest->plan.file_name = BoxMem_Strdup(src->save_file_name);
+      dest->plan.file_name = Box_Mem_Strdup(src->save_file_name);
     }
 
     /*printf("Bounding box (%f, %f) - (%f, %f)\n",
@@ -415,7 +415,7 @@ BoxTask window_save_window(BoxVMX *vmp) {
     /* ^^^ Some terminals require an explicit save! */
 
   if (src->save_file_name != NULL) {
-    BoxMem_Free(src->save_file_name);
+    Box_Mem_Free(src->save_file_name);
     src->save_file_name = NULL;
     dest->plan.file_name = NULL;
   }
@@ -428,7 +428,7 @@ BoxTask window_save_end(BoxVMX *vmp) {
 
   if (w->saved) {
     if (w->save_file_name != NULL) {
-      BoxMem_Free(w->save_file_name);
+      Box_Mem_Free(w->save_file_name);
       w->save_file_name = NULL;
       g_warning("Window.Save: given file name was not used.\n");
     }
@@ -443,7 +443,7 @@ BoxTask window_save_end(BoxVMX *vmp) {
     }
 
     all_ok = BoxGWin_Save_To_File(w->window, w->save_file_name);
-    BoxMem_Free(w->save_file_name);
+    Box_Mem_Free(w->save_file_name);
     w->save_file_name = NULL;
     w->saved = 1;
     return (all_ok) ? BOXTASK_OK : BOXTASK_FAILURE;
@@ -513,10 +513,10 @@ BoxTask window_file_string(BoxVMX *vm) {
 
   if (w->plan.have.file_name) {
     g_warning("You have already provided a file name for the window.");
-    BoxMem_Free(w->plan.file_name);
+    Box_Mem_Free(w->plan.file_name);
   }
   w->plan.have.file_name = 1;
-  w->plan.file_name = BoxMem_Strdup(s->ptr);
+  w->plan.file_name = Box_Mem_Strdup(s->ptr);
   return BOXTASK_OK;
 }
 

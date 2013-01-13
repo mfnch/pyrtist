@@ -85,10 +85,10 @@ static void MyLineState_Init(MyLineState *ls) {
  * memory which is big enough to hold a MyLineState object.
  */
 static void MyLineState_Duplicate(MyLineState *uninit_dest, MyLineState *src) {
-  size_t dashes_size = BoxMem_Safe_AX(sizeof(double), src->dash_count);
+  size_t dashes_size = Box_Mem_Safe_AX(sizeof(double), src->dash_count);
   *uninit_dest = *src;
   cairo_pattern_reference(uninit_dest->pattern);
-  uninit_dest->dashes = BoxMem_Safe_Alloc(dashes_size);
+  uninit_dest->dashes = Box_Mem_Safe_Alloc(dashes_size);
   (void) memcpy(uninit_dest->dashes, src->dashes, dashes_size);
 }
 
@@ -107,7 +107,7 @@ static void MyLineState_Relocate(MyLineState *uninit_dest, MyLineState *src) {
 /** Always call the Finish method before using a MyLineState. */
 static void MyLineState_Finish(MyLineState *ls) {
   cairo_pattern_destroy(ls->pattern);
-  BoxMem_Free(ls->dashes);
+  Box_Mem_Free(ls->dashes);
   ls->pattern = NULL;
   ls->dashes = NULL;
 }
@@ -122,7 +122,7 @@ static void MyLineState_Save(MyLineState *ls, cairo_t *cr) {
   ls->miter_limit = cairo_get_miter_limit(cr);
 
   ls->dash_count = cairo_get_dash_count(cr);
-  ls->dashes = BoxMem_Safe_Alloc_Items(sizeof(double), ls->dash_count);
+  ls->dashes = Box_Mem_Safe_Alloc_Items(sizeof(double), ls->dash_count);
   cairo_get_dash(cr, ls->dashes, & ls->dash_offset);
 
   ls->pattern = cairo_get_source(cr);
@@ -238,7 +238,7 @@ static void My_WinCairo_Finish(BoxGWin *w) {
   cairo_surface_destroy(surface);
 
   MyCairoWinData_Finish(MY_DATA(w));
-  BoxMem_Free(MY_DATA(w));
+  Box_Mem_Free(MY_DATA(w));
 }
 
 /* Variabili usate dalle procedure per scrivere il file postscript */
@@ -891,14 +891,14 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
 
       if (num_dashes > 0) {
         size_t i;
-        dashes = BoxMem_Safe_Alloc(num_dashes*sizeof(double));
+        dashes = Box_Mem_Safe_Alloc(num_dashes*sizeof(double));
         for (i = 0; i < num_dashes; i++)
           dashes[i] = *((BoxReal *) args[1 + i]);
 
       }
 
       cairo_set_dash(cr, dashes, num_dashes, offset);
-      BoxMem_Free(dashes);
+      Box_Mem_Free(dashes);
       return BOXGERR_NO_ERR;
     }
 
@@ -931,7 +931,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       char *text = BoxStr_To_C_String(s);
       if (text != NULL) {
         cairo_text_path(cr, text);
-        BoxMem_Free(text);
+        Box_Mem_Free(text);
         return BOXGERR_NO_ERR;
       }
     }
@@ -1029,7 +1029,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
         MY_DATA(w)->pattern =
           My_Cairo_Pattern_Create_Image(cr, arg1, arg2, arg3,
                                         arg4, filename);
-        BoxMem_Free(filename);
+        Box_Mem_Free(filename);
         return (MY_DATA(w)->pattern != NULL) ?
           BOXGERR_NO_ERR : BOXGERR_CAIRO_PATTERN_ERR;
 
@@ -1133,7 +1133,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       char *font = BoxStr_To_C_String(arg1);
       if (font != NULL) {
         My_Cairo_Set_Font(w, font);
-        BoxMem_Free(font);
+        Box_Mem_Free(font);
         return BOXGERR_NO_ERR;
       }
     }
@@ -1147,7 +1147,7 @@ My_WinCairo_Interpret_Iter(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
       char *text = BoxStr_To_C_String(arg5);
       if (text != NULL) {
         My_Cairo_Text_Path(w, arg1, arg2, arg3, arg4, text);
-        BoxMem_Free(text);
+        Box_Mem_Free(text);
         return BOXGERR_NO_ERR;
       }
     }
@@ -1513,7 +1513,7 @@ BoxGWin *BoxGWin_Create_Cairo(BoxGWinPlan *plan, BoxGErr *err) {
 
   /* Allocate WinCairo-specific data */
   assert(MY_DATA(w) == NULL);
-  MyCairoWinData *wd = BoxMem_Alloc(sizeof(MyCairoWinData)); 
+  MyCairoWinData *wd = Box_Mem_Alloc(sizeof(MyCairoWinData)); 
   if (wd == NULL) {
     BoxGWin_Destroy(w);
     return NULL;

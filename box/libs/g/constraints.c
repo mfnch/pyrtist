@@ -58,7 +58,7 @@ static BoxTask My_Parse_Freedom_String(BoxStr *s, BoxGAllow *allow) {
   char *c_allow = BoxStr_To_C_String(s);
   if (c_allow != NULL) {
     BoxTask t = BoxGAllow_Of_String(allow, c_allow);
-    BoxMem_Free(c_allow);
+    Box_Mem_Free(c_allow);
     return t;
 
   } else
@@ -79,9 +79,9 @@ BoxTask Box_Lib_G_Constraints_At_Transform(BoxVMX *vm) {
     return BOXTASK_FAILURE;
   }
     
-  srcs = BoxMem_Safe_Alloc(sizeof(BoxPoint)*num_constraints);
-  dsts = BoxMem_Safe_Alloc(sizeof(BoxPoint)*num_constraints);
-  weights = BoxMem_Safe_Alloc(sizeof(BoxReal)*num_constraints);
+  srcs = Box_Mem_Safe_Alloc(sizeof(BoxPoint)*num_constraints);
+  dsts = Box_Mem_Safe_Alloc(sizeof(BoxPoint)*num_constraints);
+  weights = Box_Mem_Safe_Alloc(sizeof(BoxReal)*num_constraints);
 
   assert(srcs != NULL && dsts != NULL && weights != NULL);
 
@@ -113,9 +113,9 @@ BoxTask Box_Lib_G_Constraints_At_Transform(BoxVMX *vm) {
     BoxGAutoTransformErr err_number =
       BoxG_Auto_Transform(& transform, srcs, dsts, weights, num_constraints, allowed);
 
-    BoxMem_Free(srcs);
-    BoxMem_Free(dsts);
-    BoxMem_Free(weights);
+    Box_Mem_Free(srcs);
+    Box_Mem_Free(dsts);
+    Box_Mem_Free(weights);
 
     if (err_number) {
       const char *err_msg = BoxGAutoTransformErr_To_String(err_number);

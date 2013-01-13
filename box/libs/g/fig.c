@@ -367,7 +367,7 @@ static void My_Fig_Finish(BoxGWin *w) {
     My_Layer_Finish(& lh[i]);
 
   BoxArr_Finish(& fh->layerlist);
-  BoxMem_Free(fh);
+  Box_Mem_Free(fh);
 }
 
 static void My_Fig_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
@@ -447,7 +447,7 @@ BoxTask BoxGWin_Init_Fig(BoxGWin *wd, int numlayers) {
   /* Creo gli headers della figura (con tutte le informazioni utili
    * per la gestione dei layers)
    */
-  figh = (FigHeader *) BoxMem_Alloc(sizeof(FigHeader));
+  figh = (FigHeader *) Box_Mem_Alloc(sizeof(FigHeader));
   if (figh == NULL) {
     ERRORMSG("BoxGWin_Create_Fig", "Out of memory");
     return BOXTASK_ERROR;
@@ -503,7 +503,7 @@ BoxTask BoxGWin_Init_Fig(BoxGWin *wd, int numlayers) {
  *  utilizzato per far riferimento ad esso.
  */
 BoxGWin *BoxGWin_Create_Fig(int num_layers) {
-  BoxGWin *wd = BoxMem_Alloc(sizeof(BoxGWin));
+  BoxGWin *wd = Box_Mem_Alloc(sizeof(BoxGWin));
   if (wd == NULL) {
     ERRORMSG("BoxGWin_Create_Fig", "Memoria esaurita");
     return NULL;
@@ -513,7 +513,7 @@ BoxGWin *BoxGWin_Create_Fig(int num_layers) {
     return wd;
 
   else {
-    BoxMem_Free(wd);
+    Box_Mem_Free(wd);
     return NULL;
   }
 }

@@ -96,14 +96,14 @@ void BoxGObj_Finish(BoxGObj *gobj) {
 }
 
 BoxGObj *BoxGObj_New(void) {
-  BoxGObj *gobj = BoxMem_Safe_Alloc(sizeof(BoxGObj));
+  BoxGObj *gobj = Box_Mem_Safe_Alloc(sizeof(BoxGObj));
   BoxGObj_Init(gobj);
   return gobj;
 }
 
 void BoxGObj_Destroy(BoxGObj *gobj) {
   BoxGObj_Finish(gobj);
-  BoxMem_Free(gobj);
+  Box_Mem_Free(gobj);
 }
 
 static void My_GObj_Array_Finalizer(void *item) {
@@ -429,7 +429,7 @@ static BoxTask GLib_Obj_At_X(BoxVMX *vm, BoxGObjKind kind) {
                             BoxGObjKind_Name(kind),
                             BoxGObjKind_Name(gobj->kind));
     BoxVM_Set_Fail_Msg(vm->vm, msg);
-    BoxMem_Free(msg);
+    Box_Mem_Free(msg);
     return BOXTASK_FAILURE;
   }
 }
@@ -470,7 +470,7 @@ BoxTask GLib_Int_At_Obj_Get(BoxVMX *vm) {
     char *msg =
       Box_SPrintF("Obj does not have a sub-object at index %d.", idx);
     BoxVM_Set_Fail_Msg(vm->vm, msg);
-    BoxMem_Free(msg);
+    Box_Mem_Free(msg);
     return BOXTASK_FAILURE;
   }
 }

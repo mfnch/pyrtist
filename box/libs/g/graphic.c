@@ -526,7 +526,7 @@ typedef struct {
 
 static void My_Window_Error_Close(BoxGWin *w) {
   assert(w->win_type_str == err_id_string);
-  BoxMem_Free(w->ptr);
+  Box_Mem_Free(w->ptr);
 }
 
 static BoxGWin *My_Window_Error_Report(BoxGWin *w, BoxGWinMethod m) {
@@ -551,11 +551,11 @@ void BoxGWin_Finish(BoxGWin *w) {
 
 void BoxGWin_Destroy(BoxGWin *w) {
   BoxGWin_Finish(w);
-  BoxMem_Free(w);
+  Box_Mem_Free(w);
 }
 
 BoxGWin *BoxGWin_Create_Invalid(BoxGErr *err) {
-  BoxGWin *w = BoxMem_Alloc(sizeof(BoxGWin));
+  BoxGWin *w = Box_Mem_Alloc(sizeof(BoxGWin));
   if (w != NULL) {
     BoxGWin_Block(w);
     w->win_type_str = err_id_string;
@@ -577,8 +577,8 @@ BoxGWin *BoxGWin_Create_Invalid(BoxGErr *err) {
  * tries to use it. The error message is fprinted to the given stream.
  */
 BoxGWin *BoxGWin_Create_Faulty(FILE *out, const char *msg) {
-  BoxGWin *w = BoxMem_Safe_Alloc(sizeof(BoxGWin));
-  GrpWindowErrData *d = BoxMem_Safe_Alloc(sizeof(GrpWindowErrData));
+  BoxGWin *w = Box_Mem_Safe_Alloc(sizeof(BoxGWin));
+  GrpWindowErrData *d = Box_Mem_Safe_Alloc(sizeof(GrpWindowErrData));
   BoxGWin_Block(w);
   w->win_type_str = err_id_string;
   w->save_to_file = My_Window_Error_Save;
@@ -586,7 +586,7 @@ BoxGWin *BoxGWin_Create_Faulty(FILE *out, const char *msg) {
   w->notify_not_implemented = My_Window_Error_Report;
   w->quiet = 0;
 
-  d->msg = BoxMem_Strdup(msg);
+  d->msg = Box_Mem_Strdup(msg);
   d->out = out;
   w->ptr = d;
   return w;
@@ -698,7 +698,7 @@ int BoxGWin_Type_From_String(const char *type_str) {
 
   colon = strchr(type_str, ':');
   if (colon != NULL) {
-    char *lib = BoxMem_Strdup(type_str);
+    char *lib = Box_Mem_Strdup(type_str);
     assert(type_str != NULL);
     lib[colon - type_str] = '\0';
     struct win_lib *this_lib;
@@ -710,7 +710,7 @@ int BoxGWin_Type_From_String(const char *type_str) {
     }
 
     type_str = colon + 1;
-    BoxMem_Free(lib);
+    Box_Mem_Free(lib);
 
     if (preferred_lib == WL_NONE)
       g_warning("Preferred window library not found!");
