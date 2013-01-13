@@ -48,6 +48,7 @@ class RegressionTestRunner(object):
                regression_path="RegressionData",
                output_path="OutputData",
                source_pattern="test_*.box",
+               excluded_fnames=[],
                box_exec="box"):
 
     self.test_root_path = test_root_path
@@ -55,6 +56,7 @@ class RegressionTestRunner(object):
     self.output_path = output_path
     self.source_pattern = source_pattern
     self.box_exec = box_exec
+    self.excluded_fnames = excluded_fnames
     self.output_file = "__stdout_stderr.txt"
 
   def _run_test(self, dirname, fname):
@@ -138,7 +140,8 @@ class RegressionTestRunner(object):
     relative_dirname = dirname[len(self.test_root_path):].lstrip(os.path.sep)
     for fname in fnames:
       if (glob.fnmatch.fnmatch(fname, self.source_pattern)
-          and os.path.isfile(os.path.join(dirname, fname))):
+          and os.path.isfile(os.path.join(dirname, fname))
+          and fname not in self.excluded_fnames):
         self._run_test(relative_dirname, fname)
     
   def run(self):
@@ -185,6 +188,7 @@ if __name__ == '__main__':
   # Box compiler tests
   rtr = RegressionTestRunner(test_root_path='../box',
                              source_pattern="test_*.box",
+                             excluded_fnames=["test_mylib.box"],
                              regression_path="RegressionData/box",
                              output_path=oddir,
                              box_exec=box_exec)
@@ -193,6 +197,7 @@ if __name__ == '__main__':
   # Boxer compiler tests
   rtr = RegressionTestRunner(test_root_path='../boxer/src/icons',
                              source_pattern="*.box",
+                             excluded_fnames=["fontall.box"],
                              regression_path="RegressionData/boxer",
                              output_path=oddir,
                              box_exec=box_exec)
