@@ -33,79 +33,68 @@
 typedef size_t BoxRefCount;
 
 /** Return the lowest multiple of sizeof(uint32_t) which is greater than n */
-BOXEXPORT size_t BoxMem_Size_Align(size_t n);
+BOXEXPORT size_t Box_Mem_Size_Align(size_t n);
 
 /** Align the given offset to the next multiple of 'alignment'. */
 BOXEXPORT size_t Box_Mem_Align_Offset(size_t offset, size_t alignment);
 
-#define BoxMem_Align_Offset Box_Mem_Align_Offset
-
 /** Increase the given 'size' so that it is multiple of 'alignment'. */
 #define Box_Mem_Get_Multiple_Size(size, alignment) \
-  BoxMem_Align_Offset((size), (alignment))
-
-#define BoxMem_Get_Multiple_Size Box_Mem_Get_Multiple_Size
+  Box_Mem_Align_Offset((size), (alignment))
 
 BOXEXPORT void *Box_Mem_Alloc(size_t size);
 
-#define BoxMem_Alloc Box_Mem_Alloc
-
-/** Similar to BoxMem_Alloc, but never returns NULL (display an error message
+/** Similar to Box_Mem_Alloc, but never returns NULL (display an error message
  * and abort, instead!).
  */
-BOXEXPORT void *BoxMem_Safe_Alloc(size_t size);
+BOXEXPORT void *Box_Mem_Safe_Alloc(size_t size);
 
-#define BoxMem_Safe_Alloc_Items(item_size, num_items) \
-  BoxMem_Safe_Alloc((item_size)*(num_items))
+#define Box_Mem_Safe_Alloc_Items(item_size, num_items) \
+  Box_Mem_Safe_Alloc((item_size)*(num_items))
 
-BOXEXPORT void *BoxMem_Realloc(void *ptr, size_t size);
+BOXEXPORT void *Box_Mem_Realloc(void *ptr, size_t size);
 
 BOXEXPORT void Box_Mem_Free(void *ptr);
 
-#define BoxMem_Free Box_Mem_Free
-
 BOXEXPORT char *Box_Mem_Strdup(const char *s);
 
-#define BoxMem_Strdup Box_Mem_Strdup
-
-BOXEXPORT char *BoxMem_Strndup(const char *s, size_t length);
+BOXEXPORT char *Box_Mem_Strndup(const char *s, size_t length);
 
 /** Merge the first l1 characters of str1 with the first l2 characters of str2
  * and return a NUL terminated string made by the concatenation of the two
  * parts.
  */
-BOXEXPORT char *BoxMem_Str_Merge_With_Len(const char *str1, size_t l1,
-                                          const char *str2, size_t l2);
+BOXEXPORT char *Box_Mem_Str_Merge_With_Len(const char *str1, size_t l1,
+                                           const char *str2, size_t l2);
 
-/** Merge two strings by callng BoxMem_Str_Merge_With_Len and using strlen to
+/**
+ * Merge two strings by callng Box_Mem_Str_Merge_With_Len() and using strlen to
  * get the lengths of the two strings (wh)
  */
-BOXEXPORT char *BoxMem_Str_Merge(const char *str1, const char *str2);
+BOXEXPORT char *Box_Mem_Str_Merge(const char *str1, const char *str2);
 
-BOXEXPORT void BoxMem_Exit(const char *msg);
+BOXEXPORT void Box_Mem_Exit(const char *msg);
 
 /** Called to signal a fatal error condition and exit immediately. */
 BOXEXPORT void Box_Fatal_Error(const char *file, unsigned long line_no);
 
 /** Executes *r = a*x, returning 0 in case of integer overflow, 1 otherwise. */
-BOXEXPORT int BoxMem_AX(size_t *r, size_t a, size_t x);
+BOXEXPORT int Box_Mem_AX(size_t *r, size_t a, size_t x);
 
 /** Return a multiplied by b and abort in case of integer overflow. */
-#define BoxMem_Safe_AX(a, b) ((a)*(b))
+#define Box_Mem_Safe_AX(a, b) ((a)*(b))
 
 /** Executes *r = x + y, returning 0 in case of integer overflow, 1 otherwise.
  */
-BOXEXPORT int Box_Mem_Sum(size_t *r, size_t x, size_t y);
+BOXEXPORT int Box_Mem_x_Plus_y(size_t *r, size_t x, size_t y);
 
-#define BoxMem_x_Plus_y Box_Mem_Sum
-
-#define Box_Mem_X_Plus_Y Box_Mem_Sum
+#define Box_Mem_Sum Box_Mem_x_Plus_y
 
 /** Executes *r = a*x + b*y, returning 0 in case of integer overflow,
  *  1 otherwise.
  */
-BOXEXPORT int BoxMem_AX_Plus_BY(size_t *r, size_t a, size_t x,
-                                size_t b, size_t y);
+BOXEXPORT int Box_Mem_AX_Plus_BY(size_t *r, size_t a, size_t x,
+                                 size_t b, size_t y);
 
 /**
  * Provides functionality similar to 'malloc' with the difference that the
@@ -146,17 +135,17 @@ BOXEXPORT int Box_Mem_RC_Unlink(void *ptr);
 /*#define BOXMEM_DEBUG_MACROS*/
 
 #ifdef BOXMEM_DEBUG_MACROS
-#  define BOXMEM_MACRO1(fn, ...) (fn(__VA_ARGS__) + 0*printf(#fn" in %s (%d) \n", __FILE__, __LINE__))
+#  define BOXMEM_MACRO1(fn, ...) (fn(__VA_ARGS__) + (void *) ((size_t) 0*printf(#fn" in %s (%d) \n", __FILE__, __LINE__)))
 #  define BOXMEM_MACRO2(fn, ...) {fn(__VA_ARGS__); (void) printf(#fn" in %s (%d) \n", __FILE__, __LINE__);}
 
-#  define BoxMem_Safe_Alloc(...) BOXMEM_MACRO1(BoxMem_Safe_Alloc, __VA_ARGS__)
-#  define BoxMem_Alloc(...) BOXMEM_MACRO1(BoxMem_Alloc, __VA_ARGS__)
-#  define BoxMem_Realloc(...) BOXMEM_MACRO1(BoxMem_Realloc, __VA_ARGS__)
-#  define BoxMem_Free(...) BOXMEM_MACRO2(BoxMem_Free, __VA_ARGS__)
-#  define BoxMem_Strdup(...) BOXMEM_MACRO1(BoxMem_Strdup, __VA_ARGS__)
-#  define BoxMem_Strndup(...) BOXMEM_MACRO1(BoxMem_Strndup, __VA_ARGS__)
-#  define BoxMem_Str_Merge(...) BOXMEM_MACRO1(BoxMem_Str_Merge, __VA_ARGS__)
-#  define BoxMem_Str_Merge_With_Len(...) \
-     BOXMEM_MACRO1(BoxMem_Str_Merge_With_Len, __VA_ARGS__)
+#  define Box_Mem_Safe_Alloc(...) BOXMEM_MACRO1(Box_Mem_Safe_Alloc, __VA_ARGS__)
+#  define Box_Mem_Alloc(...) BOXMEM_MACRO1(Box_Mem_Alloc, __VA_ARGS__)
+#  define Box_Mem_Realloc(...) BOXMEM_MACRO1(Box_Mem_Realloc, __VA_ARGS__)
+#  define Box_Mem_Free(...) BOXMEM_MACRO2(Box_Mem_Free, __VA_ARGS__)
+#  define Box_Mem_Strdup(...) BOXMEM_MACRO1(Box_Mem_Strdup, __VA_ARGS__)
+#  define Box_Mem_Strndup(...) BOXMEM_MACRO1(Box_Mem_Strndup, __VA_ARGS__)
+#  define Box_Mem_Str_Merge(...) BOXMEM_MACRO1(Box_Mem_Str_Merge, __VA_ARGS__)
+#  define Box_Mem_Str_Merge_With_Len(...) \
+     BOXMEM_MACRO1(Box_Mem_Str_Merge_With_Len, __VA_ARGS__)
 #endif
 #endif

@@ -151,7 +151,7 @@ void Msg_Context_Begin(MsgStack *ms, const char *msg, MsgFilter mf) {
   Msg m;
   EXIT_IF_NOT_INIT(ms);
   m.level = 0;
-  m.msg = BoxMem_Strdup(msg);
+  m.msg = Box_Mem_Strdup(msg);
   m.filter = ms->filter = mf;
   BoxArr_Push(& ms->msgs, & m);
 }
@@ -184,7 +184,7 @@ void Msg_Add(MsgStack *ms, BoxUInt level, const char *msg) {
   ++ms->level[level-1];
   if (level < ms->show_level) return;
   m.level = level;
-  m.msg = BoxMem_Strdup(msg);
+  m.msg = Box_Mem_Strdup(msg);
   m.filter = ms->filter;
   BoxArr_Push(& ms->msgs, & m);
   Msg_Show(ms);
@@ -197,7 +197,7 @@ void Msg_Add(MsgStack *ms, BoxUInt level, const char *msg) {
 char *my_filter(BoxUInt level, char *original_msg) {
   char *prefix="Fatal", *final_msg;
   if (level == 0) {
-    final_msg = BoxMem_Strdup(print("%s:\n", original_msg));
+    final_msg = Box_Mem_Strdup(print("%s:\n", original_msg));
     free(original_msg);
     return final_msg;
   }
@@ -206,7 +206,7 @@ char *my_filter(BoxUInt level, char *original_msg) {
   case 2: prefix = "Warning"; break;
   case 3: prefix = "Error"; break;
   }
-  final_msg = BoxMem_Strdup(print("%s: %s\n", prefix, original_msg));
+  final_msg = Box_Mem_Strdup(print("%s: %s\n", prefix, original_msg));
   free(original_msg);
   return final_msg;
 }

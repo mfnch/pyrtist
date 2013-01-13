@@ -110,8 +110,8 @@ BoxSrcPos *BoxSrcPosTable_Get_Src_Of(BoxSrcPosTable *pt, BoxOutPos o_pos);
 void BoxSrcPos_Init(BoxSrcPos *pos, const char *file_name);
 
 /** Return a string corresponding to the given BoxSrcPos object.
- * NOTE: the returned string is allocated with BoxMem_Alloc and should be
- *  deallocated by the user, calling BoxMem_Free.
+ * NOTE: the returned string is allocated with Box_Mem_Alloc and should be
+ *  deallocated by the user, calling Box_Mem_Free.
  */
 char *BoxSrcPos_To_Str(BoxSrcPos *pos);
 
@@ -130,8 +130,8 @@ void BoxSrcPos_Set_Undef(BoxSrcPos *pos);
 void BoxSrc_Init(BoxSrc *src);
 
 /** Return a string corresponding to the given BoxSrc object.
- * NOTE: the returned string is allocated with BoxMem_Alloc and should be
- *  deallocated by the user, calling BoxMem_Free.
+ * NOTE: the returned string is allocated with Box_Mem_Alloc and should be
+ *  deallocated by the user, calling Box_Mem_Free.
  * Example: "line 1 cols 5-15"
  */
 char *BoxSrc_To_Str(BoxSrc *loc);

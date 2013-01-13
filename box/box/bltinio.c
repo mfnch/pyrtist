@@ -51,8 +51,8 @@ static BoxTask My_File_Destroy(BoxVMX *vm) {
     fclose(f->file);
     f->opened = 0;
   }
-  BoxMem_Free(f->name);
-  BoxMem_Free(f->mode);
+  Box_Mem_Free(f->name);
+  Box_Mem_Free(f->mode);
   f->name = (char *) NULL;
   f->mode = (char *) NULL;
   return BOXTASK_OK;
@@ -68,8 +68,8 @@ static BoxTask My_File_Close(BoxVMX *vm) {
       MSG_ERROR("Error opening the file \"%s\" (mode=\"%s\").",
                 f->name, open_mode);
 
-    BoxMem_Free(f->name);
-    BoxMem_Free(f->mode);
+    Box_Mem_Free(f->name);
+    Box_Mem_Free(f->mode);
     f->name = (char *) NULL;
     f->mode = (char *) NULL;
     return (f->opened) ? BOXTASK_OK : BOXTASK_FAILURE;

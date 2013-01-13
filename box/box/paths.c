@@ -81,7 +81,7 @@ static void Add_Env_To_List(const char *env_var, BoxList *list) {
 
 char *Path_Get_Exec_Path(void) {
 #ifdef __WINDOWS__
-  char *out = (char *) BoxMem_Alloc(MAX_PATH);
+  char *out = (char *) Box_Mem_Alloc(MAX_PATH);
   if (out != NULL) {
     char *bn;
     GetModuleFileName(NULL, out, MAX_PATH);
@@ -107,15 +107,15 @@ void Box_Get_Bltin_Pkg_And_Lib_Paths(char **pkg_path, char **lib_path) {
                             "\\pkg", exec_path);
     *lib_path = Box_SPrintF("%s\\..\\lib\\box"BOX_VERSTR_ROUGH
                             "\\lib", exec_path);
-    BoxMem_Free(exec_path);
+    Box_Mem_Free(exec_path);
   }
 
 #else
 #  ifdef BUILTIN_PKG_PATH
-  *pkg_path = BoxMem_Strdup(BUILTIN_PKG_PATH);
+  *pkg_path = Box_Mem_Strdup(BUILTIN_PKG_PATH);
 #  endif
 #  ifdef BUILTIN_LIBRARY_PATH
-  *lib_path = BoxMem_Strdup(BUILTIN_LIBRARY_PATH);
+  *lib_path = Box_Mem_Strdup(BUILTIN_LIBRARY_PATH);
 #  endif
 #endif
 }
@@ -137,8 +137,8 @@ void BoxPaths_Set_All_From_Env(BoxPaths *bp) {
       MSG_WARNING("Cannot add default paths for libraries and headers.");
     }
 
-    BoxMem_Free(pkg_path);
-    BoxMem_Free(lib_path);
+    Box_Mem_Free(pkg_path);
+    Box_Mem_Free(lib_path);
   }
 #else
 #  ifdef BUILTIN_LIBRARY_PATH
@@ -170,7 +170,7 @@ void BoxPaths_Add_Script_Path_To_Inc_Dir(BoxPaths *bp,
     Box_Split_Path(& script_dir, NULL, script_path);
     if (script_dir != NULL) {
       BoxList_Append_String(& bp->inc_dirs, script_dir);
-      BoxMem_Free(script_dir);
+      Box_Mem_Free(script_dir);
       return;
     }
   }

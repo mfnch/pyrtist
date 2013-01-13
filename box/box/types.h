@@ -477,7 +477,7 @@ BoxType_Get_Size_And_Alignment(BoxType *t, size_t *size, size_t *algn);
 /**
  * @brief Create the string representation of the provided type.
  *
- * @note The returned string has to be freed with BoxMem_Free().
+ * @note The returned string has to be freed with Box_Mem_Free().
  */
 char *BoxType_Get_Repr(BoxType *t);
 

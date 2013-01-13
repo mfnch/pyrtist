@@ -492,8 +492,8 @@ static void My_Exec_Query(char *query) {
     }
   }
 
-  BoxMem_Free(pkg_path);
-  BoxMem_Free(lib_path);
+  Box_Mem_Free(pkg_path);
+  Box_Mem_Free(lib_path);
 
   exit(exit_status);
 }

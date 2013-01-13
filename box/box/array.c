@@ -73,7 +73,7 @@ void BoxArr_Finish(BoxArr *arr) {
 }
 
 BoxArr *BoxArr_Create(size_t element_size, size_t initial_size) {
-  BoxArr *arr = BoxMem_Alloc(sizeof(BoxArr));
+  BoxArr *arr = Box_Mem_Alloc(sizeof(BoxArr));
   if (arr == NULL)
     return NULL;
   BoxArr_Init(arr, element_size, initial_size);
@@ -82,7 +82,7 @@ BoxArr *BoxArr_Create(size_t element_size, size_t initial_size) {
 
 void BoxArr_Destroy(BoxArr *arr) {
   BoxArr_Finish(arr);
-  BoxMem_Free(arr);
+  Box_Mem_Free(arr);
 }
 
 void BoxArr_Set_Attr(BoxArr *arr, BoxArrAttr mask, BoxArrAttr value) {
@@ -166,7 +166,7 @@ void BoxArr_Clear(BoxArr *arr) {
   if (arr->fin != NULL)
     (void) BoxArr_Iter(arr, Finalise_Item, arr->fin);
 
-  BoxMem_Free(arr->ptr);
+  Box_Mem_Free(arr->ptr);
   BoxArr_Reinit(arr); /* Re-init */
 }
 
@@ -188,12 +188,12 @@ static void BoxArr_Expand(BoxArr *arr, BoxUInt num_items) {
     if (new_dim == 0) {
       for(new_dim = arr->mindim; new_dim < num_items; new_dim *= 2);
       new_size = new_dim*arr->elsize;
-      new_ptr = BoxMem_Alloc(new_size);
+      new_ptr = Box_Mem_Alloc(new_size);
 
     } else {
       for(; new_dim < num_items; new_dim *= 2);
       new_size = new_dim*arr->elsize;
-      new_ptr = BoxMem_Realloc(arr->ptr, new_size);
+      new_ptr = Box_Mem_Realloc(arr->ptr, new_size);
     }
     if (new_ptr == NULL) {
       BoxErr_Report(& arr->err, BOXERR_OUT_OF_MEMORY);
@@ -217,7 +217,7 @@ static void BoxArr_Shrink(BoxArr *arr, BoxUInt num_items) {
     if (new_dim < arr->mindim)
       new_dim = arr->mindim;
     new_size = arr->dim*arr->elsize;
-    new_ptr = BoxMem_Realloc(arr->ptr, new_size);
+    new_ptr = Box_Mem_Realloc(arr->ptr, new_size);
     if (new_ptr == NULL) {
       BoxErr_Report(& arr->err, BOXERR_OUT_OF_MEMORY);
       return;
@@ -233,7 +233,7 @@ void BoxArr_Compactify(BoxArr *arr) {
     if (arr->dim > arr->numel) {
       size_t new_dim = arr->numel,
              new_size = new_dim*arr->elsize;
-      void   *new_ptr = BoxMem_Realloc(arr->ptr, new_size);
+      void   *new_ptr = Box_Mem_Realloc(arr->ptr, new_size);
       if (new_ptr != NULL) {
         arr->ptr = new_ptr;
         arr->dim = new_dim;

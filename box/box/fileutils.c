@@ -73,7 +73,7 @@ static BoxTask My_Find_File(MyFindFileData *ffd,
                                ffd->file_name, (char *) suffix);
   if (Box_File_Exist(file)) {
     if (ffd->only_first) {
-      ffd->first_file = BoxMem_Strdup(file);
+      ffd->first_file = Box_Mem_Strdup(file);
       return BOXTASK_FAILURE;
 
     } else {
@@ -152,15 +152,15 @@ void Box_Split_Path(char **dir, char **file, const char *full_path) {
     if (dir != NULL)
       *dir = NULL;
     if (file != NULL)
-      *file = BoxMem_Strdup(full_path);
+      *file = Box_Mem_Strdup(full_path);
 
   } else {
     size_t i = (basename - full_path) + 1;
     /* ^^^ cast from ptrdiff_t */
     if (file != NULL)
-      *file = BoxMem_Strdup(basename + 1);
+      *file = Box_Mem_Strdup(basename + 1);
     if (dir != NULL) {
-      *dir = memcpy(BoxMem_Safe_Alloc(sizeof(char)*(i + 1)),
+      *dir = memcpy(Box_Mem_Safe_Alloc(sizeof(char)*(i + 1)),
                     full_path, i);
       (*dir)[i] = '\0';
     }

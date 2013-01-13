@@ -82,7 +82,7 @@ BoxTask BoxStream_Init_From_File(BoxStream *bs, FILE *file) {
 
 /* Wrap a FILE object inside a BoxStream object. */
 BoxStream *BoxStream_Create_From_File(FILE *file) {
-  BoxStream *bs = BoxMem_Alloc(sizeof(BoxStream));
+  BoxStream *bs = Box_Mem_Alloc(sizeof(BoxStream));
 
   if (!bs)
     return NULL;
@@ -90,6 +90,6 @@ BoxStream *BoxStream_Create_From_File(FILE *file) {
   if (BoxStream_Init_From_File(bs, file) == BOXTASK_OK)
     return bs;
 
-  BoxMem_Free(bs);
+  Box_Mem_Free(bs);
   return NULL;
 }

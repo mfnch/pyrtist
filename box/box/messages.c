@@ -61,7 +61,7 @@ static char *My_Show_Msg(BoxUInt level, char *original_msg) {
   if (level == 0) {
     char *final_msg;
     final_msg = printdup("NOTE: %s:\n", original_msg);
-    BoxMem_Free(original_msg);
+    Box_Mem_Free(original_msg);
     return final_msg;
 
   } else {
@@ -80,7 +80,7 @@ static char *My_Show_Msg(BoxUInt level, char *original_msg) {
     } else
       final_msg = Box_SPrintF("%s: %s\n", prefix, original_msg);
 
-    BoxMem_Free(original_msg);
+    Box_Mem_Free(original_msg);
     return final_msg;
   }
 }

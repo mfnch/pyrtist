@@ -143,7 +143,7 @@ include BEGIN(include);
   BEGIN(INITIAL);
 
   (void) BoxLex_Begin_Include(yyextra, f);
-  BoxMem_Free(f);
+  Box_Mem_Free(f);
 }
 
  /* Whatever else gives errors */
@@ -292,27 +292,27 @@ include BEGIN(include);
   size_t length;
   char *s = Box_Reduce_Esc_String(yytext + 1, yyleng - 2, & length);
   yylval.Node = ASTNodeString_New(s, length);
-  BoxMem_Free(s);
+  Box_Mem_Free(s);
   MY_SCAN_TOK();
   return TOK_STRING;
  }
 
 Else {
-  yylval.String = BoxMem_Strndup(yytext, yyleng);
+  yylval.String = Box_Mem_Strndup(yytext, yyleng);
   MY_SCAN_TOK();
   return TOK_KEYWORD;
 }
 
  /* Variable name */
 {LNAME} {
-  yylval.String = BoxMem_Strndup(yytext, yyleng);
+  yylval.String = Box_Mem_Strndup(yytext, yyleng);
   MY_SCAN_TOK();
   return TOK_IDENTIFIER;
  }
 
  /* Type name */
 {UNAME} {
-  yylval.String = BoxMem_Strndup(yytext, yyleng);
+  yylval.String = Box_Mem_Strndup(yytext, yyleng);
   MY_SCAN_TOK();
   return TOK_TYPE_IDENT;
  }
@@ -339,7 +339,7 @@ struct _struct_BoxLex {
 };
 
 BoxLex *BoxLex_Create(BoxPaths *paths) {
-  BoxLex *bl = BoxMem_Safe_Alloc(sizeof(BoxLex));
+  BoxLex *bl = Box_Mem_Safe_Alloc(sizeof(BoxLex));
   yylex_init(& bl->scanner);
   yyset_extra(bl, bl->scanner);
 
@@ -365,7 +365,7 @@ BoxSrcName *BoxLex_Destroy(BoxLex *bl) {
   BoxHT_Finish(& bl->provided_features);
   BoxArr_Finish(& bl->include_list);
   BoxArr_Finish(& bl->macro_content);
-  BoxMem_Free(bl);
+  Box_Mem_Free(bl);
   return filenames;
 }
 
@@ -454,7 +454,7 @@ int BoxLex_End_Include(BoxLex *bl) {
     yypop_buffer_state(bl->scanner);
     bl->pos = cur.pos;
 
-    BoxMem_Free(cur.script_dir);
+    Box_Mem_Free(cur.script_dir);
 
     /* Compute the number of errors in the included file */
     num_errs = MSG_GT_ERRORS - cur.num_errs;

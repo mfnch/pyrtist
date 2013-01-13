@@ -231,7 +231,7 @@ BoxVM_Get_Installed_Type(BoxVM *vm, BoxTypeId id);
  *   types.
  *
  * @param vm The virtual machine to which the table refers to.
- * @return A freshly allocated string (to be freed by BoxMem_Free() by the
+ * @return A freshly allocated string (to be freed by Box_Mem_Free() by the
  *   caller) containing a human-readable representation of the mapping
  *   type id -> type.
  */

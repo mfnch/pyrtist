@@ -39,7 +39,7 @@
 
 static void Destroy_TSDesc(void *td) {
   BoxSPtr_Unlink(((TSDesc *) td)->new_type);
-  BoxMem_Free(((TSDesc *) td)->name);
+  Box_Mem_Free(((TSDesc *) td)->name);
   ((TSDesc *) td)->name = 0;
 }
 
@@ -267,7 +267,7 @@ static BoxTask My_Name_Set(TS *ts, BoxTypeId t, const char *name) {
               name, t, td->name);
     return BOXTASK_FAILURE;
   }
-  td->name = BoxMem_Strdup(name);
+  td->name = Box_Mem_Strdup(name);
   return BOXTASK_OK;
 }
 
@@ -408,10 +408,10 @@ static void My_Add_Member(TSKind kind, BoxTS *ts, BoxTypeId s, BoxTypeId m,
      * not the 'size' (typesys.c needs to be rewritten another time, as it is
      * not very well designed, admittedly).
      */
-    new_m_td->size = BoxMem_Align_Offset(s_size, m_td->alignment);
+    new_m_td->size = Box_Mem_Align_Offset(s_size, m_td->alignment);
 
     if (m_name != NULL)
-      new_m_td->name = BoxMem_Strdup(m_name);
+      new_m_td->name = Box_Mem_Strdup(m_name);
 
   } else
     new_m_td->size = m_td->size;
@@ -433,7 +433,7 @@ static void My_Add_Member(TSKind kind, BoxTS *ts, BoxTypeId s, BoxTypeId m,
   /* Compute the new structure/... size. */
   switch(kind) {
   case TS_KIND_STRUCTURE:
-    s_td->size = BoxMem_Get_Multiple_Size(new_m_td->size + m_td->size,
+    s_td->size = Box_Mem_Get_Multiple_Size(new_m_td->size + m_td->size,
                                           s_td->alignment);
     /* We also add the member to the hashtable for fast search */
     if (m_name != NULL) {

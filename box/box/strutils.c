@@ -80,7 +80,7 @@ BoxTask Str_Eq2(char *s1, BoxUInt l1, char *s2, BoxUInt l2) {
 char *Str_DupLow(char *s, BoxUInt leng)
 {
   char *ns, *nc;
-  ns = (char *) BoxMem_Alloc(leng);
+  ns = (char *) Box_Mem_Alloc(leng);
   for (nc = ns; leng > 0; leng--) *(nc++) = tolower(*(s++));
   return ns;
 }
@@ -94,8 +94,8 @@ char *Str_Dup(const char *s, BoxUInt leng) {
   char *ns, *nc;
 
   if (s == NULL || leng < 1)
-    return (char *) BoxMem_Strdup("");
-  ns = (char *) BoxMem_Alloc(leng + 1);
+    return (char *) Box_Mem_Strdup("");
+  ns = (char *) Box_Mem_Alloc(leng + 1);
   for (nc = ns; leng > 0; leng--) *(nc++) = *(s++);
   *nc = '\0';
   return ns;
@@ -120,11 +120,11 @@ char *Str_Cut(const char *s, BoxUInt maxleng, BoxInt start) {
  */
 char *Str__Cut(const char *s, BoxUInt leng, BoxUInt maxleng, BoxInt start) {
   if ( leng <= maxleng )
-    return BoxMem_Strdup(s);
+    return Box_Mem_Strdup(s);
 
   else {
     char *rets, *c;
-    rets = (char *) BoxMem_Alloc(maxleng + 1);
+    rets = (char *) Box_Mem_Alloc(maxleng + 1);
 
     if ( start < 0 ) start = 0;
       else if ( start > 100 ) start = 100;
@@ -322,7 +322,7 @@ char *Box_Reduce_Esc_String(const char *s, size_t l, size_t *new_length) {
   size_t f, nl = 1; /* <-- incluso il '\0' di terminazione stringa */
   char *c, *out;
 
-  c = out = (char *) BoxMem_Alloc(l + 1);
+  c = out = (char *) Box_Mem_Alloc(l + 1);
   while (l > 0) {
     if (My_Reduce_Esc_Char(s, l, & f, c) == BOXTASK_FAILURE)
       return NULL;
@@ -458,7 +458,7 @@ BoxTask Str_ToReal(char *s, BoxUInt l, BoxReal *r) {
 
   } else {
     char *sc, *endptr;
-    sc = (char *) BoxMem_Alloc(sizeof(char)*(l+1));
+    sc = (char *) Box_Mem_Alloc(sizeof(char)*(l+1));
 
     /* Copio la stringa in modo da poterla terminare con '\0' */
     strncpy(sc, s, l);
@@ -466,7 +466,7 @@ BoxTask Str_ToReal(char *s, BoxUInt l, BoxReal *r) {
 
     errno = 0;
     *r = BoxReal_Of_Str(sc, & endptr);
-    BoxMem_Free(sc);
+    Box_Mem_Free(sc);
     if ( errno == 0 ) return BOXTASK_OK;
   }
 
@@ -492,9 +492,9 @@ BoxName *BoxName_Empty(void) {
  */
 const char *BoxName_Str(BoxName *n) {
   static char *asciiz = NULL;
-  BoxMem_Free(asciiz);
+  Box_Mem_Free(asciiz);
   if (n->length == 0) return "";
-  asciiz = (char *) BoxMem_Alloc(n->length + 1);
+  asciiz = (char *) Box_Mem_Alloc(n->length + 1);
   asciiz[n->length] = '\0';
   return strncpy(asciiz, n->text, n->length);
 }
@@ -504,8 +504,8 @@ const char *BoxName_Str(BoxName *n) {
  */
 char *BoxName_To_Str(BoxName *n) {
   char *asciiz = NULL;
-  if (n->length == 0) return BoxMem_Strdup("");
-  asciiz = (char *) BoxMem_Alloc(n->length + 1);
+  if (n->length == 0) return Box_Mem_Strdup("");
+  asciiz = (char *) Box_Mem_Alloc(n->length + 1);
   asciiz[n->length] = '\0';
   return strncpy(asciiz, n->text, n->length);
 }
@@ -518,7 +518,7 @@ void BoxName_From_Str(BoxName *dest, char *src) {
 /* DESCRIZIONE: Rimuove la stringa associata a *n (pone n --> "")
  */
 void BoxName_Free(BoxName *n) {
-  BoxMem_Free(n->text);
+  Box_Mem_Free(n->text);
   n->text = NULL;
   n->length = 0;
 }
@@ -530,7 +530,7 @@ BoxName *BoxName_Dup(BoxName *n) {
 
   if ( n > 0 ) {
     rs.length = n->length;
-    rs.text = BoxMem_Strndup(n->text, n->length);
+    rs.text = Box_Mem_Strndup(n->text, n->length);
     if ( rs.text == NULL ) {MSG_FATAL("Memoria esaurita!");}
     return & rs;
   }
@@ -548,7 +548,7 @@ BoxTask BoxName_Cat(BoxName *nm, BoxName *nm1, BoxName *nm2, int free_args) {
   if ( nm2->text[l2-1] == '\0' ) --l2;
   l = l1 + l2;
 
-  nm->text = dest = (char *) BoxMem_Alloc( nm->length = l + 1 );
+  nm->text = dest = (char *) Box_Mem_Alloc( nm->length = l + 1 );
   if ( l1 > 0 ) strncpy(dest, nm1->text, l1);
   if ( l2 > 0 ) strncpy(dest + l1, nm2->text, l2);
   *(dest + l) = '\0';
@@ -571,20 +571,20 @@ strange_cases: {
   }
 }
 
-void *BoxMem_Dup(const void *src, unsigned int length) {
+void *Box_Mem_Dup(const void *src, unsigned int length) {
   void *copy;
   if (length < 1) return NULL;
-  copy = (void *) BoxMem_Alloc(length);
+  copy = (void *) Box_Mem_Alloc(length);
   memcpy(copy, src, length);
   return copy;
 }
 
-/** Similar to BoxMem_Dup, but allocate extra space */
-void *BoxMem_Dup_Larger(const void *src, BoxInt src_size, BoxInt dest_size) {
+/** Similar to Box_Mem_Dup, but allocate extra space */
+void *Box_Mem_Dup_Larger(const void *src, BoxInt src_size, BoxInt dest_size) {
   void *copy;
   assert(dest_size >= src_size && src_size >= 0);
   if (dest_size < 1) return NULL;
-  copy = (void *) BoxMem_Alloc(dest_size);
+  copy = (void *) Box_Mem_Alloc(dest_size);
   if (copy == NULL) return NULL;
   memcpy(copy, src, src_size);
   return copy;

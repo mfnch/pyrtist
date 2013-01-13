@@ -73,10 +73,10 @@ void BoxName_From_Str(BoxName *dest, char *src);
 void BoxName_Free(BoxName *n);
 BoxName *BoxName_Dup(BoxName *n);
 BoxTask BoxName_Cat(BoxName *nm, BoxName *nm1, BoxName *nm2, int free_args);
-void *BoxMem_Dup(const void *src, unsigned int length);
+void *Box_Mem_Dup(const void *src, unsigned int length);
 
-/** Similar to BoxMem_Dup, but allocate extra space in the destination */
-void *BoxMem_Dup_Larger(const void *src, BoxInt src_size, BoxInt dest_size);
+/** Similar to Box_Mem_Dup, but allocate extra space in the destination */
+void *Box_Mem_Dup_Larger(const void *src, BoxInt src_size, BoxInt dest_size);
 
 /** Returns whether the string 'src' ends with 'end'. Both strings are
  * supposed to be NUL-terminated.

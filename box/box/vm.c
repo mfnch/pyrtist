@@ -118,7 +118,7 @@ static void My_Free_Globals(BoxVM *vmp) {
           (void) BoxPtr_Unlink(ptrs + j);
       }
 
-      BoxMem_Free(gregs->ptr + gregs->min*size_of_type[i]);
+      Box_Mem_Free(gregs->ptr + gregs->min*size_of_type[i]);
     }
     gregs->ptr = NULL;
     gregs->min = 1;
@@ -145,7 +145,7 @@ void BoxVM_Finish(BoxVM *vm) {
   BoxArr_Finish(& vm->backtrace);
 
   if (vm->fail_msg != NULL)
-    BoxMem_Free(vm->fail_msg);
+    Box_Mem_Free(vm->fail_msg);
 
   BoxVMSymTable_Finish(& vm->sym_table);
   BoxVM_Proc_Finish(vm);
@@ -155,13 +155,13 @@ void BoxVM_Finish(BoxVM *vm) {
 }
 
 BoxVM *BoxVM_Create(void) {
-  BoxVM *vm = BoxMem_Alloc(sizeof(BoxVM));
+  BoxVM *vm = Box_Mem_Alloc(sizeof(BoxVM));
 
   if (vm == NULL)
     return NULL;
 
   if (BoxVM_Init(vm) != BOXTASK_OK) {
-    BoxMem_Free(vm);
+    Box_Mem_Free(vm);
     return NULL;
   }
 
@@ -172,7 +172,7 @@ void BoxVM_Destroy(BoxVM *vm) {
   if (vm == NULL)
     return;
   BoxVM_Finish(vm);
-  BoxMem_Free(vm);
+  Box_Mem_Free(vm);
 }
 
 /* Install a new type and return its type identifier for this VM. */
@@ -505,7 +505,7 @@ BoxTask BoxVM_Module_Execute(BoxVM *vm, BoxVMCallNum call_num) {
     for (i = 0; i < NUM_TYPES; i++)
       if ((vmx.alc[i] & 1) != 0) {
         BoxVMRegs *lregs = & vmx.local[i];
-        BoxMem_Free(lregs->ptr + lregs->min*size_of_type[i]);
+        Box_Mem_Free(lregs->ptr + lregs->min*size_of_type[i]);
       }
   }
 
@@ -759,8 +759,8 @@ void BoxVM_Data_Display(BoxVM *vm, FILE *stream) {
 /* Set a failure message. */
 void BoxVM_Set_Fail_Msg(BoxVM *vm, const char *msg) {
   if (vm->fail_msg)
-    BoxMem_Free(vm->fail_msg);
-  vm->fail_msg = msg ? BoxMem_Strdup(msg) : NULL;
+    Box_Mem_Free(vm->fail_msg);
+  vm->fail_msg = msg ? Box_Mem_Strdup(msg) : NULL;
 }
 
 /* Get the last failure message. */
@@ -812,12 +812,12 @@ void BoxVM_Backtrace_Print(BoxVM *vm, FILE *stream) {
           char *src_pos_str = BoxSrcPos_To_Str(src_pos);
           fprintf(stream, "  In %s at %s (VM address %ld).\n",
                   desc, src_pos_str, (long) vm_pos);
-          BoxMem_Free(src_pos_str);
+          Box_Mem_Free(src_pos_str);
 
         } else
           fprintf(stream, "  In %s at %ld.\n", desc, (long) vm_pos);
 
-        BoxMem_Free(desc);
+        Box_Mem_Free(desc);
 
       } else {
         fprintf(stream, "  In C code (ERROR?).\n");

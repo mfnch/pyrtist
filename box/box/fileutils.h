@@ -62,12 +62,12 @@ BOXEXPORT void Box_Find_File_In_Dir(char **found_file, const char *file_name,
  * is not allocated/returned. Examples:
  *
  *  Box_Split_Path(dir, file, "/dira/dirb/file.ext") -->
- *     *dir = BoxMem_Strdup("/dira/dirb/"); *file = BoxMem_Strdup("file.ext");
+ *     *dir = Box_Mem_Strdup("/dira/dirb/"); *file = Box_Mem_Strdup("file.ext");
  *
  *  Box_Split_Path(dir, file, "/") -->
- *                       *dir = BoxMem_Strdup("/"); *file = BoxMem_Strdup("");
+ *                       *dir = Box_Mem_Strdup("/"); *file = Box_Mem_Strdup("");
  *
- *  Box_Split_Path(dir, file, "") --> *dir = NULL; *file = BoxMem_Strdup("");
+ *  Box_Split_Path(dir, file, "") --> *dir = NULL; *file = Box_Mem_Strdup("");
  */
 BOXEXPORT void Box_Split_Path(char **dir, char **file, const char *full_path);
 
@@ -75,12 +75,12 @@ BOXEXPORT void Box_Split_Path(char **dir, char **file, const char *full_path);
  * This functions transforms the input Unix path in a way that it can be
  * understood in the current platform. In particular, when running on Windows
  * this function transforms slashes to backslashes.
- * @param srcpath A string allocated with BoxMem_Alloc containing the source
+ * @param srcpath A string allocated with Box_Mem_Alloc containing the source
  *   path in Unix style.
  * @return This function tries to do a in-place transformation of the source
  *   string. When possible, it just returns srcpath. If this is not possible,
  *   then a new string is allocated and returned, while the original srcpath
- *   is freed with BoxMem_Free. In other words, the user passes allocation
+ *   is freed with Box_Mem_Free. In other words, the user passes allocation
  *   responsibility for the source string and receives allocation
  *   responsibility for the returned string.
  */

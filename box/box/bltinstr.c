@@ -66,7 +66,7 @@ static BoxTask My_Str_Int(BoxVMX *vm) {
   if (tmp != (char *) NULL) {
     if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
       return BOXTASK_FAILURE;
-    BoxMem_Free(tmp);
+    Box_Mem_Free(tmp);
   }
   return BOXTASK_OK;
 }
@@ -78,7 +78,7 @@ static BoxTask My_Str_Real(BoxVMX *vm) {
   if (tmp != (char *) NULL) {
     if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
       return BOXTASK_FAILURE;
-    BoxMem_Free(tmp);
+    Box_Mem_Free(tmp);
   }
   return BOXTASK_OK;
 }
@@ -90,7 +90,7 @@ static BoxTask My_Str_Point(BoxVMX *vm) {
   if (tmp != (char *) NULL) {
     if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
       return BOXTASK_FAILURE;
-    BoxMem_Free(tmp);
+    Box_Mem_Free(tmp);
   }
   return BOXTASK_OK;
 }
@@ -102,7 +102,7 @@ static BoxTask My_Str_Ptr(BoxVMX *vm) {
   if (tmp != (char *) NULL) {
     if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
       return BOXTASK_FAILURE;
-    BoxMem_Free(tmp);
+    Box_Mem_Free(tmp);
   }
   return BOXTASK_OK;
 }
@@ -114,7 +114,7 @@ static BoxTask My_Str_CPtr(BoxVMX *vm) {
   if (tmp != (char *) NULL) {
     if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
       return BOXTASK_FAILURE;
-    BoxMem_Free(tmp);
+    Box_Mem_Free(tmp);
   }
   return BOXTASK_OK;
 }

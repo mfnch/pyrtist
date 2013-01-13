@@ -45,7 +45,7 @@ BoxCallable_Init_As_Undefined(BoxCallable *cb) {
 /* Finalize a callable object. */
 void BoxCallable_Finish(BoxCallable *cb) {
   if (cb->uid)
-    BoxMem_Free(cb->uid);
+    Box_Mem_Free(cb->uid);
   BoxPtr_Unlink(& cb->context);
 }
 
@@ -85,7 +85,7 @@ BoxCallable_Set_Uid(BoxCallable *cb, BoxUid *uid) {
   if (!(cb && !cb->uid))
     return BOXBOOL_FALSE;
 
-  cb->uid = BoxMem_Strdup(uid);
+  cb->uid = Box_Mem_Strdup(uid);
   return BOXBOOL_TRUE;
 }
 

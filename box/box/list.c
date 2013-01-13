@@ -42,13 +42,13 @@ void BoxList_Finish(BoxList *l) {
       l->destructor(item);
     }
     lih_next = lih->next;
-    BoxMem_Free(lih);
+    Box_Mem_Free(lih);
     lih = lih_next;
   }
 }
 
 BoxList *BoxList_New(BoxUInt item_size) {
-  BoxList *l = BoxMem_Alloc(sizeof(BoxList));
+  BoxList *l = Box_Mem_Alloc(sizeof(BoxList));
   if (l == NULL) return NULL;
   BoxList_Init(l, item_size);
   return l;
@@ -56,7 +56,7 @@ BoxList *BoxList_New(BoxUInt item_size) {
 
 void BoxList_Destroy(BoxList *l) {
   BoxList_Finish(l);
-  BoxMem_Free(l);
+  Box_Mem_Free(l);
 }
 
 BoxUInt BoxList_Length(BoxList *l) {
@@ -75,14 +75,14 @@ void BoxList_Remove(BoxList *l, void *item) {
   *prev_lih = lih->next;
   *next_lih = lih->previous;
   if (l->destructor != NULL) l->destructor(item);
-  BoxMem_Free(lih);
+  Box_Mem_Free(lih);
 }
 
 void BoxList_Insert_With_Size(BoxList *l, void *item_where,
                            const void *item_what, BoxUInt size) {
   BoxListItemHead **prev_lih, **next_lih;
 
-  void *new_item = BoxMem_Alloc(sizeof(BoxListItemHead) + size);
+  void *new_item = Box_Mem_Alloc(sizeof(BoxListItemHead) + size);
   BoxListItemHead *new_lih = (BoxListItemHead *) new_item;
   new_item += sizeof(BoxListItemHead);
   (void) memcpy(new_item, item_what, size);
@@ -147,7 +147,7 @@ void BoxList_Append_Strings(BoxList *l, const char *strings, char separator) {
       if (length > 0) {
         char *s_copy = Str_Dup(string, length);
         BoxList_Append_With_Size(l, s_copy, length+1);
-        BoxMem_Free(s_copy);
+        Box_Mem_Free(s_copy);
       }
       string = ++s;
       length = 0;
@@ -221,9 +221,9 @@ BoxTask BoxList_Product_Iter(BoxList *l, BoxListProduct product, void *pass) {
     state.num_sublists = BoxList_Length(l);
     state.item = l->head_tail.next;
     state.sublist_idx = 0;
-    state.tuple = (void **) BoxMem_Alloc(n*sizeof(void *));
+    state.tuple = (void **) Box_Mem_Alloc(n*sizeof(void *));
     status = Product_Iter(& state);
-    BoxMem_Free(state.tuple);
+    Box_Mem_Free(state.tuple);
     return status;
 
   } else

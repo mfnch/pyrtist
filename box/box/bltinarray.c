@@ -62,7 +62,7 @@ BoxTask BoxArray_Init(BoxArray *a, BoxInt num_dim) {
   assert(num_dim >= 1 && num_dim <= 127);
   a->num_dim = num_dim;
   BoxPtr_Nullify(& a->data);
-  a->sizes = BoxMem_Alloc(sizeof(BoxInt)*num_dim);
+  a->sizes = Box_Mem_Alloc(sizeof(BoxInt)*num_dim);
   if (a->sizes == NULL) return BOXTASK_FAILURE;
   a->sizes[num_dim - 1] = 0; /* Used by BoxArray_Set_Size to detect the
                                 state of initialisation of the object */
@@ -70,7 +70,7 @@ BoxTask BoxArray_Init(BoxArray *a, BoxInt num_dim) {
 }
 
 void BoxArray_Finish(BoxVM *vm, BoxArray *a) {
-  BoxMem_Free(a->sizes);
+  Box_Mem_Free(a->sizes);
   (void) BoxPtr_Unlink(& a->data);
   a->sizes = NULL;               /* Just to easily detect errors... */
   BoxPtr_Nullify(& a->data);
@@ -95,9 +95,9 @@ BoxTask BoxArray_Set_Size(BoxArray *a, BoxInt size) {
 
     total_data_size = size;
     for(i = 0; i < last_size_index; i++)
-      assert( BoxMem_AX(& total_data_size, total_data_size, a->sizes[i]) );
+      assert( Box_Mem_AX(& total_data_size, total_data_size, a->sizes[i]) );
 
-    assert( BoxMem_AX(& total_data_size, total_data_size, a->item_size) );
+    assert( Box_Mem_AX(& total_data_size, total_data_size, a->item_size) );
     assert(0);
 
 #if 0
@@ -125,8 +125,8 @@ BoxArray_Calc_Address(BoxArray *a, size_t *addr,
     MSG_ERROR("Index out of bounds when accessing Array object.");
     return BOXTASK_FAILURE;
   }
-  BoxMem_AX(& new_addr, *addr, a->sizes[dim]);
-  BoxMem_x_Plus_y(& new_addr, new_addr, index);
+  Box_Mem_AX(& new_addr, *addr, a->sizes[dim]);
+  Box_Mem_x_Plus_y(& new_addr, new_addr, index);
   *addr = new_addr;
   return BOXTASK_OK;
 }

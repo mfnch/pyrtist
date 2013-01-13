@@ -942,7 +942,7 @@ void BoxOpTable_Build(BoxOpTable *ot) {
    * registers
    */
 
-  reg = ot->regs = BoxMem_Safe_Alloc(sizeof(BoxOpReg)*num_regs_to_alloc);
+  reg = ot->regs = Box_Mem_Safe_Alloc(sizeof(BoxOpReg)*num_regs_to_alloc);
 
   for(i = 0; i < BOX_NUM_OPS; i++) {
     BoxOpInfo *oi = & ot->info[i];
@@ -995,7 +995,7 @@ void BoxOpTable_Build(BoxOpTable *ot) {
 }
 
 void BoxOpTable_Destroy(BoxOpTable *ot) {
-  BoxMem_Free(ot->regs);
+  Box_Mem_Free(ot->regs);
 }
 
 void BoxOpInfo_Print(FILE *out, BoxOpInfo *oi) {

@@ -509,7 +509,7 @@ BoxBool BoxPtr_Unlink(BoxPtr *src) {
 
     if (head->type)
       (void) BoxType_Unlink(head->type);
-    BoxMem_Free(head);
+    Box_Mem_Free(head);
     return BOXBOOL_FALSE;
   }
 }

@@ -29,14 +29,14 @@ struct BoxException_struct {
 
 /* Create an exception object. */
 BoxException *BoxException_Create_Raw(char *msg) {
-  BoxException *excp = BoxMem_Safe_Alloc(sizeof(BoxException));
+  BoxException *excp = Box_Mem_Safe_Alloc(sizeof(BoxException));
   excp->msg = msg;
   return excp;
 }
 
 /* Destroy an exception object. */
 void BoxException_Destroy(BoxException *excp) {
-  BoxMem_Free(excp);
+  Box_Mem_Free(excp);
 }
 
 /* Print the given exception to screen. */

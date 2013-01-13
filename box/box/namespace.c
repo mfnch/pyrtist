@@ -55,14 +55,14 @@ void Namespace_Finish(Namespace *ns) {
 }
 
 Namespace *Namespace_New(void) {
-  Namespace *ns = BoxMem_Safe_Alloc(sizeof(Namespace));
+  Namespace *ns = Box_Mem_Safe_Alloc(sizeof(Namespace));
   Namespace_Init(ns);
   return ns;
 }
 
 void Namespace_Destroy(Namespace *ns) {
   Namespace_Finish(ns);
-  BoxMem_Free(ns);
+  Box_Mem_Free(ns);
 }
 
 static NmspFloorData *My_Get_Floor(Namespace *ns, NmspFloor f) {
@@ -109,7 +109,7 @@ My_NmspItem_Finish(Namespace *ns, size_t floor_idx, NmspItem *item) {
       MyProcedureNmspItem *p = (MyProcedureNmspItem *) item->data;
       if (floor_idx > 1)
         BoxType_Undefine_Combination(p->parent, p->comb_node);
-      BoxMem_Free(p);
+      Box_Mem_Free(p);
       return;
     }
 
@@ -142,7 +142,7 @@ void Namespace_Floor_Down(Namespace *ns) {
       BoxHT_Remove_By_HTItem(& ns->ht, item_to_del->ht_item);
 
     else
-      BoxMem_Free(item_to_del);
+      Box_Mem_Free(item_to_del);
   }
 }
 
@@ -159,7 +159,7 @@ NmspItem *Namespace_Add_Item(Namespace *ns, NmspFloor floor,
     new_item = (NmspItem *) hi->object;
 
   } else
-    new_item = (NmspItem *) BoxMem_Safe_Alloc(sizeof(NmspItem));
+    new_item = (NmspItem *) Box_Mem_Safe_Alloc(sizeof(NmspItem));
  
   new_item->ht_item = hi;
   new_item->next = floor_data->first_item;
@@ -203,7 +203,7 @@ Value *Namespace_Get_Value(Namespace *ns, NmspFloor floor,
 void Namespace_Add_Procedure(Namespace *ns, NmspFloor floor,
                              BoxType *parent, BoxType *comb_node) {
   NmspItem *new_item = Namespace_Add_Item(ns, floor, NULL);
-  MyProcedureNmspItem *p = BoxMem_Safe_Alloc(sizeof(MyProcedureNmspItem));
+  MyProcedureNmspItem *p = Box_Mem_Safe_Alloc(sizeof(MyProcedureNmspItem));
   assert(new_item);
   new_item->type = NMSPITEMTYPE_PROCEDURE;
   new_item->data = p;

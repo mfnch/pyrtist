@@ -56,7 +56,7 @@ int BoxHT_Default_Action(BoxHTItem *it, void *pass_data) {return 1;}
 /* Create a new hashtable
  */
 BoxHT *BoxHT_New(unsigned int num_entries, BoxHTFunc hash, BoxHTCmp cmp) {
-  BoxHT *ht = BoxMem_Alloc(sizeof(BoxHT));
+  BoxHT *ht = Box_Mem_Alloc(sizeof(BoxHT));
   if (ht == NULL) return NULL;
   BoxHT_Init(ht, num_entries, hash, cmp);
   return ht;
@@ -77,7 +77,7 @@ void BoxHT_Init(BoxHT *ht, unsigned int num_entries,
   } while ((num_entries >>= 1) != 0);
   num_entries = i;
 
-  hi = BoxMem_Alloc(sizeof(BoxHTItem)*num_entries);
+  hi = Box_Mem_Alloc(sizeof(BoxHTItem)*num_entries);
 
 #if DEBUG
   printf("Created hashtable of size %d, mask = %8x\n", num_entries, mask);
@@ -101,7 +101,7 @@ static BoxTask Destroy_Item(BoxHTItem *item, void *destructor) {
 
 void BoxHT_Destroy(BoxHT *ht) {
   BoxHT_Finish(ht);
-  BoxMem_Free(ht);
+  Box_Mem_Free(ht);
 }
 
 void BoxHT_Finish(BoxHT *ht) {
@@ -115,13 +115,13 @@ void BoxHT_Finish(BoxHT *ht) {
   for(branch = 0; branch < ht->num_entries; branch++)
     for(hi = ht->item[branch]; hi != NULL; hi = next) {
       next = hi->next;
-      if (hi->allocated.key) BoxMem_Free(hi->key);
-      if (hi->allocated.obj) BoxMem_Free(hi->object);
-      BoxMem_Free(hi);
+      if (hi->allocated.key) Box_Mem_Free(hi->key);
+      if (hi->allocated.obj) Box_Mem_Free(hi->object);
+      Box_Mem_Free(hi);
     }
 
   /* Now we deallocate the table of branches */
-  BoxMem_Free(ht->item);
+  Box_Mem_Free(ht->item);
 }
 
 void BoxHT_Destructor(BoxHT *ht, BoxTask (*destroy)(BoxHTItem *)) {
@@ -138,13 +138,13 @@ BoxHTItem *BoxHT_Add(BoxHT *ht, unsigned int branch,
                      const void *object, size_t object_size) {
   BoxHTItem *hi, *old_first;
   assert(branch < ht->num_entries);
-  hi = BoxMem_Alloc(sizeof(BoxHTItem));
+  hi = Box_Mem_Alloc(sizeof(BoxHTItem));
 
   hi->key_size = key_size;
   hi->key = (void *) key;
   hi->allocated.key = 0;
   if (ht->settings.copy_keys) {
-    hi->key = BoxMem_Dup(key, key_size);
+    hi->key = Box_Mem_Dup(key, key_size);
     hi->allocated.key = 1;
   }
 
@@ -152,7 +152,7 @@ BoxHTItem *BoxHT_Add(BoxHT *ht, unsigned int branch,
   hi->object = (void *) object;
   hi->allocated.obj = 0;
   if (ht->settings.copy_objs && object_size > 0) {
-    hi->object = BoxMem_Dup(object, object_size);
+    hi->object = Box_Mem_Dup(object, object_size);
     hi->allocated.obj = 1;
   }
 
@@ -184,9 +184,9 @@ BoxTask BoxHT_Remove_By_HTItem(BoxHT *ht, BoxHTItem *hi) {
     hi->next->link_to_this = hi->link_to_this;
 
   /* Free key, object and finally the BoxHTItem structure */
-  if (hi->allocated.key) BoxMem_Free(hi->key);
-  if (hi->allocated.obj) BoxMem_Free(hi->object);
-  BoxMem_Free(hi);
+  if (hi->allocated.key) Box_Mem_Free(hi->key);
+  if (hi->allocated.obj) Box_Mem_Free(hi->object);
+  Box_Mem_Free(hi);
   return BOXTASK_OK;
 }
 

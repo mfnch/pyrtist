@@ -140,9 +140,9 @@ void BoxVMCode_Finish(BoxVMCode *p) {
   if (p->have.callable)
     (void) BoxCallable_Unlink(p->callable);
   if (p->have.proc_name)
-    BoxMem_Free(p->proc_name);
+    Box_Mem_Free(p->proc_name);
   if (p->have.alter_name)
-    BoxMem_Free(p->alter_name);
+    Box_Mem_Free(p->alter_name);
   if (p->have.reg_alloc)
     Reg_Finish(& p->reg_alloc);
 }
@@ -156,7 +156,7 @@ void BoxVMCode_Set_Callable(BoxVMCode *p, BoxCallable *cb) {
 }
 
 BoxVMCode *BoxVMCode_Create(BoxCmp *c, BoxVMCodeStyle style) {
-  BoxVMCode *p = BoxMem_Alloc(sizeof(BoxVMCode));
+  BoxVMCode *p = Box_Mem_Alloc(sizeof(BoxVMCode));
   if (p == NULL) return NULL;
   BoxVMCode_Init(p, c, style);
   return p;
@@ -164,7 +164,7 @@ BoxVMCode *BoxVMCode_Create(BoxCmp *c, BoxVMCodeStyle style) {
 
 void BoxVMCode_Destroy(BoxVMCode *p) {
   BoxVMCode_Finish(p);
-  BoxMem_Free(p);
+  Box_Mem_Free(p);
 }
 
 void BoxVMCode_Begin(BoxVMCode *p) {
@@ -259,9 +259,9 @@ void BoxVMCode_Set_Alter_Name(BoxVMCode *p, const char *alter_name) {
   }
 
   if (p->have.alter_name)
-    BoxMem_Free(p->alter_name);
+    Box_Mem_Free(p->alter_name);
 
-  p->alter_name = BoxMem_Strdup(alter_name);
+  p->alter_name = Box_Mem_Strdup(alter_name);
   p->have.alter_name = 1;
 }
 
@@ -273,10 +273,10 @@ char *BoxVMCode_Get_Alter_Name(BoxVMCode *p) {
    *  - "|unknown|"
    */
   if (p->have.alter_name)
-    return BoxMem_Strdup(p->alter_name);
+    return Box_Mem_Strdup(p->alter_name);
 
   else
-    return BoxMem_Strdup((p->have.proc_name) ? p->proc_name : "|unknown|");
+    return Box_Mem_Strdup((p->have.proc_name) ? p->proc_name : "|unknown|");
 }
 
 size_t BoxVMCode_Get_Code_Size(BoxVMCode *p) {
@@ -326,7 +326,7 @@ BoxVMCallNum BoxVMCode_Install(BoxVMCode *p) {
     alter_name = BoxVMCode_Get_Alter_Name(p);
     (void) BoxVM_Set_Proc_Names(p->cmp->vm, p->call_num,
                                 proc_name, alter_name);
-    BoxMem_Free(alter_name);
+    Box_Mem_Free(alter_name);
 
     p->have.installed = 1;
     return p->call_num;

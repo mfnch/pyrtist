@@ -52,7 +52,7 @@ void Operator_Finish(Operator *opr) {
   while (opn != NULL) { /* Destroy the chain of operations */
     Operation *this = opn;
     opn = opn->next;
-    BoxMem_Free(this);
+    Box_Mem_Free(this);
   }
 }
 
@@ -120,7 +120,7 @@ Operation *Operator_Add_Opn(Operator *opr, BoxTypeId type_left,
                             BoxTypeId type_right, BoxTypeId type_result) {
   Operation *opn;
 
-  opn = (Operation *) BoxMem_Safe_Alloc(sizeof(Operation));
+  opn = (Operation *) Box_Mem_Safe_Alloc(sizeof(Operation));
   opn->opr = opr;
   opn->attr = opr->attr;
   opn->type_left = type_left;
@@ -146,7 +146,7 @@ void Operator_Del_Opn(Operator *opr, Operation *opn) {
     opn->previous->next = opn->next;
   if (opr->first_operation == opn)
     opr->first_operation = opn->next;
-  BoxMem_Free(opn);
+  Box_Mem_Free(opn);
 }
 
 /** Get the Operator object corresponding to the given ASTBinOp constant. */

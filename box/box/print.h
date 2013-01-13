@@ -55,11 +55,11 @@ void Print_Finalize(void);
  *   %P for (pointer to) Point
  * - has %~s to print a string and deallocate it with free(...).
  *   ES:
- *       msg = Box_Print("%~s", BoxMem_Strdup("allocated string"));
+ *       msg = Box_Print("%~s", Box_Mem_Strdup("allocated string"));
  */
 BOXEXPORT const char *Box_Print(const char *fmt, ...);
 
-#  define printdup(...) BoxMem_Strdup(Box_Print(__VA_ARGS__))
-#  define Box_SPrintF(...) BoxMem_Strdup(Box_Print(__VA_ARGS__))
+#  define printdup(...) Box_Mem_Strdup(Box_Print(__VA_ARGS__))
+#  define Box_SPrintF(...) Box_Mem_Strdup(Box_Print(__VA_ARGS__))
 
 #endif

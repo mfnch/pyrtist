@@ -167,7 +167,7 @@ static BoxTask My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
         call_name = (p->desc) ? p->desc : p->name;
         trunc_name = (call_name) ? Str_Cut(call_name, 40, 85) : NULL;
         fprintf(output, " ('%.40s')", (trunc_name) ? trunc_name : "?");
-        BoxMem_Free(trunc_name);
+        Box_Mem_Free(trunc_name);
       }
     }
     break;
@@ -183,12 +183,12 @@ static BoxTask My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
           char *trunc_type_repr = Str_Cut(type_repr, 40, 85);
 
           if (trunc_type_repr) {
-            BoxMem_Free(type_repr);
+            Box_Mem_Free(type_repr);
             type_repr = trunc_type_repr;
           }
 
           fprintf(output, " ('%.40s')", type_repr);
-          BoxMem_Free(type_repr);
+          Box_Mem_Free(type_repr);
         }
       }
     }

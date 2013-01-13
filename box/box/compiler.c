@@ -172,7 +172,7 @@ void BoxCmp_Finish(BoxCmp *c) {
 }
 
 BoxCmp *BoxCmp_New(BoxVM *target_vm) {
-  BoxCmp *c = BoxMem_Alloc(sizeof(BoxCmp));
+  BoxCmp *c = Box_Mem_Alloc(sizeof(BoxCmp));
   if (c == NULL) return NULL;
   BoxCmp_Init(c, target_vm);
   return c;
@@ -180,7 +180,7 @@ BoxCmp *BoxCmp_New(BoxVM *target_vm) {
 
 void BoxCmp_Destroy(BoxCmp *c) {
   BoxCmp_Finish(c);
-  BoxMem_Free(c);
+  Box_Mem_Free(c);
 }
 
 BoxVM *BoxCmp_Steal_VM(BoxCmp *c) {
@@ -1194,7 +1194,7 @@ static void My_Compile_ProcDef(BoxCmp *c, ASTNode *n) {
       assert(alter_name);
 
       BoxVMCode_Set_Alter_Name(& proc_implem, alter_name);
-      BoxMem_Free(alter_name);
+      Box_Mem_Free(alter_name);
     }
 
     /* We change target of the compilation to the new procedure */

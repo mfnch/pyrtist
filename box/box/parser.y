@@ -234,10 +234,10 @@ prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
   | TOK_KEYWORD                  {$$ = ASTNodeInstance_New(
                                          ASTNodeTypeName_New($1, 0));
-                                  BoxMem_Free($1); SRC($$, @$);}
+                                  Box_Mem_Free($1); SRC($$, @$);}
   | string_concat                {$$ = $1;}
   | TOK_IDENTIFIER opt_scope     {$$ = ASTNodeVar_New($1, 0);
-                                  BoxMem_Free($1); SRC($$, @$);}
+                                  Box_Mem_Free($1); SRC($$, @$);}
   | TOK_SELF                     {$$ = ASTNodeSelfGet_New($1); SRC($$, @$);}
   | '(' expr ')'                 {$$ = ASTNodeIgnore_New($2, 0); SRC($$, @$);}
   | '(' struc_expr ')'           {$$ = $2;}
@@ -252,10 +252,10 @@ postfix_expr:
   | type  '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1); SRC($$, @$);}
   | opt_postfix_expr '.' TOK_IDENTIFIER
                                  {$$ = ASTNodeMemberGet_New($1, $3, 0);
-                                  BoxMem_Free($3); SRC($$, @$);}
+                                  Box_Mem_Free($3); SRC($$, @$);}
   | opt_postfix_expr '.' TOK_TYPE_IDENT
                                  {$$ = ASTNodeSubtype_Build($1, $3);
-                                  BoxMem_Free($3); SRC($$, @$);}
+                                  Box_Mem_Free($3); SRC($$, @$);}
   | postfix_expr post_op         {$$ = ASTNodeUnOp_New($2, $1); SRC($$, @$);}
   ;
 
@@ -352,15 +352,15 @@ struc_type_2nd:
 
 type_sep:
     struc_type_1st void_seps     {$$ = ASTNodeStrucType_New(& $1);
-                                  BoxMem_Free($1.name); SRC($$, @$);}
+                                  Box_Mem_Free($1.name); SRC($$, @$);}
   | sep_type void_seps           {$$ = $1;}
   ;
 
 sep_type:
     void_seps struc_type_1st     {$$ = ASTNodeStrucType_New(& $2);
-                                  BoxMem_Free($2.name); SRC($$, @$);}
+                                  Box_Mem_Free($2.name); SRC($$, @$);}
   | type_sep struc_type_2nd      {$$ = ASTNodeStrucType_Add_Member($1, & $2);
-                                  BoxMem_Free($2.name); SRC($$, @$);}
+                                  Box_Mem_Free($2.name); SRC($$, @$);}
   ;
 
 struc_type:
@@ -378,15 +378,15 @@ species_type:
 
 named_type:
     TOK_TYPE_IDENT opt_scope     {$$ = ASTNodeTypeName_New($1, 0);
-                                  BoxMem_Free($1); SRC($$, @$);}
+                                  Box_Mem_Free($1); SRC($$, @$);}
   | named_type '.' TOK_TYPE_IDENT
                                  {$$ = ASTNodeSubtype_New($1, $3);
-                                  BoxMem_Free($3); SRC($$, @$);}
+                                  Box_Mem_Free($3); SRC($$, @$);}
   ;
 
 prim_type:
     TOK_TYPE_IDENT opt_scope     {$$ = ASTNodeTypeName_New($1, 0);
-                                  BoxMem_Free($1); SRC($$, @$);}
+                                  Box_Mem_Free($1); SRC($$, @$);}
   | '(' type ')'                 {$$ = $2;}
   | '(' struc_type ')'           {$$ = $2;}
   | '(' species_type ')'         {$$ = $2;}

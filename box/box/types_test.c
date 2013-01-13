@@ -86,7 +86,7 @@ My_Test_Compare_Structure(void) {
 
   char *xxx = BoxType_Get_Repr(s1);
   printf("Type '%s'\n", xxx);
-  BoxMem_Free(xxx);
+  Box_Mem_Free(xxx);
 
   BoxBool result = (s1
                     && (BoxType_Compare(s1, s2) == BOXTYPECMP_EQUAL)

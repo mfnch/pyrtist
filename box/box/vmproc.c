@@ -38,8 +38,8 @@ static void My_Destroy_Installed_Procedure(void *s) {
   BoxVMProcInstalled *p = (BoxVMProcInstalled *) s;
   if (p->type == BOXVMPROCKIND_FOREIGN)
     (void) BoxCallable_Unlink(p->code.foreign);
-  BoxMem_Free(p->name);
-  BoxMem_Free(p->desc);
+  Box_Mem_Free(p->name);
+  Box_Mem_Free(p->desc);
 }
 
 void BoxVM_Proc_Init(BoxVM *vmp) {
@@ -107,13 +107,13 @@ char *BoxVM_Proc_Get_Description(BoxVM *vm, BoxVMCallNum call_num) {
   if (p != NULL) {
     switch ((p->desc == NULL) | (p->name == NULL) << 1) {
     case 0: return printdup("%s \"%s\"", p->desc, p->name);
-    case 1: return BoxMem_Strdup(p->name);
-    case 2: return BoxMem_Strdup(p->desc);
-    case 3: return BoxMem_Strdup("(undef)");
-    default: return BoxMem_Strdup("(error)");
+    case 1: return Box_Mem_Strdup(p->name);
+    case 2: return Box_Mem_Strdup(p->desc);
+    case 3: return Box_Mem_Strdup("(undef)");
+    default: return Box_Mem_Strdup("(error)");
     }
   }
-  return BoxMem_Strdup("(unknown)");
+  return Box_Mem_Strdup("(unknown)");
 }
 
 BoxVMProcID BoxVM_Proc_Target_Set(BoxVM *vm, BoxVMProcID proc_id) {
@@ -231,10 +231,10 @@ BoxVM_Set_Proc_Names(BoxVM *vm, BoxVMCallNum cn,
     return BOXBOOL_FALSE;
 
   if (name)
-    inst_proc->name = BoxMem_Strdup(name);
+    inst_proc->name = Box_Mem_Strdup(name);
 
   if (desc)
-    inst_proc->desc = BoxMem_Strdup(desc);
+    inst_proc->desc = Box_Mem_Strdup(desc);
 
   return BOXBOOL_TRUE;
 }
@@ -364,7 +364,7 @@ BoxTask BoxVM_Proc_Disassemble_All(BoxVM *vmp, FILE *out) {
   fprintf(out, "*** OBJECT DESCRIPTOR TABLE ***\n");
   s = BoxVM_Get_Installed_Types_Desc(vmp);
   fprintf(out, "%s\n", s);
-  BoxMem_Free(s);
+  Box_Mem_Free(s);
 
   fprintf(out, "*** END OF OBJECT DESCRIPTOR TABLE ***\n\n");
 

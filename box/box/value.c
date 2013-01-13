@@ -59,7 +59,7 @@ void Value_Init(Value *v, BoxVMCode *proc) {
 }
 
 Value *Value_Create(BoxVMCode *proc) {
-  Value *v = BoxMem_Safe_Alloc(sizeof(Value));
+  Value *v = Box_Mem_Safe_Alloc(sizeof(Value));
   Value_Init(v, proc);
   v->attr.new_or_init = 1;
   return v;
@@ -67,7 +67,7 @@ Value *Value_Create(BoxVMCode *proc) {
 
 static void My_Value_Finalize(Value *v) {
   if (v->name != NULL)
-    BoxMem_Free(v->name);
+    Box_Mem_Free(v->name);
 
   switch(v->kind) {
   case VALUEKIND_ERR:
@@ -116,7 +116,7 @@ void Value_Unlink(Value *v) {
       My_Value_Finalize(v);
       v->num_ref = 0;
       if (v->attr.new_or_init)
-        BoxMem_Free(v);
+        Box_Mem_Free(v);
     }
   }
 }
@@ -231,19 +231,19 @@ void Value_Setup_As_Weak_Copy(Value *v_copy, Value *v) {
   v_copy->kind = v->kind;
   v_copy->type = BoxType_Link(v->type);
   v_copy->value.cont = v->value.cont;
-  v_copy->name = (v->name == NULL) ? NULL : BoxMem_Strdup(v->name);
+  v_copy->name = (v->name == NULL) ? NULL : Box_Mem_Strdup(v->name);
   v_copy->attr.own_register = 0;
   v_copy->attr.ignore = 0;
 }
 
 void Value_Setup_As_Var_Name(Value *v, const char *name) {
   v->kind = VALUEKIND_VAR_NAME;
-  v->name = BoxMem_Strdup(name);
+  v->name = Box_Mem_Strdup(name);
 }
 
 void Value_Setup_As_Type_Name(Value *v, const char *name) {
   v->kind = VALUEKIND_TYPE_NAME;
-  v->name = BoxMem_Strdup(name);
+  v->name = Box_Mem_Strdup(name);
 }
 
 void Value_Setup_As_Type(Value *v, BoxTypeId t) {
@@ -1027,14 +1027,14 @@ void ValueStrucIter_Finish(ValueStrucIter *vsi) {
 }
 
 ValueStrucIter *ValueStrucIter_New(Value *v_struc, BoxVMCode *proc) {
-  ValueStrucIter *vsi = BoxMem_Safe_Alloc(sizeof(ValueStrucIter));
+  ValueStrucIter *vsi = Box_Mem_Safe_Alloc(sizeof(ValueStrucIter));
   ValueStrucIter_Init(vsi, v_struc, proc);
   return vsi;
 }
 
 void ValueStrucIter_Destroy(ValueStrucIter *vsi) {
   ValueStrucIter_Finish(vsi);
-  BoxMem_Free(vsi);
+  Box_Mem_Free(vsi);
 }
 
 /*

@@ -80,7 +80,7 @@ void BoxOcc_Finish(BoxOcc *occ) {
 }
 
 BoxOcc *BoxOcc_New(BoxUInt element_size, BoxUInt initial_size) {
-  BoxOcc *occ = BoxMem_Alloc(sizeof(BoxOcc));
+  BoxOcc *occ = Box_Mem_Alloc(sizeof(BoxOcc));
   if (occ == NULL) return NULL;
   BoxOcc_Init(occ, element_size, initial_size);
   return occ;
@@ -88,7 +88,7 @@ BoxOcc *BoxOcc_New(BoxUInt element_size, BoxUInt initial_size) {
 
 void BoxOcc_Destroy(BoxOcc *occ) {
   BoxOcc_Finish(occ);
-  BoxMem_Free(occ);
+  Box_Mem_Free(occ);
 }
 
 void BoxOcc_Set_Finalizer(BoxOcc *occ, BoxOccFinalizer fin) {

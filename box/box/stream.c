@@ -27,7 +27,7 @@
 #include <box/stream_priv.h>
 
 static void MyStream_Finish(BoxStream *bs) {
-  BoxMem_Free(bs->data);
+  Box_Mem_Free(bs->data);
   bs->data = NULL;
 }
 
@@ -54,7 +54,7 @@ static int My_Arch_Is_LE(void) {
 
 void *BoxStream_Init_Generic(BoxStream *bs, size_t data_size) {
   bs->native_order = My_Arch_Is_LE();
-  bs->data = BoxMem_Alloc(data_size);
+  bs->data = Box_Mem_Alloc(data_size);
   bs->mode = BOXSTREAMMODE_DEFAULT;
   bs->fn_finish = MyStream_Finish;
   bs->fn_close = NULL;
@@ -70,7 +70,7 @@ void BoxStream_Finish(BoxStream *bs) {
 
 void BoxStream_Destroy(BoxStream *bs) {
   BoxStream_Finish(bs);
-  BoxMem_Free(bs);
+  Box_Mem_Free(bs);
 }
 
 /* Close the given stream, releasing the associated resources. */

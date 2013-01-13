@@ -211,7 +211,7 @@ ASTNode *ASTNode_New(ASTNodeType t) {
           **subnode[AST_MAX_NUM_SUBNODES];
   int i, num_subnodes;
 
-  node = BoxMem_Alloc(sizeof(ASTNode));
+  node = Box_Mem_Alloc(sizeof(ASTNode));
   assert(node != NULL);
 
   node->type = t;
@@ -243,7 +243,7 @@ void ASTNode_Destroy(ASTNode *node) {
     if (node->finaliser != NULL)
       node->finaliser(node);
 
-    BoxMem_Free(node);
+    Box_Mem_Free(node);
   }
 }
 
@@ -332,13 +332,13 @@ ASTNode *ASTNodeError_New(void) {
 
 static void ASTNodeTypeName_Finaliser(ASTNode *node) {
   assert(node->type == ASTNODETYPE_TYPENAME);
-  BoxMem_Free(node->attr.typenm.name);
+  Box_Mem_Free(node->attr.typenm.name);
 }
 
 ASTNode *ASTNodeTypeName_New(const char *name, size_t name_len) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_TYPENAME);
   node->attr.typenm.name =
-    (name_len > 0) ? BoxMem_Strndup(name, name_len) : BoxMem_Strdup(name);
+    (name_len > 0) ? Box_Mem_Strndup(name, name_len) : Box_Mem_Strdup(name);
   node->attr.typenm.scope = NULL;
   node->finaliser = ASTNodeTypeName_Finaliser;
   return node;
@@ -352,12 +352,12 @@ ASTNode *ASTNodeTypeTag_New(BoxTypeId value) {
 
 static void ASTNodeSubtype_Finaliser(ASTNode *node) {
   assert(node->type == ASTNODETYPE_SUBTYPE);
-  BoxMem_Free(node->attr.subtype.name);
+  Box_Mem_Free(node->attr.subtype.name);
 }
 
 ASTNode *ASTNodeSubtype_New(ASTNode *parent_type, const char *name) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_SUBTYPE);
-  node->attr.subtype.name = BoxMem_Strdup(name);
+  node->attr.subtype.name = Box_Mem_Strdup(name);
   node->attr.subtype.parent = parent_type;
   node->finaliser = ASTNodeSubtype_Finaliser;
   return node;
@@ -446,13 +446,13 @@ ASTNode *ASTNodeConst_New(ASTConstType t, ASTConst c) {
 
 static void ASTNodeString_Finaliser(ASTNode *node) {
   assert(node->type == ASTNODETYPE_STRING);
-  BoxMem_Free(node->attr.string.str);
+  Box_Mem_Free(node->attr.string.str);
 }
 
 ASTNode *ASTNodeString_New(const char *str, size_t str_len) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_STRING);
   node->attr.string.str = 
-    BoxMem_Str_Merge_With_Len(str, str_len, NULL, 0);
+    Box_Mem_Str_Merge_With_Len(str, str_len, NULL, 0);
   node->finaliser = ASTNodeString_Finaliser;
   return node;
 }
@@ -461,21 +461,21 @@ ASTNode *ASTNodeString_Concat(ASTNode *str1, ASTNode *str2) {
   assert(str1->type == ASTNODETYPE_STRING &&
          str2->type == ASTNODETYPE_STRING);
   char *old_str = str1->attr.string.str;
-  str1->attr.string.str = BoxMem_Str_Merge(old_str, str2->attr.string.str);
-  BoxMem_Free(old_str);
+  str1->attr.string.str = Box_Mem_Str_Merge(old_str, str2->attr.string.str);
+  Box_Mem_Free(old_str);
   ASTNode_Destroy(str2);
   return str1;
 }
 
 static void ASTNodeVar_Finaliser(ASTNode *node) {
   assert(node->type == ASTNODETYPE_VAR);
-  BoxMem_Free(node->attr.var.name);
+  Box_Mem_Free(node->attr.var.name);
 }
 
 ASTNode *ASTNodeVar_New(const char *name, size_t name_len) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_VAR);
   node->attr.var.name = (name_len > 0) ?
-                        BoxMem_Strndup(name, name_len) : BoxMem_Strdup(name);
+                        Box_Mem_Strndup(name, name_len) : Box_Mem_Strdup(name);
   node->attr.var.scope = NULL;
   node->finaliser = ASTNodeVar_Finaliser;
   return node;
@@ -505,12 +505,12 @@ ASTNode *ASTNodeBinOp_New(ASTBinOp op, ASTNode *left, ASTNode *right) {
 
 static void My_ASTNodeMember_Finaliser(ASTNode *node) {
   assert(node->type == ASTNODETYPE_MEMBER);
-  BoxMem_Free(node->attr.member.name);
+  Box_Mem_Free(node->attr.member.name);
 }
 
 ASTNode *ASTNodeMember_New(const char *name, ASTNode *expr) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_MEMBER);
-  node->attr.member.name = (name == NULL) ? NULL : BoxMem_Strdup(name);
+  node->attr.member.name = (name == NULL) ? NULL : Box_Mem_Strdup(name);
   node->attr.member.expr = expr;
   node->attr.member.next = NULL;
   node->finaliser = My_ASTNodeMember_Finaliser;
@@ -566,7 +566,7 @@ ASTNode *ASTNodeArrayGet_New(ASTNode *array, ASTNode *index) {
 
 static void ASTNodeMemberGet_Finaliser(ASTNode *node) {
   assert(node->type == ASTNODETYPE_MEMBERGET);
-  BoxMem_Free(node->attr.member_get.member);
+  Box_Mem_Free(node->attr.member_get.member);
 }
 
 ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
@@ -574,21 +574,21 @@ ASTNode *ASTNodeMemberGet_New(ASTNode *struc,
   ASTNode *node = ASTNode_New(ASTNODETYPE_MEMBERGET);
   node->attr.member_get.struc = struc;
   node->attr.member_get.member = (member_len > 0) ?
-                                  BoxMem_Strndup(member, member_len) :
-                                  BoxMem_Strdup(member);
+                                  Box_Mem_Strndup(member, member_len) :
+                                  Box_Mem_Strdup(member);
   node->finaliser = ASTNodeMemberGet_Finaliser;
   return node;
 }
 
 static void ASTNodeSubtype_Build_Finaliser(ASTNode *node) {
   assert(node->type == ASTNODETYPE_SUBTYPEBLD);
-  BoxMem_Free(node->attr.subtype_bld.subtype);
+  Box_Mem_Free(node->attr.subtype_bld.subtype);
 }
 
 ASTNode *ASTNodeSubtype_Build(ASTNode *parent, const char *subtype) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_SUBTYPEBLD);
   node->attr.subtype_bld.parent = parent;
-  node->attr.subtype_bld.subtype = BoxMem_Strdup(subtype);
+  node->attr.subtype_bld.subtype = Box_Mem_Strdup(subtype);
   node->finaliser = ASTNodeSubtype_Build_Finaliser;
   return node;
 }
@@ -627,13 +627,13 @@ ASTNode *ASTNodeTypeDef_New(ASTNode *name, ASTNode *src_type) {
 
 static void My_ASTNodeMemberType_Finaliser(ASTNode *node) {
   assert(node->type == ASTNODETYPE_MEMBERTYPE);
-  BoxMem_Free(node->attr.member_type.name);
+  Box_Mem_Free(node->attr.member_type.name);
 }
 
 ASTNode *ASTNodeMemberType_New(ASTTypeMemb *m) {
   ASTNode *node = ASTNode_New(ASTNODETYPE_MEMBERTYPE);
   node->attr.member_type.name = (m->name == NULL) ?
-                                NULL : BoxMem_Strdup(m->name);
+                                NULL : Box_Mem_Strdup(m->name);
   node->attr.member_type.type = m->type;
   node->attr.member_type.next = NULL;
   node->finaliser = My_ASTNodeMemberType_Finaliser;

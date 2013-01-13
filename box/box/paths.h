@@ -63,7 +63,7 @@ BOXEXPORT void BoxPaths_Set_Flags(BoxPaths *bp,
 
 /** Returns into '*pkg_path' and '*lib_path' two newly allocated strings
  * containing the path to the packages and the path to the library files.
- * NOTE: These two strings must be allocated by the caller with BoxMem_Free.
+ * NOTE: These two strings must be allocated by the caller with Box_Mem_Free.
  */
 BOXEXPORT void Box_Get_Bltin_Pkg_And_Lib_Paths(char **pkg_path,
                                                char **lib_path);

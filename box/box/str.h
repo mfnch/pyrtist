@@ -65,7 +65,7 @@ BOXEXPORT BoxTask BoxStr_Concat_C_String(BoxStr *s, const char *ca);
 BOXEXPORT BoxTask BoxStr_Init_From(BoxStr *new_str, const BoxStr *src);
 
 /** Create a new C string from a BoxStr object. The string is freshly
- * allocated with BoxMem_Safe_Alloc.
+ * allocated with Box_Mem_Safe_Alloc.
  */
 BOXEXPORT char *BoxStr_To_C_String(BoxStr *s);
 

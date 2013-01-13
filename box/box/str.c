@@ -33,7 +33,7 @@ void BoxStr_Init(BoxStr *s) {
 
 void BoxStr_Finish(BoxStr *s) {
   if (s->ptr != NULL) {
-    BoxMem_Free(s->ptr);
+    Box_Mem_Free(s->ptr);
     s->ptr = NULL;
     s->length = 0;
     s->buffer_size = 0;
@@ -47,7 +47,7 @@ BoxTask BoxStr_Large_Enough(BoxStr *s, BoxInt length) {
   len = s->length + length + 1;
   len = len + (len+1)/2;
   assert(len > length);
-  s->ptr = (char *) BoxMem_Realloc(s->ptr, len);
+  s->ptr = (char *) Box_Mem_Realloc(s->ptr, len);
   s->buffer_size = len;
   return BOXTASK_OK;
 }
@@ -88,17 +88,17 @@ BoxTask BoxStr_Set_From_C_String(BoxStr *dest, const char *src) {
 
 char *BoxStr_To_C_String(BoxStr *s) {
   if (s->length == 0)
-    return BoxMem_Strdup((s->ptr == NULL) ?
+    return Box_Mem_Strdup((s->ptr == NULL) ?
                          "" : "<broken Str: s->ptr != NULL>");
 
   else {
     if (s->ptr == NULL)
-      return BoxMem_Strdup("<broken Str: s->ptr == NULL>");
+      return Box_Mem_Strdup("<broken Str: s->ptr == NULL>");
 
     else {
       size_t l = strlen(s->ptr), lp1 = l + 1;
       char *cs;
-      cs = BoxMem_Safe_Alloc(lp1);
+      cs = Box_Mem_Safe_Alloc(lp1);
       strncpy(cs, s->ptr, l);
       cs[l] = '\0';
       return cs;

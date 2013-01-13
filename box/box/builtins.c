@@ -212,7 +212,7 @@ static BoxTask My_Fail_Msg(BoxVMX *vmx) {
   BoxStr *s = BoxVMX_Get_Child_Target(vmx);
   char *msg = BoxStr_To_C_String(s);
   BoxVM_Set_Fail_Msg(vmx->vm, msg);
-  BoxMem_Free(msg);
+  Box_Mem_Free(msg);
   return BOXTASK_OK;
 }
 
@@ -348,7 +348,7 @@ void Bltin_Comb_Def(TS *ts, BoxTypeId child, BoxCombType comb_type,
 
   uid = BoxType_Get_Repr(comb);
   BoxCallable_Set_Uid(callable, uid);
-  BoxMem_Free(uid);
+  Box_Mem_Free(uid);
 }
 
 void Bltin_Proc_Def(BoxCmp *c, BoxTypeId parent, BoxTypeId child,

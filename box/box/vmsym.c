@@ -419,9 +419,9 @@ My_Iter_Over_Paths(void *string, void *pass_data) {
   char *lib_file;
   BoxTask status;
   cld->path = (char *) string;
-  lib_file = BoxMem_Strdup(Box_Print("%s/lib%s", cld->path, cld->lib));
+  lib_file = Box_Mem_Strdup(Box_Print("%s/lib%s", cld->path, cld->lib));
   status = BoxVMSym_Resolve_CLib(cld->vm, lib_file);
-  BoxMem_Free(lib_file);
+  Box_Mem_Free(lib_file);
   if (status == BOXTASK_OK) return BOXTASK_FAILURE; /* Stop here, if we have found it! */
   return BOXTASK_OK;
 }
@@ -544,7 +544,7 @@ BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymCodeGen code_gen,
   def = BoxArr_Item_Ptr(& st->data, s->def_addr);
 
   ref_all_size = sizeof(BoxVMSymCodeRef) + ref_size;
-  ref_all = BoxMem_Safe_Alloc(ref_all_size);
+  ref_all = Box_Mem_Safe_Alloc(ref_all_size);
   ref_head = (BoxVMSymCodeRef *) ref_all;
   ref_tail = ref_all + sizeof(BoxVMSymCodeRef);
 
@@ -565,7 +565,7 @@ BoxVMSym_Code_Ref(BoxVM *vm, BoxVMSymID sym_id, BoxVMSymCodeGen code_gen,
   }
   ref_head->size = BoxArr_Num_Items(& pt->target_proc->code) - ref_head->pos;
   BoxVMSym_Ref(vm, sym_id, My_Code_Generator, ref_all, ref_all_size, -1);
-  BoxMem_Free(ref_all);
+  Box_Mem_Free(ref_all);
   return BOXTASK_OK;
 }
 

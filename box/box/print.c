@@ -29,7 +29,7 @@
 static char *msg = NULL;
 
 void Print_Finalize(void) {
-  BoxMem_Free(msg);
+  Box_Mem_Free(msg);
   msg = (char *) NULL;
 }
 
@@ -45,7 +45,7 @@ void Print_Finalize(void) {
  *       msg = print("My name is %N, nice to meet you!", & my_name);
  * - has %~s, %~N to print a string and deallocate it with free(...).
  *   ES:
- *       msg = print("%S", BoxMem_Strdup("allocated string"));
+ *       msg = print("%S", Box_Mem_Strdup("allocated string"));
  */
 const char *Box_Print(const char *fmt, ...) {
   static int buf_size = 0;

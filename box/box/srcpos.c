@@ -30,18 +30,18 @@
 #include "print.h"
 
 BoxSrcName *BoxSrcName_New(void) {
-  BoxSrcName *srcname = BoxMem_Safe_Alloc(sizeof(BoxSrcName));
+  BoxSrcName *srcname = Box_Mem_Safe_Alloc(sizeof(BoxSrcName));
   BoxSrcName_Init(srcname);
   return srcname;
 }
 
 void BoxSrcName_Destroy(BoxSrcName *srcname) {
   BoxSrcName_Finish(srcname);
-  BoxMem_Free(srcname);
+  Box_Mem_Free(srcname);
 }
 
 static void My_SrcName_Finalizer(void *ptr) {
-  BoxMem_Free(*((char **) ptr));
+  Box_Mem_Free(*((char **) ptr));
 }
 
 void BoxSrcName_Init(BoxSrcName *srcname) {
@@ -55,7 +55,7 @@ void BoxSrcName_Finish(BoxSrcName *srcname) {
 
 char *BoxSrcName_Add(BoxSrcName *srcname, const char *name) {
   if (name != NULL) {
-    char *name_copy = BoxMem_Strdup(name);
+    char *name_copy = Box_Mem_Strdup(name);
     BoxArr_Push(& srcname->names, & name_copy);
     return name_copy;
 
@@ -64,7 +64,7 @@ char *BoxSrcName_Add(BoxSrcName *srcname, const char *name) {
 }
 
 static void My_File_Name_Finalizer(void *ptr) {
-  BoxMem_Free(*((char **) ptr));
+  Box_Mem_Free(*((char **) ptr));
 }
 
 void BoxSrcPosTable_Init(BoxSrcPosTable *pt) {
@@ -104,7 +104,7 @@ static const char *My_New_Filename(BoxSrcPosTable *pt,
       return *((char **) BoxArr_Item_Ptr(fns, idx));
 
     } else {
-      char *s = BoxMem_Strdup(file_name);
+      char *s = Box_Mem_Strdup(file_name);
       BoxArr_Push(fns, & s);
       return s;
     }
@@ -146,7 +146,7 @@ void BoxSrcPosTable_Print(BoxSrcPosTable *pt, FILE *out) {
     char *src_pos_str = BoxSrcPos_To_Str(& sa[i].src_pos);
     fprintf(out, "  out_pos=%ld, src_pos=\"%s\"\n",
             sa[i].out_pos, src_pos_str);
-    BoxMem_Free(src_pos_str);
+    Box_Mem_Free(src_pos_str);
   }
   fprintf(out, "BoxSrcPosTable: end.\n");
 }
@@ -230,7 +230,7 @@ char *BoxSrc_To_Str(BoxSrc *loc) {
        el = loc->end.line, ec = loc->end.col;
   const char *fn =
     (loc->begin.file_name != NULL) ?
-    Box_SPrintF("\"%s\", ", loc->begin.file_name) : BoxMem_Strdup("");
+    Box_SPrintF("\"%s\", ", loc->begin.file_name) : Box_Mem_Strdup("");
 
   if (bl == 0)
     return Box_SPrintF("%~stext ending at line %ld col %ld", fn, el, ec);
