@@ -525,9 +525,10 @@ static void My_Exec_Jc_I(BoxVMX *vmx, void *arg1, void *arg2) {
     vmx->op_size = *((BoxInt *) arg1);
 }
 
-static void My_Exec_Add_O(BoxVMX *vmx, void *arg1, void *arg2) {
-  ((BoxPtr *) arg1)->ptr +=
-    *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr);
+static void My_Exec_Add_OO(BoxVMX *vmx, void *arg1, void *arg2) {
+  ((BoxPtr *) arg1)->block = ((BoxPtr *) arg2)->block;
+  ((BoxPtr *) arg1)->ptr =
+    ((BoxPtr *) arg2)->ptr + *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr);
 }
 
 /**
@@ -701,6 +702,7 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {   BOXGOP_ADD,    "add", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Add_II   }, /* add ri, ri    */
   {   BOXGOP_ADD,    "add", 2, 'r',  "a1,a2",  "a1", "xx", "xx", My_Exec_Add_RR   }, /* add rr, rr    */
   {   BOXGOP_ADD,    "add", 2, 'p',  "a1,a2",  "a1", "xx", "xx", My_Exec_Add_PP   }, /* add rp, rp    */
+  {   BOXGOP_ADD,    "add", 2, 'o', "ri0,a2",  "a1", "xx", "xx", My_Exec_Add_OO   }, /* add ro, ro    */
   {   BOXGOP_SUB,    "sub", 2, 'i',  "a1,a2",  "a1", "xx", "xx", My_Exec_Sub_II   }, /* sub ri, ri    */
   {   BOXGOP_SUB,    "sub", 2, 'r',  "a1,a2",  "a1", "xx", "xx", My_Exec_Sub_RR   }, /* sub rr, rr    */
   {   BOXGOP_SUB,    "sub", 2, 'p',  "a1,a2",  "a1", "xx", "xx", My_Exec_Sub_PP   }, /* sub rp, rp    */
@@ -763,7 +765,7 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {   BOXGOP_POP,    "pop", 1, 'o',     NULL,  "a1", "x-", "xx", My_Exec_Pop_O    }, /* pop ro          */
   {   BOXGOP_JMP,    "jmp", 1, 'i',     "a1",  NULL, "x-", "j-", My_Exec_Jmp_I    }, /* jmp ri          */
   {    BOXGOP_JC,     "jc", 1, 'i', "a1,ri0",  NULL, "x-", "j-", My_Exec_Jc_I     }, /* jc  ri          */
-  {   BOXGOP_ADD,    "add", 1, 'o',    "ri0",  NULL, "x-", "xx", My_Exec_Add_O    }, /* add ro          */
+
   {BOXGOP_TYPEOF, "typeof", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Typeof_O }, /* typeof reg_o        */
   {   BOXGOP_BOX,    "box", 1, 'o',    "ro0",  "a1", "x-", "xx", My_Exec_Box_O    }, /* box reg_o           */
   {   BOXGOP_BOX,    "box", 2, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Box_OO   }, /* box reg_o, reg_o    */

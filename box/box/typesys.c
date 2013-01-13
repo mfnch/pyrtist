@@ -203,7 +203,8 @@ int BoxTS_Resolve_Once(BoxTS *ts, BoxTypeId *t, TSKindSelect ks) {
   return (*t != old_t);
 }
 
-BoxTypeId TS_Resolve(BoxTS *ts, BoxTypeId t, TSKindSelect select) {
+BoxTypeId TS_Get_Core_Type(BoxTS *ts, BoxTypeId t) {
+  TSKindSelect select = TS_KS_ALIAS | TS_KS_RAISED | TS_KS_SPECIES;
   BoxTypeId rt = t;
   do {
     t = rt;
@@ -212,16 +213,12 @@ BoxTypeId TS_Resolve(BoxTS *ts, BoxTypeId t, TSKindSelect select) {
   return t;
 }
 
-BoxTypeId TS_Get_Core_Type(TS *ts, BoxTypeId t) {
-  return TS_Resolve(ts, t, TS_KS_ALIAS | TS_KS_RAISED | TS_KS_SPECIES);
-}
-
 int TS_Is_Fast(TS *ts, BoxTypeId t) {
   BoxTypeId ct = TS_Get_Core_Type(ts, t);
   return (ct >= BOXTYPEID_FAST_LOWER && ct <= BOXTYPEID_FAST_UPPER);
 }
 
-BoxInt TS_Get_Size(TS *ts, BoxTypeId t) {
+static BoxInt TS_Get_Size(TS *ts, BoxTypeId t) {
   BoxType *t_new = TS_Get_New_Style_Type(ts, t);
   return BoxType_Get_Size(t_new);
 }

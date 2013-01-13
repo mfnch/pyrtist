@@ -815,9 +815,9 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType *t) {
 
 Value *Value_Cast_To_Ptr(Value *v) {
   BoxCmp *c = v->proc->cmp;
+  BoxCont *v_cont = & v->value.cont;
 
-  if (v->value.cont.type == BOXCONTTYPE_OBJ
-      && v->value.cont.categ != BOXCONTCATEG_PTR) {
+  if (v_cont->type == BOXCONTTYPE_OBJ && v_cont->categ != BOXCONTCATEG_PTR) {
     /* This is the case where we already have the pointer to the object
      * stored inside a register. We then have two cases:
      *  - such register is already in use. we cannot just change the
@@ -831,23 +831,24 @@ Value *Value_Cast_To_Ptr(Value *v) {
 
     } else {
       assert(v->num_ref == 1);
-      assert(v->value.cont.categ == BOXCONTCATEG_LREG
-             || v->value.cont.categ == BOXCONTCATEG_GREG);
+      assert(v_cont->categ == BOXCONTCATEG_LREG
+             || v_cont->categ == BOXCONTCATEG_GREG);
       /* We own the sole reference to v, which is a temporary quantity:
        * in other words we can do whathever we want with it!
        */
       v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts, BOXTYPEID_PTR));
-      v->value.cont.type = BOXCONTTYPE_PTR;
+      v_cont->type = BOXCONTTYPE_PTR;
       return v;
     }
 
   } else {
     /* We have to get the pointer with a lea instruction. */
-    BoxCont v_cont = v->value.cont;
+    BoxCont v_cont_val = *v_cont;
     Value_Unlink(v);
     v = Value_New(c->cur_proc);
     Value_Setup_As_Temp_Old(v, BOXTYPEID_PTR);
-    BoxVMCode_Assemble(c->cur_proc, BOXGOP_LEA, 2, & v->value.cont, & v_cont);
+    BoxVMCode_Assemble(c->cur_proc, BOXGOP_LEA,
+                       2, & v->value.cont, & v_cont_val);
     return v;
   }
 }
@@ -1268,30 +1269,6 @@ Value_Expand(Value *src, BoxType *t_dst) {
 
   return NULL;
 }
-
-#if 0
-void My_Setup_From_Gro(Value *v, BoxTypeId t, BoxInt gro_num) {
-  BoxCmp *c = v->proc->cmp;
-  TS *ts = & c->ts;
-  if (!TS_Is_Empty(ts, t)) {
-    Value v_ptr;
-    ValContainer vc = {VALCONTTYPE_GREG, gro_num, 0};
-    Value_Init(& v_ptr, c->cur_proc);
-    Value_Setup_Container(& v_ptr, BoxType_From_Id(ts, BOXTYPEID_PTR), & vc);
-
-    Value_Setup_As_Temp_Old(v, BOXTYPEID_PTR);
-    BoxVMCode_Assemble(c->cur_proc, BOXGOP_MOV,
-                       2, & v->value.cont, & v_ptr.value.cont);
-    Value_Unlink(& v_ptr);
-    v = Value_Cast_From_Ptr(v, t);
-    v->kind = VALUEKIND_TARGET;
-
-  } else {
-    Value_Setup_As_Temp_Old(v, t);
-    v->kind = VALUEKIND_TARGET;
-  }
-}
-#endif
 
 void My_Family_Setup(Value *v, BoxType *t, int is_parent) {
   BoxCmp *c = v->proc->cmp;

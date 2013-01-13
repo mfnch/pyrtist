@@ -588,6 +588,15 @@ BOXEXPORT BoxBool
 BoxType_Is_Any(BoxType *t);
 
 /**
+ * @brief Return whether the type is a subtype.
+ *
+ * @param t The input type.
+ * @return Whether @p t is a subtype.
+ */
+#define BoxType_Is_Subtype(t) \
+  (BoxType_Get_Class((t)) == BOXTYPECLASS_SUBTYPE_NODE)
+
+/**
  * @brief Get a string representation of the given type.
  *
  * @param t The input type.

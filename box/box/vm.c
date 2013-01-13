@@ -367,9 +367,7 @@ static void *BoxOpArg_Get(BoxTypeId t, BoxOpArg *arg,
   case BOXOPARGFORM_PTR:
     {
       BoxPtr *ptr = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
-      arg->data.val_ptr.block = ptr->block;
-      arg->data.val_ptr.ptr = (char *) ptr->ptr + value;
-      return arg->data.val_ptr.ptr;
+      return (char *) ptr->ptr + value;
     }
   case BOXOPARGFORM_IMM:
     switch ((int) t) {
@@ -394,9 +392,9 @@ static void *BoxOpArg_Get(BoxTypeId t, BoxOpArg *arg,
  */
 BoxTask BoxVM_Module_Execute(BoxVM *vm, BoxVMCallNum call_num) {
   const BoxOpDesc *exec_table = vm->exec_table;
+  BoxVMProcTable *pt = & vm->proc_table;
   BoxVMX vmx;
 
-  BoxVMProcTable *pt = & vm->proc_table;
   BoxVMProcInstalled *p;
   BoxVMWord *i_pos, *i_pos0;
   BoxValue reg0[NUM_TYPES]; /* Registri locali numero zero */

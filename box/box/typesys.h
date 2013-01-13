@@ -135,8 +135,6 @@ BoxType *TS_Get_New_Style_Type(BoxTS *ts, BoxTypeId old_type);
 /** Should disappear soon */
 void TS_Init_Builtin_Types(BoxTS *ts);
 
-BoxInt TS_Get_Size(BoxTS *ts, BoxTypeId t);
-
 /** If 't' is a special type (BOXTYPEID_INIT, BOXTYPEID_FINISH, etc.)
  * return 't', otherwise return BOXTYPEID_NONE.
  */
@@ -161,9 +159,6 @@ BoxTypeId BoxTS_Obsolete_Resolve_Once(BoxTS *ts, BoxTypeId t, TSKindSelect ks);
  */
 int BoxTS_Resolve_Once(BoxTS *ts, BoxTypeId *t, TSKindSelect ks);
 
-/** TS_Resolve_Once is applied until the type is fully resolved. */
-BoxTypeId TS_Resolve(BoxTS *ts, BoxTypeId t, TSKindSelect select);
-
 /** Return the core type of the provided type 't'.
  * This means that alias, species and raised types are resolved and
  * the underlying fundamental type is returned. For example, if:
@@ -185,7 +180,7 @@ TSKind TS_Get_Kind(BoxTS *ts, BoxTypeId t);
 int TS_Is_Fast(BoxTS *ts, BoxTypeId t);
 
 #define TS_Is_Subtype(ts, t) (TS_Get_Kind((ts), (t)) == TS_KIND_SUBTYPE)
-#define TS_Is_Empty(ts, t) (TS_Get_Size((ts), (t)) == 0)
+
 
 BoxTypeId BoxTS_New_Intrinsic_With_Name(BoxTS *ts, size_t size,
                                       size_t alignment, const char *name);
