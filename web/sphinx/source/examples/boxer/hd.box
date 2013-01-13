@@ -9,7 +9,7 @@ GUI = Void
 (**end:expand*)include "hdsketch"
 include "grains"
 
-w = Window[][
+w = Figure[
   Put[hd]
   Put[grains, (40, -15), Scale[0.8]]
   Texts[Font[5, "sans"], color.black
@@ -17,6 +17,6 @@ w = Window[][
         "b)", (38, 25)]
 ]
 
-w.Save["hd.png", Window["rgb24", .Res[Dpi[100]]]]
+w.Save["hd.png", Window["rgb24", Ppi[100]]]
 
 (**expand:view:w*)(**end:expand*)
