@@ -18,7 +18,8 @@
  *   59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             *
  ***************************************************************************/
 
-/** @file mem.h
+/**
+ * @file mem.h
  * @brief Wrappings for the system calls to allocate memory (malloc & co.).
  */
 
@@ -135,7 +136,7 @@ BOXEXPORT int Box_Mem_RC_Unlink(void *ptr);
 /*#define BOXMEM_DEBUG_MACROS*/
 
 #ifdef BOXMEM_DEBUG_MACROS
-#  define BOXMEM_MACRO1(fn, ...) (fn(__VA_ARGS__) + (void *) ((size_t) 0*printf(#fn" in %s (%d) \n", __FILE__, __LINE__)))
+#  define BOXMEM_MACRO1(fn, ...) (fn(__VA_ARGS__) + ((size_t) 0*printf(#fn" in %s (%d) \n", __FILE__, __LINE__)))
 #  define BOXMEM_MACRO2(fn, ...) {fn(__VA_ARGS__); (void) printf(#fn" in %s (%d) \n", __FILE__, __LINE__);}
 
 #  define Box_Mem_Safe_Alloc(...) BOXMEM_MACRO1(Box_Mem_Safe_Alloc, __VA_ARGS__)

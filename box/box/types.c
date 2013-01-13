@@ -1145,6 +1145,17 @@ BoxBool BoxType_Is_Any(BoxType *t) {
   return stem && stem->type_class == BOXTYPECLASS_ANY;
 }
 
+/* Whether the type is a fast type. */
+BoxBool BoxType_Is_Fast(BoxType *t) {
+  BoxType *stem = BoxType_Get_Stem(t);
+  if (stem && stem->type_class == BOXTYPECLASS_PRIMARY) {
+    BoxTypePrimary *td = BoxType_Get_Data(t);
+    return (td->id >= BOXTYPEID_FAST_LOWER && td->id <= BOXTYPEID_FAST_UPPER);
+  }
+
+  return BOXBOOL_FALSE;
+}
+
 /* Get a string representation of the given type. */
 char *BoxType_Get_Repr(BoxType *t) {
   switch (t->type_class) {

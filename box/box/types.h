@@ -547,13 +547,14 @@ BoxTypeIter_Has_Items(BoxTypeIter *ti);
 /**
  * @brief Get the stem type of a type.
  *
- * The stem type for a type t is the most basic type which can describe what is
- * contained inside t. It is used by the compiler to determine how to handle
- * the object (which type of register to use, for example).
- * In practice, the stem type is obtained by resolving species, identifiers and
+ * The stem type for a type @p t is the most basic type which can describe what
+ * is contained inside @p t. It is used by the compiler to determine how to
+ * handle the object (which type of register to use, for example).  In
+ * practice, the stem type is obtained by resolving species, identifiers and
  * raised types (with BoxType_Resolve()).
- * @param type The input type.
- * @return The stem type of type (or NULL in case of failure).
+ *
+ * @param type The input type. 
+ * @return The stem type of type (or @c NULL in case of failure).
  */
 BOXEXPORT BoxType *
 BoxType_Get_Stem(BoxType *type);
@@ -595,6 +596,19 @@ BoxType_Is_Any(BoxType *t);
  */
 #define BoxType_Is_Subtype(t) \
   (BoxType_Get_Class((t)) == BOXTYPECLASS_SUBTYPE_NODE)
+
+/**
+ * @brief Whether the type is a fast type.
+ *
+ * A type is fast when it can be stored entirely inside a register with
+ * appropriate type. Fast types are integers and floating point numbers and
+ * pointers.
+ *
+ * @param t The input type.
+ * @return Whether @p t is a fast type.
+ */
+BOXEXPORT BoxBool
+BoxType_Is_Fast(BoxType *t);
 
 /**
  * @brief Get a string representation of the given type.
