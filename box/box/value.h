@@ -54,15 +54,15 @@ typedef struct {
   ValueKind kind;             /**< Kind of Value */
   BoxType   *type;            /**< Type of the Value */
   struct {
-    BoxCont   cont;             /**< Container */
+    BoxCont cont;             /**< Container */
   }         value;            /**< Value of the container */
   char      *name;            /**< Optional name of the value */
   struct {
     unsigned int
-              new_or_init   :1, /**< Created with Value_New or Value_Init? */
-              own_register  :1, /**< Need to release a register during
-                                     finalisation? */
-              ignore        :1; /**< To be ignored when passed to a Box? */
+            new_or_init   :1, /**< Created with Value_New or Value_Init? */
+            own_register  :1, /**< Need to release a register during
+                                 finalisation? */
+            ignore        :1; /**< To be ignored when passed to a Box? */
   }         attr;             /**< Attributes for the Value */
 } Value;
 
@@ -167,6 +167,15 @@ void Value_Setup_As_Imm_Real(Value *v, BoxReal r);
 /** Set the value to represent a temporary value of the given type */
 void Value_Setup_As_Temp(Value *v, BoxType *t);
 void Value_Setup_As_Temp_Old(Value *v, BoxTypeId t);
+
+/**
+ * @brief Create a new local register value.
+ *
+ * @param v The destination (uninitialized) #Value structure.
+ * @param type The type the register is referring to.
+ */
+BOXEXPORT void
+Value_Setup_As_LReg(Value *v, BoxType *type);
 
 /** Set the value to represent a new variable of the given type */
 void Value_Setup_As_Var(Value *v, BoxType *t);

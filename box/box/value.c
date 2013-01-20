@@ -107,7 +107,7 @@ static void My_Value_Finalize(Value *v) {
 }
 
 void Value_Unlink(Value *v) {
-  if (v != NULL) {
+  if (v) {
     if (v->num_ref > 1)
       --v->num_ref;
 
@@ -440,6 +440,12 @@ void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc) {
   }
 }
 
+/* Create a new local register value. */
+void Value_Setup_As_LReg(Value *v, BoxType *type) {
+  ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
+  Value_Setup_Container(v, type, & vc);
+}
+
 void Value_Emit_Allocate(Value *v) {
   switch(v->kind) {
   case VALUEKIND_ERR:
@@ -655,8 +661,12 @@ void Value_Emit_Call_From_Call_Num(BoxVMCallNum call_num,
 BoxBool
 Value_Emit_Dynamic_Call(Value *v_parent, Value *v_child) {
   BoxCmp *c = v_parent->proc->cmp;
+  Value *Value_Cast_To_Ptr_2(Value *v);
 
   assert(BoxType_Is_Any(v_parent->type) && BoxType_Is_Any(v_child->type));
+
+  //v_parent = Value_Cast_To_Ptr_2(v_parent);
+  v_child = Value_Cast_To_Ptr_2(v_child);
 
   BoxVMCode_Assemble(c->cur_proc, BOXGOP_DYCALL,
                      2, & v_parent->value.cont, & v_child->value.cont);
@@ -812,6 +822,129 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType *t) {
   assert(0);
   return NULL;
 }
+
+/*
+Special type is one of Char, Int, Real, Point.
+
+- special type in local/global register:
+  get a NULL block pointer with LEA
+
+- special type in immediate:
+  allocate the value and get a NULL block pointer with LEA
+
+- special type in pointer:
+  failure.
+
+- object type in local/global register:
+  pass back the register as a PTR object.
+
+- object type in pointer:
+  use ADD_O to obtain new pointer.
+
+- pointer type in local/global register.
+  pass back the register as a PTR.
+
+- pointer type in pointer:
+  retrieve the pointer with MOVE.
+
+*/
+
+#define OPTIMAL_PTR_CAST
+
+Value *Value_Cast_To_Ptr_2(Value *v) {
+  BoxCmp *c = v->proc->cmp;
+  BoxContCateg v_categ = v->value.cont.categ;
+  switch (v->value.cont.type) {
+  case BOXCONTTYPE_OBJ:
+    if (v_categ != BOXCONTCATEG_PTR) {
+      assert(v_categ == BOXCONTCATEG_LREG || v_categ == BOXCONTCATEG_GREG);
+      return v;
+
+    } else {
+      /* v_categ == BOXCONTCATEG_PTR */
+      BoxBool is_greg = v->value.cont.value.ptr.is_greg;
+      BoxInt reg = v->value.cont.value.ptr.reg,
+             offset = v->value.cont.value.ptr.offset;
+      BoxCont cont, *cont_src;
+      Value *v_unlink = NULL;
+
+#ifdef OPTIMAL_PTR_CAST
+      if (offset == 0) {
+        /* When offset == 0, we do not need to allocate a new register. We just
+         * need to convert the ``o[reg + 0]'' value into a simple ``reg''
+         * value.
+         */
+        if (v->num_ref == 1) {
+          cont_src = & v->value.cont;
+        } else {
+          assert(v->num_ref > 1);
+          v_unlink = v;
+          v = Value_Create(v->proc);
+          Value_Setup_As_Weak_Copy(v, v_unlink);
+          cont_src = & v->value.cont;
+        }
+      } else {
+#endif
+        /* When offset != 0, we need to increment the pointer in v. */
+        if (v->num_ref == 1 && v->attr.own_register) {
+          assert(!is_greg);
+          cont_src = & v->value.cont;
+        } else {
+          assert(v->num_ref >= 1);
+          v_unlink = v;
+          v = Value_Create(v->proc);
+          Value_Setup_As_LReg(v, v_unlink->type);
+          cont_src = & cont;
+        }
+#ifdef OPTIMAL_PTR_CAST
+      }
+#endif
+
+      /* Set cont_src to the register containing the base address. */
+      cont_src->categ = (is_greg) ? BOXCONTCATEG_GREG : BOXCONTCATEG_LREG;
+      cont_src->type = BOXCONTTYPE_OBJ;
+      cont_src->value.reg = reg;
+
+      /* Obtain the destination register as base address plus offset. */
+      if (offset != 0) {
+        Value *v_offs = Value_Create(c->cur_proc);
+        Value_Setup_As_Imm_Int(v_offs, offset);
+        BoxVMCode_Assemble(c->cur_proc, BOXGOP_ADD,
+                           3, & v->value.cont, & v_offs->value.cont, cont_src);
+        Value_Unlink(v_offs);
+      }
+#ifndef OPTIMAL_PTR_CAST
+      else {
+        BoxVMCode_Assemble(c->cur_proc, BOXGOP_REF,
+                           2, & v->value.cont, cont_src);
+      }
+#endif
+
+      if (v_unlink)
+        Value_Unlink(v_unlink);
+      return v;
+    }
+    break;
+
+  case BOXCONTTYPE_PTR:
+    return v;
+
+  default:
+    /* Deal with the fast types by creating a NULL-block pointer. */
+    {
+      Value *v_unlink = v;
+      v = Value_Create(c->cur_proc);
+      Value_Setup_As_Temp_Old(v, BOXTYPEID_PTR);
+      BoxVMCode_Assemble(c->cur_proc, BOXGOP_LEA,
+                         2, & v->value.cont, & v_unlink->value.cont);
+      Value_Unlink(v_unlink);
+      return v;
+    }
+  }
+
+  return NULL;
+}
+
 
 Value *Value_Cast_To_Ptr(Value *v) {
   BoxCmp *c = v->proc->cmp;
@@ -1076,13 +1209,15 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
     } else {
       /* We leave the copy operation to the Box memory management system */
       BoxTypeId type_id = BoxVM_Install_Type(c->vm, src->type);
-
-      Value v_type_id;
+      Value v_type_id, ri0;
       Value_Init(& v_type_id, c->cur_proc);
       Value_Setup_As_Imm_Int(& v_type_id, type_id);
+      Value_Init(& ri0, c->cur_proc);
+      BoxCont_Set(& ri0, "ri", 0);
+      BoxVMCode_Assemble(c->cur_proc, BOXGOP_TYPEOF,
+                         2, & ri0, & v_type_id.value.cont);
       BoxVMCode_Assemble(c->cur_proc, BOXGOP_RELOC,
-                         3, & dest->value.cont, & src->value.cont,
-                         & v_type_id.value.cont);
+                         3, & dest->value.cont, & src->value.cont, & ri0);
       Value_Unlink(& v_type_id);
       Value_Unlink(src);
       Value_Unlink(dest);
@@ -1222,16 +1357,16 @@ Value_Expand(Value *src, BoxType *t_dst) {
   case BOXTYPECLASS_ANY:
     /* The code below implements boxing of data. */
     {
-      BoxCont ro0, src_type_id_cont;
+      BoxCont ri0, src_type_id_cont;
       BoxCmp *cmp = src->proc->cmp;
       BoxVMCode *cur_proc = cmp->cur_proc;
       BoxTypeId src_type_id = BoxVM_Install_Type(cmp->vm, src->type);
       Value *v_dst = Value_Create(cur_proc);
 
-      /* Set up a container representing the register ro0 and one representing
+      /* Set up a container representing the register ri0 and one representing
        * the type integer.
        */
-      BoxCont_Set(& ro0, "ro", 0);
+      BoxCont_Set(& ri0, "ri", 0);
       BoxCont_Set(& src_type_id_cont, "ii", (BoxInt) src_type_id);
 
       /* Create a new ANY type. */
@@ -1242,20 +1377,20 @@ Value_Expand(Value *src, BoxType *t_dst) {
         /* The object has associated data: get data pointer in v_src_ptr. */
         Value *v_src_ptr = Value_Create(cur_proc);
         Value_Setup_As_Weak_Copy(v_src_ptr, src);
-        v_src_ptr = Value_Cast_To_Ptr(v_src_ptr);
+        v_src_ptr = Value_Cast_To_Ptr_2(v_src_ptr);
 
         BoxVMCode_Assemble(cur_proc, BOXGOP_TYPEOF,
-                           2, & ro0, & src_type_id_cont);
+                           2, & ri0, & src_type_id_cont);
         BoxVMCode_Assemble(cur_proc, BOXGOP_BOX,
                            3, & v_dst->value.cont, & v_src_ptr->value.cont,
-                           & ro0);
+                           & ri0);
         Value_Unlink(v_src_ptr);
 
       } else {
         BoxVMCode_Assemble(cur_proc, BOXGOP_TYPEOF,
-                           2, & ro0, & src_type_id_cont);
+                           2, & ri0, & src_type_id_cont);
         BoxVMCode_Assemble(cur_proc, BOXGOP_BOX,
-                           2, & v_dst->value.cont, & ro0);
+                           2, & v_dst->value.cont, & ri0);
       }
 
       Value_Unlink(src);

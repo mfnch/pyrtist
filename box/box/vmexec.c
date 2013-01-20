@@ -495,7 +495,7 @@ static void My_Exec_Null_O(BoxVMX *vmx, void *arg1, void *arg2) {
 
 static void My_Exec_Lea(BoxVMX *vmx, void *arg1, void *arg2) {
   BoxPtr *obj = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
-  obj->block = (void *) NULL;
+  obj->block = NULL;
   obj->ptr = arg1;
 }
 
@@ -525,42 +525,53 @@ static void My_Exec_Jc_I(BoxVMX *vmx, void *arg1, void *arg2) {
     vmx->op_size = *((BoxInt *) arg1);
 }
 
-static void My_Exec_Add_OO(BoxVMX *vmx, void *arg1, void *arg2) {
-  ((BoxPtr *) arg1)->block = ((BoxPtr *) arg2)->block;
-  ((BoxPtr *) arg1)->ptr =
-    ((BoxPtr *) arg2)->ptr + *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr);
+/**
+ * @brief Instruction <tt>add roA, roB</tt>.
+ *
+ * The @c add VM instruciton creates a pointer @c roA from an existing pointer
+ * @c roB, by translating @c roB by an offset (in byte) stored inside @c ri0.
+ */
+static void
+My_Exec_Add_OO(BoxVMX *vmx, void *arg1, void *arg2) {
+  BoxPtr *ptr1 = (BoxPtr *) arg1, *ptr2 = (BoxPtr *) arg2;
+  BoxInt offset = *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr);
+
+  if (!BoxPtr_Is_Detached(ptr1))
+    (void) BoxPtr_Unlink(ptr1);
+
+  ptr1->block = ptr2->block;
+  ptr1->ptr = ptr2->ptr + offset;
+  (void) BoxPtr_Link(ptr1);
 }
 
 /**
  * @brief Instruction <tt>typeof int</tt>.
  *
- * The @c typeof VM instruciton retrieves in @c ro0 the type corresponding
- * to the type identifier given as its integer argument. The type identifier
- * is the same that would be used in the @c create VM instruction.
+ * <tt>typeof [stuff]</tt> is equivalent to <tt>mov ri0, [stuff]</tt>.
+ * This instruction is used to load the type identifier in the register @c ro0
+ * before calling other instructions such as @c create, @c reloc, @c box, etc.
  */
 static void
-My_Exec_Typeof_O(BoxVMX *vmx, void *arg1, void *arg2) {
-  BoxInt id = *((BoxInt *) arg1);
-  BoxPtr *obj = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
-  BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, id);
-  BoxPtr_Init_From_SPtr(obj, t);
-  (void) BoxPtr_Link(obj);
+My_Exec_Typeof_I(BoxVMX *vmx, void *arg1, void *arg2) {
+  BoxInt *ri0 = (BoxInt *) vmx->local[BOXTYPEID_INT].ptr;
+  *ri0 = *((BoxInt *) arg1);
  }
 
 /**
  * @brief Instruction <tt>box dstptr, srcptr</tt>.
  *
- * The @c box VM instruciton converts the source object @c srcptr into a
+ * The @c box VM instruction converts the source object @c srcptr into a
  * destination @c ANY object in @c dstptr using the type in @c ro0.
  * Note that @c dstptr must be a pointer to an initialized @c ANY object.
  */
 static void
 My_Exec_Box_O(BoxVMX *vmx, void *arg1, void *arg2) {
-  BoxPtr *t_ptr = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
-  BoxPtr src;
+  BoxInt ri0 = *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr);
+  BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, ri0);
   BoxPtr *dst = (BoxPtr *) arg1;
-  BoxType *t = BoxPtr_Get_SPtr(t_ptr);
+
   if (t) {
+    BoxPtr src;
     BoxPtr_Nullify(& src);
     if (BoxAny_Box(dst, & src, t))
       return;
@@ -574,16 +585,17 @@ My_Exec_Box_O(BoxVMX *vmx, void *arg1, void *arg2) {
 /**
  * @brief Instruction <tt>box dstptr, srcptr</tt>.
  *
- * The @c box VM instruciton converts the source object @c srcptr into a
+ * The @c box VM instruction converts the source object @c srcptr into a
  * destination @c ANY object in @c dstptr using the type in @c ro0.
  * Note that @c dstptr must be a pointer to an initialized @c ANY object.
  */
 static void
 My_Exec_Box_OO(BoxVMX *vmx, void *arg1, void *arg2) {
-  BoxPtr *t_ptr = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
+  BoxInt ri0 = *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr);
+  BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, ri0);
   BoxPtr *dst = (BoxPtr *) arg1,
          *src = (BoxPtr *) arg2;
-  BoxType *t = BoxPtr_Get_SPtr(t_ptr);
+
   if (t) {
     if (BoxAny_Box(dst, src, t))
       return;
@@ -603,10 +615,11 @@ My_Exec_Box_OO(BoxVMX *vmx, void *arg1, void *arg2) {
  * of the boxed object is not consistent with what given in @c ro0.
  */
 static void My_Exec_Unbox_OO(BoxVMX *vmx, void *arg1, void *arg2) {
-  BoxPtr *t_ptr = (BoxPtr *) vmx->local[BOXTYPEID_PTR].ptr;
+  BoxInt ri0 = *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr);
+  BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, ri0);
   BoxPtr *dst = (BoxPtr *) arg1,
          *src = (BoxPtr *) arg2;
-  BoxType *t = BoxPtr_Get_SPtr(t_ptr);
+
   if (t) {
     if (BoxAny_Unbox(dst, src, t))
       return;
@@ -633,7 +646,6 @@ static void My_Exec_Dycall_OO(BoxVMX *vmx, void *arg1, void *arg2) {
   if (Box_Combine_Any(parent, child, & exception)) {
     if (!exception)
       return;
-
     else {
       char *msg = BoxException_Get_Str(exception);
       BoxVM_Set_Fail_Msg(vmx->vm, msg);
@@ -766,10 +778,10 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {   BOXGOP_JMP,    "jmp", 1, 'i',     "a1",  NULL, "x-", "j-", My_Exec_Jmp_I    }, /* jmp ri          */
   {    BOXGOP_JC,     "jc", 1, 'i', "a1,ri0",  NULL, "x-", "j-", My_Exec_Jc_I     }, /* jc  ri          */
 
-  {BOXGOP_TYPEOF, "typeof", 1, 'i',     "a1", "ro0", "x-", "xx", My_Exec_Typeof_O }, /* typeof reg_o        */
-  {   BOXGOP_BOX,    "box", 1, 'o',    "ro0",  "a1", "x-", "xx", My_Exec_Box_O    }, /* box reg_o           */
-  {   BOXGOP_BOX,    "box", 2, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Box_OO   }, /* box reg_o, reg_o    */
-  { BOXGOP_UNBOX,  "unbox", 2, 'o', "a2,ro0",  "a1", "xx", "xx", My_Exec_Unbox_OO }, /* unbox reg_o, reg_o  */
+  {BOXGOP_TYPEOF, "typeof", 1, 'i',     "a1", "ri0", "x-", "xx", My_Exec_Typeof_I }, /* typeof reg_i        */
+  {   BOXGOP_BOX,    "box", 1, 'o',    "ri0",  "a1", "x-", "xx", My_Exec_Box_O    }, /* box reg_o           */
+  {   BOXGOP_BOX,    "box", 2, 'o', "a2,ri0",  "a1", "xx", "xx", My_Exec_Box_OO   }, /* box reg_o, reg_o    */
+  { BOXGOP_UNBOX,  "unbox", 2, 'o', "a2,ri0",  "a1", "xx", "xx", My_Exec_Unbox_OO }, /* unbox reg_o, reg_o  */
   {BOXGOP_DYCALL, "dycall", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Dycall_OO}  /* dycall reg_o, reg_o */
 };
 

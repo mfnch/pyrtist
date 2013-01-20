@@ -91,6 +91,8 @@ BoxBool BoxAny_Box(BoxPtr *any, BoxPtr *obj, BoxType *t) {
   BoxPtr_Unlink(& any_sptr->ptr);
   any_sptr->ptr = *BoxPtr_Link(obj);
   any_sptr->type = t;
+  if (any_sptr->ptr.block == NULL)
+    printf("NULL-block pointer when boxing\n");
   return BOXBOOL_TRUE;
 }
 
@@ -509,6 +511,7 @@ BoxBool BoxPtr_Unlink(BoxPtr *src) {
 
     if (head->type)
       (void) BoxType_Unlink(head->type);
+    head->num_refs = 0;
     Box_Mem_Free(head);
     return BOXBOOL_FALSE;
   }

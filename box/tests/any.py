@@ -23,4 +23,4 @@ x = X[.a="Hello", .b="world!"]
 Print["answer=", x.a, x.b;]
 """
 test.expect(exit_status=0, num_errors=0, num_warnings=0,
-            answer="Hello world!")
+            answer="Helloworld!")
