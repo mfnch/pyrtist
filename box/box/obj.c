@@ -88,11 +88,23 @@ void BoxAny_Copy(BoxAny *dst, BoxAny *src) {
 /* Change the boxed object stored inside the given any object. */
 BoxBool BoxAny_Box(BoxPtr *any, BoxPtr *obj, BoxType *t) {
   BoxAny *any_sptr = BoxPtr_Get_Target(any);
+  BoxPtr obj_copy, *new_ptr = NULL;
+
+  /* If obj is a NULL-block object, we must copy it now. */
+  if (BoxPtr_Get_Target(obj) && !BoxPtr_Get_Block(obj)) {
+    if (!BoxPtr_Create_Obj(& obj_copy, t))
+      return BOXBOOL_FALSE;
+    if (!BoxPtr_Copy_Obj(& obj_copy, obj, t)) {
+      (void) BoxPtr_Unlink(& obj_copy);
+      return BOXBOOL_FALSE;
+    }
+    new_ptr = & obj_copy;
+  } else
+    new_ptr = BoxPtr_Link(obj);
+
   BoxPtr_Unlink(& any_sptr->ptr);
-  any_sptr->ptr = *BoxPtr_Link(obj);
+  any_sptr->ptr = *new_ptr;
   any_sptr->type = t;
-  if (any_sptr->ptr.block == NULL)
-    printf("NULL-block pointer when boxing\n");
   return BOXBOOL_TRUE;
 }
 
