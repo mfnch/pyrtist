@@ -129,5 +129,26 @@ void BoxCont_Set(BoxCont *c, const char *cont_type, ...) {
 }
 
 char *BoxCont_To_String(const BoxCont *c) {
-  return Box_SPrintF("%c", BoxContType_To_Char(c->type));
+  char tc = BoxContType_To_Char(c->type),
+       rc = 'r', *rg = "";
+  BoxInt reg;
+
+  switch (c->categ) {
+  case BOXCONTCATEG_GREG:
+    rg = "g";
+  case BOXCONTCATEG_LREG:
+    reg = c->value.reg;
+    if (reg < 0) {
+      reg = -reg;
+      rc = 'v';
+    }
+    return Box_SPrintF("%s%c%c%d", rg, rc, tc, reg);
+  case BOXCONTCATEG_PTR:
+    reg = c->value.ptr.reg;
+    return Box_SPrintF("%c[ro0%+d]", tc, reg);
+  case BOXCONTCATEG_IMM:
+    return Box_SPrintF("%c-imm", tc);
+  }
+
+  return Box_SPrintF("(err)");
 }

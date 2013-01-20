@@ -7,7 +7,7 @@ tests = TestSession(title="Any(boxing/unboxing)")
 test = tests.new_test(title="Any of simple types (Int)")
 test.body = """Print["answer=", Any[1234];]"""
 test.expect(exit_status=0, num_errors=0, num_warnings=0,
-            answer=1234)
+            answer="1234")
 
 #----------------------------------------------------------------------------#
 test = tests.new_test(title="Print through Any")

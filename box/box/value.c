@@ -849,8 +849,6 @@ Special type is one of Char, Int, Real, Point.
 
 */
 
-#define OPTIMAL_PTR_CAST
-
 Value *Value_Cast_To_Ptr_2(Value *v) {
   BoxCmp *c = v->proc->cmp;
   BoxContCateg v_categ = v->value.cont.categ;
@@ -868,7 +866,6 @@ Value *Value_Cast_To_Ptr_2(Value *v) {
       BoxCont cont, *cont_src;
       Value *v_unlink = NULL;
 
-#ifdef OPTIMAL_PTR_CAST
       if (offset == 0) {
         /* When offset == 0, we do not need to allocate a new register. We just
          * need to convert the ``o[reg + 0]'' value into a simple ``reg''
@@ -884,7 +881,6 @@ Value *Value_Cast_To_Ptr_2(Value *v) {
           cont_src = & v->value.cont;
         }
       } else {
-#endif
         /* When offset != 0, we need to increment the pointer in v. */
         if (v->num_ref == 1 && v->attr.own_register) {
           assert(!is_greg);
@@ -896,9 +892,7 @@ Value *Value_Cast_To_Ptr_2(Value *v) {
           Value_Setup_As_LReg(v, v_unlink->type);
           cont_src = & cont;
         }
-#ifdef OPTIMAL_PTR_CAST
       }
-#endif
 
       /* Set cont_src to the register containing the base address. */
       cont_src->categ = (is_greg) ? BOXCONTCATEG_GREG : BOXCONTCATEG_LREG;
@@ -913,12 +907,6 @@ Value *Value_Cast_To_Ptr_2(Value *v) {
                            3, & v->value.cont, & v_offs->value.cont, cont_src);
         Value_Unlink(v_offs);
       }
-#ifndef OPTIMAL_PTR_CAST
-      else {
-        BoxVMCode_Assemble(c->cur_proc, BOXGOP_REF,
-                           2, & v->value.cont, cont_src);
-      }
-#endif
 
       if (v_unlink)
         Value_Unlink(v_unlink);
@@ -947,6 +935,8 @@ Value *Value_Cast_To_Ptr_2(Value *v) {
 
 
 Value *Value_Cast_To_Ptr(Value *v) {
+  //return Value_Cast_To_Ptr_2(v);
+
   BoxCmp *c = v->proc->cmp;
   BoxCont *v_cont = & v->value.cont;
 
@@ -1209,10 +1199,10 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
     } else {
       /* We leave the copy operation to the Box memory management system */
       BoxTypeId type_id = BoxVM_Install_Type(c->vm, src->type);
-      Value v_type_id, ri0;
+      Value v_type_id;
+      BoxCont ri0;
       Value_Init(& v_type_id, c->cur_proc);
       Value_Setup_As_Imm_Int(& v_type_id, type_id);
-      Value_Init(& ri0, c->cur_proc);
       BoxCont_Set(& ri0, "ri", 0);
       BoxVMCode_Assemble(c->cur_proc, BOXGOP_TYPEOF,
                          2, & ri0, & v_type_id.value.cont);
@@ -1375,15 +1365,37 @@ Value_Expand(Value *src, BoxType *t_dst) {
       /* Generate the boxing instructions. */
       if (!BoxType_Is_Empty(src->type)) {
         /* The object has associated data: get data pointer in v_src_ptr. */
-        Value *v_src_ptr = Value_Create(cur_proc);
+        Value *v_src_ptr = Value_Create(cur_proc), *v_unlink = NULL;
         Value_Setup_As_Weak_Copy(v_src_ptr, src);
-        v_src_ptr = Value_Cast_To_Ptr_2(v_src_ptr);
 
+        /* If src is an immediate, we move it into a register, so we can use
+         * the lea instruction to build a pointer to it. We then keep the
+         * register allocated until we have finished with the boxing operation.
+         * Note that the box instruction copies objects passed with NULL-block
+         * pointers. This means that fast types are always copied.
+         */
+        if (v_src_ptr->kind == VALUEKIND_IMM) {
+          v_src_ptr = Value_To_Temp(v_src_ptr);
+          Value_Unlink(v_src_ptr);
+          /* ^^^ FIXME: this is here for a bug in Value_To_Temp */
+
+          /* Keep the register allocated until the box instruction is exec. */
+          v_unlink = v_src_ptr;
+          Value_Link(v_src_ptr);
+        }
+
+        /* Get a pointer to the object and use it in the boxing operation. */
+        v_src_ptr = Value_Cast_To_Ptr_2(v_src_ptr);
         BoxVMCode_Assemble(cur_proc, BOXGOP_TYPEOF,
                            2, & ri0, & src_type_id_cont);
         BoxVMCode_Assemble(cur_proc, BOXGOP_BOX,
                            3, & v_dst->value.cont, & v_src_ptr->value.cont,
                            & ri0);
+
+        /* Now release the register, if required. */
+        if (v_unlink)
+          Value_Unlink(v_unlink);
+
         Value_Unlink(v_src_ptr);
 
       } else {
