@@ -24,3 +24,11 @@ Print["answer=", x.a, x.b;]
 """
 test.expect(exit_status=0, num_errors=0, num_warnings=0,
             answer="Helloworld!")
+
+#----------------------------------------------------------------------------#
+test = tests.new_test(title="Any of fast types given to fast type")
+test.body = """
+Print["answer=", INT[Any[123]];]
+"""
+test.expect(exit_status=0, num_errors=0, num_warnings=0, answer="123")
+
