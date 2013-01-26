@@ -1245,7 +1245,7 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
 
   if (Value_Want_Has_Type(v_type)) {
     if (Value_Is_Type_Name(v_name)) {
-      Value *v = Value_New(c->cur_proc);
+      Value *v;
       BoxTypeId new_type;
 
       /* First create the alias type */

@@ -184,7 +184,6 @@ BoxSrcPos *BoxSrcPosTable_Get_Src_Of(BoxSrcPosTable *pt, BoxOutPos op) {
         last = mid;
       else
         first = mid;
-
     } while(last - first > 1);
     return & sa[first].src_pos;
   }
