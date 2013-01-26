@@ -849,6 +849,9 @@ Special type is one of Char, Int, Real, Point.
 
 */
 
+/**
+ * 
+ */
 Value *Value_Cast_To_Ptr_2(Value *v) {
   BoxCmp *c = v->proc->cmp;
   BoxContCateg v_categ = v->value.cont.categ;
@@ -1100,9 +1103,10 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb) {
 }
 
 void ValueStrucIter_Init(ValueStrucIter *vsi, Value *v_struc, BoxVMCode *proc) {
-  BoxType *node;
+  BoxType *node, *t_struc;
 
-  BoxTypeIter_Init(& vsi->type_iter, v_struc->type);
+  t_struc = BoxType_Get_Stem(v_struc->type);
+  BoxTypeIter_Init(& vsi->type_iter, t_struc);
   vsi->has_next = BoxTypeIter_Get_Next(& vsi->type_iter, & node);
   vsi->index = 0;
 
@@ -1233,7 +1237,7 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
  * REFERENCES: return: new, src: -1;
  */
 static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxType *dest) {
-  Value *v_dest = Value_New(c->cur_proc);
+  Value *v_dest = Value_Create(c->cur_proc);
   Value_Setup_As_Temp(v_dest, dest);
   Value_Link(src);
   Value_Link(v_dest); /* We want to return a new reference! */
@@ -1320,7 +1324,7 @@ Value_Expand(Value *src, BoxType *t_dst) {
       if (comparison == BOXTYPECMP_MATCHING) { /* need expansion */
         ValueStrucIter dst_iter, src_iter;
         BoxVMCode *cur_proc = src->proc->cmp->cur_proc;
-        Value *v_dst = Value_New(cur_proc);
+        Value *v_dst = Value_Create(cur_proc);
         Value_Setup_As_Temp(v_dst, t_dst);
 
         ValueStrucIter_Init(& dst_iter, v_dst, cur_proc);

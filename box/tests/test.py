@@ -55,7 +55,7 @@ def check(error, thing_name, expectations, obtained_thing):
 
 class TestSession:
   def __init__(self, title=None, box_exec="../box/box",
-               test_source="test_source.box"):
+               test_source="_tmp.box"):
     self.title = title
     self.box_exec = box_exec
     self.test_source = test_source
