@@ -431,6 +431,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {"Print",       c->bltin.print},
     {"Repr",        c->bltin.repr},
     {"Any",         c->bltin.any},
+    {"ARRAY",       BOXTYPEID_ARRAY},
     {(char *) NULL, BOXTYPEID_NONE}
   };
 

@@ -50,7 +50,7 @@ boxinc_HEADERS = version.h defaults.h types.h integers.h obj.h exception.h \
   callable.h core.h error.h mem.h stream.h array.h occupation.h srcpos.h   \
   msgbase.h messages.h strutils.h print.h hashfunc.h hashtable.h list.h	   \
   vm_priv.h vmproc.h vmsym.h vmsymstuff.h vmdasm.h vm2txt.h vmserial.h	   \
-  vmstore.h
+  vmstore.h bltinarray.h
 
 libboxcore0_4_la_SOURCES = types.c types.h types_priv.h combs.c combs.h obj.c  \
   obj.h exception.c exception.h callable.c callable.h callable_priv.h core.c   \
@@ -61,7 +61,7 @@ libboxcore0_4_la_SOURCES = types.c types.h types_priv.h combs.c combs.h obj.c  \
   vm_priv.h vmdasm.c vmdasm.h vm2txt.c vm2txt.h vmserial.c vmserial.h	       \
   vmstore.c vmstore.h vmexec.c vmexec_priv.h vmproc.c vmproc.h vmproc_priv.h   \
   vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h vmopregs.c vmopregs_priv.h vmop.c  \
-  vmop_priv.h str.c str.h
+  vmop_priv.h str.c str.h bltinarray.c
 
 libboxcore0_4_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32

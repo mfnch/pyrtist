@@ -84,8 +84,8 @@ static void My_Guess_AsmScheme(Operation *opn) {
       }
 
     } else
-      opn->asm_scheme = (opn->attr & OPR_ATTR_UN_RIGHT) != 0 ?
-                        OPASMSCHEME_RIGHT_UN : OPASMSCHEME_STD_UN;
+      opn->asm_scheme = ((opn->attr & OPR_ATTR_UN_RIGHT) != 0 ?
+                         OPASMSCHEME_RIGHT_UN : OPASMSCHEME_STD_UN);
 
   } else {
     opn->asm_scheme = OPASMSCHEME_UNKNOWN;

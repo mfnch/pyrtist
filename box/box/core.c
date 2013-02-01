@@ -19,12 +19,13 @@
 
 #include <assert.h>
 
-#include <box/types_priv.h>
 #include <box/callable.h>
 #include <box/obj.h>
 #include <box/core.h>
 #include <box/coremath.h>
 
+#include <box/types_priv.h>
+#include <box/bltinarray_priv.h>
 #include <box/core_priv.h>
 
 /**
@@ -59,26 +60,27 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
     {"Type", BOXTYPEID_TYPE, sizeof(BoxTypeBundle), __alignof__(BoxTypeBundle)},
     {".[", BOXTYPEID_INIT, (size_t) 0, (size_t) 0},
     {"].", BOXTYPEID_FINISH, (size_t) 0, (size_t) 0},
-    {(const char *) NULL, BOXTYPEID_NONE, (size_t) 0, (size_t) 0}
+    {"Char", BOXTYPEID_CHAR, sizeof(BoxChar), __alignof__(BoxChar)},
+    {"INT", BOXTYPEID_INT, sizeof(BoxInt), __alignof__(BoxInt)},
+    {"REAL", BOXTYPEID_REAL, sizeof(BoxReal), __alignof__(BoxReal)},
+    {"POINT", BOXTYPEID_POINT, sizeof(BoxPoint), __alignof__(BoxPoint)},
+    {"PTR", BOXTYPEID_PTR, sizeof(BoxPtr), __alignof__(BoxPtr)},
+    {"Obj", BOXTYPEID_OBJ, sizeof(BoxPtr), __alignof__(BoxPtr)},
+    {"Void", BOXTYPEID_VOID, 0, 0},
+
 
 #if 0
     {& core_types->CHAR_type, "CHAR", BOXTYPEID_CHAR,
      sizeof(BoxChar), __alignof__(BoxChar)},
-    {& core_types->Char_type, "Char", BOXTYPEID_CHAR,
-     sizeof(BoxChar), __alignof__(BoxChar)},
-    {& core_types->INT_type, "INT", BOXTYPEID_INT,
-     sizeof(BoxInt), __alignof__(BoxInt)},
-    {& core_types->REAL_type, "REAL", BOXTYPEID_REAL,
-     sizeof(BoxReal), __alignof__(BoxReal)},
-    {& core_types->POINT_type, "POINT", BOXTYPEID_POINT,
-     sizeof(BoxPoint), __alignof__(BoxPoint)},
-    {& core_types->PTR_type, "PTR", BOXTYPEID_PTR,
-     sizeof(BoxPtr), __alignof__(BoxPtr)},
     {& core_types->root_type, "/", BOXTYPEID_NONE,
      (size_t) 0, (size_t) 0},
     {& core_types->REFERENCES_type, "REFERENCES", BOXTYPEID_NONE,
      0, 0},
 #endif
+
+    {"ARRAY", BOXTYPEID_ARRAY, sizeof(BoxArray), __alignof__(BoxArray)},
+    {(const char *) NULL, BOXTYPEID_NONE, (size_t) 0, (size_t) 0}
+
   };
 
   /* Set all the entries in the table to NULL. */
