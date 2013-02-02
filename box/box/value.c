@@ -798,7 +798,7 @@ Value *Value_Cast_From_Ptr(Value *v_ptr, BoxType *t) {
         BoxCont v_ptr_cont = v_ptr->value.cont;
         Value_Unlink(v_ptr);
         v_ptr = Value_New(c->cur_proc);
-        Value_Setup_As_Temp_Old(v_ptr, BOXTYPEID_PTR);
+        Value_Setup_As_Temp(v_ptr, Box_Get_Core_Type(BOXTYPEID_PTR));
         BoxVMCode_Assemble(c->cur_proc, BOXGOP_REF, 2,
                            & v_ptr->value.cont, & v_ptr_cont);
         assert(v_ptr->value.cont.categ == BOXCONTCATEG_LREG);
@@ -921,7 +921,7 @@ Value *Value_Cast_To_Ptr_2(Value *v) {
     {
       Value *v_unlink = v;
       v = Value_Create(c->cur_proc);
-      Value_Setup_As_Temp_Old(v, BOXTYPEID_PTR);
+      Value_Setup_As_Temp(v, Box_Get_Core_Type(BOXTYPEID_PTR));
       BoxVMCode_Assemble(c->cur_proc, BOXGOP_LEA,
                          2, & v->value.cont, & v_unlink->value.cont);
       Value_Unlink(v_unlink);
@@ -968,7 +968,7 @@ Value *Value_Cast_To_Ptr(Value *v) {
     BoxCont v_cont_val = *v_cont;
     Value_Unlink(v);
     v = Value_New(c->cur_proc);
-    Value_Setup_As_Temp_Old(v, BOXTYPEID_PTR);
+    Value_Setup_As_Temp(v, Box_Get_Core_Type(BOXTYPEID_PTR));
     BoxVMCode_Assemble(c->cur_proc, BOXGOP_LEA,
                        2, & v->value.cont, & v_cont_val);
     return v;
@@ -1060,7 +1060,7 @@ static Value *My_Point_Get_Member(Value *v_point, const char *memb) {
       if (g_op != -1) {
         BoxCmp *c = v_point->proc->cmp;
         Value *v_memb = Value_New(c->cur_proc);
-        Value_Setup_As_Temp_Old(v_memb, BOXTYPEID_PTR);
+        Value_Setup_As_Temp(v_memb, Box_Get_Core_Type(BOXTYPEID_PTR));
         BoxVMCode_Assemble(v_memb->proc, g_op, 2,
                            & v_memb->value.cont, & v_point->value.cont);
         Value_Unlink(v_point);

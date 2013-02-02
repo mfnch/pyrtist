@@ -55,11 +55,10 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
     BoxTypeId id;
     size_t size;
     size_t alignment;
-
   } *row, table[] = {
     {"Type", BOXTYPEID_TYPE, sizeof(BoxTypeBundle), __alignof__(BoxTypeBundle)},
-    {".[", BOXTYPEID_INIT, (size_t) 0, (size_t) 0},
-    {"].", BOXTYPEID_FINISH, (size_t) 0, (size_t) 0},
+    {"(.[)", BOXTYPEID_INIT, (size_t) 0, (size_t) 0},
+    {"(].)", BOXTYPEID_FINISH, (size_t) 0, (size_t) 0},
     {"Char", BOXTYPEID_CHAR, sizeof(BoxChar), __alignof__(BoxChar)},
     {"INT", BOXTYPEID_INT, sizeof(BoxInt), __alignof__(BoxInt)},
     {"REAL", BOXTYPEID_REAL, sizeof(BoxReal), __alignof__(BoxReal)},
@@ -67,7 +66,11 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
     {"PTR", BOXTYPEID_PTR, sizeof(BoxPtr), __alignof__(BoxPtr)},
     {"Obj", BOXTYPEID_OBJ, sizeof(BoxPtr), __alignof__(BoxPtr)},
     {"Void", BOXTYPEID_VOID, 0, 0},
-
+    {"([)", BOXTYPEID_BEGIN, (size_t) 0, (size_t) 0},
+    {"(])", BOXTYPEID_END, (size_t) 0, (size_t) 0},
+    {"(;)", BOXTYPEID_PAUSE, (size_t) 0, (size_t) 0},
+    {"ARRAY", BOXTYPEID_ARRAY, sizeof(BoxArray), __alignof__(BoxArray)},
+    {(const char *) NULL, BOXTYPEID_NONE, (size_t) 0, (size_t) 0}
 
 #if 0
     {& core_types->CHAR_type, "CHAR", BOXTYPEID_CHAR,
@@ -77,10 +80,6 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
     {& core_types->REFERENCES_type, "REFERENCES", BOXTYPEID_NONE,
      0, 0},
 #endif
-
-    {"ARRAY", BOXTYPEID_ARRAY, sizeof(BoxArray), __alignof__(BoxArray)},
-    {(const char *) NULL, BOXTYPEID_NONE, (size_t) 0, (size_t) 0}
-
   };
 
   /* Set all the entries in the table to NULL. */

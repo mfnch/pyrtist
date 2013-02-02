@@ -92,7 +92,7 @@ static void My_Init_Const_Values(BoxCmp *c) {
   Value_Init(& c->value.end, & c->main_proc);
   Value_Setup_As_Type(& c->value.end, BOXTYPEID_END);
   Value_Init(& c->value.pause, & c->main_proc);
-  Value_Setup_As_Temp_Old(& c->value.pause, BOXTYPEID_PAUSE);
+  Value_Setup_As_Temp(& c->value.pause, Box_Get_Core_Type(BOXTYPEID_PAUSE));
 }
 
 void My_Finish_Const_Values(BoxCmp *c) {

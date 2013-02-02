@@ -212,8 +212,9 @@ void BoxCmp_Finish__Operators(BoxCmp *c) {
  * NOTE: it should not happen that type1 = type2 = TYPE_NONE.
  */
 Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
-                                    BoxTypeId type_left, BoxTypeId type_right,
-                                    BoxTypeId type_result) {
+                                    BoxType *type_left,
+                                    BoxType *type_right,
+                                    BoxType *type_result) {
   int opr_is_unary = ((opr->attr & OPR_ATTR_BINARY) == 0),
       do_match_res = ((opr->attr & OPR_ATTR_MATCH_RESULT) != 0);
   Operation *opn;
@@ -224,13 +225,13 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
     if (do_match_res) {
       BoxTypeCmp match_result =
         BoxType_Compare(BoxType_From_Id(& c->ts, opn->type_result),
-                        BoxType_From_Id(& c->ts, type_result));
+                        type_result);
       if (match_result == BOXTYPECMP_DIFFERENT)
         continue;
     }
 
     match_left = BoxType_Compare(BoxType_From_Id(& c->ts, opn->type_left),
-                                 BoxType_From_Id(& c->ts, type_left));
+                                 type_left);
     if (match_left != BOXTYPECMP_DIFFERENT) {
       if (opr_is_unary) {
           match->opr = opr;
@@ -244,7 +245,7 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
       } else {
         BoxTypeCmp match_right =
           BoxType_Compare(BoxType_From_Id(& c->ts, opn->type_right),
-                          BoxType_From_Id(& c->ts, type_right));
+                          type_right);
         if (match_right != BOXTYPECMP_DIFFERENT) {
           match->opr = opr;
           match->attr = opn->attr;
@@ -407,10 +408,8 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
   v = Value_Expand_Subtype(v);
 
   /* Now we search the operation */
-  opn = BoxCmp_Operator_Find_Opn(c, opr, & match,
-                                 BoxType_Get_Id(v->type),
-                                 BOXTYPEID_NONE, BOXTYPEID_NONE);
-  if (opn != NULL) {
+  opn = BoxCmp_Operator_Find_Opn(c, opr, & match, v->type, NULL, NULL);
+  if (opn) {
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND)
       v = Value_Expand(v, BoxType_From_Id(& c->ts, match.expand_type_left));
@@ -425,7 +424,7 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
 
     } else {
       MSG_ERROR("%s%~s <-- Operation has not been defined!",
-                opr->name, BoxType_Get_Id(v->type));
+                opr->name, BoxType_Get_Repr(v->type));
     }
   }
 
@@ -451,11 +450,9 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
   v_right = Value_Expand_Subtype(v_right);
 
   /* Now we search the operation */
-  opn = BoxCmp_Operator_Find_Opn(c, opr, & match,
-                                 BoxType_Get_Id(v_left->type),
-                                 BoxType_Get_Id(v_right->type),
-                                 BOXTYPEID_NONE);
-  if (opn != NULL) {
+  opn = BoxCmp_Operator_Find_Opn(c, opr, & match, v_left->type,
+                                 v_right->type, NULL);
+  if (opn) {
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND)
       v_left = Value_Expand(v_left, BoxType_From_Id(& c->ts, match.expand_type_left));
@@ -493,10 +490,9 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
 
   /* Now we search the operation */
   opn = BoxCmp_Operator_Find_Opn(c, & c->convert, & match,
-                                 BoxType_Get_Id(src->type),
-                                 BOXTYPEID_NONE, BoxType_Get_Id(dest->type));
+                                 src->type, NULL, dest->type);
 
-  if (opn != NULL) {
+  if (opn) {
     /* Now we expand the types, if necessary */
     if (match.match_left == TS_TYPES_EXPAND)
       src = Value_Expand(src, BoxType_From_Id(& c->ts, match.expand_type_left));
