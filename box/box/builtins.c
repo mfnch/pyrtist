@@ -454,11 +454,11 @@ static void My_Register_Core_Types(BoxCmp *c) {
 static BoxType *My_Type_Of_Char(BoxCmp *c, char t) {
   switch(t) {
   case ' ': return NULL;
-  case 'C': return BoxType_From_Id(& c->ts, BOXTYPEID_CHAR);
-  case 'I': return BoxType_From_Id(& c->ts, BOXTYPEID_INT);
-  case 'R': return BoxType_From_Id(& c->ts, BOXTYPEID_REAL);
-  case 'P': return BoxType_From_Id(& c->ts, BOXTYPEID_POINT);
-  case 'i': return BoxType_From_Id(& c->ts, c->bltin.species_int);
+  case 'C': return Box_Get_Core_Type(BOXTYPEID_CHAR);
+  case 'I': return Box_Get_Core_Type(BOXTYPEID_INT);
+  case 'R': return Box_Get_Core_Type(BOXTYPEID_REAL);
+  case 'P': return Box_Get_Core_Type(BOXTYPEID_POINT);
+  case 'i': return Box_Get_Core_Type(BOXTYPEID_SINT);
   case 'r': return BoxType_From_Id(& c->ts, c->bltin.species_real);
   case 'p': return BoxType_From_Id(& c->ts, c->bltin.species_point);
   default:

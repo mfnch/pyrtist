@@ -44,6 +44,18 @@ My_Set_Type(BoxCoreTypes *ct, BoxTypeId t_id, BoxType *t, BoxBool *success) {
   }
 }
 
+static void
+My_Create_Type(BoxCoreTypes *core_types, const char *name,
+               BoxTypeId id, size_t sz, size_t algn, BoxBool *success) {
+  BoxType *t;
+
+  if (id != BOXTYPEID_NONE)
+    t = BoxType_Create_Primary(id, sz, algn);
+  else
+    t = BoxType_Create_Intrinsic(sz, algn);
+
+  My_Set_Type(core_types, id, BoxType_Create_Ident(t, name), success);
+}
 
 /* Create primary and intrinsic types. */
 static void
@@ -73,8 +85,6 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
     {(const char *) NULL, BOXTYPEID_NONE, (size_t) 0, (size_t) 0}
 
 #if 0
-    {& core_types->CHAR_type, "CHAR", BOXTYPEID_CHAR,
-     sizeof(BoxChar), __alignof__(BoxChar)},
     {& core_types->root_type, "/", BOXTYPEID_NONE,
      (size_t) 0, (size_t) 0},
     {& core_types->REFERENCES_type, "REFERENCES", BOXTYPEID_NONE,
@@ -87,21 +97,9 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
     core_types->types[idx] = NULL;
 
   /* Populate the table. */
-  for (row = & table[0]; row->name; row++) {
-    BoxType *t;
-
-    if (row->id != BOXTYPEID_NONE)
-      t = BoxType_Create_Primary(row->id, row->size, row->alignment);
-    else
-      t = BoxType_Create_Intrinsic(row->size, row->alignment);
-
-    if (t) {
-      My_Set_Type(core_types, row->id, BoxType_Create_Ident(t, row->name),
-                  success);
-
-    } else
-      *success = BOXBOOL_FALSE;
-  }
+  for (row = & table[0]; row->name; row++)
+    My_Create_Type(core_types, row->name,
+                   row->id, row->size, row->alignment, success);
 
   My_Set_Type(core_types, BOXTYPEID_ANY, BoxType_Create_Any(), success);
 
@@ -112,53 +110,45 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
 
 /* Create species. */
 static void My_Init_Species(BoxCoreTypes *ct, BoxBool *success) {
-#if 0
   BoxType *t;
 
   /* Int = (CHAR => INT) */
   t = BoxType_Create_Species();
   if (t) {
-    BoxType_Add_Member_To_Species(t, ct->CHAR_type);
-    BoxType_Add_Member_To_Species(t, ct->INT_type);
-    ct->Int_type = BoxType_Create_Ident(t, "Int");
-
-  } else {
-    ct->Int_type = NULL;
-    *success = BOXBOOL_FALSE;
+    BoxType_Add_Member_To_Species(t, ct->types[BOXTYPEID_CHAR]);
+    BoxType_Add_Member_To_Species(t, ct->types[BOXTYPEID_INT]);
+    t = BoxType_Create_Ident(t, "Int");
   }
+  My_Set_Type(ct, BOXTYPEID_SINT, t, success);
 
   /* Real = (CHAR => INT => REAL) */
   t = BoxType_Create_Species();
   if (t) {
-    BoxType_Add_Member_To_Species(t, ct->CHAR_type);
-    BoxType_Add_Member_To_Species(t, ct->INT_type);
-    BoxType_Add_Member_To_Species(t, ct->REAL_type);
-    ct->Real_type = BoxType_Create_Ident(t, "Real");
-
-  } else {
-    ct->Real_type = NULL;
-    *success = BOXBOOL_FALSE;
+    BoxType_Add_Member_To_Species(t, ct->types[BOXTYPEID_CHAR]);
+    BoxType_Add_Member_To_Species(t, ct->types[BOXTYPEID_INT]);
+    BoxType_Add_Member_To_Species(t, ct->types[BOXTYPEID_REAL]);
+    t = BoxType_Create_Ident(t, "Real");
   }
+  My_Set_Type(ct, BOXTYPEID_SREAL, t, success);
 
   /* Point = ((Real x, y) => POINT) */
-  ct->Point_type = NULL;
   t = BoxType_Create_Species();
   if (t) {
+    BoxType *real_type = ct->types[BOXTYPEID_SREAL];
     BoxType *point_struct = BoxType_Create_Structure();
-    if (point_struct) {
-      BoxType_Add_Member_To_Structure(point_struct, ct->Real_type, "x");
-      BoxType_Add_Member_To_Structure(point_struct, ct->Real_type, "y");
+    if (real_type && point_struct) {
+      BoxType_Add_Member_To_Structure(point_struct, real_type, "x");
+      BoxType_Add_Member_To_Structure(point_struct, real_type, "y");
       BoxType_Add_Member_To_Species(t, point_struct);
-      BoxType_Add_Member_To_Species(t, ct->POINT_type);
-      BoxSPtr_Unlink(point_struct);
-      ct->Point_type = BoxType_Create_Ident(t, "Point");
-
-    } else
-      *success = BOXBOOL_FALSE;
-
-  } else
-    *success = BOXBOOL_FALSE;
-#endif
+      BoxType_Add_Member_To_Species(t, ct->types[BOXTYPEID_POINT]);
+      t = BoxType_Create_Ident(t, "Point");
+    } else {
+      (void) BoxType_Unlink(t);
+      t = NULL;
+    }
+    (void) BoxType_Unlink(point_struct);
+  }
+  My_Set_Type(ct, BOXTYPEID_SREAL, t, success);
 }
 
 /* Initialize the core types of Box. */
