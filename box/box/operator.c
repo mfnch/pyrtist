@@ -116,16 +116,16 @@ void Operation_Set_User_Implem(Operation *opn, BoxVMCallNum call_num) {
  * all'operatore *opr. Se type1 o type2 sono uguali a TYPE_NONE si tratta
  * di un'operazione unaria (sinistra o destra rispettivamente).
  */
-Operation *Operator_Add_Opn(Operator *opr, BoxTypeId type_left,
-                            BoxTypeId type_right, BoxTypeId type_result) {
+Operation *Operator_Add_Opn(Operator *opr, BoxType *type_left,
+                            BoxType *type_right, BoxType *type_result) {
   Operation *opn;
 
   opn = (Operation *) Box_Mem_Safe_Alloc(sizeof(Operation));
   opn->opr = opr;
   opn->attr = opr->attr;
-  opn->type_left = type_left;
-  opn->type_right = type_right;
-  opn->type_result = type_result;
+  opn->type_left = BoxType_Get_Id(type_left);
+  opn->type_right = BoxType_Get_Id(type_right);
+  opn->type_result = BoxType_Get_Id(type_result);
 
   /** Link to chain */
   opn->next = opr->first_operation;

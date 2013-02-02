@@ -451,20 +451,19 @@ static void My_Register_Core_Types(BoxCmp *c) {
  * value. Example: My_Type_Of_Char(c, 'I') returns BOXTYPEID_INT,
  * My_Type_Of_Char(c, 'R') returns BOXTYPEID_REAL, etc.
  */
-static BoxTypeId My_Type_Of_Char(BoxCmp *c, char t) {
+static BoxType *My_Type_Of_Char(BoxCmp *c, char t) {
   switch(t) {
-  case ' ': return BOXTYPEID_NONE;
-  case 'C': return BOXTYPEID_CHAR;
-  case 'I': return BOXTYPEID_INT;
-  case 'R': return BOXTYPEID_REAL;
-  case 'P': return BOXTYPEID_POINT;
-  case 'i': return c->bltin.species_int;
-  case 'r': return c->bltin.species_real;
-  case 'p': return c->bltin.species_point;
+  case ' ': return NULL;
+  case 'C': return BoxType_From_Id(& c->ts, BOXTYPEID_CHAR);
+  case 'I': return BoxType_From_Id(& c->ts, BOXTYPEID_INT);
+  case 'R': return BoxType_From_Id(& c->ts, BOXTYPEID_REAL);
+  case 'P': return BoxType_From_Id(& c->ts, BOXTYPEID_POINT);
+  case 'i': return BoxType_From_Id(& c->ts, c->bltin.species_int);
+  case 'r': return BoxType_From_Id(& c->ts, c->bltin.species_real);
+  case 'p': return BoxType_From_Id(& c->ts, c->bltin.species_point);
   default:
     MSG_FATAL("My_Type_Of_Char: unexpected character.");
-    assert(0);
-    return BOXTYPEID_NONE;
+    return NULL;
   }
 }
 
@@ -523,11 +522,11 @@ static void My_Register_UnOps(BoxCmp *c) {
 
   for(unop = & unops[0]; unop->types != NULL; ++unop) {
     Operator *opr = BoxCmp_UnOp_Get(c, unop->op);
-    BoxTypeId result = My_Type_Of_Char(c, unop->types[0]),
-            operand = My_Type_Of_Char(c, unop->types[1]);
+    BoxType *result = My_Type_Of_Char(c, unop->types[0]),
+            *operand = My_Type_Of_Char(c, unop->types[1]);
     OprAttr mask = My_OprAttr_Of_Str(unop->mask),
             attr = My_OprAttr_Of_Str(unop->attr);
-    Operation *opn = Operator_Add_Opn(opr, operand, BOXTYPEID_NONE, result);
+    Operation *opn = Operator_Add_Opn(opr, operand, NULL, result);
     Operation_Attr_Set(opn, mask, attr);
     opn->implem.opcode = unop->g_op;
   }
@@ -608,9 +607,9 @@ static void My_Register_BinOps(BoxCmp *c) {
 
   for(binop = & binops[0]; binop->types != NULL; ++binop) {
     Operator *opr = BoxCmp_BinOp_Get(c, binop->op);
-    BoxTypeId result = My_Type_Of_Char(c, binop->types[0]),
-            left = My_Type_Of_Char(c, binop->types[1]),
-            right = My_Type_Of_Char(c, binop->types[2]);
+    BoxType *result = My_Type_Of_Char(c, binop->types[0]),
+            *left = My_Type_Of_Char(c, binop->types[1]),
+            *right = My_Type_Of_Char(c, binop->types[2]);
     OprAttr mask = My_OprAttr_Of_Str(binop->mask),
             attr = My_OprAttr_Of_Str(binop->attr);
     Operation *opn = Operator_Add_Opn(opr, left, right, result);
@@ -642,18 +641,21 @@ static void My_Register_Conversions(BoxCmp *c) {
   };
 
   for(conv = & convs[0]; conv->types != NULL; ++conv) {
-    BoxTypeId src = My_Type_Of_Char(c, conv->types[0]),
-            dst = My_Type_Of_Char(c, conv->types[1]);
+    BoxType *src = My_Type_Of_Char(c, conv->types[0]),
+            *dst = My_Type_Of_Char(c, conv->types[1]);
     OprAttr mask = My_OprAttr_Of_Str(conv->mask),
             attr = My_OprAttr_Of_Str(conv->attr);
-    Operation *opn = Operator_Add_Opn(convert, src, BOXTYPEID_NONE, dst);
+    Operation *opn = Operator_Add_Opn(convert, src, NULL, dst);
     Operation_Attr_Set(opn, mask, attr);
     opn->implem.opcode = conv->g_op;
   }
 
   /* Conversion (Real, Real) -> Point */
-  Operation *opn = Operator_Add_Opn(convert, c->bltin.struc_real_real,
-                                    BOXTYPEID_NONE, BOXTYPEID_POINT);
+  Operation *opn =
+    Operator_Add_Opn(convert,
+                     BoxType_From_Id(& c->ts, c->bltin.struc_real_real),
+                     NULL, My_Type_Of_Char(c, 'P'));
+
   struc_to_point_call_num = Bltin_Proc_Add(c, "conv_2r_to_point", My_2R_To_P);
   Operation_Set_User_Implem(opn, struc_to_point_call_num);
 }

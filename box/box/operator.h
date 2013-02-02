@@ -133,8 +133,8 @@ void Operation_Attr_Set(Operation *opn, OprAttr mask, OprAttr attr);
  * operator 'opr'.  NOTE: for a unary operator type_right is ignore
  * (BOXTYPEID_NONE can be used).
  */
-Operation *Operator_Add_Opn(Operator *opr, BoxTypeId type_left,
-                            BoxTypeId type_right, BoxTypeId type_result);
+Operation *Operator_Add_Opn(Operator *opr, BoxType *type_left,
+                            BoxType *type_right, BoxType *type_result);
 
 /** Get the Operator object corresponding to the given ASTBinOp constant. */
 Operator *BoxCmp_BinOp_Get(BoxCmp *c, ASTBinOp bin_op);
