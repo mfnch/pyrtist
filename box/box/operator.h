@@ -57,20 +57,20 @@ typedef enum {
   OPASMSCHEME_UNKNOWN
 } OpAsmScheme;
 
-typedef struct _operation_struc Operation;
-typedef struct _operator_struc Operator;
+typedef struct Operation_struct Operation;
+typedef struct Operator_struct Operator;
 
-struct _operation_struc {
-  Operator *opr;           /**< The corresponding operator */
+struct Operation_struct {
+  Operator  *opr;          /**< The corresponding operator */
 
-  OprAttr attr;            /**< Attributes overridden from operation */
+  OprAttr   attr;          /**< Attributes overridden from operation */
 
-  BoxTypeId type_left,       /**< Type of the left operand */
-          type_right,      /**< Type of the right operand */
-          type_result;     /**< Type of the result */
+  BoxType   *type_left,    /**< Type of the left operand */
+            *type_right,   /**< Type of the right operand */
+            *type_result;  /**< Type of the result */
 
   OpAsmScheme
-          asm_scheme;      /**< Scheme for assemblying the operation */
+            asm_scheme;    /**< Scheme for assemblying the operation */
 
   union {
     BoxGOp  opcode;        /**< Bytecode instrucion associated with the op. */
@@ -79,30 +79,30 @@ struct _operation_struc {
                                 the operation. */
   } implem;                /**< The implementation of the operation */
 
-  struct _operation_struc
-          *next,           /**< Next operation of the current operator */
-          *previous;       /**< Prevous operation */
+  Operation *next,         /**< Next operation of the current operator */
+            *previous;     /**< Prevous operation */
 };
 
-struct _operator_struc {
+struct Operator_struct {
   BoxCmp      *cmp;             /**< Compiler to which the operator refers */
   OprAttr     attr;             /**< Operator attributes */
   const char  *name;            /**< Name of the operator */
   Operation   *first_operation;
 };
 
-/** Structure returned by BoxCmp_Operator_Find_Opn containing details about
+/**
+ * Structure returned by BoxCmp_Operator_Find_Opn containing details about
  * the Operation which was found.
  */
 typedef struct {
-  Operator *opr;              /**< Operator for which we got the match. */
-  OprAttr  attr;              /**< Attributes of the matched operation */
-  TSCmp    match_left,        /**< How the left operand was matched. */
-           match_right;       /**< How the right operand was matched. */
-  BoxTypeId  expand_type_left,  /**< Type to which the left operand should be
-                                   expanded */
-           expand_type_right; /**< Type to which the right operand should be
-                                   expanded */
+  Operator   *opr;               /**< Operator for which we got the match. */
+  OprAttr    attr;               /**< Attributes of the matched operation */
+  BoxTypeCmp match_left,         /**< How the left operand was matched. */
+             match_right;        /**< How the right operand was matched. */
+  BoxType    *expand_type_left,  /**< Type to which the left operand should be
+                                    expanded */
+             *expand_type_right; /**< Type to which the right operand should be
+                                    expanded */
 } OprMatch;
 
 #endif /* _OPERATOR_H_TYPES */

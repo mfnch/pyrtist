@@ -62,13 +62,13 @@ void Operator_Finish(Operator *opr) {
 static void My_Guess_AsmScheme(Operation *opn) {
   if (opn->attr & OPR_ATTR_NATIVE) {
     if (opn->attr & OPR_ATTR_BINARY) {
-      TS *ts = & opn->opr->cmp->ts;
-      BoxTypeId t_result = TS_Get_Core_Type(ts, opn->type_result),
-              t_left = TS_Get_Core_Type(ts, opn->type_left),
-              t_right = TS_Get_Core_Type(ts, opn->type_right);
-      int res_eq_l = (t_result == t_left),
-          res_eq_r = (t_result == t_right),
-          l_eq_r = (t_left == t_right);
+      BoxType *t_result = opn->type_result,
+              *t_left = opn->type_left,
+              *t_right = opn->type_right;
+      BoxBool
+        res_eq_l = BoxType_Compare(t_result, t_left) >= BOXTYPECMP_EQUAL,
+        res_eq_r = BoxType_Compare(t_result, t_right) >= BOXTYPECMP_EQUAL,
+        l_eq_r = BoxType_Compare(t_left, t_right) >= BOXTYPECMP_EQUAL;
       if (l_eq_r && res_eq_l)
         opn->asm_scheme = OPASMSCHEME_STD_BIN;
 
@@ -123,14 +123,14 @@ Operation *Operator_Add_Opn(Operator *opr, BoxType *type_left,
   opn = (Operation *) Box_Mem_Safe_Alloc(sizeof(Operation));
   opn->opr = opr;
   opn->attr = opr->attr;
-  opn->type_left = BoxType_Get_Id(type_left);
-  opn->type_right = BoxType_Get_Id(type_right);
-  opn->type_result = BoxType_Get_Id(type_result);
+  opn->type_left = BoxType_Link(type_left);
+  opn->type_right = BoxType_Link(type_right);
+  opn->type_result = BoxType_Link(type_result);
 
   /** Link to chain */
   opn->next = opr->first_operation;
   opn->previous = NULL;
-  if (opr->first_operation != NULL)
+  if (opr->first_operation)
     opr->first_operation->previous = opn;
   opr->first_operation = opn;
 
@@ -140,12 +140,15 @@ Operation *Operator_Add_Opn(Operator *opr, BoxType *type_left,
 
 void Operator_Del_Opn(Operator *opr, Operation *opn) {
   assert(opn->opr == opr);
-  if (opn->next != NULL)
+  if (opn->next)
     opn->next->previous = opn->previous;
-  if (opn->previous != NULL)
+  if (opn->previous)
     opn->previous->next = opn->next;
   if (opr->first_operation == opn)
     opr->first_operation = opn->next;
+  (void) BoxType_Unlink(opn->type_left);
+  (void) BoxType_Unlink(opn->type_right);
+  (void) BoxType_Unlink(opn->type_result);
   Box_Mem_Free(opn);
 }
 
@@ -223,29 +226,24 @@ Operation *BoxCmp_Operator_Find_Opn(BoxCmp *c, Operator *opr, OprMatch *match,
 
     /* Check for matching result, if required */
     if (do_match_res) {
-      BoxTypeCmp match_result =
-        BoxType_Compare(BoxType_From_Id(& c->ts, opn->type_result),
-                        type_result);
+      BoxTypeCmp match_result = BoxType_Compare(opn->type_result, type_result);
       if (match_result == BOXTYPECMP_DIFFERENT)
         continue;
     }
 
-    match_left = BoxType_Compare(BoxType_From_Id(& c->ts, opn->type_left),
-                                 type_left);
+    match_left = BoxType_Compare(opn->type_left, type_left);
     if (match_left != BOXTYPECMP_DIFFERENT) {
       if (opr_is_unary) {
           match->opr = opr;
           match->attr = opn->attr;
           match->match_left = match_left;
-          match->match_right = 0;
+          match->match_right = BOXTYPECMP_DIFFERENT;
           match->expand_type_left = opn->type_left;
-          match->expand_type_right = BOXTYPEID_NONE;
+          match->expand_type_right = NULL;
           return opn;
 
       } else {
-        BoxTypeCmp match_right =
-          BoxType_Compare(BoxType_From_Id(& c->ts, opn->type_right),
-                          type_right);
+        BoxTypeCmp match_right = BoxType_Compare(opn->type_right, type_right);
         if (match_right != BOXTYPECMP_DIFFERENT) {
           match->opr = opr;
           match->attr = opn->attr;
@@ -351,7 +349,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     assert((opn->attr & OPR_ATTR_NATIVE) && (opn->attr & OPR_ATTR_BINARY));
 
     result = Value_New(c->cur_proc);
-    Value_Setup_As_Temp_Old(result, opn->type_result);
+    Value_Setup_As_Temp(result, opn->type_result);
     v_left = Value_To_Temp_Or_Target(v_left);
     v_right = Value_To_Temp_Or_Target(v_right);
     BoxVMCode_Assemble(c->cur_proc, opn->implem.opcode,
@@ -362,8 +360,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     return result;
 
   case OPASMSCHEME_RL_R_BIN:
-    if (BoxType_Compare(BoxType_From_Id(& c->ts, opn->type_result),
-                        v_right->type)
+    if (BoxType_Compare(opn->type_result, v_right->type)
         != BOXTYPECMP_DIFFERENT) {
       Value *v_tmp = v_left;
       v_left = v_right;
@@ -373,10 +370,10 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     v_left = Value_To_Temp(v_left);
 
     result = Value_New(c->cur_proc);
-    Value_Setup_As_Temp_Old(result, opn->type_result);
+    Value_Setup_As_Temp(result, opn->type_result);
 
     BoxVMCode_Assemble(c->cur_proc, opn->implem.opcode,
-                     2, & v_left->value.cont, & v_right->value.cont);
+                       2, & v_left->value.cont, & v_right->value.cont);
 
     result = v_left;
     break;
@@ -411,8 +408,8 @@ Value *BoxCmp_Opr_Emit_UnOp(BoxCmp *c, ASTUnOp op, Value *v) {
   opn = BoxCmp_Operator_Find_Opn(c, opr, & match, v->type, NULL, NULL);
   if (opn) {
     /* Now we expand the types, if necessary */
-    if (match.match_left == TS_TYPES_EXPAND)
-      v = Value_Expand(v, BoxType_From_Id(& c->ts, match.expand_type_left));
+    if (match.match_left == BOXTYPECMP_MATCHING)
+      v = Value_Expand(v, match.expand_type_left);
 
     v_result = My_Opn_Emit(c, opn, v, v); /* XXX */
 
@@ -454,11 +451,11 @@ Value *BoxCmp_Opr_Emit_BinOp(BoxCmp *c, ASTBinOp op,
                                  v_right->type, NULL);
   if (opn) {
     /* Now we expand the types, if necessary */
-    if (match.match_left == TS_TYPES_EXPAND)
-      v_left = Value_Expand(v_left, BoxType_From_Id(& c->ts, match.expand_type_left));
+    if (match.match_left == BOXTYPECMP_MATCHING)
+      v_left = Value_Expand(v_left, match.expand_type_left);
 
-    if (match.match_right == TS_TYPES_EXPAND)
-      v_right = Value_Expand(v_right, BoxType_From_Id(& c->ts, match.expand_type_right));
+    if (match.match_right == BOXTYPECMP_MATCHING)
+      v_right = Value_Expand(v_right, match.expand_type_right);
 
     /* XXX */
     v_result = My_Opn_Emit(c, opn, v_left, v_right);
@@ -494,8 +491,8 @@ BoxTask BoxCmp_Opr_Try_Emit_Conversion(BoxCmp *c, Value *dest, Value *src) {
 
   if (opn) {
     /* Now we expand the types, if necessary */
-    if (match.match_left == TS_TYPES_EXPAND)
-      src = Value_Expand(src, BoxType_From_Id(& c->ts, match.expand_type_left));
+    if (match.match_left == BOXTYPECMP_MATCHING)
+      src = Value_Expand(src, match.expand_type_left);
 
     if (opn->asm_scheme == OPASMSCHEME_STD_UN) {
       BoxVMCode_Assemble(c->cur_proc, opn->implem.opcode,
