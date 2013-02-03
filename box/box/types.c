@@ -76,18 +76,6 @@ void *BoxType_Alloc(BoxType **t, BoxTypeClass tc) {
   return & ((BoxTypeBundle *) td)->data;
 }
 
-/* Transition function needed to make the old and new type interchangable. */
-BoxTypeId BoxType_Get_Id(BoxType *t) {
-  BoxTypeId id = (t) ? t->type_id : BOXTYPEID_NONE;
-  assert((id == BOXTYPEID_NONE) == (t == NULL));
-  return id;
-}
-
-void BoxType_Set_Id(BoxType *t, BoxTypeId id) {
-  t->type_id = id;
-}
-
-
 /* Get the type class of a given type. The type class is effectively the
  * type of type (the answer to whether the type is a struct, a species, etc.)
  */
@@ -753,11 +741,20 @@ BoxBool BoxType_Get_Subtype_Info(BoxType *subtype, char **name,
   return BOXBOOL_FALSE;
 }
 
+/* Return whether the subtype was registered (it has a definite type). */
+BoxBool BoxType_Is_Registered_Subtype(BoxType *subtype) {
+  if (subtype->type_class == BOXTYPECLASS_SUBTYPE_NODE) {
+    BoxTypeSubtypeNode *td = BoxType_Get_Data(subtype);
+    return (td->type) ? BOXBOOL_TRUE : BOXBOOL_FALSE;
+  }
+  return BOXBOOL_FALSE; 
+}
+
 /* Register the type for a given subtype, if not given during creation. */
 BoxBool BoxType_Register_Subtype(BoxType *subtype, BoxType *type) {
   if (subtype->type_class == BOXTYPECLASS_SUBTYPE_NODE) {
     BoxTypeSubtypeNode *td = BoxType_Get_Data(subtype);
-    if (td->type != NULL)
+    if (td->type)
       return BOXBOOL_FALSE;
     td->type = type ? BoxType_Link(type) : NULL;
     return BOXBOOL_TRUE;

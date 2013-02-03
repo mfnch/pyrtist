@@ -246,9 +246,9 @@ void Value_Setup_As_Type_Name(Value *v, const char *name) {
   v->name = Box_Mem_Strdup(name);
 }
 
-void Value_Setup_As_Type(Value *v, BoxTypeId t) {
+void Value_Setup_As_Type(Value *v, BoxType *t) {
   v->kind = VALUEKIND_TYPE;
-  v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts, t));
+  v->type = BoxType_Link(t);
   v->value.cont.type = BoxType_Get_Cont_Type(v->type);
 }
 
@@ -1446,18 +1446,16 @@ void Value_Setup_As_Child(Value *v, BoxType *child_t) {
 }
 
 static Value *My_Get_Ptr_To_New_Value(BoxVMCode *proc, BoxType *t) {
-  TS *ts = & proc->cmp->ts;
-  BoxTypeId t_old = BoxType_Get_Id(t);
-  if (TS_Is_Fast(ts, t_old)) {
+  if (BoxType_Is_Fast(t)) {
     /* Create a structure type containing just one item of type t, allocate
      * that and get a pointer to it.
      * NOTE: this can be improved. We should not keep generating new
      *  structures each time the function is called, but rather cache them!
      */
     Value *v = Value_Create(proc);
-    BoxTypeId t_struc = BoxTS_Begin_Struct(ts);
-    BoxTS_Add_Struct_Member(ts, t_struc, t_old, NULL);
-    Value_Setup_As_Temp_Old(v, t_struc);
+    BoxType *t_struc = BoxType_Create_Structure();
+    BoxType_Add_Member_To_Structure(t_struc, t, NULL);
+    Value_Setup_As_Temp(v, t_struc);
     return Value_Cast_To_Ptr(v);
 
   } else {
@@ -1469,7 +1467,6 @@ static Value *My_Get_Ptr_To_New_Value(BoxVMCode *proc, BoxType *t) {
 
 Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
   BoxCmp *c = v_parent->proc->cmp;
-  TS *ts = & c->ts;
   BoxType *found_subtype;
   Value *v_subtype = NULL;
 
@@ -1484,7 +1481,7 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
     if (found_subtype != NULL)
       break;
 
-    if (TS_Is_Subtype(ts, BoxType_Get_Id(v_parent->type))) {
+    if (BoxType_Is_Subtype(v_parent->type)) {
       v_parent = Value_Expand_Subtype(v_parent);
       if (v_parent == NULL)
         return NULL;
@@ -1500,14 +1497,14 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
   assert(found_subtype);
 
   /* First, we create the subtype object (a pair of pointers) */
-  v_subtype = Value_New(c->cur_proc);
+  v_subtype = Value_Create(c->cur_proc);
   Value_Setup_As_Temp(v_subtype, found_subtype);
 
   BoxType *t_child;
   BoxType_Get_Subtype_Info(found_subtype, NULL, NULL, & t_child);
   if (!BoxType_Is_Empty(t_child)) {
     /* Next, we create the child and get a pointer to it */
-    Value *v_ptr = Value_New(c->cur_proc),
+    Value *v_ptr = Value_Create(c->cur_proc),
           *v_subtype_child;
     v_subtype_child = My_Get_Ptr_To_New_Value(c->cur_proc, t_child);
 
@@ -1523,8 +1520,8 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
 
   /* We now create the value for the parent Pointer in the subtype */
   if (!BoxType_Is_Empty(v_parent->type)) {
-    Value *v_subtype_parent = Value_New(c->cur_proc),
-          *v_ptr = Value_New(c->cur_proc);
+    Value *v_subtype_parent = Value_Create(c->cur_proc),
+          *v_ptr = Value_Create(c->cur_proc);
     Value_Setup_As_Weak_Copy(v_ptr, v_subtype);
     v_ptr = Value_Get_Subfield(v_ptr, /*offset*/ sizeof(BoxPtr),
                                Box_Get_Core_Type(BOXTYPEID_PTR));
@@ -1541,24 +1538,22 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
 
 static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
   BoxCmp *c = v_subtype->proc->cmp;
-  TS *ts = & c->ts;
   Value *v_ret = NULL;
 
   if (Value_Want_Value(v_subtype)) {
-    BoxTypeId t_subtype = BoxType_Get_Id(v_subtype->type);
-    if (TS_Is_Subtype(ts, t_subtype)) {
+    if (BoxType_Is_Subtype(v_subtype->type)) {
       BoxType *t_parent, *t_child;
       BoxBool success = BoxType_Get_Subtype_Info(v_subtype->type, NULL,
                                                  & t_parent, & t_child);
       assert(success);
       BoxType *t_ret = get_child ? t_child : t_parent;
       if (BoxType_Is_Empty(t_ret)) {
-        v_ret = Value_New(c->cur_proc);
+        v_ret = Value_Create(c->cur_proc);
         Value_Setup_As_Temp(v_ret, t_ret);
 
       } else {
         size_t offset = get_child ? 0 : sizeof(BoxPtr);
-        v_ret = Value_New(c->cur_proc);
+        v_ret = Value_Create(c->cur_proc);
         /* FIXME: see Value_Init */
         Value_Setup_As_Weak_Copy(v_ret, v_subtype);          
         v_ret = Value_Get_Subfield(v_ret, offset,
@@ -1593,8 +1588,7 @@ Value *Value_Subtype_Get_Parent(Value *v_subtype) {
 
 Value *Value_Expand_Subtype(Value *v) {
   if (Value_Is_Value(v)) {
-    BoxCmp *c = v->proc->cmp;
-    if (TS_Is_Subtype(& c->ts, BoxType_Get_Id(v->type))) {
+    if (BoxType_Is_Subtype(v->type)) {
       int subtype_was_target = (v->kind == VALUEKIND_TARGET);
       v = Value_Subtype_Get_Child(v);
       if (subtype_was_target)

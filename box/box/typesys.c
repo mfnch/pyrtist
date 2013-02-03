@@ -124,7 +124,6 @@ void TS_Set_New_Style_Type(BoxTS *ts, BoxTypeId old_type, BoxType *new_type) {
   if (old_type != BOXTYPEID_NONE) {
     TSDesc *old_type_td = Type_Ptr(ts, old_type);
     old_type_td->new_type = new_type;
-    BoxType_Set_Id(new_type, old_type);
   }
 }
 
@@ -519,9 +518,11 @@ TS_Subtype_New(TS *ts, BoxTypeId parent_old, const char *child_name) {
 
   parent_new = TS_Get_New_Style_Type(ts, parent_old);
   assert(parent_new);
+
   subtype_new = BoxType_Create_Subtype(parent_new, child_name, NULL);
   assert(subtype_new);
   TS_Set_New_Style_Type(ts, subtype_old, BoxType_Link(subtype_new));
+
   return subtype_old;
 }
 

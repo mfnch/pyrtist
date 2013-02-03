@@ -439,7 +439,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
       type_to_register->name != NULL;
       ++type_to_register) {
     Value *v = Value_New(c->cur_proc);
-    Value_Setup_As_Type(v, type_to_register->type);
+    Value_Setup_As_Type(v, BoxType_From_Id(& c->ts, type_to_register->type));
     Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT,
                         type_to_register->name, v);
     Value_Unlink(v);
@@ -668,8 +668,8 @@ BoxTypeId Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
   new_type = BoxTS_New_Alias_With_Name(& c->ts, ret, name);
 
   (void) Bltin_Proc_Def(c, new_type, arg, fn);
-  v = Value_New(c->cur_proc);
-  Value_Setup_As_Type(v, new_type);
+  v = Value_Create(c->cur_proc);
+  Value_Setup_As_Type(v, BoxType_From_Id(& c->ts, new_type));
   Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, name, v);
   Value_Unlink(v);
   return new_type;
@@ -802,10 +802,10 @@ void Bltin_Finish(BoxCmp *c) {
 BoxTypeId Bltin_New_Type(BoxCmp *c, const char *type_name,
                          size_t type_size, size_t alignment) {
   TS *ts = & c->ts;
-  Value *v = Value_New(c->cur_proc);
+  Value *v = Value_Create(c->cur_proc);
   BoxTypeId t =
     BoxTS_New_Intrinsic_With_Name(ts, type_size, alignment, type_name);
-  Value_Setup_As_Type(v, t);
+  Value_Setup_As_Type(v, BoxType_From_Id(& c->ts, t));
   Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, type_name, v);
   Value_Unlink(v);
   return t;

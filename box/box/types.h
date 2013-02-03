@@ -112,13 +112,6 @@ typedef enum {
  * TYPE CREATION ROUTINES                                                    *
  *****************************************************************************/
 
-/* Transition functions. */
-BOXEXPORT BoxTypeId
-BoxType_Get_Id(BoxType *t);
-
-BOXEXPORT void
-BoxType_Set_Id(BoxType *t, BoxTypeId id);
-
 /**
  * @brief Get the type class of a given type. The type class is effectively the
  *   type of type (the answer to whether the type is a struct, a species, etc.)
@@ -434,16 +427,26 @@ BoxType_Get_Subtype_Info(BoxType *subtype, char **name,
                          BoxType **parent, BoxType **type);
 
 /**
+ * @brief Return whether the subtype was registered (it has a definite type).
+ *
+ * @param subtype A subtype.
+ * @return Whether the subtype was registered. A subtype is registered when
+ *   it is given all non @c NULL arguments to BoxType_Create_Subtype() or
+ *   when it is registered with BoxType_Register_Subtype().
+ */
+BOXEXPORT BoxBool
+BoxType_Is_Registered_Subtype(BoxType *subtype);
+
+/**
  * @brief Register the type for a given subtype, if not given during creation.
  *
- * @param subtype A subtype created with BoxType_Create_Subtype, giving
- *   NULL for the type.
+ * @param subtype A subtype created with BoxType_Create_Subtype(), giving
+ *   @p NULL for the type.
  * @param type The type to associate to the subtype.
  * @return Whether the operation was successful.
  */
 BOXEXPORT BoxBool
 BoxType_Register_Subtype(BoxType *subtype, BoxType *type);
-
 
 /**
  * @brief Identifier used to determine the state of a Box.

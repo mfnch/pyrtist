@@ -153,7 +153,7 @@ void Value_Setup_As_Var_Name(Value *v, const char *name);
 void Value_Setup_As_Type_Name(Value *v, const char *name);
 
 /** Set the value to represent the given type */
-void Value_Setup_As_Type(Value *v, BoxTypeId t);
+void Value_Setup_As_Type(Value *v, BoxType *t);
 
 /** Set the value to represent the given immediate char 'c' */
 void Value_Setup_As_Imm_Char(Value *v, BoxChar c);
