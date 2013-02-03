@@ -165,6 +165,7 @@ static void My_Register_Compare_Str(BoxCmp *c) {
   BoxType_Add_Member_To_Structure(str_couple, str, NULL);
   Bltin_Proc_Def(Box_Get_Core_Type(BOXTYPEID_COMPARE),
                  str_couple, My_Compare_Str);
+  (void) BoxType_Unlink(str_couple);
 }
 
 void Bltin_Str_Register_Procs(BoxCmp *c) {
