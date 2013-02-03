@@ -376,7 +376,7 @@ void BoxType_Add_Type(BoxType *parent, BoxType *child) {
 }
 
 /* Create a new raised type. */
-BoxType *BoxType_Create_Raised(BoxType *source) {
+BoxType *BoxType_Create_Raised(BOXIN BoxType *source) {
   BoxType *t;
   BoxTypeRaised *td = BoxType_Alloc(& t, BOXTYPECLASS_RAISED);
   td->source = source;
@@ -1155,6 +1155,9 @@ BoxBool BoxType_Is_Fast(BoxType *t) {
 
 /* Get a string representation of the given type. */
 char *BoxType_Get_Repr(BoxType *t) {
+  if (!t)
+    return Box_Mem_Strdup("<null>");
+
   switch (t->type_class) {
   case BOXTYPECLASS_STRUCTURE_NODE:
   case BOXTYPECLASS_SPECIES_NODE:

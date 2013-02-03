@@ -260,15 +260,13 @@ void Value_Setup_As_Imm_Char(Value *v, BoxChar c) {
 
 void Value_Setup_As_Imm_Int(Value *v, BoxInt i) {
   v->kind = VALUEKIND_IMM;
-  v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts,
-                                         v->proc->cmp->bltin.species_int));
+  v->type = BoxType_Link(Box_Get_Core_Type(BOXTYPEID_SINT));
   BoxCont_Set(& v->value.cont, "ii", i);
 }
 
 void Value_Setup_As_Imm_Real(Value *v, BoxReal r) {
   v->kind = VALUEKIND_IMM;
-  v->type = BoxType_Link(BoxType_From_Id(& v->proc->cmp->ts,
-                                         v->proc->cmp->bltin.species_real));
+  v->type = BoxType_Link(Box_Get_Core_Type(BOXTYPEID_SREAL));
   BoxCont_Set(& v->value.cont, "ir", r);
 }
 
@@ -281,12 +279,6 @@ void Value_Setup_As_Void(Value *v) {
 void Value_Setup_As_Temp(Value *v, BoxType *t) {
   ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
   Value_Setup_Container(v, t, & vc);
-  Value_Emit_Allocate(v);
-}
-
-void Value_Setup_As_Temp_Old(Value *v, BoxTypeId t) {
-  ValContainer vc = {VALCONTTYPE_LREG, -1, 0};
-  Value_Setup_Container(v, BoxType_From_Id(& v->proc->cmp->ts, t), & vc);
   Value_Emit_Allocate(v);
 }
 
@@ -324,7 +316,7 @@ void Value_Setup_As_String(Value *v_str, const char *str) {
   Value_Init(& v_str_data, v_str->proc);
   Value_Setup_Container(& v_str_data, Box_Get_Core_Type(BOXTYPEID_OBJ), & vc);
 
-  Value_Setup_As_Temp_Old(v_str, c->bltin.string);
+  Value_Setup_As_Temp(v_str, Box_Get_Core_Type(BOXTYPEID_STR));
 
   Value_Unlink(Value_Emit_Call(v_str, & v_str_data, & success));
   if (success != BOXTASK_OK) {
@@ -1065,9 +1057,8 @@ static Value *My_Point_Get_Member(Value *v_point, const char *memb) {
                            & v_memb->value.cont, & v_point->value.cont);
         Value_Unlink(v_point);
         v_memb->kind = VALUEKIND_TARGET;
-        return
-          Value_Get_Subfield(v_memb, (size_t) 0,
-                             BoxType_From_Id(& c->ts, c->bltin.species_real));
+        return Value_Get_Subfield(v_memb, (size_t) 0,
+                                  Box_Get_Core_Type(BOXTYPEID_SREAL));
       }
     }
   }

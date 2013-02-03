@@ -127,7 +127,7 @@ Operation *Operator_Add_Opn(Operator *opr, BoxType *type_left,
   opn->type_right = BoxType_Link(type_right);
   opn->type_result = BoxType_Link(type_result);
 
-  /** Link to chain */
+  /* Link to chain */
   opn->next = opr->first_operation;
   opn->previous = NULL;
   if (opr->first_operation)

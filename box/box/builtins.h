@@ -17,7 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file builtins.h
+/**
+ * @file builtins.h
  * @brief Register built-in types and functions(calling other bltin modules).
  *
  * This file registers the fundamental types of Box, calling also the init
@@ -28,29 +29,15 @@
 #  define _BUILTINS_H
 
 #  include <box/types.h>
-#  include <box/typesys.h>
 #  include <box/cmpptrs.h>
 
 /** Builtin types */
 typedef struct {
-  BoxTypeId string,
-          length,
-          num,
-          valid,
-          compare,
-          repr,
-          struc_real_real,
-          species_int,
-          species_real,
-          species_point,
+  BoxTypeId
           alias_if,
           alias_else,
           alias_elif,
-          alias_for,
-          print,
-          exit,
-          file,
-          any;
+          alias_for;
   BoxVMCallNum
           subtype_init,
           subtype_finish;
@@ -74,21 +61,31 @@ BoxVMCallNum Bltin_Proc_Add(BoxCmp *c, const char *proc_name,
  * function has returned, Box programs will be able to find the combination
  * and use it!
  */
-void Bltin_Comb_Def(TS *ts, BoxTypeId child, BoxCombType comb,
-                    BoxTypeId parent, BoxTask (*c_fn)(BoxVMX *));
+void Bltin_Comb_Def(BoxType *child, BoxCombType comb,
+                    BoxType *parent, BoxTask (*c_fn)(BoxVMX *));
+
+void Bltin_Comb_Def_With_Ids(BoxTypeId child, BoxCombType comb_type,
+                             BoxTypeId parent, BoxTask (*c_fn)(BoxVMX *));
+
+
+void Bltin_Proc_Def(BoxType *parent, BoxType *child,
+                    BoxTask (*c_fn)(BoxVMX *));
+
+void Bltin_Proc_Def_With_Id(BoxType *parent, BoxTypeId child_id,
+                            BoxTask (*c_fn)(BoxVMX *));
 
 /** Similar to 'Bltin_Comb_Def' but assumes 'comb == BOXCOMBTYPE_AT'.
  * @see Bltin_Comb_Def
  */
-void Bltin_Proc_Def(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
+void Bltin_Proc_Def_With_Ids(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
                     BoxTask (*c_fn)(BoxVMX *));
 
 /** Define a new intrinsic type with the given name and size. */
-BoxTypeId Bltin_New_Type(BoxCmp *c, const char *type_name,
-                         size_t type_size, size_t alignment);
+BoxType *Bltin_Create_Type(BoxCmp *c, const char *type_name,
+                           size_t type_size, size_t alignment);
 
 /** Convenient function to define a new intrinsic type from a given C type. */
-#define BLTIN_NEW_TYPE(c, type_name, type) \
-  Bltin_New_Type((c), (type_name), sizeof(type), __alignof__(type))
+#define BLTIN_CREATE_TYPE(c, type_name, type) \
+  Bltin_Create_Type((c), (type_name), sizeof(type), __alignof__(type))
 
 #endif

@@ -73,12 +73,12 @@ dist_boxpkg_DATA=core.dox
 
 # *** box compiler ***
 noinst_HEADERS = vmdasm_priv.h fileutils.h registers.h tokenizer.h macro.h	\
-  parserh.h typesys.h paths.h vmcode.h ast.h cmpptrs.h value.h compiler.h	\
-  operator.h namespace.h builtins.h bltinstr.h bltinio.h
+  parserh.h paths.h vmcode.h ast.h cmpptrs.h value.h compiler.h operator.h	\
+  namespace.h builtins.h bltinstr.h bltinio.h
 
-box_SOURCES = fileutils.c tokenizer.l macro.c parser.y registers.c typesys.c	\
-  paths.c main.c vmcode.c ast.c value.c compiler.c operator.c namespace.c	\
-  builtins.c bltinstr.c bltinio.c
+box_SOURCES = fileutils.c tokenizer.l macro.c parser.y registers.c paths.c	\
+  main.c vmcode.c ast.c value.c compiler.c operator.c namespace.c builtins.c	\
+  bltinstr.c bltinio.c
 
 box_LDADD = libboxcore0.4.la
 box_LDFLAGS = -static

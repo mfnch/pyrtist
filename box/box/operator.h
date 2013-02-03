@@ -26,7 +26,6 @@
 #ifndef _OPERATOR_H_TYPES
 #  define _OPERATOR_H_TYPES
 
-#  include "typesys.h"
 #  include "value.h"
 #  include "ast.h"
 #  include "cmpptrs.h"

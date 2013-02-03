@@ -23,6 +23,7 @@
 #include <box/obj.h>
 #include <box/core.h>
 #include <box/coremath.h>
+#include <box/str.h>
 
 #include <box/types_priv.h>
 #include <box/bltinarray_priv.h>
@@ -81,6 +82,8 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
     {"([)", BOXTYPEID_BEGIN, (size_t) 0, (size_t) 0},
     {"(])", BOXTYPEID_END, (size_t) 0, (size_t) 0},
     {"(;)", BOXTYPEID_PAUSE, (size_t) 0, (size_t) 0},
+    {"Str", BOXTYPEID_STR, sizeof(BoxStr), __alignof__(BoxStr)},
+    {"Print", BOXTYPEID_PRINT, 0, 0},
     {"ARRAY", BOXTYPEID_ARRAY, sizeof(BoxArray), __alignof__(BoxArray)},
     {(const char *) NULL, BOXTYPEID_NONE, (size_t) 0, (size_t) 0}
 
@@ -109,8 +112,9 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
 }
 
 /* Create species. */
-static void My_Init_Species(BoxCoreTypes *ct, BoxBool *success) {
+static void My_Init_Composite_Types(BoxCoreTypes *ct, BoxBool *success) {
   BoxType *t;
+  BoxType *real_couple;
 
   /* Int = (CHAR => INT) */
   t = BoxType_Create_Species();
@@ -133,22 +137,50 @@ static void My_Init_Species(BoxCoreTypes *ct, BoxBool *success) {
 
   /* Point = ((Real x, y) => POINT) */
   t = BoxType_Create_Species();
+  real_couple = BoxType_Create_Structure();
   if (t) {
     BoxType *real_type = ct->types[BOXTYPEID_SREAL];
-    BoxType *point_struct = BoxType_Create_Structure();
-    if (real_type && point_struct) {
-      BoxType_Add_Member_To_Structure(point_struct, real_type, "x");
-      BoxType_Add_Member_To_Structure(point_struct, real_type, "y");
-      BoxType_Add_Member_To_Species(t, point_struct);
+    if (real_type && real_couple) {
+      BoxType_Add_Member_To_Structure(real_couple, real_type, "x");
+      BoxType_Add_Member_To_Structure(real_couple, real_type, "y");
+      BoxType_Add_Member_To_Species(t, real_couple);
       BoxType_Add_Member_To_Species(t, ct->types[BOXTYPEID_POINT]);
       t = BoxType_Create_Ident(t, "Point");
     } else {
       (void) BoxType_Unlink(t);
       t = NULL;
     }
-    (void) BoxType_Unlink(point_struct);
   }
-  My_Set_Type(ct, BOXTYPEID_SREAL, t, success);
+  My_Set_Type(ct, BOXTYPEID_REAL_COUPLE, real_couple, success);
+  My_Set_Type(ct, BOXTYPEID_SPOINT, t, success);
+
+  /* Repr = Str */
+  t = BoxType_Create_Ident(BoxType_Link(ct->types[BOXTYPEID_STR]), "Repr");
+  My_Set_Type(ct, BOXTYPEID_REPR, t, success);
+
+  /* Num = Int */
+  t = BoxType_Create_Ident(BoxType_Link(ct->types[BOXTYPEID_SINT]), "Num");
+  My_Set_Type(ct, BOXTYPEID_NUM, t, success);
+
+  /* If = Int */
+  t = BoxType_Create_Raised(BoxType_Link(ct->types[BOXTYPEID_INT]));
+  t = BoxType_Create_Ident(t, "If");
+  My_Set_Type(ct, BOXTYPEID_IF, t, success);
+
+  /* Else = Void */
+  t = BoxType_Create_Raised(BoxType_Link(ct->types[BOXTYPEID_VOID]));
+  t = BoxType_Create_Ident(t, "Else");
+  My_Set_Type(ct, BOXTYPEID_ELSE, t, success);
+
+  /* Elif = Int */
+  t = BoxType_Create_Raised(BoxType_Link(ct->types[BOXTYPEID_INT]));
+  t = BoxType_Create_Ident(t, "Elif");
+  My_Set_Type(ct, BOXTYPEID_ELIF, t, success);
+
+  /* For = Int */
+  t = BoxType_Create_Raised(BoxType_Link(ct->types[BOXTYPEID_INT]));
+  t = BoxType_Create_Ident(t, "For");
+  My_Set_Type(ct, BOXTYPEID_FOR, t, success);
 }
 
 /* Initialize the core types of Box. */
@@ -157,7 +189,7 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
 
   core_types->initialized = BOXBOOL_TRUE;
   My_Init_Basic_Types(core_types, & success);
-  My_Init_Species(core_types, & success);
+  My_Init_Composite_Types(core_types, & success);
 
 #if 0
   /* Register math core functions. */

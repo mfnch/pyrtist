@@ -192,7 +192,7 @@ BoxType_Create_Ident(BOXIN BoxType *source, const char *name);
  * @return A new raised type.
  */
 BOXEXPORT BoxType *
-BoxType_Create_Raised(BoxType *source);
+BoxType_Create_Raised(BOXIN BoxType *source);
 
 /**
  * @brief Un-raise a raised type.

@@ -22,7 +22,6 @@
 
 #include "types.h"
 #include "mem.h"
-#include "typesys.h"
 #include "messages.h"
 #include "vm_priv.h"
 #include "builtins.h"
@@ -110,11 +109,11 @@ static BoxTask My_File_Str(BoxVMX *vm) {
 
 void Bltin_IO_Register(BoxCmp *c) {
   /* Register the new type File */
-  BoxTypeId t_file = BLTIN_NEW_TYPE(c, "File", File);
-  Bltin_Proc_Def(c, t_file,  BOXTYPEID_INIT, My_File_Create);
-  Bltin_Proc_Def(c, t_file,  BOXTYPEID_FINISH, My_File_Destroy);
-  Bltin_Proc_Def(c, t_file,  BOXTYPEID_END, My_File_Close);
-  Bltin_Proc_Def(c, t_file, c->bltin.string, My_File_Str);
+  BoxType *t_file = BLTIN_CREATE_TYPE(c, "File", File);
+  Bltin_Proc_Def(t_file, Box_Get_Core_Type(BOXTYPEID_INIT), My_File_Create);
+  Bltin_Proc_Def(t_file, Box_Get_Core_Type(BOXTYPEID_FINISH), My_File_Destroy);
+  Bltin_Proc_Def(t_file, Box_Get_Core_Type(BOXTYPEID_END), My_File_Close);
+  Bltin_Proc_Def(t_file, Box_Get_Core_Type(BOXTYPEID_STR), My_File_Str);
 }
 
 void Bltin_IO_Unregister(BoxCmp *c) {

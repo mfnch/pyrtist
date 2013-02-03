@@ -138,10 +138,6 @@ void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm) {
   BoxBool success = Box_Initialize_Type_System();
   assert(success);
 
-  TS_Init(& c->ts);
-  TS_Init_Builtin_Types(& c->ts);
-
-
   BoxCmp_Init__Operators(c);
 
   BoxVMCode_Init(& c->main_proc, c, BOXVMCODESTYLE_MAIN);
@@ -166,7 +162,6 @@ void BoxCmp_Finish(BoxCmp *c) {
   BoxArr_Finish(& c->stack);
 
   BoxCmp_Finish__Operators(c);
-  TS_Finish(& c->ts);
 
   if (c->attr.own_vm)
     BoxVM_Destroy(c->vm);
@@ -469,7 +464,7 @@ static void My_Compile_TypeTag(BoxCmp *c, ASTNode *n) {
   /* Should we use c->value.create, etc. ? */
   v = Value_Create(c->cur_proc);
   Value_Init(v, c->cur_proc); // ?????????????????????????????????????????????
-  Value_Setup_As_Type(v, BoxType_From_Id(& c->ts, n->attr.typetag.type));
+  Value_Setup_As_Type(v, Box_Get_Core_Type(n->attr.typetag.type));
   BoxCmp_Push_Value(c, v);
 }
 
@@ -548,7 +543,6 @@ static void My_Compile_Instance(BoxCmp *c, ASTNode *instance) {
 
 static void My_Compile_Box(BoxCmp *c, ASTNode *box,
                            BoxType *t_child, BoxType *t_parent) {
-  TS *ts = & c->ts;
   ASTNode *s;
   Value *parent = NULL, *outer_parent = NULL;
   int parent_is_err = 0;
@@ -657,12 +651,11 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
           assert(status == BOXTASK_FAILURE);
 
           /* Handle the case where stmt_val is an If[] or For[] value */
-          if (BoxType_Compare(stmt_val->type,
-                              BoxType_From_Id(ts, c->bltin.alias_if)))
+          if (BoxType_Compare(stmt_val->type, Box_Get_Core_Type(BOXTYPEID_IF)))
             Value_Emit_CJump(stmt_val, jump_label_next);
 
           else if (BoxType_Compare(stmt_val->type,
-                                   BoxType_From_Id(ts, c->bltin.alias_elif))) {
+                                   Box_Get_Core_Type(BOXTYPEID_ELIF))) {
             if (jump_label_end == BOXVMSYMID_NONE)
               jump_label_end = BoxVMCode_Jump_Label_New(c->cur_proc);
             BoxVMCode_Assemble_Jump(c->cur_proc, jump_label_end);
@@ -672,7 +665,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
             Value_Emit_CJump(stmt_val, jump_label_next);
 
           } else if (BoxType_Compare(stmt_val->type,
-                                     BoxType_From_Id(ts, c->bltin.alias_else))) {
+                                     Box_Get_Core_Type(BOXTYPEID_ELSE))) {
             if (jump_label_end == BOXVMSYMID_NONE)
               jump_label_end = BoxVMCode_Jump_Label_New(c->cur_proc);
             BoxVMCode_Assemble_Jump(c->cur_proc, jump_label_end);
@@ -682,7 +675,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
             Value_Unlink(stmt_val);
 
           } else if (BoxType_Compare(stmt_val->type,
-                                     BoxType_From_Id(ts, c->bltin.alias_for)))
+                                     Box_Get_Core_Type(BOXTYPEID_FOR)))
             Value_Emit_CJump(stmt_val, jump_label_begin);
 
           else {

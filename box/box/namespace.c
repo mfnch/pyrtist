@@ -27,7 +27,6 @@
 #include "array.h"
 #include "namespace.h"
 #include "value.h"
-#include "typesys.h"
 #include "combs.h"
 
 typedef struct {

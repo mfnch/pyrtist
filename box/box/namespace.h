@@ -31,7 +31,6 @@
 #  include "array.h"
 #  include "hashtable.h"
 #  include "value.h"
-#  include "typesys.h"
 
 /** Namespace floor. Each floor can have its own variables which live just
  * on that floor and are destroyed when the floor is destroyed.

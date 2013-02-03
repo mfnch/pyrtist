@@ -49,7 +49,6 @@ struct _box_cmp {
   BoxVM      *vm;       /**< The target of the compilation */
   BoxArr     stack;     /**< Used during compilation to pass around
                              expressions */
-  BoxTS      ts;        /**< The type system */
   BltinStuff bltin;     /**< Builtin types, etc. */
   Namespace  ns;        /**< The namespace */
   BoxVMCode  main_proc, /**< Main procedure in the module */

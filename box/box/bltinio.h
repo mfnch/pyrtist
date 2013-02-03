@@ -17,7 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file bltinio.h
+/**
+ * @file bltinio.h
  * @brief BuiLTIN Input/Output functions.
  *
  * This file collects the basic input/output functions of Box.
@@ -27,7 +28,6 @@
 #  define _BLTINIO_H
 
 #  include <box/types.h>
-#  include <box/typesys.h>
 #  include <box/cmpptrs.h>
 
 /** Register the builtin IO functions. */

@@ -205,7 +205,6 @@ typedef struct {
 
 struct BoxType_struct {
   BoxTypeClass   type_class;
-  BoxTypeId      type_id;
 
 #if 0
   struct {

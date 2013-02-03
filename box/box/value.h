@@ -166,7 +166,6 @@ void Value_Setup_As_Imm_Real(Value *v, BoxReal r);
 
 /** Set the value to represent a temporary value of the given type */
 void Value_Setup_As_Temp(Value *v, BoxType *t);
-void Value_Setup_As_Temp_Old(Value *v, BoxTypeId t);
 
 /**
  * @brief Create a new local register value.
