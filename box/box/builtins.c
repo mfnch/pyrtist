@@ -360,8 +360,8 @@ void Bltin_Proc_Def_With_Id(BoxType *parent, BoxTypeId child_id,
   Bltin_Comb_Def(child, BOXCOMBTYPE_AT, parent, c_fn);
 }
 
-void Bltin_Proc_Def_With_Ids(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
-                    BoxTask (*c_fn)(BoxVMX *)) {
+void Bltin_Proc_Def_With_Ids(BoxTypeId parent, BoxTypeId child,
+                             BoxTask (*c_fn)(BoxVMX *)) {
   Bltin_Comb_Def_With_Ids(child, BOXCOMBTYPE_AT, parent, c_fn);
 }
 
@@ -380,6 +380,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {"Int",         BOXTYPEID_SINT},
     {"Real",        BOXTYPEID_SREAL},
     {"Point",       BOXTYPEID_SPOINT},
+    {"Num",         BOXTYPEID_NUM},
     {"Str",         BOXTYPEID_STR},
     {"Void",        BOXTYPEID_VOID},
     {"Ptr",         BOXTYPEID_PTR},
@@ -391,6 +392,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {"Print",       BOXTYPEID_PRINT},
     {"Repr",        BOXTYPEID_REPR},
     {"Any",         BOXTYPEID_ANY},
+    {"Compare",     BOXTYPEID_COMPARE},
     {"ARRAY",       BOXTYPEID_ARRAY},
     {(char *) NULL, BOXTYPEID_NONE}
   };
@@ -644,21 +646,17 @@ static void My_Register_Std_IO(BoxCmp *c) {
 }
 
 static void My_Register_Std_Procs(BoxCmp *c) {
-  BoxTypeId
-          t_if    = c->bltin.alias_if,
-          t_elif  = c->bltin.alias_elif,
-          t_for   = c->bltin.alias_for;
-  (void) Bltin_Proc_Def_With_Ids(c,  BOXTYPEID_CHAR, BOXTYPEID_CHAR, My_Char_Char);
-  (void) Bltin_Proc_Def_With_Ids(c,  BOXTYPEID_CHAR,  BOXTYPEID_INT, My_Char_Int);
-  (void) Bltin_Proc_Def_With_Ids(c,  BOXTYPEID_CHAR, BOXTYPEID_REAL, My_Char_Real);
-  (void) Bltin_Proc_Def_With_Ids(c,   BOXTYPEID_INT, BOXTYPEID_SINT, My_Int_Int);
-  (void) Bltin_Proc_Def_With_Ids(c,   BOXTYPEID_INT, BOXTYPEID_REAL, My_Int_Real);
-  (void) Bltin_Proc_Def_With_Ids(c,  BOXTYPEID_REAL, BOXTYPEID_SREAL, My_Real_Real);
-  (void) Bltin_Proc_Def_With_Ids(c, BOXTYPEID_POINT, BOXTYPEID_SPOINT,
-                        My_Point_RealNumCouple);
-  (void) Bltin_Proc_Def_With_Ids(c,          t_if,    BOXTYPEID_SINT, My_If_Int);
-  (void) Bltin_Proc_Def_With_Ids(c,        t_elif,    BOXTYPEID_SINT, My_If_Int);
-  (void) Bltin_Proc_Def_With_Ids(c,         t_for,    BOXTYPEID_SINT, My_For_Int);
+  (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_CHAR, BOXTYPEID_CHAR, My_Char_Char);
+  (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_CHAR,  BOXTYPEID_INT, My_Char_Int);
+  (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_CHAR, BOXTYPEID_REAL, My_Char_Real);
+  (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_INT, BOXTYPEID_SINT, My_Int_Int);
+  (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_INT, BOXTYPEID_REAL, My_Int_Real);
+  (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_REAL, BOXTYPEID_SREAL, My_Real_Real);
+  (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_POINT, BOXTYPEID_SPOINT,
+                                 My_Point_RealNumCouple);
+  (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_IF,    BOXTYPEID_SINT, My_If_Int);
+  (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_ELIF,    BOXTYPEID_SINT, My_If_Int);
+  (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_FOR,    BOXTYPEID_SINT, My_For_Int);
 
   c->bltin.subtype_init = Bltin_Proc_Add(c, "subtype_init", My_Subtype_Init);
   c->bltin.subtype_finish = Bltin_Proc_Add(c, "subtype_finish",
@@ -723,8 +721,8 @@ static void My_Register_Sys(BoxCmp *c) {
                         BOXTYPEID_BEGIN, My_IsValid_Init);
   (void) Bltin_Proc_Def_With_Id(isvalid, BOXTYPEID_INT, My_Int_At_IsValid);
 
-  (void) Bltin_Simple_Fn_Def(c, "Compare", BOXTYPEID_INT,
-                             BOXTYPEID_BEGIN, My_Compare_Init);
+  (void) Bltin_Proc_Def_With_Ids(BOXTYPEID_COMPARE, BOXTYPEID_BEGIN,
+                                 My_Compare_Init);
 }
 
 /* Register bultin types, operation and functions */

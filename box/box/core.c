@@ -78,10 +78,12 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
     {"POINT", BOXTYPEID_POINT, sizeof(BoxPoint), __alignof__(BoxPoint)},
     {"PTR", BOXTYPEID_PTR, sizeof(BoxPtr), __alignof__(BoxPtr)},
     {"Obj", BOXTYPEID_OBJ, sizeof(BoxPtr), __alignof__(BoxPtr)},
-    {"Void", BOXTYPEID_VOID,  (size_t) 0,  (size_t) 0},
+    {"Void", BOXTYPEID_VOID, (size_t) 0,  (size_t) 0},
+    {"(=)", BOXTYPEID_COPY, (size_t) 0,  (size_t) 0},
     {"([)", BOXTYPEID_BEGIN, (size_t) 0, (size_t) 0},
     {"(])", BOXTYPEID_END, (size_t) 0, (size_t) 0},
     {"(;)", BOXTYPEID_PAUSE, (size_t) 0, (size_t) 0},
+    {"CPtr", BOXTYPEID_CPTR, sizeof(BoxCPtr), __alignof__(BoxCPtr)},
     {"Str", BOXTYPEID_STR, sizeof(BoxStr), __alignof__(BoxStr)},
     {"ARRAY", BOXTYPEID_ARRAY, sizeof(BoxArray), __alignof__(BoxArray)},
     {(const char *) NULL, BOXTYPEID_NONE, (size_t) 0, (size_t) 0}
@@ -164,6 +166,10 @@ static void My_Init_Composite_Types(BoxCoreTypes *ct, BoxBool *success) {
   /* Num = Int */
   t = BoxType_Create_Ident(BoxType_Link(ct->types[BOXTYPEID_SINT]), "Num");
   My_Set_Type(ct, BOXTYPEID_NUM, t, success);
+
+  /* Compare = Int */
+  t = BoxType_Create_Ident(BoxType_Link(ct->types[BOXTYPEID_INT]), "Compare");
+  My_Set_Type(ct, BOXTYPEID_COMPARE, t, success);
 
   /* If = Int */
   t = BoxType_Create_Raised(BoxType_Link(ct->types[BOXTYPEID_INT]));

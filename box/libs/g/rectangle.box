@@ -30,7 +30,3 @@ Rectangle@Window[
 ]
 
 Rectangle@Area[diag = $.corner2 - $.corner1, $$ += Abs[diag.x*diag.y]]
-
-//Rectangle@Length[diag = 2.0*($.corner2 - $.corner1)
-//                 $$ += Abs[diag.x] + Abs[diag.y]]
-

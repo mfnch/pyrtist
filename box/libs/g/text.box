@@ -71,7 +71,7 @@ Obj@Text[
 
 ///Intro: add the text to the path.
 Text@Path[
-  If[$.have.pos && Length[$.text] > 0 && $.font.size > 0.0]
+  If[$.have.pos && Num[$.text] > 0 && $.font.size > 0.0]
     p = $.pos
     fsz = $.font.size
     d = Point[.x=fsz, .y=0.0]

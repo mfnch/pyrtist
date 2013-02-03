@@ -33,11 +33,6 @@
 
 /** Builtin types */
 typedef struct {
-  BoxTypeId
-          alias_if,
-          alias_else,
-          alias_elif,
-          alias_for;
   BoxVMCallNum
           subtype_init,
           subtype_finish;
@@ -77,8 +72,8 @@ void Bltin_Proc_Def_With_Id(BoxType *parent, BoxTypeId child_id,
 /** Similar to 'Bltin_Comb_Def' but assumes 'comb == BOXCOMBTYPE_AT'.
  * @see Bltin_Comb_Def
  */
-void Bltin_Proc_Def_With_Ids(BoxCmp *c, BoxTypeId parent, BoxTypeId child,
-                    BoxTask (*c_fn)(BoxVMX *));
+void Bltin_Proc_Def_With_Ids(BoxTypeId parent, BoxTypeId child,
+                             BoxTask (*c_fn)(BoxVMX *));
 
 /** Define a new intrinsic type with the given name and size. */
 BoxType *Bltin_Create_Type(BoxCmp *c, const char *type_name,

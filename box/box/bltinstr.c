@@ -163,7 +163,8 @@ static void My_Register_Compare_Str(BoxCmp *c) {
   BoxType *str_couple = BoxType_Create_Structure();
   BoxType_Add_Member_To_Structure(str_couple, str, NULL);
   BoxType_Add_Member_To_Structure(str_couple, str, NULL);
-  //Bltin_Proc_Def(c->bltin.compare, str_couple, My_Compare_Str);
+  Bltin_Proc_Def(Box_Get_Core_Type(BOXTYPEID_COMPARE),
+                 str_couple, My_Compare_Str);
 }
 
 void Bltin_Str_Register_Procs(BoxCmp *c) {
@@ -176,8 +177,8 @@ void Bltin_Str_Register_Procs(BoxCmp *c) {
   Bltin_Proc_Def_With_Id(str,    BOXTYPEID_INT, My_Str_Int);
   Bltin_Proc_Def_With_Id(str,   BOXTYPEID_REAL, My_Str_Real);
   Bltin_Proc_Def_With_Id(str,  BOXTYPEID_POINT, My_Str_Point);
-  //Bltin_Proc_Def_With_Id(str,    BOXTYPEID_PTR, My_Str_Ptr);
-  //Bltin_Proc_Def_With_Id(str,   BOXTYPEID_CPTR, My_Str_CPtr);
+  Bltin_Proc_Def_With_Id(str,    BOXTYPEID_PTR, My_Str_Ptr);
+  Bltin_Proc_Def_With_Id(str,   BOXTYPEID_CPTR, My_Str_CPtr);
   Bltin_Proc_Def_With_Id(str,    BOXTYPEID_STR, My_Str_Str);
   Bltin_Proc_Def_With_Id(str,    BOXTYPEID_OBJ, My_Str_CString);
   Bltin_Proc_Def_With_Id(num,    BOXTYPEID_STR, My_Length_Str);
