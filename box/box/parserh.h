@@ -26,7 +26,6 @@
 #ifndef _PARSERH_H
 #  define _PARSERH_H
 
-#  include "typesys.h"
 #  include "ast.h"
 #  include "paths.h"
 

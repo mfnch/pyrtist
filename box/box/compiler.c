@@ -459,7 +459,6 @@ static void My_Compile_TypeTag(BoxCmp *c, ASTNode *n) {
   Value *v;
 
   assert(n->type == ASTNODETYPE_TYPETAG);
-  assert(TS_Is_Special(n->attr.typetag.type) != BOXTYPEID_NONE);
 
   /* Should we use c->value.create, etc. ? */
   v = Value_Create(c->cur_proc);
