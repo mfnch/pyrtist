@@ -108,8 +108,8 @@ test.expect(exit_status=0, num_errors=0, num_warnings=0, answer=[])
 #----------------------------------------------------------------------------#
 test = tests.new_test(title="bug 8")
 test.body = """
-ARRAY = (Int item1, item2)
-a = ARRAY[.item1=.item2=0]
+FOO = (Int item1, item2)
+a = FOO[.item1=.item2=0]
 Print["answer=", a]
 """
 test.expect(exit_status=0, num_errors=0, num_warnings=0, answer="(0, 0)")

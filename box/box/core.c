@@ -78,12 +78,11 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
     {"POINT", BOXTYPEID_POINT, sizeof(BoxPoint), __alignof__(BoxPoint)},
     {"PTR", BOXTYPEID_PTR, sizeof(BoxPtr), __alignof__(BoxPtr)},
     {"Obj", BOXTYPEID_OBJ, sizeof(BoxPtr), __alignof__(BoxPtr)},
-    {"Void", BOXTYPEID_VOID, 0, 0},
+    {"Void", BOXTYPEID_VOID,  (size_t) 0,  (size_t) 0},
     {"([)", BOXTYPEID_BEGIN, (size_t) 0, (size_t) 0},
     {"(])", BOXTYPEID_END, (size_t) 0, (size_t) 0},
     {"(;)", BOXTYPEID_PAUSE, (size_t) 0, (size_t) 0},
     {"Str", BOXTYPEID_STR, sizeof(BoxStr), __alignof__(BoxStr)},
-    {"Print", BOXTYPEID_PRINT, 0, 0},
     {"ARRAY", BOXTYPEID_ARRAY, sizeof(BoxArray), __alignof__(BoxArray)},
     {(const char *) NULL, BOXTYPEID_NONE, (size_t) 0, (size_t) 0}
 
@@ -153,6 +152,10 @@ static void My_Init_Composite_Types(BoxCoreTypes *ct, BoxBool *success) {
   }
   My_Set_Type(ct, BOXTYPEID_REAL_COUPLE, real_couple, success);
   My_Set_Type(ct, BOXTYPEID_SPOINT, t, success);
+
+  /* Print = Void */
+  t = BoxType_Create_Ident(BoxType_Link(ct->types[BOXTYPEID_VOID]), "Print");
+  My_Set_Type(ct, BOXTYPEID_PRINT, t, success);
 
   /* Repr = Str */
   t = BoxType_Create_Ident(BoxType_Link(ct->types[BOXTYPEID_STR]), "Repr");

@@ -372,7 +372,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
   struct {
     const char *name;
     BoxTypeId  type;
-  } *type_to_register, types_to_register[] = {
+  } *row, rows[] = {
     {"Char",        BOXTYPEID_CHAR},
     {"INT",         BOXTYPEID_INT},
     {"REAL",        BOXTYPEID_REAL},
@@ -395,14 +395,10 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {(char *) NULL, BOXTYPEID_NONE}
   };
 
-  for(type_to_register = & types_to_register[0];
-      type_to_register->name != NULL;
-      ++type_to_register) {
+  for(row = & rows[0]; row->name; ++row) {
     Value *v = Value_Create(c->cur_proc);
-    BoxType *t = Box_Get_Core_Type(type_to_register->type);
-    Value_Setup_As_Type(v, t);
-    Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT,
-                        type_to_register->name, v);
+    Value_Setup_As_Type(v, Box_Get_Core_Type(row->type));
+    Namespace_Add_Value(& c->ns, NMSPFLOOR_DEFAULT, row->name, v);
     Value_Unlink(v);
   }
 }
