@@ -207,7 +207,7 @@ BoxType_Unraise(BoxType *raised);
 
 /**
  * Create an empty structure. Members can be added with
- * BoxType_Add_Member_To_Structure.
+ * BoxType_Add_Member_To_Structure().
  */
 BOXEXPORT BOXOUT BoxType *
 BoxType_Create_Structure(void);

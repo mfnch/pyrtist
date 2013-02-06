@@ -121,16 +121,16 @@ BoxTypeNode *My_Type_Get_Node(BoxType *t) {
  * @param t The type. 
  * @param num_refs Pointer where the number of references made by the provided
  *   type makes be written (the number of references never exceeds the constant
- *   BOX_MAX_NUM_REFS_IN_TYPE.
+ *   #BOX_MAX_NUM_REFS_IN_TYPE.
  * @param refs Location where to write the references. This is an array of
- *   BoxSPtr objects which should be able to contain at least
- *   BOX_MAX_NUM_REFS_IN_TYPE elements.
+ *   #BoxSPtr objects which should be able to contain at least
+ *   #BOX_MAX_NUM_REFS_IN_TYPE elements.
  * @param num_mems Pointer where the number of allocations made by the provided
  *   type should be written (the number of references never exceeds
- *   the constant BOX_MAX_NUM_MEMS_IN_TYPE.
+ *   the constant #BOX_MAX_NUM_MEMS_IN_TYPE.
  * @param mems Location where to write the pointers to the allocated blocks.
  *   This is an array of pointers which should be able to contain at least
- *   BOX_MAX_NUM_MEMS_IN_TYPE elements.
+ *   #BOX_MAX_NUM_MEMS_IN_TYPE elements.
  *
  * Example:
  * @code
@@ -1146,7 +1146,7 @@ BoxBool BoxType_Is_Any(BoxType *t) {
 BoxBool BoxType_Is_Fast(BoxType *t) {
   BoxType *stem = BoxType_Get_Stem(t);
   if (stem && stem->type_class == BOXTYPECLASS_PRIMARY) {
-    BoxTypePrimary *td = BoxType_Get_Data(t);
+    BoxTypePrimary *td = BoxType_Get_Data(stem);
     return (td->id >= BOXTYPEID_FAST_LOWER && td->id <= BOXTYPEID_FAST_UPPER);
   }
 
