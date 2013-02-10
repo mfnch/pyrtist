@@ -25,9 +25,20 @@
 #ifndef _BOX_BLTINARRAY_H
 #  define _BOX_BLTINARRAY_H
 
+#  include <box/core.h>
+
 /**
  * @brief Box native heterogeneous Array type (ARRAY).
  */
 typedef struct BoxArray_struct BoxArray;
+
+/**
+ * @brief Reserved function used by the compiler to register combinations
+ *   for the ARRAY type.
+ *
+ * This function is not meant to be called by the regular user.
+ */
+BOXEXPORT void
+BoxArray_Register_Combs(void);
 
 #endif /* _BOX_BLTINARRAY_H */

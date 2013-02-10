@@ -24,6 +24,7 @@
 #include <box/core.h>
 #include <box/coremath.h>
 #include <box/str.h>
+#include <box/bltinarray.h>
 
 #include <box/types_priv.h>
 #include <box/bltinarray_priv.h>
@@ -199,6 +200,7 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
   core_types->initialized = BOXBOOL_TRUE;
   My_Init_Basic_Types(core_types, & success);
   My_Init_Composite_Types(core_types, & success);
+  BoxArray_Register_Combs();
 
 #if 0
   /* Register math core functions. */

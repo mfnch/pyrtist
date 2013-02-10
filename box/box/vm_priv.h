@@ -191,7 +191,9 @@ struct BoxVMX_struct {
                                    instruction has been used) */
 };
 
-/** @brief The full status of the virtual machine of Box. */
+/**
+ * @brief The full status of the virtual machine of Box.
+ */
 struct BoxVM_struct {
   BoxArr  types;           /**< Type bound to this VM. */
   BoxHT   types_dict;      /**< Dictionaries to find type IDs the corresponding

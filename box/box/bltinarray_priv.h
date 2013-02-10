@@ -27,9 +27,14 @@
 
 #  include <box/bltinarray.h>
 
+#  include <box/array.h>
+#  include <box/vm.h>
+#  include <box/vm_priv.h>
+#  include <box/str.h>
+#  include <box/builtins.h>
 
 struct BoxArray_struct {
-  int xxx;
+  BoxArr arr;
 };
 
 #endif /* _BOX_BLTINARRAY_PRIV_H */
