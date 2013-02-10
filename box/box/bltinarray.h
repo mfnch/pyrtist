@@ -26,11 +26,23 @@
 #  define _BOX_BLTINARRAY_H
 
 #  include <box/core.h>
+#  include <box/obj.h>
 
 /**
  * @brief Box native heterogeneous Array type (ARRAY).
  */
 typedef struct BoxArray_struct BoxArray;
+
+/**
+ * @brief Box's Get type.
+ */
+typedef BoxAny BoxGet;
+
+/**
+ * @brief Box's Set type.
+ */
+typedef struct BoxSet_struct BoxSet;
+
 
 /**
  * @brief Reserved function used by the compiler to register combinations

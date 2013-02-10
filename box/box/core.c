@@ -86,6 +86,7 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
     {"(;)", BOXTYPEID_PAUSE, (size_t) 0, (size_t) 0},
     {"CPtr", BOXTYPEID_CPTR, sizeof(BoxCPtr), __alignof__(BoxCPtr)},
     {"Str", BOXTYPEID_STR, sizeof(BoxStr), __alignof__(BoxStr)},
+    {"Set", BOXTYPEID_SET, sizeof(BoxSet), __alignof__(BoxSet)},
     {"ARRAY", BOXTYPEID_ARRAY, sizeof(BoxArray), __alignof__(BoxArray)},
     {(const char *) NULL, BOXTYPEID_NONE, (size_t) 0, (size_t) 0}
 
@@ -191,6 +192,10 @@ static void My_Init_Composite_Types(BoxCoreTypes *ct, BoxBool *success) {
   t = BoxType_Create_Raised(BoxType_Link(ct->types[BOXTYPEID_INT]));
   t = BoxType_Create_Ident(t, "For");
   My_Set_Type(ct, BOXTYPEID_FOR, t, success);
+
+  /* Get = Any */
+  t = BoxType_Create_Ident(BoxType_Link(ct->types[BOXTYPEID_ANY]), "Get");
+  My_Set_Type(ct, BOXTYPEID_GET, t, success);
 }
 
 /* Initialize the core types of Box. */

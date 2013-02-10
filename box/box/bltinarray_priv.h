@@ -28,6 +28,7 @@
 #  include <box/bltinarray.h>
 
 #  include <box/array.h>
+#  include <box/obj.h>
 #  include <box/vm.h>
 #  include <box/vm_priv.h>
 #  include <box/str.h>
@@ -35,6 +36,10 @@
 
 struct BoxArray_struct {
   BoxArr arr;
+};
+
+struct BoxSet_struct {
+  BoxAny index, value;
 };
 
 #endif /* _BOX_BLTINARRAY_PRIV_H */

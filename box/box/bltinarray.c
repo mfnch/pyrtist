@@ -102,6 +102,56 @@ static BoxTask My_Any_At_Array(BoxVMX *vm) {
   return BOXTASK_FAILURE;
 }
 
+/* Implementation of Any@Get. */
+static BoxTask My_Any_At_Get(BoxVMX *vm) {
+  BoxAny *get = BoxVMX_Get_Parent_Target(vm);
+  BoxAny *arg = BoxVMX_Get_Child_Target(vm);
+  BoxPtr *get_obj = BoxAny_Get_Obj(get);
+  BoxPtr *arg_obj = BoxAny_Get_Obj(arg);
+
+  if (!get_obj || BoxPtr_Is_Null(get_obj)) {
+    BoxAny_Finish(get);
+    BoxAny_Copy(get, arg);
+    return BOXTASK_OK;
+  } else {
+    BoxType *get_type = BoxAny_Get_Type(get),
+            *idx_type = BoxAny_Get_Type(arg);
+    BoxType *required_type;
+
+    if (!(get_type && idx_type)) {
+      BoxVM_Set_Fail_Msg(vm->vm, "Invalid argument to Any (bad type)");
+      return BOXTASK_FAILURE;
+    }
+
+    required_type = Box_Get_Core_Type(BOXTYPEID_ARRAY);
+    if (BoxType_Compare(required_type, get_type) < BOXTYPECMP_EQUAL) {
+      BoxVM_Set_Fail_Msg(vm->vm, "Container type does not support Get");
+      return BOXTASK_FAILURE;
+    }
+
+    required_type = Box_Get_Core_Type(BOXTYPEID_INT);
+    if (BoxType_Compare(required_type, idx_type) < BOXTYPECMP_EQUAL) {
+      BoxVM_Set_Fail_Msg(vm->vm, "Index must be an integer");
+      return BOXTASK_FAILURE;
+    }
+
+    if (arg_obj) {
+      BoxInt *idx = (BoxInt *) BoxPtr_Get_Target(arg_obj);
+      BoxArray *a = (BoxArray *) BoxPtr_Get_Target(get_obj);
+      if (idx) {
+        BoxAny dst_save = *get;
+        BoxAny *item = BoxArr_Get_Item_Ptr(& a->arr, (size_t) *idx + 1);
+        BoxAny_Copy(get, item);
+        BoxAny_Finish(& dst_save);
+        return BOXTASK_OK;
+      }
+    }
+
+    BoxVM_Set_Fail_Msg(vm->vm, "Empty Any object given as index");
+    return BOXTASK_FAILURE;
+  }
+}
+
 /* Implementation of Array@Num. */
 static BoxTask My_Array_At_Num(BoxVMX *vm) {
   BoxInt *num = BoxVMX_Get_Parent_Target(vm);
@@ -112,12 +162,15 @@ static BoxTask My_Array_At_Num(BoxVMX *vm) {
 
 void BoxArray_Register_Combs(void) {
   BoxType *arr = Box_Get_Core_Type(BOXTYPEID_ARRAY),
+          *get = Box_Get_Core_Type(BOXTYPEID_GET),
           *num = Box_Get_Core_Type(BOXTYPEID_NUM);
 
   Bltin_Proc_Def_With_Id(arr, BOXTYPEID_INIT, My_Init_At_Array);
   Bltin_Proc_Def_With_Id(arr, BOXTYPEID_FINISH, My_Finish_At_Array);
   Bltin_Comb_Def(arr, BOXCOMBTYPE_COPY, arr, My_Array_Copy_Array);
   Bltin_Proc_Def_With_Id(arr, BOXTYPEID_ANY, My_Any_At_Array);
+
+  Bltin_Proc_Def_With_Id(get, BOXTYPEID_ANY, My_Any_At_Get);
 
   Bltin_Proc_Def_With_Id(num, BOXTYPEID_ARRAY, My_Array_At_Num);
 }
