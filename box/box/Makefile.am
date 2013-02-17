@@ -46,10 +46,10 @@ bin_PROGRAMS = box
 
 # *** libboxcore ***
 lib_LTLIBRARIES = libboxcore0.4.la
-boxinc_HEADERS = version.h defaults.h types.h integers.h obj.h exception.h \
-  callable.h core.h error.h mem.h stream.h array.h occupation.h srcpos.h   \
-  msgbase.h messages.h strutils.h print.h hashfunc.h hashtable.h list.h	   \
-  vm_priv.h vmproc.h vmsym.h vmsymstuff.h vmdasm.h vm2txt.h vmserial.h	   \
+boxinc_HEADERS = version.h defaults.h types.h integers.h obj.h exception.h    \
+  callable.h core.h error.h mem.h stream.h array.h occupation.h srcpos.h      \
+  msgbase.h messages.h strutils.h print.h hashfunc.h hashtable.h list.h	      \
+  vm_priv.h vmproc.h vmsym.h vmsymstuff.h vmdasm.h vm2txt.h vm2c.h vmserial.h \
   vmstore.h bltinarray.h
 
 libboxcore0_4_la_SOURCES = types.c types.h types_priv.h combs.c combs.h obj.c  \
@@ -58,7 +58,7 @@ libboxcore0_4_la_SOURCES = types.c types.h types_priv.h combs.c combs.h obj.c  \
   stream.c stream.h stream_priv.h filestream.c occupation.c occupation.h       \
   strutils.c print.c srcpos.c msgbase.c messages.c hashfunc.c hashfunc.h       \
   hashtable.c hashtable.h list.c list.h container.c container.h vm.c vm.h      \
-  vm_priv.h vmdasm.c vmdasm.h vm2txt.c vm2txt.h vmserial.c vmserial.h	       \
+  vm_priv.h vmdasm.c vmdasm.h vm2txt.c vm2txt.h vm2c.c vmserial.c vmserial.h   \
   vmstore.c vmstore.h vmexec.c vmexec_priv.h vmproc.c vmproc.h vmproc_priv.h   \
   vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h vmopregs.c vmopregs_priv.h vmop.c  \
   vmop_priv.h str.c str.h bltinarray.c

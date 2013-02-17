@@ -22,6 +22,7 @@
 
 #include "types.h"
 #include "strutils.h"
+
 #include "vm_priv.h"
 #include "vmdasm_priv.h"
 
@@ -66,8 +67,8 @@ My_Arg_To_Str(char *out, size_t out_size,
   }
 }
 
-static void My_Data_To_Str(char *out, size_t out_size,
-                           BoxTypeId t, void *data) {
+static void
+My_Data_To_Str(char *out, size_t out_size, BoxTypeId t, void *data) {
   switch (t) {
   case BOXTYPEID_CHAR:
     sprintf(out, SChar, *((BoxChar *) data));
@@ -88,7 +89,8 @@ static void My_Data_To_Str(char *out, size_t out_size,
   }
 }
 
-static BoxTask My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
+static BoxTask
+My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
   MyDasmData *data = pass;
   FILE *output = data->output;
   BoxOp *op = & dasm->op;
@@ -215,8 +217,8 @@ static BoxTask My_Op_Dasm(BoxVMDasm *dasm, void *pass) {
  * prog e' il puntatore all'inizio del codice, dim e' la dimensione del codice
  * da tradurre (espresso in "numero di BoxVMWord").
  */
-BoxTask BoxVM_Disassemble(BoxVM *vm, FILE *output,
-                          const void *prog, size_t dim) {
+BoxTask
+BoxVM_Disassemble(BoxVM *vm, FILE *output, const void *prog, size_t dim) {
   MyDasmData data;
   data.output = output;
   data.bytecode = (void *) prog;

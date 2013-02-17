@@ -47,6 +47,7 @@
 #include "vm_priv.h"
 #include "vmproc.h"
 #include "vmsym.h"
+#include "vm2c.h"
 #include "registers.h"
 #include "paths.h"
 #include "compiler.h"
@@ -364,14 +365,18 @@ static BoxTask My_Stage_Write_Asm(BoxUInt flags) {
       close_file = 1;
     }
 
-    /* If the file name ends with'.bvmx' then we also include the hex '*/
-    if (Box_CStr_Ends_With(file_output, ".bvmx")) {
-      BoxVM_Set_Attr(target_vm, BOXVM_ATTR_DASM_WITH_HEX,
-                     BOXVM_ATTR_DASM_WITH_HEX);
+    /* If the file name ends with '.c' then we produce a C file. */
+    if (Box_CStr_Ends_With(file_output, ".c"))
+      BoxVM_Export_To_C_Code(target_vm, out);
+    else {
+      /* If the file name ends with '.bvmx' then we also include the hex. */
+      if (Box_CStr_Ends_With(file_output, ".bvmx"))
+        BoxVM_Set_Attr(target_vm, BOXVM_ATTR_DASM_WITH_HEX,
+                       BOXVM_ATTR_DASM_WITH_HEX);
+      if (BoxVM_Proc_Disassemble_All(target_vm, out) != BOXTASK_OK)
+        return BOXTASK_FAILURE;
     }
 
-    if (BoxVM_Proc_Disassemble_All(target_vm, out) != BOXTASK_OK)
-      return BOXTASK_FAILURE;
 
     if (close_file)
       (void) fclose(out);
