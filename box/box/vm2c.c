@@ -33,7 +33,8 @@
  * @brief 
  */
 typedef struct {
-  FILE *out;
+  FILE    *out;
+  BoxBool error;
 } MyTranslatorData;
 
 /**
@@ -41,6 +42,9 @@ typedef struct {
  */
 #define MY_MAX_ARG_LENGTH (64)
 
+static const char *my_types[] =
+  {"BoxChar", "BoxInt", "BoxReal", "BoxPoint", "BoxPtr"};
+static const char *my_type_chars = "cirpo";
 
 /**
  * @brief 
@@ -50,7 +54,7 @@ My_Arg_To_Str(char *out, size_t out_size,
               int arg_format, BoxTypeId args_type, BoxInt arg_value) {
   BoxInt arg_abs_value = abs(arg_value);
   char reg_char = "vr"[arg_value >= 0],
-       type_char = "cirpo"[args_type];
+       type_char = my_type_chars[args_type];
   switch(arg_format) {
   case BOXCONTCATEG_GREG:
     sprintf(out, "g%c%c" SInt, reg_char, type_char, arg_abs_value);
@@ -61,10 +65,9 @@ My_Arg_To_Str(char *out, size_t out_size,
   case BOXCONTCATEG_PTR:
     {
       char sgn_char = "+-"[arg_value < 0];
-      const char *types[] = {"BoxChar", "BoxInt", "BoxReal", "BoxPoint",
-                           "BoxPtr"};
+      assert(args_type < sizeof(my_types)/sizeof(my_types[0]));
       sprintf(out, "(*(%s *) (ro0.ptr %c " SInt "))",
-              types[args_type], sgn_char, arg_abs_value);
+              my_types[args_type], sgn_char, arg_abs_value);
       break;
     }
   case BOXCONTCATEG_IMM:
@@ -77,6 +80,34 @@ My_Arg_To_Str(char *out, size_t out_size,
   }
 }
 
+static void
+My_Translate_Op_New(MyTranslatorData *data, BoxTypeId args_type,
+                    BoxOp *op) {
+  FILE *out = data->out;
+  BoxInt i, num_vars = op->args[0], num_regs = op->args[1];
+  const char *sep = "";
+  char type_char;
+
+  if (num_vars + num_regs < 1)
+    return;
+
+  assert(args_type < sizeof(my_types)/sizeof(my_types[0]));
+  fprintf(out, "  %s ", my_types[args_type]);
+  type_char = my_type_chars[args_type];
+
+  for (i = 0; i < num_vars; i++) {
+    fprintf(out, "%sv%c%d", sep, type_char, (int) (i + 1));
+    sep = ", ";
+  }
+
+  for (i = 1; i <= num_regs; i++) {
+    fprintf(out, "%sr%c%d", sep, type_char, (int) i);
+    sep = ", ";
+  }
+
+  fprintf(out, ";\n");
+}
+
 /**
  * @brief Translate one single instruction to C code.
  */
@@ -85,6 +116,7 @@ My_Translate_Op(BoxVMDasm *dasm, void *pass) {
   MyTranslatorData *data = (MyTranslatorData *) pass;
   FILE *out = data->out;
   BoxOp *op = & dasm->op;
+  const BoxOpDesc *op_desc = dasm->op_desc;
   char arg_buf[BOX_OP_MAX_NUM_ARGS + 1][MY_MAX_ARG_LENGTH];
   int num_args, num_written_bufs;
 
@@ -94,7 +126,7 @@ My_Translate_Op(BoxVMDasm *dasm, void *pass) {
   /* Now we convert the arguments to string. */
   num_written_bufs = 0;
   if (num_args > 0) {
-    BoxTypeId t = dasm->op_desc->t_id;
+    BoxTypeId t = op_desc->t_id;
     int i;
 
     assert(num_args <= BOX_OP_MAX_NUM_ARGS);
@@ -120,8 +152,25 @@ My_Translate_Op(BoxVMDasm *dasm, void *pass) {
 #endif
 
   switch (op->id) {
+  case BOXOP_CALL_I:
+    fprintf(out, "  ex = fn%s(& gro1, & gro2); if (ex) goto fn_quit;\n",
+            arg_buf[0]);
+    break;
+
+  case BOXOP_NEWC_II:
+    My_Translate_Op_New(data, BOXTYPEID_CHAR, op);
+    break;
   case BOXOP_NEWI_II:
-    //fprintf();
+    My_Translate_Op_New(data, BOXTYPEID_INT, op);
+    break;
+  case BOXOP_NEWR_II:
+    My_Translate_Op_New(data, BOXTYPEID_REAL, op);
+    break;
+  case BOXOP_NEWP_II:
+    My_Translate_Op_New(data, BOXTYPEID_POINT, op);
+    break;
+  case BOXOP_NEWO_II:
+    My_Translate_Op_New(data, BOXTYPEID_PTR, op);
     break;
 
   case BOXOP_MOV_CC:
@@ -130,9 +179,12 @@ My_Translate_Op(BoxVMDasm *dasm, void *pass) {
   case BOXOP_MOV_PP:
     fprintf(out, "  %s = %s;\n", arg_buf[0], arg_buf[1]);
     break;
+  case BOXOP_MOV_OO:
+    fprintf(out, "  MY_MOVE_PTR(%s, %s);\n", arg_buf[0], arg_buf[1]);
+    break;
 
   case BOXOP_RET:
-    fprintf(out, "  return;\n");
+    fprintf(out, "  ex = NULL; goto fn_quit;\n");
     break;
 
   case BOXOP_ADD_II:
@@ -166,7 +218,7 @@ My_Translate_Op(BoxVMDasm *dasm, void *pass) {
 #endif
   case BOXOP_NEG_I:
   case BOXOP_NEG_R:
-    fprintf(out, "  %s = -%s;\n", arg_buf[0]);
+    fprintf(out, "  %s = -%s;\n", arg_buf[0], arg_buf[0]);
     break;
   case BOXOP_NEG_P:
     fprintf(out, "  %s.x = -%s.x;\n", arg_buf[0], arg_buf[0]);
@@ -199,6 +251,7 @@ BoxVM_Export_To_C_Code(BoxVM *vm, FILE *out) {
   const char *fn_sep = "";
 
   /* Prepare the translator datastructures. */
+  data.error = BOXBOOL_FALSE;
   data.out = out;
 
 #if 0
@@ -218,6 +271,21 @@ BoxVM_Export_To_C_Code(BoxVM *vm, FILE *out) {
 
 #endif
 
+  fprintf(out, "#include <stdlib.h>\n"
+          "#include <box/types.h>\n"
+          "#include <box/exception.h>\n\n");
+
+  fprintf(out, "#define MY_MOVE_PTR(src, dst) \\\n"
+          "  do {BoxPtr *s = & (src), *d = & (dst); \\\n"
+          "      if (!BoxPtr_Is_Detached(d)) (void) BoxPtr_Unlink(d); \\\n"
+          "      *d = *s; BoxPtr_Detach(s);} while(0)\n\n");
+
+  fprintf(out, "#define MY_BEGIN_FN \\\n"
+          "  BoxChar rc0; BoxInt ri0; BoxReal rr0; BoxPoint rp0; "
+          "BoxPtr ro0; \\\n"
+          "  BoxPtr gro1 = *parent, gro2 = *child; \\\n"
+          "  BoxException *ex;\n\n");
+
   for (call_num = 1; call_num <= n; call_num++) {
     BoxVMProcInstalled *p = BoxArr_Item_Ptr(& pt->installed, call_num);
 
@@ -236,12 +304,19 @@ BoxVM_Export_To_C_Code(BoxVM *vm, FILE *out) {
         /* Get the pointer to the procedure code and the length. */
         BoxVM_Proc_Get_Ptr_And_Length(vm, & ptr, & length, proc_id);
 
-        fprintf(out, "static void fn%d(void) {\n", (int) call_num);
+        /* Function preamble (declarations, setup...) */
+        fprintf(out,
+                "static BoxException *fn%d(BoxPtr *parent, BoxPtr *child) {\n",
+                (int) call_num);
+        fprintf(out, "  MY_BEGIN_FN\n");
 
         if (BoxVM_Disassemble_Block(vm, ptr, length, My_Translate_Op, & data)
             != BOXTASK_OK)
           return BOXBOOL_FALSE;
-        fprintf(out, "}\n");
+
+        /* Function finalisation stuff (decref all ro registers, etc). */
+        fprintf(out, "\nfn_quit:\n"
+                "  return ex;\n}\n");
       }
     }
 
