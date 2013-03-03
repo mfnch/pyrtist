@@ -558,11 +558,10 @@ My_Exec_Typeof_I(BoxVMX *vmx, void *arg1, void *arg2) {
  }
 
 /**
- * @brief Instruction <tt>box dstptr, srcptr</tt>.
+ * @brief Instruction <tt>box dstptr</tt>.
  *
- * The @c box VM instruction converts the source object @c srcptr into a
- * destination @c ANY object in @c dstptr using the type in @c ro0.
- * Note that @c dstptr must be a pointer to an initialized @c ANY object.
+ * This short version of the @c box VM instruction setups the Any object in
+ * @c srcptr to point to a zero-size object with type stored in @c ro0.
  */
 static void
 My_Exec_Box_O(BoxVMX *vmx, void *arg1, void *arg2) {
@@ -573,7 +572,7 @@ My_Exec_Box_O(BoxVMX *vmx, void *arg1, void *arg2) {
   if (t) {
     BoxPtr src;
     BoxPtr_Nullify(& src);
-    if (BoxAny_Box(dst, & src, t))
+    if (BoxAny_Box(dst, & src, t, BOXBOOL_FALSE))
       return;
     BoxVM_Set_Fail_Msg(vmx->vm, "Boxing operation failed");
   } else
@@ -597,7 +596,31 @@ My_Exec_Box_OO(BoxVMX *vmx, void *arg1, void *arg2) {
          *src = (BoxPtr *) arg2;
 
   if (t) {
-    if (BoxAny_Box(dst, src, t))
+    if (BoxAny_Box(dst, src, t, BOXBOOL_TRUE))
+      return;
+    BoxVM_Set_Fail_Msg(vmx->vm, "Boxing operation failed");
+  } else
+    BoxVM_Set_Fail_Msg(vmx->vm, "Anomalous type in boxing operation");
+
+  vmx->flags.error = vmx->flags.exit = 1;
+}
+
+/**
+ * @brief Instruction <tt>box dstptr, srcptr</tt>.
+ *
+ * The @c box VM instruction converts the source object @c srcptr into a
+ * destination @c ANY object in @c dstptr using the type in @c ro0.
+ * Note that @c dstptr must be a pointer to an initialized @c ANY object.
+ */
+static void
+My_Exec_WBox_OO(BoxVMX *vmx, void *arg1, void *arg2) {
+  BoxInt ri0 = *((BoxInt *) vmx->local[BOXTYPEID_INT].ptr);
+  BoxType *t = BoxVM_Get_Installed_Type(vmx->vm, ri0);
+  BoxPtr *dst = (BoxPtr *) arg1,
+         *src = (BoxPtr *) arg2;
+
+  if (t) {
+    if (BoxAny_Box(dst, src, t, BOXBOOL_FALSE))
       return;
     BoxVM_Set_Fail_Msg(vmx->vm, "Boxing operation failed");
   } else
@@ -781,6 +804,7 @@ static BoxOpTable4Humans op_table_for_humans[] = {
   {BOXGOP_TYPEOF, "typeof", 1, 'i',     "a1", "ri0", "x-", "xx", My_Exec_Typeof_I }, /* typeof reg_i        */
   {   BOXGOP_BOX,    "box", 1, 'o',    "ri0",  "a1", "x-", "xx", My_Exec_Box_O    }, /* box reg_o           */
   {   BOXGOP_BOX,    "box", 2, 'o', "a2,ri0",  "a1", "xx", "xx", My_Exec_Box_OO   }, /* box reg_o, reg_o    */
+  {  BOXGOP_WBOX,   "wbox", 2, 'o', "a2,ri0",  "a1", "xx", "xx", My_Exec_WBox_OO  }, /* wbox reg_o, reg_o   */
   { BOXGOP_UNBOX,  "unbox", 2, 'o', "a2,ri0",  "a1", "xx", "xx", My_Exec_Unbox_OO }, /* unbox reg_o, reg_o  */
   {BOXGOP_DYCALL, "dycall", 2, 'o',     "a2",  "a1", "xx", "xx", My_Exec_Dycall_OO}  /* dycall reg_o, reg_o */
 };

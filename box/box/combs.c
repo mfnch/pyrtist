@@ -89,6 +89,22 @@ BoxType_Define_Combination(BoxType *parent, BoxCombType comb_type,
   return comb;
 }
 
+/* Register a combination with a #BoxCall2 implementation. */
+BoxBool
+BoxType_Define_CCall2_Combination(BoxType *child, BoxCombType comb_type,
+                                  BoxType *parent, const char *uid,
+                                  BoxCCall2 fn) {
+  BoxCallable *callable;
+  BoxType *comb;
+
+  callable = BoxCallable_Create_Undefined(parent, child);
+  callable = BoxCallable_Define_From_CCall2(callable, fn);
+  comb = BoxType_Define_Combination(parent, comb_type, child, callable);
+  assert(comb);
+  BoxCallable_Set_Uid(callable, (BoxUid *) uid);
+  return BOXBOOL_TRUE;
+}
+
 /* Undefine the given combination. */
 void
 BoxType_Undefine_Combination(BoxType *parent, BoxType *comb) {
@@ -103,6 +119,20 @@ BoxType_Undefine_Combination(BoxType *parent, BoxType *comb) {
   /* Create the node. */
   (void) BoxTypeNode_Remove_Node(combs_of_parent, comb);
   (void) BoxType_Unlink(comb);
+}
+
+size_t BoxCombDef_Define(BoxCombDef *defs, size_t num_defs) {
+  size_t i;
+  for (i = 0; i < num_defs; i++) {
+    BoxCombDef *d = & defs[i];
+    BoxType *parent = d->parent ? d->parent : Box_Get_Core_Type(d->parent_id),
+            *child = d->child ? d->child : Box_Get_Core_Type(d->child_id);
+    if (!BoxType_Define_CCall2_Combination(child, d->comb_type, parent,
+                                          d->name, d->call2))
+      return i;
+
+  }
+  return num_defs;
 }
 
 /* Find the non-inherited procedure 'left'@'right'. */

@@ -94,10 +94,14 @@ BoxAny_Copy(BoxAny *dst, BoxAny *src);
  * @param any The ANY object which should be changed to reference @p obj.
  * @param obj The object which should be put inside @p any.
  * @param t The type of @p obj.
+ * @param safe If this is @c BOXBOOL_TRUE, then the object in @p obj is copied
+ *   whenever it is a NULL-block pointer. Otherwise, the object is not copied
+ *   which is unsafe as the Any object may survive even after @p obj is 
+ *   deallocated.
  * @return Whether the boxing operation was successful.
  */
 BOXEXPORT BoxBool
-BoxAny_Box(BoxPtr *any, BoxPtr *obj, BoxType *t);
+BoxAny_Box(BoxPtr *any, BoxPtr *obj, BoxType *t, BoxBool weak);
 
 /**
  * @brief Retrieve the boxed object stored inside the given any object.

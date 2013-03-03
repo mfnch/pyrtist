@@ -450,8 +450,27 @@ BoxCallable_Call2(BoxCallable *cb, BoxPtr *parent, BoxPtr *child) {
 
 BoxTask
 BoxCallable_CallOld(BoxCallable *cb, BoxVMX *vmx) {
-  if (cb->kind == BOXCALLABLEKIND_C_OLD)
+  BoxException *e = NULL;
+  char *es = NULL;
+
+  switch (cb->kind) {
+  case BOXCALLABLEKIND_C_2:
+    e = cb->implem.c_call_2(BoxVMX_Get_Parent(vmx), BoxVMX_Get_Child(vmx));
+    if (!e)
+      return BOXTASK_OK;
+    break;
+  case BOXCALLABLEKIND_C_OLD:
     return cb->implem.c_old(vmx);
-  MSG_FATAL("Call to new-style procedure is not supported, yet.");
+  default:
+    MSG_FATAL("Call to new-style procedure is not supported, yet.");
+    return BOXTASK_FAILURE;
+  }
+
+  if (e) {
+    es = BoxException_Get_Str(e);
+    BoxException_Destroy(e);
+    BoxVM_Set_Fail_Msg(vmx->vm, es);
+    Box_Mem_Free(es);
+  }
   return BOXTASK_FAILURE;
 }

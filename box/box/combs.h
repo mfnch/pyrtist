@@ -49,6 +49,32 @@ BoxType_Define_Combination(BoxType *parent, BoxCombType type, BoxType *child,
                            BoxCallable *callable);
 
 /**
+ * @brief Register a combination with a #BoxCall2 implementation.
+ * @note Use of this function is discouraged outside the Box runtime
+ *    implementation.
+ *
+ * @param child Child type for the combination (the type on the left of @@).
+ * @param comb_type Type of combination. See #BoxCombType.
+ * @param parent Parent type for the combination (the type on the right of @@).
+ * @param uid A string used to identify the combination during linking.
+ * @param fn The C implementation of the combination.
+ * @return Whether the operation was successful.
+ */
+BOXEXPORT BoxBool
+BoxType_Define_CCall2_Combination(BoxType *child, BoxCombType comb_type,
+                                  BoxType *parent, const char *uid,
+                                  BoxCCall2 fn);
+
+/**
+ * @brief Convenience macro to for calling BoxType_Define_CCall2_Combination().
+ *
+ * This macro expands to a call to BoxType_Define_CCall2_Combination() where
+ * the @c uid parameter is stringified.
+ */
+#define BOXTYPE_DEFINE_CCALL2_COMBINATION(child, comb_type, parent, fn) \
+  BoxType_Define_CCall2_Combination((child), (comb_type), (parent), #fn, (fn))
+
+/**
  * @brief Undefine a combination defined with BoxType_Define_Combination().
  *
  * @param parent The parent in the combination to be removed. 
@@ -132,5 +158,75 @@ BoxType_Get_Combination_Info(BoxType *comb, BoxType **child, BoxCallable **cb);
 BOXEXPORT BoxBool
 BoxType_Generate_Combination_Call_Num(BoxType *comb, BoxVM *vm,
                                      BoxVMCallNum *call_num);
+
+/**
+ * @brief Structure used with 'BoxCombDef_Define() and friends.
+ * @note Use the #BOXCOMBDEF_T_AT_T and friends to create values for initialize
+ *   a #BoxCombDef value.
+ */
+typedef struct {
+  BoxType     *parent,   /**< Parent. If @c NULL, use @c parent_id instead. */
+              *child;    /**< Child. If @c NULL, use @c child_id instead. */
+  BoxTypeId   parent_id, /**< Parent-id, used when @c parent is @c NULL. */
+              child_id;  /**< Child-id, used when @c child is @c NULL. */
+  BoxCombType comb_type; /**< Combination type. */
+  const char  *name;     /**< Name used during linking. */
+  BoxCCall2   call2;     /**< C implementation. */
+} BoxCombDef;
+
+/**
+ * @brief Convenience function used to define many combinations at once.
+ *
+ * @param defs An array of #BoxCombDef object. Each item in the array describe
+ *   one combination to define.
+ * @param num_defs Number of items in the #BoxCombDef array.
+ * @return The number of consecutive items in @p defs (starting from 0) which
+ *   could be successfully defined.
+ */
+BOXEXPORT size_t
+BoxCombDef_Define(BoxCombDef *defs, size_t num_defs);
+
+/**
+ * @brief Macro to generate a #BoxCombDef value from parent and child type.
+ *
+ * @param child type of the child.
+ * @param parent type of the parent.
+ * @param fn Pointer to the C implementation (a #BoxCCall2).
+ * @note The string identifying the combination (when linking) is obtained by
+ *   stringifying @p fn.
+ */
+#define BOXCOMBDEF_T_AT_T(child, parent, fn)       \
+  {(parent), (child), BOXTYPEID_NONE, BOXTYPEID_NONE, \
+   BOXCOMBTYPE_AT, #fn, (fn)}
+
+/**
+ * @brief Macro to generate a #BoxCombDef value from parent type and child id.
+ *
+ * @param child type of the child.
+ * @param parent type-id of the parent.
+ * @param fn See #BOXCOMBDEF_T_AT_T.
+ */
+#define BOXCOMBDEF_I_AT_T(child_id, parent, fn)            \
+  {(parent), NULL, BOXTYPEID_NONE, (child_id), BOXCOMBTYPE_AT, #fn, (fn)}
+
+/**
+ * @brief Macro to generate a #BoxCombDef value from parent type and child id.
+ *
+ * @param child type-id of the child.
+ * @param parent type of the parent.
+ * @param fn See #BOXCOMBDEF_T_AT_T.
+ */
+#define BOXCOMBDEF_T_AT_I(child, parent_id, fn) \
+  {NULL, (child), (parent_id), BOXTYPEID_NONE, BOXCOMBTYPE_AT, #fn, (fn)}
+
+/**
+ * @brief Macro to generate a #BoxCombDef value from parent type and child id.
+ *
+ * @param child type-id of the child.
+ * @param parent type-id of the parent.
+ * @param fn See #BOXCOMBDEF_T_AT_T.
+ */
+#define BOXCOMBDEF_I_AT_I(child_id, parent_id, fn) \
+  {NULL, NULL, (parent_id), (child_id), BOXCOMBTYPE_AT, #fn, (fn)}
 
 #endif /* _BOX_COMBS_H */

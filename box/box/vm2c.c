@@ -81,6 +81,28 @@ My_Arg_To_Str(char *out, size_t out_size,
 }
 
 static void
+My_Data_To_Str(char *out, size_t out_size, BoxTypeId t, void *data) {
+  switch (t) {
+  case BOXTYPEID_CHAR:
+    sprintf(out, SChar, *((BoxChar *) data));
+    break;
+  case BOXTYPEID_INT:
+    sprintf(out, SInt, *((BoxInt *) data));
+    break;
+  case BOXTYPEID_REAL:
+    sprintf(out, SReal, *((BoxReal *) data));
+    break;
+  case BOXTYPEID_POINT:
+    sprintf(out, SPoint,
+            ((BoxPoint *) data)->x, ((BoxPoint *) data)->y);
+    break;
+  default:
+    sprintf(out, "???");
+    break;
+  }
+}
+
+static void
 My_Translate_Op_New(MyTranslatorData *data, BoxTypeId args_type,
                     BoxOp *op) {
   FILE *out = data->out;
@@ -135,21 +157,12 @@ My_Translate_Op(BoxVMDasm *dasm, void *pass) {
       My_Arg_To_Str(arg_buf[i], MY_MAX_ARG_LENGTH,
                     (op->args_forms >> (2*i)) & 0x3, t, op->args[i]);
 
-    //if (op->has_data)
-    //  My_Data_To_Str(arg_buf[i++], arg_buf_size, t, op->data);
+    if (op->has_data)
+      My_Data_To_Str(arg_buf[i++], MY_MAX_ARG_LENGTH, t, op->data);
 
     num_written_bufs = i;
   }
 
-#if 0
-  {
-    int i;
-    char *sep = " ";
-
-    for (i = 0; i < num_written_bufs; i++, sep = ", ")
-      fprintf(out, "%s%s", sep, arg_buf[i]);
-  }
-#endif
 
   switch (op->id) {
   case BOXOP_CALL_I:
@@ -187,55 +200,21 @@ My_Translate_Op(BoxVMDasm *dasm, void *pass) {
     fprintf(out, "  ex = NULL; goto fn_quit;\n");
     break;
 
-  case BOXOP_ADD_II:
-  case BOXOP_ADD_RR:
-    fprintf(out, "  %s += %s;\n", arg_buf[0], arg_buf[1]);
-    break;
-  case BOXOP_ADD_PP:
-    fprintf(out, "  %s.x += %s.x;\n", arg_buf[0], arg_buf[1]);
-    fprintf(out, "  %s.y += %s.y;\n", arg_buf[0], arg_buf[1]);
-    break;
-  case BOXOP_SUB_II:
-  case BOXOP_SUB_RR:
-    fprintf(out, "  %s -= %s;\n", arg_buf[0], arg_buf[1]);
-    break;
-  case BOXOP_SUB_PP:
-    fprintf(out, "  %s.x -= %s.x;\n", arg_buf[0], arg_buf[1]);
-    fprintf(out, "  %s.y -= %s.y;\n", arg_buf[0], arg_buf[1]);
-    break;
-  case BOXOP_MUL_II:
-  case BOXOP_MUL_RR:
-    fprintf(out, "  %s *= %s;\n", arg_buf[0], arg_buf[1]);
-    break;
-  case BOXOP_DIV_II:
-  case BOXOP_DIV_RR:
-    fprintf(out, "  %s /= %s;\n", arg_buf[0], arg_buf[1]);
-    break;
-#if 0
-  case BOXOP_REM_II:
-    fprintf(out, "  %s /= %s;\n", arg_buf[0], arg_buf[1]);
-    break;
-#endif
-  case BOXOP_NEG_I:
-  case BOXOP_NEG_R:
-    fprintf(out, "  %s = -%s;\n", arg_buf[0], arg_buf[0]);
-    break;
-  case BOXOP_NEG_P:
-    fprintf(out, "  %s.x = -%s.x;\n", arg_buf[0], arg_buf[0]);
-    fprintf(out, "  %s.y = -%s.y;\n", arg_buf[0], arg_buf[0]);
-    break;
-  case BOXOP_PMULR_P:
-    fprintf(out, "  %s.x *= rr0;\n", arg_buf[0]);
-    fprintf(out, "  %s.y *= rr0;\n", arg_buf[0]);
-    break;
-  case BOXOP_PDIVR_P:
-    fprintf(out, "  %s.x /= rr0;\n", arg_buf[0]);
-    fprintf(out, "  %s.y /= rr0;\n", arg_buf[0]);
-    break;
-
   default:
-    fprintf(out, "  /* ERROR: op-id=%d (%s) */\n",
-            (int) op->id, (dasm->op_desc) ? dasm->op_desc->name : "unknown");
+    if (op_desc) {
+      int i;
+      char *sep = "";
+      BoxTypeId type_char = my_type_chars[op_desc->t_id];
+
+      fprintf(out, "  box2c_%s_%c(", op_desc->name, type_char);
+      for (i = 0; i < num_written_bufs; i++, sep = ", ")
+        fprintf(out, "%s%s", sep, arg_buf[i]);
+      fprintf(out, ");\n");
+    } else {
+      data->error = BOXBOOL_TRUE;
+      fprintf(out, "  /* ERROR: op-id=%d (%s) */\n",
+              (int) op->id, (dasm->op_desc) ? op_desc->name : "unknown");
+    }
     break;
   }
 
@@ -272,8 +251,7 @@ BoxVM_Export_To_C_Code(BoxVM *vm, FILE *out) {
 #endif
 
   fprintf(out, "#include <stdlib.h>\n"
-          "#include <box/types.h>\n"
-          "#include <box/exception.h>\n\n");
+          "#include <box/vm2c_support.h>\n\n");
 
   fprintf(out, "#define MY_MOVE_PTR(src, dst) \\\n"
           "  do {BoxPtr *s = & (src), *d = & (dst); \\\n"
@@ -317,10 +295,19 @@ BoxVM_Export_To_C_Code(BoxVM *vm, FILE *out) {
         /* Function finalisation stuff (decref all ro registers, etc). */
         fprintf(out, "\nfn_quit:\n"
                 "  return ex;\n}\n");
+      } else if (p->name) {
+        fprintf(out, "extern BoxException *%s(BoxPtr *parent, BoxPtr *child)"
+                ";\n", p->name);
+        fprintf(out, "#define fn%d %s\n", (int) call_num, p->name);
       }
     }
 
   }
+
+  /* For now, we assume main is the last defined function. */
+  fprintf(out, "\nint main(void) {\n  BoxPtr gro1, gro2;\n"
+          "  if (fn%d(& gro1, & gro2)) exit(EXIT_FAILURE);\n"
+          "  exit(EXIT_SUCCESS);\n}\n", (int) n);
 
   return BOXBOOL_TRUE;
 }

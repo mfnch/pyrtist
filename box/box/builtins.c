@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2008, 2009 by Matteo Franchin                              *
+ * Copyright (C) 2008-2013 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -60,37 +60,43 @@ static BoxTask My_Subtype_Finish(BoxVMX *vmx) {
  * IO                 *
  **********************/
 
-static BoxTask My_Print_Pause(BoxVMX *vmx) {
-  printf("\n");
-  return BOXTASK_OK;
+BOXEXPORT BoxException *
+Box_Runtime_Pause_At_Print(BoxPtr *parent, BoxPtr *child) {
+  fputs("\n", stdout);
+  return NULL;
 }
 
-static BoxTask My_Print_Char(BoxVMX *vmx) {
-  printf(SChar, *((BoxChar *) BoxVMX_Get_Child_Target(vmx)));
-  return BOXTASK_OK;
+BOXEXPORT BoxException *
+Box_Runtime_CHAR_At_Print(BoxPtr *parent, BoxPtr *child) {
+  printf(SChar, *((BoxChar *) BoxPtr_Get_Target(child)));
+  return NULL;
 }
 
-static BoxTask My_Print_Int(BoxVMX *vmx) {
-  printf(SInt, *((BoxInt *) BoxVMX_Get_Child_Target(vmx)));
-  return BOXTASK_OK;
+BOXEXPORT BoxException *
+Box_Runtime_INT_At_Print(BoxPtr *parent, BoxPtr *child) {
+  printf(SInt, *((BoxInt *) BoxPtr_Get_Target(child)));
+  return NULL;
 }
 
-static BoxTask My_Print_Real(BoxVMX *vmx) {
-  printf(SReal, *((BoxReal *) BoxVMX_Get_Child_Target(vmx)));
-  return BOXTASK_OK;
+BOXEXPORT BoxException *
+Box_Runtime_REAL_At_Print(BoxPtr *parent, BoxPtr *child){
+  printf(SReal, *((BoxReal *) BoxPtr_Get_Target(child)));
+  return NULL;
 }
 
-static BoxTask My_Print_Pnt(BoxVMX *vmx) {
-  BoxPoint *p = BoxVMX_Get_Child_Target(vmx);
+BOXEXPORT BoxException *
+Box_Runtime_Point_At_Print(BoxPtr *parent, BoxPtr *child){
+  BoxPoint *p = BoxPtr_Get_Target(child);
   printf(SPoint, p->x, p->y);
-  return BOXTASK_OK;
+  return NULL;
 }
 
-static BoxTask My_Print_Str(BoxVMX *vmx) {
-  BoxStr *s = BoxVMX_Get_Child_Target(vmx);
+BOXEXPORT BoxException *
+Box_Runtime_Str_At_Print(BoxPtr *parent, BoxPtr *child) {
+  BoxStr *s = BoxPtr_Get_Target(child);
   if (s->ptr != NULL)
-    printf("%s", s->ptr);
-  return BOXTASK_OK;
+    fputs(s->ptr, stdout);
+  return NULL;
 }
 
 /**********************
@@ -638,12 +644,15 @@ BoxType *Bltin_Simple_Fn_Def(BoxCmp *c, const char *name,
 
 static void My_Register_Std_IO(BoxCmp *c) {
   BoxType *t_print = Box_Get_Core_Type(BOXTYPEID_PRINT);
-  (void) Bltin_Proc_Def_With_Id(t_print, BOXTYPEID_PAUSE, My_Print_Pause);
-  (void) Bltin_Proc_Def_With_Id(t_print, BOXTYPEID_CHAR, My_Print_Char);
-  (void) Bltin_Proc_Def_With_Id(t_print, BOXTYPEID_INT, My_Print_Int);
-  (void) Bltin_Proc_Def_With_Id(t_print, BOXTYPEID_REAL, My_Print_Real);
-  (void) Bltin_Proc_Def_With_Id(t_print, BOXTYPEID_SPOINT, My_Print_Pnt);
-  (void) Bltin_Proc_Def_With_Id(t_print, BOXTYPEID_STR, My_Print_Str);
+  BoxCombDef defs[] =
+    {BOXCOMBDEF_I_AT_T(BOXTYPEID_PAUSE, t_print, Box_Runtime_Pause_At_Print),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_CHAR, t_print, Box_Runtime_CHAR_At_Print),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_INT, t_print, Box_Runtime_INT_At_Print),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_REAL, t_print, Box_Runtime_REAL_At_Print),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_SPOINT, t_print, Box_Runtime_Point_At_Print),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_STR, t_print, Box_Runtime_Str_At_Print)};
+  size_t num_defs = sizeof(defs)/sizeof(BoxCombDef);
+  (void) BoxCombDef_Define(defs, num_defs);
 }
 
 static void My_Register_Std_Procs(BoxCmp *c) {

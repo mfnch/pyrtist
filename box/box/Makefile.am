@@ -52,16 +52,20 @@ boxinc_HEADERS = version.h defaults.h types.h integers.h obj.h exception.h    \
   vm_priv.h vmproc.h vmsym.h vmsymstuff.h vmdasm.h vm2txt.h vm2c.h vmserial.h \
   vmstore.h bltinarray.h
 
-libboxcore0_4_la_SOURCES = types.c types.h types_priv.h combs.c combs.h obj.c  \
-  obj.h exception.c exception.h callable.c callable.h callable_priv.h core.c   \
-  core.h coremath.c coremath.h core_priv.h error.c mem.c mem.h array.c array.h \
-  stream.c stream.h stream_priv.h filestream.c occupation.c occupation.h       \
-  strutils.c print.c srcpos.c msgbase.c messages.c hashfunc.c hashfunc.h       \
-  hashtable.c hashtable.h list.c list.h container.c container.h vm.c vm.h      \
-  vm_priv.h vmdasm.c vmdasm.h vm2txt.c vm2txt.h vm2c.c vmserial.c vmserial.h   \
-  vmstore.c vmstore.h vmexec.c vmexec_priv.h vmproc.c vmproc.h vmproc_priv.h   \
-  vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h vmopregs.c vmopregs_priv.h vmop.c  \
-  vmop_priv.h str.c str.h bltinarray.c
+libboxcore0_4_la_SOURCES = types.c types.h types_priv.h combs.c combs.h obj.c	\
+  obj.h exception.c exception.h callable.c callable.h callable_priv.h core.c	\
+  core.h coremath.c coremath.h core_priv.h error.c mem.c mem.h array.c array.h	\
+  stream.c stream.h stream_priv.h filestream.c occupation.c occupation.h	\
+  strutils.c print.c srcpos.c msgbase.c messages.c hashfunc.c hashfunc.h	\
+  hashtable.c hashtable.h list.c list.h container.c container.h vm.c vm.h	\
+  vm_priv.h vmdasm.c vmdasm.h vm2txt.c vm2txt.h vm2c.c vmserial.c vmserial.h	\
+  vmstore.c vmstore.h vmexec.c vmexec_priv.h vmproc.c vmproc.h vmproc_priv.h	\
+  vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h vmopregs.c vmopregs_priv.h vmop.c	\
+  vmop_priv.h str.c str.h bltinarray.c vmcode.c ast.c value.c compiler.c	\
+  operator.c namespace.c builtins.c bltinstr.c bltinio.c fileutils.c		\
+  tokenizer.l macro.c parser.y registers.c paths.c fileutils.h registers.h	\
+  tokenizer.h macro.h parserh.h paths.h vmcode.h ast.h cmpptrs.h value.h	\
+  compiler.h operator.h namespace.h builtins.h bltinstr.h bltinio.h
 
 libboxcore0_4_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32
@@ -72,13 +76,9 @@ libboxcore0_4_la_LIBADD = $(LIBLTDL)
 dist_boxpkg_DATA=core.dox
 
 # *** box compiler ***
-noinst_HEADERS = vmdasm_priv.h fileutils.h registers.h tokenizer.h macro.h	\
-  parserh.h paths.h vmcode.h ast.h cmpptrs.h value.h compiler.h operator.h	\
-  namespace.h builtins.h bltinstr.h bltinio.h
+noinst_HEADERS = vmdasm_priv.h
 
-box_SOURCES = fileutils.c tokenizer.l macro.c parser.y registers.c paths.c	\
-  main.c vmcode.c ast.c value.c compiler.c operator.c namespace.c builtins.c	\
-  bltinstr.c bltinio.c
+box_SOURCES = main.c
 
 box_LDADD = libboxcore0.4.la
 box_LDFLAGS = -static
