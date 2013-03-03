@@ -47,17 +47,19 @@ static void BoxArray_Finish(BoxArray *a) {
 }
 
 /* Implementation of (.[)@Array. */
-static BoxTask My_Init_At_Array(BoxVMX *vm) {
-  BoxArray *a = BoxVMX_Get_Parent_Target(vm);
+BOXEXPORT BoxException *
+Box_Runtime_Init_At_Array(BoxPtr *parent, BoxPtr *child) {
+  BoxArray *a = BoxPtr_Get_Target(parent);
   BoxArray_Init(a);
-  return BOXTASK_OK;
+  return NULL;
 }
 
 /* Implementation of (].)@Array. */
-static BoxTask My_Finish_At_Array(BoxVMX *vm) {
-  BoxArray *a = BoxVMX_Get_Parent_Target(vm);
+BOXEXPORT BoxException *
+Box_Runtime_Finish_At_Array(BoxPtr *parent, BoxPtr *child) {
+  BoxArray *a = BoxPtr_Get_Target(parent);
   BoxArray_Finish(a);
-  return BOXTASK_OK;
+  return NULL;
 }
 
 /* Implementation of Array(=)Array. */
@@ -165,8 +167,13 @@ void BoxArray_Register_Combs(void) {
           *get = Box_Get_Core_Type(BOXTYPEID_GET),
           *num = Box_Get_Core_Type(BOXTYPEID_NUM);
 
-  Bltin_Proc_Def_With_Id(arr, BOXTYPEID_INIT, My_Init_At_Array);
-  Bltin_Proc_Def_With_Id(arr, BOXTYPEID_FINISH, My_Finish_At_Array);
+  BoxCombDef defs[] =
+    {BOXCOMBDEF_I_AT_T(BOXTYPEID_INIT, arr, Box_Runtime_Init_At_Array),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_FINISH, arr, Box_Runtime_Finish_At_Array)};
+
+  size_t num_defs = sizeof(defs)/sizeof(BoxCombDef);
+  (void) BoxCombDef_Define(defs, num_defs);
+
   Bltin_Comb_Def(arr, BOXCOMBTYPE_COPY, arr, My_Array_Copy_Array);
   Bltin_Proc_Def_With_Id(arr, BOXTYPEID_ANY, My_Any_At_Array);
 

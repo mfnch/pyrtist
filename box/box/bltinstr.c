@@ -22,6 +22,7 @@
 #include <assert.h>
 
 #include "types.h"
+#include "combs.h"
 #include "mem.h"
 #include "vm_priv.h"
 #include "print.h"
@@ -36,101 +37,102 @@
 /****************************************************************************
  * Here we interface Str and register it for the compiler.                  *
  ****************************************************************************/
-static BoxTask My_Str_Create(BoxVMX *vm) {
-  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
+
+static BoxException *My_Concat_C_String(BoxStr *s, const char *cstr) {
+  if (BoxStr_Concat_C_String(s, cstr) == BOXTASK_OK)
+    return NULL;
+  return BoxException_Create("Failure allocating string");
+}
+
+static BoxException *My_Concat_And_Free_C_String(BoxStr *s, char *cstr) {
+  if (cstr && BoxStr_Concat_C_String(s, cstr) == BOXTASK_OK) {
+    Box_Mem_Free(cstr);
+    return NULL;
+  }
+
+  Box_Mem_Free(cstr);
+  return BoxException_Create("Allocation failure (bltinstr.c)");
+}
+
+BOXEXPORT BoxException *
+Box_Runtime_Init_At_Str(BoxPtr *parent, BoxPtr *child) {
+  BoxStr *s = BoxPtr_Get_Target(parent);
   BoxStr_Init(s);
-  return BOXTASK_OK;
+  return NULL;
 }
 
-static BoxTask My_Str_Destroy(BoxVMX *vm) {
-  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
+BOXEXPORT BoxException *
+Box_Runtime_Finish_At_Str(BoxPtr *parent, BoxPtr *child) {
+  BoxStr *s = BoxPtr_Get_Target(parent);
   BoxStr_Finish(s);
-  return BOXTASK_OK;
+  return NULL;
 }
 
-static BoxTask My_Str_Pause(BoxVMX *vm) {
-  return BoxStr_Concat_C_String(BOX_VM_THIS_PTR(vm, Str), "\n");
+BOXEXPORT BoxException *
+Box_Runtime_Pause_At_Str(BoxPtr *parent, BoxPtr *child) {
+  BoxStr *s = BoxPtr_Get_Target(parent);
+  return My_Concat_C_String(s, "\n");
 }
 
-static BoxTask My_Str_Char(BoxVMX *vm) {
-  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
-  char ca[2] = {BOX_VM_ARG(vm, char), '\0'};
-  return BoxStr_Concat_C_String(s, ca);
+BOXEXPORT BoxException *
+Box_Runtime_Char_At_Str(BoxPtr *parent, BoxPtr *child) {
+  BoxStr *s = BoxPtr_Get_Target(parent);
+  char ca[2] = {*((char *) BoxPtr_Get_Target(child)), '\0'};
+  return My_Concat_C_String(s, ca);
 }
 
-static BoxTask My_Str_Int(BoxVMX *vm) {
-  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
-  BoxInt i = BOX_VM_ARG(vm, BoxInt);
-  char *tmp = Box_SPrintF("%I", i);
-  if (tmp != (char *) NULL) {
-    if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
-      return BOXTASK_FAILURE;
-    Box_Mem_Free(tmp);
-  }
-  return BOXTASK_OK;
+BOXEXPORT BoxException *
+Box_Runtime_INT_At_Str(BoxPtr *parent, BoxPtr *child) {
+  BoxStr *s = BoxPtr_Get_Target(parent);
+  BoxInt i = *((BoxInt *) BoxPtr_Get_Target(child));
+  return My_Concat_And_Free_C_String(s, Box_SPrintF("%I", i));
 }
 
-static BoxTask My_Str_Real(BoxVMX *vm) {
-  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
-  BoxReal r = BOX_VM_ARG1(vm, BoxReal);
-  char *tmp = Box_SPrintF("%R", r);
-  if (tmp != (char *) NULL) {
-    if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
-      return BOXTASK_FAILURE;
-    Box_Mem_Free(tmp);
-  }
-  return BOXTASK_OK;
+BOXEXPORT BoxException *
+Box_Runtime_REAL_At_Str(BoxPtr *parent, BoxPtr *child) {
+  BoxStr *s = BoxPtr_Get_Target(parent);
+  BoxReal r = *((BoxReal *) BoxPtr_Get_Target(child));
+  return My_Concat_And_Free_C_String(s, Box_SPrintF("%R", r));
 }
 
-static BoxTask My_Str_Point(BoxVMX *vm) {
-  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
-  BoxPoint *p = BOX_VM_ARG_PTR(vm, BoxPoint);
-  char *tmp = Box_SPrintF("(%R, %R)", p->x, p->y);
-  if (tmp != (char *) NULL) {
-    if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
-      return BOXTASK_FAILURE;
-    Box_Mem_Free(tmp);
-  }
-  return BOXTASK_OK;
+BOXEXPORT BoxException *
+Box_Runtime_Point_At_Str(BoxPtr *parent, BoxPtr *child) {
+  BoxStr *s = BoxPtr_Get_Target(parent);
+  BoxPoint *p = (BoxPoint *) BoxPtr_Get_Target(child);
+  return My_Concat_And_Free_C_String(s, Box_SPrintF("(%R, %R)", p->x, p->y));
 }
 
-static BoxTask My_Str_Ptr(BoxVMX *vm) {
-  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
-  BoxPtr *p = BOX_VM_ARG_PTR(vm, BoxPtr);
-  char *tmp = printdup("Ptr[block:%p, data:%p]", p->block, p->ptr);
-  if (tmp != (char *) NULL) {
-    if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
-      return BOXTASK_FAILURE;
-    Box_Mem_Free(tmp);
-  }
-  return BOXTASK_OK;
+BOXEXPORT BoxException *
+Box_Runtime_Ptr_At_Str(BoxPtr *parent, BoxPtr *child) {
+  BoxStr *s = BoxPtr_Get_Target(parent);
+  BoxPtr *p = BoxPtr_Get_Target(child);
+  char *cs = Box_SPrintF("Ptr[.block=%p, .data=%p]", p->block, p->ptr);
+  return My_Concat_And_Free_C_String(s, cs);
 }
 
-static BoxTask My_Str_CPtr(BoxVMX *vm) {
-  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
-  BoxCPtr p = BOX_VM_ARG(vm, BoxCPtr);
-  char *tmp = printdup("CPtr[%p]", p);
-  if (tmp != (char *) NULL) {
-    if (BoxStr_Concat_C_String(s, tmp) != BOXTASK_OK)
-      return BOXTASK_FAILURE;
-    Box_Mem_Free(tmp);
-  }
-  return BOXTASK_OK;
+BOXEXPORT BoxException *
+Box_Runtime_CPtr_At_Str(BoxPtr *parent, BoxPtr *child) {
+  BoxStr *s = BoxPtr_Get_Target(parent);
+  BoxCPtr cp = *((BoxCPtr *) BoxPtr_Get_Target(child));
+  char *cs = Box_SPrintF("CPtr[%p]", cp);
+  return My_Concat_And_Free_C_String(s, cs);
 }
 
-static BoxTask My_Str_Str(BoxVMX *vm) {
-  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
-  BoxStr *s2 = BOX_VM_ARG_PTR(vm, BoxStr);
-  if (s2->length > 0)
-    return BoxStr_Concat_C_String(s, s2->ptr);
-  return BOXTASK_OK;
+BOXEXPORT BoxException *
+Box_Runtime_Str_At_Str(BoxPtr *parent, BoxPtr *child) {
+  BoxStr *dst = BoxPtr_Get_Target(parent);
+  BoxStr *src = BoxPtr_Get_Target(child);
+  if (src->length > 0)
+    return My_Concat_C_String(dst, src->ptr);
+  return NULL;
 }
 
-static BoxTask My_Str_CString(BoxVMX *vm) {
-  BoxStr *s = BOX_VM_THIS_PTR(vm, BoxStr);
-  char *c_s = BOX_VM_ARG_PTR(vm, char);
-  assert(s != NULL);
-  return BoxStr_Concat_C_String(s, c_s);
+BOXEXPORT BoxException *
+Box_Runtime_Obj_At_Str(BoxPtr *parent, BoxPtr *child) {
+  BoxStr *s = BoxPtr_Get_Target(parent);
+  char *c_s = BoxPtr_Get_Target(child);
+  assert(s);
+  return My_Concat_C_String(s, c_s);
 }
 
 static BoxTask My_Str_Copy(BoxVMX *vm) {
@@ -143,11 +145,12 @@ static BoxTask My_Str_Copy(BoxVMX *vm) {
   return BOXTASK_OK;
 }
 
-static BoxTask My_Length_Str(BoxVMX *vm) {
-  BoxInt *len = BOX_VM_THIS_PTR(vm, BoxInt);
-  BoxStr *src = BOX_VM_ARG_PTR(vm, BoxStr);
-  *len += src->length;
-  return BOXTASK_OK;
+BOXEXPORT BoxException *
+Box_Runtime_Str_At_Num(BoxPtr *parent, BoxPtr *child) {
+  BoxInt *len = BoxPtr_Get_Target(parent);
+  BoxStr *s = BoxPtr_Get_Target(child);
+  *len += s->length;
+  return NULL;
 }
 
 static BoxTask My_Compare_Str(BoxVMX *vm) {
@@ -169,23 +172,26 @@ static void My_Register_Compare_Str(BoxCmp *c) {
 }
 
 void Bltin_Str_Register_Procs(BoxCmp *c) {
-  BoxType *str = Box_Get_Core_Type(BOXTYPEID_STR),
-          *num = Box_Get_Core_Type(BOXTYPEID_NUM);
-  Bltin_Proc_Def_With_Id(str,   BOXTYPEID_INIT, My_Str_Create);
-  Bltin_Proc_Def_With_Id(str, BOXTYPEID_FINISH, My_Str_Destroy);
-  Bltin_Proc_Def_With_Id(str,  BOXTYPEID_PAUSE, My_Str_Pause);
-  Bltin_Proc_Def_With_Id(str,   BOXTYPEID_CHAR, My_Str_Char);
-  Bltin_Proc_Def_With_Id(str,    BOXTYPEID_INT, My_Str_Int);
-  Bltin_Proc_Def_With_Id(str,   BOXTYPEID_REAL, My_Str_Real);
-  Bltin_Proc_Def_With_Id(str,  BOXTYPEID_POINT, My_Str_Point);
-  Bltin_Proc_Def_With_Id(str,    BOXTYPEID_PTR, My_Str_Ptr);
-  Bltin_Proc_Def_With_Id(str,   BOXTYPEID_CPTR, My_Str_CPtr);
-  Bltin_Proc_Def_With_Id(str,    BOXTYPEID_STR, My_Str_Str);
-  Bltin_Proc_Def_With_Id(str,    BOXTYPEID_OBJ, My_Str_CString);
-  Bltin_Proc_Def_With_Id(num,    BOXTYPEID_STR, My_Length_Str);
+  BoxType *t_str = Box_Get_Core_Type(BOXTYPEID_STR),
+          *t_num = Box_Get_Core_Type(BOXTYPEID_NUM);
+  BoxCombDef defs[] =
+    {BOXCOMBDEF_I_AT_T(BOXTYPEID_INIT, t_str, Box_Runtime_Init_At_Str),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_FINISH, t_str, Box_Runtime_Finish_At_Str),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_PAUSE, t_str, Box_Runtime_Pause_At_Str),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_CHAR, t_str, Box_Runtime_Char_At_Str),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_INT, t_str, Box_Runtime_INT_At_Str),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_REAL, t_str, Box_Runtime_REAL_At_Str),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_SPOINT, t_str, Box_Runtime_Point_At_Str),
+     BOXCOMBDEF_T_AT_T(t_str, t_str, Box_Runtime_Str_At_Str),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_PTR, t_str, Box_Runtime_Ptr_At_Str),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_CPTR, t_str, Box_Runtime_CPtr_At_Str),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_OBJ, t_str, Box_Runtime_Obj_At_Str),
+     BOXCOMBDEF_T_AT_T(t_str, t_num, Box_Runtime_Str_At_Num)};
+  size_t num_defs = sizeof(defs)/sizeof(BoxCombDef);
+  (void) BoxCombDef_Define(defs, num_defs);
 
   /* Copy Str to Str */
-  Bltin_Comb_Def(str, BOXCOMBTYPE_COPY, str, My_Str_Copy);
+  Bltin_Comb_Def(t_str, BOXCOMBTYPE_COPY, t_str, My_Str_Copy);
 
   /* String comparison */
   My_Register_Compare_Str(c);

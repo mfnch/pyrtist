@@ -42,8 +42,8 @@ typedef struct BoxException_struct BoxException;
 BOXEXPORT BoxException *
 BoxException_Create_Raw(char *msg);
 
-#define BoxException_Create(msg, ...)                   \
-  BoxException_Create_Raw(Box_SPrintF(msg, __VA_ARGS__))
+#define BoxException_Create(...) \
+  BoxException_Create_Raw(Box_SPrintF(__VA_ARGS__))
 
 /**
  * Destroy an exception object.

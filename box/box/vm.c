@@ -399,8 +399,8 @@ BoxTask BoxVM_Module_Execute(BoxVM *vm, BoxVMCallNum call_num) {
   BoxVMWord *i_pos, *i_pos0;
   BoxValue reg0[NUM_TYPES]; /* Registri locali numero zero */
 
-  /* Controlliamo che il modulo sia installato! */
-  if (call_num < 1 || call_num > BoxArr_Num_Items(& pt->installed)) {
+  /* Check that the procedure is installed. */
+  if (call_num < 1 || call_num > BoxArr_Get_Num_Items(& pt->installed)) {
     MSG_ERROR("Call to the undefined procedure %d.", call_num);
     return BOXTASK_FAILURE;
   }

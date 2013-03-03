@@ -32,6 +32,7 @@
 #  include <box/vm.h>
 #  include <box/vm_priv.h>
 #  include <box/str.h>
+#  include <box/combs.h>
 #  include <box/builtins.h>
 
 struct BoxArray_struct {
