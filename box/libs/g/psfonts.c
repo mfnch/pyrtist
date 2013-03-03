@@ -104,13 +104,13 @@ int ps_font_get_info(const char *full_name,
   const char *dummy_name;
   struct ps_font_desc *fd;
 
-  if (s == (FontSlant *) NULL) s = & dummy_s;
-  if (w == (FontWeight *) NULL) w = & dummy_w;
-  if (name == (const char **) NULL) name = & dummy_name;
+  if (s == NULL) s = & dummy_s;
+  if (w == NULL) w = & dummy_w;
+  if (name == NULL) name = & dummy_name;
 
-  fd = ps_find_font(full_name, FONT_SLANT_NORMAL, FONT_SLANT_NORMAL);
-  if (fd == (struct ps_font_desc *) NULL) {
-    *name = (const char *) NULL;
+  fd = ps_find_font(full_name, FONT_SLANT_NORMAL, FONT_WEIGHT_NORMAL);
+  if (fd == NULL) {
+    *name = NULL;
     return 0;
   }
   *name = fd->name;
