@@ -229,4 +229,17 @@ BoxCombDef_Define(BoxCombDef *defs, size_t num_defs);
 #define BOXCOMBDEF_I_AT_I(child_id, parent_id, fn) \
   {NULL, NULL, (parent_id), (child_id), BOXCOMBTYPE_AT, #fn, (fn)}
 
+/**
+ * @brief Macro to generate a #BoxCombDef value from parent and child type.
+ *
+ * @param child type of the child.
+ * @param parent type of the parent.
+ * @param fn Pointer to the C implementation (a #BoxCCall2).
+ * @note The string identifying the combination (when linking) is obtained by
+ *   stringifying @p fn.
+ */
+#define BOXCOMBDEF_T_TO_T(child, parent, fn)       \
+  {(parent), (child), BOXTYPEID_NONE, BOXTYPEID_NONE, \
+   BOXCOMBTYPE_COPY, #fn, (fn)}
+
 #endif /* _BOX_COMBS_H */

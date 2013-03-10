@@ -63,20 +63,21 @@ Box_Runtime_Finish_At_Array(BoxPtr *parent, BoxPtr *child) {
 }
 
 /* Implementation of Array(=)Array. */
-static BoxTask My_Array_Copy_Array(BoxVMX *vm) {
-  BoxArray *dst = BoxVMX_Get_Parent_Target(vm),
-           *src = BoxVMX_Get_Child_Target(vm);
+BOXEXPORT BoxException *
+Box_Runtime_Array_To_Array(BoxPtr *parent, BoxPtr *child) {
+  BoxArray *dst = BoxPtr_Get_Target(parent),
+           *src = BoxPtr_Get_Target(child);
   size_t num_src_items = BoxArr_Get_Num_Items(& src->arr);
   BoxAny *dst_items, *src_items;
 
   if (num_src_items < 1) {
     BoxArray_Init(dst);
-    return BOXTASK_OK;
+    return NULL;
   }
 
   src_items = (BoxAny *) BoxArr_Get_First_Item(& src->arr);
   if (!src_items)
-    return BOXTASK_FAILURE;
+    return BoxException_Create("Failure copying array (1)");
 
   BoxArray_Init(dst);
 
@@ -85,57 +86,53 @@ static BoxTask My_Array_Copy_Array(BoxVMX *vm) {
     size_t i;
     for (i = 0; i < num_src_items; i++)
       BoxAny_Copy(& dst_items[i], & src_items[i]);
-    return BOXTASK_OK;
+    return NULL;
   }
 
   BoxArray_Finish(dst);
-  return BOXTASK_FAILURE;
+  return BoxException_Create("Failure copying array (2)");
 }
 
 /* Implementation of Any@Array. */
-static BoxTask My_Any_At_Array(BoxVMX *vm) {
-  BoxArray *a = BoxVMX_Get_Parent_Target(vm);
-  BoxAny *any = BoxVMX_Get_Child_Target(vm);
+BOXEXPORT BoxException *
+Box_Runtime_Any_At_Array(BoxPtr *parent, BoxPtr *child) {
+  BoxArray *a = BoxPtr_Get_Target(parent);
+  BoxAny *any = BoxPtr_Get_Target(child);
   BoxAny *new_item = BoxArr_Push(& a->arr, NULL);
   if (new_item) {
     BoxAny_Copy(new_item, any);
-    return BOXTASK_OK;
+    return NULL;
   }
-  return BOXTASK_FAILURE;
+  return BoxException_Create("Cannot append item to Array");
 }
 
 /* Implementation of Any@Get. */
-static BoxTask My_Any_At_Get(BoxVMX *vm) {
-  BoxAny *get = BoxVMX_Get_Parent_Target(vm);
-  BoxAny *arg = BoxVMX_Get_Child_Target(vm);
+BOXEXPORT BoxException *
+Box_Runtime_Any_At_Get(BoxPtr *parent, BoxPtr *child) {
+  BoxAny *get = BoxPtr_Get_Target(parent);
+  BoxAny *arg = BoxPtr_Get_Target(child);
   BoxPtr *get_obj = BoxAny_Get_Obj(get);
   BoxPtr *arg_obj = BoxAny_Get_Obj(arg);
 
   if (!get_obj || BoxPtr_Is_Null(get_obj)) {
     BoxAny_Finish(get);
     BoxAny_Copy(get, arg);
-    return BOXTASK_OK;
+    return NULL;
   } else {
     BoxType *get_type = BoxAny_Get_Type(get),
             *idx_type = BoxAny_Get_Type(arg);
     BoxType *required_type;
 
-    if (!(get_type && idx_type)) {
-      BoxVM_Set_Fail_Msg(vm->vm, "Invalid argument to Any (bad type)");
-      return BOXTASK_FAILURE;
-    }
+    if (!(get_type && idx_type))
+      return BoxException_Create("Invalid argument to Any (bad type)");
 
     required_type = Box_Get_Core_Type(BOXTYPEID_ARRAY);
-    if (BoxType_Compare(required_type, get_type) < BOXTYPECMP_EQUAL) {
-      BoxVM_Set_Fail_Msg(vm->vm, "Container type does not support Get");
-      return BOXTASK_FAILURE;
-    }
+    if (BoxType_Compare(required_type, get_type) < BOXTYPECMP_EQUAL)
+      return BoxException_Create("Container type does not support Get");
 
     required_type = Box_Get_Core_Type(BOXTYPEID_INT);
-    if (BoxType_Compare(required_type, idx_type) < BOXTYPECMP_EQUAL) {
-      BoxVM_Set_Fail_Msg(vm->vm, "Index must be an integer");
-      return BOXTASK_FAILURE;
-    }
+    if (BoxType_Compare(required_type, idx_type) < BOXTYPECMP_EQUAL)
+      return BoxException_Create("Index must be an integer");
 
     if (arg_obj) {
       BoxInt *idx = (BoxInt *) BoxPtr_Get_Target(arg_obj);
@@ -145,39 +142,34 @@ static BoxTask My_Any_At_Get(BoxVMX *vm) {
         BoxAny *item = BoxArr_Get_Item_Ptr(& a->arr, (size_t) *idx + 1);
         BoxAny_Copy(get, item);
         BoxAny_Finish(& dst_save);
-        return BOXTASK_OK;
+        return NULL;
       }
     }
 
-    BoxVM_Set_Fail_Msg(vm->vm, "Empty Any object given as index");
-    return BOXTASK_FAILURE;
+    return BoxException_Create("Empty Any object given as index");
   }
 }
 
 /* Implementation of Array@Num. */
-static BoxTask My_Array_At_Num(BoxVMX *vm) {
-  BoxInt *num = BoxVMX_Get_Parent_Target(vm);
-  BoxArray *a = BoxVMX_Get_Child_Target(vm);
+BOXEXPORT BoxException *
+Box_Runtime_Array_At_Num(BoxPtr *parent, BoxPtr *child) {
+  BoxInt *num = BoxPtr_Get_Target(parent);
+  BoxArray *a = BoxPtr_Get_Target(child);
   *num += BoxArr_Get_Num_Items(& a->arr);
-  return BOXTASK_OK;
+  return NULL;
 }
 
 void BoxArray_Register_Combs(void) {
-  BoxType *arr = Box_Get_Core_Type(BOXTYPEID_ARRAY),
-          *get = Box_Get_Core_Type(BOXTYPEID_GET),
-          *num = Box_Get_Core_Type(BOXTYPEID_NUM);
+  BoxType *t_arr = Box_Get_Core_Type(BOXTYPEID_ARRAY);
 
   BoxCombDef defs[] =
-    {BOXCOMBDEF_I_AT_T(BOXTYPEID_INIT, arr, Box_Runtime_Init_At_Array),
-     BOXCOMBDEF_I_AT_T(BOXTYPEID_FINISH, arr, Box_Runtime_Finish_At_Array)};
+    {BOXCOMBDEF_I_AT_T(BOXTYPEID_INIT, t_arr, Box_Runtime_Init_At_Array),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_FINISH, t_arr, Box_Runtime_Finish_At_Array),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_ANY, t_arr, Box_Runtime_Any_At_Array),
+     BOXCOMBDEF_T_AT_I(t_arr, BOXTYPEID_NUM, Box_Runtime_Array_At_Num),
+     BOXCOMBDEF_I_AT_I(BOXTYPEID_ANY, BOXTYPEID_GET, Box_Runtime_Any_At_Get),
+     BOXCOMBDEF_T_TO_T(t_arr, t_arr, Box_Runtime_Array_To_Array)};
 
   size_t num_defs = sizeof(defs)/sizeof(BoxCombDef);
   (void) BoxCombDef_Define(defs, num_defs);
-
-  Bltin_Comb_Def(arr, BOXCOMBTYPE_COPY, arr, My_Array_Copy_Array);
-  Bltin_Proc_Def_With_Id(arr, BOXTYPEID_ANY, My_Any_At_Array);
-
-  Bltin_Proc_Def_With_Id(get, BOXTYPEID_ANY, My_Any_At_Get);
-
-  Bltin_Proc_Def_With_Id(num, BOXTYPEID_ARRAY, My_Array_At_Num);
 }

@@ -135,14 +135,17 @@ Box_Runtime_Obj_At_Str(BoxPtr *parent, BoxPtr *child) {
   return My_Concat_C_String(s, c_s);
 }
 
-static BoxTask My_Str_Copy(BoxVMX *vm) {
-  BoxStr *dest = BOX_VM_THIS_PTR(vm, BoxStr),
-         *src = BOX_VM_ARG_PTR(vm, BoxStr);
+BOXEXPORT BoxException *
+Box_Runtime_Str_To_Str(BoxPtr *parent, BoxPtr *child) {
+  BoxStr *dst = BoxPtr_Get_Target(parent),
+         *src = BoxPtr_Get_Target(child);
+
   char *src_text = (char *) src->ptr; /* Need this (for case: src == dest) */
-  BoxStr_Init(dest);
+  BoxStr_Init(dst);
   if (src->length > 0)
-    return BoxStr_Concat_C_String(dest, src_text);
-  return BOXTASK_OK;
+    return My_Concat_C_String(dst, src_text);
+
+  return NULL;
 }
 
 BOXEXPORT BoxException *
@@ -177,6 +180,7 @@ void Bltin_Str_Register_Procs(BoxCmp *c) {
   BoxCombDef defs[] =
     {BOXCOMBDEF_I_AT_T(BOXTYPEID_INIT, t_str, Box_Runtime_Init_At_Str),
      BOXCOMBDEF_I_AT_T(BOXTYPEID_FINISH, t_str, Box_Runtime_Finish_At_Str),
+     BOXCOMBDEF_T_TO_T(t_str, t_str, Box_Runtime_Str_To_Str),
      BOXCOMBDEF_I_AT_T(BOXTYPEID_PAUSE, t_str, Box_Runtime_Pause_At_Str),
      BOXCOMBDEF_I_AT_T(BOXTYPEID_CHAR, t_str, Box_Runtime_Char_At_Str),
      BOXCOMBDEF_I_AT_T(BOXTYPEID_INT, t_str, Box_Runtime_INT_At_Str),
@@ -189,9 +193,6 @@ void Bltin_Str_Register_Procs(BoxCmp *c) {
      BOXCOMBDEF_T_AT_T(t_str, t_num, Box_Runtime_Str_At_Num)};
   size_t num_defs = sizeof(defs)/sizeof(BoxCombDef);
   (void) BoxCombDef_Define(defs, num_defs);
-
-  /* Copy Str to Str */
-  Bltin_Comb_Def(t_str, BOXCOMBTYPE_COPY, t_str, My_Str_Copy);
 
   /* String comparison */
   My_Register_Compare_Str(c);
