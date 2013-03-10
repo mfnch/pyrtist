@@ -56,19 +56,18 @@ typedef enum {
 typedef struct BoxCont_struct BoxCont;
 
 struct BoxCont_struct {
-  BoxContCateg
-              categ;          /**< Category (immediate, register, ptr, etc ) */
-  BoxContType type;           /**< Type (CHAR, INT, REAL, ...) */
+  BoxContCateg  categ;      /**< Category (immediate, register, ptr, etc ) */
+  BoxContType   type;       /**< Type (CHAR, INT, REAL, ...) */
   union {
-    BoxValue  imm;          /**< The value (if immediate) */
-    BoxInt    reg;          /**< The register number (if register) */
+    BoxImmValue imm;        /**< The value (if immediate) */
+    BoxInt      reg;        /**< The register number (if register) */
     struct {
       BoxInt    offset,     /**< Offset from the pointer */
                 reg;        /**< Register containing the pointer */
       unsigned int
                 is_greg :1; /**< Whether ptr_reg is a global/local register */
-    }         ptr;          /**< Data necessary to identify a pointer Value */
-  }          value;         /**< Union of all possible vals for a Container */
+    }           ptr;        /**< Data necessary to identify a pointer Value */
+  }             value;      /**< Union of all possible vals for a Container */
 };
 
 /**

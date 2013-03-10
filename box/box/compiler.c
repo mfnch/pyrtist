@@ -829,10 +829,12 @@ static Value *My_Compile_Assignment(BoxCmp *c, Value *left, Value *right) {
     /* If the value is an identifier (thing without type, nor value),
      * then we transform it to a proper target.
      */
-    if (Value_Is_Var_Name(left))
-      Value_Setup_As_Var(left, right->type);
+    if (BoxValue_Is_Var_Name(left)) {
+      BoxValue_Assign(left, right);
+      Value_Set_Ignorable(left, 1);
+      return left;
 
-    if (Value_Is_Target(left)) {
+    } else if (Value_Is_Target(left)) {
       Value_Move_Content(left, right);
       Value_Set_Ignorable(left, 1);
       /*return BoxCmp_Opr_Emit_BinOp(c, ASTBINOP_ASSIGN, left, right);*/

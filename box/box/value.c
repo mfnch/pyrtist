@@ -282,7 +282,7 @@ void Value_Setup_As_Temp(Value *v, BoxType *t) {
   Value_Emit_Allocate(v);
 }
 
-void Value_Setup_As_Var(Value *v, BoxType *t) {
+void BoxValue_Setup_As_Var(BoxValue *v, BoxType *t) {
   BoxCmp *c = v->proc->cmp;
   BoxVMCode *p = c->cur_proc;
   if (BoxVMCode_Get_Style(p) == BOXVMCODESTYLE_MAIN) {
@@ -297,8 +297,6 @@ void Value_Setup_As_Var(Value *v, BoxType *t) {
     ValContainer vc = {VALCONTTYPE_LVAR, -1, 0};
     Value_Setup_Container(v, t, & vc);
   }
-
-  Value_Emit_Allocate(v);
 }
 
 void Value_Setup_As_String(Value *v_str, const char *str) {
@@ -437,7 +435,7 @@ void Value_Setup_As_LReg(Value *v, BoxType *type) {
   Value_Setup_Container(v, type, & vc);
 }
 
-void Value_Emit_Allocate(Value *v) {
+void BoxValue_Emit_Allocate(BoxValue *v) {
   switch(v->kind) {
   case VALUEKIND_ERR:
     return;
@@ -571,7 +569,7 @@ int Value_Is_Temp(Value *v) {
   return (v->kind == VALUEKIND_TEMP);
 }
 
-int Value_Is_Var_Name(Value *v) {
+BoxBool BoxValue_Is_Var_Name(BoxValue *v) {
   return (v->kind == VALUEKIND_VAR_NAME);
 }
 
@@ -1218,6 +1216,35 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
 
   Value_Unlink(src);
   return BOXTASK_OK;
+}
+
+/*
+ * REFERENCES: src: -1, dest: 0;
+ */
+BoxTask BoxValue_Assign(BoxValue *dst, BoxValue *src) {
+  assert(dst->kind == VALUEKIND_VAR_NAME);
+
+  /* Set up dst as a variable. */
+  BoxValue_Setup_As_Var(dst, src->type);
+
+  /* We play it safe here: we do not copy src only when src is a temporary
+   * value and is stored in register form.
+   */
+  if (src->kind == VALUEKIND_TEMP &&
+      src->value.cont.type == BOXCONTTYPE_OBJ &&
+      src->value.cont.categ == BOXCONTCATEG_LREG) {
+    BoxInt reg = src->value.cont.value.reg;
+    if (reg > 0) {
+      /* We then avoid allocating a dst object and copying src to dst. */
+      BoxVMCode_Assemble(dst->proc, BOXGOP_REF,
+                         2, & dst->value.cont, & src->value.cont);
+      return BOXTASK_OK;
+    }
+  }
+
+  /* Otherwise go for a full copy of the object. */
+  BoxValue_Emit_Allocate(dst);
+  return Value_Move_Content(dst, src);
 }
 
 /** Emits the conversion from the source expression 'v', to the given type 't'

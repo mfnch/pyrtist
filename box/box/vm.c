@@ -397,7 +397,7 @@ BoxTask BoxVM_Module_Execute(BoxVM *vm, BoxVMCallNum call_num) {
 
   BoxVMProcInstalled *p;
   BoxVMWord *i_pos, *i_pos0;
-  BoxValue reg0[NUM_TYPES]; /* Registri locali numero zero */
+  BoxImmValue reg0[NUM_TYPES]; /* Registri locali numero zero */
 
   /* Check that the procedure is installed. */
   if (call_num < 1 || call_num > BoxArr_Get_Num_Items(& pt->installed)) {

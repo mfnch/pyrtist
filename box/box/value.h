@@ -30,12 +30,12 @@
  * a structure, 'var1.member') are expressed in terms of Value objects.
  */
 
-#ifndef _VALUE_H
-#  define _VALUE_H
+#ifndef _BOX_VALUE_H
+#  define _BOX_VALUE_H
 
-#  include "types.h"
-#  include "container.h"
-#  include "vmcode.h"
+#  include <box/types.h>
+#  include <box/container.h>
+#  include <box/vmcode.h>
 
 typedef enum {
   VALUEKIND_ERR,              /**< An error */
@@ -64,7 +64,10 @@ typedef struct {
                                  finalisation? */
             ignore        :1; /**< To be ignored when passed to a Box? */
   }         attr;             /**< Attributes for the Value */
-} Value;
+} BoxValue;
+
+/* Just for backward "compatibility". */
+typedef BoxValue Value;
 
 /** Initialise a Value 'v' assuming 'v' points to an already allocated memory
  * region able to contain a Value object.
@@ -176,16 +179,31 @@ void Value_Setup_As_Temp(Value *v, BoxType *t);
 BOXEXPORT void
 Value_Setup_As_LReg(Value *v, BoxType *type);
 
-/** Set the value to represent a new variable of the given type */
-void Value_Setup_As_Var(Value *v, BoxType *t);
+/**
+ * @brief Set up the #BoxValue to represent a new variable of the given type.
+ *
+ * @param v An initialized #BoxValue object.
+ * @param t The type of the new variable.
+ */
+BOXEXPORT void
+BoxValue_Setup_As_Var(BoxValue *v, BoxType *t);
 
 /** Set the value to represent the given string 'str'. */
 void Value_Setup_As_String(Value *v_str, const char *str);
 
 void Value_Setup_Container(Value *v, BoxType *type, ValContainer *vc);
 
-/** Emit the VM code to generate the object 'v' is pointing to. */
-void Value_Emit_Allocate(Value *v);
+/**
+ * @brief Emit code to allocate the given object.
+ *
+ * Emit the VM code to generate the object @p v is pointing to.
+ *
+ * @param v The object to allocate.
+ */
+BOXEXPORT void
+BoxValue_Emit_Allocate(Value *v);
+
+#define Value_Emit_Allocate BoxValue_Emit_Allocate
 
 /** Emit a link instruction to the Value 'v' (which is supposed to be
  * an object or a pointer).
@@ -231,8 +249,11 @@ int Value_Is_Err(Value *v);
  */
 int Value_Is_Temp(Value *v);
 
-/** Return 1 if the value is a variable name (has no type/value) */
-int Value_Is_Var_Name(Value *v);
+/**
+ * @brief Return whether the #BoxValue is a variable name (has no type/value).
+ */
+BOXEXPORT BoxBool
+BoxValue_Is_Var_Name(BoxValue *v);
 
 /** Return 1 if the value is a type name (has no type/value) */
 int Value_Is_Type_Name(Value *v);
@@ -355,6 +376,17 @@ Value *Value_Struc_Get_Member(Value *v_struc, const char *memb);
  */
 BoxTask Value_Move_Content(Value *dest, Value *src);
 
+/**
+ * @brief Assign a value to a variable.
+ *
+ * @param dst The destination variable.
+ * @param src The value to be assigned to @p dst.
+ * @return Whether the operation succeeded.
+ * @note REFERENCES: src: -1, dest: 0;
+ */
+BOXEXPORT BoxTask
+BoxValue_Assign(BoxValue *dst, BoxValue *src);
+
 /** Expand the value 'v' in agreement with the provided expansion type.
  * REFERENCES: return: new, src: -1;
  */
@@ -396,4 +428,4 @@ Value *Value_Expand_Subtype(Value *v);
 /** Raise the value 'v': if 'v = (^Int)[]', '^v' has type 'Int'. */
 Value *Value_Raise(Value *v);
 
-#endif /* _VALUE_H */
+#endif /* _BOX_VALUE_H */

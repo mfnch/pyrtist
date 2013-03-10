@@ -228,7 +228,7 @@ typedef union {
   BoxReal  box_real;
   BoxPoint box_point;
   BoxPtr   box_obj;
-} BoxValue;
+} BoxImmValue;
 
 /* Strings containing the printf formats for the various types */
 #  define BoxChar_Fmt "%c"
