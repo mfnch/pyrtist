@@ -299,7 +299,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
                              by Value_To_Temp */
       v_temp = Value_To_Temp(v_left);
       BoxVMCode_Assemble(c->cur_proc, opn->implem.opcode,
-                       1, & v_left->value.cont);
+                         1, & v_left->value.cont);
       Value_Unlink(v_left); /* We don't need v_left anymore! */
       result = v_temp;
       break;
@@ -341,7 +341,7 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     }
 
     BoxVMCode_Assemble(c->cur_proc, opn->implem.opcode,
-                     2, & v_left->value.cont, & v_right->value.cont);
+                       2, & v_left->value.cont, & v_right->value.cont);
     result = v_left;
     break;
 
@@ -353,8 +353,8 @@ static Value *My_Opn_Emit(BoxCmp *c, Operation *opn,
     v_left = Value_To_Temp_Or_Target(v_left);
     v_right = Value_To_Temp_Or_Target(v_right);
     BoxVMCode_Assemble(c->cur_proc, opn->implem.opcode,
-                     3, & result->value.cont,
-                     & v_left->value.cont, & v_right->value.cont);
+                       3, & result->value.cont,
+                       & v_left->value.cont, & v_right->value.cont);
     Value_Unlink(v_left);
     Value_Unlink(v_right);
     return result;

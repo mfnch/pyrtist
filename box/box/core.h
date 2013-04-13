@@ -90,6 +90,7 @@ typedef enum {
   BOXTYPEID_GET,
   BOXTYPEID_SET,
   BOXTYPEID_ARRAY,
+  BOXTYPEID_Array,
   BOXTYPEID_MAX_VAL
 } BoxTypeId;
 

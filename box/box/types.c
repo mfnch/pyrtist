@@ -213,6 +213,8 @@ static void My_Type_Get_Refs(BoxType *t, int *num_refs, BoxSPtr *refs,
   case BOXTYPECLASS_ANY:
     *num_refs = 0;
     return;
+  default:
+    abort();
   }
 }
 

@@ -35,7 +35,6 @@ static int My_Arch_Is_LE(void) {
   union {
     uint8_t  u8x4[4];
     uint32_t u32x1;
-
   } check;
 
   check.u32x1 = 0x01020408;
@@ -208,7 +207,7 @@ static size_t My_Read_Values(BoxStream *src, void *vals,
 
 /* Writes the given number of uint16_t values to the given output stream. */
 size_t BoxStream_Read_UInt16s(BoxStream *src, uint16_t *vals,
-                               size_t num_vals) {
+                              size_t num_vals) {
   return My_Read_Values(src, vals, num_vals, sizeof(uint16_t));
 }
 

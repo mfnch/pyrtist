@@ -159,6 +159,59 @@ Box_Runtime_Array_At_Num(BoxPtr *parent, BoxPtr *child) {
   return NULL;
 }
 
+
+#if 0
+BoxBool
+Box_Runtime_Register_Array(BoxCoreTypes *runtime,
+                           BoxType *t_ARRAY, BoxType *t_Array) {
+  const BoxTypeId id = BOXTYPEID_ARRAY;
+  const char *name = "ARRAY";
+  BoxType *t, *t1, *t2;
+
+  id = BOXTYPEID_ARRAY;
+  t = BoxType_Create_Primary(id, sizeof(BoxArray), __alignof__(BoxArray));
+  t1 = BoxType_Create_Ident(t, "ARRAY");
+  Box_Runtime_Install_Type(runtime, id, t1);
+
+  id = BOXTYPEID_Array;
+  t2 = BoxType_Create_Ident(t1, "Array");
+  Box_Runtime_Install_Type(runtime, id, t2);
+
+  if (t_ARRAY)
+    *t_ARRAY = t1;
+  if (t_Array)
+    *t_Array = t2;
+
+  return t1 && t2;
+}
+
+BoxBool
+BoxCoreTypes_Register_Array(BoxCoreTypes *ct) {
+  const BoxTypeId id = BOXTYPEID_ARRAY;
+  const char *name = "ARRAY";
+  BoxType *t, *t_arr;
+
+  BoxCombDef defs[] =
+    {BOXCOMBDEF_I_AT_T(BOXTYPEID_INIT, t_arr, Box_Runtime_Init_At_Array),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_FINISH, t_arr, Box_Runtime_Finish_At_Array),
+     BOXCOMBDEF_I_AT_T(BOXTYPEID_ANY, t_arr, Box_Runtime_Any_At_Array),
+     BOXCOMBDEF_T_AT_I(t_arr, BOXTYPEID_NUM, Box_Runtime_Array_At_Num),
+     BOXCOMBDEF_T_TO_T(t_arr, t_arr, Box_Runtime_Array_To_Array)};
+  size_t num_defs = sizeof(defs)/sizeof(BoxCombDef);
+
+  t = BoxType_Create_Primary(id, sizeof(BoxArray), __alignof__(BoxArray));
+  t_arr = BoxType_Create_Ident(t, name);
+  BoxCoreType_Install_Type(ct, id, t_arr);
+
+  if (!t_arr)
+    return BOXBOOL_FALSE;
+
+  return num_defs == BoxCombDef_Define(defs, num_defs);
+}
+
+#endif
+
+
 void BoxArray_Register_Combs(void) {
   BoxType *t_arr = Box_Get_Core_Type(BOXTYPEID_ARRAY);
 
