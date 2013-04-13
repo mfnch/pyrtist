@@ -85,9 +85,12 @@ static BoxReal theta, cos_theta, sin_theta, s, cos_tau, sin_tau/*,tau*/;
  */
 int aput_autoput(BoxPoint *F, BoxPoint *R, BoxReal *weight, int n, int needed)
 {
-  register int i;
-  register BoxReal wsum, *wptr;
-  register BoxReal ix, iy, jx, jy, g2x, g2y, sg2x, sg2y;
+  int i;
+  BoxReal wsum, *wptr;
+  BoxReal ix, iy, jx, jy, g2x, g2y;
+#if DEBUG
+  BoxReal sg2x, sg2y;
+#endif
   BoxPoint *Fptr, *Rptr;
 
   /* n > 0 */
@@ -213,8 +216,10 @@ int aput_autoput(BoxPoint *F, BoxPoint *R, BoxReal *weight, int n, int needed)
       jx += wgx * sy;
       jy += wgy * sx;
     }
+#if DEBUG
     sg2x = sqrt(g2x = g2x/wsum);
     sg2y = sqrt(g2y = g2y/wsum);
+#endif
     ix /= wsum; /*(w = wsum * sg2x);*/
     jx /= wsum;
     iy /= wsum; /*(w = wsum * sg2y);*/

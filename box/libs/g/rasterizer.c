@@ -323,7 +323,7 @@ void rst__mark(BoxGWin *w, SWORD y, SWORD x) {
      * un nuovo blocco.
      */
     WORD y;
-    WORD *bufptr, *row1, *row2, *col1, *col2;
+    WORD *bufptr, *row1, *row2, *col1;
     block_desc *newrstblock;
 
     newrstblock = (block_desc *) malloc( sizeof(block_desc) );
@@ -347,7 +347,7 @@ void rst__mark(BoxGWin *w, SWORD y, SWORD x) {
 
     /* Facciamo un loop su tutte le righe contenute nel blocco */
     for(y = rstblock->ymin; y <= rstblock->ymax; y++) {
-      col2 = row2++;
+      row2++;
       for (col1 = row1++; *col1 != (WORD) 0;
            col1 = (WORD *) rstblock->buffer + (WORD) *col1) {}
     }

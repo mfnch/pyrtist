@@ -150,10 +150,12 @@ BoxG_Auto_Transform(BoxGTransform *transform,
 
   else {	
     /* Now we compute all the averages we need in the next steps */
-    BoxPoint g_avg,
-             g2_avg = {0.0, 0.0},
+    BoxPoint g2_avg = {0.0, 0.0},
              i_avg = {0.0, 0.0},
              j_avg = {0.0, 0.0};
+#ifdef DEBUG
+    BoxPoint g_avg;
+#endif
     BoxPoint U = 
       (BoxPoint) {transform->translation.x + transform->rotation_center.x,
 		  transform->translation.y + transform->rotation_center.y};
@@ -185,10 +187,11 @@ BoxG_Auto_Transform(BoxGTransform *transform,
     j_avg.y = -(j_avg.y/weights_sum);
     g2_avg.x /= weights_sum;
     g2_avg.y /= weights_sum;
+
+#ifdef DEBUG
     g_avg.x = sqrt(g2_avg.x);
     g_avg.y = sqrt(g2_avg.y);
 
-#ifdef DEBUG
     printf("g2x = %g\tg2y = %g\n...", g2_avg.x, g2_avg.y);
     printf("sg2x = %g\tsg2y = %g\n...", g_avg.x, g_avg.y);
     printf("ix = %g\tiy = %g\n...", i_avg.x, i_avg.y);

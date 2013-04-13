@@ -48,8 +48,11 @@ static int lt_draw_closed(LineTracer *lt);
 static int lt_put_to_begin_or_end(BoxGWin *win,
                                   LineTracer *lt, BoxPoint *p1, BoxPoint *p2,
                                   BoxReal w, BoxReal fw, void *f, int final);
+#if 0
 static int lt_put_to_join(LineTracer *lt, BoxPoint *p1, BoxPoint *p2, BoxPoint *p3,
                           BoxReal w1, BoxReal w2, BoxReal fw, void *f, int first);
+#endif
+
 static void lt_first_point(LineTracer *lt, BoxPoint *p, BoxReal s);
 static void lt_next_point(LineTracer *lt, BoxPoint *p, BoxReal si, BoxReal so);
 static void lt_final_point(LineTracer *lt, BoxPoint *p, BoxReal s);
@@ -115,7 +118,7 @@ BoxInt lt_num_pieces(LineTracer *lt) {
  */
 static int lt_draw_opened(BoxGWin *w, LineTracer *lt) {
   long numpnt, m;
-  LinePiece *ip, *i, *in; /* p --> previous, n --> next */
+  LinePiece *i, *in; /* p --> previous, n --> next */
 
   /* Una linea e' descritta da almeno 2 punti */
   numpnt = buff_numitem(& lt->pieces);
@@ -125,7 +128,6 @@ static int lt_draw_opened(BoxGWin *w, LineTracer *lt) {
   }
 
   /* i1 punta all'ultimo punto, i2 e 13 al primo e secondo rispettivamente */
-  ip = buff_lastitemptr(& lt->pieces, LinePiece);
   i = buff_firstitemptr(& lt->pieces, LinePiece);
   in = buff_itemptr(& lt->pieces, LinePiece, 2);
 
@@ -142,7 +144,7 @@ static int lt_draw_opened(BoxGWin *w, LineTracer *lt) {
   /* Ripeto per (numpnt - 2) volte */
   for (m = 2; m < numpnt; m++) {
     /* Faccio uno shift dei puntatori, per passare al prossimo punto */
-    ip = i; i = in++;
+    i = in++;
 
     lt_join_style_set(lt, & i->style);
 
@@ -771,11 +773,10 @@ void lt_first_line(LineTracer *lt, BoxReal x1, BoxReal y1, BoxReal sp1,
                    BoxReal x2, BoxReal y2, BoxReal sp2, BoxReal startlenght,
                    int is_closed) {
   BoxReal sl;
-  LineDesc *thsl, *nxtl;
+  LineDesc *thsl;
 
   /* Setto i puntatori alle strutture che contengono i dati sulle linee */
   thsl = lt->thsl = & lt->line1;
-  nxtl = lt->nxtl = & lt->line2;
 
   /* Calcolo il vettore relativo alla linea */
   thsl->v.x = (thsl->pnt2.x = x2) - (thsl->pnt1.x = x1);
