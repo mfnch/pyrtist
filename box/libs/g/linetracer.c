@@ -777,6 +777,7 @@ void lt_first_line(LineTracer *lt, BoxReal x1, BoxReal y1, BoxReal sp1,
 
   /* Setto i puntatori alle strutture che contengono i dati sulle linee */
   thsl = lt->thsl = & lt->line1;
+  lt->nxtl = & lt->line2;
 
   /* Calcolo il vettore relativo alla linea */
   thsl->v.x = (thsl->pnt2.x = x2) - (thsl->pnt1.x = x1);

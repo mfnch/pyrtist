@@ -280,11 +280,7 @@ char *BoxVMCode_Get_Alter_Name(BoxVMCode *p) {
 }
 
 size_t BoxVMCode_Get_Code_Size(BoxVMCode *p) {
-  if (p->have.proc_id)
-    return BoxVM_Proc_Get_Size(p->cmp->vm, p->proc_id);
-
-  else
-    return 0;
+  return (p->have.proc_id) ? BoxVM_Proc_Get_Size(p->cmp->vm, p->proc_id) : 0;
 }
 
 BoxVMCallNum BoxVMCode_Get_Call_Num(BoxVMCode *p) {
@@ -374,7 +370,7 @@ static void My_Prepare_Ptr_Access(BoxVMCode *p, const BoxCont *c) {
   if (c->categ == BOXCONTCATEG_PTR && (c->value.ptr.is_greg || ptr_reg != 0)) {
     BoxInt categ = c->value.ptr.is_greg ? BOXCONTCATEG_GREG : BOXCONTCATEG_LREG;
     BoxVMCode_Raw_Assemble(p, BOXOP_MOV_OO, BOXOPARGFORM_LREG, (BoxInt) 0,
-                         categ, ptr_reg);
+                           categ, ptr_reg);
   }
 }
 
@@ -541,22 +537,22 @@ typedef struct {
                 ro0_arg_conflict,
                 ro0_input_conflict;
   const BoxCont *exp_args[2];
-} FoundOP;
+  BoxCont       aux_arg;
+} MyFoundOp;
 
 int My_ContTypes_Match(BoxContType t1, BoxContType t2) {
   return    ((t1 == BOXCONTTYPE_OBJ) ? BOXCONTTYPE_PTR : t1)
          == ((t2 == BOXCONTTYPE_OBJ) ? BOXCONTTYPE_PTR : t2);
 }
 
-static BoxOpInfo *My_Find_Op(BoxVMCode *p, FoundOP *info, BoxGOp g_op,
+static BoxOpInfo *My_Find_Op(BoxVMCode *p, MyFoundOp *info, BoxGOp g_op,
                              int num_args, const BoxCont **args,
                              int ignore_signature) {
   BoxOpInfo *oi;
   int num_exp_args, ro0_arg_conflict, ro0_input_conflict;
 
   /* Search for operations whose argument number and type match */
-  oi = BoxVM_Get_Op_Info(p->cmp->vm, g_op);
-  for(; oi != NULL; oi = oi->next) {
+  for(oi = BoxVM_Get_Op_Info(p->cmp->vm, g_op); oi; oi = oi->next) {
     if (oi->num_regs == num_args) {
       /* Consider only operations with matching arg number */
       BoxOpSignature signature;
@@ -620,10 +616,41 @@ static BoxOpInfo *My_Find_Op(BoxVMCode *p, FoundOP *info, BoxGOp g_op,
   return NULL;
 }
 
+static void
+My_Load_Immediates(BoxVMCode *p, int num_regs, BoxOpReg *regs,
+                   const BoxCont **args, MyFoundOp *op) {
+  int i, j;
+  for(i = 0; i < num_regs; i++) {
+    const BoxCont *src = args[i];
+    BoxOpReg *reg = & regs[i];
+    if (src->categ == BOXCONTCATEG_IMM && (reg->io == 'i' || reg->io == 'b')) {
+      if (src->type == BOXCONTTYPE_INT && sizeof(BoxInt) > sizeof(int32_t)) {
+        BoxInt value = src->value.imm.box_int;
+        if (value != (BoxInt) ((int32_t) value)) {
+          BoxCont *ri0 = & op->aux_arg;
+
+          ri0->categ = BOXCONTCATEG_LREG;
+          ri0->type = BOXCONTTYPE_INT;
+          ri0->value.reg = 0;
+          BoxVMCode_Raw_Assemble(p, BOXOP_MOV_Iimm,
+                                 ri0->categ, ri0->value.reg,
+                                 BOXCONTCATEG_IMM, value);
+
+          /* Update references to the container. */
+          args[i] = ri0;
+          for (j = 0; j < op->num_exp_args; j++)
+            if (op->exp_args[j] == src)
+              op->exp_args[j] = ri0;
+        }
+      }
+    }
+  }
+}
+
 void BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap) {
   const BoxCont *args[BOXOP_MAX_NUM_ARGS];
   BoxOpInfo *oi;
-  FoundOP op;
+  MyFoundOp op;
   int i;
 
   if (num_args > BOXOP_MAX_NUM_ARGS) {
@@ -694,6 +721,11 @@ void BoxVMCode_VA_Assemble(BoxVMCode *p, BoxGOp g_op, int num_args, va_list ap) 
    *  catch things like "mov o[ro0+8], ro0"
    * NOT DOING THIS FOR NOW!
    */
+
+  /* Use separate load for immediates, if they are out of the admissible
+   * range.
+   */
+  My_Load_Immediates(p, num_args, oi->regs, args, & op);
 
   /* Setting all the implicit input registers from the given arguments */
   My_Gather_Implicit_Input_Regs(p, num_args, oi->regs, args);

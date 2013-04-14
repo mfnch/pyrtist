@@ -986,7 +986,7 @@ void BoxOpTable_Build(BoxOpTable *ot) {
     const char *token;
     int num_regs, num_out_regs;
 
-    assert(oi->name != NULL);
+    assert(oi->name);
     h_ot = & op_table_for_humans[oi->opcode];
 
     /* Parse the string containing the output registers and transform it into
