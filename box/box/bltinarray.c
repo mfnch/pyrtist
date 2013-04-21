@@ -190,9 +190,16 @@ BoxCoreTypes_Register_Array(BoxCoreTypes *ct) {
     BoxCombDef defs[] =
       {BOXCOMBDEF_I_AT_T(BOXTYPEID_INIT, t_ARR, Box_Runtime_Init_At_Array),
        BOXCOMBDEF_I_AT_T(BOXTYPEID_FINISH, t_ARR, Box_Runtime_Finish_At_Array),
-       BOXCOMBDEF_I_AT_T(BOXTYPEID_ANY, t_ARR, Box_Runtime_Any_At_Array),
        BOXCOMBDEF_T_AT_I(t_ARR, BOXTYPEID_NUM, Box_Runtime_Array_At_Num),
-       BOXCOMBDEF_T_TO_T(t_ARR, t_ARR, Box_Runtime_Array_To_Array)};
+       BOXCOMBDEF_T_TO_T(t_ARR, t_ARR, Box_Runtime_Array_To_Array),
+       BOXCOMBDEF_I_AT_I(BOXTYPEID_ANY, BOXTYPEID_GET, Box_Runtime_Any_At_Get)};
+    size_t num_defs = sizeof(defs)/sizeof(BoxCombDef);
+    result &= (num_defs == BoxCombDef_Define(defs, num_defs));
+  }
+
+  if (t_Arr) {
+    BoxCombDef defs[] =
+      {BOXCOMBDEF_I_AT_T(BOXTYPEID_ANY, t_Arr, Box_Runtime_Any_At_Array)};
     size_t num_defs = sizeof(defs)/sizeof(BoxCombDef);
     result &= (num_defs == BoxCombDef_Define(defs, num_defs));
   }
