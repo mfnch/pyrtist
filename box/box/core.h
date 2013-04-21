@@ -347,4 +347,15 @@ Box_Get_Core_Type(BoxTypeId id);
 
 #  define BOX_FATAL_ERROR() Box_Fatal_Error(__FILE__, __LINE__)
 
+/**
+ * @brief Install a core type (internal function).
+ *
+ * @param ct The set of core types.
+ * @param id Core type id.
+ * @param t The type to be associated to @p id.
+ * @note Aborts on failure.
+ */
+BOXEXPORT void
+BoxCoreTypes_Install_Type(BoxCoreTypes *ct, BoxTypeId id, BoxType *t);
+
 #endif /* _BOX_CORE_H */

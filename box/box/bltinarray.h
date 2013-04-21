@@ -43,14 +43,14 @@ typedef BoxAny BoxGet;
  */
 typedef struct BoxSet_struct BoxSet;
 
-
 /**
- * @brief Reserved function used by the compiler to register combinations
- *   for the ARRAY type.
+ * @brief Install @c ARRAY and @c Array as a core type (internal).
  *
- * This function is not meant to be called by the regular user.
+ * @param ct Where the @c ARRAY and @c Array types are to be installed.
+ * @return Whether the operation suceeded.
+ * @note The types are created and their combinations are defined.
  */
-BOXEXPORT void
-BoxArray_Register_Combs(void);
+BOXEXPORT BoxBool
+BoxCoreTypes_Register_Array(BoxCoreTypes *ct);
 
 #endif /* _BOX_BLTINARRAY_H */

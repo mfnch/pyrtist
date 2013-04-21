@@ -87,7 +87,6 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
     {"CPtr", BOXTYPEID_CPTR, sizeof(BoxCPtr), __alignof__(BoxCPtr)},
     {"Str", BOXTYPEID_STR, sizeof(BoxStr), __alignof__(BoxStr)},
     {"Set", BOXTYPEID_SET, sizeof(BoxSet), __alignof__(BoxSet)},
-    {"ARRAY", BOXTYPEID_ARRAY, sizeof(BoxArray), __alignof__(BoxArray)},
     {(const char *) NULL, BOXTYPEID_NONE, (size_t) 0, (size_t) 0}
 
 #if 0
@@ -205,7 +204,7 @@ BoxBool BoxCoreTypes_Init(BoxCoreTypes *core_types) {
   core_types->initialized = BOXBOOL_TRUE;
   My_Init_Basic_Types(core_types, & success);
   My_Init_Composite_Types(core_types, & success);
-  BoxArray_Register_Combs();
+  BoxCoreTypes_Register_Array(core_types);
 
 #if 0
   /* Register math core functions. */
@@ -256,4 +255,13 @@ BoxCoreTypes_Get_Type(BoxCoreTypes *ct, BoxTypeId id) {
 BoxType *
 Box_Get_Core_Type(BoxTypeId id) {
   return BoxCoreTypes_Get_Type(& box_core_types, id);
+}
+
+/* Install a core type (internal function). */
+void
+BoxCoreTypes_Install_Type(BoxCoreTypes *ct, BoxTypeId id, BoxType *t) {
+  assert(ct && id >= BOXTYPEID_MIN_VAL && id < BOXTYPEID_MAX_VAL);
+  ct->types[id] = t;
+  if (!t)
+    BoxSPtr_Unlink(t);
 }
