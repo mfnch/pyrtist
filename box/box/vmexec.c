@@ -606,11 +606,14 @@ My_Exec_Box_OO(BoxVMX *vmx, void *arg1, void *arg2) {
 }
 
 /**
- * @brief Instruction <tt>box dstptr, srcptr</tt>.
+ * @brief Instruction <tt>wbox dstptr, srcptr</tt>.
  *
- * The @c box VM instruction converts the source object @c srcptr into a
+ * The @c wbox VM instruction converts the source object @c srcptr into a
  * destination @c ANY object in @c dstptr using the type in @c ro0.
  * Note that @c dstptr must be a pointer to an initialized @c ANY object.
+ * Contrary to the @c box instruction, @c wbox does not copy NULL-block
+ * objects. This means that an object boxed with @c wbox should not escape
+ * the current execution unit.
  */
 static void
 My_Exec_WBox_OO(BoxVMX *vmx, void *arg1, void *arg2) {
@@ -622,7 +625,7 @@ My_Exec_WBox_OO(BoxVMX *vmx, void *arg1, void *arg2) {
   if (t) {
     if (BoxAny_Box(dst, src, t, BOXBOOL_FALSE))
       return;
-    BoxVM_Set_Fail_Msg(vmx->vm, "Boxing operation failed");
+    BoxVM_Set_Fail_Msg(vmx->vm, "Weak boxing operation failed");
   } else
     BoxVM_Set_Fail_Msg(vmx->vm, "Anomalous type in boxing operation");
 
