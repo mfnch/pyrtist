@@ -161,7 +161,8 @@ Box_Runtime_Array_At_Num(BoxPtr *parent, BoxPtr *child) {
 
 /* Create the types ARRAY and Array and add them to the set of core types. */
 static BoxBool
-My_Register_Types(BoxCoreTypes *ct, BoxType **t_ARRAY, BoxType **t_Array) {
+My_Register_Types(BoxCoreTypes *ct,
+                  BoxType **t_ARRAY, BoxType **t_Array) {
   BoxType *t, *t1, *t2;
 
   t = BoxType_Create_Primary(BOXTYPEID_ARRAY,
@@ -169,8 +170,15 @@ My_Register_Types(BoxCoreTypes *ct, BoxType **t_ARRAY, BoxType **t_Array) {
   t1 = BoxType_Create_Ident(t, "ARRAY");
   BoxCoreTypes_Install_Type(ct, BOXTYPEID_ARRAY, t1);
 
-  t2 = BoxType_Create_Ident(t1, "Array");
+  t2 = BoxType_Create_Ident(BoxType_Link(t1), "Array");
   BoxCoreTypes_Install_Type(ct, BOXTYPEID_Array, t2);
+
+
+#if 0
+  BoxCoreTypes_Install_Type(ct, BOXTYPEID_Get, t2);
+
+  BoxCoreTypes_Install_Type(ct, BOXTYPEID_Getter, t2);
+#endif
 
   if (t_ARRAY)
     *t_ARRAY = t1;
@@ -192,7 +200,7 @@ BoxCoreTypes_Register_Array(BoxCoreTypes *ct) {
        BOXCOMBDEF_I_AT_T(BOXTYPEID_FINISH, t_ARR, Box_Runtime_Finish_At_Array),
        BOXCOMBDEF_T_AT_I(t_ARR, BOXTYPEID_NUM, Box_Runtime_Array_At_Num),
        BOXCOMBDEF_T_TO_T(t_ARR, t_ARR, Box_Runtime_Array_To_Array),
-       BOXCOMBDEF_I_AT_I(BOXTYPEID_ANY, BOXTYPEID_GET, Box_Runtime_Any_At_Get)};
+       BOXCOMBDEF_I_AT_I(BOXTYPEID_ANY, BOXTYPEID_Get, Box_Runtime_Any_At_Get)};
     size_t num_defs = sizeof(defs)/sizeof(BoxCombDef);
     result &= (num_defs == BoxCombDef_Define(defs, num_defs));
   }

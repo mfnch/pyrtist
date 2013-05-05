@@ -194,7 +194,7 @@ static void My_Init_Composite_Types(BoxCoreTypes *ct, BoxBool *success) {
 
   /* Get = Any */
   t = BoxType_Create_Ident(BoxType_Link(ct->types[BOXTYPEID_ANY]), "Get");
-  My_Set_Type(ct, BOXTYPEID_GET, t, success);
+  My_Set_Type(ct, BOXTYPEID_Get, t, success);
 }
 
 /* Initialize the core types of Box. */
@@ -262,6 +262,4 @@ void
 BoxCoreTypes_Install_Type(BoxCoreTypes *ct, BoxTypeId id, BoxType *t) {
   assert(ct && id >= BOXTYPEID_MIN_VAL && id < BOXTYPEID_MAX_VAL);
   ct->types[id] = t;
-  if (!t)
-    BoxSPtr_Unlink(t);
 }
