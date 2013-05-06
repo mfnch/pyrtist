@@ -45,7 +45,7 @@ def _cut_square(size, x, y, dx, dy):
   if sx < 1 or sy < 1: return (x0, y0, -1, -1)
   return (x0, y0, sx+1, sy+1)
 
-def draw_ref_point(drawable, coords, size, gc):
+def draw_ref_point(drawable, coords, size, gc, kind=0):
   drawable_size = drawable.get_size()
   x, y = coords
 
@@ -56,14 +56,21 @@ def draw_ref_point(drawable, coords, size, gc):
     return None
 
   gc.foreground, gc.background = (gc.background, gc.foreground)
-  drawable.draw_rectangle(gc, True, x0, y0, dx0, dy0)
+  if kind == 0:
+    drawable.draw_rectangle(gc, True, x0, y0, dx0, dy0)
+  else:
+    drawable.draw_arc(gc, True, x0, y0, dx0, dy0, 64*0, 64*360)
   gc.foreground, gc.background = (gc.background, gc.foreground)
 
   l1 = l0 - 1
   dl1 = 2*l1
   x1, y1, dx1, dy1 = _cut_square(drawable_size, x-l1, y-l1, dl1, dl1)
   if dx1 > 0 and dy1 > 0:
-    drawable.draw_rectangle(gc, True, x1, y1, dx1, dy1)
+    if kind == 0:
+      drawable.draw_rectangle(gc, True, x1, y1, dx1, dy1)
+    else:
+      drawable.draw_arc(gc, True, x1, y1, dx1, dy1, 64*0, 64*360)
+
 
 class BoxViewArea(ZoomableArea):
   def __init__(self, filename=None, out_fn=None, callbacks=None, **kwargs):
@@ -95,10 +102,18 @@ class DraggedPoints(object):
     self.py_initial_pos = py_initial_pos
 
 
+(DO_MODE_NORMAL,
+ DO_MODE_UNDO,
+ DO_MODE_REDO) = range(3)
+
+
 class BoxEditableArea(BoxViewArea, Configurable):
   def __init__(self, *args, **kwargs):
+    self.do_mode = DO_MODE_NORMAL      # Whether doing/undoing/redoing.
+    self._undo_list = []               # List of undoable actions
+    self._redo_list = []               # List of redoable actions
 
-    self._dragged_refpoints = None     # RefPoint which is being dragged
+    self._dragged_refpoints = None     # RefPoints which are being dragged
     self._fns = {"refpoint_new": None, # External handler functions
                  "refpoint_delete": None,
                  "refpoint_pick": None,
@@ -121,6 +136,52 @@ class BoxEditableArea(BoxViewArea, Configurable):
     self.connect("button-press-event", self._on_button_press_event)
     self.connect("motion-notify-event", self._on_motion_notify_event)
     self.connect("button-release-event", self._on_button_release_event)
+
+  def _record_action(self, *args):
+    """Record an action (for undo/redo functionality)."""
+    do_mode = self.do_mode
+    if do_mode == DO_MODE_REDO:
+      self._undo_list.append(args)
+    elif do_mode == DO_MODE_UNDO:
+      self._redo_list.append(args)
+    else:
+      self._redo_list = []
+      self._undo_list.append(args)
+
+  def _do(self, action_list, repeat=1):
+    """Perform the actions given in `action_list'."""
+    for _ in range(repeat):
+      if len(action_list) == 0:
+        break
+      action = action_list.pop()
+      action_name = action[0]
+      if action_name == "created":
+        _, name = action
+        self.refpoint_delete(self.document.refpoints[name])
+      if action_name == "deleted":
+        _, name, value = action
+        self.refpoint_new(value, name=name, use_py_coords=False)
+      if action_name == "moved-from":
+        _, name, value = action
+        rp = self.document.refpoints[name]
+        self.refpoint_move(rp, value, use_py_coords=False)
+
+  def clear_do_history(self):
+    """Clear undo/redo history."""
+    self._undo_list = []
+    self._redo_list = []
+
+  def undo(self, repeat=1):
+    """Undo the last action."""
+    self.do_mode = DO_MODE_UNDO
+    self._do(self._undo_list, repeat)
+    self.do_mode = DO_MODE_NORMAL
+
+  def redo(self, repeat=1):
+    """Redo the last undone action."""
+    self.do_mode = DO_MODE_REDO
+    self._do(self._redo_list, repeat)
+    self.do_mode = DO_MODE_NORMAL
 
   def set_callback(self, name, callback):
     """Set the callbacks."""
@@ -150,7 +211,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
                             refpoint_sel_gc=sel_gc,
                             refpoint_drag_gc=drag_gc)
 
-  def refpoint_new(self, py_coords, name=None):
+  def refpoint_new(self, coords, name=None, use_py_coords=True):
     """Add a new reference point whose coordinates are 'point' (a couple
     of floats) and the name is 'name'. If 'name' is not given, then a name
     is generated automatically using the 'base_name' given during construction
@@ -158,13 +219,15 @@ class BoxEditableArea(BoxViewArea, Configurable):
     RETURN the name finally chosen for the point.
     """
     screen_view = self.get_visible_coords()
-    box_coords = screen_view.pix_to_coord(py_coords)
+    box_coords = (screen_view.pix_to_coord(coords) if use_py_coords
+                  else coords)
     refpoints = self.document.refpoints
     real_name = refpoints.new_name(name)
     if real_name in refpoints:
       raise ValueError("A reference point with the same name exists (%s)"
                        % real_name)
 
+    self._record_action('created', real_name)
     rp = RefPoint(real_name, box_coords)
     refpoints.append(rp)
     self._refpoint_show(rp)
@@ -255,12 +318,14 @@ class BoxEditableArea(BoxViewArea, Configurable):
                 else gc_drag)
           draw_ref_point(self.window, pix_coord, rp_size, gc)
 
-  def refpoint_move(self, rp, py_coords):
+  def refpoint_move(self, rp, coords, use_py_coords=True):
     """Move a reference point to a new position."""
     screen_view = self.get_visible_coords()
-    box_coords = screen_view.pix_to_coord(Point(py_coords))
+    box_coords = (screen_view.pix_to_coord(Point(coords)) if use_py_coords
+                  else coords)
     if rp.visible:
       self._refpoint_hide(rp)
+      self._record_action("moved-from", rp.name, rp.value)
       rp.value = box_coords
       self._refpoint_show(rp)
 
@@ -268,6 +333,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
     """Delete the given reference point."""
     if rp.visible:
       self._refpoint_hide(rp)
+      self._record_action("deleted", rp.name, rp.value)
       self.document.refpoints.remove(rp)
       fn = self._fns["refpoint_delete"]
       if fn != None:
@@ -389,5 +455,6 @@ class BoxEditableArea(BoxViewArea, Configurable):
                Point(transform(Point(drps.py_initial_pos))))
     for rp_name, rp in drps.initial_points.iteritems():
       if rp.visible:
+        self._record_action("moved-from", rp_name, rps[rp_name].value)
         rps[rp_name].value = Point(rps[rp_name].value) + box_vec
     
