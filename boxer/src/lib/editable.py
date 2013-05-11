@@ -143,18 +143,6 @@ class BoxEditableArea(BoxViewArea, Configurable):
     self.connect("motion-notify-event", self._on_motion_notify_event)
     self.connect("button-release-event", self._on_button_release_event)
 
-  def clear_do_history(self):
-    """Clear undo/redo history."""
-    self.undoer.clear()
-
-  def undo(self):
-    """Undo the last action."""
-    self.undoer.undo()
-
-  def redo(self, repeat=1):
-    """Redo the last undone action."""
-    self.undoer.redo()
-
   def set_callback(self, name, callback):
     """Set the callbacks."""
     if name not in self._fns:
