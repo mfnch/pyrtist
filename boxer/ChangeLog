@@ -1,3 +1,10 @@
+In version 0.4.0:
+  BRIEFLY: better undo manager.
+  DETAILS:
+  - We now use our own undo manager, which allows having a single undo history
+    for both the text editor and the graphics editor (notice that the latter
+    did not have any undo/redo capabilities).
+
 In version 0.3.8:
   BRIEFLY: the documentation system was rewritten plus bugfixes.
   DETAILS:

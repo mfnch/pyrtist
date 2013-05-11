@@ -105,7 +105,7 @@ class DraggedPoints(object):
 
 # Functions used by the undoer.
 def create_fn(_, editable, name, value):
-  editable.refpoint_new(value, name=name, use_py_coords=False)
+  editable.refpoint_new(value, name=name, use_py_coords=False, with_cb=False)
 
 def move_fn(_, editable, name, value):
   rp = editable.document.refpoints[name]
@@ -183,7 +183,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
                             refpoint_sel_gc=sel_gc,
                             refpoint_drag_gc=drag_gc)
 
-  def refpoint_new(self, coords, name=None, use_py_coords=True):
+  def refpoint_new(self, coords, name=None, use_py_coords=True, with_cb=True):
     """Add a new reference point whose coordinates are 'point' (a couple
     of floats) and the name is 'name'. If 'name' is not given, then a name
     is generated automatically using the 'base_name' given during construction
@@ -204,9 +204,9 @@ class BoxEditableArea(BoxViewArea, Configurable):
     rp = RefPoint(real_name, box_coords)
     refpoints.append(rp)
     self._refpoint_show(rp)
-    fn = self._fns["refpoint_new"]
-    if fn != None:
-      fn(self, rp)
+    cb = self._fns["refpoint_new"]
+    if with_cb and cb != None:
+      cb(self, rp)
     return rp
 
   def refpoint_pick(self, py_coords, include_invisible=False):

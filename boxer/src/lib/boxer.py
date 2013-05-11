@@ -17,7 +17,6 @@
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
 # TODO (for later):
-# - extend do/undo to refpoints
 # - add show all/hide all button
 # - configuration files should work as before
 # - buffer geometry should be determined by memory available for buffer
@@ -26,25 +25,6 @@
 # - find and replace
 # - rename RefPoint? (dangerous, should be assisted)
 # - configuration window
-
-# DONE IN VER 0.3.0:
-# x added the Box assistant (color window, polygons, lines, etc)
-# x load and save dialogs should remember last opened directory(independently)
-# x remember last window configuration (size of main window)
-# x allow cancel exit in window asking whether to save or not unsaved changes
-
-# DONE IN VER 0.2.0:
-# x it should be possible to terminate execution of running scripts
-# x refpoints should have yellow color
-# x paste button should work as before
-
-# x initial script should have bounding box defined by two RefPoint-s
-# x bounding box should be visible somehow
-# x shade view when there are errors (drawing failed)
-# x vertical placement of text editor and graphic view
-#   Now it is [--] while we should allow [ | ]
-#   There are four combinations [Text|Figure], [Figure|Text], etc.
-# x resize reference points
 
 import sys
 import time
@@ -235,8 +215,8 @@ class Boxer(object):
     emn.set_submenu(mn)
 
     # For now let's hide the Library menu
-    #mainmenu = merge.get_widget("/MenuBar")
-    #mainmenu.remove(merge.get_widget("/MenuBar/LibraryMenu"))
+    mainmenu = merge.get_widget("/MenuBar")
+    mainmenu.remove(merge.get_widget("/MenuBar/LibraryMenu"))
 
     # HBox containing the toolbar, the refpoint combobox, etc
     hbox = gtk.HBox(homogeneous=False, spacing=0)
@@ -574,39 +554,13 @@ class Boxer(object):
     if self.ensure_file_is_saved():
       self.raw_quit()
 
-  def show_undo_redo_warning(self):
-    if self._undo_redo_warning_shown:
-      return
-
-    self._undo_redo_warning_shown = True
-    self.error("Cannot undo/redo. Please install python-gtksourceview (or "
-               "python-gtksourceview2). This will give you undo-redo "
-               "capabilities, highlighting of the sources and other nice "
-               "features.")
-
   def menu_edit_undo(self, image_menu_item):
     """Called on a CTRL+Z or menu->undo."""
     self.undoer.undo()
-    return
-
-    try:
-      if self.widget_srcbuf.can_undo():
-        self.widget_srcbuf.undo()
-
-    except:
-      self.show_undo_redo_warning()
 
   def menu_edit_redo(self, image_menu_item):
     """Called on a CTRL+SHIFT+Z or menu->redo."""
     self.undoer.redo()
-    return
-
-    try:
-      if self.widget_srcbuf.can_redo():
-        self.widget_srcbuf.redo()
-
-    except:
-      self.show_undo_redo_warning()
 
   def menu_edit_cut(self, image_menu_item):
     """Called on a CTRL+X (cut) command."""
@@ -833,7 +787,6 @@ class Boxer(object):
     self.dialog_filesave = None
     self.dialog_dox_browser = None
 
-    self._undo_redo_warning_shown = False
     self.box_killer = None
 
     self.button_left = self.config.getint("Behaviour", "button_left")
@@ -942,7 +895,6 @@ class Boxer(object):
         BoxSrcView(use_gtksourceview=True,
                    quickdoc=self.srcview_tooltip,
                    undoer=undoer)
-    self.has_srcview = (self.part_srcview.mode > 0)
     self.widget_srcview = srcview = part_srcview.view
     self.widget_srcbuf = srcbuf = part_srcview.buf
 
