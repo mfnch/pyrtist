@@ -117,7 +117,7 @@ def delete_fn(_, editable, name):
 
 class BoxEditableArea(BoxViewArea, Configurable):
   def __init__(self, *args, **kwargs):
-    self.undoer = kwargs.get('undoer') or Undoer()
+    self.undoer = kwargs.pop('undoer', None) or Undoer()
 
     self._dragged_refpoints = None     # RefPoints which are being dragged
     self._fns = {"refpoint_new": None, # External handler functions

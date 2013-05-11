@@ -62,6 +62,7 @@ from config import threads_init, threads_enter, threads_leave
 import docbase
 import document
 
+from undoer import Undoer
 from srcview import BoxSrcView
 import boxmode
 from assistant import Assistant, insert_char, rinsert_char
@@ -407,12 +408,9 @@ class Boxer(object):
     tb = self.widget_srcbuf
     return tb.get_text(tb.get_start_iter(), tb.get_end_iter())
 
-  def set_main_source(self, text, not_undoable=None):
+  def set_main_source(self, text):
     """Set the content of the main textview from the string 'text'."""
-    if not_undoable == None:
-      not_undoable = self.has_srcview
-    if not_undoable:
-      self.widget_srcbuf.begin_not_undoable_action()
+    self.undoer.begin_not_undoable_action()
     self.widget_srcbuf.set_text(text)
 
     # Remove the "here" marker and put the cursor there!
@@ -424,8 +422,7 @@ class Boxer(object):
       self.widget_srcbuf.select_range(mark0, mark1)
       self.widget_srcbuf.delete_selection(True, True)
 
-    if not_undoable:
-      self.widget_srcbuf.end_not_undoable_action()
+    self.undoer.end_not_undoable_action()
 
   def raw_file_new(self):
     """Start a new box program and set the content of the main textview."""
@@ -434,7 +431,7 @@ class Boxer(object):
     d.new()
     d.load_from_str(box_source_of_new)
 
-    self.editable_area.clear_do_history()
+    self.undoer.clear()
     self.editable_area.reset()
     self.widget_toolbox.exit_all_modes(force=True)
     self.set_main_source(d.get_user_code())
@@ -453,7 +450,7 @@ class Boxer(object):
                  % (filename, str(the_exception)))
       return
     finally:
-      self.editable_area.clear_do_history()
+      self.undoer.clear()
       self.editable_area.reset()
       self.widget_toolbox.exit_all_modes(force=True)
       self.set_main_source(d.get_user_code())
@@ -589,7 +586,7 @@ class Boxer(object):
 
   def menu_edit_undo(self, image_menu_item):
     """Called on a CTRL+Z or menu->undo."""
-    self.editable_area.undo()
+    self.undoer.undo()
     return
 
     try:
@@ -601,7 +598,7 @@ class Boxer(object):
 
   def menu_edit_redo(self, image_menu_item):
     """Called on a CTRL+SHIFT+Z or menu->redo."""
-    self.editable_area.redo()
+    self.undoer.redo()
     return
 
     try:
@@ -822,8 +819,8 @@ class Boxer(object):
         dox.tree.process()
         self.dialog_dox_browser = dox_browser = DoxBrowser(dox)
 
-  def __init__(self, filename=None, box_exec=None):
-    self.filename = filename    
+  def __init__(self, filename=None, box_exec=None, undoer=None):
+    self.filename = filename
     self.config = config.get_configuration()
     if box_exec != None:
       self.config.set("Box", "exec", box_exec)
@@ -879,11 +876,15 @@ class Boxer(object):
     #-------------------------------------------------------------------------
     # Below we setup the main window
 
+    # Create the undoer
+    self.undoer = undoer = undoer or Undoer()
+
     # Create the editable area and do all the wiring
     cfg = {"box_executable": self.config.get("Box", "exec"),
            "box_include_dirs": self.config.get("Library", "dir"),
            "refpoint_size": self.config.getint("GUIView", "refpoint_size")}
-    self.editable_area = editable_area = BoxEditableArea(config=cfg)
+    self.editable_area = editable_area = \
+      BoxEditableArea(config=cfg, undoer=undoer)
     editable_area.set_callback("zoomablearea_got_killer", self._set_box_killer)
     editable_area.set_callback("refpoint_append", self.notify_refpoint_new)
     editable_area.set_callback("refpoint_remove", self.notify_refpoint_del)
@@ -939,7 +940,8 @@ class Boxer(object):
     # Create the text view
     self.part_srcview = part_srcview = \
         BoxSrcView(use_gtksourceview=True,
-                   quickdoc=self.srcview_tooltip)
+                   quickdoc=self.srcview_tooltip,
+                   undoer=undoer)
     self.has_srcview = (self.part_srcview.mode > 0)
     self.widget_srcview = srcview = part_srcview.view
     self.widget_srcbuf = srcbuf = part_srcview.buf

@@ -23,6 +23,7 @@
 class Undoer(object):
   def __init__(self):
     self.do_mode = DO_MODE_NORMAL
+    self.not_undoable_count = 0
     self.undo_actions = []
     self.redo_actions = []
     self.group = []
@@ -37,6 +38,20 @@ class Undoer(object):
     """Clear the undo/redo history."""
     self.undo_actions = []
     self.redo_actions = []
+
+  def begin_not_undoable_action(self):
+    """Begin a not undoable action. The undoer is cleared and deactivated.
+    It is reactivated when end_not_undoable_action() is called as many times
+    as begin_not_undoable_action() was."""
+    if self.not_undoable_count == 0:
+      self.clear()
+    self.not_undoable_count += 1
+
+  def end_not_undoable_action(self):
+    """Marks the end of a not undoable action. A call to this function should
+    match in pair with calls to begin_not_undoable_action()"""
+    assert self.not_undoable_count > 0
+    self.not_undoable_count -= 1
 
   def begin_group(self):
     """Begin a group of actions. A group of actions is seen as a single
@@ -83,6 +98,9 @@ class Undoer(object):
     ``args[0](args)'' undoes ``x''. It is also assumee that the function
     ``args[0]'' will call ``record_action'' to record how to undo the undone
     action."""
+    if self.not_undoable_count != 0:
+      return
+
     if self.group_level > 0:
       self.group.append(args)
       return

@@ -18,6 +18,23 @@
 import gtk
 
 import config
+from undoer import Undoer
+
+# Functions for the undoer.
+def delete_fn(_, srcview, del_offs, del_len):
+  buf = srcview.buf
+  del_start = buf.get_iter_at_offset(del_offs)
+  del_end = buf.get_iter_at_offset(del_offs + del_len)
+  buf.delete(del_start, del_end)
+  buf.place_cursor(del_start)
+
+def insert_fn(_, srcview, ins_text, ins_offs):
+  buf = srcview.buf
+  ins_start = buf.get_iter_at_offset(ins_offs)
+  buf.insert(ins_start, ins_text)
+  cursor_pos = buf.get_iter_at_offset(ins_offs + len(ins_text))
+  buf.place_cursor(cursor_pos)
+  
 
 class BoxSrcView(object):
   def _init_textview(self):
@@ -59,11 +76,12 @@ class BoxSrcView(object):
     except:
       return None
 
-  def __init__(self, use_gtksourceview=True, quickdoc=None):
+  def __init__(self, use_gtksourceview=True, quickdoc=None, undoer=None):
     """Create a new sourceview using gtksourceview2 or gtksourceview,
     if they are available, otherwise return a TextView.
     """
     self.quickdoc = quickdoc
+    self.undoer = undoer or Undoer()
 
     first = (0 if use_gtksourceview else 2)
     init_fns = [self._init_gtksourceview2,
@@ -82,6 +100,9 @@ class BoxSrcView(object):
     view.set_wrap_mode(gtk.WRAP_WORD)
     view.set_property("has-tooltip", True)
     view.connect("query-tooltip", self._sighandler_query_tooltip)
+    view.connect("undo", self._sighandler_undo)
+    buf.connect("insert-text", self._sighandler_insert_text)
+    buf.connect("delete-range", self._sighandler_delete_range)
 
   def _sighandler_query_tooltip(self, srcview, x, y, keyb_mode, tooltip, *etc):
     word = self.get_word_at_coords(x, y)
@@ -92,9 +113,19 @@ class BoxSrcView(object):
         if text != None and len(text) > 0:
           tooltip.set_text(text)
           return True
-
     else:
       return False
+
+  def _sighandler_insert_text(self, buf, text_iter, ins_text, ins_len):
+    self.undoer.record_action(delete_fn, self, text_iter.get_offset(), ins_len)
+
+  def _sighandler_delete_range(self, buf, del_iter_start, del_iter_end):
+    ins_text = buf.get_text(del_iter_start, del_iter_end)
+    self.undoer.record_action(insert_fn, self, ins_text,
+                              del_iter_start.get_offset())
+
+  def _sighandler_undo(self, buf):
+    print "undo"
 
   def get_iter_at_coords(self, x, y):
     bx, by = self.view.window_to_buffer_coords(gtk.TEXT_WINDOW_WIDGET, x, y)
