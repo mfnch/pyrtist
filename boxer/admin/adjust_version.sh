@@ -6,7 +6,7 @@
 SETUP_PY="../setup.py"
 BKP_SETUP_PY="$SETUP_PY~"
 
-INFO_PY="../src/info.py"
+INFO_PY="../src/lib/info.py"
 BKP_INFO_PY="$INFO_PY~"
 
 CUR_VERSION="`./version.sh --current`"
