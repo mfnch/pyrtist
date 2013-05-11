@@ -30,6 +30,7 @@ from zoomable import ZoomableArea, DrawSucceded, DrawFailed
 from boxdraw import BoxImageDrawer
 from refpoints \
   import RefPoint, REFPOINT_UNSELECTED, REFPOINT_SELECTED, REFPOINT_DRAGGED
+from undoer import Undoer
 
 from config import Configurable
 
@@ -102,16 +103,21 @@ class DraggedPoints(object):
     self.py_initial_pos = py_initial_pos
 
 
-(DO_MODE_NORMAL,
- DO_MODE_UNDO,
- DO_MODE_REDO) = range(3)
+# Functions used by the undoer.
+def create_fn(_, editable, name, value):
+  editable.refpoint_new(value, name=name, use_py_coords=False)
+
+def move_fn(_, editable, name, value):
+  rp = editable.document.refpoints[name]
+  editable.refpoint_move(rp, value, use_py_coords=False)
+
+def delete_fn(_, editable, name):
+  editable.refpoint_delete(editable.document.refpoints[name])
 
 
 class BoxEditableArea(BoxViewArea, Configurable):
   def __init__(self, *args, **kwargs):
-    self.do_mode = DO_MODE_NORMAL      # Whether doing/undoing/redoing.
-    self._undo_list = []               # List of undoable actions
-    self._redo_list = []               # List of redoable actions
+    self.undoer = kwargs.get('undoer') or Undoer()
 
     self._dragged_refpoints = None     # RefPoints which are being dragged
     self._fns = {"refpoint_new": None, # External handler functions
@@ -137,51 +143,17 @@ class BoxEditableArea(BoxViewArea, Configurable):
     self.connect("motion-notify-event", self._on_motion_notify_event)
     self.connect("button-release-event", self._on_button_release_event)
 
-  def _record_action(self, *args):
-    """Record an action (for undo/redo functionality)."""
-    do_mode = self.do_mode
-    if do_mode == DO_MODE_REDO:
-      self._undo_list.append(args)
-    elif do_mode == DO_MODE_UNDO:
-      self._redo_list.append(args)
-    else:
-      self._redo_list = []
-      self._undo_list.append(args)
-
-  def _do(self, action_list, repeat=1):
-    """Perform the actions given in `action_list'."""
-    for _ in range(repeat):
-      if len(action_list) == 0:
-        break
-      action = action_list.pop()
-      action_name = action[0]
-      if action_name == "created":
-        _, name = action
-        self.refpoint_delete(self.document.refpoints[name])
-      if action_name == "deleted":
-        _, name, value = action
-        self.refpoint_new(value, name=name, use_py_coords=False)
-      if action_name == "moved-from":
-        _, name, value = action
-        rp = self.document.refpoints[name]
-        self.refpoint_move(rp, value, use_py_coords=False)
-
   def clear_do_history(self):
     """Clear undo/redo history."""
-    self._undo_list = []
-    self._redo_list = []
+    self.undoer.clear()
 
-  def undo(self, repeat=1):
+  def undo(self):
     """Undo the last action."""
-    self.do_mode = DO_MODE_UNDO
-    self._do(self._undo_list, repeat)
-    self.do_mode = DO_MODE_NORMAL
+    self.undoer.undo()
 
   def redo(self, repeat=1):
     """Redo the last undone action."""
-    self.do_mode = DO_MODE_REDO
-    self._do(self._redo_list, repeat)
-    self.do_mode = DO_MODE_NORMAL
+    self.undoer.redo()
 
   def set_callback(self, name, callback):
     """Set the callbacks."""
@@ -227,7 +199,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
       raise ValueError("A reference point with the same name exists (%s)"
                        % real_name)
 
-    self._record_action('created', real_name)
+    self.undoer.record_action(delete_fn, self, real_name)
+
     rp = RefPoint(real_name, box_coords)
     refpoints.append(rp)
     self._refpoint_show(rp)
@@ -325,7 +298,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
                   else coords)
     if rp.visible:
       self._refpoint_hide(rp)
-      self._record_action("moved-from", rp.name, rp.value)
+      self.undoer.record_action(move_fn, self, rp.name, rp.value)
       rp.value = box_coords
       self._refpoint_show(rp)
 
@@ -333,7 +306,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
     """Delete the given reference point."""
     if rp.visible:
       self._refpoint_hide(rp)
-      self._record_action("deleted", rp.name, rp.value)
+
+      self.undoer.record_action(create_fn, self, rp.name, rp.value)
       self.document.refpoints.remove(rp)
       fn = self._fns["refpoint_delete"]
       if fn != None:
@@ -455,6 +429,6 @@ class BoxEditableArea(BoxViewArea, Configurable):
                Point(transform(Point(drps.py_initial_pos))))
     for rp_name, rp in drps.initial_points.iteritems():
       if rp.visible:
-        self._record_action("moved-from", rp_name, rps[rp_name].value)
+        self.undoer.record_action(move_fn, self, rp_name, rps[rp_name].value)
         rps[rp_name].value = Point(rps[rp_name].value) + box_vec
     

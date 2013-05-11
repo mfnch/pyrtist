@@ -434,6 +434,7 @@ class Boxer(object):
     d.new()
     d.load_from_str(box_source_of_new)
 
+    self.editable_area.clear_do_history()
     self.editable_area.reset()
     self.widget_toolbox.exit_all_modes(force=True)
     self.set_main_source(d.get_user_code())
@@ -452,6 +453,7 @@ class Boxer(object):
                  % (filename, str(the_exception)))
       return
     finally:
+      self.editable_area.clear_do_history()
       self.editable_area.reset()
       self.widget_toolbox.exit_all_modes(force=True)
       self.set_main_source(d.get_user_code())
@@ -587,6 +589,9 @@ class Boxer(object):
 
   def menu_edit_undo(self, image_menu_item):
     """Called on a CTRL+Z or menu->undo."""
+    self.editable_area.undo()
+    return
+
     try:
       if self.widget_srcbuf.can_undo():
         self.widget_srcbuf.undo()
@@ -596,6 +601,9 @@ class Boxer(object):
 
   def menu_edit_redo(self, image_menu_item):
     """Called on a CTRL+SHIFT+Z or menu->redo."""
+    self.editable_area.redo()
+    return
+
     try:
       if self.widget_srcbuf.can_redo():
         self.widget_srcbuf.redo()
