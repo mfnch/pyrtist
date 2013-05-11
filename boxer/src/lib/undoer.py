@@ -24,20 +24,63 @@ class Undoer(object):
   def __init__(self):
     self.do_mode = DO_MODE_NORMAL
     self.not_undoable_count = 0
+    self.save_point = None
     self.undo_actions = []
     self.redo_actions = []
     self.group = []
     self.group_level = 0
+    self.callbacks = {"modified-changed": [],
+                      "can-undo-changed": [],
+                      "can-redo-changed": []}
 
-  def register_undoable_action(self, name, do, undo):
+  def register_callback(self, name, cb):
     """Register a type of undoable action."""
-    self.do_actions[name] = do
-    self.undo_actions[name] = undo
+    if name == "all":
+      keys = self.callbacks.keys()
+      for key in keys:
+        self.callbacks[key].append(cb)
+    else:
+      cb_list = self.callbacks.get(name, None)
+      assert cb_list != None, "Cannot find callback name %s" % name
+      cb_list.append(cb)
 
-  def clear(self):
+  def _call_back(self, name, args):
+    for cb in self.callbacks[name]:
+      cb(self, name, args)
+
+  def _begin_action(self):
+    return (self.can_undo(), self.can_redo(), self.is_modified())
+
+  def _end_action(self, old_values):
+    new_values = self._begin_action()
+    for idx, cb_name in enumerate(("can-undo", "can-redo", "modified")):
+      new_value = new_values[idx]
+      if new_value != old_values[idx]:
+        self._call_back(cb_name + "-changed", new_value)
+
+  def clear(self, mark_as_unmodified=True):
     """Clear the undo/redo history."""
+    values = self._begin_action()
     self.undo_actions = []
     self.redo_actions = []
+    if mark_as_unmodified:
+      self.mark_as_unmodified()
+    self._end_action(values)
+
+  def mark_as_unmodified(self):
+    """Mark this as a save point."""
+    assert self.group_level == 0, \
+      "Cannot mark as unmodified while grouping actions"
+    values = self._begin_action()
+    self.save_point = len(self.undo_actions)
+    self._end_action(values)
+
+  def is_modified(self):
+    """Return True if and only if there have not been any modifications since
+    the last call to mark_as_unmodified(). This means that either there were no
+    recorded changes or that all the recorded/undone changes were
+    undone/redone."""
+    return self.group_level != 0 or len(self.undo_actions) != self.save_point
 
   def begin_not_undoable_action(self):
     """Begin a not undoable action. The undoer is cleared and deactivated.
@@ -73,23 +116,38 @@ class Undoer(object):
 
   def _do(self, action_list):
     if len(action_list) == 0:
-      return
+      return None
     action = action_list.pop()
     action[0](*action)
+
+  def can_undo(self):
+    """Whether there are actions to undo."""
+    return len(self.undo_actions) != 0
+
+  def can_redo(self):
+    """Whether there are actions to redo."""
+    return len(self.redo_actions) != 0
 
   def undo(self):
     """Undo the last action."""
     assert self.group_level == 0
+    values = self._begin_action()
     self.do_mode = DO_MODE_UNDO
     self._do(self.undo_actions)
     self.do_mode = DO_MODE_NORMAL
+    self._end_action(values)
 
   def redo(self):
     """Redo the last undone action."""
     assert self.group_level == 0
+    values = self._begin_action()
     self.do_mode = DO_MODE_REDO
-    self._do(self.redo_actions)
+    can_redo = self._do(self.redo_actions)
     self.do_mode = DO_MODE_NORMAL
+    self._end_action(values)
+
+    if can_redo != None:
+      self._call_back("can-redo-changed", can_redo)
 
   def record_action(self, *args):
     """Communicate to the Undoer that an action has been performed and provide
@@ -99,11 +157,15 @@ class Undoer(object):
     ``args[0]'' will call ``record_action'' to record how to undo the undone
     action."""
     if self.not_undoable_count != 0:
+      self.save_point = None
       return
 
     if self.group_level > 0:
       self.group.append(args)
       return
+
+    # If one of these changes, then a callback is called back.
+    values = self._begin_action()
 
     do_mode = self.do_mode
     if do_mode == DO_MODE_REDO:
@@ -111,5 +173,10 @@ class Undoer(object):
     elif do_mode == DO_MODE_UNDO:
       self.redo_actions.append(args)
     else:
+      if self.save_point != None and self.save_point > len(self.undo_actions):
+        self.save_point = None
       self.redo_actions = []
       self.undo_actions.append(args)
+
+    # Generate callbacks
+    self._end_action(values)

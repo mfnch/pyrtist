@@ -206,9 +206,14 @@ class Boxer(object):
 
     self.menubutton_run_execute = merge.get_widget("/MenuBar/RunMenu/Execute")
     self.menubutton_run_stop = merge.get_widget("/MenuBar/RunMenu/Stop")
+    self.menubutton_edit_undo = merge.get_widget("/MenuBar/EditMenu/Undo")
+    self.menubutton_edit_redo = merge.get_widget("/MenuBar/EditMenu/Redo")
     self.toolbutton_run = merge.get_widget("/ToolBar/Execute")
     self.toolbutton_stop = merge.get_widget("/ToolBar/Stop")
     self.widget_pastenewbutton = merge.get_widget("/ToolBar/PasteRP")
+
+    self.menubutton_edit_undo.set_sensitive(self.undoer.can_undo())
+    self.menubutton_edit_redo.set_sensitive(self.undoer.can_redo())
 
     self.examplesmenu = mn = gtk.Menu()
     emn = merge.get_widget("/MenuBar/FileMenu/ExamplesMenu")
@@ -372,16 +377,15 @@ class Boxer(object):
     """Called just after saving a file, to communicate that this has just
     happened.
     """
+    self.undoer.mark_as_unmodified()
     self.widget_srcbuf.set_modified(False)
 
   def update_title(self):
     """Update the title in the main window. Must be called when the file name
     changes or is set."""
-    filename = self.filename
-    if filename == None:
-      filename = "New file (not saved)"
-
-    self.mainwin.set_title("%s - Boxer" % filename)
+    filename = self.filename or "New file"
+    modified_char = " [modified]" if self.undoer.is_modified() else ""
+    self.mainwin.set_title("%s%s - Boxer" % (filename, modified_char))
 
   def get_main_source(self):
     """Return the content of the main textview (just a string)."""
@@ -403,6 +407,7 @@ class Boxer(object):
       self.widget_srcbuf.delete_selection(True, True)
 
     self.undoer.end_not_undoable_action()
+    self.undoer.clear(mark_as_unmodified=True)
 
   def raw_file_new(self):
     """Start a new box program and set the content of the main textview."""
@@ -411,13 +416,11 @@ class Boxer(object):
     d.new()
     d.load_from_str(box_source_of_new)
 
-    self.undoer.clear()
     self.editable_area.reset()
     self.widget_toolbox.exit_all_modes(force=True)
     self.set_main_source(d.get_user_code())
     self.filename = None
     self.assume_file_is_saved()
-    self.update_title()
     self.editable_area.refresh()
 
   def raw_file_open(self, filename):
@@ -430,13 +433,11 @@ class Boxer(object):
                  % (filename, str(the_exception)))
       return
     finally:
-      self.undoer.clear()
       self.editable_area.reset()
       self.widget_toolbox.exit_all_modes(force=True)
       self.set_main_source(d.get_user_code())
       self.filename = filename
       self.assume_file_is_saved()
-      self.update_title()
       self.editable_area.zoom_off()
 
   def raw_file_save(self, filename=None):
@@ -453,7 +454,6 @@ class Boxer(object):
       return False
 
     self.filename = filename
-    self.update_title()
     self.assume_file_is_saved()
     return True
 
@@ -463,7 +463,7 @@ class Boxer(object):
     Return True if the user decided Yes or No. Return False to cancel
     the action.
     """
-    if not self.widget_srcbuf.get_modified():
+    if not self.undoer.is_modified():
       return True
 
     msg = "The file contains unsaved changes. Do you want to save it now?"
@@ -478,15 +478,15 @@ class Boxer(object):
     response = md.run()
     md.destroy()
 
-    if response == gtk.RESPONSE_CANCEL:
-      return False
+    if response == gtk.RESPONSE_NO:
+      return True
 
     elif response == gtk.RESPONSE_YES:
       self.menu_file_save(None)
       return (not self.widget_srcbuf.get_modified())
 
     else:
-      return True
+      return False
 
   def error(self, msg):
     md = gtk.MessageDialog(parent=self.mainwin,
@@ -773,6 +773,17 @@ class Boxer(object):
         dox.tree.process()
         self.dialog_dox_browser = dox_browser = DoxBrowser(dox)
 
+  def callback_undoer(self, undoer, event_name, *args):
+    """Handles all callbacks from the undoer."""
+    if event_name == "can-undo-changed":
+      self.menubutton_edit_undo.set_sensitive(args[0])
+    elif event_name == "can-redo-changed":
+      self.menubutton_edit_redo.set_sensitive(args[0])
+    elif event_name == "modified-changed":
+      self.update_title()
+    else:
+      sys.stdout.write("Unknown undoer event '%s'\n" % event_name)
+
   def __init__(self, filename=None, box_exec=None, undoer=None):
     self.filename = filename
     self.config = config.get_configuration()
@@ -781,6 +792,10 @@ class Boxer(object):
 
     self.settings = Settings()
     self.settings.set_props(update_on_paste=False)
+
+    # Create the undoer and set up the callback.
+    self.undoer = undoer = undoer or Undoer()
+    undoer.register_callback("all", self.callback_undoer)
 
     # Dialogues
     self.dialog_fileopen = None
@@ -828,9 +843,6 @@ class Boxer(object):
 
     #-------------------------------------------------------------------------
     # Below we setup the main window
-
-    # Create the undoer
-    self.undoer = undoer = undoer or Undoer()
 
     # Create the editable area and do all the wiring
     cfg = {"box_executable": self.config.get("Box", "exec"),
