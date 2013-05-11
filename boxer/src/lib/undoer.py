@@ -65,8 +65,8 @@ class Undoer(object):
     if self.group_level == 0:
       def undo_group(_, group):
         self.begin_group()
-        for action in group:
-          action[0](action)
+        for action in reversed(group):
+          action[0](*action)
         self.end_group()
       self.record_action(undo_group, self.group)
       self.group = []

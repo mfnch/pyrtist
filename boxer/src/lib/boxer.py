@@ -844,10 +844,10 @@ class Boxer(object):
 
     def refpoint_press_middle(_, rp):
       tb = self.widget_srcbuf
-      tb.begin_user_action()
+      self.undoer.begin_group()
       insert_char(tb)
       tb.insert_at_cursor(rp.name)
-      tb.end_user_action()
+      self.undoer.end_group()
 
       if self.settings.get_prop("update_on_paste"):
         self.update_draw_area(only_if_quick=True)

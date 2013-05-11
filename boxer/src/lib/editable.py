@@ -199,14 +199,17 @@ class BoxEditableArea(BoxViewArea, Configurable):
       raise ValueError("A reference point with the same name exists (%s)"
                        % real_name)
 
-    self.undoer.record_action(delete_fn, self, real_name)
-
     rp = RefPoint(real_name, box_coords)
     refpoints.append(rp)
     self._refpoint_show(rp)
+
+    self.undoer.begin_group()
+    self.undoer.record_action(delete_fn, self, real_name)
     cb = self._fns["refpoint_new"]
     if with_cb and cb != None:
       cb(self, rp)
+    self.undoer.end_group()
+
     return rp
 
   def refpoint_pick(self, py_coords, include_invisible=False):
