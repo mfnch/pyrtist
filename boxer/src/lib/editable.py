@@ -1,4 +1,4 @@
-# Copyright (C) 2010 by Matteo Franchin (fnch@users.sourceforge.net)
+# Copyright (C) 2010-2013 by Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Boxer.
 #
@@ -38,16 +38,19 @@ def _cut_point(size, x, y):
   return (max(0, min(size[0]-1, x)), max(0, min(size[1]-1, y)))
 
 def _cut_square(size, x, y, dx, dy):
-  x = int(x)
-  y = int(y)
-  x0, y0 = _cut_point(size, x, y)
-  x1, y1 = _cut_point(size, x+dx, y+dy)
-  sx, sy = (x1 - x0, y1 - y0)
-  if sx < 1 or sy < 1: return (x0, y0, -1, -1)
-  return (x0, y0, sx+1, sy+1)
+  if size == None:
+    return (int(x), int(y), dx + 1, dy + 1)
+  else:
+    x = int(x)
+    y = int(y)
+    x0, y0 = _cut_point(size, x, y)
+    x1, y1 = _cut_point(size, x+dx, y+dy)
+    sx, sy = (x1 - x0, y1 - y0)
+    if sx < 1 or sy < 1: return (x0, y0, -1, -1)
+    return (x0, y0, sx+1, sy+1)
 
 def draw_ref_point(drawable, coords, size, gc, kind=0):
-  drawable_size = drawable.get_size()
+  drawable_size = None #drawable.get_size()
   x, y = coords
 
   l0 = size
@@ -151,6 +154,11 @@ class BoxEditableArea(BoxViewArea, Configurable):
     else:
       self._fns[name] = callback
 
+  def _call_back(self, name, *args):
+    fn = self._fns.get(name, None)
+    if fn != None:
+      fn(*args)
+
   def _realize(self, myself):
     # Set extra default configuration
     unsel_gc = self.window.new_gc()
@@ -193,9 +201,9 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
     self.undoer.begin_group()
     self.undoer.record_action(delete_fn, self, real_name)
-    cb = self._fns["refpoint_new"]
-    if with_cb and cb != None:
-      cb(self, rp)
+    if with_cb:
+      self._call_back("refpoint_new", self, rp)
+
     self.undoer.end_group()
 
     return rp
@@ -277,9 +285,9 @@ class BoxEditableArea(BoxViewArea, Configurable):
         if rp.visible:
           pix_coord = view.coord_to_pix(rp.value)
           state = rp.get_state()
-          gc = (gc_sel if state == REFPOINT_SELECTED
-                else gc_unsel if state == REFPOINT_UNSELECTED
-                else gc_drag)
+          gc = (gc_sel if state == REFPOINT_SELECTED else
+                gc_unsel if state == REFPOINT_UNSELECTED else
+                gc_drag)
           draw_ref_point(self.window, pix_coord, rp_size, gc)
 
   def refpoint_move(self, rp, coords, use_py_coords=True):
@@ -300,9 +308,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
       self.undoer.record_action(create_fn, self, rp.name, rp.value)
       self.document.refpoints.remove(rp)
-      fn = self._fns["refpoint_delete"]
-      if fn != None:
-        fn(self, rp)
+      self._call_back("refpoint_delete", self, rp)
 
   def refpoint_set_visibility(self, rp, show):
     """Set the state of visibility of the given RefPoint."""
@@ -343,9 +349,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
     rp = None
     if picked != None:
       rp, _ = picked
-      fn = self._fns["refpoint_pick"]
-      if fn != None:
-        fn(self, rp)
+      self._call_back("refpoint_pick", self, rp)
 
     if event.button == self.get_config("button_left"):
       shift_pressed = (state & gtk.gdk.SHIFT_MASK)
@@ -363,18 +367,14 @@ class BoxEditableArea(BoxViewArea, Configurable):
         if box_coords != None:
           rp = self.refpoint_new(py_coords)
           self.refpoint_select(rp)
-          fn = self._fns["refpoint_press"]
-          if fn != None:
-            fn(rp)
+          self._call_back("refpoint_press", rp)
 
     elif self._dragged_refpoints != None:
       return
 
     elif event.button == self.get_config("button_center"):
       if rp != None:
-        fn = self._fns["refpoint_press_middle"]
-        if fn != None:
-          fn(self, rp)
+        self._call_back("refpoint_press_middle", self, rp)
 
     elif event.button == self.get_config("button_right"):
       if rp != None:
