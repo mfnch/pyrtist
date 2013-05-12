@@ -114,12 +114,6 @@ class Undoer(object):
       self.record_action(undo_group, self.group)
       self.group = []
 
-  def _do(self, action_list):
-    if len(action_list) == 0:
-      return None
-    action = action_list.pop()
-    action[0](*action)
-
   def can_undo(self):
     """Whether there are actions to undo."""
     return len(self.undo_actions) != 0
@@ -128,33 +122,31 @@ class Undoer(object):
     """Whether there are actions to redo."""
     return len(self.redo_actions) != 0
 
-  def undo(self):
-    """Undo the last action."""
+  def _do(self, action_list, do_mode=DO_MODE_NORMAL):
     assert self.group_level == 0
+    if len(action_list) == 0:
+      return
     values = self._begin_action()
-    self.do_mode = DO_MODE_UNDO
-    self._do(self.undo_actions)
+    action = action_list.pop()
+    self.do_mode = do_mode
+    action[0](*action)
     self.do_mode = DO_MODE_NORMAL
     self._end_action(values)
+
+  def undo(self):
+    """Undo the last action."""
+    self._do(self.undo_actions, do_mode=DO_MODE_UNDO)
 
   def redo(self):
     """Redo the last undone action."""
-    assert self.group_level == 0
-    values = self._begin_action()
-    self.do_mode = DO_MODE_REDO
-    can_redo = self._do(self.redo_actions)
-    self.do_mode = DO_MODE_NORMAL
-    self._end_action(values)
-
-    if can_redo != None:
-      self._call_back("can-redo-changed", can_redo)
+    self._do(self.redo_actions, do_mode=DO_MODE_REDO)
 
   def record_action(self, *args):
     """Communicate to the Undoer that an action has been performed and provide
     means to undo that actions. In particular, it is assumed that if
     ``undoer.record_action(args)'' is called to signal an action ``x'', then
-    ``args[0](args)'' undoes ``x''. It is also assumee that the function
-    ``args[0]'' will call ``record_action'' to record how to undo the undone
+    ``args[0](args)'' undoes ``x''. It is also assumed that the function
+    ``args[0]'' calls ``record_action'' to record how to undo the undone
     action."""
     if self.not_undoable_count != 0:
       self.save_point = None
