@@ -97,8 +97,7 @@ class BoxerMacroExpand(MacroExpander):
     return MacroExpander.parse(self, self.document.usercode)
 
   def macro_define_all(self, args):
-    rps = map(refpoint_to_string, self.document.refpoints)
-    
+    rps = filter(None, map(refpoint_to_string, self.document.refpoints))
     sep, joiner = ((",", ",".join) if self.mode == docbase.MODE_EXEC
                    else (endline, text_writer))
 

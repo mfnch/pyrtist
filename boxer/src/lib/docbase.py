@@ -27,7 +27,7 @@ from refpoints import RefPoint, RefPoints
 # This is the version of the document (which may be different from the version
 # of Boxer which was used to write it. We should save to file all this info,
 # but we currently do not (have to improve this!)
-version = (0, 1, 1)
+version = (0, 2, 0)
 
 max_chars_per_line = 79
 marker_cursor_here = "//!BOXER:CURSOR:HERE"
@@ -38,6 +38,10 @@ endline = "\n"
 default_preamble = 'include "g"\nGUI = Void\nWindow@GUI[]\n\n'
 
 default_code = "\n"
+
+def cmp_version(v1, v2):
+  """Compare two version tuples."""
+  return cmp(v1[0], v2[0]) or cmp(v1[1], v2[1]) or cmp(v1[2], v2[2])
 
 def text_writer(pieces, sep=", ", line_sep=None, max_line_width=None):
   """Similarly to str.join, this function concatenates the strings contained
@@ -134,10 +138,11 @@ def refpoint_to_string(rp, version=version):
   """
   if version == (0, 1):
     return "%s = (%s, %s)" % (rp.name, rp.value[0], rp.value[1])
-
-  else:
+  elif cmp_version(version, (0, 1, 1)) <= 0:
     return ("%s = Point[.x=%s, .y=%s]"
-            % (rp.name, rp.value[0], rp.value[1]))
+            % (rp.name, rp.value[0], rp.value[1]))    
+  else:
+    return rp.get_box_source()
 
 def search_first(s, things, start=0):
   found = -1

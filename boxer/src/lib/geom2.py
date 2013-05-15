@@ -70,6 +70,7 @@ def square_metric(p1, p2):
   boundaries of a square of side x."""
   return max(abs(p2[0] - p1[0]), abs(p2[1] - p1[1]))
 
+
 class Point(object):
   def __init__(self, x=None, y=None):
     if y == None:
@@ -136,6 +137,7 @@ class Point(object):
     sf.set_xy(scale_factor)
     self.x *= sf.x
     self.y *= sf.y
+
 
 class Rectangle(object):
   def __init__(self, corner1, corner2):

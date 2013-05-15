@@ -18,15 +18,24 @@
 import fnmatch
 
 from geom2 import square_metric, Point
+from renderer import draw_square, draw_circle
 import namegen
 
 (REFPOINT_UNSELECTED,
  REFPOINT_SELECTED,
  REFPOINT_DRAGGED) = range(3)
 
+(REFPOINT_LONELY,
+ REFPOINT_PARENT,
+ REFPOINT_CHILD) = range(3)
+
+
 class RefPoint(object):
   def __init__(self, name, value=None, visible=True,
-               selected=REFPOINT_UNSELECTED):
+               kind=REFPOINT_LONELY, selected=REFPOINT_UNSELECTED):
+    global removeme_last
+    self.kind = kind
+    self.related = None
     self.name = name
     self.value = value
     self.visible = visible
@@ -34,10 +43,59 @@ class RefPoint(object):
 
   def copy(self, state=None):
     state = (state if state != None else self.selected)
-    return RefPoint(self.name, self.value, self.visible, state)
+    return RefPoint(self.name, self.value, self.visible, self.kind, state)
+
+  def can_procreate(self):
+    """Whether this reference point can have any children."""
+    return (self.kind != REFPOINT_CHILD
+            and (self.related == None or len(self.related) < 2))
 
   def get_state(self):
     return self.selected
+
+  def make_parent_of(self, *rps):
+    """Mark this reference point as a parent of the given reference points."""
+    self.related = children = self.related or []
+    for rp in rps:
+      rp.kind = REFPOINT_CHILD
+      rp.related = self
+      self.kind = REFPOINT_PARENT
+      children.append(rp)
+
+  def translate(self, vec):
+    """Translate the reference point by the given amount."""
+    self.value = Point(self.value) + vec
+
+  def translate_to(self, pos):
+    """Translate the reference point to the given position."""
+    self.value = Point(pos)
+
+  def get_box_source(self):
+    kind = self.kind
+    if kind == REFPOINT_CHILD:
+      return None
+    elif kind == REFPOINT_PARENT:
+      children = self.related
+      if children != None and len(children) > 0:
+        values = [(child.value if child != None else self.value)
+                  for child in children]
+        values.insert(1, self.value)
+        args = ", ".join("Point[.x=%s, .y=%s]" % (v[0], v[1])
+                         for v in values)
+        return "%s = Tri[%s]" % (self.name, args)
+
+    v = self.value
+    return ("%s = Point[.x=%s, .y=%s]" % (self.name, v[0], v[1]))
+
+  def draw(self, drawable, gc, view, size):
+    """Draw the reference point."""
+    if self.visible:
+      if self.value != None:
+        x, y = view.coord_to_pix(self.value)
+        if self.kind == REFPOINT_CHILD:
+          draw_circle(drawable, x, y, size, gc)
+        else:
+          draw_square(drawable, x, y, size, gc)
 
 
 class RefPoints(object):
@@ -160,6 +218,23 @@ class RefPoints(object):
       fn(self, rp)
 
   def remove(self, rp):
+    ret = [rp]
+    if rp.kind == REFPOINT_PARENT:
+      # Do also remove the children
+      for child in rp.related:
+        if child != None:
+          self.remove(child)
+          ret.append(child)
+
+    elif rp.kind == REFPOINT_CHILD:
+      # Update parent
+      parent = rp.related
+      children = parent.related
+      children[children.index(rp)] = None
+      if len(filter(None, children)) == 0:
+        parent.kind = REFPOINT_LONELY
+        parent.related = None
+
     self.content.remove(rp)
     self.by_name.pop(rp.name)
     self.selection.pop(rp.name, None)
@@ -168,6 +243,8 @@ class RefPoints(object):
     fn = self._fns["refpoint_remove"]
     if fn != None:
       fn(self, rp)
+
+    return ret
 
   def get_nearest(self, point, include_invisible=False):
     """Find the refpoint which is nearest to the given point.

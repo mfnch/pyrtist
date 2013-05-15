@@ -22,6 +22,20 @@ Point@Tri[
   Else, Fail["Tri does take up to three points"]
 ]
 
+///Intro: get a string representation of the {type(.@)} object.
+Tri@Str[
+  num = $.num
+  sep = ""
+  "Tri["
+  [If[num > 1], sep, $.pin, sep = ", "]
+  [If[num > 0], sep, $.p, sep = ", "]
+  [If[num > 2], sep, $.pout]
+  "]"
+]
+
+///Intro: print the object.
+Tri@Print[Str[$]]
+
 Miss@Tri[num = .num++, If[num == 1], .pin = .p, .have >>= 1]
 
 ///Intro: copy the {type(Tri)} object from the given one.

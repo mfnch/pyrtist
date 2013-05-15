@@ -49,32 +49,6 @@ def _cut_square(size, x, y, dx, dy):
     if sx < 1 or sy < 1: return (x0, y0, -1, -1)
     return (x0, y0, sx+1, sy+1)
 
-def draw_ref_point(drawable, coords, size, gc, kind=0):
-  drawable_size = None #drawable.get_size()
-  x, y = coords
-
-  l0 = size
-  dl0 = l0*2
-  x0, y0, dx0, dy0 = _cut_square(drawable_size, x-l0, y-l0, dl0, dl0)
-  if dx0 < 1 or dy0 < 1:
-    return None
-
-  gc.foreground, gc.background = (gc.background, gc.foreground)
-  if kind == 0:
-    drawable.draw_rectangle(gc, True, x0, y0, dx0, dy0)
-  else:
-    drawable.draw_arc(gc, True, x0, y0, dx0, dy0, 64*0, 64*360)
-  gc.foreground, gc.background = (gc.background, gc.foreground)
-
-  l1 = l0 - 1
-  dl1 = 2*l1
-  x1, y1, dx1, dy1 = _cut_square(drawable_size, x-l1, y-l1, dl1, dl1)
-  if dx1 > 0 and dy1 > 0:
-    if kind == 0:
-      drawable.draw_rectangle(gc, True, x1, y1, dx1, dy1)
-    else:
-      drawable.draw_arc(gc, True, x1, y1, dx1, dy1, 64*0, 64*360)
-
 
 class BoxViewArea(ZoomableArea):
   def __init__(self, filename=None, out_fn=None, callbacks=None, **kwargs):
@@ -282,13 +256,11 @@ class BoxEditableArea(BoxViewArea, Configurable):
       gc_sel = self.get_config("refpoint_sel_gc")
       gc_drag = self.get_config("refpoint_drag_gc")
       for rp in rps:
-        if rp.visible:
-          pix_coord = view.coord_to_pix(rp.value)
-          state = rp.get_state()
-          gc = (gc_sel if state == REFPOINT_SELECTED else
-                gc_unsel if state == REFPOINT_UNSELECTED else
-                gc_drag)
-          draw_ref_point(self.window, pix_coord, rp_size, gc)
+        state = rp.get_state()
+        gc = (gc_sel if state == REFPOINT_SELECTED else
+              gc_unsel if state == REFPOINT_UNSELECTED else
+              gc_drag)
+        rp.draw(self.window, gc, view, rp_size)
 
   def refpoint_move(self, rp, coords, use_py_coords=True):
     """Move a reference point to a new position."""
@@ -304,10 +276,12 @@ class BoxEditableArea(BoxViewArea, Configurable):
   def refpoint_delete(self, rp):
     """Delete the given reference point."""
     if rp.visible:
-      self._refpoint_hide(rp)
+      removed_rps = self.document.refpoints.remove(rp)
+      for removed_rp in removed_rps:
+        self.undoer.record_action(create_fn, self,
+                                  removed_rp.name, removed_rp.value)
+        self._refpoint_hide(removed_rp)
 
-      self.undoer.record_action(create_fn, self, rp.name, rp.value)
-      self.document.refpoints.remove(rp)
       self._call_back("refpoint_delete", self, rp)
 
   def refpoint_set_visibility(self, rp, show):
@@ -348,13 +322,24 @@ class BoxEditableArea(BoxViewArea, Configurable):
     state = event.get_state()
     rp = None
     if picked != None:
-      rp, _ = picked
+      rp = picked[0]
       self._call_back("refpoint_pick", self, rp)
 
-    if event.button == self.get_config("button_left"):
-      shift_pressed = (state & gtk.gdk.SHIFT_MASK)
+    shift_pressed = (state & gtk.gdk.SHIFT_MASK)
+    ctrl_pressed = (state & gtk.gdk.CONTROL_MASK)
+    if event.button == self.get_config("button_left"):      
       if rp != None:
-        if refpoints.is_selected(rp) and not shift_pressed:
+        if ctrl_pressed and not shift_pressed and rp.can_procreate():
+          visible_coords = self.get_visible_coords()
+          box_coords = visible_coords.pix_to_coord(py_coords)
+          if box_coords != None:
+            rp_child = self.refpoint_new(py_coords)
+            rp.make_parent_of(rp_child)
+            self.refpoint_select(rp_child)
+            self._dragged_refpoints = \
+              DraggedPoints(refpoints.selection, py_coords)
+            self._call_back("refpoint_press", rp_child)
+        elif refpoints.is_selected(rp) and not shift_pressed:
           self._dragged_refpoints = \
             DraggedPoints(refpoints.selection, py_coords)
         else:
@@ -407,7 +392,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
     for rp_name, rp in drps.initial_points.iteritems():
       if rp.visible:
         self._refpoint_hide(rp)
-        rp.value = Point(rps[rp_name].value) + box_vec
+        rp.translate_to(Point(rps[rp_name].value) + box_vec)
         self._refpoint_show(rp)
 
   def _drag_confirm(self, py_coords):
@@ -421,5 +406,4 @@ class BoxEditableArea(BoxViewArea, Configurable):
     for rp_name, rp in drps.initial_points.iteritems():
       if rp.visible:
         self.undoer.record_action(move_fn, self, rp_name, rps[rp_name].value)
-        rps[rp_name].value = Point(rps[rp_name].value) + box_vec
-    
+        rps[rp_name].translate(box_vec)
