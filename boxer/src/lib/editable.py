@@ -28,8 +28,8 @@ from geom2 import square_metric, Point
 import document
 from zoomable import ZoomableArea, DrawSucceded, DrawFailed
 from boxdraw import BoxImageDrawer
-from refpoints \
-  import RefPoint, REFPOINT_UNSELECTED, REFPOINT_SELECTED, REFPOINT_DRAGGED
+from refpoints import GContext, RefPoint, \
+  REFPOINT_UNSELECTED, REFPOINT_SELECTED, REFPOINT_DRAGGED
 from undoer import Undoer
 
 from config import Configurable
@@ -149,9 +149,13 @@ class BoxEditableArea(BoxViewArea, Configurable):
     drag_gc.foreground = \
       colormap.alloc_color(gtk.gdk.Color(32767, 65535, 32767))
 
+    line_gc = self.window.new_gc()
+    line_gc.copy(self.style.black_gc)
+
     self.set_config_default(refpoint_gc=unsel_gc,
                             refpoint_sel_gc=sel_gc,
-                            refpoint_drag_gc=drag_gc)
+                            refpoint_drag_gc=drag_gc,
+                            refpoint_line_gc=line_gc)
 
   def refpoint_new(self, coords, name=None, use_py_coords=True, with_cb=True):
     """Add a new reference point whose coordinates are 'point' (a couple
@@ -201,11 +205,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
         rp = current[0]
         current_py_coords = screen_view.coord_to_pix(rp.value)
         dist = square_metric(py_coords, current_py_coords)
-        if dist <= s:
-          return current
-        else:
-          return None
-
+        return current if dist <= s else None
     else:
       return None
 
@@ -255,12 +255,10 @@ class BoxEditableArea(BoxViewArea, Configurable):
       gc_unsel = self.get_config("refpoint_gc")
       gc_sel = self.get_config("refpoint_sel_gc")
       gc_drag = self.get_config("refpoint_drag_gc")
+      gc_line = self.get_config("refpoint_line_gc")
+      context = GContext(self.window, gc_unsel, gc_sel, gc_drag, gc_line)
       for rp in rps:
-        state = rp.get_state()
-        gc = (gc_sel if state == REFPOINT_SELECTED else
-              gc_unsel if state == REFPOINT_UNSELECTED else
-              gc_drag)
-        rp.draw(self.window, gc, view, rp_size)
+        rp.draw(context, view, rp_size)
 
   def refpoint_move(self, rp, coords, use_py_coords=True):
     """Move a reference point to a new position."""

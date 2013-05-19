@@ -21,6 +21,16 @@ from geom2 import square_metric, Point
 from renderer import draw_square, draw_circle
 import namegen
 
+
+class GContext(object):
+  def __init__(self, drawable, gc_unsel, gc_sel, gc_drag, gc_line):
+    self.drawable = drawable
+    self.gc_unsel = gc_unsel
+    self.gc_sel = gc_sel
+    self.gc_drag = gc_drag
+    self.gc_line = gc_line
+
+
 (REFPOINT_UNSELECTED,
  REFPOINT_SELECTED,
  REFPOINT_DRAGGED) = range(3)
@@ -52,6 +62,11 @@ class RefPoint(object):
 
   def get_state(self):
     return self.selected
+
+  def get_children(self):
+    """Get the children point of a direction point."""
+    assert self.kind == REFPOINT_PARENT
+    return self.related
 
   def make_parent_of(self, *rps):
     """Mark this reference point as a parent of the given reference points."""
@@ -87,14 +102,28 @@ class RefPoint(object):
     v = self.value
     return ("%s = Point[.x=%s, .y=%s]" % (self.name, v[0], v[1]))
 
-  def draw(self, drawable, gc, view, size):
+  def draw(self, context, view, size):
     """Draw the reference point."""
     if self.visible:
       if self.value != None:
+        state = self.get_state()
+        drawable = context.drawable
+        gc = (context.gc_sel if state == REFPOINT_SELECTED else
+              context.gc_unsel if state == REFPOINT_UNSELECTED else
+              context.gc_drag)
+
         x, y = view.coord_to_pix(self.value)
-        if self.kind == REFPOINT_CHILD:
+        kind = self.kind
+        if kind == REFPOINT_LONELY:
+          draw_square(drawable, x, y, size, gc)
+        elif kind == REFPOINT_CHILD:
+          parent = self.related
+          if parent != None:
+            x0, y0 = view.coord_to_pix(parent.value)
+            drawable.draw_line(context.gc_line,
+                               int(x0), int(y0), int(x), int(y))
           draw_circle(drawable, x, y, size, gc)
-        else:
+        elif kind == REFPOINT_PARENT:
           draw_square(drawable, x, y, size, gc)
 
 
@@ -119,6 +148,10 @@ class RefPoints(object):
 
   def __getitem__(self, key):
     return self.by_name[key]
+
+  def get_dirpoints(self):
+    """Get refpoints with directions (parent refpoints)."""
+    return [rp for rp in self.content if rp.kind == REFPOINT_PARENT]
 
   def load(self, refpoints):
     """Replace the current RefPoint-s with the given ones.

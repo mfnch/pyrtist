@@ -1,4 +1,4 @@
-# Copyright (C) 2011 Matteo Franchin (fnch@users.sf.net)
+# Copyright (C) 2011-2013 Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Boxer.
 #
@@ -21,7 +21,7 @@ from base import inherit_doc
 from refpoints import RefPoint, RefPoints
 import docbase
 from docbase import DocumentBase, refpoint_to_string, text_writer, \
-  endline
+  endline, MODE_STORE
 from comparse import MacroExpander, split_args, normalize_macro_name, \
   LEVEL_ERROR
 from document0 import Document0
@@ -32,7 +32,7 @@ default_boot_code = \
 GUI = Void
 '''
 
-version = (0, 2, 0)
+version = (0, 2, 1)
 
 def refpoints_to_str(rps, max_line_length=79):
   """Return a compact (but human readable) representation of a RefPoints
@@ -79,6 +79,65 @@ def refpoints_from_str(s):
     rps.append(RefPoint(name, value=(float(sx), float(sy)),
                         visible=bool(int(svisible))))
   return rps
+
+def dirpoints_to_str(rps):
+  """Construct a string representing the relation between a direction point
+  and its reference points. This compact representation can be used to restore
+  the direction points (using dirpoints_from_str).
+  """
+  # Construct a map refpoint -> index
+  rp_idx = {}
+  for idx, rp in enumerate(rps):
+    rp_idx[rp.name] = idx
+
+  # Build a list of triples. Each triple contains the index of the parent
+  # and its two children.
+  idxs = []
+  dps = rps.get_dirpoints()
+  for dp in dps:
+    # Append the parent index.
+    parent_idx = rp_idx[dp.name] 
+    idxs.append(parent_idx)
+
+    # Append the children indices.
+    children = dp.get_children()
+    for child in children:
+      idxs.append(rp_idx[child.name] if child != None else parent_idx)
+
+    # Missing children.
+    num_missing_children = 2 - len(children)
+    for _ in range(num_missing_children):
+      idxs.append("_")
+
+  return " ".join(map(str, idxs))
+
+def dirpoints_from_str(s, rps):
+  """Reconstruct the direction points from the string representation returned
+  by the function dirpoints_to_str.
+  """
+  idxs = s.split()
+  num_idxs = len(idxs)
+  assert num_idxs % 3 == 0
+  num_dirpoints = num_idxs/3
+
+  # Obtain a regular list.
+  rps = list(rps)
+
+  # Create all the direction points.
+  for i in range(num_dirpoints):
+    dp_idxs = []
+    for idx in idxs[3*i: 3*i + 3]:
+      try:
+        int_idx = int(idx)
+      except:
+        break
+      dp_idxs.append(int_idx)
+
+    if len(dp_idxs) > 0:
+      parent = rps[dp_idxs[0]]
+      for child_idx in dp_idxs[1:]:
+        child = rps[child_idx]
+        parent.make_parent_of(child)
 
 
 class BoxerMacroExpand(MacroExpander):
@@ -211,6 +270,17 @@ class BoxerMacroContract(MacroExpander):
     self.document.refpoints.load(rps)
     return ""
 
+  def macro_boxer_dirpoints(self, args):
+    try:
+      dirpoints_from_str(args, self.document.refpoints)
+    except:
+      self.notify_message(LEVEL_ERROR,
+                          ("Error in parsing direction points "
+                           "(macro boxer-dirpoints)"))
+      return None
+
+    return ""
+
 
 class Document1(Document0):
   def load_from_str(self, src):
@@ -230,17 +300,27 @@ class Document1(Document0):
         return False
 
   @inherit_doc
+  def get_part_preamble(self, **kwargs):
+    ret = super(Document1, self).get_part_preamble(**kwargs)
+    mode = kwargs.get('mode', None)
+    if mode == MODE_STORE:
+      num_dirpoints = len(self.get_refpoints().get_dirpoints())
+
+      if num_dirpoints > 0:
+        dirpoints_text = self.get_part_def_dirpoints()
+        if len(dirpoints_text.strip()) > 0:
+          ret = ret + endline + dirpoints_text
+
+    return endline.join(["(**expand:boxer-boot*)", ret,
+                         "(**end:expand*)"])
+
+  @inherit_doc
   def get_part_version(self):
     return "(**boxer-version:%d,%d,%d*)" % version
 
   @inherit_doc
   def get_part_boot_code(self, boot_code):
     return (boot_code or default_boot_code)
-
-  def get_part_preamble(self, **kwargs):
-    boot_code = DocumentBase.get_part_preamble(self, **kwargs)
-    return endline.join(["(**expand:boxer-boot*)", boot_code,
-                         "(**end:expand*)"])
 
   @inherit_doc
   def get_part_user_code(self, mode=None):
@@ -263,5 +343,12 @@ class Document1(Document0):
   def get_part_def_refpoints(self):
     rps = self.get_refpoints()
     return endline.join(["(**boxer-refpoints:", refpoints_to_str(rps), "*)"])
+
+  def get_part_def_dirpoints(self):
+    """Produce the part of the file which stores information about the
+    direction points.
+    """
+    rps = self.get_refpoints()
+    return endline.join(["(**boxer-dirpoints:", dirpoints_to_str(rps), "*)"])
 
   save_to_str = DocumentBase.save_to_str

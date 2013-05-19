@@ -1,0 +1,45 @@
+(**expand:boxer-boot*)
+(**boxer-version:0,2,1*)
+include "g"
+GUI = Void
+
+(**boxer-refpoints:
+gui3 1 24.1528052356 -89.8544763209 gui4 1 161.865685395 31.4343658824 gui5 1
+34.9577370304 -69.1250117409 gui6 1 69.5090357782 18.3319744939 gui7 1
+151.568370304 -8.8712159919 gui8 1 138.865686941 -57.9386530364 gui9 1
+47.97630988467874 -85.4512689768977 gui10 1 51.17865584843493
+12.220400990099009 gui11 1 114.02469538714993 19.025394389438944 gui12 1
+86.00416820428336 -39.01719636963696
+*)
+(**boxer-dirpoints:
+2 6 _ 3 7 8 5 9 _
+*)
+(**end:expand*)(**expand:define-all*)
+gui3 = Point[.x=24.1528052356, .y=-89.8544763209]
+gui4 = Point[.x=161.865685395, .y=31.4343658824]
+gui5 = Tri[Point[.x=47.9763098847, .y=-85.4512689769], Point[.x=34.9577370304, .y=-69.1250117409]]
+gui6 = Tri[Point[.x=51.1786558484, .y=12.2204009901], Point[.x=69.5090357782, .y=18.3319744939], Point[.x=114.024695387, .y=19.0253943894]]
+gui7 = Point[.x=151.568370304, .y=-8.8712159919]
+gui8 = Tri[Point[.x=86.0041682043, .y=-39.0171963696], Point[.x=138.865686941, .y=-57.9386530364]]
+
+(**end:expand*)
+
+include "grid"
+include "icon_theme"
+
+grid = Grid[gui3, gui4, icon_size.nx, icon_size.ny]
+cell = grid.GetCellSize[]
+lw = width*cell.x
+
+icon = Window[][
+  Curve[Style[Border[color.black, lw]], color_inside
+        gui5, gui6, gui7, gui8]
+  BBox[grid] // the whole grid is shown, even if it is empty
+]
+
+w = Figure[grid, icon]
+
+(**expand:view:w*)(**end:expand*)
+
+res = Point[s = grid.GetSize[], .x=grid.nx/s.x, .y=grid.ny/s.y]
+icon.Save["curve.png", Window["argb32", .Res[res]]]

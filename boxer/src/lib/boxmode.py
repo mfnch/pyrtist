@@ -1,4 +1,4 @@
-# Copyright (C) 2011 by Matteo Franchin (fnch@users.sourceforge.net)
+# Copyright (C) 2011 by Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Boxer.
 #
@@ -14,9 +14,6 @@
 #
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
-
-# TO DO:
-# Icona e opzione per Style.Border.Dash
 
 from assistant \
   import Mode, ExitMode, GUISet, GUIAct, Paste, IncludeSrc
@@ -206,6 +203,17 @@ poly = \
                       push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
        submodes=[color, gradient, style, poly_smoothing, exit])
+
+curve = \
+  Mode("Curve",
+       tooltip="Create a curved polygon",
+       statusbar=("Select the vertices by clicking on the image view; "
+                  "choose the color and filling style from the toolbox"),
+       button=Button("Curve", "curve.png"),
+       enter_actions=[Paste("$LNEWLINE$Curve[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
+                      push_settings, update_on_paste],
+       exit_actions=pop_settings,
+       submodes=[color, gradient, style, exit])
 
 circle_radius = \
   Mode("Circle radius",
@@ -434,7 +442,7 @@ text = \
 #       enter_actions=HelpAct(msg))
 
 main_mode = \
-  Mode("Main", submodes=[exit, color, gradient, style, poly,
+  Mode("Main", submodes=[exit, color, gradient, style, poly, curve,
                          circle, line, text])
 
 if __name__ == "__main__":
