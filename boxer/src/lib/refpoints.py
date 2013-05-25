@@ -58,7 +58,9 @@ class RefPoint(object):
   def can_procreate(self):
     """Whether this reference point can have any children."""
     return (self.kind != REFPOINT_CHILD
-            and (self.related == None or len(self.related) < 2))
+            and (self.related == None
+                 or len(self.related) < 2
+                 or None in self.related))
 
   def get_state(self):
     return self.selected
@@ -75,7 +77,11 @@ class RefPoint(object):
       rp.kind = REFPOINT_CHILD
       rp.related = self
       self.kind = REFPOINT_PARENT
-      children.append(rp)
+      if None in children:
+        children[children.index(None)] =rp
+      else:
+        assert len(children) < 2
+        children.append(rp)
 
   def translate(self, vec):
     """Translate the reference point by the given amount."""
@@ -87,17 +93,20 @@ class RefPoint(object):
 
   def get_box_source(self):
     kind = self.kind
-    if kind == REFPOINT_CHILD:
-      return None
-    elif kind == REFPOINT_PARENT:
+    if kind == REFPOINT_PARENT:
       children = self.related
-      if children != None and len(children) > 0:
-        values = [(child.value if child != None else self.value)
-                  for child in children]
-        values.insert(1, self.value)
-        args = ", ".join("Point[.x=%s, .y=%s]" % (v[0], v[1])
-                         for v in values)
-        return "%s = Tri[%s]" % (self.name, args)
+      n = len(children)
+      if children != None and n > 0:
+        pin = children[0]
+        pout = children[1] if n > 1 else None
+        args = []
+        for i, arg in enumerate((pin, self, pout)):
+          if arg != None:
+            args.append("Point[.x=%s, .y=%s]" % tuple(arg.value))
+          elif i == 0:
+            args.append(";")
+
+        return "%s = Tri[%s]" % (self.name, ", ".join(args))
 
     v = self.value
     return ("%s = Point[.x=%s, .y=%s]" % (self.name, v[0], v[1]))

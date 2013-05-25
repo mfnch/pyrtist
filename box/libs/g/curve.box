@@ -5,21 +5,35 @@ include "raw"
 include "style"
 include "path"
 
-Miss = ^Void
-
 ///Intro: Extension of {type(Point)} which allow to specify an entering and
 // exiting direction.
+// The typical usage is ``Tri[pin, p, pout]``, ``Tri[p]`` (which is equivalent
+// to ``Tri[p, p, p]``), ``Tri[pin, p]`` (equivalent to
+// ``Tri[pin, p, 2*p - pin]``), ``Tri[; p, pout]`` (which is equivalent to
+// ``Tri[2*p - pout, p, pout]``).
 Tri = ^(Int have, num, Point p, pin, pout)
 
 (.[)@Tri[.have = 0, .num = 0]
 
+///Intro: Used to indicate that the first point is missing.
+// Not to be used when points have been already given.
+(;)@Tri[If[$$.num == 0], $$.num += 1, Else, Fail["Unexpected usage of ;"]]
+
 ///Intro: The entering, central or exiting point.
 Point@Tri[
-  num = .num++
-  If[num == 0], .pin = .p = .pout = $, .have = 2
-  Else, If[num == 1], .pin = .p, .pout = .p = $, .have = (.have >> 1) | 2
-  Else, If[num == 2], .pout = $, .have |= 4
-  Else, Fail["Tri does take up to three points"]
+  If[$$.num > 2]
+    Fail["Tri does take up to three points"]
+  Else
+    num = $$.num++
+    If[num == 0]
+      .pin = .p = .pout = $, .have = 2
+    Else, If[num == 1]
+      [If[$$.have & 2], .pin = .p, .p = $, .pout = 2*.p - .pin, .have = 3
+       Else, .p = .pin = $   ]
+    Else // num == 2
+      .pout = $
+      .have |= 4
+      [If[!($$.have & 1)], .pin = 2*.p - .pout]
 ]
 
 ///Intro: get a string representation of the {type(.@)} object.
@@ -35,8 +49,6 @@ Tri@Str[
 
 ///Intro: print the object.
 Tri@Print[Str[$]]
-
-Miss@Tri[num = .num++, If[num == 1], .pin = .p, .have >>= 1]
 
 ///Intro: copy the {type(Tri)} object from the given one.
 Tri@Tri[$$ = $]
