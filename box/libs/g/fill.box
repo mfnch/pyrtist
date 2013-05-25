@@ -6,13 +6,23 @@ include "path"
 include "style"
 
 ///Intro: fill the given paths.
-Fill = ++(Obj path,)
+Fill = ++(Path path, Style style)
 
 //Intro: add a path to fill.
-Path@Fill[]
+Path@Fill[\ .path[$]]
+
+///Intro: set the fill style.
+Style@Fill[\ .style[$]]
+
+///Intro: set the line color.
+Color@Fill[\ .style[$]]
+
+///Intro: pattern to use for filling.
+Pattern@Fill[\ .style[$]]
 
 ///Intro: include the fill command in the current window.
-//Fill@Window[$.obj]
-
-//
-//  [If[!first_point], Obj[g.raw.fill]]
+Fill@Window[
+  If[!$.path.empty]
+    $.path.cmdstream
+    CmdStream[$.style]
+]

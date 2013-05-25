@@ -130,8 +130,8 @@ Int@Line.Get[$$ = $$$.points.Get[$]]
 REAL@Line.Get[$$ = $$$.points.Get[$]]  ///<Same.
 Point@Line.Get[$$ = $$$.points.Get[$]] ///<Same.
 
-///Intro: stroke the line.
-Line@Stroke[
+///Intro: add the path of the {type(Line)}.
+Line@Path[
   num_points = Num[$.points]
   [If[num_points > 0]
      Obj[const.raw.move_to, $.points.Get[0]]
@@ -144,13 +144,11 @@ Line@Stroke[
   
      [If[$.have.close]
         Obj[const.raw.close_path]]
-     $$.path.empty = 0]
+     $$.empty = 0]
 ]
 
-///Intro: add the path of the {type(Line)}.
-Line@Path[
-  Fail["Not implemented, yet"]  
-]
+///Intro: stroke the line.
+Line@Stroke[Path[$]]
 
 ///Intro: draw the line in the window.
 Line@Window[
