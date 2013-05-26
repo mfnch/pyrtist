@@ -74,11 +74,13 @@ class RefPoint(object):
     """Mark this reference point as a parent of the given reference points."""
     self.related = children = self.related or []
     for rp in rps:
-      rp.kind = REFPOINT_CHILD
-      rp.related = self
       self.kind = REFPOINT_PARENT
+      if rp != None:
+        rp.kind = REFPOINT_CHILD
+        rp.related = self
+
       if None in children:
-        children[children.index(None)] =rp
+        children[children.index(None)] = rp
       else:
         assert len(children) < 2
         children.append(rp)
@@ -95,18 +97,19 @@ class RefPoint(object):
     kind = self.kind
     if kind == REFPOINT_PARENT:
       children = self.related
-      n = len(children)
-      if children != None and n > 0:
-        pin = children[0]
-        pout = children[1] if n > 1 else None
-        args = []
-        for i, arg in enumerate((pin, self, pout)):
-          if arg != None:
-            args.append("Point[.x=%s, .y=%s]" % tuple(arg.value))
-          elif i == 0:
-            args.append(";")
+      if children != None:
+        n = len(children)
+        if n > 0:
+          pin = children[0]
+          pout = children[1] if n > 1 else None
+          args = []
+          for i, arg in enumerate((pin, self, pout)):
+            if arg != None:
+              args.append("Point[.x=%s, .y=%s]" % tuple(arg.value))
+            elif i == 0:
+              args.append(";")
 
-        return "%s = Tri[%s]" % (self.name, ", ".join(args))
+          return "%s = Tri[%s]" % (self.name, ", ".join(args))
 
     v = self.value
     return ("%s = Point[.x=%s, .y=%s]" % (self.name, v[0], v[1]))

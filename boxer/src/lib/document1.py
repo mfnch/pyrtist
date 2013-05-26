@@ -102,7 +102,7 @@ def dirpoints_to_str(rps):
     # Append the children indices.
     children = dp.get_children()
     for child in children:
-      idxs.append(rp_idx[child.name] if child != None else parent_idx)
+      idxs.append(rp_idx[child.name] if child != None else '_')
 
     # Missing children.
     num_missing_children = 2 - len(children)
@@ -130,13 +130,13 @@ def dirpoints_from_str(s, rps):
       try:
         int_idx = int(idx)
       except:
-        break
+        int_idx = None
       dp_idxs.append(int_idx)
 
     if len(dp_idxs) > 0:
       parent = rps[dp_idxs[0]]
       for child_idx in dp_idxs[1:]:
-        child = rps[child_idx]
+        child = rps[child_idx] if child_idx else None
         parent.make_parent_of(child)
 
 
