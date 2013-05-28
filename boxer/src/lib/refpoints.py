@@ -97,15 +97,15 @@ class RefPoint(object):
 
   def detach(self):
     """Detach this children from its parent."""
-    assert self.kind == REFPOINT_CHILD
-    parent, index = self.get_parent_and_index()
-    children = parent.related
-    children[index] = None
-    self.kind = REFPOINT_LONELY
+    if self.kind == REFPOINT_CHILD:
+      parent, index = self.get_parent_and_index()
+      children = parent.related
+      children[index] = None
+      self.kind = REFPOINT_LONELY
 
-    # If the parent is left with no children, then de-parentise it.
-    if children.count(None) == len(children):
-      parent.kind = REFPOINT_LONELY
+      # If the parent is left with no children, then de-parentise it.
+      if children.count(None) == len(children):
+        parent.kind = REFPOINT_LONELY
 
   def translate(self, vec):
     """Translate the reference point by the given amount."""

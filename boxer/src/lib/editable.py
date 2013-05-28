@@ -201,10 +201,12 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
   def refpoint_detach(self, rp_child):
     """Detach a reference point from its parent."""
-    rp_parent, index = rp_child.get_parent_and_index()
-    self.undoer.record_action(attach_fn, self,
-                              rp_child.name, rp_parent.name, index)
-    rp_child.detach()
+    parent_and_index = rp_child.get_parent_and_index()
+    if parent_and_index:
+      rp_parent, index = parent_and_index
+      self.undoer.record_action(attach_fn, self,
+                                rp_child.name, rp_parent.name, index)
+      rp_child.detach()
 
   def refpoint_move(self, rp, coords, use_py_coords=True):
     """Move a reference point to a new position."""
@@ -223,9 +225,9 @@ class BoxEditableArea(BoxViewArea, Configurable):
       self.undoer.begin_group()
       children = rp.get_children()
       for child in children:
-        self.refpoint_detach(child)
         self.refpoint_delete(child, force=True)
 
+      self.refpoint_detach(rp)
       self.document.refpoints.remove(rp)
       self.undoer.record_action(create_fn, self, rp.name, rp.value)
       self.undoer.end_group()
