@@ -66,24 +66,46 @@ class RefPoint(object):
     return self.selected
 
   def get_children(self):
-    """Get the children point of a direction point."""
-    assert self.kind == REFPOINT_PARENT
-    return self.related
+    """Get the children point of this refpoint."""
+    return self.related if self.kind == REFPOINT_PARENT else []
 
-  def make_parent_of(self, *rps):
+  def get_parent_and_index(self):
+    """Get the parent of this direction point."""
+    if self.kind == REFPOINT_CHILD:
+      parent = self.related
+      index = parent.get_children().index(self)
+      return (parent, index)
+    return None
+
+  def attach(self, rp, index=None):
     """Mark this reference point as a parent of the given reference points."""
+    assert self.kind != REFPOINT_CHILD
     self.related = children = self.related or []
-    for rp in rps:
-      self.kind = REFPOINT_PARENT
-      if rp != None:
-        rp.kind = REFPOINT_CHILD
-        rp.related = self
+    self.kind = REFPOINT_PARENT
+    if rp != None:
+      rp.kind = REFPOINT_CHILD
+      rp.related = self
 
-      if None in children:
-        children[children.index(None)] = rp
-      else:
-        assert len(children) < 2
-        children.append(rp)
+    if index == None:
+      index = children.index(None) if None in children else len(children)
+
+    assert index < 2
+    while index >= len(children):
+      children.append(None)
+
+    children[index] = rp
+
+  def detach(self):
+    """Detach this children from its parent."""
+    assert self.kind == REFPOINT_CHILD
+    parent, index = self.get_parent_and_index()
+    children = parent.related
+    children[index] = None
+    self.kind = REFPOINT_LONELY
+
+    # If the parent is left with no children, then de-parentise it.
+    if children.count(None) == len(children):
+      parent.kind = REFPOINT_LONELY
 
   def translate(self, vec):
     """Translate the reference point by the given amount."""

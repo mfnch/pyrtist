@@ -91,6 +91,14 @@ def move_fn(_, editable, name, value):
 def delete_fn(_, editable, name):
   editable.refpoint_delete(editable.document.refpoints[name])
 
+def attach_fn(_, editable, child_name, parent_name, index):
+  rp_parent = editable.document.refpoints[parent_name]
+  rp_child = editable.document.refpoints[child_name]
+  editable.refpoint_attach(rp_child, rp_parent, index)
+
+def detach_fn(_, editable, child_name):
+  editable.refpoint_detach(editable.document.refpoints[child_name])
+
 
 class BoxEditableArea(BoxViewArea, Configurable):
   def __init__(self, *args, **kwargs):
@@ -181,10 +189,48 @@ class BoxEditableArea(BoxViewArea, Configurable):
     self.undoer.record_action(delete_fn, self, real_name)
     if with_cb:
       self._call_back("refpoint_new", self, rp)
-
     self.undoer.end_group()
 
     return rp
+
+  def refpoint_attach(self, rp_child, rp_parent, index=None):
+    """Attach a reference point rp_child to another reference point rp_parent
+    using the given index."""
+    self.undoer.record_action(detach_fn, self, rp_child.name)
+    rp_parent.attach(rp_child, index=index)
+
+  def refpoint_detach(self, rp_child):
+    """Detach a reference point from its parent."""
+    rp_parent, index = rp_child.get_parent_and_index()
+    self.undoer.record_action(attach_fn, self,
+                              rp_child.name, rp_parent.name, index)
+    rp_child.detach()
+
+  def refpoint_move(self, rp, coords, use_py_coords=True):
+    """Move a reference point to a new position."""
+    screen_view = self.get_visible_coords()
+    box_coords = (screen_view.pix_to_coord(Point(coords)) if use_py_coords
+                  else coords)
+    if rp.visible:
+      self._refpoint_hide(rp)
+      self.undoer.record_action(move_fn, self, rp.name, rp.value)
+      rp.value = box_coords
+      self._refpoint_show(rp)
+
+  def refpoint_delete(self, rp, force=False):
+    """Delete the given reference point."""
+    if rp.visible or force:
+      self.undoer.begin_group()
+      children = rp.get_children()
+      for child in children:
+        self.refpoint_detach(child)
+        self.refpoint_delete(child, force=True)
+
+      self.document.refpoints.remove(rp)
+      self.undoer.record_action(create_fn, self, rp.name, rp.value)
+      self.undoer.end_group()
+      self._refpoint_hide(rp)
+      self._call_back("refpoint_delete", self, rp)
 
   def refpoint_pick(self, py_coords, include_invisible=False):
     """Returns the refpoint closest to the given one (argument 'point').
@@ -260,28 +306,6 @@ class BoxEditableArea(BoxViewArea, Configurable):
       for rp in rps:
         rp.draw(context, view, rp_size)
 
-  def refpoint_move(self, rp, coords, use_py_coords=True):
-    """Move a reference point to a new position."""
-    screen_view = self.get_visible_coords()
-    box_coords = (screen_view.pix_to_coord(Point(coords)) if use_py_coords
-                  else coords)
-    if rp.visible:
-      self._refpoint_hide(rp)
-      self.undoer.record_action(move_fn, self, rp.name, rp.value)
-      rp.value = box_coords
-      self._refpoint_show(rp)
-
-  def refpoint_delete(self, rp):
-    """Delete the given reference point."""
-    if rp.visible:
-      removed_rps = self.document.refpoints.remove(rp)
-      for removed_rp in removed_rps:
-        self.undoer.record_action(create_fn, self,
-                                  removed_rp.name, removed_rp.value)
-        self._refpoint_hide(removed_rp)
-
-      self._call_back("refpoint_delete", self, rp)
-
   def refpoint_set_visibility(self, rp, show):
     """Set the state of visibility of the given RefPoint."""
     if rp.visible == show:
@@ -331,8 +355,11 @@ class BoxEditableArea(BoxViewArea, Configurable):
           visible_coords = self.get_visible_coords()
           box_coords = visible_coords.pix_to_coord(py_coords)
           if box_coords != None:
+            self.undoer.begin_group()
             rp_child = self.refpoint_new(py_coords)
-            rp.make_parent_of(rp_child)
+            self.refpoint_attach(rp_child, rp)
+            self.undoer.end_group()
+
             self.refpoint_select(rp_child)
             self._dragged_refpoints = \
               DraggedPoints(refpoints.selection, py_coords)
@@ -401,7 +428,10 @@ class BoxEditableArea(BoxViewArea, Configurable):
     transform = screen_view.pix_to_coord
     box_vec = (Point(transform(Point(py_coords))) -
                Point(transform(Point(drps.py_initial_pos))))
+
+    self.undoer.begin_group()    
     for rp_name, rp in drps.initial_points.iteritems():
       if rp.visible:
         self.undoer.record_action(move_fn, self, rp_name, rps[rp_name].value)
         rps[rp_name].translate(box_vec)
+    self.undoer.end_group()
