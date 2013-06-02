@@ -304,9 +304,9 @@ class BoxEditableArea(BoxViewArea, Configurable):
       gc_sel = self.get_config("refpoint_sel_gc")
       gc_drag = self.get_config("refpoint_drag_gc")
       gc_line = self.get_config("refpoint_line_gc")
-      context = GContext(self.window, gc_unsel, gc_sel, gc_drag, gc_line)
-      for rp in rps:
-        rp.draw(context, view, rp_size)
+      context = \
+        GContext(self.window, rp_size, gc_unsel, gc_sel, gc_drag, gc_line)
+      context.draw(rps, view)
 
   def refpoint_set_visibility(self, rp, show):
     """Set the state of visibility of the given RefPoint."""

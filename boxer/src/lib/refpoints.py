@@ -23,12 +23,21 @@ import namegen
 
 
 class GContext(object):
-  def __init__(self, drawable, gc_unsel, gc_sel, gc_drag, gc_line):
+  def __init__(self, drawable, rp_size, gc_unsel, gc_sel, gc_drag, gc_line):
     self.drawable = drawable
+    self.rp_size = rp_size
     self.gc_unsel = gc_unsel
     self.gc_sel = gc_sel
     self.gc_drag = gc_drag
     self.gc_line = gc_line
+    self.layer = 0
+
+  def draw(self, objs, *args):
+    """Draw the given objects."""
+    for layer in (0, 1):
+      self.layer = layer
+      for obj in objs:
+        obj.draw(self, *args)
 
 
 (REFPOINT_UNSELECTED,
@@ -136,29 +145,35 @@ class RefPoint(object):
     v = self.value
     return ("%s = Point[.x=%s, .y=%s]" % (self.name, v[0], v[1]))
 
-  def draw(self, context, view, size):
+  def draw(self, context, view):
     """Draw the reference point."""
-    if self.visible:
-      if self.value != None:
-        state = self.get_state()
-        drawable = context.drawable
-        gc = (context.gc_sel if state == REFPOINT_SELECTED else
-              context.gc_unsel if state == REFPOINT_UNSELECTED else
-              context.gc_drag)
+    if not self.visible or self.value == None:
+      return
 
-        x, y = view.coord_to_pix(self.value)
-        kind = self.kind
-        if kind == REFPOINT_LONELY:
-          draw_square(drawable, x, y, size, gc)
-        elif kind == REFPOINT_CHILD:
-          parent = self.related
-          if parent != None:
-            x0, y0 = view.coord_to_pix(parent.value)
-            drawable.draw_line(context.gc_line,
-                               int(x0), int(y0), int(x), int(y))
-          draw_circle(drawable, x, y, size, gc)
-        elif kind == REFPOINT_PARENT:
-          draw_square(drawable, x, y, size, gc)
+    state = self.get_state()
+    drawable = context.drawable
+    size = context.rp_size
+    gc = (context.gc_sel if state == REFPOINT_SELECTED else
+          context.gc_unsel if state == REFPOINT_UNSELECTED else
+          context.gc_drag)
+
+    x, y = view.coord_to_pix(self.value)
+    kind = self.kind
+    layer = context.layer
+    if layer == 0:
+      if kind == REFPOINT_LONELY:
+        draw_square(drawable, x, y, size, gc)
+      elif kind == REFPOINT_CHILD:
+        parent = self.related
+        if parent != None:
+          x0, y0 = view.coord_to_pix(parent.value)
+          drawable.draw_line(context.gc_line,
+                             int(x0), int(y0), int(x), int(y))
+    elif layer == 1:
+      if kind == REFPOINT_CHILD:
+        draw_circle(drawable, x, y, size, gc)
+      elif kind == REFPOINT_PARENT:
+        draw_square(drawable, x, y, size, gc)
 
 
 class RefPoints(object):
