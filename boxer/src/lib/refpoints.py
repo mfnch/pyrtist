@@ -208,7 +208,7 @@ class RefPoint(object):
           x0, y0 = map(int, view.coord_to_pix(parent.value))
           x1, y1 = map(int, visible_coords.coord_to_pix(self.value))
           xmin, ymin = min(x0, x1), min(y0, y1)
-          dx, dy = max(x0, x1) - xmin, max(y0, y1) - ymin
+          dx, dy = max(x0, x1) - xmin + 1, max(y0, y1) - ymin + 1
           drawable.repaint_with_rps(xmin, ymin, dx, dy)
 
 
