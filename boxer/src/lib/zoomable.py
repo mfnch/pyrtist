@@ -535,6 +535,7 @@ class ZoomableArea(gtk.DrawingArea):
 
   def repaint(self, x, y, width, height):
     """Just repaint the given area of the widget."""
+
     visible_of_buf = self.get_visible_buf()
 
     # If - for some reason - the sub-buffer is not available, we just give up

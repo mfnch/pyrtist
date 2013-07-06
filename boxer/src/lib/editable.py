@@ -34,21 +34,6 @@ from undoer import Undoer
 
 from config import Configurable
 
-def _cut_point(size, x, y):
-  return (max(0, min(size[0]-1, x)), max(0, min(size[1]-1, y)))
-
-def _cut_square(size, x, y, dx, dy):
-  if size == None:
-    return (int(x), int(y), dx + 1, dy + 1)
-  else:
-    x = int(x)
-    y = int(y)
-    x0, y0 = _cut_point(size, x, y)
-    x1, y1 = _cut_point(size, x+dx, y+dy)
-    sx, sy = (x1 - x0, y1 - y0)
-    if sx < 1 or sy < 1: return (x0, y0, -1, -1)
-    return (x0, y0, sx+1, sy+1)
-
 
 class BoxViewArea(ZoomableArea):
   def __init__(self, filename=None, out_fn=None, callbacks=None, **kwargs):
@@ -183,7 +168,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
     rp = RefPoint(real_name, box_coords)
     refpoints.append(rp)
-    self._refpoint_show(rp)
+    self.repaint_rps(rp)
 
     self.undoer.begin_group()
     self.undoer.record_action(delete_fn, self, real_name)
@@ -196,17 +181,21 @@ class BoxEditableArea(BoxViewArea, Configurable):
   def refpoint_attach(self, rp_child, rp_parent, index=None):
     """Attach a reference point rp_child to another reference point rp_parent
     using the given index."""
+    v = self.refpoint_set_visibility(rp_child, False)
     self.undoer.record_action(detach_fn, self, rp_child.name)
     rp_parent.attach(rp_child, index=index)
+    self.refpoint_set_visibility(rp_child, v)
 
   def refpoint_detach(self, rp_child):
     """Detach a reference point from its parent."""
     parent_and_index = rp_child.get_parent_and_index()
     if parent_and_index:
       rp_parent, index = parent_and_index
+      v = self.refpoint_set_visibility(rp_child, False)
       self.undoer.record_action(attach_fn, self,
                                 rp_child.name, rp_parent.name, index)
       rp_child.detach()
+      self.refpoint_set_visibility(rp_child, v)
 
   def refpoint_move(self, rp, coords, use_py_coords=True):
     """Move a reference point to a new position."""
@@ -214,10 +203,10 @@ class BoxEditableArea(BoxViewArea, Configurable):
     box_coords = (screen_view.pix_to_coord(Point(coords)) if use_py_coords
                   else coords)
     if rp.visible:
-      self._refpoint_hide(rp)
+      v = self.refpoint_set_visibility(rp, False)
       self.undoer.record_action(move_fn, self, rp.name, rp.value)
       rp.value = box_coords
-      self._refpoint_show(rp)
+      self.refpoint_set_visibility(rp, v)
 
   def refpoint_delete(self, rp, force=False):
     """Delete the given reference point."""
@@ -227,11 +216,11 @@ class BoxEditableArea(BoxViewArea, Configurable):
       for child in children:
         self.refpoint_delete(child, force=True)
 
+      self.refpoint_set_visibility(rp, False)
       self.refpoint_detach(rp)
       self.document.refpoints.remove(rp)
       self.undoer.record_action(create_fn, self, rp.name, rp.value)
       self.undoer.end_group()
-      self._refpoint_hide(rp)
       self._call_back("refpoint_delete", self, rp)
 
   def refpoint_pick(self, py_coords, include_invisible=False):
@@ -269,26 +258,24 @@ class BoxEditableArea(BoxViewArea, Configurable):
       refpoints.clear_selection()
       refpoints.select(rp)
     touched_points.update(refpoints.selection)
-    self._refpoint_show(*touched_points.values())
+    self.repaint_rps(*touched_points.values())
+
+  def get_gcontext(self):
+    rp_size = self.get_config("refpoint_size")
+    gc_unsel = self.get_config("refpoint_gc")
+    gc_sel = self.get_config("refpoint_sel_gc")
+    gc_drag = self.get_config("refpoint_drag_gc")
+    gc_line = self.get_config("refpoint_line_gc")
+    return GContext(self, rp_size, gc_unsel, gc_sel, gc_drag, gc_line)
 
   def _refpoint_hide(self, *rps):
     """Hide the given RefPoint. This is a purely graphical operation, it does
     not change the status of the RefPoint object.
     """
-    visible_coords = self.get_visible_coords()
-    if visible_coords != None:
-      l0 = self.get_config("refpoint_size")
-      dl0 = l0*2
-      wsize = self.window.get_size()
-      magnification = self.last_magnification
-      distance = ((dl0 + 1)/magnification if magnification != None else None)
-      for rp in rps:
-        x, y = visible_coords.coord_to_pix(rp.value)
-        x0, y0, dx0, dy0 = _cut_square(wsize, x-l0, y-l0, dl0, dl0)
-        if dx0 > 0 and dy0 > 0:
-          self.repaint(x0, y0, dx0, dy0)
-        overlapping_rps = self.document.refpoints.get_neighbours(rp, distance)
-        self._draw_refpoints(overlapping_rps)
+    view = self.get_visible_coords()
+    if view != None:
+      context = self.get_gcontext()
+      context.hide(rps, view)
 
   def _refpoint_show(self, *rps):
     return self._draw_refpoints(rps)
@@ -299,33 +286,42 @@ class BoxEditableArea(BoxViewArea, Configurable):
       rps = refpoints
     view = self.get_visible_coords()
     if view != None:
-      rp_size = self.get_config("refpoint_size")
-      gc_unsel = self.get_config("refpoint_gc")
-      gc_sel = self.get_config("refpoint_sel_gc")
-      gc_drag = self.get_config("refpoint_drag_gc")
-      gc_line = self.get_config("refpoint_line_gc")
-      context = \
-        GContext(self.window, rp_size, gc_unsel, gc_sel, gc_drag, gc_line)
+      context = self.get_gcontext()
       context.draw(rps, view)
 
-  def refpoint_set_visibility(self, rp, show):
+  def refpoint_set_visibility(self, rp, show, force=False):
     """Set the state of visibility of the given RefPoint."""
-    if rp.visible == show:
-      return
-    else:
-      self.document.refpoints.set_visibility(rp, show)
-      if show:
-        self._refpoint_show(rp)
-      else:
-        self._refpoint_hide(rp)
+    old_visible = rp.visible
+    if old_visible != show or force:
+      rp.visible = show
+      self.repaint_rps(rp)
+    return old_visible
 
   def refpoints_set_visibility(self, selection, visibility):
     rps = self.document.refpoints.set_visibility(selection, visibility)
+    self.repaint_rps(*rps)
+
+  def repaint_rps(self, *rps):
+    """Repaint the area occupied by the specified refpoints."""
     for rp in rps:
       if rp.visible:
         self._refpoint_show(rp)
       else:
         self._refpoint_hide(rp)
+
+  def repaint_with_rps(self, x, y, width, height):
+    """Repaint the given area of the widget, including reference points."""
+    if width <= 0 or height <= 0:
+      return
+
+    # First repaint the background.
+    BoxViewArea.repaint(self, x, y, width, height)
+
+    # Then, find out which reference points need to be redrawn.
+
+
+    # XXX TODO: for now we redraw all the refpoints.
+    self._draw_refpoints()
 
   def expose(self, draw_area, event):
     ret = ZoomableArea.expose(self, draw_area, event)
@@ -418,9 +414,9 @@ class BoxEditableArea(BoxViewArea, Configurable):
                Point(transform(Point(drps.py_initial_pos))))
     for rp_name, rp in drps.initial_points.iteritems():
       if rp.visible:
-        self._refpoint_hide(rp)
+        self.refpoint_set_visibility(rp, False)
         rp.translate_to(Point(rps[rp_name].value) + box_vec)
-        self._refpoint_show(rp)
+        self.refpoint_set_visibility(rp, True)
 
   def _drag_confirm(self, py_coords):
     drps = self._dragged_refpoints

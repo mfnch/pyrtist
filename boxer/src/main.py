@@ -1,5 +1,4 @@
-# Copyright (C) 2010
-#  by Matteo Franchin (fnch@users.sourceforge.net)
+# Copyright (C) 2010-2013 by Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Boxer.
 #

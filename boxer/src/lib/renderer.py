@@ -22,17 +22,17 @@ Renderer routines to draw the refpoints.
 from geom2 import Point
 
 
-def _cut_point(size, x, y):
+def cut_point(size, x, y):
   return (max(0, min(size[0]-1, x)), max(0, min(size[1]-1, y)))
 
-def _cut_square(size, x, y, dx, dy):
+def cut_square(size, x, y, dx, dy):
   if size == None:
     return (int(x), int(y), dx + 1, dy + 1)
   else:
     x = int(x)
     y = int(y)
-    x0, y0 = _cut_point(size, x, y)
-    x1, y1 = _cut_point(size, x+dx, y+dy)
+    x0, y0 = cut_point(size, x, y)
+    x1, y1 = cut_point(size, x+dx, y+dy)
     sx, sy = (x1 - x0, y1 - y0)
     if sx < 1 or sy < 1: return (x0, y0, -1, -1)
     return (x0, y0, sx+1, sy+1)
