@@ -277,13 +277,9 @@ class BoxEditableArea(BoxViewArea, Configurable):
       context = self.get_gcontext()
       context.hide(rps, view)
 
-  def _refpoint_show(self, *rps):
-    return self._draw_refpoints(rps)
-
-  def _draw_refpoints(self, rps=None):
-    refpoints = self.document.refpoints
-    if rps == None:
-      rps = refpoints
+  def _draw_refpoints(self, *rps):
+    if len(rps) == 0:
+      rps = self.document.refpoints
     view = self.get_visible_coords()
     if view != None:
       context = self.get_gcontext()
@@ -298,6 +294,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
     return old_visible
 
   def refpoints_set_visibility(self, selection, visibility):
+    """Set the visibility for a selection of points."""
     rps = self.document.refpoints.set_visibility(selection, visibility)
     self.repaint_rps(*rps)
 
@@ -305,7 +302,7 @@ class BoxEditableArea(BoxViewArea, Configurable):
     """Repaint the area occupied by the specified refpoints."""
     for rp in rps:
       if rp.visible:
-        self._refpoint_show(rp)
+        self._draw_refpoints(rp)
       else:
         self._refpoint_hide(rp)
 
@@ -317,10 +314,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
     # First repaint the background.
     BoxViewArea.repaint(self, x, y, width, height)
 
-    # Then, find out which reference points need to be redrawn.
-
-
-    # XXX TODO: for now we redraw all the refpoints.
+    # For now we redraw all the refpoints.
+    # XXX TODO: redraw only those reference points that need to be redrawn.
     self._draw_refpoints()
 
   def expose(self, draw_area, event):
