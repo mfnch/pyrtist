@@ -17,13 +17,15 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* fig.c
+/**
+ * @file fig.c
+ * @brief Implementation of recording windows
  *
- * Questo file contiene quanto basta per poter disegnare su una "finestra
- * virtuale".
- * I comandi vengono semplicemente salvati in diverse "liste di comandi",
- * che chiamo "layer". I layer servono a ordinare gli oggetti grafici
- * in modo da realizzare la giusta sovrapposizione.
+ * This files provides the implementation of recording windows.
+ * A recording window remembers the commands it receives by storing them
+ * in lists (layers). It then offers the capability of replaying these
+ * commands by sending them to another window. The concept of layer is
+ * implemented below, but not currently exported to the Box API.
  */
 
 #include <stdio.h>
@@ -32,9 +34,6 @@
 #include <math.h>
 #include <assert.h>
 
-/* De-commentare per includere i messaggi di debug */
-/*#define DEBUG*/
-
 #include <box/types.h>
 #include <box/mem.h>
 #include <box/array.h>
@@ -42,7 +41,7 @@
 #include "error.h"
 #include "matrix.h"
 #include "winmap.h"
-#include "graphic.h"  /* Dichiaro alcune strutture grafiche generali */
+#include "graphic.h"
 #include "g.h"
 #include "fig.h"
 #include "bb.h"
@@ -53,7 +52,10 @@
 /* Dimensione iniziale di un layer in bytes = dimensione iniziale dello spazio
  * in cui vengono memorizzate le istruzioni di ciascun layer
  */
-#define LAYER_INITIAL_SIZE 128
+#define MY_INITIAL_LAYER_SIZE 128
+
+/* Macro used to align arguments. */
+#define MY_ARG_SIZE(sz) ((((sz) + 7)/8)*8)
 
 /* DESCRIZIONE: Questa macro permette di usare una indicizzazione "circolare",
  *  secondo cui, data una lista di num_items elementi, l'indice 1 si riferisce
@@ -70,7 +72,7 @@
                     num_items - ( (-index) % num_items ) )
 
 typedef struct {
-  int numlayers,    /**< Number of layers in the figure */
+  int num_layers,    /**< Number of layers in the figure */
       current,      /**< Layer which is currently being used */
       top,          /**< Top layer */
       bottom,       /**< Bottom layer */
@@ -104,11 +106,69 @@ static char *fig_id_string = "fig";
  */
 
 /* Enumero gli ID di tutti i comandi */
-enum ID_type {
-  ID_rreset = 1, ID_rinit, ID_rdraw, ID_rline,
-  ID_rcong, ID_rclose, ID_rcircle, ID_rfgcolor, ID_rbgcolor,
-  ID_rgradient, ID_text, ID_font, ID_fake_point, ID_interpret
-};
+typedef enum MyCmdId_enum {
+  MYCMDID_RRESET = 1, MYCMDID_RINIT, MYCMDID_RDRAW, MYCMDID_RLINE,
+  MYCMDID_RCONG, MYCMDID_RCLOSE, MYCMDID_RCIRCLE, MYCMDID_RFGCOLOR,
+  MYCMDID_RBGCOLOR, MYCMDID_RGRADIENT, MYCMDID_TEXT, MYCMDID_FONT,
+  MYCMDID_FAKE_POINT, MYCMDID_INTERPRET
+} MyCmdId;
+
+
+/* Arguments for MYCMDID_RDRAW. */
+typedef struct {
+  DrawStyle draw_style;
+} MyCmdRDrawArgs;
+
+/* Arguments for MYCMDID_RLINE. */
+typedef struct {
+  BoxPoint points[2];
+} MyCmdRLineArgs;
+
+/* Arguments for MYCMDID_RCONG. */
+typedef struct {
+  BoxPoint points[3];
+} MyCmdRCongArgs;
+
+/* Arguments for MYCMDID_RCIRCLE. */
+typedef struct {
+  BoxPoint points[3];
+} MyCmdRCircleArgs;
+
+/* Arguments for MYCMDID_RFGCOLOR. */
+typedef struct {
+  Color color;
+} MyCmdRFgColorArgs;
+
+/* Arguments for MYCMDID_RBGCOLOR. */
+typedef struct {
+  Color color;
+} MyCmdRBgColorArgs;
+
+/* Arguments for MYCMDID_RGRADIENT. */
+typedef struct {
+  ColorGrad gradient;
+} MyCmdRGradientArgs;
+
+/* Arguments for MYCMDID_TEXT. */
+typedef struct {
+  BoxPoint ctr, right, up, from;
+  BoxInt text_size;
+} MyCmdTextArgs;
+
+/* Arguments for MYCMDID_FONT. */
+typedef struct {
+  int str_size;
+} MyCmdFontArgs;
+
+/* Arguments for MYCMDID_FAKE_POINT. */
+typedef struct {
+  BoxPoint point;
+} MyCmdFakePointArgs;
+
+/* Arguments for MYCMDID_INTERPRET. */
+typedef struct {
+  BoxGObj gobj;
+} MyCmdInterpretArgs;
 
 #define FIGLAYER_ID_ACTIVE 0x7279616c /* "layr" */
 #define FIGLAYER_ID_FREE 0x65657266 /* "free" */
@@ -140,13 +200,13 @@ static BoxTask My_Fig_Iterate_Over_Layer(LayerHeader *layh,
 
   /* Read all the commands in the layer */
   while (nc > 0) {
-    /* Fint the address of the current instruction.
+    /* Find the address of the current instruction.
      * NOTE: we need to recompute the address each time, as during the while
      * loop the BoxArr may change (be reallocated). This happens when one
      * layer is being written into itself.
      */
     FigCmndHeader *cmnd_header = (FigCmndHeader *) BoxArr_Item_Ptr(layer, ip);
-    size_t cmnd_header_size = cmnd_header->size;
+    size_t cmnd_size = cmnd_header->size;
     void *cmnd_data = (void *) cmnd_header + sizeof(FigCmndHeader);
     BoxTask task = iter(cmnd_header, cmnd_data, pass);
 
@@ -154,7 +214,7 @@ static BoxTask My_Fig_Iterate_Over_Layer(LayerHeader *layh,
       return task;
 
     /* Continue to next command */
-    ip += sizeof(FigCmndHeader) + cmnd_header_size;
+    ip += sizeof(FigCmndHeader) + cmnd_size;
     --nc;
   }
 
@@ -164,7 +224,7 @@ static BoxTask My_Fig_Iterate_Over_Layer(LayerHeader *layh,
 BoxTask BoxGWin_Fig_Iterate_Over_Layer(BoxGWin *source, int nr_layer,
                                        FigCmndIter iter, void *pass) {
   FigHeader *figh = (FigHeader *) source->data;
-  int l = CIRCULAR_INDEX(figh->numlayers, nr_layer);
+  int l = CIRCULAR_INDEX(figh->num_layers, nr_layer);
   LayerHeader *lh = (LayerHeader *) BoxArr_Item_Ptr(& figh->layerlist, l);
   return My_Fig_Iterate_Over_Layer(lh, iter, pass);
 }
@@ -172,8 +232,8 @@ BoxTask BoxGWin_Fig_Iterate_Over_Layer(BoxGWin *source, int nr_layer,
 static BoxTask My_Layer_Finish_Iter(FigCmndHeader *cmnd_header,
                                     void *cmnd_data, void *pass) {
   switch (cmnd_header->ID) {
-  case ID_interpret:
-    BoxGObj_Finish((BoxGObj *) cmnd_data);
+  case MYCMDID_INTERPRET:
+    BoxGObj_Finish(& ((MyCmdInterpretArgs *) cmnd_data)->gobj);
     return BOXTASK_OK;
 
   default:
@@ -198,16 +258,21 @@ static void My_Fig_Push_Commands(BoxGWin *w, int id, CmndArg *args) {
 
   /* Calculate total size of arguments */
   total_size = 0;
-  for(i=0; args[i].arg_data_size > 0; i++)
-    total_size += args[i].arg_data_size;
+  for (i = 0; args[i].arg_data_size > 0; i++) {
+    /* Enforce 8 byte alignment. */
+    int aligned_size = MY_ARG_SIZE(args[i].arg_data_size);
+    total_size += aligned_size;
+  }
 
   /* Compile command header */
   ch.ID = id;
   ch.size = total_size;
 
   BoxArr_MPush(layer, & ch, sizeof(FigCmndHeader));
-  for (i = 0; args[i].arg_data_size > 0; i++)
-    BoxArr_MPush(layer, args[i].arg_data, args[i].arg_data_size);
+  for (i = 0; args[i].arg_data_size > 0; i++) {
+    int aligned_size = MY_ARG_SIZE(args[i].arg_data_size);
+    BoxArr_MPush(layer, args[i].arg_data, aligned_size);
+  }
 
   ++lh->numcmnd; /* Increase counter for number of commands in the layer */
 }
@@ -244,118 +309,130 @@ BoxGErr My_Transform_Commands(BoxGCmd cmd, BoxGCmdSig sig, int num_args,
 }
 
 static BoxTask My_Fig_Interpret(BoxGWin *w, BoxGObj *obj, BoxGWinMap *map) {
-  BoxGObj copy;
+  MyCmdInterpretArgs arg0;
 
   assert(obj != NULL && w != NULL);
 
-  BoxGObj_Init(& copy);
+  BoxGObj_Init(& arg0.gobj);
   if (BoxGCmdIter_Filter_Append(My_Transform_Commands,
-                                & copy, obj, map) == BOXTASK_OK) {
+                                & arg0.gobj, obj, map) == BOXTASK_OK) {
     /* Note that here we are assuming that we can safely relocate BoxGObj
      * objects in memory, i.e. memcopy them and completely forget about the
      * originals (which means we do not call BoxGObj_Finish for them).
-     * We then treat the copies as if they were effectively equivalent to the
+     * We then handle the copies as if they were effectively equivalent to the
      * originals. Typically this can be done for objects that are not being
      * referenced by other objects. Here we can do this as we are creating
      * a new copy of obj.
      */
-    CmndArg args[] = {{sizeof(BoxGObj), & copy},
-                      {0, (void *) NULL}};
-    My_Fig_Push_Commands(w, ID_interpret, args);
+    CmndArg args[] = {{sizeof(arg0), & arg0}, {0, (void *) NULL}};
+    My_Fig_Push_Commands(w, MYCMDID_INTERPRET, args);
     return BOXTASK_OK;
+  }
 
-  } else
-    return BOXTASK_FAILURE;
+  return BOXTASK_FAILURE;
 }
 
 void My_Fig_Create_Path(BoxGWin *w) {
-  CmndArg args[] = {{0, (void *) NULL}};
-  My_Fig_Push_Commands(w, ID_rreset, args);
+  CmndArg args[] = {{0, NULL}};
+  My_Fig_Push_Commands(w, MYCMDID_RRESET, args);
 }
 
 void My_Fig_Begin_Drawing(BoxGWin *w) {
-  CmndArg args[] = {{0, (void *) NULL}};
-  My_Fig_Push_Commands(w, ID_rinit, args);
+  CmndArg args[] = {{0, NULL}};
+  My_Fig_Push_Commands(w, MYCMDID_RINIT, args);
 }
 
 void My_Fig_Draw_Path(BoxGWin *w, DrawStyle *style) {
-  CmndArg args[] = {{sizeof(DrawStyle), style},
-                    {0, (void *) NULL},
-                    {0, (void *) NULL}};
+  MyCmdRDrawArgs arg0;
+  CmndArg args[] = {{sizeof(arg0), & arg0}, {0, NULL}, {0, NULL}};
+
+  arg0.draw_style = *style;
+  arg0.draw_style.bord_dashes = NULL;
   if (style->bord_num_dashes > 0) {
     args[1].arg_data_size = sizeof(BoxReal)*style->bord_num_dashes;
     args[1].arg_data = style->bord_dashes;
   }
-  My_Fig_Push_Commands(w, ID_rdraw, args);
+
+  My_Fig_Push_Commands(w, MYCMDID_RDRAW, args);
 }
 
 void My_Fig_Add_Line_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b) {
-  CmndArg args[] = {{sizeof(BoxPoint), a},
-                    {sizeof(BoxPoint), b},
-                    {0, (void *) NULL}};
-  My_Fig_Push_Commands(w, ID_rline, args);
+  MyCmdRLineArgs arg0;
+  CmndArg args[] = {{sizeof(arg0), & arg0}, {0, NULL}};
+  arg0.points[0] = *a;
+  arg0.points[1] = *b;
+  My_Fig_Push_Commands(w, MYCMDID_RLINE, args);
 }
 
 void My_Fig_Add_Join_Path(BoxGWin *w, BoxPoint *a, BoxPoint *b, BoxPoint *c) {
-  CmndArg args[] = {{sizeof(BoxPoint), a},
-                    {sizeof(BoxPoint), b},
-                    {sizeof(BoxPoint), c},
-                    {0, (void *) NULL}};
-  My_Fig_Push_Commands(w, ID_rcong, args);
+  MyCmdRCongArgs arg0;
+  CmndArg args[] = {{sizeof(arg0), & arg0}, {0, NULL}};
+  arg0.points[0] = *a;
+  arg0.points[1] = *b;
+  arg0.points[2] = *c;
+  My_Fig_Push_Commands(w, MYCMDID_RCONG, args);
 }
 
 void My_Fig_Close_Path(BoxGWin *w) {
-  CmndArg args[] = {{0, (void *) NULL}};
-  My_Fig_Push_Commands(w, ID_rclose, args);
+  CmndArg args[] = {{0, NULL}};
+  My_Fig_Push_Commands(w, MYCMDID_RCLOSE, args);
 }
 
 void My_Fig_Circle_Path(BoxGWin *w, BoxPoint *ctr, BoxPoint *a, BoxPoint *b) {
-  CmndArg args[] = {{sizeof(BoxPoint), ctr},
-                    {sizeof(BoxPoint), a},
-                    {sizeof(BoxPoint), b},
-                    {0, (void *) NULL}};
-  My_Fig_Push_Commands(w, ID_rcircle, args);
+  MyCmdRCircleArgs arg0;
+  CmndArg args[] = {{sizeof(arg0), & arg0}, {0, NULL}};
+  arg0.points[0] = *ctr;
+  arg0.points[1] = *a;
+  arg0.points[2] = *b;
+  My_Fig_Push_Commands(w, MYCMDID_RCIRCLE, args);
 }
 
 void My_Fig_Set_Fg_Color(BoxGWin *w, Color *c) {
-  CmndArg args[] = {{sizeof(Color), c}, {0, (void *) NULL}};
-  My_Fig_Push_Commands(w, ID_rfgcolor, args);
+  MyCmdRFgColorArgs arg0;
+  CmndArg args[] = {{sizeof(arg0), & arg0}, {0, NULL}};
+  arg0.color = *c;
+  My_Fig_Push_Commands(w, MYCMDID_RFGCOLOR, args);
 }
 
 void My_Fig_Set_Bg_Color(BoxGWin *w, Color *c) {
-  CmndArg args[] = {{sizeof(Color), c}, {0, (void *) NULL}};
-  My_Fig_Push_Commands(w, ID_rbgcolor, args);
+  MyCmdRBgColorArgs arg0;
+  CmndArg args[] = {{sizeof(arg0), & arg0}, {0, NULL}};
+  arg0.color = *c;
+  My_Fig_Push_Commands(w, MYCMDID_RBGCOLOR, args);
 }
-
-typedef struct {
-  BoxPoint ctr, right, up, from;
-  BoxInt text_size;
-} Arg4Text;
 
 static void My_Fig_Add_Text_Path(BoxGWin *w,
                                  BoxPoint *ctr, BoxPoint *right, BoxPoint *up,
                                  BoxPoint *from, const char *text) {
   BoxInt text_size = strlen(text);
-  Arg4Text arg;
-  CmndArg args[] = {{sizeof(Arg4Text), & arg},
-                    {text_size+1, (void *) text},
-                    {0, (void *) NULL}};
-  arg.ctr = *ctr; arg.right = *right; arg.up = *up; arg.from = *from;
-  arg.text_size = text_size;
-  My_Fig_Push_Commands(w, ID_text, args);
+  MyCmdTextArgs arg0;
+  CmndArg args[] = {{sizeof(arg0), & arg0},
+		    {text_size + 1, (char *) text},
+		    {0, NULL}};
+
+  arg0.ctr = *ctr;
+  arg0.right = *right;
+  arg0.up = *up;
+  arg0.from = *from;
+  arg0.text_size = text_size;
+  My_Fig_Push_Commands(w, MYCMDID_TEXT, args);
 }
 
 static void My_Fig_Set_Font(BoxGWin *w, const char *font) {
+  MyCmdFontArgs arg0;
   BoxInt font_size = strlen(font);
-  CmndArg args[] = {{sizeof(BoxInt), & font_size},
-                    {font_size+1, (void *) font},
-                    {0, (void *) NULL}};
-  My_Fig_Push_Commands(w, ID_font, args);
+  CmndArg args[] = {{sizeof(arg0), & arg0},
+                    {font_size + 1, (void *) font},
+                    {0, NULL}};
+  arg0.str_size = font_size;
+  My_Fig_Push_Commands(w, MYCMDID_FONT, args);
 }
 
 static void My_Fig_Fake_Point(BoxGWin *w, BoxPoint *p) {
-  CmndArg args[] = {{sizeof(BoxPoint), p}, {0, (void *) NULL}};
-  My_Fig_Push_Commands(w, ID_fake_point, args);
+  MyCmdFakePointArgs arg0;
+  CmndArg args[] = {{sizeof(arg0), & arg0}, {0, NULL}};
+  arg0.point = *p;
+  My_Fig_Push_Commands(w, MYCMDID_FAKE_POINT, args);
 }
 
 static void My_Fig_Finish(BoxGWin *w) {
@@ -371,14 +448,18 @@ static void My_Fig_Finish(BoxGWin *w) {
 }
 
 static void My_Fig_Set_Gradient(BoxGWin *w, ColorGrad *cg) {
-  CmndArg args[] = {{sizeof(ColorGrad), cg},
-                    {0, (void *) NULL},
-                    {0, (void *) NULL}};
+  MyCmdRGradientArgs arg0;
+  CmndArg args[] = {{sizeof(arg0), & arg0},
+		    {0, NULL},
+                    {0, NULL}};
+
+  arg0.gradient = *cg;
   if (cg->num_items > 0) {
     args[1].arg_data_size = sizeof(ColorGradItem)*cg->num_items;
     args[1].arg_data = cg->items;
   }
-  My_Fig_Push_Commands(w, ID_rgradient, args);
+
+  My_Fig_Push_Commands(w, MYCMDID_RGRADIENT, args);
 }
 
 static int My_Fig_Save_To_File(BoxGWin *w, const char *file_name) {
@@ -433,13 +514,13 @@ static void My_Fig_Repair(BoxGWin *w) {
   w->finish = My_Fig_Finish;
 }
 
-BoxTask BoxGWin_Init_Fig(BoxGWin *wd, int numlayers) {
+BoxTask BoxGWin_Init_Fig(BoxGWin *wd, int num_layers) {
   FigHeader *figh;
   LayerHeader *layh;
   BoxArr *laylist;
   int i;
 
-  if (numlayers < 1) {
+  if (num_layers < 1) {
     ERRORMSG("BoxGWin_Create_Fig", "Figura senza layers");
     return BOXTASK_ERROR;
   }
@@ -453,27 +534,27 @@ BoxTask BoxGWin_Init_Fig(BoxGWin *wd, int numlayers) {
     return BOXTASK_ERROR;
   }
 
-  /* Creo la lista dei layers con numlayers elementi */
+  /* Creo la lista dei layers con num_layers elementi */
   laylist = & figh->layerlist;
-  BoxArr_Init(& figh->layerlist, sizeof(LayerHeader), numlayers);
+  BoxArr_Init(& figh->layerlist, sizeof(LayerHeader), num_layers);
 
   /* Compilo l'header della figura */
-  figh->numlayers = numlayers;
+  figh->num_layers = num_layers;
   figh->top = 1;
-  figh->bottom = numlayers;
+  figh->bottom = num_layers;
   figh->firstfree = 0;  /* Nessun layer libero */
 
   /* Adesso creo la lista dei layer */
-  layh = (LayerHeader *) BoxArr_MPush(& figh->layerlist, NULL, numlayers);
-  for (i = 0; i < numlayers; i++, layh++) {
+  layh = (LayerHeader *) BoxArr_MPush(& figh->layerlist, NULL, num_layers);
+  for (i = 0; i < num_layers; i++, layh++) {
     /* Intialise the data space for each layer */
-    BoxArr_Init(& layh->layer, 1, LAYER_INITIAL_SIZE);
+    BoxArr_Init(& layh->layer, 1, MY_INITIAL_LAYER_SIZE);
 
     /* Fill the layer header */
     layh->ID = FIGLAYER_ID_ACTIVE;
     layh->numcmnd = 0;
     layh->previous = (i > 0) ? i - 1 : 0;
-    layh->next = (i + 1) % numlayers;
+    layh->next = (i + 1) % num_layers;
   }
 
 
@@ -497,9 +578,9 @@ BoxTask BoxGWin_Init_Fig(BoxGWin *wd, int numlayers) {
  *  Questi sono ordinati dal piu' basso, cioe' quello che viene disegnato
  *  per primo (e quindi sara' ricoperto da tutti i successivi), al piu' alto,
  *  che viene disegnato per ultimo (e quindi ricopre tutti gli altri).
- *  numlayers specifica proprio il numero dei layer della figura.
+ *  num_layers specifica proprio il numero dei layer della figura.
  *  L'ordine dei layer puo' essere modificato (altre procedure di questo file).
- *  Ad ogni layer e' associato un numero (da 1 a numlayers) e questo viene
+ *  Ad ogni layer e' associato un numero (da 1 a num_layers) e questo viene
  *  utilizzato per far riferimento ad esso.
  */
 BoxGWin *BoxGWin_Create_Fig(int num_layers) {
@@ -528,12 +609,12 @@ int BoxGWin_Fig_Destroy_Layer(BoxGWin *w, int l) {
               *llayh, *layh;
   int p, n;
 
-  if (figh->numlayers < 2) {
+  if (figh->num_layers < 2) {
     ERRORMSG("BoxGWin_Fig_Destroy_Layer", "Figura senza layers");
     return 0;
   }
 
-  l = CIRCULAR_INDEX(figh->numlayers, l);
+  l = CIRCULAR_INDEX(figh->num_layers, l);
 
   /* Trovo l'header del layer l */
   llayh = flayh + l - 1;
@@ -571,7 +652,7 @@ int BoxGWin_Fig_Destroy_Layer(BoxGWin *w, int l) {
   }
 
   /* Aggiorno i dati sulla figura */
-  --figh->numlayers;
+  --figh->num_layers;
   if (figh->current == l) {
     WARNINGMSG("BoxGWin_Fig_Destroy_Layer",
                "Layer attivo distrutto: nuovo layer attivo = 1");
@@ -618,7 +699,7 @@ int BoxGWin_Fig_New_Layer(BoxGWin *w) {
   }
 
   /* Definisco lo spazio dove verranno memorizzate le istruzioni */
-  BoxArr_Init(& llayh->layer, 1, LAYER_INITIAL_SIZE);
+  BoxArr_Init(& llayh->layer, 1, MY_INITIAL_LAYER_SIZE);
 
   /* Allungo la lista dei layers: il nuovo andra' sopra gli altri! */
   layh = flayh + figh->bottom - 1;
@@ -630,7 +711,7 @@ int BoxGWin_Fig_New_Layer(BoxGWin *w) {
   llayh->previous = figh->bottom;
   llayh->next = 0;
   figh->bottom = l;
-  ++figh->numlayers;
+  ++figh->num_layers;
   return l;
 }
 
@@ -646,7 +727,7 @@ void BoxGWin_Fig_Select_Layer(BoxGWin *w, int l) {
   figh = (FigHeader *) w->data;
 
   /* Setto il layer attivo a l */
-  l = CIRCULAR_INDEX(figh->numlayers, l);
+  l = CIRCULAR_INDEX(figh->num_layers, l);
   figh->current = l;
 
   /* Trovo l'header del layer l */
@@ -667,7 +748,7 @@ void BoxGWin_Fig_Clear_Layer(BoxGWin *w, int l) {
   figh = (FigHeader *) w->data;
 
   /* Trovo l'header del layer l */
-  l = CIRCULAR_INDEX(figh->numlayers, l);
+  l = CIRCULAR_INDEX(figh->num_layers, l);
   laylist = & figh->layerlist;
   layh = BoxArr_First_Item_Ptr(laylist) + l - 1;
 
@@ -685,128 +766,141 @@ void BoxGWin_Fig_Clear_Layer(BoxGWin *w, int l) {
 typedef struct {
   BoxGWin    *win;
   BoxGWinMap *map;
-
 } MyFigDrawLayerData;
 
 static BoxTask My_Fig_Draw_Layer_Iter(FigCmndHeader *cmnd_header,
                                       void *cmnd_data, void *pass) {
   BoxGWin *w = ((MyFigDrawLayerData *) pass)->win;
   BoxGWinMap *map = ((MyFigDrawLayerData *) pass)->map;
-  BoxPoint tp[3];
-  BoxReal tr;
-  ColorGrad cg;
 
   switch (cmnd_header->ID) {
-  case ID_rreset:
+  case MYCMDID_RRESET:
     BoxGWin_Create_Path(w);
     return BOXTASK_OK;
 
-  case ID_rinit:
+  case MYCMDID_RINIT:
     BoxGWin_Begin_Drawing(w);
     return BOXTASK_OK;
 
-  case ID_rdraw:
-    ((DrawStyle *) cmnd_data)->bord_dashes =
-      (BoxReal *) (cmnd_data + sizeof(DrawStyle));
-    tr = ((DrawStyle *) cmnd_data)->scale;
-    BoxGWinMap_Map_Width(map, & ((DrawStyle *) cmnd_data)->scale, & tr);
-    BoxGWin_Draw_Path(w, (DrawStyle *) cmnd_data);
-    ((DrawStyle *) cmnd_data)->scale = tr;
-    return BOXTASK_OK;
+  case MYCMDID_RDRAW:
+    {
+      MyCmdRDrawArgs arg0 = *((MyCmdRDrawArgs *) cmnd_data);
 
-  case ID_rline:
-    tp[0] = *((BoxPoint *) cmnd_data);
-    tp[1] = *((BoxPoint *) (cmnd_data + sizeof(BoxPoint)));
-    BoxGWinMap_Map_Points(map, tp, tp, 2);
-    BoxGWin_Add_Line_Path(w, & tp[0], & tp[1]);
-    return BOXTASK_OK;
+      arg0.draw_style.bord_dashes =
+	(BoxReal *) ((char *) cmnd_data + MY_ARG_SIZE(sizeof(MyCmdRDrawArgs)));
+      BoxGWinMap_Map_Width(map, & arg0.draw_style.scale,
+			   & arg0.draw_style.scale);
+      BoxGWin_Draw_Path(w, & arg0.draw_style);
+      return BOXTASK_OK;
+    }
 
-  case ID_rcong:
-    tp[0] = *((BoxPoint *) cmnd_data);
-    tp[1] = *((BoxPoint *) (cmnd_data + sizeof(BoxPoint)));
-    tp[2] = *((BoxPoint *) (cmnd_data + 2*sizeof(BoxPoint)));
-    BoxGWinMap_Map_Points(map, tp, tp, 3);
-    BoxGWin_Add_Join_Path(w, & tp[0], & tp[1], & tp[2]);
-    return BOXTASK_OK;
+  case MYCMDID_RLINE:
+    {
+      MyCmdRLineArgs arg0, *src = (MyCmdRLineArgs *) cmnd_data;
 
-  case ID_rclose:
+      BoxGWinMap_Map_Points(map, & arg0.points[0], & src->points[0], 2);
+      BoxGWin_Add_Line_Path(w, & arg0.points[0], & arg0.points[1]);
+      return BOXTASK_OK;
+    }
+
+  case MYCMDID_RCONG:
+    {
+      MyCmdRCongArgs arg0, *src = (MyCmdRCongArgs *) cmnd_data;
+
+      BoxGWinMap_Map_Points(map, & arg0.points[0], & src->points[0], 3);
+      BoxGWin_Add_Join_Path(w, & arg0.points[0], & arg0.points[1],
+			    & arg0.points[2]);
+      return BOXTASK_OK;
+    }
+
+  case MYCMDID_RCLOSE:
     BoxGWin_Close_Path(w);
     return BOXTASK_OK;
 
-  case ID_rcircle:
-    tp[0] = *((BoxPoint *) cmnd_data);
-    tp[1] = *((BoxPoint *) (cmnd_data + sizeof(BoxPoint)));
-    tp[2] = *((BoxPoint *) (cmnd_data + 2*sizeof(BoxPoint)));
-    BoxGWinMap_Map_Points(map, tp, tp, 3);
-    BoxGWin_Add_Circle_Path(w, & tp[0], & tp[1], & tp[2]);
-    return BOXTASK_OK;
-
-  case ID_rfgcolor:
-    BoxGWin_Set_Fg_Color(w, (Color *) cmnd_data);
-    return BOXTASK_OK;
-
-  case ID_rbgcolor:
-    BoxGWin_Set_Bg_Color(w, (Color *) cmnd_data);
-    return BOXTASK_OK;
-
-  case ID_rgradient:
-    cg = *((ColorGrad *) cmnd_data);
-    cg.items = (ColorGradItem *) (cmnd_data + sizeof(ColorGrad));
-    BoxGWinMap_Map_Point(map, & cg.point1, & cg.point1);
-    BoxGWinMap_Map_Point(map, & cg.point2, & cg.point2);
-    BoxGWinMap_Map_Point(map, & cg.ref1, & cg.ref1);
-    BoxGWinMap_Map_Point(map, & cg.ref2, & cg.ref2);
-    BoxGWin_Set_Gradient(w, & cg);
-    return BOXTASK_OK;
-
-  case ID_text:
+  case MYCMDID_RCIRCLE:
     {
-      Arg4Text arg = *((Arg4Text *) cmnd_data);
-      char *str = (char *) (cmnd_data + sizeof(Arg4Text));
-      if (sizeof(Arg4Text) + arg.text_size + 1 <= cmnd_header->size) {
-        char *ptr = (char *) (cmnd_data + sizeof(Arg4Text) + arg.text_size);
-        if (*ptr == '\0') {
-          BoxGWinMap_Map_Point(map, & arg.ctr, & arg.ctr);
-          BoxGWinMap_Map_Point(map, & arg.right, & arg.right);
-          BoxGWinMap_Map_Point(map, & arg.up, & arg.up);
-          BoxGWin_Add_Text_Path(w, & arg.ctr, & arg.right, & arg.up,
-                                & arg.from, str);
-        } else {
-          g_warning("Fig_Draw_Layer: Ignoring text command (bad str)!");
-        }
-      } else {
-        g_warning("Fig_Draw_Layer: Ignoring text command (bad size)!");
-      }
+      MyCmdRCircleArgs arg0, *src = (MyCmdRCircleArgs *) cmnd_data;
+
+      BoxGWinMap_Map_Points(map, & arg0.points[0], & src->points[0], 3);
+      BoxGWin_Add_Circle_Path(w, & arg0.points[0], & arg0.points[1],
+			      & arg0.points[2]);
+      return BOXTASK_OK;
     }
+
+  case MYCMDID_RFGCOLOR:
+    BoxGWin_Set_Fg_Color(w, & ((MyCmdRFgColorArgs *) cmnd_data)->color);
     return BOXTASK_OK;
 
-  case ID_font:
+  case MYCMDID_RBGCOLOR:
+    BoxGWin_Set_Bg_Color(w, & ((MyCmdRBgColorArgs *) cmnd_data)->color);
+    return BOXTASK_OK;
+
+  case MYCMDID_RGRADIENT:
     {
-      void *ptr = cmnd_data;
-      BoxInt str_size = *((BoxInt *) ptr); ptr += sizeof(BoxInt);
-      char *str = (char *) ptr; ptr += str_size; /* ptr now points to '\0' */
-      if (str_size + sizeof(BoxInt) <= cmnd_header->size) {
-        if (*((char *) ptr) == '\0') {
+      MyCmdRGradientArgs arg0, *src = (MyCmdRGradientArgs *) cmnd_data;
+
+      arg0 = *src;
+      arg0.gradient.items =
+	(ColorGradItem *) ((char *) cmnd_data
+			   + MY_ARG_SIZE(sizeof(MyCmdRGradientArgs)));
+
+      BoxGWinMap_Map_Point(map, & arg0.gradient.point1,
+			   & src->gradient.point1);
+      BoxGWinMap_Map_Point(map, & arg0.gradient.point2,
+			   & src->gradient.point2);
+      BoxGWinMap_Map_Point(map, & arg0.gradient.ref1, & src->gradient.ref1);
+      BoxGWinMap_Map_Point(map, & arg0.gradient.ref2, & src->gradient.ref2);
+      BoxGWin_Set_Gradient(w, & arg0.gradient);
+      return BOXTASK_OK;
+    }
+
+  case MYCMDID_TEXT:
+    {
+      MyCmdTextArgs arg0 = *((MyCmdTextArgs *) cmnd_data);
+      int arg0_size = MY_ARG_SIZE(sizeof(MyCmdTextArgs));
+      char *str = (char *) cmnd_data + arg0_size;
+
+      if (arg0_size + arg0.text_size + 1 <= cmnd_header->size) {
+	if (str[arg0.text_size] == '\0') {
+	  BoxGWinMap_Map_Point(map, & arg0.ctr, & arg0.ctr);
+	  BoxGWinMap_Map_Point(map, & arg0.right, & arg0.right);
+	  BoxGWinMap_Map_Point(map, & arg0.up, & arg0.up);
+	  BoxGWin_Add_Text_Path(w, & arg0.ctr, & arg0.right, & arg0.up,
+				& arg0.from, str);
+	} else
+	  g_warning("Fig_Draw_Layer: Ignoring text command (bad str)!");
+      } else
+	g_warning("Fig_Draw_Layer: Ignoring text command (bad size)!");
+      return BOXTASK_OK;
+    }
+
+  case MYCMDID_FONT:
+    {
+      MyCmdFontArgs *arg0 = (MyCmdFontArgs *) cmnd_data;
+      int arg0_size = MY_ARG_SIZE(sizeof(MyCmdFontArgs));
+      char *str = (char *) cmnd_data + arg0_size;
+
+      if (arg0_size + arg0->str_size <= cmnd_header->size) {
+        if (str[arg0->str_size] == '\0')
           BoxGWin_Set_Font(w, str);
-        } else {
-          g_warning("Fig_Draw_Layer: Ignoring font command (bad str) 1!");
-        }
-      } else {
-        g_warning("Fig_Draw_Layer: Ignoring font command (bad size) 2!");
-      }
+        else
+          g_warning("Fig_Draw_Layer: Ignoring font command (bad str)!");
+      }	else
+	g_warning("Fig_Draw_Layer: Ignoring font command (bad size)!");
+      return BOXTASK_OK;
     }
-    return BOXTASK_OK;
 
-  case ID_fake_point:
+  case MYCMDID_FAKE_POINT:
     {
-      BoxPoint p = *((BoxPoint *) cmnd_data);
-      BoxGWinMap_Map_Point(map, & p, & p);
-      BoxGWin_Add_Fake_Point(w, & p);
+      MyCmdFakePointArgs arg0, *src = (MyCmdFakePointArgs *) cmnd_data;
+      BoxGWinMap_Map_Point(map, & arg0.point, & src->point);
+      BoxGWin_Add_Fake_Point(w, & arg0.point);
     }
     return BOXTASK_OK;
 
-  case ID_interpret:
-    return BoxGWin_Interpret_Obj(w, (BoxGObj *) cmnd_data, map);
+  case MYCMDID_INTERPRET:
+    return BoxGWin_Interpret_Obj(w, & ((MyCmdInterpretArgs *) cmnd_data)->gobj,
+				 map);
 
   default:
     g_warning("Fig_Draw_Layer: unrecognized command (corrupted figure?)");
@@ -850,7 +944,7 @@ static void My_Fig_Draw_Fig(BoxGWin *dest, BoxGWin *source, BoxGWinMap *map) {
   /* Parto dall'header che sta sotto tutti gli altri */
   cl = figh->bottom;
 
-  for (nl = figh->numlayers; nl > 0; nl--) {
+  for (nl = figh->num_layers; nl > 0; nl--) {
     /* Disegno il layer cl */
     BoxGWin_Fig_Draw_Layer(dest, source, map, cl);
 

@@ -6,11 +6,11 @@ all: run
 $(DESTDIR)/libmylib.la: mylib.c
 	$(LIBTOOL) --mode=compile gcc -c -I../.. mylib.c
 	$(LIBTOOL) --mode=link gcc -module -o libmylib.la mylib.lo -rpath $(DESTDIR)
-        $(LIBTOOL) --mode=install cp libmylib.la $(DESTDIR)/libmylib.la
+	$(LIBTOOL) --mode=install cp libmylib.la $(DESTDIR)/libmylib.la
 	#gcc -I../.. -fPIC -shared -o libmylib.so mylib.c
 
 clean:
-	  $(LIBTOOL) clean rm -f libmylib.la mylib.lo
+	$(LIBTOOL) clean rm -f libmylib.la mylib.lo
 
 buildlib: $(DESTDIR)/libmylib.la
 

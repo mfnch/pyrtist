@@ -673,7 +673,6 @@ static cairo_operator_t My_Cairo_Operator_Of_Int(BoxInt v) {
 typedef struct {
   BoxGWin    *win;
   BoxGWinMap *map;
-
 } MyInterpretData;
 
 static BoxGErr
