@@ -144,6 +144,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
 
     line_gc = self.window.new_gc()
     line_gc.copy(self.style.black_gc)
+    #line_gc.copy(self.style.white_gc)
+    #line_gc.set_function(gtk.gdk.XOR)
 
     self.set_config_default(refpoint_gc=unsel_gc,
                             refpoint_sel_gc=sel_gc,
@@ -349,8 +351,9 @@ class BoxEditableArea(BoxViewArea, Configurable):
           box_coords = visible_coords.pix_to_coord(py_coords)
           if box_coords != None:
             self.undoer.begin_group()
-            rp_child = self.refpoint_new(py_coords)
+            rp_child = self.refpoint_new(py_coords, with_cb=False)
             self.refpoint_attach(rp_child, rp)
+            self._call_back("refpoint_new", self, rp_child)
             self.undoer.end_group()
 
             self.refpoint_select(rp_child)

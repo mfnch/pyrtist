@@ -1,5 +1,4 @@
-# Copyright (C) 2008-2011
-#  by Matteo Franchin (fnch@users.sourceforge.net)
+# Copyright (C) 2008-2013 by Matteo Franchin (fnch@users.sf.net)
 #
 # This file is part of Boxer.
 #
@@ -866,7 +865,7 @@ class Boxer(object):
     editable_area.set_callback("refpoint_press_middle", refpoint_press_middle)
 
     def new_rp(_, rp):
-      if self.should_paste_on_new():
+      if self.should_paste_on_new() and not rp.is_child():
         refpoint_press_middle(None, rp)
     editable_area.set_callback("refpoint_new", new_rp)
 

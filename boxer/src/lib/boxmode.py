@@ -211,7 +211,7 @@ curve = \
                   "choose the color and filling style from the toolbox"),
        button=Button("Curve", "curve.png"),
        enter_actions=[Paste("$LNEWLINE$Curve[$CURSORIN$]$CURSOROUT$$RNEWLINE$"),
-                      push_settings, update_on_paste],
+                      push_settings, paste_on_new, update_on_paste],
        exit_actions=pop_settings,
        submodes=[color, gradient, style, exit])
 

@@ -72,6 +72,10 @@ class RefPoint(object):
     state = (state if state != None else self.selected)
     return RefPoint(self.name, self.value, self.visible, self.kind, state)
 
+  def is_child(self):
+    """Whether this is a children refpoint."""
+    return self.kind == REFPOINT_CHILD
+
   def can_procreate(self):
     """Whether this reference point can have any children."""
     return (self.kind != REFPOINT_CHILD
