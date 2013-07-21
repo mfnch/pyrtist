@@ -152,9 +152,8 @@ class BoxEditableArea(BoxViewArea, Configurable):
       colormap.alloc_color(gtk.gdk.Color(32767, 65535, 32767))
 
     line_gc = self.window.new_gc()
-    line_gc.copy(self.style.black_gc)
-    #line_gc.copy(self.style.white_gc)
-    #line_gc.set_function(gtk.gdk.XOR)
+    line_gc.copy(self.style.white_gc)
+    line_gc.set_function(gtk.gdk.XOR)
 
     self.set_config_default(refpoint_gc=unsel_gc,
                             refpoint_sel_gc=sel_gc,
