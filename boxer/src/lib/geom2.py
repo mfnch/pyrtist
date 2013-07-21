@@ -70,6 +70,41 @@ def square_metric(p1, p2):
   boundaries of a square of side x."""
   return max(abs(p2[0] - p1[0]), abs(p2[1] - p1[1]))
 
+def determine_zone(x0, x1, x):
+  """Return 0, 1, 2 depending on whether x is inside
+  ]-infinity, x0], [x0, x1] or [x1, +infinity[."""
+  if x < x0:
+    return 0
+  elif x <= x1:
+    return 1
+  else:
+    return 2
+
+def rectangles_overlap(a0x, a0y, a1x, a1y, b0x, b0y, b1x, b1y):
+  """Whether two triangles with vertices (a0x, aoy)-(a1x, a1y) and
+  (b0x, boy)-(b1x, b1y) are intersecting each other."""
+
+  a0x, a1x = min(a0x, a1x), max(a0x, a1x)
+  a0y, a1y = min(a0y, a1y), max(a0y, a1y)
+  bz0x = determine_zone(a0x, a1x, b0x)
+  bz0y = determine_zone(a0y, a1y, b0y)
+  bz1x = determine_zone(a0x, a1x, b1x)
+  bz1y = determine_zone(a0y, a1y, b1y)
+
+  bz0x, bz1x = min(bz0x, bz1x), max(bz0x, bz1x)
+  bz0y, bz1y = min(bz0y, bz1y), max(bz0y, bz1y)
+
+  eqx = (bz0x == bz1x)
+  eqy = (bz0y == bz1y)
+  if eqx or eqy:
+    if eqx and eqy:
+      return bz0x == 1 and bz0y == 1
+    elif eqx:
+      return bz0x == 1
+    else: # eqy
+      return bz0y == 1
+  return True
+
 
 class Point(object):
   def __init__(self, x=None, y=None):
@@ -233,3 +268,4 @@ class Rectangle(object):
     if scale_factor != None:
       sf.scale(scale_factor)
     return self.new_scaled(sf)
+

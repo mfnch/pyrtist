@@ -262,13 +262,21 @@ class BoxEditableArea(BoxViewArea, Configurable):
     touched_points.update(refpoints.selection)
     self.repaint_rps(*touched_points.values())
 
-  def get_gcontext(self):
-    rp_size = self.get_config("refpoint_size")
-    gc_unsel = self.get_config("refpoint_gc")
-    gc_sel = self.get_config("refpoint_sel_gc")
-    gc_drag = self.get_config("refpoint_drag_gc")
-    gc_line = self.get_config("refpoint_line_gc")
-    return GContext(self, rp_size, gc_unsel, gc_sel, gc_drag, gc_line)
+  def get_gcontext(self, clip_rect=None):
+    args = tuple(self.get_config(val)
+                 for val in ("refpoint_size", "refpoint_gc", "refpoint_sel_gc",
+                             "refpoint_drag_gc", "refpoint_line_gc"))
+    if clip_rect != None:
+      new_args = list(args)
+      for i, arg in enumerate(args):
+        if isinstance(arg, gtk.gdk.GC):
+          new_arg = self.window.new_gc()
+          new_arg.copy(arg)
+          new_arg.set_clip_rectangle(clip_rect)
+          new_args[i] = new_arg
+      args = new_args
+
+    return GContext(self, *args)
 
   def _refpoint_hide(self, *rps):
     """Hide the given RefPoint. This is a purely graphical operation, it does
@@ -300,6 +308,51 @@ class BoxEditableArea(BoxViewArea, Configurable):
     rps = self.document.refpoints.set_visibility(selection, visibility)
     self.repaint_rps(*rps)
 
+
+
+
+
+
+  def paint_region(self, region):
+    """Repaint a region."""
+    if region.width <= 0 or region.height <= 0:
+      return
+
+    # First repaint the background.
+    view = self.get_visible_coords()
+    if view == None:
+      return
+    BoxViewArea.repaint(self, region.x, region.y, region.width, region.height)
+
+    # Construct the context.
+    gc = self.get_gcontext(clip_rect=region)
+
+    # Repaint all objects inside the region layer-by-layer.
+    for layer in GContext.layers:
+      layers = (layer,)
+
+      # First find all the objects (partially or totally) inside the region.
+      rps_inside_region = [rp for rp in self.document.refpoints
+                           if not rp.is_outside(gc, view, region,
+                                                layers=layers)]
+      if len(rps_inside_region) == 0:
+        continue
+
+      print "paint #", len(rps_inside_region), layer
+
+      # Redraw all the refpoints, using the region as a clipping rectangle.
+      gc.draw(rps_inside_region, view, layers=layers)
+
+  def repaint_with_rps(self, x, y, width, height):
+    """Repaint the given area of the widget, including reference points."""
+    region = gtk.gdk.Rectangle(x, y, width, height)
+    return self.paint_region(region)
+
+
+
+
+
+
   def repaint_rps(self, *rps):
     """Repaint the area occupied by the specified refpoints."""
     for rp in rps:
@@ -308,17 +361,6 @@ class BoxEditableArea(BoxViewArea, Configurable):
       else:
         self._refpoint_hide(rp)
 
-  def repaint_with_rps(self, x, y, width, height):
-    """Repaint the given area of the widget, including reference points."""
-    if width <= 0 or height <= 0:
-      return
-
-    # First repaint the background.
-    BoxViewArea.repaint(self, x, y, width, height)
-
-    # For now we redraw all the refpoints.
-    # XXX TODO: redraw only those reference points that need to be redrawn.
-    self._draw_refpoints()
 
   def expose(self, draw_area, event):
     ret = ZoomableArea.expose(self, draw_area, event)

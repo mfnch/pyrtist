@@ -15,14 +15,17 @@
 #   You should have received a copy of the GNU General Public License
 #   along with Boxer.  If not, see <http://www.gnu.org/licenses/>.
 
+import math
 import fnmatch
 
-from geom2 import square_metric, Point
+from geom2 import square_metric, Point, rectangles_overlap
 from renderer import draw_square, draw_circle, cut_square
 import namegen
 
 
 class GContext(object):
+  layers = (0, 1)
+
   def __init__(self, drawable, rp_size,
                gc_unsel, gc_sel, gc_drag, gc_line):
     self.drawable = drawable
@@ -33,16 +36,18 @@ class GContext(object):
     self.gc_line = gc_line
     self.layer = 0
 
-  def draw(self, objs, *args):
+  def draw(self, objs, *args, **kwargs):
     """Draw the given objects."""
-    for layer in (0, 1):
+    layers = kwargs.pop('layers', GContext.layers)
+    all_args = (self,) + args
+    for layer in layers:
       self.layer = layer
       for obj in objs:
-        obj.draw(self, *args)
+        obj.draw(*all_args)
 
   def hide(self, objs, *args):
     """Hide the given objects."""
-    for layer in (0, 1):
+    for layer in GContext.layers:
       self.layer = layer
       for obj in objs:
         obj.hide(self, *args)
@@ -157,6 +162,63 @@ class RefPoint(object):
     v = self.value
     return ("%s = Point[.x=%s, .y=%s]" % (self.name, v[0], v[1]))
 
+  # How we draw the refpoints in layers:
+  # - LAYER 0:
+  #   for every child (direction point): draw the line from the parent.
+  # - LAYER 1:
+  #   child points, parent points and lonely points are drawn
+
+  def is_outside(self, context, view, region, layers=GContext.layers):
+    """Whether the specified layer of the refpoint is completely outside the
+    given region (rectangle).
+    """
+
+    is_outside_retval = True
+    kind = self.kind
+    rx, ry, rdx, rdy = region.x, region.y, region.width, region.height
+
+    if 0 in layers and kind == REFPOINT_CHILD:
+      # We should determine whether the line connecting parent to child is
+      # passing inside the region rectangle. We do this only approximatively.
+      parent = self.related
+      if parent != None:
+        ax, ay = view.coord_to_pix(parent.value)
+        bx, by = view.coord_to_pix(self.value)
+
+        # Find the smallest circle containing the rectangle.
+        # Underscores are used to indicate leading 2 factors (we multiply by
+        # 2 where necessary to avoid using floating point numbers).
+        _cx, _cy = 2*rx + rdx, 2*ry + rdy
+        __rr2 = rdx*rdx + rdy*rdy
+
+        # Find vectors ab and ac
+        abx, aby, _acx, _acy = bx - ax, by - ay, _cx - 2*ax, _cy - 2*ay
+
+        # Find distance between line l0-l1 and center of circle rc.
+        __ac2 = _acx*_acx + _acy*_acy
+        ab2 = abx*abx + aby*aby
+        if ab2 > 0.0:
+          _abac = abx*_acx + aby*_acy
+          __d2 = __ac2 - _abac*_abac/ab2
+          if __d2 <= __rr2:
+            is_outside_retval = False
+        else:
+          if __ac2 <= __rr2:
+            is_outside_retval = False
+
+    if 1 in layers:
+      # We should determine whether the two rectangles (the region and the
+      # refpoint) intersect. We treat all refpoints as rectangles, even if
+      # the child are drawn as circles.
+      sz = context.rp_size 
+      cx, cy = map(int, view.coord_to_pix(self.value))
+
+      if rectangles_overlap(cx - sz, cy - sz, cx + sz, cy + sz,
+                            rx, ry, rx + rdx, ry + rdy):
+        is_outside_retval = False
+
+    return is_outside_retval
+
   def draw(self, context, view):
     """Draw the reference point."""
 
@@ -174,19 +236,16 @@ class RefPoint(object):
           context.gc_drag)
 
     x, y = view.coord_to_pix(self.value)
-    if layer == 0:
-      if kind == REFPOINT_LONELY:
-        draw_square(drawable, x, y, size, gc)
-      elif kind == REFPOINT_CHILD:
-        parent = self.related
-        if parent != None:
-          x0, y0 = view.coord_to_pix(parent.value)
-          drawable.draw_line(context.gc_line,
-                             int(x0), int(y0), int(x), int(y))
+    if layer == 0 and kind == REFPOINT_CHILD:
+      parent = self.related
+      if parent != None:
+        x0, y0 = view.coord_to_pix(parent.value)
+        drawable.draw_line(context.gc_line,
+                           int(x0), int(y0), int(x), int(y))
     elif layer == 1:
       if kind == REFPOINT_CHILD:
         draw_circle(drawable, x, y, size, gc)
-      elif kind == REFPOINT_PARENT:
+      else:
         draw_square(drawable, x, y, size, gc)
 
   def hide(self, context, view):

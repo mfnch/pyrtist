@@ -23,7 +23,7 @@
 #  include <box/types.h>
 #  include <box/array.h>
 
-/**< Type for storing the pointers to file names used by BoxSrcPos objects
+/** Type for storing the pointers to file names used by BoxSrcPos objects
  * and friends.
  */
 typedef struct {

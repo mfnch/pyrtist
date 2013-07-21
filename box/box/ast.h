@@ -312,7 +312,7 @@ struct __ASTNode {
   BoxSrc              src;       /**< Position in the source*/
   /* ^^^ this last entry doubles the size of ASTNode
    *     (from 24 bytes to 48 on 32 bit machine)
-   *     we may want to do something about that later.
+   *     We should use linear positions!
    */
   union {
     ASTNodeTypeName   typenm;
