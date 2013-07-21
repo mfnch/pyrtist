@@ -18,6 +18,8 @@
 import math
 import fnmatch
 
+from gtk.gdk import Rectangle
+
 from geom2 import square_metric, Point, rectangles_overlap
 from renderer import draw_square, draw_circle, cut_square
 import namegen
@@ -44,13 +46,6 @@ class GContext(object):
       self.layer = layer
       for obj in objs:
         obj.draw(*all_args)
-
-  def hide(self, objs, *args):
-    """Hide the given objects."""
-    for layer in GContext.layers:
-      self.layer = layer
-      for obj in objs:
-        obj.hide(self, *args)
     
 
 (REFPOINT_UNSELECTED,
@@ -219,6 +214,37 @@ class RefPoint(object):
 
     return is_outside_retval
 
+  def get_rectangle(self, context, view, layers=GContext.layers):
+    """Get the smallest rectangle fully containing the refpoint."""
+    drawable = context.drawable
+
+    visible_coords = drawable.get_visible_coords()
+    if visible_coords == None:
+      return None
+
+    kind = self.kind
+    retval = None
+    if 0 in layers and kind == REFPOINT_CHILD:
+      parent = self.related
+      if parent != None:
+        x0, y0 = map(int, view.coord_to_pix(parent.value))
+        x1, y1 = map(int, visible_coords.coord_to_pix(self.value))
+        xmin, ymin = min(x0, x1), min(y0, y1)
+        dx, dy = max(x0, x1) - xmin + 1, max(y0, y1) - ymin + 1
+        retval = Rectangle(xmin, ymin, dx, dy)
+
+    if 1 in layers:
+      wsize = drawable.window.get_size()
+      l0 = context.rp_size
+      dl0 = l0*2
+      x, y = visible_coords.coord_to_pix(self.value)
+      x0, y0, dx0, dy0 = cut_square(wsize, x - l0, y - l0, dl0, dl0)
+      if dx0 > 0 and dy0 > 0:
+        retval1 = Rectangle(x0, y0, dx0, dy0)
+        retval = retval.union(retval1) if retval != None else retval1
+
+    return retval
+
   def draw(self, context, view):
     """Draw the reference point."""
 
@@ -247,32 +273,6 @@ class RefPoint(object):
         draw_circle(drawable, x, y, size, gc)
       else:
         draw_square(drawable, x, y, size, gc)
-
-  def hide(self, context, view):
-    """Hide the reference point."""
-    kind = self.kind
-    layer = context.layer
-    drawable = context.drawable
-
-    visible_coords = drawable.get_visible_coords()
-    if visible_coords != None:
-      if ((layer == 0 and kind == REFPOINT_LONELY)
-          or (layer == 1 and kind in (REFPOINT_CHILD, REFPOINT_PARENT))):
-        wsize = drawable.window.get_size()
-        l0 = drawable.get_config("refpoint_size")
-        dl0 = l0*2
-        x, y = visible_coords.coord_to_pix(self.value)
-        x0, y0, dx0, dy0 = cut_square(wsize, x - l0, y - l0, dl0, dl0)
-        if dx0 > 0 and dy0 > 0:
-          drawable.repaint_with_rps(x0, y0, dx0, dy0)
-      elif layer == 0 and kind == REFPOINT_CHILD:
-        parent = self.related
-        if parent != None:
-          x0, y0 = map(int, view.coord_to_pix(parent.value))
-          x1, y1 = map(int, visible_coords.coord_to_pix(self.value))
-          xmin, ymin = min(x0, x1), min(y0, y1)
-          dx, dy = max(x0, x1) - xmin + 1, max(y0, y1) - ymin + 1
-          drawable.repaint_with_rps(xmin, ymin, dx, dy)
 
 
 class RefPoints(object):
