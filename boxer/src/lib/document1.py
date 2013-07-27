@@ -137,7 +137,7 @@ def dirpoints_from_str(s, rps):
       parent = rps[dp_idxs[0]]
       for child_idx in dp_idxs[1:]:
         child = rps[child_idx] if child_idx else None
-        parent.make_parent_of(child)
+        parent.attach(child)
 
 
 class BoxerMacroExpand(MacroExpander):
