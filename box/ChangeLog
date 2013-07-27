@@ -1,5 +1,16 @@
 Change log (recent comes first)
 
+27 Jul 2013: Released v 0.4.0: new typesystem and object management.
+  * Rewrote the typesystem to support boxing/unboxing objects. Types are
+    objects themselves. Also rewrote the object management system.
+  * Rewrote parts of the VM. The bytecode is now more compact.
+  * Added a new type, Any, which allows boxing/unboxing an object and greatly
+    extends the capabilities of the language: Any makes the language dynamic
+    when needed and provides some reflection capabilities.
+  * Added heterogeneous arrays of objects through the ``Array`` type.
+  * Added new objects: Curve, Tri, Fill to draw cubic bezier splines and fill
+    a path.
+
 24 Jun 2012: Released v 0.3.4: bugfixes and small improvements.
   * Improvements to support the new version of the GUI and previews.
   * Improvements to the VM to support converting a Box program to a C file
@@ -12,7 +23,7 @@ Change log (recent comes first)
     than ``X`` inherits the subtypes of ``Y``.
   * Regression tests: added new tool to perform automatically a large number
     of regression tests.
-  * Added objects Save, Resolution and Ppi to ease the way figure are saved
+  * Added objects Save, Resolution and Ppi to ease the way figures are saved
     to file.
 
 18 Mar 2012: Released v 0.3.2: bugfixes and improvements.
