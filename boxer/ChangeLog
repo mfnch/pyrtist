@@ -1,9 +1,12 @@
 In version 0.4.0:
-  BRIEFLY: better undo manager.
+  BRIEFLY: better undo manager. Direction points for bezier curves.
   DETAILS:
   - We now use our own undo manager, which allows having a single undo history
-    for both the text editor and the graphics editor (notice that the latter
-    did not have any undo/redo capabilities before).
+    for both the text editor and the graphics editor. We can now undo/redo
+    point creation/motion/deletion (which was not possible before),
+  - Direction points can be created by keeping the "control" key pressed and
+    dragging them out of an ordinary reference point. This allows creating
+    Bezier curves (via the "Curve" command).
 
 In version 0.3.8:
   BRIEFLY: the documentation system was rewritten plus bugfixes.
