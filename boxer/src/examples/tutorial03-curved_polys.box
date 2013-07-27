@@ -15,7 +15,10 @@ q7 1 84.80243161094225 26.73269483221477
 (**boxer-dirpoints:
 6 9 _ 8 10 11
 *)
-(**end:expand*)fg = Figure[
+(**end:expand*)// TUTORIAL EXAMPLE N.3
+// How to create a closed figure using bezier curves.
+
+fg = Figure[
   (**expand:define-all*)
 bbox1 = Point[.x=0.0, .y=50.0], bbox2 = Point[.x=100.0, .y=12.5838926174]
 p1 = Point[.x=2.85237428571, .y=48.1543624161]
@@ -51,14 +54,11 @@ q7 = Point[.x=84.8024316109, .y=26.7326948322]
     "STEP 6: you can repeat step 5 for the same vertex or for other\n"
     s, "vertices. You should obtain something similar to what shown on\n"
     s, "the left"]
-       
+
+  // The line below is what draws the curved polygon.       
   Curve[q1, q2, q3, q4]
+
   Image["curve.png", p4, 2.5]
-
-
-  
-
-
   BBox[bbox1, bbox2]
 ]
 
