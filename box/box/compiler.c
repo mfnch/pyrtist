@@ -645,7 +645,7 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
         BoxTask status;
         stmt_val = Value_Emit_Call(parent, stmt_val, & status);
 
-        if (stmt_val != NULL) {
+        if (stmt_val) {
           assert(status == BOXTASK_FAILURE);
 
           /* Handle the case where stmt_val is an If[] or For[] value */
@@ -707,14 +707,14 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
   }
 
   /* Invoke the closing procedure */
-  if (box->attr.box.parent != NULL) {
+  if (box->attr.box.parent) {
     Value_Link(& c->value.end);
     (void) Value_Emit_Call_Or_Blacklist(parent, & c->value.end);
   }
 
   Namespace_Floor_Down(& c->ns); /* close the scope unit */
 
-  if (outer_parent != NULL)
+  if (outer_parent)
     Value_Unlink(outer_parent);
 }
 
