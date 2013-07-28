@@ -35,12 +35,12 @@ Dash = ++((Int semicolon,) have, Real offset, Obj dashes)
 // After the semicolon (e.g. ``Dash[...; 1.5]``) specifies the offset,
 // which determines where the patter starts with respect to the first point
 // in the path.
-Real@Dash[If[$$ .have.semicolon], .offset = $, Else[], \ .dashes[$]]
+Real@Dash[If[$$ .have.semicolon], .offset = $, Else, \ .dashes[$]]
 
 ///Intro: communicates that the dash pattern has been entered and that the
 // offset is about to follow.
 (;)@Dash[If[$$.have.semicolon], Fail["Dash already got a semicolon"]
-         Else[], .have.semicolon = 1]
+         Else, .have.semicolon = 1]
 
 ///Intro: add the graphic commands encoding a ``Dash`` object.
 Dash@CmdStream[
@@ -199,9 +199,9 @@ FillStyle = ++(Int style,)
 // "plain" indicates normal filling, while "eo" indicates even-odd filling.
 Str@FillStyle[
   If[Compare[($, "void")] == 0], .style = -1
-  Else[], If[Compare[($, "plain")] == 0], .style = const.fill_rule.winding
-  Else[], If[Compare[($, "eo")] == 0], .style = const.fill_rule.even_odd
-  Else[]
+  Else, If[Compare[($, "plain")] == 0], .style = const.fill_rule.winding
+  Else, If[Compare[($, "eo")] == 0], .style = const.fill_rule.even_odd
+  Else
     Fail["Unknown fill style. Known styles: \"void\", \"plain\", \"eo\""]
 ]
 
@@ -277,7 +277,7 @@ Style@CmdStream[
      $.border
      Obj[const.raw.ext_border_exchange]
 
-   Else[]
+   Else
      Obj[const.raw.ext_fill_and_stroke]]
 
   [If[do_preserve]

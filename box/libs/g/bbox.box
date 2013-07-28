@@ -17,13 +17,13 @@ BBox@Center[0.5*($.max + $.min)]
 
 ///Intro: return the area of the bounding box.
 BBox@Area[If[Num[$] > 1], diag = $.max - $.min, diag.x*diag.y
-          Else[], 0.0]
+          Else, 0.0]
 
 ///Intro: expand the bounding box to contain the specified point.
 Point@BBox[
   [If[$$.n == 0]
      $$.max = $, $$.min = $, $$.n = 1
-   Else[], If[$$.n > 0]
+   Else, If[$$.n > 0]
      $$.min.x = Min[$$.min.x, $.x], $$.min.y = Min[$$.min.y, $.y]
      $$.max.x = Max[$$.max.x, $.x], $$.max.y = Max[$$.max.y, $.y]]
 
@@ -36,8 +36,8 @@ BBox@BBox[$.min, $.max]
 ///Intro: stringify the BBox object.
 BBox@Str[
   If[$.n == 0], "BBox[]"
-  Else[], If[$.n == 1], "BBox[", $.min, "]"
-  Else[], "BBox[", $.min, ", ", $.max, "]"
+  Else, If[$.n == 1], "BBox[", $.min, "]"
+  Else, "BBox[", $.min, ", ", $.max, "]"
 ]
 
 ///Intro: print the bounding box object.

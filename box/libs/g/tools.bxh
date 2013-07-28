@@ -19,8 +19,8 @@ Interval = (Int have, Real min, max)
 
 Real@Interval[
   [If[$$.have == 0], $$.min = $
-   Else[], If[$$.have == 1], $$.max = $
-   Else[], Fail["Error: Interval already got min and max!"]]
+   Else, If[$$.have == 1], $$.max = $
+   Else, Fail["Error: Interval already got min and max!"]]
   $$.have += 1
 ]
 

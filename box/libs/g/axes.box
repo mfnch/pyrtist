@@ -36,10 +36,10 @@ Point@Axes[
      $$.origin = $
      $$.one_zero = $ + (1.0, 0.0)
      $$.zero_one = $ + (0.0, 1.0)
-   Else[], If[state == 1]
+   Else, If[state == 1]
      $$.one_zero = $
      $$.zero_one = $$.origin + Ort[$ - $$.origin]
-   Else[]
+   Else
      $$.zero_one = $]
   $$.state += 1
 ]

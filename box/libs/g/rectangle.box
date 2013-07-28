@@ -16,7 +16,7 @@ Gradient@Rectangle[.have_gradient = 1, .gradient = $]
 
 Point@Rectangle[have = $$.num_corners++
                 If[have == 0], $$.corner1 = $
-                Else[], $$.corner2 = $]
+                Else, $$.corner2 = $]
 
 Rectangle@Rectangle[$$ = $]
 

@@ -22,13 +22,13 @@ Str@Near[
 ///Intro: provide the weight for the {type(Near)} constraint.
 Int@Near[
   If[Num[$$.src_dst] > 0], $$.weight = $
-  Else[], \ $$.src_dst[$]
+  Else, \ $$.src_dst[$]
 ]
 
 ///Intro: provide source and destination points.
 Point@Near[
   If[Num[$$.src_dst] < 2], \ $$.src_dst[$]
-  Else[]
+  Else
     Fail["Near[] got both the source and the destination points."]
 ]
 
@@ -43,8 +43,8 @@ Near@Str[
      ot = $.src_dst.GetType[0]
      src = $.src_dst.Get[0]
      [If[ot == objtype.point], Point[src]
-      Else[], If[ot == objtype.str], '"', Str[src], '"'
-      Else[], Int[src]]
+      Else, If[ot == objtype.str], '"', Str[src], '"'
+      Else, Int[src]]
      [If[n > 1], sep, Point[$.src_dst.Get[1]]]]
   [If[$.weight != 1.0], sep, $.weight]
   "]"
@@ -85,11 +85,11 @@ Window@Near[
      ot = $$.src_dst.GetType[0]
      [If[ot != objtype.point]
         obj = $$.src_dst.Get[0]
-        src = $.Get[If[ot == objtype.int], Int[obj], Else[], Str[obj]]
+        src = $.Get[If[ot == objtype.int], Int[obj], Else, Str[obj]]
         dst = Point[$$.src_dst.Get[1]]
         $$.src_dst = Obj[src, dst]]
 
-   Else[]
+   Else
      Fail["Incomplete Near constraint"]]
 ]
 

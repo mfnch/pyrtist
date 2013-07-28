@@ -69,12 +69,12 @@ Obj@Repr[
 
       [t = $.GetType[i], o = $.Get[i]
        If[t == objtype.empty], "Obj[]"
-       Else[], If[t == objtype.char], Char[o]
-       Else[], If[t == objtype.int], Int[o]
-       Else[], If[t == objtype.real], Real[o]
-       Else[], If[t == objtype.point], Point[o]
-       Else[], If[t == objtype.str], Str['"', o, '"']
-       Else[], If[t == objtype.obj], o]
+       Else, If[t == objtype.char], Char[o]
+       Else, If[t == objtype.int], Int[o]
+       Else, If[t == objtype.real], Real[o]
+       Else, If[t == objtype.point], Point[o]
+       Else, If[t == objtype.str], Str['"', o, '"']
+       Else, If[t == objtype.obj], o]
 
       For[++i < l]
     ]

@@ -16,7 +16,7 @@ Arrow = (Int type
 
 ///Intro: specifies initial and final points.
 Point@Arrow[
-  [np = $$.num.points, If[np == 0], $$.start = $, Else[], $$.end = $]
+  [np = $$.num.points, If[np == 0], $$.start = $, Else, $$.end = $]
   $$.num.points += 1
 ]
 
@@ -24,8 +24,8 @@ Point@Arrow[
 Real@Arrow[
   [nr = $$.num.reals
    If[nr == 0], $$.width = $
-   Else[], If[nr == 1], $$.head_width = $
-   Else[], $$.head_length = $]
+   Else, If[nr == 1], $$.head_width = $
+   Else, $$.head_length = $]
   $$.num.reals += 1
 ]
 
@@ -33,9 +33,9 @@ Real@Arrow[
 Color@Arrow[
   [nc = $$.num.colors
    If[nc == 0], $$.color1 = $
-   Else[], If[nc == 1], $$.color2 = $
-   Else[], If[nc == 2], $$.color3 = $
-   Else[], $$.color4 = $]
+   Else, If[nc == 1], $$.color2 = $
+   Else, If[nc == 2], $$.color3 = $
+   Else, $$.color4 = $]
   $$.num.colors += 1
 ]
 
@@ -61,7 +61,7 @@ Arrow@Window[
   If[$.num.points >= 2]
     t = $.type
     [If[t == 0], Arrow_2D[.arrow = $]
-     Else[], If[t == 1], Arrow_3D[.arrow = $]]
+     Else, If[t == 1], Arrow_3D[.arrow = $]]
 ]
 
 

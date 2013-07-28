@@ -25,10 +25,10 @@ GuiShowHotPoints@Window[
   bbox = BBox[$.window]
   center = Point[Center[bbox]]
   radius = Real[If[$.radius >= 0.0], $.radius
-                 Else[], 0.05*Sqrt[Area[bbox]]]
+                 Else, 0.05*Sqrt[Area[bbox]]]
   
   font = Font[If[$.has_font], $.font
-               Else[], radius*6, color.red, "sans"]
+               Else, radius*6, color.red, "sans"]
 
   n = Num[$.window]
   i = 0
@@ -38,7 +38,7 @@ GuiShowHotPoints@Window[
 
      name = \
        Str[If[$.window.HasNamedHotPoint[i]], $.window.GetHotPointName[i]
-            Else[], i]
+            Else, i]
 
      dr = pos - center
      sdr = Point[.x=Sign[dr.x], .y=Sign[dr.y]]

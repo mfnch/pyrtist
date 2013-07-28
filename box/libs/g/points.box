@@ -56,7 +56,7 @@ Int@Points.Get[
 // For example, ``ps.Get[0.5]`` returns ``0.5*(ps.Get[0] + ps.Get[1])``.
 REAL@Points.Get[
   num = Num[$$$.points]
-  idx = Real[If[$ >= 0], $, Else[], (1 - Int[$]/num)*num + $]
+  idx = Real[If[$ >= 0], $, Else, (1 - Int[$]/num)*num + $]
   idx_before = Int[idx]
   idx_after = idx_before + 1
   p_before = Point[$$$.points.Get[idx_before % num]]
@@ -68,7 +68,7 @@ REAL@Points.Get[
 Point@Points.Get[
   num = Num[$$$.points]
   x = $.x
-  idx = Real[If[x >= 0], x, Else[], (1 - Int[x]/num)*num + x]
+  idx = Real[If[x >= 0], x, Else, (1 - Int[x]/num)*num + x]
   idx_before = Int[idx]
   idx_after = idx_before + 1
   p_before = Point[$$$.points.Get[idx_before % num]]

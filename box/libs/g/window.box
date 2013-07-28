@@ -140,7 +140,7 @@ REAL@Window.Get[
   //NOTE: this is duplicate code (see REAL@Points.Get).
   //  Later we will remove Window.Hot and this will also go.
   num = Num[$$$]
-  idx = Real[If[$ >= 0], $, Else[], (1 - Int[$]/num)*num + $]
+  idx = Real[If[$ >= 0], $, Else, (1 - Int[$]/num)*num + $]
   idx_before = Int[idx]
   idx_after = idx_before + 1
   p_before = Point[$$$.Get[idx_before % num]]

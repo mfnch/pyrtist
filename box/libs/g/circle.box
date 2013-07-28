@@ -22,7 +22,7 @@ Real@Circle[
   nr = $$.have.radius
   $$.radius2 = $
   [If[nr != 2], $$.radius = $, nr = 2
-   Else[], nr = 1]
+   Else, nr = 1]
   $$.have.radius = nr
 ]
 
@@ -37,9 +37,9 @@ Circle@Circle[
 Circle@Obj[
   If[$.have.center && $.have.radius]
     Obj[$.center, $.radius, $.radius2]
-  Else[]
+  Else
     Fail[Str["Cannot convert Circle to Obj: the "
-             Str[If[!$.have.center], "center", Else[], "radius"]
+             Str[If[!$.have.center], "center", Else, "radius"]
              " is missing"]]
 ]
 
@@ -59,7 +59,7 @@ Style@Circle[\ .style[$]]
 Pattern@Circle[\ .style[$]]
 
 ///Intro: area of the Circle.
-Circle@Area[If[$.have.radius], const.pi*$.radius**2, Else[], 0.0]
+Circle@Area[If[$.have.radius], const.pi*$.radius**2, Else, 0.0]
 
 ///Intro: add the circle to the path.
 Circle@Path[

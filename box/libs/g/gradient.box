@@ -11,7 +11,7 @@ include "gradcore"
 ///Intro: add a new color to the gradient
 Color@Gradient[
   \ $$.colors[$]
-  \ $$.offsets[Real[If[$$.have.offset], $$.offset, Else[], -1.0]]
+  \ $$.offsets[Real[If[$$.have.offset], $$.offset, Else, -1.0]]
   .have.offset = 0
 ]
 
@@ -43,7 +43,7 @@ Circles@Gradient[
           "should contain one or two circles"]]
   .type = 2
   circle1 = $.Get[0]
-  circle2 = Circle[If[n >= 2], $.Get[1], Else[], circle1, 0]
+  circle2 = Circle[If[n >= 2], $.Get[1], Else, circle1, 0]
   .point1 = circle1.center
   .point2 = circle2.center
   .real1 = circle1.radius
@@ -64,13 +64,13 @@ Gradient@PATTERN[
   \ $$.cmdstream[
     If[$.type == 1]
       Obj[const.raw.pattern_create_linear, $.point1, $.point2]
-    Else[], If[$.type == 2]
+    Else, If[$.type == 2]
       ctr = $.point1
       refx = Point[ctr, .x += 1.0]
       refy = Point[ctr, .y += 1.0]
       Obj[const.raw.pattern_create_radial
           $.point1, refx, refy, $.point2, $.real1, $.real2]
-    Else[]
+    Else
       Fail[Str["Unknown gradient type (", $.type, ")"]]
   ]
 
@@ -89,8 +89,8 @@ Gradient@PATTERN[
     // Determine the offset of the last color to set. If i >= n, then we have
     // reached the end of the array: we set i to point to the last color and
     // assume the correspodning offset is 1.0.
-    offset = Real[If[i < n], $.offsets.Get[i], Else[], 1.0]
-    i = Int[If[i < n], i, Else[], n - 1]
+    offset = Real[If[i < n], $.offsets.Get[i], Else, 1.0]
+    i = Int[If[i < n], i, Else, n - 1]
 
     // Set intermediate colors
     m = i - i0
@@ -121,8 +121,8 @@ Gradient.Line = Void
 Point@Gradient.Line[
   num_points = $$$.state
   [If[num_points == 0], $$$.point1 = $
-   Else[], If[num_points == 1], $$$.point2 = $
-   Else[], Fail["Gradient.Line takes exactly two points"]]
+   Else, If[num_points == 1], $$$.point2 = $
+   Else, Fail["Gradient.Line takes exactly two points"]]
   $$$.state += 1
 ]
 
@@ -146,7 +146,7 @@ Point@Gradient.Circle[
   $$$.state |= (0x2 << got_semicolon)
   If[$$$.state & 0x1]
     $$$.point2 = $
-  Else[]
+  Else
     $$$.point1 = $
 ]
 
@@ -155,7 +155,7 @@ Real@Gradient.Circle[
   $$$.state |= (0x8 << got_semicolon)
   If[$$$.state & 0x1]
     $$$.real2 = $
-  Else[]
+  Else
     $$$.real1 = $
 ]
 

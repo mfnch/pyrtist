@@ -64,7 +64,7 @@ Str@Options.Get[
   index = $$$.GetIndex[$]
   [If[index >= 0]
      $$ = $$$.values.Get[index]
-   Else[]
+   Else
      msg = Str["Cannot find option with name '", $, "'. "
                "Available options are: ", $$$, '.']
      Fail[msg]]

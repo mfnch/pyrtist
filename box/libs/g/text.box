@@ -55,7 +55,7 @@ Font@Text[.font = $, If[$.have.color], $.color]
 Text@Obj[
   If[$.have.pos]
     Obj[$.font, $.pos, $.from.point, $.text]
-  Else[]
+  Else
     Fail["Cannot convert Text to Obj: the position is missing"]
 ]
 

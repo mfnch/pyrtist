@@ -27,7 +27,7 @@ OldGradient@Print "print_gradient" ?
 Gradient@OldGradient[
   [If[$.type == 1]
      .Line[$.point1, $.point2]
-   Else[], If[$.type == 2]
+   Else, If[$.type == 2]
      .Circle[$.point1, $.real1; $.point2, $.real2]
   ]
   num_offsets = Num[$.offsets]

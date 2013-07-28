@@ -10,7 +10,7 @@ Testreport = ++(Str msg, Int success)
 (.[)@Testreport[.success = 1]
 Str@Testreport[.msg = $, .success = 0]
 Testreport@Tests[
-  state = Str[If[$.success], "pass", Else[], "fail"]
+  state = Str[If[$.success], "pass", Else, "fail"]
   Print["Test n. ", $$.nr_test++, ": ", state, "."; $.msg]
   .success &= $.success
 ]

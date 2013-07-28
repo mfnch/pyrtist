@@ -48,6 +48,6 @@ Style@OldStyle[
   fill_style = $.fill_style.style
   [If[fill_style >= -1]
     .Fill[If[fill_style == -1], "void"
-          Else[], If[fill_style == const.fill_rule.winding], "plain"
-          Else[], "eo"]]
+          Else, If[fill_style == const.fill_rule.winding], "plain"
+          Else, "eo"]]
 ]

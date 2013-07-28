@@ -23,9 +23,9 @@ Real@Poly[
   [If[$$.num_margins == 0]
      $$.margin.left = ml = Max[0.0, Min[1.0, $]]
      $$.margin.right = Max[0.0, Min[1.0 - ml, ml]]
-   Else[], If[$$.num_margins == 1]
+   Else, If[$$.num_margins == 1]
      $$.margin.right = Max[0.0, Min[1.0 - $$.margin.left, $]]
-   Else[], Fail["Only two margins can be given between two points!"]]
+   Else, Fail["Only two margins can be given between two points!"]]
   $$.num_margins += 1
 ]
 
@@ -88,7 +88,7 @@ Poly@Path[
     [If[i < num_vertices]
        vertex2 = Point[$.points.Get[i]]
        margins = Point[If[i > 0], $.margins.Get[i]
-                       Else[], margins_at_0]
+                       Else, margins_at_0]
        margin_left = margins.x
        margin_right = margins.y
 
@@ -102,7 +102,7 @@ Poly@Path[
           [If[prev_margin != 0.0]
              Obj[const.raw.line_to, vertex1]]
           Obj[const.raw.line_to, point2]
-        Else[]
+        Else
           Obj[const.raw.ext_joinarc_to, point0, vertex1, point1]
           Obj[const.raw.line_to, point2]]
 

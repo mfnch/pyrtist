@@ -114,7 +114,7 @@ Scale@Line[.scale = $]
 // NOTES: the arrows are drawn on top of the line.
 Window@Line[
   [If[Num[$$] == 0], $$.arrow0 = $, $$.scale0 = $$.scale, $$.have.arrow0 = 1
-   Else[], $$.arrow1 = $, $$.scale1 = $$.scale, $$.have.arrow1 = 1]
+   Else, $$.arrow1 = $, $$.scale1 = $$.scale, $$.have.arrow1 = 1]
 ]
 
 ///Intro: add the vertices of the line to the {type(@.)} object.

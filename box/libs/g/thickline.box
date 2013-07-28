@@ -43,9 +43,9 @@ ThickLine@Window[
     [If[i < n]
        argtype = $.args.GetType[i]
        [If[argtype == objtype.point], Point[$.args.Get[i]]
-        Else[], If[argtype == objtype.real], Real[$.args.Get[i]],
-        Else[], If[argtype == objtype.int];
-        Else[], If[argtype == objtype.obj]
+        Else, If[argtype == objtype.real], Real[$.args.Get[i]],
+        Else, If[argtype == objtype.int];
+        Else, If[argtype == objtype.obj]
           LineStyle[ls = $.args.Get[i]
                     .a = Real[ls.Get[0]]
                     .b = Real[ls.Get[1]]
