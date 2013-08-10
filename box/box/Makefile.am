@@ -78,7 +78,7 @@ dist_boxpkg_DATA=core.dox
 # *** box compiler ***
 noinst_HEADERS = vmdasm_priv.h
 
-box_SOURCES = main.c
+box_SOURCES = argparse.c argparse.h argparse_priv.h main.c
 
 box_LDADD = libboxcore0.4.la
 box_LDFLAGS = -static

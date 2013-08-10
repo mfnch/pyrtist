@@ -1,5 +1,5 @@
 /***************************************************************************
- *   Copyright (C) 2006-2010 by Matteo Franchin (fnch@libero.it)           *
+ *   Copyright (C) 2006-2010 by Matteo Franchin (fnch@users.sf.net)        *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -111,7 +111,7 @@ static struct opt {
   {"Include-path", 0, 0, 0, -1, & flags, BoxPaths_Add_Pkg_Dir},
   {"Lib-path", 0, 0, 0, -1, & flags, BoxPaths_Add_Lib_Dir},
   {"query",    0, 0, 0, -1, & flags, My_Set_Query},
-  {NULL }
+  {NULL}
 }, opt_default =  {"input", 0, FLAG_INPUT, 0, 1, & flags, My_Set_File_Input};
 
 /* Funzioni definite inquesto file */
@@ -139,8 +139,9 @@ static void My_Stage_Finalize(void) {
   Msg_Main_Destroy();
 }
 
-static BoxTask My_Stage_Parse_Command_Line(BoxUInt *flags, int argc,
-                                           char** argv) {
+static BoxTask
+My_Stage_Parse_Command_Line(BoxUInt *flags, int argc, char **argv)
+{
   int i;
   BoxUInt j;
 
@@ -152,7 +153,7 @@ static BoxTask My_Stage_Parse_Command_Line(BoxUInt *flags, int argc,
   prog_name = argv[0];
 
   /* Ciclo su tutti gli argomenti passati */
-  for ( i = 1; i < argc; i++ ) {
+  for (i = 1; i < argc; i++) {
     char *option = argv[i];
     char *opt_prefix = "";
     struct opt *opt_desc;
@@ -170,8 +171,8 @@ static BoxTask My_Stage_Parse_Command_Line(BoxUInt *flags, int argc,
           --oplen;
         }
 
-      for ( j = 0; opt_tab[j].name != NULL; j++ )
-        if ( strncmp(option, opt_tab[j].name, oplen) == 0 )
+      for (j = 0; opt_tab[j].name != NULL; j++)
+        if (strncmp(option, opt_tab[j].name, oplen) == 0)
           opnum = (opnum == -1) ? j : -2;
 
       if ( opnum == -1 ) {
@@ -409,7 +410,7 @@ void Main_Error_Exit(char *msg) {
 }
 
 void Main_Cmnd_Line_Help(void) {
-  fprintf( stderr,
+  fprintf(stderr,
   BOX_VERSTR " " RELEASE_STRING " - Language to describe graphic figures."
   "\n Created and implemented by Matteo Franchin.\n\n"
   "USAGE: " PROGRAM_NAME " options inputfile\n\n"
