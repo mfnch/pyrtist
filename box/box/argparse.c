@@ -20,6 +20,7 @@
 #include <box/argparse_priv.h>
 
 #include <box/mem.h>
+#include <box/print.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -43,6 +44,7 @@ void BCArgParser_Finish(BCArgParser *ap)
   if (ap) {
     Box_Mem_Free(ap->prog);
     Box_Mem_Free(ap->first);
+    Box_Mem_Free(ap->err_msg);
   }
 }
 
@@ -86,7 +88,7 @@ static int My_Parse_Short(BCArgParser *ap, int arg_index)
     }
 
     if (!opt) {
-      ap->err_msg = "Unrecognized option";
+      ap->err_msg = Box_SPrintF("Unrecognized option `-%c'", c);
       return 0;
     }
 
@@ -101,7 +103,7 @@ static int My_Parse_Short(BCArgParser *ap, int arg_index)
           return 1;
       } else {
         if (arg_index + 1 >= ap->num_args) {
-          ap->err_msg = "Missing argument";
+          ap->err_msg = Box_SPrintF("Missing argument to option `-%c'", c);
           return 0;
         }
 
@@ -110,7 +112,7 @@ static int My_Parse_Short(BCArgParser *ap, int arg_index)
       }
 
       if (!ap->err_msg)
-        ap->err_msg = "Argument parse failure";
+        ap->err_msg = Box_SPrintF("Failure while parsing option `-%c'", c);
       return 0;
 
     } else if (!opt->fn(ap, opt, NULL))
@@ -139,16 +141,18 @@ static int My_Parse_Long(BCArgParser *ap, int arg_index)
   for (opt_index = 0, opt = NULL; opt_index < ap->num_opts; opt_index++) {
     if (strncmp(arg, ap->opts[opt_index].opt_str, arg_len) == 0) {
       if (opt) {
-        ap->err_msg = "Ambiguous option";
+        ap->err_msg =
+          Box_SPrintF("Ambiguous option `--%s': cannot choose between `--%s'"
+                      " and `--%s'",
+                      arg, opt->opt_str, ap->opts[opt_index].opt_str);
         return  0;
       }
       opt = & ap->opts[opt_index];
-      break;
     }
   }
 
   if (!opt) {
-    ap->err_msg = "Unrecognized option";
+    ap->err_msg = Box_SPrintF("Unrecognized option `--%s'", arg);
     return 0;
   }
 
@@ -162,7 +166,7 @@ static int My_Parse_Long(BCArgParser *ap, int arg_index)
     } else {
       /* Syntax is --option arg.*/
       if (arg_index + 1 >= ap->num_args) {
-        ap->err_msg = "Missing argument";
+        ap->err_msg = Box_SPrintF("Missing argument of option `--%s'", arg);
         return 0;
       }
 
@@ -171,14 +175,16 @@ static int My_Parse_Long(BCArgParser *ap, int arg_index)
     }
 
     if (!ap->err_msg)
-      ap->err_msg = "Argument parse failure";
+      ap->err_msg = Box_SPrintF("Failure while parsing option `--%s'", arg);
     return 0;
   }
  
 
   /* No argument required. */
   if (arg_end) {
-    ap->err_msg = "Unexpected argument";
+    ap->err_msg =
+      Box_SPrintF("Option `--%s' takes no argument, but you provided `--%s'",
+                  opt->opt_str, arg);
     return 0;
   }
 
@@ -192,6 +198,7 @@ BoxBool BCArgParser_Parse(BCArgParser *ap, const char **argv, int argc)
   int arg_index;
   char opt_char = ap->opt_char;
 
+  Box_Mem_Free(ap->err_msg);
   ap->err_msg = NULL;
   ap->args = argv;
   ap->num_args = argc;
@@ -258,7 +265,7 @@ int main(int argc, const char **argv) {
   BCArgParserOption opts[] = {
     {'h', "help", NULL, "Show this help screen", My_Parse_Option},
     {'v', "version", NULL, "Show the program version", My_Parse_Option},
-    {  0, "stdin", NULL, "Read input from standard input"},
+    {  0, "stdin", NULL, "Read input from standard input", My_Parse_Option},
     {'o', "output", "FILENAME", "Output file", My_Parse_Option},
     {'S', "setup", "FILENAME", "Setup file", My_Parse_Option},
     {'l', "library", "LIBNAME", "Add a new C library to be used when linking",
@@ -281,7 +288,8 @@ int main(int argc, const char **argv) {
   BCArgParser_Init(& ap,  & opts[0],
                    sizeof(opts)/sizeof(BCArgParserOption));
   if (!BCArgParser_Parse(& ap, argv, argc))
-    printf("Error parsing options: '%s'\n", ap.err_msg);
+    printf("Error parsing options: %s\n", ap.err_msg);
+  BCArgParser_Finish(& ap);
   exit(EXIT_SUCCESS);
 }
 

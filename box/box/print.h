@@ -27,8 +27,8 @@
  * with the specified %N, string deallocation is allowed with %~s.
  */
 
-#ifndef _PRINT_H
-#  define _PRINT_H
+#ifndef _BOX_PRINT_H
+#  define _BOX_PRINT_H
 
 #  include <stdarg.h>
 
@@ -57,9 +57,10 @@ void Print_Finalize(void);
  *   ES:
  *       msg = Box_Print("%~s", Box_Mem_Strdup("allocated string"));
  */
-BOXEXPORT const char *Box_Print(const char *fmt, ...);
+BOXEXPORT const char *
+Box_Print(const char *fmt, ...);
 
 #  define printdup(...) Box_Mem_Strdup(Box_Print(__VA_ARGS__))
 #  define Box_SPrintF(...) Box_Mem_Strdup(Box_Print(__VA_ARGS__))
 
-#endif
+#endif /* _BOX_PRINT_H */

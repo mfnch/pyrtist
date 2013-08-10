@@ -24,8 +24,8 @@
 
 
 struct BCArgParser_struct {
-  const char        *err_msg;
-  char              *prog,
+  char              *err_msg,
+                    *prog,
                     *first;
   const char        **args,
                     **args_left;
