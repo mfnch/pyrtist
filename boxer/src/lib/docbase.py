@@ -388,7 +388,7 @@ class DocumentBase(Configurable):
     args = ["-l", "g"] + box_args
 
     # Include the helper code (which allows communication box-boxer)
-    args += ("-I", presrc_path, "-se", presrc_basename, src_filename)
+    args += ("-I", presrc_path, "-S", presrc_basename)
 
     # If the Box source is saved (rather than being a temporary unsaved
     # script) then execute it from its parent directory. Also, make sure to
@@ -421,6 +421,7 @@ class DocumentBase(Configurable):
     if out_fn == None:
       out_fn = self._fns["box_exec_output"]
 
+    args.append(src_filename)
     return exec_command(box_executable, args,
                         out_fn=out_fn, do_at_exit=do_at_exit, cwd=cwd)
 
