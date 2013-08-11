@@ -151,15 +151,15 @@ void BoxPaths_Set_All_From_Env(BoxPaths *bp) {
 #endif
 }
 
-void BoxPaths_Add_Lib(BoxPaths *bp, char *lib) {
+void BoxPaths_Add_Lib(BoxPaths *bp, const char *lib) {
   BoxList_Append_String(& bp->libraries, lib);
 }
 
-void BoxPaths_Add_Lib_Dir(BoxPaths *bp, char *path) {
+void BoxPaths_Add_Lib_Dir(BoxPaths *bp, const char *path) {
   BoxList_Append_String(& bp->lib_dirs, path);
 }
 
-void BoxPaths_Add_Pkg_Dir(BoxPaths *bp, char *path) {
+void BoxPaths_Add_Pkg_Dir(BoxPaths *bp, const char *path) {
   BoxList_Append_String(& bp->inc_dirs, path);
 }
 

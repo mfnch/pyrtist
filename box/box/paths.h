@@ -69,11 +69,11 @@ BOXEXPORT void Box_Get_Bltin_Pkg_And_Lib_Paths(char **pkg_path,
                                                char **lib_path);
 BOXEXPORT void BoxPaths_Set_All_From_Env(BoxPaths *bp);
 
-BOXEXPORT void BoxPaths_Add_Lib(BoxPaths *bp, char *lib);
+BOXEXPORT void BoxPaths_Add_Lib(BoxPaths *bp, const char *lib);
 
-BOXEXPORT void BoxPaths_Add_Lib_Dir(BoxPaths *bp, char *path);
+BOXEXPORT void BoxPaths_Add_Lib_Dir(BoxPaths *bp, const char *path);
 
-BOXEXPORT void BoxPaths_Add_Pkg_Dir(BoxPaths *bp, char *path);
+BOXEXPORT void BoxPaths_Add_Pkg_Dir(BoxPaths *bp, const char *path);
 
 /** Add the directory containing the currently executed script to the list
  * of directories to be searched when including a file with "include".

@@ -24,6 +24,7 @@
 
 
 struct BCArgParser_struct {
+  void              *stuff;
   char              *err_msg,
                     *prog,
                     *first;

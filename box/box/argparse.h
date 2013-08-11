@@ -78,4 +78,61 @@ BCArgParser_Destroy(BCArgParser *ap);
 BOXEXPORT BoxBool
 BCArgParser_Parse(BCArgParser *ap, const char **argv, int argc);
 
+/**
+ * @brief Set the error message in the argument parser.
+ *
+ * @param ap The argument parser.
+ * @param err_msg A newly allocated string.
+ *
+ * @note The caller passes the responsability to deallocate the memory
+ *   occupied by the error message to the argument parser, which will use
+ *   Box_Mem_Free() to do this.
+ */
+BOXEXPORT void
+BCArgParser_Set_Err_Msg(BCArgParser *ap, char *err_msg);
+
+/**
+ * @brief Return the last error message occurred during argument parsing.
+ *
+ * @param ap The argument parser.
+ * @return A newly allocated string containing the message or @c NULL if
+ *   no errors occurred.
+ *
+ * @note The caller is given the responsability to deallocate the memory
+ *   occupied by the error message string with Box_Mem_Free().
+ */
+BOXEXPORT char *
+BCArgParser_Get_Err_Msg(BCArgParser *ap);
+
+/**
+ * @brief Set the stuff pointer in #BCArgParser.
+ *
+ * The stuff pointer is a pointer which can be stored inside the #BCArgParser
+ * object and is ignored by it (it is not used for parsing). The pointer can
+ * be retrieved with BCArgParser_Get_stuff() and can be used to pass
+ * information to the parse handlers #BCArgParserFn.
+ */
+BOXEXPORT void
+BCArgParser_Set_Stuff(BCArgParser *ap, void *stuff);
+
+/**
+ * @brief Get the stuff pointer as set by BCArgParser_Set_Stuff().
+ *
+ * @see BCArgParser_Set_Stuff
+ */
+BOXEXPORT void *
+BCArgParser_Get_Stuff(BCArgParser *ap);
+
+/**
+ * @brief Get the arguments left after parse.
+ *
+ * @param ap Object from which to extract the arguments.
+ * @param args_left This is written with the pointer to the arguments left.
+ * @param num_args_left This is written with the number of arguments left.
+ * @return Whether there are any arguments left.
+ */
+BOXEXPORT BoxBool
+BCArgParser_Get_Args_Left(BCArgParser *ap,
+                          const char ***args_left, int *num_args_left);
+
 #endif /* _BOX_ARGPARSE_H */
