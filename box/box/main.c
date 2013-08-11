@@ -225,9 +225,9 @@ BCArgParserOption my_opts[] = {
   {'S', "setup", "FILENAME", "Setup file", My_Parse_Option},
   {'l', "library", "LIBNAME", "Add a new C library to be used when linking",
    My_Parse_Option},
-  {'L', "Lib-path", "PATH", "Add directory to the list of directories "
+  {'L', "lib-path", "PATH", "Add directory to the list of directories "
    "searched with -l", My_Parse_Option},
-  {'I', "Include-path", "PATH", "Add a new directory to be searched when "
+  {'I', "include-path", "PATH", "Add a new directory to be searched when "
    "including files", My_Parse_Option},
   {'t', "test", NULL, "Test mode: compilation with no execution",
    My_Parse_Option},
@@ -242,26 +242,24 @@ BCArgParserOption my_opts[] = {
 
 void Main_Show_Help(void) {
   printf(
-  BOX_VERSTR " " RELEASE_STRING " - Language to describe graphic figures."
-  "\n Created and implemented by Matteo Franchin.\n\n"
-  "USAGE: " PROGRAM_NAME " options inputfile\n\n"
-  "options: are the following:\n"
-  " -h, --help            show this help screen\n"
-  " -i, --stdin           read the input file from stadard input\n"
-  " -o, --output FILENAME compile to filename (refuse to overwrite it)\n"
-  " -S, --setup FILENAME  this file will be included automatically at the beginning\n"
-  " -l, -library LIBNAME  add a new C library to be used when linking\n"
-  " -L, -Lib-path DIR     add dir to the list of directories to be searched for -l\n"
-  " -I, -Include-path DIR add a new directory to be searched when including files\n"
-  " -t, --test            just a test: compilation with no execution\n"
-  " -f, --force           force execution, even if warning messages have been shown\n"
-  " -V, --Verbose         show all the messages, also warning messages\n"
-  " -e, --errors          show only error messages\n"
-  " -s, --silent          do not show any message\n"
+  BOX_VERSTR " " RELEASE_STRING " - Language to describe graphic figures.\n"
+  "Created and implemented by Matteo Franchin.\n\n"
+  "USAGE: " PROGRAM_NAME " [options] inputfile\n\n"
+  "Options can be one or more of:\n"
+  " -h, --help          show this help screen\n"
+  " -v, --version       show the program version and exit\n"
+  " -i, --stdin         read the input file from stadard input\n"
+  " -o, --output FILE   compile to filename (refuse to overwrite it)\n"
+  " -S, --setup FILE    this file will be included automatically at the beginning\n"
+  " -l, --library LIB   add a new C library to be used when linking\n"
+  " -L, --lib-path DIR  add dir to the list of directories to be searched for -l\n"
+  " -I, --include-path DIR add a new directory to be searched when including files\n"
+  " -t, --test          just a test: compilation with no execution\n"
+  " -f, --force         force execution, even if warning messages have been shown\n"
+  " -V, --verbose       show all the messages, also warning messages\n"
+  " -e, --errors        show only error messages\n"
+  " -s, --silent        do not show any message\n"
   "\n inputfile: the name of the input file\n\n"
-  "NOTE: some options can be used more than once.\n"
-  " Some of them cancel out two by two. Example: using two times the option -t\n"
-  " has the same effect of not using it at all.\n"
   );
   exit(EXIT_SUCCESS);
 }
