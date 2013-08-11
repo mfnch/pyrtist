@@ -63,6 +63,7 @@
 typedef struct {
   struct {
     unsigned int show_help :1,
+                 show_version :1,
                  silent :1,
                  only_errors :1,
                  verbose :1,
@@ -205,6 +206,9 @@ BoxBool My_Parse_Option(BCArgParser *ap, BCArgParserOption *opt,
     result->flags.silent = result->flags.only_errors = 0;
     result->flags.verbose ^= 1;
     break;
+  case 'v':
+    result->flags.show_version = 1;
+    break;
   default:
     BCArgParser_Set_Err_Msg(ap, Box_Mem_Strdup("Unexpected failure"));
     return BOXBOOL_FALSE;
@@ -236,11 +240,38 @@ BCArgParserOption my_opts[] = {
   {'q', "query", "PARNAME", "Show configuration parameters", My_Parse_Option}
 };
 
-/* Forward declarations. */
-void Main_Cmnd_Line_Help(void);
-BoxTask Main_Prepare(void);
+void Main_Show_Help(void) {
+  printf(
+  BOX_VERSTR " " RELEASE_STRING " - Language to describe graphic figures."
+  "\n Created and implemented by Matteo Franchin.\n\n"
+  "USAGE: " PROGRAM_NAME " options inputfile\n\n"
+  "options: are the following:\n"
+  " -h, --help            show this help screen\n"
+  " -i, --stdin           read the input file from stadard input\n"
+  " -o, --output FILENAME compile to filename (refuse to overwrite it)\n"
+  " -S, --setup FILENAME  this file will be included automatically at the beginning\n"
+  " -l, -library LIBNAME  add a new C library to be used when linking\n"
+  " -L, -Lib-path DIR     add dir to the list of directories to be searched for -l\n"
+  " -I, -Include-path DIR add a new directory to be searched when including files\n"
+  " -t, --test            just a test: compilation with no execution\n"
+  " -f, --force           force execution, even if warning messages have been shown\n"
+  " -V, --Verbose         show all the messages, also warning messages\n"
+  " -e, --errors          show only error messages\n"
+  " -s, --silent          do not show any message\n"
+  "\n inputfile: the name of the input file\n\n"
+  "NOTE: some options can be used more than once.\n"
+  " Some of them cancel out two by two. Example: using two times the option -t\n"
+  " has the same effect of not using it at all.\n"
+  );
+  exit(EXIT_SUCCESS);
+}
 
-/******************************************************************************/
+/* Show version information and exit. */
+void Main_Show_Version(void)
+{
+  printf(BOX_VERSTR "\n");
+  exit(EXIT_SUCCESS);
+}
 
 static BoxTask My_Stage_Init(void) {
   BoxPaths_Init(& box_paths);
@@ -274,6 +305,7 @@ My_Stage_Parse_Command_Line(MyArgParserResult *result,
     MSG_FATAL("Cannot initialize command line argument parser");
 
   result->flags.show_help = 0;
+  result->flags.show_version = 0;
   result->flags.silent = 0;
   result->flags.only_errors = 0;
   result->flags.verbose = 0;
@@ -309,7 +341,10 @@ My_Stage_Parse_Command_Line(MyArgParserResult *result,
 static BoxTask My_Stage_Interpret_Command_Line(MyArgParserResult *result) {
   /* Controllo se e' stata specificata l'opzione di help */
   if (result->flags.show_help)
-    Main_Cmnd_Line_Help();
+    Main_Show_Help();
+
+  if (result->flags.show_version)
+    Main_Show_Version();
 
   if (result->query)
     My_Exec_Query(result->query);
@@ -482,34 +517,6 @@ static BoxTask My_Stage_Write_Asm(MyArgParserResult *result) {
   }
 
   return BOXTASK_OK;
-}
-
-void Main_Cmnd_Line_Help(void) {
-  fprintf(stderr,
-  BOX_VERSTR " " RELEASE_STRING " - Language to describe graphic figures."
-  "\n Created and implemented by Matteo Franchin.\n\n"
-  "USAGE: " PROGRAM_NAME " options inputfile\n\n"
-  "options: are the following:\n"
-  " -h(elp)               show this help screen\n"
-  " -st(din)              read the input file from stadard input\n"
-  " -i(nput) filename     specify the input file\n"
-  " -o(utput) filename    compile to filename (refuse to overwrite it)\n"
-  " -w(rite) filename     compile to filename (overwrite if it exists)\n"
-  " -se(tup) filename     this file will be included automatically at the beginning\n"
-  " -l(ibrary) lib        add a new C library to be used when linking\n"
-  " -L(ib-path) dir       add dir to the list of directories to be searched for -l\n"
-  " -I(nclude-path) dir   add a new directory to be searched when including files\n"
-  " -t(est)               just a test: compilation with no execution\n"
-  " -f(orce)              force execution, even if warning messages have been shown\n"
-  " -v(erbose)            show all the messages, also warning messages\n"
-  " -e(rrors)             show only error messages\n"
-  " -si(lent)             do not show any message\n"
-  "\n inputfile: the name of the input file\n\n"
-  "NOTE: some options can be used more than once.\n"
-  " Some of them cancel out two by two. Example: using two times the option -t\n"
-  " has the same effect of not using it at all.\n"
-  );
-  exit(EXIT_SUCCESS);
 }
 
 /******************************************************************************/
