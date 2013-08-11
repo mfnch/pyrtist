@@ -245,6 +245,7 @@ void Main_Show_Help(void) {
   BOX_VERSTR " " RELEASE_STRING " - Language to describe graphic figures.\n"
   "Created and implemented by Matteo Franchin.\n\n"
   "USAGE: " PROGRAM_NAME " [options] inputfile\n\n"
+  "inputfile is the name of the Box source file.\n"
   "Options can be one or more of:\n"
   " -h, --help          show this help screen\n"
   " -v, --version       show the program version and exit\n"
@@ -259,7 +260,6 @@ void Main_Show_Help(void) {
   " -V, --verbose       show all the messages, also warning messages\n"
   " -e, --errors        show only error messages\n"
   " -s, --silent        do not show any message\n"
-  "\n inputfile: the name of the input file\n\n"
   );
   exit(EXIT_SUCCESS);
 }
