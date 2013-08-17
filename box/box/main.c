@@ -244,12 +244,13 @@ void Main_Show_Help(void) {
   printf(
   BOX_VERSTR " " RELEASE_STRING " - Language to describe graphic figures.\n"
   "Created and implemented by Matteo Franchin.\n\n"
-  "USAGE: " PROGRAM_NAME " [options] inputfile\n\n"
+  "USAGE: " PROGRAM_NAME " [options] inputfile arg1 arg2 ...\n\n"
   "inputfile is the name of the Box source file.\n"
+  "arg1, arg2, ... are the arguments passed to inputfile.\n"
   "Options can be one or more of:\n"
   " -h, --help          show this help screen\n"
   " -v, --version       show the program version and exit\n"
-  " -i, --stdin         read the input file from stadard input\n"
+  " -i, --stdin         read the input from standard input\n"
   " -o, --output FILE   compile to filename (refuse to overwrite it)\n"
   " -S, --setup FILE    this file will be included automatically at the beginning\n"
   " -l, --library LIB   add a new C library to be used when linking\n"
@@ -259,7 +260,7 @@ void Main_Show_Help(void) {
   " -f, --force         force execution, even if warning messages have been shown\n"
   " -V, --verbose       show all the messages, also warning messages\n"
   " -e, --errors        show only error messages\n"
-  " -s, --silent        do not show any message\n"
+  " -s, --silent        do not show any messages\n"
   );
   exit(EXIT_SUCCESS);
 }
@@ -320,7 +321,7 @@ My_Stage_Parse_Command_Line(MyArgParserResult *result,
   if (!BCArgParser_Parse(ap, argv, argc)) {
     char *err_msg = BCArgParser_Get_Err_Msg(ap);
     if (err_msg)
-      MSG_ERROR("While parsing command line: %~s", err_msg);
+      MSG_ERROR("%~s", err_msg);
     else
       MSG_ERROR("Error while parsing the command line arguments.");
     BCArgParser_Destroy(ap);
