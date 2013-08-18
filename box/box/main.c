@@ -167,6 +167,9 @@ BoxBool My_Parse_Option(BCArgParser *ap, BCArgParserOption *opt,
   MyArgParserResult *result = BCArgParser_Get_Stuff(ap);
 
   switch (opt->opt_char) {
+  case 'f':
+    result->flags.force_exec ^= 1;
+    break;
   case 'e':
     result->flags.verbose = result->flags.silent = 0;
     result->flags.only_errors = 1;

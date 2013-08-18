@@ -116,7 +116,7 @@ class Test:
     self.write_body()
 
     output, exit_status = \
-      exec_cmd([self.box_exec, self.test_source] + self.opts)
+      exec_cmd([self.box_exec] + self.opts + [self.test_source])
 
     errors = []
 
