@@ -166,10 +166,10 @@ void BoxCmp_Finish(BoxCmp *c) {
     BoxVM_Destroy(c->vm);
 }
 
-BoxCmp *BoxCmp_New(BoxVM *target_vm) {
+BoxCmp *BoxCmp_Create(BoxVM *target_vm) {
   BoxCmp *c = Box_Mem_Alloc(sizeof(BoxCmp));
-  if (c == NULL) return NULL;
-  BoxCmp_Init(c, target_vm);
+  if (c)
+    BoxCmp_Init(c, target_vm);
   return c;
 }
 
@@ -200,7 +200,7 @@ BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
   if (main == NULL)
     main = & dummy_cn;
 
-  compiler = BoxCmp_New(target_vm);
+  compiler = BoxCmp_Create(target_vm);
   program_node = Parser_Parse(file, file_name, setup_file_name, paths);
   BoxCmp_Compile(compiler, program_node);
   ASTNode_Destroy(program_node);
@@ -354,7 +354,7 @@ static void My_Compile_RaiseType(BoxCmp *c, ASTNode *n);
 static void My_Compile_Raise(BoxCmp *c, ASTNode *n);
 
 void BoxCmp_Compile(BoxCmp *c, ASTNode *program) {
-  if (program == NULL)
+  if (!program)
     return;
 
   My_Compile_Any(c, program);

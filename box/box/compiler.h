@@ -17,7 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file compiler.h
+/**
+ * @file compiler.h
  * @brief The compiler of Box.
  *
  * A nice description...
@@ -38,27 +39,37 @@
 typedef struct BoxCmp_struct BoxCmp;
 
 
-void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm);
+BOXEXPORT BoxCmp *
+BoxCmp_Create(BoxVM *target_vm);
 
-void BoxCmp_Finish(BoxCmp *c);
+BOXEXPORT void
+BoxCmp_Destroy(BoxCmp *c);
 
-BoxCmp *BoxCmp_New(BoxVM *target_vm);
+/**
+ * Steal the VM which is being used as the target for the compilation.
+ */
+BOXEXPORT BoxVM *
+BoxCmp_Steal_VM(BoxCmp *c);
 
-void BoxCmp_Destroy(BoxCmp *c);
-
-/** Steal the VM which is being used as the target for the compilation. */
-BoxVM *BoxCmp_Steal_VM(BoxCmp *c);
-
-/** Create the compiler and use it to parse the given file, returning the
+/**
+ * Create the compiler and use it to parse the given file, returning the
  * virtual machine object which was used as the target of the compilation
  * and putting in '*main' the BoxVMCallNum of the main procedure of the
  * compiled source.
  */
-BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
-                                   FILE *file, const char *file_name,
-                                   const char *setup_file_name,
-                                   BoxPaths *paths);
+BOXEXPORT BoxVM *
+Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
+			    FILE *file, const char *file_name,
+			    const char *setup_file_name,
+			    BoxPaths *paths);
 
-void BoxCmp_Compile(BoxCmp *c, ASTNode *program);
+/**
+ * @brief Compile from the give abstract syntax tree.
+ *
+ * @param c Compiler to use.
+ * @param program Abstract syntax tree of the program to compile.
+ */
+BOXEXPORT void
+BoxCmp_Compile(BoxCmp *c, ASTNode *program);
 
 #endif /* _BOX_COMPILER_H */

@@ -76,4 +76,14 @@ struct BoxCmp_struct {
                                just for efficiency) */
 };
 
+/**
+ * @brief Initialize an unset #BoxCmp structure.
+ */
+void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm);
+
+/**
+ * @brief Finalize a #BoxCmp structure initialized with BoxCmp_Init().
+ */
+void BoxCmp_Finish(BoxCmp *c);
+
 #endif /* _BOX_COMPILER_PRIV_H */
