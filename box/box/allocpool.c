@@ -25,9 +25,8 @@
 
 
 /* Create a new allocation pool. */
-BCAllocPool *
-BCAllocPool_Create(size_t item_size,
-		   size_t initial_capacity)
+BCAllocPool *BCAllocPool_Create(size_t item_size,
+				size_t initial_capacity)
 {
   BCAllocPool *pool = Box_Mem_Alloc(sizeof(BCAllocPool));
   if (pool)
@@ -36,17 +35,15 @@ BCAllocPool_Create(size_t item_size,
 }
 
 /* Destroy the given allocation pool. */
-void
-BCAllocPool_Destroy(BCAllocPool *pool)
+void BCAllocPool_Destroy(BCAllocPool *pool)
 {
   BCAllocPool_Finish(pool);
   Box_Mem_Free(pool);
 }
 
 /* Initialise an allocation pool. */
-BCAllocPool *
-BCAllocPool_Init(BCAllocPool *pool, size_t item_size,
-		 size_t initial_capacity)
+BCAllocPool *BCAllocPool_Init(BCAllocPool *pool, size_t item_size,
+			      size_t initial_capacity)
 {
   BCAllocSubPool *sp = & pool->sub_pool;
   void *items = Box_Mem_Alloc(initial_capacity*item_size);
@@ -65,8 +62,7 @@ BCAllocPool_Init(BCAllocPool *pool, size_t item_size,
 }
 
 /* Finalise an allocation pool. */
-void
-BCAllocPool_Finish(BCAllocPool *pool)
+void BCAllocPool_Finish(BCAllocPool *pool)
 {
   BCAllocSubPool *sp = pool->sub_pool.next;
   Box_Mem_Free(pool->sub_pool.items);
@@ -78,8 +74,7 @@ BCAllocPool_Finish(BCAllocPool *pool)
   }
 }
 
-void *
-BCAllocPool_Alloc(BCAllocPool *pool)
+void *BCAllocPool_Alloc(BCAllocPool *pool)
 {
   BCAllocSubPool *sp = & pool->sub_pool;
   if (sp->num_items < sp->capacity) {
@@ -114,8 +109,7 @@ BCAllocPool_Alloc(BCAllocPool *pool)
   }
 }
 
-void
-BCAllocPool_Print_Stats(BCAllocPool *pool, FILE *out)
+void BCAllocPool_Print_Stats(BCAllocPool *pool, FILE *out)
 {
   int i;
   BCAllocSubPool *sp;

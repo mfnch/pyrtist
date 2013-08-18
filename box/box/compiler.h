@@ -23,59 +23,20 @@
  * A nice description...
  */
 
-#ifndef _NEW_COMPILER_H
-#  define _NEW_COMPILER_H
+#ifndef _BOX_COMPILER_H
+#  define _BOX_COMPILER_H
 
-#  include "types.h"
-#  include "srcpos.h"
-#  include "cmpptrs.h"
-#  include "array.h"
-#  include "vm_priv.h"
-#  include "ast.h"
-#  include "registers.h"
-#  include "value.h"
-#  include "namespace.h"
-#  include "operator.h"
-#  include "vmcode.h"
-#  include "builtins.h"
-#  include "paths.h"
+#  include <box/types.h>
+#  include <box/vm_priv.h>
+#  include <box/ast.h>
+#  include <box/paths.h>
 
-struct _box_cmp {
-  struct {
-    unsigned int
-               own_vm :1; /**< Was the VM created by us, or given from
-                               outside? */
-  }          attr;      /**< Attributes of the compiler */
-  BoxVM      *vm;       /**< The target of the compilation */
-  BoxArr     stack;     /**< Used during compilation to pass around
-                             expressions */
-  BltinStuff bltin;     /**< Builtin types, etc. */
-  Namespace  ns;        /**< The namespace */
-  BoxVMCode  main_proc, /**< Main procedure in the module */
-             *cur_proc; /**< Procedure on which we are working now */
-  Operator   convert,   /**< Conversion operator */
-             bin_ops[ASTBINOP__NUM_OPS], /**< Table of binary operators */
-             un_ops[ASTUNOP__NUM_OPS];   /**< Table of unary operators */
-  BoxSrcPos  src_pos;   /**< Recent position in source while parsing AST */
-  struct {
-    Value      error,     /**< Error value */
-               void_val,  /**< Void value */
-               create,    /**< Value for BOXTYPE_CREATE */
-               destroy,   /**< Value for BOXTYPE_DESTROY */
-               begin,     /**< Value for BOXTYPE_BEGIN */
-               end,       /**< Value for BOXTYPE_END */
-               pause;     /**< Value for BOXTYPE_PAUSE */
-  } value;                /**< Bunch of values, which we do not want
-                             to allocate again and again (just to make the
-                             compiler a little bit faster and memory
-                             efficient). */
-  struct {
-    BoxCont    pass_child,/**< Container used to pass child to procedures */
-               pass_parent;
-                          /**< Container used to pass parent to procedures */
-  }          cont;        /**< Constant containers (allocated once for all
-                               just for efficiency) */
-};
+
+/**
+ * @brief The Box Compiler.
+ */
+typedef struct BoxCmp_struct BoxCmp;
+
 
 void BoxCmp_Init(BoxCmp *c, BoxVM *target_vm);
 
@@ -100,4 +61,4 @@ BoxVM *Box_Compile_To_VM_From_File(BoxVMCallNum *main, BoxVM *target_vm,
 
 void BoxCmp_Compile(BoxCmp *c, ASTNode *program);
 
-#endif /* _COMPILER_H */
+#endif /* _BOX_COMPILER_H */

@@ -37,7 +37,7 @@
 #  include <box/vmsym.h>
 #  include <box/container.h>
 #  include <box/vmproc.h>
-#  include <box/cmpptrs.h>
+#  include <box/compiler.h>
 #  include <box/srcpos.h>
 #  include <box/callable.h>
 

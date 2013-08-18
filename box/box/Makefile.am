@@ -64,7 +64,7 @@ libboxcore0_4_la_SOURCES = types.c types.h types_priv.h combs.c combs.h obj.c	\
   vmop_priv.h str.c str.h bltinarray.c vmcode.c ast.c value.c compiler.c	\
   operator.c namespace.c builtins.c bltinstr.c bltinio.c fileutils.c		\
   tokenizer.l macro.c parser.y registers.c paths.c fileutils.h registers.h	\
-  tokenizer.h macro.h parserh.h paths.h vmcode.h ast.h cmpptrs.h value.h	\
+  tokenizer.h macro.h parserh.h paths.h vmcode.h ast.h value.h compiler_priv.h	\
   compiler.h operator.h namespace.h builtins.h bltinstr.h bltinio.h
 
 libboxcore0_4_la_LDFLAGS = -no-undefined -version-info 0:0:0

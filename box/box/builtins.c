@@ -40,6 +40,9 @@
 #include "str.h"
 #include "bltinio.h"
 
+#include "compiler_priv.h"
+
+
 /*******************************BOX-PROCEDURES********************************/
 
 static BoxTask My_Subtype_Init(BoxVMX *vmx) {

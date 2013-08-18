@@ -25,10 +25,12 @@
 #include "print.h"
 #include "messages.h"
 #include "container.h"
-#include "compiler.h"
 #include "value.h"
 #include "vmsymstuff.h"
 #include "combs.h"
+
+#include "compiler_priv.h"
+
 
 /* FIXME: there is a flaw in the design of the Value datastructure.
  *  We keep track of references to Value objects, but we shouldn't do this.

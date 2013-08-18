@@ -29,7 +29,7 @@
 #  define _BUILTINS_H
 
 #  include <box/types.h>
-#  include <box/cmpptrs.h>
+#  include <box/compiler.h>
 
 /** Builtin types */
 typedef struct {

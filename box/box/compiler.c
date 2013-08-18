@@ -30,12 +30,11 @@
 #include "operator.h"
 #include "namespace.h"
 #include "messages.h"
-#include "compiler.h"
 #include "parserh.h"
 #include "combs.h"
-
 #include "vmsymstuff.h"
 
+#include "compiler_priv.h"
 
 /* For now it is safer not to cache const values!
  * (will make easier to detect reference count problems)

@@ -30,7 +30,7 @@
 #  include <stdlib.h>
 
 #  include <box/types.h>
-#  include <box/cmpptrs.h>
+#  include <box/compiler.h>
 
 void Bltin_Str_Register_Procs(BoxCmp *c);
 

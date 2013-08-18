@@ -25,10 +25,12 @@
 #include "ast.h"
 #include "value.h"
 #include "messages.h"
-#include "compiler.h"
 #include "vm_priv.h"
 #include "vmcode.h"
 #include "operator.h"
+
+#include "compiler_priv.h"
+
 
 /* We have two concepts in this module. One is the concept of Operator
  * (+ or - are two examples), the other is the concept of Operation,

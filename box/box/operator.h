@@ -28,7 +28,7 @@
 
 #  include "value.h"
 #  include "ast.h"
-#  include "cmpptrs.h"
+#  include "compiler.h"
 #  include "vm_priv.h"
 
 typedef enum {

@@ -28,7 +28,7 @@
 #  define _BLTINIO_H
 
 #  include <box/types.h>
-#  include <box/cmpptrs.h>
+#  include <box/compiler.h>
 
 /** Register the builtin IO functions. */
 void Bltin_IO_Register(BoxCmp *c);

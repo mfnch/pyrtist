@@ -31,7 +31,7 @@
 #include "registers.h"
 
 #include "vmcode.h"
-#include "compiler.h"
+#include "compiler_priv.h"
 
 /* Function called to begin for BOXVMCODETYPE_MAIN or BOXVMCODETYPE_SUB */
 static void My_Proc_Begin(BoxVMCode *p) {
