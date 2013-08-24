@@ -1235,8 +1235,8 @@ BoxTask Value_Move_Content(Value *dest, Value *src) {
   BoxCmp *c = src->proc->cmp;
   BoxTypeCmp match = BoxType_Compare(dest->type, src->type);
   if (match == BOXTYPECMP_DIFFERENT) {
-    MSG_ERROR("Cannot move objects of type '%~s' into objects of type '%~s'",
-              BoxType_Get_Repr(src->type), BoxType_Get_Repr(dest->type));
+    MSG_ERROR("Cannot move objects of type '%T' into objects of type '%T'",
+              src->type, dest->type);
     return BOXTASK_ERROR;
   }
 
@@ -1347,8 +1347,8 @@ static Value *My_Emit_Conversion(BoxCmp *c, Value *src, BoxType *dest) {
       return v_dest;
 
     else {
-      MSG_ERROR("Don't know how to convert objects of type %~s to %~s.",
-                BoxType_Get_Repr(src->type), BoxType_Get_Repr(dest));
+      MSG_ERROR("Don't know how to convert objects of type %T to %T.",
+                src->type, dest);
       Value_Unlink(v_dest); /* Unlink, since we are not returning it! */
       return NULL;
     }
@@ -1436,8 +1436,8 @@ Value_Expand(Value *src, BoxType *t_dst) {
         }
       }
 
-      MSG_FATAL("Value_Expand: type '%~s' is not compatible with '%~s'.",
-                BoxType_Get_Repr(t_src), BoxType_Get_Repr(t_dst));
+      MSG_FATAL("Value_Expand: type '%T' is not compatible with '%T'.",
+                t_src, t_dst);
       assert(0);
     }
 
@@ -1624,8 +1624,8 @@ Value *Value_Subtype_Build(Value *v_parent, const char *subtype_name) {
         return NULL;
 
     } else {
-      MSG_ERROR("Type '%~s' has not a subtype of name '%s'",
-                BoxType_Get_Repr(v_parent->type), subtype_name);
+      MSG_ERROR("Type '%T' has not a subtype of name '%s'",
+                v_parent->type, subtype_name);
       Value_Unlink(v_parent);
       return NULL;
     }
@@ -1692,7 +1692,7 @@ static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
         size_t offset = get_child ? 0 : sizeof(BoxPtr);
         v_ret = Value_Create(c->cur_proc);
         /* FIXME: see Value_Init */
-        Value_Setup_As_Weak_Copy(v_ret, v_subtype);          
+        Value_Setup_As_Weak_Copy(v_ret, v_subtype);
         v_ret = Value_Get_Subfield(v_ret, offset,
                                    Box_Get_Core_Type(BOXTYPEID_PTR));
         v_ret = Value_Cast_From_Ptr(v_ret, t_ret);
@@ -1706,8 +1706,8 @@ static Value *My_Value_Subtype_Get(Value *v_subtype, int get_child) {
 
     } else {
       const char *what = get_child ? "child" : "parent";
-      MSG_ERROR("Cannot get the %s of '%~s': this is not a subtype!",
-                what, BoxType_Get_Repr(v_subtype->type));
+      MSG_ERROR("Cannot get the %s of '%T': this is not a subtype!",
+                what, v_subtype->type);
     }
   }
 

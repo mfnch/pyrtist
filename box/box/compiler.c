@@ -1,5 +1,5 @@
 /****************************************************************************
- * Copyright (C) 2009-2011 by Matteo Franchin                               *
+ * Copyright (C) 2009-2013 by Matteo Franchin                               *
  *                                                                          *
  * This file is part of Box.                                                *
  *                                                                          *
@@ -439,7 +439,7 @@ static void My_Compile_TypeName(BoxCmp *c, ASTNode *n) {
 
   f = NMSPFLOOR_DEFAULT;
   v = Namespace_Get_Value(& c->ns, f, type_name);
-  if (v != NULL) {
+  if (v) {
     /* We return a copy, not the original! */
     Value *v_copy = Value_New(c->cur_proc);
     Value_Setup_As_Weak_Copy(v_copy, v);
@@ -489,8 +489,8 @@ static void My_Compile_Subtype(BoxCmp *c, ASTNode *p) {
         if (!new_subtype)
           new_subtype = BoxType_Create_Subtype(pt, name, NULL);
       } else {
-        MSG_ERROR("Cannot build subtype '%s' of undefined subtype '%~s'.",
-                  name, BoxType_Get_Repr(parent_type->type));
+        MSG_ERROR("Cannot build subtype '%s' of undefined subtype '%T'.",
+                  name, parent_type->type);
       }
 
     } else {
@@ -538,12 +538,19 @@ static void My_Compile_Instance(BoxCmp *c, ASTNode *instance) {
   }
 }
 
+typedef enum {
+  MYBOXSTATE_INITIAL,
+  MYBOXSTATE_GOT_IF,
+  MYBOXSTATE_GOT_ELSE
+} MyBoxState;
+
 static void My_Compile_Box(BoxCmp *c, ASTNode *box,
                            BoxType *t_child, BoxType *t_parent) {
   ASTNode *s;
   Value *parent = NULL, *outer_parent = NULL;
-  int parent_is_err = 0;
+  BoxBool parent_is_err = 0, need_floor_down;
   BoxVMSymID jump_label_begin, jump_label_end, jump_label_next;
+  MyBoxState state;
 
   assert(box->type == ASTNODETYPE_BOX);
 
@@ -626,8 +633,10 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
   /* Save previous source position */
   BoxSrc *prev_src_of_err = Msg_Set_Src(& box->src);
 
+  need_floor_down = BOXBOOL_FALSE;
+
   /* Loop over all the statements of the box */
-  for(s = box->attr.box.first_statement;
+  for(s = box->attr.box.first_statement, state = MYBOXSTATE_INITIAL;
       s != NULL;
       s = s->attr.statement.next_statement) {
 
@@ -641,17 +650,26 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
 
     if (!(parent_is_err || Value_Is_Ignorable(stmt_val))) {
       if (Value_Want_Has_Type(stmt_val)) {
-        BoxTask status;
-        stmt_val = Value_Emit_Call(parent, stmt_val, & status);
+        BoxTask emit_task;
+        stmt_val = Value_Emit_Call(parent, stmt_val, & emit_task);
 
         if (stmt_val) {
-          assert(status == BOXTASK_FAILURE);
+          assert(emit_task == BOXTASK_FAILURE);
 
           /* Handle the case where stmt_val is an If[] or For[] value */
-          if (BoxType_Compare(stmt_val->type, Box_Get_Core_Type(BOXTYPEID_IF)))
+          if (BoxType_Compare(stmt_val->type,
+                              Box_Get_Core_Type(BOXTYPEID_IF))) {
             Value_Emit_CJump(stmt_val, jump_label_next);
 
-          else if (BoxType_Compare(stmt_val->type,
+            if (state != MYBOXSTATE_GOT_IF) {
+              assert(!need_floor_down);
+              Namespace_Floor_Up(& c->ns);
+              need_floor_down = BOXBOOL_TRUE;
+            }
+            state = MYBOXSTATE_GOT_IF;
+
+#if 0
+          } else if (BoxType_Compare(stmt_val->type,
                                    Box_Get_Core_Type(BOXTYPEID_ELIF))) {
             if (jump_label_end == BOXVMSYMID_NONE)
               jump_label_end = BoxVMCode_Jump_Label_New(c->cur_proc);
@@ -661,25 +679,43 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
             jump_label_next = BoxVMCode_Jump_Label_New(c->cur_proc);
             Value_Emit_CJump(stmt_val, jump_label_next);
 
+            if (state != MYBOXSTATE_GOT_IF) {
+              assert(!need_floor_down);
+              Namespace_Floor_Up(& c->ns);
+              need_floor_down = BOXBOOL_TRUE;
+            }
+            state = MYBOXSTATE_GOT_IF;
+#endif
           } else if (BoxType_Compare(stmt_val->type,
                                      Box_Get_Core_Type(BOXTYPEID_ELSE))) {
-            if (jump_label_end == BOXVMSYMID_NONE)
-              jump_label_end = BoxVMCode_Jump_Label_New(c->cur_proc);
-            BoxVMCode_Assemble_Jump(c->cur_proc, jump_label_end);
-            BoxVMCode_Jump_Label_Define(c->cur_proc, jump_label_next);
-            BoxVMCode_Jump_Label_Release(c->cur_proc, jump_label_next);
-            jump_label_next = BoxVMCode_Jump_Label_New(c->cur_proc);
+            if (state == MYBOXSTATE_GOT_IF) {
+              if (jump_label_end == BOXVMSYMID_NONE)
+                jump_label_end = BoxVMCode_Jump_Label_New(c->cur_proc);
+              BoxVMCode_Assemble_Jump(c->cur_proc, jump_label_end);
+              BoxVMCode_Jump_Label_Define(c->cur_proc, jump_label_next);
+              BoxVMCode_Jump_Label_Release(c->cur_proc, jump_label_next);
+              jump_label_next = BoxVMCode_Jump_Label_New(c->cur_proc);
+
+              assert(need_floor_down);
+              Namespace_Floor_Down(& c->ns);
+              need_floor_down = BOXBOOL_FALSE;
+
+            } else {
+              if (state == MYBOXSTATE_GOT_ELSE)
+                MSG_ERROR("Double 'Else'.");
+              else
+                MSG_ERROR("'Else' without 'If'.");
+            }
             Value_Unlink(stmt_val);
+            state = MYBOXSTATE_GOT_ELSE;
 
           } else if (BoxType_Compare(stmt_val->type,
                                      Box_Get_Core_Type(BOXTYPEID_FOR)))
             Value_Emit_CJump(stmt_val, jump_label_begin);
 
           else {
-            MSG_WARNING("Don't know how to use '%~s' expressions inside "
-                        "a '%~s' box.",
-                        BoxType_Get_Repr(stmt_val->type),
-                        BoxType_Get_Repr(parent->type));
+            MSG_WARNING("Don't know how to use '%T' expressions inside "
+                        "a '%T' box.", stmt_val->type, parent->type);
             Value_Unlink(stmt_val);
           }
 
@@ -690,6 +726,9 @@ static void My_Compile_Box(BoxCmp *c, ASTNode *box,
 
     Value_Unlink(stmt_val);
   }
+
+  if (need_floor_down)
+    Namespace_Floor_Down(& c->ns);
 
   /* Restore previous source position */
   (void) Msg_Set_Src(prev_src_of_err);
@@ -975,8 +1014,8 @@ static void My_Compile_MemberGet(BoxCmp *c, ASTNode *n) {
     v_memb = Value_Struc_Get_Member(v_struc, n->attr.member_get.member);
     /* No need to unlink v_struc here */
     if (v_memb == NULL)
-      MSG_ERROR("Cannot find the member '%s' of an object with type '%~s'.",
-                n->attr.member_get.member, BoxType_Get_Repr(v_struc->type));
+      MSG_ERROR("Cannot find the member '%s' of an object with type '%T'.",
+                n->attr.member_get.member, v_struc->type);
 
   } else
     Value_Unlink(v_struc);
@@ -1258,10 +1297,8 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
           BoxBool success = BoxType_Get_Subtype_Info(t, NULL, NULL, & t_child);
           assert(success);
           if (BoxType_Compare(t_child, v_type->type) == BOXTYPECMP_DIFFERENT)
-            MSG_ERROR("Inconsistent redefinition of type '%~s': was '%~s' "
-                      "and is now '%~s'", BoxType_Get_Repr(v_name->type),
-                      BoxType_Get_Repr(t_child),
-                      BoxType_Get_Repr(v_type->type));
+            MSG_ERROR("Inconsistent redefinition of type '%T': was '%T' "
+                      "and is now '%T'", v_name->type, t_child, v_type->type);
 
         } else {
           (void) BoxType_Register_Subtype(t, v_type->type);
@@ -1270,8 +1307,7 @@ static void My_Compile_TypeDef(BoxCmp *c, ASTNode *n) {
 
       } else if (BoxType_Compare(v_name->type, v_type->type)
                  == BOXTYPECMP_DIFFERENT) {
-        MSG_ERROR("Inconsistent redefinition of type '%~s.'",
-                  BoxType_Get_Repr(v_name->type));
+        MSG_ERROR("Inconsistent redefinition of type '%T.'", v_name->type);
       }
 
       v_named_type = v_type;

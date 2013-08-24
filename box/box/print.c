@@ -22,15 +22,15 @@
 #include <stdarg.h>
 #include <assert.h>
 
-#include "types.h"
-#include "mem.h"
-#include "print.h"
+#include <box/types.h>
+#include <box/mem.h>
+#include <box/print.h>
 
 static char *msg = NULL;
 
-void Print_Finalize(void) {
+void Box_Print_Finish(void) {
   Box_Mem_Free(msg);
-  msg = (char *) NULL;
+  msg = NULL;
 }
 
 /* A simplified version of sprintf, with a number of desirable features:
@@ -49,7 +49,8 @@ void Print_Finalize(void) {
  */
 const char *Box_Print(const char *fmt, ...) {
   static int buf_size = 0;
-  unsigned int do_write = 1, do_read = 1, do_continue = 1, do_dealloc = 1, do_long = 0;
+  unsigned int do_write = 1, do_read = 1, do_continue = 1, do_dealloc = 1,
+    do_long = 0;
   char *str_dealloc = (char *) NULL;
   char cw = '?', cr = '?';
   const char *i;
@@ -60,18 +61,16 @@ const char *Box_Print(const char *fmt, ...) {
   char aux_buf[128], *substring = "?";
   va_list ap;
 
-  if ( msg == (char *) NULL ) {
-    buf_size = PRINT_BUF_SIZE;
+  if (!msg) {
+    buf_size = BOX_PRINT_BUF_SIZE;
     msg = (char *) malloc(buf_size);
-    if (msg == (char *) NULL) goto print_error;
-
-  } else if (buf_size > 2*PRINT_BUF_SIZE) {
-#ifdef DEBUG_PRINT
-    printf("The size of the buffer seems to bee to big: reducing it!\n");
-#endif
-    buf_size = PRINT_BUF_SIZE;
+    if (!msg)
+      goto print_error;
+  } else if (buf_size > 2*BOX_PRINT_BUF_SIZE) {
+    buf_size = BOX_PRINT_BUF_SIZE;
     msg = (char *) realloc(msg, buf_size);
-    if (msg == (char *) NULL) goto print_error;
+    if (!msg)
+      goto print_error;
   }
 
   state = STATE_NORMAL;
@@ -83,14 +82,9 @@ const char *Box_Print(const char *fmt, ...) {
   while(do_continue) {
     if (do_read) {
       cr = *(i++);
-      if (cr == '\0') state = STATE_END;;
+      if (cr == '\0')
+        state = STATE_END;;
     }
-
-#ifdef DEBUG_PRINT
-    printf("---\n");
-    printf("state = %d\n", state);
-    printf("do_read = %d, cr = '%c'\n", do_read, cr);
-#endif
 
     switch(state) {
     case STATE_NORMAL:
@@ -130,10 +124,11 @@ const char *Box_Print(const char *fmt, ...) {
       case 's':
         do_read = 0;
         substring = va_arg(ap, char *);
-        if (substring == (char *) NULL) {
+        if (!substring) {
           substring = "(null)";
         } else {
-          if (do_dealloc) str_dealloc = substring;
+          if (do_dealloc)
+            str_dealloc = substring;
         }
         state = STATE_SUBSTRING;
         break;
@@ -190,12 +185,30 @@ const char *Box_Print(const char *fmt, ...) {
           BoxName *nm = va_arg(ap, BoxName *);
           do_read = 0;
           substring = "(null)";
-          if (nm != (BoxName *) NULL) {
-            if (nm->text != (char *) NULL) {
-              substring = nm->text;
-              substring_size = nm->length;
-            }
+          if (nm && nm->text) {
+            substring = nm->text;
+            substring_size = nm->length;
           }
+          state = STATE_SUBSTRING;
+          break;
+        }
+      case 'T':
+        {
+          BoxType *t = va_arg(ap, BoxType *);
+          if (t) {
+            /* BoxType_Get_Repr() may call Box_Print(). We then need to save
+             * the buffer. This is a temporary hack, while waiting for a proper
+             * fix.
+             */
+            char *save_msg = msg;
+            msg = NULL;
+            str_dealloc = substring = BoxType_Get_Repr(t);
+            free(msg);
+            msg = save_msg;
+          } else
+            substring = "(BoxType*)0";
+
+          do_read = 0;
           state = STATE_SUBSTRING;
           break;
         }
@@ -210,16 +223,17 @@ const char *Box_Print(const char *fmt, ...) {
       cw = *(substring++);
       if (cw != '\0') {
         do_write = 1;
-        if (substring_size == 0) break;
+        if (substring_size == 0)
+          break;
         if (--substring_size == 0) {
           do_read = 1;
           state = STATE_NORMAL;
         }
         break;
       } else {
-        if (str_dealloc != (char *) NULL) {
+        if (str_dealloc) {
           free(str_dealloc);
-          str_dealloc = (char *) NULL;
+          str_dealloc = NULL;
         }
         do_write = 0;
         do_read = 1;
@@ -244,7 +258,8 @@ const char *Box_Print(const char *fmt, ...) {
 #endif
         buf_size *= 2;
         msg = (char *) realloc(msg, buf_size);
-        if (msg == (char *) NULL) goto print_error;
+        if (!msg)
+          goto print_error;
         o = msg + size;
       }
       *(o++) = cw;
@@ -255,19 +270,19 @@ const char *Box_Print(const char *fmt, ...) {
   return msg;
 
 print_error:
-  return "print: unexpected error!";
+  return "Box_Print: unexpected error!";
 }
 
 #if 0
 int main(void) {
   BoxName my_name = {15, "Matteo Franchin"};
   const char *msg;
-  msg = print("Don't worry! I can include '%s' even if "
-   "I don't know its length a priori!\nI can also print my name: %N!\n"
-   "Or a number. Such as %d or %f!\n",
-   "this string", & my_name, 123, 3.1415926);
+  msg = Box_Print("Don't worry! I can include '%s' even if "
+                  "I don't know its length!\nI can also print my name: %N!\n"
+                  "Or a number. Such as %d or %f!\n",
+                  "this string", & my_name, 123, 3.1415926);
   printf("%s", msg);
-  msg = print("This is a NUL string '%s'. No seg-fault ;-)\n", (char *) NULL);
+  msg = Box_Print("This is a NUL string '%s'. No seg-fault ;-)\n", NULL);
   printf("%s", msg);
   return 0;
 }

@@ -1,4 +1,3 @@
-
 /****************************************************************************
  * Copyright (C) 2008 by Matteo Franchin                                    *
  *                                                                          *
@@ -18,7 +17,8 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/** @file print.h
+/**
+ * @file print.h
  * @brief A simplified version of sprintf with automatic memory management.
  *
  * This file provides the function print, which is a simplified version
@@ -34,28 +34,36 @@
 
 #  include <box/mem.h>
 
-#  define PRINT_BUF_SIZE 512
-
-/** To be called when exiting, to release the buffer allocated by print. */
-void Print_Finalize(void);
+#  define BOX_PRINT_BUF_SIZE 512
 
 /**
- * A simplified version of sprintf, with a number of desirable features:
+ * To be called when exiting, to release memory allocated by Box_Print().
+ */
+BOXEXPORT void
+Box_Print_Finish(void);
+
+/**
+ * @brief An improved version of sprintf used internally by the compiler.
+ *
+ * An improved version of sprintf, with a number of desirable features:
+ *
  * - handles memory in a nice way: the user does not need to allocate/free
  *   the memory or to worry about buffer overflow when using the %s
  *   specifier to write substrings. Usage is as follows:
- *       const char *msg = print("string = '%s', number = '%d'\n", "Hi!", 12);
- *       (No need to call the free(...) function. The user mustn't do it!)
- * - has %N to handle the Name data type.
- *   ES:
- *       Name my_name = {15, "Hello world"};
- *       msg = print("My name is %N, nice to meet you!", & my_name);
- * - supports all the data types defined inside the header "types.h"
- *   the spefifiers are: %U for UInt, %I for Int, %R for Real,
- *   %P for (pointer to) Point
+ *
+ * @code
+ * const char *msg = Box_Print("string = %s, number = %d\n", "Hi!", 12);
+ * // No need to call the free(...) function. The user mustn't do it!
+ * @endcode
+ *
+ * - has additional format specifiers to handle objects like #BoxName or
+ *   #BoxType.
+ *
  * - has %~s to print a string and deallocate it with free(...).
- *   ES:
- *       msg = Box_Print("%~s", Box_Mem_Strdup("allocated string"));
+ *
+ * @code
+ * msg = Box_Print("%~s", Box_Mem_Strdup("allocated string"));
+ * @endcode
  */
 BOXEXPORT const char *
 Box_Print(const char *fmt, ...);

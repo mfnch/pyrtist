@@ -17,11 +17,9 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* $Id$ */
-
-/* messages.c - january 2007
- *
- * This file defines the message handler for the Box compiler.
+/**
+ * @file messages.c
+ * @brief This file defines the message handler for the Box compiler.
  */
 
 #include <stdio.h>
@@ -71,7 +69,7 @@ void Msg_Destroy(MsgStack *ms) {
   BoxArr_Finish(& ms->msgs);
   free(ms->level);
   free(ms);
-  Print_Finalize();
+  Box_Print_Finish();
 }
 
 void Msg_Default_Filter_Set(MsgStack *ms, MsgFilter mf) {

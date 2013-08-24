@@ -76,6 +76,7 @@ struct BoxCmp_struct {
                                just for efficiency) */
 };
 
+
 /**
  * @brief Initialize an unset #BoxCmp structure.
  */

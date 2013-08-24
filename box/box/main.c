@@ -374,7 +374,7 @@ static BoxTask My_Stage_Interpret_Command_Line(MyArgParserResult *result) {
                   result->file_input, strerror(errno));
         Main_Error_Exit(result, NULL);
       }
-    } 
+    }
   }
 
   /* Check wheter the user has provided a setup file. */

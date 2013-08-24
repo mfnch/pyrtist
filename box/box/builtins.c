@@ -396,7 +396,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {"CPtr",        BOXTYPEID_CPTR},
     {"If",          BOXTYPEID_IF},
     {"Else",        BOXTYPEID_ELSE},
-    {"Elif",        BOXTYPEID_ELIF},
+    /*{"Elif",        BOXTYPEID_ELIF},*/
     {"For",         BOXTYPEID_FOR},
     {"Print",       BOXTYPEID_PRINT},
     {"Repr",        BOXTYPEID_REPR},
