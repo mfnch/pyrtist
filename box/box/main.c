@@ -361,20 +361,20 @@ static BoxTask My_Stage_Interpret_Command_Line(MyArgParserResult *result) {
   else
     Msg_Main_Show_Level_Set(MSG_LEVEL_WARNING);
 
-  /* Controllo che tutto sia apposto */
-  if (!result->file_input) {
-    MSG_ERROR("You should specify an input file!");
-    Main_Error_Exit(result, CMD_LINE_HELP);
+  /* Check that we did get the input file. */
+  if (result->flags.stdin) {
+      MSG_ADVICE("Reading the source program from standard input");
   } else {
-    if (!result->flags.stdin) {
-      if (freopen(result->file_input, "rt", stdin) == NULL) {
+    if (!result->file_input) {
+      MSG_ERROR("You should specify an input file!");
+      Main_Error_Exit(result, CMD_LINE_HELP);
+    } else {
+      if (!freopen(result->file_input, "rt", stdin)) {
         MSG_ERROR("%s <-- Cannot open the file for reading: %s",
                   result->file_input, strerror(errno));
         Main_Error_Exit(result, NULL);
       }
-    } else {
-      MSG_ADVICE("Reading the source program from standard input");
-    }
+    } 
   }
 
   /* Check wheter the user has provided a setup file. */
