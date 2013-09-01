@@ -3,13 +3,20 @@
 Introduction to the Box Language
 ================================
 
-Creating objects
-----------------
+Objects and types
+-----------------
 
 There are two main entities in the Box language: **types** and **objects**.
-Types have names starting with an uppercase letter.
-For example, ``Int``, ``Real`` are two fundamental types in the Box language.
-*Types can then be combined together to form new types.* For example::
+The types describe the structure of the data used in a program, while the
+objects are instances of such data. In particular, objects always have an
+associated type which describes their internal structure. A typical Box program
+ends up defining some types and using these types to define some objects.
+
+In the Box language, all type names start with an uppercase letter. For
+example: ``MyNewFunkyType``. A number of pre-defined types exists,
+like ``Int``, ``Real`` for integer and real numbers, respectively.
+Pre-existing *types can be combined together to form new types.*
+For example::
 
   NewType = Int            // NewType is just a new name for the type Int
   Tuple = (Int, Real)      // A tuple with anonymous members
@@ -17,9 +24,8 @@ For example, ``Int``, ``Real`` are two fundamental types in the Box language.
 
 The lines above show three ways of defining a new type in Box.
 There are many more ways of combining already existing types to create new
-ones. Note also the way **comments** can be added to the sources: whatever
-follows the comment mark ``//`` is treated as a comment and is ignored by
-the compiler.
+ones. Note also the way **comments** are added to the sources.
+The part of the line following ``//`` is a comment and is ignored.
 
 There are a number of **intrinsic types** the user can start from.
 ``Int`` is the type for integer numbers, ``Real`` for real numbers,
@@ -29,13 +35,13 @@ can be created as follows::
 
   s = Str[]
 
-In general, one can create a new instance for a given type ``MyType`` using
+In general, a new instance for a given type ``MyType`` can be created using
 the syntax ``MyType[]``. In the line above, we are also giving a name to
 the new emtpy string created with ``Str[]``.
-Names for instances, do start with a lowercase letter. For example,
-``myvariable`` or ``myVariable``.
+Names for instances, start with a lowercase letter. For example,
+``myvariable``, ``my_variable`` or ``myVariable``.
 
-The language also offers facilities to quickly create objects for most
+The language also offers ad-hoc syntax to quickly create objects for most
 of the intrinsic types. For example::
 
   s = "my string"  // String
@@ -50,60 +56,55 @@ objects**. For example::
   tuple = (1.2, 3.4)   // Creates a new instance of the type (Real, Real)
                        // containing the numbers 1.2 and 3.4
 
-Creating types is useful, as it simplifies creating instances. For example::
+Creating types is useful, as it simplifies creating new objects. For example::
 
   Triple = (Real x, y, z)
   triple1 = Triple[]
   triple2 = Triple[.x = .y = .z = 1.0]
 
-But, creating instances is not the only thing one may wants to do in a
-program. It is also important to **combine objects together in order to do
-something useful** with them.
+Commenting the sources
+----------------------
 
-And here is one of the main peculiarities of the Box language with respect
-to other popular programming languages (such as C, Python, etc.) where
-functions (or object methods) are the means through which objects are
-manipulated.
-The Box way of performing tasks is through what we call
-"**type combinations**".
+In line comments can be added by using either ``#!`` or ``//``.
+For example,
+
+  #!/usr/bin/box
+  // This is a Box program which prints "Hello world!".
+  // This example does also show how to comment Box sources.
+  a = "Hello world!"  // a is a string.
+  Print[a;]           // here we print a.
+
+In-line comments can be added using the two characters ``//``.  The part of the
+line following the first occurrence of``//`` or ``#!`` is ignored. Multi-line
+comments can be added using ``(*`` and `*)`` like this:
+
+  (* This is a multi-line comment.
+     This kind of comments can be nested, (* like this *)
+     The comment ends here. *)
 
 Boxes and type combinations
 ---------------------------
 
-It may be worth at this point to enter a little bit more into the technical
-details of the language.
+Creating objects is not the only thing one may want to do in a program. It is
+also important to **combine objects together in order to do something useful**
+with them. In this section, we explain how this can be done in the Box
+language.
 
-We have seen that an instance for a type ``MyType`` can be created like this::
+Let's start from the line::
 
   instance = MyType[]
 
-This statement creates a new object of type ``MyType`` and assigns it to the
-variable ``instance``.  The text fragment ``MyType[]`` is what we call a *box*.
-Boxes can be empty (as in the previous example) or can contain a group of
-statements. For example::
+We have seen that the line above can be used to create a new object of type
+``MyType`` and assign it to the variable ``instance``.  The text fragment
+``MyType[]`` is what we call a *box*.  Boxes can be empty, as in the previous
+example, or can contain a group of statements. For example::
 
   instance = MyType[statement1, statement2, statement3]
 
-Notice that statements are separated by commas. An alternative way to separate
-statements is using newlines. For example::
-
-  instance = MyType[statement1
-                    statement2
-                    statement3]
-
-Notice that commas and newlines are just used to separate statements and
-are otherwise ignored. The following is then also valid::
-
-  instance = MyType[statement1
-
-                    statement2,,,
-                    statement3]
-
-Let's now return back to the concept of *box*.
-A box is a group of statements which have the purpose of creating a new
-object. For example, let's imagine we are creating our own graphic library
-and we are trying to implement a way to define a circle shape.
-Then we may do it as follows::
+``statement1``, ``statement2``, and ``statement3`` can be used to perform three
+"actions" on the object which is being created. For example, let's imagine we
+are creating our own graphic library and we are trying to implement a way to
+define a circle shape. Then we may do it as follows::
 
   circle = Circle[(0.0, 0.0), 10.0]
 
@@ -114,15 +115,15 @@ circle. The second statement, ``10.0``, provides the radius of the circle.
 The examples we have seen so far tell us three things:
 
 1. numbers, strings, etc. are themselves statements,
-2. statements are grouped together inside boxes and serve to construct a new
-   object (whose type is specified just before the opening square bracket),
+2. statements are grouped together inside boxes and serve to construct or
+   modify an object (whose type is specified just before the opening square
+   bracket),
 3. a statement can have a type and a value. This value can be used by the box
    the statement belongs to (for example, a number ``10.0`` can be used by a
    ``Circle`` box to set the radius of a newly created circle).
 
-Concerning the last point, we have to say that statemtents do always have
-type and value. Indeed, this type is what determines how the statement is
-used in the parent box. For example, in the statement::
+Note that statements always have type and value. Indeed, the type is what
+determines its role in the parent box. For example, in the line::
 
   s = Str[3.14]
 
@@ -140,7 +141,7 @@ the same box.  For example, a ``Real`` given to a ``Circle`` may set its
 radius, while a ``Point`` may set its center.  The particular action invoked
 when a statement of type ``Child`` is given inside a box of type ``Parent`` is
 called "combination" and is denoted with ``Child@Parent``.
-Combinations can be defined using the following syntax::
+Combinations can be defined by the programmer using the following syntax::
 
   Child@Parent[...]
 
@@ -160,19 +161,19 @@ The line above defines a combination which is executed whenever a ``Real`` is
 given to a ``Circle``. The line can be ideally split in two parts, one left
 part ``Real@Circle`` and one right part ``[$$.radius = $]``. The left part
 indicates when the code should be executed. The right part provides the actual
-code to execute (the implementation of the combination). The combination takes a
-Real (which is referred to by using the ``$`` character) and assigns its value
-to the ``radius`` member of the ``Circle`` object (represented by ``$$``).
-Similarly, we may define::
+code to execute (the implementation of the combination). The combination takes
+a Real (which is referred to by using the ``$`` character) and assigns its
+value to the ``radius`` member of the ``Circle`` object (represented by
+``$$``).  Similarly, we may define::
 
   Point@Circle[$$.center = $]
 
-This way, the Box compiler knows what to do when ``Real`` and ``Point`` objects
-are given inside a ``Circle`` box. In particular, the line below::
+These lines specifies what should happen when ``Real`` and ``Point`` objects
+are given to ``Circle`` box. In particular, the line below::
 
   circle = Circle[(0, 0), 10.0]
 
-has the same effect of the lines below::
+has the same effect of the lines::
 
   circle = Circle[]
   circle.center = (0, 0)
@@ -187,10 +188,10 @@ a sheet of paper ``SheetOfPaper`` by defining another combination::
     // SheetOfPaper instance)
   ]
 
-Type combination is one of the fundamental ideas behind the Box language.
-As a Box programmer you are invited to identify which types of objects you need
-in order to implement your algorithm effectively.and to how these types can be combined together to
-make something useful.
+Type combination is one of the fundamental ideas behind the Box language.  As a
+Box programmer you are invited to identify which types of objects you need in
+order to implement your algorithm effectively and to identify how these types
+can be combined together to make something useful.
 
 Why Boxes rather than functions?
 --------------------------------
@@ -219,22 +220,25 @@ following code to circumvent the order constraint::
 
 You can then draw the circle in one of the following ways::
 
-  draw_circle(screen, point=p, radius=r)
-  draw_circle(screen, radius=r, point=p)
+  draw_circle(screen, point=point, radius=radius)
+  draw_circle(screen, radius=radius, point=point)
 
-It is clear than this is even worse than before. While we now do not need to
-remember the order of arguments, we have to remember their name. The resulting
-function call is also unnecessarily verbose.
+For some aspects, however, this is worse than the former version: while we now
+do not need to remember the order of arguments, we have to remember their
+name. The resulting function call is also unnecessarily verbose.
 
-So far we have seen two of the main very common flaws of modern programming
-languages:
+So far we have identified two problems that often occur while programming::
 
-- order of things is often arbitrary, but the user is forced to remember it
-  anyway: a circle is defined just by its center and its radius; there is no
-  reason why one should specify center and radius in this precise order and not
-  the opposite!
+- the order of things is often arbitrary, and the programmer should not be
+  forced to remember it: a circle is defined just by its center and its radius;
+  there is no reason why one should specify center and radius in this precise
+  order and not the opposite!
 
-- the user is often forced to remember a number of names: type names, function
+- the programmer should not be forced to remember names when unnecessary.
+  More importantly, it is important to reduce the number of times t
+
+: type
+  names, function
   names, optional argument names.
 
 Box addresses these flaws by inviting the user to think about which object
@@ -327,6 +331,10 @@ the expression is not passed to the underlying box.
 At this point it may be clear why boxes are so central:
 they do not simply group statements, but they provide
 the functionality of function calls.
+
+Conditional execution
+---------------------
+
 
 more to come soon...
 --------------------
