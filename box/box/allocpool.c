@@ -26,7 +26,7 @@
 
 /* Create a new allocation pool. */
 BCAllocPool *BCAllocPool_Create(size_t item_size,
-				size_t initial_capacity)
+                                size_t initial_capacity)
 {
   BCAllocPool *pool = Box_Mem_Alloc(sizeof(BCAllocPool));
   if (pool)
@@ -43,7 +43,7 @@ void BCAllocPool_Destroy(BCAllocPool *pool)
 
 /* Initialise an allocation pool. */
 BCAllocPool *BCAllocPool_Init(BCAllocPool *pool, size_t item_size,
-			      size_t initial_capacity)
+                              size_t initial_capacity)
 {
   BCAllocSubPool *sp = & pool->sub_pool;
   void *items = Box_Mem_Alloc(initial_capacity*item_size);
@@ -114,10 +114,10 @@ void BCAllocPool_Print_Stats(BCAllocPool *pool, FILE *out)
   int i;
   BCAllocSubPool *sp;
   fprintf(out, "Pool {num_items=%zu, item_size=%zu}\n",
-	  pool->num_items, pool->item_size);
+          pool->num_items, pool->item_size);
   for (sp = & pool->sub_pool, i = 0; sp; sp = sp->next, i++) {
     fprintf(out, "%d: {num_items/capacity=%zu/%zu}\n",
-	    i, sp->num_items, sp->capacity);
+            i, sp->num_items, sp->capacity);
   }
 }
 

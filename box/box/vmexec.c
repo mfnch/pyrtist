@@ -838,7 +838,7 @@ const BoxOpDesc *BoxVM_Get_Exec_Table(void) {
   else {
     int i;
 
-    for(i = 0; i < BOX_NUM_OPS; i++) { 
+    for(i = 0; i < BOX_NUM_OPS; i++) {
       BoxOpDesc *dest = & the_optable[i];
       BoxOpTable4Humans *src = & op_table_for_humans[i];
       BoxOpSignature sig = My_BoxOpSignature_From_Str(src->assembler);

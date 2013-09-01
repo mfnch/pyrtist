@@ -49,7 +49,7 @@ struct BCAllocPool_struct {
 
 BOXEXPORT BCAllocPool *
 BCAllocPool_Init(BCAllocPool *pool, size_t item_size,
-		 size_t initial_capacity);
+                 size_t initial_capacity);
 
 BOXEXPORT void
 BCAllocPool_Finish(BCAllocPool *pool);
