@@ -86,7 +86,6 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
     {"(;)", BOXTYPEID_PAUSE, (size_t) 0, (size_t) 0},
     {"CPtr", BOXTYPEID_CPTR, sizeof(BoxCPtr), __alignof__(BoxCPtr)},
     {"Str", BOXTYPEID_STR, sizeof(BoxStr), __alignof__(BoxStr)},
-    {"Set", BOXTYPEID_SET, sizeof(BoxSet), __alignof__(BoxSet)},
     {(const char *) NULL, BOXTYPEID_NONE, (size_t) 0, (size_t) 0}
 
 #if 0
@@ -115,7 +114,8 @@ My_Init_Basic_Types(BoxCoreTypes *core_types, BoxBool *success) {
 
 /* Create species. */
 static void My_Init_Composite_Types(BoxCoreTypes *ct, BoxBool *success) {
-  BoxType *t;
+  BoxType *t_Any = ct->types[BOXTYPEID_ANY];
+  BoxType *t, *t_Set;
   BoxType *real_couple;
 
   /* Int = (CHAR => INT) */
@@ -195,6 +195,15 @@ static void My_Init_Composite_Types(BoxCoreTypes *ct, BoxBool *success) {
   /* Get = Any */
   t = BoxType_Create_Ident(BoxType_Link(ct->types[BOXTYPEID_ANY]), "Get");
   My_Set_Type(ct, BOXTYPEID_Get, t, success);
+
+  /* Set = ^(Any index, value) */
+  t_Set = BoxType_Create_Structure();
+  if (t_Set) {
+    BoxType_Add_Member_To_Structure(t_Set, t_Any, "index");
+    BoxType_Add_Member_To_Structure(t_Set, t_Any, "value");
+    t_Set = BoxType_Create_Ident(BoxType_Create_Raised(t_Set), "Set");
+  }
+  My_Set_Type(ct, BOXTYPEID_Set, t_Set, success);
 }
 
 /* Initialize the core types of Box. */
@@ -239,7 +248,7 @@ void Box_Finalize_Type_System(void) {
 /* Get the core type corresponding to the given type identifier. */
 BoxType *
 BoxCoreTypes_Get_Type(BoxCoreTypes *ct, BoxTypeId id) {
-  unsigned int idx = (unsigned int) id; 
+  unsigned int idx = (unsigned int) id;
 
   if (idx >= BOXTYPEID_MIN_VAL && idx < BOXTYPEID_MAX_VAL) {
     if (ct->initialized)

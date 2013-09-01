@@ -403,6 +403,7 @@ static void My_Register_Core_Types(BoxCmp *c) {
     {"Any",         BOXTYPEID_ANY},
     {"Compare",     BOXTYPEID_COMPARE},
     {"Get",         BOXTYPEID_Get},
+    {"Set",         BOXTYPEID_Set},
     {"ARRAY",       BOXTYPEID_ARRAY},
     {"Array",       BOXTYPEID_Array},
     {(char *) NULL, BOXTYPEID_NONE}

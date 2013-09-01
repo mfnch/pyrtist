@@ -43,7 +43,7 @@ static void BoxArray_Init(BoxArray *a) {
  * @brief Finalize a #BoxArray object.
  */
 static void BoxArray_Finish(BoxArray *a) {
-  BoxArr_Finish(& a->arr);  
+  BoxArr_Finish(& a->arr);
 }
 
 /* Implementation of (.[)@Array. */
@@ -150,6 +150,48 @@ Box_Runtime_Any_At_Get(BoxPtr *parent, BoxPtr *child) {
   }
 }
 
+/* Implementation of Any@Set. */
+BOXEXPORT BoxException *
+Box_Runtime_Any_At_Set(BoxPtr *parent, BoxPtr *child) {
+  BoxAny *arg = BoxPtr_Get_Target(child);
+  BoxSet *set = BoxPtr_Get_Target(parent);
+  BoxPtr *set_index = BoxAny_Get_Obj(& set->index),
+         *set_value = BoxAny_Get_Obj(& set->value);
+  if (BoxPtr_Is_Null(set_index)) {
+    BoxAny_Copy(& set->index, arg);
+    return NULL;
+  } else if (BoxPtr_Is_Null(set_value)) {
+    BoxAny_Copy(& set->value, arg);
+    return NULL;
+  } else
+    return BoxException_Create("Set is fully set");
+}
+
+/* Implementation of Set@Array. */
+BOXEXPORT BoxException *
+Box_Runtime_Set_At_Array(BoxPtr *parent, BoxPtr *child) {
+  BoxArray *a = BoxPtr_Get_Target(parent);
+  BoxSet *set = BoxPtr_Get_Target(child);
+  BoxType *required_type = Box_Get_Core_Type(BOXTYPEID_INT);
+  BoxType *idx_type = BoxAny_Get_Type(& set->index);
+  BoxPtr *idx_obj = BoxAny_Get_Obj(& set->index);
+  BoxInt idx;
+
+  if (BoxType_Compare(required_type, idx_type) < BOXTYPECMP_EQUAL)
+    return BoxException_Create("Index must be an integer");
+
+  idx = *((BoxInt *) BoxPtr_Get_Target(idx_obj));
+  if (idx >= 0 && idx < BoxArr_Get_Num_Items(& a->arr)) {
+    BoxAny *dst = BoxArr_Get_Item_Ptr(& a->arr, 1 + (size_t) idx);
+    BoxAny dst_save = *dst;
+    BoxAny_Copy(dst, & set->value);
+    BoxAny_Finish(& dst_save);
+    return NULL;
+  }
+
+  return BoxException_Create("Set index out of range");
+}
+
 /* Implementation of Array@Num. */
 BOXEXPORT BoxException *
 Box_Runtime_Array_At_Num(BoxPtr *parent, BoxPtr *child) {
@@ -200,14 +242,17 @@ BoxCoreTypes_Register_Array(BoxCoreTypes *ct) {
        BOXCOMBDEF_I_AT_T(BOXTYPEID_FINISH, t_ARR, Box_Runtime_Finish_At_Array),
        BOXCOMBDEF_T_AT_I(t_ARR, BOXTYPEID_NUM, Box_Runtime_Array_At_Num),
        BOXCOMBDEF_T_TO_T(t_ARR, t_ARR, Box_Runtime_Array_To_Array),
-       BOXCOMBDEF_I_AT_I(BOXTYPEID_ANY, BOXTYPEID_Get, Box_Runtime_Any_At_Get)};
+       BOXCOMBDEF_I_AT_I(BOXTYPEID_ANY, BOXTYPEID_Get, Box_Runtime_Any_At_Get),
+       BOXCOMBDEF_I_AT_I(BOXTYPEID_ANY, BOXTYPEID_Set, Box_Runtime_Any_At_Set),
+       BOXCOMBDEF_I_AT_T(BOXTYPEID_Set, t_ARR, Box_Runtime_Set_At_Array)};
     size_t num_defs = sizeof(defs)/sizeof(BoxCombDef);
     result &= (num_defs == BoxCombDef_Define(defs, num_defs));
   }
 
   if (t_Arr) {
     BoxCombDef defs[] =
-      {BOXCOMBDEF_I_AT_T(BOXTYPEID_ANY, t_Arr, Box_Runtime_Any_At_Array)};
+      {BOXCOMBDEF_I_AT_T(BOXTYPEID_ANY, t_Arr, Box_Runtime_Any_At_Array),
+       BOXCOMBDEF_I_AT_T(BOXTYPEID_Set, t_Arr, Box_Runtime_Set_At_Array)};
     size_t num_defs = sizeof(defs)/sizeof(BoxCombDef);
     result &= (num_defs == BoxCombDef_Define(defs, num_defs));
   }

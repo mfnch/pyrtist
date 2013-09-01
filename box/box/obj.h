@@ -83,7 +83,7 @@ BoxAny_Finish(BoxAny *any);
  *
  * @param dst An uninitialized region of memory which can contain a #BoxAny
  *   object.
- * @param src The initialized #BoxAny object to copy. 
+ * @param src The initialized #BoxAny object to copy.
  */
 BOXEXPORT void
 BoxAny_Copy(BoxAny *dst, BoxAny *src);
@@ -96,7 +96,7 @@ BoxAny_Copy(BoxAny *dst, BoxAny *src);
  * @param t The type of @p obj.
  * @param safe If this is @c BOXBOOL_TRUE, then the object in @p obj is copied
  *   whenever it is a NULL-block pointer. Otherwise, the object is not copied
- *   which is unsafe as the Any object may survive even after @p obj is 
+ *   which is unsafe as the Any object may survive even after @p obj is
  *   deallocated.
  * @return Whether the boxing operation was successful.
  */
@@ -115,6 +115,14 @@ BoxAny_Box(BoxPtr *any, BoxPtr *obj, BoxType *t, BoxBool weak);
  */
 BOXEXPORT BoxBool
 BoxAny_Unbox(BOXOUT BoxPtr *obj, BoxPtr *any, BoxType *t);
+
+/**
+ * @brief C counterpart of the Box Set type, used to set items in containers.
+ */
+typedef struct {
+  BoxAny index, /**< Index for the set operation. */
+         value; /**< Value for the set operation. */
+} BoxSet;
 
 /**
  * Object header. Every object allocation includes some extra space to contain

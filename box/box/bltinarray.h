@@ -39,11 +39,6 @@ typedef struct BoxArray_struct BoxArray;
 typedef BoxAny BoxGet;
 
 /**
- * @brief Box's Set type.
- */
-typedef struct BoxSet_struct BoxSet;
-
-/**
  * @brief Install @c ARRAY and @c Array as a core type (internal).
  *
  * @param ct Where the @c ARRAY and @c Array types are to be installed.
