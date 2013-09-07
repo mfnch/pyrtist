@@ -67,7 +67,7 @@ typedef struct {
                  silent :1,
                  only_errors :1,
                  verbose :1,
-                 stdin : 1,
+                 use_stdin : 1,
                  force_exec : 1,
                  execute :1;
   } flags;
@@ -181,7 +181,7 @@ BoxBool My_Parse_Option(BCArgParser *ap, BCArgParserOption *opt,
     BoxPaths_Add_Pkg_Dir(& box_paths, arg);
     break;
   case 'i':
-    result->flags.stdin = 1;
+    result->flags.use_stdin = 1;
     break;
   case 'L':
     BoxPaths_Add_Lib_Dir(& box_paths, arg);
@@ -311,7 +311,7 @@ My_Stage_Parse_Command_Line(MyArgParserResult *result,
   result->flags.silent = 0;
   result->flags.only_errors = 0;
   result->flags.verbose = 0;
-  result->flags.stdin = 0;
+  result->flags.use_stdin = 0;
   result->flags.force_exec = 0;
   result->flags.execute = 1;
   result->prog_name = (argc >= 1) ? argv[0] : "box";
@@ -362,7 +362,7 @@ static BoxTask My_Stage_Interpret_Command_Line(MyArgParserResult *result) {
     Msg_Main_Show_Level_Set(MSG_LEVEL_WARNING);
 
   /* Check that we did get the input file. */
-  if (result->flags.stdin) {
+  if (result->flags.use_stdin) {
       MSG_ADVICE("Reading the source program from standard input");
   } else {
     if (!result->file_input) {

@@ -33,12 +33,12 @@ package_dir = {'boxer': 'src'}
 
 examples = \
   ['fractal.box', 'fractree.box', 'wheatstone.box', 'planes.box',
-   'tutorial*.box']
+   'tutorial*.box', 'curve.png']
 
 examples_fullpaths = list(os.path.join('examples', bn)
                           for bn in examples)
 
-package_data = {'boxer': (examples_fullpaths + 
+package_data = {'boxer': (examples_fullpaths +
                           ['icons/24x24/*.png',
                            'icons/32x32/*.png',
                            'icons/fonts/*.png',

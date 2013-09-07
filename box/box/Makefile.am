@@ -48,7 +48,7 @@ bin_PROGRAMS = box
 lib_LTLIBRARIES = libboxcore0.4.la
 boxinc_HEADERS = version.h defaults.h types.h integers.h obj.h exception.h    \
   callable.h core.h error.h mem.h stream.h array.h occupation.h srcpos.h      \
-  msgbase.h messages.h strutils.h print.h hashfunc.h hashtable.h list.h	      \
+  msgbase.h messages.h strutils.h print.h hashfunc.h hashtable.h list.h       \
   vm_priv.h vmproc.h vmsym.h vmsymstuff.h vmdasm.h vm2txt.h vm2c.h vmserial.h \
   vmstore.h bltinarray.h
 
@@ -61,11 +61,12 @@ libboxcore0_4_la_SOURCES = types.c types.h types_priv.h combs.c combs.h obj.c	\
   vm_priv.h vmdasm.c vmdasm.h vm2txt.c vm2txt.h vm2c.c vmserial.c vmserial.h	\
   vmstore.c vmstore.h vmexec.c vmexec_priv.h vmproc.c vmproc.h vmproc_priv.h	\
   vmsym.c vmsym.h vmsymstuff.c vmsymstuff.h vmopregs.c vmopregs_priv.h vmop.c	\
-  vmop_priv.h str.c str.h bltinarray.c vmcode.c ast.c value.c compiler.c	\
-  operator.c namespace.c builtins.c bltinstr.c bltinio.c fileutils.c		\
-  tokenizer.l macro.c parser.y registers.c paths.c fileutils.h registers.h	\
-  tokenizer.h macro.h parserh.h paths.h vmcode.h ast.h value.h compiler_priv.h	\
-  compiler.h operator.h namespace.h builtins.h bltinstr.h bltinio.h
+  vmop_priv.h str.c str.h bltinarray.c bltinarray_priv.h vmcode.c ast.c	\
+  value.c compiler.c operator.c namespace.c builtins.c bltinstr.c bltinio.c	\
+  fileutils.c tokenizer.l macro.c parser.y registers.c paths.c fileutils.h	\
+  registers.h tokenizer.h macro.h parserh.h paths.h vmcode.h ast.h value.h	\
+  compiler_priv.h compiler.h operator.h namespace.h builtins.h bltinstr.h	\
+  bltinio.h
 
 libboxcore0_4_la_LDFLAGS = -no-undefined -version-info 0:0:0
 # ^^^ -no-undefined is needed for libtool to create shared libs on win32
