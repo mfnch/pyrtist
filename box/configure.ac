@@ -18,12 +18,10 @@
 #    59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.             #
 ############################################################################
 
-# $Id$
-
 AC_INIT([box],[0.4.0],[fnch@libero.it])
 
 # Date corresponding to the release of the current version
-BOX_RELEASE_DATE="Dec 16 2012, 19:21:42"
+BOX_RELEASE_DATE="Sep 07 2013, 09:47:45"
 
 # Major part of the version number
 BOX_VER_MAJOR="0"

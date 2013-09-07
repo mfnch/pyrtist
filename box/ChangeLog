@@ -1,6 +1,6 @@
 Change log (recent comes first)
 
-27 Jul 2013: Released v 0.4.0: new typesystem and object management.
+07 Sep 2013: Released v 0.4.0: new typesystem and object management.
   * Rewrote the typesystem to support boxing/unboxing objects. Types are
     objects themselves. Also rewrote the object management system.
   * Rewrote parts of the VM. The bytecode is now more compact.
