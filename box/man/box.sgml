@@ -6,13 +6,13 @@
      less'.  A typical entry in a Makefile or Makefile.am is:
 
 manpage.1: manpage.sgml
-	docbook-to-man $< > $@
+        docbook-to-man $< > $@
 
 
-	The docbook-to-man binary is found in the docbook-to-man package.
-	Please remember that if you create the nroff version in one of the
-	debian/rules file targets (such as build), you will need to include
-	docbook-to-man in your Build-Depends control field.
+        The docbook-to-man binary is found in the docbook-to-man package.
+        Please remember that if you create the nroff version in one of the
+        debian/rules file targets (such as build), you will need to include
+        docbook-to-man in your Build-Depends control field.
 
   -->
 
@@ -63,10 +63,12 @@ manpage.1: manpage.sgml
     <cmdsynopsis>
       <command>&dhpackage;</command>
       <group choice="opt">
-        <arg><option>-l</option> <replaceable>library</replaceable></arg>
+        <arg> <option>-l</option> <replaceable>library</replaceable></arg>
       </group>
-      <group choice="req"><arg><option>-st</option></arg>
+      <group choice="req"><arg> <option>-i</option></arg>
                           <arg><replaceable>source.box</replaceable></arg></group>
+      <group choice="opt"><arg> arguments</arg></group>
+
     </cmdsynopsis>
     <para>This is the typical minimal syntax; see below for a list
           and explanation of the other options.</para>
@@ -94,10 +96,18 @@ manpage.1: manpage.sgml
       </varlistentry>
 
       <varlistentry>
-        <term><option>-st</option> | <replaceable>source.box</replaceable></term>
+        <term><option>-v</option></term>
+        <listitem>
+          <para>Display the name and the version number of the compiler
+            and exit.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-i</option> | <replaceable>source.box</replaceable></term>
         <listitem>
           <para>The user MUST provide either a source file or the option
-            <option>-st</option>. In the latter case the source is read
+            <option>-i</option>. In the latter case the source is read
             from the standard input.</para>
         </listitem>
       </varlistentry>
@@ -131,28 +141,26 @@ manpage.1: manpage.sgml
           <para>Add an additional path to be considered when searching for
             the file included with ``include "file"''. This option can be used
             more than once to specity more than one path. The last occurrence
-            has the precedence on the formers and on the paths specified with
+            has the precedence on the formers and on the paths specified in
             the ``BOX_INCLUDE_PATH'' environmental variable.
             When using ``include "file"'' in your programs, the files
-            ``file.bxh`` and ``file`` are searched (in this precise order).
+            ``file.box`` and ``file`` are searched (in this precise order).
           </para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
-        <term><option>-o</option> <replaceable>outfile</replaceable>, <option>-w</option> <replaceable>outfile</replaceable>
-        </term>
+        <term><option>-o</option> <replaceable>outfile</replaceable></term>
         <listitem>
           <para>Write to <replaceable>outfile</replaceable> a human readable
             representation of the bytecode produced from the given box
-            source (useful for debugging). Use <option>-w</option> if you want
-            to overwrite existing files, otherwise use <option>-o</option>.
+            source (useful for debugging).
           </para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
-        <term><option>-se</option> <replaceable>setupfile</replaceable></term>
+        <term><option>-S</option> <replaceable>setupfile</replaceable></term>
         <listitem>
           <para>Include automatically the file
             <replaceable>setupfile</replaceable> before processing any
@@ -173,14 +181,13 @@ manpage.1: manpage.sgml
       <varlistentry>
         <term><option>-f</option></term>
         <listitem>
-          <para>Force execution, even when warning messages
-            were displayed.
+          <para>Force execution, even when warning messages were displayed.
           </para>
         </listitem>
       </varlistentry>
 
       <varlistentry>
-        <term><option>-v</option></term>
+        <term><option>-V</option></term>
         <listitem>
           <para>Verbose message reports.</para>
         </listitem>
@@ -194,7 +201,7 @@ manpage.1: manpage.sgml
       </varlistentry>
 
       <varlistentry>
-        <term><option>-si</option></term>
+        <term><option>-s</option></term>
         <listitem>
           <para>Make the Box compiler totally silent.</para>
         </listitem>
@@ -252,13 +259,12 @@ manpage.1: manpage.sgml
     <para>This manual page was written by &dhusername; &dhemail;.
       Permission is granted to copy, distribute and/or modify this document
       under the terms of the &gnu; General Public License, Version 2 any
-	  later version published by the Free Software Foundation.
+      later version published by the Free Software Foundation.
     </para>
-	<para>
-	  On Debian systems, the complete text of the GNU General Public
-	  License can be found in /usr/share/common-licenses/GPL.
-	</para>
-
+        <para>
+          On Debian systems, the complete text of the GNU General Public
+          License can be found in /usr/share/common-licenses/GPL.
+        </para>
   </refsect1>
 </refentry>
 
