@@ -1,6 +1,6 @@
 %{
 /***************************************************************************
- *   Copyright (C) 2006-2010 by Matteo Franchin                            *
+ *   Copyright (C) 2006-2013 by Matteo Franchin                            *
  *   fnch@libero.it                                                        *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
@@ -103,18 +103,15 @@ static void My_Syntax_Error();
 
 /* List of nodes with semantical value */
 %type <Sep> sep
-%type <Scope> colons opt_scope
 %type <UnaryOperator> un_op post_op
 %type <BinaryOperator> mul_op add_op shift_op cmp_op eq_op assign_op
-%type <Node> expr_sep sep_expr struc_expr
+%type <Node> expr_list expr_list_memb opt_ident
 %type <Node> string_concat prim_expr postfix_expr opt_postfix_expr
 %type <Node> unary_expr pow_expr mul_expr add_expr
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
 %type <Node> land_expr lor_expr assign_expr expr statement statement_list
-%type <Node> type_sep sep_type struc_type species_type func_type
-%type <Node> named_type prim_type array_type type raise_type assign_type
 %type <Node> at_left procedure opt_c_name procedure_decl
-%type <TypeMemb> struc_type_1st struc_type_2nd
+%type <Node> actions opt_actions restrs opt_restrs
 
 /* Starting rule */
 %start program
@@ -136,18 +133,6 @@ sep:
     void_sep                  {$$ = ASTSEP_VOID;}
   | ';'                       {$$ = ASTSEP_PAUSE;}
   ;
-
-/******************************* SCOPE SPECS *******************************/
-
-colons:
-   ':'                        {$$ = 1;}
- | colons ':'                 {$$ = $1 + 1;}
- ;
-
-opt_scope:
-                              {$$ = 0;}
- | colons                     {$$ = $1;}
- ;
 
 /******************************** OPERATORS ********************************/
 un_op:
@@ -207,20 +192,21 @@ assign_op:
   ;
 
 /******************************* STRUCTURES ********************************/
-expr_sep:
-    expr void_seps            {$$ = ASTNodeStruc_New(NULL, $1); SRC($$, @$);}
-  | sep_expr void_seps        {$$ = $1;}
+
+opt_ident:
+                              {$$ = NULL;}
+  | TOK_IDENTIFIER            {$$ = $1;}
   ;
 
-sep_expr:
-    void_seps expr            {$$ = ASTNodeStruc_New(NULL, $2); SRC($$, @$);}
-  | expr_sep expr             {$$ = ASTNodeStruc_Add_Member($1, NULL, $2);
-                               SRC($$, @$);}
+expr_list_memb:
+                               {$$ = NULL;}
+  |  expr opt_ident            {$$ = $1;}
   ;
 
-struc_expr:
-    expr_sep                  {$$ = $1;}
-  | sep_expr                  {$$ = $1;}
+expr_list:
+    expr_list_memb             {$$ = NULL;}
+  | expr_list void_sep
+                expr_list_memb {$$ = $3;}
   ;
 
 /******************************* ARITHMETICS *******************************/
@@ -236,11 +222,12 @@ prim_expr:
                                          ASTNodeTypeName_New($1, 0));
                                   Box_Mem_Free($1); SRC($$, @$);}
   | string_concat                {$$ = $1;}
-  | TOK_IDENTIFIER opt_scope     {$$ = ASTNodeVar_New($1, 0);
+  | TOK_IDENTIFIER               {$$ = ASTNodeVar_New($1, 0);
                                   Box_Mem_Free($1); SRC($$, @$);}
+  | TOK_TYPE_IDENT               {$$ = NULL;}
+  | '?'                          {$$ = NULL;}
   | TOK_SELF                     {$$ = ASTNodeSelfGet_New($1); SRC($$, @$);}
-  | '(' expr ')'                 {$$ = ASTNodeIgnore_New($2, 0); SRC($$, @$);}
-  | '(' struc_expr ')'           {$$ = $2;}
+  | '(' expr_list ')'            {$$ = $2;}
   ;
 
 postfix_expr:
@@ -249,12 +236,8 @@ postfix_expr:
   | procedure_decl               {$$ = $1;}
   | postfix_expr
           '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1); SRC($$, @$);}
-  | type  '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1); SRC($$, @$);}
   | opt_postfix_expr '.' TOK_IDENTIFIER
                                  {$$ = ASTNodeMemberGet_New($1, $3, 0);
-                                  Box_Mem_Free($3); SRC($$, @$);}
-  | opt_postfix_expr '.' TOK_TYPE_IDENT
-                                 {$$ = ASTNodeSubtype_Build($1, $3);
                                   Box_Mem_Free($3); SRC($$, @$);}
   | postfix_expr post_op         {$$ = ASTNodeUnOp_New($2, $1); SRC($$, @$);}
   ;
@@ -336,99 +319,38 @@ expr:
     assign_expr                  {$$ = $1;}
   ;
 
-/***************************** TYPE ARITHMETICS ****************************/
-
-/* STRUCTURE TYPES */
-struc_type_1st:
-    type                         {$$.type = $1; $$.name = NULL;}
-  | type TOK_IDENTIFIER          {$$.type = $1; $$.name = $2;}
-  ;
-
-struc_type_2nd:
-    type                         {$$.type = $1; $$.name = NULL;}
-  | TOK_IDENTIFIER               {$$.type = NULL; $$.name = $1;}
-  | type TOK_IDENTIFIER          {$$.type = $1; $$.name = $2;}
-  ;
-
-type_sep:
-    struc_type_1st void_seps     {$$ = ASTNodeStrucType_New(& $1);
-                                  Box_Mem_Free($1.name); SRC($$, @$);}
-  | sep_type void_seps           {$$ = $1;}
-  ;
-
-sep_type:
-    void_seps struc_type_1st     {$$ = ASTNodeStrucType_New(& $2);
-                                  Box_Mem_Free($2.name); SRC($$, @$);}
-  | type_sep struc_type_2nd      {$$ = ASTNodeStrucType_Add_Member($1, & $2);
-                                  Box_Mem_Free($2.name); SRC($$, @$);}
-  ;
-
-struc_type:
-    type_sep                     {$$ = $1;}
-  | sep_type                     {$$ = $1;}
-  ;
-
-/* SPECIES TYPES */
-species_type:
-    type TOK_TO type             {$$ = ASTNodeSpecType_New($1, $3); SRC($$, @$);}
-  | species_type TOK_TO type     {$$ = ASTNodeSpecType_Add_Member($1, $3); SRC($$, @$);}
-  ;
-
-/* PRIMARY TYPES */
-
-named_type:
-    TOK_TYPE_IDENT opt_scope     {$$ = ASTNodeTypeName_New($1, 0);
-                                  Box_Mem_Free($1); SRC($$, @$);}
-  | named_type '.' TOK_TYPE_IDENT
-                                 {$$ = ASTNodeSubtype_New($1, $3);
-                                  Box_Mem_Free($3); SRC($$, @$);}
-  ;
-
-prim_type:
-    TOK_TYPE_IDENT opt_scope     {$$ = ASTNodeTypeName_New($1, 0);
-                                  Box_Mem_Free($1); SRC($$, @$);}
-  | '(' type ')'                 {$$ = $2;}
-  | '(' struc_type ')'           {$$ = $2;}
-  | '(' species_type ')'         {$$ = $2;}
-  ;
-
-array_type:
-    prim_type                    {$$ = $1;}
-  | array_type '(' expr ')'      {}
-  ;
-
-func_type:
-    array_type                   {$$ = $1;}
-  | array_type TOK_MAPTO func_type
-                                 {}
-  ;
-
-type:
-    func_type                    {$$ = $1;}
-  ;
-
-raise_type:
-    type                         {$$ = $1;}
-  | TOK_INC type                 {$$ = ASTNodeRaiseType_New($2); SRC($$, @$);}
-  | '^' type                     {$$ = ASTNodeRaiseType_New($2); SRC($$, @$);}
-  ;
-
-assign_type:
-    named_type '=' raise_type      {$$ = ASTNodeTypeDef_New($1, $3); SRC($$, @$);}
-  | named_type '=' assign_type   {$$ = ASTNodeTypeDef_New($1, $3); SRC($$, @$);}
-  ;
-
 /****************** PROCEDURE DECLARATION AND DEFINITION *******************/
 /* Definition and declaration of procedures */
 
+actions:
+    expr                         {$$ = NULL;}
+  | actions void_seps expr       {$$ = NULL;}
+  ;
+
+restrs:
+                                 {$$ = NULL;}
+  | expr                         {$$ = NULL;}
+  | restrs void_seps expr        {$$ = NULL;}
+  ;
+
+opt_actions:
+                                 {$$ = NULL;}
+  | TOK_MAPTO actions            {$$ = NULL;}
+  ;
+
+opt_restrs:
+                                 {$$ = NULL;}
+  | '(' restrs opt_actions')'    {$$ = NULL;}
+  ;
+
  /* left side of @ */
 at_left:
-    type                         {$$ = $1;}
+    TOK_TYPE_IDENT               {$$ = $1;}
   | TOK_TTAG                     {$$ = ASTNodeTypeTag_New($1); SRC($$, @$);}
   ;
 
 procedure:
-    at_left TOK_COMBINE named_type
+    at_left TOK_COMBINE opt_restrs TOK_TYPE_IDENT
                                  {$$ = ASTNodeProcDef_New($1, $2, $3);
                                   SRC($$, @$);}
   ;
@@ -448,10 +370,9 @@ procedure_decl:
 /* Syntax for the body of the program */
 statement:
                                  {$$ = NULL;}
-  | assign_type                  {$$ = ASTNodeStatement_New($1); SRC($$, @$);}
   | expr                         {$$ = ASTNodeStatement_New($1); SRC($$, @$);}
   | '\\' expr                    {$$ = ASTNodeStatement_New(
-                                         ASTNodeIgnore_New($2, 1)); SRC($$, @$);}
+                                       ASTNodeIgnore_New($2, 1)); SRC($$, @$);}
   | '[' statement_list ']'       {$$ = ASTNodeStatement_New($2); SRC($$, @$);}
   | error sep                    {$$ = ASTNodeStatement_New(ASTNodeError_New());
                                   SRC($$, @$);
