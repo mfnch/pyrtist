@@ -183,6 +183,7 @@ include BEGIN(include);
  /* Spaces are ignored */
 {SPACES}    {MY_SCAN_TOK();}
 
+":="  {MY_SCAN_TOK(); return TOK_DEFINE;}
 "=>"  {MY_SCAN_TOK(); return TOK_TO;}
 "->"  {MY_SCAN_TOK(); return TOK_MAPTO;}
 

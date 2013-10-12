@@ -1,7 +1,6 @@
 %{
 /***************************************************************************
  *   Copyright (C) 2006-2013 by Matteo Franchin                            *
- *   fnch@libero.it                                                        *
  *                                                                         *
  *   This program is free software; you can redistribute it and/or modify  *
  *   it under the terms of the GNU General Public License as published by  *
@@ -90,10 +89,9 @@ static void My_Syntax_Error();
 
 /* List of simple tokens */
 %token TOK_INC TOK_DEC TOK_SHL TOK_SHR
-%token TOK_EQ TOK_NE TOK_LT TOK_LE TOK_GT TOK_GE
-%token TOK_LOR TOK_LAND
+%token TOK_EQ TOK_NE TOK_LT TOK_LE TOK_GT TOK_GE TOK_LOR TOK_LAND
 %token TOK_APLUS TOK_AMINUS TOK_ATIMES TOK_ADIV TOK_AREM TOK_ABAND TOK_ABXOR
-%token TOK_ABOR TOK_ASHL TOK_ASHR
+%token TOK_ABOR TOK_ASHL TOK_ASHR TOK_DEFINE
 %token TOK_POW
 %token TOK_ERR
 
@@ -106,12 +104,11 @@ static void My_Syntax_Error();
 %type <UnaryOperator> un_op post_op
 %type <BinaryOperator> mul_op add_op shift_op cmp_op eq_op assign_op
 %type <Node> expr_list expr_list_memb opt_ident
-%type <Node> string_concat prim_expr postfix_expr opt_postfix_expr
+%type <Node> string_concat type name prim_expr postfix_expr opt_postfix_expr
 %type <Node> unary_expr pow_expr mul_expr add_expr
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
-%type <Node> land_expr lor_expr assign_expr expr statement statement_list
-%type <Node> at_left procedure opt_c_name procedure_decl
-%type <Node> actions opt_actions restrs opt_restrs
+%type <Node> land_expr lor_expr assign_expr combination_expr expr statement
+%type <Node> statement_list actions opt_actions restrs opt_restrs opt_c_name
 
 /* Starting rule */
 %start program
@@ -179,6 +176,7 @@ cmp_op:
 
 assign_op:
     '='                       {$$ = ASTBINOP_ASSIGN;}
+  | TOK_DEFINE                {$$ = ASTBINOP_ASSIGN;}
   | TOK_APLUS                 {$$ = ASTBINOP_APLUS;}
   | TOK_AMINUS                {$$ = ASTBINOP_AMINUS;}
   | TOK_ATIMES                {$$ = ASTBINOP_ATIMES;}
@@ -193,38 +191,57 @@ assign_op:
 
 /******************************* STRUCTURES ********************************/
 
+expr_list_sep:
+    ','
+  | TOK_NEWLINE
+  | TOK_TO
+  ;
+
 opt_ident:
-                              {$$ = NULL;}
-  | TOK_IDENTIFIER            {$$ = $1;}
+                                 {$$ = NULL;}
+  | TOK_IDENTIFIER               {$$ = $1;}
   ;
 
 expr_list_memb:
-                               {$$ = NULL;}
-  |  expr opt_ident            {$$ = $1;}
+                                 {$$ = NULL;}
+  |  expr opt_ident              {$$ = $1;}
   ;
 
 expr_list:
-    expr_list_memb             {$$ = NULL;}
-  | expr_list void_sep
-                expr_list_memb {$$ = $3;}
+    expr_list_memb               {$$ = NULL;}
+  | expr_list expr_list_sep
+                  expr_list_memb {$$ = $3;}
   ;
 
 /******************************* ARITHMETICS *******************************/
+
 string_concat:
     TOK_STRING                   {$$ = $1;}
   | string_concat TOK_STRING     {$$ = ASTNodeString_Concat($1, $2);
                                   SRC($$, @$);}
   ;
 
+type:
+    TOK_TYPE_IDENT               {$$ = NULL;}
+  | type ':' TOK_TYPE_IDENT      {$$ = NULL;}
+  ;
+
+name:
+    type                         {$$ = NULL;}
+  | TOK_IDENTIFIER               {$$ = NULL;}
+  | type ':' TOK_IDENTIFIER      {$$ = NULL;}
+  ;
+
 prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
+  | TOK_TTAG                     {$$ = NULL;}
   | TOK_KEYWORD                  {$$ = ASTNodeInstance_New(
                                          ASTNodeTypeName_New($1, 0));
                                   Box_Mem_Free($1); SRC($$, @$);}
   | string_concat                {$$ = $1;}
-  | TOK_IDENTIFIER               {$$ = ASTNodeVar_New($1, 0);
-                                  Box_Mem_Free($1); SRC($$, @$);}
-  | TOK_TYPE_IDENT               {$$ = NULL;}
+  | name                         {$$ = NULL; /*ASTNodeVar_New($1, 0);
+                                  Box_Mem_Free($1); SRC($$, @$);*/}
+  | ':' name                     {$$ = NULL;}
   | '?'                          {$$ = NULL;}
   | TOK_SELF                     {$$ = ASTNodeSelfGet_New($1); SRC($$, @$);}
   | '(' expr_list ')'            {$$ = $2;}
@@ -233,7 +250,6 @@ prim_expr:
 postfix_expr:
     prim_expr                    {$$ = $1;}
   | postfix_expr '(' expr ')'    {$$ = ASTNodeArrayGet_New($1, $3); SRC($$, @$);}
-  | procedure_decl               {$$ = $1;}
   | postfix_expr
           '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1); SRC($$, @$);}
   | opt_postfix_expr '.' TOK_IDENTIFIER
@@ -315,8 +331,14 @@ assign_expr:
                      assign_expr {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
   ;
 
+combination_expr:
+    assign_expr                  {$$ = NULL;}
+  | assign_expr TOK_COMBINE opt_restrs TOK_TYPE_IDENT opt_c_name opt_qmark
+                                 {$$ = NULL;}
+   ;
+
 expr:
-    assign_expr                  {$$ = $1;}
+    combination_expr             {$$ = $1;}
   ;
 
 /****************** PROCEDURE DECLARATION AND DEFINITION *******************/
@@ -343,27 +365,13 @@ opt_restrs:
   | '(' restrs opt_actions')'    {$$ = NULL;}
   ;
 
- /* left side of @ */
-at_left:
-    TOK_TYPE_IDENT               {$$ = $1;}
-  | TOK_TTAG                     {$$ = ASTNodeTypeTag_New($1); SRC($$, @$);}
-  ;
-
-procedure:
-    at_left TOK_COMBINE opt_restrs TOK_TYPE_IDENT
-                                 {$$ = ASTNodeProcDef_New($1, $2, $3);
-                                  SRC($$, @$);}
-  ;
-
 opt_c_name:
                                  {$$ = NULL;}
   | string_concat                {$$ = $1;}
   ;
 
-procedure_decl:
-    procedure opt_c_name '?'     {$$ = ASTNodeProcDef_Set($1, $2, NULL); SRC($$, @$);}
-  | procedure opt_c_name
-          '[' statement_list ']' {$$ = ASTNodeProcDef_Set($1, $2, $4); SRC($$, @$);}
+opt_qmark:
+  | '?'
   ;
 
 /************************ STATEMENT LISTS AND BOXES ************************/
