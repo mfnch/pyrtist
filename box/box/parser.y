@@ -107,8 +107,10 @@ static void My_Syntax_Error();
 %type <Node> string_concat type name prim_expr postfix_expr opt_postfix_expr
 %type <Node> unary_expr pow_expr mul_expr add_expr
 %type <Node> shift_expr cmp_expr eq_expr band_expr bxor_expr bor_expr
-%type <Node> land_expr lor_expr assign_expr combination_expr expr statement
-%type <Node> statement_list actions opt_actions restrs opt_restrs opt_c_name
+%type <Node> land_expr lor_expr assign_expr comb_expr expr statement
+%type <Node> statement_list actions opt_actions restrs opt_restrs opt_comb_def
+%type <Node> opt_c_name comb_parent
+
 
 /* Starting rule */
 %start program
@@ -209,16 +211,15 @@ expr_list_memb:
 
 expr_list:
     expr_list_memb               {$$ = NULL;}
-  | expr_list expr_list_sep
-                  expr_list_memb {$$ = $3;}
+  | expr_list expr_list_sep expr_list_memb
+                                 {$$ = $3;}
   ;
 
 /******************************* ARITHMETICS *******************************/
 
 string_concat:
     TOK_STRING                   {$$ = $1;}
-  | string_concat TOK_STRING     {$$ = ASTNodeString_Concat($1, $2);
-                                  SRC($$, @$);}
+  | string_concat TOK_STRING     {$$ = NULL;}
   ;
 
 type:
@@ -235,27 +236,25 @@ name:
 prim_expr:
     TOK_CONSTANT                 {$$ = $1;}
   | TOK_TTAG                     {$$ = NULL;}
-  | TOK_KEYWORD                  {$$ = ASTNodeInstance_New(
-                                         ASTNodeTypeName_New($1, 0));
-                                  Box_Mem_Free($1); SRC($$, @$);}
+  | TOK_KEYWORD                  {$$ = NULL;}
   | string_concat                {$$ = $1;}
-  | name                         {$$ = NULL; /*ASTNodeVar_New($1, 0);
-                                  Box_Mem_Free($1); SRC($$, @$);*/}
+  | name                         {$$ = NULL;}
   | ':' name                     {$$ = NULL;}
   | '?'                          {$$ = NULL;}
-  | TOK_SELF                     {$$ = ASTNodeSelfGet_New($1); SRC($$, @$);}
+  | TOK_SELF                     {$$ = NULL;}
   | '(' expr_list ')'            {$$ = $2;}
   ;
 
 postfix_expr:
     prim_expr                    {$$ = $1;}
-  | postfix_expr '(' expr ')'    {$$ = ASTNodeArrayGet_New($1, $3); SRC($$, @$);}
-  | postfix_expr
-          '[' statement_list ']' {$$ = ASTNodeBox_Set_Parent($3, $1); SRC($$, @$);}
+  | postfix_expr '(' expr ')'    {$$ = NULL;}
+  | postfix_expr '[' statement_list ']'
+                                 {$$ = NULL;}
   | opt_postfix_expr '.' TOK_IDENTIFIER
-                                 {$$ = ASTNodeMemberGet_New($1, $3, 0);
-                                  Box_Mem_Free($3); SRC($$, @$);}
-  | postfix_expr post_op         {$$ = ASTNodeUnOp_New($2, $1); SRC($$, @$);}
+                                 {$$ = NULL;}
+  | opt_postfix_expr '.' TOK_TYPE_IDENT
+                                 {$$ = NULL;}
+  | postfix_expr post_op         {$$ = NULL;}
   ;
 
 opt_postfix_expr:
@@ -265,80 +264,79 @@ opt_postfix_expr:
 
 unary_expr:
     postfix_expr                 {$$ = $1;}
-  | un_op unary_expr             {$$ = ASTNodeUnOp_New($1, $2); SRC($$, @$);}
-  | '^' unary_expr               {$$ = ASTNodeRaise_New($2); SRC($$, @$);}
+  | un_op unary_expr             {$$ = NULL;}
+  | '^' unary_expr               {$$ = NULL;}
 ;
 
 pow_expr:
     unary_expr                   {$$ = $1;}
-  | pow_expr TOK_POW unary_expr  {$$ = ASTNodeBinOp_New(ASTBINOP_POW, $1, $3);
-                                  SRC($$, @$);}
+  | pow_expr TOK_POW unary_expr  {$$ = NULL;}
   ;
 
 mul_expr:
     pow_expr                     {$$ = $1;}
-  | mul_expr mul_op pow_expr     {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
+  | mul_expr mul_op pow_expr     {$$ = NULL;}
   ;
 
 add_expr:
     mul_expr                     {$$ = $1;}
-  | add_expr add_op mul_expr     {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
+  | add_expr add_op mul_expr     {$$ = NULL;}
   ;
 
 shift_expr:
     add_expr                     {$$ = $1;}
-  | shift_expr shift_op add_expr {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
+  | shift_expr shift_op add_expr {$$ = NULL;}
   ;
 
 cmp_expr:
     shift_expr                   {$$ = $1;}
-  | cmp_expr cmp_op shift_expr   {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
+  | cmp_expr cmp_op shift_expr   {$$ = NULL;}
   ;
 
 eq_expr:
     cmp_expr                     {$$ = $1;}
-  | eq_expr eq_op cmp_expr       {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
+  | eq_expr eq_op cmp_expr       {$$ = NULL;}
   ;
 
 band_expr:
     eq_expr                      {$$ = $1;}
-  | band_expr '&' eq_expr        {$$ = ASTNodeBinOp_New(ASTBINOP_BAND, $1, $3); SRC($$, @$);}
+  | band_expr '&' eq_expr        {$$ = NULL;}
   ;
 
 bxor_expr:
     band_expr                    {$$ = $1;}
-  | bxor_expr '^' band_expr      {$$ = ASTNodeBinOp_New(ASTBINOP_BXOR, $1, $3); SRC($$, @$);}
+  | bxor_expr '^' band_expr      {$$ = NULL;}
   ;
 
 bor_expr:
     bxor_expr                    {$$ = $1;}
-  | bor_expr '|' bxor_expr       {$$ = ASTNodeBinOp_New(ASTBINOP_BOR, $1, $3); SRC($$, @$);}
+  | bor_expr '|' bxor_expr       {$$ = NULL;}
   ;
 
 land_expr:
     bor_expr                     {$$ = $1;}
-  | land_expr TOK_LAND bor_expr  {$$ = ASTNodeBinOp_New(ASTBINOP_LAND, $1, $3); SRC($$, @$);}
+  | land_expr TOK_LAND bor_expr  {$$ = NULL;}
   ;
 
 lor_expr:
     land_expr                    {$$ = $1;}
-  | lor_expr TOK_LOR land_expr   {$$ = ASTNodeBinOp_New(ASTBINOP_LOR, $1, $3); SRC($$, @$);}
+  | lor_expr TOK_LOR land_expr   {$$ = NULL;}
   ;
 
 assign_expr:
     lor_expr                     {$$ = $1;}
-  | lor_expr assign_op
-                     assign_expr {$$ = ASTNodeBinOp_New($2, $1, $3); SRC($$, @$);}
+  | lor_expr assign_op  assign_expr
+                                 {$$ = NULL;}
   ;
 
-combination_expr:
+comb_expr:
     assign_expr                  {$$ = NULL;}
-  | assign_expr TOK_COMBINE opt_restrs TOK_TYPE_IDENT opt_c_name opt_qmark
+  | assign_expr TOK_COMBINE opt_restrs comb_parent opt_c_name opt_comb_def
                                  {$$ = NULL;}
    ;
 
 expr:
-    combination_expr             {$$ = $1;}
+    comb_expr             {$$ = $1;}
   ;
 
 /****************** PROCEDURE DECLARATION AND DEFINITION *******************/
@@ -370,18 +368,25 @@ opt_c_name:
   | string_concat                {$$ = $1;}
   ;
 
-opt_qmark:
-  | '?'
+opt_comb_def:
+                                 {$$ = NULL;}
+  | '?'                          {$$ = NULL;}
+  | '[' statement_list ']'       {$$ = NULL;}
+  ;
+
+comb_parent:
+    TOK_TYPE_IDENT               {$$ = NULL;}
+  | comb_parent '.' TOK_TYPE_IDENT
+                                 {$$ = NULL;}
   ;
 
 /************************ STATEMENT LISTS AND BOXES ************************/
 /* Syntax for the body of the program */
 statement:
                                  {$$ = NULL;}
-  | expr                         {$$ = ASTNodeStatement_New($1); SRC($$, @$);}
-  | '\\' expr                    {$$ = ASTNodeStatement_New(
-                                       ASTNodeIgnore_New($2, 1)); SRC($$, @$);}
-  | '[' statement_list ']'       {$$ = ASTNodeStatement_New($2); SRC($$, @$);}
+  | expr                         {$$ = NULL;}
+  | '\\' expr                    {$$ = NULL;}
+  | '[' statement_list ']'       {$$ = NULL;}
   | error sep                    {$$ = ASTNodeStatement_New(ASTNodeError_New());
                                   SRC($$, @$);
                                   My_Syntax_Error(& @$, NULL);
@@ -390,10 +395,8 @@ statement:
   ;
 
 statement_list:
-    statement                    {$$ = ASTNodeBox_New(NULL, $1); SRC($$, @$);}
-  | statement_list sep statement {$$ = ASTNodeBox_Add_Sep($1, $2);
-                                  $$ = ASTNodeBox_Add_Statement($1, $3);
-                                  SRC($$, @$);}
+    statement                    {$$ = NULL;}
+  | statement_list sep statement {$$ = NULL;}
   ;
 
 program:
@@ -439,7 +442,7 @@ ASTNode *Parser_Parse(FILE *in, const char *in_name,
 
   file_names = BoxLex_Destroy(box_lexer);
 
-  if (parse_error == BOXTASK_OK) {
+  if (parse_error == BOXTASK_OK && program_node) {
     assert(program_node->type == ASTNODETYPE_BOX);
     program_node->attr.box.file_names = file_names;
     return program_node;
