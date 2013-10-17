@@ -5,9 +5,12 @@
 ///Intro: a 2D reference system. A {type(.)} object can be created with
 // ``Axes[origin, one_zero, zero_one]`` from three points: an origin, the
 // position of the point (1, 0) and the position of the point (0, 1).
-// If the third point (``zero_one``) is not given, then the point (0, 1) is
-// automatically computed as ``origin + Ort[one_zero - origin]``.
-Axes = ++(Int state, Point origin, one_zero, zero_one)
+// ``Axes[]`` is equivalent to ``Axes[(0, 0), (1, 0), (0, 1)]``.
+// ``Axes[origin]`` is equivalent to
+// ``Axes[origin, origin + (1, 0), origin + (0, 1)]``.
+// ``Axes[origin, one_zero]`` is equivalent to
+// ``Axes[origin, one_zero, origin + Ort[one_zero - origin]]``.
+Axes = ^(Int state, Point origin, one_zero, zero_one)
 
 (.[)@Axes[
   .state = 0
@@ -25,8 +28,8 @@ Scale@Axes[
 ]
 
 ///Intro: scale the reference system by the given factors.
-// Note that the scaling is cumulative. For example, ``Axes[2, 3]`` is 
-// equivalent to ``Axes[2*3]``. 
+// Note that the scaling is cumulative. For example, ``Axes[2, 3]`` is
+// equivalent to ``Axes[2*3]``.
 Real@Axes[Scale[$]]
 
 ///Intro: give the points defining the reference system.

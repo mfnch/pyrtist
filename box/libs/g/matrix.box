@@ -6,7 +6,7 @@
 // Transformation matrices can be specified manually or calculated
 // automatically and are used to transform (rotate, translate, distort) figures
 // (i.e. the content of a {type(Window)} object) and put them inside other
-// figures. 
+// figures.
 Matrix = ++(Real m11, m12, m13, m21, m22, m23)
 
 // We initialize with the identity matrix.
