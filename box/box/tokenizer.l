@@ -236,7 +236,7 @@ include BEGIN(include);
 "(;)"  {yylval.TTag = BOXTYPEID_PAUSE; MY_SCAN_TOK(); return TOK_TTAG;}
 
  /* Number of type Char */
-[']([^'\n]|\\')+['] {
+'([^'\n]|\\')' {
   ASTConst c;
   if (Box_Reduce_Esc_Char(yytext+1, yyleng-2, (char *) & c.c) != BOXTASK_OK) {
     yylval.Node = ASTNodeConst_New(ASTCONSTTYPE_CHAR, c);
@@ -247,10 +247,9 @@ include BEGIN(include);
   return TOK_CONSTANT;
  }
 
- /* for future use:
-   [']    {}
-   [']['] {}
-  */
+ /* Type modifiers */
+"'"  {yylval.TMod = 1; return TOK_TMOD;}
+"''" {yylval.TMod = 2; return TOK_TMOD;}
 
  /* Integer number */
 {DIGIT}+ {
