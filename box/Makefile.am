@@ -20,4 +20,3 @@
 
 EXTRA_DIST = README STYLE
 SUBDIRS = libltdl box libs tests man examples
-

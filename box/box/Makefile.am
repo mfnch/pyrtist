@@ -83,7 +83,7 @@ box_SOURCES = argparse.c argparse.h argparse_priv.h main.c
 
 box_LDADD = libboxcore0.4.la
 box_LDFLAGS = -static
-box_DEPENDENCIES=$(LTDLDEPS)
+box_DEPENDENCIES=$(LTDLDEPS) libboxcore0.4.la
 
 # EXTRA_DIST=
 
