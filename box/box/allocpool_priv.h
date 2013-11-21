@@ -34,22 +34,22 @@
 typedef struct BCAllocSubPool_struct BCAllocSubPool;
 
 struct BCAllocSubPool_struct {
-  BCAllocSubPool *next;     /**< Next pool (NULL for none). */
-  void           *items;    /**< Pointer to the items in the pool. */
-  size_t         capacity;  /**< Capacity of this pool. */
-  size_t         num_items; /**< Number of items in the pool. */
+  BCAllocSubPool *next;      /**< Next pool (NULL for none). */
+  void           *items;     /**< Pointer to the items in the pool. */
+  size_t         capacity;   /**< Capacity of this pool. */
+  size_t         free_space; /**< Free space in the pool. */
 };
 
 struct BCAllocPool_struct {
-  BCAllocSubPool sub_pool;  /**< The largest/first pool. */
-  size_t         item_size; /**< Size of items in the pool. */
-  size_t         num_items; /**< Number of items in all the pools. */
+  BCAllocSubPool sub_pool;   /**< The largest/first pool. */
+  size_t         frag1_size; /**< Size of the largest fragment. */
+  size_t         frag2_size; /**< Size of the second largest fragment. */
+  BCAllocSubPool *sub_pool1; /**< Pool containing the largest fragment. */
 };
 
 
 BOXEXPORT BCAllocPool *
-BCAllocPool_Init(BCAllocPool *pool, size_t item_size,
-                 size_t initial_capacity);
+BCAllocPool_Init(BCAllocPool *pool, uint32_t initial_capacity);
 
 BOXEXPORT void
 BCAllocPool_Finish(BCAllocPool *pool);

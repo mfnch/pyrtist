@@ -21,16 +21,17 @@
  * @file allocpool.h
  * @brief Utility to allocate pools of objects.
  *
- * A pool of objects is a collection of objects all having the same type and
- * size which can be allocated in sequence but are freed all at once. This
- * allows to allocate them in a reduced number of regions in memory making
- * allocation and deallocation faster to handle.
+ * A pool of objects is a collection of objects which can be allocated in
+ * sequence but are all freed at once. This allows to allocate them in a
+ * reduced number of regions in memory making allocation and deallocation
+ * faster to handle.
  */
 
 #ifndef _BOX_ALLOCPOOL_H
 #  define _BOX_ALLOCPOOL_H
 
 #  include <stdio.h>
+#  include <stdint.h>
 
 #  include <box/types.h>
 
@@ -45,13 +46,11 @@ typedef struct BCAllocPool_struct BCAllocPool;
 /**
  * @brief Create a new allocation pool.
  *
- * @param item_size Size of the items in the pool.
- * @param initial_capacity Capacity of the smallest allocation made.
+ * @param initial_capacity Capacity of the smallest allocation made (in bytes).
  * @return A new allocation pool or @c NULL, if the operation failed.
  */
 BOXEXPORT BCAllocPool *
-BCAllocPool_Create(size_t item_size,
-		   size_t initial_capacity);
+BCAllocPool_Create(uint32_t initial_capacity);
 
 /**
  * @brief Destroy the given allocation pool.
@@ -60,13 +59,26 @@ BOXEXPORT void
 BCAllocPool_Destroy(BCAllocPool *pool);
 
 /**
- * @brief Allocate a new item of the pool.
+ * @brief Allocate a new block of memory from the pool.
  *
  * @param pool The allocation pool.
- * @return A new item from the pool.
+ * @param size Size of memory to allocate.
+ * @return Pointer to a region of memory ready to contain @p size bytes.
  */
 BOXEXPORT void *
-BCAllocPool_Alloc(BCAllocPool *pool);
+BCAllocPool_Alloc(BCAllocPool *pool, uint32_t num_items);
+
+/**
+ * @brief Allocate a new block of memory from the pool with given alignment.
+ *
+ * @param pool The allocation pool.
+ * @param size Size of memory to allocate.
+ * @param alignment Required alignment (must be a power of two).
+ * @return Aligned pointer to a region of memory ready to contain @p size bytes.
+ */
+BOXEXPORT void *
+BCAllocPool_Alloc_Aligned(BCAllocPool *pool, uint32_t size,
+                          unsigned int alignment);
 
 /**
  * @brief Print statistics about the pool (debugging function).
