@@ -18,7 +18,7 @@
  ****************************************************************************/
 
 /**
- * @file str.h
+ * @file strutils.h
  * @brief Extra functions to deal with strings (used only by the compiler).
  *
  * This file contains some functions used to manipulate strings.
@@ -27,8 +27,8 @@
  * inside bltinstr.c
  */
 
-#ifndef _STR_H
-#  define _STR_H
+#ifndef _BOX_STRUTILS_H
+#  define _BOX_STRUTILS_H
 
 #  include <box/types.h>
 
@@ -39,26 +39,61 @@ char *Str_DupLow(char *s, BoxUInt leng);
 char *Str_Dup(const char *s, BoxUInt leng);
 char *Str_Cut(const char *s, BoxUInt maxleng, BoxInt start);
 char *Str__Cut(const char *s, BoxUInt leng, BoxUInt maxleng, BoxInt start);
-unsigned char oct_digit(unsigned char c, int *status);
-unsigned char hex_digit(unsigned char c, int *status);
 
-BoxTask Str_ToInt(char *s, BoxUInt l, BoxInt *i);
-
-/** Return the int (0 to 15) corresponding to the given hex digit (a char). */
-int Box_Hex_Digit_To_Int(char digit);
-
-/** Return the hex digit (a char) corresponding to the given int value. */
-char Box_Hex_Digit_From_Int(int v);
-
-BoxTask Str_Hex_To_Int(char *s, BoxUInt l, BoxInt *out);
-BoxTask Str_ToReal(char *s, BoxUInt l, BoxReal *r);
-
-/** Reads the escaped sequence in 's' whose length is 'l' and return
- * the corresponding char value in '*c'.
- * If 's' is a just a normal (unescaped) character, then this will be copied
- * to '*c'.
+/**
+ * @brief Return the numerical value of a character when interpreted as hex.
+ *
+ * @param digit Input character, to be interpreter as an hexadecimal digit.
+ * @return Value from 0 to 15 corresponding to the input character or -1 if the
+ *   character is not a hex digit.
  */
-BoxTask Box_Reduce_Esc_Char(const char *s, size_t l, char *c);
+BOXEXPORT int
+Box_Hex_Digit_To_Int(char digit);
+
+/**
+ * @brief Return the hex digit (a char) corresponding to the given int value.
+ */
+BOXEXPORT char
+Box_Hex_Digit_From_Int(int v);
+
+/**
+ * @brief Return the numerical value of an integer.
+ *
+ * @param s Pointer to the input string.
+ * @param s_length Length of the input string.
+ * @param out Where to put the output number.
+ * @return @c NULL is returned if the operation succeeds. Otherwise, an error
+ *   message is returned.
+ */
+BOXEXPORT const char *
+Box_Str_To_Int(const char *s, BoxUInt s_length, BoxInt *out);
+
+/**
+ * @brief Convert a string of a hex number to a BoxInt.
+ *
+ * Same parameters and usage as Box_Str_To_Int().
+ */
+BOXEXPORT const char *
+Box_Hex_Str_To_Int(const char *s, size_t s_length, BoxInt *out);
+
+/**
+ * @brief Convert a string of to a BoxReal number.
+ *
+ * Same parameters and usage as Box_Str_To_Int().
+ */
+BOXEXPORT const char *
+Box_Str_To_Real(const char *s, size_t s_length, BoxReal *out);
+
+/**
+ * @brief Expand the given escaped character.
+ *
+ * @param s Input escaped string.
+ * @param s_length Length of input string @p s.
+ * @param out Where the output character is put.
+ * @return Whether the operation succeeded.
+ */
+BOXEXPORT BoxTask
+Box_Reduce_Esc_Char(const char *s, size_t l, char *out);
 
 /** Reads the string 's' (with length 'l') and returns a string where the
  * escaped sequences are replaced by the corresponding characters.
@@ -86,5 +121,4 @@ int Box_CStr_Ends_With(const char *src, const char *end);
 #define BoxName_Cat_And_Free(nm, nm1, nm2) \
   BoxName_Cat(nm, nm1, nm2, 1)
 
-#endif
-
+#endif /* _BOX_STRUTILS_H */

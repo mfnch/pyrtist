@@ -17,8 +17,6 @@
  *   License along with Box.  If not, see <http://www.gnu.org/licenses/>.   *
  ****************************************************************************/
 
-/* 8 maggio 2004 - Semplici operazioni su stringhe. */
-
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
@@ -178,8 +176,8 @@ unsigned char hex_digit(unsigned char c, int *status) {
  *  (whose value is suitably translated into one single byte).
  * NOTE: This function is used by Str_ToChar and by Str_ToString.
  */
-static BoxTask
-My_Reduce_Esc_Char(const char *s, size_t l, size_t *f, char *c) {
+static BoxTask My_Reduce_Esc_Char(const char *s, size_t l, size_t *f, char *c)
+{
   BoxName nm = {l, (char *) s};
 
   if (l < 1)
@@ -338,43 +336,31 @@ char *Box_Reduce_Esc_String(const char *s, size_t l, size_t *new_length) {
   return out;
 }
 
-/* DESCRIZIONE: Converte il numero da formato stringa a formato numerico.
- *  s e' il puntatore alla stringa, l la lunghezza. Il numero convertito verra'
- *  memorizzato in *i.
- */
-BoxTask Str_ToInt(char *s, BoxUInt l, BoxInt *i) {
-  char sc[sizeof(BoxInt)*5 + 1], *endptr;
+/* Return the numerical value of a character when interpreted as hex. */
+const char *Box_Str_To_Int(const char *s, BoxUInt s_length, BoxInt *out)
+{
+  char s_copy[sizeof(BoxInt)*5 + 1], *endptr;
+  BoxInt result;
 
-  if (l >= sizeof(BoxInt)*5 + 1) {
-    MSG_ERROR("The integer number exceeds the range of values "
-              "representable by BoxInt.");
-    return BOXTASK_FAILURE;
-  }
+  if (s_length >= sizeof(BoxInt)*5 + 1)
+    return "The number is too big to be represented as an Int.";
 
-  /* Copio la stringa in modo da poterla terminare con '\0' */
-  strncpy(sc, s, l);
-  sc[l] = '\0';
+  strncpy(s_copy, s, s_length);
+  s_copy[s_length] = '\0';
 
   errno = 0;
-  *i = BoxInt_Of_Str(sc, & endptr, 10);
-  if (errno == 0)
-    return BOXTASK_OK;
+  result = BoxInt_Of_Str(s_copy, & endptr, 10);
+  if (!errno) {
+    *out = result;
+    return NULL;
+  }
 
-  MSG_ERROR("The integer number exceeds the range of values "
-            "representable by BoxInt.");
-  return BOXTASK_FAILURE;
+  return "The number is too big to be represented as an Int";
 }
 
-/** Return the numerical value of a charecter when interpreted
- * as an hexadecimal digit. Returns -1 if the character is not an hex digit.
- * NOTE: I may use something like:
- *  return (digit >= '0' && digit <= '9') ?
- *         digit - '0' :
- *         ((digit >= 'a' && digit <= 'f') ? digit - 'a' : -1);
- * But this makes assumptions on the order of the character codes.
- * I feel unsure about that.
- */
-int Box_Hex_Digit_To_Int(char digit) {
+/* Return the numerical value of a charecter when interpreted. */
+int Box_Hex_Digit_To_Int(char digit)
+{
   switch(tolower(digit)) {
   case '0': return 0;
   case '1': return 1;
@@ -397,7 +383,8 @@ int Box_Hex_Digit_To_Int(char digit) {
 }
 
 /** Return the hex digit (a char) corresponding to the given int value. */
-char Box_Hex_Digit_From_Int(int v) {
+char Box_Hex_Digit_From_Int(int v)
+{
   switch(v) {
   case 0: return '0';
   case 1: return '1';
@@ -419,59 +406,68 @@ char Box_Hex_Digit_From_Int(int v) {
   }
 }
 
-BoxTask Str_Hex_To_Int(char *s, BoxUInt l, BoxInt *out) {
-  char *c = s;
-  BoxUInt i, n = 0;
+/* Convert a string of a hex number to a BoxInt. */
+const char *Box_Hex_Str_To_Int(const char *s, size_t s_length, BoxInt *out)
+{
+  size_t i;
+  BoxUInt result;
 
-  for (i = 0; i < l; i++) {
-    BoxUInt digit = Box_Hex_Digit_To_Int(*(c++)),
-         m = n << 4;
-    if (m < n) {
-      MSG_WARNING("Hexadecimal number is out of bounds!");
-      return BOXTASK_OK;
-    }
-    if (digit < 0) {
-      MSG_ERROR("Bad digit in hexadecimal number!");
-      return BOXTASK_FAILURE;
-    }
-    n = m | digit;
+  for (i = 0, result = 0; i < s_length; i++) {
+    int digit = Box_Hex_Digit_To_Int(*(s++));
+    BoxUInt shifted_result = result << 4;
+
+    if (digit < 0)
+      return "Bad digit in hexadecimal number";
+
+    if (shifted_result >> 4 != result)
+      return "Hexadecimal number is out of bounds";
+
+    result = shifted_result | digit;
   }
-  *out = (BoxInt) n;
-  return BOXTASK_OK;
+
+  *out = (BoxInt) result;
+  return NULL;
 }
 
-/* Converte il numero da formato stringa a formato numerico.
- *  s e' il puntatore alla stringa, l la lunghezza. Il numero convertito verra'
- *  memorizzato in *r.
- */
-BoxTask Str_ToReal(char *s, BoxUInt l, BoxReal *r) {
-  if ( l < 64 ) {
-    char sc[64];
+/* Convert a string of to a BoxReal number. */
+const char *Box_Str_To_Real(const char *s, size_t s_length, BoxReal *out)
+{
+  char *endptr;
+  BoxReal result;
+  int errno_value = 0;
 
-    /* Copio la stringa in modo da poterla terminare con '\0' */
-    strncpy(sc, s, l);
-    sc[l] = '\0';
+  if (s_length < 64) {
+    char s_copy[64];
+    strncpy(s_copy, s, s_length);
+    s_copy[s_length] = '\0';
 
     errno = 0;
-    *r = BoxReal_Of_Str(sc, NULL);
-    if ( errno == 0 ) return BOXTASK_OK;
-
+    result = BoxReal_Of_Str(s_copy, & endptr);
+    errno_value = errno;
   } else {
-    char *sc, *endptr;
-    sc = (char *) Box_Mem_Alloc(sizeof(char)*(l+1));
-
-    /* Copio la stringa in modo da poterla terminare con '\0' */
-    strncpy(sc, s, l);
-    sc[l] = '\0';
+    char *s_copy = (char *) Box_Mem_Alloc(sizeof(char)*(s_length + 1));
+    strncpy(s_copy, s, s_length);
+    s_copy[s_length] = '\0';
 
     errno = 0;
-    *r = BoxReal_Of_Str(sc, & endptr);
-    Box_Mem_Free(sc);
-    if ( errno == 0 ) return BOXTASK_OK;
+    result = BoxReal_Of_Str(s_copy, & endptr);
+    errno_value = errno;
+    Box_Mem_Free(s_copy);
   }
 
-  MSG_ERROR("Il numero reale sta fuori dai limiti consentiti!");
-  return BOXTASK_FAILURE;
+  if (!errno_value) {
+    *out = result;
+    return NULL;
+  }
+
+  if (errno_value == ERANGE) {
+    if (result == 0)
+      return "Number is too small to be represented as Real";
+    else
+      return "Number is too large to be represented as Real";
+  }
+
+  return "Error while parsing Real number";
 }
 
 
