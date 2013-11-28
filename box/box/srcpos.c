@@ -29,71 +29,83 @@
 #include "srcpos.h"
 #include "print.h"
 
-BoxSrcName *BoxSrcName_New(void) {
+BoxSrcName *BoxSrcName_Create(void)
+{
   BoxSrcName *srcname = Box_Mem_Safe_Alloc(sizeof(BoxSrcName));
   BoxSrcName_Init(srcname);
   return srcname;
 }
 
-void BoxSrcName_Destroy(BoxSrcName *srcname) {
+void BoxSrcName_Destroy(BoxSrcName *srcname)
+{
   BoxSrcName_Finish(srcname);
   Box_Mem_Free(srcname);
 }
 
-static void My_SrcName_Finalizer(void *ptr) {
+static void My_SrcName_Finalizer(void *ptr)
+{
   Box_Mem_Free(*((char **) ptr));
 }
 
-void BoxSrcName_Init(BoxSrcName *srcname) {
+void BoxSrcName_Init(BoxSrcName *srcname)
+{
   BoxArr_Init(& srcname->names, sizeof(char *), 8);
   BoxArr_Set_Finalizer(& srcname->names, My_SrcName_Finalizer);
 }
 
-void BoxSrcName_Finish(BoxSrcName *srcname) {
+void BoxSrcName_Finish(BoxSrcName *srcname)
+{
   BoxArr_Finish(& srcname->names);
 }
 
-char *BoxSrcName_Add(BoxSrcName *srcname, const char *name) {
-  if (name != NULL) {
+const char *BoxSrcName_Add(BoxSrcName *srcname, const char *name)
+{
+  if (name) {
     char *name_copy = Box_Mem_Strdup(name);
     BoxArr_Push(& srcname->names, & name_copy);
     return name_copy;
-
   } else
     return NULL;
 }
 
-static void My_File_Name_Finalizer(void *ptr) {
+static void My_File_Name_Finalizer(void *ptr)
+{
   Box_Mem_Free(*((char **) ptr));
 }
 
-void BoxSrcPosTable_Init(BoxSrcPosTable *pt) {
+void BoxSrcPosTable_Init(BoxSrcPosTable *pt)
+{
   BoxArr_Init(& pt->file_names, sizeof(char *), 2);
   BoxArr_Set_Finalizer(& pt->file_names, My_File_Name_Finalizer);
   BoxArr_Init(& pt->assoc_table, sizeof(BoxSrcAssoc), 5);
 }
 
-void BoxSrcPosTable_Finish(BoxSrcPosTable *pt) {
+void BoxSrcPosTable_Finish(BoxSrcPosTable *pt)
+{
   BoxArr_Finish(& pt->file_names);
   BoxArr_Finish(& pt->assoc_table);
 }
 
-void BoxSrcPosTable_Clear(BoxSrcPosTable *pt) {
+void BoxSrcPosTable_Clear(BoxSrcPosTable *pt)
+{
   BoxSrcPosTable_Finish(pt);
   BoxSrcPosTable_Init(pt);
 }
 
-void BoxSrcPosTable_Compactify(BoxSrcPosTable *pt) {
+void BoxSrcPosTable_Compactify(BoxSrcPosTable *pt)
+{
   BoxArr_Compactify(& pt->file_names);
   BoxArr_Compactify(& pt->assoc_table);
 }
 
-static int My_Cmp_Names(void *left, void *right, void *pass_data) {
+static int My_Cmp_Names(void *left, void *right, void *pass_data)
+{
   return strcmp(*((char **) left), *((char **) right));
 }
 
 static const char *My_New_Filename(BoxSrcPosTable *pt,
-                                   const char *file_name) {
+                                   const char *file_name)
+{
   if (file_name == NULL)
     return NULL;
 
@@ -112,7 +124,8 @@ static const char *My_New_Filename(BoxSrcPosTable *pt,
 }
 
 void BoxSrcPosTable_Associate(BoxSrcPosTable *pt,
-                              BoxOutPos op, BoxSrcPos *sp) {
+                              BoxOutPos op, BoxSrcPos *sp)
+{
   BoxArr *at = & pt->assoc_table;
   BoxSrcAssoc *sa = NULL;
 
@@ -136,7 +149,8 @@ void BoxSrcPosTable_Associate(BoxSrcPosTable *pt,
   sa->out_pos = op;
 }
 
-void BoxSrcPosTable_Print(BoxSrcPosTable *pt, FILE *out) {
+void BoxSrcPosTable_Print(BoxSrcPosTable *pt, FILE *out)
+{
   BoxArr *at = & pt->assoc_table;
   BoxSrcAssoc *sa = BoxArr_First_Item_Ptr(at);
   size_t n = BoxArr_Num_Items(at), i;
@@ -151,7 +165,8 @@ void BoxSrcPosTable_Print(BoxSrcPosTable *pt, FILE *out) {
   fprintf(out, "BoxSrcPosTable: end.\n");
 }
 
-BoxSrcPos *BoxSrcPosTable_Get_Src_Of(BoxSrcPosTable *pt, BoxOutPos op) {
+BoxSrcPos *BoxSrcPosTable_Get_Src_Of(BoxSrcPosTable *pt, BoxOutPos op)
+{
   BoxArr *at = & pt->assoc_table;
   BoxSrcAssoc *sa = BoxArr_First_Item_Ptr(at);
   size_t n = BoxArr_Num_Items(at);
@@ -160,13 +175,13 @@ BoxSrcPos *BoxSrcPosTable_Get_Src_Of(BoxSrcPosTable *pt, BoxOutPos op) {
   if (n < 1)
     return NULL;
 
-  else if (sa[0].out_pos > op)
+  if (sa[0].out_pos > op)
     return NULL;
 
-  else if (sa[n - 1].out_pos <= op)
+  if (sa[n - 1].out_pos <= op)
     return & sa[n - 1].src_pos;
 
-  else {
+  {
     /* Here we know that:
      *
      *   sa[0].out_pos <= op < sa[n - 1].out_pos
@@ -189,42 +204,50 @@ BoxSrcPos *BoxSrcPosTable_Get_Src_Of(BoxSrcPosTable *pt, BoxOutPos op) {
   }
 }
 
-void BoxSrcPos_Init(BoxSrcPos *pos, const char *file_name) {
+void BoxSrcPos_Init(BoxSrcPos *pos, const char *file_name)
+{
   pos->file_name = file_name;
   pos->line = 1;
   pos->col = 1;
 }
 
-char *BoxSrcPos_To_Str(BoxSrcPos *pos) {
+char *BoxSrcPos_To_Str(BoxSrcPos *pos)
+{
   if (pos->file_name == NULL)
     return printdup("line %ld", pos->line);
   else
     return printdup("line %ld of file \"%s\"", pos->line, pos->file_name);
 }
 
-void BoxSrcPos_Next_Line(BoxSrcPos *pos) {
+void BoxSrcPos_Next_Line(BoxSrcPos *pos)
+{
   if (pos->line > 0) {
     pos->line += 1;
     pos->col = 1;
   }
 }
 
-int BoxSrcPos_Is_Undef(BoxSrcPos *pos) {
+int BoxSrcPos_Is_Undef(BoxSrcPos *pos)
+{
   return pos->line < 1;
 }
 
-void BoxSrcPos_Set_Undef(BoxSrcPos *pos) {
+void BoxSrcPos_Set_Undef(BoxSrcPos *pos)
+{
   pos->line = 0;
   pos->col = 0;
 }
 
-void BoxSrc_Init(BoxSrc *src) {
-  src->begin.line = src->begin.col = 1;
-  src->end.line = src->end.col = 0;
-  src->begin.file_name = src->end.file_name = (char *) NULL;
+void BoxSrc_Init(BoxSrc *src)
+{
+  src->begin = src->end = 0;
 }
 
-char *BoxSrc_To_Str(BoxSrc *loc) {
+char *BoxSrc_To_Str(BoxSrc *loc)
+{
+#if 1
+  return Box_SPrintF("idx %d-%d", (int) loc->begin, (int) loc->end);
+#else
   long bl = loc->begin.line, bc = loc->begin.col,
        el = loc->end.line, ec = loc->end.col;
   const char *fn =
@@ -245,46 +268,11 @@ char *BoxSrc_To_Str(BoxSrc *loc) {
   } else {
     return Box_SPrintF("%~sline %ld-%ld cols %ld-%ld", fn, bl, el, bc, ec);
   }
+#endif
 }
 
-void BoxSrc_Merge(BoxSrc *result, BoxSrc *first, BoxSrc *second) {
-  if (first->begin.line == 0)
-    result->begin = second->begin;
-
-  else if (second->begin.line == 0)
-    result->begin = first->begin;
-
-  else {
-    BoxSrcPosLine bl = first->begin.line, sbl = second->begin.line;
-    BoxSrcPosCol bc = first->begin.col, sbc = second->begin.col;
-
-    if (sbl < bl || (sbl == bl && sbc < bc)) {
-      result->begin.line = sbl;
-      result->begin.col = sbc;
-
-    } else {
-      result->begin.line = bl;
-      result->begin.col = bc;
-    }
-  }
-
-  if (first->end.line == 0)
-    result->end = second->end;
-
-  else if (second->end.line == 0)
-    result->end = first->end;
-
-  else {
-    BoxSrcPosLine el = first->end.line, sel = second->end.line;
-    BoxSrcPosCol ec = first->end.col, sec = second->end.col;
-
-    if (sel < el || (sel == el && sec < ec)) {
-      result->end.line = el;
-      result->end.col = ec;
-
-    } else {
-      result->end.line = sel;
-      result->end.col = sec;
-    }
-  }
+void BoxSrc_Merge(BoxSrc *result, BoxSrc *fst, BoxSrc *snd)
+{
+  result->begin = (fst->begin <= snd->begin) ? fst->begin : snd->begin;
+  result->end = (fst->end >= snd->end) ? fst->end : snd->end;
 }

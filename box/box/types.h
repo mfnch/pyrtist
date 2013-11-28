@@ -22,7 +22,7 @@
  * @brief Declaration of functionality related to the #BoxType object type.
  *
  * This header defines most of the functions needed to create #BoxType objects,
- * manipulate them and retrieve informations from them. 
+ * manipulate them and retrieve informations from them.
  * @b Note that #BoxType and #BoxTypeId are defined inside the header core.h.
  * These two types are indeed fundamental parts of the Box infrastructure. In
  * this header we rather expose the functionality to create and inspect types
@@ -354,7 +354,7 @@ BoxType_Create_Any(void);
 
 /**
  * @brief Resolve the given type.
- * 
+ *
  * Resolution is an operation on types which allow obtaining the original type
  * one type refers to. For example, resolving a species allows obtaining the
  * target type of the species and resolving an identifier type allows obtaining

@@ -23,36 +23,59 @@
 #  include <box/types.h>
 #  include <box/array.h>
 
-/** Type for storing the pointers to file names used by BoxSrcPos objects
+
+/**
+ * @brief Array of file names.
+ *
+ * Type for storing the pointers to file names used by #BoxSrcPos objects
  * and friends.
  */
 typedef struct {
   BoxArr names;
 } BoxSrcName;
 
-/** Type for number of line in a source file */
-typedef int BoxSrcPosLine;
+/**
+ * @brief Type for number of line in a source file.
+ */
+typedef int BoxSrcLine;
 
-/** Type for number of column in a source file */
-typedef int BoxSrcPosCol;
+/**
+ * @brief Type for number of column in a source file.
+ */
+typedef int BoxSrcCol;
 
-/** Object which describes the position in a Box source file (which file,
+/**
+ * @brief Position of a character of the input source code.
+ *
+ * Object which describes the position in a Box source file (which file,
  * which line and column). It is used to associate debug information to VM
- * code, i.e. to state to which line of source a certain fragment of code
+ * code, i.e. to state to which portion of source a certain fragment of code
  * corresponds.
  */
 typedef struct {
-  const char    *file_name;
-  BoxSrcPosLine line;
-  BoxSrcPosCol  col;
+  const char *file_name;
+  BoxSrcLine line;
+  BoxSrcCol  col;
 } BoxSrcPos;
 
-/** Object used to define a portion of the source file (to locate errors and
- * add ability to complement error messages with the exact location they
- * refer to)
+/**
+ * @brief Serial position of a character in a Box source file (>= 1).
+ *
+ * This is simply the number of characters (including this one) read by the
+ * tokenizer so far. This is a positive integer number and is therefore easier
+ * to handle than a #BoxSrcPos object.
+ */
+typedef unsigned int BoxSrcIdx;
+
+/**
+ * @brief Identify a portion of source code.
+ *
+ * Object used to define a portion of the source file (to locate errors and add
+ * ability to improve error messages by specifying the exact portion of source
+ * code they refer to).
  */
 typedef struct {
-  BoxSrcPos begin, end;
+  BoxSrcIdx begin, end;
 } BoxSrc;
 
 /** "Linear" position in the source */
@@ -67,8 +90,8 @@ typedef struct {
 
 /** Object containing information about where */
 typedef struct {
-  BoxArr     file_names;
-  BoxArr     assoc_table;
+  BoxArr    file_names;
+  BoxArr    assoc_table;
 } BoxSrcPosTable;
 
 /** Initialise a file name table. */
@@ -77,14 +100,29 @@ void BoxSrcName_Init(BoxSrcName *srcname);
 /** Finalise a file name table. */
 void BoxSrcName_Finish(BoxSrcName *srcname);
 
-/** Object creator for BoxSrcName */
-BoxSrcName *BoxSrcName_New(void);
+/**
+ * @brief Creator for #BoxSrcName.
+ */
+BOXEXPORT BoxSrcName *
+BoxSrcName_Create(void);
 
-/** Object destructor for BoxSrcName */
-void BoxSrcName_Destroy(BoxSrcName *srcname);
+/**
+ * @brief Destructor for #BoxSrcName.
+ */
+BOXEXPORT void
+BoxSrcName_Destroy(BoxSrcName *srcname);
 
-/** Add a new name to the file name table. */
-char *BoxSrcName_Add(BoxSrcName *srcname, const char *name);
+/**
+ * @brief Add a new name to the file name table.
+ *
+ * @param sn List of names to which @p name is added.
+ * @param name Name to add.
+ * @return A copy of the original string. Allocation responsibility for it lies
+ *   with the #BoxSrcName object, which must therefore exists while the pointer
+ *   returned by this function is used.
+ */
+BOXEXPORT const char *
+BoxSrcName_Add(BoxSrcName *sn, const char *name);
 
 /** Initialise the source position table pointed by 'pt'. */
 void BoxSrcPosTable_Init(BoxSrcPosTable *pt);
@@ -126,20 +164,32 @@ int BoxSrcPos_Is_Undef(BoxSrcPos *pos);
 /** Set the given position object to undefined. */
 void BoxSrcPos_Set_Undef(BoxSrcPos *pos);
 
-/** Initialise a BoxSrc object as "undefined". */
-void BoxSrc_Init(BoxSrc *src);
-
-/** Return a string corresponding to the given BoxSrc object.
- * NOTE: the returned string is allocated with Box_Mem_Alloc and should be
- *  deallocated by the user, calling Box_Mem_Free.
- * Example: "line 1 cols 5-15"
+/**
+ * @brief Initialise a #BoxSrc object as "undefined".
  */
-char *BoxSrc_To_Str(BoxSrc *loc);
+BOXEXPORT void
+BoxSrc_Init(BoxSrc *src);
 
-/** Return (in *result) the smallest BoxSrc object containing both first
- * and second.
+/**
+ * @brief Return a string corresponding to the given #BoxSrc object.
+ *
+ * @param The input object.
+ * @return Something like "line 1 cols 5-15"
+ * @note the returned string is allocated with Box_Mem_Alloc() and should be
+ *  deallocated by the user, calling Box_Mem_Free().
  */
-void BoxSrc_Merge(BoxSrc *result, BoxSrc *first, BoxSrc *second);
+BOXEXPORT char *
+BoxSrc_To_Str(BoxSrc *loc);
+
+/**
+ * @brief Return the smallest #BoxSrc object containing the given two.
+ *
+ * @param result This is where the result is returned.
+ * @param first The first object.
+ * @param second The second object.
+ */
+BOXEXPORT void
+BoxSrc_Merge(BoxSrc *result, BoxSrc *first, BoxSrc *second);
 
 /** Set the line number in the BoxSrcPos structure. */
 #define BoxSrcPos_Set_Line(bl, line_num) \
