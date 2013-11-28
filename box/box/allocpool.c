@@ -25,23 +25,23 @@
 
 
 /* Create a new allocation pool. */
-BCAllocPool *BCAllocPool_Create(uint32_t initial_capacity)
+BoxAllocPool *BoxAllocPool_Create(uint32_t initial_capacity)
 {
-  BCAllocPool *pool = Box_Mem_Alloc(sizeof(BCAllocPool));
+  BoxAllocPool *pool = Box_Mem_Alloc(sizeof(BoxAllocPool));
   if (pool)
-    BCAllocPool_Init(pool, initial_capacity);
+    BoxAllocPool_Init(pool, initial_capacity);
   return pool;
 }
 
 /* Destroy the given allocation pool. */
-void BCAllocPool_Destroy(BCAllocPool *pool)
+void BoxAllocPool_Destroy(BoxAllocPool *pool)
 {
-  BCAllocPool_Finish(pool);
+  BoxAllocPool_Finish(pool);
   Box_Mem_Free(pool);
 }
 
 /* Initialise an allocation pool. */
-BCAllocPool *BCAllocPool_Init(BCAllocPool *pool, uint32_t initial_capacity)
+BoxAllocPool *BoxAllocPool_Init(BoxAllocPool *pool, uint32_t initial_capacity)
 {
   BCAllocSubPool *sp = & pool->sub_pool;
   void *items;
@@ -63,7 +63,7 @@ BCAllocPool *BCAllocPool_Init(BCAllocPool *pool, uint32_t initial_capacity)
 }
 
 /* Finalise an allocation pool. */
-void BCAllocPool_Finish(BCAllocPool *pool)
+void BoxAllocPool_Finish(BoxAllocPool *pool)
 {
   BCAllocSubPool *sp = pool->sub_pool.next;
   Box_Mem_Free(pool->sub_pool.items);
@@ -75,9 +75,9 @@ void BCAllocPool_Finish(BCAllocPool *pool)
   }
 }
 
-void *BCAllocPool_Alloc(BCAllocPool *pool, uint32_t size)
+void *BoxAllocPool_Alloc(BoxAllocPool *pool, uint32_t size)
 {
-  return BCAllocPool_Alloc_Aligned(pool, size, __alignof__(void *));
+  return BoxAllocPool_Alloc_Aligned(pool, size, __alignof__(void *));
 }
 
 /* Attempt allocation using the pre-existing pools, otherwise fail and return
@@ -113,7 +113,7 @@ static void *My_Try_Alloc(BCAllocSubPool *sp, uint32_t size,
   return NULL;
 }
 
-static void My_Scan_Frags(BCAllocPool *pool)
+static void My_Scan_Frags(BoxAllocPool *pool)
 {
   size_t frag1_size = 0, frag2_size = 0;
   BCAllocSubPool *sub_pool1 = NULL, *sp;
@@ -133,8 +133,8 @@ static void My_Scan_Frags(BCAllocPool *pool)
   pool->frag2_size = frag2_size;
 }
 
-void *BCAllocPool_Alloc_Aligned(BCAllocPool *pool, uint32_t size,
-                                unsigned int alignment)
+void *BoxAllocPool_Alloc_Aligned(BoxAllocPool *pool, uint32_t size,
+                                 unsigned int alignment)
 {
   BCAllocSubPool *sp, *new_sp;
   void *item_ptr, *new_items;
@@ -200,7 +200,7 @@ void *BCAllocPool_Alloc_Aligned(BCAllocPool *pool, uint32_t size,
   return My_Try_Alloc(sp, size, alignment);
 }
 
-void BCAllocPool_Print_Stats(BCAllocPool *pool, FILE *out)
+void BoxAllocPool_Print_Stats(BoxAllocPool *pool, FILE *out)
 {
   int i;
   BCAllocSubPool *sp;
@@ -217,17 +217,17 @@ void BCAllocPool_Print_Stats(BCAllocPool *pool, FILE *out)
 int main(void) {
   int i;
   uint32_t szs[] = {1, 10, 1, 1, 1, 1, 1, 1, 1, 1};
-  BCAllocPool *p = BCAllocPool_Create(sizeof(int));
+  BoxAllocPool *p = BoxAllocPool_Create(sizeof(int));
 
 
 
   for (i = 0; i < sizeof(szs)/sizeof(szs[0]); i++) {
-    void *ptr = BCAllocPool_Alloc_Aligned(p, szs[i], 1);
+    void *ptr = BoxAllocPool_Alloc_Aligned(p, szs[i], 1);
     printf("Allocated %d bytes in %p\n", szs[i], ptr);
-    BCAllocPool_Print_Stats(p, stdout);
+    BoxAllocPool_Print_Stats(p, stdout);
   }
 
-  BCAllocPool_Destroy(p);
+  BoxAllocPool_Destroy(p);
 
   exit(EXIT_SUCCESS);
 }

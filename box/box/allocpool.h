@@ -41,7 +41,7 @@
  * This object is useful when allocating several objects which need to be
  * freed all at once.
  */
-typedef struct BCAllocPool_struct BCAllocPool;
+typedef struct BoxAllocPool_struct BoxAllocPool;
 
 /**
  * @brief Create a new allocation pool.
@@ -49,14 +49,14 @@ typedef struct BCAllocPool_struct BCAllocPool;
  * @param initial_capacity Capacity of the smallest allocation made (in bytes).
  * @return A new allocation pool or @c NULL, if the operation failed.
  */
-BOXEXPORT BCAllocPool *
-BCAllocPool_Create(uint32_t initial_capacity);
+BOXEXPORT BoxAllocPool *
+BoxAllocPool_Create(uint32_t initial_capacity);
 
 /**
  * @brief Destroy the given allocation pool.
  */
 BOXEXPORT void
-BCAllocPool_Destroy(BCAllocPool *pool);
+BoxAllocPool_Destroy(BoxAllocPool *pool);
 
 /**
  * @brief Allocate a new block of memory from the pool.
@@ -66,7 +66,7 @@ BCAllocPool_Destroy(BCAllocPool *pool);
  * @return Pointer to a region of memory ready to contain @p size bytes.
  */
 BOXEXPORT void *
-BCAllocPool_Alloc(BCAllocPool *pool, uint32_t num_items);
+BoxAllocPool_Alloc(BoxAllocPool *pool, uint32_t num_items);
 
 /**
  * @brief Allocate a new block of memory from the pool with given alignment.
@@ -77,8 +77,8 @@ BCAllocPool_Alloc(BCAllocPool *pool, uint32_t num_items);
  * @return Aligned pointer to a region of memory ready to contain @p size bytes.
  */
 BOXEXPORT void *
-BCAllocPool_Alloc_Aligned(BCAllocPool *pool, uint32_t size,
-                          unsigned int alignment);
+BoxAllocPool_Alloc_Aligned(BoxAllocPool *pool, uint32_t size,
+                           unsigned int alignment);
 
 /**
  * @brief Print statistics about the pool (debugging function).
@@ -87,6 +87,6 @@ BCAllocPool_Alloc_Aligned(BCAllocPool *pool, uint32_t size,
  * @param out The output stream.
  */
 BOXEXPORT void
-BCAllocPool_Print_Stats(BCAllocPool *pool, FILE *out);
+BoxAllocPool_Print_Stats(BoxAllocPool *pool, FILE *out);
 
 #endif /* _BOX_ALLOCPOOL_H */

@@ -40,7 +40,7 @@ struct BCAllocSubPool_struct {
   size_t         free_space; /**< Free space in the pool. */
 };
 
-struct BCAllocPool_struct {
+struct BoxAllocPool_struct {
   BCAllocSubPool sub_pool;   /**< The largest/first pool. */
   size_t         frag1_size; /**< Size of the largest fragment. */
   size_t         frag2_size; /**< Size of the second largest fragment. */
@@ -48,10 +48,10 @@ struct BCAllocPool_struct {
 };
 
 
-BOXEXPORT BCAllocPool *
-BCAllocPool_Init(BCAllocPool *pool, uint32_t initial_capacity);
+BOXEXPORT BoxAllocPool *
+BoxAllocPool_Init(BoxAllocPool *pool, uint32_t initial_capacity);
 
 BOXEXPORT void
-BCAllocPool_Finish(BCAllocPool *pool);
+BoxAllocPool_Finish(BoxAllocPool *pool);
 
 #endif /* _BOX_ALLOCPOOL_PRIV_H */
